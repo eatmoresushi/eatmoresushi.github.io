@@ -4,9 +4,10 @@ date: 2020-02-29 00:00:00 Z
 layout: post
 ---
 
-*This is the first note I took while I was reading The code book by Simon Singh. This is also my something awesome project for COMP6441 Security Engineering and Cyber Security course in UNSW*
+*This is the first note I took while I was reading [The code book](https://simonsingh.net/books/the-code-book/) by Simon Singh. This is also my something awesome project for COMP6441 Security Engineering and Cyber Security course in UNSW*    
+*This blog covers character 1-2 of the book*    
 
-**What I’ve learnt:**
+**What I’ve learnt:**  
 
 Cryptography is the art of encrypting and decrypting the meaning of a message to make a secure communication between the sender and receiver. So that even if the message is intercepted by others, they would not know the meaning. It played a crucial role in human history both in civilian activities and military. It will continue to impact the outcome of the world.
 
@@ -25,7 +26,7 @@ AM{NOPBAVNT_
 
 In substitution, each letter is substitute with another letter. The earliest documented use for military is in Julius Caesar’s Gallic Wars. Caesar simply replaced each letter with the letter that is three space down in the alphabet. Later on, keys or look-up tables are invented, both the sender and the receiver keep a copy of a look-up table. The sender uses it to encrypt it and the receiver use it to decrypt it. The keys could be any rearrangement of the alphabet and there are over 400,000,000,000,000,000,000,000,000 such rearrangements so that it is impossible for human brains to use brute force to break it. This kind of cipher, that each letter is replaced by another one letter, called a monoalphabetic substitution cipher.
 
-However, the codemakers lead didn’t not hold long. By the ninth century, an Arab scientist found out that the frequencies of letters could be exploited in order to break ciphers. For example, in English, the top three most frequencies letters are e, t and a. If we want to decrypt a monoalphabetic cipher and we know the plaintext is in English, we could find the three most common letters in the cipher text and assume each of them represents one of the three most frequencies letters in English, e, t or a. Another aspect is explored to help the decryption is the relationship between letters, for example, the letter e can appear before and after every other letter, but the letter t is rarely seen before or after b, d, g, j, k, m, q or v. If the ciphertext contains spaces, 1 to 3 letter words could be breakpoints as also.
+However, the codemakers lead did not hold long. By the ninth century, an Arab scientist found out that the frequencies of letters could be exploited in order to break ciphers. For example, in English, the top three most frequencies letters are e, t and a. If we want to decrypt a monoalphabetic cipher and we know the plaintext is in English, we could find the three most common letters in the cipher text and assume each of them represents one of the three most frequencies letters in English, e, t or a. Another aspect is explored to help the decryption is the relationship between letters, for example, the letter e can appear before and after every other letter, but the letter t is rarely seen before or after b, d, g, j, k, m, q or v. If the ciphertext contains spaces, 1 to 3 letter words could be breakpoints as also.
 
 With the development of encryption on monoalphabetic cipher, the world demands a new cipher. A French diplomat named Blaise de Vigenere, based on many other’s research, created so-called Vigenere cipher. It was called ‘the indecipherable cipher’ because no one could break it for three centuries. It uses a table called ‘Vigenere square’ like this:
 
