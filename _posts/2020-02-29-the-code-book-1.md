@@ -29,7 +29,7 @@ However, the codemakers lead didn’t not hold long. By the ninth century, an Ar
 
 With the development of encryption on monoalphabetic cipher, the world demands a new cipher. A French diplomat named Blaise de Vigenere, based on many other’s research, created so-called Vigenere cipher. It was called ‘the indecipherable cipher’ because no one could break it for three centuries. It uses a table called ‘Vigenere square’ like this:
 
-<img src="{{site.url}}/images/Vigenere_square_shading.svg" style="display: block; margin: auto;" />
+![vigenere square]({{ site.url }}/attachments/Vigenere_square_shading.svg)
 
 And a key, for example, ‘UNSW’. The keyword is repeated throughout the ciphertext. Let’s look at the following example:
 
