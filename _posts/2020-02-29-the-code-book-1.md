@@ -3,7 +3,9 @@ title: The early age of cryptography and the indecipherable cipher
 date: 2020-02-29 00:00:00 Z
 layout: post
 ---
+
 *This is the first note I took while I was reading The code book by Simon Singh. This is also my something awesome project for COMP6441 Security Engineering and Cyber Security course in UNSW*
+
 **What I’ve learnt:**
 Cryptography is the art of encrypting and decrypting the meaning of a message to make a secure communication between the sender and receiver. So that even if the message is intercepted by others, they would not know the meaning. It played a crucial role in human history both in civilian activities and military. It will continue to impact the outcome of the world.
 There are two major branches of cryptography which is transposition and substitution. In transposition, the letters of the message are simply rearranged. Using one from our learning activities as an example, the encrypted text:
