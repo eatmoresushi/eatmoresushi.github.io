@@ -1,6 +1,6 @@
 ---
 title: Code Cracking Part 1
-date: 2020-03-26 00:00:00 Z
+date: 2020-04-07 00:00:00 Z
 layout: post
 ---
 *This is a write-up for solving the code challenges 1-4 in the [The code book](https://simonsingh.net/books/the-code-book/) by Simon Singh.*
