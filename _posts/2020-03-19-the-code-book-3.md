@@ -30,7 +30,7 @@ The scheme was published in 1976 and it is considered to be the greatest cryptog
 To solve the above problem, the concept of the asymmetric key cipher was concocted by Diffie. He incorporated a type of cipher that, encryption and decryption require two different keys. So that one can encrypt a message, but he cannot decrypt it. The ideal further implemented by another trio, Ronald Rivest, Adi Shamir and Leonard Adleman.
 
 One import aspect of the RSA cryptosystem is the use of a number N. N is the product of two prime numbers, p and q. N would be public knowledge and p, q is secret. Knowing N, is hard to produce the number p and q. The detailed process of this their algorithm can be found online for example Wikipedia here:\
-~[https://en.wikipedia.org/wiki/RSA_(cryptosystem)](https://en.wikipedia.org/wiki/RSA_(cryptosystem))~
+[https://en.wikipedia.org/wiki/RSA_(cryptosystem)](https://en.wikipedia.org/wiki/RSA_(cryptosystem))
  
 **My analysis:**
 
