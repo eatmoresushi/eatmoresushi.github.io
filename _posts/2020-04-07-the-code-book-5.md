@@ -27,9 +27,8 @@ in the same hour came forth fingers of a man’s hand, and wrote over against th
 
 **Ciphertext:**
 
-```MHILY LZA ZBHL XBPZXBL MVYABUHL HWWPBZ JSHBKPBZ JHLJBZ
-
-KPJABT HYJHUBT LZA ULBAYVU
+```
+MHILY LZA ZBHL XBPZXBL MVYABUHL HWWPBZ JSHBKPBZ JHLJBZ KPJABT HYJHUBT LZA ULBAYVU
 ```
 
 **Process:**
@@ -144,7 +143,7 @@ B R U J Y S
 ```
  
 
-Process:
+**Process:**
 
 Since we know it is a vigenere cipher, I tried to write a python program to solve.
 
@@ -162,7 +161,7 @@ Then I use English frequency analysis, try to find the subkey for each sub-strin
 
 Now we got possible subkeys for each sub-string. The key for the vigenere cipher is a word consist each letter from the subkey. In this case we got lucky and find the keyword is 'SCUBA'. The plain text is poem called L'Albatros by Charles Baudelaire.
 
-Plaintext:
+**Plaintext:**
 
 ```
 Souvent, pour s'amuser, les hommes d'équipage
