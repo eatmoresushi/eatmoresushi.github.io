@@ -6,7 +6,7 @@ layout: post
 
 *This is the fourth reading note of [The code book](https://simonsingh.net/books/the-code-book/) by Simon Singh.*
 
-# What I’ve learnt
+## What I’ve learnt
 ### Pretty Good Privacy
  
 During the late 1980s, although RSA encryption has been invented long ago, only government, the military and large businesses run RSA because it requires a substantial amount of computing power. General public still didn’t have a way to protect their digital communications. 
@@ -21,5 +21,5 @@ PGP ignited a debate about the positive and negative effects of encryption in th
 
 Quantum computing is the use of quantum-mechanical phenomena such as superposition and entanglement to perform computation. Traditional computers operate on logic gate, 1’s and 0’s called bits. Quantum computer uses qubits, qubits can be in a 1 or 0 quantum state, or they can also be in a superposition of the 1 and 0 states. What’s superposition? A famous notation is the ’Schrodinger’s cat’, imagine a cat in a box with a vial of cyanide and close the lid. We don’t know the cat is live or dead until we open the lid. While the cat in the box, it is in a superposition of two states. Quantum cryptography is the science of exploiting this properties to perform cryptographic tasks. For example, if we want to distribute the key, it is impossible to copy data encoded in a quantum state (think of the data as the cat in the box). If one attempts to read the encoded data, the quantum state will be changed (like you open the lid of the box). This could be used to detect eavesdropping in quantum key distribution.
  
-# My analysis 
+## My analysis 
 The debate of whether or not the general public’s use of cryptograph should be restricted is still a focus of controversies and public attention. I believe that the technology itself is innocent. I understand the conserns of criminals use it to encrypt their communication so the police cannot know. However, a pair of gloves, could prevent the police to get the criminals fingerprints, should we restrict the gloves as also? Cryptography is just a data-protection technology and it should be available to everyone. 
