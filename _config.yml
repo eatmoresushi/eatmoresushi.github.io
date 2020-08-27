@@ -12,3 +12,5 @@ name: Eatmoresushi
 markdown: kramdown
 permalink: "/blog/:year/:month/:day/:title"
 url: https://luyuan.me
+
+theme: jekyll-theme-midnight
