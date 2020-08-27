@@ -1,5 +1,5 @@
 ---
-title: Luyuan's page
+title: Luyuan
 timezone: UTC
 collections:
   posts:
@@ -13,5 +13,6 @@ markdown: kramdown
 permalink: "/blog/:year/:month/:day/:title"
 url: https://luyuan.me
 
-theme: jekyll-theme-hacker
+description: [my personal site]
+theme: jekyll-theme-midnight
 google_analytics: [UA-176263407-1]
