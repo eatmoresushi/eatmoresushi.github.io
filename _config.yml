@@ -14,5 +14,5 @@ permalink: "/blog/:year/:month/:day/:title"
 url: https://luyuan.me
 
 description: [my personal site]
-theme: jekyll-theme-midnight
+theme: jekyll-theme-hacker
 google_analytics: [UA-176263407-1]
