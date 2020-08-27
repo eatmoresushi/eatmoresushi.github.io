@@ -1,5 +1,5 @@
 ---
-title: Eatmoresushi.Github.Io
+title: Luyuan's page
 timezone: UTC
 collections:
   posts:
@@ -8,9 +8,10 @@ collections:
   uploads:
     title: Uploads
     output: true
-name: Eatmoresushi
+name: Luyuan
 markdown: kramdown
 permalink: "/blog/:year/:month/:day/:title"
 url: https://luyuan.me
 
 theme: jekyll-theme-midnight
+google_analytics: [UA-176263407-1]
