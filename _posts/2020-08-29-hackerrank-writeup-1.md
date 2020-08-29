@@ -73,7 +73,6 @@ def gen(ori_str,max_n):
     for i in range(max_n):
         yield s[i % len(ori_str)]
 
-# Complete the repeatedString function below.
 def repeatedString(s, n):
     count = 0
     sg = gen(s,n)
@@ -84,7 +83,7 @@ def repeatedString(s, n):
 ``` 
 This code works fine, but unfortunately, some of the test strings are very big. My code above exceed the time limits. I was over-thinking the problem. I just need to calculate total appearances of `a`s in the original string, then count how many times the original string will be repeated. For non full repetitions, I just need to check if those got repeated contain `a`s.
 
-```
+```python
 def repeatedString(s, n):
     no_of_a = s.count('a')
     count = (n // len(s)) * no_of_a
