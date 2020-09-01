@@ -1,5 +1,5 @@
 ---
-title: Writeups for Interview Preparation Kit - Warm-up
+title: Writeups for Interview Prep Kit - Warm-up
 date: 2020-08-29 00:00:00 Z
 layout: post
 ---
