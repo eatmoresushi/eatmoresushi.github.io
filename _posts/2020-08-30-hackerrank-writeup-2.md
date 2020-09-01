@@ -1,5 +1,5 @@
 ---
-title: Writeups for Interview Preparation Kit on HackerRank Part 2
+title: Writeups for Interview Preparation Kit - Arrays
 date: 2020-08-30 00:00:00 Z
 layout: post
 ---
