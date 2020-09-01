@@ -1,6 +1,6 @@
 ---
-title: Writeups for Interview Prep Kit - Arrays
-date: 2020-08-30 00:00:00 Z
+title: Hackerrank Interview Prep Kit - Arrays
+date: 2020-09-01 00:00:00 Z
 layout: post
 ---
 *The second part of my process of solving the Interview Preparation Kit on [HackerRank](https://www.hackerrank.com/)*
