@@ -116,6 +116,6 @@ def minimumBribes(q):
     return          
 ```
 ### Minimum Swaps 2(Medium)
-Again, a list of numbers are given. The numbers are consecutive integers 1 through n. We still need to sort it but this time, we have to sort by swapping two numbers. The question is the minimum swaps needed.
+Again, a list of numbers is given. The numbers are consecutive integers 1 through n. We still need to sort it but this time, we have to sort by swapping two numbers. The question is the minimum swaps needed.
 
 I was confused and had to read the instructions multiple times to understand what it is really asking. Then I cannot think of a way to solve this. After asking Google, I find there is a [stackoverflow question](https://stackoverflow.com/questions/15152322/compute-the-minimal-number-of-swaps-to-order-a-sequence/15152602#15152602) for this. Apparently using graph theory, and create edge from one number in the list to its correct ordering position, we will create several cycles. The number of the minimum swaps are the sum of (length - 1)s of the cycles. For example, for the list `[2,4,3,1]`, we create the following cycles `2->4->1->2`, `3->3`, hence, the minimum swap is $(3-1)+(1-1)=2$. I ended up used the code similarly to one of the answers. 
