@@ -13,6 +13,6 @@ markdown: kramdown
 permalink: "/:year/:month/:day/:title"
 url: https://luyuan.me
 
-description: [my personal site]
+description: [Excelsior!]
 theme: jekyll-theme-hacker
 google_analytics: [UA-176263407-1]
