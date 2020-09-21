@@ -12,7 +12,7 @@ In the early 20th century, the Great War just ended. Telegram was widely used in
 
 Enigma machine, although it has different variations, contains the following main parts: rotor (sometimes called the scrambler) unit, keyboard, lampboard and plugboard. Keyboard and lampboard are used as input and output devices so that the Enigma machine could be easily operated, type one letter using the keyboard and the encrypted will light up on the lampboard. The rotor unit contains three rotors from a set of five and one reflector. The positions of these three rotors could be interchangeable. The rotor is a thick disc riddled with wires and it has 26 orientations (one for each letter). The internal wirings of these three scramblers connected by keyboard and lampboard, they determine how the plaintext letters will be encrypted. The rotors rotate each time a letter is encrypted. The reflector is a disc contains looped wire so that the scrambler unit works both encryption and decryption. The following graph is an example of the scrambling action of Enigma's rotors, for two consecutive letters with the right-hand rotor moving one position between them.
 
-![enigma action]({{ site.url }}/attachments/Enigma-action.svg)  
+![enigma action]({{ site.url }}/assets/Enigma-action.svg)  
 
 Another important feature is the plugboard between the keyboard and the first scrambler. The plugboard allows the sender to insert cables which have the effect of swapping some of the letters before they enter the scrambler. The Enigma operator had six cables, which meant that six pairs of letters could be swapped.
 
