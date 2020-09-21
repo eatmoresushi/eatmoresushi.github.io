@@ -1,6 +1,6 @@
 ---
 title: DownUnderCTF2020 writeups
-date: 2020-09-09 00:00:00 Z
+date: 2020-09-20 00:00:00 Z
 layout: post
 ---
 This is my first CTF event. I did not do well and I only solved a few. The following is my writeup for the ones I did solve. 
