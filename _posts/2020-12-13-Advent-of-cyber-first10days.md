@@ -16,6 +16,7 @@ The website only has an easy extension filters that split the filename at the do
 5. Start a netcat listener to receive the shell
 `sudo nc -lvnp 443`, where 443 is the port number used.
 6. Navigate to the shell in your browser and receive a connection!
+
 ### Introduction to Gobuster
 Gobuster is a brute forcing tool to check if common paths (provided by a dictionary file) exist in the URL. It is included in the Kali and it has three modes: `dir`,`vhost` and `dns`.
 `dir` is most used and a common use is like this:
