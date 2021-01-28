@@ -8,8 +8,6 @@ From the description we are provided that the username we are looking is "IGuide
 
 ![reddit_comment]({{ site.url }}/assets/aoc_14_1.png)
 
-![](../assets/aoc_14_1.png)
-
 We also know that Rudolph's creator was named Robert. An easy Google search reveals that Robert's full name is "Robert L. May". This solves task1,2 and 3.
 Task 4 asks us what other social media platform might Rudolph have an account. The description provided us some useful web service to search. However, if we take another look at the comments made on Reddit. Rudolph mentions about twitter.
 
