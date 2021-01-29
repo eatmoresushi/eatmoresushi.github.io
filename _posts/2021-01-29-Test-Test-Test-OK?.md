@@ -3,10 +3,9 @@ title: Test Test Test OK?
 date: 2021-01-29 Z
 layout: post
 ---
+version 2.0
 A test page to export into markdown
-
 This is the second paragraph
-
 Third paragraph with a break	
 ![]({ site.url }/assets/7C9A1576-46E0-428F-9F1A-4CC1D313AABA-1588-000056E8E9B90BB8/iqgafhnshbz01.png)
 path: `~/Library/Group Containers/9K33E3U3T4.net.shinyfrog.bear/Application Data/`
