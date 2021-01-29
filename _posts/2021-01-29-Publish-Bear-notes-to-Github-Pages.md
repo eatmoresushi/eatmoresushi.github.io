@@ -1,9 +1,9 @@
 ---
-	title: Publish Bear notes to Github Pages
-	date: 2021-01-29 Z
-	layout: post
-	---
-	I have been using [Bear](https://bear.app) app to note down everything for the last year. Naturally, I tried to write my blogs hosted on [GitHub Pages](https://pages.github.com) using it. I thought it would be pretty easy to publish those blogs because both Bear and Github pages support Markdown.
+title: Publish Bear notes to Github Pages
+date: 2021-01-29 Z
+layout: post
+---
+I have been using [Bear](https://bear.app) app to note down everything for the last year. Naturally, I tried to write my blogs hosted on [GitHub Pages](https://pages.github.com) using it. I thought it would be pretty easy to publish those blogs because both Bear and Github pages support Markdown.
 
 However, I ran into few problems. The biggest one is about pictures. To insert pictures in a Markdown file. We use syntax like the following:
 `![IMAGE_DESCRIPTION](IMAGEFILE_PATH)`

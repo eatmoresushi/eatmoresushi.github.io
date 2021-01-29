@@ -52,11 +52,11 @@ def edit_md (has_file, has_img, title, text):
 	text = '\n'.join(text_list)
 	
 	metadata = f"""---
-	title: {title}
-	date: {datetime.date.today()} Z
-	layout: post
-	---
-	"""
+title: {title}
+date: {datetime.date.today()} Z
+layout: post
+---
+"""
 	return metadata + text
 	
 
