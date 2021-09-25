@@ -14,5 +14,5 @@ permalink: "/:year/:month/:day/:title"
 url: https://luyuan.me
 
 description: [Excelsior!]
-theme: jekyll-theme-tactile
+theme: jekyll-theme-minimal
 google_analytics: [UA-176263407-1]
