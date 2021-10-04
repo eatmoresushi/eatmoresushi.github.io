@@ -24,13 +24,16 @@ Supported arguments:
 
 ## Summary
 
-Three plus years of experience in automation testing and proficiency in automation testing tools such as Appium/Selenium, combined with extensive experience in software development and excellent communication skills. I am a unique candidate who can fit in and collaborate with other members quickly to improve the quality of your software products.
+Three plus years of experience in software testing and proficiency in automation testing tools such as Appium/Selenium, combined with extensive experience in software development and excellent communication skills. I am a unique candidate who can fit in and collaborate with other members quickly to improve the quality of your software products.
 
 ## Work Experience
 
 ### **Test Analyst** `Jun 2021 - Present`
 
 _Foxtel Group, Sydney_<br>
+- Enhance and revise test automation scripts in Experitest SeeTest Cloud using Java and TestNG for testings on applications
+- Utilise the Charles Proxy tool to rewrite and remap API responses for diagnosing application behaviours     
+- Communicate closely with other members of the QA team and the development team to test the quality of software products 
 
 ### **Software Engineer in Test** `May 2018 - Jan 2019`
 
@@ -54,8 +57,8 @@ _Lenovo Electronics Technology, Shanghai, China_<br>
 
 _Gujia Network Science and Technology, Shanghai, China_<br>
 
-- Implemented web crawlers to search and parse valuable data into the company’s database using Groovy and Python.
-- Worked pro-actively to gauge the performance of the database and wrote scripts to achieve the optimal results
+- Implemented web crawlers to search and parse valuable data into the company’s database using Groovy and Python
+- Worked proactively to gauge the performance of the database and wrote scripts to achieve the optimal results
 
 ### **Junior Android Developer** `Aug 2004 - Jun 2015`
 
