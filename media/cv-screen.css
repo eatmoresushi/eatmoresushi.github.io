@@ -222,7 +222,7 @@ li {
   text-align: center;
   position: relative;
   font-weight: lighter;
-  color: #ccc;
+  /* color: #ccc; */
   /* font-family: Menlo,monospace,sans-serif; */
   font-size: 80%;
 }

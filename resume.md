@@ -31,9 +31,11 @@ Three plus years of experience in software testing and proficiency in automation
 ### **Test Analyst** `Jun 2021 - Present`
 
 _Foxtel Group, Sydney_<br>
-- Enhance and revise test automation scripts in Experitest SeeTest Cloud using Java and TestNG for testings on applications
+- Create, revise and execute automated software test plans and scripts using Java and TestNG for UI and regression tests on native mobile applications
 - Utilise the Charles Proxy tool to rewrite and remap API responses for diagnosing application behaviours     
-- Communicate closely with other members of the QA team and the development team to test the quality of software products 
+- Communicate closely with other members of the QA team and the development team to ensure software product quality
+- Integrate the test automation as part of CI/CD pipelines using Git and Jenkins
+- Support product releases by participating in user acceptance testing, documenting and reporting defects using bug tracking systems
 
 ### **Software Engineer in Test** `May 2018 - Jan 2019`
 
@@ -42,12 +44,12 @@ _Shanghai Rising Digital, Shanghai, China_<br>
 - Wrote and added in-depth test cases that covered 96% of the test scenarios
 - Documented defects found on a defect tracking system and provided constructive feedback
 - Participated in troubleshooting issues to drive towards root cause identification and resolution
-- Collaborated closely with the developer team under a scrum environment
+- Collaborated closely with the development team under a scrum environment
 
 ### **Software Engineer in Test** `Apr 2016 - May 2018`
 
 _Lenovo Electronics Technology, Shanghai, China_<br>
-- Created and maintained an automation testing platform for testings on customised Android operating systems that reduced more than 90% of the testing time compared to manual testing
+- Created and maintained an automation testing platform for performance testing on customised Android operating systems that reduced more than 90% of the testing time compared to manual testing
 - Used Git to continuous integrate new performance requirements into the framework
 - Reported results against agreed performance metrics and escalated any deviations to management
 - Performed production incident analysis and resolution
@@ -60,7 +62,7 @@ _Gujia Network Science and Technology, Shanghai, China_<br>
 - Implemented web crawlers to search and parse valuable data into the company’s database using Groovy and Python
 - Worked proactively to gauge the performance of the database and wrote scripts to achieve the optimal results
 
-### **Junior Android Developer** `Aug 2004 - Jun 2015`
+### **Junior Android Developer** `Aug 2014 - Jun 2015`
 
 _Binpit Information Technology, Shanghai, China_<br>
 - Developed an Android photo editing and sharing application using Java
@@ -79,7 +81,7 @@ _Python, Django, SQLite, JavaScript, HTML/CSS, Bootstrap_<br>
 ## Skills
 **Languages:** Python, Java, SQL, HTML/CSS<br>
 
-**Frameworks:** Appium/Selenium, Experitest, Unittest, Pytest, Django<br>
+**Frameworks:** Appium/Selenium, Experitest, Cypress, Unittest, Pytest, Django<br>
 
 **Tools:** Charles Proxy, Postman, Jenkins, Git, AWS<br>
 
@@ -103,4 +105,4 @@ _Mississippi State University_
 
 <!-- ### Footer
 
-Last updated: Oct 4 2021 -->
+Last updated: Oct 21 2021 -->
