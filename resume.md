@@ -10,7 +10,7 @@ homepage:
   text: LinkedIn
 ---
 
-# Luyuan **He**
+# Luyuan **He** (Allen)
 
 <!--
 include contact information from the front matter
@@ -34,14 +34,14 @@ _Foxtel Group, Sydney_<br>
 - Create, revise and execute automated software test plans and scripts using Java and TestNG for UI and regression tests on native mobile applications
 - Utilise the Charles Proxy tool to rewrite and remap API responses for diagnosing application behaviours     
 - Communicate closely with other members of the QA team and the development team to ensure software product quality
-- Integrate the test automation as part of CI/CD pipelines using Git and Jenkins
+- Integrate the test automation as part of CI/CD pipelines using Git, Jenkins and Bamboo
 - Support product releases by participating in user acceptance testing, documenting and reporting defects using bug tracking systems
 
 ### **Software Engineer in Test** `May 2018 - Jan 2019`
 
 _Shanghai Rising Digital, Shanghai, China_<br>
 - Built and maintained an automation testing framework using Appium, Python and Page Object Model for testings on mobile applications that saved 3 minutes per test case on average
-- Wrote and added in-depth test cases that covered 96% of the test scenarios
+- Wrote and added in-depth test cases that covered 98% of the test scenarios
 - Documented defects found on a defect tracking system and provided constructive feedback
 - Participated in troubleshooting issues to drive towards root cause identification and resolution
 - Collaborated closely with the development team under a scrum environment
@@ -83,7 +83,7 @@ _Python, Django, SQLite, JavaScript, HTML/CSS, Bootstrap_<br>
 
 **Frameworks:** Appium/Selenium, Experitest, Cypress, Unittest, Pytest, Django<br>
 
-**Tools:** Charles Proxy, Postman, Jenkins, Git, AWS<br>
+**Tools:** Charles Proxy, Postman, Jenkins, Bamboo, Git, AWS<br>
 
 ## Education
 
@@ -105,4 +105,4 @@ _Mississippi State University_
 
 <!-- ### Footer
 
-Last updated: Oct 21 2021 -->
+Last updated: Nov 4 2021 -->
