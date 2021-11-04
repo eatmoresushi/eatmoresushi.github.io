@@ -10,7 +10,7 @@ homepage:
   text: LinkedIn
 ---
 
-# Luyuan **He**
+# Luyuan **He** (Allen)
 
 <!--
 include contact information from the front matter
