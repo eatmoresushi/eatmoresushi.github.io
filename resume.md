@@ -4,7 +4,7 @@ title: Luyuan "Allen" He
 email:
   url: mailto:luyuan@hey.com
   text: luyuan@hey.com
-phone: 0482052293
+phone: 0493045321
 homepage:
   url: https://www.linkedin.com/in/luyuanhe/
   text: LinkedIn
@@ -30,7 +30,7 @@ Three plus years of experience in software testing and proficiency in automation
 
 ### **Test Analyst** `Jun 2021 - Present`
 
-_Foxtel Group, Sydney_<br>
+_Streamotion, Sydney_<br>
 - Create, revise and execute automated software test plans and scripts using Java and TestNG for UI and regression tests on native mobile applications
 - Utilise the Charles Proxy tool to rewrite and remap API responses for diagnosing application behaviours     
 - Communicate closely with other members of the QA team and the development team to ensure software product quality
@@ -105,4 +105,4 @@ _Mississippi State University_
 
 <!-- ### Footer
 
-Last updated: Nov 4 2021 -->
+Last updated: DEC 18 2021 -->
