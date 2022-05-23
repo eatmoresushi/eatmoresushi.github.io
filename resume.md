@@ -68,12 +68,14 @@ _Binpit Information Technology, Shanghai, China_<br>
 - Developed an Android photo editing and sharing application using Java
 - Debugged and updated the company’s other Android applications
 
+<!--
 ## Projects
 ### **FlimFinder**
 _Python, Django, SQLite, JavaScript, HTML/CSS, Bootstrap_<br>
 - Developed a web application where users could browse, search for, rate and review movies using Django with Bootstrap as the front-end
 - Used Scrum framework to practice agile development in JIRA
 - Used SQLite for data storage and JavaScript for creating dynamic web pages
+-->
 
 ## Certifications
 ### **ISTQB Certified Tester, Foundation Level** `May 2021`
