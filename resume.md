@@ -24,18 +24,18 @@ Supported arguments:
 
 ## Summary
 
-Three plus years of experience in software testing and proficiency in automation testing tools such as Appium/Selenium, combined with extensive experience in software development and excellent communication skills. I am a unique candidate who can fit in and collaborate with other members quickly to improve the quality of your software products.
+Four years of experience in software testing and proficiency in automation testing tools such as Appium/Selenium, combined with extensive experience in software development and excellent communication skills. I am a unique candidate who can fit in and collaborate with other members quickly to improve the quality of your software products.
 
 ## Work Experience
 
-### **Test Analyst** `Jun 2021 - Present`
+### **Product Test Analyst** `Jun 2021 - Present`
 
 _Streamotion, Sydney_<br>
 - Create, revise and execute automated software test plans and scripts using Java and TestNG for UI and regression tests on native mobile applications
 - Utilise the Charles Proxy tool to rewrite and remap API responses for diagnosing application behaviours     
 - Communicate closely with other members of the QA team and the development team to ensure software product quality
-- Integrate the test automation as part of CI/CD pipelines using Git, Jenkins and Bamboo
-- Support product releases by participating in user acceptance testing, documenting and reporting defects using bug tracking systems
+- Integrate the test automation as part of CI/CD pipelines using Git, GitHub Actions and Jenkins
+- Support product releases by participating in user acceptance testing, documenting and reporting defects using Jira
 
 ### **Software Engineer in Test** `May 2018 - Jan 2019`
 
@@ -79,11 +79,11 @@ _Python, Django, SQLite, JavaScript, HTML/CSS, Bootstrap_<br>
 ### **ISTQB Certified Tester, Foundation Level** `May 2021`
 
 ## Skills
-**Languages:** Python, Java, SQL, HTML/CSS<br>
+**Languages:** Python, Java, JavaScript, SQL<br>
 
-**Frameworks:** Appium/Selenium, Experitest, Cypress, Unittest, Pytest, Django<br>
+**Frameworks:** Appium/Selenium, Experitest, TestNG, Cypress, CodeceptJS, Pytest<br>
 
-**Tools:** Charles Proxy, Postman, Jenkins, Bamboo, Git, AWS<br>
+**Tools:** Charles Proxy, Postman, GitHub Actions, Jenkins, Git<br>
 
 ## Education
 
@@ -105,4 +105,4 @@ _Mississippi State University_
 
 <!-- ### Footer
 
-Last updated: DEC 18 2021 -->
+Last updated: MAY 23 2021 -->
