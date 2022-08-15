@@ -1,9 +1,7 @@
 ---
 layout: cv
-title: Luyuan "Allen" He
-email:
-  url: mailto:luyuan@hey.com
-  text: luyuan@hey.com
+title: Luyuan He
+email: helvyuan@gmail.com
 phone: 0493045321
 homepage:
   url: https://www.linkedin.com/in/luyuanhe/
