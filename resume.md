@@ -1,14 +1,15 @@
 ---
 layout: cv
 title: Luyuan He
-email: helvyuan@gmail.com
+email: 
+	text: helvyuan@gmail.com
 phone: 0493045321
 homepage:
   url: https://www.linkedin.com/in/luyuanhe/
   text: LinkedIn
 ---
 
-# Luyuan **He** (Allen)
+# Luyuan **He**
 
 <!--
 include contact information from the front matter
