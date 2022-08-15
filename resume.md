@@ -1,7 +1,8 @@
 ---
 layout: cv
 title: Luyuan He
-email: 
+email:
+  Url: helvyuan@gmail.com
 	text: helvyuan@gmail.com
 phone: 0493045321
 homepage:
