@@ -2,7 +2,7 @@
 layout: cv
 title: Luyuan He
 email:
-  url: hire@luyuan.me
+  url: mailto:hire@luyuan.me
 	text: hire@luyuan.me
 phone: 0493045321
 homepage:
