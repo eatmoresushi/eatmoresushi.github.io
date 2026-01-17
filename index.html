@@ -2,21 +2,40 @@
 <html lang="en">
 
 <head>
-	<meta charset="UTF-8">
+	<meta charset="UTF-8" />
 	<title>Luyuan He (Allen) - QA Automation Engineer</title>
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-	<link rel="stylesheet" href="style.css">
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+	<!-- SEO -->
+	<meta name="description"
+		content="Luyuan He (Allen) – QA Automation Engineer in Sydney. Test automation, CI/CD, Playwright, WebdriverIO, Selenium." />
+	<link rel="canonical" href="https://luyuan.me/" />
+
+	<!-- Social sharing -->
+	<meta property="og:title" content="Luyuan He (Allen) – QA Automation Engineer" />
+	<meta property="og:description"
+		content="QA Automation Engineer in Sydney. Test automation, CI/CD, Playwright, WebdriverIO, Selenium." />
+	<meta property="og:type" content="website" />
+	<meta property="og:url" content="https://luyuan.me/" />
+	<meta property="og:image" content="https://luyuan.me/og-image.png" />
+	<meta name="twitter:card" content="summary_large_image" />
+
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+	<link rel="stylesheet" href="style.css" />
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
 </head>
 
 <body>
-	<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+	<!-- Accessibility: skip link -->
+	<a class="visually-hidden-focusable" href="#about">Skip to content</a>
+
+	<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top" aria-label="Primary navigation">
 		<div class="container">
-			<a class="navbar-brand" href="#">
-				<i class="bi bi-house-fill"></i>
+			<a class="navbar-brand" href="#" aria-label="Home">
+				<i class="bi bi-house-fill" aria-hidden="true"></i>
 			</a>
-			<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+			<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+				aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
 				<span class="navbar-toggler-icon"></span>
 			</button>
 			<div class="collapse navbar-collapse" id="navbarNav">
@@ -30,10 +49,23 @@
 		</div>
 	</nav>
 
-	<header class="bg-primary text-white text-center py-5">
+	<header class="text-white text-center py-5" role="banner">
 		<div class="container">
 			<h1 class="display-4">Luyuan He (Allen)</h1>
-			<p class="lead">QA Automation Engineer</p>
+			<p class="lead mb-0">QA Automation Engineer</p>
+
+			<!-- Quick CTAs -->
+			<div class="d-flex justify-content-center gap-2 mt-3 flex-wrap">
+				<a class="btn btn-light" href="#projects">
+					<i class="bi bi-kanban" aria-hidden="true"></i> Projects
+				</a>
+				<a class="btn btn-outline-light" href="resume.pdf" target="_blank" rel="noopener">
+					<i class="bi bi-file-earmark-pdf" aria-hidden="true"></i> Resume
+				</a>
+				<a class="btn btn-outline-light" href="mailto:he@luyuan.me">
+					<i class="bi bi-envelope" aria-hidden="true"></i> Email
+				</a>
+			</div>
 		</div>
 	</header>
 
@@ -41,22 +73,22 @@
 		<div class="container">
 			<h2>About Me</h2>
 			<p>
-				I am a passionate QA Automation Engineer with with over six years of expertise in software testing and
+				I am a passionate QA Automation Engineer with over six years of expertise in software testing and
 				two years of experience in development, specializing in designing and implementing robust automated test
 				frameworks. I enjoy solving complex problems and ensuring software quality through automation and
 				continuous integration.
 			</p>
 			<ul>
 				<li>🏠 Based in Sydney, Australia</li>
-				<li>👧🏻 Proud father of a little monster</li>
+				<li>👧🏻 A proud dad</li>
 				<li>🥋 Training in Brazilian Jiu-Jitsu</li>
-				<li>🎲 Boardgame enthusiast, sometimes write short reviews on
-					<a href="https://boardgamegeek.com/collection/user/EatMoreSushi?own=1&subtype=boardgame&ff=1"
-						target="_blank">BGG</a>
+				<li>
+					🎲 Boardgame enthusiast, sometimes write short reviews on
+					<a href="https://boardgamegeek.com/collection/user/EatMoreSushi?own=1&subtype=boardgame&ff=1" target="_blank"
+						rel="noopener">BGG</a>
 				</li>
-				<li>📧 <a href="mailto:he@luyuan.me" target="_blank">he@luyuan.me</a></li>
-				<li>💼 <a href="https://www.linkedin.com/in/luyuanhe/" target="_blank">LinkedIn</a></li>
-				<li>💻 <a href="https://github.com/eatmoresushi" target="_blank">GitHub</a></li>
+				<li>💼 <a href="https://www.linkedin.com/in/luyuanhe/" target="_blank" rel="noopener">LinkedIn</a></li>
+				<li>💻 <a href="https://github.com/eatmoresushi" target="_blank" rel="noopener">GitHub</a></li>
 			</ul>
 		</div>
 	</section>
@@ -65,7 +97,7 @@
 		<div class="container">
 			<h2>Skills</h2>
 			<ul>
-				<li>Programming Languages: Java, JavaScript, TypeScript, Python, SQL(Postgres), Groovy</li>
+				<li>Programming Languages: Java, JavaScript, TypeScript, Python, SQL (Postgres), Groovy</li>
 				<li>Test Frameworks: Selenium, Appium, WebdriverIO, Cucumber, TestNG, Cypress, Playwright</li>
 				<li>Tools: Jenkins, Git (GitHub), GitHub Actions, Jira, Charles Proxy, Postman, Newman, Suitest</li>
 			</ul>
@@ -75,7 +107,9 @@
 	<section id="resume" class="py-5">
 		<div class="container">
 			<h2>Resume</h2>
-			<a href="resume.pdf" class="btn btn-primary" target="_blank">Download My Resume (PDF)</a>
+			<a href="resume.pdf" class="btn btn-primary" target="_blank" rel="noopener">
+				<i class="bi bi-download" aria-hidden="true"></i> Download My Resume (PDF)
+			</a>
 		</div>
 	</section>
 
@@ -87,54 +121,109 @@
 					<div class="card h-100">
 						<div class="card-body">
 							<h5 class="card-title">Automated Regression Suite for Kayo, Binge and Hubbl</h5>
-							<p class="card-text">A comprehensive Webdriver.io-based regression suite for the web
-								versions of Kayo, Binge and Hubbl, integrated with GitHub Actions for CI/CD.</p>
+
+							<div class="d-flex flex-wrap gap-2 mb-2">
+								<span class="badge text-bg-secondary">WebdriverIO</span>
+								<span class="badge text-bg-secondary">TypeScript</span>
+								<span class="badge text-bg-secondary">GitHub Actions</span>
+							</div>
+
+							<p class="card-text">
+								A comprehensive WebdriverIO-based regression suite for the web versions of Kayo, Binge and
+								Hubbl, integrated with GitHub Actions for CI/CD.
+							</p>
 						</div>
 					</div>
 				</div>
+
 				<div class="col-md-6 mb-4">
 					<div class="card h-100">
 						<div class="card-body">
 							<h5 class="card-title">Test Automation with Playwright</h5>
-							<p class="card-text">Learning Playwright and TypeScript by doing a web automation project
-								using these two.</p>
-							<a href="https://github.com/eatmoresushi/Playwright-with-TypeScript"
-								class="btn btn-outline-primary" target="_blank">View on GitHub</a>
+
+							<div class="d-flex flex-wrap gap-2 mb-2">
+								<span class="badge text-bg-secondary">Playwright</span>
+								<span class="badge text-bg-secondary">TypeScript</span>
+								<span class="badge text-bg-secondary">UI Automation</span>
+							</div>
+
+							<p class="card-text">
+								Learning Playwright and TypeScript by building a web automation project.
+							</p>
+							<a href="https://github.com/eatmoresushi/Playwright-with-TypeScript" class="btn btn-outline-primary"
+								target="_blank" rel="noopener">
+								<i class="bi bi-github" aria-hidden="true"></i> View on GitHub
+							</a>
 						</div>
 					</div>
 				</div>
+
 				<div class="col-md-6 mb-4">
 					<div class="card h-100">
 						<div class="card-body">
 							<h5 class="card-title">Notion Boardgame Gallery</h5>
-							<p class="card-text">Display your board game collections from boardgamegeek.com in the notes
-								app, Notion, using an image gallery style.</p>
-							<a href="https://github.com/eatmoresushi/BGG-Notion" class="btn btn-outline-primary"
-								target="_blank">View on GitHub</a>
+
+							<div class="d-flex flex-wrap gap-2 mb-2">
+								<span class="badge text-bg-secondary">Notion</span>
+								<span class="badge text-bg-secondary">API</span>
+								<span class="badge text-bg-secondary">BoardGameGeek</span>
+							</div>
+
+							<p class="card-text">
+								Display your board game collection from BoardGameGeek in Notion as an image gallery.
+							</p>
+							<a href="https://github.com/eatmoresushi/BGG-Notion" class="btn btn-outline-primary" target="_blank"
+								rel="noopener">
+								<i class="bi bi-github" aria-hidden="true"></i> View on GitHub
+							</a>
 						</div>
 					</div>
 				</div>
+
 				<div class="col-md-6 mb-4">
 					<div class="card h-100">
 						<div class="card-body">
-							<h5 class="card-title">NSW Covid Vaccination Automated Booking</h5>
-							<p class="card-text">Back in COVID times, I made this script that helped our family and friends grab opening spots on the NSW vaccination system.</p>
-							<a href="https://github.com/eatmoresushi/NSWhvam" class="btn btn-outline-primary"
-								target="_blank">View on GitHub</a>
+							<h5 class="card-title">Vaccination Appointment Availability Helper</h5>
+
+							<div class="d-flex flex-wrap gap-2 mb-2">
+								<span class="badge text-bg-secondary">Automation</span>
+								<span class="badge text-bg-secondary">Scripting</span>
+								<span class="badge text-bg-secondary">Notifications</span>
+							</div>
+
+							<p class="card-text">
+								A small tool built during COVID to monitor appointment availability and notify users quickly.
+							</p>
+							<a href="https://github.com/eatmoresushi/NSWhvam" class="btn btn-outline-primary" target="_blank"
+								rel="noopener">
+								<i class="bi bi-github" aria-hidden="true"></i> View on GitHub
+							</a>
 						</div>
 					</div>
 				</div>
+
 				<div class="col-md-6 mb-4">
 					<div class="card h-100">
 						<div class="card-body">
 							<h5 class="card-title">FilmFinder</h5>
-							<p class="card-text">Our capstone project at UNSW, helped one of my teammates land a job as
-								a web developer, a movie database built with Django and SQLite.</p>
-							<a href="https://github.com/eatmoresushi/FilmFinder" class="btn btn-outline-primary"
-								target="_blank">View on GitHub</a>
+
+							<div class="d-flex flex-wrap gap-2 mb-2">
+								<span class="badge text-bg-secondary">Django</span>
+								<span class="badge text-bg-secondary">SQLite</span>
+								<span class="badge text-bg-secondary">Web App</span>
+							</div>
+
+							<p class="card-text">
+								Our capstone project at UNSW: a movie database built with Django and SQLite.
+							</p>
+							<a href="https://github.com/eatmoresushi/FilmFinder" class="btn btn-outline-primary" target="_blank"
+								rel="noopener">
+								<i class="bi bi-github" aria-hidden="true"></i> View on GitHub
+							</a>
 						</div>
 					</div>
 				</div>
+
 				<!-- Add more projects as needed -->
 			</div>
 		</div>
