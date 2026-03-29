@@ -1,26 +1,92 @@
+/* Base */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px; /* fixed navbar offset */
+}
+
 body {
-    font-family: 'Segoe UI', Arial, sans-serif;
-    padding-top: 56px;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  padding-top: 56px;
+  line-height: 1.6;
+  color: #212529;
+}
+
+/* Headings */
+h1, h2, h3, h4 {
+  font-weight: 600;
 }
 
 h2 {
-    margin-top: 2rem;
-    margin-bottom: 1rem;
+  margin-top: 2.5rem;
+  margin-bottom: 1.25rem;
+  position: relative;
 }
 
+/* Subtle section divider under h2 */
+h2::after {
+  content: "";
+  display: block;
+  width: 60px;
+  height: 3px;
+  background-color: #0d6efd; /* Bootstrap primary */
+  margin-top: 0.5rem;
+}
+
+/* Lists */
 ul {
-    list-style-type: disc;
-    padding-left: 1.5rem;
+  list-style-type: disc;
+  padding-left: 1.5rem;
+}
+
+ul li {
+  margin-bottom: 0.4rem;
+}
+
+/* Cards */
+.card {
+  border: none;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
 }
 
 .card-title {
-    font-weight: 600;
+  font-weight: 600;
 }
 
+/* Links */
 a {
-    text-decoration: none;
+  text-decoration: none;
+  color: #0d6efd;
 }
 
 a:hover {
-    text-decoration: underline;
+  text-decoration: underline;
+}
+
+/* Header tweaks */
+header {
+  background: linear-gradient(135deg, #0d6efd, #0a58ca);
+}
+
+/* Footer */
+footer {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+/* Small screens */
+@media (max-width: 576px) {
+  h1 {
+    font-size: 2rem;
+  }
+
+  header .lead {
+    font-size: 1.1rem;
+  }
 }
