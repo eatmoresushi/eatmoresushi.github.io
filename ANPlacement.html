@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ark Nova - Scalable & Centered Map</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .controls {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        select,
+        button {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .instructions {
+            font-size: 14px;
+            color: #444;
+            margin-left: auto;
+        }
+
+        /* NEW: Added responsive sizing so it scales on different viewports */
+        #game-board {
+            background: #8bc34a;
+            border: 4px solid #558b2f;
+            border-radius: 8px;
+            cursor: crosshair;
+            display: block;
+            margin: 0 auto;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 900px;
+            aspect-ratio: 3 / 2;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="controls">
+        <div>
+            <label for="mapSelect"><strong>Map:</strong></label>
+            <select id="mapSelect">
+                <option value="map1a" selected>Map 1a: Observation Tower</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="cardSelect"><strong>Enclosure:</strong></label>
+            <select id="cardSelect">
+                <option value="amazonHouse" selected>Amazon House</option>
+                <option value="excavationSite">Excavation Site</option>
+            </select>
+        </div>
+
+        <div>
+            <button onclick="placedEnclosures = []; draw();">Clear Board</button>
+        </div>
+
+        <div class="instructions">
+            <strong>Controls:</strong> Hover to preview. Press <strong>'R'</strong> to rotate. <strong>Click</strong> to
+            place.<br>
+            <em style="color:#d32f2f;">Red means illegal (Overlaps Rock/Water/Tower, or missing connection).</em>
+        </div>
+    </div>
+
+    <canvas id="game-board" width="900" height="600"></canvas>
+
+    <script>
+        const HEX_SIZE = 36;
+
+        function generateObservationTowerMap() {
+            const layout = [
+                ['X', 'R', 'X', 'R', 'X', 'E', 'X', 'E', 'X'],
+                ['E', 'E', 'R', 'E', 'E', 'E', 'E', 'E', 'E'],
+                ['E', 'E', 'E', 'E', 'E', 'E', 'E', 'E', 'W'],
+                ['R', 'R', 'E', 'E', 'W', 'W', 'E', 'R', 'W'],
+                ['R', 'E', 'E', 'E', 'E', 'E', 'E', 'E', 'W'],
+                ['W', 'E', 'E', 'E', 'E', 'E', 'E', 'E', 'E'],
+                ['E', 'E', 'E', 'R', 'E', 'W', 'E', 'E', 'E'],
+            ];
+
+            const hexes = [];
+            for (let row = 0; row < layout.length; row++) {
+                for (let col = 0; col < layout[row].length; col++) {
+                    if (layout[row][col] === 'X') continue;
+
+                    const q = col;
+                    const r = row - Math.floor(col / 2);
+
+                    let type = 'empty';
+                    if (layout[row][col] === 'R') type = 'rock';
+                    if (layout[row][col] === 'W') type = 'water';
+                    if (layout[row][col] === 'T') type = 'tower';
+
+                    hexes.push({ q, r, type });
+                }
+            }
+            return hexes;
+        }
+
+        const maps = { map1a: generateObservationTowerMap() };
+
+        const enclosures = {
+            amazonHouse: {
+                shape: [{ q: 0, r: 0 }, { q: 1, r: 0 }, { q: -1, r: 0 }, { q: 1, r: -1 }, { q: 2, r: -2 }],
+                requires: ['water', 'rock']
+            },
+            excavationSite: {
+                shape: [
+                    { q: 0, r: 0 },
+                    { q: -1, r: 1 },
+                    { q: -1, r: 2 },
+                    { q: 1, r: 0 },
+                    { q: 2, r: -1 }
+                ],
+                requires: [] // Update this array if Excavation Site needs specific adjacencies!
+            },
+        };
+
+        let currentMap = maps.map1a;
+        let currentEnclosureShape = [...enclosures.amazonHouse.shape];
+        let currentEnclosureReqs = enclosures.amazonHouse.requires;
+        let placedEnclosures = [];
+
+        const canvas = document.getElementById('game-board');
+        const ctx = canvas.getContext('2d');
+
+        // NEW: Changed offsets from 'const' to 'let' so we can calculate them dynamically
+        let offsetX = 0;
+        let offsetY = 0;
+        let mouseHex = null;
+
+        const neighborOffsets = [
+            { q: 1, r: 0 }, { q: -1, r: 0 }, { q: 0, r: 1 },
+            { q: 0, r: -1 }, { q: 1, r: -1 }, { q: -1, r: 1 }
+        ];
+
+        // NEW: Auto-Centering Engine. Finds the exact center of the map and aligns it to the canvas
+        function centerMap() {
+            let minX = Infinity, maxX = -Infinity;
+            let minY = Infinity, maxY = -Infinity;
+
+            currentMap.forEach(hex => {
+                const x = HEX_SIZE * 3 / 2 * hex.q;
+                const y = HEX_SIZE * Math.sqrt(3) * (hex.r + hex.q / 2);
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+            });
+
+            const mapCenterX = (minX + maxX) / 2;
+            const mapCenterY = (minY + maxY) / 2;
+
+            offsetX = (canvas.width / 2) - mapCenterX;
+            offsetY = (canvas.height / 2) - mapCenterY;
+        }
+
+        function hexToPixel(q, r) {
+            const x = HEX_SIZE * 3 / 2 * q;
+            const y = HEX_SIZE * Math.sqrt(3) * (r + q / 2);
+            return { x: x + offsetX, y: y + offsetY };
+        }
+
+        function pixelToHex(x, y) {
+            const px = x - offsetX;
+            const py = y - offsetY;
+            const q = (2 / 3 * px) / HEX_SIZE;
+            const r = (-1 / 3 * px + Math.sqrt(3) / 3 * py) / HEX_SIZE;
+            return axialRound(q, r);
+        }
+
+        function axialRound(q, r) {
+            let s = -q - r;
+            let rq = Math.round(q), rr = Math.round(r), rs = Math.round(s);
+            const q_diff = Math.abs(rq - q), r_diff = Math.abs(rr - r), s_diff = Math.abs(rs - s);
+            if (q_diff > r_diff && q_diff > s_diff) rq = -rr - rs;
+            else if (r_diff > s_diff) rr = -rq - rs;
+            return { q: rq, r: rr };
+        }
+
+        function rotateEnclosure() {
+            currentEnclosureShape = currentEnclosureShape.map(hex => ({
+                q: -hex.r,
+                r: hex.q + hex.r
+            }));
+            draw();
+        }
+
+        function isValidPlacement(baseQ, baseR) {
+            const proposedPlacement = currentEnclosureShape.map(part => ({
+                q: baseQ + part.q,
+                r: baseR + part.r
+            }));
+
+            for (let target of proposedPlacement) {
+                const mapHex = currentMap.find(h => h.q === target.q && h.r === target.r);
+                if (!mapHex || mapHex.type !== 'empty') return false;
+
+                const collision = placedEnclosures.some(placed =>
+                    placed.some(p => p.q === target.q && p.r === target.r)
+                );
+                if (collision) return false;
+            }
+
+            for (let req of currentEnclosureReqs) {
+                let hasConnection = false;
+
+                for (let part of proposedPlacement) {
+                    for (let offset of neighborOffsets) {
+                        const neighborQ = part.q + offset.q;
+                        const neighborR = part.r + offset.r;
+                        const mapHex = currentMap.find(h => h.q === neighborQ && h.r === neighborR);
+
+                        if (mapHex && mapHex.type === req) {
+                            hasConnection = true;
+                            break;
+                        }
+                    }
+                    if (hasConnection) break;
+                }
+
+                if (!hasConnection) return false;
+            }
+
+            return true;
+        }
+
+        function drawHex(q, r, fillColor, strokeColor = 'rgba(0,0,0,0.1)', lineWidth = 1) {
+            const { x, y } = hexToPixel(q, r);
+            ctx.beginPath();
+            for (let i = 0; i < 6; i++) {
+                const angle_rad = Math.PI / 180 * (60 * i);
+                const hx = x + (HEX_SIZE - 1) * Math.cos(angle_rad);
+                const hy = y + (HEX_SIZE - 1) * Math.sin(angle_rad);
+                if (i === 0) ctx.moveTo(hx, hy);
+                else ctx.lineTo(hx, hy);
+            }
+            ctx.closePath();
+            ctx.fillStyle = fillColor;
+            ctx.fill();
+            ctx.lineWidth = lineWidth;
+            ctx.strokeStyle = strokeColor;
+            ctx.stroke();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            currentMap.forEach(hex => {
+                let color = '#dcedc8';
+                if (hex.type === 'rock') color = '#9e9e9e';
+                if (hex.type === 'water') color = '#4fc3f7';
+                if (hex.type === 'tower') color = '#ffb74d';
+                drawHex(hex.q, hex.r, color);
+            });
+
+            placedEnclosures.forEach(enc => {
+                enc.forEach(part => drawHex(part.q, part.r, '#5e35b1', '#311b92', 2));
+            });
+
+            if (mouseHex) {
+                const valid = isValidPlacement(mouseHex.q, mouseHex.r);
+                const previewColor = valid ? 'rgba(76, 175, 80, 0.8)' : 'rgba(244, 67, 54, 0.8)';
+                const strokeColor = valid ? '#1b5e20' : '#b71c1c';
+
+                currentEnclosureShape.forEach(part => {
+                    drawHex(mouseHex.q + part.q, mouseHex.r + part.r, previewColor, strokeColor, 2);
+                });
+            }
+        }
+
+        // NEW: Mouse event scaling math
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            // Calculate how much the CSS shrunk or stretched the canvas
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+
+            // Apply scale to the mouse position
+            const canvasX = (e.clientX - rect.left) * scaleX;
+            const canvasY = (e.clientY - rect.top) * scaleY;
+
+            mouseHex = pixelToHex(canvasX, canvasY);
+            draw();
+        });
+
+        canvas.addEventListener('mouseleave', () => { mouseHex = null; draw(); });
+
+        canvas.addEventListener('click', () => {
+            if (mouseHex && isValidPlacement(mouseHex.q, mouseHex.r)) {
+                const newPlacement = currentEnclosureShape.map(part => ({
+                    q: mouseHex.q + part.q,
+                    r: mouseHex.r + part.r
+                }));
+                placedEnclosures.push(newPlacement);
+                draw();
+            }
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'r') rotateEnclosure();
+        });
+
+        document.getElementById('mapSelect').addEventListener('change', (e) => {
+            // Re-center when the map changes
+            currentMap = maps[e.target.value];
+            placedEnclosures = [];
+            centerMap();
+            draw();
+        });
+
+        document.getElementById('cardSelect').addEventListener('change', (e) => {
+            currentEnclosureShape = [...(enclosures[e.target.value].shape)];
+            currentEnclosureReqs = enclosures[e.target.value].requires;
+            draw();
+        });
+
+        // Initialize
+        centerMap();
+        draw(); 
+    </script>
+</body>
+
+</html>
