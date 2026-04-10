@@ -94,6 +94,20 @@
             <label for="mapSelect"><strong>Map:</strong></label>
             <select id="mapSelect">
                 <option value="map1a" selected>Map 1a: Observation Tower</option>
+                <option value="map2a">Map 2a: Outdoor Areas</option>
+                <option value="map3a">Map 3a: Silver Lake</option>
+                <option value="map4a">Map 4a: Commerical Harbor</option>
+                <option value="map5a">Map 5a: Park Restaurant</option>
+                <option value="map6a">Map 6a: Research Institute</option>
+                <option value="map7a">Map 7a: Ice Cream Parlors</option>
+                <option value="map8a">Map 8a: Hollywood Hills</option>
+                <option value="map9">Map 9: Geographical Zoo</option>
+                <option value="map10">Map 10: Rescue Station</option>
+                <option value="map11">Map 11: Caves</option>
+                <option value="map12">Map 12: Artificial Intelligeuce</option>
+                <option value="map13">Map 13: Drawing Board</option>
+                <option value="map14">Map 14: Lagoon</option>
+                <option value="mapt1">Map T1: Tournament1</option>
             </select>
         </div>
 
@@ -102,7 +116,14 @@
             <select id="cardSelect">
                 <option value="amazonHouse" selected>Amazon House</option>
                 <option value="excavationSite">Excavation Site</option>
+                <option value="polarBearExhibit">Polar Bear Exhibit</option>
             </select>
+        </div>
+
+        <div>
+            <label style="cursor: pointer;">
+                <input type="checkbox" id="upgradeToggle"> <strong>Upgraded Build</strong>
+            </label>
         </div>
 
         <button id="rotateBtn" class="btn-action">↻ Rotate</button>
@@ -112,7 +133,7 @@
         <div class="instructions">
             <strong>Desktop:</strong> Hover to preview, press <strong>'R'</strong> to rotate.
             <strong>Mobile:</strong> Drag finger to preview. Use buttons to rotate and confirm.<br>
-            <em style="color:#d32f2f;">Red means illegal (Overlaps Rock/Water/Tower, or missing connection).</em>
+            <em style="color:#d32f2f;">Red means illegal.</em>
         </div>
     </div>
 
@@ -121,35 +142,180 @@
     <script>
         const HEX_SIZE = 36;
 
-        function generateObservationTowerMap() {
-            const layout = [
-                ['X', 'R', 'X', 'R', 'X', 'E', 'X', 'E', 'X'],
-                ['E', 'E', 'R', 'E', 'E', 'E', 'E', 'E', 'E'],
-                ['E', 'E', 'E', 'E', 'E', 'E', 'E', 'E', 'W'],
-                ['R', 'R', 'E', 'E', 'W', 'W', 'E', 'R', 'W'],
-                ['R', 'E', 'E', 'E', 'E', 'E', 'E', 'E', 'W'],
-                ['W', 'E', 'E', 'E', 'E', 'E', 'E', 'E', 'E'],
-                ['E', 'E', 'E', 'R', 'E', 'W', 'E', 'E', 'E'],
-            ];
-
+        // 1. Create a single, reusable parser function
+        function parseMapLayout(layout) {
             const hexes = [];
             for (let row = 0; row < layout.length; row++) {
                 for (let col = 0; col < layout[row].length; col++) {
                     if (layout[row][col] === 'X') continue;
+
                     const q = col;
                     const r = row - Math.floor(col / 2);
 
                     let type = 'empty';
                     if (layout[row][col] === 'R') type = 'rock';
                     if (layout[row][col] === 'W') type = 'water';
-                    if (layout[row][col] === 'T') type = 'tower';
+                    if (layout[row][col] === 'U') type = 'upgraded';
+
                     hexes.push({ q, r, type });
                 }
             }
             return hexes;
         }
 
-        const maps = { map1a: generateObservationTowerMap() };
+        // 2. Feed the raw arrays directly into the parser
+        const maps = {
+            map1a: parseMapLayout([
+                ['X', 'R', 'X', 'R', 'X', 'E', 'X', 'E', 'X'],
+                ['E', 'E', 'R', 'E', 'E', 'E', 'E', 'E', 'E'],
+                ['E', 'E', 'E', 'U', 'E', 'E', 'E', 'E', 'W'],
+                ['R', 'R', 'E', 'E', 'W', 'W', 'E', 'R', 'W'],
+                ['R', 'E', 'E', 'E', 'U', 'U', 'E', 'E', 'W'],
+                ['W', 'E', 'E', 'R', 'E', 'E', 'E', 'E', 'E'],
+                ['E', 'E', 'E', 'R', 'E', 'W', 'E', 'E', 'E'],
+            ]),
+
+            map2a: parseMapLayout([
+                ['X', 'U', 'X', 'U', 'X', 'R', 'X', 'W', 'X'],
+                ['W', 'E', 'U', 'E', 'R', 'E', 'W', 'E', 'E'],
+                ['R', 'R', 'E', 'E', 'E', 'R', 'E', 'E', 'E'],
+                ['E', 'E', 'U', 'E', 'E', 'U', 'E', 'E', 'R'],
+                ['E', 'E', 'E', 'W', 'E', 'W', 'E', 'E', 'E'],
+                ['R', 'R', 'E', 'E', 'W', 'W', 'E', 'E', 'E'],
+                ['R', 'E', 'E', 'E', 'E', 'E', 'E', 'E', 'E'],
+            ]),
+
+            map3a: parseMapLayout([
+                ['X', 'E', 'X', 'E', 'X', 'E', 'X', 'R', 'X'],
+                ['E', 'E', 'E', 'E', 'U', 'E', 'W', 'E', 'E'],
+                ['E', 'E', 'E', 'E', 'W', 'E', 'R', 'E', 'E'],
+                ['E', 'E', 'E', 'W', 'W', 'U', 'E', 'E', 'R'],
+                ['R', 'E', 'U', 'E', 'W', 'E', 'E', 'E', 'R'],
+                ['E', 'E', 'E', 'E', 'E', 'W', 'W', 'E', 'E'],
+                ['W', 'E', 'E', 'R', 'R', 'W', 'E', 'E', 'E'],
+            ]),
+
+            map4a: parseMapLayout([
+                ['X', 'E', 'X', 'E', 'X', 'W', 'X', 'E', 'X'],
+                ['U', 'E', 'E', 'E', 'E', 'E', 'E', 'R', 'W'],
+                ['E', 'W', 'W', 'W', 'E', 'E', 'U', 'E', 'W'],
+                ['E', 'E', 'W', 'E', 'E', 'U', 'R', 'E', 'U'],
+                ['E', 'E', 'E', 'R', 'E', 'E', 'R', 'E', 'E'],
+                ['W', 'E', 'E', 'R', 'E', 'E', 'E', 'R', 'E'],
+                ['E', 'W', 'E', 'E', 'E', 'R', 'E', 'E', 'E'],
+            ]),
+
+            map5a: parseMapLayout([
+                ['X', 'E', 'X', 'E', 'X', 'W', 'X', 'E', 'X'],
+                ['U', 'E', 'E', 'E', 'E', 'E', 'E', 'R', 'W'],
+                ['E', 'W', 'W', 'W', 'E', 'E', 'U', 'E', 'W'],
+                ['E', 'E', 'W', 'E', 'E', 'U', 'R', 'E', 'U'],
+                ['E', 'E', 'E', 'R', 'E', 'E', 'R', 'E', 'E'],
+                ['W', 'E', 'E', 'R', 'E', 'E', 'E', 'R', 'E'],
+                ['E', 'W', 'E', 'E', 'E', 'R', 'E', 'E', 'E'],
+            ]),
+
+            map6a: parseMapLayout([
+                ['X', 'E', 'X', 'E', 'X', 'R', 'X', 'U', 'X'],
+                ['W', 'E', 'E', 'E', 'R', 'E', 'U', 'E', 'W'],
+                ['W', 'E', 'E', 'E', 'U', 'E', 'E', 'W', 'W'],
+                ['E', 'E', 'E', 'R', 'E', 'E', 'E', 'W', 'E'],
+                ['E', 'E', 'R', 'R', 'E', 'E', 'E', 'E', 'E'],
+                ['E', 'E', 'R', 'E', 'U', 'W', 'E', 'R', 'E'],
+                ['E', 'E', 'E', 'E', 'E', 'W', 'E', 'E', 'W'],
+            ]),
+
+            map7a: parseMapLayout([
+                ['X', 'E', 'X', 'E', 'X', 'R', 'X', 'W', 'X'],
+                ['W', 'E', 'E', 'E', 'R', 'E', 'E', 'E', 'W'],
+                ['R', 'E', 'E', 'R', 'R', 'E', 'E', 'E', 'W'],
+                ['E', 'E', 'E', 'U', 'E', 'E', 'E', 'E', 'W'],
+                ['E', 'R', 'E', 'E', 'E', 'R', 'E', 'E', 'E'],
+                ['E', 'E', 'R', 'U', 'R', 'E', 'E', 'W', 'E'],
+                ['E', 'E', 'E', 'U', 'E', 'E', 'E', 'E', 'W'],
+            ]),
+
+            map8a: parseMapLayout([
+                ['X', 'W', 'X', 'E', 'X', 'E', 'X', 'E', 'X'],
+                ['E', 'E', 'E', 'E', 'E', 'R', 'E', 'E', 'E'],
+                ['E', 'W', 'E', 'E', 'W', 'W', 'W', 'E', 'E'],
+                ['E', 'E', 'W', 'U', 'E', 'E', 'E', 'E', 'E'],
+                ['E', 'E', 'U', 'E', 'E', 'E', 'E', 'E', 'E'],
+                ['W', 'E', 'E', 'E', 'R', 'U', 'E', 'R', 'E'],
+                ['R', 'R', 'R', 'R', 'E', 'R', 'R', 'E', 'E'],
+            ]),
+
+            map9: parseMapLayout([
+                ['X', 'R', 'X', 'E', 'X', 'E', 'X', 'R', 'X'],
+                ['E', 'W', 'E', 'E', 'E', 'E', 'R', 'E', 'R'],
+                ['E', 'E', 'W', 'E', 'E', 'E', 'E', 'E', 'E'],
+                ['E', 'E', 'E', 'E', 'W', 'U', 'E', 'E', 'E'],
+                ['E', 'E', 'W', 'E', 'U', 'E', 'W', 'E', 'E'],
+                ['R', 'E', 'E', 'E', 'W', 'E', 'E', 'E', 'W'],
+                ['R', 'R', 'E', 'E', 'E', 'E', 'E', 'R', 'W'],
+            ]),
+
+            map10: parseMapLayout([
+                ['X', 'E', 'X', 'W', 'X', 'E', 'X', 'E', 'X'],
+                ['E', 'E', 'E', 'E', 'W', 'E', 'E', 'E', 'E'],
+                ['W', 'W', 'E', 'E', 'E', 'U', 'E', 'R', 'E'],
+                ['W', 'E', 'U', 'E', 'E', 'R', 'E', 'W', 'E'],
+                ['E', 'E', 'E', 'E', 'R', 'W', 'E', 'E', 'W'],
+                ['E', 'E', 'E', 'E', 'U', 'E', 'E', 'E', 'W'],
+                ['E', 'R', 'R', 'R', 'E', 'E', 'E', 'E', 'E'],
+            ]),
+
+
+            map11: parseMapLayout([
+                ['X', 'E', 'X', 'R', 'X', 'E', 'X', 'E', 'X'],
+                ['W', 'E', 'R', 'E', 'U', 'R', 'E', 'E', 'E'],
+                ['E', 'E', 'U', 'E', 'E', 'U', 'R', 'E', 'E'],
+                ['E', 'E', 'R', 'E', 'R', 'E', 'E', 'E', 'E'],
+                ['R', 'E', 'E', 'E', 'E', 'E', 'W', 'E', 'E'],
+                ['W', 'E', 'E', 'E', 'E', 'W', 'E', 'W', 'W'],
+                ['E', 'E', 'E', 'E', 'W', 'R', 'E', 'E', 'R'],
+            ]),
+
+            map12: parseMapLayout([
+                ['X', 'E', 'X', 'W', 'X', 'R', 'X', 'R', 'X'],
+                ['E', 'E', 'E', 'E', 'E', 'E', 'U', 'E', 'E'],
+                ['E', 'E', 'E', 'E', 'E', 'R', 'E', 'E', 'E'],
+                ['R', 'W', 'U', 'E', 'W', 'R', 'E', 'W', 'E'],
+                ['W', 'E', 'E', 'E', 'R', 'U', 'E', 'E', 'E'],
+                ['W', 'E', 'E', 'R', 'E', 'E', 'E', 'E', 'E'],
+                ['E', 'R', 'E', 'E', 'E', 'W', 'R', 'E', 'E'],
+            ]),
+
+            map13: parseMapLayout([
+                ['X', 'E', 'X', 'E', 'X', 'E', 'X', 'E', 'X'],
+                ['R', 'R', 'E', 'E', 'E', 'E', 'E', 'W', 'W'],
+                ['E', 'E', 'R', 'R', 'E', 'W', 'W', 'E', 'U'],
+                ['E', 'E', 'E', 'E', 'E', 'E', 'E', 'E', 'E'],
+                ['E', 'E', 'E', 'W', 'E', 'R', 'E', 'E', 'E'],
+                ['E', 'W', 'W', 'E', 'E', 'E', 'R', 'R', 'U'],
+                ['W', 'E', 'E', 'E', 'E', 'E', 'E', 'E', 'R'],
+            ]),
+
+            map14: parseMapLayout([
+                ['X', 'E', 'X', 'E', 'X', 'E', 'X', 'R', 'X'],
+                ['E', 'E', 'E', 'W', 'E', 'E', 'W', 'E', 'W'],
+                ['R', 'U', 'E', 'R', 'E', 'R', 'R', 'E', 'W'],
+                ['E', 'E', 'E', 'E', 'E', 'E', 'E', 'E', 'R'],
+                ['E', 'R', 'E', 'E', 'E', 'U', 'E', 'E', 'E'],
+                ['E', 'E', 'W', 'E', 'E', 'W', 'E', 'E', 'W'],
+                ['E', 'E', 'E', 'E', 'E', 'E', 'U', 'W', 'W'],
+            ]),
+
+            mapt1: parseMapLayout([
+                ['X', 'R', 'X', 'E', 'X', 'U', 'X', 'E', 'X'],
+                ['R', 'E', 'E', 'E', 'E', 'W', 'E', 'E', 'E'],
+                ['E', 'W', 'E', 'E', 'W', 'U', 'E', 'E', 'W'],
+                ['E', 'E', 'R', 'R', 'E', 'E', 'E', 'W', 'W'],
+                ['E', 'E', 'U', 'E', 'E', 'E', 'E', 'E', 'E'],
+                ['R', 'E', 'E', 'E', 'R', 'E', 'E', 'R', 'E'],
+                ['R', 'E', 'E', 'E', 'E', 'E', 'E', 'W', 'W'],
+            ]),
+        };
 
         const enclosures = {
             amazonHouse: {
@@ -159,6 +325,10 @@
             excavationSite: {
                 shape: [{ q: 0, r: 0 }, { q: -1, r: 1 }, { q: -1, r: 2 }, { q: 1, r: 0 }, { q: 2, r: -1 }],
                 requires: []
+            },
+            polarBearExhibit: {
+                shape: [{ q: 0, r: 0 }, { q: -1, r: 1 }, { q: 1, r: 0 }, { q: 2, r: -1 }],
+                requires: ['water']
             },
         };
 
@@ -173,6 +343,13 @@
         let offsetX = 0;
         let offsetY = 0;
         let mouseHex = null; // Acts as both mouse and touch preview location
+        let isBuildUpgraded = false;
+
+        // Listen for toggle changes and immediately update the board
+        document.getElementById('upgradeToggle').addEventListener('change', (e) => {
+            isBuildUpgraded = e.target.checked;
+            draw();
+        });
 
         const neighborOffsets = [
             { q: 1, r: 0 }, { q: -1, r: 0 }, { q: 0, r: 1 },
@@ -250,7 +427,16 @@
 
             for (let target of proposedPlacement) {
                 const mapHex = currentMap.find(h => h.q === target.q && h.r === target.r);
-                if (!mapHex || mapHex.type !== 'empty') return false;
+                if (!mapHex) return false;
+                if (mapHex.type !== 'empty') {
+                    if (mapHex.type === 'upgraded') {
+                        // If it's an upgraded hex, but the toggle is false, it's illegal
+                        if (!isBuildUpgraded) return false;
+                    } else {
+                        // It's a rock or water, it's illegal
+                        return false;
+                    }
+                }
 
                 const collision = placedEnclosures.some(placed =>
                     placed.some(p => p.q === target.q && p.r === target.r)
@@ -277,7 +463,7 @@
             return true;
         }
 
-        function drawHex(q, r, fillColor, strokeColor = 'rgba(0,0,0,0.1)', lineWidth = 1) {
+        function drawHex(q, r, fillColor, strokeColor = 'rgba(0,0,0,0.1)', lineWidth = 1, isUpgraded = false) {
             const { x, y } = hexToPixel(q, r);
             ctx.beginPath();
             for (let i = 0; i < 6; i++) {
@@ -290,6 +476,14 @@
             ctx.closePath();
             ctx.fillStyle = fillColor;
             ctx.fill();
+            if (isUpgraded) {
+                ctx.save();
+                ctx.clip(); // Locks all future drawing inside the hexagon shape
+                ctx.fillStyle = 'rgba(244, 67, 54, 0.5)'; // Semi-transparent red
+                // Draw a rectangle over exactly the right half of the hex
+                ctx.fillRect(x, y - HEX_SIZE, HEX_SIZE, HEX_SIZE * 2);
+                ctx.restore(); // Removes the clipping lock
+            }
             ctx.lineWidth = lineWidth;
             ctx.strokeStyle = strokeColor;
             ctx.stroke();
@@ -300,10 +494,11 @@
 
             currentMap.forEach(hex => {
                 let color = '#dcedc8';
-                if (hex.type === 'rock') color = '#9e9e9e';
-                if (hex.type === 'water') color = '#4fc3f7';
-                if (hex.type === 'tower') color = '#ffb74d';
-                drawHex(hex.q, hex.r, color);
+                let isUpgraded = false;
+                if (hex.type === 'upgraded') { color = '#dcedc8'; isUpgraded = true; } // Underneath is still grass
+                else if (hex.type === 'rock') color = '#9e9e9e';
+                else if (hex.type === 'water') color = '#4fc3f7';
+                drawHex(hex.q, hex.r, color, 'rgba(0,0,0,0.1)', 1, isUpgraded);
             });
 
             placedEnclosures.forEach(enc => {
