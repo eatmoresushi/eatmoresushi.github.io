@@ -90,25 +90,33 @@
 <body>
 
     <div class="controls">
+
         <div>
             <label for="mapSelect"><strong>Map:</strong></label>
             <select id="mapSelect">
-                <option value="map1a" selected>Map 1a: Observation Tower</option>
-                <option value="map2a">Map 2a: Outdoor Areas</option>
-                <option value="map3a">Map 3a: Silver Lake</option>
-                <option value="map4a">Map 4a: Commerical Harbor</option>
-                <option value="map5a">Map 5a: Park Restaurant</option>
-                <option value="map6a">Map 6a: Research Institute</option>
-                <option value="map7a">Map 7a: Ice Cream Parlors</option>
-                <option value="map8a">Map 8a: Hollywood Hills</option>
+                <option value="map1" selected>Map 1: Observation Tower</option>
+                <option value="map2">Map 2: Outdoor Areas</option>
+                <option value="map3">Map 3: Silver Lake</option>
+                <option value="map4">Map 4: Commerical Harbor</option>
+                <option value="map5">Map 5: Park Restaurant</option>
+                <option value="map6">Map 6: Research Institute</option>
+                <option value="map7">Map 7: Ice Cream Parlors</option>
+                <option value="map8">Map 8: Hollywood Hills</option>
                 <option value="map9">Map 9: Geographical Zoo</option>
                 <option value="map10">Map 10: Rescue Station</option>
                 <option value="map11">Map 11: Caves</option>
-                <option value="map12">Map 12: Artificial Intelligeuce</option>
+                <option value="map12">Map 12: Artificial Intelligence</option>
                 <option value="map13">Map 13: Drawing Board</option>
                 <option value="map14">Map 14: Lagoon</option>
-                <option value="mapt1">Map T1: Tournament1</option>
+                <option value="mapt1">Map T1: Tournament 1</option>
+                <option value="mapA">Map A: Beginner</option>
             </select>
+        </div>
+
+        <div id="altToggleContainer">
+            <label style="cursor: pointer;">
+                <input type="checkbox" id="altToggle" checked> <strong>Alternative</strong>
+            </label>
         </div>
 
         <div>
@@ -175,6 +183,16 @@
                 ['E', 'E', 'E', 'R', 'E', 'W', 'E', 'E', 'E'],
             ]),
 
+            map1: parseMapLayout([
+                ['X', 'R', 'X', 'R', 'X', 'E', 'X', 'E', 'X'],
+                ['E', 'E', 'R', 'E', 'E', 'E', 'E', 'E', 'E'],
+                ['E', 'E', 'E', 'U', 'E', 'E', 'E', 'E', 'E'],
+                ['R', 'R', 'E', 'E', 'W', 'W', 'E', 'W', 'W'],
+                ['R', 'E', 'E', 'E', 'U', 'U', 'W', 'E', 'W'],
+                ['R', 'E', 'E', 'R', 'E', 'E', 'E', 'E', 'E'],
+                ['E', 'E', 'E', 'R', 'E', 'W', 'E', 'E', 'E'],
+            ]),
+
             map2a: parseMapLayout([
                 ['X', 'U', 'X', 'U', 'X', 'R', 'X', 'W', 'X'],
                 ['W', 'E', 'U', 'E', 'R', 'E', 'W', 'E', 'E'],
@@ -185,12 +203,32 @@
                 ['R', 'E', 'E', 'E', 'E', 'E', 'E', 'E', 'E'],
             ]),
 
+            map2: parseMapLayout([
+                ['X', 'U', 'X', 'E', 'X', 'R', 'X', 'W', 'X'],
+                ['R', 'E', 'U', 'E', 'R', 'E', 'W', 'E', 'E'],
+                ['R', 'R', 'E', 'E', 'E', 'R', 'E', 'E', 'E'],
+                ['E', 'E', 'E', 'U', 'E', 'U', 'E', 'E', 'R'],
+                ['E', 'E', 'E', 'W', 'E', 'W', 'E', 'E', 'E'],
+                ['R', 'R', 'E', 'E', 'W', 'W', 'E', 'E', 'E'],
+                ['R', 'E', 'E', 'E', 'W', 'E', 'E', 'E', 'E'],
+            ]),
+
             map3a: parseMapLayout([
                 ['X', 'E', 'X', 'E', 'X', 'E', 'X', 'R', 'X'],
                 ['E', 'E', 'E', 'E', 'U', 'E', 'W', 'E', 'E'],
                 ['E', 'E', 'E', 'E', 'W', 'E', 'R', 'E', 'E'],
                 ['E', 'E', 'E', 'W', 'W', 'U', 'E', 'E', 'R'],
                 ['R', 'E', 'U', 'E', 'W', 'E', 'E', 'E', 'R'],
+                ['E', 'E', 'E', 'E', 'E', 'W', 'W', 'E', 'E'],
+                ['W', 'E', 'E', 'R', 'R', 'W', 'E', 'E', 'E'],
+            ]),
+
+            map3: parseMapLayout([
+                ['X', 'U', 'X', 'E', 'X', 'R', 'X', 'R', 'X'],
+                ['U', 'U', 'U', 'E', 'E', 'E', 'W', 'E', 'E'],
+                ['E', 'U', 'W', 'E', 'E', 'E', 'R', 'E', 'E'],
+                ['E', 'W', 'W', 'E', 'E', 'E', 'E', 'E', 'R'],
+                ['E', 'E', 'W', 'E', 'E', 'E', 'E', 'E', 'R'],
                 ['E', 'E', 'E', 'E', 'E', 'W', 'W', 'E', 'E'],
                 ['W', 'E', 'E', 'R', 'R', 'W', 'E', 'E', 'E'],
             ]),
@@ -205,14 +243,35 @@
                 ['E', 'W', 'E', 'E', 'E', 'R', 'E', 'E', 'E'],
             ]),
 
-            map5a: parseMapLayout([
+            map4: parseMapLayout([
                 ['X', 'E', 'X', 'E', 'X', 'W', 'X', 'E', 'X'],
-                ['U', 'E', 'E', 'E', 'E', 'E', 'E', 'R', 'W'],
+                ['E', 'E', 'E', 'E', 'E', 'E', 'E', 'R', 'W'],
                 ['E', 'W', 'W', 'W', 'E', 'E', 'U', 'E', 'W'],
-                ['E', 'E', 'W', 'E', 'E', 'U', 'R', 'E', 'U'],
-                ['E', 'E', 'E', 'R', 'E', 'E', 'R', 'E', 'E'],
-                ['W', 'E', 'E', 'R', 'E', 'E', 'E', 'R', 'E'],
+                ['E', 'E', 'W', 'E', 'E', 'E', 'R', 'E', 'U'],
+                ['E', 'E', 'E', 'R', 'E', 'E', 'R', 'E', 'U'],
+                ['W', 'E', 'E', 'R', 'E', 'E', 'E', 'R', 'U'],
                 ['E', 'W', 'E', 'E', 'E', 'R', 'E', 'E', 'E'],
+            ]),
+
+
+            map5a: parseMapLayout([
+                ['X', 'E', 'X', 'E', 'X', 'R', 'X', 'E', 'X'],
+                ['U', 'E', 'E', 'E', 'E', 'E', 'R', 'E', 'E'],
+                ['E', 'W', 'R', 'E', 'E', 'E', 'E', 'E', 'U'],
+                ['W', 'E', 'E', 'E', 'R', 'E', 'W', 'W', 'R'],
+                ['E', 'R', 'E', 'E', 'W', 'E', 'E', 'E', 'W'],
+                ['E', 'E', 'W', 'E', 'E', 'E', 'R', 'E', 'U'],
+                ['E', 'E', 'E', 'E', 'E', 'W', 'E', 'E', 'E'],
+            ]),
+
+            map5: parseMapLayout([
+                ['X', 'E', 'X', 'E', 'X', 'E', 'X', 'E', 'X'],
+                ['E', 'U', 'E', 'E', 'E', 'E', 'R', 'E', 'E'],
+                ['E', 'W', 'R', 'E', 'W', 'E', 'E', 'R', 'E'],
+                ['W', 'E', 'R', 'E', 'R', 'E', 'E', 'W', 'E'],
+                ['E', 'R', 'E', 'E', 'E', 'W', 'E', 'E', 'W'],
+                ['E', 'U', 'W', 'E', 'E', 'W', 'R', 'E', 'E'],
+                ['E', 'E', 'E', 'E', 'E', 'U', 'E', 'E', 'E'],
             ]),
 
             map6a: parseMapLayout([
@@ -222,6 +281,16 @@
                 ['E', 'E', 'E', 'R', 'E', 'E', 'E', 'W', 'E'],
                 ['E', 'E', 'R', 'R', 'E', 'E', 'E', 'E', 'E'],
                 ['E', 'E', 'R', 'E', 'U', 'W', 'E', 'R', 'E'],
+                ['E', 'E', 'E', 'E', 'E', 'W', 'E', 'E', 'W'],
+            ]),
+
+            map6: parseMapLayout([
+                ['X', 'E', 'X', 'E', 'X', 'R', 'X', 'U', 'X'],
+                ['W', 'E', 'E', 'E', 'R', 'E', 'U', 'E', 'W'],
+                ['W', 'E', 'E', 'E', 'U', 'U', 'E', 'W', 'W'],
+                ['E', 'E', 'E', 'R', 'E', 'E', 'E', 'W', 'E'],
+                ['E', 'E', 'R', 'R', 'E', 'E', 'E', 'E', 'E'],
+                ['E', 'E', 'R', 'E', 'E', 'W', 'E', 'R', 'E'],
                 ['E', 'E', 'E', 'E', 'E', 'W', 'E', 'E', 'W'],
             ]),
 
@@ -235,6 +304,16 @@
                 ['E', 'E', 'E', 'U', 'E', 'E', 'E', 'E', 'W'],
             ]),
 
+            map7: parseMapLayout([
+                ['X', 'E', 'X', 'E', 'X', 'E', 'X', 'W', 'X'],
+                ['R', 'E', 'E', 'E', 'R', 'E', 'E', 'E', 'W'],
+                ['R', 'E', 'E', 'R', 'R', 'E', 'E', 'W', 'W'],
+                ['E', 'E', 'E', 'E', 'E', 'E', 'E', 'E', 'W'],
+                ['E', 'R', 'E', 'U', 'E', 'R', 'E', 'E', 'E'],
+                ['E', 'E', 'R', 'U', 'R', 'E', 'E', 'W', 'E'],
+                ['E', 'E', 'E', 'U', 'E', 'E', 'E', 'E', 'W'],
+            ]),
+
             map8a: parseMapLayout([
                 ['X', 'W', 'X', 'E', 'X', 'E', 'X', 'E', 'X'],
                 ['E', 'E', 'E', 'E', 'E', 'R', 'E', 'E', 'E'],
@@ -242,6 +321,16 @@
                 ['E', 'E', 'W', 'U', 'E', 'E', 'E', 'E', 'E'],
                 ['E', 'E', 'U', 'E', 'E', 'E', 'E', 'E', 'E'],
                 ['W', 'E', 'E', 'E', 'R', 'U', 'E', 'R', 'E'],
+                ['R', 'R', 'R', 'R', 'E', 'R', 'R', 'E', 'E'],
+            ]),
+
+            map8: parseMapLayout([
+                ['X', 'W', 'X', 'E', 'X', 'E', 'X', 'E', 'X'],
+                ['E', 'E', 'E', 'E', 'E', 'W', 'E', 'E', 'E'],
+                ['E', 'W', 'E', 'E', 'W', 'W', 'W', 'E', 'E'],
+                ['E', 'E', 'W', 'U', 'E', 'E', 'E', 'E', 'E'],
+                ['E', 'E', 'U', 'E', 'E', 'E', 'E', 'E', 'E'],
+                ['R', 'E', 'E', 'U', 'R', 'E', 'E', 'R', 'E'],
                 ['R', 'R', 'R', 'R', 'E', 'R', 'R', 'E', 'E'],
             ]),
 
@@ -315,6 +404,16 @@
                 ['R', 'E', 'E', 'E', 'R', 'E', 'E', 'R', 'E'],
                 ['R', 'E', 'E', 'E', 'E', 'E', 'E', 'W', 'W'],
             ]),
+
+            mapA: parseMapLayout([
+                ['X', 'R', 'X', 'R', 'X', 'E', 'X', 'W', 'X'],
+                ['E', 'R', 'W', 'E', 'W', 'E', 'E', 'E', 'W'],
+                ['E', 'E', 'R', 'E', 'E', 'R', 'E', 'E', 'W'],
+                ['E', 'E', 'E', 'E', 'E', 'E', 'E', 'E', 'E'],
+                ['E', 'E', 'E', 'E', 'E', 'W', 'W', 'E', 'E'],
+                ['E', 'E', 'E', 'E', 'E', 'E', 'R', 'E', 'E'],
+                ['E', 'R', 'W', 'W', 'E', 'E', 'E', 'U', 'U'],
+            ]),
         };
 
         const enclosures = {
@@ -344,6 +443,7 @@
         let offsetY = 0;
         let mouseHex = null; // Acts as both mouse and touch preview location
         let isBuildUpgraded = false;
+        let isAlternativeMap = true; // Defaults to true because the checkbox is checked
 
         // Listen for toggle changes and immediately update the board
         document.getElementById('upgradeToggle').addEventListener('change', (e) => {
@@ -565,9 +665,43 @@
             draw();
         });
 
+        // NEW: Automatically hides the toggle if the map doesn't have an alternative
+        function updateSelectedMap() {
+            const baseMapId = document.getElementById('mapSelect').value;
+            const toggleContainer = document.getElementById('altToggleContainer');
+
+            // Check if the 'a' version of this specific map exists in our data
+            const hasAlternative = !!maps[baseMapId + 'a'];
+
+            // Show or hide the toggle container
+            toggleContainer.style.display = hasAlternative ? 'block' : 'none';
+
+            // Check if the user wants the alternative map AND if it actually exists
+            if (hasAlternative && isAlternativeMap) {
+                currentMap = maps[baseMapId + 'a'];
+            } else {
+                // Fallback to the normal map
+                currentMap = maps[baseMapId];
+            }
+
+            placedEnclosures = [];
+            centerMap();
+            draw();
+        }
+
+        // Listen for the Alternative Toggle changes
+        document.getElementById('altToggle').addEventListener('change', (e) => {
+            isAlternativeMap = e.target.checked;
+            updateSelectedMap();
+        });
+
+        // Update your existing mapSelect listener to use the new function
+        document.getElementById('mapSelect').addEventListener('change', () => {
+            updateSelectedMap();
+        });
+
         // Initialize
-        centerMap();
-        draw(); 
+        updateSelectedMap();
     </script>
 </body>
 
