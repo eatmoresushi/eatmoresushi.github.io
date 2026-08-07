@@ -1,0 +1,78 @@
+name: Build and deploy luyuan.me
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out site
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/kiln-opening/package-lock.json
+
+      - name: Install game dependencies
+        working-directory: apps/kiln-opening
+        run: npm ci
+
+      - name: Verify rules, backend, and client
+        working-directory: apps/kiln-opening
+        run: |
+          npm run typecheck
+          npm run typecheck:edge
+          npm test
+
+      - name: Build game client
+        working-directory: apps/kiln-opening
+        env:
+          VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+        run: npm run build
+
+      - name: Stage homepage and game
+        run: |
+          mkdir -p _site/kiln-opening
+          rsync -a ./ _site/ \
+            --exclude .git \
+            --exclude .github \
+            --exclude _site \
+            --exclude apps \
+            --exclude node_modules
+          cp -R apps/kiln-opening/dist/. _site/kiln-opening/
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
+

@@ -1,0 +1,37 @@
+[
+  {
+    "id": "RU",
+    "name": "Ru Kiln",
+    "nameZh": "汝窑",
+    "abilityName": "Quiet Perfection",
+    "ability": "After all firing abilities are resolved, if you produced at least one Masterpiece with Celadon glaze and Plain decoration, gain 2 VP. Score this only once per round."
+  },
+  {
+    "id": "GU",
+    "name": "Guan Kiln",
+    "nameZh": "官窑",
+    "abilityName": "Imperial Patronage",
+    "ability": "Your Order hand limit is 4. Once per round, when you complete an Imperial Order, you may ignore one Decoration requirement on that Order. You must still satisfy all Shape, Glaze, quantity, relationship and Quality requirements."
+  },
+  {
+    "id": "GE",
+    "name": "Ge Kiln",
+    "nameZh": "哥窑",
+    "abilityName": "Crackle from Fire",
+    "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, choose one of your ceramics with a heat difference of exactly 1. Treat its heat difference as 0, assign it Masterpiece Quality, and change its Decoration to Crackle."
+  },
+  {
+    "id": "DI",
+    "name": "Ding Kiln",
+    "nameZh": "定窑",
+    "abilityName": "Moulded Production",
+    "ability": "Once per round, when resolving the Forming Studio, after you shape a Bowl, Plate or Washer, you may pay that Shape's normal Clay cost to shape one additional vessel of the same Shape. This additional vessel does not count against the action's normal limit."
+  },
+  {
+    "id": "JU",
+    "name": "Jun Kiln",
+    "nameZh": "钧窑",
+    "abilityName": "Kiln Transformation",
+    "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, adjust the Actual Heat of one of your ceramics by +1 or -1. This affects only that ceramic."
+  }
+]

@@ -1,0 +1,82 @@
+{
+  "rulesVersion": "0.4",
+  "players": {
+    "min": 2,
+    "max": 4
+  },
+  "rounds": 5,
+  "startingResources": {
+    "clay": 2,
+    "wood": 2,
+    "coins": 3
+  },
+  "workers": {
+    "shifu": 1,
+    "apprenticesTotal": 4,
+    "apprenticesStarting": 2,
+    "apprenticeUnlockProgress": [
+      2,
+      4
+    ]
+  },
+  "orderDisplay": {
+    "market": 4,
+    "imperial": 3,
+    "baseHandLimit": 3,
+    "guanHandLimit": 4
+  },
+  "techniques": {
+    "maxOwned": 2,
+    "faceUpPerDiscipline": 2
+  },
+  "kiln": {
+    "spaces": {
+      "high": 2,
+      "middle": 3,
+      "low": 3
+    },
+    "zoneModifier": {
+      "high": 1,
+      "middle": 0,
+      "low": -1
+    }
+  },
+  "fireDeck": {
+    "-1": 5,
+    "0": 10,
+    "1": 5
+  },
+  "glazes": {
+    "white": 1,
+    "celadon": 2,
+    "grey_green": 2,
+    "moon_white": 3
+  },
+  "decorations": {
+    "plain": 0,
+    "carved": 1,
+    "impressed": 1,
+    "crackle": 1
+  },
+  "shapes": {
+    "bowl": 1,
+    "plate": 1,
+    "washer": 1,
+    "vase": 2,
+    "censer": 2
+  },
+  "shapeSupplyEach": 8,
+  "imperialProgressEndGameVp": [
+    0,
+    1,
+    1,
+    3,
+    3,
+    7
+  ],
+  "imperialSealVp": 3,
+  "coinEndGame": {
+    "coinsPerVp": 3,
+    "maxVp": 5
+  }
+}

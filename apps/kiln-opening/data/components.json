@@ -1,0 +1,102 @@
+{
+  "rulesVersion": "0.4",
+  "components": [
+    {
+      "name": "Central Action Board",
+      "qty": 1,
+      "notes": "Six worker-placement locations with capacities by player count."
+    },
+    {
+      "name": "Shared Kiln Board",
+      "qty": 1,
+      "notes": "Eight spaces: 2 High, 3 Middle and 3 Low."
+    },
+    {
+      "name": "Kiln Player Boards",
+      "qty": 5,
+      "notes": "Ru, Guan, Ge, Ding and Jun; only 2-4 are used each game."
+    },
+    {
+      "name": "Shifu Workers",
+      "qty": 4,
+      "notes": "One in each player colour."
+    },
+    {
+      "name": "Apprentice Workers",
+      "qty": 16,
+      "notes": "Four per player; two begin available and two are unlocked."
+    },
+    {
+      "name": "Clay",
+      "qty": 40,
+      "notes": "Brown cubes or tokens."
+    },
+    {
+      "name": "Wood",
+      "qty": 40,
+      "notes": "Sticks or tokens distinct from Clay."
+    },
+    {
+      "name": "Coins",
+      "qty": 50,
+      "notes": "Values 1 and 5 are useful."
+    },
+    {
+      "name": "Vessel Cards",
+      "qty": 40,
+      "notes": "Eight each: Bowl, Plate, Washer, Vase and Censer."
+    },
+    {
+      "name": "Market Orders",
+      "qty": 20
+    },
+    {
+      "name": "Imperial Orders",
+      "qty": 10
+    },
+    {
+      "name": "Technique Tiles",
+      "qty": 12,
+      "notes": "Four Forming, four Glazing and four Firing Techniques."
+    },
+    {
+      "name": "Fire Cards",
+      "qty": 20,
+      "notes": "5 at -1, 10 at 0 and 5 at +1."
+    },
+    {
+      "name": "Wood Contribution Cards",
+      "qty": 16,
+      "notes": "Cards 0, 1, 2 and 3 for each player."
+    },
+    {
+      "name": "Imperial Progress Markers",
+      "qty": 4,
+      "notes": "One in each player colour."
+    },
+    {
+      "name": "Progress Reminder Tokens",
+      "qty": 4,
+      "notes": "Optional; mark whether a player advanced this round."
+    },
+    {
+      "name": "VP Markers / Score Pad",
+      "qty": "4 or 1",
+      "notes": "Use a score track or record VP on paper."
+    },
+    {
+      "name": "First Player Marker",
+      "qty": 1
+    },
+    {
+      "name": "Round Marker",
+      "qty": 1,
+      "notes": "Tracks rounds 1 to 5."
+    },
+    {
+      "name": "Imperial Seal",
+      "qty": 1,
+      "notes": "Worth 3 VP to the first player reaching Progress 5."
+    }
+  ]
+}

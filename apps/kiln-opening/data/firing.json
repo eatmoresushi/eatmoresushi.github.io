@@ -1,0 +1,111 @@
+{
+  "rulesVersion": "0.4",
+  "kilnSpaces": [
+    {
+      "id": "high_1",
+      "zone": "high",
+      "modifier": 1
+    },
+    {
+      "id": "high_2",
+      "zone": "high",
+      "modifier": 1
+    },
+    {
+      "id": "middle_1",
+      "zone": "middle",
+      "modifier": 0
+    },
+    {
+      "id": "middle_2",
+      "zone": "middle",
+      "modifier": 0
+    },
+    {
+      "id": "middle_3",
+      "zone": "middle",
+      "modifier": 0
+    },
+    {
+      "id": "low_1",
+      "zone": "low",
+      "modifier": -1
+    },
+    {
+      "id": "low_2",
+      "zone": "low",
+      "modifier": -1
+    },
+    {
+      "id": "low_3",
+      "zone": "low",
+      "modifier": -1
+    }
+  ],
+  "contributionCardsPerPlayer": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "baseHeatRule": {
+    "low": "totalWood < contributors",
+    "medium": "contributors <= totalWood <= 2 * contributors",
+    "high": "totalWood > 2 * contributors",
+    "heatValues": {
+      "low": 1,
+      "medium": 2,
+      "high": 3
+    }
+  },
+  "thresholdExamples": {
+    "1": {
+      "low": "0",
+      "medium": "1-2",
+      "high": "3+"
+    },
+    "2": {
+      "low": "0-1",
+      "medium": "2-4",
+      "high": "5+"
+    },
+    "3": {
+      "low": "0-2",
+      "medium": "3-6",
+      "high": "7+"
+    },
+    "4": {
+      "low": "0-3",
+      "medium": "4-8",
+      "high": "9+"
+    }
+  },
+  "fireDeck": [
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    1
+  ],
+  "qualityByDifference": {
+    "0": "masterpiece",
+    "1": "fine",
+    "2": "standard",
+    "3+": "flawed"
+  }
+}

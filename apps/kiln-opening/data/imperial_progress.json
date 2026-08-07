@@ -1,0 +1,60 @@
+{
+  "rulesVersion": "0.4",
+  "track": [
+    {
+      "space": 0,
+      "title": "Local Workshop",
+      "reward": null,
+      "endGameVp": 0
+    },
+    {
+      "space": 1,
+      "title": "Local Renown",
+      "reward": null,
+      "endGameVp": 1
+    },
+    {
+      "space": 2,
+      "title": "Prefectural Recommendation",
+      "reward": "Unlock 1 Apprentice during Cleanup.",
+      "endGameVp": 1
+    },
+    {
+      "space": 3,
+      "title": "Court Examination",
+      "reward": null,
+      "endGameVp": 3
+    },
+    {
+      "space": 4,
+      "title": "Awaiting Audience",
+      "reward": "Unlock 1 Apprentice during Cleanup; eligible for Imperial Presentation.",
+      "endGameVp": 3
+    },
+    {
+      "space": 5,
+      "title": "Imperial Audience",
+      "reward": "Take the Imperial Seal if available; eligible for Imperial Presentation.",
+      "endGameVp": 7
+    }
+  ],
+  "maxProgressPerRound": 1,
+  "imperialSealVp": 3,
+  "presentation": {
+    "eligibleSpaces": [
+      4,
+      5
+    ],
+    "maxCeramics": 3,
+    "minimumQuality": "standard",
+    "qualityVp": {
+      "standard": 1,
+      "fine": 2,
+      "masterpiece": 4
+    },
+    "threeDifferentShapesBonus": 2,
+    "threeDifferentGlazesBonus": 2,
+    "flawedEligible": false,
+    "emptyPresentationPenalty": 0
+  }
+}

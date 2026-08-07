@@ -1,0 +1,56 @@
+{
+  "rulesVersion": "0.4",
+  "centralBoard": {
+    "status": "GENERATE_FROM_DATA_NOT_OLD_RASTER",
+    "locationsSource": "data/action_locations.json",
+    "sharedKilnSource": "data/firing.json",
+    "mustNotContain": [
+      "Refining House",
+      "Refined Clay",
+      "Shifu repositioning",
+      "fixed 0-2 / 3-5 / 6+ Base Heat reference"
+    ],
+    "mustContain": [
+      "Materials Yard",
+      "Forming Studio",
+      "Glaze Workshop",
+      "Kiln Yard",
+      "Market & Imperial Office",
+      "Guild & Academy"
+    ]
+  },
+  "playerBoards": {
+    "status": "GENERATE_FROM_data/kilns.json",
+    "resources": [
+      "Clay",
+      "Wood",
+      "Coins"
+    ],
+    "noWorkerStorageRequiredOnPhysicalMat": true,
+    "mustNotContain": [
+      "Refined Clay"
+    ]
+  },
+  "woodContributionCards": {
+    "status": "GENERATE_EXACTLY",
+    "sets": 4,
+    "valuesPerSet": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "totalCards": 16
+  },
+  "craftTechniques": {
+    "status": "GENERATE_FROM_data/techniques.json",
+    "total": 12,
+    "note": "Use exact English and Chinese names from JSON; descriptions in English."
+  },
+  "playerReference": {
+    "status": "GENERATE_FROM_CURRENT_RULES",
+    "roundSource": "data/round_structure.json",
+    "firingSource": "data/firing.json",
+    "mustUseContributorScaledHeat": true
+  }
+}

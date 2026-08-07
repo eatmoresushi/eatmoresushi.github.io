@@ -1,0 +1,36 @@
+{
+  "rulesVersion": "0.4",
+  "roundCount": 5,
+  "phases": [
+    {
+      "order": 1,
+      "id": "start",
+      "name": "Start of Round",
+      "summary": "Refill displays, ready Techniques, reset once-per-round abilities and Progress Reminder."
+    },
+    {
+      "order": 2,
+      "id": "work",
+      "name": "Work Phase",
+      "summary": "Players alternate placing one worker and resolving that location until all have passed or placed all workers."
+    },
+    {
+      "order": 3,
+      "id": "firing",
+      "name": "Firing Phase",
+      "summary": "If kiln is not empty, resolve pre-contribution abilities, secret Wood, Base Heat, Fire, zone heat, quality and firing abilities."
+    },
+    {
+      "order": 4,
+      "id": "orders",
+      "name": "Order Phase",
+      "summary": "In turn order, complete any number of Orders. Imperial Progress can advance at most once per player this round."
+    },
+    {
+      "order": 5,
+      "id": "cleanup",
+      "name": "Cleanup",
+      "summary": "Return workers, unlock Apprentices, cycle Orders, pass First Player and advance Round."
+    }
+  ]
+}

@@ -1,0 +1,533 @@
+import {
+  SeededRandom,
+  applyAction,
+  createGame,
+  submitWoodContribution,
+} from "../game";
+import type {
+  GameAction,
+  GameRuleError,
+  PlayerId,
+  PrivateFiringState,
+} from "../game";
+import { projectPublicEvents, projectPublicGameState } from "./projection";
+import type {
+  AuthenticatedSeat,
+  CommitTransitionInput,
+  MultiplayerStore,
+  StoreFailureCode,
+  StoreResult,
+} from "./store";
+import type {
+  AuthoritativeHead,
+  CommandRequest,
+  CommandSuccess,
+  CreateRoomRequest,
+  JoinRoomRequest,
+  MultiplayerError,
+  MultiplayerErrorCode,
+  MultiplayerResult,
+  PendingContribution,
+  PublicRoom,
+  PublicSeat,
+  ReconnectResult,
+  RoomConnection,
+  SecurityProvider,
+  StartGameRequest,
+  StoredRoom,
+  StoredSeat,
+  SubmitWoodCommand,
+} from "./types";
+
+const MAX_DISPLAY_NAME_LENGTH = 40;
+const ROOM_CODE_ATTEMPTS = 8;
+const CONTRIBUTION_CAS_ATTEMPTS = 8;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function error(
+  code: MultiplayerErrorCode,
+  message: string,
+  currentRevision: number | null = null,
+  details: MultiplayerError["details"] = {},
+): MultiplayerError {
+  return { code, message, details, currentRevision };
+}
+
+function failed<T>(value: MultiplayerError): MultiplayerResult<T> {
+  return { ok: false, error: value };
+}
+
+function publicRoom(room: StoredRoom): PublicRoom {
+  return {
+    id: room.id,
+    code: room.code,
+    status: room.status,
+    hostSeatId: room.hostSeatId,
+    rulesVersion: room.rulesVersion,
+    latestRevision: room.latestRevision,
+  };
+}
+
+function publicSeat(seat: StoredSeat): PublicSeat {
+  return {
+    seatId: seat.seatId,
+    roomId: seat.roomId,
+    playerId: seat.playerId,
+    seatIndex: seat.seatIndex,
+    displayName: seat.displayName,
+    colour: seat.colour,
+    isHost: seat.isHost,
+  };
+}
+
+function roomAfterTransition(room: StoredRoom, head: AuthoritativeHead): PublicRoom {
+  return {
+    ...publicRoom(room),
+    status: head.state.phase.type === "finished" ? "finished" : "playing",
+    latestRevision: head.revision,
+  };
+}
+
+function validDisplayName(displayName: string): boolean {
+  const length = displayName.trim().length;
+  return length > 0 && length <= MAX_DISPLAY_NAME_LENGTH;
+}
+
+function gameFailure(ruleError: GameRuleError, revision: number): MultiplayerError {
+  return error(ruleError.code, ruleError.message, revision, ruleError.details);
+}
+
+function mapStoreFailure(code: StoreFailureCode, revision: number | null = null): MultiplayerError {
+  switch (code) {
+    case "room_code_conflict":
+      return error("ROOM_CODE_CONFLICT", "The generated room code is already in use.");
+    case "room_not_found":
+      return error("ROOM_NOT_FOUND", "The room does not exist.");
+    case "room_full":
+      return error("ROOM_FULL", "The room already has four stable seats.");
+    case "game_already_started":
+      return error("GAME_ALREADY_STARTED", "The game has already started.", revision);
+    case "not_enough_players":
+      return error("NOT_ENOUGH_PLAYERS", "At least two players are required to start.");
+    case "seat_already_joined":
+      return error("INVALID_REQUEST", "This authenticated account already has a seat in the room.");
+    case "duplicate":
+      return error("DUPLICATE_COMMAND", "This command ID was already used.", revision);
+    case "stale":
+      return error("STALE_REVISION", "The authoritative game revision has changed.", revision);
+    case "private_duplicate":
+      return error(
+        "CONTRIBUTION_ALREADY_SUBMITTED",
+        "This seat already submitted for the current Wood window.",
+        revision,
+      );
+  }
+}
+
+export class AuthoritativeGameService {
+  constructor(
+    private readonly store: MultiplayerStore,
+    private readonly security: SecurityProvider,
+  ) {}
+
+  async createRoom(request: CreateRoomRequest): Promise<MultiplayerResult<RoomConnection>> {
+    const displayName = request.displayName.trim();
+    if (!validDisplayName(displayName)) {
+      return failed(error("INVALID_REQUEST", "Display name must contain 1–40 characters."));
+    }
+    for (let attempt = 0; attempt < ROOM_CODE_ATTEMPTS; attempt += 1) {
+      const roomId = this.security.randomId();
+      const seatId = this.security.randomId();
+      const seatToken = this.security.randomSeatToken();
+      const tokenHash = await this.security.hashSecret(seatToken);
+      const code = this.security.randomRoomCode().toUpperCase();
+      const room: StoredRoom = {
+        id: roomId,
+        code,
+        status: "lobby",
+        hostSeatId: seatId,
+        rulesVersion: "0.4",
+        contentVersion: "0.4",
+        latestRevision: 0,
+      };
+      const hostSeat: StoredSeat = {
+        seatId,
+        roomId,
+        playerId: "P1",
+        seatIndex: 0,
+        displayName,
+        colour: "cinnabar",
+        isHost: true,
+        authUserId: request.authUserId,
+      };
+      const created = await this.store.createRoom({ room, hostSeat, tokenHash });
+      if (created.status === "error" && created.code === "room_code_conflict") continue;
+      if (created.status !== "ok") {
+        const storeError = created.status === "duplicate" ? "duplicate" : created.code;
+        return failed(mapStoreFailure(storeError));
+      }
+      const seats = await this.store.getSeats(roomId);
+      return {
+        ok: true,
+        value: {
+          room: publicRoom(created.value.room),
+          seats: seats.map(publicSeat),
+          seat: publicSeat(created.value.seat),
+          seatToken,
+          game: null,
+          ownPendingContribution: null,
+        },
+      };
+    }
+    return failed(error("ROOM_CODE_CONFLICT", "Unable to allocate a unique room code."));
+  }
+
+  async joinRoom(request: JoinRoomRequest): Promise<MultiplayerResult<RoomConnection>> {
+    const displayName = request.displayName.trim();
+    const roomCode = request.roomCode.trim().toUpperCase();
+    if (!validDisplayName(displayName) || roomCode.length === 0) {
+      return failed(error("INVALID_REQUEST", "A room code and 1–40 character display name are required."));
+    }
+    const seatToken = this.security.randomSeatToken();
+    const tokenHash = await this.security.hashSecret(seatToken);
+    const joined = await this.store.joinRoom({
+      roomCode,
+      seatId: this.security.randomId(),
+      displayName,
+      colour: "",
+      authUserId: request.authUserId,
+      tokenHash,
+    });
+    if (joined.status !== "ok") {
+      const storeError = joined.status === "duplicate" ? "duplicate" : joined.code;
+      return failed(mapStoreFailure(storeError));
+    }
+    const seats = await this.store.getSeats(joined.value.room.id);
+    return {
+      ok: true,
+      value: {
+        room: publicRoom(joined.value.room),
+        seats: seats.map(publicSeat),
+        seat: publicSeat(joined.value.seat),
+        seatToken,
+        game: null,
+        ownPendingContribution: null,
+      },
+    };
+  }
+
+  async reconnect(request: { roomCode: string; seatToken: string }): Promise<MultiplayerResult<ReconnectResult>> {
+    const authenticated = await this.authenticate(request.roomCode, request.seatToken);
+    if (!authenticated.ok) return authenticated;
+    const { room, seat } = authenticated.value;
+    const [seats, game, pending] = await Promise.all([
+      this.store.getSeats(room.id),
+      this.store.loadPublicState(room.id),
+      this.store.findOwnPendingSubmission(room.id, seat.playerId),
+    ]);
+    return {
+      ok: true,
+      value: {
+        room: publicRoom(room),
+        seats: seats.map(publicSeat),
+        seat: publicSeat(seat),
+        game,
+        ownPendingContribution:
+          pending === null
+            ? null
+            : { windowId: pending.windowId, amount: pending.amount, submitted: true },
+      },
+    };
+  }
+
+  async startGame(request: StartGameRequest): Promise<MultiplayerResult<CommandSuccess>> {
+    if (!UUID_PATTERN.test(request.commandId)) {
+      return failed(error("INVALID_REQUEST", "commandId must be a UUID."));
+    }
+    const authenticated = await this.authenticate(request.roomCode, request.seatToken);
+    if (!authenticated.ok) return authenticated;
+    const { room, seat } = authenticated.value;
+    const prior = await this.store.getProcessed(room.id, request.commandId);
+    if (prior !== null) return this.processedResult(prior.actorId, seat.playerId, prior.response);
+    if (!seat.isHost || room.hostSeatId !== seat.seatId) {
+      return failed(error("HOST_ONLY", "Only the host may start the game."));
+    }
+    if (room.status !== "lobby") {
+      return failed(error("GAME_ALREADY_STARTED", "The game has already started.", room.latestRevision));
+    }
+    const seats = (await this.store.getSeats(room.id)).sort(
+      (left, right) => left.seatIndex - right.seatIndex,
+    );
+    if (seats.length < 2) {
+      return failed(error("NOT_ENOUGH_PLAYERS", "At least two players are required to start."));
+    }
+    const rootSeed = this.security.randomSeed() >>> 0;
+    const rng = new SeededRandom(rootSeed);
+    const created = createGame(
+      {
+        gameId: room.id,
+        players: seats.map((currentSeat) => ({
+          id: currentSeat.playerId,
+          displayName: currentSeat.displayName,
+        })),
+      },
+      rng,
+    );
+    if (!created.ok) return failed(gameFailure(created.error, room.latestRevision));
+    const stateHash = await this.security.hashJson(created.state);
+    const head: AuthoritativeHead = {
+      roomId: room.id,
+      revision: created.state.revision,
+      state: created.state,
+      rngState: rng.getState(),
+      rootSeed,
+      stateHash,
+    };
+    const game = projectPublicGameState(created.state);
+    const response: CommandSuccess = {
+      commandId: request.commandId,
+      room: roomAfterTransition(room, head),
+      actorId: seat.playerId,
+      revision: head.revision,
+      game,
+      events: [],
+      ownPendingContribution: null,
+    };
+    const committed = await this.store.commitStart({
+      roomId: room.id,
+      commandId: request.commandId,
+      actorId: seat.playerId,
+      head,
+      publicState: game,
+      response,
+    });
+    return this.commitResult(committed, seat.playerId, room.latestRevision);
+  }
+
+  async executeCommand(request: CommandRequest): Promise<MultiplayerResult<CommandSuccess>> {
+    if (
+      !UUID_PATTERN.test(request.commandId) ||
+      !Number.isInteger(request.expectedRevision) ||
+      request.expectedRevision < 0
+    ) {
+      return failed(error("INVALID_REQUEST", "A commandId and non-negative expectedRevision are required."));
+    }
+    const authenticated = await this.authenticate(request.roomCode, request.seatToken);
+    if (!authenticated.ok) return authenticated;
+    const command = request.command;
+    if (command.type === "SUBMIT_WOOD_CONTRIBUTION") {
+      return this.executeContribution(authenticated.value, { ...request, command });
+    }
+    return this.executePublicCommand(authenticated.value, { ...request, command });
+  }
+
+  private async executePublicCommand(
+    authenticated: AuthenticatedSeat,
+    request: CommandRequest & { command: GameAction },
+  ): Promise<MultiplayerResult<CommandSuccess>> {
+    const { room, seat } = authenticated;
+    const prior = await this.store.getProcessed(room.id, request.commandId);
+    if (prior !== null) return this.processedResult(prior.actorId, seat.playerId, prior.response);
+    const head = await this.store.loadHead(room.id);
+    if (head === null) return failed(error("GAME_NOT_STARTED", "The game has not started."));
+    if (request.expectedRevision !== head.revision) {
+      return failed(error("STALE_REVISION", "The authoritative game revision has changed.", head.revision));
+    }
+    const rng = new SeededRandom(head.rngState);
+    const applied = applyAction(head.state, seat.playerId, request.command, rng);
+    if (!applied.ok) return failed(gameFailure(applied.error, head.revision));
+    const publicEvents = projectPublicEvents(applied.events);
+    const nextHead = await this.makeNextHead(head, applied.state, rng.getState());
+    const game = projectPublicGameState(applied.state);
+    const response = this.commandResponse(
+      request.commandId,
+      room,
+      seat.playerId,
+      nextHead,
+      game,
+      publicEvents,
+      null,
+    );
+    const committed = await this.store.commitTransition({
+      roomId: room.id,
+      commandId: request.commandId,
+      actorId: seat.playerId,
+      expectedRevision: head.revision,
+      command: request.command,
+      previousHead: head,
+      nextHead,
+      fullEvents: applied.events,
+      publicEvents,
+      publicState: game,
+      response,
+      privateSubmission: null,
+    });
+    return this.commitResult(committed, seat.playerId, head.revision);
+  }
+
+  private async executeContribution(
+    authenticated: AuthenticatedSeat,
+    request: CommandRequest & { command: SubmitWoodCommand },
+  ): Promise<MultiplayerResult<CommandSuccess>> {
+    const { room, seat } = authenticated;
+    if (request.command.windowId.trim().length === 0) {
+      return failed(error("INVALID_REQUEST", "A Wood Contribution windowId is required."));
+    }
+    for (let attempt = 0; attempt < CONTRIBUTION_CAS_ATTEMPTS; attempt += 1) {
+      const prior = await this.store.getProcessed(room.id, request.commandId);
+      if (prior !== null) return this.processedResult(prior.actorId, seat.playerId, prior.response);
+      const head = await this.store.loadHead(room.id);
+      if (head === null) return failed(error("GAME_NOT_STARTED", "The game has not started."));
+      if (
+        head.state.phase.type !== "firing_contributions" ||
+        head.state.phase.windowId !== request.command.windowId
+      ) {
+        return failed(
+          error("PRIVATE_WINDOW_MISMATCH", "The private submission window has changed.", head.revision),
+        );
+      }
+      if (request.expectedRevision > head.revision) {
+        return failed(error("STALE_REVISION", "The authoritative game revision has changed.", head.revision));
+      }
+      const storedSubmissions = await this.store.loadPrivateSubmissions(room.id, request.command.windowId);
+      const privateState: PrivateFiringState = {
+        gameId: head.state.gameId,
+        windowId: request.command.windowId,
+        contributions: Object.fromEntries(
+          storedSubmissions.map((submission) => [submission.playerId, submission.amount]),
+        ),
+      };
+      const rng = new SeededRandom(head.rngState);
+      const applied = submitWoodContribution(
+        head.state,
+        privateState,
+        seat.playerId,
+        request.command.amount,
+        rng,
+      );
+      if (!applied.ok) return failed(gameFailure(applied.error, head.revision));
+      const revealed = applied.privateState.windowId === null;
+      const ownPendingContribution: PendingContribution | null = revealed
+        ? null
+        : {
+            windowId: request.command.windowId,
+            amount: request.command.amount,
+            submitted: true,
+          };
+      const publicEvents = projectPublicEvents(applied.events);
+      const nextHead = await this.makeNextHead(head, applied.state, rng.getState());
+      const game = projectPublicGameState(applied.state);
+      const response = this.commandResponse(
+        request.commandId,
+        room,
+        seat.playerId,
+        nextHead,
+        game,
+        publicEvents,
+        ownPendingContribution,
+      );
+      const commitInput: CommitTransitionInput = {
+        roomId: room.id,
+        commandId: request.commandId,
+        actorId: seat.playerId,
+        expectedRevision: head.revision,
+        command: request.command,
+        previousHead: head,
+        nextHead,
+        fullEvents: applied.events,
+        publicEvents,
+        publicState: game,
+        response,
+        privateSubmission: {
+          windowId: request.command.windowId,
+          amount: request.command.amount,
+          revealed,
+        },
+      };
+      const committed = await this.store.commitTransition(commitInput);
+      if (committed.status === "error" && committed.code === "stale") continue;
+      return this.commitResult(committed, seat.playerId, head.revision);
+    }
+    const current = await this.store.loadHead(room.id);
+    return failed(
+      error(
+        "PERSISTENCE_CONFLICT",
+        "The contribution could not be committed after concurrent updates.",
+        current?.revision ?? null,
+      ),
+    );
+  }
+
+  private async authenticate(
+    roomCode: string,
+    seatToken: string,
+  ): Promise<MultiplayerResult<AuthenticatedSeat>> {
+    if (roomCode.trim().length === 0 || seatToken.length < 16) {
+      return failed(error("AUTHENTICATION_FAILED", "The room or seat credential is invalid."));
+    }
+    const tokenHash = await this.security.hashSecret(seatToken);
+    const authenticated = await this.store.authenticate(roomCode.trim().toUpperCase(), tokenHash);
+    if (authenticated === null) {
+      return failed(error("AUTHENTICATION_FAILED", "The room or seat credential is invalid."));
+    }
+    return { ok: true, value: authenticated };
+  }
+
+  private async makeNextHead(
+    previous: AuthoritativeHead,
+    state: AuthoritativeHead["state"],
+    rngState: number,
+  ): Promise<AuthoritativeHead> {
+    return {
+      roomId: previous.roomId,
+      revision: state.revision,
+      state,
+      rngState,
+      rootSeed: previous.rootSeed,
+      stateHash: await this.security.hashJson(state),
+    };
+  }
+
+  private commandResponse(
+    commandId: string,
+    room: StoredRoom,
+    actorId: PlayerId,
+    head: AuthoritativeHead,
+    game: CommandSuccess["game"],
+    events: CommandSuccess["events"],
+    pending: PendingContribution | null,
+  ): CommandSuccess {
+    return {
+      commandId,
+      room: roomAfterTransition(room, head),
+      actorId,
+      revision: head.revision,
+      game,
+      events,
+      ownPendingContribution: pending,
+    };
+  }
+
+  private processedResult(
+    processedActorId: PlayerId,
+    currentActorId: PlayerId,
+    response: CommandSuccess,
+  ): MultiplayerResult<CommandSuccess> {
+    if (processedActorId !== currentActorId) {
+      return failed(error("DUPLICATE_COMMAND", "This command ID belongs to another seat."));
+    }
+    return { ok: true, value: response };
+  }
+
+  private commitResult(
+    committed: StoreResult<CommandSuccess>,
+    actorId: PlayerId,
+    revision: number,
+  ): MultiplayerResult<CommandSuccess> {
+    if (committed.status === "ok") return { ok: true, value: committed.value };
+    if (committed.status === "duplicate") {
+      return this.processedResult(committed.processed.actorId, actorId, committed.processed.response);
+    }
+    return failed(mapStoreFailure(committed.code, revision));
+  }
+}
