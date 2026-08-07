@@ -151,6 +151,12 @@
   .status-placed { opacity: .35; }
   .status-locked { border-color: #a9a39a; color: #777; background: #d9d5cd; }
   .mini-ledger { display: flex; gap: .65rem; margin-top: .55rem; color: var(--ink-soft); font-size: .64rem; }
+  .workshop-orders { margin-top: .7rem; }
+  .workshop-order-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: .75rem; }
+  .workshop-order-hand { display: grid; gap: .55rem; align-content: start; border-top: 3px solid var(--celadon); border-radius: 9px; padding: .65rem; background: rgb(255 253 248 / 72%); }
+  .workshop-order-title { display: flex; align-items: center; justify-content: space-between; }
+  .workshop-order-title span { border-radius: 999px; padding: .15rem .4rem; color: var(--celadon-dark); font-size: .63rem; font-weight: 900; background: var(--celadon-pale); }
+  .workshop-order-hand .order-card { min-height: 0; }
   .kiln-spaces { position: relative; display: grid; grid-template-columns: repeat(3, minmax(90px, 1fr)); gap: .55rem; border-radius: 45% 45% 12px 12px; padding: 2rem .8rem .8rem; background: linear-gradient(#51392f, #251c18); box-shadow: inset 0 12px 40px #160d09; }
   .kiln-spaces::before { position: absolute; top: .65rem; left: 50%; color: #d9b981; content: "龙窑 · DRAGON KILN"; font-family: var(--serif); font-size: .7rem; letter-spacing: .18em; transform: translateX(-50%); white-space: nowrap; }
   .kiln-space { display: grid; min-height: 94px; place-items: center; border: 1px solid rgb(255 235 202 / 15%); border-radius: 10px; padding: .45rem; text-align: center; background: rgb(255 245 221 / 7%); }
@@ -186,6 +192,7 @@
   .action-heading { border-bottom: 1px solid var(--line); padding-bottom: .8rem; }
   .action-heading h2 { margin-top: .2rem; }
   .action-card { border: 1px solid var(--line); border-radius: 12px; background: rgb(255 253 248 / 82%); overflow: hidden; }
+  .action-card.is-unavailable { opacity: .68; }
   .action-card summary { display: flex; justify-content: space-between; padding: .8rem; cursor: pointer; list-style: none; }
   .action-card summary::-webkit-details-marker { display: none; }
   .action-card summary::after { color: var(--cinnabar); content: "+"; font-size: 1.1rem; }
@@ -194,6 +201,7 @@
   .action-card summary small { margin-left: auto; margin-right: .7rem; color: var(--ink-soft); }
   .control-form { display: grid; gap: .65rem; border-top: 1px solid var(--line); padding: .8rem; }
   .control-form > small { color: var(--ink-soft); }
+  .control-form > .control-error { color: var(--cinnabar-dark); font-weight: 800; }
   .split-fields { display: grid; grid-template-columns: 1fr 1fr; gap: .55rem; }
   .turn-callout { border-left: 4px solid var(--cinnabar); padding: .6rem .7rem; font-size: .8rem; background: rgb(255 253 248 / 65%); }
   .control-section { display: grid; gap: .75rem; }

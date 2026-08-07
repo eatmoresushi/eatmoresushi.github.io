@@ -2,14 +2,18 @@ import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import {
   DECORATIONS,
+  DECORATION_COSTS,
+  GAME_CONFIG,
   GLAZES,
   KILN_DEFINITIONS,
   KILN_IDS,
   KILN_SPACE_IDS,
   ORDER_DEFINITIONS,
+  SHAPE_COSTS,
   SHAPES,
   TECHNIQUE_DEFINITIONS,
   currentDecisionActor,
+  locationCapacity,
 } from "../game";
 import type {
   Decoration,
@@ -17,6 +21,7 @@ import type {
   Glaze,
   KilnId,
   KilnSpaceId,
+  LocationId,
   OfficeOrderMode,
   PlayerId,
   Shape,
@@ -132,7 +137,7 @@ function PhaseControls(props: Omit<ActionPanelProps, "ownPlayerId"> & {
     case "work":
       return <WorkControls game={game} player={player} busy={busy} send={send} />;
     case "work_office_orders":
-      return <OfficeControls game={game} busy={busy} send={send} />;
+      return <OfficeControls game={game} player={player} busy={busy} send={send} />;
     case "work_guild":
       return <GuildControls game={game} player={player} busy={busy} send={send} />;
     case "firing_before_contribution":
@@ -184,6 +189,8 @@ function WorkControls({ game, player, busy, send }: {
   send: SendCommand;
 }) {
   const workers = Object.values(player.workers).filter((worker) => worker.status === "available");
+  const full = (locationId: LocationId): boolean =>
+    game.actionBoard.placements[locationId].length >= locationCapacity(locationId, game.playerCount);
   if (workers.length === 0) {
     return (
       <ControlSection title="No workers remain" hint="Pass to finish your Work Phase participation.">
@@ -194,34 +201,29 @@ function WorkControls({ game, player, busy, send }: {
   return (
     <>
       <p className="turn-callout"><strong>Your turn.</strong> Place one available worker, or pass permanently for this round.</p>
-      <details className="action-card" open>
-        <summary><span>Materials Yard</span><small>Gain Clay and Wood</small></summary>
-        <MaterialsForm workers={workers} busy={busy} send={send} />
+      <details className={`action-card ${full("materials_yard") ? "is-unavailable" : ""}`} open>
+        <summary><span>Materials Yard</span><small>{full("materials_yard") ? "Full" : "Gain Clay and Wood"}</small></summary>
+        <MaterialsForm workers={workers} locationFull={full("materials_yard")} busy={busy} send={send} />
       </details>
-      <details className="action-card">
-        <summary><span>Forming Studio</span><small>Shape vessels</small></summary>
-        <FormCeramicsForm player={player} workers={workers} busy={busy} send={send} />
+      <details className={`action-card ${full("forming_studio") ? "is-unavailable" : ""}`}>
+        <summary><span>Forming Studio</span><small>{full("forming_studio") ? "Full" : "Shape vessels"}</small></summary>
+        <FormCeramicsForm game={game} player={player} workers={workers} locationFull={full("forming_studio")} busy={busy} send={send} />
       </details>
-      <details className="action-card">
-        <summary><span>Glaze Workshop</span><small>Glaze and decorate</small></summary>
-        <GlazeForm game={game} player={player} workers={workers} busy={busy} send={send} />
+      <details className={`action-card ${full("glaze_workshop") ? "is-unavailable" : ""}`}>
+        <summary><span>Glaze Workshop</span><small>{full("glaze_workshop") ? "Full" : "Glaze and decorate"}</small></summary>
+        <GlazeForm game={game} player={player} workers={workers} locationFull={full("glaze_workshop")} busy={busy} send={send} />
       </details>
-      <details className="action-card">
-        <summary><span>Kiln Yard</span><small>Load ceramics</small></summary>
-        <KilnYardForm game={game} player={player} workers={workers} busy={busy} send={send} />
+      <details className={`action-card ${full("kiln_yard") ? "is-unavailable" : ""}`}>
+        <summary><span>Kiln Yard</span><small>{full("kiln_yard") ? "Full" : "Load ceramics"}</small></summary>
+        <KilnYardForm game={game} player={player} workers={workers} locationFull={full("kiln_yard")} busy={busy} send={send} />
       </details>
-      <details className="action-card">
-        <summary><span>Market & Imperial Office</span><small>Coins, Orders, or flawed sales</small></summary>
-        <OfficeActionForms game={game} player={player} workers={workers} busy={busy} send={send} />
+      <details className={`action-card ${full("market_imperial_office") ? "is-unavailable" : ""}`}>
+        <summary><span>Market & Imperial Office</span><small>{full("market_imperial_office") ? "Full" : "Coins, Orders, or flawed sales"}</small></summary>
+        <OfficeActionForms game={game} player={player} workers={workers} locationFull={full("market_imperial_office")} busy={busy} send={send} />
       </details>
-      <details className="action-card">
-        <summary><span>Guild & Academy</span><small>Acquire a Technique</small></summary>
-        <SimpleWorkerForm
-          workers={workers}
-          busy={busy}
-          label="Begin Guild action"
-          onSubmit={(workerId) => send({ type: "BEGIN_GUILD_ACTION", workerId })}
-        />
+      <details className={`action-card ${full("guild_academy") ? "is-unavailable" : ""}`}>
+        <summary><span>Guild & Academy</span><small>{full("guild_academy") ? "Full" : "Acquire a Technique"}</small></summary>
+        <GuildBeginForm game={game} player={player} workers={workers} locationFull={full("guild_academy")} busy={busy} send={send} />
       </details>
       <CommandButton busy={busy} send={send} command={{ type: "PASS_WORK_PHASE" }} danger>
         Pass for this round
@@ -232,192 +234,406 @@ function WorkControls({ game, player, busy, send }: {
 
 type AvailableWorker = PublicPlayerState["workers"][string];
 
-function MaterialsForm({ workers, busy, send }: { workers: AvailableWorker[]; busy: boolean; send: SendCommand }) {
+interface WorkerFormProps {
+  workers: AvailableWorker[];
+  locationFull: boolean;
+  busy: boolean;
+  send: SendCommand;
+}
+
+function MaterialsForm({ workers, locationFull, busy, send }: WorkerFormProps) {
+  const [workerId, setWorkerId] = useState(workers[0]?.id ?? "");
+  const [clay, setClay] = useState(2);
+  const [wood, setWood] = useState(1);
+  const selectedWorker = workers.find((worker) => worker.id === workerId) ?? workers[0];
+  const maximum = selectedWorker?.kind === "shifu" ? 3 : 2;
+  const invalidAmount = !Number.isInteger(clay) || !Number.isInteger(wood) || clay < 0 || wood < 0;
+  const overLimit = !invalidAmount && clay + wood > maximum;
+  const error = locationFull
+    ? "Materials Yard is full."
+    : invalidAmount
+      ? "Choose whole, non-negative resource amounts."
+      : overLimit
+      ? `${selectedWorker?.kind === "shifu" ? "Shifu" : "Apprentice"} may take at most ${maximum} total Clay and Wood.`
+      : null;
+
   function submit(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
+    if (error !== null || selectedWorker === undefined) return;
     void send({
       type: "GAIN_MATERIALS",
-      workerId: required(data, "worker") as WorkerId,
-      clay: Number(required(data, "clay")),
-      wood: Number(required(data, "wood")),
+      workerId: selectedWorker.id,
+      clay,
+      wood,
     });
   }
   return (
     <form className="control-form" onSubmit={submit}>
-      <WorkerSelect workers={workers} />
+      <label>
+        Worker
+        <select name="worker" value={selectedWorker?.id ?? ""} onChange={(event) => setWorkerId(event.target.value)} required>
+          {workers.map((worker) => (
+            <option key={worker.id} value={worker.id}>
+              {worker.kind === "shifu" ? "Shifu" : "Apprentice"} · {worker.id}
+            </option>
+          ))}
+        </select>
+      </label>
       <div className="split-fields">
-        <NumberField name="clay" label="Clay" max={3} defaultValue={2} />
-        <NumberField name="wood" label="Wood" max={3} defaultValue={1} />
+        <label>Clay<input type="number" name="clay" min={0} max={3} step={1} value={clay} onChange={(event) => setClay(Number.isNaN(event.target.valueAsNumber) ? 0 : event.target.valueAsNumber)} required /></label>
+        <label>Wood<input type="number" name="wood" min={0} max={3} step={1} value={wood} onChange={(event) => setWood(Number.isNaN(event.target.valueAsNumber) ? 0 : event.target.valueAsNumber)} required /></label>
       </div>
-      <small>Shifu: up to 3 total. Apprentice: up to 2.</small>
-      <button className="primary-button" disabled={busy}>Gather materials</button>
+      <small role="status" className={error === null ? "" : "control-error"}>
+        {error ?? `${maximum - clay - wood} of ${maximum} resource capacity remaining.`}
+      </small>
+      <button className="primary-button" disabled={busy || error !== null || selectedWorker === undefined}>Gather materials</button>
     </form>
   );
 }
 
-function FormCeramicsForm({ player, workers, busy, send }: {
+function FormCeramicsForm({ game, player, workers, locationFull, busy, send }: {
+  game: PublicGameState;
   player: PublicPlayerState;
   workers: AvailableWorker[];
+  locationFull: boolean;
   busy: boolean;
   send: SendCommand;
 }) {
   const techniques = ownedAvailableTechniques(player, ["T01", "T02", "T03", "T04"]);
+  const [workerId, setWorkerId] = useState(workers[0]?.id ?? "");
+  const [shape1, setShape1] = useState<Shape>(SHAPES[0]!);
+  const [shape2, setShape2] = useState<Shape | "">("");
+  const [selectedTechniques, setSelectedTechniques] = useState<TechniqueId[]>([]);
+  const [substitution, setSubstitution] = useState<"" | "base" | "ding">("");
+  const [ding, setDing] = useState<Shape | "">("");
+  const selectedWorker = workers.find((worker) => worker.id === workerId) ?? workers[0];
+  const activeTechniqueIds = selectedTechniques.filter((techniqueId) => techniques.includes(techniqueId));
+  const canUseDing = player.kilnId === "DI" && !player.kilnAbilityUsedThisRound;
+  const activeDing = canUseDing ? ding : "";
+  const shapes = [shape1, shape2].filter((shape): shape is Shape => shape !== "");
+  const allShapes = activeDing === "" ? shapes : [...shapes, activeDing];
+  const usesSubstitution = activeTechniqueIds.includes("T03");
+  const activeSubstitution = usesSubstitution ? substitution : "";
+  const clayCost = allShapes.reduce((total, shape) => total + SHAPE_COSTS[shape], 0) - (usesSubstitution ? 1 : 0);
+  const coinCost = usesSubstitution ? 1 : 0;
+
+  function validationError(): string | null {
+    if (locationFull) return "Forming Studio is full.";
+    if (selectedWorker === undefined) return "Choose an available worker.";
+    if (shapes.length > (selectedWorker.kind === "shifu" ? 2 : 1)) {
+      return "An Apprentice may form only one vessel.";
+    }
+    if (activeDing !== "" && !shapes.includes(activeDing)) return "Ding's extra vessel must match a selected base Shape.";
+    if (usesSubstitution && activeSubstitution === "") return "Clay Substitution needs one payment target.";
+    if (activeSubstitution === "ding" && activeDing === "") return "Choose a Ding vessel before substituting its Clay.";
+    if (activeTechniqueIds.includes("T01") && !allShapes.some((shape) => shape === "vase" || shape === "censer")) {
+      return "Large Throwing Wheel requires a Vase or Censer.";
+    }
+    if (activeTechniqueIds.includes("T02") && new Set(allShapes).size < 2) {
+      return "Measuring Calipers requires two different Shapes.";
+    }
+    if (activeTechniqueIds.includes("T04") && !allShapes.some((shape) =>
+      player.orderHand.some((orderId) => ORDER_DEFINITIONS[orderId]?.ceramics.some(
+        (requirement) => requirement.shape === undefined || requirement.shape === shape,
+      )),
+    )) return "Drying Frames requires a Shape matching an Order in hand.";
+    if (player.resources.clay < clayCost || player.resources.coins < coinCost) {
+      return `Requires ${clayCost} Clay${coinCost > 0 ? ` and ${coinCost} Coin` : ""}.`;
+    }
+    const required = new Map<Shape, number>();
+    for (const shape of allShapes) required.set(shape, (required.get(shape) ?? 0) + 1);
+    for (const [shape, count] of required) {
+      if (game.vesselSupplyCounts[shape] < count) return `Not enough ${labels[shape]} vessels remain.`;
+    }
+    return null;
+  }
+
+  const error = validationError();
   function submit(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const shapes = [required(data, "shape1"), optional(data, "shape2")].filter(Boolean) as Shape[];
-    const selectedTechniques = data.getAll("technique") as TechniqueId[];
-    const substitution = optional(data, "substitution");
-    const ding = optional(data, "ding");
+    if (error !== null || selectedWorker === undefined) return;
     const command: Extract<GameAction, { type: "FORM_CERAMICS" }> = {
       type: "FORM_CERAMICS",
-      workerId: required(data, "worker") as WorkerId,
+      workerId: selectedWorker.id,
       shapes,
-      useTechniqueIds: selectedTechniques,
+      useTechniqueIds: activeTechniqueIds,
     };
-    if (substitution === "base" || substitution === "ding") command.claySubstitutionTarget = substitution;
-    if (ding !== "") command.dingExtraShape = ding as Shape;
+    if (activeSubstitution === "base" || activeSubstitution === "ding") command.claySubstitutionTarget = activeSubstitution;
+    if (activeDing !== "") command.dingExtraShape = activeDing;
     void send(command);
   }
   return (
     <form className="control-form" onSubmit={submit}>
-      <WorkerSelect workers={workers} />
-      <SelectField name="shape1" label="First shape" options={SHAPES} />
-      <SelectField name="shape2" label="Second shape (Shifu only)" options={SHAPES} blank="None" />
-      <TechniqueChecks techniqueIds={techniques} />
-      {techniques.includes("T03") && <SelectField name="substitution" label="Clay Substitution target" options={["base", "ding"]} blank="Do not use" />}
-      {player.kilnId === "DI" && !player.kilnAbilityUsedThisRound && <SelectField name="ding" label="Ding extra matching shape" options={["bowl", "plate", "washer"]} blank="Do not use" />}
-      <button className="primary-button" disabled={busy}>Form ceramics</button>
+      <WorkerChoice workers={workers} value={selectedWorker?.id ?? ""} onChange={setWorkerId} />
+      <label>First shape<select name="shape1" value={shape1} onChange={(event) => setShape1(event.target.value as Shape)}>{SHAPES.map((shape) => <option key={shape} value={shape}>{labels[shape]}</option>)}</select></label>
+      <label>Second shape (Shifu only)<select name="shape2" value={shape2} onChange={(event) => setShape2(event.target.value as Shape | "")}><option value="">None</option>{SHAPES.map((shape) => <option key={shape} value={shape}>{labels[shape]}</option>)}</select></label>
+      <TechniqueChecks techniqueIds={techniques} selected={activeTechniqueIds} onChange={setSelectedTechniques} />
+      {techniques.includes("T03") && <label>Clay Substitution target<select name="substitution" value={activeSubstitution} disabled={!usesSubstitution} onChange={(event) => setSubstitution(event.target.value as "" | "base" | "ding")}><option value="">Do not use</option><option value="base">base</option><option value="ding">ding</option></select></label>}
+      {canUseDing && <label>Ding extra matching shape<select name="ding" value={activeDing} onChange={(event) => setDing(event.target.value as Shape | "")}><option value="">Do not use</option>{(["bowl", "plate", "washer"] as Shape[]).map((shape) => <option key={shape} value={shape}>{labels[shape]}</option>)}</select></label>}
+      <small role="status" className={error === null ? "" : "control-error"}>{error ?? `Cost: ${clayCost} Clay${coinCost > 0 ? ` and ${coinCost} Coin` : ""}.`}</small>
+      <button className="primary-button" disabled={busy || error !== null}>Form ceramics</button>
     </form>
   );
 }
 
-function GlazeForm({ game, player, workers, busy, send }: {
+function GlazeForm({ game, player, workers, locationFull, busy, send }: {
   game: PublicGameState;
   player: PublicPlayerState;
   workers: AvailableWorker[];
+  locationFull: boolean;
   busy: boolean;
   send: SendCommand;
 }) {
   const ceramics = ownCeramics(game, player.id, "shaped");
   const techniques = ownedAvailableTechniques(player, ["T05", "T06", "T07"]);
+  const [workerId, setWorkerId] = useState(workers[0]?.id ?? "");
+  const [ceramic1, setCeramic1] = useState(ceramics[0]?.id ?? "");
+  const [glaze1, setGlaze1] = useState<Glaze>(GLAZES[0]!);
+  const [decoration1, setDecoration1] = useState<Decoration>(DECORATIONS[0]!);
+  const [ceramic2, setCeramic2] = useState("");
+  const [glaze2, setGlaze2] = useState<Glaze>(GLAZES[0]!);
+  const [decoration2, setDecoration2] = useState<Decoration>(DECORATIONS[0]!);
+  const [mode, setMode] = useState<"normal" | "free_single">("normal");
+  const [selectedTechniques, setSelectedTechniques] = useState<TechniqueId[]>([]);
+  const selectedWorker = workers.find((worker) => worker.id === workerId) ?? workers[0];
+  const firstId = ceramics.some((ceramic) => ceramic.id === ceramic1) ? ceramic1 : ceramics[0]?.id ?? "";
+  const secondId = ceramics.some((ceramic) => ceramic.id === ceramic2) ? ceramic2 : "";
+  const activeTechniqueIds = selectedTechniques.filter((techniqueId) => techniques.includes(techniqueId));
+  const selections = [
+    ...(firstId === "" ? [] : [{ ceramicId: firstId, glaze: glaze1, decoration: decoration1 }]),
+    ...(secondId === "" ? [] : [{ ceramicId: secondId, glaze: glaze2, decoration: decoration2 }]),
+  ];
+  const paidMode = mode === "normal";
+  const totalCoins = paidMode
+    ? selections.reduce((total, selection) => total + DECORATION_COSTS[selection.decoration], 0)
+      - (activeTechniqueIds.includes("T05") ? 1 : 0)
+      - (activeTechniqueIds.includes("T06") ? 1 : 0)
+    : 0;
+
+  function validationError(): string | null {
+    if (locationFull) return "Glaze Workshop is full.";
+    if (selectedWorker === undefined) return "Choose an available worker.";
+    if (selections.length === 0) return "You have no Shaped ceramic to glaze.";
+    if (selectedWorker.kind === "apprentice" && mode !== "normal") return "Only the Shifu may ignore a Decoration cost.";
+    const maximum = selectedWorker.kind === "shifu" && mode === "normal" ? 2 : 1;
+    if (selections.length > maximum) return `${selectedWorker.kind === "shifu" ? "This Shifu mode" : "An Apprentice"} may glaze at most ${maximum} ceramic${maximum === 1 ? "" : "s"}.`;
+    if (secondId !== "" && secondId === firstId) return "Choose each ceramic only once.";
+    if (activeTechniqueIds.includes("T05") && (!paidMode || !selections.some((selection) => selection.decoration === "carved"))) {
+      return "Carving Knives requires a paid Carved Decoration.";
+    }
+    if (activeTechniqueIds.includes("T06") && (!paidMode || !selections.some((selection) => selection.decoration === "impressed"))) {
+      return "Seal Stamps requires a paid Impressed Decoration.";
+    }
+    if (activeTechniqueIds.includes("T07") && new Set(selections.map((selection) => selection.glaze)).size < 2) {
+      return "Glaze Notebook requires two different Glazes.";
+    }
+    if (player.resources.coins < totalCoins) return `Requires ${totalCoins} Coins for the selected Decorations.`;
+    return null;
+  }
+
+  const error = validationError();
   function submit(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const ids = [required(data, "ceramic1"), optional(data, "ceramic2")].filter(Boolean);
-    const selections = ids.map((ceramicId, index) => ({
-      ceramicId,
-      glaze: required(data, `glaze${index + 1}`) as Glaze,
-      decoration: required(data, `decoration${index + 1}`) as Decoration,
-    }));
+    if (error !== null || selectedWorker === undefined) return;
     void send({
       type: "GLAZE_CERAMICS",
-      workerId: required(data, "worker") as WorkerId,
+      workerId: selectedWorker.id,
       selections,
-      shifuMode: required(data, "mode") as "normal" | "free_single",
-      useTechniqueIds: data.getAll("technique") as TechniqueId[],
+      shifuMode: mode,
+      useTechniqueIds: activeTechniqueIds,
     });
   }
   return (
     <form className="control-form" onSubmit={submit}>
-      <WorkerSelect workers={workers} />
-      <CeramicSelect name="ceramic1" label="First ceramic" ceramics={ceramics} />
-      <SelectField name="glaze1" label="First glaze" options={GLAZES} />
-      <SelectField name="decoration1" label="First decoration" options={DECORATIONS} />
-      <CeramicSelect name="ceramic2" label="Second ceramic (Shifu only)" ceramics={ceramics} blank="None" />
-      <SelectField name="glaze2" label="Second glaze" options={GLAZES} />
-      <SelectField name="decoration2" label="Second decoration" options={DECORATIONS} />
-      <SelectField name="mode" label="Shifu mode" options={["normal", "free_single"]} />
-      <TechniqueChecks techniqueIds={techniques} />
-      <button className="primary-button" disabled={busy || ceramics.length === 0}>Apply glaze</button>
+      <WorkerChoice workers={workers} value={selectedWorker?.id ?? ""} onChange={setWorkerId} />
+      <CeramicChoice name="ceramic1" label="First ceramic" ceramics={ceramics} value={firstId} onChange={setCeramic1} />
+      <EnumChoice name="glaze1" label="First glaze" options={GLAZES} value={glaze1} onChange={(value) => setGlaze1(value as Glaze)} />
+      <EnumChoice name="decoration1" label="First decoration" options={DECORATIONS} value={decoration1} onChange={(value) => setDecoration1(value as Decoration)} />
+      <CeramicChoice name="ceramic2" label="Second ceramic (Shifu normal mode only)" ceramics={ceramics} value={secondId} onChange={setCeramic2} blank="None" />
+      <EnumChoice name="glaze2" label="Second glaze" options={GLAZES} value={glaze2} onChange={(value) => setGlaze2(value as Glaze)} />
+      <EnumChoice name="decoration2" label="Second decoration" options={DECORATIONS} value={decoration2} onChange={(value) => setDecoration2(value as Decoration)} />
+      <EnumChoice name="mode" label="Shifu mode" options={["normal", "free_single"]} value={mode} onChange={(value) => setMode(value as "normal" | "free_single")} />
+      <TechniqueChecks techniqueIds={techniques} selected={activeTechniqueIds} onChange={setSelectedTechniques} />
+      <small role="status" className={error === null ? "" : "control-error"}>{error ?? `Decoration cost: ${totalCoins} Coins.`}</small>
+      <button className="primary-button" disabled={busy || error !== null}>Apply glaze</button>
     </form>
   );
 }
 
-function KilnYardForm({ game, player, workers, busy, send }: {
+function KilnYardForm({ game, player, workers, locationFull, busy, send }: {
   game: PublicGameState;
   player: PublicPlayerState;
   workers: AvailableWorker[];
+  locationFull: boolean;
   busy: boolean;
   send: SendCommand;
 }) {
   const ceramics = ownCeramics(game, player.id, "glazed");
   const occupied = new Set(Object.values(game.ceramics).filter((ceramic) => ceramic.stage === "loaded").map((ceramic) => ceramic.stage === "loaded" ? ceramic.kilnSpaceId : ""));
   const spaces = KILN_SPACE_IDS.filter((space) => !occupied.has(space));
+  const [workerId, setWorkerId] = useState(workers[0]?.id ?? "");
+  const [gainWood, setGainWood] = useState(true);
+  const [ceramic1, setCeramic1] = useState("");
+  const [space1, setSpace1] = useState<KilnSpaceId>(spaces[0] ?? KILN_SPACE_IDS[0]!);
+  const [ceramic2, setCeramic2] = useState("");
+  const [space2, setSpace2] = useState<KilnSpaceId>(spaces[1] ?? spaces[0] ?? KILN_SPACE_IDS[0]!);
+  const selectedWorker = workers.find((worker) => worker.id === workerId) ?? workers[0];
+  const firstId = ceramics.some((ceramic) => ceramic.id === ceramic1) ? ceramic1 : "";
+  const secondId = ceramics.some((ceramic) => ceramic.id === ceramic2) ? ceramic2 : "";
+  const firstSpace = spaces.includes(space1) ? space1 : spaces[0];
+  const secondSpace = spaces.includes(space2) ? space2 : spaces[1] ?? spaces[0];
+  const loads = [
+    ...(firstId === "" || firstSpace === undefined ? [] : [{ ceramicId: firstId, kilnSpaceId: firstSpace }]),
+    ...(secondId === "" || secondSpace === undefined ? [] : [{ ceramicId: secondId, kilnSpaceId: secondSpace }]),
+  ];
+
+  function validationError(): string | null {
+    if (locationFull) return "Kiln Yard is full.";
+    if (selectedWorker === undefined) return "Choose an available worker.";
+    if (loads.length > (selectedWorker.kind === "shifu" ? 2 : 1)) return "An Apprentice may load at most one ceramic.";
+    if (firstId !== "" && secondId === firstId) return "Choose each ceramic only once.";
+    if (firstSpace !== undefined && secondId !== "" && secondSpace === firstSpace) return "Choose each kiln space only once.";
+    return null;
+  }
+
+  const error = validationError();
   function submit(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const first = optional(data, "ceramic1");
-    const second = optional(data, "ceramic2");
-    const loads = [];
-    if (first !== "") loads.push({ ceramicId: first, kilnSpaceId: required(data, "space1") as KilnSpaceId });
-    if (second !== "") loads.push({ ceramicId: second, kilnSpaceId: required(data, "space2") as KilnSpaceId });
+    if (error !== null || selectedWorker === undefined) return;
     void send({
       type: "USE_KILN_YARD",
-      workerId: required(data, "worker") as WorkerId,
-      gainWood: data.has("gainWood"),
+      workerId: selectedWorker.id,
+      gainWood,
       loads,
     });
   }
   return (
     <form className="control-form" onSubmit={submit}>
-      <WorkerSelect workers={workers} />
-      <label className="check-row"><input type="checkbox" name="gainWood" defaultChecked /> Gain 1 Wood</label>
+      <WorkerChoice workers={workers} value={selectedWorker?.id ?? ""} onChange={setWorkerId} />
+      <label className="check-row"><input type="checkbox" name="gainWood" checked={gainWood} onChange={(event) => setGainWood(event.target.checked)} /> Gain 1 Wood</label>
       {spaces.length === 0 ? (
-        <>
-          <input type="hidden" name="ceramic1" value="" />
-          <input type="hidden" name="ceramic2" value="" />
-          <p className="control-hint">The kiln is full; this worker may still gain Wood.</p>
-        </>
+        <p className="control-hint">The kiln is full; this worker may still gain Wood.</p>
       ) : (
         <>
-          <CeramicSelect name="ceramic1" label="First ceramic" ceramics={ceramics} blank="Load none" />
-          <SelectField name="space1" label="First kiln space" options={spaces} />
-          <CeramicSelect name="ceramic2" label="Second ceramic (Shifu only)" ceramics={ceramics} blank="None" />
-          <SelectField name="space2" label="Second kiln space" options={spaces} />
+          <CeramicChoice name="ceramic1" label="First ceramic" ceramics={ceramics} value={firstId} onChange={setCeramic1} blank="Load none" />
+          <EnumChoice name="space1" label="First kiln space" options={spaces} value={firstSpace ?? ""} onChange={(value) => setSpace1(value as KilnSpaceId)} />
+          <CeramicChoice name="ceramic2" label="Second ceramic (Shifu only)" ceramics={ceramics} value={secondId} onChange={setCeramic2} blank="None" />
+          <EnumChoice name="space2" label="Second kiln space" options={spaces} value={secondSpace ?? ""} onChange={(value) => setSpace2(value as KilnSpaceId)} />
         </>
       )}
-      <button className="primary-button" disabled={busy}>Load kiln</button>
+      <small role="status" className={error === null ? "" : "control-error"}>{error ?? `${loads.length} ceramic${loads.length === 1 ? "" : "s"} selected; gaining Wood is optional.`}</small>
+      <button className="primary-button" disabled={busy || error !== null}>Load kiln</button>
     </form>
   );
 }
 
-function OfficeActionForms({ game, player, workers, busy, send }: {
+type OfficeActionChoice = OfficeOrderMode | "coins" | "sell";
+
+function OfficeActionForms({ game, player, workers, locationFull, busy, send }: {
   game: PublicGameState;
   player: PublicPlayerState;
   workers: AvailableWorker[];
+  locationFull: boolean;
   busy: boolean;
   send: SendCommand;
 }) {
   const flawed = ownCeramics(game, player.id, "finished").filter((ceramic) => ceramic.stage === "finished" && ceramic.quality === "flawed");
+  const [workerId, setWorkerId] = useState(workers[0]?.id ?? "");
+  const [officeAction, setOfficeAction] = useState<OfficeActionChoice>("coins");
+  const [selectedCeramics, setSelectedCeramics] = useState<string[]>([]);
+  const selectedWorker = workers.find((worker) => worker.id === workerId) ?? workers[0];
+  const orderModes: OfficeActionChoice[] = selectedWorker?.kind === "shifu"
+    ? ["coins", "take_up_to_two", "take_one_and_gain_two_coins", "sell"]
+    : ["coins", "take_one", "sell"];
+  const action = orderModes.includes(officeAction) ? officeAction : orderModes[0]!;
+  const validSelectedCeramics = selectedCeramics.filter((ceramicId) => flawed.some((ceramic) => ceramic.id === ceramicId));
+  const handLimit = player.kilnId === "GU" ? GAME_CONFIG.orderDisplay.guanHandLimit : GAME_CONFIG.orderDisplay.baseHandLimit;
+  const displayCount = game.displays.market.length + game.displays.imperial.length;
+
+  function validationError(): string | null {
+    if (locationFull) return "Market & Imperial Office is full.";
+    if (selectedWorker === undefined) return "Choose an available worker.";
+    if (action === "sell" && selectedWorker.kind === "apprentice" && validSelectedCeramics.length > 2) {
+      return "An Apprentice may sell at most two Flawed ceramics.";
+    }
+    if ((action === "take_one" || action === "take_one_and_gain_two_coins") && player.orderHand.length >= handLimit) {
+      return `Your Order hand is full (${handLimit}).`;
+    }
+    if ((action === "take_one" || action === "take_one_and_gain_two_coins") && displayCount === 0) {
+      return "No face-up Order is available.";
+    }
+    return null;
+  }
+
+  const error = validationError();
   function submit(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const workerId = required(data, "worker") as WorkerId;
-    const action = required(data, "officeAction");
-    if (action === "coins") void send({ type: "OFFICE_GAIN_COINS", workerId });
-    else if (action === "sell") void send({ type: "OFFICE_SELL_FLAWED", workerId, ceramicIds: data.getAll("ceramic") as string[] });
-    else void send({ type: "BEGIN_OFFICE_ORDERS", workerId, mode: action as OfficeOrderMode });
+    if (error !== null || selectedWorker === undefined) return;
+    if (action === "coins") void send({ type: "OFFICE_GAIN_COINS", workerId: selectedWorker.id });
+    else if (action === "sell") void send({ type: "OFFICE_SELL_FLAWED", workerId: selectedWorker.id, ceramicIds: validSelectedCeramics });
+    else void send({ type: "BEGIN_OFFICE_ORDERS", workerId: selectedWorker.id, mode: action });
   }
   return (
     <form className="control-form" onSubmit={submit}>
-      <WorkerSelect workers={workers} />
-      <SelectField
-        name="officeAction"
-        label="Office action"
-        options={["coins", "take_one", "take_up_to_two", "take_one_and_gain_two_coins", "sell"]}
-      />
-      {flawed.length > 0 && <CheckboxList name="ceramic" legend="Flawed ceramics to sell" options={flawed.map(ceramicOption)} />}
-      <button className="primary-button" disabled={busy}>Visit the Office</button>
+      <WorkerChoice workers={workers} value={selectedWorker?.id ?? ""} onChange={setWorkerId} />
+      <EnumChoice name="officeAction" label="Office action" options={orderModes} value={action} onChange={(value) => setOfficeAction(value as OfficeActionChoice)} />
+      {action === "sell" && flawed.length > 0 && <fieldset><legend>Flawed ceramics to sell</legend>{flawed.map((ceramic) => {
+        const checked = validSelectedCeramics.includes(ceramic.id);
+        const atApprenticeLimit = selectedWorker?.kind === "apprentice" && validSelectedCeramics.length >= 2;
+        return <label className="check-row" key={ceramic.id}><input type="checkbox" name="ceramic" value={ceramic.id} checked={checked} disabled={!checked && atApprenticeLimit} onChange={(event) => setSelectedCeramics((current) => event.target.checked ? [...current, ceramic.id] : current.filter((id) => id !== ceramic.id))} />{ceramicLabel(ceramic)}</label>;
+      })}</fieldset>}
+      {action === "sell" && flawed.length === 0 && <p className="control-hint">You have no Flawed ceramics; selling none is still a legal action.</p>}
+      <small role="status" className={error === null ? "" : "control-error"}>{error ?? officeActionHint(action, selectedWorker?.kind)}</small>
+      <button className="primary-button" disabled={busy || error !== null}>Visit the Office</button>
     </form>
   );
 }
 
-function OfficeControls({ game, busy, send }: Pick<ActionPanelProps, "game" | "busy" | "send">) {
+function GuildBeginForm({ game, player, workers, locationFull, busy, send }: {
+  game: PublicGameState;
+  player: PublicPlayerState;
+  workers: AvailableWorker[];
+  locationFull: boolean;
+  busy: boolean;
+  send: SendCommand;
+}) {
+  const [workerId, setWorkerId] = useState(workers[0]?.id ?? "");
+  const selectedWorker = workers.find((worker) => worker.id === workerId) ?? workers[0];
+  const displayed = Object.values(game.displays.techniques).flat();
+  const affordable = selectedWorker === undefined ? [] : displayed.filter((techniqueId) =>
+    guildTechniqueCost(techniqueId, selectedWorker.kind) <= player.resources.coins,
+  );
+  const error = locationFull
+    ? "Guild & Academy is full."
+    : player.techniques.length >= GAME_CONFIG.techniques.maxOwned
+      ? `You already own the maximum of ${GAME_CONFIG.techniques.maxOwned} Techniques.`
+      : displayed.length === 0
+        ? "No face-up Technique is available."
+        : affordable.length === 0
+          ? "No face-up Technique is affordable with this worker."
+          : selectedWorker === undefined
+            ? "Choose an available worker."
+            : null;
+  return (
+    <form className="control-form" onSubmit={(event) => {
+      event.preventDefault();
+      if (error === null && selectedWorker !== undefined) void send({ type: "BEGIN_GUILD_ACTION", workerId: selectedWorker.id });
+    }}>
+      <WorkerChoice workers={workers} value={selectedWorker?.id ?? ""} onChange={setWorkerId} />
+      <small role="status" className={error === null ? "" : "control-error"}>{error ?? `${affordable.length} affordable face-up Technique${affordable.length === 1 ? "" : "s"}.`}</small>
+      <button className="primary-button" disabled={busy || error !== null}>Begin Guild action</button>
+    </form>
+  );
+}
+
+function OfficeControls({ game, player, busy, send }: Pick<ActionPanelProps, "game" | "busy" | "send"> & {
+  player: PublicPlayerState;
+}) {
   if (game.phase.type !== "work_office_orders") return null;
   const phase = game.phase;
   const display = phase.lastTakenDeck === "imperial" ? game.displays.imperial : phase.lastTakenDeck === "market" ? game.displays.market : [...game.displays.market, ...game.displays.imperial];
+  const handLimit = player.kilnId === "GU" ? GAME_CONFIG.orderDisplay.guanHandLimit : GAME_CONFIG.orderDisplay.baseHandLimit;
+  const handFull = player.orderHand.length >= handLimit;
   if (phase.step === "colour_samples") {
     return (
       <ControlSection title="Colour Samples" hint="Optionally discard one other Order from that display.">
@@ -427,8 +643,8 @@ function OfficeControls({ game, busy, send }: Pick<ActionPanelProps, "game" | "b
     );
   }
   return (
-    <ControlSection title="Take an Order" hint={`${phase.remainingTakes} selection${phase.remainingTakes === 1 ? "" : "s"} remaining.`}>
-      <div className="choice-stack">{display.map((orderId) => <CommandButton key={orderId} busy={busy} send={send} command={{ type: "OFFICE_TAKE_ORDER", orderId }}>{`Take ${orderId}`}</CommandButton>)}</div>
+    <ControlSection title="Take an Order" hint={handFull ? `Your Order hand is full (${handLimit}); end this Office action.` : `${phase.remainingTakes} selection${phase.remainingTakes === 1 ? "" : "s"} remaining.`}>
+      <div className="choice-stack">{display.map((orderId) => <CommandButton key={orderId} busy={busy} disabled={handFull} send={send} command={{ type: "OFFICE_TAKE_ORDER", orderId }}>{`Take ${orderId}`}</CommandButton>)}</div>
       {phase.mode === "take_up_to_two" && <CommandButton busy={busy} send={send} command={{ type: "OFFICE_END_ORDERS" }} secondary>End Office action</CommandButton>}
     </ControlSection>
   );
@@ -455,7 +671,8 @@ function GuildControls({ game, player, busy, send }: {
     <ControlSection title="Acquire a Technique" hint={worker?.kind === "shifu" ? "Your Shifu pays 1 Coin less, to a minimum of 1." : "Pay the printed Coin cost."}>
       <div className="choice-stack">{ids.map((techniqueId) => {
         const technique = TECHNIQUE_DEFINITIONS[techniqueId];
-        return <CommandButton key={techniqueId} busy={busy} send={send} command={{ type: "GUILD_BUY_TECHNIQUE", techniqueId }}>{`${techniqueId} · ${technique.name} · ${technique.cost} Coins`}</CommandButton>;
+        const cost = guildTechniqueCost(techniqueId, worker?.kind);
+        return <CommandButton key={techniqueId} busy={busy} disabled={player.resources.coins < cost} send={send} command={{ type: "GUILD_BUY_TECHNIQUE", techniqueId }}>{`${techniqueId} · ${technique?.name ?? "Unknown Technique"} · ${cost} Coins`}</CommandButton>;
       })}</div>
     </ControlSection>
   );
@@ -665,21 +882,12 @@ function SelectionSubmission({ title, hint, options, maximum, busy, submitLabel,
   return <ControlSection title={title} hint={hint}><fieldset><legend>Select up to {maximum}</legend>{options.map((option) => <label className="check-row" key={option.value}><input type="checkbox" checked={selected.includes(option.value)} disabled={!selected.includes(option.value) && selected.length >= maximum} onChange={(event) => setSelected((current) => event.target.checked ? [...current, option.value] : current.filter((value) => value !== option.value))} />{option.label}</label>)}</fieldset><button className="primary-button" type="button" disabled={busy} onClick={() => void onSubmit(selected)}>{submitLabel}</button></ControlSection>;
 }
 
-function SimpleWorkerForm({ workers, busy, label, onSubmit }: {
+function WorkerChoice({ workers, value, onChange }: {
   workers: AvailableWorker[];
-  busy: boolean;
-  label: string;
-  onSubmit: (workerId: WorkerId) => Promise<boolean>;
+  value: string;
+  onChange: (workerId: string) => void;
 }) {
-  function submit(event: FormEvent<HTMLFormElement>): void {
-    event.preventDefault();
-    void onSubmit(required(new FormData(event.currentTarget), "worker") as WorkerId);
-  }
-  return <form className="control-form" onSubmit={submit}><WorkerSelect workers={workers} /><button className="primary-button" disabled={busy}>{label}</button></form>;
-}
-
-function WorkerSelect({ workers }: { workers: AvailableWorker[] }) {
-  return <label>Worker<select name="worker" required>{workers.map((worker) => <option key={worker.id} value={worker.id}>{worker.kind === "shifu" ? "Shifu" : "Apprentice"} · {worker.id}</option>)}</select></label>;
+  return <label>Worker<select name="worker" value={value} onChange={(event) => onChange(event.target.value)} required>{workers.map((worker) => <option key={worker.id} value={worker.id}>{worker.kind === "shifu" ? "Shifu" : "Apprentice"} · {worker.id}</option>)}</select></label>;
 }
 
 function CeramicSelect({ name, label, ceramics, blank }: {
@@ -691,6 +899,17 @@ function CeramicSelect({ name, label, ceramics, blank }: {
   return <label>{label}<select name={name} required={blank === undefined}>{blank !== undefined && <option value="">{blank}</option>}{ceramics.map((ceramic) => <option key={ceramic.id} value={ceramic.id}>{ceramicLabel(ceramic)}</option>)}</select></label>;
 }
 
+function CeramicChoice({ name, label, ceramics, blank, value, onChange }: {
+  name: string;
+  label: string;
+  ceramics: ReturnType<typeof ownCeramics>;
+  blank?: string;
+  value: string;
+  onChange: (ceramicId: string) => void;
+}) {
+  return <label>{label}<select name={name} value={value} required={blank === undefined} onChange={(event) => onChange(event.target.value)}>{blank !== undefined && <option value="">{blank}</option>}{ceramics.map((ceramic) => <option key={ceramic.id} value={ceramic.id}>{ceramicLabel(ceramic)}</option>)}</select></label>;
+}
+
 function SelectField({ name, label, options, blank }: {
   name: string;
   label: string;
@@ -700,28 +919,35 @@ function SelectField({ name, label, options, blank }: {
   return <label>{label}<select name={name} required={blank === undefined}>{blank !== undefined && <option value="">{blank}</option>}{options.map((option) => <option key={option} value={option}>{labels[String(option)] ?? String(option).replaceAll("_", " ")}</option>)}</select></label>;
 }
 
-function NumberField({ name, label, max, defaultValue }: { name: string; label: string; max: number; defaultValue: number }) {
-  return <label>{label}<input type="number" name={name} min={0} max={max} step={1} defaultValue={defaultValue} required /></label>;
+function EnumChoice({ name, label, options, value, onChange }: {
+  name: string;
+  label: string;
+  options: readonly string[];
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return <label>{label}<select name={name} value={value} onChange={(event) => onChange(event.target.value)} required>{options.map((option) => <option key={option} value={option}>{labels[option] ?? option.replaceAll("_", " ")}</option>)}</select></label>;
 }
 
-function TechniqueChecks({ techniqueIds }: { techniqueIds: TechniqueId[] }) {
+function TechniqueChecks({ techniqueIds, selected, onChange }: {
+  techniqueIds: TechniqueId[];
+  selected: TechniqueId[];
+  onChange: (techniqueIds: TechniqueId[]) => void;
+}) {
   if (techniqueIds.length === 0) return null;
-  return <fieldset><legend>Use Techniques</legend>{techniqueIds.map((techniqueId) => <label className="check-row" key={techniqueId}><input type="checkbox" name="technique" value={techniqueId} />{techniqueId} · {TECHNIQUE_DEFINITIONS[techniqueId].name}</label>)}</fieldset>;
+  return <fieldset><legend>Use Techniques</legend>{techniqueIds.map((techniqueId) => <label className="check-row" key={techniqueId}><input type="checkbox" name="technique" value={techniqueId} checked={selected.includes(techniqueId)} onChange={(event) => onChange(event.target.checked ? [...selected, techniqueId] : selected.filter((id) => id !== techniqueId))} />{techniqueId} · {TECHNIQUE_DEFINITIONS[techniqueId]?.name ?? "Unknown Technique"}</label>)}</fieldset>;
 }
 
-function CheckboxList({ name, legend, options }: { name: string; legend: string; options: Array<{ value: string; label: string }> }) {
-  return <fieldset><legend>{legend}</legend>{options.map((option) => <label className="check-row" key={option.value}><input type="checkbox" name={name} value={option.value} />{option.label}</label>)}</fieldset>;
-}
-
-function CommandButton({ busy, send, command, secondary = false, danger = false, children }: {
+function CommandButton({ busy, disabled = false, send, command, secondary = false, danger = false, children }: {
   busy: boolean;
+  disabled?: boolean;
   send: SendCommand;
   command: AuthoritativeCommand;
   secondary?: boolean;
   danger?: boolean;
   children: ReactNode;
 }) {
-  return <button className={secondary ? "secondary-button" : danger ? "danger-button" : "primary-button"} type="button" disabled={busy} onClick={() => void send(command)}>{children}</button>;
+  return <button className={secondary ? "secondary-button" : danger ? "danger-button" : "primary-button"} type="button" disabled={busy || disabled} onClick={() => void send(command)}>{children}</button>;
 }
 
 function ControlSection({ title, hint, children }: { title: string; hint: string; children?: ReactNode }) {
@@ -740,6 +966,26 @@ function ownedAvailableTechniques(player: PublicPlayerState, allowed: TechniqueI
   return player.techniques.filter((technique) => !technique.exhausted && allowed.includes(technique.id)).map((technique) => technique.id);
 }
 
+function guildTechniqueCost(techniqueId: TechniqueId, workerKind: AvailableWorker["kind"] | undefined): number {
+  const printedCost = TECHNIQUE_DEFINITIONS[techniqueId]?.cost ?? Number.POSITIVE_INFINITY;
+  return workerKind === "shifu" ? Math.max(1, printedCost - 1) : printedCost;
+}
+
+function officeActionHint(action: OfficeActionChoice, workerKind: AvailableWorker["kind"] | undefined): string {
+  switch (action) {
+    case "coins":
+      return `Gain ${workerKind === "shifu" ? 4 : 2} Coins.`;
+    case "sell":
+      return workerKind === "shifu" ? "Sell any number of Flawed ceramics." : "Sell up to two Flawed ceramics.";
+    case "take_one":
+      return "Take one face-up Order.";
+    case "take_up_to_two":
+      return "Take up to two face-up Orders.";
+    case "take_one_and_gain_two_coins":
+      return "Take one face-up Order, then gain 2 Coins.";
+  }
+}
+
 function ceramicLabel(ceramic: ReturnType<typeof ownCeramics>[number]): string {
   const decoration = "decoration" in ceramic ? ` · ${labels[ceramic.glaze]} · ${labels[ceramic.decoration]}` : "";
   const quality = "quality" in ceramic ? ` · ${ceramic.quality}` : "";
@@ -754,9 +1000,4 @@ function required(data: FormData, name: string): string {
   const value = data.get(name);
   if (typeof value !== "string" || value === "") throw new Error(`Missing form field ${name}`);
   return value;
-}
-
-function optional(data: FormData, name: string): string {
-  const value = data.get(name);
-  return typeof value === "string" ? value : "";
 }

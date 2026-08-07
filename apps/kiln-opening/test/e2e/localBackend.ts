@@ -10,6 +10,8 @@ import type { SecurityProvider } from "../../src/multiplayer";
 class BrowserTestSecurity implements SecurityProvider {
   private sequence = 0;
 
+  constructor(private readonly seed: number) {}
+
   randomId(): string {
     return randomUUID();
   }
@@ -24,7 +26,7 @@ class BrowserTestSecurity implements SecurityProvider {
   }
 
   randomSeed(): number {
-    return 720;
+    return this.seed;
   }
 
   async hashSecret(value: string): Promise<string> {
@@ -37,12 +39,14 @@ class BrowserTestSecurity implements SecurityProvider {
 }
 
 class LocalBackend {
-  private service = this.makeService();
+  private service = this.makeService(720);
 
   async handle(body: Record<string, unknown>, authUserId: string): Promise<unknown> {
     switch (body["operation"]) {
       case "e2e_reset":
-        this.service = this.makeService();
+        this.service = this.makeService(
+          Number.isInteger(body["seed"]) ? Number(body["seed"]) : 720,
+        );
         return { ok: true, value: null };
       case "create_room":
         return this.service.createRoom({ displayName: String(body["displayName"] ?? ""), authUserId });
@@ -76,8 +80,8 @@ class LocalBackend {
     }
   }
 
-  private makeService(): AuthoritativeGameService {
-    return new AuthoritativeGameService(new InMemoryMultiplayerStore(), new BrowserTestSecurity());
+  private makeService(seed: number): AuthoritativeGameService {
+    return new AuthoritativeGameService(new InMemoryMultiplayerStore(), new BrowserTestSecurity(seed));
   }
 }
 

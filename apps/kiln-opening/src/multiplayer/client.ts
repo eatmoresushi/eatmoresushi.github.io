@@ -1,12 +1,44 @@
-import { createClient } from "@supabase/supabase-js";
+import { FunctionsHttpError, createClient } from "@supabase/supabase-js";
 import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
 import type {
   AuthoritativeCommand,
   CommandSuccess,
+  MultiplayerError,
   MultiplayerResult,
   ReconnectResult,
   RoomConnection,
 } from "./types";
+
+function isMultiplayerFailure(value: unknown): value is { ok: false; error: MultiplayerError } {
+  if (typeof value !== "object" || value === null || !("ok" in value) || value.ok !== false) {
+    return false;
+  }
+  if (!("error" in value) || typeof value.error !== "object" || value.error === null) {
+    return false;
+  }
+  const failure = value.error as Record<string, unknown>;
+  return (
+    typeof failure["code"] === "string" &&
+    typeof failure["message"] === "string" &&
+    typeof failure["details"] === "object" &&
+    failure["details"] !== null &&
+    (failure["currentRevision"] === null || typeof failure["currentRevision"] === "number")
+  );
+}
+
+export async function parseMultiplayerFunctionFailure(
+  error: unknown,
+): Promise<{ ok: false; error: MultiplayerError } | null> {
+  if (!(error instanceof FunctionsHttpError)) return null;
+  const context = error.context as { json?: () => Promise<unknown> };
+  if (typeof context.json !== "function") return null;
+  try {
+    const value = await context.json();
+    return isMultiplayerFailure(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
 
 export interface GameApi {
   createRoom(displayName: string): Promise<MultiplayerResult<RoomConnection>>;
@@ -152,6 +184,8 @@ class SupabaseGameApi implements GameApi {
       body: { operation, ...body },
     });
     if (error !== null) {
+      const ruleFailure = await parseMultiplayerFunctionFailure(error);
+      if (ruleFailure !== null) return ruleFailure;
       return {
         ok: false,
         error: {

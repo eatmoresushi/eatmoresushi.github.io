@@ -26,6 +26,7 @@ const GLAZE_LABELS = {
 
 export function GameTable({ game, ownPlayerId }: { game: PublicGameState; ownPlayerId: PlayerId }) {
   const decisionActor = currentDecisionActor(game.phase);
+  const contributionPhase = game.phase.type === "firing_contributions" ? game.phase : null;
   return (
     <section className="table-region" aria-label="Game table">
       <div className="round-ribbon">
@@ -73,6 +74,38 @@ export function GameTable({ game, ownPlayerId }: { game: PublicGameState; ownPla
         })}
       </div>
 
+      <section className="workshop-orders panel" aria-labelledby="workshop-orders-title">
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">Public information</p>
+            <h2 id="workshop-orders-title">Workshop Orders</h2>
+          </div>
+          <span>Open commissions</span>
+        </div>
+        <div className="workshop-order-grid">
+          {game.playerOrder.map((playerId) => {
+            const player = game.players[playerId]!;
+            return (
+              <article className="workshop-order-hand" data-player-id={playerId} key={playerId}>
+                <div className="workshop-order-title">
+                  <strong>{player.displayName}</strong>
+                  {playerId === ownPlayerId && <span>You</span>}
+                </div>
+                {player.orderHand.length === 0
+                  ? <p className="muted">No open Orders.</p>
+                  : (
+                    <div className="card-row">
+                      {player.orderHand.map((orderId) => (
+                        <OrderCard orderId={orderId} imperial={orderId.startsWith("I")} key={orderId} />
+                      ))}
+                    </div>
+                  )}
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
       <div className="board-grid">
         <section className="kiln-board panel" aria-labelledby="kiln-title">
           <div className="panel-heading"><div><p className="eyebrow">Shared kiln</p><h2 id="kiln-title">Eight chambers</h2></div><span>Heat zones</span></div>
@@ -92,11 +125,11 @@ export function GameTable({ game, ownPlayerId }: { game: PublicGameState; ownPla
               );
             })}
           </div>
-          {game.phase.type === "firing_contributions" && (
+          {contributionPhase !== null && (
             <div className="submission-track" aria-label="Wood contribution status">
-              {game.phase.eligiblePlayerIds.map((playerId) => (
-                <span key={playerId} className={game.phase.submittedPlayerIds.includes(playerId) ? "submitted" : ""}>
-                  {game.players[playerId]?.displayName}: {game.phase.submittedPlayerIds.includes(playerId) ? "locked" : "choosing"}
+              {contributionPhase.eligiblePlayerIds.map((playerId) => (
+                <span key={playerId} className={contributionPhase.submittedPlayerIds.includes(playerId) ? "submitted" : ""}>
+                  {game.players[playerId]?.displayName}: {contributionPhase.submittedPlayerIds.includes(playerId) ? "locked" : "choosing"}
                 </span>
               ))}
             </div>
