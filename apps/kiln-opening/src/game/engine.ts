@@ -11,17 +11,17 @@ import {
   SHAPES,
   TECHNIQUE_DEFINITIONS,
   locationCapacity,
-} from "./content";
-import { applyFailure, ruleError } from "./errors";
+} from "./content.ts";
+import { applyFailure, ruleError } from "./errors.ts";
 import {
   QUALITY_RANK,
   determineBaseHeat,
   kilnZoneModifier,
   preferredHeat,
   qualityFromDifference,
-} from "./firingRules";
-import { matchesOrder } from "./orderRules";
-import type { RandomSource } from "./rng";
+} from "./firingRules.ts";
+import { matchesOrder } from "./orderRules.ts";
+import type { RandomSource } from "./rng.ts";
 import {
   actionOccupancy,
   availableWorkerIds,
@@ -30,7 +30,7 @@ import {
   kilnOccupant,
   orderHandLimit,
   turnOrderFromFirst,
-} from "./selectors";
+} from "./selectors.ts";
 import type {
   ApplyResult,
   CeramicState,
@@ -59,7 +59,7 @@ import type {
   TechniqueDiscipline,
   TechniqueId,
   WorkerState,
-} from "./types";
+} from "./types.ts";
 
 interface WorkerActionContext {
   player: PlayerState;

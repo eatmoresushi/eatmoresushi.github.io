@@ -1,4 +1,4 @@
-import type { ApplyResult, CreateGameResult, GameRuleError, GameRuleErrorCode } from "./types";
+import type { ApplyResult, CreateGameResult, GameRuleError, GameRuleErrorCode } from "./types.ts";
 
 export function ruleError(
   code: GameRuleErrorCode,

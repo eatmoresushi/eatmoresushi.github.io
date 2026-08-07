@@ -4,6 +4,7 @@ output/
 .env
 .env.local
 .DS_Store
+supabase/.temp/
 
 # The parent GitHub Pages repository ignores *.sql globally. These files are
 # executable backend source and security tests, so keep them in the app.

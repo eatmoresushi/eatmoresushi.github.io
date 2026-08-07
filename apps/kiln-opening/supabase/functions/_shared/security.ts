@@ -1,4 +1,4 @@
-import type { SecurityProvider } from "../../../src/multiplayer/index.ts";
+import type { SecurityProvider } from "../../../src/multiplayer/types.ts";
 
 const ROOM_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 

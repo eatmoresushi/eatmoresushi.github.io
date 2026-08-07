@@ -21,7 +21,7 @@ import type {
   TechniqueDiscipline,
   TechniqueId,
   WoodContribution,
-} from "../game";
+} from "../game/index.ts";
 
 export type RoomStatus = "lobby" | "playing" | "finished";
 
@@ -213,7 +213,7 @@ export interface CommandSuccess {
 export interface AuthoritativeHead {
   roomId: string;
   revision: number;
-  state: import("../game").GameState;
+  state: import("../game/index.ts").GameState;
   rngState: number;
   rootSeed: number;
   stateHash: string;

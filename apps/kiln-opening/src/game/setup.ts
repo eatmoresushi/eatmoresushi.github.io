@@ -8,11 +8,11 @@ import {
   MARKET_ORDERS,
   SHAPES,
   TECHNIQUES,
-} from "./content";
-import { createFailure, ruleError } from "./errors";
-import type { RandomSource } from "./rng";
-import { shuffle } from "./rng";
-import { emptyActionBoard } from "./selectors";
+} from "./content.ts";
+import { createFailure, ruleError } from "./errors.ts";
+import type { RandomSource } from "./rng.ts";
+import { shuffle } from "./rng.ts";
+import { emptyActionBoard } from "./selectors.ts";
 import type {
   CreateGameInput,
   CreateGameResult,
@@ -24,7 +24,7 @@ import type {
   TechniqueDeckState,
   TechniqueDisplayState,
   WorkerState,
-} from "./types";
+} from "./types.ts";
 
 function makeWorkers(playerId: PlayerId): Record<string, WorkerState> {
   const shifuId = `${playerId}:shifu`;

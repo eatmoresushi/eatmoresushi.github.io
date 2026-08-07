@@ -1,6 +1,6 @@
-import type { OrderDefinition, OrderRelationDefinition } from "./content";
-import { QUALITY_RANK } from "./firingRules";
-import type { FinishedCeramic } from "./types";
+import type { OrderDefinition, OrderRelationDefinition } from "./content.ts";
+import { QUALITY_RANK } from "./firingRules.ts";
+import type { FinishedCeramic } from "./types.ts";
 
 function requirementMatches(
   order: OrderDefinition,

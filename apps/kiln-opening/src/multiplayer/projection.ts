@@ -1,9 +1,9 @@
-import type { GameEvent, GameState, PlayerId, Shape, TechniqueDiscipline } from "../game";
+import type { GameEvent, GameState, PlayerId, Shape, TechniqueDiscipline } from "../game/index.ts";
 import type {
   PublicGameEvent,
   PublicGameState,
   PublicPlayerState,
-} from "./types";
+} from "./types.ts";
 
 function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;

@@ -1,4 +1,4 @@
-import type { GameEvent, PlayerId, WoodContribution } from "../game";
+import type { GameEvent, PlayerId, WoodContribution } from "../game/index.ts";
 import type {
   AuthoritativeHead,
   CommandSuccess,
@@ -10,7 +10,7 @@ import type {
   PublicStateListener,
   StoredRoom,
   StoredSeat,
-} from "./types";
+} from "./types.ts";
 
 export type StoreFailureCode =
   | "room_code_conflict"

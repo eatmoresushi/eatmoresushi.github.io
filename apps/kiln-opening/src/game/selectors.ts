@@ -1,4 +1,4 @@
-import { GAME_CONFIG } from "./content";
+import { GAME_CONFIG } from "./content.ts";
 import type {
   GamePhase,
   GameState,
@@ -7,7 +7,7 @@ import type {
   PlayerId,
   PlayerState,
   WorkerId,
-} from "./types";
+} from "./types.ts";
 
 export function turnOrderFromFirst(state: Pick<GameState, "playerOrder" | "firstPlayerId">): PlayerId[] {
   const firstIndex = state.playerOrder.indexOf(state.firstPlayerId);

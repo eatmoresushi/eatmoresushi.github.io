@@ -3,21 +3,21 @@ import {
   applyAction,
   createGame,
   submitWoodContribution,
-} from "../game";
+} from "../game/index.ts";
 import type {
   GameAction,
   GameRuleError,
   PlayerId,
   PrivateFiringState,
-} from "../game";
-import { projectPublicEvents, projectPublicGameState } from "./projection";
+} from "../game/index.ts";
+import { projectPublicEvents, projectPublicGameState } from "./projection.ts";
 import type {
   AuthenticatedSeat,
   CommitTransitionInput,
   MultiplayerStore,
   StoreFailureCode,
   StoreResult,
-} from "./store";
+} from "./store.ts";
 import type {
   AuthoritativeHead,
   CommandRequest,
@@ -37,7 +37,7 @@ import type {
   StoredRoom,
   StoredSeat,
   SubmitWoodCommand,
-} from "./types";
+} from "./types.ts";
 
 const MAX_DISPLAY_NAME_LENGTH = 40;
 const ROOM_CODE_ATTEMPTS = 8;

@@ -1,5 +1,5 @@
-import { GAME_CONFIG, KILN_SPACE_DEFINITIONS } from "./content";
-import type { Glaze, KilnSpaceId, Quality } from "./types";
+import { GAME_CONFIG, KILN_SPACE_DEFINITIONS } from "./content.ts";
+import type { Glaze, KilnSpaceId, Quality } from "./types.ts";
 
 export function determineBaseHeat(contributorCount: number, totalWood: number): 1 | 2 | 3 {
   if (!Number.isInteger(contributorCount) || contributorCount < 1) {

@@ -1,11 +1,11 @@
-import actionLocationsJson from "../../data/action_locations.json";
-import componentsJson from "../../data/components.json";
-import firingJson from "../../data/firing.json";
-import gameConfigJson from "../../data/game_config.json";
-import imperialProgressJson from "../../data/imperial_progress.json";
-import kilnsJson from "../../data/kilns.json";
-import ordersJson from "../../data/orders.json";
-import techniquesJson from "../../data/techniques.json";
+import actionLocationsJson from "../../data/action_locations.json" with { type: "json" };
+import componentsJson from "../../data/components.json" with { type: "json" };
+import firingJson from "../../data/firing.json" with { type: "json" };
+import gameConfigJson from "../../data/game_config.json" with { type: "json" };
+import imperialProgressJson from "../../data/imperial_progress.json" with { type: "json" };
+import kilnsJson from "../../data/kilns.json" with { type: "json" };
+import ordersJson from "../../data/orders.json" with { type: "json" };
+import techniquesJson from "../../data/techniques.json" with { type: "json" };
 import type {
   Decoration,
   FireModifier,
@@ -19,7 +19,7 @@ import type {
   Shape,
   TechniqueDiscipline,
   TechniqueId,
-} from "./types";
+} from "./types.ts";
 
 interface GameConfigDefinition {
   rulesVersion: "0.4";
