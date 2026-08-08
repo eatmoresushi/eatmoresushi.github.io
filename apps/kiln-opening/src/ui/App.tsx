@@ -9,8 +9,7 @@ import type {
   RoomConnection,
 } from "../multiplayer";
 import { ORDER_DEFINITIONS } from "../game";
-import { ActionPanel } from "./ActionPanel";
-import { GameTable } from "./GameTable";
+import { TabletopExperience } from "./tabletop/TabletopExperience";
 
 const LAST_SEAT_KEY = "kiln-opening:last-seat";
 
@@ -315,16 +314,13 @@ export function App() {
         ) : connection.game === null ? (
           <LobbyScreen connection={connection} busy={busy} onStart={startGame} />
         ) : (
-          <div className="game-layout">
-            <GameTable game={connection.game} ownPlayerId={connection.seat.playerId} />
-            <ActionPanel
-              game={connection.game}
-              ownPlayerId={connection.seat.playerId}
-              ownPendingContribution={connection.ownPendingContribution}
-              busy={busy}
-              send={send}
-            />
-          </div>
+          <TabletopExperience
+            game={connection.game}
+            ownPlayerId={connection.seat.playerId}
+            ownPendingContribution={connection.ownPendingContribution}
+            busy={busy}
+            send={send}
+          />
         )}
       </main>
       {confirmEndSession && connection !== null && (

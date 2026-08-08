@@ -5,6 +5,8 @@ export default defineConfig({
   testMatch: "**/*.spec.ts",
   outputDir: "output/playwright/results",
   fullyParallel: false,
+  // The local multiplayer backend is process-global and each scenario resets it.
+  workers: 1,
   retries: process.env["CI"] === undefined ? 0 : 1,
   reporter: process.env["CI"] === undefined
     ? "line"
