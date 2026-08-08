@@ -23,6 +23,8 @@ import type {
   CommandRequest,
   CommandSuccess,
   CreateRoomRequest,
+  EndSessionRequest,
+  EndSessionSuccess,
   JoinRoomRequest,
   MultiplayerError,
   MultiplayerErrorCode,
@@ -65,6 +67,8 @@ function publicRoom(room: StoredRoom): PublicRoom {
     hostSeatId: room.hostSeatId,
     rulesVersion: room.rulesVersion,
     latestRevision: room.latestRevision,
+    endedAt: room.endedAt ?? null,
+    endedByPlayerId: room.endedByPlayerId ?? null,
   };
 }
 
@@ -111,6 +115,10 @@ function mapStoreFailure(code: StoreFailureCode, revision: number | null = null)
       return error("NOT_ENOUGH_PLAYERS", "At least two players are required to start.");
     case "seat_already_joined":
       return error("INVALID_REQUEST", "This authenticated account already has a seat in the room.");
+    case "host_only":
+      return error("HOST_ONLY", "Only the host may end this session.", revision);
+    case "session_not_active":
+      return error("SESSION_ENDED", "This game session has already ended.", revision);
     case "duplicate":
       return error("DUPLICATE_COMMAND", "This command ID was already used.", revision);
     case "stale":
@@ -146,9 +154,11 @@ export class AuthoritativeGameService {
         code,
         status: "lobby",
         hostSeatId: seatId,
-        rulesVersion: "0.4",
-        contentVersion: "0.4",
+        rulesVersion: "0.5",
+        contentVersion: "0.5",
         latestRevision: 0,
+        endedAt: null,
+        endedByPlayerId: null,
       };
       const hostSeat: StoredSeat = {
         seatId,
@@ -247,6 +257,9 @@ export class AuthoritativeGameService {
     const authenticated = await this.authenticate(request.roomCode, request.seatToken);
     if (!authenticated.ok) return authenticated;
     const { room, seat } = authenticated.value;
+    if (room.status === "abandoned" || room.status === "finished") {
+      return failed(error("SESSION_ENDED", "This game session has already ended.", room.latestRevision));
+    }
     const prior = await this.store.getProcessed(room.id, request.commandId);
     if (prior !== null) return this.processedResult(prior.actorId, seat.playerId, prior.response);
     if (!seat.isHost || room.hostSeatId !== seat.seatId) {
@@ -304,6 +317,38 @@ export class AuthoritativeGameService {
     return this.commitResult(committed, seat.playerId, room.latestRevision);
   }
 
+  async endSession(request: EndSessionRequest): Promise<MultiplayerResult<EndSessionSuccess>> {
+    if (!UUID_PATTERN.test(request.commandId)) {
+      return failed(error("INVALID_REQUEST", "commandId must be a UUID."));
+    }
+    const authenticated = await this.authenticate(request.roomCode, request.seatToken);
+    if (!authenticated.ok) return authenticated;
+    const { room, seat } = authenticated.value;
+    if (!seat.isHost || room.hostSeatId !== seat.seatId) {
+      return failed(error("HOST_ONLY", "Only the host may end this session.", room.latestRevision));
+    }
+    if (room.status === "finished") {
+      return failed(error("SESSION_ENDED", "This game session has already finished.", room.latestRevision));
+    }
+    const ended = await this.store.endSession({
+      roomId: room.id,
+      hostSeatId: seat.seatId,
+      actorId: seat.playerId,
+      commandId: request.commandId,
+    });
+    if (ended.status !== "ok") {
+      const storeError = ended.status === "duplicate" ? "duplicate" : ended.code;
+      return failed(mapStoreFailure(storeError, room.latestRevision));
+    }
+    return {
+      ok: true,
+      value: {
+        commandId: request.commandId,
+        room: publicRoom(ended.value),
+      },
+    };
+  }
+
   async executeCommand(request: CommandRequest): Promise<MultiplayerResult<CommandSuccess>> {
     if (
       !UUID_PATTERN.test(request.commandId) ||
@@ -314,6 +359,13 @@ export class AuthoritativeGameService {
     }
     const authenticated = await this.authenticate(request.roomCode, request.seatToken);
     if (!authenticated.ok) return authenticated;
+    if (authenticated.value.room.status === "abandoned" || authenticated.value.room.status === "finished") {
+      return failed(error(
+        "SESSION_ENDED",
+        "This game session has ended and no longer accepts actions.",
+        authenticated.value.room.latestRevision,
+      ));
+    }
     const command = request.command;
     if (command.type === "SUBMIT_WOOD_CONTRIBUTION") {
       return this.executeContribution(authenticated.value, { ...request, command });
@@ -469,6 +521,14 @@ export class AuthoritativeGameService {
     const authenticated = await this.store.authenticate(roomCode.trim().toUpperCase(), tokenHash);
     if (authenticated === null) {
       return failed(error("AUTHENTICATION_FAILED", "The room or seat credential is invalid."));
+    }
+    if (authenticated.room.rulesVersion !== "0.5" || authenticated.room.contentVersion !== "0.5") {
+      return failed(
+        error(
+          "UNSUPPORTED_RULES_VERSION",
+          "This room was created under V0.4 and cannot continue under the V0.5 rules. Please create a new room.",
+        ),
+      );
     }
     return { ok: true, value: authenticated };
   }

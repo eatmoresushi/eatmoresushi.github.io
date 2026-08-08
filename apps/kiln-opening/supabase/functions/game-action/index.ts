@@ -76,6 +76,13 @@ Deno.serve(async (request) => {
           commandId: String(body["commandId"] ?? ""),
         });
         break;
+      case "end_session":
+        result = await service.endSession({
+          roomCode: String(body["roomCode"] ?? ""),
+          seatToken: String(body["seatToken"] ?? ""),
+          commandId: String(body["commandId"] ?? ""),
+        });
+        break;
       case "game_action":
         result = await service.executeCommand({
           roomCode: String(body["roomCode"] ?? ""),

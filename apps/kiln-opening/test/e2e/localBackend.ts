@@ -67,6 +67,12 @@ class LocalBackend {
           seatToken: String(body["seatToken"] ?? ""),
           commandId: String(body["commandId"] ?? ""),
         });
+      case "end_session":
+        return this.service.endSession({
+          roomCode: String(body["roomCode"] ?? ""),
+          seatToken: String(body["seatToken"] ?? ""),
+          commandId: String(body["commandId"] ?? ""),
+        });
       case "game_action":
         return this.service.executeCommand({
           roomCode: String(body["roomCode"] ?? ""),

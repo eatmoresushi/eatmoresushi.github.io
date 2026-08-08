@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import migration from "../supabase/migrations/202608070001_multiplayer_backend.sql?raw";
+import v05Migration from "../supabase/migrations/202608070002_v05_guild_rules.sql?raw";
+import lifecycleMigration from "../supabase/migrations/202608080001_session_lifecycle.sql?raw";
 import edgeFunction from "../supabase/functions/game-action/index.ts?raw";
 
 describe("Supabase security contract", () => {
@@ -48,5 +50,35 @@ describe("Supabase security contract", () => {
     expect(edgeFunction).not.toContain("console.log");
     expect(edgeFunction).toContain("AuthoritativeGameService");
     expect(edgeFunction).toContain("seatToken");
+  });
+
+  it("creates new rooms as V0.5 while preserving explicit legacy-room versioning", () => {
+    expect(v05Migration).toContain("rules_version in ('0.4', '0.5')");
+    expect(v05Migration).toContain("where status = 'lobby'");
+    expect(v05Migration).toContain("p_room_id, upper(p_code), 'lobby', p_seat_id, '0.5', '0.5', 0");
+    expect(v05Migration).toContain("to service_role");
+  });
+
+  it("ends sessions through a host-only service RPC and rejects late game commands", () => {
+    expect(lifecycleMigration).toContain("'lobby', 'playing', 'finished', 'abandoned'");
+    expect(lifecycleMigration).toContain("ended_at timestamptz");
+    expect(lifecycleMigration).toContain("ended_by_player_id text");
+    expect(lifecycleMigration).toContain("create or replace function public.server_end_session");
+    expect(lifecycleMigration).toContain("v_room.host_seat_id <> p_host_seat_id");
+    expect(lifecycleMigration).toContain("create trigger guard_active_session_command");
+    expect(lifecycleMigration).toContain("v_status in ('finished', 'abandoned')");
+    expect(lifecycleMigration).toContain("revoke all on function public.server_end_session");
+    expect(lifecycleMigration).toContain("grant execute on function public.server_end_session");
+    expect(lifecycleMigration).toContain("to service_role");
+    expect(edgeFunction).toContain('case "end_session"');
+  });
+
+  it("deletes abandoned and finished sessions on bounded retention schedules", () => {
+    expect(lifecycleMigration).toContain("create or replace function private.cleanup_expired_game_sessions");
+    expect(lifecycleMigration).toContain("status = 'abandoned' and ended_at < now() - interval '7 days'");
+    expect(lifecycleMigration).toContain("status = 'finished' and updated_at < now() - interval '30 days'");
+    expect(lifecycleMigration).toContain("create extension if not exists pg_cron");
+    expect(lifecycleMigration).toContain("kiln-opening-session-retention");
+    expect(lifecycleMigration).toContain("select private.cleanup_expired_game_sessions();");
   });
 });

@@ -1,4 +1,4 @@
-# ENGINEERING_DESIGN_REVIEW.md — Kiln Opening V0.4
+# ENGINEERING_DESIGN_REVIEW.md — Kiln Opening V0.5
 
 ## Scope and authority
 
@@ -21,9 +21,9 @@ No gameplay mismatch was found between `data/*.json` and `GAME_RULES.md`.
 | `imperial_progress.json` | Track rewards/VP, once-per-round advance, Presentation eligibility/scoring, and no-punishment rule match. |
 | `kilns.json` | All five current Kiln Traditions and their effects match. |
 | `techniques.json` | IDs T01–T12, four tiles per discipline, costs, names, once-per-round flags, and exact effects agree with the rule file's delegated Technique definitions. |
-| `orders.json` | IDs M01–M20 and I01–I10, counts, requirement vocabulary, rewards, and Qualities agree with the rule file's delegated Order definitions and the V0.4 handoff audit. |
+| `orders.json` | IDs M01–M20 and I01–I10, counts, requirement vocabulary, rewards, and Qualities agree with the rule file's delegated Order definitions and the historical V0.4 handoff audit. |
 | `components.json` | Component counts are consistent with all rule-constrained quantities. |
-| `asset_specs.json` | Regeneration requirements reflect the current six-location, no-Refined-Clay, contributor-scaled V0.4 rules. |
+| `asset_specs.json` | Regeneration requirements reflect the current six-location, no-Refined-Clay, contributor-scaled V0.5 rules. |
 
 The procedural ambiguities that still require a ruling are isolated in section 7. They are not structured-data mismatches.
 
@@ -74,7 +74,7 @@ IDs must not be array positions. Runtime-created IDs, including `CeramicId`, sho
 
 ```ts
 interface RulesContent {
-  readonly rulesVersion: "0.4";
+  readonly rulesVersion: "0.5";
   readonly contentHash: string;
   readonly config: GameConfigDefinition;
   readonly locations: Readonly<Record<LocationId, LocationDefinition>>;
@@ -118,7 +118,7 @@ Order matching must search valid permutations of selected ceramics against requi
 ```ts
 interface GameState {
   readonly schemaVersion: 1;
-  readonly rulesVersion: "0.4";
+  readonly rulesVersion: "0.5";
   readonly contentHash: string;
   readonly gameId: GameId;
   readonly revision: number;
@@ -150,7 +150,7 @@ interface PlayerState {
   readonly kilnId?: KilnId;
   readonly resources: { readonly clay: number; readonly wood: number; readonly coins: number };
   readonly workers: Readonly<Record<WorkerId, WorkerState>>;
-  readonly orderHand: readonly OrderId[]; // public in V0.4
+  readonly orderHand: readonly OrderId[]; // public in V0.5
   readonly completedOrders: readonly CompletedOrder[];
   readonly techniques: Readonly<Record<TechniqueId, OwnedTechniqueState>>;
   readonly imperialProgress: 0 | 1 | 2 | 3 | 4 | 5;
@@ -435,11 +435,11 @@ No client command is accepted while automatic advancement is executing.
 
 At `work.turn`, only the active player may act. They either submit one worker action or permanently pass. A worker action places exactly one available owned worker, consumes one location-capacity space, and fully resolves the corresponding effect before turn rotation.
 
-Actions with no newly revealed information commit atomically with placement: Materials, Forming, Glazing, Kiln Yard, Office Coins, and Office Flawed sale. Optional legal Technique/Kiln choices and payment allocations are included in the same command.
+Actions with no newly revealed information commit atomically with placement: Materials, Forming, Glazing, and Kiln Yard. Optional legal Technique/Kiln choices and payment allocations are included in the same command. An Office main action always transitions to its explicit optional Flawed-sale step before turn rotation.
 
 Actions requiring a choice after public information changes enter `work.resolve`:
 
-- **Office Order taking:** take one displayed Order, refill that exact display position immediately, offer Colour Samples if legal, resolve its discard/refill if used, then either take the next allowed Order or finish. The next selection always sees the updated display. Hand limit is checked after every take.
+- **Office Order taking:** take one displayed Order, refill that exact display position immediately, offer Colour Samples if legal, resolve its discard/refill if used, then either take the next allowed Order or finish. The next selection always sees the updated display. Hand limit is checked after every take. After the main Office action, enter the optional Flawed-sale step; an empty selection skips it.
 - **Guild Shifu refresh:** optionally bottom one displayed tile, reveal its replacement from the same discipline, then select and buy a Technique from the updated display. Refill the acquired discipline immediately. If the discipline deck is empty, apply the documented same-tile/no-refill edge case.
 
 When resolution completes, rotate clockwise to the next player who has not passed and has an available worker. End Work Phase when all players have passed or have no available worker. Passing with unused workers is legal and permanent; unused workers grant nothing.
@@ -519,7 +519,7 @@ The server derives `actorId` from the authenticated seat; it never trusts an act
 | `JOIN_ROOM` | Claim an open seat before start. |
 | `START_GAME` | Host-only; freeze 2–4 seats and invoke deterministic setup. |
 | `RECONNECT` | Exchange durable seat credential for current public and entitled private projections. |
-| `ABANDON_GAME` | Future host/admin operation only; not an MVP gameplay command. |
+| `END_SESSION` | Host-only service operation; atomically marks a lobby/active room abandoned, records audit metadata, and blocks later engine commands. |
 
 ### 3.3 Engine commands
 
@@ -531,9 +531,9 @@ The server derives `actorId` from the authenticated seat; it never trusts an act
 | Forming | `WORK_FORM_CERAMICS` | Includes worker, ordered Shape choices, payments, optional Clay Substitution, Ding choice/payment, and optional triggered Technique uses. |
 | Glazing | `WORK_GLAZE_CERAMICS` | Includes ceramic/Glaze/Decoration selections, Shifu mode, payment allocations, and Technique uses. |
 | Kiln Yard | `WORK_USE_KILN_YARD` | Includes optional Wood gain and 0–1 or 0–2 ceramic/space pairs. It can legally load none. |
-| Office direct | `WORK_OFFICE_GAIN_COINS`, `WORK_OFFICE_SELL_FLAWED` | Sale includes explicit Ceramic IDs. Only Flawed Finished ceramics are legal. |
-| Office Orders | `WORK_OFFICE_BEGIN_ORDERS`, `OFFICE_TAKE_ORDER`, `OFFICE_USE_COLOUR_SAMPLES`, `OFFICE_SKIP_COLOUR_SAMPLES`, `OFFICE_FINISH_ORDERS` | Explicit subcommands preserve immediate refill and information horizons. The begin command places the worker and selects Shifu mode. |
-| Guild | `WORK_GUILD_BEGIN`, `GUILD_REFRESH_TECHNIQUE`, `GUILD_SKIP_REFRESH`, `GUILD_BUY_TECHNIQUE` | Refresh is Shifu-only and precedes purchase. Purchase refills the same discipline. |
+| Office main action | `WORK_OFFICE_GAIN_COINS`, `WORK_OFFICE_BEGIN_ORDERS`, `OFFICE_TAKE_ORDER`, `OFFICE_USE_COLOUR_SAMPLES`, `OFFICE_SKIP_COLOUR_SAMPLES`, `OFFICE_FINISH_ORDERS` | Explicit subcommands preserve immediate refill and information horizons. Every completed main action transitions to the sale step. |
+| Office optional sale | `OFFICE_RESOLVE_FLAWED_SALE` | Includes 0–1 Apprentice or 0–2 Shifu explicit Ceramic IDs. Only owned Finished Flawed ceramics are legal; an empty list skips the sale. |
+| Guild | `WORK_GUILD_BEGIN`, `GUILD_REFRESH_TECHNIQUE`, `GUILD_SKIP_REFRESH`, `GUILD_BUY_TECHNIQUE` | Placement and purchase are Shifu-only. Optional refresh precedes exact printed-cost purchase, which refills the same discipline. |
 | Firing | `RESOLVE_KILN_SETTING`, `SUBMIT_WOOD_CONTRIBUTION`, `RESOLVE_FUEL_LEDGER`, `RESOLVE_JUN`, `RESOLVE_GE`, `RESOLVE_PROTECTIVE_SAGGARS`, `RESOLVE_TEST_PIECES` | Each Technique `RESOLVE_*` includes either a legal use payload or explicit pass. Wood submission uses the private endpoint/path. Ru is a mandatory automatic check. |
 | Orders | `COMPLETE_ORDER`, `END_ORDER_TURN` | Completion includes selected ceramics and optional Guan waiver declaration. |
 | End game | `SUBMIT_PRESENTATION` | Includes 0–3 Ceramic IDs; server computes score. |
@@ -565,7 +565,7 @@ The tabletop game is open information except for unrevealed Wood Contributions. 
 | Phase/window, round, First/active player, decision queue status | Yes | Yes | Same |
 | Resources, including current Wood count | Yes | Yes | Same |
 | Workers, Progress, score ledger, Techniques/exhaustion | Yes | Yes | Same |
-| Order hands and completed Orders | Yes | Yes | Same; Orders are explicitly public in V0.4 |
+| Order hands and completed Orders | Yes | Yes | Same; Orders are explicitly public in V0.5 |
 | Ceramics and kiln occupancy | Yes | Yes | Same |
 | Displays and discard piles | Yes | Yes | Same |
 | Draw-pile order | Yes | No | No; expose counts only |
@@ -593,7 +593,7 @@ Use UUID database keys while preserving stable engine IDs inside the snapshot.
 
 | Table | Purpose and key fields | Client access |
 |---|---|---|
-| `rooms` | `id`, short unique `code`, status, host seat ID, rules/content versions, latest revision | Read through safe room/lobby API; no direct update |
+| `rooms` | `id`, short unique `code`, status, host seat ID, rules/content versions, latest revision, ended time/actor | Read through safe room/lobby API; no direct update |
 | `room_players` | room/seat, stable `player_id`, seat index, display name, colour, joined status | Public room fields readable; writes through server only |
 | `room_seat_credentials` | seat ID, strong token hash, rotation/revocation metadata | Service role only |
 | `game_heads` | room ID, revision, full authoritative `state_json`, RNG state, state hash | Service role only |
@@ -711,12 +711,12 @@ Every rule implementation needs unit tests plus state-machine/integration covera
 
 ### 8.1 Content and schema tests
 
-- All JSON parses and validates under strict schemas; all `rulesVersion` fields that exist equal `0.4`.
+- All JSON parses and validates under strict schemas; all `rulesVersion` fields that exist equal `0.5`.
 - Stable IDs are unique; M01–M20, I01–I10, T01–T12, five Kilns, six locations, and eight kiln spaces are present.
 - Every structured definition has exactly one engine implementation; no orphan implementation exists.
 - Counts, capacities, costs, supplies, displays, Fire distribution, Progress, Presentation, and scoring match the reconciled values above.
 - Order relation indices are in range and relation enums are exhaustive.
-- Asset/data audit test rejects obsolete locations/resources/mechanics in canonical V0.4 content.
+- Asset/data audit test rejects obsolete locations/resources/mechanics in canonical V0.5 content.
 
 ### 8.2 Setup and round flow
 
@@ -732,15 +732,15 @@ Every rule implementation needs unit tests plus state-machine/integration covera
 ### 8.3 Work Phase and all six locations
 
 - Capacity for every location at 2P/3P/4P; capacity is total workers and the same player may occupy repeatedly.
-- Active-player enforcement, clockwise rotation, worker ownership/availability, Shifu versus Apprentice effects at all six locations.
+- Active-player enforcement, clockwise rotation, worker ownership/availability, worker-specific effects, and Guild's Shifu-only restriction across all six locations.
 - Pass with unused workers, permanent pass, automatic skip of players with no workers, unused workers give no benefit.
 - Materials combinations at 0 through maximum, finite/empty/partial Clay and Wood supplies.
 - Form every Shape at correct cost; insufficient Clay; eight-card per-Shape supply; persistent shaped ceramics; Shifu 0/1/2 choices.
 - Glaze exactly one Glaze and Decoration; all Decoration costs; Shifu two-normal versus one-free modes; cannot reglaze or glaze wrong lifecycle state.
 - Kiln Yard optional Wood, Wood with zero load, 1 versus 2 load maximum, ownership/state, occupied spaces, full kiln, and no Shifu reposition.
-- Office all Apprentice/Shifu modes, Flawed limits, any-number Shifu sale, finite Coins, Vessel return, non-Flawed rejection, hand limits 3/Guan 4.
+- Office all Apprentice/Shifu main modes, optional Apprentice 0–1 and Shifu 0–2 Flawed sales, exact Coin payment, Vessel return, duplicate/delivered/non-Flawed rejection, hand limits 3/Guan 4.
 - Order-taking immediate refill before the second choice, Market/Imperial mixing, optional stop after first, Colour Samples sequencing.
-- Guild capacity, printed cost, Shifu discount minimum 1, optional refresh/bottom/reveal, same-discipline refill, max two owned, empty-deck edge case.
+- Guild Shifu-only placement, 1/2/2 capacity, exact printed cost, optional refresh/bottom/reveal, same-discipline refill, max two owned, and empty-deck edge case.
 
 ### 8.4 Techniques and Kiln Traditions
 
@@ -882,6 +882,6 @@ Exit criterion: Playwright completes representative games and hidden information
 
 - Deploy static Vite client to GitHub Pages/custom domain and Supabase backend with environment separation and secret management.
 - Add owner-consented anonymous game-level telemetry only after core correctness.
-- Apply V0.4 art direction with reusable HTML/CSS/SVG components; regenerate missing assets from current data rather than obsolete raster sources.
+- Apply the approved art direction with reusable HTML/CSS/SVG components; regenerate missing assets from current V0.5 data rather than obsolete raster sources.
 
 Exit criterion: production smoke tests, security checks, replay capture, reconnect, and complete-game E2E pass before release.

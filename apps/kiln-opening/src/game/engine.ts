@@ -1012,31 +1012,50 @@ function officeGainCoins(state: GameState, actorId: PlayerId, workerId: string):
     wood: 0,
     coins: gained,
   });
-  completeWorkerAction(next, actorId, events);
+  next.phase = { type: "work_office_sale", actorId, workerId };
   return success(next, events);
 }
 
-function officeSellFlawed(
+function resolveOfficeFlawedSale(
   state: GameState,
   actorId: PlayerId,
-  workerId: string,
   ceramicIds: string[],
 ): ApplyResult {
-  const context = validateWorkerAction(
-    state,
-    actorId,
-    workerId,
-    "market_imperial_office",
-  );
-  if (!isWorkerContext(context)) {
-    return context;
+  const phase = requirePhase(state, "work_office_sale");
+  if (isFailure(phase)) return phase;
+  const actorError = actorFailure(state, actorId);
+  if (actorError !== null) return actorError;
+  const player = state.players[actorId];
+  const worker = player?.workers[phase.workerId];
+  if (
+    player === undefined ||
+    worker === undefined ||
+    worker.status !== "placed" ||
+    worker.locationId !== "market_imperial_office"
+  ) {
+    return applyFailure(ruleError("INVALID_ACTION", "The Office sale step has no placed worker."));
   }
   if (new Set(ceramicIds).size !== ceramicIds.length) {
     return applyFailure(ruleError("INVALID_SELECTION", "A ceramic may be sold only once."));
   }
-  if (context.worker.kind === "apprentice" && ceramicIds.length > 2) {
+  const saleLimit = worker.kind === "shifu" ? 2 : 1;
+  if (ceramicIds.length > saleLimit) {
     return applyFailure(
-      ruleError("INVALID_SELECTION", "An Apprentice may sell at most two Flawed ceramics."),
+      ruleError(
+        "INVALID_SELECTION",
+        worker.kind === "shifu"
+          ? "A Shifu may sell at most two Flawed ceramics."
+          : "An Apprentice may sell at most one Flawed ceramic.",
+      ),
+    );
+  }
+  if (ceramicIds.length > state.commonSupply.coins) {
+    return applyFailure(
+      ruleError(
+        "SUPPLY_EMPTY",
+        "The common supply must contain 1 Coin for every sold ceramic.",
+        { requested: ceramicIds.length, available: state.commonSupply.coins },
+      ),
     );
   }
   for (const ceramicId of ceramicIds) {
@@ -1063,9 +1082,8 @@ function officeSellFlawed(
 
   const next = cloneState(state);
   const events: GameEvent[] = [];
-  placeWorker(next, actorId, workerId, "market_imperial_office", events);
-  const player = next.players[actorId];
-  if (player === undefined) {
+  const nextPlayer = next.players[actorId];
+  if (nextPlayer === undefined) {
     throw new Error("Office actor disappeared");
   }
   for (const ceramicId of ceramicIds) {
@@ -1084,8 +1102,8 @@ function officeSellFlawed(
     };
     events.push({ type: "CERAMIC_SOLD", playerId: actorId, ceramicId });
   }
-  const gainedCoins = Math.min(ceramicIds.length, next.commonSupply.coins);
-  player.resources.coins += gainedCoins;
+  const gainedCoins = ceramicIds.length;
+  nextPlayer.resources.coins += gainedCoins;
   next.commonSupply.coins -= gainedCoins;
   if (gainedCoins > 0) {
     events.push({
@@ -1221,7 +1239,7 @@ function takeOfficeOrder(state: GameState, actorId: PlayerId, orderId: OrderId):
         coins: gainedCoins,
       });
     }
-    completeWorkerAction(next, actorId, events);
+    next.phase = { type: "work_office_sale", actorId, workerId: nextPhase.workerId };
   }
   return success(next, events);
 }
@@ -1247,7 +1265,7 @@ function endOfficeOrders(state: GameState, actorId: PlayerId): ApplyResult {
   }
   const next = cloneState(state);
   const events: GameEvent[] = [];
-  completeWorkerAction(next, actorId, events);
+  next.phase = { type: "work_office_sale", actorId, workerId: phase.workerId };
   return success(next, events);
 }
 
@@ -1274,7 +1292,7 @@ function resumeOfficeAfterColourSamples(
         coins: gainedCoins,
       });
     }
-    completeWorkerAction(state, actorId, events);
+    state.phase = { type: "work_office_sale", actorId, workerId: state.phase.workerId };
   }
 }
 
@@ -1358,18 +1376,20 @@ function techniqueDiscipline(techniqueId: TechniqueId): TechniqueDiscipline | nu
   return TECHNIQUE_DEFINITIONS[techniqueId]?.discipline ?? null;
 }
 
-function techniqueCost(techniqueId: TechniqueId, worker: WorkerState): number | null {
+function techniqueCost(techniqueId: TechniqueId): number | null {
   const definition = TECHNIQUE_DEFINITIONS[techniqueId];
-  if (definition === undefined) {
-    return null;
-  }
-  return worker.kind === "shifu" ? Math.max(1, definition.cost - 1) : definition.cost;
+  return definition?.cost ?? null;
 }
 
 function beginGuildAction(state: GameState, actorId: PlayerId, workerId: string): ApplyResult {
   const context = validateWorkerAction(state, actorId, workerId, "guild_academy");
   if (!isWorkerContext(context)) {
     return context;
+  }
+  if (context.worker.kind !== "shifu") {
+    return applyFailure(
+      ruleError("INVALID_ACTION", "Only a Shifu may be placed at Guild & Academy."),
+    );
   }
   if (context.player.techniques.length >= GAME_CONFIG.techniques.maxOwned) {
     return applyFailure(ruleError("TECHNIQUE_LIMIT", "A player may own at most two Techniques."));
@@ -1381,7 +1401,7 @@ function beginGuildAction(state: GameState, actorId: PlayerId, workerId: string)
     );
   }
   const canAffordDisplayed = displayed.some((techniqueId) => {
-    const cost = techniqueCost(techniqueId, context.worker);
+    const cost = techniqueCost(techniqueId);
     return cost !== null && cost <= context.player.resources.coins;
   });
   if (!canAffordDisplayed) {
@@ -1397,7 +1417,7 @@ function beginGuildAction(state: GameState, actorId: PlayerId, workerId: string)
     type: "work_guild",
     actorId,
     workerId,
-    step: context.worker.kind === "shifu" ? "refresh_or_skip" : "buy",
+    step: "refresh_or_skip",
   };
   return success(next, events);
 }
@@ -1489,6 +1509,9 @@ function buyGuildTechnique(
   if (player === undefined || worker === undefined) {
     return applyFailure(ruleError("UNKNOWN_PLAYER", "The Guild actor was not found."));
   }
+  if (worker.kind !== "shifu") {
+    return applyFailure(ruleError("INVALID_ACTION", "Only a Shifu may acquire a Technique."));
+  }
   if (player.techniques.length >= GAME_CONFIG.techniques.maxOwned) {
     return applyFailure(ruleError("TECHNIQUE_LIMIT", "A player may own at most two Techniques."));
   }
@@ -1498,7 +1521,7 @@ function buyGuildTechnique(
       ruleError("TECHNIQUE_NOT_AVAILABLE", "The selected Technique is not face-up."),
     );
   }
-  const cost = techniqueCost(techniqueId, worker);
+  const cost = techniqueCost(techniqueId);
   if (cost === null || player.resources.coins < cost) {
     return applyFailure(
       ruleError("INSUFFICIENT_RESOURCES", "Not enough Coins for this Technique."),
@@ -2388,8 +2411,6 @@ export function applyAction(
       return useKilnYard(state, actorId, action);
     case "OFFICE_GAIN_COINS":
       return officeGainCoins(state, actorId, action.workerId);
-    case "OFFICE_SELL_FLAWED":
-      return officeSellFlawed(state, actorId, action.workerId, action.ceramicIds);
     case "BEGIN_OFFICE_ORDERS":
       return beginOfficeOrders(state, actorId, action.workerId, action.mode);
     case "OFFICE_TAKE_ORDER":
@@ -2400,6 +2421,8 @@ export function applyAction(
       return useColourSamples(state, actorId, action.orderId);
     case "OFFICE_SKIP_COLOUR_SAMPLES":
       return skipColourSamples(state, actorId);
+    case "OFFICE_RESOLVE_FLAWED_SALE":
+      return resolveOfficeFlawedSale(state, actorId, action.ceramicIds);
     case "BEGIN_GUILD_ACTION":
       return beginGuildAction(state, actorId, action.workerId);
     case "GUILD_REFRESH_TECHNIQUE":

@@ -47,7 +47,7 @@ Host starts only with 2–4 players.
 
 - random First Player;
 - reverse-order Kiln selection;
-- starting Market Order is dealt directly to that player's hand and is public immediately, because Orders are open information in V0.4;
+- starting Market Order is dealt directly to that player's hand and is public immediately, because Orders are open information in V0.5;
 - game begins Round 1.
 
 ## Synchronous turn model
@@ -89,7 +89,17 @@ Firing is the most important digital interaction.
 
 Do not add chess clocks or automatic turns initially.
 
-Host may have a “remove disconnected player / abandon game” control later, but MVP should prioritise reconnect.
+## Session lifecycle
+
+The host may end a lobby or active game for everyone after an explicit confirmation. This is a service operation outside the pure rules engine and does not count as normal game completion.
+
+- The authoritative room status changes to `abandoned` and records the ending time and host player ID.
+- The room update is public and broadcast to every connected player.
+- Reconnect remains available but returns an ended-session view; no further gameplay or starting commands are accepted.
+- Repeating the host operation is safe. Non-host attempts return a typed `HOST_ONLY` failure.
+- `Leave view` only returns that browser to the home screen and retains its reconnect credential. The player may resume or explicitly forget the saved seat.
+
+Retain abandoned sessions for 7 days for debugging and finished games for 30 days. A daily database job deletes expired parent rooms; foreign-key cascades remove their snapshots, commands, events, credentials, and submissions.
 
 ## Reconnect
 
@@ -127,6 +137,14 @@ Not required for MVP.
 ## Chat
 
 Not required for MVP. Voice/chat can be external.
+
+## Imperial Progress synchronization
+
+Imperial Progress is server-authoritative and public. Every public snapshot and reconnect response includes each player's current space, whether that player has advanced this round, pending Apprentice unlocks, current worker availability, and the global Imperial Seal owner.
+
+Completing a Market Order never advances Imperial Progress. The first Imperial Order a player completes each round advances that player by one space, up to space 5; later Imperial Orders in the same round do not. Rewards at spaces 2 and 4 unlock one Apprentice during Cleanup. The first player to reach space 5 takes the Imperial Seal permanently.
+
+The client renders the full six-space track and uses committed server events for advancement, unlock, Presentation-eligibility, and Seal feedback. It must not predict or apply any of those transitions locally.
 
 ## Game end
 

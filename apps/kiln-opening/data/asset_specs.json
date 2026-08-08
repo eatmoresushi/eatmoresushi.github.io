@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "0.4",
+  "rulesVersion": "0.5",
   "centralBoard": {
     "status": "GENERATE_FROM_DATA_NOT_OLD_RASTER",
     "locationsSource": "data/action_locations.json",

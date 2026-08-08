@@ -3,6 +3,7 @@ import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
 import type {
   AuthoritativeCommand,
   CommandSuccess,
+  EndSessionSuccess,
   MultiplayerError,
   MultiplayerResult,
   ReconnectResult,
@@ -49,6 +50,11 @@ export interface GameApi {
     seatToken: string,
     commandId: string,
   ): Promise<MultiplayerResult<CommandSuccess>>;
+  endSession(
+    roomCode: string,
+    seatToken: string,
+    commandId: string,
+  ): Promise<MultiplayerResult<EndSessionSuccess>>;
   executeCommand(input: {
     roomCode: string;
     seatToken: string;
@@ -90,6 +96,14 @@ class TestHttpGameApi implements GameApi {
     commandId: string,
   ): Promise<MultiplayerResult<CommandSuccess>> {
     return this.call({ operation: "start_game", roomCode, seatToken, commandId });
+  }
+
+  endSession(
+    roomCode: string,
+    seatToken: string,
+    commandId: string,
+  ): Promise<MultiplayerResult<EndSessionSuccess>> {
+    return this.call({ operation: "end_session", roomCode, seatToken, commandId });
   }
 
   executeCommand(input: {
@@ -146,6 +160,14 @@ class SupabaseGameApi implements GameApi {
     return this.call("start_game", { roomCode, seatToken, commandId });
   }
 
+  endSession(
+    roomCode: string,
+    seatToken: string,
+    commandId: string,
+  ): Promise<MultiplayerResult<EndSessionSuccess>> {
+    return this.call("end_session", { roomCode, seatToken, commandId });
+  }
+
   executeCommand(input: {
     roomCode: string;
     seatToken: string;
@@ -167,6 +189,11 @@ class SupabaseGameApi implements GameApi {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "room_players", filter: `room_id=eq.${roomId}` },
+        onPublicChange,
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "rooms", filter: `id=eq.${roomId}` },
         onPublicChange,
       )
       .subscribe();

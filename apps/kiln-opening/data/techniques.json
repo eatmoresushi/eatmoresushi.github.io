@@ -4,7 +4,7 @@
     "discipline": "forming",
     "name": "Large Throwing Wheel",
     "nameZh": "大型拉坯轮",
-    "cost": 2,
+    "cost": 1,
     "ability": "After you form a Vase or Censer, gain 1 Clay.",
     "oncePerRound": true
   },
@@ -13,7 +13,7 @@
     "discipline": "forming",
     "name": "Measuring Calipers",
     "nameZh": "测量卡尺",
-    "cost": 2,
+    "cost": 1,
     "ability": "After you form two different Shapes during the same Forming action, gain 1 Coin.",
     "oncePerRound": true
   },
@@ -22,7 +22,7 @@
     "discipline": "forming",
     "name": "Clay Substitution",
     "nameZh": "代泥法",
-    "cost": 3,
+    "cost": 2,
     "ability": "When paying a Forming cost, you may pay 1 Coin instead of 1 Clay.",
     "oncePerRound": true
   },
@@ -31,7 +31,7 @@
     "discipline": "forming",
     "name": "Drying Frames",
     "nameZh": "晾坯架",
-    "cost": 2,
+    "cost": 1,
     "ability": "After you form a ceramic whose Shape matches at least one uncompleted Order in your hand, gain 1 Coin.",
     "oncePerRound": true
   },
@@ -40,7 +40,7 @@
     "discipline": "glazing",
     "name": "Carving Knives",
     "nameZh": "刻花刀",
-    "cost": 2,
+    "cost": 1,
     "ability": "Ignore the Coin cost of one Carved Decoration you apply.",
     "oncePerRound": true
   },
@@ -49,7 +49,7 @@
     "discipline": "glazing",
     "name": "Seal Stamps",
     "nameZh": "印花模",
-    "cost": 2,
+    "cost": 1,
     "ability": "Ignore the Coin cost of one Impressed Decoration you apply.",
     "oncePerRound": true
   },
@@ -58,7 +58,7 @@
     "discipline": "glazing",
     "name": "Glaze Notebook",
     "nameZh": "釉谱簿",
-    "cost": 2,
+    "cost": 1,
     "ability": "After you apply two different Glazes during the same Glaze action, gain 1 Wood.",
     "oncePerRound": true
   },
@@ -67,7 +67,7 @@
     "discipline": "glazing",
     "name": "Colour Samples",
     "nameZh": "釉色样本",
-    "cost": 2,
+    "cost": 1,
     "ability": "After you take an Order, you may discard one other face-up Order from the same display and refill it.",
     "oncePerRound": true
   },
@@ -76,7 +76,7 @@
     "discipline": "firing",
     "name": "Kiln Setting",
     "nameZh": "排窑法",
-    "cost": 3,
+    "cost": 2,
     "ability": "Before Wood Contributions are chosen, move one of your loaded ceramics to any empty kiln space.",
     "oncePerRound": true
   },
@@ -85,7 +85,7 @@
     "discipline": "firing",
     "name": "Protective Saggars",
     "nameZh": "匣钵护烧",
-    "cost": 3,
+    "cost": 2,
     "ability": "After Quality is assigned, pay 1 Coin to improve one of your Flawed ceramics to Standard.",
     "oncePerRound": true
   },
@@ -94,7 +94,7 @@
     "discipline": "firing",
     "name": "Fuel Ledger",
     "nameZh": "火候簿",
-    "cost": 3,
+    "cost": 2,
     "ability": "After Contribution cards are revealed but before Base Heat is determined, pay 1 Coin and spend 1 Wood to increase your contribution by 1.",
     "oncePerRound": true
   },
@@ -103,7 +103,7 @@
     "discipline": "firing",
     "name": "Test Pieces",
     "nameZh": "试烧片",
-    "cost": 2,
+    "cost": 1,
     "ability": "After firing, gain 1 Coin if at least one of your ceramics had an exact heat match before any ability altered Actual Heat, heat difference or Quality.",
     "oncePerRound": true
   }

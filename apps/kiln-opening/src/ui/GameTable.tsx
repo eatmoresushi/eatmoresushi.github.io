@@ -1,4 +1,5 @@
 import {
+  IMPERIAL_PROGRESS,
   KILN_SPACE_IDS,
   ORDER_DEFINITIONS,
   TECHNIQUE_DEFINITIONS,
@@ -40,6 +41,8 @@ export function GameTable({ game, ownPlayerId }: { game: PublicGameState; ownPla
         {game.playerOrder.map((playerId) => {
           const player = game.players[playerId]!;
           const isDecision = decisionActor === playerId;
+          const availableWorkers = Object.values(player.workers).filter((worker) => worker.status === "available").length;
+          const lockedWorkers = Object.values(player.workers).filter((worker) => worker.status === "locked").length;
           return (
             <article
               className={`player-board colour-border-${player.seatIndex} ${playerId === ownPlayerId ? "is-own" : ""} ${isDecision ? "is-active" : ""}`}
@@ -69,10 +72,18 @@ export function GameTable({ game, ownPlayerId }: { game: PublicGameState; ownPla
                 <span>{player.techniques.length} Techniques</span>
                 <span>{player.score.orderVp + player.score.kilnTraditionVp} VP</span>
               </div>
+              <div className="imperial-player-status">
+                <span>{availableWorkers} available worker{availableWorkers === 1 ? "" : "s"} · {lockedWorkers} locked</span>
+                {player.pendingApprenticeUnlocks > 0 && <span>+{player.pendingApprenticeUnlocks} Apprentice during Cleanup</span>}
+                <span>{player.progressAdvancedThisRound ? "Advanced this round ✓" : "Progress available this round"}</span>
+                {player.imperialProgress >= 4 && <span>Presentation eligible</span>}
+              </div>
             </article>
           );
         })}
       </div>
+
+      <ImperialProgressTrack game={game} />
 
       <section className="workshop-orders panel" aria-labelledby="workshop-orders-title">
         <div className="panel-heading">
@@ -180,6 +191,63 @@ export function GameTable({ game, ownPlayerId }: { game: PublicGameState; ownPla
   );
 }
 
+function ImperialProgressTrack({ game }: { game: PublicGameState }) {
+  const sealOwner = game.imperialSealOwnerId === null
+    ? "Unclaimed"
+    : game.players[game.imperialSealOwnerId]?.displayName ?? game.imperialSealOwnerId;
+  return (
+    <section className="imperial-progress panel" aria-labelledby="imperial-progress-title" data-testid="imperial-progress-track">
+      <div className="panel-heading">
+        <div><p className="eyebrow">Prestige and workforce</p><h2 id="imperial-progress-title">Imperial Progress</h2></div>
+        <span data-testid="imperial-seal-owner">Imperial Seal · {sealOwner}</span>
+      </div>
+      <div className="imperial-progress-scroll" tabIndex={0} aria-label="Imperial Progress spaces; scroll horizontally on narrow screens">
+        <ol className="imperial-progress-spaces">
+          {IMPERIAL_PROGRESS.track.map((space) => {
+            const occupants = game.playerOrder.filter(
+              (playerId) => game.players[playerId]?.imperialProgress === space.space,
+            );
+            return (
+              <li className={`imperial-progress-space progress-space-${space.space}`} data-progress-space={space.space} key={space.space}>
+                <header><span>Space {space.space}</span><b>{space.endGameVp} VP</b></header>
+                <strong>{space.title}</strong>
+                <div className="progress-rewards">
+                  {(space.space === 2 || space.space === 4) && <span>+ Apprentice</span>}
+                  {(space.space === 4 || space.space === 5) && <span>Presentation eligible</span>}
+                  {space.space === 5 && <span>Imperial Seal · first player</span>}
+                  {space.reward === null && space.space !== 1 && <span>No immediate reward</span>}
+                </div>
+                <div className="progress-markers" aria-label={`Players at ${space.title}`}>
+                  {occupants.map((playerId) => {
+                    const player = game.players[playerId]!;
+                    const initials = player.displayName
+                      .split(/\s+/)
+                      .filter(Boolean)
+                      .slice(0, 2)
+                      .map((part) => part[0]?.toUpperCase())
+                      .join("") || `P${player.seatIndex + 1}`;
+                    return (
+                      <span
+                        className={`progress-marker progress-colour-${player.seatIndex} ${player.progressAdvancedThisRound ? "has-advanced" : ""}`}
+                        aria-label={`${player.displayName} at space ${space.space}, ${space.title}; ${player.progressAdvancedThisRound ? "advanced this round" : "has not advanced this round"}`}
+                        title={`${player.displayName} · ${player.progressAdvancedThisRound ? "advanced this round" : "progress available"}`}
+                        key={playerId}
+                      >
+                        {initials}<b aria-hidden="true">{player.progressAdvancedThisRound ? "✓" : ""}</b>
+                      </span>
+                    );
+                  })}
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+      <p className="progress-legend">Complete your first Imperial Order each round to advance once. Apprentices reached at spaces 2 and 4 unlock during Cleanup.</p>
+    </section>
+  );
+}
+
 export function OrderCard({ orderId, imperial = false }: { orderId: string; imperial?: boolean }) {
   const order = ORDER_DEFINITIONS[orderId];
   if (order === undefined) return null;
@@ -226,6 +294,7 @@ function phaseName(game: PublicGameState): string {
     case "setup_starting_orders": return "Starting Orders";
     case "work": return "Work Phase";
     case "work_office_orders": return "Office — Orders";
+    case "work_office_sale": return "Office — Optional Flawed sale";
     case "work_guild": return "Guild & Academy";
     case "firing_before_contribution": return "Kiln Setting";
     case "firing_contributions": return "Secret Wood";

@@ -8,6 +8,7 @@ import type {
   MultiplayerError,
   RoomConnection,
 } from "../multiplayer";
+import { ORDER_DEFINITIONS } from "../game";
 import { ActionPanel } from "./ActionPanel";
 import { GameTable } from "./GameTable";
 
@@ -16,6 +17,33 @@ const LAST_SEAT_KEY = "kiln-opening:last-seat";
 interface SavedSeat {
   roomCode: string;
   seatToken: string;
+}
+
+function imperialOrderNotice(result: CommandSuccess): string | null {
+  const completed = result.events.find(
+    (event) => event.type === "ORDER_COMPLETED" && event.orderId.startsWith("I"),
+  );
+  if (completed?.type !== "ORDER_COMPLETED") return null;
+  const player = result.game.players[result.actorId];
+  const definition = ORDER_DEFINITIONS[completed.orderId];
+  const parts = [`Imperial Order completed: +${definition?.vp ?? 0} VP.`];
+  const progress = result.events.find((event) => event.type === "IMPERIAL_PROGRESS_ADVANCED");
+  if (progress?.type === "IMPERIAL_PROGRESS_ADVANCED") {
+    parts.push(`Imperial Progress: ${progress.space - 1} → ${progress.space}.`);
+    if (progress.space === 2) parts.push("Prefectural Recommendation reached. 1 Apprentice will unlock during Cleanup.");
+    if (progress.space === 4) parts.push("Awaiting Audience reached. 1 Apprentice will unlock during Cleanup. You are now eligible for the Imperial Presentation.");
+    if (progress.space === 5) {
+      const claimed = result.events.some((event) => event.type === "IMPERIAL_SEAL_CLAIMED");
+      parts.push(claimed
+        ? "Imperial Audience reached. You claim the Imperial Seal: +3 VP at game end."
+        : "Imperial Audience reached. The Imperial Seal has already been claimed.");
+    }
+  } else if (player?.imperialProgress === 5) {
+    parts.push("Imperial Progress is already at the maximum space 5.");
+  } else {
+    parts.push("Imperial Progress does not advance again this round.");
+  }
+  return parts.join(" ");
 }
 
 function readSavedSeat(): SavedSeat | null {
@@ -52,6 +80,7 @@ export function App() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<MultiplayerError | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [confirmEndSession, setConfirmEndSession] = useState(false);
   const reconnecting = useRef(false);
 
   const applyCommand = useCallback((result: CommandSuccess) => {
@@ -61,6 +90,7 @@ export function App() {
       game: result.game,
       ownPendingContribution: result.ownPendingContribution,
     });
+    setNotice(imperialOrderNotice(result));
   }, []);
 
   const reconnect = useCallback(async (saved?: SavedSeat) => {
@@ -152,9 +182,16 @@ export function App() {
   }
 
   async function send(command: AuthoritativeCommand): Promise<boolean> {
-    if (api === null || connection?.game === null || connection === null) return false;
+    if (
+      api === null ||
+      connection?.game === null ||
+      connection === null ||
+      connection.room.status === "abandoned" ||
+      connection.room.status === "finished"
+    ) return false;
     setBusy(true);
     setError(null);
+    setNotice(null);
     try {
       const result = await api.executeCommand({
         roomCode: connection.room.code,
@@ -175,12 +212,45 @@ export function App() {
     }
   }
 
+  async function endSession(): Promise<void> {
+    if (api === null || connection === null || !connection.seat.isHost) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await api.endSession(
+        connection.room.code,
+        connection.seatToken,
+        crypto.randomUUID(),
+      );
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      setConnection((current) => current === null ? current : {
+        ...current,
+        room: result.value.room,
+        ownPendingContribution: null,
+      });
+      setNotice(null);
+      setConfirmEndSession(false);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function leaveView(): void {
-    localStorage.removeItem(LAST_SEAT_KEY);
     setConnection(null);
     setNotice(null);
     setError(null);
+    setConfirmEndSession(false);
   }
+
+  function forgetSeat(): void {
+    localStorage.removeItem(LAST_SEAT_KEY);
+    leaveView();
+  }
+
+  const savedSeat = connection === null ? readSavedSeat() : null;
 
   return (
     <div className="app-shell">
@@ -193,10 +263,26 @@ export function App() {
         {connection !== null && (
           <div className="room-meta">
             <span>Room <strong data-testid="room-code">{connection.room.code}</strong></span>
-            <span className="connection-dot">Live</span>
-            <button className="text-button" type="button" onClick={() => void reconnect()} disabled={busy}>
-              Reconnect
-            </button>
+            <span className={`connection-dot status-${connection.room.status}`}>
+              {connection.room.status === "abandoned"
+                ? "Ended"
+                : connection.room.status === "finished" ? "Complete" : "Live"}
+            </span>
+            {connection.room.status !== "abandoned" && (
+              <button className="text-button" type="button" onClick={() => void reconnect()} disabled={busy}>
+                Reconnect
+              </button>
+            )}
+            {connection.seat.isHost && (connection.room.status === "lobby" || connection.room.status === "playing") && (
+              <button
+                className="text-button end-session-button"
+                type="button"
+                onClick={() => setConfirmEndSession(true)}
+                disabled={busy}
+              >
+                End session
+              </button>
+            )}
             <button className="text-button" type="button" onClick={leaveView}>Leave view</button>
           </div>
         )}
@@ -211,7 +297,7 @@ export function App() {
             <strong>{error.code.replaceAll("_", " ")}</strong> {error.message}
           </div>
         )}
-        {notice !== null && <div className="sr-only" role="status">{notice}</div>}
+        {notice !== null && <div className="banner banner-info" role="status" aria-live="polite">{notice}</div>}
         {busy && <div className="progress-line" role="progressbar" aria-label="Waiting for server" />}
 
         {connection === null ? (
@@ -219,7 +305,12 @@ export function App() {
             disabled={busy || api === null}
             onCreate={createRoom}
             onJoin={joinRoom}
+            savedSeat={savedSeat}
+            onResume={() => savedSeat === null ? undefined : void reconnect(savedSeat)}
+            onForget={forgetSeat}
           />
+        ) : connection.room.status === "abandoned" ? (
+          <EndedSessionScreen connection={connection} onLeave={leaveView} onForget={forgetSeat} />
         ) : connection.game === null ? (
           <LobbyScreen connection={connection} busy={busy} onStart={startGame} />
         ) : (
@@ -235,8 +326,16 @@ export function App() {
           </div>
         )}
       </main>
+      {confirmEndSession && connection !== null && (
+        <EndSessionDialog
+          roomCode={connection.room.code}
+          busy={busy}
+          onCancel={() => setConfirmEndSession(false)}
+          onConfirm={endSession}
+        />
+      )}
       <footer className="site-footer">
-        <span>Kiln Opening V0.4</span>
+        <span>Kiln Opening V0.5</span>
         <a href="https://luyuan.me/">Luyuan He</a>
       </footer>
     </div>
@@ -247,10 +346,16 @@ function HomeScreen({
   disabled,
   onCreate,
   onJoin,
+  savedSeat,
+  onResume,
+  onForget,
 }: {
   disabled: boolean;
   onCreate: (displayName: string) => Promise<void>;
   onJoin: (roomCode: string, displayName: string) => Promise<void>;
+  savedSeat: SavedSeat | null;
+  onResume: () => void;
+  onForget: () => void;
 }) {
   const [mode, setMode] = useState<"create" | "join">("create");
   const [displayName, setDisplayName] = useState("");
@@ -277,6 +382,18 @@ function HomeScreen({
         </div>
       </div>
       <div className="entry-card">
+        {savedSeat !== null && (
+          <aside className="saved-session" aria-label="Saved session">
+            <div>
+              <span>Saved session</span>
+              <strong>Room {savedSeat.roomCode}</strong>
+            </div>
+            <div className="button-row">
+              <button className="secondary-button" type="button" onClick={onResume} disabled={disabled}>Resume</button>
+              <button className="text-button" type="button" onClick={onForget}>Forget seat</button>
+            </div>
+          </aside>
+        )}
         <div className="segmented" role="tablist" aria-label="Room action">
           <button type="button" role="tab" aria-selected={mode === "create"} onClick={() => setMode("create")}>Create game</button>
           <button type="button" role="tab" aria-selected={mode === "join"} onClick={() => setMode("join")}>Join game</button>
@@ -312,6 +429,63 @@ function HomeScreen({
         <p className="privacy-note">Your seat is restored on this device if the connection drops.</p>
       </div>
     </section>
+  );
+}
+
+function EndedSessionScreen({
+  connection,
+  onLeave,
+  onForget,
+}: {
+  connection: RoomConnection;
+  onLeave: () => void;
+  onForget: () => void;
+}) {
+  const endedBy = connection.seats.find(
+    (seat) => seat.playerId === connection.room.endedByPlayerId,
+  )?.displayName ?? "the host";
+  return (
+    <section className="session-ended" aria-labelledby="session-ended-title">
+      <p className="eyebrow">Session closed</p>
+      <h1 id="session-ended-title">This workshop session has ended.</h1>
+      <p>
+        {endedBy} ended room <strong>{connection.room.code}</strong> for everyone.
+        The game can no longer accept actions.
+      </p>
+      <p className="muted">The session record is retained temporarily for recovery and debugging.</p>
+      <div className="button-row">
+        <button className="primary-button" type="button" onClick={onLeave}>Return home</button>
+        <button className="secondary-button" type="button" onClick={onForget}>Forget this seat</button>
+      </div>
+    </section>
+  );
+}
+
+function EndSessionDialog({
+  roomCode,
+  busy,
+  onCancel,
+  onConfirm,
+}: {
+  roomCode: string;
+  busy: boolean;
+  onCancel: () => void;
+  onConfirm: () => Promise<void>;
+}) {
+  return (
+    <div className="dialog-backdrop" role="presentation">
+      <section className="confirmation-dialog" role="dialog" aria-modal="true" aria-labelledby="end-session-title">
+        <p className="eyebrow">Host action</p>
+        <h2 id="end-session-title">End room {roomCode} for everyone?</h2>
+        <p>All players will be removed from active play immediately. This cannot be undone.</p>
+        <div className="button-row">
+          <button className="secondary-button" type="button" onClick={onCancel} disabled={busy}>Keep playing</button>
+          <button className="danger-button" type="button" onClick={() => void onConfirm()} disabled={busy}>
+            End session for everyone
+          </button>
+        </div>
+      </section>
+    </div>
   );
 }
 

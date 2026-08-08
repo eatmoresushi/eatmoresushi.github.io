@@ -138,6 +138,8 @@ function PhaseControls(props: Omit<ActionPanelProps, "ownPlayerId"> & {
       return <WorkControls game={game} player={player} busy={busy} send={send} />;
     case "work_office_orders":
       return <OfficeControls game={game} player={player} busy={busy} send={send} />;
+    case "work_office_sale":
+      return <OfficeSaleControls game={game} player={player} busy={busy} send={send} />;
     case "work_guild":
       return <GuildControls game={game} player={player} busy={busy} send={send} />;
     case "firing_before_contribution":
@@ -218,11 +220,11 @@ function WorkControls({ game, player, busy, send }: {
         <KilnYardForm game={game} player={player} workers={workers} locationFull={full("kiln_yard")} busy={busy} send={send} />
       </details>
       <details className={`action-card ${full("market_imperial_office") ? "is-unavailable" : ""}`}>
-        <summary><span>Market & Imperial Office</span><small>{full("market_imperial_office") ? "Full" : "Coins, Orders, or flawed sales"}</small></summary>
+        <summary><span>Market & Imperial Office</span><small>{full("market_imperial_office") ? "Full" : "Orders or Coins, plus an optional sale"}</small></summary>
         <OfficeActionForms game={game} player={player} workers={workers} locationFull={full("market_imperial_office")} busy={busy} send={send} />
       </details>
       <details className={`action-card ${full("guild_academy") ? "is-unavailable" : ""}`}>
-        <summary><span>Guild & Academy</span><small>{full("guild_academy") ? "Full" : "Acquire a Technique"}</small></summary>
+        <summary><span>Guild & Academy</span><small>{full("guild_academy") ? "Full" : "Shifu only"}</small></summary>
         <GuildBeginForm game={game} player={player} workers={workers} locationFull={full("guild_academy")} busy={busy} send={send} />
       </details>
       <CommandButton busy={busy} send={send} command={{ type: "PASS_WORK_PHASE" }} danger>
@@ -527,7 +529,7 @@ function KilnYardForm({ game, player, workers, locationFull, busy, send }: {
   );
 }
 
-type OfficeActionChoice = OfficeOrderMode | "coins" | "sell";
+type OfficeActionChoice = OfficeOrderMode | "coins";
 
 function OfficeActionForms({ game, player, workers, locationFull, busy, send }: {
   game: PublicGameState;
@@ -537,25 +539,19 @@ function OfficeActionForms({ game, player, workers, locationFull, busy, send }: 
   busy: boolean;
   send: SendCommand;
 }) {
-  const flawed = ownCeramics(game, player.id, "finished").filter((ceramic) => ceramic.stage === "finished" && ceramic.quality === "flawed");
   const [workerId, setWorkerId] = useState(workers[0]?.id ?? "");
   const [officeAction, setOfficeAction] = useState<OfficeActionChoice>("coins");
-  const [selectedCeramics, setSelectedCeramics] = useState<string[]>([]);
   const selectedWorker = workers.find((worker) => worker.id === workerId) ?? workers[0];
   const orderModes: OfficeActionChoice[] = selectedWorker?.kind === "shifu"
-    ? ["coins", "take_up_to_two", "take_one_and_gain_two_coins", "sell"]
-    : ["coins", "take_one", "sell"];
+    ? ["coins", "take_up_to_two", "take_one_and_gain_two_coins"]
+    : ["coins", "take_one"];
   const action = orderModes.includes(officeAction) ? officeAction : orderModes[0]!;
-  const validSelectedCeramics = selectedCeramics.filter((ceramicId) => flawed.some((ceramic) => ceramic.id === ceramicId));
   const handLimit = player.kilnId === "GU" ? GAME_CONFIG.orderDisplay.guanHandLimit : GAME_CONFIG.orderDisplay.baseHandLimit;
   const displayCount = game.displays.market.length + game.displays.imperial.length;
 
   function validationError(): string | null {
     if (locationFull) return "Market & Imperial Office is full.";
     if (selectedWorker === undefined) return "Choose an available worker.";
-    if (action === "sell" && selectedWorker.kind === "apprentice" && validSelectedCeramics.length > 2) {
-      return "An Apprentice may sell at most two Flawed ceramics.";
-    }
     if ((action === "take_one" || action === "take_one_and_gain_two_coins") && player.orderHand.length >= handLimit) {
       return `Your Order hand is full (${handLimit}).`;
     }
@@ -570,19 +566,14 @@ function OfficeActionForms({ game, player, workers, locationFull, busy, send }: 
     event.preventDefault();
     if (error !== null || selectedWorker === undefined) return;
     if (action === "coins") void send({ type: "OFFICE_GAIN_COINS", workerId: selectedWorker.id });
-    else if (action === "sell") void send({ type: "OFFICE_SELL_FLAWED", workerId: selectedWorker.id, ceramicIds: validSelectedCeramics });
     else void send({ type: "BEGIN_OFFICE_ORDERS", workerId: selectedWorker.id, mode: action });
   }
   return (
     <form className="control-form" onSubmit={submit}>
+      <p className="control-hint"><strong>Apprentice:</strong> Choose one: take 1 face-up Market or Imperial Order; or gain 2 Coins. In addition, you may sell 1 Flawed ceramic for 1 Coin.</p>
+      <p className="control-hint"><strong>Shifu:</strong> Choose one: take up to 2 face-up Orders; take 1 face-up Order and gain 2 Coins; or gain 4 Coins. In addition, you may sell up to 2 Flawed ceramics for 1 Coin each.</p>
       <WorkerChoice workers={workers} value={selectedWorker?.id ?? ""} onChange={setWorkerId} />
       <EnumChoice name="officeAction" label="Office action" options={orderModes} value={action} onChange={(value) => setOfficeAction(value as OfficeActionChoice)} />
-      {action === "sell" && flawed.length > 0 && <fieldset><legend>Flawed ceramics to sell</legend>{flawed.map((ceramic) => {
-        const checked = validSelectedCeramics.includes(ceramic.id);
-        const atApprenticeLimit = selectedWorker?.kind === "apprentice" && validSelectedCeramics.length >= 2;
-        return <label className="check-row" key={ceramic.id}><input type="checkbox" name="ceramic" value={ceramic.id} checked={checked} disabled={!checked && atApprenticeLimit} onChange={(event) => setSelectedCeramics((current) => event.target.checked ? [...current, ceramic.id] : current.filter((id) => id !== ceramic.id))} />{ceramicLabel(ceramic)}</label>;
-      })}</fieldset>}
-      {action === "sell" && flawed.length === 0 && <p className="control-hint">You have no Flawed ceramics; selling none is still a legal action.</p>}
       <small role="status" className={error === null ? "" : "control-error"}>{error ?? officeActionHint(action, selectedWorker?.kind)}</small>
       <button className="primary-button" disabled={busy || error !== null}>Visit the Office</button>
     </form>
@@ -597,29 +588,29 @@ function GuildBeginForm({ game, player, workers, locationFull, busy, send }: {
   busy: boolean;
   send: SendCommand;
 }) {
-  const [workerId, setWorkerId] = useState(workers[0]?.id ?? "");
-  const selectedWorker = workers.find((worker) => worker.id === workerId) ?? workers[0];
+  const shifu = workers.find((worker) => worker.kind === "shifu");
   const displayed = Object.values(game.displays.techniques).flat();
-  const affordable = selectedWorker === undefined ? [] : displayed.filter((techniqueId) =>
-    guildTechniqueCost(techniqueId, selectedWorker.kind) <= player.resources.coins,
+  const affordable = shifu === undefined ? [] : displayed.filter((techniqueId) =>
+    guildTechniqueCost(techniqueId) <= player.resources.coins,
   );
   const error = locationFull
     ? "Guild & Academy is full."
-    : player.techniques.length >= GAME_CONFIG.techniques.maxOwned
+    : shifu === undefined
+      ? "Your Shifu is not available. Apprentices cannot use Guild & Academy."
+      : player.techniques.length >= GAME_CONFIG.techniques.maxOwned
       ? `You already own the maximum of ${GAME_CONFIG.techniques.maxOwned} Techniques.`
       : displayed.length === 0
         ? "No face-up Technique is available."
         : affordable.length === 0
-          ? "No face-up Technique is affordable with this worker."
-          : selectedWorker === undefined
-            ? "Choose an available worker."
-            : null;
+          ? "No face-up Technique is affordable."
+          : null;
   return (
     <form className="control-form" onSubmit={(event) => {
       event.preventDefault();
-      if (error === null && selectedWorker !== undefined) void send({ type: "BEGIN_GUILD_ACTION", workerId: selectedWorker.id });
+      if (error === null && shifu !== undefined) void send({ type: "BEGIN_GUILD_ACTION", workerId: shifu.id });
     }}>
-      <WorkerChoice workers={workers} value={selectedWorker?.id ?? ""} onChange={setWorkerId} />
+      <strong>Shifu only</strong>
+      <p className="control-hint">Before choosing, you may return 1 face-up Technique to the bottom of its discipline deck and reveal a replacement. Then pay the printed Coin cost and take 1 face-up Technique.</p>
       <small role="status" className={error === null ? "" : "control-error"}>{error ?? `${affordable.length} affordable face-up Technique${affordable.length === 1 ? "" : "s"}.`}</small>
       <button className="primary-button" disabled={busy || error !== null}>Begin Guild action</button>
     </form>
@@ -643,10 +634,49 @@ function OfficeControls({ game, player, busy, send }: Pick<ActionPanelProps, "ga
     );
   }
   return (
-    <ControlSection title="Take an Order" hint={handFull ? `Your Order hand is full (${handLimit}); end this Office action.` : `${phase.remainingTakes} selection${phase.remainingTakes === 1 ? "" : "s"} remaining.`}>
+    <ControlSection title="Take an Order" hint={handFull ? `Your Order hand is full (${handLimit}); continue to the optional sale.` : `${phase.remainingTakes} selection${phase.remainingTakes === 1 ? "" : "s"} remaining.`}>
       <div className="choice-stack">{display.map((orderId) => <CommandButton key={orderId} busy={busy} disabled={handFull} send={send} command={{ type: "OFFICE_TAKE_ORDER", orderId }}>{`Take ${orderId}`}</CommandButton>)}</div>
-      {phase.mode === "take_up_to_two" && <CommandButton busy={busy} send={send} command={{ type: "OFFICE_END_ORDERS" }} secondary>End Office action</CommandButton>}
+      {phase.mode === "take_up_to_two" && <CommandButton busy={busy} send={send} command={{ type: "OFFICE_END_ORDERS" }} secondary>Continue to optional sale</CommandButton>}
     </ControlSection>
+  );
+}
+
+function OfficeSaleControls({ game, player, busy, send }: Pick<ActionPanelProps, "game" | "busy" | "send"> & {
+  player: PublicPlayerState;
+}) {
+  if (game.phase.type !== "work_office_sale") return null;
+  const worker = player.workers[game.phase.workerId];
+  const flawed = ownCeramics(game, player.id, "finished").filter(
+    (ceramic) => ceramic.stage === "finished" && ceramic.quality === "flawed",
+  );
+  const [selectedCeramics, setSelectedCeramics] = useState<string[]>([]);
+  const validSelectedCeramics = selectedCeramics.filter((ceramicId) =>
+    flawed.some((ceramic) => ceramic.id === ceramicId),
+  );
+  const workerLimit = worker?.kind === "shifu" ? 2 : 1;
+  const selectionLimit = Math.min(workerLimit, game.commonSupply.coins);
+  const saleSummary = validSelectedCeramics.length === 0
+    ? "Continue without selling any ceramic."
+    : `Sell ${validSelectedCeramics.map((ceramicId) => {
+        const ceramic = flawed.find((candidate) => candidate.id === ceramicId);
+        return ceramic === undefined ? ceramicId : ceramicLabel(ceramic);
+      }).join(", ")}: +${validSelectedCeramics.length} Coin${validSelectedCeramics.length === 1 ? "" : "s"}.`;
+  return (
+    <form className="control-form" onSubmit={(event) => {
+      event.preventDefault();
+      void send({ type: "OFFICE_RESOLVE_FLAWED_SALE", ceramicIds: validSelectedCeramics });
+    }}>
+      <h3>Sell Flawed Ceramics</h3>
+      <p className="control-hint">Optional secondary effect. {worker?.kind === "shifu" ? "Select up to 2" : "Select up to 1"}; gain 1 Coin per selected ceramic.</p>
+      {flawed.length > 0 ? <fieldset><legend>Eligible Finished Flawed ceramics</legend>{flawed.map((ceramic) => {
+        const checked = validSelectedCeramics.includes(ceramic.id);
+        const atLimit = validSelectedCeramics.length >= selectionLimit;
+        return <label className="check-row" key={ceramic.id}><input type="checkbox" name="ceramic" value={ceramic.id} checked={checked} disabled={!checked && atLimit} onChange={(event) => setSelectedCeramics((current) => event.target.checked ? [...current, ceramic.id] : current.filter((id) => id !== ceramic.id))} />{ceramicLabel(ceramic)}</label>;
+      })}</fieldset> : <p className="control-hint">You have no eligible Finished Flawed ceramics.</p>}
+      {game.commonSupply.coins < workerLimit && <p className="control-hint">The common supply can currently pay for {game.commonSupply.coins} sale{game.commonSupply.coins === 1 ? "" : "s"}.</p>}
+      <small role="status">{saleSummary}</small>
+      <button className="primary-button" disabled={busy}>{validSelectedCeramics.length === 0 ? "Continue without selling" : "Confirm sale and finish"}</button>
+    </form>
   );
 }
 
@@ -666,12 +696,11 @@ function GuildControls({ game, player, busy, send }: {
       </ControlSection>
     );
   }
-  const worker = player.workers[game.phase.workerId];
   return (
-    <ControlSection title="Acquire a Technique" hint={worker?.kind === "shifu" ? "Your Shifu pays 1 Coin less, to a minimum of 1." : "Pay the printed Coin cost."}>
+    <ControlSection title="Acquire a Technique" hint="Pay the selected Technique's printed Coin cost.">
       <div className="choice-stack">{ids.map((techniqueId) => {
         const technique = TECHNIQUE_DEFINITIONS[techniqueId];
-        const cost = guildTechniqueCost(techniqueId, worker?.kind);
+        const cost = guildTechniqueCost(techniqueId);
         return <CommandButton key={techniqueId} busy={busy} disabled={player.resources.coins < cost} send={send} command={{ type: "GUILD_BUY_TECHNIQUE", techniqueId }}>{`${techniqueId} · ${technique?.name ?? "Unknown Technique"} · ${cost} Coins`}</CommandButton>;
       })}</div>
     </ControlSection>
@@ -828,20 +857,24 @@ function PresentationControls({ game, player, ownPlayerId, busy, send }: {
   const eligible = game.phase.eligiblePlayerIds.includes(ownPlayerId);
   const submitted = game.phase.submittedPlayerIds.includes(ownPlayerId);
   const ceramics = ownCeramics(game, ownPlayerId, "finished").filter((ceramic) => ceramic.stage === "finished" && ceramic.quality !== "flawed");
-  if (!eligible) return <ControlSection title="Imperial Presentation" hint="Only workshops at Progress spaces 3–5 present."><p>You are observing the eligible workshops.</p></ControlSection>;
+  if (!eligible) return <ControlSection title="Imperial Presentation" hint="Only workshops at Progress spaces 4–5 may present."><p>You are observing the eligible workshops.</p></ControlSection>;
   if (submitted) return <ControlSection title="Presentation submitted" hint="Waiting for the other eligible workshops." />;
-  return <SelectionSubmission title="Imperial Presentation" hint="Present up to three Standard-or-better ceramics. Diversity can earn bonuses." options={ceramics.map(ceramicOption)} maximum={3} busy={busy} submitLabel="Submit Presentation" onSubmit={(ceramicIds) => send({ type: "SUBMIT_PRESENTATION", ceramicIds })} />;
+  return <SelectionSubmission title="Imperial Presentation" hint="Present 0–3 finished, undelivered Standard-or-better ceramics. Exactly three different Shapes and/or Glazes earn +2 VP each; presenting nothing has no penalty." options={ceramics.map(ceramicOption)} maximum={3} busy={busy} submitLabel="Submit Presentation" onSubmit={(ceramicIds) => send({ type: "SUBMIT_PRESENTATION", ceramicIds })} />;
 }
 
 function FinalResults({ game }: { game: PublicGameState }) {
   if (game.finalResult === null) return null;
   return (
     <ControlSection title="Final results" hint={`Resolved by ${game.finalResult.resolvedBy.replaceAll("_", " ")}.`}>
-      <div className="score-table" role="table" aria-label="Final scores">
-        {game.playerOrder.map((playerId) => {
-          const score = game.finalResult?.scores[playerId];
-          return <div role="row" className={game.finalResult?.winnerIds.includes(playerId) ? "winner" : ""} key={playerId}><strong role="cell">{game.players[playerId]?.displayName}</strong><span role="cell">{score?.total} VP</span>{game.finalResult?.winnerIds.includes(playerId) && <em>Winner</em>}</div>;
-        })}
+      <div className="score-table-scroll">
+        <table className="score-table" aria-label="Final score breakdown">
+          <thead><tr><th>Workshop</th><th>Orders</th><th>Imperial Progress</th><th>Imperial Seal</th><th>Presentation</th><th>Kiln / effects</th><th>Coins</th><th>Total</th></tr></thead>
+          <tbody>{game.playerOrder.map((playerId) => {
+            const score = game.finalResult?.scores[playerId];
+            const winner = game.finalResult?.winnerIds.includes(playerId) ?? false;
+            return <tr className={winner ? "winner" : ""} key={playerId}><th>{game.players[playerId]?.displayName}{winner && <em>Winner</em>}</th><td>{score?.orders ?? 0}</td><td>{score?.imperialProgress ?? 0}</td><td>{score?.imperialSeal ?? 0}</td><td>{score?.presentation ?? 0}</td><td>{score?.immediateAbilities ?? 0}</td><td>{score?.leftoverCoins ?? 0}</td><td><strong>{score?.total ?? 0} VP</strong></td></tr>;
+          })}</tbody>
+        </table>
       </div>
     </ControlSection>
   );
@@ -966,17 +999,15 @@ function ownedAvailableTechniques(player: PublicPlayerState, allowed: TechniqueI
   return player.techniques.filter((technique) => !technique.exhausted && allowed.includes(technique.id)).map((technique) => technique.id);
 }
 
-function guildTechniqueCost(techniqueId: TechniqueId, workerKind: AvailableWorker["kind"] | undefined): number {
+function guildTechniqueCost(techniqueId: TechniqueId): number {
   const printedCost = TECHNIQUE_DEFINITIONS[techniqueId]?.cost ?? Number.POSITIVE_INFINITY;
-  return workerKind === "shifu" ? Math.max(1, printedCost - 1) : printedCost;
+  return printedCost;
 }
 
 function officeActionHint(action: OfficeActionChoice, workerKind: AvailableWorker["kind"] | undefined): string {
   switch (action) {
     case "coins":
       return `Gain ${workerKind === "shifu" ? 4 : 2} Coins.`;
-    case "sell":
-      return workerKind === "shifu" ? "Sell any number of Flawed ceramics." : "Sell up to two Flawed ceramics.";
     case "take_one":
       return "Take one face-up Order.";
     case "take_up_to_two":

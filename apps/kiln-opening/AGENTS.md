@@ -15,15 +15,15 @@ Priority order:
 3. `docs/IMPLEMENTATION_DECISIONS.md` — digital interpretations of rules where necessary.
 4. `docs/ONLINE_GAME_SPEC.md` — digital-only behaviour.
 5. `docs/DESIGN_SPEC.md` — design intent and constraints.
-6. `source_rulebook/Kiln_Opening_v0.4_Full_Rulebook.pdf` — human backup.
+6. `source_rulebook/Kiln_Opening_v0.4_Full_Rulebook.pdf` — historical human backup; V0.5 Guild and Technique costs in `GAME_RULES.md` override it.
 7. `assets/print_reference/*` — visual direction only.
 
 Never implement an older mechanic because it appears in historical discussion or art.
 
 
-## V0.4 asset rule
+## Approved asset rule
 
-Only `assets/current_v04/` is an approved visual-reference directory.
+Only `assets/current_v04/` is an approved visual-reference directory. The directory name remains unchanged for V0.5 because the focused rules update does not rename the approved asset set.
 
 Do not search conversation history or older images for missing boards/cards. Missing current assets are intentionally specified in `data/asset_specs.json` and `docs/V0.4_ASSETS_TO_REGENERATE.md` and must be rebuilt from current data.
 
@@ -96,7 +96,7 @@ At minimum:
 - Shifu vs Apprentice effects at all six locations
 - Shape costs and vessel supply
 - Decoration costs
-- Technique acquisition limit and Shifu discount
+- Technique acquisition limit and exact printed-cost payment by the Shifu
 - every one of the 12 Techniques
 - all five Kiln abilities
 - contributor-scaled Base Heat for 1–4 contributors
@@ -104,7 +104,7 @@ At minimum:
 - Fire modifier and kiln-zone modifier
 - Quality assignment
 - Jun/Ge/Protective Saggars/Test Pieces/Ru timing
-- Market and Imperial Order validation
+- Market and Imperial Order validation, followed by the optional Apprentice 0–1 / Shifu 0–2 Flawed-sale step
 - immediate display refill
 - Order hand limit and Guan exception
 - once-per-round Imperial Progress

@@ -19,6 +19,8 @@ export type StoreFailureCode =
   | "game_already_started"
   | "not_enough_players"
   | "seat_already_joined"
+  | "host_only"
+  | "session_not_active"
   | "duplicate"
   | "stale"
   | "private_duplicate";
@@ -78,6 +80,13 @@ export interface CommitTransitionInput {
   privateSubmission: PrivateCommitInput | null;
 }
 
+export interface EndSessionRecord {
+  roomId: string;
+  hostSeatId: string;
+  actorId: PlayerId;
+  commandId: string;
+}
+
 export interface MultiplayerStore {
   createRoom(input: CreateRoomRecord): Promise<StoreResult<AuthenticatedSeat>>;
   joinRoom(input: JoinRoomRecord): Promise<StoreResult<AuthenticatedSeat>>;
@@ -86,6 +95,7 @@ export interface MultiplayerStore {
   loadHead(roomId: string): Promise<AuthoritativeHead | null>;
   loadPublicState(roomId: string): Promise<PublicGameState | null>;
   getProcessed(roomId: string, commandId: string): Promise<ProcessedCommandRecord | null>;
+  endSession(input: EndSessionRecord): Promise<StoreResult<StoredRoom>>;
   commitStart(input: CommitStartInput): Promise<StoreResult<CommandSuccess>>;
   commitTransition(input: CommitTransitionInput): Promise<StoreResult<CommandSuccess>>;
   loadPrivateSubmissions(roomId: string, windowId: string): Promise<PrivateSubmissionRecord[]>;

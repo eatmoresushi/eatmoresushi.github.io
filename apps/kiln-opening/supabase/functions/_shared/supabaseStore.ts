@@ -3,6 +3,7 @@ import type {
   CommitStartInput,
   CommitTransitionInput,
   CreateRoomRecord,
+  EndSessionRecord,
   JoinRoomRecord,
   MultiplayerStore,
   StoreResult,
@@ -15,6 +16,7 @@ import type {
   PublicEventRecord,
   PublicGameState,
   PublicStateListener,
+  StoredRoom,
   StoredSeat,
 } from "../../../src/multiplayer/types.ts";
 
@@ -65,6 +67,15 @@ export class SupabaseMultiplayerStore implements MultiplayerStore {
 
   async getProcessed(roomId: string, commandId: string): Promise<ProcessedCommandRecord | null> {
     return this.rpc("server_get_processed", { p_room_id: roomId, p_command_id: commandId });
+  }
+
+  endSession(input: EndSessionRecord): Promise<StoreResult<StoredRoom>> {
+    return this.rpc("server_end_session", {
+      p_room_id: input.roomId,
+      p_host_seat_id: input.hostSeatId,
+      p_actor_player_id: input.actorId,
+      p_command_id: input.commandId,
+    });
   }
 
   commitStart(input: CommitStartInput): Promise<StoreResult<CommandSuccess>> {

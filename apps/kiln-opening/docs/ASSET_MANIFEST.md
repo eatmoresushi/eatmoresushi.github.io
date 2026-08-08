@@ -1,4 +1,4 @@
-# ASSET_MANIFEST.md — V0.4 AUDITED
+# ASSET_MANIFEST.md — V0.5 RULES / V0.4 VISUAL AUDIT
 
 Only files under `assets/current_v04/` are approved as current visual references.
 
@@ -8,14 +8,14 @@ Only files under `assets/current_v04/` are approved as current visual references
 - `order_cards_page_1_M01-M16.png`
 - `order_cards_page_2_M17-M20_I01-I10.png`
 
-The Order deck is unchanged in V0.4. Card IDs, requirements, minimum Qualities, VP and Coin values were checked against Appendix A of the V0.4 rulebook.
+The Order deck is unchanged in V0.5. Card IDs, requirements, minimum Qualities, VP and Coin values were checked against Appendix A of the V0.4 rulebook.
 
 ### Vessel cards
 - `vessel_cards_page_1_bowl_plate.png`
 - `vessel_cards_page_2_washer_vase.png`
 - `vessel_cards_page_3_censer.png`
 
-Together these contain 8 each of Bowl, Plate, Washer, Vase and Censer (40 total). The fields Glaze / Decoration / Quality / Delivered remain compatible with V0.4.
+Together these contain 8 each of Bowl, Plate, Washer, Vase and Censer (40 total). The fields Glaze / Decoration / Quality / Delivered remain compatible with V0.5.
 
 ### Fire cards
 - `fire_cards_page_1.png`
@@ -33,12 +33,12 @@ The earlier mixed Fire/Wood Page 2 was removed from the canonical directory so i
 
 Exactly four colour sets, each containing 0 / 1 / 2 / 3: 16 cards total.
 
-## Intentionally absent because older raster text conflicts with V0.4
+## Intentionally absent because older raster text conflicts with V0.5
 
 ### Central game board
 The older board is excluded. It contained obsolete content including Refining House / Refined Clay and older action/firing references.
 
-The V0.4 central board must be generated from:
+The V0.5 central board must be generated from:
 - `data/action_locations.json`
 - `data/firing.json`
 - `data/round_structure.json`

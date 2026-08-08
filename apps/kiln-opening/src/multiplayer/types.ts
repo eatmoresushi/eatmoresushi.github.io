@@ -23,15 +23,18 @@ import type {
   WoodContribution,
 } from "../game/index.ts";
 
-export type RoomStatus = "lobby" | "playing" | "finished";
+export type RoomStatus = "lobby" | "playing" | "finished" | "abandoned";
+export type StoredRulesVersion = "0.4" | "0.5";
 
 export interface PublicRoom {
   id: string;
   code: string;
   status: RoomStatus;
   hostSeatId: string;
-  rulesVersion: "0.4";
+  rulesVersion: StoredRulesVersion;
   latestRevision: number;
+  endedAt: string | null;
+  endedByPlayerId: PlayerId | null;
 }
 
 export interface PublicSeat {
@@ -84,7 +87,7 @@ export interface PublicDiscards {
 
 export interface PublicGameState {
   schemaVersion: 1;
-  rulesVersion: "0.4";
+  rulesVersion: "0.5";
   gameId: string;
   revision: number;
   eventSequence: number;
@@ -153,6 +156,8 @@ export type MultiplayerErrorCode =
   | "STALE_REVISION"
   | "DUPLICATE_COMMAND"
   | "PERSISTENCE_CONFLICT"
+  | "SESSION_ENDED"
+  | "UNSUPPORTED_RULES_VERSION"
   | GameRuleErrorCode;
 
 export interface MultiplayerError {
@@ -184,6 +189,15 @@ export interface SeatRequest {
 
 export interface StartGameRequest extends SeatRequest {
   commandId: string;
+}
+
+export interface EndSessionRequest extends SeatRequest {
+  commandId: string;
+}
+
+export interface EndSessionSuccess {
+  commandId: string;
+  room: PublicRoom;
 }
 
 export interface SubmitWoodCommand {
@@ -236,7 +250,7 @@ export interface ProcessedCommandRecord {
 }
 
 export interface StoredRoom extends PublicRoom {
-  contentVersion: "0.4";
+  contentVersion: StoredRulesVersion;
 }
 
 export interface StoredSeat extends PublicSeat {

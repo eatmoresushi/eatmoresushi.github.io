@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "0.4",
+  "rulesVersion": "0.5",
   "locations": [
     {
       "id": "materials_yard",
@@ -58,17 +58,9 @@
         "3": 3,
         "4": 4
       },
-      "apprenticeOptions": [
-        "Take 1 face-up Market or Imperial Order.",
-        "Gain 2 Coins.",
-        "Sell up to 2 Flawed ceramics for 1 Coin each."
-      ],
-      "shifuOptions": [
-        "Take up to 2 face-up Orders.",
-        "Take 1 face-up Order and gain 2 Coins.",
-        "Gain 4 Coins.",
-        "Sell any number of Flawed ceramics for 1 Coin each."
-      ]
+      "apprentice": "Choose one: take 1 face-up Market or Imperial Order; or gain 2 Coins. In addition, you may sell 1 Flawed ceramic for 1 Coin.",
+      "shifu": "Choose one: take up to 2 face-up Orders; take 1 face-up Order and gain 2 Coins; or gain 4 Coins. In addition, you may sell up to 2 Flawed ceramics for 1 Coin each.",
+      "clarification": "Selling Flawed ceramics is an optional secondary effect resolved after the main Office action, not a main action choice."
     },
     {
       "id": "guild_academy",
@@ -76,10 +68,10 @@
       "capacity": {
         "2": 1,
         "3": 2,
-        "4": 3
+        "4": 2
       },
-      "apprentice": "Pay the printed Coin cost and take 1 face-up Technique.",
-      "shifu": "Before choosing, you may place 1 face-up Technique on the bottom of its discipline deck and reveal a replacement. Then pay 1 Coin less than the printed cost, to a minimum of 1 Coin, and take 1 face-up Technique."
+      "restriction": "Only a Shifu may be placed at this location.",
+      "shifu": "Before choosing, you may return 1 face-up Technique to the bottom of its discipline deck and reveal a replacement. Then pay the printed Coin cost and take 1 face-up Technique."
     }
   ]
 }

@@ -4,6 +4,7 @@ import type {
   CommitStartInput,
   CommitTransitionInput,
   CreateRoomRecord,
+  EndSessionRecord,
   JoinRoomRecord,
   MultiplayerStore,
   StoreResult,
@@ -143,6 +144,25 @@ export class InMemoryMultiplayerStore implements MultiplayerStore {
     return record === undefined ? null : clone(record);
   }
 
+  async endSession(input: EndSessionRecord): Promise<StoreResult<StoredRoom>> {
+    const room = this.rooms.get(input.roomId);
+    if (room === undefined) return { status: "error", code: "room_not_found" };
+    const host = this.seats.get(input.roomId)?.find(
+      (seat) => seat.seatId === input.hostSeatId && seat.playerId === input.actorId && seat.isHost,
+    );
+    if (room.hostSeatId !== input.hostSeatId || host === undefined) {
+      return { status: "error", code: "host_only" };
+    }
+    if (room.status === "finished") return { status: "error", code: "session_not_active" };
+    if (room.status !== "abandoned") {
+      room.status = "abandoned";
+      room.endedAt = new Date().toISOString();
+      room.endedByPlayerId = input.actorId;
+      this.notify(input.roomId);
+    }
+    return { status: "ok", value: clone(room) };
+  }
+
   async commitStart(input: CommitStartInput): Promise<StoreResult<CommandSuccess>> {
     const processed = this.processed.get(`${input.roomId}:${input.commandId}`);
     if (processed !== undefined) return { status: "duplicate", processed: clone(processed) };
@@ -182,6 +202,11 @@ export class InMemoryMultiplayerStore implements MultiplayerStore {
     const processed = this.processed.get(commandKey);
     if (processed !== undefined) return { status: "duplicate", processed: clone(processed) };
     const current = this.heads.get(input.roomId);
+    const room = this.rooms.get(input.roomId);
+    if (room === undefined) return { status: "error", code: "room_not_found" };
+    if (room.status === "abandoned" || room.status === "finished") {
+      return { status: "error", code: "session_not_active" };
+    }
     if (
       current === undefined ||
       current.revision !== input.expectedRevision ||
@@ -267,8 +292,6 @@ export class InMemoryMultiplayerStore implements MultiplayerStore {
       }
     }
 
-    const room = this.rooms.get(input.roomId);
-    if (room === undefined) throw new Error("Committed room disappeared");
     room.latestRevision = input.nextHead.revision;
     if (input.nextHead.state.phase.type === "finished") room.status = "finished";
     const processedRecord: ProcessedCommandRecord = {
@@ -334,10 +357,16 @@ export class InMemoryMultiplayerStore implements MultiplayerStore {
     });
   }
 
-  private notify(roomId: string, state: PublicGameState): void {
+  private notify(roomId: string, state?: PublicGameState): void {
+    const currentState = state ?? this.publicStates.get(roomId);
+    const room = this.rooms.get(roomId);
     for (const listener of this.listeners.get(roomId) ?? []) {
       try {
-        listener({ roomId, revision: state.revision, eventSequence: state.eventSequence });
+        listener({
+          roomId,
+          revision: currentState?.revision ?? room?.latestRevision ?? 0,
+          eventSequence: currentState?.eventSequence ?? 0,
+        });
       } catch {
         // Realtime notifications are advisory and cannot roll back an authoritative commit.
       }

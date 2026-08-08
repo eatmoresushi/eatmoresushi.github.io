@@ -242,6 +242,11 @@ export type GamePhase =
       lastTakenDeck: "market" | "imperial" | null;
     }
   | {
+      type: "work_office_sale";
+      actorId: PlayerId;
+      workerId: WorkerId;
+    }
+  | {
       type: "work_guild";
       actorId: PlayerId;
       workerId: WorkerId;
@@ -288,7 +293,7 @@ export type GamePhase =
 
 export interface GameState {
   schemaVersion: 1;
-  rulesVersion: "0.4";
+  rulesVersion: "0.5";
   gameId: string;
   revision: number;
   eventSequence: number;
@@ -373,11 +378,6 @@ export type GameAction =
     }
   | { type: "OFFICE_GAIN_COINS"; workerId: WorkerId }
   | {
-      type: "OFFICE_SELL_FLAWED";
-      workerId: WorkerId;
-      ceramicIds: CeramicId[];
-    }
-  | {
       type: "BEGIN_OFFICE_ORDERS";
       workerId: WorkerId;
       mode: OfficeOrderMode;
@@ -389,6 +389,7 @@ export type GameAction =
   | { type: "OFFICE_END_ORDERS" }
   | { type: "OFFICE_USE_COLOUR_SAMPLES"; orderId: OrderId }
   | { type: "OFFICE_SKIP_COLOUR_SAMPLES" }
+  | { type: "OFFICE_RESOLVE_FLAWED_SALE"; ceramicIds: CeramicId[] }
   | { type: "BEGIN_GUILD_ACTION"; workerId: WorkerId }
   | { type: "GUILD_REFRESH_TECHNIQUE"; techniqueId: TechniqueId }
   | { type: "GUILD_SKIP_REFRESH" }

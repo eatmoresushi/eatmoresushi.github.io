@@ -119,7 +119,7 @@ function finishOrderPhase(state: GameState, rng: SeededRandom): GameState {
 }
 
 describe("Order matcher", () => {
-  it("finds a valid assignment for every one of the 30 V0.4 Orders", () => {
+  it("finds a valid assignment for every one of the 30 current Orders", () => {
     const definitions = Object.values(ORDER_DEFINITIONS);
     expect(definitions).toHaveLength(30);
     for (const order of definitions) {

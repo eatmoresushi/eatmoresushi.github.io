@@ -1,4 +1,4 @@
-# GAME_RULES.md — Kiln Opening / 开窑 V0.4
+# GAME_RULES.md — Kiln Opening / 开窑 V0.5
 
 **Players:** 2–4  
 **Length:** 5 rounds  
@@ -121,7 +121,7 @@ Clay cleaning, refining, mixing, drying, etc. are abstracted into the Forming St
 | Glaze Workshop | 2 | 3 | 4 |
 | Kiln Yard | 3 | 4 | 5 |
 | Market & Imperial Office | 2 | 3 | 4 |
-| Guild & Academy | 1 | 2 | 3 |
+| Guild & Academy | 1 | 2 | 2 |
 
 Capacity is total workers at the location, not per player. A player may occupy the same location more than once if spaces remain.
 
@@ -228,31 +228,38 @@ Clarifications:
 **Apprentice — choose one:**
 
 - take 1 face-up Market or Imperial Order;
-- gain 2 Coins;
-- sell up to 2 Flawed ceramics for 1 Coin each.
+- gain 2 Coins.
+
+In addition, the Apprentice may sell 1 Flawed ceramic for 1 Coin after resolving the chosen action.
 
 **Shifu — choose one:**
 
 - take up to 2 face-up Orders;
 - take 1 face-up Order and gain 2 Coins;
-- gain 4 Coins;
-- sell any number of Flawed ceramics for 1 Coin each.
+- gain 4 Coins.
+
+In addition, the Shifu may sell up to 2 Flawed ceramics for 1 Coin each after resolving the chosen action.
+
+Selling Flawed ceramics is an optional secondary effect, not a main Office action. The player may continue without selling.
 
 When an Order is taken, refill that display position immediately before any second Order is selected.
 
 A player may not exceed hand limit.
 
-Sold Flawed ceramics return their Vessel cards to supply.
+Only the acting player's Finished Flawed ceramics may be sold. Each sold ceramic is removed from the Finished Ceramics area, its Vessel card returns to the matching Shape supply, and the player gains exactly 1 Coin. A sold ceramic cannot later be delivered to an Order or included in an Imperial Presentation. Standard, Fine, and Masterpiece ceramics cannot be sold through this effect.
 
 ### Guild & Academy
 
-**Apprentice:** pay printed Coin cost and take 1 face-up Technique.
+Only a **Shifu** may be placed at this location.
 
-**Shifu:** before choosing, may put 1 face-up Technique on bottom of its discipline deck and reveal a replacement. Then pay 1 Coin less than printed cost, minimum cost 1, and take 1 face-up Technique.
+When the Shifu is placed here:
+
+1. Before choosing a Technique, the player may place 1 face-up Technique on the bottom of its discipline deck and reveal a replacement from that same deck.
+2. The player then pays the selected Technique's printed Coin cost and takes 1 face-up Technique.
+3. Refill the empty display slot immediately from the same discipline deck.
 
 Rules:
 
-- refill from same discipline immediately;
 - maximum 2 owned Techniques;
 - both Techniques may share a discipline;
 - cannot acquire without sufficient Coins or an empty Technique slot;

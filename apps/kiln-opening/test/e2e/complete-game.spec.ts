@@ -1,6 +1,49 @@
 import { expect, test } from "@playwright/test";
 import type { Browser, Page } from "@playwright/test";
 
+test("the host can end a session for everyone while Leave view remains resumable", async ({ browser, request }) => {
+  await request.post("http://127.0.0.1:4173/test-api", {
+    headers: { "x-e2e-user": "reset" },
+    data: { operation: "e2e_reset", seed: 11 },
+  });
+
+  const { host, guest, close } = await openTwoWorkshops(browser);
+  try {
+    await host.goto("./");
+    await host.getByLabel("Workshop name").fill("Mei");
+    await host.getByRole("button", { name: "Create a room" }).click();
+    const roomCode = (await host.getByTestId("room-code").textContent())?.trim() ?? "";
+
+    await guest.goto("./");
+    await guest.getByRole("tab", { name: "Join game" }).click();
+    await guest.getByLabel("Room code").fill(roomCode);
+    await guest.getByLabel("Workshop name").fill("Ren");
+    await guest.getByRole("button", { name: "Join the workshop" }).click();
+
+    await expect(guest.getByRole("button", { name: "End session", exact: true })).toHaveCount(0);
+    await host.getByRole("button", { name: "End session", exact: true }).click();
+    await expect(host.getByRole("dialog", { name: `End room ${roomCode} for everyone?` })).toBeVisible();
+    await host.getByRole("button", { name: "Keep playing" }).click();
+    await expect(host.getByRole("heading", { name: `Room ${roomCode}` })).toBeVisible();
+
+    await host.getByRole("button", { name: "End session", exact: true }).click();
+    await host.getByRole("button", { name: "End session for everyone" }).click();
+    await expect(host.getByRole("heading", { name: "This workshop session has ended." })).toBeVisible();
+    await expect(host.getByText("Mei ended room")).toBeVisible();
+    await expect(guest.getByRole("heading", { name: "This workshop session has ended." })).toBeVisible();
+    await expect(guest.getByText("Mei ended room")).toBeVisible();
+
+    await guest.reload();
+    await expect(guest.getByRole("heading", { name: "This workshop session has ended." })).toBeVisible();
+    await guest.getByRole("button", { name: "Leave view" }).click();
+    await expect(guest.getByLabel("Saved session")).toContainText(`Room ${roomCode}`);
+    await guest.getByRole("button", { name: "Resume" }).click();
+    await expect(guest.getByRole("heading", { name: "This workshop session has ended." })).toBeVisible();
+  } finally {
+    await close();
+  }
+});
+
 test("starting Orders remain visible after an eligible redraw advances directly to Work", async ({ browser, request }) => {
   await request.post("http://127.0.0.1:4173/test-api", {
     headers: { "x-e2e-user": "reset" },
@@ -31,6 +74,13 @@ test("starting Orders remain visible after an eligible redraw advances directly 
     await expect(guest.getByTestId("phase-name")).toHaveText("Work Phase");
 
     for (const page of [host, guest]) {
+      const progress = page.getByRole("region", { name: "Imperial Progress" });
+      await expect(progress.locator("[data-progress-space]")).toHaveCount(6);
+      await expect(progress.locator('[data-progress-space="0"] .progress-marker')).toHaveCount(2);
+      await expect(progress).toContainText("Prefectural Recommendation");
+      await expect(progress).toContainText("Awaiting Audience");
+      await expect(progress).toContainText("Presentation eligible");
+      await expect(progress.getByTestId("imperial-seal-owner")).toHaveText("Imperial Seal · Unclaimed");
       const orders = page.getByRole("region", { name: "Workshop Orders" });
       await expect(orders.locator(".order-card")).toHaveCount(2);
       await expect(orders).toContainText("M03");
@@ -63,11 +113,16 @@ test("starting Orders remain visible after an eligible redraw advances directly 
     const office = guest.locator("details").filter({ hasText: "Market & Imperial Office" });
     await office.getByText("Market & Imperial Office", { exact: true }).click();
     await office.getByLabel("Worker").selectOption({ index: 1 });
-    await expect(office.locator('select[name="officeAction"] option')).toHaveText(["coins", "take one", "sell"]);
+    await expect(office.locator('select[name="officeAction"] option')).toHaveText(["coins", "take one"]);
+    await expect(office).toContainText("In addition, you may sell 1 Flawed ceramic for 1 Coin.");
+    await expect(office).not.toContainText("Sell up to 2 Flawed ceramics for 1 Coin each.");
     await expect(office.getByRole("button", { name: "Visit the Office" })).toBeEnabled();
 
     const guild = guest.locator("details").filter({ hasText: "Guild & Academy" });
     await guild.getByText("Guild & Academy", { exact: true }).click();
+    await expect(guild.locator(".control-form > strong")).toHaveText("Shifu only");
+    await expect(guild).toContainText("pay the printed Coin cost");
+    await expect(guild.getByLabel("Worker")).toHaveCount(0);
     await expect(guild.getByRole("button", { name: "Begin Guild action" })).toBeEnabled();
     await guild.getByRole("button", { name: "Begin Guild action" }).click();
     await guest.getByRole("button", { name: "Keep the display" }).click();
@@ -78,6 +133,24 @@ test("starting Orders remain visible after an eligible redraw advances directly 
     await fullGuild.getByText("Guild & Academy", { exact: true }).click();
     await expect(fullGuild.getByRole("button", { name: "Begin Guild action" })).toBeDisabled();
     await expect(fullGuild.getByRole("status")).toContainText("Guild & Academy is full");
+
+    const hostOffice = host.locator("details").filter({ hasText: "Market & Imperial Office" });
+    await hostOffice.getByText("Market & Imperial Office", { exact: true }).click();
+    await hostOffice.getByRole("button", { name: "Visit the Office" }).click();
+    await expect(host.getByTestId("phase-name")).toHaveText("Office — Optional Flawed sale");
+    await expect(host.getByRole("heading", { name: "Sell Flawed Ceramics" })).toBeVisible();
+    await expect(host.locator("body")).toContainText("You have no eligible Finished Flawed ceramics.");
+    await host.getByRole("button", { name: "Continue without selling" }).click();
+    await expect(guest.getByTestId("phase-name")).toHaveText("Work Phase");
+
+    await host.setViewportSize({ width: 390, height: 844 });
+    const mobileProgress = host.getByRole("region", { name: "Imperial Progress" });
+    await expect(mobileProgress).toBeVisible();
+    await expect(mobileProgress.locator(".progress-marker")).toHaveCount(2);
+    await expect(mobileProgress.locator('[data-progress-space="5"]')).toContainText("Imperial Audience");
+    expect(await mobileProgress.locator(".imperial-progress-scroll").evaluate(
+      (element) => element.scrollWidth > element.clientWidth,
+    )).toBe(true);
   } finally {
     await close();
   }
@@ -202,6 +275,9 @@ test("two workshops complete a firing, Order, reconnect, and five-round game", a
     await expect(guest.getByTestId("phase-name")).toHaveText("Final results");
     await expect(host.locator(".score-table")).toContainText("Mei");
     await expect(host.locator(".score-table")).toContainText("Ren");
+    await expect(host.locator(".score-table")).toContainText("Imperial Progress");
+    await expect(host.locator(".score-table")).toContainText("Imperial Seal");
+    await expect(host.locator(".score-table")).toContainText("Presentation");
   } finally {
     await close();
   }

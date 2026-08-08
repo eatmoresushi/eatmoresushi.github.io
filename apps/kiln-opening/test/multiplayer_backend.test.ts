@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { currentDecisionActor } from "../src/game";
-import type { GameAction, PlayerId, WoodContribution } from "../src/game";
+import type { GameAction, GameState, PlayerId, WoodContribution } from "../src/game";
 import {
   AuthoritativeGameService,
   InMemoryMultiplayerStore,
+  projectPublicGameState,
 } from "../src/multiplayer";
 import type {
   CommandSuccess,
@@ -134,6 +135,71 @@ async function resolveSetup(harness: Harness): Promise<void> {
     if (actorId === null) throw new Error("Missing starting Order actor");
     await command(harness, actorId, { type: "KEEP_STARTING_ORDER" });
   }
+}
+
+async function seedAuthoritativeState(
+  harness: Harness,
+  mutate: (state: GameState) => void,
+): Promise<void> {
+  const previousHead = await harness.store.loadHead(harness.game.room.id);
+  if (previousHead === null) throw new Error("Missing authoritative head");
+  const state = previousHead.state;
+  mutate(state);
+  state.revision += 1;
+  const nextHead = {
+    ...previousHead,
+    revision: state.revision,
+    state,
+    stateHash: `state:${JSON.stringify(state)}`,
+  };
+  const publicState = projectPublicGameState(state);
+  harness.commandSequence += 1;
+  const commandId = `00000000-0000-4000-9800-${String(harness.commandSequence).padStart(12, "0")}`;
+  const response: CommandSuccess = {
+    commandId,
+    room: { ...harness.game.room, latestRevision: state.revision },
+    actorId: state.firstPlayerId,
+    revision: state.revision,
+    game: publicState,
+    events: [],
+    ownPendingContribution: null,
+  };
+  const committed = await harness.store.commitTransition({
+    roomId: harness.game.room.id,
+    commandId,
+    actorId: state.firstPlayerId,
+    expectedRevision: previousHead.revision,
+    command: { type: "TEST_SEED_IMPERIAL_PROGRESS" },
+    previousHead,
+    nextHead,
+    fullEvents: [],
+    publicEvents: [],
+    publicState,
+    response,
+    privateSubmission: null,
+  });
+  if (committed.status !== "ok") throw new Error(`Unable to seed state: ${committed.status}`);
+  harness.game = committed.value;
+}
+
+function seedImperialOrder(state: GameState, playerId: PlayerId): void {
+  const vesselInstanceId = state.vesselSupply.bowl.shift();
+  if (vesselInstanceId === undefined) throw new Error("Missing Bowl vessel");
+  const ceramicId = `${state.gameId}:imperial-progress-fixture`;
+  state.ceramics[ceramicId] = {
+    id: ceramicId,
+    vesselInstanceId,
+    ownerId: playerId,
+    shape: "bowl",
+    stage: "finished",
+    glaze: "celadon",
+    decoration: "plain",
+    quality: "masterpiece",
+    firedInRound: state.round,
+  };
+  state.players[playerId]!.orderHand = ["I01"];
+  const turnOrder = [playerId, ...state.playerOrder.filter((candidate) => candidate !== playerId)];
+  state.phase = { type: "orders", turnOrder, currentIndex: 0, activePlayerId: playerId };
 }
 
 function availableWorker(
@@ -267,6 +333,106 @@ describe("multiplayer rooms and stable seats", () => {
     expect(lateJoin).toEqual(
       expect.objectContaining({ ok: false, error: expect.objectContaining({ code: "GAME_ALREADY_STARTED" }) }),
     );
+  });
+});
+
+describe("host-controlled session lifecycle", () => {
+  it("ends a lobby once, broadcasts it, and preserves the ended state on reconnect", async () => {
+    const lobby = await createLobby(2);
+    const host = lobby.connections[0]!;
+    const guest = lobby.connections[1]!;
+    expect(host.room).toEqual(expect.objectContaining({
+      status: "lobby",
+      endedAt: null,
+      endedByPlayerId: null,
+    }));
+
+    const guestAttempt = await lobby.service.endSession({
+      roomCode: guest.room.code,
+      seatToken: guest.seatToken,
+      commandId: "00000000-0000-4000-9500-000000000001",
+    });
+    expect(guestAttempt).toEqual(expect.objectContaining({
+      ok: false,
+      error: expect.objectContaining({ code: "HOST_ONLY" }),
+    }));
+
+    let notifications = 0;
+    const unsubscribe = lobby.store.subscribePublic(host.room.id, () => {
+      notifications += 1;
+    });
+    const ended = valueOf(await lobby.service.endSession({
+      roomCode: host.room.code,
+      seatToken: host.seatToken,
+      commandId: "00000000-0000-4000-9500-000000000002",
+    }));
+    expect(ended.room).toEqual(expect.objectContaining({
+      status: "abandoned",
+      endedAt: expect.any(String),
+      endedByPlayerId: host.seat.playerId,
+    }));
+    expect(notifications).toBe(1);
+
+    const repeated = valueOf(await lobby.service.endSession({
+      roomCode: host.room.code,
+      seatToken: host.seatToken,
+      commandId: "00000000-0000-4000-9500-000000000003",
+    }));
+    expect(repeated.room.endedAt).toBe(ended.room.endedAt);
+    expect(notifications).toBe(1);
+    unsubscribe();
+
+    for (const connection of lobby.connections) {
+      const reconnected = valueOf(await lobby.service.reconnect({
+        roomCode: connection.room.code,
+        seatToken: connection.seatToken,
+      }));
+      expect(reconnected.room).toEqual(expect.objectContaining({
+        status: "abandoned",
+        endedAt: ended.room.endedAt,
+        endedByPlayerId: host.seat.playerId,
+      }));
+    }
+
+    const startAfterEnd = await lobby.service.startGame({
+      roomCode: host.room.code,
+      seatToken: host.seatToken,
+      commandId: "00000000-0000-4000-9500-000000000004",
+    });
+    expect(startAfterEnd).toEqual(expect.objectContaining({
+      ok: false,
+      error: expect.objectContaining({ code: "SESSION_ENDED" }),
+    }));
+  });
+
+  it("blocks every gameplay command after the host ends a running game", async () => {
+    const harness = await startHarness();
+    const host = harness.connections[0]!;
+    const phase = harness.game.game.phase;
+    if (phase.type !== "setup_kiln_selection") throw new Error("Expected Kiln setup");
+    const actorId = currentDecisionActor(phase)!;
+    const actor = connectionFor(harness, actorId);
+    const commandCount = harness.store.audit().commands.length;
+    const revision = harness.game.revision;
+
+    valueOf(await harness.service.endSession({
+      roomCode: host.room.code,
+      seatToken: host.seatToken,
+      commandId: "00000000-0000-4000-9600-000000000001",
+    }));
+    const rejected = await harness.service.executeCommand({
+      roomCode: actor.room.code,
+      seatToken: actor.seatToken,
+      commandId: "00000000-0000-4000-9600-000000000002",
+      expectedRevision: revision,
+      command: { type: "SELECT_KILN", kilnId: "RU" },
+    });
+    expect(rejected).toEqual(expect.objectContaining({
+      ok: false,
+      error: expect.objectContaining({ code: "SESSION_ENDED", currentRevision: revision }),
+    }));
+    expect(harness.store.audit().commands).toHaveLength(commandCount);
+    expect((await harness.store.loadHead(harness.game.room.id))?.revision).toBe(revision);
   });
 });
 
@@ -474,5 +640,109 @@ describe("private Wood Contributions and reconnect", () => {
     expect(harness.store.audit().privateSubmissions).toHaveLength(1);
     const head = await harness.store.loadHead(harness.game.room.id);
     expect(head?.revision).toBe(expectedRevision + 1);
+  });
+});
+
+describe("Imperial Progress persistence and realtime", () => {
+  it("broadcasts advancement and reconnects with the reminder and pending worker state", async () => {
+    const harness = await startHarness();
+    await resolveSetup(harness);
+    const actorId = harness.game.game.firstPlayerId;
+    await seedAuthoritativeState(harness, (state) => {
+      state.players[actorId]!.imperialProgress = 1;
+      seedImperialOrder(state, actorId);
+    });
+    let notifications = 0;
+    const unsubscribe = harness.store.subscribePublic(harness.game.room.id, () => {
+      notifications += 1;
+    });
+    const ceramicId = Object.values(harness.game.game.ceramics).find(
+      (ceramic) => ceramic.ownerId === actorId && ceramic.stage === "finished",
+    )!.id;
+    await command(harness, actorId, {
+      type: "COMPLETE_ORDER",
+      orderId: "I01",
+      ceramicIds: [ceramicId],
+      useGuanWaiver: false,
+    });
+    unsubscribe();
+    expect(notifications).toBe(1);
+    expect(harness.game.events).toEqual(expect.arrayContaining([
+      { type: "IMPERIAL_PROGRESS_ADVANCED", playerId: actorId, space: 2 },
+    ]));
+    expect(harness.game.game.players[actorId]).toEqual(expect.objectContaining({
+      imperialProgress: 2,
+      progressAdvancedThisRound: true,
+      pendingApprenticeUnlocks: 1,
+    }));
+
+    for (const connection of harness.connections) {
+      const reconnected = valueOf(await harness.service.reconnect({
+        roomCode: connection.room.code,
+        seatToken: connection.seatToken,
+      }));
+      const player = reconnected.game?.players[actorId];
+      expect(player?.imperialProgress).toBe(2);
+      expect(player?.progressAdvancedThisRound).toBe(true);
+      expect(player?.pendingApprenticeUnlocks).toBe(1);
+      expect(Object.values(player?.workers ?? {}).filter((worker) => worker.status === "available")).toHaveLength(3);
+      expect(Object.values(player?.workers ?? {}).filter((worker) => worker.status === "locked")).toHaveLength(2);
+    }
+
+    await command(harness, actorId, { type: "END_ORDER_TURN" });
+    const secondId = harness.game.game.phase.type === "orders"
+      ? harness.game.game.phase.activePlayerId
+      : null;
+    if (secondId === null) throw new Error("Expected the second Order turn");
+    await command(harness, secondId, { type: "END_ORDER_TURN" });
+    const afterCleanup = valueOf(await harness.service.reconnect({
+      roomCode: connectionFor(harness, actorId).room.code,
+      seatToken: connectionFor(harness, actorId).seatToken,
+    }));
+    const player = afterCleanup.game?.players[actorId];
+    expect(afterCleanup.game?.round).toBe(2);
+    expect(player?.progressAdvancedThisRound).toBe(false);
+    expect(player?.pendingApprenticeUnlocks).toBe(0);
+    expect(Object.values(player?.workers ?? {}).filter((worker) => worker.status === "available")).toHaveLength(4);
+    expect(Object.values(player?.workers ?? {}).filter((worker) => worker.status === "locked")).toHaveLength(1);
+  });
+
+  it("persists the first Imperial Seal owner for every reconnect and later round", async () => {
+    const harness = await startHarness();
+    await resolveSetup(harness);
+    const actorId = harness.game.game.firstPlayerId;
+    await seedAuthoritativeState(harness, (state) => {
+      state.players[actorId]!.imperialProgress = 4;
+      seedImperialOrder(state, actorId);
+    });
+    const ceramicId = Object.values(harness.game.game.ceramics).find(
+      (ceramic) => ceramic.ownerId === actorId && ceramic.stage === "finished",
+    )!.id;
+    await command(harness, actorId, {
+      type: "COMPLETE_ORDER",
+      orderId: "I01",
+      ceramicIds: [ceramicId],
+      useGuanWaiver: false,
+    });
+    expect(harness.game.game.imperialSealOwnerId).toBe(actorId);
+    expect(harness.game.events).toContainEqual({ type: "IMPERIAL_SEAL_CLAIMED", playerId: actorId });
+    for (const connection of harness.connections) {
+      const reconnected = valueOf(await harness.service.reconnect({
+        roomCode: connection.room.code,
+        seatToken: connection.seatToken,
+      }));
+      expect(reconnected.game?.imperialSealOwnerId).toBe(actorId);
+      expect(reconnected.game?.players[actorId]?.imperialProgress).toBe(5);
+    }
+    await command(harness, actorId, { type: "END_ORDER_TURN" });
+    const secondId = harness.game.game.phase.type === "orders" ? harness.game.game.phase.activePlayerId : null;
+    if (secondId === null) throw new Error("Expected the second Order turn");
+    await command(harness, secondId, { type: "END_ORDER_TURN" });
+    const later = valueOf(await harness.service.reconnect({
+      roomCode: connectionFor(harness, actorId).room.code,
+      seatToken: connectionFor(harness, actorId).seatToken,
+    }));
+    expect(later.game?.round).toBe(2);
+    expect(later.game?.imperialSealOwnerId).toBe(actorId);
   });
 });

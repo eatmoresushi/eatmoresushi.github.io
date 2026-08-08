@@ -209,6 +209,13 @@ describe("T08 Colour Samples", () => {
     expect(next.marketDiscard).toContain(discardedId);
     expect(next.marketDisplay).toContain(replacementId);
     expect(next.players[actorId]!.techniques[0]!.exhausted).toBe(true);
+    expect(next.phase.type).toBe("work_office_sale");
+    next = mustApply(
+      next,
+      actorId,
+      { type: "OFFICE_RESOLVE_FLAWED_SALE", ceramicIds: [] },
+      rng,
+    );
     expect(next.phase.type).toBe("work");
   });
 });

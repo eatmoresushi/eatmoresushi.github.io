@@ -132,6 +132,6 @@ Watch especially multi-ceramic Orders M15–M20 and I06–I10 in playtests. If t
 
 ## Current version
 
-V0.4 is the current source of truth.
+V0.5 is the current source of truth. It changes Guild & Academy to Shifu-only, reduces its 4-player capacity to 2, and reduces every printed Technique cost by 1; other V0.4 gameplay remains unchanged.
 
 Do not resurrect obsolete mechanics from old images or discussion unless explicitly requested.

@@ -1,6 +1,6 @@
 # IMPLEMENTATION_DECISIONS.md
 
-These are the intended digital interpretations of current V0.4 wording.
+These are the intended digital interpretations of current V0.5 wording.
 
 ## Orders
 
@@ -20,7 +20,16 @@ A player may pass with workers still unused. Passing is permanent for the phase.
 
 If common supply is short, player receives only what remains.
 
+Office Flawed sales are an exchange exception: an accepted sale must pay exactly 1 Coin per ceramic. The server rejects a sale selection that exceeds the Coins remaining in the common supply, and the UI limits selection accordingly.
+
 For a choose-combination gain, UI must not allow total chosen amount above action maximum.
+
+## Market & Imperial Office
+
+- Resolve each visit as a main action followed by an explicit optional Flawed-sale step.
+- Selling is never a standalone main action. Submitting an empty sale selection ends the visit without selling.
+- Apprentice sale limit is 1; Shifu sale limit is 2, regardless of which valid main action was chosen.
+- Order display refill, hand-limit checks, and Colour Samples resolve before the optional sale step.
 
 ## Kiln Yard
 

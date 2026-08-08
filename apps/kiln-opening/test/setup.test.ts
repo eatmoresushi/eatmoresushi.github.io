@@ -22,6 +22,7 @@ describe("setup", () => {
     if (!result.ok) return;
 
     const state = result.state;
+    expect(state.rulesVersion).toBe("0.5");
     expect(state.playerCount).toBe(count);
     expect(state.round).toBe(1);
     expect(state.phase.type).toBe("setup_kiln_selection");

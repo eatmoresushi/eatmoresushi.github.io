@@ -35,6 +35,14 @@ Opponents may appear as compact workshop strips/cards around the top/side.
 - During firing, focus UI attention on kiln and contribution workflow.
 - Use clear timing banners: `Before Contributions`, `Reveal`, `Before Quality`, etc.
 
+## Session controls
+
+- Only the host sees `End session` while a room is in the lobby or actively playing.
+- Ending requires a destructive-action confirmation that states it affects every player and cannot be undone.
+- All players receive a dedicated ended-session screen after the server confirms or broadcasts the change.
+- `Leave view` keeps the saved seat and the home screen offers `Resume` and `Forget seat` separately.
+- Do not present a locally hidden view as though the authoritative session has ended.
+
 ## Cards
 
 Order cards should be components driven by `orders.json`, not static raster images.
@@ -62,6 +70,19 @@ Player board prominently shows:
 - unfinished and finished ceramics.
 
 The printable player-board art omits worker spaces for physical-table practicality; digital UI should still show worker status somewhere.
+
+## Imperial Progress
+
+The main table always shows the shared, public six-space Imperial Progress track from Local Workshop (0) through Imperial Audience (5).
+
+- Render every player's marker on their current space using both colour and a text label.
+- Show each space title, end-game VP, and its Apprentice, Presentation, or Imperial Seal reward where applicable.
+- Show whether each player has already advanced this round, because the once-per-round limit is public information.
+- Show available, locked, and pending-unlock worker counts on player summaries. Apprentice rewards at spaces 2 and 4 remain pending until Cleanup.
+- Show the Imperial Seal owner globally, including an explicit `Unclaimed` state.
+- At spaces 4 and 5, identify the player as eligible for Imperial Presentation.
+
+On narrow screens, keep the complete track in the document and make it horizontally scrollable. Do not remove spaces, markers, titles, rewards, or accessible labels to fit the viewport.
 
 ## Responsive behaviour
 
