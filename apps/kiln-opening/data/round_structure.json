@@ -1,12 +1,12 @@
 {
-  "rulesVersion": "0.5",
+  "rulesVersion": "0.6.3",
   "roundCount": 5,
   "phases": [
     {
       "order": 1,
       "id": "start",
       "name": "Start of Round",
-      "summary": "Refill displays, ready Techniques, reset once-per-round abilities and Progress Reminder."
+      "summary": "Refill displays, ready Techniques, and reset once-per-round Kiln abilities."
     },
     {
       "order": 2,
@@ -24,7 +24,7 @@
       "order": 4,
       "id": "orders",
       "name": "Order Phase",
-      "summary": "In turn order, complete any number of Orders. Imperial Progress can advance at most once per player this round."
+      "summary": "In turn order, complete any number of Orders. Single-ceramic Imperial Orders advance Progress by 1 and multi-ceramic Imperial Orders by 2, up to space 5."
     },
     {
       "order": 5,

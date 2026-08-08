@@ -245,19 +245,26 @@ interface WorkerFormProps {
 
 function MaterialsForm({ workers, locationFull, busy, send }: WorkerFormProps) {
   const [workerId, setWorkerId] = useState(workers[0]?.id ?? "");
-  const [clay, setClay] = useState(2);
+  const [clay, setClay] = useState(3);
   const [wood, setWood] = useState(1);
   const selectedWorker = workers.find((worker) => worker.id === workerId) ?? workers[0];
-  const maximum = selectedWorker?.kind === "shifu" ? 3 : 2;
+  const requiredTotal = selectedWorker?.kind === "shifu" ? 4 : 3;
   const invalidAmount = !Number.isInteger(clay) || !Number.isInteger(wood) || clay < 0 || wood < 0;
-  const overLimit = !invalidAmount && clay + wood > maximum;
+  const wrongTotal = !invalidAmount && clay + wood !== requiredTotal;
   const error = locationFull
     ? "Materials Yard is full."
     : invalidAmount
       ? "Choose whole, non-negative resource amounts."
-      : overLimit
-      ? `${selectedWorker?.kind === "shifu" ? "Shifu" : "Apprentice"} may take at most ${maximum} total Clay and Wood.`
+      : wrongTotal
+      ? `${selectedWorker?.kind === "shifu" ? "Shifu" : "Apprentice"} must take exactly ${requiredTotal} total Clay and Wood.`
       : null;
+
+  function chooseWorker(nextWorkerId: string): void {
+    const nextWorker = workers.find((worker) => worker.id === nextWorkerId);
+    setWorkerId(nextWorkerId);
+    setClay(nextWorker?.kind === "shifu" ? 3 : 2);
+    setWood(1);
+  }
 
   function submit(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
@@ -273,7 +280,7 @@ function MaterialsForm({ workers, locationFull, busy, send }: WorkerFormProps) {
     <form className="control-form" onSubmit={submit}>
       <label>
         Worker
-        <select name="worker" value={selectedWorker?.id ?? ""} onChange={(event) => setWorkerId(event.target.value)} required>
+        <select name="worker" value={selectedWorker?.id ?? ""} onChange={(event) => chooseWorker(event.target.value)} required>
           {workers.map((worker) => (
             <option key={worker.id} value={worker.id}>
               {worker.kind === "shifu" ? "Shifu" : "Apprentice"} · {worker.id}
@@ -282,11 +289,11 @@ function MaterialsForm({ workers, locationFull, busy, send }: WorkerFormProps) {
         </select>
       </label>
       <div className="split-fields">
-        <label>Clay<input type="number" name="clay" min={0} max={3} step={1} value={clay} onChange={(event) => setClay(Number.isNaN(event.target.valueAsNumber) ? 0 : event.target.valueAsNumber)} required /></label>
-        <label>Wood<input type="number" name="wood" min={0} max={3} step={1} value={wood} onChange={(event) => setWood(Number.isNaN(event.target.valueAsNumber) ? 0 : event.target.valueAsNumber)} required /></label>
+        <label>Clay<input type="number" name="clay" min={0} max={requiredTotal} step={1} value={clay} onChange={(event) => setClay(Number.isNaN(event.target.valueAsNumber) ? 0 : event.target.valueAsNumber)} required /></label>
+        <label>Wood<input type="number" name="wood" min={0} max={requiredTotal} step={1} value={wood} onChange={(event) => setWood(Number.isNaN(event.target.valueAsNumber) ? 0 : event.target.valueAsNumber)} required /></label>
       </div>
       <small role="status" className={error === null ? "" : "control-error"}>
-        {error ?? `${maximum - clay - wood} of ${maximum} resource capacity remaining.`}
+        {error ?? `${clay} Clay + ${wood} Wood = ${requiredTotal} resources.`}
       </small>
       <button className="primary-button" disabled={busy || error !== null || selectedWorker === undefined}>Gather materials</button>
     </form>
@@ -408,8 +415,8 @@ function GlazeForm({ game, player, workers, locationFull, busy, send }: {
   const paidMode = mode === "normal";
   const totalCoins = paidMode
     ? selections.reduce((total, selection) => total + DECORATION_COSTS[selection.decoration], 0)
-      - (activeTechniqueIds.includes("T05") ? 1 : 0)
-      - (activeTechniqueIds.includes("T06") ? 1 : 0)
+      - (activeTechniqueIds.includes("T05") ? DECORATION_COSTS.carved : 0)
+      - (activeTechniqueIds.includes("T06") ? DECORATION_COSTS.impressed : 0)
     : 0;
 
   function validationError(): string | null {
@@ -450,10 +457,10 @@ function GlazeForm({ game, player, workers, locationFull, busy, send }: {
       <WorkerChoice workers={workers} value={selectedWorker?.id ?? ""} onChange={setWorkerId} />
       <CeramicChoice name="ceramic1" label="First ceramic" ceramics={ceramics} value={firstId} onChange={setCeramic1} />
       <EnumChoice name="glaze1" label="First glaze" options={GLAZES} value={glaze1} onChange={(value) => setGlaze1(value as Glaze)} />
-      <EnumChoice name="decoration1" label="First decoration" options={DECORATIONS} value={decoration1} onChange={(value) => setDecoration1(value as Decoration)} />
+      <EnumChoice name="decoration1" label="First decoration" options={DECORATIONS} value={decoration1} onChange={(value) => setDecoration1(value as Decoration)} formatOption={decorationOptionLabel} />
       <CeramicChoice name="ceramic2" label="Second ceramic (Shifu normal mode only)" ceramics={ceramics} value={secondId} onChange={setCeramic2} blank="None" />
       <EnumChoice name="glaze2" label="Second glaze" options={GLAZES} value={glaze2} onChange={(value) => setGlaze2(value as Glaze)} />
-      <EnumChoice name="decoration2" label="Second decoration" options={DECORATIONS} value={decoration2} onChange={(value) => setDecoration2(value as Decoration)} />
+      <EnumChoice name="decoration2" label="Second decoration" options={DECORATIONS} value={decoration2} onChange={(value) => setDecoration2(value as Decoration)} formatOption={decorationOptionLabel} />
       <EnumChoice name="mode" label="Shifu mode" options={["normal", "free_single"]} value={mode} onChange={(value) => setMode(value as "normal" | "free_single")} />
       <TechniqueChecks techniqueIds={techniques} selected={activeTechniqueIds} onChange={setSelectedTechniques} />
       <small role="status" className={error === null ? "" : "control-error"}>{error ?? `Decoration cost: ${totalCoins} Coins.`}</small>
@@ -474,7 +481,6 @@ function KilnYardForm({ game, player, workers, locationFull, busy, send }: {
   const occupied = new Set(Object.values(game.ceramics).filter((ceramic) => ceramic.stage === "loaded").map((ceramic) => ceramic.stage === "loaded" ? ceramic.kilnSpaceId : ""));
   const spaces = KILN_SPACE_IDS.filter((space) => !occupied.has(space));
   const [workerId, setWorkerId] = useState(workers[0]?.id ?? "");
-  const [gainWood, setGainWood] = useState(true);
   const [ceramic1, setCeramic1] = useState("");
   const [space1, setSpace1] = useState<KilnSpaceId>(spaces[0] ?? KILN_SPACE_IDS[0]!);
   const [ceramic2, setCeramic2] = useState("");
@@ -492,6 +498,9 @@ function KilnYardForm({ game, player, workers, locationFull, busy, send }: {
   function validationError(): string | null {
     if (locationFull) return "Kiln Yard is full.";
     if (selectedWorker === undefined) return "Choose an available worker.";
+    if (ceramics.length === 0) return "You have no Glazed ceramic to load.";
+    if (spaces.length === 0) return "The kiln has no empty space.";
+    if (loads.length === 0) return "Select at least one Glazed ceramic to load.";
     if (loads.length > (selectedWorker.kind === "shifu" ? 2 : 1)) return "An Apprentice may load at most one ceramic.";
     if (firstId !== "" && secondId === firstId) return "Choose each ceramic only once.";
     if (firstSpace !== undefined && secondId !== "" && secondSpace === firstSpace) return "Choose each kiln space only once.";
@@ -505,25 +514,23 @@ function KilnYardForm({ game, player, workers, locationFull, busy, send }: {
     void send({
       type: "USE_KILN_YARD",
       workerId: selectedWorker.id,
-      gainWood,
       loads,
     });
   }
   return (
     <form className="control-form" onSubmit={submit}>
       <WorkerChoice workers={workers} value={selectedWorker?.id ?? ""} onChange={setWorkerId} />
-      <label className="check-row"><input type="checkbox" name="gainWood" checked={gainWood} onChange={(event) => setGainWood(event.target.checked)} /> Gain 1 Wood</label>
-      {spaces.length === 0 ? (
-        <p className="control-hint">The kiln is full; this worker may still gain Wood.</p>
+      {spaces.length === 0 || ceramics.length === 0 ? (
+        <p className="control-hint">Kiln Yard gives no Wood; loading an eligible ceramic is required.</p>
       ) : (
         <>
-          <CeramicChoice name="ceramic1" label="First ceramic" ceramics={ceramics} value={firstId} onChange={setCeramic1} blank="Load none" />
+          <CeramicChoice name="ceramic1" label="First ceramic" ceramics={ceramics} value={firstId} onChange={setCeramic1} blank="Choose a ceramic" />
           <EnumChoice name="space1" label="First kiln space" options={spaces} value={firstSpace ?? ""} onChange={(value) => setSpace1(value as KilnSpaceId)} />
           <CeramicChoice name="ceramic2" label="Second ceramic (Shifu only)" ceramics={ceramics} value={secondId} onChange={setCeramic2} blank="None" />
           <EnumChoice name="space2" label="Second kiln space" options={spaces} value={secondSpace ?? ""} onChange={(value) => setSpace2(value as KilnSpaceId)} />
         </>
       )}
-      <small role="status" className={error === null ? "" : "control-error"}>{error ?? `${loads.length} ceramic${loads.length === 1 ? "" : "s"} selected; gaining Wood is optional.`}</small>
+      <small role="status" className={error === null ? "" : "control-error"}>{error ?? `${loads.length} ceramic${loads.length === 1 ? "" : "s"} selected; Kiln Yard gives no Wood.`}</small>
       <button className="primary-button" disabled={busy || error !== null}>Load kiln</button>
     </form>
   );
@@ -553,7 +560,7 @@ function OfficeActionForms({ game, player, workers, locationFull, busy, send }: 
     if (locationFull) return "Market & Imperial Office is full.";
     if (selectedWorker === undefined) return "Choose an available worker.";
     if ((action === "take_one" || action === "take_one_and_gain_two_coins") && player.orderHand.length >= handLimit) {
-      return `Your Order hand is full (${handLimit}).`;
+      return `Your Order area is full (${handLimit}).`;
     }
     if ((action === "take_one" || action === "take_one_and_gain_two_coins") && displayCount === 0) {
       return "No face-up Order is available.";
@@ -634,7 +641,7 @@ function OfficeControls({ game, player, busy, send }: Pick<ActionPanelProps, "ga
     );
   }
   return (
-    <ControlSection title="Take an Order" hint={handFull ? `Your Order hand is full (${handLimit}); continue to the optional sale.` : `${phase.remainingTakes} selection${phase.remainingTakes === 1 ? "" : "s"} remaining.`}>
+    <ControlSection title="Take an Order" hint={handFull ? `Your Order area is full (${handLimit}); continue to the optional sale.` : `${phase.remainingTakes} selection${phase.remainingTakes === 1 ? "" : "s"} remaining.`}>
       <div className="choice-stack">{display.map((orderId) => <CommandButton key={orderId} busy={busy} disabled={handFull} send={send} command={{ type: "OFFICE_TAKE_ORDER", orderId }}>{`Take ${orderId}`}</CommandButton>)}</div>
       {phase.mode === "take_up_to_two" && <CommandButton busy={busy} send={send} command={{ type: "OFFICE_END_ORDERS" }} secondary>Continue to optional sale</CommandButton>}
     </ControlSection>
@@ -691,7 +698,7 @@ function GuildControls({ game, player, busy, send }: {
   if (game.phase.step === "refresh_or_skip") {
     return (
       <ControlSection title="Shifu refresh" hint="Return one face-up Technique to the bottom of its deck, or keep the display.">
-        <div className="choice-stack">{ids.map((techniqueId) => <CommandButton key={techniqueId} busy={busy} send={send} command={{ type: "GUILD_REFRESH_TECHNIQUE", techniqueId }}>{`Refresh ${techniqueId}`}</CommandButton>)}</div>
+        <div className="choice-stack">{ids.map((techniqueId) => <CommandButton key={techniqueId} busy={busy} send={send} command={{ type: "GUILD_REFRESH_TECHNIQUE", techniqueId }}>{`Replace ${techniqueId} · ${TECHNIQUE_DEFINITIONS[techniqueId]?.name ?? "Unknown Technique"}`}</CommandButton>)}</div>
         <CommandButton busy={busy} send={send} command={{ type: "GUILD_SKIP_REFRESH" }} secondary>Keep the display</CommandButton>
       </ControlSection>
     );
@@ -771,7 +778,7 @@ function KilnAbilityControls({ game, player, busy, send }: {
   const loaded = ownCeramics(game, player.id, "loaded");
   const eligibleForGe = loaded.filter((ceramic) => game.firingContext?.ceramicResults[ceramic.id]?.naturalHeatDifference === 1);
   if (player.kilnId === "GE") {
-    return <CeramicDecision title="Ge · Crackle from Fire" hint="Turn one difference-1 ceramic into a Crackle Masterpiece." ceramics={eligibleForGe} busy={busy} send={send} make={(ceramicId) => ({ type: "RESOLVE_GE", ceramicId })} skip={{ type: "RESOLVE_GE", ceramicId: null }} />;
+    return <CeramicDecision title="Ge · Crackle from Fire" hint="Turn one difference-1 ceramic into a Crackle Masterpiece. The Crackle conversion is free and does not refund its original Decoration." ceramics={eligibleForGe} busy={busy} send={send} make={(ceramicId) => ({ type: "RESOLVE_GE", ceramicId })} skip={{ type: "RESOLVE_GE", ceramicId: null }} />;
   }
   return (
     <ControlSection title="Jun · Kiln Transformation" hint="Adjust one of your ceramics by +1 or −1, or pass.">
@@ -809,7 +816,7 @@ function OrderControls({ game, player, busy, send }: {
   const ceramics = ownCeramics(game, player.id, "finished");
   return (
     <ControlSection title="Complete Orders" hint="You may complete any number of Orders, one at a time, then end your turn.">
-      {player.orderHand.length === 0 ? <p>No Orders in hand.</p> : player.orderHand.map((orderId) => (
+      {player.orderHand.length === 0 ? <p>No open Orders.</p> : player.orderHand.map((orderId) => (
         <OrderCompletion key={orderId} orderId={orderId} ceramics={ceramics} guan={player.kilnId === "GU" && !player.kilnAbilityUsedThisRound} busy={busy} send={send} />
       ))}
       <CommandButton busy={busy} send={send} command={{ type: "END_ORDER_TURN" }} secondary>End Order turn</CommandButton>
@@ -952,14 +959,21 @@ function SelectField({ name, label, options, blank }: {
   return <label>{label}<select name={name} required={blank === undefined}>{blank !== undefined && <option value="">{blank}</option>}{options.map((option) => <option key={option} value={option}>{labels[String(option)] ?? String(option).replaceAll("_", " ")}</option>)}</select></label>;
 }
 
-function EnumChoice({ name, label, options, value, onChange }: {
+function decorationOptionLabel(option: string): string {
+  const decoration = option as Decoration;
+  const cost = DECORATION_COSTS[decoration];
+  return `${labels[option] ?? option} · ${cost} Coin${cost === 1 ? "" : "s"}`;
+}
+
+function EnumChoice({ name, label, options, value, onChange, formatOption }: {
   name: string;
   label: string;
   options: readonly string[];
   value: string;
   onChange: (value: string) => void;
+  formatOption?: (option: string) => string;
 }) {
-  return <label>{label}<select name={name} value={value} onChange={(event) => onChange(event.target.value)} required>{options.map((option) => <option key={option} value={option}>{labels[option] ?? option.replaceAll("_", " ")}</option>)}</select></label>;
+  return <label>{label}<select name={name} value={value} onChange={(event) => onChange(event.target.value)} required>{options.map((option) => <option key={option} value={option}>{formatOption?.(option) ?? labels[option] ?? option.replaceAll("_", " ")}</option>)}</select></label>;
 }
 
 function TechniqueChecks({ techniqueIds, selected, onChange }: {

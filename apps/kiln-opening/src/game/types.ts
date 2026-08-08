@@ -78,7 +78,6 @@ export interface PlayerState {
   techniques: OwnedTechniqueState[];
   imperialProgress: 0 | 1 | 2 | 3 | 4 | 5;
   passedWorkPhase: boolean;
-  progressAdvancedThisRound: boolean;
   pendingApprenticeUnlocks: number;
   kilnAbilityUsedThisRound: boolean;
   presentationCeramicIds: CeramicId[];
@@ -194,6 +193,13 @@ export interface FiringContext {
   ceramicResults: Record<CeramicId, FiringCeramicResult>;
 }
 
+export interface FiringResultSummary {
+  round: RoundNumber;
+  baseHeat: 1 | 2 | 3;
+  fireModifier: FireModifier;
+  globalHeat: number;
+}
+
 export interface FinalScoreBreakdown {
   orders: number;
   imperialProgress: number;
@@ -293,7 +299,7 @@ export type GamePhase =
 
 export interface GameState {
   schemaVersion: 1;
-  rulesVersion: "0.5";
+  rulesVersion: "0.6.3";
   gameId: string;
   revision: number;
   eventSequence: number;
@@ -320,6 +326,7 @@ export interface GameState {
   fireDiscard: FireModifier[];
   imperialSealOwnerId: PlayerId | null;
   firingContext: FiringContext | null;
+  lastFiringResult: FiringResultSummary | null;
   finalResult: FinalResult | null;
 }
 
@@ -373,7 +380,6 @@ export type GameAction =
   | {
       type: "USE_KILN_YARD";
       workerId: WorkerId;
-      gainWood: boolean;
       loads: KilnLoadSelection[];
     }
   | { type: "OFFICE_GAIN_COINS"; workerId: WorkerId }
@@ -477,7 +483,13 @@ export type GameEvent =
   | { type: "FIRE_REVEALED"; modifier: FireModifier; baseHeat: 1 | 2 | 3; globalHeat: number }
   | { type: "QUALITY_ASSIGNED"; ceramicId: CeramicId; quality: Quality }
   | { type: "ORDER_COMPLETED"; playerId: PlayerId; orderId: OrderId; ceramicIds: CeramicId[] }
-  | { type: "IMPERIAL_PROGRESS_ADVANCED"; playerId: PlayerId; space: number }
+  | {
+      type: "IMPERIAL_PROGRESS_ADVANCED";
+      playerId: PlayerId;
+      from: number;
+      to: number;
+      reward: 1 | 2;
+    }
   | { type: "IMPERIAL_SEAL_CLAIMED"; playerId: PlayerId }
   | { type: "APPRENTICE_UNLOCKED"; playerId: PlayerId; workerId: WorkerId }
   | { type: "ROUND_STARTED"; round: RoundNumber; firstPlayerId: PlayerId }

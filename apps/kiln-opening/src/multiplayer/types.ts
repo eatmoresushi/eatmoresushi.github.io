@@ -4,6 +4,7 @@ import type {
   FinalResult,
   FireModifier,
   FiringContext,
+  FiringResultSummary,
   GameAction,
   GameEvent,
   GamePhase,
@@ -24,7 +25,7 @@ import type {
 } from "../game/index.ts";
 
 export type RoomStatus = "lobby" | "playing" | "finished" | "abandoned";
-export type StoredRulesVersion = "0.4" | "0.5";
+export type StoredRulesVersion = "0.4" | "0.5" | "0.6.1" | "0.6.3";
 
 export interface PublicRoom {
   id: string;
@@ -59,7 +60,6 @@ export interface PublicPlayerState {
   techniques: PlayerState["techniques"];
   imperialProgress: 0 | 1 | 2 | 3 | 4 | 5;
   passedWorkPhase: boolean;
-  progressAdvancedThisRound: boolean;
   pendingApprenticeUnlocks: number;
   kilnAbilityUsedThisRound: boolean;
   presentationCeramicIds: string[];
@@ -87,7 +87,7 @@ export interface PublicDiscards {
 
 export interface PublicGameState {
   schemaVersion: 1;
-  rulesVersion: "0.5";
+  rulesVersion: "0.6.3";
   gameId: string;
   revision: number;
   eventSequence: number;
@@ -106,6 +106,7 @@ export interface PublicGameState {
   discards: PublicDiscards;
   imperialSealOwnerId: PlayerId | null;
   firingContext: FiringContext | null;
+  lastFiringResult: FiringResultSummary | null;
   finalResult: FinalResult | null;
 }
 

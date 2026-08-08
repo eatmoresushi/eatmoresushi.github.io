@@ -62,7 +62,6 @@ function makePlayer(input: CreateGameInput["players"][number], seatIndex: number
     techniques: [],
     imperialProgress: 0,
     passedWorkPhase: false,
-    progressAdvancedThisRound: false,
     pendingApprenticeUnlocks: 0,
     kilnAbilityUsedThisRound: false,
     presentationCeramicIds: [],
@@ -170,7 +169,7 @@ export function createGame(input: CreateGameInput, rng: RandomSource): CreateGam
 
   const state: GameState = {
     schemaVersion: 1,
-    rulesVersion: "0.5",
+    rulesVersion: "0.6.3",
     gameId: input.gameId,
     revision: 0,
     eventSequence: 0,
@@ -201,6 +200,7 @@ export function createGame(input: CreateGameInput, rng: RandomSource): CreateGam
     fireDiscard: [],
     imperialSealOwnerId: null,
     firingContext: null,
+    lastFiringResult: null,
     finalResult: null,
   };
 

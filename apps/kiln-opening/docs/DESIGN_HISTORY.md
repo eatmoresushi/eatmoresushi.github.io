@@ -122,16 +122,14 @@ Techniques create persistent, player-chosen development without another resource
 
 ## Order deck
 
-The 20 Market + 10 Imperial Order cards remain unchanged while production/Technique changes are tested.
+The 20 Market + 10 Imperial Order structure and all printed VP/Coin rewards remain stable. V0.6.3 changes only five named attributes—M10, M12, M14, I02 and I04—to reach explicit Glaze distribution 4/4/4/4 and Decoration distribution 3/3/4/3.
 
-Reason:
-
-Changing both action economy and Order rewards simultaneously would make balance data difficult to interpret.
-
-Watch especially multi-ceramic Orders M15–M20 and I06–I10 in playtests. If they become too efficient, the first fallback test is roughly -1 VP on those cards, not an automatic change.
+Multi-ceramic Imperial Orders I06–I10 now advance +2 rather than +1 Progress so their larger production commitment is not disadvantaged. They never advance +3, even when three ceramics are required.
 
 ## Current version
 
-V0.5 is the current source of truth. It changes Guild & Academy to Shifu-only, reduces its 4-player capacity to 2, and reduces every printed Technique cost by 1; other V0.4 gameplay remains unchanged.
+V0.6.3 is the current source of truth. It raises Decoration costs to Plain 1 and specialised Decorations 2, rebalances five Order attributes, and gives single-ceramic Imperial Orders +1 Progress versus +2 for multi-ceramic Imperial Orders. V0.6.1 previously added a third starting Apprentice, raised Materials Yard to 3/4 resources, removed Kiln Yard Wood, kept Flawed sales as an Office secondary effect, removed the once-per-round Imperial Progress cap, and restored Technique costs to the 2/3-Coin tiers.
+
+V0.5 historically changed Guild & Academy to Shifu-only, reduced its 4-player capacity to 2, and reduced every printed Technique cost by 1.
 
 Do not resurrect obsolete mechanics from old images or discussion unless explicitly requested.

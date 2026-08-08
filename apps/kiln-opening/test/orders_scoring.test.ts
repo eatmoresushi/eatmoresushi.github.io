@@ -144,6 +144,52 @@ describe("Order matcher", () => {
     ceramics[0]!.glaze = "celadon";
     expect(matchesOrder(order, ceramics, true)).toBe(false);
   });
+
+  it("matches the exact V0.6.3 Order attribute and reward changes without score changes", () => {
+    expect(ORDER_DEFINITIONS["M10"]).toEqual(expect.objectContaining({ vp: 8, coins: 4 }));
+    expect(ORDER_DEFINITIONS["M10"]?.ceramics[0]).toEqual(expect.objectContaining({ glaze: "moon_white", decoration: "carved" }));
+    expect(ORDER_DEFINITIONS["M12"]).toEqual(expect.objectContaining({ vp: 6, coins: 4 }));
+    expect(ORDER_DEFINITIONS["M12"]?.ceramics[0]).toEqual(expect.objectContaining({ glaze: "grey_green", decoration: "impressed" }));
+    expect(ORDER_DEFINITIONS["M14"]).toEqual(expect.objectContaining({ vp: 7, coins: 4 }));
+    expect(ORDER_DEFINITIONS["M14"]?.ceramics[0]).toEqual(expect.objectContaining({ glaze: "moon_white", decoration: "impressed" }));
+    expect(ORDER_DEFINITIONS["I02"]).toEqual(expect.objectContaining({ vp: 8, imperialProgressReward: 1 }));
+    expect(ORDER_DEFINITIONS["I02"]?.ceramics[0]).toEqual(expect.objectContaining({ glaze: "celadon", decoration: "impressed" }));
+    expect(ORDER_DEFINITIONS["I04"]).toEqual(expect.objectContaining({ vp: 9, imperialProgressReward: 1 }));
+    expect(ORDER_DEFINITIONS["I04"]?.ceramics[0]).toEqual(expect.objectContaining({ glaze: "moon_white", decoration: "impressed" }));
+  });
+
+  it("keeps the V0.6.3 explicit Glaze and Decoration distributions balanced", () => {
+    const allOrders = Object.values(ORDER_DEFINITIONS);
+    const glazeCounts: Record<Glaze, number> = {
+      white: 0,
+      celadon: 0,
+      grey_green: 0,
+      moon_white: 0,
+    };
+    const decorationCounts: Record<Decoration, number> = {
+      plain: 0,
+      carved: 0,
+      impressed: 0,
+      crackle: 0,
+    };
+    for (const order of allOrders) {
+      for (const requirement of order.ceramics) {
+        if (requirement.glaze !== undefined) glazeCounts[requirement.glaze] += 1;
+        if (requirement.decoration !== undefined) decorationCounts[requirement.decoration] += 1;
+      }
+    }
+    expect(glazeCounts).toEqual({ white: 4, celadon: 4, grey_green: 4, moon_white: 4 });
+    expect(decorationCounts).toEqual({ plain: 3, carved: 3, impressed: 4, crackle: 3 });
+  });
+
+  it("gives I01–I05 +1 and I06–I10 +2, never +3", () => {
+    for (let index = 1; index <= 10; index += 1) {
+      const id = `I${String(index).padStart(2, "0")}`;
+      const reward = ORDER_DEFINITIONS[id]?.imperialProgressReward;
+      expect(reward, id).toBe(index <= 5 ? 1 : 2);
+      expect(reward, id).not.toBe(3);
+    }
+  });
 });
 
 describe("Order Phase and Imperial Progress", () => {
@@ -172,13 +218,13 @@ describe("Order Phase and Imperial Progress", () => {
     expect(next.players[actorId]!.completedOrders).toHaveLength(1);
   });
 
-  it("advances Progress at most once per round and unlocks at space 2 during Cleanup", () => {
+  it("advances for every Imperial Order in one round and unlocks space 2 during Cleanup", () => {
     const game = startedGame(2, 701);
     const actorId = game.state.firstPlayerId;
     game.state.players[actorId]!.imperialProgress = 1;
     game.state.players[actorId]!.orderHand = ["I01", "I02"];
     const first = addFinished(game.state, actorId, "bowl", "masterpiece", "celadon", "plain");
-    const second = addFinished(game.state, actorId, "washer", "masterpiece", "celadon", "plain");
+    const second = addFinished(game.state, actorId, "washer", "masterpiece", "celadon", "impressed");
     setOrderPhase(game.state);
     let state = mustApply(
       game.state,
@@ -192,7 +238,7 @@ describe("Order Phase and Imperial Progress", () => {
       { type: "COMPLETE_ORDER", orderId: "I02", ceramicIds: [second.id], useGuanWaiver: false },
       game.rng,
     );
-    expect(state.players[actorId]!.imperialProgress).toBe(2);
+    expect(state.players[actorId]!.imperialProgress).toBe(3);
     expect(state.players[actorId]!.pendingApprenticeUnlocks).toBe(1);
     state = finishOrderPhase(state, game.rng);
     expect(state.round).toBe(2);
@@ -200,7 +246,7 @@ describe("Order Phase and Imperial Progress", () => {
       Object.values(state.players[actorId]!.workers).filter(
         (worker) => worker.kind === "apprentice" && worker.status === "available",
       ),
-    ).toHaveLength(3);
+    ).toHaveLength(4);
   });
 
   it("unlocks the fourth Apprentice at Progress space 4 during Cleanup", () => {
@@ -231,7 +277,7 @@ describe("Order Phase and Imperial Progress", () => {
       Object.values(state.players[actorId]!.workers).filter(
         (worker) => worker.kind === "apprentice" && worker.status === "available",
       ),
-    ).toHaveLength(4);
+    ).toHaveLength(5);
   });
 
   it("awards the Imperial Seal only to the first arrival at space 5", () => {
@@ -421,11 +467,11 @@ describe("complete deterministic simulation", () => {
       {
         type: "USE_KILN_YARD",
         workerId: workerId(state, workshopId, "shifu"),
-        gainWood: true,
         loads: [{ ceramicId, kilnSpaceId: "middle_1" }],
       },
       game.rng,
     );
+    state = mustApply(state, workshopId, { type: "PASS_WORK_PHASE" }, game.rng);
     if (state.phase.type !== "firing_contributions") {
       throw new Error("Simulation did not reach Contributions");
     }

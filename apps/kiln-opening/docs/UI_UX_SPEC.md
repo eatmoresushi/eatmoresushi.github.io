@@ -45,7 +45,7 @@ Opponents may appear as compact workshop strips/cards around the top/side.
 
 ## Cards
 
-Order cards should be components driven by `orders.json`, not static raster images.
+Order cards should be components driven by `orders.json`, not static raster images. Every Imperial card displays its explicit +1/+2 Imperial Progress reward alongside VP. The Glaze Workshop displays Plain as 1 Coin and Carved/Impressed/Crackle as 2 Coins before confirmation, including the amount saved by Shifu, Carving Knives, or Seal Stamps.
 
 Craft Technique cards should be components driven by `techniques.json`.
 
@@ -77,10 +77,10 @@ The main table always shows the shared, public six-space Imperial Progress track
 
 - Render every player's marker on their current space using both colour and a text label.
 - Show each space title, end-game VP, and its Apprentice, Presentation, or Imperial Seal reward where applicable.
-- Show whether each player has already advanced this round, because the once-per-round limit is public information.
 - Show available, locked, and pending-unlock worker counts on player summaries. Apprentice rewards at spaces 2 and 4 remain pending until Cleanup.
 - Show the Imperial Seal owner globally, including an explicit `Unclaimed` state.
 - At spaces 4 and 5, identify the player as eligible for Imperial Presentation.
+- Animate and log a server-committed Progress move from its original space to final space. A +2 move must visibly cross and announce intermediate milestone rewards rather than appearing to skip them.
 
 On narrow screens, keep the complete track in the document and make it horizontally scrollable. Do not remove spaces, markers, titles, rewards, or accessible labels to fit the viewport.
 
@@ -117,6 +117,8 @@ Useful:
 - simultaneous Wood reveal;
 - Fire card flip;
 - Quality result.
+
+After each completed firing, keep the drawn Fire card and the Base Heat + Fire = Global Heat result visible on the shared kiln panel until a later firing replaces it. Face-up Technique tiles and Technique replacement controls must show stable Technique IDs alongside their names.
 
 Avoid slow decorative animations that extend a 90-minute game.
 

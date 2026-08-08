@@ -86,6 +86,12 @@ describe("contributor-scaled Base Heat and Quality", () => {
     expect(state.ceramics[ceramic.id]).toEqual(
       expect.objectContaining({ stage: "finished", quality: "fine" }),
     );
+    expect(state.lastFiringResult).toEqual({
+      round: 1,
+      baseHeat: 2,
+      fireModifier: 1,
+      globalHeat: 3,
+    });
   });
 });
 
@@ -120,6 +126,12 @@ describe("private Wood boundary", () => {
       expect.objectContaining({ type: "FIRE_REVEALED", baseHeat: 1 }),
     );
     expect(state.phase.type).toBe("orders");
+    expect(state.lastFiringResult).toEqual({
+      round: 1,
+      baseHeat: 1,
+      fireModifier: 0,
+      globalHeat: 1,
+    });
   });
 
   it("rejects non-contributors, unaffordable values, and duplicate submissions", () => {
@@ -227,11 +239,12 @@ describe("firing timing windows", () => {
     );
   });
 
-  it("Ge converts natural difference 1 to Masterpiece and Crackle with no refund", () => {
+  it("Ge converts natural difference 1 to Masterpiece and Crackle with no charge or refund", () => {
     const game = startedGame(2, 613);
     const actorId = game.state.firstPlayerId;
     game.state.players[actorId]!.kilnId = "GE";
-    const coinsBefore = game.state.players[actorId]!.resources.coins;
+    game.state.players[actorId]!.resources.coins = 1;
+    const coinsAfterOriginalDecoration = game.state.players[actorId]!.resources.coins;
     const ceramic = addLoaded(game.state, actorId, "bowl", "celadon", "carved", "middle_1");
     game.state.fireDeck[0] = -1;
     let state = enterFiring(game.state, game.rng);
@@ -241,7 +254,7 @@ describe("firing timing windows", () => {
     expect(state.ceramics[ceramic.id]).toEqual(
       expect.objectContaining({ stage: "finished", quality: "masterpiece", decoration: "crackle" }),
     );
-    expect(state.players[actorId]!.resources.coins).toBe(coinsBefore);
+    expect(state.players[actorId]!.resources.coins).toBe(coinsAfterOriginalDecoration);
   });
 
   it("Protective Saggars improves only an assigned Flawed ceramic to Standard", () => {

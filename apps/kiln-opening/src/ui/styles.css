@@ -170,8 +170,7 @@
   .progress-rewards { display: flex; flex-direction: column; gap: .2rem; align-items: start; }
   .progress-rewards span { border-radius: 999px; padding: .15rem .34rem; color: var(--ink-soft); font-size: .55rem; background: var(--paper-deep); }
   .progress-markers { display: flex; flex-wrap: wrap; gap: .3rem; align-self: end; min-height: 28px; }
-  .progress-marker { position: relative; display: grid; width: 29px; height: 29px; place-items: center; border: 2px solid white; border-radius: 50%; color: white; font-size: .57rem; font-weight: 900; box-shadow: 0 0 0 1px rgb(48 42 33 / 30%); }
-  .progress-marker b { position: absolute; right: -3px; bottom: -3px; display: grid; width: 13px; height: 13px; place-items: center; border-radius: 50%; color: white; font-size: .5rem; background: var(--celadon-dark); }
+  .progress-marker { position: relative; display: grid; width: 29px; height: 29px; place-items: center; border: 2px solid white; border-radius: 50%; color: white; font-size: .57rem; font-weight: 900; box-shadow: 0 0 0 1px rgb(48 42 33 / 30%); animation: progress-arrival .32s ease-out; }
   .progress-colour-0 { background: #a9483e; }
   .progress-colour-1 { background: #3f7183; }
   .progress-colour-2 { background: #82723b; }
@@ -196,6 +195,13 @@
   .submission-track { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .75rem; }
   .submission-track span { border-radius: 99px; padding: .28rem .55rem; color: var(--ink-soft); font-size: .65rem; background: var(--paper-deep); }
   .submission-track .submitted { color: white; background: var(--celadon-dark); }
+  .firing-result-summary { display: grid; grid-template-columns: minmax(105px, .55fr) minmax(180px, 1.45fr); gap: .55rem; margin-top: .75rem; border: 1px solid #c4a975; border-radius: 10px; padding: .55rem; background: linear-gradient(145deg, #fff8e7, #eee1c9); }
+  .fire-card-result, .heat-equation { display: grid; gap: .15rem; align-content: center; border-radius: 7px; padding: .55rem; }
+  .fire-card-result { color: #fff8e8; text-align: center; background: linear-gradient(150deg, var(--cinnabar), #743329); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 22%); }
+  .fire-card-result small, .heat-equation small { font-size: .58rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+  .fire-card-result strong { font-size: 1.55rem; line-height: 1; }
+  .heat-equation strong { color: var(--cinnabar-dark); font-family: var(--serif); font-size: 1rem; }
+  .heat-equation span { color: var(--ink-soft); font-size: .58rem; line-height: 1.35; }
   .orders-board h3 { margin: .8rem 0 .45rem; color: var(--ink-soft); font-family: var(--sans); font-size: .65rem; letter-spacing: .1em; text-transform: uppercase; }
   .card-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: .55rem; }
   .order-card { display: grid; gap: .45rem; min-height: 136px; border: 1px solid #c4a975; border-radius: 10px 10px 18px 10px; padding: .65rem; background: linear-gradient(145deg, #fffcf3, #eee4d0); box-shadow: 0 4px 10px rgb(62 48 30 / 8%); }
@@ -203,6 +209,12 @@
   .order-card header { display: flex; gap: .4rem; justify-content: space-between; }
   .order-card header strong { color: var(--cinnabar-dark); }
   .order-card header span, .order-card footer { color: var(--ink-soft); font-size: .61rem; }
+  .order-progress-reward { color: var(--cinnabar-dark); font-size: .68rem; }
+
+  @keyframes progress-arrival {
+    from { opacity: .35; transform: translateY(-8px) scale(.8); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
   .order-slots { display: grid; gap: .3rem; }
   .order-slots span { border-left: 3px solid var(--celadon); padding-left: .35rem; font-size: .65rem; line-height: 1.35; }
   .technique-columns { display: grid; grid-template-columns: repeat(3, 1fr); gap: .55rem; }
@@ -337,6 +349,7 @@
   .kiln-spaces { grid-template-columns: 1fr 1fr; }
   .card-row { grid-template-columns: 1fr; }
   .shelf { grid-template-columns: 1fr; }
+  .firing-result-summary { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {

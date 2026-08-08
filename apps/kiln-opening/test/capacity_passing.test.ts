@@ -15,7 +15,7 @@ const capacities: Record<LocationId, Record<PlayerCount, number>> = {
 function actionFor(locationId: LocationId, selectedWorkerId: string): GameAction {
   switch (locationId) {
     case "materials_yard":
-      return { type: "GAIN_MATERIALS", workerId: selectedWorkerId, clay: 0, wood: 0 };
+      return { type: "GAIN_MATERIALS", workerId: selectedWorkerId, clay: 3, wood: 0 };
     case "forming_studio":
       return { type: "FORM_CERAMICS", workerId: selectedWorkerId, shapes: [] };
     case "glaze_workshop":
@@ -29,7 +29,6 @@ function actionFor(locationId: LocationId, selectedWorkerId: string): GameAction
       return {
         type: "USE_KILN_YARD",
         workerId: selectedWorkerId,
-        gainWood: false,
         loads: [],
       };
     case "market_imperial_office":
@@ -80,7 +79,7 @@ describe("action capacity", () => {
         type: "GAIN_MATERIALS",
         workerId: workerId(state, actorId, "apprentice"),
         clay: 1,
-        wood: 1,
+        wood: 2,
       },
       rng,
     );
@@ -91,7 +90,7 @@ describe("action capacity", () => {
       {
         type: "GAIN_MATERIALS",
         workerId: workerId(state, actorId, "apprentice"),
-        clay: 2,
+        clay: 3,
         wood: 0,
       },
       rng,
@@ -128,7 +127,7 @@ describe("passing and Work turn rotation", () => {
         type: "GAIN_MATERIALS",
         workerId: workerId(state, secondId, "apprentice"),
         clay: 0,
-        wood: 2,
+        wood: 3,
       },
       rng,
     );
@@ -151,7 +150,7 @@ describe("passing and Work turn rotation", () => {
         type: "GAIN_MATERIALS",
         workerId: workerId(state, inactiveId, "apprentice"),
         clay: 1,
-        wood: 1,
+        wood: 2,
       },
       rng,
     );

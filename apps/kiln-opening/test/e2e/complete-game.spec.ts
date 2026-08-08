@@ -68,6 +68,8 @@ test("starting Orders remain visible after an eligible redraw advances directly 
     await guest.getByRole("button", { name: /Guan Kiln/ }).click();
     await expect(host.getByRole("heading", { name: "Your first commission" })).toBeVisible();
     await expect(host.getByRole("region", { name: "Workshop Orders" })).toContainText("M20");
+    await expect(host.locator(".player-board.is-own")).toContainText("4 available workers · 2 locked");
+    await expect(host.locator(".site-footer")).toContainText("Kiln Opening V0.6.3");
 
     await host.getByRole("button", { name: "Redraw" }).click();
     await expect(host.getByTestId("phase-name")).toHaveText("Work Phase");
@@ -80,6 +82,7 @@ test("starting Orders remain visible after an eligible redraw advances directly 
       await expect(progress).toContainText("Prefectural Recommendation");
       await expect(progress).toContainText("Awaiting Audience");
       await expect(progress).toContainText("Presentation eligible");
+      await expect(progress).toContainText("Single-ceramic Imperial Orders advance 1 space; multi-ceramic Imperial Orders advance 2");
       await expect(progress.getByTestId("imperial-seal-owner")).toHaveText("Imperial Seal · Unclaimed");
       const orders = page.getByRole("region", { name: "Workshop Orders" });
       await expect(orders.locator(".order-card")).toHaveCount(2);
@@ -89,8 +92,10 @@ test("starting Orders remain visible after an eligible redraw advances directly 
 
     const materials = guest.locator("details").filter({ hasText: "Materials Yard" });
     await materials.getByLabel("Worker").selectOption({ index: 1 });
+    await expect(materials.getByRole("button", { name: "Gather materials" })).toBeEnabled();
+    await materials.getByLabel("Clay").fill("3");
     await expect(materials.getByRole("button", { name: "Gather materials" })).toBeDisabled();
-    await expect(materials.getByRole("status")).toContainText("at most 2 total");
+    await expect(materials.getByRole("status")).toContainText("exactly 3 total");
     await materials.getByLabel("Wood").fill("0");
     await expect(materials.getByRole("button", { name: "Gather materials" })).toBeEnabled();
 
@@ -103,12 +108,27 @@ test("starting Orders remain visible after an eligible redraw advances directly 
 
     const glazing = guest.locator("details").filter({ hasText: "Glaze Workshop" });
     await glazing.getByText("Glaze Workshop", { exact: true }).click();
+    await expect(glazing.locator('select[name="decoration1"] option')).toHaveText([
+      "Plain · 1 Coin",
+      "Carved · 2 Coins",
+      "Impressed · 2 Coins",
+      "Crackle · 2 Coins",
+    ]);
     await expect(glazing.getByRole("button", { name: "Apply glaze" })).toBeDisabled();
     await expect(glazing.getByRole("status")).toContainText("no Shaped ceramic");
 
     const kilnYard = guest.locator("details").filter({ hasText: "Kiln Yard" });
     await kilnYard.getByText("Kiln Yard", { exact: true }).click();
-    await expect(kilnYard.getByRole("button", { name: "Load kiln" })).toBeEnabled();
+    await expect(kilnYard.getByRole("button", { name: "Load kiln" })).toBeDisabled();
+    await expect(kilnYard.getByRole("status")).toContainText("no Glazed ceramic");
+    await expect(kilnYard).toContainText("gives no Wood");
+
+    const imperialCards = guest.locator(".orders-board .order-imperial");
+    await expect(imperialCards).toHaveCount(3);
+    await expect(imperialCards.locator(".order-progress-reward")).toHaveCount(3);
+    for (const reward of await imperialCards.locator(".order-progress-reward").allTextContents()) {
+      expect(reward).toMatch(/^\+[12] Imperial Progress$/);
+    }
 
     const office = guest.locator("details").filter({ hasText: "Market & Imperial Office" });
     await office.getByText("Market & Imperial Office", { exact: true }).click();
@@ -124,7 +144,12 @@ test("starting Orders remain visible after an eligible redraw advances directly 
     await expect(guild).toContainText("pay the printed Coin cost");
     await expect(guild.getByLabel("Worker")).toHaveCount(0);
     await expect(guild.getByRole("button", { name: "Begin Guild action" })).toBeEnabled();
+    const firstTechniqueTile = guest.locator(".technique-tile").first();
+    const firstTechniqueId = await firstTechniqueTile.getAttribute("data-technique-id");
+    expect(firstTechniqueId).toMatch(/^T\d{2}$/);
+    await expect(firstTechniqueTile).toContainText(firstTechniqueId ?? "");
     await guild.getByRole("button", { name: "Begin Guild action" }).click();
+    await expect(guest.getByRole("button", { name: new RegExp(`^Replace ${firstTechniqueId} ·`) })).toBeVisible();
     await guest.getByRole("button", { name: "Keep the display" }).click();
     await guest.locator(".choice-stack .primary-button:not(:disabled)").first().click();
 
@@ -185,7 +210,7 @@ test("two workshops complete a firing, Order, reconnect, and five-round game", a
     await guest.getByRole("button", { name: /Guan Kiln/ }).click();
     await expect(guest.getByTestId("phase-name")).toHaveText("Work Phase");
 
-    // The deterministic commissions are M09 (Moon-white Vase) and M10 (carved Celadon Censer).
+    // The deterministic commissions are M09 (Moon-white Vase) and M10 (carved Moon-white Censer).
     await guest.getByText("Forming Studio", { exact: true }).click();
     const guestForming = guest.locator("details").filter({ hasText: "Forming Studio" });
     await guestForming.getByLabel("Worker").selectOption({ index: 1 });
@@ -217,7 +242,7 @@ test("two workshops complete a firing, Order, reconnect, and five-round game", a
     await guest.getByRole("button", { name: "Apply glaze" }).click();
     await host.getByText("Glaze Workshop", { exact: true }).click();
     const hostGlaze = host.locator("details").filter({ hasText: "Glaze Workshop" });
-    await hostGlaze.getByLabel("First glaze").selectOption("celadon");
+    await hostGlaze.getByLabel("First glaze").selectOption("moon_white");
     await hostGlaze.getByLabel("First decoration").selectOption("carved");
     await hostGlaze.getByRole("button", { name: "Apply glaze" }).click();
 
@@ -239,6 +264,10 @@ test("two workshops complete a firing, Order, reconnect, and five-round game", a
     await hostKilnYard.getByLabel("First kiln space").selectOption("middle_1");
     await hostKilnYard.getByRole("button", { name: "Load kiln" }).click();
 
+    // V0.6.3 retains four initially usable workers; both may pass the last one.
+    await guest.getByRole("button", { name: "Pass for this round" }).click();
+    await host.getByRole("button", { name: "Pass for this round" }).click();
+
     // The locked amount is private: the submitter sees 2, while the opponent sees only status.
     await expect(guest.getByRole("heading", { name: "Choose Wood in secret" })).toBeVisible();
     await guest.getByRole("button", { name: "2 Wood" }).click();
@@ -249,6 +278,16 @@ test("two workshops complete a firing, Order, reconnect, and five-round game", a
     await expect(host.locator(".secret-value")).toHaveCount(0);
     await host.getByRole("button", { name: "2 Wood" }).click();
     await expect(guest.getByTestId("phase-name")).toHaveText("Order Phase");
+    for (const page of [host, guest]) {
+      const firingResult = page.getByTestId("last-firing-result");
+      await expect(firingResult).toBeVisible();
+      await expect(firingResult).toContainText("Fire card");
+      await expect(firingResult).toContainText("Final Global Heat");
+      await expect(firingResult).toContainText("Base + Fire");
+    }
+    await expect(guest.getByText("Reconnected to the latest authoritative state.")).toHaveCount(0);
+    await guest.getByRole("button", { name: "Reconnect" }).click();
+    await expect(guest.getByText("Reconnected to the latest authoritative state.")).toBeVisible();
 
     const completion = guest.locator(".completion-card").filter({ hasText: "M09" });
     await completion.getByRole("checkbox").first().check();

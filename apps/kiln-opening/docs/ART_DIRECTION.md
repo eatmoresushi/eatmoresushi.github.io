@@ -1,4 +1,4 @@
-# ART_DIRECTION.md — Kiln Opening V0.5
+# ART_DIRECTION.md — Kiln Opening V0.6.3
 
 This document preserves the visual direction from the physical prototype without requiring Codex to read obsolete rule text from older images.
 
@@ -27,7 +27,7 @@ This document preserves the visual direction from the physical prototype without
 
 - Gold/ochre identity.
 - Similar layout to Market Orders so players can compare quickly.
-- Imperial Progress reminder may be shown, but UI must explain that only the first Imperial completion by that player each round advances Progress.
+- Print the Imperial Progress reward prominently: +1 on I01–I05 and +2 on I06–I10. Multiple Imperial completions in one round may all advance Progress.
 
 ### Vessels
 

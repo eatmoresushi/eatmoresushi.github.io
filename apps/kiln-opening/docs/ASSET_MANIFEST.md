@@ -1,21 +1,15 @@
-# ASSET_MANIFEST.md — V0.5 RULES / V0.4 VISUAL AUDIT
+# ASSET_MANIFEST.md — V0.6.3 RULES / LEGACY VISUAL AUDIT
 
 Only files under `assets/current_v04/` are approved as current visual references.
 
 ## Approved and visually audited
-
-### Order cards
-- `order_cards_page_1_M01-M16.png`
-- `order_cards_page_2_M17-M20_I01-I10.png`
-
-The Order deck is unchanged in V0.5. Card IDs, requirements, minimum Qualities, VP and Coin values were checked against Appendix A of the V0.4 rulebook.
 
 ### Vessel cards
 - `vessel_cards_page_1_bowl_plate.png`
 - `vessel_cards_page_2_washer_vase.png`
 - `vessel_cards_page_3_censer.png`
 
-Together these contain 8 each of Bowl, Plate, Washer, Vase and Censer (40 total). The fields Glaze / Decoration / Quality / Delivered remain compatible with V0.5.
+Together these contain 8 each of Bowl, Plate, Washer, Vase and Censer (40 total). The fields Glaze / Decoration / Quality / Delivered remain compatible with V0.6.3.
 
 ### Fire cards
 - `fire_cards_page_1.png`
@@ -33,12 +27,16 @@ The earlier mixed Fire/Wood Page 2 was removed from the canonical directory so i
 
 Exactly four colour sets, each containing 0 / 1 / 2 / 3: 16 cards total.
 
-## Intentionally absent because older raster text conflicts with V0.5
+## Intentionally absent because older raster text conflicts with V0.6.3
+
+### Order-card sheets
+
+The V0.6.1 sheets `order_cards_page_1_M01-M16.png` and `order_cards_page_2_M17-M20_I01-I10.png` were moved to `assets/obsolete_v061/`. They do not show the V0.6.3 M10/M12/M14/I02/I04 attributes or the +1/+2 Imperial Progress rewards and are not approved current references. Regenerate all cards from `data/orders.json`.
 
 ### Central game board
 The older board is excluded. It contained obsolete content including Refining House / Refined Clay and older action/firing references.
 
-The V0.5 central board must be generated from:
+The V0.6.3 central board must be generated from:
 - `data/action_locations.json`
 - `data/firing.json`
 - `data/round_structure.json`

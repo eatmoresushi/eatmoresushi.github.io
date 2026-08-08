@@ -1,4 +1,4 @@
-# ENGINEERING_DESIGN_REVIEW.md — Kiln Opening V0.5
+# ENGINEERING_DESIGN_REVIEW.md — Kiln Opening V0.6.3
 
 ## Scope and authority
 
@@ -18,12 +18,12 @@ No gameplay mismatch was found between `data/*.json` and `GAME_RULES.md`.
 | `action_locations.json` | Exactly six locations; all 2P/3P/4P capacities and Apprentice/Shifu effects match. No obsolete Shifu repositioning appears. |
 | `round_structure.json` | The five phases and their order match. |
 | `firing.json` | Eight spaces, zone modifiers, contribution values, contributor-scaled Base Heat, Fire distribution, and Quality mapping match. |
-| `imperial_progress.json` | Track rewards/VP, once-per-round advance, Presentation eligibility/scoring, and no-punishment rule match. |
+| `imperial_progress.json` | Track rewards/VP, per-Imperial-Order advancement, Presentation eligibility/scoring, and no-punishment rule match. |
 | `kilns.json` | All five current Kiln Traditions and their effects match. |
 | `techniques.json` | IDs T01–T12, four tiles per discipline, costs, names, once-per-round flags, and exact effects agree with the rule file's delegated Technique definitions. |
 | `orders.json` | IDs M01–M20 and I01–I10, counts, requirement vocabulary, rewards, and Qualities agree with the rule file's delegated Order definitions and the historical V0.4 handoff audit. |
 | `components.json` | Component counts are consistent with all rule-constrained quantities. |
-| `asset_specs.json` | Regeneration requirements reflect the current six-location, no-Refined-Clay, contributor-scaled V0.5 rules. |
+| `asset_specs.json` | Regeneration requirements reflect the current six-location, no-Refined-Clay, contributor-scaled V0.6.3 rules and obsolete Order-card sheets. |
 
 The procedural ambiguities that still require a ruling are isolated in section 7. They are not structured-data mismatches.
 
@@ -74,7 +74,7 @@ IDs must not be array positions. Runtime-created IDs, including `CeramicId`, sho
 
 ```ts
 interface RulesContent {
-  readonly rulesVersion: "0.5";
+  readonly rulesVersion: "0.6.3";
   readonly contentHash: string;
   readonly config: GameConfigDefinition;
   readonly locations: Readonly<Record<LocationId, LocationDefinition>>;
@@ -93,6 +93,7 @@ interface OrderDefinition {
   readonly minimumQuality: Quality;
   readonly vp: number;
   readonly coins: number;
+  readonly imperialProgressReward?: 1 | 2;
 }
 
 interface OrderRequirementSlot {
@@ -118,7 +119,7 @@ Order matching must search valid permutations of selected ceramics against requi
 ```ts
 interface GameState {
   readonly schemaVersion: 1;
-  readonly rulesVersion: "0.5";
+  readonly rulesVersion: "0.6.3";
   readonly contentHash: string;
   readonly gameId: GameId;
   readonly revision: number;
@@ -150,7 +151,7 @@ interface PlayerState {
   readonly kilnId?: KilnId;
   readonly resources: { readonly clay: number; readonly wood: number; readonly coins: number };
   readonly workers: Readonly<Record<WorkerId, WorkerState>>;
-  readonly orderHand: readonly OrderId[]; // public in V0.5
+  readonly orderHand: readonly OrderId[]; // public in V0.6.3
   readonly completedOrders: readonly CompletedOrder[];
   readonly techniques: Readonly<Record<TechniqueId, OwnedTechniqueState>>;
   readonly imperialProgress: 0 | 1 | 2 | 3 | 4 | 5;
@@ -164,8 +165,7 @@ type WorkerState =
 
 interface PlayerRoundFlags {
   readonly passedWorkPhase: boolean;
-  readonly progressAdvanced: boolean;
-  readonly pendingUnlocks: 0 | 1;
+  readonly pendingUnlocks: 0 | 1 | 2;
   readonly kilnAbilityUsed: boolean;
 }
 
@@ -175,7 +175,7 @@ interface OwnedTechniqueState {
 }
 ```
 
-`pendingUnlocks` records reaching Progress 2 or 4 during the round; Cleanup changes the corresponding locked Apprentice to available. With the once-per-round Progress rule, at most one unlock can be pending for a player.
+`pendingUnlocks` records reaching Progress 2 or 4 during the round; Cleanup changes each corresponding locked Apprentice to available. Multiple Imperial completions may leave both unlocks pending before Cleanup.
 
 ### 1.5 Ceramic lifecycle
 
@@ -474,7 +474,7 @@ The engine must not expose a contribution through resource changes, event payloa
 2. have the server find a permutation-independent assignment to requirement slots;
 3. optionally declare Guan's once-per-round Decoration waiver for one Imperial requirement;
 4. deliver ceramics, record printed VP, and gain printed Coins;
-5. if this is that player's first Imperial completion of the round, advance Progress exactly once, record a pending unlock on reaching 2 or 4, and award the Seal immediately if this is the first arrival at 5.
+5. for an Imperial completion, advance the card's explicit +1/+2 reward up to space 5; queue every crossed 2/4 Apprentice milestone and award the Seal immediately on the first crossing into 5. There is no per-round cap.
 
 Each completion is final before another is submitted. `END_ORDER_TURN` advances to the next player. After all players end, enter Cleanup.
 
@@ -527,10 +527,10 @@ The server derives `actorId` from the authenticated seat; it never trusts an act
 |---|---|---|
 | Setup | `SELECT_KILN`, `KEEP_STARTING_ORDER`, `REDRAW_STARTING_ORDER` | Redraw is accepted only for an initial Order requiring at least two ceramics and only once. |
 | Work control | `PASS_WORK_PHASE` | Passing is permanent for the phase. |
-| Materials | `WORK_GAIN_MATERIALS` | Includes worker ID and Clay/Wood split up to the worker maximum. Partial supply fulfilment follows `IMPLEMENTATION_DECISIONS.md`. |
+| Materials | `WORK_GAIN_MATERIALS` | Includes worker ID and a Clay/Wood split totalling exactly 3 for an Apprentice or 4 for the Shifu. Partial supply fulfilment follows `IMPLEMENTATION_DECISIONS.md`. |
 | Forming | `WORK_FORM_CERAMICS` | Includes worker, ordered Shape choices, payments, optional Clay Substitution, Ding choice/payment, and optional triggered Technique uses. |
 | Glazing | `WORK_GLAZE_CERAMICS` | Includes ceramic/Glaze/Decoration selections, Shifu mode, payment allocations, and Technique uses. |
-| Kiln Yard | `WORK_USE_KILN_YARD` | Includes optional Wood gain and 0–1 or 0–2 ceramic/space pairs. It can legally load none. |
+| Kiln Yard | `WORK_USE_KILN_YARD` | Includes exactly 1 Apprentice load or 1–2 Shifu ceramic/space pairs. It grants no Wood and cannot legally load none. |
 | Office main action | `WORK_OFFICE_GAIN_COINS`, `WORK_OFFICE_BEGIN_ORDERS`, `OFFICE_TAKE_ORDER`, `OFFICE_USE_COLOUR_SAMPLES`, `OFFICE_SKIP_COLOUR_SAMPLES`, `OFFICE_FINISH_ORDERS` | Explicit subcommands preserve immediate refill and information horizons. Every completed main action transitions to the sale step. |
 | Office optional sale | `OFFICE_RESOLVE_FLAWED_SALE` | Includes 0–1 Apprentice or 0–2 Shifu explicit Ceramic IDs. Only owned Finished Flawed ceramics are legal; an empty list skips the sale. |
 | Guild | `WORK_GUILD_BEGIN`, `GUILD_REFRESH_TECHNIQUE`, `GUILD_SKIP_REFRESH`, `GUILD_BUY_TECHNIQUE` | Placement and purchase are Shifu-only. Optional refresh precedes exact printed-cost purchase, which refills the same discipline. |
@@ -565,7 +565,7 @@ The tabletop game is open information except for unrevealed Wood Contributions. 
 | Phase/window, round, First/active player, decision queue status | Yes | Yes | Same |
 | Resources, including current Wood count | Yes | Yes | Same |
 | Workers, Progress, score ledger, Techniques/exhaustion | Yes | Yes | Same |
-| Order hands and completed Orders | Yes | Yes | Same; Orders are explicitly public in V0.5 |
+| Order hands and completed Orders | Yes | Yes | Same; Orders are explicitly public in V0.6.3 |
 | Ceramics and kiln occupancy | Yes | Yes | Same |
 | Displays and discard piles | Yes | Yes | Same |
 | Draw-pile order | Yes | No | No; expose counts only |
@@ -711,12 +711,12 @@ Every rule implementation needs unit tests plus state-machine/integration covera
 
 ### 8.1 Content and schema tests
 
-- All JSON parses and validates under strict schemas; all `rulesVersion` fields that exist equal `0.5`.
+- All JSON parses and validates under strict schemas; all `rulesVersion` fields that exist equal `0.6.3`.
 - Stable IDs are unique; M01–M20, I01–I10, T01–T12, five Kilns, six locations, and eight kiln spaces are present.
 - Every structured definition has exactly one engine implementation; no orphan implementation exists.
 - Counts, capacities, costs, supplies, displays, Fire distribution, Progress, Presentation, and scoring match the reconciled values above.
 - Order relation indices are in range and relation enums are exhaustive.
-- Asset/data audit test rejects obsolete locations/resources/mechanics in canonical V0.5 content.
+- Asset/data audit test rejects obsolete locations/resources/mechanics and V0.6.1 Order sheets in canonical V0.6.3 content.
 
 ### 8.2 Setup and round flow
 
@@ -725,7 +725,7 @@ Every rule implementation needs unit tests plus state-machine/integration covera
 | Player count | Complete setup for 2P, 3P, and 4P. Reject 1P/5P. |
 | Random setup | Fixed seeds reproduce First Player and every deck; different seeds vary them. |
 | Kiln selection | Reverse-order active player, unique choice, correct final ownership for 2/3/4 players. |
-| Starting state | 2 Clay, 2 Wood, 3 Coins; Shifu + 2 available Apprentices; 2 locked; Progress 0; correct displays/supplies. |
+| Starting state | 2 Clay, 2 Wood, 3 Coins; Shifu + 3 available Apprentices; 2 locked; Progress 0; correct displays/supplies. |
 | Starting Order | One public Order each; redraw eligibility only for 2+ slots; maximum one redraw; approved A1 sequence. |
 | Phase flow | Five rounds, exact five phases, empty-kiln skip without Fire draw, Round 5 Cleanup before Presentation/scoring. |
 
@@ -734,10 +734,10 @@ Every rule implementation needs unit tests plus state-machine/integration covera
 - Capacity for every location at 2P/3P/4P; capacity is total workers and the same player may occupy repeatedly.
 - Active-player enforcement, clockwise rotation, worker ownership/availability, worker-specific effects, and Guild's Shifu-only restriction across all six locations.
 - Pass with unused workers, permanent pass, automatic skip of players with no workers, unused workers give no benefit.
-- Materials combinations at 0 through maximum, finite/empty/partial Clay and Wood supplies.
+- Materials exact 3/4 totals with pure and mixed combinations, plus finite/empty/partial Clay and Wood supplies.
 - Form every Shape at correct cost; insufficient Clay; eight-card per-Shape supply; persistent shaped ceramics; Shifu 0/1/2 choices.
 - Glaze exactly one Glaze and Decoration; all Decoration costs; Shifu two-normal versus one-free modes; cannot reglaze or glaze wrong lifecycle state.
-- Kiln Yard optional Wood, Wood with zero load, 1 versus 2 load maximum, ownership/state, occupied spaces, full kiln, and no Shifu reposition.
+- Kiln Yard no-Wood behavior, required 1 versus 1–2 load count, ownership/state, occupied spaces, full kiln, and no Shifu reposition.
 - Office all Apprentice/Shifu main modes, optional Apprentice 0–1 and Shifu 0–2 Flawed sales, exact Coin payment, Vessel return, duplicate/delivered/non-Flawed rejection, hand limits 3/Guan 4.
 - Order-taking immediate refill before the second choice, Market/Imperial mixing, optional stop after first, Colour Samples sequencing.
 - Guild Shifu-only placement, 1/2/2 capacity, exact printed cost, optional refresh/bottom/reveal, same-discipline refill, max two owned, and empty-deck edge case.
@@ -779,7 +779,8 @@ Test Ru, Guan, Ge, Ding, and Jun independently and in all relevant interactions,
 - Delivered ceramics cannot be reused; non-selected Finished ceramics persist.
 - Any number of sequential completions in a player's Order turn; explicit end; no out-of-turn completion.
 - Printed VP/Coins exactly once; immediate display refill applies to taking, not completing.
-- At most one Progress per player per round despite multiple Imperial completions.
+- I01–I05 advance exactly 1 Progress; I06–I10 advance exactly 2; none advances 3; multiple completions in one round remain legal.
+- Multi-space jumps cross and resolve Apprentice milestones 2/4 and Imperial Audience/Seal at 5 without skipping them.
 - Unlock at 2 and 4 during Cleanup only; new worker acts next round.
 - First arrival at 5 gets the Seal exactly once; later arrivals do not; reaching 5 does not end game.
 - Guan ignores exactly one Decoration requirement on one Imperial completion per round and no other requirement.
@@ -882,6 +883,6 @@ Exit criterion: Playwright completes representative games and hidden information
 
 - Deploy static Vite client to GitHub Pages/custom domain and Supabase backend with environment separation and secret management.
 - Add owner-consented anonymous game-level telemetry only after core correctness.
-- Apply the approved art direction with reusable HTML/CSS/SVG components; regenerate missing assets from current V0.5 data rather than obsolete raster sources.
+- Apply the approved art direction with reusable HTML/CSS/SVG components; regenerate missing assets from current V0.6.3 data rather than obsolete raster sources.
 
 Exit criterion: production smoke tests, security checks, replay capture, reconnect, and complete-game E2E pass before release.

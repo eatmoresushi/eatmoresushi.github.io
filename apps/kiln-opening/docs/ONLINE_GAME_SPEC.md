@@ -47,7 +47,7 @@ Host starts only with 2–4 players.
 
 - random First Player;
 - reverse-order Kiln selection;
-- starting Market Order is dealt directly to that player's hand and is public immediately, because Orders are open information in V0.5;
+- starting Market Order is dealt directly to that player's Order area and is public immediately, because Orders are open information in V0.6.3;
 - game begins Round 1.
 
 ## Synchronous turn model
@@ -140,11 +140,11 @@ Not required for MVP. Voice/chat can be external.
 
 ## Imperial Progress synchronization
 
-Imperial Progress is server-authoritative and public. Every public snapshot and reconnect response includes each player's current space, whether that player has advanced this round, pending Apprentice unlocks, current worker availability, and the global Imperial Seal owner.
+Imperial Progress is server-authoritative and public. Every public snapshot and reconnect response includes each player's current space, pending Apprentice unlocks, current worker availability, and the global Imperial Seal owner.
 
-Completing a Market Order never advances Imperial Progress. The first Imperial Order a player completes each round advances that player by one space, up to space 5; later Imperial Orders in the same round do not. Rewards at spaces 2 and 4 unlock one Apprentice during Cleanup. The first player to reach space 5 takes the Imperial Seal permanently.
+Completing a Market Order never advances Imperial Progress. A single-ceramic Imperial Order advances 1 space and a multi-ceramic Imperial Order advances 2 spaces, up to space 5, even when several are completed in one round. The server checks every crossed milestone: spaces 2 and 4 each queue one Apprentice for unlock during Cleanup, and the first player to reach or cross into space 5 takes the Imperial Seal permanently.
 
-The client renders the full six-space track and uses committed server events for advancement, unlock, Presentation-eligibility, and Seal feedback. It must not predict or apply any of those transitions locally.
+The client renders the full six-space track, prints each Imperial card's +1/+2 reward, and uses committed server events containing the original space, final space, and printed reward for advancement, unlock, Presentation-eligibility, and Seal feedback. It must not predict or apply any of those transitions locally.
 
 ## Game end
 

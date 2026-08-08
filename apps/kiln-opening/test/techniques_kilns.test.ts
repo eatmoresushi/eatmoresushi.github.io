@@ -127,6 +127,29 @@ describe("Forming Techniques and Ding", () => {
 });
 
 describe("Glazing Techniques", () => {
+  it.each([
+    ["T05", "carved"],
+    ["T06", "impressed"],
+  ] as const)("%s waives the complete 2-Coin %s Decoration cost", (techniqueId, decoration) => {
+    const { state, rng } = startedGame(2, techniqueId === "T05" ? 508 : 509);
+    const actorId = state.firstPlayerId;
+    const ceramic = addShaped(state, actorId, "bowl");
+    addTechnique(state, actorId, techniqueId);
+    const next = mustApply(
+      state,
+      actorId,
+      {
+        type: "GLAZE_CERAMICS",
+        workerId: workerId(state, actorId, "apprentice"),
+        selections: [{ ceramicId: ceramic.id, glaze: "white", decoration }],
+        shifuMode: "normal",
+        useTechniqueIds: [techniqueId],
+      },
+      rng,
+    );
+    expect(next.players[actorId]!.resources.coins).toBe(3);
+  });
+
   it("implements T05 Carving Knives and T06 Seal Stamps cost reductions", () => {
     const { state, rng } = startedGame(2, 510);
     const actorId = state.firstPlayerId;

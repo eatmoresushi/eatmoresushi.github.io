@@ -1,6 +1,6 @@
 # IMPLEMENTATION_DECISIONS.md
 
-These are the intended digital interpretations of current V0.5 wording.
+These are the intended digital interpretations of current V0.6.3 wording.
 
 ## Orders
 
@@ -22,7 +22,7 @@ If common supply is short, player receives only what remains.
 
 Office Flawed sales are an exchange exception: an accepted sale must pay exactly 1 Coin per ceramic. The server rejects a sale selection that exceeds the Coins remaining in the common supply, and the UI limits selection accordingly.
 
-For a choose-combination gain, UI must not allow total chosen amount above action maximum.
+Materials Yard requires the chosen Clay/Wood amounts to total exactly 3 for an Apprentice or exactly 4 for the Shifu. If the common supply is short, the player receives only the requested resources that remain.
 
 ## Market & Imperial Office
 
@@ -33,9 +33,7 @@ For a choose-combination gain, UI must not allow total chosen amount above actio
 
 ## Kiln Yard
 
-Taking 1 Wood is optional.
-
-A player may take the Wood and load zero ceramics.
+Kiln Yard never grants Wood. Placing a worker requires loading at least one owned Glazed ceramic into an empty kiln space. An Apprentice loads exactly 1; the Shifu loads 1 or 2.
 
 Shifu does not reposition.
 
@@ -49,7 +47,7 @@ Clay Substitution may pay for Ding's additional vessel.
 
 ## Ge
 
-Changing Decoration to Crackle gives no refund for a previously paid Decoration.
+Changing Decoration to Crackle costs no Coins and gives no refund for a previously paid Decoration.
 
 Ge's chosen ceramic must naturally be Heat Difference 1 at the time Ge resolves.
 
@@ -90,6 +88,10 @@ Presentation ceramics remain separate from Order-delivered ceramics.
 ## Round 5 Cleanup
 
 Perform Cleanup as written before final scoring even though Order cycling/First Player passing has no strategic effect afterward. This keeps phase flow deterministic.
+
+## Imperial Progress
+
+Each completed single-ceramic Imperial Order advances its owner one space; each multi-ceramic Imperial Order advances two spaces. Repeated completions in the same round remain legal. Progress advancement resolves immediately and sequentially, and the engine checks every crossed milestone so a two-space jump cannot skip the Apprentice rewards at 2/4 or the Imperial Audience and Seal at 5. Progress remains capped at 5. No per-round advancement flag is stored.
 
 ## Technique deck edge case
 

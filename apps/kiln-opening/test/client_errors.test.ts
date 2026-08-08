@@ -8,8 +8,8 @@ describe("Supabase Edge Function failures", () => {
       ok: false as const,
       error: {
         code: "INVALID_SELECTION" as const,
-        message: "Choose at most 2 total Clay and Wood.",
-        details: { clay: 2, wood: 1 },
+        message: "Choose exactly 3 total Clay and Wood.",
+        details: { clay: 3, wood: 1 },
         currentRevision: 5,
       },
     };

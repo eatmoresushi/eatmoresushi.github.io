@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "0.5",
+  "rulesVersion": "0.6.3",
   "locations": [
     {
       "id": "materials_yard",
@@ -9,8 +9,8 @@
         "3": 3,
         "4": 4
       },
-      "apprentice": "Gain 2 resources in any combination of Clay and Wood.",
-      "shifu": "Gain 3 resources in any combination of Clay and Wood."
+      "apprentice": "Gain 3 resources in any combination of Clay and Wood.",
+      "shifu": "Gain 4 resources in any combination of Clay and Wood."
     },
     {
       "id": "forming_studio",
@@ -42,11 +42,11 @@
         "3": 4,
         "4": 5
       },
-      "apprentice": "Gain 1 Wood, then load 1 glazed ceramic into any empty kiln space.",
-      "shifu": "Gain 1 Wood, then load up to 2 glazed ceramics into any empty kiln spaces.",
+      "apprentice": "Load 1 glazed ceramic into any empty kiln space.",
+      "shifu": "Load up to 2 glazed ceramics into any empty kiln spaces.",
       "clarifications": [
-        "Gaining Wood is optional and occurs before loading.",
-        "A player may take the Wood without loading.",
+        "Kiln Yard gives no Wood.",
+        "At least 1 eligible ceramic must be loaded.",
         "The Shifu does not reposition ceramics."
       ]
     },

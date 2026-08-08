@@ -18,6 +18,15 @@ import {
   startedGame,
 } from "./helpers";
 
+type ImperialOrderId =
+  | "I01" | "I02" | "I03" | "I04" | "I05"
+  | "I06" | "I07" | "I08" | "I09" | "I10";
+
+const IMPERIAL_REWARDS = [
+  ["I01", 1], ["I02", 1], ["I03", 1], ["I04", 1], ["I05", 1],
+  ["I06", 2], ["I07", 2], ["I08", 2], ["I09", 2], ["I10", 2],
+] as const satisfies ReadonlyArray<readonly [ImperialOrderId, 1 | 2]>;
+
 function setOrderPhase(state: GameState): void {
   const order = turnOrderFromFirst(state);
   state.phase = { type: "orders", turnOrder: order, currentIndex: 0, activePlayerId: order[0]! };
@@ -31,42 +40,90 @@ function finishOrderPhase(state: GameState, rng: SeededRandom): GameState {
   return next;
 }
 
-function addImperialOrderCeramic(
+function addImperialOrderCeramics(
   state: GameState,
   playerId: PlayerId,
-  orderId: "I01" | "I02",
-) {
-  if (orderId === "I01") {
-    return addFinished(state, playerId, "bowl", "masterpiece", "celadon", "plain");
+  orderId: ImperialOrderId,
+): string[] {
+  switch (orderId) {
+    case "I01": return [addFinished(state, playerId, "bowl", "masterpiece", "celadon", "plain").id];
+    case "I02": return [addFinished(state, playerId, "washer", "masterpiece", "celadon", "impressed").id];
+    case "I03": return [addFinished(state, playerId, "plate", "masterpiece", "white", "carved").id];
+    case "I04": return [addFinished(state, playerId, "vase", "masterpiece", "moon_white", "impressed").id];
+    case "I05": return [addFinished(state, playerId, "censer", "fine", "grey_green", "crackle").id];
+    case "I06": return [
+      addFinished(state, playerId, "bowl", "masterpiece", "white", "plain").id,
+      addFinished(state, playerId, "plate", "fine", "white", "carved").id,
+    ];
+    case "I07": return [
+      addFinished(state, playerId, "vase", "fine", "white", "plain").id,
+      addFinished(state, playerId, "washer", "fine", "celadon", "carved").id,
+    ];
+    case "I08": return [
+      addFinished(state, playerId, "bowl", "fine", "white", "plain").id,
+      addFinished(state, playerId, "plate", "fine", "white", "plain").id,
+      addFinished(state, playerId, "washer", "fine", "white", "plain").id,
+    ];
+    case "I09": return [
+      addFinished(state, playerId, "bowl", "masterpiece", "white", "plain").id,
+      addFinished(state, playerId, "plate", "masterpiece", "celadon", "plain").id,
+    ];
+    case "I10": return [
+      addFinished(state, playerId, "bowl", "fine", "white", "plain").id,
+      addFinished(state, playerId, "vase", "fine", "celadon", "plain").id,
+      addFinished(state, playerId, "censer", "fine", "grey_green", "plain").id,
+    ];
   }
-  return addFinished(state, playerId, "washer", "masterpiece", "celadon", "plain");
 }
 
 function completeImperial(
   state: GameState,
   playerId: PlayerId,
-  orderId: "I01" | "I02",
+  orderId: ImperialOrderId,
   rng: SeededRandom,
 ): GameState {
-  const ceramic = addImperialOrderCeramic(state, playerId, orderId);
+  const ceramicIds = addImperialOrderCeramics(state, playerId, orderId);
   state.players[playerId]!.orderHand.push(orderId);
   return mustApply(
     state,
     playerId,
-    { type: "COMPLETE_ORDER", orderId, ceramicIds: [ceramic.id], useGuanWaiver: false },
+    { type: "COMPLETE_ORDER", orderId, ceramicIds, useGuanWaiver: false },
     rng,
   );
 }
 
 describe("Imperial Progress advancement and delayed Apprentices", () => {
-  it("starts every player at 0 with two available and two locked Apprentices", () => {
+  it.each(IMPERIAL_REWARDS)("%s advances exactly +%i", (orderId, reward) => {
+    const { state, rng } = startedGame(2, 780 + Number(orderId.slice(1)));
+    const actorId = state.firstPlayerId;
+    setOrderPhase(state);
+    const ceramicIds = addImperialOrderCeramics(state, actorId, orderId);
+    state.players[actorId]!.orderHand.push(orderId);
+    const result = applyAction(
+      state,
+      actorId,
+      { type: "COMPLETE_ORDER", orderId, ceramicIds, useGuanWaiver: false },
+      rng,
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error(result.error.message);
+    expect(result.state.players[actorId]!.imperialProgress).toBe(reward);
+    expect(result.events).toContainEqual({
+      type: "IMPERIAL_PROGRESS_ADVANCED",
+      playerId: actorId,
+      from: 0,
+      to: reward,
+      reward,
+    });
+  });
+
+  it("starts every player at 0 with three available and two locked Apprentices", () => {
     const { state } = startedGame(4, 810);
     for (const player of Object.values(state.players)) {
       expect(player.imperialProgress).toBe(0);
-      expect(player.progressAdvancedThisRound).toBe(false);
       expect(player.pendingApprenticeUnlocks).toBe(0);
       const apprentices = Object.values(player.workers).filter((worker) => worker.kind === "apprentice");
-      expect(apprentices.filter((worker) => worker.status === "available")).toHaveLength(2);
+      expect(apprentices.filter((worker) => worker.status === "available")).toHaveLength(3);
       expect(apprentices.filter((worker) => worker.status === "locked")).toHaveLength(2);
     }
   });
@@ -84,33 +141,18 @@ describe("Imperial Progress advancement and delayed Apprentices", () => {
       rng,
     );
     expect(next.players[actorId]!.imperialProgress).toBe(0);
-    expect(next.players[actorId]!.progressAdvancedThisRound).toBe(false);
   });
 
-  it("advances exactly once for multiple Imperial Orders in one round", () => {
+  it("advances three spaces for a single and multi-ceramic Imperial Order in one round", () => {
     const { state, rng } = startedGame(2, 812);
     const actorId = state.firstPlayerId;
     setOrderPhase(state);
-    let next = completeImperial(state, actorId, "I01", rng);
+    let next = completeImperial(state, actorId, "I03", rng);
     expect(next.players[actorId]!.imperialProgress).toBe(1);
-    expect(next.players[actorId]!.progressAdvancedThisRound).toBe(true);
-    next = completeImperial(next, actorId, "I02", rng);
-    expect(next.players[actorId]!.imperialProgress).toBe(1);
+    next = completeImperial(next, actorId, "I07", rng);
+    expect(next.players[actorId]!.imperialProgress).toBe(3);
     expect(next.players[actorId]!.completedOrders).toHaveLength(2);
-  });
-
-  it("resets the reminder at the next round and can advance again", () => {
-    const { state, rng } = startedGame(2, 813);
-    const actorId = state.firstPlayerId;
-    setOrderPhase(state);
-    let next = completeImperial(state, actorId, "I01", rng);
-    next = finishOrderPhase(next, rng);
-    expect(next.round).toBe(2);
-    expect(next.players[actorId]!.progressAdvancedThisRound).toBe(false);
-    const nextTurnOrder = [actorId, ...next.playerOrder.filter((playerId) => playerId !== actorId)];
-    next.phase = { type: "orders", turnOrder: nextTurnOrder, currentIndex: 0, activePlayerId: actorId };
-    next = completeImperial(next, actorId, "I02", rng);
-    expect(next.players[actorId]!.imperialProgress).toBe(2);
+    expect(next.players[actorId]!.pendingApprenticeUnlocks).toBe(1);
   });
 
   it("never advances beyond space 5", () => {
@@ -118,22 +160,23 @@ describe("Imperial Progress advancement and delayed Apprentices", () => {
     const actorId = state.firstPlayerId;
     state.players[actorId]!.imperialProgress = 5;
     setOrderPhase(state);
-    const next = completeImperial(state, actorId, "I01", rng);
+    const next = completeImperial(state, actorId, "I10", rng);
     expect(next.players[actorId]!.imperialProgress).toBe(5);
     expect(next.players[actorId]!.pendingApprenticeUnlocks).toBe(0);
   });
 
-  it("reaching space 2 creates one pending unlock that is unusable until Cleanup", () => {
+  it("moving 1 to 3 crosses space 2 and keeps its unlock pending until Cleanup", () => {
     const { state, rng } = startedGame(2, 815);
     const actorId = state.firstPlayerId;
     state.players[actorId]!.imperialProgress = 1;
     setOrderPhase(state);
-    let next = completeImperial(state, actorId, "I01", rng);
+    let next = completeImperial(state, actorId, "I06", rng);
+    expect(next.players[actorId]!.imperialProgress).toBe(3);
     const beforeCleanup = Object.values(next.players[actorId]!.workers).filter(
       (worker) => worker.kind === "apprentice",
     );
     expect(next.players[actorId]!.pendingApprenticeUnlocks).toBe(1);
-    expect(beforeCleanup.filter((worker) => worker.status === "available")).toHaveLength(2);
+    expect(beforeCleanup.filter((worker) => worker.status === "available")).toHaveLength(3);
     expect(beforeCleanup.filter((worker) => worker.status === "locked")).toHaveLength(2);
 
     next = finishOrderPhase(next, rng);
@@ -141,11 +184,11 @@ describe("Imperial Progress advancement and delayed Apprentices", () => {
       (worker) => worker.kind === "apprentice",
     );
     expect(next.players[actorId]!.pendingApprenticeUnlocks).toBe(0);
-    expect(afterCleanup.filter((worker) => worker.status === "available")).toHaveLength(3);
+    expect(afterCleanup.filter((worker) => worker.status === "available")).toHaveLength(4);
     expect(afterCleanup.filter((worker) => worker.status === "locked")).toHaveLength(1);
   });
 
-  it("reaching space 4 unlocks only the second Apprentice and cannot trigger twice", () => {
+  it("moving 3 to 5 resolves the space-4 unlock and space-5 Seal without duplication", () => {
     const { state, rng } = startedGame(2, 816);
     const actorId = state.firstPlayerId;
     const player = state.players[actorId]!;
@@ -155,21 +198,21 @@ describe("Imperial Progress advancement and delayed Apprentices", () => {
     firstLocked.status = "available";
     player.imperialProgress = 3;
     setOrderPhase(state);
-    let next = completeImperial(state, actorId, "I01", rng);
-    next = completeImperial(next, actorId, "I02", rng);
-    expect(next.players[actorId]!.imperialProgress).toBe(4);
+    let next = completeImperial(state, actorId, "I08", rng);
+    expect(next.players[actorId]!.imperialProgress).toBe(5);
     expect(next.players[actorId]!.pendingApprenticeUnlocks).toBe(1);
-    expect(
-      Object.values(next.players[actorId]!.workers).filter(
-        (worker) => worker.kind === "apprentice" && worker.status === "available",
-      ),
-    ).toHaveLength(3);
-    next = finishOrderPhase(next, rng);
+    expect(next.imperialSealOwnerId).toBe(actorId);
     expect(
       Object.values(next.players[actorId]!.workers).filter(
         (worker) => worker.kind === "apprentice" && worker.status === "available",
       ),
     ).toHaveLength(4);
+    next = finishOrderPhase(next, rng);
+    expect(
+      Object.values(next.players[actorId]!.workers).filter(
+        (worker) => worker.kind === "apprentice" && worker.status === "available",
+      ),
+    ).toHaveLength(5);
   });
 });
 

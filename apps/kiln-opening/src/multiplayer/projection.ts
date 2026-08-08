@@ -24,7 +24,6 @@ function projectPlayer(state: GameState, playerId: PlayerId): PublicPlayerState 
     techniques: clone(player.techniques),
     imperialProgress: player.imperialProgress,
     passedWorkPhase: player.passedWorkPhase,
-    progressAdvancedThisRound: player.progressAdvancedThisRound,
     pendingApprenticeUnlocks: player.pendingApprenticeUnlocks,
     kilnAbilityUsedThisRound: player.kilnAbilityUsedThisRound,
     presentationCeramicIds: [...player.presentationCeramicIds],
@@ -83,6 +82,7 @@ export function projectPublicGameState(state: GameState): PublicGameState {
     },
     imperialSealOwnerId: state.imperialSealOwnerId,
     firingContext: clone(state.firingContext),
+    lastFiringResult: state.lastFiringResult === undefined ? null : clone(state.lastFiringResult),
     finalResult: clone(state.finalResult),
   };
 }

@@ -75,7 +75,6 @@ export function GameTable({ game, ownPlayerId }: { game: PublicGameState; ownPla
               <div className="imperial-player-status">
                 <span>{availableWorkers} available worker{availableWorkers === 1 ? "" : "s"} · {lockedWorkers} locked</span>
                 {player.pendingApprenticeUnlocks > 0 && <span>+{player.pendingApprenticeUnlocks} Apprentice during Cleanup</span>}
-                <span>{player.progressAdvancedThisRound ? "Advanced this round ✓" : "Progress available this round"}</span>
                 {player.imperialProgress >= 4 && <span>Presentation eligible</span>}
               </div>
             </article>
@@ -145,6 +144,26 @@ export function GameTable({ game, ownPlayerId }: { game: PublicGameState; ownPla
               ))}
             </div>
           )}
+          {game.lastFiringResult !== null && game.lastFiringResult !== undefined && (
+            <div
+              className="firing-result-summary"
+              role="status"
+              aria-label={`Latest firing result, round ${game.lastFiringResult.round}`}
+              data-testid="last-firing-result"
+            >
+              <div className="fire-card-result">
+                <small>Round {game.lastFiringResult.round} · Fire card</small>
+                <strong>{signedHeat(game.lastFiringResult.fireModifier)}</strong>
+              </div>
+              <div className="heat-equation">
+                <small>Final Global Heat</small>
+                <strong>
+                  {game.lastFiringResult.baseHeat} {signedHeat(game.lastFiringResult.fireModifier)} = {game.lastFiringResult.globalHeat}
+                </strong>
+                <span>Base + Fire; chamber zones apply to each ceramic.</span>
+              </div>
+            </div>
+          )}
         </section>
 
         <section className="orders-board panel" aria-labelledby="orders-title">
@@ -167,7 +186,7 @@ export function GameTable({ game, ownPlayerId }: { game: PublicGameState; ownPla
                 <h3>{discipline}</h3>
                 {game.displays.techniques[discipline].map((techniqueId) => {
                   const definition = TECHNIQUE_DEFINITIONS[techniqueId];
-                  return <article className="technique-tile" key={techniqueId}><strong>{definition?.name}</strong><span>{definition?.cost} Coins</span><p>{definition?.ability}</p></article>;
+                  return <article className="technique-tile" data-technique-id={techniqueId} key={techniqueId}><strong>{techniqueId} · {definition?.name}</strong><span>{definition?.cost} Coins</span><p>{definition?.ability}</p></article>;
                 })}
               </div>
             ))}
@@ -189,6 +208,12 @@ export function GameTable({ game, ownPlayerId }: { game: PublicGameState; ownPla
       </div>
     </section>
   );
+}
+
+function signedHeat(value: number): string {
+  if (value > 0) return `+${value}`;
+  if (value < 0) return `−${Math.abs(value)}`;
+  return "0";
 }
 
 function ImperialProgressTrack({ game }: { game: PublicGameState }) {
@@ -228,12 +253,12 @@ function ImperialProgressTrack({ game }: { game: PublicGameState }) {
                       .join("") || `P${player.seatIndex + 1}`;
                     return (
                       <span
-                        className={`progress-marker progress-colour-${player.seatIndex} ${player.progressAdvancedThisRound ? "has-advanced" : ""}`}
-                        aria-label={`${player.displayName} at space ${space.space}, ${space.title}; ${player.progressAdvancedThisRound ? "advanced this round" : "has not advanced this round"}`}
-                        title={`${player.displayName} · ${player.progressAdvancedThisRound ? "advanced this round" : "progress available"}`}
+                        className={`progress-marker progress-colour-${player.seatIndex}`}
+                        aria-label={`${player.displayName} at space ${space.space}, ${space.title}`}
+                        title={`${player.displayName} · ${space.title}`}
                         key={playerId}
                       >
-                        {initials}<b aria-hidden="true">{player.progressAdvancedThisRound ? "✓" : ""}</b>
+                        {initials}
                       </span>
                     );
                   })}
@@ -243,7 +268,7 @@ function ImperialProgressTrack({ game }: { game: PublicGameState }) {
           })}
         </ol>
       </div>
-      <p className="progress-legend">Complete your first Imperial Order each round to advance once. Apprentices reached at spaces 2 and 4 unlock during Cleanup.</p>
+      <p className="progress-legend">Single-ceramic Imperial Orders advance 1 space; multi-ceramic Imperial Orders advance 2. Apprentices crossed at spaces 2 and 4 unlock during Cleanup.</p>
     </section>
   );
 }
@@ -254,6 +279,9 @@ export function OrderCard({ orderId, imperial = false }: { orderId: string; impe
   return (
     <article className={`order-card ${imperial || orderId.startsWith("I") ? "order-imperial" : ""}`} data-order-id={orderId}>
       <header><strong>{orderId}</strong><span>{order.vp} VP · {order.coins} Coin{order.coins === 1 ? "" : "s"}</span></header>
+      {order.imperialProgressReward !== undefined && (
+        <strong className="order-progress-reward">+{order.imperialProgressReward} Imperial Progress</strong>
+      )}
       <div className="order-slots">
         {order.ceramics.map((requirement, index) => (
           <span key={index}>{requirement.shape === undefined ? "Any form" : SHAPE_LABELS[requirement.shape]} · {requirement.glaze === undefined ? "Any glaze" : GLAZE_LABELS[requirement.glaze]} · {requirement.decoration ?? "any decoration"}</span>

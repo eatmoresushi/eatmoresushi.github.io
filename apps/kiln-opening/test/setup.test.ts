@@ -9,7 +9,7 @@ import {
   turnOrderFromFirst,
 } from "../src/game";
 import type { GameState, KilnId, PlayerCount } from "../src/game";
-import { expectError, mustApply, playerInputs } from "./helpers";
+import { expectError, mustApply, playerInputs, setActive, startedGame, workerId } from "./helpers";
 
 describe("setup", () => {
   it.each([2, 3, 4] as const)("creates the complete %s-player starting state", (count) => {
@@ -22,7 +22,7 @@ describe("setup", () => {
     if (!result.ok) return;
 
     const state = result.state;
-    expect(state.rulesVersion).toBe("0.5");
+    expect(state.rulesVersion).toBe("0.6.3");
     expect(state.playerCount).toBe(count);
     expect(state.round).toBe(1);
     expect(state.phase.type).toBe("setup_kiln_selection");
@@ -46,7 +46,7 @@ describe("setup", () => {
         Object.values(player.workers).filter(
           (worker) => worker.kind === "apprentice" && worker.status === "available",
         ),
-      ).toHaveLength(2);
+      ).toHaveLength(3);
       expect(
         Object.values(player.workers).filter(
           (worker) => worker.kind === "apprentice" && worker.status === "locked",
@@ -56,6 +56,38 @@ describe("setup", () => {
       expect(player.orderHand).toEqual([]);
     }
     expect(JSON.parse(JSON.stringify(state))).toEqual(state);
+  });
+
+  it("allows all four starting workers to be used normally", () => {
+    const game = startedGame(2, 1006);
+    let state = game.state;
+    const actorId = state.firstPlayerId;
+    const otherId = state.playerOrder.find((playerId) => playerId !== actorId)!;
+    setActive(state, otherId);
+    state = mustApply(state, otherId, { type: "PASS_WORK_PHASE" }, game.rng);
+
+    for (let index = 0; index < 2; index += 1) {
+      state = mustApply(state, actorId, {
+        type: "GAIN_MATERIALS",
+        workerId: workerId(state, actorId, "apprentice"),
+        clay: 3,
+        wood: 0,
+      }, game.rng);
+    }
+    state = mustApply(state, actorId, {
+      type: "FORM_CERAMICS",
+      workerId: workerId(state, actorId, "apprentice"),
+      shapes: ["bowl"],
+    }, game.rng);
+    state = mustApply(state, actorId, {
+      type: "FORM_CERAMICS",
+      workerId: workerId(state, actorId, "shifu"),
+      shapes: ["plate"],
+    }, game.rng);
+
+    expect(Object.values(state.players[actorId]!.workers).filter(
+      (worker) => worker.status === "placed",
+    )).toHaveLength(4);
   });
 
   it("rejects player counts outside 2–4 and duplicate player IDs", () => {

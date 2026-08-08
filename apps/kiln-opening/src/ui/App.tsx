@@ -19,20 +19,21 @@ interface SavedSeat {
   seatToken: string;
 }
 
-function imperialOrderNotice(result: CommandSuccess): string | null {
+export function imperialOrderNotice(result: CommandSuccess): string | null {
   const completed = result.events.find(
     (event) => event.type === "ORDER_COMPLETED" && event.orderId.startsWith("I"),
   );
   if (completed?.type !== "ORDER_COMPLETED") return null;
   const player = result.game.players[result.actorId];
   const definition = ORDER_DEFINITIONS[completed.orderId];
-  const parts = [`Imperial Order completed: +${definition?.vp ?? 0} VP.`];
+  const parts = [`Player completed ${completed.orderId}. +${definition?.vp ?? 0} VP.`];
   const progress = result.events.find((event) => event.type === "IMPERIAL_PROGRESS_ADVANCED");
   if (progress?.type === "IMPERIAL_PROGRESS_ADVANCED") {
-    parts.push(`Imperial Progress: ${progress.space - 1} → ${progress.space}.`);
-    if (progress.space === 2) parts.push("Prefectural Recommendation reached. 1 Apprentice will unlock during Cleanup.");
-    if (progress.space === 4) parts.push("Awaiting Audience reached. 1 Apprentice will unlock during Cleanup. You are now eligible for the Imperial Presentation.");
-    if (progress.space === 5) {
+    const capped = progress.to - progress.from < progress.reward ? " (capped at space 5)" : "";
+    parts.push(`Imperial Progress +${progress.reward}: ${progress.from} → ${progress.to}${capped}.`);
+    if (progress.from < 2 && progress.to >= 2) parts.push("Prefectural Recommendation reached. 1 Apprentice will unlock during Cleanup.");
+    if (progress.from < 4 && progress.to >= 4) parts.push("Awaiting Audience reached. 1 Apprentice will unlock during Cleanup. You are now eligible for the Imperial Presentation.");
+    if (progress.from < 5 && progress.to >= 5) {
       const claimed = result.events.some((event) => event.type === "IMPERIAL_SEAL_CLAIMED");
       parts.push(claimed
         ? "Imperial Audience reached. You claim the Imperial Seal: +3 VP at game end."
@@ -41,7 +42,7 @@ function imperialOrderNotice(result: CommandSuccess): string | null {
   } else if (player?.imperialProgress === 5) {
     parts.push("Imperial Progress is already at the maximum space 5.");
   } else {
-    parts.push("Imperial Progress does not advance again this round.");
+    parts.push("Imperial Progress could not advance.");
   }
   return parts.join(" ");
 }
@@ -93,7 +94,7 @@ export function App() {
     setNotice(imperialOrderNotice(result));
   }, []);
 
-  const reconnect = useCallback(async (saved?: SavedSeat) => {
+  const reconnect = useCallback(async (saved?: SavedSeat, announce = false) => {
     if (api === null || reconnecting.current) return;
     const target = saved ?? (connection === null
       ? readSavedSeat()
@@ -112,7 +113,7 @@ export function App() {
         seatToken: target.seatToken,
       });
       setError(null);
-      if (saved === undefined) setNotice("Reconnected to the latest authoritative state.");
+      if (announce) setNotice("Reconnected to the latest authoritative state.");
     } finally {
       reconnecting.current = false;
     }
@@ -269,7 +270,7 @@ export function App() {
                 : connection.room.status === "finished" ? "Complete" : "Live"}
             </span>
             {connection.room.status !== "abandoned" && (
-              <button className="text-button" type="button" onClick={() => void reconnect()} disabled={busy}>
+              <button className="text-button" type="button" onClick={() => void reconnect(undefined, true)} disabled={busy}>
                 Reconnect
               </button>
             )}
@@ -335,7 +336,7 @@ export function App() {
         />
       )}
       <footer className="site-footer">
-        <span>Kiln Opening V0.5</span>
+        <span>Kiln Opening V0.6.3</span>
         <a href="https://luyuan.me/">Luyuan He</a>
       </footer>
     </div>

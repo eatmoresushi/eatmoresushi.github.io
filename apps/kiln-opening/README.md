@@ -15,13 +15,13 @@ Codex should read files in this order:
 7. `docs/IMPLEMENTATION_DECISIONS.md`
 8. `docs/DESIGN_HISTORY.md` only when historical context is useful
 
-The **current V0.5 gameplay source of truth is `docs/GAME_RULES.md`**. Visual references remain restricted to `assets/current_v04/` because V0.5 does not rename the previously approved asset set; every rules-bearing visual must be regenerated from current V0.5 data. The V0.4 PDF/DOCX in `source_rulebook/` are historical human-readable backups and are superseded by `GAME_RULES.md` for Guild & Academy and Technique costs.
+The **current V0.6.3 gameplay source of truth is `docs/GAME_RULES.md`**. Visual references remain restricted to `assets/current_v04/`; the legacy directory name is retained only for stable paths. Every rules-bearing visual must be regenerated from current V0.6.3 data. The V0.4 PDF/DOCX in `source_rulebook/` are historical human-readable backups and are superseded by `GAME_RULES.md`.
 
 ## Important rule for Codex
 
 Do **not** infer gameplay rules from the artwork. Print assets are visual references only. If image text conflicts with `GAME_RULES.md` or structured JSON, the Markdown/JSON wins.
 
-Earlier central-board, player-board, Craft Technique and reference-card raster art is intentionally **not included** where any text or component count differs from current V0.5 rules. See `docs/ASSET_MANIFEST.md`.
+Earlier Order-card, central-board, player-board, Craft Technique and reference-card raster art is intentionally **not included** where any text or component count differs from current V0.6.3 rules. See `docs/ASSET_MANIFEST.md`.
 
 ## Recommended workflow
 
@@ -64,7 +64,7 @@ The architecture is intentionally replaceable: the game engine must not depend o
 
 ## Web client
 
-The V0.5 implementation includes the strict TypeScript engine, server-authoritative Supabase backend, React/Vite interface, reconnect handling, and deterministic two-browser Playwright game tests.
+The V0.6.3 implementation includes the strict TypeScript engine, server-authoritative Supabase backend, React/Vite interface, reconnect handling, and deterministic two-browser Playwright game tests.
 
 ```bash
 npm ci
@@ -77,4 +77,4 @@ Production configuration uses only the public Supabase project URL and anonymous
 
 ## Audit
 
-See `docs/V0.4_HANDOFF_AUDIT.md` for the historical component-by-component V0.4 audit. Run `python3 tools/validate_handoff.py` to validate the current V0.5 structured rules.
+See `docs/V0.4_HANDOFF_AUDIT.md` for the historical component-by-component V0.4 audit. Run `python3 tools/validate_handoff.py` to validate the current V0.6.3 structured rules.

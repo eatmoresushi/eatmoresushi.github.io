@@ -256,15 +256,16 @@ async function enterTwoContributorFiring(harness: Harness): Promise<{
   await command(harness, firstId, {
     type: "USE_KILN_YARD",
     workerId: availableWorker(harness.game.game, firstId, "shifu"),
-    gainWood: true,
     loads: [{ ceramicId: firstCeramic.id, kilnSpaceId: "middle_1" }],
   });
   await command(harness, secondId, {
     type: "USE_KILN_YARD",
     workerId: availableWorker(harness.game.game, secondId, "shifu"),
-    gainWood: true,
     loads: [{ ceramicId: secondCeramic.id, kilnSpaceId: "middle_2" }],
   });
+  while (harness.game.game.phase.type === "work") {
+    await command(harness, harness.game.game.phase.activePlayerId, { type: "PASS_WORK_PHASE" });
+  }
   if (harness.game.game.phase.type !== "firing_contributions") {
     throw new Error(`Expected Contributions, got ${harness.game.game.phase.type}`);
   }
@@ -644,7 +645,7 @@ describe("private Wood Contributions and reconnect", () => {
 });
 
 describe("Imperial Progress persistence and realtime", () => {
-  it("broadcasts advancement and reconnects with the reminder and pending worker state", async () => {
+  it("broadcasts advancement and reconnects with pending worker state", async () => {
     const harness = await startHarness();
     await resolveSetup(harness);
     const actorId = harness.game.game.firstPlayerId;
@@ -668,11 +669,10 @@ describe("Imperial Progress persistence and realtime", () => {
     unsubscribe();
     expect(notifications).toBe(1);
     expect(harness.game.events).toEqual(expect.arrayContaining([
-      { type: "IMPERIAL_PROGRESS_ADVANCED", playerId: actorId, space: 2 },
+      { type: "IMPERIAL_PROGRESS_ADVANCED", playerId: actorId, from: 1, to: 2, reward: 1 },
     ]));
     expect(harness.game.game.players[actorId]).toEqual(expect.objectContaining({
       imperialProgress: 2,
-      progressAdvancedThisRound: true,
       pendingApprenticeUnlocks: 1,
     }));
 
@@ -683,9 +683,8 @@ describe("Imperial Progress persistence and realtime", () => {
       }));
       const player = reconnected.game?.players[actorId];
       expect(player?.imperialProgress).toBe(2);
-      expect(player?.progressAdvancedThisRound).toBe(true);
       expect(player?.pendingApprenticeUnlocks).toBe(1);
-      expect(Object.values(player?.workers ?? {}).filter((worker) => worker.status === "available")).toHaveLength(3);
+      expect(Object.values(player?.workers ?? {}).filter((worker) => worker.status === "available")).toHaveLength(4);
       expect(Object.values(player?.workers ?? {}).filter((worker) => worker.status === "locked")).toHaveLength(2);
     }
 
@@ -701,9 +700,8 @@ describe("Imperial Progress persistence and realtime", () => {
     }));
     const player = afterCleanup.game?.players[actorId];
     expect(afterCleanup.game?.round).toBe(2);
-    expect(player?.progressAdvancedThisRound).toBe(false);
     expect(player?.pendingApprenticeUnlocks).toBe(0);
-    expect(Object.values(player?.workers ?? {}).filter((worker) => worker.status === "available")).toHaveLength(4);
+    expect(Object.values(player?.workers ?? {}).filter((worker) => worker.status === "available")).toHaveLength(5);
     expect(Object.values(player?.workers ?? {}).filter((worker) => worker.status === "locked")).toHaveLength(1);
   });
 

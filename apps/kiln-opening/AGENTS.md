@@ -15,7 +15,7 @@ Priority order:
 3. `docs/IMPLEMENTATION_DECISIONS.md` — digital interpretations of rules where necessary.
 4. `docs/ONLINE_GAME_SPEC.md` — digital-only behaviour.
 5. `docs/DESIGN_SPEC.md` — design intent and constraints.
-6. `source_rulebook/Kiln_Opening_v0.4_Full_Rulebook.pdf` — historical human backup; V0.5 Guild and Technique costs in `GAME_RULES.md` override it.
+6. `source_rulebook/Kiln_Opening_v0.4_Full_Rulebook.pdf` — historical human backup; V0.6.3 `GAME_RULES.md` overrides it.
 7. `assets/print_reference/*` — visual direction only.
 
 Never implement an older mechanic because it appears in historical discussion or art.
@@ -23,7 +23,7 @@ Never implement an older mechanic because it appears in historical discussion or
 
 ## Approved asset rule
 
-Only `assets/current_v04/` is an approved visual-reference directory. The directory name remains unchanged for V0.5 because the focused rules update does not rename the approved asset set.
+Only `assets/current_v04/` is an approved visual-reference directory. The directory name remains unchanged as a stable legacy path; rules-bearing visuals must follow V0.6.3 data.
 
 Do not search conversation history or older images for missing boards/cards. Missing current assets are intentionally specified in `data/asset_specs.json` and `docs/V0.4_ASSETS_TO_REGENERATE.md` and must be rebuilt from current data.
 
@@ -107,7 +107,7 @@ At minimum:
 - Market and Imperial Order validation, followed by the optional Apprentice 0–1 / Shifu 0–2 Flawed-sale step
 - immediate display refill
 - Order hand limit and Guan exception
-- once-per-round Imperial Progress
+- every Imperial Order advancing +1 or +2 Imperial Progress as printed, including multiple completions in one round and milestone-crossing jumps
 - Apprentice unlock timing at spaces 2 and 4
 - Imperial Seal first-arrival rule
 - Imperial Presentation eligibility and diversity bonuses

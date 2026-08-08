@@ -1,4 +1,4 @@
-# GAME_RULES.md — Kiln Opening / 开窑 V0.5
+# GAME_RULES.md — Kiln Opening / 开窑 V0.6.3
 
 **Players:** 2–4  
 **Length:** 5 rounds  
@@ -29,11 +29,11 @@ The game ends after Cleanup of Round 5.
 Each player owns:
 
 - 1 Shifu;
-- 4 Apprentices total.
+- 5 Apprentices total.
 
 At setup:
 
-- Shifu + 2 Apprentices are available;
+- Shifu + 3 Apprentices are available;
 - 2 Apprentices are locked.
 
 The locked Apprentices are unlocked by Imperial Progress spaces 2 and 4. They become available during Cleanup and can act starting next round.
@@ -77,10 +77,10 @@ There are 8 Vessel cards of each Shape.
 
 | Decoration | Coin cost |
 |---|---:|
-| Plain | 0 |
-| Carved | 1 |
-| Impressed | 1 |
-| Crackle | 1 |
+| Plain | 1 |
+| Carved | 2 |
+| Impressed | 2 |
+| Crackle | 2 |
 
 A ceramic must have exactly one Glaze and one Decoration before loading.
 
@@ -104,10 +104,10 @@ Clay cleaning, refining, mixing, drying, etc. are abstracted into the Forming St
 4. Separate Techniques by discipline: Forming, Glazing, Firing. Shuffle each discipline and reveal 2 from each.
 5. Shuffle the 20-card Fire deck.
 6. Place Clay, Wood, Coins and sorted Vessel cards in common supply.
-7. Each player takes a colour, 1 Shifu, 4 Apprentices, Imperial Progress marker, optional Progress Reminder, and Wood Contribution cards 0–3.
+7. Each player takes a colour, 1 Shifu, 5 Apprentices, Imperial Progress marker, and Wood Contribution cards 0–3.
 8. Randomly choose First Player.
 9. In reverse turn order, players choose available Kiln Player Boards.
-10. Each player starts with Shifu + 2 Apprentices available; 2 Apprentices locked.
+10. Each player starts with Shifu + 3 Apprentices available; 2 Apprentices locked.
 11. Each player gains 2 Clay, 2 Wood and 3 Coins.
 12. Each player draws 1 Market Order. If it requires 2+ ceramics, they may discard it and draw once more.
 13. All Imperial Progress markers begin at 0. Round marker begins at 1.
@@ -142,7 +142,6 @@ Every round has five phases.
 - Refill incomplete Order and Technique displays.
 - Ready exhausted Techniques.
 - Reset once-per-round Kiln Tradition abilities.
-- Reset Progress Reminder.
 - First Player starts Work Phase.
 
 ### Phase 2 — Work Phase
@@ -156,7 +155,7 @@ Rules:
 - Apprentice uses Apprentice effect.
 - Shifu uses Shifu effect.
 - Same player may use same location multiple times if capacity remains.
-- A player may take less than an action's maximum; unused capacity is lost.
+- A player may take less than an action's maximum unless the action specifies an exact amount; unused capacity is lost.
 - A player may pass while workers remain.
 - Passing is permanent for that Work Phase.
 - Unused workers give no benefit.
@@ -171,12 +170,12 @@ Otherwise use Section 8.
 
 In turn order, each player may complete any number of Orders.
 
-A player can advance Imperial Progress at most once that round.
+A single-ceramic Imperial Order advances its owner 1 Imperial Progress. A multi-ceramic Imperial Order advances its owner 2 Imperial Progress. Progress cannot exceed space 5, and there is no per-round limit.
 
 ### Phase 5 — Cleanup
 
 1. Return all placed workers.
-2. Unlock an Apprentice if the player reached Progress 2 or 4 this round.
+2. Unlock every Apprentice pending from reaching Progress 2 or 4.
 3. Discard leftmost face-up Market Order and leftmost face-up Imperial Order; slide and refill.
 4. Pass First Player clockwise.
 5. Advance Round marker.
@@ -189,8 +188,8 @@ After Cleanup of Round 5, score the game.
 
 ### Materials Yard
 
-**Apprentice:** gain 2 resources in any combination of Clay/Wood.  
-**Shifu:** gain 3 resources in any combination of Clay/Wood.
+**Apprentice:** gain exactly 3 resources in any combination of Clay/Wood.
+**Shifu:** gain exactly 4 resources in any combination of Clay/Wood.
 
 ### Forming Studio
 
@@ -212,14 +211,14 @@ Once applied, Glaze and Decoration do not change unless an ability explicitly ch
 
 ### Kiln Yard
 
-**Apprentice:** gain 1 Wood, then load 1 Glazed ceramic into any empty kiln space.
+**Apprentice:** load 1 Glazed ceramic into any empty kiln space.
 
-**Shifu:** gain 1 Wood, then load up to 2 Glazed ceramics into empty kiln spaces.
+**Shifu:** load up to 2 Glazed ceramics into empty kiln spaces.
 
 Clarifications:
 
-- gaining Wood is optional and happens before loading;
-- player may take Wood even if they load nothing;
+- Kiln Yard gives no Wood;
+- at least 1 eligible ceramic must be loaded to place a worker here;
 - a loaded ceramic stays in place unless a Technique moves it;
 - Shifu does **not** reposition ceramics.
 
@@ -276,6 +275,8 @@ Most are optional and usable once per round. Exhaust when used and ready next St
 Techniques give no direct VP.
 
 Exact list is authoritative in `data/techniques.json`.
+
+Printed costs are 2 Coins for T01, T02, T04, T05, T06, T07, T08 and T12; and 3 Coins for T03, T09, T10 and T11. The Shifu pays the printed cost with no discount.
 
 ### Timing windows
 
@@ -374,9 +375,16 @@ During player's turn in Order Phase:
 3. validate all Shape, Glaze, Decoration, relation and minimum Quality rules;
 4. move ceramics beneath completed Order;
 5. record printed VP and gain printed Coins;
-6. if Imperial and player has not advanced this round, advance exactly 1 Imperial Progress.
+6. if Imperial, advance 1 Progress for a single-ceramic Order or 2 Progress for a multi-ceramic Order, up to space 5.
 
-Further Imperial Orders that round still score VP but give no extra Progress.
+Every Imperial Order advances Progress independently, including multiple Imperial Orders completed in the same Order Phase. Market Orders never advance Progress.
+
+| Imperial Orders | Ceramics required | Progress |
+|---|---:|---:|
+| I01–I05 | 1 | +1 |
+| I06–I10 | 2 or 3 | +2 |
+
+Progress is categorical, not per ceramic: I08 and I10 each advance exactly 2, not 3.
 
 ---
 
@@ -393,7 +401,9 @@ Further Imperial Orders that round still score VP but give no extra Progress.
 
 Rules:
 
-- at most 1 Progress per player per round;
+- single-ceramic Imperial Orders advance 1 space and multi-ceramic Imperial Orders advance 2 spaces, with no per-round limit;
+- Progress cannot exceed space 5;
+- every milestone crossed by a multi-space advance resolves; crossing space 2 or 4 queues its Apprentice for Cleanup, and crossing space 5 resolves Imperial Audience and the Seal;
 - unlocked Apprentice becomes usable next round;
 - first player ever reaching space 5 takes Imperial Seal, worth 3 VP;
 - reaching 5 does not end game.
@@ -436,6 +446,8 @@ Once per round, when completing an Imperial Order, you may ignore one Decoration
 Once per round, after Actual Heat is calculated but before Quality is assigned, choose one of your ceramics with Heat Difference exactly 1.
 
 Treat its Heat Difference as 0, assign Masterpiece Quality, and change its Decoration to Crackle.
+
+This firing transformation does not charge the 2-Coin Crackle cost and does not refund the ceramic's original Decoration cost.
 
 ### Ding Kiln / 定窑 — Moulded Production
 

@@ -18,7 +18,7 @@
     "name": "Ge Kiln",
     "nameZh": "哥窑",
     "abilityName": "Crackle from Fire",
-    "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, choose one of your ceramics with a heat difference of exactly 1. Treat its heat difference as 0, assign it Masterpiece Quality, and change its Decoration to Crackle."
+    "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, choose one of your ceramics with a heat difference of exactly 1. Treat its heat difference as 0, assign it Masterpiece Quality, and change its Decoration to Crackle without paying the Crackle Decoration cost or refunding its original Decoration cost."
   },
   {
     "id": "DI",

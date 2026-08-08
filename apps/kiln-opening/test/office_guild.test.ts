@@ -465,7 +465,7 @@ describe("Guild & Academy", () => {
     const { state, rng } = startedGame(2, 323);
     const actorId = state.firstPlayerId;
     state.techniqueDisplay.forming = ["T03", "T01"];
-    state.players[actorId]!.resources.coins = 1;
+    state.players[actorId]!.resources.coins = 2;
     let next = mustApply(
       state,
       actorId,
@@ -474,15 +474,15 @@ describe("Guild & Academy", () => {
     );
     next = mustApply(next, actorId, { type: "GUILD_SKIP_REFRESH" }, rng);
     const rejected = applyAction(next, actorId, { type: "GUILD_BUY_TECHNIQUE", techniqueId: "T03" }, rng);
-    expect(TECHNIQUE_DEFINITIONS["T03"]!.cost).toBe(2);
+    expect(TECHNIQUE_DEFINITIONS["T03"]!.cost).toBe(3);
     expectError(rejected, "INSUFFICIENT_RESOURCES");
   });
 
-  it("matches the complete V0.5 printed-cost table", () => {
+  it("matches the complete V0.6.3 printed-cost table", () => {
     expect(Object.fromEntries(Object.entries(TECHNIQUE_DEFINITIONS).map(([id, technique]) => [id, technique.cost]))).toEqual({
-      T01: 1, T02: 1, T03: 2, T04: 1,
-      T05: 1, T06: 1, T07: 1, T08: 1,
-      T09: 2, T10: 2, T11: 2, T12: 1,
+      T01: 2, T02: 2, T03: 3, T04: 2,
+      T05: 2, T06: 2, T07: 2, T08: 2,
+      T09: 3, T10: 3, T11: 3, T12: 2,
     });
   });
 

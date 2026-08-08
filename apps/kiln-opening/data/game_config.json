@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "0.5",
+  "rulesVersion": "0.6.3",
   "players": {
     "min": 2,
     "max": 4
@@ -12,8 +12,8 @@
   },
   "workers": {
     "shifu": 1,
-    "apprenticesTotal": 4,
-    "apprenticesStarting": 2,
+    "apprenticesTotal": 5,
+    "apprenticesStarting": 3,
     "apprenticeUnlockProgress": [
       2,
       4
@@ -53,10 +53,10 @@
     "moon_white": 3
   },
   "decorations": {
-    "plain": 0,
-    "carved": 1,
-    "impressed": 1,
-    "crackle": 1
+    "plain": 1,
+    "carved": 2,
+    "impressed": 2,
+    "crackle": 2
   },
   "shapes": {
     "bowl": 1,

@@ -70,7 +70,7 @@ Sketch:
 interface GameState {
   version: number;
   gameId: string;
-  rulesVersion: "0.5";
+  rulesVersion: "0.6.3";
   status: "lobby" | "setup" | "playing" | "finished";
   playerOrder: PlayerId[];
   firstPlayerId: PlayerId;
@@ -98,7 +98,6 @@ interface GameState {
   vesselSupply: Record<Shape, VesselInstanceId[]>;
   imperialSealOwner?: PlayerId;
 
-  progressAdvancedThisRound: Record<PlayerId, boolean>;
   eventSeq: number;
 }
 ```

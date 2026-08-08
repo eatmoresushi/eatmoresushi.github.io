@@ -3,10 +3,10 @@ import { SeededRandom, applyAction, makeFinishedCeramic } from "../src/game";
 import { addGlazed, addShaped, expectError, mustApply, setActive, startedGame, workerId } from "./helpers";
 
 describe("Materials Yard", () => {
-  it("gives an Apprentice two resources and a Shifu three in any combination", () => {
+  it("gives an Apprentice three resources and a Shifu four in any combination", () => {
     for (const [kind, clay, wood] of [
-      ["apprentice", 1, 1],
-      ["shifu", 2, 1],
+      ["apprentice", 2, 1],
+      ["shifu", 3, 1],
     ] as const) {
       const { state: initial, rng } = startedGame(2, kind === "shifu" ? 201 : 200);
       const actorId = initial.firstPlayerId;
@@ -35,7 +35,7 @@ describe("Materials Yard", () => {
     const invalid = applyAction(
       state,
       actorId,
-      { type: "GAIN_MATERIALS", workerId: apprenticeId, clay: 2, wood: 1 },
+      { type: "GAIN_MATERIALS", workerId: apprenticeId, clay: 3, wood: 1 },
       rng,
     );
     expectError(invalid, "INVALID_SELECTION");
@@ -44,7 +44,7 @@ describe("Materials Yard", () => {
     const next = mustApply(
       state,
       actorId,
-      { type: "GAIN_MATERIALS", workerId: apprenticeId, clay: 2, wood: 0 },
+      { type: "GAIN_MATERIALS", workerId: apprenticeId, clay: 3, wood: 0 },
       rng,
     );
     expect(next.players[actorId]!.resources.clay).toBe(3);
@@ -123,8 +123,13 @@ describe("Forming Studio", () => {
 });
 
 describe("Glaze Workshop", () => {
-  it("applies exactly one Glaze and Decoration and pays its Coin cost", () => {
-    const { state, rng } = startedGame(2, 220);
+  it.each([
+    ["plain", 1],
+    ["carved", 2],
+    ["impressed", 2],
+    ["crackle", 2],
+  ] as const)("charges the exact %s Decoration cost of %i Coin(s)", (decoration, cost) => {
+    const { state, rng } = startedGame(2, 220 + cost);
     const actorId = state.firstPlayerId;
     const ceramic = addShaped(state, actorId, "plate");
     const next = mustApply(
@@ -133,14 +138,14 @@ describe("Glaze Workshop", () => {
       {
         type: "GLAZE_CERAMICS",
         workerId: workerId(state, actorId, "apprentice"),
-        selections: [{ ceramicId: ceramic.id, glaze: "celadon", decoration: "carved" }],
+        selections: [{ ceramicId: ceramic.id, glaze: "celadon", decoration }],
         shifuMode: "normal",
       },
       rng,
     );
-    expect(next.players[actorId]!.resources.coins).toBe(2);
+    expect(next.players[actorId]!.resources.coins).toBe(3 - cost);
     expect(next.ceramics[ceramic.id]).toEqual(
-      expect.objectContaining({ stage: "glazed", glaze: "celadon", decoration: "carved" }),
+      expect.objectContaining({ stage: "glazed", glaze: "celadon", decoration }),
     );
   });
 
@@ -149,6 +154,7 @@ describe("Glaze Workshop", () => {
     const actorId = normal.state.firstPlayerId;
     const first = addShaped(normal.state, actorId, "bowl");
     const second = addShaped(normal.state, actorId, "washer");
+    normal.state.players[actorId]!.resources.coins = 4;
     const normalNext = mustApply(
       normal.state,
       actorId,
@@ -163,7 +169,7 @@ describe("Glaze Workshop", () => {
       },
       normal.rng,
     );
-    expect(normalNext.players[actorId]!.resources.coins).toBe(1);
+    expect(normalNext.players[actorId]!.resources.coins).toBe(0);
 
     const free = startedGame(2, 222);
     const freeActor = free.state.firstPlayerId;
@@ -240,12 +246,11 @@ describe("Kiln Yard and ceramic lifecycle", () => {
       {
         type: "USE_KILN_YARD",
         workerId: workerId(state, actorId, "shifu"),
-        gainWood: true,
         loads: [{ ceramicId, kilnSpaceId: "high_1" }],
       },
       rng,
     );
-    expect(state.players[actorId]!.resources.wood).toBe(3);
+    expect(state.players[actorId]!.resources.wood).toBe(2);
     const loaded = state.ceramics[ceramicId]!;
     expect(loaded).toEqual(expect.objectContaining({ stage: "loaded", kilnSpaceId: "high_1" }));
     const finished = makeFinishedCeramic(loaded, "fine", 1);
@@ -255,7 +260,7 @@ describe("Kiln Yard and ceramic lifecycle", () => {
     expect(finished).not.toHaveProperty("kilnSpaceId");
   });
 
-  it("lets a Shifu load two, allows taking Wood with no load, and blocks occupied spaces", () => {
+  it("lets a Shifu load two, gives no Wood, rejects an empty load, and blocks occupied spaces", () => {
     const shifuGame = startedGame(2, 231);
     const actorId = shifuGame.state.firstPlayerId;
     const first = addGlazed(shifuGame.state, actorId, "bowl");
@@ -266,7 +271,6 @@ describe("Kiln Yard and ceramic lifecycle", () => {
       {
         type: "USE_KILN_YARD",
         workerId: workerId(shifuGame.state, actorId, "shifu"),
-        gainWood: false,
         loads: [
           { ceramicId: first.id, kilnSpaceId: "middle_1" },
           { ceramicId: second.id, kilnSpaceId: "middle_2" },
@@ -275,21 +279,22 @@ describe("Kiln Yard and ceramic lifecycle", () => {
       shifuGame.rng,
     );
     expect(Object.values(next.ceramics).filter((ceramic) => ceramic.stage === "loaded")).toHaveLength(2);
+    expect(next.players[actorId]!.resources.wood).toBe(2);
 
     const emptyLoad = startedGame(2, 232);
     const emptyActor = emptyLoad.state.firstPlayerId;
-    const woodOnly = mustApply(
+    const emptyRejected = applyAction(
       emptyLoad.state,
       emptyActor,
       {
         type: "USE_KILN_YARD",
         workerId: workerId(emptyLoad.state, emptyActor, "apprentice"),
-        gainWood: true,
         loads: [],
       },
       emptyLoad.rng,
     );
-    expect(woodOnly.players[emptyActor]!.resources.wood).toBe(3);
+    expectError(emptyRejected, "INVALID_SELECTION");
+    expect(emptyLoad.state.players[emptyActor]!.resources.wood).toBe(2);
 
     const occupied = startedGame(2, 233);
     const occupiedActor = occupied.state.firstPlayerId;
@@ -310,7 +315,6 @@ describe("Kiln Yard and ceramic lifecycle", () => {
       {
         type: "USE_KILN_YARD",
         workerId: workerId(occupied.state, occupiedActor, "apprentice"),
-        gainWood: false,
         loads: [{ ceramicId: actorCeramic.id, kilnSpaceId: "low_1" }],
       },
       occupied.rng,

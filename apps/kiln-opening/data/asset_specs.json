@@ -1,5 +1,12 @@
 {
-  "rulesVersion": "0.5",
+  "rulesVersion": "0.6.3",
+  "orderCards": {
+    "status": "REGENERATE_FROM_DATA",
+    "source": "data/orders.json",
+    "total": 30,
+    "mustShowImperialProgressReward": true,
+    "obsoleteSheetsDirectory": "assets/obsolete_v061"
+  },
   "centralBoard": {
     "status": "GENERATE_FROM_DATA_NOT_OLD_RASTER",
     "locationsSource": "data/action_locations.json",

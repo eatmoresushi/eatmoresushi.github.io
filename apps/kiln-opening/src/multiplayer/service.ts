@@ -154,8 +154,8 @@ export class AuthoritativeGameService {
         code,
         status: "lobby",
         hostSeatId: seatId,
-        rulesVersion: "0.5",
-        contentVersion: "0.5",
+        rulesVersion: "0.6.3",
+        contentVersion: "0.6.3",
         latestRevision: 0,
         endedAt: null,
         endedByPlayerId: null,
@@ -522,11 +522,14 @@ export class AuthoritativeGameService {
     if (authenticated === null) {
       return failed(error("AUTHENTICATION_FAILED", "The room or seat credential is invalid."));
     }
-    if (authenticated.room.rulesVersion !== "0.5" || authenticated.room.contentVersion !== "0.5") {
+    if (
+      authenticated.room.rulesVersion !== "0.6.3" ||
+      authenticated.room.contentVersion !== "0.6.3"
+    ) {
       return failed(
         error(
           "UNSUPPORTED_RULES_VERSION",
-          "This room was created under V0.4 and cannot continue under the V0.5 rules. Please create a new room.",
+          "This room uses an older rules version and cannot continue under V0.6.3. Please create a new room.",
         ),
       );
     }

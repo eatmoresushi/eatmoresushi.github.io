@@ -536,10 +536,10 @@ function gainMaterials(
   if (!isWorkerContext(context)) {
     return context;
   }
-  const maximum = context.worker.kind === "shifu" ? 3 : 2;
-  if (!isNonNegativeInteger(clay) || !isNonNegativeInteger(wood) || clay + wood > maximum) {
+  const amount = context.worker.kind === "shifu" ? 4 : 3;
+  if (!isNonNegativeInteger(clay) || !isNonNegativeInteger(wood) || clay + wood !== amount) {
     return applyFailure(
-      ruleError("INVALID_SELECTION", `Choose at most ${maximum} total Clay and Wood.`, {
+      ruleError("INVALID_SELECTION", `Choose exactly ${amount} total Clay and Wood.`, {
         clay,
         wood,
       }),
@@ -819,8 +819,8 @@ function glazeCeramics(
       totalCoins += DECORATION_COSTS[selection.decoration];
     }
   }
-  if (useTechniqueIds.includes("T05")) totalCoins -= 1;
-  if (useTechniqueIds.includes("T06")) totalCoins -= 1;
+  if (useTechniqueIds.includes("T05")) totalCoins -= DECORATION_COSTS.carved;
+  if (useTechniqueIds.includes("T06")) totalCoins -= DECORATION_COSTS.impressed;
   if (context.player.resources.coins < totalCoins) {
     return applyFailure(
       ruleError("INSUFFICIENT_RESOURCES", "Not enough Coins for the selected Decorations.", {
@@ -895,9 +895,14 @@ function useKilnYard(
     return context;
   }
   const maximum = context.worker.kind === "shifu" ? 2 : 1;
-  if (action.loads.length > maximum) {
+  if (action.loads.length < 1 || action.loads.length > maximum) {
     return applyFailure(
-      ruleError("INVALID_SELECTION", `This worker may load at most ${maximum} ceramics.`),
+      ruleError(
+        "INVALID_SELECTION",
+        context.worker.kind === "shifu"
+          ? "A Shifu must load one or two ceramics."
+          : "An Apprentice must load exactly one ceramic.",
+      ),
     );
   }
   const ceramicIds = action.loads.map((load) => load.ceramicId);
@@ -947,22 +952,6 @@ function useKilnYard(
   const next = cloneState(state);
   const events: GameEvent[] = [];
   placeWorker(next, actorId, action.workerId, "kiln_yard", events);
-  const player = next.players[actorId];
-  if (player === undefined) {
-    throw new Error("Kiln Yard actor disappeared");
-  }
-  const gainedWood = action.gainWood ? Math.min(1, next.commonSupply.wood) : 0;
-  player.resources.wood += gainedWood;
-  next.commonSupply.wood -= gainedWood;
-  if (gainedWood > 0) {
-    events.push({
-      type: "RESOURCES_CHANGED",
-      playerId: actorId,
-      clay: 0,
-      wood: gainedWood,
-      coins: 0,
-    });
-  }
   for (const load of action.loads) {
     const ceramic = next.ceramics[load.ceramicId];
     if (ceramic === undefined || ceramic.stage !== "glazed") {
@@ -2000,7 +1989,12 @@ function resolveTestPieces(state: GameState, actorId: PlayerId, use: boolean): A
 
 function finalizeFiring(state: GameState, events: GameEvent[]): void {
   const context = state.firingContext;
-  if (context === null || context.fireModifier === null) {
+  if (
+    context === null ||
+    context.baseHeat === null ||
+    context.fireModifier === null ||
+    context.globalHeat === null
+  ) {
     throw new Error("Cannot finalize an incomplete firing");
   }
   for (const playerId of turnOrderFromFirst(state)) {
@@ -2033,6 +2027,12 @@ function finalizeFiring(state: GameState, events: GameEvent[]): void {
       state.round,
     );
   }
+  state.lastFiringResult = {
+    round: context.round,
+    baseHeat: context.baseHeat,
+    fireModifier: context.fireModifier,
+    globalHeat: context.globalHeat,
+  };
   state.fireDiscard.push(context.fireModifier);
   state.firingContext = null;
   beginOrderPhase(state);
@@ -2129,13 +2129,21 @@ function completeOrder(
     nextPlayer.kilnAbilityUsedThisRound = true;
     events.push({ type: "KILN_ABILITY_USED", playerId: actorId, kilnId: "GU" });
   }
-  if (isImperial && !nextPlayer.progressAdvancedThisRound && nextPlayer.imperialProgress < 5) {
+  if (isImperial && nextPlayer.imperialProgress < 5) {
+    const reward = definition.imperialProgressReward;
+    if (reward === undefined) throw new Error("Imperial Order progress reward is missing");
     const previous = nextPlayer.imperialProgress;
-    const advanced = Math.min(5, previous + 1) as PlayerState["imperialProgress"];
+    const advanced = Math.min(5, previous + reward) as PlayerState["imperialProgress"];
     nextPlayer.imperialProgress = advanced;
-    nextPlayer.progressAdvancedThisRound = true;
-    if (advanced === 2 || advanced === 4) nextPlayer.pendingApprenticeUnlocks += 1;
-    events.push({ type: "IMPERIAL_PROGRESS_ADVANCED", playerId: actorId, space: advanced });
+    if (previous < 2 && advanced >= 2) nextPlayer.pendingApprenticeUnlocks += 1;
+    if (previous < 4 && advanced >= 4) nextPlayer.pendingApprenticeUnlocks += 1;
+    events.push({
+      type: "IMPERIAL_PROGRESS_ADVANCED",
+      playerId: actorId,
+      from: previous,
+      to: advanced,
+      reward,
+    });
     if (advanced === 5 && next.imperialSealOwnerId === null) {
       next.imperialSealOwnerId = actorId;
       events.push({ type: "IMPERIAL_SEAL_CLAIMED", playerId: actorId });
@@ -2280,7 +2288,6 @@ function performCleanup(state: GameState, events: GameEvent[]): void {
     state.round = (state.round + 1) as RoundNumber;
     for (const player of Object.values(state.players)) {
       player.passedWorkPhase = false;
-      player.progressAdvancedThisRound = false;
       player.kilnAbilityUsedThisRound = false;
       for (const technique of player.techniques) technique.exhausted = false;
     }

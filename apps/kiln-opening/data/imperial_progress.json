@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "0.5",
+  "rulesVersion": "0.6.3",
   "track": [
     {
       "space": 0,
@@ -38,7 +38,6 @@
       "endGameVp": 7
     }
   ],
-  "maxProgressPerRound": 1,
   "imperialSealVp": 3,
   "presentation": {
     "eligibleSpaces": [

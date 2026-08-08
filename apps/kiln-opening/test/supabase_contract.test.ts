@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import migration from "../supabase/migrations/202608070001_multiplayer_backend.sql?raw";
 import v05Migration from "../supabase/migrations/202608070002_v05_guild_rules.sql?raw";
 import lifecycleMigration from "../supabase/migrations/202608080001_session_lifecycle.sql?raw";
+import v061Migration from "../supabase/migrations/202608080002_v061_rules.sql?raw";
+import v063Migration from "../supabase/migrations/202608080003_v063_rules.sql?raw";
 import edgeFunction from "../supabase/functions/game-action/index.ts?raw";
 
 describe("Supabase security contract", () => {
@@ -52,11 +54,16 @@ describe("Supabase security contract", () => {
     expect(edgeFunction).toContain("seatToken");
   });
 
-  it("creates new rooms as V0.5 while preserving explicit legacy-room versioning", () => {
+  it("creates new rooms as V0.6.3 while preserving explicit legacy-room versioning", () => {
     expect(v05Migration).toContain("rules_version in ('0.4', '0.5')");
-    expect(v05Migration).toContain("where status = 'lobby'");
-    expect(v05Migration).toContain("p_room_id, upper(p_code), 'lobby', p_seat_id, '0.5', '0.5', 0");
-    expect(v05Migration).toContain("to service_role");
+    expect(v061Migration).toContain("rules_version in ('0.4', '0.5', '0.6.1')");
+    expect(v061Migration).toContain("where status = 'lobby'");
+    expect(v061Migration).toContain("p_room_id, upper(p_code), 'lobby', p_seat_id, '0.6.1', '0.6.1', 0");
+    expect(v061Migration).toContain("to service_role");
+    expect(v063Migration).toContain("rules_version in ('0.4', '0.5', '0.6.1', '0.6.3')");
+    expect(v063Migration).toContain("where status = 'lobby'");
+    expect(v063Migration).toContain("p_room_id, upper(p_code), 'lobby', p_seat_id, '0.6.3', '0.6.3', 0");
+    expect(v063Migration).toContain("to service_role");
   });
 
   it("ends sessions through a host-only service RPC and rejects late game commands", () => {

@@ -1,0 +1,9 @@
+V0.6.3 HANDOFF VALIDATION PASSED
+Rules/data: 2-4 players, 5 rounds, 6 locations, 1 Shifu + 3 starting Apprentices.
+Office: main action followed by optional Apprentice 0-1 / Shifu 0-2 Flawed sales.
+Decks: 20 Market Orders, 10 Imperial Orders, 12 Techniques, 20 Fire cards.
+Kiln: 8 spaces, contributor-scaled Base Heat, current Quality ladder.
+Decorations: Plain 1 Coin; Carved, Impressed and Crackle 2 Coins.
+Orders: named Glazes 4/4/4/4; Decorations Plain/Carved/Impressed/Crackle 3/3/4/3.
+Imperial: I01-I05 +1; I06-I10 +2; crossed unlocks at 2/4 and Seal at 5.
+Assets: six visually audited/current files remain; obsolete V0.6.1 Order sheets are archived.

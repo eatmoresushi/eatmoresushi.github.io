@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "0.5",
+  "rulesVersion": "0.6.3",
   "components": [
     {
       "name": "Central Action Board",
@@ -23,8 +23,8 @@
     },
     {
       "name": "Apprentice Workers",
-      "qty": 16,
-      "notes": "Four per player; two begin available and two are unlocked."
+      "qty": 20,
+      "notes": "Five per player; three begin available and two are unlocked."
     },
     {
       "name": "Clay",
@@ -73,11 +73,6 @@
       "name": "Imperial Progress Markers",
       "qty": 4,
       "notes": "One in each player colour."
-    },
-    {
-      "name": "Progress Reminder Tokens",
-      "qty": 4,
-      "notes": "Optional; mark whether a player advanced this round."
     },
     {
       "name": "VP Markers / Score Pad",
