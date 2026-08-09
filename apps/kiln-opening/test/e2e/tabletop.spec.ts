@@ -37,7 +37,7 @@ test("graphical tabletop places a selected Apprentice through the authoritative 
     const workerId = await apprentice.getAttribute("data-worker-id");
     await apprentice.click();
     await expect(apprentice).toHaveAttribute("aria-pressed", "true");
-    await expect(guest.locator(".action-hotspot.is-valid")).toHaveCount(5);
+    await expect(guest.locator(".action-hotspot.is-valid")).toHaveCount(6);
 
     await guest.locator('[data-location-id="materials_yard"] .hotspot-target').click();
     await expect(guest.getByRole("heading", { name: "Materials Yard" })).toBeVisible();

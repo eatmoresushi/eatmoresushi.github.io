@@ -77,7 +77,7 @@ test("starting Orders remain visible after an eligible redraw advances directly 
     await expect(host.getByRole("heading", { name: "Your first commission" })).toBeVisible();
     await expect(host.getByRole("region", { name: "Workshop Orders" })).toContainText("M20");
     await expect(host.locator(".player-board.is-own")).toContainText("4 available workers · 2 locked");
-    await expect(host.locator(".site-footer")).toContainText("Kiln Opening V0.6.3");
+    await expect(host.locator(".site-footer")).toContainText("Kiln Opening V0.6.5");
 
     await host.getByRole("button", { name: "Redraw" }).click();
     await expect(host.getByTestId("phase-name")).toHaveText("Work Phase");
@@ -142,15 +142,21 @@ test("starting Orders remain visible after an eligible redraw advances directly 
     await office.getByText("Market & Imperial Office", { exact: true }).click();
     await office.getByLabel("Worker").selectOption({ index: 1 });
     await expect(office.locator('select[name="officeAction"] option')).toHaveText(["coins", "take one"]);
-    await expect(office).toContainText("In addition, you may sell 1 Flawed ceramic for 1 Coin.");
-    await expect(office).not.toContainText("Sell up to 2 Flawed ceramics for 1 Coin each.");
+    await expect(office).toContainText("optionally sell 1 Flawed ceramic");
     await expect(office.getByRole("button", { name: "Visit the Office" })).toBeEnabled();
+
+    await office.getByLabel("Worker").selectOption({ index: 0 });
+    await expect(office.locator('select[name="officeAction"] option').filter({ hasText: "Court Patronage · 5 Coins · +1 Progress" })).toHaveCount(1);
+    await office.getByLabel("Office action").selectOption("court_patronage");
+    await expect(office.getByRole("status")).toContainText("Complete an Imperial Order first");
+    await expect(office.getByRole("button", { name: "Visit the Office" })).toBeDisabled();
 
     const guild = guest.locator("details").filter({ hasText: "Guild & Academy" });
     await guild.getByText("Guild & Academy", { exact: true }).click();
-    await expect(guild.locator(".control-form > strong")).toHaveText("Shifu only");
-    await expect(guild).toContainText("pay the printed Coin cost");
-    await expect(guild.getByLabel("Worker")).toHaveCount(0);
+    await expect(guild).not.toContainText("Shifu only");
+    await expect(guild).toContainText("Apprentice: pay printed cost");
+    await expect(guild).toContainText("Shifu: may refresh one tile");
+    await expect(guild.getByLabel("Worker")).toBeVisible();
     await expect(guild.getByRole("button", { name: "Begin Guild action" })).toBeEnabled();
     const firstTechniqueTile = guest.locator(".technique-tile").first();
     const firstTechniqueId = await firstTechniqueTile.getAttribute("data-technique-id");
@@ -169,7 +175,12 @@ test("starting Orders remain visible after an eligible redraw advances directly 
 
     const hostOffice = host.locator("details").filter({ hasText: "Market & Imperial Office" });
     await hostOffice.getByText("Market & Imperial Office", { exact: true }).click();
+    await hostOffice.getByLabel("Office action").selectOption("take_one_and_gain_two_coins");
     await hostOffice.getByRole("button", { name: "Visit the Office" }).click();
+    await expect(host.getByRole("button", { name: /Blind draw the top Market Order/ })).toBeVisible();
+    await expect(host.getByRole("button", { name: /Blind draw the top Imperial Order/ })).toBeVisible();
+    await host.getByRole("button", { name: /Blind draw the top Market Order/ }).click();
+    await expect(host.getByText(/Blind Market draw committed and revealed:/)).toBeVisible();
     await expect(host.getByTestId("phase-name")).toHaveText("Office — Optional Flawed sale");
     await expect(host.getByRole("heading", { name: "Sell Flawed Ceramics" })).toBeVisible();
     await expect(host.locator("body")).toContainText("You have no eligible Finished Flawed ceramics.");
@@ -272,7 +283,7 @@ test("two workshops complete a firing, Order, reconnect, and five-round game", a
     await hostKilnYard.getByLabel("First kiln space").selectOption("middle_1");
     await hostKilnYard.getByRole("button", { name: "Load kiln" }).click();
 
-    // V0.6.3 retains four initially usable workers; both may pass the last one.
+    // V0.6.5 retains four initially usable workers; both may pass the last one.
     await guest.getByRole("button", { name: "Pass for this round" }).click();
     await host.getByRole("button", { name: "Pass for this round" }).click();
 

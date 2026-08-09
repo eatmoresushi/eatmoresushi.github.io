@@ -115,8 +115,7 @@ export function TabletopScene({
             const isFull = placements.length >= capacity;
             const structurallyValid = isOwnWorkTurn
               && selectedWorker?.status === "available"
-              && !isFull
-              && (locationId !== "guild_academy" || selectedWorker.kind === "shifu");
+              && !isFull;
             const isSelected = selection.locationId === locationId;
             const showPreview = isSelected && selectedWorker?.status === "available";
             return (
@@ -137,6 +136,8 @@ export function TabletopScene({
                   <b>{LOCATION_LABELS[locationId]}</b>
                   <small>{placements.length} / {capacity}</small>
                 </span>
+                {locationId === "guild_academy" && <span className="hotspot-rule-update" aria-hidden="true">Apprentice: printed cost · Shifu: refresh, then −1 Coin · cap {capacity}</span>}
+                {locationId === "market_imperial_office" && <span className="hotspot-rule-update" aria-hidden="true">Face-up or blind Orders · eligible Shifu Patronage</span>}
                 <span className="hotspot-meeples" aria-label={`Workers at ${LOCATION_LABELS[locationId]}`}>
                   {placements.map((workerId) => {
                     const located = findWorker(game, workerId);

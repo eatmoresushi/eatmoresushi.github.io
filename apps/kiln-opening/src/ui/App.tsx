@@ -8,7 +8,7 @@ import type {
   MultiplayerError,
   RoomConnection,
 } from "../multiplayer";
-import { ORDER_DEFINITIONS } from "../game";
+import { ORDER_DEFINITIONS, TECHNIQUE_DEFINITIONS } from "../game";
 import { TabletopExperience } from "./tabletop/TabletopExperience";
 
 const LAST_SEAT_KEY = "kiln-opening:last-seat";
@@ -44,6 +44,30 @@ export function imperialOrderNotice(result: CommandSuccess): string | null {
     parts.push("Imperial Progress could not advance.");
   }
   return parts.join(" ");
+}
+
+export function commandNotice(result: CommandSuccess): string | null {
+  const order = result.events.find((event) => event.type === "ORDER_TAKEN");
+  if (order?.type === "ORDER_TAKEN") {
+    const deck = order.deck === "market" ? "Market" : "Imperial";
+    return order.acquisition === "blind_top"
+      ? `Blind ${deck} draw committed and revealed: ${order.orderId}.`
+      : `Took face-up ${deck} Order ${order.orderId}.`;
+  }
+  const colour = result.events.find((event) => event.type === "COLOUR_SAMPLES_USED");
+  if (colour?.type === "COLOUR_SAMPLES_USED") {
+    const deck = colour.deck === "market" ? "Market" : "Imperial";
+    return `Used Colour Samples: ${colour.bottomedOrderId} moved to the bottom of the ${deck} deck; ${colour.revealedOrderId ?? "no replacement"} was revealed.`;
+  }
+  const patronage = result.events.find((event) => event.type === "COURT_PATRONAGE_USED");
+  if (patronage?.type === "COURT_PATRONAGE_USED") {
+    return `Used Court Patronage: paid 5 Coins; Imperial Progress ${patronage.from} → ${patronage.to}.`;
+  }
+  const technique = result.events.find((event) => event.type === "TECHNIQUE_ACQUIRED");
+  if (technique?.type === "TECHNIQUE_ACQUIRED") {
+    return `Acquired ${TECHNIQUE_DEFINITIONS[technique.techniqueId]?.name ?? technique.techniqueId} for ${technique.cost} Coins.`;
+  }
+  return imperialOrderNotice(result);
 }
 
 function readSavedSeat(): SavedSeat | null {
@@ -93,7 +117,7 @@ export function App() {
       game: result.game,
       ownPendingContribution: result.ownPendingContribution,
     });
-    setNotice(imperialOrderNotice(result));
+    setNotice(commandNotice(result));
   }, []);
 
   const reconnect = useCallback(async (saved?: SavedSeat, announce = false) => {
@@ -344,7 +368,7 @@ export function App() {
         />
       )}
       <footer className="site-footer">
-        <span>Kiln Opening V0.6.3</span>
+        <span>Kiln Opening V0.6.5</span>
         <a href="https://luyuan.me/">Luyuan He</a>
       </footer>
     </div>

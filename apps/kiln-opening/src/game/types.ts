@@ -165,6 +165,7 @@ export type OfficeOrderMode =
   | "take_one"
   | "take_up_to_two"
   | "take_one_and_gain_two_coins";
+export type OrderDeck = "market" | "imperial";
 
 export interface OrderedDecisionQueue {
   actors: PlayerId[];
@@ -244,8 +245,8 @@ export type GamePhase =
       mode: OfficeOrderMode;
       remainingTakes: 0 | 1 | 2;
       ordersTaken: number;
-      step: "take_or_end" | "colour_samples";
-      lastTakenDeck: "market" | "imperial" | null;
+      step: "colour_samples_or_skip" | "take_or_end";
+      colourSamplesUsed: boolean;
     }
   | {
       type: "work_office_sale";
@@ -299,7 +300,7 @@ export type GamePhase =
 
 export interface GameState {
   schemaVersion: 1;
-  rulesVersion: "0.6.3";
+  rulesVersion: "0.6.5";
   gameId: string;
   revision: number;
   eventSequence: number;
@@ -392,10 +393,12 @@ export type GameAction =
       type: "OFFICE_TAKE_ORDER";
       orderId: OrderId;
     }
+  | { type: "OFFICE_DRAW_BLIND_ORDER"; deck: OrderDeck }
   | { type: "OFFICE_END_ORDERS" }
   | { type: "OFFICE_USE_COLOUR_SAMPLES"; orderId: OrderId }
   | { type: "OFFICE_SKIP_COLOUR_SAMPLES" }
   | { type: "OFFICE_RESOLVE_FLAWED_SALE"; ceramicIds: CeramicId[] }
+  | { type: "USE_COURT_PATRONAGE"; workerId: WorkerId }
   | { type: "BEGIN_GUILD_ACTION"; workerId: WorkerId }
   | { type: "GUILD_REFRESH_TECHNIQUE"; techniqueId: TechniqueId }
   | { type: "GUILD_SKIP_REFRESH" }
@@ -472,7 +475,20 @@ export type GameEvent =
   | { type: "CERAMIC_GLAZED"; playerId: PlayerId; ceramicId: CeramicId; glaze: Glaze; decoration: Decoration }
   | { type: "CERAMIC_LOADED"; playerId: PlayerId; ceramicId: CeramicId; kilnSpaceId: KilnSpaceId }
   | { type: "CERAMIC_SOLD"; playerId: PlayerId; ceramicId: CeramicId }
-  | { type: "ORDER_TAKEN"; playerId: PlayerId; orderId: OrderId; deck: "market" | "imperial" }
+  | {
+      type: "ORDER_TAKEN";
+      playerId: PlayerId;
+      orderId: OrderId;
+      deck: OrderDeck;
+      acquisition: "face_up" | "blind_top";
+    }
+  | {
+      type: "COLOUR_SAMPLES_USED";
+      playerId: PlayerId;
+      deck: OrderDeck;
+      bottomedOrderId: OrderId;
+      revealedOrderId: OrderId | null;
+    }
   | { type: "TECHNIQUE_REFRESHED"; playerId: PlayerId; techniqueId: TechniqueId }
   | { type: "TECHNIQUE_ACQUIRED"; playerId: PlayerId; techniqueId: TechniqueId; cost: number }
   | { type: "TECHNIQUE_USED"; playerId: PlayerId; techniqueId: TechniqueId }
@@ -489,6 +505,13 @@ export type GameEvent =
       from: number;
       to: number;
       reward: 1 | 2;
+    }
+  | {
+      type: "COURT_PATRONAGE_USED";
+      playerId: PlayerId;
+      cost: 5;
+      from: 0 | 1 | 2 | 3;
+      to: 1 | 2 | 3 | 4;
     }
   | { type: "IMPERIAL_SEAL_CLAIMED"; playerId: PlayerId }
   | { type: "APPRENTICE_UNLOCKED"; playerId: PlayerId; workerId: WorkerId }

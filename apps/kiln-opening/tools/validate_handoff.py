@@ -23,7 +23,7 @@ def check(cond, msg):
     if not cond: errors.append(msg)
 
 for versioned in [cfg, actions, firing, components, imperial, asset_specs, round_structure]:
-    check(versioned["rulesVersion"] == "0.6.3", "Rules version must be 0.6.3")
+    check(versioned["rulesVersion"] == "0.6.5", "Rules version must be 0.6.5")
 check(cfg["players"] == {"min":2,"max":4}, "Player count must be 2-4")
 check(cfg["rounds"] == 5, "Game must be 5 rounds")
 check(cfg["startingResources"] == {"clay":2,"wood":2,"coins":3}, "Starting resources mismatch")
@@ -38,10 +38,10 @@ expected_caps = {
  "glaze_workshop":{"2":2,"3":3,"4":4},
  "kiln_yard":{"2":3,"3":4,"4":5},
  "market_imperial_office":{"2":2,"3":3,"4":4},
- "guild_academy":{"2":1,"3":2,"4":2},
+ "guild_academy":{"2":1,"3":2,"4":3},
 }
 locs = {x["id"]:x for x in actions["locations"]}
-check(set(locs) == set(expected_caps), "Must have exactly the six V0.6.3 action locations")
+check(set(locs) == set(expected_caps), "Must have exactly the six V0.6.5 action locations")
 for k,v in expected_caps.items():
     check(locs.get(k,{}).get("capacity") == v, f"Capacity mismatch for {k}")
 check("reposition" not in locs["kiln_yard"]["shifu"].lower(), "Shifu Kiln action must not reposition")
@@ -50,12 +50,12 @@ check("wood" not in locs["kiln_yard"]["shifu"].lower(), "Kiln Yard Shifu must no
 check(locs["materials_yard"]["apprentice"] == "Gain 3 resources in any combination of Clay and Wood.", "Materials Apprentice amount mismatch")
 check(locs["materials_yard"]["shifu"] == "Gain 4 resources in any combination of Clay and Wood.", "Materials Shifu amount mismatch")
 office = locs["market_imperial_office"]
-check(office.get("apprentice") == "Choose one: take 1 face-up Market or Imperial Order; or gain 2 Coins. In addition, you may sell 1 Flawed ceramic for 1 Coin.", "Office Apprentice action mismatch")
-check(office.get("shifu") == "Choose one: take up to 2 face-up Orders; take 1 face-up Order and gain 2 Coins; or gain 4 Coins. In addition, you may sell up to 2 Flawed ceramics for 1 Coin each.", "Office Shifu action mismatch")
+check("blind-top" in office.get("apprentice", ""), "Office Apprentice must allow a blind top-deck Order")
+check("blind-top" in office.get("shifu", "") and "Court Patronage" in office.get("shifu", ""), "Office Shifu blind draw or Patronage mismatch")
 check("apprenticeOptions" not in office and "shifuOptions" not in office, "Office sale must not remain a standalone action option")
-check("apprentice" not in locs["guild_academy"], "Guild & Academy must not define an Apprentice action")
-check("printed Coin cost" in locs["guild_academy"]["shifu"], "Guild Shifu must pay printed cost")
-check(cfg["decorations"] == {"plain":1,"carved":2,"impressed":2,"crackle":2}, "V0.6.3 Decoration costs mismatch")
+check("printed Coin cost" in locs["guild_academy"].get("apprentice", ""), "Guild Apprentice must pay printed cost")
+check("1 Coin less" in locs["guild_academy"]["shifu"], "Guild Shifu must receive the exact discount")
+check(cfg["decorations"] == {"plain":1,"carved":2,"impressed":2,"crackle":2}, "V0.6.5 Decoration costs mismatch")
 
 check(len(orders["market"]) == 20, "Expected 20 Market Orders")
 check(len(orders["imperial"]) == 10, "Expected 10 Imperial Orders")
@@ -107,7 +107,9 @@ expected_technique_costs = {
  "T05":2, "T06":2, "T07":2, "T08":2,
  "T09":3, "T10":3, "T11":3, "T12":2,
 }
-check({t["id"]:t["cost"] for t in techs} == expected_technique_costs, "V0.6.3 Technique costs mismatch")
+check({t["id"]:t["cost"] for t in techs} == expected_technique_costs, "V0.6.5 Technique costs mismatch")
+colour_samples = next(t for t in techs if t["id"] == "T08")
+check("before choosing your first Order" in colour_samples["ability"] and "either display" in colour_samples["ability"] and "bottom" in colour_samples["ability"], "T08 Colour Samples timing or target mismatch")
 
 check(len(kilns) == 5, "Expected 5 Kilns")
 check({k["id"] for k in kilns} == {"RU","GU","GE","DI","JU"}, "Kiln IDs mismatch")
@@ -153,37 +155,29 @@ required_components = {
 for name, qty in required_components.items():
     check(component_map.get(name) == qty, f"Component checklist mismatch: {name}")
 
-# Current visual directory is deliberately small and exact.
+# Runtime artwork is presentation-only; rules-bearing corrections are live HTML/CSS.
 expected_assets = {
- "vessel_cards_page_1_bowl_plate.png",
- "vessel_cards_page_2_washer_vase.png",
- "vessel_cards_page_3_censer.png",
- "fire_cards_page_1.png",
- "fire_cards_page_2_remaining_plus1.png",
- "wood_contribution_cards_4_sets.png",
+ "central-table.webp", "player-boards.webp", "market-orders.webp", "imperial-orders.webp",
+ "techniques.webp", "vessels.webp", "tokens.webp", "firing-cards.webp",
 }
-actual_assets = {p.name for p in (ROOT/"assets"/"current_v04").iterdir() if p.is_file()}
-check(actual_assets == expected_assets, f"Canonical current asset directory mismatch: {actual_assets ^ expected_assets}")
-obsolete_orders = {p.name for p in (ROOT/"assets"/"obsolete_v061").iterdir() if p.is_file()}
-check(obsolete_orders == {"order_cards_page_1_M01-M16.png", "order_cards_page_2_M17-M20_I01-I10.png"}, "Obsolete V0.6.1 Order sheets must remain archived")
-
-# No central board/player reference/player-board/technique raster should be in canonical current assets until regenerated.
-for forbidden_piece in ["central","player_reference","player_board","technique"]:
-    check(not any(forbidden_piece in n.lower() for n in actual_assets), f"Stale {forbidden_piece} raster found in current_v04")
+asset_dir = ROOT/"public"/"assets"/"tabletop"
+actual_assets = {p.name for p in asset_dir.iterdir() if p.is_file()} if asset_dir.exists() else set()
+check(actual_assets == expected_assets, f"Runtime tabletop asset directory mismatch: {actual_assets ^ expected_assets}")
 
 check("Progress Reminder Tokens" not in component_map, "Progress Reminder Tokens must be removed")
 
 if errors:
-    print("V0.6.3 HANDOFF VALIDATION FAILED")
+    print("V0.6.5 HANDOFF VALIDATION FAILED")
     for e in errors: print(" -", e)
     sys.exit(1)
 
-print("V0.6.3 HANDOFF VALIDATION PASSED")
+print("V0.6.5 HANDOFF VALIDATION PASSED")
 print("Rules/data: 2-4 players, 5 rounds, 6 locations, 1 Shifu + 3 starting Apprentices.")
-print("Office: main action followed by optional Apprentice 0-1 / Shifu 0-2 Flawed sales.")
+print("Office: face-up/blind Orders, pre-pick Colour Samples, and gated Shifu Court Patronage.")
+print("Academy: both workers; Shifu optional refresh and -1 Coin; capacity 1/2/3.")
 print("Decks: 20 Market Orders, 10 Imperial Orders, 12 Techniques, 20 Fire cards.")
 print("Kiln: 8 spaces, contributor-scaled Base Heat, current Quality ladder.")
 print("Decorations: Plain 1 Coin; Carved, Impressed and Crackle 2 Coins.")
 print("Orders: named Glazes 4/4/4/4; Decorations Plain/Carved/Impressed/Crackle 3/3/4/3.")
 print("Imperial: I01-I05 +1; I06-I10 +2; crossed unlocks at 2/4 and Seal at 5.")
-print("Assets: six visually audited/current files remain; obsolete V0.6.1 Order sheets are archived.")
+print("Assets: eight runtime tabletop atlases are present; live overlays carry V0.6.5 rule corrections.")

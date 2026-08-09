@@ -68,7 +68,7 @@
     "name": "Colour Samples",
     "nameZh": "釉色样本",
     "cost": 2,
-    "ability": "After you take an Order, you may discard one other face-up Order from the same display and refill it.",
+    "ability": "Once per round, before choosing your first Order during an Office take-Orders action, you may place 1 face-up Order from either display on the bottom of its deck and reveal a replacement.",
     "oncePerRound": true
   },
   {

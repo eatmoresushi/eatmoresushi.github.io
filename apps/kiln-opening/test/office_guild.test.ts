@@ -390,22 +390,30 @@ describe("Market & Imperial Office", () => {
 });
 
 describe("Guild & Academy", () => {
-  it("rejects an Apprentice before placing it", () => {
+  it("lets an Apprentice enter, skips refresh, and pay printed cost", () => {
     const { state, rng } = startedGame(2, 320);
     const actorId = state.firstPlayerId;
     const apprenticeId = workerId(state, actorId, "apprentice");
-    const rejected = applyAction(
+    state.players[actorId]!.resources.coins = 3;
+    const techniqueId = Object.values(state.techniqueDisplay).flat().find(
+      (id) => TECHNIQUE_DEFINITIONS[id]!.cost <= 3,
+    )!;
+    let next = mustApply(
       state,
       actorId,
       { type: "BEGIN_GUILD_ACTION", workerId: apprenticeId },
       rng,
     );
-    expectError(rejected, "INVALID_ACTION");
-    expect(state.players[actorId]!.workers[apprenticeId]!.status).toBe("available");
-    expect(state.actionBoard.placements.guild_academy).toEqual([]);
+    expect(next.phase).toEqual(expect.objectContaining({ type: "work_guild", step: "buy" }));
+    expectError(
+      applyAction(next, actorId, { type: "GUILD_REFRESH_TECHNIQUE", techniqueId }, rng),
+      "INVALID_ACTION",
+    );
+    next = mustApply(next, actorId, { type: "GUILD_BUY_TECHNIQUE", techniqueId }, rng);
+    expect(next.players[actorId]!.resources.coins).toBe(3 - TECHNIQUE_DEFINITIONS[techniqueId]!.cost);
   });
 
-  it("places a Shifu, optionally skips refresh, pays printed cost, and refills", () => {
+  it("places a Shifu, optionally skips refresh, pays discounted cost, and refills", () => {
     const { state, rng } = startedGame(2, 321);
     const actorId = state.firstPlayerId;
     const shifuId = workerId(state, actorId, "shifu");
@@ -429,7 +437,7 @@ describe("Guild & Academy", () => {
     expect(next.actionBoard.placements.guild_academy).toEqual([shifuId]);
     next = mustApply(next, actorId, { type: "GUILD_SKIP_REFRESH" }, rng);
     next = mustApply(next, actorId, { type: "GUILD_BUY_TECHNIQUE", techniqueId }, rng);
-    expect(next.players[actorId]!.resources.coins).toBe(3 - definition.cost);
+    expect(next.players[actorId]!.resources.coins).toBe(3 - Math.max(1, definition.cost - 1));
     expect(next.players[actorId]!.techniques).toContainEqual({ id: techniqueId, exhausted: false });
     expect(next.techniqueDisplay[definition.discipline]).toHaveLength(displayBefore.length);
     expect(next.techniqueDisplay[definition.discipline]).not.toContain(techniqueId);
@@ -461,7 +469,7 @@ describe("Guild & Academy", () => {
     expect(next.techniqueDisplay.firing).toEqual(firingBefore);
   });
 
-  it("charges the printed cost exactly and applies no extra Shifu discount", () => {
+  it("charges a Shifu exactly one less than printed cost", () => {
     const { state, rng } = startedGame(2, 323);
     const actorId = state.firstPlayerId;
     state.techniqueDisplay.forming = ["T03", "T01"];
@@ -473,12 +481,12 @@ describe("Guild & Academy", () => {
       rng,
     );
     next = mustApply(next, actorId, { type: "GUILD_SKIP_REFRESH" }, rng);
-    const rejected = applyAction(next, actorId, { type: "GUILD_BUY_TECHNIQUE", techniqueId: "T03" }, rng);
+    next = mustApply(next, actorId, { type: "GUILD_BUY_TECHNIQUE", techniqueId: "T03" }, rng);
     expect(TECHNIQUE_DEFINITIONS["T03"]!.cost).toBe(3);
-    expectError(rejected, "INSUFFICIENT_RESOURCES");
+    expect(next.players[actorId]!.resources.coins).toBe(0);
   });
 
-  it("matches the complete V0.6.3 printed-cost table", () => {
+  it("keeps the complete V0.6.5 printed-cost table unchanged", () => {
     expect(Object.fromEntries(Object.entries(TECHNIQUE_DEFINITIONS).map(([id, technique]) => [id, technique.cost]))).toEqual({
       T01: 2, T02: 2, T03: 3, T04: 2,
       T05: 2, T06: 2, T07: 2, T08: 2,

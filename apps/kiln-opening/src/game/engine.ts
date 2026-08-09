@@ -44,6 +44,7 @@ import type {
   KilnSpaceId,
   LocationId,
   OfficeOrderMode,
+  OrderDeck,
   OrderId,
   PlayerId,
   PlayerState,
@@ -1134,12 +1135,19 @@ function beginOfficeOrders(
       ruleError("INVALID_ACTION", "The selected worker cannot use that Office Order mode."),
     );
   }
+  const hasHandSlot = context.player.orderHand.length < orderHandLimit(context.player);
+  const hasOrderSource =
+    state.marketDisplay.length +
+      state.imperialDisplay.length +
+      state.marketDeck.length +
+      state.imperialDeck.length >
+    0;
   if (mode !== "take_up_to_two") {
-    if (context.player.orderHand.length >= orderHandLimit(context.player)) {
+    if (!hasHandSlot) {
       return applyFailure(ruleError("ORDER_HAND_LIMIT", "The player has no Order hand slot."));
     }
-    if (state.marketDisplay.length + state.imperialDisplay.length === 0) {
-      return applyFailure(ruleError("ORDER_NOT_AVAILABLE", "No face-up Order is available."));
+    if (!hasOrderSource) {
+      return applyFailure(ruleError("ORDER_NOT_AVAILABLE", "No Order source is available."));
     }
   }
 
@@ -1153,10 +1161,41 @@ function beginOfficeOrders(
     mode,
     remainingTakes: mode === "take_up_to_two" ? 2 : 1,
     ordersTaken: 0,
-    step: "take_or_end",
-    lastTakenDeck: null,
+    step:
+      ownedTechnique(context.player, "T08") !== undefined &&
+      !ownedTechnique(context.player, "T08")?.exhausted &&
+      hasHandSlot &&
+      hasOrderSource &&
+      state.marketDisplay.length + state.imperialDisplay.length > 0
+        ? "colour_samples_or_skip"
+        : "take_or_end",
+    colourSamplesUsed: false,
   };
   return success(next, events);
+}
+
+function finishOfficeOrderAcquisition(
+  state: GameState,
+  actorId: PlayerId,
+  events: GameEvent[],
+): void {
+  if (state.phase.type !== "work_office_orders") {
+    throw new Error("Office Order phase invariant failed");
+  }
+  if (state.phase.remainingTakes > 0) return;
+  const player = state.players[actorId];
+  if (player === undefined) throw new Error("Office actor disappeared");
+  if (state.phase.mode === "take_one_and_gain_two_coins") {
+    const gainedCoins = gainFromSupply(state, player, "coins", 2);
+    events.push({
+      type: "RESOURCES_CHANGED",
+      playerId: actorId,
+      clay: 0,
+      wood: 0,
+      coins: gainedCoins,
+    });
+  }
+  state.phase = { type: "work_office_sale", actorId, workerId: state.phase.workerId };
 }
 
 function takeOfficeOrder(state: GameState, actorId: PlayerId, orderId: OrderId): ApplyResult {
@@ -1177,7 +1216,7 @@ function takeOfficeOrder(state: GameState, actorId: PlayerId, orderId: OrderId):
   }
   if (phase.step !== "take_or_end") {
     return applyFailure(
-      ruleError("INVALID_ACTION", "Resolve Colour Samples before taking another Order."),
+      ruleError("INVALID_ACTION", "Resolve the Colour Samples choice before taking an Order."),
     );
   }
   if (player.orderHand.length >= orderHandLimit(player)) {
@@ -1210,26 +1249,59 @@ function takeOfficeOrder(state: GameState, actorId: PlayerId, orderId: OrderId):
   nextPlayer.orderHand.push(orderId);
   nextPhase.remainingTakes = (nextPhase.remainingTakes - 1) as 0 | 1 | 2;
   nextPhase.ordersTaken += 1;
-  const events: GameEvent[] = [{ type: "ORDER_TAKEN", playerId: actorId, orderId, deck }];
+  const events: GameEvent[] = [
+    { type: "ORDER_TAKEN", playerId: actorId, orderId, deck, acquisition: "face_up" },
+  ];
+  finishOfficeOrderAcquisition(next, actorId, events);
+  return success(next, events);
+}
 
-  const colourSamples = ownedTechnique(nextPlayer, "T08");
-  const sameDisplay = deck === "market" ? next.marketDisplay : next.imperialDisplay;
-  if (colourSamples !== undefined && !colourSamples.exhausted && sameDisplay.length > 0) {
-    nextPhase.step = "colour_samples";
-    nextPhase.lastTakenDeck = deck;
-  } else if (nextPhase.remainingTakes === 0) {
-    if (nextPhase.mode === "take_one_and_gain_two_coins") {
-      const gainedCoins = gainFromSupply(next, nextPlayer, "coins", 2);
-      events.push({
-        type: "RESOURCES_CHANGED",
-        playerId: actorId,
-        clay: 0,
-        wood: 0,
-        coins: gainedCoins,
-      });
-    }
-    next.phase = { type: "work_office_sale", actorId, workerId: nextPhase.workerId };
+function drawBlindOfficeOrder(
+  state: GameState,
+  actorId: PlayerId,
+  deck: OrderDeck,
+): ApplyResult {
+  const phase = requirePhase(state, "work_office_orders");
+  if (isFailure(phase)) return phase;
+  const actorError = actorFailure(state, actorId);
+  if (actorError !== null) return actorError;
+  const player = state.players[actorId];
+  if (player === undefined) {
+    return applyFailure(ruleError("UNKNOWN_PLAYER", "Player was not found.", { actorId }));
   }
+  if (phase.remainingTakes <= 0) {
+    return applyFailure(ruleError("INVALID_ACTION", "This Office action has no Order take left."));
+  }
+  if (phase.step !== "take_or_end") {
+    return applyFailure(
+      ruleError("INVALID_ACTION", "Resolve the Colour Samples choice before drawing an Order."),
+    );
+  }
+  if (player.orderHand.length >= orderHandLimit(player)) {
+    return applyFailure(ruleError("ORDER_HAND_LIMIT", "The player has reached the Order hand limit."));
+  }
+  const source = deck === "market" ? state.marketDeck : state.imperialDeck;
+  if (source.length === 0) {
+    return applyFailure(
+      ruleError("ORDER_NOT_AVAILABLE", `The ${deck} deck is empty.`, { deck }),
+    );
+  }
+
+  const next = cloneState(state);
+  const nextPhase = next.phase;
+  const nextPlayer = next.players[actorId];
+  if (nextPhase.type !== "work_office_orders" || nextPlayer === undefined) {
+    throw new Error("Office blind-draw phase invariant failed");
+  }
+  const orderId = (deck === "market" ? next.marketDeck : next.imperialDeck).shift();
+  if (orderId === undefined) throw new Error("Validated blind Order disappeared");
+  nextPlayer.orderHand.push(orderId);
+  nextPhase.remainingTakes = (nextPhase.remainingTakes - 1) as 0 | 1 | 2;
+  nextPhase.ordersTaken += 1;
+  const events: GameEvent[] = [
+    { type: "ORDER_TAKEN", playerId: actorId, orderId, deck, acquisition: "blind_top" },
+  ];
+  finishOfficeOrderAcquisition(next, actorId, events);
   return success(next, events);
 }
 
@@ -1252,37 +1324,15 @@ function endOfficeOrders(state: GameState, actorId: PlayerId): ApplyResult {
       ruleError("INVALID_ACTION", "Resolve Colour Samples before ending the Office action."),
     );
   }
+  if (phase.colourSamplesUsed && phase.ordersTaken === 0) {
+    return applyFailure(
+      ruleError("INVALID_ACTION", "After using Colour Samples, take at least one Order."),
+    );
+  }
   const next = cloneState(state);
   const events: GameEvent[] = [];
   next.phase = { type: "work_office_sale", actorId, workerId: phase.workerId };
   return success(next, events);
-}
-
-function resumeOfficeAfterColourSamples(
-  state: GameState,
-  actorId: PlayerId,
-  events: GameEvent[],
-): void {
-  if (state.phase.type !== "work_office_orders") {
-    throw new Error("Office Colour Samples phase invariant failed");
-  }
-  const player = state.players[actorId];
-  if (player === undefined) throw new Error("Office actor disappeared");
-  state.phase.step = "take_or_end";
-  state.phase.lastTakenDeck = null;
-  if (state.phase.remainingTakes === 0) {
-    if (state.phase.mode === "take_one_and_gain_two_coins") {
-      const gainedCoins = gainFromSupply(state, player, "coins", 2);
-      events.push({
-        type: "RESOURCES_CHANGED",
-        playerId: actorId,
-        clay: 0,
-        wood: 0,
-        coins: gainedCoins,
-      });
-    }
-    state.phase = { type: "work_office_sale", actorId, workerId: state.phase.workerId };
-  }
 }
 
 function useColourSamples(
@@ -1294,7 +1344,7 @@ function useColourSamples(
   if (isFailure(phase)) return phase;
   const actorError = actorFailure(state, actorId);
   if (actorError !== null) return actorError;
-  if (phase.step !== "colour_samples" || phase.lastTakenDeck === null) {
+  if (phase.step !== "colour_samples_or_skip" || phase.ordersTaken !== 0) {
     return applyFailure(ruleError("INVALID_ACTION", "Colour Samples is not awaiting a choice."));
   }
   const player = state.players[actorId];
@@ -1305,10 +1355,14 @@ function useColourSamples(
   if (technique.exhausted) {
     return applyFailure(ruleError("TECHNIQUE_EXHAUSTED", "Colour Samples is exhausted."));
   }
-  const display = phase.lastTakenDeck === "market" ? state.marketDisplay : state.imperialDisplay;
-  if (!display.includes(orderId)) {
+  const deck: OrderDeck | null = state.marketDisplay.includes(orderId)
+    ? "market"
+    : state.imperialDisplay.includes(orderId)
+      ? "imperial"
+      : null;
+  if (deck === null) {
     return applyFailure(
-      ruleError("ORDER_NOT_AVAILABLE", "Choose another face-up Order from the same display."),
+      ruleError("ORDER_NOT_AVAILABLE", "Choose a face-up Market or Imperial Order."),
     );
   }
 
@@ -1316,26 +1370,29 @@ function useColourSamples(
   const nextPhase = next.phase;
   const nextPlayer = next.players[actorId];
   if (
-    nextPhase.type !== "work_office_orders" ||
-    nextPhase.lastTakenDeck === null ||
-    nextPlayer === undefined
+    nextPhase.type !== "work_office_orders" || nextPlayer === undefined
   ) {
     throw new Error("Colour Samples state invariant failed");
   }
-  const nextDisplay =
-    nextPhase.lastTakenDeck === "market" ? next.marketDisplay : next.imperialDisplay;
-  const nextDeck = nextPhase.lastTakenDeck === "market" ? next.marketDeck : next.imperialDeck;
-  const nextDiscard =
-    nextPhase.lastTakenDeck === "market" ? next.marketDiscard : next.imperialDiscard;
+  const nextDisplay = deck === "market" ? next.marketDisplay : next.imperialDisplay;
+  const nextDeck = deck === "market" ? next.marketDeck : next.imperialDeck;
   const index = nextDisplay.indexOf(orderId);
-  nextDiscard.push(orderId);
+  nextDisplay.splice(index, 1);
+  nextDeck.push(orderId);
   const replacement = nextDeck.shift();
-  if (replacement === undefined) nextDisplay.splice(index, 1);
-  else nextDisplay.splice(index, 1, replacement);
+  if (replacement !== undefined) nextDisplay.splice(index, 0, replacement);
 
   const events: GameEvent[] = [];
   exhaustTechnique(nextPlayer, actorId, "T08", events);
-  resumeOfficeAfterColourSamples(next, actorId, events);
+  nextPhase.step = "take_or_end";
+  nextPhase.colourSamplesUsed = true;
+  events.push({
+    type: "COLOUR_SAMPLES_USED",
+    playerId: actorId,
+    deck,
+    bottomedOrderId: orderId,
+    revealedOrderId: replacement ?? null,
+  });
   return success(next, events);
 }
 
@@ -1344,13 +1401,15 @@ function skipColourSamples(state: GameState, actorId: PlayerId): ApplyResult {
   if (isFailure(phase)) return phase;
   const actorError = actorFailure(state, actorId);
   if (actorError !== null) return actorError;
-  if (phase.step !== "colour_samples") {
+  if (phase.step !== "colour_samples_or_skip") {
     return applyFailure(ruleError("INVALID_ACTION", "Colour Samples is not awaiting a choice."));
   }
   const next = cloneState(state);
-  const events: GameEvent[] = [];
-  resumeOfficeAfterColourSamples(next, actorId, events);
-  return success(next, events);
+  if (next.phase.type !== "work_office_orders") {
+    throw new Error("Office Colour Samples phase invariant failed");
+  }
+  next.phase.step = "take_or_end";
+  return success(next, []);
 }
 
 function techniqueDisplayEntries(state: GameState): TechniqueId[] {
@@ -1370,15 +1429,16 @@ function techniqueCost(techniqueId: TechniqueId): number | null {
   return definition?.cost ?? null;
 }
 
+function guildTechniqueCost(techniqueId: TechniqueId, worker: WorkerState): number | null {
+  const printedCost = techniqueCost(techniqueId);
+  if (printedCost === null) return null;
+  return worker.kind === "shifu" ? Math.max(1, printedCost - 1) : printedCost;
+}
+
 function beginGuildAction(state: GameState, actorId: PlayerId, workerId: string): ApplyResult {
   const context = validateWorkerAction(state, actorId, workerId, "guild_academy");
   if (!isWorkerContext(context)) {
     return context;
-  }
-  if (context.worker.kind !== "shifu") {
-    return applyFailure(
-      ruleError("INVALID_ACTION", "Only a Shifu may be placed at Guild & Academy."),
-    );
   }
   if (context.player.techniques.length >= GAME_CONFIG.techniques.maxOwned) {
     return applyFailure(ruleError("TECHNIQUE_LIMIT", "A player may own at most two Techniques."));
@@ -1390,7 +1450,7 @@ function beginGuildAction(state: GameState, actorId: PlayerId, workerId: string)
     );
   }
   const canAffordDisplayed = displayed.some((techniqueId) => {
-    const cost = techniqueCost(techniqueId);
+    const cost = guildTechniqueCost(techniqueId, context.worker);
     return cost !== null && cost <= context.player.resources.coins;
   });
   if (!canAffordDisplayed) {
@@ -1406,7 +1466,7 @@ function beginGuildAction(state: GameState, actorId: PlayerId, workerId: string)
     type: "work_guild",
     actorId,
     workerId,
-    step: "refresh_or_skip",
+    step: context.worker.kind === "shifu" ? "refresh_or_skip" : "buy",
   };
   return success(next, events);
 }
@@ -1467,6 +1527,11 @@ function skipGuildRefresh(state: GameState, actorId: PlayerId): ApplyResult {
   if (phase.step !== "refresh_or_skip") {
     return applyFailure(ruleError("INVALID_ACTION", "There is no refresh decision to skip."));
   }
+  const player = state.players[actorId];
+  const worker = player?.workers[phase.workerId];
+  if (worker?.kind !== "shifu") {
+    return applyFailure(ruleError("INVALID_ACTION", "Only a Shifu has a refresh decision."));
+  }
   const next = cloneState(state);
   if (next.phase.type !== "work_guild") {
     throw new Error("Guild phase invariant failed");
@@ -1498,9 +1563,6 @@ function buyGuildTechnique(
   if (player === undefined || worker === undefined) {
     return applyFailure(ruleError("UNKNOWN_PLAYER", "The Guild actor was not found."));
   }
-  if (worker.kind !== "shifu") {
-    return applyFailure(ruleError("INVALID_ACTION", "Only a Shifu may acquire a Technique."));
-  }
   if (player.techniques.length >= GAME_CONFIG.techniques.maxOwned) {
     return applyFailure(ruleError("TECHNIQUE_LIMIT", "A player may own at most two Techniques."));
   }
@@ -1510,7 +1572,7 @@ function buyGuildTechnique(
       ruleError("TECHNIQUE_NOT_AVAILABLE", "The selected Technique is not face-up."),
     );
   }
-  const cost = techniqueCost(techniqueId);
+  const cost = guildTechniqueCost(techniqueId, worker);
   if (cost === null || player.resources.coins < cost) {
     return applyFailure(
       ruleError("INSUFFICIENT_RESOURCES", "Not enough Coins for this Technique."),
@@ -2038,6 +2100,95 @@ function finalizeFiring(state: GameState, events: GameEvent[]): void {
   beginOrderPhase(state);
 }
 
+function advanceImperialProgress(
+  state: GameState,
+  playerId: PlayerId,
+  reward: 1 | 2,
+  source: "imperial_order" | "court_patronage",
+  events: GameEvent[],
+): { from: PlayerState["imperialProgress"]; to: PlayerState["imperialProgress"] } {
+  const player = state.players[playerId];
+  if (player === undefined) throw new Error("Imperial Progress player disappeared");
+  const from = player.imperialProgress;
+  const to = Math.min(5, from + reward) as PlayerState["imperialProgress"];
+  player.imperialProgress = to;
+  if (from < 2 && to >= 2) player.pendingApprenticeUnlocks += 1;
+  if (from < 4 && to >= 4) player.pendingApprenticeUnlocks += 1;
+  events.push({
+    type: "IMPERIAL_PROGRESS_ADVANCED",
+    playerId,
+    from,
+    to,
+    reward,
+  });
+  if (source === "imperial_order" && to === 5 && state.imperialSealOwnerId === null) {
+    state.imperialSealOwnerId = playerId;
+    events.push({ type: "IMPERIAL_SEAL_CLAIMED", playerId });
+  }
+  return { from, to };
+}
+
+function useCourtPatronage(
+  state: GameState,
+  actorId: PlayerId,
+  workerId: string,
+): ApplyResult {
+  const context = validateWorkerAction(
+    state,
+    actorId,
+    workerId,
+    "market_imperial_office",
+  );
+  if (!isWorkerContext(context)) return context;
+  if (context.worker.kind !== "shifu") {
+    return applyFailure(ruleError("INVALID_ACTION", "Court Patronage requires a Shifu."));
+  }
+  if (!context.player.completedOrders.some(({ orderId }) => orderId.startsWith("I"))) {
+    return applyFailure(
+      ruleError(
+        "INVALID_ACTION",
+        "Complete at least one Imperial Order before using Court Patronage.",
+      ),
+    );
+  }
+  if (context.player.resources.coins < 5) {
+    return applyFailure(
+      ruleError("INSUFFICIENT_RESOURCES", "Court Patronage costs 5 Coins.", {
+        requiredCoins: 5,
+      }),
+    );
+  }
+  if (context.player.imperialProgress >= 4) {
+    return applyFailure(
+      ruleError(
+        "INVALID_ACTION",
+        context.player.imperialProgress === 5
+          ? "Court Patronage is unavailable at Progress 5."
+          : "Progress 4 must reach 5 by completing an Imperial Order.",
+      ),
+    );
+  }
+
+  const next = cloneState(state);
+  const events: GameEvent[] = [];
+  placeWorker(next, actorId, workerId, "market_imperial_office", events);
+  const player = next.players[actorId];
+  if (player === undefined) throw new Error("Court Patronage actor disappeared");
+  player.resources.coins -= 5;
+  next.commonSupply.coins += 5;
+  events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins: -5 });
+  const progress = advanceImperialProgress(next, actorId, 1, "court_patronage", events);
+  events.push({
+    type: "COURT_PATRONAGE_USED",
+    playerId: actorId,
+    cost: 5,
+    from: progress.from as 0 | 1 | 2 | 3,
+    to: progress.to as 1 | 2 | 3 | 4,
+  });
+  completeWorkerAction(next, actorId, events);
+  return success(next, events);
+}
+
 function completeOrder(
   state: GameState,
   actorId: PlayerId,
@@ -2132,22 +2283,7 @@ function completeOrder(
   if (isImperial && nextPlayer.imperialProgress < 5) {
     const reward = definition.imperialProgressReward;
     if (reward === undefined) throw new Error("Imperial Order progress reward is missing");
-    const previous = nextPlayer.imperialProgress;
-    const advanced = Math.min(5, previous + reward) as PlayerState["imperialProgress"];
-    nextPlayer.imperialProgress = advanced;
-    if (previous < 2 && advanced >= 2) nextPlayer.pendingApprenticeUnlocks += 1;
-    if (previous < 4 && advanced >= 4) nextPlayer.pendingApprenticeUnlocks += 1;
-    events.push({
-      type: "IMPERIAL_PROGRESS_ADVANCED",
-      playerId: actorId,
-      from: previous,
-      to: advanced,
-      reward,
-    });
-    if (advanced === 5 && next.imperialSealOwnerId === null) {
-      next.imperialSealOwnerId = actorId;
-      events.push({ type: "IMPERIAL_SEAL_CLAIMED", playerId: actorId });
-    }
+    advanceImperialProgress(next, actorId, reward, "imperial_order", events);
   }
   return success(next, events);
 }
@@ -2422,6 +2558,8 @@ export function applyAction(
       return beginOfficeOrders(state, actorId, action.workerId, action.mode);
     case "OFFICE_TAKE_ORDER":
       return takeOfficeOrder(state, actorId, action.orderId);
+    case "OFFICE_DRAW_BLIND_ORDER":
+      return drawBlindOfficeOrder(state, actorId, action.deck);
     case "OFFICE_END_ORDERS":
       return endOfficeOrders(state, actorId);
     case "OFFICE_USE_COLOUR_SAMPLES":
@@ -2430,6 +2568,8 @@ export function applyAction(
       return skipColourSamples(state, actorId);
     case "OFFICE_RESOLVE_FLAWED_SALE":
       return resolveOfficeFlawedSale(state, actorId, action.ceramicIds);
+    case "USE_COURT_PATRONAGE":
+      return useCourtPatronage(state, actorId, action.workerId);
     case "BEGIN_GUILD_ACTION":
       return beginGuildAction(state, actorId, action.workerId);
     case "GUILD_REFRESH_TECHNIQUE":

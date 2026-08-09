@@ -1,4 +1,4 @@
-# ART_DIRECTION.md — Kiln Opening V0.6.3
+# ART_DIRECTION.md — Kiln Opening V0.6.5
 
 This document preserves the visual direction from the physical prototype without requiring Codex to read obsolete rule text from older images.
 

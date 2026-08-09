@@ -22,7 +22,7 @@ import type {
 } from "./types.ts";
 
 interface GameConfigDefinition {
-  rulesVersion: "0.6.3";
+  rulesVersion: "0.6.5";
   players: { min: number; max: number };
   rounds: number;
   startingResources: { clay: number; wood: number; coins: number };
@@ -93,7 +93,7 @@ export interface TechniqueDefinition {
 }
 
 interface FiringDefinition {
-  rulesVersion: "0.6.3";
+  rulesVersion: "0.6.5";
   kilnSpaces: Array<{ id: KilnSpaceId; zone: "high" | "middle" | "low"; modifier: -1 | 0 | 1 }>;
   fireDeck: FireModifier[];
 }
@@ -113,7 +113,7 @@ export interface KilnDefinition {
 
 export const GAME_CONFIG = gameConfigJson as unknown as GameConfigDefinition;
 const ACTION_LOCATION_FILE = actionLocationsJson as unknown as {
-  rulesVersion: "0.6.3";
+  rulesVersion: "0.6.5";
   locations: LocationDefinition[];
 };
 const ORDER_FILE = ordersJson as unknown as {
@@ -122,7 +122,7 @@ const ORDER_FILE = ordersJson as unknown as {
 };
 const TECHNIQUE_FILE = techniquesJson as unknown as TechniqueDefinition[];
 const FIRING_FILE = firingJson as unknown as FiringDefinition;
-const COMPONENT_FILE = componentsJson as unknown as { rulesVersion: "0.6.3"; components: ComponentDefinition[] };
+const COMPONENT_FILE = componentsJson as unknown as { rulesVersion: "0.6.5"; components: ComponentDefinition[] };
 
 export const LOCATION_IDS: readonly LocationId[] = [
   "materials_yard",
@@ -166,7 +166,7 @@ export const SHAPE_COSTS = GAME_CONFIG.shapes;
 export const DECORATION_COSTS = GAME_CONFIG.decorations;
 
 export interface ImperialProgressDefinition {
-  rulesVersion: "0.6.3";
+  rulesVersion: "0.6.5";
   track: Array<{ space: number; title: string; reward: string | null; endGameVp: number }>;
   imperialSealVp: number;
   presentation: {
@@ -203,11 +203,11 @@ export const COMMON_SUPPLY = {
 
 function validateContent(): void {
   if (
-    GAME_CONFIG.rulesVersion !== "0.6.3" ||
-    ACTION_LOCATION_FILE.rulesVersion !== "0.6.3" ||
-    FIRING_FILE.rulesVersion !== "0.6.3" ||
-    COMPONENT_FILE.rulesVersion !== "0.6.3" ||
-    IMPERIAL_PROGRESS.rulesVersion !== "0.6.3"
+    GAME_CONFIG.rulesVersion !== "0.6.5" ||
+    ACTION_LOCATION_FILE.rulesVersion !== "0.6.5" ||
+    FIRING_FILE.rulesVersion !== "0.6.5" ||
+    COMPONENT_FILE.rulesVersion !== "0.6.5" ||
+    IMPERIAL_PROGRESS.rulesVersion !== "0.6.5"
   ) {
     throw new Error("Rules content version mismatch");
   }

@@ -391,6 +391,9 @@ button.visual-order-card:hover { z-index: 3; transform: translateY(-5px) scale(1
 button.visual-technique-tile:hover { z-index: 3; transform: scale(1.06); }
 .tabletop-tile-id { font-size: .39rem; }
 .visual-technique-tile.is-exhausted .tabletop-tile-art { filter: grayscale(1); opacity: .48; }
+.tabletop-tile-live-copy { position: absolute; z-index: 2; inset: 33% 4% 4%; display: grid; align-content: center; gap: .18rem; padding: .3rem; color: #2d2118; background: rgb(244 235 207 / 96%); border: 1px solid rgb(117 86 48 / 45%); font-size: clamp(.42rem, 1.6cqi, .64rem); line-height: 1.15; }
+.tabletop-tile-live-copy b { font-family: var(--serif); }
+.tabletop-tile-live-copy small { font-size: .82em; }
 .tile-exhausted { position: absolute; z-index: 3; right: .12rem; bottom: .12rem; border-radius: 99px; padding: .06rem .14rem; color: white; font-size: .36rem; background: rgb(76 58 47 / 82%); }
 
 .sealed-contributions {
@@ -479,6 +482,14 @@ button.meeple-button:hover .tabletop-meeple.meeple-apprentice { transform: trans
 .visual-piece-command .visual-order-card { width: min(112px, 100%); pointer-events: none; }
 .visual-piece-command .visual-technique-tile { width: min(120px, 100%); pointer-events: none; }
 .visual-piece-command > strong { font-size: .58rem; line-height: 1.3; }
+.blind-deck-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; }
+.blind-order-deck { min-height: 132px; display: grid; place-items: center; align-content: center; gap: .35rem; padding: .75rem; border: 3px double #d9c289; border-radius: 9px; box-shadow: 0 5px 10px rgb(0 0 0 / 22%); color: #fff8dc; text-align: center; }
+.blind-order-deck.is-market { background: radial-gradient(circle at 50% 34%, #617d61, #193b31 70%); }
+.blind-order-deck.is-imperial { background: radial-gradient(circle at 50% 34%, #a34a37, #55241e 70%); }
+.blind-order-deck > span { width: 2.2rem; height: 2.2rem; display: grid; place-items: center; border: 1px solid currentColor; border-radius: 50%; font-family: var(--serif); font-size: 1.2rem; }
+.blind-order-deck small { opacity: .82; }
+.blind-order-deck:disabled { filter: grayscale(.8); opacity: .5; }
+.hotspot-rule-update { position: absolute; z-index: 1; inset: auto 4% 3%; padding: .18rem .3rem; border-radius: 3px; color: #f8efd8; background: rgb(31 43 36 / 88%); font-size: clamp(.36rem, .65vw, .58rem); line-height: 1.15; text-align: center; pointer-events: none; }
 .technique-commands { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .wood-card-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .wood-card-choice { display: grid; gap: .28rem; justify-items: center; border: 1px solid var(--line); border-radius: 8px; padding: .4rem .2rem; color: var(--ink); background: rgb(255 253 247 / 88%); }
@@ -517,6 +528,7 @@ button.meeple-button:hover .tabletop-meeple.meeple-apprentice { transform: trans
 }
 
 @media (max-width: 700px) {
+  .blind-deck-grid { grid-template-columns: 1fr; }
   .visual-game-layout { padding: .45rem .35rem 1rem; }
   .tabletop-status-ribbon { grid-template-columns: .52fr 1fr; }
   .tabletop-status-ribbon > span:nth-child(3) { grid-column: span 2; border-top: 1px solid rgb(255 255 255 / 10%); }

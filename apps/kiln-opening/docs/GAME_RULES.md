@@ -1,4 +1,4 @@
-# GAME_RULES.md — Kiln Opening / 开窑 V0.6.3
+# GAME_RULES.md — Kiln Opening / 开窑 V0.6.5
 
 **Players:** 2–4  
 **Length:** 5 rounds  
@@ -121,7 +121,7 @@ Clay cleaning, refining, mixing, drying, etc. are abstracted into the Forming St
 | Glaze Workshop | 2 | 3 | 4 |
 | Kiln Yard | 3 | 4 | 5 |
 | Market & Imperial Office | 2 | 3 | 4 |
-| Guild & Academy | 1 | 2 | 2 |
+| Guild & Academy | 1 | 2 | 3 |
 
 Capacity is total workers at the location, not per player. A player may occupy the same location more than once if spaces remain.
 
@@ -226,35 +226,40 @@ Clarifications:
 
 **Apprentice — choose one:**
 
-- take 1 face-up Market or Imperial Order;
+- take 1 Market or Imperial Order, either face-up or as a blind top-deck draw;
 - gain 2 Coins.
 
 In addition, the Apprentice may sell 1 Flawed ceramic for 1 Coin after resolving the chosen action.
 
 **Shifu — choose one:**
 
-- take up to 2 face-up Orders;
-- take 1 face-up Order and gain 2 Coins;
+- take up to 2 Orders, choosing the deck and face-up/blind method separately for each;
+- take 1 face-up or blind-top Order and gain 2 Coins;
 - gain 4 Coins.
+- use Court Patronage, if eligible.
 
 In addition, the Shifu may sell up to 2 Flawed ceramics for 1 Coin each after resolving the chosen action.
 
 Selling Flawed ceramics is an optional secondary effect, not a main Office action. The player may continue without selling.
 
-When an Order is taken, refill that display position immediately before any second Order is selected.
+When a face-up Order is taken, refill that display position immediately before any second Order is selected. A blind draw removes and immediately reveals the actual top card of the chosen deck, adds it to the player's public Active Orders, and leaves the face-up display unchanged. A blind draw is a commitment and cannot be previewed or rejected.
 
-A player may not exceed hand limit.
+A player may not exceed hand limit. Check the limit before every individual acquisition.
+
+**Court Patronage:** this is a distinct Shifu-only main action. The player must have completed at least 1 Imperial Order during this game, have at least 5 Coins, and be at Imperial Progress 0–3. Pay 5 Coins and advance exactly 1 space. Court Patronage cannot advance from 4 to 5, cannot claim the Imperial Seal, and cannot be combined with Orders, Coin gain, Colour Samples, or the optional Flawed sale. A move to space 2 or 4 queues the normal Apprentice unlock for Cleanup.
 
 Only the acting player's Finished Flawed ceramics may be sold. Each sold ceramic is removed from the Finished Ceramics area, its Vessel card returns to the matching Shape supply, and the player gains exactly 1 Coin. A sold ceramic cannot later be delivered to an Order or included in an Imperial Presentation. Standard, Fine, and Masterpiece ceramics cannot be sold through this effect.
 
 ### Guild & Academy
 
-Only a **Shifu** may be placed at this location.
+Both Apprentices and the Shifu may be placed at this location while capacity remains.
 
-When the Shifu is placed here:
+**Apprentice:** pay the selected Technique's printed Coin cost and take 1 face-up Technique. The Apprentice cannot refresh the display.
+
+**Shifu:**
 
 1. Before choosing a Technique, the player may place 1 face-up Technique on the bottom of its discipline deck and reveal a replacement from that same deck.
-2. The player then pays the selected Technique's printed Coin cost and takes 1 face-up Technique.
+2. The player then takes 1 face-up Technique for 1 Coin less than its printed cost, minimum 1 Coin.
 3. Refill the empty display slot immediately from the same discipline deck.
 
 Rules:
@@ -276,7 +281,9 @@ Techniques give no direct VP.
 
 Exact list is authoritative in `data/techniques.json`.
 
-Printed costs are 2 Coins for T01, T02, T04, T05, T06, T07, T08 and T12; and 3 Coins for T03, T09, T10 and T11. The Shifu pays the printed cost with no discount.
+Printed costs are 2 Coins for T01, T02, T04, T05, T06, T07, T08 and T12; and 3 Coins for T03, T09, T10 and T11. The Apprentice pays the printed cost; the Shifu pays 1 less, minimum 1.
+
+**T08 Colour Samples:** once per round, when its owner begins an Office main action that will take at least 1 Order, before the first acquisition they may place exactly 1 face-up Order from either display on the bottom of its corresponding deck and reveal a replacement from that deck. Then the Office action continues normally and may acquire from either deck by either method. This grants no extra Order or Coins and is unavailable during Coins-only actions or Court Patronage.
 
 ### Timing windows
 
@@ -362,9 +369,9 @@ Exact card definitions are authoritative in `data/orders.json`.
 
 ### Taking
 
-Taken Orders enter hand. Refill immediately.
+Taken Orders enter the public Active Order area. For each acquisition, choose either a face-up Order or a blind draw from the Market or Imperial top card. Refill only a face-up selection, from its corresponding deck, immediately. Blind draws leave the display unchanged.
 
-If an action allows 2 Orders, second selection is made after the first slot is refilled. Player may stop after first.
+If an action allows 2 Orders, choose the deck and method separately for each. The second selection sees any refill caused by the first face-up selection. The player may stop after the first.
 
 ### Completing
 
@@ -407,6 +414,7 @@ Rules:
 - unlocked Apprentice becomes usable next round;
 - first player ever reaching space 5 takes Imperial Seal, worth 3 VP;
 - reaching 5 does not end game.
+- Court Patronage advances exactly 1 space only from spaces 0–3, after the player has completed at least 1 Imperial Order; it cannot reach 5 or claim the Seal.
 
 ### Imperial Presentation
 

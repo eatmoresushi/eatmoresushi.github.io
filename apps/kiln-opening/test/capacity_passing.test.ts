@@ -9,7 +9,7 @@ const capacities: Record<LocationId, Record<PlayerCount, number>> = {
   glaze_workshop: { 2: 2, 3: 3, 4: 4 },
   kiln_yard: { 2: 3, 3: 4, 4: 5 },
   market_imperial_office: { 2: 2, 3: 3, 4: 4 },
-  guild_academy: { 2: 1, 3: 2, 4: 2 },
+  guild_academy: { 2: 1, 3: 2, 4: 3 },
 };
 
 function actionFor(locationId: LocationId, selectedWorkerId: string): GameAction {

@@ -645,6 +645,45 @@ describe("private Wood Contributions and reconnect", () => {
 });
 
 describe("Imperial Progress persistence and realtime", () => {
+  it("persists derived Court Patronage eligibility and its authoritative result on reconnect", async () => {
+    const harness = await startHarness();
+    await resolveSetup(harness);
+    const actorId = harness.game.game.firstPlayerId;
+    await seedAuthoritativeState(harness, (state) => {
+      const player = state.players[actorId]!;
+      player.resources.coins = 8;
+      player.imperialProgress = 1;
+      player.completedOrders.push({
+        orderId: "I01",
+        ceramicIds: [],
+        completedInRound: state.round,
+        vpAwarded: 0,
+        coinsAwarded: 0,
+        usedGuanWaiver: false,
+      });
+    });
+    const shifuId = Object.values(harness.game.game.players[actorId]!.workers).find(
+      (worker) => worker.kind === "shifu" && worker.status === "available",
+    )!.id;
+    await command(harness, actorId, { type: "USE_COURT_PATRONAGE", workerId: shifuId });
+    expect(harness.game.events).toContainEqual({
+      type: "COURT_PATRONAGE_USED", playerId: actorId, cost: 5, from: 1, to: 2,
+    });
+    for (const connection of harness.connections) {
+      const reconnected = valueOf(await harness.service.reconnect({
+        roomCode: connection.room.code,
+        seatToken: connection.seatToken,
+      }));
+      expect(reconnected.game?.players[actorId]?.resources.coins).toBe(3);
+      expect(reconnected.game?.players[actorId]?.imperialProgress).toBe(2);
+      expect(reconnected.game?.players[actorId]?.completedOrders).toContainEqual(
+        expect.objectContaining({ orderId: "I01" }),
+      );
+    }
+    const publicEvents = await harness.store.listPublicEvents(harness.game.room.id);
+    expect(publicEvents.some((record) => record.event.type === "COURT_PATRONAGE_USED")).toBe(true);
+  });
+
   it("broadcasts advancement and reconnects with pending worker state", async () => {
     const harness = await startHarness();
     await resolveSetup(harness);

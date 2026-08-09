@@ -100,6 +100,7 @@ export function projectPublicEvent(event: GameEvent): PublicGameEvent {
     case "CERAMIC_LOADED":
     case "CERAMIC_SOLD":
     case "ORDER_TAKEN":
+    case "COLOUR_SAMPLES_USED":
     case "TECHNIQUE_REFRESHED":
     case "TECHNIQUE_ACQUIRED":
     case "TECHNIQUE_USED":
@@ -111,6 +112,7 @@ export function projectPublicEvent(event: GameEvent): PublicGameEvent {
     case "QUALITY_ASSIGNED":
     case "ORDER_COMPLETED":
     case "IMPERIAL_PROGRESS_ADVANCED":
+    case "COURT_PATRONAGE_USED":
     case "IMPERIAL_SEAL_CLAIMED":
     case "APPRENTICE_UNLOCKED":
     case "ROUND_STARTED":

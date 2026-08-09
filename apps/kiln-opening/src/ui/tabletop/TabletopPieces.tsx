@@ -188,6 +188,7 @@ export function VisualTechniqueTile({
     <>
       <span className="tabletop-tile-art" style={gridSpriteStyle(sprite.image, sprite.columns, sprite.rows, sprite.column, sprite.row)} aria-hidden="true" />
       <strong className="tabletop-tile-id">{techniqueId}</strong>
+      {techniqueId === "T08" && <span className="tabletop-tile-live-copy" aria-hidden="true"><b>Colour Samples</b><small>Before first Office Order: bottom 1 face-up Order from either display, then refill.</small></span>}
       {exhausted && <span className="tile-exhausted">Used</span>}
       <span className="sr-only">{techniqueId}, {definition?.name}, {definition?.cost} coins. {definition?.ability}</span>
     </>
@@ -231,4 +232,3 @@ export function WoodCard({ amount, faceDown = false }: { amount: WoodContributio
     </AtlasCard>
   );
 }
-

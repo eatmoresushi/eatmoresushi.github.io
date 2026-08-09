@@ -201,7 +201,7 @@ describe("Glazing Techniques", () => {
 });
 
 describe("T08 Colour Samples", () => {
-  it("opens after taking an Order, discards from the same display, and refills", () => {
+  it("opens before taking an Order, bottoms from either display, and refills", () => {
     const { state, rng } = startedGame(2, 520);
     const actorId = state.firstPlayerId;
     state.players[actorId]!.kilnId = "RU";
@@ -216,22 +216,22 @@ describe("T08 Colour Samples", () => {
       },
       rng,
     );
-    const takenId = next.marketDisplay[0]!;
-    next = mustApply(next, actorId, { type: "OFFICE_TAKE_ORDER", orderId: takenId }, rng);
     expect(next.phase).toEqual(
-      expect.objectContaining({ type: "work_office_orders", step: "colour_samples" }),
+      expect.objectContaining({ type: "work_office_orders", step: "colour_samples_or_skip" }),
     );
-    const discardedId = next.marketDisplay[0]!;
-    const replacementId = next.marketDeck[0]!;
+    const bottomedId = next.imperialDisplay[0]!;
+    const replacementId = next.imperialDeck[0]!;
     next = mustApply(
       next,
       actorId,
-      { type: "OFFICE_USE_COLOUR_SAMPLES", orderId: discardedId },
+      { type: "OFFICE_USE_COLOUR_SAMPLES", orderId: bottomedId },
       rng,
     );
-    expect(next.marketDiscard).toContain(discardedId);
-    expect(next.marketDisplay).toContain(replacementId);
+    expect(next.imperialDiscard).not.toContain(bottomedId);
+    expect(next.imperialDeck.at(-1)).toBe(bottomedId);
+    expect(next.imperialDisplay).toContain(replacementId);
     expect(next.players[actorId]!.techniques[0]!.exhausted).toBe(true);
+    next = mustApply(next, actorId, { type: "OFFICE_TAKE_ORDER", orderId: replacementId }, rng);
     expect(next.phase.type).toBe("work_office_sale");
     next = mustApply(
       next,

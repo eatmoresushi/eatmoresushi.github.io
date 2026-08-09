@@ -229,8 +229,8 @@ function WorkControls({ game, player, busy, send, tabletopSelection, debugUI = f
     forming_studio: action("forming_studio", "Shape vessels", <FormCeramicsForm game={game} player={player} workers={workers} locationFull={full("forming_studio")} busy={busy} send={send} />),
     glaze_workshop: action("glaze_workshop", "Glaze and decorate", <GlazeForm game={game} player={player} workers={workers} locationFull={full("glaze_workshop")} busy={busy} send={send} />),
     kiln_yard: action("kiln_yard", "Load ceramics", <KilnYardForm game={game} player={player} workers={workers} locationFull={full("kiln_yard")} busy={busy} send={send} />),
-    market_imperial_office: action("market_imperial_office", "Orders or Coins, plus an optional sale", <OfficeActionForms game={game} player={player} workers={workers} locationFull={full("market_imperial_office")} busy={busy} send={send} />),
-    guild_academy: action("guild_academy", "Shifu only", <GuildBeginForm game={game} player={player} workers={workers} locationFull={full("guild_academy")} busy={busy} send={send} />),
+    market_imperial_office: action("market_imperial_office", "Orders, Coins, or Shifu Patronage", <OfficeActionForms game={game} player={player} workers={workers} locationFull={full("market_imperial_office")} busy={busy} send={send} />),
+    guild_academy: action("guild_academy", "Apprentice or Shifu", <GuildBeginForm game={game} player={player} workers={workers} locationFull={full("guild_academy")} busy={busy} send={send} />),
   };
   return (
     <>
@@ -551,7 +551,7 @@ function KilnYardForm({ game, player, workers, locationFull, busy, send }: {
   );
 }
 
-type OfficeActionChoice = OfficeOrderMode | "coins";
+type OfficeActionChoice = OfficeOrderMode | "coins" | "court_patronage";
 
 function OfficeActionForms({ game, player, workers, locationFull, busy, send }: {
   game: PublicGameState;
@@ -565,11 +565,11 @@ function OfficeActionForms({ game, player, workers, locationFull, busy, send }: 
   const [officeAction, setOfficeAction] = useState<OfficeActionChoice>("coins");
   const selectedWorker = workers.find((worker) => worker.id === workerId) ?? workers[0];
   const orderModes: OfficeActionChoice[] = selectedWorker?.kind === "shifu"
-    ? ["coins", "take_up_to_two", "take_one_and_gain_two_coins"]
+    ? ["coins", "take_up_to_two", "take_one_and_gain_two_coins", "court_patronage"]
     : ["coins", "take_one"];
   const action = orderModes.includes(officeAction) ? officeAction : orderModes[0]!;
   const handLimit = player.kilnId === "GU" ? GAME_CONFIG.orderDisplay.guanHandLimit : GAME_CONFIG.orderDisplay.baseHandLimit;
-  const displayCount = game.displays.market.length + game.displays.imperial.length;
+  const orderSourceCount = game.displays.market.length + game.displays.imperial.length + game.decks.marketRemaining + game.decks.imperialRemaining;
 
   function validationError(): string | null {
     if (locationFull) return "Market & Imperial Office is full.";
@@ -577,8 +577,15 @@ function OfficeActionForms({ game, player, workers, locationFull, busy, send }: 
     if ((action === "take_one" || action === "take_one_and_gain_two_coins") && player.orderHand.length >= handLimit) {
       return `Your Order area is full (${handLimit}).`;
     }
-    if ((action === "take_one" || action === "take_one_and_gain_two_coins") && displayCount === 0) {
-      return "No face-up Order is available.";
+    if ((action === "take_one" || action === "take_one_and_gain_two_coins") && orderSourceCount === 0) {
+      return "No Order source is available.";
+    }
+    if (action === "court_patronage") {
+      if (selectedWorker?.kind !== "shifu") return "Court Patronage requires your Shifu.";
+      if (!player.completedOrders.some(({ orderId }) => orderId.startsWith("I"))) return "Complete an Imperial Order first.";
+      if (player.resources.coins < 5) return "You need 5 Coins for Court Patronage.";
+      if (player.imperialProgress === 4) return "Progress 4 must reach 5 through an Imperial Order.";
+      if (player.imperialProgress === 5) return "You are already at Progress 5.";
     }
     return null;
   }
@@ -588,14 +595,16 @@ function OfficeActionForms({ game, player, workers, locationFull, busy, send }: 
     event.preventDefault();
     if (error !== null || selectedWorker === undefined) return;
     if (action === "coins") void send({ type: "OFFICE_GAIN_COINS", workerId: selectedWorker.id });
+    else if (action === "court_patronage") void send({ type: "USE_COURT_PATRONAGE", workerId: selectedWorker.id });
     else void send({ type: "BEGIN_OFFICE_ORDERS", workerId: selectedWorker.id, mode: action });
   }
   return (
     <form className="control-form" onSubmit={submit}>
-      <p className="control-hint"><strong>Apprentice:</strong> Choose one: take 1 face-up Market or Imperial Order; or gain 2 Coins. In addition, you may sell 1 Flawed ceramic for 1 Coin.</p>
-      <p className="control-hint"><strong>Shifu:</strong> Choose one: take up to 2 face-up Orders; take 1 face-up Order and gain 2 Coins; or gain 4 Coins. In addition, you may sell up to 2 Flawed ceramics for 1 Coin each.</p>
+      <p className="control-hint"><strong>Apprentice:</strong> Take 1 face-up or blind-top Order, or gain 2 Coins; then optionally sell 1 Flawed ceramic.</p>
+      <p className="control-hint"><strong>Shifu:</strong> Take up to 2 Orders, take 1 + gain 2 Coins, gain 4 Coins, or use eligible Court Patronage. Patronage has no sale.</p>
       <WorkerChoice workers={workers} value={selectedWorker?.id ?? ""} onChange={setWorkerId} />
-      <EnumChoice name="officeAction" label="Office action" options={orderModes} value={action} onChange={(value) => setOfficeAction(value as OfficeActionChoice)} />
+      <EnumChoice name="officeAction" label="Office action" options={orderModes} value={action} onChange={(value) => setOfficeAction(value as OfficeActionChoice)} formatOption={(value) => value === "court_patronage" ? "Court Patronage · 5 Coins · +1 Progress" : value.replaceAll("_", " ")} />
+      {selectedWorker?.kind === "shifu" && <p className="control-hint"><strong>Court Patronage:</strong> Requires 1 completed Imperial Order. Costs 5 Coins. Cannot advance from 4 to 5.</p>}
       <small role="status" className={error === null ? "" : "control-error"}>{error ?? officeActionHint(action, selectedWorker?.kind)}</small>
       <button className="primary-button" disabled={busy || error !== null}>Visit the Office</button>
     </form>
@@ -610,15 +619,16 @@ function GuildBeginForm({ game, player, workers, locationFull, busy, send }: {
   busy: boolean;
   send: SendCommand;
 }) {
-  const shifu = workers.find((worker) => worker.kind === "shifu");
+  const [workerId, setWorkerId] = useState(workers[0]?.id ?? "");
+  const worker = workers.find((candidate) => candidate.id === workerId) ?? workers[0];
   const displayed = Object.values(game.displays.techniques).flat();
-  const affordable = shifu === undefined ? [] : displayed.filter((techniqueId) =>
-    guildTechniqueCost(techniqueId) <= player.resources.coins,
+  const affordable = worker === undefined ? [] : displayed.filter((techniqueId) =>
+    guildTechniqueCost(techniqueId, worker.kind) <= player.resources.coins,
   );
   const error = locationFull
     ? "Guild & Academy is full."
-    : shifu === undefined
-      ? "Your Shifu is not available. Apprentices cannot use Guild & Academy."
+    : worker === undefined
+      ? "Choose an available worker."
       : player.techniques.length >= GAME_CONFIG.techniques.maxOwned
       ? `You already own the maximum of ${GAME_CONFIG.techniques.maxOwned} Techniques.`
       : displayed.length === 0
@@ -629,10 +639,10 @@ function GuildBeginForm({ game, player, workers, locationFull, busy, send }: {
   return (
     <form className="control-form" onSubmit={(event) => {
       event.preventDefault();
-      if (error === null && shifu !== undefined) void send({ type: "BEGIN_GUILD_ACTION", workerId: shifu.id });
+      if (error === null && worker !== undefined) void send({ type: "BEGIN_GUILD_ACTION", workerId: worker.id });
     }}>
-      <strong>Shifu only</strong>
-      <p className="control-hint">Before choosing, you may return 1 face-up Technique to the bottom of its discipline deck and reveal a replacement. Then pay the printed Coin cost and take 1 face-up Technique.</p>
+      <WorkerChoice workers={workers} value={worker?.id ?? ""} onChange={setWorkerId} />
+      <p className="control-hint"><strong>Apprentice:</strong> pay printed cost. <strong>Shifu:</strong> may refresh one tile, then pays 1 Coin less (minimum 1).</p>
       <small role="status" className={error === null ? "" : "control-error"}>{error ?? `${affordable.length} affordable face-up Technique${affordable.length === 1 ? "" : "s"}.`}</small>
       <button className="primary-button" disabled={busy || error !== null}>Begin Guild action</button>
     </form>
@@ -644,22 +654,50 @@ function OfficeControls({ game, player, busy, send }: Pick<ActionPanelProps, "ga
 }) {
   if (game.phase.type !== "work_office_orders") return null;
   const phase = game.phase;
-  const display = phase.lastTakenDeck === "imperial" ? game.displays.imperial : phase.lastTakenDeck === "market" ? game.displays.market : [...game.displays.market, ...game.displays.imperial];
+  const display = [...game.displays.market, ...game.displays.imperial];
   const handLimit = player.kilnId === "GU" ? GAME_CONFIG.orderDisplay.guanHandLimit : GAME_CONFIG.orderDisplay.baseHandLimit;
   const handFull = player.orderHand.length >= handLimit;
-  if (phase.step === "colour_samples") {
+  if (phase.step === "colour_samples_or_skip") {
     return (
-      <ControlSection title="Colour Samples" hint="Optionally discard one other Order from that display.">
-        <div className="choice-stack visual-command-grid">{display.map((orderId) => <PieceCommandButton key={orderId} busy={busy} label={`Discard ${orderId}`} onClick={() => send({ type: "OFFICE_USE_COLOUR_SAMPLES", orderId })}><VisualOrderCard orderId={orderId} /></PieceCommandButton>)}</div>
-        <CommandButton busy={busy} send={send} command={{ type: "OFFICE_SKIP_COLOUR_SAMPLES" }} secondary>Keep the display</CommandButton>
+      <ControlSection title="Use Colour Samples?" hint="Before your first Order, place exactly one face-up Order from either display on the bottom of its deck and reveal its replacement.">
+        <div className="choice-stack visual-command-grid">{display.map((orderId) => <PieceCommandButton key={orderId} busy={busy} label={`Bottom ${orderId} with Colour Samples`} onClick={() => send({ type: "OFFICE_USE_COLOUR_SAMPLES", orderId })}><VisualOrderCard orderId={orderId} /></PieceCommandButton>)}</div>
+        <CommandButton busy={busy} send={send} command={{ type: "OFFICE_SKIP_COLOUR_SAMPLES" }} secondary>Skip Colour Samples</CommandButton>
       </ControlSection>
     );
   }
   return (
-    <ControlSection title="Take an Order" hint={handFull ? `Your Order area is full (${handLimit}); continue to the optional sale.` : `${phase.remainingTakes} selection${phase.remainingTakes === 1 ? "" : "s"} remaining.`}>
-      <div className="choice-stack visual-command-grid">{display.map((orderId) => <PieceCommandButton key={orderId} busy={busy || handFull} label={`Take ${orderId}`} onClick={() => send({ type: "OFFICE_TAKE_ORDER", orderId })}><VisualOrderCard orderId={orderId} /></PieceCommandButton>)}</div>
-      {phase.mode === "take_up_to_two" && <CommandButton busy={busy} send={send} command={{ type: "OFFICE_END_ORDERS" }} secondary>Continue to optional sale</CommandButton>}
+    <ControlSection title="Choose an Order" hint={handFull ? `Your Order area is full (${handLimit}); continue to the optional sale.` : `${phase.remainingTakes} acquisition${phase.remainingTakes === 1 ? "" : "s"} remaining. Face-up cards refill; blind draws leave displays unchanged.`}>
+      <h4>Face-up Orders</h4>
+      <div className="choice-stack visual-command-grid">{display.map((orderId) => <PieceCommandButton key={orderId} busy={busy || handFull} label={`Take face-up ${orderId}`} onClick={() => send({ type: "OFFICE_TAKE_ORDER", orderId })}><VisualOrderCard orderId={orderId} /></PieceCommandButton>)}</div>
+      <h4>Blind top-deck draw</h4>
+      <div className="blind-deck-grid">
+        <BlindOrderDeck deck="market" remaining={game.decks.marketRemaining} busy={busy || handFull} send={send} />
+        <BlindOrderDeck deck="imperial" remaining={game.decks.imperialRemaining} busy={busy || handFull} send={send} />
+      </div>
+      {phase.mode === "take_up_to_two" && <CommandButton busy={busy} disabled={phase.colourSamplesUsed && phase.ordersTaken === 0} send={send} command={{ type: "OFFICE_END_ORDERS" }} secondary>Continue to optional sale</CommandButton>}
     </ControlSection>
+  );
+}
+
+function BlindOrderDeck({ deck, remaining, busy, send }: {
+  deck: "market" | "imperial";
+  remaining: number;
+  busy: boolean;
+  send: SendCommand;
+}) {
+  const name = deck === "market" ? "Market" : "Imperial";
+  return (
+    <button
+      className={`blind-order-deck is-${deck}`}
+      type="button"
+      disabled={busy || remaining === 0}
+      onClick={() => void send({ type: "OFFICE_DRAW_BLIND_ORDER", deck })}
+      aria-label={`Blind draw the top ${name} Order; ${remaining} cards remain`}
+    >
+      <span aria-hidden="true">{deck === "market" ? "市" : "廷"}</span>
+      <strong>Blind draw {name}</strong>
+      <small>{remaining} remaining · top card hidden</small>
+    </button>
   );
 }
 
@@ -709,6 +747,7 @@ function GuildControls({ game, player, busy, send }: {
   send: SendCommand;
 }) {
   if (game.phase.type !== "work_guild") return null;
+  const worker = player.workers[game.phase.workerId];
   const ids = Object.values(game.displays.techniques).flat();
   if (game.phase.step === "refresh_or_skip") {
     return (
@@ -719,10 +758,10 @@ function GuildControls({ game, player, busy, send }: {
     );
   }
   return (
-    <ControlSection title="Acquire a Technique" hint="Pay the selected Technique's printed Coin cost.">
+    <ControlSection title="Acquire a Technique" hint={worker?.kind === "shifu" ? "Your Shifu pays printed cost minus 1 Coin (minimum 1)." : "Your Apprentice pays the printed Coin cost."}>
       <div className="choice-stack visual-command-grid technique-commands">{ids.map((techniqueId) => {
         const technique = TECHNIQUE_DEFINITIONS[techniqueId];
-        const cost = guildTechniqueCost(techniqueId);
+        const cost = guildTechniqueCost(techniqueId, worker?.kind ?? "apprentice");
         return <PieceCommandButton key={techniqueId} busy={busy || player.resources.coins < cost} label={`${techniqueId} · ${technique?.name ?? "Unknown Technique"} · ${cost} Coins`} onClick={() => send({ type: "GUILD_BUY_TECHNIQUE", techniqueId })}><VisualTechniqueTile techniqueId={techniqueId} /></PieceCommandButton>;
       })}</div>
     </ControlSection>
@@ -1044,9 +1083,9 @@ function ownedAvailableTechniques(player: PublicPlayerState, allowed: TechniqueI
   return player.techniques.filter((technique) => !technique.exhausted && allowed.includes(technique.id)).map((technique) => technique.id);
 }
 
-function guildTechniqueCost(techniqueId: TechniqueId): number {
+function guildTechniqueCost(techniqueId: TechniqueId, workerKind: AvailableWorker["kind"]): number {
   const printedCost = TECHNIQUE_DEFINITIONS[techniqueId]?.cost ?? Number.POSITIVE_INFINITY;
-  return printedCost;
+  return workerKind === "shifu" ? Math.max(1, printedCost - 1) : printedCost;
 }
 
 function officeActionHint(action: OfficeActionChoice, workerKind: AvailableWorker["kind"] | undefined): string {
@@ -1054,11 +1093,13 @@ function officeActionHint(action: OfficeActionChoice, workerKind: AvailableWorke
     case "coins":
       return `Gain ${workerKind === "shifu" ? 4 : 2} Coins.`;
     case "take_one":
-      return "Take one face-up Order.";
+      return "Take one face-up Order or commit to a blind top-deck draw.";
     case "take_up_to_two":
-      return "Take up to two face-up Orders.";
+      return "Take up to two Orders, choosing face-up or blind separately each time.";
     case "take_one_and_gain_two_coins":
-      return "Take one face-up Order, then gain 2 Coins.";
+      return "Take one face-up or blind Order, then gain 2 Coins.";
+    case "court_patronage":
+      return "Pay 5 Coins to advance Imperial Progress by 1; no Colour Samples or Flawed sale.";
   }
 }
 
