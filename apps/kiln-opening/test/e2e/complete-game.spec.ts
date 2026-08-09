@@ -55,7 +55,7 @@ test("the host can end a session for everyone while Leave view remains resumable
 test("starting Orders remain visible after an eligible redraw advances directly to Work", async ({ browser, request }) => {
   await request.post("http://127.0.0.1:4173/test-api", {
     headers: { "x-e2e-user": "reset" },
-    data: { operation: "e2e_reset", seed: 1 },
+    data: { operation: "e2e_reset", seed: 2 },
   });
 
   const { host, guest, close } = await openTwoWorkshops(browser);
@@ -75,9 +75,9 @@ test("starting Orders remain visible after an eligible redraw advances directly 
     await host.getByRole("button", { name: /Ru Kiln/ }).click();
     await guest.getByRole("button", { name: /Guan Kiln/ }).click();
     await expect(host.getByRole("heading", { name: "Your first commission" })).toBeVisible();
-    await expect(host.getByRole("region", { name: "Workshop Orders" })).toContainText("M20");
+    await expect(host.getByRole("region", { name: "Workshop Orders" })).toContainText("M23");
     await expect(host.locator(".player-board.is-own")).toContainText("4 available workers · 2 locked");
-    await expect(host.locator(".site-footer")).toContainText("Kiln Opening V0.6.5");
+    await expect(host.locator(".site-footer")).toContainText("Kiln Opening V1.0.0");
 
     await host.getByRole("button", { name: "Redraw" }).click();
     await expect(host.getByTestId("phase-name")).toHaveText("Work Phase");
@@ -94,8 +94,8 @@ test("starting Orders remain visible after an eligible redraw advances directly 
       await expect(progress.getByTestId("imperial-seal-owner")).toHaveText("Imperial Seal · Unclaimed");
       const orders = page.getByRole("region", { name: "Workshop Orders" });
       await expect(orders.locator(".order-card")).toHaveCount(2);
-      await expect(orders).toContainText("M03");
-      await expect(orders).not.toContainText("M20");
+      await expect(orders).toContainText("M16");
+      await expect(orders).not.toContainText("M23");
     }
 
     const materials = guest.locator("details").filter({ hasText: "Materials Yard" });
@@ -203,7 +203,7 @@ test("starting Orders remain visible after an eligible redraw advances directly 
 test("two workshops complete a firing, Order, reconnect, and five-round game", async ({ browser, request }) => {
   await request.post("http://127.0.0.1:4173/test-api", {
     headers: { "x-e2e-user": "reset" },
-    data: { operation: "e2e_reset" },
+    data: { operation: "e2e_reset", seed: 1584 },
   });
 
   const { host, guest, close } = await openTwoWorkshops(browser);
@@ -283,7 +283,7 @@ test("two workshops complete a firing, Order, reconnect, and five-round game", a
     await hostKilnYard.getByLabel("First kiln space").selectOption("middle_1");
     await hostKilnYard.getByRole("button", { name: "Load kiln" }).click();
 
-    // V0.6.5 retains four initially usable workers; both may pass the last one.
+    // V1.0.0 retains four initially usable workers; both may pass the last one.
     await guest.getByRole("button", { name: "Pass for this round" }).click();
     await host.getByRole("button", { name: "Pass for this round" }).click();
 

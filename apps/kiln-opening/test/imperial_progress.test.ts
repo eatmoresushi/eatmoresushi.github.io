@@ -20,11 +20,13 @@ import {
 
 type ImperialOrderId =
   | "I01" | "I02" | "I03" | "I04" | "I05"
-  | "I06" | "I07" | "I08" | "I09" | "I10";
+  | "I06" | "I07" | "I08" | "I09" | "I10"
+  | "I11" | "I12" | "I13";
 
 const IMPERIAL_REWARDS = [
   ["I01", 1], ["I02", 1], ["I03", 1], ["I04", 1], ["I05", 1],
   ["I06", 2], ["I07", 2], ["I08", 2], ["I09", 2], ["I10", 2],
+  ["I11", 1], ["I12", 2], ["I13", 2],
 ] as const satisfies ReadonlyArray<readonly [ImperialOrderId, 1 | 2]>;
 
 function setOrderPhase(state: GameState): void {
@@ -72,6 +74,18 @@ function addImperialOrderCeramics(
       addFinished(state, playerId, "bowl", "fine", "white", "plain").id,
       addFinished(state, playerId, "vase", "fine", "celadon", "plain").id,
       addFinished(state, playerId, "censer", "fine", "grey_green", "plain").id,
+    ];
+    case "I11": return [
+      addFinished(state, playerId, "vase", "masterpiece", "white", "plain").id,
+    ];
+    case "I12": return [
+      addFinished(state, playerId, "bowl", "fine", "white", "plain").id,
+      addFinished(state, playerId, "plate", "fine", "celadon", "plain").id,
+    ];
+    case "I13": return [
+      addFinished(state, playerId, "bowl", "fine", "white", "plain").id,
+      addFinished(state, playerId, "plate", "fine", "grey_green", "plain").id,
+      addFinished(state, playerId, "vase", "fine", "moon_white", "plain").id,
     ];
   }
 }

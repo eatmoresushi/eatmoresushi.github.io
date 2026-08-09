@@ -23,7 +23,7 @@ def check(cond, msg):
     if not cond: errors.append(msg)
 
 for versioned in [cfg, actions, firing, components, imperial, asset_specs, round_structure]:
-    check(versioned["rulesVersion"] == "0.6.5", "Rules version must be 0.6.5")
+    check(versioned["rulesVersion"] == "1.0.0", "Rules version must be 1.0.0")
 check(cfg["players"] == {"min":2,"max":4}, "Player count must be 2-4")
 check(cfg["rounds"] == 5, "Game must be 5 rounds")
 check(cfg["startingResources"] == {"clay":2,"wood":2,"coins":3}, "Starting resources mismatch")
@@ -41,7 +41,7 @@ expected_caps = {
  "guild_academy":{"2":1,"3":2,"4":3},
 }
 locs = {x["id"]:x for x in actions["locations"]}
-check(set(locs) == set(expected_caps), "Must have exactly the six V0.6.5 action locations")
+check(set(locs) == set(expected_caps), "Must have exactly the six V1.0.0 action locations")
 for k,v in expected_caps.items():
     check(locs.get(k,{}).get("capacity") == v, f"Capacity mismatch for {k}")
 check("reposition" not in locs["kiln_yard"]["shifu"].lower(), "Shifu Kiln action must not reposition")
@@ -55,18 +55,20 @@ check("blind-top" in office.get("shifu", "") and "Court Patronage" in office.get
 check("apprenticeOptions" not in office and "shifuOptions" not in office, "Office sale must not remain a standalone action option")
 check("printed Coin cost" in locs["guild_academy"].get("apprentice", ""), "Guild Apprentice must pay printed cost")
 check("1 Coin less" in locs["guild_academy"]["shifu"], "Guild Shifu must receive the exact discount")
-check(cfg["decorations"] == {"plain":1,"carved":2,"impressed":2,"crackle":2}, "V0.6.5 Decoration costs mismatch")
+check(cfg["decorations"] == {"plain":1,"carved":2,"impressed":2,"crackle":2}, "V1.0.0 Decoration costs mismatch")
 
-check(len(orders["market"]) == 20, "Expected 20 Market Orders")
-check(len(orders["imperial"]) == 10, "Expected 10 Imperial Orders")
-check([x["id"] for x in orders["market"]] == [f"M{i:02d}" for i in range(1,21)], "Market Order IDs mismatch")
-check([x["id"] for x in orders["imperial"]] == [f"I{i:02d}" for i in range(1,11)], "Imperial Order IDs mismatch")
+check(len(orders["market"]) == 23, "Expected 23 Market Orders")
+check(len(orders["imperial"]) == 13, "Expected 13 Imperial Orders")
+check([x["id"] for x in orders["market"]] == [f"M{i:02d}" for i in range(1,24)], "Market Order IDs mismatch")
+check([x["id"] for x in orders["imperial"]] == [f"I{i:02d}" for i in range(1,14)], "Imperial Order IDs mismatch")
+check(all("name" not in order and "title" not in order for order in orders["market"] + orders["imperial"]), "Orders must remain ID-only")
 
 # Key high-risk Order values
 key_orders = {x["id"]:x for x in orders["market"] + orders["imperial"]}
 for oid, vp, coins in [
     ("M15",7,5),("M16",8,5),("M17",9,5),("M18",10,4),("M19",11,6),("M20",10,5),
     ("I06",11,0),("I07",12,0),("I08",14,0),("I09",13,0),("I10",15,0)
+    ,("M21",5,5),("M22",8,4),("M23",13,5),("I11",8,0),("I12",11,0),("I13",14,0)
 ]:
     check(key_orders[oid]["vp"] == vp and key_orders[oid].get("coins",0) == coins, f"{oid} reward mismatch")
 check(key_orders["M10"]["ceramics"] == [{"shape":"censer","glaze":"moon_white","decoration":"carved"}], "M10 attribute mismatch")
@@ -77,6 +79,7 @@ check(key_orders["I04"]["ceramics"] == [{"shape":"vase","glaze":"moon_white","de
 check({x["id"]:x.get("imperialProgressReward") for x in orders["imperial"]} == {
     **{f"I{i:02d}":1 for i in range(1,6)},
     **{f"I{i:02d}":2 for i in range(6,11)},
+    "I11":1, "I12":2, "I13":2,
 }, "Imperial Order Progress rewards mismatch")
 glaze_counts = Counter(
     requirement["glaze"]
@@ -93,21 +96,22 @@ decoration_counts = Counter(
 check(glaze_counts == {"white":4,"celadon":4,"grey_green":4,"moon_white":4}, "Named Glaze distribution mismatch")
 check(decoration_counts == {"plain":3,"carved":3,"impressed":4,"crackle":3}, "Named Decoration distribution mismatch")
 
-check(len(techs) == 12, "Expected 12 Techniques")
-check(sum(1 for t in techs if t["discipline"]=="forming") == 4, "Expected 4 Forming Techniques")
-check(sum(1 for t in techs if t["discipline"]=="glazing") == 4, "Expected 4 Glazing Techniques")
-check(sum(1 for t in techs if t["discipline"]=="firing") == 4, "Expected 4 Firing Techniques")
+check(len(techs) == 15, "Expected 15 Techniques")
+check(sum(1 for t in techs if t["discipline"]=="forming") == 5, "Expected 5 Forming Techniques")
+check(sum(1 for t in techs if t["discipline"]=="glazing") == 5, "Expected 5 Glazing Techniques")
+check(sum(1 for t in techs if t["discipline"]=="firing") == 5, "Expected 5 Firing Techniques")
 check({t["name"] for t in techs} == {
  "Large Throwing Wheel","Measuring Calipers","Clay Substitution","Drying Frames",
- "Carving Knives","Seal Stamps","Glaze Notebook","Colour Samples",
- "Kiln Setting","Protective Saggars","Fuel Ledger","Test Pieces"
+ "Kiln Records","Carving Knives","Seal Stamps","Colour Samples","Connoisseur Network",
+ "Second Firing","Kiln Setting","Protective Saggars","Fuel Ledger","Test Pieces","Sagger Selection"
 }, "Technique names mismatch")
 expected_technique_costs = {
- "T01":2, "T02":2, "T03":3, "T04":2,
- "T05":2, "T06":2, "T07":2, "T08":2,
+ "T01":2, "T02":2, "T03":2, "T04":2,
+ "T05":2, "T06":2, "T08":2,
  "T09":3, "T10":3, "T11":3, "T12":2,
+ "T13":3, "T14":3, "T15":3, "T16":3,
 }
-check({t["id"]:t["cost"] for t in techs} == expected_technique_costs, "V0.6.5 Technique costs mismatch")
+check({t["id"]:t["cost"] for t in techs} == expected_technique_costs, "V1.0.0 Technique costs mismatch")
 colour_samples = next(t for t in techs if t["id"] == "T08")
 check("before choosing your first Order" in colour_samples["ability"] and "either display" in colour_samples["ability"] and "bottom" in colour_samples["ability"], "T08 Colour Samples timing or target mismatch")
 
@@ -126,6 +130,11 @@ check(sum(1 for s in firing["kilnSpaces"] if s["zone"]=="middle") == 3, "Middle 
 check(sum(1 for s in firing["kilnSpaces"] if s["zone"]=="low") == 3, "Low zone must have 3 spaces")
 check(firing["fireDeck"].count(-1)==5 and firing["fireDeck"].count(0)==10 and firing["fireDeck"].count(1)==5, "Fire distribution mismatch")
 check(firing["qualityByDifference"] == {"0":"masterpiece","1":"fine","2":"standard","3+":"flawed"}, "Quality table mismatch")
+check(cfg["kiln"]["activeSpacesByPlayerCount"] == {
+ "2":["high_1","high_2","middle_1","middle_2","low_1","low_2"],
+ "3":["high_1","high_2","middle_1","middle_2","middle_3","low_1","low_2"],
+ "4":["high_1","high_2","middle_1","middle_2","middle_3","low_1","low_2","low_3"],
+}, "Player-scaled kiln spaces mismatch")
 
 check([x["space"] for x in imperial["track"]] == [0,1,2,3,4,5], "Imperial track spaces mismatch")
 check([x["title"] for x in imperial["track"]] == [
@@ -147,13 +156,17 @@ component_map = {c["name"]:c["qty"] for c in components["components"]}
 required_components = {
  "Central Action Board":1, "Shared Kiln Board":1, "Kiln Player Boards":5,
  "Shifu Workers":4, "Apprentice Workers":20, "Clay":40, "Wood":40, "Coins":50,
- "Vessel Cards":40, "Market Orders":20, "Imperial Orders":10, "Technique Tiles":12,
+ "Vessel Cards":40, "Market Orders":23, "Imperial Orders":13, "Technique Tiles":15,
  "Fire Cards":20, "Wood Contribution Cards":16, "Imperial Progress Markers":4,
  "VP Markers / Score Pad":"4 or 1",
  "First Player Marker":1, "Round Marker":1, "Imperial Seal":1
 }
 for name, qty in required_components.items():
     check(component_map.get(name) == qty, f"Component checklist mismatch: {name}")
+
+check(asset_specs["orderCards"]["total"] == 36, "Asset spec must require 36 Order cards")
+check(asset_specs["craftTechniques"]["total"] == 15, "Asset spec must require 15 Technique tiles")
+check(asset_specs["centralBoard"].get("mustShowPlayerCountKilnCovers") is True, "Asset spec must show player-count kiln covers")
 
 # Runtime artwork is presentation-only; rules-bearing corrections are live HTML/CSS.
 expected_assets = {
@@ -167,17 +180,17 @@ check(actual_assets == expected_assets, f"Runtime tabletop asset directory misma
 check("Progress Reminder Tokens" not in component_map, "Progress Reminder Tokens must be removed")
 
 if errors:
-    print("V0.6.5 HANDOFF VALIDATION FAILED")
+    print("V1.0.0 HANDOFF VALIDATION FAILED")
     for e in errors: print(" -", e)
     sys.exit(1)
 
-print("V0.6.5 HANDOFF VALIDATION PASSED")
+print("V1.0.0 HANDOFF VALIDATION PASSED")
 print("Rules/data: 2-4 players, 5 rounds, 6 locations, 1 Shifu + 3 starting Apprentices.")
 print("Office: face-up/blind Orders, pre-pick Colour Samples, and gated Shifu Court Patronage.")
 print("Academy: both workers; Shifu optional refresh and -1 Coin; capacity 1/2/3.")
-print("Decks: 20 Market Orders, 10 Imperial Orders, 12 Techniques, 20 Fire cards.")
-print("Kiln: 8 spaces, contributor-scaled Base Heat, current Quality ladder.")
+print("Decks: 23 Market Orders, 13 Imperial Orders, 15 Techniques, 20 Fire cards.")
+print("Kiln: 6/7/8 active spaces, contributor-scaled Base Heat, current Quality ladder.")
 print("Decorations: Plain 1 Coin; Carved, Impressed and Crackle 2 Coins.")
 print("Orders: named Glazes 4/4/4/4; Decorations Plain/Carved/Impressed/Crackle 3/3/4/3.")
-print("Imperial: I01-I05 +1; I06-I10 +2; crossed unlocks at 2/4 and Seal at 5.")
-print("Assets: eight runtime tabletop atlases are present; live overlays carry V0.6.5 rule corrections.")
+print("Imperial: I01-I05/I11 +1; I06-I10/I12-I13 +2; crossed unlocks at 2/4 and Seal at 5.")
+print("Assets: eight runtime tabletop atlases are present; live overlays carry V1.0.0 rule corrections.")

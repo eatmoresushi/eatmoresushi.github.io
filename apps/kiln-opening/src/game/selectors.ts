@@ -27,10 +27,12 @@ export function currentDecisionActor(phase: GamePhase): PlayerId | null {
       return phase.activePlayerId;
     case "work_office_orders":
     case "work_office_sale":
+    case "work_office_connoisseur":
     case "work_guild":
       return phase.actorId;
     case "firing_before_contribution":
     case "firing_after_reveal":
+    case "firing_after_fire_reveal":
     case "firing_before_quality":
     case "firing_after_quality":
     case "firing_after_firing":

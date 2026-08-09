@@ -4,7 +4,7 @@ import type { Browser, Page } from "@playwright/test";
 test("graphical tabletop places a selected Apprentice through the authoritative Materials action", async ({ browser, request }) => {
   await request.post("http://127.0.0.1:4173/test-api", {
     headers: { "x-e2e-user": "reset" },
-    data: { operation: "e2e_reset", seed: 1 },
+    data: { operation: "e2e_reset", seed: 2 },
   });
 
   const { host, guest, close } = await openTwoWorkshops(browser);

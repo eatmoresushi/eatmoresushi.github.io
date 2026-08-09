@@ -70,7 +70,7 @@ Sketch:
 interface GameState {
   version: number;
   gameId: string;
-  rulesVersion: "0.6.5";
+  rulesVersion: "1.0.0";
   status: "lobby" | "setup" | "playing" | "finished";
   playerOrder: PlayerId[];
   firstPlayerId: PlayerId;

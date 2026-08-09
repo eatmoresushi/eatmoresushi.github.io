@@ -47,7 +47,7 @@ Host starts only with 2–4 players.
 
 - random First Player;
 - reverse-order Kiln selection;
-- starting Market Order is dealt directly to that player's Order area and is public immediately, because Orders are open information in V0.6.5;
+- starting Market Order is dealt directly to that player's Order area and is public immediately, because Orders are open information in V1.0.0;
 - game begins Round 1.
 
 ## Synchronous turn model
@@ -78,12 +78,13 @@ Firing is the most important digital interaction.
 8. resolve Fuel Ledger decisions in First-Player order;
 9. calculate Base Heat;
 10. reveal Fire card;
-11. calculate natural Actual Heat and natural Heat Difference;
-12. resolve Jun/Ge windows in First-Player order;
-13. assign Quality;
-14. resolve Protective Saggars;
-15. resolve Test Pieces/Ru;
-16. move ceramics to Finished areas.
+11. resolve Sagger Selection in First-Player order;
+12. calculate immutable natural heat from the original Fire modifier and final Actual Heat from each ceramic's applicable modifier;
+13. resolve Jun/Ge windows in First-Player order;
+14. assign Quality;
+15. resolve Protective Saggars, then Second Firing, in First-Player order;
+16. resolve Test Pieces/Kiln Records/Ru;
+17. move remaining ceramics to Finished areas; Second Firing choices remain Glazed.
 
 ## No timers in MVP
 

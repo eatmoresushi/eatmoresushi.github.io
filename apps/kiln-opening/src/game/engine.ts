@@ -10,6 +10,7 @@ import {
   SHAPE_COSTS,
   SHAPES,
   TECHNIQUE_DEFINITIONS,
+  activeKilnSpaceIds,
   locationCapacity,
 } from "./content.ts";
 import { applyFailure, ruleError } from "./errors.ts";
@@ -273,7 +274,9 @@ function beginFiringPhase(state: GameState): void {
     beginOrderPhase(state);
     return;
   }
-  const hasEmptySpace = KILN_SPACE_IDS.some((spaceId) => kilnOccupant(state, spaceId) === null);
+  const hasEmptySpace = activeKilnSpaceIds(state.playerCount).some(
+    (spaceId) => kilnOccupant(state, spaceId) === null,
+  );
   const kilnSettingActors = hasEmptySpace
     ? turnOrderFromFirst(state).filter((playerId) => {
         const player = state.players[playerId];
@@ -720,7 +723,7 @@ function formCeramics(
   }
   const rewardClay = useTechniqueIds.includes("T01") ? gainFromSupply(next, player, "clay", 1) : 0;
   const rewardCoins =
-    (useTechniqueIds.includes("T02") ? gainFromSupply(next, player, "coins", 1) : 0) +
+    (useTechniqueIds.includes("T02") ? gainFromSupply(next, player, "coins", 2) : 0) +
     (useTechniqueIds.includes("T04") ? gainFromSupply(next, player, "coins", 1) : 0);
   if (rewardClay > 0 || rewardCoins > 0) {
     events.push({
@@ -763,7 +766,7 @@ function glazeCeramics(
   const techniqueFailure = validateTechniqueUses(
     context.player,
     useTechniqueIds,
-    ["T05", "T06", "T07"],
+    ["T05", "T06"],
   );
   if (techniqueFailure !== null) return techniqueFailure;
   const hasCarved = action.selections.some((selection) => selection.decoration === "carved");
@@ -782,14 +785,6 @@ function glazeCeramics(
   ) {
     return applyFailure(
       ruleError("INVALID_ACTION", "Seal Stamps requires a paid Impressed Decoration."),
-    );
-  }
-  if (
-    useTechniqueIds.includes("T07") &&
-    new Set(action.selections.map((selection) => selection.glaze)).size < 2
-  ) {
-    return applyFailure(
-      ruleError("INVALID_ACTION", "Glaze Notebook requires two different Glazes."),
     );
   }
   let totalCoins = 0;
@@ -870,18 +865,6 @@ function glazeCeramics(
   for (const techniqueId of useTechniqueIds) {
     exhaustTechnique(player, actorId, techniqueId, events);
   }
-  if (useTechniqueIds.includes("T07")) {
-    const gainedWood = gainFromSupply(next, player, "wood", 1);
-    if (gainedWood > 0) {
-      events.push({
-        type: "RESOURCES_CHANGED",
-        playerId: actorId,
-        clay: 0,
-        wood: gainedWood,
-        coins: 0,
-      });
-    }
-  }
   completeWorkerAction(next, actorId, events);
   return success(next, events);
 }
@@ -921,6 +904,14 @@ function useKilnYard(
       return applyFailure(
         ruleError("INVALID_SELECTION", "The selected kiln space does not exist.", {
           kilnSpaceId: load.kilnSpaceId,
+        }),
+      );
+    }
+    if (!activeKilnSpaceIds(state.playerCount).includes(load.kilnSpaceId)) {
+      return applyFailure(
+        ruleError("INVALID_SELECTION", "The selected kiln space is covered at this player count.", {
+          kilnSpaceId: load.kilnSpaceId,
+          playerCount: state.playerCount,
         }),
       );
     }
@@ -1103,6 +1094,88 @@ function resolveOfficeFlawedSale(
       wood: 0,
       coins: gainedCoins,
     });
+  }
+  const connoisseur = ownedTechnique(nextPlayer, "T14");
+  const canUseConnoisseur =
+    connoisseur !== undefined &&
+    !connoisseur.exhausted &&
+    next.commonSupply.coins >= 3 &&
+    Object.values(next.ceramics).some(
+      (ceramic) =>
+        ceramic.ownerId === actorId &&
+        ceramic.stage === "finished" &&
+        ceramic.quality === "masterpiece",
+    );
+  if (canUseConnoisseur) {
+    next.phase = { type: "work_office_connoisseur", actorId, workerId: phase.workerId };
+  } else {
+    completeWorkerAction(next, actorId, events);
+  }
+  return success(next, events);
+}
+
+function resolveConnoisseurNetwork(
+  state: GameState,
+  actorId: PlayerId,
+  ceramicId: string | null,
+): ApplyResult {
+  const phase = requirePhase(state, "work_office_connoisseur");
+  if (isFailure(phase)) return phase;
+  const actorError = actorFailure(state, actorId);
+  if (actorError !== null) return actorError;
+  const player = state.players[actorId];
+  const technique = player === undefined ? undefined : ownedTechnique(player, "T14");
+  if (player === undefined || technique === undefined || technique.exhausted) {
+    return applyFailure(ruleError("TECHNIQUE_EXHAUSTED", "Connoisseur Network is unavailable."));
+  }
+  if (ceramicId !== null) {
+    const ceramic = state.ceramics[ceramicId];
+    if (
+      ceramic === undefined ||
+      ceramic.ownerId !== actorId ||
+      ceramic.stage !== "finished" ||
+      ceramic.quality !== "masterpiece"
+    ) {
+      return applyFailure(
+        ruleError(
+          "ILLEGAL_CERAMIC_STAGE",
+          "Connoisseur Network requires one owned Finished undelivered Masterpiece.",
+          { ceramicId },
+        ),
+      );
+    }
+    if (state.commonSupply.coins < 3) {
+      return applyFailure(
+        ruleError("SUPPLY_EMPTY", "The common supply must contain all 3 Coins for this sale."),
+      );
+    }
+  }
+
+  const next = cloneState(state);
+  const events: GameEvent[] = [];
+  const nextPlayer = next.players[actorId];
+  if (nextPlayer === undefined) throw new Error("Connoisseur actor disappeared");
+  if (ceramicId !== null) {
+    const ceramic = next.ceramics[ceramicId];
+    if (ceramic === undefined || ceramic.stage !== "finished") {
+      throw new Error("Validated Connoisseur ceramic disappeared");
+    }
+    next.vesselSupply[ceramic.shape].push(ceramic.vesselInstanceId);
+    next.ceramics[ceramicId] = {
+      id: ceramic.id,
+      vesselInstanceId: ceramic.vesselInstanceId,
+      ownerId: ceramic.ownerId,
+      shape: ceramic.shape,
+      stage: "sold",
+      soldInRound: next.round,
+    };
+    nextPlayer.resources.coins += 3;
+    next.commonSupply.coins -= 3;
+    exhaustTechnique(nextPlayer, actorId, "T14", events);
+    events.push(
+      { type: "CERAMIC_SOLD", playerId: actorId, ceramicId },
+      { type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins: 3 },
+    );
   }
   completeWorkerAction(next, actorId, events);
   return success(next, events);
@@ -1636,7 +1709,12 @@ function resolveKilnSetting(
         ruleError("ILLEGAL_CERAMIC_STAGE", "Kiln Setting must move one owned Loaded ceramic."),
       );
     }
-    if (toSpaceId === null || kilnOccupant(state, toSpaceId) !== null) {
+    if (toSpaceId === null || !activeKilnSpaceIds(state.playerCount).includes(toSpaceId)) {
+      return applyFailure(
+        ruleError("INVALID_SELECTION", "Kiln Setting cannot move a ceramic into a covered space."),
+      );
+    }
+    if (kilnOccupant(state, toSpaceId) !== null) {
       return applyFailure(ruleError("KILN_SPACE_OCCUPIED", "The destination is not empty."));
     }
   }
@@ -1679,7 +1757,7 @@ function openAfterRevealWindow(state: GameState, events: GameEvent[]): void {
       player.resources.coins >= 1
     );
   });
-  if (actors.length === 0) calculateHeatAndOpenQualityWindow(state, events);
+  if (actors.length === 0) revealFireAndOpenSaggerSelection(state, events);
   else state.phase = { type: "firing_after_reveal", queue: { actors, currentIndex: 0 } };
 }
 
@@ -1748,6 +1826,7 @@ export function submitWoodContribution(
       baseHeat: null,
       fireModifier: null,
       globalHeat: null,
+      zeroFireModifierCeramicIds: [],
       ceramicResults: {},
     };
     events.push({ type: "WOOD_REVEALED", contributions: { ...contributions } });
@@ -1760,7 +1839,7 @@ export function submitWoodContribution(
   return { ok: true, state: next, privateState: nextPrivate, events };
 }
 
-function calculateHeatAndOpenQualityWindow(state: GameState, events: GameEvent[]): void {
+function revealFireAndOpenSaggerSelection(state: GameState, events: GameEvent[]): void {
   const context = state.firingContext;
   if (context === null) throw new Error("Heat calculation requires firing context");
   const totalWood = Object.values(context.contributions).reduce((sum, amount) => sum + amount, 0);
@@ -1773,17 +1852,50 @@ function calculateHeatAndOpenQualityWindow(state: GameState, events: GameEvent[]
   context.globalHeat = globalHeat;
   events.push({ type: "FIRE_REVEALED", modifier: fireModifier, baseHeat, globalHeat });
 
+  const actors = fireModifier === 0 ? [] : turnOrderFromFirst(state).filter((playerId) => {
+    const player = state.players[playerId];
+    const technique = player === undefined ? undefined : ownedTechnique(player, "T16");
+    return (
+      player !== undefined &&
+      technique !== undefined &&
+      !technique.exhausted &&
+      player.resources.coins >= 2 &&
+      Object.values(state.ceramics).some(
+        (ceramic) => ceramic.stage === "loaded" && ceramic.ownerId === playerId,
+      )
+    );
+  });
+  if (actors.length === 0) calculateActualHeatAndOpenQualityWindow(state, events);
+  else state.phase = { type: "firing_after_fire_reveal", queue: { actors, currentIndex: 0 } };
+}
+
+function calculateActualHeatAndOpenQualityWindow(state: GameState, events: GameEvent[]): void {
+  const context = state.firingContext;
+  if (
+    context === null ||
+    context.baseHeat === null ||
+    context.fireModifier === null ||
+    context.globalHeat === null
+  ) {
+    throw new Error("Actual Heat calculation requires the revealed Fire card");
+  }
+
   for (const ceramic of Object.values(state.ceramics)) {
     if (ceramic.stage !== "loaded") continue;
     const zoneModifier = kilnZoneModifier(ceramic.kilnSpaceId);
-    const actualHeat = globalHeat + zoneModifier;
+    const naturalActualHeat = context.globalHeat + zoneModifier;
+    const naturalDifference = Math.abs(naturalActualHeat - preferredHeat(ceramic.glaze));
+    const ignoredFireModifier = context.zeroFireModifierCeramicIds.includes(ceramic.id);
+    const actualHeat =
+      context.baseHeat + (ignoredFireModifier ? 0 : context.fireModifier) + zoneModifier;
     const difference = Math.abs(actualHeat - preferredHeat(ceramic.glaze));
     context.ceramicResults[ceramic.id] = {
       ceramicId: ceramic.id,
       zoneModifier,
-      naturalActualHeat: actualHeat,
-      naturalHeatDifference: difference,
-      naturalExactMatch: difference === 0,
+      ignoredFireModifier,
+      naturalActualHeat,
+      naturalHeatDifference: naturalDifference,
+      naturalExactMatch: naturalDifference === 0,
       finalActualHeat: actualHeat,
       finalHeatDifference: difference,
       forcedQuality: null,
@@ -1805,6 +1917,52 @@ function calculateHeatAndOpenQualityWindow(state: GameState, events: GameEvent[]
   });
   if (actors.length === 0) assignQualityAndOpenSaggars(state, events);
   else state.phase = { type: "firing_before_quality", queue: { actors, currentIndex: 0 } };
+}
+
+function resolveSaggerSelection(
+  state: GameState,
+  actorId: PlayerId,
+  ceramicId: string | null,
+): ApplyResult {
+  const phase = requirePhase(state, "firing_after_fire_reveal");
+  if (isFailure(phase)) return phase;
+  const actorError = actorFailure(state, actorId);
+  if (actorError !== null) return actorError;
+  const player = state.players[actorId];
+  if (ceramicId !== null) {
+    const technique = player === undefined ? undefined : ownedTechnique(player, "T16");
+    const ceramic = state.ceramics[ceramicId];
+    if (technique === undefined || technique.exhausted) {
+      return applyFailure(ruleError("TECHNIQUE_EXHAUSTED", "Sagger Selection is unavailable."));
+    }
+    if (
+      player === undefined ||
+      player.resources.coins < 2 ||
+      ceramic === undefined ||
+      ceramic.stage !== "loaded" ||
+      ceramic.ownerId !== actorId
+    ) {
+      return applyFailure(
+        ruleError("INVALID_SELECTION", "Sagger Selection costs 2 Coins and requires one owned Loaded ceramic."),
+      );
+    }
+  }
+  const next = cloneState(state);
+  const events: GameEvent[] = [];
+  if (ceramicId !== null) {
+    const nextPlayer = next.players[actorId];
+    const nextContext = next.firingContext;
+    if (nextPlayer === undefined || nextContext === null) {
+      throw new Error("Sagger Selection invariant failed");
+    }
+    nextPlayer.resources.coins -= 2;
+    next.commonSupply.coins += 2;
+    nextContext.zeroFireModifierCeramicIds.push(ceramicId);
+    exhaustTechnique(nextPlayer, actorId, "T16", events);
+    events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins: -2 });
+  }
+  advanceQueuedWindow(next, () => calculateActualHeatAndOpenQualityWindow(next, events));
+  return success(next, events);
 }
 
 function resolveFuelLedger(state: GameState, actorId: PlayerId, use: boolean): ApplyResult {
@@ -1842,7 +2000,7 @@ function resolveFuelLedger(state: GameState, actorId: PlayerId, use: boolean): A
     exhaustTechnique(nextPlayer, actorId, "T11", events);
     events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: -1, coins: -1 });
   }
-  advanceQueuedWindow(next, () => calculateHeatAndOpenQualityWindow(next, events));
+  advanceQueuedWindow(next, () => revealFireAndOpenSaggerSelection(next, events));
   return success(next, events);
 }
 
@@ -1853,7 +2011,7 @@ function assignQualityAndOpenSaggars(state: GameState, events: GameEvent[]): voi
     result.assignedQuality = result.forcedQuality ?? qualityFromDifference(result.finalHeatDifference);
     events.push({ type: "QUALITY_ASSIGNED", ceramicId: result.ceramicId, quality: result.assignedQuality });
   }
-  const actors = turnOrderFromFirst(state).filter((playerId) => {
+  const saggarsActors = turnOrderFromFirst(state).filter((playerId) => {
     const player = state.players[playerId];
     const technique = player === undefined ? undefined : ownedTechnique(player, "T10");
     return (
@@ -1863,13 +2021,45 @@ function assignQualityAndOpenSaggars(state: GameState, events: GameEvent[]): voi
       player.resources.coins >= 1 &&
       Object.values(context.ceramicResults).some(
         (result) =>
-          result.assignedQuality === "flawed" &&
+          (result.assignedQuality === "flawed" || result.assignedQuality === "standard") &&
+          state.ceramics[result.ceramicId]?.ownerId === playerId,
+      )
+    );
+  });
+  if (saggarsActors.length === 0) openSecondFiringWindow(state, events);
+  else {
+    state.phase = {
+      type: "firing_after_quality",
+      queue: { actors: saggarsActors, currentIndex: 0 },
+      techniqueIds: saggarsActors.map(() => "T10" as TechniqueId),
+    };
+  }
+}
+
+function openSecondFiringWindow(state: GameState, events: GameEvent[]): void {
+  const context = state.firingContext;
+  if (context === null) throw new Error("Second Firing window requires firing context");
+  const actors = turnOrderFromFirst(state).filter((playerId) => {
+    const player = state.players[playerId];
+    const technique = player === undefined ? undefined : ownedTechnique(player, "T15");
+    return (
+      technique !== undefined &&
+      !technique.exhausted &&
+      Object.values(context.ceramicResults).some(
+        (result) =>
+          result.assignedQuality === "standard" &&
           state.ceramics[result.ceramicId]?.ownerId === playerId,
       )
     );
   });
   if (actors.length === 0) openAfterFiringWindow(state, events);
-  else state.phase = { type: "firing_after_quality", queue: { actors, currentIndex: 0 } };
+  else {
+    state.phase = {
+      type: "firing_after_quality",
+      queue: { actors, currentIndex: 0 },
+      techniqueIds: actors.map(() => "T15" as TechniqueId),
+    };
+  }
 }
 
 function resolveJun(
@@ -1965,6 +2155,9 @@ function resolveProtectiveSaggars(
   if (isFailure(phase)) return phase;
   const actorError = actorFailure(state, actorId);
   if (actorError !== null) return actorError;
+  if (phase.techniqueIds[phase.queue.currentIndex] !== "T10") {
+    return applyFailure(ruleError("INVALID_ACTION", "Protective Saggars is not the current decision."));
+  }
   const player = state.players[actorId];
   if (ceramicId !== null) {
     const technique = player === undefined ? undefined : ownedTechnique(player, "T10");
@@ -1978,10 +2171,10 @@ function resolveProtectiveSaggars(
       player.resources.coins < 1 ||
       ceramic === undefined ||
       ceramic.ownerId !== actorId ||
-      result?.assignedQuality !== "flawed"
+      (result?.assignedQuality !== "flawed" && result?.assignedQuality !== "standard")
     ) {
       return applyFailure(
-        ruleError("INVALID_SELECTION", "Protective Saggars requires 1 Coin and an owned Flawed ceramic."),
+        ruleError("INVALID_SELECTION", "Protective Saggars requires 1 Coin and an owned Flawed or Standard ceramic."),
       );
     }
   }
@@ -1993,9 +2186,64 @@ function resolveProtectiveSaggars(
     if (nextPlayer === undefined || result === undefined) throw new Error("Saggars invariant failed");
     nextPlayer.resources.coins -= 1;
     next.commonSupply.coins += 1;
-    result.assignedQuality = "standard";
+    result.assignedQuality = result.assignedQuality === "flawed" ? "standard" : "fine";
     exhaustTechnique(nextPlayer, actorId, "T10", events);
     events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins: -1 });
+  }
+  advanceQueuedWindow(next, () => openSecondFiringWindow(next, events));
+  return success(next, events);
+}
+
+function resolveSecondFiring(
+  state: GameState,
+  actorId: PlayerId,
+  ceramicId: string | null,
+): ApplyResult {
+  const phase = requirePhase(state, "firing_after_quality");
+  if (isFailure(phase)) return phase;
+  const actorError = actorFailure(state, actorId);
+  if (actorError !== null) return actorError;
+  if (phase.techniqueIds[phase.queue.currentIndex] !== "T15") {
+    return applyFailure(ruleError("INVALID_ACTION", "Second Firing is not the current decision."));
+  }
+  const player = state.players[actorId];
+  if (ceramicId !== null) {
+    const technique = player === undefined ? undefined : ownedTechnique(player, "T15");
+    const ceramic = state.ceramics[ceramicId];
+    const result = state.firingContext?.ceramicResults[ceramicId];
+    if (technique === undefined || technique.exhausted) {
+      return applyFailure(ruleError("TECHNIQUE_EXHAUSTED", "Second Firing is unavailable."));
+    }
+    if (
+      ceramic === undefined ||
+      ceramic.stage !== "loaded" ||
+      ceramic.ownerId !== actorId ||
+      result?.assignedQuality !== "standard"
+    ) {
+      return applyFailure(
+        ruleError("INVALID_SELECTION", "Second Firing requires one owned Standard ceramic from this firing."),
+      );
+    }
+  }
+  const next = cloneState(state);
+  const events: GameEvent[] = [];
+  if (ceramicId !== null) {
+    const nextPlayer = next.players[actorId];
+    const ceramic = next.ceramics[ceramicId];
+    const nextContext = next.firingContext;
+    if (
+      nextPlayer === undefined ||
+      ceramic === undefined ||
+      ceramic.stage !== "loaded" ||
+      nextContext === null
+    ) {
+      throw new Error("Second Firing invariant failed");
+    }
+    const { kilnSpaceId: _kilnSpaceId, ...rest } = ceramic;
+    next.ceramics[ceramicId] = { ...rest, stage: "glazed" };
+    delete nextContext.ceramicResults[ceramicId];
+    exhaustTechnique(nextPlayer, actorId, "T15", events);
+    events.push({ type: "CERAMIC_RETURNED_TO_GLAZED", playerId: actorId, ceramicId });
   }
   advanceQueuedWindow(next, () => openAfterFiringWindow(next, events));
   return success(next, events);
@@ -2004,7 +2252,7 @@ function resolveProtectiveSaggars(
 function openAfterFiringWindow(state: GameState, events: GameEvent[]): void {
   const context = state.firingContext;
   if (context === null) throw new Error("After-firing window requires firing context");
-  const actors = turnOrderFromFirst(state).filter((playerId) => {
+  const testPiecesActors = turnOrderFromFirst(state).filter((playerId) => {
     const player = state.players[playerId];
     const technique = player === undefined ? undefined : ownedTechnique(player, "T12");
     return (
@@ -2015,8 +2263,32 @@ function openAfterFiringWindow(state: GameState, events: GameEvent[]): void {
       )
     );
   });
+  const kilnRecordsActors = turnOrderFromFirst(state).filter((playerId) => {
+    const player = state.players[playerId];
+    const technique = player === undefined ? undefined : ownedTechnique(player, "T13");
+    return (
+      technique !== undefined &&
+      !technique.exhausted &&
+      Object.values(context.ceramicResults).filter(
+        (result) =>
+          result.assignedQuality === "masterpiece" &&
+          state.ceramics[result.ceramicId]?.ownerId === playerId,
+      ).length >= 2
+    );
+  });
+  const actors = [...testPiecesActors, ...kilnRecordsActors];
+  const techniqueIds = [
+    ...testPiecesActors.map(() => "T12" as TechniqueId),
+    ...kilnRecordsActors.map(() => "T13" as TechniqueId),
+  ];
   if (actors.length === 0) finalizeFiring(state, events);
-  else state.phase = { type: "firing_after_firing", queue: { actors, currentIndex: 0 } };
+  else {
+    state.phase = {
+      type: "firing_after_firing",
+      queue: { actors, currentIndex: 0 },
+      techniqueIds,
+    };
+  }
 }
 
 function resolveTestPieces(state: GameState, actorId: PlayerId, use: boolean): ApplyResult {
@@ -2024,6 +2296,9 @@ function resolveTestPieces(state: GameState, actorId: PlayerId, use: boolean): A
   if (isFailure(phase)) return phase;
   const actorError = actorFailure(state, actorId);
   if (actorError !== null) return actorError;
+  if (phase.techniqueIds[phase.queue.currentIndex] !== "T12") {
+    return applyFailure(ruleError("INVALID_ACTION", "Test Pieces is not the current decision."));
+  }
   const player = state.players[actorId];
   if (use) {
     const technique = player === undefined ? undefined : ownedTechnique(player, "T12");
@@ -2039,10 +2314,55 @@ function resolveTestPieces(state: GameState, actorId: PlayerId, use: boolean): A
   if (use) {
     const nextPlayer = next.players[actorId];
     if (nextPlayer === undefined) throw new Error("Test Pieces actor disappeared");
-    const gained = gainFromSupply(next, nextPlayer, "coins", 1);
+    const exactMatches = Object.values(next.firingContext?.ceramicResults ?? {}).filter(
+      (result) => result.naturalExactMatch && next.ceramics[result.ceramicId]?.ownerId === actorId,
+    ).length;
+    const gained = gainFromSupply(next, nextPlayer, "coins", Math.min(2, exactMatches));
     exhaustTechnique(nextPlayer, actorId, "T12", events);
     if (gained > 0) {
       events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins: gained });
+    }
+  }
+  advanceQueuedWindow(next, () => finalizeFiring(next, events));
+  return success(next, events);
+}
+
+function resolveKilnRecords(state: GameState, actorId: PlayerId, use: boolean): ApplyResult {
+  const phase = requirePhase(state, "firing_after_firing");
+  if (isFailure(phase)) return phase;
+  const actorError = actorFailure(state, actorId);
+  if (actorError !== null) return actorError;
+  if (phase.techniqueIds[phase.queue.currentIndex] !== "T13") {
+    return applyFailure(ruleError("INVALID_ACTION", "Kiln Records is not the current decision."));
+  }
+  const player = state.players[actorId];
+  if (use) {
+    const technique = player === undefined ? undefined : ownedTechnique(player, "T13");
+    const masterpieceCount = Object.values(state.firingContext?.ceramicResults ?? {}).filter(
+      (result) =>
+        result.assignedQuality === "masterpiece" &&
+        state.ceramics[result.ceramicId]?.ownerId === actorId,
+    ).length;
+    if (technique === undefined || technique.exhausted || masterpieceCount < 2) {
+      return applyFailure(ruleError("INVALID_ACTION", "Kiln Records is not eligible."));
+    }
+  }
+  const next = cloneState(state);
+  const events: GameEvent[] = [];
+  if (use) {
+    const nextPlayer = next.players[actorId];
+    if (nextPlayer === undefined) throw new Error("Kiln Records actor disappeared");
+    const gainedClay = gainFromSupply(next, nextPlayer, "clay", 1);
+    const gainedCoins = gainFromSupply(next, nextPlayer, "coins", 1);
+    exhaustTechnique(nextPlayer, actorId, "T13", events);
+    if (gainedClay > 0 || gainedCoins > 0) {
+      events.push({
+        type: "RESOURCES_CHANGED",
+        playerId: actorId,
+        clay: gainedClay,
+        wood: 0,
+        coins: gainedCoins,
+      });
     }
   }
   advanceQueuedWindow(next, () => finalizeFiring(next, events));
@@ -2568,6 +2888,8 @@ export function applyAction(
       return skipColourSamples(state, actorId);
     case "OFFICE_RESOLVE_FLAWED_SALE":
       return resolveOfficeFlawedSale(state, actorId, action.ceramicIds);
+    case "OFFICE_RESOLVE_CONNOISSEUR_NETWORK":
+      return resolveConnoisseurNetwork(state, actorId, action.ceramicId);
     case "USE_COURT_PATRONAGE":
       return useCourtPatronage(state, actorId, action.workerId);
     case "BEGIN_GUILD_ACTION":
@@ -2582,14 +2904,20 @@ export function applyAction(
       return resolveKilnSetting(state, actorId, action.ceramicId, action.toSpaceId);
     case "RESOLVE_FUEL_LEDGER":
       return resolveFuelLedger(state, actorId, action.use);
+    case "RESOLVE_SAGGER_SELECTION":
+      return resolveSaggerSelection(state, actorId, action.ceramicId);
     case "RESOLVE_JUN":
       return resolveJun(state, actorId, action.ceramicId, action.delta);
     case "RESOLVE_GE":
       return resolveGe(state, actorId, action.ceramicId);
     case "RESOLVE_PROTECTIVE_SAGGARS":
       return resolveProtectiveSaggars(state, actorId, action.ceramicId);
+    case "RESOLVE_SECOND_FIRING":
+      return resolveSecondFiring(state, actorId, action.ceramicId);
     case "RESOLVE_TEST_PIECES":
       return resolveTestPieces(state, actorId, action.use);
+    case "RESOLVE_KILN_RECORDS":
+      return resolveKilnRecords(state, actorId, action.use);
     case "COMPLETE_ORDER":
       return completeOrder(state, actorId, action);
     case "END_ORDER_TURN":

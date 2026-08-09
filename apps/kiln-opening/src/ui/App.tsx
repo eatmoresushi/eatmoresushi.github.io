@@ -368,7 +368,7 @@ export function App() {
         />
       )}
       <footer className="site-footer">
-        <span>Kiln Opening V0.6.5</span>
+        <span>Kiln Opening V1.0.0</span>
         <a href="https://luyuan.me/">Luyuan He</a>
       </footer>
     </div>

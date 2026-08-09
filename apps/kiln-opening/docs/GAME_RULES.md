@@ -1,4 +1,4 @@
-# GAME_RULES.md — Kiln Opening / 开窑 V0.6.5
+# GAME_RULES.md — Kiln Opening / 开窑 V1.0.0
 
 **Players:** 2–4  
 **Length:** 5 rounds  
@@ -111,6 +111,8 @@ Clay cleaning, refining, mixing, drying, etc. are abstracted into the Forming St
 11. Each player gains 2 Clay, 2 Wood and 3 Coins.
 12. Each player draws 1 Market Order. If it requires 2+ ceramics, they may discard it and draw once more.
 13. All Imperial Progress markers begin at 0. Round marker begins at 1.
+
+Cover inactive Shared Kiln spaces for the player count: at 2 players cover `middle_3` and `low_3`; at 3 players cover `low_3`; at 4 players use all eight spaces.
 
 ### Action capacity
 
@@ -250,6 +252,8 @@ A player may not exceed hand limit. Check the limit before every individual acqu
 
 Only the acting player's Finished Flawed ceramics may be sold. Each sold ceramic is removed from the Finished Ceramics area, its Vessel card returns to the matching Shape supply, and the player gains exactly 1 Coin. A sold ceramic cannot later be delivered to an Order or included in an Imperial Presentation. Standard, Fine, and Masterpiece ceramics cannot be sold through this effect.
 
+**Connoisseur Network (T14):** after resolving a normal Office main action and its optional Flawed-sale step, its owner may exhaust it to sell exactly 1 owned Finished, undelivered Masterpiece for exactly 3 Coins. Return that ceramic's Vessel card to its Shape supply. This is separate from the normal Flawed sale and cannot follow Court Patronage.
+
 ### Guild & Academy
 
 Both Apprentices and the Shifu may be placed at this location while capacity remains.
@@ -281,7 +285,27 @@ Techniques give no direct VP.
 
 Exact list is authoritative in `data/techniques.json`.
 
-Printed costs are 2 Coins for T01, T02, T04, T05, T06, T07, T08 and T12; and 3 Coins for T03, T09, T10 and T11. The Apprentice pays the printed cost; the Shifu pays 1 less, minimum 1.
+There are 15 Techniques, exactly 5 per discipline. T07 Glaze Notebook is not part of V1.0.0. Stable retained IDs are not renumbered.
+
+| Discipline | ID | Technique | Printed cost | Effect summary |
+|---|---|---|---:|---|
+| Forming | T01 | Large Throwing Wheel | 2 | Form Vase/Censer; gain 1 Clay. |
+| Forming | T02 | Measuring Calipers | 2 | Form two different Shapes in one action; gain 2 Coins. |
+| Forming | T03 | Clay Substitution | 2 | Pay 1 Coin instead of 1 Clay for a valid Forming payment. |
+| Forming | T04 | Drying Frames | 2 | Form a Shape matching an uncompleted Order; gain 1 Coin. |
+| Forming | T13 | Kiln Records | 3 | After firing, if at least two own ceramics are final Masterpieces, gain 1 Clay and 1 Coin. |
+| Glazing | T05 | Carving Knives | 2 | Ignore one Carved Decoration cost. |
+| Glazing | T06 | Seal Stamps | 2 | Ignore one Impressed Decoration cost. |
+| Glazing | T08 | Colour Samples | 2 | Before first Office Order acquisition, bottom one face-up Order from either display and refill. |
+| Glazing | T14 | Connoisseur Network | 3 | After a normal Office action, sell exactly one Finished Masterpiece for 3 Coins. |
+| Glazing | T15 | Second Firing | 3 | After Quality, return one own Standard result to Glazed for a future firing. |
+| Firing | T09 | Kiln Setting | 3 | Before Contributions, move one own loaded ceramic to an empty active space. |
+| Firing | T10 | Protective Saggars | 3 | After Quality, pay 1 Coin for Flawed→Standard or Standard→Fine. |
+| Firing | T11 | Fuel Ledger | 3 | After reveal, pay 1 Coin and 1 Wood to add 1 contribution. |
+| Firing | T12 | Test Pieces | 2 | After firing, gain 1 Coin for one natural exact match, plus 1 more for at least two. |
+| Firing | T16 | Sagger Selection | 3 | After Fire reveal, pay 2 Coins so one own ceramic treats that Fire modifier as 0. |
+
+The Apprentice pays the printed cost; the Shifu pays 1 less, minimum 1.
 
 **T08 Colour Samples:** once per round, when its owner begins an Office main action that will take at least 1 Order, before the first acquisition they may place exactly 1 face-up Order from either display on the bottom of its corresponding deck and reveal a replacement from that deck. Then the Office action continues normally and may acquire from either deck by either method. This grants no extra Order or Coins and is unavailable during Coins-only actions or Court Patronage.
 
@@ -290,8 +314,9 @@ Printed costs are 2 Coins for T01, T02, T04, T05, T06, T07, T08 and T12; and 3 C
 - **during action:** Forming/Glazing Techniques
 - **before Wood Contributions:** Kiln Setting
 - **after Contributions revealed, before Base Heat:** Fuel Ledger
-- **after Quality assigned:** Protective Saggars
-- **after firing:** Test Pieces and Ru check before ceramics return
+- **after Fire revealed, before Actual Heat:** Sagger Selection
+- **after Quality assigned:** Protective Saggars, then Second Firing
+- **after firing:** Test Pieces, Kiln Records and Ru check before ceramics return
 
 ---
 
@@ -299,11 +324,13 @@ Printed costs are 2 Coins for T01, T02, T04, T05, T06, T07, T08 and T12; and 3 C
 
 ### Kiln layout
 
-| Zone | Spaces | Actual Heat modifier |
-|---|---:|---:|
-| High | 2 | +1 |
-| Middle | 3 | 0 |
-| Low | 3 | -1 |
+| Player count | High active | Middle active | Low active | Total active |
+|---:|---:|---:|---:|---:|
+| 2 | 2 | 2 | 2 | 6 |
+| 3 | 2 | 3 | 2 | 7 |
+| 4 | 2 | 3 | 3 | 8 |
+
+High spaces add +1 Actual Heat, Middle spaces add 0, and Low spaces add -1. Covered spaces are not empty spaces and cannot be loaded into, selected as movement destinations, or counted toward kiln capacity.
 
 One ceramic per space unless a future rule explicitly says otherwise.
 
@@ -315,11 +342,12 @@ One ceramic per space unless a future rule explicitly says otherwise.
 4. **Modify Contributions:** in turn order, resolve post-reveal contribution abilities (e.g. Fuel Ledger).
 5. **Determine Base Heat:** count contributors, including those who chose 0, then use contributor-scaled thresholds.
 6. **Reveal Fire:** draw top Fire card (-1/0/+1); Global Heat = Base Heat + Fire modifier. Do not cap it.
-7. **Calculate Actual Heat:** Global Heat + ceramic's zone modifier.
-8. **Before-Quality abilities:** in turn order resolve Jun and Ge.
-9. **Assign Quality:** compare final Actual Heat with Preferred Heat.
-10. **After-Quality abilities:** resolve Protective Saggars in turn order.
-11. **After-Firing effects:** resolve Test Pieces and Ru. Return ceramics to owners' Finished areas. Empty kiln. Discard Fire card face-up.
+7. **After-Fire abilities:** in turn order, resolve Sagger Selection. It changes only the chosen ceramic's use of the revealed Fire modifier; the Fire card and Global Heat remain unchanged.
+8. **Calculate Actual Heat:** Base Heat + the ceramic's applicable Fire modifier + its zone modifier. Also snapshot Natural Actual Heat and Natural Heat Difference using the original Fire modifier before Sagger Selection, Jun, Ge, Protective Saggars, or any other modification.
+9. **Before-Quality abilities:** in turn order resolve Jun and Ge.
+10. **Assign Quality:** compare final Actual Heat with Preferred Heat.
+11. **After-Quality abilities:** resolve Protective Saggars in turn order, then Second Firing in turn order. A ceramic chosen for Second Firing returns to its owner's Glazed area with Shape, Glaze and Decoration intact and no Quality; it cannot re-enter the current firing.
+12. **After-Firing effects:** resolve Test Pieces, Kiln Records and Ru. Return all remaining ceramics to owners' Finished areas. Empty kiln. Discard Fire card face-up.
 
 ### Base Heat
 
@@ -362,8 +390,8 @@ Order eligibility:
 
 Two decks/displays:
 
-- Market: 4 face-up;
-- Imperial: 3 face-up.
+- Market: 23 cards, 4 face-up;
+- Imperial: 13 cards, 3 face-up.
 
 Exact card definitions are authoritative in `data/orders.json`.
 

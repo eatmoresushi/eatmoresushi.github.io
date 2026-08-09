@@ -47,7 +47,7 @@ describe("Forming Techniques and Ding", () => {
       },
       rng,
     );
-    expect(next.players[actorId]!.resources.coins).toBe(5);
+    expect(next.players[actorId]!.resources.coins).toBe(6);
   });
 
   it("implements T03 Clay Substitution for base and Ding payments", () => {
@@ -175,13 +175,13 @@ describe("Glazing Techniques", () => {
     expect(next.players[actorId]!.resources.coins).toBe(3);
   });
 
-  it("implements T07 Glaze Notebook", () => {
+  it("removes obsolete T07 Glaze Notebook", () => {
     const { state, rng } = startedGame(2, 511);
     const actorId = state.firstPlayerId;
     const first = addShaped(state, actorId, "bowl");
     const second = addShaped(state, actorId, "plate");
     addTechnique(state, actorId, "T07");
-    const next = mustApply(
+    const result = applyAction(
       state,
       actorId,
       {
@@ -196,7 +196,7 @@ describe("Glazing Techniques", () => {
       },
       rng,
     );
-    expect(next.players[actorId]!.resources.wood).toBe(3);
+    expectError(result, "INVALID_ACTION");
   });
 });
 

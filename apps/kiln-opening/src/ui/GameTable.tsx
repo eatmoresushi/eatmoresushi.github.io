@@ -1,6 +1,7 @@
 import {
   IMPERIAL_PROGRESS,
   KILN_SPACE_IDS,
+  activeKilnSpaceIds,
   ORDER_DEFINITIONS,
   TECHNIQUE_DEFINITIONS,
   currentDecisionActor,
@@ -121,14 +122,17 @@ export function GameTable({ game, ownPlayerId }: { game: PublicGameState; ownPla
           <div className="panel-heading"><div><p className="eyebrow">Shared kiln</p><h2 id="kiln-title">Eight chambers</h2></div><span>Heat zones</span></div>
           <div className="kiln-spaces">
             {KILN_SPACE_IDS.map((spaceId) => {
+              const active = activeKilnSpaceIds(game.playerCount).includes(spaceId);
               const ceramic = Object.values(game.ceramics).find(
                 (candidate) => candidate.stage === "loaded" && candidate.kilnSpaceId === spaceId,
               );
               const zone = spaceId.split("_")[0]!;
               return (
-                <div className={`kiln-space zone-${zone}`} key={spaceId} data-space={spaceId}>
+                <div className={`kiln-space zone-${zone} ${active ? "" : "is-covered"}`} key={spaceId} data-space={spaceId}>
                   <small>{zone} {zone === "high" ? "+1" : zone === "low" ? "−1" : "±0"}</small>
-                  {ceramic === undefined
+                  {!active
+                    ? <span className="empty-chamber">Covered</span>
+                    : ceramic === undefined
                     ? <span className="empty-chamber">Empty</span>
                     : <CeramicToken ceramic={ceramic} owner={game.players[ceramic.ownerId]?.displayName ?? ceramic.ownerId} />}
                 </div>
@@ -284,7 +288,7 @@ export function OrderCard({ orderId, imperial = false }: { orderId: string; impe
       )}
       <div className="order-slots">
         {order.ceramics.map((requirement, index) => (
-          <span key={index}>{requirement.shape === undefined ? "Any form" : SHAPE_LABELS[requirement.shape]} · {requirement.glaze === undefined ? "Any glaze" : GLAZE_LABELS[requirement.glaze]} · {requirement.decoration ?? "any decoration"}</span>
+          <span key={index}>{requirement.shapes?.map((shape) => SHAPE_LABELS[shape]).join(" or ") ?? (requirement.shape === undefined ? "Any form" : SHAPE_LABELS[requirement.shape])} · {requirement.glaze === undefined ? "Any glaze" : GLAZE_LABELS[requirement.glaze]} · {requirement.decoration ?? "any decoration"}</span>
         ))}
       </div>
       <footer>{qualityLabel(order)}{relationLabel(order)}</footer>
@@ -323,13 +327,15 @@ function phaseName(game: PublicGameState): string {
     case "work": return "Work Phase";
     case "work_office_orders": return "Office — Orders";
     case "work_office_sale": return "Office — Optional Flawed sale";
+    case "work_office_connoisseur": return "Office — Connoisseur Network";
     case "work_guild": return "Guild & Academy";
     case "firing_before_contribution": return "Kiln Setting";
     case "firing_contributions": return "Secret Wood";
     case "firing_after_reveal": return "Fuel Ledger";
+    case "firing_after_fire_reveal": return "Sagger Selection";
     case "firing_before_quality": return "Kiln ability";
-    case "firing_after_quality": return "Protective Saggars";
-    case "firing_after_firing": return "Test Pieces";
+    case "firing_after_quality": return game.phase.techniqueIds[game.phase.queue.currentIndex] === "T15" ? "Second Firing" : "Protective Saggars";
+    case "firing_after_firing": return game.phase.techniqueIds[game.phase.queue.currentIndex] === "T13" ? "Kiln Records" : "Test Pieces";
     case "orders": return "Order Phase";
     case "presentation": return "Imperial Presentation";
     case "finished": return "Final results";

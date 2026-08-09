@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   KILN_SPACE_IDS,
   LOCATION_IDS,
+  activeKilnSpaceIds,
   currentDecisionActor,
   locationCapacity,
 } from "../../game";
@@ -168,15 +169,16 @@ export function TabletopScene({
           {KILN_SPACE_IDS.map((spaceId) => {
             const point = KILN_SLOT_POINTS[spaceId];
             const ceramic = Object.values(game.ceramics).find((candidate) => candidate.stage === "loaded" && candidate.kilnSpaceId === spaceId);
+            const active = activeKilnSpaceIds(game.playerCount).includes(spaceId);
             return (
               <span
-                className={`visual-kiln-slot ${ceramic === undefined ? "is-empty" : "is-occupied"}`}
+                className={`visual-kiln-slot ${active ? ceramic === undefined ? "is-empty" : "is-occupied" : "is-covered"}`}
                 style={{ left: `${point.x * 100}%`, top: `${point.y * 100}%` }}
                 data-kiln-space={spaceId}
-                aria-label={ceramic === undefined ? `${spaceId.replaceAll("_", " ")} empty` : `${spaceId.replaceAll("_", " ")} occupied by ${ceramic.id}`}
+                aria-label={!active ? `${spaceId.replaceAll("_", " ")} covered for ${game.playerCount} players` : ceramic === undefined ? `${spaceId.replaceAll("_", " ")} empty` : `${spaceId.replaceAll("_", " ")} occupied by ${ceramic.id}`}
                 key={spaceId}
               >
-                {ceramic !== undefined && <CeramicPiece ceramic={ceramic} compact />}
+                {!active ? <b aria-hidden="true">Covered</b> : ceramic !== undefined && <CeramicPiece ceramic={ceramic} compact />}
               </span>
             );
           })}
@@ -400,13 +402,15 @@ function phaseName(game: PublicGameState): string {
     case "work": return "Work Phase";
     case "work_office_orders": return "Office — Orders";
     case "work_office_sale": return "Office — Sale";
+    case "work_office_connoisseur": return "Office — Connoisseur";
     case "work_guild": return "Guild & Academy";
     case "firing_before_contribution": return "Kiln Setting";
     case "firing_contributions": return "Secret Wood";
     case "firing_after_reveal": return "Fuel Ledger";
+    case "firing_after_fire_reveal": return "Sagger Selection";
     case "firing_before_quality": return "Kiln ability";
-    case "firing_after_quality": return "Protective Saggars";
-    case "firing_after_firing": return "Test Pieces";
+    case "firing_after_quality": return game.phase.techniqueIds[game.phase.queue.currentIndex] === "T15" ? "Second Firing" : "Protective Saggars";
+    case "firing_after_firing": return game.phase.techniqueIds[game.phase.queue.currentIndex] === "T13" ? "Kiln Records" : "Test Pieces";
     case "orders": return "Order Phase";
     case "presentation": return "Imperial Presentation";
     case "finished": return "Final results";

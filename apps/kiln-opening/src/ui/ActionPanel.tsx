@@ -13,6 +13,7 @@ import {
   SHAPE_COSTS,
   SHAPES,
   TECHNIQUE_DEFINITIONS,
+  activeKilnSpaceIds,
   currentDecisionActor,
   locationCapacity,
 } from "../game";
@@ -152,18 +153,26 @@ function PhaseControls(props: Omit<ActionPanelProps, "ownPlayerId"> & {
       return <OfficeControls game={game} player={player} busy={busy} send={send} />;
     case "work_office_sale":
       return <OfficeSaleControls game={game} player={player} busy={busy} send={send} />;
+    case "work_office_connoisseur":
+      return <ConnoisseurControls game={game} player={player} busy={busy} send={send} />;
     case "work_guild":
       return <GuildControls game={game} player={player} busy={busy} send={send} />;
     case "firing_before_contribution":
       return <KilnSettingControls game={game} player={player} busy={busy} send={send} />;
     case "firing_after_reveal":
       return <BinaryDecision title="Fuel Ledger" hint="Pay 1 Wood and 1 Coin to add 1 to your revealed contribution." action="RESOLVE_FUEL_LEDGER" busy={busy} send={send} />;
+    case "firing_after_fire_reveal":
+      return <SaggerSelectionControls game={game} player={player} busy={busy} send={send} />;
     case "firing_before_quality":
       return <KilnAbilityControls game={game} player={player} busy={busy} send={send} />;
     case "firing_after_quality":
-      return <SaggarsControls game={game} player={player} busy={busy} send={send} />;
+      return phase.techniqueIds[phase.queue.currentIndex] === "T15"
+        ? <SecondFiringControls game={game} player={player} busy={busy} send={send} />
+        : <SaggarsControls game={game} player={player} busy={busy} send={send} />;
     case "firing_after_firing":
-      return <BinaryDecision title="Test Pieces" hint="Use the Technique to gain 1 Coin for your natural exact heat match." action="RESOLVE_TEST_PIECES" busy={busy} send={send} />;
+      return phase.techniqueIds[phase.queue.currentIndex] === "T13"
+        ? <BinaryDecision title="Kiln Records" hint="Gain 1 Clay and 1 Coin for finishing at least two Masterpieces in this firing." action="RESOLVE_KILN_RECORDS" busy={busy} send={send} />
+        : <BinaryDecision title="Test Pieces" hint="Gain 1 Coin for one natural exact match, or 2 Coins for at least two." action="RESOLVE_TEST_PIECES" busy={busy} send={send} />;
     case "orders":
       return <OrderControls game={game} player={player} busy={busy} send={send} />;
   }
@@ -409,7 +418,7 @@ function GlazeForm({ game, player, workers, locationFull, busy, send }: {
   send: SendCommand;
 }) {
   const ceramics = ownCeramics(game, player.id, "shaped");
-  const techniques = ownedAvailableTechniques(player, ["T05", "T06", "T07"]);
+  const techniques = ownedAvailableTechniques(player, ["T05", "T06"]);
   const [workerId, setWorkerId] = useState(workers[0]?.id ?? "");
   const [ceramic1, setCeramic1] = useState(ceramics[0]?.id ?? "");
   const [glaze1, setGlaze1] = useState<Glaze>(GLAZES[0]!);
@@ -447,9 +456,6 @@ function GlazeForm({ game, player, workers, locationFull, busy, send }: {
     }
     if (activeTechniqueIds.includes("T06") && (!paidMode || !selections.some((selection) => selection.decoration === "impressed"))) {
       return "Seal Stamps requires a paid Impressed Decoration.";
-    }
-    if (activeTechniqueIds.includes("T07") && new Set(selections.map((selection) => selection.glaze)).size < 2) {
-      return "Glaze Notebook requires two different Glazes.";
     }
     if (player.resources.coins < totalCoins) return `Requires ${totalCoins} Coins for the selected Decorations.`;
     return null;
@@ -494,7 +500,7 @@ function KilnYardForm({ game, player, workers, locationFull, busy, send }: {
 }) {
   const ceramics = ownCeramics(game, player.id, "glazed");
   const occupied = new Set(Object.values(game.ceramics).filter((ceramic) => ceramic.stage === "loaded").map((ceramic) => ceramic.stage === "loaded" ? ceramic.kilnSpaceId : ""));
-  const spaces = KILN_SPACE_IDS.filter((space) => !occupied.has(space));
+  const spaces = activeKilnSpaceIds(game.playerCount).filter((space) => !occupied.has(space));
   const [workerId, setWorkerId] = useState(workers[0]?.id ?? "");
   const [ceramic1, setCeramic1] = useState("");
   const [space1, setSpace1] = useState<KilnSpaceId>(spaces[0] ?? KILN_SPACE_IDS[0]!);
@@ -740,6 +746,25 @@ function OfficeSaleControls({ game, player, busy, send }: Pick<ActionPanelProps,
   );
 }
 
+function ConnoisseurControls({ game, player, busy, send }: Pick<ActionPanelProps, "game" | "busy" | "send"> & {
+  player: PublicPlayerState;
+}) {
+  const masterpieces = ownCeramics(game, player.id, "finished").filter(
+    (ceramic) => ceramic.stage === "finished" && ceramic.quality === "masterpiece",
+  );
+  return (
+    <CeramicDecision
+      title="Connoisseur Network"
+      hint="After this normal Office action, sell exactly one undelivered Masterpiece for 3 Coins and return its Vessel, or skip."
+      ceramics={masterpieces}
+      busy={busy}
+      send={send}
+      make={(ceramicId) => ({ type: "OFFICE_RESOLVE_CONNOISSEUR_NETWORK", ceramicId })}
+      skip={{ type: "OFFICE_RESOLVE_CONNOISSEUR_NETWORK", ceramicId: null }}
+    />
+  );
+}
+
 function GuildControls({ game, player, busy, send }: {
   game: PublicGameState;
   player: PublicPlayerState;
@@ -776,7 +801,7 @@ function KilnSettingControls({ game, player, busy, send }: {
 }) {
   const loaded = ownCeramics(game, player.id, "loaded");
   const occupied = new Set(Object.values(game.ceramics).filter((ceramic) => ceramic.stage === "loaded").map((ceramic) => ceramic.stage === "loaded" ? ceramic.kilnSpaceId : ""));
-  const spaces = KILN_SPACE_IDS.filter((space) => !occupied.has(space));
+  const spaces = activeKilnSpaceIds(game.playerCount).filter((space) => !occupied.has(space));
   function submit(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -844,6 +869,26 @@ function KilnAbilityControls({ game, player, busy, send }: {
   );
 }
 
+function SaggerSelectionControls({ game, player, busy, send }: {
+  game: PublicGameState;
+  player: PublicPlayerState;
+  busy: boolean;
+  send: SendCommand;
+}) {
+  const loaded = ownCeramics(game, player.id, "loaded");
+  return (
+    <CeramicDecision
+      title="Sagger Selection"
+      hint="After the Fire card reveal, pay 2 Coins so one loaded ceramic treats only that Fire modifier as 0."
+      ceramics={loaded}
+      busy={busy}
+      send={send}
+      make={(ceramicId) => ({ type: "RESOLVE_SAGGER_SELECTION", ceramicId })}
+      skip={{ type: "RESOLVE_SAGGER_SELECTION", ceramicId: null }}
+    />
+  );
+}
+
 function JunForm({ ceramics, busy, send }: { ceramics: ReturnType<typeof ownCeramics>; busy: boolean; send: SendCommand }) {
   function submit(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
@@ -859,8 +904,23 @@ function SaggarsControls({ game, player, busy, send }: {
   busy: boolean;
   send: SendCommand;
 }) {
-  const flawed = ownCeramics(game, player.id, "loaded").filter((ceramic) => game.firingContext?.ceramicResults[ceramic.id]?.assignedQuality === "flawed");
-  return <CeramicDecision title="Protective Saggars" hint="Pay 1 Coin to improve one Flawed result to Standard." ceramics={flawed} busy={busy} send={send} make={(ceramicId) => ({ type: "RESOLVE_PROTECTIVE_SAGGARS", ceramicId })} skip={{ type: "RESOLVE_PROTECTIVE_SAGGARS", ceramicId: null }} />;
+  const eligible = ownCeramics(game, player.id, "loaded").filter((ceramic) => {
+    const quality = game.firingContext?.ceramicResults[ceramic.id]?.assignedQuality;
+    return quality === "flawed" || quality === "standard";
+  });
+  return <CeramicDecision title="Protective Saggars" hint="Pay 1 Coin to improve one result by one step: Flawed to Standard or Standard to Fine." ceramics={eligible} busy={busy} send={send} make={(ceramicId) => ({ type: "RESOLVE_PROTECTIVE_SAGGARS", ceramicId })} skip={{ type: "RESOLVE_PROTECTIVE_SAGGARS", ceramicId: null }} />;
+}
+
+function SecondFiringControls({ game, player, busy, send }: {
+  game: PublicGameState;
+  player: PublicPlayerState;
+  busy: boolean;
+  send: SendCommand;
+}) {
+  const standard = ownCeramics(game, player.id, "loaded").filter(
+    (ceramic) => game.firingContext?.ceramicResults[ceramic.id]?.assignedQuality === "standard",
+  );
+  return <CeramicDecision title="Second Firing" hint="Return one Standard ceramic from this firing to your Glazed area, preserving its Shape, Glaze and Decoration." ceramics={standard} busy={busy} send={send} make={(ceramicId) => ({ type: "RESOLVE_SECOND_FIRING", ceramicId })} skip={{ type: "RESOLVE_SECOND_FIRING", ceramicId: null }} />;
 }
 
 function OrderControls({ game, player, busy, send }: {
@@ -946,7 +1006,7 @@ function FinalResults({ game }: { game: PublicGameState }) {
 function BinaryDecision({ title, hint, action, busy, send }: {
   title: string;
   hint: string;
-  action: "RESOLVE_FUEL_LEDGER" | "RESOLVE_TEST_PIECES";
+  action: "RESOLVE_FUEL_LEDGER" | "RESOLVE_TEST_PIECES" | "RESOLVE_KILN_RECORDS";
   busy: boolean;
   send: SendCommand;
 }) {

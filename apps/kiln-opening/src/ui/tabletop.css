@@ -320,6 +320,7 @@ button.visual-order-card:hover { z-index: 3; transform: translateY(-5px) scale(1
   transform: translate(-50%, -50%);
 }
 .visual-kiln-slot.is-occupied { border-color: rgb(255 240 201 / 70%); background: rgb(34 20 13 / 42%); box-shadow: 0 0 15px rgb(255 131 52 / 28%); }
+.visual-kiln-slot.is-covered { display: grid; place-items: center; border-color: rgb(245 224 178 / 60%); color: #f1dfb9; background: repeating-linear-gradient(45deg, rgb(42 30 22 / 92%) 0 6px, rgb(109 87 58 / 92%) 6px 12px); font-size: .48rem; text-transform: uppercase; }
 .visual-kiln-slot .tabletop-ceramic { width: 94%; }
 
 .tabletop-ceramic {
@@ -392,6 +393,7 @@ button.visual-technique-tile:hover { z-index: 3; transform: scale(1.06); }
 .tabletop-tile-id { font-size: .39rem; }
 .visual-technique-tile.is-exhausted .tabletop-tile-art { filter: grayscale(1); opacity: .48; }
 .tabletop-tile-live-copy { position: absolute; z-index: 2; inset: 33% 4% 4%; display: grid; align-content: center; gap: .18rem; padding: .3rem; color: #2d2118; background: rgb(244 235 207 / 96%); border: 1px solid rgb(117 86 48 / 45%); font-size: clamp(.42rem, 1.6cqi, .64rem); line-height: 1.15; }
+.tabletop-card-live-copy { position: absolute; z-index: 2; inset: 18% 5% 5%; display: grid; align-content: center; gap: .22rem; padding: .45rem; color: #2d2118; background: rgb(250 241 213 / 96%); border: 1px solid rgb(117 86 48 / 45%); font-size: clamp(.42rem, 1.5cqi, .68rem); line-height: 1.15; text-transform: capitalize; }
 .tabletop-tile-live-copy b { font-family: var(--serif); }
 .tabletop-tile-live-copy small { font-size: .82em; }
 .tile-exhausted { position: absolute; z-index: 3; right: .12rem; bottom: .12rem; border-radius: 99px; padding: .06rem .14rem; color: white; font-size: .36rem; background: rgb(76 58 47 / 82%); }

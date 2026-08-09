@@ -36,7 +36,7 @@ function validCeramics(order: OrderDefinition): FinishedCeramic[] {
     id: `${order.id}:ceramic:${index}`,
     vesselInstanceId: `${order.id}:vessel:${index}`,
     ownerId: "P1",
-    shape: requirement.shape ?? shapes[index % shapes.length]!,
+    shape: requirement.shapes?.[0] ?? requirement.shape ?? shapes[index % shapes.length]!,
     stage: "finished",
     glaze: requirement.glaze ?? "white",
     decoration: requirement.decoration ?? "plain",
@@ -100,6 +100,14 @@ function validCeramics(order: OrderDefinition): FinishedCeramic[] {
           result[index]!.quality = relation.quality;
         }
         break;
+      case "at_least_n_distinct_glazes":
+        assignDistinct(relation.indices, "glaze", glazes);
+        break;
+      case "glaze_categories":
+        relation.indices.forEach((index, categoryIndex) => {
+          result[index]!.glaze = relation.categories[categoryIndex]![0]!;
+        });
+        break;
     }
   }
   return result;
@@ -119,9 +127,9 @@ function finishOrderPhase(state: GameState, rng: SeededRandom): GameState {
 }
 
 describe("Order matcher", () => {
-  it("finds a valid assignment for every one of the 30 current Orders", () => {
+  it("finds a valid assignment for every one of the 36 current Orders", () => {
     const definitions = Object.values(ORDER_DEFINITIONS);
-    expect(definitions).toHaveLength(30);
+    expect(definitions).toHaveLength(36);
     for (const order of definitions) {
       expect(matchesOrder(order, validCeramics(order), false), order.id).toBe(true);
     }
@@ -182,11 +190,11 @@ describe("Order matcher", () => {
     expect(decorationCounts).toEqual({ plain: 3, carved: 3, impressed: 4, crackle: 3 });
   });
 
-  it("gives I01–I05 +1 and I06–I10 +2, never +3", () => {
-    for (let index = 1; index <= 10; index += 1) {
+  it("uses the exact +1/+2 reward printed on every Imperial Order, never +3", () => {
+    for (let index = 1; index <= 13; index += 1) {
       const id = `I${String(index).padStart(2, "0")}`;
       const reward = ORDER_DEFINITIONS[id]?.imperialProgressReward;
-      expect(reward, id).toBe(index <= 5 ? 1 : 2);
+      expect(reward, id).toBe(index <= 5 || index === 11 ? 1 : 2);
       expect(reward, id).not.toBe(3);
     }
   });

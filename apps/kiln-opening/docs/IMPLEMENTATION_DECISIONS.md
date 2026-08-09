@@ -1,6 +1,6 @@
 # IMPLEMENTATION_DECISIONS.md
 
-These are the intended digital interpretations of current V0.6.5 wording.
+These are the intended digital interpretations of current V1.0.0 wording.
 
 ## Orders
 
@@ -23,6 +23,8 @@ If common supply is short, player receives only what remains.
 
 Office Flawed sales are an exchange exception: an accepted sale must pay exactly 1 Coin per ceramic. The server rejects a sale selection that exceeds the Coins remaining in the common supply, and the UI limits selection accordingly.
 
+Connoisseur Network is also an exchange exception: using it requires all 3 Coins to be available in the common supply. Skipping it is always legal.
+
 Materials Yard requires the chosen Clay/Wood amounts to total exactly 3 for an Apprentice or exactly 4 for the Shifu. If the common supply is short, the player receives only the requested resources that remain.
 
 ## Market & Imperial Office
@@ -33,6 +35,7 @@ Materials Yard requires the chosen Clay/Wood amounts to total exactly 3 for an A
 - Check hand limit before each individual face-up or blind acquisition.
 - Colour Samples is an explicit choice before the first acquisition. It can bottom a face-up card from either display, never a blind top card, and the target goes to its deck bottom rather than a discard pile.
 - Court Patronage is a mutually exclusive Shifu main action. Eligibility is derived from authoritative completed Imperial Order history; it has no Colour Samples or Flawed-sale step.
+- Connoisseur Network follows the normal Flawed-sale decision, only after a normal Office main action. It never follows Court Patronage and does not change the Apprentice/Shifu Flawed-sale limit.
 
 ## Guild & Academy
 
@@ -76,7 +79,25 @@ Contributor count does not change.
 
 Engine must snapshot each ceramic's **natural exact-match status** immediately after initial Actual Heat calculation and before Jun/Ge/other modifications.
 
-Test Pieces checks that snapshot.
+Test Pieces checks that snapshot and pays 1 Coin for one natural exact match or 2 Coins for at least two. Sagger Selection cannot create Test Pieces eligibility because the snapshot uses the original Fire modifier.
+
+## Sagger Selection
+
+The revealed Fire card and public Global Heat never change. The firing context records the chosen ceramic ID, and only that ceramic calculates final Actual Heat with a Fire modifier of 0. Natural heat still uses the original modifier.
+
+## Protective Saggars and Second Firing
+
+Resolve all eligible Protective Saggars choices in First-Player order, then open a fresh Second Firing queue from the resulting qualities. This allows T10 Flawed→Standard to create a legal T15 choice, while T10 Standard→Fine removes that ceramic from T15 eligibility.
+
+Second Firing immediately returns the chosen ceramic to `glazed` state and removes it from the current firing results, so later after-firing checks and finalization cannot count or finish it.
+
+## Kiln Records
+
+Count final assigned Masterpiece results after T10/T15. A qualifying use gains up to the available 1 Clay and 1 Coin under the normal finite-supply rule.
+
+## Player-scaled Shared Kiln
+
+Active kiln-space IDs are derived authoritatively from player count. Covered spaces are rejected for Kiln Yard and Kiln Setting and are excluded from empty-space checks. Their stable IDs remain present so the same board layout can display covers.
 
 ## Ru
 
@@ -110,4 +131,4 @@ If Shifu refreshes a face-up tile while no other tile exists in that discipline 
 
 ## Saved-game compatibility
 
-V0.6.5 does not add a duplicate Patronage-unlock flag: authoritative `completedOrders` history already persists and reconnects, so eligibility is derived faithfully from Imperial Order IDs. Unstarted lobbies are migrated to V0.6.5. Started pre-V0.6.5 rooms are rejected with a clear incompatibility message because an unresolved old Office/Colour Samples or Academy phase cannot be translated without changing a player's available decision.
+V1.0.0 does not add a duplicate Patronage-unlock flag: authoritative `completedOrders` history already persists and reconnects, so eligibility is derived faithfully from Imperial Order IDs. Unstarted lobbies are migrated to V1.0.0. Started pre-V1.0.0 rooms are rejected with a clear incompatibility message because Order decks, Technique ownership/timing windows and active kiln spaces cannot be translated without changing players' available decisions.

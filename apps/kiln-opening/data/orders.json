@@ -287,6 +287,64 @@
       "minQuality": "fine",
       "vp": 10,
       "coins": 5
+    },
+    {
+      "id": "M21",
+      "ceramics": [
+        {}
+      ],
+      "minQuality": "masterpiece",
+      "vp": 5,
+      "coins": 5
+    },
+    {
+      "id": "M22",
+      "ceramics": [
+        {},
+        {}
+      ],
+      "relations": [
+        {
+          "type": "different_shape",
+          "indices": [
+            0,
+            1
+          ]
+        }
+      ],
+      "minQuality": "fine",
+      "vp": 8,
+      "coins": 4
+    },
+    {
+      "id": "M23",
+      "ceramics": [
+        {},
+        {},
+        {}
+      ],
+      "relations": [
+        {
+          "type": "all_different_shape",
+          "indices": [
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "type": "at_least_n_distinct_glazes",
+          "indices": [
+            0,
+            1,
+            2
+          ],
+          "count": 2
+        }
+      ],
+      "minQuality": "fine",
+      "vp": 13,
+      "coins": 5
     }
   ],
   "imperial": [
@@ -480,6 +538,82 @@
       ],
       "minQuality": "fine",
       "vp": 15,
+      "coins": 0,
+      "imperialProgressReward": 2
+    },
+    {
+      "id": "I11",
+      "ceramics": [
+        {
+          "shapes": [
+            "vase",
+            "censer"
+          ]
+        }
+      ],
+      "minQuality": "masterpiece",
+      "vp": 8,
+      "coins": 0,
+      "imperialProgressReward": 1
+    },
+    {
+      "id": "I12",
+      "ceramics": [
+        {},
+        {}
+      ],
+      "relations": [
+        {
+          "type": "different_shape",
+          "indices": [
+            0,
+            1
+          ]
+        },
+        {
+          "type": "different_glaze",
+          "indices": [
+            0,
+            1
+          ]
+        }
+      ],
+      "minQuality": "fine",
+      "vp": 11,
+      "coins": 0,
+      "imperialProgressReward": 2
+    },
+    {
+      "id": "I13",
+      "ceramics": [
+        {},
+        {},
+        {}
+      ],
+      "relations": [
+        {
+          "type": "glaze_categories",
+          "indices": [
+            0,
+            1,
+            2
+          ],
+          "categories": [
+            [
+              "white"
+            ],
+            [
+              "celadon",
+              "grey_green"
+            ],
+            [
+              "moon_white"
+            ]
+          ]
+        }
+      ],
+      "minQuality": "fine",
+      "vp": 14,
       "coins": 0,
       "imperialProgressReward": 2
     }

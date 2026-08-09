@@ -99,6 +99,7 @@ export function projectPublicEvent(event: GameEvent): PublicGameEvent {
     case "CERAMIC_GLAZED":
     case "CERAMIC_LOADED":
     case "CERAMIC_SOLD":
+    case "CERAMIC_RETURNED_TO_GLAZED":
     case "ORDER_TAKEN":
     case "COLOUR_SAMPLES_USED":
     case "TECHNIQUE_REFRESHED":

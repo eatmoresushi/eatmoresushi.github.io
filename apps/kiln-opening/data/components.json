@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "0.6.5",
+  "rulesVersion": "1.0.0",
   "components": [
     {
       "name": "Central Action Board",
@@ -48,16 +48,16 @@
     },
     {
       "name": "Market Orders",
-      "qty": 20
+      "qty": 23
     },
     {
       "name": "Imperial Orders",
-      "qty": 10
+      "qty": 13
     },
     {
       "name": "Technique Tiles",
-      "qty": 12,
-      "notes": "Four Forming, four Glazing and four Firing Techniques."
+      "qty": 15,
+      "notes": "Five Forming, five Glazing and five Firing Techniques."
     },
     {
       "name": "Fire Cards",

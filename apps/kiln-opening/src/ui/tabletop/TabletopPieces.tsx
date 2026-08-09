@@ -150,6 +150,18 @@ export function VisualOrderCard({
     <>
       <span className="tabletop-card-art" style={style} aria-hidden="true" />
       <strong className="tabletop-card-id">{orderId}</strong>
+      {sprite === null && definition !== undefined && (
+        <span className="tabletop-card-live-copy" aria-hidden="true">
+          <b>{definition.minQuality}+ · {definition.vp} VP · {definition.coins} Coins</b>
+          {definition.ceramics.map((requirement, index) => (
+            <small key={index}>
+              {requirement.shapes?.join(" / ") ?? requirement.shape ?? "any shape"} · {requirement.glaze ?? "any glaze"} · {requirement.decoration ?? "any decoration"}
+            </small>
+          ))}
+          {(definition.relations ?? []).map((relation) => <small key={relation.type}>{relation.type.replaceAll("_", " ")}</small>)}
+          {definition.imperialProgressReward !== undefined && <strong>+{definition.imperialProgressReward} Imperial Progress</strong>}
+        </span>
+      )}
       <span className="sr-only">
         {orderId}, {definition?.vp ?? 0} victory points, {definition?.coins ?? 0} coins,
         {definition?.ceramics.length ?? 0} ceramic requirement{definition?.ceramics.length === 1 ? "" : "s"}
@@ -186,9 +198,9 @@ export function VisualTechniqueTile({
   const definition = TECHNIQUE_DEFINITIONS[techniqueId];
   const contents = (
     <>
-      <span className="tabletop-tile-art" style={gridSpriteStyle(sprite.image, sprite.columns, sprite.rows, sprite.column, sprite.row)} aria-hidden="true" />
+      <span className="tabletop-tile-art" style={sprite === null ? undefined : gridSpriteStyle(sprite.image, sprite.columns, sprite.rows, sprite.column, sprite.row)} aria-hidden="true" />
       <strong className="tabletop-tile-id">{techniqueId}</strong>
-      {techniqueId === "T08" && <span className="tabletop-tile-live-copy" aria-hidden="true"><b>Colour Samples</b><small>Before first Office Order: bottom 1 face-up Order from either display, then refill.</small></span>}
+      {(sprite === null || ["T02", "T03", "T08", "T10", "T12"].includes(techniqueId)) && <span className="tabletop-tile-live-copy" aria-hidden="true"><b>{definition?.name}</b><small>{definition?.ability}</small><strong>{definition?.cost} Coins</strong></span>}
       {exhausted && <span className="tile-exhausted">Used</span>}
       <span className="sr-only">{techniqueId}, {definition?.name}, {definition?.cost} coins. {definition?.ability}</span>
     </>

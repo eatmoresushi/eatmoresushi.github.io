@@ -25,7 +25,7 @@ import type {
 } from "../game/index.ts";
 
 export type RoomStatus = "lobby" | "playing" | "finished" | "abandoned";
-export type StoredRulesVersion = "0.4" | "0.5" | "0.6.1" | "0.6.3" | "0.6.5";
+export type StoredRulesVersion = "0.4" | "0.5" | "0.6.1" | "0.6.3" | "0.6.5" | "1.0.0";
 
 export interface PublicRoom {
   id: string;
@@ -87,7 +87,7 @@ export interface PublicDiscards {
 
 export interface PublicGameState {
   schemaVersion: 1;
-  rulesVersion: "0.6.5";
+  rulesVersion: "1.0.0";
   gameId: string;
   revision: number;
   eventSequence: number;

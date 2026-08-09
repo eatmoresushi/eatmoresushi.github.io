@@ -47,8 +47,9 @@ export function orderSprite(orderId: string): SpriteCrop | null {
   return null;
 }
 
-export function techniqueSprite(techniqueId: TechniqueId): SpriteCrop {
+export function techniqueSprite(techniqueId: TechniqueId): SpriteCrop | null {
   const index = Number(techniqueId.slice(1)) - 1;
+  if (!Number.isInteger(index) || index < 0 || index >= 12) return null;
   return {
     image: TABLETOP_ASSETS.techniques,
     columns: 4,

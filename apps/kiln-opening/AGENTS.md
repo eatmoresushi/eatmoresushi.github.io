@@ -15,7 +15,7 @@ Priority order:
 3. `docs/IMPLEMENTATION_DECISIONS.md` — digital interpretations of rules where necessary.
 4. `docs/ONLINE_GAME_SPEC.md` — digital-only behaviour.
 5. `docs/DESIGN_SPEC.md` — design intent and constraints.
-6. `source_rulebook/Kiln_Opening_v0.4_Full_Rulebook.pdf` — historical human backup; V0.6.3 `GAME_RULES.md` overrides it.
+6. `source_rulebook/Kiln_Opening_v0.4_Full_Rulebook.pdf` — historical human backup; V1.0.0 `GAME_RULES.md` overrides it.
 7. `assets/print_reference/*` — visual direction only.
 
 Never implement an older mechanic because it appears in historical discussion or art.
@@ -23,7 +23,7 @@ Never implement an older mechanic because it appears in historical discussion or
 
 ## Approved asset rule
 
-Only `assets/current_v04/` is an approved visual-reference directory. The directory name remains unchanged as a stable legacy path; rules-bearing visuals must follow V0.6.3 data.
+Only `assets/current_v04/` is an approved visual-reference directory. The directory name remains unchanged as a stable legacy path; rules-bearing visuals must follow V1.0.0 data.
 
 Do not search conversation history or older images for missing boards/cards. Missing current assets are intentionally specified in `data/asset_specs.json` and `docs/V0.4_ASSETS_TO_REGENERATE.md` and must be rebuilt from current data.
 
@@ -96,8 +96,8 @@ At minimum:
 - Shifu vs Apprentice effects at all six locations
 - Shape costs and vessel supply
 - Decoration costs
-- Technique acquisition limit and exact printed-cost payment by the Shifu
-- every one of the 12 Techniques
+- Technique acquisition limit, printed Apprentice cost, and Shifu −1 Coin discount (minimum 1)
+- every one of the 15 V1.0.0 Techniques
 - all five Kiln abilities
 - contributor-scaled Base Heat for 1–4 contributors
 - secret simultaneous Wood reveal

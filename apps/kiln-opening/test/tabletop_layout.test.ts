@@ -19,12 +19,14 @@ describe("tabletop presentation configuration", () => {
     expect(IMPERIAL_TRACK_POINTS).toHaveLength(6);
   });
 
-  it("maps every Order and Technique ID to a stable atlas cell", () => {
+  it("maps retained art to stable atlas cells and uses live-data fallbacks for V1 additions", () => {
     expect(orderSprite("M01")).toMatchObject({ columns: 4, rows: 5, column: 0, row: 0 });
     expect(orderSprite("M20")).toMatchObject({ columns: 4, rows: 5, column: 3, row: 4 });
     expect(orderSprite("I01")).toMatchObject({ columns: 5, rows: 2, column: 0, row: 0 });
     expect(orderSprite("I10")).toMatchObject({ columns: 5, rows: 2, column: 4, row: 1 });
     expect(techniqueSprite("T12")).toMatchObject({ columns: 4, rows: 3, column: 3, row: 2 });
+    expect(orderSprite("M21")).toBeNull();
+    expect(orderSprite("I13")).toBeNull();
+    expect(techniqueSprite("T13")).toBeNull();
   });
 });
-

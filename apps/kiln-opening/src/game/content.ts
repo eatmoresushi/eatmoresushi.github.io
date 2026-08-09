@@ -22,7 +22,7 @@ import type {
 } from "./types.ts";
 
 interface GameConfigDefinition {
-  rulesVersion: "0.6.5";
+  rulesVersion: "1.0.0";
   players: { min: number; max: number };
   rounds: number;
   startingResources: { clay: number; wood: number; coins: number };
@@ -42,6 +42,7 @@ interface GameConfigDefinition {
   kiln: {
     spaces: Record<"high" | "middle" | "low", number>;
     zoneModifier: Record<"high" | "middle" | "low", number>;
+    activeSpacesByPlayerCount: Record<"2" | "3" | "4", KilnSpaceId[]>;
   };
   fireDeck: Record<"-1" | "0" | "1", number>;
   glazes: Record<Glaze, number>;
@@ -59,6 +60,7 @@ interface LocationDefinition {
 
 export interface OrderRequirementDefinition {
   shape?: Shape;
+  shapes?: Shape[];
   glaze?: Glaze;
   decoration?: Decoration;
 }
@@ -80,7 +82,9 @@ export type OrderRelationDefinition =
   | { type: "different_shape"; indices: number[] }
   | { type: "all_different_shape"; indices: number[] }
   | { type: "same_decoration"; indices: number[] }
-  | { type: "at_least_n_quality"; quality: Quality; count: number };
+  | { type: "at_least_n_quality"; quality: Quality; count: number }
+  | { type: "at_least_n_distinct_glazes"; indices: number[]; count: number }
+  | { type: "glaze_categories"; indices: number[]; categories: Glaze[][] };
 
 export interface TechniqueDefinition {
   id: TechniqueId;
@@ -93,7 +97,7 @@ export interface TechniqueDefinition {
 }
 
 interface FiringDefinition {
-  rulesVersion: "0.6.5";
+  rulesVersion: "1.0.0";
   kilnSpaces: Array<{ id: KilnSpaceId; zone: "high" | "middle" | "low"; modifier: -1 | 0 | 1 }>;
   fireDeck: FireModifier[];
 }
@@ -113,7 +117,7 @@ export interface KilnDefinition {
 
 export const GAME_CONFIG = gameConfigJson as unknown as GameConfigDefinition;
 const ACTION_LOCATION_FILE = actionLocationsJson as unknown as {
-  rulesVersion: "0.6.5";
+  rulesVersion: "1.0.0";
   locations: LocationDefinition[];
 };
 const ORDER_FILE = ordersJson as unknown as {
@@ -122,7 +126,7 @@ const ORDER_FILE = ordersJson as unknown as {
 };
 const TECHNIQUE_FILE = techniquesJson as unknown as TechniqueDefinition[];
 const FIRING_FILE = firingJson as unknown as FiringDefinition;
-const COMPONENT_FILE = componentsJson as unknown as { rulesVersion: "0.6.5"; components: ComponentDefinition[] };
+const COMPONENT_FILE = componentsJson as unknown as { rulesVersion: "1.0.0"; components: ComponentDefinition[] };
 
 export const LOCATION_IDS: readonly LocationId[] = [
   "materials_yard",
@@ -166,7 +170,7 @@ export const SHAPE_COSTS = GAME_CONFIG.shapes;
 export const DECORATION_COSTS = GAME_CONFIG.decorations;
 
 export interface ImperialProgressDefinition {
-  rulesVersion: "0.6.5";
+  rulesVersion: "1.0.0";
   track: Array<{ space: number; title: string; reward: string | null; endGameVp: number }>;
   imperialSealVp: number;
   presentation: {
@@ -187,6 +191,10 @@ export function locationCapacity(locationId: LocationId, playerCount: PlayerCoun
   return LOCATION_DEFINITIONS[locationId].capacity[String(playerCount) as "2" | "3" | "4"];
 }
 
+export function activeKilnSpaceIds(playerCount: PlayerCount): KilnSpaceId[] {
+  return [...GAME_CONFIG.kiln.activeSpacesByPlayerCount[String(playerCount) as "2" | "3" | "4"]];
+}
+
 function componentQuantity(name: string): number {
   const component = COMPONENT_FILE.components.find((entry) => entry.name === name);
   if (component === undefined || typeof component.qty !== "number") {
@@ -203,11 +211,11 @@ export const COMMON_SUPPLY = {
 
 function validateContent(): void {
   if (
-    GAME_CONFIG.rulesVersion !== "0.6.5" ||
-    ACTION_LOCATION_FILE.rulesVersion !== "0.6.5" ||
-    FIRING_FILE.rulesVersion !== "0.6.5" ||
-    COMPONENT_FILE.rulesVersion !== "0.6.5" ||
-    IMPERIAL_PROGRESS.rulesVersion !== "0.6.5"
+    GAME_CONFIG.rulesVersion !== "1.0.0" ||
+    ACTION_LOCATION_FILE.rulesVersion !== "1.0.0" ||
+    FIRING_FILE.rulesVersion !== "1.0.0" ||
+    COMPONENT_FILE.rulesVersion !== "1.0.0" ||
+    IMPERIAL_PROGRESS.rulesVersion !== "1.0.0"
   ) {
     throw new Error("Rules content version mismatch");
   }
@@ -219,24 +227,22 @@ function validateContent(): void {
   ) {
     throw new Error("Expected exactly six action locations");
   }
-  if (MARKET_ORDERS.length !== 20 || IMPERIAL_ORDERS.length !== 10) {
+  if (MARKET_ORDERS.length !== 23 || IMPERIAL_ORDERS.length !== 13) {
     throw new Error("Order deck size mismatch");
   }
   if (
     MARKET_ORDERS.some((order) => order.imperialProgressReward !== undefined) ||
-    IMPERIAL_ORDERS.some((order) =>
-      order.imperialProgressReward !== (order.ceramics.length === 1 ? 1 : 2)
-    )
+    IMPERIAL_ORDERS.some((order) => order.imperialProgressReward === undefined)
   ) {
     throw new Error("Imperial Order progress rewards mismatch");
   }
-  if (TECHNIQUES.length !== 12 || KILN_IDS.length !== 5 || KILN_SPACE_IDS.length !== 8) {
+  if (TECHNIQUES.length !== 15 || KILN_IDS.length !== 5 || KILN_SPACE_IDS.length !== 8) {
     throw new Error("Technique, Kiln, or kiln-space count mismatch");
   }
-  if (new Set([...MARKET_ORDERS, ...IMPERIAL_ORDERS].map((order) => order.id)).size !== 30) {
+  if (new Set([...MARKET_ORDERS, ...IMPERIAL_ORDERS].map((order) => order.id)).size !== 36) {
     throw new Error("Order IDs must be unique");
   }
-  if (new Set(TECHNIQUES.map((technique) => technique.id)).size !== 12) {
+  if (new Set(TECHNIQUES.map((technique) => technique.id)).size !== 15) {
     throw new Error("Technique IDs must be unique");
   }
 }

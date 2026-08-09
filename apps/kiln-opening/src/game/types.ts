@@ -175,6 +175,7 @@ export interface OrderedDecisionQueue {
 export interface FiringCeramicResult {
   ceramicId: CeramicId;
   zoneModifier: -1 | 0 | 1;
+  ignoredFireModifier: boolean;
   naturalActualHeat: number;
   naturalHeatDifference: number;
   naturalExactMatch: boolean;
@@ -191,6 +192,7 @@ export interface FiringContext {
   baseHeat: 1 | 2 | 3 | null;
   fireModifier: FireModifier | null;
   globalHeat: number | null;
+  zeroFireModifierCeramicIds: CeramicId[];
   ceramicResults: Record<CeramicId, FiringCeramicResult>;
 }
 
@@ -254,6 +256,11 @@ export type GamePhase =
       workerId: WorkerId;
     }
   | {
+      type: "work_office_connoisseur";
+      actorId: PlayerId;
+      workerId: WorkerId;
+    }
+  | {
       type: "work_guild";
       actorId: PlayerId;
       workerId: WorkerId;
@@ -274,16 +281,22 @@ export type GamePhase =
       queue: OrderedDecisionQueue;
     }
   | {
+      type: "firing_after_fire_reveal";
+      queue: OrderedDecisionQueue;
+    }
+  | {
       type: "firing_before_quality";
       queue: OrderedDecisionQueue;
     }
   | {
       type: "firing_after_quality";
       queue: OrderedDecisionQueue;
+      techniqueIds: TechniqueId[];
     }
   | {
       type: "firing_after_firing";
       queue: OrderedDecisionQueue;
+      techniqueIds: TechniqueId[];
     }
   | {
       type: "orders";
@@ -300,7 +313,7 @@ export type GamePhase =
 
 export interface GameState {
   schemaVersion: 1;
-  rulesVersion: "0.6.5";
+  rulesVersion: "1.0.0";
   gameId: string;
   revision: number;
   eventSequence: number;
@@ -398,6 +411,7 @@ export type GameAction =
   | { type: "OFFICE_USE_COLOUR_SAMPLES"; orderId: OrderId }
   | { type: "OFFICE_SKIP_COLOUR_SAMPLES" }
   | { type: "OFFICE_RESOLVE_FLAWED_SALE"; ceramicIds: CeramicId[] }
+  | { type: "OFFICE_RESOLVE_CONNOISSEUR_NETWORK"; ceramicId: CeramicId | null }
   | { type: "USE_COURT_PATRONAGE"; workerId: WorkerId }
   | { type: "BEGIN_GUILD_ACTION"; workerId: WorkerId }
   | { type: "GUILD_REFRESH_TECHNIQUE"; techniqueId: TechniqueId }
@@ -409,10 +423,13 @@ export type GameAction =
       toSpaceId: KilnSpaceId | null;
     }
   | { type: "RESOLVE_FUEL_LEDGER"; use: boolean }
+  | { type: "RESOLVE_SAGGER_SELECTION"; ceramicId: CeramicId | null }
   | { type: "RESOLVE_JUN"; ceramicId: CeramicId | null; delta: -1 | 1 | null }
   | { type: "RESOLVE_GE"; ceramicId: CeramicId | null }
   | { type: "RESOLVE_PROTECTIVE_SAGGARS"; ceramicId: CeramicId | null }
+  | { type: "RESOLVE_SECOND_FIRING"; ceramicId: CeramicId | null }
   | { type: "RESOLVE_TEST_PIECES"; use: boolean }
+  | { type: "RESOLVE_KILN_RECORDS"; use: boolean }
   | {
       type: "COMPLETE_ORDER";
       orderId: OrderId;
@@ -475,6 +492,7 @@ export type GameEvent =
   | { type: "CERAMIC_GLAZED"; playerId: PlayerId; ceramicId: CeramicId; glaze: Glaze; decoration: Decoration }
   | { type: "CERAMIC_LOADED"; playerId: PlayerId; ceramicId: CeramicId; kilnSpaceId: KilnSpaceId }
   | { type: "CERAMIC_SOLD"; playerId: PlayerId; ceramicId: CeramicId }
+  | { type: "CERAMIC_RETURNED_TO_GLAZED"; playerId: PlayerId; ceramicId: CeramicId }
   | {
       type: "ORDER_TAKEN";
       playerId: PlayerId;

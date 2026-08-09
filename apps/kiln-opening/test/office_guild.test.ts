@@ -473,7 +473,7 @@ describe("Guild & Academy", () => {
     const { state, rng } = startedGame(2, 323);
     const actorId = state.firstPlayerId;
     state.techniqueDisplay.forming = ["T03", "T01"];
-    state.players[actorId]!.resources.coins = 2;
+    state.players[actorId]!.resources.coins = 1;
     let next = mustApply(
       state,
       actorId,
@@ -482,15 +482,16 @@ describe("Guild & Academy", () => {
     );
     next = mustApply(next, actorId, { type: "GUILD_SKIP_REFRESH" }, rng);
     next = mustApply(next, actorId, { type: "GUILD_BUY_TECHNIQUE", techniqueId: "T03" }, rng);
-    expect(TECHNIQUE_DEFINITIONS["T03"]!.cost).toBe(3);
+    expect(TECHNIQUE_DEFINITIONS["T03"]!.cost).toBe(2);
     expect(next.players[actorId]!.resources.coins).toBe(0);
   });
 
-  it("keeps the complete V0.6.5 printed-cost table unchanged", () => {
+  it("uses the complete V1.0.0 printed-cost table", () => {
     expect(Object.fromEntries(Object.entries(TECHNIQUE_DEFINITIONS).map(([id, technique]) => [id, technique.cost]))).toEqual({
-      T01: 2, T02: 2, T03: 3, T04: 2,
-      T05: 2, T06: 2, T07: 2, T08: 2,
+      T01: 2, T02: 2, T03: 2, T04: 2,
+      T05: 2, T06: 2, T08: 2,
       T09: 3, T10: 3, T11: 3, T12: 2,
+      T13: 3, T14: 3, T15: 3, T16: 3,
     });
   });
 

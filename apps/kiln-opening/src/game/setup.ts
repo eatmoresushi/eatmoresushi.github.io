@@ -169,7 +169,7 @@ export function createGame(input: CreateGameInput, rng: RandomSource): CreateGam
 
   const state: GameState = {
     schemaVersion: 1,
-    rulesVersion: "0.6.5",
+    rulesVersion: "1.0.0",
     gameId: input.gameId,
     revision: 0,
     eventSequence: 0,

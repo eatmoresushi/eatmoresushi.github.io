@@ -14,7 +14,7 @@
     "name": "Measuring Calipers",
     "nameZh": "测量卡尺",
     "cost": 2,
-    "ability": "After you form two different Shapes during the same Forming action, gain 1 Coin.",
+    "ability": "After you form two different Shapes during the same Forming action, gain 2 Coins.",
     "oncePerRound": true
   },
   {
@@ -22,7 +22,7 @@
     "discipline": "forming",
     "name": "Clay Substitution",
     "nameZh": "代泥法",
-    "cost": 3,
+    "cost": 2,
     "ability": "When paying a Forming cost, you may pay 1 Coin instead of 1 Clay.",
     "oncePerRound": true
   },
@@ -54,15 +54,6 @@
     "oncePerRound": true
   },
   {
-    "id": "T07",
-    "discipline": "glazing",
-    "name": "Glaze Notebook",
-    "nameZh": "釉谱簿",
-    "cost": 2,
-    "ability": "After you apply two different Glazes during the same Glaze action, gain 1 Wood.",
-    "oncePerRound": true
-  },
-  {
     "id": "T08",
     "discipline": "glazing",
     "name": "Colour Samples",
@@ -86,7 +77,7 @@
     "name": "Protective Saggars",
     "nameZh": "匣钵护烧",
     "cost": 3,
-    "ability": "After Quality is assigned, pay 1 Coin to improve one of your Flawed ceramics to Standard.",
+    "ability": "After Quality is assigned, pay 1 Coin to improve one of your ceramics by one step from Flawed to Standard or Standard to Fine.",
     "oncePerRound": true
   },
   {
@@ -104,7 +95,43 @@
     "name": "Test Pieces",
     "nameZh": "试烧片",
     "cost": 2,
-    "ability": "After firing, gain 1 Coin if at least one of your ceramics had an exact heat match before any ability altered Actual Heat, heat difference or Quality.",
+    "ability": "After firing, gain 1 Coin if at least one of your ceramics had a natural exact heat match, plus 1 additional Coin if at least two did.",
+    "oncePerRound": true
+  },
+  {
+    "id": "T13",
+    "discipline": "forming",
+    "name": "Kiln Records",
+    "nameZh": "窑务记录",
+    "cost": 3,
+    "ability": "After firing, if at least two of your ceramics are final Masterpieces, gain 1 Clay and 1 Coin.",
+    "oncePerRound": true
+  },
+  {
+    "id": "T14",
+    "discipline": "glazing",
+    "name": "Connoisseur Network",
+    "nameZh": "鉴赏家人脉",
+    "cost": 3,
+    "ability": "After a normal Office main action, you may sell exactly one Finished undelivered Masterpiece for 3 Coins and return its Vessel.",
+    "oncePerRound": true
+  },
+  {
+    "id": "T15",
+    "discipline": "glazing",
+    "name": "Second Firing",
+    "nameZh": "复烧法",
+    "cost": 3,
+    "ability": "After Quality is assigned, return one of your Standard ceramics from the current firing to Glazed without a Quality.",
+    "oncePerRound": true
+  },
+  {
+    "id": "T16",
+    "discipline": "firing",
+    "name": "Sagger Selection",
+    "nameZh": "选匣避火",
+    "cost": 3,
+    "ability": "After the Fire card is revealed, pay 2 Coins so one of your loaded ceramics treats that Fire modifier as 0.",
     "oncePerRound": true
   }
 ]

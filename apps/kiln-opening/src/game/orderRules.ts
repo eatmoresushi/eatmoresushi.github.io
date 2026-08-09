@@ -11,6 +11,7 @@ function requirementMatches(
   const requirement = order.ceramics[slotIndex];
   if (requirement === undefined) return false;
   if (requirement.shape !== undefined && requirement.shape !== ceramic.shape) return false;
+  if (requirement.shapes !== undefined && !requirement.shapes.includes(ceramic.shape)) return false;
   if (requirement.glaze !== undefined && requirement.glaze !== ceramic.glaze) return false;
   if (
     ignoredDecorationIndex !== slotIndex &&
@@ -65,6 +66,16 @@ function relationMatches(
           (ceramic) => QUALITY_RANK[ceramic.quality] >= QUALITY_RANK[relation.quality],
         ).length >= relation.count
       );
+    case "at_least_n_distinct_glazes": {
+      const values = indexedValues(assigned, relation.indices, (ceramic) => ceramic.glaze);
+      return values !== null && new Set(values).size >= relation.count;
+    }
+    case "glaze_categories":
+      return relation.indices.every((index, categoryIndex) => {
+        const ceramic = assigned[index];
+        const category = relation.categories[categoryIndex];
+        return ceramic !== undefined && category !== undefined && category.includes(ceramic.glaze);
+      });
   }
 }
 

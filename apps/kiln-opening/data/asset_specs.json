@@ -1,9 +1,9 @@
 {
-  "rulesVersion": "0.6.5",
+  "rulesVersion": "1.0.0",
   "orderCards": {
     "status": "REGENERATE_FROM_DATA",
     "source": "data/orders.json",
-    "total": 30,
+    "total": 36,
     "mustShowImperialProgressReward": true,
     "obsoleteSheetsDirectory": "assets/obsolete_v061"
   },
@@ -24,7 +24,8 @@
       "Kiln Yard",
       "Market & Imperial Office",
       "Guild & Academy"
-    ]
+    ],
+    "mustShowPlayerCountKilnCovers": true
   },
   "playerBoards": {
     "status": "GENERATE_FROM_data/kilns.json",
@@ -51,7 +52,7 @@
   },
   "craftTechniques": {
     "status": "GENERATE_FROM_data/techniques.json",
-    "total": 12,
+    "total": 15,
     "note": "Use exact English and Chinese names from JSON; descriptions in English."
   },
   "playerReference": {
