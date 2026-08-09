@@ -22,7 +22,7 @@ import type {
 } from "./types.ts";
 
 interface GameConfigDefinition {
-  rulesVersion: "1.0.0";
+  rulesVersion: "1.0.1";
   players: { min: number; max: number };
   rounds: number;
   startingResources: { clay: number; wood: number; coins: number };
@@ -44,7 +44,7 @@ interface GameConfigDefinition {
     zoneModifier: Record<"high" | "middle" | "low", number>;
     activeSpacesByPlayerCount: Record<"2" | "3" | "4", KilnSpaceId[]>;
   };
-  fireDeck: Record<"-1" | "0" | "1", number>;
+  fireDeck: Record<"-2" | "-1" | "0" | "1" | "2", number>;
   glazes: Record<Glaze, number>;
   decorations: Record<Decoration, number>;
   shapes: Record<Shape, number>;
@@ -97,7 +97,7 @@ export interface TechniqueDefinition {
 }
 
 interface FiringDefinition {
-  rulesVersion: "1.0.0";
+  rulesVersion: "1.0.1";
   kilnSpaces: Array<{ id: KilnSpaceId; zone: "high" | "middle" | "low"; modifier: -1 | 0 | 1 }>;
   fireDeck: FireModifier[];
 }
@@ -117,7 +117,7 @@ export interface KilnDefinition {
 
 export const GAME_CONFIG = gameConfigJson as unknown as GameConfigDefinition;
 const ACTION_LOCATION_FILE = actionLocationsJson as unknown as {
-  rulesVersion: "1.0.0";
+  rulesVersion: "1.0.1";
   locations: LocationDefinition[];
 };
 const ORDER_FILE = ordersJson as unknown as {
@@ -126,7 +126,10 @@ const ORDER_FILE = ordersJson as unknown as {
 };
 const TECHNIQUE_FILE = techniquesJson as unknown as TechniqueDefinition[];
 const FIRING_FILE = firingJson as unknown as FiringDefinition;
-const COMPONENT_FILE = componentsJson as unknown as { rulesVersion: "1.0.0"; components: ComponentDefinition[] };
+const COMPONENT_FILE = componentsJson as unknown as {
+  rulesVersion: "1.0.1";
+  components: ComponentDefinition[];
+};
 
 export const LOCATION_IDS: readonly LocationId[] = [
   "materials_yard",
@@ -170,7 +173,7 @@ export const SHAPE_COSTS = GAME_CONFIG.shapes;
 export const DECORATION_COSTS = GAME_CONFIG.decorations;
 
 export interface ImperialProgressDefinition {
-  rulesVersion: "1.0.0";
+  rulesVersion: "1.0.1";
   track: Array<{ space: number; title: string; reward: string | null; endGameVp: number }>;
   imperialSealVp: number;
   presentation: {
@@ -211,11 +214,11 @@ export const COMMON_SUPPLY = {
 
 function validateContent(): void {
   if (
-    GAME_CONFIG.rulesVersion !== "1.0.0" ||
-    ACTION_LOCATION_FILE.rulesVersion !== "1.0.0" ||
-    FIRING_FILE.rulesVersion !== "1.0.0" ||
-    COMPONENT_FILE.rulesVersion !== "1.0.0" ||
-    IMPERIAL_PROGRESS.rulesVersion !== "1.0.0"
+    GAME_CONFIG.rulesVersion !== "1.0.1" ||
+    ACTION_LOCATION_FILE.rulesVersion !== "1.0.1" ||
+    FIRING_FILE.rulesVersion !== "1.0.1" ||
+    COMPONENT_FILE.rulesVersion !== "1.0.1" ||
+    IMPERIAL_PROGRESS.rulesVersion !== "1.0.1"
   ) {
     throw new Error("Rules content version mismatch");
   }
@@ -245,6 +248,12 @@ function validateContent(): void {
   if (new Set(TECHNIQUES.map((technique) => technique.id)).size !== 15) {
     throw new Error("Technique IDs must be unique");
   }
+  for (const modifier of [-2, -1, 0, 1, 2] as const) {
+    const configured = GAME_CONFIG.fireDeck[String(modifier) as keyof GameConfigDefinition["fireDeck"]];
+    const actual = FIRE_CARDS.filter((card) => card === modifier).length;
+    if (configured !== actual) throw new Error(`Fire card count mismatch for ${modifier}`);
+  }
+  if (FIRE_CARDS.length !== 20) throw new Error("Fire deck must contain exactly 20 cards");
 }
 
 validateContent();

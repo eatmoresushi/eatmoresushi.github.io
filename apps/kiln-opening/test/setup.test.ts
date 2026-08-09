@@ -22,7 +22,7 @@ describe("setup", () => {
     if (!result.ok) return;
 
     const state = result.state;
-    expect(state.rulesVersion).toBe("1.0.0");
+    expect(state.rulesVersion).toBe("1.0.1");
     expect(state.playerCount).toBe(count);
     expect(state.round).toBe(1);
     expect(state.phase.type).toBe("setup_kiln_selection");
@@ -32,7 +32,7 @@ describe("setup", () => {
     expect(state.techniqueDisplay.glazing).toHaveLength(2);
     expect(state.techniqueDisplay.firing).toHaveLength(2);
     expect(state.fireDeck).toHaveLength(20);
-    expect(new Set(state.fireDeck)).toEqual(new Set([-1, 0, 1]));
+    expect(new Set(state.fireDeck)).toEqual(new Set([-2, -1, 0, 1, 2]));
     expect(state.commonSupply).toEqual({
       clay: 40 - 2 * count,
       wood: 40 - 2 * count,

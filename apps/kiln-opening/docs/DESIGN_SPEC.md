@@ -26,9 +26,9 @@ Do not add digital conveniences that remove this inference.
 
 ### 2. Controlled uncertainty, not chaos
 
-The Fire deck is intentionally only -1/0/+1.
+The V1.0.1 Fire deck is intentionally symmetric across -2/-1/0/+1/+2, with the greatest weight on ±2 and the least on ±1.
 
-The larger strategic uncertainty comes from other players' secret Wood contributions. Planning should usually produce useful ceramics; catastrophic failure should be possible mostly after a poor read, not a wild random event.
+The larger strategic uncertainty still comes from other players' secret Wood contributions. Fire is resolved through the existing uncapped heat-difference system; planning, zone choice and abilities remain the tools for managing its wider range.
 
 ### 3. Market vs Imperial must both be viable
 

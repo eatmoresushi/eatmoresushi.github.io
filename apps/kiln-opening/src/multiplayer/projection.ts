@@ -111,6 +111,7 @@ export function projectPublicEvent(event: GameEvent): PublicGameEvent {
     case "WOOD_REVEALED":
     case "FIRE_REVEALED":
     case "QUALITY_ASSIGNED":
+    case "FIRING_RESOLVED":
     case "ORDER_COMPLETED":
     case "IMPERIAL_PROGRESS_ADVANCED":
     case "COURT_PATRONAGE_USED":

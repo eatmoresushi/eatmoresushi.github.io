@@ -1,4 +1,4 @@
-# GAME_RULES.md — Kiln Opening / 开窑 V1.0.0
+# GAME_RULES.md — Kiln Opening / 开窑 V1.0.1
 
 **Players:** 2–4  
 **Length:** 5 rounds  
@@ -285,7 +285,7 @@ Techniques give no direct VP.
 
 Exact list is authoritative in `data/techniques.json`.
 
-There are 15 Techniques, exactly 5 per discipline. T07 Glaze Notebook is not part of V1.0.0. Stable retained IDs are not renumbered.
+There are 15 Techniques, exactly 5 per discipline. T07 Glaze Notebook is not part of V1.0.1. Stable retained IDs are not renumbered.
 
 | Discipline | ID | Technique | Printed cost | Effect summary |
 |---|---|---|---:|---|
@@ -341,7 +341,7 @@ One ceramic per space unless a future rule explicitly says otherwise.
 3. **Reveal and Spend:** reveal simultaneously; spend selected Wood.
 4. **Modify Contributions:** in turn order, resolve post-reveal contribution abilities (e.g. Fuel Ledger).
 5. **Determine Base Heat:** count contributors, including those who chose 0, then use contributor-scaled thresholds.
-6. **Reveal Fire:** draw top Fire card (-1/0/+1); Global Heat = Base Heat + Fire modifier. Do not cap it.
+6. **Reveal Fire:** draw the top Fire card (-2/-1/0/+1/+2); Global Heat = Base Heat + Fire modifier. Do not cap it.
 7. **After-Fire abilities:** in turn order, resolve Sagger Selection. It changes only the chosen ceramic's use of the revealed Fire modifier; the Fire card and Global Heat remain unchanged.
 8. **Calculate Actual Heat:** Base Heat + the ceramic's applicable Fire modifier + its zone modifier. Also snapshot Natural Actual Heat and Natural Heat Difference using the original Fire modifier before Sagger Selection, Jun, Ge, Protective Saggars, or any other modification.
 9. **Before-Quality abilities:** in turn order resolve Jun and Ge.
@@ -547,8 +547,10 @@ Tie breakers, in order:
 
 20 cards:
 
-- -1 × 5
-- 0 × 10
-- +1 × 5
+- -2 × 5
+- -1 × 3
+- 0 × 4
+- +1 × 3
+- +2 × 5
 
-The Fire deck supplies limited uncertainty. Major shifts should come from Wood decisions and zone placement.
+The Fire deck is symmetric around 0. Revealed cards are discarded face-up and are not shuffled back after each firing.

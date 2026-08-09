@@ -1,6 +1,6 @@
 # IMPLEMENTATION_DECISIONS.md
 
-These are the intended digital interpretations of current V1.0.0 wording.
+These are the intended digital interpretations of current V1.0.1 wording.
 
 ## Orders
 
@@ -131,4 +131,4 @@ If Shifu refreshes a face-up tile while no other tile exists in that discipline 
 
 ## Saved-game compatibility
 
-V1.0.0 does not add a duplicate Patronage-unlock flag: authoritative `completedOrders` history already persists and reconnects, so eligibility is derived faithfully from Imperial Order IDs. Unstarted lobbies are migrated to V1.0.0. Started pre-V1.0.0 rooms are rejected with a clear incompatibility message because Order decks, Technique ownership/timing windows and active kiln spaces cannot be translated without changing players' available decisions.
+V1.0.1 does not add a duplicate Patronage-unlock flag: authoritative `completedOrders` history already persists and reconnects, so eligibility is derived faithfully from Imperial Order IDs. Unstarted lobbies are migrated to V1.0.1. Started pre-V1.0.1 rooms are rejected with a clear incompatibility message because hidden Fire-deck order and distribution cannot be translated without changing an active game.

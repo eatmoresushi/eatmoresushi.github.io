@@ -96,6 +96,18 @@ Fixed Wood thresholds were replaced by contributor-scaled Base Heat:
 
 This keeps Low/Medium/High incentives more stable across 2–4 players.
 
+### V1.0.1 Fire-deck revision
+
+The earlier narrow Fire distribution was replaced with a symmetric five-value deck:
+
+- -2 ×5
+- -1 ×3
+- 0 ×4
+- +1 ×3
+- +2 ×5
+
+This is a balance-only change. Base Heat, zone modifiers, Wood Contributions, the Quality table and firing abilities remain unchanged.
+
 ## Shifu repositioning
 
 Earlier Shifu Kiln Yard action could reposition one already-loaded ceramic.

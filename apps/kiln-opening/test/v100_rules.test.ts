@@ -77,7 +77,7 @@ function submitOnlyContributor(
 
 function firingFixture(
   techniqueId: "T10" | "T12" | "T13" | "T15" | "T16",
-  fireModifier: -1 | 0 | 1,
+  fireModifier: -2 | -1 | 0 | 1 | 2,
   loads: Array<{ shape: Shape; glaze: Glaze; space: KilnSpaceId }>,
   seed: number,
 ) {
@@ -92,7 +92,7 @@ function firingFixture(
   return { ...game, actorId, ceramics };
 }
 
-describe("V1.0.0 content", () => {
+describe("V1.0.1 content", () => {
   it("contains 23 Market, 13 Imperial and five Techniques per discipline without T07", () => {
     expect(MARKET_ORDERS).toHaveLength(23);
     expect(IMPERIAL_ORDERS).toHaveLength(13);
@@ -177,7 +177,7 @@ describe("player-scaled Shared Kiln", () => {
   });
 });
 
-describe("V1.0.0 Technique timing", () => {
+describe("V1.0.1 Technique timing", () => {
   it("T16 ignores Fire for one ceramic while preserving the natural snapshot", () => {
     const game = firingFixture("T16", 1, [{ shape: "bowl", glaze: "white", space: "middle_1" }], 10010);
     addTechnique(game.state, game.actorId, "T12");

@@ -28,7 +28,7 @@ test("simple playtest UI exposes state and places an Apprentice through authorit
     for (const page of [host, guest]) {
       await expect(page.getByTestId("playtest-ui")).toBeVisible();
       await expect(page.getByTestId("tabletop-scene")).toHaveCount(0);
-      await expect(page.getByText("V1.0.0", { exact: true }).first()).toBeVisible();
+      await expect(page.getByText("V1.0.1", { exact: true }).first()).toBeVisible();
       await expect(page.getByRole("region", { name: "Player Workshops" })).toBeVisible();
       await expect(page.getByRole("region", { name: "Worker Placement" })).toBeVisible();
       await expect(page.getByRole("region", { name: "Kiln Spaces" })).toBeVisible();
@@ -37,7 +37,7 @@ test("simple playtest UI exposes state and places an Apprentice through authorit
       await expect(page.getByRole("region", { name: "Orders", exact: true })).toContainText("Imperial display (3)");
       await expect(page.getByRole("region", { name: "Face-up Techniques" }).locator(".technique-tile")).toHaveCount(6);
       await expect(page.getByRole("region", { name: "Game Log" })).toBeVisible();
-      await expect(page.getByRole("region", { name: "Playtest Debug" })).toBeVisible();
+      await expect(page.getByRole("region", { name: "Playtest Debug" })).toContainText("-2: 5 · -1: 3 · 0: 4 · +1: 3 · +2: 5");
       await expect(page.locator('[data-space="middle_3"]')).toContainText("No — covered");
       await expect(page.locator('[data-space="low_3"]')).toContainText("No — covered");
     }

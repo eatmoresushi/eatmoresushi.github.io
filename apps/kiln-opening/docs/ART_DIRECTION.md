@@ -1,4 +1,4 @@
-# ART_DIRECTION.md — Kiln Opening V1.0.0
+# ART_DIRECTION.md — Kiln Opening V1.0.1
 
 This document preserves the visual direction from the physical prototype without requiring Codex to read obsolete rule text from older images.
 
@@ -37,9 +37,11 @@ This document preserves the visual direction from the physical prototype without
 
 ### Fire
 
-- -1: cool/wind visual language.
+- -2: strongest cool/wind visual language.
+- -1: restrained cool/wind visual language.
 - 0: neutral kiln visual language.
-- +1: warm flame visual language.
+- +1: restrained warm flame visual language.
+- +2: strongest flame/heat visual language.
 
 ### Wood Contribution
 

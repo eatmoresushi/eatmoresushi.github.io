@@ -47,7 +47,7 @@ Host starts only with 2–4 players.
 
 - random First Player;
 - reverse-order Kiln selection;
-- starting Market Order is dealt directly to that player's Order area and is public immediately, because Orders are open information in V1.0.0;
+- starting Market Order is dealt directly to that player's Order area and is public immediately, because Orders are open information in V1.0.1;
 - game begins Round 1.
 
 ## Synchronous turn model

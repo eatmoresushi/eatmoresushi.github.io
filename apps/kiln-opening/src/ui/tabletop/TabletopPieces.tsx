@@ -212,7 +212,7 @@ export function VisualTechniqueTile({
   );
 }
 
-const FIRE_RECTS: Record<FireModifier, [number, number, number, number]> = {
+const FIRE_RECTS: Record<-1 | 0 | 1, [number, number, number, number]> = {
   [-1]: [0.019, 0.014, 0.270, 0.477],
   0: [0.300, 0.014, 0.270, 0.477],
   1: [0.585, 0.014, 0.270, 0.477],
@@ -234,6 +234,14 @@ function AtlasCard({ rect, children, className }: { rect: [number, number, numbe
 }
 
 export function FireCard({ modifier }: { modifier: FireModifier }) {
+  if (modifier === -2 || modifier === 2) {
+    return (
+      <span className="visual-fire-card visual-fire-card--live" aria-label={`Fire modifier ${modifier > 0 ? `plus ${modifier}` : modifier}`}>
+        <strong>{modifier > 0 ? `+${modifier}` : modifier}</strong>
+        <small>Fire</small>
+      </span>
+    );
+  }
   return <AtlasCard rect={FIRE_RECTS[modifier]} className="visual-fire-card"><span className="sr-only">Fire modifier {modifier > 0 ? `plus ${modifier}` : modifier}</span></AtlasCard>;
 }
 

@@ -13,7 +13,7 @@ export type Shape = "bowl" | "plate" | "washer" | "vase" | "censer";
 export type Glaze = "white" | "celadon" | "grey_green" | "moon_white";
 export type Decoration = "plain" | "carved" | "impressed" | "crackle";
 export type Quality = "flawed" | "standard" | "fine" | "masterpiece";
-export type FireModifier = -1 | 0 | 1;
+export type FireModifier = -2 | -1 | 0 | 1 | 2;
 export type TechniqueDiscipline = "forming" | "glazing" | "firing";
 export type WoodContribution = 0 | 1 | 2 | 3;
 export type KilnId = "RU" | "GU" | "GE" | "DI" | "JU";
@@ -313,7 +313,7 @@ export type GamePhase =
 
 export interface GameState {
   schemaVersion: 1;
-  rulesVersion: "1.0.0";
+  rulesVersion: "1.0.1";
   gameId: string;
   revision: number;
   eventSequence: number;
@@ -516,6 +516,15 @@ export type GameEvent =
   | { type: "WOOD_REVEALED"; contributions: Record<PlayerId, number> }
   | { type: "FIRE_REVEALED"; modifier: FireModifier; baseHeat: 1 | 2 | 3; globalHeat: number }
   | { type: "QUALITY_ASSIGNED"; ceramicId: CeramicId; quality: Quality }
+  | {
+      type: "FIRING_RESOLVED";
+      ceramicId: CeramicId;
+      fireModifier: FireModifier;
+      naturalActualHeat: number;
+      naturalHeatDifference: number;
+      naturalQuality: Quality;
+      finalQuality: Quality;
+    }
   | { type: "ORDER_COMPLETED"; playerId: PlayerId; orderId: OrderId; ceramicIds: CeramicId[] }
   | {
       type: "IMPERIAL_PROGRESS_ADVANCED";

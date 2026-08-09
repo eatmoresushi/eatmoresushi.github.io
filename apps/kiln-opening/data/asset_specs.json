@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.0.0",
+  "rulesVersion": "1.0.1",
   "orderCards": {
     "status": "REGENERATE_FROM_DATA",
     "source": "data/orders.json",
@@ -49,6 +49,18 @@
       3
     ],
     "totalCards": 16
+  },
+  "fireCards": {
+    "status": "REGENERATE_FROM_DATA",
+    "source": "data/firing.json",
+    "distribution": {
+      "-2": 5,
+      "-1": 3,
+      "0": 4,
+      "1": 3,
+      "2": 5
+    },
+    "totalCards": 20
   },
   "craftTechniques": {
     "status": "GENERATE_FROM_data/techniques.json",

@@ -1,6 +1,6 @@
 import type { AuthoritativeCommand, PendingContribution, PublicEventRecord, PublicGameEvent, PublicGameState } from "../multiplayer";
-import type { PlayerId } from "../game";
-import { KILN_DEFINITIONS, ORDER_DEFINITIONS, TECHNIQUE_DEFINITIONS } from "../game";
+import type { FireModifier, PlayerId } from "../game";
+import { GAME_CONFIG, KILN_DEFINITIONS, ORDER_DEFINITIONS, TECHNIQUE_DEFINITIONS } from "../game";
 import { ActionPanel } from "./ActionPanel";
 import { GameTable } from "./GameTable";
 
@@ -66,6 +66,11 @@ function GameLog({ game, events }: { game: PublicGameState; events: PublicEventR
 }
 
 function DebugPanel({ game }: { game: PublicGameState }) {
+  const fireComposition = ([-2, -1, 0, 1, 2] as FireModifier[]).map((modifier) => {
+    const initial = GAME_CONFIG.fireDeck[String(modifier) as keyof typeof GAME_CONFIG.fireDeck];
+    const discarded = game.discards.fire.filter((card) => card === modifier).length;
+    return `${signed(modifier)}: ${initial - discarded}`;
+  }).join(" · ");
   return (
     <section className="playtest-panel debug-panel" aria-labelledby="debug-panel-title">
       <div className="playtest-panel-heading">
@@ -81,6 +86,7 @@ function DebugPanel({ game }: { game: PublicGameState }) {
         <div><dt>Market deck / discard</dt><dd>{game.decks.marketRemaining} / {game.discards.market.length}</dd></div>
         <div><dt>Imperial deck / discard</dt><dd>{game.decks.imperialRemaining} / {game.discards.imperial.length}</dd></div>
         <div><dt>Fire deck / discard</dt><dd>{game.decks.fireRemaining} / {game.discards.fire.length}</dd></div>
+        <div><dt>Fire remaining by value</dt><dd>{fireComposition}</dd></div>
         <div><dt>Technique decks</dt><dd>F {game.decks.techniqueRemaining.forming} · G {game.decks.techniqueRemaining.glazing} · K {game.decks.techniqueRemaining.firing}</dd></div>
         <div><dt>Common supply</dt><dd>{game.commonSupply.clay} Clay · {game.commonSupply.wood} Wood · {game.commonSupply.coins} Coins</dd></div>
         <div><dt>Vessel supply</dt><dd>{Object.entries(game.vesselSupplyCounts).map(([shape, count]) => `${shape} ${count}`).join(" · ")}</dd></div>
@@ -140,6 +146,8 @@ function eventDescription(event: PublicGameEvent, game: PublicGameState): string
       return `Fire card ${signed(event.modifier)} revealed. Base Heat ${event.baseHeat}; Global Heat ${event.globalHeat}.`;
     case "QUALITY_ASSIGNED":
       return `${event.ceramicId} was assigned ${label(event.quality)} Quality.`;
+    case "FIRING_RESOLVED":
+      return `${event.ceramicId} firing recorded: Fire ${signed(event.fireModifier)}, natural Heat ${event.naturalActualHeat} (difference ${event.naturalHeatDifference}, ${label(event.naturalQuality)}), final ${label(event.finalQuality)}.`;
     case "ORDER_COMPLETED": {
       const definition = ORDER_DEFINITIONS[event.orderId];
       const reward = definition === undefined ? "" : ` +${definition.vp} VP${definition.coins > 0 ? ` and +${definition.coins} Coins` : ""}`;

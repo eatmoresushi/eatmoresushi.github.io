@@ -59,7 +59,7 @@ type CommandId = Brand<string, "CommandId">;
 type PlayerCount = 2 | 3 | 4;
 type RoundNumber = 1 | 2 | 3 | 4 | 5;
 type Contribution = 0 | 1 | 2 | 3;
-type FireModifier = -1 | 0 | 1;
+type FireModifier = -2 | -1 | 0 | 1 | 2;
 type WorkerKind = "shifu" | "apprentice";
 type Shape = "bowl" | "plate" | "washer" | "vase" | "censer";
 type Glaze = "white" | "celadon" | "grey_green" | "moon_white";
@@ -766,7 +766,7 @@ Test Ru, Guan, Ge, Ding, and Jun independently and in all relevant interactions,
 - Only owners of loaded ceramics submit; 0–3 ownership validation; one submission per window.
 - No public snapshot/event/resource decrement leaks any early value; actor can reconnect to own pending submission.
 - Concurrent last submissions cause exactly one reveal, one spend, and one transition.
-- Fire modifiers -1/0/+1 and High/Middle/Low zone modifiers; uncapped/negative Actual Heat; absolute difference.
+- Fire modifiers -2/-1/0/+1/+2 and High/Middle/Low zone modifiers; uncapped/negative Actual Heat; absolute difference.
 - Quality differences 0,1,2,3 and greater; exact Order eligibility ladder.
 - Ordered First-Player timing for every window; use/pass; disconnected player resumes same decision.
 - Jun/Ge before Quality, Saggars after Quality, Test Pieces/Ru after firing; all cross-effect combinations.

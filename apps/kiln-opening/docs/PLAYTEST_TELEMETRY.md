@@ -32,13 +32,15 @@ For each firing:
 - Fuel Ledger use
 - total Wood
 - Base Heat
-- Fire modifier
+- Fire modifier, recorded distinctly as -2, -1, 0, +1 or +2
 - Global Heat
 - number of ceramics in each zone
 - natural Quality distribution
 - final Quality distribution
 - Jun/Ge/Saggar uses
 - exact-match rate
+
+For each fired ceramic retain the original revealed Fire modifier, natural Actual Heat, natural Heat Difference, natural Quality, and final Quality after abilities. Public discard history may be observed; hidden Fire-deck order and the next card must never be exposed.
 
 ## Balance questions
 

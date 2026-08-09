@@ -419,6 +419,15 @@ button.visual-technique-tile:hover { z-index: 3; transform: scale(1.06); }
 .visual-wood-card.is-face-down { background-image: linear-gradient(145deg, #4b3825, #172d27) !important; }
 .visual-wood-card.is-face-down::after { display: grid; height: 100%; place-items: center; border: 1px solid rgb(255 238 196 / 55%); border-radius: 50%; color: #f1dcaf; content: "薪"; font-family: var(--serif); }
 .visual-fire-card { width: 76px; }
+.visual-fire-card--live {
+  display: grid;
+  place-content: center;
+  color: #fff3d3;
+  text-align: center;
+  background: radial-gradient(circle at 50% 65%, #da7a2f, #8f2f22 58%, #321712);
+}
+.visual-fire-card--live strong { font-size: 2rem; line-height: 1; }
+.visual-fire-card--live small { margin-top: .25rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 
 .tabletop-firing-result {
   position: absolute;

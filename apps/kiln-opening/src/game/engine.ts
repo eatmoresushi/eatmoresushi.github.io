@@ -2076,6 +2076,9 @@ function resolveJun(
   if (player?.kilnId !== "JU") {
     return applyFailure(ruleError("INVALID_ACTION", "The current window is not Jun's ability."));
   }
+  if (delta !== null && delta !== -1 && delta !== 1) {
+    return applyFailure(ruleError("INVALID_SELECTION", "Jun changes Actual Heat by exactly +1 or -1."));
+  }
   const isPass = ceramicId === null && delta === null;
   if ((ceramicId === null) !== (delta === null)) {
     return applyFailure(ruleError("INVALID_SELECTION", "Jun requires a ceramic and ±1."));
@@ -2403,6 +2406,15 @@ function finalizeFiring(state: GameState, events: GameEvent[]): void {
     if (ceramic === undefined || ceramic.stage !== "loaded" || result.assignedQuality === null) {
       throw new Error("Firing result is incomplete");
     }
+    events.push({
+      type: "FIRING_RESOLVED",
+      ceramicId: result.ceramicId,
+      fireModifier: context.fireModifier,
+      naturalActualHeat: result.naturalActualHeat,
+      naturalHeatDifference: result.naturalHeatDifference,
+      naturalQuality: qualityFromDifference(result.naturalHeatDifference),
+      finalQuality: result.assignedQuality,
+    });
     state.ceramics[result.ceramicId] = makeFinishedCeramic(
       ceramic,
       result.assignedQuality,
