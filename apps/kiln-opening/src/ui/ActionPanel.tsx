@@ -16,9 +16,11 @@ import {
   activeKilnSpaceIds,
   currentDecisionActor,
   locationCapacity,
+  matchesOrder,
 } from "../game";
 import type {
   Decoration,
+  FinishedCeramic,
   GameAction,
   Glaze,
   KilnId,
@@ -38,9 +40,6 @@ import type {
   PublicPlayerState,
 } from "../multiplayer";
 import { OrderCard } from "./GameTable";
-import { LOCATION_LABELS } from "./tabletop/assetCatalog";
-import type { TabletopSelection } from "./tabletop/TabletopScene";
-import { VisualOrderCard, VisualTechniqueTile, WoodCard, workshopBackground } from "./tabletop/TabletopPieces";
 
 type SendCommand = (command: AuthoritativeCommand) => Promise<boolean>;
 
@@ -50,8 +49,6 @@ interface ActionPanelProps {
   ownPendingContribution: PendingContribution | null;
   busy: boolean;
   send: SendCommand;
-  tabletopSelection?: TabletopSelection | undefined;
-  debugUI?: boolean | undefined;
 }
 
 const labels: Record<string, string> = {
@@ -70,14 +67,21 @@ const labels: Record<string, string> = {
   crackle: "Crackle",
 };
 
+const LOCATION_LABELS: Record<LocationId, string> = {
+  materials_yard: "Materials Yard",
+  forming_studio: "Forming Studio",
+  glaze_workshop: "Glaze Workshop",
+  kiln_yard: "Kiln Yard",
+  market_imperial_office: "Market & Imperial Office",
+  guild_academy: "Guild & Academy",
+};
+
 export function ActionPanel({
   game,
   ownPlayerId,
   ownPendingContribution,
   busy,
   send,
-  tabletopSelection,
-  debugUI = false,
 }: ActionPanelProps) {
   const player = game.players[ownPlayerId];
   if (player === undefined) return null;
@@ -86,10 +90,9 @@ export function ActionPanel({
   return (
     <aside className="action-rail" aria-label="Game controls">
       <div className="action-heading">
-        <p className="eyebrow">Your workshop</p>
-        <h2>{tabletopSelection?.locationId !== null && tabletopSelection?.locationId !== undefined
-          ? LOCATION_LABELS[tabletopSelection.locationId]
-          : decisionActor === ownPlayerId || decisionActor === null ? "Choose your action" : "Watch the table"}</h2>
+        <p className="eyebrow">Authoritative controls</p>
+        <h2>{decisionActor === ownPlayerId || decisionActor === null ? "Choose your action" : "Waiting for another player"}</h2>
+        <small>Every command is validated by the server before state changes.</small>
       </div>
       <PhaseControls
         game={game}
@@ -98,8 +101,6 @@ export function ActionPanel({
         ownPendingContribution={ownPendingContribution}
         busy={busy}
         send={send}
-        tabletopSelection={tabletopSelection}
-        debugUI={debugUI}
       />
     </aside>
   );
@@ -139,7 +140,7 @@ function PhaseControls(props: Omit<ActionPanelProps, "ownPlayerId"> & {
       const orderId = phase.initialOrderIds[ownPlayerId];
       return (
         <ControlSection title="Your first commission" hint="Keep it, or redraw once from the same deck.">
-          {orderId !== undefined && <div className="starting-order-piece"><VisualOrderCard orderId={orderId} /></div>}
+          {orderId !== undefined && <div className="starting-order-piece"><OrderCard orderId={orderId} /></div>}
           <div className="button-row">
             <CommandButton busy={busy} send={send} command={{ type: "KEEP_STARTING_ORDER" }}>Keep Order</CommandButton>
             <CommandButton busy={busy} send={send} command={{ type: "REDRAW_STARTING_ORDER" }} secondary>Redraw</CommandButton>
@@ -148,7 +149,7 @@ function PhaseControls(props: Omit<ActionPanelProps, "ownPlayerId"> & {
       );
     }
     case "work":
-      return <WorkControls game={game} player={player} busy={busy} send={send} tabletopSelection={props.tabletopSelection} debugUI={props.debugUI} />;
+      return <WorkControls game={game} player={player} busy={busy} send={send} />;
     case "work_office_orders":
       return <OfficeControls game={game} player={player} busy={busy} send={send} />;
     case "work_office_sale":
@@ -188,7 +189,6 @@ function KilnSelection({ game, busy, send }: Pick<ActionPanelProps, "game" | "bu
           return (
             <button
               className="kiln-choice"
-              style={workshopBackground(kilnId)}
               type="button"
               disabled={busy || taken.has(kilnId)}
               onClick={() => void send({ type: "SELECT_KILN", kilnId })}
@@ -206,18 +206,14 @@ function KilnSelection({ game, busy, send }: Pick<ActionPanelProps, "game" | "bu
   );
 }
 
-function WorkControls({ game, player, busy, send, tabletopSelection, debugUI = false }: {
+function WorkControls({ game, player, busy, send }: {
   game: PublicGameState;
   player: PublicPlayerState;
   busy: boolean;
   send: SendCommand;
-  tabletopSelection?: TabletopSelection | undefined;
-  debugUI?: boolean | undefined;
 }) {
   const availableWorkers = Object.values(player.workers).filter((worker) => worker.status === "available");
-  const workers = tabletopSelection?.workerId === null || tabletopSelection?.workerId === undefined
-    ? availableWorkers
-    : [...availableWorkers].sort((left, right) => Number(right.id === tabletopSelection.workerId) - Number(left.id === tabletopSelection.workerId));
+  const workers = availableWorkers;
   const full = (locationId: LocationId): boolean =>
     game.actionBoard.placements[locationId].length >= locationCapacity(locationId, game.playerCount);
   if (workers.length === 0) {
@@ -227,12 +223,16 @@ function WorkControls({ game, player, busy, send, tabletopSelection, debugUI = f
       </ControlSection>
     );
   }
-  const action = (locationId: LocationId, hint: string, content: ReactNode) => (
-    <details className={`action-card ${full(locationId) ? "is-unavailable" : ""}`} open={!debugUI || locationId === "materials_yard"} key={`${locationId}-${tabletopSelection?.workerId ?? "default"}`}>
-      <summary><span>{LOCATION_LABELS[locationId]}</span><small>{full(locationId) ? "Full" : hint}</small></summary>
+  const action = (locationId: LocationId, hint: string, content: ReactNode) => {
+    const used = game.actionBoard.placements[locationId].length;
+    const capacity = locationCapacity(locationId, game.playerCount);
+    return (
+    <details className={`action-card ${full(locationId) ? "is-unavailable" : ""}`} open={locationId === "materials_yard"} key={locationId}>
+      <summary><span>{LOCATION_LABELS[locationId]}</span><small>{used}/{capacity} workers · <span>{full(locationId) ? "Full" : hint}</span></small></summary>
       {content}
     </details>
-  );
+    );
+  };
   const actions: Record<LocationId, ReactNode> = {
     materials_yard: action("materials_yard", "Gain Clay and Wood", <MaterialsForm workers={workers} locationFull={full("materials_yard")} busy={busy} send={send} />),
     forming_studio: action("forming_studio", "Shape vessels", <FormCeramicsForm game={game} player={player} workers={workers} locationFull={full("forming_studio")} busy={busy} send={send} />),
@@ -244,13 +244,7 @@ function WorkControls({ game, player, busy, send, tabletopSelection, debugUI = f
   return (
     <>
       <p className="turn-callout"><strong>Your turn.</strong> Place one available worker, or pass permanently for this round.</p>
-      {debugUI
-        ? LOCATION_IDS.map((locationId) => actions[locationId])
-        : tabletopSelection?.workerId === null || tabletopSelection?.workerId === undefined
-          ? <div className="visual-action-prompt"><span aria-hidden="true">师</span><strong>Select a worker on your workshop board</strong><small>Available board locations will glow.</small></div>
-          : tabletopSelection.locationId === null
-            ? <div className="visual-action-prompt"><span aria-hidden="true">位</span><strong>Now choose a glowing board location</strong><small>The action form will appear here.</small></div>
-            : actions[tabletopSelection.locationId]}
+      {LOCATION_IDS.map((locationId) => actions[locationId])}
       <CommandButton busy={busy} send={send} command={{ type: "PASS_WORK_PHASE" }} danger>
         Pass for this round
       </CommandButton>
@@ -398,11 +392,11 @@ function FormCeramicsForm({ game, player, workers, locationFull, busy, send }: {
   return (
     <form className="control-form" onSubmit={submit}>
       <WorkerChoice workers={workers} value={selectedWorker?.id ?? ""} onChange={setWorkerId} />
-      <label>First shape<select name="shape1" value={shape1} onChange={(event) => setShape1(event.target.value as Shape)}>{SHAPES.map((shape) => <option key={shape} value={shape}>{labels[shape]}</option>)}</select></label>
-      <label>Second shape (Shifu only)<select name="shape2" value={shape2} onChange={(event) => setShape2(event.target.value as Shape | "")}><option value="">None</option>{SHAPES.map((shape) => <option key={shape} value={shape}>{labels[shape]}</option>)}</select></label>
+      <label>First shape<select name="shape1" value={shape1} onChange={(event) => setShape1(event.target.value as Shape)}>{SHAPES.map((shape) => <option key={shape} value={shape}>{labels[shape]} · {SHAPE_COSTS[shape]} Clay</option>)}</select></label>
+      <label>Second shape (Shifu only)<select name="shape2" value={shape2} onChange={(event) => setShape2(event.target.value as Shape | "")}><option value="">None</option>{SHAPES.map((shape) => <option key={shape} value={shape}>{labels[shape]} · {SHAPE_COSTS[shape]} Clay</option>)}</select></label>
       <TechniqueChecks techniqueIds={techniques} selected={activeTechniqueIds} onChange={setSelectedTechniques} />
       {techniques.includes("T03") && <label>Clay Substitution target<select name="substitution" value={activeSubstitution} disabled={!usesSubstitution} onChange={(event) => setSubstitution(event.target.value as "" | "base" | "ding")}><option value="">Do not use</option><option value="base">base</option><option value="ding">ding</option></select></label>}
-      {canUseDing && <label>Ding extra matching shape<select name="ding" value={activeDing} onChange={(event) => setDing(event.target.value as Shape | "")}><option value="">Do not use</option>{(["bowl", "plate", "washer"] as Shape[]).map((shape) => <option key={shape} value={shape}>{labels[shape]}</option>)}</select></label>}
+      {canUseDing && <label>Ding extra matching shape<select name="ding" value={activeDing} onChange={(event) => setDing(event.target.value as Shape | "")}><option value="">Do not use</option>{(["bowl", "plate", "washer"] as Shape[]).map((shape) => <option key={shape} value={shape}>{labels[shape]} · {SHAPE_COSTS[shape]} Clay</option>)}</select></label>}
       <small role="status" className={error === null ? "" : "control-error"}>{error ?? `Cost: ${clayCost} Clay${coinCost > 0 ? ` and ${coinCost} Coin` : ""}.`}</small>
       <button className="primary-button" disabled={busy || error !== null}>Form ceramics</button>
     </form>
@@ -666,7 +660,7 @@ function OfficeControls({ game, player, busy, send }: Pick<ActionPanelProps, "ga
   if (phase.step === "colour_samples_or_skip") {
     return (
       <ControlSection title="Use Colour Samples?" hint="Before your first Order, place exactly one face-up Order from either display on the bottom of its deck and reveal its replacement.">
-        <div className="choice-stack visual-command-grid">{display.map((orderId) => <PieceCommandButton key={orderId} busy={busy} label={`Bottom ${orderId} with Colour Samples`} onClick={() => send({ type: "OFFICE_USE_COLOUR_SAMPLES", orderId })}><VisualOrderCard orderId={orderId} /></PieceCommandButton>)}</div>
+        <div className="choice-stack playtest-command-grid">{display.map((orderId) => <PieceCommandButton key={orderId} busy={busy} label={`Bottom ${orderId} with Colour Samples`} onClick={() => send({ type: "OFFICE_USE_COLOUR_SAMPLES", orderId })}><OrderCard orderId={orderId} imperial={orderId.startsWith("I")} /></PieceCommandButton>)}</div>
         <CommandButton busy={busy} send={send} command={{ type: "OFFICE_SKIP_COLOUR_SAMPLES" }} secondary>Skip Colour Samples</CommandButton>
       </ControlSection>
     );
@@ -674,7 +668,7 @@ function OfficeControls({ game, player, busy, send }: Pick<ActionPanelProps, "ga
   return (
     <ControlSection title="Choose an Order" hint={handFull ? `Your Order area is full (${handLimit}); continue to the optional sale.` : `${phase.remainingTakes} acquisition${phase.remainingTakes === 1 ? "" : "s"} remaining. Face-up cards refill; blind draws leave displays unchanged.`}>
       <h4>Face-up Orders</h4>
-      <div className="choice-stack visual-command-grid">{display.map((orderId) => <PieceCommandButton key={orderId} busy={busy || handFull} label={`Take face-up ${orderId}`} onClick={() => send({ type: "OFFICE_TAKE_ORDER", orderId })}><VisualOrderCard orderId={orderId} /></PieceCommandButton>)}</div>
+      <div className="choice-stack playtest-command-grid">{display.map((orderId) => <PieceCommandButton key={orderId} busy={busy || handFull} label={`Take face-up ${orderId}`} onClick={() => send({ type: "OFFICE_TAKE_ORDER", orderId })}><OrderCard orderId={orderId} imperial={orderId.startsWith("I")} /></PieceCommandButton>)}</div>
       <h4>Blind top-deck draw</h4>
       <div className="blind-deck-grid">
         <BlindOrderDeck deck="market" remaining={game.decks.marketRemaining} busy={busy || handFull} send={send} />
@@ -777,17 +771,17 @@ function GuildControls({ game, player, busy, send }: {
   if (game.phase.step === "refresh_or_skip") {
     return (
       <ControlSection title="Shifu refresh" hint="Return one face-up Technique to the bottom of its deck, or keep the display.">
-        <div className="choice-stack visual-command-grid technique-commands">{ids.map((techniqueId) => <PieceCommandButton key={techniqueId} busy={busy} label={`Replace ${techniqueId} · ${TECHNIQUE_DEFINITIONS[techniqueId]?.name ?? "Unknown Technique"}`} onClick={() => send({ type: "GUILD_REFRESH_TECHNIQUE", techniqueId })}><VisualTechniqueTile techniqueId={techniqueId} /></PieceCommandButton>)}</div>
+        <div className="choice-stack playtest-command-grid technique-commands">{ids.map((techniqueId) => <PieceCommandButton key={techniqueId} busy={busy} label={`Replace ${techniqueId} · ${TECHNIQUE_DEFINITIONS[techniqueId]?.name ?? "Unknown Technique"}`} onClick={() => send({ type: "GUILD_REFRESH_TECHNIQUE", techniqueId })}><TechniqueSummary techniqueId={techniqueId} /></PieceCommandButton>)}</div>
         <CommandButton busy={busy} send={send} command={{ type: "GUILD_SKIP_REFRESH" }} secondary>Keep the display</CommandButton>
       </ControlSection>
     );
   }
   return (
     <ControlSection title="Acquire a Technique" hint={worker?.kind === "shifu" ? "Your Shifu pays printed cost minus 1 Coin (minimum 1)." : "Your Apprentice pays the printed Coin cost."}>
-      <div className="choice-stack visual-command-grid technique-commands">{ids.map((techniqueId) => {
+      <div className="choice-stack playtest-command-grid technique-commands">{ids.map((techniqueId) => {
         const technique = TECHNIQUE_DEFINITIONS[techniqueId];
         const cost = guildTechniqueCost(techniqueId, worker?.kind ?? "apprentice");
-        return <PieceCommandButton key={techniqueId} busy={busy || player.resources.coins < cost} label={`${techniqueId} · ${technique?.name ?? "Unknown Technique"} · ${cost} Coins`} onClick={() => send({ type: "GUILD_BUY_TECHNIQUE", techniqueId })}><VisualTechniqueTile techniqueId={techniqueId} /></PieceCommandButton>;
+        return <PieceCommandButton key={techniqueId} busy={busy || player.resources.coins < cost} label={`${techniqueId} · ${technique?.name ?? "Unknown Technique"} · ${cost} Coins`} onClick={() => send({ type: "GUILD_BUY_TECHNIQUE", techniqueId })}><TechniqueSummary techniqueId={techniqueId} shownCost={cost} /></PieceCommandButton>;
       })}</div>
     </ControlSection>
   );
@@ -843,7 +837,7 @@ function ContributionControls({ game, player, ownPlayerId, pending, busy, send }
             disabled={busy || amount > player.resources.wood}
             onClick={() => void send({ type: "SUBMIT_WOOD_CONTRIBUTION", windowId: game.phase.type === "firing_contributions" ? game.phase.windowId : "", amount })}
             aria-label={`Contribute ${amount} Wood`}
-          ><WoodCard amount={amount} /><strong>{amount} Wood</strong></button>
+          ><strong>{amount}</strong><span>Wood</span></button>
         ))}
       </div>
     </ControlSection>
@@ -949,20 +943,32 @@ function OrderCompletion({ orderId, ceramics, guan, busy, send }: {
 }) {
   const definition = ORDER_DEFINITIONS[orderId];
   const [selected, setSelected] = useState<string[]>([]);
+  const [useWaiver, setUseWaiver] = useState(false);
+  const selectedCeramics = selected
+    .map((ceramicId) => ceramics.find((ceramic) => ceramic.id === ceramicId))
+    .filter((ceramic): ceramic is FinishedCeramic => ceramic?.stage === "finished");
+  const matches = definition !== undefined && matchesOrder(definition, selectedCeramics, useWaiver);
+  const selectionStatus = selected.length === 0
+    ? `Select exactly ${definition?.ceramics.length ?? 0} Finished ceramic${definition?.ceramics.length === 1 ? "" : "s"}.`
+    : selected.length !== definition?.ceramics.length
+      ? `Selected ${selected.length}; this Order requires exactly ${definition?.ceramics.length ?? 0}.`
+      : matches
+        ? "Selection satisfies this Order. The server will validate again on submission."
+        : "Selection does not satisfy the Order's Shape, Glaze, Decoration, relationship, or minimum Quality requirements.";
   return (
     <article className="completion-card">
       <OrderCard orderId={orderId} imperial={orderId.startsWith("I")} />
       <fieldset><legend>Deliver ceramics</legend>{ceramics.map((ceramic) => (
         <label className="check-row" key={ceramic.id}><input type="checkbox" checked={selected.includes(ceramic.id)} onChange={(event) => setSelected((current) => event.target.checked ? [...current, ceramic.id] : current.filter((id) => id !== ceramic.id))} />{ceramicLabel(ceramic)}</label>
       ))}</fieldset>
-      <label className={`check-row ${guan && orderId.startsWith("I") ? "" : "is-hidden"}`}><input type="checkbox" name={`guan-${orderId}`} id={`guan-${orderId}`} /> Use Guan Decoration waiver</label>
+      <label className={`check-row ${guan && orderId.startsWith("I") ? "" : "is-hidden"}`}><input type="checkbox" name={`guan-${orderId}`} checked={useWaiver} onChange={(event) => setUseWaiver(event.target.checked)} /> Use Guan Decoration waiver</label>
+      <p className={matches ? "selection-valid" : "control-hint"} role="status">{selectionStatus}</p>
       <button
         className="primary-button"
         type="button"
-        disabled={busy || definition === undefined || selected.length !== definition.ceramics.length}
+        disabled={busy || !matches}
         onClick={() => {
-          const waiver = (document.getElementById(`guan-${orderId}`) as HTMLInputElement | null)?.checked ?? false;
-          void send({ type: "COMPLETE_ORDER", orderId, ceramicIds: selected, useGuanWaiver: waiver });
+          void send({ type: "COMPLETE_ORDER", orderId, ceramicIds: selected, useGuanWaiver: useWaiver });
         }}
       >Complete {orderId}</button>
     </article>
@@ -1108,10 +1114,22 @@ function PieceCommandButton({ busy, label, onClick, children }: {
   children: ReactNode;
 }) {
   return (
-    <button className="primary-button visual-piece-command" type="button" disabled={busy} onClick={() => void onClick()} aria-label={label} title={label}>
+    <button className="playtest-piece-command" type="button" disabled={busy} onClick={() => void onClick()} aria-label={label} title={label}>
       {children}
-      <strong>{label}</strong>
+      <span className="command-label">{label}</span>
     </button>
+  );
+}
+
+function TechniqueSummary({ techniqueId, shownCost }: { techniqueId: TechniqueId; shownCost?: number }) {
+  const technique = TECHNIQUE_DEFINITIONS[techniqueId];
+  if (technique === undefined) return <span>{techniqueId}</span>;
+  return (
+    <span className="plain-technique-summary">
+      <strong>{technique.id} · {technique.name}</strong>
+      <small>{technique.discipline} · {shownCost ?? technique.cost} Coins</small>
+      <span>{technique.ability}</span>
+    </span>
   );
 }
 

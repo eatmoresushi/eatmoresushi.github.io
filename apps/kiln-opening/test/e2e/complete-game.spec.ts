@@ -165,7 +165,7 @@ test("starting Orders remain visible after an eligible redraw advances directly 
     await guild.getByRole("button", { name: "Begin Guild action" }).click();
     await expect(guest.getByRole("button", { name: new RegExp(`^Replace ${firstTechniqueId} ·`) })).toBeVisible();
     await guest.getByRole("button", { name: "Keep the display" }).click();
-    await guest.locator(".choice-stack .primary-button:not(:disabled)").first().click();
+    await guest.locator(".playtest-piece-command:not(:disabled)").first().click();
 
     const fullGuild = host.locator("details").filter({ hasText: "Guild & Academy" });
     await expect(fullGuild.getByText("Full", { exact: true })).toBeVisible();
@@ -192,9 +192,7 @@ test("starting Orders remain visible after an eligible redraw advances directly 
     await expect(mobileProgress).toBeVisible();
     await expect(mobileProgress.locator(".progress-marker")).toHaveCount(2);
     await expect(mobileProgress.locator('[data-progress-space="5"]')).toContainText("Imperial Audience");
-    expect(await mobileProgress.locator(".imperial-progress-scroll").evaluate(
-      (element) => element.scrollWidth > element.clientWidth,
-    )).toBe(true);
+    await expect(mobileProgress.locator("table")).toBeVisible();
   } finally {
     await close();
   }
@@ -230,8 +228,8 @@ test("two workshops complete a firing, Order, reconnect, and five-round game", a
     await expect(guest.getByTestId("phase-name")).toHaveText("Work Phase");
 
     // The deterministic commissions are M09 (Moon-white Vase) and M10 (carved Moon-white Censer).
-    await guest.getByText("Forming Studio", { exact: true }).click();
     const guestForming = guest.locator("details").filter({ hasText: "Forming Studio" });
+    await guestForming.getByText("Forming Studio", { exact: true }).click();
     await guestForming.getByLabel("Worker").selectOption({ index: 1 });
     await guestForming.getByLabel("Second shape (Shifu only)").selectOption("plate");
     await expect(guestForming.getByRole("button", { name: "Form ceramics" })).toBeDisabled();
@@ -240,27 +238,28 @@ test("two workshops complete a firing, Order, reconnect, and five-round game", a
     await guestForming.getByLabel("Second shape (Shifu only)").selectOption("");
     await guest.getByLabel("First shape").selectOption("vase");
     await guest.getByRole("button", { name: "Form ceramics" }).click();
-    await host.getByText("Forming Studio", { exact: true }).click();
-    await host.getByLabel("First shape").selectOption("censer");
-    await host.getByRole("button", { name: "Form ceramics" }).click();
+    const hostForming = host.locator("details").filter({ hasText: "Forming Studio" });
+    await hostForming.getByText("Forming Studio", { exact: true }).click();
+    await hostForming.getByLabel("First shape").selectOption("censer");
+    await hostForming.getByRole("button", { name: "Form ceramics" }).click();
 
     const fullForming = guest.locator("details").filter({ hasText: "Forming Studio" });
     await expect(fullForming.getByText("Full", { exact: true })).toBeVisible();
     await fullForming.getByText("Forming Studio", { exact: true }).click();
     await expect(fullForming.getByRole("button", { name: "Form ceramics" })).toBeDisabled();
 
-    await guest.getByText("Glaze Workshop", { exact: true }).click();
     const guestGlaze = guest.locator("details").filter({ hasText: "Glaze Workshop" });
+    await guestGlaze.getByText("Glaze Workshop", { exact: true }).click();
     await guestGlaze.getByLabel("Shifu mode").selectOption("free_single");
     await expect(guestGlaze.getByRole("button", { name: "Apply glaze" })).toBeDisabled();
     await expect(guestGlaze.getByRole("status")).toContainText("Only the Shifu");
     await guestGlaze.getByLabel("Shifu mode").selectOption("normal");
     await expect(guestGlaze.getByRole("button", { name: "Apply glaze" })).toBeEnabled();
-    await guest.getByLabel("First glaze").selectOption("moon_white");
-    await guest.getByLabel("First decoration").selectOption("plain");
-    await guest.getByRole("button", { name: "Apply glaze" }).click();
-    await host.getByText("Glaze Workshop", { exact: true }).click();
+    await guestGlaze.getByLabel("First glaze").selectOption("moon_white");
+    await guestGlaze.getByLabel("First decoration").selectOption("plain");
+    await guestGlaze.getByRole("button", { name: "Apply glaze" }).click();
     const hostGlaze = host.locator("details").filter({ hasText: "Glaze Workshop" });
+    await hostGlaze.getByText("Glaze Workshop", { exact: true }).click();
     await hostGlaze.getByLabel("First glaze").selectOption("moon_white");
     await hostGlaze.getByLabel("First decoration").selectOption("carved");
     await hostGlaze.getByRole("button", { name: "Apply glaze" }).click();
@@ -268,8 +267,8 @@ test("two workshops complete a firing, Order, reconnect, and five-round game", a
     const fullGlaze = guest.locator("details").filter({ hasText: "Glaze Workshop" });
     await expect(fullGlaze.getByText("Full", { exact: true })).toBeVisible();
 
-    await guest.getByText("Kiln Yard", { exact: true }).click();
     const kilnYard = guest.locator("details").filter({ hasText: "Kiln Yard" });
+    await kilnYard.getByText("Kiln Yard", { exact: true }).click();
     await kilnYard.locator('select[name="ceramic1"]').selectOption({ index: 1 });
     await kilnYard.getByLabel("First kiln space").selectOption("high_1");
     await kilnYard.locator('select[name="ceramic2"]').selectOption({ index: 1 });
@@ -277,8 +276,8 @@ test("two workshops complete a firing, Order, reconnect, and five-round game", a
     await expect(kilnYard.getByRole("status")).toContainText("Apprentice may load at most one");
     await kilnYard.locator('select[name="ceramic2"]').selectOption("");
     await kilnYard.getByRole("button", { name: "Load kiln" }).click();
-    await host.getByText("Kiln Yard", { exact: true }).click();
     const hostKilnYard = host.locator("details").filter({ hasText: "Kiln Yard" });
+    await hostKilnYard.getByText("Kiln Yard", { exact: true }).click();
     await hostKilnYard.locator('select[name="ceramic1"]').selectOption({ index: 1 });
     await hostKilnYard.getByLabel("First kiln space").selectOption("middle_1");
     await hostKilnYard.getByRole("button", { name: "Load kiln" }).click();
@@ -293,7 +292,7 @@ test("two workshops complete a firing, Order, reconnect, and five-round game", a
     await expect(guest.getByRole("heading", { name: "Contribution locked" })).toBeVisible();
     await expect(guest.locator(".secret-value")).toContainText("2 Wood");
     await expect(host.getByRole("heading", { name: "Choose Wood in secret" })).toBeVisible();
-    await expect(host.getByText("Ren: locked")).toBeVisible();
+    await expect(host.getByText("Ren: submitted (value hidden)")).toBeVisible();
     await expect(host.locator(".secret-value")).toHaveCount(0);
     await host.getByRole("button", { name: "2 Wood" }).click();
     await expect(guest.getByTestId("phase-name")).toHaveText("Order Phase");

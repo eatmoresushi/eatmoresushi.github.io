@@ -6,10 +6,11 @@ import type {
   AuthoritativeCommand,
   CommandSuccess,
   MultiplayerError,
+  PublicEventRecord,
   RoomConnection,
 } from "../multiplayer";
 import { ORDER_DEFINITIONS, TECHNIQUE_DEFINITIONS } from "../game";
-import { TabletopExperience } from "./tabletop/TabletopExperience";
+import { PlaytestExperience } from "./PlaytestExperience";
 
 const LAST_SEAT_KEY = "kiln-opening:last-seat";
 
@@ -106,6 +107,7 @@ export function App() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<MultiplayerError | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [eventLog, setEventLog] = useState<PublicEventRecord[]>([]);
   const [confirmEndSession, setConfirmEndSession] = useState(false);
   const [savedSeat, setSavedSeat] = useState<SavedSeat | null>(() => readSavedSeat());
   const reconnecting = useRef(false);
@@ -162,6 +164,20 @@ export function App() {
       void reconnect();
     });
   }, [api, connection?.room.id, reconnect]);
+
+  useEffect(() => {
+    if (api === null || connection?.game === null || connection === null) {
+      setEventLog([]);
+      return;
+    }
+    let active = true;
+    void api.listPublicEvents(connection.room.id).then((events) => {
+      if (active) setEventLog(events);
+    });
+    return () => {
+      active = false;
+    };
+  }, [api, connection?.room.id, connection?.game?.eventSequence]);
 
   async function createRoom(displayName: string): Promise<void> {
     if (api === null) return;
@@ -271,6 +287,7 @@ export function App() {
 
   function leaveView(): void {
     setConnection(null);
+    setEventLog([]);
     setNotice(null);
     setError(null);
     setConfirmEndSession(false);
@@ -350,10 +367,11 @@ export function App() {
         ) : connection.game === null ? (
           <LobbyScreen connection={connection} busy={busy} onStart={startGame} />
         ) : (
-          <TabletopExperience
+          <PlaytestExperience
             game={connection.game}
             ownPlayerId={connection.seat.playerId}
             ownPendingContribution={connection.ownPendingContribution}
+            events={eventLog}
             busy={busy}
             send={send}
           />

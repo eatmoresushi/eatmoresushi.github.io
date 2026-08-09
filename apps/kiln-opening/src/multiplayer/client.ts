@@ -6,6 +6,8 @@ import type {
   EndSessionSuccess,
   MultiplayerError,
   MultiplayerResult,
+  PublicEventRecord,
+  PublicGameEvent,
   ReconnectResult,
   RoomConnection,
 } from "./types";
@@ -62,6 +64,7 @@ export interface GameApi {
     expectedRevision: number;
     command: AuthoritativeCommand;
   }): Promise<MultiplayerResult<CommandSuccess>>;
+  listPublicEvents(roomId: string, afterSequence?: number): Promise<PublicEventRecord[]>;
   subscribe(roomId: string, onPublicChange: () => void): () => void;
 }
 
@@ -114,6 +117,15 @@ class TestHttpGameApi implements GameApi {
     command: AuthoritativeCommand;
   }): Promise<MultiplayerResult<CommandSuccess>> {
     return this.call({ operation: "game_action", ...input });
+  }
+
+  async listPublicEvents(roomId: string, afterSequence = 0): Promise<PublicEventRecord[]> {
+    const result = await this.call<PublicEventRecord[]>({
+      operation: "list_public_events",
+      roomId,
+      afterSequence,
+    });
+    return result.ok ? result.value : [];
   }
 
   subscribe(_roomId: string, onPublicChange: () => void): () => void {
@@ -176,6 +188,25 @@ class SupabaseGameApi implements GameApi {
     command: AuthoritativeCommand;
   }): Promise<MultiplayerResult<CommandSuccess>> {
     return this.call("game_action", input);
+  }
+
+  async listPublicEvents(roomId: string, afterSequence = 0): Promise<PublicEventRecord[]> {
+    await this.ensureSession();
+    const { data, error } = await this.client
+      .from("game_public_events")
+      .select("room_id, sequence, revision, command_id, actor_player_id, payload")
+      .eq("room_id", roomId)
+      .gt("sequence", afterSequence)
+      .order("sequence", { ascending: true });
+    if (error !== null || data === null) return [];
+    return data.map((row) => ({
+      roomId: String(row.room_id),
+      sequence: Number(row.sequence),
+      revision: Number(row.revision),
+      commandId: String(row.command_id),
+      actorId: String(row.actor_player_id),
+      event: row.payload as PublicGameEvent,
+    }));
   }
 
   subscribe(roomId: string, onPublicChange: () => void): () => void {

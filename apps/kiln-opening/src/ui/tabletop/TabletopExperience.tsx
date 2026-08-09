@@ -56,7 +56,7 @@ export function TabletopExperience({
     return (
       <div className="game-layout debug-game-layout" data-testid="debug-ui">
         <GameTable game={game} ownPlayerId={ownPlayerId} />
-        <ActionPanel game={game} ownPlayerId={ownPlayerId} ownPendingContribution={ownPendingContribution} busy={busy} send={send} debugUI />
+        <ActionPanel game={game} ownPlayerId={ownPlayerId} ownPendingContribution={ownPendingContribution} busy={busy} send={send} />
       </div>
     );
   }
@@ -77,7 +77,6 @@ export function TabletopExperience({
         ownPendingContribution={ownPendingContribution}
         busy={busy}
         send={sendFromTable}
-        tabletopSelection={selection}
       />
     </div>
   );

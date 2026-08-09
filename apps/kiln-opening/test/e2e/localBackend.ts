@@ -39,15 +39,25 @@ class BrowserTestSecurity implements SecurityProvider {
 }
 
 class LocalBackend {
+  private store = new InMemoryMultiplayerStore();
   private service = this.makeService(720);
 
   async handle(body: Record<string, unknown>, authUserId: string): Promise<unknown> {
     switch (body["operation"]) {
       case "e2e_reset":
+        this.store = new InMemoryMultiplayerStore();
         this.service = this.makeService(
           Number.isInteger(body["seed"]) ? Number(body["seed"]) : 720,
         );
         return { ok: true, value: null };
+      case "list_public_events":
+        return {
+          ok: true,
+          value: await this.store.listPublicEvents(
+            String(body["roomId"] ?? ""),
+            Number(body["afterSequence"] ?? 0),
+          ),
+        };
       case "create_room":
         return this.service.createRoom({ displayName: String(body["displayName"] ?? ""), authUserId });
       case "join_room":
@@ -87,7 +97,7 @@ class LocalBackend {
   }
 
   private makeService(seed: number): AuthoritativeGameService {
-    return new AuthoritativeGameService(new InMemoryMultiplayerStore(), new BrowserTestSecurity(seed));
+    return new AuthoritativeGameService(this.store, new BrowserTestSecurity(seed));
   }
 }
 
