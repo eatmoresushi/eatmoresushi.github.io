@@ -21,6 +21,8 @@ test("the host can end a session for everyone while Leave view remains resumable
     await guest.getByRole("button", { name: "Join the workshop" }).click();
 
     await expect(guest.getByRole("button", { name: "End session", exact: true })).toHaveCount(0);
+    await expect(guest.locator(".room-role")).toHaveText("Guest");
+    await expect(host.locator(".room-role")).toHaveText("Host");
     await host.getByRole("button", { name: "End session", exact: true }).click();
     await expect(host.getByRole("dialog", { name: `End room ${roomCode} for everyone?` })).toBeVisible();
     await host.getByRole("button", { name: "Keep playing" }).click();
@@ -39,6 +41,12 @@ test("the host can end a session for everyone while Leave view remains resumable
     await expect(guest.getByLabel("Saved session")).toContainText(`Room ${roomCode}`);
     await guest.getByRole("button", { name: "Resume" }).click();
     await expect(guest.getByRole("heading", { name: "This workshop session has ended." })).toBeVisible();
+    await guest.getByRole("button", { name: "Return home" }).click();
+    await expect(guest.getByLabel("Saved session")).toContainText(`Room ${roomCode}`);
+    await guest.getByRole("button", { name: "Forget seat" }).click();
+    await expect(guest.getByLabel("Saved session")).toHaveCount(0);
+    await expect(guest.getByLabel("Workshop name")).toBeVisible();
+    expect(await guest.evaluate(() => localStorage.getItem("kiln-opening:last-seat"))).toBeNull();
   } finally {
     await close();
   }

@@ -55,11 +55,13 @@ function readSavedSeat(): SavedSeat | null {
   }
 }
 
-function saveSeat(connection: RoomConnection): void {
+function saveSeat(connection: RoomConnection): SavedSeat {
+  const savedSeat = { roomCode: connection.room.code, seatToken: connection.seatToken };
   localStorage.setItem(
     LAST_SEAT_KEY,
-    JSON.stringify({ roomCode: connection.room.code, seatToken: connection.seatToken }),
+    JSON.stringify(savedSeat),
   );
+  return savedSeat;
 }
 
 function configurationApi(): { api: GameApi | null; message: string | null } {
@@ -81,6 +83,7 @@ export function App() {
   const [error, setError] = useState<MultiplayerError | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [confirmEndSession, setConfirmEndSession] = useState(false);
+  const [savedSeat, setSavedSeat] = useState<SavedSeat | null>(() => readSavedSeat());
   const reconnecting = useRef(false);
 
   const applyCommand = useCallback((result: CommandSuccess) => {
@@ -103,7 +106,10 @@ export function App() {
     try {
       const result = await api.reconnect(target.roomCode, target.seatToken);
       if (!result.ok) {
-        if (saved !== undefined) localStorage.removeItem(LAST_SEAT_KEY);
+        if (saved !== undefined) {
+          localStorage.removeItem(LAST_SEAT_KEY);
+          setSavedSeat(null);
+        }
         setError(result.error);
         return;
       }
@@ -111,6 +117,7 @@ export function App() {
         ...result.value,
         seatToken: target.seatToken,
       });
+      setSavedSeat(target);
       setError(null);
       if (announce) setNotice("Reconnected to the latest authoritative state.");
     } finally {
@@ -140,7 +147,7 @@ export function App() {
       const result = await api.createRoom(displayName);
       if (!result.ok) setError(result.error);
       else {
-        saveSeat(result.value);
+        setSavedSeat(saveSeat(result.value));
         setConnection(result.value);
       }
     } finally {
@@ -156,7 +163,7 @@ export function App() {
       const result = await api.joinRoom(roomCode, displayName);
       if (!result.ok) setError(result.error);
       else {
-        saveSeat(result.value);
+        setSavedSeat(saveSeat(result.value));
         setConnection(result.value);
       }
     } finally {
@@ -247,10 +254,9 @@ export function App() {
 
   function forgetSeat(): void {
     localStorage.removeItem(LAST_SEAT_KEY);
+    setSavedSeat(null);
     leaveView();
   }
-
-  const savedSeat = connection === null ? readSavedSeat() : null;
 
   return (
     <div className="app-shell">
@@ -267,6 +273,12 @@ export function App() {
               {connection.room.status === "abandoned"
                 ? "Ended"
                 : connection.room.status === "finished" ? "Complete" : "Live"}
+            </span>
+            <span
+              className={`room-role ${connection.seat.isHost ? "is-host" : "is-guest"}`}
+              title={connection.seat.isHost ? "You control this room" : "Only the room host can end the session"}
+            >
+              {connection.seat.isHost ? "Host" : "Guest"}
             </span>
             {connection.room.status !== "abandoned" && (
               <button className="text-button" type="button" onClick={() => void reconnect(undefined, true)} disabled={busy}>
@@ -305,7 +317,7 @@ export function App() {
             disabled={busy || api === null}
             onCreate={createRoom}
             onJoin={joinRoom}
-            savedSeat={savedSeat}
+            savedSeat={connection === null ? savedSeat : null}
             onResume={() => savedSeat === null ? undefined : void reconnect(savedSeat)}
             onForget={forgetSeat}
           />
