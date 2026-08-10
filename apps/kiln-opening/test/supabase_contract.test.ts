@@ -8,6 +8,7 @@ import v065Migration from "../supabase/migrations/202608090001_v065_rules.sql?ra
 import v100Migration from "../supabase/migrations/202608090002_v100_rules.sql?raw";
 import v101Migration from "../supabase/migrations/202608090003_v101_fire_deck.sql?raw";
 import v102Migration from "../supabase/migrations/202608100001_v102_rules.sql?raw";
+import onlineAiMigration from "../supabase/migrations/202608100002_online_ai_v003.sql?raw";
 import edgeFunction from "../supabase/functions/game-action/index.ts?raw";
 
 describe("Supabase security contract", () => {
@@ -107,5 +108,21 @@ describe("Supabase security contract", () => {
     expect(lifecycleMigration).toContain("create extension if not exists pg_cron");
     expect(lifecycleMigration).toContain("kiln-opening-session-retention");
     expect(lifecycleMigration).toContain("select private.cleanup_expired_game_sessions();");
+  });
+
+  it("keeps V003 computer seats server-authoritative and their deterministic seeds private", () => {
+    expect(onlineAiMigration).toContain("add column if not exists is_ai boolean not null default false");
+    expect(onlineAiMigration).toContain("create table if not exists private.room_ai_seats");
+    expect(onlineAiMigration).toContain("policy_version text not null check (policy_version = 'selfplay-003')");
+    expect(onlineAiMigration).toContain("ai_seed bigint not null check (ai_seed between 0 and 4294967295)");
+    expect(onlineAiMigration).toContain("alter table private.room_ai_seats enable row level security");
+    expect(onlineAiMigration).toContain("revoke all on private.room_ai_seats from public, anon, authenticated");
+    expect(onlineAiMigration).toContain("create or replace function public.server_add_computer_seat");
+    expect(onlineAiMigration).toContain("create or replace function public.server_remove_computer_seat");
+    expect(onlineAiMigration).toContain("v_room.host_seat_id <> p_host_seat_id");
+    expect(onlineAiMigration).toContain("to service_role");
+    expect(edgeFunction).toContain('case "add_computer"');
+    expect(edgeFunction).toContain('case "remove_computer"');
+    expect(edgeFunction).toContain('case "advance_computers"');
   });
 });

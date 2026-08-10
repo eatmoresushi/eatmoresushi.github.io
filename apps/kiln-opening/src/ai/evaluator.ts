@@ -1,0 +1,795 @@
+import {
+  DECORATION_COSTS,
+  IMPERIAL_PROGRESS,
+  ORDER_DEFINITIONS,
+  QUALITY_RANK,
+  SHAPE_COSTS,
+  determineBaseHeat,
+  kilnZoneModifier,
+  preferredHeat,
+  qualityFromDifference,
+} from "../game/index.ts";
+import type { CeramicState, FinishedCeramic, Quality } from "../game/index.ts";
+import { actionOrderId, actionTechniqueId } from "./legalActions.ts";
+import { fireExpectation } from "./observation.ts";
+import { plannedOrderCompatibility, projectSaggerCounterfactual } from "./counterfactuals.ts";
+import {
+  buildPlayerPlan,
+  activeOrderProgressReward,
+  evaluateOrderFeasibility,
+  knownBlindOrderPool,
+  marginalResourceValue,
+  imperialProgressRuleDelta,
+  orderPlanUtility,
+  terminalPipelinePenalty,
+} from "./planning.ts";
+import { forecastTechniqueAcquisition } from "./techniqueForecast.ts";
+import type {
+  AIAction,
+  AIDecisionContext,
+  AIStrategyProfile,
+  EvaluationFactors,
+  OrderFeasibility,
+  PlannedCeramicAssignment,
+  PlayerObservation,
+  PlayerPlan,
+  ScoredAIAction,
+  AIDecisionDiagnostics,
+  OptionalEffectDiagnostic,
+  StrategyIntent,
+  StrategyTag,
+} from "./types.ts";
+
+const EMPTY_DIAGNOSTICS = (): AIDecisionDiagnostics => ({
+  optionalEffect: null,
+  techniqueForecast: null,
+  search: null,
+  oracle: null,
+});
+
+const ZERO_FACTORS = (): EvaluationFactors => ({
+  immediateVP: 0,
+  futureVP: 0,
+  resourceEfficiency: 0,
+  imperialValue: 0,
+  qualityValue: 0,
+  blocking: 0,
+  risk: 0,
+  learned: 0,
+  orderFeasibility: 0,
+  planProgress: 0,
+  conversionUrgency: 0,
+  resourceDemand: 0,
+  opportunityCost: 0,
+});
+
+function ownCeramics(observation: PlayerObservation): CeramicState[] {
+  return Object.values(observation.game.ceramics).filter((ceramic) => ceramic.ownerId === observation.playerId);
+}
+
+function qualityValue(quality: Quality, profile: AIStrategyProfile): number {
+  return profile.qualityParameters[quality];
+}
+
+function expectedQualityValue(
+  observation: PlayerObservation,
+  profile: AIStrategyProfile,
+  glaze: Parameters<typeof preferredHeat>[0],
+  zone: number,
+  baseHeat: number,
+): number {
+  return fireExpectation(observation).reduce((sum, card) => {
+    const difference = Math.abs(baseHeat + card.modifier + zone - preferredHeat(glaze));
+    return sum + card.probability * qualityValue(qualityFromDifference(difference), profile);
+  }, 0);
+}
+
+function primaryFeasibility(plan: PlayerPlan): OrderFeasibility | null {
+  return plan.orderFeasibilities.find(({ orderId }) => orderId === plan.primaryOrderId) ?? null;
+}
+
+function plannedAssignments(plan: PlayerPlan): PlannedCeramicAssignment[] {
+  const selected = new Set([plan.primaryOrderId, ...plan.secondaryOrderIds]);
+  return plan.orderFeasibilities.filter(({ orderId }) => selected.has(orderId)).flatMap(({ assignments }) => assignments);
+}
+
+function intentBias(intent: StrategyIntent, kind: "market" | "imperial" | "quality" | "volume" | "technique"): number {
+  if (intent === "Imperial" && kind === "imperial") return 3.2;
+  if (intent === "Market" && kind === "market") return 1.2;
+  if (intent === "Quality-control" && kind === "quality") return 1;
+  if (intent === "Volume-multi" && kind === "volume") return 1;
+  if (intent === "Technique-economy" && kind === "technique") return 1;
+  if ((intent === "Market" && kind === "imperial") || (intent === "Imperial" && kind === "market")) return -0.5;
+  return intent === "Hybrid" ? 0.25 : 0;
+}
+
+function actionWorkerKind(observation: PlayerObservation, action: AIAction): "shifu" | "apprentice" | null {
+  return "workerId" in action && typeof action.workerId === "string"
+    ? observation.game.players[observation.playerId]?.workers[action.workerId]?.kind ?? null
+    : null;
+}
+
+function acquisitionScore(
+  observation: PlayerObservation,
+  profile: AIStrategyProfile,
+  intent: StrategyIntent,
+  orderId: string,
+): { value: number; feasibility: OrderFeasibility } {
+  const feasibility = evaluateOrderFeasibility(observation, orderId);
+  const order = ORDER_DEFINITIONS[orderId];
+  if (order === undefined) return { value: -20, feasibility };
+  let value = orderPlanUtility(observation, feasibility, profile, intent)
+    + (order.id.startsWith("I") ? intentBias(intent, "imperial") : intentBias(intent, "market"))
+    - (feasibility.feasible ? 0 : 4 + feasibility.actionDebt * 0.18)
+    - (feasibility.earliestCompletionRound > 5 ? 8 : 0);
+  if (order.id.startsWith("I") && intent === "Imperial") {
+    if (observation.game.round <= 2 && feasibility.feasible) {
+      value += 7 + activeOrderProgressReward(observation, order.imperialProgressReward) * 1.5;
+    }
+    if (observation.game.round >= 4 && !feasibility.feasible) value -= 8;
+  }
+  if (intent === "Volume-multi") {
+    value += order.ceramics.length > 1 && feasibility.feasible ? 5 : order.ceramics.length === 1 ? -2 : 0;
+  }
+  return { value, feasibility };
+}
+
+function terminalCeramicCost(observation: PlayerObservation, action: AIAction): number {
+  if (observation.game.round < 5) return 0;
+  switch (action.type) {
+    case "FORM_CERAMICS": return action.shapes.length * 7;
+    case "GLAZE_CERAMICS": return action.selections.length * 4;
+    case "USE_KILN_YARD": return 0;
+    default: return 0;
+  }
+}
+
+function scoreOptionalQuality(
+  observation: PlayerObservation,
+  profile: AIStrategyProfile,
+  ceramicId: string,
+  afterQuality: Quality,
+): number {
+  const result = observation.game.firingContext?.ceramicResults[ceramicId];
+  const before = result?.assignedQuality ?? (result === undefined ? null : qualityFromDifference(result.finalHeatDifference));
+  return before === null ? 0 : qualityValue(afterQuality, profile) - qualityValue(before, profile);
+}
+
+function qualityDiagnostic(
+  effectId: OptionalEffectDiagnostic["effectId"],
+  observation: PlayerObservation,
+  plan: PlayerPlan,
+  ceramicId: string | null,
+  before: Quality | null,
+  after: Quality | null,
+  grossBenefit: number,
+  coinCost: number,
+  woodCost: number,
+  reasonCode: string,
+  eligibleTargetIds?: string[],
+  compatibilityBefore = 0,
+  compatibilityAfter = 0,
+  orderValueDelta = 0,
+  opportunityCost = 0,
+  selectedDelta: -1 | 1 | null = null,
+): OptionalEffectDiagnostic {
+  return {
+    effectId,
+    eligibleTargetIds: eligibleTargetIds ?? ownCeramics(observation).filter(({ stage }) => stage === "loaded").map(({ id }) => id),
+    selected: ceramicId !== null,
+    selectedTargetId: ceramicId,
+    selectedDelta,
+    naturalQuality: before,
+    projectedQuality: after,
+    qualityRankDelta: before === null || after === null ? 0 : QUALITY_RANK[after] - QUALITY_RANK[before],
+    compatibleOrdersBefore: compatibilityBefore,
+    compatibleOrdersAfter: compatibilityAfter,
+    orderValueDelta,
+    coinCost,
+    woodCost,
+    opportunityCost,
+    grossBenefit,
+    projectedNetValue: grossBenefit + orderValueDelta - coinCost - woodCost - opportunityCost,
+    reasonCode,
+  };
+}
+
+function junDiagnostic(
+  observation: PlayerObservation,
+  profile: AIStrategyProfile,
+  plan: PlayerPlan,
+  selectedCeramicId: string | null,
+  selectedDelta: -1 | 1 | null,
+): OptionalEffectDiagnostic {
+  const player = observation.game.players[observation.playerId];
+  const coinCost = observation.junActivationCoinCost * marginalResourceValue(
+    player?.resources.coins ?? 0,
+    plan.resourceDemand.coins,
+    0,
+  );
+  const loaded = ownCeramics(observation).filter(
+    (ceramic): ceramic is Extract<CeramicState, { stage: "loaded" }> => ceramic.stage === "loaded",
+  );
+  const candidates = loaded.flatMap((ceramic) => {
+    const result = observation.game.firingContext?.ceramicResults[ceramic.id];
+    if (result === undefined) return [];
+    const before = qualityFromDifference(result.finalHeatDifference);
+    return ([-1, 1] as const).map((delta) => {
+      const after = qualityFromDifference(Math.abs(
+        result.finalActualHeat + delta - preferredHeat(ceramic.glaze),
+      ));
+      const grossBenefit = qualityValue(after, profile) - qualityValue(before, profile);
+      const compatibilityBefore = plannedOrderCompatibility(observation, plan, ceramic.id, before);
+      const compatibilityAfter = plannedOrderCompatibility(observation, plan, ceramic.id, after);
+      const orderValueDelta = compatibilityAfter.value - compatibilityBefore.value;
+      return {
+        ceramicId: ceramic.id,
+        delta,
+        before,
+        after,
+        grossBenefit,
+        compatibilityBefore,
+        compatibilityAfter,
+        orderValueDelta,
+        netValue: grossBenefit + orderValueDelta - coinCost,
+      };
+    });
+  }).sort((left, right) => (
+    right.netValue - left.netValue ||
+    left.ceramicId.localeCompare(right.ceramicId) ||
+    left.delta - right.delta
+  ));
+  const candidate = selectedCeramicId === null || selectedDelta === null
+    ? candidates[0]
+    : candidates.find(({ ceramicId, delta }) => ceramicId === selectedCeramicId && delta === selectedDelta);
+  const eligibleTargetIds = [...new Set(candidates.map(({ ceramicId }) => ceramicId))];
+  if (candidate === undefined) {
+    return qualityDiagnostic(
+      "jun", observation, plan, selectedCeramicId, null, null, 0, coinCost, 0,
+      "no_beneficial_adjustment", eligibleTargetIds, 0, 0, 0, 0, selectedDelta,
+    );
+  }
+  const selected = selectedCeramicId !== null && selectedDelta !== null;
+  const reason = selected
+    ? candidate.netValue > 0
+      ? observation.junActivationCoinCost > 0 ? "benefit_exceeds_activation_cost" : "quality_or_order_improves"
+      : "benefit_not_worth_activation_cost"
+    : candidate.netValue > 0
+      ? "declined_positive_adjustment"
+      : observation.junActivationCoinCost > 0
+        ? "declined_below_activation_cost"
+        : "declined_no_beneficial_adjustment";
+  return qualityDiagnostic(
+    "jun",
+    observation,
+    plan,
+    selected ? candidate.ceramicId : null,
+    candidate.before,
+    candidate.after,
+    candidate.grossBenefit,
+    coinCost,
+    0,
+    reason,
+    eligibleTargetIds,
+    candidate.compatibilityBefore.compatibleOrders,
+    candidate.compatibilityAfter.compatibleOrders,
+    candidate.orderValueDelta,
+    0,
+    selected ? candidate.delta : null,
+  );
+}
+
+function saggerDiagnostic(
+  observation: PlayerObservation,
+  profile: AIStrategyProfile,
+  plan: PlayerPlan,
+  selectedCeramicId: string | null,
+): OptionalEffectDiagnostic {
+  const candidates = ownCeramics(observation)
+    .filter((ceramic): ceramic is Extract<CeramicState, { stage: "loaded" }> => ceramic.stage === "loaded")
+    .flatMap((ceramic) => {
+      const projected = projectSaggerCounterfactual(observation, plan, ceramic.id);
+      if (projected === null) return [];
+      const qualityGain = qualityValue(projected.zeroFireQuality, profile) - qualityValue(projected.naturalQuality, profile);
+      const coinCost = 2 * marginalResourceValue(observation.game.players[observation.playerId]!.resources.coins, plan.resourceDemand.coins, 0);
+      const net = qualityGain + projected.orderValueDelta - coinCost;
+      return [{ projected, qualityGain, coinCost, net }];
+    })
+    .sort((left, right) => right.net - left.net || left.projected.ceramicId.localeCompare(right.projected.ceramicId));
+  const selected = selectedCeramicId === null
+    ? candidates[0]
+    : candidates.find(({ projected }) => projected.ceramicId === selectedCeramicId);
+  if (selected === undefined) return qualityDiagnostic(
+    "sagger_selection", observation, plan, selectedCeramicId, null, null, 0, 0, 0, "no_counterfactual", candidates.map(({ projected }) => projected.ceramicId),
+  );
+  const reason = selected.net <= 0
+    ? selected.projected.qualityRankDelta < 0 ? "zero_fire_downgrades" : selected.projected.qualityRankDelta === 0 ? "unchanged_not_worth_cost" : "benefit_below_full_cost"
+    : "positive_counterfactual_value";
+  return qualityDiagnostic(
+    "sagger_selection",
+    observation,
+    plan,
+    selectedCeramicId,
+    selected.projected.naturalQuality,
+    selected.projected.zeroFireQuality,
+    selected.qualityGain,
+    selected.coinCost,
+    0,
+    reason,
+    candidates.map(({ projected }) => projected.ceramicId),
+    selected.projected.compatibilityBefore.compatibleOrders,
+    selected.projected.compatibilityAfter.compatibleOrders,
+    selected.projected.orderValueDelta,
+  );
+}
+
+function geDiagnostic(
+  observation: PlayerObservation,
+  profile: AIStrategyProfile,
+  plan: PlayerPlan,
+  selectedCeramicId: string | null,
+): OptionalEffectDiagnostic {
+  const eligible = ownCeramics(observation).filter((ceramic): ceramic is Extract<CeramicState, { stage: "loaded" }> => {
+    if (ceramic.stage !== "loaded") return false;
+    const result = observation.game.firingContext?.ceramicResults[ceramic.id];
+    return result !== undefined && result.finalHeatDifference === 1;
+  });
+  const evaluated = eligible.map((ceramic) => {
+    const before = plannedOrderCompatibility(observation, plan, ceramic.id, "fine", ceramic.decoration);
+    const after = plannedOrderCompatibility(observation, plan, ceramic.id, "masterpiece", "crackle");
+    const qualityGain = qualityValue("masterpiece", profile) - qualityValue("fine", profile);
+    return { ceramic, before, after, qualityGain, orderDelta: after.value - before.value, net: qualityGain + after.value - before.value };
+  }).sort((left, right) => right.net - left.net || left.ceramic.id.localeCompare(right.ceramic.id));
+  const selected = selectedCeramicId === null ? evaluated[0] : evaluated.find(({ ceramic }) => ceramic.id === selectedCeramicId);
+  if (selected === undefined) return qualityDiagnostic("ge", observation, plan, selectedCeramicId, null, null, 0, 0, 0, "no_eligible_target", eligible.map(({ id }) => id));
+  return qualityDiagnostic(
+    "ge", observation, plan, selectedCeramicId, "fine", "masterpiece", selected.qualityGain, 0, 0,
+    selected.net <= 0 ? "forced_crackle_breaks_plan" : selected.orderDelta < 0 ? "quality_outweighs_order_loss" : "quality_and_order_compatible",
+    eligible.map(({ id }) => id), selected.before.compatibleOrders, selected.after.compatibleOrders, selected.orderDelta,
+  );
+}
+
+function scoreAction(
+  observation: PlayerObservation,
+  action: AIAction,
+  context: AIDecisionContext,
+  profile: AIStrategyProfile,
+  plan: PlayerPlan,
+  factors: EvaluationFactors,
+  diagnostics: AIDecisionDiagnostics,
+): void {
+  const player = observation.game.players[observation.playerId];
+  if (player === undefined) return;
+  const ceramics = ownCeramics(observation);
+  const assignments = plannedAssignments(plan);
+  const intent = context.assignedIntent ?? plan.assignedIntent;
+  const primary = primaryFeasibility(plan);
+
+  switch (action.type) {
+    case "SELECT_KILN":
+      factors.futureVP += action.kilnId === context.assignedTradition ? 1_000 : -1_000;
+      factors.learned += profile.traditionValues[action.kilnId];
+      return;
+    case "KEEP_STARTING_ORDER": {
+      const orderId = observation.game.phase.type === "setup_starting_orders"
+        ? observation.game.phase.initialOrderIds[observation.playerId]
+        : undefined;
+      if (orderId !== undefined) {
+        const acquisition = acquisitionScore(observation, profile, intent, orderId);
+        factors.orderFeasibility += acquisition.value;
+      }
+      return;
+    }
+    case "REDRAW_STARTING_ORDER": {
+      const orderId = observation.game.phase.type === "setup_starting_orders"
+        ? observation.game.phase.initialOrderIds[observation.playerId]
+        : undefined;
+      if (orderId !== undefined) {
+        const current = acquisitionScore(observation, profile, intent, orderId);
+        const marketPool = knownBlindOrderPool(observation, "market");
+        const expected = marketPool.length === 0 ? 0 : marketPool.reduce(
+          (sum, id) => sum + acquisitionScore(observation, profile, intent, id).value,
+          0,
+        ) / marketPool.length;
+        factors.orderFeasibility += expected - current.value - 0.4;
+      }
+      return;
+    }
+    case "PASS_WORK_PHASE": {
+      const available = Object.values(player.workers).filter((worker) => worker.status === "available").length;
+      const workable = assignments.some((assignment) => assignment.currentStage === "missing" || assignment.currentStage === "shaped" || assignment.currentStage === "glazed");
+      factors.opportunityCost -= available * (primary?.actionDebt ?? 0) > 0
+        ? available * (workable ? 3 : 0.35)
+        : available * 1.2;
+      if (available === 0) factors.resourceEfficiency += 2;
+      return;
+    }
+    case "GAIN_MATERIALS": {
+      const clayBase = player.resources.clay;
+      const woodBase = player.resources.wood;
+      for (let index = 0; index < action.clay; index += 1) {
+        factors.resourceDemand += marginalResourceValue(clayBase + index, plan.resourceDemand.clay);
+      }
+      for (let index = 0; index < action.wood; index += 1) {
+        factors.resourceDemand += marginalResourceValue(woodBase + index, plan.resourceDemand.wood);
+      }
+      factors.opportunityCost -= Math.max(0, clayBase + action.clay - plan.resourceDemand.clay - 2) * 1.25;
+      factors.opportunityCost -= Math.max(0, woodBase + action.wood - plan.resourceDemand.wood - 2) * 1.7;
+      return;
+    }
+    case "FORM_CERAMICS": {
+      const needed = assignments.filter((assignment) => assignment.currentStage === "missing");
+      const remaining = [...needed];
+      for (const shape of action.shapes) {
+        const index = remaining.findIndex((assignment) => assignment.shape === shape);
+        if (index >= 0) {
+          factors.planProgress += 6.2;
+          remaining.splice(index, 1);
+        } else {
+          factors.futureVP += plan.terminalForecast.shouldStartSpeculativeCeramic
+            ? 1.2 + intentBias(intent, "volume")
+            : observation.game.round >= 4
+              ? -10
+              : -5;
+        }
+        factors.resourceEfficiency -= SHAPE_COSTS[shape] * 0.18;
+      }
+      if (action.dingExtraShape !== undefined) {
+        const useful = needed.some((assignment) => assignment.shape === action.dingExtraShape);
+        factors.planProgress += useful ? 5.5 : -4;
+      }
+      factors.conversionUrgency -= plan.conversionUrgency * (plan.pipeline.shaped + plan.pipeline.glazed) * 0.35;
+      factors.opportunityCost -= terminalCeramicCost(observation, action);
+      factors.resourceEfficiency += (action.useTechniqueIds?.length ?? 0) * 0.7;
+      return;
+    }
+    case "GLAZE_CERAMICS": {
+      for (const selection of action.selections) {
+        const planned = assignments.find((assignment) => assignment.ceramicId === selection.ceramicId);
+        if (planned === undefined) factors.planProgress += plan.terminalForecast.presentationCapacity > 0
+          ? 0.5
+          : observation.game.round >= 4 ? -8 : -2.5;
+        else if (planned.glaze === selection.glaze && planned.decoration === selection.decoration) factors.planProgress += 7.2;
+        else factors.planProgress -= 5;
+        factors.resourceEfficiency -= DECORATION_COSTS[selection.decoration] * 0.2;
+        factors.qualityValue += expectedQualityValue(observation, profile, selection.glaze, 0, 2) * 0.22;
+      }
+      factors.conversionUrgency += action.selections.length * plan.conversionUrgency * 2.4;
+      factors.opportunityCost -= terminalCeramicCost(observation, action);
+      if (action.shifuMode === "free_single") factors.resourceEfficiency += 0.9;
+      return;
+    }
+    case "USE_KILN_YARD": {
+      for (const load of action.loads) {
+        const ceramic = observation.game.ceramics[load.ceramicId];
+        const planned = assignments.find((assignment) => assignment.ceramicId === load.ceramicId);
+        factors.planProgress += planned === undefined
+          ? plan.terminalForecast.presentationCapacity > 0 && plan.terminalForecast.surplusCeramics === 0 ? 0.5 : observation.game.round >= 4 ? -10 : -4
+          : 6.5;
+        if (ceramic?.stage === "glazed") {
+          factors.qualityValue += expectedQualityValue(
+            observation,
+            profile,
+            ceramic.glaze,
+            kilnZoneModifier(load.kilnSpaceId),
+            2,
+          );
+        }
+      }
+      factors.conversionUrgency += action.loads.length * (2.5 + plan.conversionUrgency * 2.8);
+      return;
+    }
+    case "OFFICE_GAIN_COINS": {
+      const amount = actionWorkerKind(observation, action) === "shifu" ? 4 : 3;
+      for (let index = 0; index < amount; index += 1) factors.resourceDemand += marginalResourceValue(player.resources.coins + index, plan.resourceDemand.coins, 0);
+      if (player.resources.coins >= plan.resourceDemand.coins + 1) factors.opportunityCost -= 4;
+      return;
+    }
+    case "BEGIN_OFFICE_ORDERS": {
+      const handLimit = player.kilnId === "GU" ? 4 : 3;
+      if (player.orderHand.length >= handLimit) {
+        factors.risk -= 20;
+        return;
+      }
+      const visible = [...observation.game.displays.market, ...observation.game.displays.imperial]
+        .map((orderId) => acquisitionScore(observation, profile, intent, orderId).value)
+        .sort((left, right) => right - left);
+      const capacity = Math.min(action.mode === "take_up_to_two" ? 2 : 1, handLimit - player.orderHand.length);
+      factors.orderFeasibility += visible.slice(0, capacity).reduce((sum, value) => sum + Math.max(-2, value), 0) * 0.35;
+      if (action.mode === "take_one_and_gain_two_coins") factors.resourceDemand += 2 * marginalResourceValue(player.resources.coins, plan.resourceDemand.coins, 0);
+      factors.opportunityCost -= plan.conversionUrgency * (plan.pipeline.shaped + plan.pipeline.glazed) * 1.1;
+      return;
+    }
+    case "OFFICE_TAKE_ORDER":
+    case "OFFICE_USE_COLOUR_SAMPLES": {
+      const acquisition = acquisitionScore(observation, profile, intent, action.orderId);
+      factors.orderFeasibility += acquisition.value;
+      if (action.type === "OFFICE_USE_COLOUR_SAMPLES") {
+        // Colour Samples should replace a visibly poor option, not a good plan.
+        factors.blocking += acquisition.value < 0 ? -acquisition.value * 0.4 : -acquisition.value * 0.4;
+      }
+      return;
+    }
+    case "OFFICE_DRAW_BLIND_ORDER": {
+      const pool = knownBlindOrderPool(observation, action.deck);
+      const expected = pool.length === 0 ? -8 : pool.reduce(
+        (sum, orderId) => sum + acquisitionScore(observation, profile, intent, orderId).value,
+        0,
+      ) / pool.length;
+      factors.orderFeasibility += expected * 0.75;
+      factors.risk -= 0.8;
+      if (action.deck === "imperial") {
+        const visibleImperial = observation.game.displays.imperial.map((orderId) => acquisitionScore(observation, profile, intent, orderId));
+        const hasViableFaceUp = visibleImperial.some(({ feasibility }) => feasibility.feasible);
+        if (observation.game.round >= 4) factors.risk -= 9;
+        else if (intent === "Imperial" && hasViableFaceUp) factors.risk -= 7;
+        else if (intent === "Imperial" && observation.game.round <= 2) factors.imperialValue += 2;
+      }
+      return;
+    }
+    case "OFFICE_END_ORDERS":
+      factors.opportunityCost += primary?.feasible === false ? 1.5 : 0;
+      return;
+    case "OFFICE_SKIP_COLOUR_SAMPLES":
+    case "GUILD_SKIP_REFRESH":
+      factors.resourceEfficiency += 0.05;
+      return;
+    case "OFFICE_RESOLVE_FLAWED_SALE":
+      factors.resourceEfficiency += action.ceramicIds.length * 2.5;
+      return;
+    case "OFFICE_RESOLVE_CONNOISSEUR_NETWORK":
+      if (action.ceramicId !== null) {
+        const reserved = assignments.some((assignment) => assignment.ceramicId === action.ceramicId);
+        factors.resourceEfficiency += 5 * marginalResourceValue(player.resources.coins, plan.resourceDemand.coins, 0);
+        factors.opportunityCost -= reserved ? 8 : 0;
+      }
+      return;
+    case "USE_COURT_PATRONAGE": {
+      const unlockValue = player.imperialProgress === 1 && observation.game.round < 5 ? 3.5 : 0;
+      const presentationValue = player.imperialProgress === 3 ? 8 + Math.min(3, plan.pipeline.finished) * 1.5 : 0;
+      const fallbackPenalty = !plan.imperialRoute.presentationReachable && player.imperialProgress < 3 && observation.game.round >= 4 ? -12 : 0;
+      factors.imperialValue += 3 + unlockValue + presentationValue + fallbackPenalty +
+        intentBias(intent, "imperial") + imperialProgressRuleDelta(observation, 1);
+      factors.resourceEfficiency -= 5 * marginalResourceValue(player.resources.coins, plan.resourceDemand.coins, 0);
+      return;
+    }
+    case "BEGIN_GUILD_ACTION": {
+      const workerKind = actionWorkerKind(observation, action);
+      const forecasts = Object.values(observation.game.displays.techniques).flat().map((techniqueId) =>
+        forecastTechniqueAcquisition(observation, profile, plan, techniqueId, workerKind));
+      const best = forecasts.sort((left, right) => right.netValue - left.netValue)[0];
+      factors.futureVP += best !== undefined && best.netValue > 0
+        ? best.netValue + intentBias(intent, "technique")
+        : -18;
+      factors.opportunityCost -= plan.conversionUrgency * (plan.pipeline.shaped + plan.pipeline.glazed);
+      return;
+    }
+    case "GUILD_REFRESH_TECHNIQUE": {
+      const forecast = forecastTechniqueAcquisition(observation, profile, plan, action.techniqueId);
+      factors.blocking += forecast.netValue <= 0 ? Math.min(4, -forecast.netValue * 0.5) : -forecast.netValue;
+      return;
+    }
+    case "GUILD_BUY_TECHNIQUE": {
+      const forecast = forecastTechniqueAcquisition(observation, profile, plan, action.techniqueId);
+      diagnostics.techniqueForecast = forecast;
+      factors.futureVP += forecast.netValue > 0 ? forecast.netValue + intentBias(intent, "technique") : forecast.netValue - 25;
+      return;
+    }
+    case "RESOLVE_KILN_SETTING":
+      if (action.ceramicId !== null && action.toSpaceId !== null) {
+        const ceramic = observation.game.ceramics[action.ceramicId];
+        if (ceramic?.stage === "loaded") {
+          const before = expectedQualityValue(observation, profile, ceramic.glaze, kilnZoneModifier(ceramic.kilnSpaceId), 2);
+          const after = expectedQualityValue(observation, profile, ceramic.glaze, kilnZoneModifier(action.toSpaceId), 2);
+          factors.qualityValue += after - before;
+        }
+      }
+      return;
+    case "SUBMIT_WOOD_CONTRIBUTION": {
+      const loaded = ceramics.filter((ceramic) => ceramic.stage === "loaded");
+      const contributorCount = observation.game.phase.type === "firing_contributions"
+        ? observation.game.phase.eligiblePlayerIds.length
+        : 1;
+      const estimatedOthers = Math.max(0, contributorCount - 1) * 1.4;
+      const baseHeat = determineBaseHeat(contributorCount, Math.round(action.amount + estimatedOthers));
+      for (const ceramic of loaded) {
+        if (ceramic.stage !== "loaded") continue;
+        factors.qualityValue += expectedQualityValue(observation, profile, ceramic.glaze, kilnZoneModifier(ceramic.kilnSpaceId), baseHeat);
+      }
+      // Contributions are simultaneous and hidden. A one-Wood convention is
+      // the stable, non-collusive way for identical policies to target the
+      // contributor-scaled Base Heat 2 threshold without assuming others shirk.
+      factors.qualityValue += loaded.length > 0 ? (action.amount === 1 ? 2.2 : -Math.abs(action.amount - 1) * 1.2) : 0;
+      factors.resourceEfficiency -= action.amount * marginalResourceValue(player.resources.wood, plan.resourceDemand.wood) * 0.45;
+      return;
+    }
+    case "RESOLVE_FUEL_LEDGER": {
+      const firing = observation.game.firingContext;
+      if (firing === null) return;
+      const total = Object.values(firing.contributions).reduce((sum, amount) => sum + amount, 0);
+      const beforeHeat = determineBaseHeat(firing.contributors.length, total);
+      const afterHeat = determineBaseHeat(firing.contributors.length, total + 1);
+      let grossBenefit = 0;
+      for (const ceramic of ceramics) {
+        if (ceramic.stage !== "loaded") continue;
+        const zone = kilnZoneModifier(ceramic.kilnSpaceId);
+        const before = expectedQualityValue(observation, profile, ceramic.glaze, zone, beforeHeat);
+        const after = expectedQualityValue(observation, profile, ceramic.glaze, zone, afterHeat);
+        grossBenefit += after - before;
+      }
+      const woodCost = marginalResourceValue(player.resources.wood, plan.resourceDemand.wood);
+      const coinCost = marginalResourceValue(player.resources.coins, plan.resourceDemand.coins, 0);
+      const net = grossBenefit - woodCost - coinCost;
+      diagnostics.optionalEffect = qualityDiagnostic(
+        "fuel_ledger", observation, plan, action.use ? observation.playerId : null, null, null, grossBenefit,
+        action.use ? coinCost : 0, action.use ? woodCost : 0,
+        net > 0 ? "whole_portfolio_benefits" : "portfolio_not_worth_cost", [],
+      );
+      if (action.use) {
+        factors.qualityValue += grossBenefit;
+        factors.resourceEfficiency -= woodCost + coinCost;
+        if (net <= 0) factors.risk -= 20;
+      }
+      return;
+    }
+    case "RESOLVE_SAGGER_SELECTION": {
+      const diagnostic = saggerDiagnostic(observation, profile, plan, action.ceramicId);
+      diagnostics.optionalEffect = diagnostic;
+      if (action.ceramicId !== null) {
+        factors.qualityValue += diagnostic.grossBenefit + diagnostic.orderValueDelta;
+        factors.resourceEfficiency -= diagnostic.coinCost;
+        if (diagnostic.projectedNetValue <= 0 || diagnostic.qualityRankDelta < 0) factors.risk -= 30;
+      }
+      return;
+    }
+    case "RESOLVE_JUN": {
+      const diagnostic = junDiagnostic(observation, profile, plan, action.ceramicId, action.delta);
+      diagnostics.optionalEffect = diagnostic;
+      if (action.ceramicId !== null && action.delta !== null) {
+        factors.qualityValue += diagnostic.grossBenefit + diagnostic.orderValueDelta;
+        factors.resourceEfficiency -= diagnostic.coinCost;
+        if (diagnostic.projectedNetValue <= 0) factors.risk -= 20;
+      }
+      return;
+    }
+    case "RESOLVE_GE": {
+      const diagnostic = geDiagnostic(observation, profile, plan, action.ceramicId);
+      diagnostics.optionalEffect = diagnostic;
+      if (action.ceramicId !== null) {
+        factors.qualityValue += diagnostic.grossBenefit + diagnostic.orderValueDelta;
+        if (diagnostic.projectedNetValue <= 0) factors.risk -= 30;
+      }
+      return;
+    }
+    case "RESOLVE_PROTECTIVE_SAGGARS":
+      if (action.ceramicId !== null) {
+        const before = observation.game.firingContext?.ceramicResults[action.ceramicId]?.assignedQuality;
+        const after = before === "flawed" ? "standard" : "fine";
+        const gross = scoreOptionalQuality(observation, profile, action.ceramicId, after);
+        const coinCost = marginalResourceValue(player.resources.coins, plan.resourceDemand.coins, 0);
+        const compatibilityBefore = before === null || before === undefined ? { compatibleOrders: 0, value: 0 } : plannedOrderCompatibility(observation, plan, action.ceramicId, before);
+        const compatibilityAfter = plannedOrderCompatibility(observation, plan, action.ceramicId, after);
+        const orderDelta = compatibilityAfter.value - compatibilityBefore.value;
+        diagnostics.optionalEffect = qualityDiagnostic(
+          "protective_saggars", observation, plan, action.ceramicId, before ?? null, after, gross, coinCost, 0,
+          gross + orderDelta > coinCost ? "quality_salvage_worth_cost" : "benefit_below_full_cost",
+          ownCeramics(observation).filter((ceramic) => ceramic.stage === "loaded" && ["flawed", "standard"].includes(observation.game.firingContext?.ceramicResults[ceramic.id]?.assignedQuality ?? "")).map(({ id }) => id),
+          compatibilityBefore.compatibleOrders, compatibilityAfter.compatibleOrders, orderDelta,
+        );
+        factors.qualityValue += gross + orderDelta;
+        factors.resourceEfficiency -= coinCost;
+        if (gross + orderDelta <= coinCost) factors.risk -= 20;
+      } else {
+        diagnostics.optionalEffect = qualityDiagnostic(
+          "protective_saggars", observation, plan, null, null, null, 0, 0, 0, "declined_no_positive_target",
+          ownCeramics(observation).filter((ceramic) => ceramic.stage === "loaded" && ["flawed", "standard"].includes(observation.game.firingContext?.ceramicResults[ceramic.id]?.assignedQuality ?? "")).map(({ id }) => id),
+        );
+      }
+      return;
+    case "RESOLVE_SECOND_FIRING":
+      if (action.ceramicId !== null) {
+        const reserved = assignments.find((assignment) => assignment.ceramicId === action.ceramicId);
+        const needsFine = reserved !== undefined && QUALITY_RANK[reserved.minQuality] >= QUALITY_RANK.fine;
+        const futureCapacity = observation.game.round < 5 && plan.terminalForecast.remainingWorkerActions >= 2;
+        const gross = futureCapacity && needsFine ? 5.5 : 0;
+        const opportunityCost = futureCapacity ? 2.8 : 8;
+        diagnostics.optionalEffect = qualityDiagnostic(
+          "second_firing", observation, plan, action.ceramicId, "standard", null, gross, 0, 0,
+          gross > opportunityCost ? "planned_refire_has_time" : observation.game.round >= 5 ? "no_refire_time" : "no_higher_quality_destination",
+          ownCeramics(observation).filter((ceramic) => ceramic.stage === "loaded" && observation.game.firingContext?.ceramicResults[ceramic.id]?.assignedQuality === "standard").map(({ id }) => id),
+          0, 0, 0, opportunityCost,
+        );
+        factors.futureVP += gross;
+        factors.opportunityCost -= opportunityCost;
+        if (gross <= opportunityCost) factors.risk -= 20;
+      } else {
+        diagnostics.optionalEffect = qualityDiagnostic(
+          "second_firing", observation, plan, null, "standard", null, 0, 0, 0, "declined_no_positive_refire",
+          ownCeramics(observation).filter((ceramic) => ceramic.stage === "loaded" && observation.game.firingContext?.ceramicResults[ceramic.id]?.assignedQuality === "standard").map(({ id }) => id),
+        );
+      }
+      return;
+    case "RESOLVE_TEST_PIECES":
+      if (action.use) factors.resourceEfficiency += marginalResourceValue(player.resources.coins, plan.resourceDemand.coins, 0);
+      return;
+    case "RESOLVE_KILN_RECORDS":
+      if (action.use) factors.resourceEfficiency += marginalResourceValue(player.resources.clay, plan.resourceDemand.clay)
+        + marginalResourceValue(player.resources.coins, plan.resourceDemand.coins, 0);
+      return;
+    case "COMPLETE_ORDER": {
+      const order = ORDER_DEFINITIONS[action.orderId];
+      if (order !== undefined) {
+        const progressReward = activeOrderProgressReward(observation, order.imperialProgressReward);
+        factors.immediateVP += order.vp;
+        factors.resourceEfficiency += order.coins * 0.7;
+        factors.imperialValue += progressReward * 3.5;
+        if (order.imperialProgressReward !== undefined) {
+          factors.imperialValue += imperialProgressRuleDelta(observation, order.imperialProgressReward);
+        }
+        const presentationThreshold = observation.imperialTrackRules.presentationSpaces[0];
+        if (player.imperialProgress < presentationThreshold && player.imperialProgress + progressReward >= presentationThreshold) {
+          factors.imperialValue += 4;
+        }
+      }
+      factors.planProgress += 6;
+      return;
+    }
+    case "END_ORDER_TURN":
+      if (primary?.actionDebt === 0) factors.opportunityCost -= 12;
+      return;
+    case "SUBMIT_PRESENTATION": {
+      const selected = action.ceramicIds
+        .map((id) => observation.game.ceramics[id])
+        .filter((ceramic): ceramic is FinishedCeramic => ceramic?.stage === "finished");
+      factors.immediateVP += selected.reduce((sum, ceramic) => sum + (
+        ceramic.quality === "flawed" ? 0 : IMPERIAL_PROGRESS.presentation.qualityVp[ceramic.quality]
+      ), 0);
+      if (selected.length === 3 && new Set(selected.map(({ shape }) => shape)).size === 3) factors.immediateVP += 2;
+      if (selected.length === 3 && new Set(selected.map(({ glaze }) => glaze)).size === 3) factors.immediateVP += 2;
+      return;
+    }
+  }
+}
+
+export function strategyTags(observation: PlayerObservation): StrategyTag[] {
+  const player = observation.game.players[observation.playerId];
+  if (player === undefined) return ["Hybrid"];
+  const imperial = player.orderHand.filter((id) => id.startsWith("I")).length + player.completedOrders.filter(({ orderId }) => orderId.startsWith("I")).length;
+  const market = player.orderHand.length + player.completedOrders.length - imperial;
+  const tags: StrategyTag[] = [imperial > market ? "Imperial-heavy" : market > imperial ? "Market-heavy" : "Hybrid"];
+  if (player.techniques.length > 0) tags.push("Technique");
+  if (player.imperialProgress >= 3) tags.push("Presentation");
+  if (player.resources.coins >= 5) tags.push("Coin-economy");
+  if (ownCeramics(observation).filter(({ stage }) => stage === "loaded").length >= 2) tags.push("Firing-control");
+  tags.push(ownCeramics(observation).length >= 5 ? "Volume" : "Quality");
+  return tags;
+}
+
+export function evaluateAction(
+  observation: PlayerObservation,
+  action: AIAction,
+  context: AIDecisionContext,
+  profile: AIStrategyProfile,
+  suppliedPlan?: PlayerPlan,
+): ScoredAIAction {
+  const intent = context.assignedIntent ?? "Hybrid";
+  const plan = suppliedPlan ?? buildPlayerPlan(observation, profile, intent);
+  const factors = ZERO_FACTORS();
+  const diagnostics = EMPTY_DIAGNOSTICS();
+  scoreAction(observation, action, context, profile, plan, factors, diagnostics);
+  const orderId = actionOrderId(action);
+  const techniqueId = actionTechniqueId(action);
+  factors.learned += profile.actionWeights[action.type] ?? 0;
+  factors.learned += profile.intentPriors[intent] ?? 0;
+  if (orderId !== null) factors.learned += (profile.orderValues[orderId] ?? 0) * 0.025;
+  if (techniqueId !== null) factors.learned += (profile.techniqueValues[techniqueId] ?? 0) * 0.06;
+  if (observation.game.round === 5 && action.type !== "USE_KILN_YARD" && action.type !== "COMPLETE_ORDER") {
+    factors.opportunityCost -= terminalPipelinePenalty(plan) * 0.12;
+  }
+  return {
+    action,
+    totalScore: Object.values(factors).reduce((sum, value) => sum + value, 0),
+    factors,
+    diagnostics,
+  };
+}

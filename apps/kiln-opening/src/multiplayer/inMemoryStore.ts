@@ -6,6 +6,8 @@ import type {
   CreateRoomRecord,
   EndSessionRecord,
   JoinRoomRecord,
+  AddComputerSeatRecord,
+  RemoveComputerSeatRecord,
   MultiplayerStore,
   StoreResult,
 } from "./store";
@@ -106,13 +108,70 @@ export class InMemoryMultiplayerStore implements MultiplayerStore {
       displayName: input.displayName,
       colour: SEAT_COLOURS[seatIndex]!,
       isHost: false,
+      isComputer: false,
+      aiPolicyVersion: null,
       authUserId: input.authUserId,
+      aiSeed: null,
+      aiCreatedCommandId: null,
     };
     roomSeats.push(seat);
     roomSeats.sort((left, right) => left.seatIndex - right.seatIndex);
     this.seats.set(roomId, roomSeats);
     this.credentialHashes.set(`${roomId}:${input.tokenHash}`, { roomId, seatId: seat.seatId });
     return { status: "ok", value: { room: clone(room), seat: clone(seat) } };
+  }
+
+  async addComputerSeat(input: AddComputerSeatRecord): Promise<StoreResult<StoredSeat>> {
+    const room = this.rooms.get(input.roomId);
+    if (room === undefined) return { status: "error", code: "room_not_found" };
+    const roomSeats = this.seats.get(input.roomId) ?? [];
+    const host = roomSeats.find((seat) => seat.seatId === input.hostSeatId && seat.isHost);
+    if (room.hostSeatId !== input.hostSeatId || host === undefined) {
+      return { status: "error", code: "host_only" };
+    }
+    if (room.status !== "lobby") return { status: "error", code: "game_already_started" };
+    const prior = roomSeats.find((seat) => seat.aiCreatedCommandId === input.commandId);
+    if (prior !== undefined) return { status: "ok", value: clone(prior) };
+    if (roomSeats.length >= 4) return { status: "error", code: "room_full" };
+    const used = new Set(roomSeats.map((seat) => seat.seatIndex));
+    const seatIndex = [0, 1, 2, 3].find((index) => !used.has(index));
+    if (seatIndex === undefined) return { status: "error", code: "room_full" };
+    const seat: StoredSeat = {
+      seatId: input.seatId,
+      roomId: input.roomId,
+      playerId: `P${seatIndex + 1}`,
+      seatIndex,
+      displayName: input.displayName,
+      colour: SEAT_COLOURS[seatIndex]!,
+      isHost: false,
+      isComputer: true,
+      aiPolicyVersion: "selfplay-003",
+      authUserId: null,
+      aiSeed: input.aiSeed >>> 0,
+      aiCreatedCommandId: input.commandId,
+    };
+    roomSeats.push(seat);
+    roomSeats.sort((left, right) => left.seatIndex - right.seatIndex);
+    this.seats.set(input.roomId, roomSeats);
+    this.notify(input.roomId);
+    return { status: "ok", value: clone(seat) };
+  }
+
+  async removeComputerSeat(input: RemoveComputerSeatRecord): Promise<StoreResult<boolean>> {
+    const room = this.rooms.get(input.roomId);
+    if (room === undefined) return { status: "error", code: "room_not_found" };
+    const roomSeats = this.seats.get(input.roomId) ?? [];
+    const host = roomSeats.find((seat) => seat.seatId === input.hostSeatId && seat.isHost);
+    if (room.hostSeatId !== input.hostSeatId || host === undefined) {
+      return { status: "error", code: "host_only" };
+    }
+    if (room.status !== "lobby") return { status: "error", code: "game_already_started" };
+    const target = roomSeats.find((seat) => seat.seatId === input.computerSeatId);
+    if (target === undefined) return { status: "ok", value: true };
+    if (!target.isComputer) return { status: "error", code: "not_computer_seat" };
+    this.seats.set(input.roomId, roomSeats.filter((seat) => seat.seatId !== input.computerSeatId));
+    this.notify(input.roomId);
+    return { status: "ok", value: true };
   }
 
   async authenticate(roomCode: string, tokenHash: string): Promise<AuthenticatedSeat | null> {

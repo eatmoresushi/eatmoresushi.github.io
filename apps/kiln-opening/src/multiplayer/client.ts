@@ -1,9 +1,11 @@
 import { FunctionsHttpError, createClient } from "@supabase/supabase-js";
 import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
 import type {
+  ComputerAdvanceSuccess,
   AuthoritativeCommand,
   CommandSuccess,
   EndSessionSuccess,
+  LobbySeatUpdateSuccess,
   MultiplayerError,
   MultiplayerResult,
   PublicEventRecord,
@@ -57,6 +59,21 @@ export interface GameApi {
     seatToken: string,
     commandId: string,
   ): Promise<MultiplayerResult<EndSessionSuccess>>;
+  addComputerSeat(
+    roomCode: string,
+    seatToken: string,
+    commandId: string,
+  ): Promise<MultiplayerResult<LobbySeatUpdateSuccess>>;
+  removeComputerSeat(
+    roomCode: string,
+    seatToken: string,
+    computerSeatId: string,
+  ): Promise<MultiplayerResult<LobbySeatUpdateSuccess>>;
+  advanceComputers(
+    roomCode: string,
+    seatToken: string,
+    expectedRevision: number,
+  ): Promise<MultiplayerResult<ComputerAdvanceSuccess>>;
   executeCommand(input: {
     roomCode: string;
     seatToken: string;
@@ -107,6 +124,30 @@ class TestHttpGameApi implements GameApi {
     commandId: string,
   ): Promise<MultiplayerResult<EndSessionSuccess>> {
     return this.call({ operation: "end_session", roomCode, seatToken, commandId });
+  }
+
+  addComputerSeat(
+    roomCode: string,
+    seatToken: string,
+    commandId: string,
+  ): Promise<MultiplayerResult<LobbySeatUpdateSuccess>> {
+    return this.call({ operation: "add_computer", roomCode, seatToken, commandId });
+  }
+
+  removeComputerSeat(
+    roomCode: string,
+    seatToken: string,
+    computerSeatId: string,
+  ): Promise<MultiplayerResult<LobbySeatUpdateSuccess>> {
+    return this.call({ operation: "remove_computer", roomCode, seatToken, computerSeatId });
+  }
+
+  advanceComputers(
+    roomCode: string,
+    seatToken: string,
+    expectedRevision: number,
+  ): Promise<MultiplayerResult<ComputerAdvanceSuccess>> {
+    return this.call({ operation: "advance_computers", roomCode, seatToken, expectedRevision });
   }
 
   executeCommand(input: {
@@ -178,6 +219,30 @@ class SupabaseGameApi implements GameApi {
     commandId: string,
   ): Promise<MultiplayerResult<EndSessionSuccess>> {
     return this.call("end_session", { roomCode, seatToken, commandId });
+  }
+
+  addComputerSeat(
+    roomCode: string,
+    seatToken: string,
+    commandId: string,
+  ): Promise<MultiplayerResult<LobbySeatUpdateSuccess>> {
+    return this.call("add_computer", { roomCode, seatToken, commandId });
+  }
+
+  removeComputerSeat(
+    roomCode: string,
+    seatToken: string,
+    computerSeatId: string,
+  ): Promise<MultiplayerResult<LobbySeatUpdateSuccess>> {
+    return this.call("remove_computer", { roomCode, seatToken, computerSeatId });
+  }
+
+  advanceComputers(
+    roomCode: string,
+    seatToken: string,
+    expectedRevision: number,
+  ): Promise<MultiplayerResult<ComputerAdvanceSuccess>> {
+    return this.call("advance_computers", { roomCode, seatToken, expectedRevision });
   }
 
   executeCommand(input: {

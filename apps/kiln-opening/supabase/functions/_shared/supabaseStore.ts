@@ -5,6 +5,8 @@ import type {
   CreateRoomRecord,
   EndSessionRecord,
   JoinRoomRecord,
+  AddComputerSeatRecord,
+  RemoveComputerSeatRecord,
   MultiplayerStore,
   StoreResult,
 } from "../../../src/multiplayer/store.ts";
@@ -46,6 +48,25 @@ export class SupabaseMultiplayerStore implements MultiplayerStore {
       p_display_name: input.displayName,
       p_auth_user_id: input.authUserId,
       p_token_hash: input.tokenHash,
+    });
+  }
+
+  addComputerSeat(input: AddComputerSeatRecord): Promise<StoreResult<StoredSeat>> {
+    return this.rpc("server_add_computer_seat", {
+      p_room_id: input.roomId,
+      p_host_seat_id: input.hostSeatId,
+      p_seat_id: input.seatId,
+      p_display_name: input.displayName,
+      p_ai_seed: input.aiSeed,
+      p_command_id: input.commandId,
+    });
+  }
+
+  removeComputerSeat(input: RemoveComputerSeatRecord): Promise<StoreResult<boolean>> {
+    return this.rpc("server_remove_computer_seat", {
+      p_room_id: input.roomId,
+      p_host_seat_id: input.hostSeatId,
+      p_computer_seat_id: input.computerSeatId,
     });
   }
 

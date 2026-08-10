@@ -76,6 +76,27 @@ Deno.serve(async (request) => {
           commandId: String(body["commandId"] ?? ""),
         });
         break;
+      case "add_computer":
+        result = await service.addComputerSeat({
+          roomCode: String(body["roomCode"] ?? ""),
+          seatToken: String(body["seatToken"] ?? ""),
+          commandId: String(body["commandId"] ?? ""),
+        });
+        break;
+      case "remove_computer":
+        result = await service.removeComputerSeat({
+          roomCode: String(body["roomCode"] ?? ""),
+          seatToken: String(body["seatToken"] ?? ""),
+          computerSeatId: String(body["computerSeatId"] ?? ""),
+        });
+        break;
+      case "advance_computers":
+        result = await service.advanceComputerTurns({
+          roomCode: String(body["roomCode"] ?? ""),
+          seatToken: String(body["seatToken"] ?? ""),
+          expectedRevision: Number(body["expectedRevision"]),
+        });
+        break;
       case "end_session":
         result = await service.endSession({
           roomCode: String(body["roomCode"] ?? ""),

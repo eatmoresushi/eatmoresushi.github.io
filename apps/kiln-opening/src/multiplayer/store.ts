@@ -23,7 +23,8 @@ export type StoreFailureCode =
   | "session_not_active"
   | "duplicate"
   | "stale"
-  | "private_duplicate";
+  | "private_duplicate"
+  | "not_computer_seat";
 
 export type StoreResult<T> =
   | { status: "ok"; value: T }
@@ -43,6 +44,21 @@ export interface JoinRoomRecord {
   colour: string;
   authUserId: string | null;
   tokenHash: string;
+}
+
+export interface AddComputerSeatRecord {
+  roomId: string;
+  hostSeatId: string;
+  seatId: string;
+  displayName: string;
+  aiSeed: number;
+  commandId: string;
+}
+
+export interface RemoveComputerSeatRecord {
+  roomId: string;
+  hostSeatId: string;
+  computerSeatId: string;
 }
 
 export interface AuthenticatedSeat {
@@ -90,6 +106,8 @@ export interface EndSessionRecord {
 export interface MultiplayerStore {
   createRoom(input: CreateRoomRecord): Promise<StoreResult<AuthenticatedSeat>>;
   joinRoom(input: JoinRoomRecord): Promise<StoreResult<AuthenticatedSeat>>;
+  addComputerSeat(input: AddComputerSeatRecord): Promise<StoreResult<StoredSeat>>;
+  removeComputerSeat(input: RemoveComputerSeatRecord): Promise<StoreResult<boolean>>;
   authenticate(roomCode: string, tokenHash: string): Promise<AuthenticatedSeat | null>;
   getSeats(roomId: string): Promise<StoredSeat[]>;
   loadHead(roomId: string): Promise<AuthoritativeHead | null>;

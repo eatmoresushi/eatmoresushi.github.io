@@ -9,7 +9,7 @@ import type {
   PublicEventRecord,
   RoomConnection,
 } from "../multiplayer";
-import { ORDER_DEFINITIONS, TECHNIQUE_DEFINITIONS } from "../game";
+import { ORDER_DEFINITIONS, TECHNIQUE_DEFINITIONS, currentDecisionActor } from "../game";
 import { PlaytestExperience } from "./PlaytestExperience";
 
 const LAST_SEAT_KEY = "kiln-opening:last-seat";
@@ -106,12 +106,14 @@ export function App() {
   const api = configured.api;
   const [connection, setConnection] = useState<RoomConnection | null>(null);
   const [busy, setBusy] = useState(false);
+  const [computerThinking, setComputerThinking] = useState(false);
   const [error, setError] = useState<MultiplayerError | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [eventLog, setEventLog] = useState<PublicEventRecord[]>([]);
   const [confirmEndSession, setConfirmEndSession] = useState(false);
   const [savedSeat, setSavedSeat] = useState<SavedSeat | null>(() => readSavedSeat());
   const reconnecting = useRef(false);
+  const advancingComputers = useRef(false);
 
   const applyCommand = useCallback((result: CommandSuccess) => {
     setConnection((current) => current === null ? current : {
@@ -180,6 +182,49 @@ export function App() {
     };
   }, [api, connection?.room.id, connection?.game?.eventSequence]);
 
+  useEffect(() => {
+    if (api === null || connection === null || connection.game === null || busy || advancingComputers.current) {
+      return;
+    }
+    const phase = connection.game.phase;
+    const actorId = phase.type === "firing_contributions" || phase.type === "presentation"
+      ? phase.eligiblePlayerIds.find((id) => !phase.submittedPlayerIds.includes(id)) ?? null
+      : currentDecisionActor(phase);
+    const actorSeat = connection.seats.find((seat) => seat.playerId === actorId);
+    if (actorSeat?.isComputer !== true) return;
+
+    advancingComputers.current = true;
+    setComputerThinking(true);
+    setError(null);
+    void api.advanceComputers(
+      connection.room.code,
+      connection.seatToken,
+      connection.game.revision,
+    ).then(async (result) => {
+      if (!result.ok) {
+        setError(result.error);
+        if (result.error.code === "STALE_REVISION") await reconnect();
+        return;
+      }
+      setConnection((current) => current === null ? current : {
+        ...current,
+        room: result.value.room,
+        game: result.value.game,
+        ownPendingContribution: result.value.ownPendingContribution,
+      });
+      if (result.value.advancedActions > 0) {
+        const uniqueActors = new Set(result.value.actorIds).size;
+        setNotice(
+          `${uniqueActors === 1 ? "Computer player" : `${uniqueActors} computer players`} completed ` +
+          `${result.value.advancedActions} action${result.value.advancedActions === 1 ? "" : "s"}.`,
+        );
+      }
+    }).finally(() => {
+      advancingComputers.current = false;
+      setComputerThinking(false);
+    });
+  }, [api, busy, computerThinking, connection, reconnect]);
+
   async function createRoom(displayName: string): Promise<void> {
     if (api === null) return;
     setBusy(true);
@@ -224,6 +269,48 @@ export function App() {
       );
       if (!result.ok) setError(result.error);
       else applyCommand(result.value);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function addComputer(): Promise<void> {
+    if (api === null || connection === null || !connection.seat.isHost) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await api.addComputerSeat(
+        connection.room.code,
+        connection.seatToken,
+        crypto.randomUUID(),
+      );
+      if (!result.ok) setError(result.error);
+      else setConnection((current) => current === null ? current : {
+        ...current,
+        room: result.value.room,
+        seats: result.value.seats,
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removeComputer(computerSeatId: string): Promise<void> {
+    if (api === null || connection === null || !connection.seat.isHost) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await api.removeComputerSeat(
+        connection.room.code,
+        connection.seatToken,
+        computerSeatId,
+      );
+      if (!result.ok) setError(result.error);
+      else setConnection((current) => current === null ? current : {
+        ...current,
+        room: result.value.room,
+        seats: result.value.seats,
+      });
     } finally {
       setBusy(false);
     }
@@ -352,7 +439,10 @@ export function App() {
           </div>
         )}
         {notice !== null && <div className="banner banner-info" role="status" aria-live="polite">{notice}</div>}
-        {busy && <div className="progress-line" role="progressbar" aria-label="Waiting for server" />}
+        {(busy || computerThinking) && <div className="progress-line" role="progressbar" aria-label="Waiting for server" />}
+        {computerThinking && (
+          <div className="banner banner-info" role="status" aria-live="polite">Computer is choosing…</div>
+        )}
 
         {connection === null ? (
           <HomeScreen
@@ -366,14 +456,20 @@ export function App() {
         ) : connection.room.status === "abandoned" ? (
           <EndedSessionScreen connection={connection} onLeave={leaveView} onForget={forgetSeat} />
         ) : connection.game === null ? (
-          <LobbyScreen connection={connection} busy={busy} onStart={startGame} />
+          <LobbyScreen
+            connection={connection}
+            busy={busy}
+            onStart={startGame}
+            onAddComputer={addComputer}
+            onRemoveComputer={removeComputer}
+          />
         ) : (
           <PlaytestExperience
             game={connection.game}
             ownPlayerId={connection.seat.playerId}
             ownPendingContribution={connection.ownPendingContribution}
             events={eventLog}
-            busy={busy}
+            busy={busy || computerThinking}
             send={send}
           />
         )}
@@ -545,10 +641,14 @@ function LobbyScreen({
   connection,
   busy,
   onStart,
+  onAddComputer,
+  onRemoveComputer,
 }: {
   connection: RoomConnection;
   busy: boolean;
   onStart: () => Promise<void>;
+  onAddComputer: () => Promise<void>;
+  onRemoveComputer: (computerSeatId: string) => Promise<void>;
 }) {
   return (
     <section className="lobby-screen">
@@ -565,21 +665,47 @@ function LobbyScreen({
               <span className={`seat-swatch colour-${seat?.colour ?? "empty"}`} aria-hidden="true" />
               <span className="seat-number">Seat {index + 1}</span>
               <strong>{seat?.displayName ?? "Open seat"}</strong>
-              <small>{seat?.isHost ? "Host" : seat === undefined ? "Waiting" : "Connected"}</small>
+              <small>
+                {seat?.isHost
+                  ? "Host"
+                  : seat?.isComputer
+                    ? "Computer · V003"
+                    : seat === undefined ? "Waiting" : "Connected"}
+              </small>
+              {connection.seat.isHost && seat?.isComputer === true && (
+                <button
+                  className="text-button remove-computer-button"
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void onRemoveComputer(seat.seatId)}
+                >
+                  Remove
+                </button>
+              )}
             </article>
           );
         })}
       </div>
       <div className="lobby-actions">
         {connection.seat.isHost ? (
-          <button
-            className="primary-button"
-            type="button"
-            onClick={() => void onStart()}
-            disabled={busy || connection.seats.length < 2}
-          >
-            Start with {connection.seats.length} players
-          </button>
+          <>
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={() => void onAddComputer()}
+              disabled={busy || connection.seats.length >= 4}
+            >
+              Add computer player
+            </button>
+            <button
+              className="primary-button"
+              type="button"
+              onClick={() => void onStart()}
+              disabled={busy || connection.seats.length < 2}
+            >
+              Start with {connection.seats.length} players
+            </button>
+          </>
         ) : <p>Waiting for {connection.seats.find((seat) => seat.isHost)?.displayName ?? "the host"} to start…</p>}
       </div>
     </section>

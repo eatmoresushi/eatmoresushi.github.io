@@ -47,6 +47,8 @@ export interface PublicSeat {
   displayName: string;
   colour: string;
   isHost: boolean;
+  isComputer: boolean;
+  aiPolicyVersion: "selfplay-003" | null;
 }
 
 export interface PublicPlayerState {
@@ -161,6 +163,7 @@ export type MultiplayerErrorCode =
   | "PERSISTENCE_CONFLICT"
   | "SESSION_ENDED"
   | "UNSUPPORTED_RULES_VERSION"
+  | "COMPUTER_TURN_FAILED"
   | GameRuleErrorCode;
 
 export interface MultiplayerError {
@@ -201,6 +204,34 @@ export interface EndSessionRequest extends SeatRequest {
 export interface EndSessionSuccess {
   commandId: string;
   room: PublicRoom;
+}
+
+export interface AddComputerSeatRequest extends SeatRequest {
+  commandId: string;
+}
+
+export interface RemoveComputerSeatRequest extends SeatRequest {
+  computerSeatId: string;
+}
+
+export interface LobbySeatUpdateSuccess {
+  room: PublicRoom;
+  seats: PublicSeat[];
+}
+
+export interface AdvanceComputersRequest extends SeatRequest {
+  expectedRevision: number;
+}
+
+export interface ComputerAdvanceSuccess {
+  room: PublicRoom;
+  revision: number;
+  game: PublicGameState;
+  events: PublicGameEvent[];
+  advancedActions: number;
+  actorIds: PlayerId[];
+  stoppedReason: "human_turn" | "finished" | "action_limit";
+  ownPendingContribution: PendingContribution | null;
 }
 
 export interface SubmitWoodCommand {
@@ -258,6 +289,8 @@ export interface StoredRoom extends PublicRoom {
 
 export interface StoredSeat extends PublicSeat {
   authUserId: string | null;
+  aiSeed: number | null;
+  aiCreatedCommandId: string | null;
 }
 
 export interface SecurityProvider {

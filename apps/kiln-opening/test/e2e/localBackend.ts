@@ -77,6 +77,24 @@ class LocalBackend {
           seatToken: String(body["seatToken"] ?? ""),
           commandId: String(body["commandId"] ?? ""),
         });
+      case "add_computer":
+        return this.service.addComputerSeat({
+          roomCode: String(body["roomCode"] ?? ""),
+          seatToken: String(body["seatToken"] ?? ""),
+          commandId: String(body["commandId"] ?? ""),
+        });
+      case "remove_computer":
+        return this.service.removeComputerSeat({
+          roomCode: String(body["roomCode"] ?? ""),
+          seatToken: String(body["seatToken"] ?? ""),
+          computerSeatId: String(body["computerSeatId"] ?? ""),
+        });
+      case "advance_computers":
+        return this.service.advanceComputerTurns({
+          roomCode: String(body["roomCode"] ?? ""),
+          seatToken: String(body["seatToken"] ?? ""),
+          expectedRevision: Number(body["expectedRevision"]),
+        });
       case "end_session":
         return this.service.endSession({
           roomCode: String(body["roomCode"] ?? ""),

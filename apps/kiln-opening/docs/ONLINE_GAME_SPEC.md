@@ -43,6 +43,14 @@ Show:
 
 Host starts only with 2–4 players.
 
+### Computer players
+
+The host may add or remove computer seats while the room is in the lobby. A room must retain at least one human seat and may contain up to three computer players, for the normal four-seat maximum.
+
+Computer seats use the frozen `selfplay-003` policy with V1.0.2-compatible hand-authored priors and no live exploration or learning. Each seat has a private persistent seed and stable player/seat identity. The browser never chooses an AI command: an authenticated client only asks the Edge Function to advance, and the server derives the active computer, enumerates legal commands, applies the selected command through the authoritative engine, and commits it with the same revision checks as a human command.
+
+Consecutive computer turns run in bounded batches so an Edge Function invocation cannot monopolize the session. Concurrent advance requests are safe; compare-and-swap persistence accepts each revision only once. Wood Contributions remain private in the server-only schema until the normal simultaneous reveal, including when computers contribute.
+
 ### Game setup
 
 - random First Player;
