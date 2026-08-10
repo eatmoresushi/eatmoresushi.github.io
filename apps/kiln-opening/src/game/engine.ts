@@ -15,6 +15,11 @@ import {
 } from "./content.ts";
 import { applyFailure, ruleError } from "./errors.ts";
 import {
+  activeImperialOrderProgressReward,
+  activeImperialTrackRules,
+  junActivationCoinCost,
+} from "./experiment.ts";
+import {
   QUALITY_RANK,
   determineBaseHeat,
   kilnZoneModifier,
@@ -1099,7 +1104,7 @@ function resolveOfficeFlawedSale(
   const canUseConnoisseur =
     connoisseur !== undefined &&
     !connoisseur.exhausted &&
-    next.commonSupply.coins >= 3 &&
+    next.commonSupply.coins >= 5 &&
     Object.values(next.ceramics).some(
       (ceramic) =>
         ceramic.ownerId === actorId &&
@@ -1144,9 +1149,9 @@ function resolveConnoisseurNetwork(
         ),
       );
     }
-    if (state.commonSupply.coins < 3) {
+    if (state.commonSupply.coins < 5) {
       return applyFailure(
-        ruleError("SUPPLY_EMPTY", "The common supply must contain all 3 Coins for this sale."),
+        ruleError("SUPPLY_EMPTY", "The common supply must contain all 5 Coins for this sale."),
       );
     }
   }
@@ -1169,12 +1174,12 @@ function resolveConnoisseurNetwork(
       stage: "sold",
       soldInRound: next.round,
     };
-    nextPlayer.resources.coins += 3;
-    next.commonSupply.coins -= 3;
+    nextPlayer.resources.coins += 5;
+    next.commonSupply.coins -= 5;
     exhaustTechnique(nextPlayer, actorId, "T14", events);
     events.push(
       { type: "CERAMIC_SOLD", playerId: actorId, ceramicId },
-      { type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins: 3 },
+      { type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins: 5 },
     );
   }
   completeWorkerAction(next, actorId, events);
@@ -2088,6 +2093,10 @@ function resolveJun(
     if (ceramic === undefined || ceramic.ownerId !== actorId || ceramic.stage !== "loaded") {
       return applyFailure(ruleError("ILLEGAL_CERAMIC_STAGE", "Jun must select an owned Loaded ceramic."));
     }
+    const activationCost = junActivationCoinCost(state.experimentConfig);
+    if ((player?.resources.coins ?? 0) < activationCost) {
+      return applyFailure(ruleError("INSUFFICIENT_RESOURCES", `Jun's Kiln Transformation costs ${activationCost} Coins.`));
+    }
   }
   const next = cloneState(state);
   const events: GameEvent[] = [];
@@ -2100,6 +2109,21 @@ function resolveJun(
     }
     result.finalActualHeat += delta;
     result.finalHeatDifference = Math.abs(result.finalActualHeat - preferredHeat(ceramic.glaze));
+    const activationCost = junActivationCoinCost(next.experimentConfig);
+    if (activationCost > 0) {
+      const paidCoins = activationCost as 1 | 2;
+      nextPlayer.resources.coins -= paidCoins;
+      next.commonSupply.coins += paidCoins;
+      events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins: -paidCoins });
+      events.push({
+        type: "JUN_ACTIVATION_PAID",
+        playerId: actorId,
+        coins: paidCoins,
+        rulesContext: paidCoins === 2
+          ? "official_v1.0.2"
+          : "historical_jun_cost_1_experiment",
+      });
+    }
     nextPlayer.kilnAbilityUsedThisRound = true;
     events.push({ type: "KILN_ABILITY_USED", playerId: actorId, kilnId: "JU" });
   }
@@ -2396,7 +2420,7 @@ function finalizeFiring(state: GameState, events: GameEvent[]): void {
       );
     });
     if (qualifies) {
-      player.score.kilnTraditionVp += 2;
+      player.score.kilnTraditionVp += 3;
       player.kilnAbilityUsedThisRound = true;
       events.push({ type: "KILN_ABILITY_USED", playerId, kilnId: "RU" });
     }
@@ -2410,9 +2434,13 @@ function finalizeFiring(state: GameState, events: GameEvent[]): void {
       type: "FIRING_RESOLVED",
       ceramicId: result.ceramicId,
       fireModifier: context.fireModifier,
+      zoneModifier: result.zoneModifier,
+      ignoredFireModifier: result.ignoredFireModifier,
       naturalActualHeat: result.naturalActualHeat,
       naturalHeatDifference: result.naturalHeatDifference,
       naturalQuality: qualityFromDifference(result.naturalHeatDifference),
+      finalActualHeat: result.finalActualHeat,
+      finalHeatDifference: result.finalHeatDifference,
       finalQuality: result.assignedQuality,
     });
     state.ceramics[result.ceramicId] = makeFinishedCeramic(
@@ -2438,24 +2466,59 @@ function advanceImperialProgress(
   reward: 1 | 2,
   source: "imperial_order" | "court_patronage",
   events: GameEvent[],
+  detail: {
+    orderId: Extract<GameAction, { type: "COMPLETE_ORDER" }>["orderId"] | null;
+    requirementCeramicCount: number | null;
+    requirementCategory:
+      | "single_fine"
+      | "single_masterpiece"
+      | "multi_2"
+      | "multi_3"
+      | "court_patronage"
+      | null;
+  } = { orderId: null, requirementCeramicCount: null, requirementCategory: null },
 ): { from: PlayerState["imperialProgress"]; to: PlayerState["imperialProgress"] } {
   const player = state.players[playerId];
   if (player === undefined) throw new Error("Imperial Progress player disappeared");
+  const activeRules = activeImperialTrackRules(state.experimentConfig);
   const from = player.imperialProgress;
   const to = Math.min(5, from + reward) as PlayerState["imperialProgress"];
   player.imperialProgress = to;
-  if (from < 2 && to >= 2) player.pendingApprenticeUnlocks += 1;
-  if (from < 4 && to >= 4) player.pendingApprenticeUnlocks += 1;
+  const crossedSpaces = Array.from({ length: to - from }, (_, index) => from + index + 1);
+  const apprenticeMilestonesTriggered = activeRules.apprenticeMilestoneSpaces.filter(
+    (space) => crossedSpaces.includes(space),
+  );
+  player.pendingApprenticeUnlocks += apprenticeMilestonesTriggered.length;
+  const presentationMilestonesTriggered = activeRules.presentationSpaces.filter(
+    (space) => crossedSpaces.includes(space),
+  );
+  const sealMilestoneTriggered = source === "imperial_order" &&
+    activeRules.imperialSealEnabled &&
+    crossedSpaces.includes(5) &&
+    state.imperialSealOwnerId === null;
   events.push({
     type: "IMPERIAL_PROGRESS_ADVANCED",
     playerId,
+    source,
+    orderId: detail.orderId,
+    requirementCeramicCount: detail.requirementCeramicCount,
+    requirementCategory: detail.requirementCategory,
     from,
     to,
     reward,
+    appliedGain: to - from,
+    crossedSpaces,
+    capLoss: reward - (to - from),
+    apprenticeMilestonesTriggered: [...apprenticeMilestonesTriggered],
+    presentationMilestonesTriggered: [...presentationMilestonesTriggered],
+    sealMilestoneTriggered,
+    trackVpBefore: activeRules.trackVp[from],
+    trackVpAfter: activeRules.trackVp[to],
+    sealVp: activeRules.imperialSealVp,
   });
-  if (source === "imperial_order" && to === 5 && state.imperialSealOwnerId === null) {
+  if (sealMilestoneTriggered) {
     state.imperialSealOwnerId = playerId;
-    events.push({ type: "IMPERIAL_SEAL_CLAIMED", playerId });
+    events.push({ type: "IMPERIAL_SEAL_CLAIMED", playerId, sealVp: activeRules.imperialSealVp });
   }
   return { from, to };
 }
@@ -2509,7 +2572,11 @@ function useCourtPatronage(
   player.resources.coins -= 5;
   next.commonSupply.coins += 5;
   events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins: -5 });
-  const progress = advanceImperialProgress(next, actorId, 1, "court_patronage", events);
+  const progress = advanceImperialProgress(next, actorId, 1, "court_patronage", events, {
+    orderId: null,
+    requirementCeramicCount: null,
+    requirementCategory: "court_patronage",
+  });
   events.push({
     type: "COURT_PATRONAGE_USED",
     playerId: actorId,
@@ -2613,9 +2680,18 @@ function completeOrder(
     events.push({ type: "KILN_ABILITY_USED", playerId: actorId, kilnId: "GU" });
   }
   if (isImperial && nextPlayer.imperialProgress < 5) {
-    const reward = definition.imperialProgressReward;
-    if (reward === undefined) throw new Error("Imperial Order progress reward is missing");
-    advanceImperialProgress(next, actorId, reward, "imperial_order", events);
+    const printedReward = definition.imperialProgressReward;
+    if (printedReward === undefined) throw new Error("Imperial Order progress reward is missing");
+    const reward = activeImperialOrderProgressReward(next.experimentConfig, printedReward);
+    const ceramicCount = definition.ceramics.length;
+    const requirementCategory = ceramicCount === 1
+      ? definition.minQuality === "masterpiece" ? "single_masterpiece" : "single_fine"
+      : ceramicCount === 2 ? "multi_2" : "multi_3";
+    advanceImperialProgress(next, actorId, reward, "imperial_order", events, {
+      orderId: action.orderId,
+      requirementCeramicCount: ceramicCount,
+      requirementCategory,
+    });
   }
   return success(next, events);
 }
@@ -2656,12 +2732,13 @@ function masterpiecesDeliveredOrPresented(state: GameState, playerId: PlayerId):
 }
 
 export function calculateFinalResult(state: GameState): FinalResult {
+  const activeRules = activeImperialTrackRules(state.experimentConfig);
   const scores: FinalResult["scores"] = {};
   for (const playerId of state.playerOrder) {
     const player = state.players[playerId];
     if (player === undefined) throw new Error("Scoring player disappeared");
-    const progressVp = IMPERIAL_PROGRESS.track[player.imperialProgress]?.endGameVp ?? 0;
-    const sealVp = state.imperialSealOwnerId === playerId ? IMPERIAL_PROGRESS.imperialSealVp : 0;
+    const progressVp = activeRules.trackVp[player.imperialProgress] ?? 0;
+    const sealVp = state.imperialSealOwnerId === playerId ? activeRules.imperialSealVp : 0;
     const presentationVp = calculatePresentationVp(state, player);
     const coinVp = Math.min(
       GAME_CONFIG.coinEndGame.maxVp,
@@ -2771,9 +2848,10 @@ function performCleanup(state: GameState, events: GameEvent[]): void {
     return;
   }
 
+  const activeRules = activeImperialTrackRules(state.experimentConfig);
   const eligiblePlayerIds = state.playerOrder.filter((playerId) => {
     const progress = state.players[playerId]?.imperialProgress ?? 0;
-    return IMPERIAL_PROGRESS.presentation.eligibleSpaces.includes(progress);
+    return activeRules.presentationSpaces.includes(progress);
   });
   state.phase = { type: "presentation", eligiblePlayerIds, submittedPlayerIds: [] };
   if (eligiblePlayerIds.length === 0) finalizeGame(state, events);

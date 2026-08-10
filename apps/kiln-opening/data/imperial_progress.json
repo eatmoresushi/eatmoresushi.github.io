@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.0.1",
+  "rulesVersion": "1.0.2",
   "track": [
     {
       "space": 0,
@@ -10,35 +10,35 @@
     {
       "space": 1,
       "title": "Local Renown",
-      "reward": null,
-      "endGameVp": 1
+      "reward": "Unlock 1 Apprentice during Cleanup.",
+      "endGameVp": 0
     },
     {
       "space": 2,
       "title": "Prefectural Recommendation",
-      "reward": "Unlock 1 Apprentice during Cleanup.",
-      "endGameVp": 1
+      "reward": null,
+      "endGameVp": 2
     },
     {
       "space": 3,
       "title": "Court Examination",
-      "reward": null,
-      "endGameVp": 3
+      "reward": "Unlock 1 Apprentice during Cleanup.",
+      "endGameVp": 2
     },
     {
       "space": 4,
       "title": "Awaiting Audience",
-      "reward": "Unlock 1 Apprentice during Cleanup; eligible for Imperial Presentation.",
-      "endGameVp": 3
+      "reward": "Eligible for Imperial Presentation.",
+      "endGameVp": 4
     },
     {
       "space": 5,
       "title": "Imperial Audience",
       "reward": "Take the Imperial Seal if available; eligible for Imperial Presentation.",
-      "endGameVp": 7
+      "endGameVp": 8
     }
   ],
-  "imperialSealVp": 3,
+  "imperialSealVp": 2,
   "presentation": {
     "eligibleSpaces": [
       4,

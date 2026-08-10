@@ -149,7 +149,7 @@ describe("V0.6.5 Court Patronage", () => {
     }
   });
 
-  it.each([[1, 2], [3, 4]] as const)(
+  it.each([[0, 1], [2, 3]] as const)(
     "pays exactly 5 Coins, advances %s to %s, crosses its milestone, and ends without a sale",
     (from, to) => {
       const { state, rng } = startedGame(2, 6540 + from);

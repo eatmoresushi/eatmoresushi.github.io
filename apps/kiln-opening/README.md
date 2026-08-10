@@ -15,13 +15,13 @@ Codex should read files in this order:
 7. `docs/IMPLEMENTATION_DECISIONS.md`
 8. `docs/DESIGN_HISTORY.md` only when historical context is useful
 
-The **current V1.0.1 gameplay source of truth is `docs/GAME_RULES.md`**. Visual references remain restricted to `assets/current_v04/`; the legacy directory name is retained only for stable paths. Every rules-bearing visual must be regenerated or covered by live current-rule UI from V1.0.1 data. The V0.4 PDF/DOCX in `source_rulebook/` are historical human-readable backups and are superseded by `GAME_RULES.md`.
+The **current V1.0.2 gameplay source of truth is the supplied V1.0.2 rulebook, transcribed into `docs/GAME_RULES.md` and `data/*.json`**. Visual references remain restricted to `assets/current_v04/`; the legacy directory name is retained only for stable paths. Every rules-bearing visual must be regenerated or covered by live current-rule UI from V1.0.2 data. The V0.4 PDF/DOCX in `source_rulebook/` are historical human-readable backups.
 
 ## Important rule for Codex
 
 Do **not** infer gameplay rules from the artwork. Print assets are visual references only. If image text conflicts with `GAME_RULES.md` or structured JSON, the Markdown/JSON wins.
 
-Earlier Order-card, central-board, player-board, Craft Technique and reference-card raster art is intentionally **not authoritative** where any text or component count differs from current V1.0.1 rules. See `docs/ASSET_MANIFEST.md`.
+Earlier Order-card, central-board, player-board, Craft Technique and reference-card raster art is intentionally **not authoritative** where any text or component count differs from current V1.0.2 rules. See `docs/ASSET_MANIFEST.md`.
 
 ## Recommended workflow
 
@@ -64,7 +64,7 @@ The architecture is intentionally replaceable: the game engine must not depend o
 
 ## Web client
 
-The V1.0.1 implementation includes the strict TypeScript engine, server-authoritative Supabase backend, React/Vite interface, reconnect handling, the symmetric five-value Fire deck, blind Order draws, player-scaled kiln spaces, the expanded Orders/Techniques, gated Court Patronage, and deterministic two-browser Playwright game tests.
+The V1.0.2 implementation includes the strict TypeScript engine, server-authoritative Supabase backend, React/Vite interface, reconnect handling, the symmetric five-value Fire deck retained from V1.0.1, four-card Market and Imperial displays, blind Order draws, player-scaled kiln spaces, gated Court Patronage, and deterministic browser tests.
 
 ```bash
 npm ci
@@ -77,4 +77,4 @@ Production configuration uses only the public Supabase project URL and anonymous
 
 ## Audit
 
-See `docs/V0.4_HANDOFF_AUDIT.md` for the historical component-by-component V0.4 audit. Run `python3 tools/validate_handoff.py` to validate the current V1.0.1 structured rules.
+See `docs/V0.4_HANDOFF_AUDIT.md` for the historical component-by-component V0.4 audit. Run `python3 tools/validate_handoff.py` to validate the current V1.0.2 structured rules.

@@ -313,7 +313,7 @@ export type GamePhase =
 
 export interface GameState {
   schemaVersion: 1;
-  rulesVersion: "1.0.1";
+  rulesVersion: "1.0.2";
   gameId: string;
   revision: number;
   eventSequence: number;
@@ -342,7 +342,33 @@ export interface GameState {
   firingContext: FiringContext | null;
   lastFiringResult: FiringResultSummary | null;
   finalResult: FinalResult | null;
+  experimentConfig?: GameExperimentConfig;
 }
+
+export type JunAbExperimentArm = "control" | "jun_cost_1";
+
+export interface JunAbExperimentConfig {
+  readonly experimentId: "jun-ab-001";
+  readonly experimentArm: JunAbExperimentArm;
+  readonly junActivationCoinCost: 0 | 1;
+}
+
+export type ImperialTrackExperimentArm =
+  | "all_imperial_orders_progress_2"
+  | "earlier_apprentices_track_002248_seal_2";
+
+export interface ImperialTrackExperimentConfig {
+  readonly experimentId: "imperial-track-ab-001";
+  readonly experimentArm: ImperialTrackExperimentArm;
+  readonly imperialOrderProgressMode: "all_two" | "printed";
+  readonly imperialProgressTrackVp: readonly [number, number, number, number, number, number];
+  readonly apprenticeMilestoneSpaces: readonly [number, number];
+  readonly presentationSpaces: readonly [number, number];
+  readonly imperialSealEnabled: true;
+  readonly imperialSealVp: 2 | 3;
+}
+
+export type GameExperimentConfig = JunAbExperimentConfig | ImperialTrackExperimentConfig;
 
 export interface PlayerSetup {
   id: PlayerId;
@@ -352,6 +378,7 @@ export interface PlayerSetup {
 export interface CreateGameInput {
   gameId: string;
   players: PlayerSetup[];
+  experimentConfig?: GameExperimentConfig;
 }
 
 export interface GlazeSelection {
@@ -511,6 +538,12 @@ export type GameEvent =
   | { type: "TECHNIQUE_ACQUIRED"; playerId: PlayerId; techniqueId: TechniqueId; cost: number }
   | { type: "TECHNIQUE_USED"; playerId: PlayerId; techniqueId: TechniqueId }
   | { type: "KILN_ABILITY_USED"; playerId: PlayerId; kilnId: KilnId }
+  | {
+      type: "JUN_ACTIVATION_PAID";
+      playerId: PlayerId;
+      coins: 1 | 2;
+      rulesContext: "official_v1.0.2" | "historical_jun_cost_1_experiment";
+    }
   | { type: "WORK_PHASE_ENDED" }
   | { type: "WOOD_SUBMITTED"; playerId: PlayerId; windowId: string }
   | { type: "WOOD_REVEALED"; contributions: Record<PlayerId, number> }
@@ -520,18 +553,41 @@ export type GameEvent =
       type: "FIRING_RESOLVED";
       ceramicId: CeramicId;
       fireModifier: FireModifier;
+      zoneModifier: -1 | 0 | 1;
+      ignoredFireModifier: boolean;
       naturalActualHeat: number;
       naturalHeatDifference: number;
       naturalQuality: Quality;
+      finalActualHeat: number;
+      finalHeatDifference: number;
       finalQuality: Quality;
     }
   | { type: "ORDER_COMPLETED"; playerId: PlayerId; orderId: OrderId; ceramicIds: CeramicId[] }
   | {
       type: "IMPERIAL_PROGRESS_ADVANCED";
       playerId: PlayerId;
+      source?: "imperial_order" | "court_patronage";
+      orderId?: OrderId | null;
+      requirementCeramicCount?: number | null;
+      requirementCategory?:
+        | "single_fine"
+        | "single_masterpiece"
+        | "multi_2"
+        | "multi_3"
+        | "court_patronage"
+        | null;
       from: number;
       to: number;
       reward: 1 | 2;
+      appliedGain?: number;
+      crossedSpaces?: number[];
+      capLoss?: number;
+      apprenticeMilestonesTriggered?: number[];
+      presentationMilestonesTriggered?: number[];
+      sealMilestoneTriggered?: boolean;
+      trackVpBefore?: number;
+      trackVpAfter?: number;
+      sealVp?: number;
     }
   | {
       type: "COURT_PATRONAGE_USED";
@@ -540,7 +596,7 @@ export type GameEvent =
       from: 0 | 1 | 2 | 3;
       to: 1 | 2 | 3 | 4;
     }
-  | { type: "IMPERIAL_SEAL_CLAIMED"; playerId: PlayerId }
+  | { type: "IMPERIAL_SEAL_CLAIMED"; playerId: PlayerId; sealVp?: number }
   | { type: "APPRENTICE_UNLOCKED"; playerId: PlayerId; workerId: WorkerId }
   | { type: "ROUND_STARTED"; round: RoundNumber; firstPlayerId: PlayerId }
   | { type: "PRESENTATION_SUBMITTED"; playerId: PlayerId; ceramicIds: CeramicId[] }

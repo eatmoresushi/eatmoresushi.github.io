@@ -23,14 +23,15 @@ def check(cond, msg):
     if not cond: errors.append(msg)
 
 for versioned in [cfg, actions, firing, components, imperial, asset_specs, round_structure]:
-    check(versioned["rulesVersion"] == "1.0.1", "Rules version must be 1.0.1")
+    check(versioned["rulesVersion"] == "1.0.2", "Rules version must be 1.0.2")
 check(cfg["players"] == {"min":2,"max":4}, "Player count must be 2-4")
 check(cfg["rounds"] == 5, "Game must be 5 rounds")
 check(cfg["startingResources"] == {"clay":2,"wood":2,"coins":3}, "Starting resources mismatch")
 check(cfg["workers"]["shifu"] == 1, "Each player needs 1 Shifu")
 check(cfg["workers"]["apprenticesTotal"] == 5, "Each player needs 5 Apprentices")
 check(cfg["workers"]["apprenticesStarting"] == 3, "3 Apprentices must start available")
-check(cfg["workers"]["apprenticeUnlockProgress"] == [2,4], "Apprentice unlock spaces must be 2 and 4")
+check(cfg["workers"]["apprenticeUnlockProgress"] == [1,3], "Apprentice unlock spaces must be 1 and 3")
+check(cfg["orderDisplay"]["market"] == 4 and cfg["orderDisplay"]["imperial"] == 4, "Both Order displays must contain 4 cards")
 
 expected_caps = {
  "materials_yard":{"2":2,"3":3,"4":4},
@@ -41,7 +42,7 @@ expected_caps = {
  "guild_academy":{"2":1,"3":2,"4":3},
 }
 locs = {x["id"]:x for x in actions["locations"]}
-check(set(locs) == set(expected_caps), "Must have exactly the six V1.0.1 action locations")
+check(set(locs) == set(expected_caps), "Must have exactly the six V1.0.2 action locations")
 for k,v in expected_caps.items():
     check(locs.get(k,{}).get("capacity") == v, f"Capacity mismatch for {k}")
 check("reposition" not in locs["kiln_yard"]["shifu"].lower(), "Shifu Kiln action must not reposition")
@@ -55,7 +56,7 @@ check("blind-top" in office.get("shifu", "") and "Court Patronage" in office.get
 check("apprenticeOptions" not in office and "shifuOptions" not in office, "Office sale must not remain a standalone action option")
 check("printed Coin cost" in locs["guild_academy"].get("apprentice", ""), "Guild Apprentice must pay printed cost")
 check("1 Coin less" in locs["guild_academy"]["shifu"], "Guild Shifu must receive the exact discount")
-check(cfg["decorations"] == {"plain":1,"carved":2,"impressed":2,"crackle":2}, "V1.0.1 Decoration costs mismatch")
+check(cfg["decorations"] == {"plain":1,"carved":2,"impressed":2,"crackle":2}, "V1.0.2 Decoration costs mismatch")
 
 check(len(orders["market"]) == 23, "Expected 23 Market Orders")
 check(len(orders["imperial"]) == 13, "Expected 13 Imperial Orders")
@@ -111,9 +112,11 @@ expected_technique_costs = {
  "T09":3, "T10":3, "T11":3, "T12":2,
  "T13":3, "T14":3, "T15":3, "T16":3,
 }
-check({t["id"]:t["cost"] for t in techs} == expected_technique_costs, "V1.0.1 Technique costs mismatch")
+check({t["id"]:t["cost"] for t in techs} == expected_technique_costs, "V1.0.2 Technique costs mismatch")
 colour_samples = next(t for t in techs if t["id"] == "T08")
 check("before choosing your first Order" in colour_samples["ability"] and "either display" in colour_samples["ability"] and "bottom" in colour_samples["ability"], "T08 Colour Samples timing or target mismatch")
+connoisseur = next(t for t in techs if t["id"] == "T14")
+check(connoisseur["cost"] == 3 and "5 Coins" in connoisseur["ability"] and "Court Patronage" in connoisseur["ability"], "T14 Connoisseur Network mismatch")
 
 check(len(kilns) == 5, "Expected 5 Kilns")
 check({k["id"] for k in kilns} == {"RU","GU","GE","DI","JU"}, "Kiln IDs mismatch")
@@ -123,6 +126,10 @@ check(
     and "or refunding its original Decoration cost" in ge["ability"],
     "Ge must waive Crackle cost without a refund",
 )
+ru = next(k for k in kilns if k["id"] == "RU")
+jun = next(k for k in kilns if k["id"] == "JU")
+check("gain 3 VP" in ru["ability"], "Ru must award 3 VP")
+check("pay 2 Coins" in jun["ability"] and "+1 or -1" in jun["ability"], "Jun must cost 2 Coins and remain exactly +/-1")
 
 check(len(firing["kilnSpaces"]) == 8, "Shared Kiln must have 8 spaces")
 check(sum(1 for s in firing["kilnSpaces"] if s["zone"]=="high") == 2, "High zone must have 2 spaces")
@@ -144,9 +151,9 @@ check([x["title"] for x in imperial["track"]] == [
  "Local Workshop", "Local Renown", "Prefectural Recommendation",
  "Court Examination", "Awaiting Audience", "Imperial Audience"
 ], "Imperial track titles mismatch")
-check([x["endGameVp"] for x in imperial["track"]] == [0,1,1,3,3,7], "Imperial track VP mismatch")
+check([x["endGameVp"] for x in imperial["track"]] == [0,0,2,2,4,8], "Imperial track VP mismatch")
 check("maxProgressPerRound" not in imperial, "Imperial progress must not have a per-round cap")
-check(imperial["imperialSealVp"] == 3, "Imperial Seal must be worth 3 VP")
+check(imperial["imperialSealVp"] == 2, "Imperial Seal must be worth 2 VP")
 check(imperial["presentation"]["eligibleSpaces"] == [4,5], "Imperial Presentation eligibility must be spaces 4 and 5")
 check(imperial["presentation"]["maxCeramics"] == 3, "Imperial Presentation must allow at most 3 ceramics")
 check(imperial["presentation"]["qualityVp"] == {"standard":1,"fine":2,"masterpiece":4}, "Imperial Presentation Quality VP mismatch")
@@ -184,11 +191,11 @@ check(actual_assets == expected_assets, f"Runtime tabletop asset directory misma
 check("Progress Reminder Tokens" not in component_map, "Progress Reminder Tokens must be removed")
 
 if errors:
-    print("V1.0.1 HANDOFF VALIDATION FAILED")
+    print("V1.0.2 HANDOFF VALIDATION FAILED")
     for e in errors: print(" -", e)
     sys.exit(1)
 
-print("V1.0.1 HANDOFF VALIDATION PASSED")
+print("V1.0.2 HANDOFF VALIDATION PASSED")
 print("Rules/data: 2-4 players, 5 rounds, 6 locations, 1 Shifu + 3 starting Apprentices.")
 print("Office: face-up/blind Orders, pre-pick Colour Samples, and gated Shifu Court Patronage.")
 print("Academy: both workers; Shifu optional refresh and -1 Coin; capacity 1/2/3.")
@@ -196,5 +203,6 @@ print("Decks: 23 Market Orders, 13 Imperial Orders, 15 Techniques, Fire -2/-1/0/
 print("Kiln: 6/7/8 active spaces, contributor-scaled Base Heat, current Quality ladder.")
 print("Decorations: Plain 1 Coin; Carved, Impressed and Crackle 2 Coins.")
 print("Orders: named Glazes 4/4/4/4; Decorations Plain/Carved/Impressed/Crackle 3/3/4/3.")
-print("Imperial: I01-I05/I11 +1; I06-I10/I12-I13 +2; crossed unlocks at 2/4 and Seal at 5.")
-print("Assets: eight runtime tabletop atlases are present; live overlays carry V1.0.1 rule corrections.")
+print("Imperial: 4-card displays; I01-I05/I11 +1; I06-I10/I12-I13 +2; crossed unlocks at 1/3 and 2-VP Seal at 5.")
+print("V1.0.2: Ru +3 VP; Jun costs 2 Coins; Connoisseur Network gains 5 Coins and 0 VP.")
+print("Assets: eight runtime tabletop atlases are present; live overlays carry V1.0.2 rule corrections.")

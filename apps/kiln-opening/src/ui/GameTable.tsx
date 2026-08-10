@@ -357,7 +357,7 @@ function ImperialProgressTable({ game }: { game: PublicGameState }) {
   const sealOwner = game.imperialSealOwnerId === null ? "Unclaimed" : game.players[game.imperialSealOwnerId]?.displayName ?? game.imperialSealOwnerId;
   return (
     <section className="playtest-panel imperial-progress" aria-labelledby="imperial-progress-title" data-testid="imperial-progress-track">
-      <div className="playtest-panel-heading"><div><p className="eyebrow">Track state</p><h2 id="imperial-progress-title">Imperial Progress</h2></div><span data-testid="imperial-seal-owner">Imperial Seal · {sealOwner}</span></div>
+      <div className="playtest-panel-heading"><div><p className="eyebrow">Track state</p><h2 id="imperial-progress-title">Imperial Progress</h2></div><span data-testid="imperial-seal-owner">Imperial Seal · {sealOwner} · 2 VP</span></div>
       <div className="table-scroll imperial-progress-scroll">
         <table className="state-table imperial-progress-spaces">
           <thead><tr><th>Space</th><th>Name</th><th>End-game VP</th><th>Milestone</th><th>Players</th></tr></thead>
@@ -367,7 +367,7 @@ function ImperialProgressTable({ game }: { game: PublicGameState }) {
           })}</tbody>
         </table>
       </div>
-      <p className="progress-legend">Single-ceramic Imperial Orders advance 1 space; multi-ceramic Imperial Orders advance 2. Apprentices crossed at spaces 2 and 4 unlock during Cleanup.</p>
+      <p className="progress-legend">Single-ceramic Imperial Orders advance 1 space; multi-ceramic Imperial Orders advance 2. Apprentices crossed at spaces 1 and 3 unlock during Cleanup.</p>
     </section>
   );
 }
@@ -429,9 +429,9 @@ function placedWorkerLabel(game: PublicGameState, workerId: string): string {
 }
 
 function progressReward(space: number): string {
-  if (space === 2) return "Apprentice unlock during Cleanup";
-  if (space === 4) return "Apprentice unlock; Presentation eligible";
-  if (space === 5) return "Presentation eligible; first arrival claims Imperial Seal";
+  if (space === 1 || space === 3) return "Apprentice unlock during Cleanup";
+  if (space === 4) return "Presentation eligible";
+  if (space === 5) return "Presentation eligible; first arrival claims 2-VP Imperial Seal";
   return "—";
 }
 

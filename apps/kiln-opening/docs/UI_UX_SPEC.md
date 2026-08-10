@@ -77,7 +77,7 @@ The main table always shows the shared, public six-space Imperial Progress track
 
 - Render every player's marker on their current space using both colour and a text label.
 - Show each space title, end-game VP, and its Apprentice, Presentation, or Imperial Seal reward where applicable.
-- Show available, locked, and pending-unlock worker counts on player summaries. Apprentice rewards at spaces 2 and 4 remain pending until Cleanup.
+- Show available, locked, and pending-unlock worker counts on player summaries. Apprentice rewards at spaces 1 and 3 remain pending until Cleanup.
 - Show the Imperial Seal owner globally, including an explicit `Unclaimed` state.
 - At spaces 4 and 5, identify the player as eligible for Imperial Presentation.
 - Animate and log a server-committed Progress move from its original space to final space. A +2 move must visibly cross and announce intermediate milestone rewards rather than appearing to skip them.

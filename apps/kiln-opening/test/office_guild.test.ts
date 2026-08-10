@@ -486,7 +486,7 @@ describe("Guild & Academy", () => {
     expect(next.players[actorId]!.resources.coins).toBe(0);
   });
 
-  it("uses the complete V1.0.1 printed-cost table", () => {
+  it("uses the complete V1.0.2 printed-cost table", () => {
     expect(Object.fromEntries(Object.entries(TECHNIQUE_DEFINITIONS).map(([id, technique]) => [id, technique.cost]))).toEqual({
       T01: 2, T02: 2, T03: 2, T04: 2,
       T05: 2, T06: 2, T08: 2,

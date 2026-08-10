@@ -22,12 +22,12 @@ describe("setup", () => {
     if (!result.ok) return;
 
     const state = result.state;
-    expect(state.rulesVersion).toBe("1.0.1");
+    expect(state.rulesVersion).toBe("1.0.2");
     expect(state.playerCount).toBe(count);
     expect(state.round).toBe(1);
     expect(state.phase.type).toBe("setup_kiln_selection");
     expect(state.marketDisplay).toHaveLength(4);
-    expect(state.imperialDisplay).toHaveLength(3);
+    expect(state.imperialDisplay).toHaveLength(4);
     expect(state.techniqueDisplay.forming).toHaveLength(2);
     expect(state.techniqueDisplay.glazing).toHaveLength(2);
     expect(state.techniqueDisplay.firing).toHaveLength(2);

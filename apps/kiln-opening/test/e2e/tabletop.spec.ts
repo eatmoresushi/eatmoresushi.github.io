@@ -28,7 +28,7 @@ test("simple playtest UI exposes state and places an Apprentice through authorit
     for (const page of [host, guest]) {
       await expect(page.getByTestId("playtest-ui")).toBeVisible();
       await expect(page.getByTestId("tabletop-scene")).toHaveCount(0);
-      await expect(page.getByText("V1.0.1", { exact: true }).first()).toBeVisible();
+      await expect(page.getByText("V1.0.2", { exact: true }).first()).toBeVisible();
       await expect(page.getByRole("region", { name: "Player Workshops" })).toBeVisible();
       await expect(page.getByRole("region", { name: "Worker Placement" })).toBeVisible();
       await expect(page.getByRole("region", { name: "Kiln Spaces" })).toBeVisible();

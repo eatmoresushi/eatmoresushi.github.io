@@ -84,6 +84,9 @@ export function projectPublicGameState(state: GameState): PublicGameState {
     firingContext: clone(state.firingContext),
     lastFiringResult: state.lastFiringResult === undefined ? null : clone(state.lastFiringResult),
     finalResult: clone(state.finalResult),
+    ...(state.experimentConfig === undefined
+      ? {}
+      : { experimentConfig: clone(state.experimentConfig) }),
   };
 }
 
@@ -106,6 +109,7 @@ export function projectPublicEvent(event: GameEvent): PublicGameEvent {
     case "TECHNIQUE_ACQUIRED":
     case "TECHNIQUE_USED":
     case "KILN_ABILITY_USED":
+    case "JUN_ACTIVATION_PAID":
     case "WORK_PHASE_ENDED":
     case "WOOD_SUBMITTED":
     case "WOOD_REVEALED":

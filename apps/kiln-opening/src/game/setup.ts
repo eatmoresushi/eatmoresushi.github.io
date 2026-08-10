@@ -10,6 +10,7 @@ import {
   TECHNIQUES,
 } from "./content.ts";
 import { createFailure, ruleError } from "./errors.ts";
+import { isSupportedExperimentConfig } from "./experiment.ts";
 import type { RandomSource } from "./rng.ts";
 import { shuffle } from "./rng.ts";
 import { emptyActionBoard } from "./selectors.ts";
@@ -133,6 +134,9 @@ export function createGame(input: CreateGameInput, rng: RandomSource): CreateGam
   if (input.players.some((player) => player.displayName.trim().length === 0)) {
     return createFailure(ruleError("INVALID_SETUP", "Display names must not be empty."));
   }
+  if (input.experimentConfig !== undefined && !isSupportedExperimentConfig(input.experimentConfig)) {
+    return createFailure(ruleError("INVALID_SETUP", "Unsupported experiment configuration."));
+  }
 
   const typedPlayerCount = playerCount as PlayerCount;
   const playerOrder = [...ids];
@@ -169,7 +173,7 @@ export function createGame(input: CreateGameInput, rng: RandomSource): CreateGam
 
   const state: GameState = {
     schemaVersion: 1,
-    rulesVersion: "1.0.1",
+    rulesVersion: "1.0.2",
     gameId: input.gameId,
     revision: 0,
     eventSequence: 0,
@@ -202,6 +206,9 @@ export function createGame(input: CreateGameInput, rng: RandomSource): CreateGam
     firingContext: null,
     lastFiringResult: null,
     finalResult: null,
+    ...(input.experimentConfig === undefined
+      ? {}
+      : { experimentConfig: { ...input.experimentConfig } }),
   };
 
   if (new Set(KILN_IDS).size !== KILN_IDS.length) {

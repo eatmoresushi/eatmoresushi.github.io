@@ -4,7 +4,7 @@
     "name": "Ru Kiln",
     "nameZh": "汝窑",
     "abilityName": "Quiet Perfection",
-    "ability": "After all firing abilities are resolved, if you produced at least one Masterpiece with Celadon glaze and Plain decoration, gain 2 VP. Score this only once per round."
+    "ability": "After all firing abilities are resolved, if you produced at least one Masterpiece with Celadon glaze and Plain decoration, gain 3 VP. Score this only once per round."
   },
   {
     "id": "GU",
@@ -32,6 +32,6 @@
     "name": "Jun Kiln",
     "nameZh": "钧窑",
     "abilityName": "Kiln Transformation",
-    "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, adjust the Actual Heat of one of your ceramics by +1 or -1. This affects only that ceramic."
+    "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, you may pay 2 Coins to adjust the Actual Heat of one of your ceramics by +1 or -1. This affects only that ceramic."
   }
 ]

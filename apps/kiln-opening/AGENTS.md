@@ -10,20 +10,21 @@ Target session length for the physical design is approximately 90–120 minutes.
 
 Priority order:
 
-1. `docs/GAME_RULES.md` — authoritative gameplay rules.
-2. `data/*.json` — machine-readable values derived from those rules.
-3. `docs/IMPLEMENTATION_DECISIONS.md` — digital interpretations of rules where necessary.
-4. `docs/ONLINE_GAME_SPEC.md` — digital-only behaviour.
-5. `docs/DESIGN_SPEC.md` — design intent and constraints.
-6. `source_rulebook/Kiln_Opening_v0.4_Full_Rulebook.pdf` — historical human backup; V1.0.1 `GAME_RULES.md` overrides it.
-7. `assets/print_reference/*` — visual direction only.
+1. The supplied `Kiln_Opening_v1.0.2_Full_Rulebook.pdf` — authoritative base-game rules.
+2. `docs/GAME_RULES.md` — authoritative implementation transcription of V1.0.2.
+3. `data/*.json` — machine-readable values derived from those rules.
+4. `docs/IMPLEMENTATION_DECISIONS.md` — digital interpretations of rules where necessary.
+5. `docs/ONLINE_GAME_SPEC.md` — digital-only behaviour.
+6. `docs/DESIGN_SPEC.md` — design intent and constraints.
+7. `source_rulebook/Kiln_Opening_v0.4_Full_Rulebook.pdf` — historical human backup only.
+8. `assets/print_reference/*` — visual direction only.
 
 Never implement an older mechanic because it appears in historical discussion or art.
 
 
 ## Approved asset rule
 
-Only `assets/current_v04/` is an approved visual-reference directory. The directory name remains unchanged as a stable legacy path; rules-bearing visuals must follow V1.0.1 data.
+Only `assets/current_v04/` is an approved visual-reference directory. The directory name remains unchanged as a stable legacy path; rules-bearing visuals must follow V1.0.2 data.
 
 Do not search conversation history or older images for missing boards/cards. Missing current assets are intentionally specified in `data/asset_specs.json` and `docs/V0.4_ASSETS_TO_REGENERATE.md` and must be rebuilt from current data.
 
@@ -96,7 +97,7 @@ At minimum:
 - Shape costs and vessel supply
 - Decoration costs
 - Technique acquisition limit, printed Apprentice cost, and Shifu −1 Coin discount (minimum 1)
-- every one of the 15 V1.0.1 Techniques
+- every one of the 15 V1.0.2 Techniques
 - all five Kiln abilities
 - contributor-scaled Base Heat for 1–4 contributors
 - secret simultaneous Wood reveal
@@ -107,7 +108,7 @@ At minimum:
 - immediate display refill
 - Order hand limit and Guan exception
 - every Imperial Order advancing +1 or +2 Imperial Progress as printed, including multiple completions in one round and milestone-crossing jumps
-- Apprentice unlock timing at spaces 2 and 4
+- Apprentice unlock timing at spaces 1 and 3
 - Imperial Seal first-arrival rule
 - Imperial Presentation eligibility and diversity bonuses
 - end-game Coin VP cap

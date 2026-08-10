@@ -113,7 +113,7 @@
     "name": "Connoisseur Network",
     "nameZh": "鉴赏家人脉",
     "cost": 3,
-    "ability": "After a normal Office main action, you may sell exactly one Finished undelivered Masterpiece for 3 Coins and return its Vessel.",
+    "ability": "After a normal Office main action, you may sell exactly one Finished undelivered Masterpiece for 5 Coins and return its Vessel. It cannot follow Court Patronage.",
     "oncePerRound": true
   },
   {

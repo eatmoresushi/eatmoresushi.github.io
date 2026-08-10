@@ -749,7 +749,7 @@ function ConnoisseurControls({ game, player, busy, send }: Pick<ActionPanelProps
   return (
     <CeramicDecision
       title="Connoisseur Network"
-      hint="After this normal Office action, sell exactly one undelivered Masterpiece for 3 Coins and return its Vessel, or skip."
+      hint="After this normal Office action, sell exactly one undelivered Masterpiece for 5 Coins and return its Vessel, or skip."
       ceramics={masterpieces}
       busy={busy}
       send={send}
@@ -856,8 +856,8 @@ function KilnAbilityControls({ game, player, busy, send }: {
     return <CeramicDecision title="Ge · Crackle from Fire" hint="Turn one difference-1 ceramic into a Crackle Masterpiece. The Crackle conversion is free and does not refund its original Decoration." ceramics={eligibleForGe} busy={busy} send={send} make={(ceramicId) => ({ type: "RESOLVE_GE", ceramicId })} skip={{ type: "RESOLVE_GE", ceramicId: null }} />;
   }
   return (
-    <ControlSection title="Jun · Kiln Transformation" hint="Adjust one of your ceramics by +1 or −1, or pass.">
-      <JunForm ceramics={loaded} busy={busy} send={send} />
+    <ControlSection title="Jun · Kiln Transformation" hint="Pay 2 Coins to adjust one of your ceramics by +1 or −1, or pass.">
+      <JunForm ceramics={loaded} coins={player.resources.coins} busy={busy} send={send} />
       <CommandButton busy={busy} send={send} command={{ type: "RESOLVE_JUN", ceramicId: null, delta: null }} secondary>Skip Jun ability</CommandButton>
     </ControlSection>
   );
@@ -883,13 +883,13 @@ function SaggerSelectionControls({ game, player, busy, send }: {
   );
 }
 
-function JunForm({ ceramics, busy, send }: { ceramics: ReturnType<typeof ownCeramics>; busy: boolean; send: SendCommand }) {
+function JunForm({ ceramics, coins, busy, send }: { ceramics: ReturnType<typeof ownCeramics>; coins: number; busy: boolean; send: SendCommand }) {
   function submit(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     void send({ type: "RESOLVE_JUN", ceramicId: required(data, "ceramic"), delta: Number(required(data, "delta")) as -1 | 1 });
   }
-  return <form className="control-form" onSubmit={submit}><CeramicSelect name="ceramic" label="Ceramic" ceramics={ceramics} /><SelectField name="delta" label="Heat change" options={["-1", "1"]} /><button className="primary-button" disabled={busy || ceramics.length === 0}>Apply heat change</button></form>;
+  return <form className="control-form" onSubmit={submit}><CeramicSelect name="ceramic" label="Ceramic" ceramics={ceramics} /><SelectField name="delta" label="Heat change" options={["-1", "1"]} /><button className="primary-button" disabled={busy || ceramics.length === 0 || coins < 2}>Pay 2 Coins and apply heat change</button>{coins < 2 && <small role="status">You need 2 Coins to use Jun.</small>}</form>;
 }
 
 function SaggarsControls({ game, player, busy, send }: {

@@ -31,12 +31,13 @@ export function imperialOrderNotice(result: CommandSuccess): string | null {
   if (progress?.type === "IMPERIAL_PROGRESS_ADVANCED") {
     const capped = progress.to - progress.from < progress.reward ? " (capped at space 5)" : "";
     parts.push(`Imperial Progress +${progress.reward}: ${progress.from} → ${progress.to}${capped}.`);
-    if (progress.from < 2 && progress.to >= 2) parts.push("Prefectural Recommendation reached. 1 Apprentice will unlock during Cleanup.");
-    if (progress.from < 4 && progress.to >= 4) parts.push("Awaiting Audience reached. 1 Apprentice will unlock during Cleanup. You are now eligible for the Imperial Presentation.");
+    if (progress.from < 1 && progress.to >= 1) parts.push("Local Renown reached. 1 Apprentice will unlock during Cleanup.");
+    if (progress.from < 3 && progress.to >= 3) parts.push("Court Examination reached. 1 Apprentice will unlock during Cleanup.");
+    if (progress.from < 4 && progress.to >= 4) parts.push("Awaiting Audience reached. You are now eligible for the Imperial Presentation.");
     if (progress.from < 5 && progress.to >= 5) {
       const claimed = result.events.some((event) => event.type === "IMPERIAL_SEAL_CLAIMED");
       parts.push(claimed
-        ? "Imperial Audience reached. You claim the Imperial Seal: +3 VP at game end."
+        ? "Imperial Audience reached. You claim the Imperial Seal: +2 VP at game end."
         : "Imperial Audience reached. The Imperial Seal has already been claimed.");
     }
   } else if (player?.imperialProgress === 5) {
@@ -386,7 +387,7 @@ export function App() {
         />
       )}
       <footer className="site-footer">
-        <span>Kiln Opening V1.0.1</span>
+        <span>Kiln Opening V1.0.2</span>
         <a href="https://luyuan.me/">Luyuan He</a>
       </footer>
     </div>

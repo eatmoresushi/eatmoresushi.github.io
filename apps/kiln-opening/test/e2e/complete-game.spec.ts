@@ -77,7 +77,7 @@ test("starting Orders remain visible after an eligible redraw advances directly 
     await expect(host.getByRole("heading", { name: "Your first commission" })).toBeVisible();
     await expect(host.getByRole("region", { name: "Workshop Orders" })).toContainText("M23");
     await expect(host.locator(".player-board.is-own")).toContainText("4 available workers · 2 locked");
-    await expect(host.locator(".site-footer")).toContainText("Kiln Opening V1.0.1");
+    await expect(host.locator(".site-footer")).toContainText("Kiln Opening V1.0.2");
 
     await host.getByRole("button", { name: "Redraw" }).click();
     await expect(host.getByTestId("phase-name")).toHaveText("Work Phase");
@@ -91,7 +91,7 @@ test("starting Orders remain visible after an eligible redraw advances directly 
       await expect(progress).toContainText("Awaiting Audience");
       await expect(progress).toContainText("Presentation eligible");
       await expect(progress).toContainText("Single-ceramic Imperial Orders advance 1 space; multi-ceramic Imperial Orders advance 2");
-      await expect(progress.getByTestId("imperial-seal-owner")).toHaveText("Imperial Seal · Unclaimed");
+      await expect(progress.getByTestId("imperial-seal-owner")).toHaveText("Imperial Seal · Unclaimed · 2 VP");
       const orders = page.getByRole("region", { name: "Workshop Orders" });
       await expect(orders.locator(".order-card")).toHaveCount(2);
       await expect(orders).toContainText("M16");
@@ -132,8 +132,8 @@ test("starting Orders remain visible after an eligible redraw advances directly 
     await expect(kilnYard).toContainText("gives no Wood");
 
     const imperialCards = guest.locator(".orders-board .order-imperial");
-    await expect(imperialCards).toHaveCount(3);
-    await expect(imperialCards.locator(".order-progress-reward")).toHaveCount(3);
+    await expect(imperialCards).toHaveCount(4);
+    await expect(imperialCards.locator(".order-progress-reward")).toHaveCount(4);
     for (const reward of await imperialCards.locator(".order-progress-reward").allTextContents()) {
       expect(reward).toMatch(/^\+[12] Imperial Progress$/);
     }
@@ -282,7 +282,7 @@ test("two workshops complete a firing, Order, reconnect, and five-round game", a
     await hostKilnYard.getByLabel("First kiln space").selectOption("middle_1");
     await hostKilnYard.getByRole("button", { name: "Load kiln" }).click();
 
-    // V1.0.1 retains four initially usable workers; both may pass the last one.
+    // V1.0.2 retains four initially usable workers; both may pass the last one.
     await guest.getByRole("button", { name: "Pass for this round" }).click();
     await host.getByRole("button", { name: "Pass for this round" }).click();
 

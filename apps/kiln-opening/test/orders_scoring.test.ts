@@ -226,7 +226,7 @@ describe("Order Phase and Imperial Progress", () => {
     expect(next.players[actorId]!.completedOrders).toHaveLength(1);
   });
 
-  it("advances for every Imperial Order in one round and unlocks space 2 during Cleanup", () => {
+  it("advances for every Imperial Order in one round and unlocks space 3 during Cleanup", () => {
     const game = startedGame(2, 701);
     const actorId = game.state.firstPlayerId;
     game.state.players[actorId]!.imperialProgress = 1;
@@ -257,7 +257,7 @@ describe("Order Phase and Imperial Progress", () => {
     ).toHaveLength(4);
   });
 
-  it("unlocks the fourth Apprentice at Progress space 4 during Cleanup", () => {
+  it("unlocks the fifth Apprentice at Progress space 3 during Cleanup", () => {
     const game = startedGame(2, 711);
     const actorId = game.state.firstPlayerId;
     const player = game.state.players[actorId]!;
@@ -266,7 +266,7 @@ describe("Order Phase and Imperial Progress", () => {
     );
     if (previouslyUnlocked === undefined) throw new Error("Expected a locked Apprentice");
     previouslyUnlocked.status = "available";
-    player.imperialProgress = 3;
+    player.imperialProgress = 2;
     player.orderHand = ["I01"];
     const ceramic = addFinished(game.state, actorId, "bowl", "masterpiece", "celadon", "plain");
     setOrderPhase(game.state);
@@ -277,7 +277,7 @@ describe("Order Phase and Imperial Progress", () => {
       { type: "COMPLETE_ORDER", orderId: "I01", ceramicIds: [ceramic.id], useGuanWaiver: false },
       game.rng,
     );
-    expect(state.players[actorId]!.imperialProgress).toBe(4);
+    expect(state.players[actorId]!.imperialProgress).toBe(3);
     expect(state.players[actorId]!.pendingApprenticeUnlocks).toBe(1);
 
     state = finishOrderPhase(state, game.rng);
@@ -400,8 +400,8 @@ describe("Presentation and final scoring", () => {
     expect(calculateFinalResult(base).resolvedBy).toBe("total_vp");
     base.players[p1]!.score.orderVp = 0;
 
-    base.players[p1]!.imperialProgress = 1;
-    base.players[p2]!.score.orderVp = 1;
+    base.players[p1]!.imperialProgress = 2;
+    base.players[p2]!.score.orderVp = 2;
     expect(calculateFinalResult(base)).toEqual(
       expect.objectContaining({ winnerIds: [p1], resolvedBy: "imperial_progress" }),
     );

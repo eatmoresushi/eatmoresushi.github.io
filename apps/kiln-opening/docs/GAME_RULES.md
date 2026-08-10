@@ -1,4 +1,4 @@
-# GAME_RULES.md — Kiln Opening / 开窑 V1.0.1
+# GAME_RULES.md — Kiln Opening / 开窑 V1.0.2
 
 **Players:** 2–4  
 **Length:** 5 rounds  
@@ -36,7 +36,7 @@ At setup:
 - Shifu + 3 Apprentices are available;
 - 2 Apprentices are locked.
 
-The locked Apprentices are unlocked by Imperial Progress spaces 2 and 4. They become available during Cleanup and can act starting next round.
+The locked Apprentices are unlocked by Imperial Progress spaces 1 and 3. They become available during Cleanup and can act starting next round. Reaching or passing a milestone is sufficient.
 
 There is no training, hiring, worker specialisation, or worker loss.
 
@@ -100,7 +100,7 @@ Clay cleaning, refining, mixing, drying, etc. are abstracted into the Forming St
 
 1. Place action board, Shared Kiln, Round track and Imperial Progress track.
 2. Configure action capacities for player count.
-3. Shuffle Market and Imperial Order decks separately. Reveal 4 Market and 3 Imperial Orders.
+3. Shuffle Market and Imperial Order decks separately. Reveal 4 Market and 4 Imperial Orders.
 4. Separate Techniques by discipline: Forming, Glazing, Firing. Shuffle each discipline and reveal 2 from each.
 5. Shuffle the 20-card Fire deck.
 6. Place Clay, Wood, Coins and sorted Vessel cards in common supply.
@@ -248,11 +248,11 @@ When a face-up Order is taken, refill that display position immediately before a
 
 A player may not exceed hand limit. Check the limit before every individual acquisition.
 
-**Court Patronage:** this is a distinct Shifu-only main action. The player must have completed at least 1 Imperial Order during this game, have at least 5 Coins, and be at Imperial Progress 0–3. Pay 5 Coins and advance exactly 1 space. Court Patronage cannot advance from 4 to 5, cannot claim the Imperial Seal, and cannot be combined with Orders, Coin gain, Colour Samples, or the optional Flawed sale. A move to space 2 or 4 queues the normal Apprentice unlock for Cleanup.
+**Court Patronage:** this is a distinct Shifu-only main action. The player must have completed at least 1 Imperial Order during this game, have at least 5 Coins, and be at Imperial Progress 0–3. Pay 5 Coins and advance exactly 1 space. Court Patronage cannot advance from 4 to 5, cannot claim the Imperial Seal, and cannot be combined with Orders, Coin gain, Colour Samples, Connoisseur Network, or the optional Flawed sale. A move to space 1 or 3 queues the normal Apprentice unlock for Cleanup.
 
 Only the acting player's Finished Flawed ceramics may be sold. Each sold ceramic is removed from the Finished Ceramics area, its Vessel card returns to the matching Shape supply, and the player gains exactly 1 Coin. A sold ceramic cannot later be delivered to an Order or included in an Imperial Presentation. Standard, Fine, and Masterpiece ceramics cannot be sold through this effect.
 
-**Connoisseur Network (T14):** after resolving a normal Office main action and its optional Flawed-sale step, its owner may exhaust it to sell exactly 1 owned Finished, undelivered Masterpiece for exactly 3 Coins. Return that ceramic's Vessel card to its Shape supply. This is separate from the normal Flawed sale and cannot follow Court Patronage.
+**Connoisseur Network (T14):** after resolving a normal Office main action and its optional Flawed-sale step, its owner may exhaust it to sell exactly 1 owned Finished, undelivered Masterpiece for exactly 5 Coins and 0 VP. Return that ceramic's Vessel card to its Shape supply. This is separate from the normal Flawed sale and cannot follow Court Patronage.
 
 ### Guild & Academy
 
@@ -285,7 +285,7 @@ Techniques give no direct VP.
 
 Exact list is authoritative in `data/techniques.json`.
 
-There are 15 Techniques, exactly 5 per discipline. T07 Glaze Notebook is not part of V1.0.1. Stable retained IDs are not renumbered.
+There are 15 Techniques, exactly 5 per discipline. T07 Glaze Notebook is not part of V1.0.2. Stable retained IDs are not renumbered.
 
 | Discipline | ID | Technique | Printed cost | Effect summary |
 |---|---|---|---:|---|
@@ -297,7 +297,7 @@ There are 15 Techniques, exactly 5 per discipline. T07 Glaze Notebook is not par
 | Glazing | T05 | Carving Knives | 2 | Ignore one Carved Decoration cost. |
 | Glazing | T06 | Seal Stamps | 2 | Ignore one Impressed Decoration cost. |
 | Glazing | T08 | Colour Samples | 2 | Before first Office Order acquisition, bottom one face-up Order from either display and refill. |
-| Glazing | T14 | Connoisseur Network | 3 | After a normal Office action, sell exactly one Finished Masterpiece for 3 Coins. |
+| Glazing | T14 | Connoisseur Network | 3 | After a normal Office action, sell exactly one Finished Masterpiece for 5 Coins and 0 VP. |
 | Glazing | T15 | Second Firing | 3 | After Quality, return one own Standard result to Glazed for a future firing. |
 | Firing | T09 | Kiln Setting | 3 | Before Contributions, move one own loaded ceramic to an empty active space. |
 | Firing | T10 | Protective Saggars | 3 | After Quality, pay 1 Coin for Flawed→Standard or Standard→Fine. |
@@ -391,7 +391,7 @@ Order eligibility:
 Two decks/displays:
 
 - Market: 23 cards, 4 face-up;
-- Imperial: 13 cards, 3 face-up.
+- Imperial: 13 cards, 4 face-up.
 
 Exact card definitions are authoritative in `data/orders.json`.
 
@@ -428,19 +428,19 @@ Progress is categorical, not per ceramic: I08 and I10 each advance exactly 2, no
 | Space | Title | Reward | End-game VP |
 |---:|---|---|---:|
 | 0 | Local Workshop | — | 0 |
-| 1 | Local Renown | — | 1 |
-| 2 | Prefectural Recommendation | unlock 1 Apprentice in Cleanup | 1 |
-| 3 | Court Examination | — | 3 |
-| 4 | Awaiting Audience | unlock 1 Apprentice in Cleanup; Presentation eligible | 3 |
-| 5 | Imperial Audience | take Imperial Seal if available; Presentation eligible | 7 |
+| 1 | Local Renown | unlock 1 Apprentice in Cleanup | 0 |
+| 2 | Prefectural Recommendation | — | 2 |
+| 3 | Court Examination | unlock 1 Apprentice in Cleanup | 2 |
+| 4 | Awaiting Audience | Presentation eligible | 4 |
+| 5 | Imperial Audience | take Imperial Seal if available; Presentation eligible | 8 |
 
 Rules:
 
 - single-ceramic Imperial Orders advance 1 space and multi-ceramic Imperial Orders advance 2 spaces, with no per-round limit;
 - Progress cannot exceed space 5;
-- every milestone crossed by a multi-space advance resolves; crossing space 2 or 4 queues its Apprentice for Cleanup, and crossing space 5 resolves Imperial Audience and the Seal;
+- every milestone crossed by a multi-space advance resolves; crossing space 1 or 3 queues its Apprentice for Cleanup, and crossing space 5 resolves Imperial Audience and the Seal;
 - unlocked Apprentice becomes usable next round;
-- first player ever reaching space 5 takes Imperial Seal, worth 3 VP;
+- first player ever reaching space 5 takes Imperial Seal, worth 2 VP;
 - reaching 5 does not end game.
 - Court Patronage advances exactly 1 space only from spaces 0–3, after the player has completed at least 1 Imperial Order; it cannot reach 5 or claim the Seal.
 
@@ -469,7 +469,7 @@ There is **no penalty** for presenting fewer than 3 or none.
 
 ### Ru Kiln / 汝窑 — Quiet Perfection
 
-After all firing abilities are resolved, if you produced at least one Masterpiece with Celadon Glaze and Plain Decoration, gain 2 VP. Score once per round maximum.
+After all firing abilities are resolved, if you produced at least one Masterpiece with Celadon Glaze and Plain Decoration, gain 3 VP. Score once per round maximum.
 
 ### Guan Kiln / 官窑 — Imperial Patronage
 
@@ -493,7 +493,7 @@ The additional vessel does not count against normal action limit.
 
 ### Jun Kiln / 钧窑 — Kiln Transformation
 
-Once per round, after Actual Heat is calculated but before Quality is assigned, adjust Actual Heat of one of your ceramics by +1 or -1.
+Once per round, after Actual Heat is calculated but before Quality is assigned, you may pay 2 Coins to adjust Actual Heat of one of your ceramics by +1 or -1. If you cannot pay 2 Coins, you cannot use the adjustment.
 
 Only that ceramic is affected.
 
@@ -509,7 +509,7 @@ After Round 5 Cleanup:
 
 1. keep all VP already recorded from completed Orders, Ru, etc.;
 2. add final Imperial Progress VP;
-3. +3 VP for Imperial Seal holder;
+3. +2 VP for Imperial Seal holder;
 4. add eligible Imperial Presentation;
 5. add 1 VP per 3 leftover Coins, maximum 5 VP.
 

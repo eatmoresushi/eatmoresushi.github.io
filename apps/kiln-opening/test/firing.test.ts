@@ -316,7 +316,7 @@ describe("firing timing windows", () => {
     let state = enterFiring(game.state, game.rng);
     const privateState = createPrivateFiringState(state);
     state = mustSubmit(state, privateState, actorId, 1, game.rng).state;
-    expect(state.players[actorId]!.score.kilnTraditionVp).toBe(2);
+    expect(state.players[actorId]!.score.kilnTraditionVp).toBe(3);
     expect(state.players[actorId]!.kilnAbilityUsedThisRound).toBe(true);
   });
 });

@@ -136,6 +136,8 @@ function eventDescription(event: PublicGameEvent, game: PublicGameState): string
       return `${player(event.playerId)} used ${event.techniqueId} · ${TECHNIQUE_DEFINITIONS[event.techniqueId]?.name ?? "Unknown Technique"}.`;
     case "KILN_ABILITY_USED":
       return `${player(event.playerId)} used ${KILN_DEFINITIONS[event.kilnId].name}: ${KILN_DEFINITIONS[event.kilnId].abilityName}.`;
+    case "JUN_ACTIVATION_PAID":
+      return `${player(event.playerId)} paid ${event.coins} Coins for Jun's Kiln Transformation.`;
     case "WORK_PHASE_ENDED":
       return "All players finished the Work Phase. Firing began.";
     case "WOOD_SUBMITTED":
@@ -147,7 +149,7 @@ function eventDescription(event: PublicGameEvent, game: PublicGameState): string
     case "QUALITY_ASSIGNED":
       return `${event.ceramicId} was assigned ${label(event.quality)} Quality.`;
     case "FIRING_RESOLVED":
-      return `${event.ceramicId} firing recorded: Fire ${signed(event.fireModifier)}, natural Heat ${event.naturalActualHeat} (difference ${event.naturalHeatDifference}, ${label(event.naturalQuality)}), final ${label(event.finalQuality)}.`;
+      return `${event.ceramicId} firing recorded: Fire ${signed(event.fireModifier)}, natural Heat ${event.naturalActualHeat} (difference ${event.naturalHeatDifference}, ${label(event.naturalQuality)}), final Heat ${event.finalActualHeat} (difference ${event.finalHeatDifference}, ${label(event.finalQuality)}).`;
     case "ORDER_COMPLETED": {
       const definition = ORDER_DEFINITIONS[event.orderId];
       const reward = definition === undefined ? "" : ` +${definition.vp} VP${definition.coins > 0 ? ` and +${definition.coins} Coins` : ""}`;

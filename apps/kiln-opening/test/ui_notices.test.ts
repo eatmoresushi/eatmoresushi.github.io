@@ -18,7 +18,7 @@ describe("Imperial Order notifications", () => {
     ], 3));
     expect(notice).toContain("Player completed I06. +11 VP.");
     expect(notice).toContain("Imperial Progress +2: 1 → 3.");
-    expect(notice).toContain("Prefectural Recommendation reached.");
+    expect(notice).toContain("Court Examination reached.");
   });
 
   it("announces every milestone crossed by a 3 → 5 jump", () => {

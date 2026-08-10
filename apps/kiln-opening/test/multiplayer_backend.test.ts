@@ -689,7 +689,7 @@ describe("Imperial Progress persistence and realtime", () => {
     await resolveSetup(harness);
     const actorId = harness.game.game.firstPlayerId;
     await seedAuthoritativeState(harness, (state) => {
-      state.players[actorId]!.imperialProgress = 1;
+      state.players[actorId]!.imperialProgress = 2;
       seedImperialOrder(state, actorId);
     });
     let notifications = 0;
@@ -708,10 +708,10 @@ describe("Imperial Progress persistence and realtime", () => {
     unsubscribe();
     expect(notifications).toBe(1);
     expect(harness.game.events).toEqual(expect.arrayContaining([
-      { type: "IMPERIAL_PROGRESS_ADVANCED", playerId: actorId, from: 1, to: 2, reward: 1 },
+      expect.objectContaining({ type: "IMPERIAL_PROGRESS_ADVANCED", playerId: actorId, from: 2, to: 3, reward: 1 }),
     ]));
     expect(harness.game.game.players[actorId]).toEqual(expect.objectContaining({
-      imperialProgress: 2,
+      imperialProgress: 3,
       pendingApprenticeUnlocks: 1,
     }));
 
@@ -721,7 +721,7 @@ describe("Imperial Progress persistence and realtime", () => {
         seatToken: connection.seatToken,
       }));
       const player = reconnected.game?.players[actorId];
-      expect(player?.imperialProgress).toBe(2);
+      expect(player?.imperialProgress).toBe(3);
       expect(player?.pendingApprenticeUnlocks).toBe(1);
       expect(Object.values(player?.workers ?? {}).filter((worker) => worker.status === "available")).toHaveLength(4);
       expect(Object.values(player?.workers ?? {}).filter((worker) => worker.status === "locked")).toHaveLength(2);
@@ -762,7 +762,7 @@ describe("Imperial Progress persistence and realtime", () => {
       useGuanWaiver: false,
     });
     expect(harness.game.game.imperialSealOwnerId).toBe(actorId);
-    expect(harness.game.events).toContainEqual({ type: "IMPERIAL_SEAL_CLAIMED", playerId: actorId });
+    expect(harness.game.events).toContainEqual({ type: "IMPERIAL_SEAL_CLAIMED", playerId: actorId, sealVp: 2 });
     for (const connection of harness.connections) {
       const reconnected = valueOf(await harness.service.reconnect({
         roomCode: connection.room.code,

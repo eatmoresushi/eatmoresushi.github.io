@@ -92,7 +92,7 @@ function firingFixture(
   return { ...game, actorId, ceramics };
 }
 
-describe("V1.0.1 content", () => {
+describe("V1.0.2 retained content", () => {
   it("contains 23 Market, 13 Imperial and five Techniques per discipline without T07", () => {
     expect(MARKET_ORDERS).toHaveLength(23);
     expect(IMPERIAL_ORDERS).toHaveLength(13);
@@ -177,7 +177,7 @@ describe("player-scaled Shared Kiln", () => {
   });
 });
 
-describe("V1.0.1 Technique timing", () => {
+describe("V1.0.2 Technique timing", () => {
   it("T16 ignores Fire for one ceramic while preserving the natural snapshot", () => {
     const game = firingFixture("T16", 1, [{ shape: "bowl", glaze: "white", space: "middle_1" }], 10010);
     addTechnique(game.state, game.actorId, "T12");
@@ -267,7 +267,7 @@ describe("V1.0.1 Technique timing", () => {
     });
   });
 
-  it("T14 follows a normal Office action, sells one Masterpiece for 3, and never follows Patronage", () => {
+  it("T14 follows a normal Office action, sells one Masterpiece for 5, and never follows Patronage", () => {
     const game = startedGame(2, 10016);
     const actorId = game.state.firstPlayerId;
     addTechnique(game.state, actorId, "T14");
@@ -284,7 +284,7 @@ describe("V1.0.1 Technique timing", () => {
       ceramicId: masterpiece.id,
     }, game.rng);
     expect(state.ceramics[masterpiece.id]?.stage).toBe("sold");
-    expect(state.players[actorId]!.resources.coins).toBe(coinsBefore + 5);
+    expect(state.players[actorId]!.resources.coins).toBe(coinsBefore + 7);
 
     const patronage = startedGame(2, 10017);
     const patronId = patronage.state.firstPlayerId;

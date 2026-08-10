@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.0.1",
+  "rulesVersion": "1.0.2",
   "players": {
     "min": 2,
     "max": 4
@@ -15,13 +15,13 @@
     "apprenticesTotal": 5,
     "apprenticesStarting": 3,
     "apprenticeUnlockProgress": [
-      2,
-      4
+      1,
+      3
     ]
   },
   "orderDisplay": {
     "market": 4,
-    "imperial": 3,
+    "imperial": 4,
     "baseHandLimit": 3,
     "guanHandLimit": 4
   },
@@ -75,13 +75,13 @@
   "shapeSupplyEach": 8,
   "imperialProgressEndGameVp": [
     0,
-    1,
-    1,
-    3,
-    3,
-    7
+    0,
+    2,
+    2,
+    4,
+    8
   ],
-  "imperialSealVp": 3,
+  "imperialSealVp": 2,
   "coinEndGame": {
     "coinsPerVp": 3,
     "maxVp": 5

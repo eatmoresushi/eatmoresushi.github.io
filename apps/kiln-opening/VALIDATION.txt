@@ -1,9 +1,11 @@
-V0.6.3 HANDOFF VALIDATION PASSED
+V1.0.2 HANDOFF VALIDATION PASSED
 Rules/data: 2-4 players, 5 rounds, 6 locations, 1 Shifu + 3 starting Apprentices.
-Office: main action followed by optional Apprentice 0-1 / Shifu 0-2 Flawed sales.
-Decks: 20 Market Orders, 10 Imperial Orders, 12 Techniques, 20 Fire cards.
-Kiln: 8 spaces, contributor-scaled Base Heat, current Quality ladder.
+Office: face-up/blind Orders, pre-pick Colour Samples, and gated Shifu Court Patronage.
+Academy: both workers; Shifu optional refresh and -1 Coin; capacity 1/2/3.
+Decks: 23 Market Orders, 13 Imperial Orders, 15 Techniques, Fire -2/-1/0/+1/+2 = 5/3/4/3/5.
+Kiln: 6/7/8 active spaces, contributor-scaled Base Heat, current Quality ladder.
 Decorations: Plain 1 Coin; Carved, Impressed and Crackle 2 Coins.
 Orders: named Glazes 4/4/4/4; Decorations Plain/Carved/Impressed/Crackle 3/3/4/3.
-Imperial: I01-I05 +1; I06-I10 +2; crossed unlocks at 2/4 and Seal at 5.
-Assets: six visually audited/current files remain; obsolete V0.6.1 Order sheets are archived.
+Imperial: 4-card displays; I01-I05/I11 +1; I06-I10/I12-I13 +2; crossed unlocks at 1/3 and 2-VP Seal at 5.
+V1.0.2: Ru +3 VP; Jun costs 2 Coins; Connoisseur Network gains 5 Coins and 0 VP.
+Assets: eight runtime tabletop atlases are present; live overlays carry V1.0.2 rule corrections.
