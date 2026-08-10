@@ -198,6 +198,10 @@ export interface FiringContext {
 
 export interface FiringResultSummary {
   round: RoundNumber;
+  /** Present on V1.0.2 states produced after the firing-recap UI update. */
+  contributors?: PlayerId[];
+  /** Revealed effective contributions, including any Fuel Ledger adjustment. */
+  contributions?: Record<PlayerId, number>;
   baseHeat: 1 | 2 | 3;
   fireModifier: FireModifier;
   globalHeat: number;

@@ -71,6 +71,8 @@ describe("V1.0.1 Fire deck", () => {
 
     expect(resolved.state.lastFiringResult).toEqual({
       round: 1,
+      contributors: [actorId],
+      contributions: { [actorId]: 1 },
       baseHeat: 2,
       fireModifier: modifier,
       globalHeat,

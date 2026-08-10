@@ -99,8 +99,12 @@ function DebugPanel({ game }: { game: PublicGameState }) {
   );
 }
 
-function eventDescription(event: PublicGameEvent, game: PublicGameState): string {
+export function eventDescription(event: PublicGameEvent, game: PublicGameState): string {
   const player = (playerId: PlayerId): string => game.players[playerId]?.displayName ?? playerId;
+  const ceramic = (ceramicId: string): string => {
+    const current = game.ceramics[ceramicId];
+    return current === undefined ? "ceramic" : label(current.shape);
+  };
   switch (event.type) {
     case "KILN_SELECTED":
       return `${player(event.playerId)} selected ${KILN_DEFINITIONS[event.kilnId].name}.`;
@@ -115,15 +119,15 @@ function eventDescription(event: PublicGameEvent, game: PublicGameState): string
     case "RESOURCES_CHANGED":
       return `${player(event.playerId)} resources changed: ${resourceChanges(event)}.`;
     case "CERAMIC_SHAPED":
-      return `${player(event.playerId)} shaped ${event.ceramicId} as a ${label(event.shape)}.`;
+      return `${player(event.playerId)} shaped a ${label(event.shape)}.`;
     case "CERAMIC_GLAZED":
-      return `${player(event.playerId)} glazed ${event.ceramicId}: ${label(event.glaze)}, ${label(event.decoration)}.`;
+      return `${player(event.playerId)} glazed a ${ceramic(event.ceramicId)} ceramic: ${label(event.glaze)}, ${label(event.decoration)}.`;
     case "CERAMIC_LOADED":
-      return `${player(event.playerId)} loaded ${event.ceramicId} into ${label(event.kilnSpaceId)}.`;
+      return `${player(event.playerId)} loaded a ${ceramic(event.ceramicId)} ceramic into ${label(event.kilnSpaceId)}.`;
     case "CERAMIC_SOLD":
-      return `${player(event.playerId)} sold ${event.ceramicId}.`;
+      return `${player(event.playerId)} sold a ${ceramic(event.ceramicId)} ceramic.`;
     case "CERAMIC_RETURNED_TO_GLAZED":
-      return `${player(event.playerId)} used Second Firing; ${event.ceramicId} returned to Glazed and lost its Standard Quality.`;
+      return `${player(event.playerId)} used Second Firing; the ${ceramic(event.ceramicId)} ceramic returned to Glazed and lost its Standard Quality.`;
     case "ORDER_TAKEN":
       return `${player(event.playerId)} ${event.acquisition === "blind_top" ? "blind-drew" : "took"} ${event.orderId} from the ${event.deck} Orders.`;
     case "COLOUR_SAMPLES_USED":
@@ -143,17 +147,17 @@ function eventDescription(event: PublicGameEvent, game: PublicGameState): string
     case "WOOD_SUBMITTED":
       return `${player(event.playerId)} submitted a secret Wood Contribution.`;
     case "WOOD_REVEALED":
-      return `Wood Contributions revealed: ${Object.entries(event.contributions).map(([id, value]) => `${player(id)}=${value}`).join(", ")}.`;
+      return `Wood Contributions revealed: ${Object.entries(event.contributions).map(([id, value]) => `${player(id)} contributed ${value} Wood`).join("; ")}.`;
     case "FIRE_REVEALED":
       return `Fire card ${signed(event.modifier)} revealed. Base Heat ${event.baseHeat}; Global Heat ${event.globalHeat}.`;
     case "QUALITY_ASSIGNED":
-      return `${event.ceramicId} was assigned ${label(event.quality)} Quality.`;
+      return `The ${ceramic(event.ceramicId)} ceramic was assigned ${label(event.quality)} Quality.`;
     case "FIRING_RESOLVED":
-      return `${event.ceramicId} firing recorded: Fire ${signed(event.fireModifier)}, natural Heat ${event.naturalActualHeat} (difference ${event.naturalHeatDifference}, ${label(event.naturalQuality)}), final Heat ${event.finalActualHeat} (difference ${event.finalHeatDifference}, ${label(event.finalQuality)}).`;
+      return `${ceramic(event.ceramicId)} ceramic firing recorded: Fire ${signed(event.fireModifier)}, natural Heat ${event.naturalActualHeat} (difference ${event.naturalHeatDifference}, ${label(event.naturalQuality)}), final Heat ${event.finalActualHeat} (difference ${event.finalHeatDifference}, ${label(event.finalQuality)}).`;
     case "ORDER_COMPLETED": {
       const definition = ORDER_DEFINITIONS[event.orderId];
       const reward = definition === undefined ? "" : ` +${definition.vp} VP${definition.coins > 0 ? ` and +${definition.coins} Coins` : ""}`;
-      return `${player(event.playerId)} completed ${event.orderId} with ${event.ceramicIds.join(", ")}.${reward}`;
+      return `${player(event.playerId)} completed ${event.orderId} with ${event.ceramicIds.length} ceramic${event.ceramicIds.length === 1 ? "" : "s"}.${reward}`;
     }
     case "IMPERIAL_PROGRESS_ADVANCED":
       return `${player(event.playerId)} advanced Imperial Progress ${event.from} → ${event.to} (reward +${event.reward}).`;

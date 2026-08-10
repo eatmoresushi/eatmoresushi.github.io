@@ -2451,6 +2451,8 @@ function finalizeFiring(state: GameState, events: GameEvent[]): void {
   }
   state.lastFiringResult = {
     round: context.round,
+    contributors: [...context.contributors],
+    contributions: { ...context.contributions },
     baseHeat: context.baseHeat,
     fireModifier: context.fireModifier,
     globalHeat: context.globalHeat,

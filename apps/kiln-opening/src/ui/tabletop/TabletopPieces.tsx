@@ -114,10 +114,9 @@ export function CeramicPiece({ ceramic, compact = false }: { ceramic: CeramicSta
   return (
     <span
       className={`tabletop-ceramic shape-${ceramic.shape} glaze-${glaze} decoration-${decoration ?? "none"} quality-${quality ?? "none"} ${compact ? "is-compact" : ""}`}
-      data-ceramic-id={ceramic.id}
       role="img"
       aria-label={description}
-      title={`${ceramic.id} · ${description}`}
+      title={description}
     >
       <svg viewBox="0 0 80 72" aria-hidden="true" focusable="false">
         {ceramic.shape === "bowl" && <path d="M8 22h64c-3 26-14 38-32 38S11 48 8 22zM18 64h44" />}

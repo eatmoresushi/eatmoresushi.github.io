@@ -257,25 +257,28 @@ function KilnTable({ game }: { game: PublicGameState }) {
 
 function FiringInspector({ game, context, live }: { game: PublicGameState; context: FiringContext | null; live: boolean }) {
   const summary = game.lastFiringResult;
+  const latest = context ?? summary;
+  const contributions = context?.contributions ?? summary?.contributions ?? {};
+  const contributorCount = (context?.contributors ?? summary?.contributors ?? Object.keys(contributions)).length;
   return (
     <section className="playtest-panel firing-inspector" aria-labelledby="firing-inspector-title" data-testid="firing-inspector">
       <div className="playtest-panel-heading">
         <div><p className="eyebrow">Calculation audit</p><h2 id="firing-inspector-title">Firing Inspector</h2></div>
-        <span>{context === null ? "No firing observed" : live ? "Current firing" : `Latest observed · Round ${context.round}`}</span>
+        <span>{latest === null ? "No firing observed" : live ? "Current firing" : `Latest firing · Round ${latest.round}`}</span>
       </div>
-      {context === null ? (
+      {latest === null ? (
         <p className="muted">Firing calculations will appear here after Wood Contributions are revealed.</p>
       ) : (
         <>
           <dl className="firing-totals">
-            <div><dt>Contributors</dt><dd>{context.contributors.length}</dd></div>
-            <div><dt>Contributions</dt><dd>{Object.entries(context.contributions).map(([id, amount]) => `${game.players[id]?.displayName ?? id}=${amount}`).join(" · ") || "Not revealed"}</dd></div>
-            <div><dt>Total Wood</dt><dd>{Object.values(context.contributions).reduce((sum, amount) => sum + amount, 0)}</dd></div>
-            <div><dt>Base Heat</dt><dd>{context.baseHeat ?? "—"}</dd></div>
-            <div><dt>Fire modifier</dt><dd>{context.fireModifier === null ? "—" : signed(context.fireModifier)}</dd></div>
-            <div><dt>Global Heat</dt><dd>{context.globalHeat ?? "—"}</dd></div>
+            <div><dt>Contributors</dt><dd>{contributorCount}</dd></div>
+            <div><dt>Wood Contributions</dt><dd>{firingContributionText(game, contributions)}</dd></div>
+            <div><dt>Total Wood</dt><dd>{Object.values(contributions).reduce((sum, amount) => sum + amount, 0)}</dd></div>
+            <div><dt>Base Heat</dt><dd>{latest.baseHeat ?? "—"}</dd></div>
+            <div><dt>Fire modifier</dt><dd>{latest.fireModifier === null ? "—" : signed(latest.fireModifier)}</dd></div>
+            <div><dt>Global Heat</dt><dd>{latest.globalHeat ?? "—"}</dd></div>
           </dl>
-          <div className="table-scroll">
+          {context !== null && Object.keys(context.ceramicResults).length > 0 && <div className="table-scroll">
             <table className="state-table firing-table">
               <thead><tr><th>Ceramic</th><th>Owner</th><th>Preferred</th><th>Base</th><th>Fire used</th><th>Zone</th><th>Ability changes</th><th>Actual</th><th>Difference</th><th>Quality</th></tr></thead>
               <tbody>{Object.values(context.ceramicResults).map((result) => {
@@ -289,7 +292,7 @@ function FiringInspector({ game, context, live }: { game: PublicGameState; conte
                 ].filter((value): value is string => value !== null);
                 return (
                   <tr key={result.ceramicId}>
-                    <th>{result.ceramicId}{ceramic === undefined ? "" : ` · ${SHAPE_LABELS[ceramic.shape]}`}</th>
+                    <th>{ceramic === undefined ? "Ceramic" : ceramicAttributes(ceramic)}</th>
                     <td>{ceramic === undefined ? "—" : game.players[ceramic.ownerId]?.displayName ?? ceramic.ownerId}</td>
                     <td>{glaze === null ? "—" : `${preferredHeat(glaze)} (${GLAZE_LABELS[glaze]})`}</td>
                     <td>{context.baseHeat ?? "—"}</td><td>{fireUsed === null ? "—" : signed(fireUsed)}</td><td>{signed(result.zoneModifier)}</td><td>{changes.join("; ") || "None"}</td><td>{result.finalActualHeat}</td><td>{result.finalHeatDifference}</td><td>{result.assignedQuality === null ? "Pending" : title(result.assignedQuality)}</td>
@@ -297,12 +300,23 @@ function FiringInspector({ game, context, live }: { game: PublicGameState; conte
                 );
               })}</tbody>
             </table>
-          </div>
+          </div>}
         </>
       )}
       {summary !== null && <GlobalHeatSummary round={summary.round} base={summary.baseHeat} fire={summary.fireModifier} global={summary.globalHeat} />}
     </section>
   );
+}
+
+export function firingContributionText(
+  game: Pick<PublicGameState, "players">,
+  contributions: Record<PlayerId, number>,
+): string {
+  const entries = Object.entries(contributions);
+  if (entries.length === 0) return "Not recorded";
+  return entries
+    .map(([playerId, amount]) => `${game.players[playerId]?.displayName ?? "Player"} contributed ${amount} Wood`)
+    .join(" · ");
 }
 
 function GlobalHeatSummary({ round, base, fire, global }: { round: number; base: number; fire: number; global: number }) {
@@ -408,8 +422,8 @@ function relationLabel(order: OrderDefinition): string {
   }).join("; ")}`;
 }
 
-function ceramicDescription(ceramic: CeramicState): string {
-  const parts = [ceramic.id, SHAPE_LABELS[ceramic.shape], title(ceramic.stage)];
+export function ceramicDescription(ceramic: CeramicState): string {
+  const parts = [SHAPE_LABELS[ceramic.shape], title(ceramic.stage)];
   if (ceramic.stage !== "shaped" && ceramic.stage !== "sold") {
     parts.push(GLAZE_LABELS[ceramic.glaze], title(ceramic.decoration));
   }
@@ -417,6 +431,14 @@ function ceramicDescription(ceramic: CeramicState): string {
     parts.push(`Quality: ${title(ceramic.quality)}`);
   }
   if (ceramic.stage === "loaded") parts.push(`Slot: ${ceramic.kilnSpaceId}`);
+  return parts.join(" · ");
+}
+
+function ceramicAttributes(ceramic: CeramicState): string {
+  const parts: string[] = [SHAPE_LABELS[ceramic.shape]];
+  if (ceramic.stage !== "shaped" && ceramic.stage !== "sold") {
+    parts.push(GLAZE_LABELS[ceramic.glaze], title(ceramic.decoration));
+  }
   return parts.join(" · ");
 }
 

@@ -88,6 +88,8 @@ describe("contributor-scaled Base Heat and Quality", () => {
     );
     expect(state.lastFiringResult).toEqual({
       round: 1,
+      contributors: [actorId],
+      contributions: { [actorId]: 1 },
       baseHeat: 2,
       fireModifier: 1,
       globalHeat: 3,
@@ -128,6 +130,8 @@ describe("private Wood boundary", () => {
     expect(state.phase.type).toBe("orders");
     expect(state.lastFiringResult).toEqual({
       round: 1,
+      contributors: [firstId, secondId],
+      contributions: { [firstId!]: 1, [secondId!]: 0 },
       baseHeat: 1,
       fireModifier: 0,
       globalHeat: 1,

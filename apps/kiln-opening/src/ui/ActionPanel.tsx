@@ -719,7 +719,7 @@ function OfficeSaleControls({ game, player, busy, send }: Pick<ActionPanelProps,
     ? "Continue without selling any ceramic."
     : `Sell ${validSelectedCeramics.map((ceramicId) => {
         const ceramic = flawed.find((candidate) => candidate.id === ceramicId);
-        return ceramic === undefined ? ceramicId : ceramicLabel(ceramic);
+        return ceramic === undefined ? "ceramic" : ceramicLabel(ceramic);
       }).join(", ")}: +${validSelectedCeramics.length} Coin${validSelectedCeramics.length === 1 ? "" : "s"}.`;
   return (
     <form className="control-form" onSubmit={(event) => {
@@ -1181,10 +1181,11 @@ function officeActionHint(action: OfficeActionChoice, workerKind: AvailableWorke
   }
 }
 
-function ceramicLabel(ceramic: ReturnType<typeof ownCeramics>[number]): string {
+export function ceramicLabel(ceramic: ReturnType<typeof ownCeramics>[number]): string {
   const decoration = "decoration" in ceramic ? ` · ${labels[ceramic.glaze]} · ${labels[ceramic.decoration]}` : "";
   const quality = "quality" in ceramic ? ` · ${ceramic.quality}` : "";
-  return `${ceramic.id.split(":").at(-1)} · ${labels[ceramic.shape]}${decoration}${quality}`;
+  const kilnSpace = ceramic.stage === "loaded" ? ` · ${ceramic.kilnSpaceId.replaceAll("_", " ")}` : "";
+  return `${labels[ceramic.shape]}${decoration}${quality}${kilnSpace}`;
 }
 
 function ceramicOption(ceramic: ReturnType<typeof ownCeramics>[number]) {

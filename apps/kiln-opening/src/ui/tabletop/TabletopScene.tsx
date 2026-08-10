@@ -175,7 +175,7 @@ export function TabletopScene({
                 className={`visual-kiln-slot ${active ? ceramic === undefined ? "is-empty" : "is-occupied" : "is-covered"}`}
                 style={{ left: `${point.x * 100}%`, top: `${point.y * 100}%` }}
                 data-kiln-space={spaceId}
-                aria-label={!active ? `${spaceId.replaceAll("_", " ")} covered for ${game.playerCount} players` : ceramic === undefined ? `${spaceId.replaceAll("_", " ")} empty` : `${spaceId.replaceAll("_", " ")} occupied by ${ceramic.id}`}
+                aria-label={!active ? `${spaceId.replaceAll("_", " ")} covered for ${game.playerCount} players` : ceramic === undefined ? `${spaceId.replaceAll("_", " ")} empty` : `${spaceId.replaceAll("_", " ")} occupied by ${ceramic.shape.replaceAll("_", " ")} ceramic`}
                 key={spaceId}
               >
                 {!active ? <b aria-hidden="true">Covered</b> : ceramic !== undefined && <CeramicPiece ceramic={ceramic} compact />}
