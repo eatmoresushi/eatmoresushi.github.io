@@ -303,6 +303,7 @@
   .hero-facts { display: flex; flex-wrap: wrap; gap: 1.2rem; margin-top: 2rem; }
   .hero-facts span { display: flex; gap: .35rem; align-items: baseline; color: var(--ink-soft); font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; }
   .hero-facts strong { color: var(--cinnabar); font-family: var(--serif); font-size: 1.6rem; }
+  .rulebook-link { display: inline-flex; margin-top: 1.4rem; border-bottom: 1px solid currentColor; padding: .2rem 0; font-size: .82rem; font-weight: 800; text-decoration: none; }
   .entry-card { border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem; background: rgb(255 253 248 / 82%); box-shadow: var(--shadow); }
   .entry-card form { display: grid; gap: .9rem; padding: 1rem .2rem .2rem; }
   .segmented { display: grid; grid-template-columns: 1fr 1fr; border-radius: 9px; padding: .2rem; background: var(--paper-deep); }

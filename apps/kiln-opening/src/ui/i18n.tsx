@@ -4,6 +4,15 @@ import type { ReactNode } from "react";
 export type Locale = "en" | "zh-CN";
 
 const LANGUAGE_STORAGE_KEY = "kiln-opening:language";
+const RULEBOOK_FILENAMES: Record<Locale, string> = {
+  en: "Kiln_Opening_v1.0.4_Full_Rulebook.pdf",
+  "zh-CN": "Kiln_Opening_v1.0.4_Chinese_Full_Rulebook.pdf",
+};
+
+export function rulebookHref(locale: Locale, baseUrl = import.meta.env.BASE_URL): string {
+  const base = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+  return `${base}rulebooks/${RULEBOOK_FILENAMES[locale]}`;
+}
 
 const ZH_CN: Record<string, string> = {
   "Kiln Opening": "开窑",
@@ -33,6 +42,7 @@ const ZH_CN: Record<string, string> = {
   "rounds": "轮",
   "minutes": "分钟",
   "Game summary": "游戏概览",
+  "V1.0.4 Rulebook (PDF)": "V1.0.4中文规则书（PDF）",
   "Saved session": "已保存的会话",
   "Resume": "继续",
   "Forget seat": "忘记席位",

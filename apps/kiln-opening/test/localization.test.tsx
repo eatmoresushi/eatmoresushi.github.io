@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { GAME_CONFIG, ORDER_DEFINITIONS, TECHNIQUE_DEFINITIONS } from "../src/game";
 import { projectPublicGameState } from "../src/multiplayer";
 import { GameTable, OrderCard } from "../src/ui/GameTable";
-import { LanguageProvider, localizeMultiplayerError, term, translate } from "../src/ui/i18n";
+import { LanguageProvider, localizeMultiplayerError, rulebookHref, term, translate } from "../src/ui/i18n";
 import type { Locale } from "../src/ui/i18n";
 import { startedGame } from "./helpers";
 
@@ -23,6 +23,10 @@ describe("English / Simplified Chinese localization", () => {
     expect(Object.values(TECHNIQUE_DEFINITIONS)).toHaveLength(15);
     expect(Object.values(TECHNIQUE_DEFINITIONS).every((technique) => technique.nameZh.length > 0 && technique.abilityZh.length > 0)).toBe(true);
     expect(localizeMultiplayerError("zh-CN", "ORDER_REQUIREMENTS_NOT_MET", "English fallback")).toBe("所选陶瓷不符合订单要求。");
+    expect(rulebookHref("en", "/kiln-opening/"))
+      .toBe("/kiln-opening/rulebooks/Kiln_Opening_v1.0.4_Full_Rulebook.pdf");
+    expect(rulebookHref("zh-CN", "/kiln-opening"))
+      .toBe("/kiln-opening/rulebooks/Kiln_Opening_v1.0.4_Chinese_Full_Rulebook.pdf");
   });
 
   it("renders I02, I04, and I09 from identical structural data in both languages", () => {

@@ -11,7 +11,7 @@ import type {
 } from "../multiplayer";
 import { ORDER_DEFINITIONS, TECHNIQUE_DEFINITIONS, currentDecisionActor } from "../game";
 import { PlaytestExperience } from "./PlaytestExperience";
-import { localizeMultiplayerError, useI18n } from "./i18n";
+import { localizeMultiplayerError, rulebookHref, useI18n } from "./i18n";
 import type { Locale } from "./i18n";
 
 const LAST_SEAT_KEY = "kiln-opening:last-seat";
@@ -534,7 +534,7 @@ function HomeScreen({
   onResume: () => void;
   onForget: () => void;
 }) {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const [mode, setMode] = useState<"create" | "join">("create");
   const [displayName, setDisplayName] = useState("");
   const [roomCode, setRoomCode] = useState("");
@@ -558,6 +558,14 @@ function HomeScreen({
           <span><strong>5</strong> {t("rounds")}</span>
           <span><strong>90–120</strong> {t("minutes")}</span>
         </div>
+        <a
+          className="rulebook-link"
+          href={rulebookHref(locale)}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {t("V1.0.4 Rulebook (PDF)")}
+        </a>
       </div>
       <div className="entry-card">
         {savedSeat !== null && (

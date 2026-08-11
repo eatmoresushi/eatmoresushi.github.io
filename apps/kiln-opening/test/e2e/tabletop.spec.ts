@@ -10,6 +10,12 @@ test("simple playtest UI exposes state and places an Apprentice through authorit
   const { host, guest, close } = await openTwoWorkshops(browser);
   try {
     await host.goto("./");
+    const englishRulebook = host.getByRole("link", { name: "V1.0.4 Rulebook (PDF)" });
+    await expect(englishRulebook).toHaveAttribute("href", "/kiln-opening/rulebooks/Kiln_Opening_v1.0.4_Full_Rulebook.pdf");
+    await host.getByRole("button", { name: "中文" }).click();
+    const chineseRulebook = host.getByRole("link", { name: "V1.0.4中文规则书（PDF）" });
+    await expect(chineseRulebook).toHaveAttribute("href", "/kiln-opening/rulebooks/Kiln_Opening_v1.0.4_Chinese_Full_Rulebook.pdf");
+    await host.getByRole("button", { name: "EN" }).click();
     await host.getByLabel("Workshop name").fill("Mei");
     await host.getByRole("button", { name: "Create a room" }).click();
     const roomCode = (await host.getByTestId("room-code").textContent())?.trim() ?? "";
