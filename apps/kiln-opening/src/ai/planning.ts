@@ -72,12 +72,17 @@ function progressMoveValue(
   const trackValue = (rules.trackVp[to] ?? 0) - (rules.trackVp[from] ?? 0);
   const apprenticeValue = crossedMilestones(from, to, rules.apprenticeMilestoneSpaces) *
     (0.9 + remainingRounds * 0.55);
-  const presentationValue = crossedMilestones(from, to, rules.presentationSpaces) *
-    (1.2 + Math.min(3, finished) * 0.8);
+  const exhibitionCapacityValue = (
+    rules.exhibitionCapacityByProgress[to]! - rules.exhibitionCapacityByProgress[from]!
+  ) * (1.2 + Math.min(3, finished) * 0.8);
+  const stipendValue = (
+    (from < 2 && to >= 2 ? 2 : 0) +
+    (from < 4 && to >= 4 ? 3 : 0)
+  ) * 0.35;
   const sealValue = from < 5 && to === 5 && observation.game.imperialSealOwnerId === null
     ? rules.imperialSealVp
     : 0;
-  return trackValue + apprenticeValue + presentationValue + sealValue;
+  return trackValue + apprenticeValue + exhibitionCapacityValue + stipendValue + sealValue;
 }
 
 /**
@@ -674,7 +679,7 @@ function terminalConversionForecast(
   const remainingWorkerActions = (observation.game.phase.type === "work" ? currentAvailable : 0) + futureRounds * usableWorkers;
   const assignments = selected.flatMap(({ assignments }) => assignments);
   const plannedDestinations = assignments.length;
-  const presentationCapacity = observation.imperialTrackRules.presentationSpaces.includes(reachableImperialSpace) ? 3 : 0;
+  const presentationCapacity = observation.imperialTrackRules.exhibitionCapacityByProgress[reachableImperialSpace]!;
   const finishedAssignable = assignments.filter(({ currentStage }) => currentStage === "finished").length;
   const unfinishedAssignable = assignments.filter(({ currentStage }) => currentStage !== "finished").length;
   const activeCeramics = pipeline.shaped + pipeline.glazed + pipeline.loaded + pipeline.finished;
@@ -712,7 +717,9 @@ function imperialRouteForecast(
     player.resources.coins >= 5 || observation.game.round <= 4
   );
   const projectedProgress = Math.min(5, player.imperialProgress + projectedOrderProgress + (patronageReachable ? 1 : 0));
-  const presentationReachable = observation.imperialTrackRules.presentationSpaces.includes(projectedProgress);
+  // This legacy field name is retained in serialized AI diagnostics, but under
+  // V1.0.4 it means that the universal end-game Exhibition has capacity.
+  const presentationReachable = observation.imperialTrackRules.exhibitionCapacityByProgress[projectedProgress]! > 0;
   const sealReachable = player.imperialProgress + projectedOrderProgress >= 5;
   const viable = imperialPlans.some(({ feasible, earliestCompletionRound }) => feasible && earliestCompletionRound <= 5);
   const reasonCodes = [

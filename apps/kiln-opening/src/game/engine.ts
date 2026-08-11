@@ -2120,7 +2120,7 @@ function resolveJun(
         playerId: actorId,
         coins: paidCoins,
         rulesContext: paidCoins === 2
-          ? "official_v1.0.2"
+          ? "official_v1.0.4"
           : "historical_jun_cost_1_experiment",
       });
     }
@@ -2494,6 +2494,9 @@ function advanceImperialProgress(
   const presentationMilestonesTriggered = activeRules.presentationSpaces.filter(
     (space) => crossedSpaces.includes(space),
   );
+  const stipendMilestonesTriggered = (state.experimentConfig?.experimentId === "imperial-track-ab-001" ? [] : [2, 4] as const).filter(
+    (space) => crossedSpaces.includes(space) && !(player.imperialStipendsReceived ?? []).includes(space),
+  );
   const sealMilestoneTriggered = source === "imperial_order" &&
     activeRules.imperialSealEnabled &&
     crossedSpaces.includes(5) &&
@@ -2513,11 +2516,22 @@ function advanceImperialProgress(
     capLoss: reward - (to - from),
     apprenticeMilestonesTriggered: [...apprenticeMilestonesTriggered],
     presentationMilestonesTriggered: [...presentationMilestonesTriggered],
+    stipendMilestonesTriggered: [...stipendMilestonesTriggered],
     sealMilestoneTriggered,
     trackVpBefore: activeRules.trackVp[from],
     trackVpAfter: activeRules.trackVp[to],
     sealVp: activeRules.imperialSealVp,
   });
+  for (const space of stipendMilestonesTriggered) {
+    const configuredCoins = IMPERIAL_PROGRESS.stipends[String(space) as "2" | "4"];
+    const coins = gainFromSupply(state, player, "coins", configuredCoins);
+    player.imperialStipendsReceived ??= [];
+    player.imperialStipendsReceived.push(space);
+    if (coins > 0) {
+      events.push({ type: "RESOURCES_CHANGED", playerId, clay: 0, wood: 0, coins });
+    }
+    events.push({ type: "IMPERIAL_STIPEND_RECEIVED", playerId, space, coins });
+  }
   if (sealMilestoneTriggered) {
     state.imperialSealOwnerId = playerId;
     events.push({ type: "IMPERIAL_SEAL_CLAIMED", playerId, sealVp: activeRules.imperialSealVp });
@@ -2706,20 +2720,39 @@ function refillTo<T>(display: T[], deck: T[], target: number): void {
   }
 }
 
+function rotateOrderDisplaysAtStartOfRound(state: GameState, events: GameEvent[]): void {
+  if (state.round === 1) return;
+  const marketOrderIds = state.marketDisplay.splice(0, 2);
+  const imperialOrderIds = state.imperialDisplay.splice(0, 2);
+  state.marketDiscard.push(...marketOrderIds);
+  state.imperialDiscard.push(...imperialOrderIds);
+  refillTo(state.marketDisplay, state.marketDeck, GAME_CONFIG.orderDisplay.market);
+  refillTo(state.imperialDisplay, state.imperialDeck, GAME_CONFIG.orderDisplay.imperial);
+  events.push({
+    type: "ORDER_DISPLAYS_ROTATED",
+    round: state.round,
+    marketOrderIds,
+    imperialOrderIds,
+  });
+}
+
 function calculatePresentationVp(state: GameState, player: PlayerState): number {
   const ceramics = player.presentationCeramicIds.map((id) => state.ceramics[id]).filter(
     (ceramic): ceramic is Extract<CeramicState, { stage: "presented" }> =>
       ceramic?.stage === "presented",
   );
   let score = ceramics.reduce(
-    (sum, ceramic) => sum + IMPERIAL_PROGRESS.presentation.qualityVp[ceramic.quality],
+    (sum, ceramic) => sum + IMPERIAL_PROGRESS.exhibition.qualityVp[ceramic.quality],
     0,
   );
-  if (ceramics.length === 3 && new Set(ceramics.map((ceramic) => ceramic.shape)).size === 3) {
-    score += IMPERIAL_PROGRESS.presentation.threeDifferentShapesBonus;
+  const diversityEligible = IMPERIAL_PROGRESS.exhibition.diversityEligibleSpaces.includes(
+    player.imperialProgress,
+  );
+  if (diversityEligible && ceramics.length === 3 && new Set(ceramics.map((ceramic) => ceramic.shape)).size === 3) {
+    score += IMPERIAL_PROGRESS.exhibition.threeDifferentShapesBonus;
   }
-  if (ceramics.length === 3 && new Set(ceramics.map((ceramic) => ceramic.glaze)).size === 3) {
-    score += IMPERIAL_PROGRESS.presentation.threeDifferentGlazesBonus;
+  if (diversityEligible && ceramics.length === 3 && new Set(ceramics.map((ceramic) => ceramic.glaze)).size === 3) {
+    score += IMPERIAL_PROGRESS.exhibition.threeDifferentGlazesBonus;
   }
   return score;
 }
@@ -2819,13 +2852,6 @@ function performCleanup(state: GameState, events: GameEvent[]): void {
   }
   state.actionBoard.placements = emptyActionBoard();
 
-  const marketDiscard = state.marketDisplay.shift();
-  if (marketDiscard !== undefined) state.marketDiscard.push(marketDiscard);
-  const imperialDiscard = state.imperialDisplay.shift();
-  if (imperialDiscard !== undefined) state.imperialDiscard.push(imperialDiscard);
-  refillTo(state.marketDisplay, state.marketDeck, GAME_CONFIG.orderDisplay.market);
-  refillTo(state.imperialDisplay, state.imperialDeck, GAME_CONFIG.orderDisplay.imperial);
-
   const firstIndex = state.playerOrder.indexOf(state.firstPlayerId);
   const nextFirst = state.playerOrder[(firstIndex + 1) % state.playerOrder.length];
   if (nextFirst === undefined) throw new Error("Unable to pass First Player");
@@ -2833,6 +2859,7 @@ function performCleanup(state: GameState, events: GameEvent[]): void {
 
   if (state.round < 5) {
     state.round = (state.round + 1) as RoundNumber;
+    rotateOrderDisplaysAtStartOfRound(state, events);
     for (const player of Object.values(state.players)) {
       player.passedWorkPhase = false;
       player.kilnAbilityUsedThisRound = false;
@@ -2850,13 +2877,8 @@ function performCleanup(state: GameState, events: GameEvent[]): void {
     return;
   }
 
-  const activeRules = activeImperialTrackRules(state.experimentConfig);
-  const eligiblePlayerIds = state.playerOrder.filter((playerId) => {
-    const progress = state.players[playerId]?.imperialProgress ?? 0;
-    return activeRules.presentationSpaces.includes(progress);
-  });
+  const eligiblePlayerIds = [...state.playerOrder];
   state.phase = { type: "presentation", eligiblePlayerIds, submittedPlayerIds: [] };
-  if (eligiblePlayerIds.length === 0) finalizeGame(state, events);
 }
 
 function endOrderTurn(state: GameState, actorId: PlayerId): ApplyResult {
@@ -2883,16 +2905,17 @@ function submitPresentation(
   if (isFailure(phase)) return phase;
   const player = state.players[actorId];
   if (player === undefined || !phase.eligiblePlayerIds.includes(actorId)) {
-    return applyFailure(ruleError("PRESENTATION_NOT_ELIGIBLE", "This player is not eligible."));
+    return applyFailure(ruleError("PRESENTATION_NOT_ELIGIBLE", "This player cannot submit an End-game Exhibition selection."));
   }
   if (phase.submittedPlayerIds.includes(actorId)) {
-    return applyFailure(ruleError("INVALID_ACTION", "This player already submitted a Presentation."));
+    return applyFailure(ruleError("INVALID_ACTION", "This player already submitted an End-game Exhibition selection."));
   }
+  const maximum = IMPERIAL_PROGRESS.exhibition.capacityByProgress[player.imperialProgress] ?? 0;
   if (
-    ceramicIds.length > IMPERIAL_PROGRESS.presentation.maxCeramics ||
+    ceramicIds.length > maximum ||
     new Set(ceramicIds).size !== ceramicIds.length
   ) {
-    return applyFailure(ruleError("INVALID_SELECTION", "Present at most three unique ceramics."));
+    return applyFailure(ruleError("INVALID_SELECTION", `Exhibit at most ${maximum} unique ceramics.`));
   }
   for (const ceramicId of ceramicIds) {
     const ceramic = state.ceramics[ceramicId];
@@ -2903,7 +2926,7 @@ function submitPresentation(
       QUALITY_RANK[ceramic.quality] < QUALITY_RANK.standard
     ) {
       return applyFailure(
-        ruleError("PRESENTATION_NOT_ELIGIBLE", "Presentation requires owned Finished Standard+ ceramics."),
+        ruleError("PRESENTATION_NOT_ELIGIBLE", "End-game Exhibition requires owned Finished Standard+ ceramics."),
       );
     }
   }

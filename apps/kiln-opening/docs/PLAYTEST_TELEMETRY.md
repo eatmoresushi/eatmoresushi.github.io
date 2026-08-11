@@ -2,6 +2,34 @@
 
 Telemetry is for balance analysis, not player profiling.
 
+Current V1.0.4 compatibility telemetry records the round each Progress space 1–5 is first reached, Progress source (Order or Patronage), one-time 2- and 4-space stipend crossings and Coins received, Exhibition capacity/use/Quality/diversity scoring, Imperial Seal acquisition, two-card Order-display rotations, Fire-modifier and Quality distributions, Jun opportunities/uses/coins paid/direction/Quality change/Masterpieces/Orders enabled, Ru triggers at 3 VP, and Connoisseur Network uses at 5 Coins and 0 VP. Historical V1.0.1 and V1.0.2 exports remain immutable.
+
+Selfplay-005 adds `oracle_observations.jsonl`, containing only serialisable `PlayerObservation`, typed legal commands, and public decision context. `oracle_targets.jsonl` stores common-seed rollout values, candidate action keys, target regret, duration, and failure counts. `pre_holdout_canary.json` freezes the latency-qualified policy before evaluation. None of these files contains authoritative deck order, vessel identities hidden in supply, another player's unrevealed Wood, or chain-of-thought.
+
+Selfplay-006 adds `public_observations.jsonl`, `realized_leaf_examples.jsonl`, `leaf_model.json`, and `leaf_validation.json`. A realized-leaf example contains only the source fingerprint, typed candidate key, checkpoint label, public numeric feature vector, aggregate realized outcome, and training target; synthetic sampled decks are never serialized. Training and holdout are separated by complete capture game, and V1.0.1 observations are audit-only rather than V1.0.2 training rows. Quick-study summaries must retain `provisional=true` and cannot pass the minimum-sample promotion gate.
+
+Selfplay-003 records `training` (games 1–50 per player count) and `holdout` (games 51–100) on every raw table. Policy learning is disabled throughout holdout. Its holdout seeds are rejected if they overlap Selfplay-001 or Selfplay-002, and comparisons and balance interpretation must report the frozen holdout separately from the adaptive training trajectory.
+
+Selfplay-003 also writes normalized optional-effect, Technique-forecast, and intent-outcome tables. Optional-effect rows retain eligible targets, use/decline, natural and projected Quality, Order compatibility delta, full resource costs, projected net value, and a reason code. Technique acquisitions retain expected windows, beneficial-use probability, gross value, purchase/activation/opportunity costs, forecast net value, and later opportunities/uses. Intent outcomes retain first Market/Imperial/multi-ceramic acquisition timing and source, Imperial reachability, fallback, Presentation, Patronage, and terminal unused ceramics.
+
+The frozen-bot `jun-ab-001` experiment uses `dataset_split=ab_evaluation` and adds `experiment_id`, `experiment_arm`, `pair_id`, `replacement_index`, `jun_activation_cost`, `frozen_profile_hash`, policy version, simulation version, and canonical rules version. `jun_opportunities.csv` contains every use/decline window with Coin balance, active cost, eligible targets, selected target and delta, natural/projected/final Quality, compatibility and value deltas, projected net value, actual payment, destination, and reason code. `paired_outcomes.csv` is one row per matched scenario, and `quality_monitor.csv` preserves the natural and final Quality audit by arm. No experiment row may contain deck order, unrevealed Wood, or chain-of-thought.
+
+The frozen-bot `imperial-track-ab-001` package keeps the normalized game, player, round, action, plan, decision, firing, ceramic, Order, Order-event, Presentation-event, and intent tables for each candidate. Its Imperial Progress event table additionally records archived control/matched scenario IDs, candidate, frozen-profile hash, event sequence, player/seat/Tradition/intent, source, Order and requirement category, before/raw/applied/after Progress, crossed spaces and cap loss, every triggered Apprentice/Presentation/Seal milestone, track VP before/after, and active Seal VP. Historical control remains read-only; direct same-seat and Imperial-intent-relative comparisons are written at the experiment root. These exports must not contain hidden deck order, unrevealed Wood, or chain-of-thought.
+
+## AI planning metrics
+
+- assigned strategy intent and realized tags
+- primary and compatible secondary Order targets
+- unique ceramic assignment by Order requirement
+- missing Shape, Glaze, Decoration, and Quality specifications
+- action debt, resource debt, feasibility probability, reasons, and earliest completion round
+- projected Clay, Wood, and Coin demand with safety margins
+- shaped / glazed / loaded / finished pipeline counts
+- conversion urgency, hand conflicts, and reachable Imperial space
+- acquisition-time feasibility snapshot for each Order
+
+These are structured audit features, not chain-of-thought. Hidden deck order and unrevealed opposing Wood values remain excluded.
+
 ## Per-game metrics
 
 - player count
@@ -9,7 +37,7 @@ Telemetry is for balance analysis, not player profiling.
 - final VP by player
 - winner Kiln
 - final Imperial Progress
-- round each player reached Progress 2 / 4 / 5
+- round each player reached Progress 1 / 2 / 3 / 4 / 5
 - Techniques acquired and acquisition round
 - completed Market Orders
 - completed Imperial Orders
@@ -18,7 +46,7 @@ Telemetry is for balance analysis, not player profiling.
 - ceramics formed/fired
 - Quality distribution
 - number of Flawed ceramics sold
-- Presentation size and score
+- Exhibition capacity, submitted Quality mix, diversity bonus, and score
 - action-space usage by round
 - Shifu location usage
 - number of blocked attempted actions if UI records them

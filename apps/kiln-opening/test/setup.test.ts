@@ -22,7 +22,8 @@ describe("setup", () => {
     if (!result.ok) return;
 
     const state = result.state;
-    expect(state.rulesVersion).toBe("1.0.2");
+    expect(state.rulesVersion).toBe("1.0.4");
+    expect(state.players[state.playerOrder[0]!]!.imperialStipendsReceived).toEqual([]);
     expect(state.playerCount).toBe(count);
     expect(state.round).toBe(1);
     expect(state.phase.type).toBe("setup_kiln_selection");

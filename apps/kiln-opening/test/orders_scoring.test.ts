@@ -166,6 +166,41 @@ describe("Order matcher", () => {
     expect(ORDER_DEFINITIONS["I04"]?.ceramics[0]).toEqual(expect.objectContaining({ glaze: "moon_white", decoration: "impressed" }));
   });
 
+  it("enforces the V1.0.4 I02, I04, and I09 Quality requirements", () => {
+    for (const orderId of ["I02", "I04"] as const) {
+      const order = ORDER_DEFINITIONS[orderId]!;
+      const ceramics = validCeramics(order);
+      ceramics[0]!.quality = "fine";
+      expect(matchesOrder(order, ceramics, false), `${orderId} Fine`).toBe(true);
+      ceramics[0]!.quality = "masterpiece";
+      expect(matchesOrder(order, ceramics, false), `${orderId} Masterpiece`).toBe(true);
+      ceramics[0]!.quality = "standard";
+      expect(matchesOrder(order, ceramics, false), `${orderId} Standard`).toBe(false);
+    }
+
+    const order = ORDER_DEFINITIONS["I09"]!;
+    const ceramics = validCeramics(order);
+    expect(ceramics[0]!.glaze).not.toBe(ceramics[1]!.glaze);
+    ceramics[0]!.quality = "masterpiece";
+    ceramics[1]!.quality = "fine";
+    expect(matchesOrder(order, ceramics, false)).toBe(true);
+    ceramics[0]!.quality = "fine";
+    ceramics[1]!.quality = "masterpiece";
+    expect(matchesOrder(order, ceramics, false)).toBe(true);
+    ceramics[0]!.quality = "masterpiece";
+    ceramics[1]!.quality = "masterpiece";
+    expect(matchesOrder(order, ceramics, false)).toBe(true);
+    ceramics[0]!.quality = "fine";
+    ceramics[1]!.quality = "fine";
+    expect(matchesOrder(order, ceramics, false)).toBe(false);
+    ceramics[0]!.quality = "masterpiece";
+    ceramics[1]!.quality = "standard";
+    expect(matchesOrder(order, ceramics, false)).toBe(false);
+    ceramics[1]!.quality = "fine";
+    ceramics[1]!.glaze = ceramics[0]!.glaze;
+    expect(matchesOrder(order, ceramics, false)).toBe(false);
+  });
+
   it("keeps the V0.6.3 explicit Glaze and Decoration distributions balanced", () => {
     const allOrders = Object.values(ORDER_DEFINITIONS);
     const glazeCounts: Record<Glaze, number> = {
@@ -340,7 +375,7 @@ describe("Order Phase and Imperial Progress", () => {
   });
 });
 
-describe("Presentation and final scoring", () => {
+describe("End-game Exhibition and final scoring", () => {
   it("scores Quality plus exact-three Shape/Glaze diversity and caps Coin VP", () => {
     const game = startedGame(2, 710);
     const actorId = game.state.firstPlayerId;
@@ -368,6 +403,9 @@ describe("Presentation and final scoring", () => {
       },
       game.rng,
     );
+    for (const playerId of state.playerOrder.filter((id) => id !== actorId)) {
+      state = mustApply(state, playerId, { type: "SUBMIT_PRESENTATION", ceramicIds: [] }, game.rng);
+    }
     expect(state.phase.type).toBe("finished");
     expect(state.finalResult?.scores[actorId]?.presentation).toBe(11);
     expect(state.finalResult?.scores[actorId]?.leftoverCoins).toBe(5);
@@ -389,6 +427,9 @@ describe("Presentation and final scoring", () => {
     );
     expectError(rejected, "PRESENTATION_NOT_ELIGIBLE");
     state = mustApply(state, actorId, { type: "SUBMIT_PRESENTATION", ceramicIds: [] }, game.rng);
+    for (const playerId of state.playerOrder.filter((id) => id !== actorId)) {
+      state = mustApply(state, playerId, { type: "SUBMIT_PRESENTATION", ceramicIds: [] }, game.rng);
+    }
     expect(state.finalResult?.scores[actorId]?.presentation).toBe(0);
   });
 

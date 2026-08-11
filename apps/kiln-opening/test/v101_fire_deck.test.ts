@@ -44,14 +44,14 @@ function submitOnlyContributor(
   return result;
 }
 
-describe("V1.0.1 Fire deck", () => {
-  it("contains the exact symmetric 5/3/4/3/5 distribution", () => {
+describe("V1.0.4 Fire deck", () => {
+  it("contains the exact symmetric 4/3/6/3/4 distribution", () => {
     const count = (modifier: FireModifier) => FIRE_CARDS.filter((card) => card === modifier).length;
     expect(FIRE_CARDS).toHaveLength(20);
-    expect([-2, -1, 0, 1, 2].map((value) => count(value as FireModifier))).toEqual([5, 3, 4, 3, 5]);
+    expect([-2, -1, 0, 1, 2].map((value) => count(value as FireModifier))).toEqual([4, 3, 6, 3, 4]);
     expect(count(-2)).toBe(count(2));
     expect(count(-1)).toBe(count(1));
-    expect(GAME_CONFIG.fireDeck).toEqual({ "-2": 5, "-1": 3, "0": 4, "1": 3, "2": 5 });
+    expect(GAME_CONFIG.fireDeck).toEqual({ "-2": 4, "-1": 3, "0": 6, "1": 3, "2": 4 });
   });
 
   it.each([

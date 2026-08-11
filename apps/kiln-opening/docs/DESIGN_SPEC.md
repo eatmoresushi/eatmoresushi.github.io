@@ -26,7 +26,7 @@ Do not add digital conveniences that remove this inference.
 
 ### 2. Controlled uncertainty, not chaos
 
-The symmetric Fire deck introduced in V1.0.1 is retained unchanged in V1.0.2 across -2/-1/0/+1/+2, with the greatest weight on ±2 and the least on ±1.
+The V1.0.4 Fire deck contains -2/-1/0/+1/+2 in a 4/3/6/3/4 distribution. Zero is the most common result, the negative and positive sides are symmetric, and exact-heat firing is therefore favoured without making wider outcomes rare.
 
 The larger strategic uncertainty still comes from other players' secret Wood contributions. Fire is resolved through the existing uncapped heat-difference system; planning, zone choice and abilities remain the tools for managing its wider range.
 
@@ -44,8 +44,8 @@ Imperial route:
 - harder Orders;
 - less Coin income;
 - Imperial Progress;
-- additional Apprentices;
-- Presentation and prestige.
+- one-time Coin stipends;
+- larger Imperial Exhibition capacity and, at the top spaces, diversity prestige.
 
 Imperial Progress should be attractive but not mandatory.
 

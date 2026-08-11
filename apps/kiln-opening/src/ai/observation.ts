@@ -33,7 +33,7 @@ export function createPlayerObservation(
   ) as PlayerObservation["knownFireRemaining"];
 
   return {
-    rulesVersion: "1.0.2",
+    rulesVersion: "1.0.4",
     playerId,
     game: projectPublicGameState(state),
     ownPendingContribution,

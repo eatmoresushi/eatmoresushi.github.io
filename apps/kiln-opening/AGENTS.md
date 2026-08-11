@@ -10,8 +10,8 @@ Target session length for the physical design is approximately 90–120 minutes.
 
 Priority order:
 
-1. The supplied `Kiln_Opening_v1.0.2_Full_Rulebook.pdf` — authoritative base-game rules.
-2. `docs/GAME_RULES.md` — authoritative implementation transcription of V1.0.2.
+1. The supplied English and Simplified Chinese `Kiln_Opening_v1.0.4_*_Full_Rulebook.pdf` files — authoritative base-game rules.
+2. `docs/GAME_RULES.md` — authoritative implementation transcription of V1.0.4.
 3. `data/*.json` — machine-readable values derived from those rules.
 4. `docs/IMPLEMENTATION_DECISIONS.md` — digital interpretations of rules where necessary.
 5. `docs/ONLINE_GAME_SPEC.md` — digital-only behaviour.
@@ -24,7 +24,7 @@ Never implement an older mechanic because it appears in historical discussion or
 
 ## Approved asset rule
 
-Only `assets/current_v04/` is an approved visual-reference directory. The directory name remains unchanged as a stable legacy path; rules-bearing visuals must follow V1.0.2 data.
+Only `assets/current_v04/` is an approved visual-reference directory. The directory name remains unchanged as a stable legacy path; rules-bearing visuals must follow V1.0.4 data and localized gameplay text must come from structured data or the i18n layer.
 
 Do not search conversation history or older images for missing boards/cards. Missing current assets are intentionally specified in `data/asset_specs.json` and `docs/V0.4_ASSETS_TO_REGENERATE.md` and must be rebuilt from current data.
 
@@ -97,20 +97,22 @@ At minimum:
 - Shape costs and vessel supply
 - Decoration costs
 - Technique acquisition limit, printed Apprentice cost, and Shifu −1 Coin discount (minimum 1)
-- every one of the 15 V1.0.2 Techniques
+- every one of the 15 V1.0.4 Techniques
 - all five Kiln abilities
 - contributor-scaled Base Heat for 1–4 contributors
 - secret simultaneous Wood reveal
-- all five Fire modifiers and kiln-zone modifiers
+- all five Fire modifiers, the V1.0.4 4/3/6/3/4 deck distribution, and kiln-zone modifiers
 - Quality assignment
 - Jun/Ge/Protective Saggars/Test Pieces/Ru timing
 - Market and Imperial Order validation, followed by the optional Apprentice 0–1 / Shifu 0–2 Flawed-sale step
-- immediate display refill
+- immediate display refill and the two-card left-edge Order-display rotation at the start of Rounds 2–5
 - Order hand limit and Guan exception
 - every Imperial Order advancing +1 or +2 Imperial Progress as printed, including multiple completions in one round and milestone-crossing jumps
 - Apprentice unlock timing at spaces 1 and 3
+- one-time Coin stipends on reaching or crossing spaces 2 and 4
 - Imperial Seal first-arrival rule
-- Imperial Presentation eligibility and diversity bonuses
+- universal end-game Imperial Exhibition capacity by Progress, plus diversity bonuses only at spaces 4 and 5
+- English/Simplified Chinese rendering from the same stable IDs without changing game state
 - end-game Coin VP cap
 - all tie breakers
 - reconnect without changing player seat/state

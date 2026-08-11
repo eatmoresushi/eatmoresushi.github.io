@@ -11,6 +11,8 @@ import type {
 } from "../multiplayer";
 import { ORDER_DEFINITIONS, TECHNIQUE_DEFINITIONS, currentDecisionActor } from "../game";
 import { PlaytestExperience } from "./PlaytestExperience";
+import { localizeMultiplayerError, useI18n } from "./i18n";
+import type { Locale } from "./i18n";
 
 const LAST_SEAT_KEY = "kiln-opening:last-seat";
 
@@ -19,57 +21,81 @@ interface SavedSeat {
   seatToken: string;
 }
 
-export function imperialOrderNotice(result: CommandSuccess): string | null {
+export function imperialOrderNotice(result: CommandSuccess, locale: Locale = "en"): string | null {
   const completed = result.events.find(
     (event) => event.type === "ORDER_COMPLETED" && event.orderId.startsWith("I"),
   );
   if (completed?.type !== "ORDER_COMPLETED") return null;
   const player = result.game.players[result.actorId];
   const definition = ORDER_DEFINITIONS[completed.orderId];
-  const parts = [`Player completed ${completed.orderId}. +${definition?.vp ?? 0} VP.`];
+  const stipendCoins = (space: 2 | 4): number | null => {
+    const event = result.events.find((candidate) => candidate.type === "IMPERIAL_STIPEND_RECEIVED" && candidate.space === space);
+    return event?.type === "IMPERIAL_STIPEND_RECEIVED" ? event.coins : null;
+  };
+  const parts = [locale === "zh-CN"
+    ? `玩家完成了${completed.orderId}。+${definition?.vp ?? 0}分。`
+    : `Player completed ${completed.orderId}. +${definition?.vp ?? 0} VP.`];
   const progress = result.events.find((event) => event.type === "IMPERIAL_PROGRESS_ADVANCED");
   if (progress?.type === "IMPERIAL_PROGRESS_ADVANCED") {
     const capped = progress.to - progress.from < progress.reward ? " (capped at space 5)" : "";
-    parts.push(`Imperial Progress +${progress.reward}: ${progress.from} → ${progress.to}${capped}.`);
-    if (progress.from < 1 && progress.to >= 1) parts.push("Local Renown reached. 1 Apprentice will unlock during Cleanup.");
-    if (progress.from < 3 && progress.to >= 3) parts.push("Court Examination reached. 1 Apprentice will unlock during Cleanup.");
-    if (progress.from < 4 && progress.to >= 4) parts.push("Awaiting Audience reached. You are now eligible for the Imperial Presentation.");
+    parts.push(locale === "zh-CN"
+      ? `御用进度+${progress.reward}：${progress.from} → ${progress.to}${progress.to - progress.from < progress.reward ? "（上限为5）" : ""}。`
+      : `Imperial Progress +${progress.reward}: ${progress.from} → ${progress.to}${capped}.`);
+    if (progress.from < 1 && progress.to >= 1) parts.push(locale === "zh-CN" ? "到达地方声望。1名学徒将在清理阶段解锁。" : "Local Renown reached. 1 Apprentice will unlock during Cleanup.");
+    if (progress.from < 2 && progress.to >= 2) {
+      const coins = stipendCoins(2);
+      parts.push(locale === "zh-CN"
+        ? `到达州府举荐${coins === null ? "" : `，朝廷赏赐+${coins}铜钱`}；终局展陈容量提升至2件。`
+        : `Prefectural Recommendation reached.${coins === null ? "" : ` Court stipend +${coins} Coin${coins === 1 ? "" : "s"};`} End-game Exhibition capacity increases to 2.`);
+    }
+    if (progress.from < 3 && progress.to >= 3) parts.push(locale === "zh-CN" ? "到达入朝考核。1名学徒将在清理阶段解锁。" : "Court Examination reached. 1 Apprentice will unlock during Cleanup.");
+    if (progress.from < 4 && progress.to >= 4) {
+      const coins = stipendCoins(4);
+      parts.push(locale === "zh-CN"
+        ? `到达候见天听${coins === null ? "" : `，朝廷赏赐+${coins}铜钱`}；终局展陈容量提升至3件，并可获得多样性奖励。`
+        : `Awaiting Audience reached.${coins === null ? "" : ` Court stipend +${coins} Coin${coins === 1 ? "" : "s"};`} End-game Exhibition capacity increases to 3 with diversity bonuses.`);
+    }
     if (progress.from < 5 && progress.to >= 5) {
       const claimed = result.events.some((event) => event.type === "IMPERIAL_SEAL_CLAIMED");
-      parts.push(claimed
-        ? "Imperial Audience reached. You claim the Imperial Seal: +2 VP at game end."
-        : "Imperial Audience reached. The Imperial Seal has already been claimed.");
+      parts.push(locale === "zh-CN"
+        ? claimed ? "到达御前召见。你获得御印：游戏结束时+2分。" : "到达御前召见。御印已被领取。"
+        : claimed ? "Imperial Audience reached. You claim the Imperial Seal: +2 VP at game end." : "Imperial Audience reached. The Imperial Seal has already been claimed.");
     }
   } else if (player?.imperialProgress === 5) {
-    parts.push("Imperial Progress is already at the maximum space 5.");
+    parts.push(locale === "zh-CN" ? "御用进度已达到最高的5格。" : "Imperial Progress is already at the maximum space 5.");
   } else {
-    parts.push("Imperial Progress could not advance.");
+    parts.push(locale === "zh-CN" ? "御用进度无法前进。" : "Imperial Progress could not advance.");
   }
   return parts.join(" ");
 }
 
-export function commandNotice(result: CommandSuccess): string | null {
+export function commandNotice(result: CommandSuccess, locale: Locale = "en"): string | null {
   const order = result.events.find((event) => event.type === "ORDER_TAKEN");
   if (order?.type === "ORDER_TAKEN") {
-    const deck = order.deck === "market" ? "Market" : "Imperial";
+    const deck = order.deck === "market" ? (locale === "zh-CN" ? "市场" : "Market") : (locale === "zh-CN" ? "御用" : "Imperial");
     return order.acquisition === "blind_top"
-      ? `Blind ${deck} draw committed and revealed: ${order.orderId}.`
-      : `Took face-up ${deck} Order ${order.orderId}.`;
+      ? locale === "zh-CN" ? `已确认并公开盲抽的${deck}订单：${order.orderId}。` : `Blind ${deck} draw committed and revealed: ${order.orderId}.`
+      : locale === "zh-CN" ? `拿取正面的${deck}订单${order.orderId}。` : `Took face-up ${deck} Order ${order.orderId}.`;
   }
   const colour = result.events.find((event) => event.type === "COLOUR_SAMPLES_USED");
   if (colour?.type === "COLOUR_SAMPLES_USED") {
-    const deck = colour.deck === "market" ? "Market" : "Imperial";
-    return `Used Colour Samples: ${colour.bottomedOrderId} moved to the bottom of the ${deck} deck; ${colour.revealedOrderId ?? "no replacement"} was revealed.`;
+    const deck = colour.deck === "market" ? (locale === "zh-CN" ? "市场" : "Market") : (locale === "zh-CN" ? "御用" : "Imperial");
+    return locale === "zh-CN"
+      ? `使用釉色样本：${colour.bottomedOrderId}移至${deck}订单牌堆底；翻开${colour.revealedOrderId ?? "无替补"}。`
+      : `Used Colour Samples: ${colour.bottomedOrderId} moved to the bottom of the ${deck} deck; ${colour.revealedOrderId ?? "no replacement"} was revealed.`;
   }
   const patronage = result.events.find((event) => event.type === "COURT_PATRONAGE_USED");
   if (patronage?.type === "COURT_PATRONAGE_USED") {
-    return `Used Court Patronage: paid 5 Coins; Imperial Progress ${patronage.from} → ${patronage.to}.`;
+    return locale === "zh-CN" ? `使用朝廷赞助：支付5铜钱；御用进度${patronage.from} → ${patronage.to}。` : `Used Court Patronage: paid 5 Coins; Imperial Progress ${patronage.from} → ${patronage.to}.`;
   }
   const technique = result.events.find((event) => event.type === "TECHNIQUE_ACQUIRED");
   if (technique?.type === "TECHNIQUE_ACQUIRED") {
-    return `Acquired ${TECHNIQUE_DEFINITIONS[technique.techniqueId]?.name ?? technique.techniqueId} for ${technique.cost} Coins.`;
+    const definition = TECHNIQUE_DEFINITIONS[technique.techniqueId];
+    return locale === "zh-CN"
+      ? `以${technique.cost}铜钱获得${definition?.nameZh ?? technique.techniqueId}。`
+      : `Acquired ${definition?.name ?? technique.techniqueId} for ${technique.cost} Coins.`;
   }
-  return imperialOrderNotice(result);
+  return imperialOrderNotice(result, locale);
 }
 
 function readSavedSeat(): SavedSeat | null {
@@ -102,6 +128,7 @@ function configurationApi(): { api: GameApi | null; message: string | null } {
 }
 
 export function App() {
+  const { locale, setLocale, t } = useI18n();
   const configured = useMemo(configurationApi, []);
   const api = configured.api;
   const [connection, setConnection] = useState<RoomConnection | null>(null);
@@ -122,10 +149,10 @@ export function App() {
       game: result.game,
       ownPendingContribution: result.ownPendingContribution,
     });
-    setNotice(commandNotice(result));
-  }, []);
+    setNotice(commandNotice(result, locale));
+  }, [locale]);
 
-  const reconnect = useCallback(async (saved?: SavedSeat, announce = false) => {
+  const reconnect = useCallback(async (saved?: SavedSeat) => {
     if (api === null || reconnecting.current) return;
     const target = saved ?? (connection === null
       ? readSavedSeat()
@@ -148,7 +175,6 @@ export function App() {
       });
       setSavedSeat(target);
       setError(null);
-      if (announce) setNotice("Reconnected to the latest authoritative state.");
     } finally {
       reconnecting.current = false;
     }
@@ -214,10 +240,9 @@ export function App() {
       });
       if (result.value.advancedActions > 0) {
         const uniqueActors = new Set(result.value.actorIds).size;
-        setNotice(
-          `${uniqueActors === 1 ? "Computer player" : `${uniqueActors} computer players`} completed ` +
-          `${result.value.advancedActions} action${result.value.advancedActions === 1 ? "" : "s"}.`,
-        );
+        setNotice(uniqueActors === 1
+          ? t("Computer player completed {count} actions.", { count: result.value.advancedActions })
+          : t("Computer players completed {count} actions.", { count: result.value.advancedActions }));
       }
     }).finally(() => {
       advancingComputers.current = false;
@@ -389,29 +414,33 @@ export function App() {
 
   return (
     <div className="app-shell">
-      <a className="skip-link" href="#main-content">Skip to game controls</a>
+      <a className="skip-link" href="#main-content">{t("Skip to game controls")}</a>
       <header className="masthead">
-        <a className="brand" href={import.meta.env.BASE_URL} aria-label="Kiln Opening home">
+        <a className="brand" href={import.meta.env.BASE_URL} aria-label={t("Kiln Opening")}>
           <span className="brand-mark" aria-hidden="true">窑</span>
-          <span><strong>Kiln Opening</strong><small>开窑 · Song workshop strategy</small></span>
+          <span><strong>{t("Kiln Opening")}</strong><small>{locale === "zh-CN" ? "Kiln Opening" : "开窑"} · {t("Song workshop strategy")}</small></span>
         </a>
+        <div className="language-toggle" role="group" aria-label="Language / 语言">
+          <button type="button" aria-pressed={locale === "en"} onClick={() => setLocale("en")}>EN</button>
+          <button type="button" aria-pressed={locale === "zh-CN"} onClick={() => setLocale("zh-CN")}>中文</button>
+        </div>
         {connection !== null && (
           <div className="room-meta">
-            <span>Room <strong data-testid="room-code">{connection.room.code}</strong></span>
+            <span>{t("Room")} <strong data-testid="room-code">{connection.room.code}</strong></span>
             <span className={`connection-dot status-${connection.room.status}`}>
               {connection.room.status === "abandoned"
-                ? "Ended"
-                : connection.room.status === "finished" ? "Complete" : "Live"}
+                ? t("Ended")
+                : connection.room.status === "finished" ? t("Complete") : t("Live")}
             </span>
             <span
               className={`room-role ${connection.seat.isHost ? "is-host" : "is-guest"}`}
-              title={connection.seat.isHost ? "You control this room" : "Only the room host can end the session"}
+              title={connection.seat.isHost ? t("You control this room") : t("Only the room host can end the session")}
             >
-              {connection.seat.isHost ? "Host" : "Guest"}
+              {connection.seat.isHost ? t("Host") : t("Guest")}
             </span>
             {connection.room.status !== "abandoned" && (
-              <button className="text-button" type="button" onClick={() => void reconnect(undefined, true)} disabled={busy}>
-                Reconnect
+              <button className="text-button" type="button" onClick={() => void reconnect()} disabled={busy}>
+                {t("Reconnect")}
               </button>
             )}
             {connection.seat.isHost && (connection.room.status === "lobby" || connection.room.status === "playing") && (
@@ -421,27 +450,27 @@ export function App() {
                 onClick={() => setConfirmEndSession(true)}
                 disabled={busy}
               >
-                End session
+                {t("End session")}
               </button>
             )}
-            <button className="text-button" type="button" onClick={leaveView}>Leave view</button>
+            <button className="text-button" type="button" onClick={leaveView}>{t("Leave view")}</button>
           </div>
         )}
       </header>
 
       <main id="main-content">
         {configured.message !== null && (
-          <div className="banner banner-warning" role="status">{configured.message}</div>
+          <div className="banner banner-warning" role="status">{t(configured.message)}</div>
         )}
         {error !== null && (
           <div className="banner banner-error" role="alert">
-            <strong>{error.code.replaceAll("_", " ")}</strong> {error.message}
+            <strong>{locale === "zh-CN" ? t("Action could not be completed") : error.code.replaceAll("_", " ")}</strong> {localizeMultiplayerError(locale, error.code, error.message)}
           </div>
         )}
         {notice !== null && <div className="banner banner-info" role="status" aria-live="polite">{notice}</div>}
-        {(busy || computerThinking) && <div className="progress-line" role="progressbar" aria-label="Waiting for server" />}
+        {(busy || computerThinking) && <div className="progress-line" role="progressbar" aria-label={t("Waiting for server")} />}
         {computerThinking && (
-          <div className="banner banner-info" role="status" aria-live="polite">Computer is choosing…</div>
+          <div className="banner banner-info" role="status" aria-live="polite">{t("Computer is choosing…")}</div>
         )}
 
         {connection === null ? (
@@ -483,7 +512,7 @@ export function App() {
         />
       )}
       <footer className="site-footer">
-        <span>Kiln Opening V1.0.2</span>
+        <span>{t("Kiln Opening")} V1.0.4</span>
         <a href="https://luyuan.me/">Luyuan He</a>
       </footer>
     </div>
@@ -505,6 +534,7 @@ function HomeScreen({
   onResume: () => void;
   onForget: () => void;
 }) {
+  const { t } = useI18n();
   const [mode, setMode] = useState<"create" | "join">("create");
   const [displayName, setDisplayName] = useState("");
   const [roomCode, setRoomCode] = useState("");
@@ -518,37 +548,37 @@ function HomeScreen({
   return (
     <section className="home-screen">
       <div className="hero-copy">
-        <p className="eyebrow">A strategic game of earth, glaze, and fire</p>
-        <h1>Shape a workshop worthy of the imperial court.</h1>
+        <p className="eyebrow">{t("A strategic game of earth, glaze, and fire")}</p>
+        <h1>{t("Shape a workshop worthy of the imperial court.")}</h1>
         <p className="hero-lead">
-          A synchronous 2–4 player adaptation of the medium-weight Euro game set among Song Dynasty ceramic workshops.
+          {t("A synchronous 2–4 player adaptation of the medium-weight Euro game set among Song Dynasty ceramic workshops.")}
         </p>
-        <div className="hero-facts" aria-label="Game summary">
-          <span><strong>2–4</strong> players</span>
-          <span><strong>5</strong> rounds</span>
-          <span><strong>90–120</strong> minutes</span>
+        <div className="hero-facts" aria-label={t("Game summary")}>
+          <span><strong>2–4</strong> {t("players")}</span>
+          <span><strong>5</strong> {t("rounds")}</span>
+          <span><strong>90–120</strong> {t("minutes")}</span>
         </div>
       </div>
       <div className="entry-card">
         {savedSeat !== null && (
-          <aside className="saved-session" aria-label="Saved session">
+          <aside className="saved-session" aria-label={t("Saved session")}>
             <div>
-              <span>Saved session</span>
-              <strong>Room {savedSeat.roomCode}</strong>
+              <span>{t("Saved session")}</span>
+              <strong>{t("Room")} {savedSeat.roomCode}</strong>
             </div>
             <div className="button-row">
-              <button className="secondary-button" type="button" onClick={onResume} disabled={disabled}>Resume</button>
-              <button className="text-button" type="button" onClick={onForget}>Forget seat</button>
+              <button className="secondary-button" type="button" onClick={onResume} disabled={disabled}>{t("Resume")}</button>
+              <button className="text-button" type="button" onClick={onForget}>{t("Forget seat")}</button>
             </div>
           </aside>
         )}
-        <div className="segmented" role="tablist" aria-label="Room action">
-          <button type="button" role="tab" aria-selected={mode === "create"} onClick={() => setMode("create")}>Create game</button>
-          <button type="button" role="tab" aria-selected={mode === "join"} onClick={() => setMode("join")}>Join game</button>
+        <div className="segmented" role="tablist" aria-label={t("Room action")}>
+          <button type="button" role="tab" aria-selected={mode === "create"} onClick={() => setMode("create")}>{t("Create game")}</button>
+          <button type="button" role="tab" aria-selected={mode === "join"} onClick={() => setMode("join")}>{t("Join game")}</button>
         </div>
         <form onSubmit={submit}>
           {mode === "join" && (
-            <label>Room code
+            <label>{t("Room code")}
               <input
                 name="roomCode"
                 value={roomCode}
@@ -559,22 +589,22 @@ function HomeScreen({
               />
             </label>
           )}
-          <label>Workshop name
+          <label>{t("Workshop name")}
             <input
               name="displayName"
               value={displayName}
               onChange={(event) => setDisplayName(event.target.value)}
               autoComplete="name"
               maxLength={40}
-              placeholder="Your name"
+              placeholder={t("Your name")}
               required
             />
           </label>
           <button className="primary-button full-width" type="submit" disabled={disabled}>
-            {mode === "create" ? "Create a room" : "Join the workshop"}
+            {mode === "create" ? t("Create a room") : t("Join the workshop")}
           </button>
         </form>
-        <p className="privacy-note">Your seat is restored on this device if the connection drops.</p>
+        <p className="privacy-note">{t("Your seat is restored on this device if the connection drops.")}</p>
       </div>
     </section>
   );
@@ -589,21 +619,22 @@ function EndedSessionScreen({
   onLeave: () => void;
   onForget: () => void;
 }) {
+  const { locale, t } = useI18n();
   const endedBy = connection.seats.find(
     (seat) => seat.playerId === connection.room.endedByPlayerId,
-  )?.displayName ?? "the host";
+  )?.displayName ?? (locale === "zh-CN" ? "房主" : "the host");
   return (
     <section className="session-ended" aria-labelledby="session-ended-title">
-      <p className="eyebrow">Session closed</p>
-      <h1 id="session-ended-title">This workshop session has ended.</h1>
+      <p className="eyebrow">{t("Session closed")}</p>
+      <h1 id="session-ended-title">{t("This workshop session has ended.")}</h1>
       <p>
-        {endedBy} ended room <strong>{connection.room.code}</strong> for everyone.
-        The game can no longer accept actions.
+        {locale === "zh-CN" ? <>{endedBy}已为所有人结束房间<strong>{connection.room.code}</strong>。</> : <>{endedBy} ended room <strong>{connection.room.code}</strong> for everyone.</>}
+        {" "}{t("The game can no longer accept actions.")}
       </p>
-      <p className="muted">The session record is retained temporarily for recovery and debugging.</p>
+      <p className="muted">{t("The session record is retained temporarily for recovery and debugging.")}</p>
       <div className="button-row">
-        <button className="primary-button" type="button" onClick={onLeave}>Return home</button>
-        <button className="secondary-button" type="button" onClick={onForget}>Forget this seat</button>
+        <button className="primary-button" type="button" onClick={onLeave}>{t("Return home")}</button>
+        <button className="secondary-button" type="button" onClick={onForget}>{t("Forget this seat")}</button>
       </div>
     </section>
   );
@@ -620,16 +651,17 @@ function EndSessionDialog({
   onCancel: () => void;
   onConfirm: () => Promise<void>;
 }) {
+  const { locale, t } = useI18n();
   return (
     <div className="dialog-backdrop" role="presentation">
       <section className="confirmation-dialog" role="dialog" aria-modal="true" aria-labelledby="end-session-title">
-        <p className="eyebrow">Host action</p>
-        <h2 id="end-session-title">End room {roomCode} for everyone?</h2>
-        <p>All players will be removed from active play immediately. This cannot be undone.</p>
+        <p className="eyebrow">{t("Host action")}</p>
+        <h2 id="end-session-title">{locale === "zh-CN" ? `为所有人结束房间${roomCode}？` : `End room ${roomCode} for everyone?`}</h2>
+        <p>{t("All players will be removed from active play immediately. This cannot be undone.")}</p>
         <div className="button-row">
-          <button className="secondary-button" type="button" onClick={onCancel} disabled={busy}>Keep playing</button>
+          <button className="secondary-button" type="button" onClick={onCancel} disabled={busy}>{t("Keep playing")}</button>
           <button className="danger-button" type="button" onClick={() => void onConfirm()} disabled={busy}>
-            End session for everyone
+            {t("End session for everyone")}
           </button>
         </div>
       </section>
@@ -650,27 +682,28 @@ function LobbyScreen({
   onAddComputer: () => Promise<void>;
   onRemoveComputer: (computerSeatId: string) => Promise<void>;
 }) {
+  const { locale, t } = useI18n();
   return (
     <section className="lobby-screen">
       <div className="section-heading">
-        <p className="eyebrow">Workshop gathering</p>
-        <h1>Room {connection.room.code}</h1>
-        <p>Share this six-character code. Seats stay attached to each player through refreshes and reconnects.</p>
+        <p className="eyebrow">{t("Workshop gathering")}</p>
+        <h1>{t("Room")} {connection.room.code}</h1>
+        <p>{t("Share this six-character code. Seats stay attached to each player through refreshes and reconnects.")}</p>
       </div>
-      <div className="seat-grid" aria-label="Players in lobby">
+      <div className="seat-grid" aria-label={t("Players in lobby")}>
         {[0, 1, 2, 3].map((index) => {
           const seat = connection.seats.find((candidate) => candidate.seatIndex === index);
           return (
             <article className={`seat-card ${seat === undefined ? "seat-empty" : ""}`} key={index}>
               <span className={`seat-swatch colour-${seat?.colour ?? "empty"}`} aria-hidden="true" />
-              <span className="seat-number">Seat {index + 1}</span>
-              <strong>{seat?.displayName ?? "Open seat"}</strong>
+              <span className="seat-number">{t("Seat")} {index + 1}</span>
+              <strong>{seat?.displayName ?? t("Open seat")}</strong>
               <small>
                 {seat?.isHost
-                  ? "Host"
+                  ? t("Host")
                   : seat?.isComputer
-                    ? "Computer · V003"
-                    : seat === undefined ? "Waiting" : "Connected"}
+                    ? t("Computer · V003")
+                    : seat === undefined ? t("Waiting") : t("Connected")}
               </small>
               {connection.seat.isHost && seat?.isComputer === true && (
                 <button
@@ -679,7 +712,7 @@ function LobbyScreen({
                   disabled={busy}
                   onClick={() => void onRemoveComputer(seat.seatId)}
                 >
-                  Remove
+                  {t("Remove")}
                 </button>
               )}
             </article>
@@ -695,7 +728,7 @@ function LobbyScreen({
               onClick={() => void onAddComputer()}
               disabled={busy || connection.seats.length >= 4}
             >
-              Add computer player
+              {t("Add computer player")}
             </button>
             <button
               className="primary-button"
@@ -703,10 +736,10 @@ function LobbyScreen({
               onClick={() => void onStart()}
               disabled={busy || connection.seats.length < 2}
             >
-              Start with {connection.seats.length} players
+              {t("Start with {count} players", { count: connection.seats.length })}
             </button>
           </>
-        ) : <p>Waiting for {connection.seats.find((seat) => seat.isHost)?.displayName ?? "the host"} to start…</p>}
+        ) : <p>{t("Waiting for {name} to start…", { name: connection.seats.find((seat) => seat.isHost)?.displayName ?? (locale === "zh-CN" ? "房主" : "the host") })}</p>}
       </div>
     </section>
   );

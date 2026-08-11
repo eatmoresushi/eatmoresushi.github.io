@@ -4,34 +4,44 @@
     "name": "Ru Kiln",
     "nameZh": "汝窑",
     "abilityName": "Quiet Perfection",
-    "ability": "After all firing abilities are resolved, if you produced at least one Masterpiece with Celadon glaze and Plain decoration, gain 3 VP. Score this only once per round."
+    "abilityNameZh": "静雅天成",
+    "ability": "After all firing abilities are resolved, if you produced at least one Masterpiece with Celadon glaze and Plain decoration, gain 3 VP. Score this only once per round.",
+    "abilityZh": "在所有烧成能力结算完成后，若你本轮至少烧成了1件青釉、素面的杰作，获得3分。每轮最多计1次。"
   },
   {
     "id": "GU",
     "name": "Guan Kiln",
     "nameZh": "官窑",
     "abilityName": "Imperial Patronage",
-    "ability": "Your Order hand limit is 4. Once per round, when you complete an Imperial Order, you may ignore one Decoration requirement on that Order. You must still satisfy all Shape, Glaze, quantity, relationship and Quality requirements."
+    "abilityNameZh": "御用恩荣",
+    "ability": "Your Order hand limit is 4. Once per round, when you complete an Imperial Order, you may ignore one Decoration requirement on that Order. You must still satisfy all Shape, Glaze, quantity, relationship and Quality requirements.",
+    "abilityZh": "你的订单手牌上限为4。每轮一次，当你完成1张御用订单时，可以忽略该订单上的1项装饰要求，但仍须满足器型、釉色、数量、关系与品质要求。"
   },
   {
     "id": "GE",
     "name": "Ge Kiln",
     "nameZh": "哥窑",
     "abilityName": "Crackle from Fire",
-    "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, choose one of your ceramics with a heat difference of exactly 1. Treat its heat difference as 0, assign it Masterpiece Quality, and change its Decoration to Crackle without paying the Crackle Decoration cost or refunding its original Decoration cost."
+    "abilityNameZh": "裂纹天成",
+    "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, choose one of your ceramics with a heat difference of exactly 1. Treat its heat difference as 0, assign it Masterpiece Quality, and change its Decoration to Crackle without paying the Crackle Decoration cost or refunding its original Decoration cost.",
+    "abilityZh": "每轮一次，在实际热度计算完成后、品质判定前，选择你1件热度差恰为1的陶瓷。将其热度差视为0，品质改为杰作，并将装饰改为开片，无需支付开片费用。"
   },
   {
     "id": "DI",
     "name": "Ding Kiln",
     "nameZh": "定窑",
     "abilityName": "Moulded Production",
-    "ability": "Once per round, when resolving the Forming Studio, after you shape a Bowl, Plate or Washer, you may pay that Shape's normal Clay cost to shape one additional vessel of the same Shape. This additional vessel does not count against the action's normal limit."
+    "abilityNameZh": "模制成器",
+    "ability": "Once per round, when resolving the Forming Studio, after you shape a Bowl, Plate or Washer, you may pay that Shape's normal Clay cost to shape one additional vessel of the same Shape. This additional vessel does not count against the action's normal limit.",
+    "abilityZh": "每轮一次，当你执行成型作坊后，若成型了1件碗、盘或洗，可以再支付该器型的正常陶土费用，额外成型1件相同器型。该额外器物不计入行动原本的数量上限。"
   },
   {
     "id": "JU",
     "name": "Jun Kiln",
     "nameZh": "钧窑",
     "abilityName": "Kiln Transformation",
-    "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, you may pay 2 Coins to adjust the Actual Heat of one of your ceramics by +1 or -1. This affects only that ceramic."
+    "abilityNameZh": "窑变妙化",
+    "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, you may pay 2 Coins to adjust the Actual Heat of one of your ceramics by +1 or -1. This affects only that ceramic.",
+    "abilityZh": "每轮一次，在实际热度计算完成后、品质判定前，可以支付2铜钱，使其中1件陶瓷的实际热度增加1或减少1。该效果仅影响该陶瓷。"
   }
 ]

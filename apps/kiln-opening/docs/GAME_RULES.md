@@ -1,4 +1,4 @@
-# GAME_RULES.md — Kiln Opening / 开窑 V1.0.2
+# GAME_RULES.md — Kiln Opening / 开窑 V1.0.4
 
 **Players:** 2–4  
 **Length:** 5 rounds  
@@ -16,7 +16,7 @@ Earn the most VP from:
 - completed Market and Imperial Orders;
 - final Imperial Progress;
 - the Imperial Seal;
-- an eligible Imperial Presentation;
+- the universal End-game Exhibition;
 - immediate Kiln Tradition scoring;
 - leftover Coins.
 
@@ -141,6 +141,7 @@ Every round has five phases.
 
 ### Phase 1 — Start of Round
 
+- At the start of Rounds 2–5, discard the two leftmost face-up Market Orders and the two leftmost face-up Imperial Orders, slide the remaining cards left, and refill each display to 4. Round 1 does not rotate.
 - Refill incomplete Order and Technique displays.
 - Ready exhausted Techniques.
 - Reset once-per-round Kiln Tradition abilities.
@@ -177,10 +178,9 @@ A single-ceramic Imperial Order advances its owner 1 Imperial Progress. A multi-
 ### Phase 5 — Cleanup
 
 1. Return all placed workers.
-2. Unlock every Apprentice pending from reaching Progress 2 or 4.
-3. Discard leftmost face-up Market Order and leftmost face-up Imperial Order; slide and refill.
-4. Pass First Player clockwise.
-5. Advance Round marker.
+2. Unlock every Apprentice pending from reaching Progress 1 or 3.
+3. Pass First Player clockwise.
+4. Advance Round marker. If another round remains, perform its scheduled two-card rotation during Start of Round.
 
 After Cleanup of Round 5, score the game.
 
@@ -250,7 +250,7 @@ A player may not exceed hand limit. Check the limit before every individual acqu
 
 **Court Patronage:** this is a distinct Shifu-only main action. The player must have completed at least 1 Imperial Order during this game, have at least 5 Coins, and be at Imperial Progress 0–3. Pay 5 Coins and advance exactly 1 space. Court Patronage cannot advance from 4 to 5, cannot claim the Imperial Seal, and cannot be combined with Orders, Coin gain, Colour Samples, Connoisseur Network, or the optional Flawed sale. A move to space 1 or 3 queues the normal Apprentice unlock for Cleanup.
 
-Only the acting player's Finished Flawed ceramics may be sold. Each sold ceramic is removed from the Finished Ceramics area, its Vessel card returns to the matching Shape supply, and the player gains exactly 1 Coin. A sold ceramic cannot later be delivered to an Order or included in an Imperial Presentation. Standard, Fine, and Masterpiece ceramics cannot be sold through this effect.
+Only the acting player's Finished Flawed ceramics may be sold. Each sold ceramic is removed from the Finished Ceramics area, its Vessel card returns to the matching Shape supply, and the player gains exactly 1 Coin. A sold ceramic cannot later be delivered to an Order or included in the End-game Exhibition. Standard, Fine, and Masterpiece ceramics cannot be sold through this effect.
 
 **Connoisseur Network (T14):** after resolving a normal Office main action and its optional Flawed-sale step, its owner may exhaust it to sell exactly 1 owned Finished, undelivered Masterpiece for exactly 5 Coins and 0 VP. Return that ceramic's Vessel card to its Shape supply. This is separate from the normal Flawed sale and cannot follow Court Patronage.
 
@@ -285,7 +285,7 @@ Techniques give no direct VP.
 
 Exact list is authoritative in `data/techniques.json`.
 
-There are 15 Techniques, exactly 5 per discipline. T07 Glaze Notebook is not part of V1.0.2. Stable retained IDs are not renumbered.
+There are 15 Techniques, exactly 5 per discipline. T07 Glaze Notebook is not part of V1.0.4. Stable retained IDs are not renumbered.
 
 | Discipline | ID | Technique | Printed cost | Effect summary |
 |---|---|---|---:|---|
@@ -382,7 +382,7 @@ Order eligibility:
 - Masterpiece: satisfies any minimum;
 - Fine: Fine+ or Standard+;
 - Standard: Standard+ only;
-- Flawed: no Orders and no Imperial Presentation.
+- Flawed: no Orders and no End-game Exhibition.
 
 ---
 
@@ -421,6 +421,14 @@ Every Imperial Order advances Progress independently, including multiple Imperia
 
 Progress is categorical, not per ceramic: I08 and I10 each advance exactly 2, not 3.
 
+V1.0.4 changed only these Imperial Order Quality requirements from V1.0.2:
+
+- **I02:** 1 Washer, Celadon, Impressed, Fine+, 8 VP, +1 Progress.
+- **I04:** 1 Vase, Moon White, Impressed, Fine+, 9 VP, +1 Progress.
+- **I09:** 2 ceramics, both Fine+, different Glazes, at least one Masterpiece, 13 VP, +2 Progress.
+
+All other Market and Imperial Orders retain their printed V1.0.4 definitions in `data/orders.json`.
+
 ---
 
 ## 10. Imperial Progress
@@ -429,24 +437,31 @@ Progress is categorical, not per ceramic: I08 and I10 each advance exactly 2, no
 |---:|---|---|---:|
 | 0 | Local Workshop | — | 0 |
 | 1 | Local Renown | unlock 1 Apprentice in Cleanup | 0 |
-| 2 | Prefectural Recommendation | — | 2 |
+| 2 | Prefectural Recommendation | immediately gain 2 Coins; Exhibition capacity 2 | 2 |
 | 3 | Court Examination | unlock 1 Apprentice in Cleanup | 2 |
-| 4 | Awaiting Audience | Presentation eligible | 4 |
-| 5 | Imperial Audience | take Imperial Seal if available; Presentation eligible | 8 |
+| 4 | Awaiting Audience | immediately gain 3 Coins; Exhibition capacity 3 and diversity eligibility | 4 |
+| 5 | Imperial Audience | take Imperial Seal if available; Exhibition capacity 3 and diversity eligibility | 8 |
 
 Rules:
 
 - single-ceramic Imperial Orders advance 1 space and multi-ceramic Imperial Orders advance 2 spaces, with no per-round limit;
 - Progress cannot exceed space 5;
-- every milestone crossed by a multi-space advance resolves; crossing space 1 or 3 queues its Apprentice for Cleanup, and crossing space 5 resolves Imperial Audience and the Seal;
+- every milestone crossed by a multi-space advance resolves; crossing space 1 or 3 queues its Apprentice for Cleanup, crossing space 2 or 4 grants its one-time stipend, and crossing space 5 resolves Imperial Audience and the Seal;
+- the first time each player reaches or passes space 2, they immediately gain 2 Coins; the first time they reach or pass space 4, they immediately gain 3 Coins; each stipend is gained once per player;
 - unlocked Apprentice becomes usable next round;
 - first player ever reaching space 5 takes Imperial Seal, worth 2 VP;
 - reaching 5 does not end game.
 - Court Patronage advances exactly 1 space only from spaces 0–3, after the player has completed at least 1 Imperial Order; it cannot reach 5 or claim the Seal.
 
-### Imperial Presentation
+### End-game Exhibition / 终局展陈
 
-At game end, players at Progress 4 or 5 may present up to 3 finished, undelivered ceramics of **Standard or better**.
+At game end, every player may exhibit finished, undelivered ceramics of **Standard or better**. Maximum capacity depends on final Imperial Progress:
+
+| Final Progress | Maximum exhibited |
+|---:|---:|
+| 0–1 | 1 |
+| 2–3 | 2 |
+| 4–5 | 3 |
 
 | Quality | VP |
 |---|---:|
@@ -454,14 +469,14 @@ At game end, players at Progress 4 or 5 may present up to 3 finished, undelivere
 | Fine | 2 |
 | Masterpiece | 4 |
 
-Bonuses:
+Only players ending at Progress 4 or 5 can earn these bonuses:
 
-- +2 VP if exactly 3 presented ceramics have 3 different Shapes;
-- +2 VP if exactly 3 presented ceramics have 3 different Glazes.
+- +2 VP if exactly 3 exhibited ceramics have 3 different Shapes;
+- +2 VP if exactly 3 exhibited ceramics have 3 different Glazes.
 
-Flawed ceramics cannot be presented.
+Flawed ceramics cannot be exhibited.
 
-There is **no penalty** for presenting fewer than 3 or none.
+There is **no penalty** for exhibiting fewer than the maximum or none.
 
 ---
 
@@ -510,7 +525,7 @@ After Round 5 Cleanup:
 1. keep all VP already recorded from completed Orders, Ru, etc.;
 2. add final Imperial Progress VP;
 3. +2 VP for Imperial Seal holder;
-4. add eligible Imperial Presentation;
+4. add End-game Exhibition VP;
 5. add 1 VP per 3 leftover Coins, maximum 5 VP.
 
 Highest VP wins.
@@ -519,7 +534,7 @@ Tie breakers, in order:
 
 1. farther on Imperial Progress;
 2. more completed Imperial Orders;
-3. more Masterpieces delivered or presented;
+3. more Masterpieces delivered or exhibited;
 4. shared victory.
 
 ---
@@ -533,7 +548,7 @@ Tie breakers, in order:
 - Unused action capacity is lost.
 - Newly unlocked Apprentice acts next round.
 - Shaped/Glazed/Finished ceramics persist between rounds.
-- Only delivered, presented, or sold ceramics leave Finished area.
+- Only delivered, exhibited, or sold ceramics leave Finished area.
 - Flawed sale returns Vessel to supply.
 - Non-Flawed ceramic cannot be voluntarily discarded.
 - Uncompleted Orders and unused ceramics have no end-game penalty.
@@ -547,10 +562,10 @@ Tie breakers, in order:
 
 20 cards:
 
-- -2 × 5
+- -2 × 4
 - -1 × 3
-- 0 × 4
+- 0 × 6
 - +1 × 3
-- +2 × 5
+- +2 × 4
 
 The Fire deck is symmetric around 0. Revealed cards are discarded face-up and are not shuffled back after each firing.

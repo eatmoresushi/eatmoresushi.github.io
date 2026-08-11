@@ -62,6 +62,7 @@ function makePlayer(input: CreateGameInput["players"][number], seatIndex: number
     completedOrders: [],
     techniques: [],
     imperialProgress: 0,
+    imperialStipendsReceived: [],
     passedWorkPhase: false,
     pendingApprenticeUnlocks: 0,
     kilnAbilityUsedThisRound: false,
@@ -173,7 +174,7 @@ export function createGame(input: CreateGameInput, rng: RandomSource): CreateGam
 
   const state: GameState = {
     schemaVersion: 1,
-    rulesVersion: "1.0.2",
+    rulesVersion: "1.0.4",
     gameId: input.gameId,
     revision: 0,
     eventSequence: 0,

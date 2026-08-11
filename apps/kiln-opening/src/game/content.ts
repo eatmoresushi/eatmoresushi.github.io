@@ -22,7 +22,7 @@ import type {
 } from "./types.ts";
 
 interface GameConfigDefinition {
-  rulesVersion: "1.0.2";
+  rulesVersion: "1.0.4";
   players: { min: number; max: number };
   rounds: number;
   startingResources: { clay: number; wood: number; coins: number };
@@ -57,6 +57,11 @@ interface GameConfigDefinition {
 interface LocationDefinition {
   id: LocationId;
   name: string;
+  nameZh: string;
+  apprentice: string;
+  apprenticeZh: string;
+  shifu: string;
+  shifuZh: string;
   capacity: Record<"2" | "3" | "4", number>;
 }
 
@@ -95,11 +100,12 @@ export interface TechniqueDefinition {
   nameZh: string;
   cost: number;
   ability: string;
+  abilityZh: string;
   oncePerRound: boolean;
 }
 
 interface FiringDefinition {
-  rulesVersion: "1.0.2";
+  rulesVersion: "1.0.4";
   kilnSpaces: Array<{ id: KilnSpaceId; zone: "high" | "middle" | "low"; modifier: -1 | 0 | 1 }>;
   fireDeck: FireModifier[];
 }
@@ -114,12 +120,14 @@ export interface KilnDefinition {
   name: string;
   nameZh: string;
   abilityName: string;
+  abilityNameZh: string;
   ability: string;
+  abilityZh: string;
 }
 
 export const GAME_CONFIG = gameConfigJson as unknown as GameConfigDefinition;
 const ACTION_LOCATION_FILE = actionLocationsJson as unknown as {
-  rulesVersion: "1.0.2";
+  rulesVersion: "1.0.4";
   locations: LocationDefinition[];
 };
 const ORDER_FILE = ordersJson as unknown as {
@@ -129,7 +137,7 @@ const ORDER_FILE = ordersJson as unknown as {
 const TECHNIQUE_FILE = techniquesJson as unknown as TechniqueDefinition[];
 const FIRING_FILE = firingJson as unknown as FiringDefinition;
 const COMPONENT_FILE = componentsJson as unknown as {
-  rulesVersion: "1.0.2";
+  rulesVersion: "1.0.4";
   components: ComponentDefinition[];
 };
 
@@ -175,18 +183,26 @@ export const SHAPE_COSTS = GAME_CONFIG.shapes;
 export const DECORATION_COSTS = GAME_CONFIG.decorations;
 
 export interface ImperialProgressDefinition {
-  rulesVersion: "1.0.2";
-  track: Array<{ space: number; title: string; reward: string | null; endGameVp: number }>;
+  rulesVersion: "1.0.4";
+  track: Array<{
+    space: number;
+    title: string;
+    titleZh: string;
+    reward: string | null;
+    rewardZh: string | null;
+    endGameVp: number;
+  }>;
   imperialSealVp: number;
-  presentation: {
-    eligibleSpaces: number[];
-    maxCeramics: number;
+  stipends: Record<"2" | "4", number>;
+  exhibition: {
+    capacityByProgress: [number, number, number, number, number, number];
+    diversityEligibleSpaces: number[];
     minimumQuality: Quality;
     qualityVp: Record<"standard" | "fine" | "masterpiece", number>;
     threeDifferentShapesBonus: number;
     threeDifferentGlazesBonus: number;
     flawedEligible: boolean;
-    emptyPresentationPenalty: number;
+    emptyExhibitionPenalty: number;
   };
 }
 
@@ -216,11 +232,11 @@ export const COMMON_SUPPLY = {
 
 function validateContent(): void {
   if (
-    GAME_CONFIG.rulesVersion !== "1.0.2" ||
-    ACTION_LOCATION_FILE.rulesVersion !== "1.0.2" ||
-    FIRING_FILE.rulesVersion !== "1.0.2" ||
-    COMPONENT_FILE.rulesVersion !== "1.0.2" ||
-    IMPERIAL_PROGRESS.rulesVersion !== "1.0.2"
+    GAME_CONFIG.rulesVersion !== "1.0.4" ||
+    ACTION_LOCATION_FILE.rulesVersion !== "1.0.4" ||
+    FIRING_FILE.rulesVersion !== "1.0.4" ||
+    COMPONENT_FILE.rulesVersion !== "1.0.4" ||
+    IMPERIAL_PROGRESS.rulesVersion !== "1.0.4"
   ) {
     throw new Error("Rules content version mismatch");
   }

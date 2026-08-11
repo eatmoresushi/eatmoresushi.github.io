@@ -23,6 +23,7 @@ function projectPlayer(state: GameState, playerId: PlayerId): PublicPlayerState 
     completedOrders: clone(player.completedOrders),
     techniques: clone(player.techniques),
     imperialProgress: player.imperialProgress,
+    imperialStipendsReceived: [...(player.imperialStipendsReceived ?? [])],
     passedWorkPhase: player.passedWorkPhase,
     pendingApprenticeUnlocks: player.pendingApprenticeUnlocks,
     kilnAbilityUsedThisRound: player.kilnAbilityUsedThisRound,
@@ -121,6 +122,8 @@ export function projectPublicEvent(event: GameEvent): PublicGameEvent {
     case "COURT_PATRONAGE_USED":
     case "IMPERIAL_SEAL_CLAIMED":
     case "APPRENTICE_UNLOCKED":
+    case "IMPERIAL_STIPEND_RECEIVED":
+    case "ORDER_DISPLAYS_ROTATED":
     case "ROUND_STARTED":
     case "PRESENTATION_SUBMITTED":
     case "FINAL_SCORE_CALCULATED":

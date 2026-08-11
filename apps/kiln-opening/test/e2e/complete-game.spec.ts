@@ -77,7 +77,7 @@ test("starting Orders remain visible after an eligible redraw advances directly 
     await expect(host.getByRole("heading", { name: "Your first commission" })).toBeVisible();
     await expect(host.getByRole("region", { name: "Workshop Orders" })).toContainText("M23");
     await expect(host.locator(".player-board.is-own")).toContainText("4 available workers · 2 locked");
-    await expect(host.locator(".site-footer")).toContainText("Kiln Opening V1.0.2");
+    await expect(host.locator(".site-footer")).toContainText("Kiln Opening V1.0.4");
 
     await host.getByRole("button", { name: "Redraw" }).click();
     await expect(host.getByTestId("phase-name")).toHaveText("Work Phase");
@@ -89,7 +89,7 @@ test("starting Orders remain visible after an eligible redraw advances directly 
       await expect(progress.locator('[data-progress-space="0"] .progress-marker')).toHaveCount(2);
       await expect(progress).toContainText("Prefectural Recommendation");
       await expect(progress).toContainText("Awaiting Audience");
-      await expect(progress).toContainText("Presentation eligible");
+      await expect(progress).toContainText("Exhibition capacity 3");
       await expect(progress).toContainText("Single-ceramic Imperial Orders advance 1 space; multi-ceramic Imperial Orders advance 2");
       await expect(progress.getByTestId("imperial-seal-owner")).toHaveText("Imperial Seal · Unclaimed · 2 VP");
       const orders = page.getByRole("region", { name: "Workshop Orders" });
@@ -282,7 +282,7 @@ test("two workshops complete a firing, Order, reconnect, and five-round game", a
     await hostKilnYard.getByLabel("First kiln space").selectOption("middle_1");
     await hostKilnYard.getByRole("button", { name: "Load kiln" }).click();
 
-    // V1.0.2 retains four initially usable workers; both may pass the last one.
+    // V1.0.4 retains four initially usable workers; both may pass the last one.
     await guest.getByRole("button", { name: "Pass for this round" }).click();
     await host.getByRole("button", { name: "Pass for this round" }).click();
 
@@ -304,8 +304,11 @@ test("two workshops complete a firing, Order, reconnect, and five-round game", a
       await expect(firingResult).toContainText("Base + Fire");
     }
     await expect(guest.getByText("Reconnected to the latest authoritative state.")).toHaveCount(0);
+    const revisionBeforeReconnect = await guest.getByTestId("revision").textContent();
     await guest.getByRole("button", { name: "Reconnect" }).click();
-    await expect(guest.getByText("Reconnected to the latest authoritative state.")).toBeVisible();
+    await expect(guest.getByText("Reconnected to the latest authoritative state.")).toHaveCount(0);
+    await expect(guest.getByTestId("revision")).toHaveText(revisionBeforeReconnect ?? "");
+    await expect(guest.getByTestId("phase-name")).toHaveText("Order Phase");
 
     const completion = guest.locator(".completion-card").filter({ hasText: "M09" });
     await completion.getByRole("checkbox").first().check();
@@ -334,7 +337,7 @@ test("two workshops complete a firing, Order, reconnect, and five-round game", a
     await expect(host.locator(".score-table")).toContainText("Ren");
     await expect(host.locator(".score-table")).toContainText("Imperial Progress");
     await expect(host.locator(".score-table")).toContainText("Imperial Seal");
-    await expect(host.locator(".score-table")).toContainText("Presentation");
+    await expect(host.locator(".score-table")).toContainText("End-game Exhibition");
   } finally {
     await close();
   }
@@ -362,4 +365,14 @@ async function finishEmptyRound(first: Page, second: Page): Promise<void> {
   await second.getByRole("button", { name: "Pass for this round" }).click();
   await first.getByRole("button", { name: "End Order turn" }).click();
   await second.getByRole("button", { name: "End Order turn" }).click();
+  await expect(first.getByTestId("phase-name")).not.toHaveText("Order Phase");
+  if (await first.getByTestId("phase-name").textContent() === "End-game Exhibition") {
+    await expect(second.getByTestId("phase-name")).toHaveText("End-game Exhibition");
+    await first.getByRole("button", { name: "Submit Exhibition" }).click();
+    await expect(first.getByRole("heading", { name: "Exhibition submitted" })).toBeVisible();
+    await expect(second.getByText("1/2 Exhibition selections submitted")).toBeVisible();
+    await second.getByRole("button", { name: "Submit Exhibition" }).click();
+    await expect(first.getByTestId("phase-name")).toHaveText("Final results");
+    await expect(second.getByTestId("phase-name")).toHaveText("Final results");
+  }
 }

@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.0.2",
+  "rulesVersion": "1.0.4",
   "orderCards": {
     "status": "REGENERATE_FROM_DATA",
     "source": "data/orders.json",
@@ -54,18 +54,18 @@
     "status": "REGENERATE_FROM_DATA",
     "source": "data/firing.json",
     "distribution": {
-      "-2": 5,
+      "-2": 4,
       "-1": 3,
-      "0": 4,
+      "0": 6,
       "1": 3,
-      "2": 5
+      "2": 4
     },
     "totalCards": 20
   },
   "craftTechniques": {
     "status": "GENERATE_FROM_data/techniques.json",
     "total": 15,
-    "note": "Use exact English and Chinese names from JSON; descriptions in English."
+    "note": "Use exact English and Chinese names and descriptions from JSON."
   },
   "playerReference": {
     "status": "GENERATE_FROM_CURRENT_RULES",

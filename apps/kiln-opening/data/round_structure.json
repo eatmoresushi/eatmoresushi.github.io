@@ -1,12 +1,12 @@
 {
-  "rulesVersion": "1.0.2",
+  "rulesVersion": "1.0.4",
   "roundCount": 5,
   "phases": [
     {
       "order": 1,
       "id": "start",
       "name": "Start of Round",
-      "summary": "Refill displays, ready Techniques, and reset once-per-round Kiln abilities."
+      "summary": "In Rounds 2-5, rotate the two leftmost Market and Imperial Orders; refill displays, ready Techniques, and reset once-per-round Kiln abilities."
     },
     {
       "order": 2,
@@ -30,7 +30,7 @@
       "order": 5,
       "id": "cleanup",
       "name": "Cleanup",
-      "summary": "Return workers, unlock Apprentices, cycle Orders, pass First Player and advance Round."
+      "summary": "Return workers, unlock Apprentices, pass First Player and advance Round."
     }
   ]
 }

@@ -1,50 +1,73 @@
 {
-  "rulesVersion": "1.0.2",
+  "rulesVersion": "1.0.4",
   "track": [
     {
       "space": 0,
       "title": "Local Workshop",
+      "titleZh": "地方作坊",
       "reward": null,
+      "rewardZh": null,
       "endGameVp": 0
     },
     {
       "space": 1,
       "title": "Local Renown",
+      "titleZh": "地方声望",
       "reward": "Unlock 1 Apprentice during Cleanup.",
+      "rewardZh": "在清理阶段解锁1名学徒。",
       "endGameVp": 0
     },
     {
       "space": 2,
       "title": "Prefectural Recommendation",
-      "reward": null,
+      "titleZh": "州府举荐",
+      "reward": "Gain 2 Coins immediately.",
+      "rewardZh": "立即获得2铜钱。",
       "endGameVp": 2
     },
     {
       "space": 3,
       "title": "Court Examination",
+      "titleZh": "入朝考核",
       "reward": "Unlock 1 Apprentice during Cleanup.",
+      "rewardZh": "在清理阶段解锁1名学徒。",
       "endGameVp": 2
     },
     {
       "space": 4,
       "title": "Awaiting Audience",
-      "reward": "Eligible for Imperial Presentation.",
+      "titleZh": "候见天听",
+      "reward": "Gain 3 Coins immediately; full End-game Exhibition access.",
+      "rewardZh": "立即获得3铜钱；终局展陈容量提升至3件，并可获得多样性奖励。",
       "endGameVp": 4
     },
     {
       "space": 5,
       "title": "Imperial Audience",
-      "reward": "Take the Imperial Seal if available; eligible for Imperial Presentation.",
+      "titleZh": "御前召见",
+      "reward": "Take the Imperial Seal if available; full End-game Exhibition access.",
+      "rewardZh": "若御印尚未被领取，则获得御印；终局展陈容量为3件，并可获得多样性奖励。",
       "endGameVp": 8
     }
   ],
   "imperialSealVp": 2,
-  "presentation": {
-    "eligibleSpaces": [
+  "stipends": {
+    "2": 2,
+    "4": 3
+  },
+  "exhibition": {
+    "capacityByProgress": [
+      1,
+      1,
+      2,
+      2,
+      3,
+      3
+    ],
+    "diversityEligibleSpaces": [
       4,
       5
     ],
-    "maxCeramics": 3,
     "minimumQuality": "standard",
     "qualityVp": {
       "standard": 1,
@@ -54,6 +77,6 @@
     "threeDifferentShapesBonus": 2,
     "threeDifferentGlazesBonus": 2,
     "flawedEligible": false,
-    "emptyPresentationPenalty": 0
+    "emptyExhibitionPenalty": 0
   }
 }

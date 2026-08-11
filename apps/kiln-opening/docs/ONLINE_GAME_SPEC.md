@@ -47,7 +47,7 @@ Host starts only with 2–4 players.
 
 The host may add or remove computer seats while the room is in the lobby. A room must retain at least one human seat and may contain up to three computer players, for the normal four-seat maximum.
 
-Computer seats use the frozen `selfplay-003` policy with V1.0.2-compatible hand-authored priors and no live exploration or learning. Each seat has a private persistent seed and stable player/seat identity. The browser never chooses an AI command: an authenticated client only asks the Edge Function to advance, and the server derives the active computer, enumerates legal commands, applies the selected command through the authoritative engine, and commits it with the same revision checks as a human command.
+Computer seats use the frozen `selfplay-003` policy, originally calibrated under V1.0.2 and run through the current V1.0.4 authoritative engine, with no live exploration or learning. Each seat has a private persistent seed and stable player/seat identity. The browser never chooses an AI command: an authenticated client only asks the Edge Function to advance, and the server derives the active computer, enumerates legal commands, applies the selected command through the authoritative engine, and commits it with the same revision checks as a human command.
 
 Consecutive computer turns run in bounded batches so an Edge Function invocation cannot monopolize the session. Concurrent advance requests are safe; compare-and-swap persistence accepts each revision only once. Wood Contributions remain private in the server-only schema until the normal simultaneous reveal, including when computers contribute.
 
@@ -55,7 +55,7 @@ Consecutive computer turns run in bounded batches so an Edge Function invocation
 
 - random First Player;
 - reverse-order Kiln selection;
-- starting Market Order is dealt directly to that player's Order area and is public immediately, because Orders are open information in V1.0.2;
+- starting Market Order is dealt directly to that player's Order area and is public immediately, because Orders are open information in V1.0.4;
 - game begins Round 1.
 
 ## Synchronous turn model
@@ -149,11 +149,11 @@ Not required for MVP. Voice/chat can be external.
 
 ## Imperial Progress synchronization
 
-Imperial Progress is server-authoritative and public. Every public snapshot and reconnect response includes each player's current space, pending Apprentice unlocks, current worker availability, and the global Imperial Seal owner.
+Imperial Progress is server-authoritative and public. Every public snapshot and reconnect response includes each player's current space, pending Apprentice unlocks, one-time stipends already received, current worker availability, current Exhibition capacity, and the global Imperial Seal owner.
 
-Completing a Market Order never advances Imperial Progress. A single-ceramic Imperial Order advances 1 space and a multi-ceramic Imperial Order advances 2 spaces, up to space 5, even when several are completed in one round. The server checks every crossed milestone: spaces 1 and 3 each queue one Apprentice for unlock during Cleanup, and the first player to reach or cross into space 5 takes the 2-VP Imperial Seal permanently.
+Completing a Market Order never advances Imperial Progress. A single-ceramic Imperial Order advances 1 space and a multi-ceramic Imperial Order advances 2 spaces, up to space 5, even when several are completed in one round. The server checks every crossed milestone: spaces 1 and 3 each queue one Apprentice for unlock during Cleanup; reaching or crossing space 2 grants a one-time 2-Coin stipend; reaching or crossing space 4 grants a one-time 3-Coin stipend; and the first player to reach or cross into space 5 takes the 2-VP Imperial Seal permanently.
 
-The client renders the full six-space track, prints each Imperial card's +1/+2 reward, and uses committed server events containing the original space, final space, and printed reward for advancement, unlock, Presentation-eligibility, and Seal feedback. It must not predict or apply any of those transitions locally.
+The client renders the full six-space track, prints each Imperial card's +1/+2 reward, and uses committed server events containing the original space, final space, printed reward, and crossed milestones for advancement, Apprentice-unlock, Exhibition-capacity, stipend, and Seal feedback. It must not predict or apply any of those transitions locally.
 
 Completed Order history is persisted and public. Court Patronage eligibility is derived from that authoritative history, never inferred from current Progress. Blind deck tops remain absent from public projections; only the chosen deck and revealed Order are published after the committed draw resolves.
 
@@ -166,9 +166,15 @@ Results screen shows VP breakdown by:
 - Orders;
 - Imperial Progress;
 - Imperial Seal;
-- Presentation;
+- Imperial Exhibition;
 - immediate ability VP;
 - leftover Coins.
+
+Every player may submit Finished ceramics to the end-game Imperial Exhibition. Capacity is determined by final Imperial Progress: 1/1/2/2/3/3 ceramics at spaces 0–5. Submitted Flawed, Standard, Fine, and Masterpiece ceramics score 0/1/2/4 VP respectively. Only players at spaces 4 or 5 add the printed glaze/decoration diversity bonuses.
+
+## Localization
+
+English is the default language. An always-available `EN / 中文` control switches the normal home, lobby, game, rules-facing labels, cards, rule errors, and results UI between English and Simplified Chinese. The preference is stored locally in the browser and is presentation-only: changing it never sends a game command, replaces authoritative state, or alters reconnect credentials. Both languages render the same stable Order, Technique, Kiln, location, and event IDs.
 
 ## Playtest telemetry
 

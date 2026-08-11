@@ -28,19 +28,31 @@ test("simple playtest UI exposes state and places an Apprentice through authorit
     for (const page of [host, guest]) {
       await expect(page.getByTestId("playtest-ui")).toBeVisible();
       await expect(page.getByTestId("tabletop-scene")).toHaveCount(0);
-      await expect(page.getByText("V1.0.2", { exact: true }).first()).toBeVisible();
+      await expect(page.getByText("V1.0.4", { exact: true }).first()).toBeVisible();
       await expect(page.getByRole("region", { name: "Player Workshops" })).toBeVisible();
       await expect(page.getByRole("region", { name: "Worker Placement" })).toBeVisible();
       await expect(page.getByRole("region", { name: "Kiln Spaces" })).toBeVisible();
       await expect(page.getByRole("region", { name: "Firing Inspector" })).toBeVisible();
       await expect(page.getByRole("region", { name: "Orders", exact: true })).toContainText("Market display (4)");
-      await expect(page.getByRole("region", { name: "Orders", exact: true })).toContainText("Imperial display (3)");
+      await expect(page.getByRole("region", { name: "Orders", exact: true })).toContainText("Imperial display (4)");
       await expect(page.getByRole("region", { name: "Face-up Techniques" }).locator(".technique-tile")).toHaveCount(6);
       await expect(page.getByRole("region", { name: "Game Log" })).toBeVisible();
-      await expect(page.getByRole("region", { name: "Playtest Debug" })).toContainText("-2: 5 · -1: 3 · 0: 4 · +1: 3 · +2: 5");
+      await expect(page.getByRole("region", { name: "Playtest Debug" })).toContainText("-2: 4 · -1: 3 · 0: 6 · +1: 3 · +2: 4");
       await expect(page.locator('[data-space="middle_3"]')).toContainText("No — covered");
       await expect(page.locator('[data-space="low_3"]')).toContainText("No — covered");
     }
+
+    const phaseBeforeLanguageChange = await host.getByTestId("phase-name").textContent();
+    const revisionBeforeLanguageChange = await host.getByTestId("revision").textContent();
+    await host.getByRole("button", { name: "中文" }).click();
+    await expect(host.getByRole("region", { name: "玩家作坊" })).toBeVisible();
+    await expect(host.getByRole("region", { name: "御用进度" })).toContainText("终局展陈");
+    await expect(host.getByRole("complementary", { name: "游戏操作" })).toContainText("其他作坊正在决策");
+    await expect(host.getByTestId("phase-name")).toHaveText("工作阶段");
+    await expect(host.getByTestId("revision")).toHaveText(revisionBeforeLanguageChange ?? "");
+    expect(await host.evaluate(() => localStorage.getItem("kiln-opening:language"))).toBe("zh-CN");
+    await host.getByRole("button", { name: "EN" }).click();
+    await expect(host.getByTestId("phase-name")).toHaveText(phaseBeforeLanguageChange ?? "Work Phase");
 
     const materials = guest.locator("details").filter({ hasText: "Materials Yard" });
     await materials.getByLabel("Worker").selectOption({ index: 1 });

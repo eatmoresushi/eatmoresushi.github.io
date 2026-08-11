@@ -131,6 +131,25 @@ describe("Imperial Progress advancement and delayed Apprentices", () => {
     }));
   });
 
+  it("awards the Progress 2 and 4 stipends once, including milestone jumps", () => {
+    const { state, rng } = startedGame(2, 779);
+    const actorId = state.firstPlayerId;
+    setOrderPhase(state);
+    const startingCoins = state.players[actorId]!.resources.coins;
+    let next = completeImperial(state, actorId, "I06", rng);
+    expect(next.players[actorId]!.imperialProgress).toBe(2);
+    expect(next.players[actorId]!.resources.coins).toBe(startingCoins + 2);
+    expect(next.players[actorId]!.imperialStipendsReceived).toEqual([2]);
+    next = completeImperial(next, actorId, "I07", rng);
+    expect(next.players[actorId]!.imperialProgress).toBe(4);
+    expect(next.players[actorId]!.resources.coins).toBe(startingCoins + 5);
+    expect(next.players[actorId]!.imperialStipendsReceived).toEqual([2, 4]);
+    next.players[actorId]!.imperialProgress = 1;
+    next = completeImperial(next, actorId, "I01", rng);
+    expect(next.players[actorId]!.resources.coins).toBe(startingCoins + 5);
+    expect(next.players[actorId]!.imperialStipendsReceived).toEqual([2, 4]);
+  });
+
   it("starts every player at 0 with three available and two locked Apprentices", () => {
     const { state } = startedGame(4, 810);
     for (const player of Object.values(state.players)) {
@@ -253,6 +272,7 @@ describe("Imperial Seal", () => {
 function presentedScore(qualities: Quality[], distinctShapes: boolean, distinctGlazes: boolean): number {
   const { state } = startedGame(2, 830 + qualities.length + Number(distinctShapes) + Number(distinctGlazes));
   const actorId = state.firstPlayerId;
+  state.players[actorId]!.imperialProgress = 4;
   const shapes = distinctShapes ? ["bowl", "plate", "vase"] as const : ["bowl", "bowl", "bowl"] as const;
   const glazes = distinctGlazes ? ["white", "celadon", "moon_white"] as const : ["white", "white", "white"] as const;
   const ids = qualities.map((quality, index) => {
@@ -265,26 +285,24 @@ function presentedScore(qualities: Quality[], distinctShapes: boolean, distinctG
   return calculateFinalResult(state).scores[actorId]!.presentation;
 }
 
-describe("Imperial Presentation and final Imperial scoring", () => {
-  it("rejects Progress 3 while Progress 4 and 5 are eligible", () => {
-    const below = startedGame(2, 840);
-    const [belowId, eligibleId] = below.state.playerOrder as [PlayerId, PlayerId];
-    below.state.players[belowId]!.imperialProgress = 3;
-    below.state.players[eligibleId]!.imperialProgress = 4;
-    below.state.phase = { type: "presentation", eligiblePlayerIds: [eligibleId], submittedPlayerIds: [] };
-    expectError(
-      applyAction(below.state, belowId, { type: "SUBMIT_PRESENTATION", ceramicIds: [] }, below.rng),
-      "PRESENTATION_NOT_ELIGIBLE",
-    );
-
-    for (const [progress, seed] of [[4, 841], [5, 842]] as const) {
-      const game = startedGame(2, seed);
+describe("End-game Exhibition and final Imperial scoring", () => {
+  it.each([
+    [0, 1], [1, 1], [2, 2], [3, 2], [4, 3], [5, 3],
+  ] as const)("allows Progress %s to exhibit up to %s ceramics", (progress, capacity) => {
+      const game = startedGame(2, 840 + progress);
       const actorId = game.state.firstPlayerId;
       game.state.phase = { type: "presentation", eligiblePlayerIds: [actorId], submittedPlayerIds: [] };
       game.state.players[actorId]!.imperialProgress = progress;
-      const next = mustApply(game.state, actorId, { type: "SUBMIT_PRESENTATION", ceramicIds: [] }, game.rng);
+      const ids = Array.from({ length: capacity + 1 }, (_, index) =>
+        addFinished(game.state, actorId, (["bowl", "plate", "vase", "washer"] as const)[index]!, "standard").id,
+      );
+      expectError(
+        applyAction(game.state, actorId, { type: "SUBMIT_PRESENTATION", ceramicIds: ids }, game.rng),
+        "INVALID_SELECTION",
+      );
+      const next = mustApply(game.state, actorId, { type: "SUBMIT_PRESENTATION", ceramicIds: ids.slice(0, capacity) }, game.rng);
       expect(next.phase.type).toBe("finished");
-    }
+      expect(next.players[actorId]!.presentationCeramicIds).toHaveLength(capacity);
   });
 
   it("rejects Flawed and delivered ceramics", () => {

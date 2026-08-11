@@ -674,7 +674,7 @@ describe("Imperial Progress persistence and realtime", () => {
         roomCode: connection.room.code,
         seatToken: connection.seatToken,
       }));
-      expect(reconnected.game?.players[actorId]?.resources.coins).toBe(3);
+      expect(reconnected.game?.players[actorId]?.resources.coins).toBe(5);
       expect(reconnected.game?.players[actorId]?.imperialProgress).toBe(2);
       expect(reconnected.game?.players[actorId]?.completedOrders).toContainEqual(
         expect.objectContaining({ orderId: "I01" }),

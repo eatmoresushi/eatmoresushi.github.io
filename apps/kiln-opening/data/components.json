@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.0.2",
+  "rulesVersion": "1.0.4",
   "components": [
     {
       "name": "Central Action Board",
@@ -62,7 +62,7 @@
     {
       "name": "Fire Cards",
       "qty": 20,
-      "notes": "5 at -2, 3 at -1, 4 at 0, 3 at +1 and 5 at +2."
+      "notes": "4 at -2, 3 at -1, 6 at 0, 3 at +1 and 4 at +2."
     },
     {
       "name": "Wood Contribution Cards",

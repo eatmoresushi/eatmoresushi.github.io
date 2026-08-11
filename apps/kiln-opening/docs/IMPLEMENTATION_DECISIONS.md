@@ -1,6 +1,6 @@
 # IMPLEMENTATION_DECISIONS.md
 
-These are the intended digital interpretations of current V1.0.2 wording.
+These are the intended digital interpretations of current V1.0.4 wording.
 
 ## Orders
 
@@ -105,13 +105,13 @@ Ru checks final produced ceramic state after all Quality-changing effects.
 
 If Ge changed a ceramic's Decoration from Plain to Crackle, it no longer satisfies Ru via Plain.
 
-## Presentation
+## End-game Exhibition
 
 Flawed is not eligible.
 
-No negative VP for zero presentation.
+No negative VP for an empty Exhibition.
 
-Presentation ceramics remain separate from Order-delivered ceramics.
+Exhibition ceramics remain separate from Order-delivered ceramics. Internal serialized field and action names retain the legacy word `presentation` for replay compatibility; all player-facing text uses End-game Exhibition / 终局展陈.
 
 ## Round 5 Cleanup
 
@@ -119,7 +119,7 @@ Perform Cleanup as written before final scoring even though Order cycling/First 
 
 ## Imperial Progress
 
-Each completed single-ceramic Imperial Order advances its owner one space; each multi-ceramic Imperial Order advances two spaces. Repeated completions in the same round remain legal. Progress advancement resolves immediately and sequentially, and the engine checks every crossed milestone so a two-space jump cannot skip the Apprentice rewards at 1/3, Presentation eligibility at 4, or the Imperial Audience and Seal at 5. Progress remains capped at 5. No per-round advancement flag is stored.
+Each completed single-ceramic Imperial Order advances its owner one space; each multi-ceramic Imperial Order advances two spaces. Repeated completions in the same round remain legal. Progress advancement resolves immediately and sequentially, and the engine checks every crossed milestone so a two-space jump cannot skip Apprentice rewards at 1/3, one-time Coin stipends at 2/4, Exhibition-capacity changes, or the Imperial Audience and Seal at 5. Progress remains capped at 5. No per-round advancement flag is stored.
 
 Court Patronage reuses the milestone resolver but is validated only from spaces 0–3 and never invokes Seal claiming. Its permanent eligibility gate is derived from `completedOrders` entries whose stable Order ID begins with `I`; holdings and Market completions do not qualify.
 
@@ -131,4 +131,4 @@ If Shifu refreshes a face-up tile while no other tile exists in that discipline 
 
 ## Saved-game compatibility
 
-V1.0.2 does not add a duplicate Patronage-unlock flag: authoritative `completedOrders` history already persists and reconnects, so eligibility is derived faithfully from Imperial Order IDs. Unstarted lobbies are migrated to V1.0.2. Started pre-V1.0.2 rooms are rejected with a clear incompatibility message because changed public displays, milestones, costs, and scoring cannot be translated without changing an active game.
+V1.0.4 does not add a duplicate Patronage-unlock flag: authoritative `completedOrders` history already persists and reconnects, so eligibility is derived faithfully from Imperial Order IDs. Per-player stipend milestones are stored explicitly so reconnect and multi-space jumps remain idempotent. Unstarted lobbies are migrated to V1.0.4. Started pre-V1.0.4 rooms are rejected with a clear incompatibility message because changed displays, decks, milestones, and scoring cannot be translated without changing an active game.

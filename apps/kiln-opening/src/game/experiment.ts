@@ -21,6 +21,7 @@ export interface ActiveImperialTrackRules {
   readonly trackVp: readonly [number, number, number, number, number, number];
   readonly apprenticeMilestoneSpaces: readonly [number, number];
   readonly presentationSpaces: readonly [number, number];
+  readonly exhibitionCapacityByProgress: readonly [1, 1, 2, 2, 3, 3];
   readonly imperialSealEnabled: true;
   readonly imperialSealVp: 2 | 3;
 }
@@ -30,6 +31,7 @@ export const OFFICIAL_IMPERIAL_TRACK_RULES = Object.freeze({
   trackVp: Object.freeze([0, 0, 2, 2, 4, 8]),
   apprenticeMilestoneSpaces: Object.freeze([1, 3]),
   presentationSpaces: Object.freeze([4, 5]),
+  exhibitionCapacityByProgress: Object.freeze([1, 1, 2, 2, 3, 3]),
   imperialSealEnabled: true,
   imperialSealVp: 2,
 } satisfies ActiveImperialTrackRules);
@@ -111,6 +113,7 @@ export function activeImperialTrackRules(
     trackVp: config.imperialProgressTrackVp,
     apprenticeMilestoneSpaces: config.apprenticeMilestoneSpaces,
     presentationSpaces: config.presentationSpaces,
+    exhibitionCapacityByProgress: Object.freeze([1, 1, 2, 2, 3, 3]),
     imperialSealEnabled: config.imperialSealEnabled,
     imperialSealVp: config.imperialSealVp,
   };

@@ -26,7 +26,7 @@ import type {
 } from "../game/index.ts";
 
 export type RoomStatus = "lobby" | "playing" | "finished" | "abandoned";
-export type StoredRulesVersion = "0.4" | "0.5" | "0.6.1" | "0.6.3" | "0.6.5" | "1.0.0" | "1.0.1" | "1.0.2";
+export type StoredRulesVersion = "0.4" | "0.5" | "0.6.1" | "0.6.3" | "0.6.5" | "1.0.0" | "1.0.1" | "1.0.2" | "1.0.4";
 
 export interface PublicRoom {
   id: string;
@@ -62,6 +62,7 @@ export interface PublicPlayerState {
   completedOrders: PlayerState["completedOrders"];
   techniques: PlayerState["techniques"];
   imperialProgress: 0 | 1 | 2 | 3 | 4 | 5;
+  imperialStipendsReceived: Array<2 | 4>;
   passedWorkPhase: boolean;
   pendingApprenticeUnlocks: number;
   kilnAbilityUsedThisRound: boolean;
@@ -90,7 +91,7 @@ export interface PublicDiscards {
 
 export interface PublicGameState {
   schemaVersion: 1;
-  rulesVersion: "1.0.2";
+  rulesVersion: "1.0.4";
   gameId: string;
   revision: number;
   eventSequence: number;

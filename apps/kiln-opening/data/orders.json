@@ -371,7 +371,7 @@
           "decoration": "impressed"
         }
       ],
-      "minQuality": "masterpiece",
+      "minQuality": "fine",
       "vp": 8,
       "coins": 0,
       "imperialProgressReward": 1
@@ -399,7 +399,7 @@
           "decoration": "impressed"
         }
       ],
-      "minQuality": "masterpiece",
+      "minQuality": "fine",
       "vp": 9,
       "coins": 0,
       "imperialProgressReward": 1
@@ -506,9 +506,14 @@
             0,
             1
           ]
+        },
+        {
+          "type": "at_least_n_quality",
+          "quality": "masterpiece",
+          "count": 1
         }
       ],
-      "minQuality": "masterpiece",
+      "minQuality": "fine",
       "vp": 13,
       "coins": 0,
       "imperialProgressReward": 2

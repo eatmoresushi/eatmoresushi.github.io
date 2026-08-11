@@ -32,4 +32,14 @@ describe("Imperial Order notifications", () => {
     expect(notice).toContain("Imperial Audience reached.");
     expect(notice).toContain("You claim the Imperial Seal");
   });
+
+  it("uses the authoritative stipend event amount in both languages", () => {
+    const result = resultWith([
+      { type: "ORDER_COMPLETED", playerId: "P1", orderId: "I06", ceramicIds: ["C1", "C2"] },
+      { type: "IMPERIAL_PROGRESS_ADVANCED", playerId: "P1", from: 0, to: 2, reward: 2 },
+      { type: "IMPERIAL_STIPEND_RECEIVED", playerId: "P1", space: 2, coins: 1 },
+    ], 2);
+    expect(imperialOrderNotice(result)).toContain("Court stipend +1 Coin");
+    expect(imperialOrderNotice(result, "zh-CN")).toContain("朝廷赏赐+1铜钱");
+  });
 });

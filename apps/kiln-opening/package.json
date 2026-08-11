@@ -1,6 +1,6 @@
 {
   "name": "kiln-opening-rules-engine",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,7 +11,26 @@
     "typecheck:edge": "tsc -p tsconfig.edge.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "selfplay:v101": "node --no-warnings --experimental-strip-types src/ai/runSelfPlayStudy.ts",
+    "selfplay:v101:002": "node --no-warnings --experimental-strip-types src/ai/runSelfPlayStudy.ts",
+    "selfplay:v101:003": "node --no-warnings --experimental-strip-types src/ai/runSelfPlayStudy.ts",
+    "selfplay:v101:004": "node --no-warnings --experimental-strip-types src/ai/runSelfPlay004Study.ts",
+    "selfplay:v101:004:quick": "node --no-warnings --experimental-strip-types src/ai/runSelfPlay004Study.ts --quick",
+    "selfplay:v101:005": "node --no-warnings --experimental-strip-types src/ai/runSelfPlay005Study.ts",
+    "selfplay:v101:005:quick": "node --no-warnings --experimental-strip-types src/ai/runSelfPlay005Study.ts --quick",
+    "selfplay:v102": "node --no-warnings --experimental-strip-types src/ai/runSelfPlayStudy.ts",
+    "selfplay:v102:003": "node --no-warnings --experimental-strip-types src/ai/runSelfPlayStudy.ts",
+    "selfplay:v102:004": "node --no-warnings --experimental-strip-types src/ai/runSelfPlay004Study.ts",
+    "selfplay:v102:004:quick": "node --no-warnings --experimental-strip-types src/ai/runSelfPlay004Study.ts --quick",
+    "selfplay:v102:005": "node --no-warnings --experimental-strip-types src/ai/runSelfPlay005Study.ts",
+    "selfplay:v102:005:quick": "node --no-warnings --experimental-strip-types src/ai/runSelfPlay005Study.ts --quick",
+    "selfplay:v102:006": "node --no-warnings --experimental-strip-types src/ai/runSelfPlay006Study.ts",
+    "selfplay:v102:006:quick": "node --no-warnings --experimental-strip-types src/ai/runSelfPlay006Study.ts --quick",
+    "selfplay:v102:smoke": "node --no-warnings --experimental-strip-types src/ai/runV102Smoke.ts",
+    "selfplay:v104:smoke": "node --no-warnings --experimental-strip-types src/ai/runV104Smoke.ts",
+    "experiment:jun-ab-001": "node --no-warnings --experimental-strip-types src/ai/runJunAbExperiment.ts",
+    "experiment:imperial-track-ab-001": "node --no-warnings --experimental-strip-types src/ai/runImperialTrackExperiment.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",

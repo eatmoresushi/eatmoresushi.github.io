@@ -34,6 +34,7 @@ Opponents may appear as compact workshop strips/cards around the top/side.
 - Kiln spaces show zone and modifier.
 - During firing, focus UI attention on kiln and contribution workflow.
 - Use clear timing banners: `Before Contributions`, `Reveal`, `Before Quality`, etc.
+- Keep an always-visible `EN / 中文` control. Switching language must preserve selections, reconnect identity, and authoritative game state.
 
 ## Session controls
 
@@ -76,10 +77,11 @@ The printable player-board art omits worker spaces for physical-table practicali
 The main table always shows the shared, public six-space Imperial Progress track from Local Workshop (0) through Imperial Audience (5).
 
 - Render every player's marker on their current space using both colour and a text label.
-- Show each space title, end-game VP, and its Apprentice, Presentation, or Imperial Seal reward where applicable.
+- Show each space title, end-game VP, Exhibition capacity, and its Coin-stipend or Imperial Seal reward where applicable.
 - Show available, locked, and pending-unlock worker counts on player summaries. Apprentice rewards at spaces 1 and 3 remain pending until Cleanup.
+- Show each player's one-time stipend status. Reaching/crossing space 2 grants 2 Coins; reaching/crossing space 4 grants 3 Coins.
 - Show the Imperial Seal owner globally, including an explicit `Unclaimed` state.
-- At spaces 4 and 5, identify the player as eligible for Imperial Presentation.
+- Every player is eligible for the end-game Imperial Exhibition. Show capacity 1/1/2/2/3/3 at spaces 0–5, and identify that only spaces 4 and 5 receive diversity bonuses.
 - Animate and log a server-committed Progress move from its original space to final space. A +2 move must visibly cross and announce intermediate milestone rewards rather than appearing to skip them.
 
 On narrow screens, keep the complete track in the document and make it horizontally scrollable. Do not remove spaces, markers, titles, rewards, or accessible labels to fit the viewport.

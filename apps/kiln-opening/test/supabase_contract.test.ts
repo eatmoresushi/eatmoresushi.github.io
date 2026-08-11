@@ -8,6 +8,7 @@ import v065Migration from "../supabase/migrations/202608090001_v065_rules.sql?ra
 import v100Migration from "../supabase/migrations/202608090002_v100_rules.sql?raw";
 import v101Migration from "../supabase/migrations/202608090003_v101_fire_deck.sql?raw";
 import v102Migration from "../supabase/migrations/202608100001_v102_rules.sql?raw";
+import v104Migration from "../supabase/migrations/202608110001_v104_rules.sql?raw";
 import onlineAiMigration from "../supabase/migrations/202608100002_online_ai_v003.sql?raw";
 import edgeFunction from "../supabase/functions/game-action/index.ts?raw";
 
@@ -59,7 +60,7 @@ describe("Supabase security contract", () => {
     expect(edgeFunction).toContain("seatToken");
   });
 
-  it("creates new rooms as V1.0.2 while preserving explicit legacy-room versioning", () => {
+  it("creates new rooms as V1.0.4 while preserving explicit legacy-room versioning", () => {
     expect(v05Migration).toContain("rules_version in ('0.4', '0.5')");
     expect(v061Migration).toContain("rules_version in ('0.4', '0.5', '0.6.1')");
     expect(v061Migration).toContain("where status = 'lobby'");
@@ -85,6 +86,10 @@ describe("Supabase security contract", () => {
     expect(v102Migration).toContain("where status = 'lobby'");
     expect(v102Migration).toContain("p_room_id, upper(p_code), 'lobby', p_seat_id, '1.0.2', '1.0.2', 0");
     expect(v102Migration).toContain("to service_role");
+    expect(v104Migration).toContain("rules_version in ('0.4', '0.5', '0.6.1', '0.6.3', '0.6.5', '1.0.0', '1.0.1', '1.0.2', '1.0.4')");
+    expect(v104Migration).toContain("where status = 'lobby'");
+    expect(v104Migration).toContain("p_room_id, upper(p_code), 'lobby', p_seat_id, '1.0.4', '1.0.4', 0");
+    expect(v104Migration).toContain("to service_role");
   });
 
   it("ends sessions through a host-only service RPC and rejects late game commands", () => {

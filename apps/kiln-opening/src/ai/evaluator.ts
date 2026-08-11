@@ -546,9 +546,17 @@ function scoreAction(
       return;
     case "USE_COURT_PATRONAGE": {
       const unlockValue = player.imperialProgress === 1 && observation.game.round < 5 ? 3.5 : 0;
-      const presentationValue = player.imperialProgress === 3 ? 8 + Math.min(3, plan.pipeline.finished) * 1.5 : 0;
-      const fallbackPenalty = !plan.imperialRoute.presentationReachable && player.imperialProgress < 3 && observation.game.round >= 4 ? -12 : 0;
-      factors.imperialValue += 3 + unlockValue + presentationValue + fallbackPenalty +
+      const nextProgress = Math.min(5, player.imperialProgress + 1);
+      const capacityGain = observation.imperialTrackRules.exhibitionCapacityByProgress[nextProgress]! -
+        observation.imperialTrackRules.exhibitionCapacityByProgress[player.imperialProgress]!;
+      const exhibitionValue = capacityGain * (3 + Math.min(3, plan.pipeline.finished) * 1.5);
+      const stipendValue = player.imperialProgress === 1 ? 2 * 0.35 : player.imperialProgress === 3 ? 3 * 0.35 : 0;
+      const trackVpGain = observation.imperialTrackRules.trackVp[nextProgress]! -
+        observation.imperialTrackRules.trackVp[player.imperialProgress]!;
+      const deadEndPenalty = observation.game.round >= 5 && capacityGain === 0 && stipendValue === 0 && trackVpGain === 0
+        ? -12
+        : 0;
+      factors.imperialValue += 3 + unlockValue + exhibitionValue + stipendValue + deadEndPenalty +
         intentBias(intent, "imperial") + imperialProgressRuleDelta(observation, 1);
       factors.resourceEfficiency -= 5 * marginalResourceValue(player.resources.coins, plan.resourceDemand.coins, 0);
       return;
@@ -726,10 +734,12 @@ function scoreAction(
         if (order.imperialProgressReward !== undefined) {
           factors.imperialValue += imperialProgressRuleDelta(observation, order.imperialProgressReward);
         }
-        const presentationThreshold = observation.imperialTrackRules.presentationSpaces[0];
-        if (player.imperialProgress < presentationThreshold && player.imperialProgress + progressReward >= presentationThreshold) {
-          factors.imperialValue += 4;
-        }
+        const targetProgress = Math.min(5, player.imperialProgress + progressReward) as 0 | 1 | 2 | 3 | 4 | 5;
+        const capacityGain = observation.imperialTrackRules.exhibitionCapacityByProgress[targetProgress] -
+          observation.imperialTrackRules.exhibitionCapacityByProgress[player.imperialProgress];
+        factors.imperialValue += capacityGain * 4;
+        if (player.imperialProgress < 2 && targetProgress >= 2) factors.imperialValue += 1.5;
+        if (player.imperialProgress < 4 && targetProgress >= 4) factors.imperialValue += 2;
       }
       factors.planProgress += 6;
       return;
@@ -742,10 +752,12 @@ function scoreAction(
         .map((id) => observation.game.ceramics[id])
         .filter((ceramic): ceramic is FinishedCeramic => ceramic?.stage === "finished");
       factors.immediateVP += selected.reduce((sum, ceramic) => sum + (
-        ceramic.quality === "flawed" ? 0 : IMPERIAL_PROGRESS.presentation.qualityVp[ceramic.quality]
+        ceramic.quality === "flawed" ? 0 : IMPERIAL_PROGRESS.exhibition.qualityVp[ceramic.quality]
       ), 0);
-      if (selected.length === 3 && new Set(selected.map(({ shape }) => shape)).size === 3) factors.immediateVP += 2;
-      if (selected.length === 3 && new Set(selected.map(({ glaze }) => glaze)).size === 3) factors.immediateVP += 2;
+      if (IMPERIAL_PROGRESS.exhibition.diversityEligibleSpaces.includes(player.imperialProgress)) {
+        if (selected.length === 3 && new Set(selected.map(({ shape }) => shape)).size === 3) factors.immediateVP += 2;
+        if (selected.length === 3 && new Set(selected.map(({ glaze }) => glaze)).size === 3) factors.immediateVP += 2;
+      }
       return;
     }
   }

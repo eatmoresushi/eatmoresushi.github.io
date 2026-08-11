@@ -1,6 +1,7 @@
 node_modules/
 dist/
 output/
+playtests/
 .env
 .env.local
 .DS_Store

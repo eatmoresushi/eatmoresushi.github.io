@@ -23,7 +23,7 @@ def check(cond, msg):
     if not cond: errors.append(msg)
 
 for versioned in [cfg, actions, firing, components, imperial, asset_specs, round_structure]:
-    check(versioned["rulesVersion"] == "1.0.2", "Rules version must be 1.0.2")
+    check(versioned["rulesVersion"] == "1.0.4", "Rules version must be 1.0.4")
 check(cfg["players"] == {"min":2,"max":4}, "Player count must be 2-4")
 check(cfg["rounds"] == 5, "Game must be 5 rounds")
 check(cfg["startingResources"] == {"clay":2,"wood":2,"coins":3}, "Starting resources mismatch")
@@ -42,7 +42,7 @@ expected_caps = {
  "guild_academy":{"2":1,"3":2,"4":3},
 }
 locs = {x["id"]:x for x in actions["locations"]}
-check(set(locs) == set(expected_caps), "Must have exactly the six V1.0.2 action locations")
+check(set(locs) == set(expected_caps), "Must have exactly the six V1.0.4 action locations")
 for k,v in expected_caps.items():
     check(locs.get(k,{}).get("capacity") == v, f"Capacity mismatch for {k}")
 check("reposition" not in locs["kiln_yard"]["shifu"].lower(), "Shifu Kiln action must not reposition")
@@ -56,7 +56,7 @@ check("blind-top" in office.get("shifu", "") and "Court Patronage" in office.get
 check("apprenticeOptions" not in office and "shifuOptions" not in office, "Office sale must not remain a standalone action option")
 check("printed Coin cost" in locs["guild_academy"].get("apprentice", ""), "Guild Apprentice must pay printed cost")
 check("1 Coin less" in locs["guild_academy"]["shifu"], "Guild Shifu must receive the exact discount")
-check(cfg["decorations"] == {"plain":1,"carved":2,"impressed":2,"crackle":2}, "V1.0.2 Decoration costs mismatch")
+check(cfg["decorations"] == {"plain":1,"carved":2,"impressed":2,"crackle":2}, "V1.0.4 Decoration costs mismatch")
 
 check(len(orders["market"]) == 23, "Expected 23 Market Orders")
 check(len(orders["imperial"]) == 13, "Expected 13 Imperial Orders")
@@ -77,6 +77,16 @@ check(key_orders["M12"]["ceramics"] == [{"glaze":"grey_green","decoration":"impr
 check(key_orders["M14"]["ceramics"] == [{"glaze":"moon_white","decoration":"impressed"}], "M14 attribute mismatch")
 check(key_orders["I02"]["ceramics"] == [{"shape":"washer","glaze":"celadon","decoration":"impressed"}], "I02 attribute mismatch")
 check(key_orders["I04"]["ceramics"] == [{"shape":"vase","glaze":"moon_white","decoration":"impressed"}], "I04 attribute mismatch")
+check(key_orders["I02"].get("minQuality") == "fine", "I02 must require Fine+")
+check(key_orders["I04"].get("minQuality") == "fine", "I04 must require Fine+")
+check(
+    key_orders["I09"].get("minQuality") == "fine"
+    and key_orders["I09"].get("relations") == [
+        {"type":"different_glaze", "indices":[0,1]},
+        {"type":"at_least_n_quality", "quality":"masterpiece", "count":1},
+    ],
+    "I09 must require two different Glazes, both Fine+, with at least one Masterpiece",
+)
 check({x["id"]:x.get("imperialProgressReward") for x in orders["imperial"]} == {
     **{f"I{i:02d}":1 for i in range(1,6)},
     **{f"I{i:02d}":2 for i in range(6,11)},
@@ -112,7 +122,8 @@ expected_technique_costs = {
  "T09":3, "T10":3, "T11":3, "T12":2,
  "T13":3, "T14":3, "T15":3, "T16":3,
 }
-check({t["id"]:t["cost"] for t in techs} == expected_technique_costs, "V1.0.2 Technique costs mismatch")
+check({t["id"]:t["cost"] for t in techs} == expected_technique_costs, "V1.0.4 Technique costs mismatch")
+check(all(t.get("nameZh") and t.get("abilityZh") for t in techs), "Every Technique needs official Simplified Chinese text")
 colour_samples = next(t for t in techs if t["id"] == "T08")
 check("before choosing your first Order" in colour_samples["ability"] and "either display" in colour_samples["ability"] and "bottom" in colour_samples["ability"], "T08 Colour Samples timing or target mismatch")
 connoisseur = next(t for t in techs if t["id"] == "T14")
@@ -120,6 +131,7 @@ check(connoisseur["cost"] == 3 and "5 Coins" in connoisseur["ability"] and "Cour
 
 check(len(kilns) == 5, "Expected 5 Kilns")
 check({k["id"] for k in kilns} == {"RU","GU","GE","DI","JU"}, "Kiln IDs mismatch")
+check(all(k.get("nameZh") and k.get("abilityNameZh") and k.get("abilityZh") for k in kilns), "Every Kiln needs official Simplified Chinese text")
 ge = next(k for k in kilns if k["id"] == "GE")
 check(
     "without paying the Crackle Decoration cost" in ge["ability"]
@@ -135,7 +147,7 @@ check(len(firing["kilnSpaces"]) == 8, "Shared Kiln must have 8 spaces")
 check(sum(1 for s in firing["kilnSpaces"] if s["zone"]=="high") == 2, "High zone must have 2 spaces")
 check(sum(1 for s in firing["kilnSpaces"] if s["zone"]=="middle") == 3, "Middle zone must have 3 spaces")
 check(sum(1 for s in firing["kilnSpaces"] if s["zone"]=="low") == 3, "Low zone must have 3 spaces")
-expected_fire_distribution = {-2:5, -1:3, 0:4, 1:3, 2:5}
+expected_fire_distribution = {-2:4, -1:3, 0:6, 1:3, 2:4}
 check(Counter(firing["fireDeck"]) == expected_fire_distribution, "Fire distribution mismatch")
 check(cfg["fireDeck"] == {str(value): count for value, count in expected_fire_distribution.items()}, "Game config Fire distribution mismatch")
 check(sum(firing["fireDeck"]) == 0, "Fire distribution must remain symmetric around 0")
@@ -154,13 +166,18 @@ check([x["title"] for x in imperial["track"]] == [
 check([x["endGameVp"] for x in imperial["track"]] == [0,0,2,2,4,8], "Imperial track VP mismatch")
 check("maxProgressPerRound" not in imperial, "Imperial progress must not have a per-round cap")
 check(imperial["imperialSealVp"] == 2, "Imperial Seal must be worth 2 VP")
-check(imperial["presentation"]["eligibleSpaces"] == [4,5], "Imperial Presentation eligibility must be spaces 4 and 5")
-check(imperial["presentation"]["maxCeramics"] == 3, "Imperial Presentation must allow at most 3 ceramics")
-check(imperial["presentation"]["qualityVp"] == {"standard":1,"fine":2,"masterpiece":4}, "Imperial Presentation Quality VP mismatch")
-check(imperial["presentation"]["threeDifferentShapesBonus"] == 2, "Imperial Presentation shape-diversity bonus mismatch")
-check(imperial["presentation"]["threeDifferentGlazesBonus"] == 2, "Imperial Presentation glaze-diversity bonus mismatch")
-check(imperial["presentation"]["flawedEligible"] is False, "Flawed must not be presentable")
-check(imperial["presentation"]["emptyPresentationPenalty"] == 0, "There must be no empty Presentation penalty")
+check(imperial["stipends"] == {"2":2,"4":3}, "Imperial stipends must award 2 Coins at space 2 and 3 Coins at space 4")
+exhibition = imperial["exhibition"]
+check(exhibition["capacityByProgress"] == [1,1,2,2,3,3], "End-game Exhibition capacity mismatch")
+check(exhibition["diversityEligibleSpaces"] == [4,5], "Exhibition diversity eligibility must be spaces 4 and 5")
+check(exhibition["minimumQuality"] == "standard", "Exhibition minimum Quality must be Standard")
+check(exhibition["qualityVp"] == {"standard":1,"fine":2,"masterpiece":4}, "Exhibition Quality VP mismatch")
+check(exhibition["threeDifferentShapesBonus"] == 2, "Exhibition shape-diversity bonus mismatch")
+check(exhibition["threeDifferentGlazesBonus"] == 2, "Exhibition glaze-diversity bonus mismatch")
+check(exhibition["flawedEligible"] is False, "Flawed ceramics must not be exhibited")
+check(exhibition["emptyExhibitionPenalty"] == 0, "There must be no empty Exhibition penalty")
+check(all(space.get("titleZh") for space in imperial["track"]), "Every Imperial Progress space needs official Simplified Chinese text")
+check(round_structure["phases"][0]["summary"].startswith("In Rounds 2-5, rotate the two leftmost Market and Imperial Orders"), "Round-start Order rotation mismatch")
 
 component_map = {c["name"]:c["qty"] for c in components["components"]}
 required_components = {
@@ -191,18 +208,20 @@ check(actual_assets == expected_assets, f"Runtime tabletop asset directory misma
 check("Progress Reminder Tokens" not in component_map, "Progress Reminder Tokens must be removed")
 
 if errors:
-    print("V1.0.2 HANDOFF VALIDATION FAILED")
+    print("V1.0.4 HANDOFF VALIDATION FAILED")
     for e in errors: print(" -", e)
     sys.exit(1)
 
-print("V1.0.2 HANDOFF VALIDATION PASSED")
+print("V1.0.4 HANDOFF VALIDATION PASSED")
 print("Rules/data: 2-4 players, 5 rounds, 6 locations, 1 Shifu + 3 starting Apprentices.")
 print("Office: face-up/blind Orders, pre-pick Colour Samples, and gated Shifu Court Patronage.")
 print("Academy: both workers; Shifu optional refresh and -1 Coin; capacity 1/2/3.")
-print("Decks: 23 Market Orders, 13 Imperial Orders, 15 Techniques, Fire -2/-1/0/+1/+2 = 5/3/4/3/5.")
+print("Decks: 23 Market Orders, 13 Imperial Orders, 15 Techniques, Fire -2/-1/0/+1/+2 = 4/3/6/3/4.")
 print("Kiln: 6/7/8 active spaces, contributor-scaled Base Heat, current Quality ladder.")
 print("Decorations: Plain 1 Coin; Carved, Impressed and Crackle 2 Coins.")
 print("Orders: named Glazes 4/4/4/4; Decorations Plain/Carved/Impressed/Crackle 3/3/4/3.")
-print("Imperial: 4-card displays; I01-I05/I11 +1; I06-I10/I12-I13 +2; crossed unlocks at 1/3 and 2-VP Seal at 5.")
-print("V1.0.2: Ru +3 VP; Jun costs 2 Coins; Connoisseur Network gains 5 Coins and 0 VP.")
-print("Assets: eight runtime tabletop atlases are present; live overlays carry V1.0.2 rule corrections.")
+print("Imperial: unlocks at 1/3; stipends at 2/4; Exhibition capacity 1/1/2/2/3/3; 2-VP Seal at 5.")
+print("V1.0.4: two-card display rotation; I02/I04 Fine+; I09 both Fine+ with one Masterpiece.")
+print("Retained: Ru +3 VP; Jun costs 2 Coins; Connoisseur Network gains 5 Coins and 0 VP.")
+print("Localization: structured Technique, Kiln, location and Progress terminology includes Simplified Chinese.")
+print("Assets: eight runtime tabletop atlases are present; live overlays carry V1.0.4 rule corrections.")

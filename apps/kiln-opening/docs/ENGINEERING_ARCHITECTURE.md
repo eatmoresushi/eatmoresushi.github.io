@@ -70,7 +70,7 @@ Sketch:
 interface GameState {
   version: number;
   gameId: string;
-  rulesVersion: "1.0.2";
+  rulesVersion: "1.0.4";
   status: "lobby" | "setup" | "playing" | "finished";
   playerOrder: PlayerId[];
   firstPlayerId: PlayerId;
@@ -125,7 +125,7 @@ type GameAction =
   | { type: "USE_GE"; ceramicId: CeramicId }
   | { type: "USE_SAGGAR"; ceramicId: CeramicId }
   | { type: "COMPLETE_ORDER"; orderId: OrderId; ceramicIds: CeramicId[] }
-  | { type: "CHOOSE_PRESENTATION"; ceramicIds: CeramicId[] };
+  | { type: "CHOOSE_EXHIBITION"; ceramicIds: CeramicId[] };
 ```
 
 Some actions are two-step UI interactions but should commit atomically when possible.

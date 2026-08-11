@@ -1,4 +1,5 @@
 export type PlayerId = string;
+export type RulesVersion = "1.0.4";
 export type WorkerId = string;
 export type CeramicId = string;
 export type VesselInstanceId = string;
@@ -77,6 +78,7 @@ export interface PlayerState {
   completedOrders: CompletedOrderState[];
   techniques: OwnedTechniqueState[];
   imperialProgress: 0 | 1 | 2 | 3 | 4 | 5;
+  imperialStipendsReceived: Array<2 | 4>;
   passedWorkPhase: boolean;
   pendingApprenticeUnlocks: number;
   kilnAbilityUsedThisRound: boolean;
@@ -198,7 +200,7 @@ export interface FiringContext {
 
 export interface FiringResultSummary {
   round: RoundNumber;
-  /** Present on V1.0.2 states produced after the firing-recap UI update. */
+  /** Present on states produced after the firing-recap UI update. */
   contributors?: PlayerId[];
   /** Revealed effective contributions, including any Fuel Ledger adjustment. */
   contributions?: Record<PlayerId, number>;
@@ -317,7 +319,7 @@ export type GamePhase =
 
 export interface GameState {
   schemaVersion: 1;
-  rulesVersion: "1.0.2";
+  rulesVersion: RulesVersion;
   gameId: string;
   revision: number;
   eventSequence: number;
@@ -546,7 +548,7 @@ export type GameEvent =
       type: "JUN_ACTIVATION_PAID";
       playerId: PlayerId;
       coins: 1 | 2;
-      rulesContext: "official_v1.0.2" | "historical_jun_cost_1_experiment";
+      rulesContext: "official_v1.0.4" | "historical_jun_cost_1_experiment";
     }
   | { type: "WORK_PHASE_ENDED" }
   | { type: "WOOD_SUBMITTED"; playerId: PlayerId; windowId: string }
@@ -588,6 +590,7 @@ export type GameEvent =
       capLoss?: number;
       apprenticeMilestonesTriggered?: number[];
       presentationMilestonesTriggered?: number[];
+      stipendMilestonesTriggered?: number[];
       sealMilestoneTriggered?: boolean;
       trackVpBefore?: number;
       trackVpAfter?: number;
@@ -602,6 +605,13 @@ export type GameEvent =
     }
   | { type: "IMPERIAL_SEAL_CLAIMED"; playerId: PlayerId; sealVp?: number }
   | { type: "APPRENTICE_UNLOCKED"; playerId: PlayerId; workerId: WorkerId }
+  | { type: "IMPERIAL_STIPEND_RECEIVED"; playerId: PlayerId; space: 2 | 4; coins: number }
+  | {
+      type: "ORDER_DISPLAYS_ROTATED";
+      round: 2 | 3 | 4 | 5;
+      marketOrderIds: OrderId[];
+      imperialOrderIds: OrderId[];
+    }
   | { type: "ROUND_STARTED"; round: RoundNumber; firstPlayerId: PlayerId }
   | { type: "PRESENTATION_SUBMITTED"; playerId: PlayerId; ceramicIds: CeramicId[] }
   | { type: "FINAL_SCORE_CALCULATED"; result: FinalResult };
