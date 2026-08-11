@@ -108,6 +108,7 @@ function PlayerPanel({
   const workers = Object.values(player.workers);
   const availableWorkers = workers.filter((worker) => worker.status === "available");
   const lockedWorkers = workers.filter((worker) => worker.status === "locked");
+  const imperialStipendsReceived = player.imperialStipendsReceived ?? [];
 
   return (
     <article className={`player-board ${own ? "is-own" : ""} ${deciding ? "is-active" : ""}`} data-player-id={player.id}>
@@ -126,8 +127,8 @@ function PlayerPanel({
         <div><dt>{t("Wood")}</dt><dd>{player.resources.wood}</dd></div>
         <div><dt>{t("Progress")}</dt><dd>{player.imperialProgress} / 5</dd></div>
         <div className="stipend-status"><dt>{t("Stipends")}</dt><dd>{locale === "zh-CN"
-          ? `进度2 ${player.imperialStipendsReceived.includes(2) ? "已领取" : "未触发"} · 进度4 ${player.imperialStipendsReceived.includes(4) ? "已领取" : "未触发"}`
-          : `Progress 2 ${player.imperialStipendsReceived.includes(2) ? "received" : "not reached"} · Progress 4 ${player.imperialStipendsReceived.includes(4) ? "received" : "not reached"}`}</dd></div>
+          ? `进度2 ${imperialStipendsReceived.includes(2) ? "已领取" : "未触发"} · 进度4 ${imperialStipendsReceived.includes(4) ? "已领取" : "未触发"}`
+          : `Progress 2 ${imperialStipendsReceived.includes(2) ? "received" : "not reached"} · Progress 4 ${imperialStipendsReceived.includes(4) ? "received" : "not reached"}`}</dd></div>
       </dl>
 
       <section className="plain-subsection">
