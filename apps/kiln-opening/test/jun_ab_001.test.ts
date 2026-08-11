@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -31,7 +32,11 @@ import {
 import type { AIDecisionContext, AIStrategyProfile } from "../src/ai/types";
 import { addLoaded, expectError, mustApply, startedGame } from "./helpers";
 
-const PROJECT_PATH = "/Users/luyuan/Documents/Kiln_Opening_Codex_Handoff_v0.4_Strict";
+const PROJECT_PATH = process.cwd();
+const FROZEN_PROFILE_PATH = join(PROJECT_PATH, "playtests/v1.0.1/selfplay-003/ai_strategy_v1.0.1.json");
+const PRIOR_PLAYTESTS_PATH = join(PROJECT_PATH, "playtests/v1.0.1");
+const HAS_LOCAL_FROZEN_PROFILE = process.env["CI"] !== "true" && existsSync(FROZEN_PROFILE_PATH);
+const HAS_LOCAL_PRIOR_PLAYTESTS = process.env["CI"] !== "true" && existsSync(PRIOR_PLAYTESTS_PATH);
 
 function enterFiring(state: GameState, rng: ReturnType<typeof startedGame>["rng"]): GameState {
   let next = state;
@@ -296,8 +301,8 @@ describe("jun-ab-001 frozen-bot experiment", () => {
     }
   });
 
-  it("17. recomputes the exact Selfplay-003 frozen-profile hash", async () => {
-    const artifact = await import(`${PROJECT_PATH}/playtests/v1.0.1/selfplay-003/ai_strategy_v1.0.1.json`, { with: { type: "json" } });
+  it.skipIf(!HAS_LOCAL_FROZEN_PROFILE)("17. recomputes the exact Selfplay-003 frozen-profile hash", async () => {
+    const artifact = await import(FROZEN_PROFILE_PATH, { with: { type: "json" } });
     expect(frozenProfileHash(artifact.default.snapshots.frozenHoldout)).toBe(EXPECTED_FROZEN_PROFILE_HASH);
   });
 
@@ -334,8 +339,8 @@ describe("jun-ab-001 frozen-bot experiment", () => {
     }
   });
 
-  it("21. every primary and replacement seed is fresh against prior studies", async () => {
-    const prior = await collectPriorSeeds(join(PROJECT_PATH, "playtests/v1.0.1"));
+  it.skipIf(!HAS_LOCAL_PRIOR_PLAYTESTS)("21. every primary and replacement seed is fresh against prior studies", async () => {
+    const prior = await collectPriorSeeds(PRIOR_PLAYTESTS_PATH);
     const schedule = createJunAbSchedule(prior);
     expect(validateJunAbSchedule(schedule, prior)).toEqual([]);
   });

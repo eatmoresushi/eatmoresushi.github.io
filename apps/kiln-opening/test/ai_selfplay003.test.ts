@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import { SeededRandom, createPrivateFiringState } from "../src/game/index.ts";
@@ -17,6 +18,11 @@ import type { StrategyLearningResult } from "../src/ai/strategy.ts";
 import { forecastTechniqueAcquisition } from "../src/ai/techniqueForecast.ts";
 import type { AIDecisionContext, AIStrategyProfile } from "../src/ai/types.ts";
 import { addFinished, addGlazed, addLoaded, addShaped, addTechnique, startedGame, workerId } from "./helpers.ts";
+
+const SELFPLAY_002_PLAYERS = "playtests/v1.0.1/selfplay-002/playtests_v1.0.1_players.csv";
+const SELFPLAY_002_SUMMARY = "playtests/v1.0.1/selfplay-002/study_summary.json";
+const HAS_LOCAL_SELFPLAY_002_ARCHIVE = process.env["CI"] !== "true" &&
+  existsSync(SELFPLAY_002_PLAYERS) && existsSync(SELFPLAY_002_SUMMARY);
 
 function fixture(playerCount: 2 | 3 | 4 = 2, seed = 9301): { state: GameState; actorId: PlayerId } {
   const { state } = startedGame(playerCount, seed);
@@ -119,11 +125,11 @@ describe("Selfplay-003 policy validation", () => {
     expect(plan.assignments.filter(({ ceramicId }) => ceramicId === ceramic.id)).toHaveLength(1);
   });
 
-  it("4. preserves immutable Selfplay-002 benchmark artifacts", async () => {
+  it.skipIf(!HAS_LOCAL_SELFPLAY_002_ARCHIVE)("4. preserves immutable Selfplay-002 benchmark artifacts", async () => {
     const digest = (value: Uint8Array) => createHash("sha256").update(value).digest("hex");
-    expect(digest(await readFile("playtests/v1.0.1/selfplay-002/playtests_v1.0.1_players.csv")))
+    expect(digest(await readFile(SELFPLAY_002_PLAYERS)))
       .toBe("f33cdc4969a51bf25c97201463e9786d3ab588c044a6eee74ab5ec91575089a8");
-    expect(digest(await readFile("playtests/v1.0.1/selfplay-002/study_summary.json")))
+    expect(digest(await readFile(SELFPLAY_002_SUMMARY)))
       .toBe("051e49dcee69e077de182262bba73400c09ab9d7d8f8db25c77e59541887dd3c");
   });
 

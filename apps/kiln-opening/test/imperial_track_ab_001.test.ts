@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   IMPERIAL_ORDERS,
@@ -20,6 +22,9 @@ import type {
   PlayerId,
 } from "../src/game";
 import {
+  ARCHIVED_GAMES_PATH,
+  ARCHIVED_PROFILE_PATH,
+  ARCHIVED_SOURCE_MANIFEST_PATH,
   EXPECTED_IMPERIAL_FROZEN_PROFILE_HASH,
   loadHistoricalArchive,
   validateHistoricalArchive,
@@ -27,6 +32,12 @@ import {
 import { imperialTrackExperimentFields } from "../src/ai/imperialTrackReporting.ts";
 import type { SelfPlayGameResult } from "../src/ai/selfplay.ts";
 import { addFinished, expectError, playerInputs, startedGame, workerId } from "./helpers";
+
+const HAS_LOCAL_IMPERIAL_ARCHIVE = process.env["CI"] !== "true" && [
+  ARCHIVED_GAMES_PATH,
+  ARCHIVED_PROFILE_PATH,
+  ARCHIVED_SOURCE_MANIFEST_PATH,
+].every((path) => existsSync(resolve(process.cwd(), path)));
 
 type FixtureOrder = "I01" | "I05" | "I06";
 
@@ -295,7 +306,7 @@ describe("imperial-track-ab-001 deterministic preflight", () => {
     });
   });
 
-  it("14. frozen-profile hash gate accepts the archive and rejects a mismatch", async () => {
+  it.skipIf(!HAS_LOCAL_IMPERIAL_ARCHIVE)("14. frozen-profile hash gate accepts the archive and rejects a mismatch", async () => {
     const archive = await loadHistoricalArchive(process.cwd());
     expect(archive.profileHash).toBe(EXPECTED_IMPERIAL_FROZEN_PROFILE_HASH);
     expect(validateHistoricalArchive(archive)).toEqual([]);
@@ -303,7 +314,7 @@ describe("imperial-track-ab-001 deterministic preflight", () => {
       .some((error) => error.includes("frozen profile hash"))).toBe(true);
   });
 
-  it("15. replay scenario inputs map one-to-one to the archived holdout", async () => {
+  it.skipIf(!HAS_LOCAL_IMPERIAL_ARCHIVE)("15. replay scenario inputs map one-to-one to the archived holdout", async () => {
     const archive = await loadHistoricalArchive(process.cwd());
     expect(archive.scenarios).toHaveLength(150);
     expect(archive.scenarios.filter(({ playerCount }) => playerCount === 2)).toHaveLength(50);
