@@ -1,10 +1,10 @@
 {
-  "rulesVersion": "1.0.4",
+  "rulesVersion": "1.0.9",
   "locations": [
     {
       "id": "materials_yard",
       "name": "Materials Yard",
-      "nameZh": "原料场",
+      "nameZh": "备料场",
       "capacity": {
         "2": 2,
         "3": 3,
@@ -12,13 +12,13 @@
       },
       "apprentice": "Gain 3 resources in any combination of Clay and Wood.",
       "apprenticeZh": "获得3个资源，可任意分配为陶土与柴薪。",
-      "shifu": "Gain 4 resources in any combination of Clay and Wood.",
-      "shifuZh": "获得4个资源，可任意分配为陶土与柴薪。"
+      "shifu": "Gain 4 resources in any combination of Clay and Wood, then exchange Clay and Wood with the supply 1:1 any number of times.",
+      "shifuZh": "获得4个资源，可任意分配为陶土与柴薪；随后可与供应区任意次数按1:1兑换陶土与柴薪。"
     },
     {
       "id": "forming_studio",
       "name": "Forming Studio",
-      "nameZh": "成型作坊",
+      "nameZh": "制坯坊",
       "capacity": {
         "2": 2,
         "3": 3,
@@ -26,61 +26,61 @@
       },
       "apprentice": "Pay the normal Clay cost to shape 1 vessel of any Shape.",
       "apprenticeZh": "支付该器型的正常陶土费用，塑形1件任意器型。",
-      "shifu": "Pay the normal Clay costs to shape up to 2 vessels of any Shapes.",
-      "shifuZh": "支付正常陶土费用，最多塑形2件任意器型。"
+      "shifu": "Shape up to 2 vessels; each Vase or Censer costs 1 Clay during this action.",
+      "shifuZh": "制作至多2件坯体；本次行动中的瓶或炉各只需1陶土。"
     },
     {
       "id": "glaze_workshop",
       "name": "Glaze Workshop",
-      "nameZh": "施釉作坊",
+      "nameZh": "施釉坊",
       "capacity": {
         "2": 2,
         "3": 3,
         "4": 4
       },
       "apprentice": "Apply 1 Glaze and choose 1 Decoration for 1 shaped ceramic. Pay the Decoration cost normally.",
-      "apprenticeZh": "为1件已成型陶瓷选择1种釉色与1种装饰，并支付该装饰正常费用。",
-      "shifu": "Choose one: apply Glaze and Decoration to up to 2 shaped ceramics, paying costs normally; or apply Glaze and Decoration to 1 shaped ceramic and ignore that Decoration's Coin cost.",
-      "shifuZh": "二选一：为最多2件已成型陶瓷施釉并加装饰，正常支付费用；或为1件已成型陶瓷施釉并加装饰，且忽略该装饰的铜钱费用。"
+      "apprenticeZh": "为1件成坯器物选择1种釉色与1种装饰，并支付该装饰费用。",
+      "shifu": "Apply Glaze and Decoration to up to 2 shaped ceramics and ignore the Coin cost of one selected Decoration.",
+      "shifuZh": "为至多2件成坯器物施釉并加装饰，且其中一项装饰免费。"
     },
     {
       "id": "kiln_yard",
       "name": "Kiln Yard",
-      "nameZh": "入窑场",
+      "nameZh": "装窑场",
       "capacity": {
         "2": 3,
         "3": 4,
         "4": 5
       },
-      "apprentice": "Load 1 glazed ceramic into any empty kiln space.",
-      "apprenticeZh": "将1件已施釉陶瓷装入任意1个空的可用窑位。",
-      "shifu": "Load up to 2 glazed ceramics into any empty kiln spaces.",
-      "shifuZh": "将最多2件已施釉陶瓷装入任意空的可用窑位。",
+      "apprentice": "Load 1 glazed ceramic into an empty active kiln space and gain 1 Wood.",
+      "apprenticeZh": "将1件施釉器物装入任一空的启用窑位，并获得1柴薪。",
+      "shifu": "Load up to 2 glazed ceramics, gain 1 Wood per ceramic loaded, then receive the pre-Fire reposition opportunity.",
+      "shifuZh": "装入至多2件施釉器物，每件获得1柴薪；基础火候确定后可移窑。",
       "clarifications": [
-        "Kiln Yard gives no Wood.",
+        "Gain 1 Wood per ceramic actually loaded.",
         "At least 1 eligible ceramic must be loaded.",
-        "The Shifu does not reposition ceramics."
+        "After Base Heat is determined and before Fire is revealed, an eligible Shifu may reposition one owned loaded ceramic."
       ]
     },
     {
       "id": "market_imperial_office",
       "name": "Market & Imperial Office",
-      "nameZh": "市场与内府署",
+      "nameZh": "市易与贡务",
       "capacity": {
         "2": 2,
         "3": 3,
         "4": 4
       },
       "apprentice": "Choose one: take 1 face-up or blind-top Market or Imperial Order; or gain 2 Coins. After a normal main action, you may sell 1 Flawed ceramic for 1 Coin.",
-      "apprenticeZh": "二选一：拿取1张订单（明牌或从任一牌堆顶盲抽），或获得2铜钱。普通主要行动后，可出售至多1件瑕疵品陶瓷，获得1铜钱。",
+      "apprenticeZh": "二选一：拿取1张订单（明牌或从任一牌堆顶盲抽），或获得2铜钱。正常主行动后，可出售至多1件次品，获得1铜钱。",
       "shifu": "Choose one: take up to 2 face-up or blind-top Orders; take 1 Order and gain 2 Coins; gain 4 Coins; or use eligible Court Patronage. After a normal main action, you may sell up to 2 Flawed ceramics for 1 Coin each.",
-      "shifuZh": "四选一：拿取最多2张订单；拿1张订单并获得2铜钱；获得4铜钱；或在符合条件时执行朝廷赞助。普通主要行动后，可出售至多2件瑕疵品陶瓷，每件获得1铜钱。",
+      "shifuZh": "四选一：拿取至多2张订单；拿1张订单并获得2铜钱；获得4铜钱；或在符合条件时执行朝廷恩荫。正常主行动后，可出售至多2件次品，每件获得1铜钱。",
       "clarification": "Court Patronage requires a completed Imperial Order, costs 5 Coins, advances Progress by 1 only from spaces 0-3, and grants neither Colour Samples nor a Flawed sale."
     },
     {
       "id": "guild_academy",
       "name": "Guild & Academy",
-      "nameZh": "行会与书院",
+      "nameZh": "行会与学堂",
       "capacity": {
         "2": 1,
         "3": 2,
@@ -88,8 +88,8 @@
       },
       "apprentice": "Pay the printed Coin cost and acquire 1 face-up Technique.",
       "apprenticeZh": "支付印刷费用，拿取1张正面朝上的技术。",
-      "shifu": "Before choosing, you may place 1 face-up Technique on the bottom of its discipline deck and reveal a replacement. Then acquire 1 face-up Technique for 1 Coin less than its printed cost, minimum 1 Coin.",
-      "shifuZh": "选择前可将1张正面朝上的技术放回所属类别牌堆底并翻开替补；随后以印刷费用减1铜钱（最低1铜钱）拿取1张正面朝上的技术。"
+      "shifu": "Before choosing, you may place 1 face-up Technique on the bottom of its discipline deck and reveal a replacement. Then acquire 1 face-up Technique for 1 Coin less than its printed cost, minimum 0 Coins.",
+      "shifuZh": "选择前可将1张明置工艺牌置于其所属牌堆底并揭示替补；随后以印刷费用减1铜钱（最低0）取得1张明置工艺牌。"
     }
   ]
 }

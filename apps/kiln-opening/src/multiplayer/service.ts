@@ -7,6 +7,7 @@ import {
 } from "../game/index.ts";
 import type {
   GameAction,
+  GameState,
   GameRuleError,
   PlayerId,
   PrivateFiringState,
@@ -36,6 +37,7 @@ import type {
   MultiplayerErrorCode,
   MultiplayerResult,
   PendingContribution,
+  PrivateDecisionState,
   PublicRoom,
   PublicSeat,
   ReconnectResult,
@@ -62,6 +64,17 @@ function error(
   details: MultiplayerError["details"] = {},
 ): MultiplayerError {
   return { code, message, details, currentRevision };
+}
+
+function privateDecisionState(state: GameState, playerId: PlayerId): PrivateDecisionState {
+  const phase = state.phase;
+  return {
+    startingOrderIds: phase.type === "setup_starting_orders" ? [...(phase.offeredOrderIds[playerId] ?? [])] : [],
+    colourSamplesOrderIds: phase.type === "work_office_orders" && phase.actorId === playerId && phase.step === "colour_samples_choose"
+      ? [...(phase.colourSamplesChoices ?? [])]
+      : [],
+    fireModifierPeek: state.privateFirePeeks?.[playerId] ?? null,
+  };
 }
 
 function failed<T>(value: MultiplayerError): MultiplayerResult<T> {
@@ -167,8 +180,8 @@ export class AuthoritativeGameService {
         code,
         status: "lobby",
         hostSeatId: seatId,
-        rulesVersion: "1.0.4",
-        contentVersion: "1.0.4",
+        rulesVersion: "1.0.9",
+        contentVersion: "1.0.9",
         latestRevision: 0,
         endedAt: null,
         endedByPlayerId: null,
@@ -247,9 +260,9 @@ export class AuthoritativeGameService {
     const authenticated = await this.authenticate(request.roomCode, request.seatToken);
     if (!authenticated.ok) return authenticated;
     const { room, seat } = authenticated.value;
-    const [seats, game, pending] = await Promise.all([
+    const [seats, head, pending] = await Promise.all([
       this.store.getSeats(room.id),
-      this.store.loadPublicState(room.id),
+      this.store.loadHead(room.id),
       this.store.findOwnPendingSubmission(room.id, seat.playerId),
     ]);
     return {
@@ -258,11 +271,12 @@ export class AuthoritativeGameService {
         room: publicRoom(room),
         seats: seats.map(publicSeat),
         seat: publicSeat(seat),
-        game,
+        game: head === null ? null : projectPublicGameState(head.state),
         ownPendingContribution:
           pending === null
             ? null
-            : { windowId: pending.windowId, amount: pending.amount, submitted: true },
+            : { windowId: pending.windowId, amount: pending.amount, useFuelLedger: pending.useFuelLedger ?? false, submitted: true },
+        ...(head === null ? {} : { ownPrivateDecision: privateDecisionState(head.state, seat.playerId) }),
       },
     };
   }
@@ -387,6 +401,7 @@ export class AuthoritativeGameService {
       game,
       events: [],
       ownPendingContribution: null,
+      ownPrivateDecision: privateDecisionState(created.state, seat.playerId),
     };
     const committed = await this.store.commitStart({
       roomId: room.id,
@@ -489,11 +504,11 @@ export class AuthoritativeGameService {
       let command: Awaited<ReturnType<typeof chooseOnlineComputerAction>>;
       try {
         command = await chooseOnlineComputerAction(head.state, privateState, computerSeat);
-      } catch {
+      } catch (cause) {
         return failed(
           error(
             "COMPUTER_TURN_FAILED",
-            `${computerSeat.displayName} could not choose a legal action.`,
+            `${computerSeat.displayName} could not choose a legal action: ${cause instanceof Error ? cause.message : "unknown policy error"}`,
             head.revision,
           ),
         );
@@ -517,6 +532,7 @@ export class AuthoritativeGameService {
           privateState,
           computerSeat.playerId,
           command.amount,
+          command.useFuelLedger ?? false,
           rng,
         );
         if (!applied.ok) return failed(gameFailure(applied.error, head.revision));
@@ -525,6 +541,7 @@ export class AuthoritativeGameService {
         privateSubmission = {
           windowId: command.windowId,
           amount: command.amount,
+          useFuelLedger: command.useFuelLedger ?? false,
           revealed: applied.privateState.windowId === null,
         };
       } else {
@@ -613,7 +630,8 @@ export class AuthoritativeGameService {
         ownPendingContribution:
           pending === null
             ? null
-            : { windowId: pending.windowId, amount: pending.amount, submitted: true },
+            : { windowId: pending.windowId, amount: pending.amount, useFuelLedger: pending.useFuelLedger ?? false, submitted: true },
+        ownPrivateDecision: privateDecisionState(head.state, requestingSeat.playerId),
       },
     };
   }
@@ -691,7 +709,7 @@ export class AuthoritativeGameService {
         gameId: head.state.gameId,
         windowId: request.command.windowId,
         contributions: Object.fromEntries(
-          storedSubmissions.map((submission) => [submission.playerId, submission.amount]),
+          storedSubmissions.map((submission) => [submission.playerId, { amount: submission.amount, useFuelLedger: submission.useFuelLedger ?? false }]),
         ),
       };
       const rng = new SeededRandom(head.rngState);
@@ -700,6 +718,7 @@ export class AuthoritativeGameService {
         privateState,
         seat.playerId,
         request.command.amount,
+        request.command.useFuelLedger ?? false,
         rng,
       );
       if (!applied.ok) return failed(gameFailure(applied.error, head.revision));
@@ -709,6 +728,7 @@ export class AuthoritativeGameService {
         : {
             windowId: request.command.windowId,
             amount: request.command.amount,
+            useFuelLedger: request.command.useFuelLedger ?? false,
             submitted: true,
           };
       const publicEvents = projectPublicEvents(applied.events);
@@ -738,6 +758,7 @@ export class AuthoritativeGameService {
         privateSubmission: {
           windowId: request.command.windowId,
           amount: request.command.amount,
+          useFuelLedger: request.command.useFuelLedger ?? false,
           revealed,
         },
       };
@@ -768,13 +789,13 @@ export class AuthoritativeGameService {
       return failed(error("AUTHENTICATION_FAILED", "The room or seat credential is invalid."));
     }
     if (
-      authenticated.room.rulesVersion !== "1.0.4" ||
-      authenticated.room.contentVersion !== "1.0.4"
+      authenticated.room.rulesVersion !== "1.0.9" ||
+      authenticated.room.contentVersion !== "1.0.9"
     ) {
       return failed(
         error(
           "UNSUPPORTED_RULES_VERSION",
-          "This room uses an older rules version and cannot continue under V1.0.4. Please create a new room.",
+          "This room uses an older rules version and cannot continue under V1.0.9. Please create a new room.",
         ),
       );
     }
@@ -792,7 +813,7 @@ export class AuthoritativeGameService {
       gameId: head.state.gameId,
       windowId: head.state.phase.windowId,
       contributions: Object.fromEntries(
-        submissions.map((submission) => [submission.playerId, submission.amount]),
+        submissions.map((submission) => [submission.playerId, { amount: submission.amount, useFuelLedger: submission.useFuelLedger ?? false }]),
       ),
     };
   }
@@ -829,6 +850,7 @@ export class AuthoritativeGameService {
       game,
       events,
       ownPendingContribution: pending,
+      ownPrivateDecision: privateDecisionState(head.state, actorId),
     };
   }
 

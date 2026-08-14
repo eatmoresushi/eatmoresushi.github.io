@@ -121,8 +121,8 @@ export function activeImperialTrackRules(
 
 export function activeImperialOrderProgressReward(
   config: GameExperimentConfig | undefined,
-  printedReward: 1 | 2,
-): 1 | 2 {
+  printedReward: 1 | 2 | 3,
+): 1 | 2 | 3 {
   return activeImperialTrackRules(config).imperialOrderProgressMode === "all_two"
     ? 2
     : printedReward;

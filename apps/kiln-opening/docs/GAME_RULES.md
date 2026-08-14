@@ -1,60 +1,32 @@
-# GAME_RULES.md — Kiln Opening / 开窑 V1.0.4
+# GAME_RULES.md — Kiln Opening / 开窑 V1.0.9
 
 **Players:** 2–4  
 **Length:** 5 rounds  
-**Target weight:** medium Euro  
-**Primary mechanisms:** worker placement, resource/production planning, shared-kiln risk, contract fulfilment, asymmetric powers, persistent Craft Techniques.
+**Rules version:** V1.0.9
 
-This file is the gameplay source of truth for the digital implementation.
+This is the authoritative implementation transcription of the English V1.0.9 rulebook. The Simplified Chinese rulebook is authoritative for Chinese terminology. Exact component values live in `data/*.json`; the IDs and values in those files form part of these rules.
 
----
+## 1. Objective and game end
 
-## 1. Objective
-
-Earn the most VP from:
+The game ends after Cleanup in Round 5. Players score:
 
 - completed Market and Imperial Orders;
-- final Imperial Progress;
-- the Imperial Seal;
-- the universal End-game Exhibition;
-- immediate Kiln Tradition scoring;
-- leftover Coins.
+- Imperial Progress: 0/0/2/2/4/8 VP at spaces 0–5;
+- the 2 VP Imperial Seal;
+- the End-game Exhibition;
+- immediate Kiln Tradition VP;
+- 1 VP per owned Technique;
+- 1 VP per 3 Coins, capped at 5 VP.
 
-The game ends after Cleanup of Round 5.
+Tie breakers, in order: farther along Imperial Progress; more completed Imperial Orders; more Masterpieces delivered or exhibited; shared victory.
 
----
+## 2. Workers, resources, and ceramics
 
-## 2. Player workforce
+Each player owns 1 Shifu and 5 Apprentices. The Shifu and 3 Apprentices begin available; the other Apprentices unlock when Imperial Progress reaches or crosses spaces 1 and 3. Unlocks resolve during Cleanup and are usable next round. If an Apprentice would unlock during Round 5 Cleanup, gain 3 Coins instead.
 
-Each player owns:
+Resources are Clay, Wood, and Coins. There is no Refined Clay.
 
-- 1 Shifu;
-- 5 Apprentices total.
-
-At setup:
-
-- Shifu + 3 Apprentices are available;
-- 2 Apprentices are locked.
-
-The locked Apprentices are unlocked by Imperial Progress spaces 1 and 3. They become available during Cleanup and can act starting next round. Reaching or passing a milestone is sufficient.
-
-There is no training, hiring, worker specialisation, or worker loss.
-
----
-
-## 3. Resources and ceramic attributes
-
-Resources:
-
-- Clay
-- Wood
-- Coins
-
-There is **no Refined Clay**.
-
-### Shapes and Clay costs
-
-| Shape | Clay |
+| Shape | Clay cost |
 |---|---:|
 | Bowl | 1 |
 | Plate | 1 |
@@ -64,16 +36,12 @@ There is **no Refined Clay**.
 
 There are 8 Vessel cards of each Shape.
 
-### Glazes and Preferred Heat
-
 | Glaze | Preferred Heat |
 |---|---:|
 | White | 1 |
 | Celadon | 2 |
 | Grey-Green | 2 |
 | Moon White | 3 |
-
-### Decorations and costs
 
 | Decoration | Coin cost |
 |---|---:|
@@ -82,39 +50,44 @@ There are 8 Vessel cards of each Shape.
 | Impressed | 2 |
 | Crackle | 2 |
 
-A ceramic must have exactly one Glaze and one Decoration before loading.
+A ceramic progresses from Shaped, to Glazed, to Loaded, to Finished, and finally Delivered. A Glazed ceramic has exactly one Glaze and one Decoration. Delivered ceramics cannot be reused.
 
-### Ceramic states
+## 3. Setup
 
-1. **Shaped:** Shape only.
-2. **Glazed:** Shape + Glaze + Decoration.
-3. **Loaded:** glazed ceramic occupying one Shared Kiln space.
-4. **Fired/Finished:** Shape + Glaze + Decoration + Quality.
-5. **Delivered:** committed beneath a completed Order and unusable again.
+1. Configure worker-placement capacities and the Shared Kiln for player count.
+2. Shuffle Market, Imperial, and the three Technique discipline decks. Reveal 4 Market Orders, 4 Imperial Orders, and 2 Techniques per discipline.
+3. Shuffle the 12 Fire cards.
+4. Randomly choose First Player.
+5. In reverse turn order, players choose Kiln Traditions.
+6. Each player gains 2 Clay, 2 Wood, and 3 Coins.
+7. Deal each player 2 Market and 2 Imperial Orders privately. Each player secretly keeps exactly 2 in any combination and returns 2. Shuffle returned cards into their matching decks, then reveal all kept Orders simultaneously.
 
-Clay cleaning, refining, mixing, drying, etc. are abstracted into the Forming Studio action.
+Starting Order offers and selections are private until the simultaneous reveal.
 
----
+## 4. Round structure
 
-## 4. Setup
+Each round has Start of Round, Work, Firing, Order, and Cleanup phases.
 
-1. Place action board, Shared Kiln, Round track and Imperial Progress track.
-2. Configure action capacities for player count.
-3. Shuffle Market and Imperial Order decks separately. Reveal 4 Market and 4 Imperial Orders.
-4. Separate Techniques by discipline: Forming, Glazing, Firing. Shuffle each discipline and reveal 2 from each.
-5. Shuffle the 20-card Fire deck.
-6. Place Clay, Wood, Coins and sorted Vessel cards in common supply.
-7. Each player takes a colour, 1 Shifu, 5 Apprentices, Imperial Progress marker, and Wood Contribution cards 0–3.
-8. Randomly choose First Player.
-9. In reverse turn order, players choose available Kiln Player Boards.
-10. Each player starts with Shifu + 3 Apprentices available; 2 Apprentices locked.
-11. Each player gains 2 Clay, 2 Wood and 3 Coins.
-12. Each player draws 1 Market Order. If it requires 2+ ceramics, they may discard it and draw once more.
-13. All Imperial Progress markers begin at 0. Round marker begins at 1.
+At the start of Rounds 2–5, discard the single leftmost card from each Order display, slide left, and refill to 4. Refill incomplete displays, ready once-per-round abilities, and reset Kiln Traditions.
 
-Cover inactive Shared Kiln spaces for the player count: at 2 players cover `middle_3` and `low_3`; at 3 players cover `low_3`; at 4 players use all eight spaces.
+During Work, players alternate clockwise. On a turn, place one available worker and resolve the location, or pass permanently. A player may take less than an action's maximum unless the rule requires an exact amount. Unused workers provide no benefit.
 
-### Action capacity
+If the Shared Kiln is empty, skip Firing. During the Order Phase, players may complete any number of legal Orders in turn order. Cleanup returns workers, resolves unlocks or Round-5 compensation, forces Order discards to the cleanup limit, passes First Player clockwise, and advances the round.
+
+## 5. Worker-placement locations
+
+| Location | Apprentice | Shifu |
+|---|---|---|
+| Materials Yard | Gain exactly 3 Clay/Wood in any combination. | Gain exactly 4 Clay/Wood, then exchange Clay and Wood with the supply 1:1 any number of times. |
+| Forming Studio | Pay normal cost to shape 1 vessel. | Shape up to 2; each Vase or Censer costs 1 Clay during this action. |
+| Glaze Workshop | Glaze and decorate 1 shaped ceramic, paying the Decoration cost. | Glaze and decorate up to 2, ignoring the Coin cost of one selected Decoration. |
+| Kiln Yard | Load 1 ceramic and gain 1 Wood. | Load up to 2, gain 1 Wood for each loaded, and receive the pre-Fire reposition opportunity described below. |
+| Market & Imperial Office | Take 1 face-up Market or Imperial Order; or sell one Flawed ceramic for 1 Coin. | Take 1 face-up Order, then optionally sell up to 2 Flawed ceramics for 1 Coin each; alternatively use Court Patronage. |
+| Guild & Academy | Buy 1 face-up Technique at printed cost. | Refresh one face-up Technique, then buy one at −1 Coin, minimum 0. |
+
+Court Patronage costs 5 Coins, requires at least one previously completed Imperial Order, draws one blind Imperial Order, and cannot advance Imperial Progress from space 4 to 5.
+
+Action capacity counts total workers at a location:
 
 | Location | 2P | 3P | 4P |
 |---|---:|---:|---:|
@@ -125,447 +98,86 @@ Cover inactive Shared Kiln spaces for the player count: at 2 players cover `midd
 | Market & Imperial Office | 2 | 3 | 4 |
 | Guild & Academy | 1 | 2 | 3 |
 
-Capacity is total workers at the location, not per player. A player may occupy the same location more than once if spaces remain.
+## 6. Shared Kiln and firing
 
-### Order hand limit
+The seven kiln spaces are 1 High (+1), 5 Middle (0), and 1 Low (−1). High and Low are always active. Use 3/4/5 Middle spaces at 2/3/4 players, for 5/6/7 active spaces total.
 
-Normally 3 uncompleted Orders total. Guan may hold 4.
+Only players with at least one loaded ceramic contribute. Each secretly chooses 0–3 Wood and must be able to pay it. Fuel Ledger may be committed secretly with the bid: pay 1 Coin for +1 Wood, to an effective maximum contribution of 4. Do not reveal any value until every contributor has submitted.
 
-Orders stay in hand until completed and cannot be voluntarily discarded unless a rule allows it. Uncompleted Orders score 0 and have no end-game penalty.
+Base Heat is determined from total Wood and contributor count `N`:
 
----
+- for one contributor: 0 = Low, 1–2 = Medium, 3+ = High;
+- for `N >= 2`: below `N` = Low, `N` through `N+2` = Medium, above `N+2` = High.
 
-## 5. Round structure
+Low, Medium, and High Base Heat are 1, 2, and 3.
 
-Every round has five phases.
+The Fire deck contains −2×1, −1×3, 0×4, +1×3, and +2×1. Discard revealed cards face up. When the draw deck is empty, shuffle the discard to make a new draw deck.
 
-### Phase 1 — Start of Round
+Firing resolves in this order:
 
-- At the start of Rounds 2–5, discard the two leftmost face-up Market Orders and the two leftmost face-up Imperial Orders, slide the remaining cards left, and refill each display to 4. Round 1 does not rotate.
-- Refill incomplete Order and Technique displays.
-- Ready exhausted Techniques.
-- Reset once-per-round Kiln Tradition abilities.
-- First Player starts Work Phase.
+1. Before contribution: Kiln Setting and Test Pieces.
+2. Secretly commit Wood and optional Fuel Ledger.
+3. Reveal and spend.
+4. Determine Base Heat.
+5. Each eligible Kiln Yard Shifu may move one ceramic they loaded this round to a legal empty active space.
+6. Reveal the Fire card.
+7. Resolve Sagger Selection.
+8. Calculate Actual Heat: Base Heat + Fire modifier + kiln-space modifier, subject to card effects.
+9. Resolve Jun and Ge heat adjustments.
+10. Assign Quality from absolute Heat Difference: 0 Masterpiece, 1 Fine, 2 Standard, 3+ Flawed.
+11. Resolve Protective Saggars and Second Firing.
+12. After firing fully resolves, resolve Kiln Records.
 
-### Phase 2 — Work Phase
+Test Pieces privately looks at and returns the top Fire card before bids. No peek is exposed in public state or logs. Ge sets a selected ceramic's Actual Heat to its Preferred Heat. Jun modifies Actual Heat in its printed timing window.
 
-Players alternate clockwise, placing exactly one available worker and resolving that location immediately.
+## 7. Orders
 
-Continue until all players have placed all workers or passed.
+There are 28 Market Orders and 20 Imperial Orders. `data/orders.json` contains their authoritative IDs, requirements, quality thresholds, VP, Coins, and printed Imperial Progress.
 
-Rules:
+Imperial Progress is always read from the completed card's printed `progress` value (+1, +2, or +3); it is never derived from ceramic count. Multiple Imperial Orders may advance Progress in one round, up to space 5. Every crossed milestone resolves even when an advance jumps over it:
 
-- Apprentice uses Apprentice effect.
-- Shifu uses Shifu effect.
-- Same player may use same location multiple times if capacity remains.
-- A player may take less than an action's maximum unless the action specifies an exact amount; unused capacity is lost.
-- A player may pass while workers remain.
-- Passing is permanent for that Work Phase.
-- Unused workers give no benefit.
+- spaces 1 and 3 queue Apprentice unlocks;
+- space 2 grants 2 Coins once;
+- space 4 grants 3 Coins once;
+- first arrival at space 5 takes the 2 VP Imperial Seal.
 
-### Phase 3 — Firing Phase
+Displays refill immediately after a face-up Order is taken. When a draw deck empties, shuffle its discard. If both are empty, the display remains short and blind draws are unavailable.
 
-If kiln is empty, skip the entire phase and do not draw Fire.
+There is no Order hand limit during a round. In Cleanup, discard face up to 3 Orders, or 4 with Guan, to their matching discard piles.
 
-Otherwise use Section 8.
+After completing Orders, a player may use the normal optional Flawed sale: Apprentice 0–1 ceramic, Shifu 0–2 ceramics, for 1 Coin each.
 
-### Phase 4 — Order Phase
+## 8. Techniques
 
-In turn order, each player may complete any number of Orders.
+There are 15 Technique tiles defined in `data/techniques.json`, with 2 cost-1, 5 cost-2, and 8 cost-3 tiles. Each owned Technique is worth 1 VP at game end.
 
-A single-ceramic Imperial Order advances its owner 1 Imperial Progress. A multi-ceramic Imperial Order advances its owner 2 Imperial Progress. Progress cannot exceed space 5, and there is no per-round limit.
+All Techniques except Clay Substitution are once per round. Clay Substitution may replace any number of Clay with Coins 1:1 while paying one Forming action.
 
-### Phase 5 — Cleanup
+Important V1.0.9 effects:
 
-1. Return all placed workers.
-2. Unlock every Apprentice pending from reaching Progress 1 or 3.
-3. Pass First Player clockwise.
-4. Advance Round marker. If another round remains, perform its scheduled two-card rotation during Start of Round.
+- Measuring Calipers: after forming two different Shapes in one action, gain 2 Coins and 1 Clay.
+- Drying Frames: after forming, immediately Glaze and apply Plain free; another Decoration still costs normally.
+- Colour Samples: after taking a face-up Order, privately inspect the top 2 of either Order deck, keep 1, and put the other on the bottom.
+- Connoisseur Network: after a normal Office action, sell one finished undelivered Standard/Fine/Masterpiece for 2/4/7 Coins; not after Court Patronage.
+- Kiln Records: after firing, if at least one of your ceramics is a Masterpiece, gain 1 Clay and 2 Coins.
+- Fuel Ledger and Test Pieces follow the secret firing rules above.
 
-After Cleanup of Round 5, score the game.
+## 9. Kiln Traditions
 
----
+- **Ru:** once per round when delivering a Celadon + Plain Masterpiece to complete any Order, gain 4 VP. Producing or exhibiting it does not trigger Ru.
+- **Guan:** whenever completing an Imperial Order, gain 2 Coins. Separately, once per round, one printed Decoration requirement may be ignored. Cleanup Order limit is 4.
+- **Ge:** once per round in the heat-adjustment window, set one own ceramic's Actual Heat to its Preferred Heat and its Decoration to Crackle.
+- **Ding:** once per round after forming a Bowl, Plate, or Washer, form one additional matching vessel for no Clay.
+- **Jun:** follows its printed heat-adjustment ability in `data/kilns.json`.
 
-## 6. Worker-placement locations
+## 10. End-game Exhibition
 
-### Materials Yard
+Each player may exhibit Finished, undelivered ceramics up to the capacity shown by final Imperial Progress: 1/1/2/2/3/3 at spaces 0–5. Flawed/Standard/Fine/Masterpiece score 0/1/2/4 VP. At Progress 4 or 5, add the printed Glaze and Decoration diversity bonuses. An exhibited ceramic cannot also satisfy an Order.
 
-**Apprentice:** gain exactly 3 resources in any combination of Clay/Wood.
-**Shifu:** gain exactly 4 resources in any combination of Clay/Wood.
+## 11. Information and implementation constraints
 
-### Forming Studio
+The engine and server are authoritative. Clients never calculate resources, legal moves, draws, Quality, Progress, or scoring.
 
-**Apprentice:** pay normal Clay cost to shape 1 vessel of any Shape.  
-**Shifu:** pay normal Clay costs to shape up to 2 vessels of any Shapes.
+Hidden information includes opening Order offers/selections, Colour Samples choices, Test Pieces peeks, and unrevealed Wood/Fuel Ledger submissions. A client receives only its own private decision data. Public events reveal only what the timing rule makes public.
 
-Take matching Vessel cards from supply.
-
-### Glaze Workshop
-
-**Apprentice:** apply 1 Glaze and choose 1 Decoration for 1 Shaped ceramic; pay Decoration normally.
-
-**Shifu:** choose one:
-
-- apply Glaze + Decoration to up to 2 Shaped ceramics, paying normally; or
-- apply Glaze + Decoration to 1 Shaped ceramic and ignore that Decoration's Coin cost.
-
-Once applied, Glaze and Decoration do not change unless an ability explicitly changes them.
-
-### Kiln Yard
-
-**Apprentice:** load 1 Glazed ceramic into any empty kiln space.
-
-**Shifu:** load up to 2 Glazed ceramics into empty kiln spaces.
-
-Clarifications:
-
-- Kiln Yard gives no Wood;
-- at least 1 eligible ceramic must be loaded to place a worker here;
-- a loaded ceramic stays in place unless a Technique moves it;
-- Shifu does **not** reposition ceramics.
-
-### Market & Imperial Office
-
-**Apprentice — choose one:**
-
-- take 1 Market or Imperial Order, either face-up or as a blind top-deck draw;
-- gain 2 Coins.
-
-In addition, the Apprentice may sell 1 Flawed ceramic for 1 Coin after resolving the chosen action.
-
-**Shifu — choose one:**
-
-- take up to 2 Orders, choosing the deck and face-up/blind method separately for each;
-- take 1 face-up or blind-top Order and gain 2 Coins;
-- gain 4 Coins.
-- use Court Patronage, if eligible.
-
-In addition, the Shifu may sell up to 2 Flawed ceramics for 1 Coin each after resolving the chosen action.
-
-Selling Flawed ceramics is an optional secondary effect, not a main Office action. The player may continue without selling.
-
-When a face-up Order is taken, refill that display position immediately before any second Order is selected. A blind draw removes and immediately reveals the actual top card of the chosen deck, adds it to the player's public Active Orders, and leaves the face-up display unchanged. A blind draw is a commitment and cannot be previewed or rejected.
-
-A player may not exceed hand limit. Check the limit before every individual acquisition.
-
-**Court Patronage:** this is a distinct Shifu-only main action. The player must have completed at least 1 Imperial Order during this game, have at least 5 Coins, and be at Imperial Progress 0–3. Pay 5 Coins and advance exactly 1 space. Court Patronage cannot advance from 4 to 5, cannot claim the Imperial Seal, and cannot be combined with Orders, Coin gain, Colour Samples, Connoisseur Network, or the optional Flawed sale. A move to space 1 or 3 queues the normal Apprentice unlock for Cleanup.
-
-Only the acting player's Finished Flawed ceramics may be sold. Each sold ceramic is removed from the Finished Ceramics area, its Vessel card returns to the matching Shape supply, and the player gains exactly 1 Coin. A sold ceramic cannot later be delivered to an Order or included in the End-game Exhibition. Standard, Fine, and Masterpiece ceramics cannot be sold through this effect.
-
-**Connoisseur Network (T14):** after resolving a normal Office main action and its optional Flawed-sale step, its owner may exhaust it to sell exactly 1 owned Finished, undelivered Masterpiece for exactly 5 Coins and 0 VP. Return that ceramic's Vessel card to its Shape supply. This is separate from the normal Flawed sale and cannot follow Court Patronage.
-
-### Guild & Academy
-
-Both Apprentices and the Shifu may be placed at this location while capacity remains.
-
-**Apprentice:** pay the selected Technique's printed Coin cost and take 1 face-up Technique. The Apprentice cannot refresh the display.
-
-**Shifu:**
-
-1. Before choosing a Technique, the player may place 1 face-up Technique on the bottom of its discipline deck and reveal a replacement from that same deck.
-2. The player then takes 1 face-up Technique for 1 Coin less than its printed cost, minimum 1 Coin.
-3. Refill the empty display slot immediately from the same discipline deck.
-
-Rules:
-
-- maximum 2 owned Techniques;
-- both Techniques may share a discipline;
-- cannot acquire without sufficient Coins or an empty Technique slot;
-- newly acquired Technique may be used later that round if its timing allows.
-
----
-
-## 7. Craft Techniques
-
-Six Techniques are face-up: 2 Forming, 2 Glazing, 2 Firing.
-
-Most are optional and usable once per round. Exhaust when used and ready next Start of Round.
-
-Techniques give no direct VP.
-
-Exact list is authoritative in `data/techniques.json`.
-
-There are 15 Techniques, exactly 5 per discipline. T07 Glaze Notebook is not part of V1.0.4. Stable retained IDs are not renumbered.
-
-| Discipline | ID | Technique | Printed cost | Effect summary |
-|---|---|---|---:|---|
-| Forming | T01 | Large Throwing Wheel | 2 | Form Vase/Censer; gain 1 Clay. |
-| Forming | T02 | Measuring Calipers | 2 | Form two different Shapes in one action; gain 2 Coins. |
-| Forming | T03 | Clay Substitution | 2 | Pay 1 Coin instead of 1 Clay for a valid Forming payment. |
-| Forming | T04 | Drying Frames | 2 | Form a Shape matching an uncompleted Order; gain 1 Coin. |
-| Forming | T13 | Kiln Records | 3 | After firing, if at least two own ceramics are final Masterpieces, gain 1 Clay and 1 Coin. |
-| Glazing | T05 | Carving Knives | 2 | Ignore one Carved Decoration cost. |
-| Glazing | T06 | Seal Stamps | 2 | Ignore one Impressed Decoration cost. |
-| Glazing | T08 | Colour Samples | 2 | Before first Office Order acquisition, bottom one face-up Order from either display and refill. |
-| Glazing | T14 | Connoisseur Network | 3 | After a normal Office action, sell exactly one Finished Masterpiece for 5 Coins and 0 VP. |
-| Glazing | T15 | Second Firing | 3 | After Quality, return one own Standard result to Glazed for a future firing. |
-| Firing | T09 | Kiln Setting | 3 | Before Contributions, move one own loaded ceramic to an empty active space. |
-| Firing | T10 | Protective Saggars | 3 | After Quality, pay 1 Coin for Flawed→Standard or Standard→Fine. |
-| Firing | T11 | Fuel Ledger | 3 | After reveal, pay 1 Coin and 1 Wood to add 1 contribution. |
-| Firing | T12 | Test Pieces | 2 | After firing, gain 1 Coin for one natural exact match, plus 1 more for at least two. |
-| Firing | T16 | Sagger Selection | 3 | After Fire reveal, pay 2 Coins so one own ceramic treats that Fire modifier as 0. |
-
-The Apprentice pays the printed cost; the Shifu pays 1 less, minimum 1.
-
-**T08 Colour Samples:** once per round, when its owner begins an Office main action that will take at least 1 Order, before the first acquisition they may place exactly 1 face-up Order from either display on the bottom of its corresponding deck and reveal a replacement from that deck. Then the Office action continues normally and may acquire from either deck by either method. This grants no extra Order or Coins and is unavailable during Coins-only actions or Court Patronage.
-
-### Timing windows
-
-- **during action:** Forming/Glazing Techniques
-- **before Wood Contributions:** Kiln Setting
-- **after Contributions revealed, before Base Heat:** Fuel Ledger
-- **after Fire revealed, before Actual Heat:** Sagger Selection
-- **after Quality assigned:** Protective Saggars, then Second Firing
-- **after firing:** Test Pieces, Kiln Records and Ru check before ceramics return
-
----
-
-## 8. Shared Kiln and Firing
-
-### Kiln layout
-
-| Player count | High active | Middle active | Low active | Total active |
-|---:|---:|---:|---:|---:|
-| 2 | 2 | 2 | 2 | 6 |
-| 3 | 2 | 3 | 2 | 7 |
-| 4 | 2 | 3 | 3 | 8 |
-
-High spaces add +1 Actual Heat, Middle spaces add 0, and Low spaces add -1. Covered spaces are not empty spaces and cannot be loaded into, selected as movement destinations, or counted toward kiln capacity.
-
-One ceramic per space unless a future rule explicitly says otherwise.
-
-### Firing procedure
-
-1. **Before Contributions:** in turn order from First Player, resolve optional pre-contribution abilities (e.g. Kiln Setting).
-2. **Choose Contributions:** each player with ≥1 loaded ceramic secretly selects Contribution 0–3 and must own at least that much Wood. Players with no loaded ceramic do not contribute.
-3. **Reveal and Spend:** reveal simultaneously; spend selected Wood.
-4. **Modify Contributions:** in turn order, resolve post-reveal contribution abilities (e.g. Fuel Ledger).
-5. **Determine Base Heat:** count contributors, including those who chose 0, then use contributor-scaled thresholds.
-6. **Reveal Fire:** draw the top Fire card (-2/-1/0/+1/+2); Global Heat = Base Heat + Fire modifier. Do not cap it.
-7. **After-Fire abilities:** in turn order, resolve Sagger Selection. It changes only the chosen ceramic's use of the revealed Fire modifier; the Fire card and Global Heat remain unchanged.
-8. **Calculate Actual Heat:** Base Heat + the ceramic's applicable Fire modifier + its zone modifier. Also snapshot Natural Actual Heat and Natural Heat Difference using the original Fire modifier before Sagger Selection, Jun, Ge, Protective Saggars, or any other modification.
-9. **Before-Quality abilities:** in turn order resolve Jun and Ge.
-10. **Assign Quality:** compare final Actual Heat with Preferred Heat.
-11. **After-Quality abilities:** resolve Protective Saggars in turn order, then Second Firing in turn order. A ceramic chosen for Second Firing returns to its owner's Glazed area with Shape, Glaze and Decoration intact and no Quality; it cannot re-enter the current firing.
-12. **After-Firing effects:** resolve Test Pieces, Kiln Records and Ru. Return all remaining ceramics to owners' Finished areas. Empty kiln. Discard Fire card face-up.
-
-### Base Heat
-
-Let `N` = number of contributors (players with ≥1 loaded ceramic, including a contributor who selected 0).
-
-- Low (Heat 1): total Wood `< N`
-- Medium (Heat 2): total Wood from `N` through `2N`
-- High (Heat 3): total Wood `> 2N`
-
-Equivalent table:
-
-| Contributors | Low | Medium | High |
-|---:|---:|---:|---:|
-| 1 | 0 | 1–2 | 3+ |
-| 2 | 0–1 | 2–4 | 5+ |
-| 3 | 0–2 | 3–6 | 7+ |
-| 4 | 0–3 | 4–8 | 9+ |
-
-### Quality
-
-`Heat Difference = abs(Actual Heat - Preferred Heat)`
-
-| Difference | Quality |
-|---:|---|
-| 0 | Masterpiece |
-| 1 | Fine |
-| 2 | Standard |
-| 3+ | Flawed |
-
-Order eligibility:
-
-- Masterpiece: satisfies any minimum;
-- Fine: Fine+ or Standard+;
-- Standard: Standard+ only;
-- Flawed: no Orders and no End-game Exhibition.
-
----
-
-## 9. Orders
-
-Two decks/displays:
-
-- Market: 23 cards, 4 face-up;
-- Imperial: 13 cards, 4 face-up.
-
-Exact card definitions are authoritative in `data/orders.json`.
-
-### Taking
-
-Taken Orders enter the public Active Order area. For each acquisition, choose either a face-up Order or a blind draw from the Market or Imperial top card. Refill only a face-up selection, from its corresponding deck, immediately. Blind draws leave the display unchanged.
-
-If an action allows 2 Orders, choose the deck and method separately for each. The second selection sees any refill caused by the first face-up selection. The player may stop after the first.
-
-### Completing
-
-During player's turn in Order Phase:
-
-1. choose Order in hand;
-2. select required finished, undelivered ceramics;
-3. validate all Shape, Glaze, Decoration, relation and minimum Quality rules;
-4. move ceramics beneath completed Order;
-5. record printed VP and gain printed Coins;
-6. if Imperial, advance 1 Progress for a single-ceramic Order or 2 Progress for a multi-ceramic Order, up to space 5.
-
-Every Imperial Order advances Progress independently, including multiple Imperial Orders completed in the same Order Phase. Market Orders never advance Progress.
-
-| Imperial Orders | Ceramics required | Progress |
-|---|---:|---:|
-| I01–I05 | 1 | +1 |
-| I06–I10 | 2 or 3 | +2 |
-
-Progress is categorical, not per ceramic: I08 and I10 each advance exactly 2, not 3.
-
-V1.0.4 changed only these Imperial Order Quality requirements from V1.0.2:
-
-- **I02:** 1 Washer, Celadon, Impressed, Fine+, 8 VP, +1 Progress.
-- **I04:** 1 Vase, Moon White, Impressed, Fine+, 9 VP, +1 Progress.
-- **I09:** 2 ceramics, both Fine+, different Glazes, at least one Masterpiece, 13 VP, +2 Progress.
-
-All other Market and Imperial Orders retain their printed V1.0.4 definitions in `data/orders.json`.
-
----
-
-## 10. Imperial Progress
-
-| Space | Title | Reward | End-game VP |
-|---:|---|---|---:|
-| 0 | Local Workshop | — | 0 |
-| 1 | Local Renown | unlock 1 Apprentice in Cleanup | 0 |
-| 2 | Prefectural Recommendation | immediately gain 2 Coins; Exhibition capacity 2 | 2 |
-| 3 | Court Examination | unlock 1 Apprentice in Cleanup | 2 |
-| 4 | Awaiting Audience | immediately gain 3 Coins; Exhibition capacity 3 and diversity eligibility | 4 |
-| 5 | Imperial Audience | take Imperial Seal if available; Exhibition capacity 3 and diversity eligibility | 8 |
-
-Rules:
-
-- single-ceramic Imperial Orders advance 1 space and multi-ceramic Imperial Orders advance 2 spaces, with no per-round limit;
-- Progress cannot exceed space 5;
-- every milestone crossed by a multi-space advance resolves; crossing space 1 or 3 queues its Apprentice for Cleanup, crossing space 2 or 4 grants its one-time stipend, and crossing space 5 resolves Imperial Audience and the Seal;
-- the first time each player reaches or passes space 2, they immediately gain 2 Coins; the first time they reach or pass space 4, they immediately gain 3 Coins; each stipend is gained once per player;
-- unlocked Apprentice becomes usable next round;
-- first player ever reaching space 5 takes Imperial Seal, worth 2 VP;
-- reaching 5 does not end game.
-- Court Patronage advances exactly 1 space only from spaces 0–3, after the player has completed at least 1 Imperial Order; it cannot reach 5 or claim the Seal.
-
-### End-game Exhibition / 终局展陈
-
-At game end, every player may exhibit finished, undelivered ceramics of **Standard or better**. Maximum capacity depends on final Imperial Progress:
-
-| Final Progress | Maximum exhibited |
-|---:|---:|
-| 0–1 | 1 |
-| 2–3 | 2 |
-| 4–5 | 3 |
-
-| Quality | VP |
-|---|---:|
-| Standard | 1 |
-| Fine | 2 |
-| Masterpiece | 4 |
-
-Only players ending at Progress 4 or 5 can earn these bonuses:
-
-- +2 VP if exactly 3 exhibited ceramics have 3 different Shapes;
-- +2 VP if exactly 3 exhibited ceramics have 3 different Glazes.
-
-Flawed ceramics cannot be exhibited.
-
-There is **no penalty** for exhibiting fewer than the maximum or none.
-
----
-
-## 11. Kiln Tradition abilities
-
-### Ru Kiln / 汝窑 — Quiet Perfection
-
-After all firing abilities are resolved, if you produced at least one Masterpiece with Celadon Glaze and Plain Decoration, gain 3 VP. Score once per round maximum.
-
-### Guan Kiln / 官窑 — Imperial Patronage
-
-Order hand limit is 4.
-
-Once per round, when completing an Imperial Order, you may ignore one Decoration requirement. All Shape, Glaze, quantity, relationship and Quality requirements still apply.
-
-### Ge Kiln / 哥窑 — Crackle from Fire
-
-Once per round, after Actual Heat is calculated but before Quality is assigned, choose one of your ceramics with Heat Difference exactly 1.
-
-Treat its Heat Difference as 0, assign Masterpiece Quality, and change its Decoration to Crackle.
-
-This firing transformation does not charge the 2-Coin Crackle cost and does not refund the ceramic's original Decoration cost.
-
-### Ding Kiln / 定窑 — Moulded Production
-
-Once per round during Forming Studio, after shaping a Bowl, Plate or Washer, you may pay that Shape's normal Clay cost to shape one additional vessel of the same Shape.
-
-The additional vessel does not count against normal action limit.
-
-### Jun Kiln / 钧窑 — Kiln Transformation
-
-Once per round, after Actual Heat is calculated but before Quality is assigned, you may pay 2 Coins to adjust Actual Heat of one of your ceramics by +1 or -1. If you cannot pay 2 Coins, you cannot use the adjustment.
-
-Only that ceramic is affected.
-
-### Same-window timing
-
-If multiple players use abilities in the same timing window, resolve in turn order beginning with First Player.
-
----
-
-## 12. Final scoring
-
-After Round 5 Cleanup:
-
-1. keep all VP already recorded from completed Orders, Ru, etc.;
-2. add final Imperial Progress VP;
-3. +2 VP for Imperial Seal holder;
-4. add End-game Exhibition VP;
-5. add 1 VP per 3 leftover Coins, maximum 5 VP.
-
-Highest VP wins.
-
-Tie breakers, in order:
-
-1. farther on Imperial Progress;
-2. more completed Imperial Orders;
-3. more Masterpieces delivered or exhibited;
-4. shared victory.
-
----
-
-## 13. General clarifications
-
-- Supplies are finite.
-- Coin denominations may be exchanged.
-- No trading.
-- Worker actions resolve immediately.
-- Unused action capacity is lost.
-- Newly unlocked Apprentice acts next round.
-- Shaped/Glazed/Finished ceramics persist between rounds.
-- Only delivered, exhibited, or sold ceramics leave Finished area.
-- Flawed sale returns Vessel to supply.
-- Non-Flawed ceramic cannot be voluntarily discarded.
-- Uncompleted Orders and unused ceramics have no end-game penalty.
-- Immediate VP is recorded once.
-- If Technique deck is empty, do not refill unless a tile is returned.
-- No special 2P rules beyond action capacities and contributor-scaled Base Heat.
-
----
-
-## 14. Fire deck
-
-20 cards:
-
-- -2 × 4
-- -1 × 3
-- 0 × 6
-- +1 × 3
-- +2 × 4
-
-The Fire deck is symmetric around 0. Revealed cards are discarded face-up and are not shuffled back after each firing.
+Stable component IDs remain identical in English and Chinese. Canonical Chinese terminology is maintained in the locale data and must not be machine-translated.

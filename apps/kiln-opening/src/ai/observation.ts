@@ -16,12 +16,13 @@ export function createPlayerObservation(
   privateFiringState: PrivateFiringState,
 ): PlayerObservation {
   const ownAmount = privateFiringState.contributions[playerId];
+  const normalizedOwnAmount = typeof ownAmount === "number" ? ownAmount : ownAmount?.amount;
   const ownPendingContribution: PendingContribution | null =
     ownAmount === undefined || state.phase.type !== "firing_contributions"
       ? null
       : {
           windowId: state.phase.windowId,
-          amount: ownAmount,
+          amount: normalizedOwnAmount as PendingContribution["amount"],
           submitted: true,
         };
   const knownFireRemaining = Object.fromEntries(

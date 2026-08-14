@@ -66,7 +66,7 @@ export function mixBeliefSeed(...values: number[]): number {
 
 function phaseOrderIds(game: PublicGameState): string[] {
   return game.phase.type === "setup_starting_orders"
-    ? Object.values(game.phase.initialOrderIds)
+    ? Object.values(game.phase.offeredOrderIds).flat()
     : [];
 }
 

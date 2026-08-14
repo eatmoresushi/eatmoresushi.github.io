@@ -78,6 +78,7 @@ export interface CommitStartInput {
 export interface PrivateCommitInput {
   windowId: string;
   amount: WoodContribution;
+  useFuelLedger: boolean;
   revealed: boolean;
 }
 

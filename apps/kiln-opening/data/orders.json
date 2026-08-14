@@ -9,7 +9,7 @@
       ],
       "minQuality": "standard",
       "vp": 3,
-      "coins": 3
+      "coins": 2
     },
     {
       "id": "M02",
@@ -20,7 +20,7 @@
       ],
       "minQuality": "standard",
       "vp": 3,
-      "coins": 3
+      "coins": 2
     },
     {
       "id": "M03",
@@ -31,7 +31,7 @@
       ],
       "minQuality": "standard",
       "vp": 3,
-      "coins": 3
+      "coins": 2
     },
     {
       "id": "M04",
@@ -42,7 +42,7 @@
       ],
       "minQuality": "standard",
       "vp": 4,
-      "coins": 4
+      "coins": 3
     },
     {
       "id": "M05",
@@ -53,7 +53,7 @@
       ],
       "minQuality": "standard",
       "vp": 4,
-      "coins": 4
+      "coins": 3
     },
     {
       "id": "M06",
@@ -66,7 +66,7 @@
       ],
       "minQuality": "fine",
       "vp": 5,
-      "coins": 4
+      "coins": 3
     },
     {
       "id": "M07",
@@ -79,7 +79,7 @@
       ],
       "minQuality": "fine",
       "vp": 6,
-      "coins": 3
+      "coins": 2
     },
     {
       "id": "M08",
@@ -90,9 +90,9 @@
           "decoration": "crackle"
         }
       ],
-      "minQuality": "standard",
+      "minQuality": "fine",
       "vp": 6,
-      "coins": 3
+      "coins": 2
     },
     {
       "id": "M09",
@@ -104,7 +104,7 @@
       ],
       "minQuality": "fine",
       "vp": 7,
-      "coins": 4
+      "coins": 3
     },
     {
       "id": "M10",
@@ -117,7 +117,7 @@
       ],
       "minQuality": "fine",
       "vp": 8,
-      "coins": 4
+      "coins": 3
     },
     {
       "id": "M11",
@@ -129,7 +129,7 @@
       ],
       "minQuality": "fine",
       "vp": 6,
-      "coins": 4
+      "coins": 3
     },
     {
       "id": "M12",
@@ -141,7 +141,7 @@
       ],
       "minQuality": "fine",
       "vp": 6,
-      "coins": 4
+      "coins": 3
     },
     {
       "id": "M13",
@@ -153,7 +153,7 @@
       ],
       "minQuality": "fine",
       "vp": 7,
-      "coins": 3
+      "coins": 2
     },
     {
       "id": "M14",
@@ -165,7 +165,7 @@
       ],
       "minQuality": "fine",
       "vp": 7,
-      "coins": 4
+      "coins": 3
     },
     {
       "id": "M15",
@@ -271,7 +271,7 @@
         }
       ],
       "minQuality": "standard",
-      "vp": 11,
+      "vp": 13,
       "coins": 6
     },
     {
@@ -282,6 +282,15 @@
         },
         {
           "glaze": "celadon"
+        }
+      ],
+      "relations": [
+        {
+          "type": "different_shape",
+          "indices": [
+            0,
+            1
+          ]
         }
       ],
       "minQuality": "fine",
@@ -313,8 +322,8 @@
         }
       ],
       "minQuality": "fine",
-      "vp": 8,
-      "coins": 4
+      "vp": 10,
+      "coins": 5
     },
     {
       "id": "M23",
@@ -343,7 +352,49 @@
         }
       ],
       "minQuality": "fine",
-      "vp": 13,
+      "vp": 16,
+      "coins": 5
+    },
+    {
+      "id": "M24",
+      "ceramics": [{}, {}],
+      "relations": [
+        { "type": "same_shape", "indices": [0, 1] },
+        { "type": "different_glaze", "indices": [0, 1] }
+      ],
+      "minQuality": "fine",
+      "vp": 9,
+      "coins": 4
+    },
+    {
+      "id": "M25",
+      "ceramics": [{ "shape": "censer" }, { "shape": "bowl" }],
+      "minQuality": "standard",
+      "vp": 8,
+      "coins": 5
+    },
+    {
+      "id": "M26",
+      "ceramics": [{}, {}],
+      "relations": [{ "type": "different_decoration", "indices": [0, 1] }],
+      "minQuality": "fine",
+      "vp": 9,
+      "coins": 4
+    },
+    {
+      "id": "M27",
+      "ceramics": [{ "shape": "plate" }, { "shape": "vase" }],
+      "relations": [{ "type": "same_decoration", "indices": [0, 1] }],
+      "minQuality": "standard",
+      "vp": 8,
+      "coins": 5
+    },
+    {
+      "id": "M28",
+      "ceramics": [{}, {}],
+      "relations": [{ "type": "at_least_n_quality", "quality": "masterpiece", "count": 1 }],
+      "minQuality": "standard",
+      "vp": 9,
       "coins": 5
     }
   ],
@@ -360,7 +411,7 @@
       "minQuality": "masterpiece",
       "vp": 7,
       "coins": 0,
-      "imperialProgressReward": 1
+      "imperialProgressReward": 2
     },
     {
       "id": "I02",
@@ -388,7 +439,7 @@
       "minQuality": "masterpiece",
       "vp": 8,
       "coins": 0,
-      "imperialProgressReward": 1
+      "imperialProgressReward": 2
     },
     {
       "id": "I04",
@@ -491,7 +542,7 @@
       "minQuality": "fine",
       "vp": 14,
       "coins": 0,
-      "imperialProgressReward": 2
+      "imperialProgressReward": 3
     },
     {
       "id": "I09",
@@ -544,7 +595,7 @@
       "minQuality": "fine",
       "vp": 15,
       "coins": 0,
-      "imperialProgressReward": 2
+      "imperialProgressReward": 3
     },
     {
       "id": "I11",
@@ -559,7 +610,7 @@
       "minQuality": "masterpiece",
       "vp": 8,
       "coins": 0,
-      "imperialProgressReward": 1
+      "imperialProgressReward": 2
     },
     {
       "id": "I12",
@@ -620,7 +671,67 @@
       "minQuality": "fine",
       "vp": 14,
       "coins": 0,
+      "imperialProgressReward": 3
+    },
+    {
+      "id": "I14",
+      "ceramics": [{ "shapes": ["bowl", "plate"], "glaze": "celadon", "decoration": "impressed" }],
+      "minQuality": "standard",
+      "vp": 3,
+      "coins": 0,
+      "imperialProgressReward": 1
+    },
+    {
+      "id": "I15",
+      "ceramics": [{ "shape": "washer", "decoration": "plain" }],
+      "minQuality": "standard",
+      "vp": 3,
+      "coins": 0,
+      "imperialProgressReward": 1
+    },
+    {
+      "id": "I16",
+      "ceramics": [{ "glazes": ["white", "moon_white"] }],
+      "minQuality": "fine",
+      "vp": 5,
+      "coins": 0,
+      "imperialProgressReward": 1
+    },
+    {
+      "id": "I17",
+      "ceramics": [{}, {}],
+      "minQuality": "standard",
+      "vp": 5,
+      "coins": 0,
       "imperialProgressReward": 2
+    },
+    {
+      "id": "I18",
+      "ceramics": [{ "shape": "vase", "glazes": ["celadon", "grey_green"], "decoration": "carved" }],
+      "minQuality": "fine",
+      "vp": 7,
+      "coins": 0,
+      "imperialProgressReward": 1
+    },
+    {
+      "id": "I19",
+      "ceramics": [{}, {}],
+      "relations": [
+        { "type": "same_shape", "indices": [0, 1] },
+        { "type": "at_least_n_quality", "quality": "masterpiece", "count": 1 }
+      ],
+      "minQuality": "fine",
+      "vp": 12,
+      "coins": 0,
+      "imperialProgressReward": 2
+    },
+    {
+      "id": "I20",
+      "ceramics": [{ "shapes": ["bowl", "plate"], "glaze": "moon_white", "decoration": "plain" }],
+      "minQuality": "fine",
+      "vp": 7,
+      "coins": 0,
+      "imperialProgressReward": 1
     }
   ]
 }

@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.0.4",
+  "rulesVersion": "1.0.9",
   "components": [
     {
       "name": "Central Action Board",
@@ -9,7 +9,7 @@
     {
       "name": "Shared Kiln Board",
       "qty": 1,
-      "notes": "Eight spaces: 2 High, 3 Middle and 3 Low."
+      "notes": "Seven spaces: 1 High, 5 Middle and 1 Low; cover Middle spaces by player count."
     },
     {
       "name": "Kiln Player Boards",
@@ -48,11 +48,11 @@
     },
     {
       "name": "Market Orders",
-      "qty": 23
+      "qty": 28
     },
     {
       "name": "Imperial Orders",
-      "qty": 13
+      "qty": 20
     },
     {
       "name": "Technique Tiles",
@@ -61,8 +61,8 @@
     },
     {
       "name": "Fire Cards",
-      "qty": 20,
-      "notes": "4 at -2, 3 at -1, 6 at 0, 3 at +1 and 4 at +2."
+      "qty": 12,
+      "notes": "1 at -2, 3 at -1, 4 at 0, 3 at +1 and 1 at +2."
     },
     {
       "name": "Wood Contribution Cards",

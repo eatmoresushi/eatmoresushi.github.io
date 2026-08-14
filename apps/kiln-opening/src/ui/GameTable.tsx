@@ -286,7 +286,7 @@ function FiringInspector({ game, context, live }: { game: PublicGameState; conte
                 const fireUsed = result.ignoredFireModifier ? 0 : context.fireModifier;
                 const changes = [
                   result.ignoredFireModifier ? (locale === "zh-CN" ? "匣钵择定：窑火修正视为0" : "Sagger Selection: Fire treated as 0") : null,
-                  result.finalActualHeat !== result.naturalActualHeat ? (locale === "zh-CN" ? `实际热度${result.naturalActualHeat} → ${result.finalActualHeat}` : `Actual Heat ${result.naturalActualHeat} → ${result.finalActualHeat}`) : null,
+                  result.finalActualHeat !== result.naturalActualHeat ? (locale === "zh-CN" ? `实际火候${result.naturalActualHeat} → ${result.finalActualHeat}` : `Actual Heat ${result.naturalActualHeat} → ${result.finalActualHeat}`) : null,
                   result.forcedQuality !== null ? (locale === "zh-CN" ? `强制改为${term(result.forcedQuality)}` : `Forced ${term(result.forcedQuality)}`) : null,
                 ].filter((value): value is string => value !== null);
                 return (
@@ -387,7 +387,7 @@ function ImperialProgressTable({ game }: { game: PublicGameState }) {
           })}</tbody>
         </table>
       </div>
-      <p className="progress-legend">{t("Single-ceramic Imperial Orders advance 1 space; multi-ceramic Imperial Orders advance 2. Apprentices crossed at spaces 1 and 3 unlock during Cleanup.")}</p>
+      <p className="progress-legend">{t("Imperial Orders advance by their printed +1, +2, or +3. Apprentices crossed at spaces 1 and 3 unlock during Cleanup.")}</p>
     </section>
   );
 }
@@ -435,7 +435,7 @@ export function ceramicDescription(ceramic: CeramicState, locale: Locale = "en")
     parts.push(localizedTerm(locale, ceramic.glaze), localizedTerm(locale, ceramic.decoration));
   }
   if (ceramic.stage === "finished" || ceramic.stage === "delivered" || ceramic.stage === "presented") {
-    parts.push(locale === "zh-CN" ? `品质：${localizedTerm(locale, ceramic.quality)}` : `Quality: ${localizedTerm(locale, ceramic.quality)}`);
+    parts.push(locale === "zh-CN" ? `品第：${localizedTerm(locale, ceramic.quality)}` : `Quality: ${localizedTerm(locale, ceramic.quality)}`);
   }
   if (ceramic.stage === "loaded") parts.push(locale === "zh-CN" ? `窑位：${ceramic.kilnSpaceId}` : `Slot: ${ceramic.kilnSpaceId}`);
   return parts.join(" · ");
@@ -469,13 +469,13 @@ function progressReward(space: number, locale: Locale = "en"): string {
 
 function phaseName(game: PublicGameState, locale: Locale = "en"): string {
   const tx = (english: string): string => locale === "zh-CN" ? ({
-    "Kiln selection": "选择窑口", "Starting Orders": "起始订单", "Work Phase": "工作阶段",
-    "Office — Orders": "内府署 — 订单", "Office — Optional Flawed sale": "内府署 — 可选瑕疵品出售",
-    "Office — Connoisseur Network": "内府署 — 鉴赏家人脉", "Guild & Academy": "行会与书院",
-    "Kiln Setting": "调窑", "Secret Wood": "秘密柴薪贡献", "Fuel Ledger": "燃料账册",
-    "Sagger Selection": "匣钵择定", "Kiln ability": "窑口能力", "Second Firing": "二次烧成",
-    "Protective Saggars": "匣钵防护", "Kiln Records": "窑记", "Test Pieces": "试烧片",
-    "Order Phase": "订单阶段", "End-game Exhibition": "终局展陈", "Final results": "最终计分",
+    "Kiln selection": "选择窑口", "Starting Orders": "起始订单", "Work Phase": "劳作阶段",
+    "Office — Orders": "贡务 — 订单", "Office — Optional Flawed sale": "贡务 — 可选次品出售",
+    "Office — Connoisseur Network": "贡务 — 鉴藏人脉", "Guild & Academy": "行会与学堂",
+    "Kiln Setting": "装窑法", "Secret Wood": "秘密出柴", "Fuel Ledger": "柴薪簿",
+    "Sagger Selection": "匣钵择选", "Kiln ability": "窑口能力", "Second Firing": "二次烧成",
+    "Protective Saggars": "护胎匣钵", "Kiln Records": "窑务簿录", "Test Pieces": "试片",
+    "Order Phase": "交付阶段", "End-game Exhibition": "终局陈设", "Final results": "最终计分",
   } as Record<string, string>)[english] ?? english : english;
   switch (game.phase.type) {
     case "setup_kiln_selection": return tx("Kiln selection");
@@ -488,11 +488,13 @@ function phaseName(game: PublicGameState, locale: Locale = "en"): string {
     case "firing_before_contribution": return tx("Kiln Setting");
     case "firing_contributions": return tx("Secret Wood");
     case "firing_after_reveal": return tx("Fuel Ledger");
+    case "firing_reposition": return tx("Shifu kiln reposition");
     case "firing_after_fire_reveal": return tx("Sagger Selection");
     case "firing_before_quality": return tx("Kiln ability");
     case "firing_after_quality": return tx(game.phase.techniqueIds[game.phase.queue.currentIndex] === "T15" ? "Second Firing" : "Protective Saggars");
     case "firing_after_firing": return tx(game.phase.techniqueIds[game.phase.queue.currentIndex] === "T13" ? "Kiln Records" : "Test Pieces");
     case "orders": return tx("Order Phase");
+    case "cleanup_orders": return tx("Cleanup Orders");
     case "presentation": return tx("End-game Exhibition");
     case "finished": return tx("Final results");
   }

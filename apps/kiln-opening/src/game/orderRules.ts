@@ -13,6 +13,7 @@ function requirementMatches(
   if (requirement.shape !== undefined && requirement.shape !== ceramic.shape) return false;
   if (requirement.shapes !== undefined && !requirement.shapes.includes(ceramic.shape)) return false;
   if (requirement.glaze !== undefined && requirement.glaze !== ceramic.glaze) return false;
+  if (requirement.glazes !== undefined && !requirement.glazes.includes(ceramic.glaze)) return false;
   if (
     ignoredDecorationIndex !== slotIndex &&
     requirement.decoration !== undefined &&
@@ -46,6 +47,10 @@ function relationMatches(
       const values = indexedValues(assigned, relation.indices, (ceramic) => ceramic.glaze);
       return values !== null && new Set(values).size === 1;
     }
+    case "same_shape": {
+      const values = indexedValues(assigned, relation.indices, (ceramic) => ceramic.shape);
+      return values !== null && new Set(values).size === 1;
+    }
     case "different_glaze":
     case "all_different_glaze": {
       const values = indexedValues(assigned, relation.indices, (ceramic) => ceramic.glaze);
@@ -59,6 +64,10 @@ function relationMatches(
     case "same_decoration": {
       const values = indexedValues(assigned, relation.indices, (ceramic) => ceramic.decoration);
       return values !== null && new Set(values).size === 1;
+    }
+    case "different_decoration": {
+      const values = indexedValues(assigned, relation.indices, (ceramic) => ceramic.decoration);
+      return values !== null && new Set(values).size === values.length;
     }
     case "at_least_n_quality":
       return (

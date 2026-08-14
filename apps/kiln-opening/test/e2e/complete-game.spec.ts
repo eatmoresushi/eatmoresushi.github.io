@@ -77,7 +77,7 @@ test("starting Orders remain visible after an eligible redraw advances directly 
     await expect(host.getByRole("heading", { name: "Your first commission" })).toBeVisible();
     await expect(host.getByRole("region", { name: "Workshop Orders" })).toContainText("M23");
     await expect(host.locator(".player-board.is-own")).toContainText("4 available workers · 2 locked");
-    await expect(host.locator(".site-footer")).toContainText("Kiln Opening V1.0.4");
+    await expect(host.locator(".site-footer")).toContainText("Kiln Opening V1.0.9");
 
     await host.getByRole("button", { name: "Redraw" }).click();
     await expect(host.getByTestId("phase-name")).toHaveText("Work Phase");
@@ -282,7 +282,7 @@ test("two workshops complete a firing, Order, reconnect, and five-round game", a
     await hostKilnYard.getByLabel("First kiln space").selectOption("middle_1");
     await hostKilnYard.getByRole("button", { name: "Load kiln" }).click();
 
-    // V1.0.4 retains four initially usable workers; both may pass the last one.
+    // V1.0.9 retains four initially usable workers; both may pass the last one.
     await guest.getByRole("button", { name: "Pass for this round" }).click();
     await host.getByRole("button", { name: "Pass for this round" }).click();
 

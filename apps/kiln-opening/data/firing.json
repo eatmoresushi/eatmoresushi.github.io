@@ -1,13 +1,8 @@
 {
-  "rulesVersion": "1.0.4",
+  "rulesVersion": "1.0.9",
   "kilnSpaces": [
     {
       "id": "high_1",
-      "zone": "high",
-      "modifier": 1
-    },
-    {
-      "id": "high_2",
       "zone": "high",
       "modifier": 1
     },
@@ -27,17 +22,17 @@
       "modifier": 0
     },
     {
+      "id": "middle_4",
+      "zone": "middle",
+      "modifier": 0
+    },
+    {
+      "id": "middle_5",
+      "zone": "middle",
+      "modifier": 0
+    },
+    {
       "id": "low_1",
-      "zone": "low",
-      "modifier": -1
-    },
-    {
-      "id": "low_2",
-      "zone": "low",
-      "modifier": -1
-    },
-    {
-      "id": "low_3",
       "zone": "low",
       "modifier": -1
     }
@@ -50,8 +45,8 @@
   ],
   "baseHeatRule": {
     "low": "totalWood < contributors",
-    "medium": "contributors <= totalWood <= 2 * contributors",
-    "high": "totalWood > 2 * contributors",
+    "medium": "contributors <= totalWood <= contributors + 2 (for one contributor: 1-2)",
+    "high": "totalWood > contributors + 2 (for one contributor: 3+)",
     "heatValues": {
       "low": 1,
       "medium": 2,
@@ -71,20 +66,17 @@
     },
     "3": {
       "low": "0-2",
-      "medium": "3-6",
-      "high": "7+"
+      "medium": "3-5",
+      "high": "6+"
     },
     "4": {
       "low": "0-3",
-      "medium": "4-8",
-      "high": "9+"
+      "medium": "4-6",
+      "high": "7+"
     }
   },
   "fireDeck": [
     -2,
-    -2,
-    -2,
-    -2,
     -1,
     -1,
     -1,
@@ -92,14 +84,9 @@
     0,
     0,
     0,
-    0,
-    0,
     1,
     1,
     1,
-    2,
-    2,
-    2,
     2
   ],
   "qualityByDifference": {

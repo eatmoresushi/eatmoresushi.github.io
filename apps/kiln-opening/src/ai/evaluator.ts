@@ -372,7 +372,7 @@ function scoreAction(
       return;
     case "KEEP_STARTING_ORDER": {
       const orderId = observation.game.phase.type === "setup_starting_orders"
-        ? observation.game.phase.initialOrderIds[observation.playerId]
+        ? observation.game.phase.initialOrderIds?.[observation.playerId] ?? observation.game.phase.offeredOrderIds[observation.playerId]?.[0]
         : undefined;
       if (orderId !== undefined) {
         const acquisition = acquisitionScore(observation, profile, intent, orderId);
@@ -382,7 +382,7 @@ function scoreAction(
     }
     case "REDRAW_STARTING_ORDER": {
       const orderId = observation.game.phase.type === "setup_starting_orders"
-        ? observation.game.phase.initialOrderIds[observation.playerId]
+        ? observation.game.phase.initialOrderIds?.[observation.playerId] ?? observation.game.phase.offeredOrderIds[observation.playerId]?.[0]
         : undefined;
       if (orderId !== undefined) {
         const current = acquisitionScore(observation, profile, intent, orderId);
@@ -500,16 +500,14 @@ function scoreAction(
       factors.opportunityCost -= plan.conversionUrgency * (plan.pipeline.shaped + plan.pipeline.glazed) * 1.1;
       return;
     }
-    case "OFFICE_TAKE_ORDER":
-    case "OFFICE_USE_COLOUR_SAMPLES": {
+    case "OFFICE_TAKE_ORDER": {
       const acquisition = acquisitionScore(observation, profile, intent, action.orderId);
       factors.orderFeasibility += acquisition.value;
-      if (action.type === "OFFICE_USE_COLOUR_SAMPLES") {
-        // Colour Samples should replace a visibly poor option, not a good plan.
-        factors.blocking += acquisition.value < 0 ? -acquisition.value * 0.4 : -acquisition.value * 0.4;
-      }
       return;
     }
+    case "OFFICE_USE_COLOUR_SAMPLES":
+      factors.orderFeasibility += 0.5;
+      return;
     case "OFFICE_DRAW_BLIND_ORDER": {
       const pool = knownBlindOrderPool(observation, action.deck);
       const expected = pool.length === 0 ? -8 : pool.reduce(

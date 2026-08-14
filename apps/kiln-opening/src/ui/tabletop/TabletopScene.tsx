@@ -407,11 +407,13 @@ function phaseName(game: PublicGameState): string {
     case "firing_before_contribution": return "Kiln Setting";
     case "firing_contributions": return "Secret Wood";
     case "firing_after_reveal": return "Fuel Ledger";
+    case "firing_reposition": return "Shifu kiln reposition";
     case "firing_after_fire_reveal": return "Sagger Selection";
     case "firing_before_quality": return "Kiln ability";
     case "firing_after_quality": return game.phase.techniqueIds[game.phase.queue.currentIndex] === "T15" ? "Second Firing" : "Protective Saggars";
     case "firing_after_firing": return game.phase.techniqueIds[game.phase.queue.currentIndex] === "T13" ? "Kiln Records" : "Test Pieces";
     case "orders": return "Order Phase";
+    case "cleanup_orders": return "Cleanup Orders";
     case "presentation": return "Imperial Presentation";
     case "finished": return "Final results";
   }

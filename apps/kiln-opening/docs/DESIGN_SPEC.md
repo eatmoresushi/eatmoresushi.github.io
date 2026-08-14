@@ -26,7 +26,7 @@ Do not add digital conveniences that remove this inference.
 
 ### 2. Controlled uncertainty, not chaos
 
-The V1.0.4 Fire deck contains -2/-1/0/+1/+2 in a 4/3/6/3/4 distribution. Zero is the most common result, the negative and positive sides are symmetric, and exact-heat firing is therefore favoured without making wider outcomes rare.
+The V1.0.9 Fire deck contains -2/-1/0/+1/+2 in a 1/3/4/3/1 distribution. Zero is the most common result and the negative and positive sides are symmetric.
 
 The larger strategic uncertainty still comes from other players' secret Wood contributions. Fire is resolved through the existing uncapped heat-difference system; planning, zone choice and abilities remain the tools for managing its wider range.
 

@@ -1,4 +1,4 @@
-import type { AuthoritativeCommand, PendingContribution, PublicEventRecord, PublicGameEvent, PublicGameState } from "../multiplayer";
+import type { AuthoritativeCommand, PendingContribution, PrivateDecisionState, PublicEventRecord, PublicGameEvent, PublicGameState } from "../multiplayer";
 import type { FireModifier, PlayerId } from "../game";
 import { GAME_CONFIG, KILN_DEFINITIONS, ORDER_DEFINITIONS, TECHNIQUE_DEFINITIONS } from "../game";
 import { ActionPanel } from "./ActionPanel";
@@ -12,6 +12,7 @@ export function PlaytestExperience({
   game,
   ownPlayerId,
   ownPendingContribution,
+  ownPrivateDecision,
   events,
   busy,
   send,
@@ -19,6 +20,7 @@ export function PlaytestExperience({
   game: PublicGameState;
   ownPlayerId: PlayerId;
   ownPendingContribution: PendingContribution | null;
+  ownPrivateDecision?: PrivateDecisionState | undefined;
   events: PublicEventRecord[];
   busy: boolean;
   send: SendCommand;
@@ -32,6 +34,7 @@ export function PlaytestExperience({
         game={game}
         ownPlayerId={ownPlayerId}
         ownPendingContribution={ownPendingContribution}
+        ownPrivateDecision={ownPrivateDecision}
         busy={busy}
         send={send}
       />
@@ -112,6 +115,10 @@ export function eventDescription(event: PublicGameEvent, game: PublicGameState, 
   switch (event.type) {
     case "KILN_SELECTED":
       return `${player(event.playerId)} selected ${KILN_DEFINITIONS[event.kilnId].name}.`;
+    case "STARTING_ORDERS_SUBMITTED":
+      return `${player(event.playerId)} locked an opening Order choice.`;
+    case "STARTING_ORDERS_REVEALED":
+      return `Opening Orders revealed: ${Object.entries(event.ordersByPlayer).map(([id, orders]) => `${player(id)} kept ${orders.join(", ")}`).join("; ")}.`;
     case "STARTING_ORDER_KEPT":
       return `${player(event.playerId)} kept starting Order ${event.orderId}.`;
     case "STARTING_ORDER_REDRAWN":
@@ -135,7 +142,7 @@ export function eventDescription(event: PublicGameEvent, game: PublicGameState, 
     case "ORDER_TAKEN":
       return `${player(event.playerId)} ${event.acquisition === "blind_top" ? "blind-drew" : "took"} ${event.orderId} from the ${event.deck} Orders.`;
     case "COLOUR_SAMPLES_USED":
-      return `${player(event.playerId)} used Colour Samples: ${event.bottomedOrderId} went to the bottom and ${event.revealedOrderId ?? "no replacement"} was revealed.`;
+      return `${player(event.playerId)} used Colour Samples, took ${event.selectedOrderId ?? "an Order"}, and put ${event.bottomedOrderId} on the bottom.`;
     case "TECHNIQUE_REFRESHED":
       return `${player(event.playerId)} refreshed ${event.techniqueId} · ${TECHNIQUE_DEFINITIONS[event.techniqueId]?.name ?? "Unknown Technique"}.`;
     case "TECHNIQUE_ACQUIRED":
@@ -171,6 +178,10 @@ export function eventDescription(event: PublicGameEvent, game: PublicGameState, 
       return `${player(event.playerId)} claimed the Imperial Seal.`;
     case "APPRENTICE_UNLOCKED":
       return `${player(event.playerId)} unlocked Apprentice ${event.workerId}.`;
+    case "ROUND_FIVE_UNLOCK_COIN_REWARD":
+      return `${player(event.playerId)} received 3 Coins instead of a Round 5 Apprentice unlock.`;
+    case "ORDERS_DISCARDED_FOR_CLEANUP":
+      return `${player(event.playerId)} discarded ${event.orderIds.join(", ")} during Cleanup.`;
     case "IMPERIAL_STIPEND_RECEIVED":
       return `${player(event.playerId)} received the Progress ${event.space} court stipend: +${event.coins} Coins.`;
     case "ORDER_DISPLAYS_ROTATED":
@@ -192,6 +203,8 @@ function eventDescriptionZh(event: PublicGameEvent, game: PublicGameState): stri
   };
   switch (event.type) {
     case "KILN_SELECTED": return `${player(event.playerId)}选择了${KILN_DEFINITIONS[event.kilnId].nameZh}。`;
+    case "STARTING_ORDERS_SUBMITTED": return `${player(event.playerId)}已锁定起始订单选择。`;
+    case "STARTING_ORDERS_REVEALED": return `起始订单同时公开：${Object.entries(event.ordersByPlayer).map(([id, orders]) => `${player(id)}保留${orders.join("、")}`).join("；")}。`;
     case "STARTING_ORDER_KEPT": return `${player(event.playerId)}保留起始订单${event.orderId}。`;
     case "STARTING_ORDER_REDRAWN": return `${player(event.playerId)}弃掉${event.discardedOrderId}并重抽到${event.drawnOrderId}。`;
     case "WORKER_PLACED": return `${player(event.playerId)}将${workerName(event.workerId, "zh-CN")}放到${locationName(event.locationId, "zh-CN")}。`;
@@ -201,9 +214,9 @@ function eventDescriptionZh(event: PublicGameEvent, game: PublicGameState): stri
     case "CERAMIC_GLAZED": return `${player(event.playerId)}为${ceramic(event.ceramicId)}施釉：${term("zh-CN", event.glaze)}、${term("zh-CN", event.decoration)}。`;
     case "CERAMIC_LOADED": return `${player(event.playerId)}将${ceramic(event.ceramicId)}放入${term("zh-CN", event.kilnSpaceId)}。`;
     case "CERAMIC_SOLD": return `${player(event.playerId)}出售了1件${ceramic(event.ceramicId)}。`;
-    case "CERAMIC_RETURNED_TO_GLAZED": return `${player(event.playerId)}使用二次烧成；${ceramic(event.ceramicId)}退回已施釉区，并失去标准品品质。`;
+    case "CERAMIC_RETURNED_TO_GLAZED": return `${player(event.playerId)}使用二次烧成；${ceramic(event.ceramicId)}退回施釉区，并失去合格品品第。`;
     case "ORDER_TAKEN": return `${player(event.playerId)}${event.acquisition === "blind_top" ? "盲抽" : "拿取"}了${event.deck === "market" ? "市场" : "御用"}订单${event.orderId}。`;
-    case "COLOUR_SAMPLES_USED": return `${player(event.playerId)}使用釉色样本：${event.bottomedOrderId}移到牌堆底，翻开${event.revealedOrderId ?? "无替补"}。`;
+    case "COLOUR_SAMPLES_USED": return `${player(event.playerId)}使用釉色样本，拿取${event.selectedOrderId ?? "1张订单"}，并将${event.bottomedOrderId}置于牌堆底。`;
     case "TECHNIQUE_REFRESHED": return `${player(event.playerId)}刷新了${event.techniqueId} · ${TECHNIQUE_DEFINITIONS[event.techniqueId]?.nameZh ?? "未知技术"}。`;
     case "TECHNIQUE_ACQUIRED": return `${player(event.playerId)}以${event.cost}铜钱购买${event.techniqueId} · ${TECHNIQUE_DEFINITIONS[event.techniqueId]?.nameZh ?? "未知技术"}。`;
     case "TECHNIQUE_USED": return `${player(event.playerId)}使用${event.techniqueId} · ${TECHNIQUE_DEFINITIONS[event.techniqueId]?.nameZh ?? "未知技术"}。`;
@@ -213,8 +226,8 @@ function eventDescriptionZh(event: PublicGameEvent, game: PublicGameState): stri
     case "WOOD_SUBMITTED": return `${player(event.playerId)}提交了秘密柴薪贡献。`;
     case "WOOD_REVEALED": return `柴薪贡献公开：${Object.entries(event.contributions).map(([id, value]) => `${player(id)}贡献${value}柴薪`).join("；")}。`;
     case "FIRE_REVEALED": return `翻开窑火牌${signed(event.modifier)}。基础热度${event.baseHeat}；全局热度${event.globalHeat}。`;
-    case "QUALITY_ASSIGNED": return `${ceramic(event.ceramicId)}的品质判定为${term("zh-CN", event.quality)}。`;
-    case "FIRING_RESOLVED": return `${ceramic(event.ceramicId)}烧成记录：窑火${signed(event.fireModifier)}，天然热度${event.naturalActualHeat}（热度差${event.naturalHeatDifference}，${term("zh-CN", event.naturalQuality)}），最终热度${event.finalActualHeat}（热度差${event.finalHeatDifference}，${term("zh-CN", event.finalQuality)}）。`;
+    case "QUALITY_ASSIGNED": return `${ceramic(event.ceramicId)}的品第判定为${term("zh-CN", event.quality)}。`;
+    case "FIRING_RESOLVED": return `${ceramic(event.ceramicId)}烧制记录：窑火${signed(event.fireModifier)}，自然实际火候${event.naturalActualHeat}（火候差${event.naturalHeatDifference}，${term("zh-CN", event.naturalQuality)}），最终实际火候${event.finalActualHeat}（火候差${event.finalHeatDifference}，${term("zh-CN", event.finalQuality)}）。`;
     case "ORDER_COMPLETED": {
       const definition = ORDER_DEFINITIONS[event.orderId];
       const reward = definition === undefined ? "" : ` +${definition.vp}分${definition.coins > 0 ? `、+${definition.coins}铜钱` : ""}`;
@@ -224,6 +237,8 @@ function eventDescriptionZh(event: PublicGameEvent, game: PublicGameState): stri
     case "COURT_PATRONAGE_USED": return `${player(event.playerId)}使用朝廷赞助，支付${event.cost}铜钱，御用进度${event.from} → ${event.to}。`;
     case "IMPERIAL_SEAL_CLAIMED": return `${player(event.playerId)}获得御印。`;
     case "APPRENTICE_UNLOCKED": return `${player(event.playerId)}解锁学徒${event.workerId}。`;
+    case "ROUND_FIVE_UNLOCK_COIN_REWARD": return `${player(event.playerId)}在第5轮以3铜钱替代学徒解锁。`;
+    case "ORDERS_DISCARDED_FOR_CLEANUP": return `${player(event.playerId)}在整备阶段弃掉${event.orderIds.join("、")}。`;
     case "IMPERIAL_STIPEND_RECEIVED": return `${player(event.playerId)}获得进度${event.space}的朝廷赏赐：+${event.coins}铜钱。`;
     case "ORDER_DISPLAYS_ROTATED": return `第${event.round}轮订单轮换弃掉市场订单${event.marketOrderIds.join("、")}和御用订单${event.imperialOrderIds.join("、")}。`;
     case "ROUND_STARTED": return `第${event.round}轮开始。${player(event.firstPlayerId)}为起始玩家。`;

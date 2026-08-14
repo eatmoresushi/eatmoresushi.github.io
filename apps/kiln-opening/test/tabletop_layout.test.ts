@@ -14,8 +14,8 @@ describe("tabletop presentation configuration", () => {
     }
   });
 
-  it("provides a visual slot for all eight kiln spaces and all six Imperial spaces", () => {
-    expect(Object.keys(KILN_SLOT_POINTS)).toEqual(KILN_SPACE_IDS);
+  it("provides a visual slot for all seven active-rules kiln spaces and all six Imperial spaces", () => {
+    expect(KILN_SPACE_IDS.every((spaceId) => KILN_SLOT_POINTS[spaceId] !== undefined)).toBe(true);
     expect(IMPERIAL_TRACK_POINTS).toHaveLength(6);
   });
 

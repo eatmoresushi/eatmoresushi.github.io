@@ -22,7 +22,7 @@ import type {
 } from "./types.ts";
 
 interface GameConfigDefinition {
-  rulesVersion: "1.0.4";
+  rulesVersion: "1.0.9";
   players: { min: number; max: number };
   rounds: number;
   startingResources: { clay: number; wood: number; coins: number };
@@ -69,6 +69,7 @@ export interface OrderRequirementDefinition {
   shape?: Shape;
   shapes?: Shape[];
   glaze?: Glaze;
+  glazes?: Glaze[];
   decoration?: Decoration;
 }
 
@@ -79,16 +80,18 @@ export interface OrderDefinition {
   minQuality: Quality;
   vp: number;
   coins: number;
-  imperialProgressReward?: 1 | 2;
+  imperialProgressReward?: 1 | 2 | 3;
 }
 
 export type OrderRelationDefinition =
   | { type: "same_glaze"; indices: number[] }
+  | { type: "same_shape"; indices: number[] }
   | { type: "different_glaze"; indices: number[] }
   | { type: "all_different_glaze"; indices: number[] }
   | { type: "different_shape"; indices: number[] }
   | { type: "all_different_shape"; indices: number[] }
   | { type: "same_decoration"; indices: number[] }
+  | { type: "different_decoration"; indices: number[] }
   | { type: "at_least_n_quality"; quality: Quality; count: number }
   | { type: "at_least_n_distinct_glazes"; indices: number[]; count: number }
   | { type: "glaze_categories"; indices: number[]; categories: Glaze[][] };
@@ -105,7 +108,7 @@ export interface TechniqueDefinition {
 }
 
 interface FiringDefinition {
-  rulesVersion: "1.0.4";
+  rulesVersion: "1.0.9";
   kilnSpaces: Array<{ id: KilnSpaceId; zone: "high" | "middle" | "low"; modifier: -1 | 0 | 1 }>;
   fireDeck: FireModifier[];
 }
@@ -127,7 +130,7 @@ export interface KilnDefinition {
 
 export const GAME_CONFIG = gameConfigJson as unknown as GameConfigDefinition;
 const ACTION_LOCATION_FILE = actionLocationsJson as unknown as {
-  rulesVersion: "1.0.4";
+  rulesVersion: "1.0.9";
   locations: LocationDefinition[];
 };
 const ORDER_FILE = ordersJson as unknown as {
@@ -137,7 +140,7 @@ const ORDER_FILE = ordersJson as unknown as {
 const TECHNIQUE_FILE = techniquesJson as unknown as TechniqueDefinition[];
 const FIRING_FILE = firingJson as unknown as FiringDefinition;
 const COMPONENT_FILE = componentsJson as unknown as {
-  rulesVersion: "1.0.4";
+  rulesVersion: "1.0.9";
   components: ComponentDefinition[];
 };
 
@@ -183,7 +186,7 @@ export const SHAPE_COSTS = GAME_CONFIG.shapes;
 export const DECORATION_COSTS = GAME_CONFIG.decorations;
 
 export interface ImperialProgressDefinition {
-  rulesVersion: "1.0.4";
+  rulesVersion: "1.0.9";
   track: Array<{
     space: number;
     title: string;
@@ -232,11 +235,11 @@ export const COMMON_SUPPLY = {
 
 function validateContent(): void {
   if (
-    GAME_CONFIG.rulesVersion !== "1.0.4" ||
-    ACTION_LOCATION_FILE.rulesVersion !== "1.0.4" ||
-    FIRING_FILE.rulesVersion !== "1.0.4" ||
-    COMPONENT_FILE.rulesVersion !== "1.0.4" ||
-    IMPERIAL_PROGRESS.rulesVersion !== "1.0.4"
+    GAME_CONFIG.rulesVersion !== "1.0.9" ||
+    ACTION_LOCATION_FILE.rulesVersion !== "1.0.9" ||
+    FIRING_FILE.rulesVersion !== "1.0.9" ||
+    COMPONENT_FILE.rulesVersion !== "1.0.9" ||
+    IMPERIAL_PROGRESS.rulesVersion !== "1.0.9"
   ) {
     throw new Error("Rules content version mismatch");
   }
@@ -248,7 +251,7 @@ function validateContent(): void {
   ) {
     throw new Error("Expected exactly six action locations");
   }
-  if (MARKET_ORDERS.length !== 23 || IMPERIAL_ORDERS.length !== 13) {
+  if (MARKET_ORDERS.length !== 28 || IMPERIAL_ORDERS.length !== 20) {
     throw new Error("Order deck size mismatch");
   }
   if (
@@ -257,10 +260,10 @@ function validateContent(): void {
   ) {
     throw new Error("Imperial Order progress rewards mismatch");
   }
-  if (TECHNIQUES.length !== 15 || KILN_IDS.length !== 5 || KILN_SPACE_IDS.length !== 8) {
+  if (TECHNIQUES.length !== 15 || KILN_IDS.length !== 5 || KILN_SPACE_IDS.length !== 7) {
     throw new Error("Technique, Kiln, or kiln-space count mismatch");
   }
-  if (new Set([...MARKET_ORDERS, ...IMPERIAL_ORDERS].map((order) => order.id)).size !== 36) {
+  if (new Set([...MARKET_ORDERS, ...IMPERIAL_ORDERS].map((order) => order.id)).size !== 48) {
     throw new Error("Order IDs must be unique");
   }
   if (new Set(TECHNIQUES.map((technique) => technique.id)).size !== 15) {
@@ -271,7 +274,7 @@ function validateContent(): void {
     const actual = FIRE_CARDS.filter((card) => card === modifier).length;
     if (configured !== actual) throw new Error(`Fire card count mismatch for ${modifier}`);
   }
-  if (FIRE_CARDS.length !== 20) throw new Error("Fire deck must contain exactly 20 cards");
+  if (FIRE_CARDS.length !== 12) throw new Error("Fire deck must contain exactly 12 cards");
 }
 
 validateContent();

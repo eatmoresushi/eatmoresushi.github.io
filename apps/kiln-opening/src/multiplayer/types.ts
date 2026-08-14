@@ -26,7 +26,7 @@ import type {
 } from "../game/index.ts";
 
 export type RoomStatus = "lobby" | "playing" | "finished" | "abandoned";
-export type StoredRulesVersion = "0.4" | "0.5" | "0.6.1" | "0.6.3" | "0.6.5" | "1.0.0" | "1.0.1" | "1.0.2" | "1.0.4";
+export type StoredRulesVersion = "0.4" | "0.5" | "0.6.1" | "0.6.3" | "0.6.5" | "1.0.0" | "1.0.1" | "1.0.2" | "1.0.4" | "1.0.9";
 
 export interface PublicRoom {
   id: string;
@@ -91,7 +91,7 @@ export interface PublicDiscards {
 
 export interface PublicGameState {
   schemaVersion: 1;
-  rulesVersion: "1.0.4";
+  rulesVersion: "1.0.9";
   gameId: string;
   revision: number;
   eventSequence: number;
@@ -129,7 +129,14 @@ export interface PublicEventRecord {
 export interface PendingContribution {
   windowId: string;
   amount: WoodContribution;
+  useFuelLedger?: boolean;
   submitted: true;
+}
+
+export interface PrivateDecisionState {
+  startingOrderIds: OrderId[];
+  colourSamplesOrderIds: OrderId[];
+  fireModifierPeek: FireModifier | null;
 }
 
 export interface RoomConnection {
@@ -139,6 +146,7 @@ export interface RoomConnection {
   seatToken: string;
   game: PublicGameState | null;
   ownPendingContribution: PendingContribution | null;
+  ownPrivateDecision?: PrivateDecisionState | undefined;
 }
 
 export interface ReconnectResult {
@@ -147,6 +155,7 @@ export interface ReconnectResult {
   seat: PublicSeat;
   game: PublicGameState | null;
   ownPendingContribution: PendingContribution | null;
+  ownPrivateDecision?: PrivateDecisionState | undefined;
 }
 
 export type MultiplayerErrorCode =
@@ -233,12 +242,14 @@ export interface ComputerAdvanceSuccess {
   actorIds: PlayerId[];
   stoppedReason: "human_turn" | "finished" | "action_limit";
   ownPendingContribution: PendingContribution | null;
+  ownPrivateDecision?: PrivateDecisionState | undefined;
 }
 
 export interface SubmitWoodCommand {
   type: "SUBMIT_WOOD_CONTRIBUTION";
   windowId: string;
   amount: WoodContribution;
+  useFuelLedger?: boolean;
 }
 
 export type AuthoritativeCommand = GameAction | SubmitWoodCommand;
@@ -257,6 +268,7 @@ export interface CommandSuccess {
   game: PublicGameState;
   events: PublicGameEvent[];
   ownPendingContribution: PendingContribution | null;
+  ownPrivateDecision?: PrivateDecisionState | undefined;
 }
 
 export interface AuthoritativeHead {
@@ -274,6 +286,7 @@ export interface PrivateSubmissionRecord {
   playerId: PlayerId;
   commandId: string;
   amount: WoodContribution;
+  useFuelLedger?: boolean;
   revealedRevision: number | null;
 }
 

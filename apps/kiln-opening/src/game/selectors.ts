@@ -31,6 +31,7 @@ export function currentDecisionActor(phase: GamePhase): PlayerId | null {
     case "work_guild":
       return phase.actorId;
     case "firing_before_contribution":
+    case "firing_reposition":
     case "firing_after_reveal":
     case "firing_after_fire_reveal":
     case "firing_before_quality":
@@ -39,6 +40,8 @@ export function currentDecisionActor(phase: GamePhase): PlayerId | null {
       return phase.queue.actors[phase.queue.currentIndex] ?? null;
     case "orders":
       return phase.activePlayerId;
+    case "cleanup_orders":
+      return phase.queue.actors[phase.queue.currentIndex] ?? null;
     case "firing_contributions":
     case "presentation":
     case "finished":

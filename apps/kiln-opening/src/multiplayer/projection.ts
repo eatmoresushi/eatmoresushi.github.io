@@ -19,7 +19,8 @@ function projectPlayer(state: GameState, playerId: PlayerId): PublicPlayerState 
     kilnId: player.kilnId,
     resources: clone(player.resources),
     workers: clone(player.workers),
-    orderHand: [...player.orderHand],
+    // Opening selections remain hidden until the final simultaneous reveal.
+    orderHand: state.phase.type === "setup_starting_orders" ? [] : [...player.orderHand],
     completedOrders: clone(player.completedOrders),
     techniques: clone(player.techniques),
     imperialProgress: player.imperialProgress,
@@ -33,6 +34,7 @@ function projectPlayer(state: GameState, playerId: PlayerId): PublicPlayerState 
 }
 
 export function projectPublicGameState(state: GameState): PublicGameState {
+  if (state.rulesVersion !== "1.0.9") throw new Error("Only V1.0.9 games may be projected by the current client");
   if (state.phase.type === "firing_contributions" && state.firingContext !== null) {
     throw new Error("Unrevealed Contributions must never enter the public firing context");
   }
@@ -49,6 +51,14 @@ export function projectPublicGameState(state: GameState): PublicGameState {
     ]),
   ) as Record<TechniqueDiscipline, number>;
 
+  const phase = clone(state.phase);
+  if (phase.type === "setup_starting_orders") {
+    phase.offeredOrderIds = {};
+    phase.initialOrderIds = {};
+  }
+  if (phase.type === "work_office_orders" && phase.step === "colour_samples_choose") {
+    phase.colourSamplesChoices = [];
+  }
   return {
     schemaVersion: state.schemaVersion,
     rulesVersion: state.rulesVersion,
@@ -59,7 +69,7 @@ export function projectPublicGameState(state: GameState): PublicGameState {
     round: state.round,
     playerOrder: [...state.playerOrder],
     firstPlayerId: state.firstPlayerId,
-    phase: clone(state.phase),
+    phase,
     players,
     actionBoard: clone(state.actionBoard),
     ceramics: clone(state.ceramics),
@@ -94,6 +104,8 @@ export function projectPublicGameState(state: GameState): PublicGameState {
 export function projectPublicEvent(event: GameEvent): PublicGameEvent {
   switch (event.type) {
     case "KILN_SELECTED":
+    case "STARTING_ORDERS_SUBMITTED":
+    case "STARTING_ORDERS_REVEALED":
     case "STARTING_ORDER_KEPT":
     case "STARTING_ORDER_REDRAWN":
     case "WORKER_PLACED":
@@ -122,6 +134,8 @@ export function projectPublicEvent(event: GameEvent): PublicGameEvent {
     case "COURT_PATRONAGE_USED":
     case "IMPERIAL_SEAL_CLAIMED":
     case "APPRENTICE_UNLOCKED":
+    case "ROUND_FIVE_UNLOCK_COIN_REWARD":
+    case "ORDERS_DISCARDED_FOR_CLEANUP":
     case "IMPERIAL_STIPEND_RECEIVED":
     case "ORDER_DISPLAYS_ROTATED":
     case "ROUND_STARTED":

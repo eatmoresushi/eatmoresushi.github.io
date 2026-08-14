@@ -11,7 +11,7 @@ import type {
 } from "../multiplayer";
 import { ORDER_DEFINITIONS, TECHNIQUE_DEFINITIONS, currentDecisionActor } from "../game";
 import { PlaytestExperience } from "./PlaytestExperience";
-import { localizeMultiplayerError, rulebookHref, useI18n } from "./i18n";
+import { localizeMultiplayerError, useI18n } from "./i18n";
 import type { Locale } from "./i18n";
 
 const LAST_SEAT_KEY = "kiln-opening:last-seat";
@@ -81,8 +81,8 @@ export function commandNotice(result: CommandSuccess, locale: Locale = "en"): st
   if (colour?.type === "COLOUR_SAMPLES_USED") {
     const deck = colour.deck === "market" ? (locale === "zh-CN" ? "市场" : "Market") : (locale === "zh-CN" ? "御用" : "Imperial");
     return locale === "zh-CN"
-      ? `使用釉色样本：${colour.bottomedOrderId}移至${deck}订单牌堆底；翻开${colour.revealedOrderId ?? "无替补"}。`
-      : `Used Colour Samples: ${colour.bottomedOrderId} moved to the bottom of the ${deck} deck; ${colour.revealedOrderId ?? "no replacement"} was revealed.`;
+      ? `使用釉色样本：拿取${colour.selectedOrderId ?? "1张订单"}；${colour.bottomedOrderId}移至${deck}订单牌堆底。`
+      : `Used Colour Samples: took ${colour.selectedOrderId ?? "one Order"}; ${colour.bottomedOrderId} moved to the bottom of the ${deck} deck.`;
   }
   const patronage = result.events.find((event) => event.type === "COURT_PATRONAGE_USED");
   if (patronage?.type === "COURT_PATRONAGE_USED") {
@@ -148,6 +148,7 @@ export function App() {
       room: result.room,
       game: result.game,
       ownPendingContribution: result.ownPendingContribution,
+      ownPrivateDecision: result.ownPrivateDecision,
     });
     setNotice(commandNotice(result, locale));
   }, [locale]);
@@ -237,6 +238,7 @@ export function App() {
         room: result.value.room,
         game: result.value.game,
         ownPendingContribution: result.value.ownPendingContribution,
+        ownPrivateDecision: result.value.ownPrivateDecision,
       });
       if (result.value.advancedActions > 0) {
         const uniqueActors = new Set(result.value.actorIds).size;
@@ -497,6 +499,7 @@ export function App() {
             game={connection.game}
             ownPlayerId={connection.seat.playerId}
             ownPendingContribution={connection.ownPendingContribution}
+            ownPrivateDecision={connection.ownPrivateDecision}
             events={eventLog}
             busy={busy || computerThinking}
             send={send}
@@ -512,7 +515,7 @@ export function App() {
         />
       )}
       <footer className="site-footer">
-        <span>{t("Kiln Opening")} V1.0.4</span>
+        <span>{t("Kiln Opening")} V1.0.9</span>
         <a href="https://luyuan.me/">Luyuan He</a>
       </footer>
     </div>
@@ -534,7 +537,7 @@ function HomeScreen({
   onResume: () => void;
   onForget: () => void;
 }) {
-  const { locale, t } = useI18n();
+  const { t } = useI18n();
   const [mode, setMode] = useState<"create" | "join">("create");
   const [displayName, setDisplayName] = useState("");
   const [roomCode, setRoomCode] = useState("");
@@ -558,14 +561,6 @@ function HomeScreen({
           <span><strong>5</strong> {t("rounds")}</span>
           <span><strong>90–120</strong> {t("minutes")}</span>
         </div>
-        <a
-          className="rulebook-link"
-          href={rulebookHref(locale)}
-          target="_blank"
-          rel="noreferrer"
-        >
-          {t("V1.0.4 Rulebook (PDF)")}
-        </a>
       </div>
       <div className="entry-card">
         {savedSeat !== null && (

@@ -1,5 +1,5 @@
 export type PlayerId = string;
-export type RulesVersion = "1.0.4";
+export type RulesVersion = "1.0.4" | "1.0.9";
 export type WorkerId = string;
 export type CeramicId = string;
 export type VesselInstanceId = string;
@@ -27,11 +27,13 @@ export type LocationId =
   | "guild_academy";
 export type KilnSpaceId =
   | "high_1"
-  | "high_2"
   | "middle_1"
   | "middle_2"
   | "middle_3"
+  | "middle_4"
+  | "middle_5"
   | "low_1"
+  | "high_2"
   | "low_2"
   | "low_3";
 
@@ -215,6 +217,7 @@ export interface FinalScoreBreakdown {
   imperialSeal: number;
   presentation: number;
   immediateAbilities: number;
+  techniques?: number;
   leftoverCoins: number;
   total: number;
 }
@@ -240,7 +243,10 @@ export type GamePhase =
       type: "setup_starting_orders";
       decisionOrder: PlayerId[];
       currentIndex: number;
+      offeredOrderIds: Record<PlayerId, OrderId[]>;
+      /** Historical save compatibility only. */
       initialOrderIds: Record<PlayerId, OrderId>;
+      submittedPlayerIds: PlayerId[];
     }
   | {
       type: "work";
@@ -253,8 +259,10 @@ export type GamePhase =
       mode: OfficeOrderMode;
       remainingTakes: 0 | 1 | 2;
       ordersTaken: number;
-      step: "colour_samples_or_skip" | "take_or_end";
+      step: "colour_samples_or_skip" | "colour_samples_choose" | "take_or_end";
       colourSamplesUsed: boolean;
+      colourSamplesDeck?: OrderDeck;
+      colourSamplesChoices?: OrderId[];
     }
   | {
       type: "work_office_sale";
@@ -275,6 +283,7 @@ export type GamePhase =
   | {
       type: "firing_before_contribution";
       queue: OrderedDecisionQueue;
+      techniqueIds: TechniqueId[];
     }
   | {
       type: "firing_contributions";
@@ -282,10 +291,8 @@ export type GamePhase =
       eligiblePlayerIds: PlayerId[];
       submittedPlayerIds: PlayerId[];
     }
-  | {
-      type: "firing_after_reveal";
-      queue: OrderedDecisionQueue;
-    }
+  | { type: "firing_reposition"; queue: OrderedDecisionQueue }
+  | { type: "firing_after_reveal"; queue: OrderedDecisionQueue }
   | {
       type: "firing_after_fire_reveal";
       queue: OrderedDecisionQueue;
@@ -310,6 +317,7 @@ export type GamePhase =
       currentIndex: number;
       activePlayerId: PlayerId;
     }
+  | { type: "cleanup_orders"; queue: OrderedDecisionQueue }
   | {
       type: "presentation";
       eligiblePlayerIds: PlayerId[];
@@ -348,6 +356,7 @@ export interface GameState {
   firingContext: FiringContext | null;
   lastFiringResult: FiringResultSummary | null;
   finalResult: FinalResult | null;
+  privateFirePeeks?: Record<PlayerId, FireModifier>;
   experimentConfig?: GameExperimentConfig;
 }
 
@@ -393,6 +402,16 @@ export interface GlazeSelection {
   decoration: Decoration;
 }
 
+export interface MaterialExchange {
+  give: "clay" | "wood";
+  amount: number;
+}
+
+export interface DryingFramesSelection {
+  formedIndex: number;
+  glaze: Glaze;
+}
+
 export interface KilnLoadSelection {
   ceramicId: CeramicId;
   kilnSpaceId: KilnSpaceId;
@@ -400,6 +419,7 @@ export interface KilnLoadSelection {
 
 export type GameAction =
   | { type: "SELECT_KILN"; kilnId: KilnId }
+  | { type: "SUBMIT_STARTING_ORDERS"; orderIds: OrderId[] }
   | { type: "KEEP_STARTING_ORDER" }
   | { type: "REDRAW_STARTING_ORDER" }
   | { type: "PASS_WORK_PHASE" }
@@ -408,20 +428,26 @@ export type GameAction =
       workerId: WorkerId;
       clay: number;
       wood: number;
+      exchange?: MaterialExchange;
     }
   | {
       type: "FORM_CERAMICS";
       workerId: WorkerId;
       shapes: Shape[];
       useTechniqueIds?: TechniqueId[];
+      claySubstitutions?: number;
+      /** Historical caller compatibility; translated to one substitution. */
       claySubstitutionTarget?: "base" | "ding";
+      dryingFrames?: DryingFramesSelection;
       dingExtraShape?: Shape;
     }
   | {
       type: "GLAZE_CERAMICS";
       workerId: WorkerId;
       selections: GlazeSelection[];
-      shifuMode: "normal" | "free_single";
+      freeDecorationCeramicId?: CeramicId;
+      /** Historical caller compatibility; V1.0.9 always uses the merged Shifu action. */
+      shifuMode?: "normal" | "free_single";
       useTechniqueIds?: TechniqueId[];
     }
   | {
@@ -441,7 +467,8 @@ export type GameAction =
     }
   | { type: "OFFICE_DRAW_BLIND_ORDER"; deck: OrderDeck }
   | { type: "OFFICE_END_ORDERS" }
-  | { type: "OFFICE_USE_COLOUR_SAMPLES"; orderId: OrderId }
+  | { type: "OFFICE_USE_COLOUR_SAMPLES"; deck?: OrderDeck; orderId?: OrderId }
+  | { type: "OFFICE_CHOOSE_COLOUR_SAMPLES_ORDER"; orderId: OrderId }
   | { type: "OFFICE_SKIP_COLOUR_SAMPLES" }
   | { type: "OFFICE_RESOLVE_FLAWED_SALE"; ceramicIds: CeramicId[] }
   | { type: "OFFICE_RESOLVE_CONNOISSEUR_NETWORK"; ceramicId: CeramicId | null }
@@ -455,6 +482,7 @@ export type GameAction =
       ceramicId: CeramicId | null;
       toSpaceId: KilnSpaceId | null;
     }
+  | { type: "RESOLVE_KILN_YARD_REPOSITION"; ceramicId: CeramicId | null; toSpaceId: KilnSpaceId | null }
   | { type: "RESOLVE_FUEL_LEDGER"; use: boolean }
   | { type: "RESOLVE_SAGGER_SELECTION"; ceramicId: CeramicId | null }
   | { type: "RESOLVE_JUN"; ceramicId: CeramicId | null; delta: -1 | 1 | null }
@@ -470,6 +498,7 @@ export type GameAction =
       useGuanWaiver: boolean;
     }
   | { type: "END_ORDER_TURN" }
+  | { type: "DISCARD_ORDERS_FOR_CLEANUP"; orderIds: OrderId[] }
   | { type: "SUBMIT_PRESENTATION"; ceramicIds: CeramicId[] };
 
 export type GameRuleErrorCode =
@@ -511,13 +540,10 @@ export interface GameRuleError {
 
 export type GameEvent =
   | { type: "KILN_SELECTED"; playerId: PlayerId; kilnId: KilnId }
+  | { type: "STARTING_ORDERS_SUBMITTED"; playerId: PlayerId }
+  | { type: "STARTING_ORDERS_REVEALED"; ordersByPlayer: Record<PlayerId, OrderId[]> }
   | { type: "STARTING_ORDER_KEPT"; playerId: PlayerId; orderId: OrderId }
-  | {
-      type: "STARTING_ORDER_REDRAWN";
-      playerId: PlayerId;
-      discardedOrderId: OrderId;
-      drawnOrderId: OrderId;
-    }
+  | { type: "STARTING_ORDER_REDRAWN"; playerId: PlayerId; discardedOrderId: OrderId; drawnOrderId: OrderId }
   | { type: "WORKER_PLACED"; playerId: PlayerId; workerId: WorkerId; locationId: LocationId }
   | { type: "PLAYER_PASSED"; playerId: PlayerId }
   | { type: "RESOURCES_CHANGED"; playerId: PlayerId; clay: number; wood: number; coins: number }
@@ -538,7 +564,8 @@ export type GameEvent =
       playerId: PlayerId;
       deck: OrderDeck;
       bottomedOrderId: OrderId;
-      revealedOrderId: OrderId | null;
+      selectedOrderId?: OrderId;
+      revealedOrderId?: OrderId | null;
     }
   | { type: "TECHNIQUE_REFRESHED"; playerId: PlayerId; techniqueId: TechniqueId }
   | { type: "TECHNIQUE_ACQUIRED"; playerId: PlayerId; techniqueId: TechniqueId; cost: number }
@@ -548,7 +575,7 @@ export type GameEvent =
       type: "JUN_ACTIVATION_PAID";
       playerId: PlayerId;
       coins: 1 | 2;
-      rulesContext: "official_v1.0.4" | "historical_jun_cost_1_experiment";
+      rulesContext: "official_v1.0.9" | "historical_jun_cost_1_experiment";
     }
   | { type: "WORK_PHASE_ENDED" }
   | { type: "WOOD_SUBMITTED"; playerId: PlayerId; windowId: string }
@@ -584,7 +611,7 @@ export type GameEvent =
         | null;
       from: number;
       to: number;
-      reward: 1 | 2;
+      reward: 1 | 2 | 3;
       appliedGain?: number;
       crossedSpaces?: number[];
       capLoss?: number;
@@ -605,6 +632,8 @@ export type GameEvent =
     }
   | { type: "IMPERIAL_SEAL_CLAIMED"; playerId: PlayerId; sealVp?: number }
   | { type: "APPRENTICE_UNLOCKED"; playerId: PlayerId; workerId: WorkerId }
+  | { type: "ROUND_FIVE_UNLOCK_COIN_REWARD"; playerId: PlayerId; coins: 3 }
+  | { type: "ORDERS_DISCARDED_FOR_CLEANUP"; playerId: PlayerId; orderIds: OrderId[] }
   | { type: "IMPERIAL_STIPEND_RECEIVED"; playerId: PlayerId; space: 2 | 4; coins: number }
   | {
       type: "ORDER_DISPLAYS_ROTATED";
@@ -627,7 +656,7 @@ export type CreateGameResult =
 export interface PrivateFiringState {
   gameId: string;
   windowId: string | null;
-  contributions: Record<PlayerId, WoodContribution>;
+  contributions: Record<PlayerId, WoodContribution | { amount: WoodContribution; useFuelLedger: boolean }>;
 }
 
 export type SubmitContributionResult =

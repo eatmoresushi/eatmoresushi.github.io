@@ -45,8 +45,8 @@ const DEFAULT_INTENT: StrategyIntent = "Hybrid";
 
 export function activeOrderProgressReward(
   observation: PlayerObservation,
-  printedReward: 1 | 2 | undefined,
-): 0 | 1 | 2 {
+  printedReward: 1 | 2 | 3 | undefined,
+): 0 | 1 | 2 | 3 {
   if (printedReward === undefined) return 0;
   return observation.imperialTrackRules.imperialOrderProgressMode === "all_two"
     ? 2
@@ -60,7 +60,7 @@ function crossedMilestones(from: number, to: number, spaces: readonly number[]):
 function progressMoveValue(
   observation: PlayerObservation,
   rules: PlayerObservation["imperialTrackRules"],
-  reward: 1 | 2,
+  reward: 1 | 2 | 3,
 ): number {
   const player = observation.game.players[observation.playerId]!;
   const from = player.imperialProgress;
@@ -91,9 +91,9 @@ function progressMoveValue(
  */
 export function imperialProgressRuleDelta(
   observation: PlayerObservation,
-  printedReward: 1 | 2,
+  printedReward: 1 | 2 | 3,
 ): number {
-  const activeReward = activeOrderProgressReward(observation, printedReward) as 1 | 2;
+  const activeReward = activeOrderProgressReward(observation, printedReward) as 1 | 2 | 3;
   return progressMoveValue(observation, observation.imperialTrackRules, activeReward) -
     progressMoveValue(observation, OFFICIAL_IMPERIAL_TRACK_RULES, printedReward);
 }

@@ -547,7 +547,7 @@ describe("private Wood Contributions and reconnect", () => {
       }),
     );
     expect(firstReconnect.seat.playerId).toBe(firstId);
-    expect(firstReconnect.ownPendingContribution).toEqual({ windowId, amount: 2, submitted: true });
+    expect(firstReconnect.ownPendingContribution).toEqual({ windowId, amount: 2, useFuelLedger: false, submitted: true });
     expect(secondReconnect.ownPendingContribution).toBeNull();
     expect(firstReconnect.game).toEqual(secondReconnect.game);
 
@@ -708,10 +708,10 @@ describe("Imperial Progress persistence and realtime", () => {
     unsubscribe();
     expect(notifications).toBe(1);
     expect(harness.game.events).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: "IMPERIAL_PROGRESS_ADVANCED", playerId: actorId, from: 2, to: 3, reward: 1 }),
+      expect.objectContaining({ type: "IMPERIAL_PROGRESS_ADVANCED", playerId: actorId, from: 2, to: 4, reward: 2 }),
     ]));
     expect(harness.game.game.players[actorId]).toEqual(expect.objectContaining({
-      imperialProgress: 3,
+      imperialProgress: 4,
       pendingApprenticeUnlocks: 1,
     }));
 
@@ -721,7 +721,7 @@ describe("Imperial Progress persistence and realtime", () => {
         seatToken: connection.seatToken,
       }));
       const player = reconnected.game?.players[actorId];
-      expect(player?.imperialProgress).toBe(3);
+      expect(player?.imperialProgress).toBe(4);
       expect(player?.pendingApprenticeUnlocks).toBe(1);
       expect(Object.values(player?.workers ?? {}).filter((worker) => worker.status === "available")).toHaveLength(4);
       expect(Object.values(player?.workers ?? {}).filter((worker) => worker.status === "locked")).toHaveLength(2);

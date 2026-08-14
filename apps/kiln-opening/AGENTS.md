@@ -10,21 +10,20 @@ Target session length for the physical design is approximately 90–120 minutes.
 
 Priority order:
 
-1. The supplied English and Simplified Chinese `Kiln_Opening_v1.0.4_*_Full_Rulebook.pdf` files — authoritative base-game rules.
-2. `docs/GAME_RULES.md` — authoritative implementation transcription of V1.0.4.
+1. The supplied English and Simplified Chinese V1.0.9 rulebooks — authoritative base-game rules.
+2. `docs/GAME_RULES.md` — authoritative implementation transcription of V1.0.9.
 3. `data/*.json` — machine-readable values derived from those rules.
 4. `docs/IMPLEMENTATION_DECISIONS.md` — digital interpretations of rules where necessary.
 5. `docs/ONLINE_GAME_SPEC.md` — digital-only behaviour.
 6. `docs/DESIGN_SPEC.md` — design intent and constraints.
-7. `source_rulebook/Kiln_Opening_v0.4_Full_Rulebook.pdf` — historical human backup only.
-8. `assets/print_reference/*` — visual direction only.
+7. `assets/print_reference/*` — visual direction only.
 
 Never implement an older mechanic because it appears in historical discussion or art.
 
 
 ## Approved asset rule
 
-Only `assets/current_v04/` is an approved visual-reference directory. The directory name remains unchanged as a stable legacy path; rules-bearing visuals must follow V1.0.4 data and localized gameplay text must come from structured data or the i18n layer.
+Only `assets/current_v04/` is an approved visual-reference directory. The directory name remains unchanged as a stable legacy path; rules-bearing visuals must follow V1.0.9 data and localized gameplay text must come from structured data or the i18n layer.
 
 Do not search conversation history or older images for missing boards/cards. Missing current assets are intentionally specified in `data/asset_specs.json` and `docs/V0.4_ASSETS_TO_REGENERATE.md` and must be rebuilt from current data.
 
@@ -40,7 +39,6 @@ Do not reintroduce any of these unless the user explicitly changes the rules:
 - Refined Clay
 - Refining House
 - five-player mode
-- Shifu repositioning a loaded ceramic
 - fixed Base Heat thresholds independent of contributor count
 - penalties for having no Imperial Presentation
 - presenting Flawed ceramics
@@ -96,18 +94,18 @@ At minimum:
 - Shifu vs Apprentice effects at all six locations
 - Shape costs and vessel supply
 - Decoration costs
-- Technique acquisition limit, printed Apprentice cost, and Shifu −1 Coin discount (minimum 1)
-- every one of the 15 V1.0.4 Techniques
+- Technique acquisition limit, printed Apprentice cost, and Shifu −1 Coin discount (minimum 0)
+- every one of the 15 V1.0.9 Techniques
 - all five Kiln abilities
 - contributor-scaled Base Heat for 1–4 contributors
 - secret simultaneous Wood reveal
-- all five Fire modifiers, the V1.0.4 4/3/6/3/4 deck distribution, and kiln-zone modifiers
+- all five Fire modifiers, the V1.0.9 1/3/4/3/1 deck distribution, reshuffling, and kiln-zone modifiers
 - Quality assignment
 - Jun/Ge/Protective Saggars/Test Pieces/Ru timing
 - Market and Imperial Order validation, followed by the optional Apprentice 0–1 / Shifu 0–2 Flawed-sale step
-- immediate display refill and the two-card left-edge Order-display rotation at the start of Rounds 2–5
+- immediate display refill and the one-card left-edge Order-display rotation at the start of Rounds 2–5
 - Order hand limit and Guan exception
-- every Imperial Order advancing +1 or +2 Imperial Progress as printed, including multiple completions in one round and milestone-crossing jumps
+- every Imperial Order advancing +1, +2, or +3 Imperial Progress as printed, including multiple completions in one round and milestone-crossing jumps
 - Apprentice unlock timing at spaces 1 and 3
 - one-time Coin stipends on reaching or crossing spaces 2 and 4
 - Imperial Seal first-arrival rule

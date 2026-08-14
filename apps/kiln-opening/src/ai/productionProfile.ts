@@ -24,11 +24,11 @@ const STRATEGY_INTENTS: readonly StrategyIntent[] = [
   "Technique-economy",
 ];
 
-/** Frozen V003 production priors, interpreted by the current V1.0.4 engine. */
+/** Frozen V003 production priors, interpreted by the current V1.0.9 engine. */
 export function createProductionV3Profile(playerCount: PlayerCount): AIStrategyProfile {
   return {
     rulesVersion: "1.0.2",
-    currentRulesVersion: "1.0.4",
+    currentRulesVersion: "1.0.9",
     aiPolicyVersion: AI_POLICY_VERSION,
     playerCount,
     gamesLearned: 0,

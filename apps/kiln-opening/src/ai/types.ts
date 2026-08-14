@@ -352,9 +352,9 @@ export interface AIPolicy {
 
 export interface AIStrategyProfile {
   /** Rules used to create or train this serialized profile. */
-  rulesVersion: "1.0.1" | "1.0.2" | "1.0.4";
+  rulesVersion: "1.0.1" | "1.0.2" | "1.0.4" | "1.0.9";
   /** Current engine rules; permits an explicit historical-policy compatibility audit. */
-  currentRulesVersion?: "1.0.2" | "1.0.4";
+  currentRulesVersion?: "1.0.2" | "1.0.4" | "1.0.9";
   aiPolicyVersion: AIPolicyVersion;
   playerCount: PlayerCount;
   gamesLearned: number;

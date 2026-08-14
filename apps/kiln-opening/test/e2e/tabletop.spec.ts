@@ -10,11 +10,9 @@ test("simple playtest UI exposes state and places an Apprentice through authorit
   const { host, guest, close } = await openTwoWorkshops(browser);
   try {
     await host.goto("./");
-    const englishRulebook = host.getByRole("link", { name: "V1.0.4 Rulebook (PDF)" });
-    await expect(englishRulebook).toHaveAttribute("href", "/kiln-opening/rulebooks/Kiln_Opening_v1.0.4_Full_Rulebook.pdf");
+    await expect(host.getByRole("link", { name: /Rulebook|规则书/ })).toHaveCount(0);
     await host.getByRole("button", { name: "中文" }).click();
-    const chineseRulebook = host.getByRole("link", { name: "V1.0.4中文规则书（PDF）" });
-    await expect(chineseRulebook).toHaveAttribute("href", "/kiln-opening/rulebooks/Kiln_Opening_v1.0.4_Chinese_Full_Rulebook.pdf");
+    await expect(host.getByRole("link", { name: /Rulebook|规则书/ })).toHaveCount(0);
     await host.getByRole("button", { name: "EN" }).click();
     await host.getByLabel("Workshop name").fill("Mei");
     await host.getByRole("button", { name: "Create a room" }).click();
@@ -34,7 +32,7 @@ test("simple playtest UI exposes state and places an Apprentice through authorit
     for (const page of [host, guest]) {
       await expect(page.getByTestId("playtest-ui")).toBeVisible();
       await expect(page.getByTestId("tabletop-scene")).toHaveCount(0);
-      await expect(page.getByText("V1.0.4", { exact: true }).first()).toBeVisible();
+      await expect(page.getByText("V1.0.9", { exact: true }).first()).toBeVisible();
       await expect(page.getByRole("region", { name: "Player Workshops" })).toBeVisible();
       await expect(page.getByRole("region", { name: "Worker Placement" })).toBeVisible();
       await expect(page.getByRole("region", { name: "Kiln Spaces" })).toBeVisible();

@@ -174,7 +174,7 @@ export function createGame(input: CreateGameInput, rng: RandomSource): CreateGam
 
   const state: GameState = {
     schemaVersion: 1,
-    rulesVersion: "1.0.4",
+    rulesVersion: "1.0.9",
     gameId: input.gameId,
     revision: 0,
     eventSequence: 0,
@@ -207,6 +207,7 @@ export function createGame(input: CreateGameInput, rng: RandomSource): CreateGam
     firingContext: null,
     lastFiringResult: null,
     finalResult: null,
+    privateFirePeeks: {},
     ...(input.experimentConfig === undefined
       ? {}
       : { experimentConfig: { ...input.experimentConfig } }),

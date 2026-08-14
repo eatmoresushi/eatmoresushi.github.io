@@ -9,7 +9,7 @@ export function determineBaseHeat(contributorCount: number, totalWood: number): 
     throw new RangeError("totalWood must be a non-negative integer");
   }
   if (totalWood < contributorCount) return 1;
-  if (totalWood <= 2 * contributorCount) return 2;
+  if (contributorCount === 1 ? totalWood <= 2 : totalWood <= contributorCount + 2) return 2;
   return 3;
 }
 

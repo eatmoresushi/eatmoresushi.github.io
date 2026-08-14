@@ -37,6 +37,7 @@ import type {
 import type {
   AuthoritativeCommand,
   PendingContribution,
+  PrivateDecisionState,
   PublicGameState,
   PublicPlayerState,
 } from "../multiplayer";
@@ -50,6 +51,7 @@ interface ActionPanelProps {
   game: PublicGameState;
   ownPlayerId: PlayerId;
   ownPendingContribution: PendingContribution | null;
+  ownPrivateDecision?: PrivateDecisionState | undefined;
   busy: boolean;
   send: SendCommand;
 }
@@ -58,6 +60,7 @@ export function ActionPanel({
   game,
   ownPlayerId,
   ownPendingContribution,
+  ownPrivateDecision,
   busy,
   send,
 }: ActionPanelProps) {
@@ -78,6 +81,7 @@ export function ActionPanel({
         player={player}
         ownPlayerId={ownPlayerId}
         ownPendingContribution={ownPendingContribution}
+        ownPrivateDecision={ownPrivateDecision}
         busy={busy}
         send={send}
       />
@@ -90,7 +94,7 @@ function PhaseControls(props: Omit<ActionPanelProps, "ownPlayerId"> & {
   player: PublicPlayerState;
 }) {
   const { locale, t } = useI18n();
-  const { game, player, ownPlayerId, ownPendingContribution, busy, send } = props;
+  const { game, player, ownPlayerId, ownPendingContribution, ownPrivateDecision, busy, send } = props;
   const phase = game.phase;
   const decisionActor = currentDecisionActor(phase);
   const waiting = decisionActor !== null && decisionActor !== ownPlayerId;
@@ -103,6 +107,7 @@ function PhaseControls(props: Omit<ActionPanelProps, "ownPlayerId"> & {
         player={player}
         ownPlayerId={ownPlayerId}
         pending={ownPendingContribution}
+        privateDecision={ownPrivateDecision}
         busy={busy}
         send={send}
       />
@@ -117,21 +122,12 @@ function PhaseControls(props: Omit<ActionPanelProps, "ownPlayerId"> & {
     case "setup_kiln_selection":
       return <KilnSelection game={game} busy={busy} send={send} />;
     case "setup_starting_orders": {
-      const orderId = phase.initialOrderIds[ownPlayerId];
-      return (
-        <ControlSection title="Your first commission" hint="Keep it, or redraw once from the same deck.">
-          {orderId !== undefined && <div className="starting-order-piece"><OrderCard orderId={orderId} /></div>}
-          <div className="button-row">
-            <CommandButton busy={busy} send={send} command={{ type: "KEEP_STARTING_ORDER" }}>Keep Order</CommandButton>
-            <CommandButton busy={busy} send={send} command={{ type: "REDRAW_STARTING_ORDER" }} secondary>Redraw</CommandButton>
-          </div>
-        </ControlSection>
-      );
+      return <StartingOrdersControls orderIds={ownPrivateDecision?.startingOrderIds ?? []} busy={busy} send={send} />;
     }
     case "work":
       return <WorkControls game={game} player={player} busy={busy} send={send} />;
     case "work_office_orders":
-      return <OfficeControls game={game} player={player} busy={busy} send={send} />;
+      return <OfficeControls game={game} player={player} privateDecision={ownPrivateDecision} busy={busy} send={send} />;
     case "work_office_sale":
       return <OfficeSaleControls game={game} player={player} busy={busy} send={send} />;
     case "work_office_connoisseur":
@@ -139,9 +135,13 @@ function PhaseControls(props: Omit<ActionPanelProps, "ownPlayerId"> & {
     case "work_guild":
       return <GuildControls game={game} player={player} busy={busy} send={send} />;
     case "firing_before_contribution":
-      return <KilnSettingControls game={game} player={player} busy={busy} send={send} />;
+      return phase.techniqueIds[phase.queue.currentIndex] === "T12"
+        ? <BinaryDecision title="Test Pieces" hint="Privately look at the top Fire card, then return it to the top of the deck." action="RESOLVE_TEST_PIECES" busy={busy} send={send} />
+        : <KilnSettingControls game={game} player={player} busy={busy} send={send} />;
     case "firing_after_reveal":
-      return <BinaryDecision title="Fuel Ledger" hint="Pay 1 Wood and 1 Coin to add 1 to your revealed contribution." action="RESOLVE_FUEL_LEDGER" busy={busy} send={send} />;
+      return <Waiting game={game} actorId={decisionActor ?? ownPlayerId} />;
+    case "firing_reposition":
+      return <KilnRepositionControls game={game} player={player} busy={busy} send={send} />;
     case "firing_after_fire_reveal":
       return <SaggerSelectionControls game={game} player={player} busy={busy} send={send} />;
     case "firing_before_quality":
@@ -151,12 +151,27 @@ function PhaseControls(props: Omit<ActionPanelProps, "ownPlayerId"> & {
         ? <SecondFiringControls game={game} player={player} busy={busy} send={send} />
         : <SaggarsControls game={game} player={player} busy={busy} send={send} />;
     case "firing_after_firing":
-      return phase.techniqueIds[phase.queue.currentIndex] === "T13"
-        ? <BinaryDecision title="Kiln Records" hint="Gain 1 Clay and 1 Coin for finishing at least two Masterpieces in this firing." action="RESOLVE_KILN_RECORDS" busy={busy} send={send} />
-        : <BinaryDecision title="Test Pieces" hint="Gain 1 Coin for one natural exact match, or 2 Coins for at least two." action="RESOLVE_TEST_PIECES" busy={busy} send={send} />;
+      return <BinaryDecision title="Kiln Records" hint="Gain 1 Clay and 2 Coins for finishing at least one Masterpiece in this firing." action="RESOLVE_KILN_RECORDS" busy={busy} send={send} />;
     case "orders":
       return <OrderControls game={game} player={player} busy={busy} send={send} />;
+    case "cleanup_orders":
+      return <CleanupOrderControls player={player} busy={busy} send={send} />;
   }
+}
+
+function StartingOrdersControls({ orderIds, busy, send }: { orderIds: string[]; busy: boolean; send: SendCommand }) {
+  const [selected, setSelected] = useState<string[]>([]);
+  return (
+    <ControlSection title="Choose opening Orders" hint="Privately choose exactly two from two Market and two Imperial Orders. All kept Orders are revealed together.">
+      <div className="choice-stack playtest-command-grid">{orderIds.map((orderId) => (
+        <label className="check-row starting-order-piece" key={orderId}>
+          <input type="checkbox" checked={selected.includes(orderId)} disabled={!selected.includes(orderId) && selected.length >= 2} onChange={(event) => setSelected((current) => event.target.checked ? [...current, orderId] : current.filter((id) => id !== orderId))} />
+          <OrderCard orderId={orderId} imperial={orderId.startsWith("I")} />
+        </label>
+      ))}</div>
+      <CommandButton busy={busy} disabled={selected.length !== 2} send={send} command={{ type: "SUBMIT_STARTING_ORDERS", orderIds: selected }}>Keep selected Orders</CommandButton>
+    </ControlSection>
+  );
 }
 
 function KilnSelection({ game, busy, send }: Pick<ActionPanelProps, "game" | "busy" | "send">) {
@@ -216,7 +231,7 @@ function WorkControls({ game, player, busy, send }: {
     );
   };
   const actions: Record<LocationId, ReactNode> = {
-    materials_yard: action("materials_yard", "Gain Clay and Wood", <MaterialsForm workers={workers} locationFull={full("materials_yard")} busy={busy} send={send} />),
+    materials_yard: action("materials_yard", "Gain Clay and Wood", <MaterialsForm game={game} player={player} workers={workers} locationFull={full("materials_yard")} busy={busy} send={send} />),
     forming_studio: action("forming_studio", "Shape vessels", <FormCeramicsForm game={game} player={player} workers={workers} locationFull={full("forming_studio")} busy={busy} send={send} />),
     glaze_workshop: action("glaze_workshop", "Glaze and decorate", <GlazeForm game={game} player={player} workers={workers} locationFull={full("glaze_workshop")} busy={busy} send={send} />),
     kiln_yard: action("kiln_yard", "Load ceramics", <KilnYardForm game={game} player={player} workers={workers} locationFull={full("kiln_yard")} busy={busy} send={send} />),
@@ -243,21 +258,30 @@ interface WorkerFormProps {
   send: SendCommand;
 }
 
-function MaterialsForm({ workers, locationFull, busy, send }: WorkerFormProps) {
+function MaterialsForm({ game, player, workers, locationFull, busy, send }: WorkerFormProps & { game: PublicGameState; player: PublicPlayerState }) {
   const { locale, t, term } = useI18n();
   const [workerId, setWorkerId] = useState(workers[0]?.id ?? "");
   const [clay, setClay] = useState(workers[0]?.kind === "shifu" ? 3 : 2);
   const [wood, setWood] = useState(1);
+  const [exchangeGive, setExchangeGive] = useState<"" | "clay" | "wood">("");
+  const [exchangeAmount, setExchangeAmount] = useState(1);
   const selectedWorker = workers.find((worker) => worker.id === workerId) ?? workers[0];
   const requiredTotal = selectedWorker?.kind === "shifu" ? 4 : 3;
   const invalidAmount = !Number.isInteger(clay) || !Number.isInteger(wood) || clay < 0 || wood < 0;
   const wrongTotal = !invalidAmount && clay + wood !== requiredTotal;
+  const exchangeInvalid = selectedWorker?.kind === "shifu" && exchangeGive !== "" && (
+    !Number.isInteger(exchangeAmount) || exchangeAmount < 1 ||
+    player.resources[exchangeGive] + (exchangeGive === "clay" ? clay : wood) < exchangeAmount ||
+    game.commonSupply[exchangeGive === "clay" ? "wood" : "clay"] - (exchangeGive === "clay" ? wood : clay) < exchangeAmount
+  );
   const error = locationFull
     ? "Materials Yard is full."
     : invalidAmount
       ? "Choose whole, non-negative resource amounts."
       : wrongTotal
       ? `${selectedWorker?.kind === "shifu" ? "Shifu" : "Apprentice"} must take exactly ${requiredTotal} total Clay and Wood.`
+      : exchangeInvalid
+        ? "The exchange must use a positive amount of a resource the Shifu just gained."
       : null;
 
   function chooseWorker(nextWorkerId: string): void {
@@ -275,6 +299,7 @@ function MaterialsForm({ workers, locationFull, busy, send }: WorkerFormProps) {
       workerId: selectedWorker.id,
       clay,
       wood,
+      ...(selectedWorker.kind === "shifu" && exchangeGive !== "" ? { exchange: { give: exchangeGive, amount: exchangeAmount } } : {}),
     });
   }
   return (
@@ -293,10 +318,11 @@ function MaterialsForm({ workers, locationFull, busy, send }: WorkerFormProps) {
         <label>{t("Clay")}<input type="number" name="clay" min={0} max={requiredTotal} step={1} value={clay} onChange={(event) => setClay(Number.isNaN(event.target.valueAsNumber) ? 0 : event.target.valueAsNumber)} required /></label>
         <label>{t("Wood")}<input type="number" name="wood" min={0} max={requiredTotal} step={1} value={wood} onChange={(event) => setWood(Number.isNaN(event.target.valueAsNumber) ? 0 : event.target.valueAsNumber)} required /></label>
       </div>
+      {selectedWorker?.kind === "shifu" && <div className="split-fields"><label>{t("Exchange resource")}<select value={exchangeGive} onChange={(event) => setExchangeGive(event.target.value as "" | "clay" | "wood")}><option value="">{t("No exchange")}</option><option value="clay">{t("Give Clay for Wood")}</option><option value="wood">{t("Give Wood for Clay")}</option></select></label><label>{t("Exchange amount")}<input type="number" min={1} step={1} value={exchangeAmount} disabled={exchangeGive === ""} onChange={(event) => setExchangeAmount(Math.max(1, event.target.valueAsNumber || 1))} /></label></div>}
       <small role="status" className={error === null ? "" : "control-error"}>
         {error === null
           ? locale === "zh-CN" ? `${clay}陶土 + ${wood}柴薪 = ${requiredTotal}份资源。` : `${clay} Clay + ${wood} Wood = ${requiredTotal} resources.`
-          : locale === "zh-CN" ? (locationFull ? "原料场已满。" : invalidAmount ? "请选择非负整数资源数量。" : `${term(selectedWorker?.kind ?? "apprentice")}必须恰好拿取${requiredTotal}份陶土与柴薪。`) : error}
+          : locale === "zh-CN" ? (locationFull ? "备料场已满。" : invalidAmount ? "请选择非负整数资源数量。" : `${term(selectedWorker?.kind ?? "apprentice")}必须恰好拿取${requiredTotal}份陶土与柴薪。`) : error}
       </small>
       <button className="primary-button" disabled={busy || error !== null || selectedWorker === undefined}>{t("Gather materials")}</button>
     </form>
@@ -317,7 +343,8 @@ function FormCeramicsForm({ game, player, workers, locationFull, busy, send }: {
   const [shape1, setShape1] = useState<Shape>(SHAPES[0]!);
   const [shape2, setShape2] = useState<Shape | "">("");
   const [selectedTechniques, setSelectedTechniques] = useState<TechniqueId[]>([]);
-  const [substitution, setSubstitution] = useState<"" | "base" | "ding">("");
+  const [substitutions, setSubstitutions] = useState(0);
+  const [dryingGlaze, setDryingGlaze] = useState<Glaze>(GLAZES[0]!);
   const [ding, setDing] = useState<Shape | "">("");
   const selectedWorker = workers.find((worker) => worker.id === workerId) ?? workers[0];
   const activeTechniqueIds = selectedTechniques.filter((techniqueId) => techniques.includes(techniqueId));
@@ -326,9 +353,13 @@ function FormCeramicsForm({ game, player, workers, locationFull, busy, send }: {
   const shapes = [shape1, shape2].filter((shape): shape is Shape => shape !== "");
   const allShapes = activeDing === "" ? shapes : [...shapes, activeDing];
   const usesSubstitution = activeTechniqueIds.includes("T03");
-  const activeSubstitution = usesSubstitution ? substitution : "";
-  const clayCost = allShapes.reduce((total, shape) => total + SHAPE_COSTS[shape], 0) - (usesSubstitution ? 1 : 0);
-  const coinCost = usesSubstitution ? 1 : 0;
+  const formingClayCost = (shape: Shape): number => selectedWorker?.kind === "shifu" && (shape === "vase" || shape === "censer")
+    ? 1
+    : SHAPE_COSTS[shape];
+  const baseClayCost = shapes.reduce((total, shape) => total + formingClayCost(shape), 0);
+  const activeSubstitutions = usesSubstitution ? Math.min(substitutions, baseClayCost) : 0;
+  const clayCost = baseClayCost - activeSubstitutions;
+  const coinCost = activeSubstitutions;
 
   function validationError(): string | null {
     if (locationFull) return "Forming Studio is full.";
@@ -337,19 +368,13 @@ function FormCeramicsForm({ game, player, workers, locationFull, busy, send }: {
       return "An Apprentice may form only one vessel.";
     }
     if (activeDing !== "" && !shapes.includes(activeDing)) return "Ding's extra vessel must match a selected base Shape.";
-    if (usesSubstitution && activeSubstitution === "") return "Clay Substitution needs one payment target.";
-    if (activeSubstitution === "ding" && activeDing === "") return "Choose a Ding vessel before substituting its Clay.";
+    if (usesSubstitution && (substitutions < 1 || substitutions > baseClayCost)) return "Choose how many Clay costs to replace with Coins.";
     if (activeTechniqueIds.includes("T01") && !allShapes.some((shape) => shape === "vase" || shape === "censer")) {
       return "Large Throwing Wheel requires a Vase or Censer.";
     }
     if (activeTechniqueIds.includes("T02") && new Set(allShapes).size < 2) {
       return "Measuring Calipers requires two different Shapes.";
     }
-    if (activeTechniqueIds.includes("T04") && !allShapes.some((shape) =>
-      player.orderHand.some((orderId) => ORDER_DEFINITIONS[orderId]?.ceramics.some(
-        (requirement) => requirement.shape === undefined || requirement.shape === shape,
-      )),
-    )) return "Drying Frames requires a Shape matching an Order in hand.";
     if (player.resources.clay < clayCost || player.resources.coins < coinCost) {
       return `Requires ${clayCost} Clay${coinCost > 0 ? ` and ${coinCost} Coin` : ""}.`;
     }
@@ -371,18 +396,20 @@ function FormCeramicsForm({ game, player, workers, locationFull, busy, send }: {
       shapes,
       useTechniqueIds: activeTechniqueIds,
     };
-    if (activeSubstitution === "base" || activeSubstitution === "ding") command.claySubstitutionTarget = activeSubstitution;
+    if (activeSubstitutions > 0) command.claySubstitutions = activeSubstitutions;
+    if (activeTechniqueIds.includes("T04")) command.dryingFrames = { formedIndex: 0, glaze: dryingGlaze };
     if (activeDing !== "") command.dingExtraShape = activeDing;
     void send(command);
   }
   return (
     <form className="control-form" onSubmit={submit}>
       <WorkerChoice workers={workers} value={selectedWorker?.id ?? ""} onChange={setWorkerId} />
-      <label>{t("First shape")}<select name="shape1" value={shape1} onChange={(event) => setShape1(event.target.value as Shape)}>{SHAPES.map((shape) => <option key={shape} value={shape}>{term(shape)} · {SHAPE_COSTS[shape]} {t("Clay")}</option>)}</select></label>
-      <label>{t("Second shape (Shifu only)")}<select name="shape2" value={shape2} onChange={(event) => setShape2(event.target.value as Shape | "")}><option value="">{t("None")}</option>{SHAPES.map((shape) => <option key={shape} value={shape}>{term(shape)} · {SHAPE_COSTS[shape]} {t("Clay")}</option>)}</select></label>
+      <label>{t("First shape")}<select name="shape1" value={shape1} onChange={(event) => setShape1(event.target.value as Shape)}>{SHAPES.map((shape) => <option key={shape} value={shape}>{term(shape)} · {formingClayCost(shape)} {t("Clay")}</option>)}</select></label>
+      <label>{t("Second shape (Shifu only)")}<select name="shape2" value={shape2} onChange={(event) => setShape2(event.target.value as Shape | "")}><option value="">{t("None")}</option>{SHAPES.map((shape) => <option key={shape} value={shape}>{term(shape)} · {formingClayCost(shape)} {t("Clay")}</option>)}</select></label>
       <TechniqueChecks techniqueIds={techniques} selected={activeTechniqueIds} onChange={setSelectedTechniques} />
-      {techniques.includes("T03") && <label>{t("Clay Substitution target")}<select name="substitution" value={activeSubstitution} disabled={!usesSubstitution} onChange={(event) => setSubstitution(event.target.value as "" | "base" | "ding")}><option value="">{t("Do not use")}</option><option value="base">{locale === "zh-CN" ? "基础成型" : "base"}</option><option value="ding">{locale === "zh-CN" ? "定窑额外器物" : "ding"}</option></select></label>}
-      {canUseDing && <label>{t("Ding extra matching shape")}<select name="ding" value={activeDing} onChange={(event) => setDing(event.target.value as Shape | "")}><option value="">{t("Do not use")}</option>{(["bowl", "plate", "washer"] as Shape[]).map((shape) => <option key={shape} value={shape}>{term(shape)} · {SHAPE_COSTS[shape]} {t("Clay")}</option>)}</select></label>}
+      {techniques.includes("T03") && <label>{t("Clay costs replaced by Coins")}<input type="number" min={0} max={baseClayCost} value={activeSubstitutions} disabled={!usesSubstitution} onChange={(event) => setSubstitutions(Math.max(0, event.target.valueAsNumber || 0))} /></label>}
+      {activeTechniqueIds.includes("T04") && <EnumChoice name="drying-glaze" label="Drying Frames glaze for first formed vessel" options={GLAZES} value={dryingGlaze} onChange={(value) => setDryingGlaze(value as Glaze)} />}
+      {canUseDing && <label>{t("Ding extra matching shape")}<select name="ding" value={activeDing} onChange={(event) => setDing(event.target.value as Shape | "")}><option value="">{t("Do not use")}</option>{(["bowl", "plate", "washer"] as Shape[]).map((shape) => <option key={shape} value={shape}>{term(shape)} · {t("free")}</option>)}</select></label>}
       <small role="status" className={error === null ? "" : "control-error"}>{error === null ? (locale === "zh-CN" ? `费用：${clayCost}陶土${coinCost > 0 ? `与${coinCost}铜钱` : ""}。` : `Cost: ${clayCost} Clay${coinCost > 0 ? ` and ${coinCost} Coin` : ""}.`) : localizeActionError(locale, error)}</small>
       <button className="primary-button" disabled={busy || error !== null}>{t("Form ceramics")}</button>
     </form>
@@ -417,25 +444,23 @@ function GlazeForm({ game, player, workers, locationFull, busy, send }: {
     ...(firstId === "" ? [] : [{ ceramicId: firstId, glaze: glaze1, decoration: decoration1 }]),
     ...(secondId === "" ? [] : [{ ceramicId: secondId, glaze: glaze2, decoration: decoration2 }]),
   ];
-  const paidMode = mode === "normal";
-  const totalCoins = paidMode
-    ? selections.reduce((total, selection) => total + DECORATION_COSTS[selection.decoration], 0)
+  const freeDecorationCeramicId = selectedWorker?.kind === "shifu" && mode === "free_single" ? firstId : undefined;
+  const totalCoins = selections.reduce((total, selection) => total + (selection.ceramicId === freeDecorationCeramicId ? 0 : DECORATION_COSTS[selection.decoration]), 0)
       - (activeTechniqueIds.includes("T05") ? DECORATION_COSTS.carved : 0)
-      - (activeTechniqueIds.includes("T06") ? DECORATION_COSTS.impressed : 0)
-    : 0;
+      - (activeTechniqueIds.includes("T06") ? DECORATION_COSTS.impressed : 0);
 
   function validationError(): string | null {
     if (locationFull) return "Glaze Workshop is full.";
     if (selectedWorker === undefined) return "Choose an available worker.";
     if (selections.length === 0) return "You have no Shaped ceramic to glaze.";
     if (selectedWorker.kind === "apprentice" && mode !== "normal") return "Only the Shifu may ignore a Decoration cost.";
-    const maximum = selectedWorker.kind === "shifu" && mode === "normal" ? 2 : 1;
+    const maximum = selectedWorker.kind === "shifu" ? 2 : 1;
     if (selections.length > maximum) return `${selectedWorker.kind === "shifu" ? "This Shifu mode" : "An Apprentice"} may glaze at most ${maximum} ceramic${maximum === 1 ? "" : "s"}.`;
     if (secondId !== "" && secondId === firstId) return "Choose each ceramic only once.";
-    if (activeTechniqueIds.includes("T05") && (!paidMode || !selections.some((selection) => selection.decoration === "carved"))) {
+    if (activeTechniqueIds.includes("T05") && !selections.some((selection) => selection.decoration === "carved" && selection.ceramicId !== freeDecorationCeramicId)) {
       return "Carving Knives requires a paid Carved Decoration.";
     }
-    if (activeTechniqueIds.includes("T06") && (!paidMode || !selections.some((selection) => selection.decoration === "impressed"))) {
+    if (activeTechniqueIds.includes("T06") && !selections.some((selection) => selection.decoration === "impressed" && selection.ceramicId !== freeDecorationCeramicId)) {
       return "Seal Stamps requires a paid Impressed Decoration.";
     }
     if (player.resources.coins < totalCoins) return `Requires ${totalCoins} Coins for the selected Decorations.`;
@@ -450,7 +475,7 @@ function GlazeForm({ game, player, workers, locationFull, busy, send }: {
       type: "GLAZE_CERAMICS",
       workerId: selectedWorker.id,
       selections,
-      shifuMode: mode,
+      ...(freeDecorationCeramicId === undefined ? {} : { freeDecorationCeramicId }),
       useTechniqueIds: activeTechniqueIds,
     });
   }
@@ -460,10 +485,10 @@ function GlazeForm({ game, player, workers, locationFull, busy, send }: {
       <CeramicChoice name="ceramic1" label="First ceramic" ceramics={ceramics} value={firstId} onChange={setCeramic1} />
       <EnumChoice name="glaze1" label="First glaze" options={GLAZES} value={glaze1} onChange={(value) => setGlaze1(value as Glaze)} />
       <EnumChoice name="decoration1" label="First decoration" options={DECORATIONS} value={decoration1} onChange={(value) => setDecoration1(value as Decoration)} formatOption={(option) => decorationOptionLabel(option, locale)} />
-      <CeramicChoice name="ceramic2" label="Second ceramic (Shifu normal mode only)" ceramics={ceramics} value={secondId} onChange={setCeramic2} blank="None" />
+      <CeramicChoice name="ceramic2" label="Second ceramic (Shifu only)" ceramics={ceramics} value={secondId} onChange={setCeramic2} blank="None" />
       <EnumChoice name="glaze2" label="Second glaze" options={GLAZES} value={glaze2} onChange={(value) => setGlaze2(value as Glaze)} />
       <EnumChoice name="decoration2" label="Second decoration" options={DECORATIONS} value={decoration2} onChange={(value) => setDecoration2(value as Decoration)} formatOption={(option) => decorationOptionLabel(option, locale)} />
-      <EnumChoice name="mode" label="Shifu mode" options={["normal", "free_single"]} value={mode} onChange={(value) => setMode(value as "normal" | "free_single")} />
+      {selectedWorker?.kind === "shifu" && <EnumChoice name="mode" label="Shifu free Decoration" options={["normal", "free_single"]} value={mode} onChange={(value) => setMode(value as "normal" | "free_single")} />}
       <TechniqueChecks techniqueIds={techniques} selected={activeTechniqueIds} onChange={setSelectedTechniques} />
       <small role="status" className={error === null ? "" : "control-error"}>{error === null ? (locale === "zh-CN" ? `装饰费用：${totalCoins}铜钱。` : `Decoration cost: ${totalCoins} Coins.`) : localizeActionError(locale, error)}</small>
       <button className="primary-button" disabled={busy || error !== null}>{t("Apply glaze")}</button>
@@ -524,7 +549,7 @@ function KilnYardForm({ game, player, workers, locationFull, busy, send }: {
     <form className="control-form" onSubmit={submit}>
       <WorkerChoice workers={workers} value={selectedWorker?.id ?? ""} onChange={setWorkerId} />
       {spaces.length === 0 || ceramics.length === 0 ? (
-        <p className="control-hint">{t("Kiln Yard gives no Wood; loading an eligible ceramic is required.")}</p>
+        <p className="control-hint">{t("Loading an eligible ceramic is required; gain 1 Wood per ceramic loaded.")}</p>
       ) : (
         <>
           <CeramicChoice name="ceramic1" label="First ceramic" ceramics={ceramics} value={firstId} onChange={setCeramic1} blank="Choose a ceramic" />
@@ -533,7 +558,7 @@ function KilnYardForm({ game, player, workers, locationFull, busy, send }: {
           <EnumChoice name="space2" label="Second kiln space" options={spaces} value={secondSpace ?? ""} onChange={(value) => setSpace2(value as KilnSpaceId)} />
         </>
       )}
-      <small role="status" className={error === null ? "" : "control-error"}>{error === null ? (locale === "zh-CN" ? `已选择${loads.length}件陶瓷；入窑场不会获得柴薪。` : `${loads.length} ceramic${loads.length === 1 ? "" : "s"} selected; Kiln Yard gives no Wood.`) : localizeActionError(locale, error)}</small>
+      <small role="status" className={error === null ? "" : "control-error"}>{error === null ? (locale === "zh-CN" ? `已选择${loads.length}件器物；装窑后获得${loads.length}柴薪。` : `${loads.length} ceramic${loads.length === 1 ? "" : "s"} selected; gain ${loads.length} Wood after loading.`) : localizeActionError(locale, error)}</small>
       <button className="primary-button" disabled={busy || error !== null}>{t("Load kiln")}</button>
     </form>
   );
@@ -632,44 +657,41 @@ function GuildBeginForm({ game, player, workers, locationFull, busy, send }: {
       if (error === null && worker !== undefined) void send({ type: "BEGIN_GUILD_ACTION", workerId: worker.id });
     }}>
       <WorkerChoice workers={workers} value={worker?.id ?? ""} onChange={setWorkerId} />
-      <p className="control-hint"><strong>{t("Apprentice:")}</strong> {t("pay printed cost.")} <strong>{t("Shifu:")}</strong> {t("may refresh one tile, then pays 1 Coin less (minimum 1).")}</p>
+      <p className="control-hint"><strong>{t("Apprentice:")}</strong> {t("pay printed cost.")} <strong>{t("Shifu:")}</strong> {t("may refresh one tile, then pays 1 Coin less (minimum 0).")}</p>
       <small role="status" className={error === null ? "" : "control-error"}>{error === null ? (locale === "zh-CN" ? `有${affordable.length}块买得起的正面技术。` : `${affordable.length} affordable face-up Technique${affordable.length === 1 ? "" : "s"}.`) : localizeActionError(locale, error)}</small>
       <button className="primary-button" disabled={busy || error !== null}>{t("Begin Guild action")}</button>
     </form>
   );
 }
 
-function OfficeControls({ game, player, busy, send }: Pick<ActionPanelProps, "game" | "busy" | "send"> & {
+function OfficeControls({ game, player, privateDecision, busy, send }: Pick<ActionPanelProps, "game" | "busy" | "send"> & {
   player: PublicPlayerState;
+  privateDecision?: PrivateDecisionState | undefined;
 }) {
   const { locale, t } = useI18n();
   if (game.phase.type !== "work_office_orders") return null;
   const phase = game.phase;
   const display = [...game.displays.market, ...game.displays.imperial];
-  const handLimit = player.kilnId === "GU" ? GAME_CONFIG.orderDisplay.guanHandLimit : GAME_CONFIG.orderDisplay.baseHandLimit;
-  const handFull = player.orderHand.length >= handLimit;
   if (phase.step === "colour_samples_or_skip") {
     return (
-      <ControlSection title="Use Colour Samples?" hint="Before your first Order, place exactly one face-up Order from either display on the bottom of its deck and reveal its replacement.">
-        <div className="choice-stack playtest-command-grid">{display.map((orderId) => <PieceCommandButton key={orderId} busy={busy} label={locale === "zh-CN" ? `使用釉色样本将${orderId}置于牌堆底` : `Bottom ${orderId} with Colour Samples`} onClick={() => send({ type: "OFFICE_USE_COLOUR_SAMPLES", orderId })}><OrderCard orderId={orderId} imperial={orderId.startsWith("I")} /></PieceCommandButton>)}</div>
+      <ControlSection title="Use Colour Samples?" hint="Privately look at the top two cards of either Order deck, take one, and put the other on the bottom.">
+        <div className="button-row"><CommandButton busy={busy} send={send} command={{ type: "OFFICE_USE_COLOUR_SAMPLES", deck: "market" }}>Look at Market top 2</CommandButton><CommandButton busy={busy} send={send} command={{ type: "OFFICE_USE_COLOUR_SAMPLES", deck: "imperial" }}>Look at Imperial top 2</CommandButton></div>
         <CommandButton busy={busy} send={send} command={{ type: "OFFICE_SKIP_COLOUR_SAMPLES" }} secondary>Skip Colour Samples</CommandButton>
       </ControlSection>
     );
   }
+  if (phase.step === "colour_samples_choose") {
+    const choices = privateDecision?.colourSamplesOrderIds ?? [];
+    return <ControlSection title="Choose a Colour Samples Order" hint="Only you can see these two cards until you choose one."><div className="choice-stack playtest-command-grid">{choices.map((orderId) => <PieceCommandButton key={orderId} busy={busy} label={`Take ${orderId}`} onClick={() => send({ type: "OFFICE_CHOOSE_COLOUR_SAMPLES_ORDER", orderId })}><OrderCard orderId={orderId} imperial={orderId.startsWith("I")} /></PieceCommandButton>)}</div></ControlSection>;
+  }
   return (
-    <ControlSection title="Choose an Order" hint={locale === "zh-CN"
-      ? handFull
-        ? `你的订单区已满（上限${handLimit}张）；继续进行可选出售。`
-        : `还可拿取${phase.remainingTakes}张订单。拿取正面订单后立即补充；盲抽不改变展示区。`
-      : handFull
-        ? `Your Order area is full (${handLimit}); continue to the optional sale.`
-        : `${phase.remainingTakes} acquisition${phase.remainingTakes === 1 ? "" : "s"} remaining. Face-up cards refill; blind draws leave displays unchanged.`}>
+    <ControlSection title="Choose an Order" hint={locale === "zh-CN" ? `还可拿取${phase.remainingTakes}张订单。本轮拿取订单不受手牌上限限制；整备时弃至上限。` : `${phase.remainingTakes} acquisition${phase.remainingTakes === 1 ? "" : "s"} remaining. There is no hand limit during the round; discard to your limit during Cleanup.`}>
       <h4>{t("Face-up Orders")}</h4>
-      <div className="choice-stack playtest-command-grid">{display.map((orderId) => <PieceCommandButton key={orderId} busy={busy || handFull} label={locale === "zh-CN" ? `拿取正面订单${orderId}` : `Take face-up ${orderId}`} onClick={() => send({ type: "OFFICE_TAKE_ORDER", orderId })}><OrderCard orderId={orderId} imperial={orderId.startsWith("I")} /></PieceCommandButton>)}</div>
+      <div className="choice-stack playtest-command-grid">{display.map((orderId) => <PieceCommandButton key={orderId} busy={busy} label={locale === "zh-CN" ? `拿取正面订单${orderId}` : `Take face-up ${orderId}`} onClick={() => send({ type: "OFFICE_TAKE_ORDER", orderId })}><OrderCard orderId={orderId} imperial={orderId.startsWith("I")} /></PieceCommandButton>)}</div>
       <h4>{t("Blind top-deck draw")}</h4>
       <div className="blind-deck-grid">
-        <BlindOrderDeck deck="market" remaining={game.decks.marketRemaining} busy={busy || handFull} send={send} />
-        <BlindOrderDeck deck="imperial" remaining={game.decks.imperialRemaining} busy={busy || handFull} send={send} />
+        <BlindOrderDeck deck="market" remaining={game.decks.marketRemaining + game.discards.market.length} busy={busy} send={send} />
+        <BlindOrderDeck deck="imperial" remaining={game.decks.imperialRemaining + game.discards.imperial.length} busy={busy} send={send} />
       </div>
       {phase.mode === "take_up_to_two" && <CommandButton busy={busy} disabled={phase.colourSamplesUsed && phase.ordersTaken === 0} send={send} command={{ type: "OFFICE_END_ORDERS" }} secondary>Continue to optional sale</CommandButton>}
     </ControlSection>
@@ -781,7 +803,7 @@ function GuildControls({ game, player, busy, send }: {
     );
   }
   return (
-    <ControlSection title="Acquire a Technique" hint={worker?.kind === "shifu" ? "Your Shifu pays printed cost minus 1 Coin (minimum 1)." : "Your Apprentice pays the printed Coin cost."}>
+    <ControlSection title="Acquire a Technique" hint={worker?.kind === "shifu" ? "Your Shifu pays printed cost minus 1 Coin (minimum 0)." : "Your Apprentice pays the printed Coin cost."}>
       <div className="choice-stack playtest-command-grid technique-commands">{ids.map((techniqueId) => {
         const technique = TECHNIQUE_DEFINITIONS[techniqueId];
         const cost = guildTechniqueCost(techniqueId, worker?.kind ?? "apprentice");
@@ -818,36 +840,81 @@ function KilnSettingControls({ game, player, busy, send }: {
   );
 }
 
-function ContributionControls({ game, player, ownPlayerId, pending, busy, send }: {
+function KilnRepositionControls({ game, player, busy, send }: {
+  game: PublicGameState;
+  player: PublicPlayerState;
+  busy: boolean;
+  send: SendCommand;
+}) {
+  const { t } = useI18n();
+  const loaded = ownCeramics(game, player.id, "loaded");
+  const occupied = new Set(Object.values(game.ceramics).filter((ceramic) => ceramic.stage === "loaded").map((ceramic) => ceramic.stage === "loaded" ? ceramic.kilnSpaceId : ""));
+  const spaces = activeKilnSpaceIds(game.playerCount).filter((space) => !occupied.has(space));
+  return (
+    <ControlSection title="Shifu kiln reposition" hint="After Base Heat is known and before the Fire card is revealed, move one of your loaded ceramics to an empty active kiln space.">
+      <form className="control-form" onSubmit={(event) => {
+        event.preventDefault();
+        const data = new FormData(event.currentTarget);
+        void send({ type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: required(data, "ceramic"), toSpaceId: required(data, "space") as KilnSpaceId });
+      }}>
+        <CeramicSelect name="ceramic" label="Ceramic" ceramics={loaded} />
+        <SelectField name="space" label="Empty destination" options={spaces} />
+        <button className="primary-button" disabled={busy || loaded.length === 0 || spaces.length === 0}>{t("Move ceramic")}</button>
+      </form>
+      <CommandButton busy={busy} send={send} command={{ type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: null, toSpaceId: null }} secondary>Keep kiln positions</CommandButton>
+    </ControlSection>
+  );
+}
+
+function ContributionControls({ game, player, ownPlayerId, pending, privateDecision, busy, send }: {
   game: PublicGameState;
   player: PublicPlayerState;
   ownPlayerId: PlayerId;
   pending: PendingContribution | null;
+  privateDecision?: PrivateDecisionState | undefined;
   busy: boolean;
   send: SendCommand;
 }) {
   const { locale, t } = useI18n();
+  const [useFuelLedger, setUseFuelLedger] = useState(false);
   if (game.phase.type !== "firing_contributions") return null;
   const eligible = game.phase.eligiblePlayerIds.includes(ownPlayerId);
   const submitted = game.phase.submittedPlayerIds.includes(ownPlayerId);
   if (!eligible) return <ControlSection title="The kiln is being fired" hint="Only players with loaded ceramics contribute Wood."><p>{t("You have no ceramic in this firing.")}</p></ControlSection>;
-  if (submitted) return <ControlSection title="Contribution locked" hint="Other players cannot see your amount until every contributor submits."><p className="secret-value">{t("Your sealed choice:")} <strong>{pending?.amount ?? t("saved")} {t("Wood")}</strong></p></ControlSection>;
+  if (submitted) return <ControlSection title="Contribution locked" hint="Other players cannot see your amount or Fuel Ledger choice until every contributor submits."><p className="secret-value">{t("Your sealed choice:")} <strong>{pending?.amount ?? t("saved")} {t("Wood")}{pending?.useFuelLedger ? " + Fuel Ledger" : ""}</strong></p></ControlSection>;
   return (
     <ControlSection title="Choose Wood in secret" hint="Your contribution stays private until every eligible player has locked a choice.">
+      {privateDecision?.fireModifierPeek !== null && privateDecision?.fireModifierPeek !== undefined && <p className="secret-value">Test Pieces peek: <strong>{privateDecision.fireModifierPeek > 0 ? "+" : ""}{privateDecision.fireModifierPeek}</strong></p>}
+      {ownedAvailableTechniques(player, ["T11"]).includes("T11") && <label className="check-row"><input type="checkbox" checked={useFuelLedger} onChange={(event) => setUseFuelLedger(event.target.checked)} />Use Fuel Ledger secretly: pay 1 Coin and contribute 1 additional Wood (effective maximum 4).</label>}
       <div className="contribution-grid wood-card-grid">
         {([0, 1, 2, 3] as WoodContribution[]).map((amount) => (
           <button
             className="wood-card-choice"
             type="button"
             key={amount}
-            disabled={busy || amount > player.resources.wood}
-            onClick={() => void send({ type: "SUBMIT_WOOD_CONTRIBUTION", windowId: game.phase.type === "firing_contributions" ? game.phase.windowId : "", amount })}
+            disabled={busy || amount + (useFuelLedger ? 1 : 0) > player.resources.wood || (useFuelLedger && player.resources.coins < 1)}
+            onClick={() => void send({ type: "SUBMIT_WOOD_CONTRIBUTION", windowId: game.phase.type === "firing_contributions" ? game.phase.windowId : "", amount, useFuelLedger })}
             aria-label={locale === "zh-CN" ? `贡献${amount}柴薪` : `Contribute ${amount} Wood`}
           ><strong>{amount}</strong><span>{t("Wood")}</span></button>
         ))}
       </div>
     </ControlSection>
   );
+}
+
+function CleanupOrderControls({ player, busy, send }: { player: PublicPlayerState; busy: boolean; send: SendCommand }) {
+  const limit = player.kilnId === "GU" ? 4 : 3;
+  const requiredCount = Math.max(0, player.orderHand.length - limit);
+  return <SelectionSubmission
+    title="Cleanup Order limit"
+    hint={`Discard exactly ${requiredCount} Order${requiredCount === 1 ? "" : "s"} face up to finish cleanup. Your limit is ${limit}.`}
+    options={player.orderHand.map((orderId) => ({ value: orderId, label: orderId }))}
+    maximum={requiredCount}
+    exact
+    busy={busy}
+    submitLabel="Discard selected Orders"
+    onSubmit={(orderIds) => send({ type: "DISCARD_ORDERS_FOR_CLEANUP", orderIds })}
+  />;
 }
 
 function KilnAbilityControls({ game, player, busy, send }: {
@@ -857,9 +924,11 @@ function KilnAbilityControls({ game, player, busy, send }: {
   send: SendCommand;
 }) {
   const loaded = ownCeramics(game, player.id, "loaded");
-  const eligibleForGe = loaded.filter((ceramic) => game.firingContext?.ceramicResults[ceramic.id]?.naturalHeatDifference === 1);
   if (player.kilnId === "GE") {
-    return <CeramicDecision title="Ge · Crackle from Fire" hint="Turn one difference-1 ceramic into a Crackle Masterpiece. The Crackle conversion is free and does not refund its original Decoration." ceramics={eligibleForGe} busy={busy} send={send} make={(ceramicId) => ({ type: "RESOLVE_GE", ceramicId })} skip={{ type: "RESOLVE_GE", ceramicId: null }} />;
+    const eligible = loaded.filter(
+      ({ id }) => game.firingContext?.ceramicResults[id]?.finalHeatDifference === 1,
+    );
+    return <CeramicDecision title="Ge · Crackle from Fire" hint="Choose a ceramic with exactly 1 Heat Difference. Set its Actual Heat to its Preferred Heat and change its Decoration to Crackle for free." ceramics={eligible} busy={busy} send={send} make={(ceramicId) => ({ type: "RESOLVE_GE", ceramicId })} skip={{ type: "RESOLVE_GE", ceramicId: null }} />;
   }
   return (
     <ControlSection title="Jun · Kiln Transformation" hint="Pay 2 Coins to adjust one of your ceramics by +1 or −1, or pass.">
@@ -965,7 +1034,7 @@ function OrderCompletion({ orderId, ceramics, guan, busy, send }: {
         ? `已选择${selected.length}件；此订单需要恰好${requiredCount}件。`
         : matches
           ? "所选陶瓷符合此订单；提交后服务器会再次验证。"
-          : "所选陶瓷不符合订单的器型、釉色、装饰、组合关系或最低品质要求。"
+          : "所选器物不符合订单的器形、釉色、装饰、组合关系或最低品第要求。"
     : selected.length === 0
       ? `Select exactly ${requiredCount} Finished ceramic${requiredCount === 1 ? "" : "s"}.`
       : selected.length !== requiredCount
@@ -1008,8 +1077,8 @@ function PresentationControls({ game, player, ownPlayerId, busy, send }: {
   if (submitted) return <ControlSection title="Exhibition submitted" hint="Waiting for the other workshops." />;
   const hint = locale === "zh-CN"
     ? player.imperialProgress >= 4
-      ? `展出0–${maximum}件已完成、未交付且品质为标准品或更高的陶瓷。恰好3件器型各不相同和／或釉色各不相同，各获得+2分；不展出没有惩罚。`
-      : `展出0–${maximum}件已完成、未交付且品质为标准品或更高的陶瓷。多样性奖励要求最终御用进度达到4–5。`
+      ? `陈设0–${maximum}件未交付且品第为合格品或更高的器物。恰好3件器形各不相同和／或釉色各不相同，各获得+2分；不陈设没有惩罚。`
+      : `陈设0–${maximum}件未交付且品第为合格品或更高的器物。多样性奖励要求最终贡御进度达到4–5。`
     : player.imperialProgress >= 4
       ? `Exhibit 0–${maximum} finished, undelivered Standard-or-better ceramics. Exactly three different Shapes and/or Glazes earn +2 VP each; exhibiting nothing has no penalty.`
       : `Exhibit 0–${maximum} finished, undelivered Standard-or-better ceramic${maximum === 1 ? "" : "s"}. Diversity bonuses require final Imperial Progress 4–5.`;
@@ -1023,11 +1092,11 @@ function FinalResults({ game }: { game: PublicGameState }) {
     <ControlSection title="Final results" hint={locale === "zh-CN" ? `判定依据：${finalResolutionLabel(game.finalResult.resolvedBy, locale)}。` : `Resolved by ${finalResolutionLabel(game.finalResult.resolvedBy, locale)}.`}>
       <div className="score-table-scroll">
         <table className="score-table" aria-label={locale === "zh-CN" ? "最终分数明细" : "Final score breakdown"}>
-          <thead><tr><th>{locale === "zh-CN" ? "作坊" : "Workshop"}</th><th>{t("Orders")}</th><th>{t("Imperial Progress")}</th><th>{t("Imperial Seal")}</th><th>{t("End-game Exhibition")}</th><th>{locale === "zh-CN" ? "窑口／效果" : "Kiln / effects"}</th><th>{t("Coins")}</th><th>{locale === "zh-CN" ? "总分" : "Total"}</th></tr></thead>
+          <thead><tr><th>{locale === "zh-CN" ? "作坊" : "Workshop"}</th><th>{t("Orders")}</th><th>{t("Imperial Progress")}</th><th>{t("Imperial Seal")}</th><th>{t("End-game Exhibition")}</th><th>{locale === "zh-CN" ? "窑口／效果" : "Kiln / effects"}</th><th>{t("Techniques")}</th><th>{t("Coins")}</th><th>{locale === "zh-CN" ? "总分" : "Total"}</th></tr></thead>
           <tbody>{game.playerOrder.map((playerId) => {
             const score = game.finalResult?.scores[playerId];
             const winner = game.finalResult?.winnerIds.includes(playerId) ?? false;
-            return <tr className={winner ? "winner" : ""} key={playerId}><th>{game.players[playerId]?.displayName}{winner && <em>{locale === "zh-CN" ? "胜者" : "Winner"}</em>}</th><td>{score?.orders ?? 0}</td><td>{score?.imperialProgress ?? 0}</td><td>{score?.imperialSeal ?? 0}</td><td>{score?.presentation ?? 0}</td><td>{score?.immediateAbilities ?? 0}</td><td>{score?.leftoverCoins ?? 0}</td><td><strong>{score?.total ?? 0} {t("VP")}</strong></td></tr>;
+            return <tr className={winner ? "winner" : ""} key={playerId}><th>{game.players[playerId]?.displayName}{winner && <em>{locale === "zh-CN" ? "胜者" : "Winner"}</em>}</th><td>{score?.orders ?? 0}</td><td>{score?.imperialProgress ?? 0}</td><td>{score?.imperialSeal ?? 0}</td><td>{score?.presentation ?? 0}</td><td>{score?.immediateAbilities ?? 0}</td><td>{score?.techniques ?? 0}</td><td>{score?.leftoverCoins ?? 0}</td><td><strong>{score?.total ?? 0} {t("VP")}</strong></td></tr>;
           })}</tbody>
         </table>
       </div>
@@ -1043,7 +1112,7 @@ function finalResolutionLabel(
     total_vp: "总分",
     imperial_progress: "御用进度",
     completed_imperial_orders: "已完成御用订单数量",
-    masterpieces_delivered_or_presented: "已交付或展陈的杰作数量",
+    masterpieces_delivered_or_presented: "已交付或陈设的珍品数量",
     shared_victory: "共享胜利",
   } : {
     total_vp: "total VP",
@@ -1078,18 +1147,19 @@ function CeramicDecision({ title, hint, ceramics, busy, send, make, skip }: {
   return <ControlSection title={title} hint={hint}><div className="choice-stack">{ceramics.map((ceramic) => <CommandButton key={ceramic.id} busy={busy} send={send} command={make(ceramic.id)}>{ceramicLabel(ceramic, locale)}</CommandButton>)}</div><CommandButton busy={busy} send={send} command={skip} secondary>Skip</CommandButton></ControlSection>;
 }
 
-function SelectionSubmission({ title, hint, options, maximum, busy, submitLabel, onSubmit }: {
+function SelectionSubmission({ title, hint, options, maximum, exact = false, busy, submitLabel, onSubmit }: {
   title: string;
   hint: string;
   options: Array<{ value: string; label: string }>;
   maximum: number;
+  exact?: boolean;
   busy: boolean;
   submitLabel: string;
   onSubmit: (values: string[]) => Promise<boolean>;
 }) {
   const { t } = useI18n();
   const [selected, setSelected] = useState<string[]>([]);
-  return <ControlSection title={title} hint={hint}><fieldset><legend>{t("Select up to {maximum}", { maximum })}</legend>{options.map((option) => <label className="check-row" key={option.value}><input type="checkbox" checked={selected.includes(option.value)} disabled={!selected.includes(option.value) && selected.length >= maximum} onChange={(event) => setSelected((current) => event.target.checked ? [...current, option.value] : current.filter((value) => value !== option.value))} />{option.label}</label>)}</fieldset><button className="primary-button" type="button" disabled={busy} onClick={() => void onSubmit(selected)}>{t(submitLabel)}</button></ControlSection>;
+  return <ControlSection title={title} hint={hint}><fieldset><legend>{exact ? `Select exactly ${maximum}` : t("Select up to {maximum}", { maximum })}</legend>{options.map((option) => <label className="check-row" key={option.value}><input type="checkbox" checked={selected.includes(option.value)} disabled={!selected.includes(option.value) && selected.length >= maximum} onChange={(event) => setSelected((current) => event.target.checked ? [...current, option.value] : current.filter((value) => value !== option.value))} />{option.label}</label>)}</fieldset><button className="primary-button" type="button" disabled={busy || (exact && selected.length !== maximum)} onClick={() => void onSubmit(selected)}>{t(submitLabel)}</button></ControlSection>;
 }
 
 function WorkerChoice({ workers, value, onChange }: {
@@ -1221,7 +1291,7 @@ function ownedAvailableTechniques(player: PublicPlayerState, allowed: TechniqueI
 
 function guildTechniqueCost(techniqueId: TechniqueId, workerKind: AvailableWorker["kind"]): number {
   const printedCost = TECHNIQUE_DEFINITIONS[techniqueId]?.cost ?? Number.POSITIVE_INFINITY;
-  return workerKind === "shifu" ? Math.max(1, printedCost - 1) : printedCost;
+  return workerKind === "shifu" ? Math.max(0, printedCost - 1) : printedCost;
 }
 
 function officeActionHint(action: OfficeActionChoice, workerKind: AvailableWorker["kind"] | undefined, locale: Locale = "en"): string {
@@ -1231,7 +1301,7 @@ function officeActionHint(action: OfficeActionChoice, workerKind: AvailableWorke
       case "take_one": return "拿取1张正面订单，或确认盲抽1张牌堆顶订单。";
       case "take_up_to_two": return "拿取至多2张订单；每次可分别选择正面或盲抽。";
       case "take_one_and_gain_two_coins": return "拿取1张正面或盲抽订单，然后获得2铜钱。";
-      case "court_patronage": return "支付5铜钱，使御用进度前进1格；不能使用釉色样本或出售瑕疵品。";
+      case "court_patronage": return "支付5铜钱，使贡御进度前进1格；不能使用釉样册或出售次品。";
     }
   }
   switch (action) {
@@ -1251,11 +1321,11 @@ function officeActionHint(action: OfficeActionChoice, workerKind: AvailableWorke
 function localizeActionError(locale: Locale, error: string): string {
   if (locale === "en") return error;
   const errors: Record<string, string> = {
-    "Forming Studio is full.": "成型作坊已满。",
-    "Glaze Workshop is full.": "施釉作坊已满。",
-    "Kiln Yard is full.": "入窑场已满。",
-    "Market & Imperial Office is full.": "市场与内府署已满。",
-    "Guild & Academy is full.": "行会与书院已满。",
+    "Forming Studio is full.": "制坯坊已满。",
+    "Glaze Workshop is full.": "施釉坊已满。",
+    "Kiln Yard is full.": "装窑场已满。",
+    "Market & Imperial Office is full.": "市易与贡务已满。",
+    "Guild & Academy is full.": "行会与学堂已满。",
     "Choose an available worker.": "请选择1名可用工人。",
     "An Apprentice may form only one vessel.": "学徒只能成型1件器物。",
     "Ding's extra vessel must match a selected base Shape.": "定窑额外器物必须与所选基础器型相同。",
@@ -1282,7 +1352,7 @@ function localizeActionError(locale: Locale, error: string): string {
     "You are already at Progress 5.": "你的御用进度已在5格。",
     "No face-up Technique is available.": "没有正面的技术可用。",
     "No face-up Technique is affordable.": "没有买得起的正面技术。",
-    "Materials Yard is full.": "原料场已满。",
+    "Materials Yard is full.": "备料场已满。",
     "Choose whole, non-negative resource amounts.": "请选择非负整数资源数量。",
   };
   if (errors[error] !== undefined) return errors[error]!;

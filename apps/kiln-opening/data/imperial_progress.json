@@ -1,10 +1,10 @@
 {
-  "rulesVersion": "1.0.4",
+  "rulesVersion": "1.0.9",
   "track": [
     {
       "space": 0,
       "title": "Local Workshop",
-      "titleZh": "地方作坊",
+      "titleZh": "乡野作坊",
       "reward": null,
       "rewardZh": null,
       "endGameVp": 0
@@ -12,9 +12,9 @@
     {
       "space": 1,
       "title": "Local Renown",
-      "titleZh": "地方声望",
+      "titleZh": "一方薄名",
       "reward": "Unlock 1 Apprentice during Cleanup.",
-      "rewardZh": "在清理阶段解锁1名学徒。",
+      "rewardZh": "在整理阶段解锁1名学徒。",
       "endGameVp": 0
     },
     {
@@ -28,15 +28,15 @@
     {
       "space": 3,
       "title": "Court Examination",
-      "titleZh": "入朝考核",
+      "titleZh": "内府考较",
       "reward": "Unlock 1 Apprentice during Cleanup.",
-      "rewardZh": "在清理阶段解锁1名学徒。",
+      "rewardZh": "在整理阶段解锁1名学徒。",
       "endGameVp": 2
     },
     {
       "space": 4,
       "title": "Awaiting Audience",
-      "titleZh": "候见天听",
+      "titleZh": "待诏候见",
       "reward": "Gain 3 Coins immediately; full End-game Exhibition access.",
       "rewardZh": "立即获得3铜钱；终局展陈容量提升至3件，并可获得多样性奖励。",
       "endGameVp": 4
@@ -44,7 +44,7 @@
     {
       "space": 5,
       "title": "Imperial Audience",
-      "titleZh": "御前召见",
+      "titleZh": "御前奏对",
       "reward": "Take the Imperial Seal if available; full End-game Exhibition access.",
       "rewardZh": "若御印尚未被领取，则获得御印；终局展陈容量为3件，并可获得多样性奖励。",
       "endGameVp": 8

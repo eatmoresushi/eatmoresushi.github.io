@@ -316,18 +316,22 @@ function candidatePhaseActions(
     case "setup_kiln_selection":
       return KILN_IDS.map((kilnId) => ({ type: "SELECT_KILN", kilnId }));
     case "setup_starting_orders":
-      return [{ type: "KEEP_STARTING_ORDER" }, { type: "REDRAW_STARTING_ORDER" }];
+      return combinations(phase.offeredOrderIds[playerId] ?? [], 2).map((orderIds) => ({
+        type: "SUBMIT_STARTING_ORDERS" as const,
+        orderIds,
+      }));
     case "work":
       return candidateWorkActions(state, playerId, options.exhaustive === true);
     case "work_office_orders":
       if (phase.step === "colour_samples_or_skip") {
         return [
           { type: "OFFICE_SKIP_COLOUR_SAMPLES" },
-          ...[...state.marketDisplay, ...state.imperialDisplay].map((orderId) => ({
-            type: "OFFICE_USE_COLOUR_SAMPLES" as const,
-            orderId,
-          })),
+          { type: "OFFICE_USE_COLOUR_SAMPLES", deck: "market" },
+          { type: "OFFICE_USE_COLOUR_SAMPLES", deck: "imperial" },
         ];
+      }
+      if (phase.step === "colour_samples_choose") {
+        return (phase.colourSamplesChoices ?? []).map((orderId) => ({ type: "OFFICE_CHOOSE_COLOUR_SAMPLES_ORDER" as const, orderId }));
       }
       return [
         { type: "OFFICE_END_ORDERS" },
@@ -370,6 +374,9 @@ function candidatePhaseActions(
       return ids.map((techniqueId) => ({ type: "GUILD_BUY_TECHNIQUE", techniqueId }));
     }
     case "firing_before_contribution": {
+      if (phase.techniqueIds[phase.queue.currentIndex] === "T12") {
+        return [{ type: "RESOLVE_TEST_PIECES", use: false }, { type: "RESOLVE_TEST_PIECES", use: true }];
+      }
       const loaded = Object.values(state.ceramics).filter(
         (ceramic) => ceramic.ownerId === playerId && ceramic.stage === "loaded",
       );
@@ -399,6 +406,15 @@ function candidatePhaseActions(
     }
     case "firing_after_reveal":
       return [{ type: "RESOLVE_FUEL_LEDGER", use: false }, { type: "RESOLVE_FUEL_LEDGER", use: true }];
+    case "firing_reposition": {
+      const loaded = Object.values(state.ceramics).filter((ceramic) => ceramic.ownerId === playerId && ceramic.stage === "loaded");
+      const occupied = new Set(Object.values(state.ceramics).filter((ceramic) => ceramic.stage === "loaded").map((ceramic) => ceramic.stage === "loaded" ? ceramic.kilnSpaceId : "middle_1"));
+      const free = activeKilnSpaceIds(state.playerCount).filter((space) => !occupied.has(space));
+      return [
+        { type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: null, toSpaceId: null },
+        ...loaded.flatMap((ceramic) => free.map((toSpaceId) => ({ type: "RESOLVE_KILN_YARD_REPOSITION" as const, ceramicId: ceramic.id, toSpaceId }))),
+      ];
+    }
     case "firing_after_fire_reveal": {
       const loaded = Object.values(state.ceramics).filter(
         (ceramic) => ceramic.ownerId === playerId && ceramic.stage === "loaded",
@@ -423,9 +439,12 @@ function candidatePhaseActions(
           })))),
         ];
       }
+      const geEligible = loaded.filter(
+        ({ id }) => state.firingContext?.ceramicResults[id]?.finalHeatDifference === 1,
+      );
       return [
         { type: "RESOLVE_GE", ceramicId: null },
-        ...loaded.map(({ id }) => ({ type: "RESOLVE_GE" as const, ceramicId: id })),
+        ...geEligible.map(({ id }) => ({ type: "RESOLVE_GE" as const, ceramicId: id })),
       ];
     }
     case "firing_after_quality": {
@@ -452,6 +471,10 @@ function candidatePhaseActions(
     }
     case "orders":
       return candidateOrderActions(state, playerId);
+    case "cleanup_orders": {
+      const count = Math.max(0, (player?.orderHand.length ?? 0) - (player?.kilnId === "GU" ? 4 : 3));
+      return combinations(player?.orderHand ?? [], count).map((orderIds) => ({ type: "DISCARD_ORDERS_FOR_CLEANUP" as const, orderIds }));
+    }
     case "presentation":
       return candidatePresentationActions(state, playerId);
     case "finished":

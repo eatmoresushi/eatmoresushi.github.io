@@ -52,8 +52,8 @@ export function learningPhase(gameSequence: number): "early" | "developing" | "m
 
 export function createInitialStrategyProfile(playerCount: PlayerCount): AIStrategyProfile {
   return {
-    rulesVersion: "1.0.4",
-    currentRulesVersion: "1.0.4",
+    rulesVersion: "1.0.9",
+    currentRulesVersion: "1.0.9",
     aiPolicyVersion: AI_POLICY_VERSION,
     playerCount,
     gamesLearned: 0,

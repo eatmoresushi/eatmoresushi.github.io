@@ -1,134 +1,77 @@
 # IMPLEMENTATION_DECISIONS.md
 
-These are the intended digital interpretations of current V1.0.4 wording.
+These are the intended digital interpretations of current V1.0.9 wording.
 
-## Orders
+## Orders and private setup
 
-- Order matching is permutation-independent. For a multi-ceramic Order, the engine must find a valid assignment of selected ceramics to requirement slots; the UI selection order does not matter.
-
-- Shifu `take up to 2 Orders` chooses Market/Imperial and face-up/blind separately for each acquisition.
-- Refill after a face-up take before choosing second; a blind draw leaves the display unchanged.
-- The server resolves a blind draw from the actual deck top and accepts no client-supplied card ID.
-- Orders in hand are public because the tabletop rule defines Orders as open information.
-- Player may stop after first Order.
-- Completing multiple Orders in Order Phase is sequential and fully resolved one at a time.
-
-## Passing
-
-A player may pass with workers still unused. Passing is permanent for the phase.
+- Multi-ceramic matching is permutation-independent; UI selection order never changes validity.
+- Opening offers are private. Each player selects exactly two of their 2 Market + 2 Imperial offers. Kept Orders become public only after every player submits; returned cards are shuffled into the matching decks first.
+- A normal Shifu Office action may take up to 2 Orders. Each take independently selects Market/Imperial and face-up/blind, with immediate display refill between takes.
+- A blind draw always uses the authoritative deck top; clients never submit the drawn ID.
+- There is no mid-round hand-limit check. Cleanup explicitly prompts players over 3 Orders, or over 4 with Guan, to discard chosen cards face up.
+- When an Order draw deck empties, its discard is deterministically reshuffled with the action RNG. If neither cards nor discard remain, the draw is unavailable.
+- Completing multiple Orders is sequential. Printed Imperial `progress` is applied after each completion.
 
 ## Resource actions
 
-If common supply is short, player receives only what remains.
+- Materials gains must request exactly 3 resources for an Apprentice or 4 for a Shifu. A short common supply pays only what remains.
+- The Shifu Materials exchange occurs after the gain and may make any number of 1:1 Clay/Wood swaps, limited by player holdings and supply.
+- Exact sales are exchange exceptions: the common supply must contain the full Coin reward.
 
-Office Flawed sales are an exchange exception: an accepted sale must pay exactly 1 Coin per ceramic. The server rejects a sale selection that exceeds the Coins remaining in the common supply, and the UI limits selection accordingly.
+## Forming and glazing
 
-Connoisseur Network is also an exchange exception: using it requires all 5 Coins to be available in the common supply. Skipping it is always legal.
+- Shifu Vases and Censers cost 1 Clay only for vessels formed by that action.
+- Clay Substitution can replace any number of Clay payments in one action and is not exhausted.
+- Ding's matching extra vessel is free and still consumes a Vessel card from supply.
+- Drying Frames is selected per newly formed vessel and immediately assigns a Glaze plus Plain at no Coin cost.
+- A Shifu Glaze action may process up to two ceramics and marks one selected Decoration as free; this is one merged effect, not alternate branches.
 
-Materials Yard requires the chosen Clay/Wood amounts to total exactly 3 for an Apprentice or exactly 4 for the Shifu. If the common supply is short, the player receives only the requested resources that remain.
+## Office
 
-## Market & Imperial Office
-
-- Resolve each visit as a main action followed by an explicit optional Flawed-sale step.
-- Selling is never a standalone main action. Submitting an empty sale selection ends the visit without selling.
-- Apprentice sale limit is 1; Shifu sale limit is 2, regardless of which valid main action was chosen.
-- Check hand limit before each individual face-up or blind acquisition.
-- Colour Samples is an explicit choice before the first acquisition. It can bottom a face-up card from either display, never a blind top card, and the target goes to its deck bottom rather than a discard pile.
-- Court Patronage is a mutually exclusive Shifu main action. Eligibility is derived from authoritative completed Imperial Order history; it has no Colour Samples or Flawed-sale step.
-- Connoisseur Network follows the normal Flawed-sale decision, only after a normal Office main action. It never follows Court Patronage and does not change the Apprentice/Shifu Flawed-sale limit.
+- A visit is a main action followed by the normal optional Flawed sale.
+- Apprentice sale limit is 1 and Shifu limit is 2.
+- Court Patronage is a mutually exclusive Shifu main action. It requires a completed Imperial Order, costs 5 Coins, draws authoritatively, and cannot advance Progress from 4 to 5.
+- Colour Samples follows a normal Order take. Its top-two choice is private; the selected card enters the hand and the other moves to the bottom.
+- Connoisseur Network follows the normal visit but not Court Patronage. It pays exactly 2/4/7 Coins for Standard/Fine/Masterpiece.
 
 ## Guild & Academy
 
-An Apprentice enters the buy step directly and pays printed cost. A Shifu first receives the optional one-tile, same-discipline refresh step and then pays printed cost minus 1, minimum 1. Capacity is 1/2/3 at 2/3/4 players.
+An Apprentice pays printed cost. A Shifu may refresh one tile, then buys at printed cost minus 1 with minimum 0. Empty discipline decks may leave displays short; a refresh can legally reveal the same tile if it is the only card.
 
-## Kiln Yard
+## Kiln Yard and repositioning
 
-Kiln Yard never grants Wood. Placing a worker requires loading at least one owned Glazed ceramic into an empty kiln space. An Apprentice loads exactly 1; the Shifu loads 1 or 2.
+- At least one ceramic must be loaded. Apprentice loads exactly 1; Shifu loads 1 or 2.
+- Gain 1 Wood per ceramic actually loaded, subject to finite supply.
+- A Shifu placed here records the ceramic IDs loaded by that action. After Base Heat and before Fire reveal, the owner may move one of those ceramics to a different legal empty active space or decline.
 
-Shifu does not reposition.
+## Secret firing information
 
-## Ding
+- Wood amount and Fuel Ledger choice are one private submission. Fuel Ledger is validated before acceptance but resources are paid only in the atomic reveal transition.
+- Public pending state identifies who submitted, never amount or Fuel choice. The final reveal exposes effective contributions.
+- Test Pieces records the top Fire modifier in server-private state and returns it to the same top position. It is delivered only to the owning authenticated player and never to public state/events.
+- The Fire discard is reshuffled only when a draw is required and the draw deck is empty.
 
-Ding's extra vessel costs the normal Clay cost.
+## Heat effects
 
-It can trigger from either ceramic formed by a Shifu action, but only once per round.
+- Sagger Selection changes only the chosen ceramic's applied Fire modifier; the revealed card and public firing context remain unchanged.
+- Ge changes Actual Heat to Preferred Heat, then changes Decoration to Crackle, without Coin cost or refund.
+- Jun pays exactly 2 Coins and adjusts one own Actual Heat by exactly ±1.
+- Protective Saggars resolves before Second Firing. A ceramic returned by Second Firing is removed from the current results and cannot count for after-firing rewards.
+- Kiln Records checks final remaining results and pays up to 1 Clay and 2 Coins from the supply.
 
-Clay Substitution may pay for Ding's additional vessel.
+## Traditions and scoring
 
-## Ge
+- Ru is checked only while delivering a ceramic. Once per round, a delivered Celadon + Plain Masterpiece grants 4 VP.
+- Guan's 2-Coin Imperial-completion reward is independent from its Decoration waiver. Either can trigger without the other.
+- Every owned Technique adds 1 VP to the final breakdown.
+- Exhibition ceramics stay distinct from Order-delivered ceramics. Serialized action names retain legacy `presentation` wording for replay compatibility; player-facing text says End-game Exhibition / 终局展陈.
 
-Changing Decoration to Crackle costs no Coins and gives no refund for a previously paid Decoration.
+## Progress and Round 5
 
-Ge's chosen ceramic must naturally be Heat Difference 1 at the time Ge resolves.
-
-## Jun
-
-Jun costs exactly 2 Coins, changes one eligible ceramic's Actual Heat by exactly +1 or -1, then recalculates Heat Difference. Declining is free, and use is unavailable below 2 Coins.
-
-## Fuel Ledger
-
-Initial selected contribution is spent on reveal.
-
-To use Fuel Ledger, player must still own 1 additional Wood and 1 Coin.
-
-Effective contribution can exceed 3.
-
-Contributor count does not change.
-
-## Test Pieces
-
-Engine must snapshot each ceramic's **natural exact-match status** immediately after initial Actual Heat calculation and before Jun/Ge/other modifications.
-
-Test Pieces checks that snapshot and pays 1 Coin for one natural exact match or 2 Coins for at least two. Sagger Selection cannot create Test Pieces eligibility because the snapshot uses the original Fire modifier.
-
-## Sagger Selection
-
-The revealed Fire card and public Global Heat never change. The firing context records the chosen ceramic ID, and only that ceramic calculates final Actual Heat with a Fire modifier of 0. Natural heat still uses the original modifier.
-
-## Protective Saggars and Second Firing
-
-Resolve all eligible Protective Saggars choices in First-Player order, then open a fresh Second Firing queue from the resulting qualities. This allows T10 Flawed→Standard to create a legal T15 choice, while T10 Standard→Fine removes that ceramic from T15 eligibility.
-
-Second Firing immediately returns the chosen ceramic to `glazed` state and removes it from the current firing results, so later after-firing checks and finalization cannot count or finish it.
-
-## Kiln Records
-
-Count final assigned Masterpiece results after T10/T15. A qualifying use gains up to the available 1 Clay and 1 Coin under the normal finite-supply rule.
-
-## Player-scaled Shared Kiln
-
-Active kiln-space IDs are derived authoritatively from player count. Covered spaces are rejected for Kiln Yard and Kiln Setting and are excluded from empty-space checks. Their stable IDs remain present so the same board layout can display covers.
-
-## Ru
-
-Ru checks final produced ceramic state after all Quality-changing effects.
-
-If Ge changed a ceramic's Decoration from Plain to Crackle, it no longer satisfies Ru via Plain.
-
-## End-game Exhibition
-
-Flawed is not eligible.
-
-No negative VP for an empty Exhibition.
-
-Exhibition ceramics remain separate from Order-delivered ceramics. Internal serialized field and action names retain the legacy word `presentation` for replay compatibility; all player-facing text uses End-game Exhibition / 终局展陈.
-
-## Round 5 Cleanup
-
-Perform Cleanup as written before final scoring even though Order cycling/First Player passing has no strategic effect afterward. This keeps phase flow deterministic.
-
-## Imperial Progress
-
-Each completed single-ceramic Imperial Order advances its owner one space; each multi-ceramic Imperial Order advances two spaces. Repeated completions in the same round remain legal. Progress advancement resolves immediately and sequentially, and the engine checks every crossed milestone so a two-space jump cannot skip Apprentice rewards at 1/3, one-time Coin stipends at 2/4, Exhibition-capacity changes, or the Imperial Audience and Seal at 5. Progress remains capped at 5. No per-round advancement flag is stored.
-
-Court Patronage reuses the milestone resolver but is validated only from spaces 0–3 and never invokes Seal claiming. Its permanent eligibility gate is derived from `completedOrders` entries whose stable Order ID begins with `I`; holdings and Market completions do not qualify.
-
-## Technique deck edge case
-
-If a discipline draw deck is empty, its display simply contains fewer than 2 tiles.
-
-If Shifu refreshes a face-up tile while no other tile exists in that discipline deck, putting it on the bottom and revealing from the same deck may return the same tile. This is legal and has no useful effect. The same deterministic edge-case rule applies to Colour Samples.
+- Imperial Progress uses the completed card's printed +1/+2/+3 value and checks every crossed milestone. It is capped at 5.
+- Court Patronage uses the same milestone resolver but cannot reach 5.
+- Cleanup after Round 5 still resolves fully. Each pending Apprentice unlock becomes 3 Coins instead of adding a usable worker.
 
 ## Saved-game compatibility
 
-V1.0.4 does not add a duplicate Patronage-unlock flag: authoritative `completedOrders` history already persists and reconnects, so eligibility is derived faithfully from Imperial Order IDs. Per-player stipend milestones are stored explicitly so reconnect and multi-space jumps remain idempotent. Unstarted lobbies are migrated to V1.0.4. Started pre-V1.0.4 rooms are rejected with a clear incompatibility message because changed displays, decks, milestones, and scoring cannot be translated without changing an active game.
+New rooms use V1.0.9. Historical version tags remain readable for archived local AI evidence, but the live service rejects started rooms from older rules because their hidden offers, decks, kiln layout, firing windows, and scoring cannot be translated safely. Lobby-only rooms may be recreated under V1.0.9.

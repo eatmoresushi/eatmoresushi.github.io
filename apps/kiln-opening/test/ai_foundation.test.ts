@@ -38,7 +38,7 @@ describe("reusable AI foundation", () => {
     expect(observation.ownPendingContribution?.amount).toBe(2);
     expect(observation.game.firingContext).toBeNull();
     expect(JSON.stringify(observation)).not.toContain(`"${otherId}":3`);
-    expect(Object.values(observation.knownFireRemaining).reduce((sum, count) => sum + count, 0)).toBe(18);
+    expect(Object.values(observation.knownFireRemaining).reduce((sum, count) => sum + count, 0)).toBe(10);
   });
 
   it("returns only commands accepted by the unchanged authoritative engine", () => {
