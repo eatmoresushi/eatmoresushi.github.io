@@ -57,9 +57,11 @@ Deno.serve(async (request) => {
     );
   }
 
+  // Hoisted so the catch below can name the failing operation in the function log.
+  let operation: unknown = "unknown";
   try {
     const body = await request.json() as Record<string, unknown>;
-    const operation = body["operation"];
+    operation = body["operation"];
     const store = new SupabaseMultiplayerStore(supabaseUrl, serviceRoleKey);
     const service = new AuthoritativeGameService(store, new EdgeSecurityProvider());
     let result: unknown;
@@ -139,10 +141,15 @@ Deno.serve(async (request) => {
     }
     const status = typeof result === "object" && result !== null && "ok" in result && result.ok === false ? 409 : 200;
     return json(result, status);
-  } catch {
-    // Never return stack traces, full command payloads, seat tokens, or private Contribution values.
-    // The generic message is deliberate; the operator diagnoses the cause from the
-    // function logs, but the client still receives a code it can name accurately.
+  } catch (thrown) {
+    // Never return stack traces, full command payloads, seat tokens, or private
+    // Contribution values. The response stays generic, but the cause has to survive
+    // somewhere: an empty catch erased it, leaving a 500 with no record anywhere and
+    // nothing to debug from. The log is operator-only and is not part of any response.
+    console.error("game-action failed", {
+      operation: typeof operation === "string" ? operation : "unknown",
+      error: thrown instanceof Error ? thrown.message : String(thrown),
+    });
     return failure(
       "INTERNAL_SERVER_ERROR",
       "The multiplayer function failed while handling the request.",

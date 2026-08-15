@@ -10,8 +10,10 @@ import v101Migration from "../supabase/migrations/202608090003_v101_fire_deck.sq
 import v102Migration from "../supabase/migrations/202608100001_v102_rules.sql?raw";
 import v104Migration from "../supabase/migrations/202608110001_v104_rules.sql?raw";
 import v109Migration from "../supabase/migrations/202608140001_v109_rules.sql?raw";
+import createRoomSeatKeyMigration from "../supabase/migrations/202608150001_fix_create_room_seat_key.sql?raw";
 import onlineAiMigration from "../supabase/migrations/202608100002_online_ai_v003.sql?raw";
 import edgeFunction from "../supabase/functions/game-action/index.ts?raw";
+import service from "../src/multiplayer/service.ts?raw";
 
 describe("Supabase security contract", () => {
   it("keeps credentials, authoritative state, audit events, and Wood values in a denied private schema", () => {
@@ -95,6 +97,37 @@ describe("Supabase security contract", () => {
     expect(v109Migration).toContain("where status = 'lobby'");
     expect(v109Migration).toContain("p_room_id, upper(p_code), 'lobby', p_seat_id, '1.0.9', '1.0.9', 0");
     expect(v109Migration).toContain("to service_role");
+  });
+
+  // 202608140001 shipped `hostSeat` here while the service reads `created.value.seat`,
+  // so every create_room threw inside publicSeat and surfaced as INTERNAL_SERVER_ERROR.
+  // tsc cannot see into SQL and the suite exercises the in-memory store, so nothing
+  // caught it. Pin the payload key against the reader that consumes it.
+  it("returns the seat key that the service reads from the room-creation RPC", () => {
+    expect(service).toContain("publicSeat(created.value.seat)");
+    expect(service).toContain("publicSeat(joined.value.seat)");
+
+    // The live definition is the last one applied, so the fix migration is what counts.
+    expect(createRoomSeatKeyMigration).toContain("create or replace function public.server_create_room");
+    expect(createRoomSeatKeyMigration).toContain("'room', v_room, 'seat', v_seat");
+    expect(createRoomSeatKeyMigration).not.toContain("'hostSeat'");
+    expect(createRoomSeatKeyMigration).toContain("p_room_id, upper(p_code), 'lobby', p_seat_id, '1.0.9', '1.0.9', 0");
+    expect(createRoomSeatKeyMigration).toContain("to service_role");
+
+    // Every room-authenticating RPC hands back the same envelope shape.
+    for (const sql of [migration, createRoomSeatKeyMigration]) {
+      expect(sql).toMatch(/'room', v_room, 'seat', v_seat/);
+    }
+  });
+
+  it("keeps a server-side record when the function converts a throw into a 500", () => {
+    // The client is deliberately told nothing beyond the code, so the operator's only
+    // route to the cause is the function log. An empty catch erased it entirely.
+    expect(edgeFunction).toMatch(/catch\s*\(\s*\w+\s*\)\s*\{/);
+    expect(edgeFunction).toContain("console.error");
+    expect(edgeFunction).toContain("INTERNAL_SERVER_ERROR");
+    // The response body must still carry no diagnostic detail.
+    expect(edgeFunction).not.toMatch(/error:\s*\{[^}]*stack/i);
   });
 
   it("persists Fuel Ledger with the sealed Wood submission", () => {
