@@ -174,6 +174,13 @@ export type MultiplayerErrorCode =
   | "SESSION_ENDED"
   | "UNSUPPORTED_RULES_VERSION"
   | "COMPUTER_TURN_FAILED"
+  // Transport and backend-plane failures. These are not rule outcomes: they mean the
+  // request never reached a rules decision, so they must stay distinguishable from
+  // PERSISTENCE_CONFLICT, which reports a genuine revision/commit conflict.
+  | "SERVER_CONFIGURATION_ERROR"
+  | "INTERNAL_SERVER_ERROR"
+  | "METHOD_NOT_ALLOWED"
+  | "SERVICE_UNAVAILABLE"
   | GameRuleErrorCode;
 
 export interface MultiplayerError {

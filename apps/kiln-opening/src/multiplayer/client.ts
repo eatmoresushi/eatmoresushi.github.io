@@ -31,6 +31,43 @@ function isMultiplayerFailure(value: unknown): value is { ok: false; error: Mult
   );
 }
 
+/**
+ * Salvage a failure that carries a usable `error.code` but omits the rest of the
+ * envelope. The Edge Function's own early exits (authentication, configuration,
+ * unhandled exceptions) historically returned a bare `{ ok: false, error: { code } }`,
+ * which `isMultiplayerFailure` rejects. Without this the real cause was discarded and
+ * every backend failure surfaced as PERSISTENCE_CONFLICT, so a deployment or migration
+ * problem was indistinguishable from a commit conflict.
+ *
+ * This also keeps a browser running new client code informative against an Edge
+ * Function that has not been redeployed yet.
+ */
+function salvageMultiplayerFailure(value: unknown): { ok: false; error: MultiplayerError } | null {
+  if (typeof value !== "object" || value === null || !("ok" in value) || value.ok !== false) {
+    return null;
+  }
+  if (!("error" in value) || typeof value.error !== "object" || value.error === null) return null;
+  const failure = value.error as Record<string, unknown>;
+  const code = failure["code"];
+  if (typeof code !== "string" || code.length === 0) return null;
+  const message = failure["message"];
+  const details = failure["details"];
+  const currentRevision = failure["currentRevision"];
+  return {
+    ok: false,
+    error: {
+      code: code as MultiplayerError["code"],
+      message: typeof message === "string" && message.length > 0
+        ? message
+        : "The multiplayer service rejected the request.",
+      details: typeof details === "object" && details !== null
+        ? details as MultiplayerError["details"]
+        : {},
+      currentRevision: typeof currentRevision === "number" ? currentRevision : null,
+    },
+  };
+}
+
 export async function parseMultiplayerFunctionFailure(
   error: unknown,
 ): Promise<{ ok: false; error: MultiplayerError } | null> {
@@ -39,7 +76,7 @@ export async function parseMultiplayerFunctionFailure(
   if (typeof context.json !== "function") return null;
   try {
     const value = await context.json();
-    return isMultiplayerFailure(value) ? value : null;
+    return isMultiplayerFailure(value) ? value : salvageMultiplayerFailure(value);
   } catch {
     return null;
   }
@@ -309,12 +346,15 @@ class SupabaseGameApi implements GameApi {
     if (error !== null) {
       const ruleFailure = await parseMultiplayerFunctionFailure(error);
       if (ruleFailure !== null) return ruleFailure;
+      // Nothing structured came back, so the request never reached the rules engine:
+      // the function is undeployed, unreachable, or returned a non-JSON body. Report
+      // that as unavailability rather than as a persistence conflict.
       return {
         ok: false,
         error: {
-          code: "PERSISTENCE_CONFLICT",
-          message: "The multiplayer service is temporarily unavailable.",
-          details: {},
+          code: "SERVICE_UNAVAILABLE",
+          message: `The multiplayer service could not be reached (${operation}).`,
+          details: { operation },
           currentRevision: null,
         },
       };

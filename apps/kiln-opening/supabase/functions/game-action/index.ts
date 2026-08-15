@@ -15,6 +15,17 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
+/**
+ * Emit a complete MultiplayerError envelope. The client only accepts failures carrying
+ * code, message, details and currentRevision; a bare `{ code }` was discarded there and
+ * reported as a generic persistence conflict, which hid authentication and
+ * configuration faults behind a misleading message. Messages stay operator-readable and
+ * must never carry stack traces, command payloads, seat tokens or Contribution values.
+ */
+function failure(code: string, message: string, status: number): Response {
+  return json({ ok: false, error: { code, message, details: {}, currentRevision: null } }, status);
+}
+
 async function authenticatedUserId(
   request: Request,
   supabaseUrl: string,
@@ -32,12 +43,18 @@ async function authenticatedUserId(
 
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders });
-  if (request.method !== "POST") return json({ ok: false, error: { code: "METHOD_NOT_ALLOWED" } }, 405);
+  if (request.method !== "POST") {
+    return failure("METHOD_NOT_ALLOWED", "The multiplayer endpoint accepts POST only.", 405);
+  }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (supabaseUrl === undefined || serviceRoleKey === undefined) {
-    return json({ ok: false, error: { code: "SERVER_CONFIGURATION_ERROR" } }, 500);
+    return failure(
+      "SERVER_CONFIGURATION_ERROR",
+      "The multiplayer function is missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.",
+      500,
+    );
   }
 
   try {
@@ -49,13 +66,17 @@ Deno.serve(async (request) => {
     switch (operation) {
       case "create_room": {
         const authUserId = await authenticatedUserId(request, supabaseUrl, serviceRoleKey);
-        if (authUserId === null) return json({ ok: false, error: { code: "AUTHENTICATION_FAILED" } }, 401);
+        if (authUserId === null) {
+          return failure("AUTHENTICATION_FAILED", "The multiplayer session token was not accepted.", 401);
+        }
         result = await service.createRoom({ displayName: String(body["displayName"] ?? ""), authUserId });
         break;
       }
       case "join_room": {
         const authUserId = await authenticatedUserId(request, supabaseUrl, serviceRoleKey);
-        if (authUserId === null) return json({ ok: false, error: { code: "AUTHENTICATION_FAILED" } }, 401);
+        if (authUserId === null) {
+          return failure("AUTHENTICATION_FAILED", "The multiplayer session token was not accepted.", 401);
+        }
         result = await service.joinRoom({
           roomCode: String(body["roomCode"] ?? ""),
           displayName: String(body["displayName"] ?? ""),
@@ -114,12 +135,18 @@ Deno.serve(async (request) => {
         });
         break;
       default:
-        return json({ ok: false, error: { code: "INVALID_REQUEST", message: "Unknown operation." } }, 400);
+        return failure("INVALID_REQUEST", "Unknown operation.", 400);
     }
     const status = typeof result === "object" && result !== null && "ok" in result && result.ok === false ? 409 : 200;
     return json(result, status);
   } catch {
     // Never return stack traces, full command payloads, seat tokens, or private Contribution values.
-    return json({ ok: false, error: { code: "INTERNAL_SERVER_ERROR" } }, 500);
+    // The generic message is deliberate; the operator diagnoses the cause from the
+    // function logs, but the client still receives a code it can name accurately.
+    return failure(
+      "INTERNAL_SERVER_ERROR",
+      "The multiplayer function failed while handling the request.",
+      500,
+    );
   }
 });
