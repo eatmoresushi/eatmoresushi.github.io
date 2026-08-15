@@ -11,6 +11,7 @@ import v102Migration from "../supabase/migrations/202608100001_v102_rules.sql?ra
 import v104Migration from "../supabase/migrations/202608110001_v104_rules.sql?raw";
 import v109Migration from "../supabase/migrations/202608140001_v109_rules.sql?raw";
 import createRoomSeatKeyMigration from "../supabase/migrations/202608150001_fix_create_room_seat_key.sql?raw";
+import createRoomSeatColumnsMigration from "../supabase/migrations/202608150002_fix_create_room_seat_columns.sql?raw";
 import onlineAiMigration from "../supabase/migrations/202608100002_online_ai_v003.sql?raw";
 import edgeFunction from "../supabase/functions/game-action/index.ts?raw";
 import service from "../src/multiplayer/service.ts?raw";
@@ -107,17 +108,91 @@ describe("Supabase security contract", () => {
     expect(service).toContain("publicSeat(created.value.seat)");
     expect(service).toContain("publicSeat(joined.value.seat)");
 
-    // The live definition is the last one applied, so the fix migration is what counts.
-    expect(createRoomSeatKeyMigration).toContain("create or replace function public.server_create_room");
-    expect(createRoomSeatKeyMigration).toContain("'room', v_room, 'seat', v_seat");
-    expect(createRoomSeatKeyMigration).not.toContain("'hostSeat'");
-    expect(createRoomSeatKeyMigration).toContain("p_room_id, upper(p_code), 'lobby', p_seat_id, '1.0.9', '1.0.9', 0");
-    expect(createRoomSeatKeyMigration).toContain("to service_role");
+    // The live definition is the newest one applied, so that is what has to be right.
+    // These migrations document the bugs they fix, so assert against executable SQL.
+    const live = createRoomSeatColumnsMigration.replaceAll(/--[^\n]*/g, "");
+    expect(live).toContain("create or replace function public.server_create_room");
+    expect(live).toContain("'room', v_room, 'seat', v_seat");
+    expect(live).not.toContain("'hostSeat'");
+    expect(live).toContain("'isComputer', rp.is_ai");
+    expect(live).not.toContain("rp.is_computer");
+    expect(live).not.toContain("rp.ai_policy_version");
+    expect(live).toContain("p_room_id, upper(p_code), 'lobby', p_seat_id, '1.0.9', '1.0.9', 0");
+    expect(live).toContain("to service_role");
 
     // Every room-authenticating RPC hands back the same envelope shape.
-    for (const sql of [migration, createRoomSeatKeyMigration]) {
+    for (const sql of [migration, createRoomSeatKeyMigration, createRoomSeatColumnsMigration]) {
       expect(sql).toMatch(/'room', v_room, 'seat', v_seat/);
     }
+  });
+
+  // PL/pgSQL resolves column names at run time, so a function selecting a column that
+  // does not exist is created without complaint and raises on first call. That is how
+  // `rp.is_computer` and `rp.ai_policy_version` reached production twice. Rebuild the
+  // schema from the migrations and check every qualified reference against it.
+  it("selects only columns that the migrations actually create", () => {
+    const files = import.meta.glob("../supabase/migrations/*.sql", {
+      query: "?raw",
+      import: "default",
+      eager: true,
+    }) as Record<string, string>;
+
+    const columns = new Map<string, Set<string>>();
+    const add = (table: string, column: string): void => {
+      const existing = columns.get(table) ?? new Set<string>();
+      existing.add(column);
+      columns.set(table, existing);
+    };
+    const types = "uuid|text|boolean|smallint|bigint|integer|jsonb|timestamptz|numeric";
+    for (const sql of Object.keys(files).sort().map((key) => files[key]!)) {
+      for (const table of sql.matchAll(
+        /create table (?:if not exists )?((?:public|private)\.\w+)\s*\(([\s\S]*?)\n\);/g,
+      )) {
+        for (const line of table[2]!.split("\n")) {
+          const column = new RegExp(`^\\s*(\\w+)\\s+(?:${types})`).exec(line);
+          if (column !== null) add(table[1]!, column[1]!);
+        }
+      }
+      // A single ALTER may add several columns, so scan the whole statement.
+      for (const alter of sql.matchAll(/alter table ((?:public|private)\.\w+)([\s\S]*?);/g)) {
+        for (const column of alter[2]!.matchAll(/add column (?:if not exists )?(\w+)/g)) {
+          add(alter[1]!, column[1]!);
+        }
+      }
+    }
+
+    expect(columns.get("public.room_players")).toContain("is_ai");
+    expect(columns.get("public.room_players")?.has("is_computer")).toBe(false);
+    expect(columns.get("public.room_players")?.has("ai_policy_version")).toBe(false);
+
+    const aliases: Record<string, string> = {
+      rp: "public.room_players",
+      r: "public.rooms",
+      ps: "private.private_submissions",
+      ai: "private.room_ai_seats",
+    };
+    // Both of these are applied and therefore immutable, and 202608150002 supersedes
+    // their server_create_room. The bad references stay recorded here rather than
+    // hidden, so the exemption is visible and narrow.
+    const supersededFiles = ["202608140001", "202608150001"];
+    const supersededReferences = new Set(["rp.is_computer", "rp.ai_policy_version"]);
+
+    const offenders: string[] = [];
+    for (const [path, sql] of Object.entries(files)) {
+      const name = path.slice(path.lastIndexOf("/") + 1);
+      // Comments explain past mistakes by naming them, so scan executable SQL only.
+      const executable = sql.replaceAll(/--[^\n]*/g, "");
+      for (const reference of executable.matchAll(/\b(rp|r|ps|ai)\.(\w+)/g)) {
+        const table = aliases[reference[1]!]!;
+        const known = columns.get(table);
+        if (known === undefined || known.has(reference[2]!)) continue;
+        const qualified = `${reference[1]}.${reference[2]}`;
+        const exempt = supersededFiles.some((prefix) => name.startsWith(prefix));
+        if (exempt && supersededReferences.has(qualified)) continue;
+        offenders.push(`${name}: ${qualified} is not a column of ${table}`);
+      }
+    }
+    expect([...new Set(offenders)]).toEqual([]);
   });
 
   it("keeps a server-side record when the function converts a throw into a 500", () => {
