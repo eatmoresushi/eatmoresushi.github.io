@@ -33,5 +33,12 @@ const historicalRulesTests = [
 export default defineConfig({
   test: {
     exclude: [...configDefaults.exclude, "test/e2e/**", ...historicalRulesTests],
+    // Several suites play complete authoritative games or run belief rollouts, and the
+    // GitHub runner is roughly three times slower than a dev machine. V1.1.1 widened
+    // the search further: Wood bids now genuinely vary across 0-3 instead of collapsing
+    // onto one value, so rollouts explore more branches. Vitest's 5s default left the
+    // slowest of these under a second of headroom in CI. This is generous enough that
+    // normal variance cannot fail the build, while still failing fast on a real hang.
+    testTimeout: 30_000,
   },
 });
