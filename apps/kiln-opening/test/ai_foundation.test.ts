@@ -132,7 +132,7 @@ describe("reusable AI foundation", () => {
       baseHeat: 2,
       fireModifier: 2,
       globalHeat: 4,
-      zeroFireModifierCeramicIds: [],
+      saggerAdjustedCeramicIds: [],
       ceramicResults: {
         [ceramic.id]: {
           ceramicId: ceramic.id,

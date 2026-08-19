@@ -1,5 +1,5 @@
 export type PlayerId = string;
-export type RulesVersion = "1.0.4" | "1.0.9";
+export type RulesVersion = "1.0.4" | "1.0.9" | "1.1.1";
 export type WorkerId = string;
 export type CeramicId = string;
 export type VesselInstanceId = string;
@@ -25,6 +25,9 @@ export type LocationId =
   | "kiln_yard"
   | "market_imperial_office"
   | "guild_academy";
+/** V1.1.1: Base Heat is a clamped formula result, not a three-band table. */
+export type BaseHeat = 0 | 1 | 2 | 3 | 4 | 5;
+
 export type KilnSpaceId =
   | "high_1"
   | "middle_1"
@@ -34,6 +37,7 @@ export type KilnSpaceId =
   | "middle_5"
   | "low_1"
   | "high_2"
+  | "high_3"
   | "low_2"
   | "low_3";
 
@@ -193,10 +197,14 @@ export interface FiringContext {
   round: RoundNumber;
   contributors: PlayerId[];
   contributions: Record<PlayerId, number>;
-  baseHeat: 1 | 2 | 3 | null;
+  baseHeat: BaseHeat | null;
   fireModifier: FireModifier | null;
   globalHeat: number | null;
-  zeroFireModifierCeramicIds: CeramicId[];
+  /**
+   * V1.1.1 Sagger Selection moves the Fire modifier one step toward 0 for the chosen
+   * ceramic rather than zeroing it, so the adjustment is per-ceramic, not a flag.
+   */
+  saggerAdjustedCeramicIds: CeramicId[];
   ceramicResults: Record<CeramicId, FiringCeramicResult>;
 }
 
@@ -206,7 +214,7 @@ export interface FiringResultSummary {
   contributors?: PlayerId[];
   /** Revealed effective contributions, including any Fuel Ledger adjustment. */
   contributions?: Record<PlayerId, number>;
-  baseHeat: 1 | 2 | 3;
+  baseHeat: BaseHeat;
   fireModifier: FireModifier;
   globalHeat: number;
 }
@@ -580,7 +588,7 @@ export type GameEvent =
   | { type: "WORK_PHASE_ENDED" }
   | { type: "WOOD_SUBMITTED"; playerId: PlayerId; windowId: string }
   | { type: "WOOD_REVEALED"; contributions: Record<PlayerId, number> }
-  | { type: "FIRE_REVEALED"; modifier: FireModifier; baseHeat: 1 | 2 | 3; globalHeat: number }
+  | { type: "FIRE_REVEALED"; modifier: FireModifier; baseHeat: BaseHeat; globalHeat: number }
   | { type: "QUALITY_ASSIGNED"; ceramicId: CeramicId; quality: Quality }
   | {
       type: "FIRING_RESOLVED";

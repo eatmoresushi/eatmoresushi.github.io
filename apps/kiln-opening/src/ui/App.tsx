@@ -515,7 +515,7 @@ export function App() {
         />
       )}
       <footer className="site-footer">
-        <span>{t("Kiln Opening")} V1.0.9</span>
+        <span>{t("Kiln Opening")} V1.1.1</span>
         <a href="https://luyuan.me/">Luyuan He</a>
       </footer>
     </div>

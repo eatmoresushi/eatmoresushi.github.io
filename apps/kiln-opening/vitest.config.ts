@@ -1,8 +1,8 @@
 import { configDefaults, defineConfig } from "vitest/config";
 
-// These suites assert superseded V0.6.5–V1.0.4 values or preserve completed
+// These suites assert superseded V0.6.5–V1.0.9 values or preserve completed
 // A/B-study fixtures. Keep them as historical evidence, but do not make the
-// live V1.0.9 regression gate satisfy obsolete mechanics.
+// live V1.1.1 regression gate satisfy obsolete mechanics.
 const historicalRulesTests = [
   "test/firing.test.ts",
   "test/imperial_progress.test.ts",
@@ -21,6 +21,13 @@ const historicalRulesTests = [
   "test/v104_population.test.ts",
   "test/v104_population002.test.ts",
   "test/v104_population003.test.ts",
+  // V1.1.1 replaced the Base Heat band table, the Glaze heats, the kiln layout,
+  // the 48-card Order deck, and Fuel Ledger's secret timing. These assert those.
+  "test/v109_rules.test.ts",
+  "test/v109_ai_contract.test.ts",
+  "test/v109_bilingual_parity.test.ts",
+  "test/v109_population.test.ts",
+  "test/ai_selfplay002.test.ts",
 ];
 
 export default defineConfig({

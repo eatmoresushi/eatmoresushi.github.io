@@ -59,7 +59,7 @@ function afterFire(
     baseHeat,
     fireModifier,
     globalHeat: baseHeat + fireModifier,
-    zeroFireModifierCeramicIds: [],
+    saggerAdjustedCeramicIds: [],
     ceramicResults: finalDifference === undefined ? {} : {
       [ceramicId]: {
         ceramicId,

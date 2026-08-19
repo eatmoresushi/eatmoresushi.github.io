@@ -1,8 +1,18 @@
 {
-  "rulesVersion": "1.0.9",
+  "rulesVersion": "1.1.1",
   "kilnSpaces": [
     {
       "id": "high_1",
+      "zone": "high",
+      "modifier": 1
+    },
+    {
+      "id": "high_2",
+      "zone": "high",
+      "modifier": 1
+    },
+    {
+      "id": "high_3",
       "zone": "high",
       "modifier": 1
     },
@@ -17,22 +27,12 @@
       "modifier": 0
     },
     {
-      "id": "middle_3",
-      "zone": "middle",
-      "modifier": 0
-    },
-    {
-      "id": "middle_4",
-      "zone": "middle",
-      "modifier": 0
-    },
-    {
-      "id": "middle_5",
-      "zone": "middle",
-      "modifier": 0
-    },
-    {
       "id": "low_1",
+      "zone": "low",
+      "modifier": -1
+    },
+    {
+      "id": "low_2",
       "zone": "low",
       "modifier": -1
     }
@@ -44,35 +44,55 @@
     3
   ],
   "baseHeatRule": {
-    "low": "totalWood < contributors",
-    "medium": "contributors <= totalWood <= contributors + 2 (for one contributor: 1-2)",
-    "high": "totalWood > contributors + 2 (for one contributor: 3+)",
-    "heatValues": {
-      "low": 1,
-      "medium": 2,
-      "high": 3
-    }
+    "formula": "clamp(2 + (totalWood - contributorCount), 0, 5)",
+    "minimum": 0,
+    "maximum": 5,
+    "contributors": "players with at least one ceramic in the kiln, including any who bid 0"
   },
   "thresholdExamples": {
     "1": {
-      "low": "0",
-      "medium": "1-2",
-      "high": "3+"
+      "0": 1,
+      "1": 2,
+      "2": 3,
+      "3": 4,
+      "4": 5,
+      "5": 5,
+      "6": 5,
+      "7": 5,
+      "8": 5
     },
     "2": {
-      "low": "0-1",
-      "medium": "2-4",
-      "high": "5+"
+      "0": 0,
+      "1": 1,
+      "2": 2,
+      "3": 3,
+      "4": 4,
+      "5": 5,
+      "6": 5,
+      "7": 5,
+      "8": 5
     },
     "3": {
-      "low": "0-2",
-      "medium": "3-5",
-      "high": "6+"
+      "0": 0,
+      "1": 0,
+      "2": 1,
+      "3": 2,
+      "4": 3,
+      "5": 4,
+      "6": 5,
+      "7": 5,
+      "8": 5
     },
     "4": {
-      "low": "0-3",
-      "medium": "4-6",
-      "high": "7+"
+      "0": 0,
+      "1": 0,
+      "2": 0,
+      "3": 1,
+      "4": 2,
+      "5": 3,
+      "6": 4,
+      "7": 5,
+      "8": 5
     }
   },
   "fireDeck": [

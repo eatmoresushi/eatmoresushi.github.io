@@ -12,6 +12,7 @@ import v104Migration from "../supabase/migrations/202608110001_v104_rules.sql?ra
 import v109Migration from "../supabase/migrations/202608140001_v109_rules.sql?raw";
 import createRoomSeatKeyMigration from "../supabase/migrations/202608150001_fix_create_room_seat_key.sql?raw";
 import createRoomSeatColumnsMigration from "../supabase/migrations/202608150002_fix_create_room_seat_columns.sql?raw";
+import v111Migration from "../supabase/migrations/202608160001_v111_rules.sql?raw";
 import onlineAiMigration from "../supabase/migrations/202608100002_online_ai_v003.sql?raw";
 import edgeFunction from "../supabase/functions/game-action/index.ts?raw";
 import service from "../src/multiplayer/service.ts?raw";
@@ -64,7 +65,7 @@ describe("Supabase security contract", () => {
     expect(edgeFunction).toContain("seatToken");
   });
 
-  it("creates new rooms as V1.0.9 while preserving explicit legacy-room versioning", () => {
+  it("creates new rooms as V1.1.1 while preserving explicit legacy-room versioning", () => {
     expect(v05Migration).toContain("rules_version in ('0.4', '0.5')");
     expect(v061Migration).toContain("rules_version in ('0.4', '0.5', '0.6.1')");
     expect(v061Migration).toContain("where status = 'lobby'");
@@ -98,6 +99,10 @@ describe("Supabase security contract", () => {
     expect(v109Migration).toContain("where status = 'lobby'");
     expect(v109Migration).toContain("p_room_id, upper(p_code), 'lobby', p_seat_id, '1.0.9', '1.0.9', 0");
     expect(v109Migration).toContain("to service_role");
+    expect(v111Migration).toContain("rules_version in ('0.4', '0.5', '0.6.1', '0.6.3', '0.6.5', '1.0.0', '1.0.1', '1.0.2', '1.0.4', '1.0.9', '1.1.1')");
+    expect(v111Migration).toContain("where status = 'lobby'");
+    expect(v111Migration).toContain("p_room_id, upper(p_code), 'lobby', p_seat_id, '1.1.1', '1.1.1', 0");
+    expect(v111Migration).toContain("to service_role");
   });
 
   // 202608140001 shipped `hostSeat` here while the service reads `created.value.seat`,
@@ -110,18 +115,18 @@ describe("Supabase security contract", () => {
 
     // The live definition is the newest one applied, so that is what has to be right.
     // These migrations document the bugs they fix, so assert against executable SQL.
-    const live = createRoomSeatColumnsMigration.replaceAll(/--[^\n]*/g, "");
+    const live = v111Migration.replaceAll(/--[^\n]*/g, "");
     expect(live).toContain("create or replace function public.server_create_room");
     expect(live).toContain("'room', v_room, 'seat', v_seat");
     expect(live).not.toContain("'hostSeat'");
     expect(live).toContain("'isComputer', rp.is_ai");
     expect(live).not.toContain("rp.is_computer");
     expect(live).not.toContain("rp.ai_policy_version");
-    expect(live).toContain("p_room_id, upper(p_code), 'lobby', p_seat_id, '1.0.9', '1.0.9', 0");
+    expect(live).toContain("p_room_id, upper(p_code), 'lobby', p_seat_id, '1.1.1', '1.1.1', 0");
     expect(live).toContain("to service_role");
 
     // Every room-authenticating RPC hands back the same envelope shape.
-    for (const sql of [migration, createRoomSeatKeyMigration, createRoomSeatColumnsMigration]) {
+    for (const sql of [migration, createRoomSeatKeyMigration, createRoomSeatColumnsMigration, v111Migration]) {
       expect(sql).toMatch(/'room', v_room, 'seat', v_seat/);
     }
   });

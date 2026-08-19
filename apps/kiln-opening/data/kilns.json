@@ -23,8 +23,8 @@
     "nameZh": "哥窑",
     "abilityName": "Crackle from Fire",
     "abilityNameZh": "窑变开片",
-    "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, choose one of your ceramics whose Actual Heat differs from its Preferred Heat by exactly 1. Set its Actual Heat to its Preferred Heat and change its Decoration to Crackle without paying Coins.",
-    "abilityZh": "每轮一次，在计算实际火候后、判定品第之前，选择你1件实际火候与适温恰好相差1的器物。将其实际火候设为等于适温，并将其装饰改为开片，无需支付铜钱。"
+    "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, spend 1 Wood, then choose one of your ceramics whose Actual Heat differs from its Preferred Heat by exactly 1. Set its Actual Heat equal to its Preferred Heat and change its Decoration to Crackle without paying the Crackle cost.",
+    "abilityZh": "每轮一次，在计算实际火候后、判定品第之前，花费1柴薪，然后选择你1件实际火候与适温恰好相差1的器物。将其实际火候设为等于适温，并将其装饰改为开片，无需支付开片费用。"
   },
   {
     "id": "DI",

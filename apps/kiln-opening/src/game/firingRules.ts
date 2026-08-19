@@ -1,16 +1,21 @@
 import { GAME_CONFIG, KILN_SPACE_DEFINITIONS } from "./content.ts";
-import type { Glaze, KilnSpaceId, Quality } from "./types.ts";
+import type { BaseHeat, Glaze, KilnSpaceId, Quality } from "./types.ts";
 
-export function determineBaseHeat(contributorCount: number, totalWood: number): 1 | 2 | 3 {
+/**
+ * V1.1.1 replaces the contributor-scaled band table with a formula:
+ * `clamp(2 + (totalWood - contributorCount), 0, 5)`. Contributors are players with at
+ * least one ceramic in the kiln, including any who bid 0. One extra log is now worth
+ * exactly one step of Base Heat at every player count, which is what makes bids of
+ * 0-3 four distinct choices rather than the two the band table collapsed them into.
+ */
+export function determineBaseHeat(contributorCount: number, totalWood: number): BaseHeat {
   if (!Number.isInteger(contributorCount) || contributorCount < 1) {
     throw new RangeError("contributorCount must be at least 1");
   }
   if (!Number.isInteger(totalWood) || totalWood < 0) {
     throw new RangeError("totalWood must be a non-negative integer");
   }
-  if (totalWood < contributorCount) return 1;
-  if (contributorCount === 1 ? totalWood <= 2 : totalWood <= contributorCount + 2) return 2;
-  return 3;
+  return Math.min(5, Math.max(0, 2 + totalWood - contributorCount)) as BaseHeat;
 }
 
 export function qualityFromDifference(difference: number): Quality {

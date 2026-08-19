@@ -40,6 +40,7 @@ import {
 } from "./selectors.ts";
 import type {
   ApplyResult,
+  BaseHeat,
   CeramicState,
   Decoration,
   GameAction,
@@ -1852,6 +1853,90 @@ function ensureFireDeck(state: GameState, rng: RandomSource): void {
   }
 }
 
+/**
+ * V1.1.1 firing step 4. Fuel Ledger is conditional and reactive: evaluate the formula on
+ * the revealed totals first, offer the tile only if that provisional Base Heat is 0 or 1,
+ * then recompute. Opening the window unconditionally would let a player buy a step at any
+ * heat, which is exactly what the version removed.
+ */
+function provisionalBaseHeat(state: GameState): BaseHeat {
+  const context = state.firingContext;
+  if (context === null) throw new Error("Base Heat requires firing context");
+  const totalWood = Object.values(context.contributions).reduce((sum, amount) => sum + amount, 0);
+  return determineBaseHeat(context.contributors.length, totalWood);
+}
+
+function fuelLedgerCandidates(state: GameState): PlayerId[] {
+  const context = state.firingContext;
+  if (context === null) return [];
+  return turnOrderFromFirst(state).filter((playerId) => {
+    if (!context.contributors.includes(playerId)) return false;
+    const player = state.players[playerId];
+    if (player === undefined) return false;
+    const technique = ownedTechnique(player, "T11");
+    return technique !== undefined && !technique.exhausted &&
+      player.resources.wood >= 1 && player.resources.coins >= 1;
+  });
+}
+
+function openFuelLedgerOrDetermineBaseHeat(
+  state: GameState,
+  events: GameEvent[],
+  rng: RandomSource,
+): void {
+  const provisional = provisionalBaseHeat(state);
+  const actors = provisional <= 1 ? fuelLedgerCandidates(state) : [];
+  if (actors.length === 0) determineBaseHeatAndOpenReposition(state, events, rng);
+  else state.phase = { type: "firing_after_reveal", queue: { actors, currentIndex: 0 } };
+}
+
+function resolveFuelLedger(
+  state: GameState,
+  actorId: PlayerId,
+  use: boolean,
+  rng: RandomSource,
+): ApplyResult {
+  const phase = requirePhase(state, "firing_after_reveal");
+  if (isFailure(phase)) return phase;
+  const actorError = actorFailure(state, actorId);
+  if (actorError !== null) return actorError;
+  const player = state.players[actorId];
+  const context = state.firingContext;
+  if (player === undefined || context === null) {
+    return applyFailure(ruleError("INVALID_ACTION", "Fuel Ledger context is unavailable."));
+  }
+  if (use) {
+    const technique = ownedTechnique(player, "T11");
+    if (technique === undefined || technique.exhausted) {
+      return applyFailure(ruleError("TECHNIQUE_EXHAUSTED", "Fuel Ledger is unavailable."));
+    }
+    if (player.resources.wood < 1 || player.resources.coins < 1) {
+      return applyFailure(ruleError("INSUFFICIENT_RESOURCES", "Fuel Ledger costs 1 Coin and 1 Wood."));
+    }
+    if (provisionalBaseHeat(state) > 1) {
+      return applyFailure(
+        ruleError("INVALID_ACTION", "Fuel Ledger applies only when Base Heat would otherwise be 0 or 1."),
+      );
+    }
+  }
+  const next = cloneState(state);
+  const events: GameEvent[] = [];
+  if (use) {
+    const nextPlayer = next.players[actorId];
+    const nextContext = next.firingContext;
+    if (nextPlayer === undefined || nextContext === null) throw new Error("Fuel Ledger invariant failed");
+    nextPlayer.resources.wood -= 1;
+    nextPlayer.resources.coins -= 1;
+    next.commonSupply.wood += 1;
+    next.commonSupply.coins += 1;
+    nextContext.contributions[actorId] = (nextContext.contributions[actorId] ?? 0) + 1;
+    exhaustTechnique(nextPlayer, actorId, "T11", events);
+    events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: -1, coins: -1 });
+  }
+  advanceQueuedWindow(next, () => determineBaseHeatAndOpenReposition(next, events, rng));
+  return success(next, events);
+}
+
 function determineBaseHeatAndOpenReposition(
   state: GameState,
   events: GameEvent[],
@@ -1859,8 +1944,7 @@ function determineBaseHeatAndOpenReposition(
 ): void {
   const context = state.firingContext;
   if (context === null) throw new Error("Base Heat requires firing context");
-  const totalWood = Object.values(context.contributions).reduce((sum, amount) => sum + amount, 0);
-  context.baseHeat = determineBaseHeat(context.contributors.length, totalWood);
+  context.baseHeat = provisionalBaseHeat(state);
   const hasEmptySpace = activeKilnSpaceIds(state.playerCount).some((spaceId) => kilnOccupant(state, spaceId) === null);
   const actors = hasEmptySpace ? turnOrderFromFirst(state).filter((playerId) => {
     const player = state.players[playerId];
@@ -1883,9 +1967,18 @@ export function submitWoodContribution(
   useFuelLedgerOrRng: boolean | RandomSource,
   rngMaybe?: RandomSource,
 ): SubmitContributionResult {
-  const useFuelLedger = typeof useFuelLedgerOrRng === "boolean" ? useFuelLedgerOrRng : false;
+  const requestedFuelLedger = typeof useFuelLedgerOrRng === "boolean" ? useFuelLedgerOrRng : false;
   const rng = typeof useFuelLedgerOrRng === "boolean" ? rngMaybe : useFuelLedgerOrRng;
   if (rng === undefined) throw new Error("Wood Contribution requires a RandomSource");
+  if (requestedFuelLedger) {
+    return {
+      ok: false,
+      error: ruleError(
+        "INVALID_CONTRIBUTION",
+        "Fuel Ledger is resolved after Wood Contributions are revealed, not committed with the bid.",
+      ),
+    };
+  }
   if (state.phase.type !== "firing_contributions") {
     return { ok: false, error: ruleError("WRONG_PHASE", "Wood Contributions are not open.") };
   }
@@ -1908,16 +2001,10 @@ export function submitWoodContribution(
       error: ruleError("CONTRIBUTION_ALREADY_SUBMITTED", "This player already submitted."),
     };
   }
-  const effectiveAmount = amount + (useFuelLedger ? 1 : 0);
-  const fuelLedger = ownedTechnique(player, "T11");
-  if (
-    !Number.isInteger(amount) || amount < 0 || amount > 3 || effectiveAmount > 4 ||
-    player.resources.wood < effectiveAmount ||
-    (useFuelLedger && (fuelLedger === undefined || fuelLedger.exhausted || player.resources.coins < 1))
-  ) {
+  if (!Number.isInteger(amount) || amount < 0 || amount > 3 || player.resources.wood < amount) {
     return {
       ok: false,
-      error: ruleError("INVALID_CONTRIBUTION", "Contribution, including a secret Fuel Ledger commitment, must be affordable and no more than 4."),
+      error: ruleError("INVALID_CONTRIBUTION", "A Wood Contribution must be an affordable 0-3."),
     };
   }
 
@@ -1925,7 +2012,7 @@ export function submitWoodContribution(
   const nextPrivate: PrivateFiringState = JSON.parse(JSON.stringify(privateState)) as PrivateFiringState;
   if (next.phase.type !== "firing_contributions") throw new Error("Contribution phase invariant failed");
   next.phase.submittedPlayerIds.push(actorId);
-  nextPrivate.contributions[actorId] = { amount, useFuelLedger };
+  nextPrivate.contributions[actorId] = { amount, useFuelLedger: false };
   const events: GameEvent[] = [
     { type: "WOOD_SUBMITTED", playerId: actorId, windowId: next.phase.windowId },
   ];
@@ -1961,13 +2048,13 @@ export function submitWoodContribution(
       baseHeat: null,
       fireModifier: null,
       globalHeat: null,
-      zeroFireModifierCeramicIds: [],
+      saggerAdjustedCeramicIds: [],
       ceramicResults: {},
     };
     events.push({ type: "WOOD_REVEALED", contributions: { ...contributions } });
     nextPrivate.windowId = null;
     nextPrivate.contributions = {};
-    determineBaseHeatAndOpenReposition(next, events, rng);
+    openFuelLedgerOrDetermineBaseHeat(next, events, rng);
   }
   next.revision += 1;
   next.eventSequence += events.length;
@@ -2059,9 +2146,13 @@ function calculateActualHeatAndOpenQualityWindow(state: GameState, events: GameE
     const zoneModifier = kilnZoneModifier(ceramic.kilnSpaceId);
     const naturalActualHeat = context.globalHeat + zoneModifier;
     const naturalDifference = Math.abs(naturalActualHeat - preferredHeat(ceramic.glaze));
-    const ignoredFireModifier = context.zeroFireModifierCeramicIds.includes(ceramic.id);
-    const actualHeat =
-      context.baseHeat + (ignoredFireModifier ? 0 : context.fireModifier) + zoneModifier;
+    // V1.1.1: Sagger Selection moves the modifier one step toward 0, it no longer zeroes it.
+    const saggerAdjusted = context.saggerAdjustedCeramicIds.includes(ceramic.id);
+    const effectiveFireModifier = saggerAdjusted
+      ? context.fireModifier - Math.sign(context.fireModifier)
+      : context.fireModifier;
+    const ignoredFireModifier = saggerAdjusted;
+    const actualHeat = context.baseHeat + effectiveFireModifier + zoneModifier;
     const difference = Math.abs(actualHeat - preferredHeat(ceramic.glaze));
     context.ceramicResults[ceramic.id] = {
       ceramicId: ceramic.id,
@@ -2131,7 +2222,7 @@ function resolveSaggerSelection(
     }
     nextPlayer.resources.coins -= 2;
     next.commonSupply.coins += 2;
-    nextContext.zeroFireModifierCeramicIds.push(ceramicId);
+    nextContext.saggerAdjustedCeramicIds.push(ceramicId);
     exhaustTechnique(nextPlayer, actorId, "T16", events);
     events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins: -2 });
   }
@@ -2270,6 +2361,10 @@ function resolveGe(state: GameState, actorId: PlayerId, ceramicId: string | null
   if (player?.kilnId !== "GE") {
     return applyFailure(ruleError("INVALID_ACTION", "The current window is not Ge's ability."));
   }
+  // V1.1.1: Ge costs 1 Wood, so a Ge player holding none cannot use the ability.
+  if (ceramicId !== null && player.resources.wood < 1) {
+    return applyFailure(ruleError("INSUFFICIENT_RESOURCES", "Ge costs 1 Wood."));
+  }
   if (ceramicId !== null) {
     const ceramic = state.ceramics[ceramicId];
     const result = state.firingContext?.ceramicResults[ceramicId];
@@ -2297,10 +2392,13 @@ function resolveGe(state: GameState, actorId: PlayerId, ceramicId: string | null
     if (nextPlayer === undefined || ceramic === undefined || ceramic.stage !== "loaded" || result === undefined) {
       throw new Error("Ge invariant failed");
     }
+    nextPlayer.resources.wood -= 1;
+    next.commonSupply.wood += 1;
     ceramic.decoration = "crackle";
     result.finalActualHeat = preferredHeat(ceramic.glaze);
     result.finalHeatDifference = 0;
     nextPlayer.kilnAbilityUsedThisRound = true;
+    events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: -1, coins: 0 });
     events.push({ type: "KILN_ABILITY_USED", playerId: actorId, kilnId: "GE" });
   }
   advanceQueuedWindow(next, () => assignQualityAndOpenSaggars(next, events));
@@ -2659,10 +2757,10 @@ function useCourtPatronage(
       ),
     );
   }
-  if (context.player.resources.coins < 5) {
+  if (context.player.resources.coins < 4) {
     return applyFailure(
-      ruleError("INSUFFICIENT_RESOURCES", "Court Patronage costs 5 Coins.", {
-        requiredCoins: 5,
+      ruleError("INSUFFICIENT_RESOURCES", "Court Patronage costs 4 Coins.", {
+        requiredCoins: 4,
       }),
     );
   }
@@ -2682,9 +2780,9 @@ function useCourtPatronage(
   placeWorker(next, actorId, workerId, "market_imperial_office", events);
   const player = next.players[actorId];
   if (player === undefined) throw new Error("Court Patronage actor disappeared");
-  player.resources.coins -= 5;
-  next.commonSupply.coins += 5;
-  events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins: -5 });
+  player.resources.coins -= 4;
+  next.commonSupply.coins += 4;
+  events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins: -4 });
   const progress = advanceImperialProgress(next, actorId, 1, "court_patronage", events, {
     orderId: null,
     requirementCeramicCount: null,
@@ -3177,7 +3275,7 @@ export function applyAction(
     case "RESOLVE_KILN_YARD_REPOSITION":
       return resolveKilnYardReposition(state, actorId, action.ceramicId, action.toSpaceId, rng);
     case "RESOLVE_FUEL_LEDGER":
-      return applyFailure(ruleError("INVALID_ACTION", "Fuel Ledger must be committed secretly with the Wood Contribution in V1.0.9."));
+      return resolveFuelLedger(state, actorId, action.use, rng);
     case "RESOLVE_SAGGER_SELECTION":
       return resolveSaggerSelection(state, actorId, action.ceramicId);
     case "RESOLVE_JUN":

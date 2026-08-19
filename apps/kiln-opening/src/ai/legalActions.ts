@@ -1,10 +1,10 @@
 import {
   DECORATIONS,
-  GAME_CONFIG,
   GLAZES,
   KILN_IDS,
   ORDER_DEFINITIONS,
   SHAPES,
+  SHAPE_COSTS,
   TECHNIQUE_DEFINITIONS,
   activeKilnSpaceIds,
   applyAction,
@@ -142,15 +142,60 @@ function candidateWorkActions(
   for (const worker of workers) {
     const materialTotal = worker.kind === "shifu" ? 4 : 3;
     for (let clay = 0; clay <= materialTotal; clay += 1) {
-      actions.push({
+      const materialAction: Extract<GameAction, { type: "GAIN_MATERIALS" }> = {
         type: "GAIN_MATERIALS",
         workerId: worker.id,
         clay,
         wood: materialTotal - clay,
-      });
+      };
+      actions.push(materialAction);
+      if (worker.kind === "shifu") {
+        const gainedClay = Math.min(clay, state.commonSupply.clay);
+        const gainedWood = Math.min(materialTotal - clay, state.commonSupply.wood);
+        const clayForWoodMaximum = Math.min(
+          player.resources.clay + gainedClay,
+          state.commonSupply.wood - gainedWood,
+        );
+        const woodForClayMaximum = Math.min(
+          player.resources.wood + gainedWood,
+          state.commonSupply.clay - gainedClay,
+        );
+        for (let amount = 1; amount <= clayForWoodMaximum; amount += 1) {
+          actions.push({ ...materialAction, exchange: { give: "clay", amount } });
+        }
+        for (let amount = 1; amount <= woodForClayMaximum; amount += 1) {
+          actions.push({ ...materialAction, exchange: { give: "wood", amount } });
+        }
+      }
     }
 
     const formingTechniques = ownReadyTechniques(state, playerId, ["T01", "T02", "T03", "T04"]);
+    const addFormVariants = (
+      base: Extract<GameAction, { type: "FORM_CERAMICS" }>,
+      allFormedCount: number,
+    ) => {
+      const totalClay = base.shapes.reduce((sum, shape) => sum + (
+        worker.kind === "shifu" && (shape === "vase" || shape === "censer")
+          ? 1
+          : SHAPE_COSTS[shape]
+      ), 0);
+      const substitutions = base.useTechniqueIds?.includes("T03")
+        ? Array.from({ length: totalClay }, (_, index) => index + 1)
+        : [0];
+      const dryingFrames = base.useTechniqueIds?.includes("T04")
+        ? Array.from({ length: allFormedCount }, (_, formedIndex) =>
+            GLAZES.map((glaze) => ({ formedIndex, glaze }))).flat()
+        : [undefined];
+      for (const claySubstitutions of substitutions) {
+        for (const dryingFrame of dryingFrames) {
+          actions.push({
+            ...base,
+            ...(claySubstitutions === 0 ? {} : { claySubstitutions }),
+            ...(dryingFrame === undefined ? {} : { dryingFrames: dryingFrame }),
+          });
+        }
+      }
+    };
     for (const shapes of shapeSelections(worker.kind === "shifu" ? 2 : 1)) {
       const subsets = techniqueSubsets(formingTechniques);
       for (const useTechniqueIds of subsets) {
@@ -160,16 +205,12 @@ function candidateWorkActions(
           shapes,
           useTechniqueIds,
         };
-        if (useTechniqueIds.includes("T03")) base.claySubstitutionTarget = "base";
-        actions.push(base);
+        addFormVariants(base, shapes.length);
         if (player.kilnId === "DI" && !player.kilnAbilityUsedThisRound) {
           for (const shape of shapes) {
             if (shape !== "bowl" && shape !== "plate" && shape !== "washer") continue;
             const dingAction = { ...base, dingExtraShape: shape };
-            actions.push(dingAction);
-            if (useTechniqueIds.includes("T03")) {
-              actions.push({ ...dingAction, claySubstitutionTarget: "ding" });
-            }
+            addFormVariants(dingAction, shapes.length + 1);
           }
         }
       }
@@ -182,22 +223,16 @@ function candidateWorkActions(
           id === "T05" ? option.decoration === "carved" : option.decoration === "impressed",
         );
         for (const useTechniqueIds of techniqueSubsets(applicable)) {
-          actions.push({
+          const action: Extract<GameAction, { type: "GLAZE_CERAMICS" }> = {
             type: "GLAZE_CERAMICS",
             workerId: worker.id,
             selections: [{ ceramicId: ceramic.id, ...option }],
-            shifuMode: "normal",
             useTechniqueIds,
-          });
-        }
-        if (worker.kind === "shifu") {
-          actions.push({
-            type: "GLAZE_CERAMICS",
-            workerId: worker.id,
-            selections: [{ ceramicId: ceramic.id, ...option }],
-            shifuMode: "free_single",
-            useTechniqueIds: [],
-          });
+          };
+          actions.push(action);
+          if (worker.kind === "shifu") {
+            actions.push({ ...action, freeDecorationCeramicId: ceramic.id });
+          }
         }
       }
     }
@@ -214,16 +249,18 @@ function candidateWorkActions(
                 : firstOption.decoration === "impressed" || secondOption.decoration === "impressed",
             );
             for (const useTechniqueIds of techniqueSubsets(applicable)) {
-              actions.push({
+              const action: Extract<GameAction, { type: "GLAZE_CERAMICS" }> = {
                 type: "GLAZE_CERAMICS",
                 workerId: worker.id,
                 selections: [
                   { ceramicId: first.id, ...firstOption },
                   { ceramicId: second.id, ...secondOption },
                 ],
-                shifuMode: "normal",
                 useTechniqueIds,
-              });
+              };
+              actions.push(action);
+              actions.push({ ...action, freeDecorationCeramicId: first.id });
+              actions.push({ ...action, freeDecorationCeramicId: second.id });
             }
           }
         }
@@ -355,12 +392,12 @@ function candidatePhaseActions(
         }));
     }
     case "work_office_connoisseur": {
-      const masterpieces = Object.values(state.ceramics).filter(
-        (ceramic) => ceramic.ownerId === playerId && ceramic.stage === "finished" && ceramic.quality === "masterpiece",
+      const eligible = Object.values(state.ceramics).filter(
+        (ceramic) => ceramic.ownerId === playerId && ceramic.stage === "finished" && ceramic.quality !== "flawed",
       );
       return [
         { type: "OFFICE_RESOLVE_CONNOISSEUR_NETWORK", ceramicId: null },
-        ...masterpieces.map(({ id }) => ({ type: "OFFICE_RESOLVE_CONNOISSEUR_NETWORK" as const, ceramicId: id })),
+        ...eligible.map(({ id }) => ({ type: "OFFICE_RESOLVE_CONNOISSEUR_NETWORK" as const, ceramicId: id })),
       ];
     }
     case "work_guild": {
@@ -397,7 +434,10 @@ function candidatePhaseActions(
     }
     case "firing_contributions": {
       if (!phase.eligiblePlayerIds.includes(playerId) || phase.submittedPlayerIds.includes(playerId)) return [];
-      const maximum = Math.min(3, player?.resources.wood ?? 0) as WoodContribution;
+      // V1.1.1: the bid is a plain 0-3. Fuel Ledger is no longer committed here; it is
+      // offered reactively in the firing_after_reveal window when Base Heat would be 0 or 1.
+      const availableWood = player?.resources.wood ?? 0;
+      const maximum = Math.min(3, availableWood) as WoodContribution;
       return Array.from({ length: maximum + 1 }, (_, amount) => ({
         type: "SUBMIT_WOOD_CONTRIBUTION" as const,
         windowId: phase.windowId,
@@ -498,6 +538,7 @@ function validates(
       privateFiringState,
       playerId,
       action.amount,
+      action.useFuelLedger ?? false,
       validationRng,
     ).ok;
   }
@@ -517,7 +558,9 @@ export function getLegalAIActions(
   const candidates = candidatePhaseActions(state, playerId, options);
   const unique = [...new Map(candidates.map((action) => [JSON.stringify(action), action])).values()];
   const maximum = options.maxCandidates ?? (options.exhaustive === true ? Number.POSITIVE_INFINITY : 5_000);
-  return unique.slice(0, maximum).filter((action) => validates(state, playerId, privateFiringState, action));
+  return unique
+    .filter((action) => validates(state, playerId, privateFiringState, action))
+    .slice(0, maximum);
 }
 
 export function getAllLegalAIActions(

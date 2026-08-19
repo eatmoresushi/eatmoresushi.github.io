@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.0.9",
+  "rulesVersion": "1.1.1",
   "components": [
     {
       "name": "Central Action Board",
@@ -48,11 +48,11 @@
     },
     {
       "name": "Market Orders",
-      "qty": 28
+      "qty": 30
     },
     {
       "name": "Imperial Orders",
-      "qty": 20
+      "qty": 22
     },
     {
       "name": "Technique Tiles",

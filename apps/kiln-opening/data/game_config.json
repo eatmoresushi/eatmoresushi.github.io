@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.0.9",
+  "rulesVersion": "1.1.1",
   "players": {
     "min": 2,
     "max": 4
@@ -31,9 +31,9 @@
   },
   "kiln": {
     "spaces": {
-      "high": 1,
-      "middle": 5,
-      "low": 1
+      "high": 3,
+      "middle": 2,
+      "low": 2
     },
     "zoneModifier": {
       "high": 1,
@@ -41,9 +41,30 @@
       "low": -1
     },
     "activeSpacesByPlayerCount": {
-      "2": ["high_1", "middle_1", "middle_2", "middle_3", "low_1"],
-      "3": ["high_1", "middle_1", "middle_2", "middle_3", "middle_4", "low_1"],
-      "4": ["high_1", "middle_1", "middle_2", "middle_3", "middle_4", "middle_5", "low_1"]
+      "2": [
+        "high_1",
+        "high_2",
+        "middle_1",
+        "middle_2",
+        "low_1"
+      ],
+      "3": [
+        "high_1",
+        "high_2",
+        "middle_1",
+        "middle_2",
+        "low_1",
+        "low_2"
+      ],
+      "4": [
+        "high_1",
+        "high_2",
+        "high_3",
+        "middle_1",
+        "middle_2",
+        "low_1",
+        "low_2"
+      ]
     }
   },
   "fireDeck": {
@@ -56,8 +77,8 @@
   "glazes": {
     "white": 1,
     "celadon": 2,
-    "grey_green": 2,
-    "moon_white": 3
+    "grey_green": 3,
+    "moon_white": 4
   },
   "decorations": {
     "plain": 1,

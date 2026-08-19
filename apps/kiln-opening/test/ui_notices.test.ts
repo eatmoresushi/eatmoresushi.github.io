@@ -16,7 +16,7 @@ describe("Imperial Order notifications", () => {
       { type: "ORDER_COMPLETED", playerId: "P1", orderId: "I06", ceramicIds: ["C1", "C2"] },
       { type: "IMPERIAL_PROGRESS_ADVANCED", playerId: "P1", from: 1, to: 3, reward: 2 },
     ], 3));
-    expect(notice).toContain("Player completed I06. +11 VP.");
+    expect(notice).toContain("Player completed I06. +13 VP.");
     expect(notice).toContain("Imperial Progress +2: 1 → 3.");
     expect(notice).toContain("Court Examination reached.");
   });

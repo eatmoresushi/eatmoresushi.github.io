@@ -58,7 +58,7 @@ describe("English / Simplified Chinese localization", () => {
     expect(chinese).toContain("终局展陈最多1件");
     expect(chinese).toContain("终局展陈最多2件");
     expect(chinese).toContain("终局展陈最多3件");
-    expect(chinese).toContain("V1.0.9");
+    expect(chinese).toContain("V1.1.1");
     expect(JSON.stringify(publicGame)).toBe(before);
   });
 

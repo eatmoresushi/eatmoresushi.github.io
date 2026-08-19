@@ -174,7 +174,7 @@ describe("Selfplay-002 planning policy", () => {
       baseHeat: 2,
       fireModifier: 1,
       globalHeat: 3,
-      zeroFireModifierCeramicIds: [],
+      saggerAdjustedCeramicIds: [],
       ceramicResults: {
         [ceramic.id]: { ceramicId: ceramic.id, zoneModifier: 0, ignoredFireModifier: false, naturalActualHeat: 3, naturalHeatDifference: 2, naturalExactMatch: false, finalActualHeat: 3, finalHeatDifference: 2, forcedQuality: null, assignedQuality: "standard" },
       },
@@ -200,7 +200,7 @@ describe("Selfplay-002 planning policy", () => {
         baseHeat: null,
         fireModifier: null,
         globalHeat: null,
-        zeroFireModifierCeramicIds: [],
+        saggerAdjustedCeramicIds: [],
         ceramicResults: { [first.id]: { ceramicId: first.id, zoneModifier: 0, ignoredFireModifier: false, naturalActualHeat: 0, naturalHeatDifference: 0, naturalExactMatch: false, finalActualHeat: 0, finalHeatDifference: 0, forcedQuality: null, assignedQuality: null } },
       };
       return { state, actorId };
