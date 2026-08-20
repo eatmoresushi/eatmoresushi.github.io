@@ -22,13 +22,17 @@ export const AI_SIMULATION_V4_VERSION = "v1.0.2-selfplay-004-compat" as const;
 export const AI_POLICY_V5_VERSION = "selfplay-005" as const;
 export const AI_SIMULATION_V5_VERSION = "v1.0.2-selfplay-005-compat" as const;
 export const AI_POLICY_V6_VERSION = "selfplay-006" as const;
+/** V1.1.1 online policy: frozen V003 play with a computed Wood bid. */
+export const AI_POLICY_V111_VERSION = "rules-v1.1.1-wood-001" as const;
+export const AI_SIMULATION_V111_VERSION = "v1.1.1-wood-001" as const;
 export const AI_SIMULATION_V6_VERSION = "v1.0.2-selfplay-006-leaf-001" as const;
 
 export type AIPolicyVersion =
   | typeof AI_POLICY_VERSION
   | typeof AI_POLICY_V4_VERSION
   | typeof AI_POLICY_V5_VERSION
-  | typeof AI_POLICY_V6_VERSION;
+  | typeof AI_POLICY_V6_VERSION
+  | typeof AI_POLICY_V111_VERSION;
 
 export type AIAction = AuthoritativeCommand;
 
@@ -352,9 +356,9 @@ export interface AIPolicy {
 
 export interface AIStrategyProfile {
   /** Rules used to create or train this serialized profile. */
-  rulesVersion: "1.0.1" | "1.0.2" | "1.0.4" | "1.0.9";
+  rulesVersion: "1.0.1" | "1.0.2" | "1.0.4" | "1.0.9" | "1.1.1";
   /** Current engine rules; permits an explicit historical-policy compatibility audit. */
-  currentRulesVersion?: "1.0.2" | "1.0.4" | "1.0.9";
+  currentRulesVersion?: "1.0.2" | "1.0.4" | "1.0.9" | "1.1.1";
   aiPolicyVersion: AIPolicyVersion;
   playerCount: PlayerCount;
   gamesLearned: number;

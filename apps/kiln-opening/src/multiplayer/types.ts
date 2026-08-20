@@ -48,7 +48,7 @@ export interface PublicSeat {
   colour: string;
   isHost: boolean;
   isComputer: boolean;
-  aiPolicyVersion: "selfplay-003" | null;
+  aiPolicyVersion: "selfplay-003" | "rules-v1.1.1-wood-001" | null;
 }
 
 export interface PublicPlayerState {

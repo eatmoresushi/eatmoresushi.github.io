@@ -22,6 +22,7 @@ import { createPlayerObservation } from "./observation.ts";
 import { getLegalAIActions } from "./legalActions.ts";
 import { actionTechniqueId } from "./legalActions.ts";
 import { HeuristicAIPolicy } from "./policy.ts";
+import { V111Policy } from "./v111Policy.ts";
 import { LookaheadAIPolicy, V4_SEARCH_CONFIGS } from "./lookaheadPolicy.ts";
 import { RolloutAIPolicy } from "./rolloutPolicy.ts";
 import { V5_ROLLOUT_CONFIGS } from "./decisionOracle.ts";
@@ -41,7 +42,7 @@ import type {
   V4SearchConfig,
   V5RolloutConfig,
 } from "./types.ts";
-import { AI_POLICY_V4_VERSION, AI_POLICY_V5_VERSION, AI_POLICY_V6_VERSION, AI_POLICY_VERSION } from "./types.ts";
+import { AI_POLICY_V111_VERSION, AI_POLICY_V4_VERSION, AI_POLICY_V5_VERSION, AI_POLICY_V6_VERSION, AI_POLICY_VERSION } from "./types.ts";
 
 export interface SelfPlayGameConfig {
   gameId: string;
@@ -493,7 +494,9 @@ export async function runSelfPlayGame(config: SelfPlayGameConfig): Promise<SelfP
       const profile = profileFor(playerId);
       const rng = new SeededRandom((config.aiSeed + (index + 1) * 0x9e3779b9) >>> 0);
       const version = policyVersionFor(playerId);
-      const policy: AIPolicy = version === AI_POLICY_V6_VERSION
+      const policy: AIPolicy = version === AI_POLICY_V111_VERSION
+        ? new V111Policy(profile, rng)
+        : version === AI_POLICY_V6_VERSION
         ? (() => {
             if (config.v6LeafModel === undefined) throw new Error("Selfplay-006 requires a calibrated V1.0.2 leaf model");
             return new RolloutAIPolicy(
