@@ -1,9 +1,9 @@
 import { SeededRandom } from "../game/index.ts";
 import { HeuristicAIPolicy } from "./policy.ts";
 import { createProductionV3Profile } from "./productionProfile.ts";
-import { chooseV111WoodBid } from "./v111WoodPolicy.ts";
-import type { V111WoodDecision } from "./v111WoodPolicy.ts";
-import { AI_POLICY_V111_VERSION } from "./types.ts";
+import { chooseContributionCard } from "./v114ContributionPolicy.ts";
+import type { ContributionDecision } from "./v114ContributionPolicy.ts";
+import { AI_POLICY_V114_VERSION } from "./types.ts";
 import type {
   AIAction,
   AIDecisionContext,
@@ -25,10 +25,10 @@ import type {
  * that function still carries a flat +2.2 bonus for bidding exactly 1, which was correct
  * under V1.0.9's band table and is now simply wrong.
  */
-export class V111Policy implements AIPolicy {
+export class V114Policy implements AIPolicy {
   private readonly inner: HeuristicAIPolicy;
   private readonly profile: AIStrategyProfile;
-  private lastWoodDecision: V111WoodDecision | null = null;
+  private lastContributionDecision: ContributionDecision | null = null;
 
   constructor(profile: AIStrategyProfile, rng: SeededRandom) {
     this.profile = profile;
@@ -36,8 +36,8 @@ export class V111Policy implements AIPolicy {
   }
 
   /** Exposed for telemetry: what the bid was, and what the old convention would have scored. */
-  get woodDecision(): V111WoodDecision | null {
-    return this.lastWoodDecision;
+  get woodDecision(): ContributionDecision | null {
+    return this.lastContributionDecision;
   }
 
   async chooseAction(
@@ -50,31 +50,32 @@ export class V111Policy implements AIPolicy {
         action.type === "SUBMIT_WOOD_CONTRIBUTION",
     );
     if (contributions.length === 0) {
-      this.lastWoodDecision = null;
+      this.lastContributionDecision = null;
       return this.inner.chooseAction(observation, legalActions, context);
     }
 
     const started = performance.now();
-    const affordable = Math.max(...contributions.map(({ amount }) => amount));
-    const decision = chooseV111WoodBid(observation, this.profile, affordable);
-    this.lastWoodDecision = decision;
-    const chosen = contributions.find(({ amount }) => amount === decision.amount) ?? contributions[0]!;
+    const player = observation.game.players[observation.playerId];
+    const decision = chooseContributionCard(observation, this.profile, player?.resources.wood ?? 0);
+    this.lastContributionDecision = decision;
+    const chosen = contributions.find(({ card }) => card === decision.card) ?? contributions[0]!;
     const fallback = await this.inner.chooseAction(observation, legalActions, context);
     return {
       ...fallback,
       action: chosen,
       score: decision.expectedValue,
-      explored: chosen.amount !== 1,
+      // Tend is the neutral, free card; anything else is a deliberate departure from it.
+      explored: chosen.card !== "TEND",
       durationMs: performance.now() - started,
     };
   }
 }
 
-export function createV111Profile(playerCount: 2 | 3 | 4): AIStrategyProfile {
+export function createV114Profile(playerCount: 2 | 3 | 4): AIStrategyProfile {
   const profile = structuredClone(createProductionV3Profile(playerCount));
   profile.rulesVersion = "1.1.1";
   profile.currentRulesVersion = "1.1.1";
-  profile.aiPolicyVersion = AI_POLICY_V111_VERSION;
+  profile.aiPolicyVersion = AI_POLICY_V114_VERSION;
   profile.gamesLearned = 0;
   profile.exploration = { early: 0, developing: 0, mature: 0 };
   return profile;

@@ -8,6 +8,8 @@ import {
   TECHNIQUE_DEFINITIONS,
   activeKilnSpaceIds,
   applyAction,
+  CONTRIBUTION_CARD_IDS,
+  contributionWoodCost,
   currentDecisionActor,
   junActivationCoinCost,
   SeededRandom,
@@ -414,6 +416,18 @@ function candidatePhaseActions(
       if (phase.techniqueIds[phase.queue.currentIndex] === "T12") {
         return [{ type: "RESOLVE_TEST_PIECES", use: false }, { type: "RESOLVE_TEST_PIECES", use: true }];
       }
+      if (phase.techniqueIds[phase.queue.currentIndex] === "T03") {
+        // Clay Substitution grants exactly three resources split any way between the two.
+        return [
+          { type: "RESOLVE_FIRING_CLAY_SUBSTITUTION", clay: 0, wood: 0, use: false },
+          ...[0, 1, 2, 3].map((wood) => ({
+            type: "RESOLVE_FIRING_CLAY_SUBSTITUTION" as const,
+            clay: 3 - wood,
+            wood,
+            use: true,
+          })),
+        ];
+      }
       const loaded = Object.values(state.ceramics).filter(
         (ceramic) => ceramic.ownerId === playerId && ceramic.stage === "loaded",
       );
@@ -437,12 +451,14 @@ function candidatePhaseActions(
       // V1.1.1: the bid is a plain 0-3. Fuel Ledger is no longer committed here; it is
       // offered reactively in the firing_after_reveal window when Base Heat would be 0 or 1.
       const availableWood = player?.resources.wood ?? 0;
-      const maximum = Math.min(3, availableWood) as WoodContribution;
-      return Array.from({ length: maximum + 1 }, (_, amount) => ({
-        type: "SUBMIT_WOOD_CONTRIBUTION" as const,
-        windowId: phase.windowId,
-        amount: amount as WoodContribution,
-      }));
+      // Tend costs nothing, so at least one card is always legal and the window can close.
+      return CONTRIBUTION_CARD_IDS
+        .filter((card) => contributionWoodCost(card) <= availableWood)
+        .map((card) => ({
+          type: "SUBMIT_WOOD_CONTRIBUTION" as const,
+          windowId: phase.windowId,
+          card,
+        }));
     }
     case "firing_after_reveal":
       return [{ type: "RESOLVE_FUEL_LEDGER", use: false }, { type: "RESOLVE_FUEL_LEDGER", use: true }];
@@ -537,8 +553,7 @@ function validates(
       state,
       privateFiringState,
       playerId,
-      action.amount,
-      action.useFuelLedger ?? false,
+      action.card,
       validationRng,
     ).ok;
   }

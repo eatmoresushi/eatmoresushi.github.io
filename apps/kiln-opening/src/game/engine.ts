@@ -10,6 +10,7 @@ import {
   SHAPE_COSTS,
   SHAPES,
   TECHNIQUE_DEFINITIONS,
+  CONTRIBUTION_CARD_IDS,
   activeKilnSpaceIds,
   locationCapacity,
 } from "./content.ts";
@@ -21,14 +22,27 @@ import {
 } from "./experiment.ts";
 import {
   QUALITY_RANK,
+  contributionHeatAdjustment,
+  contributionWoodCost,
   determineBaseHeat,
   kilnZoneModifier,
   preferredHeat,
   qualityFromDifference,
 } from "./firingRules.ts";
+
+/** Fuel Ledger spends this much extra Wood to turn a revealed Stoke into +2 Heat. */
+const FUEL_LEDGER_WOOD = 2;
+
+/** Office sale value of one Flawed ceramic. */
+const FLAWED_SALE_COINS = 2;
+
+/** Clay Substitution pays this many Coins for three Clay/Wood in any combination. */
+const CLAY_SUBSTITUTION_COINS = 3;
+const CLAY_SUBSTITUTION_RESOURCES = 3;
 import { matchesOrder } from "./orderRules.ts";
 import type { RandomSource } from "./rng.ts";
 import { shuffle } from "./rng.ts";
+import type { ContributionCardId } from "./types.ts";
 import {
   actionOccupancy,
   availableWorkerIds,
@@ -297,10 +311,21 @@ function beginFiringPhase(state: GameState): void {
       actors.push(playerId);
       techniqueIds.push("T09");
     }
+    const claySubstitution = player === undefined ? undefined : ownedTechnique(player, "T03");
+    if (
+          claySubstitution !== undefined &&
+          !claySubstitution.exhausted &&
+          (player?.resources.coins ?? 0) >= CLAY_SUBSTITUTION_COINS &&
+          loaded.some((ceramic) => ceramic.ownerId === playerId)
+    ) {
+      actors.push(playerId);
+      techniqueIds.push("T03");
+    }
     const testPieces = player === undefined ? undefined : ownedTechnique(player, "T12");
     if (
           testPieces !== undefined &&
           !testPieces.exhausted &&
+          (player?.resources.wood ?? 0) >= 1 &&
           loaded.some((ceramic) => ceramic.ownerId === playerId)
     ) {
       actors.push(playerId);
@@ -797,7 +822,7 @@ function formCeramics(
   const rewardClay =
     (useTechniqueIds.includes("T01") ? gainFromSupply(next, player, "clay", 1) : 0) +
     (useTechniqueIds.includes("T02") ? gainFromSupply(next, player, "clay", 1) : 0);
-  const rewardCoins = useTechniqueIds.includes("T02") ? gainFromSupply(next, player, "coins", 2) : 0;
+  const rewardCoins = useTechniqueIds.includes("T02") ? gainFromSupply(next, player, "coins", 1) : 0;
   if (rewardClay > 0 || rewardCoins > 0) {
     events.push({
       type: "RESOURCES_CHANGED",
@@ -1044,10 +1069,6 @@ function useKilnYard(
   }
   const player = next.players[actorId];
   if (player === undefined) throw new Error("Kiln Yard actor disappeared");
-  const gainedWood = gainFromSupply(next, player, "wood", action.loads.length);
-  if (gainedWood > 0) {
-    events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: gainedWood, coins: 0 });
-  }
   completeWorkerAction(next, actorId, events);
   return success(next, events);
 }
@@ -1117,12 +1138,12 @@ function resolveOfficeFlawedSale(
       ),
     );
   }
-  if (ceramicIds.length > state.commonSupply.coins) {
+  if (ceramicIds.length * FLAWED_SALE_COINS > state.commonSupply.coins) {
     return applyFailure(
       ruleError(
         "SUPPLY_EMPTY",
         "The common supply must contain 1 Coin for every sold ceramic.",
-        { requested: ceramicIds.length, available: state.commonSupply.coins },
+        { requested: ceramicIds.length * FLAWED_SALE_COINS, available: state.commonSupply.coins },
       ),
     );
   }
@@ -1170,7 +1191,8 @@ function resolveOfficeFlawedSale(
     };
     events.push({ type: "CERAMIC_SOLD", playerId: actorId, ceramicId });
   }
-  const gainedCoins = ceramicIds.length;
+  // v1.1.4 Office sale: a Flawed ceramic is worth 2 Coins.
+  const gainedCoins = ceramicIds.length * FLAWED_SALE_COINS;
   nextPlayer.resources.coins += gainedCoins;
   next.commonSupply.coins -= gainedCoins;
   if (gainedCoins > 0) {
@@ -1231,7 +1253,7 @@ function resolveConnoisseurNetwork(
         ),
       );
     }
-    const saleCoins = ceramic.quality === "masterpiece" ? 7 : ceramic.quality === "fine" ? 4 : 2;
+    const saleCoins = ceramic.quality === "masterpiece" ? 10 : ceramic.quality === "fine" ? 6 : 3;
     if (state.commonSupply.coins < saleCoins) {
       return applyFailure(
         ruleError("SUPPLY_EMPTY", "The common supply cannot pay the selected ceramic sale."),
@@ -1257,7 +1279,7 @@ function resolveConnoisseurNetwork(
       stage: "sold",
       soldInRound: next.round,
     };
-    const saleCoins = ceramic.quality === "masterpiece" ? 7 : ceramic.quality === "fine" ? 4 : 2;
+    const saleCoins = ceramic.quality === "masterpiece" ? 10 : ceramic.quality === "fine" ? 6 : 3;
     nextPlayer.resources.coins += saleCoins;
     next.commonSupply.coins -= saleCoins;
     exhaustTechnique(nextPlayer, actorId, "T14", events);
@@ -1854,16 +1876,22 @@ function ensureFireDeck(state: GameState, rng: RandomSource): void {
 }
 
 /**
- * V1.1.1 firing step 4. Fuel Ledger is conditional and reactive: evaluate the formula on
- * the revealed totals first, offer the tile only if that provisional Base Heat is 0 or 1,
- * then recompute. Opening the window unconditionally would let a player buy a step at any
- * heat, which is exactly what the version removed.
+ * v1.1.4 firing steps 4-5. Fuel Ledger now resolves in its own window after every card is
+ * revealed and before Base Heat exists, so the provisional value here is what the table
+ * would produce with no upgrade, and the window is offered to anyone who revealed Stoke.
  */
-function provisionalBaseHeat(state: GameState): BaseHeat {
+function contributionAdjustments(state: GameState): number[] {
   const context = state.firingContext;
   if (context === null) throw new Error("Base Heat requires firing context");
-  const totalWood = Object.values(context.contributions).reduce((sum, amount) => sum + amount, 0);
-  return determineBaseHeat(context.contributors.length, totalWood);
+  return context.contributors.map((playerId) => {
+    const card = context.contributions[playerId];
+    if (card === undefined) throw new Error(`Missing revealed Contribution for ${playerId}`);
+    return contributionHeatAdjustment(card) + (context.fuelLedgerUpgradedBy.includes(playerId) ? 1 : 0);
+  });
+}
+
+function provisionalBaseHeat(state: GameState): BaseHeat {
+  return determineBaseHeat(contributionAdjustments(state));
 }
 
 function fuelLedgerCandidates(state: GameState): PlayerId[] {
@@ -1871,11 +1899,12 @@ function fuelLedgerCandidates(state: GameState): PlayerId[] {
   if (context === null) return [];
   return turnOrderFromFirst(state).filter((playerId) => {
     if (!context.contributors.includes(playerId)) return false;
+    if (context.contributions[playerId] !== "STOKE") return false;
+    if (context.fuelLedgerUpgradedBy.includes(playerId)) return false;
     const player = state.players[playerId];
     if (player === undefined) return false;
     const technique = ownedTechnique(player, "T11");
-    return technique !== undefined && !technique.exhausted &&
-      player.resources.wood >= 1 && player.resources.coins >= 1;
+    return technique !== undefined && !technique.exhausted && player.resources.wood >= FUEL_LEDGER_WOOD;
   });
 }
 
@@ -1884,8 +1913,7 @@ function openFuelLedgerOrDetermineBaseHeat(
   events: GameEvent[],
   rng: RandomSource,
 ): void {
-  const provisional = provisionalBaseHeat(state);
-  const actors = provisional <= 1 ? fuelLedgerCandidates(state) : [];
+  const actors = fuelLedgerCandidates(state);
   if (actors.length === 0) determineBaseHeatAndOpenReposition(state, events, rng);
   else state.phase = { type: "firing_after_reveal", queue: { actors, currentIndex: 0 } };
 }
@@ -1910,12 +1938,16 @@ function resolveFuelLedger(
     if (technique === undefined || technique.exhausted) {
       return applyFailure(ruleError("TECHNIQUE_EXHAUSTED", "Fuel Ledger is unavailable."));
     }
-    if (player.resources.wood < 1 || player.resources.coins < 1) {
-      return applyFailure(ruleError("INSUFFICIENT_RESOURCES", "Fuel Ledger costs 1 Coin and 1 Wood."));
-    }
-    if (provisionalBaseHeat(state) > 1) {
+    if (context.contributions[actorId] !== "STOKE") {
       return applyFailure(
-        ruleError("INVALID_ACTION", "Fuel Ledger applies only when Base Heat would otherwise be 0 or 1."),
+        ruleError("INVALID_ACTION", "Fuel Ledger upgrades Stoke the Fire only."),
+      );
+    }
+    if (player.resources.wood < FUEL_LEDGER_WOOD) {
+      return applyFailure(
+        ruleError("INSUFFICIENT_RESOURCES", "Fuel Ledger costs 2 additional Wood.", {
+          requiredWood: FUEL_LEDGER_WOOD,
+        }),
       );
     }
   }
@@ -1925,13 +1957,11 @@ function resolveFuelLedger(
     const nextPlayer = next.players[actorId];
     const nextContext = next.firingContext;
     if (nextPlayer === undefined || nextContext === null) throw new Error("Fuel Ledger invariant failed");
-    nextPlayer.resources.wood -= 1;
-    nextPlayer.resources.coins -= 1;
-    next.commonSupply.wood += 1;
-    next.commonSupply.coins += 1;
-    nextContext.contributions[actorId] = (nextContext.contributions[actorId] ?? 0) + 1;
+    nextPlayer.resources.wood -= FUEL_LEDGER_WOOD;
+    next.commonSupply.wood += FUEL_LEDGER_WOOD;
+    nextContext.fuelLedgerUpgradedBy.push(actorId);
     exhaustTechnique(nextPlayer, actorId, "T11", events);
-    events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: -1, coins: -1 });
+    events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: -FUEL_LEDGER_WOOD, coins: 0 });
   }
   advanceQueuedWindow(next, () => determineBaseHeatAndOpenReposition(next, events, rng));
   return success(next, events);
@@ -1963,22 +1993,9 @@ export function submitWoodContribution(
   state: GameState,
   privateState: PrivateFiringState,
   actorId: PlayerId,
-  amount: WoodContribution,
-  useFuelLedgerOrRng: boolean | RandomSource,
-  rngMaybe?: RandomSource,
+  card: ContributionCardId,
+  rng: RandomSource,
 ): SubmitContributionResult {
-  const requestedFuelLedger = typeof useFuelLedgerOrRng === "boolean" ? useFuelLedgerOrRng : false;
-  const rng = typeof useFuelLedgerOrRng === "boolean" ? rngMaybe : useFuelLedgerOrRng;
-  if (rng === undefined) throw new Error("Wood Contribution requires a RandomSource");
-  if (requestedFuelLedger) {
-    return {
-      ok: false,
-      error: ruleError(
-        "INVALID_CONTRIBUTION",
-        "Fuel Ledger is resolved after Wood Contributions are revealed, not committed with the bid.",
-      ),
-    };
-  }
   if (state.phase.type !== "firing_contributions") {
     return { ok: false, error: ruleError("WRONG_PHASE", "Wood Contributions are not open.") };
   }
@@ -2001,10 +2018,21 @@ export function submitWoodContribution(
       error: ruleError("CONTRIBUTION_ALREADY_SUBMITTED", "This player already submitted."),
     };
   }
-  if (!Number.isInteger(amount) || amount < 0 || amount > 3 || player.resources.wood < amount) {
+  if (!CONTRIBUTION_CARD_IDS.includes(card)) {
     return {
       ok: false,
-      error: ruleError("INVALID_CONTRIBUTION", "A Wood Contribution must be an affordable 0-3."),
+      error: ruleError("INVALID_CONTRIBUTION", "That Contribution card is not in the set."),
+    };
+  }
+  // Affordability is checked against the card's printed Wood cost. Tend costs nothing and
+  // is therefore always a legal choice, which is what guarantees the window can close.
+  if (player.resources.wood < contributionWoodCost(card)) {
+    return {
+      ok: false,
+      error: ruleError("INVALID_CONTRIBUTION", "You cannot pay that Contribution card's Wood cost.", {
+        card,
+        requiredWood: contributionWoodCost(card),
+      }),
     };
   }
 
@@ -2012,39 +2040,32 @@ export function submitWoodContribution(
   const nextPrivate: PrivateFiringState = JSON.parse(JSON.stringify(privateState)) as PrivateFiringState;
   if (next.phase.type !== "firing_contributions") throw new Error("Contribution phase invariant failed");
   next.phase.submittedPlayerIds.push(actorId);
-  nextPrivate.contributions[actorId] = { amount, useFuelLedger: false };
+  nextPrivate.contributions[actorId] = card;
   const events: GameEvent[] = [
     { type: "WOOD_SUBMITTED", playerId: actorId, windowId: next.phase.windowId },
   ];
 
   if (next.phase.submittedPlayerIds.length === next.phase.eligiblePlayerIds.length) {
-    const contributions: Record<PlayerId, number> = {};
+    const contributions: Record<PlayerId, ContributionCardId> = {};
     for (const contributorId of next.phase.eligiblePlayerIds) {
-      const storedSubmission = nextPrivate.contributions[contributorId];
+      const revealed = nextPrivate.contributions[contributorId];
       const contributor = next.players[contributorId];
-      if (storedSubmission === undefined || contributor === undefined) {
+      if (revealed === undefined || contributor === undefined) {
         throw new Error("A revealed contribution is missing");
       }
-      const submission = typeof storedSubmission === "number"
-        ? { amount: storedSubmission, useFuelLedger: false }
-        : storedSubmission;
-      const contribution = submission.amount + (submission.useFuelLedger ? 1 : 0);
-      contributor.resources.wood -= contribution;
-      next.commonSupply.wood += contribution;
-      if (submission.useFuelLedger) {
-        contributor.resources.coins -= 1;
-        next.commonSupply.coins += 1;
-        exhaustTechnique(contributor, contributorId, "T11", events);
-        events.push({ type: "RESOURCES_CHANGED", playerId: contributorId, clay: 0, wood: -contribution, coins: -1 });
-      } else if (contribution > 0) {
-        events.push({ type: "RESOURCES_CHANGED", playerId: contributorId, clay: 0, wood: -contribution, coins: 0 });
+      const woodPaid = contributionWoodCost(revealed);
+      contributor.resources.wood -= woodPaid;
+      next.commonSupply.wood += woodPaid;
+      if (woodPaid > 0) {
+        events.push({ type: "RESOURCES_CHANGED", playerId: contributorId, clay: 0, wood: -woodPaid, coins: 0 });
       }
-      contributions[contributorId] = contribution;
+      contributions[contributorId] = revealed;
     }
     next.firingContext = {
       round: next.round,
       contributors: [...next.phase.eligiblePlayerIds],
       contributions,
+      fuelLedgerUpgradedBy: [],
       baseHeat: null,
       fireModifier: null,
       globalHeat: null,
@@ -2120,7 +2141,7 @@ function revealFireAndOpenSaggerSelection(state: GameState, events: GameEvent[],
       player !== undefined &&
       technique !== undefined &&
       !technique.exhausted &&
-      player.resources.coins >= 2 &&
+      player.resources.wood >= 2 &&
       Object.values(state.ceramics).some(
         (ceramic) => ceramic.stage === "loaded" && ceramic.ownerId === playerId,
       )
@@ -2202,7 +2223,7 @@ function resolveSaggerSelection(
     }
     if (
       player === undefined ||
-      player.resources.coins < 2 ||
+      player.resources.wood < 2 ||
       ceramic === undefined ||
       ceramic.stage !== "loaded" ||
       ceramic.ownerId !== actorId
@@ -2220,11 +2241,11 @@ function resolveSaggerSelection(
     if (nextPlayer === undefined || nextContext === null) {
       throw new Error("Sagger Selection invariant failed");
     }
-    nextPlayer.resources.coins -= 2;
-    next.commonSupply.coins += 2;
+    nextPlayer.resources.wood -= 2;
+    next.commonSupply.wood += 2;
     nextContext.saggerAdjustedCeramicIds.push(ceramicId);
     exhaustTechnique(nextPlayer, actorId, "T16", events);
-    events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins: -2 });
+    events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: -2, coins: 0 });
   }
   advanceQueuedWindow(next, () => calculateActualHeatAndOpenQualityWindow(next, events));
   return success(next, events);
@@ -2244,7 +2265,7 @@ function assignQualityAndOpenSaggars(state: GameState, events: GameEvent[]): voi
       player !== undefined &&
       technique !== undefined &&
       !technique.exhausted &&
-      player.resources.coins >= 1 &&
+      player.resources.wood >= 1 &&
       Object.values(context.ceramicResults).some(
         (result) =>
           (result.assignedQuality === "flawed" || result.assignedQuality === "standard") &&
@@ -2443,11 +2464,11 @@ function resolveProtectiveSaggars(
     const nextPlayer = next.players[actorId];
     const result = next.firingContext?.ceramicResults[ceramicId];
     if (nextPlayer === undefined || result === undefined) throw new Error("Saggars invariant failed");
-    nextPlayer.resources.coins -= 1;
-    next.commonSupply.coins += 1;
+    nextPlayer.resources.wood -= 1;
+    next.commonSupply.wood += 1;
     result.assignedQuality = result.assignedQuality === "flawed" ? "standard" : "fine";
     exhaustTechnique(nextPlayer, actorId, "T10", events);
-    events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins: -1 });
+    events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: -1, coins: 0 });
   }
   advanceQueuedWindow(next, () => openSecondFiringWindow(next, events));
   return success(next, events);
@@ -2536,6 +2557,67 @@ function openAfterFiringWindow(state: GameState, events: GameEvent[]): void {
   }
 }
 
+/**
+ * Clay Substitution inside the Firing Phase. The rulebook bounds this to before
+ * Contribution cards are chosen precisely so it cannot be used to manufacture Wood for a
+ * card already revealed, or for a Fuel Ledger upgrade after the fact.
+ */
+function resolveFiringClaySubstitution(
+  state: GameState,
+  actorId: PlayerId,
+  clay: number,
+  wood: number,
+  use: boolean,
+): ApplyResult {
+  const phase = requirePhase(state, "firing_before_contribution");
+  if (isFailure(phase)) return phase;
+  const actorError = actorFailure(state, actorId);
+  if (actorError !== null) return actorError;
+  if (phase.techniqueIds[phase.queue.currentIndex] !== "T03") {
+    return applyFailure(ruleError("INVALID_ACTION", "Clay Substitution is not the current decision."));
+  }
+  const player = state.players[actorId];
+  if (use) {
+    const technique = player === undefined ? undefined : ownedTechnique(player, "T03");
+    if (technique === undefined || technique.exhausted) {
+      return applyFailure(ruleError("TECHNIQUE_EXHAUSTED", "Clay Substitution is unavailable."));
+    }
+    if (!Number.isInteger(clay) || !Number.isInteger(wood) || clay < 0 || wood < 0 ||
+        clay + wood !== CLAY_SUBSTITUTION_RESOURCES) {
+      return applyFailure(
+        ruleError("INVALID_SELECTION", "Clay Substitution grants exactly 3 resources.", { clay, wood }),
+      );
+    }
+    if ((player?.resources.coins ?? 0) < CLAY_SUBSTITUTION_COINS) {
+      return applyFailure(
+        ruleError("INSUFFICIENT_RESOURCES", "Clay Substitution costs 3 Coins.", {
+          requiredCoins: CLAY_SUBSTITUTION_COINS,
+        }),
+      );
+    }
+  }
+  const next = cloneState(state);
+  const events: GameEvent[] = [];
+  if (use) {
+    const nextPlayer = next.players[actorId];
+    if (nextPlayer === undefined) throw new Error("Clay Substitution actor disappeared");
+    nextPlayer.resources.coins -= CLAY_SUBSTITUTION_COINS;
+    next.commonSupply.coins += CLAY_SUBSTITUTION_COINS;
+    const gainedClay = gainFromSupply(next, nextPlayer, "clay", clay);
+    const gainedWood = gainFromSupply(next, nextPlayer, "wood", wood);
+    exhaustTechnique(nextPlayer, actorId, "T03", events);
+    events.push({
+      type: "RESOURCES_CHANGED",
+      playerId: actorId,
+      clay: gainedClay,
+      wood: gainedWood,
+      coins: -CLAY_SUBSTITUTION_COINS,
+    });
+  }
+  advanceQueuedWindow(next, () => openContributionPhase(next));
+  return success(next, events);
+}
+
 function resolveTestPieces(state: GameState, actorId: PlayerId, use: boolean, rng: RandomSource): ApplyResult {
   const phase = requirePhase(state, "firing_before_contribution");
   if (isFailure(phase)) return phase;
@@ -2550,6 +2632,9 @@ function resolveTestPieces(state: GameState, actorId: PlayerId, use: boolean, rn
     if (technique === undefined || technique.exhausted) {
       return applyFailure(ruleError("INVALID_ACTION", "Test Pieces is not eligible."));
     }
+    if ((player?.resources.wood ?? 0) < 1) {
+      return applyFailure(ruleError("INSUFFICIENT_RESOURCES", "Test Pieces costs 1 Wood."));
+    }
   }
   const next = cloneState(state);
   const events: GameEvent[] = [];
@@ -2561,7 +2646,10 @@ function resolveTestPieces(state: GameState, actorId: PlayerId, use: boolean, rn
     if (peek === undefined) throw new Error("Test Pieces cannot peek an empty Fire deck");
     next.privateFirePeeks ??= {};
     next.privateFirePeeks[actorId] = peek;
+    nextPlayer.resources.wood -= 1;
+    next.commonSupply.wood += 1;
     exhaustTechnique(nextPlayer, actorId, "T12", events);
+    events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: -1, coins: 0 });
   }
   advanceQueuedWindow(next, () => openContributionPhase(next));
   return success(next, events);
@@ -2689,9 +2777,9 @@ function advanceImperialProgress(
   const presentationMilestonesTriggered = activeRules.presentationSpaces.filter(
     (space) => crossedSpaces.includes(space),
   );
-  const stipendMilestonesTriggered = (state.experimentConfig?.experimentId === "imperial-track-ab-001" ? [] : [2, 4] as const).filter(
-    (space) => crossedSpaces.includes(space) && !(player.imperialStipendsReceived ?? []).includes(space),
-  );
+  // v1.1.4 pays no Coin stipend at Progress 2 or 4. The event field is retained so
+  // serialized v1.1.1 matches still decode; it is always empty under the current rules.
+  const stipendMilestonesTriggered: number[] = [];
   const sealMilestoneTriggered = source === "imperial_order" &&
     activeRules.imperialSealEnabled &&
     crossedSpaces.includes(5) &&
@@ -2717,16 +2805,6 @@ function advanceImperialProgress(
     trackVpAfter: activeRules.trackVp[to],
     sealVp: activeRules.imperialSealVp,
   });
-  for (const space of stipendMilestonesTriggered) {
-    const configuredCoins = IMPERIAL_PROGRESS.stipends[String(space) as "2" | "4"];
-    const coins = gainFromSupply(state, player, "coins", configuredCoins);
-    player.imperialStipendsReceived ??= [];
-    player.imperialStipendsReceived.push(space);
-    if (coins > 0) {
-      events.push({ type: "RESOURCES_CHANGED", playerId, clay: 0, wood: 0, coins });
-    }
-    events.push({ type: "IMPERIAL_STIPEND_RECEIVED", playerId, space, coins });
-  }
   if (sealMilestoneTriggered) {
     state.imperialSealOwnerId = playerId;
     events.push({ type: "IMPERIAL_SEAL_CLAIMED", playerId, sealVp: activeRules.imperialSealVp });
@@ -3286,6 +3364,8 @@ export function applyAction(
       return resolveProtectiveSaggars(state, actorId, action.ceramicId);
     case "RESOLVE_SECOND_FIRING":
       return resolveSecondFiring(state, actorId, action.ceramicId);
+    case "RESOLVE_FIRING_CLAY_SUBSTITUTION":
+      return resolveFiringClaySubstitution(state, actorId, action.clay, action.wood, action.use);
     case "RESOLVE_TEST_PIECES":
       return resolveTestPieces(state, actorId, action.use, rng);
     case "RESOLVE_KILN_RECORDS":

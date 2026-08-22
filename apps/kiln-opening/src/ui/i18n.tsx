@@ -303,7 +303,7 @@ const ZH_CN: Record<string, string> = {
   "Take up to 2 Orders, take 1 + gain 2 Coins, gain 4 Coins, or use eligible Court Patronage. Patronage has no sale.": "拿取至多2张订单、拿取1张并获得2铜钱、获得4铜钱，或在符合条件时使用朝廷赞助。赞助后不能出售。",
   "Requires 1 completed Imperial Order. Costs 5 Coins. Cannot advance from 4 to 5.": "需要已完成1张御用订单。费用为5铜钱。不能从4格前进到5格。",
   "Visit the Office": "前往贡务",
-  "Loading an eligible ceramic is required; gain 1 Wood per ceramic loaded.": "必须装入至少1件符合条件的器物；每装1件获得1柴薪。",
+  "Loading an eligible ceramic is required.": "必须装入至少1件符合条件的器物。",
   "pay printed cost.": "支付印刷费用。",
   "may refresh one tile, then pays 1 Coin less (minimum 0).": "可以刷新1张工艺牌，然后少支付1铜钱（最低0）。",
   "Begin Guild action": "开始行会行动",

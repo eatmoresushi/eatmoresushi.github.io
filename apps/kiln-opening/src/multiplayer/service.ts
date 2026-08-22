@@ -180,8 +180,8 @@ export class AuthoritativeGameService {
         code,
         status: "lobby",
         hostSeatId: seatId,
-        rulesVersion: "1.1.1",
-        contentVersion: "1.1.1",
+        rulesVersion: "1.1.4",
+        contentVersion: "1.1.4",
         latestRevision: 0,
         endedAt: null,
         endedByPlayerId: null,
@@ -275,7 +275,7 @@ export class AuthoritativeGameService {
         ownPendingContribution:
           pending === null
             ? null
-            : { windowId: pending.windowId, amount: pending.amount, useFuelLedger: pending.useFuelLedger ?? false, submitted: true },
+            : { windowId: pending.windowId, card: pending.card, submitted: true },
         ...(head === null ? {} : { ownPrivateDecision: privateDecisionState(head.state, seat.playerId) }),
       },
     };
@@ -531,8 +531,7 @@ export class AuthoritativeGameService {
           head.state,
           privateState,
           computerSeat.playerId,
-          command.amount,
-          command.useFuelLedger ?? false,
+          command.card,
           rng,
         );
         if (!applied.ok) return failed(gameFailure(applied.error, head.revision));
@@ -540,8 +539,7 @@ export class AuthoritativeGameService {
         fullEvents = applied.events;
         privateSubmission = {
           windowId: command.windowId,
-          amount: command.amount,
-          useFuelLedger: command.useFuelLedger ?? false,
+        card: command.card,
           revealed: applied.privateState.windowId === null,
         };
       } else {
@@ -630,7 +628,7 @@ export class AuthoritativeGameService {
         ownPendingContribution:
           pending === null
             ? null
-            : { windowId: pending.windowId, amount: pending.amount, useFuelLedger: pending.useFuelLedger ?? false, submitted: true },
+            : { windowId: pending.windowId, card: pending.card, submitted: true },
         ownPrivateDecision: privateDecisionState(head.state, requestingSeat.playerId),
       },
     };
@@ -709,7 +707,7 @@ export class AuthoritativeGameService {
         gameId: head.state.gameId,
         windowId: request.command.windowId,
         contributions: Object.fromEntries(
-          storedSubmissions.map((submission) => [submission.playerId, { amount: submission.amount, useFuelLedger: submission.useFuelLedger ?? false }]),
+          storedSubmissions.map((submission) => [submission.playerId, submission.card]),
         ),
       };
       const rng = new SeededRandom(head.rngState);
@@ -717,8 +715,7 @@ export class AuthoritativeGameService {
         head.state,
         privateState,
         seat.playerId,
-        request.command.amount,
-        request.command.useFuelLedger ?? false,
+        request.command.card,
         rng,
       );
       if (!applied.ok) return failed(gameFailure(applied.error, head.revision));
@@ -727,8 +724,7 @@ export class AuthoritativeGameService {
         ? null
         : {
             windowId: request.command.windowId,
-            amount: request.command.amount,
-            useFuelLedger: request.command.useFuelLedger ?? false,
+        card: request.command.card,
             submitted: true,
           };
       const publicEvents = projectPublicEvents(applied.events);
@@ -757,8 +753,7 @@ export class AuthoritativeGameService {
         response,
         privateSubmission: {
           windowId: request.command.windowId,
-          amount: request.command.amount,
-          useFuelLedger: request.command.useFuelLedger ?? false,
+        card: request.command.card,
           revealed,
         },
       };
@@ -789,13 +784,13 @@ export class AuthoritativeGameService {
       return failed(error("AUTHENTICATION_FAILED", "The room or seat credential is invalid."));
     }
     if (
-      authenticated.room.rulesVersion !== "1.1.1" ||
-      authenticated.room.contentVersion !== "1.1.1"
+      authenticated.room.rulesVersion !== "1.1.4" ||
+      authenticated.room.contentVersion !== "1.1.4"
     ) {
       return failed(
         error(
           "UNSUPPORTED_RULES_VERSION",
-          "This room uses an older rules version and cannot continue under V1.0.9. Please create a new room.",
+          "This room uses an older rules version and cannot continue under V1.1.4. Please create a new room.",
         ),
       );
     }
@@ -813,7 +808,7 @@ export class AuthoritativeGameService {
       gameId: head.state.gameId,
       windowId: head.state.phase.windowId,
       contributions: Object.fromEntries(
-        submissions.map((submission) => [submission.playerId, { amount: submission.amount, useFuelLedger: submission.useFuelLedger ?? false }]),
+        submissions.map((submission) => [submission.playerId, submission.card]),
       ),
     };
   }

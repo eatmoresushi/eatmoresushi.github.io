@@ -9,7 +9,7 @@ import {
   TECHNIQUES,
   locationCapacity,
 } from "../game/index.ts";
-import type { GameEvent, KilnId, PlayerCount, PlayerId, Quality } from "../game/index.ts";
+import type { GameEvent, KilnId, PlayerCount, PlayerId, PresentedCeramic, Quality } from "../game/index.ts";
 import { AI_POLICY_VERSION, AI_SIMULATION_VERSION } from "./types.ts";
 import type { AIStrategyProfile } from "./types.ts";
 import type {
@@ -70,7 +70,10 @@ function splitFor(result: SelfPlayGameResult): "training" | "holdout" | "ab_eval
 }
 
 function phaseForResult(result: SelfPlayGameResult): string {
-  return splitFor(result) === "ab_evaluation" ? "frozen" : phaseFor(result.config.gameSequence);
+  const split = splitFor(result);
+  if (split === "ab_evaluation") return "frozen";
+  if (split === "holdout") return "holdout";
+  return phaseFor(result.config.gameSequence);
 }
 
 export interface StudyTables {
@@ -205,7 +208,8 @@ function playerRows(results: readonly SelfPlayGameResult[]): CsvRow[] {
           (event.type === "STARTING_ORDER_REDRAWN" && event.playerId === playerId)
         );
       });
-      const presented = Object.values(result.state.ceramics).filter((ceramic) => ceramic.ownerId === playerId && ceramic.stage === "presented");
+      const presented = Object.values(result.state.ceramics).filter((ceramic): ceramic is PresentedCeramic =>
+        ceramic.ownerId === playerId && ceramic.stage === "presented");
       const finished = Object.values(result.state.ceramics).filter((ceramic) => ceramic.ownerId === playerId && ceramic.stage === "finished");
       const finalQuality = (quality: Quality) => finalFirings.filter((row) => row.finalQuality === quality).length;
       const naturalQuality = (quality: Quality) => firingRows.filter((row) => row.naturalQuality === quality).length;
@@ -221,6 +225,13 @@ function playerRows(results: readonly SelfPlayGameResult[]): CsvRow[] {
         const event = eventValue(row);
         return event.type === "TECHNIQUE_USED" && event.playerId === playerId && event.techniqueId === "T14";
       }).length;
+      const stipendEvents = result.events.flatMap((row) => {
+        const event = eventValue(row);
+        return event.type === "IMPERIAL_STIPEND_RECEIVED" && event.playerId === playerId ? [event] : [];
+      });
+      const exhibitionCapacity = IMPERIAL_PROGRESS.exhibition.capacityByProgress[player.imperialProgress] ?? 1;
+      const presentationQualityVp = presented.reduce((sum, ceramic) =>
+        sum + IMPERIAL_PROGRESS.exhibition.qualityVp[ceramic.quality], 0);
       return {
         game_id: result.config.gameId,
         game_seed: result.config.gameSeed,
@@ -256,9 +267,19 @@ function playerRows(results: readonly SelfPlayGameResult[]): CsvRow[] {
         patronage_uses: progress.patronageRounds.length,
         patronage_rounds: progress.patronageRounds.join("|"),
         seal_obtained: result.state.imperialSealOwnerId === playerId,
-        presentation_eligible: player.imperialProgress >= 4,
+        stipend_2_received: (player.imperialStipendsReceived ?? []).includes(2),
+        stipend_4_received: (player.imperialStipendsReceived ?? []).includes(4),
+        stipend_coins_received: stipendEvents.reduce((sum, event) => sum + event.coins, 0),
+        exhibition_capacity: exhibitionCapacity,
+        presentation_eligible: true,
+        presentation_diversity_eligible: IMPERIAL_PROGRESS.exhibition.diversityEligibleSpaces.includes(player.imperialProgress),
         presentation_used: presented.length > 0,
         presented: presented.length,
+        presentation_standard: presented.filter((ceramic) => ceramic.quality === "standard").length,
+        presentation_fine: presented.filter((ceramic) => ceramic.quality === "fine").length,
+        presentation_masterpiece: presented.filter((ceramic) => ceramic.quality === "masterpiece").length,
+        presentation_quality_vp: presentationQualityVp,
+        presentation_diversity_bonus: Math.max(0, score.presentation - presentationQualityVp),
         formed: countEvents(result, "CERAMIC_SHAPED", playerId),
         glazed: countEvents(result, "CERAMIC_GLAZED", playerId),
         loaded: countEvents(result, "CERAMIC_LOADED", playerId),
@@ -318,7 +339,9 @@ function playerRows(results: readonly SelfPlayGameResult[]): CsvRow[] {
           return sum + (diagnostic?.selected ? Math.max(0, diagnostic.compatibleOrdersAfter - diagnostic.compatibleOrdersBefore) : 0);
         }, 0),
         connoisseur_network_uses: connoisseurUses,
-        connoisseur_coins_gained: connoisseurUses * 5,
+        connoisseur_coins_gained: actions
+          .filter((row) => row.actionType === "OFFICE_RESOLVE_CONNOISSEUR_NETWORK")
+          .reduce((sum, row) => sum + Math.max(0, row.coinsAfter - row.coinsBefore), 0),
         worker_actions: workerActions,
         passes: actions.filter((row) => row.actionType === "PASS_WORK_PHASE").length,
         clay_gained: clay.gained,
@@ -375,6 +398,10 @@ function gameRows(results: readonly SelfPlayGameResult[], players: readonly CsvR
       market_orders_completed: gamePlayers.reduce((sum, row) => sum + Number(row["market_orders_completed"]), 0),
       imperial_orders_completed: gamePlayers.reduce((sum, row) => sum + Number(row["imperial_orders_completed"]), 0),
       court_patronage_uses: gamePlayers.reduce((sum, row) => sum + Number(row["patronage_uses"]), 0),
+      imperial_stipends_received: countEvents(result, "IMPERIAL_STIPEND_RECEIVED"),
+      imperial_stipend_coins: gamePlayers.reduce((sum, row) => sum + Number(row["stipend_coins_received"]), 0),
+      order_display_rotations: countEvents(result, "ORDER_DISPLAYS_ROTATED"),
+      presentations_submitted: countEvents(result, "PRESENTATION_SUBMITTED"),
       techniques_purchased: countEvents(result, "TECHNIQUE_ACQUIRED"),
       technique_activations: countEvents(result, "TECHNIQUE_USED"),
       tradition_activations: countEvents(result, "KILN_ABILITY_USED"),
@@ -768,7 +795,11 @@ function intentOutcomeRows(results: readonly SelfPlayGameResult[]): CsvRow[] {
       final_imperial_progress: player.imperialProgress,
       patronage_uses: countEvents(result, "COURT_PATRONAGE_USED", playerId),
       seal_obtained: result.state.imperialSealOwnerId === playerId,
-      presentation_eligible: player.imperialProgress >= 4,
+      stipend_2_received: (player.imperialStipendsReceived ?? []).includes(2),
+      stipend_4_received: (player.imperialStipendsReceived ?? []).includes(4),
+      exhibition_capacity: IMPERIAL_PROGRESS.exhibition.capacityByProgress[player.imperialProgress] ?? 1,
+      presentation_eligible: true,
+      presentation_diversity_eligible: IMPERIAL_PROGRESS.exhibition.diversityEligibleSpaces.includes(player.imperialProgress),
       presentation_used: player.presentationCeramicIds.length > 0,
       fallback_used: fallback,
       market_orders_completed: player.completedOrders.filter(({ orderId }) => orderId.startsWith("M")).length,

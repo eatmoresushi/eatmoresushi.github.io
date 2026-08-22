@@ -1,6 +1,40 @@
 # AI Player Next Steps
 
-> Current online rules compatibility: V1.0.4. The V003 online policy and V004–V006 studies retain their original V1.0.1/V1.0.2 training labels and evidence. Write new compatibility output only below `playtests/v1.0.4/`; do not overwrite or relabel historical datasets.
+> Current online rules compatibility: **v1.1.4**. The online policy is
+> `rules-v1.1.4-contribution-001`, rebuilt for the Bank / Tend / Stoke Contribution cards
+> rather than retuned from an earlier lineage. Write new v1.1.4 output only below
+> `playtests/v1.1.4/`; do not overwrite or relabel historical datasets.
+>
+> **Everything below documenting V1.0.4 and V1.0.9 lineages is a historical record.** Those
+> policies were deleted when v1.1.4 replaced the numeric 0-3 Wood bid: they select a bid
+> value that no longer exists in the legal action set, so they cannot play this ruleset.
+> Their measurements are retained here; their code is not.
+
+## V1.0.9 contract and honest baseline
+
+The V1.0.9 observation/legal-action repair is complete. It exposes only the acting player's Test Pieces peek and sealed Fuel Ledger commitment; enumerates V1.0.9 Material exchanges, unlimited Clay Substitution, Drying Frames, merged Shifu Glaze actions, and all Connoisseur sale qualities; and evaluates the new Office, Kiln Yard, Technique, and Wood rules without the historical fixed-one-Wood bonus.
+
+`v109-v003-compat-001` is now the frozen comparison target. It ran exactly 50 fresh-seed games at 2P, 3P, and 4P with frozen V003 profiles, no learning, and no exploration. All 150 games completed on V1.0.9 with zero illegal selections and no replacements. The local ignored evidence is under `playtests/v1.0.9/v109-v003-compat-001/`; rerunning the committed command requires a new empty output path rather than overwriting it.
+
+`v109-population-001` is precommitted but untrained. It reuses Population-003's conservative V003-anchor architecture, with V1.0.9-native Wood/Fuel Ledger and Technique forecasts. Its profiles are freshly initialized from frozen V003, its persona weights are uniform, and its training, behavioral-holdout, and paired-evaluation seeds are frozen and disjoint before fitting. It imports no fitted V1.0.4 weights or performance claims. The precommit is under `playtests/v1.0.9/v109-population-001/precommit/` and can be regenerated only into a new empty directory with `npm run selfplay:v109:population:prepare`.
+
+## V1.0.4 Population-002 outcome
+
+Population-002 implemented the conservative successor to Population-001: V003-anchored ordinary play, positive public multi-round Technique exceptions, and public loaded-portfolio Wood exceptions. The full study completed 1,500 training games, 150 independent behavioral games, and 90 matched focal-seat pairs with zero illegal actions. All coverage gates passed, including 55 Technique purchases and Wood 0/1/2 representation.
+
+It must not replace online V003. Mean paired VP delta was -0.711 with a 95% bootstrap interval of [-1.189, -0.289]. The 2P subgroup was close at -0.100, but 3P was -0.733 and 4P was -1.300. The precommitted overall and player-count strength floors were -0.500 and -0.750 respectively.
+
+Run `npm run selfplay:v104:population:002:quick` only to check the pipeline. The completed full command is `npm run selfplay:v104:population:002`; its immutable local evidence is under `playtests/v1.0.4/population-002/`.
+
+Population-003 is now registered as a separate frozen candidate. It corrects the expected-other-Wood model at 3P/4P, requires stricter V003-anchor forecast evidence for Technique detours, and uses fresh training, behavior, persona-sampling, and matched evaluation seeds. Its quick trial is pipeline evidence only; the unchanged strength gates and the revised 3% positive-Technique/any-alternate-Wood behavior floors are precommitted in `docs/AI_EXPERIMENT_REGISTRY.md` before the full study. Until real human telemetry exists, preserve all failed candidates as useful boundary evidence rather than treating their synthetic frequencies as human estimates.
+
+The full Population-003 study passed every synthetic gate. Across 90 fresh matched pairs it averaged +0.067 VP versus V003, with a 95% bootstrap interval of [-0.033, +0.200], zero Order delta, zero illegal actions, and 12.828-ms decision p95. Its 2P/3P/4P deltas were -0.033/+0.033/+0.200. The behavior holdout retained 20 positive-forecast Technique purchases and 25 evidence-based zero-Wood exceptions while 98.7% of contributions remained one Wood.
+
+Treat this as non-inferiority, not demonstrated superiority. Population-003 may now be considered for an explicit online A/B or difficulty-option decision, but it should not silently replace V003 and its synthetic persona frequencies should not be interpreted as human behavior.
+
+## V1.0.4 Population-001 outcome
+
+Population-001 trained and evaluated the same 18 bounded-rational personas under authoritative V1.0.4 rules. It passed safety and behavior coverage but failed the strength gate at -0.911 paired VP, with a 95% bootstrap interval of [-2.689, 0.822]. Its wider Wood and Technique behavior remains useful archived coverage evidence, not a deployment candidate. See `docs/AI_EXPERIMENT_REGISTRY.md` for lineage and compatibility status.
 
 ## Selfplay-006 implementation
 

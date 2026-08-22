@@ -1,3 +1,4 @@
+import { CONTRIBUTION_CARDS, CONTRIBUTION_CARD_DEFINITIONS } from "../game/index.ts";
 import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import {
@@ -549,7 +550,7 @@ function KilnYardForm({ game, player, workers, locationFull, busy, send }: {
     <form className="control-form" onSubmit={submit}>
       <WorkerChoice workers={workers} value={selectedWorker?.id ?? ""} onChange={setWorkerId} />
       {spaces.length === 0 || ceramics.length === 0 ? (
-        <p className="control-hint">{t("Loading an eligible ceramic is required; gain 1 Wood per ceramic loaded.")}</p>
+        <p className="control-hint">{t("Loading an eligible ceramic is required.")}</p>
       ) : (
         <>
           <CeramicChoice name="ceramic1" label="First ceramic" ceramics={ceramics} value={firstId} onChange={setCeramic1} blank="Choose a ceramic" />
@@ -876,27 +877,35 @@ function ContributionControls({ game, player, ownPlayerId, pending, privateDecis
   send: SendCommand;
 }) {
   const { locale, t } = useI18n();
-  const [useFuelLedger, setUseFuelLedger] = useState(false);
   if (game.phase.type !== "firing_contributions") return null;
   const eligible = game.phase.eligiblePlayerIds.includes(ownPlayerId);
   const submitted = game.phase.submittedPlayerIds.includes(ownPlayerId);
   if (!eligible) return <ControlSection title="The kiln is being fired" hint="Only players with loaded ceramics contribute Wood."><p>{t("You have no ceramic in this firing.")}</p></ControlSection>;
-  if (submitted) return <ControlSection title="Contribution locked" hint="Other players cannot see your amount or Fuel Ledger choice until every contributor submits."><p className="secret-value">{t("Your sealed choice:")} <strong>{pending?.amount ?? t("saved")} {t("Wood")}{pending?.useFuelLedger ? " + Fuel Ledger" : ""}</strong></p></ControlSection>;
+  if (submitted) {
+    const sealed = pending === null || pending === undefined ? null : CONTRIBUTION_CARD_DEFINITIONS[pending.card];
+    return <ControlSection title="Contribution locked" hint="Other players cannot see your Contribution card until every contributor submits."><p className="secret-value">{t("Your sealed choice:")} <strong>{sealed === null ? t("saved") : (locale === "zh-CN" ? sealed.nameZh : sealed.name)}</strong></p></ControlSection>;
+  }
   return (
-    <ControlSection title="Choose Wood in secret" hint="Your contribution stays private until every eligible player has locked a choice.">
+    <ControlSection title="Choose a Contribution card in secret" hint="Your card stays private until every eligible player has locked a choice.">
       {privateDecision?.fireModifierPeek !== null && privateDecision?.fireModifierPeek !== undefined && <p className="secret-value">Test Pieces peek: <strong>{privateDecision.fireModifierPeek > 0 ? "+" : ""}{privateDecision.fireModifierPeek}</strong></p>}
-      {ownedAvailableTechniques(player, ["T11"]).includes("T11") && <label className="check-row"><input type="checkbox" checked={useFuelLedger} onChange={(event) => setUseFuelLedger(event.target.checked)} />Use Fuel Ledger secretly: pay 1 Coin and contribute 1 additional Wood (effective maximum 4).</label>}
       <div className="contribution-grid wood-card-grid">
-        {([0, 1, 2, 3] as WoodContribution[]).map((amount) => (
-          <button
-            className="wood-card-choice"
-            type="button"
-            key={amount}
-            disabled={busy || amount + (useFuelLedger ? 1 : 0) > player.resources.wood || (useFuelLedger && player.resources.coins < 1)}
-            onClick={() => void send({ type: "SUBMIT_WOOD_CONTRIBUTION", windowId: game.phase.type === "firing_contributions" ? game.phase.windowId : "", amount, useFuelLedger })}
-            aria-label={locale === "zh-CN" ? `贡献${amount}柴薪` : `Contribute ${amount} Wood`}
-          ><strong>{amount}</strong><span>{t("Wood")}</span></button>
-        ))}
+        {CONTRIBUTION_CARDS.map((card) => {
+          const affordable = card.woodCost <= player.resources.wood;
+          return (
+            <button
+              className="wood-card-choice"
+              type="button"
+              key={card.id}
+              disabled={busy || !affordable}
+              onClick={() => void send({ type: "SUBMIT_WOOD_CONTRIBUTION", windowId: game.phase.type === "firing_contributions" ? game.phase.windowId : "", card: card.id })}
+              aria-label={locale === "zh-CN" ? `${card.nameZh}：${card.woodCost}柴薪，火候${card.heatAdjustment >= 0 ? "+" : ""}${card.heatAdjustment}` : `${card.name}: ${card.woodCost} Wood, ${card.heatAdjustment >= 0 ? "+" : ""}${card.heatAdjustment} Heat`}
+            >
+              <strong>{locale === "zh-CN" ? card.nameZh : card.name}</strong>
+              <span>{card.woodCost} {t("Wood")}</span>
+              <span>{card.heatAdjustment >= 0 ? "+" : ""}{card.heatAdjustment} {t("Heat")}</span>
+            </button>
+          );
+        })}
       </div>
     </ControlSection>
   );

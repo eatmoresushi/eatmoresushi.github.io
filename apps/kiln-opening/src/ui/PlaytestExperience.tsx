@@ -172,6 +172,9 @@ export function eventDescription(event: PublicGameEvent, game: PublicGameState, 
     }
     case "IMPERIAL_PROGRESS_ADVANCED":
       return `${player(event.playerId)} advanced Imperial Progress ${event.from} → ${event.to} (reward +${event.reward}).`;
+    // v1.1.4 never emits this; the renderer stays so archived pre-v1.1.4 logs still read.
+    case "IMPERIAL_STIPEND_RECEIVED":
+      return `${player(event.playerId)} received the Progress ${event.space} court stipend: +${event.coins} Coins.`;
     case "COURT_PATRONAGE_USED":
       return `${player(event.playerId)} used Court Patronage, paid ${event.cost} Coins, and advanced ${event.from} → ${event.to}.`;
     case "IMPERIAL_SEAL_CLAIMED":
@@ -182,8 +185,6 @@ export function eventDescription(event: PublicGameEvent, game: PublicGameState, 
       return `${player(event.playerId)} received 3 Coins instead of a Round 5 Apprentice unlock.`;
     case "ORDERS_DISCARDED_FOR_CLEANUP":
       return `${player(event.playerId)} discarded ${event.orderIds.join(", ")} during Cleanup.`;
-    case "IMPERIAL_STIPEND_RECEIVED":
-      return `${player(event.playerId)} received the Progress ${event.space} court stipend: +${event.coins} Coins.`;
     case "ORDER_DISPLAYS_ROTATED":
       return `Round ${event.round} Order rotation discarded Market ${event.marketOrderIds.join(", ")} and Imperial ${event.imperialOrderIds.join(", ")}.`;
     case "ROUND_STARTED":

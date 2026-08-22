@@ -1,3 +1,4 @@
+import { ONLINE_COMPUTER_POLICY_VERSION } from "./computerPlayer.ts";
 import type { GameEvent, PlayerId } from "../game";
 import type {
   AuthenticatedSeat,
@@ -145,7 +146,7 @@ export class InMemoryMultiplayerStore implements MultiplayerStore {
       colour: SEAT_COLOURS[seatIndex]!,
       isHost: false,
       isComputer: true,
-      aiPolicyVersion: "selfplay-003",
+      aiPolicyVersion: ONLINE_COMPUTER_POLICY_VERSION,
       authUserId: null,
       aiSeed: input.aiSeed >>> 0,
       aiCreatedCommandId: input.commandId,
@@ -335,8 +336,7 @@ export class InMemoryMultiplayerStore implements MultiplayerStore {
         windowId: input.privateSubmission.windowId,
         playerId: input.actorId,
         commandId: input.commandId,
-        amount: input.privateSubmission.amount,
-        useFuelLedger: input.privateSubmission.useFuelLedger,
+        card: input.privateSubmission.card,
         revealedRevision: input.privateSubmission.revealed ? input.nextHead.revision : null,
       };
       this.privateSubmissions.set(

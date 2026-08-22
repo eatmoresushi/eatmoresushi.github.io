@@ -17,7 +17,7 @@ describe("player-facing ceramic and firing labels", () => {
     fixture.state.lastFiringResult = {
       round: 1,
       contributors: [actorId],
-      contributions: { [actorId]: 2 },
+      contributions: { [actorId]: "STOKE" },
       baseHeat: 3,
       fireModifier: -1,
       globalHeat: 2,
@@ -37,7 +37,7 @@ describe("player-facing ceramic and firing labels", () => {
 
     const tableMarkup = renderToStaticMarkup(createElement(GameTable, { game, ownPlayerId: actorId }));
     expect(tableMarkup).toContain("Wood Contributions");
-    expect(tableMarkup).toContain("Player A contributed 2 Wood");
+    expect(tableMarkup).toContain("revealed Stoke the Fire");
     expect(tableMarkup).toContain("Total Wood");
     expect(tableMarkup).not.toContain(ceramic.id);
   });
@@ -48,6 +48,6 @@ describe("player-facing ceramic and firing labels", () => {
     fixture.state.players[actorId]!.displayName = "Player A";
     const game = projectPublicGameState(fixture.state);
 
-    expect(firingContributionText(game, { [actorId]: 2 })).toBe("Player A contributed 2 Wood");
+    expect(firingContributionText(game, { [actorId]: "STOKE" })).toBe("Player A revealed Stoke the Fire");
   });
 });

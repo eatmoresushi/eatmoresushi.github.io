@@ -1,5 +1,6 @@
 import type {
   ActionBoardState,
+  ContributionCardId,
   CeramicState,
   FinalResult,
   FireModifier,
@@ -26,7 +27,7 @@ import type {
 } from "../game/index.ts";
 
 export type RoomStatus = "lobby" | "playing" | "finished" | "abandoned";
-export type StoredRulesVersion = "0.4" | "0.5" | "0.6.1" | "0.6.3" | "0.6.5" | "1.0.0" | "1.0.1" | "1.0.2" | "1.0.4" | "1.0.9" | "1.1.1";
+export type StoredRulesVersion = "0.4" | "0.5" | "0.6.1" | "0.6.3" | "0.6.5" | "1.0.0" | "1.0.1" | "1.0.2" | "1.0.4" | "1.0.9" | "1.1.1" | "1.1.4";
 
 export interface PublicRoom {
   id: string;
@@ -48,7 +49,7 @@ export interface PublicSeat {
   colour: string;
   isHost: boolean;
   isComputer: boolean;
-  aiPolicyVersion: "selfplay-003" | "rules-v1.1.1-wood-001" | null;
+  aiPolicyVersion: "selfplay-003" | "rules-v1.1.1-wood-001" | "rules-v1.1.4-contribution-001" | null;
 }
 
 export interface PublicPlayerState {
@@ -91,7 +92,7 @@ export interface PublicDiscards {
 
 export interface PublicGameState {
   schemaVersion: 1;
-  rulesVersion: "1.1.1";
+  rulesVersion: "1.1.4";
   gameId: string;
   revision: number;
   eventSequence: number;
@@ -128,8 +129,7 @@ export interface PublicEventRecord {
 
 export interface PendingContribution {
   windowId: string;
-  amount: WoodContribution;
-  useFuelLedger?: boolean;
+  card: ContributionCardId;
   submitted: true;
 }
 
@@ -255,8 +255,8 @@ export interface ComputerAdvanceSuccess {
 export interface SubmitWoodCommand {
   type: "SUBMIT_WOOD_CONTRIBUTION";
   windowId: string;
-  amount: WoodContribution;
-  useFuelLedger?: boolean;
+  /** Bank, Tend or Stoke. Fuel Ledger is resolved after the reveal, never committed here. */
+  card: ContributionCardId;
 }
 
 export type AuthoritativeCommand = GameAction | SubmitWoodCommand;
@@ -292,8 +292,7 @@ export interface PrivateSubmissionRecord {
   windowId: string;
   playerId: PlayerId;
   commandId: string;
-  amount: WoodContribution;
-  useFuelLedger?: boolean;
+  card: ContributionCardId;
   revealedRevision: number | null;
 }
 

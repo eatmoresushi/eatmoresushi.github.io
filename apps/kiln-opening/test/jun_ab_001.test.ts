@@ -64,7 +64,7 @@ function junWindow(
   game.state.fireDeck[0] = -1;
   let state = enterFiring(game.state, game.rng);
   let privateState = createPrivateFiringState(state);
-  const submitted = submitWoodContribution(state, privateState, actorId, 1, game.rng);
+  const submitted = submitWoodContribution(state, privateState, actorId, "TEND", game.rng);
   expect(submitted.ok).toBe(true);
   if (!submitted.ok) throw new Error(submitted.error.message);
   state = submitted.state;

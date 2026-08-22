@@ -28,7 +28,7 @@ export function techniquePurchaseCost(
   if (resolvedKind === undefined && observation.game.phase.type === "work_guild") {
     resolvedKind = observation.game.players[observation.playerId]?.workers[observation.game.phase.workerId]?.kind ?? null;
   }
-  return resolvedKind === "shifu" ? Math.max(1, definition.cost - 1) : definition.cost;
+  return resolvedKind === "shifu" ? Math.max(0, definition.cost - 1) : definition.cost;
 }
 
 export function forecastTechniqueAcquisition(
@@ -71,7 +71,10 @@ export function forecastTechniqueAcquisition(
       expectedWindows = Math.min(remainingWindows, Math.floor(missing.length / 2));
       probability = distinct >= 2 ? 0.8 : 0.05;
       beneficialUses = expectedWindows * probability;
-      grossBenefit = beneficialUses * 2 * marginalResourceValue(player.resources.coins, plan.resourceDemand.coins, 0);
+      grossBenefit = beneficialUses * (
+        2 * marginalResourceValue(player.resources.coins, plan.resourceDemand.coins, 0) +
+        marginalResourceValue(player.resources.clay, plan.resourceDemand.clay)
+      );
       compatibility = distinct >= 2 ? 1 : 0;
       reasons.push(distinct >= 2 ? "planned_shape_pair" : "no_different_shape_pair");
       break;
@@ -89,7 +92,9 @@ export function forecastTechniqueAcquisition(
       expectedWindows = Math.min(remainingWindows, missing.length);
       probability = missing.length > 0 ? 0.9 : 0.05;
       beneficialUses = expectedWindows * probability;
-      grossBenefit = beneficialUses * marginalResourceValue(player.resources.coins, plan.resourceDemand.coins, 0);
+      grossBenefit = beneficialUses * (
+        2.2 + marginalResourceValue(player.resources.coins, plan.resourceDemand.coins, 0)
+      );
       compatibility = missing.length;
       reasons.push(missing.length > 0 ? "planned_order_shapes" : "no_missing_order_shape");
       break;
@@ -152,32 +157,41 @@ export function forecastTechniqueAcquisition(
       expectedWindows = Math.min(remainingWindows, Math.ceil(Math.max(0, pipelinePotential) / 2));
       probability = pipelinePotential > 0 ? 0.28 : 0;
       beneficialUses = expectedWindows * probability;
-      grossBenefit = beneficialUses * 1.35 * marginalResourceValue(player.resources.coins, plan.resourceDemand.coins, 0);
+      grossBenefit = beneficialUses * (1.4 + pipelinePotential * 0.12);
       compatibility = pipelinePotential;
-      reasons.push(pipelinePotential > 0 ? "natural_match_chance" : "no_future_firing");
+      reasons.push(pipelinePotential > 0 ? "private_fire_information" : "no_future_firing");
       break;
     }
     case "T13": {
-      expectedWindows = Math.min(remainingWindows, Math.floor(Math.max(0, pipelinePotential) / 2));
-      probability = pipelinePotential >= 4 ? 0.22 : pipelinePotential >= 2 ? 0.08 : 0;
+      expectedWindows = Math.min(remainingWindows, Math.ceil(Math.max(0, pipelinePotential) / 2));
+      probability = pipelinePotential >= 3 ? 0.34 : pipelinePotential >= 1 ? 0.16 : 0;
       beneficialUses = expectedWindows * probability;
       grossBenefit = beneficialUses * (
         marginalResourceValue(player.resources.clay, plan.resourceDemand.clay) +
-        marginalResourceValue(player.resources.coins, plan.resourceDemand.coins, 0)
+        2 * marginalResourceValue(player.resources.coins, plan.resourceDemand.coins, 0)
       );
       compatibility = pipelinePotential;
-      reasons.push(probability >= 0.2 ? "dense_masterpiece_portfolio" : "masterpiece_pair_unlikely");
+      reasons.push(probability >= 0.2 ? "masterpiece_portfolio" : "masterpiece_unlikely");
       break;
     }
     case "T14": {
-      const surplusMasterpieces = Object.values(observation.game.ceramics).filter((ceramic) => ceramic.ownerId === observation.playerId && ceramic.stage === "finished" && ceramic.quality === "masterpiece")
-        .filter((ceramic) => !assignments.some((assignment) => assignment.ceramicId === ceramic.id)).length;
-      expectedWindows = Math.min(remainingWindows, surplusMasterpieces + pipelinePotential * 0.12);
+      const surplusEligible = Object.values(observation.game.ceramics).flatMap((ceramic) =>
+        ceramic.ownerId === observation.playerId &&
+        ceramic.stage === "finished" &&
+        ceramic.quality !== "flawed" &&
+        !assignments.some((assignment) => assignment.ceramicId === ceramic.id)
+          ? [ceramic]
+          : []);
+      const currentSaleValue = surplusEligible.reduce((best, ceramic) => Math.max(
+        best,
+        ceramic.quality === "masterpiece" ? 7 : ceramic.quality === "fine" ? 4 : 2,
+      ), 0);
+      expectedWindows = Math.min(remainingWindows, surplusEligible.length + pipelinePotential * 0.12);
       probability = expectedWindows > 0 ? 0.55 : 0;
       beneficialUses = expectedWindows * probability;
-      grossBenefit = beneficialUses * 3 * marginalResourceValue(player.resources.coins, plan.resourceDemand.coins, 0);
-      compatibility = surplusMasterpieces;
-      reasons.push(surplusMasterpieces > 0 ? "surplus_masterpiece" : "no_unreserved_masterpiece");
+      grossBenefit = beneficialUses * Math.max(2, currentSaleValue) * marginalResourceValue(player.resources.coins, plan.resourceDemand.coins, 0);
+      compatibility = surplusEligible.length;
+      reasons.push(surplusEligible.length > 0 ? "surplus_non_flawed_ceramic" : "no_unreserved_sale_ceramic");
       break;
     }
     case "T15": {
@@ -203,6 +217,9 @@ export function forecastTechniqueAcquisition(
     }
   }
 
+  // Every acquired Technique is worth 1 VP at final scoring in V1.0.9.
+  grossBenefit += 1;
+  reasons.push("printed_endgame_vp");
   probability = clamp(probability);
   const workerOpportunityCost = 1.6 + plan.conversionUrgency * (plan.pipeline.shaped + plan.pipeline.glazed) * 0.45;
   const intentAdjustment = plan.assignedIntent === "Technique-economy" ? 0.35 : 0;

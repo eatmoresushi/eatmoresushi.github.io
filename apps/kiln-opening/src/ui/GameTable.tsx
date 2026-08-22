@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import actionLocationsJson from "../../data/action_locations.json" with { type: "json" };
 import {
+  CONTRIBUTION_CARD_DEFINITIONS,
   GAME_CONFIG,
   IMPERIAL_PROGRESS,
   KILN_DEFINITIONS,
@@ -10,11 +11,13 @@ import {
   ORDER_DEFINITIONS,
   TECHNIQUE_DEFINITIONS,
   activeKilnSpaceIds,
+  contributionWoodCost,
   currentDecisionActor,
   locationCapacity,
   preferredHeat,
 } from "../game";
-import type { CeramicState, FiringContext, LocationId, PlayerId } from "../game";
+import type {
+  ContributionCardId, CeramicState, FiringContext, LocationId, PlayerId } from "../game";
 import type { OrderDefinition } from "../game/content";
 import type { PublicGameState, PublicPlayerState } from "../multiplayer";
 import { term as localizedTerm, useI18n } from "./i18n";
@@ -126,9 +129,6 @@ function PlayerPanel({
         <div><dt>{t("Clay")}</dt><dd>{player.resources.clay}</dd></div>
         <div><dt>{t("Wood")}</dt><dd>{player.resources.wood}</dd></div>
         <div><dt>{t("Progress")}</dt><dd>{player.imperialProgress} / 5</dd></div>
-        <div className="stipend-status"><dt>{t("Stipends")}</dt><dd>{locale === "zh-CN"
-          ? `进度2 ${imperialStipendsReceived.includes(2) ? "已领取" : "未触发"} · 进度4 ${imperialStipendsReceived.includes(4) ? "已领取" : "未触发"}`
-          : `Progress 2 ${imperialStipendsReceived.includes(2) ? "received" : "not reached"} · Progress 4 ${imperialStipendsReceived.includes(4) ? "received" : "not reached"}`}</dd></div>
       </dl>
 
       <section className="plain-subsection">
@@ -272,7 +272,7 @@ function FiringInspector({ game, context, live }: { game: PublicGameState; conte
           <dl className="firing-totals">
             <div><dt>{t("Contributors")}</dt><dd>{contributorCount}</dd></div>
             <div><dt>{t("Wood Contributions")}</dt><dd>{firingContributionText(game, contributions, locale)}</dd></div>
-            <div><dt>{t("Total Wood")}</dt><dd>{Object.values(contributions).reduce((sum, amount) => sum + amount, 0)}</dd></div>
+            <div><dt>{t("Total Wood")}</dt><dd>{Object.values(contributions).reduce((sum, card) => sum + contributionWoodCost(card), 0)}</dd></div>
             <div><dt>{t("Base Heat")}</dt><dd>{latest.baseHeat ?? "—"}</dd></div>
             <div><dt>{t("Fire modifier")}</dt><dd>{latest.fireModifier === null ? "—" : signed(latest.fireModifier)}</dd></div>
             <div><dt>{t("Global Heat")}</dt><dd>{latest.globalHeat ?? "—"}</dd></div>
@@ -309,15 +309,18 @@ function FiringInspector({ game, context, live }: { game: PublicGameState; conte
 
 export function firingContributionText(
   game: Pick<PublicGameState, "players">,
-  contributions: Record<PlayerId, number>,
+  contributions: Record<PlayerId, ContributionCardId>,
   locale: Locale = "en",
 ): string {
   const entries = Object.entries(contributions);
   if (entries.length === 0) return locale === "zh-CN" ? "未记录" : "Not recorded";
   return entries
-    .map(([playerId, amount]) => locale === "zh-CN"
-      ? `${game.players[playerId]?.displayName ?? "玩家"}贡献了${amount}柴薪`
-      : `${game.players[playerId]?.displayName ?? "Player"} contributed ${amount} Wood`)
+    .map(([playerId, card]) => {
+      const definition = CONTRIBUTION_CARD_DEFINITIONS[card];
+      return locale === "zh-CN"
+        ? `${game.players[playerId]?.displayName ?? "玩家"}揭示了${definition.nameZh}`
+        : `${game.players[playerId]?.displayName ?? "Player"} revealed ${definition.name}`;
+    })
     .join(" · ");
 }
 

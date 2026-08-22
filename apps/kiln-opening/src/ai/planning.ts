@@ -75,14 +75,12 @@ function progressMoveValue(
   const exhibitionCapacityValue = (
     rules.exhibitionCapacityByProgress[to]! - rules.exhibitionCapacityByProgress[from]!
   ) * (1.2 + Math.min(3, finished) * 0.8);
-  const stipendValue = (
-    (from < 2 && to >= 2 ? 2 : 0) +
-    (from < 4 && to >= 4 ? 3 : 0)
-  ) * 0.35;
+  // v1.1.4 removed the Coin stipends at Progress 2 and 4, so an advance is worth only
+  // track VP, Apprentice unlocks, Exhibition capacity and the Seal.
   const sealValue = from < 5 && to === 5 && observation.game.imperialSealOwnerId === null
     ? rules.imperialSealVp
     : 0;
-  return trackValue + apprenticeValue + exhibitionCapacityValue + stipendValue + sealValue;
+  return trackValue + apprenticeValue + exhibitionCapacityValue + sealValue;
 }
 
 /**

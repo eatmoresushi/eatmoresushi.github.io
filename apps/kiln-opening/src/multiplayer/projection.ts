@@ -34,7 +34,7 @@ function projectPlayer(state: GameState, playerId: PlayerId): PublicPlayerState 
 }
 
 export function projectPublicGameState(state: GameState): PublicGameState {
-  if (state.rulesVersion !== "1.1.1") throw new Error("Only V1.1.1 games may be projected by the current client");
+  if (state.rulesVersion !== "1.1.4") throw new Error("Only V1.1.4 games may be projected by the current client");
   if (state.phase.type === "firing_contributions" && state.firingContext !== null) {
     throw new Error("Unrevealed Contributions must never enter the public firing context");
   }
@@ -61,7 +61,7 @@ export function projectPublicGameState(state: GameState): PublicGameState {
   }
   return {
     schemaVersion: state.schemaVersion,
-    rulesVersion: state.rulesVersion,
+    rulesVersion: state.rulesVersion as "1.1.4",
     gameId: state.gameId,
     revision: state.revision,
     eventSequence: state.eventSequence,

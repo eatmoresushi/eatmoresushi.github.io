@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SeededRandom, createPrivateFiringState } from "../src/game/index.ts";
+import { GAME_CONFIG, SeededRandom, createPrivateFiringState } from "../src/game/index.ts";
 import type { GameState, PlayerId } from "../src/game/index.ts";
 import { getLegalAIActions } from "../src/ai/legalActions.ts";
 import { LookaheadAIPolicy, V4_SEARCH_CONFIGS } from "../src/ai/lookaheadPolicy.ts";
@@ -41,14 +41,16 @@ describe("Selfplay-004 strategic policy", () => {
     expect(STRATEGIC_SCENARIO_CATALOG.some(({ kind }) => kind === "terminal")).toBe(true);
   });
 
-  it("builds an explicit multi-round action budget under the V1.0.4 base rules", () => {
+  it("builds an explicit multi-round action budget under the authoritative base rules", () => {
     const { state, actorId } = fixture(10_402);
     const observation = createPlayerObservation(state, actorId, createPrivateFiringState(state));
     const plan = buildPlayerPlan(observation, createV4StrategyProfile(2));
     expect(plan.multiRoundRoute.rounds.map(({ round }) => round)).toEqual([1, 2, 3, 4, 5]);
     expect(plan.multiRoundRoute.totalWorkerActionsAvailable).toBeGreaterThan(0);
     expect(plan.multiRoundRoute.orders.map(({ orderId }) => orderId)).toContain(plan.primaryOrderId);
-    expect(observation.rulesVersion).toBe("1.0.4");
+    // The V004 policy is historical, but its observation must report the rules the
+    // authoritative engine is actually running, not the version it was trained on.
+    expect(observation.rulesVersion).toBe(GAME_CONFIG.rulesVersion);
   });
 
   it("is deterministic for the same public observation and AI seed", async () => {

@@ -4,30 +4,23 @@ import { configDefaults, defineConfig } from "vitest/config";
 // A/B-study fixtures. Keep them as historical evidence, but do not make the
 // live V1.1.1 regression gate satisfy obsolete mechanics.
 const historicalRulesTests = [
-  "test/firing.test.ts",
   "test/imperial_progress.test.ts",
   "test/office_guild.test.ts",
-  "test/orders_scoring.test.ts",
   "test/setup.test.ts",
   "test/techniques_kilns.test.ts",
   "test/work_locations.test.ts",
   "test/v065_office.test.ts",
-  "test/v100_rules.test.ts",
-  "test/v101_fire_deck.test.ts",
-  "test/v102_rules.test.ts",
   "test/jun_ab_001.test.ts",
   "test/imperial_track_ab_001.test.ts",
   "test/v104_baseline.test.ts",
   "test/v104_population.test.ts",
   "test/v104_population002.test.ts",
   "test/v104_population003.test.ts",
-  // V1.1.1 replaced the Base Heat band table, the Glaze heats, the kiln layout,
-  // the 48-card Order deck, and Fuel Ledger's secret timing. These assert those.
-  "test/v109_rules.test.ts",
-  "test/v109_ai_contract.test.ts",
+  // Suites pinned to rulesets the engine no longer implements. v1.1.4 removed the
+  // numeric contribution, the contributor-count formula, the rebate and the Progress
+  // stipends, so anything asserting those was deleted rather than migrated.
   "test/v109_bilingual_parity.test.ts",
   "test/v109_population.test.ts",
-  "test/ai_selfplay002.test.ts",
 ];
 
 export default defineConfig({

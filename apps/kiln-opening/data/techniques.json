@@ -5,8 +5,8 @@
     "name": "Large Throwing Wheel",
     "nameZh": "大轮车",
     "cost": 2,
-    "ability": "Once per round, form one Vase or Censer without paying its Clay cost.",
-    "abilityZh": "每回合一次，成型1件瓶或香炉时无需支付其陶土费用。",
+    "ability": "Once per round, when you form a Vase or Censer during a Forming Studio action, ignore that vessel's Clay cost. This does not create an additional vessel or increase the action's limit.",
+    "abilityZh": "每轮一次，在制坯坊行动中制作瓶或炉时，无需支付该器物的陶土费用。此能力不会额外制作器物，也不增加该行动的上限。",
     "oncePerRound": true
   },
   {
@@ -15,8 +15,8 @@
     "name": "Measuring Calipers",
     "nameZh": "校形规",
     "cost": 1,
-    "ability": "After you form a vessel of a second different Shape this round, gain 2 Coins and 1 Clay.",
-    "abilityZh": "本回合成型第二种不同器形的坯体后，获得2铜钱和1陶土。",
+    "ability": "After you form a vessel of a second different Shape this round, gain 1 Coin and 1 Clay.",
+    "abilityZh": "本轮当你制作第二种不同器形的器物后，获得1铜钱和1陶土。",
     "oncePerRound": true
   },
   {
@@ -25,8 +25,8 @@
     "name": "Clay Substitution",
     "nameZh": "代土之资",
     "cost": 3,
-    "ability": "Once per round, pay 3 Coins to gain 3 resources in any combination of Clay and Wood. May be used at any time on your turn, or during any Firing Phase window before Base Heat is determined.",
-    "abilityZh": "每回合一次，支付3铜钱，获得共3个陶土与柴薪的任意组合。可在你的回合中随时使用，或在基础火候确定之前的任何烧窑阶段窗口使用。",
+    "ability": "Once per round, on your turn or before Contribution cards are chosen during the Firing Phase, pay 3 Coins to gain 3 resources in any combination of Clay and Wood.",
+    "abilityZh": "每轮一次，在你的回合中，或在烧制阶段选择出柴牌之前，支付3铜钱，获得任意搭配的3个陶土或柴薪。",
     "oncePerRound": true
   },
   {
@@ -85,8 +85,8 @@
     "name": "Protective Saggars",
     "nameZh": "护胎匣钵",
     "cost": 3,
-    "ability": "After Quality is assigned, pay 1 Coin to improve one of your ceramics by one step from Flawed to Standard or Standard to Fine.",
-    "abilityZh": "判定品第后，支付1铜钱将一件器物提升一级：次品变为合格品，或合格品变为精品。不能产生珍品。",
+    "ability": "After Quality is assigned, spend 1 Wood to improve one of your ceramics by one step from Flawed to Standard or Standard to Fine. It cannot create a Masterpiece.",
+    "abilityZh": "判定品第后，花费1柴薪，将你1件器物提升一级：次品升为标准，或标准升为精品。不能造就珍品。",
     "oncePerRound": true
   },
   {
@@ -95,8 +95,8 @@
     "name": "Fuel Ledger",
     "nameZh": "柴薪簿",
     "cost": 3,
-    "ability": "After Wood Contributions are revealed and before Base Heat is determined, if Base Heat would otherwise be 0 or 1, pay 1 Coin and spend 1 Wood to increase your contribution by 1.",
-    "abilityZh": "出柴牌揭示后、基础火候确定之前，若基础火候原本将为0或1，支付1铜钱并花费1柴薪，使你的出柴量增加1。",
+    "ability": "After all Contribution cards are revealed but before Base Heat is determined, if you revealed Stoke the Fire, you may spend 2 additional Wood. If you do, your Stoke gives +2 Heat instead of +1 this firing.",
+    "abilityZh": "所有出柴牌揭示后、基础火候确定之前，若你揭示的是添薪，可额外花费2柴薪。若如此做，本次烧制中你的添薪改为+2火候而非+1。",
     "oncePerRound": true
   },
   {
@@ -105,8 +105,8 @@
     "name": "Test Pieces",
     "nameZh": "试片",
     "cost": 3,
-    "ability": "Before Wood Contributions are chosen, privately look at the top Fire card, then return it to the top of the deck.",
-    "abilityZh": "出柴牌选定之前，私下查看窑火牌堆顶的1张牌，然后将其放回牌堆顶部。",
+    "ability": "Before Contribution cards are chosen, pay 1 Wood to privately look at the top card of the Fire deck, then return it to the top.",
+    "abilityZh": "选择出柴牌之前，支付1柴薪，私下查看火焰牌堆顶的1张牌，然后将其放回牌堆顶部。",
     "oncePerRound": true
   },
   {
@@ -145,8 +145,8 @@
     "name": "Sagger Selection",
     "nameZh": "匣钵择选",
     "cost": 3,
-    "ability": "After the Fire card is revealed, pay 2 Coins to move its modifier 1 step toward 0 for one of your ceramics.",
-    "abilityZh": "揭示窑火牌后，支付2铜钱，使其修正值对你的1件器物向0移动一格。",
+    "ability": "After the Fire card is revealed, spend 2 Wood. For one of your ceramics, treat the Fire modifier as 1 step closer to 0 this firing.",
+    "abilityZh": "火焰牌揭示后，花费2柴薪。本次烧制中，你的1件器物视火焰调整值向0靠近1步。",
     "oncePerRound": true
   }
 ]

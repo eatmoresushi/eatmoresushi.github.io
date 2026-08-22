@@ -28,10 +28,6 @@ export function imperialOrderNotice(result: CommandSuccess, locale: Locale = "en
   if (completed?.type !== "ORDER_COMPLETED") return null;
   const player = result.game.players[result.actorId];
   const definition = ORDER_DEFINITIONS[completed.orderId];
-  const stipendCoins = (space: 2 | 4): number | null => {
-    const event = result.events.find((candidate) => candidate.type === "IMPERIAL_STIPEND_RECEIVED" && candidate.space === space);
-    return event?.type === "IMPERIAL_STIPEND_RECEIVED" ? event.coins : null;
-  };
   const parts = [locale === "zh-CN"
     ? `玩家完成了${completed.orderId}。+${definition?.vp ?? 0}分。`
     : `Player completed ${completed.orderId}. +${definition?.vp ?? 0} VP.`];
@@ -43,17 +39,15 @@ export function imperialOrderNotice(result: CommandSuccess, locale: Locale = "en
       : `Imperial Progress +${progress.reward}: ${progress.from} → ${progress.to}${capped}.`);
     if (progress.from < 1 && progress.to >= 1) parts.push(locale === "zh-CN" ? "到达地方声望。1名学徒将在清理阶段解锁。" : "Local Renown reached. 1 Apprentice will unlock during Cleanup.");
     if (progress.from < 2 && progress.to >= 2) {
-      const coins = stipendCoins(2);
       parts.push(locale === "zh-CN"
-        ? `到达州府举荐${coins === null ? "" : `，朝廷赏赐+${coins}铜钱`}；终局展陈容量提升至2件。`
-        : `Prefectural Recommendation reached.${coins === null ? "" : ` Court stipend +${coins} Coin${coins === 1 ? "" : "s"};`} End-game Exhibition capacity increases to 2.`);
+        ? "到达州府举荐；终局展陈容量提升至2件。"
+        : "Prefectural Recommendation reached. End-game Exhibition capacity increases to 2.");
     }
     if (progress.from < 3 && progress.to >= 3) parts.push(locale === "zh-CN" ? "到达入朝考核。1名学徒将在清理阶段解锁。" : "Court Examination reached. 1 Apprentice will unlock during Cleanup.");
     if (progress.from < 4 && progress.to >= 4) {
-      const coins = stipendCoins(4);
       parts.push(locale === "zh-CN"
-        ? `到达候见天听${coins === null ? "" : `，朝廷赏赐+${coins}铜钱`}；终局展陈容量提升至3件，并可获得多样性奖励。`
-        : `Awaiting Audience reached.${coins === null ? "" : ` Court stipend +${coins} Coin${coins === 1 ? "" : "s"};`} End-game Exhibition capacity increases to 3 with diversity bonuses.`);
+        ? "到达候见天听；终局展陈容量提升至3件，并可获得多样性奖励。"
+        : "Awaiting Audience reached. End-game Exhibition capacity increases to 3 with diversity bonuses.");
     }
     if (progress.from < 5 && progress.to >= 5) {
       const claimed = result.events.some((event) => event.type === "IMPERIAL_SEAL_CLAIMED");
@@ -515,7 +509,7 @@ export function App() {
         />
       )}
       <footer className="site-footer">
-        <span>{t("Kiln Opening")} V1.1.1</span>
+        <span>{t("Kiln Opening")} V1.1.4</span>
         <a href="https://luyuan.me/">Luyuan He</a>
       </footer>
     </div>

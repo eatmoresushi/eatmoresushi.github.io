@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { currentDecisionActor } from "../src/game";
-import type { GameAction, GameState, PlayerId, WoodContribution } from "../src/game";
+import type { GameAction, GameState, PlayerId, ContributionCardId } from "../src/game";
 import {
   AuthoritativeGameService,
   InMemoryMultiplayerStore,
@@ -261,7 +261,7 @@ async function enterTwoContributorFiring(harness: Harness): Promise<{
   await command(harness, secondId, {
     type: "USE_KILN_YARD",
     workerId: availableWorker(harness.game.game, secondId, "shifu"),
-    loads: [{ ceramicId: secondCeramic.id, kilnSpaceId: "middle_2" }],
+    loads: [{ ceramicId: secondCeramic.id, kilnSpaceId: "low_1" }],
   });
   while (harness.game.game.phase.type === "work") {
     await command(harness, harness.game.game.phase.activePlayerId, { type: "PASS_WORK_PHASE" });
@@ -522,7 +522,7 @@ describe("private Wood Contributions and reconnect", () => {
     await command(harness, firstId, {
       type: "SUBMIT_WOOD_CONTRIBUTION",
       windowId,
-      amount: 2,
+      card: "STOKE",
     });
     expect(harness.game.game.phase).toEqual(
       expect.objectContaining({ type: "firing_contributions", submittedPlayerIds: [firstId] }),
@@ -532,7 +532,7 @@ describe("private Wood Contributions and reconnect", () => {
       { type: "WOOD_SUBMITTED", playerId: firstId, windowId },
     ]);
     expect(JSON.stringify(harness.game.game)).not.toContain('"amount":2');
-    expect(harness.game.ownPendingContribution?.amount).toBe(2);
+    expect(harness.game.ownPendingContribution?.card).toBe("STOKE");
 
     const firstReconnect = valueOf(
       await harness.service.reconnect({
@@ -547,7 +547,7 @@ describe("private Wood Contributions and reconnect", () => {
       }),
     );
     expect(firstReconnect.seat.playerId).toBe(firstId);
-    expect(firstReconnect.ownPendingContribution).toEqual({ windowId, amount: 2, useFuelLedger: false, submitted: true });
+    expect(firstReconnect.ownPendingContribution).toEqual({ windowId, card: "STOKE",  submitted: true });
     expect(secondReconnect.ownPendingContribution).toBeNull();
     expect(firstReconnect.game).toEqual(secondReconnect.game);
 
@@ -559,7 +559,7 @@ describe("private Wood Contributions and reconnect", () => {
       command: {
         type: "SUBMIT_WOOD_CONTRIBUTION",
         windowId,
-        amount: 4 as WoodContribution,
+        card: "FIRE_HARD" as unknown as ContributionCardId,
       },
     });
     expect(bad).toEqual(
@@ -569,11 +569,12 @@ describe("private Wood Contributions and reconnect", () => {
     await command(harness, secondId, {
       type: "SUBMIT_WOOD_CONTRIBUTION",
       windowId,
-      amount: 1,
+      card: "TEND",
     });
     expect(harness.game.revision).toBe(revisionBeforeReveal + 1);
     expect(harness.game.events.some((event) => event.type === "WOOD_REVEALED")).toBe(true);
-    expect(harness.game.game.players[firstId]!.resources.wood).toBe(woodBefore - 2);
+    // Stoke costs its printed 1 Wood; there is no rebate and no per-ceramic load grant.
+    expect(harness.game.game.players[firstId]!.resources.wood).toBe(woodBefore - 1);
     expect(harness.store.audit().privateSubmissions.every((submission) => submission.revealedRevision !== null)).toBe(true);
   });
 
@@ -581,19 +582,19 @@ describe("private Wood Contributions and reconnect", () => {
     const harness = await startHarness();
     const { firstId, secondId, windowId } = await enterTwoContributorFiring(harness);
     const expectedRevision = harness.game.revision;
-    const submit = (playerId: PlayerId, amount: WoodContribution, suffix: string) => {
+    const submit = (playerId: PlayerId, card: ContributionCardId, suffix: string) => {
       const connection = connectionFor(harness, playerId);
       return harness.service.executeCommand({
         roomCode: connection.room.code,
         seatToken: connection.seatToken,
         commandId: `00000000-0000-4000-9300-${suffix}`,
         expectedRevision,
-        command: { type: "SUBMIT_WOOD_CONTRIBUTION", windowId, amount },
+        command: { type: "SUBMIT_WOOD_CONTRIBUTION", windowId, card },
       });
     };
     const results = await Promise.all([
-      submit(firstId, 1, "000000000001"),
-      submit(secondId, 0, "000000000002"),
+      submit(firstId, "TEND", "000000000001"),
+      submit(secondId, "BANK", "000000000002"),
     ]);
     expect(results.every((result) => result.ok)).toBe(true);
     const reconnect = valueOf(
@@ -621,14 +622,14 @@ describe("private Wood Contributions and reconnect", () => {
         seatToken: connection.seatToken,
         commandId: "00000000-0000-4000-9400-000000000001",
         expectedRevision,
-        command: { type: "SUBMIT_WOOD_CONTRIBUTION", windowId, amount: 1 },
+        command: { type: "SUBMIT_WOOD_CONTRIBUTION", windowId, card: "TEND" },
       }),
       harness.service.executeCommand({
         roomCode: connection.room.code,
         seatToken: connection.seatToken,
         commandId: "00000000-0000-4000-9400-000000000002",
         expectedRevision,
-        command: { type: "SUBMIT_WOOD_CONTRIBUTION", windowId, amount: 2 },
+        command: { type: "SUBMIT_WOOD_CONTRIBUTION", windowId, card: "STOKE" },
       }),
     ]);
     expect(results.filter((result) => result.ok)).toHaveLength(1);
@@ -674,7 +675,8 @@ describe("Imperial Progress persistence and realtime", () => {
         roomCode: connection.room.code,
         seatToken: connection.seatToken,
       }));
-      expect(reconnected.game?.players[actorId]?.resources.coins).toBe(6);
+      // v1.1.4 removed the Progress 2 Coin stipend, so no 2 Coins arrive with the advance.
+      expect(reconnected.game?.players[actorId]?.resources.coins).toBe(4);
       expect(reconnected.game?.players[actorId]?.imperialProgress).toBe(2);
       expect(reconnected.game?.players[actorId]?.completedOrders).toContainEqual(
         expect.objectContaining({ orderId: "I01" }),
@@ -708,10 +710,10 @@ describe("Imperial Progress persistence and realtime", () => {
     unsubscribe();
     expect(notifications).toBe(1);
     expect(harness.game.events).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: "IMPERIAL_PROGRESS_ADVANCED", playerId: actorId, from: 2, to: 4, reward: 2 }),
+      expect.objectContaining({ type: "IMPERIAL_PROGRESS_ADVANCED", playerId: actorId, from: 2, to: 3, reward: 1 }),
     ]));
     expect(harness.game.game.players[actorId]).toEqual(expect.objectContaining({
-      imperialProgress: 4,
+      imperialProgress: 3,
       pendingApprenticeUnlocks: 1,
     }));
 
@@ -721,7 +723,7 @@ describe("Imperial Progress persistence and realtime", () => {
         seatToken: connection.seatToken,
       }));
       const player = reconnected.game?.players[actorId];
-      expect(player?.imperialProgress).toBe(4);
+      expect(player?.imperialProgress).toBe(3);
       expect(player?.pendingApprenticeUnlocks).toBe(1);
       expect(Object.values(player?.workers ?? {}).filter((worker) => worker.status === "available")).toHaveLength(4);
       expect(Object.values(player?.workers ?? {}).filter((worker) => worker.status === "locked")).toHaveLength(2);

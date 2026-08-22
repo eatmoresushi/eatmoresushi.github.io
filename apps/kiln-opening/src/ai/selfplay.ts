@@ -1,7 +1,11 @@
 import {
+  GLAZES,
+  contributionWoodCost,
+  preferredHeat,
   KILN_IDS,
   ORDER_DEFINITIONS,
   SeededRandom,
+  activeKilnSpaceIds,
   applyAction,
   createGame,
   createPrivateFiringState,
@@ -9,6 +13,7 @@ import {
   submitWoodContribution,
 } from "../game/index.ts";
 import type {
+  ContributionCardId,
   CeramicState,
   GameEvent,
   GameExperimentConfig,
@@ -22,9 +27,9 @@ import { createPlayerObservation } from "./observation.ts";
 import { getLegalAIActions } from "./legalActions.ts";
 import { actionTechniqueId } from "./legalActions.ts";
 import { HeuristicAIPolicy } from "./policy.ts";
-import { V111Policy } from "./v111Policy.ts";
 import { LookaheadAIPolicy, V4_SEARCH_CONFIGS } from "./lookaheadPolicy.ts";
 import { RolloutAIPolicy } from "./rolloutPolicy.ts";
+import { V114Policy } from "./v114Policy.ts";
 import { V5_ROLLOUT_CONFIGS } from "./decisionOracle.ts";
 import { learningPhase } from "./strategy.ts";
 import { createV6LeafEvaluator } from "./v6LeafModel.ts";
@@ -42,7 +47,13 @@ import type {
   V4SearchConfig,
   V5RolloutConfig,
 } from "./types.ts";
-import { AI_POLICY_V111_VERSION, AI_POLICY_V4_VERSION, AI_POLICY_V5_VERSION, AI_POLICY_V6_VERSION, AI_POLICY_VERSION } from "./types.ts";
+import {
+  AI_POLICY_V114_VERSION,
+  AI_POLICY_V4_VERSION,
+  AI_POLICY_V5_VERSION,
+  AI_POLICY_V6_VERSION,
+  AI_POLICY_VERSION,
+} from "./types.ts";
 
 export interface SelfPlayGameConfig {
   gameId: string;
@@ -141,7 +152,9 @@ export interface FiringCeramicRow {
   kilnZone: "high" | "middle" | "low";
   zoneModifier: number;
   contributorCount: number;
-  contribution: number;
+  /** The Contribution card this ceramic's owner revealed. */
+  contributionCard: ContributionCardId;
+  /** Wood paid by every contributor this firing, at the cards' printed costs. */
   totalWood: number;
   baseHeat: number;
   fireModifier: number;
@@ -244,7 +257,7 @@ function zoneFromSpace(spaceId: string): "high" | "middle" | "low" {
 }
 
 function activeSpaceCount(playerCount: PlayerCount): number {
-  return playerCount === 2 ? 6 : playerCount === 3 ? 7 : 8;
+  return activeKilnSpaceIds(playerCount).length;
 }
 
 interface CurrentFiringAbilities {
@@ -311,7 +324,7 @@ function deriveKilnFirings(rows: readonly FiringCeramicRow[], playerCount: Playe
   }
   return [...groups.values()].map((group) => {
     const first = group[0]!;
-    const contributions = Object.fromEntries(group.map((row) => [row.ownerId, row.contribution]));
+    const contributions = Object.fromEntries(group.map((row) => [row.ownerId, row.contributionCard]));
     const active = activeSpaceCount(playerCount);
     return {
       gameId: first.gameId,
@@ -376,8 +389,8 @@ function recordFiringEvents(
       kilnZone: zoneFromSpace(ceramic.kilnSpaceId),
       zoneModifier: event.zoneModifier,
       contributorCount: Object.keys(contributions).length,
-      contribution: contributions[ceramic.ownerId] ?? 0,
-      totalWood: Object.values(contributions).reduce((sum, amount) => sum + amount, 0),
+      contributionCard: contributions[ceramic.ownerId] ?? "TEND",
+      totalWood: Object.values(contributions).reduce((sum, card) => sum + contributionWoodCost(card), 0),
       baseHeat,
       fireModifier: event.fireModifier,
       preAbilityGlobalHeat: globalHeat,
@@ -436,8 +449,8 @@ function recordSecondFiringChoice(
     kilnZone: zoneFromSpace(ceramic.kilnSpaceId),
     zoneModifier: result.zoneModifier,
     contributorCount: context.contributors.length,
-    contribution: context.contributions[ceramic.ownerId] ?? 0,
-    totalWood: Object.values(context.contributions).reduce((sum, amount) => sum + amount, 0),
+    contributionCard: context.contributions[ceramic.ownerId] ?? "TEND",
+    totalWood: Object.values(context.contributions).reduce((sum, card) => sum + contributionWoodCost(card), 0),
     baseHeat: context.baseHeat,
     fireModifier: context.fireModifier,
     preAbilityGlobalHeat: context.globalHeat,
@@ -461,12 +474,16 @@ function recordSecondFiringChoice(
   });
 }
 
-const GAME_CONFIG_GLAZE_HEAT: Record<string, number> = {
-  white: 1,
-  celadon: 2,
-  grey_green: 2,
-  moon_white: 3,
-};
+/**
+ * Preferred Heat for firing telemetry, read from the authoritative content rather than
+ * duplicated here. The previous hard-coded copy still carried the pre-V1.1.1 values
+ * (grey_green 2, moon_white 3) against the shipped 3 and 4, so every pre-fire alignment
+ * figure for those two Glazes was measured one step off. The engine was never affected --
+ * it assigns Quality from its own preferredHeat() -- so only this telemetry was wrong.
+ */
+export const GAME_CONFIG_GLAZE_HEAT: Record<string, number> = Object.fromEntries(
+  GLAZES.map((glaze) => [glaze, preferredHeat(glaze)]),
+);
 
 export async function runSelfPlayGame(config: SelfPlayGameConfig): Promise<SelfPlayGameResult> {
   const started = performance.now();
@@ -494,8 +511,8 @@ export async function runSelfPlayGame(config: SelfPlayGameConfig): Promise<SelfP
       const profile = profileFor(playerId);
       const rng = new SeededRandom((config.aiSeed + (index + 1) * 0x9e3779b9) >>> 0);
       const version = policyVersionFor(playerId);
-      const policy: AIPolicy = version === AI_POLICY_V111_VERSION
-        ? new V111Policy(profile, rng)
+      const policy: AIPolicy = version === AI_POLICY_V114_VERSION
+        ? new V114Policy(profile, rng)
         : version === AI_POLICY_V6_VERSION
         ? (() => {
             if (config.v6LeafModel === undefined) throw new Error("Selfplay-006 requires a calibrated V1.0.2 leaf model");
@@ -588,7 +605,7 @@ export async function runSelfPlayGame(config: SelfPlayGameConfig): Promise<SelfP
         state,
         privateFiringState,
         actorId,
-        decision.action.amount,
+        decision.action.card,
         gameRng,
       );
       if (!contributionResult.ok) {
@@ -666,6 +683,25 @@ export async function runSelfPlayGame(config: SelfPlayGameConfig): Promise<SelfP
         eventType: event.type,
         eventJson: JSON.stringify(event),
       });
+      if (event.type === "STARTING_ORDERS_REVEALED") {
+        for (const [startingPlayerId, orderIds] of Object.entries(event.ordersByPlayer)) {
+          for (const orderId of orderIds) {
+            eventRows.push({
+              gameId: config.gameId,
+              decisionIndex,
+              round: before.round,
+              actorId: startingPlayerId,
+              eventType: "STARTING_ORDER_KEPT",
+              eventJson: JSON.stringify({
+                type: "STARTING_ORDER_KEPT",
+                playerId: startingPlayerId,
+                orderId,
+                telemetryOnlyOpeningPair: true,
+              }),
+            });
+          }
+        }
+      }
     }
     if (before.phase.type === "setup_kiln_selection" && state.phase.type !== "setup_kiln_selection") {
       const awaitingDecision = state.phase.type === "setup_starting_orders"

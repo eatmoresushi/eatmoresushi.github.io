@@ -22,9 +22,10 @@ export const AI_SIMULATION_V4_VERSION = "v1.0.2-selfplay-004-compat" as const;
 export const AI_POLICY_V5_VERSION = "selfplay-005" as const;
 export const AI_SIMULATION_V5_VERSION = "v1.0.2-selfplay-005-compat" as const;
 export const AI_POLICY_V6_VERSION = "selfplay-006" as const;
-/** V1.1.1 online policy: frozen V003 play with a computed Wood bid. */
-export const AI_POLICY_V111_VERSION = "rules-v1.1.1-wood-001" as const;
-export const AI_SIMULATION_V111_VERSION = "v1.1.1-wood-001" as const;
+/** V1.1.1 candidate: frozen V003 play with a computed Wood bid. */
+export const AI_POLICY_V114_VERSION = "rules-v1.1.4-contribution-001" as const;
+export const AI_SIMULATION_V114_VERSION = "v1.1.4-contribution-001" as const;
+/** V1.1.1 joint candidate: chooses kiln zone and Wood bid for one target Base Heat. */
 export const AI_SIMULATION_V6_VERSION = "v1.0.2-selfplay-006-leaf-001" as const;
 
 export type AIPolicyVersion =
@@ -32,7 +33,7 @@ export type AIPolicyVersion =
   | typeof AI_POLICY_V4_VERSION
   | typeof AI_POLICY_V5_VERSION
   | typeof AI_POLICY_V6_VERSION
-  | typeof AI_POLICY_V111_VERSION;
+  | typeof AI_POLICY_V114_VERSION;
 
 export type AIAction = AuthoritativeCommand;
 
@@ -183,11 +184,13 @@ export interface ImperialRouteForecast {
 }
 
 export interface PlayerObservation {
-  /** Historical snapshots remain readable; live observations are V1.0.4. */
-  rulesVersion: "1.0.2" | "1.0.4";
+  /** Rules contract used to interpret every public and private field below. */
+  rulesVersion: "1.0.2" | "1.0.4" | "1.0.9" | "1.1.1" | "1.1.4";
   playerId: PlayerId;
   game: PublicGameState;
   ownPendingContribution: PendingContribution | null;
+  /** Private Test Pieces information for this player only. */
+  ownFireModifierPeek: FireModifier | null;
   knownFireRemaining: Record<"-2" | "-1" | "0" | "1" | "2", number>;
   junActivationCoinCost: 0 | 1 | 2;
   imperialTrackRules: ActiveImperialTrackRules;
@@ -356,9 +359,9 @@ export interface AIPolicy {
 
 export interface AIStrategyProfile {
   /** Rules used to create or train this serialized profile. */
-  rulesVersion: "1.0.1" | "1.0.2" | "1.0.4" | "1.0.9" | "1.1.1";
+  rulesVersion: "1.0.1" | "1.0.2" | "1.0.4" | "1.0.9" | "1.1.1" | "1.1.4";
   /** Current engine rules; permits an explicit historical-policy compatibility audit. */
-  currentRulesVersion?: "1.0.2" | "1.0.4" | "1.0.9" | "1.1.1";
+  currentRulesVersion?: "1.0.2" | "1.0.4" | "1.0.9" | "1.1.1" | "1.1.4";
   aiPolicyVersion: AIPolicyVersion;
   playerCount: PlayerCount;
   gamesLearned: number;

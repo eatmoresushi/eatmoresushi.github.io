@@ -58,22 +58,8 @@ describe("English / Simplified Chinese localization", () => {
     expect(chinese).toContain("终局展陈最多1件");
     expect(chinese).toContain("终局展陈最多2件");
     expect(chinese).toContain("终局展陈最多3件");
-    expect(chinese).toContain("V1.1.1");
+    expect(chinese).toContain("V1.1.4");
     expect(JSON.stringify(publicGame)).toBe(before);
   });
 
-  it("renders persisted public states created before stipend history was added", () => {
-    const publicGame = projectPublicGameState(startedGame(2, 10_402).state);
-    const ownPlayerId = publicGame.playerOrder[0]!;
-    const legacyPlayer = publicGame.players[ownPlayerId] as unknown as {
-      imperialStipendsReceived?: Array<2 | 4>;
-    };
-    delete legacyPlayer.imperialStipendsReceived;
-
-    const english = localizedMarkup("en", createElement(GameTable, { game: publicGame, ownPlayerId }));
-    const chinese = localizedMarkup("zh-CN", createElement(GameTable, { game: publicGame, ownPlayerId }));
-
-    expect(english).toContain("Progress 2 not reached");
-    expect(chinese).toContain("进度2 未触发");
-  });
 });

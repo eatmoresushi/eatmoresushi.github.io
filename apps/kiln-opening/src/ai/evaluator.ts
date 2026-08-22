@@ -2,6 +2,8 @@ import {
   DECORATION_COSTS,
   IMPERIAL_PROGRESS,
   ORDER_DEFINITIONS,
+  contributionHeatAdjustment,
+  contributionWoodCost,
   QUALITY_RANK,
   SHAPE_COSTS,
   determineBaseHeat,
@@ -370,6 +372,12 @@ function scoreAction(
       factors.futureVP += action.kilnId === context.assignedTradition ? 1_000 : -1_000;
       factors.learned += profile.traditionValues[action.kilnId];
       return;
+    case "SUBMIT_STARTING_ORDERS":
+      factors.orderFeasibility += action.orderIds.reduce(
+        (sum, orderId) => sum + acquisitionScore(observation, profile, intent, orderId).value,
+        0,
+      );
+      return;
     case "KEEP_STARTING_ORDER": {
       const orderId = observation.game.phase.type === "setup_starting_orders"
         ? observation.game.phase.initialOrderIds?.[observation.playerId] ?? observation.game.phase.offeredOrderIds[observation.playerId]?.[0]
@@ -413,6 +421,16 @@ function scoreAction(
       for (let index = 0; index < action.wood; index += 1) {
         factors.resourceDemand += marginalResourceValue(woodBase + index, plan.resourceDemand.wood);
       }
+      if (action.exchange !== undefined) {
+        const giveDemand = action.exchange.give === "clay" ? plan.resourceDemand.clay : plan.resourceDemand.wood;
+        const receiveDemand = action.exchange.give === "clay" ? plan.resourceDemand.wood : plan.resourceDemand.clay;
+        const giveBase = action.exchange.give === "clay" ? clayBase + action.clay : woodBase + action.wood;
+        const receiveBase = action.exchange.give === "clay" ? woodBase + action.wood : clayBase + action.clay;
+        for (let index = 0; index < action.exchange.amount; index += 1) {
+          factors.resourceDemand -= marginalResourceValue(giveBase - index, giveDemand);
+          factors.resourceDemand += marginalResourceValue(receiveBase + index, receiveDemand);
+        }
+      }
       factors.opportunityCost -= Math.max(0, clayBase + action.clay - plan.resourceDemand.clay - 2) * 1.25;
       factors.opportunityCost -= Math.max(0, woodBase + action.wood - plan.resourceDemand.wood - 2) * 1.7;
       return;
@@ -420,6 +438,8 @@ function scoreAction(
     case "FORM_CERAMICS": {
       const needed = assignments.filter((assignment) => assignment.currentStage === "missing");
       const remaining = [...needed];
+      const workerKind = actionWorkerKind(observation, action);
+      let formingClayCost = 0;
       for (const shape of action.shapes) {
         const index = remaining.findIndex((assignment) => assignment.shape === shape);
         if (index >= 0) {
@@ -432,18 +452,45 @@ function scoreAction(
               ? -10
               : -5;
         }
-        factors.resourceEfficiency -= SHAPE_COSTS[shape] * 0.18;
+        formingClayCost += workerKind === "shifu" && (shape === "vase" || shape === "censer")
+          ? 1
+          : SHAPE_COSTS[shape];
       }
+      const substitutions = action.claySubstitutions ?? (action.claySubstitutionTarget === undefined ? 0 : 1);
+      factors.resourceEfficiency -= (formingClayCost - substitutions) * marginalResourceValue(
+        player.resources.clay,
+        plan.resourceDemand.clay,
+      ) * 0.25;
+      factors.resourceEfficiency -= substitutions * marginalResourceValue(
+        player.resources.coins,
+        plan.resourceDemand.coins,
+        0,
+      ) * 0.25;
       if (action.dingExtraShape !== undefined) {
         const useful = needed.some((assignment) => assignment.shape === action.dingExtraShape);
         factors.planProgress += useful ? 5.5 : -4;
       }
       factors.conversionUrgency -= plan.conversionUrgency * (plan.pipeline.shaped + plan.pipeline.glazed) * 0.35;
       factors.opportunityCost -= terminalCeramicCost(observation, action);
-      factors.resourceEfficiency += (action.useTechniqueIds?.length ?? 0) * 0.7;
+      if (action.useTechniqueIds?.includes("T01")) {
+        factors.resourceDemand += marginalResourceValue(player.resources.clay, plan.resourceDemand.clay);
+      }
+      if (action.useTechniqueIds?.includes("T02")) {
+        factors.resourceDemand += marginalResourceValue(player.resources.clay, plan.resourceDemand.clay)
+          + 2 * marginalResourceValue(player.resources.coins, plan.resourceDemand.coins, 0);
+      }
+      if (action.dryingFrames !== undefined) factors.planProgress += 3.5;
       return;
     }
     case "GLAZE_CERAMICS": {
+      const freeDecorationCeramicId = action.freeDecorationCeramicId ??
+        (action.shifuMode === "free_single" ? action.selections[0]?.ceramicId : undefined);
+      let totalDecorationCost = action.selections.reduce((sum, selection) => (
+        sum + (selection.ceramicId === freeDecorationCeramicId ? 0 : DECORATION_COSTS[selection.decoration])
+      ), 0);
+      if (action.useTechniqueIds?.includes("T05")) totalDecorationCost -= DECORATION_COSTS.carved;
+      if (action.useTechniqueIds?.includes("T06")) totalDecorationCost -= DECORATION_COSTS.impressed;
+      factors.resourceEfficiency -= Math.max(0, totalDecorationCost) * 0.2;
       for (const selection of action.selections) {
         const planned = assignments.find((assignment) => assignment.ceramicId === selection.ceramicId);
         if (planned === undefined) factors.planProgress += plan.terminalForecast.presentationCapacity > 0
@@ -451,12 +498,10 @@ function scoreAction(
           : observation.game.round >= 4 ? -8 : -2.5;
         else if (planned.glaze === selection.glaze && planned.decoration === selection.decoration) factors.planProgress += 7.2;
         else factors.planProgress -= 5;
-        factors.resourceEfficiency -= DECORATION_COSTS[selection.decoration] * 0.2;
         factors.qualityValue += expectedQualityValue(observation, profile, selection.glaze, 0, 2) * 0.22;
       }
       factors.conversionUrgency += action.selections.length * plan.conversionUrgency * 2.4;
       factors.opportunityCost -= terminalCeramicCost(observation, action);
-      if (action.shifuMode === "free_single") factors.resourceEfficiency += 0.9;
       return;
     }
     case "USE_KILN_YARD": {
@@ -477,24 +522,22 @@ function scoreAction(
         }
       }
       factors.conversionUrgency += action.loads.length * (2.5 + plan.conversionUrgency * 2.8);
+      for (let index = 0; index < action.loads.length; index += 1) {
+        factors.resourceDemand += marginalResourceValue(player.resources.wood + index, plan.resourceDemand.wood);
+      }
       return;
     }
     case "OFFICE_GAIN_COINS": {
-      const amount = actionWorkerKind(observation, action) === "shifu" ? 4 : 3;
+      const amount = actionWorkerKind(observation, action) === "shifu" ? 4 : 2;
       for (let index = 0; index < amount; index += 1) factors.resourceDemand += marginalResourceValue(player.resources.coins + index, plan.resourceDemand.coins, 0);
       if (player.resources.coins >= plan.resourceDemand.coins + 1) factors.opportunityCost -= 4;
       return;
     }
     case "BEGIN_OFFICE_ORDERS": {
-      const handLimit = player.kilnId === "GU" ? 4 : 3;
-      if (player.orderHand.length >= handLimit) {
-        factors.risk -= 20;
-        return;
-      }
       const visible = [...observation.game.displays.market, ...observation.game.displays.imperial]
         .map((orderId) => acquisitionScore(observation, profile, intent, orderId).value)
         .sort((left, right) => right - left);
-      const capacity = Math.min(action.mode === "take_up_to_two" ? 2 : 1, handLimit - player.orderHand.length);
+      const capacity = action.mode === "take_up_to_two" ? 2 : 1;
       factors.orderFeasibility += visible.slice(0, capacity).reduce((sum, value) => sum + Math.max(-2, value), 0) * 0.35;
       if (action.mode === "take_one_and_gain_two_coins") factors.resourceDemand += 2 * marginalResourceValue(player.resources.coins, plan.resourceDemand.coins, 0);
       factors.opportunityCost -= plan.conversionUrgency * (plan.pipeline.shaped + plan.pipeline.glazed) * 1.1;
@@ -505,6 +548,9 @@ function scoreAction(
       factors.orderFeasibility += acquisition.value;
       return;
     }
+    case "OFFICE_CHOOSE_COLOUR_SAMPLES_ORDER":
+      factors.orderFeasibility += acquisitionScore(observation, profile, intent, action.orderId).value;
+      return;
     case "OFFICE_USE_COLOUR_SAMPLES":
       factors.orderFeasibility += 0.5;
       return;
@@ -537,18 +583,27 @@ function scoreAction(
       return;
     case "OFFICE_RESOLVE_CONNOISSEUR_NETWORK":
       if (action.ceramicId !== null) {
+        const ceramic = observation.game.ceramics[action.ceramicId];
         const reserved = assignments.some((assignment) => assignment.ceramicId === action.ceramicId);
-        factors.resourceEfficiency += 5 * marginalResourceValue(player.resources.coins, plan.resourceDemand.coins, 0);
+        const saleCoins = ceramic?.stage === "finished"
+          ? ceramic.quality === "masterpiece" ? 7 : ceramic.quality === "fine" ? 4 : ceramic.quality === "standard" ? 2 : 0
+          : 0;
+        factors.resourceEfficiency += saleCoins * marginalResourceValue(player.resources.coins, plan.resourceDemand.coins, 0);
         factors.opportunityCost -= reserved ? 8 : 0;
       }
       return;
     case "USE_COURT_PATRONAGE": {
       const unlockValue = player.imperialProgress === 1 && observation.game.round < 5 ? 3.5 : 0;
-      const nextProgress = Math.min(5, player.imperialProgress + 1);
+      // How far one Court Patronage actually moves, and what the track actually pays for
+      // it, both come from the active rules. Hard-coding either would leave the agent
+      // blind to the imperial-economy arms and make the A/B measure its arithmetic.
+      const nextProgress = Math.min(4, player.imperialProgress + 1);
       const capacityGain = observation.imperialTrackRules.exhibitionCapacityByProgress[nextProgress]! -
         observation.imperialTrackRules.exhibitionCapacityByProgress[player.imperialProgress]!;
       const exhibitionValue = capacityGain * (3 + Math.min(3, plan.pipeline.finished) * 1.5);
-      const stipendValue = player.imperialProgress === 1 ? 2 * 0.35 : player.imperialProgress === 3 ? 3 * 0.35 : 0;
+      // v1.1.4 removed the Progress 2 and 4 Coin stipends, so advancing pays only in
+      // track VP, Apprentice unlocks and Exhibition capacity.
+      const stipendValue = 0;
       const trackVpGain = observation.imperialTrackRules.trackVp[nextProgress]! -
         observation.imperialTrackRules.trackVp[player.imperialProgress]!;
       const deadEndPenalty = observation.game.round >= 5 && capacityGain === 0 && stipendValue === 0 && trackVpGain === 0
@@ -591,30 +646,43 @@ function scoreAction(
         }
       }
       return;
+    case "RESOLVE_KILN_YARD_REPOSITION":
+      if (action.ceramicId !== null && action.toSpaceId !== null) {
+        const ceramic = observation.game.ceramics[action.ceramicId];
+        const baseHeat = observation.game.firingContext?.baseHeat;
+        if (ceramic?.stage === "loaded" && baseHeat !== null && baseHeat !== undefined) {
+          const before = expectedQualityValue(observation, profile, ceramic.glaze, kilnZoneModifier(ceramic.kilnSpaceId), baseHeat);
+          const after = expectedQualityValue(observation, profile, ceramic.glaze, kilnZoneModifier(action.toSpaceId), baseHeat);
+          factors.qualityValue += after - before;
+        }
+      }
+      return;
     case "SUBMIT_WOOD_CONTRIBUTION": {
       const loaded = ceramics.filter((ceramic) => ceramic.stage === "loaded");
-      const contributorCount = observation.game.phase.type === "firing_contributions"
-        ? observation.game.phase.eligiblePlayerIds.length
-        : 1;
-      const estimatedOthers = Math.max(0, contributorCount - 1) * 1.4;
-      const baseHeat = determineBaseHeat(contributorCount, Math.round(action.amount + estimatedOthers));
+      // Predict the rest of the table on the neutral card, which is both the free option
+      // and the one nobody is individually paid to abandon, then score the Base Heat this
+      // card would produce for the ceramics this player actually has in the kiln.
+      const projected = determineBaseHeat([contributionHeatAdjustment(action.card)]);
       for (const ceramic of loaded) {
         if (ceramic.stage !== "loaded") continue;
-        factors.qualityValue += expectedQualityValue(observation, profile, ceramic.glaze, kilnZoneModifier(ceramic.kilnSpaceId), baseHeat);
+        factors.qualityValue += expectedQualityValue(observation, profile, ceramic.glaze, kilnZoneModifier(ceramic.kilnSpaceId), projected);
       }
-      // Contributions are simultaneous and hidden. A one-Wood convention is
-      // the stable, non-collusive way for identical policies to target the
-      // contributor-scaled Base Heat 2 threshold without assuming others shirk.
-      factors.qualityValue += loaded.length > 0 ? (action.amount === 1 ? 2.2 : -Math.abs(action.amount - 1) * 1.2) : 0;
-      factors.resourceEfficiency -= action.amount * marginalResourceValue(player.resources.wood, plan.resourceDemand.wood) * 0.45;
+      // Charge the card's printed Wood cost. Bank and Stoke both cost 1, so cooling is
+      // never cheaper than heating and the agent has no structural reason to free-ride.
+      factors.resourceEfficiency -= contributionWoodCost(action.card) *
+        marginalResourceValue(player.resources.wood, plan.resourceDemand.wood) * 0.45;
       return;
     }
     case "RESOLVE_FUEL_LEDGER": {
       const firing = observation.game.firingContext;
       if (firing === null) return;
-      const total = Object.values(firing.contributions).reduce((sum, amount) => sum + amount, 0);
-      const beforeHeat = determineBaseHeat(firing.contributors.length, total);
-      const afterHeat = determineBaseHeat(firing.contributors.length, total + 1);
+      // Fuel Ledger turns this player's revealed Stoke into +2, one extra step of Heat.
+      const adjustments = firing.contributors.map((contributorId) => {
+        const card = firing.contributions[contributorId];
+        return card === undefined ? 0 : contributionHeatAdjustment(card);
+      });
+      const beforeHeat = determineBaseHeat(adjustments);
+      const afterHeat = determineBaseHeat([...adjustments, 1]);
       let grossBenefit = 0;
       for (const ceramic of ceramics) {
         if (ceramic.stage !== "loaded") continue;
@@ -715,8 +783,21 @@ function scoreAction(
         );
       }
       return;
+    case "RESOLVE_FIRING_CLAY_SUBSTITUTION":
+      // Three resources for 3 Coins, taken in the Firing Phase. Its distinctive value is
+      // buying Wood while a Contribution card can still be chosen with it.
+      if (action.use) {
+        factors.resourceEfficiency +=
+          action.clay * marginalResourceValue(player.resources.clay, plan.resourceDemand.clay)
+          + action.wood * marginalResourceValue(player.resources.wood, plan.resourceDemand.wood)
+          - CLAY_SUBSTITUTION_COIN_COST * marginalResourceValue(player.resources.coins, plan.resourceDemand.coins, 0);
+      }
+      return;
     case "RESOLVE_TEST_PIECES":
-      if (action.use) factors.resourceEfficiency += marginalResourceValue(player.resources.coins, plan.resourceDemand.coins, 0);
+      if (action.use) {
+        const loadedCount = ceramics.filter(({ stage }) => stage === "loaded").length;
+        factors.qualityValue += 0.8 + loadedCount * 0.45;
+      }
       return;
     case "RESOLVE_KILN_RECORDS":
       if (action.use) factors.resourceEfficiency += marginalResourceValue(player.resources.clay, plan.resourceDemand.clay)
@@ -744,6 +825,12 @@ function scoreAction(
     }
     case "END_ORDER_TURN":
       if (primary?.actionDebt === 0) factors.opportunityCost -= 12;
+      return;
+    case "DISCARD_ORDERS_FOR_CLEANUP":
+      factors.orderFeasibility -= action.orderIds.reduce(
+        (sum, orderId) => sum + acquisitionScore(observation, profile, intent, orderId).value,
+        0,
+      );
       return;
     case "SUBMIT_PRESENTATION": {
       const selected = action.ceramicIds
@@ -774,6 +861,8 @@ export function strategyTags(observation: PlayerObservation): StrategyTag[] {
   tags.push(ownCeramics(observation).length >= 5 ? "Volume" : "Quality");
   return tags;
 }
+
+const CLAY_SUBSTITUTION_COIN_COST = 3;
 
 export function evaluateAction(
   observation: PlayerObservation,

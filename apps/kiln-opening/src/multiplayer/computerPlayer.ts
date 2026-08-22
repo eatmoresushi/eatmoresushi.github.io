@@ -3,20 +3,26 @@ import type { GameState, PlayerId, PrivateFiringState } from "../game/index.ts";
 import { getLegalAIActions } from "../ai/legalActions.ts";
 import { createPlayerObservation } from "../ai/observation.ts";
 import { HeuristicAIPolicy } from "../ai/policy.ts";
-import { V111Policy, createV111Profile } from "../ai/v111Policy.ts";
+import { V114Policy, createV114Profile } from "../ai/v114Policy.ts";
 import { createProductionV3Profile } from "../ai/productionProfile.ts";
-import { AI_POLICY_V111_VERSION } from "../ai/types.ts";
+import { AI_POLICY_V114_VERSION } from "../ai/types.ts";
 import type { AIAction, AIDecisionContext, StrategyIntent } from "../ai/types.ts";
 import type { StoredSeat } from "./types.ts";
 
 /**
- * The policy the online computer seats play. Promoted from frozen V003 to the V1.1.1
- * Wood candidate: V003 was trained when every Glaze aligned at Base Heat 2 and the bid
- * changed nothing, so it bids exactly 1 in 100% of firings and never uses the 0-5 range
- * V1.1.1 opened. Measured at +0.577 focal VP over 300 matched pairs on disjoint seeds.
+ * The policy online computer seats play.
+ *
+ * v1.1.4 replaced the numeric 0-3 Wood bid with three Contribution cards, so the shipped
+ * policy is rebuilt around Bank / Tend / Stoke rather than retuned. Frozen V003 cannot
+ * play this ruleset at all -- it chooses a numeric bid that no longer exists -- and every
+ * room below v1.1.4 is rejected by the version gate before reaching this code, so the
+ * legacy path is retired rather than kept as a live branch.
  */
-export const ONLINE_COMPUTER_POLICY_VERSION = AI_POLICY_V111_VERSION;
-/** Seats created before the promotion keep playing V003 for the rest of their game. */
+export const ONLINE_COMPUTER_POLICY_VERSION = AI_POLICY_V114_VERSION;
+/**
+ * Retained so a stored pre-v1.1.4 seat still decodes. Rooms carrying it are rejected by
+ * the rules-version gate, so it is never dispatched to a policy.
+ */
 export const LEGACY_ONLINE_COMPUTER_POLICY_VERSION = "selfplay-003" as const;
 
 export function nextOnlineDecisionActor(state: GameState): PlayerId | null {
@@ -48,10 +54,8 @@ export async function chooseOnlineComputerAction(
   seat: StoredSeat,
 ): Promise<AIAction> {
   const seatPolicy = seat.aiPolicyVersion;
-  const supported = seatPolicy === ONLINE_COMPUTER_POLICY_VERSION ||
-    seatPolicy === LEGACY_ONLINE_COMPUTER_POLICY_VERSION;
-  if (!seat.isComputer || !supported || seat.aiSeed === null) {
-    throw new Error(`Seat ${seat.seatId} is not a configured V003 computer`);
+  if (!seat.isComputer || seatPolicy !== ONLINE_COMPUTER_POLICY_VERSION || seat.aiSeed === null) {
+    throw new Error(`Seat ${seat.seatId} is not a configured v1.1.4 computer seat`);
   }
   const actorId = nextOnlineDecisionActor(state);
   if (actorId !== seat.playerId) throw new Error(`Computer ${seat.playerId} is not the current actor`);
@@ -68,12 +72,8 @@ export async function chooseOnlineComputerAction(
     explorationRate: 0,
     mode: "live",
   };
-  // A seat plays the policy it was created with, so a game already in flight never
-  // changes opponent behaviour underneath its players.
   const rng = new SeededRandom(policySeed);
-  const policy = seatPolicy === LEGACY_ONLINE_COMPUTER_POLICY_VERSION
-    ? new HeuristicAIPolicy(createProductionV3Profile(state.playerCount), rng)
-    : new V111Policy(createV111Profile(state.playerCount), rng);
+  const policy = new V114Policy(createV114Profile(state.playerCount), rng);
   const decision = await policy.chooseAction(observation, legalActions, context);
   return decision.action;
 }

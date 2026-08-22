@@ -1,5 +1,12 @@
 export type PlayerId = string;
-export type RulesVersion = "1.0.4" | "1.0.9" | "1.1.1";
+export type RulesVersion = "1.0.4" | "1.0.9" | "1.1.1" | "1.1.4";
+
+/**
+ * The three v1.1.4 Contribution cards. Bank (-1 Heat, 1 Wood), Tend (0, 0) and
+ * Stoke (+1, 1). There is deliberately no fourth card: Fire the Kiln Hard was removed
+ * from the set, so no FIRE_HARD value exists to be chosen by mistake.
+ */
+export type ContributionCardId = "BANK" | "TEND" | "STOKE";
 export type WorkerId = string;
 export type CeramicId = string;
 export type VesselInstanceId = string;
@@ -16,6 +23,10 @@ export type Decoration = "plain" | "carved" | "impressed" | "crackle";
 export type Quality = "flawed" | "standard" | "fine" | "masterpiece";
 export type FireModifier = -2 | -1 | 0 | 1 | 2;
 export type TechniqueDiscipline = "forming" | "glazing" | "firing";
+/**
+ * Legacy numeric contribution, retained only so serialized pre-v1.1.4 matches still
+ * decode. v1.1.4 play uses ContributionCardId; nothing in the live rules produces this.
+ */
 export type WoodContribution = 0 | 1 | 2 | 3;
 export type KilnId = "RU" | "GU" | "GE" | "DI" | "JU";
 export type LocationId =
@@ -196,7 +207,14 @@ export interface FiringCeramicResult {
 export interface FiringContext {
   round: RoundNumber;
   contributors: PlayerId[];
-  contributions: Record<PlayerId, number>;
+  /** The Contribution card each contributor revealed. */
+  contributions: Record<PlayerId, ContributionCardId>;
+  /**
+   * Contributors whose Stoke was upgraded to +2 Heat by Fuel Ledger this firing. The
+   * upgrade is resolved after the reveal and before Base Heat, so it cannot be read off
+   * the revealed card alone.
+   */
+  fuelLedgerUpgradedBy: PlayerId[];
   baseHeat: BaseHeat | null;
   fireModifier: FireModifier | null;
   globalHeat: number | null;
@@ -213,7 +231,7 @@ export interface FiringResultSummary {
   /** Present on states produced after the firing-recap UI update. */
   contributors?: PlayerId[];
   /** Revealed effective contributions, including any Fuel Ledger adjustment. */
-  contributions?: Record<PlayerId, number>;
+  contributions?: Record<PlayerId, ContributionCardId>;
   baseHeat: BaseHeat;
   fireModifier: FireModifier;
   globalHeat: number;
@@ -391,7 +409,17 @@ export interface ImperialTrackExperimentConfig {
   readonly imperialSealVp: 2 | 3;
 }
 
-export type GameExperimentConfig = JunAbExperimentConfig | ImperialTrackExperimentConfig;
+
+
+
+
+
+
+
+
+export type GameExperimentConfig =
+  | JunAbExperimentConfig
+  | ImperialTrackExperimentConfig;
 
 export interface PlayerSetup {
   id: PlayerId;
@@ -498,6 +526,12 @@ export type GameAction =
   | { type: "RESOLVE_PROTECTIVE_SAGGARS"; ceramicId: CeramicId | null }
   | { type: "RESOLVE_SECOND_FIRING"; ceramicId: CeramicId | null }
   | { type: "RESOLVE_TEST_PIECES"; use: boolean }
+  /**
+   * Clay Substitution used inside the Firing Phase. The rulebook allows it on the owner's
+   * turn or before Contribution cards are chosen; the Work Phase route is handled by the
+   * Forming action's technique list, and this is the firing-window route.
+   */
+  | { type: "RESOLVE_FIRING_CLAY_SUBSTITUTION"; clay: number; wood: number; use: boolean }
   | { type: "RESOLVE_KILN_RECORDS"; use: boolean }
   | {
       type: "COMPLETE_ORDER";
@@ -587,7 +621,7 @@ export type GameEvent =
     }
   | { type: "WORK_PHASE_ENDED" }
   | { type: "WOOD_SUBMITTED"; playerId: PlayerId; windowId: string }
-  | { type: "WOOD_REVEALED"; contributions: Record<PlayerId, number> }
+  | { type: "WOOD_REVEALED"; contributions: Record<PlayerId, ContributionCardId> }
   | { type: "FIRE_REVEALED"; modifier: FireModifier; baseHeat: BaseHeat; globalHeat: number }
   | { type: "QUALITY_ASSIGNED"; ceramicId: CeramicId; quality: Quality }
   | {
@@ -664,7 +698,7 @@ export type CreateGameResult =
 export interface PrivateFiringState {
   gameId: string;
   windowId: string | null;
-  contributions: Record<PlayerId, WoodContribution | { amount: WoodContribution; useFuelLedger: boolean }>;
+  contributions: Record<PlayerId, ContributionCardId>;
 }
 
 export type SubmitContributionResult =

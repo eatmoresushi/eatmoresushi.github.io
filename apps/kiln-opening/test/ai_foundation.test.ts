@@ -30,12 +30,12 @@ describe("reusable AI foundation", () => {
     const privateState: PrivateFiringState = {
       gameId: state.gameId,
       windowId: "secret-window",
-      contributions: { [playerId]: 2, [otherId]: 3 },
+      contributions: { [playerId]: "STOKE", [otherId]: "BANK" },
     };
     const observation = createPlayerObservation(state, playerId, privateState);
     const otherObservation = createPlayerObservation(otherFireOrder, playerId, privateState);
     expect(observation).toEqual(otherObservation);
-    expect(observation.ownPendingContribution?.amount).toBe(2);
+    expect(observation.ownPendingContribution?.card).toBe("STOKE");
     expect(observation.game.firingContext).toBeNull();
     expect(JSON.stringify(observation)).not.toContain(`"${otherId}":3`);
     expect(Object.values(observation.knownFireRemaining).reduce((sum, count) => sum + count, 0)).toBe(10);
@@ -128,7 +128,8 @@ describe("reusable AI foundation", () => {
     state.firingContext = {
       round: state.round,
       contributors: [actorId],
-      contributions: { [actorId]: 1 },
+      contributions: { [actorId]: "TEND" },
+    fuelLedgerUpgradedBy: [],
       baseHeat: 2,
       fireModifier: 2,
       globalHeat: 4,

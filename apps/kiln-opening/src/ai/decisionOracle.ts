@@ -187,7 +187,13 @@ function applyRolloutAction(
   rng: SeededRandom,
 ): { ok: true; state: GameState; privateState: PrivateFiringState } | { ok: false } {
   if (action.type === "SUBMIT_WOOD_CONTRIBUTION") {
-    const result = submitWoodContribution(state, privateState, actorId, action.amount, rng);
+    const result = submitWoodContribution(
+      state,
+      privateState,
+      actorId,
+      action.card,
+      rng,
+    );
     return result.ok
       ? { ok: true, state: result.state, privateState: result.privateState }
       : { ok: false };

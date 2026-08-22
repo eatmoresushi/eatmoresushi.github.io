@@ -1,6 +1,6 @@
 {
   "name": "kiln-opening-rules-engine",
-  "version": "1.1.1",
+  "version": "1.1.4",
   "private": true,
   "type": "module",
   "scripts": {
@@ -29,6 +29,18 @@
     "selfplay:v102:006:quick": "node --no-warnings --experimental-strip-types src/ai/runSelfPlay006Study.ts --quick",
     "selfplay:v102:smoke": "node --no-warnings --experimental-strip-types src/ai/runV102Smoke.ts",
     "selfplay:v104:smoke": "node --no-warnings --experimental-strip-types src/ai/runV104Smoke.ts",
+    "selfplay:v104:baseline": "node --no-warnings --experimental-strip-types src/ai/runV104BaselineStudy.ts --games-per-count 50 --output playtests/v1.0.4/selfplay-003-baseline-001",
+    "selfplay:v104:population": "node --no-warnings --experimental-strip-types src/ai/runV104PopulationStudy.ts --output playtests/v1.0.4/population-001",
+    "selfplay:v104:population:quick": "node --no-warnings --experimental-strip-types src/ai/runV104PopulationStudy.ts --quick --output playtests/v1.0.4/population-001-quick",
+    "selfplay:v104:population:002": "node --no-warnings --experimental-strip-types src/ai/runV104PopulationStudy.ts --population-002 --output playtests/v1.0.4/population-002",
+    "selfplay:v104:population:002:quick": "node --no-warnings --experimental-strip-types src/ai/runV104PopulationStudy.ts --population-002 --quick --output playtests/v1.0.4/population-002-quick",
+    "selfplay:v104:population:003": "node --no-warnings --experimental-strip-types src/ai/runV104PopulationStudy.ts --population-003 --output playtests/v1.0.4/population-003",
+    "selfplay:v104:population:003:quick": "node --no-warnings --experimental-strip-types src/ai/runV104PopulationStudy.ts --population-003 --quick --output playtests/v1.0.4/population-003-quick",
+    "selfplay:v109:baseline": "node --no-warnings --experimental-strip-types src/ai/runV109BaselineStudy.ts --games-per-count 50 --output playtests/v1.0.9/v109-v003-compat-001",
+    "selfplay:v109:population:prepare": "node --no-warnings --experimental-strip-types src/ai/runV109PopulationPrecommit.ts --output playtests/v1.0.9/v109-population-001/precommit",
+    "selfplay:v109:population": "node --no-warnings --experimental-strip-types src/ai/runV109PopulationStudy.ts --output playtests/v1.0.9/v109-population-001",
+    "selfplay:v109:population:quick": "node --no-warnings --experimental-strip-types src/ai/runV109PopulationStudy.ts --quick --output playtests/v1.0.9/v109-population-001-quick",
+    "selfplay:v109:population:confirm": "node --no-warnings --experimental-strip-types src/ai/runV109PopulationConfirmatory.ts",
     "experiment:jun-ab-001": "node --no-warnings --experimental-strip-types src/ai/runJunAbExperiment.ts",
     "experiment:imperial-track-ab-001": "node --no-warnings --experimental-strip-types src/ai/runImperialTrackExperiment.ts"
   },

@@ -7,6 +7,7 @@ import kilnsJson from "../../data/kilns.json" with { type: "json" };
 import ordersJson from "../../data/orders.json" with { type: "json" };
 import techniquesJson from "../../data/techniques.json" with { type: "json" };
 import type {
+  ContributionCardId,
   Decoration,
   FireModifier,
   Glaze,
@@ -22,7 +23,7 @@ import type {
 } from "./types.ts";
 
 interface GameConfigDefinition {
-  rulesVersion: "1.1.1";
+  rulesVersion: "1.1.4";
   players: { min: number; max: number };
   rounds: number;
   startingResources: { clay: number; wood: number; coins: number };
@@ -107,10 +108,22 @@ export interface TechniqueDefinition {
   oncePerRound: boolean;
 }
 
+export interface ContributionCardDefinition {
+  id: ContributionCardId;
+  name: string;
+  nameZh: string;
+  woodCost: number;
+  heatAdjustment: number;
+  meaning: string;
+  meaningZh: string;
+}
+
 interface FiringDefinition {
-  rulesVersion: "1.1.1";
+  rulesVersion: "1.1.4";
   kilnSpaces: Array<{ id: KilnSpaceId; zone: "high" | "middle" | "low"; modifier: -1 | 0 | 1 }>;
   fireDeck: FireModifier[];
+  contributionCards: ContributionCardDefinition[];
+  baseHeatRule: { formula: string; start: number; minimum: number; maximum: number; contributors: string };
 }
 
 interface ComponentDefinition {
@@ -130,7 +143,7 @@ export interface KilnDefinition {
 
 export const GAME_CONFIG = gameConfigJson as unknown as GameConfigDefinition;
 const ACTION_LOCATION_FILE = actionLocationsJson as unknown as {
-  rulesVersion: "1.1.1";
+  rulesVersion: "1.1.4";
   locations: LocationDefinition[];
 };
 const ORDER_FILE = ordersJson as unknown as {
@@ -140,7 +153,7 @@ const ORDER_FILE = ordersJson as unknown as {
 const TECHNIQUE_FILE = techniquesJson as unknown as TechniqueDefinition[];
 const FIRING_FILE = firingJson as unknown as FiringDefinition;
 const COMPONENT_FILE = componentsJson as unknown as {
-  rulesVersion: "1.1.1";
+  rulesVersion: "1.1.4";
   components: ComponentDefinition[];
 };
 
@@ -186,7 +199,7 @@ export const SHAPE_COSTS = GAME_CONFIG.shapes;
 export const DECORATION_COSTS = GAME_CONFIG.decorations;
 
 export interface ImperialProgressDefinition {
-  rulesVersion: "1.1.1";
+  rulesVersion: "1.1.4";
   track: Array<{
     space: number;
     title: string;
@@ -196,7 +209,6 @@ export interface ImperialProgressDefinition {
     endGameVp: number;
   }>;
   imperialSealVp: number;
-  stipends: Record<"2" | "4", number>;
   exhibition: {
     capacityByProgress: [number, number, number, number, number, number];
     diversityEligibleSpaces: number[];
@@ -210,6 +222,19 @@ export interface ImperialProgressDefinition {
 }
 
 export const IMPERIAL_PROGRESS = imperialProgressJson as unknown as ImperialProgressDefinition;
+
+/** The three v1.1.4 Contribution cards, in Bank / Tend / Stoke order. */
+export const CONTRIBUTION_CARDS: readonly ContributionCardDefinition[] = FIRING_FILE.contributionCards;
+
+export const CONTRIBUTION_CARD_DEFINITIONS = Object.fromEntries(
+  CONTRIBUTION_CARDS.map((card) => [card.id, card]),
+) as Record<ContributionCardId, ContributionCardDefinition>;
+
+export const CONTRIBUTION_CARD_IDS: readonly ContributionCardId[] =
+  CONTRIBUTION_CARDS.map((card) => card.id);
+
+/** Where Base Heat starts before any Contribution card is applied. */
+export const BASE_HEAT_START = FIRING_FILE.baseHeatRule.start;
 
 export function locationCapacity(locationId: LocationId, playerCount: PlayerCount): number {
   return LOCATION_DEFINITIONS[locationId].capacity[String(playerCount) as "2" | "3" | "4"];
@@ -235,11 +260,11 @@ export const COMMON_SUPPLY = {
 
 function validateContent(): void {
   if (
-    GAME_CONFIG.rulesVersion !== "1.1.1" ||
-    ACTION_LOCATION_FILE.rulesVersion !== "1.1.1" ||
-    FIRING_FILE.rulesVersion !== "1.1.1" ||
-    COMPONENT_FILE.rulesVersion !== "1.1.1" ||
-    IMPERIAL_PROGRESS.rulesVersion !== "1.1.1"
+    GAME_CONFIG.rulesVersion !== "1.1.4" ||
+    ACTION_LOCATION_FILE.rulesVersion !== "1.1.4" ||
+    FIRING_FILE.rulesVersion !== "1.1.4" ||
+    COMPONENT_FILE.rulesVersion !== "1.1.4" ||
+    IMPERIAL_PROGRESS.rulesVersion !== "1.1.4"
   ) {
     throw new Error("Rules content version mismatch");
   }

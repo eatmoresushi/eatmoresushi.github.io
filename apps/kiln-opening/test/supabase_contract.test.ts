@@ -13,6 +13,8 @@ import v109Migration from "../supabase/migrations/202608140001_v109_rules.sql?ra
 import createRoomSeatKeyMigration from "../supabase/migrations/202608150001_fix_create_room_seat_key.sql?raw";
 import createRoomSeatColumnsMigration from "../supabase/migrations/202608150002_fix_create_room_seat_columns.sql?raw";
 import v111Migration from "../supabase/migrations/202608160001_v111_rules.sql?raw";
+import v114Migration from "../supabase/migrations/202608220001_v114_rules.sql?raw";
+import onlineAiV114Migration from "../supabase/migrations/202608220002_online_ai_v114.sql?raw";
 import onlineAiMigration from "../supabase/migrations/202608100002_online_ai_v003.sql?raw";
 import edgeFunction from "../supabase/functions/game-action/index.ts?raw";
 import service from "../src/multiplayer/service.ts?raw";
@@ -210,6 +212,38 @@ describe("Supabase security contract", () => {
     expect(edgeFunction).not.toMatch(/error:\s*\{[^}]*stack/i);
   });
 
+  it("stamps new rooms v1.1.4 and hard-cuts older started games", () => {
+    expect(v114Migration).toContain("'1.1.1', '1.1.4'");
+    expect(v114Migration).toContain("set rules_version = '1.1.4', content_version = '1.1.4'");
+    expect(v114Migration).toContain("where status = 'lobby'");
+    // Only unstarted lobbies move. A started pre-v1.1.4 board is never reinterpreted.
+    expect(v114Migration).not.toMatch(/update public\.rooms[\s\S]{0,400}where status <> 'lobby'/);
+    expect(v114Migration).toContain("values (p_room_id, upper(p_code), 'lobby', p_seat_id, '1.1.4', '1.1.4', 0)");
+  });
+
+  it("persists a Contribution card rather than a numeric bid, with no sealed Fuel Ledger", () => {
+    expect(v114Migration).toContain("add column if not exists contribution_card text");
+    expect(v114Migration).toContain("contribution_card in ('BANK', 'TEND', 'STOKE')");
+    // Exactly one of the legacy amount and the card is present on any row.
+    expect(v114Migration).toContain("num_nonnulls(contribution, contribution_card) = 1");
+    expect(v114Migration).toContain("alter column contribution drop not null");
+    expect(v114Migration).toContain("'card', ps.contribution_card");
+    expect(v114Migration).toContain("room_id, window_id, player_id, command_id, contribution_card");
+    expect(v114Migration).toContain("p_private_submission->>'card'");
+    // v1.1.4 resolves Fuel Ledger after the reveal, so it is never sealed with the card.
+    expect(v114Migration).not.toContain("useFuelLedger");
+    expect(v114Migration).not.toContain("use_fuel_ledger");
+  });
+
+  it("promotes online computer seats to the v1.1.4 Contribution policy", () => {
+    expect(onlineAiV114Migration).toContain("'rules-v1.1.4-contribution-001'");
+    expect(onlineAiV114Migration).toContain("set policy_version = 'rules-v1.1.4-contribution-001'");
+    expect(onlineAiV114Migration).toContain("where r.id = ai.room_id and r.status = 'lobby'");
+    // Older values stay legal so stored rows still read, but are never dispatched.
+    expect(onlineAiV114Migration).toContain("'selfplay-003', 'rules-v1.1.1-wood-001', 'rules-v1.1.4-contribution-001'");
+  });
+
+  /** Historical: the v1.0.9 migration's own shape, superseded by 202608220001. */
   it("persists Fuel Ledger with the sealed Wood submission", () => {
     expect(v109Migration).toContain("add column if not exists use_fuel_ledger boolean not null default false");
     expect(v109Migration).toContain("'useFuelLedger', ps.use_fuel_ledger");

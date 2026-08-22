@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.1.1",
+  "rulesVersion": "1.1.4",
   "locations": [
     {
       "id": "materials_yard",
@@ -52,10 +52,10 @@
         "3": 4,
         "4": 5
       },
-      "apprentice": "Load 1 glazed ceramic into an empty active kiln space and gain 1 Wood.",
-      "apprenticeZh": "将1件施釉器物装入任一空的启用窑位，并获得1柴薪。",
-      "shifu": "Load up to 2 glazed ceramics, gain 1 Wood per ceramic loaded, then receive the pre-Fire reposition opportunity.",
-      "shifuZh": "装入至多2件施釉器物，每件获得1柴薪；基础火候确定后可移窑。",
+      "apprentice": "Load 1 glazed ceramic into an empty active kiln space.",
+      "apprenticeZh": "将1件施釉器物装入任一空的启用窑位。",
+      "shifu": "Load up to 2 glazed ceramics, then receive the pre-Fire reposition opportunity.",
+      "shifuZh": "装入至多2件施釉器物；基础火候确定后可移窑。",
       "clarifications": [
         "Gain 1 Wood per ceramic actually loaded.",
         "At least 1 eligible ceramic must be loaded.",
@@ -71,10 +71,10 @@
         "3": 3,
         "4": 4
       },
-      "apprentice": "Choose one: take 1 face-up or blind-top Market or Imperial Order; or gain 2 Coins. After a normal main action, you may sell 1 Flawed ceramic for 1 Coin.",
-      "apprenticeZh": "二选一：拿取1张订单（明牌或从任一牌堆顶盲抽），或获得2铜钱。正常主行动后，可出售至多1件次品，获得1铜钱。",
-      "shifu": "Choose one: take up to 2 face-up or blind-top Orders; take 1 Order and gain 2 Coins; gain 4 Coins; or use eligible Court Patronage. After a normal main action, you may sell up to 2 Flawed ceramics for 1 Coin each.",
-      "shifuZh": "四选一：拿取至多2张订单；拿1张订单并获得2铜钱；获得4铜钱；或在符合条件时执行朝廷恩荫。正常主行动后，可出售至多2件次品，每件获得1铜钱。",
+      "apprentice": "Choose one: take 1 face-up or blind-top Market or Imperial Order; or gain 2 Coins. After a normal main action, you may sell 1 Flawed ceramic for 2 Coins.",
+      "apprenticeZh": "二选一：拿取1张订单（明牌或从任一牌堆顶盲抽），或获得2铜钱。正常主行动后，可出售至多1件次品，获得2铜钱。",
+      "shifu": "Choose one: take up to 2 face-up or blind-top Orders; take 1 Order and gain 2 Coins; gain 4 Coins; or use eligible Court Patronage. After a normal main action, you may sell up to 2 Flawed ceramics for 2 Coins each.",
+      "shifuZh": "四选一：拿取至多2张订单；拿1张订单并获得2铜钱；获得4铜钱；或在符合条件时执行朝廷恩荫。正常主行动后，可出售至多2件次品，每件获得2铜钱。",
       "clarification": "Court Patronage requires a completed Imperial Order, costs 5 Coins, advances Progress by 1 only from spaces 0-3, and grants neither Colour Samples nor a Flawed sale."
     },
     {

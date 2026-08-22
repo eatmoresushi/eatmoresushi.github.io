@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.1.1",
+  "rulesVersion": "1.1.4",
   "track": [
     {
       "space": 0,
@@ -21,8 +21,8 @@
       "space": 2,
       "title": "Prefectural Recommendation",
       "titleZh": "州府举荐",
-      "reward": "Gain 2 Coins immediately.",
-      "rewardZh": "立即获得2铜钱。",
+      "reward": null,
+      "rewardZh": null,
       "endGameVp": 2
     },
     {
@@ -37,8 +37,8 @@
       "space": 4,
       "title": "Awaiting Audience",
       "titleZh": "待诏候见",
-      "reward": "Gain 3 Coins immediately; full End-game Exhibition access.",
-      "rewardZh": "立即获得3铜钱；终局展陈容量提升至3件，并可获得多样性奖励。",
+      "reward": "Full End-game Exhibition access.",
+      "rewardZh": "获得完整的终局展览资格。",
       "endGameVp": 4
     },
     {
@@ -51,10 +51,6 @@
     }
   ],
   "imperialSealVp": 2,
-  "stipends": {
-    "2": 2,
-    "4": 3
-  },
   "exhibition": {
     "capacityByProgress": [
       1,

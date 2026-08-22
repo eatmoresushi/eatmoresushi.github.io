@@ -158,8 +158,6 @@
   .resource-row div { text-align: center; }
   .resource-row dt { color: var(--ink-soft); font-size: .58rem; text-transform: uppercase; }
   .resource-row dd { font-family: var(--serif); font-size: 1.1rem; }
-  .resource-row .stipend-status { grid-column: 1 / -1; text-align: left; }
-  .resource-row .stipend-status dd { overflow-wrap: anywhere; font-family: var(--sans); font-size: .7rem; }
   .worker-row { display: flex; gap: .35rem; min-height: 28px; }
   .worker-token { display: grid; width: 26px; height: 26px; place-items: center; border: 1px solid var(--celadon-dark); border-radius: 50%; color: white; font-size: .72rem; background: var(--celadon-dark); }
   .worker-apprentice { border-radius: 6px; }

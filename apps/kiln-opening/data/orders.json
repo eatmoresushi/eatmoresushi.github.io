@@ -92,7 +92,7 @@
       ],
       "minQuality": "fine",
       "vp": 8,
-      "coins": 2
+      "coins": 3
     },
     {
       "id": "M09",
@@ -224,7 +224,7 @@
         }
       ],
       "minQuality": "standard",
-      "vp": 10,
+      "vp": 9,
       "coins": 5
     },
     {
@@ -379,7 +379,7 @@
       ],
       "minQuality": "fine",
       "vp": 10,
-      "coins": 4
+      "coins": 5
     },
     {
       "id": "M25",
@@ -412,7 +412,7 @@
       ],
       "minQuality": "fine",
       "vp": 10,
-      "coins": 4
+      "coins": 5
     },
     {
       "id": "M27",
@@ -466,7 +466,7 @@
       ],
       "minQuality": "fine",
       "vp": 12,
-      "coins": 4
+      "coins": 5
     },
     {
       "id": "M30",
@@ -476,7 +476,7 @@
         }
       ],
       "minQuality": "standard",
-      "vp": 5,
+      "vp": 4,
       "coins": 3
     }
   ],
@@ -491,9 +491,9 @@
         }
       ],
       "minQuality": "masterpiece",
-      "vp": 7,
+      "vp": 9,
       "coins": 0,
-      "imperialProgressReward": 2
+      "imperialProgressReward": 1
     },
     {
       "id": "I02",
@@ -519,9 +519,9 @@
         }
       ],
       "minQuality": "masterpiece",
-      "vp": 8,
+      "vp": 10,
       "coins": 0,
-      "imperialProgressReward": 2
+      "imperialProgressReward": 1
     },
     {
       "id": "I04",

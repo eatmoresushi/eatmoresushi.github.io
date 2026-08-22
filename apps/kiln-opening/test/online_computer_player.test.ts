@@ -63,7 +63,7 @@ async function createHost(): Promise<{
   return { service, store, host };
 }
 
-describe("online V003 computer seats", () => {
+describe("online v1.1.4 computer seats", () => {
   it("lets the host add, remove, and restore multiple stable computer seats", async () => {
     const { service, store, host } = await createHost();
     let seats = host.seats;
@@ -78,9 +78,9 @@ describe("online V003 computer seats", () => {
     expect(seats).toHaveLength(4);
     expect(seats.filter((seat) => seat.isComputer)).toHaveLength(3);
     expect(seats.slice(1).map((seat) => seat.aiPolicyVersion)).toEqual([
-      "selfplay-003",
-      "selfplay-003",
-      "selfplay-003",
+      "rules-v1.1.4-contribution-001",
+      "rules-v1.1.4-contribution-001",
+      "rules-v1.1.4-contribution-001",
     ]);
     expect(store.audit().credentials).toHaveLength(1);
 
@@ -200,7 +200,7 @@ describe("online V003 computer seats", () => {
       colour: "celadon",
       isHost: false,
       isComputer: true,
-      aiPolicyVersion: "selfplay-003",
+      aiPolicyVersion: "rules-v1.1.4-contribution-001",
       authUserId: null,
       aiSeed: 47_003,
       aiCreatedCommandId: "40000000-0000-4000-8000-000000000002",
@@ -235,7 +235,7 @@ describe("online V003 computer seats", () => {
     const virtualHumanPolicySeat: StoredSeat = {
       ...host.seat,
       isComputer: true,
-      aiPolicyVersion: "selfplay-003",
+      aiPolicyVersion: "rules-v1.1.4-contribution-001",
       aiSeed: 99_001,
       aiCreatedCommandId: "50000000-0000-4000-8000-000000000011",
       authUserId: "host-user",
@@ -269,7 +269,7 @@ describe("online V003 computer seats", () => {
         privateState = {
           gameId: head.state.gameId,
           windowId: head.state.phase.windowId,
-          contributions: Object.fromEntries(submissions.map((submission) => [submission.playerId, submission.amount])),
+          contributions: Object.fromEntries(submissions.map((submission) => [submission.playerId, submission.card])),
         };
       }
       const action = await chooseOnlineComputerAction(head.state, privateState, virtualHumanPolicySeat);

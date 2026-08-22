@@ -55,7 +55,8 @@ function afterFire(
   state.firingContext = {
     round: state.round,
     contributors: [actorId],
-    contributions: { [actorId]: 1 },
+    contributions: { [actorId]: "TEND" },
+    fuelLedgerUpgradedBy: [],
     baseHeat,
     fireModifier,
     globalHeat: baseHeat + fireModifier,

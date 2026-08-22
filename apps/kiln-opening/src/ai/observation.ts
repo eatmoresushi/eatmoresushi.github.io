@@ -15,16 +15,11 @@ export function createPlayerObservation(
   playerId: PlayerId,
   privateFiringState: PrivateFiringState,
 ): PlayerObservation {
-  const ownAmount = privateFiringState.contributions[playerId];
-  const normalizedOwnAmount = typeof ownAmount === "number" ? ownAmount : ownAmount?.amount;
+  const ownCard = privateFiringState.contributions[playerId];
   const ownPendingContribution: PendingContribution | null =
-    ownAmount === undefined || state.phase.type !== "firing_contributions"
+    ownCard === undefined || state.phase.type !== "firing_contributions"
       ? null
-      : {
-          windowId: state.phase.windowId,
-          amount: normalizedOwnAmount as PendingContribution["amount"],
-          submitted: true,
-        };
+      : { windowId: state.phase.windowId, card: ownCard, submitted: true };
   const knownFireRemaining = Object.fromEntries(
     FIRE_VALUES.map((modifier) => {
       const key = String(modifier) as keyof typeof GAME_CONFIG.fireDeck;
@@ -34,10 +29,11 @@ export function createPlayerObservation(
   ) as PlayerObservation["knownFireRemaining"];
 
   return {
-    rulesVersion: "1.0.4",
+    rulesVersion: state.rulesVersion,
     playerId,
     game: projectPublicGameState(state),
     ownPendingContribution,
+    ownFireModifierPeek: state.privateFirePeeks?.[playerId] ?? null,
     knownFireRemaining,
     junActivationCoinCost: junActivationCoinCost(state.experimentConfig),
     imperialTrackRules: activeImperialTrackRules(state.experimentConfig),
@@ -48,6 +44,9 @@ export function fireExpectation(observation: PlayerObservation): Array<{
   modifier: FireModifier;
   probability: number;
 }> {
+  if (observation.ownFireModifierPeek !== null) {
+    return [{ modifier: observation.ownFireModifierPeek, probability: 1 }];
+  }
   const total = Object.values(observation.knownFireRemaining).reduce((sum, count) => sum + count, 0);
   if (total === 0) return [{ modifier: 0, probability: 1 }];
   return FIRE_VALUES.map((modifier) => ({
