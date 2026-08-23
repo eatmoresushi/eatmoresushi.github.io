@@ -30,6 +30,8 @@ import { HeuristicAIPolicy } from "./policy.ts";
 import { LookaheadAIPolicy, V4_SEARCH_CONFIGS } from "./lookaheadPolicy.ts";
 import { RolloutAIPolicy } from "./rolloutPolicy.ts";
 import { V114Policy } from "./v114Policy.ts";
+import { V115Policy } from "./v115Policy.ts";
+import type { DenialWeights } from "./v115Denial.ts";
 import { V5_ROLLOUT_CONFIGS } from "./decisionOracle.ts";
 import { learningPhase } from "./strategy.ts";
 import { createV6LeafEvaluator } from "./v6LeafModel.ts";
@@ -49,6 +51,7 @@ import type {
 } from "./types.ts";
 import {
   AI_POLICY_V114_VERSION,
+  AI_POLICY_V115_VERSION,
   AI_POLICY_V4_VERSION,
   AI_POLICY_V5_VERSION,
   AI_POLICY_V6_VERSION,
@@ -69,6 +72,8 @@ export interface SelfPlayGameConfig {
   profilesByPlayer?: Partial<Record<PlayerId, AIStrategyProfile>>;
   policyVersionsByPlayer?: Partial<Record<PlayerId, AIPolicyVersion>>;
   v4SearchConfig?: V4SearchConfig;
+  /** Denial weights for the V1.1.5 lineage; omitted means the lineage defaults. */
+  denialWeights?: DenialWeights;
   v5RolloutConfig?: V5RolloutConfig;
   v6LeafModel?: V6LeafModel;
   decisionObserver?: (snapshot: SelfPlayDecisionSnapshot) => void | Promise<void>;
@@ -511,7 +516,9 @@ export async function runSelfPlayGame(config: SelfPlayGameConfig): Promise<SelfP
       const profile = profileFor(playerId);
       const rng = new SeededRandom((config.aiSeed + (index + 1) * 0x9e3779b9) >>> 0);
       const version = policyVersionFor(playerId);
-      const policy: AIPolicy = version === AI_POLICY_V114_VERSION
+      const policy: AIPolicy = version === AI_POLICY_V115_VERSION
+        ? new V115Policy(profile, rng, config.denialWeights)
+        : version === AI_POLICY_V114_VERSION
         ? new V114Policy(profile, rng)
         : version === AI_POLICY_V6_VERSION
         ? (() => {

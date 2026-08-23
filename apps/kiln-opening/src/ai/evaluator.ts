@@ -58,6 +58,7 @@ const ZERO_FACTORS = (): EvaluationFactors => ({
   imperialValue: 0,
   qualityValue: 0,
   blocking: 0,
+  opponentDenial: 0,
   risk: 0,
   learned: 0,
   orderFeasibility: 0,
@@ -119,7 +120,7 @@ function acquisitionScore(
   intent: StrategyIntent,
   orderId: string,
 ): { value: number; feasibility: OrderFeasibility } {
-  const feasibility = evaluateOrderFeasibility(observation, orderId);
+  const feasibility = evaluateOrderFeasibility(observation, orderId, profile.orderRetryHorizon);
   const order = ORDER_DEFINITIONS[orderId];
   if (order === undefined) return { value: -20, feasibility };
   let value = orderPlanUtility(observation, feasibility, profile, intent)

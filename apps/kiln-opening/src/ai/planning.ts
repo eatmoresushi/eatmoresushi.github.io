@@ -387,6 +387,7 @@ function reasonsFor(
 export function evaluateOrderFeasibility(
   observation: PlayerObservation,
   orderId: string,
+  retryHorizon = 1,
 ): OrderFeasibility {
   const order = ORDER_DEFINITIONS[orderId];
   if (order === undefined) {
@@ -418,7 +419,18 @@ export function evaluateOrderFeasibility(
   const relationConflictCount = assignments.length === 0 ? 1 : relationConflicts(order, assignments);
   const actionDebt = assignments.reduce((sum, assignment) => sum + assignment.stageDebt, 0);
   const resourceDebt = resourceDebtFor(observation, assignments);
-  const qualityProbability = assignments.reduce((product, assignment) => product * assignment.qualityProbability, 1);
+  // A ceramic that fires to the wrong Quality is not destroyed -- it stays in stock and the
+  // requirement can be attempted again while rounds remain. With `retryHorizon` at 1 this is
+  // the frozen single-attempt product; above 1 each requirement is lifted to the chance of
+  // succeeding at least once, which lifts multi-ceramic Orders more because the product has
+  // more terms. Retries are not free, and their cost is already carried by `actionDebt`,
+  // `resourceDebt` and `timeProbability` below, so this is not double counting.
+  const attempts = Math.max(1, Math.min(retryHorizon, 6 - observation.game.round));
+  const atLeastOnce = (single: number): number => 1 - Math.pow(1 - single, attempts);
+  const qualityProbability = assignments.reduce(
+    (product, assignment) => product * atLeastOnce(assignment.qualityProbability),
+    1,
+  );
   const resourcePenalty = resourceDebt.clay * 0.045 + resourceDebt.wood * 0.04 + resourceDebt.coins * 0.035;
   const phaseAfterFiring = observation.game.phase.type === "orders" || observation.game.phase.type === "presentation";
   const actionsPerRound = 3.2;
@@ -506,7 +518,7 @@ export function buildPlayerPlan(
   assignedIntent: StrategyIntent = DEFAULT_INTENT,
 ): PlayerPlan {
   const player = observation.game.players[observation.playerId]!;
-  const orderFeasibilities = player.orderHand.map((orderId) => evaluateOrderFeasibility(observation, orderId));
+  const orderFeasibilities = player.orderHand.map((orderId) => evaluateOrderFeasibility(observation, orderId, profile.orderRetryHorizon));
   const ordered = [...orderFeasibilities].sort(
     (left, right) => orderPlanUtility(observation, right, profile, assignedIntent) - orderPlanUtility(observation, left, profile, assignedIntent) || left.orderId.localeCompare(right.orderId),
   );

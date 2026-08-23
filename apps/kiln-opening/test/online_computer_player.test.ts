@@ -1,7 +1,11 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { createPrivateFiringState, currentDecisionActor } from "../src/game/index.ts";
-import { chooseOnlineComputerAction, nextOnlineDecisionActor } from "../src/multiplayer/computerPlayer.ts";
+import {
+  ONLINE_COMPUTER_POLICY_VERSION,
+  chooseOnlineComputerAction,
+  nextOnlineDecisionActor,
+} from "../src/multiplayer/computerPlayer.ts";
 import {
   AuthoritativeGameService,
   InMemoryMultiplayerStore,
@@ -63,7 +67,7 @@ async function createHost(): Promise<{
   return { service, store, host };
 }
 
-describe("online v1.1.4 computer seats", () => {
+describe("online computer seats", () => {
   it("lets the host add, remove, and restore multiple stable computer seats", async () => {
     const { service, store, host } = await createHost();
     let seats = host.seats;
@@ -78,9 +82,9 @@ describe("online v1.1.4 computer seats", () => {
     expect(seats).toHaveLength(4);
     expect(seats.filter((seat) => seat.isComputer)).toHaveLength(3);
     expect(seats.slice(1).map((seat) => seat.aiPolicyVersion)).toEqual([
-      "rules-v1.1.4-contribution-001",
-      "rules-v1.1.4-contribution-001",
-      "rules-v1.1.4-contribution-001",
+      ONLINE_COMPUTER_POLICY_VERSION,
+      ONLINE_COMPUTER_POLICY_VERSION,
+      ONLINE_COMPUTER_POLICY_VERSION,
     ]);
     expect(store.audit().credentials).toHaveLength(1);
 
@@ -200,7 +204,7 @@ describe("online v1.1.4 computer seats", () => {
       colour: "celadon",
       isHost: false,
       isComputer: true,
-      aiPolicyVersion: "rules-v1.1.4-contribution-001",
+      aiPolicyVersion: ONLINE_COMPUTER_POLICY_VERSION,
       authUserId: null,
       aiSeed: 47_003,
       aiCreatedCommandId: "40000000-0000-4000-8000-000000000002",
@@ -235,7 +239,7 @@ describe("online v1.1.4 computer seats", () => {
     const virtualHumanPolicySeat: StoredSeat = {
       ...host.seat,
       isComputer: true,
-      aiPolicyVersion: "rules-v1.1.4-contribution-001",
+      aiPolicyVersion: ONLINE_COMPUTER_POLICY_VERSION,
       aiSeed: 99_001,
       aiCreatedCommandId: "50000000-0000-4000-8000-000000000011",
       authUserId: "host-user",

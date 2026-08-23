@@ -25,6 +25,9 @@ export const AI_POLICY_V6_VERSION = "selfplay-006" as const;
 /** V1.1.1 candidate: frozen V003 play with a computed Wood bid. */
 export const AI_POLICY_V114_VERSION = "rules-v1.1.4-contribution-001" as const;
 export const AI_SIMULATION_V114_VERSION = "v1.1.4-contribution-001" as const;
+/** V1.1.5: frozen V003 scoring with a retry-aware Order feasibility model. */
+export const AI_POLICY_V115_VERSION = "rules-v1.1.5-order-001" as const;
+export const AI_SIMULATION_V115_VERSION = "v1.1.5-order-001" as const;
 /** V1.1.1 joint candidate: chooses kiln zone and Wood bid for one target Base Heat. */
 export const AI_SIMULATION_V6_VERSION = "v1.0.2-selfplay-006-leaf-001" as const;
 
@@ -33,7 +36,8 @@ export type AIPolicyVersion =
   | typeof AI_POLICY_V4_VERSION
   | typeof AI_POLICY_V5_VERSION
   | typeof AI_POLICY_V6_VERSION
-  | typeof AI_POLICY_V114_VERSION;
+  | typeof AI_POLICY_V114_VERSION
+  | typeof AI_POLICY_V115_VERSION;
 
 export type AIAction = AuthoritativeCommand;
 
@@ -203,6 +207,12 @@ export interface EvaluationFactors {
   imperialValue: number;
   qualityValue: number;
   blocking: number;
+  /**
+   * Value of what this placement denies opponents. Always 0 under frozen V003, which has
+   * no denial term; written only by the V1.1.5 denial lineage. Distinct from `blocking`,
+   * which the evaluator uses for the Technique-forecast penalty.
+   */
+  opponentDenial: number;
   risk: number;
   learned: number;
   orderFeasibility: number;
@@ -384,6 +394,14 @@ export interface AIStrategyProfile {
     developing: number;
     mature: number;
   };
+  /**
+   * How many firing attempts an outstanding Order requirement is assumed to get before the
+   * game ends. Frozen V003 leaves this undefined, which means 1 -- every requirement must
+   * land on a single simultaneous attempt, so a two-ceramic Order is charged the product of
+   * two single-shot probabilities. That is why V003 completes 68% single-ceramic Orders and
+   * averages 7.84 VP against a two-ceramic band worth 10.21. Set by the V1.1.5 lineage.
+   */
+  orderRetryHorizon?: number;
 }
 
 export interface AIDecisionLog {
