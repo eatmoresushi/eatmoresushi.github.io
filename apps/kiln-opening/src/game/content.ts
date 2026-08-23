@@ -37,7 +37,6 @@ interface GameConfigDefinition {
     market: number;
     imperial: number;
     baseHandLimit: number;
-    guanHandLimit: number;
   };
   techniques: { maxOwned: number; faceUpPerDiscipline: number };
   kiln: {

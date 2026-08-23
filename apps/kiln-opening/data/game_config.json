@@ -22,8 +22,7 @@
   "orderDisplay": {
     "market": 4,
     "imperial": 4,
-    "baseHandLimit": 3,
-    "guanHandLimit": 4
+    "baseHandLimit": 3
   },
   "techniques": {
     "maxOwned": 2,

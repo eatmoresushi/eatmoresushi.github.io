@@ -230,6 +230,9 @@ describe("Market & Imperial Office", () => {
     );
   });
 
+  // HISTORICAL (suite excluded in vitest.config.ts): asserts a pre-v1.1.5 ruleset in which
+  // Guan held 4 Orders and the Office rejected a take at the limit mid-round. v1.1.5 sets a
+  // uniform limit of 3 and has no mid-round check at all -- Cleanup does the trimming.
   it("enforces the normal 3-Order hand limit and Guan's limit of 4", () => {
     const normal = startedGame(2, 306);
     const actorId = normal.state.firstPlayerId;

@@ -52,16 +52,20 @@ const JUN_ACTIVATION_WOOD = 1;
 /** Ge's activation cost, in Wood. */
 const GE_ACTIVATION_WOOD = 1;
 
-/** VP Guan scores alongside its Coin stipend on an Imperial Order. */
-const GUAN_ORDER_VP = 1;
-
 /** VP paid instead of an Apprentice that unlocks too late in Round 5 to ever act. */
 const ROUND_FIVE_UNLOCK_VP = 2;
 
 /** Clay Substitution pays this many Coins for three Clay/Wood in any combination. */
 const CLAY_SUBSTITUTION_COINS = 3;
 const CLAY_SUBSTITUTION_RESOURCES = 3;
-import { RU_ORDER_VP, matchesOrder, ruBonusCeramic } from "./orderRules.ts";
+import {
+  GUAN_ORDER_COINS,
+  GUAN_ORDER_VP,
+  RU_ORDER_VP,
+  isImperialOrder,
+  matchesOrder,
+  ruBonusCeramic,
+} from "./orderRules.ts";
 import type { RandomSource } from "./rng.ts";
 import { shuffle } from "./rng.ts";
 import type { ContributionCardId } from "./types.ts";
@@ -2931,7 +2935,7 @@ function completeOrder(
     }
     selected.push(ceramic);
   }
-  const isImperial = action.orderId.startsWith("I");
+  const isImperial = isImperialOrder(action.orderId);
   const guanTriggers = isImperial && player.kilnId === "GU" && !player.kilnAbilityUsedThisRound;
   const ruTriggers = player.kilnId === "RU" && !player.kilnAbilityUsedThisRound
     && selected.some((ceramic) => ruBonusCeramic(ceramic));
@@ -2997,7 +3001,7 @@ function completeOrder(
     // Round 5, when Coins are nearly dead. Paying only in Coins -- as it did before --
     // meant the ability delivered about half a point across a whole game, because Guan
     // ended richer than everyone else and could not spend the difference.
-    const guanCoins = gainFromSupply(next, nextPlayer, "coins", 2);
+    const guanCoins = gainFromSupply(next, nextPlayer, "coins", GUAN_ORDER_COINS);
     nextPlayer.score.kilnTraditionVp += GUAN_ORDER_VP;
     nextPlayer.kilnAbilityUsedThisRound = true;
     events.push({ type: "KILN_ABILITY_USED", playerId: actorId, kilnId: "GU" });

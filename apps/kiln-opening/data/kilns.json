@@ -14,7 +14,7 @@
     "nameZh": "官窑",
     "abilityName": "Imperial Patronage",
     "abilityNameZh": "内府恩眷",
-    "ability": "Your Order hand limit is 3. Once per round, when you complete an Imperial Order, gain 2 Coins and 1 VP. You may also ignore one Decoration requirement on that Order.",
+    "ability": "Once per round, when you complete an Imperial Order, gain 2 Coins and 1 VP. You may also ignore one Decoration requirement on that Order.",
     "abilityZh": "每轮一次，当你完成1张御用订单时，获得2铜钱和1分，并且可以独立选择忽略该订单上的1项装饰要求。"
   },
   {

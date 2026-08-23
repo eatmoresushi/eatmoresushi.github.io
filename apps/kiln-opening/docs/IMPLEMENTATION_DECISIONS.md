@@ -8,7 +8,7 @@ These are the intended digital interpretations of current V1.0.9 wording.
 - Opening offers are private. Each player selects exactly two of their 2 Market + 2 Imperial offers. Kept Orders become public only after every player submits; returned cards are shuffled into the matching decks first.
 - A normal Shifu Office action may take up to 2 Orders. Each take independently selects Market/Imperial and face-up/blind, with immediate display refill between takes.
 - A blind draw always uses the authoritative deck top; clients never submit the drawn ID.
-- There is no mid-round hand-limit check. Cleanup explicitly prompts players over 3 Orders, or over 4 with Guan, to discard chosen cards face up.
+- There is no mid-round hand-limit check. Cleanup explicitly prompts players over 3 Orders to discard chosen cards face up. The limit is 3 for every Tradition; Guan's +1 was removed in v1.1.5.
 - When an Order draw deck empties, its discard is deterministically reshuffled with the action RNG. If neither cards nor discard remain, the draw is unavailable.
 - Completing multiple Orders is sequential. Printed Imperial `progress` is applied after each completion.
 

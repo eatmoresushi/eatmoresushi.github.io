@@ -8,6 +8,7 @@ import {
   RU_BONUS_QUALITY,
   RU_ORDER_VP,
   createPrivateFiringState,
+  isImperialOrder,
   orderAdmitsGeCrackle,
   orderAdmitsRuBonus,
   ruBonusCeramic,
@@ -123,5 +124,51 @@ describe("V1.1.5 Kiln Tradition awareness", () => {
   it("frozen V003 remains unaware, so it stays the control", () => {
     expect(createProductionV3Profile(3).traditionAwareness).toBeUndefined();
     expect(createV115Profile(3).traditionAwareness).toBe(true);
+  });
+});
+
+describe("V1.1.5 Guan Imperial focus", () => {
+  it("identifies Imperial Orders by deck membership, not an ID prefix", () => {
+    for (const order of IMPERIAL_ORDERS) expect(isImperialOrder(order.id)).toBe(true);
+    for (const order of MARKET_ORDERS) expect(isImperialOrder(order.id)).toBe(false);
+    expect(isImperialOrder("not-an-order")).toBe(false);
+  });
+
+  it("a Guan seat values an Imperial Order above a Market one, beyond the usual bias", () => {
+    const { observation } = observationFor("GU", 62_001);
+    const { observation: neutral } = observationFor("DI", 62_001);
+    const profile = createV115Profile(3);
+    const util = (o: typeof observation, id: string): number =>
+      orderPlanUtility(o, evaluateOrderFeasibility(o, id, 3, true), profile, "Hybrid");
+
+    const imperial = IMPERIAL_ORDERS.map((o) => o.id);
+    const market = MARKET_ORDERS.map((o) => o.id);
+    // Ding is the control: same evaluation, no Imperial-specific ability.
+    const guanGap = Math.max(...imperial.map((id) => util(observation, id)))
+      - Math.max(...market.map((id) => util(observation, id)));
+    const dingGap = Math.max(...imperial.map((id) => util(neutral, id)))
+      - Math.max(...market.map((id) => util(neutral, id)));
+    expect(guanGap).toBeGreaterThan(dingGap);
+  });
+
+  it("pays Guan nothing extra on a Market Order", () => {
+    const { observation } = observationFor("GU", 62_002);
+    const { observation: neutral } = observationFor("DI", 62_002);
+    const profile = createV115Profile(3);
+    const market = MARKET_ORDERS[0]!.id;
+    const guan = orderPlanUtility(observation, evaluateOrderFeasibility(observation, market, 3, true), profile, "Hybrid");
+    const ding = orderPlanUtility(neutral, evaluateOrderFeasibility(neutral, market, 3, true), profile, "Hybrid");
+    expect(guan).toBeCloseTo(ding, 9);
+  });
+
+  it("stops paying once Guan's ability has fired this round", () => {
+    const { state, actor, observation } = observationFor("GU", 62_003);
+    const profile = createV115Profile(3);
+    const target = IMPERIAL_ORDERS[0]!.id;
+    const before = orderPlanUtility(observation, evaluateOrderFeasibility(observation, target, 3, true), profile, "Hybrid");
+    state.players[actor]!.kilnAbilityUsedThisRound = true;
+    const spent = createPlayerObservation(state, actor, createPrivateFiringState(state));
+    const after = orderPlanUtility(spent, evaluateOrderFeasibility(spent, target, 3, true), profile, "Hybrid");
+    expect(after).toBeLessThan(before);
   });
 });

@@ -11,6 +11,7 @@ import {
   kilnZoneModifier,
   preferredHeat,
   qualityFromDifference,
+  isImperialOrder,
 } from "../game/index.ts";
 import type { CeramicState, FinishedCeramic, Quality } from "../game/index.ts";
 import { actionOrderId, actionTechniqueId } from "./legalActions.ts";
@@ -124,10 +125,10 @@ function acquisitionScore(
   const order = ORDER_DEFINITIONS[orderId];
   if (order === undefined) return { value: -20, feasibility };
   let value = orderPlanUtility(observation, feasibility, profile, intent)
-    + (order.id.startsWith("I") ? intentBias(intent, "imperial") : intentBias(intent, "market"))
+    + (isImperialOrder(order.id) ? intentBias(intent, "imperial") : intentBias(intent, "market"))
     - (feasibility.feasible ? 0 : 4 + feasibility.actionDebt * 0.18)
     - (feasibility.earliestCompletionRound > 5 ? 8 : 0);
-  if (order.id.startsWith("I") && intent === "Imperial") {
+  if (isImperialOrder(order.id) && intent === "Imperial") {
     if (observation.game.round <= 2 && feasibility.feasible) {
       value += 7 + activeOrderProgressReward(observation, order.imperialProgressReward) * 1.5;
     }
@@ -891,7 +892,7 @@ function scoreAction(
 export function strategyTags(observation: PlayerObservation): StrategyTag[] {
   const player = observation.game.players[observation.playerId];
   if (player === undefined) return ["Hybrid"];
-  const imperial = player.orderHand.filter((id) => id.startsWith("I")).length + player.completedOrders.filter(({ orderId }) => orderId.startsWith("I")).length;
+  const imperial = player.orderHand.filter((id) => isImperialOrder(id)).length + player.completedOrders.filter(({ orderId }) => isImperialOrder(orderId)).length;
   const market = player.orderHand.length + player.completedOrders.length - imperial;
   const tags: StrategyTag[] = [imperial > market ? "Imperial-heavy" : market > imperial ? "Market-heavy" : "Hybrid"];
   if (player.techniques.length > 0) tags.push("Technique");

@@ -1,3 +1,4 @@
+import { IMPERIAL_ORDERS } from "./content.ts";
 import type { OrderDefinition, OrderRelationDefinition } from "./content.ts";
 import { QUALITY_RANK } from "./firingRules.ts";
 import type { FinishedCeramic } from "./types.ts";
@@ -207,4 +208,30 @@ export function orderAdmitsGeCrackle(order: OrderDefinition): boolean {
   return order.ceramics.some((requirement) => (
     requirement.decoration === undefined || requirement.decoration === GE_BONUS_DECORATION
   ));
+}
+
+/**
+ * Guan's Order bonus.
+ *
+ * Unlike Ru, Guan has no execution problem to solve: measured over 1,400 seat-games it
+ * fires 1.69 times per game against 1.69 rounds in which it completes an Imperial Order --
+ * it already triggers every time it possibly can. What it does not do is *seek* Imperial
+ * Orders. It completes 1.70 per game against Jun's 2.03, despite being the only Tradition
+ * paid for them, because nothing in the Order valuation knew the ability existed.
+ */
+export const GUAN_ORDER_VP = 1;
+export const GUAN_ORDER_COINS = 2;
+
+/**
+ * Is this an Imperial Order?
+ *
+ * Read from deck membership in authoritative content rather than an `id.startsWith("I")`
+ * prefix test. The prefix happens to hold for the current 52 cards, but it is a second,
+ * implicit copy of a fact the content already states, and this codebase has been bitten
+ * repeatedly by exactly that pattern.
+ */
+const IMPERIAL_ORDER_IDS: ReadonlySet<string> = new Set(IMPERIAL_ORDERS.map((order) => order.id));
+
+export function isImperialOrder(orderId: string): boolean {
+  return IMPERIAL_ORDER_IDS.has(orderId);
 }

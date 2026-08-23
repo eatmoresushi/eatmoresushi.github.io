@@ -738,7 +738,7 @@ Every rule implementation needs unit tests plus state-machine/integration covera
 - Form every Shape at correct cost; insufficient Clay; eight-card per-Shape supply; persistent shaped ceramics; Shifu 0/1/2 choices.
 - Glaze exactly one Glaze and Decoration; all Decoration costs; Shifu two-normal versus one-free modes; cannot reglaze or glaze wrong lifecycle state.
 - Kiln Yard no-Wood behavior, required 1 versus 1–2 load count, ownership/state, occupied spaces, full kiln, and no Shifu reposition.
-- Office all Apprentice/Shifu main modes, optional Apprentice 0–1 and Shifu 0–2 Flawed sales, exact Coin payment, Vessel return, duplicate/delivered/non-Flawed rejection, hand limits 3/Guan 4.
+- Office all Apprentice/Shifu main modes, optional Apprentice 0–1 and Shifu 0–2 Flawed sales, exact Coin payment, Vessel return, duplicate/delivered/non-Flawed rejection, hand limit 3 for every Tradition.
 - Order-taking immediate refill before the second choice, Market/Imperial mixing, optional stop after first, Colour Samples sequencing.
 - Guild Shifu-only placement, 1/2/2 capacity, exact printed cost, optional refresh/bottom/reveal, same-discipline refill, max two owned, and empty-deck edge case.
 
@@ -758,7 +758,7 @@ Have positive, decline, wrong-window, exhausted, unaffordable, and reset tests f
 - T11 Fuel Ledger: contributor only, post-reveal/pre-Base Heat, remaining Wood + Coin, effective value above 3, no contributor-count change.
 - T12 Test Pieces: immutable natural exact-match snapshot; Jun/Ge/Saggar cannot create eligibility retroactively; use versus pass follows the approved A5 ruling.
 
-Test Ru, Guan, Ge, Ding, and Jun independently and in all relevant interactions, including Ru after Ge changes Plain to Crackle, Guan hand limit/waiver constraints, Ge natural difference and no refund, Ding trigger/cost/action-limit exception, and Jun exact ±1 recalculation.
+Test Ru, Guan, Ge, Ding, and Jun independently and in all relevant interactions, including Ru after Ge changes Plain to Crackle, Guan waiver constraints, Ge natural difference and no refund, Ding trigger/cost/action-limit exception, and Jun exact ±1 recalculation.
 
 ### 8.5 Firing matrix
 

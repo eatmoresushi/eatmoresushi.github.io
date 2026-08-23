@@ -144,7 +144,7 @@ Imperial Progress is always read from the completed card's printed `progress` va
 
 Displays refill immediately after a face-up Order is taken. When a draw deck empties, shuffle its discard. If both are empty, the display remains short and blind draws are unavailable.
 
-There is no Order hand limit during a round. In Cleanup, discard face up to 3 Orders, or 4 with Guan, to their matching discard piles.
+There is no Order hand limit during a round. In Cleanup, discard face up to 3 Orders to their matching discard piles. Every Tradition trims to the same limit; Guan's +1 was removed in v1.1.5.
 
 After completing Orders, a player may use the normal optional Flawed sale: Apprentice 0–1 ceramic, Shifu 0–2 ceramics, for 1 Coin each.
 

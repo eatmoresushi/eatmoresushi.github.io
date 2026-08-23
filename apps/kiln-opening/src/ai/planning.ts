@@ -3,12 +3,15 @@ import {
   GLAZES,
   IMPERIAL_ORDERS,
   MARKET_ORDERS,
+  GUAN_ORDER_COINS,
+  GUAN_ORDER_VP,
   ORDER_DEFINITIONS,
   RU_BONUS_DECORATION,
   RU_BONUS_GLAZE,
   RU_BONUS_QUALITY,
   RU_ORDER_VP,
   officialImperialTrackRules,
+  isImperialOrder,
   orderAdmitsGeCrackle,
   orderAdmitsRuBonus,
   QUALITY_RANK,
@@ -487,7 +490,7 @@ function intentValue(
   intent: StrategyIntent,
   order: OrderDefinition,
 ): number {
-  const imperial = order.id.startsWith("I");
+  const imperial = isImperialOrder(order.id);
   const progressReward = activeOrderProgressReward(observation, order.imperialProgressReward);
   switch (intent) {
     case "Market": return imperial ? -0.6 : 0.8;
@@ -535,6 +538,14 @@ function traditionOrderBonus(
   if (player.kilnId === "RU") {
     if (!orderAdmitsRuBonus(order)) return 0;
     return RU_ORDER_VP * bestQualityProbability(observation, RU_BONUS_GLAZE, RU_BONUS_QUALITY);
+  }
+  if (player.kilnId === "GU") {
+    // Guan already fires every time it completes an Imperial Order -- 1.69 times per game
+    // against 1.69 opportunities. The gap is that it seeks them no harder than anyone else,
+    // completing 1.70 per game against Jun's 2.03. The Decoration waiver is not priced here:
+    // it is enumerated as a separate COMPLETE_ORDER variant and scored on its own.
+    if (!isImperialOrder(order.id)) return 0;
+    return GUAN_ORDER_VP + GUAN_ORDER_COINS * profile.resourceValues.coins;
   }
   if (player.kilnId === "GE") {
     // Ge's payoff is a Quality upgrade, not a flat award: a ceramic that lands 1 or 2 off
@@ -794,13 +805,13 @@ function imperialRouteForecast(
   reachableImperialSpace: number,
 ): ImperialRouteForecast {
   const player = observation.game.players[observation.playerId]!;
-  const imperialPlans = selected.filter(({ orderId }) => orderId.startsWith("I"));
+  const imperialPlans = selected.filter(({ orderId }) => isImperialOrder(orderId));
   const projectedOrderProgress = imperialPlans.reduce((sum, feasibility) => sum + (
     feasibility.feasible
       ? activeOrderProgressReward(observation, ORDER_DEFINITIONS[feasibility.orderId]?.imperialProgressReward)
       : 0
   ), 0);
-  const completedImperial = player.completedOrders.some(({ orderId }) => orderId.startsWith("I"));
+  const completedImperial = player.completedOrders.some(({ orderId }) => isImperialOrder(orderId));
   const projectedImperialCompletion = imperialPlans.some(({ feasible }) => feasible);
   const patronageReachable = player.imperialProgress <= 3 && (completedImperial || projectedImperialCompletion) && (
     player.resources.coins >= 5 || observation.game.round <= 4
