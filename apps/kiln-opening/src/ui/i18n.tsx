@@ -60,7 +60,7 @@ const ZH_CN: Record<string, string> = {
   "Players in lobby": "大厅中的玩家",
   "Seat": "席位",
   "Open seat": "空席位",
-  "Computer · V003": "电脑玩家 · V003",
+  "Computer": "电脑玩家",
   "Waiting": "等待中",
   "Connected": "已连接",
   "Remove": "移除",

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { createGameApi } from "../multiplayer/client";
+import { computerPolicyLabel } from "../multiplayer/computerPlayer.ts";
 import type { GameApi } from "../multiplayer/client";
 import type {
   AuthoritativeCommand,
@@ -699,7 +700,7 @@ function LobbyScreen({
                 {seat?.isHost
                   ? t("Host")
                   : seat?.isComputer
-                    ? t("Computer · V003")
+                    ? `${t("Computer")} · ${computerPolicyLabel(seat.aiPolicyVersion)}`
                     : seat === undefined ? t("Waiting") : t("Connected")}
               </small>
               {connection.seat.isHost && seat?.isComputer === true && (

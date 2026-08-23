@@ -84,3 +84,22 @@ export async function chooseOnlineComputerAction(
   const decision = await policy.chooseAction(observation, legalActions, context);
   return decision.action;
 }
+
+/**
+ * Short label for a computer seat's policy, for display.
+ *
+ * The lobby previously printed a hard-coded "Computer · V003" that survived three policy
+ * promotions -- V1.1.1, V1.1.4 and V1.1.5 -- and told players the seat was running a policy
+ * retired months earlier. Deriving it from the seat's stored version means the label cannot
+ * drift from the policy again; an unrecognised value is shown verbatim rather than guessed at.
+ */
+export function computerPolicyLabel(policyVersion: string | null): string {
+  switch (policyVersion) {
+    case AI_POLICY_V115_VERSION: return "V1.1.5";
+    case "rules-v1.1.4-contribution-001": return "V1.1.4";
+    case "rules-v1.1.1-wood-001": return "V1.1.1";
+    case LEGACY_ONLINE_COMPUTER_POLICY_VERSION: return "V003";
+    case null: return "—";
+    default: return policyVersion;
+  }
+}

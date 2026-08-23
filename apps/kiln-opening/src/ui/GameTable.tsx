@@ -406,16 +406,16 @@ export function OrderCard({ orderId, imperial = false }: { orderId: string; impe
       <ol className="order-slots">{order.ceramics.map((requirement, index) => (
         <li key={index}>{requirement.shapes?.map((shape) => term(shape)).join(` ${t("or")} `) ?? (requirement.shape === undefined ? t("Any Shape") : term(requirement.shape))} · {requirement.glaze === undefined ? t("Any Glaze") : term(requirement.glaze)} · {requirement.decoration === undefined ? t("Any Decoration") : term(requirement.decoration)}</li>
       ))}</ol>
-      <footer>{t("Minimum Quality")}: {qualityLabel(order, locale)}{relationLabel(order, locale)}</footer>
+      <footer>{qualityLabel(order, locale)}{relationLabel(order, locale)}</footer>
     </article>
   );
 }
 
-function qualityLabel(order: OrderDefinition, locale: Locale = "en"): string {
+export function qualityLabel(order: OrderDefinition, locale: Locale = "en"): string {
   return order.minQuality === "masterpiece" ? localizedTerm(locale, "masterpiece") : `${localizedTerm(locale, order.minQuality)}+`;
 }
 
-function relationLabel(order: OrderDefinition, locale: Locale = "en"): string {
+export function relationLabel(order: OrderDefinition, locale: Locale = "en"): string {
   if (order.relations === undefined || order.relations.length === 0) return "";
   return ` · ${order.relations.map((relation) => {
     switch (relation.type) {
@@ -424,10 +424,28 @@ function relationLabel(order: OrderDefinition, locale: Locale = "en"): string {
       case "all_different_glaze": return locale === "zh-CN" ? "釉色各不相同" : "all different Glazes";
       case "different_shape": return locale === "zh-CN" ? "器型不同" : "different Shapes";
       case "all_different_shape": return locale === "zh-CN" ? "器型各不相同" : "all different Shapes";
+      case "same_shape": return locale === "zh-CN" ? "器型相同" : "same Shape";
       case "same_decoration": return locale === "zh-CN" ? "装饰相同" : "same Decoration";
+      case "different_decoration": return locale === "zh-CN" ? "装饰不同" : "different Decorations";
       case "at_least_n_quality": return locale === "zh-CN" ? `至少${relation.count}件${localizedTerm(locale, relation.quality)}` : `at least ${relation.count} ${localizedTerm(locale, relation.quality)}`;
       case "at_least_n_distinct_glazes": return locale === "zh-CN" ? `至少${relation.count}种不同釉色` : `at least ${relation.count} distinct Glazes`;
-      case "glaze_categories": return locale === "zh-CN" ? "所需釉色类别分别由不同陶瓷满足" : "required Glaze categories in separate ceramics";
+      case "glaze_categories": {
+        // Name the Glazes. The generic phrasing left I13 unplayable from its own card: the
+        // data requires White, Celadon and Moon White, and the card said only that some
+        // unnamed categories had to sit in separate ceramics.
+        const names = relation.categories
+          .map((category) => category.map((glaze) => localizedTerm(locale, glaze)).join(locale === "zh-CN" ? "或" : "/"))
+          .join(locale === "zh-CN" ? "、" : ", ");
+        return locale === "zh-CN" ? `分别为${names}各1件` : `one each of ${names}`;
+      }
+      default: {
+        // Every relation must print. `same_shape` and `different_decoration` were absent
+        // here and rendered as nothing, so M24 and M26 showed no requirement at all on the
+        // card while the engine still enforced it. This makes the next omission a build
+        // error instead of a silently wrong card.
+        const unhandled: never = relation;
+        throw new Error(`Unhandled Order relation: ${JSON.stringify(unhandled)}`);
+      }
     }
   }).join("; ")}`;
 }
