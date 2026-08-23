@@ -51,6 +51,7 @@ const ROUND_FIVE_UNLOCK_VP = 2;
 const CLAY_SUBSTITUTION_COINS = 3;
 const CLAY_SUBSTITUTION_RESOURCES = 3;
 import {
+  DING_EXTRA_SHAPES,
   GUAN_ORDER_COINS,
   GUAN_ORDER_VP,
   RU_ORDER_VP,
@@ -695,7 +696,7 @@ function formCeramics(
     if (
       context.player.kilnId !== "DI" ||
       context.player.kilnAbilityUsedThisRound ||
-      !(["bowl", "plate", "washer"] as Shape[]).includes(dingExtraShape) ||
+      !(DING_EXTRA_SHAPES as readonly Shape[]).includes(dingExtraShape) ||
       !action.shapes.includes(dingExtraShape)
     ) {
       return applyFailure(

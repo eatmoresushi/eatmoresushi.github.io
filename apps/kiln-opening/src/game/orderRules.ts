@@ -235,3 +235,9 @@ const IMPERIAL_ORDER_IDS: ReadonlySet<string> = new Set(IMPERIAL_ORDERS.map((ord
 export function isImperialOrder(orderId: string): boolean {
   return IMPERIAL_ORDER_IDS.has(orderId);
 }
+
+/**
+ * Shapes Ding's extra vessel may copy. Previously a bare array literal inside
+ * `applyFormCeramics`, which meant the AI had no way to ask the question.
+ */
+export const DING_EXTRA_SHAPES = ["bowl", "plate", "washer"] as const;

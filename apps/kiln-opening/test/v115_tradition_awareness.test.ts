@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  DING_EXTRA_SHAPES,
   GE_BONUS_DECORATION,
   IMPERIAL_ORDERS,
   MARKET_ORDERS,
@@ -170,5 +171,14 @@ describe("V1.1.5 Guan Imperial focus", () => {
     const spent = createPlayerObservation(state, actor, createPrivateFiringState(state));
     const after = orderPlanUtility(spent, evaluateOrderFeasibility(spent, target, 3, true), profile, "Hybrid");
     expect(after).toBeLessThan(before);
+  });
+});
+
+describe("V1.1.5 Ding", () => {
+  it("keeps the engine and the AI on one list of Ding-eligible Shapes", () => {
+    // The list was a bare literal inside applyFormCeramics, which is why the AI had no way
+    // to ask the question. Order-seeking was tried and rejected -- see
+    // docs/experiments/v115-ding-pairing-001.md -- but the shared list is worth keeping.
+    expect([...DING_EXTRA_SHAPES]).toEqual(["bowl", "plate", "washer"]);
   });
 });
