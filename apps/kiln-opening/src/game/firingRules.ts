@@ -63,5 +63,12 @@ export const QUALITY_RANK: Record<Quality, number> = {
 /** Extra Wood a revealed Stoke pays to become +2 Heat instead of +1. */
 export const FUEL_LEDGER_WOOD = 1;
 
+/**
+ * Heat Differences Ge can correct to exact. v1.1.5 widened this from 1 to 1-or-2; the
+ * enumerator kept offering only difference-1 targets for a while afterwards, which made the
+ * widening look inert in measurement (26.1% -> 26.4%) when it was actually worth ten points.
+ */
+export const GE_CORRECTABLE_DIFFERENCES: readonly number[] = [1, 2];
+
 export const JUN_ACTIVATION_WOOD = 2;
 export const GE_ACTIVATION_WOOD = 1;

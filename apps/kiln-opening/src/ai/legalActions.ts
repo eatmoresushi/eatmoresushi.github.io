@@ -15,6 +15,7 @@ import {
   orderHandLimit,
   SeededRandom,
   submitWoodContribution,
+  GE_CORRECTABLE_DIFFERENCES,
 } from "../game/index.ts";
 import type {
   Decoration,
@@ -505,7 +506,7 @@ function candidatePhaseActions(
       // eligibility exactly: offering fewer targets silently removes the rule from play.
       const geEligible = loaded.filter(({ id }) => {
         const difference = state.firingContext?.ceramicResults[id]?.finalHeatDifference;
-        return difference === 1 || difference === 2;
+        return difference !== undefined && GE_CORRECTABLE_DIFFERENCES.includes(difference);
       });
       return [
         { type: "RESOLVE_GE", ceramicId: null },

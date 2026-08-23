@@ -23,6 +23,7 @@ import {
 import {
   FUEL_LEDGER_WOOD,
   GE_ACTIVATION_WOOD,
+  GE_CORRECTABLE_DIFFERENCES,
   JUN_ACTIVATION_WOOD,
   QUALITY_RANK,
   contributionHeatAdjustment,
@@ -2416,7 +2417,7 @@ function resolveGe(state: GameState, actorId: PlayerId, ceramicId: string | null
       ceramic.ownerId !== actorId ||
       ceramic.stage !== "loaded" ||
       result === undefined ||
-      (result.finalHeatDifference !== 1 && result.finalHeatDifference !== 2)
+      !GE_CORRECTABLE_DIFFERENCES.includes(result.finalHeatDifference)
     ) {
       return applyFailure(
         ruleError(

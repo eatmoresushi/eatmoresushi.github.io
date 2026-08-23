@@ -3,6 +3,7 @@ import {
   GLAZES,
   IMPERIAL_ORDERS,
   MARKET_ORDERS,
+  GE_CORRECTABLE_DIFFERENCES,
   GUAN_ORDER_COINS,
   GUAN_ORDER_VP,
   ORDER_DEFINITIONS,
@@ -511,7 +512,7 @@ function nearMissProbability(observation: PlayerObservation, glaze: Glaze): numb
   const modifiers = [...new Set(activeKilnSpaceIds(observation.game.playerCount).map(kilnZoneModifier))];
   return Math.max(...modifiers.map((zone) => fireExpectation(observation).reduce((sum, card) => {
     const difference = Math.abs(2 + zone + card.modifier - preferredHeat(glaze));
-    return sum + (difference === 1 || difference === 2 ? card.probability : 0);
+    return sum + (GE_CORRECTABLE_DIFFERENCES.includes(difference) ? card.probability : 0);
   }, 0)));
 }
 
