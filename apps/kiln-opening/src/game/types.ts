@@ -182,10 +182,14 @@ export interface TechniqueDisplayState {
   firing: TechniqueId[];
 }
 
+/**
+ * v1.1.5 moved Coin income to the Labour location and removed it from the Office, so the
+ * old `take_one_and_gain_two_coins` mode is gone. It survived the v1.1.5 migration by
+ * oversight and stayed playable, which meant Labour never actually replaced anything.
+ */
 export type OfficeOrderMode =
   | "take_one"
-  | "take_up_to_two"
-  | "take_one_and_gain_two_coins";
+  | "take_up_to_two";
 export type OrderDeck = "market" | "imperial";
 
 export interface OrderedDecisionQueue {
@@ -684,7 +688,7 @@ export type GameEvent =
   | {
       type: "COURT_PATRONAGE_USED";
       playerId: PlayerId;
-      cost: 5;
+      cost: number;
       from: 0 | 1 | 2 | 3;
       to: 1 | 2 | 3 | 4;
     }

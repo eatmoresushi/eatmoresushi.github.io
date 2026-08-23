@@ -308,7 +308,6 @@ function candidateWorkActions(
       mode: worker.kind === "shifu" ? "take_up_to_two" : "take_one",
     });
     if (worker.kind === "shifu") {
-      actions.push({ type: "BEGIN_OFFICE_ORDERS", workerId: worker.id, mode: "take_one_and_gain_two_coins" });
       // Court Patronage is its own uncapped location in v1.1.5, so it is offered to every
       // available Shifu regardless of how crowded the Office is.
       actions.push({ type: "USE_COURT_PATRONAGE", workerId: worker.id });

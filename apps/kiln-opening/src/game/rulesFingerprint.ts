@@ -34,8 +34,11 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  * Revision history:
  *   1 -- v1.1.5 as first promoted online.
  *   2 -- Ding's extra vessel pays the normal Clay cost; Jun's activation costs 2 Wood.
+ *   3 -- The Office's `take_one_and_gain_two_coins` mode is removed. v1.1.5 moved Coin
+ *        income to Labour but the mode stayed implemented and playable, so Labour had not
+ *        in fact replaced anything.
  */
-export const RULES_BEHAVIOUR_REVISION = 2;
+export const RULES_BEHAVIOUR_REVISION = 3;
 
 /**
  * Display-only keys, excluded so that a typo fix or a translation improvement does not
@@ -55,6 +58,11 @@ const PROSE_KEYS: ReadonlySet<string> = new Set([
   "text",
   "flavour",
   "flavor",
+  // Action-location effect descriptions, the same kind of thing as a Kiln's `ability`.
+  "apprentice",
+  "shifu",
+  "apprenticeZh",
+  "shifuZh",
 ]);
 
 /** Deterministic serialisation: keys sorted, prose dropped, no incidental whitespace. */
@@ -62,7 +70,9 @@ function canonical(value: unknown): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value) ?? "null";
   if (Array.isArray(value)) return `[${value.map((item) => canonical(item)).join(",")}]`;
   const entries = Object.entries(value as Record<string, unknown>)
-    .filter(([key]) => !PROSE_KEYS.has(key))
+    // Only drop a prose key when it actually holds prose. If one of these names is ever
+    // reused for a number, that number must still reach the digest.
+    .filter(([key, item]) => !(PROSE_KEYS.has(key) && typeof item === "string"))
     .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0));
   return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${canonical(item)}`).join(",")}}`;
 }

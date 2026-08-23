@@ -668,7 +668,9 @@ describe("Imperial Progress persistence and realtime", () => {
     )!.id;
     await command(harness, actorId, { type: "USE_COURT_PATRONAGE", workerId: shifuId });
     expect(harness.game.events).toContainEqual({
-      type: "COURT_PATRONAGE_USED", playerId: actorId, cost: 5, from: 1, to: 2,
+      // 4, matching what the engine deducts. This asserted 5 for as long as the event
+      // misreported it, so the test was pinning the defect rather than catching it.
+      type: "COURT_PATRONAGE_USED", playerId: actorId, cost: 4, from: 1, to: 2,
     });
     for (const connection of harness.connections) {
       const reconnected = valueOf(await harness.service.reconnect({

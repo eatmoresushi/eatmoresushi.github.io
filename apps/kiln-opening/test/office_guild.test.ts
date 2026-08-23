@@ -145,54 +145,9 @@ describe("Market & Imperial Office", () => {
     expect(state.phase.type).toBe("work");
   });
 
-  it("lets a Shifu stop after one Order or take one Order plus 2 Coins before the sale step", () => {
-    const stop = startedGame(2, 304);
-    const stopActor = stop.state.firstPlayerId;
-    let stopState = mustApply(
-      stop.state,
-      stopActor,
-      {
-        type: "BEGIN_OFFICE_ORDERS",
-        workerId: workerId(stop.state, stopActor, "shifu"),
-        mode: "take_up_to_two",
-      },
-      stop.rng,
-    );
-    stopState = mustApply(
-      stopState,
-      stopActor,
-      { type: "OFFICE_TAKE_ORDER", orderId: stopState.imperialDisplay[0]! },
-      stop.rng,
-    );
-    stopState = mustApply(stopState, stopActor, { type: "OFFICE_END_ORDERS" }, stop.rng);
-    expect(stopState.phase.type).toBe("work_office_sale");
-    stopState = resolveOfficeSale(stopState, stopActor, [], stop.rng);
-    expect(stopState.phase.type).toBe("work");
-
-    const bonus = startedGame(2, 305);
-    const bonusActor = bonus.state.firstPlayerId;
-    const coinsBefore = bonus.state.players[bonusActor]!.resources.coins;
-    let bonusState = mustApply(
-      bonus.state,
-      bonusActor,
-      {
-        type: "BEGIN_OFFICE_ORDERS",
-        workerId: workerId(bonus.state, bonusActor, "shifu"),
-        mode: "take_one_and_gain_two_coins",
-      },
-      bonus.rng,
-    );
-    bonusState = mustApply(
-      bonusState,
-      bonusActor,
-      { type: "OFFICE_TAKE_ORDER", orderId: bonusState.marketDisplay[0]! },
-      bonus.rng,
-    );
-    expect(bonusState.players[bonusActor]!.resources.coins).toBe(coinsBefore + 2);
-    expect(bonusState.phase.type).toBe("work_office_sale");
-    bonusState = resolveOfficeSale(bonusState, bonusActor, [], bonus.rng);
-    expect(bonusState.phase.type).toBe("work");
-  });
+  // REMOVED (suite already excluded in vitest.config.ts): this covered the Office mode
+  // `take_one_and_gain_two_coins`, which v1.1.5 retired when Coin income moved to Labour.
+  // The mode no longer exists in OfficeOrderMode, so the case cannot compile, let alone run.
 
   it("lets a Shifu gain 4 Coins and then sell up to two Flawed ceramics for exactly 1 Coin each", () => {
     const { state, rng } = startedGame(2, 308);

@@ -175,7 +175,8 @@ test("starting Orders remain visible after an eligible redraw advances directly 
 
     const hostOffice = host.locator("details").filter({ hasText: "Market & Imperial Office" });
     await hostOffice.getByText("Market & Imperial Office", { exact: true }).click();
-    await hostOffice.getByLabel("Office action").selectOption("take_one_and_gain_two_coins");
+    // v1.1.5 retired `take_one_and_gain_two_coins`; Coin income lives at Labour now.
+    await hostOffice.getByLabel("Office action").selectOption("take_up_to_two");
     await hostOffice.getByRole("button", { name: "Visit the Office" }).click();
     await expect(host.getByRole("button", { name: /Blind draw the top Market Order/ })).toBeVisible();
     await expect(host.getByRole("button", { name: /Blind draw the top Imperial Order/ })).toBeVisible();

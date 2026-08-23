@@ -653,7 +653,7 @@ function OfficeActionForms({ game, player, workers, locationFull, busy, send }: 
   const [officeAction, setOfficeAction] = useState<OfficeActionChoice>("take_one");
   const selectedWorker = workers.find((worker) => worker.id === workerId) ?? workers[0];
   const orderModes: OfficeActionChoice[] = selectedWorker?.kind === "shifu"
-    ? ["take_up_to_two", "take_one_and_gain_two_coins", "court_patronage"]
+    ? ["take_up_to_two", "court_patronage"]
     : ["take_one"];
   const action = orderModes.includes(officeAction) ? officeAction : orderModes[0]!;
   const handLimit = orderHandLimit();
@@ -662,10 +662,10 @@ function OfficeActionForms({ game, player, workers, locationFull, busy, send }: 
   function validationError(): string | null {
     if (locationFull) return "Market & Imperial Office is full.";
     if (selectedWorker === undefined) return "Choose an available worker.";
-    if ((action === "take_one" || action === "take_one_and_gain_two_coins") && player.orderHand.length >= handLimit) {
+    if (action === "take_one" && player.orderHand.length >= handLimit) {
       return `Your Order area is full (${handLimit}).`;
     }
-    if ((action === "take_one" || action === "take_one_and_gain_two_coins") && orderSourceCount === 0) {
+    if (action === "take_one" && orderSourceCount === 0) {
       return "No Order source is available.";
     }
     if (action === "court_patronage") {
@@ -1380,7 +1380,6 @@ function officeActionHint(action: OfficeActionChoice, workerKind: AvailableWorke
     switch (action) {
       case "take_one": return "拿取1张正面订单，或确认盲抽1张牌堆顶订单。";
       case "take_up_to_two": return "拿取至多2张订单；每次可分别选择正面或盲抽。";
-      case "take_one_and_gain_two_coins": return "拿取1张正面或盲抽订单，然后获得2铜钱。";
       case "court_patronage": return "支付5铜钱，使贡御进度前进1格；不能使用釉样册或出售次品。";
     }
   }
@@ -1389,7 +1388,6 @@ function officeActionHint(action: OfficeActionChoice, workerKind: AvailableWorke
       return "Take one face-up Order or commit to a blind top-deck draw.";
     case "take_up_to_two":
       return "Take up to two Orders, choosing face-up or blind separately each time.";
-    case "take_one_and_gain_two_coins":
       return "Take one face-up or blind Order, then gain 2 Coins.";
     case "court_patronage":
       return "Pay 5 Coins to advance Imperial Progress by 1; no Colour Samples or Flawed sale.";
@@ -1455,7 +1453,6 @@ function officeActionLabel(action: OfficeActionChoice, locale: Locale): string {
   switch (action) {
     case "take_one": return "拿取1张订单";
     case "take_up_to_two": return "拿取至多2张订单";
-    case "take_one_and_gain_two_coins": return "拿取1张订单并获得2铜钱";
     case "court_patronage": return "朝廷赞助";
   }
 }

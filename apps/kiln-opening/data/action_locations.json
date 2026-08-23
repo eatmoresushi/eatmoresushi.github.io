@@ -73,8 +73,8 @@
       },
       "apprentice": "Take 1 Order: a face-up Order from either display, or a blind top-card draw from either deck. After a normal main action, you may sell 1 Flawed ceramic for 2 Coins.",
       "apprenticeZh": "拿取1张订单：从任一展示区选取明置订单，或从任一牌堆顶盲抽。正常主行动后，可出售至多1件次品，获得2铜钱。",
-      "shifu": "Choose one: take up to 2 Orders; or take 1 Order and gain 2 Coins. After a normal main action, you may sell up to 2 Flawed ceramics for 2 Coins each.",
-      "shifuZh": "二选一：拿取至多2张订单；或拿1张订单并获得2铜钱。正常主行动后，可出售至多2件次品，每件获得2铜钱。",
+      "shifu": "Take up to 2 Orders: face-up Orders from either display, or blind top-card draws from either deck. After a normal main action, you may sell up to 2 Flawed ceramics for 2 Coins each.",
+      "shifuZh": "拿取至多2张订单：从任一展示区选取明置订单，或从任一牌堆顶盲抽。正常主行动后，可出售至多2件次品，每件获得2铜钱。",
       "clarification": "Court Patronage requires a completed Imperial Order, costs 5 Coins, advances Progress by 1 only from spaces 0-3, and grants neither Colour Samples nor a Flawed sale."
     },
     {
@@ -117,7 +117,7 @@
       "apprentice": "Shifu only. An Apprentice cannot be placed here.",
       "apprenticeZh": "仅限师傅。学徒不可放置于此。",
       "shifu": "If you have completed at least 1 Imperial Order this game, pay 4 Coins to advance Imperial Progress by 1 space. It cannot advance you from space 4 to space 5. This location has no worker limit.",
-      "shifuZh": "若你本局已完成至少1张御用订单，支付4铜钱使御用进度前进1格。不能от第4格前进至第5格。此地点没有工人数量限制。"
+      "shifuZh": "若你本局已完成至少1张御用订单，支付4铜钱使御用进度前进1格。不能从第4格前进至第5格。此地点没有工人数量限制。"
     }
   ]
 }

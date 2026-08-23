@@ -305,3 +305,16 @@ function validateContent(): void {
 }
 
 validateContent();
+
+/**
+ * Prices printed on action locations. Previously module-private constants inside
+ * `engine.ts`, which left the printed board text with nothing to check itself against:
+ * the Office advertised a Coin option v1.1.5 had removed, and Court Patronage reported a
+ * cost of 5 while charging 4.
+ */
+export const ACTION_LOCATION_PRICES = {
+  labourApprenticeCoins: 2,
+  labourShifuCoins: 4,
+  flawedSaleCoins: 2,
+  courtPatronageCoins: 4,
+} as const;

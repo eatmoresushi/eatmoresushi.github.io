@@ -572,7 +572,6 @@ function scoreAction(
         .sort((left, right) => right - left);
       const capacity = action.mode === "take_up_to_two" ? 2 : 1;
       factors.orderFeasibility += visible.slice(0, capacity).reduce((sum, value) => sum + Math.max(-2, value), 0) * 0.35;
-      if (action.mode === "take_one_and_gain_two_coins") factors.resourceDemand += 2 * marginalResourceValue(player.resources.coins, plan.resourceDemand.coins, 0);
       factors.opportunityCost -= plan.conversionUrgency * (plan.pipeline.shaped + plan.pipeline.glazed) * 1.1;
       return;
     }

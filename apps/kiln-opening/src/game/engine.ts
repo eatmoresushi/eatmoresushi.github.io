@@ -1,4 +1,5 @@
 import {
+  ACTION_LOCATION_PRICES,
   DECORATION_COSTS,
   DECORATIONS,
   GAME_CONFIG,
@@ -37,14 +38,17 @@ import {
 /** Fuel Ledger spends this much extra Wood to turn a revealed Stoke into +2 Heat. */
 
 /** Office sale value of one Flawed ceramic. */
-const FLAWED_SALE_COINS = 2;
+const FLAWED_SALE_COINS = ACTION_LOCATION_PRICES.flawedSaleCoins;
+
+/** Coins Court Patronage charges for one step of Imperial Progress. */
+const COURT_PATRONAGE_COINS = ACTION_LOCATION_PRICES.courtPatronageCoins;
 
 /** Cards discarded from each Order display at the start of Rounds 2-5. */
 const ORDER_DISPLAY_ROTATION = 2;
 
 /** Labour pays these Coins; it has no worker limit, so it is always available. */
-const LABOUR_APPRENTICE_COINS = 2;
-const LABOUR_SHIFU_COINS = 4;
+const LABOUR_APPRENTICE_COINS = ACTION_LOCATION_PRICES.labourApprenticeCoins;
+const LABOUR_SHIFU_COINS = ACTION_LOCATION_PRICES.labourShifuCoins;
 
 /** VP paid instead of an Apprentice that unlocks too late in Round 5 to ever act. */
 const ROUND_FIVE_UNLOCK_VP = 2;
@@ -1327,7 +1331,7 @@ function validOfficeMode(worker: WorkerState, mode: OfficeOrderMode): boolean {
   if (worker.kind === "apprentice") {
     return mode === "take_one";
   }
-  return mode === "take_up_to_two" || mode === "take_one_and_gain_two_coins";
+  return mode === "take_up_to_two";
 }
 
 function beginOfficeOrders(
@@ -1397,16 +1401,6 @@ function finishOfficeOrderAcquisition(
   if (state.phase.remainingTakes > 0) return;
   const player = state.players[actorId];
   if (player === undefined) throw new Error("Office actor disappeared");
-  if (state.phase.mode === "take_one_and_gain_two_coins") {
-    const gainedCoins = gainFromSupply(state, player, "coins", 2);
-    events.push({
-      type: "RESOURCES_CHANGED",
-      playerId: actorId,
-      clay: 0,
-      wood: 0,
-      coins: gainedCoins,
-    });
-  }
   state.phase = { type: "work_office_sale", actorId, workerId: state.phase.workerId };
 }
 
@@ -2858,10 +2852,10 @@ function useCourtPatronage(
       ),
     );
   }
-  if (context.player.resources.coins < 4) {
+  if (context.player.resources.coins < COURT_PATRONAGE_COINS) {
     return applyFailure(
-      ruleError("INSUFFICIENT_RESOURCES", "Court Patronage costs 4 Coins.", {
-        requiredCoins: 4,
+      ruleError("INSUFFICIENT_RESOURCES", `Court Patronage costs ${COURT_PATRONAGE_COINS} Coins.`, {
+        requiredCoins: COURT_PATRONAGE_COINS,
       }),
     );
   }
@@ -2881,7 +2875,7 @@ function useCourtPatronage(
   placeWorker(next, actorId, workerId, "court_patronage", events);
   const player = next.players[actorId];
   if (player === undefined) throw new Error("Court Patronage actor disappeared");
-  player.resources.coins -= 4;
+  player.resources.coins -= COURT_PATRONAGE_COINS;
   next.commonSupply.coins += 4;
   events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins: -4 });
   const progress = advanceImperialProgress(next, actorId, 1, "court_patronage", events, {
@@ -2892,7 +2886,8 @@ function useCourtPatronage(
   events.push({
     type: "COURT_PATRONAGE_USED",
     playerId: actorId,
-    cost: 5,
+    // Charged above as 4. This read 5 and misreported every use to telemetry and the UI.
+    cost: COURT_PATRONAGE_COINS,
     from: progress.from as 0 | 1 | 2 | 3,
     to: progress.to as 1 | 2 | 3 | 4,
   });
