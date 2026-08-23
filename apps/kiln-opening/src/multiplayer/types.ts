@@ -173,6 +173,7 @@ export type MultiplayerErrorCode =
   | "PERSISTENCE_CONFLICT"
   | "SESSION_ENDED"
   | "UNSUPPORTED_RULES_VERSION"
+  | "RULES_FINGERPRINT_MISMATCH"
   | "COMPUTER_TURN_FAILED"
   // Transport and backend-plane failures. These are not rule outcomes: they mean the
   // request never reached a rules decision, so they must stay distinguishable from
@@ -305,6 +306,12 @@ export interface ProcessedCommandRecord {
 
 export interface StoredRoom extends PublicRoom {
   contentVersion: StoredRulesVersion;
+  /**
+   * Rules fingerprint at room creation, `r<revision>-<digest>`. Null for rooms created
+   * before fingerprinting existed; those cannot have one reconstructed, so they are accepted
+   * on the rules-version gate alone.
+   */
+  contentDigest: string | null;
 }
 
 export interface StoredSeat extends PublicSeat {

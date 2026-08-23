@@ -1,6 +1,7 @@
 import {
   SeededRandom,
   applyAction,
+  rulesFingerprint,
   createPrivateFiringState,
   createGame,
   submitWoodContribution,
@@ -182,6 +183,7 @@ export class AuthoritativeGameService {
         hostSeatId: seatId,
         rulesVersion: "1.1.5",
         contentVersion: "1.1.5",
+        contentDigest: rulesFingerprint(),
         latestRevision: 0,
         endedAt: null,
         endedByPlayerId: null,
@@ -791,6 +793,25 @@ export class AuthoritativeGameService {
         error(
           "UNSUPPORTED_RULES_VERSION",
           "This room uses an older rules version and cannot continue under V1.1.5. Please create a new room.",
+        ),
+      );
+    }
+    // A room can carry the current rules *version* and still have been created under
+    // different rules, because a change can land inside an unchanged version string. Refuse
+    // rather than reinterpret: continuing would silently alter the rules mid-game.
+    // Null means the room predates fingerprinting and cannot have one reconstructed.
+    const fingerprint = rulesFingerprint();
+    if (authenticated.room.contentDigest !== null && authenticated.room.contentDigest !== fingerprint) {
+      return failed(
+        error(
+          "RULES_FINGERPRINT_MISMATCH",
+          "This room was created under a different ruleset than the server now runs, so it "
+            + "cannot continue without changing the rules mid-game. Please create a new room.",
+          null,
+          {
+            roomFingerprint: authenticated.room.contentDigest,
+            serverFingerprint: fingerprint,
+          },
         ),
       );
     }

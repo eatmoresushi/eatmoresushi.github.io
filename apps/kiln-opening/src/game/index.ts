@@ -3,6 +3,7 @@ export * from "./engine.ts";
 export * from "./experiment.ts";
 export * from "./firingRules.ts";
 export * from "./orderRules.ts";
+export * from "./rulesFingerprint.ts";
 export * from "./rng.ts";
 export * from "./selectors.ts";
 export * from "./setup.ts";
