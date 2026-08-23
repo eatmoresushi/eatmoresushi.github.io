@@ -52,9 +52,6 @@ const JUN_ACTIVATION_WOOD = 1;
 /** Ge's activation cost, in Wood. */
 const GE_ACTIVATION_WOOD = 1;
 
-/** VP Ru scores for delivering a Celadon, Plain Masterpiece into an Order. */
-const RU_ORDER_VP = 4;
-
 /** VP Guan scores alongside its Coin stipend on an Imperial Order. */
 const GUAN_ORDER_VP = 1;
 
@@ -64,7 +61,7 @@ const ROUND_FIVE_UNLOCK_VP = 2;
 /** Clay Substitution pays this many Coins for three Clay/Wood in any combination. */
 const CLAY_SUBSTITUTION_COINS = 3;
 const CLAY_SUBSTITUTION_RESOURCES = 3;
-import { matchesOrder } from "./orderRules.ts";
+import { RU_ORDER_VP, matchesOrder, ruBonusCeramic } from "./orderRules.ts";
 import type { RandomSource } from "./rng.ts";
 import { shuffle } from "./rng.ts";
 import type { ContributionCardId } from "./types.ts";
@@ -2936,9 +2933,8 @@ function completeOrder(
   }
   const isImperial = action.orderId.startsWith("I");
   const guanTriggers = isImperial && player.kilnId === "GU" && !player.kilnAbilityUsedThisRound;
-  const ruTriggers = player.kilnId === "RU" && !player.kilnAbilityUsedThisRound && selected.some(
-    (ceramic) => ceramic.glaze === "celadon" && ceramic.decoration === "plain" && ceramic.quality === "masterpiece",
-  );
+  const ruTriggers = player.kilnId === "RU" && !player.kilnAbilityUsedThisRound
+    && selected.some((ceramic) => ruBonusCeramic(ceramic));
   if (action.useGuanWaiver) {
     if (
       !isImperial ||

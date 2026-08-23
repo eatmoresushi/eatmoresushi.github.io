@@ -402,6 +402,12 @@ export interface AIStrategyProfile {
    * averages 7.84 VP against a two-ceramic band worth 10.21. Set by the V1.1.5 lineage.
    */
   orderRetryHorizon?: number;
+  /**
+   * Whether the agent prices its own Kiln Tradition's ability. Frozen V003 leaves this
+   * unset: its evaluator has no kiln-tradition term, so it chose Orders and Glazes without
+   * knowing its ability existed. Set by the V1.1.5 lineage.
+   */
+  traditionAwareness?: boolean;
 }
 
 export interface AIDecisionLog {

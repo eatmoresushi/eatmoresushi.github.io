@@ -4,7 +4,13 @@ import {
   IMPERIAL_ORDERS,
   MARKET_ORDERS,
   ORDER_DEFINITIONS,
+  RU_BONUS_DECORATION,
+  RU_BONUS_GLAZE,
+  RU_BONUS_QUALITY,
+  RU_ORDER_VP,
   officialImperialTrackRules,
+  orderAdmitsGeCrackle,
+  orderAdmitsRuBonus,
   QUALITY_RANK,
   SHAPES,
   SHAPE_COSTS,
@@ -384,10 +390,23 @@ function reasonsFor(
   return reasons;
 }
 
+/**
+ * How strongly this seat should steer an otherwise-free Glaze/Decoration choice toward
+ * Ru's Celadon, Plain pair. Zero for every other Tradition, once the ability has fired this
+ * round, and for frozen V003, which carries no `traditionAwareness` flag.
+ */
+function ruAssignmentPreference(observation: PlayerObservation, traditionAware: boolean): number {
+  if (!traditionAware) return 0;
+  const player = observation.game.players[observation.playerId];
+  if (player === undefined || player.kilnId !== "RU" || player.kilnAbilityUsedThisRound) return 0;
+  return bestQualityProbability(observation, RU_BONUS_GLAZE, RU_BONUS_QUALITY) * 1.2;
+}
+
 export function evaluateOrderFeasibility(
   observation: PlayerObservation,
   orderId: string,
   retryHorizon = 1,
+  traditionAware = false,
 ): OrderFeasibility {
   const order = ORDER_DEFINITIONS[orderId];
   if (order === undefined) {
@@ -411,11 +430,20 @@ export function evaluateOrderFeasibility(
     const assignments = bestAssignmentForTargets(observation, order, targets);
     return assignments === null ? [] : [{ assignments, relationConflicts: relationConflicts(order, assignments) }];
   });
-  const assignments = options.sort((left, right) => {
-    const leftDebt = left.assignments.reduce((sum, assignment) => sum + assignment.stageDebt + 2 * (1 - assignment.qualityProbability), 0);
-    const rightDebt = right.assignments.reduce((sum, assignment) => sum + assignment.stageDebt + 2 * (1 - assignment.qualityProbability), 0);
-    return leftDebt - rightDebt;
-  })[0]?.assignments ?? [];
+  // Ru breaks ties toward Celadon + Plain. Two thirds of Order slots fix neither Glaze nor
+  // Decoration, so the choice is usually free -- Celadon already sits on the neutral Base
+  // Heat 2 and Plain is the cheapest Decoration -- yet only 41% of Ru's fired ceramics came
+  // out Celadon + Plain, because nothing in the plan preferred them. The bonus is scaled by
+  // the chance of actually reaching Masterpiece, so it never outbids a real debt difference.
+  const ruPreference = ruAssignmentPreference(observation, traditionAware);
+  const cost = (option: { assignments: readonly PlannedCeramicAssignment[] }): number => option.assignments.reduce(
+    (sum, assignment) => sum + assignment.stageDebt + 2 * (1 - assignment.qualityProbability)
+      - (ruPreference > 0 && assignment.glaze === RU_BONUS_GLAZE && assignment.decoration === RU_BONUS_DECORATION
+        ? ruPreference
+        : 0),
+    0,
+  );
+  const assignments = options.sort((left, right) => cost(left) - cost(right))[0]?.assignments ?? [];
   const relationConflictCount = assignments.length === 0 ? 1 : relationConflicts(order, assignments);
   const actionDebt = assignments.reduce((sum, assignment) => sum + assignment.stageDebt, 0);
   const resourceDebt = resourceDebtFor(observation, assignments);
@@ -471,6 +499,57 @@ function intentValue(
   }
 }
 
+/**
+ * Chance a ceramic of this Glaze lands 1 or 2 off its Preferred Heat -- exactly the window
+ * Ge's ability converts into a Masterpiece. Read from the same Fire expectation the rest of
+ * the planner uses, so it tracks Techniques and known cards rather than assuming a flat deck.
+ */
+function nearMissProbability(observation: PlayerObservation, glaze: Glaze): number {
+  const modifiers = [...new Set(activeKilnSpaceIds(observation.game.playerCount).map(kilnZoneModifier))];
+  return Math.max(...modifiers.map((zone) => fireExpectation(observation).reduce((sum, card) => {
+    const difference = Math.abs(2 + zone + card.modifier - preferredHeat(glaze));
+    return sum + (difference === 1 || difference === 2 ? card.probability : 0);
+  }, 0)));
+}
+
+/**
+ * Expected VP from Ru's Order bonus if this Order is completed.
+ *
+ * Priced at the Order-choice level because that is where the decision actually is: 32 of
+ * the 52 Orders admit a Celadon, Plain ceramic, and an agent that does not look for them
+ * takes the other 20 just as readily. Multiplied by the chance the ceramic reaches
+ * Masterpiece, which is the part Ru cannot simply choose. Zero for every other Tradition,
+ * once the ability has fired this round, and for frozen V003.
+ */
+function traditionOrderBonus(
+  observation: PlayerObservation,
+  feasibility: OrderFeasibility,
+  profile: AIStrategyProfile,
+): number {
+  if (profile.traditionAwareness !== true) return 0;
+  const player = observation.game.players[observation.playerId];
+  if (player === undefined || player.kilnAbilityUsedThisRound) return 0;
+  const order = ORDER_DEFINITIONS[feasibility.orderId];
+  if (order === undefined) return 0;
+
+  if (player.kilnId === "RU") {
+    if (!orderAdmitsRuBonus(order)) return 0;
+    return RU_ORDER_VP * bestQualityProbability(observation, RU_BONUS_GLAZE, RU_BONUS_QUALITY);
+  }
+  if (player.kilnId === "GE") {
+    // Ge's payoff is a Quality upgrade, not a flat award: a ceramic that lands 1 or 2 off
+    // becomes a Masterpiece. Worth the gap between those two Qualities, weighted by the
+    // chance of landing in that window, less the Wood the ability costs. Zero when the
+    // Order pins every slot to some Decoration other than Crackle, because then firing the
+    // ability would break the very Order it was meant to serve.
+    if (!orderAdmitsGeCrackle(order)) return 0;
+    const glaze = feasibility.assignments[0]?.glaze ?? RU_BONUS_GLAZE;
+    const upgrade = profile.qualityParameters.masterpiece - profile.qualityParameters.fine;
+    return Math.max(0, upgrade * nearMissProbability(observation, glaze) - profile.resourceValues.wood);
+  }
+  return 0;
+}
+
 export function orderPlanUtility(
   observation: PlayerObservation,
   feasibility: OrderFeasibility,
@@ -484,7 +563,7 @@ export function orderPlanUtility(
   const ruleDelta = order.imperialProgressReward === undefined
     ? 0
     : imperialProgressRuleDelta(observation, order.imperialProgressReward);
-  return feasibility.probability * (reward + ruleDelta) +
+  return feasibility.probability * (reward + ruleDelta + traditionOrderBonus(observation, feasibility, profile)) +
     intentValue(observation, intent, order) +
     (profile.orderValues[order.id] ?? reward) * 0.04 -
     feasibility.actionDebt * 0.28;
@@ -518,7 +597,7 @@ export function buildPlayerPlan(
   assignedIntent: StrategyIntent = DEFAULT_INTENT,
 ): PlayerPlan {
   const player = observation.game.players[observation.playerId]!;
-  const orderFeasibilities = player.orderHand.map((orderId) => evaluateOrderFeasibility(observation, orderId, profile.orderRetryHorizon));
+  const orderFeasibilities = player.orderHand.map((orderId) => evaluateOrderFeasibility(observation, orderId, profile.orderRetryHorizon, profile.traditionAwareness));
   const ordered = [...orderFeasibilities].sort(
     (left, right) => orderPlanUtility(observation, right, profile, assignedIntent) - orderPlanUtility(observation, left, profile, assignedIntent) || left.orderId.localeCompare(right.orderId),
   );

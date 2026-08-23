@@ -139,5 +139,7 @@ export function createV115Profile(playerCount: 2 | 3 | 4): AIStrategyProfile {
   // model leaves: 1.39x/1.93x on one- and two-ceramic Orders against the 1.37x/2.01x the
   // data asks for. See docs/experiments/v115-order-valuation-001.md.
   profile.orderRetryHorizon = 3;
+  // Price the seat's own Kiln Tradition ability. See docs/experiments/v115-tradition-001.md.
+  profile.traditionAwareness = true;
   return profile;
 }

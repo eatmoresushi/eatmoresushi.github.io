@@ -141,3 +141,70 @@ export function matchesOrder(
     .filter((index): index is number => index !== null);
   return decorationIndices.some((index) => hasValidAssignment(order, selected, index));
 }
+
+/**
+ * Ru's Order bonus, in one place.
+ *
+ * The rule is "once per round, when you complete any Order using a Celadon, Plain
+ * Masterpiece, gain 4 VP". Every part of that lived as a literal inside `applyCompleteOrder`
+ * and nowhere else, so the AI could not consult it: the shipped evaluator carried no
+ * kiln-tradition term at all and chose Orders, Glazes and firing targets without knowing
+ * the ability existed. Ru fired 0.47 times per game in self-play against 2 for a human
+ * table, and was the weakest Tradition under both policies.
+ *
+ * These are exported so the engine and the AI answer the question with the same code.
+ */
+export const RU_BONUS_GLAZE = "celadon" as const;
+export const RU_BONUS_DECORATION = "plain" as const;
+export const RU_BONUS_QUALITY = "masterpiece" as const;
+
+/** VP Ru scores for delivering a Celadon, Plain Masterpiece into an Order. */
+export const RU_ORDER_VP = 4;
+
+/** Does this finished ceramic trigger Ru's bonus? The engine's own test. */
+export function ruBonusCeramic(
+  ceramic: Pick<FinishedCeramic, "glaze" | "decoration" | "quality">,
+): boolean {
+  return ceramic.glaze === RU_BONUS_GLAZE
+    && ceramic.decoration === RU_BONUS_DECORATION
+    && ceramic.quality === RU_BONUS_QUALITY;
+}
+
+/**
+ * Could this Order be completed using a Celadon, Plain ceramic?
+ *
+ * This is a *compatibility* test, not an exact-match one. A slot that fixes no Glaze can be
+ * filled with Celadon, and a slot that fixes no Decoration can be filled with Plain, so an
+ * open slot qualifies just as much as one that spells out Celadon and Plain. 32 of the 52
+ * Orders in the pool admit the bonus on that reading; only a slot demanding some other
+ * Glaze or Decoration rules it out. Quality is deliberately not considered here -- whether
+ * the ceramic actually fires to Masterpiece is a firing question, not an Order-choice one.
+ */
+export function orderAdmitsRuBonus(order: OrderDefinition): boolean {
+  return order.ceramics.some((requirement) => {
+    const glazeOk = requirement.glaze === undefined
+      ? requirement.glazes === undefined || requirement.glazes.includes(RU_BONUS_GLAZE)
+      : requirement.glaze === RU_BONUS_GLAZE;
+    const decorationOk = requirement.decoration === undefined
+      || requirement.decoration === RU_BONUS_DECORATION;
+    return glazeOk && decorationOk;
+  });
+}
+
+/**
+ * Ge's ability rewrites the chosen ceramic's Decoration to Crackle as a side effect of
+ * correcting its Heat. An Order slot that demands some other Decoration therefore cannot
+ * receive a ceramic Ge has fixed -- using the ability would break the match.
+ *
+ * The evaluator already checks this when deciding whether to *fire* the ability
+ * (`forced_crackle_breaks_plan`). This predicate is the same rule one step earlier, at the
+ * point where the Order is taken: 38 of the 52 Orders leave at least one slot open to
+ * Crackle, and an agent that does not look for them takes the other 14 just as readily.
+ */
+export const GE_BONUS_DECORATION = "crackle" as const;
+
+export function orderAdmitsGeCrackle(order: OrderDefinition): boolean {
+  return order.ceramics.some((requirement) => (
+    requirement.decoration === undefined || requirement.decoration === GE_BONUS_DECORATION
+  ));
+}

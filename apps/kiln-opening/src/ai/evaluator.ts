@@ -120,7 +120,7 @@ function acquisitionScore(
   intent: StrategyIntent,
   orderId: string,
 ): { value: number; feasibility: OrderFeasibility } {
-  const feasibility = evaluateOrderFeasibility(observation, orderId, profile.orderRetryHorizon);
+  const feasibility = evaluateOrderFeasibility(observation, orderId, profile.orderRetryHorizon, profile.traditionAwareness);
   const order = ORDER_DEFINITIONS[orderId];
   if (order === undefined) return { value: -20, feasibility };
   let value = orderPlanUtility(observation, feasibility, profile, intent)
