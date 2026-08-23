@@ -95,8 +95,8 @@
     "name": "Fuel Ledger",
     "nameZh": "柴薪簿",
     "cost": 3,
-    "ability": "After all Contribution cards are revealed but before Base Heat is determined, if you revealed Stoke the Fire, you may spend 2 additional Wood. If you do, your Stoke gives +2 Heat instead of +1 this firing.",
-    "abilityZh": "所有出柴牌揭示后、基础火候确定之前，若你揭示的是添薪，可额外花费2柴薪。若如此做，本次烧制中你的添薪改为+2火候而非+1。",
+    "ability": "After all Contribution cards are revealed but before Base Heat is determined, if you revealed Stoke the Fire, you may spend 1 additional Wood. If you do, your Stoke gives +2 Heat instead of +1 this firing.",
+    "abilityZh": "所有出柴牌揭示后、基础火候确定之前，若你揭示的是添薪，可额外花费1柴薪。若如此做，本次烧制中你的添薪改为+2火候而非+1。",
     "oncePerRound": true
   },
   {

@@ -21,6 +21,7 @@ import {
   dingExtraVesselIsFree,
 } from "./experiment.ts";
 import {
+  FUEL_LEDGER_WOOD,
   GE_ACTIVATION_WOOD,
   JUN_ACTIVATION_WOOD,
   QUALITY_RANK,
@@ -33,7 +34,6 @@ import {
 } from "./firingRules.ts";
 
 /** Fuel Ledger spends this much extra Wood to turn a revealed Stoke into +2 Heat. */
-const FUEL_LEDGER_WOOD = 1;
 
 /** Office sale value of one Flawed ceramic. */
 const FLAWED_SALE_COINS = 2;

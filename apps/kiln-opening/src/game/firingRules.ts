@@ -60,5 +60,8 @@ export const QUALITY_RANK: Record<Quality, number> = {
  * `src/ai/evaluator.ts`, so a repricing updated the engine and left the AI valuing the old
  * number. They live here now and are imported by both.
  */
+/** Extra Wood a revealed Stoke pays to become +2 Heat instead of +1. */
+export const FUEL_LEDGER_WOOD = 1;
+
 export const JUN_ACTIVATION_WOOD = 2;
 export const GE_ACTIVATION_WOOD = 1;
