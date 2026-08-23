@@ -197,6 +197,8 @@ export interface PlayerObservation {
   ownFireModifierPeek: FireModifier | null;
   knownFireRemaining: Record<"-2" | "-1" | "0" | "1" | "2", number>;
   junActivationCoinCost: 0 | 1 | 2;
+  /** True only under the ding-cost-ab-001 `free` arm; shipped rules charge for the vessel. */
+  dingExtraVesselFree: boolean;
   imperialTrackRules: ActiveImperialTrackRules;
 }
 

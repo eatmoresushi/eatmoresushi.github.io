@@ -473,7 +473,9 @@ function scoreAction(
       // `applyFormCeramics`. While the two disagreed the agent took a vessel it believed
       // free and paid for it unbudgeted, which understated Ding by about half a point. The
       // extra is restricted to Bowl/Plate/Washer, so no Shifu Vase/Censer discount applies.
-      if (action.dingExtraShape !== undefined) formingClayCost += SHAPE_COSTS[action.dingExtraShape];
+      if (action.dingExtraShape !== undefined && !observation.dingExtraVesselFree) {
+        formingClayCost += SHAPE_COSTS[action.dingExtraShape];
+      }
       const substitutions = action.claySubstitutions ?? (action.claySubstitutionTarget === undefined ? 0 : 1);
       factors.resourceEfficiency -= (formingClayCost - substitutions) * marginalResourceValue(
         player.resources.clay,

@@ -1,5 +1,6 @@
 import { IMPERIAL_PROGRESS } from "./content.ts";
 import type {
+  DingCostExperimentConfig,
   GameExperimentConfig,
   ImperialTrackExperimentConfig,
   JunAbExperimentConfig,
@@ -118,8 +119,15 @@ function isImperialTrackConfig(value: unknown): value is ImperialTrackExperiment
   return false;
 }
 
+function isDingCostConfig(value: unknown): value is DingCostExperimentConfig {
+  if (typeof value !== "object" || value === null) return false;
+  const candidate = value as Partial<DingCostExperimentConfig>;
+  return candidate.experimentId === "ding-cost-ab-001"
+    && (candidate.experimentArm === "paid" || candidate.experimentArm === "free");
+}
+
 export function isSupportedExperimentConfig(value: unknown): value is GameExperimentConfig {
-  return isJunConfig(value) || isImperialTrackConfig(value);
+  return isJunConfig(value) || isImperialTrackConfig(value) || isDingCostConfig(value);
 }
 
 export function junActivationCoinCost(config: GameExperimentConfig | undefined): 0 | 1 | 2 {
@@ -154,4 +162,12 @@ export function isImperialTrackExperiment(
   config: GameExperimentConfig | undefined,
 ): config is ImperialTrackExperimentConfig {
   return config?.experimentId === "imperial-track-ab-001";
+}
+
+/**
+ * Does Ding's extra vessel pay its normal Clay cost? Shipped rules say yes; only the
+ * `ding-cost-ab-001` `free` arm says no.
+ */
+export function dingExtraVesselIsFree(config: GameExperimentConfig | undefined): boolean {
+  return config?.experimentId === "ding-cost-ab-001" && config.experimentArm === "free";
 }

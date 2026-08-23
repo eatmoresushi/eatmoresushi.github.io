@@ -1,6 +1,7 @@
 import {
   GAME_CONFIG,
   activeImperialTrackRules,
+  dingExtraVesselIsFree,
   junActivationCoinCost,
 } from "../game/index.ts";
 import type { FireModifier, GameState, PlayerId, PrivateFiringState } from "../game/index.ts";
@@ -36,6 +37,7 @@ export function createPlayerObservation(
     ownFireModifierPeek: state.privateFirePeeks?.[playerId] ?? null,
     knownFireRemaining,
     junActivationCoinCost: junActivationCoinCost(state.experimentConfig),
+    dingExtraVesselFree: dingExtraVesselIsFree(state.experimentConfig),
     imperialTrackRules: activeImperialTrackRules(state.experimentConfig),
   };
 }

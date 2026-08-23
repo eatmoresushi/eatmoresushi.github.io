@@ -18,6 +18,7 @@ import { applyFailure, ruleError } from "./errors.ts";
 import {
   activeImperialOrderProgressReward,
   activeImperialTrackRules,
+  dingExtraVesselIsFree,
 } from "./experiment.ts";
 import {
   GE_ACTIVATION_WOOD,
@@ -754,7 +755,8 @@ function formCeramics(
   // does not count against the action's normal limit. `src/ai/evaluator.ts` must charge the
   // same set -- when the two disagree the agent plans against a price the engine will not
   // charge, which is invisible because neither side errors.
-  for (const shape of allFormedShapes) {
+  const chargedShapes = dingExtraVesselIsFree(state.experimentConfig) ? action.shapes : allFormedShapes;
+  for (const shape of chargedShapes) {
     totalClay +=
       context.worker.kind === "shifu" && (shape === "vase" || shape === "censer")
         ? 1

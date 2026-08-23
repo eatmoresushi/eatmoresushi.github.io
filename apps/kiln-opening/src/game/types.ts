@@ -419,9 +419,22 @@ export interface ImperialTrackExperimentConfig {
 
 
 
+/**
+ * Whether Ding's extra vessel pays its normal Clay cost. Shipped rules charge for it; the
+ * `free` arm restores the pre-v1.1.5 behaviour so the two can be compared on one seed set
+ * instead of across separate runs, where other changes confound the comparison.
+ */
+export type DingCostExperimentArm = "paid" | "free";
+
+export interface DingCostExperimentConfig {
+  readonly experimentId: "ding-cost-ab-001";
+  readonly experimentArm: DingCostExperimentArm;
+}
+
 export type GameExperimentConfig =
   | JunAbExperimentConfig
-  | ImperialTrackExperimentConfig;
+  | ImperialTrackExperimentConfig
+  | DingCostExperimentConfig;
 
 export interface PlayerSetup {
   id: PlayerId;
