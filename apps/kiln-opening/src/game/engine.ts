@@ -20,6 +20,8 @@ import {
   activeImperialTrackRules,
 } from "./experiment.ts";
 import {
+  GE_ACTIVATION_WOOD,
+  JUN_ACTIVATION_WOOD,
   QUALITY_RANK,
   contributionHeatAdjustment,
   contributionWoodCost,
@@ -41,16 +43,6 @@ const ORDER_DISPLAY_ROTATION = 2;
 /** Labour pays these Coins; it has no worker limit, so it is always available. */
 const LABOUR_APPRENTICE_COINS = 2;
 const LABOUR_SHIFU_COINS = 4;
-
-/**
- * Jun pays Wood rather than Coins. Wood is the currency of kiln control in v1.1.4 --
- * Contribution cards and every Firing Technique draw on it -- while Labour made Coins
- * abundant, so a Coin price no longer represented a real choice.
- */
-const JUN_ACTIVATION_WOOD = 1;
-
-/** Ge's activation cost, in Wood. */
-const GE_ACTIVATION_WOOD = 1;
 
 /** VP paid instead of an Apprentice that unlocks too late in Round 5 to ever act. */
 const ROUND_FIVE_UNLOCK_VP = 2;
@@ -756,13 +748,12 @@ function formCeramics(
   for (const shape of allFormedShapes) {
     requiredByShape.set(shape, (requiredByShape.get(shape) ?? 0) + 1);
   }
-  // Ding's extra vessel is free: the cost loop covers only the vessels the action formed.
-  // Measured against charging for it, both settle inside their intervals -- free lands
-  // Ding 2.0 points above fair share, charging lands it 2.2 below -- so this is a design
-  // call, not a balance one. Free is chosen because the ability then fires 2.31 times a
-  // game rather than 1.49, which is what makes it feel like a tradition rather than a
-  // rounding error. `src/ai/evaluator.ts` must match: it charges the same set.
-  for (const shape of action.shapes) {
+  // Ding's extra vessel pays the normal Clay cost: the loop covers every vessel formed,
+  // including the extra. The ability's remaining value is the extra vessel itself, which
+  // does not count against the action's normal limit. `src/ai/evaluator.ts` must charge the
+  // same set -- when the two disagree the agent plans against a price the engine will not
+  // charge, which is invisible because neither side errors.
+  for (const shape of allFormedShapes) {
     totalClay +=
       context.worker.kind === "shifu" && (shape === "vase" || shape === "censer")
         ? 1

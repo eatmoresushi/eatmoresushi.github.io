@@ -32,8 +32,8 @@
     "nameZh": "定窑",
     "abilityName": "Moulded Production",
     "abilityNameZh": "覆烧成模",
-    "ability": "Once per round, when resolving the Forming Studio, after you shape a Bowl, Plate or Washer, you may shape one additional vessel of the same Shape at no Clay cost. This additional vessel does not count against the action's normal limit.",
-    "abilityZh": "每轮一次，在结算制坯坊时，于你制作1件碗、盘或洗之后，可免付陶土费用再制作1件相同器形的坯体。此额外坯体不计入该行动的正常上限。"
+    "ability": "Once per round, when resolving the Forming Studio, after you shape a Bowl, Plate or Washer, you may shape one additional vessel of the same Shape, paying its normal Clay cost. This additional vessel does not count against the action's normal limit.",
+    "abilityZh": "每轮一次，在结算制坯坊时，于你制作1件碗、盘或洗之后，可支付正常陶土费用再制作1件相同器形的坯体。此额外坯体不计入该行动的正常上限。"
   },
   {
     "id": "JU",
@@ -41,7 +41,7 @@
     "nameZh": "钧窑",
     "abilityName": "Kiln Transformation",
     "abilityNameZh": "入窑一色",
-    "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, you may pay 1 Wood to adjust the Actual Heat of one of your ceramics by +1 or -1.",
-    "abilityZh": "每轮一次，在计算实际火候后、判定品第之前，可支付1柴薪，将你1件器物的实际火候调整+1或-1。"
+    "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, you may pay 2 Wood to adjust the Actual Heat of one of your ceramics by +1 or -1.",
+    "abilityZh": "每轮一次，在计算实际火候后、判定品第之前，可支付2柴薪，将你1件器物的实际火候调整+1或-1。"
   }
 ]

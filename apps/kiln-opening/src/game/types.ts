@@ -621,7 +621,7 @@ export type GameEvent =
   | { type: "TECHNIQUE_ACQUIRED"; playerId: PlayerId; techniqueId: TechniqueId; cost: number }
   | { type: "TECHNIQUE_USED"; playerId: PlayerId; techniqueId: TechniqueId }
   | { type: "KILN_ABILITY_USED"; playerId: PlayerId; kilnId: KilnId }
-  | { type: "JUN_ACTIVATION_PAID"; playerId: PlayerId; wood: 1 }
+  | { type: "JUN_ACTIVATION_PAID"; playerId: PlayerId; wood: number }
   | { type: "WORK_PHASE_ENDED" }
   | { type: "WOOD_SUBMITTED"; playerId: PlayerId; windowId: string }
   | { type: "WOOD_REVEALED"; contributions: Record<PlayerId, ContributionCardId> }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SeededRandom, applyAction, createPrivateFiringState } from "../src/game";
+import { JUN_ACTIVATION_WOOD, SeededRandom, applyAction, createPrivateFiringState } from "../src/game";
 import type { CeramicId, GameState, PlayerId } from "../src/game";
 import type { AIAction } from "../src/ai/types.ts";
 import { getLegalAIActions } from "../src/ai/legalActions.ts";
@@ -113,6 +113,31 @@ describe("legal-action enumeration matches the engine", () => {
     for (const action of accepted) {
       expect(offered, `the engine accepts this Jun move but the AI never offers it: ${action}`).toContain(action);
     }
+  });
+
+  it("gates Jun on Wood rather than Coins, in both directions", () => {
+    // The fixture above hands out 5 Wood and 9 Coins, so a Coin-based gate and a Wood-based
+    // one were indistinguishable -- which is how the enumerator came to read
+    // `resources.coins` against a cost from the retired jun-ab-001 Coin experiment while the
+    // engine charged Wood. Vary the two independently so they cannot be confused again.
+    const { state, actor, owned } = abilityWindow("JU");
+    const candidates: AIAction[] = owned.flatMap((ceramicId) =>
+      ([-1, 1] as const).map((delta) => ({ type: "RESOLVE_JUN" as const, ceramicId, delta })));
+    const withResources = (wood: number, coins: number): { offered: string[]; accepted: string[] } => {
+      state.players[actor]!.resources = { clay: 3, wood, coins };
+      return {
+        offered: enumeratedByAi(state, actor, "RESOLVE_JUN").filter((a) => !a.includes("null")),
+        accepted: acceptedByEngine(state, actor, candidates),
+      };
+    };
+
+    const woodNoCoins = withResources(JUN_ACTIVATION_WOOD, 0);
+    expect(woodNoCoins.offered.length).toBeGreaterThan(0);
+    expect(woodNoCoins.offered.sort()).toEqual(woodNoCoins.accepted.sort());
+
+    const coinsNoWood = withResources(JUN_ACTIVATION_WOOD - 1, 20);
+    expect(coinsNoWood.accepted).toHaveLength(0);
+    expect(coinsNoWood.offered).toHaveLength(0);
   });
 
   it("offers every Contribution card the engine accepts, and no others", () => {

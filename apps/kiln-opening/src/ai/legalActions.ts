@@ -11,7 +11,7 @@ import {
   CONTRIBUTION_CARD_IDS,
   contributionWoodCost,
   currentDecisionActor,
-  junActivationCoinCost,
+  JUN_ACTIVATION_WOOD,
   orderHandLimit,
   SeededRandom,
   submitWoodContribution,
@@ -489,10 +489,12 @@ function candidatePhaseActions(
         (ceramic) => ceramic.ownerId === playerId && ceramic.stage === "loaded",
       );
       if (player?.kilnId === "JU") {
-        const activationCost = junActivationCoinCost(state.experimentConfig);
+        // Jun pays Wood, not Coins. This previously read `resources.coins` against a cost
+        // from the retired jun-ab-001 Coin experiment, so the enumerated set disagreed with
+        // the engine in both directions.
         return [
           { type: "RESOLVE_JUN", ceramicId: null, delta: null },
-          ...(player.resources.coins < activationCost ? [] : loaded.flatMap(({ id }) => ([-1, 1] as const).map((delta) => ({
+          ...(player.resources.wood < JUN_ACTIVATION_WOOD ? [] : loaded.flatMap(({ id }) => ([-1, 1] as const).map((delta) => ({
             type: "RESOLVE_JUN" as const,
             ceramicId: id,
             delta,

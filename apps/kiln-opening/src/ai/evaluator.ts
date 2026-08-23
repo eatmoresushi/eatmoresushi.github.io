@@ -12,6 +12,8 @@ import {
   preferredHeat,
   qualityFromDifference,
   isImperialOrder,
+  GE_ACTIVATION_WOOD,
+  JUN_ACTIVATION_WOOD,
 } from "../game/index.ts";
 import type { CeramicState, FinishedCeramic, Quality } from "../game/index.ts";
 import { actionOrderId, actionTechniqueId } from "./legalActions.ts";
@@ -467,10 +469,11 @@ function scoreAction(
           ? 1
           : SHAPE_COSTS[shape];
       }
-      // Ding's extra vessel is free under the current rules, so nothing is charged for it
-      // here. If the engine ever charges for it again, this must charge too: while the two
-      // disagreed, the agent took a vessel it believed free and paid for it unbudgeted,
-      // which understated Ding by about half a point in measurement.
+      // Ding's extra vessel now pays the normal Clay cost, so it is charged here to match
+      // `applyFormCeramics`. While the two disagreed the agent took a vessel it believed
+      // free and paid for it unbudgeted, which understated Ding by about half a point. The
+      // extra is restricted to Bowl/Plate/Washer, so no Shifu Vase/Censer discount applies.
+      if (action.dingExtraShape !== undefined) formingClayCost += SHAPE_COSTS[action.dingExtraShape];
       const substitutions = action.claySubstitutions ?? (action.claySubstitutionTarget === undefined ? 0 : 1);
       factors.resourceEfficiency -= (formingClayCost - substitutions) * marginalResourceValue(
         player.resources.clay,
@@ -904,12 +907,6 @@ export function strategyTags(observation: PlayerObservation): StrategyTag[] {
 }
 
 const CLAY_SUBSTITUTION_COIN_COST = 3;
-
-/** Jun's activation cost, in Wood. Mirrors the engine constant. */
-const JUN_ACTIVATION_WOOD = 1;
-
-/** Ge's activation cost, in Wood. Mirrors the engine constant. */
-const GE_ACTIVATION_WOOD = 1;
 
 /** VP that a Coin balance is worth if the game ended now, read from the authoritative rules. */
 function terminalCoinVp(coins: number): number {

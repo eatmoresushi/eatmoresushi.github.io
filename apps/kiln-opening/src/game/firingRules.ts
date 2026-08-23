@@ -52,3 +52,13 @@ export const QUALITY_RANK: Record<Quality, number> = {
   fine: 2,
   masterpiece: 3,
 };
+
+/**
+ * Kiln Tradition activation costs, in Wood.
+ *
+ * Both were previously module-private in `engine.ts` with hand-copied duplicates in
+ * `src/ai/evaluator.ts`, so a repricing updated the engine and left the AI valuing the old
+ * number. They live here now and are imported by both.
+ */
+export const JUN_ACTIVATION_WOOD = 2;
+export const GE_ACTIVATION_WOOD = 1;
