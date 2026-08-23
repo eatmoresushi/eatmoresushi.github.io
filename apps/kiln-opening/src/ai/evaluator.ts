@@ -1,5 +1,6 @@
 import {
   DECORATION_COSTS,
+  GAME_CONFIG,
   IMPERIAL_PROGRESS,
   ORDER_DEFINITIONS,
   contributionHeatAdjustment,
@@ -23,6 +24,7 @@ import {
   marginalResourceValue,
   imperialProgressRuleDelta,
   orderPlanUtility,
+  progressMoveValue,
   terminalPipelinePenalty,
 } from "./planning.ts";
 import { forecastTechniqueAcquisition } from "./techniqueForecast.ts";
@@ -204,9 +206,11 @@ function junDiagnostic(
   selectedDelta: -1 | 1 | null,
 ): OptionalEffectDiagnostic {
   const player = observation.game.players[observation.playerId];
-  const coinCost = observation.junActivationCoinCost * marginalResourceValue(
-    player?.resources.coins ?? 0,
-    plan.resourceDemand.coins,
+  // Jun pays Wood in v1.1.4, which competes directly with Contribution cards and every
+  // Firing Technique. Pricing it in Coins would understate the real cost.
+  const coinCost = JUN_ACTIVATION_WOOD * marginalResourceValue(
+    player?.resources.wood ?? 0,
+    plan.resourceDemand.wood,
     0,
   );
   const loaded = ownCeramics(observation).filter(
@@ -334,18 +338,23 @@ function geDiagnostic(
   const eligible = ownCeramics(observation).filter((ceramic): ceramic is Extract<CeramicState, { stage: "loaded" }> => {
     if (ceramic.stage !== "loaded") return false;
     const result = observation.game.firingContext?.ceramicResults[ceramic.id];
-    return result !== undefined && result.finalHeatDifference === 1;
+    // v1.1.4 widened Ge to a Heat Difference of 1 or 2. From 2 the jump is Standard to
+    // Masterpiece, a larger prize than the Fine-to-Masterpiece case, which matters because
+    // the forced Crackle has to be worth paying for.
+    return result !== undefined && (result.finalHeatDifference === 1 || result.finalHeatDifference === 2);
   });
   const evaluated = eligible.map((ceramic) => {
-    const before = plannedOrderCompatibility(observation, plan, ceramic.id, "fine", ceramic.decoration);
+    const difference = observation.game.firingContext?.ceramicResults[ceramic.id]?.finalHeatDifference ?? 1;
+    const currentQuality = qualityFromDifference(difference);
+    const before = plannedOrderCompatibility(observation, plan, ceramic.id, currentQuality, ceramic.decoration);
     const after = plannedOrderCompatibility(observation, plan, ceramic.id, "masterpiece", "crackle");
-    const qualityGain = qualityValue("masterpiece", profile) - qualityValue("fine", profile);
-    return { ceramic, before, after, qualityGain, orderDelta: after.value - before.value, net: qualityGain + after.value - before.value };
+    const qualityGain = qualityValue("masterpiece", profile) - qualityValue(currentQuality, profile);
+    return { ceramic, currentQuality, before, after, qualityGain, orderDelta: after.value - before.value, net: qualityGain + after.value - before.value };
   }).sort((left, right) => right.net - left.net || left.ceramic.id.localeCompare(right.ceramic.id));
   const selected = selectedCeramicId === null ? evaluated[0] : evaluated.find(({ ceramic }) => ceramic.id === selectedCeramicId);
   if (selected === undefined) return qualityDiagnostic("ge", observation, plan, selectedCeramicId, null, null, 0, 0, 0, "no_eligible_target", eligible.map(({ id }) => id));
   return qualityDiagnostic(
-    "ge", observation, plan, selectedCeramicId, "fine", "masterpiece", selected.qualityGain, 0, 0,
+    "ge", observation, plan, selectedCeramicId, selected.currentQuality, "masterpiece", selected.qualityGain, 0, 0,
     selected.net <= 0 ? "forced_crackle_breaks_plan" : selected.orderDelta < 0 ? "quality_outweighs_order_loss" : "quality_and_order_compatible",
     eligible.map(({ id }) => id), selected.before.compatibleOrders, selected.after.compatibleOrders, selected.orderDelta,
   );
@@ -456,6 +465,10 @@ function scoreAction(
           ? 1
           : SHAPE_COSTS[shape];
       }
+      // Ding's extra vessel is free under the current rules, so nothing is charged for it
+      // here. If the engine ever charges for it again, this must charge too: while the two
+      // disagreed, the agent took a vessel it believed free and paid for it unbudgeted,
+      // which understated Ding by about half a point in measurement.
       const substitutions = action.claySubstitutions ?? (action.claySubstitutionTarget === undefined ? 0 : 1);
       factors.resourceEfficiency -= (formingClayCost - substitutions) * marginalResourceValue(
         player.resources.clay,
@@ -527,10 +540,23 @@ function scoreAction(
       }
       return;
     }
-    case "OFFICE_GAIN_COINS": {
+    case "USE_LABOUR": {
       const amount = actionWorkerKind(observation, action) === "shifu" ? 4 : 2;
-      for (let index = 0; index < amount; index += 1) factors.resourceDemand += marginalResourceValue(player.resources.coins + index, plan.resourceDemand.coins, 0);
-      if (player.resources.coins >= plan.resourceDemand.coins + 1) factors.opportunityCost -= 4;
+      let instrumental = 0;
+      for (let index = 0; index < amount; index += 1) {
+        instrumental += marginalResourceValue(player.resources.coins + index, plan.resourceDemand.coins, 0);
+      }
+      // Coins are not purely instrumental. Every 3 left at game end convert to 1 VP, up to
+      // 5 VP, so a coin keeps a floor value even when there is nothing left to buy. Pricing
+      // only the instrumental side put a surplus coin at 0.08 and, with the hoarding
+      // penalty below, made Labour score about -3.8 in Round 5 -- so the agent passed
+      // rather than turn an idle worker into guaranteed points.
+      const terminal = terminalCoinVp(player.resources.coins + amount) - terminalCoinVp(player.resources.coins);
+      factors.resourceDemand += Math.max(instrumental, terminal);
+      // Hoarding is only wasteful once the conversion is capped out.
+      if (terminal <= 0 && player.resources.coins >= plan.resourceDemand.coins + 1) {
+        factors.opportunityCost -= 4;
+      }
       return;
     }
     case "BEGIN_OFFICE_ORDERS": {
@@ -606,6 +632,9 @@ function scoreAction(
       const stipendValue = 0;
       const trackVpGain = observation.imperialTrackRules.trackVp[nextProgress]! -
         observation.imperialTrackRules.trackVp[player.imperialProgress]!;
+      // Buying a step onto a 0 VP space is worth far less than buying one onto a 2 VP
+      // space; this term was computed and then discarded.
+      factors.imperialValue += trackVpGain;
       const deadEndPenalty = observation.game.round >= 5 && capacityGain === 0 && stipendValue === 0 && trackVpGain === 0
         ? -12
         : 0;
@@ -731,6 +760,10 @@ function scoreAction(
       diagnostics.optionalEffect = diagnostic;
       if (action.ceramicId !== null) {
         factors.qualityValue += diagnostic.grossBenefit + diagnostic.orderValueDelta;
+        // Ge spends Wood, which competes with Contribution cards and every Firing
+        // Technique. Leaving this unpriced would make the ability look free to the agent.
+        factors.resourceEfficiency -= GE_ACTIVATION_WOOD *
+          marginalResourceValue(player.resources.wood, plan.resourceDemand.wood, 0);
         if (diagnostic.projectedNetValue <= 0) factors.risk -= 30;
       }
       return;
@@ -809,7 +842,13 @@ function scoreAction(
         const progressReward = activeOrderProgressReward(observation, order.imperialProgressReward);
         factors.immediateVP += order.vp;
         factors.resourceEfficiency += order.coins * 0.7;
-        factors.imperialValue += progressReward * 3.5;
+        // Price the space actually landed on, not a flat rate per step. The track pays
+        // 0 / 0 / 2 / 2 / 4 / 8, so advancing 2 -> 3 is worth nothing in VP while 3 -> 4 is
+        // worth 2 plus full Exhibition access. A flat rate makes those identical, which is
+        // exactly the distinction a player has to reason about.
+        factors.imperialValue += progressReward > 0
+          ? progressMoveValue(observation, observation.imperialTrackRules, progressReward as 1 | 2 | 3)
+          : 0;
         if (order.imperialProgressReward !== undefined) {
           factors.imperialValue += imperialProgressRuleDelta(observation, order.imperialProgressReward);
         }
@@ -863,6 +902,18 @@ export function strategyTags(observation: PlayerObservation): StrategyTag[] {
 }
 
 const CLAY_SUBSTITUTION_COIN_COST = 3;
+
+/** Jun's activation cost, in Wood. Mirrors the engine constant. */
+const JUN_ACTIVATION_WOOD = 1;
+
+/** Ge's activation cost, in Wood. Mirrors the engine constant. */
+const GE_ACTIVATION_WOOD = 1;
+
+/** VP that a Coin balance is worth if the game ended now, read from the authoritative rules. */
+function terminalCoinVp(coins: number): number {
+  const { coinsPerVp, maxVp } = GAME_CONFIG.coinEndGame;
+  return Math.min(maxVp, Math.floor(Math.max(0, coins) / coinsPerVp));
+}
 
 export function evaluateAction(
   observation: PlayerObservation,

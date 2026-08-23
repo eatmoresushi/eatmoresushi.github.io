@@ -217,9 +217,9 @@ function actionLocation(action: AIAction): string | null {
     case "FORM_CERAMICS": return "forming_studio";
     case "GLAZE_CERAMICS": return "glaze_workshop";
     case "USE_KILN_YARD": return "kiln_yard";
-    case "OFFICE_GAIN_COINS":
-    case "BEGIN_OFFICE_ORDERS":
-    case "USE_COURT_PATRONAGE": return "market_imperial_office";
+    case "USE_LABOUR": return "labour";
+    case "USE_COURT_PATRONAGE": return "court_patronage";
+    case "BEGIN_OFFICE_ORDERS": return "market_imperial_office";
     case "BEGIN_GUILD_ACTION": return "guild_academy";
     default: return null;
   }

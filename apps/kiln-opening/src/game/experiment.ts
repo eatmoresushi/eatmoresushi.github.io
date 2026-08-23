@@ -1,3 +1,4 @@
+import { IMPERIAL_PROGRESS } from "./content.ts";
 import type {
   GameExperimentConfig,
   ImperialTrackExperimentConfig,
@@ -26,15 +27,36 @@ export interface ActiveImperialTrackRules {
   readonly imperialSealVp: 2 | 3;
 }
 
-export const OFFICIAL_IMPERIAL_TRACK_RULES = Object.freeze({
-  imperialOrderProgressMode: "printed",
-  trackVp: Object.freeze([0, 0, 2, 2, 4, 8]),
-  apprenticeMilestoneSpaces: Object.freeze([1, 3]),
-  presentationSpaces: Object.freeze([4, 5]),
-  exhibitionCapacityByProgress: Object.freeze([1, 1, 2, 2, 3, 3]),
-  imperialSealEnabled: true,
-  imperialSealVp: 2,
-} satisfies ActiveImperialTrackRules);
+/**
+ * The published Imperial Progress rules, derived from `data/imperial_progress.json` rather
+ * than restated here.
+ *
+ * These values were previously hard-coded. They happened to agree with the data file, so
+ * nothing was visibly wrong -- but the engine scores end-game Progress VP from this object
+ * (`engine.ts`, final scoring), which meant editing the track in the data file would have
+ * changed the rulebook, the UI and every reference table while leaving actual scoring on
+ * the old numbers.
+ */
+/**
+ * Built fresh from the data on each read rather than frozen at import, so that editing
+ * `data/imperial_progress.json` actually changes play. Freezing a derived copy at module
+ * load reintroduces the bug this derivation exists to remove: the values agree until
+ * someone edits the file, and then they silently do not.
+ */
+export function officialImperialTrackRules(): ActiveImperialTrackRules {
+  const track = IMPERIAL_PROGRESS.track;
+  return {
+    imperialOrderProgressMode: "printed",
+    trackVp: track.map((space) => space.endGameVp) as unknown as ActiveImperialTrackRules["trackVp"],
+    apprenticeMilestoneSpaces: track
+      .filter((space) => space.unlocksApprentice)
+      .map((space) => space.space) as unknown as ActiveImperialTrackRules["apprenticeMilestoneSpaces"],
+    presentationSpaces: [...IMPERIAL_PROGRESS.exhibition.diversityEligibleSpaces] as unknown as ActiveImperialTrackRules["presentationSpaces"],
+    exhibitionCapacityByProgress: [...IMPERIAL_PROGRESS.exhibition.capacityByProgress] as unknown as ActiveImperialTrackRules["exhibitionCapacityByProgress"],
+    imperialSealEnabled: true,
+    imperialSealVp: IMPERIAL_PROGRESS.imperialSealVp as 2 | 3,
+  };
+}
 
 export const IMPERIAL_TRACK_CANDIDATE_A_CONFIG = Object.freeze({
   experimentId: "imperial-track-ab-001",
@@ -107,7 +129,7 @@ export function junActivationCoinCost(config: GameExperimentConfig | undefined):
 export function activeImperialTrackRules(
   config: GameExperimentConfig | undefined,
 ): ActiveImperialTrackRules {
-  if (config?.experimentId !== "imperial-track-ab-001") return OFFICIAL_IMPERIAL_TRACK_RULES;
+  if (config?.experimentId !== "imperial-track-ab-001") return officialImperialTrackRules();
   return {
     imperialOrderProgressMode: config.imperialOrderProgressMode,
     trackVp: config.imperialProgressTrackVp,

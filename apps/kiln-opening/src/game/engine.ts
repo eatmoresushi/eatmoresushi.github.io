@@ -18,7 +18,6 @@ import { applyFailure, ruleError } from "./errors.ts";
 import {
   activeImperialOrderProgressReward,
   activeImperialTrackRules,
-  junActivationCoinCost,
 } from "./experiment.ts";
 import {
   QUALITY_RANK,
@@ -31,10 +30,36 @@ import {
 } from "./firingRules.ts";
 
 /** Fuel Ledger spends this much extra Wood to turn a revealed Stoke into +2 Heat. */
-const FUEL_LEDGER_WOOD = 2;
+const FUEL_LEDGER_WOOD = 1;
 
 /** Office sale value of one Flawed ceramic. */
 const FLAWED_SALE_COINS = 2;
+
+/** Cards discarded from each Order display at the start of Rounds 2-5. */
+const ORDER_DISPLAY_ROTATION = 2;
+
+/** Labour pays these Coins; it has no worker limit, so it is always available. */
+const LABOUR_APPRENTICE_COINS = 2;
+const LABOUR_SHIFU_COINS = 4;
+
+/**
+ * Jun pays Wood rather than Coins. Wood is the currency of kiln control in v1.1.4 --
+ * Contribution cards and every Firing Technique draw on it -- while Labour made Coins
+ * abundant, so a Coin price no longer represented a real choice.
+ */
+const JUN_ACTIVATION_WOOD = 1;
+
+/** Ge's activation cost, in Wood. */
+const GE_ACTIVATION_WOOD = 1;
+
+/** VP Ru scores for delivering a Celadon, Plain Masterpiece into an Order. */
+const RU_ORDER_VP = 4;
+
+/** VP Guan scores alongside its Coin stipend on an Imperial Order. */
+const GUAN_ORDER_VP = 1;
+
+/** VP paid instead of an Apprentice that unlocks too late in Round 5 to ever act. */
+const ROUND_FIVE_UNLOCK_VP = 2;
 
 /** Clay Substitution pays this many Coins for three Clay/Wood in any combination. */
 const CLAY_SUBSTITUTION_COINS = 3;
@@ -730,6 +755,12 @@ function formCeramics(
   for (const shape of allFormedShapes) {
     requiredByShape.set(shape, (requiredByShape.get(shape) ?? 0) + 1);
   }
+  // Ding's extra vessel is free: the cost loop covers only the vessels the action formed.
+  // Measured against charging for it, both settle inside their intervals -- free lands
+  // Ding 2.0 points above fair share, charging lands it 2.2 below -- so this is a design
+  // call, not a balance one. Free is chosen because the ability then fires 2.31 times a
+  // game rather than 1.49, which is what makes it feel like a tradition rather than a
+  // rounding error. `src/ai/evaluator.ts` must match: it charges the same set.
   for (const shape of action.shapes) {
     totalClay +=
       context.worker.kind === "shifu" && (shape === "vase" || shape === "censer")
@@ -1073,23 +1104,27 @@ function useKilnYard(
   return success(next, events);
 }
 
-function officeGainCoins(state: GameState, actorId: PlayerId, workerId: string): ApplyResult {
+/**
+ * Labour: an uncapped action that converts a worker into Coins. Apprentices earn 2 and a
+ * Shifu 4, the same rates the Office used to pay, but without competing for a space.
+ */
+function useLabour(state: GameState, actorId: PlayerId, workerId: string): ApplyResult {
   const context = validateWorkerAction(
     state,
     actorId,
     workerId,
-    "market_imperial_office",
+    "labour",
   );
   if (!isWorkerContext(context)) {
     return context;
   }
-  const amount = context.worker.kind === "shifu" ? 4 : 2;
+  const amount = context.worker.kind === "shifu" ? LABOUR_SHIFU_COINS : LABOUR_APPRENTICE_COINS;
   const next = cloneState(state);
   const events: GameEvent[] = [];
-  placeWorker(next, actorId, workerId, "market_imperial_office", events);
+  placeWorker(next, actorId, workerId, "labour", events);
   const player = next.players[actorId];
   if (player === undefined) {
-    throw new Error("Office actor disappeared");
+    throw new Error("Labour actor disappeared");
   }
   const gained = Math.min(amount, next.commonSupply.coins);
   player.resources.coins += gained;
@@ -1101,7 +1136,7 @@ function officeGainCoins(state: GameState, actorId: PlayerId, workerId: string):
     wood: 0,
     coins: gained,
   });
-  next.phase = { type: "work_office_sale", actorId, workerId };
+  completeWorkerAction(next, actorId, events);
   return success(next, events);
 }
 
@@ -2335,9 +2370,10 @@ function resolveJun(
     if (ceramic === undefined || ceramic.ownerId !== actorId || ceramic.stage !== "loaded") {
       return applyFailure(ruleError("ILLEGAL_CERAMIC_STAGE", "Jun must select an owned Loaded ceramic."));
     }
-    const activationCost = junActivationCoinCost(state.experimentConfig);
-    if ((player?.resources.coins ?? 0) < activationCost) {
-      return applyFailure(ruleError("INSUFFICIENT_RESOURCES", `Jun's Kiln Transformation costs ${activationCost} Coins.`));
+    if ((player?.resources.wood ?? 0) < JUN_ACTIVATION_WOOD) {
+      return applyFailure(
+        ruleError("INSUFFICIENT_RESOURCES", `Jun's Kiln Transformation costs ${JUN_ACTIVATION_WOOD} Wood.`),
+      );
     }
   }
   const next = cloneState(state);
@@ -2351,21 +2387,10 @@ function resolveJun(
     }
     result.finalActualHeat += delta;
     result.finalHeatDifference = Math.abs(result.finalActualHeat - preferredHeat(ceramic.glaze));
-    const activationCost = junActivationCoinCost(next.experimentConfig);
-    if (activationCost > 0) {
-      const paidCoins = activationCost as 1 | 2;
-      nextPlayer.resources.coins -= paidCoins;
-      next.commonSupply.coins += paidCoins;
-      events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins: -paidCoins });
-      events.push({
-        type: "JUN_ACTIVATION_PAID",
-        playerId: actorId,
-        coins: paidCoins,
-        rulesContext: paidCoins === 2
-          ? "official_v1.0.9"
-          : "historical_jun_cost_1_experiment",
-      });
-    }
+    nextPlayer.resources.wood -= JUN_ACTIVATION_WOOD;
+    next.commonSupply.wood += JUN_ACTIVATION_WOOD;
+    events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: -JUN_ACTIVATION_WOOD, coins: 0 });
+    events.push({ type: "JUN_ACTIVATION_PAID", playerId: actorId, wood: JUN_ACTIVATION_WOOD });
     nextPlayer.kilnAbilityUsedThisRound = true;
     events.push({ type: "KILN_ABILITY_USED", playerId: actorId, kilnId: "JU" });
   }
@@ -2382,9 +2407,11 @@ function resolveGe(state: GameState, actorId: PlayerId, ceramicId: string | null
   if (player?.kilnId !== "GE") {
     return applyFailure(ruleError("INVALID_ACTION", "The current window is not Ge's ability."));
   }
-  // V1.1.1: Ge costs 1 Wood, so a Ge player holding none cannot use the ability.
-  if (ceramicId !== null && player.resources.wood < 1) {
-    return applyFailure(ruleError("INSUFFICIENT_RESOURCES", "Ge costs 1 Wood."));
+  // Ge spends 1 Wood. Its earlier weakness was never this price -- removing the cost
+  // moved its win rate by 0.01 VP -- it was an enumerator that only ever offered targets
+  // at Heat Difference 1 while the engine accepted 1 or 2.
+  if (ceramicId !== null && (player?.resources.wood ?? 0) < GE_ACTIVATION_WOOD) {
+    return applyFailure(ruleError("INSUFFICIENT_RESOURCES", `Ge costs ${GE_ACTIVATION_WOOD} Wood.`));
   }
   if (ceramicId !== null) {
     const ceramic = state.ceramics[ceramicId];
@@ -2394,12 +2421,12 @@ function resolveGe(state: GameState, actorId: PlayerId, ceramicId: string | null
       ceramic.ownerId !== actorId ||
       ceramic.stage !== "loaded" ||
       result === undefined ||
-      result.finalHeatDifference !== 1
+      (result.finalHeatDifference !== 1 && result.finalHeatDifference !== 2)
     ) {
       return applyFailure(
         ruleError(
           "INVALID_SELECTION",
-          "Ge requires one owned ceramic whose current Actual Heat differs from its Preferred Heat by exactly 1.",
+          "Ge requires one owned ceramic whose current Actual Heat differs from its Preferred Heat by 1 or 2.",
         ),
       );
     }
@@ -2413,13 +2440,13 @@ function resolveGe(state: GameState, actorId: PlayerId, ceramicId: string | null
     if (nextPlayer === undefined || ceramic === undefined || ceramic.stage !== "loaded" || result === undefined) {
       throw new Error("Ge invariant failed");
     }
-    nextPlayer.resources.wood -= 1;
-    next.commonSupply.wood += 1;
     ceramic.decoration = "crackle";
     result.finalActualHeat = preferredHeat(ceramic.glaze);
     result.finalHeatDifference = 0;
+    nextPlayer.resources.wood -= GE_ACTIVATION_WOOD;
+    next.commonSupply.wood += GE_ACTIVATION_WOOD;
     nextPlayer.kilnAbilityUsedThisRound = true;
-    events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: -1, coins: 0 });
+    events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: -GE_ACTIVATION_WOOD, coins: 0 });
     events.push({ type: "KILN_ABILITY_USED", playerId: actorId, kilnId: "GE" });
   }
   advanceQueuedWindow(next, () => assignQualityAndOpenSaggars(next, events));
@@ -2821,7 +2848,7 @@ function useCourtPatronage(
     state,
     actorId,
     workerId,
-    "market_imperial_office",
+    "court_patronage",
   );
   if (!isWorkerContext(context)) return context;
   if (context.worker.kind !== "shifu") {
@@ -2855,7 +2882,7 @@ function useCourtPatronage(
 
   const next = cloneState(state);
   const events: GameEvent[] = [];
-  placeWorker(next, actorId, workerId, "market_imperial_office", events);
+  placeWorker(next, actorId, workerId, "court_patronage", events);
   const player = next.players[actorId];
   if (player === undefined) throw new Error("Court Patronage actor disappeared");
   player.resources.coins -= 4;
@@ -2969,13 +2996,19 @@ function completeOrder(
     events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins: gainedCoins });
   }
   if (guanTriggers) {
+    // Guan pays a Coin stipend and a point. The Coins matter in the early rounds, when a
+    // workshop is poor and a Technique or Decoration is out of reach; the VP matters in
+    // Round 5, when Coins are nearly dead. Paying only in Coins -- as it did before --
+    // meant the ability delivered about half a point across a whole game, because Guan
+    // ended richer than everyone else and could not spend the difference.
     const guanCoins = gainFromSupply(next, nextPlayer, "coins", 2);
+    nextPlayer.score.kilnTraditionVp += GUAN_ORDER_VP;
     nextPlayer.kilnAbilityUsedThisRound = true;
     events.push({ type: "KILN_ABILITY_USED", playerId: actorId, kilnId: "GU" });
     if (guanCoins > 0) events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins: guanCoins });
   }
   if (ruTriggers) {
-    nextPlayer.score.kilnTraditionVp += 4;
+    nextPlayer.score.kilnTraditionVp += RU_ORDER_VP;
     nextPlayer.kilnAbilityUsedThisRound = true;
     events.push({ type: "KILN_ABILITY_USED", playerId: actorId, kilnId: "RU" });
   }
@@ -3006,8 +3039,9 @@ function refillTo<T>(display: T[], deck: T[], target: number): void {
 
 function rotateOrderDisplaysAtStartOfRound(state: GameState, events: GameEvent[], rng: RandomSource): void {
   if (state.round === 1) return;
-  const marketOrderIds = state.marketDisplay.splice(0, 1);
-  const imperialOrderIds = state.imperialDisplay.splice(0, 1);
+  // v1.1.5 rotates two cards from each display, so half the offer turns over each round.
+  const marketOrderIds = state.marketDisplay.splice(0, ORDER_DISPLAY_ROTATION);
+  const imperialOrderIds = state.imperialDisplay.splice(0, ORDER_DISPLAY_ROTATION);
   state.marketDiscard.push(...marketOrderIds);
   state.imperialDiscard.push(...imperialOrderIds);
   ensureOrderDeck(state, "market", rng);
@@ -3134,7 +3168,11 @@ function performCleanup(state: GameState, events: GameEvent[], rng: RandomSource
         const coins = gainFromSupply(state, player, "coins", 3);
         player.pendingApprenticeUnlocks -= 1;
         if (coins > 0) events.push({ type: "RESOURCES_CHANGED", playerId: player.id, clay: 0, wood: 0, coins });
-        events.push({ type: "ROUND_FIVE_UNLOCK_COIN_REWARD", playerId: player.id, coins: 3 });
+        // An Apprentice unlocked in Cleanup of Round 5 can never act, so it pays points
+        // instead. 3 Coins was worth about 1 VP against the 3-per-VP cap, which did not
+        // match the 2 VP an even Progress space pays for the same advance.
+        player.score.kilnTraditionVp += ROUND_FIVE_UNLOCK_VP;
+        events.push({ type: "ROUND_FIVE_UNLOCK_VP_REWARD", playerId: player.id, vp: ROUND_FIVE_UNLOCK_VP });
         continue;
       }
       const worker = Object.values(player.workers).find(
@@ -3180,7 +3218,7 @@ function performCleanup(state: GameState, events: GameEvent[], rng: RandomSource
 function beginCleanupOrderDiscards(state: GameState, events: GameEvent[], rng: RandomSource): void {
   const actors = turnOrderFromFirst(state).filter((playerId) => {
     const player = state.players[playerId];
-    return player !== undefined && player.orderHand.length > orderHandLimit(player);
+    return player !== undefined && player.orderHand.length > orderHandLimit();
   });
   if (actors.length === 0) performCleanup(state, events, rng);
   else state.phase = { type: "cleanup_orders", queue: { actors, currentIndex: 0 } };
@@ -3198,7 +3236,7 @@ function discardOrdersForCleanup(
   if (actorError !== null) return actorError;
   const player = state.players[actorId];
   if (player === undefined) return applyFailure(ruleError("UNKNOWN_PLAYER", "Cleanup player was not found."));
-  const required = player.orderHand.length - orderHandLimit(player);
+  const required = player.orderHand.length - orderHandLimit();
   if (orderIds.length !== required || new Set(orderIds).size !== orderIds.length || orderIds.some((id) => !player.orderHand.includes(id))) {
     return applyFailure(ruleError("INVALID_SELECTION", `Discard exactly ${required} Orders for cleanup.`));
   }
@@ -3318,8 +3356,8 @@ export function applyAction(
       return glazeCeramics(state, actorId, action);
     case "USE_KILN_YARD":
       return useKilnYard(state, actorId, action);
-    case "OFFICE_GAIN_COINS":
-      return officeGainCoins(state, actorId, action.workerId);
+    case "USE_LABOUR":
+      return useLabour(state, actorId, action.workerId);
     case "BEGIN_OFFICE_ORDERS":
       return beginOfficeOrders(state, actorId, action.workerId, action.mode);
     case "OFFICE_TAKE_ORDER":

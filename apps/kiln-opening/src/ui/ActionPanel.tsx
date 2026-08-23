@@ -1,4 +1,5 @@
-import { CONTRIBUTION_CARDS, CONTRIBUTION_CARD_DEFINITIONS } from "../game/index.ts";
+import {   orderHandLimit,
+CONTRIBUTION_CARDS, CONTRIBUTION_CARD_DEFINITIONS } from "../game/index.ts";
 import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import {
@@ -232,6 +233,8 @@ function WorkControls({ game, player, busy, send }: {
     );
   };
   const actions: Record<LocationId, ReactNode> = {
+    court_patronage: action("court_patronage", "Seek Court Patronage", <CourtPatronageForm game={game} player={player} workers={workers} busy={busy} send={send} />),
+    labour: action("labour", "Send workers to Labour", <LabourForm workers={workers} busy={busy} send={send} />),
     materials_yard: action("materials_yard", "Gain Clay and Wood", <MaterialsForm game={game} player={player} workers={workers} locationFull={full("materials_yard")} busy={busy} send={send} />),
     forming_studio: action("forming_studio", "Shape vessels", <FormCeramicsForm game={game} player={player} workers={workers} locationFull={full("forming_studio")} busy={busy} send={send} />),
     glaze_workshop: action("glaze_workshop", "Glaze and decorate", <GlazeForm game={game} player={player} workers={workers} locationFull={full("glaze_workshop")} busy={busy} send={send} />),
@@ -257,6 +260,76 @@ interface WorkerFormProps {
   locationFull: boolean;
   busy: boolean;
   send: SendCommand;
+}
+
+/** Court Patronage is Shifu-only and uncapped, so it never shows a "location full" state. */
+function CourtPatronageForm({ game, player, workers, busy, send }: {
+  game: PublicGameState;
+  player: PublicPlayerState;
+  workers: Array<{ id: string; kind: "shifu" | "apprentice" }>;
+  busy: boolean;
+  send: SendCommand;
+}) {
+  const { locale, t } = useI18n();
+  const shifu = workers.find((worker) => worker.kind === "shifu");
+  const hasImperial = player.completedOrders.some(({ orderId }) => orderId.startsWith("I"));
+  const blocked = shifu === undefined
+    ? t("No available Shifu.")
+    : !hasImperial
+      ? t("Complete an Imperial Order first.")
+      : player.resources.coins < 4
+        ? t("Court Patronage costs 4 Coins.")
+        : player.imperialProgress >= 4
+          ? t("Progress 4 must reach 5 by completing an Imperial Order.")
+          : null;
+  void game;
+  return (
+    <form
+      className="control-form"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (shifu !== undefined) void send({ type: "USE_COURT_PATRONAGE", workerId: shifu.id });
+      }}
+    >
+      <p className="control-hint">{locale === "zh-CN"
+        ? "仅限师傅。支付4铜钱使御用进度前进1格。此地点没有工人数量限制。"
+        : "Shifu only. Pay 4 Coins to advance Imperial Progress by 1. This location has no worker limit."}</p>
+      {blocked !== null && <p className="control-hint">{blocked}</p>}
+      <button type="submit" disabled={busy || blocked !== null}>{t("Seek Patronage")}</button>
+    </form>
+  );
+}
+
+/** Labour has no worker limit, so it never shows a "location full" state. */
+function LabourForm({ workers, busy, send }: {
+  workers: Array<{ id: string; kind: "shifu" | "apprentice" }>;
+  busy: boolean;
+  send: SendCommand;
+}) {
+  const { locale, t } = useI18n();
+  const [workerId, setWorkerId] = useState(workers[0]?.id ?? "");
+  const selected = workers.find((worker) => worker.id === workerId) ?? workers[0];
+  if (selected === undefined) return <p className="control-hint">{t("No available workers.")}</p>;
+  const coins = selected.kind === "shifu" ? 4 : 2;
+  return (
+    <form
+      className="control-form"
+      onSubmit={(event) => { event.preventDefault(); void send({ type: "USE_LABOUR", workerId: selected.id }); }}
+    >
+      <label className="field">
+        <span className="field-label">{t("Worker")}</span>
+        <select value={selected.id} onChange={(event) => setWorkerId(event.target.value)}>
+          {workers.map((worker) => (
+            <option key={worker.id} value={worker.id}>{worker.id}</option>
+          ))}
+        </select>
+      </label>
+      <p className="control-hint">{locale === "zh-CN"
+        ? `获得${coins}铜钱。佣工没有工人数量限制，始终可用。`
+        : `Gain ${coins} Coins. Labour has no worker limit, so it is always available.`}</p>
+      <button type="submit" disabled={busy}>{t("Send to Labour")}</button>
+    </form>
+  );
 }
 
 function MaterialsForm({ game, player, workers, locationFull, busy, send }: WorkerFormProps & { game: PublicGameState; player: PublicPlayerState }) {
@@ -565,7 +638,7 @@ function KilnYardForm({ game, player, workers, locationFull, busy, send }: {
   );
 }
 
-type OfficeActionChoice = OfficeOrderMode | "coins" | "court_patronage";
+type OfficeActionChoice = OfficeOrderMode | "court_patronage";
 
 function OfficeActionForms({ game, player, workers, locationFull, busy, send }: {
   game: PublicGameState;
@@ -577,13 +650,13 @@ function OfficeActionForms({ game, player, workers, locationFull, busy, send }: 
 }) {
   const { locale, t } = useI18n();
   const [workerId, setWorkerId] = useState(workers[0]?.id ?? "");
-  const [officeAction, setOfficeAction] = useState<OfficeActionChoice>("coins");
+  const [officeAction, setOfficeAction] = useState<OfficeActionChoice>("take_one");
   const selectedWorker = workers.find((worker) => worker.id === workerId) ?? workers[0];
   const orderModes: OfficeActionChoice[] = selectedWorker?.kind === "shifu"
-    ? ["coins", "take_up_to_two", "take_one_and_gain_two_coins", "court_patronage"]
-    : ["coins", "take_one"];
+    ? ["take_up_to_two", "take_one_and_gain_two_coins", "court_patronage"]
+    : ["take_one"];
   const action = orderModes.includes(officeAction) ? officeAction : orderModes[0]!;
-  const handLimit = player.kilnId === "GU" ? GAME_CONFIG.orderDisplay.guanHandLimit : GAME_CONFIG.orderDisplay.baseHandLimit;
+  const handLimit = orderHandLimit();
   const orderSourceCount = game.displays.market.length + game.displays.imperial.length + game.decks.marketRemaining + game.decks.imperialRemaining;
 
   function validationError(): string | null {
@@ -609,8 +682,7 @@ function OfficeActionForms({ game, player, workers, locationFull, busy, send }: 
   function submit(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
     if (error !== null || selectedWorker === undefined) return;
-    if (action === "coins") void send({ type: "OFFICE_GAIN_COINS", workerId: selectedWorker.id });
-    else if (action === "court_patronage") void send({ type: "USE_COURT_PATRONAGE", workerId: selectedWorker.id });
+    if (action === "court_patronage") void send({ type: "USE_COURT_PATRONAGE", workerId: selectedWorker.id });
     else void send({ type: "BEGIN_OFFICE_ORDERS", workerId: selectedWorker.id, mode: action });
   }
   return (
@@ -912,7 +984,7 @@ function ContributionControls({ game, player, ownPlayerId, pending, privateDecis
 }
 
 function CleanupOrderControls({ player, busy, send }: { player: PublicPlayerState; busy: boolean; send: SendCommand }) {
-  const limit = player.kilnId === "GU" ? 4 : 3;
+  const limit = orderHandLimit();
   const requiredCount = Math.max(0, player.orderHand.length - limit);
   return <SelectionSubmission
     title="Cleanup Order limit"
@@ -1306,7 +1378,6 @@ function guildTechniqueCost(techniqueId: TechniqueId, workerKind: AvailableWorke
 function officeActionHint(action: OfficeActionChoice, workerKind: AvailableWorker["kind"] | undefined, locale: Locale = "en"): string {
   if (locale === "zh-CN") {
     switch (action) {
-      case "coins": return `获得${workerKind === "shifu" ? 4 : 2}铜钱。`;
       case "take_one": return "拿取1张正面订单，或确认盲抽1张牌堆顶订单。";
       case "take_up_to_two": return "拿取至多2张订单；每次可分别选择正面或盲抽。";
       case "take_one_and_gain_two_coins": return "拿取1张正面或盲抽订单，然后获得2铜钱。";
@@ -1314,8 +1385,6 @@ function officeActionHint(action: OfficeActionChoice, workerKind: AvailableWorke
     }
   }
   switch (action) {
-    case "coins":
-      return `Gain ${workerKind === "shifu" ? 4 : 2} Coins.`;
     case "take_one":
       return "Take one face-up Order or commit to a blind top-deck draw.";
     case "take_up_to_two":
@@ -1384,7 +1453,6 @@ function localizeActionError(locale: Locale, error: string): string {
 function officeActionLabel(action: OfficeActionChoice, locale: Locale): string {
   if (locale === "en") return action.replaceAll("_", " ");
   switch (action) {
-    case "coins": return "获得铜钱";
     case "take_one": return "拿取1张订单";
     case "take_up_to_two": return "拿取至多2张订单";
     case "take_one_and_gain_two_coins": return "拿取1张订单并获得2铜钱";

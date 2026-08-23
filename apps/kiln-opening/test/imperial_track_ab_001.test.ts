@@ -5,7 +5,7 @@ import {
   IMPERIAL_ORDERS,
   IMPERIAL_TRACK_CANDIDATE_A_CONFIG,
   IMPERIAL_TRACK_CANDIDATE_B_CONFIG,
-  OFFICIAL_IMPERIAL_TRACK_RULES,
+  officialImperialTrackRules,
   ORDER_DEFINITIONS,
   SeededRandom,
   activeImperialOrderProgressReward,
@@ -109,7 +109,7 @@ function recordImperialCompletion(state: GameState, playerId: PlayerId): void {
 
 describe("imperial-track-ab-001 deterministic preflight", () => {
   it("1. default configuration uses official V1.0.2", () => {
-    expect(activeImperialTrackRules(undefined)).toEqual(OFFICIAL_IMPERIAL_TRACK_RULES);
+    expect(activeImperialTrackRules(undefined)).toEqual(officialImperialTrackRules());
     for (const order of IMPERIAL_ORDERS) {
       expect(activeImperialOrderProgressReward(undefined, order.imperialProgressReward!))
         .toBe(order.imperialProgressReward);
@@ -335,7 +335,7 @@ describe("imperial-track-ab-001 deterministic preflight", () => {
     expect(defaultGame.ok).toBe(true);
     if (!defaultGame.ok) throw new Error(defaultGame.error.message);
     expect(defaultGame.state.experimentConfig).toBeUndefined();
-    expect(activeImperialTrackRules(defaultGame.state.experimentConfig)).toEqual(OFFICIAL_IMPERIAL_TRACK_RULES);
+    expect(activeImperialTrackRules(defaultGame.state.experimentConfig)).toEqual(officialImperialTrackRules());
     const invalidCombined = createGame({
       gameId: "invalid-combined-arm",
       players: playerInputs(2),

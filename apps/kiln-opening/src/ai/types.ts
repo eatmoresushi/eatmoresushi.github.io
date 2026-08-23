@@ -185,7 +185,7 @@ export interface ImperialRouteForecast {
 
 export interface PlayerObservation {
   /** Rules contract used to interpret every public and private field below. */
-  rulesVersion: "1.0.2" | "1.0.4" | "1.0.9" | "1.1.1" | "1.1.4";
+  rulesVersion: "1.0.2" | "1.0.4" | "1.0.9" | "1.1.1" | "1.1.4" | "1.1.5";
   playerId: PlayerId;
   game: PublicGameState;
   ownPendingContribution: PendingContribution | null;
@@ -359,9 +359,9 @@ export interface AIPolicy {
 
 export interface AIStrategyProfile {
   /** Rules used to create or train this serialized profile. */
-  rulesVersion: "1.0.1" | "1.0.2" | "1.0.4" | "1.0.9" | "1.1.1" | "1.1.4";
+  rulesVersion: "1.0.1" | "1.0.2" | "1.0.4" | "1.0.9" | "1.1.1" | "1.1.4" | "1.1.5";
   /** Current engine rules; permits an explicit historical-policy compatibility audit. */
-  currentRulesVersion?: "1.0.2" | "1.0.4" | "1.0.9" | "1.1.1" | "1.1.4";
+  currentRulesVersion?: "1.0.2" | "1.0.4" | "1.0.9" | "1.1.1" | "1.1.4" | "1.1.5";
   aiPolicyVersion: AIPolicyVersion;
   playerCount: PlayerCount;
   gamesLearned: number;

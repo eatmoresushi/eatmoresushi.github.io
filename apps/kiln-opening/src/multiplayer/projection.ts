@@ -34,7 +34,7 @@ function projectPlayer(state: GameState, playerId: PlayerId): PublicPlayerState 
 }
 
 export function projectPublicGameState(state: GameState): PublicGameState {
-  if (state.rulesVersion !== "1.1.4") throw new Error("Only V1.1.4 games may be projected by the current client");
+  if (state.rulesVersion !== "1.1.5") throw new Error("Only V1.1.5 games may be projected by the current client");
   if (state.phase.type === "firing_contributions" && state.firingContext !== null) {
     throw new Error("Unrevealed Contributions must never enter the public firing context");
   }
@@ -61,7 +61,7 @@ export function projectPublicGameState(state: GameState): PublicGameState {
   }
   return {
     schemaVersion: state.schemaVersion,
-    rulesVersion: state.rulesVersion as "1.1.4",
+    rulesVersion: state.rulesVersion as "1.1.5",
     gameId: state.gameId,
     revision: state.revision,
     eventSequence: state.eventSequence,
@@ -134,7 +134,7 @@ export function projectPublicEvent(event: GameEvent): PublicGameEvent {
     case "COURT_PATRONAGE_USED":
     case "IMPERIAL_SEAL_CLAIMED":
     case "APPRENTICE_UNLOCKED":
-    case "ROUND_FIVE_UNLOCK_COIN_REWARD":
+    case "ROUND_FIVE_UNLOCK_VP_REWARD":
     case "ORDERS_DISCARDED_FOR_CLEANUP":
     case "IMPERIAL_STIPEND_RECEIVED":
     case "ORDER_DISPLAYS_ROTATED":

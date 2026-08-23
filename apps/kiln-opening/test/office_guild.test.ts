@@ -19,7 +19,7 @@ function beginCoinOfficeSale(
   return mustApply(
     state,
     actorId,
-    { type: "OFFICE_GAIN_COINS", workerId: workerId(state, actorId, kind) },
+    { type: "USE_LABOUR", workerId: workerId(state, actorId, kind) },
     rng,
   );
 }
@@ -235,7 +235,7 @@ describe("Market & Imperial Office", () => {
     const actorId = normal.state.firstPlayerId;
     normal.state.players[actorId]!.kilnId = "RU";
     normal.state.players[actorId]!.orderHand = ["M01", "M02", "M03"];
-    expect(orderHandLimit(normal.state.players[actorId]!)).toBe(3);
+    expect(orderHandLimit()).toBe(3);
     const rejected = applyAction(
       normal.state,
       actorId,
@@ -252,7 +252,7 @@ describe("Market & Imperial Office", () => {
     const guanActor = guan.state.firstPlayerId;
     guan.state.players[guanActor]!.kilnId = "GU";
     guan.state.players[guanActor]!.orderHand = ["M01", "M02", "M03"];
-    expect(orderHandLimit(guan.state.players[guanActor]!)).toBe(4);
+    expect(orderHandLimit()).toBe(4);
     let accepted = mustApply(
       guan.state,
       guanActor,

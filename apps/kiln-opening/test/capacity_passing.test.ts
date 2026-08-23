@@ -4,6 +4,8 @@ import type { GameAction, LocationId, PlayerCount } from "../src/game";
 import { expectError, mustApply, setActive, startedGame, workerId } from "./helpers";
 
 const capacities: Record<LocationId, Record<PlayerCount, number>> = {
+  labour: { 2: 12, 3: 18, 4: 24 },
+  court_patronage: { 2: 12, 3: 18, 4: 24 },
   materials_yard: { 2: 2, 3: 3, 4: 4 },
   forming_studio: { 2: 2, 3: 3, 4: 4 },
   glaze_workshop: { 2: 2, 3: 3, 4: 4 },
@@ -14,6 +16,10 @@ const capacities: Record<LocationId, Record<PlayerCount, number>> = {
 
 function actionFor(locationId: LocationId, selectedWorkerId: string): GameAction {
   switch (locationId) {
+    case "labour":
+      return { type: "USE_LABOUR", workerId: selectedWorkerId };
+    case "court_patronage":
+      return { type: "USE_COURT_PATRONAGE", workerId: selectedWorkerId };
     case "materials_yard":
       return { type: "GAIN_MATERIALS", workerId: selectedWorkerId, clay: 3, wood: 0 };
     case "forming_studio":
@@ -32,7 +38,7 @@ function actionFor(locationId: LocationId, selectedWorkerId: string): GameAction
         loads: [],
       };
     case "market_imperial_office":
-      return { type: "OFFICE_GAIN_COINS", workerId: selectedWorkerId };
+      return { type: "BEGIN_OFFICE_ORDERS", workerId: selectedWorkerId, mode: "take_one" };
     case "guild_academy":
       return { type: "BEGIN_GUILD_ACTION", workerId: selectedWorkerId };
   }
@@ -45,8 +51,10 @@ describe("action capacity", () => {
     }
   });
 
-  it.each([2, 3, 4] as const)("rejects all six locations when full at %s players", (count) => {
+  it.each([2, 3, 4] as const)("rejects every capped location when full at %s players", (count) => {
     for (const locationId of Object.keys(capacities) as LocationId[]) {
+      // Labour is deliberately uncapped, so it has no full state to reject.
+      if (locationId === "labour" || locationId === "court_patronage") continue;
       const { state, rng } = startedGame(count, 4000 + count * 100 + locationId.length);
       const actorId = state.firstPlayerId;
       const capacity = capacities[locationId][count];
@@ -62,6 +70,28 @@ describe("action capacity", () => {
       );
       expectError(result, "LOCATION_FULL");
     }
+  });
+
+  /**
+   * Labour exists so that a worker always has somewhere to go. Its capacity is every
+   * worker that could exist at that player count, so it can never fill.
+   */
+  it.each([2, 3, 4] as const)("never fills Labour at %s players", (count) => {
+    const maxWorkersInPlay = count * 6;
+    expect(locationCapacity("labour", count)).toBeGreaterThanOrEqual(maxWorkersInPlay);
+    const { state, rng } = startedGame(count, 4700 + count);
+    const actorId = state.firstPlayerId;
+    state.actionBoard.placements["labour"] = Array.from(
+      { length: maxWorkersInPlay - 1 },
+      (_, index) => `occupied:${index}`,
+    );
+    const result = applyAction(
+      state,
+      actorId,
+      { type: "USE_LABOUR", workerId: workerId(state, actorId, "apprentice") },
+      rng,
+    );
+    expect(result.ok).toBe(true);
   });
 
   it("allows a player to occupy the same location more than once while space remains", () => {
@@ -175,20 +205,18 @@ describe("passing and Work turn rotation", () => {
       applyAction(pendingOffice, officeActor, { type: "PASS_WORK_PHASE" }, office.rng),
       "WRONG_PHASE",
     );
-    const pendingSale = mustApply(
+    // Labour is not an Office action: it resolves in one step and never strands the
+    // player in a sub-phase, which is what makes it a safe fallback for an idle worker.
+    const afterLabour = mustApply(
       office.state,
       officeActor,
       {
-        type: "OFFICE_GAIN_COINS",
+        type: "USE_LABOUR",
         workerId: workerId(office.state, officeActor, "apprentice"),
       },
       office.rng,
     );
-    expect(pendingSale.phase.type).toBe("work_office_sale");
-    expectError(
-      applyAction(pendingSale, officeActor, { type: "PASS_WORK_PHASE" }, office.rng),
-      "WRONG_PHASE",
-    );
+    expect(afterLabour.phase.type).toBe("work");
 
     const guild = startedGame(2, 423);
     const guildActor = guild.state.firstPlayerId;

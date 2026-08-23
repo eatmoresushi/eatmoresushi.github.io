@@ -74,6 +74,8 @@ export const WORKSHOP_CROPS: Record<KilnId, {
 
 export const LOCATION_LABELS: Record<LocationId, string> = {
   materials_yard: "Materials Yard",
+  labour: "Labour",
+  court_patronage: "Court Patronage",
   forming_studio: "Forming Studio",
   glaze_workshop: "Glaze Workshop",
   kiln_yard: "Kiln Yard",

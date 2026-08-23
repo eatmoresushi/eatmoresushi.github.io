@@ -1,5 +1,5 @@
 export type PlayerId = string;
-export type RulesVersion = "1.0.4" | "1.0.9" | "1.1.1" | "1.1.4";
+export type RulesVersion = "1.0.4" | "1.0.9" | "1.1.1" | "1.1.4" | "1.1.5";
 
 /**
  * The three v1.1.4 Contribution cards. Bank (-1 Heat, 1 Wood), Tend (0, 0) and
@@ -35,7 +35,9 @@ export type LocationId =
   | "glaze_workshop"
   | "kiln_yard"
   | "market_imperial_office"
-  | "guild_academy";
+  | "guild_academy"
+  | "labour"
+  | "court_patronage";
 /** V1.1.1: Base Heat is a clamped formula result, not a three-band table. */
 export type BaseHeat = 0 | 1 | 2 | 3 | 4 | 5;
 
@@ -491,7 +493,13 @@ export type GameAction =
       workerId: WorkerId;
       loads: KilnLoadSelection[];
     }
-  | { type: "OFFICE_GAIN_COINS"; workerId: WorkerId }
+  /**
+   * Labour has no worker limit, so it is always available. It exists because the pipeline
+   * is four actions deep and the last round otherwise strands workers with nothing worth
+   * doing: measured across 60 three-player games, 68% of seats passed early in Round 5
+   * against 0% in Round 1.
+   */
+  | { type: "USE_LABOUR"; workerId: WorkerId }
   | {
       type: "BEGIN_OFFICE_ORDERS";
       workerId: WorkerId;
@@ -613,12 +621,7 @@ export type GameEvent =
   | { type: "TECHNIQUE_ACQUIRED"; playerId: PlayerId; techniqueId: TechniqueId; cost: number }
   | { type: "TECHNIQUE_USED"; playerId: PlayerId; techniqueId: TechniqueId }
   | { type: "KILN_ABILITY_USED"; playerId: PlayerId; kilnId: KilnId }
-  | {
-      type: "JUN_ACTIVATION_PAID";
-      playerId: PlayerId;
-      coins: 1 | 2;
-      rulesContext: "official_v1.0.9" | "historical_jun_cost_1_experiment";
-    }
+  | { type: "JUN_ACTIVATION_PAID"; playerId: PlayerId; wood: 1 }
   | { type: "WORK_PHASE_ENDED" }
   | { type: "WOOD_SUBMITTED"; playerId: PlayerId; windowId: string }
   | { type: "WOOD_REVEALED"; contributions: Record<PlayerId, ContributionCardId> }
@@ -674,7 +677,7 @@ export type GameEvent =
     }
   | { type: "IMPERIAL_SEAL_CLAIMED"; playerId: PlayerId; sealVp?: number }
   | { type: "APPRENTICE_UNLOCKED"; playerId: PlayerId; workerId: WorkerId }
-  | { type: "ROUND_FIVE_UNLOCK_COIN_REWARD"; playerId: PlayerId; coins: 3 }
+  | { type: "ROUND_FIVE_UNLOCK_VP_REWARD"; playerId: PlayerId; vp: 2 }
   | { type: "ORDERS_DISCARDED_FOR_CLEANUP"; playerId: PlayerId; orderIds: OrderId[] }
   | { type: "IMPERIAL_STIPEND_RECEIVED"; playerId: PlayerId; space: 2 | 4; coins: number }
   | {

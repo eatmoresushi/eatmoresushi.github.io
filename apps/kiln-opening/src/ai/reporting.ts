@@ -219,7 +219,7 @@ function playerRows(results: readonly SelfPlayGameResult[]): CsvRow[] {
       );
       const junPayments = result.events.flatMap((row) => {
         const event = eventValue(row);
-        return event.type === "JUN_ACTIVATION_PAID" && event.playerId === playerId ? [event.coins] : [];
+        return event.type === "JUN_ACTIVATION_PAID" && event.playerId === playerId ? [event.wood] : [];
       });
       const connoisseurUses = result.events.filter((row) => {
         const event = eventValue(row);

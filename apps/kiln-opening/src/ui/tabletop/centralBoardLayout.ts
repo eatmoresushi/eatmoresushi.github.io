@@ -15,6 +15,8 @@ export interface NormalizedPoint {
 // Coordinates are normalized against central-table.webp. They are presentation
 // configuration only and are never persisted in GameState.
 export const ACTION_ZONE_RECTS: Record<LocationId, NormalizedRect> = {
+  court_patronage: { x: 0.34, y: 0.86, width: 0.30, height: 0.12 },
+  labour: { x: 0.02, y: 0.86, width: 0.30, height: 0.12 },
   materials_yard: { x: 0.033, y: 0.123, width: 0.228, height: 0.242 },
   forming_studio: { x: 0.271, y: 0.123, width: 0.238, height: 0.242 },
   glaze_workshop: { x: 0.033, y: 0.377, width: 0.228, height: 0.247 },

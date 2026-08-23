@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.1.4",
+  "rulesVersion": "1.1.5",
   "locations": [
     {
       "id": "materials_yard",
@@ -71,10 +71,10 @@
         "3": 3,
         "4": 4
       },
-      "apprentice": "Choose one: take 1 face-up or blind-top Market or Imperial Order; or gain 2 Coins. After a normal main action, you may sell 1 Flawed ceramic for 2 Coins.",
-      "apprenticeZh": "二选一：拿取1张订单（明牌或从任一牌堆顶盲抽），或获得2铜钱。正常主行动后，可出售至多1件次品，获得2铜钱。",
-      "shifu": "Choose one: take up to 2 face-up or blind-top Orders; take 1 Order and gain 2 Coins; gain 4 Coins; or use eligible Court Patronage. After a normal main action, you may sell up to 2 Flawed ceramics for 2 Coins each.",
-      "shifuZh": "四选一：拿取至多2张订单；拿1张订单并获得2铜钱；获得4铜钱；或在符合条件时执行朝廷恩荫。正常主行动后，可出售至多2件次品，每件获得2铜钱。",
+      "apprentice": "Take 1 Order: a face-up Order from either display, or a blind top-card draw from either deck. After a normal main action, you may sell 1 Flawed ceramic for 2 Coins.",
+      "apprenticeZh": "拿取1张订单：从任一展示区选取明置订单，或从任一牌堆顶盲抽。正常主行动后，可出售至多1件次品，获得2铜钱。",
+      "shifu": "Choose one: take up to 2 Orders; or take 1 Order and gain 2 Coins. After a normal main action, you may sell up to 2 Flawed ceramics for 2 Coins each.",
+      "shifuZh": "二选一：拿取至多2张订单；或拿1张订单并获得2铜钱。正常主行动后，可出售至多2件次品，每件获得2铜钱。",
       "clarification": "Court Patronage requires a completed Imperial Order, costs 5 Coins, advances Progress by 1 only from spaces 0-3, and grants neither Colour Samples nor a Flawed sale."
     },
     {
@@ -90,6 +90,34 @@
       "apprenticeZh": "支付印刷费用，拿取1张正面朝上的技术。",
       "shifu": "Before choosing, you may place 1 face-up Technique on the bottom of its discipline deck and reveal a replacement. Then acquire 1 face-up Technique for 1 Coin less than its printed cost, minimum 0 Coins.",
       "shifuZh": "选择前可将1张明置工艺牌置于其所属牌堆底并揭示替补；随后以印刷费用减1铜钱（最低0）取得1张明置工艺牌。"
+    },
+    {
+      "id": "labour",
+      "name": "Labour",
+      "nameZh": "佣工",
+      "capacity": {
+        "2": 12,
+        "3": 18,
+        "4": 24
+      },
+      "apprentice": "Gain 2 Coins. This location has no worker limit.",
+      "apprenticeZh": "获得2铜钱。此地点没有工人数量限制。",
+      "shifu": "Gain 4 Coins. This location has no worker limit.",
+      "shifuZh": "获得4铜钱。此地点没有工人数量限制。"
+    },
+    {
+      "id": "court_patronage",
+      "name": "Court Patronage",
+      "nameZh": "朝廷恩荫",
+      "capacity": {
+        "2": 12,
+        "3": 18,
+        "4": 24
+      },
+      "apprentice": "Shifu only. An Apprentice cannot be placed here.",
+      "apprenticeZh": "仅限师傅。学徒不可放置于此。",
+      "shifu": "If you have completed at least 1 Imperial Order this game, pay 4 Coins to advance Imperial Progress by 1 space. It cannot advance you from space 4 to space 5. This location has no worker limit.",
+      "shifuZh": "若你本局已完成至少1张御用订单，支付4铜钱使御用进度前进1格。不能от第4格前进至第5格。此地点没有工人数量限制。"
     }
   ]
 }

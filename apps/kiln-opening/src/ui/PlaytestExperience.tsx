@@ -152,7 +152,7 @@ export function eventDescription(event: PublicGameEvent, game: PublicGameState, 
     case "KILN_ABILITY_USED":
       return `${player(event.playerId)} used ${KILN_DEFINITIONS[event.kilnId].name}: ${KILN_DEFINITIONS[event.kilnId].abilityName}.`;
     case "JUN_ACTIVATION_PAID":
-      return `${player(event.playerId)} paid ${event.coins} Coins for Jun's Kiln Transformation.`;
+      return `${player(event.playerId)} paid ${event.wood} Wood for Jun's Kiln Transformation.`;
     case "WORK_PHASE_ENDED":
       return "All players finished the Work Phase. Firing began.";
     case "WOOD_SUBMITTED":
@@ -181,8 +181,8 @@ export function eventDescription(event: PublicGameEvent, game: PublicGameState, 
       return `${player(event.playerId)} claimed the Imperial Seal.`;
     case "APPRENTICE_UNLOCKED":
       return `${player(event.playerId)} unlocked Apprentice ${event.workerId}.`;
-    case "ROUND_FIVE_UNLOCK_COIN_REWARD":
-      return `${player(event.playerId)} received 3 Coins instead of a Round 5 Apprentice unlock.`;
+    case "ROUND_FIVE_UNLOCK_VP_REWARD":
+      return `${player(event.playerId)} received 2 VP instead of a Round 5 Apprentice unlock.`;
     case "ORDERS_DISCARDED_FOR_CLEANUP":
       return `${player(event.playerId)} discarded ${event.orderIds.join(", ")} during Cleanup.`;
     case "ORDER_DISPLAYS_ROTATED":
@@ -222,7 +222,7 @@ function eventDescriptionZh(event: PublicGameEvent, game: PublicGameState): stri
     case "TECHNIQUE_ACQUIRED": return `${player(event.playerId)}以${event.cost}铜钱购买${event.techniqueId} · ${TECHNIQUE_DEFINITIONS[event.techniqueId]?.nameZh ?? "未知技术"}。`;
     case "TECHNIQUE_USED": return `${player(event.playerId)}使用${event.techniqueId} · ${TECHNIQUE_DEFINITIONS[event.techniqueId]?.nameZh ?? "未知技术"}。`;
     case "KILN_ABILITY_USED": return `${player(event.playerId)}使用${KILN_DEFINITIONS[event.kilnId].nameZh}：${KILN_DEFINITIONS[event.kilnId].abilityNameZh}。`;
-    case "JUN_ACTIVATION_PAID": return `${player(event.playerId)}为钧窑的窑变妙化支付${event.coins}铜钱。`;
+    case "JUN_ACTIVATION_PAID": return `${player(event.playerId)}为钧窑的窑变妙化支付${event.wood}柴薪。`;
     case "WORK_PHASE_ENDED": return "所有玩家完成工作阶段，开始烧成。";
     case "WOOD_SUBMITTED": return `${player(event.playerId)}提交了秘密柴薪贡献。`;
     case "WOOD_REVEALED": return `柴薪贡献公开：${Object.entries(event.contributions).map(([id, value]) => `${player(id)}贡献${value}柴薪`).join("；")}。`;
@@ -238,7 +238,7 @@ function eventDescriptionZh(event: PublicGameEvent, game: PublicGameState): stri
     case "COURT_PATRONAGE_USED": return `${player(event.playerId)}使用朝廷赞助，支付${event.cost}铜钱，御用进度${event.from} → ${event.to}。`;
     case "IMPERIAL_SEAL_CLAIMED": return `${player(event.playerId)}获得御印。`;
     case "APPRENTICE_UNLOCKED": return `${player(event.playerId)}解锁学徒${event.workerId}。`;
-    case "ROUND_FIVE_UNLOCK_COIN_REWARD": return `${player(event.playerId)}在第5轮以3铜钱替代学徒解锁。`;
+    case "ROUND_FIVE_UNLOCK_VP_REWARD": return `${player(event.playerId)}在第5轮获得2分以替代学徒解锁。`;
     case "ORDERS_DISCARDED_FOR_CLEANUP": return `${player(event.playerId)}在整备阶段弃掉${event.orderIds.join("、")}。`;
     case "IMPERIAL_STIPEND_RECEIVED": return `${player(event.playerId)}获得进度${event.space}的朝廷赏赐：+${event.coins}铜钱。`;
     case "ORDER_DISPLAYS_ROTATED": return `第${event.round}轮订单轮换弃掉市场订单${event.marketOrderIds.join("、")}和御用订单${event.imperialOrderIds.join("、")}。`;

@@ -23,7 +23,7 @@ import type {
 } from "./types.ts";
 
 interface GameConfigDefinition {
-  rulesVersion: "1.1.4";
+  rulesVersion: "1.1.5";
   players: { min: number; max: number };
   rounds: number;
   startingResources: { clay: number; wood: number; coins: number };
@@ -119,7 +119,7 @@ export interface ContributionCardDefinition {
 }
 
 interface FiringDefinition {
-  rulesVersion: "1.1.4";
+  rulesVersion: "1.1.5";
   kilnSpaces: Array<{ id: KilnSpaceId; zone: "high" | "middle" | "low"; modifier: -1 | 0 | 1 }>;
   fireDeck: FireModifier[];
   contributionCards: ContributionCardDefinition[];
@@ -143,7 +143,7 @@ export interface KilnDefinition {
 
 export const GAME_CONFIG = gameConfigJson as unknown as GameConfigDefinition;
 const ACTION_LOCATION_FILE = actionLocationsJson as unknown as {
-  rulesVersion: "1.1.4";
+  rulesVersion: "1.1.5";
   locations: LocationDefinition[];
 };
 const ORDER_FILE = ordersJson as unknown as {
@@ -153,7 +153,7 @@ const ORDER_FILE = ordersJson as unknown as {
 const TECHNIQUE_FILE = techniquesJson as unknown as TechniqueDefinition[];
 const FIRING_FILE = firingJson as unknown as FiringDefinition;
 const COMPONENT_FILE = componentsJson as unknown as {
-  rulesVersion: "1.1.4";
+  rulesVersion: "1.1.5";
   components: ComponentDefinition[];
 };
 
@@ -164,6 +164,8 @@ export const LOCATION_IDS: readonly LocationId[] = [
   "kiln_yard",
   "market_imperial_office",
   "guild_academy",
+  "labour",
+  "court_patronage",
 ];
 
 export const SHAPES: readonly Shape[] = ["bowl", "plate", "washer", "vase", "censer"];
@@ -199,7 +201,7 @@ export const SHAPE_COSTS = GAME_CONFIG.shapes;
 export const DECORATION_COSTS = GAME_CONFIG.decorations;
 
 export interface ImperialProgressDefinition {
-  rulesVersion: "1.1.4";
+  rulesVersion: "1.1.5";
   track: Array<{
     space: number;
     title: string;
@@ -207,6 +209,7 @@ export interface ImperialProgressDefinition {
     reward: string | null;
     rewardZh: string | null;
     endGameVp: number;
+    unlocksApprentice: boolean;
   }>;
   imperialSealVp: number;
   exhibition: {
@@ -260,18 +263,18 @@ export const COMMON_SUPPLY = {
 
 function validateContent(): void {
   if (
-    GAME_CONFIG.rulesVersion !== "1.1.4" ||
-    ACTION_LOCATION_FILE.rulesVersion !== "1.1.4" ||
-    FIRING_FILE.rulesVersion !== "1.1.4" ||
-    COMPONENT_FILE.rulesVersion !== "1.1.4" ||
-    IMPERIAL_PROGRESS.rulesVersion !== "1.1.4"
+    GAME_CONFIG.rulesVersion !== "1.1.5" ||
+    ACTION_LOCATION_FILE.rulesVersion !== "1.1.5" ||
+    FIRING_FILE.rulesVersion !== "1.1.5" ||
+    COMPONENT_FILE.rulesVersion !== "1.1.5" ||
+    IMPERIAL_PROGRESS.rulesVersion !== "1.1.5"
   ) {
     throw new Error("Rules content version mismatch");
   }
   const actualLocationIds = new Set(ACTION_LOCATION_FILE.locations.map((location) => location.id));
   if (
-    ACTION_LOCATION_FILE.locations.length !== 6 ||
-    new Set(LOCATION_IDS).size !== 6 ||
+    ACTION_LOCATION_FILE.locations.length !== 8 ||
+    new Set(LOCATION_IDS).size !== 8 ||
     LOCATION_IDS.some((locationId) => !actualLocationIds.has(locationId))
   ) {
     throw new Error("Expected exactly six action locations");

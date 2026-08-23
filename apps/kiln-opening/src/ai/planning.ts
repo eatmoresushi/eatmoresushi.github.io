@@ -4,7 +4,7 @@ import {
   IMPERIAL_ORDERS,
   MARKET_ORDERS,
   ORDER_DEFINITIONS,
-  OFFICIAL_IMPERIAL_TRACK_RULES,
+  officialImperialTrackRules,
   QUALITY_RANK,
   SHAPES,
   SHAPE_COSTS,
@@ -57,7 +57,7 @@ function crossedMilestones(from: number, to: number, spaces: readonly number[]):
   return spaces.filter((space) => from < space && to >= space).length;
 }
 
-function progressMoveValue(
+export function progressMoveValue(
   observation: PlayerObservation,
   rules: PlayerObservation["imperialTrackRules"],
   reward: 1 | 2 | 3,
@@ -93,7 +93,7 @@ export function imperialProgressRuleDelta(
 ): number {
   const activeReward = activeOrderProgressReward(observation, printedReward) as 1 | 2 | 3;
   return progressMoveValue(observation, observation.imperialTrackRules, activeReward) -
-    progressMoveValue(observation, OFFICIAL_IMPERIAL_TRACK_RULES, printedReward);
+    progressMoveValue(observation, officialImperialTrackRules(), printedReward);
 }
 
 function clamp(value: number, minimum = 0, maximum = 1): number {

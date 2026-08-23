@@ -12,6 +12,7 @@ import {
   contributionWoodCost,
   currentDecisionActor,
   junActivationCoinCost,
+  orderHandLimit,
   SeededRandom,
   submitWoodContribution,
 } from "../game/index.ts";
@@ -298,7 +299,8 @@ function candidateWorkActions(
       }
     }
 
-    actions.push({ type: "OFFICE_GAIN_COINS", workerId: worker.id });
+    // Labour is uncapped, so it is legal for every available worker in every round.
+    actions.push({ type: "USE_LABOUR", workerId: worker.id });
     actions.push({
       type: "BEGIN_OFFICE_ORDERS",
       workerId: worker.id,
@@ -306,6 +308,8 @@ function candidateWorkActions(
     });
     if (worker.kind === "shifu") {
       actions.push({ type: "BEGIN_OFFICE_ORDERS", workerId: worker.id, mode: "take_one_and_gain_two_coins" });
+      // Court Patronage is its own uncapped location in v1.1.5, so it is offered to every
+      // available Shifu regardless of how crowded the Office is.
       actions.push({ type: "USE_COURT_PATRONAGE", workerId: worker.id });
     }
     actions.push({ type: "BEGIN_GUILD_ACTION", workerId: worker.id });
@@ -495,9 +499,12 @@ function candidatePhaseActions(
           })))),
         ];
       }
-      const geEligible = loaded.filter(
-        ({ id }) => state.firingContext?.ceramicResults[id]?.finalHeatDifference === 1,
-      );
+      // Ge acts at a Heat Difference of 1 or 2. This filter must match the engine's
+      // eligibility exactly: offering fewer targets silently removes the rule from play.
+      const geEligible = loaded.filter(({ id }) => {
+        const difference = state.firingContext?.ceramicResults[id]?.finalHeatDifference;
+        return difference === 1 || difference === 2;
+      });
       return [
         { type: "RESOLVE_GE", ceramicId: null },
         ...geEligible.map(({ id }) => ({ type: "RESOLVE_GE" as const, ceramicId: id })),
@@ -528,7 +535,9 @@ function candidatePhaseActions(
     case "orders":
       return candidateOrderActions(state, playerId);
     case "cleanup_orders": {
-      const count = Math.max(0, (player?.orderHand.length ?? 0) - (player?.kilnId === "GU" ? 4 : 3));
+      // Read the limit from the rules, never re-derive it here: this line previously
+      // hard-coded Guan's +1 and silently disagreed with the engine the moment it changed.
+      const count = player === undefined ? 0 : Math.max(0, player.orderHand.length - orderHandLimit());
       return combinations(player?.orderHand ?? [], count).map((orderIds) => ({ type: "DISCARD_ORDERS_FOR_CLEANUP" as const, orderIds }));
     }
     case "presentation":

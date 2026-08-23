@@ -1,4 +1,5 @@
-import { LOCATION_IDS, QUALITY_RANK, SeededRandom, TECHNIQUE_DEFINITIONS, locationCapacity } from "../game/index.ts";
+import {   orderHandLimit,
+LOCATION_IDS, QUALITY_RANK, SeededRandom, TECHNIQUE_DEFINITIONS, locationCapacity } from "../game/index.ts";
 import type { LocationId } from "../game/index.ts";
 import { evaluateAction, strategyTags } from "./evaluator.ts";
 import { buildPlayerPlan } from "./planning.ts";
@@ -216,7 +217,7 @@ function reduceDebt(state: AbstractRouteState, step: keyof AbstractRouteState["d
 function actionRouteStep(action: AIAction): StrategicStepId | null {
   switch (action.type) {
     case "GAIN_MATERIALS": return "gain_materials";
-    case "OFFICE_GAIN_COINS": return "gain_coins";
+    case "USE_LABOUR": return "gain_coins";
     case "FORM_CERAMICS": return "form";
     case "GLAZE_CERAMICS": return "glaze";
     case "USE_KILN_YARD": return "load";
@@ -251,7 +252,7 @@ function applyRootAction(
       next.actionsRemaining -= 1;
       break;
     }
-    case "OFFICE_GAIN_COINS":
+    case "USE_LABOUR":
       reduceDebt(next, "coins");
       immediate += next.debts.coins === 0 ? 0.8 : 0;
       next.actionsRemaining -= 1;
@@ -397,9 +398,9 @@ function actionLocation(action: AIAction): LocationId | null {
     case "FORM_CERAMICS": return "forming_studio";
     case "GLAZE_CERAMICS": return "glaze_workshop";
     case "USE_KILN_YARD": return "kiln_yard";
-    case "OFFICE_GAIN_COINS":
-    case "BEGIN_OFFICE_ORDERS":
-    case "USE_COURT_PATRONAGE": return "market_imperial_office";
+    case "USE_LABOUR": return "labour";
+    case "USE_COURT_PATRONAGE": return "court_patronage";
+    case "BEGIN_OFFICE_ORDERS": return "market_imperial_office";
     case "BEGIN_GUILD_ACTION": return "guild_academy";
     default: return null;
   }
@@ -417,8 +418,12 @@ function opponentNeed(observation: PlayerObservation, location: LocationId): num
         case "forming_studio": return sum + (player.orderHand.length > 0 && ceramics.length < 3 ? 0.8 : 0.2);
         case "glaze_workshop": return sum + (ceramics.some(({ stage }) => stage === "shaped") ? 1 : 0.1);
         case "kiln_yard": return sum + (ceramics.some(({ stage }) => stage === "glazed") ? 1 : 0.1);
-        case "market_imperial_office": return sum + (player.orderHand.length < (player.kilnId === "GU" ? 4 : 3) ? 0.6 : 0.15);
+        case "market_imperial_office": return sum + (player.orderHand.length < orderHandLimit() ? 0.6 : 0.15);
         case "guild_academy": return sum + (player.techniques.length < 2 && player.resources.coins >= 2 ? 0.55 : 0.1);
+        // Labour and Court Patronage have no worker limit, so an opponent can never
+        // crowd you out of either.
+        case "labour":
+        case "court_patronage": return sum;
       }
     }, 0);
 }

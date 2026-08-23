@@ -237,12 +237,12 @@ describe("Selfplay-003 policy validation", () => {
     state.players[actorId]!.imperialProgress = 3;
     addFinished(state, actorId, "bowl", "fine");
     const coherent = score(state, actorId, { type: "USE_COURT_PATRONAGE", workerId: shifu }, createInitialStrategyProfile(2), { assignedIntent: "Imperial" });
-    const coins = score(state, actorId, { type: "OFFICE_GAIN_COINS", workerId: shifu }, createInitialStrategyProfile(2), { assignedIntent: "Imperial" });
+    const coins = score(state, actorId, { type: "USE_LABOUR", workerId: shifu }, createInitialStrategyProfile(2), { assignedIntent: "Imperial" });
     expect(coherent.totalScore).toBeGreaterThan(coins.totalScore);
     state.players[actorId]!.imperialProgress = 0;
     state.round = 5;
     const dead = score(state, actorId, { type: "USE_COURT_PATRONAGE", workerId: shifu }, createInitialStrategyProfile(2), { assignedIntent: "Imperial" });
-    expect(dead.totalScore).toBeLessThan(score(state, actorId, { type: "OFFICE_GAIN_COINS", workerId: shifu }).totalScore);
+    expect(dead.totalScore).toBeLessThan(score(state, actorId, { type: "USE_LABOUR", workerId: shifu }).totalScore);
   });
 
   it("15. makes Volume intent acquire a feasible multi-ceramic destination first", () => {

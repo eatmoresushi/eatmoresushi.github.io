@@ -14,8 +14,8 @@
     "nameZh": "官窑",
     "abilityName": "Imperial Patronage",
     "abilityNameZh": "内府恩眷",
-    "ability": "Your cleanup Order hand limit is 4. Once per round, when you complete an Imperial Order, gain 2 Coins and you may independently ignore one Decoration requirement on that Order.",
-    "abilityZh": "你的整备阶段订单手牌上限为4。每轮一次，当你完成1张御用订单时，获得2铜钱，并且可以独立选择忽略该订单上的1项装饰要求。"
+    "ability": "Your Order hand limit is 3. Once per round, when you complete an Imperial Order, gain 2 Coins and 1 VP. You may also ignore one Decoration requirement on that Order.",
+    "abilityZh": "每轮一次，当你完成1张御用订单时，获得2铜钱和1分，并且可以独立选择忽略该订单上的1项装饰要求。"
   },
   {
     "id": "GE",
@@ -23,8 +23,8 @@
     "nameZh": "哥窑",
     "abilityName": "Crackle from Fire",
     "abilityNameZh": "窑变开片",
-    "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, spend 1 Wood, then choose one of your ceramics whose Actual Heat differs from its Preferred Heat by exactly 1. Set its Actual Heat equal to its Preferred Heat and change its Decoration to Crackle without paying the Crackle cost.",
-    "abilityZh": "每轮一次，在计算实际火候后、判定品第之前，花费1柴薪，然后选择你1件实际火候与适温恰好相差1的器物。将其实际火候设为等于适温，并将其装饰改为开片，无需支付开片费用。"
+    "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, spend 1 Wood, then choose one of your ceramics whose Actual Heat differs from its Preferred Heat by 1 or 2. Set its Actual Heat equal to its Preferred Heat and change its Decoration to Crackle without paying the Crackle cost.",
+    "abilityZh": "每轮一次，在计算实际火候后、判定品第之前，花费1柴薪，然后选择你1件实际火候与适温相差1或2的器物。将其实际火候设为等于适温，并将其装饰改为开片，无需支付开片费用。"
   },
   {
     "id": "DI",
@@ -32,7 +32,7 @@
     "nameZh": "定窑",
     "abilityName": "Moulded Production",
     "abilityNameZh": "覆烧成模",
-    "ability": "Once per round, when resolving the Forming Studio, after you shape a Bowl, Plate or Washer, shape one additional vessel of the same Shape for free. This additional vessel does not count against the action's normal limit.",
+    "ability": "Once per round, when resolving the Forming Studio, after you shape a Bowl, Plate or Washer, you may shape one additional vessel of the same Shape at no Clay cost. This additional vessel does not count against the action's normal limit.",
     "abilityZh": "每轮一次，在结算制坯坊时，于你制作1件碗、盘或洗之后，可免付陶土费用再制作1件相同器形的坯体。此额外坯体不计入该行动的正常上限。"
   },
   {
@@ -41,7 +41,7 @@
     "nameZh": "钧窑",
     "abilityName": "Kiln Transformation",
     "abilityNameZh": "入窑一色",
-    "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, you may pay 2 Coins to adjust the Actual Heat of one of your ceramics by +1 or -1. This affects only that ceramic.",
-    "abilityZh": "每轮一次，在计算实际火候后、判定品第之前，可支付2铜钱，将你1件器物的实际火候调整+1或-1。"
+    "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, you may pay 1 Wood to adjust the Actual Heat of one of your ceramics by +1 or -1.",
+    "abilityZh": "每轮一次，在计算实际火候后、判定品第之前，可支付1柴薪，将你1件器物的实际火候调整+1或-1。"
   }
 ]

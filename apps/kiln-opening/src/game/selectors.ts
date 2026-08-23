@@ -49,10 +49,13 @@ export function currentDecisionActor(phase: GamePhase): PlayerId | null {
   }
 }
 
-export function orderHandLimit(player: PlayerState): number {
-  return player.kilnId === "GU"
-    ? GAME_CONFIG.orderDisplay.guanHandLimit
-    : GAME_CONFIG.orderDisplay.baseHandLimit;
+/**
+ * Every workshop trims to the same limit. Guan's +1 hand size was removed along with its
+ * Decoration waiver: measured over 360 seats it completed 2.99 Orders against the field's
+ * 3.11, so neither clause was earning its text.
+ */
+export function orderHandLimit(): number {
+  return GAME_CONFIG.orderDisplay.baseHandLimit;
 }
 
 export function availableWorkerIds(player: PlayerState): WorkerId[] {
@@ -77,6 +80,8 @@ export function actionOccupancy(state: GameState, locationId: LocationId): numbe
 export function emptyActionBoard(): Record<LocationId, WorkerId[]> {
   return {
     materials_yard: [],
+    labour: [],
+    court_patronage: [],
     forming_studio: [],
     glaze_workshop: [],
     kiln_yard: [],
