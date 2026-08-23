@@ -38,6 +38,7 @@ export class SupabaseMultiplayerStore implements MultiplayerStore {
       p_colour: input.hostSeat.colour,
       p_auth_user_id: input.hostSeat.authUserId,
       p_token_hash: input.tokenHash,
+      p_content_digest: input.room.contentDigest,
     });
   }
 

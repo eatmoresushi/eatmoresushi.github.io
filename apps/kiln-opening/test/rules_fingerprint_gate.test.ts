@@ -56,6 +56,16 @@ describe("rules fingerprint gate", () => {
     }
   });
 
+  it("treats a missing fingerprint field as legacy rather than as a mismatch", async () => {
+    // A room row returned without the column at all arrives as undefined, not null. Refusing
+    // it would lock players out of a room whose rules never changed.
+    const { service, store, room } = await host();
+    const rooms = (store as unknown as { rooms: Map<string, Record<string, unknown>> }).rooms;
+    for (const record of rooms.values()) delete record["contentDigest"];
+    const result = await service.reconnect({ roomCode: room.room.code, seatToken: room.seatToken });
+    expect(result.ok).toBe(true);
+  });
+
   it("accepts a room predating fingerprinting, which cannot have one reconstructed", async () => {
     const { service, store, room } = await host();
     const legacy = (store as unknown as { rooms: Map<string, { contentDigest: string | null }> }).rooms;

@@ -801,7 +801,12 @@ export class AuthoritativeGameService {
     // rather than reinterpret: continuing would silently alter the rules mid-game.
     // Null means the room predates fingerprinting and cannot have one reconstructed.
     const fingerprint = rulesFingerprint();
-    if (authenticated.room.contentDigest !== null && authenticated.room.contentDigest !== fingerprint) {
+    // `?? null` on purpose: a room row that predates the column, or one returned by an RPC
+    // that does not select it, arrives as undefined. Treating undefined as a mismatch would
+    // lock every such player out of a room whose rules never actually changed -- a strictly
+    // worse failure than the silent reinterpretation this guard exists to prevent.
+    const roomFingerprint = authenticated.room.contentDigest ?? null;
+    if (roomFingerprint !== null && roomFingerprint !== fingerprint) {
       return failed(
         error(
           "RULES_FINGERPRINT_MISMATCH",
@@ -809,7 +814,7 @@ export class AuthoritativeGameService {
             + "cannot continue without changing the rules mid-game. Please create a new room.",
           null,
           {
-            roomFingerprint: authenticated.room.contentDigest,
+            roomFingerprint,
             serverFingerprint: fingerprint,
           },
         ),
