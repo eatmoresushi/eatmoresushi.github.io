@@ -19,8 +19,11 @@ import { applyFailure, ruleError } from "./errors.ts";
 import {
   activeImperialOrderProgressReward,
   activeImperialTrackRules,
+  activeExhibitionRules,
+  activeJunActivationCoins,
   activeJunActivationWood,
   activeRuBonusRules,
+  round5ExtraWorkerFor,
   dingExtraVesselIsFree,
 } from "./experiment.ts";
 import {
@@ -53,7 +56,15 @@ const LABOUR_APPRENTICE_COINS = ACTION_LOCATION_PRICES.labourApprenticeCoins;
 const LABOUR_SHIFU_COINS = ACTION_LOCATION_PRICES.labourShifuCoins;
 
 /** VP paid instead of an Apprentice that unlocks too late in Round 5 to ever act. */
-const ROUND_FIVE_UNLOCK_VP = 2;
+/**
+ * VP paid instead of an Apprentice that unlocks too late in Round 5 to ever act.
+ *
+ * Was 2, set by analogy to the Progress track's 2 VP per even space. Measured directly, an
+ * extra Round-5 Apprentice is worth 0.59 VP (95% CI [0.41, 0.80]) -- so 2 VP paid more for a
+ * worker that cannot act than for one that can, and quietly rewarded delaying Imperial
+ * Progress past Round 4. At 1 VP the premium is small and the incentive is gone.
+ */
+const ROUND_FIVE_UNLOCK_VP = 1;
 
 /** Clay Substitution pays this many Coins for three Clay/Wood in any combination. */
 const CLAY_SUBSTITUTION_COINS = 3;
@@ -1594,17 +1605,40 @@ function chooseColourSamplesOrder(state: GameState, actorId: PlayerId, orderId: 
   if (isFailure(phase)) return phase;
   const actorError = actorFailure(state, actorId);
   if (actorError !== null) return actorError;
-  if (phase.step !== "colour_samples_choose" || phase.colourSamplesDeck === undefined || phase.colourSamplesChoices === undefined || !phase.colourSamplesChoices.includes(orderId)) {
+  // v1.1.6: the looked-at cards are no longer the only options. A player who dislikes both
+  // may take a face-up Order instead, and the looked-at cards still go to the bottom. The
+  // old rule forced a take from two cards seen, which made the Technique a gamble rather
+  // than information.
+  const faceUp = phase.colourSamplesDeck === undefined
+    ? []
+    : [...state.marketDisplay, ...state.imperialDisplay];
+  const takeable = phase.colourSamplesChoices === undefined
+    ? []
+    : [...phase.colourSamplesChoices, ...faceUp];
+  if (phase.step !== "colour_samples_choose" || phase.colourSamplesDeck === undefined || phase.colourSamplesChoices === undefined || !takeable.includes(orderId)) {
     return applyFailure(ruleError("INVALID_SELECTION", "Choose one of the two private Colour Samples Orders."));
   }
-  const bottomedOrderId = phase.colourSamplesChoices.find((choice) => choice !== orderId);
-  if (bottomedOrderId === undefined) throw new Error("Colour Samples requires two distinct Orders");
+  // Taking one of the looked-at cards bottoms the other. Taking a face-up Order instead
+  // bottoms both, and the display position it came from is refilled as any face-up take is.
+  const tookLookedAt = phase.colourSamplesChoices.includes(orderId);
+  const bottomed = tookLookedAt
+    ? phase.colourSamplesChoices.filter((choice) => choice !== orderId)
+    : [...phase.colourSamplesChoices];
+  if (tookLookedAt && bottomed.length === 0) throw new Error("Colour Samples requires two distinct Orders");
   const next = cloneState(state);
   const nextPhase = next.phase;
   const player = next.players[actorId];
   if (nextPhase.type !== "work_office_orders" || player === undefined || nextPhase.colourSamplesDeck === undefined) throw new Error("Colour Samples state invariant failed");
   const deck = nextPhase.colourSamplesDeck;
-  (deck === "market" ? next.marketDeck : next.imperialDeck).push(bottomedOrderId);
+  const bottomedOrderId = bottomed[0]!;
+  for (const id of bottomed) (deck === "market" ? next.marketDeck : next.imperialDeck).push(id);
+  if (!tookLookedAt) {
+    const fromMarket = next.marketDisplay.includes(orderId);
+    const drawn = fromMarket
+      ? drawFromDisplay(next.marketDisplay, next.marketDeck, orderId)
+      : drawFromDisplay(next.imperialDisplay, next.imperialDeck, orderId);
+    if (!drawn) throw new Error("Validated face-up Colour Samples Order disappeared");
+  }
   player.orderHand.push(orderId);
   nextPhase.remainingTakes = (nextPhase.remainingTakes - 1) as 0 | 1 | 2;
   nextPhase.ordersTaken += 1;
@@ -1612,7 +1646,7 @@ function chooseColourSamplesOrder(state: GameState, actorId: PlayerId, orderId: 
   delete nextPhase.colourSamplesChoices;
   delete nextPhase.colourSamplesDeck;
   const events: GameEvent[] = [
-    { type: "ORDER_TAKEN", playerId: actorId, orderId, deck, acquisition: "blind_top" },
+    { type: "ORDER_TAKEN", playerId: actorId, orderId, deck, acquisition: tookLookedAt ? "blind_top" : "face_up" },
     { type: "COLOUR_SAMPLES_USED", playerId: actorId, deck, bottomedOrderId, selectedOrderId: orderId },
   ];
   finishOfficeOrderAcquisition(next, actorId, events);
@@ -2363,6 +2397,12 @@ function resolveJun(
       return applyFailure(ruleError("ILLEGAL_CERAMIC_STAGE", "Jun must select an owned Loaded ceramic."));
     }
     const junWood = activeJunActivationWood(state.experimentConfig);
+    const junCoins = activeJunActivationCoins(state.experimentConfig);
+    if ((player?.resources.coins ?? 0) < junCoins) {
+      return applyFailure(
+        ruleError("INSUFFICIENT_RESOURCES", `Jun's Kiln Transformation costs ${junCoins} Coins.`),
+      );
+    }
     if ((player?.resources.wood ?? 0) < junWood) {
       return applyFailure(
         ruleError("INSUFFICIENT_RESOURCES", `Jun's Kiln Transformation costs ${junWood} Wood.`),
@@ -2381,8 +2421,13 @@ function resolveJun(
     result.finalActualHeat += delta;
     result.finalHeatDifference = Math.abs(result.finalActualHeat - preferredHeat(ceramic.glaze));
     nextPlayer.resources.wood -= activeJunActivationWood(next.experimentConfig);
+    const paidCoins = activeJunActivationCoins(next.experimentConfig);
+    if (paidCoins > 0) {
+      nextPlayer.resources.coins -= paidCoins;
+      next.commonSupply.coins += paidCoins;
+    }
     next.commonSupply.wood += activeJunActivationWood(next.experimentConfig);
-    events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: -activeJunActivationWood(next.experimentConfig), coins: 0 });
+    events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: -activeJunActivationWood(next.experimentConfig), coins: -paidCoins });
     events.push({ type: "JUN_ACTIVATION_PAID", playerId: actorId, wood: activeJunActivationWood(next.experimentConfig) });
     nextPlayer.kilnAbilityUsedThisRound = true;
     events.push({ type: "KILN_ABILITY_USED", playerId: actorId, kilnId: "JU" });
@@ -3056,7 +3101,7 @@ function calculatePresentationVp(state: GameState, player: PlayerState): number 
       ceramic?.stage === "presented",
   );
   let score = ceramics.reduce(
-    (sum, ceramic) => sum + IMPERIAL_PROGRESS.exhibition.qualityVp[ceramic.quality],
+    (sum, ceramic) => sum + activeExhibitionRules(state.experimentConfig).qualityVp[ceramic.quality],
     0,
   );
   const diversityEligible = IMPERIAL_PROGRESS.exhibition.diversityEligibleSpaces.includes(
@@ -3187,6 +3232,20 @@ function performCleanup(state: GameState, events: GameEvent[], rng: RandomSource
 
   if (state.round < 5) {
     state.round = (state.round + 1) as RoundNumber;
+    // r5-worker-ab-001: hand one player an extra Apprentice as Round 5 opens, so the VP
+    // difference measures what a marginal Round-5 worker is worth. Only ever active under
+    // that experiment arm, and only when a locked Apprentice remains to release.
+    if (state.round === 5) {
+      const beneficiary = round5ExtraWorkerFor(state.experimentConfig);
+      const grantee = beneficiary === null ? undefined : state.players[beneficiary];
+      const spare = grantee === undefined ? undefined : Object.values(grantee.workers).find(
+        (candidate) => candidate.kind === "apprentice" && candidate.status === "locked",
+      );
+      if (grantee !== undefined && spare !== undefined) {
+        spare.status = "available";
+        events.push({ type: "APPRENTICE_UNLOCKED", playerId: grantee.id, workerId: spare.id });
+      }
+    }
     rotateOrderDisplaysAtStartOfRound(state, events, rng);
     for (const player of Object.values(state.players)) {
       player.passedWorkPhase = false;
@@ -3273,7 +3332,7 @@ function submitPresentation(
   if (phase.submittedPlayerIds.includes(actorId)) {
     return applyFailure(ruleError("INVALID_ACTION", "This player already submitted an End-game Exhibition selection."));
   }
-  const maximum = IMPERIAL_PROGRESS.exhibition.capacityByProgress[player.imperialProgress] ?? 0;
+  const maximum = activeExhibitionRules(state.experimentConfig).capacityByProgress[player.imperialProgress] ?? 0;
   if (
     ceramicIds.length > maximum ||
     new Set(ceramicIds).size !== ceramicIds.length

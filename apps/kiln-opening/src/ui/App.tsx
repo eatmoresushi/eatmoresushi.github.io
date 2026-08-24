@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { createGameApi } from "../multiplayer/client";
+import { GAME_CONFIG } from "../game/index.ts";
 import { computerPolicyLabel } from "../multiplayer/computerPlayer.ts";
 import type { GameApi } from "../multiplayer/client";
 import type {
@@ -510,7 +511,7 @@ export function App() {
         />
       )}
       <footer className="site-footer">
-        <span>{t("Kiln Opening")} V1.1.5</span>
+        <span>{t("Kiln Opening")} V{GAME_CONFIG.rulesVersion}</span>
         <a href="https://luyuan.me/">Luyuan He</a>
       </footer>
     </div>

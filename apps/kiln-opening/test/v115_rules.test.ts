@@ -24,10 +24,10 @@ import type { ContributionCardId } from "../src/game";
 const adjustments = (...cards: ContributionCardId[]): number[] =>
   cards.map((card) => contributionHeatAdjustment(card));
 
-describe("v1.1.5 authoritative content", () => {
-  it("loads v1.1.5 content versions, deck sizes and Glaze heats", () => {
-    expect(GAME_CONFIG.rulesVersion).toBe("1.1.5");
-    expect(IMPERIAL_PROGRESS.rulesVersion).toBe("1.1.5");
+describe("v1.1.6 authoritative content", () => {
+  it("loads v1.1.6 content versions, deck sizes and Glaze heats", () => {
+    expect(GAME_CONFIG.rulesVersion).toBe("1.1.6");
+    expect(IMPERIAL_PROGRESS.rulesVersion).toBe("1.1.6");
     expect(MARKET_ORDERS.length).toBe(30);
     expect(IMPERIAL_ORDERS.length).toBe(22);
     expect(TECHNIQUES.length).toBe(15);
@@ -47,7 +47,7 @@ describe("v1.1.5 authoritative content", () => {
   });
 
   /** Spec §22 data validation. */
-  it("carries the v1.1.5 Order values", () => {
+  it("carries the v1.1.6 Order values", () => {
     expect(ORDER_DEFINITIONS["M08"]).toMatchObject({ vp: 8, coins: 3 });
     expect(ORDER_DEFINITIONS["M17"]).toMatchObject({ vp: 9, coins: 5 });
     expect(ORDER_DEFINITIONS["M24"]).toMatchObject({ vp: 10, coins: 5 });
@@ -64,21 +64,21 @@ describe("v1.1.5 authoritative content", () => {
     }
   });
 
-  it("prices the v1.1.5 Techniques as printed", () => {
+  it("prices the v1.1.6 Techniques as printed", () => {
     expect(TECHNIQUE_DEFINITIONS["T01"]?.cost).toBe(2);
     expect(TECHNIQUE_DEFINITIONS["T02"]?.cost).toBe(1);
     expect(TECHNIQUE_DEFINITIONS["T10"]?.cost).toBe(3);
     expect(TECHNIQUE_DEFINITIONS["T11"]?.cost).toBe(3);
     expect(TECHNIQUE_DEFINITIONS["T12"]?.cost).toBe(3);
     expect(TECHNIQUE_DEFINITIONS["T16"]?.cost).toBe(3);
-    // Firing Techniques activate with Wood in v1.1.5, never Coins.
+    // Firing Techniques activate with Wood in v1.1.6, never Coins.
     expect(TECHNIQUE_DEFINITIONS["T10"]?.ability).toMatch(/1 Wood/);
     expect(TECHNIQUE_DEFINITIONS["T12"]?.ability).toMatch(/1 Wood/);
     expect(TECHNIQUE_DEFINITIONS["T16"]?.ability).toMatch(/2 Wood/);
     expect(TECHNIQUE_DEFINITIONS["T02"]?.ability).toMatch(/1 Coin and 1 Clay/);
   });
 
-  /** v1.1.5 turns over two cards from each display at the start of Rounds 2-5. */
+  /** v1.1.6 turns over two cards from each display at the start of Rounds 2-5. */
   it("rotates two Orders from each display", () => {
     expect(GAME_CONFIG.orderDisplay.market).toBe(4);
     expect(GAME_CONFIG.orderDisplay.imperial).toBe(4);
@@ -93,7 +93,7 @@ describe("v1.1.5 authoritative content", () => {
   });
 });
 
-describe("v1.1.5 Base Heat", () => {
+describe("v1.1.6 Base Heat", () => {
   /** Spec §20 contribution math. */
   it.each([
     [["TEND", "TEND", "TEND"], 2],
@@ -131,7 +131,7 @@ describe("v1.1.5 Base Heat", () => {
   });
 });
 
-describe("v1.1.5 kiln layout", () => {
+describe("v1.1.6 kiln layout", () => {
   /** Spec §5 and §20: 2P is 2 High / 1 Middle / 2 Low, covering 1 High and 1 Middle. */
   it.each([
     [2, [2, 1, 2], 5],

@@ -434,7 +434,7 @@
         }
       ],
       "minQuality": "standard",
-      "vp": 8,
+      "vp": 9,
       "coins": 5
     },
     {
@@ -451,7 +451,7 @@
         }
       ],
       "minQuality": "standard",
-      "vp": 9,
+      "vp": 10,
       "coins": 5
     },
     {
@@ -893,5 +893,6 @@
       "coins": 0,
       "imperialProgressReward": 1
     }
-  ]
+  ],
+  "rulesVersion": "1.1.6"
 }

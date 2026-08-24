@@ -10,7 +10,7 @@ import {
 import type { PlayerCount } from "../src/game";
 
 /**
- * Every value the v1.1.5 rulebook states, checked against the code that implements it.
+ * Every value the v1.1.6 rulebook states, checked against the code that implements it.
  *
  * Written after a session in which the printed rules and the engine disagreed six separate
  * times -- Guan's hand limit, the Office's Coin mode, Fuel Ledger's surcharge, Court
@@ -20,7 +20,7 @@ import type { PlayerCount } from "../src/game";
  *
  * Section numbers refer to the v1.1.5 rulebook.
  */
-describe("v1.1.5 rulebook conformance", () => {
+describe("v1.1.6 rulebook conformance", () => {
   const checks: Array<[string, unknown, unknown]> = [];
   const check = (label: string, got: unknown, want: unknown): void => { checks.push([label, got, want]); };
 
@@ -89,8 +89,8 @@ for (const m of FIRE_CARDS) fire[String(m)] = (fire[String(m)] ?? 0) + 1;
   check("App A/§8 kiln spaces total", Object.keys(KILN_SPACE_DEFINITIONS).length, 7);
   check("§9 Progress track length", IMPERIAL_PROGRESS.track.length, 6);
   // §9 End-game Exhibition
-  check("§9 Exhibition capacity by Progress", IMPERIAL_PROGRESS.exhibition.capacityByProgress, [1, 1, 2, 2, 3, 3]);
-  check("§9 Exhibition VP by Quality", IMPERIAL_PROGRESS.exhibition.qualityVp, { standard: 1, fine: 2, masterpiece: 4 });
+  check("§9 Exhibition capacity by Progress", IMPERIAL_PROGRESS.exhibition.capacityByProgress, [2, 2, 2, 2, 3, 3]);
+  check("§9 Exhibition VP by Quality", IMPERIAL_PROGRESS.exhibition.qualityVp, { standard: 2, fine: 3, masterpiece: 4 });
   check("§9 Exhibition diversity spaces", IMPERIAL_PROGRESS.exhibition.diversityEligibleSpaces, [4, 5]);
   check("§9 Exhibition diversity bonuses", [IMPERIAL_PROGRESS.exhibition.threeDifferentShapesBonus, IMPERIAL_PROGRESS.exhibition.threeDifferentGlazesBonus], [2, 2]);
   check("§9 Flawed cannot be exhibited", IMPERIAL_PROGRESS.exhibition.flawedEligible, false);

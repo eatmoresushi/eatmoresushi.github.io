@@ -1,5 +1,5 @@
 export type PlayerId = string;
-export type RulesVersion = "1.0.4" | "1.0.9" | "1.1.1" | "1.1.4" | "1.1.5";
+export type RulesVersion = "1.0.4" | "1.0.9" | "1.1.1" | "1.1.4" | "1.1.5" | "1.1.6";
 
 /**
  * The three v1.1.4 Contribution cards. Bank (-1 Heat, 1 Wood), Tend (0, 0) and
@@ -454,12 +454,43 @@ export interface RuTriggerExperimentConfig {
  * activations buy Fine -> Masterpiece, which unlocks the 8 Orders that require one (mean
  * 10.4 VP against 8.3 for the rest). This arm tests the cost lever in isolation.
  */
-export type JunWoodExperimentArm = "control" | "wood_3";
+export type JunWoodExperimentArm = "control" | "wood_3" | "wood2_coin1";
 
 export interface JunWoodExperimentConfig {
   readonly experimentId: "jun-wood-ab-001";
   readonly experimentArm: JunWoodExperimentArm;
   readonly junActivationWood: number;
+  /** Coins charged alongside the Wood. Zero under the shipped rules. */
+  readonly junActivationCoins?: number;
+}
+
+/**
+ * Grants one player an extra available Apprentice at the start of Round 5, to measure what a
+ * marginal Round-5 worker is actually worth. That number sets the correct award for the
+ * Round-5 unlock: an Apprentice unlocked in Cleanup of Round 5 can never act, so it pays VP
+ * instead, and if that award exceeds what a working Round-5 Apprentice earns, players are
+ * paid to delay Imperial Progress.
+ */
+export type R5WorkerExperimentArm = "control" | "extra_worker";
+
+export interface R5WorkerExperimentConfig {
+  readonly experimentId: "r5-worker-ab-001";
+  readonly experimentArm: R5WorkerExperimentArm;
+  readonly beneficiaryPlayerId: string;
+}
+
+/**
+ * End-game Exhibition values and capacity. The Exhibition is 5.8% of all VP scored today,
+ * and the traditions taking most from it are Ge and Ding rather than the Masterpiece kilns,
+ * so a general buff moves the table in a direction worth measuring before shipping.
+ */
+export type ExhibitionExperimentArm = "control" | "proposed";
+
+export interface ExhibitionExperimentConfig {
+  readonly experimentId: "exhibition-ab-001";
+  readonly experimentArm: ExhibitionExperimentArm;
+  readonly capacityByProgress: readonly [number, number, number, number, number, number];
+  readonly qualityVp: { readonly standard: number; readonly fine: number; readonly masterpiece: number };
 }
 
 export type GameExperimentConfig =
@@ -467,7 +498,9 @@ export type GameExperimentConfig =
   | ImperialTrackExperimentConfig
   | DingCostExperimentConfig
   | RuTriggerExperimentConfig
-  | JunWoodExperimentConfig;
+  | JunWoodExperimentConfig
+  | R5WorkerExperimentConfig
+  | ExhibitionExperimentConfig;
 
 export interface PlayerSetup {
   id: PlayerId;
@@ -723,7 +756,7 @@ export type GameEvent =
     }
   | { type: "IMPERIAL_SEAL_CLAIMED"; playerId: PlayerId; sealVp?: number }
   | { type: "APPRENTICE_UNLOCKED"; playerId: PlayerId; workerId: WorkerId }
-  | { type: "ROUND_FIVE_UNLOCK_VP_REWARD"; playerId: PlayerId; vp: 2 }
+  | { type: "ROUND_FIVE_UNLOCK_VP_REWARD"; playerId: PlayerId; vp: number }
   | { type: "ORDERS_DISCARDED_FOR_CLEANUP"; playerId: PlayerId; orderIds: OrderId[] }
   | { type: "IMPERIAL_STIPEND_RECEIVED"; playerId: PlayerId; space: 2 | 4; coins: number }
   | {

@@ -212,7 +212,7 @@ function junDiagnostic(
   const player = observation.game.players[observation.playerId];
   // Jun pays Wood in v1.1.4, which competes directly with Contribution cards and every
   // Firing Technique. Pricing it in Coins would understate the real cost.
-  const coinCost = observation.junActivationWood * marginalResourceValue(
+  const coinCost = observation.junActivationCoinPrice * 0.5 + observation.junActivationWood * marginalResourceValue(
     player?.resources.wood ?? 0,
     plan.resourceDemand.wood,
     0,
@@ -882,7 +882,7 @@ function scoreAction(
         .map((id) => observation.game.ceramics[id])
         .filter((ceramic): ceramic is FinishedCeramic => ceramic?.stage === "finished");
       factors.immediateVP += selected.reduce((sum, ceramic) => sum + (
-        ceramic.quality === "flawed" ? 0 : IMPERIAL_PROGRESS.exhibition.qualityVp[ceramic.quality]
+        ceramic.quality === "flawed" ? 0 : observation.exhibitionQualityVp[ceramic.quality]
       ), 0);
       if (IMPERIAL_PROGRESS.exhibition.diversityEligibleSpaces.includes(player.imperialProgress)) {
         if (selected.length === 3 && new Set(selected.map(({ shape }) => shape)).size === 3) factors.immediateVP += 2;

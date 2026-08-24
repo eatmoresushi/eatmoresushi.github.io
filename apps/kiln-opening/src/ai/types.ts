@@ -189,7 +189,7 @@ export interface ImperialRouteForecast {
 
 export interface PlayerObservation {
   /** Rules contract used to interpret every public and private field below. */
-  rulesVersion: "1.0.2" | "1.0.4" | "1.0.9" | "1.1.1" | "1.1.4" | "1.1.5";
+  rulesVersion: "1.0.2" | "1.0.4" | "1.0.9" | "1.1.1" | "1.1.4" | "1.1.5" | "1.1.6";
   playerId: PlayerId;
   game: PublicGameState;
   ownPendingContribution: PendingContribution | null;
@@ -203,6 +203,10 @@ export interface PlayerObservation {
   ruBonusRules: { minQuality: "fine" | "masterpiece"; vp: number };
   /** Jun's active activation price in Wood. Shipped rules: JUN_ACTIVATION_WOOD. */
   junActivationWood: number;
+  /** Coins charged alongside Jun's Wood. Zero under the shipped rules. */
+  junActivationCoinPrice: number;
+  /** Active End-game Exhibition VP by Quality. Shipped values come from content. */
+  exhibitionQualityVp: Record<"standard" | "fine" | "masterpiece", number>;
   imperialTrackRules: ActiveImperialTrackRules;
 }
 
@@ -375,9 +379,9 @@ export interface AIPolicy {
 
 export interface AIStrategyProfile {
   /** Rules used to create or train this serialized profile. */
-  rulesVersion: "1.0.1" | "1.0.2" | "1.0.4" | "1.0.9" | "1.1.1" | "1.1.4" | "1.1.5";
+  rulesVersion: "1.0.1" | "1.0.2" | "1.0.4" | "1.0.9" | "1.1.1" | "1.1.4" | "1.1.5" | "1.1.6";
   /** Current engine rules; permits an explicit historical-policy compatibility audit. */
-  currentRulesVersion?: "1.0.2" | "1.0.4" | "1.0.9" | "1.1.1" | "1.1.4" | "1.1.5";
+  currentRulesVersion?: "1.0.2" | "1.0.4" | "1.0.9" | "1.1.1" | "1.1.4" | "1.1.5" | "1.1.6";
   aiPolicyVersion: AIPolicyVersion;
   playerCount: PlayerCount;
   gamesLearned: number;

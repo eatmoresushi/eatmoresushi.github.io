@@ -181,8 +181,8 @@ export class AuthoritativeGameService {
         code,
         status: "lobby",
         hostSeatId: seatId,
-        rulesVersion: "1.1.5",
-        contentVersion: "1.1.5",
+        rulesVersion: "1.1.6",
+        contentVersion: "1.1.6",
         contentDigest: rulesFingerprint(),
         latestRevision: 0,
         endedAt: null,
@@ -786,8 +786,8 @@ export class AuthoritativeGameService {
       return failed(error("AUTHENTICATION_FAILED", "The room or seat credential is invalid."));
     }
     if (
-      authenticated.room.rulesVersion !== "1.1.5" ||
-      authenticated.room.contentVersion !== "1.1.5"
+      authenticated.room.rulesVersion !== "1.1.6" ||
+      authenticated.room.contentVersion !== "1.1.6"
     ) {
       return failed(
         error(

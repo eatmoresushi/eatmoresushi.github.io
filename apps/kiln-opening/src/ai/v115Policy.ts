@@ -129,8 +129,8 @@ export class V115Policy implements AIPolicy {
 
 export function createV115Profile(playerCount: 2 | 3 | 4): AIStrategyProfile {
   const profile = structuredClone(createProductionV3Profile(playerCount));
-  profile.rulesVersion = "1.1.5";
-  profile.currentRulesVersion = "1.1.5";
+  profile.rulesVersion = "1.1.6";
+  profile.currentRulesVersion = "1.1.6";
   profile.aiPolicyVersion = AI_POLICY_V115_VERSION;
   profile.gamesLearned = 0;
   profile.exploration = { early: 0, developing: 0, mature: 0 };

@@ -43,8 +43,10 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  *        Guan pays 2 Coins and 1 VP; Jun costs 2 Wood. Ge and Ding are unchanged.
  *   6 -- Jun's activation costs 3 Wood. Measured in isolation at -8.21 pp for the Jun seat,
  *        taking it from 36.3% to 28.0% against a 28.6% fair share.
+ *   7 -- v1.1.6. Round-5 Apprentice compensation drops to 1 VP, and Colour Samples may take
+ *        a face-up Order instead of one of the cards it looked at.
  */
-export const RULES_BEHAVIOUR_REVISION = 6;
+export const RULES_BEHAVIOUR_REVISION = 7;
 
 /**
  * Display-only keys, excluded so that a typo fix or a translation improvement does not

@@ -4,6 +4,8 @@ import { IMPERIAL_PROGRESS } from "./content.ts";
 import type {
   DingCostExperimentConfig,
   JunWoodExperimentConfig,
+  ExhibitionExperimentConfig,
+  R5WorkerExperimentConfig,
   RuTriggerExperimentConfig,
   GameExperimentConfig,
   ImperialTrackExperimentConfig,
@@ -142,19 +144,66 @@ function isRuTriggerConfig(value: unknown): value is RuTriggerExperimentConfig {
 function isJunWoodConfig(value: unknown): value is JunWoodExperimentConfig {
   if (typeof value !== "object" || value === null) return false;
   const c = value as Partial<JunWoodExperimentConfig>;
-  return c.experimentId === "jun-wood-ab-001"
-    && (c.experimentArm === "control" || c.experimentArm === "wood_3")
-    && typeof c.junActivationWood === "number" && c.junActivationWood > 0;
+  if (c.experimentId !== "jun-wood-ab-001") return false;
+  if (!["control", "wood_3", "wood2_coin1"].includes(c.experimentArm ?? "")) return false;
+  if (typeof c.junActivationWood !== "number" || c.junActivationWood <= 0) return false;
+  return c.junActivationCoins === undefined
+    || (typeof c.junActivationCoins === "number" && c.junActivationCoins >= 0);
+}
+
+function isR5WorkerConfig(value: unknown): value is R5WorkerExperimentConfig {
+  if (typeof value !== "object" || value === null) return false;
+  const c = value as Partial<R5WorkerExperimentConfig>;
+  return c.experimentId === "r5-worker-ab-001"
+    && (c.experimentArm === "control" || c.experimentArm === "extra_worker")
+    && typeof c.beneficiaryPlayerId === "string" && c.beneficiaryPlayerId.length > 0;
+}
+
+function isExhibitionConfig(value: unknown): value is ExhibitionExperimentConfig {
+  if (typeof value !== "object" || value === null) return false;
+  const c = value as Partial<ExhibitionExperimentConfig>;
+  if (c.experimentId !== "exhibition-ab-001") return false;
+  if (c.experimentArm !== "control" && c.experimentArm !== "proposed") return false;
+  if (!Array.isArray(c.capacityByProgress) || c.capacityByProgress.length !== 6) return false;
+  const q = c.qualityVp;
+  return typeof q === "object" && q !== null
+    && typeof q.standard === "number" && typeof q.fine === "number" && typeof q.masterpiece === "number";
 }
 
 export function isSupportedExperimentConfig(value: unknown): value is GameExperimentConfig {
   return isJunConfig(value) || isImperialTrackConfig(value) || isDingCostConfig(value)
-    || isRuTriggerConfig(value) || isJunWoodConfig(value);
+    || isRuTriggerConfig(value) || isJunWoodConfig(value) || isR5WorkerConfig(value)
+    || isExhibitionConfig(value);
+}
+
+/** Active Exhibition capacity and Quality values. Shipped rules come from content. */
+export function activeExhibitionRules(config: GameExperimentConfig | undefined): {
+  capacityByProgress: readonly number[];
+  qualityVp: Record<"standard" | "fine" | "masterpiece", number>;
+} {
+  if (config?.experimentId !== "exhibition-ab-001") {
+    return {
+      capacityByProgress: IMPERIAL_PROGRESS.exhibition.capacityByProgress,
+      qualityVp: IMPERIAL_PROGRESS.exhibition.qualityVp,
+    };
+  }
+  return { capacityByProgress: config.capacityByProgress, qualityVp: { ...config.qualityVp } };
+}
+
+/** Which player, if any, receives an extra Apprentice at the start of Round 5. */
+export function round5ExtraWorkerFor(config: GameExperimentConfig | undefined): string | null {
+  if (config?.experimentId !== "r5-worker-ab-001") return null;
+  return config.experimentArm === "extra_worker" ? config.beneficiaryPlayerId : null;
 }
 
 /** Jun's active activation price in Wood. Shipped rules: JUN_ACTIVATION_WOOD. */
 export function activeJunActivationWood(config: GameExperimentConfig | undefined): number {
   return config?.experimentId === "jun-wood-ab-001" ? config.junActivationWood : JUN_ACTIVATION_WOOD;
+}
+
+/** Coins charged alongside Jun's Wood. Zero under the shipped rules. */
+export function activeJunActivationCoins(config: GameExperimentConfig | undefined): number {
+  return config?.experimentId === "jun-wood-ab-001" ? config.junActivationCoins ?? 0 : 0;
 }
 
 /** Ru's active trigger and award. Shipped rules: a Masterpiece, worth RU_ORDER_VP. */

@@ -23,7 +23,7 @@ import type {
 } from "./types.ts";
 
 interface GameConfigDefinition {
-  rulesVersion: "1.1.5";
+  rulesVersion: "1.1.6";
   players: { min: number; max: number };
   rounds: number;
   startingResources: { clay: number; wood: number; coins: number };
@@ -118,7 +118,7 @@ export interface ContributionCardDefinition {
 }
 
 interface FiringDefinition {
-  rulesVersion: "1.1.5";
+  rulesVersion: "1.1.6";
   kilnSpaces: Array<{ id: KilnSpaceId; zone: "high" | "middle" | "low"; modifier: -1 | 0 | 1 }>;
   fireDeck: FireModifier[];
   contributionCards: ContributionCardDefinition[];
@@ -142,7 +142,7 @@ export interface KilnDefinition {
 
 export const GAME_CONFIG = gameConfigJson as unknown as GameConfigDefinition;
 const ACTION_LOCATION_FILE = actionLocationsJson as unknown as {
-  rulesVersion: "1.1.5";
+  rulesVersion: "1.1.6";
   locations: LocationDefinition[];
 };
 const ORDER_FILE = ordersJson as unknown as {
@@ -152,7 +152,7 @@ const ORDER_FILE = ordersJson as unknown as {
 const TECHNIQUE_FILE = techniquesJson as unknown as TechniqueDefinition[];
 const FIRING_FILE = firingJson as unknown as FiringDefinition;
 const COMPONENT_FILE = componentsJson as unknown as {
-  rulesVersion: "1.1.5";
+  rulesVersion: "1.1.6";
   components: ComponentDefinition[];
 };
 
@@ -200,7 +200,7 @@ export const SHAPE_COSTS = GAME_CONFIG.shapes;
 export const DECORATION_COSTS = GAME_CONFIG.decorations;
 
 export interface ImperialProgressDefinition {
-  rulesVersion: "1.1.5";
+  rulesVersion: "1.1.6";
   track: Array<{
     space: number;
     title: string;
@@ -262,11 +262,11 @@ export const COMMON_SUPPLY = {
 
 function validateContent(): void {
   if (
-    GAME_CONFIG.rulesVersion !== "1.1.5" ||
-    ACTION_LOCATION_FILE.rulesVersion !== "1.1.5" ||
-    FIRING_FILE.rulesVersion !== "1.1.5" ||
-    COMPONENT_FILE.rulesVersion !== "1.1.5" ||
-    IMPERIAL_PROGRESS.rulesVersion !== "1.1.5"
+    GAME_CONFIG.rulesVersion !== "1.1.6" ||
+    ACTION_LOCATION_FILE.rulesVersion !== "1.1.6" ||
+    FIRING_FILE.rulesVersion !== "1.1.6" ||
+    COMPONENT_FILE.rulesVersion !== "1.1.6" ||
+    IMPERIAL_PROGRESS.rulesVersion !== "1.1.6"
   ) {
     throw new Error("Rules content version mismatch");
   }
