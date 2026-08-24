@@ -5,8 +5,8 @@
     "nameZh": "汝窑",
     "abilityName": "Quiet Perfection",
     "abilityNameZh": "清雅无瑕",
-    "ability": "Once per round, when you complete any Order using a Celadon, Plain ceramic of Fine quality or better, gain 3 VP.",
-    "abilityZh": "每轮一次，当你用1件青釉、素面且品第为精品或以上的器物完成任意订单时，获得3分。"
+    "ability": "Once per round, when you complete any Order using a Celadon, Plain Masterpiece, gain 4 VP.",
+    "abilityZh": "每轮一次，当你用1件青釉、素面珍品完成任意订单时，获得4分。"
   },
   {
     "id": "GU",
@@ -14,8 +14,8 @@
     "nameZh": "官窑",
     "abilityName": "Imperial Patronage",
     "abilityNameZh": "内府恩眷",
-    "ability": "Once per round, when you complete an Imperial Order, gain 2 Coins. You may also ignore one Decoration requirement on that Order.",
-    "abilityZh": "每轮一次，当你完成1张御用订单时，获得2铜钱，并且可以独立选择忽略该订单上的1项装饰要求。"
+    "ability": "Once per round, when you complete an Imperial Order, gain 2 Coins and 1 VP. You may also ignore one Decoration requirement on that Order.",
+    "abilityZh": "每轮一次，当你完成1张御用订单时，获得2铜钱和1分，并且可以独立选择忽略该订单上的1项装饰要求。"
   },
   {
     "id": "GE",
@@ -41,7 +41,7 @@
     "nameZh": "钧窑",
     "abilityName": "Kiln Transformation",
     "abilityNameZh": "入窑一色",
-    "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, you may pay 3 Wood to adjust the Actual Heat of one of your ceramics by +1 or -1.",
-    "abilityZh": "每轮一次，在计算实际火候后、判定品第之前，可支付3柴薪，将你1件器物的实际火候调整+1或-1。"
+    "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, you may pay 2 Wood to adjust the Actual Heat of one of your ceramics by +1 or -1.",
+    "abilityZh": "每轮一次，在计算实际火候后、判定品第之前，可支付2柴薪，将你1件器物的实际火候调整+1或-1。"
   }
 ]
