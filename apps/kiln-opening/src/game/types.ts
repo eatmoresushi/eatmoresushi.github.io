@@ -449,11 +449,25 @@ export interface RuTriggerExperimentConfig {
   readonly ruOrderVp: number;
 }
 
+/**
+ * Jun's activation price. Jun leads the Tradition table at 36.2% pooled, and 68.8% of its
+ * activations buy Fine -> Masterpiece, which unlocks the 8 Orders that require one (mean
+ * 10.4 VP against 8.3 for the rest). This arm tests the cost lever in isolation.
+ */
+export type JunWoodExperimentArm = "control" | "wood_3";
+
+export interface JunWoodExperimentConfig {
+  readonly experimentId: "jun-wood-ab-001";
+  readonly experimentArm: JunWoodExperimentArm;
+  readonly junActivationWood: number;
+}
+
 export type GameExperimentConfig =
   | JunAbExperimentConfig
   | ImperialTrackExperimentConfig
   | DingCostExperimentConfig
-  | RuTriggerExperimentConfig;
+  | RuTriggerExperimentConfig
+  | JunWoodExperimentConfig;
 
 export interface PlayerSetup {
   id: PlayerId;

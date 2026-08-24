@@ -212,7 +212,7 @@ function junDiagnostic(
   const player = observation.game.players[observation.playerId];
   // Jun pays Wood in v1.1.4, which competes directly with Contribution cards and every
   // Firing Technique. Pricing it in Coins would understate the real cost.
-  const coinCost = JUN_ACTIVATION_WOOD * marginalResourceValue(
+  const coinCost = observation.junActivationWood * marginalResourceValue(
     player?.resources.wood ?? 0,
     plan.resourceDemand.wood,
     0,

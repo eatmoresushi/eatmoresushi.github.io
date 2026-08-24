@@ -70,5 +70,13 @@ export const FUEL_LEDGER_WOOD = 1;
  */
 export const GE_CORRECTABLE_DIFFERENCES: readonly number[] = [1, 2];
 
-export const JUN_ACTIVATION_WOOD = 2;
+/**
+ * Jun's activation price, in Wood. Raised from 2 to 3 in v1.1.5.
+ *
+ * Jun led the Tradition table at 36.3% against a 28.6% fair share, and 68.8% of its
+ * activations bought Fine -> Masterpiece, unlocking the 8 Orders that require one (mean
+ * 10.4 VP against 8.3 for the rest). Measured in isolation on matched seeds, the extra Wood
+ * is worth -8.21 pp to Jun (95% CI [-11.07, -5.24]) and lands it on 28.0%.
+ */
+export const JUN_ACTIVATION_WOOD = 3;
 export const GE_ACTIVATION_WOOD = 1;

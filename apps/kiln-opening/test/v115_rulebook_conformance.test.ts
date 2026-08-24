@@ -79,7 +79,7 @@ for (const m of FIRE_CARDS) fire[String(m)] = (fire[String(m)] ?? 0) + 1;
   check("§10 Ru award", RU_ORDER_VP, 4);
   check("§10 Guan award", [GUAN_ORDER_COINS, GUAN_ORDER_VP], [2, 1]);
   check("§10 Ge cost / window", [GE_ACTIVATION_WOOD, [...GE_CORRECTABLE_DIFFERENCES]], [1, [1, 2]]);
-  check("§10 Jun cost", JUN_ACTIVATION_WOOD, 2);
+  check("§10 Jun cost", JUN_ACTIVATION_WOOD, 3);
 // Section 5 / App B -- location and Technique prices
   check("§5 Labour Coins", [ACTION_LOCATION_PRICES.labourApprenticeCoins, ACTION_LOCATION_PRICES.labourShifuCoins], [2, 4]);
   check("§5 Court Patronage Coins", ACTION_LOCATION_PRICES.courtPatronageCoins, 4);

@@ -201,6 +201,8 @@ export interface PlayerObservation {
   dingExtraVesselFree: boolean;
   /** Ru's active trigger and award. Shipped rules: a Masterpiece, worth RU_ORDER_VP. */
   ruBonusRules: { minQuality: "fine" | "masterpiece"; vp: number };
+  /** Jun's active activation price in Wood. Shipped rules: JUN_ACTIVATION_WOOD. */
+  junActivationWood: number;
   imperialTrackRules: ActiveImperialTrackRules;
 }
 

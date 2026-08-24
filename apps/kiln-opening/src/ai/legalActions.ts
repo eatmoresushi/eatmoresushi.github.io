@@ -11,7 +11,7 @@ import {
   CONTRIBUTION_CARD_IDS,
   contributionWoodCost,
   currentDecisionActor,
-  JUN_ACTIVATION_WOOD,
+  activeJunActivationWood,
   orderHandLimit,
   SeededRandom,
   submitWoodContribution,
@@ -494,7 +494,7 @@ function candidatePhaseActions(
         // the engine in both directions.
         return [
           { type: "RESOLVE_JUN", ceramicId: null, delta: null },
-          ...(player.resources.wood < JUN_ACTIVATION_WOOD ? [] : loaded.flatMap(({ id }) => ([-1, 1] as const).map((delta) => ({
+          ...(player.resources.wood < activeJunActivationWood(state.experimentConfig) ? [] : loaded.flatMap(({ id }) => ([-1, 1] as const).map((delta) => ({
             type: "RESOLVE_JUN" as const,
             ceramicId: id,
             delta,

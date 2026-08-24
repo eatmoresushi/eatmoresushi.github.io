@@ -1,7 +1,9 @@
 import { RU_BONUS_QUALITY, RU_ORDER_VP } from "./orderRules.ts";
+import { JUN_ACTIVATION_WOOD } from "./firingRules.ts";
 import { IMPERIAL_PROGRESS } from "./content.ts";
 import type {
   DingCostExperimentConfig,
+  JunWoodExperimentConfig,
   RuTriggerExperimentConfig,
   GameExperimentConfig,
   ImperialTrackExperimentConfig,
@@ -137,9 +139,22 @@ function isRuTriggerConfig(value: unknown): value is RuTriggerExperimentConfig {
   return ["control", "fine_2", "fine_3", "master_6"].includes(candidate.experimentArm ?? "");
 }
 
+function isJunWoodConfig(value: unknown): value is JunWoodExperimentConfig {
+  if (typeof value !== "object" || value === null) return false;
+  const c = value as Partial<JunWoodExperimentConfig>;
+  return c.experimentId === "jun-wood-ab-001"
+    && (c.experimentArm === "control" || c.experimentArm === "wood_3")
+    && typeof c.junActivationWood === "number" && c.junActivationWood > 0;
+}
+
 export function isSupportedExperimentConfig(value: unknown): value is GameExperimentConfig {
   return isJunConfig(value) || isImperialTrackConfig(value) || isDingCostConfig(value)
-    || isRuTriggerConfig(value);
+    || isRuTriggerConfig(value) || isJunWoodConfig(value);
+}
+
+/** Jun's active activation price in Wood. Shipped rules: JUN_ACTIVATION_WOOD. */
+export function activeJunActivationWood(config: GameExperimentConfig | undefined): number {
+  return config?.experimentId === "jun-wood-ab-001" ? config.junActivationWood : JUN_ACTIVATION_WOOD;
 }
 
 /** Ru's active trigger and award. Shipped rules: a Masterpiece, worth RU_ORDER_VP. */

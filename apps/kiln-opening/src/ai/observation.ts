@@ -1,6 +1,7 @@
 import {
   GAME_CONFIG,
   activeImperialTrackRules,
+  activeJunActivationWood,
   activeRuBonusRules,
   dingExtraVesselIsFree,
   junActivationCoinCost,
@@ -40,6 +41,7 @@ export function createPlayerObservation(
     junActivationCoinCost: junActivationCoinCost(state.experimentConfig),
     dingExtraVesselFree: dingExtraVesselIsFree(state.experimentConfig),
     ruBonusRules: activeRuBonusRules(state.experimentConfig),
+    junActivationWood: activeJunActivationWood(state.experimentConfig),
     imperialTrackRules: activeImperialTrackRules(state.experimentConfig),
   };
 }

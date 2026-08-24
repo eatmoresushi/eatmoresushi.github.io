@@ -19,6 +19,7 @@ import { applyFailure, ruleError } from "./errors.ts";
 import {
   activeImperialOrderProgressReward,
   activeImperialTrackRules,
+  activeJunActivationWood,
   activeRuBonusRules,
   dingExtraVesselIsFree,
 } from "./experiment.ts";
@@ -2361,9 +2362,10 @@ function resolveJun(
     if (ceramic === undefined || ceramic.ownerId !== actorId || ceramic.stage !== "loaded") {
       return applyFailure(ruleError("ILLEGAL_CERAMIC_STAGE", "Jun must select an owned Loaded ceramic."));
     }
-    if ((player?.resources.wood ?? 0) < JUN_ACTIVATION_WOOD) {
+    const junWood = activeJunActivationWood(state.experimentConfig);
+    if ((player?.resources.wood ?? 0) < junWood) {
       return applyFailure(
-        ruleError("INSUFFICIENT_RESOURCES", `Jun's Kiln Transformation costs ${JUN_ACTIVATION_WOOD} Wood.`),
+        ruleError("INSUFFICIENT_RESOURCES", `Jun's Kiln Transformation costs ${junWood} Wood.`),
       );
     }
   }
@@ -2378,10 +2380,10 @@ function resolveJun(
     }
     result.finalActualHeat += delta;
     result.finalHeatDifference = Math.abs(result.finalActualHeat - preferredHeat(ceramic.glaze));
-    nextPlayer.resources.wood -= JUN_ACTIVATION_WOOD;
-    next.commonSupply.wood += JUN_ACTIVATION_WOOD;
-    events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: -JUN_ACTIVATION_WOOD, coins: 0 });
-    events.push({ type: "JUN_ACTIVATION_PAID", playerId: actorId, wood: JUN_ACTIVATION_WOOD });
+    nextPlayer.resources.wood -= activeJunActivationWood(next.experimentConfig);
+    next.commonSupply.wood += activeJunActivationWood(next.experimentConfig);
+    events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: -activeJunActivationWood(next.experimentConfig), coins: 0 });
+    events.push({ type: "JUN_ACTIVATION_PAID", playerId: actorId, wood: activeJunActivationWood(next.experimentConfig) });
     nextPlayer.kilnAbilityUsedThisRound = true;
     events.push({ type: "KILN_ABILITY_USED", playerId: actorId, kilnId: "JU" });
   }

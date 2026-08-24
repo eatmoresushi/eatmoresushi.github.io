@@ -41,8 +41,10 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  *        Ru triggers on Fine-or-better rather than Masterpiece and pays 3 VP.
  *   5 -- Reverted to the v1.1.5 rulebook set: Ru is a Celadon, Plain Masterpiece for 4 VP;
  *        Guan pays 2 Coins and 1 VP; Jun costs 2 Wood. Ge and Ding are unchanged.
+ *   6 -- Jun's activation costs 3 Wood. Measured in isolation at -8.21 pp for the Jun seat,
+ *        taking it from 36.3% to 28.0% against a 28.6% fair share.
  */
-export const RULES_BEHAVIOUR_REVISION = 5;
+export const RULES_BEHAVIOUR_REVISION = 6;
 
 /**
  * Display-only keys, excluded so that a typo fix or a translation improvement does not
