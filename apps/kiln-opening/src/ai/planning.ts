@@ -403,7 +403,7 @@ function ruAssignmentPreference(observation: PlayerObservation, traditionAware: 
   if (!traditionAware) return 0;
   const player = observation.game.players[observation.playerId];
   if (player === undefined || player.kilnId !== "RU" || player.kilnAbilityUsedThisRound) return 0;
-  return bestQualityProbability(observation, RU_BONUS_GLAZE, RU_BONUS_QUALITY) * 1.2;
+  return bestQualityProbability(observation, RU_BONUS_GLAZE, observation.ruBonusRules.minQuality) * 1.2;
 }
 
 export function evaluateOrderFeasibility(
@@ -538,7 +538,10 @@ function traditionOrderBonus(
 
   if (player.kilnId === "RU") {
     if (!orderAdmitsRuBonus(order)) return 0;
-    return RU_ORDER_VP * bestQualityProbability(observation, RU_BONUS_GLAZE, RU_BONUS_QUALITY);
+    // Read the active trigger, not the shipped one: under a Fine+ arm the ability fires far
+    // more often, and an agent still pricing it at Masterpiece odds would understate it.
+    const { minQuality, vp } = observation.ruBonusRules;
+    return vp * bestQualityProbability(observation, RU_BONUS_GLAZE, minQuality);
   }
   if (player.kilnId === "GU") {
     // Guan already fires every time it completes an Imperial Order -- 1.69 times per game

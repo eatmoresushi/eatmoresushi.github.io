@@ -199,6 +199,8 @@ export interface PlayerObservation {
   junActivationCoinCost: 0 | 1 | 2;
   /** True only under the ding-cost-ab-001 `free` arm; shipped rules charge for the vessel. */
   dingExtraVesselFree: boolean;
+  /** Ru's active trigger and award. Shipped rules: a Masterpiece, worth RU_ORDER_VP. */
+  ruBonusRules: { minQuality: "fine" | "masterpiece"; vp: number };
   imperialTrackRules: ActiveImperialTrackRules;
 }
 

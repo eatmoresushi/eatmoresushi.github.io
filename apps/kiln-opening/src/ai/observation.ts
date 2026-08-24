@@ -1,6 +1,7 @@
 import {
   GAME_CONFIG,
   activeImperialTrackRules,
+  activeRuBonusRules,
   dingExtraVesselIsFree,
   junActivationCoinCost,
 } from "../game/index.ts";
@@ -38,6 +39,7 @@ export function createPlayerObservation(
     knownFireRemaining,
     junActivationCoinCost: junActivationCoinCost(state.experimentConfig),
     dingExtraVesselFree: dingExtraVesselIsFree(state.experimentConfig),
+    ruBonusRules: activeRuBonusRules(state.experimentConfig),
     imperialTrackRules: activeImperialTrackRules(state.experimentConfig),
   };
 }

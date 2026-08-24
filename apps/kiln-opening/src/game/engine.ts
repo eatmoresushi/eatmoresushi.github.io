@@ -19,6 +19,7 @@ import { applyFailure, ruleError } from "./errors.ts";
 import {
   activeImperialOrderProgressReward,
   activeImperialTrackRules,
+  activeRuBonusRules,
   dingExtraVesselIsFree,
 } from "./experiment.ts";
 import {
@@ -2927,8 +2928,9 @@ function completeOrder(
   }
   const isImperial = isImperialOrder(action.orderId);
   const guanTriggers = isImperial && player.kilnId === "GU" && !player.kilnAbilityUsedThisRound;
+  const ruRules = activeRuBonusRules(state.experimentConfig);
   const ruTriggers = player.kilnId === "RU" && !player.kilnAbilityUsedThisRound
-    && selected.some((ceramic) => ruBonusCeramic(ceramic));
+    && selected.some((ceramic) => ruBonusCeramic(ceramic, ruRules.minQuality));
   if (action.useGuanWaiver) {
     if (
       !isImperial ||
@@ -2998,7 +3000,7 @@ function completeOrder(
     if (guanCoins > 0) events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins: guanCoins });
   }
   if (ruTriggers) {
-    nextPlayer.score.kilnTraditionVp += RU_ORDER_VP;
+    nextPlayer.score.kilnTraditionVp += ruRules.vp;
     nextPlayer.kilnAbilityUsedThisRound = true;
     events.push({ type: "KILN_ABILITY_USED", playerId: actorId, kilnId: "RU" });
   }

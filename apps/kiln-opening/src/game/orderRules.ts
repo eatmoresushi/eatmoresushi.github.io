@@ -165,10 +165,10 @@ export const RU_ORDER_VP = 4;
 /** Does this finished ceramic trigger Ru's bonus? The engine's own test. */
 export function ruBonusCeramic(
   ceramic: Pick<FinishedCeramic, "glaze" | "decoration" | "quality">,
+  minQuality: "fine" | "masterpiece" = RU_BONUS_QUALITY,
 ): boolean {
-  return ceramic.glaze === RU_BONUS_GLAZE
-    && ceramic.decoration === RU_BONUS_DECORATION
-    && ceramic.quality === RU_BONUS_QUALITY;
+  if (ceramic.glaze !== RU_BONUS_GLAZE || ceramic.decoration !== RU_BONUS_DECORATION) return false;
+  return QUALITY_RANK[ceramic.quality] >= QUALITY_RANK[minQuality];
 }
 
 /**

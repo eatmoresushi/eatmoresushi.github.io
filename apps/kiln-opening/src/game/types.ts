@@ -435,10 +435,25 @@ export interface DingCostExperimentConfig {
   readonly experimentArm: DingCostExperimentArm;
 }
 
+/**
+ * Ru's trigger and award. Its ability needs three simultaneous conditions where every other
+ * Tradition needs one, and the Masterpiece requirement is the binding one: a ceramic aimed
+ * exactly at its Preferred Heat is Masterpiece 33.3% of the time and Fine-or-better 83.3%.
+ */
+export type RuTriggerExperimentArm = "control" | "fine_2" | "fine_3" | "master_6";
+
+export interface RuTriggerExperimentConfig {
+  readonly experimentId: "ru-trigger-ab-001";
+  readonly experimentArm: RuTriggerExperimentArm;
+  readonly ruMinQuality: "fine" | "masterpiece";
+  readonly ruOrderVp: number;
+}
+
 export type GameExperimentConfig =
   | JunAbExperimentConfig
   | ImperialTrackExperimentConfig
-  | DingCostExperimentConfig;
+  | DingCostExperimentConfig
+  | RuTriggerExperimentConfig;
 
 export interface PlayerSetup {
   id: PlayerId;

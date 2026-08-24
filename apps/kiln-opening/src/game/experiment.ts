@@ -1,6 +1,8 @@
+import { RU_BONUS_QUALITY, RU_ORDER_VP } from "./orderRules.ts";
 import { IMPERIAL_PROGRESS } from "./content.ts";
 import type {
   DingCostExperimentConfig,
+  RuTriggerExperimentConfig,
   GameExperimentConfig,
   ImperialTrackExperimentConfig,
   JunAbExperimentConfig,
@@ -126,8 +128,28 @@ function isDingCostConfig(value: unknown): value is DingCostExperimentConfig {
     && (candidate.experimentArm === "paid" || candidate.experimentArm === "free");
 }
 
+function isRuTriggerConfig(value: unknown): value is RuTriggerExperimentConfig {
+  if (typeof value !== "object" || value === null) return false;
+  const candidate = value as Partial<RuTriggerExperimentConfig>;
+  if (candidate.experimentId !== "ru-trigger-ab-001") return false;
+  if (candidate.ruMinQuality !== "fine" && candidate.ruMinQuality !== "masterpiece") return false;
+  if (typeof candidate.ruOrderVp !== "number" || candidate.ruOrderVp <= 0) return false;
+  return ["control", "fine_2", "fine_3", "master_6"].includes(candidate.experimentArm ?? "");
+}
+
 export function isSupportedExperimentConfig(value: unknown): value is GameExperimentConfig {
-  return isJunConfig(value) || isImperialTrackConfig(value) || isDingCostConfig(value);
+  return isJunConfig(value) || isImperialTrackConfig(value) || isDingCostConfig(value)
+    || isRuTriggerConfig(value);
+}
+
+/** Ru's active trigger and award. Shipped rules: a Masterpiece, worth RU_ORDER_VP. */
+export function activeRuBonusRules(
+  config: GameExperimentConfig | undefined,
+): { minQuality: "fine" | "masterpiece"; vp: number } {
+  if (config?.experimentId !== "ru-trigger-ab-001") {
+    return { minQuality: RU_BONUS_QUALITY, vp: RU_ORDER_VP };
+  }
+  return { minQuality: config.ruMinQuality, vp: config.ruOrderVp };
 }
 
 export function junActivationCoinCost(config: GameExperimentConfig | undefined): 0 | 1 | 2 {
