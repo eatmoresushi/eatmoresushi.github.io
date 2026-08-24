@@ -51,3 +51,56 @@ Both arms fix the balance. They produce different games:
   ability that rewards consistent Celadon work rather than exact firing.
 
 The shipped rules are unchanged; both remain experiment arms pending a decision.
+
+---
+
+# Full-table check, and a flaw in the pinned design
+
+`master_6` measured on the full Tradition table, same seeds as the previous table so
+assignments and deck order match:
+
+| kiln | win | 95% CI | VP | fires | before | delta |
+|---|---|---|---|---|---|---|
+| Jun | 33.8% | `[29.6, 37.8]` | 35.8 | 2.78 | 32.5% | +1.3 |
+| Guan | 33.5% | `[29.7, 37.8]` | 35.0 | 2.02 | 34.9% | −1.4 |
+| Ge | 26.3% | `[22.8, 29.8]` | 34.3 | 2.32 | 25.9% | +0.4 |
+| Ru | 25.4% | `[21.9, 29.1]` | 34.0 | 0.65 | 23.5% | **+1.9** |
+| Ding | 23.9% | `[20.5, 27.4]` | 33.0 | 1.60 | 26.1% | −2.2 |
+
+spread **9.8 pp** `[6.9, 16.8]`, against 11.4 pp.
+
+**Ru gains +1.9 pp here, not the +5.0 the pinned A/B reported.** The pinned design is why.
+
+## The flaw
+
+The pinned harness assigned opponents as `others[i % others.length]` **by seat index, not by
+game**, so the opponent set was fixed for every game rather than rotating. With
+`KILN_IDS = [RU, GU, GE, DI, JU]`:
+
+| pinned | 3P opponents | never faced | 4P opponents | never faced |
+|---|---|---|---|---|
+| Ru | GU, GE | **DI, JU** | GU, GE, DI | **JU** |
+| Guan | RU, GE | **DI, JU** | RU, GE, DI | **JU** |
+| Ding | RU, GU | **GE, JU** | RU, GU, GE | **JU** |
+
+Pinned Ru never played against Jun, the strongest Tradition, at either player count. A buff
+measured against a field missing the strongest opponent converts into wins more readily than
+it does against the real field, which is most of the gap between +5.0 and +1.9.
+
+The paired deltas are not void — both arms faced identical opposition, so the sign and the
+existence of an effect stand. But the magnitudes are "against that specific field", not
+against the natural one, and every pinned A/B in this project shares the fault: Guan's
++3.80 pp and Ding's −3.00 pp carry the same caveat. Guan's direction is independently
+corroborated by the full table (22.4% before the teaching, 33-35% after); Ding's rejection
+was a sign test and survives.
+
+## Where that leaves `master_6`
+
+It moves Ru from 23.5% to 25.4%, still short of the 28.6% baseline, and the compensating
+loss falls on Ding (−2.2), which was at fair share and is now below it. The table trades one
+low outlier for another: before, Guan and Jun above with Ru below; after, Guan and Jun above
+with Ding below. Spread improves 11.4 → 9.8 pp, well inside its interval.
+
+`master_6` is therefore **not the clear fix the pinned run suggested**. The honest next step
+is a corrected pinned A/B with opponents drawn per game, to size the Ru arms against the real
+field before choosing between them or looking for a larger award.
