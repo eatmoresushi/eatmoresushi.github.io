@@ -44,11 +44,18 @@ const ALL_ORDERS = [...MARKET_ORDERS, ...IMPERIAL_ORDERS];
 describe("V1.1.5 Kiln Tradition awareness", () => {
   it("the engine and the AI answer Ru's trigger with the same code", () => {
     expect(ruBonusCeramic({ glaze: RU_BONUS_GLAZE, decoration: RU_BONUS_DECORATION, quality: RU_BONUS_QUALITY })).toBe(true);
-    // Each condition is load-bearing -- Masterpiece especially, which the ability text
-    // requires and which is easy to drop when reading "Celadon, Plain".
+    // Each condition is load-bearing. Glaze and Decoration are exact; Quality is a floor,
+    // so the threshold itself passes, anything above it passes, and the rank below fails.
     expect(ruBonusCeramic({ glaze: "white", decoration: RU_BONUS_DECORATION, quality: RU_BONUS_QUALITY })).toBe(false);
     expect(ruBonusCeramic({ glaze: RU_BONUS_GLAZE, decoration: "carved", quality: RU_BONUS_QUALITY })).toBe(false);
-    expect(ruBonusCeramic({ glaze: RU_BONUS_GLAZE, decoration: RU_BONUS_DECORATION, quality: "fine" })).toBe(false);
+    expect(ruBonusCeramic({ glaze: RU_BONUS_GLAZE, decoration: RU_BONUS_DECORATION, quality: "masterpiece" })).toBe(true);
+
+    const ladder = ["flawed", "standard", "fine", "masterpiece"] as const;
+    const below = ladder[ladder.indexOf(RU_BONUS_QUALITY) - 1];
+    expect(below, "the threshold must not be the lowest Quality").toBeDefined();
+    if (below !== undefined) {
+      expect(ruBonusCeramic({ glaze: RU_BONUS_GLAZE, decoration: RU_BONUS_DECORATION, quality: below })).toBe(false);
+    }
   });
 
   it("treats an open slot as admitting the bonus, not only an exact match", () => {

@@ -157,10 +157,16 @@ export function matchesOrder(
  */
 export const RU_BONUS_GLAZE = "celadon" as const;
 export const RU_BONUS_DECORATION = "plain" as const;
-export const RU_BONUS_QUALITY = "masterpiece" as const;
+export const RU_BONUS_QUALITY = "fine" as const;
 
-/** VP Ru scores for delivering a Celadon, Plain Masterpiece into an Order. */
-export const RU_ORDER_VP = 4;
+/**
+ * VP Ru scores for delivering a Celadon, Plain ceramic of Fine quality or better.
+ *
+ * Was a Masterpiece worth 4. A ceramic aimed exactly at its Preferred Heat is Masterpiece
+ * 33.3% of the time and Fine-or-better 83.3%, so the old trigger fired 0.61 times a game
+ * against Jun's 2.77 and left Ru last in every measurement of the Tradition table.
+ */
+export const RU_ORDER_VP = 3;
 
 /** Does this finished ceramic trigger Ru's bonus? The engine's own test. */
 export function ruBonusCeramic(
@@ -219,7 +225,8 @@ export function orderAdmitsGeCrackle(order: OrderDefinition): boolean {
  * Orders. It completes 1.70 per game against Jun's 2.03, despite being the only Tradition
  * paid for them, because nothing in the Order valuation knew the ability existed.
  */
-export const GUAN_ORDER_VP = 1;
+/** Guan's award is Coins only; the VP component was removed. */
+export const GUAN_ORDER_VP = 0;
 export const GUAN_ORDER_COINS = 2;
 
 /**

@@ -70,5 +70,5 @@ export const FUEL_LEDGER_WOOD = 1;
  */
 export const GE_CORRECTABLE_DIFFERENCES: readonly number[] = [1, 2];
 
-export const JUN_ACTIVATION_WOOD = 2;
+export const JUN_ACTIVATION_WOOD = 3;
 export const GE_ACTIVATION_WOOD = 1;

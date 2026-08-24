@@ -37,8 +37,10 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  *   3 -- The Office's `take_one_and_gain_two_coins` mode is removed. v1.1.5 moved Coin
  *        income to Labour but the mode stayed implemented and playable, so Labour had not
  *        in fact replaced anything.
+ *   4 -- Guan's award drops its VP half and pays Coins only; Jun's activation costs 3 Wood;
+ *        Ru triggers on Fine-or-better rather than Masterpiece and pays 3 VP.
  */
-export const RULES_BEHAVIOUR_REVISION = 3;
+export const RULES_BEHAVIOUR_REVISION = 4;
 
 /**
  * Display-only keys, excluded so that a typo fix or a translation improvement does not

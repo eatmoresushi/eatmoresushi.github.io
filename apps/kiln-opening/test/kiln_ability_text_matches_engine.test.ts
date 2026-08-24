@@ -42,9 +42,16 @@ describe("Kiln ability text agrees with the engine", () => {
 
   it("Guan states both halves of its award and no hand limit", () => {
     expect(ability("GU")).toContain(`${GUAN_ORDER_COINS} Coins`);
-    expect(ability("GU")).toContain(`${GUAN_ORDER_VP} VP`);
     expect(abilityZh("GU")).toContain(`${GUAN_ORDER_COINS}铜钱`);
-    expect(abilityZh("GU")).toContain(`${GUAN_ORDER_VP}分`);
+    // The VP half was removed; the card must not still promise points, and must promise
+    // them again if the award ever returns.
+    if (GUAN_ORDER_VP > 0) {
+      expect(ability("GU")).toContain(`${GUAN_ORDER_VP} VP`);
+      expect(abilityZh("GU")).toContain(`${GUAN_ORDER_VP}分`);
+    } else {
+      expect(ability("GU")).not.toMatch(/\bVP\b/);
+      expect(abilityZh("GU")).not.toMatch(/\d分/);
+    }
     // The hand-limit clause was removed in v1.1.5; every Tradition trims to the same limit.
     expect(ability("GU")).not.toMatch(/hand limit/i);
     expect(abilityZh("GU")).not.toContain("手牌上限");
