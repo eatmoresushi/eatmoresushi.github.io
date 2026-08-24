@@ -1,5 +1,6 @@
 import {
   ACTION_LOCATION_PRICES,
+  COLOUR_SAMPLES_LOOK,
   DECORATION_COSTS,
   DECORATIONS,
   GAME_CONFIG,
@@ -1589,7 +1590,7 @@ function useColourSamples(
   if (nextDeck.length < 2) {
     return applyFailure(ruleError("ORDER_NOT_AVAILABLE", "That Order deck cannot provide two Colour Samples cards."));
   }
-  const choices = nextDeck.splice(0, 2);
+  const choices = nextDeck.splice(0, COLOUR_SAMPLES_LOOK);
 
   const events: GameEvent[] = [];
   exhaustTechnique(nextPlayer, actorId, "T08", events);

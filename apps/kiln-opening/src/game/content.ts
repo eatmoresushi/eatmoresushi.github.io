@@ -318,3 +318,13 @@ export const ACTION_LOCATION_PRICES = {
   flawedSaleCoins: 2,
   courtPatronageCoins: 4,
 } as const;
+
+/**
+ * Cards Colour Samples reveals from the chosen deck. Was a bare `splice(0, 2)` in the
+ * engine while the printed card said "top 3 cards" -- a mismatch that survived two rulesets
+ * because nothing named the number, so nothing could compare it to the text.
+ */
+export const COLOUR_SAMPLES_LOOK = 2;
+
+/** Coins Connoisseur Network pays for a sold ceramic, by Quality. */
+export const CONNOISSEUR_SALE_COINS = { standard: 3, fine: 6, masterpiece: 10 } as const;
