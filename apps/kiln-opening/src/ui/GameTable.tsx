@@ -111,8 +111,6 @@ function PlayerPanel({
   const workers = Object.values(player.workers);
   const availableWorkers = workers.filter((worker) => worker.status === "available");
   const lockedWorkers = workers.filter((worker) => worker.status === "locked");
-  const imperialStipendsReceived = player.imperialStipendsReceived ?? [];
-
   return (
     <article className={`player-board ${own ? "is-own" : ""} ${deciding ? "is-active" : ""}`} data-player-id={player.id}>
       <header className="plain-player-header">
@@ -266,12 +264,12 @@ function FiringInspector({ game, context, live }: { game: PublicGameState; conte
         <span>{latest === null ? t("No firing observed") : live ? t("Current firing") : t("Latest firing · Round {round}", { round: latest.round })}</span>
       </div>
       {latest === null ? (
-        <p className="muted">{t("Firing calculations will appear here after Wood Contributions are revealed.")}</p>
+        <p className="muted">{t("Firing calculations will appear here after Contribution cards are revealed.")}</p>
       ) : (
         <>
           <dl className="firing-totals">
             <div><dt>{t("Contributors")}</dt><dd>{contributorCount}</dd></div>
-            <div><dt>{t("Wood Contributions")}</dt><dd>{firingContributionText(game, contributions, locale)}</dd></div>
+            <div><dt>{t("Contribution cards")}</dt><dd>{firingContributionText(game, contributions, locale)}</dd></div>
             <div><dt>{t("Total Wood")}</dt><dd>{Object.values(contributions).reduce((sum, card) => sum + contributionWoodCost(card), 0)}</dd></div>
             <div><dt>{t("Base Heat")}</dt><dd>{latest.baseHeat ?? "—"}</dd></div>
             <div><dt>{t("Fire modifier")}</dt><dd>{latest.fireModifier === null ? "—" : signed(latest.fireModifier)}</dd></div>
@@ -479,12 +477,9 @@ function placedWorkerLabel(game: PublicGameState, workerId: string, locale: Loca
 }
 
 function progressReward(space: number, locale: Locale = "en"): string {
-  if (space === 0) return locale === "zh-CN" ? "终局展陈最多1件" : "Exhibition capacity 1";
-  if (space === 1) return locale === "zh-CN" ? "在清理阶段解锁1名学徒；终局展陈最多1件" : "Apprentice unlock during Cleanup; Exhibition capacity 1";
-  if (space === 2) return locale === "zh-CN" ? "立即获得2铜钱；终局展陈最多2件" : "Gain 2 Coins immediately; Exhibition capacity 2";
-  if (space === 3) return locale === "zh-CN" ? "在清理阶段解锁1名学徒；终局展陈最多2件" : "Apprentice unlock during Cleanup; Exhibition capacity 2";
-  if (space === 4) return locale === "zh-CN" ? "立即获得3铜钱；终局展陈最多3件，并可获得多样性奖励" : "Gain 3 Coins immediately; Exhibition capacity 3 with diversity bonuses";
-  if (space === 5) return locale === "zh-CN" ? "首位到达者获得2分御印；终局展陈最多3件，并可获得多样性奖励" : "First arrival claims the 2-VP Imperial Seal; Exhibition capacity 3 with diversity bonuses";
+  if (space === 0 || space === 2 || space === 4) return locale === "zh-CN" ? "终局展陈上限5件" : "End-game Exhibition capacity 5";
+  if (space === 1 || space === 3) return locale === "zh-CN" ? "清理阶段解锁1名学徒；终局展陈上限5件" : "Unlock 1 Apprentice during Cleanup; Exhibition capacity 5";
+  if (space === 5) return locale === "zh-CN" ? "首位到达者获得2分御印；终局展陈上限5件" : "First arrival claims the 2-VP Imperial Seal; Exhibition capacity 5";
   return "—";
 }
 
@@ -493,7 +488,7 @@ function phaseName(game: PublicGameState, locale: Locale = "en"): string {
     "Kiln selection": "选择窑口", "Starting Orders": "起始订单", "Work Phase": "劳作阶段",
     "Office — Orders": "贡务 — 订单", "Office — Optional Flawed sale": "贡务 — 可选次品出售",
     "Office — Connoisseur Network": "贡务 — 鉴藏人脉", "Guild & Academy": "行会与学堂",
-    "Kiln Setting": "装窑法", "Secret Wood": "秘密出柴", "Fuel Ledger": "柴薪簿",
+    "Pre-firing Techniques": "烧制前技术", "Secret Contributions": "秘密出柴牌", "Fuel Ledger": "柴薪簿",
     "Sagger Selection": "匣钵择选", "Kiln ability": "窑口能力", "Second Firing": "二次烧成",
     "Protective Saggars": "护胎匣钵", "Kiln Records": "窑务簿录", "Test Pieces": "试片",
     "Order Phase": "交付阶段", "End-game Exhibition": "终局陈设", "Final results": "最终计分",
@@ -506,8 +501,8 @@ function phaseName(game: PublicGameState, locale: Locale = "en"): string {
     case "work_office_sale": return tx("Office — Optional Flawed sale");
     case "work_office_connoisseur": return tx("Office — Connoisseur Network");
     case "work_guild": return tx("Guild & Academy");
-    case "firing_before_contribution": return tx("Kiln Setting");
-    case "firing_contributions": return tx("Secret Wood");
+    case "firing_before_contribution": return tx("Pre-firing Techniques");
+    case "firing_contributions": return tx("Secret Contributions");
     case "firing_after_reveal": return tx("Fuel Ledger");
     case "firing_reposition": return tx("Shifu kiln reposition");
     case "firing_after_fire_reveal": return tx("Sagger Selection");

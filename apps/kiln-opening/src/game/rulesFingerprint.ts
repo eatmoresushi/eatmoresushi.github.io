@@ -45,8 +45,14 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  *        taking it from 36.3% to 28.0% against a 28.6% fair share.
  *   7 -- v1.1.6. Round-5 Apprentice compensation drops to 1 VP, and Colour Samples may take
  *        a face-up Order instead of one of the cards it looked at.
+ *   8 -- Kiln Records pays 1 Wood and triggers on any ceramic of yours in the firing. It
+ *        previously paid 1 Clay and 2 Coins while its card said 1 Clay and 1 Coin, and
+ *        required a Masterpiece while its card said "at least one ceramic in the kiln".
+ *   9 -- Reconciled the online engine to the supplied V1.1.6 source: universal five-item
+ *        Exhibition with a three-item featured collection; corrected Technique timing,
+ *        costs and passive effects; and removed the obsolete Round-5 Coin compensation.
  */
-export const RULES_BEHAVIOUR_REVISION = 7;
+export const RULES_BEHAVIOUR_REVISION = 9;
 
 /**
  * Display-only keys, excluded so that a typo fix or a translation improvement does not

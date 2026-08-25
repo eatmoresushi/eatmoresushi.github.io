@@ -213,6 +213,7 @@ export interface ImperialProgressDefinition {
   imperialSealVp: number;
   exhibition: {
     capacityByProgress: [number, number, number, number, number, number];
+    featuredCollectionSize: number;
     diversityEligibleSpaces: number[];
     minimumQuality: Quality;
     qualityVp: Record<"standard" | "fine" | "masterpiece", number>;
@@ -328,3 +329,14 @@ export const COLOUR_SAMPLES_LOOK = 2;
 
 /** Coins Connoisseur Network pays for a sold ceramic, by Quality. */
 export const CONNOISSEUR_SALE_COINS = { standard: 3, fine: 6, masterpiece: 10 } as const;
+
+/**
+ * Wood Kiln Records pays after a firing the owner had a ceramic in.
+ *
+ * v1.1.6 reworked this card. It previously paid 1 Clay and 2 Coins -- while its printed text
+ * said 1 Clay and 1 Coin -- and, worse, the engine required a **Masterpiece** to trigger
+ * where the card said "at least one ceramic in the kiln". A card advertising a common
+ * trigger while enforcing a rare one is why it was bought 0.000 times per seat in self-play.
+ * It now pays the scarce resource, on the trigger it always claimed.
+ */
+export const KILN_RECORDS_WOOD = 1;

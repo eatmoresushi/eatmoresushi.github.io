@@ -19,6 +19,10 @@ describe("English / Simplified Chinese localization", () => {
     expect(term("zh-CN", "shifu")).toBe("师傅");
     expect(term("zh-CN", "grey_green")).toBe("灰青");
     expect(term("zh-CN", "masterpiece")).toBe("珍品");
+    expect(term("en", "labour")).toBe("Labour");
+    expect(term("zh-CN", "labour")).toBe("佣工");
+    expect(term("en", "court_patronage")).toBe("Court Patronage");
+    expect(term("zh-CN", "court_patronage")).toBe("朝廷恩荫");
     expect(GAME_CONFIG.fireDeck).toEqual({ "-2": 1, "-1": 3, "0": 4, "1": 3, "2": 1 });
     expect(Object.values(TECHNIQUE_DEFINITIONS)).toHaveLength(15);
     expect(Object.values(TECHNIQUE_DEFINITIONS).every((technique) => technique.nameZh.length > 0 && technique.abilityZh.length > 0)).toBe(true);
@@ -52,12 +56,10 @@ describe("English / Simplified Chinese localization", () => {
     expect(chinese).toContain("玩家作坊");
     expect(english).toContain("End-game Exhibition");
     expect(chinese).toContain("终局展陈");
-    expect(english).toContain("Exhibition capacity 1");
-    expect(english).toContain("Exhibition capacity 2");
-    expect(english).toContain("Exhibition capacity 3 with diversity bonuses");
-    expect(chinese).toContain("终局展陈最多1件");
-    expect(chinese).toContain("终局展陈最多2件");
-    expect(chinese).toContain("终局展陈最多3件");
+    expect(english).toContain("End-game Exhibition capacity 5");
+    expect(english).toContain("Unlock 1 Apprentice during Cleanup; Exhibition capacity 5");
+    expect(chinese).toContain("终局展陈上限5件");
+    expect(chinese).toContain("清理阶段解锁1名学徒；终局展陈上限5件");
     expect(chinese).toContain(`V${GAME_CONFIG.rulesVersion}`);
     expect(JSON.stringify(publicGame)).toBe(before);
   });

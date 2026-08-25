@@ -129,12 +129,24 @@ function candidateWorkActions(
   const player = state.players[playerId];
   if (player === undefined) return [];
   const actions: GameAction[] = [{ type: "PASS_WORK_PHASE" }];
+  const claySubstitution = ownReadyTechniques(state, playerId, ["T03"])[0];
+  if (claySubstitution !== undefined && player.resources.coins >= 3) {
+    for (let wood = 0; wood <= 3; wood += 1) {
+      const clay = 3 - wood;
+      if (state.commonSupply.clay >= clay && state.commonSupply.wood >= wood) {
+        actions.push({ type: "USE_CLAY_SUBSTITUTION", clay, wood });
+      }
+    }
+  }
   const workers = Object.values(player.workers).filter((worker) => worker.status === "available");
   const shaped = Object.values(state.ceramics).filter(
     (ceramic) => ceramic.ownerId === playerId && ceramic.stage === "shaped",
   );
   const glazed = Object.values(state.ceramics).filter(
     (ceramic) => ceramic.ownerId === playerId && ceramic.stage === "glazed",
+  );
+  const loadableGlazed = glazed.filter(
+    (ceramic) => ceramic.loadableFromRound === undefined || state.round >= ceramic.loadableFromRound,
   );
   const occupied = new Set(
     Object.values(state.ceramics)
@@ -174,31 +186,20 @@ function candidateWorkActions(
       }
     }
 
-    const formingTechniques = ownReadyTechniques(state, playerId, ["T01", "T02", "T03", "T04"]);
+    const formingTechniques = ownReadyTechniques(state, playerId, ["T01", "T04"]);
     const addFormVariants = (
       base: Extract<GameAction, { type: "FORM_CERAMICS" }>,
       allFormedCount: number,
     ) => {
-      const totalClay = base.shapes.reduce((sum, shape) => sum + (
-        worker.kind === "shifu" && (shape === "vase" || shape === "censer")
-          ? 1
-          : SHAPE_COSTS[shape]
-      ), 0);
-      const substitutions = base.useTechniqueIds?.includes("T03")
-        ? Array.from({ length: totalClay }, (_, index) => index + 1)
-        : [0];
       const dryingFrames = base.useTechniqueIds?.includes("T04")
         ? Array.from({ length: allFormedCount }, (_, formedIndex) =>
             GLAZES.map((glaze) => ({ formedIndex, glaze }))).flat()
         : [undefined];
-      for (const claySubstitutions of substitutions) {
-        for (const dryingFrame of dryingFrames) {
-          actions.push({
-            ...base,
-            ...(claySubstitutions === 0 ? {} : { claySubstitutions }),
-            ...(dryingFrame === undefined ? {} : { dryingFrames: dryingFrame }),
-          });
-        }
+      for (const dryingFrame of dryingFrames) {
+        actions.push({
+          ...base,
+          ...(dryingFrame === undefined ? {} : { dryingFrames: dryingFrame }),
+        });
       }
     };
     for (const shapes of shapeSelections(worker.kind === "shifu" ? 2 : 1)) {
@@ -221,23 +222,16 @@ function candidateWorkActions(
       }
     }
 
-    const glazingTechniques = ownReadyTechniques(state, playerId, ["T05", "T06"]);
     for (const ceramic of shaped) {
       for (const option of glazeOptions) {
-        const applicable = glazingTechniques.filter((id) =>
-          id === "T05" ? option.decoration === "carved" : option.decoration === "impressed",
-        );
-        for (const useTechniqueIds of techniqueSubsets(applicable)) {
-          const action: Extract<GameAction, { type: "GLAZE_CERAMICS" }> = {
-            type: "GLAZE_CERAMICS",
-            workerId: worker.id,
-            selections: [{ ceramicId: ceramic.id, ...option }],
-            useTechniqueIds,
-          };
-          actions.push(action);
-          if (worker.kind === "shifu") {
-            actions.push({ ...action, freeDecorationCeramicId: ceramic.id });
-          }
+        const action: Extract<GameAction, { type: "GLAZE_CERAMICS" }> = {
+          type: "GLAZE_CERAMICS",
+          workerId: worker.id,
+          selections: [{ ceramicId: ceramic.id, ...option }],
+        };
+        actions.push(action);
+        if (worker.kind === "shifu") {
+          actions.push({ ...action, freeDecorationCeramicId: ceramic.id });
         }
       }
     }
@@ -248,31 +242,45 @@ function candidateWorkActions(
         if (first === undefined || second === undefined) continue;
         for (const firstOption of pairOptions) {
           for (const secondOption of pairOptions) {
-            const applicable = glazingTechniques.filter((id) =>
-              id === "T05"
-                ? firstOption.decoration === "carved" || secondOption.decoration === "carved"
-                : firstOption.decoration === "impressed" || secondOption.decoration === "impressed",
-            );
-            for (const useTechniqueIds of techniqueSubsets(applicable)) {
-              const action: Extract<GameAction, { type: "GLAZE_CERAMICS" }> = {
-                type: "GLAZE_CERAMICS",
-                workerId: worker.id,
-                selections: [
-                  { ceramicId: first.id, ...firstOption },
-                  { ceramicId: second.id, ...secondOption },
-                ],
-                useTechniqueIds,
-              };
-              actions.push(action);
-              actions.push({ ...action, freeDecorationCeramicId: first.id });
-              actions.push({ ...action, freeDecorationCeramicId: second.id });
-            }
+            const action: Extract<GameAction, { type: "GLAZE_CERAMICS" }> = {
+              type: "GLAZE_CERAMICS",
+              workerId: worker.id,
+              selections: [
+                { ceramicId: first.id, ...firstOption },
+                { ceramicId: second.id, ...secondOption },
+              ],
+            };
+            actions.push(action);
+            actions.push({ ...action, freeDecorationCeramicId: first.id });
+            actions.push({ ...action, freeDecorationCeramicId: second.id });
           }
         }
       }
     }
 
     for (const ceramic of glazed) {
+      if (ceramic.stage !== "glazed") continue;
+      if (ceramic.dryingFramesApplied === true) {
+        for (const decoration of DECORATIONS) {
+          actions.push({
+            type: "GLAZE_CERAMICS",
+            workerId: worker.id,
+            selections: [{ ceramicId: ceramic.id, glaze: ceramic.glaze, decoration }],
+          });
+        }
+      }
+      for (const techniqueId of ownReadyTechniques(state, playerId, ["T05", "T06"])) {
+        const decoration = techniqueId === "T05" ? "carved" : "impressed";
+        actions.push({
+          type: "GLAZE_CERAMICS",
+          workerId: worker.id,
+          selections: [{ ceramicId: ceramic.id, glaze: ceramic.glaze, decoration }],
+          useTechniqueIds: [techniqueId],
+        });
+      }
+    }
+
+    for (const ceramic of loadableGlazed) {
       for (const kilnSpaceId of freeSpaces) {
         actions.push({
           type: "USE_KILN_YARD",
@@ -341,11 +349,17 @@ function candidatePresentationActions(state: GameState, playerId: PlayerId): Gam
     (ceramic) =>
       ceramic.ownerId === playerId && ceramic.stage === "finished" && ceramic.quality !== "flawed",
   );
-  return [0, 1, 2, 3].flatMap((size) =>
-    combinations(eligible, size).map((selected) => ({
-      type: "SUBMIT_PRESENTATION" as const,
-      ceramicIds: selected.map(({ id }) => id),
-    })),
+  const maximum = 5;
+  return Array.from({ length: Math.min(maximum, eligible.length) + 1 }, (_, size) => size).flatMap((size) =>
+    combinations(eligible, size).flatMap((selected) => {
+      const ceramicIds = selected.map(({ id }) => id);
+      const featured = size < 3 ? [[]] : combinations(selected, 3);
+      return featured.map((featuredSelection) => ({
+        type: "SUBMIT_PRESENTATION" as const,
+        ceramicIds,
+        featuredCeramicIds: featuredSelection.map(({ id }) => id),
+      }));
+    }),
   );
 }
 
@@ -375,7 +389,8 @@ function candidatePhaseActions(
         ];
       }
       if (phase.step === "colour_samples_choose") {
-        return (phase.colourSamplesChoices ?? []).map((orderId) => ({ type: "OFFICE_CHOOSE_COLOUR_SAMPLES_ORDER" as const, orderId }));
+        return [...new Set([...(phase.colourSamplesChoices ?? []), ...state.marketDisplay, ...state.imperialDisplay])]
+          .map((orderId) => ({ type: "OFFICE_CHOOSE_COLOUR_SAMPLES_ORDER" as const, orderId }));
       }
       return [
         { type: "OFFICE_END_ORDERS" },

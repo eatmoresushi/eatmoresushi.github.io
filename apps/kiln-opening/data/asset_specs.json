@@ -3,7 +3,7 @@
   "orderCards": {
     "status": "REGENERATE_FROM_DATA",
     "source": "data/orders.json",
-    "total": 48,
+    "total": 52,
     "mustShowImperialProgressReward": true,
     "obsoleteSheetsDirectory": "assets/obsolete_v061"
   },
@@ -23,6 +23,8 @@
       "Kiln Yard",
       "Market & Imperial Office",
       "Guild & Academy",
+      "Labour",
+      "Court Patronage",
       "Shifu repositioning after Base Heat"
     ],
     "mustShowPlayerCountKilnCovers": true
@@ -39,16 +41,16 @@
       "Refined Clay"
     ]
   },
-  "woodContributionCards": {
+  "kilnContributionCards": {
     "status": "GENERATE_EXACTLY",
     "sets": 4,
-    "valuesPerSet": [
-      0,
-      1,
-      2,
-      3
+    "cardsPerSet": [
+      "BANK",
+      "TEND",
+      "STOKE"
     ],
-    "totalCards": 16
+    "totalCards": 12,
+    "source": "data/firing.json"
   },
   "fireCards": {
     "status": "REGENERATE_FROM_DATA",

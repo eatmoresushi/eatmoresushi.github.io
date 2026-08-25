@@ -7,21 +7,23 @@ This folder is the engineering handoff for **Kiln Opening / 开窑**, a 2–4 pl
 Codex should read files in this order:
 
 1. `AGENTS.md`
-2. `docs/GAME_RULES.md`
-3. `docs/DESIGN_SPEC.md`
-4. `docs/ONLINE_GAME_SPEC.md`
-5. `docs/ENGINEERING_ARCHITECTURE.md`
-6. `data/*.json`
-7. `docs/IMPLEMENTATION_DECISIONS.md`
-8. `docs/DESIGN_HISTORY.md` only when historical context is useful
+2. `docs/KILN_OPENING_v1.1.6_SOURCE.md`
+3. `docs/RULEBOOK_AUDIT_V1.1.6.md`
+4. `docs/GAME_RULES.md`
+5. `docs/DESIGN_SPEC.md`
+6. `docs/ONLINE_GAME_SPEC.md`
+7. `docs/ENGINEERING_ARCHITECTURE.md`
+8. `data/*.json`
+9. `docs/IMPLEMENTATION_DECISIONS.md`
+10. `docs/DESIGN_HISTORY.md` only when historical context is useful
 
-The **current V1.0.4 gameplay source of truth is the supplied English V1.0.4 rulebook, transcribed into `docs/GAME_RULES.md` and `data/*.json`**. The supplied Chinese V1.0.4 rulebook controls Simplified Chinese player-facing terminology. Visual references remain restricted to `assets/current_v04/`; the legacy directory name is retained only for stable paths. Every rules-bearing visual must be generated from V1.0.4 data or covered by live current-rule UI. Older PDFs and V1.0.2 simulation outputs remain historical evidence.
+The **sole current gameplay source of truth is the owner-supplied V1.1.6 Markdown**, checked in byte-for-byte as `docs/KILN_OPENING_v1.1.6_SOURCE.md`. `docs/RULEBOOK_AUDIT_V1.1.6.md` records the source's internal contradictions and their implementation resolutions. English and Simplified Chinese player-facing rules derive from the same stable IDs. Visual references remain restricted to `assets/current_v04/`; that directory name is retained only as a legacy path. Older rules and simulations remain historical evidence and must not override V1.1.6.
 
 ## Important rule for Codex
 
-Do **not** infer gameplay rules from the artwork. Print assets are visual references only. If image text conflicts with `GAME_RULES.md` or structured JSON, the Markdown/JSON wins.
+Do **not** infer gameplay rules from the artwork. Print assets are visual references only. If image text, derived documentation, structured JSON, tests, or UI copy conflict with `docs/KILN_OPENING_v1.1.6_SOURCE.md`, the checked-in V1.1.6 source wins, subject only to the recorded internal-conflict rulings in `docs/RULEBOOK_AUDIT_V1.1.6.md`.
 
-Earlier Order-card, central-board, player-board, Craft Technique and reference-card raster art is intentionally **not authoritative** where any text or component count differs from current V1.0.4 rules. See `docs/ASSET_MANIFEST.md`.
+Earlier Order-card, central-board, player-board, Craft Technique and reference-card raster art is intentionally **not authoritative** where any text or component count differs from current V1.1.6 rules. See `docs/ASSET_MANIFEST.md`.
 
 ## Recommended workflow
 
@@ -64,7 +66,7 @@ The architecture is intentionally replaceable: the game engine must not depend o
 
 ## Web client
 
-The V1.0.4 implementation includes the strict TypeScript engine, server-authoritative Supabase backend, React/Vite interface, reconnect handling, the revised 4/3/6/3/4 Fire deck, four-card Market and Imperial displays with two-card round-start rotation, the universal End-game Exhibition, Imperial stipends, blind Order draws, player-scaled kiln spaces, gated Court Patronage, and a persistent English / 简体中文 toggle.
+The V1.1.6 implementation includes the strict TypeScript engine, server-authoritative Supabase backend, React/Vite interface, reconnect handling, the 1/3/4/3/1 twelve-card Fire deck, Bank/Tend/Stoke secret Contributions, four-card Market and Imperial displays with two-card round-start rotation, the universal five-item End-game Exhibition and three-item featured collection, blind Order draws, player-scaled kiln spaces, separate Court Patronage and Labour locations, and a persistent English / 简体中文 toggle.
 
 ```bash
 npm ci
@@ -77,4 +79,4 @@ Production configuration uses only the public Supabase project URL and anonymous
 
 ## Audit
 
-See `docs/V0.4_HANDOFF_AUDIT.md` for the historical component-by-component V0.4 audit. Run `python3 tools/validate_handoff.py` to validate the current V1.0.4 structured rules.
+See `docs/RULEBOOK_AUDIT_V1.1.6.md` for the current rules audit and `docs/V0.4_HANDOFF_AUDIT.md` only for historical context. Run the TypeScript and Vitest checks to validate the current structured rules and implementation.

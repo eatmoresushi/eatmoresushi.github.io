@@ -404,8 +404,8 @@ function phaseName(game: PublicGameState): string {
     case "work_office_sale": return "Office — Sale";
     case "work_office_connoisseur": return "Office — Connoisseur";
     case "work_guild": return "Guild & Academy";
-    case "firing_before_contribution": return "Kiln Setting";
-    case "firing_contributions": return "Secret Wood";
+    case "firing_before_contribution": return "Pre-firing Techniques";
+    case "firing_contributions": return "Secret Contributions";
     case "firing_after_reveal": return "Fuel Ledger";
     case "firing_reposition": return "Shifu kiln reposition";
     case "firing_after_fire_reveal": return "Sagger Selection";
@@ -414,7 +414,7 @@ function phaseName(game: PublicGameState): string {
     case "firing_after_firing": return game.phase.techniqueIds[game.phase.queue.currentIndex] === "T13" ? "Kiln Records" : "Test Pieces";
     case "orders": return "Order Phase";
     case "cleanup_orders": return "Cleanup Orders";
-    case "presentation": return "Imperial Presentation";
+    case "presentation": return "End-game Exhibition";
     case "finished": return "Final results";
   }
 }

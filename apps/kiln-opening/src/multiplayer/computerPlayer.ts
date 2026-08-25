@@ -62,7 +62,7 @@ export async function chooseOnlineComputerAction(
 ): Promise<AIAction> {
   const seatPolicy = seat.aiPolicyVersion;
   if (!seat.isComputer || seatPolicy !== ONLINE_COMPUTER_POLICY_VERSION || seat.aiSeed === null) {
-    throw new Error(`Seat ${seat.seatId} is not a configured v1.1.4 computer seat`);
+    throw new Error(`Seat ${seat.seatId} is not a configured V1.1.6 computer seat`);
   }
   const actorId = nextOnlineDecisionActor(state);
   if (actorId !== seat.playerId) throw new Error(`Computer ${seat.playerId} is not the current actor`);
@@ -95,7 +95,7 @@ export async function chooseOnlineComputerAction(
  */
 export function computerPolicyLabel(policyVersion: string | null): string {
   switch (policyVersion) {
-    case AI_POLICY_V115_VERSION: return "V1.1.5";
+    case AI_POLICY_V115_VERSION: return "V1.1.6";
     case "rules-v1.1.4-contribution-001": return "V1.1.4";
     case "rules-v1.1.1-wood-001": return "V1.1.1";
     case LEGACY_ONLINE_COMPUTER_POLICY_VERSION: return "V003";

@@ -1,12 +1,12 @@
 # AI Player Next Steps
 
-> Current online rules compatibility: **v1.1.4**. The online policy is
-> `rules-v1.1.4-contribution-001`, rebuilt for the Bank / Tend / Stoke Contribution cards
-> rather than retuned from an earlier lineage. Write new v1.1.4 output only below
-> `playtests/v1.1.4/`; do not overwrite or relabel historical datasets.
+> Current online rules compatibility: **V1.1.6**. The online policy retains the historical
+> `rules-v1.1.5-order-001` lineage identifier, but its legal actions are generated, validated,
+> and applied by the V1.1.6 engine. Write new V1.1.6 output only below
+> `playtests/v1.1.6/`; do not overwrite or relabel historical datasets.
 >
-> **Everything below documenting V1.0.4 and V1.0.9 lineages is a historical record.** Those
-> policies were deleted when v1.1.4 replaced the numeric 0-3 Wood bid: they select a bid
+> **Everything below documenting earlier rule-version lineages is a historical record.** The
+> V1.0.4 and V1.0.9 policies were deleted when V1.1.4 replaced the numeric 0–3 Wood bid: they select a bid
 > value that no longer exists in the legal action set, so they cannot play this ruleset.
 > Their measurements are retained here; their code is not.
 

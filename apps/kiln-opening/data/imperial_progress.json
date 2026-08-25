@@ -41,32 +41,36 @@
       "space": 4,
       "title": "Awaiting Audience",
       "titleZh": "待诏候见",
-      "reward": "Full End-game Exhibition access.",
-      "rewardZh": "获得完整的终局展览资格。",
-      "endGameVp": 4,
+      "reward": null,
+      "rewardZh": null,
+      "endGameVp": 6,
       "unlocksApprentice": false
     },
     {
       "space": 5,
       "title": "Imperial Audience",
       "titleZh": "御前奏对",
-      "reward": "Take the Imperial Seal if available; full End-game Exhibition access.",
-      "rewardZh": "若御印尚未被领取，则获得御印；终局展陈容量为3件，并可获得多样性奖励。",
-      "endGameVp": 8,
+      "reward": "Take the Imperial Seal if available.",
+      "rewardZh": "若御印尚未被领取，则获得御印。",
+      "endGameVp": 10,
       "unlocksApprentice": false
     }
   ],
   "imperialSealVp": 2,
   "exhibition": {
     "capacityByProgress": [
-      2,
-      2,
-      2,
-      2,
-      3,
-      3
+      5,
+      5,
+      5,
+      5,
+      5,
+      5
     ],
     "diversityEligibleSpaces": [
+      0,
+      1,
+      2,
+      3,
       4,
       5
     ],
@@ -74,8 +78,9 @@
     "qualityVp": {
       "standard": 2,
       "fine": 3,
-      "masterpiece": 4
+      "masterpiece": 5
     },
+    "featuredCollectionSize": 3,
     "threeDifferentShapesBonus": 2,
     "threeDifferentGlazesBonus": 2,
     "flawedEligible": false,

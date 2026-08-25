@@ -4,12 +4,12 @@
     {
       "name": "Central Action Board",
       "qty": 1,
-      "notes": "Six worker-placement locations with capacities by player count."
+      "notes": "Eight worker-placement locations; six have capacities by player count and Labour and Court Patronage are uncapped."
     },
     {
       "name": "Shared Kiln Board",
       "qty": 1,
-      "notes": "Seven spaces: 1 High, 5 Middle and 1 Low; cover Middle spaces by player count."
+      "notes": "Seven spaces: 3 High (+1), 2 Middle (0) and 2 Low (-1); cover 1 High at 3 players and 1 High plus 1 Middle at 2 players."
     },
     {
       "name": "Kiln Player Boards",
@@ -65,9 +65,9 @@
       "notes": "1 at -2, 3 at -1, 4 at 0, 3 at +1 and 1 at +2."
     },
     {
-      "name": "Wood Contribution Cards",
-      "qty": 16,
-      "notes": "Cards 0, 1, 2 and 3 for each player."
+      "name": "Kiln Contribution Cards",
+      "qty": 12,
+      "notes": "Three per player: Bank the Fire, Tend the Fire and Stoke the Fire."
     },
     {
       "name": "Imperial Progress Markers",

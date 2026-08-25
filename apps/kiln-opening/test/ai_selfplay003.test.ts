@@ -394,6 +394,6 @@ describe("Selfplay-003 policy validation", () => {
     if (first === undefined || second === undefined) throw new Error("fixture players missing");
     state.phase = { type: "presentation", eligiblePlayerIds: [first, second], submittedPlayerIds: [first] };
     const legal = getLegalAIActions(state, second, createPrivateFiringState(state));
-    expect(legal).toContainEqual({ type: "SUBMIT_PRESENTATION", ceramicIds: [] });
+    expect(legal).toContainEqual({ type: "SUBMIT_PRESENTATION", ceramicIds: [], featuredCeramicIds: [] });
   });
 });

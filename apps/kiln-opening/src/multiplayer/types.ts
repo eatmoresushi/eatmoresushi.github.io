@@ -68,7 +68,9 @@ export interface PublicPlayerState {
   passedWorkPhase: boolean;
   pendingApprenticeUnlocks: number;
   kilnAbilityUsedThisRound: boolean;
+  shapesFormedThisRound: Shape[];
   presentationCeramicIds: string[];
+  presentationFeaturedCeramicIds: string[];
   score: PlayerState["score"];
 }
 
@@ -117,7 +119,15 @@ export interface PublicGameState {
   experimentConfig?: GameExperimentConfig;
 }
 
-export type PublicGameEvent = GameEvent;
+export type PublicGameEvent =
+  | Exclude<GameEvent, { type: "COLOUR_SAMPLES_USED" }>
+  | {
+      type: "COLOUR_SAMPLES_USED";
+      playerId: PlayerId;
+      deck: "market" | "imperial";
+      bottomedCount: number;
+      selectedOrderId?: OrderId;
+    };
 
 export interface PublicEventRecord {
   roomId: string;

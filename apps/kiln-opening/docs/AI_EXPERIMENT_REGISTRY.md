@@ -25,7 +25,7 @@ Board-game rules versions and AI experiment versions are independent. Historical
 
 ## V1.0.9 baseline and Population-001 precommit
 
-`v109-v003-compat-001` uses the repaired V1.0.9 observation, legal-action, evaluation, and authoritative engine contract with frozen V003 profiles. Its 50 × 2P, 50 × 3P, and 50 × 4P games use a fresh, First-Player-balanced seed family. All 150 games completed with zero illegal selections, invalid attempts, or replacements. This is the only current-rules comparison baseline; the V1.0.4 Population-003 result must not be used as its substitute.
+`v109-v003-compat-001` uses the repaired V1.0.9 observation, legal-action, evaluation, and authoritative engine contract with frozen V003 profiles. Its 50 × 2P, 50 × 3P, and 50 × 4P games use a fresh, First-Player-balanced seed family. All 150 games completed with zero illegal selections, invalid attempts, or replacements. This is the only same-rules V1.0.9 comparison baseline; the V1.0.4 Population-003 result must not be used as its substitute. It is historical evidence, not a V1.1.6 baseline.
 
 `rules-v1.0.9-population-001` reuses the Population-003 structural idea—deterministic V003 anchoring with narrow public-counterfactual Wood and Technique exceptions—but redefines those counterfactuals for V1.0.9, including Fuel Ledger and private Test Pieces information. Initial profiles are fresh V1.0.9 objects whose learned/action/Order/Technique priors equal frozen V003, with uniform persona weights and zero games learned. New conservative exception margins and all training/behavior/paired seeds are frozen in the precommit before training. The artifact explicitly contains no V1.0.4 fitted weights and no inherited V1.0.4 performance claim.
 

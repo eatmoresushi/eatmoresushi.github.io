@@ -413,6 +413,12 @@ export interface AIStrategyProfile {
    */
   orderRetryHorizon?: number;
   /**
+   * Whether `techniqueValues` carries measured VP for owning each Technique, and the
+   * forecast should use it as the gross benefit. Frozen V003 leaves this unset and keeps its
+   * own computed estimate, which is well-calibrated on average and wrong tile by tile.
+   */
+  techniqueCalibration?: boolean;
+  /**
    * Whether the agent prices its own Kiln Tradition's ability. Frozen V003 leaves this
    * unset: its evaluator has no kiln-tradition term, so it chose Orders and Glazes without
    * knowing its ability existed. Set by the V1.1.5 lineage.

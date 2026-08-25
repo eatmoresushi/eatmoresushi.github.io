@@ -10,20 +10,21 @@ Target session length for the physical design is approximately 90–120 minutes.
 
 Priority order:
 
-1. The supplied English and Simplified Chinese V1.0.9 rulebooks — authoritative base-game rules.
-2. `docs/GAME_RULES.md` — authoritative implementation transcription of V1.0.9.
-3. `data/*.json` — machine-readable values derived from those rules.
-4. `docs/IMPLEMENTATION_DECISIONS.md` — digital interpretations of rules where necessary.
-5. `docs/ONLINE_GAME_SPEC.md` — digital-only behaviour.
-6. `docs/DESIGN_SPEC.md` — design intent and constraints.
-7. `assets/print_reference/*` — visual direction only.
+1. `docs/KILN_OPENING_v1.1.6_SOURCE.md` — the sole authoritative rules source; it is an exact copy of the owner-supplied Markdown.
+2. `docs/RULEBOOK_AUDIT_V1.1.6.md` — recorded resolutions for contradictions inside that supplied source.
+3. `docs/GAME_RULES.md` — source index and implementation note, not an independent rules authority.
+4. `data/*.json` — machine-readable values derived from V1.1.6.
+5. `docs/IMPLEMENTATION_DECISIONS.md` — digital interpretations of rules where necessary.
+6. `docs/ONLINE_GAME_SPEC.md` — digital-only behaviour.
+7. `docs/DESIGN_SPEC.md` — design intent and constraints.
+8. `assets/print_reference/*` — visual direction only.
 
 Never implement an older mechanic because it appears in historical discussion or art.
 
 
 ## Approved asset rule
 
-Only `assets/current_v04/` is an approved visual-reference directory. The directory name remains unchanged as a stable legacy path; rules-bearing visuals must follow V1.0.9 data and localized gameplay text must come from structured data or the i18n layer.
+Only `assets/current_v04/` is an approved visual-reference directory. The directory name remains unchanged as a stable legacy path; rules-bearing visuals must follow V1.1.6 data and localized gameplay text must come from structured data or the i18n layer.
 
 Do not search conversation history or older images for missing boards/cards. Missing current assets are intentionally specified in `data/asset_specs.json` and `docs/V0.4_ASSETS_TO_REGENERATE.md` and must be rebuilt from current data.
 
@@ -40,7 +41,12 @@ Do not reintroduce any of these unless the user explicitly changes the rules:
 - Refining House
 - five-player mode
 - fixed Base Heat thresholds independent of contributor count
-- penalties for having no Imperial Presentation
+- numeric 0–3 Wood bidding instead of Bank/Tend/Stoke cards
+- Kiln Yard Wood income
+- Court Patronage inside the Office rather than its own uncapped Shifu-only location
+- Imperial Progress Coin stipends
+- Guan's extra Order-hand capacity
+- penalties for exhibiting nothing at the End-game Exhibition
 - presenting Flawed ceramics
 - direct VP printed on Craft Techniques
 
@@ -81,7 +87,7 @@ function applyAction(
 
 ## Hidden information
 
-Wood Contribution selections are secret until every eligible contributor has submitted. Do not expose other players' unrevealed values in realtime payloads, logs visible to clients, browser state, or database rows readable under client credentials.
+Contribution-card selections are secret until every eligible contributor has submitted. Do not expose other players' unrevealed cards in realtime payloads, logs visible to clients, browser state, or database rows readable under client credentials.
 
 ## Tests that must exist
 
@@ -91,25 +97,24 @@ At minimum:
 - reverse-order Kiln selection
 - worker capacity by player count
 - passing with unused workers
-- Shifu vs Apprentice effects at all six locations
+- Shifu vs Apprentice effects at all eight locations
 - Shape costs and vessel supply
 - Decoration costs
 - Technique acquisition limit, printed Apprentice cost, and Shifu −1 Coin discount (minimum 0)
-- every one of the 15 V1.0.9 Techniques
+- every one of the 15 V1.1.6 Techniques
 - all five Kiln abilities
 - contributor-scaled Base Heat for 1–4 contributors
-- secret simultaneous Wood reveal
-- all five Fire modifiers, the V1.0.9 1/3/4/3/1 deck distribution, reshuffling, and kiln-zone modifiers
+- secret simultaneous Contribution-card reveal
+- all five Fire modifiers, the V1.1.6 1/3/4/3/1 deck distribution, reshuffling, and kiln-zone modifiers
 - Quality assignment
 - Jun/Ge/Protective Saggars/Test Pieces/Ru timing
 - Market and Imperial Order validation, followed by the optional Apprentice 0–1 / Shifu 0–2 Flawed-sale step
-- immediate display refill and the one-card left-edge Order-display rotation at the start of Rounds 2–5
-- Order hand limit and Guan exception
-- every Imperial Order advancing +1, +2, or +3 Imperial Progress as printed, including multiple completions in one round and milestone-crossing jumps
+- immediate display refill and the two-card left-edge Order-display rotation at the start of Rounds 2–5
+- uniform Order hand limit
+- every Imperial Order advancing +1, +2, or +3 Imperial Progress according to its required ceramic count, including multiple completions in one round and milestone-crossing jumps
 - Apprentice unlock timing at spaces 1 and 3
-- one-time Coin stipends on reaching or crossing spaces 2 and 4
 - Imperial Seal first-arrival rule
-- universal end-game Imperial Exhibition capacity by Progress, plus diversity bonuses only at spaces 4 and 5
+- universal five-ceramic End-game Exhibition and its three-ceramic featured collection
 - English/Simplified Chinese rendering from the same stable IDs without changing game state
 - end-game Coin VP cap
 - all tie breakers
@@ -122,6 +127,6 @@ If a desired implementation requires changing the board-game rules:
 1. stop,
 2. explain the conflict,
 3. propose the smallest rule change,
-4. wait for user approval before modifying `GAME_RULES.md` or balance data.
+4. wait for user approval before modifying the checked-in V1.1.6 source, its recorded errata, or balance data.
 
 Do not silently “improve” balance values.

@@ -52,7 +52,7 @@ test("the host can end a session for everyone while Leave view remains resumable
   }
 });
 
-test("starting Orders remain visible after an eligible redraw advances directly to Work", async ({ browser, request }) => {
+test("private opening Order choices reveal together and advance to Work", async ({ browser, request }) => {
   await request.post("http://127.0.0.1:4173/test-api", {
     headers: { "x-e2e-user": "reset" },
     data: { operation: "e2e_reset", seed: 2 },
@@ -74,12 +74,13 @@ test("starting Orders remain visible after an eligible redraw advances directly 
 
     await host.getByRole("button", { name: /Ru Kiln/ }).click();
     await guest.getByRole("button", { name: /Guan Kiln/ }).click();
-    await expect(host.getByRole("heading", { name: "Your first commission" })).toBeVisible();
-    await expect(host.getByRole("region", { name: "Workshop Orders" })).toContainText("M23");
+    await expect(guest.getByRole("heading", { name: "Choose opening Orders" })).toBeVisible();
+    await keepFirstTwoOpeningOrders(guest);
+    await expect(host.getByRole("region", { name: "Workshop Orders" })).not.toContainText("M23");
+    await keepFirstTwoOpeningOrders(host);
     await expect(host.locator(".player-board.is-own")).toContainText("4 available workers · 2 locked");
-    await expect(host.locator(".site-footer")).toContainText("Kiln Opening V1.0.9");
+    await expect(host.locator(".site-footer")).toContainText("Kiln Opening V1.1.6");
 
-    await host.getByRole("button", { name: "Redraw" }).click();
     await expect(host.getByTestId("phase-name")).toHaveText("Work Phase");
     await expect(guest.getByTestId("phase-name")).toHaveText("Work Phase");
 
@@ -89,13 +90,13 @@ test("starting Orders remain visible after an eligible redraw advances directly 
       await expect(progress.locator('[data-progress-space="0"] .progress-marker')).toHaveCount(2);
       await expect(progress).toContainText("Prefectural Recommendation");
       await expect(progress).toContainText("Awaiting Audience");
-      await expect(progress).toContainText("Exhibition capacity 3");
-      await expect(progress).toContainText("Single-ceramic Imperial Orders advance 1 space; multi-ceramic Imperial Orders advance 2");
+      await expect(progress).toContainText("Exhibition capacity 5");
+      await expect(progress).toContainText("Imperial Orders advance by their printed +1, +2, or +3");
       await expect(progress.getByTestId("imperial-seal-owner")).toHaveText("Imperial Seal · Unclaimed · 2 VP");
       const orders = page.getByRole("region", { name: "Workshop Orders" });
-      await expect(orders.locator(".order-card")).toHaveCount(2);
-      await expect(orders).toContainText("M16");
-      await expect(orders).not.toContainText("M23");
+      await expect(orders.locator(".order-card")).toHaveCount(4);
+      await expect(orders).toContainText("M23");
+      await expect(orders).toContainText("M21");
     }
 
     const materials = guest.locator("details").filter({ hasText: "Materials Yard" });
@@ -123,13 +124,14 @@ test("starting Orders remain visible after an eligible redraw advances directly 
       "Crackle · 2 Coins",
     ]);
     await expect(glazing.getByRole("button", { name: "Apply glaze" })).toBeDisabled();
-    await expect(glazing.getByRole("status")).toContainText("no Shaped ceramic");
+    await expect(glazing.getByRole("status")).toContainText("no ceramic eligible");
 
     const kilnYard = guest.locator("details").filter({ hasText: "Kiln Yard" });
     await kilnYard.getByText("Kiln Yard", { exact: true }).click();
     await expect(kilnYard.getByRole("button", { name: "Load kiln" })).toBeDisabled();
     await expect(kilnYard.getByRole("status")).toContainText("no Glazed ceramic");
-    await expect(kilnYard).toContainText("gives no Wood");
+    await expect(kilnYard.locator("summary")).toContainText("Load ceramics");
+    await expect(kilnYard.locator("summary")).not.toContainText("Wood");
 
     const imperialCards = guest.locator(".orders-board .order-imperial");
     await expect(imperialCards).toHaveCount(4);
@@ -141,15 +143,17 @@ test("starting Orders remain visible after an eligible redraw advances directly 
     const office = guest.locator("details").filter({ hasText: "Market & Imperial Office" });
     await office.getByText("Market & Imperial Office", { exact: true }).click();
     await office.getByLabel("Worker").selectOption({ index: 1 });
-    await expect(office.locator('select[name="officeAction"] option')).toHaveText(["coins", "take one"]);
-    await expect(office).toContainText("optionally sell 1 Flawed ceramic");
+    await expect(office.locator('select[name="officeAction"] option')).toHaveText(["take one"]);
+    await expect(office).toContainText("optionally sell 0–1 Flawed ceramic");
     await expect(office.getByRole("button", { name: "Visit the Office" })).toBeEnabled();
 
     await office.getByLabel("Worker").selectOption({ index: 0 });
-    await expect(office.locator('select[name="officeAction"] option').filter({ hasText: "Court Patronage · 5 Coins · +1 Progress" })).toHaveCount(1);
-    await office.getByLabel("Office action").selectOption("court_patronage");
-    await expect(office.getByRole("status")).toContainText("Complete an Imperial Order first");
-    await expect(office.getByRole("button", { name: "Visit the Office" })).toBeDisabled();
+    await expect(office.locator('select[name="officeAction"] option')).toHaveText(["take up to two"]);
+    const patronage = guest.locator("details").filter({ hasText: "Court Patronage" });
+    await patronage.getByText("Court Patronage", { exact: true }).click();
+    await expect(patronage).toContainText("Pay 4 Coins");
+    await expect(patronage).toContainText("Complete an Imperial Order first");
+    await expect(patronage.getByRole("button", { name: "Seek Patronage" })).toBeDisabled();
 
     const guild = guest.locator("details").filter({ hasText: "Guild & Academy" });
     await guild.getByText("Guild & Academy", { exact: true }).click();
@@ -175,13 +179,14 @@ test("starting Orders remain visible after an eligible redraw advances directly 
 
     const hostOffice = host.locator("details").filter({ hasText: "Market & Imperial Office" });
     await hostOffice.getByText("Market & Imperial Office", { exact: true }).click();
-    // v1.1.5 retired `take_one_and_gain_two_coins`; Coin income lives at Labour now.
+    // V1.1.6 keeps Coin income at Labour rather than adding it to an Office action.
     await hostOffice.getByLabel("Office action").selectOption("take_up_to_two");
     await hostOffice.getByRole("button", { name: "Visit the Office" }).click();
     await expect(host.getByRole("button", { name: /Blind draw the top Market Order/ })).toBeVisible();
     await expect(host.getByRole("button", { name: /Blind draw the top Imperial Order/ })).toBeVisible();
     await host.getByRole("button", { name: /Blind draw the top Market Order/ }).click();
     await expect(host.getByText(/Blind Market draw committed and revealed:/)).toBeVisible();
+    await host.getByRole("button", { name: "Continue to optional sale" }).click();
     await expect(host.getByTestId("phase-name")).toHaveText("Office — Optional Flawed sale");
     await expect(host.getByRole("heading", { name: "Sell Flawed Ceramics" })).toBeVisible();
     await expect(host.locator("body")).toContainText("You have no eligible Finished Flawed ceramics.");
@@ -200,6 +205,7 @@ test("starting Orders remain visible after an eligible redraw advances directly 
 });
 
 test("two workshops complete a firing, Order, reconnect, and five-round game", async ({ browser, request }) => {
+  test.setTimeout(90_000);
   await request.post("http://127.0.0.1:4173/test-api", {
     headers: { "x-e2e-user": "reset" },
     data: { operation: "e2e_reset", seed: 1584 },
@@ -226,9 +232,11 @@ test("two workshops complete a firing, Order, reconnect, and five-round game", a
     // Reverse-order tradition selection: seat one chooses before the First Player in this seed.
     await host.getByRole("button", { name: /Ru Kiln/ }).click();
     await guest.getByRole("button", { name: /Guan Kiln/ }).click();
+    await keepFirstTwoOpeningOrders(guest);
+    await keepFirstTwoOpeningOrders(host);
     await expect(guest.getByTestId("phase-name")).toHaveText("Work Phase");
 
-    // The deterministic commissions are M09 (Moon-white Vase) and M10 (carved Moon-white Censer).
+    // The deterministic opening choices include host Order M08 (Fine+ Grey-Green Crackle Washer).
     const guestForming = guest.locator("details").filter({ hasText: "Forming Studio" });
     await guestForming.getByText("Forming Studio", { exact: true }).click();
     await guestForming.getByLabel("Worker").selectOption({ index: 1 });
@@ -241,7 +249,7 @@ test("two workshops complete a firing, Order, reconnect, and five-round game", a
     await guest.getByRole("button", { name: "Form ceramics" }).click();
     const hostForming = host.locator("details").filter({ hasText: "Forming Studio" });
     await hostForming.getByText("Forming Studio", { exact: true }).click();
-    await hostForming.getByLabel("First shape").selectOption("censer");
+    await hostForming.getByLabel("First shape").selectOption("washer");
     await hostForming.getByRole("button", { name: "Form ceramics" }).click();
 
     const fullForming = guest.locator("details").filter({ hasText: "Forming Studio" });
@@ -251,18 +259,15 @@ test("two workshops complete a firing, Order, reconnect, and five-round game", a
 
     const guestGlaze = guest.locator("details").filter({ hasText: "Glaze Workshop" });
     await guestGlaze.getByText("Glaze Workshop", { exact: true }).click();
-    await guestGlaze.getByLabel("Shifu mode").selectOption("free_single");
-    await expect(guestGlaze.getByRole("button", { name: "Apply glaze" })).toBeDisabled();
-    await expect(guestGlaze.getByRole("status")).toContainText("Only the Shifu");
-    await guestGlaze.getByLabel("Shifu mode").selectOption("normal");
+    await expect(guestGlaze.getByLabel("Shifu free Decoration")).toHaveCount(0);
     await expect(guestGlaze.getByRole("button", { name: "Apply glaze" })).toBeEnabled();
     await guestGlaze.getByLabel("First glaze").selectOption("moon_white");
     await guestGlaze.getByLabel("First decoration").selectOption("plain");
     await guestGlaze.getByRole("button", { name: "Apply glaze" }).click();
     const hostGlaze = host.locator("details").filter({ hasText: "Glaze Workshop" });
     await hostGlaze.getByText("Glaze Workshop", { exact: true }).click();
-    await hostGlaze.getByLabel("First glaze").selectOption("moon_white");
-    await hostGlaze.getByLabel("First decoration").selectOption("carved");
+    await hostGlaze.getByLabel("First glaze").selectOption("grey_green");
+    await hostGlaze.getByLabel("First decoration").selectOption("crackle");
     await hostGlaze.getByRole("button", { name: "Apply glaze" }).click();
 
     const fullGlaze = guest.locator("details").filter({ hasText: "Glaze Workshop" });
@@ -280,22 +285,22 @@ test("two workshops complete a firing, Order, reconnect, and five-round game", a
     const hostKilnYard = host.locator("details").filter({ hasText: "Kiln Yard" });
     await hostKilnYard.getByText("Kiln Yard", { exact: true }).click();
     await hostKilnYard.locator('select[name="ceramic1"]').selectOption({ index: 1 });
-    await hostKilnYard.getByLabel("First kiln space").selectOption("middle_1");
+    await hostKilnYard.getByLabel("First kiln space").selectOption("high_2");
     await hostKilnYard.getByRole("button", { name: "Load kiln" }).click();
 
-    // V1.0.9 retains four initially usable workers; both may pass the last one.
+    // V1.1.6 retains four initially usable workers; both may pass the last one.
     await guest.getByRole("button", { name: "Pass for this round" }).click();
     await host.getByRole("button", { name: "Pass for this round" }).click();
 
-    // The locked amount is private: the submitter sees 2, while the opponent sees only status.
-    await expect(guest.getByRole("heading", { name: "Choose Wood in secret" })).toBeVisible();
-    await guest.getByRole("button", { name: "2 Wood" }).click();
+    // The locked Contribution card is private; this seed's Fire card is 0, so both Tend.
+    await expect(guest.getByRole("heading", { name: "Choose a Contribution card in secret" })).toBeVisible();
+    await guest.getByRole("button", { name: /Tend the Fire/ }).click();
     await expect(guest.getByRole("heading", { name: "Contribution locked" })).toBeVisible();
-    await expect(guest.locator(".secret-value")).toContainText("2 Wood");
-    await expect(host.getByRole("heading", { name: "Choose Wood in secret" })).toBeVisible();
+    await expect(guest.locator(".secret-value")).toContainText("Tend the Fire");
+    await expect(host.getByRole("heading", { name: "Choose a Contribution card in secret" })).toBeVisible();
     await expect(host.getByText("Ren: submitted (value hidden)")).toBeVisible();
     await expect(host.locator(".secret-value")).toHaveCount(0);
-    await host.getByRole("button", { name: "2 Wood" }).click();
+    await host.getByRole("button", { name: /Tend the Fire/ }).click();
     await expect(guest.getByTestId("phase-name")).toHaveText("Order Phase");
     for (const page of [host, guest]) {
       const firingResult = page.getByTestId("last-firing-result");
@@ -311,19 +316,14 @@ test("two workshops complete a firing, Order, reconnect, and five-round game", a
     await expect(guest.getByTestId("revision")).toHaveText(revisionBeforeReconnect ?? "");
     await expect(guest.getByTestId("phase-name")).toHaveText("Order Phase");
 
-    const completion = guest.locator(".completion-card").filter({ hasText: "M09" });
-    await completion.getByRole("checkbox").first().check();
-    await completion.getByRole("button", { name: "Complete M09" }).click();
-    await expect(completion).toHaveCount(0);
-
     // Refresh exercises persisted seat recovery against the current authoritative revision.
     await guest.reload();
     await expect(guest.getByTestId("room-code")).toHaveText(roomCode ?? "");
     await expect(guest.getByTestId("phase-name")).toHaveText("Order Phase");
     await guest.getByRole("button", { name: "End Order turn" }).click();
-    const hostCompletion = host.locator(".completion-card").filter({ hasText: "M10" });
+    const hostCompletion = host.locator(".completion-card").filter({ hasText: "M08" });
     await hostCompletion.getByRole("checkbox").first().check();
-    await hostCompletion.getByRole("button", { name: "Complete M10" }).click();
+    await hostCompletion.getByRole("button", { name: "Complete M08" }).click();
     await host.getByRole("button", { name: "End Order turn" }).click();
 
     // Rounds 2–5: both workshops pass, then close their Order turns. No kiln load means firing skips.
@@ -358,6 +358,15 @@ async function openTwoWorkshops(browser: Browser): Promise<{
       await Promise.all([hostContext.close(), guestContext.close()]);
     },
   };
+}
+
+async function keepFirstTwoOpeningOrders(page: Page): Promise<void> {
+  await expect(page.getByRole("heading", { name: "Choose opening Orders" })).toBeVisible();
+  const choices = page.locator(".starting-order-piece input");
+  await expect(choices).toHaveCount(4);
+  await choices.nth(0).check();
+  await choices.nth(1).check();
+  await page.getByRole("button", { name: "Keep selected Orders" }).click();
 }
 
 async function finishEmptyRound(first: Page, second: Page): Promise<void> {
