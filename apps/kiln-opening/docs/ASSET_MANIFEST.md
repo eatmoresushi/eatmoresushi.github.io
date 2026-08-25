@@ -1,79 +1,73 @@
-# ASSET_MANIFEST.md — V1.0.4 RULES / LEGACY VISUAL AUDIT
+# ASSET_MANIFEST.md — V1.1.6 rules / legacy visual audit
 
-Only files under `assets/current_v04/` are approved as current visual references.
+Only files under `assets/current_v04/` are approved as visual references. The directory name is a stable legacy path, not a rules-version claim. No raster text is authoritative.
 
-## Approved and visually audited
+## Approved visual references
 
 ### Vessel cards
+
 - `vessel_cards_page_1_bowl_plate.png`
 - `vessel_cards_page_2_washer_vase.png`
 - `vessel_cards_page_3_censer.png`
 
-Together these contain 8 each of Bowl, Plate, Washer, Vase and Censer (40 total). The fields Glaze / Decoration / Quality / Delivered remain compatible with V1.0.4.
+Together these provide 8 each of Bowl, Plate, Washer, Vase and Censer. Their writable Glaze, Decoration and Quality fields remain usable, but all labels and rules must be checked against the V1.1.6 source and current structured data.
 
-### Legacy Fire cards
-- `fire_cards_page_1.png`
-- `fire_cards_page_2_remaining_plus1.png`
+## Obsolete rules-bearing raster sets
 
-These images cover only the earlier -1/0/+1 cards and are not a complete V1.0.4 Fire deck. Regenerate a full 20-card set from `data/firing.json` with:
+- Earlier Fire-card sheets are incomplete and have the wrong distribution.
+- The four-colour `0 / 1 / 2 / 3` Wood-card sheet is obsolete. V1.1.6 uses Bank, Tend and Stoke.
+- Earlier Order sheets do not contain the complete 30 Market and 22 Imperial Orders.
+- The older central board omits Labour and separate Court Patronage and contains obsolete effects.
+- Earlier Technique and reference-card text predates V1.1.6 timing and costs.
 
-- -2 ×4
-- -1 ×3
-- 0 ×6
-- +1 ×3
-- +2 ×4
+The online client must cover or replace stale raster wording with data-driven bilingual UI; it must never expose obsolete text as the current rule.
 
-Until that set exists, the online client renders ±2 with a data-driven live card rather than mislabelling an older raster.
+## Assets to regenerate from V1.1.6 data
 
-### Wood Contribution cards
-- `wood_contribution_cards_4_sets.png`
+### Orders
 
-Exactly four colour sets, each containing 0 / 1 / 2 / 3: 16 cards total.
+Generate all 52 fronts from `data/orders.json`: 30 Market and 22 Imperial. Print each Imperial card's Progress reward and provide distinct deck backs. Use both English and Simplified Chinese text from the same stable card IDs.
 
-## Intentionally absent because older raster text conflicts with V1.0.4
+### Central Action Board
 
-### Order-card sheets
+Generate from `data/action_locations.json` with exactly eight locations:
 
-The V0.6.1 sheets `order_cards_page_1_M01-M16.png` and `order_cards_page_2_M17-M20_I01-I10.png` were moved to `assets/obsolete_v061/`. They do not show the V0.6.3 M10/M12/M14/I02/I04 attributes or the +1/+2 Imperial Progress rewards and are not approved current references. Regenerate all cards from `data/orders.json`.
-
-### Central game board
-The older board is excluded. It contained obsolete content including Refining House / Refined Clay and older action/firing references.
-
-The V1.0.4 central board must be generated from:
-- `data/action_locations.json`
-- `data/firing.json`
-- `data/round_structure.json`
-
-It must contain exactly:
 1. Materials Yard
 2. Forming Studio
 3. Glaze Workshop
 4. Kiln Yard
 5. Market & Imperial Office
 6. Guild & Academy
+7. Labour
+8. Court Patronage
 
-### Player boards
-Earlier text-bearing player-board rasters are excluded. Generate all five from `data/kilns.json`. Resource areas are Clay / Wood / Coins.
+Labour and Court Patronage are uncapped. Court Patronage is Shifu-only and costs 4 Coins. Kiln Yard must show loading counts and the Shifu reposition window after Base Heat is known.
 
-### Craft Technique cards
-Earlier raster sheets are excluded because at least one generated English title differs from the rulebook spelling. Generate all 15 from `data/techniques.json`.
+### Shared Kiln and Fire deck
 
-Any older T08 raster is obsolete: V1.0.4 Colour Samples acts before the first Office acquisition, may target either display, and bottoms the target. The online tabletop covers stale atlas wording and all changed/new Technique text with live bilingual V1.0.4 data.
+Generate from `data/firing.json`. The Shared Kiln has 3 High (+1), 2 Middle (0) and 2 Low (−1) spaces, with player-count covers. The 12-card Fire deck is:
 
-### V1.0.4 rules-bearing board updates
+- −2 ×1
+- −1 ×3
+- 0 ×4
+- +1 ×3
+- +2 ×1
 
-Market/Imperial decks require distinct backs for blind draws. The Office must show face-up/blind acquisition and gated Court Patronage; Guild & Academy must show both worker types, the Shifu discount, and capacity 1/2/3. Until regenerated raster art is available, the online tabletop uses authoritative HTML/CSS plaques over stale baked-in board text.
+### Kiln Contribution cards
 
-### Player reference
-Earlier reference raster predates the contributor-scaled firing rule and current six-location action board. Generate from current data.
+Generate four identical three-card sets from `data/firing.json`: Bank the Fire, Tend the Fire and Stoke the Fire, for 12 cards total.
 
-## Authority rule
+### Player boards, Techniques and reference
 
-Raster artwork is never a rules source.
+Generate the five player boards from `data/kilns.json`, all 15 Technique tiles from `data/techniques.json`, and the player reference from `data/round_structure.json` plus `data/firing.json`. All rules-bearing output must support matching English and Simplified Chinese text.
 
-Codex must implement/render gameplay from:
-1. `docs/GAME_RULES.md`
-2. `data/*.json`
-3. `docs/IMPLEMENTATION_DECISIONS.md`
+## Authority
 
-The PNGs above are safe visual references only.
+For current gameplay use, in order:
+
+1. `docs/KILN_OPENING_v1.1.6_SOURCE.md`
+2. `docs/RULEBOOK_AUDIT_V1.1.6.md`
+3. current `data/*.json`
+4. `docs/IMPLEMENTATION_DECISIONS.md`
+
+Raster artwork is visual direction only.

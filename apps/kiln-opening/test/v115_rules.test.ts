@@ -86,7 +86,7 @@ describe("v1.1.6 authoritative content", () => {
 
   it("awards no Coin stipend at Imperial Progress 2 or 4", () => {
     expect(IMPERIAL_PROGRESS).not.toHaveProperty("stipends");
-    expect(IMPERIAL_PROGRESS.track.map((space) => space.endGameVp)).toEqual([0, 0, 2, 2, 4, 8]);
+    expect(IMPERIAL_PROGRESS.track.map((space) => space.endGameVp)).toEqual([0, 0, 2, 2, 6, 10]);
     for (const space of IMPERIAL_PROGRESS.track) {
       expect(space.reward ?? "", `space ${space.space}`).not.toMatch(/coin/i);
     }

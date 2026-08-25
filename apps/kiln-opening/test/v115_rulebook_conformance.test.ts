@@ -68,7 +68,7 @@ for (const m of FIRE_CARDS) fire[String(m)] = (fire[String(m)] ?? 0) + 1;
   check("App C Fire deck (config table)", GAME_CONFIG.fireDeck, { "-2": 1, "-1": 3, "0": 4, "1": 3, "2": 1 });
   check("App B Technique count", TECHNIQUES.length, 15);
 // Section 9 -- Imperial Progress
-  check("§9 Progress end-game VP", GAME_CONFIG.imperialProgressEndGameVp, [0, 0, 2, 2, 4, 8]);
+  check("§9 Progress end-game VP", GAME_CONFIG.imperialProgressEndGameVp, [0, 0, 2, 2, 6, 10]);
   check("§9 Imperial Seal VP", GAME_CONFIG.imperialSealVp, 2);
   check("§9 every Imperial Order gives 1 Progress per ceramic",
   IMPERIAL_ORDERS.every((o) => (o as { imperialProgressReward?: number }).imperialProgressReward === o.ceramics.length), true);
@@ -89,9 +89,9 @@ for (const m of FIRE_CARDS) fire[String(m)] = (fire[String(m)] ?? 0) + 1;
   check("App A/§8 kiln spaces total", Object.keys(KILN_SPACE_DEFINITIONS).length, 7);
   check("§9 Progress track length", IMPERIAL_PROGRESS.track.length, 6);
   // §9 End-game Exhibition
-  check("§9 Exhibition capacity by Progress", IMPERIAL_PROGRESS.exhibition.capacityByProgress, [2, 2, 2, 2, 3, 3]);
-  check("§9 Exhibition VP by Quality", IMPERIAL_PROGRESS.exhibition.qualityVp, { standard: 2, fine: 3, masterpiece: 4 });
-  check("§9 Exhibition diversity spaces", IMPERIAL_PROGRESS.exhibition.diversityEligibleSpaces, [4, 5]);
+  check("§9 Exhibition capacity by Progress", IMPERIAL_PROGRESS.exhibition.capacityByProgress, [5, 5, 5, 5, 5, 5]);
+  check("§9 Exhibition VP by Quality", IMPERIAL_PROGRESS.exhibition.qualityVp, { standard: 2, fine: 3, masterpiece: 5 });
+  check("§9 Exhibition diversity spaces", IMPERIAL_PROGRESS.exhibition.diversityEligibleSpaces, [0, 1, 2, 3, 4, 5]);
   check("§9 Exhibition diversity bonuses", [IMPERIAL_PROGRESS.exhibition.threeDifferentShapesBonus, IMPERIAL_PROGRESS.exhibition.threeDifferentGlazesBonus], [2, 2]);
   check("§9 Flawed cannot be exhibited", IMPERIAL_PROGRESS.exhibition.flawedEligible, false);
   check("§9 Exhibition minimum Quality", IMPERIAL_PROGRESS.exhibition.minimumQuality, "standard");

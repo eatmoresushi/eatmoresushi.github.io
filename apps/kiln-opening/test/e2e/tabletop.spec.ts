@@ -27,12 +27,13 @@ test("simple playtest UI exposes state and places an Apprentice through authorit
 
     await host.getByRole("button", { name: /Ru Kiln/ }).click();
     await guest.getByRole("button", { name: /Guan Kiln/ }).click();
-    await host.getByRole("button", { name: "Redraw" }).click();
+    await keepFirstTwoOpeningOrders(guest);
+    await keepFirstTwoOpeningOrders(host);
 
     for (const page of [host, guest]) {
       await expect(page.getByTestId("playtest-ui")).toBeVisible();
       await expect(page.getByTestId("tabletop-scene")).toHaveCount(0);
-      await expect(page.getByText("V1.0.9", { exact: true }).first()).toBeVisible();
+      await expect(page.getByText("V1.1.6", { exact: true }).first()).toBeVisible();
       await expect(page.getByRole("region", { name: "Player Workshops" })).toBeVisible();
       await expect(page.getByRole("region", { name: "Worker Placement" })).toBeVisible();
       await expect(page.getByRole("region", { name: "Kiln Spaces" })).toBeVisible();
@@ -41,9 +42,9 @@ test("simple playtest UI exposes state and places an Apprentice through authorit
       await expect(page.getByRole("region", { name: "Orders", exact: true })).toContainText("Imperial display (4)");
       await expect(page.getByRole("region", { name: "Face-up Techniques" }).locator(".technique-tile")).toHaveCount(6);
       await expect(page.getByRole("region", { name: "Game Log" })).toBeVisible();
-      await expect(page.getByRole("region", { name: "Playtest Debug" })).toContainText("-2: 4 · -1: 3 · 0: 6 · +1: 3 · +2: 4");
-      await expect(page.locator('[data-space="middle_3"]')).toContainText("No — covered");
-      await expect(page.locator('[data-space="low_3"]')).toContainText("No — covered");
+      await expect(page.getByRole("region", { name: "Playtest Debug" })).toContainText("-2: 1 · -1: 3 · 0: 4 · +1: 3 · +2: 1");
+      await expect(page.locator('[data-space="high_3"]')).toContainText("No — covered");
+      await expect(page.locator('[data-space="middle_2"]')).toContainText("No — covered");
     }
 
     const phaseBeforeLanguageChange = await host.getByTestId("phase-name").textContent();
@@ -52,7 +53,7 @@ test("simple playtest UI exposes state and places an Apprentice through authorit
     await expect(host.getByRole("region", { name: "玩家作坊" })).toBeVisible();
     await expect(host.getByRole("region", { name: "御用进度" })).toContainText("终局展陈");
     await expect(host.getByRole("complementary", { name: "游戏操作" })).toContainText("其他作坊正在决策");
-    await expect(host.getByTestId("phase-name")).toHaveText("工作阶段");
+    await expect(host.getByTestId("phase-name")).toHaveText("劳作阶段");
     await expect(host.getByTestId("revision")).toHaveText(revisionBeforeLanguageChange ?? "");
     expect(await host.evaluate(() => localStorage.getItem("kiln-opening:language"))).toBe("zh-CN");
     await host.getByRole("button", { name: "EN" }).click();
@@ -93,4 +94,13 @@ async function openTwoWorkshops(browser: Browser): Promise<{
       await Promise.all([hostContext.close(), guestContext.close()]);
     },
   };
+}
+
+async function keepFirstTwoOpeningOrders(page: Page): Promise<void> {
+  await expect(page.getByRole("heading", { name: "Choose opening Orders" })).toBeVisible();
+  const choices = page.locator(".starting-order-piece input");
+  await expect(choices).toHaveCount(4);
+  await choices.nth(0).check();
+  await choices.nth(1).check();
+  await page.getByRole("button", { name: "Keep selected Orders" }).click();
 }

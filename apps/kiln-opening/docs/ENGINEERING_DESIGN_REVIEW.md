@@ -1,10 +1,15 @@
 # ENGINEERING_DESIGN_REVIEW.md — Kiln Opening V0.6.3
 
+> **Historical archive only.** This review records the V0.6.3 engine-design checkpoint and
+> must not be used as a current rules source. The sole current source is
+> `docs/KILN_OPENING_v1.1.6_SOURCE.md`; current implementation rulings are in
+> `docs/IMPLEMENTATION_DECISIONS.md`.
+
 ## Scope and authority
 
 This is an engineering design review only. It does not implement the game and does not change any gameplay value.
 
-Source precedence follows `AGENTS.md`: `GAME_RULES.md`, then `data/*.json`, then `IMPLEMENTATION_DECISIONS.md`, `ONLINE_GAME_SPEC.md`, and `DESIGN_SPEC.md`. Raster assets are not rules sources. The proposed engine is server-authoritative, deterministic except for injected shuffle randomness, JSON-serialisable, and independent of React, networking, Supabase, and browser APIs.
+At the time of this archived review, source precedence followed the then-current `AGENTS.md`. Those old values are preserved below only as design history. Raster assets were not rules sources. The proposed engine was server-authoritative, deterministic except for injected shuffle randomness, JSON-serialisable, and independent of React, networking, Supabase, and browser APIs.
 
 ### Handoff gate and structured-data reconciliation
 

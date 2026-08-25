@@ -1,4 +1,5 @@
 import {
+  ACTION_LOCATION_PRICES,
   DECORATION_COSTS,
   GLAZES,
   IMPERIAL_ORDERS,
@@ -818,7 +819,7 @@ function imperialRouteForecast(
   const completedImperial = player.completedOrders.some(({ orderId }) => isImperialOrder(orderId));
   const projectedImperialCompletion = imperialPlans.some(({ feasible }) => feasible);
   const patronageReachable = player.imperialProgress <= 3 && (completedImperial || projectedImperialCompletion) && (
-    player.resources.coins >= 5 || observation.game.round <= 4
+    player.resources.coins >= ACTION_LOCATION_PRICES.courtPatronageCoins || observation.game.round <= 4
   );
   const projectedProgress = Math.min(5, player.imperialProgress + projectedOrderProgress + (patronageReachable ? 1 : 0));
   // This legacy field name is retained in serialized AI diagnostics, but under

@@ -19,16 +19,16 @@ Players should care about:
 - which zones remain;
 - what Glazes opponents loaded;
 - what heat those opponents probably want;
-- how much Wood other players may commit;
+- which secret Contribution card other players may commit;
 - whether to load early for position or wait for information.
 
 Do not add digital conveniences that remove this inference.
 
 ### 2. Controlled uncertainty, not chaos
 
-The V1.0.9 Fire deck contains -2/-1/0/+1/+2 in a 1/3/4/3/1 distribution. Zero is the most common result and the negative and positive sides are symmetric.
+The V1.1.6 Fire deck contains -2/-1/0/+1/+2 in a 1/3/4/3/1 distribution. Zero is the most common result and the negative and positive sides are symmetric.
 
-The larger strategic uncertainty still comes from other players' secret Wood contributions. Fire is resolved through the existing uncapped heat-difference system; planning, zone choice and abilities remain the tools for managing its wider range.
+The larger strategic uncertainty comes from other players' secret Bank, Tend, or Stoke Contribution choices. Their Wood costs are paid only after every eligible contributor has committed and the choices are revealed together. Fire is resolved through the contributor-scaled Base Heat table and uncapped heat-difference system; planning, zone choice and abilities remain the tools for managing its range.
 
 ### 3. Market vs Imperial must both be viable
 
@@ -44,8 +44,10 @@ Imperial route:
 - harder Orders;
 - less Coin income;
 - Imperial Progress;
-- one-time Coin stipends;
-- larger Imperial Exhibition capacity and, at the top spaces, diversity prestige.
+- Apprentice milestones at Progress spaces 1 and 3;
+- higher end-game Progress VP and a race for the Imperial Seal.
+
+End-game Exhibition is universal: every player may exhibit up to five qualifying ceramics, independent of Imperial Progress.
 
 Imperial Progress should be attractive but not mandatory.
 
@@ -61,7 +63,7 @@ A player may own at most 2 Techniques so nobody becomes universally efficient.
 
 The Shifu should be stronger than an Apprentice, but technical mastery should live in Kiln Traditions and Techniques.
 
-Important example: Shifu no longer repositions loaded ceramics. Repositioning is the Firing Technique **Kiln Setting**.
+At the Kiln Yard, the Shifu may load up to two ceramics or load one and reposition one already-loaded ceramic after Base Heat is known. The Firing Technique **Kiln Setting** is the broader pre-Contribution option that may move any number of the owner's loaded ceramics to empty active spaces.
 
 ### 6. Avoid mandatory transit resources
 
@@ -73,7 +75,7 @@ Clay preparation is abstracted into Forming.
 
 Prefer:
 
-- 6 meaningful locations over many narrow ones;
+- 8 meaningful locations, including the two uncapped Labour and Court Patronage spaces, over unnecessary narrow sub-locations;
 - small permanent effects over combo-heavy engines;
 - visible card requirements;
 - few timing windows with explicit names.

@@ -77,12 +77,12 @@ export function commandNotice(result: CommandSuccess, locale: Locale = "en"): st
   if (colour?.type === "COLOUR_SAMPLES_USED") {
     const deck = colour.deck === "market" ? (locale === "zh-CN" ? "市场" : "Market") : (locale === "zh-CN" ? "御用" : "Imperial");
     return locale === "zh-CN"
-      ? `使用釉色样本：拿取${colour.selectedOrderId ?? "1张订单"}；${colour.bottomedOrderId}移至${deck}订单牌堆底。`
-      : `Used Colour Samples: took ${colour.selectedOrderId ?? "one Order"}; ${colour.bottomedOrderId} moved to the bottom of the ${deck} deck.`;
+      ? `使用釉色样本：拿取${colour.selectedOrderId ?? "1张订单"}；${colour.bottomedCount}张已查看牌移至${deck}订单牌堆底。`
+      : `Used Colour Samples: took ${colour.selectedOrderId ?? "one Order"}; ${colour.bottomedCount} looked-at Order${colour.bottomedCount === 1 ? "" : "s"} moved to the bottom of the ${deck} deck.`;
   }
   const patronage = result.events.find((event) => event.type === "COURT_PATRONAGE_USED");
   if (patronage?.type === "COURT_PATRONAGE_USED") {
-    return locale === "zh-CN" ? `使用朝廷赞助：支付5铜钱；御用进度${patronage.from} → ${patronage.to}。` : `Used Court Patronage: paid 5 Coins; Imperial Progress ${patronage.from} → ${patronage.to}.`;
+    return locale === "zh-CN" ? `使用朝廷赞助：支付${patronage.cost}铜钱；御用进度${patronage.from} → ${patronage.to}。` : `Used Court Patronage: paid ${patronage.cost} Coins; Imperial Progress ${patronage.from} → ${patronage.to}.`;
   }
   const technique = result.events.find((event) => event.type === "TECHNIQUE_ACQUIRED");
   if (technique?.type === "TECHNIQUE_ACQUIRED") {

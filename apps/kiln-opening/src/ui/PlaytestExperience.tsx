@@ -1,6 +1,6 @@
 import type { AuthoritativeCommand, PendingContribution, PrivateDecisionState, PublicEventRecord, PublicGameEvent, PublicGameState } from "../multiplayer";
 import type { FireModifier, PlayerId } from "../game";
-import { GAME_CONFIG, KILN_DEFINITIONS, ORDER_DEFINITIONS, TECHNIQUE_DEFINITIONS } from "../game";
+import { CONTRIBUTION_CARD_DEFINITIONS, GAME_CONFIG, KILN_DEFINITIONS, ORDER_DEFINITIONS, TECHNIQUE_DEFINITIONS } from "../game";
 import { ActionPanel } from "./ActionPanel";
 import { GameTable } from "./GameTable";
 import { term, useI18n } from "./i18n";
@@ -142,7 +142,7 @@ export function eventDescription(event: PublicGameEvent, game: PublicGameState, 
     case "ORDER_TAKEN":
       return `${player(event.playerId)} ${event.acquisition === "blind_top" ? "blind-drew" : "took"} ${event.orderId} from the ${event.deck} Orders.`;
     case "COLOUR_SAMPLES_USED":
-      return `${player(event.playerId)} used Colour Samples, took ${event.selectedOrderId ?? "an Order"}, and put ${event.bottomedOrderId} on the bottom.`;
+      return `${player(event.playerId)} used Colour Samples, took ${event.selectedOrderId ?? "an Order"}, and put ${event.bottomedCount} looked-at Order${event.bottomedCount === 1 ? "" : "s"} on the bottom.`;
     case "TECHNIQUE_REFRESHED":
       return `${player(event.playerId)} refreshed ${event.techniqueId} · ${TECHNIQUE_DEFINITIONS[event.techniqueId]?.name ?? "Unknown Technique"}.`;
     case "TECHNIQUE_ACQUIRED":
@@ -156,9 +156,12 @@ export function eventDescription(event: PublicGameEvent, game: PublicGameState, 
     case "WORK_PHASE_ENDED":
       return "All players finished the Work Phase. Firing began.";
     case "WOOD_SUBMITTED":
-      return `${player(event.playerId)} submitted a secret Wood Contribution.`;
+      return `${player(event.playerId)} submitted a secret Contribution card.`;
     case "WOOD_REVEALED":
-      return `Wood Contributions revealed: ${Object.entries(event.contributions).map(([id, value]) => `${player(id)} contributed ${value} Wood`).join("; ")}.`;
+      return `Contribution cards revealed: ${Object.entries(event.contributions).map(([id, cardId]) => {
+        const card = CONTRIBUTION_CARD_DEFINITIONS[cardId];
+        return `${player(id)} chose ${card.name} (${card.woodCost} Wood)`;
+      }).join("; ")}.`;
     case "FIRE_REVEALED":
       return `Fire card ${signed(event.modifier)} revealed. Base Heat ${event.baseHeat}; Global Heat ${event.globalHeat}.`;
     case "QUALITY_ASSIGNED":
@@ -182,7 +185,7 @@ export function eventDescription(event: PublicGameEvent, game: PublicGameState, 
     case "APPRENTICE_UNLOCKED":
       return `${player(event.playerId)} unlocked Apprentice ${event.workerId}.`;
     case "ROUND_FIVE_UNLOCK_VP_REWARD":
-      return `${player(event.playerId)} received 2 VP instead of a Round 5 Apprentice unlock.`;
+      return `${player(event.playerId)} received ${event.vp} VP instead of a Round 5 Apprentice unlock.`;
     case "ORDERS_DISCARDED_FOR_CLEANUP":
       return `${player(event.playerId)} discarded ${event.orderIds.join(", ")} during Cleanup.`;
     case "ORDER_DISPLAYS_ROTATED":
@@ -217,15 +220,18 @@ function eventDescriptionZh(event: PublicGameEvent, game: PublicGameState): stri
     case "CERAMIC_SOLD": return `${player(event.playerId)}出售了1件${ceramic(event.ceramicId)}。`;
     case "CERAMIC_RETURNED_TO_GLAZED": return `${player(event.playerId)}使用二次烧成；${ceramic(event.ceramicId)}退回施釉区，并失去合格品品第。`;
     case "ORDER_TAKEN": return `${player(event.playerId)}${event.acquisition === "blind_top" ? "盲抽" : "拿取"}了${event.deck === "market" ? "市场" : "御用"}订单${event.orderId}。`;
-    case "COLOUR_SAMPLES_USED": return `${player(event.playerId)}使用釉色样本，拿取${event.selectedOrderId ?? "1张订单"}，并将${event.bottomedOrderId}置于牌堆底。`;
+    case "COLOUR_SAMPLES_USED": return `${player(event.playerId)}使用釉色样本，拿取${event.selectedOrderId ?? "1张订单"}，并将${event.bottomedCount}张已查看牌置于牌堆底。`;
     case "TECHNIQUE_REFRESHED": return `${player(event.playerId)}刷新了${event.techniqueId} · ${TECHNIQUE_DEFINITIONS[event.techniqueId]?.nameZh ?? "未知技术"}。`;
     case "TECHNIQUE_ACQUIRED": return `${player(event.playerId)}以${event.cost}铜钱购买${event.techniqueId} · ${TECHNIQUE_DEFINITIONS[event.techniqueId]?.nameZh ?? "未知技术"}。`;
     case "TECHNIQUE_USED": return `${player(event.playerId)}使用${event.techniqueId} · ${TECHNIQUE_DEFINITIONS[event.techniqueId]?.nameZh ?? "未知技术"}。`;
     case "KILN_ABILITY_USED": return `${player(event.playerId)}使用${KILN_DEFINITIONS[event.kilnId].nameZh}：${KILN_DEFINITIONS[event.kilnId].abilityNameZh}。`;
     case "JUN_ACTIVATION_PAID": return `${player(event.playerId)}为钧窑的窑变妙化支付${event.wood}柴薪。`;
     case "WORK_PHASE_ENDED": return "所有玩家完成工作阶段，开始烧成。";
-    case "WOOD_SUBMITTED": return `${player(event.playerId)}提交了秘密柴薪贡献。`;
-    case "WOOD_REVEALED": return `柴薪贡献公开：${Object.entries(event.contributions).map(([id, value]) => `${player(id)}贡献${value}柴薪`).join("；")}。`;
+    case "WOOD_SUBMITTED": return `${player(event.playerId)}提交了秘密出柴牌。`;
+    case "WOOD_REVEALED": return `出柴牌公开：${Object.entries(event.contributions).map(([id, cardId]) => {
+      const card = CONTRIBUTION_CARD_DEFINITIONS[cardId];
+      return `${player(id)}选择${card.nameZh}（${card.woodCost}柴薪）`;
+    }).join("；")}。`;
     case "FIRE_REVEALED": return `翻开窑火牌${signed(event.modifier)}。基础热度${event.baseHeat}；全局热度${event.globalHeat}。`;
     case "QUALITY_ASSIGNED": return `${ceramic(event.ceramicId)}的品第判定为${term("zh-CN", event.quality)}。`;
     case "FIRING_RESOLVED": return `${ceramic(event.ceramicId)}烧制记录：窑火${signed(event.fireModifier)}，自然实际火候${event.naturalActualHeat}（火候差${event.naturalHeatDifference}，${term("zh-CN", event.naturalQuality)}），最终实际火候${event.finalActualHeat}（火候差${event.finalHeatDifference}，${term("zh-CN", event.finalQuality)}）。`;
@@ -238,12 +244,12 @@ function eventDescriptionZh(event: PublicGameEvent, game: PublicGameState): stri
     case "COURT_PATRONAGE_USED": return `${player(event.playerId)}使用朝廷赞助，支付${event.cost}铜钱，御用进度${event.from} → ${event.to}。`;
     case "IMPERIAL_SEAL_CLAIMED": return `${player(event.playerId)}获得御印。`;
     case "APPRENTICE_UNLOCKED": return `${player(event.playerId)}解锁学徒${event.workerId}。`;
-    case "ROUND_FIVE_UNLOCK_VP_REWARD": return `${player(event.playerId)}在第5轮获得2分以替代学徒解锁。`;
+    case "ROUND_FIVE_UNLOCK_VP_REWARD": return `${player(event.playerId)}在第5轮获得${event.vp}分以替代学徒解锁。`;
     case "ORDERS_DISCARDED_FOR_CLEANUP": return `${player(event.playerId)}在整备阶段弃掉${event.orderIds.join("、")}。`;
     case "IMPERIAL_STIPEND_RECEIVED": return `${player(event.playerId)}获得进度${event.space}的朝廷赏赐：+${event.coins}铜钱。`;
     case "ORDER_DISPLAYS_ROTATED": return `第${event.round}轮订单轮换弃掉市场订单${event.marketOrderIds.join("、")}和御用订单${event.imperialOrderIds.join("、")}。`;
     case "ROUND_STARTED": return `第${event.round}轮开始。${player(event.firstPlayerId)}为起始玩家。`;
-    case "PRESENTATION_SUBMITTED": return `${player(event.playerId)}为终局展陈提交${event.ceramicIds.length}件陶瓷。`;
+    case "PRESENTATION_SUBMITTED": return `${player(event.playerId)}为终局展陈提交${event.ceramicIds.length}件陶瓷，其中${event.featuredCeramicIds.length}件为主题藏品。`;
     case "FINAL_SCORE_CALCULATED": return `最终计分完成。胜者：${event.result.winnerIds.map(player).join("、")}。`;
   }
 }

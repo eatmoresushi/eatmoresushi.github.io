@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   ACTION_LOCATION_PRICES, COLOUR_SAMPLES_LOOK, CONNOISSEUR_SALE_COINS, FUEL_LEDGER_WOOD,
   GE_ACTIVATION_WOOD, GE_CORRECTABLE_DIFFERENCES, GUAN_ORDER_COINS, GUAN_ORDER_VP,
-  JUN_ACTIVATION_WOOD, KILN_DEFINITIONS, LOCATION_DEFINITIONS, LOCATION_IDS, RU_ORDER_VP,
+  JUN_ACTIVATION_WOOD, KILN_DEFINITIONS, KILN_RECORDS_WOOD, LOCATION_DEFINITIONS, LOCATION_IDS, RU_ORDER_VP,
   SHAPE_COSTS, TECHNIQUE_DEFINITIONS,
 } from "../src/game";
 import type { KilnId, LocationId } from "../src/game";
@@ -38,7 +38,7 @@ const cases: Array<[string, string, number[]]> = [
   ["Protective Saggars", T("Protective Saggars"), [1]],
   ["Fuel Ledger", T("Fuel Ledger"), [FUEL_LEDGER_WOOD, 2, 1]],
   ["Test Pieces", T("Test Pieces"), [1]],
-  ["Kiln Records", T("Kiln Records"), [1, 1]],
+  ["Kiln Records", T("Kiln Records"), [KILN_RECORDS_WOOD]],
   ["Connoisseur Network", T("Connoisseur Network"),
     [CONNOISSEUR_SALE_COINS.standard, CONNOISSEUR_SALE_COINS.fine, CONNOISSEUR_SALE_COINS.masterpiece]],
   ["Sagger Selection", T("Sagger Selection"), [2, 1, 0]],

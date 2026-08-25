@@ -101,7 +101,11 @@ export interface PlayerState {
   passedWorkPhase: boolean;
   pendingApprenticeUnlocks: number;
   kilnAbilityUsedThisRound: boolean;
+  /** Distinct Shapes formed this round, used by Measuring Calipers. */
+  shapesFormedThisRound: Shape[];
   presentationCeramicIds: CeramicId[];
+  /** The three exhibited ceramics chosen for the two diversity bonuses. */
+  presentationFeaturedCeramicIds: CeramicId[];
   score: ImmediateScoreState;
 }
 
@@ -110,6 +114,12 @@ interface CeramicCore {
   vesselInstanceId: VesselInstanceId;
   ownerId: PlayerId;
   shape: Shape;
+  /** Set on creation so delayed loading effects remain deterministic after reconnect. */
+  formedInRound?: RoundNumber;
+  /** Drying Frames vessels cannot be loaded before this round number. */
+  loadableFromRound?: number;
+  /** Allows the later Glaze Workshop action to change Decoration without changing Glaze. */
+  dryingFramesApplied?: boolean;
 }
 
 export type ShapedCeramic = CeramicCore & {
@@ -410,7 +420,7 @@ export interface ImperialTrackExperimentConfig {
   readonly imperialOrderProgressMode: "all_two" | "printed";
   readonly imperialProgressTrackVp: readonly [number, number, number, number, number, number];
   readonly apprenticeMilestoneSpaces: readonly [number, number];
-  readonly presentationSpaces: readonly [number, number];
+  readonly presentationSpaces: readonly number[];
   readonly imperialSealEnabled: true;
   readonly imperialSealVp: 2 | 3;
 }
@@ -493,6 +503,19 @@ export interface ExhibitionExperimentConfig {
   readonly qualityVp: { readonly standard: number; readonly fine: number; readonly masterpiece: number };
 }
 
+/**
+ * Grants one player a Technique for free at setup, to measure what owning it is worth.
+ * The AI buys 0.26 Techniques per game and its forecast reports a positive net value in only
+ * 4.4% of cases, so the model needs a ground truth to be corrected against rather than a
+ * guessed constant.
+ */
+export interface TechniqueGrantExperimentConfig {
+  readonly experimentId: "technique-grant-ab-001";
+  readonly experimentArm: "control" | "granted";
+  readonly beneficiaryPlayerId: string;
+  readonly techniqueId: string;
+}
+
 export type GameExperimentConfig =
   | JunAbExperimentConfig
   | ImperialTrackExperimentConfig
@@ -500,7 +523,8 @@ export type GameExperimentConfig =
   | RuTriggerExperimentConfig
   | JunWoodExperimentConfig
   | R5WorkerExperimentConfig
-  | ExhibitionExperimentConfig;
+  | ExhibitionExperimentConfig
+  | TechniqueGrantExperimentConfig;
 
 export interface PlayerSetup {
   id: PlayerId;
@@ -540,6 +564,7 @@ export type GameAction =
   | { type: "KEEP_STARTING_ORDER" }
   | { type: "REDRAW_STARTING_ORDER" }
   | { type: "PASS_WORK_PHASE" }
+  | { type: "USE_CLAY_SUBSTITUTION"; clay: number; wood: number }
   | {
       type: "GAIN_MATERIALS";
       workerId: WorkerId;
@@ -613,11 +638,7 @@ export type GameAction =
   | { type: "RESOLVE_PROTECTIVE_SAGGARS"; ceramicId: CeramicId | null }
   | { type: "RESOLVE_SECOND_FIRING"; ceramicId: CeramicId | null }
   | { type: "RESOLVE_TEST_PIECES"; use: boolean }
-  /**
-   * Clay Substitution used inside the Firing Phase. The rulebook allows it on the owner's
-   * turn or before Contribution cards are chosen; the Work Phase route is handled by the
-   * Forming action's technique list, and this is the firing-window route.
-   */
+  /** Clay Substitution used before Contribution cards are chosen. */
   | { type: "RESOLVE_FIRING_CLAY_SUBSTITUTION"; clay: number; wood: number; use: boolean }
   | { type: "RESOLVE_KILN_RECORDS"; use: boolean }
   | {
@@ -628,7 +649,12 @@ export type GameAction =
     }
   | { type: "END_ORDER_TURN" }
   | { type: "DISCARD_ORDERS_FOR_CLEANUP"; orderIds: OrderId[] }
-  | { type: "SUBMIT_PRESENTATION"; ceramicIds: CeramicId[] };
+  | {
+      type: "SUBMIT_PRESENTATION";
+      ceramicIds: CeramicId[];
+      /** Required when three or more ceramics are exhibited; optional for old callers. */
+      featuredCeramicIds?: CeramicId[];
+    };
 
 export type GameRuleErrorCode =
   | "INVALID_SETUP"
@@ -693,6 +719,8 @@ export type GameEvent =
       playerId: PlayerId;
       deck: OrderDeck;
       bottomedOrderId: OrderId;
+      /** All looked-at cards bottomed; two entries when a face-up Order was taken. */
+      bottomedOrderIds?: OrderId[];
       selectedOrderId?: OrderId;
       revealedOrderId?: OrderId | null;
     }
@@ -766,7 +794,12 @@ export type GameEvent =
       imperialOrderIds: OrderId[];
     }
   | { type: "ROUND_STARTED"; round: RoundNumber; firstPlayerId: PlayerId }
-  | { type: "PRESENTATION_SUBMITTED"; playerId: PlayerId; ceramicIds: CeramicId[] }
+  | {
+      type: "PRESENTATION_SUBMITTED";
+      playerId: PlayerId;
+      ceramicIds: CeramicId[];
+      featuredCeramicIds: CeramicId[];
+    }
   | { type: "FINAL_SCORE_CALCULATED"; result: FinalResult };
 
 export type ApplyResult =

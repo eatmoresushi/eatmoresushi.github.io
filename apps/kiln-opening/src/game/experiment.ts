@@ -5,6 +5,7 @@ import type {
   DingCostExperimentConfig,
   JunWoodExperimentConfig,
   ExhibitionExperimentConfig,
+  TechniqueGrantExperimentConfig,
   R5WorkerExperimentConfig,
   RuTriggerExperimentConfig,
   GameExperimentConfig,
@@ -28,8 +29,8 @@ export interface ActiveImperialTrackRules {
   readonly imperialOrderProgressMode: "printed" | "all_two";
   readonly trackVp: readonly [number, number, number, number, number, number];
   readonly apprenticeMilestoneSpaces: readonly [number, number];
-  readonly presentationSpaces: readonly [number, number];
-  readonly exhibitionCapacityByProgress: readonly [1, 1, 2, 2, 3, 3];
+  readonly presentationSpaces: readonly number[];
+  readonly exhibitionCapacityByProgress: readonly [number, number, number, number, number, number];
   readonly imperialSealEnabled: true;
   readonly imperialSealVp: 2 | 3;
 }
@@ -170,10 +171,29 @@ function isExhibitionConfig(value: unknown): value is ExhibitionExperimentConfig
     && typeof q.standard === "number" && typeof q.fine === "number" && typeof q.masterpiece === "number";
 }
 
+function isTechniqueGrantConfig(value: unknown): value is TechniqueGrantExperimentConfig {
+  if (typeof value !== "object" || value === null) return false;
+  const c = value as Partial<TechniqueGrantExperimentConfig>;
+  return c.experimentId === "technique-grant-ab-001"
+    && (c.experimentArm === "control" || c.experimentArm === "granted")
+    && typeof c.beneficiaryPlayerId === "string" && c.beneficiaryPlayerId.length > 0
+    && typeof c.techniqueId === "string" && c.techniqueId.length > 0;
+}
+
+/** The Technique granted for free at setup, if any, and to whom. */
+export function grantedTechnique(
+  config: GameExperimentConfig | undefined,
+): { playerId: string; techniqueId: string } | null {
+  if (config?.experimentId !== "technique-grant-ab-001") return null;
+  return config.experimentArm === "granted"
+    ? { playerId: config.beneficiaryPlayerId, techniqueId: config.techniqueId }
+    : null;
+}
+
 export function isSupportedExperimentConfig(value: unknown): value is GameExperimentConfig {
   return isJunConfig(value) || isImperialTrackConfig(value) || isDingCostConfig(value)
     || isRuTriggerConfig(value) || isJunWoodConfig(value) || isR5WorkerConfig(value)
-    || isExhibitionConfig(value);
+    || isExhibitionConfig(value) || isTechniqueGrantConfig(value);
 }
 
 /** Active Exhibition capacity and Quality values. Shipped rules come from content. */
@@ -217,7 +237,7 @@ export function activeRuBonusRules(
 }
 
 export function junActivationCoinCost(config: GameExperimentConfig | undefined): 0 | 1 | 2 {
-  return config?.experimentId === "jun-ab-001" ? config.junActivationCoinCost : 2;
+  return config?.experimentId === "jun-ab-001" ? config.junActivationCoinCost : 0;
 }
 
 export function activeImperialTrackRules(

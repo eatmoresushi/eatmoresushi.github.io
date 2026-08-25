@@ -1,4 +1,5 @@
-import { QUALITY_RANK, TECHNIQUE_DEFINITIONS } from "../game/index.ts";
+import {
+  ACTION_LOCATION_PRICES, QUALITY_RANK, TECHNIQUE_DEFINITIONS } from "../game/index.ts";
 import type { TechniqueId } from "../game/index.ts";
 import { marginalResourceValue } from "./planning.ts";
 import type {
@@ -223,6 +224,42 @@ export function forecastTechniqueAcquisition(
   probability = clamp(probability);
   const workerOpportunityCost = 1.6 + plan.conversionUrgency * (plan.pipeline.shaped + plan.pipeline.glazed) * 0.45;
   const intentAdjustment = plan.assignedIntent === "Technique-economy" ? 0.35 : 0;
+
+  if (profile.techniqueCalibration === true) {
+    // Measured value of owning this tile, from granting it free against a matched control.
+    // It already nets out the activation costs the agent pays, so `activationCost` is not
+    // subtracted again -- double-counting it is the obvious trap. Only acquisition is left
+    // to charge: the Coins and the placement.
+    const measured = profile.techniqueValues[techniqueId] ?? grossBenefit;
+    // Labour sells Coins at `labourApprenticeCoins` per Apprentice placement, uncapped, so a
+    // Coin can never be worth more than that fraction of a placement however short the
+    // player is right now. Without this the forecast prices an early 2-Coin tile at ~4
+    // points, because `marginalResourceValue` reads any shortage as scarcity.
+    const coinCeiling = workerOpportunityCost / ACTION_LOCATION_PRICES.labourApprenticeCoins;
+    const cappedPurchase = Math.min(
+      purchaseCost,
+      techniquePurchaseCost(observation, techniqueId, workerKind) * coinCeiling,
+    );
+    const calibratedNet = measured - cappedPurchase - workerOpportunityCost + intentAdjustment;
+    if (calibratedNet <= 0) reasons.push("non_positive_net_value");
+    else reasons.push("positive_expected_use");
+    reasons.push("measured_technique_value");
+    return {
+      techniqueId,
+      remainingRounds,
+      expectedWindows,
+      opportunityProbability: probability,
+      expectedBeneficialUses: beneficialUses,
+      grossBenefit: measured,
+      purchaseCost: cappedPurchase,
+      activationCost: 0,
+      workerOpportunityCost,
+      netValue: calibratedNet,
+      planCompatibility: compatibility,
+      reasonCodes: reasons,
+    };
+  }
+
   const learnedAdjustment = Math.max(-0.25, Math.min(0.25, (profile.techniqueValues[techniqueId] ?? 0) * 0.025));
   const netValue = grossBenefit - purchaseCost - activationCost - workerOpportunityCost + intentAdjustment + learnedAdjustment;
   if (netValue <= 0) reasons.push("non_positive_net_value");

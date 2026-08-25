@@ -35,8 +35,8 @@
     "name": "Drying Frames",
     "nameZh": "阴干架",
     "cost": 3,
-    "ability": "Once per round, after you form a vessel, immediately apply a Glaze and Plain Decoration at no Coin cost. That vessel cannot be loaded into the kiln until the following round.",
-    "abilityZh": "每回合一次，成型坯体后，立即为其施加釉色与素面装饰，无需支付铜钱。该坯体在下一回合之前不能装入窑中。",
+    "ability": "Once per round, after you form a vessel, immediately apply a Glaze and Plain Decoration at no Coin cost. That vessel cannot be loaded into the kiln until the following round. A later Glaze Workshop action may change only its Decoration at normal cost; its Glaze remains unchanged.",
+    "abilityZh": "每轮一次，成型坯体后，立即为其施加釉色与素面装饰，无需支付铜钱。该坯体在下一轮之前不能装入窑中。之后可在施釉坊行动中按正常费用仅更改其装饰，釉色保持不变。",
     "oncePerRound": true
   },
   {
@@ -75,7 +75,7 @@
     "name": "Kiln Setting",
     "nameZh": "装窑法",
     "cost": 2,
-    "ability": "Before Wood Contributions are chosen, move any number of your loaded ceramics to empty active kiln spaces. Resolve moves one at a time; a space you vacate counts as empty.",
+    "ability": "Before Contribution cards are chosen, move any number of your loaded ceramics to empty active kiln spaces. Resolve moves one at a time; a space you vacate counts as empty.",
     "abilityZh": "出柴牌选定之前，将任意数量的已装窑器物移至空置的启用窑位。逐一结算移动；你腾出的窑位视为空位。",
     "oncePerRound": true
   },
@@ -114,9 +114,9 @@
     "discipline": "forming",
     "name": "Kiln Records",
     "nameZh": "窑务簿录",
-    "cost": 3,
-    "ability": "After firing is fully resolved, if you had at least one ceramic in the kiln, gain 1 Clay and 1 Coin.",
-    "abilityZh": "烧制全部结算后，若你在窑中至少有1件器物，获得1陶土和1铜钱。",
+    "cost": 2,
+    "ability": "After firing is fully resolved, if you had at least one ceramic in the kiln, gain 1 Wood.",
+    "abilityZh": "烧制全部结算后，若你在窑中至少有1件器物，获得1柴薪。",
     "oncePerRound": true
   },
   {

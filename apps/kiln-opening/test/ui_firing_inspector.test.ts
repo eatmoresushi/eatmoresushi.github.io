@@ -36,7 +36,7 @@ describe("player-facing ceramic and firing labels", () => {
     expect(pieceMarkup).not.toContain(ceramic.id);
 
     const tableMarkup = renderToStaticMarkup(createElement(GameTable, { game, ownPlayerId: actorId }));
-    expect(tableMarkup).toContain("Wood Contributions");
+    expect(tableMarkup).toContain("Contribution cards");
     expect(tableMarkup).toContain("revealed Stoke the Fire");
     expect(tableMarkup).toContain("Total Wood");
     expect(tableMarkup).not.toContain(ceramic.id);

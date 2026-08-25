@@ -8,6 +8,7 @@ import {
 } from "../game/index.ts";
 import type {
   GameAction,
+  GameEvent,
   GameState,
   GameRuleError,
   PlayerId,
@@ -519,7 +520,7 @@ export class AuthoritativeGameService {
       const commandId = this.security.randomId();
       const rng = new SeededRandom(head.rngState);
       let appliedState: AuthoritativeHead["state"];
-      let fullEvents: CommandSuccess["events"];
+      let fullEvents: GameEvent[];
       let privateSubmission: CommitTransitionInput["privateSubmission"] = null;
 
       if (command.type === "SUBMIT_WOOD_CONTRIBUTION") {
@@ -792,7 +793,7 @@ export class AuthoritativeGameService {
       return failed(
         error(
           "UNSUPPORTED_RULES_VERSION",
-          "This room uses an older rules version and cannot continue under V1.1.5. Please create a new room.",
+          "This room uses an older rules version and cannot continue under V1.1.6. Please create a new room.",
         ),
       );
     }

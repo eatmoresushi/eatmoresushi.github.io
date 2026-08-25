@@ -141,5 +141,27 @@ export function createV115Profile(playerCount: 2 | 3 | 4): AIStrategyProfile {
   profile.orderRetryHorizon = 3;
   // Price the seat's own Kiln Tradition ability. See docs/experiments/v115-tradition-001.md.
   profile.traditionAwareness = true;
+  // Keep the earlier calibration values for reproducibility, but do not activate them.
+  // Their simulations predate the sole-source V1.1.6 reconciliation (notably Exhibition,
+  // Progress scoring and several Technique timings), so they are not valid production
+  // evidence under the rules now implemented. Recalibrate before enabling this flag.
+  profile.techniqueCalibration = false;
+  profile.techniqueValues = {
+    T01: 1.63,  // Large Throwing Wheel
+    T02: 2.49,  // Measuring Calipers
+    T03: -0.05, // Clay Substitution
+    T04: 5.95,  // Drying Frames
+    T05: 2.12,  // Carving Knives
+    T06: 1.89,  // Seal Stamps
+    T08: 1.72,  // Colour Samples
+    T09: 1.01,  // Kiln Setting
+    T10: 3.34,  // Protective Saggars
+    T11: 0.98,  // Fuel Ledger
+    T12: -4.16, // Test Pieces -- actively harmful as this agent plays it
+    T13: 1.27,  // Kiln Records
+    T14: -0.13, // Connoisseur Network
+    T15: 2.26,  // Second Firing
+    T16: 5.28,  // Sagger Selection
+  };
   return profile;
 }

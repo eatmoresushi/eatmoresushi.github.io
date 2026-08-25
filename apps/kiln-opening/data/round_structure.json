@@ -6,7 +6,7 @@
       "order": 1,
       "id": "start",
       "name": "Start of Round",
-      "summary": "In Rounds 2-5, rotate the single leftmost Market and Imperial Orders; refill displays, ready Techniques, and reset once-per-round Kiln abilities."
+      "summary": "In Rounds 2-5, discard the two leftmost Market Orders and two leftmost Imperial Orders; slide and refill both displays, ready Techniques, and reset once-per-round Kiln abilities."
     },
     {
       "order": 2,
@@ -18,7 +18,7 @@
       "order": 3,
       "id": "firing",
       "name": "Firing Phase",
-      "summary": "If the kiln is not empty, resolve pre-firing abilities, secret Wood and Fuel Ledger, Base Heat, Shifu repositioning, Fire, Actual Heat, Quality and after-firing effects."
+      "summary": "If the kiln is not empty, resolve pre-Contribution Techniques, secret Contribution cards, Fuel Ledger, Base Heat, Kiln Yard Shifu repositioning, Fire, Actual Heat, Quality and after-firing effects."
     },
     {
       "order": 4,
@@ -30,7 +30,7 @@
       "order": 5,
       "id": "cleanup",
       "name": "Cleanup",
-      "summary": "Return workers, resolve Apprentice unlocks or Round-5 compensation, discard Orders down to 3 (Guan 4), pass First Player and advance the round."
+      "summary": "Return workers, resolve Apprentice unlocks or the Round-5 1-VP compensation, discard Orders down to the uniform limit of 3, pass First Player and advance the round."
     }
   ]
 }

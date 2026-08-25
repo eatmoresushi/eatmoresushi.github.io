@@ -1,14 +1,14 @@
 # Kiln Opening AI Architecture
 
-## V1.0.4 compatibility status
+## V1.1.6 compatibility status
 
-The authoritative engine and public observation now use V1.0.4. The online computer player remains the frozen `selfplay-003` policy trained under V1.0.2, but every candidate command is enumerated, validated, and applied by the V1.0.4 engine. Policy identifiers are not board-game rules versions. Existing serialized V1.0.1/V1.0.2 profiles and all matching playtest outputs remain historical and must not be relabelled or overwritten. Compatibility-only V1.0.4 smoke results are written under `playtests/v1.0.4/smoke/`; future V1.0.4 training or evaluation must use separate versioned output directories.
+The authoritative engine, public observation and online computer player now use the supplied V1.1.6 rules. The live policy retains the historical `rules-v1.1.5-order-001` identifier because policy identifiers describe AI lineage, not board-game rules versions; every candidate command is enumerated, validated and applied by the V1.1.6 engine. Existing serialized profiles and playtest outputs remain historical and must not be relabelled or overwritten. The pre-reconciliation V1.1.6 Technique calibration is disabled until its study is rerun against the reconciled engine.
 
 ## Selfplay-005 public-belief rollout candidate
 
 Selfplay-005 reconstructs complete sampled engine states exclusively from `PlayerObservation`. For a fixed observation and seed, hidden authoritative deck order cannot affect the sampled belief. Projection tests require every sampled belief to project back to exactly the source public state.
 
-In the historical V005 study, the decision oracle applied candidate commands through the then-current V1.0.1 engine, then advanced a bounded number of real legal transitions using common random numbers. Under current play it consumes the V1.0.4 engine. Unrevealed Wood is never sampled from server state: contribution decisions bypass the oracle and use the frozen safe evaluator.
+In the historical V005 study, the decision oracle applied candidate commands through the then-current V1.0.1 engine, then advanced a bounded number of real legal transitions using common random numbers. Under current play it consumes the V1.1.6 engine. Unrevealed Contribution choices are never sampled from server state: Contribution decisions bypass the oracle and use the safe evaluator.
 
 The V005 study separates four datasets:
 
@@ -43,8 +43,8 @@ The V004 promotion pipeline is:
 4. run fresh matched baseline/candidate pairs with candidate seats rotated;
 5. promote only if legality, coverage, latency, completed-Order, mean-VP, and paired-confidence gates all pass.
 
-Current rules version: V1.0.4
-AI policy version: `selfplay-003`
+Current rules version: V1.1.6
+AI policy version: `rules-v1.1.5-order-001` (historical lineage identifier)
 
 ## Boundaries
 
@@ -61,19 +61,19 @@ The reusable flow is:
 
 ## Observation safety
 
-`PlayerObservation` contains the public multiplayer projection, the acting player's own pending Wood submission, and conditional Fire probabilities derived from the printed deck composition and face-up discard.
+`PlayerObservation` contains the public multiplayer projection, the acting player's own pending Contribution submission, and conditional Fire probabilities derived from the printed deck composition and face-up discard.
 
 It never contains:
 
 - Market, Imperial, Technique, or Fire deck order;
 - the next blind Order or Fire card;
-- another player's unrevealed Wood amount.
+- another player's unrevealed Contribution card.
 
 Order hands remain visible because `docs/IMPLEMENTATION_DECISIONS.md` defines tabletop Order areas as open information.
 
 ## Legal action coverage
 
-The legal-action layer covers setup, all six worker locations, Office and Guild substeps, secret Wood submission, every firing timing window, Order completion, Cleanup transition, and Presentation. Optional effects retain both use and decline commands.
+The legal-action layer covers setup, all eight worker locations, Office and Guild substeps, secret Contribution submission, every firing timing window, Order completion, Cleanup transition, and End-game Exhibition. Optional effects retain both use and decline commands.
 
 Candidate enumeration is not a second rules engine. The real `applyAction` or `submitWoodContribution` result decides legality. Normal play bounds combinatorial Glaze choices; exhaustive mode exists for regression tests.
 

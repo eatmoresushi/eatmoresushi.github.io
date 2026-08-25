@@ -8,14 +8,16 @@ import {
   MARKET_ORDERS,
   SHAPES,
   TECHNIQUES,
+  TECHNIQUE_DEFINITIONS,
 } from "./content.ts";
 import { createFailure, ruleError } from "./errors.ts";
-import { isSupportedExperimentConfig } from "./experiment.ts";
+import { grantedTechnique, isSupportedExperimentConfig } from "./experiment.ts";
 import type { RandomSource } from "./rng.ts";
 import { shuffle } from "./rng.ts";
 import { emptyActionBoard } from "./selectors.ts";
 import type {
   CreateGameInput,
+  OwnedTechniqueState,
   CreateGameResult,
   GameState,
   PlayerCount,
@@ -66,7 +68,9 @@ function makePlayer(input: CreateGameInput["players"][number], seatIndex: number
     passedWorkPhase: false,
     pendingApprenticeUnlocks: 0,
     kilnAbilityUsedThisRound: false,
+    shapesFormedThisRound: [],
     presentationCeramicIds: [],
+    presentationFeaturedCeramicIds: [],
     score: { orderVp: 0, kilnTraditionVp: 0 },
   };
 }
@@ -215,6 +219,19 @@ export function createGame(input: CreateGameInput, rng: RandomSource): CreateGam
 
   if (new Set(KILN_IDS).size !== KILN_IDS.length) {
     return createFailure(ruleError("INVALID_SETUP", "Kiln definitions must be unique."));
+  }
+
+  // technique-grant-ab-001: hand one player a Technique at setup so the VP difference
+  // measures what owning it is worth. The tile is not removed from any display or deck --
+  // this measures ownership, not the cost of acquiring it, which is the term the forecast
+  // already models and the one under suspicion.
+  const grant = grantedTechnique(state.experimentConfig);
+  if (grant !== null) {
+    const owner = state.players[grant.playerId];
+    const known = TECHNIQUES.some((technique) => technique.id === grant.techniqueId);
+    if (owner !== undefined && known) {
+      owner.techniques.push({ id: grant.techniqueId as OwnedTechniqueState["id"], exhausted: false });
+    }
   }
   return { ok: true, state };
 }

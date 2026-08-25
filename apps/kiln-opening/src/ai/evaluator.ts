@@ -1,4 +1,5 @@
 import {
+  ACTION_LOCATION_PRICES,
   DECORATION_COSTS,
   GAME_CONFIG,
   IMPERIAL_PROGRESS,
@@ -476,15 +477,15 @@ function scoreAction(
       if (action.dingExtraShape !== undefined && !observation.dingExtraVesselFree) {
         formingClayCost += SHAPE_COSTS[action.dingExtraShape];
       }
-      const substitutions = action.claySubstitutions ?? (action.claySubstitutionTarget === undefined ? 0 : 1);
-      factors.resourceEfficiency -= (formingClayCost - substitutions) * marginalResourceValue(
+      if (action.useTechniqueIds?.includes("T01")) {
+        const waived = action.shapes.find((shape) => shape === "vase" || shape === "censer");
+        if (waived !== undefined) {
+          formingClayCost -= workerKind === "shifu" ? 1 : SHAPE_COSTS[waived];
+        }
+      }
+      factors.resourceEfficiency -= formingClayCost * marginalResourceValue(
         player.resources.clay,
         plan.resourceDemand.clay,
-      ) * 0.25;
-      factors.resourceEfficiency -= substitutions * marginalResourceValue(
-        player.resources.coins,
-        plan.resourceDemand.coins,
-        0,
       ) * 0.25;
       if (action.dingExtraShape !== undefined) {
         const useful = needed.some((assignment) => assignment.shape === action.dingExtraShape);
@@ -495,7 +496,10 @@ function scoreAction(
       if (action.useTechniqueIds?.includes("T01")) {
         factors.resourceDemand += marginalResourceValue(player.resources.clay, plan.resourceDemand.clay);
       }
-      if (action.useTechniqueIds?.includes("T02")) {
+      const priorShapes = new Set(player.shapesFormedThisRound ?? []);
+      const formedShapes = new Set([...priorShapes, ...action.shapes, ...(action.dingExtraShape === undefined ? [] : [action.dingExtraShape])]);
+      const calipersReady = player.techniques.some(({ id, exhausted }) => id === "T02" && !exhausted);
+      if (calipersReady && priorShapes.size < 2 && formedShapes.size >= 2) {
         factors.resourceDemand += marginalResourceValue(player.resources.clay, plan.resourceDemand.clay)
           + 2 * marginalResourceValue(player.resources.coins, plan.resourceDemand.coins, 0);
       }
@@ -505,11 +509,14 @@ function scoreAction(
     case "GLAZE_CERAMICS": {
       const freeDecorationCeramicId = action.freeDecorationCeramicId ??
         (action.shifuMode === "free_single" ? action.selections[0]?.ceramicId : undefined);
-      let totalDecorationCost = action.selections.reduce((sum, selection) => (
-        sum + (selection.ceramicId === freeDecorationCeramicId ? 0 : DECORATION_COSTS[selection.decoration])
-      ), 0);
-      if (action.useTechniqueIds?.includes("T05")) totalDecorationCost -= DECORATION_COSTS.carved;
-      if (action.useTechniqueIds?.includes("T06")) totalDecorationCost -= DECORATION_COSTS.impressed;
+      const ownsT05 = player.techniques.some(({ id }) => id === "T05");
+      const ownsT06 = player.techniques.some(({ id }) => id === "T06");
+      const totalDecorationCost = action.selections.reduce((sum, selection) => {
+        const waived = selection.ceramicId === freeDecorationCeramicId ||
+          (selection.decoration === "carved" && ownsT05) ||
+          (selection.decoration === "impressed" && ownsT06);
+        return sum + (waived ? 0 : DECORATION_COSTS[selection.decoration]);
+      }, 0);
       factors.resourceEfficiency -= Math.max(0, totalDecorationCost) * 0.2;
       for (const selection of action.selections) {
         const planned = assignments.find((assignment) => assignment.ceramicId === selection.ceramicId);
@@ -524,6 +531,15 @@ function scoreAction(
       factors.opportunityCost -= terminalCeramicCost(observation, action);
       return;
     }
+    case "USE_CLAY_SUBSTITUTION":
+      factors.resourceEfficiency += action.clay * marginalResourceValue(
+        player.resources.clay,
+        plan.resourceDemand.clay,
+      ) + action.wood * marginalResourceValue(
+        player.resources.wood,
+        plan.resourceDemand.wood,
+      ) - 3 * marginalResourceValue(player.resources.coins, plan.resourceDemand.coins, 0);
+      return;
     case "USE_KILN_YARD": {
       for (const load of action.loads) {
         const ceramic = observation.game.ceramics[load.ceramicId];
@@ -646,7 +662,7 @@ function scoreAction(
         : 0;
       factors.imperialValue += 3 + unlockValue + exhibitionValue + stipendValue + deadEndPenalty +
         intentBias(intent, "imperial") + imperialProgressRuleDelta(observation, 1);
-      factors.resourceEfficiency -= 5 * marginalResourceValue(player.resources.coins, plan.resourceDemand.coins, 0);
+      factors.resourceEfficiency -= ACTION_LOCATION_PRICES.courtPatronageCoins * marginalResourceValue(player.resources.coins, plan.resourceDemand.coins, 0);
       return;
     }
     case "BEGIN_GUILD_ACTION": {
@@ -849,9 +865,8 @@ function scoreAction(
         factors.immediateVP += order.vp;
         factors.resourceEfficiency += order.coins * 0.7;
         // Price the space actually landed on, not a flat rate per step. The track pays
-        // 0 / 0 / 2 / 2 / 4 / 8, so advancing 2 -> 3 is worth nothing in VP while 3 -> 4 is
-        // worth 2 plus full Exhibition access. A flat rate makes those identical, which is
-        // exactly the distinction a player has to reason about.
+        // Price the destination space from the V1.1.6 track rather than assigning a flat
+        // value per step. Exhibition is universal and therefore adds no Progress gate.
         factors.imperialValue += progressReward > 0
           ? progressMoveValue(observation, observation.imperialTrackRules, progressReward as 1 | 2 | 3)
           : 0;
@@ -884,10 +899,11 @@ function scoreAction(
       factors.immediateVP += selected.reduce((sum, ceramic) => sum + (
         ceramic.quality === "flawed" ? 0 : observation.exhibitionQualityVp[ceramic.quality]
       ), 0);
-      if (IMPERIAL_PROGRESS.exhibition.diversityEligibleSpaces.includes(player.imperialProgress)) {
-        if (selected.length === 3 && new Set(selected.map(({ shape }) => shape)).size === 3) factors.immediateVP += 2;
-        if (selected.length === 3 && new Set(selected.map(({ glaze }) => glaze)).size === 3) factors.immediateVP += 2;
-      }
+      const featured = (action.featuredCeramicIds ?? [])
+        .map((id) => observation.game.ceramics[id])
+        .filter((ceramic): ceramic is FinishedCeramic => ceramic?.stage === "finished");
+      if (featured.length === 3 && new Set(featured.map(({ shape }) => shape)).size === 3) factors.immediateVP += 2;
+      if (featured.length === 3 && new Set(featured.map(({ glaze }) => glaze)).size === 3) factors.immediateVP += 2;
       return;
     }
   }

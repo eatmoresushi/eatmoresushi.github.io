@@ -55,9 +55,8 @@
       "apprentice": "Load 1 glazed ceramic into an empty active kiln space.",
       "apprenticeZh": "将1件施釉器物装入任一空的启用窑位。",
       "shifu": "Load up to 2 glazed ceramics, then receive the pre-Fire reposition opportunity.",
-      "shifuZh": "装入至多2件施釉器物；基础火候确定后可移窑。",
+      "shifuZh": "装入至多2件施釉器物；基础火候确定后、翻开窑火牌前可移窑。",
       "clarifications": [
-        "Gain 1 Wood per ceramic actually loaded.",
         "At least 1 eligible ceramic must be loaded.",
         "After Base Heat is determined and before Fire is revealed, an eligible Shifu may reposition one owned loaded ceramic."
       ]
@@ -75,7 +74,7 @@
       "apprenticeZh": "拿取1张订单：从任一展示区选取明置订单，或从任一牌堆顶盲抽。正常主行动后，可出售至多1件次品，获得2铜钱。",
       "shifu": "Take up to 2 Orders: face-up Orders from either display, or blind top-card draws from either deck. After a normal main action, you may sell up to 2 Flawed ceramics for 2 Coins each.",
       "shifuZh": "拿取至多2张订单：从任一展示区选取明置订单，或从任一牌堆顶盲抽。正常主行动后，可出售至多2件次品，每件获得2铜钱。",
-      "clarification": "Court Patronage requires a completed Imperial Order, costs 5 Coins, advances Progress by 1 only from spaces 0-3, and grants neither Colour Samples nor a Flawed sale."
+      "clarification": "Court Patronage is a separate Shifu-only location. It requires a completed Imperial Order, costs 4 Coins, advances Progress by 1 only from spaces 0-3, and grants neither Colour Samples nor a Flawed sale."
     },
     {
       "id": "guild_academy",
