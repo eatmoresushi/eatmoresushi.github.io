@@ -15,6 +15,7 @@ import createRoomSeatColumnsMigration from "../supabase/migrations/202608150002_
 import v111Migration from "../supabase/migrations/202608160001_v111_rules.sql?raw";
 import v114Migration from "../supabase/migrations/202608220001_v114_rules.sql?raw";
 import onlineAiV114Migration from "../supabase/migrations/202608220002_online_ai_v114.sql?raw";
+import v116LobbyFingerprintMigration from "../supabase/migrations/202608250001_v116_lobby_fingerprint.sql?raw";
 import onlineAiMigration from "../supabase/migrations/202608100002_online_ai_v003.sql?raw";
 import edgeFunction from "../supabase/functions/game-action/index.ts?raw";
 import service from "../src/multiplayer/service.ts?raw";
@@ -241,6 +242,16 @@ describe("Supabase security contract", () => {
     expect(onlineAiV114Migration).toContain("where r.id = ai.room_id and r.status = 'lobby'");
     // Older values stay legal so stored rows still read, but are never dispatched.
     expect(onlineAiV114Migration).toContain("'selfplay-003', 'rules-v1.1.1-wood-001', 'rules-v1.1.4-contribution-001'");
+  });
+
+  it("repairs only unstarted V1.1.6 lobbies to the deployed rules fingerprint", () => {
+    expect(v116LobbyFingerprintMigration).toContain("set content_digest = 'r9-cd75e98b11934a15'");
+    expect(v116LobbyFingerprintMigration).toContain("where status = 'lobby'");
+    expect(v116LobbyFingerprintMigration).toContain("and rules_version = '1.1.6'");
+    expect(v116LobbyFingerprintMigration).toContain("and content_version = '1.1.6'");
+    expect(v116LobbyFingerprintMigration).toContain("content_digest is distinct from 'r9-cd75e98b11934a15'");
+    expect(v116LobbyFingerprintMigration).not.toMatch(/status\s*=\s*'playing'/);
+    expect(v116LobbyFingerprintMigration).not.toMatch(/status\s+in\s*\(/);
   });
 
   /** Historical: the v1.0.9 migration's own shape, superseded by 202608220001. */
