@@ -1,5 +1,9 @@
-import {   orderHandLimit,
-CONTRIBUTION_CARDS, CONTRIBUTION_CARD_DEFINITIONS } from "../game/index.ts";
+import {
+  CONTRIBUTION_CARDS,
+  CONTRIBUTION_CARD_DEFINITIONS,
+  JUN_ACTIVATION_WOOD,
+  orderHandLimit,
+} from "../game/index.ts";
 import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import {
@@ -1061,7 +1065,7 @@ function KilnAbilityControls({ game, player, busy, send }: {
     return <CeramicDecision title="Ge · Crackle from Fire" hint="Pay 1 Wood for a ceramic with Heat Difference 1 or 2. Set it to exact heat and change its Decoration to Crackle." ceramics={eligible} busy={busy} send={send} make={(ceramicId) => ({ type: "RESOLVE_GE", ceramicId })} skip={{ type: "RESOLVE_GE", ceramicId: null }} />;
   }
   return (
-    <ControlSection title="Jun · Kiln Transformation" hint="Pay 3 Wood to adjust one of your ceramics' Actual Heat by +1 or −1, or pass.">
+    <ControlSection title="Jun · Kiln Transformation" hint="Pay 2 Wood to adjust one of your ceramics' Actual Heat by +1 or −1, or pass.">
       <JunForm ceramics={loaded} wood={player.resources.wood} busy={busy} send={send} />
       <CommandButton busy={busy} send={send} command={{ type: "RESOLVE_JUN", ceramicId: null, delta: null }} secondary>Skip Jun ability</CommandButton>
     </ControlSection>
@@ -1095,7 +1099,7 @@ function JunForm({ ceramics, wood, busy, send }: { ceramics: ReturnType<typeof o
     const data = new FormData(event.currentTarget);
     void send({ type: "RESOLVE_JUN", ceramicId: required(data, "ceramic"), delta: Number(required(data, "delta")) as -1 | 1 });
   }
-  return <form className="control-form" onSubmit={submit}><CeramicSelect name="ceramic" label="Ceramic" ceramics={ceramics} /><SelectField name="delta" label="Heat change" options={["-1", "1"]} /><button className="primary-button" disabled={busy || ceramics.length === 0 || wood < 3}>{t("Pay 3 Wood and apply heat change")}</button>{wood < 3 && <small role="status">{t("You need 3 Wood to use Jun.")}</small>}</form>;
+  return <form className="control-form" onSubmit={submit}><CeramicSelect name="ceramic" label="Ceramic" ceramics={ceramics} /><SelectField name="delta" label="Heat change" options={["-1", "1"]} /><button className="primary-button" disabled={busy || ceramics.length === 0 || wood < JUN_ACTIVATION_WOOD}>{t("Pay 2 Wood and apply heat change")}</button>{wood < JUN_ACTIVATION_WOOD && <small role="status">{t("You need 2 Wood to use Jun.")}</small>}</form>;
 }
 
 function SaggarsControls({ game, player, busy, send }: {

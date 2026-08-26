@@ -51,8 +51,9 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  *   9 -- Reconciled the online engine to the supplied V1.1.6 source: universal five-item
  *        Exhibition with a three-item featured collection; corrected Technique timing,
  *        costs and passive effects; and removed the obsolete Round-5 Coin compensation.
+ *  10 -- Owner-approved V1.1.6 amendment: Jun's activation costs 2 Wood instead of 3.
  */
-export const RULES_BEHAVIOUR_REVISION = 9;
+export const RULES_BEHAVIOUR_REVISION = 10;
 
 /**
  * Display-only keys, excluded so that a typo fix or a translation improvement does not

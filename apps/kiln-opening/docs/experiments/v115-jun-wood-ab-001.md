@@ -1,5 +1,7 @@
 # Jun's activation price: 2 Wood against 3
 
+> Historical experiment. The owner-approved V1.1.6 ruleset uses 2 Wood as of 26 August 2026.
+
 Jun led the Tradition table at 36.3% against a 28.6% fair share. The cause was not the
 ability's face value — at 2.77 VP per game it is worth less than Ge's 4.76 — but what it
 unlocks: Jun completed 3.04 Orders a game at 9.26 VP each, roughly 28 VP from Orders against

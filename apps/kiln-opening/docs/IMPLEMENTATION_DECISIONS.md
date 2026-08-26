@@ -35,7 +35,7 @@ These are digital interpretations only. The sole rules authority is `docs/KILN_O
 - Fuel Ledger is offered after Contribution reveal only to an owner who revealed Stoke and can pay the additional 1 Wood.
 - Kiln Yard grants no Wood. A Shifu placed there may reposition one owned loaded ceramic after Base Heat is known and before the Fire card is revealed. Kiln Setting remains the separate pre-Contribution effect that can move any number one at a time.
 - Sagger Selection changes the chosen ceramic's Fire modifier by one step toward zero; the public revealed card remains unchanged.
-- Ge costs 1 Wood and accepts Heat Difference 1 or 2. Jun costs 3 Wood. Protective Saggars costs 1 Wood.
+- Ge costs 1 Wood and accepts Heat Difference 1 or 2. Jun costs 2 Wood. Protective Saggars costs 1 Wood.
 - Test Pieces data remains private to its authenticated owner. Kiln Records triggers after resolution if any ceramic owned by that player participated in the firing and gains 1 Wood.
 
 ## Progress, Round 5, and scoring
@@ -48,4 +48,4 @@ These are digital interpretations only. The sole rules authority is `docs/KILN_O
 
 ## Saved-game compatibility
 
-New rooms use V1.1.6 and rules fingerprint revision 9. Historical version tags remain readable for archived evidence, but the live service rejects started rooms whose version or fingerprint differs because their hidden offers, rule windows, and scoring cannot be translated safely.
+New rooms use V1.1.6 and rules fingerprint revision 10. Historical version tags remain readable for archived evidence, but the live service rejects started rooms whose version or fingerprint differs because their hidden offers, rule windows, and scoring cannot be translated safely.

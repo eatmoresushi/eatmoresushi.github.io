@@ -17,7 +17,7 @@ Codex should read files in this order:
 9. `docs/IMPLEMENTATION_DECISIONS.md`
 10. `docs/DESIGN_HISTORY.md` only when historical context is useful
 
-The **sole current gameplay source of truth is the owner-supplied V1.1.6 Markdown**, checked in byte-for-byte as `docs/KILN_OPENING_v1.1.6_SOURCE.md`. `docs/RULEBOOK_AUDIT_V1.1.6.md` records the source's internal contradictions and their implementation resolutions. English and Simplified Chinese player-facing rules derive from the same stable IDs. Visual references remain restricted to `assets/current_v04/`; that directory name is retained only as a legacy path. Older rules and simulations remain historical evidence and must not override V1.1.6.
+The **sole current gameplay source of truth is the owner-approved V1.1.6 Markdown** at `docs/KILN_OPENING_v1.1.6_SOURCE.md`. It began as the supplied rulebook and incorporates later owner-approved amendments, which are recorded in `docs/RULEBOOK_AUDIT_V1.1.6.md` alongside the source's internal contradictions and their implementation resolutions. English and Simplified Chinese player-facing rules derive from the same stable IDs. Visual references remain restricted to `assets/current_v04/`; that directory name is retained only as a legacy path. Older rules and simulations remain historical evidence and must not override V1.1.6.
 
 ## Important rule for Codex
 

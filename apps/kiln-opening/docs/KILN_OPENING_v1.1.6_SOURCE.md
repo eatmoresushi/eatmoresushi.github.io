@@ -1,5 +1,7 @@
 # KILN OPENING 开窑 v1.1.6
 
+> Owner-approved amendment (26 August 2026): Jun Kiln / 钧窑 costs 2 Wood / 2柴薪 to activate.
+
 ### VERSION 1.1.6 RULEBOOK
 **2–4 players | 90–120 minutes | Ages 12+**
 
@@ -495,7 +497,7 @@ Once per round, when resolving the Forming Studio, after you shape a Bowl, Plate
 
 ### Jun Kiln / 钧窑 — Kiln Transformation
 
-Once per round, after Actual Heat is calculated but before Quality is assigned, you may pay 3 Wood to adjust the Actual Heat of one of your ceramics by +1 or −1.
+Once per round, after Actual Heat is calculated but before Quality is assigned, you may pay 2 Wood to adjust the Actual Heat of one of your ceramics by +1 or −1.
 
 ### Ability Timing
 
@@ -760,5 +762,5 @@ There is **no rebate**. Opposing Bank/Stoke choices cancel one another's Heat ad
 - **Technique costs:** Clay Substitution **3 → 2 Coins**; Kiln Setting **3 → 2 Coins**.
 - **Kiln Records:** After firing is fully resolved, if you had at least one ceramic in the kiln, gain 1 Wood. 
 - **Colour Samples:** now looks at the top **2** cards of either the Market or Imperial deck. After looking, you may take one of those cards **or a face-up Order from the displays**; looked-at cards not taken go to the bottom of that deck.
-- **Jun Kiln:** activation costs **3 Wood** (was 2). *(Shipped late in v1.1.5; restated here for completeness.)*
+- **Jun Kiln:** activation costs **2 Wood**. *(Owner-approved V1.1.6 amendment, 26 August 2026.)*
 - Imperial Progress VP: **0 / 0 / 2 / 2 / 6 / 10** for spaces 0–5

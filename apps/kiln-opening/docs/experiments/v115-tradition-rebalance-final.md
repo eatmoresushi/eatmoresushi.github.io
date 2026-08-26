@@ -1,5 +1,7 @@
 # Guan Coins-only, Jun 3 Wood, Ru Fine+ 3 VP — the resulting table
 
+> Historical experiment. The owner-approved V1.1.6 ruleset uses Jun's 2-Wood cost as of 26 August 2026.
+
 Three changes applied together at the designer's direction:
 
 - **Guan** — award drops its VP half: 2 Coins, no VP (was 2 Coins + 1 VP).

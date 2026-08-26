@@ -15,7 +15,7 @@ import { RULES_BEHAVIOUR_REVISION, contentDigest, rulesFingerprint } from "../sr
  *
  * Then update the constant below to the value the failure reports.
  */
-const PINNED_FINGERPRINT = "r9-cd75e98b11934a15";
+const PINNED_FINGERPRINT = "r10-cd75e98b11934a15";
 
 describe("rules fingerprint", () => {
   it("matches the pinned value for the shipped ruleset", () => {

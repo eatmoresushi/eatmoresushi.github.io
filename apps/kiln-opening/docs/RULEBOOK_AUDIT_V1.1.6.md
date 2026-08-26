@@ -2,7 +2,12 @@
 
 Reviewed source: `KILN OPENING 开窑 v1.1.6.md`  
 Checked-in copy: [KILN_OPENING_v1.1.6_SOURCE.md](./KILN_OPENING_v1.1.6_SOURCE.md)  
-SHA-256: `57e2a14876abd83c41c27f204583ec88979345b461fa10ce6a1d3f3655c25f1e`
+Original supplied SHA-256: `57e2a14876abd83c41c27f204583ec88979345b461fa10ce6a1d3f3655c25f1e`
+Current authoritative SHA-256: `0397db9c9e5c44a049587f91209f3d966fdc643751f4f253693f98baa0f5fe0b`
+
+## Owner-approved amendment
+
+On 26 August 2026, the project owner changed Jun Kiln / 钧窑's activation cost from 3 Wood to 2 Wood / 2柴薪. The checked-in source, structured data, engine, AI, English UI and Simplified Chinese UI all use the amended 2-Wood cost. Historical balance experiments retain their original measured 2-versus-3-Wood arms and are marked as historical.
 
 ## Material inconsistency
 

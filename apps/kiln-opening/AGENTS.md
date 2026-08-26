@@ -10,7 +10,7 @@ Target session length for the physical design is approximately 90–120 minutes.
 
 Priority order:
 
-1. `docs/KILN_OPENING_v1.1.6_SOURCE.md` — the sole authoritative rules source; it is an exact copy of the owner-supplied Markdown.
+1. `docs/KILN_OPENING_v1.1.6_SOURCE.md` — the sole authoritative rules source; it incorporates owner-approved amendments to the supplied V1.1.6 Markdown.
 2. `docs/RULEBOOK_AUDIT_V1.1.6.md` — recorded resolutions for contradictions inside that supplied source.
 3. `docs/GAME_RULES.md` — source index and implementation note, not an independent rules authority.
 4. `data/*.json` — machine-readable values derived from V1.1.6.

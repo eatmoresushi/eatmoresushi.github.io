@@ -41,7 +41,7 @@
     "nameZh": "钧窑",
     "abilityName": "Kiln Transformation",
     "abilityNameZh": "入窑一色",
-    "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, you may pay 3 Wood to adjust the Actual Heat of one of your ceramics by +1 or -1.",
-    "abilityZh": "每轮一次，在计算实际火候后、判定品第之前，可支付3柴薪，将你1件器物的实际火候调整+1或-1。"
+    "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, you may pay 2 Wood to adjust the Actual Heat of one of your ceramics by +1 or -1.",
+    "abilityZh": "每轮一次，在计算实际火候后、判定品第之前，可支付2柴薪，将你1件器物的实际火候调整+1或-1。"
   }
 ]

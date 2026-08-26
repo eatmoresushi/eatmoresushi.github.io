@@ -16,6 +16,7 @@ import v111Migration from "../supabase/migrations/202608160001_v111_rules.sql?ra
 import v114Migration from "../supabase/migrations/202608220001_v114_rules.sql?raw";
 import onlineAiV114Migration from "../supabase/migrations/202608220002_online_ai_v114.sql?raw";
 import v116LobbyFingerprintMigration from "../supabase/migrations/202608250001_v116_lobby_fingerprint.sql?raw";
+import v116JunCostMigration from "../supabase/migrations/202608260001_v116_jun_cost.sql?raw";
 import onlineAiMigration from "../supabase/migrations/202608100002_online_ai_v003.sql?raw";
 import edgeFunction from "../supabase/functions/game-action/index.ts?raw";
 import service from "../src/multiplayer/service.ts?raw";
@@ -252,6 +253,16 @@ describe("Supabase security contract", () => {
     expect(v116LobbyFingerprintMigration).toContain("content_digest is distinct from 'r9-cd75e98b11934a15'");
     expect(v116LobbyFingerprintMigration).not.toMatch(/status\s*=\s*'playing'/);
     expect(v116LobbyFingerprintMigration).not.toMatch(/status\s+in\s*\(/);
+  });
+
+  it("promotes only unstarted V1.1.6 lobbies to the Jun-cost fingerprint", () => {
+    expect(v116JunCostMigration).toContain("set content_digest = 'r10-cd75e98b11934a15'");
+    expect(v116JunCostMigration).toContain("where status = 'lobby'");
+    expect(v116JunCostMigration).toContain("and rules_version = '1.1.6'");
+    expect(v116JunCostMigration).toContain("and content_version = '1.1.6'");
+    expect(v116JunCostMigration).toContain("content_digest is distinct from 'r10-cd75e98b11934a15'");
+    expect(v116JunCostMigration).not.toMatch(/status\s*=\s*'playing'/);
+    expect(v116JunCostMigration).not.toMatch(/status\s+in\s*\(/);
   });
 
   /** Historical: the v1.0.9 migration's own shape, superseded by 202608220001. */

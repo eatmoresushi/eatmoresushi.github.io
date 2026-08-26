@@ -1,9 +1,10 @@
 # GAME_RULES.md — V1.1.6 source index
 
-The sole gameplay source of truth is [KILN_OPENING_v1.1.6_SOURCE.md](./KILN_OPENING_v1.1.6_SOURCE.md), an exact byte-for-byte copy of the rulebook supplied by the project owner:
+The sole gameplay source of truth is [KILN_OPENING_v1.1.6_SOURCE.md](./KILN_OPENING_v1.1.6_SOURCE.md), the owner-approved V1.1.6 rulebook incorporating the recorded Jun amendment:
 
-- title: `KILN OPENING 开窑 v1.1.6.md`
-- SHA-256: `57e2a14876abd83c41c27f204583ec88979345b461fa10ce6a1d3f3655c25f1e`
+- original supplied title: `KILN OPENING 开窑 v1.1.6.md`
+- original supplied SHA-256: `57e2a14876abd83c41c27f204583ec88979345b461fa10ce6a1d3f3655c25f1e`
+- current authoritative SHA-256: `0397db9c9e5c44a049587f91209f3d966fdc643751f4f253693f98baa0f5fe0b`
 - rules version: V1.1.6
 - languages: English rules with Simplified Chinese names and terminology
 
