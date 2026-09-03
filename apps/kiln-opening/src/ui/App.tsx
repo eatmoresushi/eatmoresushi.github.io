@@ -25,64 +25,39 @@ interface SavedSeat {
 
 export function imperialOrderNotice(result: CommandSuccess, locale: Locale = "en"): string | null {
   const completed = result.events.find(
-    (event) => event.type === "ORDER_COMPLETED" && event.orderId.startsWith("I"),
+    (event) => event.type === "ORDER_COMPLETED",
   );
   if (completed?.type !== "ORDER_COMPLETED") return null;
-  const player = result.game.players[result.actorId];
   const definition = ORDER_DEFINITIONS[completed.orderId];
   const parts = [locale === "zh-CN"
     ? `玩家完成了${completed.orderId}。+${definition?.vp ?? 0}分。`
     : `Player completed ${completed.orderId}. +${definition?.vp ?? 0} VP.`];
-  const progress = result.events.find((event) => event.type === "IMPERIAL_PROGRESS_ADVANCED");
-  if (progress?.type === "IMPERIAL_PROGRESS_ADVANCED") {
-    const capped = progress.to - progress.from < progress.reward ? " (capped at space 5)" : "";
+  const recognition = result.events.find((event) => event.type === "IMPERIAL_RECOGNITION_ADVANCED");
+  if (recognition?.type === "IMPERIAL_RECOGNITION_ADVANCED") {
+    const capped = recognition.appliedCrowns < recognition.crowns ? " (capped at 5)" : "";
     parts.push(locale === "zh-CN"
-      ? `御用进度+${progress.reward}：${progress.from} → ${progress.to}${progress.to - progress.from < progress.reward ? "（上限为5）" : ""}。`
-      : `Imperial Progress +${progress.reward}: ${progress.from} → ${progress.to}${capped}.`);
-    if (progress.from < 1 && progress.to >= 1) parts.push(locale === "zh-CN" ? "到达地方声望。1名学徒将在清理阶段解锁。" : "Local Renown reached. 1 Apprentice will unlock during Cleanup.");
-    if (progress.from < 2 && progress.to >= 2) {
-      parts.push(locale === "zh-CN"
-        ? "到达州府举荐；终局展陈容量提升至2件。"
-        : "Prefectural Recommendation reached. End-game Exhibition capacity increases to 2.");
-    }
-    if (progress.from < 3 && progress.to >= 3) parts.push(locale === "zh-CN" ? "到达入朝考核。1名学徒将在清理阶段解锁。" : "Court Examination reached. 1 Apprentice will unlock during Cleanup.");
-    if (progress.from < 4 && progress.to >= 4) {
-      parts.push(locale === "zh-CN"
-        ? "到达候见天听；终局展陈容量提升至3件，并可获得多样性奖励。"
-        : "Awaiting Audience reached. End-game Exhibition capacity increases to 3 with diversity bonuses.");
-    }
-    if (progress.from < 5 && progress.to >= 5) {
-      const claimed = result.events.some((event) => event.type === "IMPERIAL_SEAL_CLAIMED");
-      parts.push(locale === "zh-CN"
-        ? claimed ? "到达御前召见。你获得御印：游戏结束时+2分。" : "到达御前召见。御印已被领取。"
-        : claimed ? "Imperial Audience reached. You claim the Imperial Seal: +2 VP at game end." : "Imperial Audience reached. The Imperial Seal has already been claimed.");
-    }
-  } else if (player?.imperialProgress === 5) {
-    parts.push(locale === "zh-CN" ? "御用进度已达到最高的5格。" : "Imperial Progress is already at the maximum space 5.");
-  } else {
-    parts.push(locale === "zh-CN" ? "御用进度无法前进。" : "Imperial Progress could not advance.");
+      ? `皇冠+${recognition.crowns}：御用认可${recognition.from} → ${recognition.to}${recognition.appliedCrowns < recognition.crowns ? "（上限为5）" : ""}。`
+      : `+${recognition.crowns} Crown${recognition.crowns === 1 ? "" : "s"}: Imperial Recognition ${recognition.from} → ${recognition.to}${capped}.`);
   }
+  if (result.events.some((event) => event.type === "IMPERIAL_GRANT_RECEIVED")) parts.push(locale === "zh-CN" ? "已结算御赐资助。" : "Imperial Grant resolved.");
+  if (result.events.some((event) => event.type === "IMPERIAL_KILN_UNLOCKED")) parts.push(locale === "zh-CN" ? "御赐窑炉：御窑已解锁。" : "Imperial Gift: Imperial Kiln unlocked.");
+  if (result.events.some((event) => event.type === "IMPERIAL_PRIORITY_GAINED")) parts.push(locale === "zh-CN" ? "获得御用优先标记。" : "Imperial Priority token gained.");
+  if (result.events.some((event) => event.type === "IMPERIAL_AUDIENCE_GAINED")) parts.push(locale === "zh-CN" ? "御前召见：立即获得6分。" : "Imperial Audience: gain 6 VP immediately.");
   return parts.join(" ");
 }
 
 export function commandNotice(result: CommandSuccess, locale: Locale = "en"): string | null {
   const order = result.events.find((event) => event.type === "ORDER_TAKEN");
   if (order?.type === "ORDER_TAKEN") {
-    const deck = order.deck === "market" ? (locale === "zh-CN" ? "市场" : "Market") : (locale === "zh-CN" ? "御用" : "Imperial");
-    return order.acquisition === "blind_top"
-      ? locale === "zh-CN" ? `已确认并公开盲抽的${deck}订单：${order.orderId}。` : `Blind ${deck} draw committed and revealed: ${order.orderId}.`
-      : locale === "zh-CN" ? `拿取正面的${deck}订单${order.orderId}。` : `Took face-up ${deck} Order ${order.orderId}.`;
+    return order.acquisition === "colour_samples"
+      ? locale === "zh-CN" ? `通过釉色样本预留主订单${order.orderId}。` : `Reserved Main Order ${order.orderId} through Colour Samples.`
+      : locale === "zh-CN" ? `预留正面主订单${order.orderId}。` : `Reserved face-up Main Order ${order.orderId}.`;
   }
   const colour = result.events.find((event) => event.type === "COLOUR_SAMPLES_USED");
   if (colour?.type === "COLOUR_SAMPLES_USED") {
-    const deck = colour.deck === "market" ? (locale === "zh-CN" ? "市场" : "Market") : (locale === "zh-CN" ? "御用" : "Imperial");
     return locale === "zh-CN"
-      ? `使用釉色样本：拿取${colour.selectedOrderId ?? "1张订单"}；${colour.bottomedCount}张已查看牌移至${deck}订单牌堆底。`
-      : `Used Colour Samples: took ${colour.selectedOrderId ?? "one Order"}; ${colour.bottomedCount} looked-at Order${colour.bottomedCount === 1 ? "" : "s"} moved to the bottom of the ${deck} deck.`;
-  }
-  const patronage = result.events.find((event) => event.type === "COURT_PATRONAGE_USED");
-  if (patronage?.type === "COURT_PATRONAGE_USED") {
-    return locale === "zh-CN" ? `使用朝廷赞助：支付${patronage.cost}铜钱；御用进度${patronage.from} → ${patronage.to}。` : `Used Court Patronage: paid ${patronage.cost} Coins; Imperial Progress ${patronage.from} → ${patronage.to}.`;
+      ? `使用釉色样本：预留${colour.selectedOrderId ?? "1张订单"}；${colour.bottomedCount}张已查看牌移至主订单牌堆底。`
+      : `Used Colour Samples: reserved ${colour.selectedOrderId ?? "one Order"}; ${colour.bottomedCount} looked-at Order${colour.bottomedCount === 1 ? "" : "s"} moved to the bottom of the Main deck.`;
   }
   const technique = result.events.find((event) => event.type === "TECHNIQUE_ACQUIRED");
   if (technique?.type === "TECHNIQUE_ACQUIRED") {

@@ -1,10 +1,12 @@
 {
-  "rulesVersion": "1.1.6",
+  "rulesVersion": "1.2.2",
   "orderCards": {
     "status": "REGENERATE_FROM_DATA",
     "source": "data/orders.json",
-    "total": 52,
-    "mustShowImperialProgressReward": true,
+    "total": 64,
+    "main": 48,
+    "starting": 16,
+    "mustShowCrowns": true,
     "obsoleteSheetsDirectory": "assets/obsolete_v061"
   },
   "centralBoard": {
@@ -18,13 +20,13 @@
     ],
     "mustContain": [
       "Materials Yard",
-      "Forming Studio",
-      "Glaze Workshop",
+      "Private Potter's Wheel",
+      "Private Glaze & Decoration",
       "Kiln Yard",
-      "Market & Imperial Office",
+      "Commission Market",
       "Guild & Academy",
       "Labour",
-      "Court Patronage",
+      "Imperial Recognition",
       "Shifu repositioning after Base Heat"
     ],
     "mustShowPlayerCountKilnCovers": true
@@ -73,6 +75,7 @@
     "status": "GENERATE_FROM_CURRENT_RULES",
     "roundSource": "data/round_structure.json",
     "firingSource": "data/firing.json",
-    "mustUseContributorScaledHeat": true
+    "mustUseBaseHeatStartTwo": true,
+    "mustShowFiveCardMainOrderDisplay": true
   }
 }

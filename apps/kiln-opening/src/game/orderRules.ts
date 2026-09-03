@@ -1,4 +1,3 @@
-import { IMPERIAL_ORDERS } from "./content.ts";
 import type { OrderDefinition, OrderRelationDefinition } from "./content.ts";
 import { QUALITY_RANK } from "./firingRules.ts";
 import type { FinishedCeramic } from "./types.ts";
@@ -80,6 +79,14 @@ function relationMatches(
       const values = indexedValues(assigned, relation.indices, (ceramic) => ceramic.glaze);
       return values !== null && new Set(values).size >= relation.count;
     }
+    case "at_least_n_distinct_decorations": {
+      const values = indexedValues(assigned, relation.indices, (ceramic) => ceramic.decoration);
+      return values !== null && new Set(values).size >= relation.count;
+    }
+    case "required_glazes":
+      return multisetContains(assigned.map((ceramic) => ceramic.glaze), relation.values);
+    case "required_decorations":
+      return multisetContains(assigned.map((ceramic) => ceramic.decoration), relation.values);
     case "glaze_categories":
       return relation.indices.every((index, categoryIndex) => {
         const ceramic = assigned[index];
@@ -128,7 +135,7 @@ function hasValidAssignment(
   return search(0);
 }
 
-export function matchesOrder(
+function matchesOrderLegacy(
   order: OrderDefinition,
   selected: readonly FinishedCeramic[],
   useGuanDecorationWaiver: boolean,
@@ -141,6 +148,115 @@ export function matchesOrder(
     .map((requirement, index) => (requirement.decoration === undefined ? null : index))
     .filter((index): index is number => index !== null);
   return decorationIndices.some((index) => hasValidAssignment(order, selected, index));
+}
+
+function multisetContains<T>(actual: readonly T[], required: readonly T[]): boolean {
+  const remaining = [...actual];
+  for (const value of required) {
+    const index = remaining.indexOf(value);
+    if (index < 0) return false;
+    remaining.splice(index, 1);
+  }
+  return true;
+}
+
+function shapeSlotsMatch(order: OrderDefinition, selected: readonly FinishedCeramic[]): boolean {
+  const used = new Set<number>();
+  const search = (slotIndex: number): boolean => {
+    if (slotIndex === order.ceramics.length) return true;
+    const requirement = order.ceramics[slotIndex];
+    if (requirement === undefined) return false;
+    for (let index = 0; index < selected.length; index += 1) {
+      if (used.has(index)) continue;
+      const ceramic = selected[index];
+      if (ceramic === undefined) continue;
+      if (requirement.shape !== undefined && requirement.shape !== ceramic.shape) continue;
+      if (requirement.shapes !== undefined && !requirement.shapes.includes(ceramic.shape)) continue;
+      used.add(index);
+      if (search(slotIndex + 1)) return true;
+      used.delete(index);
+    }
+    return false;
+  };
+  return search(0);
+}
+
+/**
+ * V1.2.2 evaluates Shape, Glaze and Decoration groups independently. Guan removes the
+ * chosen ceramic only from Decoration checks; Shape, Glaze and Quality still apply.
+ */
+export function matchesOrder(
+  order: OrderDefinition,
+  selected: readonly FinishedCeramic[],
+  guanWaiver: boolean | string | null,
+): boolean {
+  if (selected.length !== order.ceramics.length || new Set(selected.map((ceramic) => ceramic.id)).size !== selected.length) return false;
+  if (selected.some((ceramic) => QUALITY_RANK[ceramic.quality] < QUALITY_RANK[order.minQuality])) return false;
+  if (!shapeSlotsMatch(order, selected)) return false;
+  const waivedId = typeof guanWaiver === "string"
+    ? guanWaiver
+    : guanWaiver === true
+      ? selected[0]?.id ?? null
+      : null;
+  if (selected.length === 1) {
+    const requirement = order.ceramics[0];
+    const ceramic = selected[0];
+    if (requirement === undefined || ceramic === undefined) return false;
+    if (requirement.glaze !== undefined && ceramic.glaze !== requirement.glaze) return false;
+    if (requirement.glazes !== undefined && !requirement.glazes.includes(ceramic.glaze)) return false;
+    if (waivedId !== ceramic.id && requirement.decoration !== undefined && ceramic.decoration !== requirement.decoration) return false;
+  }
+  const decorations = selected.filter((ceramic) => ceramic.id !== waivedId);
+  for (const relation of order.relations ?? []) {
+    switch (relation.type) {
+      case "same_shape":
+        if (new Set(selected.map((ceramic) => ceramic.shape)).size !== 1) return false;
+        break;
+      case "different_shape":
+      case "all_different_shape":
+        if (new Set(selected.map((ceramic) => ceramic.shape)).size !== selected.length) return false;
+        break;
+      case "same_glaze":
+        if (new Set(selected.map((ceramic) => ceramic.glaze)).size !== 1) return false;
+        break;
+      case "different_glaze":
+      case "all_different_glaze":
+        if (new Set(selected.map((ceramic) => ceramic.glaze)).size !== selected.length) return false;
+        break;
+      case "same_decoration":
+        if (decorations.length > 1 && new Set(decorations.map((ceramic) => ceramic.decoration)).size !== 1) return false;
+        break;
+      case "different_decoration":
+        if (new Set(decorations.map((ceramic) => ceramic.decoration)).size !== decorations.length) return false;
+        break;
+      case "required_glazes":
+        if (!multisetContains(selected.map((ceramic) => ceramic.glaze), relation.values)) return false;
+        break;
+      case "required_decorations": {
+        let required = relation.values;
+        if (waivedId !== null && relation.values.length === selected.length) {
+          const actual = decorations.map((ceramic) => ceramic.decoration);
+          if (!relation.values.some((_, index) => multisetContains(actual, relation.values.filter((__, valueIndex) => valueIndex !== index)))) return false;
+          required = [];
+        }
+        if (required.length > 0 && !multisetContains(decorations.map((ceramic) => ceramic.decoration), required)) return false;
+        break;
+      }
+      case "at_least_n_quality":
+        if (selected.filter((ceramic) => QUALITY_RANK[ceramic.quality] >= QUALITY_RANK[relation.quality]).length < relation.count) return false;
+        break;
+      case "at_least_n_distinct_glazes":
+        if (new Set(selected.map((ceramic) => ceramic.glaze)).size < relation.count) return false;
+        break;
+      case "at_least_n_distinct_decorations":
+        if (new Set(decorations.map((ceramic) => ceramic.decoration)).size < Math.min(relation.count, decorations.length)) return false;
+        break;
+      case "glaze_categories":
+        if (!relation.categories.every((category) => selected.some((ceramic) => category.includes(ceramic.glaze)))) return false;
+        break;
+    }
+  }
+  return true;
 }
 
 /**
@@ -219,23 +335,19 @@ export function orderAdmitsGeCrackle(order: OrderDefinition): boolean {
  * Orders. It completes 1.70 per game against Jun's 2.03, despite being the only Tradition
  * paid for them, because nothing in the Order valuation knew the ability existed.
  */
-/** VP Guan scores alongside its Coin stipend on an Imperial Order. */
-export const GUAN_ORDER_VP = 1;
+/**
+ * Guan's Imperial Patronage pays Coins only. A `GUAN_ORDER_VP = 1` sat here unread from a
+ * pre-V1.2.2 ruleset; V1.2.2 grants 2 Coins and the Decoration waiver and no VP, so the
+ * constant was removed rather than left for someone to wire up into a rule error.
+ */
 export const GUAN_ORDER_COINS = 2;
 
 /**
- * Is this an Imperial Order?
- *
- * Read from deck membership in authoritative content rather than an `id.startsWith("I")`
- * prefix test. The prefix happens to hold for the current 52 cards, but it is a second,
- * implicit copy of a fact the content already states, and this codebase has been bitten
- * repeatedly by exactly that pattern.
+ * V1.2.2 has one Main Order deck; "Imperial Order" is a Crown count on a card, not deck
+ * membership. `isImperialOrder()` and the empty `IMPERIAL_ORDERS` deck it read outlived the
+ * separate-deck mechanic and answered `false` for every card in the game. The engine had
+ * already moved to `definition.crowns > 0`, so nothing called them.
  */
-const IMPERIAL_ORDER_IDS: ReadonlySet<string> = new Set(IMPERIAL_ORDERS.map((order) => order.id));
-
-export function isImperialOrder(orderId: string): boolean {
-  return IMPERIAL_ORDER_IDS.has(orderId);
-}
 
 /**
  * Shapes Ding's extra vessel may copy. Previously a bare array literal inside

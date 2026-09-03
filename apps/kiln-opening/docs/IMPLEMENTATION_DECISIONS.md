@@ -1,51 +1,63 @@
-# IMPLEMENTATION_DECISIONS.md — V1.1.6
+# IMPLEMENTATION_DECISIONS.md — V1.2.2
 
-These are digital interpretations only. The sole rules authority is `docs/KILN_OPENING_v1.1.6_SOURCE.md`; the source-audit resolutions are in `docs/RULEBOOK_AUDIT_V1.1.6.md`.
+These are digital interpretations only. The sole rules authority is `docs/KILN_OPENING_v1.2.2_SOURCE.md`; source conflicts and owner rulings are recorded in `docs/RULEBOOK_AUDIT_V1.2.2.md`.
 
-## Orders and private setup
+## Setup and private workshop
 
-- Multi-ceramic matching is permutation-independent; UI selection order never changes validity.
-- Opening offers are private. Each player chooses exactly two of their 2 Market + 2 Imperial offers. Kept Orders become public only after every player submits; returned cards are shuffled into their matching decks first.
-- A normal Shifu Office action may take up to 2 Orders. Each take independently selects Market/Imperial and face-up/blind, with immediate display refill between takes.
-- A blind draw always uses the authoritative deck top; clients never submit the drawn ID.
-- There is no mid-round hand-limit check. Cleanup prompts players over 3 Orders to discard chosen cards face up. The limit is 3 for every Tradition.
-- Completing multiple Orders is sequential. Imperial Progress equals the completed Imperial Order's required ceramic count.
+- Every player begins with 1 Shifu and 3 Apprentices. V1.2.2 has no worker-unlock mechanic.
+- Each player begins with one open and one locked Potter's Wheel space and one open and one locked Glaze & Decoration space.
+- Acquiring the first Advanced Tech unlocks either one of the two locked private spaces, chosen by that player. Acquiring the second unlocks the remaining space.
+- Starting Tech choices and retained Starting Orders become public after simultaneous setup choices resolve.
+- Starting Orders remain distinct from the Main deck but are real held Orders for completion and the three-card Cleanup hand limit.
 
-## Resources, forming, and glazing
+## Orders
 
-- Material gains request exactly 3 resources for an Apprentice or 4 for a Shifu. The Shifu may then exchange Clay and Wood 1:1.
-- Clay Substitution is a free once-per-round command on the owner's Work turn. It does not consume a worker or end the turn. The same effect has an explicit pre-Contribution firing window.
-- Large Throwing Wheel reduces one selected Vase/Censer's action cost to zero before payment; it is not implemented as a supply refund.
-- Measuring Calipers tracks distinct Shapes formed across the whole round and resolves automatically when the second different Shape is formed.
-- Ding's extra matching Bowl/Plate/Washer does not count against the action limit but pays its normal Clay cost.
-- Drying Frames records the creation round and refuses loading until the following round. A later Glaze Workshop action can change only that ceramic's Decoration; its Glaze remains fixed.
-- Carving Knives and Seal Stamps waive every matching Decoration cost as passive effects, even after their separate once-per-round re-decoration effect has been used.
+- The Main Order market is one five-card ordered display. Empty positions refill immediately without changing the relative order of cards that remain.
+- At the start of Rounds 2–5, discard the three leftmost displayed Main Orders, slide the other two left, then refill to five.
+- Commission reservations take a face-up Order. A Shifu may reserve up to two with an immediate refill between them, but the resource advance is granted only once for the action.
+- Colour Samples privately inspects the top three Main Orders. Reserving one replaces a face-up reservation; unchosen cards return to the bottom in the player's chosen order without leaking their identities.
+- Multi-ceramic Shape, Glaze and Decoration requirements are independent unless a card explicitly prints a fixed pairing. Selection order never changes validity.
+- In the Order Phase, opportunities proceed in reverse Work order. Each opportunity completes at most one Order or passes. Continue circuits until one complete circuit contains no completion.
+- Completing a public Main Order removes and immediately refills that display slot. Completing a held Starting or Main Order removes it from the player's hand.
+- Cleanup enforces one combined maximum of three held Starting and reserved Main Orders.
 
-## Office and Court Patronage
+## Workshop actions and Techs
 
-- A normal Office visit is followed by the optional Flawed sale: Apprentice 0–1 and Shifu 0–2, at 2 Coins each.
-- Court Patronage is its own uncapped Shifu-only worker location, not an Office mode. It requires a completed Imperial Order, costs 4 Coins, advances Progress by exactly 1 only from spaces 0–3, and grants neither Colour Samples nor a Flawed sale.
-- Colour Samples' two looked-at cards are private. The player may instead take a face-up card from either display; every unchosen looked-at card goes to the bottom, and its ID is omitted from public events. If a Shifu skips the Technique before the first acquisition, it is offered again before the second.
-- Connoisseur Network follows a normal Office action, including one whose Flawed-sale step sold nothing. It pays exactly 3/6/10 Coins for Standard/Fine/Masterpiece and cannot follow Court Patronage.
+- A Tech effect is not a worker action and does not trigger effects requiring that worker action unless its text explicitly says so.
+- The Advanced-Tech limit is two; Starting Tech does not count toward it.
+- Once-per-round Tech use is stored independently per Tech and readied at round start.
+- Drying Frames' follow-up glaze pays the normal Plain Decoration cost.
+- Reworking Table pays only added Clay when changing Shape and never refunds Clay.
+- Fuel Ledger is selected as a secret upgraded contribution, not as a public post-reveal prompt: Bank −2 or Stoke +2 costs 2 Wood total.
+- Second Firing resolves immediately after Quality by revealing one additional Fire card for the selected ceramic only. Its replacement Quality is final for that firing.
 
 ## Firing and hidden information
 
-- Contribution cards are private server-side until all eligible contributors submit. Browser state and public events expose only submission status before reveal.
-- Only players with a loaded ceramic contribute, but pre-Contribution Clay Substitution and Test Pieces windows are available to any owner of the relevant ready Technique.
-- Fuel Ledger is offered after Contribution reveal only to an owner who revealed Stoke and can pay the additional 1 Wood.
-- Kiln Yard grants no Wood. A Shifu placed there may reposition one owned loaded ceramic after Base Heat is known and before the Fire card is revealed. Kiln Setting remains the separate pre-Contribution effect that can move any number one at a time.
-- Sagger Selection changes the chosen ceramic's Fire modifier by one step toward zero; the public revealed card remains unchanged.
-- Ge costs 1 Wood and accepts Heat Difference 1 or 2. Jun costs 2 Wood. Protective Saggars costs 1 Wood.
-- Test Pieces data remains private to its authenticated owner. Kiln Records triggers after resolution if any ceramic owned by that player participated in the firing and gains 1 Wood.
+- Contribution choices are private server-side until every eligible contributor submits. Public state exposes submission status only.
+- A Fuel Ledger submission stores the base Bank/Stoke card and extra-Wood commitment privately. The server validates ownership and 2-Wood affordability both when submitted and atomically when revealed.
+- Base Heat starts at 2, applies all final contribution modifiers, then clamps to 0–5. Global and Actual Heat are not clamped.
+- The private Imperial Kiln is a one-ceramic space with no zone modifier. It participates in the shared firing and Contribution eligibility but is not a Shared-Kiln space.
+- Imperial Priority adds one load to a Kiln Yard action, and that additional ceramic must enter the owner's empty Imperial Kiln. It has no heat-adjustment effect.
+- Kiln Furniture's zero-zone choice stays attached to that ceramic for the current firing, including an immediate Second Firing.
+- Workshop Seconds resolves after after-Quality effects and firing resolution. Each player may discard at most one remaining Flawed ceramic for 2 Coins.
 
-## Progress, Round 5, and scoring
+## Guan Decoration waiver
 
-- The track is capped at 5. Apprentice milestones at spaces 1 and 3 queue unlocks for Cleanup. There are no Progress Coin stipends.
-- A pending Apprentice unlock in Round 5 Cleanup becomes exactly 1 VP and awards no Coins.
-- Every player may exhibit up to 5 Finished, undelivered Standard-or-better ceramics.
-- A submission of at least three ceramics must identify exactly three of them as the featured collection. Only those three are checked for the +2 three-Shape and +2 three-Glaze bonuses. Submissions of zero, one, or two have no featured collection.
-- Serialized score/action fields retain legacy `presentation` names for replay compatibility; player-facing text says End-game Exhibition / 终局展陈.
+When Guan resolves on a Crown Order, the player explicitly selects at most one submitted ceramic for the waiver. That ceramic is omitted from direct and relational Decoration checks. Relational checks continue among all other submitted ceramics. Shape, Glaze, Quality, ceramic count and every non-Decoration requirement are still validated normally.
+
+## Recognition and scoring
+
+- Recognition advances only from Crown icons on completed Orders, resolves every crossed milestone in ascending order, and caps at 5.
+- Recognition 3, **Imperial Gift**, unlocks the private Imperial Kiln.
+- Recognition 4, **Imperial Priority**, grants one once-per-game token with the additional-load effect above.
+- Recognition 5, **Imperial Audience**, immediately grants 6 VP. Spaces 1–4 have no separate end-game VP.
+- Exhibition accepts up to five finished, undelivered Standard-or-better ceramics. When at least three are exhibited, exactly three are the featured collection for Shape and Glaze diversity.
+- Leftover Coins score 1 VP per 3 Coins, capped at 5 VP.
+
+## Localization
+
+English and Simplified Chinese UI text are presentation layers over identical stable Order, Tech, Kiln, location, milestone, action, error and event IDs. Locale changes never mutate authoritative state.
 
 ## Saved-game compatibility
 
-New rooms use V1.1.6 and rules fingerprint revision 10. Historical version tags remain readable for archived evidence, but the live service rejects started rooms whose version or fingerprint differs because their hidden offers, rule windows, and scoring cannot be translated safely.
+V1.2.2 introduces incompatible setup, deck, worker, Tech, Recognition, kiln and timing state. New rooms use the V1.2.2 save schema and rules fingerprint. The live service rejects started rooms, snapshots and commands with an older rules version, schema or fingerprint rather than attempting an unsafe translation.

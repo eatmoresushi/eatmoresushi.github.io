@@ -115,6 +115,14 @@ export class SupabaseMultiplayerStore implements MultiplayerStore {
   }
 
   commitTransition(input: CommitTransitionInput): Promise<StoreResult<CommandSuccess>> {
+    const privateSubmission = input.privateSubmission === null
+      ? null
+      : {
+          windowId: input.privateSubmission.windowId,
+          card: input.privateSubmission.card,
+          useFuelLedger: input.privateSubmission.useFuelLedger,
+          revealed: input.privateSubmission.revealed,
+        };
     return this.rpc("server_commit_transition", {
       p_room_id: input.roomId,
       p_command_id: input.commandId,
@@ -131,7 +139,7 @@ export class SupabaseMultiplayerStore implements MultiplayerStore {
       p_public_events: input.publicEvents,
       p_public_state: input.publicState,
       p_response: input.response,
-      p_private_submission: input.privateSubmission,
+      p_private_submission: privateSubmission,
     });
   }
 

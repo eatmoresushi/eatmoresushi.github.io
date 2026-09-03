@@ -1,9 +1,17 @@
 # AI Player Next Steps
 
-> Current online rules compatibility: **V1.1.6**. The online policy retains the historical
-> `rules-v1.1.5-order-001` lineage identifier, but its legal actions are generated, validated,
-> and applied by the V1.1.6 engine. Write new V1.1.6 output only below
-> `playtests/v1.1.6/`; do not overwrite or relabel historical datasets.
+> **The offline self-play harness was removed during the V1.2.2 cleanup.** `src/ai/` and the
+> `npm run selfplay:*` / `experiment:*` scripts no longer exist: the code targeted pre-V1.2.2
+> mechanics (Imperial Progress, Imperial Seal, Office blind draw, Clay Substitution) and no
+> longer compiled or ran. Nothing the game ships imported it; the online computer player lives
+> in `src/multiplayer/computerPlayer.ts`. Every `npm run selfplay:...` command named below is a
+> historical record of how a study was produced, not a command you can run. The study outputs
+> themselves remain under `playtests/`, and the code is recoverable from git history.
+
+> Current online rules compatibility: **V1.2.2**. The production online policy is
+> `rules-v1.2.2-heuristic-001`; every action is validated and applied by the V1.2.2 engine.
+> It has deterministic 2/3/4-player full-game completion coverage but no claim of
+> human-calibrated strength. Do not overwrite or relabel historical datasets.
 >
 > **Everything below documenting earlier rule-version lineages is a historical record.** The
 > V1.0.4 and V1.0.9 policies were deleted when V1.1.4 replaced the numeric 0–3 Wood bid: they select a bid

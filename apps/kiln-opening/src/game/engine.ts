@@ -1,7 +1,6 @@
 import {
   ACTION_LOCATION_PRICES,
   COLOUR_SAMPLES_LOOK,
-  KILN_RECORDS_WOOD,
   DECORATION_COSTS,
   DECORATIONS,
   GAME_CONFIG,
@@ -12,22 +11,13 @@ import {
   ORDER_DEFINITIONS,
   SHAPE_COSTS,
   SHAPES,
+  STARTING_TECHNIQUE_DEFINITIONS,
   TECHNIQUE_DEFINITIONS,
   CONTRIBUTION_CARD_IDS,
   activeKilnSpaceIds,
   locationCapacity,
 } from "./content.ts";
 import { applyFailure, ruleError } from "./errors.ts";
-import {
-  activeImperialOrderProgressReward,
-  activeImperialTrackRules,
-  activeExhibitionRules,
-  activeJunActivationCoins,
-  activeJunActivationWood,
-  activeRuBonusRules,
-  round5ExtraWorkerFor,
-  dingExtraVesselIsFree,
-} from "./experiment.ts";
 import {
   FUEL_LEDGER_WOOD,
   GE_ACTIVATION_WOOD,
@@ -37,52 +27,29 @@ import {
   contributionHeatAdjustment,
   contributionWoodCost,
   determineBaseHeat,
+  fuelLedgerHeatDelta,
   kilnZoneModifier,
   preferredHeat,
   qualityFromDifference,
 } from "./firingRules.ts";
 
-/** Fuel Ledger spends this much extra Wood to turn a revealed Stoke into +2 Heat. */
-
-/** Office sale value of one Flawed ceramic. */
-const FLAWED_SALE_COINS = ACTION_LOCATION_PRICES.flawedSaleCoins;
-
-/** Coins Court Patronage charges for one step of Imperial Progress. */
-const COURT_PATRONAGE_COINS = ACTION_LOCATION_PRICES.courtPatronageCoins;
-
 /** Cards discarded from each Order display at the start of Rounds 2-5. */
-const ORDER_DISPLAY_ROTATION = 2;
+const ORDER_DISPLAY_ROTATION = 3;
 
 /** Labour pays these Coins; it has no worker limit, so it is always available. */
 const LABOUR_APPRENTICE_COINS = ACTION_LOCATION_PRICES.labourApprenticeCoins;
 const LABOUR_SHIFU_COINS = ACTION_LOCATION_PRICES.labourShifuCoins;
-
-/** VP paid instead of an Apprentice that unlocks too late in Round 5 to ever act. */
-/**
- * VP paid instead of an Apprentice that unlocks too late in Round 5 to ever act.
- *
- * Was 2, set by analogy to the Progress track's 2 VP per even space. Measured directly, an
- * extra Round-5 Apprentice is worth 0.59 VP (95% CI [0.41, 0.80]) -- so 2 VP paid more for a
- * worker that cannot act than for one that can, and quietly rewarded delaying Imperial
- * Progress past Round 4. At 1 VP the premium is small and the incentive is gone.
- */
-const ROUND_FIVE_UNLOCK_VP = 1;
-
-/** Clay Substitution pays this many Coins for three Clay/Wood in any combination. */
-const CLAY_SUBSTITUTION_COINS = 3;
-const CLAY_SUBSTITUTION_RESOURCES = 3;
 import {
   DING_EXTRA_SHAPES,
   GUAN_ORDER_COINS,
-  GUAN_ORDER_VP,
+  RU_BONUS_QUALITY,
   RU_ORDER_VP,
-  isImperialOrder,
   matchesOrder,
   ruBonusCeramic,
 } from "./orderRules.ts";
 import type { RandomSource } from "./rng.ts";
 import { shuffle } from "./rng.ts";
-import type { ContributionCardId } from "./types.ts";
+import type { ContributionCardId, ContributionHeatAdjustment } from "./types.ts";
 import {
   actionOccupancy,
   availableWorkerIds,
@@ -95,6 +62,7 @@ import {
 import type {
   ApplyResult,
   BaseHeat,
+  CeramicId,
   CeramicState,
   Decoration,
   GameAction,
@@ -117,7 +85,6 @@ import type {
   Quality,
   RoundNumber,
   SubmitContributionResult,
-  WoodContribution,
   Shape,
   TechniqueDiscipline,
   TechniqueId,
@@ -273,8 +240,16 @@ function validateWorkerAction(
       ruleError("WORKER_UNAVAILABLE", "The selected worker is not available.", { workerId }),
     );
   }
-  const capacity = locationCapacity(locationId, state.playerCount);
-  if (actionOccupancy(state, locationId) >= capacity) {
+  const privateCapacity = locationId === "forming_studio"
+    ? player.workshopSpaces.pottersWheelUnlocked
+    : locationId === "glaze_workshop"
+      ? player.workshopSpaces.glazeDecorationUnlocked
+      : null;
+  const occupancy = privateCapacity === null
+    ? actionOccupancy(state, locationId)
+    : Object.values(player.workers).filter((placed) => placed.locationId === locationId).length;
+  const capacity = privateCapacity ?? locationCapacity(locationId, state.playerCount);
+  if (occupancy >= capacity) {
     return applyFailure(
       ruleError("LOCATION_FULL", "The selected location is at capacity.", {
         locationId,
@@ -309,10 +284,10 @@ function placeWorker(
 }
 
 function beginOrderPhase(state: GameState): void {
-  const order = turnOrderFromFirst(state);
+  const order = [...turnOrderFromFirst(state)].reverse();
   const first = order[0];
   if (first === undefined) throw new Error("Order Phase requires a player");
-  state.phase = { type: "orders", turnOrder: order, currentIndex: 0, activePlayerId: first };
+  state.phase = { type: "orders", turnOrder: order, currentIndex: 0, activePlayerId: first, completedInCircuit: 0 };
 }
 
 function openContributionPhase(state: GameState): void {
@@ -335,39 +310,18 @@ function beginFiringPhase(state: GameState): void {
     beginOrderPhase(state);
     return;
   }
-  const hasEmptySpace = activeKilnSpaceIds(state.playerCount).some(
-    (spaceId) => kilnOccupant(state, spaceId) === null,
-  );
   const actors: PlayerId[] = [];
   const techniqueIds: TechniqueId[] = [];
   for (const playerId of turnOrderFromFirst(state)) {
-        const player = state.players[playerId];
-    const kilnSetting = player === undefined ? undefined : ownedTechnique(player, "T09");
-    if (hasEmptySpace &&
-          kilnSetting !== undefined &&
-          !kilnSetting.exhausted &&
+    const player = state.players[playerId];
+    const testPieces = player === undefined ? undefined : ownedTechnique(player, "T13");
+    if (
+          testPieces !== undefined &&
+          (player?.resources.wood ?? 0) >= 1 &&
           loaded.some((ceramic) => ceramic.ownerId === playerId)
     ) {
       actors.push(playerId);
-      techniqueIds.push("T09");
-    }
-    const claySubstitution = player === undefined ? undefined : ownedTechnique(player, "T03");
-    if (
-          claySubstitution !== undefined &&
-          !claySubstitution.exhausted &&
-          (player?.resources.coins ?? 0) >= CLAY_SUBSTITUTION_COINS
-    ) {
-      actors.push(playerId);
-      techniqueIds.push("T03");
-    }
-    const testPieces = player === undefined ? undefined : ownedTechnique(player, "T12");
-    if (
-          testPieces !== undefined &&
-          !testPieces.exhausted &&
-          (player?.resources.wood ?? 0) >= 1
-    ) {
-      actors.push(playerId);
-      techniqueIds.push("T12");
+      techniqueIds.push("T13");
     }
   }
   if (actors.length === 0) {
@@ -427,20 +381,20 @@ function drawFromDisplay(
   return true;
 }
 
-function ensureOrderDeck(state: GameState, deck: OrderDeck, rng: RandomSource): void {
-  const drawPile = deck === "market" ? state.marketDeck : state.imperialDeck;
-  const discard = deck === "market" ? state.marketDiscard : state.imperialDiscard;
-  if (drawPile.length === 0 && discard.length > 0) {
-    const reshuffled = shuffle(discard, rng);
-    drawPile.push(...reshuffled);
-    discard.splice(0, discard.length);
+function ensureMainOrderDeck(
+  state: GameState,
+  rng: RandomSource,
+  requiredCards = 1,
+): void {
+  if (state.marketDeck.length < requiredCards && state.marketDiscard.length > 0) {
+    state.marketDeck.push(...shuffle(state.marketDiscard, rng));
+    state.marketDiscard.splice(0, state.marketDiscard.length);
   }
 }
 
-function ensureOrderCards(state: GameState, deck: OrderDeck, count: number, rng: RandomSource): boolean {
-  ensureOrderDeck(state, deck, rng);
-  const drawPile = deck === "market" ? state.marketDeck : state.imperialDeck;
-  return drawPile.length >= count;
+function ensureMainOrderCards(state: GameState, count: number, rng: RandomSource): boolean {
+  ensureMainOrderDeck(state, rng, count);
+  return state.marketDeck.length >= count;
 }
 
 function startWorkPhase(state: GameState): void {
@@ -451,12 +405,7 @@ function dealStartingOrders(state: GameState): ApplyResult | null {
   const offeredOrderIds: Record<PlayerId, OrderId[]> = {};
   const decisionOrder = turnOrderFromFirst(state);
   for (const playerId of turnOrderFromFirst(state)) {
-    const orders = [
-      state.marketDeck.shift(),
-      state.marketDeck.shift(),
-      state.imperialDeck.shift(),
-      state.imperialDeck.shift(),
-    ];
+    const orders = Array.from({ length: 4 }, () => state.startingOrderDeck.shift());
     const player = state.players[playerId];
     if (orders.some((orderId) => orderId === undefined) || player === undefined) {
       return applyFailure(
@@ -482,7 +431,11 @@ function advanceStartingOrderDecision(state: GameState): void {
   }
   const nextIndex = state.phase.currentIndex + 1;
   if (nextIndex >= state.phase.decisionOrder.length) {
-    startWorkPhase(state);
+    state.phase = {
+      type: "setup_starting_tech",
+      decisionOrder: [...state.phase.decisionOrder],
+      currentIndex: 0,
+    };
   } else {
     state.phase.currentIndex = nextIndex;
   }
@@ -562,16 +515,13 @@ function submitStartingOrders(
   nextPhase.submittedPlayerIds.push(actorId);
   advanceStartingOrderDecision(next);
   const events: GameEvent[] = [{ type: "STARTING_ORDERS_SUBMITTED", playerId: actorId }];
-  if (next.phase.type === "work") {
+  if (next.phase.type === "setup_starting_tech") {
     for (const [selectionPlayerId, offeredOrders] of Object.entries(nextPhase.offeredOrderIds)) {
       const kept = next.players[selectionPlayerId]?.orderHand ?? [];
       for (const returned of offeredOrders.filter((orderId) => !kept.includes(orderId))) {
-        if (returned.startsWith("M")) next.marketDeck.push(returned);
-        else next.imperialDeck.push(returned);
+        next.returnedStartingOrderIds.push(returned);
       }
     }
-    next.marketDeck = shuffle(next.marketDeck, rng);
-    next.imperialDeck = shuffle(next.imperialDeck, rng);
     events.push({
       type: "STARTING_ORDERS_REVEALED",
       ordersByPlayer: Object.fromEntries(
@@ -582,15 +532,27 @@ function submitStartingOrders(
   return success(next, events);
 }
 
-function submitLegacyStartingOrders(state: GameState, actorId: PlayerId, rng: RandomSource): ApplyResult {
-  if (state.phase.type !== "setup_starting_orders") {
-    return applyFailure(ruleError("WRONG_PHASE", "Opening Orders are not awaiting a choice."));
+function selectStartingTech(
+  state: GameState,
+  actorId: PlayerId,
+  techniqueId: "ST01" | "ST02" | "ST03" | "ST04",
+): ApplyResult {
+  const phase = requirePhase(state, "setup_starting_tech");
+  if (isFailure(phase)) return phase;
+  const actorError = actorFailure(state, actorId);
+  if (actorError !== null) return actorError;
+  if (STARTING_TECHNIQUE_DEFINITIONS[techniqueId] === undefined) {
+    return applyFailure(ruleError("INVALID_SELECTION", "Choose one of the four Starting Techs."));
   }
-  const offered = state.phase.offeredOrderIds[actorId];
-  if (offered === undefined || offered.length < 2) {
-    return applyFailure(ruleError("INVALID_ACTION", "Opening Order offer is unavailable."));
+  const next = cloneState(state);
+  const player = next.players[actorId];
+  if (player === undefined || next.phase.type !== "setup_starting_tech") {
+    throw new Error("Starting Tech selection invariant failed");
   }
-  return submitStartingOrders(state, actorId, offered.slice(0, 2), rng);
+  player.startingTechniqueId = techniqueId;
+  next.phase.currentIndex += 1;
+  if (next.phase.currentIndex >= next.phase.decisionOrder.length) startWorkPhase(next);
+  return success(next, [{ type: "STARTING_TECH_SELECTED", playerId: actorId, techniqueId }]);
 }
 
 function passWorkPhase(state: GameState, actorId: PlayerId): ApplyResult {
@@ -618,70 +580,12 @@ function passWorkPhase(state: GameState, actorId: PlayerId): ApplyResult {
   return success(next, events);
 }
 
-/**
- * Clay Substitution is a free once-per-round Technique action. During the Work Phase it
- * may be used only on the owner's turn and does not consume a worker or end that turn.
- */
-function useClaySubstitution(
-  state: GameState,
-  actorId: PlayerId,
-  clay: number,
-  wood: number,
-): ApplyResult {
-  const phase = requirePhase(state, "work");
-  if (isFailure(phase)) return phase;
-  const actorError = actorFailure(state, actorId);
-  if (actorError !== null) return actorError;
-  const player = state.players[actorId];
-  const technique = player === undefined ? undefined : ownedTechnique(player, "T03");
-  if (player === undefined) {
-    return applyFailure(ruleError("UNKNOWN_PLAYER", "Player was not found.", { actorId }));
-  }
-  if (player.passedWorkPhase) {
-    return applyFailure(ruleError("PLAYER_ALREADY_PASSED", "Passing is permanent for this Work Phase."));
-  }
-  if (technique === undefined) {
-    return applyFailure(ruleError("TECHNIQUE_NOT_OWNED", "The player does not own Clay Substitution."));
-  }
-  if (technique.exhausted) {
-    return applyFailure(ruleError("TECHNIQUE_EXHAUSTED", "Clay Substitution is already exhausted."));
-  }
-  if (!isNonNegativeInteger(clay) || !isNonNegativeInteger(wood) || clay + wood !== CLAY_SUBSTITUTION_RESOURCES) {
-    return applyFailure(ruleError("INVALID_SELECTION", "Clay Substitution grants exactly 3 resources.", { clay, wood }));
-  }
-  if (player.resources.coins < CLAY_SUBSTITUTION_COINS) {
-    return applyFailure(ruleError("INSUFFICIENT_RESOURCES", "Clay Substitution costs 3 Coins."));
-  }
-  if (state.commonSupply.clay < clay || state.commonSupply.wood < wood) {
-    return applyFailure(ruleError("SUPPLY_EMPTY", "The common supply cannot provide the selected resources."));
-  }
-  const next = cloneState(state);
-  const nextPlayer = next.players[actorId];
-  if (nextPlayer === undefined) throw new Error("Clay Substitution actor disappeared");
-  nextPlayer.resources.coins -= CLAY_SUBSTITUTION_COINS;
-  next.commonSupply.coins += CLAY_SUBSTITUTION_COINS;
-  nextPlayer.resources.clay += clay;
-  nextPlayer.resources.wood += wood;
-  next.commonSupply.clay -= clay;
-  next.commonSupply.wood -= wood;
-  const events: GameEvent[] = [];
-  exhaustTechnique(nextPlayer, actorId, "T03", events);
-  events.push({
-    type: "RESOURCES_CHANGED",
-    playerId: actorId,
-    clay,
-    wood,
-    coins: -CLAY_SUBSTITUTION_COINS,
-  });
-  return success(next, events);
-}
-
 function gainMaterials(
   state: GameState,
   actorId: PlayerId,
   action: Extract<GameAction, { type: "GAIN_MATERIALS" }>,
 ): ApplyResult {
-  const { workerId, clay, wood, exchange } = action;
+  const { workerId, clay, wood, buyShifuBonus = false, preparedClayShape } = action;
   const context = validateWorkerAction(state, actorId, workerId, "materials_yard");
   if (!isWorkerContext(context)) {
     return context;
@@ -695,13 +599,14 @@ function gainMaterials(
       }),
     );
   }
-  if (
-    exchange !== undefined &&
-    (context.worker.kind !== "shifu" ||
-      !isNonNegativeInteger(exchange.amount) ||
-      exchange.amount < 1)
-  ) {
-    return applyFailure(ruleError("INVALID_SELECTION", "Only the Shifu may exchange a positive number of Clay and Wood."));
+  if (buyShifuBonus && context.worker.kind !== "shifu") {
+    return applyFailure(ruleError("INVALID_ACTION", "Only the Shifu may buy the Materials Yard bonus."));
+  }
+  if (buyShifuBonus && context.player.resources.coins < 1) {
+    return applyFailure(ruleError("INSUFFICIENT_RESOURCES", "The Materials Yard bonus costs 1 Coin."));
+  }
+  if (preparedClayShape !== undefined && (context.player.startingTechniqueId !== "ST01" || !SHAPES.includes(preparedClayShape))) {
+    return applyFailure(ruleError("INVALID_ACTION", "Prepared Clay is required to form during Materials Yard."));
   }
 
   const next = cloneState(state);
@@ -719,27 +624,34 @@ function gainMaterials(
   next.commonSupply.wood -= gainedWood;
   let clayDelta = gainedClay;
   let woodDelta = gainedWood;
-  if (exchange !== undefined) {
-    const give = exchange.give;
-    const receive = give === "clay" ? "wood" : "clay";
-    const availableToGive = player.resources[give];
-    const availableToReceive = next.commonSupply[receive];
-    if (availableToGive < exchange.amount || availableToReceive < exchange.amount) {
-      return applyFailure(ruleError("INSUFFICIENT_RESOURCES", "The selected Shifu material exchange cannot be completed."));
+  let coinDelta = 0;
+  if (buyShifuBonus) {
+    player.resources.coins -= 1;
+    next.commonSupply.coins += 1;
+    clayDelta += gainFromSupply(next, player, "clay", 1);
+    woodDelta += gainFromSupply(next, player, "wood", 1);
+    coinDelta = -1;
+  }
+  if (preparedClayShape !== undefined) {
+    const clayCost = SHAPE_COSTS[preparedClayShape];
+    if (player.resources.clay < clayCost || next.vesselSupply[preparedClayShape].length < 1) {
+      return applyFailure(ruleError("INSUFFICIENT_RESOURCES", "Prepared Clay cannot pay for or supply that vessel."));
     }
-    player.resources[give] -= exchange.amount;
-    next.commonSupply[give] += exchange.amount;
-    player.resources[receive] += exchange.amount;
-    next.commonSupply[receive] -= exchange.amount;
-    clayDelta += give === "clay" ? -exchange.amount : exchange.amount;
-    woodDelta += give === "wood" ? -exchange.amount : exchange.amount;
+    player.resources.clay -= clayCost;
+    next.commonSupply.clay += clayCost;
+    clayDelta -= clayCost;
+    const vesselInstanceId = next.vesselSupply[preparedClayShape].shift();
+    if (vesselInstanceId === undefined) throw new Error("Prepared Clay vessel disappeared");
+    const ceramicId = `${next.gameId}:ceramic:${next.nextCeramicSequence++}`;
+    next.ceramics[ceramicId] = { id: ceramicId, vesselInstanceId, ownerId: actorId, shape: preparedClayShape, formedInRound: next.round, stage: "shaped" };
+    events.push({ type: "CERAMIC_SHAPED", playerId: actorId, ceramicId, shape: preparedClayShape });
   }
   events.push({
     type: "RESOURCES_CHANGED",
     playerId: actorId,
     clay: clayDelta,
     wood: woodDelta,
-    coins: 0,
+    coins: coinDelta,
   });
   completeWorkerAction(next, actorId, events);
   return success(next, events);
@@ -755,9 +667,13 @@ function formCeramics(
     return context;
   }
   const maximum = context.worker.kind === "shifu" ? 2 : 1;
-  if (action.shapes.length > maximum || action.shapes.some((shape) => !SHAPES.includes(shape))) {
+  if (
+    action.shapes.length < 1 ||
+    action.shapes.length > maximum ||
+    action.shapes.some((shape) => !SHAPES.includes(shape))
+  ) {
     return applyFailure(
-      ruleError("INVALID_SELECTION", `This worker may form at most ${maximum} ceramics.`),
+      ruleError("INVALID_SELECTION", `This worker must form 1 to ${maximum} ceramics.`),
     );
   }
   const useTechniqueIds = action.useTechniqueIds ?? [];
@@ -784,9 +700,6 @@ function formCeramics(
       );
     }
   }
-  if ((action.claySubstitutions ?? 0) !== 0 || action.claySubstitutionTarget !== undefined) {
-    return applyFailure(ruleError("INVALID_ACTION", "Clay Substitution gains resources as a separate Technique action; it does not replace Forming costs."));
-  }
   const allFormedShapes =
     dingExtraShape === undefined ? [...action.shapes] : [...action.shapes, dingExtraShape];
   if (
@@ -808,31 +721,38 @@ function formCeramics(
   ) {
     return applyFailure(ruleError("INVALID_SELECTION", "The Drying Frames selection is invalid."));
   }
+  if (action.whiteSlip !== undefined && context.player.startingTechniqueId !== "ST02") {
+    return applyFailure(ruleError("INVALID_ACTION", "White Slip is not this workshop's Starting Tech."));
+  }
+  if (action.whiteSlip !== undefined && (
+    action.whiteSlip.formedIndex < 0 ||
+    action.whiteSlip.formedIndex >= allFormedShapes.length ||
+    !DECORATIONS.includes(action.whiteSlip.decoration)
+  )) {
+    return applyFailure(ruleError("INVALID_SELECTION", "The White Slip selection is invalid."));
+  }
+  if (action.whiteSlip !== undefined && action.dryingFrames?.formedIndex === action.whiteSlip.formedIndex) {
+    return applyFailure(ruleError("INVALID_SELECTION", "White Slip and Drying Frames must choose different vessels."));
+  }
 
   const requiredByShape = new Map<Shape, number>();
   let totalClay = 0;
   for (const shape of allFormedShapes) {
     requiredByShape.set(shape, (requiredByShape.get(shape) ?? 0) + 1);
   }
-  // Ding's extra vessel pays the normal Clay cost: the loop covers every vessel formed,
-  // including the extra. The ability's remaining value is the extra vessel itself, which
-  // does not count against the action's normal limit. `src/ai/evaluator.ts` must charge the
-  // same set -- when the two disagree the agent plans against a price the engine will not
-  // charge, which is invisible because neither side errors.
-  const chargedShapes = dingExtraVesselIsFree(state.experimentConfig) ? action.shapes : allFormedShapes;
+  const chargedShapes = allFormedShapes;
   for (const shape of chargedShapes) {
-    totalClay +=
-      context.worker.kind === "shifu" && (shape === "vase" || shape === "censer")
-        ? 1
-        : SHAPE_COSTS[shape];
+    totalClay += SHAPE_COSTS[shape];
   }
+  if (context.worker.kind === "shifu" && action.shapes.length === 2) totalClay -= 1;
   if (useTechniqueIds.includes("T01")) {
-    const waivedShape = chargedShapes.find((shape) => shape === "vase" || shape === "censer");
-    if (waivedShape === undefined) throw new Error("Validated Large Throwing Wheel target disappeared");
-    totalClay -= context.worker.kind === "shifu" ? 1 : SHAPE_COSTS[waivedShape];
+    totalClay -= 1;
   }
   const clayPaid = totalClay;
-  if (context.player.resources.clay < clayPaid) {
+  const dryingFramesCoins = action.dryingFrames === undefined ? 0 : DECORATION_COSTS.plain;
+  const whiteSlipCoins = action.whiteSlip === undefined ? 0 : DECORATION_COSTS[action.whiteSlip.decoration];
+  const formingCoins = dryingFramesCoins + whiteSlipCoins;
+  if (context.player.resources.clay < clayPaid || context.player.resources.coins < formingCoins) {
     return applyFailure(
       ruleError("INSUFFICIENT_RESOURCES", "Not enough resources to form the selected vessels.", {
         requiredClay: clayPaid,
@@ -855,14 +775,16 @@ function formCeramics(
     throw new Error("Forming actor disappeared");
   }
   player.resources.clay -= clayPaid;
+  player.resources.coins -= formingCoins;
   next.commonSupply.clay += clayPaid;
-  if (clayPaid > 0) {
+  next.commonSupply.coins += formingCoins;
+  if (clayPaid > 0 || formingCoins > 0) {
     events.push({
       type: "RESOURCES_CHANGED",
       playerId: actorId,
       clay: -clayPaid,
       wood: 0,
-      coins: 0,
+      coins: -formingCoins,
     });
   }
   for (const [formedIndex, shape] of allFormedShapes.entries()) {
@@ -874,17 +796,17 @@ function formCeramics(
     next.nextCeramicSequence += 1;
     const dryingFrames = action.dryingFrames;
     const dryingFramesApplies = dryingFrames?.formedIndex === formedIndex;
-    next.ceramics[ceramicId] = dryingFramesApplies ? {
+    const whiteSlip = action.whiteSlip;
+    const whiteSlipApplies = whiteSlip?.formedIndex === formedIndex;
+    next.ceramics[ceramicId] = dryingFramesApplies || whiteSlipApplies ? {
       id: ceramicId,
       vesselInstanceId,
       ownerId: actorId,
       shape,
       formedInRound: next.round,
-      loadableFromRound: next.round + 1,
-      dryingFramesApplied: true,
       stage: "glazed",
-      glaze: dryingFrames?.glaze ?? "white",
-      decoration: "plain",
+      glaze: dryingFramesApplies ? dryingFrames?.glaze ?? "white" : "white",
+      decoration: dryingFramesApplies ? "plain" : whiteSlip?.decoration ?? "plain",
     } : {
       id: ceramicId,
       vesselInstanceId,
@@ -894,13 +816,13 @@ function formCeramics(
       stage: "shaped",
     };
     events.push({ type: "CERAMIC_SHAPED", playerId: actorId, ceramicId, shape });
-    if (dryingFramesApplies) {
+    if (dryingFramesApplies || whiteSlipApplies) {
       events.push({
         type: "CERAMIC_GLAZED",
         playerId: actorId,
         ceramicId,
-        glaze: dryingFrames?.glaze ?? "white",
-        decoration: "plain",
+        glaze: dryingFramesApplies ? dryingFrames?.glaze ?? "white" : "white",
+        decoration: dryingFramesApplies ? "plain" : whiteSlip?.decoration ?? "plain",
       });
     }
   }
@@ -909,14 +831,17 @@ function formCeramics(
     player.kilnAbilityUsedThisRound = true;
     events.push({ type: "KILN_ABILITY_USED", playerId: actorId, kilnId: "DI" });
   }
-  const previousShapes = new Set(context.player.shapesFormedThisRound ?? []);
+  const previousShapes = new Set(Object.values(state.ceramics).filter((ceramic) => ceramic.ownerId === actorId && (ceramic.stage === "shaped" || ceramic.stage === "glazed")).map((ceramic) => ceramic.shape));
   const currentShapes = new Set([...previousShapes, ...allFormedShapes]);
   const calipers = ownedTechnique(player, "T02");
-  const calipersTriggers = calipers !== undefined && !calipers.exhausted && previousShapes.size < 2 && currentShapes.size >= 2;
+  const calipersTriggers = calipers !== undefined && !calipers.exhausted && allFormedShapes.some((shape) => [...currentShapes].some((other) => other !== shape));
+  const moulds = ownedTechnique(player, "T03");
+  const mouldsTriggers = moulds !== undefined && !moulds.exhausted && allFormedShapes.some((shape, index) => previousShapes.has(shape) || allFormedShapes.indexOf(shape) !== index);
   player.shapesFormedThisRound = [...currentShapes];
-  const rewardClay = calipersTriggers ? gainFromSupply(next, player, "clay", 1) : 0;
-  const rewardCoins = calipersTriggers ? gainFromSupply(next, player, "coins", 1) : 0;
+  const rewardClay = 0;
+  const rewardCoins = (calipersTriggers ? gainFromSupply(next, player, "coins", 1) : 0) + (mouldsTriggers ? gainFromSupply(next, player, "coins", 1) : 0);
   if (calipersTriggers) exhaustTechnique(player, actorId, "T02", events);
+  if (mouldsTriggers) exhaustTechnique(player, actorId, "T03", events);
   if (rewardClay > 0 || rewardCoins > 0) {
     events.push({
       type: "RESOURCES_CHANGED",
@@ -930,271 +855,214 @@ function formCeramics(
   return success(next, events);
 }
 
-function glazeCeramics(
+function glazeCeramicsV122(
   state: GameState,
   actorId: PlayerId,
   action: Extract<GameAction, { type: "GLAZE_CERAMICS" }>,
 ): ApplyResult {
   const context = validateWorkerAction(state, actorId, action.workerId, "glaze_workshop");
-  if (!isWorkerContext(context)) {
-    return context;
-  }
-  const freeDecorationCeramicId = action.freeDecorationCeramicId ??
-    (action.shifuMode === "free_single" ? action.selections[0]?.ceramicId : undefined);
-  if (context.worker.kind === "apprentice" && freeDecorationCeramicId !== undefined) {
-    return applyFailure(
-      ruleError("INVALID_ACTION", "Only the Shifu may make one selected Decoration free."),
-    );
-  }
+  if (!isWorkerContext(context)) return context;
   const maximum = context.worker.kind === "shifu" ? 2 : 1;
-  if (action.selections.length > maximum) {
-    return applyFailure(
-      ruleError("INVALID_SELECTION", `This mode may glaze at most ${maximum} ceramics.`),
-    );
+  if (action.selections.length < 1 || action.selections.length > maximum) {
+    return applyFailure(ruleError("INVALID_SELECTION", `This worker must glaze 1 to ${maximum} vessels.`));
   }
-  const ceramicIds = action.selections.map((selection) => selection.ceramicId);
-  if (new Set(ceramicIds).size !== ceramicIds.length) {
-    return applyFailure(ruleError("INVALID_SELECTION", "A ceramic may be selected only once."));
-  }
+  const ids = action.selections.map((selection) => selection.ceramicId);
+  if (new Set(ids).size !== ids.length) return applyFailure(ruleError("INVALID_SELECTION", "A ceramic may be selected once."));
   const useTechniqueIds = action.useTechniqueIds ?? [];
-  const techniqueFailure = validateTechniqueUses(
-    context.player,
-    useTechniqueIds,
-    ["T05", "T06"],
-  );
+  const techniqueFailure = validateTechniqueUses(context.player, useTechniqueIds, ["T05", "T06", "T07", "T08", "T09"]);
   if (techniqueFailure !== null) return techniqueFailure;
-  if (
-    freeDecorationCeramicId !== undefined &&
-    !ceramicIds.includes(freeDecorationCeramicId)
-  ) {
-    return applyFailure(ruleError("INVALID_SELECTION", "The free Shifu Decoration must be one of the selected ceramics."));
+  const reworks = action.selections.filter((selection) => selection.newShape !== undefined);
+  if (useTechniqueIds.includes("T05") !== (reworks.length === 1)) {
+    return applyFailure(ruleError("INVALID_SELECTION", "Reworking Table must change exactly one selected vessel."));
   }
-  const hasCarvedRedecoration = action.selections.some((selection) =>
-    selection.decoration === "carved" && state.ceramics[selection.ceramicId]?.stage === "glazed"
-  );
-  const hasImpressedRedecoration = action.selections.some((selection) =>
-    selection.decoration === "impressed" && state.ceramics[selection.ceramicId]?.stage === "glazed"
-  );
-  if (
-    useTechniqueIds.includes("T05") &&
-    !hasCarvedRedecoration
-  ) {
-    return applyFailure(
-      ruleError("INVALID_ACTION", "Carving Knives' once-per-round use requires changing a Glazed ceramic to Carved."),
-    );
+  if (useTechniqueIds.includes("T06") !== (action.glazePalette !== undefined)) {
+    return applyFailure(ruleError("INVALID_SELECTION", "Glaze Palette requires one other Glazed ceramic."));
   }
-  if (
-    useTechniqueIds.includes("T06") &&
-    !hasImpressedRedecoration
-  ) {
-    return applyFailure(
-      ruleError("INVALID_ACTION", "Seal Stamps' once-per-round use requires changing a Glazed ceramic to Impressed."),
-    );
+  const freeDecorationCeramicId = action.freeDecorationCeramicId;
+  if (freeDecorationCeramicId !== undefined && (context.worker.kind !== "shifu" || !ids.includes(freeDecorationCeramicId))) {
+    return applyFailure(ruleError("INVALID_SELECTION", "The Shifu's free Decoration must be on this action."));
   }
-  const ownsCarvingKnives = ownedTechnique(context.player, "T05") !== undefined;
-  const ownsSealStamps = ownedTechnique(context.player, "T06") !== undefined;
   let totalCoins = 0;
+  let addedClay = 0;
   for (const selection of action.selections) {
-    if (!GLAZES.includes(selection.glaze) || !DECORATIONS.includes(selection.decoration)) {
-      return applyFailure(
-        ruleError("INVALID_SELECTION", "The selected Glaze or Decoration does not exist."),
-      );
-    }
     const ceramic = state.ceramics[selection.ceramicId];
-    if (ceramic === undefined) {
-      return applyFailure(
-        ruleError("CERAMIC_NOT_FOUND", "A selected ceramic does not exist.", {
-          ceramicId: selection.ceramicId,
-        }),
-      );
+    if (ceramic === undefined || ceramic.ownerId !== actorId || ceramic.stage !== "shaped") {
+      return applyFailure(ruleError("ILLEGAL_CERAMIC_STAGE", "Glaze & Decoration selects owned Shaped vessels only."));
     }
-    if (ceramic.ownerId !== actorId || (ceramic.stage !== "shaped" && ceramic.stage !== "glazed")) {
-      return applyFailure(
-        ruleError(
-          "ILLEGAL_CERAMIC_STAGE",
-          "Only the acting player's Shaped or eligible Glazed ceramics may be affected.",
-          { ceramicId: selection.ceramicId },
-        ),
-      );
+    if (!GLAZES.includes(selection.glaze) || !DECORATIONS.includes(selection.decoration)) {
+      return applyFailure(ruleError("INVALID_SELECTION", "Unknown Glaze or Decoration."));
     }
-    if (ceramic.stage === "glazed") {
-      if (selection.glaze !== ceramic.glaze) {
-        return applyFailure(ruleError("INVALID_SELECTION", "Re-decoration cannot change a ceramic's existing Glaze."));
+    if (selection.newShape !== undefined) {
+      if (!SHAPES.includes(selection.newShape) || selection.newShape === ceramic.shape || state.vesselSupply[selection.newShape].length < 1) {
+        return applyFailure(ruleError("INVALID_SELECTION", "Reworking Table needs an available different Shape."));
       }
-      const matchingTechnique = selection.decoration === "carved"
-        ? "T05"
-        : selection.decoration === "impressed"
-          ? "T06"
-          : null;
-      if (ceramic.dryingFramesApplied !== true && (matchingTechnique === null || !useTechniqueIds.includes(matchingTechnique))) {
-        return applyFailure(ruleError("INVALID_ACTION", "Only Drying Frames or the matching re-decoration Technique may affect an already Glazed ceramic."));
-      }
+      addedClay += Math.max(0, SHAPE_COSTS[selection.newShape] - SHAPE_COSTS[ceramic.shape]);
     }
-    const passiveWaiver =
-      (selection.decoration === "carved" && ownsCarvingKnives) ||
-      (selection.decoration === "impressed" && ownsSealStamps);
-    if (selection.ceramicId !== freeDecorationCeramicId && !passiveWaiver) {
-      totalCoins += DECORATION_COSTS[selection.decoration];
+    const freeByTech = (selection.decoration === "carved" && useTechniqueIds.includes("T07"))
+      || (selection.decoration === "impressed" && useTechniqueIds.includes("T08"))
+      || (selection.decoration === "crackle" && useTechniqueIds.includes("T09"));
+    if (selection.ceramicId !== freeDecorationCeramicId && !freeByTech) totalCoins += DECORATION_COSTS[selection.decoration];
+  }
+  for (const [techniqueId, decoration] of [["T07", "carved"], ["T08", "impressed"], ["T09", "crackle"]] as const) {
+    if (useTechniqueIds.includes(techniqueId) && !action.selections.some((selection) => selection.decoration === decoration)) {
+      return applyFailure(ruleError("INVALID_SELECTION", `${TECHNIQUE_DEFINITIONS[techniqueId]?.name ?? techniqueId} must waive its matching Decoration.`));
     }
   }
-  if (context.player.resources.coins < totalCoins) {
-    return applyFailure(
-      ruleError("INSUFFICIENT_RESOURCES", "Not enough Coins for the selected Decorations.", {
-        requiredCoins: totalCoins,
-      }),
-    );
+  if (action.glazePalette !== undefined) {
+    const target = state.ceramics[action.glazePalette.ceramicId];
+    if (target === undefined || target.ownerId !== actorId || target.stage !== "glazed" || ids.includes(target.id) || !GLAZES.includes(action.glazePalette.glaze)) {
+      return applyFailure(ruleError("INVALID_SELECTION", "Glaze Palette must change one other owned Glazed ceramic."));
+    }
+  }
+  if (context.player.resources.coins < totalCoins || context.player.resources.clay < addedClay) {
+    return applyFailure(ruleError("INSUFFICIENT_RESOURCES", "The selected glazing and reworking costs cannot be paid."));
+  }
+  if (action.rapidDrying !== undefined) {
+    if (context.player.startingTechniqueId !== "ST03" || !ids.includes(action.rapidDrying.ceramicId) || context.player.resources.wood < 1) {
+      return applyFailure(ruleError("INVALID_ACTION", "Rapid Drying requires its Starting Tech, 1 Wood, and a ceramic glazed now."));
+    }
+    const destination = action.rapidDrying.kilnSpaceId;
+    if (destination === "imperial") {
+      const imperialOccupied = Object.values(state.ceramics).some((ceramic) => ceramic.stage === "loaded" && ceramic.ownerId === actorId && ceramic.kilnSpaceId === "imperial");
+      if (!context.player.imperialKilnUnlocked || imperialOccupied) return applyFailure(ruleError("KILN_SPACE_OCCUPIED", "The Imperial Kiln is unavailable."));
+    } else if (!activeKilnSpaceIds(state.playerCount).includes(destination) || kilnOccupant(state, destination) !== null) {
+      return applyFailure(ruleError("KILN_SPACE_OCCUPIED", "The Rapid Drying destination is unavailable."));
+    }
   }
 
   const next = cloneState(state);
   const events: GameEvent[] = [];
   placeWorker(next, actorId, action.workerId, "glaze_workshop", events);
   const player = next.players[actorId];
-  if (player === undefined) {
-    throw new Error("Glazing actor disappeared");
-  }
+  if (player === undefined) throw new Error("Glazing actor disappeared");
   player.resources.coins -= totalCoins;
+  player.resources.clay -= addedClay;
   next.commonSupply.coins += totalCoins;
-  if (totalCoins > 0) {
-    events.push({
-      type: "RESOURCES_CHANGED",
-      playerId: actorId,
-      clay: 0,
-      wood: 0,
-      coins: -totalCoins,
-    });
-  }
+  next.commonSupply.clay += addedClay;
+  if (totalCoins > 0 || addedClay > 0) events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: -addedClay, wood: 0, coins: -totalCoins });
   for (const selection of action.selections) {
     const ceramic = next.ceramics[selection.ceramicId];
-    if (ceramic === undefined || (ceramic.stage !== "shaped" && ceramic.stage !== "glazed")) {
-      throw new Error("Validated Glaze Workshop ceramic disappeared");
+    if (ceramic === undefined || ceramic.stage !== "shaped") throw new Error("Glazing target disappeared");
+    let vesselInstanceId = ceramic.vesselInstanceId;
+    let shape = ceramic.shape;
+    if (selection.newShape !== undefined) {
+      next.vesselSupply[ceramic.shape].push(ceramic.vesselInstanceId);
+      const replacement = next.vesselSupply[selection.newShape].shift();
+      if (replacement === undefined) throw new Error("Reworking vessel disappeared");
+      vesselInstanceId = replacement;
+      shape = selection.newShape;
     }
-    next.ceramics[selection.ceramicId] = {
-      ...ceramic,
-      stage: "glazed",
-      glaze: ceramic.stage === "glazed" ? ceramic.glaze : selection.glaze,
-      decoration: selection.decoration,
-    };
-    events.push({
-      type: "CERAMIC_GLAZED",
-      playerId: actorId,
-      ceramicId: selection.ceramicId,
-      glaze: ceramic.stage === "glazed" ? ceramic.glaze : selection.glaze,
-      decoration: selection.decoration,
-    });
+    next.ceramics[selection.ceramicId] = { ...ceramic, vesselInstanceId, shape, stage: "glazed", glaze: selection.glaze, decoration: selection.decoration };
+    events.push({ type: "CERAMIC_GLAZED", playerId: actorId, ceramicId: selection.ceramicId, glaze: selection.glaze, decoration: selection.decoration });
   }
-  for (const techniqueId of useTechniqueIds) {
-    exhaustTechnique(player, actorId, techniqueId, events);
+  if (action.glazePalette !== undefined) {
+    const target = next.ceramics[action.glazePalette.ceramicId];
+    if (target === undefined || target.stage !== "glazed") throw new Error("Glaze Palette target disappeared");
+    next.ceramics[target.id] = { ...target, glaze: action.glazePalette.glaze };
   }
+  if (action.rapidDrying !== undefined) {
+    const target = next.ceramics[action.rapidDrying.ceramicId];
+    if (target === undefined || target.stage !== "glazed") throw new Error("Rapid Drying target disappeared");
+    player.resources.wood -= 1;
+    next.commonSupply.wood += 1;
+    next.ceramics[target.id] = { ...target, stage: "loaded", kilnSpaceId: action.rapidDrying.kilnSpaceId };
+    events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: -1, coins: 0 });
+    events.push({ type: "CERAMIC_LOADED", playerId: actorId, ceramicId: target.id, kilnSpaceId: action.rapidDrying.kilnSpaceId });
+  }
+  for (const techniqueId of useTechniqueIds) exhaustTechnique(player, actorId, techniqueId, events);
   completeWorkerAction(next, actorId, events);
   return success(next, events);
 }
 
-function useKilnYard(
+function useKilnYardV122(
   state: GameState,
   actorId: PlayerId,
   action: Extract<GameAction, { type: "USE_KILN_YARD" }>,
 ): ApplyResult {
   const context = validateWorkerAction(state, actorId, action.workerId, "kiln_yard");
-  if (!isWorkerContext(context)) {
-    return context;
+  if (!isWorkerContext(context)) return context;
+  const normalMaximum = context.worker.kind === "shifu" ? 2 : 1;
+  const priority = action.useImperialPriority === true;
+  const normalCount = action.loads.length - (priority ? 1 : 0);
+  if (normalCount < 1 || normalCount > normalMaximum) {
+    return applyFailure(ruleError("INVALID_SELECTION", `This Kiln Yard action must load 1 to ${normalMaximum}${priority ? " normal" : ""} ceramics.`));
   }
-  const maximum = context.worker.kind === "shifu" ? 2 : 1;
-  if (action.loads.length < 1 || action.loads.length > maximum) {
-    return applyFailure(
-      ruleError(
-        "INVALID_SELECTION",
-        context.worker.kind === "shifu"
-          ? "A Shifu must load one or two ceramics."
-          : "An Apprentice must load exactly one ceramic.",
-      ),
-    );
+  if (priority && (!context.player.imperialPriorityAvailable || !context.player.imperialKilnUnlocked)) {
+    return applyFailure(ruleError("ABILITY_ALREADY_USED", "Imperial Priority is unavailable."));
   }
   const ceramicIds = action.loads.map((load) => load.ceramicId);
-  const spaceIds = action.loads.map((load) => load.kilnSpaceId);
-  if (
-    new Set(ceramicIds).size !== ceramicIds.length ||
-    new Set(spaceIds).size !== spaceIds.length
-  ) {
-    return applyFailure(
-      ruleError("INVALID_SELECTION", "Ceramics and kiln spaces may be selected only once."),
-    );
+  const destinations = action.loads.map((load) => load.kilnSpaceId);
+  if (new Set(ceramicIds).size !== ceramicIds.length || new Set(destinations).size !== destinations.length) {
+    return applyFailure(ruleError("INVALID_SELECTION", "Ceramics and kiln destinations may be selected only once."));
+  }
+  const imperialLoads = action.loads.filter((load) => load.kilnSpaceId === "imperial");
+  if (imperialLoads.length > 1 || (priority && imperialLoads.length !== 1)) {
+    return applyFailure(ruleError("INVALID_SELECTION", "At most one ceramic may enter the empty Imperial Kiln."));
+  }
+  if (imperialLoads.length === 1) {
+    const occupied = Object.values(state.ceramics).some((ceramic) => ceramic.stage === "loaded" && ceramic.ownerId === actorId && ceramic.kilnSpaceId === "imperial");
+    if (!context.player.imperialKilnUnlocked || occupied) return applyFailure(ruleError("KILN_SPACE_OCCUPIED", "The Imperial Kiln is locked or occupied."));
+  }
+  if (priority && action.loads[action.loads.length - 1]?.kilnSpaceId !== "imperial") {
+    return applyFailure(ruleError("INVALID_SELECTION", "The Imperial Priority additional load must be identified last and enter the Imperial Kiln."));
+  }
+  const furnitureLoads = action.loads.filter((load) => load.useKilnFurniture === true);
+  if (furnitureLoads.length > 1) return applyFailure(ruleError("INVALID_SELECTION", "Kiln Furniture may affect one ceramic per round."));
+  if (furnitureLoads.length === 1) {
+    const tech = ownedTechnique(context.player, "T15");
+    const destination = furnitureLoads[0]?.kilnSpaceId;
+    if (tech === undefined || tech.exhausted || destination === undefined || destination === "imperial" || !destination.startsWith("high_") && !destination.startsWith("low_")) {
+      return applyFailure(ruleError("INVALID_ACTION", "Kiln Furniture requires an available High or Low Shared Kiln load."));
+    }
   }
   for (const load of action.loads) {
-    if (!KILN_SPACE_IDS.includes(load.kilnSpaceId)) {
-      return applyFailure(
-        ruleError("INVALID_SELECTION", "The selected kiln space does not exist.", {
-          kilnSpaceId: load.kilnSpaceId,
-        }),
-      );
-    }
-    if (!activeKilnSpaceIds(state.playerCount).includes(load.kilnSpaceId)) {
-      return applyFailure(
-        ruleError("INVALID_SELECTION", "The selected kiln space is covered at this player count.", {
-          kilnSpaceId: load.kilnSpaceId,
-          playerCount: state.playerCount,
-        }),
-      );
-    }
-    if (kilnOccupant(state, load.kilnSpaceId) !== null) {
-      return applyFailure(
-        ruleError("KILN_SPACE_OCCUPIED", "The selected kiln space is occupied.", {
-          kilnSpaceId: load.kilnSpaceId,
-        }),
-      );
+    if (load.kilnSpaceId !== "imperial") {
+      if (!KILN_SPACE_IDS.includes(load.kilnSpaceId) || !activeKilnSpaceIds(state.playerCount).includes(load.kilnSpaceId)) {
+        return applyFailure(ruleError("INVALID_SELECTION", "That Shared Kiln space is inactive."));
+      }
+      if (kilnOccupant(state, load.kilnSpaceId) !== null) return applyFailure(ruleError("KILN_SPACE_OCCUPIED", "That Shared Kiln space is occupied."));
     }
     const ceramic = state.ceramics[load.ceramicId];
-    if (ceramic === undefined) {
-      return applyFailure(
-        ruleError("CERAMIC_NOT_FOUND", "A selected ceramic does not exist.", {
-          ceramicId: load.ceramicId,
-        }),
-      );
-    }
-    if (
-      ceramic.ownerId !== actorId ||
-      ceramic.stage !== "glazed" ||
-      (ceramic.loadableFromRound !== undefined && state.round < ceramic.loadableFromRound)
-    ) {
-      return applyFailure(
-        ruleError(
-          "ILLEGAL_CERAMIC_STAGE",
-          "Only the acting player's currently loadable Glazed ceramics may be loaded.",
-          { ceramicId: load.ceramicId },
-        ),
-      );
+    if (ceramic === undefined || ceramic.ownerId !== actorId || ceramic.stage !== "glazed") {
+      return applyFailure(ruleError("ILLEGAL_CERAMIC_STAGE", "Kiln Yard loads owned Glazed ceramics only."));
     }
   }
-
+  const tendingSelected = action.kilnTendingClay !== undefined || action.kilnTendingWood !== undefined;
+  if (context.player.startingTechniqueId === "ST04") {
+    const tendingClay = action.kilnTendingClay ?? -1;
+    const tendingWood = action.kilnTendingWood ?? -1;
+    if (!isNonNegativeInteger(tendingClay) || !isNonNegativeInteger(tendingWood) || tendingClay + tendingWood !== 2) {
+      return applyFailure(ruleError("INVALID_SELECTION", "Kiln Tending gains exactly 2 Clay/Wood resources."));
+    }
+  } else if (tendingSelected) {
+    return applyFailure(ruleError("INVALID_ACTION", "Kiln Tending is not this workshop's Starting Tech."));
+  }
   const next = cloneState(state);
   const events: GameEvent[] = [];
   placeWorker(next, actorId, action.workerId, "kiln_yard", events);
-  for (const load of action.loads) {
-    const ceramic = next.ceramics[load.ceramicId];
-    if (ceramic === undefined || ceramic.stage !== "glazed") {
-      throw new Error("Validated Glazed ceramic disappeared");
-    }
-    next.ceramics[load.ceramicId] = {
-      ...ceramic,
-      stage: "loaded",
-      kilnSpaceId: load.kilnSpaceId,
-    };
-    events.push({
-      type: "CERAMIC_LOADED",
-      playerId: actorId,
-      ceramicId: load.ceramicId,
-      kilnSpaceId: load.kilnSpaceId,
-    });
-  }
   const player = next.players[actorId];
   if (player === undefined) throw new Error("Kiln Yard actor disappeared");
+  for (const load of action.loads) {
+    const ceramic = next.ceramics[load.ceramicId];
+    if (ceramic === undefined || ceramic.stage !== "glazed") throw new Error("Kiln Yard target disappeared");
+    next.ceramics[ceramic.id] = { ...ceramic, stage: "loaded", kilnSpaceId: load.kilnSpaceId, ...(load.useKilnFurniture === true ? { kilnFurnitureUsed: true } : {}) };
+    events.push({ type: "CERAMIC_LOADED", playerId: actorId, ceramicId: ceramic.id, kilnSpaceId: load.kilnSpaceId });
+  }
+  if (priority) {
+    player.imperialPriorityAvailable = false;
+    events.push({ type: "IMPERIAL_PRIORITY_USED", playerId: actorId });
+  }
+  if (context.worker.kind === "shifu") player.kilnYardShifuUsedThisRound = true;
+  if (furnitureLoads.length === 1) exhaustTechnique(player, actorId, "T15", events);
+  if (player.startingTechniqueId === "ST04") {
+    const clay = gainFromSupply(next, player, "clay", action.kilnTendingClay ?? 0);
+    const wood = gainFromSupply(next, player, "wood", action.kilnTendingWood ?? 0);
+    events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay, wood, coins: 0 });
+  }
   completeWorkerAction(next, actorId, events);
   return success(next, events);
 }
 
-/**
- * Labour: an uncapped action that converts a worker into Coins. Apprentices earn 2 and a
- * Shifu 4, the same rates the Office used to pay, but without competing for a space.
- */
 function useLabour(state: GameState, actorId: PlayerId, workerId: string): ApplyResult {
   const context = validateWorkerAction(
     state,
@@ -1227,193 +1095,6 @@ function useLabour(state: GameState, actorId: PlayerId, workerId: string): Apply
   return success(next, events);
 }
 
-function resolveOfficeFlawedSale(
-  state: GameState,
-  actorId: PlayerId,
-  ceramicIds: string[],
-): ApplyResult {
-  const phase = requirePhase(state, "work_office_sale");
-  if (isFailure(phase)) return phase;
-  const actorError = actorFailure(state, actorId);
-  if (actorError !== null) return actorError;
-  const player = state.players[actorId];
-  const worker = player?.workers[phase.workerId];
-  if (
-    player === undefined ||
-    worker === undefined ||
-    worker.status !== "placed" ||
-    worker.locationId !== "market_imperial_office"
-  ) {
-    return applyFailure(ruleError("INVALID_ACTION", "The Office sale step has no placed worker."));
-  }
-  if (new Set(ceramicIds).size !== ceramicIds.length) {
-    return applyFailure(ruleError("INVALID_SELECTION", "A ceramic may be sold only once."));
-  }
-  const saleLimit = worker.kind === "shifu" ? 2 : 1;
-  if (ceramicIds.length > saleLimit) {
-    return applyFailure(
-      ruleError(
-        "INVALID_SELECTION",
-        worker.kind === "shifu"
-          ? "A Shifu may sell at most two Flawed ceramics."
-          : "An Apprentice may sell at most one Flawed ceramic.",
-      ),
-    );
-  }
-  if (ceramicIds.length * FLAWED_SALE_COINS > state.commonSupply.coins) {
-    return applyFailure(
-      ruleError(
-        "SUPPLY_EMPTY",
-        `The common supply must contain ${FLAWED_SALE_COINS} Coins for every sold ceramic.`,
-        { requested: ceramicIds.length * FLAWED_SALE_COINS, available: state.commonSupply.coins },
-      ),
-    );
-  }
-  for (const ceramicId of ceramicIds) {
-    const ceramic = state.ceramics[ceramicId];
-    if (ceramic === undefined) {
-      return applyFailure(
-        ruleError("CERAMIC_NOT_FOUND", "A selected ceramic does not exist.", { ceramicId }),
-      );
-    }
-    if (
-      ceramic.ownerId !== actorId ||
-      ceramic.stage !== "finished" ||
-      ceramic.quality !== "flawed"
-    ) {
-      return applyFailure(
-        ruleError(
-          "ILLEGAL_CERAMIC_STAGE",
-          "Only the acting player's Finished Flawed ceramics may be sold.",
-          { ceramicId },
-        ),
-      );
-    }
-  }
-
-  const next = cloneState(state);
-  const events: GameEvent[] = [];
-  const nextPlayer = next.players[actorId];
-  if (nextPlayer === undefined) {
-    throw new Error("Office actor disappeared");
-  }
-  for (const ceramicId of ceramicIds) {
-    const ceramic = next.ceramics[ceramicId];
-    if (ceramic === undefined || ceramic.stage !== "finished") {
-      throw new Error("Validated Flawed ceramic disappeared");
-    }
-    next.vesselSupply[ceramic.shape].push(ceramic.vesselInstanceId);
-    next.ceramics[ceramicId] = {
-      id: ceramic.id,
-      vesselInstanceId: ceramic.vesselInstanceId,
-      ownerId: ceramic.ownerId,
-      shape: ceramic.shape,
-      stage: "sold",
-      soldInRound: next.round,
-    };
-    events.push({ type: "CERAMIC_SOLD", playerId: actorId, ceramicId });
-  }
-  // v1.1.4 Office sale: a Flawed ceramic is worth 2 Coins.
-  const gainedCoins = ceramicIds.length * FLAWED_SALE_COINS;
-  nextPlayer.resources.coins += gainedCoins;
-  next.commonSupply.coins -= gainedCoins;
-  if (gainedCoins > 0) {
-    events.push({
-      type: "RESOURCES_CHANGED",
-      playerId: actorId,
-      clay: 0,
-      wood: 0,
-      coins: gainedCoins,
-    });
-  }
-  const connoisseur = ownedTechnique(nextPlayer, "T14");
-  const canUseConnoisseur =
-    connoisseur !== undefined &&
-    !connoisseur.exhausted &&
-    Object.values(next.ceramics).some(
-      (ceramic) =>
-        ceramic.ownerId === actorId &&
-        ceramic.stage === "finished" &&
-        ceramic.quality !== "flawed" &&
-        next.commonSupply.coins >= (ceramic.quality === "masterpiece" ? 10 : ceramic.quality === "fine" ? 6 : 3),
-    );
-  if (canUseConnoisseur) {
-    next.phase = { type: "work_office_connoisseur", actorId, workerId: phase.workerId };
-  } else {
-    completeWorkerAction(next, actorId, events);
-  }
-  return success(next, events);
-}
-
-function resolveConnoisseurNetwork(
-  state: GameState,
-  actorId: PlayerId,
-  ceramicId: string | null,
-): ApplyResult {
-  const phase = requirePhase(state, "work_office_connoisseur");
-  if (isFailure(phase)) return phase;
-  const actorError = actorFailure(state, actorId);
-  if (actorError !== null) return actorError;
-  const player = state.players[actorId];
-  const technique = player === undefined ? undefined : ownedTechnique(player, "T14");
-  if (player === undefined || technique === undefined || technique.exhausted) {
-    return applyFailure(ruleError("TECHNIQUE_EXHAUSTED", "Connoisseur Network is unavailable."));
-  }
-  if (ceramicId !== null) {
-    const ceramic = state.ceramics[ceramicId];
-    if (
-      ceramic === undefined ||
-      ceramic.ownerId !== actorId ||
-      ceramic.stage !== "finished" ||
-      ceramic.quality === "flawed"
-    ) {
-      return applyFailure(
-        ruleError(
-          "ILLEGAL_CERAMIC_STAGE",
-          "Connoisseur Network requires one owned Finished undelivered non-Flawed ceramic.",
-          { ceramicId },
-        ),
-      );
-    }
-    const saleCoins = ceramic.quality === "masterpiece" ? 10 : ceramic.quality === "fine" ? 6 : 3;
-    if (state.commonSupply.coins < saleCoins) {
-      return applyFailure(
-        ruleError("SUPPLY_EMPTY", "The common supply cannot pay the selected ceramic sale."),
-      );
-    }
-  }
-
-  const next = cloneState(state);
-  const events: GameEvent[] = [];
-  const nextPlayer = next.players[actorId];
-  if (nextPlayer === undefined) throw new Error("Connoisseur actor disappeared");
-  if (ceramicId !== null) {
-    const ceramic = next.ceramics[ceramicId];
-    if (ceramic === undefined || ceramic.stage !== "finished") {
-      throw new Error("Validated Connoisseur ceramic disappeared");
-    }
-    next.vesselSupply[ceramic.shape].push(ceramic.vesselInstanceId);
-    next.ceramics[ceramicId] = {
-      id: ceramic.id,
-      vesselInstanceId: ceramic.vesselInstanceId,
-      ownerId: ceramic.ownerId,
-      shape: ceramic.shape,
-      stage: "sold",
-      soldInRound: next.round,
-    };
-    const saleCoins = ceramic.quality === "masterpiece" ? 10 : ceramic.quality === "fine" ? 6 : 3;
-    nextPlayer.resources.coins += saleCoins;
-    next.commonSupply.coins -= saleCoins;
-    exhaustTechnique(nextPlayer, actorId, "T14", events);
-    events.push(
-      { type: "CERAMIC_SOLD", playerId: actorId, ceramicId },
-      { type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins: saleCoins },
-    );
-  }
-  completeWorkerAction(next, actorId, events);
-  return success(next, events);
-}
-
 function validOfficeMode(worker: WorkerState, mode: OfficeOrderMode): boolean {
   if (worker.kind === "apprentice") {
     return mode === "take_one";
@@ -1442,13 +1123,7 @@ function beginOfficeOrders(
     );
   }
   const hasOrderSource =
-    state.marketDisplay.length +
-      state.imperialDisplay.length +
-      state.marketDeck.length +
-      state.imperialDeck.length +
-      state.marketDiscard.length +
-      state.imperialDiscard.length >
-    0;
+    state.marketDisplay.length > 0;
   if (mode !== "take_up_to_two") {
     if (!hasOrderSource) {
       return applyFailure(ruleError("ORDER_NOT_AVAILABLE", "No Order source is available."));
@@ -1466,11 +1141,9 @@ function beginOfficeOrders(
     remainingTakes: mode === "take_up_to_two" ? 2 : 1,
     ordersTaken: 0,
     step:
-      ownedTechnique(context.player, "T08") !== undefined &&
-      !ownedTechnique(context.player, "T08")?.exhausted &&
+      ownedTechnique(context.player, "T10") !== undefined &&
       hasOrderSource &&
-      (state.marketDeck.length + state.marketDiscard.length >= COLOUR_SAMPLES_LOOK ||
-        state.imperialDeck.length + state.imperialDiscard.length >= COLOUR_SAMPLES_LOOK)
+      state.marketDeck.length + state.marketDiscard.length >= COLOUR_SAMPLES_LOOK
         ? "colour_samples_or_skip"
         : "take_or_end",
     colourSamplesUsed: false,
@@ -1489,17 +1162,17 @@ function finishOfficeOrderAcquisition(
   if (state.phase.remainingTakes > 0) return;
   const player = state.players[actorId];
   if (player === undefined) throw new Error("Office actor disappeared");
-  state.phase = { type: "work_office_sale", actorId, workerId: state.phase.workerId };
+  state.phase = { type: "work_commission_advance", actorId, workerId: state.phase.workerId };
 }
 
 function offerColourSamplesBeforeNextTake(state: GameState): void {
   if (state.phase.type !== "work_office_orders" || state.phase.remainingTakes <= 0 || state.phase.colourSamplesUsed) return;
   const player = state.players[state.phase.actorId];
-  const technique = player === undefined ? undefined : ownedTechnique(player, "T08");
-  const hasTwoInEitherDeck =
-    state.marketDeck.length + state.marketDiscard.length >= COLOUR_SAMPLES_LOOK ||
-    state.imperialDeck.length + state.imperialDiscard.length >= COLOUR_SAMPLES_LOOK;
-  if (technique !== undefined && !technique.exhausted && hasTwoInEitherDeck) {
+  const technique = player === undefined ? undefined : ownedTechnique(player, "T10");
+  if (
+    technique !== undefined &&
+    state.marketDeck.length + state.marketDiscard.length >= COLOUR_SAMPLES_LOOK
+  ) {
     state.phase.step = "colour_samples_or_skip";
   }
 }
@@ -1525,11 +1198,7 @@ function takeOfficeOrder(state: GameState, actorId: PlayerId, orderId: OrderId, 
       ruleError("INVALID_ACTION", "Resolve the Colour Samples choice before taking an Order."),
     );
   }
-  const deck = state.marketDisplay.includes(orderId)
-    ? "market"
-    : state.imperialDisplay.includes(orderId)
-      ? "imperial"
-      : null;
+  const deck = state.marketDisplay.includes(orderId) ? "market" : null;
   if (deck === null) {
     return applyFailure(
       ruleError("ORDER_NOT_AVAILABLE", "The selected Order is not face-up.", { orderId }),
@@ -1537,16 +1206,13 @@ function takeOfficeOrder(state: GameState, actorId: PlayerId, orderId: OrderId, 
   }
 
   const next = cloneState(state);
-  ensureOrderDeck(next, deck, rng);
   const nextPhase = next.phase;
   const nextPlayer = next.players[actorId];
   if (nextPhase.type !== "work_office_orders" || nextPlayer === undefined) {
     throw new Error("Office Order phase invariant failed");
   }
-  const drawn =
-    deck === "market"
-      ? drawFromDisplay(next.marketDisplay, next.marketDeck, orderId)
-      : drawFromDisplay(next.imperialDisplay, next.imperialDeck, orderId);
+  ensureMainOrderDeck(next, rng);
+  const drawn = drawFromDisplay(next.marketDisplay, next.marketDeck, orderId);
   if (!drawn) {
     throw new Error("Validated face-up Order disappeared");
   }
@@ -1556,55 +1222,6 @@ function takeOfficeOrder(state: GameState, actorId: PlayerId, orderId: OrderId, 
   offerColourSamplesBeforeNextTake(next);
   const events: GameEvent[] = [
     { type: "ORDER_TAKEN", playerId: actorId, orderId, deck, acquisition: "face_up" },
-  ];
-  finishOfficeOrderAcquisition(next, actorId, events);
-  return success(next, events);
-}
-
-function drawBlindOfficeOrder(
-  state: GameState,
-  actorId: PlayerId,
-  deck: OrderDeck,
-  rng: RandomSource,
-): ApplyResult {
-  const phase = requirePhase(state, "work_office_orders");
-  if (isFailure(phase)) return phase;
-  const actorError = actorFailure(state, actorId);
-  if (actorError !== null) return actorError;
-  const player = state.players[actorId];
-  if (player === undefined) {
-    return applyFailure(ruleError("UNKNOWN_PLAYER", "Player was not found.", { actorId }));
-  }
-  if (phase.remainingTakes <= 0) {
-    return applyFailure(ruleError("INVALID_ACTION", "This Office action has no Order take left."));
-  }
-  if (phase.step !== "take_or_end") {
-    return applyFailure(
-      ruleError("INVALID_ACTION", "Resolve the Colour Samples choice before drawing an Order."),
-    );
-  }
-  const available = (deck === "market" ? state.marketDeck.length + state.marketDiscard.length : state.imperialDeck.length + state.imperialDiscard.length);
-  if (available === 0) {
-    return applyFailure(
-      ruleError("ORDER_NOT_AVAILABLE", `The ${deck} deck is empty.`, { deck }),
-    );
-  }
-
-  const next = cloneState(state);
-  ensureOrderDeck(next, deck, rng);
-  const nextPhase = next.phase;
-  const nextPlayer = next.players[actorId];
-  if (nextPhase.type !== "work_office_orders" || nextPlayer === undefined) {
-    throw new Error("Office blind-draw phase invariant failed");
-  }
-  const orderId = (deck === "market" ? next.marketDeck : next.imperialDeck).shift();
-  if (orderId === undefined) throw new Error("Validated blind Order disappeared");
-  nextPlayer.orderHand.push(orderId);
-  nextPhase.remainingTakes = (nextPhase.remainingTakes - 1) as 0 | 1 | 2;
-  nextPhase.ordersTaken += 1;
-  offerColourSamplesBeforeNextTake(next);
-  const events: GameEvent[] = [
-    { type: "ORDER_TAKEN", playerId: actorId, orderId, deck, acquisition: "blind_top" },
   ];
   finishOfficeOrderAcquisition(next, actorId, events);
   return success(next, events);
@@ -1629,14 +1246,14 @@ function endOfficeOrders(state: GameState, actorId: PlayerId): ApplyResult {
       ruleError("INVALID_ACTION", "Resolve Colour Samples before ending the Office action."),
     );
   }
-  if (phase.colourSamplesUsed && phase.ordersTaken === 0) {
+  if (phase.ordersTaken === 0) {
     return applyFailure(
       ruleError("INVALID_ACTION", "After using Colour Samples, take at least one Order."),
     );
   }
   const next = cloneState(state);
   const events: GameEvent[] = [];
-  next.phase = { type: "work_office_sale", actorId, workerId: phase.workerId };
+  next.phase = { type: "work_commission_advance", actorId, workerId: phase.workerId };
   return success(next, events);
 }
 
@@ -1654,15 +1271,15 @@ function useColourSamples(
     return applyFailure(ruleError("INVALID_ACTION", "Colour Samples is not awaiting a choice."));
   }
   const player = state.players[actorId];
-  const technique = player === undefined ? undefined : ownedTechnique(player, "T08");
+  const technique = player === undefined ? undefined : ownedTechnique(player, "T10");
   if (player === undefined || technique === undefined) {
     return applyFailure(ruleError("TECHNIQUE_NOT_OWNED", "Colour Samples is not owned."));
   }
-  if (technique.exhausted) {
-    return applyFailure(ruleError("TECHNIQUE_EXHAUSTED", "Colour Samples is exhausted."));
-  }
-  if ((deck === "market" ? state.marketDeck.length + state.marketDiscard.length : state.imperialDeck.length + state.imperialDiscard.length) < 2) {
-    return applyFailure(ruleError("ORDER_NOT_AVAILABLE", "That Order deck cannot provide two Colour Samples cards."));
+  if (
+    deck !== "market" ||
+    state.marketDeck.length + state.marketDiscard.length < COLOUR_SAMPLES_LOOK
+  ) {
+    return applyFailure(ruleError("ORDER_NOT_AVAILABLE", "The Main deck cannot provide three Colour Samples cards."));
   }
 
   const next = cloneState(state);
@@ -1673,15 +1290,13 @@ function useColourSamples(
   ) {
     throw new Error("Colour Samples state invariant failed");
   }
-  ensureOrderDeck(next, deck, rng);
-  const nextDeck = deck === "market" ? next.marketDeck : next.imperialDeck;
-  if (nextDeck.length < 2) {
-    return applyFailure(ruleError("ORDER_NOT_AVAILABLE", "That Order deck cannot provide two Colour Samples cards."));
+  if (!ensureMainOrderCards(next, COLOUR_SAMPLES_LOOK, rng)) {
+    return applyFailure(ruleError("ORDER_NOT_AVAILABLE", "The Main deck cannot provide three Colour Samples cards."));
   }
+  const nextDeck = next.marketDeck;
   const choices = nextDeck.splice(0, COLOUR_SAMPLES_LOOK);
 
   const events: GameEvent[] = [];
-  exhaustTechnique(nextPlayer, actorId, "T08", events);
   nextPhase.step = "colour_samples_choose";
   nextPhase.colourSamplesUsed = true;
   nextPhase.colourSamplesDeck = deck;
@@ -1689,7 +1304,7 @@ function useColourSamples(
   return success(next, events);
 }
 
-function chooseColourSamplesOrder(state: GameState, actorId: PlayerId, orderId: OrderId): ApplyResult {
+function chooseColourSamplesOrder(state: GameState, actorId: PlayerId, orderId: OrderId, bottomOrderIds?: OrderId[]): ApplyResult {
   const phase = requirePhase(state, "work_office_orders");
   if (isFailure(phase)) return phase;
   const actorError = actorFailure(state, actorId);
@@ -1698,36 +1313,23 @@ function chooseColourSamplesOrder(state: GameState, actorId: PlayerId, orderId: 
   // may take a face-up Order instead, and the looked-at cards still go to the bottom. The
   // old rule forced a take from two cards seen, which made the Technique a gamble rather
   // than information.
-  const faceUp = phase.colourSamplesDeck === undefined
-    ? []
-    : [...state.marketDisplay, ...state.imperialDisplay];
-  const takeable = phase.colourSamplesChoices === undefined
-    ? []
-    : [...phase.colourSamplesChoices, ...faceUp];
-  if (phase.step !== "colour_samples_choose" || phase.colourSamplesDeck === undefined || phase.colourSamplesChoices === undefined || !takeable.includes(orderId)) {
-    return applyFailure(ruleError("INVALID_SELECTION", "Choose a looked-at Order or any face-up Order."));
+  if (phase.step !== "colour_samples_choose" || phase.colourSamplesDeck !== "market" || phase.colourSamplesChoices === undefined || !phase.colourSamplesChoices.includes(orderId)) {
+    return applyFailure(ruleError("INVALID_SELECTION", "Choose one of the three looked-at Main Orders."));
   }
   // Taking one of the looked-at cards bottoms the other. Taking a face-up Order instead
   // bottoms both, and the display position it came from is refilled as any face-up take is.
-  const tookLookedAt = phase.colourSamplesChoices.includes(orderId);
-  const bottomed = tookLookedAt
-    ? phase.colourSamplesChoices.filter((choice) => choice !== orderId)
-    : [...phase.colourSamplesChoices];
-  if (tookLookedAt && bottomed.length === 0) throw new Error("Colour Samples requires two distinct Orders");
+  const unselected = phase.colourSamplesChoices.filter((choice) => choice !== orderId);
+  const bottomed = bottomOrderIds ?? unselected;
+  if (bottomed.length !== 2 || new Set(bottomed).size !== 2 || bottomed.some((id) => !unselected.includes(id))) {
+    return applyFailure(ruleError("INVALID_SELECTION", "Put the other two looked-at Orders on the bottom in the chosen order."));
+  }
   const next = cloneState(state);
   const nextPhase = next.phase;
   const player = next.players[actorId];
   if (nextPhase.type !== "work_office_orders" || player === undefined || nextPhase.colourSamplesDeck === undefined) throw new Error("Colour Samples state invariant failed");
   const deck = nextPhase.colourSamplesDeck;
   const bottomedOrderId = bottomed[0]!;
-  for (const id of bottomed) (deck === "market" ? next.marketDeck : next.imperialDeck).push(id);
-  if (!tookLookedAt) {
-    const fromMarket = next.marketDisplay.includes(orderId);
-    const drawn = fromMarket
-      ? drawFromDisplay(next.marketDisplay, next.marketDeck, orderId)
-      : drawFromDisplay(next.imperialDisplay, next.imperialDeck, orderId);
-    if (!drawn) throw new Error("Validated face-up Colour Samples Order disappeared");
-  }
+  for (const id of bottomed) next.marketDeck.push(id);
   player.orderHand.push(orderId);
   nextPhase.remainingTakes = (nextPhase.remainingTakes - 1) as 0 | 1 | 2;
   nextPhase.ordersTaken += 1;
@@ -1735,7 +1337,7 @@ function chooseColourSamplesOrder(state: GameState, actorId: PlayerId, orderId: 
   delete nextPhase.colourSamplesChoices;
   delete nextPhase.colourSamplesDeck;
   const events: GameEvent[] = [
-    { type: "ORDER_TAKEN", playerId: actorId, orderId, deck, acquisition: tookLookedAt ? "blind_top" : "face_up" },
+    { type: "ORDER_TAKEN", playerId: actorId, orderId, deck, acquisition: "colour_samples" },
     { type: "COLOUR_SAMPLES_USED", playerId: actorId, deck, bottomedOrderId, bottomedOrderIds: bottomed, selectedOrderId: orderId },
   ];
   finishOfficeOrderAcquisition(next, actorId, events);
@@ -1756,6 +1358,30 @@ function skipColourSamples(state: GameState, actorId: PlayerId): ApplyResult {
   }
   next.phase.step = "take_or_end";
   return success(next, []);
+}
+
+function gainCommissionAdvance(
+  state: GameState,
+  actorId: PlayerId,
+  resource: "clay" | "wood" | "coins",
+): ApplyResult {
+  const phase = requirePhase(state, "work_commission_advance");
+  if (isFailure(phase)) return phase;
+  const actorError = actorFailure(state, actorId);
+  if (actorError !== null) return actorError;
+  const next = cloneState(state);
+  const player = next.players[actorId];
+  if (player === undefined) return applyFailure(ruleError("UNKNOWN_PLAYER", "Commission actor disappeared."));
+  const gained = gainFromSupply(next, player, resource, 1);
+  const events: GameEvent[] = [{
+    type: "RESOURCES_CHANGED",
+    playerId: actorId,
+    clay: resource === "clay" ? gained : 0,
+    wood: resource === "wood" ? gained : 0,
+    coins: resource === "coins" ? gained : 0,
+  }];
+  completeWorkerAction(next, actorId, events);
+  return success(next, events);
 }
 
 function techniqueDisplayEntries(state: GameState): TechniqueId[] {
@@ -1850,13 +1476,9 @@ function refreshGuildTechnique(
     throw new Error("Guild phase invariant failed");
   }
   const display = next.techniqueDisplay[discipline];
-  const index = display.indexOf(techniqueId);
-  display.splice(index, 1);
-  next.techniqueDecks[discipline].push(techniqueId);
-  const replacement = next.techniqueDecks[discipline].shift();
-  if (replacement !== undefined) {
-    display.splice(index, 0, replacement);
-  }
+  next.techniqueDecks[discipline].push(...display);
+  display.splice(0, display.length);
+  refillTo(display, next.techniqueDecks[discipline], GAME_CONFIG.techniques.faceUpPerDiscipline);
   nextPhase.step = "buy";
   return success(next, [{ type: "TECHNIQUE_REFRESHED", playerId: actorId, techniqueId }]);
 }
@@ -1890,6 +1512,7 @@ function buyGuildTechnique(
   state: GameState,
   actorId: PlayerId,
   techniqueId: TechniqueId,
+  unlockWorkshop?: "potters_wheel" | "glaze_decoration",
 ): ApplyResult {
   const phase = requirePhase(state, "work_guild");
   if (isFailure(phase)) {
@@ -1911,6 +1534,15 @@ function buyGuildTechnique(
   }
   if (player.techniques.length >= GAME_CONFIG.techniques.maxOwned) {
     return applyFailure(ruleError("TECHNIQUE_LIMIT", "A player may own at most two Techniques."));
+  }
+  if (player.techniques.length === 0 && unlockWorkshop === undefined) {
+    return applyFailure(ruleError("INVALID_SELECTION", "The first Advanced Tech must unlock one private workshop space."));
+  }
+  if (player.techniques.length === 0 && unlockWorkshop === "potters_wheel" && player.workshopSpaces.pottersWheelUnlocked === 2) {
+    return applyFailure(ruleError("INVALID_SELECTION", "The second Potter's Wheel space is already unlocked."));
+  }
+  if (player.techniques.length === 0 && unlockWorkshop === "glaze_decoration" && player.workshopSpaces.glazeDecorationUnlocked === 2) {
+    return applyFailure(ruleError("INVALID_SELECTION", "The second Glaze & Decoration space is already unlocked."));
   }
   const discipline = techniqueDiscipline(techniqueId);
   if (discipline === null || !state.techniqueDisplay[discipline].includes(techniqueId)) {
@@ -1940,6 +1572,13 @@ function buyGuildTechnique(
   nextPlayer.resources.coins -= cost;
   next.commonSupply.coins += cost;
   nextPlayer.techniques.push({ id: techniqueId, exhausted: false });
+  if (nextPlayer.techniques.length === 1) {
+    if (unlockWorkshop === "potters_wheel") nextPlayer.workshopSpaces.pottersWheelUnlocked = 2;
+    else nextPlayer.workshopSpaces.glazeDecorationUnlocked = 2;
+  } else if (nextPlayer.techniques.length === 2) {
+    nextPlayer.workshopSpaces.pottersWheelUnlocked = 2;
+    nextPlayer.workshopSpaces.glazeDecorationUnlocked = 2;
+  }
   const events: GameEvent[] = [
     { type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins: -cost },
     { type: "TECHNIQUE_ACQUIRED", playerId: actorId, techniqueId, cost },
@@ -1956,65 +1595,12 @@ function advanceQueuedWindow(state: GameState, onComplete: () => void): void {
   if (state.phase.queue.currentIndex >= state.phase.queue.actors.length) onComplete();
 }
 
-function resolveKilnSetting(
-  state: GameState,
-  actorId: PlayerId,
-  ceramicId: string | null,
-  toSpaceId: KilnSpaceId | null,
-): ApplyResult {
-  const phase = requirePhase(state, "firing_before_contribution");
-  if (isFailure(phase)) return phase;
-  const actorError = actorFailure(state, actorId);
-  if (actorError !== null) return actorError;
-  if (phase.techniqueIds[phase.queue.currentIndex] !== "T09") {
-    return applyFailure(ruleError("INVALID_ACTION", "Kiln Setting is not the current decision."));
-  }
-  const isPass = ceramicId === null && toSpaceId === null;
-  if ((ceramicId === null) !== (toSpaceId === null)) {
-    return applyFailure(ruleError("INVALID_SELECTION", "Kiln Setting requires both selections."));
-  }
-  if (!isPass) {
-    const player = state.players[actorId];
-    const technique = player === undefined ? undefined : ownedTechnique(player, "T09");
-    const ceramic = ceramicId === null ? undefined : state.ceramics[ceramicId];
-    if (technique === undefined || technique.exhausted) {
-      return applyFailure(ruleError("TECHNIQUE_EXHAUSTED", "Kiln Setting is unavailable."));
-    }
-    if (ceramic === undefined || ceramic.ownerId !== actorId || ceramic.stage !== "loaded") {
-      return applyFailure(
-        ruleError("ILLEGAL_CERAMIC_STAGE", "Kiln Setting must move one owned Loaded ceramic."),
-      );
-    }
-    if (toSpaceId === null || !activeKilnSpaceIds(state.playerCount).includes(toSpaceId)) {
-      return applyFailure(
-        ruleError("INVALID_SELECTION", "Kiln Setting cannot move a ceramic into a covered space."),
-      );
-    }
-    if (kilnOccupant(state, toSpaceId) !== null) {
-      return applyFailure(ruleError("KILN_SPACE_OCCUPIED", "The destination is not empty."));
-    }
-  }
-
-  const next = cloneState(state);
-  const events: GameEvent[] = [];
-  if (!isPass && ceramicId !== null && toSpaceId !== null) {
-    const player = next.players[actorId];
-    const ceramic = next.ceramics[ceramicId];
-    if (player === undefined || ceramic === undefined || ceramic.stage !== "loaded") {
-      throw new Error("Kiln Setting invariant failed");
-    }
-    ceramic.kilnSpaceId = toSpaceId;
-    exhaustTechnique(player, actorId, "T09", events);
-  }
-  advanceQueuedWindow(next, () => openContributionPhase(next));
-  return success(next, events);
-}
-
 export function createPrivateFiringState(state: GameState): PrivateFiringState {
   return {
     gameId: state.gameId,
     windowId: state.phase.type === "firing_contributions" ? state.phase.windowId : null,
     contributions: {},
+    fuelLedgerCommittedBy: [],
   };
 }
 
@@ -2036,85 +1622,23 @@ function contributionAdjustments(state: GameState): number[] {
   return context.contributors.map((playerId) => {
     const card = context.contributions[playerId];
     if (card === undefined) throw new Error(`Missing revealed Contribution for ${playerId}`);
-    return contributionHeatAdjustment(card) + (context.fuelLedgerUpgradedBy.includes(playerId) ? 1 : 0);
+    const ledgerDelta = context.fuelLedgerUpgradedBy.includes(playerId) ? fuelLedgerHeatDelta(card) : 0;
+    return contributionHeatAdjustment(card) + ledgerDelta;
   });
+}
+
+function revealedContributionAdjustments(
+  contributions: Record<PlayerId, ContributionCardId>,
+  fuelLedgerUpgradedBy: readonly PlayerId[],
+): Record<PlayerId, ContributionHeatAdjustment> {
+  return Object.fromEntries(Object.entries(contributions).map(([playerId, card]) => {
+    const ledgerDelta = fuelLedgerUpgradedBy.includes(playerId) ? fuelLedgerHeatDelta(card) : 0;
+    return [playerId, contributionHeatAdjustment(card) + ledgerDelta];
+  })) as Record<PlayerId, ContributionHeatAdjustment>;
 }
 
 function provisionalBaseHeat(state: GameState): BaseHeat {
   return determineBaseHeat(contributionAdjustments(state));
-}
-
-function fuelLedgerCandidates(state: GameState): PlayerId[] {
-  const context = state.firingContext;
-  if (context === null) return [];
-  return turnOrderFromFirst(state).filter((playerId) => {
-    if (!context.contributors.includes(playerId)) return false;
-    if (context.contributions[playerId] !== "STOKE") return false;
-    if (context.fuelLedgerUpgradedBy.includes(playerId)) return false;
-    const player = state.players[playerId];
-    if (player === undefined) return false;
-    const technique = ownedTechnique(player, "T11");
-    return technique !== undefined && !technique.exhausted && player.resources.wood >= FUEL_LEDGER_WOOD;
-  });
-}
-
-function openFuelLedgerOrDetermineBaseHeat(
-  state: GameState,
-  events: GameEvent[],
-  rng: RandomSource,
-): void {
-  const actors = fuelLedgerCandidates(state);
-  if (actors.length === 0) determineBaseHeatAndOpenReposition(state, events, rng);
-  else state.phase = { type: "firing_after_reveal", queue: { actors, currentIndex: 0 } };
-}
-
-function resolveFuelLedger(
-  state: GameState,
-  actorId: PlayerId,
-  use: boolean,
-  rng: RandomSource,
-): ApplyResult {
-  const phase = requirePhase(state, "firing_after_reveal");
-  if (isFailure(phase)) return phase;
-  const actorError = actorFailure(state, actorId);
-  if (actorError !== null) return actorError;
-  const player = state.players[actorId];
-  const context = state.firingContext;
-  if (player === undefined || context === null) {
-    return applyFailure(ruleError("INVALID_ACTION", "Fuel Ledger context is unavailable."));
-  }
-  if (use) {
-    const technique = ownedTechnique(player, "T11");
-    if (technique === undefined || technique.exhausted) {
-      return applyFailure(ruleError("TECHNIQUE_EXHAUSTED", "Fuel Ledger is unavailable."));
-    }
-    if (context.contributions[actorId] !== "STOKE") {
-      return applyFailure(
-        ruleError("INVALID_ACTION", "Fuel Ledger upgrades Stoke the Fire only."),
-      );
-    }
-    if (player.resources.wood < FUEL_LEDGER_WOOD) {
-      return applyFailure(
-        ruleError("INSUFFICIENT_RESOURCES", "Fuel Ledger costs 1 additional Wood.", {
-          requiredWood: FUEL_LEDGER_WOOD,
-        }),
-      );
-    }
-  }
-  const next = cloneState(state);
-  const events: GameEvent[] = [];
-  if (use) {
-    const nextPlayer = next.players[actorId];
-    const nextContext = next.firingContext;
-    if (nextPlayer === undefined || nextContext === null) throw new Error("Fuel Ledger invariant failed");
-    nextPlayer.resources.wood -= FUEL_LEDGER_WOOD;
-    next.commonSupply.wood += FUEL_LEDGER_WOOD;
-    nextContext.fuelLedgerUpgradedBy.push(actorId);
-    exhaustTechnique(nextPlayer, actorId, "T11", events);
-    events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: -FUEL_LEDGER_WOOD, coins: 0 });
-  }
-  advanceQueuedWindow(next, () => determineBaseHeatAndOpenReposition(next, events, rng));
-  return success(next, events);
 }
 
 function determineBaseHeatAndOpenReposition(
@@ -2132,10 +1656,10 @@ function determineBaseHeatAndOpenReposition(
       (worker) => worker.kind === "shifu" && worker.status === "placed" && worker.locationId === "kiln_yard",
     );
     return shifu !== undefined && Object.values(state.ceramics).some(
-      (ceramic) => ceramic.stage === "loaded" && ceramic.ownerId === playerId,
+      (ceramic) => ceramic.stage === "loaded" && ceramic.ownerId === playerId && ceramic.kilnSpaceId !== "imperial",
     );
   }) : [];
-  if (actors.length === 0) revealFireAndOpenSaggerSelection(state, events, rng);
+  if (actors.length === 0) revealFireAndCalculateActualHeat(state, events, rng);
   else state.phase = { type: "firing_reposition", queue: { actors, currentIndex: 0 } };
 }
 
@@ -2144,6 +1668,7 @@ export function submitWoodContribution(
   privateState: PrivateFiringState,
   actorId: PlayerId,
   card: ContributionCardId,
+  useFuelLedger: boolean,
   rng: RandomSource,
 ): SubmitContributionResult {
   if (state.phase.type !== "firing_contributions") {
@@ -2174,14 +1699,19 @@ export function submitWoodContribution(
       error: ruleError("INVALID_CONTRIBUTION", "That Contribution card is not in the set."),
     };
   }
-  // Affordability is checked against the card's printed Wood cost. Tend costs nothing and
-  // is therefore always a legal choice, which is what guarantees the window can close.
-  if (player.resources.wood < contributionWoodCost(card)) {
+  if (useFuelLedger) {
+    const technique = ownedTechnique(player, "T12");
+    if (technique === undefined || (card !== "BANK" && card !== "STOKE")) {
+      return { ok: false, error: ruleError("INVALID_CONTRIBUTION", "Fuel Ledger may accompany Bank or Stoke only.") };
+    }
+  }
+  const totalWoodCost = contributionWoodCost(card) + (useFuelLedger ? FUEL_LEDGER_WOOD : 0);
+  if (player.resources.wood < totalWoodCost) {
     return {
       ok: false,
       error: ruleError("INVALID_CONTRIBUTION", "You cannot pay that Contribution card's Wood cost.", {
         card,
-        requiredWood: contributionWoodCost(card),
+        requiredWood: totalWoodCost,
       }),
     };
   }
@@ -2191,6 +1721,7 @@ export function submitWoodContribution(
   if (next.phase.type !== "firing_contributions") throw new Error("Contribution phase invariant failed");
   next.phase.submittedPlayerIds.push(actorId);
   nextPrivate.contributions[actorId] = card;
+  if (useFuelLedger) nextPrivate.fuelLedgerCommittedBy.push(actorId);
   const events: GameEvent[] = [
     { type: "WOOD_SUBMITTED", playerId: actorId, windowId: next.phase.windowId },
   ];
@@ -2203,7 +1734,8 @@ export function submitWoodContribution(
       if (revealed === undefined || contributor === undefined) {
         throw new Error("A revealed contribution is missing");
       }
-      const woodPaid = contributionWoodCost(revealed);
+      const ledgerCommitted = nextPrivate.fuelLedgerCommittedBy.includes(contributorId);
+      const woodPaid = contributionWoodCost(revealed) + (ledgerCommitted ? 1 : 0);
       contributor.resources.wood -= woodPaid;
       next.commonSupply.wood += woodPaid;
       if (woodPaid > 0) {
@@ -2215,17 +1747,24 @@ export function submitWoodContribution(
       round: next.round,
       contributors: [...next.phase.eligiblePlayerIds],
       contributions,
-      fuelLedgerUpgradedBy: [],
+      fuelLedgerUpgradedBy: [...nextPrivate.fuelLedgerCommittedBy],
       baseHeat: null,
       fireModifier: null,
       globalHeat: null,
-      saggerAdjustedCeramicIds: [],
       ceramicResults: {},
     };
-    events.push({ type: "WOOD_REVEALED", contributions: { ...contributions } });
+    events.push({
+      type: "WOOD_REVEALED",
+      contributions: { ...contributions },
+      effectiveHeatAdjustments: revealedContributionAdjustments(
+        contributions,
+        nextPrivate.fuelLedgerCommittedBy,
+      ),
+    });
     nextPrivate.windowId = null;
     nextPrivate.contributions = {};
-    openFuelLedgerOrDetermineBaseHeat(next, events, rng);
+    nextPrivate.fuelLedgerCommittedBy = [];
+    determineBaseHeatAndOpenReposition(next, events, rng);
   }
   next.revision += 1;
   next.eventSequence += events.length;
@@ -2249,7 +1788,7 @@ function resolveKilnYardReposition(
   }
   if (!isPass) {
     const ceramic = ceramicId === null ? undefined : state.ceramics[ceramicId];
-    if (ceramic === undefined || ceramic.stage !== "loaded" || ceramic.ownerId !== actorId) {
+    if (ceramic === undefined || ceramic.stage !== "loaded" || ceramic.ownerId !== actorId || ceramic.kilnSpaceId === "imperial") {
       return applyFailure(ruleError("ILLEGAL_CERAMIC_STAGE", "Reposition one of your loaded ceramics."));
     }
     if (toSpaceId === null || !activeKilnSpaceIds(state.playerCount).includes(toSpaceId)) {
@@ -2266,11 +1805,11 @@ function resolveKilnYardReposition(
     if (ceramic === undefined || ceramic.stage !== "loaded") throw new Error("Kiln Yard reposition invariant failed");
     ceramic.kilnSpaceId = toSpaceId;
   }
-  advanceQueuedWindow(next, () => revealFireAndOpenSaggerSelection(next, events, rng));
+  advanceQueuedWindow(next, () => revealFireAndCalculateActualHeat(next, events, rng));
   return success(next, events);
 }
 
-function revealFireAndOpenSaggerSelection(state: GameState, events: GameEvent[], rng: RandomSource): void {
+function revealFireAndCalculateActualHeat(state: GameState, events: GameEvent[], rng: RandomSource): void {
   const context = state.firingContext;
   if (context === null) throw new Error("Heat calculation requires firing context");
   const baseHeat = context.baseHeat;
@@ -2284,21 +1823,7 @@ function revealFireAndOpenSaggerSelection(state: GameState, events: GameEvent[],
   context.globalHeat = globalHeat;
   events.push({ type: "FIRE_REVEALED", modifier: fireModifier, baseHeat, globalHeat });
 
-  const actors = fireModifier === 0 ? [] : turnOrderFromFirst(state).filter((playerId) => {
-    const player = state.players[playerId];
-    const technique = player === undefined ? undefined : ownedTechnique(player, "T16");
-    return (
-      player !== undefined &&
-      technique !== undefined &&
-      !technique.exhausted &&
-      player.resources.wood >= 2 &&
-      Object.values(state.ceramics).some(
-        (ceramic) => ceramic.stage === "loaded" && ceramic.ownerId === playerId,
-      )
-    );
-  });
-  if (actors.length === 0) calculateActualHeatAndOpenQualityWindow(state, events);
-  else state.phase = { type: "firing_after_fire_reveal", queue: { actors, currentIndex: 0 } };
+  calculateActualHeatAndOpenQualityWindow(state, events);
 }
 
 function calculateActualHeatAndOpenQualityWindow(state: GameState, events: GameEvent[]): void {
@@ -2314,21 +1839,16 @@ function calculateActualHeatAndOpenQualityWindow(state: GameState, events: GameE
 
   for (const ceramic of Object.values(state.ceramics)) {
     if (ceramic.stage !== "loaded") continue;
-    const zoneModifier = kilnZoneModifier(ceramic.kilnSpaceId);
+    const zoneModifier = ceramic.kilnSpaceId === "imperial" || ceramic.kilnFurnitureUsed === true
+      ? 0
+      : kilnZoneModifier(ceramic.kilnSpaceId);
     const naturalActualHeat = context.globalHeat + zoneModifier;
     const naturalDifference = Math.abs(naturalActualHeat - preferredHeat(ceramic.glaze));
-    // V1.1.1: Sagger Selection moves the modifier one step toward 0, it no longer zeroes it.
-    const saggerAdjusted = context.saggerAdjustedCeramicIds.includes(ceramic.id);
-    const effectiveFireModifier = saggerAdjusted
-      ? context.fireModifier - Math.sign(context.fireModifier)
-      : context.fireModifier;
-    const ignoredFireModifier = saggerAdjusted;
-    const actualHeat = context.baseHeat + effectiveFireModifier + zoneModifier;
+    const actualHeat = naturalActualHeat;
     const difference = Math.abs(actualHeat - preferredHeat(ceramic.glaze));
     context.ceramicResults[ceramic.id] = {
       ceramicId: ceramic.id,
       zoneModifier,
-      ignoredFireModifier,
       naturalActualHeat,
       naturalHeatDifference: naturalDifference,
       naturalExactMatch: naturalDifference === 0,
@@ -2351,57 +1871,11 @@ function calculateActualHeatAndOpenQualityWindow(state: GameState, events: GameE
     }
     return false;
   });
-  if (actors.length === 0) assignQualityAndOpenSaggars(state, events);
+  if (actors.length === 0) assignQualityAndOpenAfterQualityTechs(state, events);
   else state.phase = { type: "firing_before_quality", queue: { actors, currentIndex: 0 } };
 }
 
-function resolveSaggerSelection(
-  state: GameState,
-  actorId: PlayerId,
-  ceramicId: string | null,
-): ApplyResult {
-  const phase = requirePhase(state, "firing_after_fire_reveal");
-  if (isFailure(phase)) return phase;
-  const actorError = actorFailure(state, actorId);
-  if (actorError !== null) return actorError;
-  const player = state.players[actorId];
-  if (ceramicId !== null) {
-    const technique = player === undefined ? undefined : ownedTechnique(player, "T16");
-    const ceramic = state.ceramics[ceramicId];
-    if (technique === undefined || technique.exhausted) {
-      return applyFailure(ruleError("TECHNIQUE_EXHAUSTED", "Sagger Selection is unavailable."));
-    }
-    if (
-      player === undefined ||
-      player.resources.wood < 2 ||
-      ceramic === undefined ||
-      ceramic.stage !== "loaded" ||
-      ceramic.ownerId !== actorId
-    ) {
-      return applyFailure(
-        ruleError("INVALID_SELECTION", "Sagger Selection costs 2 Wood and requires one owned Loaded ceramic."),
-      );
-    }
-  }
-  const next = cloneState(state);
-  const events: GameEvent[] = [];
-  if (ceramicId !== null) {
-    const nextPlayer = next.players[actorId];
-    const nextContext = next.firingContext;
-    if (nextPlayer === undefined || nextContext === null) {
-      throw new Error("Sagger Selection invariant failed");
-    }
-    nextPlayer.resources.wood -= 2;
-    next.commonSupply.wood += 2;
-    nextContext.saggerAdjustedCeramicIds.push(ceramicId);
-    exhaustTechnique(nextPlayer, actorId, "T16", events);
-    events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: -2, coins: 0 });
-  }
-  advanceQueuedWindow(next, () => calculateActualHeatAndOpenQualityWindow(next, events));
-  return success(next, events);
-}
-
-function assignQualityAndOpenSaggars(state: GameState, events: GameEvent[]): void {
+function assignQualityAndOpenAfterQualityTechs(state: GameState, events: GameEvent[]): void {
   const context = state.firingContext;
   if (context === null) throw new Error("Quality assignment requires firing context");
   for (const result of Object.values(context.ceramicResults)) {
@@ -2410,7 +1884,7 @@ function assignQualityAndOpenSaggars(state: GameState, events: GameEvent[]): voi
   }
   const saggarsActors = turnOrderFromFirst(state).filter((playerId) => {
     const player = state.players[playerId];
-    const technique = player === undefined ? undefined : ownedTechnique(player, "T10");
+    const technique = player === undefined ? undefined : ownedTechnique(player, "T11");
     return (
       player !== undefined &&
       technique !== undefined &&
@@ -2428,7 +1902,7 @@ function assignQualityAndOpenSaggars(state: GameState, events: GameEvent[]): voi
     state.phase = {
       type: "firing_after_quality",
       queue: { actors: saggarsActors, currentIndex: 0 },
-      techniqueIds: saggarsActors.map(() => "T10" as TechniqueId),
+      techniqueIds: saggarsActors.map(() => "T11" as TechniqueId),
     };
   }
 }
@@ -2438,23 +1912,23 @@ function openSecondFiringWindow(state: GameState, events: GameEvent[]): void {
   if (context === null) throw new Error("Second Firing window requires firing context");
   const actors = turnOrderFromFirst(state).filter((playerId) => {
     const player = state.players[playerId];
-    const technique = player === undefined ? undefined : ownedTechnique(player, "T15");
+    const technique = player === undefined ? undefined : ownedTechnique(player, "T14");
     return (
       technique !== undefined &&
       !technique.exhausted &&
       Object.values(context.ceramicResults).some(
         (result) =>
-          result.assignedQuality === "standard" &&
+          (result.assignedQuality === "flawed" || result.assignedQuality === "standard") &&
           state.ceramics[result.ceramicId]?.ownerId === playerId,
       )
     );
   });
-  if (actors.length === 0) openAfterFiringWindow(state, events);
+  if (actors.length === 0) openWorkshopSeconds(state, events);
   else {
     state.phase = {
       type: "firing_after_quality",
       queue: { actors, currentIndex: 0 },
-      techniqueIds: actors.map(() => "T15" as TechniqueId),
+      techniqueIds: actors.map(() => "T14" as TechniqueId),
     };
   }
 }
@@ -2485,16 +1959,9 @@ function resolveJun(
     if (ceramic === undefined || ceramic.ownerId !== actorId || ceramic.stage !== "loaded") {
       return applyFailure(ruleError("ILLEGAL_CERAMIC_STAGE", "Jun must select an owned Loaded ceramic."));
     }
-    const junWood = activeJunActivationWood(state.experimentConfig);
-    const junCoins = activeJunActivationCoins(state.experimentConfig);
-    if ((player?.resources.coins ?? 0) < junCoins) {
+    if ((player?.resources.wood ?? 0) < JUN_ACTIVATION_WOOD) {
       return applyFailure(
-        ruleError("INSUFFICIENT_RESOURCES", `Jun's Kiln Transformation costs ${junCoins} Coins.`),
-      );
-    }
-    if ((player?.resources.wood ?? 0) < junWood) {
-      return applyFailure(
-        ruleError("INSUFFICIENT_RESOURCES", `Jun's Kiln Transformation costs ${junWood} Wood.`),
+        ruleError("INSUFFICIENT_RESOURCES", `Jun's Kiln Transformation costs ${JUN_ACTIVATION_WOOD} Wood.`),
       );
     }
   }
@@ -2509,19 +1976,14 @@ function resolveJun(
     }
     result.finalActualHeat += delta;
     result.finalHeatDifference = Math.abs(result.finalActualHeat - preferredHeat(ceramic.glaze));
-    nextPlayer.resources.wood -= activeJunActivationWood(next.experimentConfig);
-    const paidCoins = activeJunActivationCoins(next.experimentConfig);
-    if (paidCoins > 0) {
-      nextPlayer.resources.coins -= paidCoins;
-      next.commonSupply.coins += paidCoins;
-    }
-    next.commonSupply.wood += activeJunActivationWood(next.experimentConfig);
-    events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: -activeJunActivationWood(next.experimentConfig), coins: -paidCoins });
-    events.push({ type: "JUN_ACTIVATION_PAID", playerId: actorId, wood: activeJunActivationWood(next.experimentConfig) });
+    nextPlayer.resources.wood -= JUN_ACTIVATION_WOOD;
+    next.commonSupply.wood += JUN_ACTIVATION_WOOD;
+    events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: -JUN_ACTIVATION_WOOD, coins: 0 });
+    events.push({ type: "JUN_ACTIVATION_PAID", playerId: actorId, wood: JUN_ACTIVATION_WOOD });
     nextPlayer.kilnAbilityUsedThisRound = true;
     events.push({ type: "KILN_ABILITY_USED", playerId: actorId, kilnId: "JU" });
   }
-  advanceQueuedWindow(next, () => assignQualityAndOpenSaggars(next, events));
+  advanceQueuedWindow(next, () => assignQualityAndOpenAfterQualityTechs(next, events));
   return success(next, events);
 }
 
@@ -2553,7 +2015,7 @@ function resolveGe(state: GameState, actorId: PlayerId, ceramicId: string | null
       return applyFailure(
         ruleError(
           "INVALID_SELECTION",
-          "Ge requires one owned ceramic whose current Actual Heat differs from its Preferred Heat by 1 or 2.",
+          "Ge requires one owned ceramic whose current Actual Heat differs from its Preferred Heat by exactly 1.",
         ),
       );
     }
@@ -2576,7 +2038,7 @@ function resolveGe(state: GameState, actorId: PlayerId, ceramicId: string | null
     events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: -GE_ACTIVATION_WOOD, coins: 0 });
     events.push({ type: "KILN_ABILITY_USED", playerId: actorId, kilnId: "GE" });
   }
-  advanceQueuedWindow(next, () => assignQualityAndOpenSaggars(next, events));
+  advanceQueuedWindow(next, () => assignQualityAndOpenAfterQualityTechs(next, events));
   return success(next, events);
 }
 
@@ -2589,12 +2051,12 @@ function resolveProtectiveSaggars(
   if (isFailure(phase)) return phase;
   const actorError = actorFailure(state, actorId);
   if (actorError !== null) return actorError;
-  if (phase.techniqueIds[phase.queue.currentIndex] !== "T10") {
+  if (phase.techniqueIds[phase.queue.currentIndex] !== "T11") {
     return applyFailure(ruleError("INVALID_ACTION", "Protective Saggars is not the current decision."));
   }
   const player = state.players[actorId];
   if (ceramicId !== null) {
-    const technique = player === undefined ? undefined : ownedTechnique(player, "T10");
+    const technique = player === undefined ? undefined : ownedTechnique(player, "T11");
     const ceramic = state.ceramics[ceramicId];
     const result = state.firingContext?.ceramicResults[ceramicId];
     if (technique === undefined || technique.exhausted) {
@@ -2621,7 +2083,7 @@ function resolveProtectiveSaggars(
     nextPlayer.resources.wood -= 1;
     next.commonSupply.wood += 1;
     result.assignedQuality = result.assignedQuality === "flawed" ? "standard" : "fine";
-    exhaustTechnique(nextPlayer, actorId, "T10", events);
+    exhaustTechnique(nextPlayer, actorId, "T11", events);
     events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: -1, coins: 0 });
   }
   advanceQueuedWindow(next, () => openSecondFiringWindow(next, events));
@@ -2632,17 +2094,18 @@ function resolveSecondFiring(
   state: GameState,
   actorId: PlayerId,
   ceramicId: string | null,
+  rng: RandomSource,
 ): ApplyResult {
   const phase = requirePhase(state, "firing_after_quality");
   if (isFailure(phase)) return phase;
   const actorError = actorFailure(state, actorId);
   if (actorError !== null) return actorError;
-  if (phase.techniqueIds[phase.queue.currentIndex] !== "T15") {
+  if (phase.techniqueIds[phase.queue.currentIndex] !== "T14") {
     return applyFailure(ruleError("INVALID_ACTION", "Second Firing is not the current decision."));
   }
   const player = state.players[actorId];
   if (ceramicId !== null) {
-    const technique = player === undefined ? undefined : ownedTechnique(player, "T15");
+    const technique = player === undefined ? undefined : ownedTechnique(player, "T14");
     const ceramic = state.ceramics[ceramicId];
     const result = state.firingContext?.ceramicResults[ceramicId];
     if (technique === undefined || technique.exhausted) {
@@ -2652,10 +2115,10 @@ function resolveSecondFiring(
       ceramic === undefined ||
       ceramic.stage !== "loaded" ||
       ceramic.ownerId !== actorId ||
-      result?.assignedQuality !== "standard"
+      (result?.assignedQuality !== "flawed" && result?.assignedQuality !== "standard")
     ) {
       return applyFailure(
-        ruleError("INVALID_SELECTION", "Second Firing requires one owned Standard ceramic from this firing."),
+        ruleError("INVALID_SELECTION", "Second Firing requires one owned Flawed or Standard ceramic from this firing."),
       );
     }
   }
@@ -2673,105 +2136,62 @@ function resolveSecondFiring(
     ) {
       throw new Error("Second Firing invariant failed");
     }
-    const { kilnSpaceId: _kilnSpaceId, ...rest } = ceramic;
-    next.ceramics[ceramicId] = { ...rest, stage: "glazed" };
-    delete nextContext.ceramicResults[ceramicId];
-    exhaustTechnique(nextPlayer, actorId, "T15", events);
-    events.push({ type: "CERAMIC_RETURNED_TO_GLAZED", playerId: actorId, ceramicId });
+    ensureFireDeck(next, rng);
+    const extraFire = next.fireDeck.shift();
+    const result = nextContext.ceramicResults[ceramicId];
+    if (extraFire === undefined || result === undefined || nextContext.baseHeat === null) throw new Error("Second Firing card/result disappeared");
+    const actualHeat = nextContext.baseHeat + extraFire + result.zoneModifier;
+    result.finalActualHeat = actualHeat;
+    result.finalHeatDifference = Math.abs(actualHeat - preferredHeat(ceramic.glaze));
+    result.assignedQuality = qualityFromDifference(result.finalHeatDifference);
+    next.fireDiscard.push(extraFire);
+    exhaustTechnique(nextPlayer, actorId, "T14", events);
+    events.push({ type: "SECOND_FIRING_RESOLVED", playerId: actorId, ceramicId, fireModifier: extraFire, quality: result.assignedQuality });
   }
-  advanceQueuedWindow(next, () => openAfterFiringWindow(next, events));
+  advanceQueuedWindow(next, () => openWorkshopSeconds(next, events));
   return success(next, events);
 }
 
-function openAfterFiringWindow(state: GameState, events: GameEvent[]): void {
+function openWorkshopSeconds(state: GameState, events: GameEvent[]): void {
   const context = state.firingContext;
-  if (context === null) throw new Error("After-firing window requires firing context");
-  const kilnRecordsActors = turnOrderFromFirst(state).filter((playerId) => {
-    const player = state.players[playerId];
-    const technique = player === undefined ? undefined : ownedTechnique(player, "T13");
-    return (
-      technique !== undefined &&
-      !technique.exhausted &&
-      Object.values(context.ceramicResults).some(
-        (result) => state.ceramics[result.ceramicId]?.ownerId === playerId,
-      )
-    );
-  });
-  const actors = kilnRecordsActors;
-  const techniqueIds = kilnRecordsActors.map(() => "T13" as TechniqueId);
+  if (context === null) throw new Error("Workshop Seconds requires firing context");
+  const actors = turnOrderFromFirst(state).filter((playerId) => Object.values(context.ceramicResults).some(
+    (result) => result.assignedQuality === "flawed" && state.ceramics[result.ceramicId]?.ownerId === playerId,
+  ));
   if (actors.length === 0) finalizeFiring(state, events);
-  else {
-    state.phase = {
-      type: "firing_after_firing",
-      queue: { actors, currentIndex: 0 },
-      techniqueIds,
-    };
-  }
+  else state.phase = { type: "firing_workshop_seconds", queue: { actors, currentIndex: 0 } };
 }
 
-/**
- * Clay Substitution inside the Firing Phase. The rulebook bounds this to before
- * Contribution cards are chosen precisely so it cannot be used to manufacture Wood for a
- * card already revealed, or for a Fuel Ledger upgrade after the fact.
- */
-function resolveFiringClaySubstitution(
+function resolveWorkshopSeconds(
   state: GameState,
   actorId: PlayerId,
-  clay: number,
-  wood: number,
-  use: boolean,
+  ceramicId: CeramicId | null,
 ): ApplyResult {
-  const phase = requirePhase(state, "firing_before_contribution");
+  const phase = requirePhase(state, "firing_workshop_seconds");
   if (isFailure(phase)) return phase;
   const actorError = actorFailure(state, actorId);
   if (actorError !== null) return actorError;
-  if (phase.techniqueIds[phase.queue.currentIndex] !== "T03") {
-    return applyFailure(ruleError("INVALID_ACTION", "Clay Substitution is not the current decision."));
-  }
-  const player = state.players[actorId];
-  if (use) {
-    const technique = player === undefined ? undefined : ownedTechnique(player, "T03");
-    if (technique === undefined || technique.exhausted) {
-      return applyFailure(ruleError("TECHNIQUE_EXHAUSTED", "Clay Substitution is unavailable."));
-    }
-    if (!Number.isInteger(clay) || !Number.isInteger(wood) || clay < 0 || wood < 0 ||
-        clay + wood !== CLAY_SUBSTITUTION_RESOURCES) {
-      return applyFailure(
-        ruleError("INVALID_SELECTION", "Clay Substitution grants exactly 3 resources.", { clay, wood }),
-      );
-    }
-    if ((player?.resources.coins ?? 0) < CLAY_SUBSTITUTION_COINS) {
-      return applyFailure(
-        ruleError("INSUFFICIENT_RESOURCES", "Clay Substitution costs 3 Coins.", {
-          requiredCoins: CLAY_SUBSTITUTION_COINS,
-        }),
-      );
-    }
-    if (state.commonSupply.clay < clay || state.commonSupply.wood < wood) {
-      return applyFailure(ruleError("SUPPLY_EMPTY", "The common supply cannot provide the selected resources."));
+  if (ceramicId !== null) {
+    const ceramic = state.ceramics[ceramicId];
+    const result = state.firingContext?.ceramicResults[ceramicId];
+    if (ceramic === undefined || ceramic.stage !== "loaded" || ceramic.ownerId !== actorId || result?.assignedQuality !== "flawed") {
+      return applyFailure(ruleError("INVALID_SELECTION", "Workshop Seconds may discard one remaining owned Flawed ceramic."));
     }
   }
   const next = cloneState(state);
   const events: GameEvent[] = [];
-  if (use) {
-    const nextPlayer = next.players[actorId];
-    if (nextPlayer === undefined) throw new Error("Clay Substitution actor disappeared");
-    nextPlayer.resources.coins -= CLAY_SUBSTITUTION_COINS;
-    next.commonSupply.coins += CLAY_SUBSTITUTION_COINS;
-    nextPlayer.resources.clay += clay;
-    nextPlayer.resources.wood += wood;
-    next.commonSupply.clay -= clay;
-    next.commonSupply.wood -= wood;
-    exhaustTechnique(nextPlayer, actorId, "T03", events);
-    events.push({
-      type: "RESOURCES_CHANGED",
-      playerId: actorId,
-      clay,
-      wood,
-      coins: -CLAY_SUBSTITUTION_COINS,
-    });
+  if (ceramicId !== null) {
+    const player = next.players[actorId];
+    const ceramic = next.ceramics[ceramicId];
+    if (player === undefined || ceramic === undefined || ceramic.stage !== "loaded") throw new Error("Workshop Seconds target disappeared");
+    next.vesselSupply[ceramic.shape].push(ceramic.vesselInstanceId);
+    delete next.ceramics[ceramicId];
+    if (next.firingContext !== null) delete next.firingContext.ceramicResults[ceramicId];
+    const coins = gainFromSupply(next, player, "coins", ACTION_LOCATION_PRICES.workshopSecondsCoins);
+    events.push({ type: "WORKSHOP_SECONDS_SOLD", playerId: actorId, ceramicId, coins });
+    if (coins > 0) events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins });
   }
-  advanceQueuedWindow(next, () => openContributionPhase(next));
+  advanceQueuedWindow(next, () => finalizeFiring(next, events));
   return success(next, events);
 }
 
@@ -2780,13 +2200,13 @@ function resolveTestPieces(state: GameState, actorId: PlayerId, use: boolean, rn
   if (isFailure(phase)) return phase;
   const actorError = actorFailure(state, actorId);
   if (actorError !== null) return actorError;
-  if (phase.techniqueIds[phase.queue.currentIndex] !== "T12") {
+  if (phase.techniqueIds[phase.queue.currentIndex] !== "T13") {
     return applyFailure(ruleError("INVALID_ACTION", "Test Pieces is not the current decision."));
   }
   const player = state.players[actorId];
   if (use) {
-    const technique = player === undefined ? undefined : ownedTechnique(player, "T12");
-    if (technique === undefined || technique.exhausted) {
+    const technique = player === undefined ? undefined : ownedTechnique(player, "T13");
+    if (technique === undefined) {
       return applyFailure(ruleError("INVALID_ACTION", "Test Pieces is not eligible."));
     }
     if ((player?.resources.wood ?? 0) < 1) {
@@ -2805,49 +2225,9 @@ function resolveTestPieces(state: GameState, actorId: PlayerId, use: boolean, rn
     next.privateFirePeeks[actorId] = peek;
     nextPlayer.resources.wood -= 1;
     next.commonSupply.wood += 1;
-    exhaustTechnique(nextPlayer, actorId, "T12", events);
     events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: -1, coins: 0 });
   }
   advanceQueuedWindow(next, () => openContributionPhase(next));
-  return success(next, events);
-}
-
-function resolveKilnRecords(state: GameState, actorId: PlayerId, use: boolean): ApplyResult {
-  const phase = requirePhase(state, "firing_after_firing");
-  if (isFailure(phase)) return phase;
-  const actorError = actorFailure(state, actorId);
-  if (actorError !== null) return actorError;
-  if (phase.techniqueIds[phase.queue.currentIndex] !== "T13") {
-    return applyFailure(ruleError("INVALID_ACTION", "Kiln Records is not the current decision."));
-  }
-  const player = state.players[actorId];
-  if (use) {
-    const technique = player === undefined ? undefined : ownedTechnique(player, "T13");
-    const firedForActor = Object.values(state.firingContext?.ceramicResults ?? {}).some(
-      (result) => state.ceramics[result.ceramicId]?.ownerId === actorId,
-    );
-    if (technique === undefined || technique.exhausted || !firedForActor) {
-      return applyFailure(ruleError("INVALID_ACTION", "Kiln Records is not eligible."));
-    }
-  }
-  const next = cloneState(state);
-  const events: GameEvent[] = [];
-  if (use) {
-    const nextPlayer = next.players[actorId];
-    if (nextPlayer === undefined) throw new Error("Kiln Records actor disappeared");
-    const gainedWood = gainFromSupply(next, nextPlayer, "wood", KILN_RECORDS_WOOD);
-    exhaustTechnique(nextPlayer, actorId, "T13", events);
-    if (gainedWood > 0) {
-      events.push({
-        type: "RESOURCES_CHANGED",
-        playerId: actorId,
-        clay: 0,
-        wood: gainedWood,
-        coins: 0,
-      });
-    }
-  }
-  advanceQueuedWindow(next, () => finalizeFiring(next, events));
   return success(next, events);
 }
 
@@ -2871,7 +2251,6 @@ function finalizeFiring(state: GameState, events: GameEvent[]): void {
       ceramicId: result.ceramicId,
       fireModifier: context.fireModifier,
       zoneModifier: result.zoneModifier,
-      ignoredFireModifier: result.ignoredFireModifier,
       naturalActualHeat: result.naturalActualHeat,
       naturalHeatDifference: result.naturalHeatDifference,
       naturalQuality: qualityFromDifference(result.naturalHeatDifference),
@@ -2889,6 +2268,10 @@ function finalizeFiring(state: GameState, events: GameEvent[]): void {
     round: context.round,
     contributors: [...context.contributors],
     contributions: { ...context.contributions },
+    effectiveHeatAdjustments: revealedContributionAdjustments(
+      context.contributions,
+      context.fuelLedgerUpgradedBy,
+    ),
     baseHeat: context.baseHeat,
     fireModifier: context.fireModifier,
     globalHeat: context.globalHeat,
@@ -2899,143 +2282,64 @@ function finalizeFiring(state: GameState, events: GameEvent[]): void {
   beginOrderPhase(state);
 }
 
-function advanceImperialProgress(
+function advanceRecognitionV122(
   state: GameState,
   playerId: PlayerId,
-  reward: 1 | 2 | 3,
-  source: "imperial_order" | "court_patronage",
+  crowns: 1 | 2 | 3,
+  grantChoice: "coins" | "resources" | undefined,
+  orderId: OrderId,
   events: GameEvent[],
-  detail: {
-    orderId: Extract<GameAction, { type: "COMPLETE_ORDER" }>["orderId"] | null;
-    requirementCeramicCount: number | null;
-    requirementCategory:
-      | "single_fine"
-      | "single_masterpiece"
-      | "multi_2"
-      | "multi_3"
-      | "court_patronage"
-      | null;
-  } = { orderId: null, requirementCeramicCount: null, requirementCategory: null },
-): { from: PlayerState["imperialProgress"]; to: PlayerState["imperialProgress"] } {
+): void {
   const player = state.players[playerId];
-  if (player === undefined) throw new Error("Imperial Progress player disappeared");
-  const activeRules = activeImperialTrackRules(state.experimentConfig);
-  const from = player.imperialProgress;
-  const to = Math.min(5, from + reward) as PlayerState["imperialProgress"];
-  player.imperialProgress = to;
+  if (player === undefined) throw new Error("Recognition player disappeared");
+  const from = player.imperialRecognition;
+  const to = Math.min(5, from + crowns) as PlayerState["imperialRecognition"];
+  const crossesTwo = from < 2 && to >= 2;
+  if (crossesTwo && grantChoice === undefined) throw new Error("Imperial Grant choice was not validated");
+  player.imperialRecognition = to;
   const crossedSpaces = Array.from({ length: to - from }, (_, index) => from + index + 1);
-  const apprenticeMilestonesTriggered = activeRules.apprenticeMilestoneSpaces.filter(
-    (space) => crossedSpaces.includes(space),
-  );
-  player.pendingApprenticeUnlocks += apprenticeMilestonesTriggered.length;
-  const presentationMilestonesTriggered = activeRules.presentationSpaces.filter(
-    (space) => crossedSpaces.includes(space),
-  );
-  // v1.1.4 pays no Coin stipend at Progress 2 or 4. The event field is retained so
-  // serialized v1.1.1 matches still decode; it is always empty under the current rules.
-  const stipendMilestonesTriggered: number[] = [];
-  const sealMilestoneTriggered = source === "imperial_order" &&
-    activeRules.imperialSealEnabled &&
-    crossedSpaces.includes(5) &&
-    state.imperialSealOwnerId === null;
   events.push({
-    type: "IMPERIAL_PROGRESS_ADVANCED",
+    type: "IMPERIAL_RECOGNITION_ADVANCED",
     playerId,
-    source,
-    orderId: detail.orderId,
-    requirementCeramicCount: detail.requirementCeramicCount,
-    requirementCategory: detail.requirementCategory,
+    orderId,
     from,
     to,
-    reward,
-    appliedGain: to - from,
-    crossedSpaces,
-    capLoss: reward - (to - from),
-    apprenticeMilestonesTriggered: [...apprenticeMilestonesTriggered],
-    presentationMilestonesTriggered: [...presentationMilestonesTriggered],
-    stipendMilestonesTriggered: [...stipendMilestonesTriggered],
-    sealMilestoneTriggered,
-    trackVpBefore: activeRules.trackVp[from],
-    trackVpAfter: activeRules.trackVp[to],
-    sealVp: activeRules.imperialSealVp,
+    crowns,
+    appliedCrowns: to - from,
   });
-  if (sealMilestoneTriggered) {
-    state.imperialSealOwnerId = playerId;
-    events.push({ type: "IMPERIAL_SEAL_CLAIMED", playerId, sealVp: activeRules.imperialSealVp });
+  if (crossesTwo && !player.imperialGrantResolved) {
+    player.imperialGrantResolved = true;
+    if (grantChoice === "coins") {
+      const coins = gainFromSupply(state, player, "coins", 3);
+      if (coins > 0) events.push({ type: "RESOURCES_CHANGED", playerId, clay: 0, wood: 0, coins });
+      events.push({ type: "IMPERIAL_GRANT_RECEIVED", playerId, choice: "coins", clay: 0, wood: 0, coins });
+    } else {
+      const clay = gainFromSupply(state, player, "clay", 1);
+      const wood = gainFromSupply(state, player, "wood", 1);
+      const coins = gainFromSupply(state, player, "coins", 1);
+      events.push({ type: "RESOURCES_CHANGED", playerId, clay, wood, coins });
+      events.push({ type: "IMPERIAL_GRANT_RECEIVED", playerId, choice: "resources", clay, wood, coins });
+    }
   }
-  return { from, to };
-}
-
-function useCourtPatronage(
-  state: GameState,
-  actorId: PlayerId,
-  workerId: string,
-): ApplyResult {
-  const context = validateWorkerAction(
-    state,
-    actorId,
-    workerId,
-    "court_patronage",
-  );
-  if (!isWorkerContext(context)) return context;
-  if (context.worker.kind !== "shifu") {
-    return applyFailure(ruleError("INVALID_ACTION", "Court Patronage requires a Shifu."));
+  if (from < 3 && to >= 3) {
+    player.imperialKilnUnlocked = true;
+    events.push({ type: "IMPERIAL_KILN_UNLOCKED", playerId });
   }
-  if (!context.player.completedOrders.some(({ orderId }) => orderId.startsWith("I"))) {
-    return applyFailure(
-      ruleError(
-        "INVALID_ACTION",
-        "Complete at least one Imperial Order before using Court Patronage.",
-      ),
-    );
+  if (from < 4 && to >= 4) {
+    player.imperialPriorityAvailable = true;
+    events.push({ type: "IMPERIAL_PRIORITY_GAINED", playerId });
   }
-  if (context.player.resources.coins < COURT_PATRONAGE_COINS) {
-    return applyFailure(
-      ruleError("INSUFFICIENT_RESOURCES", `Court Patronage costs ${COURT_PATRONAGE_COINS} Coins.`, {
-        requiredCoins: COURT_PATRONAGE_COINS,
-      }),
-    );
+  if (from < 5 && to >= 5 && !player.imperialAudienceVpAwarded) {
+    player.imperialAudienceVpAwarded = true;
+    events.push({ type: "IMPERIAL_AUDIENCE_GAINED", playerId, vp: 6 });
   }
-  if (context.player.imperialProgress >= 4) {
-    return applyFailure(
-      ruleError(
-        "INVALID_ACTION",
-        context.player.imperialProgress === 5
-          ? "Court Patronage is unavailable at Progress 5."
-          : "Progress 4 must reach 5 by completing an Imperial Order.",
-      ),
-    );
-  }
-
-  const next = cloneState(state);
-  const events: GameEvent[] = [];
-  placeWorker(next, actorId, workerId, "court_patronage", events);
-  const player = next.players[actorId];
-  if (player === undefined) throw new Error("Court Patronage actor disappeared");
-  player.resources.coins -= COURT_PATRONAGE_COINS;
-  next.commonSupply.coins += 4;
-  events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins: -4 });
-  const progress = advanceImperialProgress(next, actorId, 1, "court_patronage", events, {
-    orderId: null,
-    requirementCeramicCount: null,
-    requirementCategory: "court_patronage",
-  });
-  events.push({
-    type: "COURT_PATRONAGE_USED",
-    playerId: actorId,
-    // Charged above as 4. This read 5 and misreported every use to telemetry and the UI.
-    cost: COURT_PATRONAGE_COINS,
-    from: progress.from as 0 | 1 | 2 | 3,
-    to: progress.to as 1 | 2 | 3 | 4,
-  });
-  completeWorkerAction(next, actorId, events);
-  return success(next, events);
 }
 
 function completeOrder(
   state: GameState,
   actorId: PlayerId,
   action: Extract<GameAction, { type: "COMPLETE_ORDER" }>,
+  rng: RandomSource,
 ): ApplyResult {
   const phase = requirePhase(state, "orders");
   if (isFailure(phase)) return phase;
@@ -3043,8 +2347,10 @@ function completeOrder(
   if (actorError !== null) return actorError;
   const player = state.players[actorId];
   const definition = ORDER_DEFINITIONS[action.orderId];
-  if (player === undefined || definition === undefined || !player.orderHand.includes(action.orderId)) {
-    return applyFailure(ruleError("ORDER_NOT_AVAILABLE", "The selected Order is not in hand."));
+  const held = player?.orderHand.includes(action.orderId) ?? false;
+  const publicOrder = state.marketDisplay.includes(action.orderId);
+  if (player === undefined || definition === undefined || (!held && !publicOrder)) {
+    return applyFailure(ruleError("ORDER_NOT_AVAILABLE", "Complete a held Order or a face-up Main Order."));
   }
   if (new Set(action.ceramicIds).size !== action.ceramicIds.length) {
     return applyFailure(ruleError("INVALID_SELECTION", "A ceramic may be delivered only once."));
@@ -3062,24 +2368,28 @@ function completeOrder(
     }
     selected.push(ceramic);
   }
-  const isImperial = isImperialOrder(action.orderId);
-  const guanTriggers = isImperial && player.kilnId === "GU" && !player.kilnAbilityUsedThisRound;
-  const ruRules = activeRuBonusRules(state.experimentConfig);
+  const isCrownOrder = definition.crowns > 0;
+  const guanTriggers = isCrownOrder && player.kilnId === "GU" && !player.kilnAbilityUsedThisRound;
   const ruTriggers = player.kilnId === "RU" && !player.kilnAbilityUsedThisRound
-    && selected.some((ceramic) => ruBonusCeramic(ceramic, ruRules.minQuality));
+    && selected.some((ceramic) => ruBonusCeramic(ceramic, RU_BONUS_QUALITY));
   if (action.useGuanWaiver) {
     if (
-      !isImperial ||
+      !isCrownOrder ||
       player.kilnId !== "GU" ||
-      player.kilnAbilityUsedThisRound ||
-      !definition.ceramics.some((requirement) => requirement.decoration !== undefined)
+      player.kilnAbilityUsedThisRound
     ) {
       return applyFailure(
         ruleError("INVALID_ACTION", "Guan's waiver is unavailable for this Order."),
       );
     }
   }
-  if (!matchesOrder(definition, selected, action.useGuanWaiver)) {
+  const guanWaiverCeramicId = action.useGuanWaiver
+    ? action.guanWaiverCeramicId ?? action.ceramicIds[0] ?? null
+    : null;
+  if (guanWaiverCeramicId !== null && !action.ceramicIds.includes(guanWaiverCeramicId)) {
+    return applyFailure(ruleError("INVALID_SELECTION", "Guan must choose one ceramic used for the Order."));
+  }
+  if (!matchesOrder(definition, selected, guanWaiverCeramicId)) {
     return applyFailure(
       ruleError("ORDER_REQUIREMENTS_NOT_MET", "The selected ceramics do not fulfil this Order."),
     );
@@ -3088,8 +2398,16 @@ function completeOrder(
   const next = cloneState(state);
   const nextPlayer = next.players[actorId];
   if (nextPlayer === undefined) throw new Error("Order actor disappeared");
-  const handIndex = nextPlayer.orderHand.indexOf(action.orderId);
-  nextPlayer.orderHand.splice(handIndex, 1);
+  if (held) {
+    const handIndex = nextPlayer.orderHand.indexOf(action.orderId);
+    nextPlayer.orderHand.splice(handIndex, 1);
+  } else {
+    const displayIndex = next.marketDisplay.indexOf(action.orderId);
+    ensureMainOrderDeck(next, rng);
+    const replacement = next.marketDeck.shift();
+    if (replacement === undefined) next.marketDisplay.splice(displayIndex, 1);
+    else next.marketDisplay.splice(displayIndex, 1, replacement);
+  }
   const gainedCoins = gainFromSupply(next, nextPlayer, "coins", definition.coins);
   nextPlayer.score.orderVp += definition.vp;
   for (const ceramicId of action.ceramicIds) {
@@ -3124,36 +2442,34 @@ function completeOrder(
     events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins: gainedCoins });
   }
   if (guanTriggers) {
-    // Guan pays a Coin stipend and a point. The Coins matter in the early rounds, when a
-    // workshop is poor and a Technique or Decoration is out of reach; the VP matters in
-    // Round 5, when Coins are nearly dead. Paying only in Coins -- as it did before --
-    // meant the ability delivered about half a point across a whole game, because Guan
-    // ended richer than everyone else and could not spend the difference.
     const guanCoins = gainFromSupply(next, nextPlayer, "coins", GUAN_ORDER_COINS);
-    nextPlayer.score.kilnTraditionVp += GUAN_ORDER_VP;
     nextPlayer.kilnAbilityUsedThisRound = true;
     events.push({ type: "KILN_ABILITY_USED", playerId: actorId, kilnId: "GU" });
     if (guanCoins > 0) events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins: guanCoins });
   }
   if (ruTriggers) {
-    nextPlayer.score.kilnTraditionVp += ruRules.vp;
+    nextPlayer.score.kilnTraditionVp += RU_ORDER_VP;
     nextPlayer.kilnAbilityUsedThisRound = true;
     events.push({ type: "KILN_ABILITY_USED", playerId: actorId, kilnId: "RU" });
   }
-  if (isImperial && nextPlayer.imperialProgress < 5) {
-    const printedReward = definition.imperialProgressReward;
-    if (printedReward === undefined) throw new Error("Imperial Order progress reward is missing");
-    const reward = activeImperialOrderProgressReward(next.experimentConfig, printedReward);
-    const ceramicCount = definition.ceramics.length;
-    const requirementCategory = ceramicCount === 1
-      ? definition.minQuality === "masterpiece" ? "single_masterpiece" : "single_fine"
-      : ceramicCount === 2 ? "multi_2" : "multi_3";
-    advanceImperialProgress(next, actorId, reward, "imperial_order", events, {
-      orderId: action.orderId,
-      requirementCeramicCount: ceramicCount,
-      requirementCategory,
-    });
+  if (definition.crowns > 0 && nextPlayer.imperialRecognition < 5) {
+    const reachesGrant = nextPlayer.imperialRecognition < 2
+      && Math.min(5, nextPlayer.imperialRecognition + definition.crowns) >= 2;
+    if (reachesGrant && action.imperialGrantChoice === undefined) {
+      return applyFailure(ruleError("INVALID_SELECTION", "Choose the Imperial Grant reward before completing this Crown Order."));
+    }
+    advanceRecognitionV122(next, actorId, definition.crowns as 1 | 2 | 3, action.imperialGrantChoice, action.orderId, events);
   }
+  if (next.phase.type !== "orders") throw new Error("Order phase disappeared");
+  next.phase.completedInCircuit += 1;
+  next.phase.currentIndex += 1;
+  if (next.phase.currentIndex >= next.phase.turnOrder.length) {
+    next.phase.currentIndex = 0;
+    next.phase.completedInCircuit = 0;
+  }
+  const nextActor = next.phase.turnOrder[next.phase.currentIndex];
+  if (nextActor === undefined) throw new Error("Order circuit actor disappeared");
+  next.phase.activePlayerId = nextActor;
   return success(next, events);
 }
 
@@ -3167,20 +2483,18 @@ function refillTo<T>(display: T[], deck: T[], target: number): void {
 
 function rotateOrderDisplaysAtStartOfRound(state: GameState, events: GameEvent[], rng: RandomSource): void {
   if (state.round === 1) return;
-  // v1.1.5 rotates two cards from each display, so half the offer turns over each round.
   const marketOrderIds = state.marketDisplay.splice(0, ORDER_DISPLAY_ROTATION);
-  const imperialOrderIds = state.imperialDisplay.splice(0, ORDER_DISPLAY_ROTATION);
   state.marketDiscard.push(...marketOrderIds);
-  state.imperialDiscard.push(...imperialOrderIds);
-  ensureOrderDeck(state, "market", rng);
-  ensureOrderDeck(state, "imperial", rng);
+  ensureMainOrderDeck(
+    state,
+    rng,
+    GAME_CONFIG.orderDisplay.market - state.marketDisplay.length,
+  );
   refillTo(state.marketDisplay, state.marketDeck, GAME_CONFIG.orderDisplay.market);
-  refillTo(state.imperialDisplay, state.imperialDeck, GAME_CONFIG.orderDisplay.imperial);
   events.push({
     type: "ORDER_DISPLAYS_ROTATED",
     round: state.round,
     marketOrderIds,
-    imperialOrderIds,
   });
 }
 
@@ -3190,7 +2504,7 @@ function calculatePresentationVp(state: GameState, player: PlayerState): number 
       ceramic?.stage === "presented",
   );
   let score = ceramics.reduce(
-    (sum, ceramic) => sum + activeExhibitionRules(state.experimentConfig).qualityVp[ceramic.quality],
+    (sum, ceramic) => sum + IMPERIAL_PROGRESS.exhibition.qualityVp[ceramic.quality],
     0,
   );
   const featuredIds = player.presentationFeaturedCeramicIds ?? [];
@@ -3217,34 +2531,27 @@ function masterpiecesDeliveredOrPresented(state: GameState, playerId: PlayerId):
 }
 
 export function calculateFinalResult(state: GameState): FinalResult {
-  const activeRules = activeImperialTrackRules(state.experimentConfig);
   const scores: FinalResult["scores"] = {};
   for (const playerId of state.playerOrder) {
     const player = state.players[playerId];
     if (player === undefined) throw new Error("Scoring player disappeared");
-    const progressVp = activeRules.trackVp[player.imperialProgress] ?? 0;
-    const sealVp = state.imperialSealOwnerId === playerId ? activeRules.imperialSealVp : 0;
+    const imperialAudienceVp = player.imperialAudienceVpAwarded ? 6 : 0;
     const presentationVp = calculatePresentationVp(state, player);
     const coinVp = Math.min(
       GAME_CONFIG.coinEndGame.maxVp,
       Math.floor(player.resources.coins / GAME_CONFIG.coinEndGame.coinsPerVp),
     );
-    const techniqueVp = player.techniques.length;
     const total =
       player.score.orderVp +
-      progressVp +
-      sealVp +
+      imperialAudienceVp +
       presentationVp +
       player.score.kilnTraditionVp +
-      techniqueVp +
       coinVp;
     scores[playerId] = {
       orders: player.score.orderVp,
-      imperialProgress: progressVp,
-      imperialSeal: sealVp,
+      imperialAudience: imperialAudienceVp,
       presentation: presentationVp,
       immediateAbilities: player.score.kilnTraditionVp,
-      techniques: techniqueVp,
       leftoverCoins: coinVp,
       total,
     };
@@ -3256,16 +2563,16 @@ export function calculateFinalResult(state: GameState): FinalResult {
   };
   let finalists = maximumBy(state.playerOrder, (id) => scores[id]?.total ?? 0);
   if (finalists.length === 1) return { scores, winnerIds: finalists, resolvedBy: "total_vp" };
-  finalists = maximumBy(finalists, (id) => state.players[id]?.imperialProgress ?? 0);
+  finalists = maximumBy(finalists, (id) => state.players[id]?.imperialRecognition ?? 0);
   if (finalists.length === 1) {
-    return { scores, winnerIds: finalists, resolvedBy: "imperial_progress" };
+    return { scores, winnerIds: finalists, resolvedBy: "imperial_recognition" };
   }
   finalists = maximumBy(
     finalists,
-    (id) => state.players[id]?.completedOrders.filter((order) => order.orderId.startsWith("I")).length ?? 0,
+    (id) => state.players[id]?.completedOrders.reduce((sum, order) => sum + (ORDER_DEFINITIONS[order.orderId]?.crowns ?? 0), 0) ?? 0,
   );
   if (finalists.length === 1) {
-    return { scores, winnerIds: finalists, resolvedBy: "completed_imperial_orders" };
+    return { scores, winnerIds: finalists, resolvedBy: "completed_crowns" };
   }
   finalists = maximumBy(finalists, (id) => masterpiecesDeliveredOrPresented(state, id));
   if (finalists.length === 1) {
@@ -3293,23 +2600,6 @@ function performCleanup(state: GameState, events: GameEvent[], rng: RandomSource
         worker.locationId = null;
       }
     }
-    while (player.pendingApprenticeUnlocks > 0) {
-      if (state.round === 5) {
-        player.pendingApprenticeUnlocks -= 1;
-        // An Apprentice unlocked in Cleanup of Round 5 can never act, so V1.1.6 awards
-        // exactly 1 VP instead. There is no additional Coin compensation.
-        player.score.kilnTraditionVp += ROUND_FIVE_UNLOCK_VP;
-        events.push({ type: "ROUND_FIVE_UNLOCK_VP_REWARD", playerId: player.id, vp: ROUND_FIVE_UNLOCK_VP });
-        continue;
-      }
-      const worker = Object.values(player.workers).find(
-        (candidate) => candidate.kind === "apprentice" && candidate.status === "locked",
-      );
-      if (worker === undefined) throw new Error("No locked Apprentice remains to unlock");
-      worker.status = "available";
-      player.pendingApprenticeUnlocks -= 1;
-      events.push({ type: "APPRENTICE_UNLOCKED", playerId: player.id, workerId: worker.id });
-    }
   }
   state.actionBoard.placements = emptyActionBoard();
 
@@ -3320,24 +2610,11 @@ function performCleanup(state: GameState, events: GameEvent[], rng: RandomSource
 
   if (state.round < 5) {
     state.round = (state.round + 1) as RoundNumber;
-    // r5-worker-ab-001: hand one player an extra Apprentice as Round 5 opens, so the VP
-    // difference measures what a marginal Round-5 worker is worth. Only ever active under
-    // that experiment arm, and only when a locked Apprentice remains to release.
-    if (state.round === 5) {
-      const beneficiary = round5ExtraWorkerFor(state.experimentConfig);
-      const grantee = beneficiary === null ? undefined : state.players[beneficiary];
-      const spare = grantee === undefined ? undefined : Object.values(grantee.workers).find(
-        (candidate) => candidate.kind === "apprentice" && candidate.status === "locked",
-      );
-      if (grantee !== undefined && spare !== undefined) {
-        spare.status = "available";
-        events.push({ type: "APPRENTICE_UNLOCKED", playerId: grantee.id, workerId: spare.id });
-      }
-    }
     rotateOrderDisplaysAtStartOfRound(state, events, rng);
     for (const player of Object.values(state.players)) {
       player.passedWorkPhase = false;
       player.kilnAbilityUsedThisRound = false;
+      player.kilnYardShifuUsedThisRound = false;
       player.shapesFormedThisRound = [];
       for (const technique of player.techniques) technique.exhausted = false;
     }
@@ -3386,7 +2663,12 @@ function discardOrdersForCleanup(
   const nextPlayer = next.players[actorId];
   if (nextPlayer === undefined) throw new Error("Cleanup player disappeared");
   nextPlayer.orderHand = nextPlayer.orderHand.filter((id) => !orderIds.includes(id));
-  for (const id of orderIds) (id.startsWith("M") ? next.marketDiscard : next.imperialDiscard).push(id);
+  // Starting Orders leave the game when discarded; only O01-O48 can ever return to the
+  // Main Order discard pile.
+  for (const id of orderIds) {
+    if (id.startsWith("O")) next.marketDiscard.push(id);
+    else next.returnedStartingOrderIds.push(id);
+  }
   const events: GameEvent[] = [{ type: "ORDERS_DISCARDED_FOR_CLEANUP", playerId: actorId, orderIds: [...orderIds] }];
   advanceQueuedWindow(next, () => performCleanup(next, events, rng));
   return success(next, events);
@@ -3401,9 +2683,19 @@ function endOrderTurn(state: GameState, actorId: PlayerId, rng: RandomSource): A
   const events: GameEvent[] = [];
   if (next.phase.type !== "orders") throw new Error("Order phase invariant failed");
   next.phase.currentIndex += 1;
-  const nextActor = next.phase.turnOrder[next.phase.currentIndex];
-  if (nextActor === undefined) beginCleanupOrderDiscards(next, events, rng);
-  else next.phase.activePlayerId = nextActor;
+  if (next.phase.currentIndex >= next.phase.turnOrder.length) {
+    if (next.phase.completedInCircuit === 0) {
+      beginCleanupOrderDiscards(next, events, rng);
+      return success(next, events);
+    }
+    next.phase.currentIndex = 0;
+    next.phase.completedInCircuit = 0;
+  }
+  if (next.phase.type === "orders") {
+    const nextActor = next.phase.turnOrder[next.phase.currentIndex];
+    if (nextActor === undefined) throw new Error("Order circuit actor disappeared");
+    next.phase.activePlayerId = nextActor;
+  }
   return success(next, events);
 }
 
@@ -3422,7 +2714,7 @@ function submitPresentation(
   if (phase.submittedPlayerIds.includes(actorId)) {
     return applyFailure(ruleError("INVALID_ACTION", "This player already submitted an End-game Exhibition selection."));
   }
-  const maximum = activeExhibitionRules(state.experimentConfig).capacityByProgress[player.imperialProgress] ?? 0;
+  const maximum = IMPERIAL_PROGRESS.exhibition.capacityByProgress[player.imperialRecognition] ?? 0;
   if (
     ceramicIds.length > maximum ||
     new Set(ceramicIds).size !== ceramicIds.length
@@ -3507,43 +2799,34 @@ export function applyAction(
       return selectKiln(state, actorId, action.kilnId);
     case "SUBMIT_STARTING_ORDERS":
       return submitStartingOrders(state, actorId, action.orderIds, rng);
-    case "KEEP_STARTING_ORDER":
-    case "REDRAW_STARTING_ORDER":
-      return submitLegacyStartingOrders(state, actorId, rng);
+    case "SELECT_STARTING_TECH":
+      return selectStartingTech(state, actorId, action.techniqueId);
     case "PASS_WORK_PHASE":
       return passWorkPhase(state, actorId);
-    case "USE_CLAY_SUBSTITUTION":
-      return useClaySubstitution(state, actorId, action.clay, action.wood);
     case "GAIN_MATERIALS":
       return gainMaterials(state, actorId, action);
     case "FORM_CERAMICS":
       return formCeramics(state, actorId, action);
     case "GLAZE_CERAMICS":
-      return glazeCeramics(state, actorId, action);
+      return glazeCeramicsV122(state, actorId, action);
     case "USE_KILN_YARD":
-      return useKilnYard(state, actorId, action);
+      return useKilnYardV122(state, actorId, action);
     case "USE_LABOUR":
       return useLabour(state, actorId, action.workerId);
     case "BEGIN_OFFICE_ORDERS":
       return beginOfficeOrders(state, actorId, action.workerId, action.mode);
     case "OFFICE_TAKE_ORDER":
       return takeOfficeOrder(state, actorId, action.orderId, rng);
-    case "OFFICE_DRAW_BLIND_ORDER":
-      return drawBlindOfficeOrder(state, actorId, action.deck, rng);
     case "OFFICE_END_ORDERS":
       return endOfficeOrders(state, actorId);
     case "OFFICE_USE_COLOUR_SAMPLES":
-      return useColourSamples(state, actorId, action.deck ?? (action.orderId?.startsWith("I") ? "imperial" : "market"), rng);
+      return useColourSamples(state, actorId, action.deck ?? "market", rng);
     case "OFFICE_CHOOSE_COLOUR_SAMPLES_ORDER":
-      return chooseColourSamplesOrder(state, actorId, action.orderId);
+      return chooseColourSamplesOrder(state, actorId, action.orderId, action.bottomOrderIds);
     case "OFFICE_SKIP_COLOUR_SAMPLES":
       return skipColourSamples(state, actorId);
-    case "OFFICE_RESOLVE_FLAWED_SALE":
-      return resolveOfficeFlawedSale(state, actorId, action.ceramicIds);
-    case "OFFICE_RESOLVE_CONNOISSEUR_NETWORK":
-      return resolveConnoisseurNetwork(state, actorId, action.ceramicId);
-    case "USE_COURT_PATRONAGE":
-      return useCourtPatronage(state, actorId, action.workerId);
+    case "COMMISSION_GAIN_ADVANCE":
+      return gainCommissionAdvance(state, actorId, action.resource);
     case "BEGIN_GUILD_ACTION":
       return beginGuildAction(state, actorId, action.workerId);
     case "GUILD_REFRESH_TECHNIQUE":
@@ -3551,15 +2834,9 @@ export function applyAction(
     case "GUILD_SKIP_REFRESH":
       return skipGuildRefresh(state, actorId);
     case "GUILD_BUY_TECHNIQUE":
-      return buyGuildTechnique(state, actorId, action.techniqueId);
-    case "RESOLVE_KILN_SETTING":
-      return resolveKilnSetting(state, actorId, action.ceramicId, action.toSpaceId);
+      return buyGuildTechnique(state, actorId, action.techniqueId, action.unlockWorkshop);
     case "RESOLVE_KILN_YARD_REPOSITION":
       return resolveKilnYardReposition(state, actorId, action.ceramicId, action.toSpaceId, rng);
-    case "RESOLVE_FUEL_LEDGER":
-      return resolveFuelLedger(state, actorId, action.use, rng);
-    case "RESOLVE_SAGGER_SELECTION":
-      return resolveSaggerSelection(state, actorId, action.ceramicId);
     case "RESOLVE_JUN":
       return resolveJun(state, actorId, action.ceramicId, action.delta);
     case "RESOLVE_GE":
@@ -3567,21 +2844,21 @@ export function applyAction(
     case "RESOLVE_PROTECTIVE_SAGGARS":
       return resolveProtectiveSaggars(state, actorId, action.ceramicId);
     case "RESOLVE_SECOND_FIRING":
-      return resolveSecondFiring(state, actorId, action.ceramicId);
-    case "RESOLVE_FIRING_CLAY_SUBSTITUTION":
-      return resolveFiringClaySubstitution(state, actorId, action.clay, action.wood, action.use);
+      return resolveSecondFiring(state, actorId, action.ceramicId, rng);
     case "RESOLVE_TEST_PIECES":
       return resolveTestPieces(state, actorId, action.use, rng);
-    case "RESOLVE_KILN_RECORDS":
-      return resolveKilnRecords(state, actorId, action.use);
+    case "RESOLVE_WORKSHOP_SECONDS":
+      return resolveWorkshopSeconds(state, actorId, action.ceramicId);
     case "COMPLETE_ORDER":
-      return completeOrder(state, actorId, action);
+      return completeOrder(state, actorId, action, rng);
     case "END_ORDER_TURN":
       return endOrderTurn(state, actorId, rng);
     case "DISCARD_ORDERS_FOR_CLEANUP":
       return discardOrdersForCleanup(state, actorId, action.orderIds, rng);
     case "SUBMIT_PRESENTATION":
       return submitPresentation(state, actorId, action.ceramicIds, action.featuredCeramicIds ?? []);
+    default:
+      return applyFailure(ruleError("INVALID_ACTION", "That action is not part of V1.2.2."));
   }
 }
 
@@ -3593,6 +2870,6 @@ export function makeFinishedCeramic(
   if (ceramic.stage !== "loaded") {
     throw new Error("Only a Loaded ceramic can become Finished");
   }
-  const { kilnSpaceId: _kilnSpaceId, ...rest } = ceramic;
+  const { kilnSpaceId: _kilnSpaceId, kilnFurnitureUsed: _kilnFurnitureUsed, ...rest } = ceramic;
   return { ...rest, stage: "finished", quality, firedInRound: round };
 }

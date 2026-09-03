@@ -89,8 +89,7 @@ function DebugPanel({ game }: { game: PublicGameState }) {
       <dl className="debug-counts">
         <div><dt>Revision</dt><dd>{game.revision}</dd></div>
         <div><dt>Event sequence</dt><dd>{game.eventSequence}</dd></div>
-        <div><dt>Market deck / discard</dt><dd>{game.decks.marketRemaining} / {game.discards.market.length}</dd></div>
-        <div><dt>Imperial deck / discard</dt><dd>{game.decks.imperialRemaining} / {game.discards.imperial.length}</dd></div>
+        <div><dt>Main Order deck / discard</dt><dd>{game.decks.marketRemaining} / {game.discards.market.length}</dd></div>
         <div><dt>Fire deck / discard</dt><dd>{game.decks.fireRemaining} / {game.discards.fire.length}</dd></div>
         <div><dt>Fire remaining by value</dt><dd>{fireComposition}</dd></div>
         <div><dt>Technique decks</dt><dd>F {game.decks.techniqueRemaining.forming} · G {game.decks.techniqueRemaining.glazing} · K {game.decks.techniqueRemaining.firing}</dd></div>
@@ -115,14 +114,12 @@ export function eventDescription(event: PublicGameEvent, game: PublicGameState, 
   switch (event.type) {
     case "KILN_SELECTED":
       return `${player(event.playerId)} selected ${KILN_DEFINITIONS[event.kilnId].name}.`;
+    case "STARTING_TECH_SELECTED":
+      return `${player(event.playerId)} selected Starting Tech ${event.techniqueId}.`;
     case "STARTING_ORDERS_SUBMITTED":
       return `${player(event.playerId)} locked an opening Order choice.`;
     case "STARTING_ORDERS_REVEALED":
       return `Opening Orders revealed: ${Object.entries(event.ordersByPlayer).map(([id, orders]) => `${player(id)} kept ${orders.join(", ")}`).join("; ")}.`;
-    case "STARTING_ORDER_KEPT":
-      return `${player(event.playerId)} kept starting Order ${event.orderId}.`;
-    case "STARTING_ORDER_REDRAWN":
-      return `${player(event.playerId)} redrew ${event.discardedOrderId} and received ${event.drawnOrderId}.`;
     case "WORKER_PLACED":
       return `${player(event.playerId)} placed ${workerName(event.workerId)} at ${locationName(event.locationId)}.`;
     case "PLAYER_PASSED":
@@ -135,12 +132,8 @@ export function eventDescription(event: PublicGameEvent, game: PublicGameState, 
       return `${player(event.playerId)} glazed a ${ceramic(event.ceramicId)} ceramic: ${label(event.glaze)}, ${label(event.decoration)}.`;
     case "CERAMIC_LOADED":
       return `${player(event.playerId)} loaded a ${ceramic(event.ceramicId)} ceramic into ${label(event.kilnSpaceId)}.`;
-    case "CERAMIC_SOLD":
-      return `${player(event.playerId)} sold a ${ceramic(event.ceramicId)} ceramic.`;
-    case "CERAMIC_RETURNED_TO_GLAZED":
-      return `${player(event.playerId)} used Second Firing; the ${ceramic(event.ceramicId)} ceramic returned to Glazed and lost its Standard Quality.`;
     case "ORDER_TAKEN":
-      return `${player(event.playerId)} ${event.acquisition === "blind_top" ? "blind-drew" : "took"} ${event.orderId} from the ${event.deck} Orders.`;
+      return `${player(event.playerId)} ${event.acquisition === "colour_samples" ? "selected" : "took"} ${event.orderId} from the Main Orders${event.acquisition === "colour_samples" ? " through Colour Samples" : ""}.`;
     case "COLOUR_SAMPLES_USED":
       return `${player(event.playerId)} used Colour Samples, took ${event.selectedOrderId ?? "an Order"}, and put ${event.bottomedCount} looked-at Order${event.bottomedCount === 1 ? "" : "s"} on the bottom.`;
     case "TECHNIQUE_REFRESHED":
@@ -151,6 +144,8 @@ export function eventDescription(event: PublicGameEvent, game: PublicGameState, 
       return `${player(event.playerId)} used ${event.techniqueId} · ${TECHNIQUE_DEFINITIONS[event.techniqueId]?.name ?? "Unknown Technique"}.`;
     case "KILN_ABILITY_USED":
       return `${player(event.playerId)} used ${KILN_DEFINITIONS[event.kilnId].name}: ${KILN_DEFINITIONS[event.kilnId].abilityName}.`;
+    case "IMPERIAL_PRIORITY_USED":
+      return `${player(event.playerId)} spent Imperial Priority to load one additional ceramic into their Imperial Kiln.`;
     case "JUN_ACTIVATION_PAID":
       return `${player(event.playerId)} paid ${event.wood} Wood for Jun's Kiln Transformation.`;
     case "WORK_PHASE_ENDED":
@@ -160,12 +155,18 @@ export function eventDescription(event: PublicGameEvent, game: PublicGameState, 
     case "WOOD_REVEALED":
       return `Contribution cards revealed: ${Object.entries(event.contributions).map(([id, cardId]) => {
         const card = CONTRIBUTION_CARD_DEFINITIONS[cardId];
-        return `${player(id)} chose ${card.name} (${card.woodCost} Wood)`;
+        const heat = event.effectiveHeatAdjustments[id] ?? card.heatAdjustment;
+        const usedFuelLedger = heat !== card.heatAdjustment;
+        return `${player(id)} chose ${card.name}${usedFuelLedger ? " + Fuel Ledger" : ""} (${card.woodCost + (usedFuelLedger ? 1 : 0)} Wood, ${signed(heat)} Heat)`;
       }).join("; ")}.`;
     case "FIRE_REVEALED":
       return `Fire card ${signed(event.modifier)} revealed. Base Heat ${event.baseHeat}; Global Heat ${event.globalHeat}.`;
     case "QUALITY_ASSIGNED":
       return `The ${ceramic(event.ceramicId)} ceramic was assigned ${label(event.quality)} Quality.`;
+    case "SECOND_FIRING_RESOLVED":
+      return `${player(event.playerId)} resolved Second Firing on the ${ceramic(event.ceramicId)} ceramic with Fire ${signed(event.fireModifier)}; its replacement Quality is ${label(event.quality)}.`;
+    case "WORKSHOP_SECONDS_SOLD":
+      return `${player(event.playerId)} discarded a Flawed ${ceramic(event.ceramicId)} as Workshop Seconds and gained ${event.coins} Coins.`;
     case "FIRING_RESOLVED":
       return `${ceramic(event.ceramicId)} ceramic firing recorded: Fire ${signed(event.fireModifier)}, natural Heat ${event.naturalActualHeat} (difference ${event.naturalHeatDifference}, ${label(event.naturalQuality)}), final Heat ${event.finalActualHeat} (difference ${event.finalHeatDifference}, ${label(event.finalQuality)}).`;
     case "ORDER_COMPLETED": {
@@ -173,23 +174,20 @@ export function eventDescription(event: PublicGameEvent, game: PublicGameState, 
       const reward = definition === undefined ? "" : ` +${definition.vp} VP${definition.coins > 0 ? ` and +${definition.coins} Coins` : ""}`;
       return `${player(event.playerId)} completed ${event.orderId} with ${event.ceramicIds.length} ceramic${event.ceramicIds.length === 1 ? "" : "s"}.${reward}`;
     }
-    case "IMPERIAL_PROGRESS_ADVANCED":
-      return `${player(event.playerId)} advanced Imperial Progress ${event.from} → ${event.to} (reward +${event.reward}).`;
-    // v1.1.4 never emits this; the renderer stays so archived pre-v1.1.4 logs still read.
-    case "IMPERIAL_STIPEND_RECEIVED":
-      return `${player(event.playerId)} received the Progress ${event.space} court stipend: +${event.coins} Coins.`;
-    case "COURT_PATRONAGE_USED":
-      return `${player(event.playerId)} used Court Patronage, paid ${event.cost} Coins, and advanced ${event.from} → ${event.to}.`;
-    case "IMPERIAL_SEAL_CLAIMED":
-      return `${player(event.playerId)} claimed the Imperial Seal.`;
-    case "APPRENTICE_UNLOCKED":
-      return `${player(event.playerId)} unlocked Apprentice ${event.workerId}.`;
-    case "ROUND_FIVE_UNLOCK_VP_REWARD":
-      return `${player(event.playerId)} received ${event.vp} VP instead of a Round 5 Apprentice unlock.`;
+    case "IMPERIAL_RECOGNITION_ADVANCED":
+      return `${player(event.playerId)} gained ${event.crowns} Crown${event.crowns === 1 ? "" : "s"}: Imperial Recognition ${event.from} → ${event.to}.`;
+    case "IMPERIAL_GRANT_RECEIVED":
+      return `${player(event.playerId)} resolved Imperial Grant: ${event.choice === "coins" ? `${event.coins} Coins` : `${event.clay} Clay, ${event.wood} Wood and ${event.coins} Coin`}.`;
+    case "IMPERIAL_KILN_UNLOCKED":
+      return `${player(event.playerId)} reached Imperial Gift and unlocked their Imperial Kiln.`;
+    case "IMPERIAL_PRIORITY_GAINED":
+      return `${player(event.playerId)} gained an Imperial Priority token.`;
+    case "IMPERIAL_AUDIENCE_GAINED":
+      return `${player(event.playerId)} reached Imperial Audience and gained ${event.vp} VP.`;
     case "ORDERS_DISCARDED_FOR_CLEANUP":
       return `${player(event.playerId)} discarded ${event.orderIds.join(", ")} during Cleanup.`;
     case "ORDER_DISPLAYS_ROTATED":
-      return `Round ${event.round} Order rotation discarded Market ${event.marketOrderIds.join(", ")} and Imperial ${event.imperialOrderIds.join(", ")}.`;
+      return `Round ${event.round} Order rotation discarded Main Orders ${event.marketOrderIds.join(", ")}.`;
     case "ROUND_STARTED":
       return `Round ${event.round} started. ${player(event.firstPlayerId)} is First Player.`;
     case "PRESENTATION_SUBMITTED":
@@ -207,47 +205,48 @@ function eventDescriptionZh(event: PublicGameEvent, game: PublicGameState): stri
   };
   switch (event.type) {
     case "KILN_SELECTED": return `${player(event.playerId)}选择了${KILN_DEFINITIONS[event.kilnId].nameZh}。`;
+    case "STARTING_TECH_SELECTED": return `${player(event.playerId)}选择了起始技术${event.techniqueId}。`;
     case "STARTING_ORDERS_SUBMITTED": return `${player(event.playerId)}已锁定起始订单选择。`;
     case "STARTING_ORDERS_REVEALED": return `起始订单同时公开：${Object.entries(event.ordersByPlayer).map(([id, orders]) => `${player(id)}保留${orders.join("、")}`).join("；")}。`;
-    case "STARTING_ORDER_KEPT": return `${player(event.playerId)}保留起始订单${event.orderId}。`;
-    case "STARTING_ORDER_REDRAWN": return `${player(event.playerId)}弃掉${event.discardedOrderId}并重抽到${event.drawnOrderId}。`;
     case "WORKER_PLACED": return `${player(event.playerId)}将${workerName(event.workerId, "zh-CN")}放到${locationName(event.locationId, "zh-CN")}。`;
     case "PLAYER_PASSED": return `${player(event.playerId)}跳过本轮剩余工作阶段。`;
     case "RESOURCES_CHANGED": return `${player(event.playerId)}的资源变化：${resourceChanges(event, "zh-CN")}。`;
     case "CERAMIC_SHAPED": return `${player(event.playerId)}成型了1件${term("zh-CN", event.shape)}。`;
     case "CERAMIC_GLAZED": return `${player(event.playerId)}为${ceramic(event.ceramicId)}施釉：${term("zh-CN", event.glaze)}、${term("zh-CN", event.decoration)}。`;
     case "CERAMIC_LOADED": return `${player(event.playerId)}将${ceramic(event.ceramicId)}放入${term("zh-CN", event.kilnSpaceId)}。`;
-    case "CERAMIC_SOLD": return `${player(event.playerId)}出售了1件${ceramic(event.ceramicId)}。`;
-    case "CERAMIC_RETURNED_TO_GLAZED": return `${player(event.playerId)}使用二次烧成；${ceramic(event.ceramicId)}退回施釉区，并失去合格品品第。`;
-    case "ORDER_TAKEN": return `${player(event.playerId)}${event.acquisition === "blind_top" ? "盲抽" : "拿取"}了${event.deck === "market" ? "市场" : "御用"}订单${event.orderId}。`;
+    case "ORDER_TAKEN": return `${player(event.playerId)}${event.acquisition === "colour_samples" ? "通过釉色样本选择" : "拿取"}了主订单${event.orderId}。`;
     case "COLOUR_SAMPLES_USED": return `${player(event.playerId)}使用釉色样本，拿取${event.selectedOrderId ?? "1张订单"}，并将${event.bottomedCount}张已查看牌置于牌堆底。`;
     case "TECHNIQUE_REFRESHED": return `${player(event.playerId)}刷新了${event.techniqueId} · ${TECHNIQUE_DEFINITIONS[event.techniqueId]?.nameZh ?? "未知技术"}。`;
     case "TECHNIQUE_ACQUIRED": return `${player(event.playerId)}以${event.cost}铜钱购买${event.techniqueId} · ${TECHNIQUE_DEFINITIONS[event.techniqueId]?.nameZh ?? "未知技术"}。`;
     case "TECHNIQUE_USED": return `${player(event.playerId)}使用${event.techniqueId} · ${TECHNIQUE_DEFINITIONS[event.techniqueId]?.nameZh ?? "未知技术"}。`;
     case "KILN_ABILITY_USED": return `${player(event.playerId)}使用${KILN_DEFINITIONS[event.kilnId].nameZh}：${KILN_DEFINITIONS[event.kilnId].abilityNameZh}。`;
+    case "IMPERIAL_PRIORITY_USED": return `${player(event.playerId)}花费御用优先标记，额外将1件陶瓷装入自己的御窑。`;
     case "JUN_ACTIVATION_PAID": return `${player(event.playerId)}为钧窑的窑变妙化支付${event.wood}柴薪。`;
     case "WORK_PHASE_ENDED": return "所有玩家完成工作阶段，开始烧成。";
     case "WOOD_SUBMITTED": return `${player(event.playerId)}提交了秘密出柴牌。`;
     case "WOOD_REVEALED": return `出柴牌公开：${Object.entries(event.contributions).map(([id, cardId]) => {
       const card = CONTRIBUTION_CARD_DEFINITIONS[cardId];
-      return `${player(id)}选择${card.nameZh}（${card.woodCost}柴薪）`;
+      const heat = event.effectiveHeatAdjustments[id] ?? card.heatAdjustment;
+      const usedFuelLedger = heat !== card.heatAdjustment;
+      return `${player(id)}选择${card.nameZh}${usedFuelLedger ? "并使用柴薪账簿" : ""}（${card.woodCost + (usedFuelLedger ? 1 : 0)}柴薪，火候${signed(heat)}）`;
     }).join("；")}。`;
     case "FIRE_REVEALED": return `翻开窑火牌${signed(event.modifier)}。基础热度${event.baseHeat}；全局热度${event.globalHeat}。`;
     case "QUALITY_ASSIGNED": return `${ceramic(event.ceramicId)}的品第判定为${term("zh-CN", event.quality)}。`;
+    case "SECOND_FIRING_RESOLVED": return `${player(event.playerId)}对${ceramic(event.ceramicId)}结算二次烧成，额外窑火为${signed(event.fireModifier)}；替代后的品第为${term("zh-CN", event.quality)}。`;
+    case "WORKSHOP_SECONDS_SOLD": return `${player(event.playerId)}将1件次品${ceramic(event.ceramicId)}作为作坊次品弃掉，获得${event.coins}铜钱。`;
     case "FIRING_RESOLVED": return `${ceramic(event.ceramicId)}烧制记录：窑火${signed(event.fireModifier)}，自然实际火候${event.naturalActualHeat}（火候差${event.naturalHeatDifference}，${term("zh-CN", event.naturalQuality)}），最终实际火候${event.finalActualHeat}（火候差${event.finalHeatDifference}，${term("zh-CN", event.finalQuality)}）。`;
     case "ORDER_COMPLETED": {
       const definition = ORDER_DEFINITIONS[event.orderId];
       const reward = definition === undefined ? "" : ` +${definition.vp}分${definition.coins > 0 ? `、+${definition.coins}铜钱` : ""}`;
       return `${player(event.playerId)}以${event.ceramicIds.length}件陶瓷完成${event.orderId}。${reward}`;
     }
-    case "IMPERIAL_PROGRESS_ADVANCED": return `${player(event.playerId)}的御用进度${event.from} → ${event.to}（奖励进度+${event.reward}）。`;
-    case "COURT_PATRONAGE_USED": return `${player(event.playerId)}使用朝廷赞助，支付${event.cost}铜钱，御用进度${event.from} → ${event.to}。`;
-    case "IMPERIAL_SEAL_CLAIMED": return `${player(event.playerId)}获得御印。`;
-    case "APPRENTICE_UNLOCKED": return `${player(event.playerId)}解锁学徒${event.workerId}。`;
-    case "ROUND_FIVE_UNLOCK_VP_REWARD": return `${player(event.playerId)}在第5轮获得${event.vp}分以替代学徒解锁。`;
+    case "IMPERIAL_RECOGNITION_ADVANCED": return `${player(event.playerId)}获得${event.crowns}个皇冠：御用认可${event.from} → ${event.to}。`;
+    case "IMPERIAL_GRANT_RECEIVED": return `${player(event.playerId)}结算御赐资助：${event.choice === "coins" ? `${event.coins}铜钱` : `${event.clay}黏土、${event.wood}柴薪和${event.coins}铜钱`}。`;
+    case "IMPERIAL_KILN_UNLOCKED": return `${player(event.playerId)}到达御赐窑炉，解锁御窑。`;
+    case "IMPERIAL_PRIORITY_GAINED": return `${player(event.playerId)}获得御用优先标记。`;
+    case "IMPERIAL_AUDIENCE_GAINED": return `${player(event.playerId)}到达御前召见，获得${event.vp}分。`;
     case "ORDERS_DISCARDED_FOR_CLEANUP": return `${player(event.playerId)}在整备阶段弃掉${event.orderIds.join("、")}。`;
-    case "IMPERIAL_STIPEND_RECEIVED": return `${player(event.playerId)}获得进度${event.space}的朝廷赏赐：+${event.coins}铜钱。`;
-    case "ORDER_DISPLAYS_ROTATED": return `第${event.round}轮订单轮换弃掉市场订单${event.marketOrderIds.join("、")}和御用订单${event.imperialOrderIds.join("、")}。`;
+    case "ORDER_DISPLAYS_ROTATED": return `第${event.round}轮订单轮换弃掉主订单${event.marketOrderIds.join("、")}。`;
     case "ROUND_STARTED": return `第${event.round}轮开始。${player(event.firstPlayerId)}为起始玩家。`;
     case "PRESENTATION_SUBMITTED": return `${player(event.playerId)}为终局展陈提交${event.ceramicIds.length}件陶瓷，其中${event.featuredCeramicIds.length}件为主题藏品。`;
     case "FINAL_SCORE_CALCULATED": return `最终计分完成。胜者：${event.result.winnerIds.map(player).join("、")}。`;
@@ -258,17 +257,9 @@ function workerName(workerId: string, locale: Locale = "en"): string {
   return workerId.toLowerCase().includes("shifu") ? term(locale, "shifu") : locale === "zh-CN" ? `工人${workerId}` : `worker ${workerId}`;
 }
 
+/** Both locales read the V1.2.2 location names from the shared term table. */
 function locationName(locationId: string, locale: Locale = "en"): string {
-  if (locale === "zh-CN") return term(locale, locationId);
-  const names: Record<string, string> = {
-    materials_yard: "Materials Yard",
-    forming_studio: "Forming Studio",
-    glaze_workshop: "Glaze Workshop",
-    kiln_yard: "Kiln Yard",
-    market_imperial_office: "Market & Imperial Office",
-    guild_academy: "Guild & Academy",
-  };
-  return names[locationId] ?? label(locationId);
+  return term(locale, locationId);
 }
 
 function resourceChanges(event: Extract<PublicGameEvent, { type: "RESOURCES_CHANGED" }>, locale: Locale = "en"): string {

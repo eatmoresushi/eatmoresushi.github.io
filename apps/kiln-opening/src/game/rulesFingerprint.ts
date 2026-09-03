@@ -52,8 +52,11 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  *        Exhibition with a three-item featured collection; corrected Technique timing,
  *        costs and passive effects; and removed the obsolete Round-5 Coin compensation.
  *  10 -- Owner-approved V1.1.6 amendment: Jun's activation costs 2 Wood instead of 3.
+ *  11 -- V1.2.2: unified five-card Main Order market; Starting Orders and Starting Techs;
+ *        private workshop expansion; rebuilt Techs; Crown-based Imperial Recognition;
+ *        Imperial Kiln/Priority; secret Fuel Ledger commitments; revised firing and scoring.
  */
-export const RULES_BEHAVIOUR_REVISION = 10;
+export const RULES_BEHAVIOUR_REVISION = 11;
 
 /**
  * Display-only keys, excluded so that a typo fix or a translation improvement does not

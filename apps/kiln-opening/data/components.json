@@ -1,10 +1,10 @@
 {
-  "rulesVersion": "1.1.6",
+  "rulesVersion": "1.2.2",
   "components": [
     {
       "name": "Central Action Board",
       "qty": 1,
-      "notes": "Eight worker-placement locations; six have capacities by player count and Labour and Court Patronage are uncapped."
+      "notes": "Materials Yard, Commission Market, Guild & Academy, Kiln Yard, Labour and Imperial Recognition; private Potter's Wheel and Glaze & Decoration spaces are on player boards."
     },
     {
       "name": "Shared Kiln Board",
@@ -14,7 +14,7 @@
     {
       "name": "Kiln Player Boards",
       "qty": 5,
-      "notes": "Ru, Guan, Ge, Ding and Jun; only 2-4 are used each game."
+      "notes": "Ru, Guan, Ge, Ding and Jun. Each has private Potter's Wheel and Glaze & Decoration spaces, Tech slots and an Imperial Kiln; only 2-4 are used each game."
     },
     {
       "name": "Shifu Workers",
@@ -23,8 +23,8 @@
     },
     {
       "name": "Apprentice Workers",
-      "qty": 20,
-      "notes": "Five per player; three begin available and two are unlocked."
+      "qty": 12,
+      "notes": "Three per player; all begin available."
     },
     {
       "name": "Clay",
@@ -47,17 +47,24 @@
       "notes": "Eight each: Bowl, Plate, Washer, Vase and Censer."
     },
     {
-      "name": "Market Orders",
-      "qty": 30
+      "name": "Main Order Cards",
+      "qty": 48,
+      "notes": "One unified public and reservable deck with a five-card display."
     },
     {
-      "name": "Imperial Orders",
-      "qty": 22
+      "name": "Starting Order Cards",
+      "qty": 16,
+      "notes": "Separate Setup-only deck; each player is dealt four and keeps two."
     },
     {
-      "name": "Technique Tiles",
+      "name": "Starting Tech Tiles",
+      "qty": 16,
+      "notes": "Four copies each of Prepared Clay, White Slip, Rapid Drying and Kiln Tending."
+    },
+    {
+      "name": "Advanced Tech Tiles",
       "qty": 15,
-      "notes": "Five Forming, five Glazing and five Firing Techniques."
+      "notes": "Five Forming, five Glazing & Decoration and five Firing Techs."
     },
     {
       "name": "Fire Cards",
@@ -70,7 +77,7 @@
       "notes": "Three per player: Bank the Fire, Tend the Fire and Stoke the Fire."
     },
     {
-      "name": "Imperial Progress Markers",
+      "name": "Imperial Recognition Markers",
       "qty": 4,
       "notes": "One in each player colour."
     },
@@ -89,9 +96,9 @@
       "notes": "Tracks rounds 1 to 5."
     },
     {
-      "name": "Imperial Seal",
-      "qty": 1,
-      "notes": "Worth 2 VP to the first player reaching Progress 5."
+      "name": "Imperial Priority Tokens",
+      "qty": 4,
+      "notes": "One per player colour; gained at Imperial Recognition 4 and spent for one additional Imperial Kiln load."
     }
   ]
 }

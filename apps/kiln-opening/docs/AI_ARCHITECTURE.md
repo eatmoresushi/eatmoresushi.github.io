@@ -1,14 +1,22 @@
 # Kiln Opening AI Architecture
 
-## V1.1.6 compatibility status
+> **The offline self-play harness was removed during the V1.2.2 cleanup.** `src/ai/` and the
+> `npm run selfplay:*` / `experiment:*` scripts no longer exist: the code targeted pre-V1.2.2
+> mechanics (Imperial Progress, Imperial Seal, Office blind draw, Clay Substitution) and no
+> longer compiled or ran. Nothing the game ships imported it; the online computer player lives
+> in `src/multiplayer/computerPlayer.ts`. Every `npm run selfplay:...` command named below is a
+> historical record of how a study was produced, not a command you can run. The study outputs
+> themselves remain under `playtests/`, and the code is recoverable from git history.
 
-The authoritative engine, public observation and online computer player now use the supplied V1.1.6 rules. The live policy retains the historical `rules-v1.1.5-order-001` identifier because policy identifiers describe AI lineage, not board-game rules versions; every candidate command is enumerated, validated and applied by the V1.1.6 engine. Existing serialized profiles and playtest outputs remain historical and must not be relabelled or overwritten. The pre-reconciliation V1.1.6 Technique calibration is disabled until its study is rerun against the reconciled engine.
+## V1.2.2 online status
+
+The authoritative engine, public projection and online computer player use V1.2.2. The current deterministic online policy is `rules-v1.2.2-heuristic-001`; it handles the four-card Starting Order choice, Starting Tech selection, private workshop expansion, five-card Main Order market, Crown Recognition, Imperial Kiln/Priority, all current Tech windows and sealed Fuel Ledger choices. Automated full-game tests complete legal five-round games at 2, 3 and 4 players. Older Selfplay-003 through Selfplay-006 studies below are historical methodology and evidence only; their policies and measurements are not current V1.2.2 balance evidence.
 
 ## Selfplay-005 public-belief rollout candidate
 
 Selfplay-005 reconstructs complete sampled engine states exclusively from `PlayerObservation`. For a fixed observation and seed, hidden authoritative deck order cannot affect the sampled belief. Projection tests require every sampled belief to project back to exactly the source public state.
 
-In the historical V005 study, the decision oracle applied candidate commands through the then-current V1.0.1 engine, then advanced a bounded number of real legal transitions using common random numbers. Under current play it consumes the V1.1.6 engine. Unrevealed Contribution choices are never sampled from server state: Contribution decisions bypass the oracle and use the safe evaluator.
+In the historical V005 study, the decision oracle applied candidate commands through the then-current V1.0.1 engine, then advanced a bounded number of real legal transitions using common random numbers. That archived pipeline is excluded from the V1.2.2 production build. Unrevealed Contribution choices were never sampled from server state: Contribution decisions bypassed the oracle and used the safe evaluator.
 
 The V005 study separates four datasets:
 
@@ -43,7 +51,7 @@ The V004 promotion pipeline is:
 4. run fresh matched baseline/candidate pairs with candidate seats rotated;
 5. promote only if legality, coverage, latency, completed-Order, mean-VP, and paired-confidence gates all pass.
 
-Current rules version: V1.1.6
+Current rules version: V1.2.2
 AI policy version: `rules-v1.1.5-order-001` (historical lineage identifier)
 
 ## Boundaries

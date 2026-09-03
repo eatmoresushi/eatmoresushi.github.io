@@ -23,7 +23,7 @@ import type {
 } from "./types.ts";
 
 interface GameConfigDefinition {
-  rulesVersion: "1.1.6";
+  rulesVersion: "1.2.2";
   players: { min: number; max: number };
   rounds: number;
   startingResources: { clay: number; wood: number; coins: number };
@@ -31,11 +31,9 @@ interface GameConfigDefinition {
     shifu: number;
     apprenticesTotal: number;
     apprenticesStarting: number;
-    apprenticeUnlockProgress: number[];
   };
   orderDisplay: {
     market: number;
-    imperial: number;
     baseHandLimit: number;
   };
   techniques: { maxOwned: number; faceUpPerDiscipline: number };
@@ -49,20 +47,19 @@ interface GameConfigDefinition {
   decorations: Record<Decoration, number>;
   shapes: Record<Shape, number>;
   shapeSupplyEach: number;
-  imperialProgressEndGameVp: [number, number, number, number, number, number];
-  imperialSealVp: number;
   coinEndGame: { coinsPerVp: number; maxVp: number };
 }
 
 interface LocationDefinition {
   id: LocationId;
+  scope?: "shared" | "private" | "uncapped";
   name: string;
   nameZh: string;
   apprentice: string;
   apprenticeZh: string;
   shifu: string;
   shifuZh: string;
-  capacity: Record<"2" | "3" | "4", number>;
+  capacity: Record<"2" | "3" | "4", number | null>;
 }
 
 export interface OrderRequirementDefinition {
@@ -80,7 +77,9 @@ export interface OrderDefinition {
   minQuality: Quality;
   vp: number;
   coins: number;
-  imperialProgressReward?: 1 | 2 | 3;
+  crowns: 0 | 1 | 2 | 3;
+  commission: string;
+  commissionZh: string;
 }
 
 export type OrderRelationDefinition =
@@ -94,6 +93,9 @@ export type OrderRelationDefinition =
   | { type: "different_decoration"; indices: number[] }
   | { type: "at_least_n_quality"; quality: Quality; count: number }
   | { type: "at_least_n_distinct_glazes"; indices: number[]; count: number }
+  | { type: "at_least_n_distinct_decorations"; indices: number[]; count: number }
+  | { type: "required_glazes"; values: Glaze[] }
+  | { type: "required_decorations"; values: Decoration[] }
   | { type: "glaze_categories"; indices: number[]; categories: Glaze[][] };
 
 export interface TechniqueDefinition {
@@ -107,6 +109,14 @@ export interface TechniqueDefinition {
   oncePerRound: boolean;
 }
 
+export interface StartingTechniqueDefinition {
+  id: "ST01" | "ST02" | "ST03" | "ST04";
+  name: string;
+  nameZh: string;
+  ability: string;
+  abilityZh: string;
+}
+
 export interface ContributionCardDefinition {
   id: ContributionCardId;
   name: string;
@@ -118,7 +128,7 @@ export interface ContributionCardDefinition {
 }
 
 interface FiringDefinition {
-  rulesVersion: "1.1.6";
+  rulesVersion: "1.2.2";
   kilnSpaces: Array<{ id: KilnSpaceId; zone: "high" | "middle" | "low"; modifier: -1 | 0 | 1 }>;
   fireDeck: FireModifier[];
   contributionCards: ContributionCardDefinition[];
@@ -142,17 +152,22 @@ export interface KilnDefinition {
 
 export const GAME_CONFIG = gameConfigJson as unknown as GameConfigDefinition;
 const ACTION_LOCATION_FILE = actionLocationsJson as unknown as {
-  rulesVersion: "1.1.6";
+  rulesVersion: "1.2.2";
   locations: LocationDefinition[];
 };
 const ORDER_FILE = ordersJson as unknown as {
-  market: OrderDefinition[];
-  imperial: OrderDefinition[];
+  rulesVersion: "1.2.2";
+  starting: OrderDefinition[];
+  main: OrderDefinition[];
 };
-const TECHNIQUE_FILE = techniquesJson as unknown as TechniqueDefinition[];
+const TECHNIQUE_FILE = techniquesJson as unknown as {
+  rulesVersion: "1.2.2";
+  starting: StartingTechniqueDefinition[];
+  advanced: TechniqueDefinition[];
+};
 const FIRING_FILE = firingJson as unknown as FiringDefinition;
 const COMPONENT_FILE = componentsJson as unknown as {
-  rulesVersion: "1.1.6";
+  rulesVersion: "1.2.2";
   components: ComponentDefinition[];
 };
 
@@ -164,7 +179,6 @@ export const LOCATION_IDS: readonly LocationId[] = [
   "market_imperial_office",
   "guild_academy",
   "labour",
-  "court_patronage",
 ];
 
 export const SHAPES: readonly Shape[] = ["bowl", "plate", "washer", "vase", "censer"];
@@ -181,15 +195,19 @@ export const LOCATION_DEFINITIONS = Object.fromEntries(
   ACTION_LOCATION_FILE.locations.map((location) => [location.id, location]),
 ) as Record<LocationId, LocationDefinition>;
 
-export const MARKET_ORDERS = ORDER_FILE.market;
-export const IMPERIAL_ORDERS = ORDER_FILE.imperial;
+export const STARTING_ORDERS = ORDER_FILE.starting;
+export const MAIN_ORDERS = ORDER_FILE.main;
 export const ORDER_DEFINITIONS = Object.fromEntries(
-  [...MARKET_ORDERS, ...IMPERIAL_ORDERS].map((order) => [order.id, order]),
+  [...STARTING_ORDERS, ...MAIN_ORDERS].map((order) => [order.id, order]),
 ) as Record<OrderId, OrderDefinition>;
 
-export const TECHNIQUES = TECHNIQUE_FILE;
+export const STARTING_TECHNIQUES = TECHNIQUE_FILE.starting;
+export const STARTING_TECHNIQUE_DEFINITIONS = Object.fromEntries(
+  STARTING_TECHNIQUES.map((technique) => [technique.id, technique]),
+) as Record<StartingTechniqueDefinition["id"], StartingTechniqueDefinition>;
+export const TECHNIQUES = TECHNIQUE_FILE.advanced;
 export const TECHNIQUE_DEFINITIONS = Object.fromEntries(
-  TECHNIQUE_FILE.map((technique) => [technique.id, technique]),
+  TECHNIQUES.map((technique) => [technique.id, technique]),
 ) as Record<TechniqueId, TechniqueDefinition>;
 
 export const FIRE_CARDS = FIRING_FILE.fireDeck;
@@ -200,7 +218,7 @@ export const SHAPE_COSTS = GAME_CONFIG.shapes;
 export const DECORATION_COSTS = GAME_CONFIG.decorations;
 
 export interface ImperialProgressDefinition {
-  rulesVersion: "1.1.6";
+  rulesVersion: "1.2.2";
   track: Array<{
     space: number;
     title: string;
@@ -240,7 +258,7 @@ export const CONTRIBUTION_CARD_IDS: readonly ContributionCardId[] =
 export const BASE_HEAT_START = FIRING_FILE.baseHeatRule.start;
 
 export function locationCapacity(locationId: LocationId, playerCount: PlayerCount): number {
-  return LOCATION_DEFINITIONS[locationId].capacity[String(playerCount) as "2" | "3" | "4"];
+  return LOCATION_DEFINITIONS[locationId].capacity[String(playerCount) as "2" | "3" | "4"] ?? Number.POSITIVE_INFINITY;
 }
 
 export function activeKilnSpaceIds(playerCount: PlayerCount): KilnSpaceId[] {
@@ -263,35 +281,29 @@ export const COMMON_SUPPLY = {
 
 function validateContent(): void {
   if (
-    GAME_CONFIG.rulesVersion !== "1.1.6" ||
-    ACTION_LOCATION_FILE.rulesVersion !== "1.1.6" ||
-    FIRING_FILE.rulesVersion !== "1.1.6" ||
-    COMPONENT_FILE.rulesVersion !== "1.1.6" ||
-    IMPERIAL_PROGRESS.rulesVersion !== "1.1.6"
+    GAME_CONFIG.rulesVersion !== "1.2.2" ||
+    ACTION_LOCATION_FILE.rulesVersion !== "1.2.2" ||
+    FIRING_FILE.rulesVersion !== "1.2.2" ||
+    COMPONENT_FILE.rulesVersion !== "1.2.2" ||
+    IMPERIAL_PROGRESS.rulesVersion !== "1.2.2"
   ) {
     throw new Error("Rules content version mismatch");
   }
   const actualLocationIds = new Set(ACTION_LOCATION_FILE.locations.map((location) => location.id));
   if (
-    ACTION_LOCATION_FILE.locations.length !== 8 ||
-    new Set(LOCATION_IDS).size !== 8 ||
+    ACTION_LOCATION_FILE.locations.length !== 7 ||
+    new Set(LOCATION_IDS).size !== 7 ||
     LOCATION_IDS.some((locationId) => !actualLocationIds.has(locationId))
   ) {
-    throw new Error("Expected exactly six action locations");
+    throw new Error("Expected exactly seven V1.2.2 action locations");
   }
-  if (MARKET_ORDERS.length !== 30 || IMPERIAL_ORDERS.length !== 22) {
+  if (MAIN_ORDERS.length !== 48 || STARTING_ORDERS.length !== 16) {
     throw new Error("Order deck size mismatch");
-  }
-  if (
-    MARKET_ORDERS.some((order) => order.imperialProgressReward !== undefined) ||
-    IMPERIAL_ORDERS.some((order) => order.imperialProgressReward === undefined)
-  ) {
-    throw new Error("Imperial Order progress rewards mismatch");
   }
   if (TECHNIQUES.length !== 15 || KILN_IDS.length !== 5 || KILN_SPACE_IDS.length !== 7) {
     throw new Error("Technique, Kiln, or kiln-space count mismatch");
   }
-  if (new Set([...MARKET_ORDERS, ...IMPERIAL_ORDERS].map((order) => order.id)).size !== 52) {
+  if (new Set([...MAIN_ORDERS, ...STARTING_ORDERS].map((order) => order.id)).size !== 64) {
     throw new Error("Order IDs must be unique");
   }
   if (new Set(TECHNIQUES.map((technique) => technique.id)).size !== 15) {
@@ -316,8 +328,8 @@ validateContent();
 export const ACTION_LOCATION_PRICES = {
   labourApprenticeCoins: 2,
   labourShifuCoins: 4,
-  flawedSaleCoins: 2,
-  courtPatronageCoins: 4,
+  /** Coins Workshop Seconds pays for a discarded Flawed ceramic (V1.2.2 firing step 11). */
+  workshopSecondsCoins: 2,
 } as const;
 
 /**
@@ -325,18 +337,5 @@ export const ACTION_LOCATION_PRICES = {
  * engine while the printed card said "top 3 cards" -- a mismatch that survived two rulesets
  * because nothing named the number, so nothing could compare it to the text.
  */
-export const COLOUR_SAMPLES_LOOK = 2;
+export const COLOUR_SAMPLES_LOOK = 3;
 
-/** Coins Connoisseur Network pays for a sold ceramic, by Quality. */
-export const CONNOISSEUR_SALE_COINS = { standard: 3, fine: 6, masterpiece: 10 } as const;
-
-/**
- * Wood Kiln Records pays after a firing the owner had a ceramic in.
- *
- * v1.1.6 reworked this card. It previously paid 1 Clay and 2 Coins -- while its printed text
- * said 1 Clay and 1 Coin -- and, worse, the engine required a **Masterpiece** to trigger
- * where the card said "at least one ceramic in the kiln". A card advertising a common
- * trigger while enforcing a rare one is why it was bought 0.000 times per seat in self-play.
- * It now pays the scarce resource, on the trigger it always claimed.
- */
-export const KILN_RECORDS_WOOD = 1;

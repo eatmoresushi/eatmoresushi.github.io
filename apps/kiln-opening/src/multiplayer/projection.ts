@@ -23,11 +23,16 @@ function projectPlayer(state: GameState, playerId: PlayerId): PublicPlayerState 
     orderHand: state.phase.type === "setup_starting_orders" ? [] : [...player.orderHand],
     completedOrders: clone(player.completedOrders),
     techniques: clone(player.techniques),
-    imperialProgress: player.imperialProgress,
-    imperialStipendsReceived: [...(player.imperialStipendsReceived ?? [])],
+    startingTechniqueId: player.startingTechniqueId,
+    workshopSpaces: clone(player.workshopSpaces),
+    imperialRecognition: player.imperialRecognition,
+    imperialGrantResolved: player.imperialGrantResolved,
+    imperialKilnUnlocked: player.imperialKilnUnlocked,
+    imperialPriorityAvailable: player.imperialPriorityAvailable,
+    imperialAudienceVpAwarded: player.imperialAudienceVpAwarded,
     passedWorkPhase: player.passedWorkPhase,
-    pendingApprenticeUnlocks: player.pendingApprenticeUnlocks,
     kilnAbilityUsedThisRound: player.kilnAbilityUsedThisRound,
+    kilnYardShifuUsedThisRound: player.kilnYardShifuUsedThisRound,
     shapesFormedThisRound: [...(player.shapesFormedThisRound ?? [])],
     presentationCeramicIds: [...player.presentationCeramicIds],
     presentationFeaturedCeramicIds: [...(player.presentationFeaturedCeramicIds ?? [])],
@@ -36,7 +41,9 @@ function projectPlayer(state: GameState, playerId: PlayerId): PublicPlayerState 
 }
 
 export function projectPublicGameState(state: GameState): PublicGameState {
-  if (state.rulesVersion !== "1.1.6") throw new Error("Only V1.1.6 games may be projected by the current client");
+  if (state.schemaVersion !== 2 || state.rulesVersion !== "1.2.2") {
+    throw new Error("Only schema-2 V1.2.2 games may be projected by the current client");
+  }
   if (state.phase.type === "firing_contributions" && state.firingContext !== null) {
     throw new Error("Unrevealed Contributions must never enter the public firing context");
   }
@@ -63,7 +70,7 @@ export function projectPublicGameState(state: GameState): PublicGameState {
   }
   return {
     schemaVersion: state.schemaVersion,
-    rulesVersion: state.rulesVersion as "1.1.6",
+    rulesVersion: state.rulesVersion,
     gameId: state.gameId,
     revision: state.revision,
     eventSequence: state.eventSequence,
@@ -79,31 +86,29 @@ export function projectPublicGameState(state: GameState): PublicGameState {
     vesselSupplyCounts,
     decks: {
       marketRemaining: state.marketDeck.length,
-      imperialRemaining: state.imperialDeck.length,
       techniqueRemaining,
       fireRemaining: state.fireDeck.length,
     },
     displays: {
       market: [...state.marketDisplay],
-      imperial: [...state.imperialDisplay],
       techniques: clone(state.techniqueDisplay),
     },
     discards: {
       market: [...state.marketDiscard],
-      imperial: [...state.imperialDiscard],
       fire: [...state.fireDiscard],
     },
-    imperialSealOwnerId: state.imperialSealOwnerId,
     firingContext: clone(state.firingContext),
     lastFiringResult: state.lastFiringResult === undefined ? null : clone(state.lastFiringResult),
     finalResult: clone(state.finalResult),
-    ...(state.experimentConfig === undefined
-      ? {}
-      : { experimentConfig: clone(state.experimentConfig) }),
   };
 }
 
 export function projectPublicEvent(event: GameEvent): PublicGameEvent {
+  if (event.type === "WOOD_SUBMITTED") {
+    // Construct this record explicitly. Even if the private engine event gains more
+    // fields later, a Fuel Ledger commitment must not cross the public event boundary.
+    return { type: "WOOD_SUBMITTED", playerId: event.playerId, windowId: event.windowId };
+  }
   if (event.type === "COLOUR_SAMPLES_USED") {
     return {
       type: event.type,
@@ -113,46 +118,7 @@ export function projectPublicEvent(event: GameEvent): PublicGameEvent {
       ...(event.selectedOrderId === undefined ? {} : { selectedOrderId: event.selectedOrderId }),
     };
   }
-  switch (event.type) {
-    case "KILN_SELECTED":
-    case "STARTING_ORDERS_SUBMITTED":
-    case "STARTING_ORDERS_REVEALED":
-    case "STARTING_ORDER_KEPT":
-    case "STARTING_ORDER_REDRAWN":
-    case "WORKER_PLACED":
-    case "PLAYER_PASSED":
-    case "RESOURCES_CHANGED":
-    case "CERAMIC_SHAPED":
-    case "CERAMIC_GLAZED":
-    case "CERAMIC_LOADED":
-    case "CERAMIC_SOLD":
-    case "CERAMIC_RETURNED_TO_GLAZED":
-    case "ORDER_TAKEN":
-    case "TECHNIQUE_REFRESHED":
-    case "TECHNIQUE_ACQUIRED":
-    case "TECHNIQUE_USED":
-    case "KILN_ABILITY_USED":
-    case "JUN_ACTIVATION_PAID":
-    case "WORK_PHASE_ENDED":
-    case "WOOD_SUBMITTED":
-    case "WOOD_REVEALED":
-    case "FIRE_REVEALED":
-    case "QUALITY_ASSIGNED":
-    case "FIRING_RESOLVED":
-    case "ORDER_COMPLETED":
-    case "IMPERIAL_PROGRESS_ADVANCED":
-    case "COURT_PATRONAGE_USED":
-    case "IMPERIAL_SEAL_CLAIMED":
-    case "APPRENTICE_UNLOCKED":
-    case "ROUND_FIVE_UNLOCK_VP_REWARD":
-    case "ORDERS_DISCARDED_FOR_CLEANUP":
-    case "IMPERIAL_STIPEND_RECEIVED":
-    case "ORDER_DISPLAYS_ROTATED":
-    case "ROUND_STARTED":
-    case "PRESENTATION_SUBMITTED":
-    case "FINAL_SCORE_CALCULATED":
-      return clone(event);
-  }
+  return clone(event) as PublicGameEvent;
 }
 
 export function projectPublicEvents(events: readonly GameEvent[]): PublicGameEvent[] {

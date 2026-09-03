@@ -23,20 +23,19 @@ export function currentDecisionActor(phase: GamePhase): PlayerId | null {
       return phase.selectionOrder[phase.currentIndex] ?? null;
     case "setup_starting_orders":
       return phase.decisionOrder[phase.currentIndex] ?? null;
+    case "setup_starting_tech":
+      return phase.decisionOrder[phase.currentIndex] ?? null;
     case "work":
       return phase.activePlayerId;
     case "work_office_orders":
-    case "work_office_sale":
-    case "work_office_connoisseur":
     case "work_guild":
+    case "work_commission_advance":
       return phase.actorId;
     case "firing_before_contribution":
     case "firing_reposition":
-    case "firing_after_reveal":
-    case "firing_after_fire_reveal":
     case "firing_before_quality":
     case "firing_after_quality":
-    case "firing_after_firing":
+    case "firing_workshop_seconds":
       return phase.queue.actors[phase.queue.currentIndex] ?? null;
     case "orders":
       return phase.activePlayerId;
@@ -81,7 +80,6 @@ export function emptyActionBoard(): Record<LocationId, WorkerId[]> {
   return {
     materials_yard: [],
     labour: [],
-    court_patronage: [],
     forming_studio: [],
     glaze_workshop: [],
     kiln_yard: [],

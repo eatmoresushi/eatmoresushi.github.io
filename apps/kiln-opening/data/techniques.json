@@ -1,152 +1,26 @@
-[
-  {
-    "id": "T01",
-    "discipline": "forming",
-    "name": "Large Throwing Wheel",
-    "nameZh": "大轮车",
-    "cost": 2,
-    "ability": "Once per round, when you form a Vase or Censer during a Forming Studio action, ignore that vessel's Clay cost. This does not create an additional vessel or increase the action's limit.",
-    "abilityZh": "每轮一次，在制坯坊行动中制作瓶或炉时，无需支付该器物的陶土费用。此能力不会额外制作器物，也不增加该行动的上限。",
-    "oncePerRound": true
-  },
-  {
-    "id": "T02",
-    "discipline": "forming",
-    "name": "Measuring Calipers",
-    "nameZh": "校形规",
-    "cost": 1,
-    "ability": "After you form a vessel of a second different Shape this round, gain 1 Coin and 1 Clay.",
-    "abilityZh": "本轮当你制作第二种不同器形的器物后，获得1铜钱和1陶土。",
-    "oncePerRound": true
-  },
-  {
-    "id": "T03",
-    "discipline": "forming",
-    "name": "Clay Substitution",
-    "nameZh": "代土之资",
-    "cost": 2,
-    "ability": "Once per round, on your turn or before Contribution cards are chosen during the Firing Phase, pay 3 Coins to gain 3 resources in any combination of Clay and Wood.",
-    "abilityZh": "每轮一次，在你的回合中，或在烧制阶段选择出柴牌之前，支付3铜钱，获得任意搭配的3个陶土或柴薪。",
-    "oncePerRound": true
-  },
-  {
-    "id": "T04",
-    "discipline": "forming",
-    "name": "Drying Frames",
-    "nameZh": "阴干架",
-    "cost": 3,
-    "ability": "Once per round, after you form a vessel, immediately apply a Glaze and Plain Decoration at no Coin cost. That vessel cannot be loaded into the kiln until the following round. A later Glaze Workshop action may change only its Decoration at normal cost; its Glaze remains unchanged.",
-    "abilityZh": "每轮一次，成型坯体后，立即为其施加釉色与素面装饰，无需支付铜钱。该坯体在下一轮之前不能装入窑中。之后可在施釉坊行动中按正常费用仅更改其装饰，釉色保持不变。",
-    "oncePerRound": true
-  },
-  {
-    "id": "T05",
-    "discipline": "glazing",
-    "name": "Carving Knives",
-    "nameZh": "刻刀",
-    "cost": 2,
-    "ability": "Ignore the Coin cost of every Carved Decoration you apply. Once per round, you may change the Decoration on one of your Glazed, unloaded ceramics to Carved at no cost.",
-    "abilityZh": "你施加的每个刻花装饰均无需支付铜钱。每回合一次，你可以将一件已施釉且未装窑的器物的装饰改为刻花，无需费用。",
-    "oncePerRound": true
-  },
-  {
-    "id": "T06",
-    "discipline": "glazing",
-    "name": "Seal Stamps",
-    "nameZh": "印模",
-    "cost": 2,
-    "ability": "Ignore the Coin cost of every Impressed Decoration you apply. Once per round, you may change the Decoration on one of your Glazed, unloaded ceramics to Impressed at no cost.",
-    "abilityZh": "你施加的每个印花装饰均无需支付铜钱。每回合一次，你可以将一件已施釉且未装窑的器物的装饰改为印花，无需费用。",
-    "oncePerRound": true
-  },
-  {
-    "id": "T08",
-    "discipline": "glazing",
-    "name": "Colour Samples",
-    "nameZh": "釉样册",
-    "cost": 2,
-    "ability": "When you take an Order at the Office, look at the top 2 cards of either Order deck. You may then take one of those cards, or a face-up Order from either display. Any looked-at card you do not take goes to the bottom of its deck.",
-    "abilityZh": "在贡务处获取订单时，查看任一订单牌堆顶的2张牌。随后你可以选取其中1张，或改为选取任一展示区的明置订单。未被选取的已查看牌置于该牌堆底部。",
-    "oncePerRound": true
-  },
-  {
-    "id": "T09",
-    "discipline": "firing",
-    "name": "Kiln Setting",
-    "nameZh": "装窑法",
-    "cost": 2,
-    "ability": "Before Contribution cards are chosen, move any number of your loaded ceramics to empty active kiln spaces. Resolve moves one at a time; a space you vacate counts as empty.",
-    "abilityZh": "出柴牌选定之前，将任意数量的已装窑器物移至空置的启用窑位。逐一结算移动；你腾出的窑位视为空位。",
-    "oncePerRound": true
-  },
-  {
-    "id": "T10",
-    "discipline": "firing",
-    "name": "Protective Saggars",
-    "nameZh": "护胎匣钵",
-    "cost": 3,
-    "ability": "After Quality is assigned, spend 1 Wood to improve one of your ceramics by one step from Flawed to Standard or Standard to Fine. It cannot create a Masterpiece.",
-    "abilityZh": "判定品第后，花费1柴薪，将你1件器物提升一级：次品升为标准，或标准升为精品。不能造就珍品。",
-    "oncePerRound": true
-  },
-  {
-    "id": "T11",
-    "discipline": "firing",
-    "name": "Fuel Ledger",
-    "nameZh": "柴薪簿",
-    "cost": 3,
-    "ability": "After all Contribution cards are revealed but before Base Heat is determined, if you revealed Stoke the Fire, you may spend 1 additional Wood. If you do, your Stoke gives +2 Heat instead of +1 this firing.",
-    "abilityZh": "所有出柴牌揭示后、基础火候确定之前，若你揭示的是添薪，可额外花费1柴薪。若如此做，本次烧制中你的添薪改为+2火候而非+1。",
-    "oncePerRound": true
-  },
-  {
-    "id": "T12",
-    "discipline": "firing",
-    "name": "Test Pieces",
-    "nameZh": "试片",
-    "cost": 3,
-    "ability": "Before Contribution cards are chosen, pay 1 Wood to privately look at the top card of the Fire deck, then return it to the top.",
-    "abilityZh": "选择出柴牌之前，支付1柴薪，私下查看火焰牌堆顶的1张牌，然后将其放回牌堆顶部。",
-    "oncePerRound": true
-  },
-  {
-    "id": "T13",
-    "discipline": "forming",
-    "name": "Kiln Records",
-    "nameZh": "窑务簿录",
-    "cost": 2,
-    "ability": "After firing is fully resolved, if you had at least one ceramic in the kiln, gain 1 Wood.",
-    "abilityZh": "烧制全部结算后，若你在窑中至少有1件器物，获得1柴薪。",
-    "oncePerRound": true
-  },
-  {
-    "id": "T14",
-    "discipline": "glazing",
-    "name": "Connoisseur Network",
-    "nameZh": "鉴藏人脉",
-    "cost": 2,
-    "ability": "After a normal Office main action, you may sell exactly one Finished undelivered ceramic and return its Vessel: Standard 3 Coins, Fine 6 Coins, or Masterpiece 10 Coins. It cannot follow Court Patronage.",
-    "abilityZh": "在贡务处执行常规主行动后，你可以出售恰好1件已完成且未交付的器物并归还其坯体卡：合格品3铜钱、精品6铜钱、珍品10铜钱。不能在朝廷恩荫之后使用。",
-    "oncePerRound": true
-  },
-  {
-    "id": "T15",
-    "discipline": "glazing",
-    "name": "Second Firing",
-    "nameZh": "二次烧成",
-    "cost": 2,
-    "ability": "After Quality is assigned, return one of your Standard ceramics from the current firing to Glazed without a Quality.",
-    "abilityZh": "判定品第后，将你1件合格品退回施釉区并移除其品第；日后可再次烧制。",
-    "oncePerRound": true
-  },
-  {
-    "id": "T16",
-    "discipline": "firing",
-    "name": "Sagger Selection",
-    "nameZh": "匣钵择选",
-    "cost": 3,
-    "ability": "After the Fire card is revealed, spend 2 Wood. For one of your ceramics, treat the Fire modifier as 1 step closer to 0 this firing.",
-    "abilityZh": "火焰牌揭示后，花费2柴薪。本次烧制中，你的1件器物视火焰调整值向0靠近1步。",
-    "oncePerRound": true
-  }
-]
+{
+  "rulesVersion": "1.2.2",
+  "starting": [
+    { "id": "ST01", "name": "Prepared Clay", "nameZh": "备泥", "ability": "Once during each Materials Yard action you take, after gaining resources, you may pay the normal Clay cost to form 1 vessel of any Shape.", "abilityZh": "每次执行材料场行动时限一次：获得资源后，可支付正常黏土费用成型1件任意器形。" },
+    { "id": "ST02", "name": "White Slip", "nameZh": "白化妆土", "ability": "Once during each Potter's Wheel action you take, after forming, choose 1 vessel formed by that action. Give it White Glaze and any Decoration, paying the Decoration's normal cost.", "abilityZh": "每次执行拉坯轮行动时限一次：成型后，选择该行动成型的1件器物，施加白釉和任意装饰，并支付正常装饰费用。" },
+    { "id": "ST03", "name": "Rapid Drying", "nameZh": "速干", "ability": "Once during each Glaze & Decoration action you take, after glazing, pay 1 Wood to immediately load 1 ceramic glazed by that action into an empty active Shared Kiln space or your empty unlocked Imperial Kiln.", "abilityZh": "每次执行施釉与装饰行动时限一次：施釉后支付1柴薪，立即将该行动施釉的1件陶瓷装入空置有效共窑格，或空置且已解锁的御窑。" },
+    { "id": "ST04", "name": "Kiln Tending", "nameZh": "理窑", "ability": "Once during each Kiln Yard action you take, after loading at least 1 ceramic, gain 2 resources in any combination of Clay and Wood.", "abilityZh": "每次执行窑场行动时限一次：装入至少1件陶瓷后，获得共2份黏土和/或柴薪，可任意组合。" }
+  ],
+  "advanced": [
+    { "id": "T01", "discipline": "forming", "name": "Large Throwing Wheel", "nameZh": "大拉坯轮", "cost": 2, "ability": "Once per round, during a Potter's Wheel action in which you form at least 1 Vase or Censer, reduce that action's total Clay cost by 1.", "abilityZh": "每轮一次：在拉坯轮行动中成型至少1件瓶或炉时，该行动总黏土费用减1。", "oncePerRound": true },
+    { "id": "T02", "discipline": "forming", "name": "Measuring Calipers", "nameZh": "量规", "cost": 2, "ability": "Once per round, after you form a vessel, if you have another Shaped or Glazed vessel of a different Shape, gain 1 Coin.", "abilityZh": "每轮一次：成型器物后，若你另有一件不同器形的已成型或已施釉器物，获得1铜钱。", "oncePerRound": true },
+    { "id": "T03", "discipline": "forming", "name": "Standardised Moulds", "nameZh": "标准化模具", "cost": 2, "ability": "Once per round, after you form a vessel, if you have another Shaped or Glazed vessel of the same Shape, gain 1 Coin.", "abilityZh": "每轮一次：成型器物后，若你另有一件相同器形的已成型或已施釉器物，获得1铜钱。", "oncePerRound": true },
+    { "id": "T04", "discipline": "forming", "name": "Drying Frames", "nameZh": "阴干架", "cost": 3, "ability": "Once per round after a Potter's Wheel action, choose 1 shaped vessel formed by that action. Immediately give it any Glaze and Plain Decoration, paying the normal cost of Plain.", "abilityZh": "每轮一次：拉坯轮行动后，选择该行动成型的1件器物，立即施加任意釉色和素面装饰，并支付素面的正常费用。", "oncePerRound": true },
+    { "id": "T05", "discipline": "forming", "name": "Reworking Table", "nameZh": "改坯台", "cost": 2, "ability": "Once per round, during a Glaze & Decoration action, you may change the Shape of 1 Shaped vessel being glazed to any other Shape. Pay added Clay cost; gain no refund.", "abilityZh": "每轮一次：在施釉与装饰行动中，可将正被施釉的1件坯体改为任意另一器形。支付增加的黏土费用；费用降低不退款。", "oncePerRound": true },
+    { "id": "T06", "discipline": "glazing", "name": "Glaze Palette", "nameZh": "釉色板", "cost": 2, "ability": "Once per round, during a Glaze & Decoration action, change the Glaze of 1 other Glazed ceramic to any Glaze.", "abilityZh": "每轮一次：在施釉与装饰行动中，将另一件已施釉陶瓷的釉色改为任意釉色。", "oncePerRound": true },
+    { "id": "T07", "discipline": "glazing", "name": "Carving Knives", "nameZh": "刻花刀", "cost": 2, "ability": "Once per round, one Carved Decoration you apply costs 0 Coins.", "abilityZh": "每轮一次：你施加的1个刻花装饰费用为0铜钱。", "oncePerRound": true },
+    { "id": "T08", "discipline": "glazing", "name": "Seal Stamps", "nameZh": "印花模", "cost": 2, "ability": "Once per round, one Impressed Decoration you apply costs 0 Coins.", "abilityZh": "每轮一次：你施加的1个印花装饰费用为0铜钱。", "oncePerRound": true },
+    { "id": "T09", "discipline": "glazing", "name": "Crackle Slips", "nameZh": "开片釉浆", "cost": 2, "ability": "Once per round, one Crackle Decoration you apply costs 0 Coins.", "abilityZh": "每轮一次：你施加的1个开片装饰费用为0铜钱。", "oncePerRound": true },
+    { "id": "T10", "discipline": "glazing", "name": "Colour Samples", "nameZh": "釉色样本", "cost": 2, "ability": "Once during each Commission Market action, look at the top 3 Main Orders. Reserve 1 instead of a face-up Order. Put the others on the bottom in any order.", "abilityZh": "每次执行委托市场行动时限一次：查看主订单牌堆顶3张，以预留其中1张替代拿取正面订单；其余牌以任意顺序置于牌堆底。", "oncePerRound": false },
+    { "id": "T11", "discipline": "firing", "name": "Protective Saggars", "nameZh": "护胎匣钵", "cost": 2, "ability": "Once per round after Quality is assigned, spend 1 Wood to improve 1 ceramic: Flawed to Standard or Standard to Fine. Cannot create a Masterpiece.", "abilityZh": "每轮一次：判定品第后支付1柴薪，将1件陶瓷从次品提升为合格品，或从合格品提升为精品；不能造就珍品。", "oncePerRound": true },
+    { "id": "T12", "discipline": "firing", "name": "Fuel Ledger", "nameZh": "柴薪簿", "cost": 3, "ability": "When choosing Bank or Stoke, you may secretly commit 1 additional Wood. Reveal together; the Contribution becomes -2 or +2.", "abilityZh": "选择压火或添薪时，可秘密追加投入1柴薪；同时揭示后，该出柴变为-2或+2。", "oncePerRound": false },
+    { "id": "T13", "discipline": "firing", "name": "Test Pieces", "nameZh": "试片", "cost": 3, "ability": "Before Contributions are chosen, you may pay 1 Wood to privately look at the top Fire card, then return it.", "abilityZh": "选择出柴牌之前，可支付1柴薪私下查看窑火牌堆顶牌，然后放回。", "oncePerRound": false },
+    { "id": "T14", "discipline": "firing", "name": "Second Firing", "nameZh": "二次烧成", "cost": 3, "ability": "Once per round after Quality is assigned, choose 1 Flawed or Standard ceramic. Reveal 1 extra Fire card and recalculate its Quality using the same Base Heat and position with the new Fire modifier.", "abilityZh": "每轮一次：判定品第后选择1件次品或合格品，额外翻开1张窑火牌，以相同基础热度和位置及新的窑火调整值重新计算其品第。", "oncePerRound": true },
+    { "id": "T15", "discipline": "firing", "name": "Kiln Furniture", "nameZh": "窑具", "cost": 3, "ability": "Once per round, when loading into a High or Low Shared Kiln space, you may treat that ceramic's zone modifier as 0 for this firing.", "abilityZh": "每轮一次：将陶瓷装入共窑高位或低位时，可在本次烧制中将该陶瓷的窑位调整值视为0。", "oncePerRound": true }
+  ]
+}
