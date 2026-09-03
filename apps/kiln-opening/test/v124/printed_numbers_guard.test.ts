@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  ACTION_LOCATION_PRICES, COLOUR_SAMPLES_LOOK, FUEL_LEDGER_WOOD,
+  ACTION_LOCATION_PRICES, COLOUR_SAMPLES_LOOK, FORMING_TECH_COINS, FUEL_LEDGER_WOOD,
+  GUILD_SHIFU_INSPECT, GUAN_ORDER_VP,
   GE_CORRECTABLE_DIFFERENCES, GUAN_ORDER_COINS, JUN_ACTIVATION_WOOD,
   KILN_DEFINITIONS, LOCATION_DEFINITIONS, LOCATION_IDS, RU_ORDER_VP,
   STARTING_TECHNIQUES, TECHNIQUE_DEFINITIONS,
@@ -32,22 +33,25 @@ const [geDifference] = GE_CORRECTABLE_DIFFERENCES as readonly [number];
 /** [label, printed text, the exact sequence the code implies]. */
 const cases: Array<[string, string, number[]]> = [
   // Advanced Techs
-  ["Large Throwing Wheel", T("Large Throwing Wheel"), [1, 1]],
-  ["Measuring Calipers", T("Measuring Calipers"), [1]],
-  ["Standardised Moulds", T("Standardised Moulds"), [1]],
+  // "at least 1 Vase or 1 Censer", then the 1 Clay the action saves.
+  ["Large Throwing Wheel", T("Large Throwing Wheel"), [1, 1, 1]],
+  ["Measuring Calipers", T("Measuring Calipers"), [FORMING_TECH_COINS]],
+  ["Standardised Moulds", T("Standardised Moulds"), [FORMING_TECH_COINS]],
   ["Drying Frames", T("Drying Frames"), [1]],
   ["Reworking Table", T("Reworking Table"), [1]],
   ["Glaze Palette", T("Glaze Palette"), [1]],
   ["Carving Knives", T("Carving Knives"), [0]],
   ["Seal Stamps", T("Seal Stamps"), [0]],
   ["Crackle Slips", T("Crackle Slips"), [0]],
-  ["Colour Samples", T("Colour Samples"), [COLOUR_SAMPLES_LOOK, 1]],
+  // Look at 3, reserve 1 of those or 1 face-up.
+  ["Colour Samples", T("Colour Samples"), [COLOUR_SAMPLES_LOOK, 1, 1]],
   ["Protective Saggars", T("Protective Saggars"), [1, 1]],
   // The commitment is 1 Wood; the two 2s are the -2/+2 Contribution it produces.
   ["Fuel Ledger", T("Fuel Ledger"), [FUEL_LEDGER_WOOD, 2, 2]],
-  ["Test Pieces", T("Test Pieces"), [1]],
+  // V1.2.4 adds the "at least 1 ceramic participating" gate before the 1 Wood.
+  ["Test Pieces", T("Test Pieces"), [1, 1]],
   ["Second Firing", T("Second Firing"), [1, 1]],
-  ["Kiln Furniture", T("Kiln Furniture"), [0]],
+  ["Kiln Furniture", T("Kiln Furniture"), [1, 0]],
   // Starting Techs
   ["Prepared Clay", T("Prepared Clay"), [1]],
   ["White Slip", T("White Slip"), [1]],
@@ -55,8 +59,8 @@ const cases: Array<[string, string, number[]]> = [
   ["Kiln Tending", T("Kiln Tending"), [1, 2]],
   // Kiln Traditions
   ["kiln RU", KILN_DEFINITIONS.RU.ability, [RU_ORDER_VP]],
-  // Guan pays Coins only in V1.2.2; the leading 1 is "at least 1 Crown".
-  ["kiln GU", KILN_DEFINITIONS.GU.ability, [1, GUAN_ORDER_COINS]],
+  // "at least 1 Crown", then the 2 Coins and 1 VP V1.2.4 pays.
+  ["kiln GU", KILN_DEFINITIONS.GU.ability, [1, GUAN_ORDER_COINS, GUAN_ORDER_VP]],
   // Ge's correction is free, so the only number is the Heat Difference it may correct.
   ["kiln GE", KILN_DEFINITIONS.GE.ability, [geDifference]],
   ["kiln JU", KILN_DEFINITIONS.JU.ability, [JUN_ACTIVATION_WOOD, 1, 1]],
@@ -72,7 +76,8 @@ const cases: Array<[string, string, number[]]> = [
   ["market_imperial_office.apprentice", L("market_imperial_office").apprentice, [1, 1, 1, 1]],
   ["market_imperial_office.shifu", L("market_imperial_office").shifu, [2, 1, 1, 1]],
   ["guild_academy.apprentice", L("guild_academy").apprentice, [1]],
-  ["guild_academy.shifu", L("guild_academy").shifu, [1, 1, 1, 0]],
+  // Inspect the top 2 of 1 discipline, then take 1 tile for 1 Coin less, minimum 0.
+  ["guild_academy.shifu", L("guild_academy").shifu, [1, GUILD_SHIFU_INSPECT, 1, 1, 1, 0]],
   ["labour.apprentice", L("labour").apprentice, [ACTION_LOCATION_PRICES.labourApprenticeCoins]],
   ["labour.shifu", L("labour").shifu, [ACTION_LOCATION_PRICES.labourShifuCoins]],
 ];
@@ -101,8 +106,8 @@ describe("printed numbers match the code exactly", () => {
     expect(missing, `not guarded: ${missing.join(", ")}`).toEqual([]);
   });
 
-  /** Workshop Seconds prints its payout in the rulebook, not on a card, so guard it here. */
-  it("pays Workshop Seconds the Coins V1.2.2 firing step 11 prints", () => {
+  /** The Flawed salvage prints its payout in the rulebook, not on a card, so guard it here. */
+  it("pays the Flawed salvage the Coins V1.2.4 firing step 10 prints", () => {
     expect(ACTION_LOCATION_PRICES.workshopSecondsCoins).toBe(2);
   });
 });

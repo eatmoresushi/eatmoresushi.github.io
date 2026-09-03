@@ -2,6 +2,9 @@ import {
   ACTION_LOCATION_PRICES,
   COLOUR_SAMPLES_LOOK,
   DECORATION_COSTS,
+  DISCIPLINES,
+  FORMING_TECH_COINS,
+  GUILD_SHIFU_INSPECT,
   DECORATIONS,
   GAME_CONFIG,
   GLAZES,
@@ -42,6 +45,7 @@ const LABOUR_SHIFU_COINS = ACTION_LOCATION_PRICES.labourShifuCoins;
 import {
   DING_EXTRA_SHAPES,
   GUAN_ORDER_COINS,
+  GUAN_ORDER_VP,
   RU_BONUS_QUALITY,
   RU_ORDER_VP,
   matchesOrder,
@@ -304,6 +308,36 @@ function openContributionPhase(state: GameState): void {
   };
 }
 
+/**
+ * Players who may reposition a Shared-Kiln ceramic with their Kiln Yard Shifu.
+ *
+ * V1.2.4 moved this from mid-firing (after Base Heat, before Fire) to the end of the Work
+ * Phase, before any Firing Phase ability resolves, so repositioning is now decided without
+ * knowing the Base Heat the Contributions will produce.
+ */
+function kilnYardRepositionActors(state: GameState): PlayerId[] {
+  const hasEmptySpace = activeKilnSpaceIds(state.playerCount).some((spaceId) => kilnOccupant(state, spaceId) === null);
+  if (!hasEmptySpace) return [];
+  return turnOrderFromFirst(state).filter((playerId) => {
+    const player = state.players[playerId];
+    const shifu = player === undefined ? undefined : Object.values(player.workers).find(
+      (worker) => worker.kind === "shifu" && worker.status === "placed" && worker.locationId === "kiln_yard",
+    );
+    return shifu !== undefined && Object.values(state.ceramics).some(
+      (ceramic) => ceramic.stage === "loaded" && ceramic.ownerId === playerId && ceramic.kilnSpaceId !== "imperial",
+    );
+  });
+}
+
+/** End of Work Phase: resolve Kiln Yard Shifu repositions, then open the Firing Phase. */
+function endWorkPhase(state: GameState): void {
+  const actors = Object.values(state.ceramics).some((ceramic) => ceramic.stage === "loaded")
+    ? kilnYardRepositionActors(state)
+    : [];
+  if (actors.length === 0) beginFiringPhase(state);
+  else state.phase = { type: "firing_reposition", queue: { actors, currentIndex: 0 } };
+}
+
 function beginFiringPhase(state: GameState): void {
   const loaded = Object.values(state.ceramics).filter((ceramic) => ceramic.stage === "loaded");
   if (loaded.length === 0) {
@@ -316,7 +350,7 @@ function beginFiringPhase(state: GameState): void {
     const player = state.players[playerId];
     const testPieces = player === undefined ? undefined : ownedTechnique(player, "T13");
     if (
-          testPieces !== undefined &&
+          testPieces !== undefined && !testPieces.exhausted &&
           (player?.resources.wood ?? 0) >= 1 &&
           loaded.some((ceramic) => ceramic.ownerId === playerId)
     ) {
@@ -359,7 +393,7 @@ function completeWorkerAction(
       return;
     }
   }
-  beginFiringPhase(state);
+  endWorkPhase(state);
   events.push({ type: "WORK_PHASE_ENDED" });
 }
 
@@ -740,7 +774,8 @@ function formCeramics(
   for (const shape of allFormedShapes) {
     requiredByShape.set(shape, (requiredByShape.get(shape) ?? 0) + 1);
   }
-  const chargedShapes = allFormedShapes;
+  // V1.2.4: Ding's additional vessel costs no Clay, so it is formed but never charged.
+  const chargedShapes = action.shapes;
   for (const shape of chargedShapes) {
     totalClay += SHAPE_COSTS[shape];
   }
@@ -839,7 +874,8 @@ function formCeramics(
   const mouldsTriggers = moulds !== undefined && !moulds.exhausted && allFormedShapes.some((shape, index) => previousShapes.has(shape) || allFormedShapes.indexOf(shape) !== index);
   player.shapesFormedThisRound = [...currentShapes];
   const rewardClay = 0;
-  const rewardCoins = (calipersTriggers ? gainFromSupply(next, player, "coins", 1) : 0) + (mouldsTriggers ? gainFromSupply(next, player, "coins", 1) : 0);
+  const rewardCoins = (calipersTriggers ? gainFromSupply(next, player, "coins", FORMING_TECH_COINS) : 0)
+    + (mouldsTriggers ? gainFromSupply(next, player, "coins", FORMING_TECH_COINS) : 0);
   if (calipersTriggers) exhaustTechnique(player, actorId, "T02", events);
   if (mouldsTriggers) exhaustTechnique(player, actorId, "T03", events);
   if (rewardClay > 0 || rewardCoins > 0) {
@@ -1122,12 +1158,12 @@ function beginOfficeOrders(
       ruleError("INVALID_ACTION", "The selected worker cannot use that Office Order mode."),
     );
   }
+  // V1.2.4: a reservation may take a face-up Order or the top of the deck, so either source
+  // makes the placement legal. The Work Phase requires at least one instance of the action.
   const hasOrderSource =
-    state.marketDisplay.length > 0;
-  if (mode !== "take_up_to_two") {
-    if (!hasOrderSource) {
-      return applyFailure(ruleError("ORDER_NOT_AVAILABLE", "No Order source is available."));
-    }
+    state.marketDisplay.length > 0 || state.marketDeck.length + state.marketDiscard.length > 0;
+  if (!hasOrderSource) {
+    return applyFailure(ruleError("ORDER_NOT_AVAILABLE", "No Order source is available."));
   }
 
   const next = cloneState(state);
@@ -1141,9 +1177,8 @@ function beginOfficeOrders(
     remainingTakes: mode === "take_up_to_two" ? 2 : 1,
     ordersTaken: 0,
     step:
-      ownedTechnique(context.player, "T10") !== undefined &&
-      hasOrderSource &&
-      state.marketDeck.length + state.marketDiscard.length >= COLOUR_SAMPLES_LOOK
+      ownedTechnique(context.player, "T10")?.exhausted === false &&
+      state.marketDeck.length + state.marketDiscard.length > 0
         ? "colour_samples_or_skip"
         : "take_or_end",
     colourSamplesUsed: false,
@@ -1170,8 +1205,8 @@ function offerColourSamplesBeforeNextTake(state: GameState): void {
   const player = state.players[state.phase.actorId];
   const technique = player === undefined ? undefined : ownedTechnique(player, "T10");
   if (
-    technique !== undefined &&
-    state.marketDeck.length + state.marketDiscard.length >= COLOUR_SAMPLES_LOOK
+    technique !== undefined && !technique.exhausted &&
+    state.marketDeck.length + state.marketDiscard.length > 0
   ) {
     state.phase.step = "colour_samples_or_skip";
   }
@@ -1227,6 +1262,52 @@ function takeOfficeOrder(state: GameState, actorId: PlayerId, orderId: OrderId, 
   return success(next, events);
 }
 
+/**
+ * V1.2.4: a reservation may instead take the top Main Order without looking at it first.
+ *
+ * V1.2.2 could only reserve a face-up Order, so a Commission Market worker was worth
+ * nothing once the display held nothing the player wanted. Each reservation now chooses
+ * between the display and the deck independently.
+ */
+function takeTopOfficeOrder(state: GameState, actorId: PlayerId, rng: RandomSource): ApplyResult {
+  const phase = requirePhase(state, "work_office_orders");
+  if (isFailure(phase)) {
+    return phase;
+  }
+  const actorError = actorFailure(state, actorId);
+  if (actorError !== null) {
+    return actorError;
+  }
+  if (phase.remainingTakes <= 0) {
+    return applyFailure(ruleError("INVALID_ACTION", "This Commission Market action has no reservation left."));
+  }
+  if (phase.step !== "take_or_end") {
+    return applyFailure(
+      ruleError("INVALID_ACTION", "Resolve the Colour Samples choice before reserving an Order."),
+    );
+  }
+  const next = cloneState(state);
+  ensureMainOrderDeck(next, rng);
+  const nextPhase = next.phase;
+  const nextPlayer = next.players[actorId];
+  if (nextPhase.type !== "work_office_orders" || nextPlayer === undefined) {
+    throw new Error("Office Order phase invariant failed");
+  }
+  const orderId = next.marketDeck.shift();
+  if (orderId === undefined) {
+    return applyFailure(ruleError("ORDER_NOT_AVAILABLE", "The Main Order deck is empty."));
+  }
+  nextPlayer.orderHand.push(orderId);
+  nextPhase.remainingTakes = (nextPhase.remainingTakes - 1) as 0 | 1 | 2;
+  nextPhase.ordersTaken += 1;
+  offerColourSamplesBeforeNextTake(next);
+  const events: GameEvent[] = [
+    { type: "ORDER_TAKEN", playerId: actorId, orderId, deck: "market", acquisition: "blind_deck" },
+  ];
+  finishOfficeOrderAcquisition(next, actorId, events);
+  return success(next, events);
+}
+
 function endOfficeOrders(state: GameState, actorId: PlayerId): ApplyResult {
   const phase = requirePhase(state, "work_office_orders");
   if (isFailure(phase)) {
@@ -1275,11 +1356,8 @@ function useColourSamples(
   if (player === undefined || technique === undefined) {
     return applyFailure(ruleError("TECHNIQUE_NOT_OWNED", "Colour Samples is not owned."));
   }
-  if (
-    deck !== "market" ||
-    state.marketDeck.length + state.marketDiscard.length < COLOUR_SAMPLES_LOOK
-  ) {
-    return applyFailure(ruleError("ORDER_NOT_AVAILABLE", "The Main deck cannot provide three Colour Samples cards."));
+  if (deck !== "market" || state.marketDeck.length + state.marketDiscard.length === 0) {
+    return applyFailure(ruleError("ORDER_NOT_AVAILABLE", "The Main Order deck is empty."));
   }
 
   const next = cloneState(state);
@@ -1290,11 +1368,9 @@ function useColourSamples(
   ) {
     throw new Error("Colour Samples state invariant failed");
   }
-  if (!ensureMainOrderCards(next, COLOUR_SAMPLES_LOOK, rng)) {
-    return applyFailure(ruleError("ORDER_NOT_AVAILABLE", "The Main deck cannot provide three Colour Samples cards."));
-  }
-  const nextDeck = next.marketDeck;
-  const choices = nextDeck.splice(0, COLOUR_SAMPLES_LOOK);
+  // V1.2.4 looks at the top 3 "or as many as remain".
+  ensureMainOrderCards(next, COLOUR_SAMPLES_LOOK, rng);
+  const choices = next.marketDeck.splice(0, COLOUR_SAMPLES_LOOK);
 
   const events: GameEvent[] = [];
   nextPhase.step = "colour_samples_choose";
@@ -1304,42 +1380,47 @@ function useColourSamples(
   return success(next, events);
 }
 
-function chooseColourSamplesOrder(state: GameState, actorId: PlayerId, orderId: OrderId, bottomOrderIds?: OrderId[]): ApplyResult {
+function chooseColourSamplesOrder(state: GameState, actorId: PlayerId, orderId: OrderId, rng: RandomSource): ApplyResult {
   const phase = requirePhase(state, "work_office_orders");
   if (isFailure(phase)) return phase;
   const actorError = actorFailure(state, actorId);
   if (actorError !== null) return actorError;
-  // v1.1.6: the looked-at cards are no longer the only options. A player who dislikes both
-  // may take a face-up Order instead, and the looked-at cards still go to the bottom. The
-  // old rule forced a take from two cards seen, which made the Technique a gamble rather
-  // than information.
-  if (phase.step !== "colour_samples_choose" || phase.colourSamplesDeck !== "market" || phase.colourSamplesChoices === undefined || !phase.colourSamplesChoices.includes(orderId)) {
-    return applyFailure(ruleError("INVALID_SELECTION", "Choose one of the three looked-at Main Orders."));
+  // V1.2.4: reserve one looked-at Order or one face-up Order. Everything looked at and not
+  // reserved is discarded -- V1.2.2 returned them to the bottom of the deck instead.
+  if (phase.step !== "colour_samples_choose" || phase.colourSamplesDeck !== "market" || phase.colourSamplesChoices === undefined) {
+    return applyFailure(ruleError("INVALID_ACTION", "Colour Samples is not awaiting a choice."));
   }
-  // Taking one of the looked-at cards bottoms the other. Taking a face-up Order instead
-  // bottoms both, and the display position it came from is refilled as any face-up take is.
-  const unselected = phase.colourSamplesChoices.filter((choice) => choice !== orderId);
-  const bottomed = bottomOrderIds ?? unselected;
-  if (bottomed.length !== 2 || new Set(bottomed).size !== 2 || bottomed.some((id) => !unselected.includes(id))) {
-    return applyFailure(ruleError("INVALID_SELECTION", "Put the other two looked-at Orders on the bottom in the chosen order."));
+  const lookedAt = phase.colourSamplesChoices;
+  const fromLookedAt = lookedAt.includes(orderId);
+  const fromDisplay = state.marketDisplay.includes(orderId);
+  if (!fromLookedAt && !fromDisplay) {
+    return applyFailure(ruleError("INVALID_SELECTION", "Reserve a looked-at Order or a face-up Main Order."));
   }
   const next = cloneState(state);
   const nextPhase = next.phase;
   const player = next.players[actorId];
   if (nextPhase.type !== "work_office_orders" || player === undefined || nextPhase.colourSamplesDeck === undefined) throw new Error("Colour Samples state invariant failed");
   const deck = nextPhase.colourSamplesDeck;
-  const bottomedOrderId = bottomed[0]!;
-  for (const id of bottomed) next.marketDeck.push(id);
+  const events: GameEvent[] = [];
+  if (fromDisplay) {
+    ensureMainOrderDeck(next, rng);
+    if (!drawFromDisplay(next.marketDisplay, next.marketDeck, orderId)) {
+      throw new Error("Validated face-up Order disappeared");
+    }
+  }
+  const discarded = lookedAt.filter((id) => id !== orderId);
+  next.marketDiscard.push(...discarded);
   player.orderHand.push(orderId);
+  exhaustTechnique(player, actorId, "T10", events);
   nextPhase.remainingTakes = (nextPhase.remainingTakes - 1) as 0 | 1 | 2;
   nextPhase.ordersTaken += 1;
   nextPhase.step = "take_or_end";
   delete nextPhase.colourSamplesChoices;
   delete nextPhase.colourSamplesDeck;
-  const events: GameEvent[] = [
+  events.push(
     { type: "ORDER_TAKEN", playerId: actorId, orderId, deck, acquisition: "colour_samples" },
-    { type: "COLOUR_SAMPLES_USED", playerId: actorId, deck, bottomedOrderId, bottomedOrderIds: bottomed, selectedOrderId: orderId },
-  ];
+    { type: "COLOUR_SAMPLES_USED", playerId: actorId, deck, discardedOrderIds: discarded, selectedOrderId: orderId, reservedFromDisplay: fromDisplay },
+  );
   finishOfficeOrderAcquisition(next, actorId, events);
   return success(next, events);
 }
@@ -1438,15 +1519,23 @@ function beginGuildAction(state: GameState, actorId: PlayerId, workerId: string)
     type: "work_guild",
     actorId,
     workerId,
-    step: context.worker.kind === "shifu" ? "refresh_or_skip" : "buy",
+    step: context.worker.kind === "shifu" ? "inspect" : "buy",
   };
   return success(next, events);
 }
 
-function refreshGuildTechnique(
+/**
+ * V1.2.4 Guild Shifu: look at the top 2 Techs of one discipline, or as many as remain.
+ *
+ * V1.2.2 refreshed a discipline -- its face-up tiles went to the bottom and the display
+ * refilled -- and the purchase then had to come from that same discipline. V1.2.4 instead
+ * draws the top 2 off the chosen deck for the actor alone to see, leaves the face-up
+ * displays untouched, and lets the purchase come from any face-up tile or either drawn tile.
+ */
+function inspectGuildDiscipline(
   state: GameState,
   actorId: PlayerId,
-  techniqueId: TechniqueId,
+  discipline: TechniqueDiscipline,
 ): ApplyResult {
   const phase = requirePhase(state, "work_guild");
   if (isFailure(phase)) {
@@ -1458,16 +1547,13 @@ function refreshGuildTechnique(
   }
   const player = state.players[actorId];
   const worker = player?.workers[phase.workerId];
-  if (phase.step !== "refresh_or_skip" || worker?.kind !== "shifu") {
+  if (phase.step !== "inspect" || worker?.kind !== "shifu") {
     return applyFailure(
-      ruleError("INVALID_ACTION", "A Shifu refresh is not available in this step."),
+      ruleError("INVALID_ACTION", "A Shifu inspection is not available in this step."),
     );
   }
-  const discipline = techniqueDiscipline(techniqueId);
-  if (discipline === null || !state.techniqueDisplay[discipline].includes(techniqueId)) {
-    return applyFailure(
-      ruleError("TECHNIQUE_NOT_AVAILABLE", "The selected Technique is not face-up."),
-    );
+  if (!(DISCIPLINES as readonly TechniqueDiscipline[]).includes(discipline)) {
+    return applyFailure(ruleError("INVALID_SELECTION", "Choose a Tech discipline to inspect."));
   }
 
   const next = cloneState(state);
@@ -1475,37 +1561,12 @@ function refreshGuildTechnique(
   if (nextPhase.type !== "work_guild") {
     throw new Error("Guild phase invariant failed");
   }
-  const display = next.techniqueDisplay[discipline];
-  next.techniqueDecks[discipline].push(...display);
-  display.splice(0, display.length);
-  refillTo(display, next.techniqueDecks[discipline], GAME_CONFIG.techniques.faceUpPerDiscipline);
+  const deck = next.techniqueDecks[discipline];
+  const inspected = deck.splice(0, GUILD_SHIFU_INSPECT);
+  nextPhase.inspectedDiscipline = discipline;
+  nextPhase.inspectedTechniqueIds = inspected;
   nextPhase.step = "buy";
-  return success(next, [{ type: "TECHNIQUE_REFRESHED", playerId: actorId, techniqueId }]);
-}
-
-function skipGuildRefresh(state: GameState, actorId: PlayerId): ApplyResult {
-  const phase = requirePhase(state, "work_guild");
-  if (isFailure(phase)) {
-    return phase;
-  }
-  const actorError = actorFailure(state, actorId);
-  if (actorError !== null) {
-    return actorError;
-  }
-  if (phase.step !== "refresh_or_skip") {
-    return applyFailure(ruleError("INVALID_ACTION", "There is no refresh decision to skip."));
-  }
-  const player = state.players[actorId];
-  const worker = player?.workers[phase.workerId];
-  if (worker?.kind !== "shifu") {
-    return applyFailure(ruleError("INVALID_ACTION", "Only a Shifu has a refresh decision."));
-  }
-  const next = cloneState(state);
-  if (next.phase.type !== "work_guild") {
-    throw new Error("Guild phase invariant failed");
-  }
-  next.phase.step = "buy";
-  return success(next, []);
+  return success(next, [{ type: "GUILD_DISCIPLINE_INSPECTED", playerId: actorId, discipline, count: inspected.length }]);
 }
 
 function buyGuildTechnique(
@@ -1524,7 +1585,7 @@ function buyGuildTechnique(
   }
   if (phase.step !== "buy") {
     return applyFailure(
-      ruleError("INVALID_ACTION", "Resolve the Shifu refresh decision before buying."),
+      ruleError("INVALID_ACTION", "Choose a discipline to inspect before buying."),
     );
   }
   const player = state.players[actorId];
@@ -1545,9 +1606,12 @@ function buyGuildTechnique(
     return applyFailure(ruleError("INVALID_SELECTION", "The second Glaze & Decoration space is already unlocked."));
   }
   const discipline = techniqueDiscipline(techniqueId);
-  if (discipline === null || !state.techniqueDisplay[discipline].includes(techniqueId)) {
+  const inspectedIds = phase.inspectedTechniqueIds ?? [];
+  const fromDisplay = discipline !== null && state.techniqueDisplay[discipline].includes(techniqueId);
+  const fromInspected = inspectedIds.includes(techniqueId);
+  if (discipline === null || (!fromDisplay && !fromInspected)) {
     return applyFailure(
-      ruleError("TECHNIQUE_NOT_AVAILABLE", "The selected Technique is not face-up."),
+      ruleError("TECHNIQUE_NOT_AVAILABLE", "The selected Technique is neither face-up nor one you inspected."),
     );
   }
   const cost = guildTechniqueCost(techniqueId, worker);
@@ -1562,12 +1626,19 @@ function buyGuildTechnique(
   if (nextPlayer === undefined) {
     throw new Error("Guild actor disappeared");
   }
-  const display = next.techniqueDisplay[discipline];
-  const index = display.indexOf(techniqueId);
-  display.splice(index, 1);
-  const replacement = next.techniqueDecks[discipline].shift();
-  if (replacement !== undefined) {
-    display.splice(index, 0, replacement);
+  if (fromDisplay) {
+    const display = next.techniqueDisplay[discipline];
+    const index = display.indexOf(techniqueId);
+    display.splice(index, 1);
+    const replacement = next.techniqueDecks[discipline].shift();
+    if (replacement !== undefined) {
+      display.splice(index, 0, replacement);
+    }
+  }
+  // Inspected tiles the actor did not take go to the bottom of their own deck.
+  const inspectedDiscipline = phase.inspectedDiscipline;
+  if (inspectedDiscipline !== undefined) {
+    next.techniqueDecks[inspectedDiscipline].push(...inspectedIds.filter((id) => id !== techniqueId));
   }
   nextPlayer.resources.coins -= cost;
   next.commonSupply.coins += cost;
@@ -1649,18 +1720,7 @@ function determineBaseHeatAndOpenReposition(
   const context = state.firingContext;
   if (context === null) throw new Error("Base Heat requires firing context");
   context.baseHeat = provisionalBaseHeat(state);
-  const hasEmptySpace = activeKilnSpaceIds(state.playerCount).some((spaceId) => kilnOccupant(state, spaceId) === null);
-  const actors = hasEmptySpace ? turnOrderFromFirst(state).filter((playerId) => {
-    const player = state.players[playerId];
-    const shifu = player === undefined ? undefined : Object.values(player.workers).find(
-      (worker) => worker.kind === "shifu" && worker.status === "placed" && worker.locationId === "kiln_yard",
-    );
-    return shifu !== undefined && Object.values(state.ceramics).some(
-      (ceramic) => ceramic.stage === "loaded" && ceramic.ownerId === playerId && ceramic.kilnSpaceId !== "imperial",
-    );
-  }) : [];
-  if (actors.length === 0) revealFireAndCalculateActualHeat(state, events, rng);
-  else state.phase = { type: "firing_reposition", queue: { actors, currentIndex: 0 } };
+  revealFireAndCalculateActualHeat(state, events, rng);
 }
 
 export function submitWoodContribution(
@@ -1805,7 +1865,7 @@ function resolveKilnYardReposition(
     if (ceramic === undefined || ceramic.stage !== "loaded") throw new Error("Kiln Yard reposition invariant failed");
     ceramic.kilnSpaceId = toSpaceId;
   }
-  advanceQueuedWindow(next, () => revealFireAndCalculateActualHeat(next, events, rng));
+  advanceQueuedWindow(next, () => beginFiringPhase(next));
   return success(next, events);
 }
 
@@ -2206,7 +2266,7 @@ function resolveTestPieces(state: GameState, actorId: PlayerId, use: boolean, rn
   const player = state.players[actorId];
   if (use) {
     const technique = player === undefined ? undefined : ownedTechnique(player, "T13");
-    if (technique === undefined) {
+    if (technique === undefined || technique.exhausted) {
       return applyFailure(ruleError("INVALID_ACTION", "Test Pieces is not eligible."));
     }
     if ((player?.resources.wood ?? 0) < 1) {
@@ -2225,6 +2285,7 @@ function resolveTestPieces(state: GameState, actorId: PlayerId, use: boolean, rn
     next.privateFirePeeks[actorId] = peek;
     nextPlayer.resources.wood -= 1;
     next.commonSupply.wood += 1;
+    exhaustTechnique(nextPlayer, actorId, "T13", events);
     events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: -1, coins: 0 });
   }
   advanceQueuedWindow(next, () => openContributionPhase(next));
@@ -2372,24 +2433,7 @@ function completeOrder(
   const guanTriggers = isCrownOrder && player.kilnId === "GU" && !player.kilnAbilityUsedThisRound;
   const ruTriggers = player.kilnId === "RU" && !player.kilnAbilityUsedThisRound
     && selected.some((ceramic) => ruBonusCeramic(ceramic, RU_BONUS_QUALITY));
-  if (action.useGuanWaiver) {
-    if (
-      !isCrownOrder ||
-      player.kilnId !== "GU" ||
-      player.kilnAbilityUsedThisRound
-    ) {
-      return applyFailure(
-        ruleError("INVALID_ACTION", "Guan's waiver is unavailable for this Order."),
-      );
-    }
-  }
-  const guanWaiverCeramicId = action.useGuanWaiver
-    ? action.guanWaiverCeramicId ?? action.ceramicIds[0] ?? null
-    : null;
-  if (guanWaiverCeramicId !== null && !action.ceramicIds.includes(guanWaiverCeramicId)) {
-    return applyFailure(ruleError("INVALID_SELECTION", "Guan must choose one ceramic used for the Order."));
-  }
-  if (!matchesOrder(definition, selected, guanWaiverCeramicId)) {
+  if (!matchesOrder(definition, selected)) {
     return applyFailure(
       ruleError("ORDER_REQUIREMENTS_NOT_MET", "The selected ceramics do not fulfil this Order."),
     );
@@ -2433,7 +2477,6 @@ function completeOrder(
     completedInRound: next.round,
     vpAwarded: definition.vp,
     coinsAwarded: gainedCoins,
-    usedGuanWaiver: action.useGuanWaiver,
   });
   const events: GameEvent[] = [
     { type: "ORDER_COMPLETED", playerId: actorId, orderId: action.orderId, ceramicIds: [...action.ceramicIds] },
@@ -2443,6 +2486,7 @@ function completeOrder(
   }
   if (guanTriggers) {
     const guanCoins = gainFromSupply(next, nextPlayer, "coins", GUAN_ORDER_COINS);
+    nextPlayer.score.kilnTraditionVp += GUAN_ORDER_VP;
     nextPlayer.kilnAbilityUsedThisRound = true;
     events.push({ type: "KILN_ABILITY_USED", playerId: actorId, kilnId: "GU" });
     if (guanCoins > 0) events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins: guanCoins });
@@ -2817,22 +2861,22 @@ export function applyAction(
       return beginOfficeOrders(state, actorId, action.workerId, action.mode);
     case "OFFICE_TAKE_ORDER":
       return takeOfficeOrder(state, actorId, action.orderId, rng);
+    case "OFFICE_TAKE_TOP_ORDER":
+      return takeTopOfficeOrder(state, actorId, rng);
     case "OFFICE_END_ORDERS":
       return endOfficeOrders(state, actorId);
     case "OFFICE_USE_COLOUR_SAMPLES":
       return useColourSamples(state, actorId, action.deck ?? "market", rng);
     case "OFFICE_CHOOSE_COLOUR_SAMPLES_ORDER":
-      return chooseColourSamplesOrder(state, actorId, action.orderId, action.bottomOrderIds);
+      return chooseColourSamplesOrder(state, actorId, action.orderId, rng);
     case "OFFICE_SKIP_COLOUR_SAMPLES":
       return skipColourSamples(state, actorId);
     case "COMMISSION_GAIN_ADVANCE":
       return gainCommissionAdvance(state, actorId, action.resource);
     case "BEGIN_GUILD_ACTION":
       return beginGuildAction(state, actorId, action.workerId);
-    case "GUILD_REFRESH_TECHNIQUE":
-      return refreshGuildTechnique(state, actorId, action.techniqueId);
-    case "GUILD_SKIP_REFRESH":
-      return skipGuildRefresh(state, actorId);
+    case "GUILD_INSPECT_DISCIPLINE":
+      return inspectGuildDiscipline(state, actorId, action.discipline);
     case "GUILD_BUY_TECHNIQUE":
       return buyGuildTechnique(state, actorId, action.techniqueId, action.unlockWorkshop);
     case "RESOLVE_KILN_YARD_REPOSITION":
@@ -2858,7 +2902,7 @@ export function applyAction(
     case "SUBMIT_PRESENTATION":
       return submitPresentation(state, actorId, action.ceramicIds, action.featuredCeramicIds ?? []);
     default:
-      return applyFailure(ruleError("INVALID_ACTION", "That action is not part of V1.2.2."));
+      return applyFailure(ruleError("INVALID_ACTION", "That action is not part of V1.2.4."));
   }
 }
 

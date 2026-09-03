@@ -8,6 +8,7 @@ import {
   activeKilnSpaceIds,
   currentDecisionActor,
   locationCapacity,
+  DISCIPLINES,
   matchesOrder,
   orderHandLimit,
   preferredHeat,
@@ -26,7 +27,7 @@ import type {
 } from "../game/index.ts";
 import type { AuthoritativeCommand, StoredSeat, SubmitWoodCommand } from "./types.ts";
 
-export const ONLINE_COMPUTER_POLICY_VERSION = "rules-v1.2.2-heuristic-001" as const;
+export const ONLINE_COMPUTER_POLICY_VERSION = "rules-v1.2.4-heuristic-001" as const;
 export const LEGACY_ONLINE_COMPUTER_POLICY_VERSION = "selfplay-003" as const;
 
 export function nextOnlineDecisionActor(state: GameState): PlayerId | null {
@@ -89,18 +90,12 @@ function orderAction(state: GameState, playerId: PlayerId): GameAction {
     const order = ORDER_DEFINITIONS[orderId];
     if (order === undefined) continue;
     for (const group of combinations(finished, order.ceramics.length)) {
-      let waiverId: string | null = null;
-      if (!matchesOrder(order, group, null) && player.kilnId === "GU" && order.crowns > 0 && !player.kilnAbilityUsedThisRound) {
-        waiverId = group.find((ceramic) => matchesOrder(order, group, ceramic.id))?.id ?? null;
-      }
-      if (!matchesOrder(order, group, waiverId)) continue;
+      if (!matchesOrder(order, group)) continue;
       const crossesGrant = player.imperialRecognition < 2 && player.imperialRecognition + order.crowns >= 2;
       return {
         type: "COMPLETE_ORDER",
         orderId,
         ceramicIds: group.map((ceramic) => ceramic.id),
-        useGuanWaiver: waiverId !== null,
-        ...(waiverId === null ? {} : { guanWaiverCeramicId: waiverId }),
         ...(crossesGrant ? { imperialGrantChoice: player.resources.coins < 3 ? "coins" as const : "resources" as const } : {}),
       };
     }
@@ -205,7 +200,7 @@ export async function chooseOnlineComputerAction(
   seat: StoredSeat,
 ): Promise<AuthoritativeCommand> {
   if (!seat.isComputer || seat.aiPolicyVersion !== ONLINE_COMPUTER_POLICY_VERSION || seat.aiSeed === null) {
-    throw new Error(`Seat ${seat.seatId} is not a configured V1.2.2 computer seat`);
+    throw new Error(`Seat ${seat.seatId} is not a configured V1.2.4 computer seat`);
   }
   const playerId = seat.playerId;
   if (nextOnlineDecisionActor(state) !== playerId) throw new Error(`Computer ${playerId} is not the current actor`);
@@ -228,14 +223,24 @@ export async function chooseOnlineComputerAction(
         const choices = state.phase.colourSamplesChoices ?? [];
         const selected = [...choices].sort((a, b) => (ORDER_DEFINITIONS[b]?.vp ?? 0) - (ORDER_DEFINITIONS[a]?.vp ?? 0))[0];
         if (selected === undefined) return { type: "OFFICE_SKIP_COLOUR_SAMPLES" };
-        return { type: "OFFICE_CHOOSE_COLOUR_SAMPLES_ORDER", orderId: selected, bottomOrderIds: choices.filter((id) => id !== selected) };
+        return { type: "OFFICE_CHOOSE_COLOUR_SAMPLES_ORDER", orderId: selected };
       }
       if (state.phase.remainingTakes > 0 && state.marketDisplay[0] !== undefined) return { type: "OFFICE_TAKE_ORDER", orderId: state.marketDisplay[0] };
+      // Nothing face up: V1.2.4 still allows reserving the top card unseen.
+      if (state.phase.ordersTaken === 0 && state.marketDeck.length + state.marketDiscard.length > 0) return { type: "OFFICE_TAKE_TOP_ORDER" };
       return { type: "OFFICE_END_ORDERS" };
     case "work_commission_advance":
       return { type: "COMMISSION_GAIN_ADVANCE", resource: player.resources.coins < 2 ? "coins" : player.resources.wood < player.resources.clay ? "wood" : "clay" };
     case "work_guild":
-      if (state.phase.step === "refresh_or_skip") return { type: "GUILD_SKIP_REFRESH" };
+      // Inspect the discipline whose deck is deepest: the most tiles it could still reveal.
+      if (state.phase.step === "inspect") {
+        const deepest = DISCIPLINES.reduce((best, d) => (state.techniqueDecks[d].length > state.techniqueDecks[best].length ? d : best), DISCIPLINES[0]!);
+        return { type: "GUILD_INSPECT_DISCIPLINE", discipline: deepest };
+      }
+      for (const id of state.phase.inspectedTechniqueIds ?? []) {
+        const cost = Math.max(0, (TECHNIQUE_DEFINITIONS[id]?.cost ?? 99) - 1);
+        if (cost <= player.resources.coins) return { type: "GUILD_BUY_TECHNIQUE", techniqueId: id, ...(player.techniques.length === 0 ? { unlockWorkshop: shapedCount(state, playerId) > 0 ? "glaze_decoration" as const : "potters_wheel" as const } : {}) };
+      }
       for (const id of [...state.techniqueDisplay.forming, ...state.techniqueDisplay.glazing, ...state.techniqueDisplay.firing]) {
         const cost = Math.max(0, (TECHNIQUE_DEFINITIONS[id]?.cost ?? 99) - (player.workers[state.phase.workerId]?.kind === "shifu" ? 1 : 0));
         if (cost <= player.resources.coins) return { type: "GUILD_BUY_TECHNIQUE", techniqueId: id, ...(player.techniques.length === 0 ? { unlockWorkshop: shapedCount(state, playerId) > 0 ? "glaze_decoration" as const : "potters_wheel" as const } : {}) };
@@ -284,7 +289,7 @@ function shapedCount(state: GameState, playerId: PlayerId): number {
 }
 
 export function computerPolicyLabel(policyVersion: string | null): string {
-  if (policyVersion === ONLINE_COMPUTER_POLICY_VERSION) return "V1.2.2";
+  if (policyVersion === ONLINE_COMPUTER_POLICY_VERSION) return "V1.2.4";
   if (policyVersion === LEGACY_ONLINE_COMPUTER_POLICY_VERSION) return "V003";
   return policyVersion ?? "—";
 }

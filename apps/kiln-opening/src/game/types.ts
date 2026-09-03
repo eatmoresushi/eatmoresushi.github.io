@@ -1,5 +1,5 @@
 export type PlayerId = string;
-export type RulesVersion = "1.2.2";
+export type RulesVersion = "1.2.4";
 
 /**
  * The three v1.1.4 Contribution cards. Bank (-1 Heat, 1 Wood), Tend (0, 0) and
@@ -78,7 +78,6 @@ export interface CompletedOrderState {
   completedInRound: RoundNumber;
   vpAwarded: number;
   coinsAwarded: number;
-  usedGuanWaiver: boolean;
 }
 
 export interface ImmediateScoreState {
@@ -318,7 +317,10 @@ export type GamePhase =
       type: "work_guild";
       actorId: PlayerId;
       workerId: WorkerId;
-      step: "refresh_or_skip" | "buy";
+      step: "inspect" | "buy";
+      /** V1.2.4 Shifu: the top Techs drawn off one discipline, private to the actor. */
+      inspectedDiscipline?: TechniqueDiscipline;
+      inspectedTechniqueIds?: TechniqueId[];
     }
   | {
       type: "work_commission_advance";
@@ -490,14 +492,14 @@ export type GameAction =
       type: "OFFICE_TAKE_ORDER";
       orderId: OrderId;
     }
+  | { type: "OFFICE_TAKE_TOP_ORDER" }
   | { type: "OFFICE_END_ORDERS" }
   | { type: "OFFICE_USE_COLOUR_SAMPLES"; deck?: OrderDeck }
-  | { type: "OFFICE_CHOOSE_COLOUR_SAMPLES_ORDER"; orderId: OrderId; bottomOrderIds?: OrderId[] }
+  | { type: "OFFICE_CHOOSE_COLOUR_SAMPLES_ORDER"; orderId: OrderId }
   | { type: "OFFICE_SKIP_COLOUR_SAMPLES" }
   | { type: "COMMISSION_GAIN_ADVANCE"; resource: "clay" | "wood" | "coins" }
   | { type: "BEGIN_GUILD_ACTION"; workerId: WorkerId }
-  | { type: "GUILD_REFRESH_TECHNIQUE"; techniqueId: TechniqueId }
-  | { type: "GUILD_SKIP_REFRESH" }
+  | { type: "GUILD_INSPECT_DISCIPLINE"; discipline: TechniqueDiscipline }
   | {
       type: "GUILD_BUY_TECHNIQUE";
       techniqueId: TechniqueId;
@@ -514,8 +516,6 @@ export type GameAction =
       type: "COMPLETE_ORDER";
       orderId: OrderId;
       ceramicIds: CeramicId[];
-      useGuanWaiver: boolean;
-      guanWaiverCeramicId?: CeramicId;
       imperialGrantChoice?: "coins" | "resources";
     }
   | { type: "END_ORDER_TURN" }
@@ -580,19 +580,18 @@ export type GameEvent =
       playerId: PlayerId;
       orderId: OrderId;
       deck: OrderDeck;
-      acquisition: "face_up" | "colour_samples";
+      acquisition: "face_up" | "colour_samples" | "blind_deck";
     }
   | {
       type: "COLOUR_SAMPLES_USED";
       playerId: PlayerId;
       deck: OrderDeck;
-      bottomedOrderId: OrderId;
-      /** All looked-at cards bottomed; two entries when a face-up Order was taken. */
-      bottomedOrderIds?: OrderId[];
-      selectedOrderId?: OrderId;
-      revealedOrderId?: OrderId | null;
+      /** V1.2.4 discards every looked-at Order the player did not reserve. */
+      discardedOrderIds: OrderId[];
+      selectedOrderId: OrderId;
+      reservedFromDisplay: boolean;
     }
-  | { type: "TECHNIQUE_REFRESHED"; playerId: PlayerId; techniqueId: TechniqueId }
+  | { type: "GUILD_DISCIPLINE_INSPECTED"; playerId: PlayerId; discipline: TechniqueDiscipline; count: number }
   | { type: "TECHNIQUE_ACQUIRED"; playerId: PlayerId; techniqueId: TechniqueId; cost: number }
   | { type: "TECHNIQUE_USED"; playerId: PlayerId; techniqueId: TechniqueId }
   | { type: "KILN_ABILITY_USED"; playerId: PlayerId; kilnId: KilnId }

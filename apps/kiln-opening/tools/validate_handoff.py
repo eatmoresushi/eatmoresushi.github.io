@@ -6,7 +6,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
-RULES_VERSION = "1.2.2"
+RULES_VERSION = "1.2.4"
 errors: list[str] = []
 
 
@@ -41,7 +41,7 @@ for name, document in {
     "round structure": rounds,
     "techniques": techniques,
 }.items():
-    check(document.get("rulesVersion") == RULES_VERSION, f"{name} must use V1.2.2")
+    check(document.get("rulesVersion") == RULES_VERSION, f"{name} must use V{RULES_VERSION}")
 
 check(config["players"] == {"min": 2, "max": 4}, "Player count must be 2-4")
 check(config["rounds"] == 5, "Game must last 5 rounds")
@@ -61,7 +61,7 @@ expected_locations = {
     "labour": ({"2": None, "3": None, "4": None}, "uncapped"),
 }
 locations = {location["id"]: location for location in actions["locations"]}
-check(set(locations) == set(expected_locations), "Expected exactly the seven V1.2.2 action locations")
+check(set(locations) == set(expected_locations), "Expected exactly the seven V1.2.4 action locations")
 for location_id, (capacity, scope) in expected_locations.items():
     location = locations.get(location_id, {})
     check(location.get("capacity") == capacity, f"{location_id} capacity mismatch")
@@ -74,7 +74,7 @@ check(len(orders["main"]) == 48, "Expected 48 Main Orders")
 check([order["id"] for order in orders["starting"]] == [f"S{number:02d}" for number in range(1, 17)], "Starting Order IDs mismatch")
 check([order["id"] for order in orders["main"]] == [f"O{number:02d}" for number in range(1, 49)], "Main Order IDs mismatch")
 all_orders = orders["starting"] + orders["main"]
-check(all(order.get("commission") and order.get("commissionZh") for order in all_orders), "Every Order needs English and Chinese commission text")
+check(all(order.get("requirements") and order.get("requirementsZh") for order in all_orders), "Every Order needs English and Chinese Requirements text")
 check(all(order["crowns"] == 0 for order in orders["starting"]), "Starting Orders cannot have Crowns")
 check(sum(order["crowns"] for order in orders["main"]) == 30, "Main Order deck must contain 30 Crown icons")
 check(sum(order["crowns"] > 0 for order in orders["main"]) == 20, "Exactly 20 Main Orders must show Crowns")
@@ -91,8 +91,8 @@ check({tech["id"]: tech["cost"] for tech in techniques["advanced"]} == expected_
 check(all(tech.get("name") and tech.get("nameZh") and tech.get("ability") and tech.get("abilityZh") for tech in techniques["starting"] + techniques["advanced"]), "Every Tech needs bilingual text")
 tech_by_id = {tech["id"]: tech for tech in techniques["advanced"]}
 check("top 3 Main Orders" in tech_by_id["T10"]["ability"], "Colour Samples must inspect three Main Orders")
-check("secretly commit 1 additional Wood" in tech_by_id["T12"]["ability"] and "-2 or +2" in tech_by_id["T12"]["ability"], "Fuel Ledger text mismatch")
-check("same Base Heat and position" in tech_by_id["T14"]["ability"], "Second Firing immediate recalculation mismatch")
+check("secretly commit 1 additional Wood" in tech_by_id["T12"]["ability"] and "\u22122 or +2" in tech_by_id["T12"]["ability"], "Fuel Ledger text mismatch")
+check("same Base Heat and kiln position" in tech_by_id["T14"]["ability"], "Second Firing recalculation mismatch")
 
 expected_fire = {-2: 1, -1: 3, 0: 4, 1: 3, 2: 1}
 check(Counter(firing["fireDeck"]) == expected_fire, "Fire deck distribution mismatch")
@@ -107,13 +107,15 @@ check([kiln["id"] for kiln in kilns] == ["RU", "GU", "GE", "DI", "JU"], "Kiln ID
 check(all(kiln.get("nameZh") and kiln.get("abilityNameZh") and kiln.get("abilityZh") for kiln in kilns), "Every Kiln needs bilingual text")
 kiln_by_id = {kiln["id"]: kiln for kiln in kilns}
 check("gain 4 VP" in kiln_by_id["RU"]["ability"], "Ru must award 4 VP")
-check("direct and relational Decoration requirements" in kiln_by_id["GU"]["ability"], "Guan waiver scope mismatch")
-check("pay 1 Wood" in kiln_by_id["JU"]["ability"], "Jun must cost 1 Wood under V1.2.2")
+check("2 Coins and 1 VP" in kiln_by_id["GU"]["ability"], "Guan must pay 2 Coins and 1 VP under V1.2.4")
+check("waive" not in kiln_by_id["GU"]["ability"].lower() and "ignore" not in kiln_by_id["GU"]["ability"].lower(), "V1.2.4 Guan waives no Decoration requirement")
+check("at no Clay cost" in kiln_by_id["DI"]["ability"], "Ding's additional vessel must be free under V1.2.4")
+check("pay 1 Wood" in kiln_by_id["JU"]["ability"], "Jun must cost 1 Wood under V1.2.4")
 
 track = recognition["track"]
 check([space["space"] for space in track] == [0, 1, 2, 3, 4, 5], "Recognition spaces mismatch")
 check([space["title"] for space in track] == ["Local Workshop", "Local Renown", "Imperial Grant", "Imperial Gift", "Imperial Priority", "Imperial Audience"], "Recognition titles mismatch")
-check(track[3]["reward"] == "Unlock your Imperial Kiln.", "Imperial Gift must unlock the Imperial Kiln")
+check(track[3]["reward"] == "Gain your Imperial Kiln tile.", "Imperial Gift must grant the Imperial Kiln tile")
 check("during a Kiln Yard action" in track[4]["reward"] and "1 additional ceramic" in track[4]["reward"], "Imperial Priority effect mismatch")
 check(track[5]["reward"] == "Gain 6 VP.", "Imperial Audience must award 6 VP")
 check(recognition["exhibition"]["capacityByProgress"] == [5, 5, 5, 5, 5, 5], "Exhibition capacity mismatch")
@@ -128,23 +130,31 @@ check("discard the three leftmost" in rounds["phases"][0]["summary"] and "refill
 check(assets["orderCards"].get("total") == 64 and assets["orderCards"].get("main") == 48 and assets["orderCards"].get("starting") == 16, "Order asset counts mismatch")
 check(assets["playerReference"].get("mustShowFiveCardMainOrderDisplay") is True, "Reference asset must show a five-card Main Order display")
 
-adopted_rules = (ROOT / "docs" / "KILN_OPENING_v1.2.2_SOURCE.md").read_text(encoding="utf-8")
+adopted_rules = (ROOT / "docs" / "KILN_OPENING_v1.2.4_SOURCE.md").read_text(encoding="utf-8")
 for required in (
     "reveal **5 face-up Main Orders**",
     "Discard the **3 leftmost face-up Main Orders**",
     "Imperial Gift",
     "**4 — Imperial Priority:**",
-    "same Base Heat and position",
+    "same Base Heat and kiln position",
+    # V1.2.4-specific rules that must survive any future edit of the adopted source.
+    "gain **2 Coins and 1 VP**",
+    "at no Clay cost",
+    "look at the top 2 Techs of that deck",
+    "At the end of the Work Phase, before any Firing Phase abilities are resolved",
+    "reserve the **top card of the Main Order deck without looking at it first**",
+    "+3 VP if the 3 have **3 different Shapes**",
+    "**1 VP per 3 Coins remaining**",
 ):
     check(required in adopted_rules, f"Adopted rulebook is missing: {required}")
 
 if errors:
-    print("V1.2.2 HANDOFF VALIDATION FAILED")
+    print("V1.2.4 HANDOFF VALIDATION FAILED")
     for item in errors:
         print(f"- {item}")
     sys.exit(1)
 
-print("V1.2.2 HANDOFF VALIDATION PASSED")
+print("V1.2.4 HANDOFF VALIDATION PASSED")
 print("Rules/data: 2-4 players, 5 rounds, 1 Shifu + 3 Apprentices, seven current locations.")
 print("Orders: 16 Starting + 48 Main; five-card market rotates its three leftmost cards.")
 print("Tech: 4 Starting + 15 Advanced; Fuel Ledger and Second Firing match owner rulings.")

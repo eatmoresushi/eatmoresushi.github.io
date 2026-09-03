@@ -1,6 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import { localBackendPlugin } from "./test/e2e/localBackend";
+import { localBackendPlugin } from "./tools/localBackend";
 
 export default defineConfig({
   base: "/kiln-opening/",

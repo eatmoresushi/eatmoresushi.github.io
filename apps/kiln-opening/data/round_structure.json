@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.2.2",
+  "rulesVersion": "1.2.4",
   "roundCount": 5,
   "phases": [
     {
@@ -12,13 +12,13 @@
       "order": 2,
       "id": "work",
       "name": "Work Phase",
-      "summary": "Players alternate placing one worker and resolving that location until all have passed or placed all workers."
+      "summary": "Players alternate placing one worker and resolving that location until all have passed. A worker may be placed only if it can perform at least one instance of that location's main action. At the end of the phase, in First Player order, each player who used a Kiln Yard Shifu may reposition 1 Shared-Kiln ceramic."
     },
     {
       "order": 3,
       "id": "firing",
       "name": "Firing Phase",
-      "summary": "If either Shared or Imperial Kiln contains ceramics, resolve Test Pieces, secret Contributions (including secret Fuel Ledger commitments), Base Heat, Kiln Yard Shifu repositioning, Fire, Actual Heat, Kiln abilities, Quality, after-Quality Techs and Workshop Seconds."
+      "summary": "If either Shared or Imperial Kiln contains ceramics, resolve Test Pieces, secret Contributions (including secret Fuel Ledger commitments), Base Heat, Fire, Actual Heat, Kiln abilities, Quality, after-Quality Techs and the optional 2-Coin discard of a still-Flawed ceramic."
     },
     {
       "order": 4,
@@ -30,7 +30,7 @@
       "order": 5,
       "id": "cleanup",
       "name": "Cleanup",
-      "summary": "Return workers, discard held Orders down to the limit of 3, pass First Player clockwise and advance the round."
+      "summary": "Return workers and discard held Orders down to the limit of 3. If the round was not the fifth, pass First Player clockwise and advance the round."
     }
   ]
 }

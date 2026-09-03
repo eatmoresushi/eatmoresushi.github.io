@@ -60,7 +60,7 @@ function firingContext(ceramicResults: Record<string, FiringCeramicResult>): Fir
   };
 }
 
-describe("V1.2.2 firing, Tech timing, and Kiln Traditions", () => {
+describe("V1.2.4 firing, Tech timing, and Kiln Traditions", () => {
   it("uses the exact Contribution costs and clamps Base Heat only", () => {
     expect(contributionWoodCost("BANK")).toBe(1);
     expect(contributionWoodCost("TEND")).toBe(0);
@@ -181,7 +181,10 @@ describe("V1.2.2 firing, Tech timing, and Kiln Traditions", () => {
     expect(state.firingContext?.ceramicResults[furniture.id]?.zoneModifier).toBe(0);
   });
 
-  it("lets a Kiln Yard Shifu reposition only a Shared-Kiln ceramic after Base Heat and before Fire", () => {
+  it("repositions a Shared-Kiln ceramic at the end of the Work Phase, before any Base Heat is known", () => {
+    // V1.2.2 repositioned after Base Heat was determined and before Fire was revealed, so
+    // the choice was made knowing the shared heat. V1.2.4 moves it to the end of the Work
+    // Phase, before any Firing Phase ability resolves, so it is now a blind commitment.
     const { state: initial, rng } = startedGame(2, 1404);
     let state = structuredClone(initial);
     const shared = addLoaded(state, "P1", "bowl", "celadon", "plain", "high_1");
@@ -192,21 +195,20 @@ describe("V1.2.2 firing, Tech timing, and Kiln Traditions", () => {
     state.actionBoard.placements.kiln_yard.push(shifu.id);
     state.players["P1"]!.kilnId = "RU";
     state.fireDeck = [0];
-    openContributions(state, ["P1"]);
-    const privateState = createPrivateFiringState(state);
-    const submitted = submitWoodContribution(state, privateState, "P1", "TEND", false, rng);
-    expect(submitted.ok).toBe(true);
-    if (!submitted.ok) return;
-    state = submitted.state;
+
+    // Ending the Work Phase opens the reposition window, not the Contribution window.
+    state.phase = { type: "work", activePlayerId: "P1" };
+    state = mustApply(state, "P1", { type: "PASS_WORK_PHASE" }, rng);
+    state = mustApply(state, "P2", { type: "PASS_WORK_PHASE" }, rng);
     expect(state.phase.type).toBe("firing_reposition");
-    expect(state.firingContext?.baseHeat).toBe(2);
-    expect(state.firingContext?.fireModifier).toBeNull();
+    expect(state.firingContext).toBeNull();
+
     expectError(applyAction(state, "P1", { type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: imperial.id, toSpaceId: "low_1" }, rng), "ILLEGAL_CERAMIC_STAGE");
     const moved = mustResult(state, "P1", { type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: shared.id, toSpaceId: "low_1" }, rng);
     state = moved.state;
-    expect(moved.events).toContainEqual(expect.objectContaining({ type: "FIRING_RESOLVED", ceramicId: shared.id, zoneModifier: -1 }));
-    expect(state.ceramics[shared.id]).toEqual(expect.objectContaining({ stage: "finished", quality: "fine" }));
-    expect(moved.events).toContainEqual(expect.objectContaining({ type: "FIRE_REVEALED", baseHeat: 2, modifier: 0 }));
+    expect(state.ceramics[shared.id]).toEqual(expect.objectContaining({ stage: "loaded", kilnSpaceId: "low_1" }));
+    // Only after the reposition does the firing itself begin.
+    expect(state.phase.type).toBe("firing_contributions");
   });
 
   it("uses Imperial Priority once to add an Imperial-Kiln load beyond the worker's normal limit", () => {
@@ -312,7 +314,7 @@ describe("V1.2.2 firing, Tech timing, and Kiln Traditions", () => {
     expect(state.ceramics[refired.id]).toEqual(expect.objectContaining({ stage: "finished", quality: "masterpiece" }));
   });
 
-  it("offers Workshop Seconds after after-Quality effects and discards at most one Flawed ceramic for 2 Coins", () => {
+  it("offers the Flawed salvage after after-Quality effects and discards at most one still-Flawed ceramic for 2 Coins", () => {
     const { state: initial, rng } = startedGame(2, 1410);
     let state = structuredClone(initial);
     const first = addLoaded(state, "P1", "bowl", "white", "plain", "high_1");

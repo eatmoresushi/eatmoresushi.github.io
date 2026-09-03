@@ -56,8 +56,8 @@ export function commandNotice(result: CommandSuccess, locale: Locale = "en"): st
   const colour = result.events.find((event) => event.type === "COLOUR_SAMPLES_USED");
   if (colour?.type === "COLOUR_SAMPLES_USED") {
     return locale === "zh-CN"
-      ? `使用釉色样本：预留${colour.selectedOrderId ?? "1张订单"}；${colour.bottomedCount}张已查看牌移至主订单牌堆底。`
-      : `Used Colour Samples: reserved ${colour.selectedOrderId ?? "one Order"}; ${colour.bottomedCount} looked-at Order${colour.bottomedCount === 1 ? "" : "s"} moved to the bottom of the Main deck.`;
+      ? `使用釉色样本：预留${colour.selectedOrderId ?? "1张订单"}；${colour.discardedCount}张已查看牌被弃掉。`
+      : `Used Colour Samples: reserved ${colour.selectedOrderId ?? "one Order"}; ${colour.discardedCount} looked-at Order${colour.discardedCount === 1 ? "" : "s"} discarded.`;
   }
   const technique = result.events.find((event) => event.type === "TECHNIQUE_ACQUIRED");
   if (technique?.type === "TECHNIQUE_ACQUIRED") {

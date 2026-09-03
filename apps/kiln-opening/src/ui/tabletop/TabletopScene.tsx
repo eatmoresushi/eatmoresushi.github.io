@@ -356,7 +356,7 @@ function PlayerWorkshop({
 
         <section className="workshop-active-orders" aria-label="Active Orders">
           <h3>Active Orders · {player.orderHand.length}</h3>
-          <div>{player.orderHand.length === 0 ? <p>No open commissions</p> : player.orderHand.map((orderId) => <VisualOrderCard orderId={orderId} compact onInspect={onInspectOrder} key={orderId} />)}</div>
+          <div>{player.orderHand.length === 0 ? <p>No open Orders</p> : player.orderHand.map((orderId) => <VisualOrderCard orderId={orderId} compact onInspect={onInspectOrder} key={orderId} />)}</div>
         </section>
 
         <section className="workshop-owned-techniques" aria-label="Owned Craft Techniques">
@@ -393,14 +393,14 @@ function phaseName(game: PublicGameState): string {
     case "setup_starting_tech": return "Starting Tech";
     case "work": return "Work Phase";
     case "work_office_orders": return "Commission Market — Orders";
-    case "work_commission_advance": return "Commission advance";
+    case "work_commission_advance": return "Reservation advance";
     case "work_guild": return "Guild & Academy";
     case "firing_before_contribution": return "Pre-firing Techniques";
     case "firing_contributions": return "Secret Contributions";
     case "firing_reposition": return "Shifu kiln reposition";
     case "firing_before_quality": return "Kiln ability";
     case "firing_after_quality": return game.phase.techniqueIds[game.phase.queue.currentIndex] === "T14" ? "Second Firing" : "Protective Saggars";
-    case "firing_workshop_seconds": return "Workshop Seconds";
+    case "firing_workshop_seconds": return "Flawed salvage";
     case "orders": return "Order Phase";
     case "cleanup_orders": return "Cleanup Orders";
     case "presentation": return "End-game Exhibition";

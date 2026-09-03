@@ -2,7 +2,7 @@
 
 Telemetry is for balance analysis, not player profiling.
 
-Current **V1.2.2** telemetry records Crown-driven Imperial Recognition and each milestone, the five-card Main Order display's three-card rotation, End-game Exhibition and featured-three scoring, Fire and Quality distributions, Jun/Ge and Kiln Yard Shifu windows, public Contribution cards and effective Heat only after simultaneous reveal, Fuel Ledger upgrades, Starting and Advanced Tech effects, Commission advances, Labour, Workshop Seconds, Imperial Kiln loads and Imperial Priority use. Starting Order offers, Colour Samples choices, Test Pieces peeks and unrevealed Fuel Ledger commitments remain private. Obsolete Court Patronage, Imperial Seal, Apprentice-unlock and Progress-stipend events are not produced by V1.2.2. Historical exports remain immutable under their original rules labels.
+Current **V1.2.4** telemetry records Crown-driven Imperial Recognition and each milestone, the five-card Main Order display's three-card rotation, End-game Exhibition and featured-three scoring, Fire and Quality distributions, Jun/Ge and Kiln Yard Shifu windows, public Contribution cards and effective Heat only after simultaneous reveal, Fuel Ledger upgrades, Starting and Advanced Tech effects, Reservation advances, Labour, the 2-Coin Flawed salvage, Imperial Kiln loads and Imperial Priority use. Starting Order offers, Colour Samples choices, Test Pieces peeks and unrevealed Fuel Ledger commitments remain private. Obsolete Court Patronage, Imperial Seal, Apprentice-unlock and Progress-stipend events are not produced by V1.2.4. Historical exports remain immutable under their original rules labels.
 
 ## Historical telemetry
 

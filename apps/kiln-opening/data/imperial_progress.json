@@ -1,22 +1,88 @@
 {
-  "rulesVersion": "1.2.2",
+  "rulesVersion": "1.2.4",
   "track": [
-    { "space": 0, "title": "Local Workshop", "titleZh": "地方作坊", "reward": null, "rewardZh": null, "endGameVp": 0, "unlocksApprentice": false },
-    { "space": 1, "title": "Local Renown", "titleZh": "地方声望", "reward": null, "rewardZh": null, "endGameVp": 0, "unlocksApprentice": false },
-    { "space": 2, "title": "Imperial Grant", "titleZh": "御赐资助", "reward": "Gain 3 Coins or 1 Clay + 1 Wood + 1 Coin.", "rewardZh": "获得3铜钱，或1黏土、1柴薪和1铜钱。", "endGameVp": 0, "unlocksApprentice": false },
-    { "space": 3, "title": "Imperial Gift", "titleZh": "御赐窑炉", "reward": "Unlock your Imperial Kiln.", "rewardZh": "解锁你的御窑。", "endGameVp": 0, "unlocksApprentice": false },
-    { "space": 4, "title": "Imperial Priority", "titleZh": "御用优先", "reward": "Gain an Imperial Priority token. Once per game, during a Kiln Yard action, load 1 additional ceramic into your empty Imperial Kiln.", "rewardZh": "获得1枚御用优先标记。每局一次，在窑场行动中，额外将1件陶瓷装入你的空置御窑。", "endGameVp": 0, "unlocksApprentice": false },
-    { "space": 5, "title": "Imperial Audience", "titleZh": "御前召见", "reward": "Gain 6 VP.", "rewardZh": "获得6分。", "endGameVp": 0, "unlocksApprentice": false }
+    {
+      "space": 0,
+      "title": "Local Workshop",
+      "titleZh": "地方作坊",
+      "reward": null,
+      "rewardZh": null,
+      "endGameVp": 0,
+      "unlocksApprentice": false
+    },
+    {
+      "space": 1,
+      "title": "Local Renown",
+      "titleZh": "地方声望",
+      "reward": null,
+      "rewardZh": null,
+      "endGameVp": 0,
+      "unlocksApprentice": false
+    },
+    {
+      "space": 2,
+      "title": "Imperial Grant",
+      "titleZh": "御赐资助",
+      "reward": "Gain 3 Coins or 1 Clay + 1 Wood + 1 Coin.",
+      "rewardZh": "获得3铜钱，或1黏土、1柴薪和1铜钱。",
+      "endGameVp": 0,
+      "unlocksApprentice": false
+    },
+    {
+      "space": 3,
+      "title": "Imperial Gift",
+      "titleZh": "御赐窑炉",
+      "reward": "Gain your Imperial Kiln tile.",
+      "rewardZh": "获得你的御窑窑板。",
+      "endGameVp": 0,
+      "unlocksApprentice": false
+    },
+    {
+      "space": 4,
+      "title": "Imperial Priority",
+      "titleZh": "御用优先",
+      "reward": "Take your coloured Imperial Priority token from this space. Once per game, during a Kiln Yard action, spend it to load 1 additional ceramic into your empty Imperial Kiln.",
+      "rewardZh": "从该格取走你颜色的御用优先标记。每局一次，在窑场行动中，花费该标记额外将1件陶瓷装入你空置的御窑。",
+      "endGameVp": 0,
+      "unlocksApprentice": false
+    },
+    {
+      "space": 5,
+      "title": "Imperial Audience",
+      "titleZh": "御前召见",
+      "reward": "Gain 6 VP.",
+      "rewardZh": "获得6分。",
+      "endGameVp": 0,
+      "unlocksApprentice": false
+    }
   ],
   "imperialSealVp": 0,
   "exhibition": {
-    "capacityByProgress": [5, 5, 5, 5, 5, 5],
-    "diversityEligibleSpaces": [0, 1, 2, 3, 4, 5],
+    "capacityByProgress": [
+      5,
+      5,
+      5,
+      5,
+      5,
+      5
+    ],
+    "diversityEligibleSpaces": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
     "minimumQuality": "standard",
-    "qualityVp": { "standard": 2, "fine": 3, "masterpiece": 5 },
+    "qualityVp": {
+      "standard": 2,
+      "fine": 3,
+      "masterpiece": 5
+    },
     "featuredCollectionSize": 3,
-    "threeDifferentShapesBonus": 2,
-    "threeDifferentGlazesBonus": 2,
+    "threeDifferentShapesBonus": 3,
+    "threeDifferentGlazesBonus": 3,
     "flawedEligible": false,
     "emptyExhibitionPenalty": 0
   }

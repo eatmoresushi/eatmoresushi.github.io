@@ -10,10 +10,10 @@ Target session length for the physical design is approximately 90–120 minutes.
 
 Priority order:
 
-1. `docs/KILN_OPENING_v1.2.2_SOURCE.md` — the sole authoritative rules source; it is an exact copy of the owner-supplied V1.2.2 Markdown.
-2. `docs/RULEBOOK_AUDIT_V1.2.2.md` — recorded owner resolutions for contradictions and ambiguities inside that supplied source.
+1. `docs/KILN_OPENING_v1.2.4_SOURCE.md` — the sole authoritative rules source; it is an exact copy of the owner-supplied V1.2.4 Markdown.
+2. `docs/RULEBOOK_AUDIT_V1.2.4.md` — recorded owner resolutions for contradictions and ambiguities inside that supplied source.
 3. `docs/GAME_RULES.md` — source index and implementation note, not an independent rules authority.
-4. `data/*.json` — machine-readable values derived from V1.2.2.
+4. `data/*.json` — machine-readable values derived from V1.2.4.
 5. `docs/IMPLEMENTATION_DECISIONS.md` — digital interpretations of rules where necessary.
 6. `docs/ONLINE_GAME_SPEC.md` — digital-only behaviour.
 7. `docs/DESIGN_SPEC.md` — design intent and constraints.
@@ -24,7 +24,7 @@ Never implement an older mechanic because it appears in historical discussion or
 
 ## Approved asset rule
 
-Only `assets/current_v04/` is an approved visual-reference directory. The directory name remains unchanged as a stable legacy path; rules-bearing visuals must follow V1.2.2 data and localized gameplay text must come from structured data or the i18n layer.
+Only `assets/current_v04/` is an approved visual-reference directory. The directory name remains unchanged as a stable legacy path; rules-bearing visuals must follow V1.2.4 data and localized gameplay text must come from structured data or the i18n layer.
 
 Do not search conversation history or older images for missing boards/cards. Missing current assets are intentionally specified in `data/asset_specs.json` and `docs/V0.4_ASSETS_TO_REGENERATE.md` and must be rebuilt from current data.
 
@@ -105,16 +105,16 @@ At minimum:
 - Shifu vs Apprentice effects at all five shared locations and both private workshop actions
 - Shape costs and vessel supply
 - Decoration costs
-- all 4 Starting Techs and all 15 V1.2.2 Advanced Techs
+- all 4 Starting Techs and all 15 V1.2.4 Advanced Techs
 - Advanced-Tech acquisition limit, discipline refresh, printed cost, Shifu discount, and station unlocks
 - all five Kiln abilities
 - Base Heat starting at 2, all contributions, and the 0–5 clamp
 - secret simultaneous Contribution-card reveal
 - Fuel Ledger's secret −2/+2 choices, two-Wood affordability, reveal, and payment
-- all five Fire modifiers, the V1.2.2 1/3/4/3/1 deck distribution, reshuffling, and kiln-zone modifiers
+- all five Fire modifiers, the V1.2.4 1/3/4/3/1 deck distribution, reshuffling, and kiln-zone modifiers
 - Quality assignment
 - Jun/Ge/Protective Saggars/Test Pieces/Second Firing/Ru timing
-- Workshop Seconds after firing
+- the optional 2-Coin discard of a still-Flawed ceramic after firing
 - all 16 Starting Orders and 48 Main Orders, including independent multi-ceramic attribute matching
 - setup deal-four/keep-two Starting Orders
 - Commission reservation benefits and immediate Main-display refill
@@ -136,6 +136,6 @@ If a desired implementation requires changing the board-game rules:
 1. stop,
 2. explain the conflict,
 3. propose the smallest rule change,
-4. wait for user approval before modifying the checked-in V1.2.2 source, its recorded rulings, or balance data.
+4. wait for user approval before modifying the checked-in V1.2.4 source, its recorded rulings, or balance data.
 
 Do not silently “improve” balance values.

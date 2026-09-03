@@ -16,11 +16,11 @@ import {
 } from "../../src/game/index.ts";
 import { createdGame, mustApply, mustResult, startedGame } from "./helpers.ts";
 
-describe("V1.2.2 setup and authoritative content", () => {
+describe("V1.2.4 setup and authoritative content", () => {
   it.each([2, 3, 4] as const)("creates the exact %i-player setup", (playerCount) => {
     const { state } = createdGame(playerCount, 1200 + playerCount);
 
-    expect(state.rulesVersion).toBe("1.2.2");
+    expect(state.rulesVersion).toBe("1.2.4");
     expect(state.schemaVersion).toBe(2);
     expect(state.round).toBe(1);
     expect(state.marketDisplay).toHaveLength(5);
@@ -77,7 +77,7 @@ describe("V1.2.2 setup and authoritative content", () => {
     expect(Object.values(state.players).every(({ startingTechniqueId }) => startingTechniqueId === "ST01")).toBe(true);
   });
 
-  it("contains exactly the V1.2.2 decks, spaces, locations, and bilingual records", () => {
+  it("contains exactly the V1.2.4 decks, spaces, locations, and bilingual records", () => {
     expect(STARTING_ORDERS.map(({ id }) => id)).toEqual(Array.from({ length: 16 }, (_, i) => `S${String(i + 1).padStart(2, "0")}`));
     expect(MAIN_ORDERS.map(({ id }) => id)).toEqual(Array.from({ length: 48 }, (_, i) => `O${String(i + 1).padStart(2, "0")}`));
     expect(STARTING_TECHNIQUES).toHaveLength(4);
@@ -85,7 +85,7 @@ describe("V1.2.2 setup and authoritative content", () => {
     expect(TECHNIQUES.filter(({ discipline }) => discipline === "forming")).toHaveLength(5);
     expect(TECHNIQUES.filter(({ discipline }) => discipline === "glazing")).toHaveLength(5);
     expect(TECHNIQUES.filter(({ discipline }) => discipline === "firing")).toHaveLength(5);
-    expect([...STARTING_ORDERS, ...MAIN_ORDERS].every(({ commission, commissionZh }) => commission.length > 0 && commissionZh.length > 0)).toBe(true);
+    expect([...STARTING_ORDERS, ...MAIN_ORDERS].every(({ requirements, requirementsZh }) => requirements.length > 0 && requirementsZh.length > 0)).toBe(true);
     expect([...STARTING_TECHNIQUES, ...TECHNIQUES].every(({ name, nameZh, ability, abilityZh }) => name.length > 0 && nameZh.length > 0 && ability.length > 0 && abilityZh.length > 0)).toBe(true);
     expect(LOCATION_IDS).toHaveLength(7);
     expect(LOCATION_IDS).not.toContain("court_patronage");

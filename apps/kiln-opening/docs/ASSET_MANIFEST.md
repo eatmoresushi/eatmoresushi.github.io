@@ -1,4 +1,4 @@
-# ASSET_MANIFEST.md — V1.2.2 rules / legacy visual audit
+# ASSET_MANIFEST.md — V1.2.4 rules / legacy visual audit
 
 Only files under `assets/current_v04/` are approved as visual references. The directory name is a stable legacy path, not a rules-version claim. No raster text is authoritative.
 
@@ -10,7 +10,7 @@ Only files under `assets/current_v04/` are approved as visual references. The di
 - `vessel_cards_page_2_washer_vase.png`
 - `vessel_cards_page_3_censer.png`
 
-Together these provide 8 each of Bowl, Plate, Brush Washer, Vase and Censer. Their writable Glaze, Decoration and Quality fields remain usable, but all labels and rules must be checked against the V1.2.2 source and current structured data.
+Together these provide 8 each of Bowl, Plate, Brush Washer, Vase and Censer. Their writable Glaze, Decoration and Quality fields remain usable, but all labels and rules must be checked against the V1.2.4 source and current structured data.
 
 ## Obsolete rules-bearing raster sets
 
@@ -21,12 +21,12 @@ Any image showing an earlier ruleset is obsolete, including:
 - separate Market and Imperial Order decks or displays;
 - Office, Court Patronage, shared Forming or shared Glazing locations;
 - worker unlocks, Imperial Progress or the Imperial Seal;
-- older Craft Technique sets rather than V1.2.2 Starting and Advanced Techs;
+- older Craft Technique sets rather than V1.2.4 Starting and Advanced Techs;
 - an Imperial token that adjusts firing heat rather than Imperial Priority's additional Kiln Yard load.
 
 The online client must cover or replace stale raster wording with data-driven bilingual UI; it must never expose obsolete text as the current rule.
 
-## Assets to regenerate from V1.2.2 data
+## Assets to regenerate from V1.2.4 data
 
 ### Orders
 
@@ -66,14 +66,14 @@ Generate four Starting Tech designs, with four physical copies each, and all 15 
 
 ### Reference
 
-Generate the five-phase round sequence, Contribution/Firing sequence, Workshop Seconds, Recognition milestones, universal five-ceramic Exhibition and featured-three diversity rule from current structured data. All rules-bearing output must support matching English and Simplified Chinese text.
+Generate the five-phase round sequence, Contribution/Firing sequence, the 2-Coin Flawed salvage, Recognition milestones, universal five-ceramic Exhibition and featured-three diversity rule from current structured data. All rules-bearing output must support matching English and Simplified Chinese text.
 
 ## Authority
 
 For current gameplay use, in order:
 
-1. `docs/KILN_OPENING_v1.2.2_SOURCE.md`
-2. `docs/RULEBOOK_AUDIT_V1.2.2.md`
+1. `docs/KILN_OPENING_v1.2.4_SOURCE.md`
+2. `docs/RULEBOOK_AUDIT_V1.2.4.md`
 3. current `data/*.json`
 4. `docs/IMPLEMENTATION_DECISIONS.md`
 

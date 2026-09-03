@@ -329,7 +329,7 @@ function OrderDisplays({ game, ownPlayerId }: { game: PublicGameState; ownPlayer
   return (
     <section className="playtest-panel orders-board" aria-labelledby="orders-title">
       <div className="playtest-panel-heading">
-        <div><p className="eyebrow">{t("Public commissions")}</p><h2 id="orders-title">{t("Orders")}</h2></div>
+        <div><p className="eyebrow">{t("Public Orders")}</p><h2 id="orders-title">{t("Orders")}</h2></div>
         <span>{t("Main deck")} {game.decks.marketRemaining} {t("remaining")}</span>
       </div>
       <div className="order-display-columns">
@@ -480,7 +480,7 @@ function phaseName(game: PublicGameState, locale: Locale = "en"): string {
     "Pre-firing Techniques": "烧制前技术", "Secret Contributions": "秘密出柴牌", "Fuel Ledger": "柴薪簿",
     "Shifu kiln reposition": "师傅移窑", "Kiln ability": "窑口能力", "Second Firing": "二次烧成",
     "Protective Saggars": "护胎匣钵", "Test Pieces": "试片", "Cleanup Orders": "整理阶段订单",
-    "Commission advance": "委托预付款", "Workshop Seconds": "作坊次品", "Order Phase": "交付阶段", "End-game Exhibition": "终局展陈", "Final results": "最终计分",
+    "Reservation advance": "预留预付款", "Flawed salvage": "次品回收", "Order Phase": "交付阶段", "End-game Exhibition": "终局展陈", "Final results": "最终计分",
   } as Record<string, string>)[english] ?? english : english;
   switch (game.phase.type) {
     case "setup_kiln_selection": return tx("Kiln selection");
@@ -488,14 +488,14 @@ function phaseName(game: PublicGameState, locale: Locale = "en"): string {
     case "setup_starting_tech": return tx("Starting Tech");
     case "work": return tx("Work Phase");
     case "work_office_orders": return tx("Commission Market — Orders");
-    case "work_commission_advance": return tx("Commission advance");
+    case "work_commission_advance": return tx("Reservation advance");
     case "work_guild": return tx("Guild & Academy");
     case "firing_before_contribution": return tx("Pre-firing Techniques");
     case "firing_contributions": return tx("Secret Contributions");
     case "firing_reposition": return tx("Shifu kiln reposition");
     case "firing_before_quality": return tx("Kiln ability");
     case "firing_after_quality": return tx(game.phase.techniqueIds[game.phase.queue.currentIndex] === "T14" ? "Second Firing" : "Protective Saggars");
-    case "firing_workshop_seconds": return tx("Workshop Seconds");
+    case "firing_workshop_seconds": return tx("Flawed salvage");
     case "orders": return tx("Order Phase");
     case "cleanup_orders": return tx("Cleanup Orders");
     case "presentation": return tx("End-game Exhibition");

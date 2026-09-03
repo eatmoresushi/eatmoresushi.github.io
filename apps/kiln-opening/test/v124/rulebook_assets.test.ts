@@ -6,7 +6,7 @@ import { GAME_CONFIG } from "../../src/game/index.ts";
  * The site must not publish a rulebook for a superseded ruleset.
  *
  * The earlier version of this guard named two v1.0.4 PDFs explicitly, so it went on passing
- * through v1.0.9, v1.1.4, v1.1.6 and v1.2.2 without ever asking about the rulebooks those
+ * through v1.0.9, v1.1.4, v1.1.6 and v1.2.4 without ever asking about the rulebooks those
  * versions could have left behind. A player who downloads the wrong PDF is playing a
  * different game from the server, and nothing in the build would say so. This asks the
  * general question instead: anything published here must name the shipped rules version.

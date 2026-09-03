@@ -61,17 +61,17 @@ function witnessFor(order: OrderDefinition): FinishedCeramic[] | null {
           glazeValues[index]!,
           decorationValues[index]!,
         ));
-        if (matchesOrder(order, selected, null)) return selected;
+        if (matchesOrder(order, selected)) return selected;
       }
     }
   }
   return null;
 }
 
-describe("V1.2.2 Orders, Recognition, and scoring", () => {
+describe("V1.2.4 Orders, Recognition, and scoring", () => {
   it("has a valid independent-attribute witness for every one of the 64 Orders", () => {
     for (const order of [...STARTING_ORDERS, ...MAIN_ORDERS]) {
-      expect(witnessFor(order), `${order.id}: ${order.commission}`).not.toBeNull();
+      expect(witnessFor(order), `${order.id}: ${order.requirements}`).not.toBeNull();
     }
   });
 
@@ -85,8 +85,8 @@ describe("V1.2.2 Orders, Recognition, and scoring", () => {
       ceramic("c", "bowl", "moon_white", "impressed", "fine"),
       ceramic("d", "washer", "white", "crackle", "fine"),
     ];
-    expect(matchesOrder(order, firstPairing, null)).toBe(true);
-    expect(matchesOrder(order, crossedPairing, null)).toBe(true);
+    expect(matchesOrder(order, firstPairing)).toBe(true);
+    expect(matchesOrder(order, crossedPairing)).toBe(true);
   });
 
   it("completes held Starting Orders and face-up Main Orders directly, refilling the public position", () => {
@@ -96,7 +96,7 @@ describe("V1.2.2 Orders, Recognition, and scoring", () => {
     state.players["P1"]!.orderHand = [held];
     const bowl = addFinished(state, "P1", "bowl", "standard");
     openOrderTurn(state);
-    state = mustApply(state, "P1", { type: "COMPLETE_ORDER", orderId: held, ceramicIds: [bowl.id], useGuanWaiver: false }, rng);
+    state = mustApply(state, "P1", { type: "COMPLETE_ORDER", orderId: held, ceramicIds: [bowl.id] }, rng);
     expect(state.players["P1"]!.orderHand).not.toContain(held);
     expect(state.ceramics[bowl.id]).toEqual(expect.objectContaining({ stage: "delivered", orderId: held }));
 
@@ -106,7 +106,7 @@ describe("V1.2.2 Orders, Recognition, and scoring", () => {
     state.marketDeck = [replacement, ...state.marketDeck.filter((id) => id !== replacement && !state.marketDisplay.includes(id))];
     const plate = addFinished(state, "P1", "plate", "standard");
     openOrderTurn(state);
-    const result = mustResult(state, "P1", { type: "COMPLETE_ORDER", orderId: publicId, ceramicIds: [plate.id], useGuanWaiver: false }, rng);
+    const result = mustResult(state, "P1", { type: "COMPLETE_ORDER", orderId: publicId, ceramicIds: [plate.id] }, rng);
     state = result.state;
     expect(state.marketDisplay).toEqual([replacement, "O04", "O05", "O06", "O07"]);
     expect(state.players["P1"]!.orderHand).not.toContain(publicId);
@@ -121,7 +121,7 @@ describe("V1.2.2 Orders, Recognition, and scoring", () => {
     const firstActor = reverse[0]!;
     state.players[firstActor]!.orderHand = ["S16"];
     const finished = addFinished(state, firstActor, "bowl", "standard");
-    state = mustApply(state, firstActor, { type: "COMPLETE_ORDER", orderId: "S16", ceramicIds: [finished.id], useGuanWaiver: false }, rng);
+    state = mustApply(state, firstActor, { type: "COMPLETE_ORDER", orderId: "S16", ceramicIds: [finished.id] }, rng);
     expect(state.phase).toEqual(expect.objectContaining({ type: "orders", activePlayerId: reverse[1] }));
 
     while (state.phase.type === "orders" && state.phase.completedInCircuit > 0) {
@@ -149,34 +149,38 @@ describe("V1.2.2 Orders, Recognition, and scoring", () => {
     expect(state.returnedStartingOrderIds).toContain("S01");
   });
 
-  it("applies Guan's direct and relational Decoration waiver without waiving Shape, Glaze, or Quality", () => {
+  it("no longer waives any Decoration requirement for Guan", () => {
+    // V1.2.2 let Guan exempt one ceramic from direct and relational Decoration checks.
+    // V1.2.4 pays 2 Coins and 1 VP instead and exempts nothing, so a wrong Decoration is
+    // simply a failed Order however the workshop is decorated.
     const single = ORDER_DEFINITIONS["O19"]!;
     const wrongDecoration = ceramic("single", "censer", "grey_green", "carved", "fine");
-    expect(matchesOrder(single, [wrongDecoration], null)).toBe(false);
-    expect(matchesOrder(single, [wrongDecoration], wrongDecoration.id)).toBe(true);
-    const wrongGlaze = { ...wrongDecoration, id: "wrong-glaze", glaze: "white" as const };
-    expect(matchesOrder(single, [wrongGlaze], wrongGlaze.id)).toBe(false);
+    expect(matchesOrder(single, [wrongDecoration])).toBe(false);
+    const rightDecoration = ceramic("right", "censer", "grey_green", "impressed", "fine");
+    expect(matchesOrder(single, [rightDecoration])).toBe(true);
 
     const relational = ORDER_DEFINITIONS["O39"]!;
-    const waived = ceramic("waived", "vase", "celadon", "carved", "fine");
+    const wrongPair = ceramic("wrong", "vase", "celadon", "carved", "fine");
     const remaining = ceramic("remaining", "censer", "moon_white", "crackle", "fine");
-    expect(matchesOrder(relational, [waived, remaining], null)).toBe(false);
-    expect(matchesOrder(relational, [waived, remaining], waived.id)).toBe(true);
+    expect(matchesOrder(relational, [wrongPair, remaining])).toBe(false);
+    const rightPair = ceramic("right-pair", "vase", "celadon", "plain", "fine");
+    expect(matchesOrder(relational, [rightPair, remaining])).toBe(true);
   });
 
-  it("gives Guan 2 Coins on a Crown Order and Ru 4 VP once per round on any qualifying Order", () => {
+  it("gives Guan 2 Coins and 1 VP on a Crown Order, and Ru 4 VP once per round", () => {
     const { state: initial, rng } = startedGame(2, 1504);
     let state = structuredClone(initial);
     state.players["P1"]!.kilnId = "GU";
     state.players["P1"]!.resources.coins = 0;
     state.marketDisplay = ["O17"];
-    const guanCeramic = addFinished(state, "P1", "washer", "fine", "white", "carved");
+    // O17 is Brush Washer / White / Crackle: with the waiver gone it must match exactly.
+    const guanCeramic = addFinished(state, "P1", "washer", "fine", "white", "crackle");
     openOrderTurn(state);
     state = mustApply(state, "P1", {
-      type: "COMPLETE_ORDER", orderId: "O17", ceramicIds: [guanCeramic.id], useGuanWaiver: true,
-      guanWaiverCeramicId: guanCeramic.id,
+      type: "COMPLETE_ORDER", orderId: "O17", ceramicIds: [guanCeramic.id],
     }, rng);
     expect(state.players["P1"]!.resources.coins).toBe(4);
+    expect(state.players["P1"]!.score.kilnTraditionVp).toBe(1);
     expect(state.players["P1"]!.kilnAbilityUsedThisRound).toBe(true);
 
     state = structuredClone(initial);
@@ -184,12 +188,12 @@ describe("V1.2.2 Orders, Recognition, and scoring", () => {
     state.marketDisplay = ["O01", "O02"];
     const ruOne = addFinished(state, "P1", "bowl", "masterpiece", "celadon", "plain");
     openOrderTurn(state);
-    state = mustApply(state, "P1", { type: "COMPLETE_ORDER", orderId: "O01", ceramicIds: [ruOne.id], useGuanWaiver: false }, rng);
+    state = mustApply(state, "P1", { type: "COMPLETE_ORDER", orderId: "O01", ceramicIds: [ruOne.id] }, rng);
     expect(state.players["P1"]!.score.kilnTraditionVp).toBe(4);
     const ruTwo = addFinished(state, "P1", "plate", "masterpiece", "celadon", "plain");
     state.marketDisplay = ["O02"];
     openOrderTurn(state);
-    state = mustApply(state, "P1", { type: "COMPLETE_ORDER", orderId: "O02", ceramicIds: [ruTwo.id], useGuanWaiver: false }, rng);
+    state = mustApply(state, "P1", { type: "COMPLETE_ORDER", orderId: "O02", ceramicIds: [ruTwo.id] }, rng);
     expect(state.players["P1"]!.score.kilnTraditionVp).toBe(4);
   });
 
@@ -208,7 +212,7 @@ describe("V1.2.2 Orders, Recognition, and scoring", () => {
     openOrderTurn(state);
     const result = mustResult(state, "P1", {
       type: "COMPLETE_ORDER", orderId: "O47", ceramicIds: ceramics.map(({ id }) => id),
-      useGuanWaiver: false, imperialGrantChoice: "resources",
+      imperialGrantChoice: "resources",
     }, rng);
     state = result.state;
     expect(state.players["P1"]!.imperialRecognition).toBe(4);
@@ -235,7 +239,7 @@ describe("V1.2.2 Orders, Recognition, and scoring", () => {
     const audienceCeramic = addFinished(state, "P1", "washer", "fine", "white", "crackle");
     openOrderTurn(state);
     const audience = mustResult(state, "P1", {
-      type: "COMPLETE_ORDER", orderId: "O17", ceramicIds: [audienceCeramic.id], useGuanWaiver: false,
+      type: "COMPLETE_ORDER", orderId: "O17", ceramicIds: [audienceCeramic.id],
     }, rng);
     state = audience.state;
     expect(state.players["P1"]!.imperialRecognition).toBe(5);
@@ -265,10 +269,11 @@ describe("V1.2.2 Orders, Recognition, and scoring", () => {
     expect(score).toEqual({
       orders: 10,
       imperialAudience: 6,
-      presentation: 14,
+      // Standard 2 + Fine 3 + Masterpiece 5, then V1.2.4's +3 Shapes and +3 Glazes.
+      presentation: 16,
       immediateAbilities: 4,
       leftoverCoins: 5,
-      total: 39,
+      total: 41,
     });
   });
 
@@ -281,8 +286,8 @@ describe("V1.2.2 Orders, Recognition, and scoring", () => {
     expect(calculateFinalResult(state)).toEqual(expect.objectContaining({ winnerIds: ["P1"], resolvedBy: "imperial_recognition" }));
 
     state = structuredClone(initial);
-    state.players["P1"]!.completedOrders = [{ orderId: "O47", ceramicIds: [], completedInRound: 1, vpAwarded: 0, coinsAwarded: 0, usedGuanWaiver: false }];
-    state.players["P2"]!.completedOrders = [{ orderId: "O17", ceramicIds: [], completedInRound: 1, vpAwarded: 0, coinsAwarded: 0, usedGuanWaiver: false }];
+    state.players["P1"]!.completedOrders = [{ orderId: "O47", ceramicIds: [], completedInRound: 1, vpAwarded: 0, coinsAwarded: 0 }];
+    state.players["P2"]!.completedOrders = [{ orderId: "O17", ceramicIds: [], completedInRound: 1, vpAwarded: 0, coinsAwarded: 0 }];
     expect(calculateFinalResult(state)).toEqual(expect.objectContaining({ winnerIds: ["P1"], resolvedBy: "completed_crowns" }));
 
     state = structuredClone(initial);

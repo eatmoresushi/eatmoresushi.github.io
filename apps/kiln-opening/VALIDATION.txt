@@ -1,4 +1,4 @@
-V1.2.2 HANDOFF VALIDATION PASSED
+V1.2.4 HANDOFF VALIDATION PASSED
 Rules/data: 2-4 players, 5 rounds, 1 Shifu + 3 Apprentices, seven current locations.
 Orders: 16 Starting + 48 Main; five-card market rotates its three leftmost cards.
 Tech: 4 Starting + 15 Advanced; Fuel Ledger and Second Firing match owner rulings.

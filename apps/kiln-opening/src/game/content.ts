@@ -23,7 +23,7 @@ import type {
 } from "./types.ts";
 
 interface GameConfigDefinition {
-  rulesVersion: "1.2.2";
+  rulesVersion: "1.2.4";
   players: { min: number; max: number };
   rounds: number;
   startingResources: { clay: number; wood: number; coins: number };
@@ -78,8 +78,8 @@ export interface OrderDefinition {
   vp: number;
   coins: number;
   crowns: 0 | 1 | 2 | 3;
-  commission: string;
-  commissionZh: string;
+  requirements: string;
+  requirementsZh: string;
 }
 
 export type OrderRelationDefinition =
@@ -128,7 +128,7 @@ export interface ContributionCardDefinition {
 }
 
 interface FiringDefinition {
-  rulesVersion: "1.2.2";
+  rulesVersion: "1.2.4";
   kilnSpaces: Array<{ id: KilnSpaceId; zone: "high" | "middle" | "low"; modifier: -1 | 0 | 1 }>;
   fireDeck: FireModifier[];
   contributionCards: ContributionCardDefinition[];
@@ -152,22 +152,22 @@ export interface KilnDefinition {
 
 export const GAME_CONFIG = gameConfigJson as unknown as GameConfigDefinition;
 const ACTION_LOCATION_FILE = actionLocationsJson as unknown as {
-  rulesVersion: "1.2.2";
+  rulesVersion: "1.2.4";
   locations: LocationDefinition[];
 };
 const ORDER_FILE = ordersJson as unknown as {
-  rulesVersion: "1.2.2";
+  rulesVersion: "1.2.4";
   starting: OrderDefinition[];
   main: OrderDefinition[];
 };
 const TECHNIQUE_FILE = techniquesJson as unknown as {
-  rulesVersion: "1.2.2";
+  rulesVersion: "1.2.4";
   starting: StartingTechniqueDefinition[];
   advanced: TechniqueDefinition[];
 };
 const FIRING_FILE = firingJson as unknown as FiringDefinition;
 const COMPONENT_FILE = componentsJson as unknown as {
-  rulesVersion: "1.2.2";
+  rulesVersion: "1.2.4";
   components: ComponentDefinition[];
 };
 
@@ -218,7 +218,7 @@ export const SHAPE_COSTS = GAME_CONFIG.shapes;
 export const DECORATION_COSTS = GAME_CONFIG.decorations;
 
 export interface ImperialProgressDefinition {
-  rulesVersion: "1.2.2";
+  rulesVersion: "1.2.4";
   track: Array<{
     space: number;
     title: string;
@@ -281,11 +281,11 @@ export const COMMON_SUPPLY = {
 
 function validateContent(): void {
   if (
-    GAME_CONFIG.rulesVersion !== "1.2.2" ||
-    ACTION_LOCATION_FILE.rulesVersion !== "1.2.2" ||
-    FIRING_FILE.rulesVersion !== "1.2.2" ||
-    COMPONENT_FILE.rulesVersion !== "1.2.2" ||
-    IMPERIAL_PROGRESS.rulesVersion !== "1.2.2"
+    GAME_CONFIG.rulesVersion !== "1.2.4" ||
+    ACTION_LOCATION_FILE.rulesVersion !== "1.2.4" ||
+    FIRING_FILE.rulesVersion !== "1.2.4" ||
+    COMPONENT_FILE.rulesVersion !== "1.2.4" ||
+    IMPERIAL_PROGRESS.rulesVersion !== "1.2.4"
   ) {
     throw new Error("Rules content version mismatch");
   }
@@ -295,7 +295,7 @@ function validateContent(): void {
     new Set(LOCATION_IDS).size !== 7 ||
     LOCATION_IDS.some((locationId) => !actualLocationIds.has(locationId))
   ) {
-    throw new Error("Expected exactly seven V1.2.2 action locations");
+    throw new Error("Expected exactly seven V1.2.4 action locations");
   }
   if (MAIN_ORDERS.length !== 48 || STARTING_ORDERS.length !== 16) {
     throw new Error("Order deck size mismatch");
@@ -328,7 +328,7 @@ validateContent();
 export const ACTION_LOCATION_PRICES = {
   labourApprenticeCoins: 2,
   labourShifuCoins: 4,
-  /** Coins Workshop Seconds pays for a discarded Flawed ceramic (V1.2.2 firing step 11). */
+  /** Coins the V1.2.4 firing step-10 discard pays for a ceramic still Flawed from this firing. */
   workshopSecondsCoins: 2,
 } as const;
 
@@ -338,4 +338,15 @@ export const ACTION_LOCATION_PRICES = {
  * because nothing named the number, so nothing could compare it to the text.
  */
 export const COLOUR_SAMPLES_LOOK = 3;
+
+/**
+ * Coins Measuring Calipers and Standardised Moulds each pay.
+ *
+ * V1.2.4 doubled both from 1 Coin. They were inline `1`s in `applyFormCeramics`, which is
+ * how a repricing reaches the card text and misses the handler.
+ */
+export const FORMING_TECH_COINS = 2;
+
+/** Techs a V1.2.4 Guild Shifu draws off the chosen discipline to inspect. */
+export const GUILD_SHIFU_INSPECT = 2;
 

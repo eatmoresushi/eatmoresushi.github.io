@@ -9,6 +9,7 @@ import type { FormEvent, ReactNode } from "react";
 import {
   DECORATIONS,
   DECORATION_COSTS,
+  DISCIPLINES,
   GAME_CONFIG,
   GLAZES,
   IMPERIAL_PROGRESS,
@@ -38,6 +39,7 @@ import type {
   PlayerId,
   Shape,
   StartingTechniqueId,
+  TechniqueDiscipline,
   TechniqueId,
   WorkerId,
 } from "../game";
@@ -140,7 +142,7 @@ function PhaseControls(props: Omit<ActionPanelProps, "ownPlayerId"> & {
     case "work_commission_advance":
       return <CommissionAdvanceControls busy={busy} send={send} />;
     case "work_guild":
-      return <GuildControls game={game} player={player} busy={busy} send={send} />;
+      return <GuildControls game={game} player={player} privateDecision={ownPrivateDecision} busy={busy} send={send} />;
     case "firing_before_contribution":
       if (phase.techniqueIds[phase.queue.currentIndex] === "T13") {
         return <BinaryDecision title="Test Pieces" hint="Pay 1 Wood to privately look at the top Fire card, then return it to the top of the deck." action="RESOLVE_TEST_PIECES" busy={busy} send={send} />;
@@ -208,7 +210,7 @@ function CommissionAdvanceControls({ busy, send }: { busy: boolean; send: SendCo
   const { locale, t } = useI18n();
   return (
     <ControlSection
-      title="Commission advance"
+      title="Reservation advance"
       hint={locale === "zh-CN" ? "预留订单后，选择获得1黏土、1柴薪或1铜钱。师傅本次行动也只获得1份预付款。" : "After reserving Orders, gain 1 Clay, 1 Wood, or 1 Coin. A Shifu gains only one advance for the action."}
     >
       <div className="button-row">
@@ -735,8 +737,8 @@ function OfficeActionForms({ game, player, workers, locationFull, busy, send }: 
   }
   return (
     <form className="control-form" onSubmit={submit}>
-      <p className="control-hint"><strong>{t("Apprentice:")}</strong> {locale === "zh-CN" ? "预留1张正面主订单，立即补牌，然后获得1份委托预付款。" : "Reserve 1 face-up Main Order, refill immediately, then gain one commission advance."}</p>
-      <p className="control-hint"><strong>{t("Shifu:")}</strong> {locale === "zh-CN" ? "预留至多2张正面主订单，每次立即补牌；本次行动总共获得1份预付款。" : "Reserve up to 2 face-up Main Orders, refilling after each; gain one advance total."}</p>
+      <p className="control-hint"><strong>{t("Apprentice:")}</strong> {locale === "zh-CN" ? "预留1张主订单：可取1张正面订单（立即补牌），或不看牌面直接取牌堆顶。然后获得1份预留预付款。" : "Reserve 1 Main Order: either a face-up Order, refilling immediately, or the top card of the deck without looking. Then gain one reservation advance."}</p>
+      <p className="control-hint"><strong>{t("Shifu:")}</strong> {locale === "zh-CN" ? "预留至多2张主订单，每次预留分别结算；本次行动总共获得1份预留预付款。" : "Reserve up to 2 Main Orders, resolving each reservation separately; gain one reservation advance total."}</p>
       <WorkerChoice workers={workers} value={selectedWorker?.id ?? ""} onChange={setWorkerId} />
       <EnumChoice name="officeAction" label="Office action" options={orderModes} value={action} onChange={(value) => setOfficeAction(value as OfficeActionChoice)} formatOption={(value) => officeActionLabel(value as OfficeActionChoice, locale)} />
       <small role="status" className={error === null ? "" : "control-error"}>{error === null ? officeActionHint(action, selectedWorker?.kind, locale) : localizeActionError(locale, error)}</small>
@@ -811,14 +813,19 @@ function OfficeControls({ game, player, privateDecision, busy, send }: Pick<Acti
     <ControlSection title="Choose an Order" hint={locale === "zh-CN" ? `还可拿取${phase.remainingTakes}张订单。本轮拿取订单不受手牌上限限制；整备时弃至上限。` : `${phase.remainingTakes} acquisition${phase.remainingTakes === 1 ? "" : "s"} remaining. There is no hand limit during the round; discard to your limit during Cleanup.`}>
       <h4>{t("Face-up Orders")}</h4>
       <div className="choice-stack playtest-command-grid">{display.map((orderId) => <PieceCommandButton key={orderId} busy={busy} label={locale === "zh-CN" ? `拿取正面订单${orderId}` : `Take face-up ${orderId}`} onClick={() => send({ type: "OFFICE_TAKE_ORDER", orderId })}><OrderCard orderId={orderId} /></PieceCommandButton>)}</div>
-      {phase.mode === "take_up_to_two" && <CommandButton busy={busy} send={send} command={{ type: "OFFICE_END_ORDERS" }} secondary>Finish reserving</CommandButton>}
+      <h4>{t("Main Order deck")}</h4>
+      <CommandButton busy={busy} send={send} command={{ type: "OFFICE_TAKE_TOP_ORDER" }} secondary>{locale === "zh-CN" ? "盲抽牌堆顶主订单" : "Reserve the top Main Order unseen"}</CommandButton>
+      {phase.mode === "take_up_to_two" && phase.ordersTaken > 0 && <CommandButton busy={busy} send={send} command={{ type: "OFFICE_END_ORDERS" }} secondary>Finish reserving</CommandButton>}
     </ControlSection>
   );
 }
 
-function GuildControls({ game, player, busy, send }: {
+const DISCIPLINE_LABELS_ZH: Record<TechniqueDiscipline, string> = { forming: "成型", glazing: "施釉", firing: "烧成" };
+
+function GuildControls({ game, player, privateDecision, busy, send }: {
   game: PublicGameState;
   player: PublicPlayerState;
+  privateDecision?: PrivateDecisionState | undefined;
   busy: boolean;
   send: SendCommand;
 }) {
@@ -826,12 +833,15 @@ function GuildControls({ game, player, busy, send }: {
   const [firstUnlock, setFirstUnlock] = useState<"potters_wheel" | "glaze_decoration">("potters_wheel");
   if (game.phase.type !== "work_guild") return null;
   const worker = player.workers[game.phase.workerId];
-  const ids = Object.values(game.displays.techniques).flat();
-  if (game.phase.step === "refresh_or_skip") {
+  const ids = [...Object.values(game.displays.techniques).flat(), ...(privateDecision?.guildInspectedTechniqueIds ?? [])];
+  if (game.phase.step === "inspect") {
     return (
-      <ControlSection title="Shifu refresh" hint="Choose a discipline by selecting one of its tiles. Put both face-up Techs from that discipline on the bottom, refill it to two, then buy from that discipline.">
-        <div className="choice-stack playtest-command-grid technique-commands">{ids.map((techniqueId) => { const technique = TECHNIQUE_DEFINITIONS[techniqueId]; return <PieceCommandButton key={techniqueId} busy={busy} label={locale === "zh-CN" ? `替换${techniqueId} · ${technique?.nameZh ?? t("Unknown Technique")}` : `Replace ${techniqueId} · ${technique?.name ?? "Unknown Technique"}`} onClick={() => send({ type: "GUILD_REFRESH_TECHNIQUE", techniqueId })}><TechniqueSummary techniqueId={techniqueId} /></PieceCommandButton>; })}</div>
-        <CommandButton busy={busy} send={send} command={{ type: "GUILD_SKIP_REFRESH" }} secondary>Keep the display</CommandButton>
+      <ControlSection title="Shifu inspection" hint="Choose a discipline. You look at the top 2 Techs of its deck, then buy either one of those or any face-up Tech for 1 Coin less.">
+        <div className="choice-stack playtest-command-grid">{(DISCIPLINES as readonly TechniqueDiscipline[]).map((discipline) => (
+          <PieceCommandButton key={discipline} busy={busy} label={locale === "zh-CN" ? `查看${DISCIPLINE_LABELS_ZH[discipline]}牌堆顶2张` : `Inspect the top 2 ${discipline} Techs`} onClick={() => send({ type: "GUILD_INSPECT_DISCIPLINE", discipline })}>
+            <span>{locale === "zh-CN" ? DISCIPLINE_LABELS_ZH[discipline] : discipline}</span>
+          </PieceCommandButton>
+        ))}</div>
       </ControlSection>
     );
   }
@@ -1010,7 +1020,7 @@ function WorkshopSecondsControls({ game, player, busy, send }: {
   const flawed = ownCeramics(game, player.id, "loaded").filter(
     (ceramic) => game.firingContext?.ceramicResults[ceramic.id]?.assignedQuality === "flawed",
   );
-  return <CeramicDecision title="Workshop Seconds" hint="After all after-Quality abilities, you may discard 1 remaining Flawed ceramic to gain 2 Coins, or keep it." ceramics={flawed} busy={busy} send={send} make={(ceramicId) => ({ type: "RESOLVE_WORKSHOP_SECONDS", ceramicId })} skip={{ type: "RESOLVE_WORKSHOP_SECONDS", ceramicId: null }} />;
+  return <CeramicDecision title="Flawed salvage" hint="After all after-Quality abilities, you may discard 1 ceramic still Flawed from this firing to gain 2 Coins, or keep it." ceramics={flawed} busy={busy} send={send} make={(ceramicId) => ({ type: "RESOLVE_WORKSHOP_SECONDS", ceramicId })} skip={{ type: "RESOLVE_WORKSHOP_SECONDS", ceramicId: null }} />;
 }
 
 function OrderControls({ game, player, busy, send }: {
@@ -1025,17 +1035,16 @@ function OrderControls({ game, player, busy, send }: {
   return (
     <ControlSection title="Complete an Order" hint="On this opportunity, complete at most one held Order or one of the five face-up Main Orders, or pass. The Order Phase continues in reverse order until a full circuit has no completion.">
       {availableOrders.length === 0 ? <p>{t("No open Orders.")}</p> : availableOrders.map((orderId) => (
-        <OrderCompletion key={orderId} orderId={orderId} ceramics={ceramics} guan={player.kilnId === "GU" && !player.kilnAbilityUsedThisRound} recognition={player.imperialRecognition} busy={busy} send={send} />
+        <OrderCompletion key={orderId} orderId={orderId} ceramics={ceramics} recognition={player.imperialRecognition} busy={busy} send={send} />
       ))}
       <CommandButton busy={busy} send={send} command={{ type: "END_ORDER_TURN" }} secondary>Pass this Order opportunity</CommandButton>
     </ControlSection>
   );
 }
 
-function OrderCompletion({ orderId, ceramics, guan, recognition, busy, send }: {
+function OrderCompletion({ orderId, ceramics, recognition, busy, send }: {
   orderId: string;
   ceramics: ReturnType<typeof ownCeramics>;
-  guan: boolean;
   recognition: 0 | 1 | 2 | 3 | 4 | 5;
   busy: boolean;
   send: SendCommand;
@@ -1043,15 +1052,11 @@ function OrderCompletion({ orderId, ceramics, guan, recognition, busy, send }: {
   const { locale, t } = useI18n();
   const definition = ORDER_DEFINITIONS[orderId];
   const [selected, setSelected] = useState<string[]>([]);
-  const [useWaiver, setUseWaiver] = useState(false);
-  const [guanWaiverCeramicId, setGuanWaiverCeramicId] = useState("");
   const [grantChoice, setGrantChoice] = useState<"coins" | "resources">("coins");
   const selectedCeramics = selected
     .map((ceramicId) => ceramics.find((ceramic) => ceramic.id === ceramicId))
     .filter((ceramic): ceramic is FinishedCeramic => ceramic?.stage === "finished");
-  const crownOrder = (definition?.crowns ?? 0) > 0;
-  const waiverTarget = useWaiver ? (selected.includes(guanWaiverCeramicId) ? guanWaiverCeramicId : selected[0] ?? null) : null;
-  const matches = definition !== undefined && matchesOrder(definition, selectedCeramics, waiverTarget);
+  const matches = definition !== undefined && matchesOrder(definition, selectedCeramics);
   const requiredCount = definition?.ceramics.length ?? 0;
   const crossesGrant = definition !== undefined && recognition < 2 && recognition + definition.crowns >= 2;
   const selectionStatus = locale === "zh-CN"
@@ -1075,8 +1080,6 @@ function OrderCompletion({ orderId, ceramics, guan, recognition, busy, send }: {
       <fieldset><legend>{t("Deliver ceramics")}</legend>{ceramics.map((ceramic) => (
         <label className="check-row" key={ceramic.id}><input type="checkbox" checked={selected.includes(ceramic.id)} onChange={(event) => setSelected((current) => event.target.checked ? [...current, ceramic.id] : current.filter((id) => id !== ceramic.id))} />{ceramicLabel(ceramic, locale)}</label>
       ))}</fieldset>
-      <label className={`check-row ${guan && crownOrder ? "" : "is-hidden"}`}><input type="checkbox" name={`guan-${orderId}`} checked={useWaiver} onChange={(event) => setUseWaiver(event.target.checked)} /> {t("Use Guan Decoration waiver")}</label>
-      {guan && crownOrder && useWaiver && <label>{locale === "zh-CN" ? "官窑：忽略哪件陶瓷的装饰要求" : "Guan: ceramic that ignores Decoration requirements"}<select value={waiverTarget ?? ""} onChange={(event) => setGuanWaiverCeramicId(event.target.value)}>{selected.map((ceramicId) => <option key={ceramicId} value={ceramicId}>{ceramicId}</option>)}</select></label>}
       {crossesGrant && <label>{locale === "zh-CN" ? "御赐资助奖励" : "Imperial Grant reward"}<select value={grantChoice} onChange={(event) => setGrantChoice(event.target.value as "coins" | "resources")}><option value="coins">{locale === "zh-CN" ? "3铜钱" : "3 Coins"}</option><option value="resources">{locale === "zh-CN" ? "1黏土 + 1柴薪 + 1铜钱" : "1 Clay + 1 Wood + 1 Coin"}</option></select></label>}
       <p className={matches ? "selection-valid" : "control-hint"} role="status">{selectionStatus}</p>
       <button
@@ -1084,7 +1087,7 @@ function OrderCompletion({ orderId, ceramics, guan, recognition, busy, send }: {
         type="button"
         disabled={busy || !matches}
         onClick={() => {
-          void send({ type: "COMPLETE_ORDER", orderId, ceramicIds: selected, useGuanWaiver: useWaiver, ...(waiverTarget === null ? {} : { guanWaiverCeramicId: waiverTarget }), ...(crossesGrant ? { imperialGrantChoice: grantChoice } : {}) });
+          void send({ type: "COMPLETE_ORDER", orderId, ceramicIds: selected, ...(crossesGrant ? { imperialGrantChoice: grantChoice } : {}) });
         }}
       >{locale === "zh-CN" ? `完成${orderId}` : `Complete ${orderId}`}</button>
     </article>

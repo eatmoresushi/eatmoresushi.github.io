@@ -26,7 +26,7 @@ import type {
 
 export type RoomStatus = "lobby" | "playing" | "finished" | "abandoned";
 export type StoredRulesVersion = "0.4" | "0.5" | "0.6.1" | "0.6.3" | "0.6.5" | "1.0.0" | "1.0.1" | "1.0.2" | "1.0.4" | "1.0.9" | "1.1.1" | "1.1.4" | "1.1.5"
-  | "1.1.6" | "1.2.2";
+  | "1.1.6" | "1.2.2" | "1.2.4";
 
 export interface PublicRoom {
   id: string;
@@ -48,7 +48,7 @@ export interface PublicSeat {
   colour: string;
   isHost: boolean;
   isComputer: boolean;
-  aiPolicyVersion: "selfplay-003" | "rules-v1.1.1-wood-001" | "rules-v1.1.4-contribution-001" | "rules-v1.1.5-order-001" | "rules-v1.2.2-heuristic-001" | null;
+  aiPolicyVersion: "selfplay-003" | "rules-v1.1.1-wood-001" | "rules-v1.1.4-contribution-001" | "rules-v1.1.5-order-001" | "rules-v1.2.2-heuristic-001" | "rules-v1.2.4-heuristic-001" | null;
 }
 
 export interface PublicPlayerState {
@@ -95,7 +95,7 @@ export interface PublicDiscards {
 
 export interface PublicGameState {
   schemaVersion: 2;
-  rulesVersion: "1.2.2";
+  rulesVersion: "1.2.4";
   gameId: string;
   revision: number;
   eventSequence: number;
@@ -123,7 +123,7 @@ export type PublicGameEvent =
       type: "COLOUR_SAMPLES_USED";
       playerId: PlayerId;
       deck: "market" | "imperial";
-      bottomedCount: number;
+      discardedCount: number;
       selectedOrderId?: OrderId;
     };
 
@@ -147,6 +147,8 @@ export interface PendingContribution {
 export interface PrivateDecisionState {
   startingOrderIds: OrderId[];
   colourSamplesOrderIds: OrderId[];
+  /** V1.2.4 Guild Shifu: the Techs this player drew off a discipline to inspect. */
+  guildInspectedTechniqueIds: TechniqueId[];
   fireModifierPeek: FireModifier | null;
 }
 
