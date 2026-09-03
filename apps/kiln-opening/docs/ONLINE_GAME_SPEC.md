@@ -46,7 +46,7 @@ Host starts only with 2–4 players.
 
 The host may add or remove computer seats while the room is in the lobby. A room must retain at least one human seat and may contain up to three computer players, for the normal four-seat maximum.
 
-Computer seats use the current production policy through the V1.2.2 authoritative engine, with no live exploration or learning. Historical calibration labels remain honest and are not claims of V1.2.2 calibration. Each seat has a private persistent seed and stable player/seat identity. The browser never chooses an AI command: an authenticated client only asks the Edge Function to advance, and the server derives the active computer, enumerates legal commands, applies the selected command through the authoritative engine, and commits it with the same revision checks as a human command.
+Computer seats use the current production policy through the V1.2.4 authoritative engine, with no live exploration or learning. Historical calibration labels remain honest and are not claims of V1.2.4 calibration. Each seat has a private persistent seed and stable player/seat identity. The browser never chooses an AI command: an authenticated client only asks the Edge Function to advance, and the server derives the active computer, enumerates legal commands, applies the selected command through the authoritative engine, and commits it with the same revision checks as a human command.
 
 Consecutive computer turns run in bounded batches so an Edge Function invocation cannot monopolize the session. Concurrent advance requests are safe; compare-and-swap persistence accepts each revision only once. Contribution-card choices remain private in the server-only schema until the normal simultaneous reveal, including when computers contribute.
 
@@ -77,18 +77,18 @@ Players cannot submit actions out of turn except special simultaneous/timing-win
 
 Firing is the most important digital interaction.
 
+0. at the **end of the Work Phase**, before any Firing Phase ability, offer each eligible Kiln Yard Shifu one Shared-Kiln reposition decision in First-Player order. A ceramic may move only between empty active Shared Kiln spaces, never into or out of an Imperial Kiln, and a Kiln Furniture tile travels with it;
 1. show the final Shared- and Imperial-Kiln layout;
 2. resolve private Test Pieces choices before Contributions;
 3. eligible players privately submit Bank, Tend or Stoke; an affordable Fuel Ledger owner may instead submit Bank −2 or Stoke +2 with the extra Wood committed secretly;
 4. UI shows only submission status, never card values, the extra commitment or derived heat;
 5. once all eligible players submit, the server atomically reveals and pays all Contributions, calculates Base Heat from 2, then clamps it to 0–5;
-6. offer each eligible Kiln Yard Shifu one Shared-Kiln reposition decision in First-Player order;
-7. reveal the Fire card, reshuffling the discard first if needed;
-8. calculate Actual Heat and resolve Jun/Ge adjustments;
-9. assign Quality;
-10. resolve Protective Saggars and immediate Second Firing choices in First-Player order;
-11. move remaining ceramics to Finished areas, empty all kiln spaces and discard used Fire cards;
-12. resolve Workshop Seconds: each player may discard at most one remaining Flawed ceramic for 2 Coins.
+6. reveal the Fire card, reshuffling the discard first if needed;
+7. calculate Actual Heat and resolve Jun/Ge adjustments;
+8. assign Quality;
+9. resolve Protective Saggars and immediate Second Firing choices in First-Player order;
+10. resolve the Flawed salvage: each player may discard at most one ceramic still Flawed from this firing for 2 Coins, returning its Vessel card to the matching Shape supply;
+11. move remaining ceramics to Finished areas, empty all kiln spaces, return Kiln Furniture tiles and discard used Fire cards.
 
 ## No timers in MVP
 

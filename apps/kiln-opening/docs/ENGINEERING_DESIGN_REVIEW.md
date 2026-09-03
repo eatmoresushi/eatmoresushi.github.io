@@ -2,7 +2,7 @@
 
 > **Historical archive only.** This review records the V0.6.3 engine-design checkpoint and
 > must not be used as a current rules source. The sole current source is
-> `docs/KILN_OPENING_v1.1.6_SOURCE.md`; current implementation rulings are in
+> `docs/KILN_OPENING_v1.2.4_SOURCE.md`; current implementation rulings are in
 > `docs/IMPLEMENTATION_DECISIONS.md`.
 
 ## Scope and authority

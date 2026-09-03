@@ -14,7 +14,7 @@ import { startedGame } from "./helpers.ts";
 /**
  * Switching language must change only what is drawn, never what is true.
  *
- * The pre-V1.2.2 version of this suite asserted `court_patronage` and I-prefixed Imperial
+ * The pre-V1.2.4 version of this suite asserted `court_patronage` and I-prefixed Imperial
  * Orders, so it pinned a ruleset the engine had already left. What it was actually guarding
  * -- that both locales render from one set of structural data, and that rendering mutates
  * nothing -- outlived those values, so it is the part kept here.
@@ -44,7 +44,7 @@ describe("English / Simplified Chinese localization", () => {
 
   it("gives every Order, Technique and location Chinese text as well as English", () => {
     for (const order of [...MAIN_ORDERS, ...STARTING_ORDERS]) {
-      expect(order.commissionZh.length, order.id).toBeGreaterThan(0);
+      expect(order.requirementsZh.length, order.id).toBeGreaterThan(0);
     }
     for (const technique of Object.values(TECHNIQUE_DEFINITIONS)) {
       expect(technique.nameZh.length, technique.id).toBeGreaterThan(0);
@@ -66,7 +66,7 @@ describe("English / Simplified Chinese localization", () => {
       expect(english).toContain(orderId);
       expect(chinese).toContain(orderId);
     }
-    // A Crown Order carries its Crowns in both locales; Crowns are the V1.2.2 Imperial marker.
+    // A Crown Order carries its Crowns in both locales; Crowns are the V1.2.4 Imperial marker.
     expect(localizedMarkup("en", createElement(OrderCard, { orderId: CROWN_ORDER }))).toContain("👑");
     expect(localizedMarkup("zh-CN", createElement(OrderCard, { orderId: CROWN_ORDER }))).toContain("👑");
     expect(localizedMarkup("en", createElement(OrderCard, { orderId: MASTERPIECE_ORDER }))).toContain("Masterpiece");

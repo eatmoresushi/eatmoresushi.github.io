@@ -4,7 +4,7 @@ Board-game rules versions and AI experiment versions are independent. Historical
 
 | AI lineage | Rules evidence | Status | Current use |
 |---|---|---|---|
-| Rules-V1.2.2-Heuristic-001 | V1.2.2 deterministic legal-play coverage | current online policy | Online AI and 2/3/4-player full-game regression coverage |
+| Rules-V1.2.4-Heuristic-001 | V1.2.4 deterministic legal-play coverage | current online policy | Online AI and 2/3/4-player full-game regression coverage |
 | Selfplay-003 | trained V1.0.2; compatibility baseline V1.0.4 | frozen historical policy | Historical regression opponent and V1.0.4 baseline only |
 | Selfplay-004 | V1.0.1 | failed the positive paired-confidence gate | Historical negative result and search regression opponent |
 | Selfplay-005 | V1.0.1 | failed strength, player-count, and Order gates | Historical public-belief/oracle pipeline evidence |

@@ -55,8 +55,15 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  *  11 -- V1.2.2: unified five-card Main Order market; Starting Orders and Starting Techs;
  *        private workshop expansion; rebuilt Techs; Crown-based Imperial Recognition;
  *        Imperial Kiln/Priority; secret Fuel Ledger commitments; revised firing and scoring.
+ *  12 -- V1.2.4. Guan pays 2 Coins and 1 VP and waives no Decoration; Ding's additional
+ *        vessel is free; the Guild Shifu inspects the top 2 of one discipline instead of
+ *        refreshing it, and may buy any face-up tile; the Kiln Yard Shifu repositions at the
+ *        end of the Work Phase rather than after Base Heat; a reservation may take the top
+ *        Main Order unseen; Colour Samples is once per round and discards what it did not
+ *        reserve; Test Pieces is once per round; Measuring Calipers and Standardised Moulds
+ *        pay 2 Coins; the Exhibition diversity bonuses are +3/+3; S16 pays 4 Coins.
  */
-export const RULES_BEHAVIOUR_REVISION = 11;
+export const RULES_BEHAVIOUR_REVISION = 12;
 
 /**
  * Display-only keys, excluded so that a typo fix or a translation improvement does not

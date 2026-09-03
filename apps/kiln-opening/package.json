@@ -1,6 +1,6 @@
 {
   "name": "kiln-opening-rules-engine",
-  "version": "1.2.2",
+  "version": "1.2.4",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,10 +11,9 @@
     "typecheck:edge": "tsc -p tsconfig.edge.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "dev:local": "VITE_E2E_LOCAL_BACKEND=1 vite"
   },
   "devDependencies": {
-    "@playwright/test": "^1.62.1",
     "@types/node": "^26.1.2",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",

@@ -81,6 +81,6 @@ export function fuelLedgerHeatDelta(card: ContributionCardId): number {
  */
 export const GE_CORRECTABLE_DIFFERENCES: readonly number[] = [1];
 
-/** Jun's V1.2.2 activation price, in Wood. */
+/** Jun's activation price, in Wood. V1.2.4 keeps it at 1. */
 export const JUN_ACTIVATION_WOOD = 1;
 export const GE_ACTIVATION_WOOD = 0;

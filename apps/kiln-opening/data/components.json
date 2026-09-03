@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.2.2",
+  "rulesVersion": "1.2.4",
   "components": [
     {
       "name": "Central Action Board",
@@ -14,7 +14,7 @@
     {
       "name": "Kiln Player Boards",
       "qty": 5,
-      "notes": "Ru, Guan, Ge, Ding and Jun. Each has private Potter's Wheel and Glaze & Decoration spaces, Tech slots and an Imperial Kiln; only 2-4 are used each game."
+      "notes": "Ru, Guan, Ge, Ding and Jun. Each includes workshop Potter's Wheel and Glaze & Decoration stations, Tech slots and an Imperial Kiln area; only 2-4 are used each game."
     },
     {
       "name": "Shifu Workers",
@@ -43,8 +43,8 @@
     },
     {
       "name": "Vessel Cards",
-      "qty": 40,
-      "notes": "Eight each: Bowl, Plate, Washer, Vase and Censer."
+      "qty": 50,
+      "notes": "Ten each: Bowl, Plate, Washer, Vase and Censer. Not a hard gameplay limit; use a proxy if all ten of a Shape are in use."
     },
     {
       "name": "Main Order Cards",
@@ -98,7 +98,17 @@
     {
       "name": "Imperial Priority Tokens",
       "qty": 4,
-      "notes": "One per player colour; gained at Imperial Recognition 4 and spent for one additional Imperial Kiln load."
+      "notes": "One per player colour; begins on Recognition space 4 and is taken when that player reaches it, then spent for one additional Imperial Kiln load."
+    },
+    {
+      "name": "Imperial Kiln Tiles",
+      "qty": 4,
+      "notes": "One-space private kiln tiles; gained at 3 Imperial Recognition and placed in the owner's Imperial Kiln area."
+    },
+    {
+      "name": "Workshop Lock Markers",
+      "qty": 8,
+      "notes": "Two per player: the second Potter's Wheel and second Glaze & Decoration spaces begin locked."
     }
   ]
 }

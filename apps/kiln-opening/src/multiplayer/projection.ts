@@ -41,8 +41,8 @@ function projectPlayer(state: GameState, playerId: PlayerId): PublicPlayerState 
 }
 
 export function projectPublicGameState(state: GameState): PublicGameState {
-  if (state.schemaVersion !== 2 || state.rulesVersion !== "1.2.2") {
-    throw new Error("Only schema-2 V1.2.2 games may be projected by the current client");
+  if (state.schemaVersion !== 2 || state.rulesVersion !== "1.2.4") {
+    throw new Error("Only schema-2 V1.2.4 games may be projected by the current client");
   }
   if (state.phase.type === "firing_contributions" && state.firingContext !== null) {
     throw new Error("Unrevealed Contributions must never enter the public firing context");
@@ -67,6 +67,10 @@ export function projectPublicGameState(state: GameState): PublicGameState {
   }
   if (phase.type === "work_office_orders" && phase.step === "colour_samples_choose") {
     phase.colourSamplesChoices = [];
+  }
+  // The Guild Shifu's inspected Techs are private to that player.
+  if (phase.type === "work_guild" && phase.inspectedTechniqueIds !== undefined) {
+    phase.inspectedTechniqueIds = [];
   }
   return {
     schemaVersion: state.schemaVersion,
@@ -114,8 +118,8 @@ export function projectPublicEvent(event: GameEvent): PublicGameEvent {
       type: event.type,
       playerId: event.playerId,
       deck: event.deck,
-      bottomedCount: event.bottomedOrderIds?.length ?? 1,
-      ...(event.selectedOrderId === undefined ? {} : { selectedOrderId: event.selectedOrderId }),
+      discardedCount: event.discardedOrderIds.length,
+      selectedOrderId: event.selectedOrderId,
     };
   }
   return clone(event) as PublicGameEvent;

@@ -86,7 +86,7 @@ async function playComputerGame(playerCount: PlayerCount, seed: number): Promise
   return { state, actionCount };
 }
 
-describe("V1.2.2 online computer policy", () => {
+describe("V1.2.4 online computer policy", () => {
   for (const playerCount of [2, 3, 4] as const) {
     it(`completes a legal five-round ${playerCount}-player game`, async () => {
       const { state, actionCount } = await playComputerGame(playerCount, 1_220 + playerCount);

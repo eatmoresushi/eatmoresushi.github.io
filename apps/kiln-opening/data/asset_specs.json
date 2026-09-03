@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.2.2",
+  "rulesVersion": "1.2.4",
   "orderCards": {
     "status": "REGENERATE_FROM_DATA",
     "source": "data/orders.json",

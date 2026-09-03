@@ -135,9 +135,9 @@ export function eventDescription(event: PublicGameEvent, game: PublicGameState, 
     case "ORDER_TAKEN":
       return `${player(event.playerId)} ${event.acquisition === "colour_samples" ? "selected" : "took"} ${event.orderId} from the Main Orders${event.acquisition === "colour_samples" ? " through Colour Samples" : ""}.`;
     case "COLOUR_SAMPLES_USED":
-      return `${player(event.playerId)} used Colour Samples, took ${event.selectedOrderId ?? "an Order"}, and put ${event.bottomedCount} looked-at Order${event.bottomedCount === 1 ? "" : "s"} on the bottom.`;
-    case "TECHNIQUE_REFRESHED":
-      return `${player(event.playerId)} refreshed ${event.techniqueId} · ${TECHNIQUE_DEFINITIONS[event.techniqueId]?.name ?? "Unknown Technique"}.`;
+      return `${player(event.playerId)} used Colour Samples, reserved ${event.selectedOrderId ?? "an Order"}, and discarded ${event.discardedCount} looked-at Order${event.discardedCount === 1 ? "" : "s"}.`;
+    case "GUILD_DISCIPLINE_INSPECTED":
+      return `${player(event.playerId)} inspected the top ${event.count} ${event.discipline} Tech${event.count === 1 ? "" : "s"}.`;
     case "TECHNIQUE_ACQUIRED":
       return `${player(event.playerId)} bought ${event.techniqueId} · ${TECHNIQUE_DEFINITIONS[event.techniqueId]?.name ?? "Unknown Technique"} for ${event.cost} Coins.`;
     case "TECHNIQUE_USED":
@@ -166,7 +166,7 @@ export function eventDescription(event: PublicGameEvent, game: PublicGameState, 
     case "SECOND_FIRING_RESOLVED":
       return `${player(event.playerId)} resolved Second Firing on the ${ceramic(event.ceramicId)} ceramic with Fire ${signed(event.fireModifier)}; its replacement Quality is ${label(event.quality)}.`;
     case "WORKSHOP_SECONDS_SOLD":
-      return `${player(event.playerId)} discarded a Flawed ${ceramic(event.ceramicId)} as Workshop Seconds and gained ${event.coins} Coins.`;
+      return `${player(event.playerId)} discarded a still-Flawed ${ceramic(event.ceramicId)} to gain ${event.coins} Coins.`;
     case "FIRING_RESOLVED":
       return `${ceramic(event.ceramicId)} ceramic firing recorded: Fire ${signed(event.fireModifier)}, natural Heat ${event.naturalActualHeat} (difference ${event.naturalHeatDifference}, ${label(event.naturalQuality)}), final Heat ${event.finalActualHeat} (difference ${event.finalHeatDifference}, ${label(event.finalQuality)}).`;
     case "ORDER_COMPLETED": {
@@ -215,8 +215,8 @@ function eventDescriptionZh(event: PublicGameEvent, game: PublicGameState): stri
     case "CERAMIC_GLAZED": return `${player(event.playerId)}为${ceramic(event.ceramicId)}施釉：${term("zh-CN", event.glaze)}、${term("zh-CN", event.decoration)}。`;
     case "CERAMIC_LOADED": return `${player(event.playerId)}将${ceramic(event.ceramicId)}放入${term("zh-CN", event.kilnSpaceId)}。`;
     case "ORDER_TAKEN": return `${player(event.playerId)}${event.acquisition === "colour_samples" ? "通过釉色样本选择" : "拿取"}了主订单${event.orderId}。`;
-    case "COLOUR_SAMPLES_USED": return `${player(event.playerId)}使用釉色样本，拿取${event.selectedOrderId ?? "1张订单"}，并将${event.bottomedCount}张已查看牌置于牌堆底。`;
-    case "TECHNIQUE_REFRESHED": return `${player(event.playerId)}刷新了${event.techniqueId} · ${TECHNIQUE_DEFINITIONS[event.techniqueId]?.nameZh ?? "未知技术"}。`;
+    case "COLOUR_SAMPLES_USED": return `${player(event.playerId)}使用釉色样本，预留${event.selectedOrderId ?? "1张订单"}，并弃掉${event.discardedCount}张已查看牌。`;
+    case "GUILD_DISCIPLINE_INSPECTED": return `${player(event.playerId)}查看了${DISCIPLINE_ZH[event.discipline]}牌堆顶${event.count}个技术。`;
     case "TECHNIQUE_ACQUIRED": return `${player(event.playerId)}以${event.cost}铜钱购买${event.techniqueId} · ${TECHNIQUE_DEFINITIONS[event.techniqueId]?.nameZh ?? "未知技术"}。`;
     case "TECHNIQUE_USED": return `${player(event.playerId)}使用${event.techniqueId} · ${TECHNIQUE_DEFINITIONS[event.techniqueId]?.nameZh ?? "未知技术"}。`;
     case "KILN_ABILITY_USED": return `${player(event.playerId)}使用${KILN_DEFINITIONS[event.kilnId].nameZh}：${KILN_DEFINITIONS[event.kilnId].abilityNameZh}。`;
@@ -257,10 +257,12 @@ function workerName(workerId: string, locale: Locale = "en"): string {
   return workerId.toLowerCase().includes("shifu") ? term(locale, "shifu") : locale === "zh-CN" ? `工人${workerId}` : `worker ${workerId}`;
 }
 
-/** Both locales read the V1.2.2 location names from the shared term table. */
+/** Both locales read the V1.2.4 location names from the shared term table. */
 function locationName(locationId: string, locale: Locale = "en"): string {
   return term(locale, locationId);
 }
+
+const DISCIPLINE_ZH: Record<string, string> = { forming: "成型", glazing: "施釉", firing: "烧成" };
 
 function resourceChanges(event: Extract<PublicGameEvent, { type: "RESOURCES_CHANGED" }>, locale: Locale = "en"): string {
   return [

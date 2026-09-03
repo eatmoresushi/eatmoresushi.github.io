@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyAction } from "../../src/game/index.ts";
+import { FORMING_TECH_COINS, GUILD_SHIFU_INSPECT, SHAPE_COSTS, TECHNIQUE_DEFINITIONS, applyAction } from "../../src/game/index.ts";
 import {
   addGlazed,
   addShaped,
@@ -12,7 +12,7 @@ import {
   workerId,
 } from "./helpers.ts";
 
-describe("V1.2.2 worker actions and workshop Techs", () => {
+describe("V1.2.4 worker actions and workshop Techs", () => {
   it("resolves Apprentice and Shifu Materials Yard effects, including Prepared Clay", () => {
     const { state: initial, rng } = startedGame(2, 1301, ["ST01"]);
     let state = structuredClone(initial);
@@ -69,7 +69,7 @@ describe("V1.2.2 worker actions and workshop Techs", () => {
     expect(state.players["P1"]!.resources.clay).toBe(before - 3);
   });
 
-  it("applies Ding's additional matching vessel at its normal Clay cost", () => {
+  it("gives Ding's additional matching vessel free of Clay", () => {
     const { state: initial, rng } = startedGame(2, 1315);
     let state = structuredClone(initial);
     state.players["P1"]!.kilnId = "DI";
@@ -85,7 +85,8 @@ describe("V1.2.2 worker actions and workshop Techs", () => {
       (ceramic) => ceramic.ownerId === "P1" && ceramic.shape === "bowl",
     );
     expect(bowls).toHaveLength(2);
-    expect(state.players["P1"]!.resources.clay).toBe(before - 2);
+    // V1.2.4: only the vessel the action itself formed is charged; Ding's extra is free.
+    expect(state.players["P1"]!.resources.clay).toBe(before - SHAPE_COSTS.bowl);
     expect(state.players["P1"]!.kilnAbilityUsedThisRound).toBe(true);
   });
 
@@ -144,7 +145,7 @@ describe("V1.2.2 worker actions and workshop Techs", () => {
     state = mustApply(state, "P1", {
       type: "FORM_CERAMICS", workerId: workerId(state, "P1", "apprentice"), shapes: ["plate"],
     }, rng);
-    expect(state.players["P1"]!.resources.coins).toBe(calipersCoins + 1);
+    expect(state.players["P1"]!.resources.coins).toBe(calipersCoins + FORMING_TECH_COINS);
     expect(state.players["P1"]!.techniques.find(({ id }) => id === "T02")?.exhausted).toBe(true);
 
     state = structuredClone(initial);
@@ -155,7 +156,7 @@ describe("V1.2.2 worker actions and workshop Techs", () => {
     state = mustApply(state, "P1", {
       type: "FORM_CERAMICS", workerId: workerId(state, "P1", "apprentice"), shapes: ["bowl"],
     }, rng);
-    expect(state.players["P1"]!.resources.coins).toBe(mouldCoins + 1);
+    expect(state.players["P1"]!.resources.coins).toBe(mouldCoins + FORMING_TECH_COINS);
 
     state = structuredClone(initial);
     state.players["P1"]!.resources = { clay: 10, wood: 10, coins: 10 };
@@ -257,7 +258,7 @@ describe("V1.2.2 worker actions and workshop Techs", () => {
     expect(state.actionBoard.placements.kiln_yard).toHaveLength(2);
   });
 
-  it("reserves and refills two Main Orders with a Shifu, then grants only one commission advance", () => {
+  it("reserves and refills two Main Orders with a Shifu, then grants only one reservation advance", () => {
     const { state: initial, rng } = startedGame(2, 1310);
     let state = structuredClone(initial);
     const displayed = state.marketDisplay.slice(0, 2);
@@ -274,7 +275,10 @@ describe("V1.2.2 worker actions and workshop Techs", () => {
     expect(state.players["P1"]!.orderHand).toEqual(expect.arrayContaining(displayed));
   });
 
-  it("uses Colour Samples only from its three private Main Orders", () => {
+  it("lets Colour Samples reserve a looked-at Order or a face-up one, discarding the rest", () => {
+    // V1.2.2 forced the reservation to come from the three looked-at cards and returned the
+    // others to the bottom of the deck. V1.2.4 also allows reserving a face-up Order, and
+    // discards every looked-at card that was not reserved.
     const { state: initial, rng } = startedGame(2, 1311);
     let state = structuredClone(initial);
     addTechnique(state, "P1", "T10");
@@ -285,13 +289,29 @@ describe("V1.2.2 worker actions and workshop Techs", () => {
     state = mustApply(state, "P1", { type: "OFFICE_USE_COLOUR_SAMPLES", deck: "market" }, rng);
     if (state.phase.type !== "work_office_orders" || state.phase.colourSamplesChoices === undefined) throw new Error("Missing Colour Samples choices");
     const choices = [...state.phase.colourSamplesChoices];
-    const publicOrder = state.marketDisplay[0]!;
-    expectError(applyAction(state, "P1", { type: "OFFICE_CHOOSE_COLOUR_SAMPLES_ORDER", orderId: publicOrder }, rng), "INVALID_SELECTION");
-    state = mustApply(state, "P1", {
-      type: "OFFICE_CHOOSE_COLOUR_SAMPLES_ORDER", orderId: choices[1]!, bottomOrderIds: [choices[2]!, choices[0]!],
+    expect(choices).toHaveLength(3);
+    const chosen = choices[1]!;
+    state = mustApply(state, "P1", { type: "OFFICE_CHOOSE_COLOUR_SAMPLES_ORDER", orderId: chosen }, rng);
+    expect(state.players["P1"]!.orderHand).toContain(chosen);
+    // The two not reserved are discarded, not bottomed.
+    expect(state.marketDiscard).toEqual(expect.arrayContaining([choices[0]!, choices[2]!]));
+    expect(state.marketDeck).not.toContain(choices[0]!);
+    expect(state.players["P1"]!.techniques.find(({ id }) => id === "T10")?.exhausted).toBe(true);
+
+    // The face-up display is a legal target for the same reservation.
+    let display = structuredClone(initial);
+    addTechnique(display, "P1", "T10");
+    display = mustApply(display, "P1", {
+      type: "BEGIN_OFFICE_ORDERS", workerId: workerId(display, "P1", "apprentice"), mode: "take_one",
     }, rng);
-    expect(state.players["P1"]!.orderHand).toContain(choices[1]);
-    expect(state.marketDeck.slice(-2)).toEqual([choices[2], choices[0]]);
+    display = mustApply(display, "P1", { type: "OFFICE_USE_COLOUR_SAMPLES", deck: "market" }, rng);
+    if (display.phase.type !== "work_office_orders" || display.phase.colourSamplesChoices === undefined) throw new Error("Missing Colour Samples choices");
+    const lookedAt = [...display.phase.colourSamplesChoices];
+    const faceUp = display.marketDisplay[0]!;
+    display = mustApply(display, "P1", { type: "OFFICE_CHOOSE_COLOUR_SAMPLES_ORDER", orderId: faceUp }, rng);
+    expect(display.players["P1"]!.orderHand).toContain(faceUp);
+    expect(display.marketDiscard).toEqual(expect.arrayContaining(lookedAt));
+    expect(display.marketDisplay).toHaveLength(5);
   });
 
   it("rejects obsolete blind draws and non-Main Colour Samples at the engine boundary", () => {
@@ -340,21 +360,28 @@ describe("V1.2.2 worker actions and workshop Techs", () => {
     }, rng), "TECHNIQUE_LIMIT");
   });
 
-  it("refreshes an entire discipline and applies the Shifu Advanced-Tech discount", () => {
+  it("inspects the top 2 of one discipline, then buys an inspected or face-up Tech at -1 Coin", () => {
+    // V1.2.2's Shifu refreshed a discipline -- its face-up tiles went to the bottom and the
+    // purchase had to come from that same discipline. V1.2.4 draws the top 2 off the chosen
+    // deck for this player alone, leaves every display untouched, and lets the purchase come
+    // from any face-up tile or either drawn tile.
     const { state: initial, rng } = startedGame(2, 1313);
     let state = structuredClone(initial);
     state.players["P1"]!.resources.coins = 10;
-    const oldDisplay = [...state.techniqueDisplay.firing];
-    const expectedNew = state.techniqueDecks.firing.slice(0, 2);
+    const displayBefore = [...state.techniqueDisplay.firing];
+    const topTwo = state.techniqueDecks.firing.slice(0, GUILD_SHIFU_INSPECT);
     state = mustApply(state, "P1", {
       type: "BEGIN_GUILD_ACTION", workerId: workerId(state, "P1", "shifu"),
     }, rng);
-    state = mustApply(state, "P1", { type: "GUILD_REFRESH_TECHNIQUE", techniqueId: oldDisplay[0]! }, rng);
-    expect(state.techniqueDisplay.firing).toEqual(expectedNew);
-    const selected = state.techniqueDisplay.firing[0]!;
-    const printed = [
-      ...state.techniqueDisplay.firing,
-    ].includes(selected) ? 3 : 0;
+    expect(state.phase).toEqual(expect.objectContaining({ type: "work_guild", step: "inspect" }));
+    state = mustApply(state, "P1", { type: "GUILD_INSPECT_DISCIPLINE", discipline: "firing" }, rng);
+    if (state.phase.type !== "work_guild") throw new Error("Guild phase invariant failed");
+    expect(state.phase.inspectedTechniqueIds).toEqual(topTwo);
+    // The face-up display is untouched by the inspection.
+    expect(state.techniqueDisplay.firing).toEqual(displayBefore);
+
+    const selected = topTwo[0]!;
+    const printed = TECHNIQUE_DEFINITIONS[selected]!.cost;
     const before = state.players["P1"]!.resources.coins;
     const result = mustResult(state, "P1", {
       type: "GUILD_BUY_TECHNIQUE", techniqueId: selected, unlockWorkshop: "glaze_decoration",
@@ -363,6 +390,26 @@ describe("V1.2.2 worker actions and workshop Techs", () => {
     const acquired = result.events.find((event) => event.type === "TECHNIQUE_ACQUIRED");
     expect(acquired).toEqual(expect.objectContaining({ techniqueId: selected, cost: printed - 1 }));
     expect(state.players["P1"]!.resources.coins).toBe(before - (printed - 1));
+    // The inspected tile that was not taken goes to the bottom of its own deck.
+    expect(state.techniqueDecks.firing.at(-1)).toBe(topTwo[1]!);
+  });
+
+  it("lets the Guild Shifu buy a face-up Tech from another discipline after inspecting", () => {
+    const { state: initial, rng } = startedGame(2, 1316);
+    let state = structuredClone(initial);
+    state.players["P1"]!.resources.coins = 10;
+    state = mustApply(state, "P1", {
+      type: "BEGIN_GUILD_ACTION", workerId: workerId(state, "P1", "shifu"),
+    }, rng);
+    state = mustApply(state, "P1", { type: "GUILD_INSPECT_DISCIPLINE", discipline: "firing" }, rng);
+    const faceUp = state.techniqueDisplay.forming[0]!;
+    const printed = TECHNIQUE_DEFINITIONS[faceUp]!.cost;
+    const before = state.players["P1"]!.resources.coins;
+    state = mustApply(state, "P1", {
+      type: "GUILD_BUY_TECHNIQUE", techniqueId: faceUp, unlockWorkshop: "potters_wheel",
+    }, rng);
+    expect(state.players["P1"]!.resources.coins).toBe(before - (printed - 1));
+    expect(state.techniqueDisplay.forming).toHaveLength(2);
   });
 
   it("pays Labour at 2 Coins for an Apprentice and 4 for a Shifu", () => {

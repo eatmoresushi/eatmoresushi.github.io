@@ -1,10 +1,10 @@
-# IMPLEMENTATION_DECISIONS.md — V1.2.2
+# IMPLEMENTATION_DECISIONS.md — V1.2.4
 
-These are digital interpretations only. The sole rules authority is `docs/KILN_OPENING_v1.2.2_SOURCE.md`; source conflicts and owner rulings are recorded in `docs/RULEBOOK_AUDIT_V1.2.2.md`.
+These are digital interpretations only. The sole rules authority is `docs/KILN_OPENING_v1.2.4_SOURCE.md`; source conflicts and owner rulings are recorded in `docs/RULEBOOK_AUDIT_V1.2.4.md`.
 
 ## Setup and private workshop
 
-- Every player begins with 1 Shifu and 3 Apprentices. V1.2.2 has no worker-unlock mechanic.
+- Every player begins with 1 Shifu and 3 Apprentices. V1.2.4 has no worker-unlock mechanic.
 - Each player begins with one open and one locked Potter's Wheel space and one open and one locked Glaze & Decoration space.
 - Acquiring the first Advanced Tech unlocks either one of the two locked private spaces, chosen by that player. Acquiring the second unlocks the remaining space.
 - Starting Tech choices and retained Starting Orders become public after simultaneous setup choices resolve.
@@ -39,19 +39,19 @@ These are digital interpretations only. The sole rules authority is `docs/KILN_O
 - The private Imperial Kiln is a one-ceramic space with no zone modifier. It participates in the shared firing and Contribution eligibility but is not a Shared-Kiln space.
 - Imperial Priority adds one load to a Kiln Yard action, and that additional ceramic must enter the owner's empty Imperial Kiln. It has no heat-adjustment effect.
 - Kiln Furniture's zero-zone choice stays attached to that ceramic for the current firing, including an immediate Second Firing.
-- Workshop Seconds resolves after after-Quality effects and firing resolution. Each player may discard at most one remaining Flawed ceramic for 2 Coins.
+- The Flawed salvage resolves after all after-Quality effects. Each player may discard at most one ceramic still Flawed from that firing for 2 Coins, returning its Vessel card to the matching Shape supply.
 
-## Guan Decoration waiver
+## Guan Imperial Patronage
 
-When Guan resolves on a Crown Order, the player explicitly selects at most one submitted ceramic for the waiver. That ceramic is omitted from direct and relational Decoration checks. Relational checks continue among all other submitted ceramics. Shape, Glaze, Quality, ceramic count and every non-Decoration requirement are still validated normally.
+V1.2.4 removed the Decoration waiver. Guan gains 2 Coins and 1 VP once per round on completing an Order showing at least 1 Crown, and exempts no ceramic from any requirement: Shape, Glaze, Decoration, relational, Quality and ceramic count are all validated normally.
 
 ## Recognition and scoring
 
 - Recognition advances only from Crown icons on completed Orders, resolves every crossed milestone in ascending order, and caps at 5.
-- Recognition 3, **Imperial Gift**, unlocks the private Imperial Kiln.
+- Recognition 3, **Imperial Gift**, grants the Imperial Kiln tile, placed in the owner's Imperial Kiln area.
 - Recognition 4, **Imperial Priority**, grants one once-per-game token with the additional-load effect above.
 - Recognition 5, **Imperial Audience**, immediately grants 6 VP. Spaces 1–4 have no separate end-game VP.
-- Exhibition accepts up to five finished, undelivered Standard-or-better ceramics. When at least three are exhibited, exactly three are the featured collection for Shape and Glaze diversity.
+- Exhibition accepts up to five finished, undelivered Standard-or-better ceramics. When at least three are exhibited, exactly three are the featured collection, each diversity bonus paying 3 VP.
 - Leftover Coins score 1 VP per 3 Coins, capped at 5 VP.
 
 ## Localization
@@ -60,4 +60,4 @@ English and Simplified Chinese UI text are presentation layers over identical st
 
 ## Saved-game compatibility
 
-V1.2.2 introduces incompatible setup, deck, worker, Tech, Recognition, kiln and timing state. New rooms use the V1.2.2 save schema and rules fingerprint. The live service rejects started rooms, snapshots and commands with an older rules version, schema or fingerprint rather than attempting an unsafe translation.
+V1.2.4 introduces incompatible setup, deck, worker, Tech, Recognition, kiln and timing state. New rooms use the V1.2.4 save schema and rules fingerprint. The live service rejects started rooms, snapshots and commands with an older rules version, schema or fingerprint rather than attempting an unsafe translation.

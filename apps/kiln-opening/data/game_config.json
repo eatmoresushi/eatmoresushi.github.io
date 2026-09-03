@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.2.2",
+  "rulesVersion": "1.2.4",
   "players": {
     "min": 2,
     "max": 4
@@ -87,7 +87,7 @@
     "vase": 2,
     "censer": 2
   },
-  "shapeSupplyEach": 8,
+  "shapeSupplyEach": 10,
   "coinEndGame": {
     "coinsPerVp": 3,
     "maxVp": 5

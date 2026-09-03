@@ -135,20 +135,6 @@ function hasValidAssignment(
   return search(0);
 }
 
-function matchesOrderLegacy(
-  order: OrderDefinition,
-  selected: readonly FinishedCeramic[],
-  useGuanDecorationWaiver: boolean,
-): boolean {
-  if (selected.length !== order.ceramics.length) return false;
-  if (new Set(selected.map((ceramic) => ceramic.id)).size !== selected.length) return false;
-  if (!useGuanDecorationWaiver) return hasValidAssignment(order, selected, null);
-
-  const decorationIndices = order.ceramics
-    .map((requirement, index) => (requirement.decoration === undefined ? null : index))
-    .filter((index): index is number => index !== null);
-  return decorationIndices.some((index) => hasValidAssignment(order, selected, index));
-}
 
 function multisetContains<T>(actual: readonly T[], required: readonly T[]): boolean {
   const remaining = [...actual];
@@ -182,31 +168,27 @@ function shapeSlotsMatch(order: OrderDefinition, selected: readonly FinishedCera
 }
 
 /**
- * V1.2.2 evaluates Shape, Glaze and Decoration groups independently. Guan removes the
- * chosen ceramic only from Decoration checks; Shape, Glaze and Quality still apply.
+ * V1.2.4 evaluates Shape, Glaze and Decoration groups independently.
+ *
+ * V1.2.2's Guan Decoration waiver is gone: Imperial Patronage now pays 2 Coins and 1 VP and
+ * exempts nothing, so every submitted ceramic faces every printed requirement.
  */
 export function matchesOrder(
   order: OrderDefinition,
   selected: readonly FinishedCeramic[],
-  guanWaiver: boolean | string | null,
 ): boolean {
   if (selected.length !== order.ceramics.length || new Set(selected.map((ceramic) => ceramic.id)).size !== selected.length) return false;
   if (selected.some((ceramic) => QUALITY_RANK[ceramic.quality] < QUALITY_RANK[order.minQuality])) return false;
   if (!shapeSlotsMatch(order, selected)) return false;
-  const waivedId = typeof guanWaiver === "string"
-    ? guanWaiver
-    : guanWaiver === true
-      ? selected[0]?.id ?? null
-      : null;
   if (selected.length === 1) {
     const requirement = order.ceramics[0];
     const ceramic = selected[0];
     if (requirement === undefined || ceramic === undefined) return false;
     if (requirement.glaze !== undefined && ceramic.glaze !== requirement.glaze) return false;
     if (requirement.glazes !== undefined && !requirement.glazes.includes(ceramic.glaze)) return false;
-    if (waivedId !== ceramic.id && requirement.decoration !== undefined && ceramic.decoration !== requirement.decoration) return false;
+    if (requirement.decoration !== undefined && ceramic.decoration !== requirement.decoration) return false;
   }
-  const decorations = selected.filter((ceramic) => ceramic.id !== waivedId);
+  const decorations = selected;
   for (const relation of order.relations ?? []) {
     switch (relation.type) {
       case "same_shape":
@@ -232,16 +214,9 @@ export function matchesOrder(
       case "required_glazes":
         if (!multisetContains(selected.map((ceramic) => ceramic.glaze), relation.values)) return false;
         break;
-      case "required_decorations": {
-        let required = relation.values;
-        if (waivedId !== null && relation.values.length === selected.length) {
-          const actual = decorations.map((ceramic) => ceramic.decoration);
-          if (!relation.values.some((_, index) => multisetContains(actual, relation.values.filter((__, valueIndex) => valueIndex !== index)))) return false;
-          required = [];
-        }
-        if (required.length > 0 && !multisetContains(decorations.map((ceramic) => ceramic.decoration), required)) return false;
+      case "required_decorations":
+        if (!multisetContains(decorations.map((ceramic) => ceramic.decoration), relation.values)) return false;
         break;
-      }
       case "at_least_n_quality":
         if (selected.filter((ceramic) => QUALITY_RANK[ceramic.quality] >= QUALITY_RANK[relation.quality]).length < relation.count) return false;
         break;
@@ -335,12 +310,9 @@ export function orderAdmitsGeCrackle(order: OrderDefinition): boolean {
  * Orders. It completes 1.70 per game against Jun's 2.03, despite being the only Tradition
  * paid for them, because nothing in the Order valuation knew the ability existed.
  */
-/**
- * Guan's Imperial Patronage pays Coins only. A `GUAN_ORDER_VP = 1` sat here unread from a
- * pre-V1.2.2 ruleset; V1.2.2 grants 2 Coins and the Decoration waiver and no VP, so the
- * constant was removed rather than left for someone to wire up into a rule error.
- */
+/** V1.2.4 Imperial Patronage: 2 Coins and 1 VP on a Crown Order, and no Decoration waiver. */
 export const GUAN_ORDER_COINS = 2;
+export const GUAN_ORDER_VP = 1;
 
 /**
  * V1.2.2 has one Main Order deck; "Imperial Order" is a Crown count on a card, not deck

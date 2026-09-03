@@ -14,8 +14,8 @@
     "nameZh": "官窑",
     "abilityName": "Imperial Patronage",
     "abilityNameZh": "内府恩眷",
-    "ability": "Once per round, when you complete an Order showing at least 1 Crown, gain 2 Coins. You may also have one ceramic used for that Order ignore its direct and relational Decoration requirements. Shape, Glaze and Quality still apply.",
-    "abilityZh": "每轮一次，当你完成至少有1个皇冠的订单时，获得2铜钱。你也可让该订单使用的1件陶瓷忽略直接及关系性装饰要求；器形、釉色和品第要求仍须满足。"
+    "ability": "Once per round, when you complete an Order showing at least 1 Crown, gain 2 Coins and 1 VP.",
+    "abilityZh": "每轮一次：当你完成至少有1个皇冠的订单时，获得2铜钱和1分。"
   },
   {
     "id": "GE",
@@ -32,8 +32,8 @@
     "nameZh": "定窑",
     "abilityName": "Moulded Production",
     "abilityNameZh": "覆烧成模",
-    "ability": "Once per round, when resolving a Potter's Wheel action, after you form a Bowl, Plate or Brush Washer, you may form one additional vessel of the same Shape at normal Clay cost. This additional vessel does not count against the action's normal limit.",
-    "abilityZh": "每轮一次，在结算拉坯轮行动时，于你成型1件碗、盘或洗之后，可支付正常黏土费用再成型1件相同器形。此额外器物不计入该行动的正常上限。"
+    "ability": "Once per round, when resolving a Potter's Wheel action, after you form a Bowl, Plate or Brush Washer, you may form one additional vessel of the same Shape at no Clay cost. This additional vessel does not count against that action's normal vessel limit.",
+    "abilityZh": "每轮一次：结算拉坯轮行动时，成型1件碗、盘或洗之后，可免付黏土费用额外成型1件相同器形的器物。该额外器物不计入该行动的正常成型上限。"
   },
   {
     "id": "JU",

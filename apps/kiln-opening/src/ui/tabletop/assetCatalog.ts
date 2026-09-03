@@ -59,8 +59,8 @@ export const WORKSHOP_CROPS: Record<KilnId, {
 };
 
 /**
- * Board labels come from the V1.2.2 action-location data, never a hand-copied list.
- * The ids are stable legacy keys: `market_imperial_office` is V1.2.2's Commission
+ * Board labels come from the V1.2.4 action-location data, never a hand-copied list.
+ * The ids are stable legacy keys: `market_imperial_office` is V1.2.4's Commission
  * Market. A fourth hardcoded copy is exactly how "Market & Imperial Office" outlived
  * the rename, so read the names the rules ship with.
  */
