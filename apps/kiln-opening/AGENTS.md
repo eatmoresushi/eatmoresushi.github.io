@@ -10,10 +10,10 @@ Target session length for the physical design is approximately 90–120 minutes.
 
 Priority order:
 
-1. `docs/KILN_OPENING_v1.1.6_SOURCE.md` — the sole authoritative rules source; it incorporates owner-approved amendments to the supplied V1.1.6 Markdown.
-2. `docs/RULEBOOK_AUDIT_V1.1.6.md` — recorded resolutions for contradictions inside that supplied source.
+1. `docs/KILN_OPENING_v1.2.2_SOURCE.md` — the sole authoritative rules source; it is an exact copy of the owner-supplied V1.2.2 Markdown.
+2. `docs/RULEBOOK_AUDIT_V1.2.2.md` — recorded owner resolutions for contradictions and ambiguities inside that supplied source.
 3. `docs/GAME_RULES.md` — source index and implementation note, not an independent rules authority.
-4. `data/*.json` — machine-readable values derived from V1.1.6.
+4. `data/*.json` — machine-readable values derived from V1.2.2.
 5. `docs/IMPLEMENTATION_DECISIONS.md` — digital interpretations of rules where necessary.
 6. `docs/ONLINE_GAME_SPEC.md` — digital-only behaviour.
 7. `docs/DESIGN_SPEC.md` — design intent and constraints.
@@ -24,7 +24,7 @@ Never implement an older mechanic because it appears in historical discussion or
 
 ## Approved asset rule
 
-Only `assets/current_v04/` is an approved visual-reference directory. The directory name remains unchanged as a stable legacy path; rules-bearing visuals must follow V1.1.6 data and localized gameplay text must come from structured data or the i18n layer.
+Only `assets/current_v04/` is an approved visual-reference directory. The directory name remains unchanged as a stable legacy path; rules-bearing visuals must follow V1.2.2 data and localized gameplay text must come from structured data or the i18n layer.
 
 Do not search conversation history or older images for missing boards/cards. Missing current assets are intentionally specified in `data/asset_specs.json` and `docs/V0.4_ASSETS_TO_REGENERATE.md` and must be rebuilt from current data.
 
@@ -40,15 +40,18 @@ Do not reintroduce any of these unless the user explicitly changes the rules:
 - Refined Clay
 - Refining House
 - five-player mode
-- fixed Base Heat thresholds independent of contributor count
+- starting with fewer than 1 Shifu + 3 Apprentices or unlocking additional workers
 - numeric 0–3 Wood bidding instead of Bank/Tend/Stoke cards
 - Kiln Yard Wood income
-- Court Patronage inside the Office rather than its own uncapped Shifu-only location
-- Imperial Progress Coin stipends
+- separate Market and Imperial Order decks or displays
+- Office, Court Patronage, or separate Imperial Order actions
+- Imperial Progress, Apprentice-unlock, or Imperial Seal mechanics
+- shared Potter's Wheel or Glaze Workshop action locations
+- treating Tech effects as worker actions unless the Tech explicitly says so
 - Guan's extra Order-hand capacity
 - penalties for exhibiting nothing at the End-game Exhibition
 - presenting Flawed ceramics
-- direct VP printed on Craft Techniques
+- direct VP printed on Techs
 
 ## Engineering principles
 
@@ -97,23 +100,29 @@ At minimum:
 - reverse-order Kiln selection
 - worker capacity by player count
 - passing with unused workers
-- Shifu vs Apprentice effects at all eight locations
+- all players starting with 1 Shifu + 3 Apprentices
+- private Potter's Wheel and Glaze & Decoration capacity and both Advanced-Tech unlocks
+- Shifu vs Apprentice effects at all five shared locations and both private workshop actions
 - Shape costs and vessel supply
 - Decoration costs
-- Technique acquisition limit, printed Apprentice cost, and Shifu −1 Coin discount (minimum 0)
-- every one of the 15 V1.1.6 Techniques
+- all 4 Starting Techs and all 15 V1.2.2 Advanced Techs
+- Advanced-Tech acquisition limit, discipline refresh, printed cost, Shifu discount, and station unlocks
 - all five Kiln abilities
-- contributor-scaled Base Heat for 1–4 contributors
+- Base Heat starting at 2, all contributions, and the 0–5 clamp
 - secret simultaneous Contribution-card reveal
-- all five Fire modifiers, the V1.1.6 1/3/4/3/1 deck distribution, reshuffling, and kiln-zone modifiers
+- Fuel Ledger's secret −2/+2 choices, two-Wood affordability, reveal, and payment
+- all five Fire modifiers, the V1.2.2 1/3/4/3/1 deck distribution, reshuffling, and kiln-zone modifiers
 - Quality assignment
-- Jun/Ge/Protective Saggars/Test Pieces/Ru timing
-- Market and Imperial Order validation, followed by the optional Apprentice 0–1 / Shifu 0–2 Flawed-sale step
-- immediate display refill and the two-card left-edge Order-display rotation at the start of Rounds 2–5
-- uniform Order hand limit
-- every Imperial Order advancing +1, +2, or +3 Imperial Progress according to its required ceramic count, including multiple completions in one round and milestone-crossing jumps
-- Apprentice unlock timing at spaces 1 and 3
-- Imperial Seal first-arrival rule
+- Jun/Ge/Protective Saggars/Test Pieces/Second Firing/Ru timing
+- Workshop Seconds after firing
+- all 16 Starting Orders and 48 Main Orders, including independent multi-ceramic attribute matching
+- setup deal-four/keep-two Starting Orders
+- Commission reservation benefits and immediate Main-display refill
+- discard-three left-edge Main-display rotation at the start of Rounds 2–5
+- reverse-Work-order completion circuits until a complete pass circuit
+- uniform three-Order hand limit across Starting and reserved Main Orders
+- Crown advancement, every crossed Recognition milestone, and the 0–5 cap
+- Imperial Gift unlock, Imperial Priority's once-per-game additional Imperial-Kiln load, and Imperial Audience VP
 - universal five-ceramic End-game Exhibition and its three-ceramic featured collection
 - English/Simplified Chinese rendering from the same stable IDs without changing game state
 - end-game Coin VP cap
@@ -127,6 +136,6 @@ If a desired implementation requires changing the board-game rules:
 1. stop,
 2. explain the conflict,
 3. propose the smallest rule change,
-4. wait for user approval before modifying the checked-in V1.1.6 source, its recorded errata, or balance data.
+4. wait for user approval before modifying the checked-in V1.2.2 source, its recorded rulings, or balance data.
 
 Do not silently “improve” balance values.

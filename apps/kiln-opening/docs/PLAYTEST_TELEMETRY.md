@@ -2,7 +2,9 @@
 
 Telemetry is for balance analysis, not player profiling.
 
-Current **V1.1.6** compatibility telemetry records the round each Progress space 1–5 is first reached, Progress source (Order or Patronage), the universal five-item End-game Exhibition and featured-three diversity scoring, Imperial Seal acquisition, two-card Order-display rotations, Fire-modifier and Quality distributions, Jun/Ge and Kiln Yard Shifu windows, each revealed Contribution card and its Wood cost, Fuel Ledger upgrades, all optional Technique windows, Shifu Material exchanges, Labour and Court Patronage. Retired Progress Coin stipends, numeric Wood bids and Kiln Yard Wood income are never emitted. Historical exports remain immutable and retain their original rules labels.
+Current **V1.2.2** telemetry records Crown-driven Imperial Recognition and each milestone, the five-card Main Order display's three-card rotation, End-game Exhibition and featured-three scoring, Fire and Quality distributions, Jun/Ge and Kiln Yard Shifu windows, public Contribution cards and effective Heat only after simultaneous reveal, Fuel Ledger upgrades, Starting and Advanced Tech effects, Commission advances, Labour, Workshop Seconds, Imperial Kiln loads and Imperial Priority use. Starting Order offers, Colour Samples choices, Test Pieces peeks and unrevealed Fuel Ledger commitments remain private. Obsolete Court Patronage, Imperial Seal, Apprentice-unlock and Progress-stipend events are not produced by V1.2.2. Historical exports remain immutable under their original rules labels.
+
+## Historical telemetry
 
 The frozen `v109-v003-compat-001` baseline writes only below `playtests/v1.0.9/v109-v003-compat-001/`. Its 150 games retain the normalized game/player/round/Order/Technique/action/decision/firing/kiln tables plus explicit submitted/effective Wood distributions and V1.0.9 action coverage. The run completed with 150/150 valid games, zero illegal selections, and zero replacements. Its Selfplay-003 profiles remain labelled as trained under V1.0.2.
 

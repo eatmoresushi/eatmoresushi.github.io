@@ -8,7 +8,6 @@ import type {
   FiringResultSummary,
   GameAction,
   GameEvent,
-  GameExperimentConfig,
   GamePhase,
   GameRuleErrorCode,
   Glaze,
@@ -23,12 +22,11 @@ import type {
   Shape,
   TechniqueDiscipline,
   TechniqueId,
-  WoodContribution,
 } from "../game/index.ts";
 
 export type RoomStatus = "lobby" | "playing" | "finished" | "abandoned";
 export type StoredRulesVersion = "0.4" | "0.5" | "0.6.1" | "0.6.3" | "0.6.5" | "1.0.0" | "1.0.1" | "1.0.2" | "1.0.4" | "1.0.9" | "1.1.1" | "1.1.4" | "1.1.5"
-  | "1.1.6";
+  | "1.1.6" | "1.2.2";
 
 export interface PublicRoom {
   id: string;
@@ -50,7 +48,7 @@ export interface PublicSeat {
   colour: string;
   isHost: boolean;
   isComputer: boolean;
-  aiPolicyVersion: "selfplay-003" | "rules-v1.1.1-wood-001" | "rules-v1.1.4-contribution-001" | "rules-v1.1.5-order-001" | null;
+  aiPolicyVersion: "selfplay-003" | "rules-v1.1.1-wood-001" | "rules-v1.1.4-contribution-001" | "rules-v1.1.5-order-001" | "rules-v1.2.2-heuristic-001" | null;
 }
 
 export interface PublicPlayerState {
@@ -63,11 +61,16 @@ export interface PublicPlayerState {
   orderHand: OrderId[];
   completedOrders: PlayerState["completedOrders"];
   techniques: PlayerState["techniques"];
-  imperialProgress: 0 | 1 | 2 | 3 | 4 | 5;
-  imperialStipendsReceived: Array<2 | 4>;
+  startingTechniqueId: PlayerState["startingTechniqueId"];
+  workshopSpaces: PlayerState["workshopSpaces"];
+  imperialRecognition: 0 | 1 | 2 | 3 | 4 | 5;
+  imperialGrantResolved: boolean;
+  imperialKilnUnlocked: boolean;
+  imperialPriorityAvailable: boolean;
+  imperialAudienceVpAwarded: boolean;
   passedWorkPhase: boolean;
-  pendingApprenticeUnlocks: number;
   kilnAbilityUsedThisRound: boolean;
+  kilnYardShifuUsedThisRound: boolean;
   shapesFormedThisRound: Shape[];
   presentationCeramicIds: string[];
   presentationFeaturedCeramicIds: string[];
@@ -76,26 +79,23 @@ export interface PublicPlayerState {
 
 export interface PublicDeckState {
   marketRemaining: number;
-  imperialRemaining: number;
   techniqueRemaining: Record<TechniqueDiscipline, number>;
   fireRemaining: number;
 }
 
 export interface PublicDisplays {
   market: OrderId[];
-  imperial: OrderId[];
   techniques: Record<TechniqueDiscipline, TechniqueId[]>;
 }
 
 export interface PublicDiscards {
   market: OrderId[];
-  imperial: OrderId[];
   fire: FireModifier[];
 }
 
 export interface PublicGameState {
-  schemaVersion: 1;
-  rulesVersion: "1.1.6";
+  schemaVersion: 2;
+  rulesVersion: "1.2.2";
   gameId: string;
   revision: number;
   eventSequence: number;
@@ -112,11 +112,9 @@ export interface PublicGameState {
   decks: PublicDeckState;
   displays: PublicDisplays;
   discards: PublicDiscards;
-  imperialSealOwnerId: PlayerId | null;
   firingContext: FiringContext | null;
   lastFiringResult: FiringResultSummary | null;
   finalResult: FinalResult | null;
-  experimentConfig?: GameExperimentConfig;
 }
 
 export type PublicGameEvent =
@@ -141,6 +139,8 @@ export interface PublicEventRecord {
 export interface PendingContribution {
   windowId: string;
   card: ContributionCardId;
+  /** Visible only to the seat that submitted it, never in PublicGameState or public events. */
+  useFuelLedger: boolean;
   submitted: true;
 }
 
@@ -267,8 +267,13 @@ export interface ComputerAdvanceSuccess {
 export interface SubmitWoodCommand {
   type: "SUBMIT_WOOD_CONTRIBUTION";
   windowId: string;
-  /** Bank, Tend or Stoke. Fuel Ledger is resolved after the reveal, never committed here. */
+  /** The printed Bank, Tend or Stoke card. */
   card: ContributionCardId;
+  /**
+   * Secretly spend the additional Wood for Fuel Ledger. Legal only with Bank or Stoke;
+   * the engine remains authoritative for ownership and affordability.
+   */
+  useFuelLedger: boolean;
 }
 
 export type AuthoritativeCommand = GameAction | SubmitWoodCommand;
@@ -305,6 +310,7 @@ export interface PrivateSubmissionRecord {
   playerId: PlayerId;
   commandId: string;
   card: ContributionCardId;
+  useFuelLedger: boolean;
   revealedRevision: number | null;
 }
 

@@ -1,6 +1,5 @@
 export * from "./content.ts";
 export * from "./engine.ts";
-export * from "./experiment.ts";
 export * from "./firingRules.ts";
 export * from "./orderRules.ts";
 export * from "./rulesFingerprint.ts";

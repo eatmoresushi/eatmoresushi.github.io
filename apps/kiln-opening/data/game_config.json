@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.1.6",
+  "rulesVersion": "1.2.2",
   "players": {
     "min": 2,
     "max": 4
@@ -12,16 +12,11 @@
   },
   "workers": {
     "shifu": 1,
-    "apprenticesTotal": 5,
-    "apprenticesStarting": 3,
-    "apprenticeUnlockProgress": [
-      1,
-      3
-    ]
+    "apprenticesTotal": 3,
+    "apprenticesStarting": 3
   },
   "orderDisplay": {
-    "market": 4,
-    "imperial": 4,
+    "market": 5,
     "baseHandLimit": 3
   },
   "techniques": {
@@ -93,15 +88,6 @@
     "censer": 2
   },
   "shapeSupplyEach": 8,
-  "imperialProgressEndGameVp": [
-    0,
-    0,
-    2,
-    2,
-    6,
-    10
-  ],
-  "imperialSealVp": 2,
   "coinEndGame": {
     "coinsPerVp": 3,
     "maxVp": 5

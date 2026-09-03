@@ -7,7 +7,6 @@ import type {
   TechniqueId,
   WorkerKind,
   WorkerStatus,
-  WoodContribution,
 } from "../../game";
 import { TABLETOP_ASSETS, WORKSHOP_CROPS, orderSprite, techniqueSprite } from "./assetCatalog";
 
@@ -158,7 +157,7 @@ export function VisualOrderCard({
             </small>
           ))}
           {(definition.relations ?? []).map((relation) => <small key={relation.type}>{relation.type.replaceAll("_", " ")}</small>)}
-          {definition.imperialProgressReward !== undefined && <strong>+{definition.imperialProgressReward} Imperial Progress</strong>}
+          {definition.crowns > 0 && <strong>{"👑".repeat(definition.crowns)} Imperial Recognition</strong>}
         </span>
       )}
       <span className="sr-only">
@@ -168,12 +167,12 @@ export function VisualOrderCard({
     </>
   );
   return onInspect === undefined ? (
-    <span className={`visual-order-card ${orderId.startsWith("I") ? "is-imperial" : "is-market"} ${compact ? "is-compact" : ""}`} data-order-id={orderId}>
+    <span className={`visual-order-card ${(definition?.crowns ?? 0) > 0 ? "is-imperial" : "is-market"} ${compact ? "is-compact" : ""}`} data-order-id={orderId}>
       {contents}
     </span>
   ) : (
     <button
-      className={`visual-order-card ${orderId.startsWith("I") ? "is-imperial" : "is-market"} ${compact ? "is-compact" : ""}`}
+      className={`visual-order-card ${(definition?.crowns ?? 0) > 0 ? "is-imperial" : "is-market"} ${compact ? "is-compact" : ""}`}
       type="button"
       onClick={() => onInspect(orderId)}
       data-order-id={orderId}
@@ -217,13 +216,6 @@ const FIRE_RECTS: Record<-1 | 0 | 1, [number, number, number, number]> = {
   1: [0.585, 0.014, 0.270, 0.477],
 };
 
-const WOOD_RECTS: Record<WoodContribution, [number, number, number, number]> = {
-  0: [0.019, 0.510, 0.232, 0.475],
-  1: [0.258, 0.510, 0.232, 0.475],
-  2: [0.500, 0.510, 0.232, 0.475],
-  3: [0.740, 0.510, 0.232, 0.475],
-};
-
 function AtlasCard({ rect, children, className }: { rect: [number, number, number, number]; children: ReactNode; className: string }) {
   return (
     <span className={className} style={arbitraryCropStyle(TABLETOP_ASSETS.firingCards, ...rect)}>
@@ -242,12 +234,4 @@ export function FireCard({ modifier }: { modifier: FireModifier }) {
     );
   }
   return <AtlasCard rect={FIRE_RECTS[modifier]} className="visual-fire-card"><span className="sr-only">Fire modifier {modifier > 0 ? `plus ${modifier}` : modifier}</span></AtlasCard>;
-}
-
-export function WoodCard({ amount, faceDown = false }: { amount: WoodContribution; faceDown?: boolean }) {
-  return (
-    <AtlasCard rect={WOOD_RECTS[amount]} className={`visual-wood-card ${faceDown ? "is-face-down" : ""}`}>
-      <span className="sr-only">{faceDown ? "Face-down Wood Contribution" : `${amount} Wood Contribution`}</span>
-    </AtlasCard>
-  );
 }

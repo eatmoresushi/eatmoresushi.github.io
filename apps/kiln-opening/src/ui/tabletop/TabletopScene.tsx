@@ -18,7 +18,6 @@ import {
   SEAT_COLOURS,
   VisualOrderCard,
   VisualTechniqueTile,
-  WoodCard,
   workshopBackground,
 } from "./TabletopPieces";
 
@@ -96,19 +95,15 @@ export function TabletopScene({
       </div>
 
       <section className="tabletop-order-display" aria-label="Face-up Order displays">
-        <CardDeck label="Market" remaining={game.decks.marketRemaining} className="market-deck" />
+        <CardDeck label="Main Orders" remaining={game.decks.marketRemaining} className="market-deck" />
         <div className="tabletop-card-fan market-display">
           {game.displays.market.map((orderId) => <VisualOrderCard orderId={orderId} onInspect={(id) => setInspection({ type: "order", id })} key={orderId} />)}
-        </div>
-        <CardDeck label="Imperial" remaining={game.decks.imperialRemaining} className="imperial-deck" />
-        <div className="tabletop-card-fan imperial-display">
-          {game.displays.imperial.map((orderId) => <VisualOrderCard orderId={orderId} onInspect={(id) => setInspection({ type: "order", id })} key={orderId} />)}
         </div>
       </section>
 
       <div className="tabletop-main-stage">
-        <section className="central-board-shell" aria-label="Central Action Board, Shared Kiln, and Imperial Progress">
-          <img className="central-board-art" src={TABLETOP_ASSETS.centralTable} alt="Illustrated Kiln Opening central action board, shared kiln, and Imperial Progress track" />
+        <section className="central-board-shell" aria-label="Central Action Board, Shared Kiln, and Imperial Recognition">
+          <img className="central-board-art" src={TABLETOP_ASSETS.centralTable} alt="Illustrated Kiln Opening central action board, shared kiln, and Imperial Recognition track" />
           {LOCATION_IDS.map((locationId) => {
             const rect = ACTION_ZONE_RECTS[locationId];
             const placements = game.actionBoard.placements[locationId];
@@ -185,21 +180,18 @@ export function TabletopScene({
 
           {IMPERIAL_TRACK_POINTS.map((point, space) => (
             <span className="visual-progress-space" style={{ left: `${point.x * 100}%`, top: `${point.y * 100}%` }} data-progress-space={space} key={space}>
-              {game.playerOrder.filter((playerId) => game.players[playerId]?.imperialProgress === space).map((playerId, index) => {
+              {game.playerOrder.filter((playerId) => game.players[playerId]?.imperialRecognition === space).map((playerId, index) => {
                 const player = game.players[playerId]!;
                 return (
                   <i
                     className="visual-progress-marker"
                     style={{ "--marker-colour": SEAT_COLOURS[player.seatIndex], "--marker-index": index } as React.CSSProperties}
-                    title={`${player.displayName} · Imperial Progress ${space}`}
-                    aria-label={`${player.displayName} at Imperial Progress space ${space}`}
+                    title={`${player.displayName} · Imperial Recognition ${space}`}
+                    aria-label={`${player.displayName} at Imperial Recognition ${space}`}
                     key={playerId}
                   >{player.displayName.slice(0, 1).toUpperCase()}</i>
                 );
               })}
-              {space === 5 && game.imperialSealOwnerId !== null && (
-                <b className="visual-imperial-seal" title={`Imperial Seal: ${game.players[game.imperialSealOwnerId]?.displayName ?? game.imperialSealOwnerId}`}>玺</b>
-              )}
             </span>
           ))}
 
@@ -207,7 +199,7 @@ export function TabletopScene({
             <div className="sealed-contributions" aria-label="Wood Contribution status">
               {contributionPhase.eligiblePlayerIds.map((playerId) => (
                 <span key={playerId}>
-                  <WoodCard amount={0} faceDown />
+                  <span className="visual-wood-card is-face-down"><span className="sr-only">Face-down Contribution card</span></span>
                   <small>{game.players[playerId]?.displayName}<br />{contributionPhase.submittedPlayerIds.includes(playerId) ? "Locked" : "Choosing"}</small>
                 </span>
               ))}
@@ -288,7 +280,7 @@ function OpponentWorkshop({ game, player, onInspectOrder }: { game: PublicGameSt
   const ceramics = Object.values(game.ceramics).filter((ceramic) => ceramic.ownerId === player.id && ceramic.stage !== "sold");
   return (
     <article className={`opponent-workshop seat-${player.seatIndex}`} style={workshopBackground(player.kilnId)}>
-      <header><strong>{player.displayName}</strong><small>{player.kilnId ?? "Choosing kiln"} · Progress {player.imperialProgress}</small></header>
+      <header><strong>{player.displayName}</strong><small>{player.kilnId ?? "Choosing kiln"} · Recognition {player.imperialRecognition}</small></header>
       <div className="opponent-resources"><ResourceToken kind="clay" amount={player.resources.clay} /><ResourceToken kind="wood" amount={player.resources.wood} /><ResourceToken kind="coins" amount={player.resources.coins} /></div>
       <div className="opponent-pieces">
         <span>{Object.values(player.workers).filter((worker) => worker.status === "available").length} workers ready</span>
@@ -326,7 +318,7 @@ function PlayerWorkshop({
     <section className={`player-workshop-table ${own ? "is-own" : ""}`} style={workshopBackground(player.kilnId)} aria-label={`${player.displayName}'s workshop`}>
       <div className="workshop-art-wash" aria-hidden="true" />
       <header className="workshop-titlebar">
-        <div><span>{player.kilnId ?? "窑"}</span><strong>{player.displayName}</strong><small>{player.kilnId === null ? "Select a kiln tradition" : `${player.kilnId} workshop`} · Imperial Progress {player.imperialProgress}</small></div>
+        <div><span>{player.kilnId ?? "窑"}</span><strong>{player.displayName}</strong><small>{player.kilnId === null ? "Select a kiln tradition" : `${player.kilnId} workshop`} · Imperial Recognition {player.imperialRecognition}</small></div>
         <div className="workshop-resources"><ResourceToken kind="clay" amount={player.resources.clay} /><ResourceToken kind="wood" amount={player.resources.wood} /><ResourceToken kind="coins" amount={player.resources.coins} /></div>
       </header>
 
@@ -355,7 +347,6 @@ function PlayerWorkshop({
               );
             })}
           </div>
-          {player.pendingApprenticeUnlocks > 0 && <small>+{player.pendingApprenticeUnlocks} Apprentice unlocks at Cleanup</small>}
         </section>
 
         <section className="workshop-ceramic-shelf" aria-label="Workshop ceramics">
@@ -399,19 +390,17 @@ function phaseName(game: PublicGameState): string {
   switch (game.phase.type) {
     case "setup_kiln_selection": return "Kiln selection";
     case "setup_starting_orders": return "Starting Orders";
+    case "setup_starting_tech": return "Starting Tech";
     case "work": return "Work Phase";
-    case "work_office_orders": return "Office — Orders";
-    case "work_office_sale": return "Office — Sale";
-    case "work_office_connoisseur": return "Office — Connoisseur";
+    case "work_office_orders": return "Commission Market — Orders";
+    case "work_commission_advance": return "Commission advance";
     case "work_guild": return "Guild & Academy";
     case "firing_before_contribution": return "Pre-firing Techniques";
     case "firing_contributions": return "Secret Contributions";
-    case "firing_after_reveal": return "Fuel Ledger";
     case "firing_reposition": return "Shifu kiln reposition";
-    case "firing_after_fire_reveal": return "Sagger Selection";
     case "firing_before_quality": return "Kiln ability";
-    case "firing_after_quality": return game.phase.techniqueIds[game.phase.queue.currentIndex] === "T15" ? "Second Firing" : "Protective Saggars";
-    case "firing_after_firing": return game.phase.techniqueIds[game.phase.queue.currentIndex] === "T13" ? "Kiln Records" : "Test Pieces";
+    case "firing_after_quality": return game.phase.techniqueIds[game.phase.queue.currentIndex] === "T14" ? "Second Firing" : "Protective Saggars";
+    case "firing_workshop_seconds": return "Workshop Seconds";
     case "orders": return "Order Phase";
     case "cleanup_orders": return "Cleanup Orders";
     case "presentation": return "End-game Exhibition";

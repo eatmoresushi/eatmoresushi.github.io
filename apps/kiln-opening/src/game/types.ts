@@ -1,5 +1,5 @@
 export type PlayerId = string;
-export type RulesVersion = "1.0.4" | "1.0.9" | "1.1.1" | "1.1.4" | "1.1.5" | "1.1.6";
+export type RulesVersion = "1.2.2";
 
 /**
  * The three v1.1.4 Contribution cards. Bank (-1 Heat, 1 Wood), Tend (0, 0) and
@@ -7,11 +7,13 @@ export type RulesVersion = "1.0.4" | "1.0.9" | "1.1.1" | "1.1.4" | "1.1.5" | "1.
  * from the set, so no FIRE_HARD value exists to be chosen by mistake.
  */
 export type ContributionCardId = "BANK" | "TEND" | "STOKE";
+export type ContributionHeatAdjustment = -2 | -1 | 0 | 1 | 2;
 export type WorkerId = string;
 export type CeramicId = string;
 export type VesselInstanceId = string;
 export type OrderId = string;
 export type TechniqueId = string;
+export type StartingTechniqueId = "ST01" | "ST02" | "ST03" | "ST04";
 
 export type PlayerCount = 2 | 3 | 4;
 export type RoundNumber = 1 | 2 | 3 | 4 | 5;
@@ -27,7 +29,6 @@ export type TechniqueDiscipline = "forming" | "glazing" | "firing";
  * Legacy numeric contribution, retained only so serialized pre-v1.1.4 matches still
  * decode. v1.1.4 play uses ContributionCardId; nothing in the live rules produces this.
  */
-export type WoodContribution = 0 | 1 | 2 | 3;
 export type KilnId = "RU" | "GU" | "GE" | "DI" | "JU";
 export type LocationId =
   | "materials_yard"
@@ -36,8 +37,7 @@ export type LocationId =
   | "kiln_yard"
   | "market_imperial_office"
   | "guild_academy"
-  | "labour"
-  | "court_patronage";
+  | "labour";
 /** V1.1.1: Base Heat is a clamped formula result, not a three-band table. */
 export type BaseHeat = 0 | 1 | 2 | 3 | 4 | 5;
 
@@ -96,11 +96,19 @@ export interface PlayerState {
   orderHand: OrderId[];
   completedOrders: CompletedOrderState[];
   techniques: OwnedTechniqueState[];
-  imperialProgress: 0 | 1 | 2 | 3 | 4 | 5;
-  imperialStipendsReceived: Array<2 | 4>;
+  startingTechniqueId: StartingTechniqueId | null;
+  workshopSpaces: {
+    pottersWheelUnlocked: 1 | 2;
+    glazeDecorationUnlocked: 1 | 2;
+  };
+  imperialRecognition: 0 | 1 | 2 | 3 | 4 | 5;
+  imperialGrantResolved: boolean;
+  imperialKilnUnlocked: boolean;
+  imperialPriorityAvailable: boolean;
+  imperialAudienceVpAwarded: boolean;
   passedWorkPhase: boolean;
-  pendingApprenticeUnlocks: number;
   kilnAbilityUsedThisRound: boolean;
+  kilnYardShifuUsedThisRound: boolean;
   /** Distinct Shapes formed this round, used by Measuring Calipers. */
   shapesFormedThisRound: Shape[];
   presentationCeramicIds: CeramicId[];
@@ -136,7 +144,8 @@ export type LoadedCeramic = CeramicCore & {
   stage: "loaded";
   glaze: Glaze;
   decoration: Decoration;
-  kilnSpaceId: KilnSpaceId;
+  kilnSpaceId: KilnSpaceId | "imperial";
+  kilnFurnitureUsed?: boolean;
 };
 
 export type FinishedCeramic = CeramicCore & {
@@ -200,7 +209,7 @@ export interface TechniqueDisplayState {
 export type OfficeOrderMode =
   | "take_one"
   | "take_up_to_two";
-export type OrderDeck = "market" | "imperial";
+export type OrderDeck = "market";
 
 export interface OrderedDecisionQueue {
   actors: PlayerId[];
@@ -210,7 +219,6 @@ export interface OrderedDecisionQueue {
 export interface FiringCeramicResult {
   ceramicId: CeramicId;
   zoneModifier: -1 | 0 | 1;
-  ignoredFireModifier: boolean;
   naturalActualHeat: number;
   naturalHeatDifference: number;
   naturalExactMatch: boolean;
@@ -234,11 +242,6 @@ export interface FiringContext {
   baseHeat: BaseHeat | null;
   fireModifier: FireModifier | null;
   globalHeat: number | null;
-  /**
-   * V1.1.1 Sagger Selection moves the Fire modifier one step toward 0 for the chosen
-   * ceramic rather than zeroing it, so the adjustment is per-ceramic, not a flag.
-   */
-  saggerAdjustedCeramicIds: CeramicId[];
   ceramicResults: Record<CeramicId, FiringCeramicResult>;
 }
 
@@ -246,8 +249,10 @@ export interface FiringResultSummary {
   round: RoundNumber;
   /** Present on states produced after the firing-recap UI update. */
   contributors?: PlayerId[];
-  /** Revealed effective contributions, including any Fuel Ledger adjustment. */
+  /** Contribution cards revealed simultaneously for this firing. */
   contributions?: Record<PlayerId, ContributionCardId>;
+  /** Public Heat values after any simultaneously revealed Fuel Ledger commitments. */
+  effectiveHeatAdjustments?: Record<PlayerId, ContributionHeatAdjustment>;
   baseHeat: BaseHeat;
   fireModifier: FireModifier;
   globalHeat: number;
@@ -255,11 +260,9 @@ export interface FiringResultSummary {
 
 export interface FinalScoreBreakdown {
   orders: number;
-  imperialProgress: number;
-  imperialSeal: number;
+  imperialAudience: number;
   presentation: number;
   immediateAbilities: number;
-  techniques?: number;
   leftoverCoins: number;
   total: number;
 }
@@ -269,8 +272,8 @@ export interface FinalResult {
   winnerIds: PlayerId[];
   resolvedBy:
     | "total_vp"
-    | "imperial_progress"
-    | "completed_imperial_orders"
+    | "imperial_recognition"
+    | "completed_crowns"
     | "masterpieces_delivered_or_presented"
     | "shared_victory";
 }
@@ -291,6 +294,11 @@ export type GamePhase =
       submittedPlayerIds: PlayerId[];
     }
   | {
+      type: "setup_starting_tech";
+      decisionOrder: PlayerId[];
+      currentIndex: number;
+    }
+  | {
       type: "work";
       activePlayerId: PlayerId;
     }
@@ -307,20 +315,15 @@ export type GamePhase =
       colourSamplesChoices?: OrderId[];
     }
   | {
-      type: "work_office_sale";
-      actorId: PlayerId;
-      workerId: WorkerId;
-    }
-  | {
-      type: "work_office_connoisseur";
-      actorId: PlayerId;
-      workerId: WorkerId;
-    }
-  | {
       type: "work_guild";
       actorId: PlayerId;
       workerId: WorkerId;
       step: "refresh_or_skip" | "buy";
+    }
+  | {
+      type: "work_commission_advance";
+      actorId: PlayerId;
+      workerId: WorkerId;
     }
   | {
       type: "firing_before_contribution";
@@ -334,11 +337,6 @@ export type GamePhase =
       submittedPlayerIds: PlayerId[];
     }
   | { type: "firing_reposition"; queue: OrderedDecisionQueue }
-  | { type: "firing_after_reveal"; queue: OrderedDecisionQueue }
-  | {
-      type: "firing_after_fire_reveal";
-      queue: OrderedDecisionQueue;
-    }
   | {
       type: "firing_before_quality";
       queue: OrderedDecisionQueue;
@@ -348,16 +346,13 @@ export type GamePhase =
       queue: OrderedDecisionQueue;
       techniqueIds: TechniqueId[];
     }
-  | {
-      type: "firing_after_firing";
-      queue: OrderedDecisionQueue;
-      techniqueIds: TechniqueId[];
-    }
+  | { type: "firing_workshop_seconds"; queue: OrderedDecisionQueue }
   | {
       type: "orders";
       turnOrder: PlayerId[];
       currentIndex: number;
       activePlayerId: PlayerId;
+      completedInCircuit: number;
     }
   | { type: "cleanup_orders"; queue: OrderedDecisionQueue }
   | {
@@ -368,7 +363,7 @@ export type GamePhase =
   | { type: "finished" };
 
 export interface GameState {
-  schemaVersion: 1;
+  schemaVersion: 2;
   rulesVersion: RulesVersion;
   gameId: string;
   revision: number;
@@ -387,144 +382,19 @@ export interface GameState {
   marketDeck: OrderId[];
   marketDiscard: OrderId[];
   marketDisplay: OrderId[];
-  imperialDeck: OrderId[];
-  imperialDiscard: OrderId[];
-  imperialDisplay: OrderId[];
+  /** Separate setup-only Starting Order deck; never enters the Main Order market. */
+  startingOrderDeck: OrderId[];
+  /** Starting Orders returned to the box during setup or discarded from hand. */
+  returnedStartingOrderIds: OrderId[];
   techniqueDecks: TechniqueDeckState;
   techniqueDisplay: TechniqueDisplayState;
   fireDeck: FireModifier[];
   fireDiscard: FireModifier[];
-  imperialSealOwnerId: PlayerId | null;
   firingContext: FiringContext | null;
   lastFiringResult: FiringResultSummary | null;
   finalResult: FinalResult | null;
   privateFirePeeks?: Record<PlayerId, FireModifier>;
-  experimentConfig?: GameExperimentConfig;
 }
-
-export type JunAbExperimentArm = "control" | "jun_cost_1";
-
-export interface JunAbExperimentConfig {
-  readonly experimentId: "jun-ab-001";
-  readonly experimentArm: JunAbExperimentArm;
-  readonly junActivationCoinCost: 0 | 1;
-}
-
-export type ImperialTrackExperimentArm =
-  | "all_imperial_orders_progress_2"
-  | "earlier_apprentices_track_002248_seal_2";
-
-export interface ImperialTrackExperimentConfig {
-  readonly experimentId: "imperial-track-ab-001";
-  readonly experimentArm: ImperialTrackExperimentArm;
-  readonly imperialOrderProgressMode: "all_two" | "printed";
-  readonly imperialProgressTrackVp: readonly [number, number, number, number, number, number];
-  readonly apprenticeMilestoneSpaces: readonly [number, number];
-  readonly presentationSpaces: readonly number[];
-  readonly imperialSealEnabled: true;
-  readonly imperialSealVp: 2 | 3;
-}
-
-
-
-
-
-
-
-
-
-/**
- * Whether Ding's extra vessel pays its normal Clay cost. Shipped rules charge for it; the
- * `free` arm restores the pre-v1.1.5 behaviour so the two can be compared on one seed set
- * instead of across separate runs, where other changes confound the comparison.
- */
-export type DingCostExperimentArm = "paid" | "free";
-
-export interface DingCostExperimentConfig {
-  readonly experimentId: "ding-cost-ab-001";
-  readonly experimentArm: DingCostExperimentArm;
-}
-
-/**
- * Ru's trigger and award. Its ability needs three simultaneous conditions where every other
- * Tradition needs one, and the Masterpiece requirement is the binding one: a ceramic aimed
- * exactly at its Preferred Heat is Masterpiece 33.3% of the time and Fine-or-better 83.3%.
- */
-export type RuTriggerExperimentArm = "control" | "fine_2" | "fine_3" | "master_6";
-
-export interface RuTriggerExperimentConfig {
-  readonly experimentId: "ru-trigger-ab-001";
-  readonly experimentArm: RuTriggerExperimentArm;
-  readonly ruMinQuality: "fine" | "masterpiece";
-  readonly ruOrderVp: number;
-}
-
-/**
- * Jun's activation price. Jun leads the Tradition table at 36.2% pooled, and 68.8% of its
- * activations buy Fine -> Masterpiece, which unlocks the 8 Orders that require one (mean
- * 10.4 VP against 8.3 for the rest). This arm tests the cost lever in isolation.
- */
-export type JunWoodExperimentArm = "control" | "wood_3" | "wood2_coin1";
-
-export interface JunWoodExperimentConfig {
-  readonly experimentId: "jun-wood-ab-001";
-  readonly experimentArm: JunWoodExperimentArm;
-  readonly junActivationWood: number;
-  /** Coins charged alongside the Wood. Zero under the shipped rules. */
-  readonly junActivationCoins?: number;
-}
-
-/**
- * Grants one player an extra available Apprentice at the start of Round 5, to measure what a
- * marginal Round-5 worker is actually worth. That number sets the correct award for the
- * Round-5 unlock: an Apprentice unlocked in Cleanup of Round 5 can never act, so it pays VP
- * instead, and if that award exceeds what a working Round-5 Apprentice earns, players are
- * paid to delay Imperial Progress.
- */
-export type R5WorkerExperimentArm = "control" | "extra_worker";
-
-export interface R5WorkerExperimentConfig {
-  readonly experimentId: "r5-worker-ab-001";
-  readonly experimentArm: R5WorkerExperimentArm;
-  readonly beneficiaryPlayerId: string;
-}
-
-/**
- * End-game Exhibition values and capacity. The Exhibition is 5.8% of all VP scored today,
- * and the traditions taking most from it are Ge and Ding rather than the Masterpiece kilns,
- * so a general buff moves the table in a direction worth measuring before shipping.
- */
-export type ExhibitionExperimentArm = "control" | "proposed";
-
-export interface ExhibitionExperimentConfig {
-  readonly experimentId: "exhibition-ab-001";
-  readonly experimentArm: ExhibitionExperimentArm;
-  readonly capacityByProgress: readonly [number, number, number, number, number, number];
-  readonly qualityVp: { readonly standard: number; readonly fine: number; readonly masterpiece: number };
-}
-
-/**
- * Grants one player a Technique for free at setup, to measure what owning it is worth.
- * The AI buys 0.26 Techniques per game and its forecast reports a positive net value in only
- * 4.4% of cases, so the model needs a ground truth to be corrected against rather than a
- * guessed constant.
- */
-export interface TechniqueGrantExperimentConfig {
-  readonly experimentId: "technique-grant-ab-001";
-  readonly experimentArm: "control" | "granted";
-  readonly beneficiaryPlayerId: string;
-  readonly techniqueId: string;
-}
-
-export type GameExperimentConfig =
-  | JunAbExperimentConfig
-  | ImperialTrackExperimentConfig
-  | DingCostExperimentConfig
-  | RuTriggerExperimentConfig
-  | JunWoodExperimentConfig
-  | R5WorkerExperimentConfig
-  | ExhibitionExperimentConfig
-  | TechniqueGrantExperimentConfig;
 
 export interface PlayerSetup {
   id: PlayerId;
@@ -534,13 +404,13 @@ export interface PlayerSetup {
 export interface CreateGameInput {
   gameId: string;
   players: PlayerSetup[];
-  experimentConfig?: GameExperimentConfig;
 }
 
 export interface GlazeSelection {
   ceramicId: CeramicId;
   glaze: Glaze;
   decoration: Decoration;
+  newShape?: Shape;
 }
 
 export interface MaterialExchange {
@@ -553,34 +423,38 @@ export interface DryingFramesSelection {
   glaze: Glaze;
 }
 
+export interface WhiteSlipSelection {
+  formedIndex: number;
+  decoration: Decoration;
+}
+
 export interface KilnLoadSelection {
   ceramicId: CeramicId;
-  kilnSpaceId: KilnSpaceId;
+  kilnSpaceId: KilnSpaceId | "imperial";
+  useKilnFurniture?: boolean;
 }
 
 export type GameAction =
   | { type: "SELECT_KILN"; kilnId: KilnId }
   | { type: "SUBMIT_STARTING_ORDERS"; orderIds: OrderId[] }
-  | { type: "KEEP_STARTING_ORDER" }
-  | { type: "REDRAW_STARTING_ORDER" }
+  | { type: "SELECT_STARTING_TECH"; techniqueId: StartingTechniqueId }
   | { type: "PASS_WORK_PHASE" }
-  | { type: "USE_CLAY_SUBSTITUTION"; clay: number; wood: number }
   | {
       type: "GAIN_MATERIALS";
       workerId: WorkerId;
       clay: number;
       wood: number;
       exchange?: MaterialExchange;
+      buyShifuBonus?: boolean;
+      preparedClayShape?: Shape;
     }
   | {
       type: "FORM_CERAMICS";
       workerId: WorkerId;
       shapes: Shape[];
       useTechniqueIds?: TechniqueId[];
-      claySubstitutions?: number;
-      /** Historical caller compatibility; translated to one substitution. */
-      claySubstitutionTarget?: "base" | "ding";
       dryingFrames?: DryingFramesSelection;
+      whiteSlip?: WhiteSlipSelection;
       dingExtraShape?: Shape;
     }
   | {
@@ -588,14 +462,17 @@ export type GameAction =
       workerId: WorkerId;
       selections: GlazeSelection[];
       freeDecorationCeramicId?: CeramicId;
-      /** Historical caller compatibility; V1.0.9 always uses the merged Shifu action. */
-      shifuMode?: "normal" | "free_single";
       useTechniqueIds?: TechniqueId[];
+      glazePalette?: { ceramicId: CeramicId; glaze: Glaze };
+      rapidDrying?: { ceramicId: CeramicId; kilnSpaceId: KilnSpaceId | "imperial" };
     }
   | {
       type: "USE_KILN_YARD";
       workerId: WorkerId;
       loads: KilnLoadSelection[];
+      useImperialPriority?: boolean;
+      kilnTendingClay?: number;
+      kilnTendingWood?: number;
     }
   /**
    * Labour has no worker limit, so it is always available. It exists because the pipeline
@@ -613,39 +490,33 @@ export type GameAction =
       type: "OFFICE_TAKE_ORDER";
       orderId: OrderId;
     }
-  | { type: "OFFICE_DRAW_BLIND_ORDER"; deck: OrderDeck }
   | { type: "OFFICE_END_ORDERS" }
-  | { type: "OFFICE_USE_COLOUR_SAMPLES"; deck?: OrderDeck; orderId?: OrderId }
-  | { type: "OFFICE_CHOOSE_COLOUR_SAMPLES_ORDER"; orderId: OrderId }
+  | { type: "OFFICE_USE_COLOUR_SAMPLES"; deck?: OrderDeck }
+  | { type: "OFFICE_CHOOSE_COLOUR_SAMPLES_ORDER"; orderId: OrderId; bottomOrderIds?: OrderId[] }
   | { type: "OFFICE_SKIP_COLOUR_SAMPLES" }
-  | { type: "OFFICE_RESOLVE_FLAWED_SALE"; ceramicIds: CeramicId[] }
-  | { type: "OFFICE_RESOLVE_CONNOISSEUR_NETWORK"; ceramicId: CeramicId | null }
-  | { type: "USE_COURT_PATRONAGE"; workerId: WorkerId }
+  | { type: "COMMISSION_GAIN_ADVANCE"; resource: "clay" | "wood" | "coins" }
   | { type: "BEGIN_GUILD_ACTION"; workerId: WorkerId }
   | { type: "GUILD_REFRESH_TECHNIQUE"; techniqueId: TechniqueId }
   | { type: "GUILD_SKIP_REFRESH" }
-  | { type: "GUILD_BUY_TECHNIQUE"; techniqueId: TechniqueId }
   | {
-      type: "RESOLVE_KILN_SETTING";
-      ceramicId: CeramicId | null;
-      toSpaceId: KilnSpaceId | null;
+      type: "GUILD_BUY_TECHNIQUE";
+      techniqueId: TechniqueId;
+      unlockWorkshop?: "potters_wheel" | "glaze_decoration";
     }
   | { type: "RESOLVE_KILN_YARD_REPOSITION"; ceramicId: CeramicId | null; toSpaceId: KilnSpaceId | null }
-  | { type: "RESOLVE_FUEL_LEDGER"; use: boolean }
-  | { type: "RESOLVE_SAGGER_SELECTION"; ceramicId: CeramicId | null }
   | { type: "RESOLVE_JUN"; ceramicId: CeramicId | null; delta: -1 | 1 | null }
   | { type: "RESOLVE_GE"; ceramicId: CeramicId | null }
   | { type: "RESOLVE_PROTECTIVE_SAGGARS"; ceramicId: CeramicId | null }
   | { type: "RESOLVE_SECOND_FIRING"; ceramicId: CeramicId | null }
   | { type: "RESOLVE_TEST_PIECES"; use: boolean }
-  /** Clay Substitution used before Contribution cards are chosen. */
-  | { type: "RESOLVE_FIRING_CLAY_SUBSTITUTION"; clay: number; wood: number; use: boolean }
-  | { type: "RESOLVE_KILN_RECORDS"; use: boolean }
+  | { type: "RESOLVE_WORKSHOP_SECONDS"; ceramicId: CeramicId | null }
   | {
       type: "COMPLETE_ORDER";
       orderId: OrderId;
       ceramicIds: CeramicId[];
       useGuanWaiver: boolean;
+      guanWaiverCeramicId?: CeramicId;
+      imperialGrantChoice?: "coins" | "resources";
     }
   | { type: "END_ORDER_TURN" }
   | { type: "DISCARD_ORDERS_FOR_CLEANUP"; orderIds: OrderId[] }
@@ -695,24 +566,21 @@ export interface GameRuleError {
 
 export type GameEvent =
   | { type: "KILN_SELECTED"; playerId: PlayerId; kilnId: KilnId }
+  | { type: "STARTING_TECH_SELECTED"; playerId: PlayerId; techniqueId: StartingTechniqueId }
   | { type: "STARTING_ORDERS_SUBMITTED"; playerId: PlayerId }
   | { type: "STARTING_ORDERS_REVEALED"; ordersByPlayer: Record<PlayerId, OrderId[]> }
-  | { type: "STARTING_ORDER_KEPT"; playerId: PlayerId; orderId: OrderId }
-  | { type: "STARTING_ORDER_REDRAWN"; playerId: PlayerId; discardedOrderId: OrderId; drawnOrderId: OrderId }
   | { type: "WORKER_PLACED"; playerId: PlayerId; workerId: WorkerId; locationId: LocationId }
   | { type: "PLAYER_PASSED"; playerId: PlayerId }
   | { type: "RESOURCES_CHANGED"; playerId: PlayerId; clay: number; wood: number; coins: number }
   | { type: "CERAMIC_SHAPED"; playerId: PlayerId; ceramicId: CeramicId; shape: Shape }
   | { type: "CERAMIC_GLAZED"; playerId: PlayerId; ceramicId: CeramicId; glaze: Glaze; decoration: Decoration }
-  | { type: "CERAMIC_LOADED"; playerId: PlayerId; ceramicId: CeramicId; kilnSpaceId: KilnSpaceId }
-  | { type: "CERAMIC_SOLD"; playerId: PlayerId; ceramicId: CeramicId }
-  | { type: "CERAMIC_RETURNED_TO_GLAZED"; playerId: PlayerId; ceramicId: CeramicId }
+  | { type: "CERAMIC_LOADED"; playerId: PlayerId; ceramicId: CeramicId; kilnSpaceId: KilnSpaceId | "imperial" }
   | {
       type: "ORDER_TAKEN";
       playerId: PlayerId;
       orderId: OrderId;
       deck: OrderDeck;
-      acquisition: "face_up" | "blind_top";
+      acquisition: "face_up" | "colour_samples";
     }
   | {
       type: "COLOUR_SAMPLES_USED";
@@ -728,18 +596,24 @@ export type GameEvent =
   | { type: "TECHNIQUE_ACQUIRED"; playerId: PlayerId; techniqueId: TechniqueId; cost: number }
   | { type: "TECHNIQUE_USED"; playerId: PlayerId; techniqueId: TechniqueId }
   | { type: "KILN_ABILITY_USED"; playerId: PlayerId; kilnId: KilnId }
+  | { type: "IMPERIAL_PRIORITY_USED"; playerId: PlayerId }
   | { type: "JUN_ACTIVATION_PAID"; playerId: PlayerId; wood: number }
   | { type: "WORK_PHASE_ENDED" }
   | { type: "WOOD_SUBMITTED"; playerId: PlayerId; windowId: string }
-  | { type: "WOOD_REVEALED"; contributions: Record<PlayerId, ContributionCardId> }
+  | {
+      type: "WOOD_REVEALED";
+      contributions: Record<PlayerId, ContributionCardId>;
+      effectiveHeatAdjustments: Record<PlayerId, ContributionHeatAdjustment>;
+    }
   | { type: "FIRE_REVEALED"; modifier: FireModifier; baseHeat: BaseHeat; globalHeat: number }
   | { type: "QUALITY_ASSIGNED"; ceramicId: CeramicId; quality: Quality }
+  | { type: "SECOND_FIRING_RESOLVED"; playerId: PlayerId; ceramicId: CeramicId; fireModifier: FireModifier; quality: Quality }
+  | { type: "WORKSHOP_SECONDS_SOLD"; playerId: PlayerId; ceramicId: CeramicId; coins: number }
   | {
       type: "FIRING_RESOLVED";
       ceramicId: CeramicId;
       fireModifier: FireModifier;
       zoneModifier: -1 | 0 | 1;
-      ignoredFireModifier: boolean;
       naturalActualHeat: number;
       naturalHeatDifference: number;
       naturalQuality: Quality;
@@ -749,49 +623,30 @@ export type GameEvent =
     }
   | { type: "ORDER_COMPLETED"; playerId: PlayerId; orderId: OrderId; ceramicIds: CeramicId[] }
   | {
-      type: "IMPERIAL_PROGRESS_ADVANCED";
+      type: "IMPERIAL_RECOGNITION_ADVANCED";
       playerId: PlayerId;
-      source?: "imperial_order" | "court_patronage";
-      orderId?: OrderId | null;
-      requirementCeramicCount?: number | null;
-      requirementCategory?:
-        | "single_fine"
-        | "single_masterpiece"
-        | "multi_2"
-        | "multi_3"
-        | "court_patronage"
-        | null;
-      from: number;
-      to: number;
-      reward: 1 | 2 | 3;
-      appliedGain?: number;
-      crossedSpaces?: number[];
-      capLoss?: number;
-      apprenticeMilestonesTriggered?: number[];
-      presentationMilestonesTriggered?: number[];
-      stipendMilestonesTriggered?: number[];
-      sealMilestoneTriggered?: boolean;
-      trackVpBefore?: number;
-      trackVpAfter?: number;
-      sealVp?: number;
+      orderId: OrderId;
+      from: 0 | 1 | 2 | 3 | 4 | 5;
+      to: 0 | 1 | 2 | 3 | 4 | 5;
+      crowns: 1 | 2 | 3;
+      appliedCrowns: number;
     }
   | {
-      type: "COURT_PATRONAGE_USED";
+      type: "IMPERIAL_GRANT_RECEIVED";
       playerId: PlayerId;
-      cost: number;
-      from: 0 | 1 | 2 | 3;
-      to: 1 | 2 | 3 | 4;
+      choice: "coins" | "resources";
+      clay: number;
+      wood: number;
+      coins: number;
     }
-  | { type: "IMPERIAL_SEAL_CLAIMED"; playerId: PlayerId; sealVp?: number }
-  | { type: "APPRENTICE_UNLOCKED"; playerId: PlayerId; workerId: WorkerId }
-  | { type: "ROUND_FIVE_UNLOCK_VP_REWARD"; playerId: PlayerId; vp: number }
+  | { type: "IMPERIAL_KILN_UNLOCKED"; playerId: PlayerId }
+  | { type: "IMPERIAL_PRIORITY_GAINED"; playerId: PlayerId }
+  | { type: "IMPERIAL_AUDIENCE_GAINED"; playerId: PlayerId; vp: 6 }
   | { type: "ORDERS_DISCARDED_FOR_CLEANUP"; playerId: PlayerId; orderIds: OrderId[] }
-  | { type: "IMPERIAL_STIPEND_RECEIVED"; playerId: PlayerId; space: 2 | 4; coins: number }
   | {
       type: "ORDER_DISPLAYS_ROTATED";
       round: 2 | 3 | 4 | 5;
       marketOrderIds: OrderId[];
-      imperialOrderIds: OrderId[];
     }
   | { type: "ROUND_STARTED"; round: RoundNumber; firstPlayerId: PlayerId }
   | {
@@ -814,6 +669,7 @@ export interface PrivateFiringState {
   gameId: string;
   windowId: string | null;
   contributions: Record<PlayerId, ContributionCardId>;
+  fuelLedgerCommittedBy: PlayerId[];
 }
 
 export type SubmitContributionResult =

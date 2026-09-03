@@ -127,6 +127,16 @@ function gameFailure(ruleError: GameRuleError, revision: number): MultiplayerErr
   return error(ruleError.code, ruleError.message, revision, ruleError.details);
 }
 
+function gameCompatibilityError(state: GameState, revision: number): MultiplayerError | null {
+  if (state.schemaVersion === 2 && state.rulesVersion === "1.2.2") return null;
+  return error(
+    "UNSUPPORTED_RULES_VERSION",
+    "This saved game uses an older rules or save format and cannot continue under V1.2.2. Please create a new room.",
+    revision,
+    { schemaVersion: state.schemaVersion, rulesVersion: state.rulesVersion },
+  );
+}
+
 function mapStoreFailure(code: StoreFailureCode, revision: number | null = null): MultiplayerError {
   switch (code) {
     case "room_code_conflict":
@@ -182,8 +192,8 @@ export class AuthoritativeGameService {
         code,
         status: "lobby",
         hostSeatId: seatId,
-        rulesVersion: "1.1.6",
-        contentVersion: "1.1.6",
+        rulesVersion: "1.2.2",
+        contentVersion: "1.2.2",
         contentDigest: rulesFingerprint(),
         latestRevision: 0,
         endedAt: null,
@@ -268,6 +278,10 @@ export class AuthoritativeGameService {
       this.store.loadHead(room.id),
       this.store.findOwnPendingSubmission(room.id, seat.playerId),
     ]);
+    if (head !== null) {
+      const compatibilityError = gameCompatibilityError(head.state, head.revision);
+      if (compatibilityError !== null) return failed(compatibilityError);
+    }
     return {
       ok: true,
       value: {
@@ -278,7 +292,12 @@ export class AuthoritativeGameService {
         ownPendingContribution:
           pending === null
             ? null
-            : { windowId: pending.windowId, card: pending.card, submitted: true },
+            : {
+                windowId: pending.windowId,
+                card: pending.card,
+                useFuelLedger: pending.useFuelLedger,
+                submitted: true,
+              },
         ...(head === null ? {} : { ownPrivateDecision: privateDecisionState(head.state, seat.playerId) }),
       },
     };
@@ -487,6 +506,10 @@ export class AuthoritativeGameService {
     }
     let head = await this.store.loadHead(room.id);
     if (head === null) return failed(error("GAME_NOT_STARTED", "The game has not started."));
+    {
+      const compatibilityError = gameCompatibilityError(head.state, head.revision);
+      if (compatibilityError !== null) return failed(compatibilityError);
+    }
     if (head.revision !== request.expectedRevision) {
       return failed(error("STALE_REVISION", "The authoritative game revision has changed.", head.revision));
     }
@@ -535,6 +558,7 @@ export class AuthoritativeGameService {
           privateState,
           computerSeat.playerId,
           command.card,
+          command.useFuelLedger,
           rng,
         );
         if (!applied.ok) return failed(gameFailure(applied.error, head.revision));
@@ -542,7 +566,8 @@ export class AuthoritativeGameService {
         fullEvents = applied.events;
         privateSubmission = {
           windowId: command.windowId,
-        card: command.card,
+          card: command.card,
+          useFuelLedger: command.useFuelLedger,
           revealed: applied.privateState.windowId === null,
         };
       } else {
@@ -595,6 +620,10 @@ export class AuthoritativeGameService {
         }
         const current = await this.store.loadHead(room.id);
         if (current === null) return failed(error("GAME_NOT_STARTED", "The game has not started."));
+        {
+          const compatibilityError = gameCompatibilityError(current.state, current.revision);
+          if (compatibilityError !== null) return failed(compatibilityError);
+        }
         head = current;
         continue;
       }
@@ -631,7 +660,12 @@ export class AuthoritativeGameService {
         ownPendingContribution:
           pending === null
             ? null
-            : { windowId: pending.windowId, card: pending.card, submitted: true },
+            : {
+                windowId: pending.windowId,
+                card: pending.card,
+                useFuelLedger: pending.useFuelLedger,
+                submitted: true,
+              },
         ownPrivateDecision: privateDecisionState(head.state, requestingSeat.playerId),
       },
     };
@@ -646,6 +680,10 @@ export class AuthoritativeGameService {
     if (prior !== null) return this.processedResult(prior.actorId, seat.playerId, prior.response);
     const head = await this.store.loadHead(room.id);
     if (head === null) return failed(error("GAME_NOT_STARTED", "The game has not started."));
+    {
+      const compatibilityError = gameCompatibilityError(head.state, head.revision);
+      if (compatibilityError !== null) return failed(compatibilityError);
+    }
     if (request.expectedRevision !== head.revision) {
       return failed(error("STALE_REVISION", "The authoritative game revision has changed.", head.revision));
     }
@@ -689,11 +727,21 @@ export class AuthoritativeGameService {
     if (request.command.windowId.trim().length === 0) {
       return failed(error("INVALID_REQUEST", "A Wood Contribution windowId is required."));
     }
+    if (typeof request.command.useFuelLedger !== "boolean") {
+      return failed(error("INVALID_REQUEST", "A Fuel Ledger choice is required."));
+    }
+    if (request.command.useFuelLedger && request.command.card === "TEND") {
+      return failed(error("INVALID_CONTRIBUTION", "Fuel Ledger can modify only Bank or Stoke."));
+    }
     for (let attempt = 0; attempt < CONTRIBUTION_CAS_ATTEMPTS; attempt += 1) {
       const prior = await this.store.getProcessed(room.id, request.commandId);
       if (prior !== null) return this.processedResult(prior.actorId, seat.playerId, prior.response);
       const head = await this.store.loadHead(room.id);
       if (head === null) return failed(error("GAME_NOT_STARTED", "The game has not started."));
+      {
+        const compatibilityError = gameCompatibilityError(head.state, head.revision);
+        if (compatibilityError !== null) return failed(compatibilityError);
+      }
       if (
         head.state.phase.type !== "firing_contributions" ||
         head.state.phase.windowId !== request.command.windowId
@@ -712,6 +760,9 @@ export class AuthoritativeGameService {
         contributions: Object.fromEntries(
           storedSubmissions.map((submission) => [submission.playerId, submission.card]),
         ),
+        fuelLedgerCommittedBy: storedSubmissions
+          .filter((submission) => submission.useFuelLedger)
+          .map((submission) => submission.playerId),
       };
       const rng = new SeededRandom(head.rngState);
       const applied = submitWoodContribution(
@@ -719,6 +770,7 @@ export class AuthoritativeGameService {
         privateState,
         seat.playerId,
         request.command.card,
+        request.command.useFuelLedger,
         rng,
       );
       if (!applied.ok) return failed(gameFailure(applied.error, head.revision));
@@ -727,7 +779,8 @@ export class AuthoritativeGameService {
         ? null
         : {
             windowId: request.command.windowId,
-        card: request.command.card,
+            card: request.command.card,
+            useFuelLedger: request.command.useFuelLedger,
             submitted: true,
           };
       const publicEvents = projectPublicEvents(applied.events);
@@ -756,7 +809,8 @@ export class AuthoritativeGameService {
         response,
         privateSubmission: {
           windowId: request.command.windowId,
-        card: request.command.card,
+          card: request.command.card,
+          useFuelLedger: request.command.useFuelLedger,
           revealed,
         },
       };
@@ -787,13 +841,13 @@ export class AuthoritativeGameService {
       return failed(error("AUTHENTICATION_FAILED", "The room or seat credential is invalid."));
     }
     if (
-      authenticated.room.rulesVersion !== "1.1.6" ||
-      authenticated.room.contentVersion !== "1.1.6"
+      authenticated.room.rulesVersion !== "1.2.2" ||
+      authenticated.room.contentVersion !== "1.2.2"
     ) {
       return failed(
         error(
           "UNSUPPORTED_RULES_VERSION",
-          "This room uses an older rules version and cannot continue under V1.1.6. Please create a new room.",
+          "This room uses an older rules version and cannot continue under V1.2.2. Please create a new room.",
         ),
       );
     }
@@ -837,6 +891,9 @@ export class AuthoritativeGameService {
       contributions: Object.fromEntries(
         submissions.map((submission) => [submission.playerId, submission.card]),
       ),
+      fuelLedgerCommittedBy: submissions
+        .filter((submission) => submission.useFuelLedger)
+        .map((submission) => submission.playerId),
     };
   }
 

@@ -3,15 +3,14 @@ import {
   DISCIPLINES,
   FIRE_CARDS,
   GAME_CONFIG,
-  IMPERIAL_ORDERS,
+  STARTING_ORDERS,
   KILN_IDS,
-  MARKET_ORDERS,
+  MAIN_ORDERS,
   SHAPES,
   TECHNIQUES,
   TECHNIQUE_DEFINITIONS,
 } from "./content.ts";
 import { createFailure, ruleError } from "./errors.ts";
-import { grantedTechnique, isSupportedExperimentConfig } from "./experiment.ts";
 import type { RandomSource } from "./rng.ts";
 import { shuffle } from "./rng.ts";
 import { emptyActionBoard } from "./selectors.ts";
@@ -63,11 +62,16 @@ function makePlayer(input: CreateGameInput["players"][number], seatIndex: number
     orderHand: [],
     completedOrders: [],
     techniques: [],
-    imperialProgress: 0,
-    imperialStipendsReceived: [],
+    startingTechniqueId: null,
+    workshopSpaces: { pottersWheelUnlocked: 1, glazeDecorationUnlocked: 1 },
+    imperialRecognition: 0,
+    imperialGrantResolved: false,
+    imperialKilnUnlocked: false,
+    imperialPriorityAvailable: false,
+    imperialAudienceVpAwarded: false,
     passedWorkPhase: false,
-    pendingApprenticeUnlocks: 0,
     kilnAbilityUsedThisRound: false,
+    kilnYardShifuUsedThisRound: false,
     shapesFormedThisRound: [],
     presentationCeramicIds: [],
     presentationFeaturedCeramicIds: [],
@@ -139,10 +143,6 @@ export function createGame(input: CreateGameInput, rng: RandomSource): CreateGam
   if (input.players.some((player) => player.displayName.trim().length === 0)) {
     return createFailure(ruleError("INVALID_SETUP", "Display names must not be empty."));
   }
-  if (input.experimentConfig !== undefined && !isSupportedExperimentConfig(input.experimentConfig)) {
-    return createFailure(ruleError("INVALID_SETUP", "Unsupported experiment configuration."));
-  }
-
   const typedPlayerCount = playerCount as PlayerCount;
   const playerOrder = [...ids];
   const firstPlayerId = playerOrder[rng.nextInt(playerOrder.length)];
@@ -154,15 +154,14 @@ export function createGame(input: CreateGameInput, rng: RandomSource): CreateGam
   const selectionOrder = [...turnOrder].reverse();
 
   const marketDeck = shuffle(
-    MARKET_ORDERS.map((order) => order.id),
+    MAIN_ORDERS.map((order) => order.id),
     rng,
   );
-  const imperialDeck = shuffle(
-    IMPERIAL_ORDERS.map((order) => order.id),
+  const startingOrderDeck = shuffle(
+    STARTING_ORDERS.map((order) => order.id),
     rng,
   );
   const marketDisplay = drawMany(marketDeck, GAME_CONFIG.orderDisplay.market);
-  const imperialDisplay = drawMany(imperialDeck, GAME_CONFIG.orderDisplay.imperial);
   const techniqueState = makeTechniqueState(rng);
   const fireDeck = shuffle(FIRE_CARDS, rng);
 
@@ -177,7 +176,7 @@ export function createGame(input: CreateGameInput, rng: RandomSource): CreateGam
   };
 
   const state: GameState = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     rulesVersion: GAME_CONFIG.rulesVersion,
     gameId: input.gameId,
     revision: 0,
@@ -200,38 +199,21 @@ export function createGame(input: CreateGameInput, rng: RandomSource): CreateGam
     marketDeck,
     marketDiscard: [],
     marketDisplay,
-    imperialDeck,
-    imperialDiscard: [],
-    imperialDisplay,
+    startingOrderDeck,
+    returnedStartingOrderIds: [],
     techniqueDecks: techniqueState.decks,
     techniqueDisplay: techniqueState.display,
     fireDeck,
     fireDiscard: [],
-    imperialSealOwnerId: null,
     firingContext: null,
     lastFiringResult: null,
     finalResult: null,
     privateFirePeeks: {},
-    ...(input.experimentConfig === undefined
-      ? {}
-      : { experimentConfig: { ...input.experimentConfig } }),
   };
 
   if (new Set(KILN_IDS).size !== KILN_IDS.length) {
     return createFailure(ruleError("INVALID_SETUP", "Kiln definitions must be unique."));
   }
 
-  // technique-grant-ab-001: hand one player a Technique at setup so the VP difference
-  // measures what owning it is worth. The tile is not removed from any display or deck --
-  // this measures ownership, not the cost of acquiring it, which is the term the forecast
-  // already models and the one under suspicion.
-  const grant = grantedTechnique(state.experimentConfig);
-  if (grant !== null) {
-    const owner = state.players[grant.playerId];
-    const known = TECHNIQUES.some((technique) => technique.id === grant.techniqueId);
-    if (owner !== undefined && known) {
-      owner.techniques.push({ id: grant.techniqueId as OwnedTechniqueState["id"], exhausted: false });
-    }
-  }
   return { ok: true, state };
 }

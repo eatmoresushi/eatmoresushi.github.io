@@ -1,12 +1,12 @@
 {
-  "rulesVersion": "1.1.6",
+  "rulesVersion": "1.2.2",
   "roundCount": 5,
   "phases": [
     {
       "order": 1,
       "id": "start",
       "name": "Start of Round",
-      "summary": "In Rounds 2-5, discard the two leftmost Market Orders and two leftmost Imperial Orders; slide and refill both displays, ready Techniques, and reset once-per-round Kiln abilities."
+      "summary": "In Rounds 2-5, discard the three leftmost face-up Main Orders, slide the remaining two left and refill the display to five; refill Tech displays and ready once-per-round abilities."
     },
     {
       "order": 2,
@@ -18,19 +18,19 @@
       "order": 3,
       "id": "firing",
       "name": "Firing Phase",
-      "summary": "If the kiln is not empty, resolve pre-Contribution Techniques, secret Contribution cards, Fuel Ledger, Base Heat, Kiln Yard Shifu repositioning, Fire, Actual Heat, Quality and after-firing effects."
+      "summary": "If either Shared or Imperial Kiln contains ceramics, resolve Test Pieces, secret Contributions (including secret Fuel Ledger commitments), Base Heat, Kiln Yard Shifu repositioning, Fire, Actual Heat, Kiln abilities, Quality, after-Quality Techs and Workshop Seconds."
     },
     {
       "order": 4,
       "id": "orders",
       "name": "Order Phase",
-      "summary": "In turn order, complete any number of Orders. Imperial Orders advance by their printed +1, +2 or +3 Progress, up to space 5."
+      "summary": "In reverse turn order, each opportunity completes at most one held or face-up Order or passes. Continue until a full circuit has no completion. Each Crown advances Imperial Recognition by one."
     },
     {
       "order": 5,
       "id": "cleanup",
       "name": "Cleanup",
-      "summary": "Return workers, resolve Apprentice unlocks or the Round-5 1-VP compensation, discard Orders down to the uniform limit of 3, pass First Player and advance the round."
+      "summary": "Return workers, discard held Orders down to the limit of 3, pass First Player clockwise and advance the round."
     }
   ]
 }

@@ -1,5 +1,5 @@
 import type {
-  ContributionCardId, GameEvent, PlayerId, WoodContribution } from "../game/index.ts";
+  ContributionCardId, GameEvent, PlayerId } from "../game/index.ts";
 import type {
   AuthoritativeHead,
   CommandSuccess,
@@ -79,6 +79,7 @@ export interface CommitStartInput {
 export interface PrivateCommitInput {
   windowId: string;
   card: ContributionCardId;
+  useFuelLedger: boolean;
   revealed: boolean;
 }
 

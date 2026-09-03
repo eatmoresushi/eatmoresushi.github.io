@@ -107,7 +107,7 @@ function PlayerPanel({
   const ceramics = Object.values(game.ceramics).filter(
     (ceramic) => ceramic.ownerId === player.id && ceramic.stage !== "sold",
   );
-  const immediateVp = player.score.orderVp + player.score.kilnTraditionVp;
+  const immediateVp = player.score.orderVp + player.score.kilnTraditionVp + (player.imperialAudienceVpAwarded ? 6 : 0);
   const workers = Object.values(player.workers);
   const availableWorkers = workers.filter((worker) => worker.status === "available");
   const lockedWorkers = workers.filter((worker) => worker.status === "locked");
@@ -126,7 +126,7 @@ function PlayerPanel({
         <div><dt>{t("Coins")}</dt><dd>{player.resources.coins}</dd></div>
         <div><dt>{t("Clay")}</dt><dd>{player.resources.clay}</dd></div>
         <div><dt>{t("Wood")}</dt><dd>{player.resources.wood}</dd></div>
-        <div><dt>{t("Progress")}</dt><dd>{player.imperialProgress} / 5</dd></div>
+        <div><dt>{locale === "zh-CN" ? "御用认可" : "Recognition"}</dt><dd>{player.imperialRecognition} / 5</dd></div>
       </dl>
 
       <section className="plain-subsection">
@@ -150,7 +150,6 @@ function PlayerPanel({
           {locale === "zh-CN"
             ? `${availableWorkers.length}名可用工人 · ${lockedWorkers.length}名锁定。可用：${availableWorkers.filter((worker) => worker.kind === "shifu").length}名师傅、${availableWorkers.filter((worker) => worker.kind === "apprentice").length}名学徒`
             : `${availableWorkers.length} available workers · ${lockedWorkers.length} locked. Breakdown: ${availableWorkers.filter((worker) => worker.kind === "shifu").length} Shifu and ${availableWorkers.filter((worker) => worker.kind === "apprentice").length} Apprentices available`}
-          {player.pendingApprenticeUnlocks > 0 ? locale === "zh-CN" ? ` · ${player.pendingApprenticeUnlocks}名将在清理阶段解锁` : ` · ${player.pendingApprenticeUnlocks} unlocks during Cleanup` : ""}
         </p>
       </section>
 
@@ -281,9 +280,7 @@ function FiringInspector({ game, context, live }: { game: PublicGameState; conte
               <tbody>{Object.values(context.ceramicResults).map((result) => {
                 const ceramic = game.ceramics[result.ceramicId];
                 const glaze = ceramic !== undefined && ceramic.stage !== "shaped" && ceramic.stage !== "sold" ? ceramic.glaze : null;
-                const fireUsed = result.ignoredFireModifier ? 0 : context.fireModifier;
                 const changes = [
-                  result.ignoredFireModifier ? (locale === "zh-CN" ? "匣钵择定：窑火修正视为0" : "Sagger Selection: Fire treated as 0") : null,
                   result.finalActualHeat !== result.naturalActualHeat ? (locale === "zh-CN" ? `实际火候${result.naturalActualHeat} → ${result.finalActualHeat}` : `Actual Heat ${result.naturalActualHeat} → ${result.finalActualHeat}`) : null,
                   result.forcedQuality !== null ? (locale === "zh-CN" ? `强制改为${term(result.forcedQuality)}` : `Forced ${term(result.forcedQuality)}`) : null,
                 ].filter((value): value is string => value !== null);
@@ -292,7 +289,7 @@ function FiringInspector({ game, context, live }: { game: PublicGameState; conte
                     <th>{ceramic === undefined ? t("Ceramic") : ceramicAttributes(ceramic, locale)}</th>
                     <td>{ceramic === undefined ? "—" : game.players[ceramic.ownerId]?.displayName ?? ceramic.ownerId}</td>
                     <td>{glaze === null ? "—" : `${preferredHeat(glaze)} (${term(glaze)})`}</td>
-                    <td>{context.baseHeat ?? "—"}</td><td>{fireUsed === null ? "—" : signed(fireUsed)}</td><td>{signed(result.zoneModifier)}</td><td>{changes.join("; ") || t("None.")}</td><td>{result.finalActualHeat}</td><td>{result.finalHeatDifference}</td><td>{result.assignedQuality === null ? t("Pending") : term(result.assignedQuality)}</td>
+                    <td>{context.baseHeat ?? "—"}</td><td>{context.fireModifier === null ? "—" : signed(context.fireModifier)}</td><td>{signed(result.zoneModifier)}</td><td>{changes.join("; ") || t("None.")}</td><td>{result.finalActualHeat}</td><td>{result.finalHeatDifference}</td><td>{result.assignedQuality === null ? t("Pending") : term(result.assignedQuality)}</td>
                   </tr>
                 );
               })}</tbody>
@@ -333,11 +330,10 @@ function OrderDisplays({ game, ownPlayerId }: { game: PublicGameState; ownPlayer
     <section className="playtest-panel orders-board" aria-labelledby="orders-title">
       <div className="playtest-panel-heading">
         <div><p className="eyebrow">{t("Public commissions")}</p><h2 id="orders-title">{t("Orders")}</h2></div>
-        <span>{t("Market")} {game.decks.marketRemaining} · {t("Imperial")} {game.decks.imperialRemaining} {t("remaining")}</span>
+        <span>{t("Main deck")} {game.decks.marketRemaining} {t("remaining")}</span>
       </div>
       <div className="order-display-columns">
-        <div><h3>{t("Market display")} ({game.displays.market.length})</h3><div className="card-row">{game.displays.market.map((orderId) => <OrderCard orderId={orderId} key={orderId} />)}</div></div>
-        <div><h3>{t("Imperial display")} ({game.displays.imperial.length})</h3><div className="card-row">{game.displays.imperial.map((orderId) => <OrderCard orderId={orderId} key={orderId} imperial />)}</div></div>
+        <div><h3>{t("Main Order display")} ({game.displays.market.length})</h3><div className="card-row">{game.displays.market.map((orderId) => <OrderCard orderId={orderId} key={orderId} />)}</div></div>
       </div>
       <section className="workshop-orders" aria-label={t("Workshop Orders")}>
         <h3>{t("Uncompleted Order hands — public information")}</h3>
@@ -346,7 +342,7 @@ function OrderDisplays({ game, ownPlayerId }: { game: PublicGameState; ownPlayer
           return (
             <article className="workshop-order-hand" key={playerId}>
               <h4>{player.displayName}{playerId === ownPlayerId ? ` (${t("You")})` : ""} · {player.orderHand.length} {t("open")} / {player.completedOrders.length} {t("completed")}</h4>
-              {player.orderHand.length === 0 ? <p className="muted">{t("No open Orders.")}</p> : <div className="card-row">{player.orderHand.map((orderId) => <OrderCard orderId={orderId} imperial={orderId.startsWith("I")} key={orderId} />)}</div>}
+              {player.orderHand.length === 0 ? <p className="muted">{t("No open Orders.")}</p> : <div className="card-row">{player.orderHand.map((orderId) => <OrderCard orderId={orderId} key={orderId} />)}</div>}
             </article>
           );
         })}</div>
@@ -375,32 +371,30 @@ function TechniqueDisplays({ game }: { game: PublicGameState }) {
 
 function ImperialProgressTable({ game }: { game: PublicGameState }) {
   const { locale, t } = useI18n();
-  const sealOwner = game.imperialSealOwnerId === null ? t("Unclaimed") : game.players[game.imperialSealOwnerId]?.displayName ?? game.imperialSealOwnerId;
   return (
     <section className="playtest-panel imperial-progress" aria-labelledby="imperial-progress-title" data-testid="imperial-progress-track">
-      <div className="playtest-panel-heading"><div><p className="eyebrow">{t("Track state")}</p><h2 id="imperial-progress-title">{t("Imperial Progress")}</h2></div><span data-testid="imperial-seal-owner">{t("Imperial Seal")} · {sealOwner} · 2 {t("VP")}</span></div>
+      <div className="playtest-panel-heading"><div><p className="eyebrow">{t("Track state")}</p><h2 id="imperial-progress-title">{locale === "zh-CN" ? "御用认可" : "Imperial Recognition"}</h2></div><span>{locale === "zh-CN" ? "完成订单上的每个皇冠推进1格" : "Each Crown on a completed Order advances 1"}</span></div>
       <div className="table-scroll imperial-progress-scroll">
         <table className="state-table imperial-progress-spaces">
-          <thead><tr><th>{t("Space")}</th><th>{t("Name")}</th><th>{t("End-game VP")}</th><th>{t("Milestone")}</th><th>{t("Players")}</th></tr></thead>
+          <thead><tr><th>{locale === "zh-CN" ? "认可" : "Recognition"}</th><th>{t("Name")}</th><th>{locale === "zh-CN" ? "首次到达奖励" : "First-reached reward"}</th><th>{t("Players")}</th></tr></thead>
           <tbody>{IMPERIAL_PROGRESS.track.map((space) => {
-            const occupants = game.playerOrder.filter((playerId) => game.players[playerId]?.imperialProgress === space.space);
-            return <tr data-progress-space={space.space} key={space.space}><th>{space.space}</th><td>{locale === "zh-CN" ? space.titleZh : space.title}</td><td>{space.endGameVp}</td><td>{progressReward(space.space, locale)}</td><td className="progress-markers">{occupants.length === 0 ? "—" : occupants.map((playerId) => <span className="progress-marker" key={playerId}>{game.players[playerId]?.displayName}</span>)}</td></tr>;
+            const occupants = game.playerOrder.filter((playerId) => game.players[playerId]?.imperialRecognition === space.space);
+            return <tr data-progress-space={space.space} key={space.space}><th>{space.space}</th><td>{locale === "zh-CN" ? space.titleZh : space.title}</td><td>{locale === "zh-CN" ? space.rewardZh ?? "—" : space.reward ?? "—"}</td><td className="progress-markers">{occupants.length === 0 ? "—" : occupants.map((playerId) => <span className="progress-marker" key={playerId}>{game.players[playerId]?.displayName}</span>)}</td></tr>;
           })}</tbody>
         </table>
       </div>
-      <p className="progress-legend">{t("Imperial Orders advance by their printed +1, +2, or +3. Apprentices crossed at spaces 1 and 3 unlock during Cleanup.")}</p>
+      <p className="progress-legend">{locale === "zh-CN" ? "只有已完成订单上的皇冠推进认可；多皇冠订单按顺序结算跨过的每个里程碑。" : "Only Crowns on completed Orders advance Recognition; resolve every crossed milestone in order."}</p>
     </section>
   );
 }
 
-export function OrderCard({ orderId, imperial = false }: { orderId: string; imperial?: boolean }) {
+export function OrderCard({ orderId }: { orderId: string }) {
   const { locale, t, term } = useI18n();
   const order = ORDER_DEFINITIONS[orderId];
   if (order === undefined) return null;
   return (
-    <article className={`order-card ${imperial || orderId.startsWith("I") ? "order-imperial" : ""}`} data-order-id={orderId}>
-      <header><strong>{orderId}</strong><span>{order.vp} {t("VP")}{order.coins > 0 ? ` · ${order.coins} ${t("Coins")}` : ""}</span></header>
-      {order.imperialProgressReward !== undefined && <strong className="order-progress-reward">+{order.imperialProgressReward} {t("Imperial Progress")}</strong>}
+    <article className={`order-card ${order.crowns > 0 ? "order-imperial" : ""}`} data-order-id={orderId}>
+      <header><strong>{orderId}</strong><span>{order.vp} {t("VP")}{order.coins > 0 ? ` · ${order.coins} ${t("Coins")}` : ""}{order.crowns > 0 ? ` · ${"👑".repeat(order.crowns)}` : ""}</span></header>
       <ol className="order-slots">{order.ceramics.map((requirement, index) => (
         <li key={index}>{requirement.shapes?.map((shape) => term(shape)).join(` ${t("or")} `) ?? (requirement.shape === undefined ? t("Any Shape") : term(requirement.shape))} · {requirement.glaze === undefined ? t("Any Glaze") : term(requirement.glaze)} · {requirement.decoration === undefined ? t("Any Decoration") : term(requirement.decoration)}</li>
       ))}</ol>
@@ -427,6 +421,9 @@ export function relationLabel(order: OrderDefinition, locale: Locale = "en"): st
       case "different_decoration": return locale === "zh-CN" ? "装饰不同" : "different Decorations";
       case "at_least_n_quality": return locale === "zh-CN" ? `至少${relation.count}件${localizedTerm(locale, relation.quality)}` : `at least ${relation.count} ${localizedTerm(locale, relation.quality)}`;
       case "at_least_n_distinct_glazes": return locale === "zh-CN" ? `至少${relation.count}种不同釉色` : `at least ${relation.count} distinct Glazes`;
+      case "at_least_n_distinct_decorations": return locale === "zh-CN" ? `至少${relation.count}种不同装饰` : `at least ${relation.count} distinct Decorations`;
+      case "required_glazes": return locale === "zh-CN" ? `所用釉色包括：${relation.values.map((value) => localizedTerm(locale, value)).join("、")}` : `required Glazes: ${relation.values.map((value) => localizedTerm(locale, value)).join(", ")}`;
+      case "required_decorations": return locale === "zh-CN" ? `所用装饰包括：${relation.values.map((value) => localizedTerm(locale, value)).join("、")}` : `required Decorations: ${relation.values.map((value) => localizedTerm(locale, value)).join(", ")}`;
       case "glaze_categories": {
         // Name the Glazes. The generic phrasing left I13 unplayable from its own card: the
         // data requires White, Celadon and Moon White, and the card said only that some
@@ -476,39 +473,29 @@ function placedWorkerLabel(game: PublicGameState, workerId: string, locale: Loca
   return workerId;
 }
 
-function progressReward(space: number, locale: Locale = "en"): string {
-  if (space === 0 || space === 2 || space === 4) return locale === "zh-CN" ? "终局展陈上限5件" : "End-game Exhibition capacity 5";
-  if (space === 1 || space === 3) return locale === "zh-CN" ? "清理阶段解锁1名学徒；终局展陈上限5件" : "Unlock 1 Apprentice during Cleanup; Exhibition capacity 5";
-  if (space === 5) return locale === "zh-CN" ? "首位到达者获得2分御印；终局展陈上限5件" : "First arrival claims the 2-VP Imperial Seal; Exhibition capacity 5";
-  return "—";
-}
-
 function phaseName(game: PublicGameState, locale: Locale = "en"): string {
   const tx = (english: string): string => locale === "zh-CN" ? ({
-    "Kiln selection": "选择窑口", "Starting Orders": "起始订单", "Work Phase": "劳作阶段",
-    "Office — Orders": "贡务 — 订单", "Office — Optional Flawed sale": "贡务 — 可选次品出售",
-    "Office — Connoisseur Network": "贡务 — 鉴藏人脉", "Guild & Academy": "行会与学堂",
+    "Kiln selection": "选择窑口", "Starting Orders": "起始订单", "Starting Tech": "起始技术", "Work Phase": "劳作阶段",
+    "Commission Market — Orders": "委托市场 — 订单", "Guild & Academy": "行会与书院",
     "Pre-firing Techniques": "烧制前技术", "Secret Contributions": "秘密出柴牌", "Fuel Ledger": "柴薪簿",
-    "Sagger Selection": "匣钵择选", "Kiln ability": "窑口能力", "Second Firing": "二次烧成",
-    "Protective Saggars": "护胎匣钵", "Kiln Records": "窑务簿录", "Test Pieces": "试片",
-    "Order Phase": "交付阶段", "End-game Exhibition": "终局陈设", "Final results": "最终计分",
+    "Shifu kiln reposition": "师傅移窑", "Kiln ability": "窑口能力", "Second Firing": "二次烧成",
+    "Protective Saggars": "护胎匣钵", "Test Pieces": "试片", "Cleanup Orders": "整理阶段订单",
+    "Commission advance": "委托预付款", "Workshop Seconds": "作坊次品", "Order Phase": "交付阶段", "End-game Exhibition": "终局展陈", "Final results": "最终计分",
   } as Record<string, string>)[english] ?? english : english;
   switch (game.phase.type) {
     case "setup_kiln_selection": return tx("Kiln selection");
     case "setup_starting_orders": return tx("Starting Orders");
+    case "setup_starting_tech": return tx("Starting Tech");
     case "work": return tx("Work Phase");
-    case "work_office_orders": return tx("Office — Orders");
-    case "work_office_sale": return tx("Office — Optional Flawed sale");
-    case "work_office_connoisseur": return tx("Office — Connoisseur Network");
+    case "work_office_orders": return tx("Commission Market — Orders");
+    case "work_commission_advance": return tx("Commission advance");
     case "work_guild": return tx("Guild & Academy");
     case "firing_before_contribution": return tx("Pre-firing Techniques");
     case "firing_contributions": return tx("Secret Contributions");
-    case "firing_after_reveal": return tx("Fuel Ledger");
     case "firing_reposition": return tx("Shifu kiln reposition");
-    case "firing_after_fire_reveal": return tx("Sagger Selection");
     case "firing_before_quality": return tx("Kiln ability");
-    case "firing_after_quality": return tx(game.phase.techniqueIds[game.phase.queue.currentIndex] === "T15" ? "Second Firing" : "Protective Saggars");
-    case "firing_after_firing": return tx(game.phase.techniqueIds[game.phase.queue.currentIndex] === "T13" ? "Kiln Records" : "Test Pieces");
+    case "firing_after_quality": return tx(game.phase.techniqueIds[game.phase.queue.currentIndex] === "T14" ? "Second Firing" : "Protective Saggars");
+    case "firing_workshop_seconds": return tx("Workshop Seconds");
     case "orders": return tx("Order Phase");
     case "cleanup_orders": return tx("Cleanup Orders");
     case "presentation": return tx("End-game Exhibition");

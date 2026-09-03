@@ -337,6 +337,7 @@ export class InMemoryMultiplayerStore implements MultiplayerStore {
         playerId: input.actorId,
         commandId: input.commandId,
         card: input.privateSubmission.card,
+        useFuelLedger: input.privateSubmission.useFuelLedger,
         revealedRevision: input.privateSubmission.revealed ? input.nextHead.revision : null,
       };
       this.privateSubmissions.set(

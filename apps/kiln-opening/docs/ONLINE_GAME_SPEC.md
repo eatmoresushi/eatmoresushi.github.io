@@ -46,7 +46,7 @@ Host starts only with 2–4 players.
 
 The host may add or remove computer seats while the room is in the lobby. A room must retain at least one human seat and may contain up to three computer players, for the normal four-seat maximum.
 
-Computer seats use the current production policy through the V1.1.6 authoritative engine, with no live exploration or learning. Historical calibration labels remain honest and are not claims of V1.1.6 calibration. Each seat has a private persistent seed and stable player/seat identity. The browser never chooses an AI command: an authenticated client only asks the Edge Function to advance, and the server derives the active computer, enumerates legal commands, applies the selected command through the authoritative engine, and commits it with the same revision checks as a human command.
+Computer seats use the current production policy through the V1.2.2 authoritative engine, with no live exploration or learning. Historical calibration labels remain honest and are not claims of V1.2.2 calibration. Each seat has a private persistent seed and stable player/seat identity. The browser never chooses an AI command: an authenticated client only asks the Edge Function to advance, and the server derives the active computer, enumerates legal commands, applies the selected command through the authoritative engine, and commits it with the same revision checks as a human command.
 
 Consecutive computer turns run in bounded batches so an Edge Function invocation cannot monopolize the session. Concurrent advance requests are safe; compare-and-swap persistence accepts each revision only once. Contribution-card choices remain private in the server-only schema until the normal simultaneous reveal, including when computers contribute.
 
@@ -54,8 +54,10 @@ Consecutive computer turns run in bounded batches so an Edge Function invocation
 
 - random First Player;
 - reverse-order Kiln selection;
-- each player privately receives 2 Market and 2 Imperial Orders, secretly keeps exactly 2, and all kept Orders are revealed simultaneously after every player submits;
-- game begins Round 1.
+- each player receives 4 private Starting Orders, secretly keeps exactly 2, and all kept Starting Orders become public after every player submits;
+- each player chooses 1 Starting Tech from the common supply;
+- every player starts with 1 Shifu + 3 Apprentices, one open and one locked space in each private workshop action, and a locked Imperial Kiln;
+- game begins Round 1 with a five-card Main Order display.
 
 ## Synchronous turn model
 
@@ -75,19 +77,18 @@ Players cannot submit actions out of turn except special simultaneous/timing-win
 
 Firing is the most important digital interaction.
 
-1. show final kiln layout;
-2. resolve pre-Contribution Kiln Setting, Clay Substitution, and private Test Pieces choices in First-Player order;
-3. eligible players privately submit one Bank/Tend/Stoke Contribution card;
-4. UI shows only submission status, never card values;
-5. once all eligible players submit, server atomically reveals and spends contributions;
-6. resolve Fuel Ledger, then calculate Base Heat;
-7. offer each eligible Kiln Yard Shifu one reposition decision in First-Player order;
-8. reveal Fire card, reshuffling the discard first if needed;
-9. resolve Sagger Selection;
-10. calculate Actual Heat and resolve Jun/Ge adjustments;
-11. assign Quality;
-12. resolve Protective Saggars, then Second Firing;
-13. resolve Kiln Records and move remaining ceramics to Finished areas.
+1. show the final Shared- and Imperial-Kiln layout;
+2. resolve private Test Pieces choices before Contributions;
+3. eligible players privately submit Bank, Tend or Stoke; an affordable Fuel Ledger owner may instead submit Bank −2 or Stoke +2 with the extra Wood committed secretly;
+4. UI shows only submission status, never card values, the extra commitment or derived heat;
+5. once all eligible players submit, the server atomically reveals and pays all Contributions, calculates Base Heat from 2, then clamps it to 0–5;
+6. offer each eligible Kiln Yard Shifu one Shared-Kiln reposition decision in First-Player order;
+7. reveal the Fire card, reshuffling the discard first if needed;
+8. calculate Actual Heat and resolve Jun/Ge adjustments;
+9. assign Quality;
+10. resolve Protective Saggars and immediate Second Firing choices in First-Player order;
+11. move remaining ceramics to Finished areas, empty all kiln spaces and discard used Fire cards;
+12. resolve Workshop Seconds: each player may discard at most one remaining Flawed ceramic for 2 Coins.
 
 ## No timers in MVP
 
@@ -120,7 +121,7 @@ On reconnect:
 
 ## Hidden information
 
-Opening Order offers/selections, Colour Samples top-two choices, Test Pieces peeks, and Wood/Fuel Ledger submissions are private. Wood and Fuel Ledger choices remain strictly secret until the simultaneous reveal.
+Opening Starting Order offers/selections, Colour Samples top-three choices and ordering, Test Pieces peeks, and Contribution/Fuel Ledger submissions are private. Contribution and Fuel Ledger choices remain strictly secret until the simultaneous reveal.
 
 Never put unrevealed contribution values in public realtime state.
 
@@ -142,15 +143,15 @@ Not required for MVP.
 
 Not required for MVP. Voice/chat can be external.
 
-## Imperial Progress synchronization
+## Imperial Recognition synchronization
 
-Imperial Progress is server-authoritative and public. Every public snapshot and reconnect response includes each player's current space, pending Apprentice unlocks, current worker availability, and the global Imperial Seal owner. The serialized legacy stipend field remains empty for replay compatibility.
+Imperial Recognition is server-authoritative and public. Every public snapshot and reconnect response includes each player's current 0–5 space, resolved milestone rewards, whether their Imperial Kiln is unlocked, and whether their Imperial Priority token is available.
 
-Completing a Market Order never advances Imperial Progress. An Imperial Order advances by the number of ceramics it requires (+1, +2, or +3), up to space 5, even when several are completed in one round. The server checks every crossed milestone: spaces 1 and 3 each queue one Apprentice for unlock during Cleanup, and the first player to reach or cross into space 5 takes the 2-VP Imperial Seal permanently. Spaces 2 and 4 grant no immediate resources.
+Only Crown icons printed on completed Orders advance Recognition. The server applies all Crowns, caps the result at 5, and resolves every newly crossed milestone in ascending order: Recognition 2 grants the player's chosen Imperial Grant, Recognition 3 **Imperial Gift** unlocks the private Imperial Kiln, Recognition 4 **Imperial Priority** grants its once-per-game token, and Recognition 5 **Imperial Audience** grants 6 VP.
 
-The client renders the full six-space track, prints each Imperial card's +1/+2/+3 reward, and uses committed server events containing the original space, final space, printed reward, and crossed milestones for advancement, Apprentice-unlock, and Seal feedback. It must not predict or apply any of those transitions locally.
+Imperial Priority is submitted only as part of a legal Kiln Yard action. It increases that action's load allowance by one and requires the additional ceramic to enter the owner's empty Imperial Kiln. The client never predicts the unlock, token spend or Audience VP locally.
 
-Completed Order history is persisted and public. Court Patronage eligibility is derived from that authoritative history, never inferred from current Progress. Blind deck tops remain absent from public projections; only the chosen deck and revealed Order are published after the committed draw resolves.
+Completed Order history, Crown totals and Recognition milestones are persisted and public. Main deck order remains absent from public projections; only cards entering the public display or otherwise legitimately revealed are published.
 
 ## Game end
 
@@ -159,11 +160,9 @@ Server calculates final score and tie breakers.
 Results screen shows VP breakdown by:
 
 - Orders;
-- Imperial Progress;
-- Imperial Seal;
-- Imperial Exhibition;
-- immediate ability VP;
-- Techniques;
+- Imperial Audience;
+- End-game Exhibition;
+- Kiln Tradition and other immediate ability VP;
 - leftover Coins.
 
 Every player may submit up to 5 Finished, undelivered Standard-or-better ceramics to the End-game Exhibition. Standard, Fine, and Masterpiece ceramics score 2/3/5 VP. A player exhibiting at least three ceramics chooses exactly three as the featured collection; three different Shapes and three different Glazes within that collection each score +2 VP.
