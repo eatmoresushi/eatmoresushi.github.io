@@ -25,6 +25,7 @@ import type {
   PlayerId,
   PrivateFiringState,
   Shape,
+  WorkerState,
 } from "../game/index.ts";
 import type { AuthoritativeCommand, StoredSeat, SubmitWoodCommand } from "./types.ts";
 
@@ -119,6 +120,22 @@ function locationHasSpace(state: GameState, playerId: PlayerId, locationId: Loca
   return state.actionBoard.placements[locationId].length < locationCapacity(locationId, state.playerCount);
 }
 
+/**
+ * Could this worker take an Advanced Tech at the Guild right now?
+ *
+ * The Shifu discount is part of the question -- a 2-Coin tile is out of reach for an
+ * Apprentice holding 1 Coin but not for a Shifu -- so both placement branches ask through
+ * here rather than each carrying its own copy of the affordability rule.
+ */
+function guildIsWorthwhile(state: GameState, playerId: PlayerId, kind: WorkerState["kind"]): boolean {
+  const player = state.players[playerId];
+  if (player === undefined || player.techniques.length >= GAME_CONFIG.techniques.maxOwned) return false;
+  if (!locationHasSpace(state, playerId, "guild_academy")) return false;
+  const discount = kind === "shifu" ? 1 : 0;
+  return [...state.techniqueDisplay.forming, ...state.techniqueDisplay.glazing, ...state.techniqueDisplay.firing]
+    .some((id) => Math.max(0, (TECHNIQUE_DEFINITIONS[id]?.cost ?? 99) - discount) <= player.resources.coins);
+}
+
 function workAction(state: GameState, playerId: PlayerId): GameAction {
   const player = state.players[playerId];
   if (player === undefined) throw new Error("Computer worker disappeared");
@@ -135,6 +152,17 @@ function workAction(state: GameState, playerId: PlayerId): GameAction {
   const imperialKilnEmpty = player.imperialKilnUnlocked && !Object.values(state.ceramics).some(
     (ceramic) => ceramic.stage === "loaded" && ceramic.ownerId === playerId && ceramic.kilnSpaceId === "imperial",
   );
+
+  // Send the Shifu to the Guild only when its 1-Coin discount is load-bearing -- when it
+  // buys a tile no Apprentice here could afford. Sending it whenever a Tech was merely
+  // wanted cost a full Shifu production action every round and measured 2.4 VP worse.
+  if (
+    worker.kind === "shifu"
+    && guildIsWorthwhile(state, playerId, "shifu")
+    && !guildIsWorthwhile(state, playerId, "apprentice")
+  ) {
+    return { type: "BEGIN_GUILD_ACTION", workerId: worker.id };
+  }
 
   if (glazed.length > 0 && (spaces.length > 0 || imperialKilnEmpty)) {
     const normalMaximum = worker.kind === "shifu" ? 2 : 1;
@@ -181,8 +209,7 @@ function workAction(state: GameState, playerId: PlayerId): GameAction {
     return { type: "FORM_CERAMICS", workerId: worker.id, shapes: formShapes };
   }
 
-  if (locationHasSpace(state, playerId, "guild_academy") && player.techniques.length < 2 && state.techniqueDisplay.forming.concat(state.techniqueDisplay.glazing, state.techniqueDisplay.firing)
-    .some((id) => (TECHNIQUE_DEFINITIONS[id]?.cost ?? 99) - (worker.kind === "shifu" ? 1 : 0) <= player.resources.coins)) {
+  if (guildIsWorthwhile(state, playerId, worker.kind)) {
     return { type: "BEGIN_GUILD_ACTION", workerId: worker.id };
   }
   const orderSourceAvailable = state.marketDisplay.length > 0
