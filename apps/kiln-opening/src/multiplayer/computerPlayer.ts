@@ -24,6 +24,7 @@ import type {
   OrderId,
   PlayerId,
   PrivateFiringState,
+  PlayerState,
   Shape,
   TechniqueId,
   WorkerState,
@@ -67,11 +68,15 @@ function chooseContribution(state: GameState, playerId: PlayerId, windowId: stri
   const loaded = Object.values(state.ceramics).filter(
     (ceramic): ceramic is LoadedCeramic => ceramic.stage === "loaded" && ceramic.ownerId === playerId,
   );
+  // Test Pieces paid 1 Wood to see the Fire card; the peek sat in state and was never read,
+  // so the tile fired 0.81 times a game and changed nothing. Actual Heat is
+  // Base Heat + Fire + zone, so a known Fire modifier moves the Contribution target by -F.
+  const knownFire = state.privateFirePeeks?.[playerId] ?? 0;
   const desiredAdjustment = loaded.length === 0 ? 0 : Math.round(loaded.reduce((sum, ceramic) => {
     const zone = ceramic.kilnSpaceId === "imperial" || ceramic.kilnFurnitureUsed === true
       ? 0
       : ceramic.kilnSpaceId.startsWith("high_") ? 1 : ceramic.kilnSpaceId.startsWith("low_") ? -1 : 0;
-    return sum + preferredHeat(ceramic.glaze) - 2 - zone;
+    return sum + preferredHeat(ceramic.glaze) - 2 - zone - knownFire;
   }, 0) / loaded.length);
   const hasLedger = player.techniques.some((technique) => technique.id === "T12");
   if (hasLedger && player.resources.wood >= 2 && desiredAdjustment >= 2) return { type: "SUBMIT_WOOD_CONTRIBUTION", windowId, card: "STOKE", useFuelLedger: true };
@@ -121,36 +126,49 @@ function locationHasSpace(state: GameState, playerId: PlayerId, locationId: Loca
   return state.actionBoard.placements[locationId].length < locationCapacity(locationId, state.playerCount);
 }
 
+/** An owned Tech that is ready to use this round, or undefined. */
+function ownedUnexhausted(player: PlayerState, techniqueId: TechniqueId) {
+  return player.techniques.find((technique) => technique.id === techniqueId && !technique.exhausted);
+}
+
 /**
  * What an Advanced Tech is worth to *this* policy, measured rather than assumed.
  *
  * Granting each tile free to one seat across 42 games and comparing its final score to the
- * rest of the table gives, net of the +1.64 every tile is worth simply for unlocking a
- * workshop space when acquired:
+ * rest of the table, after the activation fields were wired:
  *
- *   T14 Second Firing       +2.17   fires 1.45x per game
- *   T02 Measuring Calipers  +1.32   fires 1.60x per game
- *   T11 Protective Saggars  +0.93   fires 0.95x per game
- *   T10 Colour Samples      +0.34   fires 1.12x per game
- *   T13 Test Pieces          0.00   fires 0.81x per game, but the peek changes no decision
- *   the remaining ten        0.00   never fire at all
+ *   T04 Drying Frames       +8.67   fires 4.60x per game
+ *   T02 Measuring Calipers  +2.72   fires 1.52x per game
+ *   T07 Carving Knives      +2.57   fires 4.48x per game
+ *   T08 Seal Stamps         +2.52   fires 4.38x per game
+ *   T09 Crackle Slips       +1.91   fires 4.45x per game
+ *   T14 Second Firing       +1.91   fires 1.19x per game
+ *   T11 Protective Saggars  +1.19   fires 0.86x per game
+ *   T10 Colour Samples      +0.90   fires 1.21x per game
+ *   T13 Test Pieces         +0.62   fires 0.67x per game
+ *   T01 Large Throwing Wheel +0.04  fires 2.05x per game -- fires often, worth nothing
  *
- * The ten are inert because this policy never sends the field that switches them on. It
- * glazes every ceramic Plain, so the three free-Decoration tiles cannot trigger; it forms
- * the Shapes it owns fewest of, so Standardised Moulds' same-Shape condition is designed
- * against; and it passes no `useTechniqueIds`, `dryingFrames`, `glazePalette`,
- * `reworkingTable` or `useKilnFurniture` anywhere. Wiring those is separate work. Until it
- * lands, buying one of them spends Coins on a tile that will never resolve, so they score 0
- * here and the buyer falls back to cost.
+ * Five score 0 because they still never fire. Standardised Moulds wants a same-Shape pair
+ * the forming heuristic is designed against; Reworking Table and Glaze Palette have nothing
+ * to aim at while every ceramic is Celadon; Fuel Ledger's +-2 needs a Contribution target
+ * this policy's uniform glazing never reaches. Kiln Furniture is worse than inert -- wiring
+ * it measured -3.76, because zeroing one ceramic's zone splits a Contribution target aimed
+ * at all of them at once.
  *
- * Re-measure this table if the policy learns to activate a tile; a stale entry here buys
- * the wrong tile silently.
+ * Re-measure this table whenever the policy learns to activate a tile or changes what it
+ * glazes; a stale entry here buys the wrong tile silently.
  */
 const MEASURED_TECHNIQUE_VALUE: Partial<Record<TechniqueId, number>> = {
-  T14: 2.17,
-  T02: 1.32,
-  T11: 0.93,
-  T10: 0.34,
+  T04: 8.67,
+  T02: 2.72,
+  T07: 2.57,
+  T08: 2.52,
+  T09: 1.91,
+  T14: 1.91,
+  T11: 1.19,
+  T10: 0.90,
+  T13: 0.62,
+  T01: 0.04,
 };
 
 /** Measured worth of a tile to this policy; 0 for anything it cannot currently resolve. */
@@ -231,10 +249,15 @@ function workAction(state: GameState, playerId: PlayerId): GameAction {
     const loads = canPriority
       ? [...normalLoads, { ceramicId: glazed[normalLoads.length]!.id, kilnSpaceId: "imperial" as const }]
       : normalLoads.length > 0 ? normalLoads : [{ ceramicId: glazed[0]!.id, kilnSpaceId: "imperial" as const }];
-    if (loads.length > 0) return {
+    // Kiln Furniture is deliberately left unwired. Zeroing one ceramic's zone modifier
+    // splits the Contribution target across ceramics that no longer share a bias, and this
+    // policy aims one Base Heat at all of its ceramics at once: granting the tile and using
+    // it that way measured -3.76 per game against not owning it at all.
+    const finalLoads = loads;
+    if (finalLoads.length > 0) return {
       type: "USE_KILN_YARD",
       workerId: worker.id,
-      loads,
+      loads: finalLoads,
       ...(canPriority ? { useImperialPriority: true } : {}),
       ...(player.startingTechniqueId === "ST04" ? { kilnTendingClay: 1, kilnTendingWood: 1 } : {}),
     };
@@ -242,14 +265,27 @@ function workAction(state: GameState, playerId: PlayerId): GameAction {
 
   if (shaped.length > 0 && locationHasSpace(state, playerId, "glaze_workshop")) {
     const maximum = worker.kind === "shifu" ? 2 : 1;
-    const selections = shaped.slice(0, maximum).map((ceramic) => ({ ceramicId: ceramic.id, glaze: "celadon" as const, decoration: "plain" as const }));
-    const cost = selections.reduce((sum, selection) => sum + DECORATION_COSTS[selection.decoration], 0);
+    // One of Carving Knives / Seal Stamps / Crackle Slips makes its Decoration free, which
+    // is strictly better than paying for the Plain this policy defaults to -- and a
+    // non-Plain Decoration satisfies Orders that Plain cannot. Without this the three
+    // tiles could never fire at all, because the policy only ever applied Plain.
+    const freeDecorationTech = ([["T07", "carved"], ["T08", "impressed"], ["T09", "crackle"]] as const)
+      .find(([techniqueId]) => ownedUnexhausted(player, techniqueId) !== undefined);
+    const selections = shaped.slice(0, maximum).map((ceramic, index) => ({
+      ceramicId: ceramic.id,
+      glaze: "celadon" as const,
+      decoration: index === 0 && freeDecorationTech !== undefined ? freeDecorationTech[1] : "plain" as const,
+    }));
+    const glazeTechniqueIds = freeDecorationTech === undefined ? [] : [freeDecorationTech[0]];
+    const cost = selections.reduce((sum, selection, index) =>
+      sum + (index === 0 && freeDecorationTech !== undefined ? 0 : DECORATION_COSTS[selection.decoration]), 0);
     if (player.resources.coins >= cost) {
-      const freeDecorationCeramicId = worker.kind === "shifu" ? selections[0]?.ceramicId : undefined;
+      const freeDecorationCeramicId = worker.kind === "shifu" ? selections[selections.length - 1]?.ceramicId : undefined;
       return {
         type: "GLAZE_CERAMICS",
         workerId: worker.id,
         selections,
+        ...(glazeTechniqueIds.length > 0 ? { useTechniqueIds: glazeTechniqueIds } : {}),
         ...(freeDecorationCeramicId === undefined ? {} : { freeDecorationCeramicId }),
       };
     }
@@ -265,8 +301,27 @@ function workAction(state: GameState, playerId: PlayerId): GameAction {
   const formCount = worker.kind === "shifu" && player.resources.clay >= 2 ? 2 : 1;
   const formShapes = shapes.slice(0, formCount);
   let formCost = formShapes.reduce((sum, shape) => sum + SHAPE_COSTS[shape], 0) - (worker.kind === "shifu" && formShapes.length === 2 ? 1 : 0);
+  // Large Throwing Wheel takes 1 Clay off an action that forms a Vase or Censer, and Drying
+  // Frames glazes one vessel the action just formed for the price of a Plain Decoration --
+  // a whole Glaze action saved. Neither could fire before, because the policy passed no
+  // `useTechniqueIds` and no `dryingFrames` anywhere.
+  const formingTechniqueIds: TechniqueId[] = [];
+  const throwingWheel = ownedUnexhausted(player, "T01") !== undefined
+    && formShapes.some((shape) => shape === "vase" || shape === "censer");
+  if (throwingWheel) formingTechniqueIds.push("T01");
+  if (throwingWheel) formCost = Math.max(0, formCost - 1);
+  const dryingFrames = ownedUnexhausted(player, "T04") !== undefined
+    && formShapes.length > 0
+    && player.resources.coins >= DECORATION_COSTS.plain;
+  if (dryingFrames) formingTechniqueIds.push("T04");
   if (formShapes.length > 0 && player.resources.clay >= formCost && locationHasSpace(state, playerId, "forming_studio")) {
-    return { type: "FORM_CERAMICS", workerId: worker.id, shapes: formShapes };
+    return {
+      type: "FORM_CERAMICS",
+      workerId: worker.id,
+      shapes: formShapes,
+      ...(formingTechniqueIds.length > 0 ? { useTechniqueIds: formingTechniqueIds } : {}),
+      ...(dryingFrames ? { dryingFrames: { formedIndex: 0, glaze: "celadon" as const } } : {}),
+    };
   }
 
   if (guildIsWorthwhile(state, playerId, worker.kind)) {

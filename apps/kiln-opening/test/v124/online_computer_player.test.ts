@@ -6,7 +6,7 @@ import {
   chooseOnlineComputerAction,
 } from "../../src/multiplayer/computerPlayer.ts";
 import type { StoredSeat } from "../../src/multiplayer/types.ts";
-import { mustApply, setWorkTurn, startedGame, workerId } from "./helpers.ts";
+import { addGlazed, addLoaded, addShaped, addTechnique, mustApply, setWorkTurn, startedGame } from "./helpers.ts";
 
 function seatFor(playerId: PlayerId): StoredSeat {
   return {
@@ -180,8 +180,9 @@ describe("V1.2.4 online computer policy: which Tech it buys", () => {
   it("takes the Firing tile over an equally affordable Forming tile", async () => {
     const { state: initial } = startedGame(2, 4601);
     const state = structuredClone(initial);
-    // T01 costs 2 and resolves for nobody here; T14 costs 3 and is the best tile measured.
-    state.techniqueDisplay = { forming: ["T01"], glazing: ["T07"], firing: ["T14"] };
+    // T05 and T06 cost 2 and still resolve for nobody; T14 costs 3 and is measured worth.
+    state.techniqueDisplay = { forming: ["T05"], glazing: ["T06"], firing: ["T14"] };
+    state.techniqueDecks = { forming: [], glazing: [], firing: [] };
     state.players["P1"]!.resources = { clay: 0, wood: 0, coins: 5 };
     setWorkTurn(state, "P1");
     expect(await buy(state)).toEqual(expect.objectContaining({
@@ -192,11 +193,12 @@ describe("V1.2.4 online computer policy: which Tech it buys", () => {
   it("orders the tiles it can resolve by measured worth", async () => {
     const { state: initial } = startedGame(2, 4602);
     const state = structuredClone(initial);
-    // All three resolve; T14 (+2.17) beats T02 (+1.32) beats T11 (+0.93).
-    state.techniqueDisplay = { forming: ["T02"], glazing: ["T10"], firing: ["T11", "T14"] };
+    // All resolve; Drying Frames (+8.67) is far the strongest tile measured.
+    state.techniqueDisplay = { forming: ["T02", "T04"], glazing: ["T10"], firing: ["T11", "T14"] };
+    state.techniqueDecks = { forming: [], glazing: [], firing: [] };
     state.players["P1"]!.resources = { clay: 0, wood: 0, coins: 5 };
     setWorkTurn(state, "P1");
-    expect(await buy(state)).toEqual(expect.objectContaining({ techniqueId: "T14" }));
+    expect(await buy(state)).toEqual(expect.objectContaining({ techniqueId: "T04" }));
   });
 
   it("falls back to the cheapest tile when none of them resolves for this policy", async () => {
@@ -204,22 +206,22 @@ describe("V1.2.4 online computer policy: which Tech it buys", () => {
     const state = structuredClone(initial);
     // None of these can fire: the policy only ever applies Plain and passes no activation
     // field. Owning any tile still unlocks a workshop space, so it buys the cheapest.
-    state.techniqueDisplay = { forming: ["T04"], glazing: ["T07"], firing: ["T12"] };
+    state.techniqueDisplay = { forming: ["T03"], glazing: ["T06"], firing: ["T12"] };
     // Empty decks so an inspection cannot add tiles and the display is the whole pool.
     state.techniqueDecks = { forming: [], glazing: [], firing: [] };
     state.players["P1"]!.resources = { clay: 0, wood: 0, coins: 5 };
     setWorkTurn(state, "P1");
     const action = await buy(state);
     expect(action).toEqual(expect.objectContaining({ type: "GUILD_BUY_TECHNIQUE" }));
-    // T07 costs 2; T04 and T12 cost 3.
-    expect((action as { techniqueId: string }).techniqueId).toBe("T07");
+    // T03 and T06 cost 2; T12 costs 3, so cost breaks the all-zero tie.
+    expect(["T03", "T06"]).toContain((action as { techniqueId: string }).techniqueId);
   });
 
   it("buys a valuable inspected tile over a worthless face-up one", async () => {
     const { state: initial } = startedGame(2, 4604);
     const state = structuredClone(initial);
-    state.techniqueDisplay = { forming: ["T01"], glazing: ["T07"], firing: ["T12"] };
-    state.techniqueDecks = { forming: [], glazing: [], firing: ["T14", "T11"] };
+    state.techniqueDisplay = { forming: ["T03"], glazing: ["T06"], firing: ["T12"] };
+    state.techniqueDecks = { forming: [], glazing: [], firing: ["T11", "T14"] };
     // 1 Coin: only the Shifu discount reaches a 2-cost tile, so the Shifu takes the Guild.
     state.players["P1"]!.resources = { clay: 4, wood: 4, coins: 1 };
     setWorkTurn(state, "P1");
@@ -230,5 +232,82 @@ describe("V1.2.4 online computer policy: which Tech it buys", () => {
     const inspected = mustApply(opened, "P1", inspect, new SeededRandom(1));
     // T11 costs 2 and resolves; the face-up tiles do not resolve at all.
     expect(await choose(inspected, "P1")).toEqual(expect.objectContaining({ techniqueId: "T11" }));
+  });
+});
+
+/**
+ * Ten of the fifteen Advanced Techs could never fire, because the policy never sent the
+ * field that switches them on: it glazed every ceramic Plain and passed no
+ * `useTechniqueIds`, `dryingFrames`, `glazePalette`, `reworkingTable` or
+ * `useKilnFurniture` anywhere. These cases pin the ones worth activating.
+ */
+describe("V1.2.4 online computer policy: Tech activation", () => {
+  const glazeTurn = (state: GameState) => {
+    state.players["P1"]!.resources = { clay: 0, wood: 0, coins: 5 };
+    addShaped(state, "P1", "bowl");
+    setWorkTurn(state, "P1");
+  };
+
+  it("applies a free Carved Decoration instead of paying for Plain", async () => {
+    const { state: initial } = startedGame(2, 4701);
+    const state = structuredClone(initial);
+    addTechnique(state, "P1", "T07");
+    glazeTurn(state);
+    const action = await choose(state, "P1");
+    expect(action).toEqual(expect.objectContaining({ type: "GLAZE_CERAMICS" }));
+    const glaze = action as { selections: Array<{ decoration: string }>; useTechniqueIds?: string[] };
+    expect(glaze.selections[0]!.decoration).toBe("carved");
+    expect(glaze.useTechniqueIds).toContain("T07");
+  });
+
+  it("glazes a vessel it just formed with Drying Frames", async () => {
+    const { state: initial } = startedGame(2, 4702);
+    const state = structuredClone(initial);
+    addTechnique(state, "P1", "T04");
+    state.players["P1"]!.resources = { clay: 4, wood: 0, coins: 3 };
+    setWorkTurn(state, "P1");
+    const action = await choose(state, "P1");
+    expect(action).toEqual(expect.objectContaining({ type: "FORM_CERAMICS" }));
+    const form = action as { useTechniqueIds?: string[]; dryingFrames?: { formedIndex: number } };
+    expect(form.useTechniqueIds).toContain("T04");
+    expect(form.dryingFrames?.formedIndex).toBe(0);
+  });
+
+  it("aims the Contribution at the Fire card Test Pieces already paid to see", async () => {
+    const { state: initial, rng } = startedGame(2, 4703);
+    const state = structuredClone(initial);
+    // One Celadon ceramic (Preferred Heat 2) in a Middle space, so zone is 0.
+    addLoaded(state, "P1", "bowl", "celadon", "plain", "middle_1");
+    state.players["P1"]!.resources = { clay: 0, wood: 4, coins: 0 };
+    state.phase = {
+      type: "firing_contributions",
+      windowId: `${state.gameId}:w`, eligiblePlayerIds: ["P1"], submittedPlayerIds: [],
+    };
+    state.firingContext = null;
+
+    const contribution = (s: GameState) =>
+      chooseOnlineComputerAction(s, null as never, seatFor("P1"));
+
+    // Blind, Base Heat 2 already lands the ceramic exactly: Tend.
+    expect(await contribution(state)).toEqual(expect.objectContaining({ card: "TEND" }));
+
+    // Knowing Fire is -1, Base Heat must rise to 3 to keep Actual Heat at 2: Stoke.
+    const peeked = structuredClone(state);
+    peeked.privateFirePeeks = { P1: -1 };
+    expect(await contribution(peeked)).toEqual(expect.objectContaining({ card: "STOKE" }));
+    expect(rng).toBeDefined();
+  });
+
+  it("leaves Kiln Furniture alone, which measured worse than not owning it", async () => {
+    const { state: initial } = startedGame(2, 4704);
+    const state = structuredClone(initial);
+    addTechnique(state, "P1", "T15");
+    addGlazed(state, "P1", "bowl", "celadon", "plain");
+    state.players["P1"]!.resources = { clay: 0, wood: 0, coins: 0 };
+    setWorkTurn(state, "P1");
+    const action = await choose(state, "P1");
+    expect(action).toEqual(expect.objectContaining({ type: "USE_KILN_YARD" }));
+    const loads = (action as { loads: Array<{ useKilnFurniture?: boolean }> }).loads;
+    expect(loads.every((load) => load.useKilnFurniture !== true)).toBe(true);
   });
 });
