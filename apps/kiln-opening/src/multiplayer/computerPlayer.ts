@@ -14,17 +14,24 @@ import {
   preferredHeat,
 } from "../game/index.ts";
 import type {
+  Decoration,
   FinishedCeramic,
   GameAction,
   GameState,
+  Glaze,
+  GlazedCeramic,
   KilnId,
+  KilnSpaceId,
   LocationId,
   LoadedCeramic,
   OrderDefinition,
   OrderId,
   PlayerId,
   PrivateFiringState,
+  PlayerState,
   Shape,
+  TechniqueId,
+  WorkerState,
 } from "../game/index.ts";
 import type { AuthoritativeCommand, StoredSeat, SubmitWoodCommand } from "./types.ts";
 
@@ -65,11 +72,15 @@ function chooseContribution(state: GameState, playerId: PlayerId, windowId: stri
   const loaded = Object.values(state.ceramics).filter(
     (ceramic): ceramic is LoadedCeramic => ceramic.stage === "loaded" && ceramic.ownerId === playerId,
   );
+  // Test Pieces paid 1 Wood to see the Fire card; the peek sat in state and was never read,
+  // so the tile fired 0.81 times a game and changed nothing. Actual Heat is
+  // Base Heat + Fire + zone, so a known Fire modifier moves the Contribution target by -F.
+  const knownFire = state.privateFirePeeks?.[playerId] ?? 0;
   const desiredAdjustment = loaded.length === 0 ? 0 : Math.round(loaded.reduce((sum, ceramic) => {
     const zone = ceramic.kilnSpaceId === "imperial" || ceramic.kilnFurnitureUsed === true
       ? 0
       : ceramic.kilnSpaceId.startsWith("high_") ? 1 : ceramic.kilnSpaceId.startsWith("low_") ? -1 : 0;
-    return sum + preferredHeat(ceramic.glaze) - 2 - zone;
+    return sum + preferredHeat(ceramic.glaze) - 2 - zone - knownFire;
   }, 0) / loaded.length);
   const hasLedger = player.techniques.some((technique) => technique.id === "T12");
   if (hasLedger && player.resources.wood >= 2 && desiredAdjustment >= 2) return { type: "SUBMIT_WOOD_CONTRIBUTION", windowId, card: "STOKE", useFuelLedger: true };
@@ -85,8 +96,10 @@ function orderAction(state: GameState, playerId: PlayerId): GameAction {
   const finished = Object.values(state.ceramics).filter(
     (ceramic): ceramic is FinishedCeramic => ceramic.stage === "finished" && ceramic.ownerId === playerId,
   );
-  const orderIds = [...player.orderHand, ...state.marketDisplay]
-    .sort((a, b) => (ORDER_DEFINITIONS[b]?.vp ?? 0) - (ORDER_DEFINITIONS[a]?.vp ?? 0));
+  const orderIds = [...player.orderHand, ...state.marketDisplay].sort((a, b) => {
+    const left = ORDER_DEFINITIONS[a]; const right = ORDER_DEFINITIONS[b];
+    return (right === undefined ? 0 : orderScore(right)) - (left === undefined ? 0 : orderScore(left));
+  });
   for (const orderId of orderIds) {
     const order = ORDER_DEFINITIONS[orderId];
     if (order === undefined) continue;
@@ -119,6 +132,178 @@ function locationHasSpace(state: GameState, playerId: PlayerId, locationId: Loca
   return state.actionBoard.placements[locationId].length < locationCapacity(locationId, state.playerCount);
 }
 
+/**
+ * VP-equivalent this policy assigns to each Crown on an Order.
+ *
+ * Both the reservation and the completion scorers used printed VP alone, so a Crown counted
+ * for nothing and Imperial Recognition was chased only by accident. Recognition compounds
+ * where a commercial Order pays once: 2 Crowns pay a milestone reward, 3 grant the Imperial
+ * Kiln -- an extra firing slot every remaining round -- 4 grant Imperial Priority and 5 pay
+ * 6 VP outright. Swept over 60 games at 0, 1, 2, 3 and 5; see the commit for the table.
+ */
+const CROWN_SCORE_BONUS = 1;
+
+/** Printed VP plus the Recognition a completed Order is worth to this policy. */
+function orderScore(definition: OrderDefinition): number {
+  return definition.vp + definition.crowns * CROWN_SCORE_BONUS;
+}
+
+/** Zone modifier a Shared Kiln space applies, or 0 for the Imperial Kiln. */
+function zoneModifierOf(kilnSpaceId: KilnSpaceId | "imperial"): number {
+  if (kilnSpaceId === "imperial") return 0;
+  return kilnSpaceId.startsWith("high_") ? 1 : kilnSpaceId.startsWith("low_") ? -1 : 0;
+}
+
+/**
+ * The Glaze this workshop should be making.
+ *
+ * Every ceramic used to be Celadon and Plain. Only 2 of the 8 single-ceramic Crown Orders
+ * are reachable that way, and 13 of the 20 Crown Orders demand a Glaze that is not Celadon,
+ * so Imperial Recognition was closed off by construction: across 180 measured seats, 138
+ * finished on 0 Crowns and not one reached the Imperial Kiln at Recognition 3.
+ *
+ * One Glaze is chosen for the whole workshop rather than per ceramic. Preferred Heat is a
+ * property of the Glaze and one Base Heat serves the entire firing, so a mixed load leaves
+ * the Contribution aimed at an average that suits none of it -- the same way wiring Kiln
+ * Furniture measured worse than leaving it alone.
+ *
+ * Crown Orders are weighted double: Recognition compounds, paying a milestone reward on the
+ * way and 6 VP at the top, where a commercial Order pays once.
+ */
+function targetGlaze(state: GameState, player: PlayerState): Glaze {
+  const demand = new Map<Glaze, number>();
+  for (const orderId of player.orderHand) {
+    const definition = ORDER_DEFINITIONS[orderId];
+    if (definition === undefined) continue;
+    const weight = definition.crowns > 0 ? 2 : 1;
+    for (const requirement of definition.ceramics) {
+      for (const glaze of requirement.glazes ?? (requirement.glaze === undefined ? [] : [requirement.glaze])) {
+        demand.set(glaze, (demand.get(glaze) ?? 0) + weight);
+      }
+    }
+  }
+  // Celadon breaks ties: its Preferred Heat of 2 is the Base Heat a firing starts from,
+  // so it is the one Glaze that lands without help from a zone or a Contribution.
+  return [...demand.entries()].sort((a, b) => b[1] - a[1] || preferredHeat(a[0]) - preferredHeat(b[0]))[0]?.[0]
+    ?? "celadon";
+}
+
+/**
+ * The Decoration this workshop should apply alongside `glaze`.
+ *
+ * Six of the eight single-ceramic Crown Orders name a Decoration, and the policy could only
+ * make Plain, so those Orders were unreachable whatever it glazed. Unlike a Glaze -- whose
+ * Preferred Heat has to agree with one shared Base Heat -- a Decoration has no effect on
+ * firing, so it can be aimed per ceramic at whatever the held Orders actually ask for.
+ */
+function targetDecoration(player: PlayerState, glaze: Glaze): Decoration {
+  const demand = new Map<Decoration, number>();
+  for (const orderId of player.orderHand) {
+    const definition = ORDER_DEFINITIONS[orderId];
+    if (definition === undefined) continue;
+    const weight = definition.crowns > 0 ? 2 : 1;
+    for (const requirement of definition.ceramics) {
+      const wantedGlazes = requirement.glazes ?? (requirement.glaze === undefined ? [] : [requirement.glaze]);
+      // Only chase a Decoration on a slot this ceramic's Glaze could actually fill.
+      if (wantedGlazes.length > 0 && !wantedGlazes.includes(glaze)) continue;
+      if (requirement.decoration !== undefined) {
+        demand.set(requirement.decoration, (demand.get(requirement.decoration) ?? 0) + weight);
+      }
+    }
+  }
+  // Plain breaks ties: it is the cheapest Decoration and satisfies every "any" slot.
+  return [...demand.entries()].sort((a, b) =>
+    b[1] - a[1] || DECORATION_COSTS[a[0]] - DECORATION_COSTS[b[0]])[0]?.[0] ?? "plain";
+}
+
+/** An owned Tech that is ready to use this round, or undefined. */
+function ownedUnexhausted(player: PlayerState, techniqueId: TechniqueId) {
+  return player.techniques.find((technique) => technique.id === techniqueId && !technique.exhausted);
+}
+
+/**
+ * What an Advanced Tech is worth to *this* policy, measured rather than assumed.
+ *
+ * Granting each tile free to one seat across 42 games and comparing its final score to the
+ * rest of the table, after the activation fields were wired:
+ *
+ *   T04 Drying Frames       +8.67   fires 4.60x per game
+ *   T02 Measuring Calipers  +2.72   fires 1.52x per game
+ *   T07 Carving Knives      +2.57   fires 4.48x per game
+ *   T08 Seal Stamps         +2.52   fires 4.38x per game
+ *   T09 Crackle Slips       +1.91   fires 4.45x per game
+ *   T14 Second Firing       +1.91   fires 1.19x per game
+ *   T11 Protective Saggars  +1.19   fires 0.86x per game
+ *   T10 Colour Samples      +0.90   fires 1.21x per game
+ *   T13 Test Pieces         +0.62   fires 0.67x per game
+ *   T01 Large Throwing Wheel +0.04  fires 2.05x per game -- fires often, worth nothing
+ *
+ * Five score 0 because they still never fire. Standardised Moulds wants a same-Shape pair
+ * the forming heuristic is designed against; Reworking Table and Glaze Palette have nothing
+ * to aim at while every ceramic is Celadon; Fuel Ledger's +-2 needs a Contribution target
+ * this policy's uniform glazing never reaches. Kiln Furniture is worse than inert -- wiring
+ * it measured -3.76, because zeroing one ceramic's zone splits a Contribution target aimed
+ * at all of them at once.
+ *
+ * Re-measure this table whenever the policy learns to activate a tile or changes what it
+ * glazes; a stale entry here buys the wrong tile silently.
+ */
+const MEASURED_TECHNIQUE_VALUE: Partial<Record<TechniqueId, number>> = {
+  T04: 8.67,
+  T02: 2.72,
+  T07: 2.57,
+  T08: 2.52,
+  T09: 1.91,
+  T14: 1.91,
+  T11: 1.19,
+  T10: 0.90,
+  T13: 0.62,
+  T01: 0.04,
+};
+
+/** Measured worth of a tile to this policy; 0 for anything it cannot currently resolve. */
+function techniqueValue(techniqueId: TechniqueId): number {
+  return MEASURED_TECHNIQUE_VALUE[techniqueId] ?? 0;
+}
+
+/**
+ * The tile this workshop should buy from what it can see and afford.
+ *
+ * V1.2.2 took the first affordable tile in Forming, Glazing, Firing display order. Forming
+ * tiles cost 2 and are always affordable, so across 312 measured Guild actions it bought a
+ * Firing tile zero times -- including Second Firing, the single most valuable tile it has.
+ * Ties break on cost because every tile is worth the same workshop unlock.
+ */
+function bestTechniquePurchase(
+  candidates: readonly TechniqueId[],
+  coins: number,
+  discount: number,
+): TechniqueId | null {
+  const affordable = candidates.filter(
+    (id) => Math.max(0, (TECHNIQUE_DEFINITIONS[id]?.cost ?? 99) - discount) <= coins,
+  );
+  return affordable.sort((a, b) =>
+    techniqueValue(b) - techniqueValue(a)
+    || (TECHNIQUE_DEFINITIONS[a]?.cost ?? 99) - (TECHNIQUE_DEFINITIONS[b]?.cost ?? 99)
+  )[0] ?? null;
+}
+
+/**
+ * Could this worker take an Advanced Tech at the Guild right now?
+ *
+ * The Shifu discount is part of the question -- a 2-Coin tile is out of reach for an
+ * Apprentice holding 1 Coin but not for a Shifu -- so both placement branches ask through
+ * here rather than each carrying its own copy of the affordability rule.
+ */
+function guildIsWorthwhile(state: GameState, playerId: PlayerId, kind: WorkerState["kind"]): boolean {
+  const player = state.players[playerId];
+  if (player === undefined || player.techniques.length >= GAME_CONFIG.techniques.maxOwned) return false;
+  if (!locationHasSpace(state, playerId, "guild_academy")) return false;
+  const discount = kind === "shifu" ? 1 : 0;
+  return [...state.techniqueDisplay.forming, ...state.techniqueDisplay.glazing, ...state.techniqueDisplay.firing]
+    .some((id) => Math.max(0, (TECHNIQUE_DEFINITIONS[id]?.cost ?? 99) - discount) <= player.resources.coins);
+}
+
 function workAction(state: GameState, playerId: PlayerId): GameAction {
   const player = state.players[playerId];
   if (player === undefined) throw new Error("Computer worker disappeared");
@@ -126,15 +311,32 @@ function workAction(state: GameState, playerId: PlayerId): GameAction {
   const worker = workers.find((candidate) => candidate.kind === "shifu") ?? workers[0];
   if (worker === undefined) return { type: "PASS_WORK_PHASE" };
   const shaped = Object.values(state.ceramics).filter((ceramic) => ceramic.ownerId === playerId && ceramic.stage === "shaped");
-  const glazed = Object.values(state.ceramics).filter((ceramic) =>
+  const glazed = Object.values(state.ceramics).filter((ceramic): ceramic is GlazedCeramic =>
     ceramic.ownerId === playerId &&
     ceramic.stage === "glazed" &&
     (ceramic.loadableFromRound === undefined || state.round >= ceramic.loadableFromRound)
   );
-  const spaces = activeKilnSpaceIds(state.playerCount).filter((spaceId) => !Object.values(state.ceramics).some((ceramic) => ceramic.stage === "loaded" && ceramic.kilnSpaceId === spaceId));
+  // Actual Heat is Base Heat + Fire + zone, and a firing starts from Base Heat 2, so the
+  // space whose zone is closest to (Preferred Heat - 2) is the one that needs least help.
+  // Loading into whatever space came first made every non-Celadon Glaze a gamble.
+  const wantedZone = glazed.length === 0 ? 0 : preferredHeat(glazed[0]!.glaze) - 2;
+  const spaces = activeKilnSpaceIds(state.playerCount)
+    .filter((spaceId) => !Object.values(state.ceramics).some((ceramic) => ceramic.stage === "loaded" && ceramic.kilnSpaceId === spaceId))
+    .sort((a, b) => Math.abs(zoneModifierOf(a) - wantedZone) - Math.abs(zoneModifierOf(b) - wantedZone));
   const imperialKilnEmpty = player.imperialKilnUnlocked && !Object.values(state.ceramics).some(
     (ceramic) => ceramic.stage === "loaded" && ceramic.ownerId === playerId && ceramic.kilnSpaceId === "imperial",
   );
+
+  // Send the Shifu to the Guild only when its 1-Coin discount is load-bearing -- when it
+  // buys a tile no Apprentice here could afford. Sending it whenever a Tech was merely
+  // wanted cost a full Shifu production action every round and measured 2.4 VP worse.
+  if (
+    worker.kind === "shifu"
+    && guildIsWorthwhile(state, playerId, "shifu")
+    && !guildIsWorthwhile(state, playerId, "apprentice")
+  ) {
+    return { type: "BEGIN_GUILD_ACTION", workerId: worker.id };
+  }
 
   if (glazed.length > 0 && (spaces.length > 0 || imperialKilnEmpty)) {
     const normalMaximum = worker.kind === "shifu" ? 2 : 1;
@@ -143,10 +345,15 @@ function workAction(state: GameState, playerId: PlayerId): GameAction {
     const loads = canPriority
       ? [...normalLoads, { ceramicId: glazed[normalLoads.length]!.id, kilnSpaceId: "imperial" as const }]
       : normalLoads.length > 0 ? normalLoads : [{ ceramicId: glazed[0]!.id, kilnSpaceId: "imperial" as const }];
-    if (loads.length > 0) return {
+    // Kiln Furniture is deliberately left unwired. Zeroing one ceramic's zone modifier
+    // splits the Contribution target across ceramics that no longer share a bias, and this
+    // policy aims one Base Heat at all of its ceramics at once: granting the tile and using
+    // it that way measured -3.76 per game against not owning it at all.
+    const finalLoads = loads;
+    if (finalLoads.length > 0) return {
       type: "USE_KILN_YARD",
       workerId: worker.id,
-      loads,
+      loads: finalLoads,
       ...(canPriority ? { useImperialPriority: true } : {}),
       ...(player.startingTechniqueId === "ST04" ? { kilnTendingClay: 1, kilnTendingWood: 1 } : {}),
     };
@@ -154,14 +361,34 @@ function workAction(state: GameState, playerId: PlayerId): GameAction {
 
   if (shaped.length > 0 && locationHasSpace(state, playerId, "glaze_workshop")) {
     const maximum = worker.kind === "shifu" ? 2 : 1;
-    const selections = shaped.slice(0, maximum).map((ceramic) => ({ ceramicId: ceramic.id, glaze: "celadon" as const, decoration: "plain" as const }));
-    const cost = selections.reduce((sum, selection) => sum + DECORATION_COSTS[selection.decoration], 0);
+    // One of Carving Knives / Seal Stamps / Crackle Slips makes its Decoration free, which
+    // is strictly better than paying for the Plain this policy defaults to -- and a
+    // non-Plain Decoration satisfies Orders that Plain cannot. Without this the three
+    // tiles could never fire at all, because the policy only ever applied Plain.
+    const freeDecorationTech = ([["T07", "carved"], ["T08", "impressed"], ["T09", "crackle"]] as const)
+      .find(([techniqueId]) => ownedUnexhausted(player, techniqueId) !== undefined);
+    const glaze = targetGlaze(state, player);
+    const wantedDecoration = targetDecoration(player, glaze);
+    const selections = shaped.slice(0, maximum).map((ceramic, index) => ({
+      ceramicId: ceramic.id,
+      glaze,
+      // A free-Decoration tile beats paying, but only if it makes what the Orders want.
+      decoration: index === 0 && freeDecorationTech !== undefined && freeDecorationTech[1] === wantedDecoration
+        ? freeDecorationTech[1]
+        : wantedDecoration,
+    }));
+    const glazeTechniqueIds = freeDecorationTech !== undefined && selections[0]?.decoration === freeDecorationTech[1]
+      ? [freeDecorationTech[0]]
+      : [];
+    const cost = selections.reduce((sum, selection, index) =>
+      sum + (index === 0 && glazeTechniqueIds.length > 0 ? 0 : DECORATION_COSTS[selection.decoration]), 0);
     if (player.resources.coins >= cost) {
-      const freeDecorationCeramicId = worker.kind === "shifu" ? selections[0]?.ceramicId : undefined;
+      const freeDecorationCeramicId = worker.kind === "shifu" ? selections[selections.length - 1]?.ceramicId : undefined;
       return {
         type: "GLAZE_CERAMICS",
         workerId: worker.id,
         selections,
+        ...(glazeTechniqueIds.length > 0 ? { useTechniqueIds: glazeTechniqueIds } : {}),
         ...(freeDecorationCeramicId === undefined ? {} : { freeDecorationCeramicId }),
       };
     }
@@ -177,12 +404,30 @@ function workAction(state: GameState, playerId: PlayerId): GameAction {
   const formCount = worker.kind === "shifu" && player.resources.clay >= 2 ? 2 : 1;
   const formShapes = shapes.slice(0, formCount);
   let formCost = formShapes.reduce((sum, shape) => sum + SHAPE_COSTS[shape], 0) - (worker.kind === "shifu" && formShapes.length === 2 ? 1 : 0);
+  // Large Throwing Wheel takes 1 Clay off an action that forms a Vase or Censer, and Drying
+  // Frames glazes one vessel the action just formed for the price of a Plain Decoration --
+  // a whole Glaze action saved. Neither could fire before, because the policy passed no
+  // `useTechniqueIds` and no `dryingFrames` anywhere.
+  const formingTechniqueIds: TechniqueId[] = [];
+  const throwingWheel = ownedUnexhausted(player, "T01") !== undefined
+    && formShapes.some((shape) => shape === "vase" || shape === "censer");
+  if (throwingWheel) formingTechniqueIds.push("T01");
+  if (throwingWheel) formCost = Math.max(0, formCost - 1);
+  const dryingFrames = ownedUnexhausted(player, "T04") !== undefined
+    && formShapes.length > 0
+    && player.resources.coins >= DECORATION_COSTS.plain;
+  if (dryingFrames) formingTechniqueIds.push("T04");
   if (formShapes.length > 0 && player.resources.clay >= formCost && locationHasSpace(state, playerId, "forming_studio")) {
-    return { type: "FORM_CERAMICS", workerId: worker.id, shapes: formShapes };
+    return {
+      type: "FORM_CERAMICS",
+      workerId: worker.id,
+      shapes: formShapes,
+      ...(formingTechniqueIds.length > 0 ? { useTechniqueIds: formingTechniqueIds } : {}),
+      ...(dryingFrames ? { dryingFrames: { formedIndex: 0, glaze: targetGlaze(state, player) } } : {}),
+    };
   }
 
-  if (locationHasSpace(state, playerId, "guild_academy") && player.techniques.length < 2 && state.techniqueDisplay.forming.concat(state.techniqueDisplay.glazing, state.techniqueDisplay.firing)
-    .some((id) => (TECHNIQUE_DEFINITIONS[id]?.cost ?? 99) - (worker.kind === "shifu" ? 1 : 0) <= player.resources.coins)) {
+  if (guildIsWorthwhile(state, playerId, worker.kind)) {
     return { type: "BEGIN_GUILD_ACTION", workerId: worker.id };
   }
   const orderSourceAvailable = state.marketDisplay.length > 0
@@ -246,15 +491,27 @@ export async function chooseOnlineComputerAction(
         const deepest = DISCIPLINES.reduce((best, d) => (state.techniqueDecks[d].length > state.techniqueDecks[best].length ? d : best), DISCIPLINES[0]!);
         return { type: "GUILD_INSPECT_DISCIPLINE", discipline: deepest };
       }
-      for (const id of state.phase.inspectedTechniqueIds ?? []) {
-        const cost = Math.max(0, (TECHNIQUE_DEFINITIONS[id]?.cost ?? 99) - 1);
-        if (cost <= player.resources.coins) return { type: "GUILD_BUY_TECHNIQUE", techniqueId: id, ...(player.techniques.length === 0 ? { unlockWorkshop: shapedCount(state, playerId) > 0 ? "glaze_decoration" as const : "potters_wheel" as const } : {}) };
+      {
+        const isShifu = player.workers[state.phase.workerId]?.kind === "shifu";
+        const discount = isShifu ? 1 : 0;
+        // Inspected tiles and the face-up display are one pool: V1.2.4 lets a Shifu buy
+        // from either, so compare them on measured worth rather than on where they sat.
+        const pool = [
+          ...(state.phase.inspectedTechniqueIds ?? []),
+          ...state.techniqueDisplay.forming,
+          ...state.techniqueDisplay.glazing,
+          ...state.techniqueDisplay.firing,
+        ];
+        const chosen = bestTechniquePurchase(pool, player.resources.coins, discount);
+        if (chosen === null) throw new Error("No affordable Advanced Tech after Guild validation");
+        return {
+          type: "GUILD_BUY_TECHNIQUE",
+          techniqueId: chosen,
+          ...(player.techniques.length === 0
+            ? { unlockWorkshop: shapedCount(state, playerId) > 0 ? "glaze_decoration" as const : "potters_wheel" as const }
+            : {}),
+        };
       }
-      for (const id of [...state.techniqueDisplay.forming, ...state.techniqueDisplay.glazing, ...state.techniqueDisplay.firing]) {
-        const cost = Math.max(0, (TECHNIQUE_DEFINITIONS[id]?.cost ?? 99) - (player.workers[state.phase.workerId]?.kind === "shifu" ? 1 : 0));
-        if (cost <= player.resources.coins) return { type: "GUILD_BUY_TECHNIQUE", techniqueId: id, ...(player.techniques.length === 0 ? { unlockWorkshop: shapedCount(state, playerId) > 0 ? "glaze_decoration" as const : "potters_wheel" as const } : {}) };
-      }
-      throw new Error("No affordable Advanced Tech after Guild validation");
     case "firing_before_contribution":
       return { type: "RESOLVE_TEST_PIECES", use: player.resources.wood > 2 };
     case "firing_contributions":
@@ -310,7 +567,7 @@ function reservableFaceUpOrder(state: GameState, playerId: PlayerId): OrderId | 
     .filter((entry): entry is { orderId: OrderId; definition: OrderDefinition } =>
       entry.definition !== undefined
       && (entry.definition.ceramics.length === 1 || entry.definition.ceramics.length <= pipeline))
-    .sort((a, b) => b.definition.vp - a.definition.vp);
+    .sort((a, b) => orderScore(b.definition) - orderScore(a.definition));
   return candidates[0]?.orderId ?? null;
 }
 
