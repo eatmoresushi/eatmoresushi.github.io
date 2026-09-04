@@ -248,10 +248,13 @@ describe("V1.2.4 online computer policy: Tech activation", () => {
     setWorkTurn(state, "P1");
   };
 
-  it("applies a free Carved Decoration instead of paying for Plain", async () => {
+  it("takes the free Carved Decoration when that is what the Order wants", async () => {
     const { state: initial } = startedGame(2, 4701);
     const state = structuredClone(initial);
     addTechnique(state, "P1", "T07");
+    // O20 wants Moon White and Carved, so Carving Knives makes the Decoration it needs
+    // free. A free Decoration the Orders do not ask for is worth nothing.
+    state.players["P1"]!.orderHand = ["O20"];
     glazeTurn(state);
     const action = await choose(state, "P1");
     expect(action).toEqual(expect.objectContaining({ type: "GLAZE_CERAMICS" }));
@@ -309,5 +312,65 @@ describe("V1.2.4 online computer policy: Tech activation", () => {
     expect(action).toEqual(expect.objectContaining({ type: "USE_KILN_YARD" }));
     const loads = (action as { loads: Array<{ useKilnFurniture?: boolean }> }).loads;
     expect(loads.every((load) => load.useKilnFurniture !== true)).toBe(true);
+  });
+});
+
+/**
+ * The policy glazed every ceramic Celadon and Plain. Only 2 of the 8 single-ceramic Crown
+ * Orders are reachable that way and 13 of the 20 Crown Orders demand another Glaze, so the
+ * Imperial Recognition track was closed off by construction.
+ */
+describe("V1.2.4 online computer policy: what it makes", () => {
+  const glazeTurn = (state: GameState) => {
+    state.players["P1"]!.resources = { clay: 0, wood: 0, coins: 6 };
+    addShaped(state, "P1", "bowl");
+    setWorkTurn(state, "P1");
+  };
+
+  it("glazes toward an Order it holds instead of always Celadon", async () => {
+    const { state: initial } = startedGame(2, 4801);
+    const state = structuredClone(initial);
+    // O24 is a Crown Order wanting Moon White.
+    state.players["P1"]!.orderHand = ["O24"];
+    glazeTurn(state);
+    const action = await choose(state, "P1");
+    const glaze = (action as { selections: Array<{ glaze: string }> }).selections[0]!.glaze;
+    expect(glaze).toBe("moon_white");
+  });
+
+  it("applies the Decoration that Order names, not Plain", async () => {
+    const { state: initial } = startedGame(2, 4802);
+    const state = structuredClone(initial);
+    // O19 wants Grey-Green and Impressed.
+    state.players["P1"]!.orderHand = ["O19"];
+    glazeTurn(state);
+    const action = await choose(state, "P1");
+    const selection = (action as { selections: Array<{ glaze: string; decoration: string }> }).selections[0]!;
+    expect(selection.glaze).toBe("grey_green");
+    expect(selection.decoration).toBe("impressed");
+  });
+
+  it("falls back to Celadon, whose Preferred Heat is the Base Heat a firing starts from", async () => {
+    const { state: initial } = startedGame(2, 4803);
+    const state = structuredClone(initial);
+    state.players["P1"]!.orderHand = [];
+    glazeTurn(state);
+    const action = await choose(state, "P1");
+    const selection = (action as { selections: Array<{ glaze: string; decoration: string }> }).selections[0]!;
+    expect(selection.glaze).toBe("celadon");
+    expect(selection.decoration).toBe("plain");
+  });
+
+  it("loads into the zone that suits the Glaze it made", async () => {
+    const { state: initial } = startedGame(2, 4804);
+    const state = structuredClone(initial);
+    // White has Preferred Heat 1, so it wants a Low space against a Base Heat of 2.
+    addGlazed(state, "P1", "bowl", "white", "plain");
+    state.players["P1"]!.resources = { clay: 0, wood: 0, coins: 0 };
+    setWorkTurn(state, "P1");
+    const action = await choose(state, "P1");
+    expect(action).toEqual(expect.objectContaining({ type: "USE_KILN_YARD" }));
+    const first = (action as { loads: Array<{ kilnSpaceId: string }> }).loads[0]!;
+    expect(first.kilnSpaceId.startsWith("low_")).toBe(true);
   });
 });
