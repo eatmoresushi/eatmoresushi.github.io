@@ -20,6 +20,7 @@ import type {
   KilnId,
   LocationId,
   LoadedCeramic,
+  OrderDefinition,
   OrderId,
   PlayerId,
   PrivateFiringState,
@@ -184,7 +185,9 @@ function workAction(state: GameState, playerId: PlayerId): GameAction {
     .some((id) => (TECHNIQUE_DEFINITIONS[id]?.cost ?? 99) - (worker.kind === "shifu" ? 1 : 0) <= player.resources.coins)) {
     return { type: "BEGIN_GUILD_ACTION", workerId: worker.id };
   }
-  if (locationHasSpace(state, playerId, "market_imperial_office") && state.marketDisplay.length > 0 && player.orderHand.length < orderHandLimit()) {
+  const orderSourceAvailable = state.marketDisplay.length > 0
+    || state.marketDeck.length + state.marketDiscard.length > 0;
+  if (locationHasSpace(state, playerId, "market_imperial_office") && orderSourceAvailable && player.orderHand.length < orderHandLimit()) {
     return { type: "BEGIN_OFFICE_ORDERS", workerId: worker.id, mode: worker.kind === "shifu" ? "take_up_to_two" : "take_one" };
   }
   if (locationHasSpace(state, playerId, "materials_yard") && player.resources.clay + player.resources.wood < 6) {
@@ -225,9 +228,15 @@ export async function chooseOnlineComputerAction(
         if (selected === undefined) return { type: "OFFICE_SKIP_COLOUR_SAMPLES" };
         return { type: "OFFICE_CHOOSE_COLOUR_SAMPLES_ORDER", orderId: selected };
       }
-      if (state.phase.remainingTakes > 0 && state.marketDisplay[0] !== undefined) return { type: "OFFICE_TAKE_ORDER", orderId: state.marketDisplay[0] };
-      // Nothing face up: V1.2.4 still allows reserving the top card unseen.
-      if (state.phase.ordersTaken === 0 && state.marketDeck.length + state.marketDiscard.length > 0) return { type: "OFFICE_TAKE_TOP_ORDER" };
+      if (state.phase.remainingTakes > 0) {
+        const best = reservableFaceUpOrder(state, playerId);
+        if (best !== null) return { type: "OFFICE_TAKE_ORDER", orderId: best };
+        // Nothing face up this workshop could deliver. V1.2.4 lets a reservation take the
+        // top card unseen instead, which beats reserving a card known to be unusable.
+        if (state.marketDeck.length + state.marketDiscard.length > 0) return { type: "OFFICE_TAKE_TOP_ORDER" };
+        const fallback = state.marketDisplay[0];
+        if (fallback !== undefined) return { type: "OFFICE_TAKE_ORDER", orderId: fallback };
+      }
       return { type: "OFFICE_END_ORDERS" };
     case "work_commission_advance":
       return { type: "COMMISSION_GAIN_ADVANCE", resource: player.resources.coins < 2 ? "coins" : player.resources.wood < player.resources.clay ? "wood" : "clay" };
@@ -282,6 +291,27 @@ export async function chooseOnlineComputerAction(
     }
     case "finished": throw new Error("Finished games have no computer action");
   }
+}
+
+/**
+ * The best face-up Main Order this workshop could plausibly deliver, or null.
+ *
+ * V1.2.2 reserved whatever sat leftmost, which regularly took a three-ceramic Order to a
+ * workshop that finishes about five ceramics a game. A single-ceramic Order is always
+ * reachable; a larger one is only worth a reservation once the pipeline can actually fill
+ * it. Returning null is what makes V1.2.4's unseen top-card reservation the better option.
+ */
+function reservableFaceUpOrder(state: GameState, playerId: PlayerId): OrderId | null {
+  const pipeline = Object.values(state.ceramics).filter((ceramic) =>
+    ceramic.ownerId === playerId && ceramic.stage !== "delivered" && ceramic.stage !== "presented",
+  ).length;
+  const candidates = state.marketDisplay
+    .map((orderId) => ({ orderId, definition: ORDER_DEFINITIONS[orderId] }))
+    .filter((entry): entry is { orderId: OrderId; definition: OrderDefinition } =>
+      entry.definition !== undefined
+      && (entry.definition.ceramics.length === 1 || entry.definition.ceramics.length <= pipeline))
+    .sort((a, b) => b.definition.vp - a.definition.vp);
+  return candidates[0]?.orderId ?? null;
 }
 
 function shapedCount(state: GameState, playerId: PlayerId): number {
