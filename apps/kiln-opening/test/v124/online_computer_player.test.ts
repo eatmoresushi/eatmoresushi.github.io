@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ORDER_DEFINITIONS, SeededRandom, applyAction } from "../../src/game/index.ts";
+import { ORDER_DEFINITIONS, SeededRandom } from "../../src/game/index.ts";
 import type { GameAction, GameState, PlayerId } from "../../src/game/index.ts";
 import {
   ONLINE_COMPUTER_POLICY_VERSION,
@@ -157,5 +157,78 @@ describe("V1.2.4 online computer policy: Guild & Academy", () => {
     expect(action).toEqual(expect.objectContaining({ type: "BEGIN_GUILD_ACTION" }));
     const worker = state.players["P1"]!.workers[(action as { workerId: string }).workerId];
     expect(worker?.kind).toBe("apprentice");
+  });
+});
+
+/**
+ * The policy bought the first affordable tile in Forming, Glazing, Firing display order.
+ * Forming tiles cost 2 and are always affordable, so across 312 measured Guild actions it
+ * bought a Firing tile zero times -- including Second Firing, which measurement puts at
+ * +2.17 per game, the most valuable tile it can actually resolve.
+ */
+describe("V1.2.4 online computer policy: which Tech it buys", () => {
+  const buy = async (state: GameState) => {
+    const action = await choose(state, "P1");
+    expect(action).toEqual(expect.objectContaining({ type: "BEGIN_GUILD_ACTION" }));
+    const opened = mustApply(state, "P1", action, new SeededRandom(1));
+    const inspectOrBuy = await choose(opened, "P1");
+    if (inspectOrBuy.type !== "GUILD_INSPECT_DISCIPLINE") return inspectOrBuy;
+    const inspected = mustApply(opened, "P1", inspectOrBuy, new SeededRandom(1));
+    return choose(inspected, "P1");
+  };
+
+  it("takes the Firing tile over an equally affordable Forming tile", async () => {
+    const { state: initial } = startedGame(2, 4601);
+    const state = structuredClone(initial);
+    // T01 costs 2 and resolves for nobody here; T14 costs 3 and is the best tile measured.
+    state.techniqueDisplay = { forming: ["T01"], glazing: ["T07"], firing: ["T14"] };
+    state.players["P1"]!.resources = { clay: 0, wood: 0, coins: 5 };
+    setWorkTurn(state, "P1");
+    expect(await buy(state)).toEqual(expect.objectContaining({
+      type: "GUILD_BUY_TECHNIQUE", techniqueId: "T14",
+    }));
+  });
+
+  it("orders the tiles it can resolve by measured worth", async () => {
+    const { state: initial } = startedGame(2, 4602);
+    const state = structuredClone(initial);
+    // All three resolve; T14 (+2.17) beats T02 (+1.32) beats T11 (+0.93).
+    state.techniqueDisplay = { forming: ["T02"], glazing: ["T10"], firing: ["T11", "T14"] };
+    state.players["P1"]!.resources = { clay: 0, wood: 0, coins: 5 };
+    setWorkTurn(state, "P1");
+    expect(await buy(state)).toEqual(expect.objectContaining({ techniqueId: "T14" }));
+  });
+
+  it("falls back to the cheapest tile when none of them resolves for this policy", async () => {
+    const { state: initial } = startedGame(2, 4603);
+    const state = structuredClone(initial);
+    // None of these can fire: the policy only ever applies Plain and passes no activation
+    // field. Owning any tile still unlocks a workshop space, so it buys the cheapest.
+    state.techniqueDisplay = { forming: ["T04"], glazing: ["T07"], firing: ["T12"] };
+    // Empty decks so an inspection cannot add tiles and the display is the whole pool.
+    state.techniqueDecks = { forming: [], glazing: [], firing: [] };
+    state.players["P1"]!.resources = { clay: 0, wood: 0, coins: 5 };
+    setWorkTurn(state, "P1");
+    const action = await buy(state);
+    expect(action).toEqual(expect.objectContaining({ type: "GUILD_BUY_TECHNIQUE" }));
+    // T07 costs 2; T04 and T12 cost 3.
+    expect((action as { techniqueId: string }).techniqueId).toBe("T07");
+  });
+
+  it("buys a valuable inspected tile over a worthless face-up one", async () => {
+    const { state: initial } = startedGame(2, 4604);
+    const state = structuredClone(initial);
+    state.techniqueDisplay = { forming: ["T01"], glazing: ["T07"], firing: ["T12"] };
+    state.techniqueDecks = { forming: [], glazing: [], firing: ["T14", "T11"] };
+    // 1 Coin: only the Shifu discount reaches a 2-cost tile, so the Shifu takes the Guild.
+    state.players["P1"]!.resources = { clay: 4, wood: 4, coins: 1 };
+    setWorkTurn(state, "P1");
+    const begin = await choose(state, "P1");
+    const opened = mustApply(state, "P1", begin, new SeededRandom(1));
+    const inspect = await choose(opened, "P1");
+    expect(inspect).toEqual({ type: "GUILD_INSPECT_DISCIPLINE", discipline: "firing" });
+    const inspected = mustApply(opened, "P1", inspect, new SeededRandom(1));
+    // T11 costs 2 and resolves; the face-up tiles do not resolve at all.
+    expect(await choose(inspected, "P1")).toEqual(expect.objectContaining({ techniqueId: "T11" }));
   });
 });

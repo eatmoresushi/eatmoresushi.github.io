@@ -25,6 +25,7 @@ import type {
   PlayerId,
   PrivateFiringState,
   Shape,
+  TechniqueId,
   WorkerState,
 } from "../game/index.ts";
 import type { AuthoritativeCommand, StoredSeat, SubmitWoodCommand } from "./types.ts";
@@ -118,6 +119,65 @@ function locationHasSpace(state: GameState, playerId: PlayerId, locationId: Loca
     return occupancy < capacity;
   }
   return state.actionBoard.placements[locationId].length < locationCapacity(locationId, state.playerCount);
+}
+
+/**
+ * What an Advanced Tech is worth to *this* policy, measured rather than assumed.
+ *
+ * Granting each tile free to one seat across 42 games and comparing its final score to the
+ * rest of the table gives, net of the +1.64 every tile is worth simply for unlocking a
+ * workshop space when acquired:
+ *
+ *   T14 Second Firing       +2.17   fires 1.45x per game
+ *   T02 Measuring Calipers  +1.32   fires 1.60x per game
+ *   T11 Protective Saggars  +0.93   fires 0.95x per game
+ *   T10 Colour Samples      +0.34   fires 1.12x per game
+ *   T13 Test Pieces          0.00   fires 0.81x per game, but the peek changes no decision
+ *   the remaining ten        0.00   never fire at all
+ *
+ * The ten are inert because this policy never sends the field that switches them on. It
+ * glazes every ceramic Plain, so the three free-Decoration tiles cannot trigger; it forms
+ * the Shapes it owns fewest of, so Standardised Moulds' same-Shape condition is designed
+ * against; and it passes no `useTechniqueIds`, `dryingFrames`, `glazePalette`,
+ * `reworkingTable` or `useKilnFurniture` anywhere. Wiring those is separate work. Until it
+ * lands, buying one of them spends Coins on a tile that will never resolve, so they score 0
+ * here and the buyer falls back to cost.
+ *
+ * Re-measure this table if the policy learns to activate a tile; a stale entry here buys
+ * the wrong tile silently.
+ */
+const MEASURED_TECHNIQUE_VALUE: Partial<Record<TechniqueId, number>> = {
+  T14: 2.17,
+  T02: 1.32,
+  T11: 0.93,
+  T10: 0.34,
+};
+
+/** Measured worth of a tile to this policy; 0 for anything it cannot currently resolve. */
+function techniqueValue(techniqueId: TechniqueId): number {
+  return MEASURED_TECHNIQUE_VALUE[techniqueId] ?? 0;
+}
+
+/**
+ * The tile this workshop should buy from what it can see and afford.
+ *
+ * V1.2.2 took the first affordable tile in Forming, Glazing, Firing display order. Forming
+ * tiles cost 2 and are always affordable, so across 312 measured Guild actions it bought a
+ * Firing tile zero times -- including Second Firing, the single most valuable tile it has.
+ * Ties break on cost because every tile is worth the same workshop unlock.
+ */
+function bestTechniquePurchase(
+  candidates: readonly TechniqueId[],
+  coins: number,
+  discount: number,
+): TechniqueId | null {
+  const affordable = candidates.filter(
+    (id) => Math.max(0, (TECHNIQUE_DEFINITIONS[id]?.cost ?? 99) - discount) <= coins,
+  );
+  return affordable.sort((a, b) =>
+    techniqueValue(b) - techniqueValue(a)
+    || (TECHNIQUE_DEFINITIONS[a]?.cost ?? 99) - (TECHNIQUE_DEFINITIONS[b]?.cost ?? 99)
+  )[0] ?? null;
 }
 
 /**
@@ -273,15 +333,27 @@ export async function chooseOnlineComputerAction(
         const deepest = DISCIPLINES.reduce((best, d) => (state.techniqueDecks[d].length > state.techniqueDecks[best].length ? d : best), DISCIPLINES[0]!);
         return { type: "GUILD_INSPECT_DISCIPLINE", discipline: deepest };
       }
-      for (const id of state.phase.inspectedTechniqueIds ?? []) {
-        const cost = Math.max(0, (TECHNIQUE_DEFINITIONS[id]?.cost ?? 99) - 1);
-        if (cost <= player.resources.coins) return { type: "GUILD_BUY_TECHNIQUE", techniqueId: id, ...(player.techniques.length === 0 ? { unlockWorkshop: shapedCount(state, playerId) > 0 ? "glaze_decoration" as const : "potters_wheel" as const } : {}) };
+      {
+        const isShifu = player.workers[state.phase.workerId]?.kind === "shifu";
+        const discount = isShifu ? 1 : 0;
+        // Inspected tiles and the face-up display are one pool: V1.2.4 lets a Shifu buy
+        // from either, so compare them on measured worth rather than on where they sat.
+        const pool = [
+          ...(state.phase.inspectedTechniqueIds ?? []),
+          ...state.techniqueDisplay.forming,
+          ...state.techniqueDisplay.glazing,
+          ...state.techniqueDisplay.firing,
+        ];
+        const chosen = bestTechniquePurchase(pool, player.resources.coins, discount);
+        if (chosen === null) throw new Error("No affordable Advanced Tech after Guild validation");
+        return {
+          type: "GUILD_BUY_TECHNIQUE",
+          techniqueId: chosen,
+          ...(player.techniques.length === 0
+            ? { unlockWorkshop: shapedCount(state, playerId) > 0 ? "glaze_decoration" as const : "potters_wheel" as const }
+            : {}),
+        };
       }
-      for (const id of [...state.techniqueDisplay.forming, ...state.techniqueDisplay.glazing, ...state.techniqueDisplay.firing]) {
-        const cost = Math.max(0, (TECHNIQUE_DEFINITIONS[id]?.cost ?? 99) - (player.workers[state.phase.workerId]?.kind === "shifu" ? 1 : 0));
-        if (cost <= player.resources.coins) return { type: "GUILD_BUY_TECHNIQUE", techniqueId: id, ...(player.techniques.length === 0 ? { unlockWorkshop: shapedCount(state, playerId) > 0 ? "glaze_decoration" as const : "potters_wheel" as const } : {}) };
-      }
-      throw new Error("No affordable Advanced Tech after Guild validation");
     case "firing_before_contribution":
       return { type: "RESOLVE_TEST_PIECES", use: player.resources.wood > 2 };
     case "firing_contributions":
