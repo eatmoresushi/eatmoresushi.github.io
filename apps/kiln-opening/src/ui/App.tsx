@@ -579,6 +579,9 @@ function HomeScreen({
           </button>
         </form>
         <p className="privacy-note">{t("Your seat is restored on this device if the connection drops.")}</p>
+        <a className="playtest-entry-link" href={`${import.meta.env.BASE_URL}playtest/`}>
+          {t("Finished a game? Record a playtest")}
+        </a>
       </div>
     </section>
   );

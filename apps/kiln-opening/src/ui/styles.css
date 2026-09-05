@@ -105,6 +105,7 @@
   .room-role { border: 1px solid var(--line); border-radius: 999px; padding: .15rem .42rem; color: var(--ink-soft); font-size: .62rem; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; background: rgb(255 253 248 / 70%); }
   .room-role.is-host { border-color: rgb(166 62 50 / 35%); color: var(--cinnabar-dark); background: rgb(255 245 238 / 75%); }
   .text-button { border: 0; padding: .3rem; color: var(--celadon-dark); text-decoration: underline; background: transparent; }
+  .playtest-entry-link { display: block; margin-top: .75rem; color: var(--cinnabar-dark); font-size: .78rem; font-weight: 800; text-align: center; }
   .end-session-button { color: var(--cinnabar-dark); }
   html[lang="zh-CN"] .order-card,
   html[lang="zh-CN"] .technique-tile,

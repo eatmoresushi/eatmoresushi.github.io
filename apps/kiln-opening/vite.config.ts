@@ -1,6 +1,9 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { fileURLToPath } from "node:url";
 import { localBackendPlugin } from "./tools/localBackend";
+
+const projectRoot = fileURLToPath(new URL(".", import.meta.url));
 
 export default defineConfig({
   base: "/kiln-opening/",
@@ -11,5 +14,11 @@ export default defineConfig({
   build: {
     outDir: "dist",
     sourcemap: true,
+    rollupOptions: {
+      input: {
+        game: `${projectRoot}index.html`,
+        playtest: `${projectRoot}playtest/index.html`,
+      },
+    },
   },
 });

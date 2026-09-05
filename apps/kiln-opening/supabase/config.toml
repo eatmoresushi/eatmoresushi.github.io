@@ -1,2 +1,5 @@
 [functions.game-action]
 verify_jwt = true
+
+[functions.playtest-submit]
+verify_jwt = true
