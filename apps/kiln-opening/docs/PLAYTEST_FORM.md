@@ -13,6 +13,8 @@ The form uses a concise subset of `Kiln_Opening_Playtest_Recording_v1.2.4.xlsx` 
 
 Ceramic-level and Tech-performance logs are intentionally omitted. Completed Order count is derived from the Order IDs recorded for each player, so the count cannot disagree with the list.
 
+Recognition VP is also derived rather than manually entered: V1.2.4 awards 6 VP for reaching Recognition 5 and 0 VP for positions 0-4. The stored `recognition_vp` analysis column follows the recorded Recognition position, including for submissions made before that column was added.
+
 There is no Game ID input. `public.server_submit_playtest` assigns the next private sequence value inside the database transaction and returns a reference such as `KO-000001` only after the submission is stored.
 
 ## Storage
@@ -49,6 +51,7 @@ select
   round(avg(final_vp), 1) as avg_final_vp,
   round(avg(tradition_vp), 1) as avg_tradition_vp,
   round(avg(recognition), 2) as avg_recognition,
+  round(avg(recognition_vp), 2) as avg_recognition_vp,
   round(avg(kiln_ability_uses), 2) as avg_kiln_ability_uses,
   round(avg((winner)::int) * 100, 1) as win_rate_pct
 from private.playtest_player_summary

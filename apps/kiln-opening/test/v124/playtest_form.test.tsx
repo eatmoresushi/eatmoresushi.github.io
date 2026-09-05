@@ -8,6 +8,7 @@ import {
 import { validatePlaytestSubmission } from "../../src/playtest/schema.ts";
 import { PlaytestFormPage } from "../../src/ui/PlaytestFormPage.tsx";
 import migration from "../../supabase/migrations/202609050001_playtest_submissions.sql?raw";
+import recognitionMigration from "../../supabase/migrations/202609050002_playtest_recognition_vp.sql?raw";
 import edgeFunction from "../../supabase/functions/playtest-submit/index.ts?raw";
 
 function validCandidate(): unknown {
@@ -77,6 +78,25 @@ describe("V1.2.4 playtest form", () => {
     expect(markup).not.toContain("Tech and Tradition performance");
     expect(markup).not.toContain("Duration (minutes)");
     expect(markup).not.toContain("Overall tension");
+  });
+
+  it("supports signed Fire modifiers and starts Recognition unrecorded", () => {
+    const draft = createPlaytestDraft(2);
+    const markup = renderToStaticMarkup(createElement(PlaytestFormPage));
+    expect(draft.players[0]!.recognition).toBeNull();
+    expect(markup).toContain("<span>Fire modifier</span><select>");
+    expect(markup).toContain("<option value=\"-2\">−2</option>");
+    expect(markup).not.toContain("min=\"-2\" max=\"2\"");
+    expect(markup).toContain("<span>Imperial Recognition</span><select required=\"\">");
+  });
+
+  it("shows the derived Imperial Recognition score", () => {
+    const markup = renderToStaticMarkup(createElement(PlaytestFormPage));
+    expect(markup).toContain("Recognition VP");
+    expect(markup).toContain("Imperial Audience awards 6 VP at Recognition 5; otherwise 0.");
+    expect(recognitionMigration).toContain("add column if not exists recognition_vp smallint");
+    expect(recognitionMigration).toContain("generated always as");
+    expect(recognitionMigration).toContain("player.recognition_vp");
   });
 
   it("renders no editable Game ID field and explains backend assignment", () => {

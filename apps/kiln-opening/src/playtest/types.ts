@@ -68,10 +68,11 @@ export interface PlaytestSubmission {
 
 type DraftPlayerMetrics = Omit<
   PlayerMetrics,
-  "kilnId" | "startingTechniqueId" | "kilnAbilityUses" | "finalVp"
+  "kilnId" | "startingTechniqueId" | "recognition" | "kilnAbilityUses" | "finalVp"
 > & {
   kilnId: KilnId | null;
   startingTechniqueId: StartingTechniqueId | null;
+  recognition: number | null;
   kilnAbilityUses: number | null;
   finalVp: number | null;
 };

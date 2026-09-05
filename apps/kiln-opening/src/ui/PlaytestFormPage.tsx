@@ -93,6 +93,32 @@ function YesNoField({ label, value, onChange }: { label: string; value: YesNo; o
   );
 }
 
+function FireModifierField({ value, onChange }: { value: number | null; onChange: (value: number | null) => void }) {
+  return (
+    <Field label="Fire modifier">
+      <select value={value ?? ""} onChange={(event) => onChange(numberFromInput(event.target.value))}>
+        <option value="">Not recorded</option>
+        <option value="-2">−2</option>
+        <option value="-1">−1</option>
+        <option value="0">0</option>
+        <option value="1">+1</option>
+        <option value="2">+2</option>
+      </select>
+    </Field>
+  );
+}
+
+function RecognitionField({ value, onChange }: { value: number | null; onChange: (value: number | null) => void }) {
+  return (
+    <Field label="Imperial Recognition">
+      <select required value={value ?? ""} onChange={(event) => onChange(numberFromInput(event.target.value))}>
+        <option value="">Not recorded</option>
+        {[0, 1, 2, 3, 4, 5].map((position) => <option value={position} key={position}>{position}</option>)}
+      </select>
+    </Field>
+  );
+}
+
 function Section({
   number,
   title,
@@ -353,7 +379,7 @@ export function PlaytestFormPage() {
                         <NumberField label="Tend" value={round.tend} min={0} max={draft.playerCount} onChange={(tend) => updateRound(index, { tend })} />
                         <NumberField label="Stoke" value={round.stoke} min={0} max={draft.playerCount} onChange={(stoke) => updateRound(index, { stoke })} />
                         <NumberField label="Base Heat" value={round.baseHeat} min={0} max={5} onChange={(baseHeat) => updateRound(index, { baseHeat })} />
-                        <NumberField label="Fire modifier" value={round.fireModifier} min={-2} max={2} onChange={(fireModifier) => updateRound(index, { fireModifier })} />
+                        <FireModifierField value={round.fireModifier} onChange={(fireModifier) => updateRound(index, { fireModifier })} />
                         <Field label="Global Heat"><output className="calculated-output">{globalHeat ?? "—"}</output></Field>
                       </div>
                       <h4>Glazes loaded</h4>
@@ -416,7 +442,7 @@ export function PlaytestFormPage() {
                   </div>
 
                   <div className="metric-grid endgame-metrics">
-                    <NumberField label="Imperial Recognition" value={player.recognition} min={0} max={5} required onChange={(recognition) => updatePlayer(playerIndex, { recognition: recognition ?? 0 })} />
+                    <RecognitionField value={player.recognition} onChange={(recognition) => updatePlayer(playerIndex, { recognition })} />
                     <NumberField label="Kiln ability uses" value={player.kilnAbilityUses} min={0} max={5} required onChange={(kilnAbilityUses) => updatePlayer(playerIndex, { kilnAbilityUses })} />
                   </div>
                   <div className="metric-subsection">
@@ -425,6 +451,11 @@ export function PlaytestFormPage() {
                       {SCORE_FIELDS.map(([label, key, required]) => (
                         <NumberField key={key} label={label} value={player[key]} min={key === "coinVp" ? 0 : -100} max={key === "coinVp" ? 5 : 500} required={required} onChange={(value) => updatePlayer(playerIndex, { [key]: value })} />
                       ))}
+                      <Field label="Recognition VP" hint="Imperial Audience awards 6 VP at Recognition 5; otherwise 0.">
+                        <output className="calculated-output">
+                          {player.recognition === null ? "—" : player.recognition === 5 ? 6 : 0}
+                        </output>
+                      </Field>
                     </div>
                   </div>
                 </article>

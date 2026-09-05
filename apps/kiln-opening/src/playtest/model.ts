@@ -15,7 +15,7 @@ export function emptyPlayer(): PlaytestDraft["players"][number] {
     advancedTechnique1Id: null,
     advancedTechnique2Id: null,
     completedOrderIds: [],
-    recognition: 0,
+    recognition: null,
     kilnAbilityUses: null,
     finalVp: null,
     orderVp: null,
