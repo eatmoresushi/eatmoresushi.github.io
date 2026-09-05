@@ -13,3 +13,5 @@ Deployment requirements:
 - never expose the `private` schema through the Data API.
 
 Realtime is a notification path. Reconnect or revision gaps must refetch the latest public projection through the function. Unrevealed Wood values exist only in `private.private_submissions`, private command/audit rows, and the submitting seat's endpoint response.
+
+`migrations/202609050001_playtest_submissions.sql` adds private, normalized playtest storage and workbook-shaped analysis views. `functions/playtest-submit` accepts authenticated anonymous submissions, validates them, and calls a service-role-only transaction that assigns the Game ID. See `docs/PLAYTEST_FORM.md` for the data model, deployment, and example analysis queries.

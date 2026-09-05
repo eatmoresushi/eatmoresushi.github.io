@@ -45,6 +45,7 @@ const ZH_CN: Record<string, string> = {
   "Create a room": "创建房间",
   "Join the workshop": "加入作坊",
   "Your seat is restored on this device if the connection drops.": "连接中断后，可在此设备上恢复你的席位。",
+  "Finished a game? Record a playtest": "完成一局？填写试玩记录",
   "Session closed": "会话已关闭",
   "This workshop session has ended.": "本次作坊会话已结束。",
   "The game can no longer accept actions.": "游戏已不再接受任何操作。",

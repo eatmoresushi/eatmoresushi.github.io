@@ -22,7 +22,8 @@
   "include": [
     "src/game/**/*.ts",
     "src/multiplayer/**/*.ts",
+    "src/playtest/**/*.ts",
     "supabase/functions/**/*.ts"
   ],
-  "exclude": ["src/multiplayer/client.ts"]
+  "exclude": ["src/multiplayer/client.ts", "src/playtest/client.ts"]
 }
