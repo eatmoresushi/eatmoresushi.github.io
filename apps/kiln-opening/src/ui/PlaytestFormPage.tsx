@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import {
+  BASE_HEAT_START,
+  COMMON_SUPPLY,
   KILN_DEFINITIONS,
   KILN_IDS,
   MAIN_ORDERS,
@@ -17,10 +19,30 @@ import {
 } from "../playtest/model.ts";
 import { validatePlaytestSubmission } from "../playtest/schema.ts";
 import { submitPlaytest } from "../playtest/client.ts";
-import type { PlaytestDraft, PlaytestFeedback, YesNo } from "../playtest/types.ts";
+import type {
+  FireContribution,
+  FiringTechniqueId,
+  PlaytestDraft,
+  PlaytestFeedback,
+} from "../playtest/types.ts";
 
-const DRAFT_KEY = "kiln-opening:playtest-draft-v1";
+const DRAFT_KEY = "kiln-opening:playtest-draft-v2";
 const ALL_ORDERS = [...STARTING_ORDERS, ...MAIN_ORDERS];
+const FIRING_TECHNIQUES = TECHNIQUES.filter((technique) => technique.discipline === "firing");
+const CONTRIBUTION_OPTIONS: ReadonlyArray<[FireContribution, string]> = [
+  ["bank_2", "Bank + Fuel Ledger (−2)"],
+  ["bank", "Bank (−1)"],
+  ["tend", "Tend (0)"],
+  ["stoke", "Stoke (+1)"],
+  ["stoke_2", "Stoke + Fuel Ledger (+2)"],
+];
+const CONTRIBUTION_HEAT: Record<FireContribution, number> = {
+  bank_2: -2,
+  bank: -1,
+  tend: 0,
+  stoke: 1,
+  stoke_2: 2,
+};
 
 function initialDraft(): PlaytestDraft {
   if (typeof window === "undefined") return createPlaytestDraft();
@@ -79,20 +101,6 @@ function NumberField({
   );
 }
 
-function YesNoField({ label, value, onChange }: { label: string; value: YesNo; onChange: (value: YesNo) => void }) {
-  return (
-    <Field label={label}>
-      <select value={value === null ? "" : value ? "yes" : "no"} onChange={(event) => {
-        onChange(event.target.value === "" ? null : event.target.value === "yes");
-      }}>
-        <option value="">Not recorded</option>
-        <option value="yes">Yes</option>
-        <option value="no">No</option>
-      </select>
-    </Field>
-  );
-}
-
 function FireModifierField({ value, onChange }: { value: number | null; onChange: (value: number | null) => void }) {
   return (
     <Field label="Fire modifier">
@@ -106,6 +114,36 @@ function FireModifierField({ value, onChange }: { value: number | null; onChange
       </select>
     </Field>
   );
+}
+
+function UsageCounter({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <div className="usage-counter" aria-label={label}>
+      <button type="button" aria-label={`Decrease ${label}`} disabled={value === 0} onClick={() => onChange(Math.max(0, value - 1))}>−</button>
+      <output aria-live="polite">{value}</output>
+      <button type="button" aria-label={`Increase ${label}`} disabled={value === 1} onClick={() => onChange(Math.min(1, value + 1))}>+</button>
+    </div>
+  );
+}
+
+function contributionValue(value: string): FireContribution | null {
+  return value === "" ? null : value as FireContribution;
+}
+
+function roundBaseHeat(round: PlaytestDraft["rounds"][number]): number {
+  const contributionTotal = round.players.reduce(
+    (total, player) => total + (player.contribution === null ? 0 : CONTRIBUTION_HEAT[player.contribution]),
+    0,
+  );
+  return Math.max(0, Math.min(5, BASE_HEAT_START + contributionTotal));
 }
 
 function RecognitionField({ value, onChange }: { value: number | null; onChange: (value: number | null) => void }) {
@@ -206,6 +244,67 @@ export function PlaytestFormPage() {
     setDraft((current) => ({
       ...current,
       rounds: current.rounds.map((round, roundIndex) => roundIndex === index ? { ...round, ...patch } : round),
+    }));
+  }
+
+  function updateRoundPlayer(
+    roundIndex: number,
+    playerIndex: number,
+    patch: Partial<PlaytestDraft["rounds"][number]["players"][number]>,
+  ): void {
+    setDraft((current) => ({
+      ...current,
+      rounds: current.rounds.map((round, currentRoundIndex) => currentRoundIndex === roundIndex ? {
+        ...round,
+        players: round.players.map((player, currentPlayerIndex) => (
+          currentPlayerIndex === playerIndex ? { ...player, ...patch } : player
+        )),
+      } : round),
+    }));
+  }
+
+  function updateContribution(roundIndex: number, playerIndex: number, contribution: FireContribution | null): void {
+    setDraft((current) => ({
+      ...current,
+      rounds: current.rounds.map((round, currentRoundIndex) => {
+        if (currentRoundIndex !== roundIndex) return round;
+        const players = round.players.map((player, currentPlayerIndex) => (
+          currentPlayerIndex === playerIndex ? { ...player, contribution } : player
+        ));
+        const fuelLedgerUsed = players.some((player) => (
+          player.contribution === "bank_2" || player.contribution === "stoke_2"
+        ));
+        return {
+          ...round,
+          players,
+          firingTechniqueIds: fuelLedgerUsed
+            ? [...new Set([...round.firingTechniqueIds, "T12" as const])]
+            : round.firingTechniqueIds.filter((techniqueId) => techniqueId !== "T12"),
+        };
+      }),
+    }));
+  }
+
+  function toggleFiringTechnique(roundIndex: number, techniqueId: FiringTechniqueId, checked: boolean): void {
+    setDraft((current) => ({
+      ...current,
+      rounds: current.rounds.map((round, currentRoundIndex) => {
+        if (currentRoundIndex !== roundIndex) return round;
+        return {
+          ...round,
+          players: techniqueId === "T12" && !checked
+            ? round.players.map((player) => ({
+              ...player,
+              contribution: player.contribution === "bank_2"
+                ? "bank"
+                : player.contribution === "stoke_2" ? "stoke" : player.contribution,
+            }))
+            : round.players,
+          firingTechniqueIds: checked
+            ? [...new Set([...round.firingTechniqueIds, techniqueId])]
+            : round.firingTechniqueIds.filter((currentId) => currentId !== techniqueId),
+        };
+      }),
     }));
   }
 
@@ -363,39 +462,127 @@ export function PlaytestFormPage() {
             </div>
           </Section>
 
-          <Section number="2" title="Firing by round" description={`Record only what was observed. Shared Kiln capacity for this game is ${capacity}.`} optional>
+          <Section number="2" title="Firing by round" description={`Record each player's firing activity. Shared Kiln capacity for this game is ${capacity}.`}>
             <div className="round-grid">
-              {draft.rounds.map((round, index) => {
-                const occupancy = round.sharedLoaded === null ? null : Math.round((round.sharedLoaded / capacity) * 100);
-                const globalHeat = round.baseHeat === null || round.fireModifier === null ? null : round.baseHeat + round.fireModifier;
+              {draft.rounds.map((round, roundIndex) => {
+                const baseHeat = roundBaseHeat(round);
+                const globalHeat = round.fireModifier === null ? null : baseHeat + round.fireModifier;
                 return (
-                  <details className="round-card" key={round.round} open={index === 0}>
-                    <summary><span>Round {round.round}</span><small>{occupancy === null ? "Not recorded" : `${occupancy}% occupancy`}</small></summary>
+                  <details className="round-card" key={round.round} open={roundIndex === 0}>
+                    <summary><span>Round {round.round}</span><small>{globalHeat === null ? "Global Heat not recorded" : `Global Heat ${globalHeat}`}</small></summary>
                     <div className="round-content">
-                      <div className="metric-grid">
-                        <NumberField label="Shared Kiln loaded" value={round.sharedLoaded} min={0} max={capacity} onChange={(sharedLoaded) => updateRound(index, { sharedLoaded })} />
-                        <NumberField label="Imperial Kilns loaded" value={round.imperialLoaded} min={0} max={draft.playerCount} onChange={(imperialLoaded) => updateRound(index, { imperialLoaded })} />
-                        <NumberField label="Bank" value={round.bank} min={0} max={draft.playerCount} onChange={(bank) => updateRound(index, { bank })} />
-                        <NumberField label="Tend" value={round.tend} min={0} max={draft.playerCount} onChange={(tend) => updateRound(index, { tend })} />
-                        <NumberField label="Stoke" value={round.stoke} min={0} max={draft.playerCount} onChange={(stoke) => updateRound(index, { stoke })} />
-                        <NumberField label="Base Heat" value={round.baseHeat} min={0} max={5} onChange={(baseHeat) => updateRound(index, { baseHeat })} />
-                        <FireModifierField value={round.fireModifier} onChange={(fireModifier) => updateRound(index, { fireModifier })} />
-                        <Field label="Global Heat"><output className="calculated-output">{globalHeat ?? "—"}</output></Field>
+                      <div className="firing-table-wrap">
+                        <table className="firing-table">
+                          <thead>
+                            <tr>
+                              <th>Player</th>
+                              <th>Fire Contribution</th>
+                              <th>Ceramics Loaded to Shared Kiln</th>
+                              <th>Ceramics Loaded to Imperial Kiln</th>
+                              <th>Orders Completed</th>
+                              <th>Kiln Ability Uses</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {round.players.map((roundPlayer, playerIndex) => {
+                              const label = playerName(draft, playerIndex);
+                              return (
+                                <tr key={roundPlayer.playerIndex}>
+                                  <th scope="row" data-label="Player"><span className="firing-player"><strong>P{playerIndex + 1}</strong><small>{label}</small></span></th>
+                                  <td data-label="Fire Contribution">
+                                    <select
+                                      aria-label={`Round ${round.round} ${label} Fire Contribution`}
+                                      value={roundPlayer.contribution ?? ""}
+                                      onChange={(event) => updateContribution(roundIndex, playerIndex, contributionValue(event.target.value))}
+                                    >
+                                      <option value="">Not participating</option>
+                                      {CONTRIBUTION_OPTIONS.map(([value, optionLabel]) => <option value={value} key={value}>{optionLabel}</option>)}
+                                    </select>
+                                  </td>
+                                  <td data-label="Shared Kiln">
+                                    <input
+                                      aria-label={`Round ${round.round} ${label} Ceramics Loaded to Shared Kiln`}
+                                      type="number"
+                                      inputMode="numeric"
+                                      min={0}
+                                      max={capacity}
+                                      value={roundPlayer.sharedLoaded ?? ""}
+                                      onChange={(event) => updateRoundPlayer(roundIndex, playerIndex, { sharedLoaded: numberFromInput(event.target.value) })}
+                                    />
+                                  </td>
+                                  <td data-label="Imperial Kiln">
+                                    <input
+                                      aria-label={`Round ${round.round} ${label} Ceramics Loaded to Imperial Kiln`}
+                                      type="number"
+                                      inputMode="numeric"
+                                      min={0}
+                                      max={1}
+                                      value={roundPlayer.imperialLoaded}
+                                      onChange={(event) => updateRoundPlayer(roundIndex, playerIndex, { imperialLoaded: numberFromInput(event.target.value) ?? 0 })}
+                                    />
+                                  </td>
+                                  <td data-label="Orders Completed">
+                                    <input
+                                      aria-label={`Round ${round.round} ${label} Orders Completed`}
+                                      type="number"
+                                      inputMode="numeric"
+                                      min={0}
+                                      max={20}
+                                      value={roundPlayer.ordersCompleted ?? ""}
+                                      onChange={(event) => updateRoundPlayer(roundIndex, playerIndex, { ordersCompleted: numberFromInput(event.target.value) })}
+                                    />
+                                  </td>
+                                  <td data-label="Kiln Ability Uses">
+                                    <UsageCounter
+                                      label={`Round ${round.round} ${label} Kiln Ability Uses`}
+                                      value={roundPlayer.kilnAbilityUses}
+                                      onChange={(kilnAbilityUses) => updateRoundPlayer(roundIndex, playerIndex, { kilnAbilityUses })}
+                                    />
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
                       </div>
-                      <h4>Glazes loaded</h4>
-                      <div className="metric-grid">
-                        <NumberField label="White" value={round.whiteLoaded} min={0} max={11} onChange={(whiteLoaded) => updateRound(index, { whiteLoaded })} />
-                        <NumberField label="Celadon" value={round.celadonLoaded} min={0} max={11} onChange={(celadonLoaded) => updateRound(index, { celadonLoaded })} />
-                        <NumberField label="Grey-Green" value={round.greyGreenLoaded} min={0} max={11} onChange={(greyGreenLoaded) => updateRound(index, { greyGreenLoaded })} />
-                        <NumberField label="Moon White" value={round.moonWhiteLoaded} min={0} max={11} onChange={(moonWhiteLoaded) => updateRound(index, { moonWhiteLoaded })} />
+
+                      <div className="field-grid field-grid-two firing-result-grid">
+                        <FireModifierField value={round.fireModifier} onChange={(fireModifier) => updateRound(roundIndex, { fireModifier })} />
+                        <Field label="Global Heat" hint={`Base Heat ${baseHeat}: starts at 2, adds Contributions, then clamps to 0–5.`}>
+                          <output className="calculated-output">{globalHeat ?? "—"}</output>
+                        </Field>
                       </div>
-                      <div className="field-grid field-grid-four">
-                        <YesNoField label="Memorable heat conflict?" value={round.heatConflict} onChange={(heatConflict) => updateRound(index, { heatConflict })} />
-                        <YesNoField label="Order taken before intended turn?" value={round.orderStolen} onChange={(orderStolen) => updateRound(index, { orderStolen })} />
-                        <YesNoField label="Shifu reposition used?" value={round.shifuRepositionUsed} onChange={(shifuRepositionUsed) => updateRound(index, { shifuRepositionUsed })} />
-                        <YesNoField label="Fuel Ledger used?" value={round.fuelLedgerUsed} onChange={(fuelLedgerUsed) => updateRound(index, { fuelLedgerUsed })} />
-                      </div>
-                      <Field label="Round notes"><textarea rows={2} value={round.notes} maxLength={1000} onChange={(event) => updateRound(index, { notes: event.target.value })} /></Field>
+
+                      <label className="firing-checkbox">
+                        <input
+                          type="checkbox"
+                          checked={round.shifuRepositionUsed}
+                          onChange={(event) => updateRound(roundIndex, { shifuRepositionUsed: event.target.checked })}
+                        />
+                        <span>Shifu reposition used</span>
+                      </label>
+
+                      <fieldset className="firing-tech-fieldset">
+                        <legend>Firing Advanced Tech used</legend>
+                        <div className="firing-tech-grid">
+                          {FIRING_TECHNIQUES.map((technique) => {
+                            const techniqueId = technique.id as FiringTechniqueId;
+                            const ownerIndex = draft.players.findIndex((player) => (
+                              player.advancedTechnique1Id === techniqueId || player.advancedTechnique2Id === techniqueId
+                            ));
+                            return (
+                              <label className="firing-checkbox" key={techniqueId}>
+                                <input
+                                  type="checkbox"
+                                  checked={round.firingTechniqueIds.includes(techniqueId)}
+                                  onChange={(event) => toggleFiringTechnique(roundIndex, techniqueId, event.target.checked)}
+                                />
+                                <span>{technique.name}<small>{ownerIndex < 0 ? "Owner not recorded" : playerName(draft, ownerIndex)}</small></span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </fieldset>
                     </div>
                   </details>
                 );
@@ -403,7 +590,7 @@ export function PlaytestFormPage() {
             </div>
           </Section>
 
-          <Section number="3" title="End of game" description="Record the winner and each player's completed Orders, Recognition, Kiln ability use, and score.">
+          <Section number="3" title="End of game" description="Record the winner and each player's completed Orders, Recognition, remaining resources, and score.">
             <div className="winner-field">
               <Field label="Winner">
                 <select value={draft.winnerIndex} onChange={(event) => setDraft({ ...draft, winnerIndex: Number(event.target.value) })}>
@@ -441,9 +628,16 @@ export function PlaytestFormPage() {
                     ))}
                   </div>
 
-                  <div className="metric-grid endgame-metrics">
+                  <div className="endgame-metrics">
                     <RecognitionField value={player.recognition} onChange={(recognition) => updatePlayer(playerIndex, { recognition })} />
-                    <NumberField label="Kiln ability uses" value={player.kilnAbilityUses} min={0} max={5} required onChange={(kilnAbilityUses) => updatePlayer(playerIndex, { kilnAbilityUses })} />
+                  </div>
+                  <div className="metric-subsection">
+                    <h4>Resources remaining</h4>
+                    <div className="metric-grid">
+                      <NumberField label="Coins" value={player.coinsRemaining} max={COMMON_SUPPLY.coins} required onChange={(coinsRemaining) => updatePlayer(playerIndex, { coinsRemaining })} />
+                      <NumberField label="Clay" value={player.clayRemaining} max={COMMON_SUPPLY.clay} required onChange={(clayRemaining) => updatePlayer(playerIndex, { clayRemaining })} />
+                      <NumberField label="Wood" value={player.woodRemaining} max={COMMON_SUPPLY.wood} required onChange={(woodRemaining) => updatePlayer(playerIndex, { woodRemaining })} />
+                    </div>
                   </div>
                   <div className="metric-subsection">
                     <h4>Scoring</h4>

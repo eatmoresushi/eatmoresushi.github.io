@@ -7,11 +7,14 @@ The web form is built at `/kiln-opening/playtest/`. In production that is:
 The form uses a concise subset of `Kiln_Opening_Playtest_Recording_v1.2.4.xlsx` and records:
 
 - game date, player count, rules version, first player, and player setup;
-- round-by-round Shared and Imperial Kiln loading, Contribution-card mix, Base Heat, Fire, glaze mix, heat conflict, Order pressure, Shifu repositioning, and Fuel Ledger use;
-- the winner and, for every player, completed Order IDs, final Imperial Recognition position, Kiln ability uses, and score;
+- for every player in each round: final Contribution value, Shared and Imperial Kiln loading, Orders completed, and Kiln ability use;
+- each round's Fire modifier, automatically calculated Base/Global Heat, Shifu repositioning, and the five Firing Advanced Techs;
+- the winner and, for every player, completed Order IDs in completion order, final Imperial Recognition position, remaining Coins/Clay/Wood, and score;
 - optional qualitative table observations and rules ambiguities.
 
-Ceramic-level and Tech-performance logs are intentionally omitted. Completed Order count is derived from the Order IDs recorded for each player, so the count cannot disagree with the list.
+Ceramic-level and general Tech-performance logs are intentionally omitted. The end-game Kiln ability total is derived from the five per-round counters. Completed Order count is derived from the Order IDs recorded for each player; when all five round counts are entered, the form also checks that their sum agrees with that list.
+
+Contribution choices include ordinary Bank (−1), Tend (0), and Stoke (+1), plus Fuel Ledger's adjusted Bank (−2) and Stoke (+2). Choosing an adjusted Contribution records Fuel Ledger automatically. Base Heat starts at 2, adds those final Contribution values, and clamps to 0–5 before the Fire modifier is added to produce Global Heat.
 
 Recognition VP is also derived rather than manually entered: V1.2.4 awards 6 VP for reaching Recognition 5 and 0 VP for positions 0-4. The stored `recognition_vp` analysis column follows the recorded Recognition position, including for submissions made before that column was added.
 
@@ -25,6 +28,7 @@ Use the existing Supabase project as the source of truth. The migration creates 
 - `private.playtest_players`
 - `private.playtest_completed_orders`
 - `private.playtest_rounds`
+- `private.playtest_round_players`
 
 This is preferable to writing directly to Google Sheets or a public Supabase table. It provides transactional writes, database constraints, stable IDs, nullable metrics, private access, and SQL analysis without exposing submissions or credentials to the browser. A spreadsheet can remain an export and presentation format rather than the primary database.
 
@@ -40,6 +44,7 @@ The migration provides private, workbook-shaped views:
 - `private.playtest_player_summary`
 - `private.playtest_order_log`
 - `private.playtest_firing_log`
+- `private.playtest_firing_player_log`
 
 Use the Supabase SQL editor to query them and download results as CSV. Example comparisons:
 
@@ -58,14 +63,25 @@ from private.playtest_player_summary
 group by kiln_id
 order by kiln_id;
 
--- Shared Kiln pressure and heat conflict by round
+-- Shared Kiln pressure and Global Heat by round
 select
   round,
   round(avg(occupancy) * 100, 1) as avg_occupancy_pct,
-  round(avg((heat_conflict)::int) * 100, 1) as heat_conflict_rate_pct
+  round(avg(global_heat), 2) as avg_global_heat
 from private.playtest_firing_log
 group by round
 order by round;
+
+-- Per-player firing behaviour by Kiln
+select
+  kiln_id,
+  fire_contribution,
+  count(*) as uses,
+  round(avg(coalesce(shared_loaded, 0)), 2) as avg_shared_loaded,
+  sum(kiln_ability_uses) as kiln_ability_uses
+from private.playtest_firing_player_log
+group by kiln_id, fire_contribution
+order by kiln_id, fire_contribution;
 
 -- Order popularity and completion ownership
 select
@@ -77,7 +93,7 @@ group by order_id
 order by completions desc, order_id;
 ```
 
-Keep these tables long-term so comparisons can accumulate across rules versions. The current form and database constraint accept V1.2.4 only. When rules change, add a new form version and migration rather than changing the meaning of existing columns.
+Keep these tables long-term so comparisons can accumulate across rules versions. The current UI submits Form V2 for rules V1.2.4; existing Form V1 records remain readable. When rules change, add a new form version and migration rather than changing the meaning of existing columns.
 
 ## Deployment
 
@@ -88,6 +104,8 @@ Keep these tables long-term so comparisons can accumulate across rules versions.
    supabase functions deploy game-action
    supabase functions deploy playtest-submit
    ```
+
+   The `playtest-submit` redeploy is required whenever the shared playtest schema changes; deploying `game-action` alone does not update this form endpoint.
 
 3. Keep `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` as Edge Function secrets.
 4. Keep anonymous Auth enabled and the existing public URL and anonymous key available to the Vite build.
