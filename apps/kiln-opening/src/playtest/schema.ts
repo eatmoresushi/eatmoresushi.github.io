@@ -1,4 +1,5 @@
 import {
+  COMMON_SUPPLY,
   GAME_CONFIG,
   KILN_IDS,
   MAIN_ORDERS,
@@ -7,17 +8,24 @@ import {
   TECHNIQUES,
 } from "../game/content.ts";
 import type {
+  FireContribution,
+  FiringTechniqueId,
   PlaytestFeedback,
   PlaytestSubmission,
   PlaytestValidationIssue,
   PlaytestValidationResult,
   PlayerMetrics,
   RoundMetrics,
+  RoundPlayerMetrics,
 } from "./types.ts";
 
 const STARTING_TECH_IDS = STARTING_TECHNIQUES.map((technique) => technique.id);
 const ADVANCED_TECH_IDS = TECHNIQUES.map((technique) => technique.id);
+const FIRING_TECH_IDS = TECHNIQUES
+  .filter((technique) => technique.discipline === "firing")
+  .map((technique) => technique.id) as FiringTechniqueId[];
 const ORDER_IDS = [...STARTING_ORDERS, ...MAIN_ORDERS].map((order) => order.id);
+const FIRE_CONTRIBUTIONS: readonly FireContribution[] = ["bank_2", "bank", "tend", "stoke", "stoke_2"];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -96,21 +104,6 @@ function integer(
   return value;
 }
 
-function booleanOrNull(
-  record: Record<string, unknown>,
-  key: string,
-  path: string,
-  issues: PlaytestValidationIssue[],
-): boolean | null {
-  const value = record[key];
-  if (value === null || value === undefined || value === "") return null;
-  if (typeof value !== "boolean") {
-    issue(issues, path, "Choose Yes, No, or leave this blank.");
-    return null;
-  }
-  return value;
-}
-
 function enumValue<T extends string>(
   record: Record<string, unknown>,
   key: string,
@@ -178,6 +171,9 @@ function parsePlayer(value: unknown, index: number, issues: PlaytestValidationIs
     ),
     completedOrderIds: parseCompletedOrders(record, path, issues),
     recognition: integer(record, "recognition", `${path}.recognition`, issues, 0, 5)!,
+    coinsRemaining: integer(record, "coinsRemaining", `${path}.coinsRemaining`, issues, 0, COMMON_SUPPLY.coins)!,
+    clayRemaining: integer(record, "clayRemaining", `${path}.clayRemaining`, issues, 0, COMMON_SUPPLY.clay)!,
+    woodRemaining: integer(record, "woodRemaining", `${path}.woodRemaining`, issues, 0, COMMON_SUPPLY.wood)!,
     kilnAbilityUses: integer(record, "kilnAbilityUses", `${path}.kilnAbilityUses`, issues, 0, 5)!,
     finalVp: integer(record, "finalVp", `${path}.finalVp`, issues, -100, 500)!,
     orderVp: integer(record, "orderVp", `${path}.orderVp`, issues, -100, 500, true),
@@ -187,27 +183,89 @@ function parsePlayer(value: unknown, index: number, issues: PlaytestValidationIs
   };
 }
 
-function parseRound(value: unknown, index: number, issues: PlaytestValidationIssue[]): RoundMetrics {
-  const path = `rounds.${index}`;
+function parseRoundPlayer(
+  value: unknown,
+  index: number,
+  roundPath: string,
+  issues: PlaytestValidationIssue[],
+): RoundPlayerMetrics {
+  const path = `${roundPath}.players.${index}`;
   const record = recordAt(value, path, issues);
   return {
-    round: integer(record, "round", `${path}.round`, issues, 1, 5)!,
+    playerIndex: integer(record, "playerIndex", `${path}.playerIndex`, issues, 0, 3)!,
+    contribution: enumValue(
+      record,
+      "contribution",
+      `${path}.contribution`,
+      issues,
+      FIRE_CONTRIBUTIONS,
+      true,
+    ),
     sharedLoaded: integer(record, "sharedLoaded", `${path}.sharedLoaded`, issues, 0, 7, true),
-    imperialLoaded: integer(record, "imperialLoaded", `${path}.imperialLoaded`, issues, 0, 4, true),
-    bank: integer(record, "bank", `${path}.bank`, issues, 0, 4, true),
-    tend: integer(record, "tend", `${path}.tend`, issues, 0, 4, true),
-    stoke: integer(record, "stoke", `${path}.stoke`, issues, 0, 4, true),
-    baseHeat: integer(record, "baseHeat", `${path}.baseHeat`, issues, 0, 5, true),
+    imperialLoaded: integer(record, "imperialLoaded", `${path}.imperialLoaded`, issues, 0, 1)!,
+    ordersCompleted: integer(record, "ordersCompleted", `${path}.ordersCompleted`, issues, 0, 20, true),
+    kilnAbilityUses: integer(record, "kilnAbilityUses", `${path}.kilnAbilityUses`, issues, 0, 1)!,
+  };
+}
+
+function parseFiringTechniqueIds(
+  record: Record<string, unknown>,
+  path: string,
+  issues: PlaytestValidationIssue[],
+): FiringTechniqueId[] {
+  const values = arrayAt(record, "firingTechniqueIds", path, issues, 5);
+  const techniqueIds = values.map((value, index) => {
+    if (typeof value !== "string" || !FIRING_TECH_IDS.includes(value as FiringTechniqueId)) {
+      issue(issues, `${path}.${index}`, "Choose a valid Firing Advanced Tech.");
+      return null;
+    }
+    return value as FiringTechniqueId;
+  }).filter((value): value is FiringTechniqueId => value !== null);
+  if (new Set(techniqueIds).size !== techniqueIds.length) {
+    issue(issues, path, "Record each Firing Advanced Tech at most once per round.");
+  }
+  return techniqueIds;
+}
+
+function parseRound(
+  value: unknown,
+  index: number,
+  playerCount: 2 | 3 | 4,
+  issues: PlaytestValidationIssue[],
+): RoundMetrics {
+  const path = `rounds.${index}`;
+  const record = recordAt(value, path, issues);
+  const playerValues = arrayAt(record, "players", `${path}.players`, issues, 4);
+  if (playerValues.length !== playerCount) {
+    issue(issues, `${path}.players`, `Add exactly ${playerCount} player rows for this round.`);
+  }
+  const players = playerValues.map((player, playerIndex) => parseRoundPlayer(player, playerIndex, path, issues));
+  for (const [playerIndex, player] of players.entries()) {
+    if (player.playerIndex !== playerIndex) {
+      issue(issues, `${path}.players.${playerIndex}.playerIndex`, "Player rows must stay in seat order.");
+    }
+  }
+  const sharedLoaded = players.reduce((total, player) => total + (player.sharedLoaded ?? 0), 0);
+  const sharedCapacity = playerCount === 2 ? 5 : playerCount === 3 ? 6 : 7;
+  if (sharedLoaded > sharedCapacity) {
+    issue(issues, `${path}.players`, `Shared Kiln loading cannot exceed ${sharedCapacity} ceramics.`);
+  }
+  const firingTechniqueIds = parseFiringTechniqueIds(record, `${path}.firingTechniqueIds`, issues);
+  const adjustedContributions = players.filter((player) => (
+    player.contribution === "bank_2" || player.contribution === "stoke_2"
+  )).length;
+  const fuelLedgerRecorded = firingTechniqueIds.includes("T12");
+  if (adjustedContributions > 0 && !fuelLedgerRecorded) {
+    issue(issues, `${path}.firingTechniqueIds`, "Check Fuel Ledger when a −2 or +2 Contribution was used.");
+  }
+  if (fuelLedgerRecorded && adjustedContributions !== 1) {
+    issue(issues, `${path}.players`, "Fuel Ledger requires exactly one Bank −2 or Stoke +2 Contribution.");
+  }
+  return {
+    round: integer(record, "round", `${path}.round`, issues, 1, 5)!,
+    players,
     fireModifier: integer(record, "fireModifier", `${path}.fireModifier`, issues, -2, 2, true),
-    whiteLoaded: integer(record, "whiteLoaded", `${path}.whiteLoaded`, issues, 0, 11, true),
-    celadonLoaded: integer(record, "celadonLoaded", `${path}.celadonLoaded`, issues, 0, 11, true),
-    greyGreenLoaded: integer(record, "greyGreenLoaded", `${path}.greyGreenLoaded`, issues, 0, 11, true),
-    moonWhiteLoaded: integer(record, "moonWhiteLoaded", `${path}.moonWhiteLoaded`, issues, 0, 11, true),
-    heatConflict: booleanOrNull(record, "heatConflict", `${path}.heatConflict`, issues),
-    orderStolen: booleanOrNull(record, "orderStolen", `${path}.orderStolen`, issues),
-    shifuRepositionUsed: booleanOrNull(record, "shifuRepositionUsed", `${path}.shifuRepositionUsed`, issues),
-    fuelLedgerUsed: booleanOrNull(record, "fuelLedgerUsed", `${path}.fuelLedgerUsed`, issues),
-    notes: text(record, "notes", `${path}.notes`, issues, 1000),
+    firingTechniqueIds,
   };
 }
 
@@ -231,7 +289,7 @@ export function validatePlaytestSubmission(input: unknown): PlaytestValidationRe
   if (Object.prototype.hasOwnProperty.call(record, "gameId")) {
     issue(issues, "gameId", "The reference number is assigned by the server.");
   }
-  if (record["formVersion"] !== 1) issue(issues, "formVersion", "Unsupported form version.");
+  if (record["formVersion"] !== 2) issue(issues, "formVersion", "Unsupported form version.");
   if (record["rulesVersion"] !== GAME_CONFIG.rulesVersion) {
     issue(issues, "rulesVersion", `This form records rules V${GAME_CONFIG.rulesVersion}.`);
   }
@@ -259,16 +317,55 @@ export function validatePlaytestSubmission(input: unknown): PlaytestValidationRe
   }
 
   const rounds = arrayAt(record, "rounds", "rounds", issues, 5)
-    .map((value, index) => parseRound(value, index, issues));
+    .map((value, index) => parseRound(value, index, playerCount, issues));
+  if (rounds.length !== GAME_CONFIG.rounds) {
+    issue(issues, "rounds", `Add exactly ${GAME_CONFIG.rounds} firing rounds.`);
+  }
   if (new Set(rounds.map((round) => round.round)).size !== rounds.length) {
     issue(issues, "rounds", "Record each round at most once.");
   }
-  for (const [index, round] of rounds.entries()) {
-    const contributions = [round.bank, round.tend, round.stoke];
-    if (contributions.every((value) => value !== null)) {
-      const total = contributions.reduce<number>((sum, value) => sum + (value ?? 0), 0);
-      if (total > playerCount) {
-        issue(issues, `rounds.${index}`, "Contribution-card counts cannot exceed the player count.");
+  const ownedFiringTechIds = new Set(
+    advancedIds.filter((techniqueId) => FIRING_TECH_IDS.includes(techniqueId as FiringTechniqueId)),
+  );
+  const fuelLedgerOwnerIndex = players.findIndex((player) => (
+    player.advancedTechnique1Id === "T12" || player.advancedTechnique2Id === "T12"
+  ));
+  for (const [roundIndex, round] of rounds.entries()) {
+    for (const techniqueId of round.firingTechniqueIds) {
+      if (!ownedFiringTechIds.has(techniqueId)) {
+        issue(
+          issues,
+          `rounds.${roundIndex}.firingTechniqueIds`,
+          "A Firing Advanced Tech can only be used after assigning it to a player in setup.",
+        );
+      }
+    }
+    for (const [playerIndex, roundPlayer] of round.players.entries()) {
+      if (
+        (roundPlayer.contribution === "bank_2" || roundPlayer.contribution === "stoke_2")
+        && playerIndex !== fuelLedgerOwnerIndex
+      ) {
+        issue(
+          issues,
+          `rounds.${roundIndex}.players.${playerIndex}.contribution`,
+          "Only the player who owns Fuel Ledger can record a −2 or +2 Contribution.",
+        );
+      }
+    }
+  }
+  for (const [playerIndex, player] of players.entries()) {
+    const kilnAbilityUses = rounds.reduce(
+      (total, round) => total + (round.players[playerIndex]?.kilnAbilityUses ?? 0),
+      0,
+    );
+    if (player.kilnAbilityUses !== kilnAbilityUses) {
+      issue(issues, `players.${playerIndex}.kilnAbilityUses`, "Kiln ability total must match the five round counters.");
+    }
+    const roundOrderCounts = rounds.map((round) => round.players[playerIndex]?.ordersCompleted ?? null);
+    if (roundOrderCounts.every((count) => count !== null)) {
+      const roundOrderTotal = roundOrderCounts.reduce<number>((total, count) => total + (count ?? 0), 0);
+      if (roundOrderTotal !== player.completedOrderIds.length) {
+        issue(issues, `players.${playerIndex}.completedOrderIds`, "Completed Orders must match the total recorded across rounds.");
       }
     }
   }
@@ -278,7 +375,7 @@ export function validatePlaytestSubmission(input: unknown): PlaytestValidationRe
   return {
     ok: true,
     value: {
-      formVersion: 1,
+      formVersion: 2,
       rulesVersion: GAME_CONFIG.rulesVersion,
       playedOn,
       playerCount,

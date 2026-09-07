@@ -1,6 +1,7 @@
 import type { KilnId, StartingTechniqueId, TechniqueId } from "../game/types.ts";
 
-export type YesNo = boolean | null;
+export type FireContribution = "bank_2" | "bank" | "tend" | "stoke" | "stoke_2";
+export type FiringTechniqueId = "T11" | "T12" | "T13" | "T14" | "T15";
 
 export interface PlayerMetrics {
   name: string;
@@ -10,6 +11,10 @@ export interface PlayerMetrics {
   advancedTechnique2Id: TechniqueId | null;
   completedOrderIds: string[];
   recognition: number;
+  coinsRemaining: number;
+  clayRemaining: number;
+  woodRemaining: number;
+  /** Derived from the five per-round counters before submission. */
   kilnAbilityUses: number;
   finalVp: number;
   orderVp: number | null;
@@ -18,24 +23,20 @@ export interface PlayerMetrics {
   coinVp: number | null;
 }
 
+export interface RoundPlayerMetrics {
+  playerIndex: number;
+  contribution: FireContribution | null;
+  sharedLoaded: number | null;
+  imperialLoaded: number;
+  ordersCompleted: number | null;
+  kilnAbilityUses: number;
+}
+
 export interface RoundMetrics {
   round: number;
-  sharedLoaded: number | null;
-  imperialLoaded: number | null;
-  bank: number | null;
-  tend: number | null;
-  stoke: number | null;
-  baseHeat: number | null;
+  players: RoundPlayerMetrics[];
   fireModifier: number | null;
-  whiteLoaded: number | null;
-  celadonLoaded: number | null;
-  greyGreenLoaded: number | null;
-  moonWhiteLoaded: number | null;
-  heatConflict: YesNo;
-  orderStolen: YesNo;
-  shifuRepositionUsed: YesNo;
-  fuelLedgerUsed: YesNo;
-  notes: string;
+  firingTechniqueIds: FiringTechniqueId[];
 }
 
 export interface PlaytestFeedback {
@@ -55,7 +56,7 @@ export interface PlaytestFeedback {
 }
 
 export interface PlaytestSubmission {
-  formVersion: 1;
+  formVersion: 2;
   rulesVersion: "1.2.4";
   playedOn: string;
   playerCount: 2 | 3 | 4;
@@ -68,16 +69,26 @@ export interface PlaytestSubmission {
 
 type DraftPlayerMetrics = Omit<
   PlayerMetrics,
-  "kilnId" | "startingTechniqueId" | "kilnAbilityUses" | "finalVp"
+  | "kilnId"
+  | "startingTechniqueId"
+  | "recognition"
+  | "coinsRemaining"
+  | "clayRemaining"
+  | "woodRemaining"
+  | "kilnAbilityUses"
+  | "finalVp"
 > & {
   kilnId: KilnId | null;
   startingTechniqueId: StartingTechniqueId | null;
-  kilnAbilityUses: number | null;
+  recognition: number | null;
+  coinsRemaining: number | null;
+  clayRemaining: number | null;
+  woodRemaining: number | null;
   finalVp: number | null;
 };
 
 export interface PlaytestDraft {
-  formVersion: 1;
+  formVersion: 2;
   rulesVersion: "1.2.4";
   playedOn: string;
   playerCount: 2 | 3 | 4;
