@@ -108,7 +108,7 @@
   .usage-counter button { min-height: 2.1rem; border: 1px solid var(--line); border-radius: 7px; padding: 0; color: var(--celadon-dark); font-size: 1rem; background: var(--porcelain); }
   .usage-counter button:disabled { color: #aaa49b; cursor: default; }
   .usage-counter output { color: var(--ink); font-weight: 900; text-align: center; }
-  .firing-result-grid { align-items: end; }
+  .firing-result-grid { align-items: start; }
   .firing-checkbox { display: flex; gap: .6rem; align-items: center; min-height: 2.65rem; border: 1px solid var(--line); border-radius: 9px; padding: .55rem .7rem; color: var(--ink); font-size: .76rem; font-weight: 800; background: rgb(255 253 248 / 70%); }
   .firing-checkbox input { flex: 0 0 auto; width: 1.05rem; min-height: 1.05rem; }
   .firing-checkbox > span { display: grid; gap: .08rem; }

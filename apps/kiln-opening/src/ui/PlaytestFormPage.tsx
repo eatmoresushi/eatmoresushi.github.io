@@ -12,6 +12,7 @@ import {
 } from "../game/content.ts";
 import {
   createPlaytestDraft,
+  reconcileFiringTechniqueOwnership,
   resizePlayers,
   restorePlaytestDraft,
   sharedKilnCapacity,
@@ -232,11 +233,34 @@ export function PlaytestFormPage() {
     () => new Set(draft.players.flatMap((player) => player.completedOrderIds).filter((orderId) => orderId !== "")),
     [draft.players],
   );
+  const ownedFiringTechniques = useMemo(() => FIRING_TECHNIQUES.flatMap((technique) => {
+    const ownerIndex = draft.players.findIndex((player) => (
+      player.advancedTechnique1Id === technique.id || player.advancedTechnique2Id === technique.id
+    ));
+    return ownerIndex < 0 ? [] : [{ technique, ownerIndex }];
+  }), [draft.players]);
+  const fuelLedgerOwnerIndex = draft.players.findIndex((player) => (
+    player.advancedTechnique1Id === "T12" || player.advancedTechnique2Id === "T12"
+  ));
 
   function updatePlayer(index: number, patch: Partial<PlaytestDraft["players"][number]>): void {
     setDraft((current) => ({
       ...current,
       players: current.players.map((player, playerIndex) => playerIndex === index ? { ...player, ...patch } : player),
+    }));
+  }
+
+  function updateAdvancedTechnique(
+    playerIndex: number,
+    key: "advancedTechnique1Id" | "advancedTechnique2Id",
+    techniqueId: string,
+  ): void {
+    setDraft((current) => reconcileFiringTechniqueOwnership({
+      ...current,
+      players: current.players.map((player, currentPlayerIndex) => currentPlayerIndex === playerIndex ? {
+        ...player,
+        [key]: techniqueId === "" ? null : techniqueId,
+      } : player),
     }));
   }
 
@@ -418,7 +442,9 @@ export function PlaytestFormPage() {
             <div className="field-grid field-grid-four game-basics">
               <Field label="Date played"><input type="date" value={draft.playedOn} required onChange={(event) => setDraft({ ...draft, playedOn: event.target.value })} /></Field>
               <Field label="Players">
-                <select value={draft.playerCount} onChange={(event) => setDraft((current) => resizePlayers(current, Number(event.target.value) as 2 | 3 | 4))}>
+                <select value={draft.playerCount} onChange={(event) => setDraft((current) => reconcileFiringTechniqueOwnership(
+                  resizePlayers(current, Number(event.target.value) as 2 | 3 | 4),
+                ))}>
                   <option value={2}>2</option><option value={3}>3</option><option value={4}>4</option>
                 </select>
               </Field>
@@ -450,7 +476,7 @@ export function PlaytestFormPage() {
                     </Field>
                     {["advancedTechnique1Id", "advancedTechnique2Id"].map((key, techIndex) => (
                       <Field label={`Advanced Tech ${techIndex + 1}`} key={key}>
-                        <select value={player[key as "advancedTechnique1Id" | "advancedTechnique2Id"] ?? ""} onChange={(event) => updatePlayer(index, { [key]: event.target.value === "" ? null : event.target.value })}>
+                        <select value={player[key as "advancedTechnique1Id" | "advancedTechnique2Id"] ?? ""} onChange={(event) => updateAdvancedTechnique(index, key as "advancedTechnique1Id" | "advancedTechnique2Id", event.target.value)}>
                           <option value="">None</option>
                           {TECHNIQUES.map((technique) => <option value={technique.id} key={technique.id}>{technique.name}</option>)}
                         </select>
@@ -486,6 +512,9 @@ export function PlaytestFormPage() {
                           <tbody>
                             {round.players.map((roundPlayer, playerIndex) => {
                               const label = playerName(draft, playerIndex);
+                              const contributionOptions = playerIndex === fuelLedgerOwnerIndex
+                                ? CONTRIBUTION_OPTIONS
+                                : CONTRIBUTION_OPTIONS.filter(([value]) => value !== "bank_2" && value !== "stoke_2");
                               return (
                                 <tr key={roundPlayer.playerIndex}>
                                   <th scope="row" data-label="Player"><span className="firing-player"><strong>P{playerIndex + 1}</strong><small>{label}</small></span></th>
@@ -496,7 +525,7 @@ export function PlaytestFormPage() {
                                       onChange={(event) => updateContribution(roundIndex, playerIndex, contributionValue(event.target.value))}
                                     >
                                       <option value="">Not participating</option>
-                                      {CONTRIBUTION_OPTIONS.map(([value, optionLabel]) => <option value={value} key={value}>{optionLabel}</option>)}
+                                      {contributionOptions.map(([value, optionLabel]) => <option value={value} key={value}>{optionLabel}</option>)}
                                     </select>
                                   </td>
                                   <td data-label="Shared Kiln">
@@ -562,27 +591,26 @@ export function PlaytestFormPage() {
                         <span>Shifu reposition used</span>
                       </label>
 
-                      <fieldset className="firing-tech-fieldset">
-                        <legend>Firing Advanced Tech used</legend>
-                        <div className="firing-tech-grid">
-                          {FIRING_TECHNIQUES.map((technique) => {
-                            const techniqueId = technique.id as FiringTechniqueId;
-                            const ownerIndex = draft.players.findIndex((player) => (
-                              player.advancedTechnique1Id === techniqueId || player.advancedTechnique2Id === techniqueId
-                            ));
-                            return (
+                      {ownedFiringTechniques.length > 0 && (
+                        <fieldset className="firing-tech-fieldset">
+                          <legend>Firing Advanced Tech used</legend>
+                          <div className="firing-tech-grid">
+                            {ownedFiringTechniques.map(({ technique, ownerIndex }) => {
+                              const techniqueId = technique.id as FiringTechniqueId;
+                              return (
                               <label className="firing-checkbox" key={techniqueId}>
                                 <input
                                   type="checkbox"
                                   checked={round.firingTechniqueIds.includes(techniqueId)}
                                   onChange={(event) => toggleFiringTechnique(roundIndex, techniqueId, event.target.checked)}
                                 />
-                                <span>{technique.name}<small>{ownerIndex < 0 ? "Owner not recorded" : playerName(draft, ownerIndex)}</small></span>
+                                <span>{technique.name}<small>{playerName(draft, ownerIndex)}</small></span>
                               </label>
-                            );
-                          })}
-                        </div>
-                      </fieldset>
+                              );
+                            })}
+                          </div>
+                        </fieldset>
+                      )}
                     </div>
                   </details>
                 );

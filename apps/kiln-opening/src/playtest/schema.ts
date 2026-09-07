@@ -339,6 +339,35 @@ export function validatePlaytestSubmission(input: unknown): PlaytestValidationRe
   if (new Set(rounds.map((round) => round.round)).size !== rounds.length) {
     issue(issues, "rounds", "Record each round at most once.");
   }
+  const ownedFiringTechIds = new Set(
+    advancedIds.filter((techniqueId) => FIRING_TECH_IDS.includes(techniqueId as FiringTechniqueId)),
+  );
+  const fuelLedgerOwnerIndex = players.findIndex((player) => (
+    player.advancedTechnique1Id === "T12" || player.advancedTechnique2Id === "T12"
+  ));
+  for (const [roundIndex, round] of rounds.entries()) {
+    for (const techniqueId of round.firingTechniqueIds) {
+      if (!ownedFiringTechIds.has(techniqueId)) {
+        issue(
+          issues,
+          `rounds.${roundIndex}.firingTechniqueIds`,
+          "A Firing Advanced Tech can only be used after assigning it to a player in setup.",
+        );
+      }
+    }
+    for (const [playerIndex, roundPlayer] of round.players.entries()) {
+      if (
+        (roundPlayer.contribution === "bank_2" || roundPlayer.contribution === "stoke_2")
+        && playerIndex !== fuelLedgerOwnerIndex
+      ) {
+        issue(
+          issues,
+          `rounds.${roundIndex}.players.${playerIndex}.contribution`,
+          "Only the player who owns Fuel Ledger can record a −2 or +2 Contribution.",
+        );
+      }
+    }
+  }
   for (const [playerIndex, player] of players.entries()) {
     const kilnAbilityUses = rounds.reduce(
       (total, round) => total + (round.players[playerIndex]?.kilnAbilityUses ?? 0),

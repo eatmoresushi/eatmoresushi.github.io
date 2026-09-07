@@ -1,4 +1,4 @@
-import { GAME_CONFIG } from "../game/content.ts";
+import { GAME_CONFIG, TECHNIQUES } from "../game/content.ts";
 import type {
   PlaytestDraft,
   PlaytestFeedback,
@@ -110,6 +110,49 @@ export function sharedKilnCapacity(playerCount: 2 | 3 | 4): number {
   return playerCount === 2 ? 5 : playerCount === 3 ? 6 : 7;
 }
 
+const FIRING_TECHNIQUE_IDS = new Set(
+  TECHNIQUES.filter((technique) => technique.discipline === "firing").map((technique) => technique.id),
+);
+
+/** Remove firing-use data that no longer has a matching owner in player setup. */
+export function reconcileFiringTechniqueOwnership(draft: PlaytestDraft): PlaytestDraft {
+  const ownedFiringTechniqueIds = new Set(
+    draft.players
+      .flatMap((player) => [player.advancedTechnique1Id, player.advancedTechnique2Id])
+      .filter((techniqueId): techniqueId is NonNullable<typeof techniqueId> => (
+        techniqueId !== null && FIRING_TECHNIQUE_IDS.has(techniqueId)
+      )),
+  );
+  const fuelLedgerOwnerIndex = draft.players.findIndex((player) => (
+    player.advancedTechnique1Id === "T12" || player.advancedTechnique2Id === "T12"
+  ));
+
+  return {
+    ...draft,
+    rounds: draft.rounds.map((round) => {
+      const players = round.players.map((player, playerIndex) => ({
+        ...player,
+        contribution: playerIndex === fuelLedgerOwnerIndex
+          ? player.contribution
+          : player.contribution === "bank_2"
+            ? "bank" as const
+            : player.contribution === "stoke_2" ? "stoke" as const : player.contribution,
+      }));
+      const adjustedContributionRecorded = players.some((player) => (
+        player.contribution === "bank_2" || player.contribution === "stoke_2"
+      ));
+      return {
+        ...round,
+        players,
+        firingTechniqueIds: round.firingTechniqueIds.filter((techniqueId) => (
+          ownedFiringTechniqueIds.has(techniqueId)
+          && (techniqueId !== "T12" || adjustedContributionRecorded)
+        )),
+      };
+    }),
+  };
+}
+
 export function submissionCandidate(draft: PlaytestDraft): unknown {
   return {
     ...draft,
@@ -143,7 +186,7 @@ export function restorePlaytestDraft(serialized: string): PlaytestDraft | null {
       && Array.isArray(round["firingTechniqueIds"])
       && round["players"].length === value["playerCount"]
     ))) return null;
-    return value as unknown as PlaytestDraft;
+    return reconcileFiringTechniqueOwnership(value as unknown as PlaytestDraft);
   } catch {
     return null;
   }

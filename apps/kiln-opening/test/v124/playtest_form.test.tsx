@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
   createPlaytestDraft,
+  reconcileFiringTechniqueOwnership,
   submissionCandidate,
 } from "../../src/playtest/model.ts";
 import { validatePlaytestSubmission } from "../../src/playtest/schema.ts";
@@ -114,6 +115,47 @@ describe("V1.2.4 playtest form", () => {
     expect(result.issues.some((entry) => entry.path === "rounds.0.firingTechniqueIds")).toBe(true);
   });
 
+  it("accepts a Fuel Ledger adjustment only for its recorded owner", () => {
+    const candidate = validCandidate() as Record<string, unknown>;
+    const players = candidate["players"] as Array<Record<string, unknown>>;
+    players[0]!["advancedTechnique1Id"] = "T12";
+    const rounds = candidate["rounds"] as Array<Record<string, unknown>>;
+    rounds[0]!["firingTechniqueIds"] = ["T12"];
+    const roundPlayers = rounds[0]!["players"] as Array<Record<string, unknown>>;
+    roundPlayers[0]!["contribution"] = "stoke_2";
+    expect(validatePlaytestSubmission(candidate).ok).toBe(true);
+
+    roundPlayers[0]!["contribution"] = "stoke";
+    roundPlayers[1]!["contribution"] = "stoke_2";
+    const nonOwnerResult = validatePlaytestSubmission(candidate);
+    expect(nonOwnerResult.ok).toBe(false);
+    if (nonOwnerResult.ok) return;
+    expect(nonOwnerResult.issues.some((entry) => (
+      entry.path === "rounds.0.players.1.contribution"
+    ))).toBe(true);
+  });
+
+  it("rejects a Firing Tech use when nobody owns that Tech", () => {
+    const candidate = validCandidate() as Record<string, unknown>;
+    const rounds = candidate["rounds"] as Array<Record<string, unknown>>;
+    rounds[0]!["firingTechniqueIds"] = ["T11"];
+    const result = validatePlaytestSubmission(candidate);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.issues.some((entry) => entry.message.includes("assigning it to a player"))).toBe(true);
+  });
+
+  it("clears firing data when its Advanced Tech owner is removed", () => {
+    const draft = createPlaytestDraft(2);
+    draft.players[0]!.advancedTechnique1Id = "T12";
+    draft.rounds[0]!.players[0]!.contribution = "bank_2";
+    draft.rounds[0]!.firingTechniqueIds = ["T11", "T12"];
+    draft.players[0]!.advancedTechnique1Id = null;
+    const reconciled = reconcileFiringTechniqueOwnership(draft);
+    expect(reconciled.rounds[0]!.players[0]!.contribution).toBe("bank");
+    expect(reconciled.rounds[0]!.firingTechniqueIds).toEqual([]);
+  });
+
   it("renders the simplified sections without Ceramic or Tech logs", () => {
     const markup = renderToStaticMarkup(createElement(PlaytestFormPage));
     expect(markup).toContain("Game and players");
@@ -126,11 +168,10 @@ describe("V1.2.4 playtest form", () => {
     expect(markup).toContain("Orders Completed");
     expect(markup).toContain("Kiln Ability Uses");
     expect(markup).toContain("Shifu reposition used");
-    expect(markup).toContain("Protective Saggars");
-    expect(markup).toContain("Fuel Ledger");
-    expect(markup).toContain("Test Pieces");
-    expect(markup).toContain("Second Firing");
-    expect(markup).toContain("Kiln Furniture");
+    expect(markup).not.toContain("firing-tech-fieldset");
+    expect(markup).not.toContain("Owner not recorded");
+    expect(markup).not.toContain("Bank + Fuel Ledger (−2)");
+    expect(markup).not.toContain("Stoke + Fuel Ledger (+2)");
     expect(markup).toContain("Resources remaining");
     expect(markup).toContain("Coins");
     expect(markup).toContain("Clay");

@@ -16,6 +16,8 @@ Ceramic-level and general Tech-performance logs are intentionally omitted. The e
 
 Contribution choices include ordinary Bank (−1), Tend (0), and Stoke (+1), plus Fuel Ledger's adjusted Bank (−2) and Stoke (+2). Choosing an adjusted Contribution records Fuel Ledger automatically. Base Heat starts at 2, adds those final Contribution values, and clamps to 0–5 before the Fire modifier is added to produce Global Heat.
 
+The round form shows only Firing Advanced Techs assigned to a player in the setup section. Fuel Ledger's adjusted Bank/Stoke choices appear only in that owner's Contribution menu. Removing or reassigning a Firing Tech clears firing-use data that no longer has a matching owner.
+
 Recognition VP is also derived rather than manually entered: V1.2.4 awards 6 VP for reaching Recognition 5 and 0 VP for positions 0-4. The stored `recognition_vp` analysis column follows the recorded Recognition position, including for submissions made before that column was added.
 
 There is no Game ID input. `public.server_submit_playtest` assigns the next private sequence value inside the database transaction and returns a reference such as `KO-000001` only after the submission is stored.
