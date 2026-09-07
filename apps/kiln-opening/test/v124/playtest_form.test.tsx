@@ -10,6 +10,7 @@ import { validatePlaytestSubmission } from "../../src/playtest/schema.ts";
 import { PlaytestFormPage } from "../../src/ui/PlaytestFormPage.tsx";
 import migration from "../../supabase/migrations/202609050001_playtest_submissions.sql?raw";
 import roundDetailsMigration from "../../supabase/migrations/202609060001_playtest_round_details.sql?raw";
+import resetMigration from "../../supabase/migrations/202609070001_reset_playtest_records.sql?raw";
 import edgeFunction from "../../supabase/functions/playtest-submit/index.ts?raw";
 
 function validCandidate(): unknown {
@@ -230,6 +231,10 @@ describe("V1.2.4 playtest form", () => {
     expect(migration).toContain("create or replace view private.playtest_order_log");
     expect(migration).toContain("create or replace view private.playtest_firing_log");
     expect(roundDetailsMigration).toContain("create or replace view private.playtest_firing_player_log");
+    expect(resetMigration).toContain("truncate table private.playtest_submissions cascade");
+    expect(resetMigration).toContain("alter sequence private.playtest_game_number_seq restart with 1");
+    expect(resetMigration).toContain("drop column if exists shifu_reposition_used");
+    expect(resetMigration).not.toContain("round.shifu_reposition_used");
     expect(migration).not.toContain("private.playtest_ceramics");
     expect(migration).not.toContain("private.playtest_tech_performance");
     expect(edgeFunction).toContain("validatePlaytestSubmission(body[\"payload\"])");

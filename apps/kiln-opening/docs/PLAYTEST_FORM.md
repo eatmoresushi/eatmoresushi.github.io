@@ -38,6 +38,8 @@ The browser signs in anonymously, then calls `playtest-submit`. The Edge Functio
 
 Player names are optional. The database stores the anonymous Supabase user ID only for submission rate limiting; the form does not ask for an email or account.
 
+Migration `202609070001_reset_playtest_records.sql` performs the owner-requested one-time reset before Form V2 collection: it deletes every row belonging to the playtest-form tables, resets Game ID numbering to `KO-000001`, and removes the legacy `shifu_reposition_used` column. It does not touch multiplayer rooms, accounts, or game-session data.
+
 ## Analysis views
 
 The migration provides private, workbook-shaped views:

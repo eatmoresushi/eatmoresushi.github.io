@@ -179,8 +179,7 @@ begin
       insert into private.playtest_rounds (
         submission_id, round, shared_loaded, imperial_loaded, bank, tend, stoke,
         base_heat, fire_modifier, white_loaded, celadon_loaded, grey_green_loaded,
-        moon_white_loaded, heat_conflict, order_stolen, shifu_reposition_used,
-        fuel_ledger_used, notes
+        moon_white_loaded, heat_conflict, order_stolen, fuel_ledger_used, notes
       ) values (
         v_submission_id, (v_round->>'round')::smallint,
         (v_round->>'sharedLoaded')::smallint, (v_round->>'imperialLoaded')::smallint,
@@ -189,8 +188,8 @@ begin
         (v_round->>'fireModifier')::smallint, (v_round->>'whiteLoaded')::smallint,
         (v_round->>'celadonLoaded')::smallint, (v_round->>'greyGreenLoaded')::smallint,
         (v_round->>'moonWhiteLoaded')::smallint, (v_round->>'heatConflict')::boolean,
-        (v_round->>'orderStolen')::boolean, (v_round->>'shifuRepositionUsed')::boolean,
-        (v_round->>'fuelLedgerUsed')::boolean, coalesce(v_round->>'notes', '')
+        (v_round->>'orderStolen')::boolean, (v_round->>'fuelLedgerUsed')::boolean,
+        coalesce(v_round->>'notes', '')
       );
     else
       select
