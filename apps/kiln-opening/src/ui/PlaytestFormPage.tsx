@@ -582,15 +582,6 @@ export function PlaytestFormPage() {
                         </Field>
                       </div>
 
-                      <label className="firing-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={round.shifuRepositionUsed}
-                          onChange={(event) => updateRound(roundIndex, { shifuRepositionUsed: event.target.checked })}
-                        />
-                        <span>Shifu reposition used</span>
-                      </label>
-
                       {ownedFiringTechniques.length > 0 && (
                         <fieldset className="firing-tech-fieldset">
                           <legend>Firing Advanced Tech used</legend>

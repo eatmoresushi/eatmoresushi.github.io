@@ -167,7 +167,7 @@ describe("V1.2.4 playtest form", () => {
     expect(markup).toContain("Ceramics Loaded to Imperial Kiln");
     expect(markup).toContain("Orders Completed");
     expect(markup).toContain("Kiln Ability Uses");
-    expect(markup).toContain("Shifu reposition used");
+    expect(markup).not.toContain("Shifu reposition used");
     expect(markup).not.toContain("firing-tech-fieldset");
     expect(markup).not.toContain("Owner not recorded");
     expect(markup).not.toContain("Bank + Fuel Ledger (−2)");

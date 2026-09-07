@@ -8,7 +8,7 @@ The form uses a concise subset of `Kiln_Opening_Playtest_Recording_v1.2.4.xlsx` 
 
 - game date, player count, rules version, first player, and player setup;
 - for every player in each round: final Contribution value, Shared and Imperial Kiln loading, Orders completed, and Kiln ability use;
-- each round's Fire modifier, automatically calculated Base/Global Heat, Shifu repositioning, and the five Firing Advanced Techs;
+- each round's Fire modifier, automatically calculated Base/Global Heat, and the five Firing Advanced Techs;
 - the winner and, for every player, completed Order IDs in completion order, final Imperial Recognition position, remaining Coins/Clay/Wood, and score;
 - optional qualitative table observations and rules ambiguities.
 

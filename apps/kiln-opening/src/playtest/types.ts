@@ -36,7 +36,6 @@ export interface RoundMetrics {
   round: number;
   players: RoundPlayerMetrics[];
   fireModifier: number | null;
-  shifuRepositionUsed: boolean;
   firingTechniqueIds: FiringTechniqueId[];
 }
 

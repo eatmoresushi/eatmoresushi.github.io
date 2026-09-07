@@ -215,14 +215,13 @@ begin
 
       insert into private.playtest_rounds (
         submission_id, round, shared_loaded, imperial_loaded, bank, tend, stoke,
-        base_heat, fire_modifier, shifu_reposition_used, fuel_ledger_used,
+        base_heat, fire_modifier, fuel_ledger_used,
         protective_saggars_used, test_pieces_used, second_firing_used,
         kiln_furniture_used, notes
       ) values (
         v_submission_id, (v_round->>'round')::smallint, v_shared_loaded,
         v_imperial_loaded, v_bank, v_tend, v_stoke, v_base_heat,
         (v_round->>'fireModifier')::smallint,
-        coalesce((v_round->>'shifuRepositionUsed')::boolean, false),
         coalesce(v_round->'firingTechniqueIds', '[]'::jsonb) ? 'T12',
         coalesce(v_round->'firingTechniqueIds', '[]'::jsonb) ? 'T11',
         coalesce(v_round->'firingTechniqueIds', '[]'::jsonb) ? 'T13',

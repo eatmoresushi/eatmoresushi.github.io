@@ -49,7 +49,6 @@ export function emptyRound(round: number, playerCount: 2 | 3 | 4): RoundMetrics 
     round,
     players: Array.from({ length: playerCount }, (_, playerIndex) => emptyRoundPlayer(playerIndex)),
     fireModifier: null,
-    shifuRepositionUsed: false,
     firingTechniqueIds: [],
   };
 }

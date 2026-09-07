@@ -104,20 +104,6 @@ function integer(
   return value;
 }
 
-function booleanValue(
-  record: Record<string, unknown>,
-  key: string,
-  path: string,
-  issues: PlaytestValidationIssue[],
-): boolean {
-  const value = record[key];
-  if (typeof value !== "boolean") {
-    issue(issues, path, "Choose whether this happened.");
-    return false;
-  }
-  return value;
-}
-
 function enumValue<T extends string>(
   record: Record<string, unknown>,
   key: string,
@@ -279,7 +265,6 @@ function parseRound(
     round: integer(record, "round", `${path}.round`, issues, 1, 5)!,
     players,
     fireModifier: integer(record, "fireModifier", `${path}.fireModifier`, issues, -2, 2, true),
-    shifuRepositionUsed: booleanValue(record, "shifuRepositionUsed", `${path}.shifuRepositionUsed`, issues),
     firingTechniqueIds,
   };
 }
