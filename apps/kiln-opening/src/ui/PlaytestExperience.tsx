@@ -1,8 +1,7 @@
 import type { AuthoritativeCommand, PendingContribution, PrivateDecisionState, PublicEventRecord, PublicGameEvent, PublicGameState } from "../multiplayer";
 import type { FireModifier, PlayerId } from "../game";
 import { CONTRIBUTION_CARD_DEFINITIONS, GAME_CONFIG, KILN_DEFINITIONS, ORDER_DEFINITIONS, TECHNIQUE_DEFINITIONS } from "../game";
-import { ActionPanel } from "./ActionPanel";
-import { GameTable } from "./GameTable";
+import { TabletopGameExperience } from "./TabletopGameExperience";
 import { term, useI18n } from "./i18n";
 import type { Locale } from "./i18n";
 
@@ -25,21 +24,24 @@ export function PlaytestExperience({
   busy: boolean;
   send: SendCommand;
 }) {
+  const { locale } = useI18n();
   return (
-    <div className="playtest-shell" data-testid="playtest-ui">
-      <div className="playtest-dashboard">
-        <GameTable game={game} ownPlayerId={ownPlayerId} />
-      </div>
-      <ActionPanel
+    <div className="playtest-shell has-tabletop-live" data-testid="playtest-ui">
+      <TabletopGameExperience
         game={game}
         ownPlayerId={ownPlayerId}
         ownPendingContribution={ownPendingContribution}
         ownPrivateDecision={ownPrivateDecision}
+        events={events}
+        describeEvent={(record, liveGame, locale) => eventDescription(record.event, liveGame, locale)}
         busy={busy}
         send={send}
       />
-      <GameLog game={game} events={events} />
-      <DebugPanel game={game} />
+      <details className="kiln-live-diagnostics">
+        <summary>{locale === "zh-CN" ? "试玩调试" : "Playtest diagnostics"}</summary>
+        <GameLog game={game} events={events} />
+        <DebugPanel game={game} />
+      </details>
     </div>
   );
 }

@@ -61,6 +61,10 @@ interface ActionPanelProps {
   ownPlayerId: PlayerId;
   ownPendingContribution: PendingContribution | null;
   ownPrivateDecision?: PrivateDecisionState | undefined;
+  /** Optional tabletop context. The engine still validates the submitted command. */
+  selectedLocation?: LocationId | null | undefined;
+  /** Moves the selected physical worker to the front of contextual form choices. */
+  selectedWorkerId?: WorkerId | null | undefined;
   busy: boolean;
   send: SendCommand;
 }
@@ -70,6 +74,8 @@ export function ActionPanel({
   ownPlayerId,
   ownPendingContribution,
   ownPrivateDecision,
+  selectedLocation,
+  selectedWorkerId,
   busy,
   send,
 }: ActionPanelProps) {
@@ -91,6 +97,8 @@ export function ActionPanel({
         ownPlayerId={ownPlayerId}
         ownPendingContribution={ownPendingContribution}
         ownPrivateDecision={ownPrivateDecision}
+        selectedLocation={selectedLocation}
+        selectedWorkerId={selectedWorkerId}
         busy={busy}
         send={send}
       />
@@ -136,7 +144,14 @@ function PhaseControls(props: Omit<ActionPanelProps, "ownPlayerId"> & {
     case "setup_starting_tech":
       return <StartingTechControls busy={busy} send={send} />;
     case "work":
-      return <WorkControls game={game} player={player} busy={busy} send={send} />;
+      return <WorkControls
+        game={game}
+        player={player}
+        selectedLocation={props.selectedLocation}
+        selectedWorkerId={props.selectedWorkerId}
+        busy={busy}
+        send={send}
+      />;
     case "work_imperial_priority":
       return <ImperialPriorityControls game={game} player={player} afterAction busy={busy} send={send} />;
     case "work_office_orders":
@@ -251,15 +266,19 @@ function KilnSelection({ game, busy, send }: Pick<ActionPanelProps, "game" | "bu
   );
 }
 
-function WorkControls({ game, player, busy, send }: {
+function WorkControls({ game, player, selectedLocation, selectedWorkerId, busy, send }: {
   game: PublicGameState;
   player: PublicPlayerState;
+  selectedLocation?: LocationId | null | undefined;
+  selectedWorkerId?: WorkerId | null | undefined;
   busy: boolean;
   send: SendCommand;
 }) {
   const { locale, t, term } = useI18n();
   const availableWorkers = Object.values(player.workers).filter((worker) => worker.status === "available");
-  const workers = availableWorkers;
+  const workers = selectedWorkerId === null || selectedWorkerId === undefined
+    ? availableWorkers
+    : [...availableWorkers].sort((left, right) => Number(right.id === selectedWorkerId) - Number(left.id === selectedWorkerId));
   const locationUse = (locationId: LocationId): number => game.actionBoard.placements[locationId].length;
   const locationLimit = (locationId: LocationId): number => locationCapacity(locationId, game.playerCount);
   const full = (locationId: LocationId): boolean => locationUse(locationId) >= locationLimit(locationId);
@@ -279,7 +298,11 @@ function WorkControls({ game, player, busy, send }: {
     const capacity = locationLimit(locationId);
     const capacityLabel = Number.isFinite(capacity) ? String(capacity) : "∞";
     return (
-    <details className={`action-card ${full(locationId) && !shifuAvailable ? "is-unavailable" : ""}`} open={locationId === "materials_yard"} key={locationId}>
+    <details
+      className={`action-card ${full(locationId) && !shifuAvailable ? "is-unavailable" : ""}`}
+      open={selectedLocation === locationId || (selectedLocation == null && locationId === "materials_yard")}
+      key={`${locationId}:${selectedWorkerId ?? "auto"}`}
+    >
       <summary><span>{term(locationId)}</span><small>{used}/{capacityLabel} {t("workers")} · <span>{full(locationId) ? (shifuAvailable ? t("Shifu may overfill") : t("Full")) : t(hint)}</span></small></summary>
       {content}
     </details>
@@ -302,7 +325,8 @@ function WorkControls({ game, player, busy, send }: {
           : "You used Imperial Priority before this action; now place one worker and resolve its action."
         : t("Place one available worker, or pass permanently for this round.")}</p>
       {player.imperialPriorityAvailable && <ImperialPriorityControls game={game} player={player} busy={busy} send={send} />}
-      {LOCATION_IDS.map((locationId) => actions[locationId])}
+      {(selectedLocation === null || selectedLocation === undefined ? LOCATION_IDS : [selectedLocation])
+        .map((locationId) => actions[locationId])}
       {!priorityRequiresAction && <CommandButton busy={busy} send={send} command={{ type: "PASS_WORK_PHASE" }} danger>
         Pass for this round
       </CommandButton>}
