@@ -68,9 +68,9 @@ Sketch:
 
 ```ts
 interface GameState {
-  version: number;
+  schemaVersion: 3;
   gameId: string;
-  rulesVersion: "1.0.9";
+  rulesVersion: "1.2.5";
   status: "lobby" | "setup" | "playing" | "finished";
   playerOrder: PlayerId[];
   firstPlayerId: PlayerId;
@@ -84,10 +84,9 @@ interface GameState {
   actionBoard: ActionBoardState;
   kiln: KilnState;
 
-  marketDeck: OrderId[];
-  marketDisplay: OrderId[];
-  imperialDeck: OrderId[];
-  imperialDisplay: OrderId[];
+  mainOrderDeck: OrderId[];
+  mainOrderDisplay: OrderId[];
+  startingOrderDeck: OrderId[];
 
   techniqueDecks: Record<TechniqueDiscipline, TechniqueId[]>;
   techniqueDisplay: Record<TechniqueDiscipline, TechniqueId[]>;
@@ -95,8 +94,7 @@ interface GameState {
   fireDeck: FireModifier[];
   fireDiscard: FireModifier[];
 
-  vesselSupply: Record<Shape, VesselInstanceId[]>;
-  imperialSealOwner?: PlayerId;
+  vesselSupply: Record<Shape, VesselInstanceId[]>; // proxies keep Shapes available
 
   eventSeq: number;
 }
@@ -110,22 +108,22 @@ Prefer explicit commands such as:
 
 ```ts
 type GameAction =
-  | { type: "PLACE_WORKER"; workerId: WorkerId; location: LocationId }
-  | { type: "MATERIALS_GAIN"; clay: number; wood: number }
-  | { type: "FORM_VESSELS"; shapes: Shape[] }
+  | { type: "GAIN_MATERIALS"; workerId: WorkerId; clay: number; wood: number }
+  | { type: "FORM_CERAMICS"; workerId: WorkerId; shapes: Shape[] }
   | { type: "GLAZE_CERAMICS"; selections: GlazeSelection[] }
-  | { type: "LOAD_KILN"; ceramicIds: CeramicId[]; spaceIds: KilnSpaceId[] }
-  | { type: "TAKE_ORDERS"; orderIds: OrderId[]; withCoinBonus?: boolean }
-  | { type: "BUY_TECHNIQUE"; techniqueId: TechniqueId; shifuRefreshId?: TechniqueId }
-  | { type: "PASS" }
-  | { type: "USE_KILN_SETTING"; ceramicId: CeramicId; toSpaceId: KilnSpaceId }
-  | { type: "SUBMIT_WOOD"; amount: 0|1|2|3 }
-  | { type: "USE_FUEL_LEDGER" }
-  | { type: "USE_JUN"; ceramicId: CeramicId; delta: -1|1 }
-  | { type: "USE_GE"; ceramicId: CeramicId }
-  | { type: "USE_SAGGAR"; ceramicId: CeramicId }
+  | { type: "USE_KILN_YARD"; workerId: WorkerId; loads: KilnLoadSelection[] }
+  | { type: "BEGIN_OFFICE_ORDERS"; workerId: WorkerId; mode: OfficeOrderMode }
+  | { type: "BEGIN_GUILD_ACTION"; workerId: WorkerId }
+  | { type: "USE_LABOUR"; workerId: WorkerId }
+  | { type: "PASS_WORK_PHASE" }
+  | { type: "RESOLVE_IMPERIAL_PRIORITY"; ceramicId: CeramicId | null }
+  | { type: "RESOLVE_KILN_YARD_REPOSITION"; ceramicId: CeramicId | null; toSpaceId: KilnSpaceId | null }
+  | { type: "RESOLVE_JUN"; ceramicId: CeramicId | null; delta: -1|1|null }
+  | { type: "RESOLVE_GE"; ceramicId: CeramicId | null }
+  | { type: "RESOLVE_PROTECTIVE_SAGGARS"; ceramicId: CeramicId | null }
+  | { type: "RESOLVE_SECOND_FIRING"; ceramicId: CeramicId | null }
   | { type: "COMPLETE_ORDER"; orderId: OrderId; ceramicIds: CeramicId[] }
-  | { type: "CHOOSE_EXHIBITION"; ceramicIds: CeramicId[] };
+  | { type: "SUBMIT_PRESENTATION"; ceramicIds: CeramicId[]; featuredCeramicIds: CeramicId[] };
 ```
 
 Some actions are two-step UI interactions but should commit atomically when possible.
@@ -186,7 +184,7 @@ Server must validate:
 
 - actor's turn;
 - worker ownership/availability;
-- action capacity;
+- global action capacity and the Shifu overfill exception;
 - resource/coin affordability;
 - legal ceramic state;
 - Order hand limit;

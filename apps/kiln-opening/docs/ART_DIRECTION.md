@@ -1,4 +1,4 @@
-# ART_DIRECTION.md — Kiln Opening V1.0.4
+# ART_DIRECTION.md — Kiln Opening V1.2.5
 
 This document preserves the visual direction from the physical prototype without requiring Codex to read obsolete rule text from older images.
 
@@ -16,18 +16,18 @@ This document preserves the visual direction from the physical prototype without
 
 ## Component families
 
-### Market Orders
+### Starting Orders
 
-- Teal identity.
+- A distinct opening-deck identity.
 - Requirements on the left/top-left.
 - VP and Coins visually prominent on the right/top-right.
-- Stable card ID such as M01.
+- Stable card ID such as S01.
 
-### Imperial Orders
+### Main Orders
 
-- Gold/ochre identity.
-- Similar layout to Market Orders so players can compare quickly.
-- Print the Imperial Progress reward prominently: +1 on I01–I05 and +2 on I06–I10. Multiple Imperial completions in one round may all advance Progress.
+- One coherent public/reservable deck identity with stable IDs O01–O48.
+- Requirements, minimum Quality, VP, Coins and 0–3 Crowns must be directly comparable across the five-card display.
+- Crown-bearing cards may use restrained gold/ochre emphasis, but must not look like a separate deck or imply a separate Imperial Order action.
 
 ### Vessels
 
@@ -43,18 +43,18 @@ This document preserves the visual direction from the physical prototype without
 - +1: restrained warm flame visual language.
 - +2: strongest flame/heat visual language.
 
-### Wood Contribution
+### Kiln Contribution
 
-- Large 0/1/2/3 value.
+- Clear Bank the Fire (−1), Tend the Fire (0), and Stoke the Fire (+1) identity.
 - Player-colour identity.
-- Values remain hidden until simultaneous reveal.
+- Choices and any Fuel Ledger upgrade remain hidden until simultaneous reveal.
 
-### Craft Techniques
+### Starting and Advanced Techs
 
 - Forming: earthy olive / clay accent.
 - Glazing: celadon/teal-blue accent.
 - Firing: rust / kiln-fire accent.
-- English and Chinese Technique names.
+- English and Chinese Tech names.
 - English ability text.
 - Cost visible near title/discipline.
 
@@ -68,20 +68,20 @@ Each tradition should have its own ceramic hero art and accent while retaining t
 - Ding / 定窑: ivory-white carved ware.
 - Jun / 钧窑: blue-purple transmutation/flambé glaze.
 
-Digital player panels should prominently show current resources, available/locked workers, owned Techniques, ceramics and the exact current ability from `data/kilns.json`.
+Digital player panels should prominently show current resources, available/placed workers, owned Techs, ceramics and the exact current ability from `data/kilns.json`. Do not show private workshop worker spaces or Tech-based location unlocks.
 
 ## Central board
 
 The central board should visually prioritise:
 
-1. six worker-placement locations;
+1. seven shared worker-placement locations;
 2. the Shared Kiln;
 3. occupancy/capacity information;
 4. readable Apprentice vs Shifu effects.
 
 Do not visually resurrect removed production stages merely for historical realism.
 
-The current six locations are defined only by `data/action_locations.json`.
+The current seven locations are defined only by `data/action_locations.json`. Materials Yard, Potter's Wheel, Glaze & Decoration, Commission Market, and Guild & Academy show 2 / 3 / 4 global spaces by player count; Kiln Yard and Labour are uncapped. The visual grammar must allow one or more Shifu to overfill a location without implying extra printed spaces.
 
 ## Digital implementation
 

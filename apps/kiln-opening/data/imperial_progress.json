@@ -1,79 +1,44 @@
 {
-  "rulesVersion": "1.2.4",
+  "rulesVersion": "1.2.5",
   "track": [
     {
       "space": 0,
       "title": "Local Workshop",
-      "titleZh": "地方作坊",
+      "titleZh": "民间作坊",
       "reward": null,
-      "rewardZh": null,
-      "endGameVp": 0,
-      "unlocksApprentice": false
+      "rewardZh": null
     },
     {
       "space": 1,
-      "title": "Local Renown",
-      "titleZh": "地方声望",
-      "reward": null,
-      "rewardZh": null,
-      "endGameVp": 0,
-      "unlocksApprentice": false
+      "title": "Imperial Grant",
+      "titleZh": "御赐",
+      "reward": "Gain 3 Coins or 1 Clay + 1 Wood + 1 Coin.",
+      "rewardZh": "获得3铜钱，或1泥、1柴和1铜钱。"
     },
     {
       "space": 2,
-      "title": "Imperial Grant",
-      "titleZh": "御赐资助",
-      "reward": "Gain 3 Coins or 1 Clay + 1 Wood + 1 Coin.",
-      "rewardZh": "获得3铜钱，或1黏土、1柴薪和1铜钱。",
-      "endGameVp": 0,
-      "unlocksApprentice": false
+      "title": "Imperial Gift",
+      "titleZh": "赐御窑",
+      "reward": "Gain your Imperial Kiln tile.",
+      "rewardZh": "获得你的御窑。"
     },
     {
       "space": 3,
-      "title": "Imperial Gift",
-      "titleZh": "御赐窑炉",
-      "reward": "Gain your Imperial Kiln tile.",
-      "rewardZh": "获得你的御窑窑板。",
-      "endGameVp": 0,
-      "unlocksApprentice": false
+      "title": "Imperial Priority",
+      "titleZh": "御烧优先",
+      "reward": "Take your Imperial Priority token. Once per game, before or after your worker action, spend it to load 1 unloaded Glazed ceramic into your empty Imperial Kiln.",
+      "rewardZh": "获得御烧优先标记。每局一次，在你的工人行动之前或之后，花费它将1件未装窑的已施釉陶瓷装入空置御窑。"
     },
     {
       "space": 4,
-      "title": "Imperial Priority",
-      "titleZh": "御用优先",
-      "reward": "Take your coloured Imperial Priority token from this space. Once per game, during a Kiln Yard action, spend it to load 1 additional ceramic into your empty Imperial Kiln.",
-      "rewardZh": "从该格取走你颜色的御用优先标记。每局一次，在窑场行动中，花费该标记额外将1件陶瓷装入你空置的御窑。",
-      "endGameVp": 0,
-      "unlocksApprentice": false
-    },
-    {
-      "space": 5,
       "title": "Imperial Audience",
       "titleZh": "御前召见",
-      "reward": "Gain 6 VP.",
-      "rewardZh": "获得6分。",
-      "endGameVp": 0,
-      "unlocksApprentice": false
+      "reward": "Gain 6 VP. Each later Crown scores 1 VP.",
+      "rewardZh": "获得6 VP。之后每个 👑 获得1 VP。"
     }
   ],
-  "imperialSealVp": 0,
   "exhibition": {
-    "capacityByProgress": [
-      5,
-      5,
-      5,
-      5,
-      5,
-      5
-    ],
-    "diversityEligibleSpaces": [
-      0,
-      1,
-      2,
-      3,
-      4,
-      5
-    ],
+    "capacity": 5,
     "minimumQuality": "standard",
     "qualityVp": {
       "standard": 2,

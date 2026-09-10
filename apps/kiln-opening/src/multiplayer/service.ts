@@ -131,10 +131,10 @@ function gameFailure(ruleError: GameRuleError, revision: number): MultiplayerErr
 }
 
 function gameCompatibilityError(state: GameState, revision: number): MultiplayerError | null {
-  if (state.schemaVersion === 2 && state.rulesVersion === "1.2.4") return null;
+  if (state.schemaVersion === 3 && state.rulesVersion === "1.2.5") return null;
   return error(
     "UNSUPPORTED_RULES_VERSION",
-    "This saved game uses an older rules or save format and cannot continue under V1.2.4. Please create a new room.",
+    "This saved game uses an older rules or save format and cannot continue under V1.2.5. Please create a new room.",
     revision,
     { schemaVersion: state.schemaVersion, rulesVersion: state.rulesVersion },
   );
@@ -195,8 +195,8 @@ export class AuthoritativeGameService {
         code,
         status: "lobby",
         hostSeatId: seatId,
-        rulesVersion: "1.2.4",
-        contentVersion: "1.2.4",
+        rulesVersion: "1.2.5",
+        contentVersion: "1.2.5",
         contentDigest: rulesFingerprint(),
         latestRevision: 0,
         endedAt: null,
@@ -844,13 +844,13 @@ export class AuthoritativeGameService {
       return failed(error("AUTHENTICATION_FAILED", "The room or seat credential is invalid."));
     }
     if (
-      authenticated.room.rulesVersion !== "1.2.4" ||
-      authenticated.room.contentVersion !== "1.2.4"
+      authenticated.room.rulesVersion !== "1.2.5" ||
+      authenticated.room.contentVersion !== "1.2.5"
     ) {
       return failed(
         error(
           "UNSUPPORTED_RULES_VERSION",
-          "This room uses an older rules version and cannot continue under V1.2.4. Please create a new room.",
+          "This room uses an older rules version and cannot continue under V1.2.5. Please create a new room.",
         ),
       );
     }

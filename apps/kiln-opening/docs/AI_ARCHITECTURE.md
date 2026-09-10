@@ -8,15 +8,15 @@
 > historical record of how a study was produced, not a command you can run. The study outputs
 > themselves remain under `playtests/`, and the code is recoverable from git history.
 
-## V1.2.2 online status
+## V1.2.5 online status
 
-The authoritative engine, public projection and online computer player use V1.2.2. The current deterministic online policy is `rules-v1.2.2-heuristic-001`; it handles the four-card Starting Order choice, Starting Tech selection, private workshop expansion, five-card Main Order market, Crown Recognition, Imperial Kiln/Priority, all current Tech windows and sealed Fuel Ledger choices. Automated full-game tests complete legal five-round games at 2, 3 and 4 players. Older Selfplay-003 through Selfplay-006 studies below are historical methodology and evidence only; their policies and measurements are not current V1.2.2 balance evidence.
+The authoritative engine, public projection and online computer player use V1.2.5. The current deterministic online policy is `rules-v1.2.5-heuristic-001`; it handles the four-card Starting Order choice, Starting Tech selection, seven shared action locations and global capacity, the five-card Main Order market, Crown-driven Recognition 0–4, Imperial Kiln/Priority, current Tech and firing timing windows, and sealed Fuel Ledger choices. Automated full-game tests exercise legal five-round games at 2, 3 and 4 players. Older Selfplay-003 through Selfplay-006 studies below are historical methodology and evidence only; their policies and measurements are not current V1.2.5 balance evidence.
 
 ## Selfplay-005 public-belief rollout candidate
 
 Selfplay-005 reconstructs complete sampled engine states exclusively from `PlayerObservation`. For a fixed observation and seed, hidden authoritative deck order cannot affect the sampled belief. Projection tests require every sampled belief to project back to exactly the source public state.
 
-In the historical V005 study, the decision oracle applied candidate commands through the then-current V1.0.1 engine, then advanced a bounded number of real legal transitions using common random numbers. That archived pipeline is excluded from the V1.2.2 production build. Unrevealed Contribution choices were never sampled from server state: Contribution decisions bypassed the oracle and used the safe evaluator.
+In the historical V005 study, the decision oracle applied candidate commands through the then-current V1.0.1 engine, then advanced a bounded number of real legal transitions using common random numbers. That archived pipeline is excluded from the current production build. Unrevealed Contribution choices were never sampled from server state: Contribution decisions bypassed the oracle and used the safe evaluator.
 
 The V005 study separates four datasets:
 
@@ -51,8 +51,8 @@ The V004 promotion pipeline is:
 4. run fresh matched baseline/candidate pairs with candidate seats rotated;
 5. promote only if legality, coverage, latency, completed-Order, mean-VP, and paired-confidence gates all pass.
 
-Current rules version: V1.2.2
-AI policy version: `rules-v1.1.5-order-001` (historical lineage identifier)
+Current production rules version: V1.2.5
+Current production AI policy: `rules-v1.2.5-heuristic-001`
 
 ## Boundaries
 

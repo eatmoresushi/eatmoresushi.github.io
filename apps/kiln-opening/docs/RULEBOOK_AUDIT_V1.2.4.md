@@ -1,5 +1,7 @@
 # KILN OPENING V1.2.4 rulebook audit
 
+> Historical audit only. V1.2.5 is current; use `KILN_OPENING_v1.2.5_EN_SOURCE.md` for mechanics, `KILN_OPENING_v1.2.5_ZH_SOURCE.md` for Chinese localization, and `RULEBOOK_AUDIT_V1.2.5.md` for the adoption record.
+
 ## Authority
 
 The sole gameplay source is [KILN_OPENING_v1.2.4_SOURCE.md](./KILN_OPENING_v1.2.4_SOURCE.md), an exact copy of the owner-supplied `KILN OPENING 开窑 v1.2.4.md` (SHA-256 `95ecf7625ab93c5ca98c32a6db61e02f071036e4c48921afda471f919a112dd9`). Nothing in V1.2.2 survives merely because it was implemented; where the two differ, V1.2.4 wins.

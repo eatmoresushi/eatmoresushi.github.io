@@ -170,7 +170,7 @@ function parsePlayer(value: unknown, index: number, issues: PlaytestValidationIs
       true,
     ),
     completedOrderIds: parseCompletedOrders(record, path, issues),
-    recognition: integer(record, "recognition", `${path}.recognition`, issues, 0, 5)!,
+    recognition: integer(record, "recognition", `${path}.recognition`, issues, 0, 4)!,
     coinsRemaining: integer(record, "coinsRemaining", `${path}.coinsRemaining`, issues, 0, COMMON_SUPPLY.coins)!,
     clayRemaining: integer(record, "clayRemaining", `${path}.clayRemaining`, issues, 0, COMMON_SUPPLY.clay)!,
     woodRemaining: integer(record, "woodRemaining", `${path}.woodRemaining`, issues, 0, COMMON_SUPPLY.wood)!,

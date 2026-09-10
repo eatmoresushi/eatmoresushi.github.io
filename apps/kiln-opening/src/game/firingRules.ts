@@ -74,13 +74,10 @@ export function fuelLedgerHeatDelta(card: ContributionCardId): number {
   return card === "BANK" ? -1 : card === "STOKE" ? 1 : 0;
 }
 
-/**
- * Heat Differences Ge can correct to exact. v1.1.5 widened this from 1 to 1-or-2; the
- * enumerator kept offering only difference-1 targets for a while afterwards, which made the
- * widening look inert in measurement (26.1% -> 26.4%) when it was actually worth ten points.
- */
+/** V1.2.5 Ge can correct only a ceramic whose Heat Difference is exactly 1. */
 export const GE_CORRECTABLE_DIFFERENCES: readonly number[] = [1];
 
-/** Jun's activation price, in Wood. V1.2.4 keeps it at 1. */
+/** Jun's activation price, in Wood. V1.2.5 keeps it at 1. */
 export const JUN_ACTIVATION_WOOD = 1;
+/** Ge has no resource cost in V1.2.5. */
 export const GE_ACTIVATION_WOOD = 0;

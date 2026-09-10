@@ -140,7 +140,7 @@ async function seedAuthoritativeState(harness: Harness, mutate: (state: GameStat
     commandId,
     actorId: "P1",
     expectedRevision: previousHead.revision,
-    command: { type: "TEST_SEED_V122_STATE" },
+    command: { type: "TEST_SEED_V125_STATE" },
     previousHead,
     nextHead,
     fullEvents: [],
@@ -181,7 +181,7 @@ function seedContributionWindow(state: GameState): void {
   state.firingContext = null;
 }
 
-describe("V1.2.4 multiplayer privacy and reconnect", () => {
+describe("V1.2.5 multiplayer privacy and reconnect", () => {
   it("keeps all four Starting Order offers private and never publishes returned cards", async () => {
     const harness = await startedHarness();
     await selectKilns(harness);
@@ -269,11 +269,11 @@ describe("V1.2.4 multiplayer privacy and reconnect", () => {
     expect(revealed.ownPendingContribution).toBeNull();
   });
 
-  it("rejects projection of pre-V1.2.4 or pre-schema-2 authoritative states", () => {
+  it("rejects projection of pre-V1.2.5 or pre-schema-3 authoritative states", () => {
     const state = {
       schemaVersion: 1,
       rulesVersion: "1.1.6",
     } as unknown as GameState;
-    expect(() => projectPublicGameState(state)).toThrow("Only schema-2 V1.2.4 games");
+    expect(() => projectPublicGameState(state)).toThrow("Only schema-3 V1.2.5 games");
   });
 });

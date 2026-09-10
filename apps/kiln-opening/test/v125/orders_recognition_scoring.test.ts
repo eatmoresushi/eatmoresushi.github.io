@@ -68,7 +68,7 @@ function witnessFor(order: OrderDefinition): FinishedCeramic[] | null {
   return null;
 }
 
-describe("V1.2.4 Orders, Recognition, and scoring", () => {
+describe("V1.2.5 Orders, Recognition, and scoring", () => {
   it("has a valid independent-attribute witness for every one of the 64 Orders", () => {
     for (const order of [...STARTING_ORDERS, ...MAIN_ORDERS]) {
       expect(witnessFor(order), `${order.id}: ${order.requirements}`).not.toBeNull();
@@ -151,7 +151,7 @@ describe("V1.2.4 Orders, Recognition, and scoring", () => {
 
   it("no longer waives any Decoration requirement for Guan", () => {
     // V1.2.2 let Guan exempt one ceramic from direct and relational Decoration checks.
-    // V1.2.4 pays 2 Coins and 1 VP instead and exempts nothing, so a wrong Decoration is
+    // V1.2.5 pays 2 Coins and 1 VP instead and exempts nothing, so a wrong Decoration is
     // simply a failed Order however the workshop is decorated.
     const single = ORDER_DEFINITIONS["O19"]!;
     const wrongDecoration = ceramic("single", "censer", "grey_green", "carved", "fine");
@@ -171,6 +171,8 @@ describe("V1.2.4 Orders, Recognition, and scoring", () => {
     const { state: initial, rng } = startedGame(2, 1504);
     let state = structuredClone(initial);
     state.players["P1"]!.kilnId = "GU";
+    state.players["P1"]!.imperialRecognition = 1;
+    state.players["P1"]!.imperialGrantResolved = true;
     state.players["P1"]!.resources.coins = 0;
     state.marketDisplay = ["O17"];
     // O17 is Brush Washer / White / Crackle: with the waiver gone it must match exactly.
@@ -201,7 +203,7 @@ describe("V1.2.4 Orders, Recognition, and scoring", () => {
     const { state: initial, rng } = startedGame(2, 1505);
     let state = structuredClone(initial);
     state.players["P1"]!.kilnId = "RU";
-    state.players["P1"]!.imperialRecognition = 1;
+    state.players["P1"]!.imperialRecognition = 0;
     state.marketDisplay = ["O47"];
     const ceramics = [
       addFinished(state, "P1", "bowl", "masterpiece", "white", "plain"),
@@ -215,7 +217,7 @@ describe("V1.2.4 Orders, Recognition, and scoring", () => {
       imperialGrantChoice: "resources",
     }, rng);
     state = result.state;
-    expect(state.players["P1"]!.imperialRecognition).toBe(4);
+    expect(state.players["P1"]!.imperialRecognition).toBe(3);
     expect(state.players["P1"]!.imperialGrantResolved).toBe(true);
     expect(state.players["P1"]!.imperialKilnUnlocked).toBe(true);
     expect(state.players["P1"]!.imperialPriorityAvailable).toBe(true);
@@ -242,17 +244,35 @@ describe("V1.2.4 Orders, Recognition, and scoring", () => {
       type: "COMPLETE_ORDER", orderId: "O17", ceramicIds: [audienceCeramic.id],
     }, rng);
     state = audience.state;
-    expect(state.players["P1"]!.imperialRecognition).toBe(5);
+    expect(state.players["P1"]!.imperialRecognition).toBe(4);
     expect(state.players["P1"]!.imperialAudienceVpAwarded).toBe(true);
     expect(audience.events).toContainEqual({ type: "IMPERIAL_AUDIENCE_GAINED", playerId: "P1", vp: 6 });
+
+    state.marketDisplay = ["O18"];
+    const overflowCeramic = addFinished(state, "P1", "vase", "fine", "celadon", "carved");
+    openOrderTurn(state);
+    const overflow = mustResult(state, "P1", {
+      type: "COMPLETE_ORDER", orderId: "O18", ceramicIds: [overflowCeramic.id],
+    }, rng);
+    state = overflow.state;
+    expect(state.players["P1"]!.imperialRecognition).toBe(4);
+    expect(state.players["P1"]!.score.imperialOverflowVp).toBe(1);
+    expect(overflow.events).toContainEqual(expect.objectContaining({
+      type: "IMPERIAL_RECOGNITION_ADVANCED",
+      from: 4,
+      to: 4,
+      crowns: 1,
+      appliedCrowns: 0,
+      overflowVp: 1,
+    }));
   });
 
-  it("scores the universal five-slot Exhibition, Audience, Coins, and no Tech/track/Seal VP", () => {
+  it("scores the five-slot Exhibition, Audience, Advanced Techs, overflow Crowns, and Coins", () => {
     const { state: initial, rng } = startedGame(2, 1506);
     let state = structuredClone(initial);
-    state.players["P1"]!.score = { orderVp: 10, kilnTraditionVp: 4 };
+    state.players["P1"]!.score = { orderVp: 10, kilnTraditionVp: 4, imperialOverflowVp: 1 };
     state.players["P1"]!.imperialAudienceVpAwarded = true;
-    state.players["P1"]!.imperialRecognition = 5;
+    state.players["P1"]!.imperialRecognition = 4;
     state.players["P1"]!.resources.coins = 17;
     state.players["P1"]!.techniques = [{ id: "T01", exhausted: false }, { id: "T11", exhausted: false }];
     const exhibited = [
@@ -269,11 +289,12 @@ describe("V1.2.4 Orders, Recognition, and scoring", () => {
     expect(score).toEqual({
       orders: 10,
       imperialAudience: 6,
-      // Standard 2 + Fine 3 + Masterpiece 5, then V1.2.4's +3 Shapes and +3 Glazes.
+      // Standard 2 + Fine 3 + Masterpiece 5, then V1.2.5's +3 Shapes and +3 Glazes.
       presentation: 16,
-      immediateAbilities: 4,
+      advancedTechniques: 2,
+      immediateAbilities: 5,
       leftoverCoins: 5,
-      total: 41,
+      total: 44,
     });
   });
 

@@ -18,7 +18,7 @@ Contribution choices include ordinary Bank (−1), Tend (0), and Stoke (+1), plu
 
 The round form shows only Firing Advanced Techs assigned to a player in the setup section. Fuel Ledger's adjusted Bank/Stoke choices appear only in that owner's Contribution menu. Removing or reassigning a Firing Tech clears firing-use data that no longer has a matching owner.
 
-Recognition VP is also derived rather than manually entered: V1.2.4 awards 6 VP for reaching Recognition 5 and 0 VP for positions 0-4. The stored `recognition_vp` analysis column follows the recorded Recognition position, including for submissions made before that column was added.
+Recognition VP is derived rather than manually entered. For current V1.2.5 submissions, reaching Recognition 4 records the 6 VP Imperial Audience reward and positions 0–3 record 0. Version-aware analysis preserves the historical V1.2.4 rule of 6 VP at Recognition 5. VP from Crowns gained beyond V1.2.5 Recognition 4 is immediate VP included in the player's final score rather than track position.
 
 There is no Game ID input. `public.server_submit_playtest` assigns the next private sequence value inside the database transaction and returns a reference such as `KO-000001` only after the submission is stored.
 
@@ -39,6 +39,8 @@ The browser signs in anonymously, then calls `playtest-submit`. The Edge Functio
 Player names are optional. The database stores the anonymous Supabase user ID only for submission rate limiting; the form does not ask for an email or account.
 
 Migration `202609070001_reset_playtest_records.sql` performs the owner-requested one-time reset before Form V2 collection: it deletes every row belonging to the playtest-form tables, resets Game ID numbering to `KO-000001`, and removes the legacy `shifu_reposition_used` column. It does not touch multiplayer rooms, accounts, or game-session data.
+
+Migration `202609090002_playtest_v125.sql` accepts current V1.2.5 Form V2 submissions, limits their Recognition position to 0–4, and makes analysis views calculate Recognition VP according to each row's stored rules version. Historical V1.2.4 submissions remain labelled and readable.
 
 ## Analysis views
 
@@ -97,7 +99,7 @@ group by order_id
 order by completions desc, order_id;
 ```
 
-Keep these tables long-term so comparisons can accumulate across rules versions. The current UI submits Form V2 for rules V1.2.4; existing Form V1 records remain readable. When rules change, add a new form version and migration rather than changing the meaning of existing columns.
+Keep these tables long-term so comparisons can accumulate across rules versions. The current UI submits Form V2 for rules V1.2.5; historical V1.2.4 records remain readable and version-labelled. When a future rules change alters payload meaning, add a new form version and migration rather than silently changing existing columns.
 
 ## Deployment
 

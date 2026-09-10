@@ -62,8 +62,12 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  *        Main Order unseen; Colour Samples is once per round and discards what it did not
  *        reserve; Test Pieces is once per round; Measuring Calipers and Standardised Moulds
  *        pay 2 Coins; the Exhibition diversity bonuses are +3/+3; S16 pays 4 Coins.
+ *  13 -- V1.2.5. Every action location is shared; five locations have global 2/3/4
+ *        capacity and Shifu may overfill. Recognition is 0-4 with Crown overflow VP,
+ *        Imperial Priority works before/after any worker action, Kiln Yard Shifu moves
+ *        after Base Heat to a neighbouring zone, and revised Tech timing/costs apply.
  */
-export const RULES_BEHAVIOUR_REVISION = 12;
+export const RULES_BEHAVIOUR_REVISION = 13;
 
 /**
  * Display-only keys, excluded so that a typo fix or a translation improvement does not

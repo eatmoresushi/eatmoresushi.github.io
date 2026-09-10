@@ -63,7 +63,6 @@ function makePlayer(input: CreateGameInput["players"][number], seatIndex: number
     completedOrders: [],
     techniques: [],
     startingTechniqueId: null,
-    workshopSpaces: { pottersWheelUnlocked: 1, glazeDecorationUnlocked: 1 },
     imperialRecognition: 0,
     imperialGrantResolved: false,
     imperialKilnUnlocked: false,
@@ -75,7 +74,7 @@ function makePlayer(input: CreateGameInput["players"][number], seatIndex: number
     shapesFormedThisRound: [],
     presentationCeramicIds: [],
     presentationFeaturedCeramicIds: [],
-    score: { orderVp: 0, kilnTraditionVp: 0 },
+    score: { orderVp: 0, kilnTraditionVp: 0, imperialOverflowVp: 0 },
   };
 }
 
@@ -176,7 +175,7 @@ export function createGame(input: CreateGameInput, rng: RandomSource): CreateGam
   };
 
   const state: GameState = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     rulesVersion: GAME_CONFIG.rulesVersion,
     gameId: input.gameId,
     revision: 0,

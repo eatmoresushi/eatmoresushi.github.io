@@ -34,14 +34,13 @@ export function imperialOrderNotice(result: CommandSuccess, locale: Locale = "en
     : `Player completed ${completed.orderId}. +${definition?.vp ?? 0} VP.`];
   const recognition = result.events.find((event) => event.type === "IMPERIAL_RECOGNITION_ADVANCED");
   if (recognition?.type === "IMPERIAL_RECOGNITION_ADVANCED") {
-    const capped = recognition.appliedCrowns < recognition.crowns ? " (capped at 5)" : "";
     parts.push(locale === "zh-CN"
-      ? `皇冠+${recognition.crowns}：御用认可${recognition.from} → ${recognition.to}${recognition.appliedCrowns < recognition.crowns ? "（上限为5）" : ""}。`
-      : `+${recognition.crowns} Crown${recognition.crowns === 1 ? "" : "s"}: Imperial Recognition ${recognition.from} → ${recognition.to}${capped}.`);
+      ? `👑 +${recognition.crowns}：御府声望 ${recognition.from} → ${recognition.to}${recognition.overflowVp > 0 ? `；超出声望4的${recognition.overflowVp}个👑立即获得${recognition.overflowVp}分` : ""}。`
+      : `+${recognition.crowns} Crown${recognition.crowns === 1 ? "" : "s"}: Imperial Recognition ${recognition.from} → ${recognition.to}${recognition.overflowVp > 0 ? `; ${recognition.overflowVp} VP from Crown${recognition.overflowVp === 1 ? "" : "s"} beyond Recognition 4` : ""}.`);
   }
-  if (result.events.some((event) => event.type === "IMPERIAL_GRANT_RECEIVED")) parts.push(locale === "zh-CN" ? "已结算御赐资助。" : "Imperial Grant resolved.");
-  if (result.events.some((event) => event.type === "IMPERIAL_KILN_UNLOCKED")) parts.push(locale === "zh-CN" ? "御赐窑炉：御窑已解锁。" : "Imperial Gift: Imperial Kiln unlocked.");
-  if (result.events.some((event) => event.type === "IMPERIAL_PRIORITY_GAINED")) parts.push(locale === "zh-CN" ? "获得御用优先标记。" : "Imperial Priority token gained.");
+  if (result.events.some((event) => event.type === "IMPERIAL_GRANT_RECEIVED")) parts.push(locale === "zh-CN" ? "已结算御赐。" : "Imperial Grant resolved.");
+  if (result.events.some((event) => event.type === "IMPERIAL_KILN_UNLOCKED")) parts.push(locale === "zh-CN" ? "赐御窑：已获得御窑。" : "Imperial Gift: Imperial Kiln unlocked.");
+  if (result.events.some((event) => event.type === "IMPERIAL_PRIORITY_GAINED")) parts.push(locale === "zh-CN" ? "获得御烧优先标记。" : "Imperial Priority token gained.");
   if (result.events.some((event) => event.type === "IMPERIAL_AUDIENCE_GAINED")) parts.push(locale === "zh-CN" ? "御前召见：立即获得6分。" : "Imperial Audience: gain 6 VP immediately.");
   return parts.join(" ");
 }
@@ -50,13 +49,13 @@ export function commandNotice(result: CommandSuccess, locale: Locale = "en"): st
   const order = result.events.find((event) => event.type === "ORDER_TAKEN");
   if (order?.type === "ORDER_TAKEN") {
     return order.acquisition === "colour_samples"
-      ? locale === "zh-CN" ? `通过釉色样本预留主订单${order.orderId}。` : `Reserved Main Order ${order.orderId} through Colour Samples.`
-      : locale === "zh-CN" ? `预留正面主订单${order.orderId}。` : `Reserved face-up Main Order ${order.orderId}.`;
+      ? locale === "zh-CN" ? `通过色样簿承接主委托${order.orderId}。` : `Reserved Main Order ${order.orderId} through Colour Samples.`
+      : locale === "zh-CN" ? `承接公开主委托${order.orderId}。` : `Reserved face-up Main Order ${order.orderId}.`;
   }
   const colour = result.events.find((event) => event.type === "COLOUR_SAMPLES_USED");
   if (colour?.type === "COLOUR_SAMPLES_USED") {
     return locale === "zh-CN"
-      ? `使用釉色样本：预留${colour.selectedOrderId ?? "1张订单"}；${colour.discardedCount}张已查看牌被弃掉。`
+      ? `使用色样簿：承接${colour.selectedOrderId ?? "1张委托"}；弃掉${colour.discardedCount}张未承接的已查看委托。`
       : `Used Colour Samples: reserved ${colour.selectedOrderId ?? "one Order"}; ${colour.discardedCount} looked-at Order${colour.discardedCount === 1 ? "" : "s"} discarded.`;
   }
   const technique = result.events.find((event) => event.type === "TECHNIQUE_ACQUIRED");

@@ -16,12 +16,12 @@ import {
 } from "../../src/game/index.ts";
 import { createdGame, mustApply, mustResult, startedGame } from "./helpers.ts";
 
-describe("V1.2.4 setup and authoritative content", () => {
+describe("V1.2.5 setup and authoritative content", () => {
   it.each([2, 3, 4] as const)("creates the exact %i-player setup", (playerCount) => {
     const { state } = createdGame(playerCount, 1200 + playerCount);
 
-    expect(state.rulesVersion).toBe("1.2.4");
-    expect(state.schemaVersion).toBe(2);
+    expect(state.rulesVersion).toBe("1.2.5");
+    expect(state.schemaVersion).toBe(3);
     expect(state.round).toBe(1);
     expect(state.marketDisplay).toHaveLength(5);
     expect(state.marketDeck).toHaveLength(43);
@@ -36,7 +36,6 @@ describe("V1.2.4 setup and authoritative content", () => {
       expect(Object.values(player.workers).filter(({ kind }) => kind === "shifu")).toHaveLength(1);
       expect(Object.values(player.workers).filter(({ kind }) => kind === "apprentice")).toHaveLength(3);
       expect(Object.values(player.workers).every(({ status }) => status === "available")).toBe(true);
-      expect(player.workshopSpaces).toEqual({ pottersWheelUnlocked: 1, glazeDecorationUnlocked: 1 });
       expect(player.imperialRecognition).toBe(0);
       expect(player.imperialKilnUnlocked).toBe(false);
       expect(player.imperialPriorityAvailable).toBe(false);
@@ -77,7 +76,7 @@ describe("V1.2.4 setup and authoritative content", () => {
     expect(Object.values(state.players).every(({ startingTechniqueId }) => startingTechniqueId === "ST01")).toBe(true);
   });
 
-  it("contains exactly the V1.2.4 decks, spaces, locations, and bilingual records", () => {
+  it("contains exactly the V1.2.5 decks, spaces, locations, and bilingual records", () => {
     expect(STARTING_ORDERS.map(({ id }) => id)).toEqual(Array.from({ length: 16 }, (_, i) => `S${String(i + 1).padStart(2, "0")}`));
     expect(MAIN_ORDERS.map(({ id }) => id)).toEqual(Array.from({ length: 48 }, (_, i) => `O${String(i + 1).padStart(2, "0")}`));
     expect(STARTING_TECHNIQUES).toHaveLength(4);
@@ -98,7 +97,13 @@ describe("V1.2.4 setup and authoritative content", () => {
 
   it("uses 2/3/4 capacity for shared contested locations and no cap for Kiln Yard/Labour", () => {
     for (const playerCount of [2, 3, 4] as const) {
-      for (const location of ["materials_yard", "market_imperial_office", "guild_academy"] as const) {
+      for (const location of [
+        "materials_yard",
+        "forming_studio",
+        "glaze_workshop",
+        "market_imperial_office",
+        "guild_academy",
+      ] as const) {
         expect(locationCapacity(location, playerCount)).toBe(playerCount);
       }
       expect(locationCapacity("kiln_yard", playerCount)).toBe(Number.POSITIVE_INFINITY);
@@ -144,5 +149,27 @@ describe("V1.2.4 setup and authoritative content", () => {
     expect(state.round).toBe(2);
     expect(state.marketDisplay).toHaveLength(5);
     expect(state.marketDiscard).toEqual([]);
+  });
+
+  it("does not pass the First Player marker after the fifth-round Cleanup", () => {
+    const { state: initial, rng } = startedGame(2, 1224);
+    let state = structuredClone(initial);
+    state.round = 5;
+    const firstPlayerId = state.firstPlayerId;
+    const reverseOrder = [...turnOrderFromFirst(state)].reverse();
+    state.phase = {
+      type: "orders",
+      turnOrder: reverseOrder,
+      currentIndex: 0,
+      activePlayerId: reverseOrder[0]!,
+      completedInCircuit: 0,
+    };
+
+    while (state.phase.type === "orders") {
+      state = mustApply(state, state.phase.activePlayerId, { type: "END_ORDER_TURN" }, rng);
+    }
+
+    expect(state.phase.type).toBe("presentation");
+    expect(state.firstPlayerId).toBe(firstPlayerId);
   });
 });
