@@ -2,8 +2,8 @@
 
 > **Historical archive only.** This review records the V0.6.3 engine-design checkpoint and
 > must not be used as a current rules source. The sole current source is
-> `docs/KILN_OPENING_v1.2.5_EN_SOURCE.md` for mechanics and
-> `docs/KILN_OPENING_v1.2.5_ZH_SOURCE.md` for Chinese localization; current implementation notes are in
+> `docs/KILN_OPENING_v1.2.6_EN_SOURCE.md` for mechanics and
+> `docs/KILN_OPENING_v1.2.6_ZH_SOURCE.md` for Chinese localization; current implementation notes are in
 > `docs/IMPLEMENTATION_DECISIONS.md`.
 
 ## Scope and authority

@@ -42,7 +42,7 @@ function marketTurn(state: GameState, playerId: PlayerId): void {
 }
 
 /**
- * V1.2.5 lets a Commission Market reservation take the top Main Order unseen.
+ * V1.2.6 lets a Commission Market reservation take the top Main Order unseen.
  *
  * The branch shipped dead: the work-phase gate only placed a worker when the display held
  * cards, while the branch itself only fired when the display was empty -- and the display
@@ -50,7 +50,7 @@ function marketTurn(state: GameState, playerId: PlayerId): void {
  * the blind take would draw from. The two conditions could never hold at once, so across
  * 60 measured games the option was chosen zero times.
  */
-describe("V1.2.5 online computer policy: Commission Market", () => {
+describe("V1.2.6 online computer policy: Commission Market", () => {
   it("reserves the top Main Order unseen when nothing face up is deliverable", async () => {
     const { state: initial, rng } = startedGame(2, 4401);
     const state = structuredClone(initial);
@@ -87,7 +87,7 @@ describe("V1.2.5 online computer policy: Commission Market", () => {
   it("still places a Commission Market worker when only the deck can supply an Order", async () => {
     const { state: initial, rng } = startedGame(2, 4403);
     const state = structuredClone(initial);
-    // An empty display with a stocked deck is legal in V1.2.5; the policy used to refuse it.
+    // An empty display with a stocked deck is legal in V1.2.6; the policy used to refuse it.
     state.marketDisplay = [];
     expect(state.marketDeck.length).toBeGreaterThan(0);
     marketTurn(state, "P1");
@@ -108,7 +108,7 @@ describe("V1.2.5 online computer policy: Commission Market", () => {
 });
 
 /**
- * V1.2.5's Shifu Guild action -- inspect the top 2 Techs of a discipline, then take any
+ * V1.2.6's Shifu Guild action -- inspect the top 2 Techs of a discipline, then take any
  * face-up tile at 1 Coin less -- needs a Shifu to reach the Guild, and Apprentices cannot
  * inspect. The policy spent the Shifu on production first, so across 312 measured Guild
  * actions the inspect fired twice.
@@ -118,7 +118,7 @@ describe("V1.2.5 online computer policy: Commission Market", () => {
  * measured 2.4 VP per seat worse over 60 games. It now diverts only when the discount buys
  * a tile no Apprentice here could afford, which is strength-neutral.
  */
-describe("V1.2.5 online computer policy: Guild & Academy", () => {
+describe("V1.2.6 online computer policy: Guild & Academy", () => {
   it("sends the Shifu when only the Shifu discount can afford a tile", async () => {
     const { state: initial } = startedGame(2, 4501);
     const state = structuredClone(initial);
@@ -166,7 +166,7 @@ describe("V1.2.5 online computer policy: Guild & Academy", () => {
  * bought a Firing tile zero times -- including Second Firing, which measurement puts at
  * +2.17 per game, the most valuable tile it can actually resolve.
  */
-describe("V1.2.5 online computer policy: which Tech it buys", () => {
+describe("V1.2.6 online computer policy: which Tech it buys", () => {
   const buy = async (state: GameState) => {
     const action = await choose(state, "P1");
     expect(action).toEqual(expect.objectContaining({ type: "BEGIN_GUILD_ACTION" }));
@@ -241,7 +241,7 @@ describe("V1.2.5 online computer policy: which Tech it buys", () => {
  * `useTechniqueIds`, `dryingFrames`, `glazePalette`, `reworkingTable` or
  * `useKilnFurniture` anywhere. These cases pin the ones worth activating.
  */
-describe("V1.2.5 online computer policy: Tech activation", () => {
+describe("V1.2.6 online computer policy: Tech activation", () => {
   const glazeTurn = (state: GameState) => {
     state.players["P1"]!.resources = { clay: 0, wood: 0, coins: 5 };
     addShaped(state, "P1", "bowl");
@@ -320,7 +320,7 @@ describe("V1.2.5 online computer policy: Tech activation", () => {
  * Orders are reachable that way and 13 of the 20 Crown Orders demand another Glaze, so the
  * Imperial Recognition track was closed off by construction.
  */
-describe("V1.2.5 online computer policy: what it makes", () => {
+describe("V1.2.6 online computer policy: what it makes", () => {
   const glazeTurn = (state: GameState) => {
     state.players["P1"]!.resources = { clay: 0, wood: 0, coins: 6 };
     addShaped(state, "P1", "bowl");

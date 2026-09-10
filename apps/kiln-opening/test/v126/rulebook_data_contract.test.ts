@@ -10,11 +10,11 @@ import {
 } from "../../src/game/index.ts";
 
 const EN_SOURCE = readFileSync(
-  join(import.meta.dirname, "../../docs/KILN_OPENING_v1.2.5_EN_SOURCE.md"),
+  join(import.meta.dirname, "../../docs/KILN_OPENING_v1.2.6_EN_SOURCE.md"),
   "utf8",
 );
 const ZH_SOURCE = readFileSync(
-  join(import.meta.dirname, "../../docs/KILN_OPENING_v1.2.5_ZH_SOURCE.md"),
+  join(import.meta.dirname, "../../docs/KILN_OPENING_v1.2.6_ZH_SOURCE.md"),
   "utf8",
 );
 
@@ -48,7 +48,7 @@ function namedTableRow(source: string, name: string): string[] {
   return tableCells(row);
 }
 
-describe("V1.2.5 checked-in data matches both adopted rulebooks", () => {
+describe("V1.2.6 checked-in data matches both adopted rulebooks", () => {
   it("matches every English and Chinese Order row exactly", () => {
     const english = orderRows(EN_SOURCE);
     const chinese = orderRows(ZH_SOURCE);

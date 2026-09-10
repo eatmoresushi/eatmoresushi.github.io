@@ -10,11 +10,11 @@ Target session length for the physical design is approximately 90–120 minutes.
 
 Priority order:
 
-1. `docs/KILN_OPENING_v1.2.5_EN_SOURCE.md` — the mechanical authority; it is an exact copy of the owner-supplied V1.2.5 English rulebook.
-2. `docs/KILN_OPENING_v1.2.5_ZH_SOURCE.md` — the Simplified Chinese terminology and localization authority; it is an exact copy of the owner-supplied V1.2.5 Chinese rulebook.
-3. `docs/RULEBOOK_AUDIT_V1.2.5.md` — source checksums, cross-language review, and recorded owner clarifications.
+1. `docs/KILN_OPENING_v1.2.6_EN_SOURCE.md` — the mechanical authority; it is an exact copy of the owner-supplied V1.2.6 English rulebook.
+2. `docs/KILN_OPENING_v1.2.6_ZH_SOURCE.md` — the Simplified Chinese terminology and localization authority; it is an exact copy of the owner-supplied V1.2.6 Chinese rulebook.
+3. `docs/RULEBOOK_AUDIT_V1.2.6.md` — source checksums, cross-language review, and recorded owner clarifications.
 4. `docs/GAME_RULES.md` — source index and implementation note, not an independent rules authority.
-5. `data/*.json` — machine-readable values derived from V1.2.5.
+5. `data/*.json` — machine-readable values derived from V1.2.6.
 6. `docs/IMPLEMENTATION_DECISIONS.md` — digital interpretations of rules where necessary.
 7. `docs/ONLINE_GAME_SPEC.md` — digital-only behaviour.
 8. `docs/DESIGN_SPEC.md` — design intent and constraints.
@@ -25,7 +25,7 @@ Never implement an older mechanic because it appears in historical discussion or
 
 ## Approved asset rule
 
-Only `assets/current_v04/` is an approved visual-reference directory. The directory name remains unchanged as a stable legacy path; rules-bearing visuals must follow V1.2.5 data and localized gameplay text must come from structured data or the i18n layer.
+Only `assets/current_v04/` is an approved visual-reference directory. The directory name remains unchanged as a stable legacy path; rules-bearing visuals must follow V1.2.6 data and localized gameplay text must come from structured data or the i18n layer.
 
 Do not search conversation history or older images for missing boards/cards. Missing current assets are intentionally specified in `data/asset_specs.json` and `docs/V0.4_ASSETS_TO_REGENERATE.md` and must be rebuilt from current data.
 
@@ -108,14 +108,14 @@ At minimum:
 - Shifu vs Apprentice effects at all seven shared locations
 - Shape costs and non-limiting Vessel-card proxies
 - Decoration costs
-- all 4 Starting Techs and all 15 V1.2.5 Advanced Techs
+- all 4 Starting Techs and all 15 V1.2.6 Advanced Techs
 - Advanced-Tech acquisition limit, discipline refresh, printed cost, Shifu discount, and end-game VP
 - all five Kiln abilities
 - Base Heat starting at 2, all contributions, and the 0–5 clamp
 - secret simultaneous Contribution-card reveal
 - Fuel Ledger's secret −2/+2 choices, two-Wood affordability, reveal, and payment
-- Kiln Yard Shifu reposition after Base Heat and before the Fire card, restricted to a neighbouring Shared-Kiln zone
-- all five Fire modifiers, the V1.2.5 1/3/4/3/1 deck distribution, reshuffling, and kiln-zone modifiers
+- Kiln Yard Shifu target commitment during the Work action, then reposition of only that marked ceramic after Base Heat and before the Fire card, restricted to a neighbouring Shared-Kiln zone
+- all five Fire modifiers, the V1.2.6 1/3/4/3/1 deck distribution, reshuffling, and kiln-zone modifiers
 - Quality assignment
 - Jun/Ge/Protective Saggars/Test Pieces/Second Firing/Ru timing
 - the optional 2-Coin discard of a still-Flawed ceramic after firing
@@ -140,6 +140,6 @@ If a desired implementation requires changing the board-game rules:
 1. stop,
 2. explain the conflict,
 3. propose the smallest rule change,
-4. wait for user approval before modifying either checked-in V1.2.5 source, its recorded rulings, or balance data.
+4. wait for user approval before modifying either checked-in V1.2.6 source, its recorded rulings, or balance data.
 
 Do not silently “improve” balance values.

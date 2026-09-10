@@ -16,12 +16,12 @@ import {
 } from "../../src/game/index.ts";
 import { createdGame, mustApply, mustResult, startedGame } from "./helpers.ts";
 
-describe("V1.2.5 setup and authoritative content", () => {
+describe("V1.2.6 setup and authoritative content", () => {
   it.each([2, 3, 4] as const)("creates the exact %i-player setup", (playerCount) => {
     const { state } = createdGame(playerCount, 1200 + playerCount);
 
-    expect(state.rulesVersion).toBe("1.2.5");
-    expect(state.schemaVersion).toBe(3);
+    expect(state.rulesVersion).toBe("1.2.6");
+    expect(state.schemaVersion).toBe(4);
     expect(state.round).toBe(1);
     expect(state.marketDisplay).toHaveLength(5);
     expect(state.marketDeck).toHaveLength(43);
@@ -76,7 +76,7 @@ describe("V1.2.5 setup and authoritative content", () => {
     expect(Object.values(state.players).every(({ startingTechniqueId }) => startingTechniqueId === "ST01")).toBe(true);
   });
 
-  it("contains exactly the V1.2.5 decks, spaces, locations, and bilingual records", () => {
+  it("contains exactly the V1.2.6 decks, spaces, locations, and bilingual records", () => {
     expect(STARTING_ORDERS.map(({ id }) => id)).toEqual(Array.from({ length: 16 }, (_, i) => `S${String(i + 1).padStart(2, "0")}`));
     expect(MAIN_ORDERS.map(({ id }) => id)).toEqual(Array.from({ length: 48 }, (_, i) => `O${String(i + 1).padStart(2, "0")}`));
     expect(STARTING_TECHNIQUES).toHaveLength(4);

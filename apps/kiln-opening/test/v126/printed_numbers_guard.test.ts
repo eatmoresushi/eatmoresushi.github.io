@@ -4,7 +4,7 @@ import {
   GUILD_SHIFU_INSPECT, GUAN_ORDER_VP,
   GE_CORRECTABLE_DIFFERENCES, GUAN_ORDER_COINS, JUN_ACTIVATION_WOOD,
   KILN_DEFINITIONS, LOCATION_DEFINITIONS, LOCATION_IDS, RU_ORDER_VP,
-  STARTING_TECHNIQUES, TECHNIQUE_DEFINITIONS,
+  SHAPE_COSTS, STARTING_TECHNIQUES, TECHNIQUE_DEFINITIONS,
 } from "../../src/game/index.ts";
 import type { KilnId, LocationId } from "../../src/game/index.ts";
 
@@ -48,7 +48,7 @@ const cases: Array<[string, string, number[]]> = [
   ["Protective Saggars", T("Protective Saggars"), [1, 1]],
   // The commitment is 1 Wood; the two 2s are the -2/+2 Contribution it produces.
   ["Fuel Ledger", T("Fuel Ledger"), [FUEL_LEDGER_WOOD, 2, 2]],
-  // V1.2.5 adds the "at least 1 ceramic participating" gate before the 1 Wood.
+  // V1.2.6 adds the "at least 1 ceramic participating" gate before the 1 Wood.
   ["Test Pieces", T("Test Pieces"), [1, 1]],
   ["Second Firing", T("Second Firing"), [1, 1]],
   ["Kiln Furniture", T("Kiln Furniture"), [1, 0]],
@@ -59,20 +59,21 @@ const cases: Array<[string, string, number[]]> = [
   ["Kiln Tending", T("Kiln Tending"), [1, 1, 1]],
   // Kiln Traditions
   ["kiln RU", KILN_DEFINITIONS.RU.ability, [RU_ORDER_VP]],
-  // "at least 1 Crown", then the 2 Coins and 1 VP V1.2.5 pays.
+  // "at least 1 Crown", then the 2 Coins and 1 VP V1.2.6 pays.
   ["kiln GU", KILN_DEFINITIONS.GU.ability, [1, GUAN_ORDER_COINS, GUAN_ORDER_VP]],
   // Ge's correction is free, so the only number is the Heat Difference it may correct.
   ["kiln GE", KILN_DEFINITIONS.GE.ability, [geDifference]],
+  ["kiln DI", KILN_DEFINITIONS.DI.ability, [SHAPE_COSTS.bowl]],
   ["kiln JU", KILN_DEFINITIONS.JU.ability, [JUN_ACTIVATION_WOOD, 1, 1]],
   // Action locations
   ["materials_yard.apprentice", L("materials_yard").apprentice, [3]],
   ["materials_yard.shifu", L("materials_yard").shifu, [4, 1, 1, 1]],
   ["forming_studio.apprentice", L("forming_studio").apprentice, [1]],
-  ["forming_studio.shifu", L("forming_studio").shifu, [2, 2, 1]],
+  ["forming_studio.shifu", L("forming_studio").shifu, [1, 2, 2, 1]],
   ["glaze_workshop.apprentice", L("glaze_workshop").apprentice, [1]],
   ["glaze_workshop.shifu", L("glaze_workshop").shifu, [2, 0]],
   ["kiln_yard.apprentice", L("kiln_yard").apprentice, [1]],
-  ["kiln_yard.shifu", L("kiln_yard").shifu, [2, 1]],
+  ["kiln_yard.shifu", L("kiln_yard").shifu, [2, 1, 1]],
   ["market_imperial_office.apprentice", L("market_imperial_office").apprentice, [1, 1, 1, 1]],
   ["market_imperial_office.shifu", L("market_imperial_office").shifu, [2, 1, 1, 1]],
   ["guild_academy.apprentice", L("guild_academy").apprentice, [1]],
@@ -107,7 +108,7 @@ describe("printed numbers match the code exactly", () => {
   });
 
   /** The Flawed salvage prints its payout in the rulebook, not on a card, so guard it here. */
-  it("pays the Flawed salvage the Coins V1.2.5 firing step 10 prints", () => {
+  it("pays the Flawed salvage the Coins V1.2.6 firing step 10 prints", () => {
     expect(ACTION_LOCATION_PRICES.flawedSalvageCoins).toBe(2);
   });
 });

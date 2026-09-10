@@ -35,7 +35,7 @@ import type {
 } from "../game/index.ts";
 import type { AuthoritativeCommand, StoredSeat, SubmitWoodCommand } from "./types.ts";
 
-export const ONLINE_COMPUTER_POLICY_VERSION = "rules-v1.2.5-heuristic-001" as const;
+export const ONLINE_COMPUTER_POLICY_VERSION = "rules-v1.2.6-heuristic-001" as const;
 export const LEGACY_ONLINE_COMPUTER_POLICY_VERSION = "selfplay-003" as const;
 
 export function nextOnlineDecisionActor(state: GameState): PlayerId | null {
@@ -339,10 +339,17 @@ function workAction(state: GameState, playerId: PlayerId): GameAction {
     // policy aims one Base Heat at all of its ceramics at once: granting the tile and using
     // it that way measured -3.76 per game against not owning it at all.
     const finalLoads = loads;
+    const existingSharedCeramicId = Object.values(state.ceramics).find(
+      (ceramic) => ceramic.stage === "loaded" && ceramic.ownerId === playerId && ceramic.kilnSpaceId !== "imperial",
+    )?.id;
+    const shifuCeramicId = worker.kind === "shifu"
+      ? finalLoads.find((load) => load.kilnSpaceId !== "imperial")?.ceramicId ?? existingSharedCeramicId
+      : undefined;
     if (finalLoads.length > 0) return {
       type: "USE_KILN_YARD",
       workerId: worker.id,
       loads: finalLoads,
+      ...(shifuCeramicId === undefined ? {} : { shifuCeramicId }),
       ...(player.startingTechniqueId === "ST04" ? { kilnTendingClay: 1, kilnTendingWood: 0 } : {}),
     };
   }
@@ -435,7 +442,7 @@ export async function chooseOnlineComputerAction(
   seat: StoredSeat,
 ): Promise<AuthoritativeCommand> {
   if (!seat.isComputer || seat.aiPolicyVersion !== ONLINE_COMPUTER_POLICY_VERSION || seat.aiSeed === null) {
-    throw new Error(`Seat ${seat.seatId} is not a configured V1.2.5 computer seat`);
+    throw new Error(`Seat ${seat.seatId} is not a configured V1.2.6 computer seat`);
   }
   const playerId = seat.playerId;
   if (nextOnlineDecisionActor(state) !== playerId) throw new Error(`Computer ${playerId} is not the current actor`);
@@ -480,7 +487,7 @@ export async function chooseOnlineComputerAction(
       if (state.phase.remainingTakes > 0) {
         const best = reservableFaceUpOrder(state, playerId);
         if (best !== null) return { type: "OFFICE_TAKE_ORDER", orderId: best };
-        // Nothing face up this workshop could deliver. V1.2.5 lets a reservation take the
+        // Nothing face up this workshop could deliver. V1.2.6 lets a reservation take the
         // top card unseen instead, which beats reserving a card known to be unusable.
         if (state.marketDeck.length + state.marketDiscard.length > 0) return { type: "OFFICE_TAKE_TOP_ORDER" };
         const fallback = state.marketDisplay[0];
@@ -496,7 +503,7 @@ export async function chooseOnlineComputerAction(
       {
         const isShifu = player.workers[state.phase.workerId]?.kind === "shifu";
         const discount = isShifu ? 1 : 0;
-        // Inspected tiles and the face-up display are one pool: V1.2.5 lets a Shifu buy
+        // Inspected tiles and the face-up display are one pool: V1.2.6 lets a Shifu buy
         // from either, so compare them on measured worth rather than on where they sat.
         const pool = [
           ...(state.phase.inspectedTechniqueIds ?? []),
@@ -555,7 +562,7 @@ export async function chooseOnlineComputerAction(
  * V1.2.2 reserved whatever sat leftmost, which regularly took a three-ceramic Order to a
  * workshop that finishes about five ceramics a game. A single-ceramic Order is always
  * reachable; a larger one is only worth a reservation once the pipeline can actually fill
- * it. Returning null is what makes V1.2.5's unseen top-card reservation the better option.
+ * it. Returning null is what makes V1.2.6's unseen top-card reservation the better option.
  */
 function reservableFaceUpOrder(state: GameState, playerId: PlayerId): OrderId | null {
   const pipeline = Object.values(state.ceramics).filter((ceramic) =>
@@ -575,7 +582,7 @@ function shapedCount(state: GameState, playerId: PlayerId): number {
 }
 
 export function computerPolicyLabel(policyVersion: string | null): string {
-  if (policyVersion === ONLINE_COMPUTER_POLICY_VERSION) return "V1.2.5";
+  if (policyVersion === ONLINE_COMPUTER_POLICY_VERSION) return "V1.2.6";
   if (policyVersion === LEGACY_ONLINE_COMPUTER_POLICY_VERSION) return "V003";
   return policyVersion ?? "—";
 }

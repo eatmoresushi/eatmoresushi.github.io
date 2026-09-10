@@ -215,7 +215,7 @@ function gainFromSupply(
   return gained;
 }
 
-/** Vessel cards are a component aid in V1.2.5, not a gameplay supply limit. */
+/** Vessel cards are a component aid in V1.2.6, not a gameplay supply limit. */
 function takeVesselCard(state: GameState, shape: Shape, ceramicId: CeramicId): string {
   return state.vesselSupply[shape].shift() ?? `${shape}:proxy:${ceramicId}`;
 }
@@ -311,21 +311,19 @@ function openContributionPhase(state: GameState): void {
 }
 
 /**
- * Players who may reposition a Shared-Kiln ceramic with their Kiln Yard Shifu.
- *
- * V1.2.5 resolves this after Contributions set Base Heat and before Fire is revealed.
+ * Players whose V1.2.6 Kiln Yard Shifu is still attached to its Work-Phase target.
+ * The target is committed during the action; this window only moves or declines it.
  */
 function kilnYardRepositionActors(state: GameState): PlayerId[] {
-  const hasEmptySpace = activeKilnSpaceIds(state.playerCount).some((spaceId) => kilnOccupant(state, spaceId) === null);
-  if (!hasEmptySpace) return [];
   return turnOrderFromFirst(state).filter((playerId) => {
     const player = state.players[playerId];
-    const shifu = player === undefined ? undefined : Object.values(player.workers).find(
-      (worker) => worker.kind === "shifu" && worker.status === "placed" && worker.locationId === "kiln_yard",
-    );
-    return shifu !== undefined && Object.values(state.ceramics).some(
-      (ceramic) => ceramic.stage === "loaded" && ceramic.ownerId === playerId && ceramic.kilnSpaceId !== "imperial",
-    );
+    const target = player?.kilnYardShifuCeramicId === null || player?.kilnYardShifuCeramicId === undefined
+      ? undefined
+      : state.ceramics[player.kilnYardShifuCeramicId];
+    return player?.kilnYardShifuUsedThisRound === true
+      && target?.stage === "loaded"
+      && target.ownerId === playerId
+      && target.kilnSpaceId !== "imperial";
   });
 }
 
@@ -853,15 +851,16 @@ function formCeramics(
   }
 
   let totalClay = 0;
-  // Ding's additional vessel costs no Clay, so it is formed but never charged.
-  const chargedShapes = action.shapes;
-  for (const shape of chargedShapes) {
+  // The worker effect is costed first so Ding's separate vessel never counts toward the
+  // Shifu's two-vessel discount. V1.2.6 then charges Ding its own 1 Clay.
+  for (const shape of action.shapes) {
     totalClay += SHAPE_COSTS[shape];
   }
   if (context.worker.kind === "shifu" && action.shapes.length === 2) totalClay -= 1;
   if (useTechniqueIds.includes("T01")) {
     totalClay -= 1;
   }
+  if (dingExtraShape !== undefined) totalClay += SHAPE_COSTS[dingExtraShape];
   const clayPaid = totalClay;
   const dryingFramesCoins = action.dryingFrames === undefined ? 0 : DECORATION_COSTS[action.dryingFrames.decoration];
   const whiteSlipCoins = action.whiteSlip === undefined ? 0 : DECORATION_COSTS.plain;
@@ -1118,6 +1117,27 @@ function useKilnYard(
       return applyFailure(ruleError("ILLEGAL_CERAMIC_STAGE", "Kiln Yard loads owned Glazed ceramics only."));
     }
   }
+  const sharedCeramicIdsAfterLoading = new Set([
+    ...Object.values(state.ceramics)
+      .filter((ceramic) => ceramic.stage === "loaded" && ceramic.ownerId === actorId && ceramic.kilnSpaceId !== "imperial")
+      .map((ceramic) => ceramic.id),
+    ...action.loads.filter((load) => load.kilnSpaceId !== "imperial").map((load) => load.ceramicId),
+  ]);
+  if (context.worker.kind === "shifu" && sharedCeramicIdsAfterLoading.size > 0) {
+    if (action.shifuCeramicId === undefined || !sharedCeramicIdsAfterLoading.has(action.shifuCeramicId)) {
+      return applyFailure(ruleError(
+        "INVALID_SELECTION",
+        "Choose exactly one of your Shared-Kiln ceramics for this Kiln Yard Shifu.",
+      ));
+    }
+  } else if (action.shifuCeramicId !== undefined) {
+    return applyFailure(ruleError(
+      "INVALID_SELECTION",
+      context.worker.kind === "shifu"
+        ? "A Kiln Yard Shifu cannot be placed on an Imperial Kiln ceramic."
+        : "Only a Kiln Yard Shifu may mark a Shared-Kiln ceramic.",
+    ));
+  }
   const tendingSelected = action.kilnTendingClay !== undefined || action.kilnTendingWood !== undefined;
   if (context.player.startingTechniqueId === "ST04") {
     const tendingClay = action.kilnTendingClay ?? -1;
@@ -1139,7 +1159,13 @@ function useKilnYard(
     next.ceramics[ceramic.id] = { ...ceramic, stage: "loaded", kilnSpaceId: load.kilnSpaceId, ...(load.useKilnFurniture === true ? { kilnFurnitureUsed: true } : {}) };
     events.push({ type: "CERAMIC_LOADED", playerId: actorId, ceramicId: ceramic.id, kilnSpaceId: load.kilnSpaceId });
   }
-  if (context.worker.kind === "shifu") player.kilnYardShifuUsedThisRound = true;
+  if (context.worker.kind === "shifu") {
+    player.kilnYardShifuUsedThisRound = true;
+    player.kilnYardShifuCeramicId = action.shifuCeramicId ?? null;
+    if (action.shifuCeramicId !== undefined) {
+      events.push({ type: "KILN_YARD_SHIFU_MARKED", playerId: actorId, ceramicId: action.shifuCeramicId });
+    }
+  }
   if (furnitureLoads.length === 1) exhaustTechnique(player, actorId, "T15", events);
   if (player.startingTechniqueId === "ST04") {
     const clay = gainFromSupply(next, player, "clay", action.kilnTendingClay ?? 0);
@@ -1214,7 +1240,7 @@ function beginOfficeOrders(
       ruleError("INVALID_ACTION", "The selected worker cannot use that Commission Market reservation mode."),
     );
   }
-  // V1.2.5: a reservation may take a face-up Order or the top of the deck, so either source
+  // V1.2.6: a reservation may take a face-up Order or the top of the deck, so either source
   // makes the placement legal. The Work Phase requires at least one instance of the action.
   const hasOrderSource =
     state.marketDisplay.length > 0 || state.marketDeck.length + state.marketDiscard.length > 0;
@@ -1315,7 +1341,7 @@ function takeOfficeOrder(state: GameState, actorId: PlayerId, orderId: OrderId, 
 }
 
 /**
- * V1.2.5: a reservation may instead take the top Main Order without looking at it first.
+ * V1.2.6: a reservation may instead take the top Main Order without looking at it first.
  *
  * V1.2.2 could only reserve a face-up Order, so a Commission Market worker was worth
  * nothing once the display held nothing the player wanted. Each reservation now chooses
@@ -1419,7 +1445,7 @@ function useColourSamples(
   ) {
     throw new Error("Colour Samples state invariant failed");
   }
-  // V1.2.5 looks at the top 3 "or as many as remain".
+  // V1.2.6 looks at the top 3 "or as many as remain".
   ensureMainOrderCards(next, COLOUR_SAMPLES_LOOK, rng);
   const choices = next.marketDeck.splice(0, COLOUR_SAMPLES_LOOK);
 
@@ -1436,7 +1462,7 @@ function chooseColourSamplesOrder(state: GameState, actorId: PlayerId, orderId: 
   if (isFailure(phase)) return phase;
   const actorError = actorFailure(state, actorId);
   if (actorError !== null) return actorError;
-  // V1.2.5: reserve one looked-at Order or one face-up Order. Everything looked at and not
+  // V1.2.6: reserve one looked-at Order or one face-up Order. Everything looked at and not
   // reserved is discarded -- V1.2.2 returned them to the bottom of the deck instead.
   if (phase.step !== "colour_samples_choose" || phase.colourSamplesDeck !== "market" || phase.colourSamplesChoices === undefined) {
     return applyFailure(ruleError("INVALID_ACTION", "Colour Samples is not awaiting a choice."));
@@ -1585,10 +1611,10 @@ function beginGuildAction(state: GameState, actorId: PlayerId, workerId: string)
 }
 
 /**
- * V1.2.5 Guild Shifu: look at the top 2 Techs of one discipline, or as many as remain.
+ * V1.2.6 Guild Shifu: look at the top 2 Techs of one discipline, or as many as remain.
  *
  * V1.2.2 refreshed a discipline -- its face-up tiles went to the bottom and the display
- * refilled -- and the purchase then had to come from that same discipline. V1.2.5 instead
+ * refilled -- and the purchase then had to come from that same discipline. V1.2.6 instead
  * draws the top 2 off the chosen deck for the actor alone to see, leaves the face-up
  * displays untouched, and lets the purchase come from any face-up tile or either drawn tile.
  */
@@ -1852,6 +1878,7 @@ export function submitWoodContribution(
       baseHeat: null,
       fireModifier: null,
       globalHeat: null,
+      kilnYardShifuRepositions: [],
       ceramicResults: {},
     };
     events.push({
@@ -1883,14 +1910,22 @@ function resolveKilnYardReposition(
   if (isFailure(phase)) return phase;
   const actorError = actorFailure(state, actorId);
   if (actorError !== null) return actorError;
+  const player = state.players[actorId];
+  const markedCeramicId = player?.kilnYardShifuCeramicId ?? null;
+  if (markedCeramicId === null) {
+    return applyFailure(ruleError("INVALID_ACTION", "This Kiln Yard Shifu has no marked Shared-Kiln ceramic."));
+  }
   const isPass = ceramicId === null && toSpaceId === null;
   if ((ceramicId === null) !== (toSpaceId === null)) {
     return applyFailure(ruleError("INVALID_SELECTION", "Kiln Yard repositioning requires both a ceramic and destination."));
   }
   if (!isPass) {
     const ceramic = ceramicId === null ? undefined : state.ceramics[ceramicId];
+    if (ceramicId !== markedCeramicId) {
+      return applyFailure(ruleError("INVALID_SELECTION", "Only the ceramic marked by this Shifu during the Kiln Yard action may move."));
+    }
     if (ceramic === undefined || ceramic.stage !== "loaded" || ceramic.ownerId !== actorId || ceramic.kilnSpaceId === "imperial") {
-      return applyFailure(ruleError("ILLEGAL_CERAMIC_STAGE", "Reposition one of your loaded ceramics."));
+      return applyFailure(ruleError("ILLEGAL_CERAMIC_STAGE", "The Shifu-marked Shared-Kiln ceramic is no longer eligible."));
     }
     if (toSpaceId === null || !activeKilnSpaceIds(state.playerCount).includes(toSpaceId)) {
       return applyFailure(ruleError("INVALID_SELECTION", "Choose an active kiln space."));
@@ -1911,11 +1946,33 @@ function resolveKilnYardReposition(
   }
   const next = cloneState(state);
   const events: GameEvent[] = [];
+  const nextPlayer = next.players[actorId];
+  const marked = next.ceramics[markedCeramicId];
+  if (nextPlayer === undefined || marked === undefined || marked.stage !== "loaded" || marked.kilnSpaceId === "imperial") {
+    throw new Error("Kiln Yard Shifu target invariant failed");
+  }
+  const fromSpaceId = marked.kilnSpaceId;
   if (!isPass && ceramicId !== null && toSpaceId !== null) {
     const ceramic = next.ceramics[ceramicId];
     if (ceramic === undefined || ceramic.stage !== "loaded") throw new Error("Kiln Yard reposition invariant failed");
     ceramic.kilnSpaceId = toSpaceId;
+    next.firingContext?.kilnYardShifuRepositions.push({
+      playerId: actorId,
+      ceramicId,
+      fromSpaceId,
+      toSpaceId,
+    });
+    events.push({ type: "KILN_YARD_SHIFU_REPOSITIONED", playerId: actorId, ceramicId, fromSpaceId, toSpaceId });
+  } else {
+    next.firingContext?.kilnYardShifuRepositions.push({
+      playerId: actorId,
+      ceramicId: markedCeramicId,
+      fromSpaceId,
+      toSpaceId: null,
+    });
+    events.push({ type: "KILN_YARD_SHIFU_REPOSITION_DECLINED", playerId: actorId, ceramicId: markedCeramicId });
   }
+  nextPlayer.kilnYardShifuCeramicId = null;
   advanceQueuedWindow(next, () => revealFireAndCalculateActualHeat(next, events, rng));
   return success(next, events);
 }
@@ -2439,6 +2496,7 @@ function finalizeFiring(state: GameState, events: GameEvent[]): void {
     baseHeat: context.baseHeat,
     fireModifier: context.fireModifier,
     globalHeat: context.globalHeat,
+    kilnYardShifuRepositions: context.kilnYardShifuRepositions.map((entry) => ({ ...entry })),
   };
   state.fireDiscard.push(context.fireModifier);
   state.firingContext = null;
@@ -2767,6 +2825,7 @@ function performCleanup(state: GameState, events: GameEvent[], rng: RandomSource
       player.passedWorkPhase = false;
       player.kilnAbilityUsedThisRound = false;
       player.kilnYardShifuUsedThisRound = false;
+      player.kilnYardShifuCeramicId = null;
       player.shapesFormedThisRound = [];
       for (const technique of player.techniques) technique.exhausted = false;
     }
@@ -3012,7 +3071,7 @@ export function applyAction(
     case "SUBMIT_PRESENTATION":
       return submitPresentation(state, actorId, action.ceramicIds, action.featuredCeramicIds ?? []);
     default:
-      return applyFailure(ruleError("INVALID_ACTION", "That action is not part of V1.2.5."));
+      return applyFailure(ruleError("INVALID_ACTION", "That action is not part of V1.2.6."));
   }
 }
 

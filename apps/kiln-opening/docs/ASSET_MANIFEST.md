@@ -1,4 +1,4 @@
-# ASSET_MANIFEST.md — V1.2.5 rules / legacy visual audit
+# ASSET_MANIFEST.md — V1.2.6 rules / legacy visual audit
 
 Only files under `assets/current_v04/` are approved as visual references. The directory name is a stable legacy path, not a rules-version claim. No raster text is authoritative.
 
@@ -10,7 +10,7 @@ Only files under `assets/current_v04/` are approved as visual references. The di
 - `vessel_cards_page_2_washer_vase.png`
 - `vessel_cards_page_3_censer.png`
 
-Together these provide 8 each of Bowl, Plate, Brush Washer, Vase and Censer. Their writable Glaze, Decoration and Quality fields remain usable, but all labels and rules must be checked against the V1.2.5 sources and current structured data. The physical card count is not a gameplay limit; provide a same-Shape proxy when all available cards are in use.
+Together these provide 8 each of Bowl, Plate, Brush Washer, Vase and Censer. Their writable Glaze, Decoration and Quality fields remain usable, but all labels and rules must be checked against the V1.2.6 sources and current structured data. The physical card count is not a gameplay limit; provide a same-Shape proxy when all available cards are in use.
 
 ## Obsolete rules-bearing raster sets
 
@@ -21,12 +21,12 @@ Any image showing an earlier ruleset is obsolete, including:
 - separate Market and Imperial Order decks or displays;
 - Office, Court Patronage, private Potter's Wheel or private Glaze & Decoration locations;
 - worker unlocks, Imperial Progress or the Imperial Seal;
-- older Craft Technique sets rather than V1.2.5 Starting and Advanced Techs;
+- older Craft Technique sets rather than V1.2.6 Starting and Advanced Techs;
 - an Imperial token that adjusts firing heat or is embedded as an additional Kiln Yard load rather than the before-or-after-action Imperial Priority load.
 
 The online client must cover or replace stale raster wording with data-driven bilingual UI; it must never expose obsolete text as the current rule.
 
-## Assets to regenerate from V1.2.5 data
+## Assets to regenerate from V1.2.6 data
 
 ### Orders
 
@@ -68,15 +68,15 @@ Generate four Starting Tech designs, with four physical copies each, and all 15 
 
 ### Reference
 
-Generate the five-phase round sequence, Contribution/Firing sequence, after-Base/before-Fire Shifu reposition, the 2-Coin Flawed salvage, Recognition 0–4 milestones and Crown overflow VP, universal five-ceramic Exhibition and featured-three diversity rule from current structured data. All rules-bearing output must support matching English and Simplified Chinese text.
+Generate the five-phase round sequence, Contribution/Firing sequence, Work-Phase Shifu-to-ceramic marker and after-Base/before-Fire movement of only that marked ceramic, the 2-Coin Flawed salvage, Recognition 0–4 milestones and Crown overflow VP, universal five-ceramic Exhibition and featured-three diversity rule from current structured data. All rules-bearing output must support matching English and Simplified Chinese text.
 
 ## Authority
 
 For current gameplay use, in order:
 
-1. `docs/KILN_OPENING_v1.2.5_EN_SOURCE.md` for mechanics
-2. `docs/KILN_OPENING_v1.2.5_ZH_SOURCE.md` for Chinese localization
-3. `docs/RULEBOOK_AUDIT_V1.2.5.md`
+1. `docs/KILN_OPENING_v1.2.6_EN_SOURCE.md` for mechanics
+2. `docs/KILN_OPENING_v1.2.6_ZH_SOURCE.md` for Chinese localization
+3. `docs/RULEBOOK_AUDIT_V1.2.6.md`
 4. current `data/*.json`
 5. `docs/IMPLEMENTATION_DECISIONS.md`
 

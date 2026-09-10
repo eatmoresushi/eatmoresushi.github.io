@@ -133,6 +133,12 @@ export function eventDescription(event: PublicGameEvent, game: PublicGameState, 
       return `${player(event.playerId)} glazed a ${ceramic(event.ceramicId)} ceramic: ${label(event.glaze)}, ${label(event.decoration)}.`;
     case "CERAMIC_LOADED":
       return `${player(event.playerId)} loaded a ${ceramic(event.ceramicId)} ceramic into ${label(event.kilnSpaceId)}.`;
+    case "KILN_YARD_SHIFU_MARKED":
+      return `${player(event.playerId)} placed their Kiln Yard Shifu on the ${ceramic(event.ceramicId)} ceramic selected for this firing.`;
+    case "KILN_YARD_SHIFU_REPOSITIONED":
+      return `${player(event.playerId)} moved the Shifu-marked ${ceramic(event.ceramicId)} ceramic from ${label(event.fromSpaceId)} to ${label(event.toSpaceId)}.`;
+    case "KILN_YARD_SHIFU_REPOSITION_DECLINED":
+      return `${player(event.playerId)} kept the Shifu-marked ${ceramic(event.ceramicId)} ceramic in place.`;
     case "ORDER_TAKEN":
       return `${player(event.playerId)} ${event.acquisition === "colour_samples" ? "selected" : "took"} ${event.orderId} from the Main Orders${event.acquisition === "colour_samples" ? " through Colour Samples" : ""}.`;
     case "COLOUR_SAMPLES_USED":
@@ -215,6 +221,9 @@ function eventDescriptionZh(event: PublicGameEvent, game: PublicGameState): stri
     case "CERAMIC_SHAPED": return `${player(event.playerId)}成型了1件${term("zh-CN", event.shape)}。`;
     case "CERAMIC_GLAZED": return `${player(event.playerId)}为${ceramic(event.ceramicId)}施釉：${term("zh-CN", event.glaze)}、${term("zh-CN", event.decoration)}。`;
     case "CERAMIC_LOADED": return `${player(event.playerId)}将${ceramic(event.ceramicId)}放入${term("zh-CN", event.kilnSpaceId)}。`;
+    case "KILN_YARD_SHIFU_MARKED": return `${player(event.playerId)}将窑坊师傅放在本次烧成所选的${ceramic(event.ceramicId)}陶瓷上。`;
+    case "KILN_YARD_SHIFU_REPOSITIONED": return `${player(event.playerId)}将师傅所在的${ceramic(event.ceramicId)}陶瓷从${term("zh-CN", event.fromSpaceId)}移至${term("zh-CN", event.toSpaceId)}。`;
+    case "KILN_YARD_SHIFU_REPOSITION_DECLINED": return `${player(event.playerId)}选择不移动师傅所在的${ceramic(event.ceramicId)}陶瓷。`;
     case "ORDER_TAKEN": return `${player(event.playerId)}${event.acquisition === "colour_samples" ? "通过色样簿承接" : "承接"}了主委托${event.orderId}。`;
     case "COLOUR_SAMPLES_USED": return `${player(event.playerId)}使用色样簿，承接${event.selectedOrderId ?? "1张委托"}，并弃掉${event.discardedCount}张未承接的已查看委托。`;
     case "GUILD_DISCIPLINE_INSPECTED": return `${player(event.playerId)}查看了${DISCIPLINE_ZH[event.discipline]}牌堆顶${event.count}个技艺。`;
@@ -258,7 +267,7 @@ function workerName(workerId: string, locale: Locale = "en"): string {
   return workerId.toLowerCase().includes("shifu") ? term(locale, "shifu") : locale === "zh-CN" ? `工人${workerId}` : `worker ${workerId}`;
 }
 
-/** Both locales read the V1.2.5 location names from the shared term table. */
+/** Both locales read the V1.2.6 location names from the shared term table. */
 function locationName(locationId: string, locale: Locale = "en"): string {
   return term(locale, locationId);
 }

@@ -2,7 +2,7 @@
 
 This is a distilled history so future agents understand *why* the current rules look the way they do. It is not a rules source.
 
-> Entries below preserve the language and conclusions of their historical checkpoints, including statements that were “current” at that time. They do not override the V1.2.5 sources indexed in `GAME_RULES.md`.
+> Entries below preserve the language and conclusions of their historical checkpoints, including statements that were “current” at that time. They do not override the V1.2.6 sources indexed in `GAME_RULES.md`.
 
 ## Initial concept
 

@@ -46,7 +46,7 @@ Host starts only with 2–4 players.
 
 The host may add or remove computer seats while the room is in the lobby. A room must retain at least one human seat and may contain up to three computer players, for the normal four-seat maximum.
 
-Computer seats use the current production policy through the V1.2.5 authoritative engine, with no live exploration or learning. Historical calibration labels remain honest and are not claims of V1.2.5 calibration. Each seat has a private persistent seed and stable player/seat identity. The browser never chooses an AI command: an authenticated client only asks the Edge Function to advance, and the server derives the active computer, enumerates legal commands, applies the selected command through the authoritative engine, and commits it with the same revision checks as a human command.
+Computer seats use the current production policy through the V1.2.6 authoritative engine, with no live exploration or learning. Historical calibration labels remain honest and are not claims of V1.2.6 calibration. Each seat has a private persistent seed and stable player/seat identity. The browser never chooses an AI command: an authenticated client only asks the Edge Function to advance, and the server derives the active computer, enumerates legal commands, applies the selected command through the authoritative engine, and commits it with the same revision checks as a human command.
 
 Consecutive computer turns run in bounded batches so an Edge Function invocation cannot monopolize the session. Concurrent advance requests are safe; compare-and-swap persistence accepts each revision only once. Contribution-card choices remain private in the server-only schema until the normal simultaneous reveal, including when computers contribute.
 
@@ -83,13 +83,14 @@ Firing is the most important digital interaction.
 3. eligible players privately submit Bank, Tend or Stoke; an affordable Fuel Ledger owner may instead submit Bank −2 or Stoke +2 with the extra Wood committed secretly;
 4. UI shows only submission status, never card values, the extra commitment or derived heat;
 5. once all eligible players submit, the server atomically reveals and pays all Contributions, calculates Base Heat from 2, then clamps it to 0–5;
-6. before revealing Fire, offer every player who used a Kiln Yard Shifu this round one reposition decision in First Player order. The player may move one owned Shared-Kiln ceramic to an empty active space in a neighbouring zone only: High ↔ Middle ↔ Low. It never enters or leaves an Imperial Kiln, and Kiln Furniture travels with its ceramic;
-7. reveal the Fire card, reshuffling the discard first if needed, and calculate uncapped Global Heat;
-8. calculate each ceramic's Actual Heat and resolve Jun/Ge adjustments in the rulebook timing window;
-9. assign Quality;
-10. in First Player order, resolve Protective Saggars, Second Firing and similar after-Quality choices; a player controlling multiple abilities at that timing chooses their order. Relevant unused once-per-round abilities may resolve at their normal timing inside a Second Firing recalculation;
-11. resolve the Flawed salvage: each player may discard at most one ceramic still Flawed from this firing for 2 Coins, returning its Vessel card to the matching Shape supply;
-12. move remaining ceramics to Finished areas, empty all kiln spaces, return Kiln Furniture tiles, discard used Fire cards and return Contribution cards.
+6. during each Kiln Yard Shifu action, if the player has an owned ceramic in the Shared Kiln after loading, require the player to mark exactly one of those ceramics and show that association publicly;
+7. before revealing Fire, offer each player with a marked Kiln Yard Shifu target one reposition decision in First Player order. Only the ceramic marked during that Work-Phase action may move, and only to an empty active space in a neighbouring zone: High ↔ Middle ↔ Low. It never enters or leaves an Imperial Kiln, and Kiln Furniture travels with its ceramic;
+8. reveal the Fire card, reshuffling the discard first if needed, and calculate uncapped Global Heat;
+9. calculate each ceramic's Actual Heat and resolve Jun/Ge adjustments in the rulebook timing window;
+10. assign Quality;
+11. in First Player order, resolve Protective Saggars, Second Firing and similar after-Quality choices; a player controlling multiple abilities at that timing chooses their order. Relevant unused once-per-round abilities may resolve at their normal timing inside a Second Firing recalculation;
+12. resolve the Flawed salvage: each player may discard at most one ceramic still Flawed from this firing for 2 Coins, returning its Vessel card to the matching Shape supply;
+13. move remaining ceramics to Finished areas, empty all kiln spaces, return Kiln Furniture tiles, discard used Fire cards and return Contribution cards.
 
 ## No timers in MVP
 

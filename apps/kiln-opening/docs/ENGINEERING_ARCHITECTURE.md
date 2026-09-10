@@ -68,9 +68,9 @@ Sketch:
 
 ```ts
 interface GameState {
-  schemaVersion: 3;
+  schemaVersion: 4;
   gameId: string;
-  rulesVersion: "1.2.5";
+  rulesVersion: "1.2.6";
   status: "lobby" | "setup" | "playing" | "finished";
   playerOrder: PlayerId[];
   firstPlayerId: PlayerId;

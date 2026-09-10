@@ -12,7 +12,7 @@ import {
   workerId,
 } from "./helpers.ts";
 
-describe("V1.2.5 worker actions and Techs", () => {
+describe("V1.2.6 worker actions and Techs", () => {
   it("resolves Apprentice and Shifu Materials Yard effects, including Prepared Clay", () => {
     const { state: initial, rng } = startedGame(2, 1301, ["ST01"]);
     let state = structuredClone(initial);
@@ -169,7 +169,7 @@ describe("V1.2.5 worker actions and Techs", () => {
     expect(state.vesselSupply.bowl).toEqual([]);
   });
 
-  it("gives Ding's additional matching vessel free of Clay", () => {
+  it("charges Ding's additional matching vessel its separate 1 Clay", () => {
     const { state: initial, rng } = startedGame(2, 1315);
     let state = structuredClone(initial);
     state.players["P1"]!.kilnId = "DI";
@@ -185,8 +185,7 @@ describe("V1.2.5 worker actions and Techs", () => {
       (ceramic) => ceramic.ownerId === "P1" && ceramic.shape === "bowl",
     );
     expect(bowls).toHaveLength(2);
-    // V1.2.5: only the vessel the action itself formed is charged; Ding's extra is free.
-    expect(state.players["P1"]!.resources.clay).toBe(before - SHAPE_COSTS.bowl);
+    expect(state.players["P1"]!.resources.clay).toBe(before - SHAPE_COSTS.bowl - 1);
     expect(state.players["P1"]!.kilnAbilityUsedThisRound).toBe(true);
   });
 
@@ -380,7 +379,7 @@ describe("V1.2.5 worker actions and Techs", () => {
 
   it("lets Colour Samples reserve a looked-at Order or a face-up one, discarding the rest", () => {
     // V1.2.2 forced the reservation to come from the three looked-at cards and returned the
-    // others to the bottom of the deck. V1.2.5 also allows reserving a face-up Order, and
+    // others to the bottom of the deck. V1.2.6 also allows reserving a face-up Order, and
     // discards every looked-at card that was not reserved.
     const { state: initial, rng } = startedGame(2, 1311);
     let state = structuredClone(initial);
@@ -465,7 +464,7 @@ describe("V1.2.5 worker actions and Techs", () => {
 
   it("inspects the top 2 of one discipline, then buys an inspected or face-up Tech at -1 Coin", () => {
     // V1.2.2's Shifu refreshed a discipline -- its face-up tiles went to the bottom and the
-    // purchase had to come from that same discipline. V1.2.5 draws the top 2 off the chosen
+    // purchase had to come from that same discipline. V1.2.6 draws the top 2 off the chosen
     // deck for this player alone, leaves every display untouched, and lets the purchase come
     // from any face-up tile or either drawn tile.
     const { state: initial, rng } = startedGame(2, 1313);

@@ -32,6 +32,7 @@ function projectPlayer(state: GameState, playerId: PlayerId): PublicPlayerState 
     passedWorkPhase: player.passedWorkPhase,
     kilnAbilityUsedThisRound: player.kilnAbilityUsedThisRound,
     kilnYardShifuUsedThisRound: player.kilnYardShifuUsedThisRound,
+    kilnYardShifuCeramicId: player.kilnYardShifuCeramicId,
     shapesFormedThisRound: [...(player.shapesFormedThisRound ?? [])],
     presentationCeramicIds: [...player.presentationCeramicIds],
     presentationFeaturedCeramicIds: [...(player.presentationFeaturedCeramicIds ?? [])],
@@ -40,8 +41,8 @@ function projectPlayer(state: GameState, playerId: PlayerId): PublicPlayerState 
 }
 
 export function projectPublicGameState(state: GameState): PublicGameState {
-  if (state.schemaVersion !== 3 || state.rulesVersion !== "1.2.5") {
-    throw new Error("Only schema-3 V1.2.5 games may be projected by the current client");
+  if (state.schemaVersion !== 4 || state.rulesVersion !== "1.2.6") {
+    throw new Error("Only schema-4 V1.2.6 games may be projected by the current client");
   }
   if (state.phase.type === "firing_contributions" && state.firingContext !== null) {
     throw new Error("Unrevealed Contributions must never enter the public firing context");
