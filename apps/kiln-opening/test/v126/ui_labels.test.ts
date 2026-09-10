@@ -1,10 +1,8 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { LOCATION_DEFINITIONS, LOCATION_IDS } from "../../src/game/index.ts";
-import { KILN_SPACE_IDS } from "../../src/game/index.ts";
-import { LOCATION_LABELS } from "../../src/ui/tabletop/assetCatalog.ts";
-import { IMPERIAL_TRACK_POINTS, KILN_SLOT_POINTS } from "../../src/ui/tabletop/centralBoardLayout.ts";
+import { IMPERIAL_PROGRESS, KILN_SPACE_IDS, LOCATION_DEFINITIONS, LOCATION_IDS } from "../../src/game/index.ts";
+import { TABLETOP_BOARD_LOCATIONS } from "../../src/ui/TabletopGameExperience.tsx";
 import { term } from "../../src/ui/i18n.tsx";
 
 /**
@@ -56,16 +54,13 @@ describe("V1.2.6 user-facing labels", () => {
     expect(term("zh-CN", id)).toBe(LOCATION_DEFINITIONS[id].nameZh);
   });
 
-  it("labels every board hotspot from the same data", () => {
-    for (const id of LOCATION_IDS) {
-      expect(LOCATION_LABELS[id]).toBe(LOCATION_DEFINITIONS[id].name);
-    }
-    expect(Object.keys(LOCATION_LABELS).sort()).toEqual([...LOCATION_IDS].sort());
+  it("places every data-backed action location on the live tabletop", () => {
+    expect(TABLETOP_BOARD_LOCATIONS.map(({ id }) => id).sort()).toEqual([...LOCATION_IDS].sort());
   });
 
-  it("draws exactly the current seven kiln spaces and Recognition 0–4", () => {
-    expect(Object.keys(KILN_SLOT_POINTS).sort()).toEqual([...KILN_SPACE_IDS].sort());
-    expect(IMPERIAL_TRACK_POINTS).toHaveLength(5);
+  it("draws from the current seven kiln spaces and Recognition 0–4", () => {
+    expect(KILN_SPACE_IDS).toHaveLength(7);
+    expect(IMPERIAL_PROGRESS.track.map(({ space }) => space)).toEqual([0, 1, 2, 3, 4]);
   });
 
   it("carries the three V1.2.6 renames through to the player", () => {

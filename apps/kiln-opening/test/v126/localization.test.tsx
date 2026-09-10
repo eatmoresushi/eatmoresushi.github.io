@@ -10,7 +10,10 @@ import { GameTable, OrderCard } from "../../src/ui/GameTable.tsx";
 import { LanguageProvider, localizeMultiplayerError, term, translate } from "../../src/ui/i18n.tsx";
 import type { Locale } from "../../src/ui/i18n.tsx";
 import { PlaytestExperience } from "../../src/ui/PlaytestExperience.tsx";
-import { TabletopScene } from "../../src/ui/tabletop/TabletopScene.tsx";
+import {
+  TabletopGameExperience,
+  tabletopLocationReason,
+} from "../../src/ui/TabletopGameExperience.tsx";
 import { startedGame } from "./helpers.ts";
 
 /**
@@ -96,22 +99,23 @@ describe("English / Simplified Chinese localization", () => {
     expect(JSON.stringify(publicGame)).toBe(before);
   });
 
-  it("localizes the illustrated tabletop from the same V1.2.6 data", () => {
+  it("localizes the live tabletop from the same V1.2.6 data", () => {
     const publicGame = projectPublicGameState(startedGame(2, 10_402).state);
     const ownPlayerId = publicGame.playerOrder[0]!;
     const before = JSON.stringify(publicGame);
-    const chinese = localizedMarkup("zh-CN", createElement(TabletopScene, {
+    const chinese = localizedMarkup("zh-CN", createElement(TabletopGameExperience, {
       game: publicGame,
       ownPlayerId,
-      selection: { workerId: null, locationId: null },
-      onSelectWorker: () => undefined,
-      onSelectLocation: () => undefined,
-      onClearSelection: () => undefined,
+      ownPendingContribution: null,
+      events: [],
+      describeEvent: (record) => record.event.type,
+      busy: false,
+      send: async () => true,
     }));
     for (const label of ["泥柴场", "陶车坊", "釉饰坊", "瓷牙行", "陶工行", "御府声望", "进阶技艺"]) {
       expect(chinese).toContain(label);
     }
-    expect(chinese).toContain("每次承接后获得资源");
+    expect(chinese).toContain(LOCATION_DEFINITIONS.market_imperial_office.apprenticeZh);
     expect(chinese).not.toContain("eligible Shifu Patronage");
     expect(JSON.stringify(publicGame)).toBe(before);
   });
@@ -133,25 +137,15 @@ describe("English / Simplified Chinese localization", () => {
     expect(chinese).not.toContain("Playtest Debug");
   });
 
-  it("lets a selected Shifu target a full shared action in the illustrated tabletop", () => {
+  it("lets a selected Shifu target a full shared action in the live tabletop", () => {
     const publicGame = projectPublicGameState(startedGame(2, 10_403).state);
     const ownPlayerId = publicGame.playerOrder[0]!;
     const shifu = Object.values(publicGame.players[ownPlayerId]!.workers).find((worker) => worker.kind === "shifu")!;
     const apprentice = Object.values(publicGame.players[ownPlayerId]!.workers).find((worker) => worker.kind === "apprentice")!;
     publicGame.actionBoard.placements.materials_yard = ["occupied-1", "occupied-2"];
-    const render = (workerId: string): string => localizedMarkup("en", createElement(TabletopScene, {
-      game: publicGame,
-      ownPlayerId,
-      selection: { workerId, locationId: null },
-      onSelectWorker: () => undefined,
-      onSelectLocation: () => undefined,
-      onClearSelection: () => undefined,
-    }));
-    const shifuHotspot = render(shifu.id).match(/class="action-hotspot ([^"]*)"[^>]*data-location-id="materials_yard"/)?.[1];
-    const apprenticeHotspot = render(apprentice.id).match(/class="action-hotspot ([^"]*)"[^>]*data-location-id="materials_yard"/)?.[1];
-    expect(shifuHotspot).toContain("is-valid");
-    expect(shifuHotspot).toContain("is-full");
-    expect(apprenticeHotspot).not.toContain("is-valid");
-    expect(apprenticeHotspot).toContain("is-full");
+    const player = publicGame.players[ownPlayerId]!;
+    expect(tabletopLocationReason(publicGame, player, shifu.id, "materials_yard", "en")).toBeNull();
+    expect(tabletopLocationReason(publicGame, player, apprentice.id, "materials_yard", "en"))
+      .toBe("Full — select your Shifu to overfill");
   });
 });

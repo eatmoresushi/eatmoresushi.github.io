@@ -49,21 +49,21 @@ describe("V1.2.6 functional tabletop", () => {
     expect(markup).toContain('data-player-id="P2"');
     expect(markup).toContain('data-worker-kind="apprentice"');
     expect(markup).toContain('data-worker-kind="shifu"');
-    expect(markup).toContain('class="kiln-mock-worker-hat"');
+    expect(markup).toContain('class="kiln-tabletop-worker-hat"');
     expect(markup).toContain('>S</text>');
     expect(markup).toContain('>A</text>');
 
     expect(markup).toContain('data-shape="plate"');
     expect(markup).toContain('data-glaze="celadon"');
     expect(markup).toContain('data-decoration="carved"');
-    expect(markup).toContain('class="kiln-mock-decoration-pattern is-carved"');
-    expect(markup).toContain('class="kiln-mock-decoration-pattern is-crackle"');
+    expect(markup).toContain('class="kiln-tabletop-decoration-pattern is-carved"');
+    expect(markup).toContain('class="kiln-tabletop-decoration-pattern is-crackle"');
     expect(markup).toContain("BELONGS TO");
     expect(markup).toContain("Preferred Heat");
     expect(markup).toContain("Furniture");
-    expect(markup).toContain('class="kiln-mock-quality-badge is-fine"');
+    expect(markup).toContain('class="kiln-tabletop-quality-badge is-fine"');
     expect(markup).toContain(">Fine</b>");
-    expect(markup).toMatch(/class="kiln-mock-shifu-marker"[^>]*>S<\/em>/);
+    expect(markup).toMatch(/class="kiln-tabletop-shifu-marker"[^>]*>S<\/em>/);
     expect(markup).not.toMatch(/<i>素<\/i>|<i>刻<\/i>|<i>印<\/i>|<i>裂<\/i>/);
   });
 

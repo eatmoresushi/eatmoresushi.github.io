@@ -5,7 +5,7 @@ import { projectPublicGameState } from "../../src/multiplayer/index.ts";
 import { ActionPanel } from "../../src/ui/ActionPanel.tsx";
 import { LanguageProvider } from "../../src/ui/i18n.tsx";
 import type { Locale } from "../../src/ui/i18n.tsx";
-import { TabletopScene } from "../../src/ui/tabletop/TabletopScene.tsx";
+import { TabletopGameExperience } from "../../src/ui/TabletopGameExperience.tsx";
 import { addLoaded, startedGame, workerId } from "./helpers.ts";
 
 function localizedMarkup(locale: Locale, child: ReturnType<typeof createElement>): string {
@@ -45,21 +45,22 @@ describe("V1.2.6 player-facing controls", () => {
     state.players["P1"]!.workers[shifuId]!.locationId = "kiln_yard";
     state.actionBoard.placements.kiln_yard.push(shifuId);
     const game = projectPublicGameState(state);
-    const scene = createElement(TabletopScene, {
+    const scene = createElement(TabletopGameExperience, {
       game,
       ownPlayerId: "P1",
-      selection: { workerId: null, locationId: null },
-      onSelectWorker: () => undefined,
-      onSelectLocation: () => undefined,
-      onClearSelection: () => undefined,
+      ownPendingContribution: null,
+      events: [],
+      describeEvent: (record) => record.event.type,
+      busy: false,
+      send: async () => true,
     });
 
     const english = localizedMarkup("en", scene);
-    expect(english).toContain("is-shifu-marked");
-    expect(english).toContain("kiln-shifu-marker");
-    expect(english).toContain("marked by its Shifu");
+    expect(english).toContain("kiln-tabletop-shifu-marker");
+    expect(english).toContain("Kiln Yard Shifu committed to this ceramic");
+    expect(english).toMatch(/class="kiln-tabletop-shifu-marker"[^>]*>S<\/em>/);
     const chinese = localizedMarkup("zh-CN", scene);
-    expect(chinese).toContain("师傅位于此陶瓷");
+    expect(chinese).toContain("窑坊师傅已标记此陶瓷");
   });
 
   it("offers repositioning only for the ceramic committed during the Kiln Yard action", () => {
