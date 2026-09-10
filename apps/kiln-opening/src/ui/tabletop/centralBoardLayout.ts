@@ -25,7 +25,7 @@ export const ACTION_ZONE_RECTS: Record<LocationId, NormalizedRect> = {
 };
 
 export const KILN_SLOT_POINTS: Record<KilnSpaceId, NormalizedPoint> = {
-  // V1.2.5 Shared Kiln: 3 High / 2 Middle / 2 Low.
+  // V1.2.6 Shared Kiln: 3 High / 2 Middle / 2 Low.
   high_1: { x: 0.608, y: 0.198 },
   high_2: { x: 0.690, y: 0.198 },
   high_3: { x: 0.773, y: 0.198 },

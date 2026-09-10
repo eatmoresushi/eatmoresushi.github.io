@@ -1,5 +1,5 @@
 export type PlayerId = string;
-export type RulesVersion = "1.2.5";
+export type RulesVersion = "1.2.6";
 
 /**
  * The three v1.1.4 Contribution cards. Bank (-1 Heat, 1 Wood), Tend (0, 0) and
@@ -101,6 +101,8 @@ export interface PlayerState {
   passedWorkPhase: boolean;
   kilnAbilityUsedThisRound: boolean;
   kilnYardShifuUsedThisRound: boolean;
+  /** V1.2.6: the Shared-Kiln ceramic chosen when this round's Kiln Yard Shifu resolved. */
+  kilnYardShifuCeramicId: CeramicId | null;
   /** Distinct Shapes formed this round, used by Measuring Calipers. */
   shapesFormedThisRound: Shape[];
   presentationCeramicIds: CeramicId[];
@@ -220,6 +222,13 @@ export interface FiringCeramicResult {
   assignedQuality: Quality | null;
 }
 
+export interface KilnYardShifuReposition {
+  playerId: PlayerId;
+  ceramicId: CeramicId;
+  fromSpaceId: KilnSpaceId;
+  toSpaceId: KilnSpaceId | null;
+}
+
 export interface FiringContext {
   round: RoundNumber;
   contributors: PlayerId[];
@@ -234,6 +243,7 @@ export interface FiringContext {
   baseHeat: BaseHeat | null;
   fireModifier: FireModifier | null;
   globalHeat: number | null;
+  kilnYardShifuRepositions: KilnYardShifuReposition[];
   ceramicResults: Record<CeramicId, FiringCeramicResult>;
 }
 
@@ -248,6 +258,7 @@ export interface FiringResultSummary {
   baseHeat: BaseHeat;
   fireModifier: FireModifier;
   globalHeat: number;
+  kilnYardShifuRepositions: KilnYardShifuReposition[];
 }
 
 export interface FinalScoreBreakdown {
@@ -314,7 +325,7 @@ export type GamePhase =
       actorId: PlayerId;
       workerId: WorkerId;
       step: "inspect" | "buy";
-      /** V1.2.5 Shifu: the top Techs drawn off one discipline, private to the actor. */
+      /** V1.2.6 Shifu: the top Techs drawn off one discipline, private to the actor. */
       inspectedDiscipline?: TechniqueDiscipline;
       inspectedTechniqueIds?: TechniqueId[];
     }
@@ -369,7 +380,7 @@ export type GamePhase =
   | { type: "finished" };
 
 export interface GameState {
-  schemaVersion: 3;
+  schemaVersion: 4;
   rulesVersion: RulesVersion;
   gameId: string;
   revision: number;
@@ -476,6 +487,8 @@ export type GameAction =
       type: "USE_KILN_YARD";
       workerId: WorkerId;
       loads: KilnLoadSelection[];
+      /** Required for a Shifu when the player has any ceramic in the Shared Kiln after loading. */
+      shifuCeramicId?: CeramicId;
       kilnTendingClay?: number;
       kilnTendingWood?: number;
     }
@@ -578,6 +591,15 @@ export type GameEvent =
   | { type: "CERAMIC_SHAPED"; playerId: PlayerId; ceramicId: CeramicId; shape: Shape }
   | { type: "CERAMIC_GLAZED"; playerId: PlayerId; ceramicId: CeramicId; glaze: Glaze; decoration: Decoration }
   | { type: "CERAMIC_LOADED"; playerId: PlayerId; ceramicId: CeramicId; kilnSpaceId: KilnSpaceId | "imperial" }
+  | { type: "KILN_YARD_SHIFU_MARKED"; playerId: PlayerId; ceramicId: CeramicId }
+  | {
+      type: "KILN_YARD_SHIFU_REPOSITIONED";
+      playerId: PlayerId;
+      ceramicId: CeramicId;
+      fromSpaceId: KilnSpaceId;
+      toSpaceId: KilnSpaceId;
+    }
+  | { type: "KILN_YARD_SHIFU_REPOSITION_DECLINED"; playerId: PlayerId; ceramicId: CeramicId }
   | {
       type: "ORDER_TAKEN";
       playerId: PlayerId;
@@ -589,7 +611,7 @@ export type GameEvent =
       type: "COLOUR_SAMPLES_USED";
       playerId: PlayerId;
       deck: OrderDeck;
-      /** V1.2.5 discards every looked-at Order the player did not reserve. */
+      /** V1.2.6 discards every looked-at Order the player did not reserve. */
       discardedOrderIds: OrderId[];
       selectedOrderId: OrderId;
       reservedFromDisplay: boolean;

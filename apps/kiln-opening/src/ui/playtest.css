@@ -278,6 +278,11 @@
     background: repeating-linear-gradient(135deg, #f3f4f6 0 8px, #e5e7eb 8px 16px);
   }
 
+  .shifu-marked-row {
+    box-shadow: inset 4px 0 #a9473d;
+    background: #fff8df;
+  }
+
   .plain-technique-list,
   .workshop-ceramics ul,
   .order-slots,

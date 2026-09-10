@@ -11,7 +11,7 @@ import { PlaytestFormPage } from "../../src/ui/PlaytestFormPage.tsx";
 import migration from "../../supabase/migrations/202609050001_playtest_submissions.sql?raw";
 import roundDetailsMigration from "../../supabase/migrations/202609060001_playtest_round_details.sql?raw";
 import resetMigration from "../../supabase/migrations/202609070001_reset_playtest_records.sql?raw";
-import v125PlaytestMigration from "../../supabase/migrations/202609090002_playtest_v125.sql?raw";
+import v126PlaytestMigration from "../../supabase/migrations/202609100002_playtest_v126.sql?raw";
 import edgeFunction from "../../supabase/functions/playtest-submit/index.ts?raw";
 
 function validCandidate(): unknown {
@@ -59,7 +59,7 @@ function validCandidate(): unknown {
   return submissionCandidate(draft);
 }
 
-describe("V1.2.5 playtest form", () => {
+describe("V1.2.6 playtest form", () => {
   it("accepts the concise setup, firing, and end-game metrics", () => {
     const result = validatePlaytestSubmission(validCandidate());
     expect(result.ok).toBe(true);
@@ -72,7 +72,7 @@ describe("V1.2.5 playtest form", () => {
     expect(result.value.players[0]!.coinsRemaining).toBe(4);
     expect(result.value.rounds).toHaveLength(5);
     expect(result.value.rounds[0]!.players[0]!.contribution).toBe("stoke");
-    expect(result.value.rulesVersion).toBe("1.2.5");
+    expect(result.value.rulesVersion).toBe("1.2.6");
     expect(result.value.formVersion).toBe(2);
   });
 
@@ -207,7 +207,7 @@ describe("V1.2.5 playtest form", () => {
     expect(roundDetailsMigration).toContain("add column if not exists recognition_vp smallint");
     expect(roundDetailsMigration).toContain("generated always as");
     expect(roundDetailsMigration).toContain("player.recognition_vp");
-    expect(v125PlaytestMigration).toContain("when submission.rules_version = '1.2.5' and player.recognition = 4 then 6");
+    expect(v126PlaytestMigration).toContain("when submission.rules_version in ('1.2.5', '1.2.6') and player.recognition = 4 then 6");
   });
 
   it("renders no editable Game ID field and explains backend assignment", () => {
@@ -233,9 +233,9 @@ describe("V1.2.5 playtest form", () => {
     expect(migration).toContain("create or replace view private.playtest_order_log");
     expect(migration).toContain("create or replace view private.playtest_firing_log");
     expect(roundDetailsMigration).toContain("create or replace view private.playtest_firing_player_log");
-    expect(v125PlaytestMigration).toContain("coalesce(p_payload->>'rulesVersion', '') <> '1.2.5'");
-    expect(v125PlaytestMigration).toContain("v_form_version <> 2");
-    expect(v125PlaytestMigration).toContain("advanced_tech_vp");
+    expect(v126PlaytestMigration).toContain("coalesce(p_payload->>'rulesVersion', '') <> '1.2.6'");
+    expect(v126PlaytestMigration).toContain("v_form_version <> 2");
+    expect(v126PlaytestMigration).toContain("advanced_tech_vp");
     expect(resetMigration).toContain("truncate table private.playtest_submissions cascade");
     expect(resetMigration).toContain("alter sequence private.playtest_game_number_seq restart with 1");
     expect(resetMigration).toContain("drop column if exists shifu_reposition_used");

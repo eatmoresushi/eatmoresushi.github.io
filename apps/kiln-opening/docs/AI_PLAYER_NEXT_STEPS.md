@@ -8,8 +8,8 @@
 > historical record of how a study was produced, not a command you can run. The study outputs
 > themselves remain under `playtests/`, and the code is recoverable from git history.
 
-> Current online rules compatibility: **V1.2.5**. The production online policy is
-> `rules-v1.2.5-heuristic-001`; every action is validated and applied by the V1.2.5 engine.
+> Current online rules compatibility: **V1.2.6**. The production online policy is
+> `rules-v1.2.6-heuristic-001`; every action is validated and applied by the V1.2.6 engine.
 > It has deterministic 2/3/4-player full-game completion coverage but no claim of
 > human-calibrated strength. Do not overwrite or relabel historical datasets.
 >

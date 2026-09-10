@@ -32,8 +32,8 @@
     "nameZh": "定窑",
     "abilityName": "Moulded Production",
     "abilityNameZh": "范制成器",
-    "ability": "Once per round, when resolving a Potter’s Wheel action, after you form a Bowl, Plate or Brush Washer, you may form one additional vessel of the same Shape at no Clay cost. This additional vessel does not count against that action's normal vessel limit.",
-    "abilityZh": "每轮一次，在结算陶车坊行动时，当你成型一个碗、盘或笔洗后，可以额外成型1件相同器型，无需支付泥。这件额外器物不计入该行动原本的成型数量上限。"
+    "ability": "Once per round, when resolving a Potter’s Wheel action, after you form a Bowl, Plate or Brush Washer, you may pay 1 Clay to form one additional vessel of the same Shape. This additional vessel does not count as one of the vessels formed by the worker effect.",
+    "abilityZh": "每轮一次，在结算陶车坊行动时，当你成型一个碗、盘或笔洗后，可以额外支付1泥，再成型1件相同器物。该额外器物不计入该工人效果所形成的器物数量。"
   },
   {
     "id": "JU",

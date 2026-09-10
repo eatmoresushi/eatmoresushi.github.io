@@ -6,7 +6,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
-RULES_VERSION = "1.2.5"
+RULES_VERSION = "1.2.6"
 errors: list[str] = []
 
 
@@ -61,7 +61,7 @@ expected_locations = {
     "labour": {"2": None, "3": None, "4": None},
 }
 locations = {location["id"]: location for location in actions["locations"]}
-check(set(locations) == set(expected_locations), "Expected exactly the seven V1.2.5 action locations")
+check(set(locations) == set(expected_locations), "Expected exactly the seven V1.2.6 action locations")
 for location_id, capacity in expected_locations.items():
     location = locations.get(location_id, {})
     check(location.get("capacity") == capacity, f"{location_id} capacity mismatch")
@@ -108,7 +108,8 @@ kiln_by_id = {kiln["id"]: kiln for kiln in kilns}
 check("gain 4 VP" in kiln_by_id["RU"]["ability"], "Ru must award 4 VP")
 check("2 Coins and 1 VP" in kiln_by_id["GU"]["ability"], "Guan must pay 2 Coins and 1 VP")
 check("waive" not in kiln_by_id["GU"]["ability"].lower() and "ignore" not in kiln_by_id["GU"]["ability"].lower(), "Guan waives no Decoration requirement")
-check("at no Clay cost" in kiln_by_id["DI"]["ability"], "Ding's additional vessel must be free")
+check("pay 1 Clay" in kiln_by_id["DI"]["ability"], "Ding's additional vessel must cost exactly 1 Clay")
+check("at no Clay cost" not in kiln_by_id["DI"]["ability"], "Ding must not retain the obsolete free-vessel wording")
 check("pay 1 Wood" in kiln_by_id["JU"]["ability"], "Jun must cost 1 Wood")
 
 track = recognition["track"]
@@ -133,17 +134,17 @@ check("discard the three leftmost" in rounds["phases"][0]["summary"] and "refill
 check(assets["orderCards"].get("total") == 64 and assets["orderCards"].get("main") == 48 and assets["orderCards"].get("starting") == 16, "Order asset counts mismatch")
 check(assets["playerReference"].get("mustShowFiveCardMainOrderDisplay") is True, "Reference asset must show a five-card Main Order display")
 
-adopted_rules = (ROOT / "docs" / "KILN_OPENING_v1.2.5_EN_SOURCE.md").read_text(encoding="utf-8")
+adopted_rules = (ROOT / "docs" / "KILN_OPENING_v1.2.6_EN_SOURCE.md").read_text(encoding="utf-8")
 for required in (
     "reveal **5 face-up Main Orders**",
     "Discard the **3 leftmost face-up Main Orders**",
     "Multiple Shifu may overfill the same location.",
-    "After Contributions are revealed and Base Heat is determined",
+    "the ceramic that has the Shifu worker",
     "before or after your worker action",
     "reserve the **top card of the Main Order deck without looking at it first**",
     "same Base Heat and kiln position",
     "gain **2 Coins and 1 VP**",
-    "at no Clay cost",
+    "pay 1 Clay",
     "look at the top 2 Techs of that deck",
     "+3 VP if the 3 have **3 different Shapes**",
     "**1 VP per 3 Coins remaining**",
@@ -152,12 +153,12 @@ for required in (
     check(required in adopted_rules, f"Adopted rulebook is missing: {required}")
 
 if errors:
-    print("V1.2.5 HANDOFF VALIDATION FAILED")
+    print("V1.2.6 HANDOFF VALIDATION FAILED")
     for item in errors:
         print(f"- {item}")
     sys.exit(1)
 
-print("V1.2.5 HANDOFF VALIDATION PASSED")
+print("V1.2.6 HANDOFF VALIDATION PASSED")
 print("Rules/data: 2-4 players, 5 rounds, 1 Shifu + 3 Apprentices, seven shared locations.")
 print("Orders: 16 Starting + 48 Main; five-card market rotates its three leftmost cards.")
 print("Tech: 4 Starting + 15 Advanced; Fuel Ledger and Second Firing match owner rulings.")

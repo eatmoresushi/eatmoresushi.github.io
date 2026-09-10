@@ -1,6 +1,6 @@
-# IMPLEMENTATION_DECISIONS.md — V1.2.5
+# IMPLEMENTATION_DECISIONS.md — V1.2.6
 
-These are digital-flow decisions and implementation notes only. `docs/KILN_OPENING_v1.2.5_EN_SOURCE.md` is authoritative for mechanics and `docs/KILN_OPENING_v1.2.5_ZH_SOURCE.md` is authoritative for Simplified Chinese. Source checksums and the owner's shared-location clarification are recorded in `docs/RULEBOOK_AUDIT_V1.2.5.md`.
+These are digital-flow decisions and implementation notes only. `docs/KILN_OPENING_v1.2.6_EN_SOURCE.md` is authoritative for mechanics and `docs/KILN_OPENING_v1.2.6_ZH_SOURCE.md` is authoritative for Simplified Chinese. Source checksums and the owner's shared-location clarification are recorded in `docs/RULEBOOK_AUDIT_V1.2.6.md`.
 
 ## Setup and shared action locations
 
@@ -30,9 +30,10 @@ These are digital-flow decisions and implementation notes only. `docs/KILN_OPENI
 - A Tech effect is not a worker action and does not trigger effects requiring that worker action unless its text explicitly says so.
 - The Advanced-Tech limit is two; Starting Tech does not count toward it. Every owned Advanced Tech scores 1 VP at game end.
 - Once-per-round Tech use is stored independently per Tech and readied at round start.
-- Prepared Clay forms during the Materials Yard action for one more Clay than the chosen Shape's normal cost.
+- Prepared Clay forms during the Materials Yard action for one more Clay than the chosen Shape's Clay cost.
 - White Slip changes one vessel formed during that Potter's Wheel action to White Glaze and Plain Decoration; the player pays the Plain Decoration cost.
-- Drying Frames applies any Glaze and any Decoration to one vessel just formed, paying that Decoration's normal cost.
+- Drying Frames applies any Glaze and any Decoration to one vessel just formed, paying that Decoration's cost.
+- Ding's optional additional Bowl, Plate or Brush Washer is outside the worker effect's vessel count and pays its own 1 Clay after the Shifu two-vessel discount is calculated. It remains a vessel formed during the Potter's Wheel action for effects such as Standardised Moulds.
 - Reworking Table changes one shaped vessel being glazed to any other Shape without an added Clay payment or refund.
 - Fuel Ledger is selected as a secret upgraded contribution, not as a public post-reveal prompt: Bank −2 or Stoke +2 costs 2 Wood total.
 - Second Firing resolves in the after-Quality window for one Flawed or Standard ceramic. It reveals an additional Fire card, replaces that ceramic's Quality even if worse, and permits relevant unused once-per-round firing abilities at their normal recalculation timing.
@@ -43,7 +44,8 @@ These are digital-flow decisions and implementation notes only. `docs/KILN_OPENI
 - Test Pieces resolves before Contributions. Contribution choices are private server-side until every eligible contributor submits; public state exposes submission status only.
 - A Fuel Ledger submission stores the base Bank/Stoke card and extra-Wood commitment privately. The server validates ownership and 2-Wood affordability both when submitted and atomically when revealed.
 - Base Heat starts at 2, applies all final Contribution modifiers, then clamps to 0–5. Global and Actual Heat are not clamped.
-- After Base Heat is fixed and before Fire is revealed, players who used a Kiln Yard Shifu resolve in First Player order. Each may move one owned Shared-Kiln ceramic to an empty active space in a neighbouring zone only: High ↔ Middle ↔ Low. It cannot move into or out of an Imperial Kiln.
+- A Kiln Yard Shifu with at least one owned Shared-Kiln ceramic after loading must commit exactly one such ceramic during that Work-Phase action. The target is stored in authoritative state and made public immediately. A Shifu that loads only into the Imperial Kiln while owning no Shared-Kiln ceramic stores no target.
+- After Base Heat is fixed and before Fire is revealed, marked Shifu targets resolve in First Player order. Each may move only its previously marked ceramic to an empty active space in a neighbouring zone: High ↔ Middle ↔ Low. It cannot move into or out of an Imperial Kiln. The association clears after that player moves or declines, while the worker remains used until Cleanup.
 - The private Imperial Kiln is a one-ceramic space with no zone modifier. It participates in the shared firing and Contribution eligibility but is not a Shared-Kiln space.
 - Imperial Priority is a separate once-per-game timing choice before or after its owner's worker action. It loads one unloaded Glazed ceramic into the owner's empty Imperial Kiln and is not part of Kiln Yard's normal load allowance.
 - Kiln Furniture's zero-zone choice stays attached to that ceramic for the current firing, follows a legal Shifu reposition, and remains applicable to an immediate Second Firing.
@@ -67,4 +69,4 @@ English and Simplified Chinese UI text are presentation layers over identical st
 
 ## Saved-game compatibility
 
-V1.2.5 changes action-location ownership and occupancy, Tech effects, Recognition, firing timing and scoring state. New rooms use the V1.2.5 save schema and rules fingerprint. The live service rejects started rooms, snapshots and commands with an older rules version, schema or fingerprint rather than attempting an unsafe translation.
+V1.2.6 adds an authoritative Work-Phase Shifu-to-ceramic association and changes Ding's Clay payment. New rooms use the V1.2.6 save schema and rules fingerprint. The live service rejects started rooms, snapshots and commands with an older rules version, schema or fingerprint rather than attempting an unsafe translation.

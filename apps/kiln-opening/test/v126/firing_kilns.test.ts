@@ -56,11 +56,12 @@ function firingContext(ceramicResults: Record<string, FiringCeramicResult>): Fir
     baseHeat: 2,
     fireModifier: 0,
     globalHeat: 2,
+    kilnYardShifuRepositions: [],
     ceramicResults,
   };
 }
 
-describe("V1.2.5 firing, Tech timing, and Kiln Traditions", () => {
+describe("V1.2.6 firing, Tech timing, and Kiln Traditions", () => {
   it("skips the Firing Phase without revealing a Fire card when no ceramic is loaded", () => {
     const { state: initial, rng } = startedGame(2, 1400);
     let state = structuredClone(initial);
@@ -205,6 +206,8 @@ describe("V1.2.5 firing, Tech timing, and Kiln Traditions", () => {
     shifu.status = "placed";
     shifu.locationId = "kiln_yard";
     state.actionBoard.placements.kiln_yard.push(shifu.id);
+    state.players["P1"]!.kilnYardShifuUsedThisRound = true;
+    state.players["P1"]!.kilnYardShifuCeramicId = shared.id;
     state.players["P1"]!.kilnId = "RU";
     state.fireDeck = [0];
 
@@ -224,7 +227,7 @@ describe("V1.2.5 firing, Tech timing, and Kiln Traditions", () => {
     expect(state.firingContext?.baseHeat).toBe(2);
     expect(state.firingContext?.fireModifier).toBeNull();
 
-    expectError(applyAction(state, "P1", { type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: imperial.id, toSpaceId: "low_1" }, rng), "ILLEGAL_CERAMIC_STAGE");
+    expectError(applyAction(state, "P1", { type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: imperial.id, toSpaceId: "low_1" }, rng), "INVALID_SELECTION");
     expectError(applyAction(state, "P1", { type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: shared.id, toSpaceId: "low_1" }, rng), "INVALID_SELECTION");
     const moved = mustResult(state, "P1", { type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: shared.id, toSpaceId: "middle_1" }, rng);
     state = moved.state;

@@ -17,7 +17,7 @@ import type { StoredSeat } from "../../src/multiplayer/types.ts";
 function computerSeat(playerId: string, seatIndex: number, seed: number): StoredSeat {
   return {
     seatId: `seat-${playerId}`,
-    roomId: "ai-v125",
+    roomId: "ai-v126",
     playerId,
     seatIndex,
     displayName: `Computer ${seatIndex + 1}`,
@@ -40,7 +40,7 @@ async function playComputerGame(playerCount: PlayerCount, seed: number): Promise
     computerSeat(`P${index + 1}`, index, seed + index * 17),
   );
   const created = createGame({
-    gameId: `ai-v125-${playerCount}-${seed}`,
+    gameId: `ai-v126-${playerCount}-${seed}`,
     players: seats.map((seat) => ({ id: seat.playerId, displayName: seat.displayName })),
   }, rng);
   if (!created.ok) throw new Error(created.error.message);
@@ -86,7 +86,7 @@ async function playComputerGame(playerCount: PlayerCount, seed: number): Promise
   return { state, actionCount };
 }
 
-describe("V1.2.5 online computer policy", () => {
+describe("V1.2.6 online computer policy", () => {
   for (const playerCount of [2, 3, 4] as const) {
     it(`completes a legal five-round ${playerCount}-player game`, async () => {
       const { state, actionCount } = await playComputerGame(playerCount, 1_220 + playerCount);

@@ -71,6 +71,7 @@ function makePlayer(input: CreateGameInput["players"][number], seatIndex: number
     passedWorkPhase: false,
     kilnAbilityUsedThisRound: false,
     kilnYardShifuUsedThisRound: false,
+    kilnYardShifuCeramicId: null,
     shapesFormedThisRound: [],
     presentationCeramicIds: [],
     presentationFeaturedCeramicIds: [],
@@ -175,7 +176,7 @@ export function createGame(input: CreateGameInput, rng: RandomSource): CreateGam
   };
 
   const state: GameState = {
-    schemaVersion: 3,
+    schemaVersion: 4,
     rulesVersion: GAME_CONFIG.rulesVersion,
     gameId: input.gameId,
     revision: 0,

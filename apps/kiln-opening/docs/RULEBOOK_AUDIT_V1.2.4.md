@@ -1,6 +1,6 @@
 # KILN OPENING V1.2.4 rulebook audit
 
-> Historical audit only. V1.2.5 is current; use `KILN_OPENING_v1.2.5_EN_SOURCE.md` for mechanics, `KILN_OPENING_v1.2.5_ZH_SOURCE.md` for Chinese localization, and `RULEBOOK_AUDIT_V1.2.5.md` for the adoption record.
+> Historical audit only. V1.2.6 is current; use `KILN_OPENING_v1.2.6_EN_SOURCE.md` for mechanics, `KILN_OPENING_v1.2.6_ZH_SOURCE.md` for Chinese localization, and `RULEBOOK_AUDIT_V1.2.6.md` for the adoption record.
 
 ## Authority
 

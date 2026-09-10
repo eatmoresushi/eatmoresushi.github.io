@@ -320,8 +320,11 @@ button.visual-order-card:hover { z-index: 3; transform: translateY(-5px) scale(1
   transform: translate(-50%, -50%);
 }
 .visual-kiln-slot.is-occupied { border-color: rgb(255 240 201 / 70%); background: rgb(34 20 13 / 42%); box-shadow: 0 0 15px rgb(255 131 52 / 28%); }
+.visual-kiln-slot.is-shifu-marked { border-style: solid; border-color: #ffe083; box-shadow: 0 0 0 2px rgb(137 48 33 / 78%), 0 0 18px rgb(255 216 93 / 72%); }
 .visual-kiln-slot.is-covered { display: grid; place-items: center; border-color: rgb(245 224 178 / 60%); color: #f1dfb9; background: repeating-linear-gradient(45deg, rgb(42 30 22 / 92%) 0 6px, rgb(109 87 58 / 92%) 6px 12px); font-size: .48rem; text-transform: uppercase; }
 .visual-kiln-slot .tabletop-ceramic { width: 94%; }
+.kiln-shifu-marker { position: absolute; z-index: 3; right: -44%; bottom: -38%; display: grid; width: 70%; place-items: center; pointer-events: none; }
+.kiln-shifu-marker .tabletop-meeple { width: 100%; min-width: 0; filter: drop-shadow(0 0 4px #ffe083) drop-shadow(0 3px 2px rgb(0 0 0 / 55%)); }
 
 .tabletop-ceramic {
   position: relative;

@@ -8,9 +8,9 @@
 > historical record of how a study was produced, not a command you can run. The study outputs
 > themselves remain under `playtests/`, and the code is recoverable from git history.
 
-## V1.2.5 online status
+## V1.2.6 online status
 
-The authoritative engine, public projection and online computer player use V1.2.5. The current deterministic online policy is `rules-v1.2.5-heuristic-001`; it handles the four-card Starting Order choice, Starting Tech selection, seven shared action locations and global capacity, the five-card Main Order market, Crown-driven Recognition 0–4, Imperial Kiln/Priority, current Tech and firing timing windows, and sealed Fuel Ledger choices. Automated full-game tests exercise legal five-round games at 2, 3 and 4 players. Older Selfplay-003 through Selfplay-006 studies below are historical methodology and evidence only; their policies and measurements are not current V1.2.5 balance evidence.
+The authoritative engine, public projection and online computer player use V1.2.6. The current deterministic online policy is `rules-v1.2.6-heuristic-001`; it handles the four-card Starting Order choice, Starting Tech selection, seven shared action locations and global capacity, the five-card Main Order market, Crown-driven Recognition 0–4, Imperial Kiln/Priority, current Tech and firing timing windows, and sealed Fuel Ledger choices. Automated full-game tests exercise legal five-round games at 2, 3 and 4 players. Older Selfplay-003 through Selfplay-006 studies below are historical methodology and evidence only; their policies and measurements are not current V1.2.6 balance evidence.
 
 ## Selfplay-005 public-belief rollout candidate
 
@@ -51,8 +51,8 @@ The V004 promotion pipeline is:
 4. run fresh matched baseline/candidate pairs with candidate seats rotated;
 5. promote only if legality, coverage, latency, completed-Order, mean-VP, and paired-confidence gates all pass.
 
-Current production rules version: V1.2.5
-Current production AI policy: `rules-v1.2.5-heuristic-001`
+Current production rules version: V1.2.6
+Current production AI policy: `rules-v1.2.6-heuristic-001`
 
 ## Boundaries
 

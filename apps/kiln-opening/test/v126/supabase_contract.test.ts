@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
-import migration from "../../supabase/migrations/202609090001_v125_rules.sql?raw";
+import migration from "../../supabase/migrations/202609100001_v126_rules.sql?raw";
 import supabaseStore from "../../supabase/functions/_shared/supabaseStore.ts?raw";
 
-describe("V1.2.5 Supabase contract", () => {
+describe("V1.2.6 Supabase contract", () => {
   it("stamps new rooms and rejects old save schemas at both commit boundaries", () => {
-    expect(migration).toContain("'1.2.5', '1.2.5', 0, p_content_digest");
-    expect(migration).toContain("coalesce((p_state->>'schemaVersion')::integer, -1) <> 3");
-    expect(migration).toContain("coalesce((p_public_state->>'schemaVersion')::integer, -1) <> 3");
-    expect(migration).toContain("coalesce(p_next_state->>'rulesVersion', '') <> '1.2.5'");
-    expect(migration).toContain("!~ '^r13-[0-9a-f]{16}$'");
-    expect(migration).not.toMatch(/update public\.rooms[\s\S]{0,240}set rules_version = '1\.2\.5'/);
+    expect(migration).toContain("'1.2.6', '1.2.6', 0, p_content_digest");
+    expect(migration).toContain("coalesce((p_state->>'schemaVersion')::integer, -1) <> 4");
+    expect(migration).toContain("coalesce((p_public_state->>'schemaVersion')::integer, -1) <> 4");
+    expect(migration).toContain("coalesce(p_next_state->>'rulesVersion', '') <> '1.2.6'");
+    expect(migration).toContain("!~ '^r14-[0-9a-f]{16}$'");
+    expect(migration).not.toMatch(/update public\.rooms[\s\S]{0,240}set rules_version = '1\.2\.6'/);
   });
 
   it("stores the Fuel Ledger commitment only in the private schema until reveal", () => {
@@ -23,11 +23,11 @@ describe("V1.2.5 Supabase contract", () => {
   });
 
   it("installs the current computer policy and keeps the function service-role-only", () => {
-    expect(migration).toContain("'rules-v1.2.5-heuristic-001'");
+    expect(migration).toContain("'rules-v1.2.6-heuristic-001'");
     expect(migration).toContain("create or replace function public.server_add_computer_seat");
-    expect(migration).toContain("v_room.rules_version <> '1.2.5'");
+    expect(migration).toContain("v_room.rules_version <> '1.2.6'");
     expect(migration).toContain(
-      "p_seat_id, p_room_id, 'rules-v1.2.5-heuristic-001', p_ai_seed, p_command_id",
+      "p_seat_id, p_room_id, 'rules-v1.2.6-heuristic-001', p_ai_seed, p_command_id",
     );
     expect(migration).toContain(
       "revoke all on function public.server_add_computer_seat(uuid, uuid, uuid, text, bigint, uuid) from public, anon, authenticated",

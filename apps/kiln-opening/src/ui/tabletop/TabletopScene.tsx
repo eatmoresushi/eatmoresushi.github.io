@@ -145,6 +145,10 @@ export function TabletopScene({
                   {placements.map((workerId) => {
                     const located = findWorker(game, workerId);
                     if (located === null) return null;
+                    const shifuIsOnCeramic = locationId === "kiln_yard"
+                      && located.worker.kind === "shifu"
+                      && located.player.kilnYardShifuCeramicId !== null;
+                    if (shifuIsOnCeramic) return null;
                     return (
                       <Meeple
                         key={workerId}
@@ -172,19 +176,22 @@ export function TabletopScene({
             const point = KILN_SLOT_POINTS[spaceId];
             const ceramic = Object.values(game.ceramics).find((candidate) => candidate.stage === "loaded" && candidate.kilnSpaceId === spaceId);
             const active = activeKilnSpaceIds(game.playerCount).includes(spaceId);
+            const owner = ceramic === undefined ? undefined : game.players[ceramic.ownerId];
+            const shifuMarked = ceramic !== undefined && owner?.kilnYardShifuCeramicId === ceramic.id;
             return (
               <span
-                className={`visual-kiln-slot ${active ? ceramic === undefined ? "is-empty" : "is-occupied" : "is-covered"}`}
+                className={`visual-kiln-slot ${active ? ceramic === undefined ? "is-empty" : "is-occupied" : "is-covered"} ${shifuMarked ? "is-shifu-marked" : ""}`}
                 style={{ left: `${point.x * 100}%`, top: `${point.y * 100}%` }}
                 data-kiln-space={spaceId}
                 aria-label={!active
                   ? locale === "zh-CN" ? `${term(spaceId)}在${game.playerCount}人游戏中被遮盖` : `${term(spaceId)} covered for ${game.playerCount} players`
                   : ceramic === undefined
                     ? locale === "zh-CN" ? `${term(spaceId)}为空` : `${term(spaceId)} empty`
-                    : locale === "zh-CN" ? `${term(spaceId)}已有${term(ceramic.shape)}器物` : `${term(spaceId)} occupied by ${term(ceramic.shape)} ceramic`}
+                    : locale === "zh-CN" ? `${term(spaceId)}已有${term(ceramic.shape)}器物${shifuMarked ? "，师傅位于此陶瓷" : ""}` : `${term(spaceId)} occupied by ${term(ceramic.shape)} ceramic${shifuMarked ? ", marked by its Shifu" : ""}`}
                 key={spaceId}
               >
                 {!active ? <b aria-hidden="true">{locale === "zh-CN" ? "遮盖" : "Covered"}</b> : ceramic !== undefined && <CeramicPiece ceramic={ceramic} compact />}
+                {shifuMarked && owner !== undefined && <span className="kiln-shifu-marker"><Meeple kind="shifu" seatIndex={owner.seatIndex} status="placed" label={locale === "zh-CN" ? `${owner.displayName}的师傅位于此陶瓷` : `${owner.displayName}'s Shifu is on this ceramic`} /></span>}
               </span>
             );
           })}

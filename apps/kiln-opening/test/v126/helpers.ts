@@ -72,7 +72,7 @@ export function expectError(result: ApplyResult, code: string): void {
 export function createdGame(playerCount: PlayerCount, seed = 122): StartedGame {
   const rng = new SeededRandom(seed);
   const result = createGame(
-    { gameId: `v125-${playerCount}-${seed}`, players: playerInputs(playerCount) },
+    { gameId: `v126-${playerCount}-${seed}`, players: playerInputs(playerCount) },
     rng,
   );
   if (!result.ok) throw new Error(result.error.message);

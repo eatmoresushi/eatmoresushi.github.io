@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.2.5",
+  "rulesVersion": "1.2.6",
   "locations": [
     {
       "id": "materials_yard",
@@ -23,8 +23,8 @@
       "nameZh": "陶车坊",
       "apprentice": "Pay the Clay cost to form 1 vessel.",
       "apprenticeZh": "支付泥费用，成型1件器物。",
-      "shifu": "Form up to 2 vessels. If you form 2, reduce their total Clay cost by 1.",
-      "shifuZh": "成型至多2件器物。若成型2件，其总泥费用减1。",
+      "shifu": "Form 1 or 2 vessels. If you form 2 vessels using this Shifu effect, reduce their total Clay cost by 1. Ding's additional vessel is paid for separately and does not count toward the Shifu Potter’s Wheel discount.",
+      "shifuZh": "成型最多2件器物。若成型2件，则这2件器物所需的泥总数减少1。",
       "capacity": {
         "2": 2,
         "3": 3,
@@ -53,8 +53,8 @@
       "nameZh": "窑坊",
       "apprentice": "Load 1.",
       "apprenticeZh": "装窑1件。",
-      "shifu": "Load up to 2 ceramics. After Contributions are revealed and Base Heat is determined, but before the Fire card is revealed, you may move 1 of your ceramics in the Shared Kiln to an empty active space in a neighbouring heat zone (High ↔ Middle ↔ Low).",
-      "shifuZh": "装窑最多2件。控火牌公开并确定基础火候后、但在翻开窑火牌前，你可以将自己在共窑中的1件陶瓷移到相邻温区的一个空置有效窑位（高 ↔ 中 ↔ 低）。",
+      "shifu": "Load up to 2 ceramics. If you have at least 1 ceramic in the Shared Kiln, place your Shifu on 1 of your ceramics in the Shared Kiln. After Contributions are revealed and Base Heat is determined, but before the Fire card is revealed, you may move that ceramic to an empty active space in a neighbouring heat zone.",
+      "shifuZh": "装窑至多2件陶瓷。若你的共窑中至少有1件己方陶瓷，将师傅放在其中1件上。控火牌揭示并确定基础火候后、火牌揭示前，你可以将该陶瓷移动至相邻火候区（高 ↔ 中 ↔ 低）中的一个空置有效窑位。",
       "capacity": {
         "2": null,
         "3": null,

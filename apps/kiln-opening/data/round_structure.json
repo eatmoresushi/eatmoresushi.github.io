@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.2.5",
+  "rulesVersion": "1.2.6",
   "roundCount": 5,
   "phases": [
     {
@@ -18,7 +18,7 @@
       "order": 3,
       "id": "firing",
       "name": "Firing Phase",
-      "summary": "If either Shared or Imperial Kiln contains ceramics, resolve Test Pieces, secret Contributions (including secret Fuel Ledger commitments), Base Heat, Kiln Yard Shifu neighbouring-zone repositions in First Player order, Fire, Actual Heat, Kiln abilities, Quality, player-ordered after-Quality Techs and the optional 2-Coin discard of one still-Flawed ceramic per player."
+      "summary": "If either Shared or Imperial Kiln contains ceramics, resolve Test Pieces, secret Contributions (including secret Fuel Ledger commitments), Base Heat, each Kiln Yard Shifu's previously marked ceramic in First Player order, Fire, Actual Heat, Kiln abilities, Quality, player-ordered after-Quality Techs and the optional 2-Coin discard of one still-Flawed ceramic per player."
     },
     {
       "order": 4,

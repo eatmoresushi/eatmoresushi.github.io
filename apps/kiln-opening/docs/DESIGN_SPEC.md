@@ -26,7 +26,7 @@ Do not add digital conveniences that remove this inference.
 
 ### 2. Controlled uncertainty, not chaos
 
-The V1.2.5 Fire deck contains -2/-1/0/+1/+2 in a 1/3/4/3/1 distribution. Zero is the most common result and the negative and positive sides are symmetric.
+The V1.2.6 Fire deck contains -2/-1/0/+1/+2 in a 1/3/4/3/1 distribution. Zero is the most common result and the negative and positive sides are symmetric.
 
 The larger strategic uncertainty comes from other players' secret Bank, Tend, or Stoke Contribution choices, including Fuel Ledger's upgraded −2/+2 commitments. Wood costs are paid only after every eligible contributor has committed and the choices are revealed together. Base Heat starts at 2, applies all Contributions and clamps to 0–5; planning, zone choice and abilities remain the tools for managing uncapped Global and Actual Heat.
 
@@ -65,7 +65,7 @@ A player may own at most 2 Advanced Techs. They modify actions and production bu
 
 The Shifu should be stronger than an Apprentice, but technical mastery should live in Kiln Traditions and Techniques.
 
-At the Kiln Yard, the Shifu may load up to two ceramics and later reposition one owned Shared-Kiln ceramic after Base Heat is known but before Fire is revealed. The move is limited to an empty active space in a neighbouring heat zone. Imperial Priority is a separate once-per-game load into the owner's empty Imperial Kiln before or after a worker action.
+At the Kiln Yard, the Shifu may load up to two ceramics and, if the player has an owned Shared-Kiln ceramic after loading, is placed on exactly one of those ceramics. After Base Heat is known but before Fire is revealed, only that marked ceramic may move to an empty active space in a neighbouring heat zone. Imperial Priority is a separate once-per-game load into the owner's empty Imperial Kiln before or after a worker action.
 
 ### 6. Avoid mandatory transit resources
 
@@ -86,7 +86,7 @@ Avoid:
 
 - specialists;
 - trained/untrained worker states;
-- extra firing sub-systems beyond the concise V1.2.5 Tech and Kiln abilities.
+- extra firing sub-systems beyond the concise V1.2.6 Tech and Kiln abilities.
 
 ## Desired strategic identities
 

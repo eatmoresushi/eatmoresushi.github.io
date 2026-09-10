@@ -66,8 +66,11 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  *        capacity and Shifu may overfill. Recognition is 0-4 with Crown overflow VP,
  *        Imperial Priority works before/after any worker action, Kiln Yard Shifu moves
  *        after Base Heat to a neighbouring zone, and revised Tech timing/costs apply.
+ *  14 -- V1.2.6. A Kiln Yard Shifu commits its one Shared-Kiln ceramic during the Work
+ *        Phase and may reposition only that marked ceramic after Base Heat. Ding's separate
+ *        bonus vessel now costs 1 Clay and remains outside the Shifu vessel count.
  */
-export const RULES_BEHAVIOUR_REVISION = 13;
+export const RULES_BEHAVIOUR_REVISION = 14;
 
 /**
  * Display-only keys, excluded so that a typo fix or a translation improvement does not

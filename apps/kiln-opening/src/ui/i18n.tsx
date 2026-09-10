@@ -261,7 +261,7 @@ const ZH_CN: Record<string, string> = {
   "Second shape (Shifu only)": "第二件器型（仅师傅）",
   "None": "无",
   "Do not use": "不使用",
-  "Ding extra matching shape": "定窑额外同器型",
+  "Ding extra matching shape": "范制成器：额外同器型",
   "Form ceramics": "成型器物",
   "First ceramic": "第一件器物",
   "Second ceramic (Shifu only)": "第二件器物（仅师傅）",

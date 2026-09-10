@@ -68,7 +68,7 @@ function witnessFor(order: OrderDefinition): FinishedCeramic[] | null {
   return null;
 }
 
-describe("V1.2.5 Orders, Recognition, and scoring", () => {
+describe("V1.2.6 Orders, Recognition, and scoring", () => {
   it("has a valid independent-attribute witness for every one of the 64 Orders", () => {
     for (const order of [...STARTING_ORDERS, ...MAIN_ORDERS]) {
       expect(witnessFor(order), `${order.id}: ${order.requirements}`).not.toBeNull();
@@ -151,7 +151,7 @@ describe("V1.2.5 Orders, Recognition, and scoring", () => {
 
   it("no longer waives any Decoration requirement for Guan", () => {
     // V1.2.2 let Guan exempt one ceramic from direct and relational Decoration checks.
-    // V1.2.5 pays 2 Coins and 1 VP instead and exempts nothing, so a wrong Decoration is
+    // V1.2.6 pays 2 Coins and 1 VP instead and exempts nothing, so a wrong Decoration is
     // simply a failed Order however the workshop is decorated.
     const single = ORDER_DEFINITIONS["O19"]!;
     const wrongDecoration = ceramic("single", "censer", "grey_green", "carved", "fine");
@@ -289,7 +289,7 @@ describe("V1.2.5 Orders, Recognition, and scoring", () => {
     expect(score).toEqual({
       orders: 10,
       imperialAudience: 6,
-      // Standard 2 + Fine 3 + Masterpiece 5, then V1.2.5's +3 Shapes and +3 Glazes.
+      // Standard 2 + Fine 3 + Masterpiece 5, then V1.2.6's +3 Shapes and +3 Glazes.
       presentation: 16,
       advancedTechniques: 2,
       immediateAbilities: 5,

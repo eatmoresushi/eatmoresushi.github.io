@@ -230,9 +230,11 @@ function KilnTable({ game }: { game: PublicGameState }) {
               (candidate) => candidate.stage === "loaded" && candidate.kilnSpaceId === spaceId,
             );
             const enabled = active.has(spaceId);
+            const shifuMarked = ceramic !== undefined
+              && game.players[ceramic.ownerId]?.kilnYardShifuCeramicId === ceramic.id;
             return (
-              <tr className={enabled ? "" : "inactive-row"} key={spaceId} data-space={spaceId}>
-                <th>{spaceId}</th><td>{term(definition.zone)}</td><td>{signed(definition.modifier)}</td><td>{enabled ? t("Yes") : t("No — covered")}</td><td>{ceramic === undefined ? t("Empty") : ceramicDescription(ceramic, locale)}</td><td>{ceramic === undefined ? "—" : game.players[ceramic.ownerId]?.displayName ?? ceramic.ownerId}</td>
+              <tr className={`${enabled ? "" : "inactive-row"} ${shifuMarked ? "shifu-marked-row" : ""}`} key={spaceId} data-space={spaceId}>
+                <th>{spaceId}</th><td>{term(definition.zone)}</td><td>{signed(definition.modifier)}</td><td>{enabled ? t("Yes") : t("No — covered")}</td><td>{ceramic === undefined ? t("Empty") : `${ceramicDescription(ceramic, locale)}${shifuMarked ? locale === "zh-CN" ? " · 师傅所在陶瓷" : " · Shifu-marked" : ""}`}</td><td>{ceramic === undefined ? "—" : game.players[ceramic.ownerId]?.displayName ?? ceramic.ownerId}</td>
               </tr>
             );
           })}</tbody>
@@ -257,6 +259,7 @@ function FiringInspector({ game, context, live }: { game: PublicGameState; conte
   const latest = context ?? summary;
   const contributions = context?.contributions ?? summary?.contributions ?? {};
   const contributorCount = (context?.contributors ?? summary?.contributors ?? Object.keys(contributions)).length;
+  const shifuAdjustments = latest?.kilnYardShifuRepositions ?? [];
   return (
     <section className="playtest-panel firing-inspector" aria-labelledby="firing-inspector-title" data-testid="firing-inspector">
       <div className="playtest-panel-heading">
@@ -274,6 +277,14 @@ function FiringInspector({ game, context, live }: { game: PublicGameState; conte
             <div><dt>{t("Base Heat")}</dt><dd>{latest.baseHeat ?? "—"}</dd></div>
             <div><dt>{t("Fire modifier")}</dt><dd>{latest.fireModifier === null ? "—" : signed(latest.fireModifier)}</dd></div>
             <div><dt>{t("Global Heat")}</dt><dd>{latest.globalHeat ?? "—"}</dd></div>
+            <div><dt>{locale === "zh-CN" ? "窑坊师傅调位" : "Kiln Yard Shifu adjustments"}</dt><dd>{shifuAdjustments.length === 0
+              ? t("None.")
+              : shifuAdjustments.map((entry) => {
+                const owner = game.players[entry.playerId]?.displayName ?? entry.playerId;
+                return entry.toSpaceId === null
+                  ? locale === "zh-CN" ? `${owner}保留${entry.fromSpaceId}` : `${owner} kept ${entry.fromSpaceId}`
+                  : locale === "zh-CN" ? `${owner}：${entry.fromSpaceId} → ${entry.toSpaceId}` : `${owner}: ${entry.fromSpaceId} → ${entry.toSpaceId}`;
+              }).join(" · ")}</dd></div>
           </dl>
           {context !== null && Object.keys(context.ceramicResults).length > 0 && <div className="table-scroll">
             <table className="state-table firing-table">
