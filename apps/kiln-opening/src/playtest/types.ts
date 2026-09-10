@@ -57,7 +57,7 @@ export interface PlaytestFeedback {
 
 export interface PlaytestSubmission {
   formVersion: 2;
-  rulesVersion: "1.2.4";
+  rulesVersion: "1.2.5";
   playedOn: string;
   playerCount: 2 | 3 | 4;
   firstPlayerIndex: number;
@@ -89,7 +89,7 @@ type DraftPlayerMetrics = Omit<
 
 export interface PlaytestDraft {
   formVersion: 2;
-  rulesVersion: "1.2.4";
+  rulesVersion: "1.2.5";
   playedOn: string;
   playerCount: 2 | 3 | 4;
   firstPlayerIndex: number;

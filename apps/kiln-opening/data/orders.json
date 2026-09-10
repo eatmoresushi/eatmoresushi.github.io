@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.2.4",
+  "rulesVersion": "1.2.5",
   "starting": [
     {
       "id": "S01",
@@ -13,7 +13,7 @@
       "coins": 4,
       "crowns": 0,
       "requirements": "Bowl · any Glaze · any Decoration",
-      "requirementsZh": "碗 · 任意釉色 · 任意装饰"
+      "requirementsZh": "碗 · 任意釉 · 任意装饰"
     },
     {
       "id": "S02",
@@ -27,7 +27,7 @@
       "coins": 4,
       "crowns": 0,
       "requirements": "Plate · any Glaze · any Decoration",
-      "requirementsZh": "盘 · 任意釉色 · 任意装饰"
+      "requirementsZh": "盘 · 任意釉 · 任意装饰"
     },
     {
       "id": "S03",
@@ -41,7 +41,7 @@
       "coins": 4,
       "crowns": 0,
       "requirements": "Brush Washer · any Glaze · any Decoration",
-      "requirementsZh": "洗 · 任意釉色 · 任意装饰"
+      "requirementsZh": "笔洗 · 任意釉 · 任意装饰"
     },
     {
       "id": "S04",
@@ -55,7 +55,7 @@
       "coins": 5,
       "crowns": 0,
       "requirements": "Vase · any Glaze · any Decoration",
-      "requirementsZh": "瓶 · 任意釉色 · 任意装饰"
+      "requirementsZh": "瓶 · 任意釉 · 任意装饰"
     },
     {
       "id": "S05",
@@ -69,7 +69,7 @@
       "coins": 5,
       "crowns": 0,
       "requirements": "Censer · any Glaze · any Decoration",
-      "requirementsZh": "炉 · 任意釉色 · 任意装饰"
+      "requirementsZh": "香炉 · 任意釉 · 任意装饰"
     },
     {
       "id": "S06",
@@ -83,7 +83,7 @@
       "coins": 4,
       "crowns": 0,
       "requirements": "any Shape · White · any Decoration",
-      "requirementsZh": "任意器形 · 白釉 · 任意装饰"
+      "requirementsZh": "任意器型 · 白釉 · 任意装饰"
     },
     {
       "id": "S07",
@@ -97,7 +97,7 @@
       "coins": 4,
       "crowns": 0,
       "requirements": "any Shape · Celadon · any Decoration",
-      "requirementsZh": "任意器形 · 青釉 · 任意装饰"
+      "requirementsZh": "任意器型 · 青釉 · 任意装饰"
     },
     {
       "id": "S08",
@@ -111,7 +111,7 @@
       "coins": 4,
       "crowns": 0,
       "requirements": "any Shape · Grey-Green · any Decoration",
-      "requirementsZh": "任意器形 · 灰青釉 · 任意装饰"
+      "requirementsZh": "任意器型 · 灰青釉 · 任意装饰"
     },
     {
       "id": "S09",
@@ -125,7 +125,7 @@
       "coins": 4,
       "crowns": 0,
       "requirements": "any Shape · Moon White · any Decoration",
-      "requirementsZh": "任意器形 · 月白釉 · 任意装饰"
+      "requirementsZh": "任意器型 · 月白釉 · 任意装饰"
     },
     {
       "id": "S10",
@@ -139,7 +139,7 @@
       "coins": 4,
       "crowns": 0,
       "requirements": "any Shape · any Glaze · Plain",
-      "requirementsZh": "任意器形 · 任意釉色 · 素面"
+      "requirementsZh": "任意器型 · 任意釉 · 素面"
     },
     {
       "id": "S11",
@@ -153,7 +153,7 @@
       "coins": 4,
       "crowns": 0,
       "requirements": "any Shape · any Glaze · Carved",
-      "requirementsZh": "任意器形 · 任意釉色 · 刻花"
+      "requirementsZh": "任意器型 · 任意釉 · 刻花"
     },
     {
       "id": "S12",
@@ -167,7 +167,7 @@
       "coins": 4,
       "crowns": 0,
       "requirements": "any Shape · any Glaze · Impressed",
-      "requirementsZh": "任意器形 · 任意釉色 · 印花"
+      "requirementsZh": "任意器型 · 任意釉 · 印花"
     },
     {
       "id": "S13",
@@ -181,7 +181,7 @@
       "coins": 4,
       "crowns": 0,
       "requirements": "any Shape · any Glaze · Crackle",
-      "requirementsZh": "任意器形 · 任意釉色 · 开片"
+      "requirementsZh": "任意器型 · 任意釉 · 开片"
     },
     {
       "id": "S14",
@@ -199,7 +199,7 @@
       "coins": 3,
       "crowns": 0,
       "requirements": "Bowl, Plate or Brush Washer · any Glaze · any Decoration",
-      "requirementsZh": "碗、盘或洗 · 任意釉色 · 任意装饰"
+      "requirementsZh": "碗、盘或笔洗 · 任意釉 · 任意装饰"
     },
     {
       "id": "S15",
@@ -216,7 +216,7 @@
       "coins": 4,
       "crowns": 0,
       "requirements": "Vase or Censer · any Glaze · any Decoration",
-      "requirementsZh": "瓶或炉 · 任意釉色 · 任意装饰"
+      "requirementsZh": "瓶或香炉 · 任意釉 · 任意装饰"
     },
     {
       "id": "S16",
@@ -228,7 +228,7 @@
       "coins": 4,
       "crowns": 0,
       "requirements": "any Shape · any Glaze · any Decoration",
-      "requirementsZh": "任意器形 · 任意釉色 · 任意装饰"
+      "requirementsZh": "任意器型 · 任意釉 · 任意装饰"
     }
   ],
   "main": [
@@ -244,7 +244,7 @@
       "coins": 3,
       "crowns": 0,
       "requirements": "Bowl · any Glaze · any Decoration",
-      "requirementsZh": "碗 · 任意釉色 · 任意装饰"
+      "requirementsZh": "碗 · 任意釉 · 任意装饰"
     },
     {
       "id": "O02",
@@ -258,7 +258,7 @@
       "coins": 3,
       "crowns": 0,
       "requirements": "Plate · any Glaze · any Decoration",
-      "requirementsZh": "盘 · 任意釉色 · 任意装饰"
+      "requirementsZh": "盘 · 任意釉 · 任意装饰"
     },
     {
       "id": "O03",
@@ -272,7 +272,7 @@
       "coins": 3,
       "crowns": 0,
       "requirements": "Brush Washer · any Glaze · any Decoration",
-      "requirementsZh": "洗 · 任意釉色 · 任意装饰"
+      "requirementsZh": "笔洗 · 任意釉 · 任意装饰"
     },
     {
       "id": "O04",
@@ -302,7 +302,7 @@
       "coins": 4,
       "crowns": 0,
       "requirements": "Censer · any Glaze · Carved",
-      "requirementsZh": "炉 · 任意釉色 · 刻花"
+      "requirementsZh": "香炉 · 任意釉 · 刻花"
     },
     {
       "id": "O06",
@@ -316,7 +316,7 @@
       "coins": 3,
       "crowns": 0,
       "requirements": "any Shape · White · any Decoration",
-      "requirementsZh": "任意器形 · 白釉 · 任意装饰"
+      "requirementsZh": "任意器型 · 白釉 · 任意装饰"
     },
     {
       "id": "O07",
@@ -330,7 +330,7 @@
       "coins": 3,
       "crowns": 0,
       "requirements": "any Shape · Celadon · any Decoration",
-      "requirementsZh": "任意器形 · 青釉 · 任意装饰"
+      "requirementsZh": "任意器型 · 青釉 · 任意装饰"
     },
     {
       "id": "O08",
@@ -344,7 +344,7 @@
       "coins": 3,
       "crowns": 0,
       "requirements": "any Shape · Grey-Green · any Decoration",
-      "requirementsZh": "任意器形 · 灰青釉 · 任意装饰"
+      "requirementsZh": "任意器型 · 灰青釉 · 任意装饰"
     },
     {
       "id": "O09",
@@ -358,7 +358,7 @@
       "coins": 3,
       "crowns": 0,
       "requirements": "any Shape · Moon White · any Decoration",
-      "requirementsZh": "任意器形 · 月白釉 · 任意装饰"
+      "requirementsZh": "任意器型 · 月白釉 · 任意装饰"
     },
     {
       "id": "O10",
@@ -372,7 +372,7 @@
       "coins": 3,
       "crowns": 0,
       "requirements": "any Shape · any Glaze · Plain",
-      "requirementsZh": "任意器形 · 任意釉色 · 素面"
+      "requirementsZh": "任意器型 · 任意釉 · 素面"
     },
     {
       "id": "O11",
@@ -386,7 +386,7 @@
       "coins": 3,
       "crowns": 0,
       "requirements": "any Shape · any Glaze · Carved",
-      "requirementsZh": "任意器形 · 任意釉色 · 刻花"
+      "requirementsZh": "任意器型 · 任意釉 · 刻花"
     },
     {
       "id": "O12",
@@ -400,7 +400,7 @@
       "coins": 3,
       "crowns": 0,
       "requirements": "any Shape · any Glaze · Impressed",
-      "requirementsZh": "任意器形 · 任意釉色 · 印花"
+      "requirementsZh": "任意器型 · 任意釉 · 印花"
     },
     {
       "id": "O13",
@@ -414,7 +414,7 @@
       "coins": 3,
       "crowns": 0,
       "requirements": "any Shape · any Glaze · Crackle",
-      "requirementsZh": "任意器形 · 任意釉色 · 开片"
+      "requirementsZh": "任意器型 · 任意釉 · 开片"
     },
     {
       "id": "O14",
@@ -432,7 +432,7 @@
       "coins": 4,
       "crowns": 0,
       "requirements": "Bowl, Plate or Brush Washer · any Glaze · any Decoration",
-      "requirementsZh": "碗、盘或洗 · 任意釉色 · 任意装饰"
+      "requirementsZh": "碗、盘或笔洗 · 任意釉 · 任意装饰"
     },
     {
       "id": "O15",
@@ -449,7 +449,7 @@
       "coins": 4,
       "crowns": 0,
       "requirements": "Vase or Censer · any Glaze · any Decoration",
-      "requirementsZh": "瓶或炉 · 任意釉色 · 任意装饰"
+      "requirementsZh": "瓶或香炉 · 任意釉 · 任意装饰"
     },
     {
       "id": "O16",
@@ -461,7 +461,7 @@
       "coins": 2,
       "crowns": 0,
       "requirements": "any Shape · any Glaze · any Decoration",
-      "requirementsZh": "任意器形 · 任意釉色 · 任意装饰"
+      "requirementsZh": "任意器型 · 任意釉 · 任意装饰"
     },
     {
       "id": "O17",
@@ -477,7 +477,7 @@
       "coins": 2,
       "crowns": 1,
       "requirements": "Brush Washer · White · Crackle",
-      "requirementsZh": "洗 · 白釉 · 开片"
+      "requirementsZh": "笔洗 · 白釉 · 开片"
     },
     {
       "id": "O18",
@@ -508,7 +508,7 @@
       "coins": 2,
       "crowns": 1,
       "requirements": "Censer · Grey-Green · Impressed",
-      "requirementsZh": "炉 · 灰青釉 · 印花"
+      "requirementsZh": "香炉 · 灰青釉 · 印花"
     },
     {
       "id": "O20",
@@ -555,7 +555,7 @@
       "coins": 1,
       "crowns": 1,
       "requirements": "any Shape · Celadon · Plain",
-      "requirementsZh": "任意器形 · 青釉 · 素面"
+      "requirementsZh": "任意器型 · 青釉 · 素面"
     },
     {
       "id": "O23",
@@ -585,7 +585,7 @@
       "coins": 1,
       "crowns": 1,
       "requirements": "any Shape · Moon White · any Decoration",
-      "requirementsZh": "任意器形 · 月白釉 · 任意装饰"
+      "requirementsZh": "任意器型 · 月白釉 · 任意装饰"
     },
     {
       "id": "O25",
@@ -607,7 +607,7 @@
       "coins": 5,
       "crowns": 0,
       "requirements": "2 different Shapes; any Glazes; any Decorations",
-      "requirementsZh": "2种不同器形；任意釉色；任意装饰"
+      "requirementsZh": "2 种不同器型；任意釉；任意装饰"
     },
     {
       "id": "O26",
@@ -633,7 +633,7 @@
       "coins": 5,
       "crowns": 0,
       "requirements": "Bowl + Plate; same Glaze; any Decorations",
-      "requirementsZh": "碗+盘；相同釉色；任意装饰"
+      "requirementsZh": "碗 + 盘；相同釉；任意装饰"
     },
     {
       "id": "O27",
@@ -659,7 +659,7 @@
       "coins": 5,
       "crowns": 0,
       "requirements": "Brush Washer + Vase; different Glazes; any Decorations",
-      "requirementsZh": "洗+瓶；不同釉色；任意装饰"
+      "requirementsZh": "笔洗 + 瓶；不同釉；任意装饰"
     },
     {
       "id": "O28",
@@ -688,7 +688,7 @@
       "coins": 5,
       "crowns": 0,
       "requirements": "2 ceramics of the same Shape; different Glazes; any Decorations",
-      "requirementsZh": "2件相同器形；不同釉色；任意装饰"
+      "requirementsZh": "2 件相同器型；不同釉；任意装饰"
     },
     {
       "id": "O29",
@@ -714,7 +714,7 @@
       "coins": 5,
       "crowns": 0,
       "requirements": "Vase + Censer; any Glazes; different Decorations",
-      "requirementsZh": "瓶+炉；任意釉色；不同装饰"
+      "requirementsZh": "瓶 + 香炉；任意釉；不同装饰"
     },
     {
       "id": "O30",
@@ -740,7 +740,7 @@
       "coins": 5,
       "crowns": 0,
       "requirements": "Bowl + Brush Washer; one White, one Moon White; any Decorations",
-      "requirementsZh": "碗+洗；1白釉、1月白釉；任意装饰"
+      "requirementsZh": "碗 + 笔洗；1 件白釉、1 件月白釉；任意装饰"
     },
     {
       "id": "O31",
@@ -772,7 +772,7 @@
       "coins": 5,
       "crowns": 0,
       "requirements": "Plate + Vase; both Celadon; at least one Plain, other Decoration any",
-      "requirementsZh": "盘+瓶；均为青釉；至少1件素面，另一件装饰不限"
+      "requirementsZh": "盘 + 瓶；两件均青釉；至少 1 件素面，另一件装饰任意"
     },
     {
       "id": "O32",
@@ -805,7 +805,7 @@
       "coins": 5,
       "crowns": 0,
       "requirements": "Vase + Bowl; both White; different Decorations",
-      "requirementsZh": "瓶+碗；均为白釉；不同装饰"
+      "requirementsZh": "瓶 + 碗；两件均白釉；不同装饰"
     },
     {
       "id": "O33",
@@ -846,7 +846,7 @@
       "coins": 4,
       "crowns": 0,
       "requirements": "2 different Shapes; same Glaze; different Decorations",
-      "requirementsZh": "2种不同器形；相同釉色；不同装饰"
+      "requirementsZh": "2 种不同器型；相同釉；不同装饰"
     },
     {
       "id": "O34",
@@ -887,7 +887,7 @@
       "coins": 4,
       "crowns": 0,
       "requirements": "2 different Shapes; different Glazes; same Decoration",
-      "requirementsZh": "2种不同器形；不同釉色；相同装饰"
+      "requirementsZh": "2 种不同器型；不同釉；相同装饰"
     },
     {
       "id": "O35",
@@ -913,7 +913,7 @@
       "coins": 2,
       "crowns": 1,
       "requirements": "Bowl + Plate; both Celadon; any Decorations",
-      "requirementsZh": "碗+盘；均为青釉；任意装饰"
+      "requirementsZh": "碗 + 盘；两件均青釉；任意装饰"
     },
     {
       "id": "O36",
@@ -946,7 +946,7 @@
       "coins": 2,
       "crowns": 1,
       "requirements": "Brush Washer + Vase; one White, one Moon White; different Decorations",
-      "requirementsZh": "洗+瓶；1白釉、1月白釉；不同装饰"
+      "requirementsZh": "笔洗 + 瓶；1 件白釉、1 件月白釉；不同装饰"
     },
     {
       "id": "O37",
@@ -979,7 +979,7 @@
       "coins": 2,
       "crowns": 1,
       "requirements": "Censer + Bowl; one Grey-Green, one Celadon; same Decoration",
-      "requirementsZh": "炉+碗；1灰青釉、1青釉；相同装饰"
+      "requirementsZh": "香炉 + 碗；1 件灰青釉、1 件青釉；相同装饰"
     },
     {
       "id": "O38",
@@ -1012,7 +1012,7 @@
       "coins": 1,
       "crowns": 1,
       "requirements": "Plate + Brush Washer; different Glazes; both Carved",
-      "requirementsZh": "盘+洗；不同釉色；均为刻花"
+      "requirementsZh": "盘 + 笔洗；不同釉；两件均刻花"
     },
     {
       "id": "O39",
@@ -1045,7 +1045,7 @@
       "coins": 1,
       "crowns": 2,
       "requirements": "Vase + Censer; one Celadon, one Moon White; one Plain, one Crackle",
-      "requirementsZh": "瓶+炉；1青釉、1月白釉；1素面、1开片"
+      "requirementsZh": "瓶 + 香炉；1 件青釉、1 件月白釉；1 件素面、1 件开片"
     },
     {
       "id": "O40",
@@ -1083,7 +1083,7 @@
       "coins": 0,
       "crowns": 2,
       "requirements": "Bowl + Brush Washer; one White, one Grey-Green; one Impressed, one Crackle",
-      "requirementsZh": "碗+洗；1件白釉、1件灰青釉；1件印花、1件开片"
+      "requirementsZh": "碗 + 笔洗；1 件白釉、1 件灰青釉；1 件印花、1 件开片"
     },
     {
       "id": "O41",
@@ -1121,7 +1121,7 @@
       "coins": 1,
       "crowns": 2,
       "requirements": "Plate + Vase; same Glaze; different Decorations",
-      "requirementsZh": "盘+瓶；相同釉色；不同装饰"
+      "requirementsZh": "盘 + 瓶；相同釉；不同装饰"
     },
     {
       "id": "O42",
@@ -1159,7 +1159,7 @@
       "coins": 0,
       "crowns": 2,
       "requirements": "Brush Washer + Censer; different Glazes; same Decoration",
-      "requirementsZh": "洗+炉；不同釉色；相同装饰"
+      "requirementsZh": "笔洗 + 香炉；不同釉；相同装饰"
     },
     {
       "id": "O43",
@@ -1183,7 +1183,7 @@
       "coins": 6,
       "crowns": 0,
       "requirements": "3 different Shapes; any Glazes; any Decorations",
-      "requirementsZh": "3种不同器形；任意釉色；任意装饰"
+      "requirementsZh": "3 种不同器型；任意釉；任意装饰"
     },
     {
       "id": "O44",
@@ -1215,7 +1215,7 @@
       "coins": 6,
       "crowns": 0,
       "requirements": "3 different Shapes; 3 different Glazes; any Decorations",
-      "requirementsZh": "3种不同器形；3种不同釉色；任意装饰"
+      "requirementsZh": "3 种不同器型；3 种不同釉；任意装饰"
     },
     {
       "id": "O45",
@@ -1255,7 +1255,7 @@
       "coins": 1,
       "crowns": 2,
       "requirements": "3 different Shapes; one White, one Celadon, one Grey-Green; 3 different Decorations",
-      "requirementsZh": "3种不同器形；1件白釉、1件青釉、1件灰青釉；3种不同装饰"
+      "requirementsZh": "3 种不同器型；白釉、青釉、灰青釉各 1 件；3 种不同装饰"
     },
     {
       "id": "O46",
@@ -1293,7 +1293,7 @@
       "coins": 0,
       "crowns": 2,
       "requirements": "Plate + Vase + Censer; one Celadon, one Grey-Green, one Moon White; one Carved, one Impressed, one Crackle",
-      "requirementsZh": "盘+瓶+炉；1件青釉、1件灰青釉、1件月白釉；1件刻花、1件印花、1件开片"
+      "requirementsZh": "盘 + 瓶 + 香炉；青釉、灰青釉、月白釉各 1 件；刻花、印花、开片各 1 件"
     },
     {
       "id": "O47",
@@ -1338,7 +1338,7 @@
       "coins": 0,
       "crowns": 3,
       "requirements": "3 different Shapes; 3 different Glazes; 3 different Decorations",
-      "requirementsZh": "3种不同器形；3种不同釉色；3种不同装饰"
+      "requirementsZh": "3 种不同器型；3 种不同釉；3 种不同装饰"
     },
     {
       "id": "O48",
@@ -1382,7 +1382,7 @@
       "coins": 0,
       "crowns": 3,
       "requirements": "Brush Washer + Vase + Censer; one White, one Grey-Green, one Moon White; at least 2 different Decorations",
-      "requirementsZh": "洗+瓶+炉；1件白釉、1件灰青釉、1件月白釉；至少2种不同装饰"
+      "requirementsZh": "笔洗 + 瓶 + 香炉；白釉、灰青釉、月白釉各 1 件；至少 2 种不同装饰"
     }
   ]
 }

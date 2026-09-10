@@ -2,7 +2,7 @@
 
 Telemetry is for balance analysis, not player profiling.
 
-Current **V1.2.4** telemetry records Crown-driven Imperial Recognition and each milestone, the five-card Main Order display's three-card rotation, End-game Exhibition and featured-three scoring, Fire and Quality distributions, Jun/Ge and Kiln Yard Shifu windows, public Contribution cards and effective Heat only after simultaneous reveal, Fuel Ledger upgrades, Starting and Advanced Tech effects, Reservation advances, Labour, the 2-Coin Flawed salvage, Imperial Kiln loads and Imperial Priority use. Starting Order offers, Colour Samples choices, Test Pieces peeks and unrevealed Fuel Ledger commitments remain private. Obsolete Court Patronage, Imperial Seal, Apprentice-unlock and Progress-stipend events are not produced by V1.2.4. Historical exports remain immutable under their original rules labels.
+Current **V1.2.5** telemetry records Crown-driven Imperial Recognition 0–4, every milestone and overflow-Crown VP, the five-card Main Order display's three-card rotation, End-game Exhibition and featured-three scoring, Fire and Quality distributions, Jun/Ge and the after-Base/before-Fire Kiln Yard Shifu window, public Contribution cards and effective Heat only after simultaneous reveal, Fuel Ledger upgrades, Starting and Advanced Tech effects, per-reservation advances, all seven shared action locations, Labour, the 2-Coin Flawed salvage, Imperial Kiln loads and before/after-worker-action Imperial Priority use. Starting Order offers, Colour Samples choices, Test Pieces peeks and unrevealed Fuel Ledger commitments remain private. Obsolete private workshop spaces, Tech-based space unlocks, Court Patronage, Imperial Seal, Apprentice-unlock and Progress-stipend events are not produced by V1.2.5. Historical exports remain immutable under their original rules labels.
 
 ## Historical telemetry
 
@@ -52,11 +52,11 @@ These are structured audit features, not chain-of-thought. Hidden deck order and
 - game duration
 - final VP by player
 - winner Kiln
-- final Imperial Progress
-- round each player reached Progress 1 / 2 / 3 / 4 / 5
+- final Imperial Recognition position and Crowns scored beyond Recognition 4
+- round each player reached Recognition 1 / 2 / 3 / 4
 - Techniques acquired and acquisition round
-- completed Market Orders
-- completed Imperial Orders
+- completed Starting and Main Orders
+- completed Crown Orders and printed Crown totals
 - VP by scoring source
 - Coin income/spend totals
 - ceramics formed/fired
@@ -90,7 +90,7 @@ For each fired ceramic retain the original revealed Fire modifier, natural Actua
 
 Flag after sufficient games:
 
-- Is Progress 2 effectively mandatory?
+- Is Recognition 2 effectively mandatory?
 - Do players who buy zero Techniques remain competitive?
 - Is one Technique a dominant first purchase?
 - Are M15–M20 / I06–I10 over-efficient?

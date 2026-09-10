@@ -1,5 +1,5 @@
 export type PlayerId = string;
-export type RulesVersion = "1.2.4";
+export type RulesVersion = "1.2.5";
 
 /**
  * The three v1.1.4 Contribution cards. Bank (-1 Heat, 1 Wood), Tend (0, 0) and
@@ -43,16 +43,12 @@ export type BaseHeat = 0 | 1 | 2 | 3 | 4 | 5;
 
 export type KilnSpaceId =
   | "high_1"
-  | "middle_1"
-  | "middle_2"
-  | "middle_3"
-  | "middle_4"
-  | "middle_5"
-  | "low_1"
   | "high_2"
   | "high_3"
-  | "low_2"
-  | "low_3";
+  | "middle_1"
+  | "middle_2"
+  | "low_1"
+  | "low_2";
 
 export interface ResourceState {
   clay: number;
@@ -83,6 +79,7 @@ export interface CompletedOrderState {
 export interface ImmediateScoreState {
   orderVp: number;
   kilnTraditionVp: number;
+  imperialOverflowVp: number;
 }
 
 export interface PlayerState {
@@ -96,11 +93,7 @@ export interface PlayerState {
   completedOrders: CompletedOrderState[];
   techniques: OwnedTechniqueState[];
   startingTechniqueId: StartingTechniqueId | null;
-  workshopSpaces: {
-    pottersWheelUnlocked: 1 | 2;
-    glazeDecorationUnlocked: 1 | 2;
-  };
-  imperialRecognition: 0 | 1 | 2 | 3 | 4 | 5;
+  imperialRecognition: 0 | 1 | 2 | 3 | 4;
   imperialGrantResolved: boolean;
   imperialKilnUnlocked: boolean;
   imperialPriorityAvailable: boolean;
@@ -261,6 +254,7 @@ export interface FinalScoreBreakdown {
   orders: number;
   imperialAudience: number;
   presentation: number;
+  advancedTechniques: number;
   immediateAbilities: number;
   leftoverCoins: number;
   total: number;
@@ -300,6 +294,8 @@ export type GamePhase =
   | {
       type: "work";
       activePlayerId: PlayerId;
+      /** Imperial Priority was spent immediately before this turn's required worker action. */
+      imperialPriorityUsedBeforeAction?: true;
     }
   | {
       type: "work_office_orders";
@@ -308,7 +304,7 @@ export type GamePhase =
       mode: OfficeOrderMode;
       remainingTakes: 0 | 1 | 2;
       ordersTaken: number;
-      step: "colour_samples_or_skip" | "colour_samples_choose" | "take_or_end";
+      step: "colour_samples_or_skip" | "colour_samples_choose" | "take_or_end" | "gain_advance";
       colourSamplesUsed: boolean;
       colourSamplesDeck?: OrderDeck;
       colourSamplesChoices?: OrderId[];
@@ -318,15 +314,11 @@ export type GamePhase =
       actorId: PlayerId;
       workerId: WorkerId;
       step: "inspect" | "buy";
-      /** V1.2.4 Shifu: the top Techs drawn off one discipline, private to the actor. */
+      /** V1.2.5 Shifu: the top Techs drawn off one discipline, private to the actor. */
       inspectedDiscipline?: TechniqueDiscipline;
       inspectedTechniqueIds?: TechniqueId[];
     }
-  | {
-      type: "work_commission_advance";
-      actorId: PlayerId;
-      workerId: WorkerId;
-    }
+  | { type: "work_imperial_priority"; actorId: PlayerId }
   | {
       type: "firing_before_contribution";
       queue: OrderedDecisionQueue;
@@ -347,6 +339,18 @@ export type GamePhase =
       type: "firing_after_quality";
       queue: OrderedDecisionQueue;
       techniqueIds: TechniqueId[];
+      declinedTechniqueIds: Record<PlayerId, TechniqueId[]>;
+    }
+  | {
+      type: "firing_second_before_quality";
+      actorId: PlayerId;
+      ceramicId: CeramicId;
+      fireModifier: FireModifier;
+      afterQualityPhase: {
+        queue: OrderedDecisionQueue;
+        techniqueIds: TechniqueId[];
+        declinedTechniqueIds: Record<PlayerId, TechniqueId[]>;
+      };
     }
   | { type: "firing_workshop_seconds"; queue: OrderedDecisionQueue }
   | {
@@ -365,7 +369,7 @@ export type GamePhase =
   | { type: "finished" };
 
 export interface GameState {
-  schemaVersion: 2;
+  schemaVersion: 3;
   rulesVersion: RulesVersion;
   gameId: string;
   revision: number;
@@ -423,11 +427,11 @@ export interface MaterialExchange {
 export interface DryingFramesSelection {
   formedIndex: number;
   glaze: Glaze;
+  decoration: Decoration;
 }
 
 export interface WhiteSlipSelection {
   formedIndex: number;
-  decoration: Decoration;
 }
 
 export interface KilnLoadSelection {
@@ -472,7 +476,6 @@ export type GameAction =
       type: "USE_KILN_YARD";
       workerId: WorkerId;
       loads: KilnLoadSelection[];
-      useImperialPriority?: boolean;
       kilnTendingClay?: number;
       kilnTendingWood?: number;
     }
@@ -503,8 +506,8 @@ export type GameAction =
   | {
       type: "GUILD_BUY_TECHNIQUE";
       techniqueId: TechniqueId;
-      unlockWorkshop?: "potters_wheel" | "glaze_decoration";
     }
+  | { type: "RESOLVE_IMPERIAL_PRIORITY"; ceramicId: CeramicId | null }
   | { type: "RESOLVE_KILN_YARD_REPOSITION"; ceramicId: CeramicId | null; toSpaceId: KilnSpaceId | null }
   | { type: "RESOLVE_JUN"; ceramicId: CeramicId | null; delta: -1 | 1 | null }
   | { type: "RESOLVE_GE"; ceramicId: CeramicId | null }
@@ -586,7 +589,7 @@ export type GameEvent =
       type: "COLOUR_SAMPLES_USED";
       playerId: PlayerId;
       deck: OrderDeck;
-      /** V1.2.4 discards every looked-at Order the player did not reserve. */
+      /** V1.2.5 discards every looked-at Order the player did not reserve. */
       discardedOrderIds: OrderId[];
       selectedOrderId: OrderId;
       reservedFromDisplay: boolean;
@@ -625,10 +628,11 @@ export type GameEvent =
       type: "IMPERIAL_RECOGNITION_ADVANCED";
       playerId: PlayerId;
       orderId: OrderId;
-      from: 0 | 1 | 2 | 3 | 4 | 5;
-      to: 0 | 1 | 2 | 3 | 4 | 5;
+      from: 0 | 1 | 2 | 3 | 4;
+      to: 0 | 1 | 2 | 3 | 4;
       crowns: 1 | 2 | 3;
       appliedCrowns: number;
+      overflowVp: number;
     }
   | {
       type: "IMPERIAL_GRANT_RECEIVED";

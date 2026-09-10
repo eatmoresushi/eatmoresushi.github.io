@@ -1,10 +1,10 @@
 {
-  "rulesVersion": "1.2.4",
+  "rulesVersion": "1.2.5",
   "components": [
     {
       "name": "Central Action Board",
       "qty": 1,
-      "notes": "Materials Yard, Commission Market, Guild & Academy, Kiln Yard, Labour and Imperial Recognition; private Potter's Wheel and Glaze & Decoration spaces are on player boards."
+      "notes": "All seven shared action locations plus the Imperial Recognition track. Materials Yard, Potter's Wheel, Glaze & Decoration, Commission Market and Guild & Academy use 2/3/4 spaces by player count; Kiln Yard and Labour are uncapped."
     },
     {
       "name": "Shared Kiln Board",
@@ -14,7 +14,7 @@
     {
       "name": "Kiln Player Boards",
       "qty": 5,
-      "notes": "Ru, Guan, Ge, Ding and Jun. Each includes workshop Potter's Wheel and Glaze & Decoration stations, Tech slots and an Imperial Kiln area; only 2-4 are used each game."
+      "notes": "Ru, Guan, Ge, Ding and Jun. Each includes a Kiln Tradition, Tech area, Finished Ceramics area and an Imperial Kiln area; only 2-4 are used each game."
     },
     {
       "name": "Shifu Workers",
@@ -44,7 +44,7 @@
     {
       "name": "Vessel Cards",
       "qty": 50,
-      "notes": "Ten each: Bowl, Plate, Washer, Vase and Censer. Not a hard gameplay limit; use a proxy if all ten of a Shape are in use."
+      "notes": "Ten each: Bowl, Plate, Brush Washer, Vase and Censer. Not a hard gameplay limit; use a proxy if all ten of a Shape are in use."
     },
     {
       "name": "Main Order Cards",
@@ -88,7 +88,8 @@
     },
     {
       "name": "First Player Marker",
-      "qty": 1
+      "qty": 1,
+      "notes": "Passes clockwise each round."
     },
     {
       "name": "Round Marker",
@@ -98,17 +99,12 @@
     {
       "name": "Imperial Priority Tokens",
       "qty": 4,
-      "notes": "One per player colour; begins on Recognition space 4 and is taken when that player reaches it, then spent for one additional Imperial Kiln load."
+      "notes": "One per player colour; begins on Recognition space 3 and is taken when that player reaches it, then spent before or after a worker action for one Imperial Kiln load."
     },
     {
       "name": "Imperial Kiln Tiles",
       "qty": 4,
-      "notes": "One-space private kiln tiles; gained at 3 Imperial Recognition and placed in the owner's Imperial Kiln area."
-    },
-    {
-      "name": "Workshop Lock Markers",
-      "qty": 8,
-      "notes": "Two per player: the second Potter's Wheel and second Glaze & Decoration spaces begin locked."
+      "notes": "One-space private kiln tiles; gained at 2 Imperial Recognition and placed in the owner's Imperial Kiln area."
     }
   ]
 }

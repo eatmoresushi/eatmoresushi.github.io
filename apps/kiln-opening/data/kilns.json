@@ -4,9 +4,9 @@
     "name": "Ru Kiln",
     "nameZh": "汝窑",
     "abilityName": "Quiet Perfection",
-    "abilityNameZh": "清雅无瑕",
-    "ability": "Once per round, when you complete any Order using a Celadon, Plain Masterpiece, gain 4 VP.",
-    "abilityZh": "每轮一次，当你用1件青釉、素面珍品完成任意订单时，获得4分。"
+    "abilityNameZh": "天青无瑕",
+    "ability": "Once per round, when you complete an Order using a Masterpiece with Celadon Glaze and Plain Decoration, gain 4 VP.",
+    "abilityZh": "每轮一次，当你完成委托时，若使用了一件臻品、青釉、素面陶瓷，获得4 VP。该委托本身不必要求臻品、青釉或素面；实际交付的陶瓷拥有这些属性即可。"
   },
   {
     "id": "GU",
@@ -15,33 +15,33 @@
     "abilityName": "Imperial Patronage",
     "abilityNameZh": "内府恩眷",
     "ability": "Once per round, when you complete an Order showing at least 1 Crown, gain 2 Coins and 1 VP.",
-    "abilityZh": "每轮一次：当你完成至少有1个皇冠的订单时，获得2铜钱和1分。"
+    "abilityZh": "每轮一次，当你完成一张带有至少1个 👑 的委托时，获得2铜钱和1 VP。"
   },
   {
     "id": "GE",
     "name": "Ge Kiln",
     "nameZh": "哥窑",
     "abilityName": "Crackle from Fire",
-    "abilityNameZh": "窑变开片",
-    "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, choose one of your ceramics whose Actual Heat differs from Preferred Heat by exactly 1. Set its Actual Heat to Preferred Heat and change its Decoration to Crackle at no cost.",
-    "abilityZh": "每轮一次，在计算实际火候后、判定品第之前，选择你1件实际火候与适温恰好相差1的陶瓷。将其实际火候设为适温，并免费把装饰改为开片。"
+    "abilityNameZh": "窑火开片",
+    "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, you may choose one of your ceramics whose Actual Heat differs from its Preferred Heat by exactly 1. Set its Actual Heat equal to its Preferred Heat and change its Decoration to Crackle without paying the Crackle cost.",
+    "abilityZh": "每轮一次，在计算实际火候后、决定品质前，你可以选择自己1件实际火候与适烧火候恰好相差1的陶瓷。将其实际火候设为适烧火候，并把其装饰改为开片，无需支付开片费用。"
   },
   {
     "id": "DI",
     "name": "Ding Kiln",
     "nameZh": "定窑",
     "abilityName": "Moulded Production",
-    "abilityNameZh": "覆烧成模",
-    "ability": "Once per round, when resolving a Potter's Wheel action, after you form a Bowl, Plate or Brush Washer, you may form one additional vessel of the same Shape at no Clay cost. This additional vessel does not count against that action's normal vessel limit.",
-    "abilityZh": "每轮一次：结算拉坯轮行动时，成型1件碗、盘或洗之后，可免付黏土费用额外成型1件相同器形的器物。该额外器物不计入该行动的正常成型上限。"
+    "abilityNameZh": "范制成器",
+    "ability": "Once per round, when resolving a Potter’s Wheel action, after you form a Bowl, Plate or Brush Washer, you may form one additional vessel of the same Shape at no Clay cost. This additional vessel does not count against that action's normal vessel limit.",
+    "abilityZh": "每轮一次，在结算陶车坊行动时，当你成型一个碗、盘或笔洗后，可以额外成型1件相同器型，无需支付泥。这件额外器物不计入该行动原本的成型数量上限。"
   },
   {
     "id": "JU",
     "name": "Jun Kiln",
     "nameZh": "钧窑",
     "abilityName": "Kiln Transformation",
-    "abilityNameZh": "入窑一色",
-    "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, you may pay 1 Wood to adjust the Actual Heat of one of your ceramics by +1 or -1.",
-    "abilityZh": "每轮一次，在计算实际火候后、判定品第之前，可支付1柴薪，将你1件陶瓷的实际火候调整+1或-1。"
+    "abilityNameZh": "窑变天成",
+    "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, you may pay 1 Wood to adjust the Actual Heat of one of your ceramics by +1 or −1.",
+    "abilityZh": "每轮一次，在计算实际火候后、决定品质前，你可以支付1柴，将自己1件陶瓷的实际火候调整+1或−1。"
   }
 ]

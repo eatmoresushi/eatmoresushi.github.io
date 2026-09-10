@@ -24,7 +24,6 @@ function projectPlayer(state: GameState, playerId: PlayerId): PublicPlayerState 
     completedOrders: clone(player.completedOrders),
     techniques: clone(player.techniques),
     startingTechniqueId: player.startingTechniqueId,
-    workshopSpaces: clone(player.workshopSpaces),
     imperialRecognition: player.imperialRecognition,
     imperialGrantResolved: player.imperialGrantResolved,
     imperialKilnUnlocked: player.imperialKilnUnlocked,
@@ -41,8 +40,8 @@ function projectPlayer(state: GameState, playerId: PlayerId): PublicPlayerState 
 }
 
 export function projectPublicGameState(state: GameState): PublicGameState {
-  if (state.schemaVersion !== 2 || state.rulesVersion !== "1.2.4") {
-    throw new Error("Only schema-2 V1.2.4 games may be projected by the current client");
+  if (state.schemaVersion !== 3 || state.rulesVersion !== "1.2.5") {
+    throw new Error("Only schema-3 V1.2.5 games may be projected by the current client");
   }
   if (state.phase.type === "firing_contributions" && state.firingContext !== null) {
     throw new Error("Unrevealed Contributions must never enter the public firing context");

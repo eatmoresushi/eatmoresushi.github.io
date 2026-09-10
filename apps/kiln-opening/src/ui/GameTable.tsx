@@ -82,7 +82,7 @@ function GameStatus({ game, decisionActor }: { game: PublicGameState; decisionAc
       <StatusCell label={t("First Player")} value={game.players[game.firstPlayerId]?.displayName ?? game.firstPlayerId} />
       <StatusCell label={t("Active / Decision")} value={active} testId="decision-player" />
       <StatusCell label={t("Turn status")} value={phaseStatus(game, locale)} />
-      <StatusCell label={t("Revision")} value={`${game.revision} · event ${game.eventSequence}`} testId="revision" />
+      <StatusCell label={t("Revision")} value={`${game.revision} · ${locale === "zh-CN" ? "事件" : "event"} ${game.eventSequence}`} testId="revision" />
     </section>
   );
 }
@@ -107,7 +107,7 @@ function PlayerPanel({
   const ceramics = Object.values(game.ceramics).filter(
     (ceramic) => ceramic.ownerId === player.id && ceramic.stage !== "sold",
   );
-  const immediateVp = player.score.orderVp + player.score.kilnTraditionVp + (player.imperialAudienceVpAwarded ? 6 : 0);
+  const immediateVp = player.score.orderVp + player.score.kilnTraditionVp + player.score.imperialOverflowVp + (player.imperialAudienceVpAwarded ? 6 : 0);
   const workers = Object.values(player.workers);
   const availableWorkers = workers.filter((worker) => worker.status === "available");
   const lockedWorkers = workers.filter((worker) => worker.status === "locked");
@@ -126,7 +126,7 @@ function PlayerPanel({
         <div><dt>{t("Coins")}</dt><dd>{player.resources.coins}</dd></div>
         <div><dt>{t("Clay")}</dt><dd>{player.resources.clay}</dd></div>
         <div><dt>{t("Wood")}</dt><dd>{player.resources.wood}</dd></div>
-        <div><dt>{locale === "zh-CN" ? "御用认可" : "Recognition"}</dt><dd>{player.imperialRecognition} / 5</dd></div>
+        <div><dt>{locale === "zh-CN" ? "御府声望" : "Recognition"}</dt><dd>{player.imperialRecognition} / 4</dd></div>
       </dl>
 
       <section className="plain-subsection">
@@ -193,11 +193,12 @@ function WorkerPlacementTable({ game }: { game: PublicGameState }) {
           <tbody>{LOCATION_IDS.map((locationId) => {
             const definition = LOCATION_COPY[locationId];
             const placements = game.actionBoard.placements[locationId];
+            const capacity = locationCapacity(locationId, game.playerCount);
             return (
               <tr key={locationId} data-location-id={locationId}>
                 <th>{locale === "zh-CN" ? definition.nameZh : definition.name}</th>
                 <td>{placements.length}</td>
-                <td>{locationCapacity(locationId, game.playerCount)}</td>
+                <td>{Number.isFinite(capacity) ? capacity : "∞"}</td>
                 <td>{placements.length === 0 ? "—" : placements.map((workerId) => placedWorkerLabel(game, workerId, locale)).join("; ")}</td>
                 <td>{locale === "zh-CN" ? definition.apprenticeZh : definition.apprentice}</td>
                 <td>{locale === "zh-CN" ? definition.shifuZh : definition.shifu}</td>
@@ -373,17 +374,17 @@ function ImperialProgressTable({ game }: { game: PublicGameState }) {
   const { locale, t } = useI18n();
   return (
     <section className="playtest-panel imperial-progress" aria-labelledby="imperial-progress-title" data-testid="imperial-progress-track">
-      <div className="playtest-panel-heading"><div><p className="eyebrow">{t("Track state")}</p><h2 id="imperial-progress-title">{locale === "zh-CN" ? "御用认可" : "Imperial Recognition"}</h2></div><span>{locale === "zh-CN" ? "完成订单上的每个皇冠推进1格" : "Each Crown on a completed Order advances 1"}</span></div>
+      <div className="playtest-panel-heading"><div><p className="eyebrow">{t("Track state")}</p><h2 id="imperial-progress-title">{locale === "zh-CN" ? "御府声望" : "Imperial Recognition"}</h2></div><span>{locale === "zh-CN" ? "已完成委托上的每个👑推进1格" : "Each Crown on a completed Order advances 1"}</span></div>
       <div className="table-scroll imperial-progress-scroll">
         <table className="state-table imperial-progress-spaces">
-          <thead><tr><th>{locale === "zh-CN" ? "认可" : "Recognition"}</th><th>{t("Name")}</th><th>{locale === "zh-CN" ? "首次到达奖励" : "First-reached reward"}</th><th>{t("Players")}</th></tr></thead>
+          <thead><tr><th>{locale === "zh-CN" ? "声望" : "Recognition"}</th><th>{t("Name")}</th><th>{locale === "zh-CN" ? "首次到达奖励" : "First-reached reward"}</th><th>{t("Players")}</th></tr></thead>
           <tbody>{IMPERIAL_PROGRESS.track.map((space) => {
             const occupants = game.playerOrder.filter((playerId) => game.players[playerId]?.imperialRecognition === space.space);
             return <tr data-progress-space={space.space} key={space.space}><th>{space.space}</th><td>{locale === "zh-CN" ? space.titleZh : space.title}</td><td>{locale === "zh-CN" ? space.rewardZh ?? "—" : space.reward ?? "—"}</td><td className="progress-markers">{occupants.length === 0 ? "—" : occupants.map((playerId) => <span className="progress-marker" key={playerId}>{game.players[playerId]?.displayName}</span>)}</td></tr>;
           })}</tbody>
         </table>
       </div>
-      <p className="progress-legend">{locale === "zh-CN" ? "只有已完成订单上的皇冠推进认可；多皇冠订单按顺序结算跨过的每个里程碑。" : "Only Crowns on completed Orders advance Recognition; resolve every crossed milestone in order."}</p>
+      <p className="progress-legend">{locale === "zh-CN" ? "只有已完成委托上的👑推进御府声望；逐个结算每个👑与跨过的里程碑。到达声望4后，每个额外👑立即获得1 VP。" : "Only Crowns on completed Orders advance Recognition; resolve every crossed milestone in order. Each Crown beyond Recognition 4 scores 1 VP immediately."}</p>
     </section>
   );
 }
@@ -411,18 +412,18 @@ export function relationLabel(order: OrderDefinition, locale: Locale = "en"): st
   if (order.relations === undefined || order.relations.length === 0) return "";
   return ` · ${order.relations.map((relation) => {
     switch (relation.type) {
-      case "same_glaze": return locale === "zh-CN" ? "釉色相同" : "same Glaze";
-      case "different_glaze": return locale === "zh-CN" ? "釉色不同" : "different Glazes";
-      case "all_different_glaze": return locale === "zh-CN" ? "釉色各不相同" : "all different Glazes";
+      case "same_glaze": return locale === "zh-CN" ? "釉相同" : "same Glaze";
+      case "different_glaze": return locale === "zh-CN" ? "釉不同" : "different Glazes";
+      case "all_different_glaze": return locale === "zh-CN" ? "釉各不相同" : "all different Glazes";
       case "different_shape": return locale === "zh-CN" ? "器型不同" : "different Shapes";
       case "all_different_shape": return locale === "zh-CN" ? "器型各不相同" : "all different Shapes";
       case "same_shape": return locale === "zh-CN" ? "器型相同" : "same Shape";
       case "same_decoration": return locale === "zh-CN" ? "装饰相同" : "same Decoration";
       case "different_decoration": return locale === "zh-CN" ? "装饰不同" : "different Decorations";
       case "at_least_n_quality": return locale === "zh-CN" ? `至少${relation.count}件${localizedTerm(locale, relation.quality)}` : `at least ${relation.count} ${localizedTerm(locale, relation.quality)}`;
-      case "at_least_n_distinct_glazes": return locale === "zh-CN" ? `至少${relation.count}种不同釉色` : `at least ${relation.count} distinct Glazes`;
+      case "at_least_n_distinct_glazes": return locale === "zh-CN" ? `至少${relation.count}种不同釉` : `at least ${relation.count} distinct Glazes`;
       case "at_least_n_distinct_decorations": return locale === "zh-CN" ? `至少${relation.count}种不同装饰` : `at least ${relation.count} distinct Decorations`;
-      case "required_glazes": return locale === "zh-CN" ? `所用釉色包括：${relation.values.map((value) => localizedTerm(locale, value)).join("、")}` : `required Glazes: ${relation.values.map((value) => localizedTerm(locale, value)).join(", ")}`;
+      case "required_glazes": return locale === "zh-CN" ? `所用釉包括：${relation.values.map((value) => localizedTerm(locale, value)).join("、")}` : `required Glazes: ${relation.values.map((value) => localizedTerm(locale, value)).join(", ")}`;
       case "required_decorations": return locale === "zh-CN" ? `所用装饰包括：${relation.values.map((value) => localizedTerm(locale, value)).join("、")}` : `required Decorations: ${relation.values.map((value) => localizedTerm(locale, value)).join(", ")}`;
       case "glaze_categories": {
         // Name the Glazes. The generic phrasing left I13 unplayable from its own card: the
@@ -451,7 +452,7 @@ export function ceramicDescription(ceramic: CeramicState, locale: Locale = "en")
     parts.push(localizedTerm(locale, ceramic.glaze), localizedTerm(locale, ceramic.decoration));
   }
   if (ceramic.stage === "finished" || ceramic.stage === "delivered" || ceramic.stage === "presented") {
-    parts.push(locale === "zh-CN" ? `品第：${localizedTerm(locale, ceramic.quality)}` : `Quality: ${localizedTerm(locale, ceramic.quality)}`);
+    parts.push(locale === "zh-CN" ? `品质：${localizedTerm(locale, ceramic.quality)}` : `Quality: ${localizedTerm(locale, ceramic.quality)}`);
   }
   if (ceramic.stage === "loaded") parts.push(locale === "zh-CN" ? `窑位：${ceramic.kilnSpaceId}` : `Slot: ${ceramic.kilnSpaceId}`);
   return parts.join(" · ");
@@ -475,26 +476,27 @@ function placedWorkerLabel(game: PublicGameState, workerId: string, locale: Loca
 
 function phaseName(game: PublicGameState, locale: Locale = "en"): string {
   const tx = (english: string): string => locale === "zh-CN" ? ({
-    "Kiln selection": "选择窑口", "Starting Orders": "起始订单", "Starting Tech": "起始技术", "Work Phase": "劳作阶段",
-    "Commission Market — Orders": "委托市场 — 订单", "Guild & Academy": "行会与书院",
-    "Pre-firing Techniques": "烧制前技术", "Secret Contributions": "秘密出柴牌", "Fuel Ledger": "柴薪簿",
-    "Shifu kiln reposition": "师傅移窑", "Kiln ability": "窑口能力", "Second Firing": "二次烧成",
-    "Protective Saggars": "护胎匣钵", "Test Pieces": "试片", "Cleanup Orders": "整理阶段订单",
-    "Reservation advance": "预留预付款", "Flawed salvage": "次品回收", "Order Phase": "交付阶段", "End-game Exhibition": "终局展陈", "Final results": "最终计分",
+    "Kiln selection": "选择窑口", "Starting Orders": "起始委托", "Starting Tech": "起始技艺", "Work Phase": "作业阶段",
+    "Imperial Priority": "御烧优先", "Commission Market — Orders": "瓷牙行 — 委托", "Guild & Academy": "陶工行",
+    "Pre-firing Techniques": "烧成前技艺", "Secret Contributions": "秘密控火", "Fuel Ledger": "柴簿",
+    "Shifu kiln reposition": "窑坊师傅调位", "Kiln ability": "窑口能力", "Second Firing": "复烧",
+    "After-Quality abilities": "品质判定后能力", "Protective Saggars": "匣钵护烧", "Test Pieces": "火照", "Cleanup Orders": "整理委托",
+    "Reservation advance": "承接后收益", "Flawed salvage": "瑕品处理", "Order Phase": "委托阶段", "End-game Exhibition": "终局陈列", "Final results": "最终计分",
   } as Record<string, string>)[english] ?? english : english;
   switch (game.phase.type) {
     case "setup_kiln_selection": return tx("Kiln selection");
     case "setup_starting_orders": return tx("Starting Orders");
     case "setup_starting_tech": return tx("Starting Tech");
     case "work": return tx("Work Phase");
+    case "work_imperial_priority": return tx("Imperial Priority");
     case "work_office_orders": return tx("Commission Market — Orders");
-    case "work_commission_advance": return tx("Reservation advance");
     case "work_guild": return tx("Guild & Academy");
     case "firing_before_contribution": return tx("Pre-firing Techniques");
     case "firing_contributions": return tx("Secret Contributions");
     case "firing_reposition": return tx("Shifu kiln reposition");
     case "firing_before_quality": return tx("Kiln ability");
-    case "firing_after_quality": return tx(game.phase.techniqueIds[game.phase.queue.currentIndex] === "T14" ? "Second Firing" : "Protective Saggars");
+    case "firing_second_before_quality": return tx("Second Firing");
+    case "firing_after_quality": return tx("After-Quality abilities");
     case "firing_workshop_seconds": return tx("Flawed salvage");
     case "orders": return tx("Order Phase");
     case "cleanup_orders": return tx("Cleanup Orders");
@@ -505,10 +507,16 @@ function phaseName(game: PublicGameState, locale: Locale = "en"): string {
 
 function phaseStatus(game: PublicGameState, locale: Locale = "en"): string {
   switch (game.phase.type) {
-    case "work": return locale === "zh-CN" ? `${game.players[game.phase.activePlayerId]?.displayName ?? game.phase.activePlayerId}必须放置工人或跳过` : `${game.players[game.phase.activePlayerId]?.displayName ?? game.phase.activePlayerId} must place a worker or pass`;
-    case "firing_contributions": return locale === "zh-CN" ? `${game.phase.submittedPlayerIds.length}/${game.phase.eligiblePlayerIds.length}份贡献已提交` : `${game.phase.submittedPlayerIds.length}/${game.phase.eligiblePlayerIds.length} contributions submitted`;
-    case "presentation": return locale === "zh-CN" ? `${game.phase.submittedPlayerIds.length}/${game.phase.eligiblePlayerIds.length}份展陈选择已提交` : `${game.phase.submittedPlayerIds.length}/${game.phase.eligiblePlayerIds.length} Exhibition selections submitted`;
-    case "orders": return locale === "zh-CN" ? `${game.players[game.phase.activePlayerId]?.displayName ?? game.phase.activePlayerId}可以完成订单` : `${game.players[game.phase.activePlayerId]?.displayName ?? game.phase.activePlayerId} may complete Orders`;
+    case "work": {
+      const player = game.players[game.phase.activePlayerId]?.displayName ?? game.phase.activePlayerId;
+      if (game.phase.imperialPriorityUsedBeforeAction === true) {
+        return locale === "zh-CN" ? `${player}必须放置工人并结算行动` : `${player} must place a worker and resolve its action`;
+      }
+      return locale === "zh-CN" ? `${player}必须放置工人或跳过` : `${player} must place a worker or pass`;
+    }
+    case "firing_contributions": return locale === "zh-CN" ? `${game.phase.submittedPlayerIds.length}/${game.phase.eligiblePlayerIds.length}份控火选择已提交` : `${game.phase.submittedPlayerIds.length}/${game.phase.eligiblePlayerIds.length} contributions submitted`;
+    case "presentation": return locale === "zh-CN" ? `${game.phase.submittedPlayerIds.length}/${game.phase.eligiblePlayerIds.length}份陈列选择已提交` : `${game.phase.submittedPlayerIds.length}/${game.phase.eligiblePlayerIds.length} Exhibition selections submitted`;
+    case "orders": return locale === "zh-CN" ? `${game.players[game.phase.activePlayerId]?.displayName ?? game.phase.activePlayerId}可以完成委托` : `${game.players[game.phase.activePlayerId]?.displayName ?? game.phase.activePlayerId} may complete Orders`;
     case "finished": return locale === "zh-CN" ? "最终计分已完成" : "Final scoring complete";
     default: {
       const actor = currentDecisionActor(game.phase);

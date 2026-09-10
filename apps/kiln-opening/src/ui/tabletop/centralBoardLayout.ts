@@ -25,7 +25,7 @@ export const ACTION_ZONE_RECTS: Record<LocationId, NormalizedRect> = {
 };
 
 export const KILN_SLOT_POINTS: Record<KilnSpaceId, NormalizedPoint> = {
-  // V1.1.1 board: 3 High / 2 Middle / 2 Low.
+  // V1.2.5 Shared Kiln: 3 High / 2 Middle / 2 Low.
   high_1: { x: 0.608, y: 0.198 },
   high_2: { x: 0.690, y: 0.198 },
   high_3: { x: 0.773, y: 0.198 },
@@ -33,11 +33,6 @@ export const KILN_SLOT_POINTS: Record<KilnSpaceId, NormalizedPoint> = {
   middle_2: { x: 0.732, y: 0.355 },
   low_1: { x: 0.649, y: 0.505 },
   low_2: { x: 0.732, y: 0.505 },
-  // Retained so historical states still render; not printed on the V1.1.1 board.
-  middle_3: { x: 0.815, y: 0.355 },
-  middle_4: { x: 0.608, y: 0.505 },
-  middle_5: { x: 0.815, y: 0.505 },
-  low_3: { x: 0.773, y: 0.585 },
 };
 
 export const IMPERIAL_TRACK_POINTS: readonly NormalizedPoint[] = [
@@ -46,7 +41,6 @@ export const IMPERIAL_TRACK_POINTS: readonly NormalizedPoint[] = [
   { x: 0.705, y: 0.751 },
   { x: 0.775, y: 0.751 },
   { x: 0.846, y: 0.751 },
-  { x: 0.916, y: 0.751 },
 ];
 
 export function normalizedStyle(rect: NormalizedRect): Record<string, string> {

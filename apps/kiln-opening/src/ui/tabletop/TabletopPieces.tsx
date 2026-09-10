@@ -8,6 +8,7 @@ import type {
   WorkerKind,
   WorkerStatus,
 } from "../../game";
+import { useI18n } from "../i18n";
 import { TABLETOP_ASSETS, WORKSHOP_CROPS, orderSprite, techniqueSprite } from "./assetCatalog";
 
 export const SEAT_COLOURS = ["#a9473d", "#356e81", "#927c31", "#674f7c"] as const;
@@ -87,28 +88,32 @@ export function Meeple({
 }
 
 export function ResourceToken({ kind, amount }: { kind: "clay" | "wood" | "coins"; amount: number }) {
-  const labels = { clay: "Clay", wood: "Wood", coins: "Coins" } as const;
+  const { term } = useI18n();
+  const label = term(kind);
   return (
-    <span className={`tabletop-resource resource-${kind}`} aria-label={`${amount} ${labels[kind]}`}>
+    <span className={`tabletop-resource resource-${kind}`} aria-label={`${amount} ${label}`}>
       <i aria-hidden="true">{kind === "clay" ? "●" : kind === "wood" ? "▰" : "宋"}</i>
       <b>{amount}</b>
-      <small>{labels[kind]}</small>
+      <small>{label}</small>
     </span>
   );
 }
 
 export function CeramicPiece({ ceramic, compact = false }: { ceramic: CeramicState; compact?: boolean }) {
+  const { locale, term } = useI18n();
   const glaze = ceramic.stage === "shaped" || ceramic.stage === "sold" ? "unfired" : ceramic.glaze;
   const decoration = ceramic.stage === "shaped" || ceramic.stage === "sold" ? null : ceramic.decoration;
   const quality = ceramic.stage === "finished" || ceramic.stage === "delivered" || ceramic.stage === "presented"
     ? ceramic.quality
     : null;
   const description = [
-    ceramic.shape.replaceAll("_", " "),
-    ceramic.stage,
-    glaze === "unfired" ? "unfired" : `${glaze.replaceAll("_", " ")} glaze, preferred heat ${preferredHeat(glaze)}`,
-    decoration,
-    quality,
+    term(ceramic.shape),
+    term(ceramic.stage),
+    glaze === "unfired"
+      ? term("unfired")
+      : locale === "zh-CN" ? `${term(glaze)}，适烧火候${preferredHeat(glaze)}` : `${term(glaze)} glaze, preferred heat ${preferredHeat(glaze)}`,
+    decoration === null ? null : term(decoration),
+    quality === null ? null : term(quality),
   ].filter(Boolean).join(", ");
   return (
     <span
@@ -139,6 +144,7 @@ export function VisualOrderCard({
   compact?: boolean;
   onInspect?: (orderId: string) => void;
 }) {
+  const { locale, t, term } = useI18n();
   const sprite = orderSprite(orderId);
   const definition = ORDER_DEFINITIONS[orderId];
   const style = sprite === null
@@ -150,19 +156,15 @@ export function VisualOrderCard({
       <strong className="tabletop-card-id">{orderId}</strong>
       {sprite === null && definition !== undefined && (
         <span className="tabletop-card-live-copy" aria-hidden="true">
-          <b>{definition.minQuality}+ · {definition.vp} VP · {definition.coins} Coins</b>
-          {definition.ceramics.map((requirement, index) => (
-            <small key={index}>
-              {requirement.shapes?.join(" / ") ?? requirement.shape ?? "any shape"} · {requirement.glaze ?? "any glaze"} · {requirement.decoration ?? "any decoration"}
-            </small>
-          ))}
-          {(definition.relations ?? []).map((relation) => <small key={relation.type}>{relation.type.replaceAll("_", " ")}</small>)}
-          {definition.crowns > 0 && <strong>{"👑".repeat(definition.crowns)} Imperial Recognition</strong>}
+          <b>{term(definition.minQuality)}+ · {definition.vp} {t("VP")} · {definition.coins} {term("coins")}</b>
+          <small>{locale === "zh-CN" ? definition.requirementsZh : definition.requirements}</small>
+          {definition.crowns > 0 && <strong>{"👑".repeat(definition.crowns)} {locale === "zh-CN" ? "御府声望" : "Imperial Recognition"}</strong>}
         </span>
       )}
       <span className="sr-only">
-        {orderId}, {definition?.vp ?? 0} victory points, {definition?.coins ?? 0} coins,
-        {definition?.ceramics.length ?? 0} ceramic requirement{definition?.ceramics.length === 1 ? "" : "s"}
+        {locale === "zh-CN"
+          ? `${orderId}，${definition?.vp ?? 0}分，${definition?.coins ?? 0}铜钱，${definition?.ceramics.length ?? 0}件陶瓷要求。${definition?.requirementsZh ?? ""}`
+          : `${orderId}, ${definition?.vp ?? 0} victory points, ${definition?.coins ?? 0} coins, ${definition?.ceramics.length ?? 0} ceramic requirement${definition?.ceramics.length === 1 ? "" : "s"}. ${definition?.requirements ?? ""}`}
       </span>
     </>
   );
@@ -176,7 +178,7 @@ export function VisualOrderCard({
       type="button"
       onClick={() => onInspect(orderId)}
       data-order-id={orderId}
-      aria-label={`Inspect Order ${orderId}`}
+      aria-label={locale === "zh-CN" ? `查看委托 ${orderId}` : `Inspect Order ${orderId}`}
     >
       {contents}
     </button>
@@ -192,21 +194,24 @@ export function VisualTechniqueTile({
   exhausted?: boolean;
   onInspect?: (techniqueId: TechniqueId) => void;
 }) {
+  const { locale, term } = useI18n();
   const sprite = techniqueSprite(techniqueId);
   const definition = TECHNIQUE_DEFINITIONS[techniqueId];
+  const name = locale === "zh-CN" ? definition?.nameZh : definition?.name;
+  const ability = locale === "zh-CN" ? definition?.abilityZh : definition?.ability;
   const contents = (
     <>
       <span className="tabletop-tile-art" style={sprite === null ? undefined : gridSpriteStyle(sprite.image, sprite.columns, sprite.rows, sprite.column, sprite.row)} aria-hidden="true" />
       <strong className="tabletop-tile-id">{techniqueId}</strong>
-      {(sprite === null || ["T02", "T03", "T08", "T10", "T12"].includes(techniqueId)) && <span className="tabletop-tile-live-copy" aria-hidden="true"><b>{definition?.name}</b><small>{definition?.ability}</small><strong>{definition?.cost} Coins</strong></span>}
-      {exhausted && <span className="tile-exhausted">Used</span>}
-      <span className="sr-only">{techniqueId}, {definition?.name}, {definition?.cost} coins. {definition?.ability}</span>
+      <span className="tabletop-tile-live-copy" aria-hidden="true"><b>{name}</b><small>{ability}</small><strong>{definition?.cost} {term("coins")}</strong></span>
+      {exhausted && <span className="tile-exhausted">{locale === "zh-CN" ? "已使用" : "Used"}</span>}
+      <span className="sr-only">{techniqueId}, {name}, {definition?.cost} {term("coins")}. {ability}</span>
     </>
   );
   return onInspect === undefined ? (
     <span className={`visual-technique-tile ${exhausted ? "is-exhausted" : ""}`} data-technique-id={techniqueId}>{contents}</span>
   ) : (
-    <button className={`visual-technique-tile ${exhausted ? "is-exhausted" : ""}`} type="button" onClick={() => onInspect(techniqueId)} data-technique-id={techniqueId} aria-label={`Inspect Technique ${techniqueId}`}>{contents}</button>
+    <button className={`visual-technique-tile ${exhausted ? "is-exhausted" : ""}`} type="button" onClick={() => onInspect(techniqueId)} data-technique-id={techniqueId} aria-label={locale === "zh-CN" ? `查看技艺 ${techniqueId}` : `Inspect Technique ${techniqueId}`}>{contents}</button>
   );
 }
 
@@ -225,13 +230,15 @@ function AtlasCard({ rect, children, className }: { rect: [number, number, numbe
 }
 
 export function FireCard({ modifier }: { modifier: FireModifier }) {
+  const { locale } = useI18n();
+  const modifierLabel = modifier > 0 ? (locale === "zh-CN" ? `正${modifier}` : `plus ${modifier}`) : String(modifier);
   if (modifier === -2 || modifier === 2) {
     return (
-      <span className="visual-fire-card visual-fire-card--live" aria-label={`Fire modifier ${modifier > 0 ? `plus ${modifier}` : modifier}`}>
+      <span className="visual-fire-card visual-fire-card--live" aria-label={locale === "zh-CN" ? `窑火修正${modifierLabel}` : `Fire modifier ${modifierLabel}`}>
         <strong>{modifier > 0 ? `+${modifier}` : modifier}</strong>
-        <small>Fire</small>
+        <small>{locale === "zh-CN" ? "窑火" : "Fire"}</small>
       </span>
     );
   }
-  return <AtlasCard rect={FIRE_RECTS[modifier]} className="visual-fire-card"><span className="sr-only">Fire modifier {modifier > 0 ? `plus ${modifier}` : modifier}</span></AtlasCard>;
+  return <AtlasCard rect={FIRE_RECTS[modifier]} className="visual-fire-card"><span className="sr-only">{locale === "zh-CN" ? `窑火修正${modifierLabel}` : `Fire modifier ${modifierLabel}`}</span></AtlasCard>;
 }

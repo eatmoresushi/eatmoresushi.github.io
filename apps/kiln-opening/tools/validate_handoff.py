@@ -6,7 +6,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
-RULES_VERSION = "1.2.4"
+RULES_VERSION = "1.2.5"
 errors: list[str] = []
 
 
@@ -52,21 +52,20 @@ check(config["techniques"] == {"maxOwned": 2, "faceUpPerDiscipline": 2}, "Advanc
 check(config["coinEndGame"] == {"coinsPerVp": 3, "maxVp": 5}, "Coin scoring mismatch")
 
 expected_locations = {
-    "materials_yard": ({"2": 2, "3": 3, "4": 4}, None),
-    "forming_studio": ({"2": 2, "3": 2, "4": 2}, "private"),
-    "glaze_workshop": ({"2": 2, "3": 2, "4": 2}, "private"),
-    "kiln_yard": ({"2": None, "3": None, "4": None}, "uncapped"),
-    "market_imperial_office": ({"2": 2, "3": 3, "4": 4}, None),
-    "guild_academy": ({"2": 2, "3": 3, "4": 4}, None),
-    "labour": ({"2": None, "3": None, "4": None}, "uncapped"),
+    "materials_yard": {"2": 2, "3": 3, "4": 4},
+    "forming_studio": {"2": 2, "3": 3, "4": 4},
+    "glaze_workshop": {"2": 2, "3": 3, "4": 4},
+    "kiln_yard": {"2": None, "3": None, "4": None},
+    "market_imperial_office": {"2": 2, "3": 3, "4": 4},
+    "guild_academy": {"2": 2, "3": 3, "4": 4},
+    "labour": {"2": None, "3": None, "4": None},
 }
 locations = {location["id"]: location for location in actions["locations"]}
-check(set(locations) == set(expected_locations), "Expected exactly the seven V1.2.4 action locations")
-for location_id, (capacity, scope) in expected_locations.items():
+check(set(locations) == set(expected_locations), "Expected exactly the seven V1.2.5 action locations")
+for location_id, capacity in expected_locations.items():
     location = locations.get(location_id, {})
     check(location.get("capacity") == capacity, f"{location_id} capacity mismatch")
-    if scope is not None:
-        check(location.get("scope") == scope, f"{location_id} scope mismatch")
+    check(location.get("scope") == "shared", f"{location_id} must be shared")
     check(bool(location.get("nameZh")) and bool(location.get("apprenticeZh")) and bool(location.get("shifuZh")), f"{location_id} needs Chinese text")
 
 check(len(orders["starting"]) == 16, "Expected 16 Starting Orders")
@@ -85,7 +84,7 @@ check(Counter(tech["discipline"] for tech in techniques["advanced"]) == {"formin
 expected_tech_costs = {
     "T01": 2, "T02": 2, "T03": 2, "T04": 3, "T05": 2,
     "T06": 2, "T07": 2, "T08": 2, "T09": 2, "T10": 2,
-    "T11": 2, "T12": 3, "T13": 3, "T14": 3, "T15": 3,
+    "T11": 2, "T12": 3, "T13": 3, "T14": 2, "T15": 2,
 }
 check({tech["id"]: tech["cost"] for tech in techniques["advanced"]} == expected_tech_costs, "Advanced Tech costs mismatch")
 check(all(tech.get("name") and tech.get("nameZh") and tech.get("ability") and tech.get("abilityZh") for tech in techniques["starting"] + techniques["advanced"]), "Every Tech needs bilingual text")
@@ -107,19 +106,23 @@ check([kiln["id"] for kiln in kilns] == ["RU", "GU", "GE", "DI", "JU"], "Kiln ID
 check(all(kiln.get("nameZh") and kiln.get("abilityNameZh") and kiln.get("abilityZh") for kiln in kilns), "Every Kiln needs bilingual text")
 kiln_by_id = {kiln["id"]: kiln for kiln in kilns}
 check("gain 4 VP" in kiln_by_id["RU"]["ability"], "Ru must award 4 VP")
-check("2 Coins and 1 VP" in kiln_by_id["GU"]["ability"], "Guan must pay 2 Coins and 1 VP under V1.2.4")
-check("waive" not in kiln_by_id["GU"]["ability"].lower() and "ignore" not in kiln_by_id["GU"]["ability"].lower(), "V1.2.4 Guan waives no Decoration requirement")
-check("at no Clay cost" in kiln_by_id["DI"]["ability"], "Ding's additional vessel must be free under V1.2.4")
-check("pay 1 Wood" in kiln_by_id["JU"]["ability"], "Jun must cost 1 Wood under V1.2.4")
+check("2 Coins and 1 VP" in kiln_by_id["GU"]["ability"], "Guan must pay 2 Coins and 1 VP")
+check("waive" not in kiln_by_id["GU"]["ability"].lower() and "ignore" not in kiln_by_id["GU"]["ability"].lower(), "Guan waives no Decoration requirement")
+check("at no Clay cost" in kiln_by_id["DI"]["ability"], "Ding's additional vessel must be free")
+check("pay 1 Wood" in kiln_by_id["JU"]["ability"], "Jun must cost 1 Wood")
 
 track = recognition["track"]
-check([space["space"] for space in track] == [0, 1, 2, 3, 4, 5], "Recognition spaces mismatch")
-check([space["title"] for space in track] == ["Local Workshop", "Local Renown", "Imperial Grant", "Imperial Gift", "Imperial Priority", "Imperial Audience"], "Recognition titles mismatch")
-check(track[3]["reward"] == "Gain your Imperial Kiln tile.", "Imperial Gift must grant the Imperial Kiln tile")
-check("during a Kiln Yard action" in track[4]["reward"] and "1 additional ceramic" in track[4]["reward"], "Imperial Priority effect mismatch")
-check(track[5]["reward"] == "Gain 6 VP.", "Imperial Audience must award 6 VP")
-check(recognition["exhibition"]["capacityByProgress"] == [5, 5, 5, 5, 5, 5], "Exhibition capacity mismatch")
+check([space["space"] for space in track] == [0, 1, 2, 3, 4], "Recognition spaces mismatch")
+check([space["title"] for space in track] == ["Local Workshop", "Imperial Grant", "Imperial Gift", "Imperial Priority", "Imperial Audience"], "Recognition titles mismatch")
+check(track[1]["reward"] == "Gain 3 Coins or 1 Clay + 1 Wood + 1 Coin.", "Imperial Grant reward mismatch")
+check(track[2]["reward"] == "Gain your Imperial Kiln tile.", "Imperial Gift must grant the Imperial Kiln tile")
+check("before or after your worker action" in track[3]["reward"] and "1 unloaded Glazed ceramic" in track[3]["reward"], "Imperial Priority effect mismatch")
+check(track[4]["reward"] == "Gain 6 VP. Each later Crown scores 1 VP.", "Imperial Audience reward mismatch")
+check(recognition["exhibition"]["capacity"] == 5, "Exhibition capacity mismatch")
 check(recognition["exhibition"]["qualityVp"] == {"standard": 2, "fine": 3, "masterpiece": 5}, "Exhibition VP mismatch")
+check(recognition["exhibition"]["featuredCollectionSize"] == 3, "Featured Collection size mismatch")
+check(recognition["exhibition"]["threeDifferentShapesBonus"] == 3, "Featured Collection Shape bonus mismatch")
+check(recognition["exhibition"]["threeDifferentGlazesBonus"] == 3, "Featured Collection Glaze bonus mismatch")
 
 component_counts = {component["name"]: component["qty"] for component in components["components"]}
 check(component_counts.get("Main Order Cards") == 48 and component_counts.get("Starting Order Cards") == 16, "Order component counts mismatch")
@@ -130,34 +133,34 @@ check("discard the three leftmost" in rounds["phases"][0]["summary"] and "refill
 check(assets["orderCards"].get("total") == 64 and assets["orderCards"].get("main") == 48 and assets["orderCards"].get("starting") == 16, "Order asset counts mismatch")
 check(assets["playerReference"].get("mustShowFiveCardMainOrderDisplay") is True, "Reference asset must show a five-card Main Order display")
 
-adopted_rules = (ROOT / "docs" / "KILN_OPENING_v1.2.4_SOURCE.md").read_text(encoding="utf-8")
+adopted_rules = (ROOT / "docs" / "KILN_OPENING_v1.2.5_EN_SOURCE.md").read_text(encoding="utf-8")
 for required in (
     "reveal **5 face-up Main Orders**",
     "Discard the **3 leftmost face-up Main Orders**",
-    "Imperial Gift",
-    "**4 — Imperial Priority:**",
+    "Multiple Shifu may overfill the same location.",
+    "After Contributions are revealed and Base Heat is determined",
+    "before or after your worker action",
+    "reserve the **top card of the Main Order deck without looking at it first**",
     "same Base Heat and kiln position",
-    # V1.2.4-specific rules that must survive any future edit of the adopted source.
     "gain **2 Coins and 1 VP**",
     "at no Clay cost",
     "look at the top 2 Techs of that deck",
-    "At the end of the Work Phase, before any Firing Phase abilities are resolved",
-    "reserve the **top card of the Main Order deck without looking at it first**",
     "+3 VP if the 3 have **3 different Shapes**",
     "**1 VP per 3 Coins remaining**",
+    "Each Advanced Tech you own scores **1 VP at game end**.",
 ):
     check(required in adopted_rules, f"Adopted rulebook is missing: {required}")
 
 if errors:
-    print("V1.2.4 HANDOFF VALIDATION FAILED")
+    print("V1.2.5 HANDOFF VALIDATION FAILED")
     for item in errors:
         print(f"- {item}")
     sys.exit(1)
 
-print("V1.2.4 HANDOFF VALIDATION PASSED")
-print("Rules/data: 2-4 players, 5 rounds, 1 Shifu + 3 Apprentices, seven current locations.")
+print("V1.2.5 HANDOFF VALIDATION PASSED")
+print("Rules/data: 2-4 players, 5 rounds, 1 Shifu + 3 Apprentices, seven shared locations.")
 print("Orders: 16 Starting + 48 Main; five-card market rotates its three leftmost cards.")
 print("Tech: 4 Starting + 15 Advanced; Fuel Ledger and Second Firing match owner rulings.")
 print("Firing: Bank/Tend/Stoke, 12-card Fire deck, seven Shared Kiln spaces, current Quality ladder.")
-print("Recognition: Imperial Gift at 3, Imperial Priority at 4, Imperial Audience at 5.")
+print("Recognition: Imperial Grant at 1, Gift at 2, Priority at 3, Audience at 4.")
 print("Localization: every current Order, Tech, Kiln and action location includes Chinese text.")

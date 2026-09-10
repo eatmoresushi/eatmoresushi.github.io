@@ -9,12 +9,14 @@ import { projectPublicGameState } from "../../src/multiplayer/index.ts";
 import { GameTable, OrderCard } from "../../src/ui/GameTable.tsx";
 import { LanguageProvider, localizeMultiplayerError, term, translate } from "../../src/ui/i18n.tsx";
 import type { Locale } from "../../src/ui/i18n.tsx";
+import { PlaytestExperience } from "../../src/ui/PlaytestExperience.tsx";
+import { TabletopScene } from "../../src/ui/tabletop/TabletopScene.tsx";
 import { startedGame } from "./helpers.ts";
 
 /**
  * Switching language must change only what is drawn, never what is true.
  *
- * The pre-V1.2.4 version of this suite asserted `court_patronage` and I-prefixed Imperial
+ * The pre-V1.2.5 version of this suite asserted `court_patronage` and I-prefixed Imperial
  * Orders, so it pinned a ruleset the engine had already left. What it was actually guarding
  * -- that both locales render from one set of structural data, and that rendering mutates
  * nothing -- outlived those values, so it is the part kept here.
@@ -32,14 +34,14 @@ const MASTERPIECE_ORDER = MAIN_ORDERS.find((order) => order.minQuality === "mast
 describe("English / Simplified Chinese localization", () => {
   it("uses English by default and the official Chinese core terminology", () => {
     expect(translate("en", "End-game Exhibition")).toBe("End-game Exhibition");
-    expect(translate("zh-CN", "End-game Exhibition")).toBe("终局展陈");
+    expect(translate("zh-CN", "End-game Exhibition")).toBe("终局陈列");
     expect(term("zh-CN", "shifu")).toBe("师傅");
-    expect(term("zh-CN", "grey_green")).toBe("灰青");
-    expect(term("zh-CN", "masterpiece")).toBe("珍品");
+    expect(term("zh-CN", "grey_green")).toBe("灰青釉");
+    expect(term("zh-CN", "masterpiece")).toBe("臻品");
     expect(GAME_CONFIG.fireDeck).toEqual({ "-2": 1, "-1": 3, "0": 4, "1": 3, "2": 1 });
     expect(Object.values(TECHNIQUE_DEFINITIONS)).toHaveLength(15);
     expect(localizeMultiplayerError("zh-CN", "ORDER_REQUIREMENTS_NOT_MET", "English fallback"))
-      .toBe("所选陶瓷不符合订单要求。");
+      .toBe("所选陶瓷不符合委托要求。");
   });
 
   it("gives every Order, Technique and location Chinese text as well as English", () => {
@@ -66,11 +68,11 @@ describe("English / Simplified Chinese localization", () => {
       expect(english).toContain(orderId);
       expect(chinese).toContain(orderId);
     }
-    // A Crown Order carries its Crowns in both locales; Crowns are the V1.2.4 Imperial marker.
+    // A Crown Order carries its Crowns in both locales; Crowns are the V1.2.5 Imperial marker.
     expect(localizedMarkup("en", createElement(OrderCard, { orderId: CROWN_ORDER }))).toContain("👑");
     expect(localizedMarkup("zh-CN", createElement(OrderCard, { orderId: CROWN_ORDER }))).toContain("👑");
     expect(localizedMarkup("en", createElement(OrderCard, { orderId: MASTERPIECE_ORDER }))).toContain("Masterpiece");
-    expect(localizedMarkup("zh-CN", createElement(OrderCard, { orderId: MASTERPIECE_ORDER }))).toContain("珍品");
+    expect(localizedMarkup("zh-CN", createElement(OrderCard, { orderId: MASTERPIECE_ORDER }))).toContain("臻品");
     expect(JSON.stringify([ORDER_DEFINITIONS[CROWN_ORDER], ORDER_DEFINITIONS[MASTERPIECE_ORDER]])).toBe(snapshot);
   });
 
@@ -85,8 +87,71 @@ describe("English / Simplified Chinese localization", () => {
     expect(english).toContain("Player Workshops");
     expect(chinese).toContain("玩家作坊");
     expect(english).toContain("End-game Exhibition");
-    expect(chinese).toContain("终局展陈");
+    expect(chinese).toContain("终局陈列");
+    expect(english).toContain("∞");
+    expect(chinese).toContain("∞");
+    expect(chinese).not.toContain("Infinity");
+    expect(chinese).toContain("事件");
     expect(chinese).toContain(`V${GAME_CONFIG.rulesVersion}`);
     expect(JSON.stringify(publicGame)).toBe(before);
+  });
+
+  it("localizes the illustrated tabletop from the same V1.2.5 data", () => {
+    const publicGame = projectPublicGameState(startedGame(2, 10_402).state);
+    const ownPlayerId = publicGame.playerOrder[0]!;
+    const before = JSON.stringify(publicGame);
+    const chinese = localizedMarkup("zh-CN", createElement(TabletopScene, {
+      game: publicGame,
+      ownPlayerId,
+      selection: { workerId: null, locationId: null },
+      onSelectWorker: () => undefined,
+      onSelectLocation: () => undefined,
+      onClearSelection: () => undefined,
+    }));
+    for (const label of ["泥柴场", "陶车坊", "釉饰坊", "瓷牙行", "陶工行", "御府声望", "进阶技艺"]) {
+      expect(chinese).toContain(label);
+    }
+    expect(chinese).toContain("每次承接后获得资源");
+    expect(chinese).not.toContain("eligible Shifu Patronage");
+    expect(JSON.stringify(publicGame)).toBe(before);
+  });
+
+  it("localizes the public playtest diagnostics", () => {
+    const publicGame = projectPublicGameState(startedGame(2, 10_404).state);
+    const ownPlayerId = publicGame.playerOrder[0]!;
+    const chinese = localizedMarkup("zh-CN", createElement(PlaytestExperience, {
+      game: publicGame,
+      ownPlayerId,
+      ownPendingContribution: null,
+      events: [],
+      busy: false,
+      send: async () => true,
+    }));
+    expect(chinese).toContain("试玩调试");
+    expect(chinese).toContain("仅公开状态");
+    expect(chinese).toContain("公共资源库");
+    expect(chinese).not.toContain("Playtest Debug");
+  });
+
+  it("lets a selected Shifu target a full shared action in the illustrated tabletop", () => {
+    const publicGame = projectPublicGameState(startedGame(2, 10_403).state);
+    const ownPlayerId = publicGame.playerOrder[0]!;
+    const shifu = Object.values(publicGame.players[ownPlayerId]!.workers).find((worker) => worker.kind === "shifu")!;
+    const apprentice = Object.values(publicGame.players[ownPlayerId]!.workers).find((worker) => worker.kind === "apprentice")!;
+    publicGame.actionBoard.placements.materials_yard = ["occupied-1", "occupied-2"];
+    const render = (workerId: string): string => localizedMarkup("en", createElement(TabletopScene, {
+      game: publicGame,
+      ownPlayerId,
+      selection: { workerId, locationId: null },
+      onSelectWorker: () => undefined,
+      onSelectLocation: () => undefined,
+      onClearSelection: () => undefined,
+    }));
+    const shifuHotspot = render(shifu.id).match(/class="action-hotspot ([^"]*)"[^>]*data-location-id="materials_yard"/)?.[1];
+    const apprenticeHotspot = render(apprentice.id).match(/class="action-hotspot ([^"]*)"[^>]*data-location-id="materials_yard"/)?.[1];
+    expect(shifuHotspot).toContain("is-valid");
+    expect(shifuHotspot).toContain("is-full");
+    expect(apprenticeHotspot).not.toContain("is-valid");
+    expect(apprenticeHotspot).toContain("is-full");
   });
 });

@@ -1,14 +1,15 @@
 {
-  "rulesVersion": "1.2.4",
+  "rulesVersion": "1.2.5",
   "locations": [
     {
       "id": "materials_yard",
+      "scope": "shared",
       "name": "Materials Yard",
-      "nameZh": "材料场",
+      "nameZh": "泥柴场",
       "apprentice": "Gain 3 resources in any combination of Clay and Wood.",
-      "apprenticeZh": "获得共3份黏土和/或柴薪，可任意组合。",
+      "apprenticeZh": "获得共3份泥和/或柴，可任意组合。",
       "shifu": "Gain 4 resources in any combination of Clay and Wood. Then you may pay 1 Coin to gain +1 Clay and +1 Wood.",
-      "shifuZh": "获得共4份黏土和/或柴薪，可任意组合。然后可支付1铜钱，额外获得1黏土和1柴薪。",
+      "shifuZh": "获得共4份泥和/或柴，可任意组合。然后可支付1铜钱，额外获得1泥和1柴。",
       "capacity": {
         "2": 2,
         "3": 3,
@@ -17,43 +18,43 @@
     },
     {
       "id": "forming_studio",
-      "scope": "private",
-      "name": "Workshop Potter’s Wheel",
-      "nameZh": "作坊拉坯轮",
-      "apprentice": "Pay the normal Clay cost to form 1 vessel.",
-      "apprenticeZh": "支付正常黏土费用，成型1件器物。",
+      "scope": "shared",
+      "name": "Potter’s Wheel",
+      "nameZh": "陶车坊",
+      "apprentice": "Pay the Clay cost to form 1 vessel.",
+      "apprenticeZh": "支付泥费用，成型1件器物。",
       "shifu": "Form up to 2 vessels. If you form 2, reduce their total Clay cost by 1.",
-      "shifuZh": "成型至多2件器物。若成型2件，其总黏土费用减1。",
+      "shifuZh": "成型至多2件器物。若成型2件，其总泥费用减1。",
       "capacity": {
         "2": 2,
-        "3": 2,
-        "4": 2
+        "3": 3,
+        "4": 4
       }
     },
     {
       "id": "glaze_workshop",
-      "scope": "private",
-      "name": "Workshop Glaze & Decoration",
-      "nameZh": "作坊施釉与装饰间",
-      "apprentice": "Apply a Glaze and Decoration to 1 shaped vessel; pay normally.",
-      "apprenticeZh": "为1件已成型器物施釉并装饰，正常支付费用。",
+      "scope": "shared",
+      "name": "Glaze & Decoration",
+      "nameZh": "釉饰坊",
+      "apprentice": "Apply a Glaze and Decoration to 1 shaped vessel; pay the Decoration cost.",
+      "apprenticeZh": "为1件已成型器物施加1种釉与1种装饰，支付装饰费用。",
       "shifu": "Apply Glaze and Decoration to up to 2 shaped vessels; one Decoration applied by this action costs 0 Coins.",
-      "shifuZh": "为至多2件已成型器物施釉并装饰；本次行动施加的其中1种装饰费用为0铜钱。",
+      "shifuZh": "为最多2件已成型器物施釉与装饰；本行动所施加的其中1个装饰费用为0铜钱。",
       "capacity": {
         "2": 2,
-        "3": 2,
-        "4": 2
+        "3": 3,
+        "4": 4
       }
     },
     {
       "id": "kiln_yard",
-      "scope": "uncapped",
+      "scope": "shared",
       "name": "Kiln Yard",
-      "nameZh": "窑场",
+      "nameZh": "窑坊",
       "apprentice": "Load 1.",
       "apprenticeZh": "装窑1件。",
-      "shifu": "Load up to 2. At the end of the Work Phase, before any Firing Phase abilities are resolved, you may move 1 of your Shared-Kiln ceramics to another empty active Shared Kiln space.",
-      "shifuZh": "装窑至多2件。在劳作阶段结束时、结算任何烧成阶段能力之前，可将你在共窑中的1件陶瓷移动到另一个空置的有效共窑格。",
+      "shifu": "Load up to 2 ceramics. After Contributions are revealed and Base Heat is determined, but before the Fire card is revealed, you may move 1 of your ceramics in the Shared Kiln to an empty active space in a neighbouring heat zone (High ↔ Middle ↔ Low).",
+      "shifuZh": "装窑最多2件。控火牌公开并确定基础火候后、但在翻开窑火牌前，你可以将自己在共窑中的1件陶瓷移到相邻温区的一个空置有效窑位（高 ↔ 中 ↔ 低）。",
       "capacity": {
         "2": null,
         "3": null,
@@ -62,12 +63,13 @@
     },
     {
       "id": "market_imperial_office",
+      "scope": "shared",
       "name": "Commission Market",
-      "nameZh": "委托市场",
+      "nameZh": "瓷牙行",
       "apprentice": "Reserve 1 Main Order. Then gain 1 Clay, 1 Wood or 1 Coin.",
-      "apprenticeZh": "预留1张主订单。然后获得1黏土、1柴薪或1铜钱。",
-      "shifu": "Reserve up to 2 Main Orders, resolving each reservation separately. Then gain 1 Clay, 1 Wood or 1 Coin total.",
-      "shifuZh": "预留至多2张主订单，每次预留分别结算。然后总共获得1黏土、1柴薪或1铜钱。",
+      "apprenticeZh": "承接1张主委托。然后获得1泥、1柴或1铜钱。",
+      "shifu": "Reserve up to 2 Main Orders, resolving each reservation separately. After each reservation, gain 1 Clay, 1 Wood or 1 Coin.",
+      "shifuZh": "最多承接2张主委托，逐张独立结算。每承接1张后，获得1泥、1柴或1铜钱。",
       "capacity": {
         "2": 2,
         "3": 3,
@@ -76,12 +78,13 @@
     },
     {
       "id": "guild_academy",
+      "scope": "shared",
       "name": "Guild & Academy",
-      "nameZh": "行会与书院",
+      "nameZh": "陶工行",
       "apprentice": "Pay the printed Coin cost and take 1 face-up Advanced Tech.",
-      "apprenticeZh": "支付印刷的铜钱费用，拿取1个正面高级技术。",
+      "apprenticeZh": "支付牌面铜钱费用，取得1个公开进阶技艺。",
       "shifu": "Choose 1 discipline and look at the top 2 Techs of that deck, or as many as remain. Then take either 1 face-up Advanced Tech from any discipline or 1 of the revealed Techs, paying 1 Coin less, minimum 0. Put any revealed Tech not taken on the bottom of its deck.",
-      "shifuZh": "选择1个学科，查看该牌堆顶部2个技术（若不足则查看剩余全部）。然后从任意学科拿取1个正面高级技术，或拿取其中1个已查看的技术，费用少1铜钱（最低0）。未被拿取的已查看技术置于其牌堆底。",
+      "shifuZh": "选择1个技艺类别，查看该叠顶端2个技艺（不足则尽量查看）。然后取得任意类别的1个公开技艺，或其中1个刚查看的技艺，支付费用−1铜钱，最低为0。未取得的已查看技艺放到该叠底。",
       "capacity": {
         "2": 2,
         "3": 3,
@@ -90,9 +93,9 @@
     },
     {
       "id": "labour",
-      "scope": "uncapped",
+      "scope": "shared",
       "name": "Labour",
-      "nameZh": "劳作",
+      "nameZh": "杂作行",
       "apprentice": "Gain 2 Coins.",
       "apprenticeZh": "获得2铜钱。",
       "shifu": "Gain 4 Coins.",

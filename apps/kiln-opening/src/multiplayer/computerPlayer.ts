@@ -35,7 +35,7 @@ import type {
 } from "../game/index.ts";
 import type { AuthoritativeCommand, StoredSeat, SubmitWoodCommand } from "./types.ts";
 
-export const ONLINE_COMPUTER_POLICY_VERSION = "rules-v1.2.4-heuristic-001" as const;
+export const ONLINE_COMPUTER_POLICY_VERSION = "rules-v1.2.5-heuristic-001" as const;
 export const LEGACY_ONLINE_COMPUTER_POLICY_VERSION = "selfplay-003" as const;
 
 export function nextOnlineDecisionActor(state: GameState): PlayerId | null {
@@ -105,7 +105,7 @@ function orderAction(state: GameState, playerId: PlayerId): GameAction {
     if (order === undefined) continue;
     for (const group of combinations(finished, order.ceramics.length)) {
       if (!matchesOrder(order, group)) continue;
-      const crossesGrant = player.imperialRecognition < 2 && player.imperialRecognition + order.crowns >= 2;
+      const crossesGrant = player.imperialRecognition < 1 && player.imperialRecognition + order.crowns >= 1;
       return {
         type: "COMPLETE_ORDER",
         orderId,
@@ -117,19 +117,9 @@ function orderAction(state: GameState, playerId: PlayerId): GameAction {
   return { type: "END_ORDER_TURN" };
 }
 
-function locationHasSpace(state: GameState, playerId: PlayerId, locationId: LocationId): boolean {
-  const player = state.players[playerId];
-  if (player === undefined) return false;
-  if (locationId === "forming_studio" || locationId === "glaze_workshop") {
-    const capacity = locationId === "forming_studio"
-      ? player.workshopSpaces.pottersWheelUnlocked
-      : player.workshopSpaces.glazeDecorationUnlocked;
-    const occupancy = Object.values(player.workers).filter(
-      (worker) => worker.locationId === locationId,
-    ).length;
-    return occupancy < capacity;
-  }
-  return state.actionBoard.placements[locationId].length < locationCapacity(locationId, state.playerCount);
+function locationHasSpace(state: GameState, locationId: LocationId, workerKind: "shifu" | "apprentice"): boolean {
+  return workerKind === "shifu"
+    || state.actionBoard.placements[locationId].length < locationCapacity(locationId, state.playerCount);
 }
 
 /**
@@ -298,7 +288,7 @@ function bestTechniquePurchase(
 function guildIsWorthwhile(state: GameState, playerId: PlayerId, kind: WorkerState["kind"]): boolean {
   const player = state.players[playerId];
   if (player === undefined || player.techniques.length >= GAME_CONFIG.techniques.maxOwned) return false;
-  if (!locationHasSpace(state, playerId, "guild_academy")) return false;
+  if (!locationHasSpace(state, "guild_academy", kind)) return false;
   const discount = kind === "shifu" ? 1 : 0;
   return [...state.techniqueDisplay.forming, ...state.techniqueDisplay.glazing, ...state.techniqueDisplay.firing]
     .some((id) => Math.max(0, (TECHNIQUE_DEFINITIONS[id]?.cost ?? 99) - discount) <= player.resources.coins);
@@ -341,10 +331,9 @@ function workAction(state: GameState, playerId: PlayerId): GameAction {
   if (glazed.length > 0 && (spaces.length > 0 || imperialKilnEmpty)) {
     const normalMaximum = worker.kind === "shifu" ? 2 : 1;
     const normalLoads = glazed.slice(0, Math.min(normalMaximum, spaces.length)).map((ceramic, index) => ({ ceramicId: ceramic.id, kilnSpaceId: spaces[index]! }));
-    const canPriority = player.imperialPriorityAvailable && imperialKilnEmpty && normalLoads.length === normalMaximum && glazed.length > normalLoads.length;
-    const loads = canPriority
-      ? [...normalLoads, { ceramicId: glazed[normalLoads.length]!.id, kilnSpaceId: "imperial" as const }]
-      : normalLoads.length > 0 ? normalLoads : [{ ceramicId: glazed[0]!.id, kilnSpaceId: "imperial" as const }];
+    const loads = normalLoads.length > 0
+      ? normalLoads
+      : [{ ceramicId: glazed[0]!.id, kilnSpaceId: "imperial" as const }];
     // Kiln Furniture is deliberately left unwired. Zeroing one ceramic's zone modifier
     // splits the Contribution target across ceramics that no longer share a bias, and this
     // policy aims one Base Heat at all of its ceramics at once: granting the tile and using
@@ -354,12 +343,11 @@ function workAction(state: GameState, playerId: PlayerId): GameAction {
       type: "USE_KILN_YARD",
       workerId: worker.id,
       loads: finalLoads,
-      ...(canPriority ? { useImperialPriority: true } : {}),
-      ...(player.startingTechniqueId === "ST04" ? { kilnTendingClay: 1, kilnTendingWood: 1 } : {}),
+      ...(player.startingTechniqueId === "ST04" ? { kilnTendingClay: 1, kilnTendingWood: 0 } : {}),
     };
   }
 
-  if (shaped.length > 0 && locationHasSpace(state, playerId, "glaze_workshop")) {
+  if (shaped.length > 0 && locationHasSpace(state, "glaze_workshop", worker.kind)) {
     const maximum = worker.kind === "shifu" ? 2 : 1;
     // One of Carving Knives / Seal Stamps / Crackle Slips makes its Decoration free, which
     // is strictly better than paying for the Plain this policy defaults to -- and a
@@ -399,7 +387,6 @@ function workAction(state: GameState, playerId: PlayerId): GameAction {
     { bowl: 0, plate: 0, washer: 0, vase: 0, censer: 0 },
   );
   const shapes = (["bowl", "plate", "washer", "vase", "censer"] as Shape[])
-    .filter((shape) => state.vesselSupply[shape].length > 0)
     .sort((a, b) => ownedShapeCounts[a] - ownedShapeCounts[b] || SHAPE_COSTS[a] - SHAPE_COSTS[b]);
   const formCount = worker.kind === "shifu" && player.resources.clay >= 2 ? 2 : 1;
   const formShapes = shapes.slice(0, formCount);
@@ -417,13 +404,13 @@ function workAction(state: GameState, playerId: PlayerId): GameAction {
     && formShapes.length > 0
     && player.resources.coins >= DECORATION_COSTS.plain;
   if (dryingFrames) formingTechniqueIds.push("T04");
-  if (formShapes.length > 0 && player.resources.clay >= formCost && locationHasSpace(state, playerId, "forming_studio")) {
+  if (formShapes.length > 0 && player.resources.clay >= formCost && locationHasSpace(state, "forming_studio", worker.kind)) {
     return {
       type: "FORM_CERAMICS",
       workerId: worker.id,
       shapes: formShapes,
       ...(formingTechniqueIds.length > 0 ? { useTechniqueIds: formingTechniqueIds } : {}),
-      ...(dryingFrames ? { dryingFrames: { formedIndex: 0, glaze: targetGlaze(state, player) } } : {}),
+      ...(dryingFrames ? { dryingFrames: { formedIndex: 0, glaze: targetGlaze(state, player), decoration: "plain" as const } } : {}),
     };
   }
 
@@ -432,10 +419,10 @@ function workAction(state: GameState, playerId: PlayerId): GameAction {
   }
   const orderSourceAvailable = state.marketDisplay.length > 0
     || state.marketDeck.length + state.marketDiscard.length > 0;
-  if (locationHasSpace(state, playerId, "market_imperial_office") && orderSourceAvailable && player.orderHand.length < orderHandLimit()) {
+  if (locationHasSpace(state, "market_imperial_office", worker.kind) && orderSourceAvailable && player.orderHand.length < orderHandLimit()) {
     return { type: "BEGIN_OFFICE_ORDERS", workerId: worker.id, mode: worker.kind === "shifu" ? "take_up_to_two" : "take_one" };
   }
-  if (locationHasSpace(state, playerId, "materials_yard") && player.resources.clay + player.resources.wood < 6) {
+  if (locationHasSpace(state, "materials_yard", worker.kind) && player.resources.clay + player.resources.wood < 6) {
     const amount = worker.kind === "shifu" ? 4 : 3;
     return { type: "GAIN_MATERIALS", workerId: worker.id, clay: Math.ceil(amount / 2), wood: Math.floor(amount / 2) };
   }
@@ -448,7 +435,7 @@ export async function chooseOnlineComputerAction(
   seat: StoredSeat,
 ): Promise<AuthoritativeCommand> {
   if (!seat.isComputer || seat.aiPolicyVersion !== ONLINE_COMPUTER_POLICY_VERSION || seat.aiSeed === null) {
-    throw new Error(`Seat ${seat.seatId} is not a configured V1.2.4 computer seat`);
+    throw new Error(`Seat ${seat.seatId} is not a configured V1.2.5 computer seat`);
   }
   const playerId = seat.playerId;
   if (nextOnlineDecisionActor(state) !== playerId) throw new Error(`Computer ${playerId} is not the current actor`);
@@ -463,9 +450,26 @@ export async function chooseOnlineComputerAction(
       return { type: "SUBMIT_STARTING_ORDERS", orderIds: state.phase.offeredOrderIds[playerId]?.slice(0, 2) ?? [] };
     case "setup_starting_tech":
       return { type: "SELECT_STARTING_TECH", techniqueId: (["ST01", "ST02", "ST03", "ST04"] as const)[seat.aiSeed % 4]! };
-    case "work":
+    case "work": {
+      const priorityCeramic = Object.values(state.ceramics).find(
+        (ceramic) => ceramic.ownerId === playerId && ceramic.stage === "glazed",
+      );
+      const imperialOccupied = Object.values(state.ceramics).some(
+        (ceramic) => ceramic.ownerId === playerId && ceramic.stage === "loaded" && ceramic.kilnSpaceId === "imperial",
+      );
+      if (player.imperialPriorityAvailable && player.imperialKilnUnlocked && !imperialOccupied && priorityCeramic !== undefined) {
+        return { type: "RESOLVE_IMPERIAL_PRIORITY", ceramicId: priorityCeramic.id };
+      }
       return workAction(state, playerId);
+    }
+    case "work_imperial_priority": {
+      const priorityCeramic = Object.values(state.ceramics).find(
+        (ceramic) => ceramic.ownerId === playerId && ceramic.stage === "glazed",
+      );
+      return { type: "RESOLVE_IMPERIAL_PRIORITY", ceramicId: priorityCeramic?.id ?? null };
+    }
     case "work_office_orders":
+      if (state.phase.step === "gain_advance") return { type: "COMMISSION_GAIN_ADVANCE", resource: player.resources.coins < 2 ? "coins" : player.resources.wood < player.resources.clay ? "wood" : "clay" };
       if (state.phase.step === "colour_samples_or_skip") return player.techniques.some((technique) => technique.id === "T10") ? { type: "OFFICE_USE_COLOUR_SAMPLES", deck: "market" } : { type: "OFFICE_SKIP_COLOUR_SAMPLES" };
       if (state.phase.step === "colour_samples_choose") {
         const choices = state.phase.colourSamplesChoices ?? [];
@@ -476,15 +480,13 @@ export async function chooseOnlineComputerAction(
       if (state.phase.remainingTakes > 0) {
         const best = reservableFaceUpOrder(state, playerId);
         if (best !== null) return { type: "OFFICE_TAKE_ORDER", orderId: best };
-        // Nothing face up this workshop could deliver. V1.2.4 lets a reservation take the
+        // Nothing face up this workshop could deliver. V1.2.5 lets a reservation take the
         // top card unseen instead, which beats reserving a card known to be unusable.
         if (state.marketDeck.length + state.marketDiscard.length > 0) return { type: "OFFICE_TAKE_TOP_ORDER" };
         const fallback = state.marketDisplay[0];
         if (fallback !== undefined) return { type: "OFFICE_TAKE_ORDER", orderId: fallback };
       }
       return { type: "OFFICE_END_ORDERS" };
-    case "work_commission_advance":
-      return { type: "COMMISSION_GAIN_ADVANCE", resource: player.resources.coins < 2 ? "coins" : player.resources.wood < player.resources.clay ? "wood" : "clay" };
     case "work_guild":
       // Inspect the discipline whose deck is deepest: the most tiles it could still reveal.
       if (state.phase.step === "inspect") {
@@ -494,7 +496,7 @@ export async function chooseOnlineComputerAction(
       {
         const isShifu = player.workers[state.phase.workerId]?.kind === "shifu";
         const discount = isShifu ? 1 : 0;
-        // Inspected tiles and the face-up display are one pool: V1.2.4 lets a Shifu buy
+        // Inspected tiles and the face-up display are one pool: V1.2.5 lets a Shifu buy
         // from either, so compare them on measured worth rather than on where they sat.
         const pool = [
           ...(state.phase.inspectedTechniqueIds ?? []),
@@ -507,9 +509,6 @@ export async function chooseOnlineComputerAction(
         return {
           type: "GUILD_BUY_TECHNIQUE",
           techniqueId: chosen,
-          ...(player.techniques.length === 0
-            ? { unlockWorkshop: shapedCount(state, playerId) > 0 ? "glaze_decoration" as const : "potters_wheel" as const }
-            : {}),
         };
       }
     case "firing_before_contribution":
@@ -518,8 +517,9 @@ export async function chooseOnlineComputerAction(
       return chooseContribution(state, playerId, state.phase.windowId);
     case "firing_reposition":
       return { type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: null, toSpaceId: null };
-    case "firing_before_quality": {
-      const results = Object.values(state.firingContext?.ceramicResults ?? {}).filter((result) => state.ceramics[result.ceramicId]?.ownerId === playerId);
+    case "firing_before_quality":
+    case "firing_second_before_quality": {
+      const results = Object.values(state.firingContext?.ceramicResults ?? {}).filter((result) => state.ceramics[result.ceramicId]?.ownerId === playerId && (state.phase.type !== "firing_second_before_quality" || result.ceramicId === state.phase.ceramicId));
       const best = results.sort((a, b) => b.finalHeatDifference - a.finalHeatDifference)[0];
       if (player.kilnId === "GE") return { type: "RESOLVE_GE", ceramicId: best?.finalHeatDifference === 1 ? best.ceramicId : null };
       if (player.kilnId === "JU" && best !== undefined && best.finalHeatDifference > 0 && player.resources.wood >= 1) {
@@ -529,9 +529,8 @@ export async function chooseOnlineComputerAction(
       return player.kilnId === "JU" ? { type: "RESOLVE_JUN", ceramicId: null, delta: null } : { type: "RESOLVE_GE", ceramicId: null };
     }
     case "firing_after_quality": {
-      const currentTech = state.phase.techniqueIds[state.phase.queue.currentIndex];
       const eligible = Object.values(state.firingContext?.ceramicResults ?? {}).filter((result) => state.ceramics[result.ceramicId]?.ownerId === playerId && (result.assignedQuality === "flawed" || result.assignedQuality === "standard"));
-      if (currentTech === "T11") return { type: "RESOLVE_PROTECTIVE_SAGGARS", ceramicId: player.resources.wood > 0 ? eligible[0]?.ceramicId ?? null : null };
+      if (state.phase.techniqueIds.includes("T11")) return { type: "RESOLVE_PROTECTIVE_SAGGARS", ceramicId: player.resources.wood > 0 ? eligible[0]?.ceramicId ?? null : null };
       return { type: "RESOLVE_SECOND_FIRING", ceramicId: eligible[0]?.ceramicId ?? null };
     }
     case "firing_workshop_seconds": {
@@ -556,7 +555,7 @@ export async function chooseOnlineComputerAction(
  * V1.2.2 reserved whatever sat leftmost, which regularly took a three-ceramic Order to a
  * workshop that finishes about five ceramics a game. A single-ceramic Order is always
  * reachable; a larger one is only worth a reservation once the pipeline can actually fill
- * it. Returning null is what makes V1.2.4's unseen top-card reservation the better option.
+ * it. Returning null is what makes V1.2.5's unseen top-card reservation the better option.
  */
 function reservableFaceUpOrder(state: GameState, playerId: PlayerId): OrderId | null {
   const pipeline = Object.values(state.ceramics).filter((ceramic) =>
@@ -576,7 +575,7 @@ function shapedCount(state: GameState, playerId: PlayerId): number {
 }
 
 export function computerPolicyLabel(policyVersion: string | null): string {
-  if (policyVersion === ONLINE_COMPUTER_POLICY_VERSION) return "V1.2.4";
+  if (policyVersion === ONLINE_COMPUTER_POLICY_VERSION) return "V1.2.5";
   if (policyVersion === LEGACY_ONLINE_COMPUTER_POLICY_VERSION) return "V003";
   return policyVersion ?? "—";
 }

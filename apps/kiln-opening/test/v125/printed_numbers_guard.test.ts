@@ -48,18 +48,18 @@ const cases: Array<[string, string, number[]]> = [
   ["Protective Saggars", T("Protective Saggars"), [1, 1]],
   // The commitment is 1 Wood; the two 2s are the -2/+2 Contribution it produces.
   ["Fuel Ledger", T("Fuel Ledger"), [FUEL_LEDGER_WOOD, 2, 2]],
-  // V1.2.4 adds the "at least 1 ceramic participating" gate before the 1 Wood.
+  // V1.2.5 adds the "at least 1 ceramic participating" gate before the 1 Wood.
   ["Test Pieces", T("Test Pieces"), [1, 1]],
   ["Second Firing", T("Second Firing"), [1, 1]],
   ["Kiln Furniture", T("Kiln Furniture"), [1, 0]],
   // Starting Techs
-  ["Prepared Clay", T("Prepared Clay"), [1]],
+  ["Prepared Clay", T("Prepared Clay"), [1, 1]],
   ["White Slip", T("White Slip"), [1]],
   ["Rapid Drying", T("Rapid Drying"), [1, 1]],
-  ["Kiln Tending", T("Kiln Tending"), [1, 2]],
+  ["Kiln Tending", T("Kiln Tending"), [1, 1, 1]],
   // Kiln Traditions
   ["kiln RU", KILN_DEFINITIONS.RU.ability, [RU_ORDER_VP]],
-  // "at least 1 Crown", then the 2 Coins and 1 VP V1.2.4 pays.
+  // "at least 1 Crown", then the 2 Coins and 1 VP V1.2.5 pays.
   ["kiln GU", KILN_DEFINITIONS.GU.ability, [1, GUAN_ORDER_COINS, GUAN_ORDER_VP]],
   // Ge's correction is free, so the only number is the Heat Difference it may correct.
   ["kiln GE", KILN_DEFINITIONS.GE.ability, [geDifference]],
@@ -107,7 +107,7 @@ describe("printed numbers match the code exactly", () => {
   });
 
   /** The Flawed salvage prints its payout in the rulebook, not on a card, so guard it here. */
-  it("pays the Flawed salvage the Coins V1.2.4 firing step 10 prints", () => {
-    expect(ACTION_LOCATION_PRICES.workshopSecondsCoins).toBe(2);
+  it("pays the Flawed salvage the Coins V1.2.5 firing step 10 prints", () => {
+    expect(ACTION_LOCATION_PRICES.flawedSalvageCoins).toBe(2);
   });
 });

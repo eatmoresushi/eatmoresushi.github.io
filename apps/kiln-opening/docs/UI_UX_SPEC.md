@@ -28,12 +28,13 @@ Opponents may appear as compact workshop strips/cards around the top/side.
 - Selecting a location opens only the choices relevant to that action.
 - Illegal choices should be disabled with a reason.
 - Show cost before confirmation.
-- Show remaining location capacity visually.
+- Show each shared location's global printed capacity and remaining spaces visually. Materials Yard, Potter's Wheel, Glaze & Decoration, Commission Market, and Guild & Academy scale to 2 / 3 / 4 spaces; Kiln Yard and Labour are uncapped.
+- Do not group printed spaces by player. Highlight that a Shifu may overfill a full location while an Apprentice cannot.
 - Shifu and Apprentice effects should be visible without opening rules.
 - Always show Preferred Heat on a glazed ceramic.
 - Kiln spaces show zone and modifier.
 - During firing, focus UI attention on kiln and contribution workflow.
-- Use clear timing banners: `Before Contributions`, `Reveal`, `Before Quality`, etc.
+- Use clear timing banners: `Before Contributions`, `Contributions Revealed`, `After Base Heat / Before Fire`, `Before Quality`, etc.
 - Keep an always-visible `EN / 中文` control. Switching language must preserve selections, reconnect identity, and authoritative game state.
 
 ## Session controls
@@ -46,9 +47,9 @@ Opponents may appear as compact workshop strips/cards around the top/side.
 
 ## Cards
 
-Order cards should be components driven by `orders.json`, not static raster images. Every Imperial card displays its explicit +1/+2 Imperial Progress reward alongside VP. The Glaze Workshop displays Plain as 1 Coin and Carved/Impressed/Crackle as 2 Coins before confirmation, including the amount saved by Shifu, Carving Knives, or Seal Stamps.
+Order cards should be components driven by `orders.json`, not static raster images. Every Crown Order displays its printed Crown reward alongside VP and Coins. Glaze & Decoration displays Plain as 1 Coin and Carved/Impressed/Crackle as 2 Coins before confirmation, including the amount saved by Shifu, Carving Knives, Seal Stamps, or Crackle Slips.
 
-Craft Technique cards should be components driven by `techniques.json`.
+Starting and Advanced Tech cards should be components driven by `techniques.json`.
 
 Use printable art only as inspiration for:
 
@@ -66,22 +67,22 @@ Player board prominently shows:
 - Clay;
 - Wood;
 - Coins;
-- available/locked workers;
+- all available and placed workers;
 - owned Techniques;
 - unfinished and finished ceramics.
 
 The printable player-board art omits worker spaces for physical-table practicality; digital UI should still show worker status somewhere.
 
-## Imperial Progress
+## Imperial Recognition
 
-The main table always shows the shared, public six-space Imperial Progress track from Local Workshop (0) through Imperial Audience (5).
+The main table always shows the shared, public five-space Imperial Recognition track from Local Workshop (0) through Imperial Audience (4).
 
 - Render every player's marker on their current space using both colour and a text label.
-- Show each space title, end-game VP, Apprentice unlock where applicable, and the Imperial Seal at space 5.
-- Show available, locked, and pending-unlock worker counts on player summaries. Apprentice rewards at spaces 1 and 3 remain pending until Cleanup.
-- Show the Imperial Seal owner globally, including an explicit `Unclaimed` state.
+- Show Imperial Grant's resource choice at 1, Imperial Gift and the Imperial Kiln at 2, Imperial Priority at 3, and Imperial Audience's immediate 6 VP at 4.
+- Show the Imperial Kiln tile and Imperial Priority token on the owning player's summary after they are gained. Make Imperial Priority's legal before-or-after-worker-action window explicit.
+- Show immediate +1 VP events for Crowns gained after the marker has reached 4; the marker remains on 4.
 - Every player is eligible for an End-game Exhibition of up to 5 ceramics. The submission UI must separately identify the exactly-three featured collection used for Shape and Glaze diversity bonuses.
-- Animate and log a server-committed Progress move from its original space to final space. A +2 move must visibly cross and announce intermediate milestone rewards rather than appearing to skip them.
+- Animate and log each server-committed Recognition step. A multi-Crown Order must visibly resolve each crossed milestone and any remaining overflow Crowns rather than appearing to skip them.
 
 On narrow screens, keep the complete track in the document and make it horizontally scrollable. Do not remove spaces, markers, titles, rewards, or accessible labels to fit the viewport.
 

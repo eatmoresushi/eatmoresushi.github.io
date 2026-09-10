@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.2.4",
+  "rulesVersion": "1.2.5",
   "kilnSpaces": [
     {
       "id": "high_1",
@@ -42,7 +42,7 @@
     "start": 2,
     "minimum": 0,
     "maximum": 5,
-    "contributors": "players with at least one ceramic in the kiln"
+    "contributors": "players with at least 1 ceramic in the Shared Kiln or their Imperial Kiln"
   },
   "fireDeck": [
     -2,
@@ -68,11 +68,11 @@
     {
       "id": "BANK",
       "name": "Bank the Fire",
-      "nameZh": "封火",
+      "nameZh": "压火",
       "woodCost": 1,
       "heatAdjustment": -1,
       "meaning": "Deliberately restrain and bank the firing.",
-      "meaningZh": "刻意抑制窑火，封窑缓烧。"
+      "meaningZh": "压低本次烧成的基础火候。"
     },
     {
       "id": "TEND",
@@ -86,7 +86,7 @@
     {
       "id": "STOKE",
       "name": "Stoke the Fire",
-      "nameZh": "添薪",
+      "nameZh": "添柴",
       "woodCost": 1,
       "heatAdjustment": 1,
       "meaning": "Feed the kiln enough to raise the fire one step.",

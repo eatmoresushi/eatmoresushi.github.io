@@ -1,31 +1,31 @@
-# GAME_RULES.md — V1.2.4 source index
+# GAME_RULES.md — V1.2.5 source index
 
-The sole gameplay source of truth is [KILN_OPENING_v1.2.4_SOURCE.md](./KILN_OPENING_v1.2.4_SOURCE.md), the owner-supplied V1.2.4 rulebook.
+The current ruleset has two owner-supplied sources with separate authority:
 
-- Original supplied title: `KILN OPENING 开窑 v1.2.4.md`
-- Original supplied SHA-256: `95ecf7625ab93c5ca98c32a6db61e02f071036e4c48921afda471f919a112dd9`
-- Rules version: **V1.2.4**
-- Languages: English rules with English / Simplified Chinese player-facing terminology
+- [KILN_OPENING_v1.2.5_EN_SOURCE.md](./KILN_OPENING_v1.2.5_EN_SOURCE.md) is authoritative for mechanics, timing, costs, limits, setup, cards, abilities and scoring.
+- [KILN_OPENING_v1.2.5_ZH_SOURCE.md](./KILN_OPENING_v1.2.5_ZH_SOURCE.md) is authoritative for Simplified Chinese terminology, labels, names and player-facing wording.
 
-This file is an index, not an independent transcription. If prose here, structured data, tests, UI text, historical documents, experiments, saved games or visual assets disagree with the checked-in source, the checked-in source wins.
+Original supplied titles:
 
-## Recorded source rulings
+- `KILN OPENING 开窑 v1.2.5 — Player Rulebook2.md`
+- `《开窑》KILN OPENING v1.2.5 — 玩家规则书2.md`
 
-The source review is recorded in [RULEBOOK_AUDIT_V1.2.4.md](./RULEBOOK_AUDIT_V1.2.4.md). **V1.2.4 required no owner ruling**: it resolves, in its own text, every internal contradiction the V1.2.2 audit had to settle. The audit now records only two presentational deviations mandated by the owner's terminology brief -- an Order's printed requirements are headed **Requirements** rather than "Commission", and the Clay/Wood/Coin from reserving is a **reservation advance** -- plus notes where the source is deliberately terse.
+Rules version: **V1.2.5**.
 
-Rules V1.2.4 changed from V1.2.2, all enforced by the engine:
+This file is an index, not an independent transcription. Source checksums, the bilingual cross-check and the owner's shared-location clarification are recorded in [RULEBOOK_AUDIT_V1.2.5.md](./RULEBOOK_AUDIT_V1.2.5.md).
 
-- **Guan:** 2 Coins **and 1 VP** on a Crown Order, and **no Decoration waiver** -- every submitted ceramic faces every printed requirement.
-- **Ding:** the additional matching vessel costs **no Clay**.
-- **Guild & Academy Shifu:** inspect the **top 2 Techs of one discipline**, then buy either an inspected tile or any face-up tile at −1 Coin.
-- **Kiln Yard Shifu:** reposition at the **end of the Work Phase**, before any Firing Phase ability, in First Player order.
-- **Commission Market:** each reservation may take a face-up Order **or the top of the deck unseen**.
-- **Colour Samples / Test Pieces:** both **once per round**; Colour Samples **discards** what it did not reserve.
-- **Measuring Calipers / Standardised Moulds:** 2 Coins each.
-- **Exhibition:** diversity bonuses are **+3 VP** each. **S16** pays 4 Coins. There are **50 Vessel cards**, ten per Shape.
+## V1.2.5 implementation anchors
 
-Recognition 3 is titled **Imperial Gift** and grants the Imperial Kiln tile. Recognition 4 is titled **Imperial Priority**.
+- All seven worker-placement locations are shared. Materials Yard, Potter's Wheel, Glaze & Decoration, Commission Market, and Guild & Academy use 2 / 3 / 4 global printed spaces in 2 / 3 / 4-player games. Kiln Yard and Labour are uncapped.
+- A worker may use any unoccupied printed space regardless of other workers at that location. A Shifu may be placed when a location is full, and multiple Shifu may overfill it.
+- There are no private workshop worker locations, locked workshop spaces, or Tech-based location unlocks. Advanced Tech effects are not worker actions unless their text explicitly says otherwise.
+- A Kiln Yard Shifu repositions after Contributions are revealed and Base Heat is determined, but before the Fire card is revealed. The move must be between neighbouring Shared-Kiln heat zones and never enters or leaves an Imperial Kiln.
+- Imperial Recognition runs from 0 to 4. Imperial Gift grants the Imperial Kiln at 2, Imperial Priority is gained at 3, and Imperial Audience grants 6 VP at 4. Each Crown after reaching 4 grants 1 VP immediately.
+- Imperial Priority is spent once per game before or after the owner's worker action to load one unloaded Glazed ceramic into an empty Imperial Kiln.
+- Each Advanced Tech scores 1 VP at game end. Vessel cards are not a hard supply limit.
 
 ## Machine-readable implementation
 
-`data/*.json` and `src/game/*` are derived implementations of V1.2.4. They do not outrank the source and recorded rulings. New rooms and saves must carry the current rules version and fingerprint; older saves must be rejected rather than translated silently.
+`data/*.json` and `src/game/*` are derived implementations of V1.2.5. They do not outrank either adopted source. New rooms and saves carry the current rules version, save schema and rules fingerprint; incompatible older started games are rejected rather than translated silently.
+
+The V1.2.4 source and audit remain in `docs/` as historical snapshots only.

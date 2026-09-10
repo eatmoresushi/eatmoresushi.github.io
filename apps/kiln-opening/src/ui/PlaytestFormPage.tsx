@@ -152,7 +152,7 @@ function RecognitionField({ value, onChange }: { value: number | null; onChange:
     <Field label="Imperial Recognition">
       <select required value={value ?? ""} onChange={(event) => onChange(numberFromInput(event.target.value))}>
         <option value="">Not recorded</option>
-        {[0, 1, 2, 3, 4, 5].map((position) => <option value={position} key={position}>{position}</option>)}
+        {[0, 1, 2, 3, 4].map((position) => <option value={position} key={position}>{position}</option>)}
       </select>
     </Field>
   );
@@ -664,9 +664,9 @@ export function PlaytestFormPage() {
                       {SCORE_FIELDS.map(([label, key, required]) => (
                         <NumberField key={key} label={label} value={player[key]} min={key === "coinVp" ? 0 : -100} max={key === "coinVp" ? 5 : 500} required={required} onChange={(value) => updatePlayer(playerIndex, { [key]: value })} />
                       ))}
-                      <Field label="Recognition VP" hint="Imperial Audience awards 6 VP at Recognition 5; otherwise 0.">
+                      <Field label="Recognition VP" hint="Imperial Audience awards 6 VP at Recognition 4; otherwise 0. Record later Crown VP in the total score.">
                         <output className="calculated-output">
-                          {player.recognition === null ? "—" : player.recognition === 5 ? 6 : 0}
+                          {player.recognition === null ? "—" : player.recognition === 4 ? 6 : 0}
                         </output>
                       </Field>
                     </div>

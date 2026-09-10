@@ -26,7 +26,7 @@ Do not add digital conveniences that remove this inference.
 
 ### 2. Controlled uncertainty, not chaos
 
-The V1.2.4 Fire deck contains -2/-1/0/+1/+2 in a 1/3/4/3/1 distribution. Zero is the most common result and the negative and positive sides are symmetric.
+The V1.2.5 Fire deck contains -2/-1/0/+1/+2 in a 1/3/4/3/1 distribution. Zero is the most common result and the negative and positive sides are symmetric.
 
 The larger strategic uncertainty comes from other players' secret Bank, Tend, or Stoke Contribution choices, including Fuel Ledger's upgraded −2/+2 commitments. Wood costs are paid only after every eligible contributor has committed and the choices are revealed together. Base Heat starts at 2, applies all Contributions and clamps to 0–5; planning, zone choice and abilities remain the tools for managing uncapped Global and Actual Heat.
 
@@ -44,11 +44,12 @@ Crown route:
 - more exacting Orders;
 - less Coin income;
 - Imperial Recognition milestones;
-- Imperial Gift unlocks the private Imperial Kiln;
-- Imperial Priority adds a once-per-game Imperial-Kiln load;
-- Imperial Audience grants 6 VP.
+- Imperial Gift unlocks the Imperial Kiln at Recognition 2;
+- Imperial Priority adds a once-per-game Imperial-Kiln load before or after a worker action at Recognition 3;
+- Imperial Audience grants 6 VP at Recognition 4;
+- each Crown after Recognition 4 grants 1 VP immediately.
 
-End-game Exhibition is universal: every player may exhibit up to five qualifying ceramics, independent of Imperial Progress.
+End-game Exhibition is universal: every player may exhibit up to five qualifying ceramics, independent of Imperial Recognition.
 
 Imperial Recognition should be attractive but not mandatory.
 
@@ -58,13 +59,13 @@ The five Kilns make players asymmetrical from setup.
 
 Starting Tech and Advanced Tech choices answer: “What does my workshop become this game?”
 
-A player may own at most 2 Advanced Techs, and each acquisition expands one locked private workshop station, so nobody becomes universally efficient.
+A player may own at most 2 Advanced Techs. They modify actions and production but never create or unlock worker positions; each also scores 1 VP at game end.
 
 ### 5. Shifu = efficiency/flexibility, not every special power
 
 The Shifu should be stronger than an Apprentice, but technical mastery should live in Kiln Traditions and Techniques.
 
-At the Kiln Yard, the Shifu may load up to two ceramics and later reposition one owned Shared-Kiln ceramic after Base Heat is known. Imperial Priority may add one load to the owner's empty private Imperial Kiln once per game.
+At the Kiln Yard, the Shifu may load up to two ceramics and later reposition one owned Shared-Kiln ceramic after Base Heat is known but before Fire is revealed. The move is limited to an empty active space in a neighbouring heat zone. Imperial Priority is a separate once-per-game load into the owner's empty Imperial Kiln before or after a worker action.
 
 ### 6. Avoid mandatory transit resources
 
@@ -76,7 +77,7 @@ Clay preparation is abstracted into Forming.
 
 Prefer:
 
-- five meaningful shared locations plus each player's two private workshop actions, over unnecessary narrow sub-locations;
+- seven meaningful shared locations with clear global capacity, over private or unnecessary narrow sub-locations;
 - small permanent effects over combo-heavy engines;
 - visible card requirements;
 - few timing windows with explicit names.
@@ -85,7 +86,7 @@ Avoid:
 
 - specialists;
 - trained/untrained worker states;
-- extra firing sub-systems beyond the concise V1.2.4 Tech and Kiln abilities.
+- extra firing sub-systems beyond the concise V1.2.5 Tech and Kiln abilities.
 
 ## Desired strategic identities
 

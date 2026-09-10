@@ -168,7 +168,7 @@ function shapeSlotsMatch(order: OrderDefinition, selected: readonly FinishedCera
 }
 
 /**
- * V1.2.4 evaluates Shape, Glaze and Decoration groups independently.
+ * V1.2.5 evaluates Shape, Glaze and Decoration groups independently.
  *
  * V1.2.2's Guan Decoration waiver is gone: Imperial Patronage now pays 2 Coins and 1 VP and
  * exempts nothing, so every submitted ceramic faces every printed requirement.
@@ -310,7 +310,7 @@ export function orderAdmitsGeCrackle(order: OrderDefinition): boolean {
  * Orders. It completes 1.70 per game against Jun's 2.03, despite being the only Tradition
  * paid for them, because nothing in the Order valuation knew the ability existed.
  */
-/** V1.2.4 Imperial Patronage: 2 Coins and 1 VP on a Crown Order, and no Decoration waiver. */
+/** V1.2.5 Imperial Patronage: 2 Coins and 1 VP on a Crown Order, and no Decoration waiver. */
 export const GUAN_ORDER_COINS = 2;
 export const GUAN_ORDER_VP = 1;
 

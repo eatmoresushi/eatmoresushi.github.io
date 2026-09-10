@@ -12,7 +12,7 @@ import {
   workerId,
 } from "./helpers.ts";
 
-describe("V1.2.4 worker actions and workshop Techs", () => {
+describe("V1.2.5 worker actions and Techs", () => {
   it("resolves Apprentice and Shifu Materials Yard effects, including Prepared Clay", () => {
     const { state: initial, rng } = startedGame(2, 1301, ["ST01"]);
     let state = structuredClone(initial);
@@ -21,7 +21,7 @@ describe("V1.2.4 worker actions and workshop Techs", () => {
     state = mustApply(state, "P1", {
       type: "GAIN_MATERIALS", workerId: apprentice, clay: 1, wood: 2, preparedClayShape: "vase",
     }, rng);
-    expect(state.players["P1"]!.resources.clay).toBe(before.clay + 1 - 2);
+    expect(state.players["P1"]!.resources.clay).toBe(before.clay + 1 - (2 + 1));
     expect(state.players["P1"]!.resources.wood).toBe(before.wood + 2);
     expect(Object.values(state.ceramics)).toEqual([
       expect.objectContaining({ ownerId: "P1", shape: "vase", stage: "shaped" }),
@@ -40,21 +40,102 @@ describe("V1.2.4 worker actions and workshop Techs", () => {
     });
   });
 
-  it("enforces one private Potter's Wheel space per owner until Advanced Tech expansion", () => {
+  it("rejects Materials Yard and Labour placements that cannot perform a main action", () => {
+    const { state: initial, rng } = startedGame(2, 1301_1);
+    let state = structuredClone(initial);
+    state.commonSupply.clay = 0;
+    state.commonSupply.wood = 2;
+
+    expectError(applyAction(state, "P1", {
+      type: "GAIN_MATERIALS",
+      workerId: workerId(state, "P1", "apprentice"),
+      clay: 3,
+      wood: 0,
+    }, rng), "SUPPLY_EMPTY");
+
+    state.commonSupply.coins = 0;
+    expectError(applyAction(state, "P1", {
+      type: "USE_LABOUR",
+      workerId: workerId(state, "P1", "apprentice"),
+    }, rng), "SUPPLY_EMPTY");
+
+    state = mustApply(state, "P1", {
+      type: "GAIN_MATERIALS",
+      workerId: workerId(state, "P1", "apprentice"),
+      clay: 1,
+      wood: 2,
+    }, rng);
+    expect(state.players["P1"]!.resources.wood).toBe(4);
+  });
+
+  it("uses shared Potter's Wheel spaces, permits repeat visits, and lets multiple Shifu overfill", () => {
     const { state: initial, rng } = startedGame(2, 1302);
     let state = structuredClone(initial);
     state.players["P1"]!.resources.clay = 10;
     state.players["P2"]!.resources.clay = 10;
-    const first = workerId(state, "P1", "apprentice", 0);
+    const first = workerId(state, "P1", "apprentice");
     state = mustApply(state, "P1", { type: "FORM_CERAMICS", workerId: first, shapes: ["bowl"] }, rng);
 
     setWorkTurn(state, "P1");
-    const second = workerId(state, "P1", "apprentice", 0);
-    expectError(applyAction(state, "P1", { type: "FORM_CERAMICS", workerId: second, shapes: ["plate"] }, rng), "LOCATION_FULL");
+    const second = workerId(state, "P1", "apprentice");
+    state = mustApply(state, "P1", { type: "FORM_CERAMICS", workerId: second, shapes: ["plate"] }, rng);
 
     setWorkTurn(state, "P2");
-    state = mustApply(state, "P2", { type: "FORM_CERAMICS", workerId: workerId(state, "P2", "apprentice"), shapes: ["plate"] }, rng);
-    expect(Object.values(state.ceramics).filter(({ stage }) => stage === "shaped")).toHaveLength(2);
+    expectError(applyAction(state, "P2", {
+      type: "FORM_CERAMICS",
+      workerId: workerId(state, "P2", "apprentice"),
+      shapes: ["plate"],
+    }, rng), "LOCATION_FULL");
+
+    setWorkTurn(state, "P1");
+    state = mustApply(state, "P1", {
+      type: "FORM_CERAMICS",
+      workerId: workerId(state, "P1", "shifu"),
+      shapes: ["vase"],
+    }, rng);
+    setWorkTurn(state, "P2");
+    state = mustApply(state, "P2", {
+      type: "FORM_CERAMICS",
+      workerId: workerId(state, "P2", "shifu"),
+      shapes: ["washer"],
+    }, rng);
+    expect(state.actionBoard.placements.forming_studio).toHaveLength(4);
+    expect(Object.values(state.ceramics).filter(({ stage }) => stage === "shaped")).toHaveLength(4);
+  });
+
+  it("uses shared Glaze & Decoration spaces and permits the same player to revisit", () => {
+    const { state: initial, rng } = startedGame(2, 1302_1);
+    let state = structuredClone(initial);
+    state.players["P1"]!.resources.coins = 10;
+    state.players["P2"]!.resources.coins = 10;
+    const first = addShaped(state, "P1", "bowl");
+    const second = addShaped(state, "P1", "plate");
+    const opponent = addShaped(state, "P2", "washer");
+
+    state = mustApply(state, "P1", {
+      type: "GLAZE_CERAMICS",
+      workerId: workerId(state, "P1", "apprentice"),
+      selections: [{ ceramicId: first.id, glaze: "white", decoration: "plain" }],
+    }, rng);
+    setWorkTurn(state, "P1");
+    state = mustApply(state, "P1", {
+      type: "GLAZE_CERAMICS",
+      workerId: workerId(state, "P1", "apprentice"),
+      selections: [{ ceramicId: second.id, glaze: "celadon", decoration: "plain" }],
+    }, rng);
+    setWorkTurn(state, "P2");
+    expectError(applyAction(state, "P2", {
+      type: "GLAZE_CERAMICS",
+      workerId: workerId(state, "P2", "apprentice"),
+      selections: [{ ceramicId: opponent.id, glaze: "grey_green", decoration: "plain" }],
+    }, rng), "LOCATION_FULL");
+    state = mustApply(state, "P2", {
+      type: "GLAZE_CERAMICS",
+      workerId: workerId(state, "P2", "shifu"),
+      selections: [{ ceramicId: opponent.id, glaze: "grey_green", decoration: "plain" }],
+      freeDecorationCeramicId: opponent.id,
+    }, rng);
+    expect(state.actionBoard.placements.glaze_workshop).toHaveLength(3);
   });
 
   it("applies the Potter's Wheel limits, Shifu two-vessel discount, and forbids an empty action", () => {
@@ -67,6 +148,25 @@ describe("V1.2.4 worker actions and workshop Techs", () => {
     const before = state.players["P1"]!.resources.clay;
     state = mustApply(state, "P1", { type: "FORM_CERAMICS", workerId: shifu, shapes: ["vase", "censer"] }, rng);
     expect(state.players["P1"]!.resources.clay).toBe(before - 3);
+  });
+
+  it("uses a proxy instead of treating an empty Vessel-card stack as a gameplay limit", () => {
+    const { state: initial, rng } = startedGame(2, 1303_1);
+    let state = structuredClone(initial);
+    state.players["P1"]!.resources.clay = 10;
+    state.vesselSupply.bowl = [];
+
+    state = mustApply(state, "P1", {
+      type: "FORM_CERAMICS",
+      workerId: workerId(state, "P1", "apprentice"),
+      shapes: ["bowl"],
+    }, rng);
+
+    const bowl = Object.values(state.ceramics).find(
+      (ceramic) => ceramic.ownerId === "P1" && ceramic.shape === "bowl",
+    );
+    expect(bowl?.vesselInstanceId).toContain("bowl:proxy:");
+    expect(state.vesselSupply.bowl).toEqual([]);
   });
 
   it("gives Ding's additional matching vessel free of Clay", () => {
@@ -85,7 +185,7 @@ describe("V1.2.4 worker actions and workshop Techs", () => {
       (ceramic) => ceramic.ownerId === "P1" && ceramic.shape === "bowl",
     );
     expect(bowls).toHaveLength(2);
-    // V1.2.4: only the vessel the action itself formed is charged; Ding's extra is free.
+    // V1.2.5: only the vessel the action itself formed is charged; Ding's extra is free.
     expect(state.players["P1"]!.resources.clay).toBe(before - SHAPE_COSTS.bowl);
     expect(state.players["P1"]!.kilnAbilityUsedThisRound).toBe(true);
   });
@@ -113,13 +213,13 @@ describe("V1.2.4 worker actions and workshop Techs", () => {
       workerId: workerId(state, "P1", "shifu"),
       shapes: ["bowl", "plate"],
       useTechniqueIds: ["T04"],
-      whiteSlip: { formedIndex: 0, decoration: "carved" },
-      dryingFrames: { formedIndex: 1, glaze: "moon_white" },
+      whiteSlip: { formedIndex: 0 },
+      dryingFrames: { formedIndex: 1, glaze: "moon_white", decoration: "carved" },
     }, rng);
     const glazed = Object.values(state.ceramics).filter(({ stage }) => stage === "glazed");
     expect(glazed).toEqual(expect.arrayContaining([
-      expect.objectContaining({ shape: "bowl", glaze: "white", decoration: "carved" }),
-      expect.objectContaining({ shape: "plate", glaze: "moon_white", decoration: "plain" }),
+      expect.objectContaining({ shape: "bowl", glaze: "white", decoration: "plain" }),
+      expect.objectContaining({ shape: "plate", glaze: "moon_white", decoration: "carved" }),
     ]));
     expect(state.players["P1"]!.resources.coins).toBe(7);
     expect(state.players["P1"]!.techniques.find(({ id }) => id === "T04")?.exhausted).toBe(true);
@@ -163,9 +263,9 @@ describe("V1.2.4 worker actions and workshop Techs", () => {
     addTechnique(state, "P1", "T04");
     state = mustApply(state, "P1", {
       type: "FORM_CERAMICS", workerId: workerId(state, "P1", "apprentice"), shapes: ["washer"],
-      useTechniqueIds: ["T04"], dryingFrames: { formedIndex: 0, glaze: "celadon" },
+      useTechniqueIds: ["T04"], dryingFrames: { formedIndex: 0, glaze: "celadon", decoration: "impressed" },
     }, rng);
-    expect(Object.values(state.ceramics)).toContainEqual(expect.objectContaining({ shape: "washer", stage: "glazed", glaze: "celadon", decoration: "plain" }));
+    expect(Object.values(state.ceramics)).toContainEqual(expect.objectContaining({ shape: "washer", stage: "glazed", glaze: "celadon", decoration: "impressed" }));
 
     state = structuredClone(initial);
     state.players["P1"]!.resources = { clay: 10, wood: 10, coins: 10 };
@@ -178,7 +278,7 @@ describe("V1.2.4 worker actions and workshop Techs", () => {
       useTechniqueIds: ["T05"],
     }, rng);
     expect(state.ceramics[reworked.id]).toEqual(expect.objectContaining({ shape: "vase", stage: "glazed" }));
-    expect(state.players["P1"]!.resources.clay).toBe(clayBeforeRework - 1);
+    expect(state.players["P1"]!.resources.clay).toBe(clayBeforeRework);
   });
 
   it("applies the Shifu free Decoration even when glazing one vessel", () => {
@@ -246,10 +346,10 @@ describe("V1.2.4 worker actions and workshop Techs", () => {
     const resources = { ...state.players["P1"]!.resources };
     state = mustApply(state, "P1", {
       type: "USE_KILN_YARD", workerId: workerId(state, "P1", "apprentice"),
-      loads: [{ ceramicId: p1.id, kilnSpaceId: "high_1" }], kilnTendingClay: 1, kilnTendingWood: 1,
+      loads: [{ ceramicId: p1.id, kilnSpaceId: "high_1" }], kilnTendingClay: 1, kilnTendingWood: 0,
     }, rng);
     expect(state.players["P1"]!.resources.clay).toBe(resources.clay + 1);
-    expect(state.players["P1"]!.resources.wood).toBe(resources.wood + 1);
+    expect(state.players["P1"]!.resources.wood).toBe(resources.wood);
     setWorkTurn(state, "P2");
     state = mustApply(state, "P2", {
       type: "USE_KILN_YARD", workerId: workerId(state, "P2", "apprentice"),
@@ -258,7 +358,7 @@ describe("V1.2.4 worker actions and workshop Techs", () => {
     expect(state.actionBoard.placements.kiln_yard).toHaveLength(2);
   });
 
-  it("reserves and refills two Main Orders with a Shifu, then grants only one reservation advance", () => {
+  it("reserves and refills two Main Orders with a Shifu, gaining an advance after each", () => {
     const { state: initial, rng } = startedGame(2, 1310);
     let state = structuredClone(initial);
     const displayed = state.marketDisplay.slice(0, 2);
@@ -267,17 +367,20 @@ describe("V1.2.4 worker actions and workshop Techs", () => {
       type: "BEGIN_OFFICE_ORDERS", workerId: workerId(state, "P1", "shifu"), mode: "take_up_to_two",
     }, rng);
     state = mustApply(state, "P1", { type: "OFFICE_TAKE_ORDER", orderId: displayed[0]! }, rng);
-    state = mustApply(state, "P1", { type: "OFFICE_TAKE_ORDER", orderId: displayed[1]! }, rng);
-    expect(state.phase.type).toBe("work_commission_advance");
-    expect(state.marketDisplay).toHaveLength(5);
+    expect(state.phase).toEqual(expect.objectContaining({ type: "work_office_orders", step: "gain_advance" }));
     state = mustApply(state, "P1", { type: "COMMISSION_GAIN_ADVANCE", resource: "clay" }, rng);
+    state = mustApply(state, "P1", { type: "OFFICE_TAKE_ORDER", orderId: displayed[1]! }, rng);
+    expect(state.phase).toEqual(expect.objectContaining({ type: "work_office_orders", step: "gain_advance" }));
+    expect(state.marketDisplay).toHaveLength(5);
+    state = mustApply(state, "P1", { type: "COMMISSION_GAIN_ADVANCE", resource: "wood" }, rng);
     expect(state.players["P1"]!.resources.clay).toBe(clayBefore + 1);
+    expect(state.players["P1"]!.resources.wood).toBe(initial.players["P1"]!.resources.wood + 1);
     expect(state.players["P1"]!.orderHand).toEqual(expect.arrayContaining(displayed));
   });
 
   it("lets Colour Samples reserve a looked-at Order or a face-up one, discarding the rest", () => {
     // V1.2.2 forced the reservation to come from the three looked-at cards and returned the
-    // others to the bottom of the deck. V1.2.4 also allows reserving a face-up Order, and
+    // others to the bottom of the deck. V1.2.5 also allows reserving a face-up Order, and
     // discards every looked-at card that was not reserved.
     const { state: initial, rng } = startedGame(2, 1311);
     let state = structuredClone(initial);
@@ -333,7 +436,7 @@ describe("V1.2.4 worker actions and workshop Techs", () => {
     } as never, rng), "ORDER_NOT_AVAILABLE");
   });
 
-  it("unlocks the chosen private space with the first Advanced Tech and the other with the second", () => {
+  it("allows at most two Advanced Techs and creates no private action spaces", () => {
     const { state: initial, rng } = startedGame(2, 1312);
     let state = structuredClone(initial);
     state.players["P1"]!.resources.coins = 10;
@@ -341,8 +444,7 @@ describe("V1.2.4 worker actions and workshop Techs", () => {
     state = mustApply(state, "P1", {
       type: "BEGIN_GUILD_ACTION", workerId: workerId(state, "P1", "apprentice"),
     }, rng);
-    state = mustApply(state, "P1", { type: "GUILD_BUY_TECHNIQUE", techniqueId: firstId, unlockWorkshop: "potters_wheel" }, rng);
-    expect(state.players["P1"]!.workshopSpaces).toEqual({ pottersWheelUnlocked: 2, glazeDecorationUnlocked: 1 });
+    state = mustApply(state, "P1", { type: "GUILD_BUY_TECHNIQUE", techniqueId: firstId }, rng);
 
     setWorkTurn(state, "P1");
     const secondId = state.techniqueDisplay.glazing[0]!;
@@ -350,8 +452,9 @@ describe("V1.2.4 worker actions and workshop Techs", () => {
       type: "BEGIN_GUILD_ACTION", workerId: workerId(state, "P1", "apprentice"),
     }, rng);
     state = mustApply(state, "P1", { type: "GUILD_BUY_TECHNIQUE", techniqueId: secondId }, rng);
-    expect(state.players["P1"]!.workshopSpaces).toEqual({ pottersWheelUnlocked: 2, glazeDecorationUnlocked: 2 });
     expect(state.players["P1"]!.techniques).toHaveLength(2);
+    expect(state.actionBoard.placements).not.toHaveProperty("private_potters_wheel");
+    expect(state.actionBoard.placements).not.toHaveProperty("private_glaze_decoration");
 
     setWorkTurn(state, "P1");
     state.actionBoard.placements.guild_academy = [];
@@ -362,7 +465,7 @@ describe("V1.2.4 worker actions and workshop Techs", () => {
 
   it("inspects the top 2 of one discipline, then buys an inspected or face-up Tech at -1 Coin", () => {
     // V1.2.2's Shifu refreshed a discipline -- its face-up tiles went to the bottom and the
-    // purchase had to come from that same discipline. V1.2.4 draws the top 2 off the chosen
+    // purchase had to come from that same discipline. V1.2.5 draws the top 2 off the chosen
     // deck for this player alone, leaves every display untouched, and lets the purchase come
     // from any face-up tile or either drawn tile.
     const { state: initial, rng } = startedGame(2, 1313);
@@ -384,7 +487,7 @@ describe("V1.2.4 worker actions and workshop Techs", () => {
     const printed = TECHNIQUE_DEFINITIONS[selected]!.cost;
     const before = state.players["P1"]!.resources.coins;
     const result = mustResult(state, "P1", {
-      type: "GUILD_BUY_TECHNIQUE", techniqueId: selected, unlockWorkshop: "glaze_decoration",
+      type: "GUILD_BUY_TECHNIQUE", techniqueId: selected,
     }, rng);
     state = result.state;
     const acquired = result.events.find((event) => event.type === "TECHNIQUE_ACQUIRED");
@@ -406,7 +509,7 @@ describe("V1.2.4 worker actions and workshop Techs", () => {
     const printed = TECHNIQUE_DEFINITIONS[faceUp]!.cost;
     const before = state.players["P1"]!.resources.coins;
     state = mustApply(state, "P1", {
-      type: "GUILD_BUY_TECHNIQUE", techniqueId: faceUp, unlockWorkshop: "potters_wheel",
+      type: "GUILD_BUY_TECHNIQUE", techniqueId: faceUp,
     }, rng);
     expect(state.players["P1"]!.resources.coins).toBe(before - (printed - 1));
     expect(state.techniqueDisplay.forming).toHaveLength(2);

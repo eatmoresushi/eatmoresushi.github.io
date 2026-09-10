@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.2.4",
+  "rulesVersion": "1.2.5",
   "orderCards": {
     "status": "REGENERATE_FROM_DATA",
     "source": "data/orders.json",
@@ -20,13 +20,15 @@
     ],
     "mustContain": [
       "Materials Yard",
-      "Private Potter's Wheel",
-      "Private Glaze & Decoration",
+      "Potter's Wheel",
+      "Glaze & Decoration",
       "Kiln Yard",
       "Commission Market",
       "Guild & Academy",
       "Labour",
       "Imperial Recognition",
+      "2/3/4 shared action spaces by player count",
+      "Shifu overfill",
       "Shifu repositioning after Base Heat"
     ],
     "mustShowPlayerCountKilnCovers": true
