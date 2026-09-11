@@ -41,6 +41,17 @@ describe("V1.2.6 functional tabletop", () => {
     expect(markup).toContain("Face-up Main Orders");
     expect(markup).toContain("Shared Kiln");
     expect(markup).toContain("Face-up Techs");
+    expect(markup).toContain('data-hover-preview="order"');
+    expect(markup).toContain('data-hover-preview="advanced-technique"');
+    expect(markup).toMatch(/aria-describedby="kiln-order-preview-[^"]+-description"/);
+    expect(markup).toMatch(/aria-describedby="kiln-technique-preview-[^"]+-description"/);
+    expect(markup).toMatch(/aria-describedby="kiln-starting-technique-preview-[^"]+-description"/);
+    expect(markup).toMatch(/<button[^>]*aria-haspopup="dialog"[^>]*data-hover-preview="starting-technique"[^>]*data-preview-id="kiln-starting-technique-preview-ST0[1-4]"[^>]*data-starting-technique-id="ST0[1-4]"/);
+    expect(markup).toMatch(/<button[^>]*aria-label="Inspect Order [^"]+"[^>]*aria-haspopup="dialog"[^>]*data-hover-preview="order"/);
+    expect(markup).toMatch(/<button[^>]*aria-label="Inspect [^"]+"[^>]*aria-haspopup="dialog"[^>]*data-hover-preview="advanced-technique"/);
+    expect(markup).toMatch(/class="kiln-tabletop-player-resources" aria-label="Resources"><i>Clay \d+<\/i><i>Wood \d+<\/i><i>Coins \d+<\/i>/);
+    expect(markup).toContain('title="First Player">1</span>');
+    expect(markup).not.toContain('title="First Player">一</span>');
     expect(markup).toContain('data-min-players="3"');
     expect(markup).toContain('data-min-players="4"');
     expect(markup).toMatch(/class="[^"]*is-locked[^"]*" data-min-players="3"/);
@@ -105,6 +116,10 @@ describe("V1.2.6 functional tabletop", () => {
     expect(markup).toContain("共窑");
     expect(markup).toContain("御府声望");
     expect(markup).toContain("你的作坊");
+    expect(markup).toContain('data-hover-preview="order"');
+    expect(markup).toContain('data-hover-preview="advanced-technique"');
+    expect(markup).toContain('data-hover-preview="starting-technique"');
+    expect(markup).toMatch(/class="kiln-tabletop-player-resources" aria-label="资源"><i>泥 \d+<\/i><i>柴 \d+<\/i><i>钱 \d+<\/i>/);
     expect(JSON.stringify(game)).toBe(before);
   });
 });
