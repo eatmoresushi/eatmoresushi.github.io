@@ -254,9 +254,9 @@ export function TabletopGameExperience({
               <span className="kiln-tabletop-avatar" aria-hidden="true">{player.displayName.slice(0, 1).toUpperCase()}</span>
               <span className="kiln-tabletop-player-name"><strong>{player.displayName}{playerId === ownPlayerId ? text(locale, " · You", " · 你") : ""}</strong><small>{kiln === null ? text(locale, "Choosing kiln", "正在选择窑口") : locale === "zh-CN" ? kiln.nameZh : kiln.name}</small></span>
               <span className="kiln-tabletop-player-score"><small>{text(locale, "VP", "分")}</small><b>{playerVp(game, player)}</b></span>
-              <span className="kiln-tabletop-player-resources" aria-label={text(locale, "Resources", "资源")}><i>泥 {player.resources.clay}</i><i>柴 {player.resources.wood}</i><i>钱 {player.resources.coins}</i></span>
+              <span className="kiln-tabletop-player-resources" aria-label={text(locale, "Resources", "资源")}><i>{text(locale, "Clay", "泥")} {player.resources.clay}</i><i>{text(locale, "Wood", "柴")} {player.resources.wood}</i><i>{text(locale, "Coins", "钱")} {player.resources.coins}</i></span>
               <span className="kiln-tabletop-player-public"><i>{player.orderHand.length} {text(locale, "Orders", "委托")}</i><i>{player.techniques.length + (player.startingTechniqueId === null ? 0 : 1)} {text(locale, "Techs", "技艺")}</i><i>{availableWorkers} {text(locale, "workers", "工人")}</i></span>
-              {player.id === game.firstPlayerId && <span className="kiln-tabletop-first-player" title={text(locale, "First Player", "起始玩家")}>一</span>}
+              {player.id === game.firstPlayerId && <span className="kiln-tabletop-first-player" title={text(locale, "First Player", "起始玩家")}>1</span>}
             </button>
           );
         })}
