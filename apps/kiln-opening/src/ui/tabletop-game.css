@@ -264,7 +264,6 @@
   overflow: hidden;
   transition: transform .15s ease, box-shadow .15s ease;
 }
-button.kiln-tabletop-order-card:hover { z-index: 2; transform: translateY(-4px); box-shadow: 0 9px 16px rgb(61 44 18 / 25%); }
 .kiln-tabletop-order-card.is-crown { border-color: #b65b3f; background: radial-gradient(circle at 78% 18%, rgb(183 95 58 / 18%), transparent 4rem), linear-gradient(145deg, #fff9e9, #e6d4bd); }
 .kiln-tabletop-order-card header { display: flex; gap: .35rem; justify-content: space-between; }
 .kiln-tabletop-order-card header b { font-size: .58rem; letter-spacing: .08em; }
@@ -499,7 +498,6 @@ button.kiln-tabletop-order-card:hover { z-index: 2; transform: translateY(-4px);
   overflow: hidden;
   transition: transform .15s ease, box-shadow .15s ease;
 }
-button.kiln-tabletop-tech-tile:hover { z-index: 2; transform: translateY(-3px); box-shadow: 0 8px 14px rgb(54 41 20 / 24%); }
 .kiln-tabletop-tech-tile.is-glazing { border-top-color: #4e8791; }
 .kiln-tabletop-tech-tile.is-firing { border-top-color: #a6553d; }
 .kiln-tabletop-tech-tile header { display: flex; justify-content: space-between; font-size: .47rem; }
@@ -523,8 +521,10 @@ button.kiln-tabletop-tech-tile:hover { z-index: 2; transform: translateY(-3px); 
   border-radius: 7px;
   padding: .38rem;
   color: #292d26;
+  text-align: left;
   background: radial-gradient(circle at 90% 15%, rgb(171 76 59 / 15%), transparent 4rem), linear-gradient(145deg, #fff7e4, #ddcba8);
   box-shadow: 0 4px 8px rgb(54 41 20 / 16%);
+  transition: transform .15s ease, box-shadow .15s ease;
 }
 .kiln-tabletop-starting-tech header { display: flex; justify-content: space-between; color: #814339; font-size: .47rem; }
 .kiln-tabletop-starting-tech header span { font-weight: 900; letter-spacing: .06em; }
@@ -534,6 +534,46 @@ button.kiln-tabletop-tech-tile:hover { z-index: 2; transform: translateY(-3px); 
 .kiln-tabletop-starting-tech footer { color: #8a5748; font-size: .4rem; font-weight: 850; text-transform: uppercase; letter-spacing: .05em; }
 .kiln-tabletop-starting-tech.is-compact { width: 112px; min-height: 88px; flex: 0 0 112px; }
 .kiln-tabletop-starting-tech.is-compact p { font-size: .45rem; -webkit-line-clamp: 2; }
+
+@media (hover: hover) and (pointer: fine) {
+  button.kiln-tabletop-order-card:hover { z-index: 2; transform: translateY(-4px); box-shadow: 0 9px 16px rgb(61 44 18 / 25%); }
+  button.kiln-tabletop-tech-tile:hover,
+  button.kiln-tabletop-starting-tech:hover { z-index: 2; transform: translateY(-3px); box-shadow: 0 8px 14px rgb(54 41 20 / 24%); }
+}
+
+.kiln-tabletop-card-preview {
+  position: fixed;
+  z-index: 110;
+  display: grid;
+  gap: .4rem;
+  width: min(320px, calc(100vw - 24px));
+  box-sizing: border-box;
+  border: 1px solid #d0b477;
+  border-radius: 11px;
+  padding: .48rem;
+  color: var(--tabletop-ink);
+  background: linear-gradient(145deg, #fff9e9, #e4d4b2);
+  box-shadow: 0 18px 44px rgb(8 23 18 / 45%), inset 0 0 0 2px rgb(255 255 255 / 45%);
+  overflow: auto;
+  pointer-events: auto;
+  transform-origin: center bottom;
+}
+.kiln-tabletop-card-preview.is-above { transform: translate(-50%, -100%); animation: kiln-tabletop-card-preview-above .13s ease-out; }
+.kiln-tabletop-card-preview.is-below { transform: translateX(-50%); transform-origin: center top; animation: kiln-tabletop-card-preview-below .13s ease-out; }
+.kiln-tabletop-card-preview > small { color: #844538; font-size: .53rem; font-weight: 900; line-height: 1.2; letter-spacing: .08em; text-transform: uppercase; }
+.kiln-tabletop-card-preview > div { min-width: 0; }
+.kiln-tabletop-card-preview .kiln-tabletop-order-card,
+.kiln-tabletop-card-preview .kiln-tabletop-tech-tile,
+.kiln-tabletop-card-preview .kiln-tabletop-starting-tech { width: 100%; min-height: 240px; }
+.kiln-tabletop-card-preview .kiln-tabletop-order-card p,
+.kiln-tabletop-card-preview .kiln-tabletop-tech-tile p,
+.kiln-tabletop-card-preview .kiln-tabletop-starting-tech p { display: block; overflow: visible; font-size: .76rem; line-height: 1.42; -webkit-line-clamp: unset; }
+.kiln-tabletop-card-preview .kiln-tabletop-order-card footer b,
+.kiln-tabletop-card-preview .kiln-tabletop-tech-tile > strong,
+.kiln-tabletop-card-preview .kiln-tabletop-starting-tech > strong { font-size: .78rem; }
+
+@keyframes kiln-tabletop-card-preview-above { from { opacity: 0; transform: translate(-50%, calc(-100% + 7px)) scale(.98); } }
+@keyframes kiln-tabletop-card-preview-below { from { opacity: 0; transform: translate(-50%, -7px) scale(.98); } }
 
 .kiln-tabletop-workshop {
   display: grid;
@@ -763,8 +803,10 @@ button.kiln-tabletop-tech-tile:hover { z-index: 2; transform: translateY(-3px); 
 .kiln-tabletop-detail-view { display: grid; gap: .7rem; justify-items: center; }
 .kiln-tabletop-detail-view > .kiln-tabletop-order-card { width: min(260px, 100%); min-height: 245px; }
 .kiln-tabletop-detail-view > .kiln-tabletop-order-card p { font-size: .75rem; -webkit-line-clamp: 8; }
-.kiln-tabletop-detail-view > .kiln-tabletop-tech-tile { width: min(300px, 100%); min-height: 250px; }
-.kiln-tabletop-detail-view > .kiln-tabletop-tech-tile p { font-size: .72rem; -webkit-line-clamp: 12; }
+.kiln-tabletop-detail-view > .kiln-tabletop-tech-tile,
+.kiln-tabletop-detail-view > .kiln-tabletop-starting-tech { width: min(300px, 100%); min-height: 250px; }
+.kiln-tabletop-detail-view > .kiln-tabletop-tech-tile p,
+.kiln-tabletop-detail-view > .kiln-tabletop-starting-tech p { font-size: .72rem; -webkit-line-clamp: 12; }
 .kiln-tabletop-detail-view dl { display: grid; width: 100%; margin: 0; }
 .kiln-tabletop-detail-view dl > div { display: flex; justify-content: space-between; border-bottom: 1px solid var(--tabletop-line); padding: .48rem 0; }
 .kiln-tabletop-detail-view dt { color: #6e6e63; font-size: .6rem; }
@@ -853,7 +895,9 @@ button.kiln-tabletop-tech-tile:hover { z-index: 2; transform: translateY(-3px); 
   .kiln-tabletop-player,
   .kiln-tabletop-order-card,
   .kiln-tabletop-tech-tile,
+  .kiln-tabletop-starting-tech,
   .kiln-tabletop-action-space,
+  .kiln-tabletop-card-preview,
   .kiln-tabletop-inspector { animation: none; transition: none; }
 }
 

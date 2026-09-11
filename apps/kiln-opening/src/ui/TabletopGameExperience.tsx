@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from "react";
+import { createPortal } from "react-dom";
 import {
   BASE_HEAT_START,
   GAME_CONFIG,
@@ -51,8 +52,18 @@ type Inspection =
   | { type: "player"; id: PlayerId }
   | { type: "order"; id: OrderId }
   | { type: "technique"; id: TechniqueId }
+  | { type: "startingTechnique"; id: StartingTechniqueId }
   | { type: "log" }
   | null;
+
+type CardPreviewPosition = {
+  left: number;
+  top: number;
+  maxHeight: number;
+  placement: "above" | "below";
+};
+
+const CARD_PREVIEW_OPEN_EVENT = "kiln-card-preview-open";
 
 export const TABLETOP_BOARD_LOCATIONS = [
   { id: "materials_yard", glyph: "泥", position: "north-west" },
@@ -81,6 +92,157 @@ function ArtworkLayer({ source, slot }: { source: string | undefined; slot: stri
 
 function text(locale: Locale, english: string, chinese: string): string {
   return locale === "zh-CN" ? chinese : english;
+}
+
+function cardPreviewPosition(anchor: HTMLElement): CardPreviewPosition | null {
+  const rect = anchor.getBoundingClientRect();
+  const gutter = 12;
+  const gap = 10;
+  if (rect.bottom < gutter || rect.top > window.innerHeight - gutter || rect.right < gutter || rect.left > window.innerWidth - gutter) return null;
+  const width = Math.min(320, window.innerWidth - gutter * 2);
+  const left = Math.min(window.innerWidth - gutter - width / 2, Math.max(gutter + width / 2, rect.left + rect.width / 2));
+  const roomAbove = Math.max(0, rect.top - gap - gutter);
+  const roomBelow = Math.max(0, window.innerHeight - rect.bottom - gap - gutter);
+  if (Math.max(roomAbove, roomBelow) < 180) return null;
+  const placement = roomBelow >= 280 || roomBelow >= roomAbove ? "below" : "above";
+  return {
+    left,
+    top: placement === "below" ? rect.bottom + gap : rect.top - gap,
+    maxHeight: Math.max(1, placement === "below" ? roomBelow : roomAbove),
+    placement,
+  };
+}
+
+function useCardPreview<T extends HTMLElement>(ownerId: string) {
+  const anchorRef = useRef<T>(null);
+  const [position, setPosition] = useState<CardPreviewPosition | null>(null);
+  const openTimerRef = useRef<number | null>(null);
+  const closeTimerRef = useRef<number | null>(null);
+  const pointerInsideRef = useRef(false);
+  const focusInsideRef = useRef(false);
+
+  function clearOpenTimer(): void {
+    if (openTimerRef.current !== null) window.clearTimeout(openTimerRef.current);
+    openTimerRef.current = null;
+  }
+
+  function clearCloseTimer(): void {
+    if (closeTimerRef.current !== null) window.clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = null;
+  }
+
+  function showNow(): void {
+    clearOpenTimer();
+    clearCloseTimer();
+    if (anchorRef.current !== null) {
+      window.dispatchEvent(new CustomEvent<string>(CARD_PREVIEW_OPEN_EVENT, { detail: ownerId }));
+      setPosition(cardPreviewPosition(anchorRef.current));
+    }
+  }
+
+  function show(): void {
+    clearCloseTimer();
+    if (position !== null) return;
+    clearOpenTimer();
+    openTimerRef.current = window.setTimeout(showNow, 130);
+  }
+
+  function hideNow(): void {
+    clearOpenTimer();
+    clearCloseTimer();
+    setPosition(null);
+  }
+
+  function hide(): void {
+    clearOpenTimer();
+    clearCloseTimer();
+    closeTimerRef.current = window.setTimeout(hideNow, 110);
+  }
+
+  function pointerEnter(): void {
+    pointerInsideRef.current = true;
+    show();
+  }
+
+  function pointerLeave(): void {
+    pointerInsideRef.current = false;
+    if (!focusInsideRef.current) hide();
+  }
+
+  function focus(): void {
+    if (anchorRef.current?.dataset["kilnSuppressCardPreviewFocus"] === "true") {
+      focusInsideRef.current = false;
+      hideNow();
+      return;
+    }
+    const keyboardFocus = anchorRef.current?.matches(":focus-visible") ?? false;
+    focusInsideRef.current = keyboardFocus;
+    if (keyboardFocus) showNow();
+    else if (!pointerInsideRef.current) hideNow();
+  }
+
+  function blur(): void {
+    focusInsideRef.current = false;
+    if (!pointerInsideRef.current) hideNow();
+  }
+
+  function dismiss(): void {
+    hideNow();
+  }
+
+  const visible = position !== null;
+  useEffect(() => {
+    if (!visible) return;
+    const update = (): void => {
+      if (anchorRef.current !== null) setPosition(cardPreviewPosition(anchorRef.current));
+    };
+    const dismissOnEscape = (event: KeyboardEvent): void => {
+      if (event.key === "Escape") hideNow();
+    };
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    window.addEventListener("keydown", dismissOnEscape);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+      window.removeEventListener("keydown", dismissOnEscape);
+    };
+  }, [visible]);
+
+  useEffect(() => {
+    const closeForOtherPreview = (event: Event): void => {
+      if (event instanceof CustomEvent && event.detail !== ownerId) hideNow();
+    };
+    window.addEventListener(CARD_PREVIEW_OPEN_EVENT, closeForOtherPreview);
+    return () => window.removeEventListener(CARD_PREVIEW_OPEN_EVENT, closeForOtherPreview);
+  }, [ownerId]);
+
+  useEffect(() => () => {
+    clearOpenTimer();
+    clearCloseTimer();
+  }, []);
+
+  return { anchorRef, position, pointerEnter, pointerLeave, focus, blur, dismiss };
+}
+
+function CardHoverPreview({ id, position, eyebrow, onPointerEnter, onPointerLeave, children }: { id: string; position: CardPreviewPosition | null; eyebrow: string; onPointerEnter: () => void; onPointerLeave: () => void; children: ReactNode }) {
+  if (position === null || typeof document === "undefined") return null;
+  const portalRoot = document.querySelector(".kiln-tabletop-root") ?? document.body;
+  return createPortal(
+    <aside
+      className={`kiln-tabletop-card-preview is-${position.placement}`}
+      id={id}
+      aria-hidden="true"
+      data-card-preview="true"
+      onPointerEnter={onPointerEnter}
+      onPointerLeave={onPointerLeave}
+      style={{ left: position.left, top: position.top, maxHeight: position.maxHeight }}
+    >
+      <small>{eyebrow}</small>
+      <div>{children}</div>
+    </aside>,
+    portalRoot,
+  );
 }
 
 function accent(player: PublicPlayerState): Accent {
@@ -301,6 +463,7 @@ export function TabletopGameExperience({
           onChooseWorker={selectWorker}
           onInspectOrder={(id) => { setControlsOpen(false); setInspection({ type: "order", id }); }}
           onInspectTechnique={(id) => { setControlsOpen(false); setInspection({ type: "technique", id }); }}
+          onInspectStartingTechnique={(id) => { setControlsOpen(false); setInspection({ type: "startingTechnique", id }); }}
         />
       </main>
 
@@ -350,16 +513,42 @@ function MarketShelf({ game, locale, onInspect }: { game: PublicGameState; local
 
 function OrderCard({ id, locale, displayIndex, compact = false, onInspect }: { id: OrderId; locale: Locale; displayIndex?: number; compact?: boolean; onInspect: (id: OrderId) => void }) {
   const order = ORDER_DEFINITIONS[id];
+  const previewId = `kiln-order-preview-${id}-${compact ? "owned" : "market"}`;
+  const descriptionId = `${previewId}-description`;
+  const preview = useCardPreview<HTMLButtonElement>(previewId);
   if (order === undefined) return null;
+  const description = text(locale, `Order ${id}. ${order.requirements}. ${order.ceramics.length} ceramics. Minimum Quality: ${qualityLabel(order.minQuality, locale)}. Reward: ${order.vp} VP, ${order.coins} Coins${order.crowns > 0 ? `, ${order.crowns} Crown${order.crowns === 1 ? "" : "s"}` : ""}.`, `委托 ${id}。${order.requirementsZh}。${order.ceramics.length}件陶瓷。最低品质：${qualityLabel(order.minQuality, locale)}。奖励：${order.vp}分、${order.coins}铜钱${order.crowns > 0 ? `、${order.crowns}皇冠` : ""}。`);
   return (
-    <button className={`kiln-tabletop-order-card kiln-tabletop-art-surface ${order.crowns > 0 ? "is-crown" : ""} ${compact ? "is-compact" : ""}`} type="button" onClick={() => onInspect(id)} aria-label={text(locale, `Inspect Order ${id}`, `查看委托 ${id}`)} data-order-id={id}>
-      <ArtworkLayer source={TABLETOP_ARTWORK.orders[id]} slot={`order:${id}`} />
-      {displayIndex !== undefined && <span className="kiln-tabletop-display-index">{displayIndex}</span>}
-      <header><b>{id}</b><span>{"♛".repeat(order.crowns)}</span></header>
-      <div className="kiln-tabletop-order-seal" aria-hidden="true">{order.ceramics.length}</div>
-      <p>{locale === "zh-CN" ? order.requirementsZh : order.requirements}</p>
-      <footer><span><small>{text(locale, "MIN", "最低")}</small><b>{qualityLabel(order.minQuality, locale)}</b></span><span><small>{text(locale, "VP", "分")}</small><b>{order.vp}</b></span><span><small>{text(locale, "COIN", "钱")}</small><b>{order.coins}</b></span></footer>
-    </button>
+    <>
+      <button
+        ref={preview.anchorRef}
+        className={`kiln-tabletop-order-card kiln-tabletop-art-surface ${order.crowns > 0 ? "is-crown" : ""} ${compact ? "is-compact" : ""}`}
+        type="button"
+        onClick={() => { preview.dismiss(); onInspect(id); }}
+        onPointerEnter={(event) => { if (event.pointerType !== "touch") preview.pointerEnter(); }}
+        onPointerLeave={preview.pointerLeave}
+        onFocus={preview.focus}
+        onBlur={preview.blur}
+        onKeyDown={(event) => { if (event.key === "Escape") preview.dismiss(); }}
+        aria-label={text(locale, `Inspect Order ${id}`, `查看委托 ${id}`)}
+        aria-describedby={descriptionId}
+        aria-haspopup="dialog"
+        data-hover-preview="order"
+        data-preview-id={previewId}
+        data-order-id={id}
+      >
+        <ArtworkLayer source={TABLETOP_ARTWORK.orders[id]} slot={`order:${id}`} />
+        {displayIndex !== undefined && <span className="kiln-tabletop-display-index">{displayIndex}</span>}
+        <header><b>{id}</b><span>{"♛".repeat(order.crowns)}</span></header>
+        <div className="kiln-tabletop-order-seal" aria-hidden="true">{order.ceramics.length}</div>
+        <p>{locale === "zh-CN" ? order.requirementsZh : order.requirements}</p>
+        <footer><span><small>{text(locale, "MIN", "最低")}</small><b>{qualityLabel(order.minQuality, locale)}</b></span><span><small>{text(locale, "VP", "分")}</small><b>{order.vp}</b></span><span><small>{text(locale, "COIN", "钱")}</small><b>{order.coins}</b></span></footer>
+      </button>
+      <span className="sr-only" id={descriptionId}>{description}</span>
+      <CardHoverPreview id={previewId} position={preview.position} eyebrow={text(locale, "ORDER PREVIEW · CLICK FOR DETAILS", "委托预览 · 点击查看详情")} onPointerEnter={preview.pointerEnter} onPointerLeave={preview.pointerLeave}>
+        <StaticOrderCard id={id} locale={locale} />
+      </CardHoverPreview>
+    </>
   );
 }
 
@@ -479,12 +668,38 @@ function TechniqueMarket({ game, locale, onInspect }: { game: PublicGameState; l
 
 function TechniqueTile({ id, locale, compact = false, exhausted = false, onInspect }: { id: TechniqueId; locale: Locale; compact?: boolean; exhausted?: boolean; onInspect: (id: TechniqueId) => void }) {
   const technique = TECHNIQUE_DEFINITIONS[id];
+  const previewId = `kiln-technique-preview-${id}-${compact ? "owned" : "market"}`;
+  const descriptionId = `${previewId}-description`;
+  const preview = useCardPreview<HTMLButtonElement>(previewId);
   if (technique === undefined) return null;
+  const description = text(locale, `${technique.name}. Advanced ${titleCase(technique.discipline)} Technique. Printed cost: ${technique.cost} Coins. ${technique.ability} Timing: ${technique.oncePerRound ? "Once per round" : "Continuous"}.${exhausted ? " Used this round." : ""}`, `${technique.nameZh}。${disciplineZh(technique.discipline)}进阶技艺。牌面费用：${technique.cost}铜钱。${technique.abilityZh}时机：${technique.oncePerRound ? "每轮一次" : "持续生效"}。${exhausted ? "本轮已用。" : ""}`);
   return (
-    <button className={`kiln-tabletop-tech-tile kiln-tabletop-art-surface is-${technique.discipline} ${compact ? "is-compact" : ""} ${exhausted ? "is-exhausted" : ""}`} type="button" onClick={() => onInspect(id)} aria-label={text(locale, `Inspect ${technique.name}`, `查看${technique.nameZh}`)} data-technique-id={id}>
-      <ArtworkLayer source={TABLETOP_ARTWORK.techniques[id]} slot={`technique:${id}`} />
-      <header><span>{id}</span><b>{technique.cost} ◉</b></header><strong>{locale === "zh-CN" ? technique.nameZh : technique.name}</strong>{!compact && <p>{locale === "zh-CN" ? technique.abilityZh : technique.ability}</p>}<footer>{technique.oncePerRound ? text(locale, "Once / round", "每轮一次") : text(locale, "Continuous", "持续生效")}</footer>{exhausted && <i>{text(locale, "Used", "已用")}</i>}
-    </button>
+    <>
+      <button
+        ref={preview.anchorRef}
+        className={`kiln-tabletop-tech-tile kiln-tabletop-art-surface is-${technique.discipline} ${compact ? "is-compact" : ""} ${exhausted ? "is-exhausted" : ""}`}
+        type="button"
+        onClick={() => { preview.dismiss(); onInspect(id); }}
+        onPointerEnter={(event) => { if (event.pointerType !== "touch") preview.pointerEnter(); }}
+        onPointerLeave={preview.pointerLeave}
+        onFocus={preview.focus}
+        onBlur={preview.blur}
+        onKeyDown={(event) => { if (event.key === "Escape") preview.dismiss(); }}
+        aria-label={text(locale, `Inspect ${technique.name}`, `查看${technique.nameZh}`)}
+        aria-describedby={descriptionId}
+        aria-haspopup="dialog"
+        data-hover-preview="advanced-technique"
+        data-preview-id={previewId}
+        data-technique-id={id}
+      >
+        <ArtworkLayer source={TABLETOP_ARTWORK.techniques[id]} slot={`technique:${id}`} />
+        <header><span>{id}</span><b>{technique.cost} ◉</b></header><strong>{locale === "zh-CN" ? technique.nameZh : technique.name}</strong>{!compact && <p>{locale === "zh-CN" ? technique.abilityZh : technique.ability}</p>}<footer>{technique.oncePerRound ? text(locale, "Once / round", "每轮一次") : text(locale, "Continuous", "持续生效")}</footer>{exhausted && <i>{text(locale, "Used", "已用")}</i>}
+      </button>
+      <span className="sr-only" id={descriptionId}>{description}</span>
+      <CardHoverPreview id={previewId} position={preview.position} eyebrow={text(locale, "ADVANCED TECH PREVIEW · CLICK FOR DETAILS", "进阶技艺预览 · 点击查看详情")} onPointerEnter={preview.pointerEnter} onPointerLeave={preview.pointerLeave}>
+        <StaticTechniqueTile id={id} locale={locale} exhausted={exhausted} />
+      </CardHoverPreview>
+    </>
   );
 }
 
@@ -494,12 +709,42 @@ function StaticTechniqueTile({ id, locale, exhausted = false }: { id: TechniqueI
   return <article className={`kiln-tabletop-tech-tile kiln-tabletop-static-tech kiln-tabletop-art-surface is-${technique.discipline} ${exhausted ? "is-exhausted" : ""}`} data-technique-id={id}><ArtworkLayer source={TABLETOP_ARTWORK.techniques[id]} slot={`technique:${id}`} /><header><span>{id}</span><b>{technique.cost} ◉</b></header><strong>{locale === "zh-CN" ? technique.nameZh : technique.name}</strong><p>{locale === "zh-CN" ? technique.abilityZh : technique.ability}</p><footer>{technique.oncePerRound ? text(locale, "Once / round", "每轮一次") : text(locale, "Continuous", "持续生效")}</footer>{exhausted && <i>{text(locale, "Used", "已用")}</i>}</article>;
 }
 
-function StartingTechniqueTile({ id, locale, compact = false }: { id: StartingTechniqueId; locale: Locale; compact?: boolean }) {
+function StartingTechniqueTile({ id, locale, compact = false, onInspect }: { id: StartingTechniqueId; locale: Locale; compact?: boolean; onInspect?: (id: StartingTechniqueId) => void }) {
   const technique = STARTING_TECHNIQUE_DEFINITIONS[id];
-  return <article className={`kiln-tabletop-starting-tech kiln-tabletop-art-surface ${compact ? "is-compact" : ""}`} data-starting-technique-id={id}><ArtworkLayer source={TABLETOP_ARTWORK.techniques[id]} slot={`starting-technique:${id}`} /><header><span>{id}</span><small>{text(locale, "Starting Tech", "起始技艺")}</small></header><strong>{locale === "zh-CN" ? technique.nameZh : technique.name}</strong><p>{locale === "zh-CN" ? technique.abilityZh : technique.ability}</p><footer>{text(locale, "Workshop foundation", "作坊基础")}</footer></article>;
+  const previewId = `kiln-starting-technique-preview-${id}`;
+  const descriptionId = `${previewId}-description`;
+  const preview = useCardPreview<HTMLButtonElement>(previewId);
+  const className = `kiln-tabletop-starting-tech kiln-tabletop-art-surface ${compact ? "is-compact" : ""}`;
+  const contents = <><ArtworkLayer source={TABLETOP_ARTWORK.techniques[id]} slot={`starting-technique:${id}`} /><header><span>{id}</span><small>{text(locale, "Starting Tech", "起始技艺")}</small></header><strong>{locale === "zh-CN" ? technique.nameZh : technique.name}</strong><p>{locale === "zh-CN" ? technique.abilityZh : technique.ability}</p><footer>{text(locale, "Workshop foundation", "作坊基础")}</footer></>;
+  if (onInspect === undefined) return <article className={className} data-starting-technique-id={id}>{contents}</article>;
+  return (
+    <>
+      <button
+        ref={preview.anchorRef}
+        className={className}
+        type="button"
+        onClick={() => { preview.dismiss(); onInspect(id); }}
+        onPointerEnter={(event) => { if (event.pointerType !== "touch") preview.pointerEnter(); }}
+        onPointerLeave={preview.pointerLeave}
+        onFocus={preview.focus}
+        onBlur={preview.blur}
+        onKeyDown={(event) => { if (event.key === "Escape") preview.dismiss(); }}
+        aria-label={text(locale, `Inspect ${technique.name}`, `查看${technique.nameZh}`)}
+        aria-describedby={descriptionId}
+        aria-haspopup="dialog"
+        data-hover-preview="starting-technique"
+        data-preview-id={previewId}
+        data-starting-technique-id={id}
+      >{contents}</button>
+      <span className="sr-only" id={descriptionId}>{text(locale, `${technique.name}. Starting Technique. ${technique.ability}`, `${technique.nameZh}。起始技艺。${technique.abilityZh}`)}</span>
+      <CardHoverPreview id={previewId} position={preview.position} eyebrow={text(locale, "STARTING TECH PREVIEW · CLICK FOR DETAILS", "起始技艺预览 · 点击查看详情")} onPointerEnter={preview.pointerEnter} onPointerLeave={preview.pointerLeave}>
+        <StartingTechniqueTile id={id} locale={locale} />
+      </CardHoverPreview>
+    </>
+  );
 }
 
-function OwnWorkshop({ game, player, locale, selectedWorkerId, canSelectWorker, onChooseWorker, onInspectOrder, onInspectTechnique }: { game: PublicGameState; player: PublicPlayerState; locale: Locale; selectedWorkerId: WorkerId | null; canSelectWorker: boolean; onChooseWorker: (id: WorkerId) => void; onInspectOrder: (id: OrderId) => void; onInspectTechnique: (id: TechniqueId) => void }) {
+function OwnWorkshop({ game, player, locale, selectedWorkerId, canSelectWorker, onChooseWorker, onInspectOrder, onInspectTechnique, onInspectStartingTechnique }: { game: PublicGameState; player: PublicPlayerState; locale: Locale; selectedWorkerId: WorkerId | null; canSelectWorker: boolean; onChooseWorker: (id: WorkerId) => void; onInspectOrder: (id: OrderId) => void; onInspectTechnique: (id: TechniqueId) => void; onInspectStartingTechnique: (id: StartingTechniqueId) => void }) {
   const kiln = player.kilnId === null ? null : KILN_DEFINITIONS[player.kilnId];
   const availableWorkers = Object.values(player.workers).filter((worker) => worker.status === "available");
   const ceramics = Object.values(game.ceramics).filter((ceramic) => ceramic.ownerId === player.id && ceramic.stage !== "sold" && ceramic.stage !== "loaded");
@@ -514,7 +759,7 @@ function OwnWorkshop({ game, player, locale, selectedWorkerId, canSelectWorker, 
         <section className="kiln-tabletop-worker-supply"><h3>{text(locale, "Available workers", "可用工人")}</h3><div>{availableWorkers.map((worker) => <button type="button" disabled={!canSelectWorker} aria-pressed={selectedWorkerId === worker.id} className={selectedWorkerId === worker.id ? "is-selected" : ""} onClick={() => onChooseWorker(worker.id)} data-worker-id={worker.id} key={worker.id}><WorkerToken player={player} kind={worker.kind} locale={locale} /><span>{locale === "zh-CN" ? worker.kind === "shifu" ? "师傅" : "学徒" : worker.kind === "shifu" ? "Shifu" : "Apprentice"}</span></button>)}{availableWorkers.length === 0 && <span className="kiln-live-empty-copy">{text(locale, "No workers remain", "没有剩余工人")}</span>}</div><small>{text(locale, `${availableWorkers.length} workers remain · Pass is permanent for the round`, `剩余${availableWorkers.length}名工人 · 本轮跳过后不可返回`)}</small></section>
         <section className="kiln-tabletop-ceramic-shelf"><h3>{text(locale, "Ceramics", "陶瓷")} <span>{ceramics.length}</span></h3><div>{ceramics.map((ceramic) => <Ceramic ceramic={ceramic} game={game} locale={locale} inspectable key={ceramic.id} />)}{ceramics.length === 0 && <span className="kiln-live-empty-copy">{text(locale, "No ceramics in workshop", "作坊中没有陶瓷")}</span>}</div></section>
         <section className="kiln-tabletop-own-orders"><h3>{text(locale, "Your Orders", "你的委托")} <span>{player.orderHand.length} / {GAME_CONFIG.orderDisplay.baseHandLimit}</span></h3><div>{player.orderHand.map((id) => <OrderCard id={id} locale={locale} compact onInspect={onInspectOrder} key={id} />)}{player.orderHand.length === 0 && <span className="kiln-live-empty-copy">{text(locale, "No held Orders", "没有持有委托")}</span>}</div></section>
-        <section className="kiln-tabletop-own-techs"><h3>{text(locale, "Your Techs", "你的技艺")} <span>{text(locale, `${player.startingTechniqueId === null ? 0 : 1} Starting · ${player.techniques.length} / ${GAME_CONFIG.techniques.maxOwned} Advanced`, `${player.startingTechniqueId === null ? 0 : 1}起始 · ${player.techniques.length} / ${GAME_CONFIG.techniques.maxOwned}进阶`)}</span></h3><div>{player.startingTechniqueId !== null && <StartingTechniqueTile id={player.startingTechniqueId} locale={locale} compact />}{player.techniques.map((owned) => <TechniqueTile id={owned.id} locale={locale} compact exhausted={owned.exhausted} onInspect={onInspectTechnique} key={owned.id} />)}{player.startingTechniqueId === null && player.techniques.length === 0 && <span className="kiln-live-empty-copy">{text(locale, "No Tech selected", "尚未选择技艺")}</span>}</div></section>
+        <section className="kiln-tabletop-own-techs"><h3>{text(locale, "Your Techs", "你的技艺")} <span>{text(locale, `${player.startingTechniqueId === null ? 0 : 1} Starting · ${player.techniques.length} / ${GAME_CONFIG.techniques.maxOwned} Advanced`, `${player.startingTechniqueId === null ? 0 : 1}起始 · ${player.techniques.length} / ${GAME_CONFIG.techniques.maxOwned}进阶`)}</span></h3><div>{player.startingTechniqueId !== null && <StartingTechniqueTile id={player.startingTechniqueId} locale={locale} compact onInspect={onInspectStartingTechnique} />}{player.techniques.map((owned) => <TechniqueTile id={owned.id} locale={locale} compact exhausted={owned.exhausted} onInspect={onInspectTechnique} key={owned.id} />)}{player.startingTechniqueId === null && player.techniques.length === 0 && <span className="kiln-live-empty-copy">{text(locale, "No Tech selected", "尚未选择技艺")}</span>}</div></section>
       </div>
     </section>
   );
@@ -569,12 +814,14 @@ function Inspector({ inspection, game, events, describeEvent, locale, onClose }:
   const player = inspection.type === "player" ? game.players[inspection.id] : undefined;
   const order = inspection.type === "order" ? ORDER_DEFINITIONS[inspection.id] : undefined;
   const technique = inspection.type === "technique" ? TECHNIQUE_DEFINITIONS[inspection.id] : undefined;
-  const title = player !== undefined ? text(locale, `${player.displayName}'s workshop`, `${player.displayName}的作坊`) : order !== undefined ? text(locale, `Order ${order.id}`, `委托 ${order.id}`) : technique !== undefined ? locale === "zh-CN" ? technique.nameZh : technique.name : text(locale, "Game log", "游戏记录");
+  const startingTechnique = inspection.type === "startingTechnique" ? STARTING_TECHNIQUE_DEFINITIONS[inspection.id] : undefined;
+  const title = player !== undefined ? text(locale, `${player.displayName}'s workshop`, `${player.displayName}的作坊`) : order !== undefined ? text(locale, `Order ${order.id}`, `委托 ${order.id}`) : technique !== undefined ? locale === "zh-CN" ? technique.nameZh : technique.name : startingTechnique !== undefined ? locale === "zh-CN" ? startingTechnique.nameZh : startingTechnique.name : text(locale, "Game log", "游戏记录");
   return (
     <ModalPanel title={title} eyebrow={text(locale, "TABLE INSPECTOR", "桌面查看")} locale={locale} onClose={onClose}>
       {player !== undefined && <PlayerInspection player={player} game={game} locale={locale} />}
       {order !== undefined && <OrderInspection id={order.id} locale={locale} />}
       {technique !== undefined && <TechniqueInspection id={technique.id} locale={locale} />}
+      {startingTechnique !== undefined && <StartingTechniqueInspection id={startingTechnique.id} locale={locale} />}
       {inspection.type === "log" && <LogInspection game={game} events={events} describeEvent={describeEvent} locale={locale} />}
     </ModalPanel>
   );
@@ -583,7 +830,18 @@ function Inspector({ inspection, game, events, describeEvent, locale, onClose }:
 function ModalPanel({ title, eyebrow, locale, onClose, className = "", children }: { title: string; eyebrow: string; locale: Locale; onClose: () => void; className?: string; children: ReactNode }) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
-  useEffect(() => { returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; closeButtonRef.current?.focus(); return () => returnFocusRef.current?.focus(); }, []);
+  useEffect(() => {
+    returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeButtonRef.current?.focus();
+    return () => {
+      const returnTarget = returnFocusRef.current;
+      if (returnTarget === null) return;
+      // Focus restoration should not reopen a card preview behind the closing dialog.
+      returnTarget.dataset["kilnSuppressCardPreviewFocus"] = "true";
+      returnTarget.focus();
+      delete returnTarget.dataset["kilnSuppressCardPreviewFocus"];
+    };
+  }, []);
   function keyDown(event: ReactKeyboardEvent<HTMLElement>): void {
     if (event.key === "Escape") { event.preventDefault(); onClose(); return; }
     if (event.key !== "Tab") return;
@@ -612,6 +870,10 @@ function TechniqueInspection({ id, locale }: { id: TechniqueId; locale: Locale }
   const technique = TECHNIQUE_DEFINITIONS[id];
   if (technique === undefined) return null;
   return <div className="kiln-tabletop-inspector-content kiln-tabletop-detail-view"><StaticTechniqueTile id={id} locale={locale} /><dl><div><dt>{text(locale, "Discipline", "类别")}</dt><dd>{locale === "zh-CN" ? disciplineZh(technique.discipline) : titleCase(technique.discipline)}</dd></div><div><dt>{text(locale, "Printed cost", "牌面费用")}</dt><dd>{technique.cost} {text(locale, "Coins", "铜钱")}</dd></div><div><dt>{text(locale, "Timing", "时机")}</dt><dd>{technique.oncePerRound ? text(locale, "Once per round", "每轮一次") : text(locale, "Continuous", "持续生效")}</dd></div></dl></div>;
+}
+
+function StartingTechniqueInspection({ id, locale }: { id: StartingTechniqueId; locale: Locale }) {
+  return <div className="kiln-tabletop-inspector-content kiln-tabletop-detail-view"><StartingTechniqueTile id={id} locale={locale} /><dl><div><dt>{text(locale, "Type", "类型")}</dt><dd>{text(locale, "Starting Tech", "起始技艺")}</dd></div><div><dt>{text(locale, "Availability", "归属")}</dt><dd>{text(locale, "Workshop foundation", "作坊基础")}</dd></div></dl></div>;
 }
 
 function LogInspection({ game, events, describeEvent, locale }: { game: PublicGameState; events: PublicEventRecord[]; describeEvent: TabletopGameExperienceProps["describeEvent"]; locale: Locale }) {
