@@ -292,7 +292,7 @@
   position: relative;
   display: grid;
   gap: .55rem;
-  min-width: 930px;
+  min-width: 980px;
   border: 1px solid rgb(104 74 37 / 55%);
   border-radius: 14px;
   padding: .65rem;
@@ -331,8 +331,8 @@
 
 .kiln-tabletop-action-ring {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 1.15fr) minmax(0, 1fr);
-  grid-template-rows: minmax(142px, auto) minmax(230px, auto) minmax(134px, auto);
+  grid-template-columns: minmax(250px, .92fr) minmax(360px, 1.34fr) minmax(250px, .92fr);
+  grid-template-rows: minmax(142px, auto) minmax(276px, auto) minmax(134px, auto);
   gap: .45rem;
 }
 
@@ -380,17 +380,22 @@
 .position-south-west { grid-area: 3 / 1; }
 .position-south { grid-area: 3 / 2; }
 
+.kiln-tabletop-action-space[data-location-id="market_imperial_office"],
+.kiln-tabletop-action-space[data-location-id="guild_academy"] {
+  align-self: center;
+}
+
 .kiln-tabletop-shared-kiln {
   grid-area: 2 / 2;
   position: relative;
   z-index: 3;
   display: grid;
   grid-template-rows: auto auto 1fr auto;
-  gap: .25rem;
+  gap: .34rem;
   min-width: 0;
   border: 2px solid #b28445;
   border-radius: 46% 46% 13px 13px;
-  padding: .55rem .65rem .5rem;
+  padding: .68rem .78rem .62rem;
   color: #fff0cf;
   background:
     radial-gradient(ellipse at 50% 72%, rgb(224 104 45 / 55%), transparent 36%),
@@ -406,22 +411,23 @@
 .kiln-tabletop-shared-kiln > header strong { display: block; }
 .kiln-tabletop-shared-kiln > header small { color: #d6bc8e; font-size: .39rem; letter-spacing: .08em; }
 .kiln-tabletop-shared-kiln > header strong { font-family: var(--tabletop-serif); font-size: .68rem; }
-.kiln-tabletop-shared-kiln > header > span { display: grid; width: 32px; aspect-ratio: 1; place-items: center; border: 1px solid #e5c17a; border-radius: 50%; color: #ffe4a9; font-family: var(--tabletop-serif); background: #9c3929; box-shadow: 0 0 16px rgb(245 125 48 / 55%); }
+.kiln-tabletop-shared-kiln > header > span { display: grid; width: 38px; aspect-ratio: 1; place-items: center; border: 1px solid #e5c17a; border-radius: 50%; color: #ffe4a9; font-family: var(--tabletop-serif); font-size: 1rem; background: #9c3929; box-shadow: 0 0 19px rgb(245 125 48 / 58%); }
 .kiln-tabletop-kiln-title { position: relative; text-align: center; }
 .kiln-tabletop-kiln-title small,
 .kiln-tabletop-kiln-title strong { display: block; }
-.kiln-tabletop-kiln-title small { color: #d5b985; font-size: .39rem; letter-spacing: .14em; }
-.kiln-tabletop-kiln-title strong { font-family: var(--tabletop-serif); font-size: .86rem; letter-spacing: .08em; }
-.kiln-tabletop-kiln-zones { position: relative; display: grid; gap: .18rem; }
-.kiln-tabletop-kiln-zone { display: grid; grid-template-columns: 65px 1fr; gap: .25rem; align-items: center; min-height: 41px; border: 1px solid rgb(255 236 199 / 13%); border-radius: 7px; padding: .16rem .28rem; background: rgb(255 255 255 / 4%); }
+.kiln-tabletop-kiln-title small { color: #d5b985; font-size: .43rem; letter-spacing: .14em; }
+.kiln-tabletop-kiln-title strong { font-family: var(--tabletop-serif); font-size: 1rem; letter-spacing: .08em; }
+.kiln-tabletop-kiln-zones { position: relative; display: grid; gap: .25rem; }
+.kiln-tabletop-kiln-zone { display: grid; grid-template-columns: 72px 1fr; gap: .32rem; align-items: center; min-height: 48px; border: 1px solid rgb(255 236 199 / 13%); border-radius: 8px; padding: .2rem .35rem; background: rgb(255 255 255 / 4%); }
 .kiln-tabletop-kiln-zone > span { display: flex; gap: .18rem; align-items: center; justify-content: space-between; min-width: 0; }
-.kiln-tabletop-kiln-zone > span b { overflow: hidden; color: #e7cf9e; font-size: .45rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
-.kiln-tabletop-kiln-zone > span i { display: grid; width: 20px; aspect-ratio: 1; place-items: center; border-radius: 50%; color: #fff3d7; font-size: .44rem; font-style: normal; background: rgb(255 255 255 / 10%); }
-.kiln-tabletop-kiln-zone > div { display: flex; gap: .2rem; align-items: center; justify-content: center; }
+.kiln-tabletop-kiln-zone > span b { overflow: hidden; color: #e7cf9e; font-size: .49rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.kiln-tabletop-kiln-zone > span i { display: grid; width: 23px; aspect-ratio: 1; place-items: center; border-radius: 50%; color: #fff3d7; font-size: .47rem; font-style: normal; background: rgb(255 255 255 / 10%); }
+.kiln-tabletop-kiln-zone > div { display: flex; gap: .24rem; align-items: center; justify-content: center; }
 .kiln-tabletop-kiln-zone.is-high { background: linear-gradient(90deg, rgb(180 64 35 / 14%), rgb(255 255 255 / 3%)); }
 .kiln-tabletop-kiln-zone.is-low { background: linear-gradient(90deg, rgb(58 118 135 / 14%), rgb(255 255 255 / 3%)); }
-.kiln-tabletop-empty-slot { display: block; width: 38px; aspect-ratio: 1; border: 1px dashed rgb(255 234 194 / 32%); border-radius: 50%; }
-.kiln-tabletop-shared-kiln > footer { position: relative; display: flex; gap: .4rem; justify-content: space-between; color: #d6bc8e; font-size: .42rem; }
+.kiln-tabletop-empty-slot { display: block; width: 44px; aspect-ratio: 1; border: 1px dashed rgb(255 234 194 / 32%); border-radius: 50%; }
+.kiln-tabletop-shared-kiln .kiln-tabletop-ceramic.is-compact { flex-basis: 44px; width: 44px; }
+.kiln-tabletop-shared-kiln > footer { position: relative; display: flex; gap: .4rem; justify-content: space-between; color: #d6bc8e; font-size: .46rem; }
 .kiln-tabletop-shared-kiln > footer strong { color: #f2ddaf; }
 
 .kiln-tabletop-firing-deck {
@@ -829,16 +835,19 @@
   .kiln-tabletop-tech-tile { min-height: 120px; }
 }
 
+@media (max-width: 1260px) {
+  .kiln-tabletop-play-area { grid-template-columns: minmax(0, 1fr); }
+  .kiln-tabletop-tech-market { grid-template-columns: 160px repeat(3, minmax(250px, 1fr)); overflow-x: auto; }
+  .kiln-tabletop-tech-market > .kiln-tabletop-section-title { align-self: center; }
+  .kiln-tabletop-tech-discipline > div { min-width: 245px; }
+}
+
 @media (max-width: 1050px) {
   .kiln-tabletop-topbar { grid-template-columns: 180px 1fr auto; }
   .kiln-tabletop-turn-summary > span:last-child { display: none; }
   .kiln-tabletop-turn-summary { grid-template-columns: repeat(3, minmax(90px, 1fr)); }
   .kiln-tabletop-player-dock { display: flex; overflow-x: auto; padding-bottom: .15rem; }
   .kiln-tabletop-player { flex: 0 0 250px; }
-  .kiln-tabletop-play-area { grid-template-columns: minmax(0, 1fr); }
-  .kiln-tabletop-tech-market { grid-template-columns: 160px repeat(3, minmax(250px, 1fr)); overflow-x: auto; }
-  .kiln-tabletop-tech-market > .kiln-tabletop-section-title { align-self: center; }
-  .kiln-tabletop-tech-discipline > div { min-width: 245px; }
   .kiln-tabletop-workshop-zones { grid-template-columns: .8fr 1.2fr 1fr; }
   .kiln-tabletop-own-techs { grid-column: span 3; }
 }
@@ -853,8 +862,6 @@
   .kiln-tabletop-player { flex-basis: 220px; }
   .kiln-tabletop-market { grid-template-columns: 125px 52px 650px; padding: .42rem; }
   .kiln-tabletop-order-row { grid-template-columns: repeat(5, 126px); }
-  .kiln-tabletop-board { min-width: 860px; }
-  .kiln-tabletop-action-ring { grid-template-columns: 1fr 250px 1fr; }
   .kiln-tabletop-tech-market { grid-template-columns: 125px repeat(3, 245px); padding: .45rem; }
   .kiln-tabletop-workshop > header { align-items: start; }
   .kiln-tabletop-workshop-name p { display: none; }
