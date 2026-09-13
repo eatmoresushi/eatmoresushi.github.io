@@ -69,8 +69,10 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  *  14 -- V1.2.6. A Kiln Yard Shifu commits its one Shared-Kiln ceramic during the Work
  *        Phase and may reposition only that marked ceramic after Base Heat. Ding's separate
  *        bonus vessel now costs 1 Clay and remains outside the Shifu vessel count.
+ *  15 -- V1.2.6 Main Order amendment. Every face-up removal slides later Orders left and
+ *        appends its replacement on the right; Rounds 2-5 rotate the two oldest Orders.
  */
-export const RULES_BEHAVIOUR_REVISION = 14;
+export const RULES_BEHAVIOUR_REVISION = 15;
 
 /**
  * Display-only keys, excluded so that a typo fix or a translation improvement does not

@@ -1,7 +1,7 @@
-V1.2.4 HANDOFF VALIDATION PASSED
-Rules/data: 2-4 players, 5 rounds, 1 Shifu + 3 Apprentices, seven current locations.
-Orders: 16 Starting + 48 Main; five-card market rotates its three leftmost cards.
+V1.2.6 HANDOFF VALIDATION PASSED
+Rules/data: 2-4 players, 5 rounds, 1 Shifu + 3 Apprentices, seven shared locations.
+Orders: 16 Starting + 48 Main; five-card queue rotates its two oldest cards.
 Tech: 4 Starting + 15 Advanced; Fuel Ledger and Second Firing match owner rulings.
 Firing: Bank/Tend/Stoke, 12-card Fire deck, seven Shared Kiln spaces, current Quality ladder.
-Recognition: Imperial Gift at 3, Imperial Priority at 4, Imperial Audience at 5.
+Recognition: Imperial Grant at 1, Gift at 2, Priority at 3, Audience at 4.
 Localization: every current Order, Tech, Kiln and action location includes Chinese text.

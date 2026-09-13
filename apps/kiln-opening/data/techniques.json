@@ -127,8 +127,8 @@
       "name": "Colour Samples",
       "nameZh": "色样簿",
       "cost": 2,
-      "ability": "Once per round, during one reservation of a Commission Market action, look at the top 3 Main Orders (or as many as remain). Then reserve either 1 of those Orders or 1 face-up Main Order. Discard every looked-at Order you did not reserve; if you reserve from the display, refill that position immediately.",
-      "abilityZh": "每轮一次，在瓷牙行行动中的一次承接时，查看主委托牌库顶端 3 张（不足则尽量查看）。然后承接其中 1 张，或承接公开展示中的 1 张主委托。未承接的已查看委托全部弃掉；若承接公开委托，立即补上该展示位置。",
+      "ability": "Once per round, during one reservation of a Commission Market action, look at the top 3 Main Orders (or as many as remain). Then reserve either 1 of those Orders or 1 face-up Main Order. Discard every looked-at Order you did not reserve; if you reserve from the display, slide later Orders left and refill the rightmost position immediately.",
+      "abilityZh": "每轮一次，在瓷牙行行动中的一次承接时，查看主委托牌库顶端 3 张（不足则尽量查看）。然后承接其中 1 张，或承接公开展示中的 1 张主委托。未承接的已查看委托全部弃掉；若承接公开委托，将其右侧委托向左移动，并立即补入最右侧空位。",
       "oncePerRound": true
     },
     {

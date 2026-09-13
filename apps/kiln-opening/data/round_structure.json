@@ -6,7 +6,7 @@
       "order": 1,
       "id": "start",
       "name": "Start of Round",
-      "summary": "In Rounds 2-5, discard the three leftmost face-up Main Orders, slide the remaining two left and refill the display to five; refill Tech displays and ready once-per-round abilities."
+      "summary": "In Rounds 2-5, discard the two leftmost face-up Main Orders, slide the remaining three left and reveal two new Main Orders into the rightmost positions; refill Tech displays and ready once-per-round abilities."
     },
     {
       "order": 2,

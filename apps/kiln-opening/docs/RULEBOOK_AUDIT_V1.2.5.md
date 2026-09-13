@@ -1,15 +1,17 @@
 # RULEBOOK_AUDIT_V1.2.5.md
 
-## Adopted sources
+> Historical audit only. V1.2.6 is current; use `KILN_OPENING_v1.2.6_EN_SOURCE.md` for mechanics, `KILN_OPENING_v1.2.6_ZH_SOURCE.md` for Chinese localization, and `RULEBOOK_AUDIT_V1.2.6.md` for the adoption record.
 
-The current ruleset is V1.2.5 and has two complementary authorities:
+## Historical sources
 
-| Scope | Checked-in source | Owner-supplied filename | SHA-256 |
-|---|---|---|---|
-| Mechanics, timing, costs, limits, setup, cards, abilities and scoring | `KILN_OPENING_v1.2.5_EN_SOURCE.md` | `KILN OPENING 开窑 v1.2.5 — Player Rulebook2.md` | `fe9cc9b5ccf95ade74fa5f04fdc111ab383d0b78e13206192fd748777099d04e` |
-| Simplified Chinese terminology, labels, names and player-facing wording | `KILN_OPENING_v1.2.5_ZH_SOURCE.md` | `《开窑》KILN OPENING v1.2.5 — 玩家规则书2.md` | `73ccf17030af6ca076b267eb344e71b677b3e08836f1563295ad90afafcc6997` |
+The superseded V1.2.5 ruleset had two complementary authorities:
 
-Both checked-in files are byte-for-byte copies of the supplied files. Do not edit them as implementation documentation. If a future owner ruling changes a rule, preserve these snapshots and adopt a new source or record the ruling separately.
+| Scope | Checked-in source | Owner-supplied filename | Original supplied SHA-256 | Current archival SHA-256 |
+|---|---|---|---|---|
+| Mechanics, timing, costs, limits, setup, cards, abilities and scoring | `KILN_OPENING_v1.2.5_EN_SOURCE.md` | `KILN OPENING 开窑 v1.2.5 — Player Rulebook2.md` | `fe9cc9b5ccf95ade74fa5f04fdc111ab383d0b78e13206192fd748777099d04e` | `b5d331f5c7bf2ace56de3db5b1e96707224b0ee89765d3078e079b219aa539dd` |
+| Simplified Chinese terminology, labels, names and player-facing wording | `KILN_OPENING_v1.2.5_ZH_SOURCE.md` | `《开窑》KILN OPENING v1.2.5 — 玩家规则书2.md` | `73ccf17030af6ca076b267eb344e71b677b3e08836f1563295ad90afafcc6997` | `713f2b12aabdfb16a1e0438a95bddeaa4050c18452e0e14576fbdbc29deea37f` |
+
+The original hashes preserve the supplied artifacts' provenance. The checked-in archives now carry an explicit superseded notice, and their Main Order display passages were synchronised with the V1.2.6 ordered-queue rule so they cannot supply obsolete operational guidance. They are not current gameplay authorities; all other historical wording remains version-labelled context.
 
 ## Authority split
 
@@ -63,6 +65,6 @@ This is a source audit, not a substitute rulebook. The most implementation-sensi
 
 For exact card text, costs, rewards, timing and edge cases, read the adopted sources rather than this summary.
 
-## Historical sources
+## Earlier historical sources
 
-`KILN_OPENING_v1.2.4_SOURCE.md` and `RULEBOOK_AUDIT_V1.2.4.md` remain checked in as immutable history. They are not current authorities and must not be used to restore V1.2.4 mechanics.
+`KILN_OPENING_v1.2.4_SOURCE.md` and `RULEBOOK_AUDIT_V1.2.4.md` remain checked in as superseded, version-labelled history. The original import is recoverable from its recorded hash and repository history; the checked-in archive's Main Order passages contain current queue guidance. Neither file is a current authority or a basis for restoring other V1.2.4 mechanics.

@@ -34,6 +34,7 @@ interface GameConfigDefinition {
   };
   orderDisplay: {
     market: number;
+    roundStartDiscard: number;
     baseHandLimit: number;
   };
   techniques: { maxOwned: number; faceUpPerDiscipline: number };

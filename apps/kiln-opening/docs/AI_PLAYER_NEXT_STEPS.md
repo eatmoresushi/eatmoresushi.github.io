@@ -9,9 +9,10 @@
 > themselves remain under `playtests/`, and the code is recoverable from git history.
 
 > Current online rules compatibility: **V1.2.6**. The production online policy is
-> `rules-v1.2.6-heuristic-001`; every action is validated and applied by the V1.2.6 engine.
-> It has deterministic 2/3/4-player full-game completion coverage but no claim of
-> human-calibrated strength. Do not overwrite or relabel historical datasets.
+> `rules-v1.2.6-strategic-002`; every strategic choice and fallback is validated and applied
+> by the V1.2.6 engine from a sanitized player observation. It has deterministic 2/3/4-player
+> full-game completion coverage but no claim of human-calibrated strength. Do not overwrite
+> or relabel historical datasets.
 >
 > **Everything below documenting earlier rule-version lineages is a historical record.** The
 > V1.0.4 and V1.0.9 policies were deleted when V1.1.4 replaced the numeric 0–3 Wood bid: they select a bid

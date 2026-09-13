@@ -1,6 +1,7 @@
 from collections import Counter
 import json
 from pathlib import Path
+import re
 import sys
 
 
@@ -17,6 +18,54 @@ def load(name: str):
 def check(condition: bool, message: str) -> None:
     if not condition:
         errors.append(message)
+
+
+def check_for_stale_order_guidance() -> None:
+    """Prevent superseded Main Order refresh instructions from returning anywhere."""
+    stale_patterns = (
+        re.compile(
+            "refill" + r"\s+(?:that|its|this|the\s+empty|the\s+vacated|the\s+same)\s+"
+            r"(?:display\s+)?(?:position|slot)",
+            re.IGNORECASE,
+        ),
+        re.compile(
+            r"(?:3|three)\s+(?:leftmost|oldest|left\s+edge)\s+"
+            r"(?:face\s+up\s+)?(?:main\s+orders?|orders?|cards|main\s+display)",
+            re.IGNORECASE,
+        ),
+        re.compile("three" + r"\s+card\s+(?:market\s+)?rotation", re.IGNORECASE),
+        re.compile(
+            "(?:slide|retain)" + r"\s+(?:the\s+)?remaining\s+(?:2|two)\s+"
+            r"(?:main\s+)?orders?",
+            re.IGNORECASE,
+        ),
+        re.compile("补" + r"(?:上|入)(?:(?:该|其)展示位置|空位)"),
+        re.compile("最左侧" + r"\s*(?:3|三)\s*张[^\n]{0,30}主委托"),
+        re.compile("(?:剩余(?:的)?|余下)" + r"\s*(?:2|两)\s*张主委托"),
+    )
+    checked_suffixes = {".json", ".md", ".py", ".sql", ".ts", ".tsx", ".txt"}
+    ignored_parts = {".git", "coverage", "dist", "node_modules"}
+
+    for path in ROOT.rglob("*"):
+        if not path.is_file() or path.suffix not in checked_suffixes:
+            continue
+        relative = path.relative_to(ROOT)
+        if ignored_parts.intersection(relative.parts):
+            continue
+        content = path.read_text(encoding="utf-8")
+        # Ignore Markdown emphasis and punctuation differences so obsolete copy cannot
+        # evade the guard as `**3 leftmost**`, `discard-three`, or `three-card`.
+        searchable_content = re.sub(r"(?:\*\*|__)", "", content)
+        searchable_content = re.sub(r"[-‐‑‒–—]", " ", searchable_content)
+        for pattern in stale_patterns:
+            for match in pattern.finditer(searchable_content):
+                line = searchable_content.count("\n", 0, match.start()) + 1
+                errors.append(
+                    f"Stale Main Order guidance in {relative}:{line}: {match.group(0)!r}"
+                )
+
+
+check_for_stale_order_guidance()
 
 
 config = load("game_config.json")
@@ -47,7 +96,10 @@ check(config["players"] == {"min": 2, "max": 4}, "Player count must be 2-4")
 check(config["rounds"] == 5, "Game must last 5 rounds")
 check(config["startingResources"] == {"clay": 2, "wood": 2, "coins": 3}, "Starting resources mismatch")
 check(config["workers"] == {"shifu": 1, "apprenticesTotal": 3, "apprenticesStarting": 3}, "Every player must start with 1 Shifu and 3 Apprentices")
-check(config["orderDisplay"] == {"market": 5, "baseHandLimit": 3}, "Main Order display or hand limit mismatch")
+check(
+    config["orderDisplay"] == {"market": 5, "roundStartDiscard": 2, "baseHandLimit": 3},
+    "Main Order display, rotation, or hand limit mismatch",
+)
 check(config["techniques"] == {"maxOwned": 2, "faceUpPerDiscipline": 2}, "Advanced Tech limits mismatch")
 check(config["coinEndGame"] == {"coinsPerVp": 3, "maxVp": 5}, "Coin scoring mismatch")
 
@@ -130,14 +182,21 @@ check(component_counts.get("Main Order Cards") == 48 and component_counts.get("S
 check(component_counts.get("Starting Tech Tiles") == 16 and component_counts.get("Advanced Tech Tiles") == 15, "Tech component counts mismatch")
 check(component_counts.get("Fire Cards") == 12 and component_counts.get("Imperial Priority Tokens") == 4, "Fire/Priority component counts mismatch")
 check(rounds["roundCount"] == 5, "Round structure must contain five rounds")
-check("discard the three leftmost" in rounds["phases"][0]["summary"] and "refill the display to five" in rounds["phases"][0]["summary"], "Round-start five-card market rotation mismatch")
+check(
+    "discard the two leftmost" in rounds["phases"][0]["summary"]
+    and "remaining three" in rounds["phases"][0]["summary"]
+    and "two new Main Orders" in rounds["phases"][0]["summary"],
+    "Round-start five-card market rotation mismatch",
+)
 check(assets["orderCards"].get("total") == 64 and assets["orderCards"].get("main") == 48 and assets["orderCards"].get("starting") == 16, "Order asset counts mismatch")
 check(assets["playerReference"].get("mustShowFiveCardMainOrderDisplay") is True, "Reference asset must show a five-card Main Order display")
 
 adopted_rules = (ROOT / "docs" / "KILN_OPENING_v1.2.6_EN_SOURCE.md").read_text(encoding="utf-8")
 for required in (
     "reveal **5 face-up Main Orders**",
-    "Discard the **3 leftmost face-up Main Orders**",
+    "Discard the **2 leftmost face-up Main Orders**",
+    "rightmost Order is the newest",
+    "Slide every later Order left",
     "Multiple Shifu may overfill the same location.",
     "the ceramic that has the Shifu worker",
     "before or after your worker action",
@@ -160,7 +219,7 @@ if errors:
 
 print("V1.2.6 HANDOFF VALIDATION PASSED")
 print("Rules/data: 2-4 players, 5 rounds, 1 Shifu + 3 Apprentices, seven shared locations.")
-print("Orders: 16 Starting + 48 Main; five-card market rotates its three leftmost cards.")
+print("Orders: 16 Starting + 48 Main; five-card queue rotates its two oldest cards.")
 print("Tech: 4 Starting + 15 Advanced; Fuel Ledger and Second Firing match owner rulings.")
 print("Firing: Bank/Tend/Stoke, 12-card Fire deck, seven Shared Kiln spaces, current Quality ladder.")
 print("Recognition: Imperial Grant at 1, Gift at 2, Priority at 3, Audience at 4.")

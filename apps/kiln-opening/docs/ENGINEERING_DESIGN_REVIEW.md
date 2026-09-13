@@ -445,7 +445,7 @@ Actions with no newly revealed information commit atomically with placement: Mat
 
 Actions requiring a choice after public information changes enter `work.resolve`:
 
-- **Office Order taking:** take one displayed Order, refill that exact display position immediately, offer Colour Samples if legal, resolve its discard/refill if used, then either take the next allowed Order or finish. The next selection always sees the updated display. Hand limit is checked after every take. After the main Office action, enter the optional Flawed-sale step; an empty selection skips it.
+- **Office Order taking:** take one displayed Order, apply the then-current display-refill procedure, offer Colour Samples if legal, resolve its discard/refill if used, then either take the next allowed Order or finish. The next selection always sees the updated display. This archived procedure is superseded by the current V1.2.6 oldest-to-newest queue in `docs/IMPLEMENTATION_DECISIONS.md`. Hand limit is checked after every take. After the main Office action, enter the optional Flawed-sale step; an empty selection skips it.
 - **Guild Shifu refresh:** optionally bottom one displayed tile, reveal its replacement from the same discipline, then select and buy a Technique from the updated display. Refill the acquired discipline immediately. If the discipline deck is empty, apply the documented same-tile/no-refill edge case.
 
 When resolution completes, rotate clockwise to the next player who has not passed and has an available worker. End Work Phase when all players have passed or have no available worker. Passing with unused workers is legal and permanent; unused workers grant nothing.

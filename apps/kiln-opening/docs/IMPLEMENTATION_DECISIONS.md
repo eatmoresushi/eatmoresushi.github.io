@@ -1,6 +1,6 @@
 # IMPLEMENTATION_DECISIONS.md — V1.2.6
 
-These are digital-flow decisions and implementation notes only. `docs/KILN_OPENING_v1.2.6_EN_SOURCE.md` is authoritative for mechanics and `docs/KILN_OPENING_v1.2.6_ZH_SOURCE.md` is authoritative for Simplified Chinese. Source checksums and the owner's shared-location clarification are recorded in `docs/RULEBOOK_AUDIT_V1.2.6.md`.
+These are digital-flow decisions and implementation notes only. `docs/KILN_OPENING_v1.2.6_EN_SOURCE.md` is authoritative for mechanics and `docs/KILN_OPENING_v1.2.6_ZH_SOURCE.md` is authoritative for Simplified Chinese. Source checksums and the owner's adopted clarifications and amendments are recorded in `docs/RULEBOOK_AUDIT_V1.2.6.md`.
 
 ## Setup and shared action locations
 
@@ -15,14 +15,15 @@ These are digital-flow decisions and implementation notes only. `docs/KILN_OPENI
 
 ## Orders and Advanced Tech acquisition
 
-- The Main Order market is one five-card ordered display. Empty positions refill immediately without changing the relative order of cards that remain.
-- At the start of Rounds 2–5, discard the three leftmost displayed Main Orders, slide the other two left, then refill to five.
-- Each Commission reservation independently takes either a face-up Order with immediate refill or the unseen top Main Order. After **each** reservation, the acting player chooses and gains 1 Clay, 1 Wood or 1 Coin. A Shifu may stop after completing the first reservation and its advance.
-- Colour Samples privately inspects the top three Main Orders. One inspected card or one face-up card may be reserved; inspected cards not taken are discarded without leaking their identities.
+- The Main Order market is one five-card ordered queue, oldest on the left and newest on the right. Removing a face-up Order slides every later card left and appends the replacement at the right; it never refills in place.
+- At the start of Rounds 2–5, discard the two leftmost displayed Main Orders, retain and slide the other three left, then append two new Orders at the right.
+- Each Commission reservation independently takes either a face-up Order or the unseen top Main Order. Face-up removal advances the queue; a blind deck reservation leaves the display unchanged. After **each** reservation, the acting player chooses and gains 1 Clay, 1 Wood or 1 Coin. A Shifu fully resolves the first reservation and sees its updated display before choosing a second, and may stop after completing the first reservation and its advance.
+- Colour Samples privately inspects the top three Main Orders. One inspected card or one face-up card may be reserved; inspected cards not taken are discarded without leaking their identities. Reserving an inspected card leaves the display unchanged; reserving a face-up card advances the queue.
 - A Guild Shifu privately inspects the top two remaining Techs of one discipline. It may acquire one inspected Tech or any face-up Tech at a 1-Coin discount, minimum 0; unchosen inspected Techs go to the bottom of that discipline's deck.
 - Multi-ceramic Shape, Glaze and Decoration requirements are independent unless a card explicitly prints a fixed pairing. Selection order never changes validity.
 - In the Order Phase, opportunities proceed in reverse Work order. Each opportunity completes at most one Order or passes. Continue circuits until one complete circuit contains no completion.
-- Completing a public Main Order removes and immediately refills that display slot. Completing a held Starting or Main Order removes it from the player's hand.
+- The Order panel lists only Orders for which the active player has at least one legal group of Finished ceramics. After an explicit pass, the online flow remembers the legal choices that player declined: later unchanged or impossible opportunities are skipped administratively, but a newly displayed Main Order that the player can complete prompts them again. A new legal decision is never skipped, and the phase still ends only after a full circuit without a completion.
+- Completing a public Main Order removes it, slides every later displayed Order left and appends its replacement at the right. Completing a held Starting or Main Order removes it from the player's hand without moving the display.
 - Cleanup enforces one combined maximum of three held Starting and reserved Main Orders.
 
 ## Techs and production effects
@@ -46,6 +47,7 @@ These are digital-flow decisions and implementation notes only. `docs/KILN_OPENI
 - Base Heat starts at 2, applies all final Contribution modifiers, then clamps to 0–5. Global and Actual Heat are not clamped.
 - A Kiln Yard Shifu with at least one owned Shared-Kiln ceramic after loading must commit exactly one such ceramic during that Work-Phase action. The target is stored in authoritative state and made public immediately. A Shifu that loads only into the Imperial Kiln while owning no Shared-Kiln ceramic stores no target.
 - After Base Heat is fixed and before Fire is revealed, marked Shifu targets resolve in First Player order. Each may move only its previously marked ceramic to an empty active space in a neighbouring zone: High ↔ Middle ↔ Low. It cannot move into or out of an Imperial Kiln. The association clears after that player moves or declines, while the worker remains used until Cleanup.
+- After all Contributions and Kiln Yard Shifu adjustments resolve, the First Player confirms the Fire-card reveal. This is a ceremonial online pacing step with no choice or rules effect; the server still draws the card and calculates all Heat and Quality results.
 - The private Imperial Kiln is a one-ceramic space with no zone modifier. It participates in the shared firing and Contribution eligibility but is not a Shared-Kiln space.
 - Imperial Priority is a separate once-per-game timing choice before or after its owner's worker action. It loads one unloaded Glazed ceramic into the owner's empty Imperial Kiln and is not part of Kiln Yard's normal load allowance.
 - Kiln Furniture's zero-zone choice stays attached to that ceramic for the current firing, follows a legal Shifu reposition, and remains applicable to an immediate Second Firing.

@@ -210,10 +210,10 @@ describe("V1.2.6 playtest form", () => {
     expect(v126PlaytestMigration).toContain("when submission.rules_version in ('1.2.5', '1.2.6') and player.recognition = 4 then 6");
   });
 
-  it("renders no editable Game ID field and explains backend assignment", () => {
+  it("renders no editable Game ID field and explains the submission reference", () => {
     const markup = renderToStaticMarkup(createElement(PlaytestFormPage));
     expect(markup).toContain("Tell us what happened at the table.");
-    expect(markup).toContain("reference number is created only after a successful submission");
+    expect(markup).toContain("reference number after a successful submission");
     expect(markup).not.toContain("name=\"gameId\"");
     expect(markup).not.toContain(">Game ID<");
   });
