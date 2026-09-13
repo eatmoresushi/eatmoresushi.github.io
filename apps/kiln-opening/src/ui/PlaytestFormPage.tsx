@@ -384,7 +384,7 @@ export function PlaytestFormPage() {
         <div className="success-mark" aria-hidden="true">✓</div>
         <p className="eyebrow">Playtest received</p>
         <h1>Thank you for opening the kiln.</h1>
-        <p>Your submission reference is <strong>{submittedId}</strong>. It was assigned by the server and stored for comparison with future games.</p>
+        <p>Your submission reference is <strong>{submittedId}</strong>. Keep it if you would like to refer to this playtest later.</p>
         <div className="button-row">
           <button className="primary-button" type="button" onClick={() => {
             setDraft(createPlaytestDraft());
@@ -416,7 +416,7 @@ export function PlaytestFormPage() {
           <aside>
             <strong>Draft saved locally</strong>
             <span>You can close this page and continue later on this device.</span>
-            <span>There is no Game ID to enter; your reference number is created only after a successful submission.</span>
+            <span>You will receive a reference number after a successful submission.</span>
           </aside>
         </section>
 

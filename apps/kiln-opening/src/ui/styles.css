@@ -131,6 +131,19 @@
   .banner-warning { border: 1px solid #d3aa58; color: #69470c; background: #fff4d4; }
   .banner-error { border: 1px solid #ce827a; color: #65241e; background: #fae3df; }
   .banner-info { border: 1px solid var(--celadon); color: var(--celadon-dark); background: var(--celadon-pale); }
+  .banner-computer-paused {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: .75rem;
+    align-items: center;
+    border: 1px solid #ca8a42;
+    color: #5f3a12;
+    background: #fff2d8;
+    box-shadow: 0 8px 24px rgb(92 58 18 / 12%);
+  }
+  .banner-computer-paused > span:not(.computer-paused-mark) { display: grid; gap: .12rem; }
+  .banner-computer-paused small { line-height: 1.4; }
+  .computer-paused-mark { display: grid; width: 2.2rem; aspect-ratio: 1; place-items: center; border-radius: 50%; color: white; font-size: .67rem; font-weight: 900; letter-spacing: .04em; background: #9a5b25; }
   .progress-line { position: fixed; z-index: 40; top: 0; left: 0; width: 38%; height: 3px; background: var(--cinnabar); animation: progress 1.2s ease-in-out infinite; }
   @keyframes progress { 0% { transform: translateX(-100%); } 100% { transform: translateX(365%); } }
   .panel { border: 1px solid rgb(109 93 71 / 21%); border-radius: var(--radius); padding: 1rem; background: rgb(255 253 248 / 68%); box-shadow: 0 2px 0 rgb(255 255 255 / 50%) inset; }

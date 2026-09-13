@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import migration from "../../supabase/migrations/202609100001_v126_rules.sql?raw";
+import strategicAiMigration from "../../supabase/migrations/202609120001_v126_strategic_ai.sql?raw";
+import orderQueueMigration from "../../supabase/migrations/202609130001_v126_order_queue.sql?raw";
 import supabaseStore from "../../supabase/functions/_shared/supabaseStore.ts?raw";
 
 describe("V1.2.6 Supabase contract", () => {
@@ -23,17 +25,27 @@ describe("V1.2.6 Supabase contract", () => {
   });
 
   it("installs the current computer policy and keeps the function service-role-only", () => {
-    expect(migration).toContain("'rules-v1.2.6-heuristic-001'");
-    expect(migration).toContain("create or replace function public.server_add_computer_seat");
-    expect(migration).toContain("v_room.rules_version <> '1.2.6'");
-    expect(migration).toContain(
-      "p_seat_id, p_room_id, 'rules-v1.2.6-heuristic-001', p_ai_seed, p_command_id",
+    expect(strategicAiMigration).toContain("'rules-v1.2.6-strategic-002'");
+    expect(strategicAiMigration).toContain("create or replace function public.server_add_computer_seat");
+    expect(strategicAiMigration).toContain("v_room.rules_version <> '1.2.6'");
+    expect(strategicAiMigration).toContain(
+      "p_seat_id, p_room_id, 'rules-v1.2.6-strategic-002', p_ai_seed, p_command_id",
     );
-    expect(migration).toContain(
+    expect(strategicAiMigration).toContain("room.status in ('lobby', 'playing')");
+    expect(strategicAiMigration).toContain(
       "revoke all on function public.server_add_computer_seat(uuid, uuid, uuid, text, bigint, uuid) from public, anon, authenticated",
     );
-    expect(migration).toContain(
+    expect(strategicAiMigration).toContain(
       "grant execute on function public.server_add_computer_seat(uuid, uuid, uuid, text, bigint, uuid) to service_role",
     );
+  });
+
+  it("advances the V1.2.6 save boundary for the Main Order queue amendment", () => {
+    expect(orderQueueMigration).toContain("'^r(14|15)-[0-9a-f]{16}$'");
+    expect(orderQueueMigration).toContain("execute replace(v_definition, '^r14-', '^r15-')");
+    expect(orderQueueMigration).toContain("public.server_add_computer_seat");
+    expect(orderQueueMigration).toContain("public.server_create_room");
+    expect(orderQueueMigration).toContain("public.server_commit_start");
+    expect(orderQueueMigration).toContain("public.server_commit_transition");
   });
 });

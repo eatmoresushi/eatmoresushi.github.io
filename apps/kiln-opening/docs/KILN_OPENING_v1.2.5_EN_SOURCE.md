@@ -1,5 +1,10 @@
 # KILN OPENING 开窑 v1.2.5 — Player Rulebook
 
+> **Superseded archive.** This file preserves older-version context, but its Main Order
+> display passages have been synchronised with the current V1.2.6 queue rule to remove
+> obsolete gameplay guidance. The original supplied artifact remains identifiable by the
+> SHA-256 recorded in `RULEBOOK_AUDIT_V1.2.5.md` and by repository history.
+
 **2–4 players | 90–120 minutes | Ages 12+**
 *Build the workshop. Share the kiln. Master the craft.*
 A medium-weight worker-placement game about Song Dynasty ceramic workshops.
@@ -57,7 +62,7 @@ The game lasts exactly **5 rounds**.
    - **4 players:** use all 7 spaces.
    - **3 players:** use 6 spaces; do not use 1 High space.
    - **2 players:** use 5 spaces; do not use 1 High and 1 Middle space.
-2. Shuffle the **48-card Main Order deck** and reveal **5 face-up Main Orders** from left to right.
+2. Shuffle the **48-card Main Order deck** and reveal **5 face-up Main Orders** from left to right. The leftmost Order is the oldest and the rightmost Order is the newest.
 3. Shuffle the separate **16-card Starting Order deck**. Deal **4 Starting Orders to each player**. Each player secretly keeps **2**. After everyone has chosen, reveal all kept Starting Orders and return all unkept and undealt Starting Orders to the box. Starting Orders are never shuffled into the Main Order deck.
 4. Separate the 15 Advanced Techs into Forming, Glazing & Decoration and Firing decks of 5. Shuffle each discipline and reveal **2 face-up tiles from each**.
 5. Shuffle the 12-card Fire deck and place it face down beside a face-up discard pile.
@@ -85,9 +90,9 @@ The game lasts exactly **5 rounds**.
 | 5 | Cleanup | Return workers; trim Order hands; pass First Player. |
 ## Phase 1 — Start of Round
 In Rounds 2–5:
-1. Discard the **3 leftmost face-up Main Orders** to the Main Order discard pile.
-2. Slide the remaining **2 Main Orders** left.
-3. Refill the display to **5**.
+1. Discard the **2 leftmost face-up Main Orders** to the Main Order discard pile.
+2. Retain the remaining **3 Main Orders** in their current order and slide them left.
+3. Draw **2 new Main Orders**, one at a time, and add them at the right end of the display.
 Then:
 - ready all abilities marked **once per round**;
 - the First Player begins the Work Phase.
@@ -134,8 +139,8 @@ Beginning with the First Player and proceeding clockwise, each player places one
 
 ### Commission Market
 For each reservation, choose one:
-- reserve **1 face-up Main Order**, then refill that display position immediately; or
-- reserve the **top card of the Main Order deck without looking at it first**. Reveal it after taking it.
+- reserve **1 face-up Main Order**. Slide every later Order left, then draw 1 new Main Order and add it to the rightmost position; or
+- reserve the **top card of the Main Order deck without looking at it first**. Reveal it after taking it. The face-up display does not move.
 | **Worker** | **Effect** |
 |:-|:-|
 | Apprentice | Reserve **1 Main Order**. Then gain **1 Clay, 1 Wood or 1 Coin**. |
@@ -223,7 +228,7 @@ On each Order opportunity, a player may complete **at most 1 Order** or pass.
 A completed Order may be:
 - one of the player's held Orders; or
 - one of the **5 face-up Main Orders**.
-If a face-up Main Order is completed, refill its display position immediately.
+If a face-up Main Order is completed, slide every later Order left, then draw 1 new Main Order and add it to the rightmost position.
 Continue cycling in reverse turn order until one full circuit occurs in which **no player completes an Order**. Passing on one opportunity does not prevent that player from completing an Order on a later circuit if the display changes.
 ## Phase 5 — Cleanup
 1. Return all workers to their owners.
@@ -286,11 +291,11 @@ Each player chooses exactly **1 Starting Tech** during Setup. It does not count 
 See Appendix B for all 15 tiles.
 # Orders and Imperial Recognition
 ## Main Order Market
-There is one **48-card Main Order deck** and one **5-card public display**. The separate 16-card Starting Order deck is used only during Setup.
+There is one **48-card Main Order deck** and one **5-card public display**. Read the display from oldest on the left to newest on the right. Whenever a face-up Order leaves the display, all later Orders slide left and a new Order is added at the right. The separate 16-card Starting Order deck is used only during Setup.
 Orders may award **VP, Coins and 0–3 Crowns**.
 Commercial Orders tend to be more flexible and pay more Coins. Crown Orders tend to be more specific, pay fewer Coins and advance Imperial Recognition.
 ## Reserving Orders
-Use the Commission Market during the Work Phase to reserve Main Orders. Each reservation may take either a face-up Order or the top card of the Main Order deck without looking first, unless an ability such as **Colour Samples** changes that reservation.
+Use the Commission Market during the Work Phase to reserve Main Orders. Each reservation may take either a face-up Order or the top card of the Main Order deck without looking first, unless an ability such as **Colour Samples** changes that reservation. Taking a blind or privately viewed Order from the deck does not move the face-up display. Resolve multiple reservations one at a time, so the next choice sees the display produced by the previous reservation.
 
 A reserved Main Order:
 - is placed in your hand and revealed to all players;
@@ -308,7 +313,7 @@ During an Order opportunity:
 6. Gain the printed Coins.
 7. Resolve **1 Crown at a time**. Each Crown advances Imperial Recognition by 1 until you reach Recognition 4. After you are at Recognition 4, each further Crown scores **1 VP immediately**. Resolve every milestone crossed.
 8. Place the completed Order face up in your scoring area.
-9. If it came from the public display, refill the empty position immediately.
+9. If it came from the public display, slide every later Order left and refill the rightmost position immediately.
 A ceramic may satisfy only one completed Order.
 ### Reading Multi-Ceramic Requirements
 Requirements are **independent unless a specific pairing is explicitly printed**.
@@ -493,7 +498,7 @@ Tech tiles use abbreviated reminder text. The rules in this appendix give the fu
 | **Carving Knives** | 2        | Once per round, one Carved Decoration you apply costs 0 Coins. |
 | **Seal Stamps**    | 2        | Once per round, one Impressed Decoration you apply costs 0 Coins. |
 | **Crackle Slips**  | 2        | Once per round, one Crackle Decoration you apply costs 0 Coins. |
-| **Colour Samples** | 2        | Once per round, during one reservation of a Commission Market action, look at the top **3 Main Orders** (or as many as remain). Then reserve either **1 of those Orders** or **1 face-up Main Order**. Discard every looked-at Order you did not reserve; if you reserve from the display, refill that position immediately. |
+| **Colour Samples** | 2        | Once per round, during one reservation of a Commission Market action, look at the top **3 Main Orders** (or as many as remain). Then reserve either **1 of those Orders** or **1 face-up Main Order**. Discard every looked-at Order you did not reserve; if you reserve from the display, slide later Orders left and refill the rightmost position immediately. |
 ## B4. Firing Advanced Tech
 | **Advanced Tech**      | **Cost** | **Ability**                                                  |
 |------------------------|:--------:|--------------------------------------------------------------|
@@ -540,7 +545,7 @@ If no ceramics are loaded in the Shared Kiln or any Imperial Kiln, **skip this p
 | After Quality is assigned | 10 |
 # Appendix E — Quick Reference
 ## Round Sequence
-1. **Start:** Rounds 2–5 discard the 3 leftmost Main Orders, slide the remaining 2 left and refill the **5-card display**; ready abilities.
+1. **Start:** Rounds 2–5 discard the 2 leftmost Main Orders, retain and slide the remaining 3 left, then add 2 new Orders at the right; ready abilities.
 2. **Work:** First Player clockwise; place workers until everyone passes.
 3. **Fire:** Contributions → Base Heat → **Kiln Yard Shifu** → Fire → Actual Heat → abilities → Quality.
 4. **Orders:** reverse Work order; one Order per opportunity; repeat until a full circuit completes **no Orders**.
@@ -556,7 +561,7 @@ If no ceramics are loaded in the Shared Kiln or any Imperial Kiln, **skip this p
 | Commission Market  | Reserve 1 + gain 1 Clay/Wood/Coin | Reserve up to 2 separately; gain 1 Clay/Wood/Coin after each reservation |
 | Guild              | Buy 1 Advanced Tech at cost       | Look at top 2 Techs of 1 discipline (or as many as remain); take 1 revealed Tech or any face-up Tech at −1 Coin |
 | Labour             | 2 Coins                           | 4 Coins                                                   |
-For each reservation, take either a face-up Main Order or blindly take the top Main Order.
+For each reservation, take either a face-up Main Order or blindly take the top Main Order. Face-up removals slide later Orders left and refill at the right; blind draws do not move the display.
 A Shifu may use a fully occupied action location, and multiple Shifu may overfill the same location.
 If you have gained your Imperial Kiln and it is empty, one ceramic loaded during a Kiln Yard action may enter it instead of the Shared Kiln.
 ## Imperial Recognition

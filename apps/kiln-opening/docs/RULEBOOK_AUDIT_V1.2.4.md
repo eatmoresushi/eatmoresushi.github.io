@@ -4,7 +4,7 @@
 
 ## Authority
 
-The sole gameplay source is [KILN_OPENING_v1.2.4_SOURCE.md](./KILN_OPENING_v1.2.4_SOURCE.md), an exact copy of the owner-supplied `KILN OPENING 开窑 v1.2.4.md` (SHA-256 `95ecf7625ab93c5ca98c32a6db61e02f071036e4c48921afda471f919a112dd9`). Nothing in V1.2.2 survives merely because it was implemented; where the two differ, V1.2.4 wins.
+For the V1.2.4 release, the sole gameplay source was the owner-supplied `KILN OPENING 开窑 v1.2.4.md` (original SHA-256 `95ecf7625ab93c5ca98c32a6db61e02f071036e4c48921afda471f919a112dd9`). The checked-in [KILN_OPENING_v1.2.4_SOURCE.md](./KILN_OPENING_v1.2.4_SOURCE.md) is now a superseded archive rather than a current authority (current archival SHA-256 `451497bd0b3687a7282d23a1f01eb99f1d89e7e3367b5bfad9e83198ba8f0d36`). Its Main Order display passages were later synchronised with the V1.2.6 ordered-queue rule so obsolete operational guidance cannot be mistaken for current play. Repository history and the original hash preserve the supplied artifact's provenance.
 
 ## Contradictions the V1.2.2 audit recorded, now resolved upstream
 
@@ -19,7 +19,7 @@ No owner ruling was required to implement V1.2.4.
 
 ## Terminology deviations from the supplied source
 
-The owner's V1.2.4 brief mandates a terminology cleanup that the supplied Markdown does not yet apply to itself. Where the two disagree, the online version follows the brief and the adopted source file is left byte-identical to what was supplied:
+The owner's V1.2.4 brief mandated a terminology cleanup that the supplied Markdown did not yet apply to itself. For the historical V1.2.4 implementation, the online version followed the brief:
 
 1. **Order requirements.** Appendix A's tables head their requirement column **Commission**. The brief reserves "Commission" for the Commission Market location and requires **Requirements** for what an Order asks for. The `data/orders.json` field and every UI heading use `requirements` / `requirementsZh`.
 2. **Reservation advance.** §5 calls the Clay/Wood/Coin gained from reserving an "immediate commission advance". The brief requires **reservation advance**, which is what the interface shows.

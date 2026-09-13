@@ -17,6 +17,7 @@
   },
   "orderDisplay": {
     "market": 5,
+    "roundStartDiscard": 2,
     "baseHandLimit": 3
   },
   "techniques": {

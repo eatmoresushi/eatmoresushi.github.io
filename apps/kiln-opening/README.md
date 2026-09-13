@@ -19,7 +19,7 @@ Codex should read files in this order:
 11. `docs/IMPLEMENTATION_DECISIONS.md`
 12. `docs/DESIGN_HISTORY.md` only when historical context is useful
 
-The **current mechanical source of truth is the owner-supplied V1.2.6 English rulebook** at `docs/KILN_OPENING_v1.2.6_EN_SOURCE.md`. The paired Chinese rulebook at `docs/KILN_OPENING_v1.2.6_ZH_SOURCE.md` is authoritative for Simplified Chinese terminology and player-facing wording. Their exact checksums and the cross-language review are recorded in `docs/RULEBOOK_AUDIT_V1.2.6.md`. English and Simplified Chinese player-facing rules derive from the same stable IDs. Visual references remain restricted to `assets/current_v04/`; that directory name is retained only as a legacy path. Older rules and simulations remain historical evidence and must not override V1.2.6.
+The **current mechanical source of truth is the adopted V1.2.6 English source** at `docs/KILN_OPENING_v1.2.6_EN_SOURCE.md`; it incorporates the owner-supplied rulebook and the later Main Order queue amendment recorded in the audit. The paired adopted Chinese source at `docs/KILN_OPENING_v1.2.6_ZH_SOURCE.md` is authoritative for Simplified Chinese terminology and player-facing wording. Original and current checksums plus the cross-language review are recorded in `docs/RULEBOOK_AUDIT_V1.2.6.md`. English and Simplified Chinese player-facing rules derive from the same stable IDs. Visual references remain restricted to `assets/current_v04/`; that directory name is retained only as a legacy path. Older rules and simulations remain historical evidence and must not override V1.2.6.
 
 ## Important rule for Codex
 

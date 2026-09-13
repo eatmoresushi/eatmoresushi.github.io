@@ -48,7 +48,7 @@ export interface PublicSeat {
   colour: string;
   isHost: boolean;
   isComputer: boolean;
-  aiPolicyVersion: "selfplay-003" | "rules-v1.1.1-wood-001" | "rules-v1.1.4-contribution-001" | "rules-v1.1.5-order-001" | "rules-v1.2.2-heuristic-001" | "rules-v1.2.4-heuristic-001" | "rules-v1.2.5-heuristic-001" | "rules-v1.2.6-heuristic-001" | null;
+  aiPolicyVersion: "selfplay-003" | "rules-v1.1.1-wood-001" | "rules-v1.1.4-contribution-001" | "rules-v1.1.5-order-001" | "rules-v1.2.2-heuristic-001" | "rules-v1.2.4-heuristic-001" | "rules-v1.2.5-heuristic-001" | "rules-v1.2.6-heuristic-001" | "rules-v1.2.6-strategic-002" | null;
 }
 
 export interface PublicPlayerState {

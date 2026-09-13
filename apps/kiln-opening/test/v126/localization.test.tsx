@@ -94,7 +94,7 @@ describe("English / Simplified Chinese localization", () => {
     expect(english).toContain("∞");
     expect(chinese).toContain("∞");
     expect(chinese).not.toContain("Infinity");
-    expect(chinese).toContain("事件");
+    expect(chinese).not.toContain("状态版本");
     expect(chinese).toContain(`V${GAME_CONFIG.rulesVersion}`);
     expect(JSON.stringify(publicGame)).toBe(before);
   });
@@ -120,7 +120,7 @@ describe("English / Simplified Chinese localization", () => {
     expect(JSON.stringify(publicGame)).toBe(before);
   });
 
-  it("localizes the public playtest diagnostics", () => {
+  it("keeps internal playtest diagnostics out of the player-facing table", () => {
     const publicGame = projectPublicGameState(startedGame(2, 10_404).state);
     const ownPlayerId = publicGame.playerOrder[0]!;
     const chinese = localizedMarkup("zh-CN", createElement(PlaytestExperience, {
@@ -131,10 +131,11 @@ describe("English / Simplified Chinese localization", () => {
       busy: false,
       send: async () => true,
     }));
-    expect(chinese).toContain("试玩调试");
-    expect(chinese).toContain("仅公开状态");
-    expect(chinese).toContain("公共资源库");
-    expect(chinese).not.toContain("Playtest Debug");
+    expect(chinese).toContain("游戏桌面");
+    expect(chinese).not.toContain("试玩调试");
+    expect(chinese).not.toContain("仅公开状态");
+    expect(chinese).not.toContain("原始公共游戏状态");
+    expect(chinese).not.toContain("Playtest diagnostics");
   });
 
   it("lets a selected Shifu target a full shared action in the live tabletop", () => {

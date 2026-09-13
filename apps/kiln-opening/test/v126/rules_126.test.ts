@@ -231,7 +231,14 @@ describe("V1.2.6 Kiln Yard Shifu commitment", () => {
     expect(state.phase).toEqual({ type: "firing_reposition", queue: { actors: ["P1", "P2"], currentIndex: 1 } });
     expect(state.players["P1"]!.kilnYardShifuCeramicId).toBeNull();
     expect(state.players["P1"]!.workers[`${state.players["P1"]!.id}:shifu`]?.status).toBe("placed");
-    const finished = mustResult(state, "P2", { type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: p2.id, toSpaceId: "middle_1" }, rng);
+    const repositioned = mustResult(state, "P2", { type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: p2.id, toSpaceId: "middle_1" }, rng);
+    state = repositioned.state;
+    expect(state.phase).toEqual({ type: "firing_reveal_fire", actorId: "P1" });
+    expect(state.firingContext?.kilnYardShifuRepositions).toEqual([
+      { playerId: "P1", ceramicId: p1.id, fromSpaceId: "middle_1", toSpaceId: "high_1" },
+      { playerId: "P2", ceramicId: p2.id, fromSpaceId: "low_1", toSpaceId: "middle_1" },
+    ]);
+    const finished = mustResult(state, "P1", { type: "REVEAL_FIRE_CARD" }, rng);
     expect(finished.state.lastFiringResult?.kilnYardShifuRepositions).toEqual([
       { playerId: "P1", ceramicId: p1.id, fromSpaceId: "middle_1", toSpaceId: "high_1" },
       { playerId: "P2", ceramicId: p2.id, fromSpaceId: "low_1", toSpaceId: "middle_1" },
@@ -250,7 +257,14 @@ describe("V1.2.6 Kiln Yard Shifu commitment", () => {
     };
     state.fireDeck = [0];
     state.phase = { type: "firing_reposition", queue: { actors: ["P1"], currentIndex: 0 } };
-    const result = mustResult(state, "P1", { type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: ceramic.id, toSpaceId: "middle_1" }, rng);
+    state = mustApply(state, "P1", { type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: ceramic.id, toSpaceId: "middle_1" }, rng);
+    expect(state.phase).toEqual({ type: "firing_reveal_fire", actorId: state.firstPlayerId });
+    expect(state.ceramics[ceramic.id]).toEqual(expect.objectContaining({
+      stage: "loaded",
+      kilnSpaceId: "middle_1",
+      kilnFurnitureUsed: true,
+    }));
+    const result = mustResult(state, state.firstPlayerId, { type: "REVEAL_FIRE_CARD" }, rng);
     expect(result.events).toContainEqual(expect.objectContaining({ type: "FIRING_RESOLVED", ceramicId: ceramic.id, zoneModifier: 0 }));
   });
 

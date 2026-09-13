@@ -110,6 +110,7 @@ export interface GameApi {
     roomCode: string,
     seatToken: string,
     expectedRevision: number,
+    signal?: AbortSignal,
   ): Promise<MultiplayerResult<ComputerAdvanceSuccess>>;
   executeCommand(input: {
     roomCode: string;
@@ -123,7 +124,7 @@ export interface GameApi {
 }
 
 class TestHttpGameApi implements GameApi {
-  private async call<T>(body: Record<string, unknown>): Promise<MultiplayerResult<T>> {
+  private async call<T>(body: Record<string, unknown>, signal?: AbortSignal): Promise<MultiplayerResult<T>> {
     const response = await fetch("/test-api", {
       method: "POST",
       headers: {
@@ -131,6 +132,7 @@ class TestHttpGameApi implements GameApi {
         "x-e2e-user": this.testUserId(),
       },
       body: JSON.stringify(body),
+      ...(signal === undefined ? {} : { signal }),
     });
     return await response.json() as MultiplayerResult<T>;
   }
@@ -183,8 +185,9 @@ class TestHttpGameApi implements GameApi {
     roomCode: string,
     seatToken: string,
     expectedRevision: number,
+    signal?: AbortSignal,
   ): Promise<MultiplayerResult<ComputerAdvanceSuccess>> {
-    return this.call({ operation: "advance_computers", roomCode, seatToken, expectedRevision });
+    return this.call({ operation: "advance_computers", roomCode, seatToken, expectedRevision }, signal);
   }
 
   executeCommand(input: {
@@ -278,8 +281,9 @@ class SupabaseGameApi implements GameApi {
     roomCode: string,
     seatToken: string,
     expectedRevision: number,
+    signal?: AbortSignal,
   ): Promise<MultiplayerResult<ComputerAdvanceSuccess>> {
-    return this.call("advance_computers", { roomCode, seatToken, expectedRevision });
+    return this.call("advance_computers", { roomCode, seatToken, expectedRevision }, signal);
   }
 
   executeCommand(input: {
@@ -338,10 +342,12 @@ class SupabaseGameApi implements GameApi {
   private async call<T>(
     operation: string,
     body: Record<string, unknown>,
+    signal?: AbortSignal,
   ): Promise<MultiplayerResult<T>> {
     await this.ensureSession();
     const { data, error } = await this.client.functions.invoke("game-action", {
       body: { operation, ...body },
+      ...(signal === undefined ? {} : { signal }),
     });
     if (error !== null) {
       const ruleFailure = await parseMultiplayerFunctionFailure(error);

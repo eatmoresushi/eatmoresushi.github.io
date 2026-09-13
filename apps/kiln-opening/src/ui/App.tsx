@@ -13,14 +13,40 @@ import type {
 } from "../multiplayer";
 import { ORDER_DEFINITIONS, TECHNIQUE_DEFINITIONS, currentDecisionActor } from "../game";
 import { PlaytestExperience } from "./PlaytestExperience";
+import type { ComputerTurnRecap } from "./TabletopGameExperience";
 import { localizeMultiplayerError, useI18n } from "./i18n";
 import type { Locale } from "./i18n";
 
 const LAST_SEAT_KEY = "kiln-opening:last-seat";
+const COMPUTER_TURN_TIMEOUT_MS = 20_000;
 
 interface SavedSeat {
   roomCode: string;
   seatToken: string;
+}
+
+interface ComputerAdvanceFailure {
+  revision: number;
+  error: MultiplayerError;
+  timedOut: boolean;
+}
+
+function computerTurnTimeoutError(): MultiplayerError {
+  return {
+    code: "SERVICE_UNAVAILABLE",
+    message: "The computer player did not answer in time.",
+    details: { operation: "advance_computers", timedOut: true },
+    currentRevision: null,
+  };
+}
+
+function computerTurnRequestError(_cause: unknown): MultiplayerError {
+  return {
+    code: "SERVICE_UNAVAILABLE",
+    message: "The computer turn could not be completed. Please try again.",
+    details: { operation: "advance_computers" },
+    currentRevision: null,
+  };
 }
 
 export function imperialOrderNotice(result: CommandSuccess, locale: Locale = "en"): string | null {
@@ -48,9 +74,19 @@ export function imperialOrderNotice(result: CommandSuccess, locale: Locale = "en
 export function commandNotice(result: CommandSuccess, locale: Locale = "en"): string | null {
   const order = result.events.find((event) => event.type === "ORDER_TAKEN");
   if (order?.type === "ORDER_TAKEN") {
-    return order.acquisition === "colour_samples"
-      ? locale === "zh-CN" ? `通过色样簿承接主委托${order.orderId}。` : `Reserved Main Order ${order.orderId} through Colour Samples.`
-      : locale === "zh-CN" ? `承接公开主委托${order.orderId}。` : `Reserved face-up Main Order ${order.orderId}.`;
+    if (order.acquisition === "colour_samples") {
+      return locale === "zh-CN"
+        ? `通过色样簿承接主委托${order.orderId}。`
+        : `Reserved Main Order ${order.orderId} through Colour Samples.`;
+    }
+    if (order.acquisition === "blind_deck") {
+      return locale === "zh-CN"
+        ? `不看牌面承接主委托牌库顶${order.orderId}。`
+        : `Reserved unseen top Main Order ${order.orderId}.`;
+    }
+    return locale === "zh-CN"
+      ? `承接公开主委托${order.orderId}。`
+      : `Reserved face-up Main Order ${order.orderId}.`;
   }
   const colour = result.events.find((event) => event.type === "COLOUR_SAMPLES_USED");
   if (colour?.type === "COLOUR_SAMPLES_USED") {
@@ -92,7 +128,7 @@ function configurationApi(): { api: GameApi | null; message: string | null } {
   } catch {
     return {
       api: null,
-      message: "This deployment still needs its public Supabase URL and anonymous key.",
+      message: "Online play is temporarily unavailable.",
     };
   }
 }
@@ -104,6 +140,8 @@ export function App() {
   const [connection, setConnection] = useState<RoomConnection | null>(null);
   const [busy, setBusy] = useState(false);
   const [computerThinking, setComputerThinking] = useState(false);
+  const [computerAdvanceFailure, setComputerAdvanceFailure] = useState<ComputerAdvanceFailure | null>(null);
+  const [computerRecap, setComputerRecap] = useState<ComputerTurnRecap | null>(null);
   const [error, setError] = useState<MultiplayerError | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [eventLog, setEventLog] = useState<PublicEventRecord[]>([]);
@@ -111,6 +149,9 @@ export function App() {
   const [savedSeat, setSavedSeat] = useState<SavedSeat | null>(() => readSavedSeat());
   const reconnecting = useRef(false);
   const advancingComputers = useRef(false);
+  const failedComputerRevision = useRef<number | null>(null);
+  const computerRequestAbort = useRef<AbortController | null>(null);
+  const computerRequestSerial = useRef(0);
 
   const applyCommand = useCallback((result: CommandSuccess) => {
     setConnection((current) => current === null ? current : {
@@ -179,30 +220,51 @@ export function App() {
     };
   }, [api, connection?.room.id, connection?.game?.eventSequence]);
 
-  useEffect(() => {
-    if (api === null || connection === null || connection.game === null || busy || advancingComputers.current) {
-      return;
-    }
-    const phase = connection.game.phase;
-    const actorId = phase.type === "firing_contributions" || phase.type === "presentation"
-      ? phase.eligiblePlayerIds.find((id) => !phase.submittedPlayerIds.includes(id)) ?? null
-      : currentDecisionActor(phase);
-    const actorSeat = connection.seats.find((seat) => seat.playerId === actorId);
-    if (actorSeat?.isComputer !== true) return;
-
+  const advanceComputerTurns = useCallback(async (expectedRevision: number) => {
+    if (api === null || connection === null || connection.game === null || advancingComputers.current) return;
     advancingComputers.current = true;
+    const requestSerial = ++computerRequestSerial.current;
+    const controller = new AbortController();
+    computerRequestAbort.current = controller;
+    let timeout: number | null = null;
     setComputerThinking(true);
     setError(null);
-    void api.advanceComputers(
-      connection.room.code,
-      connection.seatToken,
-      connection.game.revision,
-    ).then(async (result) => {
+    setNotice(null);
+
+    const latchFailure = (failure: MultiplayerError, timedOut: boolean): void => {
+      if (requestSerial !== computerRequestSerial.current) return;
+      failedComputerRevision.current = expectedRevision;
+      setComputerAdvanceFailure({ revision: expectedRevision, error: failure, timedOut });
+    };
+
+    try {
+      const result = await Promise.race([
+        api.advanceComputers(
+          connection.room.code,
+          connection.seatToken,
+          expectedRevision,
+          controller.signal,
+        ),
+        new Promise<never>((_resolve, reject) => {
+          timeout = window.setTimeout(() => {
+            controller.abort();
+            reject(new DOMException("Computer turn request timed out.", "AbortError"));
+          }, COMPUTER_TURN_TIMEOUT_MS);
+        }),
+      ]);
+      if (requestSerial !== computerRequestSerial.current) return;
+      if (controller.signal.aborted) {
+        latchFailure(computerTurnTimeoutError(), true);
+        return;
+      }
       if (!result.ok) {
-        setError(result.error);
+        latchFailure(result.error, false);
         if (result.error.code === "STALE_REVISION") await reconnect();
         return;
       }
+
+      failedComputerRevision.current = null;
+      setComputerAdvanceFailure(null);
       setConnection((current) => current === null ? current : {
         ...current,
         room: result.value.room,
@@ -211,16 +273,55 @@ export function App() {
         ownPrivateDecision: result.value.ownPrivateDecision,
       });
       if (result.value.advancedActions > 0) {
-        const uniqueActors = new Set(result.value.actorIds).size;
-        setNotice(uniqueActors === 1
-          ? t("Computer player completed {count} actions.", { count: result.value.advancedActions })
-          : t("Computer players completed {count} actions.", { count: result.value.advancedActions }));
+        setComputerRecap({
+          id: `${result.value.revision}:${requestSerial}`,
+          revision: result.value.revision,
+          actionCount: result.value.advancedActions,
+          actorIds: result.value.actorIds,
+          events: result.value.events,
+        });
       }
-    }).finally(() => {
-      advancingComputers.current = false;
-      setComputerThinking(false);
-    });
-  }, [api, busy, computerThinking, connection, reconnect]);
+    } catch (cause) {
+      latchFailure(controller.signal.aborted ? computerTurnTimeoutError() : computerTurnRequestError(cause), controller.signal.aborted);
+    } finally {
+      if (timeout !== null) window.clearTimeout(timeout);
+      if (requestSerial === computerRequestSerial.current) {
+        advancingComputers.current = false;
+        computerRequestAbort.current = null;
+        setComputerThinking(false);
+      }
+    }
+  }, [api, connection, reconnect]);
+
+  useEffect(() => {
+    if (api === null || connection === null || connection.game === null || busy || advancingComputers.current) return;
+    const phase = connection.game.phase;
+    const actorId = phase.type === "firing_contributions" || phase.type === "presentation"
+      ? phase.eligiblePlayerIds.find((id) => !phase.submittedPlayerIds.includes(id)) ?? null
+      : currentDecisionActor(phase);
+    const actorSeat = connection.seats.find((seat) => seat.playerId === actorId);
+    if (actorSeat?.isComputer !== true || failedComputerRevision.current === connection.game.revision) return;
+    void advanceComputerTurns(connection.game.revision);
+  }, [advanceComputerTurns, api, busy, connection]);
+
+  useEffect(() => {
+    const revision = connection?.game?.revision;
+    if (computerAdvanceFailure === null || revision === computerAdvanceFailure.revision) return;
+    failedComputerRevision.current = null;
+    setComputerAdvanceFailure(null);
+  }, [computerAdvanceFailure, connection?.game?.revision]);
+
+  useEffect(() => () => {
+    computerRequestSerial.current += 1;
+    computerRequestAbort.current?.abort();
+  }, []);
+
+  function retryComputerTurn(): void {
+    if (connection?.game === null || connection === null || computerThinking) return;
+    failedComputerRevision.current = null;
+    setComputerAdvanceFailure(null);
+    void advanceComputerTurns(connection.game.revision);
+  }
 
   async function createRoom(displayName: string): Promise<void> {
     if (api === null) return;
@@ -371,10 +472,18 @@ export function App() {
   }
 
   function leaveView(): void {
+    computerRequestSerial.current += 1;
+    computerRequestAbort.current?.abort();
+    computerRequestAbort.current = null;
+    advancingComputers.current = false;
     setConnection(null);
     setEventLog([]);
     setNotice(null);
     setError(null);
+    setComputerThinking(false);
+    failedComputerRevision.current = null;
+    setComputerAdvanceFailure(null);
+    setComputerRecap(null);
     setConfirmEndSession(false);
   }
 
@@ -386,7 +495,7 @@ export function App() {
 
   return (
     <div className="app-shell">
-      <a className="skip-link" href="#main-content">{t("Skip to game controls")}</a>
+      <a className="skip-link" href="#main-content">{t("Skip to main content")}</a>
       <header className="masthead">
         <a className="brand" href={import.meta.env.BASE_URL} aria-label={t("Kiln Opening")}>
           <span className="brand-mark" aria-hidden="true">窑</span>
@@ -436,11 +545,27 @@ export function App() {
         )}
         {error !== null && (
           <div className="banner banner-error" role="alert">
-            <strong>{locale === "zh-CN" ? t("Action could not be completed") : error.code.replaceAll("_", " ")}</strong> {localizeMultiplayerError(locale, error.code, error.message)}
+            <strong>{t("Action could not be completed")}</strong> {localizeMultiplayerError(locale, error.code, error.message)}
+          </div>
+        )}
+        {computerAdvanceFailure !== null && connection?.game?.revision === computerAdvanceFailure.revision && (
+          <div className="banner banner-computer-paused" role="alert" data-testid="computer-turn-paused">
+            <span aria-hidden="true" className="computer-paused-mark">AI</span>
+            <span>
+              <strong>{t("Computer turn paused")}</strong>
+              <small>
+                {computerAdvanceFailure.timedOut
+                  ? t("The computer player did not answer in time. Please try again.")
+                  : localizeMultiplayerError(locale, computerAdvanceFailure.error.code, computerAdvanceFailure.error.message)}
+              </small>
+            </span>
+            <button className="secondary-button" type="button" onClick={retryComputerTurn} disabled={busy || computerThinking}>
+              {t("Retry computer turn")}
+            </button>
           </div>
         )}
         {notice !== null && <div className="banner banner-info" role="status" aria-live="polite">{notice}</div>}
-        {(busy || computerThinking) && <div className="progress-line" role="progressbar" aria-label={t("Waiting for server")} />}
+        {(busy || computerThinking) && <div className="progress-line" role="progressbar" aria-label={t("Please wait")} />}
         {computerThinking && (
           <div className="banner banner-info" role="status" aria-live="polite">{t("Computer is choosing…")}</div>
         )}
@@ -471,6 +596,8 @@ export function App() {
             ownPendingContribution={connection.ownPendingContribution}
             ownPrivateDecision={connection.ownPrivateDecision}
             events={eventLog}
+            seats={connection.seats}
+            computerRecap={computerRecap}
             busy={busy || computerThinking}
             send={send}
           />
@@ -604,7 +731,6 @@ function EndedSessionScreen({
         {locale === "zh-CN" ? <>{endedBy}已为所有人结束房间<strong>{connection.room.code}</strong>。</> : <>{endedBy} ended room <strong>{connection.room.code}</strong> for everyone.</>}
         {" "}{t("The game can no longer accept actions.")}
       </p>
-      <p className="muted">{t("The session record is retained temporarily for recovery and debugging.")}</p>
       <div className="button-row">
         <button className="primary-button" type="button" onClick={onLeave}>{t("Return home")}</button>
         <button className="secondary-button" type="button" onClick={onForget}>{t("Forget this seat")}</button>

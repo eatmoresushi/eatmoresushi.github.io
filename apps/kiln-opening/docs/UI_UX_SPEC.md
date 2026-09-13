@@ -31,6 +31,7 @@ Opponents may appear as compact workshop strips/cards around the top/side.
 - Show each shared location's global printed capacity and remaining spaces visually. Materials Yard, Potter's Wheel, Glaze & Decoration, Commission Market, and Guild & Academy scale to 2 / 3 / 4 spaces; Kiln Yard and Labour are uncapped.
 - Do not group printed spaces by player. Highlight that a Shifu may overfill a full location while an Apprentice cannot.
 - Shifu and Apprentice effects should be visible without opening rules.
+- Present the Main Order display as an ordered shelf: label or visually imply oldest at left and newest at right. When a face-up Order leaves, animate later cards sliding left and the replacement entering at the right. Do not animate or reorder the display for a blind or privately viewed deck reservation.
 - Always show Preferred Heat on a glazed ceramic.
 - Kiln spaces show zone and modifier.
 - During firing, focus UI attention on kiln and contribution workflow.

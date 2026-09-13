@@ -10,8 +10,8 @@ Target session length for the physical design is approximately 90–120 minutes.
 
 Priority order:
 
-1. `docs/KILN_OPENING_v1.2.6_EN_SOURCE.md` — the mechanical authority; it is an exact copy of the owner-supplied V1.2.6 English rulebook.
-2. `docs/KILN_OPENING_v1.2.6_ZH_SOURCE.md` — the Simplified Chinese terminology and localization authority; it is an exact copy of the owner-supplied V1.2.6 Chinese rulebook.
+1. `docs/KILN_OPENING_v1.2.6_EN_SOURCE.md` — the mechanical authority; it contains the owner-supplied V1.2.6 English rulebook plus the owner's adopted Main Order queue amendment recorded in the V1.2.6 audit.
+2. `docs/KILN_OPENING_v1.2.6_ZH_SOURCE.md` — the Simplified Chinese terminology and localization authority; it contains the owner-supplied V1.2.6 Chinese rulebook plus the corresponding adopted Main Order queue amendment.
 3. `docs/RULEBOOK_AUDIT_V1.2.6.md` — source checksums, cross-language review, and recorded owner clarifications.
 4. `docs/GAME_RULES.md` — source index and implementation note, not an independent rules authority.
 5. `data/*.json` — machine-readable values derived from V1.2.6.
@@ -122,7 +122,7 @@ At minimum:
 - all 16 Starting Orders and 48 Main Orders, including independent multi-ceramic attribute matching
 - setup deal-four/keep-two Starting Orders
 - Commission reservation benefits and immediate Main-display refill
-- discard-three left-edge Main-display rotation at the start of Rounds 2–5
+- ordered Main-display queue removal/refill and discard-two, retain-three rotation at the start of Rounds 2–5
 - reverse-Work-order completion circuits until a complete pass circuit
 - uniform three-Order hand limit across Starting and reserved Main Orders
 - Crown advancement, every crossed Recognition milestone, the 0–4 cap, and immediate VP for Crowns beyond 4

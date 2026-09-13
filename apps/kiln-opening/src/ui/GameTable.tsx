@@ -44,7 +44,7 @@ export function GameTable({ game, ownPlayerId }: { game: PublicGameState; ownPla
 
       <section className="playtest-panel" aria-labelledby="players-title">
         <div className="playtest-panel-heading">
-          <div><p className="eyebrow">{t("Complete public state")}</p><h2 id="players-title">{t("Player Workshops")}</h2></div>
+          <div><h2 id="players-title">{t("Player Workshops")}</h2></div>
           <span>{game.playerCount} {t("players")}</span>
         </div>
         <div className="player-strip">
@@ -75,14 +75,12 @@ function GameStatus({ game, decisionActor }: { game: PublicGameState; decisionAc
   const active = decisionActor === null ? t("Simultaneous decisions") : game.players[decisionActor]?.displayName ?? decisionActor;
   return (
     <section className="playtest-status" aria-label={t("Game status")}>
-      <StatusCell label={t("Game ID")} value={game.gameId} />
       <StatusCell label={t("Rules")} value={`V${game.rulesVersion}`} />
       <StatusCell label={t("Round")} value={`${game.round} / ${GAME_CONFIG.rounds}`} />
       <StatusCell label={t("Phase")} value={phaseName(game, locale)} testId="phase-name" />
       <StatusCell label={t("First Player")} value={game.players[game.firstPlayerId]?.displayName ?? game.firstPlayerId} />
       <StatusCell label={t("Active / Decision")} value={active} testId="decision-player" />
       <StatusCell label={t("Turn status")} value={phaseStatus(game, locale)} />
-      <StatusCell label={t("Revision")} value={`${game.revision} · ${locale === "zh-CN" ? "事件" : "event"} ${game.eventSequence}`} testId="revision" />
     </section>
   );
 }
@@ -116,7 +114,11 @@ function PlayerPanel({
       <header className="plain-player-header">
         <div>
           <h3>{player.displayName} {own && <span className="you-tag">{t("You")}</span>}</h3>
-          <small>{player.id} · {t("Seat")} {player.seatIndex + 1}{player.passedWorkPhase ? ` · ${t("Passed")}` : ""}</small>
+          <small>{player.passedWorkPhase
+            ? t("Passed")
+            : kiln === null
+              ? (locale === "zh-CN" ? "正在选择窑口" : "Choosing kiln")
+              : (locale === "zh-CN" ? kiln.nameZh : kiln.name)}</small>
         </div>
         {deciding && <strong className="decision-badge">{t("Deciding")}</strong>}
       </header>
@@ -139,10 +141,10 @@ function PlayerPanel({
       <section className="plain-subsection">
         <h4>{t("Workers")}</h4>
         <table className="compact-table">
-          <thead><tr><th>{t("ID")}</th><th>{t("Kind")}</th><th>{t("Status")}</th><th>{t("Location")}</th></tr></thead>
-          <tbody>{workers.map((worker) => (
+          <thead><tr><th>{t("Worker")}</th><th>{t("Status")}</th><th>{t("Location")}</th></tr></thead>
+          <tbody>{workers.map((worker, index) => (
             <tr key={worker.id}>
-              <td>{worker.id}</td><td>{term(worker.kind)}</td><td>{term(worker.status)}</td><td>{worker.locationId === null ? "—" : term(worker.locationId)}</td>
+              <td>{term(worker.kind)}{worker.kind === "apprentice" ? ` ${workers.slice(0, index + 1).filter(({ kind }) => kind === "apprentice").length}` : ""}</td><td>{term(worker.status)}</td><td>{worker.locationId === null ? "—" : term(worker.locationId)}</td>
             </tr>
           ))}</tbody>
         </table>
@@ -345,7 +347,7 @@ function OrderDisplays({ game, ownPlayerId }: { game: PublicGameState; ownPlayer
         <span>{t("Main deck")} {game.decks.marketRemaining} {t("remaining")}</span>
       </div>
       <div className="order-display-columns">
-        <div><h3>{t("Main Order display")} ({game.displays.market.length})</h3><div className="card-row">{game.displays.market.map((orderId) => <OrderCard orderId={orderId} key={orderId} />)}</div></div>
+        <div><h3>{t("Main Order display")} ({game.displays.market.length})</h3><p className="muted">{t("Oldest → newest. Face-up removals slide later Orders left and refill at the right.")}</p><div className="card-row">{game.displays.market.map((orderId) => <OrderCard orderId={orderId} key={orderId} />)}</div></div>
       </div>
       <section className="workshop-orders" aria-label={t("Workshop Orders")}>
         <h3>{t("Uncompleted Order hands — public information")}</h3>
@@ -480,9 +482,9 @@ function ceramicAttributes(ceramic: CeramicState, locale: Locale = "en"): string
 function placedWorkerLabel(game: PublicGameState, workerId: string, locale: Locale = "en"): string {
   for (const playerId of game.playerOrder) {
     const worker = game.players[playerId]?.workers[workerId];
-    if (worker !== undefined) return `${game.players[playerId]?.displayName} · ${localizedTerm(locale, worker.kind)} · ${worker.id}`;
+    if (worker !== undefined) return `${game.players[playerId]?.displayName} · ${localizedTerm(locale, worker.kind)}`;
   }
-  return workerId;
+  return locale === "zh-CN" ? "未知工人" : "Unknown worker";
 }
 
 function phaseName(game: PublicGameState, locale: Locale = "en"): string {
@@ -490,7 +492,7 @@ function phaseName(game: PublicGameState, locale: Locale = "en"): string {
     "Kiln selection": "选择窑口", "Starting Orders": "起始委托", "Starting Tech": "起始技艺", "Work Phase": "作业阶段",
     "Imperial Priority": "御烧优先", "Commission Market — Orders": "瓷牙行 — 委托", "Guild & Academy": "陶工行",
     "Pre-firing Techniques": "烧成前技艺", "Secret Contributions": "秘密控火", "Fuel Ledger": "柴簿",
-    "Shifu kiln reposition": "窑坊师傅调位", "Kiln ability": "窑口能力", "Second Firing": "复烧",
+    "Shifu kiln reposition": "窑坊师傅调位", "Reveal Fire": "揭示窑火", "Kiln ability": "窑口能力", "Second Firing": "复烧",
     "After-Quality abilities": "品质判定后能力", "Protective Saggars": "匣钵护烧", "Test Pieces": "火照", "Cleanup Orders": "整理委托",
     "Reservation advance": "承接后收益", "Flawed salvage": "瑕品处理", "Order Phase": "委托阶段", "End-game Exhibition": "终局陈列", "Final results": "最终计分",
   } as Record<string, string>)[english] ?? english : english;
@@ -505,6 +507,7 @@ function phaseName(game: PublicGameState, locale: Locale = "en"): string {
     case "firing_before_contribution": return tx("Pre-firing Techniques");
     case "firing_contributions": return tx("Secret Contributions");
     case "firing_reposition": return tx("Shifu kiln reposition");
+    case "firing_reveal_fire": return tx("Reveal Fire");
     case "firing_before_quality": return tx("Kiln ability");
     case "firing_second_before_quality": return tx("Second Firing");
     case "firing_after_quality": return tx("After-Quality abilities");

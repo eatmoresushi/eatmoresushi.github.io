@@ -12,6 +12,7 @@ import {
   chooseOnlineComputerAction,
   nextOnlineDecisionActor,
 } from "../../src/multiplayer/computerPlayer.ts";
+import { createComputerObservation } from "../../src/multiplayer/computerObservation.ts";
 import type { StoredSeat } from "../../src/multiplayer/types.ts";
 
 function computerSeat(playerId: string, seatIndex: number, seed: number): StoredSeat {
@@ -59,7 +60,7 @@ async function playComputerGame(playerCount: PlayerCount, seed: number): Promise
     ) {
       privateState = createPrivateFiringState(state);
     }
-    const action = await chooseOnlineComputerAction(state, privateState, seat);
+    const action = await chooseOnlineComputerAction(createComputerObservation(state, actorId), seat);
     if (action.type === "SUBMIT_WOOD_CONTRIBUTION") {
       const result = submitWoodContribution(
         state,

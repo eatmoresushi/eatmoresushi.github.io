@@ -235,6 +235,51 @@ export function matchesOrder(
 }
 
 /**
+ * Return every distinct group of Finished ceramics that can fulfil an Order.
+ *
+ * `matchesOrder` owns the V1.2.6 attribute-assignment rules; this helper only
+ * enumerates unordered groups so the engine, computer player, and UI can ask
+ * the same higher-level legality question without reimplementing those rules.
+ */
+export function matchingOrderCeramicGroups(
+  order: OrderDefinition,
+  ceramics: readonly FinishedCeramic[],
+): FinishedCeramic[][] {
+  const requiredCount = order.ceramics.length;
+  if (requiredCount === 0 || requiredCount > ceramics.length) return [];
+
+  const groups: FinishedCeramic[][] = [];
+  const selected: FinishedCeramic[] = [];
+
+  const search = (startIndex: number): void => {
+    if (selected.length === requiredCount) {
+      if (matchesOrder(order, selected)) groups.push([...selected]);
+      return;
+    }
+
+    const stillNeeded = requiredCount - selected.length;
+    for (let index = startIndex; index <= ceramics.length - stillNeeded; index += 1) {
+      const ceramic = ceramics[index];
+      if (ceramic === undefined) continue;
+      selected.push(ceramic);
+      search(index + 1);
+      selected.pop();
+    }
+  };
+
+  search(0);
+  return groups;
+}
+
+/** Whether at least one distinct group of Finished ceramics fulfils an Order. */
+export function canCompleteOrder(
+  order: OrderDefinition,
+  ceramics: readonly FinishedCeramic[],
+): boolean {
+  return matchingOrderCeramicGroups(order, ceramics).length > 0;
+}
+
+/**
  * Ru's Order bonus, in one place.
  *
  * The rule is "once per round, when you complete any Order using a Celadon, Plain

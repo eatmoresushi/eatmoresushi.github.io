@@ -36,8 +36,8 @@ import {
   qualityFromDifference,
 } from "./firingRules.ts";
 
-/** Cards discarded from each Order display at the start of Rounds 2-5. */
-const ORDER_DISPLAY_ROTATION = 3;
+/** Oldest Main Orders discarded from the display at the start of Rounds 2-5. */
+const ORDER_DISPLAY_ROTATION = GAME_CONFIG.orderDisplay.roundStartDiscard;
 
 /** Labour pays these Coins; it has no worker limit, so it is always available. */
 const LABOUR_APPRENTICE_COINS = ACTION_LOCATION_PRICES.labourApprenticeCoins;
@@ -48,6 +48,7 @@ import {
   GUAN_ORDER_VP,
   RU_BONUS_QUALITY,
   RU_ORDER_VP,
+  canCompleteOrder,
   matchesOrder,
   ruBonusCeramic,
 } from "./orderRules.ts";
@@ -293,7 +294,14 @@ function beginOrderPhase(state: GameState): void {
   const order = [...turnOrderFromFirst(state)].reverse();
   const first = order[0];
   if (first === undefined) throw new Error("Order Phase requires a player");
-  state.phase = { type: "orders", turnOrder: order, currentIndex: 0, activePlayerId: first, completedInCircuit: 0 };
+  state.phase = {
+    type: "orders",
+    turnOrder: order,
+    currentIndex: 0,
+    activePlayerId: first,
+    completedInCircuit: 0,
+    declinedCompletableOrderIdsByPlayer: {},
+  };
 }
 
 function openContributionPhase(state: GameState): void {
@@ -473,12 +481,12 @@ function drawFromDisplay(
   if (index < 0) {
     return false;
   }
+  // The display is an oldest-to-newest queue. Removing the selected card
+  // naturally slides every later card left; a replacement always enters at
+  // the newest, rightmost end rather than occupying the vacated index.
+  display.splice(index, 1);
   const replacement = deck.shift();
-  if (replacement === undefined) {
-    display.splice(index, 1);
-  } else {
-    display.splice(index, 1, replacement);
-  }
+  if (replacement !== undefined) display.push(replacement);
   return true;
 }
 
@@ -1479,14 +1487,17 @@ function chooseColourSamplesOrder(state: GameState, actorId: PlayerId, orderId: 
   if (nextPhase.type !== "work_office_orders" || player === undefined || nextPhase.colourSamplesDeck === undefined) throw new Error("Colour Samples state invariant failed");
   const deck = nextPhase.colourSamplesDeck;
   const events: GameEvent[] = [];
+  const discarded = lookedAt.filter((id) => id !== orderId);
+  // Discard the unchosen inspected Orders before a face-up reservation refills.
+  // If inspecting the top three exhausted the draw pile, those discards are the
+  // cards the normal Main Order reshuffle rule can use to restore the display.
+  next.marketDiscard.push(...discarded);
   if (fromDisplay) {
     ensureMainOrderDeck(next, rng);
     if (!drawFromDisplay(next.marketDisplay, next.marketDeck, orderId)) {
       throw new Error("Validated face-up Order disappeared");
     }
   }
-  const discarded = lookedAt.filter((id) => id !== orderId);
-  next.marketDiscard.push(...discarded);
   player.orderHand.push(orderId);
   exhaustTechnique(player, actorId, "T10", events);
   nextPhase.remainingTakes = (nextPhase.remainingTakes - 1) as 0 | 1 | 2;
@@ -1777,16 +1788,19 @@ function provisionalBaseHeat(state: GameState): BaseHeat {
   return determineBaseHeat(contributionAdjustments(state));
 }
 
+function openFireReveal(state: GameState): void {
+  state.phase = { type: "firing_reveal_fire", actorId: state.firstPlayerId };
+}
+
 function determineBaseHeatAndOpenReposition(
   state: GameState,
-  events: GameEvent[],
-  rng: RandomSource,
+  _events: GameEvent[],
 ): void {
   const context = state.firingContext;
   if (context === null) throw new Error("Base Heat requires firing context");
   context.baseHeat = provisionalBaseHeat(state);
   const actors = kilnYardRepositionActors(state);
-  if (actors.length === 0) revealFireAndCalculateActualHeat(state, events, rng);
+  if (actors.length === 0) openFireReveal(state);
   else state.phase = { type: "firing_reposition", queue: { actors, currentIndex: 0 } };
 }
 
@@ -1892,7 +1906,7 @@ export function submitWoodContribution(
     nextPrivate.windowId = null;
     nextPrivate.contributions = {};
     nextPrivate.fuelLedgerCommittedBy = [];
-    determineBaseHeatAndOpenReposition(next, events, rng);
+    determineBaseHeatAndOpenReposition(next, events);
   }
   next.revision += 1;
   next.eventSequence += events.length;
@@ -1904,7 +1918,7 @@ function resolveKilnYardReposition(
   actorId: PlayerId,
   ceramicId: string | null,
   toSpaceId: KilnSpaceId | null,
-  rng: RandomSource,
+  _rng: RandomSource,
 ): ApplyResult {
   const phase = requirePhase(state, "firing_reposition");
   if (isFailure(phase)) return phase;
@@ -1973,7 +1987,22 @@ function resolveKilnYardReposition(
     events.push({ type: "KILN_YARD_SHIFU_REPOSITION_DECLINED", playerId: actorId, ceramicId: markedCeramicId });
   }
   nextPlayer.kilnYardShifuCeramicId = null;
-  advanceQueuedWindow(next, () => revealFireAndCalculateActualHeat(next, events, rng));
+  advanceQueuedWindow(next, () => openFireReveal(next));
+  return success(next, events);
+}
+
+function revealFireCard(
+  state: GameState,
+  actorId: PlayerId,
+  rng: RandomSource,
+): ApplyResult {
+  const phase = requirePhase(state, "firing_reveal_fire");
+  if (isFailure(phase)) return phase;
+  const actorError = actorFailure(state, actorId);
+  if (actorError !== null) return actorError;
+  const next = cloneState(state);
+  const events: GameEvent[] = [];
+  revealFireAndCalculateActualHeat(next, events, rng);
   return success(next, events);
 }
 
@@ -2497,6 +2526,9 @@ function finalizeFiring(state: GameState, events: GameEvent[]): void {
     fireModifier: context.fireModifier,
     globalHeat: context.globalHeat,
     kilnYardShifuRepositions: context.kilnYardShifuRepositions.map((entry) => ({ ...entry })),
+    ceramicResults: Object.fromEntries(
+      Object.entries(context.ceramicResults).map(([ceramicId, result]) => [ceramicId, { ...result }]),
+    ),
   };
   state.fireDiscard.push(context.fireModifier);
   state.firingContext = null;
@@ -2560,6 +2592,62 @@ function advanceRecognitionV125(
   }
 }
 
+function completableOrderIds(state: GameState, playerId: PlayerId): OrderId[] {
+  const player = state.players[playerId];
+  if (player === undefined) return [];
+  const finished = Object.values(state.ceramics).filter(
+    (ceramic): ceramic is FinishedCeramic =>
+      ceramic.ownerId === playerId && ceramic.stage === "finished",
+  );
+  if (finished.length === 0) return [];
+
+  return [...new Set([...player.orderHand, ...state.marketDisplay])].filter((orderId) => {
+    const order = ORDER_DEFINITIONS[orderId];
+    return order !== undefined && canCompleteOrder(order, finished);
+  });
+}
+
+function orderOpportunityRequiresDecision(state: GameState, playerId: PlayerId): boolean {
+  const orderIds = completableOrderIds(state, playerId);
+  if (orderIds.length === 0) return false;
+  if (state.phase.type !== "orders") return true;
+  const declinedOrderIds = state.phase.declinedCompletableOrderIdsByPlayer?.[playerId];
+  if (declinedOrderIds === undefined) return true;
+  const declined = new Set(declinedOrderIds);
+  return orderIds.some((orderId) => !declined.has(orderId));
+}
+
+/**
+ * Move to the next Order opportunity, omitting turns that have no new legal choice.
+ *
+ * An explicit pass remembers the then-current completable Orders. After every
+ * completion/refill we recompute legality for every player: a newly displayed
+ * completable Order stops the scan and prompts its player, while an unchanged
+ * choice stays passed. A complete circuit with no completion ends the phase.
+ */
+function advanceOrderOpportunity(
+  state: GameState,
+  events: GameEvent[],
+  rng: RandomSource,
+): void {
+  while (state.phase.type === "orders") {
+    state.phase.currentIndex += 1;
+    if (state.phase.currentIndex >= state.phase.turnOrder.length) {
+      if (state.phase.completedInCircuit === 0) {
+        beginCleanupOrderDiscards(state, events, rng);
+        return;
+      }
+      state.phase.currentIndex = 0;
+      state.phase.completedInCircuit = 0;
+    }
+
+    const nextActor = state.phase.turnOrder[state.phase.currentIndex];
+    if (nextActor === undefined) throw new Error("Order circuit actor disappeared");
+    state.phase.activePlayerId = nextActor;
+    if (orderOpportunityRequiresDecision(state, nextActor)) return;
+  }
+}
+
 function completeOrder(
   state: GameState,
   actorId: PlayerId,
@@ -2610,11 +2698,10 @@ function completeOrder(
     const handIndex = nextPlayer.orderHand.indexOf(action.orderId);
     nextPlayer.orderHand.splice(handIndex, 1);
   } else {
-    const displayIndex = next.marketDisplay.indexOf(action.orderId);
     ensureMainOrderDeck(next, rng);
-    const replacement = next.marketDeck.shift();
-    if (replacement === undefined) next.marketDisplay.splice(displayIndex, 1);
-    else next.marketDisplay.splice(displayIndex, 1, replacement);
+    if (!drawFromDisplay(next.marketDisplay, next.marketDeck, action.orderId)) {
+      throw new Error("Validated face-up Order disappeared");
+    }
   }
   const gainedCoins = gainFromSupply(next, nextPlayer, "coins", definition.coins);
   nextPlayer.score.orderVp += definition.vp;
@@ -2669,15 +2756,9 @@ function completeOrder(
     advanceRecognitionV125(next, actorId, definition.crowns as 1 | 2 | 3, action.imperialGrantChoice, action.orderId, events);
   }
   if (next.phase.type !== "orders") throw new Error("Order phase disappeared");
+  delete next.phase.declinedCompletableOrderIdsByPlayer?.[actorId];
   next.phase.completedInCircuit += 1;
-  next.phase.currentIndex += 1;
-  if (next.phase.currentIndex >= next.phase.turnOrder.length) {
-    next.phase.currentIndex = 0;
-    next.phase.completedInCircuit = 0;
-  }
-  const nextActor = next.phase.turnOrder[next.phase.currentIndex];
-  if (nextActor === undefined) throw new Error("Order circuit actor disappeared");
-  next.phase.activePlayerId = nextActor;
+  advanceOrderOpportunity(next, events, rng);
   return success(next, events);
 }
 
@@ -2893,20 +2974,9 @@ function endOrderTurn(state: GameState, actorId: PlayerId, rng: RandomSource): A
   const next = cloneState(state);
   const events: GameEvent[] = [];
   if (next.phase.type !== "orders") throw new Error("Order phase invariant failed");
-  next.phase.currentIndex += 1;
-  if (next.phase.currentIndex >= next.phase.turnOrder.length) {
-    if (next.phase.completedInCircuit === 0) {
-      beginCleanupOrderDiscards(next, events, rng);
-      return success(next, events);
-    }
-    next.phase.currentIndex = 0;
-    next.phase.completedInCircuit = 0;
-  }
-  if (next.phase.type === "orders") {
-    const nextActor = next.phase.turnOrder[next.phase.currentIndex];
-    if (nextActor === undefined) throw new Error("Order circuit actor disappeared");
-    next.phase.activePlayerId = nextActor;
-  }
+  next.phase.declinedCompletableOrderIdsByPlayer ??= {};
+  next.phase.declinedCompletableOrderIdsByPlayer[actorId] = completableOrderIds(next, actorId);
+  advanceOrderOpportunity(next, events, rng);
   return success(next, events);
 }
 
@@ -3050,6 +3120,8 @@ export function applyAction(
       return resolveImperialPriority(state, actorId, action.ceramicId);
     case "RESOLVE_KILN_YARD_REPOSITION":
       return resolveKilnYardReposition(state, actorId, action.ceramicId, action.toSpaceId, rng);
+    case "REVEAL_FIRE_CARD":
+      return revealFireCard(state, actorId, rng);
     case "RESOLVE_JUN":
       return resolveJun(state, actorId, action.ceramicId, action.delta);
     case "RESOLVE_GE":

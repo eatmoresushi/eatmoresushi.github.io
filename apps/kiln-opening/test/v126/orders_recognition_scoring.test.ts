@@ -4,6 +4,7 @@ import {
   ORDER_DEFINITIONS,
   STARTING_ORDERS,
   applyAction,
+  canCompleteOrder,
   calculateFinalResult,
   matchesOrder,
   turnOrderFromFirst,
@@ -22,12 +23,20 @@ function openOrderTurn(state: GameState, actorId = "P1"): void {
   state.phase = { type: "orders", turnOrder, currentIndex: 0, activePlayerId: actorId, completedInCircuit: 0 };
 }
 
+/** Keep assertions about an Order completion in the same round instead of auto-cleaning up. */
+function keepFollowingActorLegallyActive(state: GameState, actorId = "P1"): void {
+  const followingActor = state.playerOrder.find((playerId) => playerId !== actorId);
+  if (followingActor === undefined) throw new Error("Order test requires another player");
+  state.players[followingActor]!.orderHand = ["S16"];
+  addFinished(state, followingActor, "bowl", "standard");
+}
+
 function ceramic(
   id: string,
   shape: Shape,
   glaze: Glaze,
   decoration: Decoration,
-  quality: "standard" | "fine" | "masterpiece" = "masterpiece",
+  quality: FinishedCeramic["quality"] = "masterpiece",
 ): FinishedCeramic {
   return {
     id,
@@ -89,12 +98,22 @@ describe("V1.2.6 Orders, Recognition, and scoring", () => {
     expect(matchesOrder(order, crossedPairing)).toBe(true);
   });
 
-  it("completes held Starting Orders and face-up Main Orders directly, refilling the public position", () => {
+  it("uses the shared legality helper to identify Orders with a valid Finished-ceramic group", () => {
+    const bowl = ceramic("bowl", "bowl", "white", "plain", "standard");
+    const flawedBowl = ceramic("flawed", "bowl", "white", "plain", "flawed");
+
+    expect(canCompleteOrder(ORDER_DEFINITIONS["O01"]!, [bowl])).toBe(true);
+    expect(canCompleteOrder(ORDER_DEFINITIONS["O02"]!, [bowl])).toBe(false);
+    expect(canCompleteOrder(ORDER_DEFINITIONS["O01"]!, [flawedBowl])).toBe(false);
+  });
+
+  it("completes held Starting Orders and slides a completed face-up Main Order before refilling right", () => {
     const { state: initial, rng } = startedGame(2, 1501);
     let state = structuredClone(initial);
     const held = "S01";
     state.players["P1"]!.orderHand = [held];
     const bowl = addFinished(state, "P1", "bowl", "standard");
+    keepFollowingActorLegallyActive(state);
     openOrderTurn(state);
     state = mustApply(state, "P1", { type: "COMPLETE_ORDER", orderId: held, ceramicIds: [bowl.id] }, rng);
     expect(state.players["P1"]!.orderHand).not.toContain(held);
@@ -108,33 +127,108 @@ describe("V1.2.6 Orders, Recognition, and scoring", () => {
     openOrderTurn(state);
     const result = mustResult(state, "P1", { type: "COMPLETE_ORDER", orderId: publicId, ceramicIds: [plate.id] }, rng);
     state = result.state;
-    expect(state.marketDisplay).toEqual([replacement, "O04", "O05", "O06", "O07"]);
+    expect(state.marketDisplay).toEqual(["O04", "O05", "O06", "O07", replacement]);
     expect(state.players["P1"]!.orderHand).not.toContain(publicId);
     expect(result.events).toContainEqual({ type: "ORDER_COMPLETED", playerId: "P1", orderId: publicId, ceramicIds: [plate.id] });
   });
 
-  it("keeps all players in reverse-order completion circuits until a full circuit completes nothing", () => {
+  it("ends the Order Phase after one full zero-completion circuit", () => {
     const { state: initial, rng } = startedGame(3, 1502);
     let state = structuredClone(initial);
     const reverse = [...turnOrderFromFirst(state)].reverse();
     state.phase = { type: "orders", turnOrder: reverse, currentIndex: 0, activePlayerId: reverse[0]!, completedInCircuit: 0 };
-    const firstActor = reverse[0]!;
-    state.players[firstActor]!.orderHand = ["S16"];
-    const finished = addFinished(state, firstActor, "bowl", "standard");
-    state = mustApply(state, firstActor, { type: "COMPLETE_ORDER", orderId: "S16", ceramicIds: [finished.id] }, rng);
-    expect(state.phase).toEqual(expect.objectContaining({ type: "orders", activePlayerId: reverse[1] }));
+    state.marketDisplay = ["O47"];
+    for (const player of Object.values(state.players)) player.orderHand = [];
 
-    while (state.phase.type === "orders" && state.phase.completedInCircuit > 0) {
-      state = mustApply(state, state.phase.activePlayerId, { type: "END_ORDER_TURN" }, rng);
-    }
-    expect(state.phase).toEqual(expect.objectContaining({ type: "orders", activePlayerId: reverse[0], completedInCircuit: 0 }));
-    const secondCircuitActors: string[] = [];
-    while (state.phase.type === "orders") {
-      secondCircuitActors.push(state.phase.activePlayerId);
-      state = mustApply(state, state.phase.activePlayerId, { type: "END_ORDER_TURN" }, rng);
-    }
-    expect(secondCircuitActors).toEqual(reverse);
+    // The first explicit pass scans the remaining actors, whose lack of legal
+    // completions is administrative, and closes the no-completion circuit.
+    state = mustApply(state, reverse[0]!, { type: "END_ORDER_TURN" }, rng);
+
     expect(state.round).toBe(2);
+    expect(state.phase).toEqual({ type: "work", activePlayerId: state.firstPlayerId });
+  });
+
+  it("suppresses unchanged legal choices after an explicit pass", () => {
+    const { state: initial, rng } = startedGame(2, 15_021);
+    let state = structuredClone(initial);
+    state.players["P1"]!.orderHand = [];
+    state.players["P2"]!.orderHand = ["S16"];
+    state.marketDisplay = ["O01"];
+    state.marketDeck = state.marketDeck.filter((orderId) => orderId !== "O01");
+    addFinished(state, "P1", "bowl", "standard");
+    const p2Bowl = addFinished(state, "P2", "bowl", "standard");
+    openOrderTurn(state);
+
+    state = mustApply(state, "P1", { type: "END_ORDER_TURN" }, rng);
+    expect(state.phase).toEqual(expect.objectContaining({
+      type: "orders",
+      activePlayerId: "P2",
+      declinedCompletableOrderIdsByPlayer: { P1: ["O01"] },
+    }));
+
+    // P2 completes a held Order, so the public display is unchanged. P1's
+    // still-legal O01 was already declined and is skipped in the next circuit.
+    state = mustApply(state, "P2", {
+      type: "COMPLETE_ORDER",
+      orderId: "S16",
+      ceramicIds: [p2Bowl.id],
+    }, rng);
+    expect(state.players["P1"]!.completedOrders).toHaveLength(0);
+    expect(state.round).toBe(2);
+    expect(state.phase.type).toBe("work");
+  });
+
+  it("re-prompts a passer when a refill reveals a newly completable Main Order", () => {
+    const { state: initial, rng } = startedGame(2, 15_022);
+    let state = structuredClone(initial);
+    state.players["P1"]!.orderHand = [];
+    state.players["P2"]!.orderHand = [];
+    state.marketDisplay = ["O02"];
+    state.marketDeck = ["O01", ...state.marketDeck.filter((orderId) => orderId !== "O01" && orderId !== "O02")];
+    addFinished(state, "P1", "bowl", "standard");
+    const p2Plate = addFinished(state, "P2", "plate", "standard");
+    openOrderTurn(state);
+
+    state = mustApply(state, "P1", { type: "END_ORDER_TURN" }, rng);
+    state = mustApply(state, "P2", {
+      type: "COMPLETE_ORDER",
+      orderId: "O02",
+      ceramicIds: [p2Plate.id],
+    }, rng);
+
+    expect(state.marketDisplay).toEqual(["O01"]);
+    expect(state.phase).toEqual(expect.objectContaining({
+      type: "orders",
+      activePlayerId: "P1",
+      declinedCompletableOrderIdsByPlayer: { P1: [] },
+    }));
+  });
+
+  it("auto-skips a passer when a refill still does not match, without hiding the next legal actor", () => {
+    const { state: initial, rng } = startedGame(2, 15_023);
+    let state = structuredClone(initial);
+    state.players["P1"]!.orderHand = [];
+    state.players["P2"]!.orderHand = ["S16"];
+    state.marketDisplay = ["O02"];
+    state.marketDeck = ["O03", ...state.marketDeck.filter((orderId) => orderId !== "O02" && orderId !== "O03")];
+    addFinished(state, "P1", "bowl", "standard");
+    const p2Plate = addFinished(state, "P2", "plate", "standard");
+    addFinished(state, "P2", "bowl", "standard");
+    openOrderTurn(state);
+
+    state = mustApply(state, "P1", { type: "END_ORDER_TURN" }, rng);
+    state = mustApply(state, "P2", {
+      type: "COMPLETE_ORDER",
+      orderId: "O02",
+      ceramicIds: [p2Plate.id],
+    }, rng);
+
+    expect(state.marketDisplay).toEqual(["O03"]);
+    expect(state.phase).toEqual(expect.objectContaining({
+      type: "orders",
+      activePlayerId: "P2",
+      declinedCompletableOrderIdsByPlayer: { P1: [] },
+    }));
   });
 
   it("enforces one combined three-card Cleanup hand limit for Starting and reserved Main Orders", () => {
@@ -175,6 +269,7 @@ describe("V1.2.6 Orders, Recognition, and scoring", () => {
     state.players["P1"]!.imperialGrantResolved = true;
     state.players["P1"]!.resources.coins = 0;
     state.marketDisplay = ["O17"];
+    keepFollowingActorLegallyActive(state);
     // O17 is Brush Washer / White / Crackle: with the waiver gone it must match exactly.
     const guanCeramic = addFinished(state, "P1", "washer", "fine", "white", "crackle");
     openOrderTurn(state);
@@ -188,6 +283,7 @@ describe("V1.2.6 Orders, Recognition, and scoring", () => {
     state = structuredClone(initial);
     state.players["P1"]!.kilnId = "RU";
     state.marketDisplay = ["O01", "O02"];
+    keepFollowingActorLegallyActive(state);
     const ruOne = addFinished(state, "P1", "bowl", "masterpiece", "celadon", "plain");
     openOrderTurn(state);
     state = mustApply(state, "P1", { type: "COMPLETE_ORDER", orderId: "O01", ceramicIds: [ruOne.id] }, rng);
@@ -205,6 +301,7 @@ describe("V1.2.6 Orders, Recognition, and scoring", () => {
     state.players["P1"]!.kilnId = "RU";
     state.players["P1"]!.imperialRecognition = 0;
     state.marketDisplay = ["O47"];
+    keepFollowingActorLegallyActive(state);
     const ceramics = [
       addFinished(state, "P1", "bowl", "masterpiece", "white", "plain"),
       addFinished(state, "P1", "plate", "masterpiece", "celadon", "carved"),

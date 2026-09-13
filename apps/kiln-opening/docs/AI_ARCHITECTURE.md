@@ -10,7 +10,7 @@
 
 ## V1.2.6 online status
 
-The authoritative engine, public projection and online computer player use V1.2.6. The current deterministic online policy is `rules-v1.2.6-heuristic-001`; it handles the four-card Starting Order choice, Starting Tech selection, seven shared action locations and global capacity, the five-card Main Order market, Crown-driven Recognition 0–4, Imperial Kiln/Priority, current Tech and firing timing windows, and sealed Fuel Ledger choices. Automated full-game tests exercise legal five-round games at 2, 3 and 4 players. Older Selfplay-003 through Selfplay-006 studies below are historical methodology and evidence only; their policies and measurements are not current V1.2.6 balance evidence.
+The authoritative engine, public projection and online computer player use V1.2.6. The current single-difficulty online policy is `rules-v1.2.6-strategic-002`. It plans production against held Orders, values Crown milestones, reacts to public action-space pressure, uses all current Starting Tech/Kiln/Advanced Tech timing windows, and resolves sealed Fuel Ledger choices. Its policy input is a dedicated sanitized observation containing the public game state plus only the acting seat's private choices and Fire peek. Every proposed command and conservative fallback is preflighted through the unchanged authoritative engine. Automated full-game tests exercise legal five-round games at 2, 3 and 4 players. Older Selfplay-003 through Selfplay-006 studies below are historical methodology and evidence only; their policies and measurements are not current V1.2.6 balance evidence.
 
 ## Selfplay-005 public-belief rollout candidate
 
@@ -52,7 +52,7 @@ The V004 promotion pipeline is:
 5. promote only if legality, coverage, latency, completed-Order, mean-VP, and paired-confidence gates all pass.
 
 Current production rules version: V1.2.6
-Current production AI policy: `rules-v1.2.6-heuristic-001`
+Current production AI policy: `rules-v1.2.6-strategic-002`
 
 ## Boundaries
 

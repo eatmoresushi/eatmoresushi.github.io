@@ -46,9 +46,9 @@ Host starts only with 2–4 players.
 
 The host may add or remove computer seats while the room is in the lobby. A room must retain at least one human seat and may contain up to three computer players, for the normal four-seat maximum.
 
-Computer seats use the current production policy through the V1.2.6 authoritative engine, with no live exploration or learning. Historical calibration labels remain honest and are not claims of V1.2.6 calibration. Each seat has a private persistent seed and stable player/seat identity. The browser never chooses an AI command: an authenticated client only asks the Edge Function to advance, and the server derives the active computer, enumerates legal commands, applies the selected command through the authoritative engine, and commits it with the same revision checks as a human command.
+Computer seats use the single `rules-v1.2.6-strategic-002` production policy through the V1.2.6 authoritative engine, with no live exploration or learning. Historical calibration labels remain honest and are not claims of human-calibrated strength. Each seat has a private persistent seed and stable player/seat identity. The browser never chooses an AI command: an authenticated client only asks the Edge Function to advance. The server derives the active computer, creates a sanitized observation containing public state plus only that seat's private decisions, preflights the strategic command and conservative fallbacks through the engine, and commits the first legal result with the same revision checks as a human command.
 
-Consecutive computer turns run in bounded batches so an Edge Function invocation cannot monopolize the session. Concurrent advance requests are safe; compare-and-swap persistence accepts each revision only once. Contribution-card choices remain private in the server-only schema until the normal simultaneous reveal, including when computers contribute.
+Consecutive computer turns run in bounded batches so an Edge Function invocation cannot monopolize the session. Concurrent advance requests are safe; compare-and-swap persistence accepts each revision only once. Contribution-card choices remain private in the server-only schema until the normal simultaneous reveal, including when computers contribute. The client times out a stalled advance request without changing local game state, pauses automatic retries for that revision, and offers an explicit retry. Successful batches produce a paced public-event recap while the complete authoritative history remains available in the log.
 
 ### Game setup
 
@@ -58,7 +58,7 @@ Consecutive computer turns run in bounded batches so an Edge Function invocation
 - each player chooses 1 Starting Tech from the common supply;
 - every player starts with 1 Shifu + 3 Apprentices and an empty Imperial Kiln area;
 - all seven action locations are shared; Materials Yard, Potter's Wheel, Glaze & Decoration, Commission Market, and Guild & Academy use 2 / 3 / 4 global printed spaces at 2 / 3 / 4 players, while Kiln Yard and Labour are uncapped;
-- game begins Round 1 with a five-card Main Order display.
+- game begins Round 1 with a five-card Main Order queue, oldest on the left and newest on the right.
 
 ## Synchronous turn model
 
@@ -74,6 +74,10 @@ UI shows:
 
 Players cannot submit actions out of turn except special simultaneous/timing-window submissions.
 
+The Main Order display behaves as a left-to-right queue. Whenever a face-up Order is reserved or completed, all later cards slide left and the replacement is appended at the right. Blind deck reservations and privately viewed Colour Samples reservations leave the display unchanged. A multi-reservation Commission action resolves one reservation completely before presenting the updated choices for the next. At the start of Rounds 2–5, discard the two leftmost Orders, retain the other three in order, then append two replacements.
+
+During the Order Phase, the action panel shows only held or face-up Orders that the active player can fulfil with a legal Finished-ceramic group. An explicit pass remembers the legal Orders declined at that opportunity. When later completions advance and refill the public display, the server checks every player in reverse Work order: it prompts a prior passer again only when a newly displayed Order is now completable, skips unchanged or impossible opportunities, and ends the phase after a complete circuit with no completion. This automates repeated no-choice passes without suppressing a newly created decision.
+
 ## Firing multiplayer flow
 
 Firing is the most important digital interaction.
@@ -85,7 +89,7 @@ Firing is the most important digital interaction.
 5. once all eligible players submit, the server atomically reveals and pays all Contributions, calculates Base Heat from 2, then clamps it to 0–5;
 6. during each Kiln Yard Shifu action, if the player has an owned ceramic in the Shared Kiln after loading, require the player to mark exactly one of those ceramics and show that association publicly;
 7. before revealing Fire, offer each player with a marked Kiln Yard Shifu target one reposition decision in First Player order. Only the ceramic marked during that Work-Phase action may move, and only to an empty active space in a neighbouring zone: High ↔ Middle ↔ Low. It never enters or leaves an Imperial Kiln, and Kiln Furniture travels with its ceramic;
-8. reveal the Fire card, reshuffling the discard first if needed, and calculate uncapped Global Heat;
+8. after all adjustments, prompt the First Player to reveal the Fire card (a ceremonial confirmation only); the server reshuffles the discard first if needed, draws the card, and calculates uncapped Global Heat;
 9. calculate each ceramic's Actual Heat and resolve Jun/Ge adjustments in the rulebook timing window;
 10. assign Quality;
 11. in First Player order, resolve Protective Saggars, Second Firing and similar after-Quality choices; a player controlling multiple abilities at that timing chooses their order. Relevant unused once-per-round abilities may resolve at their normal timing inside a Second Firing recalculation;

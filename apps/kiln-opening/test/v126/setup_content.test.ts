@@ -111,11 +111,11 @@ describe("V1.2.6 setup and authoritative content", () => {
     }
   });
 
-  it("rotates a five-card market by discarding the leftmost three and preserving the remaining two", () => {
+  it("rotates a five-card market by discarding the two oldest and preserving the remaining three", () => {
     const { state: started, rng } = startedGame(2, 1222);
     let state = structuredClone(started);
     const oldDisplay = [...state.marketDisplay];
-    const nextThree = state.marketDeck.slice(0, 3);
+    const nextTwo = state.marketDeck.slice(0, 2);
     const reverseOrder = [...turnOrderFromFirst(state)].reverse();
     state.phase = { type: "orders", turnOrder: reverseOrder, currentIndex: 0, activePlayerId: reverseOrder[0]!, completedInCircuit: 0 };
 
@@ -127,10 +127,10 @@ describe("V1.2.6 setup and authoritative content", () => {
     }
 
     expect(state.round).toBe(2);
-    expect(state.marketDisplay).toEqual([...oldDisplay.slice(3), ...nextThree]);
+    expect(state.marketDisplay).toEqual([...oldDisplay.slice(2), ...nextTwo]);
     expect(state.marketDisplay).toHaveLength(GAME_CONFIG.orderDisplay.market);
-    expect(state.marketDiscard.slice(-3)).toEqual(oldDisplay.slice(0, 3));
-    expect(finalEvents).toContainEqual(expect.objectContaining({ type: "ORDER_DISPLAYS_ROTATED", marketOrderIds: oldDisplay.slice(0, 3) }));
+    expect(state.marketDiscard.slice(-2)).toEqual(oldDisplay.slice(0, 2));
+    expect(finalEvents).toContainEqual(expect.objectContaining({ type: "ORDER_DISPLAYS_ROTATED", marketOrderIds: oldDisplay.slice(0, 2) }));
   });
 
   it("finishes a five-card rotation when the Main deck runs out mid-refill", () => {

@@ -5,6 +5,7 @@ import {
   ONLINE_COMPUTER_POLICY_VERSION,
   chooseOnlineComputerAction,
 } from "../../src/multiplayer/computerPlayer.ts";
+import { createComputerObservation } from "../../src/multiplayer/computerObservation.ts";
 import type { StoredSeat } from "../../src/multiplayer/types.ts";
 import { addGlazed, addLoaded, addShaped, addTechnique, mustApply, setWorkTurn, startedGame } from "./helpers.ts";
 
@@ -23,7 +24,7 @@ function seatFor(playerId: PlayerId): StoredSeat {
  * Market cases can produce one, so narrow it rather than widen `mustApply`.
  */
 async function choose(state: GameState, playerId: PlayerId): Promise<GameAction> {
-  const command = await chooseOnlineComputerAction(state, null as never, seatFor(playerId));
+  const command = await chooseOnlineComputerAction(createComputerObservation(state, playerId), seatFor(playerId));
   if (command.type === "SUBMIT_WOOD_CONTRIBUTION") {
     throw new Error("Unexpected Contribution command outside the firing phase");
   }
@@ -289,7 +290,7 @@ describe("V1.2.6 online computer policy: Tech activation", () => {
     state.firingContext = null;
 
     const contribution = (s: GameState) =>
-      chooseOnlineComputerAction(s, null as never, seatFor("P1"));
+      chooseOnlineComputerAction(createComputerObservation(s, "P1"), seatFor("P1"));
 
     // Blind, Base Heat 2 already lands the ceramic exactly: Tend.
     expect(await contribution(state)).toEqual(expect.objectContaining({ card: "TEND" }));

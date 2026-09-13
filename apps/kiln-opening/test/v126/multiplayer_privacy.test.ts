@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { currentDecisionActor } from "../../src/game/index.ts";
-import type { GameAction, GameState, PlayerId } from "../../src/game/index.ts";
+import type { GameAction, GameState, OrderId, PlayerId } from "../../src/game/index.ts";
 import {
   AuthoritativeGameService,
   InMemoryMultiplayerStore,
@@ -154,6 +154,7 @@ async function seedAuthoritativeState(harness: Harness, mutate: (state: GameStat
 }
 
 function seedContributionWindow(state: GameState): void {
+  state.firstPlayerId = "P2";
   for (const [index, playerId] of state.playerOrder.entries()) {
     const vesselInstanceId = state.vesselSupply.bowl.shift();
     if (vesselInstanceId === undefined) throw new Error("Missing Bowl vessel");
@@ -263,10 +264,64 @@ describe("V1.2.6 multiplayer privacy and reconnect", () => {
       contributions: { P1: "BANK", P2: "STOKE" },
       fuelLedgerUpgradedBy: ["P1"],
       baseHeat: 1,
+      fireModifier: null,
+      globalHeat: null,
     }));
+    expect(revealed.game.phase).toEqual({ type: "firing_reveal_fire", actorId: "P2" });
+    expect(revealed.events.some((event) => event.type === "FIRE_REVEALED")).toBe(false);
     expect(revealed.game.players["P1"]!.resources.wood).toBe(1);
     expect(revealed.game.players["P2"]!.resources.wood).toBe(2);
     expect(revealed.ownPendingContribution).toBeNull();
+
+    const denied = await harness.service.executeCommand({
+      roomCode: p1.room.code,
+      seatToken: p1.seatToken,
+      commandId: "00000000-0000-4000-9001-000000000001",
+      expectedRevision: revealed.revision,
+      command: { type: "REVEAL_FIRE_CARD" },
+    });
+    expect(denied.ok).toBe(false);
+    if (!denied.ok) expect(denied.error.code).toBe("NOT_ACTIVE_PLAYER");
+
+    const fired = await command(harness, "P2", { type: "REVEAL_FIRE_CARD" });
+    expect(fired.events).toContainEqual(expect.objectContaining({
+      type: "FIRE_REVEALED",
+      baseHeat: 1,
+    }));
+  });
+
+  it("reveals Colour Samples choices only to the acting player across reconnect", async () => {
+    const harness = await startedHarness();
+    let lookedAt: OrderId[] = [];
+    await seedAuthoritativeState(harness, (state) => {
+      lookedAt = state.marketDeck.splice(0, 3);
+      const workerId = Object.keys(state.players["P1"]!.workers)[0];
+      if (workerId === undefined || lookedAt.length !== 3) throw new Error("Missing private-choice fixture data");
+      state.phase = {
+        type: "work_office_orders",
+        actorId: "P1",
+        workerId,
+        mode: "take_one",
+        remainingTakes: 1,
+        ordersTaken: 0,
+        step: "colour_samples_choose",
+        colourSamplesUsed: true,
+        colourSamplesDeck: "market",
+        colourSamplesChoices: [...lookedAt],
+      };
+    });
+
+    if (harness.game.game.phase.type !== "work_office_orders") throw new Error("Missing public Colour Samples phase");
+    expect(harness.game.game.phase.colourSamplesChoices).toEqual([]);
+    for (const orderId of lookedAt) expect(JSON.stringify(harness.game.game)).not.toContain(`"${orderId}"`);
+
+    const p1 = connectionFor(harness, "P1");
+    const p2 = connectionFor(harness, "P2");
+    const ownReconnect = valueOf(await harness.service.reconnect({ roomCode: p1.room.code, seatToken: p1.seatToken }));
+    const otherReconnect = valueOf(await harness.service.reconnect({ roomCode: p2.room.code, seatToken: p2.seatToken }));
+    expect(ownReconnect.ownPrivateDecision?.colourSamplesOrderIds).toEqual(lookedAt);
+    expect(otherReconnect.ownPrivateDecision?.colourSamplesOrderIds).toEqual([]);
+    for (const orderId of lookedAt) expect(JSON.stringify(otherReconnect)).not.toContain(`"${orderId}"`);
   });
 
   it("rejects projection of pre-V1.2.6 or pre-schema-4 authoritative states", () => {

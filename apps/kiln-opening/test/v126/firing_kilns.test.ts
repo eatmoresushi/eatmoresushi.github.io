@@ -102,7 +102,7 @@ describe("V1.2.6 firing, Tech timing, and Kiln Traditions", () => {
     expect(kilnZoneModifier("low_1")).toBe(-1);
   });
 
-  it("offers Fuel Ledger as secret -2/+2 contributions, charges 2 Wood total, and reveals atomically", () => {
+  it("reveals Fuel Ledger atomically, then lets only the First Player reveal Fire", () => {
     const { state: initial, rng } = startedGame(2, 1401);
     let state = structuredClone(initial);
     addLoaded(state, "P1", "bowl", "celadon", "plain", "middle_1");
@@ -112,6 +112,7 @@ describe("V1.2.6 firing, Tech timing, and Kiln Traditions", () => {
     state.players["P2"]!.resources.wood = 1;
     state.players["P1"]!.kilnId = "RU";
     state.players["P2"]!.kilnId = "GU";
+    state.firstPlayerId = "P1";
     state.fireDeck = [0];
     state.fireDiscard = [];
     openContributions(state, ["P1", "P2"]);
@@ -128,6 +129,7 @@ describe("V1.2.6 firing, Tech timing, and Kiln Traditions", () => {
     expect(privateState.contributions).toEqual({ P1: "BANK" });
     expect(privateState.fuelLedgerCommittedBy).toEqual(["P1"]);
     expect(first.events).toEqual([expect.objectContaining({ type: "WOOD_SUBMITTED", playerId: "P1" })]);
+    expectError(applyAction(state, "P1", { type: "REVEAL_FIRE_CARD" }, rng), "WRONG_PHASE");
 
     const second = submitWoodContribution(state, privateState, "P2", "STOKE", false, rng);
     expect(second.ok).toBe(true);
@@ -140,9 +142,24 @@ describe("V1.2.6 firing, Tech timing, and Kiln Traditions", () => {
       contributions: { P1: "BANK", P2: "STOKE" },
       effectiveHeatAdjustments: { P1: -2, P2: 1 },
     });
-    expect(second.events).toContainEqual(expect.objectContaining({ type: "FIRE_REVEALED", baseHeat: 1 }));
+    expect(state.phase).toEqual({ type: "firing_reveal_fire", actorId: "P1" });
+    expect(state.firingContext).toEqual(expect.objectContaining({
+      baseHeat: 1,
+      fireModifier: null,
+      globalHeat: null,
+    }));
+    expect(second.events.some((event) => event.type === "FIRE_REVEALED")).toBe(false);
+    expectError(applyAction(state, "P2", { type: "REVEAL_FIRE_CARD" }, rng), "NOT_ACTIVE_PLAYER");
     expect(second.privateState.contributions).toEqual({});
     expect(second.privateState.fuelLedgerCommittedBy).toEqual([]);
+
+    const fire = mustResult(state, "P1", { type: "REVEAL_FIRE_CARD" }, rng);
+    expect(fire.events).toContainEqual(expect.objectContaining({
+      type: "FIRE_REVEALED",
+      modifier: 0,
+      baseHeat: 1,
+      globalHeat: 1,
+    }));
   });
 
   it("rejects a Fuel Ledger option without its Tech, with Tend, or without 2 Wood", () => {
@@ -189,6 +206,8 @@ describe("V1.2.6 firing, Tech timing, and Kiln Traditions", () => {
       privateState = result.privateState;
     }
     expect(state.firingContext?.baseHeat).toBe(5);
+    expect(state.phase).toEqual({ type: "firing_reveal_fire", actorId: state.firstPlayerId });
+    state = mustApply(state, state.firstPlayerId, { type: "REVEAL_FIRE_CARD" }, rng);
     expect(state.firingContext?.globalHeat).toBe(7);
     expect(state.firingContext?.ceramicResults[high.id]?.finalActualHeat).toBe(8);
     expect(state.firingContext?.ceramicResults[imperial.id]?.finalActualHeat).toBe(7);
@@ -226,13 +245,21 @@ describe("V1.2.6 firing, Tech timing, and Kiln Traditions", () => {
     expect(state.phase.type).toBe("firing_reposition");
     expect(state.firingContext?.baseHeat).toBe(2);
     expect(state.firingContext?.fireModifier).toBeNull();
+    expectError(applyAction(state, state.firstPlayerId, { type: "REVEAL_FIRE_CARD" }, rng), "WRONG_PHASE");
 
     expectError(applyAction(state, "P1", { type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: imperial.id, toSpaceId: "low_1" }, rng), "INVALID_SELECTION");
     expectError(applyAction(state, "P1", { type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: shared.id, toSpaceId: "low_1" }, rng), "INVALID_SELECTION");
     const moved = mustResult(state, "P1", { type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: shared.id, toSpaceId: "middle_1" }, rng);
     state = moved.state;
+    expect(state.phase).toEqual({ type: "firing_reveal_fire", actorId: state.firstPlayerId });
+    expect(state.ceramics[shared.id]).toEqual(expect.objectContaining({ stage: "loaded", kilnSpaceId: "middle_1" }));
+    expect(state.firingContext?.fireModifier).toBeNull();
+    expect(moved.events.some((event) => event.type === "FIRE_REVEALED" || event.type === "FIRING_RESOLVED")).toBe(false);
+
+    const revealed = mustResult(state, state.firstPlayerId, { type: "REVEAL_FIRE_CARD" }, rng);
+    state = revealed.state;
     expect(state.ceramics[shared.id]).toEqual(expect.objectContaining({ stage: "finished", quality: "masterpiece" }));
-    expect(moved.events).toContainEqual(expect.objectContaining({
+    expect(revealed.events).toContainEqual(expect.objectContaining({
       type: "FIRING_RESOLVED",
       ceramicId: shared.id,
       fireModifier: 0,

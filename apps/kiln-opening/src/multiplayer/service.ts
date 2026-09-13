@@ -15,6 +15,11 @@ import type {
   PrivateFiringState,
 } from "../game/index.ts";
 import { chooseOnlineComputerAction, nextOnlineDecisionActor } from "./computerPlayer.ts";
+import { createComputerObservation } from "./computerObservation.ts";
+import {
+  fallbackComputerCommands,
+  selectFirstLegalComputerCommand,
+} from "./computerFallback.ts";
 import { projectPublicEvents, projectPublicGameState } from "./projection.ts";
 import type {
   AuthenticatedSeat,
@@ -171,6 +176,64 @@ function mapStoreFailure(code: StoreFailureCode, revision: number | null = null)
     case "not_computer_seat":
       return error("INVALID_REQUEST", "Only computer seats can be removed from the lobby.", revision);
   }
+}
+
+type ComputerCommandApplication =
+  | {
+      ok: true;
+      rng: SeededRandom;
+      state: GameState;
+      events: GameEvent[];
+      privateSubmission: CommitTransitionInput["privateSubmission"];
+    }
+  | { ok: false; code: string; message: string };
+
+function applyComputerCandidate(
+  head: AuthoritativeHead,
+  privateState: PrivateFiringState,
+  actorId: PlayerId,
+  command: GameAction | SubmitWoodCommand,
+): ComputerCommandApplication {
+  const rng = new SeededRandom(head.rngState);
+  if (command.type === "SUBMIT_WOOD_CONTRIBUTION") {
+    if (
+      head.state.phase.type !== "firing_contributions"
+      || head.state.phase.windowId !== command.windowId
+    ) {
+      return { ok: false, code: "WRONG_PHASE", message: "The Contribution window changed." };
+    }
+    const applied = submitWoodContribution(
+      head.state,
+      privateState,
+      actorId,
+      command.card,
+      command.useFuelLedger,
+      rng,
+    );
+    if (!applied.ok) return { ok: false, code: applied.error.code, message: applied.error.message };
+    return {
+      ok: true,
+      rng,
+      state: applied.state,
+      events: applied.events,
+      privateSubmission: {
+        windowId: command.windowId,
+        card: command.card,
+        useFuelLedger: command.useFuelLedger,
+        revealed: applied.privateState.windowId === null,
+      },
+    };
+  }
+
+  const applied = applyAction(head.state, actorId, command, rng);
+  if (!applied.ok) return { ok: false, code: applied.error.code, message: applied.error.message };
+  return {
+    ok: true,
+    rng,
+    state: applied.state,
+    events: applied.events,
+    privateSubmission: null,
+  };
 }
 
 export class AuthoritativeGameService {
@@ -530,9 +593,11 @@ export class AuthoritativeGameService {
       if (computerSeat === undefined || !computerSeat.isComputer) break;
 
       const privateState = await this.privateFiringState(room.id, head);
-      let command: Awaited<ReturnType<typeof chooseOnlineComputerAction>>;
+      const observation = createComputerObservation(head.state, computerSeat.playerId);
+      const decisionHead = head;
+      let strategicCommand: Awaited<ReturnType<typeof chooseOnlineComputerAction>>;
       try {
-        command = await chooseOnlineComputerAction(head.state, privateState, computerSeat);
+        strategicCommand = await chooseOnlineComputerAction(observation, computerSeat);
       } catch (cause) {
         return failed(
           error(
@@ -543,42 +608,46 @@ export class AuthoritativeGameService {
         );
       }
 
-      const commandId = this.security.randomId();
-      const rng = new SeededRandom(head.rngState);
-      let appliedState: AuthoritativeHead["state"];
-      let fullEvents: GameEvent[];
-      let privateSubmission: CommitTransitionInput["privateSubmission"] = null;
-
-      if (command.type === "SUBMIT_WOOD_CONTRIBUTION") {
-        if (
-          head.state.phase.type !== "firing_contributions" ||
-          head.state.phase.windowId !== command.windowId
-        ) {
-          return failed(error("COMPUTER_TURN_FAILED", "The computer contribution window changed.", head.revision));
-        }
-        const applied = submitWoodContribution(
-          head.state,
-          privateState,
-          computerSeat.playerId,
-          command.card,
-          command.useFuelLedger,
-          rng,
-        );
-        if (!applied.ok) return failed(gameFailure(applied.error, head.revision));
-        appliedState = applied.state;
-        fullEvents = applied.events;
-        privateSubmission = {
-          windowId: command.windowId,
-          card: command.card,
-          useFuelLedger: command.useFuelLedger,
-          revealed: applied.privateState.windowId === null,
-        };
-      } else {
-        const applied = applyAction(head.state, computerSeat.playerId, command, rng);
-        if (!applied.ok) return failed(gameFailure(applied.error, head.revision));
-        appliedState = applied.state;
-        fullEvents = applied.events;
+      const successfulApplications = new Map<string, Extract<ComputerCommandApplication, { ok: true }>>();
+      const selection = selectFirstLegalComputerCommand(
+        strategicCommand,
+        fallbackComputerCommands(observation),
+        (candidate) => {
+          const application = applyComputerCandidate(
+            decisionHead,
+            privateState,
+            computerSeat.playerId,
+            candidate,
+          );
+          if (!application.ok) return application;
+          successfulApplications.set(JSON.stringify(candidate), application);
+          return { ok: true };
+        },
+      );
+      if (selection === null) {
+        return failed(error(
+          "COMPUTER_TURN_FAILED",
+          `${computerSeat.displayName} had no legal action or safe phase exit.`,
+          head.revision,
+        ));
       }
+
+      const command = selection.command;
+      const application = successfulApplications.get(JSON.stringify(command));
+      if (application === undefined) {
+        return failed(error(
+          "COMPUTER_TURN_FAILED",
+          `${computerSeat.displayName}'s selected action could not be reproduced.`,
+          head.revision,
+        ));
+      }
+      const commandId = this.security.randomId();
+      const {
+        rng,
+        state: appliedState,
+        events: fullEvents,
+        privateSubmission,
+      } = application;
 
       const nextHead = await this.makeNextHead(head, appliedState, rng.getState());
       const projectedEvents = projectPublicEvents(fullEvents);

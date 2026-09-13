@@ -259,6 +259,8 @@ export interface FiringResultSummary {
   fireModifier: FireModifier;
   globalHeat: number;
   kilnYardShifuRepositions: KilnYardShifuReposition[];
+  /** Final per-ceramic Heat and Quality values retained for the local post-firing review. */
+  ceramicResults?: Record<CeramicId, FiringCeramicResult>;
 }
 
 export interface FinalScoreBreakdown {
@@ -342,6 +344,7 @@ export type GamePhase =
       submittedPlayerIds: PlayerId[];
     }
   | { type: "firing_reposition"; queue: OrderedDecisionQueue }
+  | { type: "firing_reveal_fire"; actorId: PlayerId }
   | {
       type: "firing_before_quality";
       queue: OrderedDecisionQueue;
@@ -370,6 +373,8 @@ export type GamePhase =
       currentIndex: number;
       activePlayerId: PlayerId;
       completedInCircuit: number;
+      /** Legal Order IDs recorded when a player explicitly passes. Optional for older schema-v4 saves. */
+      declinedCompletableOrderIdsByPlayer?: Partial<Record<PlayerId, OrderId[]>>;
     }
   | { type: "cleanup_orders"; queue: OrderedDecisionQueue }
   | {
@@ -522,6 +527,7 @@ export type GameAction =
     }
   | { type: "RESOLVE_IMPERIAL_PRIORITY"; ceramicId: CeramicId | null }
   | { type: "RESOLVE_KILN_YARD_REPOSITION"; ceramicId: CeramicId | null; toSpaceId: KilnSpaceId | null }
+  | { type: "REVEAL_FIRE_CARD" }
   | { type: "RESOLVE_JUN"; ceramicId: CeramicId | null; delta: -1 | 1 | null }
   | { type: "RESOLVE_GE"; ceramicId: CeramicId | null }
   | { type: "RESOLVE_PROTECTIVE_SAGGARS"; ceramicId: CeramicId | null }

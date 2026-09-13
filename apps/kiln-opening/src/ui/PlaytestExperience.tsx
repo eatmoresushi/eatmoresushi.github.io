@@ -1,8 +1,9 @@
-import type { AuthoritativeCommand, PendingContribution, PrivateDecisionState, PublicEventRecord, PublicGameEvent, PublicGameState } from "../multiplayer";
-import type { FireModifier, PlayerId } from "../game";
-import { CONTRIBUTION_CARD_DEFINITIONS, GAME_CONFIG, KILN_DEFINITIONS, ORDER_DEFINITIONS, TECHNIQUE_DEFINITIONS } from "../game";
+import type { AuthoritativeCommand, PendingContribution, PrivateDecisionState, PublicEventRecord, PublicGameEvent, PublicGameState, PublicSeat } from "../multiplayer";
+import type { PlayerId } from "../game";
+import { CONTRIBUTION_CARD_DEFINITIONS, KILN_DEFINITIONS, ORDER_DEFINITIONS, TECHNIQUE_DEFINITIONS } from "../game";
 import { TabletopGameExperience } from "./TabletopGameExperience";
-import { term, useI18n } from "./i18n";
+import type { ComputerTurnRecap } from "./TabletopGameExperience";
+import { term } from "./i18n";
 import type { Locale } from "./i18n";
 
 type SendCommand = (command: AuthoritativeCommand) => Promise<boolean>;
@@ -13,6 +14,8 @@ export function PlaytestExperience({
   ownPendingContribution,
   ownPrivateDecision,
   events,
+  seats,
+  computerRecap,
   busy,
   send,
 }: {
@@ -21,10 +24,11 @@ export function PlaytestExperience({
   ownPendingContribution: PendingContribution | null;
   ownPrivateDecision?: PrivateDecisionState | undefined;
   events: PublicEventRecord[];
+  seats?: PublicSeat[] | undefined;
+  computerRecap?: ComputerTurnRecap | null | undefined;
   busy: boolean;
   send: SendCommand;
 }) {
-  const { locale } = useI18n();
   return (
     <div className="playtest-shell has-tabletop-live" data-testid="playtest-ui">
       <TabletopGameExperience
@@ -33,77 +37,14 @@ export function PlaytestExperience({
         ownPendingContribution={ownPendingContribution}
         ownPrivateDecision={ownPrivateDecision}
         events={events}
+        seats={seats}
+        computerRecap={computerRecap}
         describeEvent={(record, liveGame, locale) => eventDescription(record.event, liveGame, locale)}
+        describeComputerEvent={(event, liveGame, locale) => eventDescription(event, liveGame, locale)}
         busy={busy}
         send={send}
       />
-      <details className="kiln-live-diagnostics">
-        <summary>{locale === "zh-CN" ? "试玩调试" : "Playtest diagnostics"}</summary>
-        <GameLog game={game} events={events} />
-        <DebugPanel game={game} />
-      </details>
     </div>
-  );
-}
-
-function GameLog({ game, events }: { game: PublicGameState; events: PublicEventRecord[] }) {
-  const { locale, t } = useI18n();
-  return (
-    <section className="playtest-panel playtest-log" aria-labelledby="game-log-title">
-      <div className="playtest-panel-heading">
-        <div>
-          <p className="eyebrow">{locale === "zh-CN" ? "公开事件历史" : "Public event history"}</p>
-          <h2 id="game-log-title">{locale === "zh-CN" ? "游戏记录" : "Game Log"}</h2>
-        </div>
-        <span>{events.length} {locale === "zh-CN" ? "个事件" : "events"}</span>
-      </div>
-      {events.length === 0 ? (
-        <p className="muted">{locale === "zh-CN" ? "尚未记录游戏事件。" : "No game events have been recorded yet."}</p>
-      ) : (
-        <ol className="event-log" aria-live="polite">
-          {events.map((record) => (
-            <li key={record.sequence}>
-              <span>#{record.sequence}</span>
-              <p>{eventDescription(record.event, game, locale)}</p>
-            </li>
-          ))}
-        </ol>
-      )}
-    </section>
-  );
-}
-
-function DebugPanel({ game }: { game: PublicGameState }) {
-  const { locale } = useI18n();
-  const fireComposition = ([-2, -1, 0, 1, 2] as FireModifier[]).map((modifier) => {
-    const initial = GAME_CONFIG.fireDeck[String(modifier) as keyof typeof GAME_CONFIG.fireDeck];
-    const discarded = game.discards.fire.filter((card) => card === modifier).length;
-    return `${signed(modifier)}: ${initial - discarded}`;
-  }).join(" · ");
-  return (
-    <section className="playtest-panel debug-panel" aria-labelledby="debug-panel-title">
-      <div className="playtest-panel-heading">
-        <div>
-          <p className="eyebrow">{locale === "zh-CN" ? "只读" : "Read-only"}</p>
-          <h2 id="debug-panel-title">{locale === "zh-CN" ? "试玩调试" : "Playtest Debug"}</h2>
-        </div>
-        <span>{locale === "zh-CN" ? "仅公开状态" : "Public state only"}</span>
-      </div>
-      <dl className="debug-counts">
-        <div><dt>{locale === "zh-CN" ? "状态版本" : "Revision"}</dt><dd>{game.revision}</dd></div>
-        <div><dt>{locale === "zh-CN" ? "事件序号" : "Event sequence"}</dt><dd>{game.eventSequence}</dd></div>
-        <div><dt>{locale === "zh-CN" ? "主委托牌库／弃牌" : "Main Order deck / discard"}</dt><dd>{game.decks.marketRemaining} / {game.discards.market.length}</dd></div>
-        <div><dt>{locale === "zh-CN" ? "窑火牌库／弃牌" : "Fire deck / discard"}</dt><dd>{game.decks.fireRemaining} / {game.discards.fire.length}</dd></div>
-        <div><dt>{locale === "zh-CN" ? "各数值剩余窑火牌" : "Fire remaining by value"}</dt><dd>{fireComposition}</dd></div>
-        <div><dt>{locale === "zh-CN" ? "技艺牌库" : "Technique decks"}</dt><dd>{term(locale, "forming")} {game.decks.techniqueRemaining.forming} · {term(locale, "glazing")} {game.decks.techniqueRemaining.glazing} · {term(locale, "firing")} {game.decks.techniqueRemaining.firing}</dd></div>
-        <div><dt>{locale === "zh-CN" ? "公共资源库" : "Common supply"}</dt><dd>{game.commonSupply.clay} {term(locale, "clay")} · {game.commonSupply.wood} {term(locale, "wood")} · {game.commonSupply.coins} {term(locale, "coins")}</dd></div>
-        <div><dt>{locale === "zh-CN" ? "器物供应" : "Vessel supply"}</dt><dd>{Object.entries(game.vesselSupplyCounts).map(([shape, count]) => `${term(locale, shape)} ${count}`).join(" · ")}</dd></div>
-      </dl>
-      <details className="raw-state">
-        <summary>{locale === "zh-CN" ? "显示原始公开游戏状态" : "Show raw public game state"}</summary>
-        <pre>{JSON.stringify(game, null, 2)}</pre>
-      </details>
-    </section>
   );
 }
 
@@ -266,7 +207,7 @@ function eventDescriptionZh(event: PublicGameEvent, game: PublicGameState): stri
 }
 
 function workerName(workerId: string, locale: Locale = "en"): string {
-  return workerId.toLowerCase().includes("shifu") ? term(locale, "shifu") : locale === "zh-CN" ? `工人${workerId}` : `worker ${workerId}`;
+  return workerId.toLowerCase().includes("shifu") ? term(locale, "shifu") : term(locale, "apprentice");
 }
 
 /** Both locales read the V1.2.6 location names from the shared term table. */
