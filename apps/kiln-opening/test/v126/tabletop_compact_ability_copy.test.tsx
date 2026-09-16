@@ -149,7 +149,7 @@ describe("tabletop compact Kiln copy", () => {
     expect(KILN_SHORT_COPY).toEqual({
       RU: { en: "**Once/round:** Complete an Order using a **Masterpiece · Celadon · Plain** ceramic → **+4 VP**.", "zh-CN": "**每轮一次：**\n完成委托时，若使用了 1 件**臻品 · 青釉 · 素面**陶瓷 → **+4 VP**。" },
       GU: { en: "**Once/round:** Complete a **Crown Order** → **+2 Coins +1 VP**.", "zh-CN": "**每轮一次：**\n完成 1 张**御令委托** → **+2 铜钱 +1 VP**。" },
-      GE: { en: "**Once/round, before Quality:**\n1 ceramic at exactly **±1 Heat** → set it to **Preferred Heat** and change it to **Crackle** for free.", "zh-CN": "**每轮一次，判定品质前：**\n选择 1 件实际火候与适烧火候正好相差 **±1** 的陶瓷 → 将其实际火候设为**适烧火候**，并免费将装饰改为**开片**。" },
+      GE: { en: "**Once/round, before Quality:** Choose 1 of your ceramics whose **Actual Heat is exactly 1 above or below its Preferred Heat** → set its Actual Heat to **Preferred Heat** and change its Decoration to **Crackle** for free.", "zh-CN": "**每轮一次，判定品质前：**\n选择 1 件实际火候与适烧火候正好相差 **±1** 的陶瓷 → 将其实际火候设为**适烧火候**，并免费将装饰改为**开片**。" },
       DI: { en: "**Once/round, Potter’s Wheel:**\nAfter forming a **Bowl, Plate or Brush Washer**, pay **1 Clay** → form **+1 of the same Shape**.", "zh-CN": "**每轮一次，陶车坊：**\n形成**碗、盘或笔洗**后，支付 **1 泥** → 再形成 **1 件相同器形**。" },
       JU: { en: "**Once/round, before Quality:**\nPay **1 Wood** → adjust 1 ceramic’s **Actual Heat ±1**.", "zh-CN": "**每轮一次，判定品质前：**\n支付 **1 柴** → 将 1 件陶瓷的**实际火候 ±1**。" },
     });

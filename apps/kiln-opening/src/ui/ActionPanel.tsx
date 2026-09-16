@@ -59,6 +59,7 @@ import { OrderCard } from "./GameTable";
 import { term as localizedTerm, useI18n } from "./i18n";
 import type { Locale } from "./i18n";
 import { WorkerMeeple } from "./WorkerMeeple";
+import { kilnShortPlainText } from "./TechniqueDescription";
 
 type SendCommand = (command: AuthoritativeCommand) => Promise<boolean>;
 
@@ -1482,7 +1483,7 @@ function KilnAbilityControls({ game, player, busy, send }: {
         return difference === 1;
       },
     );
-    return <CeramicDecision title="Ge · Crackle from Fire" hint="Choose one ceramic whose Heat Difference is exactly 1. At no cost, set it to exact heat and change its Decoration to Crackle." ceramics={eligible} busy={busy} send={send} make={(ceramicId) => ({ type: "RESOLVE_GE", ceramicId })} skip={{ type: "RESOLVE_GE", ceramicId: null }} />;
+    return <CeramicDecision title="Ge · Crackle from Fire" hint={kilnShortPlainText("GE", locale)} ceramics={eligible} busy={busy} send={send} make={(ceramicId) => ({ type: "RESOLVE_GE", ceramicId })} skip={{ type: "RESOLVE_GE", ceramicId: null }} />;
   }
   return (
     <ControlSection title="Jun · Kiln Transformation" hint={locale === "zh-CN" ? `支付${JUN_ACTIVATION_WOOD}柴，将你1件陶瓷的实际火候调整+1或−1，也可以跳过。` : `Pay ${JUN_ACTIVATION_WOOD} Wood to adjust one of your ceramics' Actual Heat by +1 or −1, or pass.`}>

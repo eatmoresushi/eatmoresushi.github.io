@@ -2076,9 +2076,9 @@ function calculateActualHeatAndOpenQualityWindow(state: GameState, events: GameE
     const ownedResults = Object.values(context.ceramicResults).filter(
       (result) => state.ceramics[result.ceramicId]?.ownerId === playerId,
     );
-    if (player.kilnId === "JU") return ownedResults.length > 0;
+    if (player.kilnId === "JU") return ownedResults.length > 0 && player.resources.wood >= JUN_ACTIVATION_WOOD;
     if (player.kilnId === "GE") {
-      return ownedResults.length > 0;
+      return ownedResults.some((result) => GE_CORRECTABLE_DIFFERENCES.includes(result.finalHeatDifference));
     }
     return false;
   });
