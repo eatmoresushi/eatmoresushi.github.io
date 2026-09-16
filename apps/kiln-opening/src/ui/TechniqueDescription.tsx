@@ -114,7 +114,7 @@ export const KILN_SHORT_COPY = {
     "zh-CN": "**每轮一次：**\n完成 1 张**御令委托** → **+2 铜钱 +1 VP**。",
   },
   GE: {
-    en: "**Once/round, before Quality:**\n1 ceramic at exactly **±1 Heat** → set it to **Preferred Heat** and change it to **Crackle** for free.",
+    en: "**Once/round, before Quality:** Choose 1 of your ceramics whose **Actual Heat is exactly 1 above or below its Preferred Heat** → set its Actual Heat to **Preferred Heat** and change its Decoration to **Crackle** for free.",
     "zh-CN": "**每轮一次，判定品质前：**\n选择 1 件实际火候与适烧火候正好相差 **±1** 的陶瓷 → 将其实际火候设为**适烧火候**，并免费将装饰改为**开片**。",
   },
   DI: {
