@@ -150,7 +150,7 @@
 
 .kiln-tabletop-player:hover { transform: translateY(-2px); border-color: rgb(239 216 165 / 48%); background: rgb(255 255 255 / 10%); }
 .kiln-tabletop-player.is-active { box-shadow: inset 0 0 0 1px rgb(255 236 183 / 36%), 0 0 18px color-mix(in srgb, var(--player-color) 50%, transparent); }
-.kiln-tabletop-player.is-active::after { position: absolute; top: -.35rem; right: .45rem; border-radius: 99px; padding: .12rem .36rem; color: #fff7e8; content: "TURN"; font-size: .45rem; font-weight: 900; letter-spacing: .09em; background: var(--player-color); }
+.kiln-tabletop-player.is-active::after { position: absolute; top: -.35rem; right: .45rem; border-radius: 99px; padding: .12rem .36rem; color: #fff7e8; content: attr(data-turn-label); font-size: .45rem; font-weight: 900; letter-spacing: .09em; background: var(--player-color); }
 
 .kiln-tabletop-avatar {
   grid-row: span 3;
@@ -340,7 +340,8 @@
 .kiln-tabletop-order-card.is-crown { border-color: #b65b3f; background: radial-gradient(circle at 78% 18%, rgb(183 95 58 / 18%), transparent 4rem), linear-gradient(145deg, #fff9e9, #e6d4bd); }
 .kiln-tabletop-order-card header { display: flex; gap: .35rem; justify-content: space-between; }
 .kiln-tabletop-order-card header b { font-size: .58rem; letter-spacing: .08em; }
-.kiln-tabletop-order-card header span { min-height: .8rem; color: #a44b31; font-size: .64rem; }
+.kiln-tabletop-order-card header span { min-height: .8rem; }
+.kiln-tabletop-order-card header .kiln-tabletop-order-crowns { color: #a33f2d; font-size: 1.35rem; line-height: .8; letter-spacing: .02em; filter: drop-shadow(0 1px 0 rgb(255 250 231 / 85%)); }
 .kiln-tabletop-order-seal { display: grid; width: 22px; aspect-ratio: 1; place-items: center; border: 1px solid #b84f3f; border-radius: 50%; color: #fff8e8; font-family: var(--tabletop-serif); font-size: .56rem; background: #a84436; }
 .kiln-tabletop-order-card p { display: -webkit-box; overflow: hidden; color: #4f554e; font-size: clamp(.56rem, .68vw, .68rem); line-height: 1.25; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
 .kiln-tabletop-order-card footer { display: grid; grid-template-columns: 1.25fr .6fr .6fr; gap: .18rem; border-top: 1px solid rgb(91 70 39 / 20%); padding-top: .25rem; }
@@ -350,10 +351,7 @@
 .kiln-tabletop-order-card footer small { color: #7c705e; font-size: .39rem; font-weight: 850; letter-spacing: .06em; }
 .kiln-tabletop-order-card footer b { font-family: var(--tabletop-serif); font-size: .61rem; }
 .kiln-tabletop-display-index { position: absolute; top: 38%; right: .28rem; display: grid; width: 17px; aspect-ratio: 1; place-items: center; border-radius: 50%; color: #657269; font-size: .43rem; background: rgb(255 255 255 / 60%); }
-.kiln-tabletop-order-card.is-compact { width: 88px; min-height: 104px; flex: 0 0 88px; }
-.kiln-tabletop-order-card.is-compact p { font-size: .46rem; -webkit-line-clamp: 2; }
-.kiln-tabletop-order-card.is-compact footer span:first-child { display: none; }
-.kiln-tabletop-order-card.is-compact footer { grid-template-columns: 1fr 1fr; }
+.kiln-tabletop-order-card.is-owned { flex: 1 1 126px; width: 146px; min-width: 126px; max-width: 146px; min-height: 136px; }
 
 .kiln-tabletop-market-note { display: grid; gap: .2rem; align-content: center; border-left: 1px solid var(--tabletop-line); padding-left: .55rem; }
 .kiln-tabletop-market-note small { color: #615944; font-size: .52rem; line-height: 1.3; }
@@ -709,17 +707,20 @@
 .kiln-tabletop-tech-tile.is-firing { border-top-color: #a6553d; }
 .kiln-tabletop-tech-tile header { display: flex; justify-content: space-between; font-size: .47rem; }
 .kiln-tabletop-tech-tile header span { font-weight: 900; letter-spacing: .06em; }
-.kiln-tabletop-tech-tile header b { color: #7c4b1e; }
+.kiln-tabletop-tech-tile header .kiln-tabletop-tech-cost { display: inline-flex; gap: .18rem; align-items: center; color: #7c4b1e; font-size: .64rem; line-height: 1; white-space: nowrap; }
+.kiln-tabletop-cash-coin { position: relative; display: inline-grid; flex: 0 0 1rem; width: 1rem; aspect-ratio: 1; place-items: center; border: 1.5px solid #824714; border-radius: 50%; background: radial-gradient(circle at 35% 28%, #f3cf78, #be7929 58%, #8b4d18 100%); box-shadow: inset 0 0 0 1px rgb(255 233 165 / 55%), 0 1px 2px rgb(67 37 12 / 24%); }
+.kiln-tabletop-cash-coin::after { width: 31%; aspect-ratio: 1; border: 1px solid #754012; content: ""; background: #f7edd2; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 55%); }
 .kiln-tabletop-tech-tile > strong { font-family: var(--tabletop-serif); font-size: .58rem; line-height: 1.15; }
 .kiln-tabletop-tech-tile p { display: -webkit-box; overflow: hidden; color: #5c6157; font-size: .55rem; line-height: 1.25; -webkit-box-orient: vertical; -webkit-line-clamp: 4; }
-.kiln-tabletop-tech-tile footer { color: #756b54; font-size: .4rem; font-weight: 850; text-transform: uppercase; letter-spacing: .05em; }
-.kiln-tabletop-tech-tile > i { position: absolute; right: .2rem; bottom: .2rem; border-radius: 99px; padding: .08rem .2rem; color: white; font-size: .38rem; font-style: normal; background: #6c6355; }
+.kiln-tabletop-tech-tile footer { display: flex; gap: .25rem; align-items: end; justify-content: space-between; color: #756b54; font-size: .4rem; font-weight: 850; text-transform: uppercase; letter-spacing: .05em; }
+.kiln-tabletop-tech-endgame-vp { flex: 0 0 auto; border: 1px solid rgb(255 246 215 / 72%); border-radius: 99px; padding: .11rem .26rem; color: #fff9e8; font-size: .48rem; line-height: 1; letter-spacing: .025em; background: #3f7163; box-shadow: 0 1px 3px rgb(34 52 43 / 24%); }
+.kiln-tabletop-tech-tile > i { position: absolute; right: 2.55rem; bottom: .22rem; border-radius: 99px; padding: .08rem .2rem; color: white; font-size: .38rem; font-style: normal; background: #6c6355; }
 .kiln-tabletop-tech-tile.is-exhausted { filter: grayscale(.65); opacity: .7; }
-.kiln-tabletop-tech-tile.is-compact { width: 112px; min-height: 88px; flex: 0 0 112px; }
+.kiln-tabletop-tech-tile.is-owned { flex: 1 1 132px; width: 156px; min-width: 132px; max-width: 156px; min-height: 136px; }
 
 .kiln-tabletop-starting-tech {
   display: grid;
-  grid-template-rows: auto auto 1fr auto;
+  grid-template-rows: auto auto 1fr;
   gap: .2rem;
   min-width: 0;
   min-height: 128px;
@@ -738,9 +739,7 @@
 .kiln-tabletop-starting-tech header small { font-weight: 800; text-transform: uppercase; }
 .kiln-tabletop-starting-tech > strong { font-family: var(--tabletop-serif); font-size: .58rem; line-height: 1.15; }
 .kiln-tabletop-starting-tech p { display: -webkit-box; overflow: hidden; color: #5c6157; font-size: .55rem; line-height: 1.28; -webkit-box-orient: vertical; -webkit-line-clamp: 5; }
-.kiln-tabletop-starting-tech footer { color: #8a5748; font-size: .4rem; font-weight: 850; text-transform: uppercase; letter-spacing: .05em; }
-.kiln-tabletop-starting-tech.is-compact { width: 112px; min-height: 88px; flex: 0 0 112px; }
-.kiln-tabletop-starting-tech.is-compact p { font-size: .45rem; -webkit-line-clamp: 2; }
+.kiln-tabletop-starting-tech.is-owned { flex: 1 1 132px; width: 156px; min-width: 132px; max-width: 156px; min-height: 136px; }
 .kiln-tabletop-tech-tile p strong,
 .kiln-tabletop-starting-tech p strong,
 .kiln-tabletop-kiln-card p strong { color: inherit; font-weight: inherit; }
@@ -815,9 +814,9 @@
     radial-gradient(circle at 15% 100%, rgb(116 161 142 / 18%), transparent 20rem),
     linear-gradient(105deg, #f5ead1, #dac79d);
   box-shadow: 0 12px 30px rgb(0 0 0 / 27%);
-  overflow: hidden;
+  overflow: visible;
 }
-.kiln-tabletop-workshop > header { display: flex; gap: 1rem; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--tabletop-line); padding: .55rem .7rem; background: rgb(255 251 239 / 52%); }
+.kiln-tabletop-workshop > header { display: flex; gap: 1rem; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--tabletop-line); border-radius: 11px 11px 0 0; padding: .55rem .7rem; background: rgb(255 251 239 / 52%); }
 .kiln-tabletop-workshop-name { display: flex; gap: .55rem; align-items: center; min-width: 0; }
 .kiln-tabletop-workshop-name > span { display: grid; flex: 0 0 40px; width: 40px; aspect-ratio: 1; place-items: center; border-radius: 50%; color: white; font-family: var(--tabletop-serif); background: #b04d3e; }
 .kiln-tabletop-workshop-name small,
@@ -842,17 +841,21 @@
 .kiln-tabletop-imperial-status small { margin-top: .03rem; color: #7b705f; font-size: .4rem; }
 .kiln-tabletop-imperial-status.is-compact { display: flex; flex: 0 0 auto; margin-top: 0; }
 .kiln-tabletop-imperial-status.is-compact > span { min-width: 118px; }
-.kiln-tabletop-workshop-zones { display: grid; grid-template-columns: .72fr 1.15fr 1fr 1fr; gap: .45rem; padding: .55rem; }
+.kiln-tabletop-workshop-zones { display: grid; grid-template-columns: .62fr .88fr 1.22fr 1.28fr; gap: .45rem; padding: .55rem; }
 .kiln-tabletop-workshop-zones > section { min-width: 0; border: 1px solid rgb(91 69 38 / 18%); border-radius: 8px; padding: .42rem; background: rgb(255 252 241 / 65%); }
 .kiln-tabletop-workshop-zones h3 { display: flex; justify-content: space-between; margin: 0 0 .3rem; color: #684d2d; font-family: var(--sans); font-size: .47rem; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; }
 .kiln-tabletop-workshop-zones h3 span { color: #8b7a5d; }
+.kiln-tabletop-own-orders h3,
+.kiln-tabletop-own-techs h3 { margin-bottom: .42rem; color: #513d29; font-family: var(--tabletop-serif); font-size: .72rem; font-weight: 750; letter-spacing: .035em; text-transform: none; }
+.kiln-tabletop-own-orders h3 span,
+.kiln-tabletop-own-techs h3 span { color: #74664e; font-family: var(--sans); font-size: .43rem; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; }
 .kiln-tabletop-worker-supply > header { display: flex; gap: .35rem; align-items: center; justify-content: space-between; }
 .kiln-tabletop-worker-supply > header h3 { margin: 0; }
 .kiln-tabletop-pass-button { border: 1px solid rgb(151 74 60 / 30%); border-radius: 99px; padding: .18rem .42rem; color: #833c31; font-size: .42rem; background: rgb(255 249 237 / 72%); }
 .kiln-tabletop-pass-button:hover:not(:disabled) { border-color: #9f493b; background: #fff9ed; }
 .kiln-tabletop-ceramic-shelf > div,
 .kiln-tabletop-own-orders > div,
-.kiln-tabletop-own-techs > div { display: flex; gap: .28rem; align-items: center; min-height: 88px; overflow-x: auto; }
+.kiln-tabletop-own-techs > div { display: flex; gap: .34rem; align-items: center; min-height: 136px; overflow-x: auto; }
 .kiln-tabletop-worker-supply > div {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -915,51 +918,37 @@
 .kiln-tabletop-ceramic > em.kiln-tabletop-shifu-marker { position: absolute; z-index: 2; top: -3px; right: -3px; display: grid; width: 17px; aspect-ratio: 1; place-items: center; border: 1px solid #fff0ce; border-radius: 50%; color: white; font-family: var(--tabletop-serif); font-size: .39rem; font-style: normal; background: var(--player-color); box-shadow: 0 2px 5px rgb(0 0 0 / 35%); }
 .kiln-tabletop-ceramic.is-compact > em.kiln-tabletop-shifu-marker { width: 13px; font-size: .31rem; }
 
+.kiln-tabletop-card-preview.kiln-tabletop-ceramic-preview {
+  /* Escape the inspector's scrolling/clipping region and appear above its backdrop. */
+  z-index: 130;
+  padding: .72rem;
+}
 .kiln-tabletop-ceramic-tooltip {
-  position: absolute;
-  z-index: 80;
-  bottom: calc(100% + .55rem);
-  left: 50%;
   display: grid;
-  gap: .38rem;
-  width: 205px;
-  border: 1px solid #d7b977;
-  border-radius: 9px;
-  padding: .5rem;
+  gap: .55rem;
   color: #2a3933;
   text-align: left;
-  background: linear-gradient(145deg, #fff9e9, #e9dbb8);
-  box-shadow: 0 10px 26px rgb(0 0 0 / 42%);
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transform: translate(-50%, 6px) scale(.93);
-  transform-origin: bottom center;
-  transition: opacity .12s ease, transform .12s ease, visibility .12s ease;
 }
-.kiln-tabletop-ceramic-tooltip::after { position: absolute; top: 100%; left: 50%; width: 9px; aspect-ratio: 1; border-right: 1px solid #d7b977; border-bottom: 1px solid #d7b977; content: ""; background: #e9dbb8; transform: translate(-50%, -5px) rotate(45deg); }
-.kiln-tabletop-ceramic.is-inspectable:hover .kiln-tabletop-ceramic-tooltip,
-.kiln-tabletop-ceramic.is-inspectable:focus .kiln-tabletop-ceramic-tooltip { opacity: 1; visibility: visible; transform: translate(-50%, 0) scale(.93); }
-.kiln-tabletop-ceramic-tooltip-owner { display: flex; gap: .38rem; align-items: center; }
-.kiln-tabletop-ceramic-tooltip-owner > i { display: grid; flex: 0 0 28px; width: 28px; aspect-ratio: 1; place-items: center; border: 2px solid #fff4d9; border-radius: 50%; color: white; font-size: .48rem; font-style: normal; background: var(--player-color); box-shadow: 0 2px 5px rgb(0 0 0 / 20%); }
+.kiln-tabletop-ceramic-tooltip-owner { display: flex; gap: .55rem; align-items: center; }
+.kiln-tabletop-ceramic-tooltip-owner > i { display: grid; flex: 0 0 40px; width: 40px; aspect-ratio: 1; place-items: center; border: 3px solid #fff4d9; border-radius: 50%; color: white; font-size: .58rem; font-style: normal; background: var(--player-color); box-shadow: 0 3px 7px rgb(0 0 0 / 23%); }
 .kiln-tabletop-ceramic-tooltip-owner small,
 .kiln-tabletop-ceramic-tooltip-owner strong,
 .kiln-tabletop-ceramic-tooltip-title strong,
 .kiln-tabletop-ceramic-tooltip-title small { display: block; }
-.kiln-tabletop-ceramic-tooltip-owner small { color: #876f4c; font-size: .38rem; font-weight: 900; letter-spacing: .09em; }
-.kiln-tabletop-ceramic-tooltip-owner strong { margin-top: .03rem; color: #314139; font-family: var(--tabletop-serif); font-size: .66rem; }
-.kiln-tabletop-ceramic-tooltip-title { border-top: 1px solid rgb(100 75 41 / 18%); padding-top: .32rem; }
-.kiln-tabletop-ceramic-tooltip-title strong { color: #4c3523; font-family: var(--tabletop-serif); font-size: .7rem; }
-.kiln-tabletop-ceramic-tooltip-title small { margin-top: .04rem; color: #766c5d; font-size: .42rem; }
-.kiln-tabletop-ceramic-tooltip-facts { display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; }
-.kiln-tabletop-ceramic-tooltip-facts > span { min-width: 0; border-radius: 5px; padding: .26rem; background: rgb(255 255 255 / 48%); }
+.kiln-tabletop-ceramic-tooltip-owner small { color: #876f4c; font-size: .65rem; letter-spacing: .06em; line-height: 1.2; }
+.kiln-tabletop-ceramic-tooltip-owner strong { margin-top: .1rem; color: #314139; font-family: var(--tabletop-serif); font-size: .86rem; line-height: 1.15; }
+.kiln-tabletop-ceramic-tooltip-title { border-top: 1px solid rgb(100 75 41 / 18%); padding-top: .46rem; }
+.kiln-tabletop-ceramic-tooltip-title strong { color: #4c3523; font-family: var(--tabletop-serif); font-size: .94rem; line-height: 1.12; }
+.kiln-tabletop-ceramic-tooltip-title small { margin-top: .12rem; color: #6b655a; font-size: .72rem; line-height: 1.35; }
+.kiln-tabletop-ceramic-tooltip-facts { display: grid; grid-template-columns: 1fr 1fr; gap: .38rem; }
+.kiln-tabletop-ceramic-tooltip-facts > span { min-width: 0; border-radius: 7px; padding: .42rem .46rem; background: rgb(255 255 255 / 55%); }
 .kiln-tabletop-ceramic-tooltip-facts > span:last-child { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; }
 .kiln-tabletop-ceramic-tooltip-facts small,
-.kiln-tabletop-ceramic-tooltip-facts strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.kiln-tabletop-ceramic-tooltip-facts small { color: #806f54; font-size: .36rem; }
-.kiln-tabletop-ceramic-tooltip-facts strong { margin-top: .05rem; color: #36453d; font-size: .49rem; }
-.kiln-tabletop-ceramic-tooltip-facts > span:last-child strong { margin-top: 0; color: #824337; font-family: var(--tabletop-serif); font-size: .66rem; }
-.kiln-tabletop-ceramic-tooltip-note { border-radius: 5px; padding: .25rem .3rem; color: #824337; font-size: .4rem; font-weight: 800; background: rgb(172 72 57 / 10%); }
+.kiln-tabletop-ceramic-tooltip-facts strong { display: block; overflow-wrap: anywhere; }
+.kiln-tabletop-ceramic-tooltip-facts small { color: #806f54; font-size: .72rem; line-height: 1.25; }
+.kiln-tabletop-ceramic-tooltip-facts strong { margin-top: .12rem; color: #36453d; font-size: .8rem; line-height: 1.3; }
+.kiln-tabletop-ceramic-tooltip-facts > span:last-child strong { margin-top: 0; color: #824337; font-family: var(--tabletop-serif); font-size: .9rem; line-height: 1; }
+.kiln-tabletop-ceramic-tooltip-note { border-radius: 7px; padding: .38rem .45rem; color: #824337; font-size: .72rem; line-height: 1.35; background: rgb(172 72 57 / 10%); }
 .kiln-tabletop-ceramic-tooltip-note.is-quality { color: #315f51; background: rgb(49 95 81 / 11%); }
 
 .kiln-tabletop-inspector-backdrop { position: fixed; z-index: 119; inset: 0; background: rgb(4 17 14 / 24%); }
@@ -1000,9 +989,9 @@
 .kiln-tabletop-inspector-section { margin-top: .8rem; }
 .kiln-tabletop-inspector-section > h3 { display: flex; justify-content: space-between; margin-bottom: .4rem; color: #5f482d; font-family: var(--tabletop-serif); font-size: .76rem; }
 .kiln-tabletop-inspector-section > h3 span { color: #8a7657; font-family: var(--sans); font-size: .53rem; }
-.kiln-tabletop-inspector-orders { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .35rem; }
+.kiln-tabletop-inspector-orders { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
 .kiln-tabletop-inspector-orders .kiln-tabletop-order-card { min-height: 148px; }
-.kiln-tabletop-inspector-techs { display: grid; grid-template-columns: 1fr 1fr; gap: .35rem; }
+.kiln-tabletop-inspector-techs { display: grid; grid-template-columns: minmax(0, 1fr); gap: .5rem; }
 .kiln-tabletop-inspector-techs > .kiln-tabletop-starting-tech { grid-column: 1 / -1; }
 .kiln-tabletop-static-order,
 .kiln-tabletop-static-tech { cursor: default; }
@@ -1013,6 +1002,19 @@
 .kiln-tabletop-detail-view > .kiln-tabletop-starting-tech { width: min(300px, 100%); min-height: 250px; }
 .kiln-tabletop-detail-view > .kiln-tabletop-tech-tile p,
 .kiln-tabletop-detail-view > .kiln-tabletop-starting-tech p { font-size: .72rem; -webkit-line-clamp: 12; }
+/* An inspector is the full-text view, not another truncated card shelf. */
+.kiln-tabletop-inspector-orders .kiln-tabletop-order-card p,
+.kiln-tabletop-inspector-techs .kiln-tabletop-tech-tile p,
+.kiln-tabletop-inspector-techs .kiln-tabletop-starting-tech p,
+.kiln-tabletop-detail-view > .kiln-tabletop-order-card p,
+.kiln-tabletop-detail-view > .kiln-tabletop-tech-tile p,
+.kiln-tabletop-detail-view > .kiln-tabletop-starting-tech p {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+  font-size: .76rem;
+  line-height: 1.45;
+}
 .kiln-tabletop-detail-view dl { display: grid; width: 100%; margin: 0; }
 .kiln-tabletop-detail-view dl > div { display: flex; justify-content: space-between; border-bottom: 1px solid var(--tabletop-line); padding: .48rem 0; }
 .kiln-tabletop-detail-view dt { color: #6e6e63; font-size: .6rem; }
@@ -1120,6 +1122,7 @@
 
 .kiln-live-controls-panel {
   z-index: 132;
+  grid-template-rows: auto minmax(0, 1fr);
   width: min(620px, calc(100vw - 1.5rem));
   background: linear-gradient(145deg, #f8f0df, #ddd0b2);
 }
@@ -1127,6 +1130,8 @@
 .kiln-live-controls-panel > .action-rail {
   position: static;
   grid-row: 2;
+  /* Keep each action at its full content height so the rail owns all scrolling. */
+  grid-auto-rows: max-content;
   top: auto;
   align-content: start;
   min-height: 0;
@@ -1143,6 +1148,14 @@
   scrollbar-width: auto;
 }
 
+.kiln-live-controls-panel .kiln-action-unavailable {
+  margin: 0;
+  padding: .85rem;
+  color: #824337;
+  font-size: .8rem;
+  line-height: 1.45;
+}
+
 .kiln-live-controls-panel > .action-rail::-webkit-scrollbar { width: 10px; }
 .kiln-live-controls-panel > .action-rail::-webkit-scrollbar-track { border-radius: 99px; background: rgb(255 250 239 / 54%); }
 .kiln-live-controls-panel > .action-rail::-webkit-scrollbar-thumb { border: 2px solid rgb(255 250 239 / 54%); border-radius: 99px; background: #8f7450; }
@@ -1155,6 +1168,228 @@
 .kiln-live-controls-panel .control-section {
   color: var(--tabletop-ink);
 }
+
+/* Contextual action choices ------------------------------------------------ */
+.kiln-live-controls-panel .kiln-action-choice-group {
+  min-width: 0;
+  margin: 0;
+  border: 1px solid rgb(91 69 38 / 18%);
+  border-radius: 10px;
+  padding: .55rem;
+  background: rgb(255 252 241 / 38%);
+}
+
+.kiln-live-controls-panel .kiln-action-choice-group > legend {
+  max-width: calc(100% - .5rem);
+  padding: 0 .28rem;
+  color: #654f35;
+  font-size: .68rem;
+  line-height: 1.2;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+
+.kiln-live-controls-panel .kiln-action-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  gap: .42rem;
+  min-width: 0;
+}
+
+.kiln-live-controls-panel .kiln-action-choice-group.is-compact .kiln-action-choice-grid,
+.kiln-live-controls-panel .kiln-action-choice-grid.is-compact {
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: .32rem;
+}
+
+.kiln-live-controls-panel .kiln-action-choice,
+.kiln-live-controls-panel .kiln-worker-choice-button,
+.kiln-live-controls-panel .kiln-action-toggle {
+  position: relative;
+  min-width: 0;
+  border: 1px solid #b8aa89;
+  border-radius: 9px;
+  color: #28352f;
+  text-align: left;
+  background:
+    radial-gradient(circle at 92% 8%, rgb(199 154 75 / 10%), transparent 3.5rem),
+    linear-gradient(145deg, rgb(255 253 246 / 96%), rgb(239 231 210 / 92%));
+  box-shadow: 0 3px 9px rgb(57 43 24 / 8%), inset 0 0 0 1px rgb(255 255 255 / 50%);
+  transition: border-color .14s ease, box-shadow .14s ease, color .14s ease, background .14s ease, transform .14s ease;
+}
+
+.kiln-live-controls-panel .kiln-action-choice {
+  display: flex;
+  gap: .42rem;
+  align-items: center;
+  min-height: 58px;
+  padding: .5rem .55rem;
+}
+
+.kiln-live-controls-panel .kiln-action-choice-group.is-compact .kiln-action-choice {
+  min-height: 48px;
+  padding: .4rem .45rem;
+}
+
+.kiln-live-controls-panel .kiln-action-choice > span,
+.kiln-live-controls-panel .kiln-action-choice-copy {
+  display: grid;
+  gap: .12rem;
+  min-width: 0;
+}
+
+.kiln-live-controls-panel .kiln-action-choice-label,
+.kiln-live-controls-panel .kiln-action-choice > span > strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #28352f;
+  font-size: .78rem;
+  line-height: 1.22;
+}
+
+.kiln-live-controls-panel .kiln-action-choice-detail,
+.kiln-live-controls-panel .kiln-action-choice > span > small {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #687168;
+  font-size: .62rem;
+  line-height: 1.3;
+}
+
+.kiln-live-controls-panel .kiln-action-choice-reason,
+.kiln-live-controls-panel .kiln-action-choice > span > em {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #93493c;
+  font-size: .56rem;
+  font-style: normal;
+  line-height: 1.25;
+}
+
+.kiln-live-controls-panel .kiln-action-choice.is-selected,
+.kiln-live-controls-panel .kiln-worker-choice-button.is-selected,
+.kiln-live-controls-panel .kiln-action-toggle.is-selected {
+  border-color: #3e7160;
+  color: #24483c;
+  background:
+    radial-gradient(circle at 92% 8%, rgb(199 154 75 / 13%), transparent 3.5rem),
+    linear-gradient(145deg, #f7fbf3, #dce8db);
+  box-shadow: 0 0 0 2px rgb(62 113 96 / 18%), 0 5px 12px rgb(49 91 76 / 14%), inset 4px 0 0 #3e7160;
+}
+
+.kiln-live-controls-panel .kiln-action-choice.is-selected { padding-right: 1.8rem; }
+
+.kiln-live-controls-panel .kiln-action-choice.is-selected::after,
+.kiln-live-controls-panel .kiln-action-toggle.is-selected::after {
+  position: absolute;
+  top: .32rem;
+  right: .36rem;
+  display: grid;
+  width: 17px;
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff9ea;
+  font-size: .45rem;
+  line-height: 1;
+  content: "\2713";
+  background: #3e7160;
+  box-shadow: 0 1px 3px rgb(34 52 43 / 20%);
+}
+
+.kiln-live-controls-panel .kiln-action-choice:not(:disabled):hover,
+.kiln-live-controls-panel .kiln-worker-choice-button:not(:disabled):hover,
+.kiln-live-controls-panel .kiln-action-toggle:not(:disabled):hover {
+  border-color: #5c806f;
+  background: linear-gradient(145deg, #fffef8, #e8f0e5);
+  box-shadow: 0 6px 14px rgb(49 91 76 / 14%), inset 0 0 0 1px rgb(255 255 255 / 58%);
+  transform: translateY(-1px);
+}
+
+.kiln-live-controls-panel .kiln-action-choice:focus-visible,
+.kiln-live-controls-panel .kiln-worker-choice-button:focus-visible,
+.kiln-live-controls-panel .kiln-action-toggle:focus-visible {
+  outline: 3px solid #cda850;
+  outline-offset: 2px;
+}
+
+.kiln-live-controls-panel .kiln-action-choice:disabled,
+.kiln-live-controls-panel .kiln-worker-choice-button:disabled,
+.kiln-live-controls-panel .kiln-action-toggle:disabled {
+  border-style: dashed;
+  border-color: #c8bfaa;
+  color: #766f63;
+  background: rgb(229 225 214 / 64%);
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: .72;
+  transform: none;
+}
+
+.kiln-live-controls-panel .kiln-worker-choice-button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: .12rem .48rem;
+  align-items: center;
+  min-height: 76px;
+  padding: .38rem .5rem;
+}
+
+.kiln-live-controls-panel .kiln-worker-choice-button > .kiln-tabletop-worker {
+  grid-row: 1 / span 2;
+  justify-self: center;
+}
+
+.kiln-live-controls-panel .kiln-worker-choice-button > span,
+.kiln-live-controls-panel .kiln-worker-choice-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #2f453c;
+  font-size: .75rem;
+  line-height: 1.2;
+}
+
+.kiln-live-controls-panel .kiln-worker-choice-button > small,
+.kiln-live-controls-panel .kiln-worker-choice-kind {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #8a493e;
+  font-size: .55rem;
+  line-height: 1.25;
+}
+
+.kiln-live-controls-panel .kiln-worker-choice-copy {
+  display: grid;
+  gap: .12rem;
+  min-width: 0;
+}
+
+.kiln-live-controls-panel .kiln-worker-choice-button.is-selected::after {
+  position: absolute;
+  top: .35rem;
+  right: .4rem;
+  width: 8px;
+  aspect-ratio: 1;
+  border: 2px solid #f7f0db;
+  border-radius: 50%;
+  content: "";
+  background: #3e7160;
+  box-shadow: 0 0 0 1px #3e7160;
+}
+
+.kiln-live-controls-panel .kiln-action-toggle {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: .12rem .5rem;
+  width: 100%;
+  min-height: 62px;
+  padding: .52rem .62rem;
+}
+
+.kiln-live-controls-panel .kiln-action-toggle > span { color: #2f453c; font-size: .78rem; line-height: 1.2; }
+.kiln-live-controls-panel .kiln-action-toggle > small { grid-column: 1; color: #667068; font-size: .62rem; line-height: 1.3; }
+.kiln-live-controls-panel .kiln-action-toggle > em { grid-row: 1 / span 2; grid-column: 2; align-self: center; max-width: 118px; color: #93493c; font-size: .56rem; font-style: normal; line-height: 1.25; text-align: right; }
+.kiln-live-controls-panel .kiln-action-toggle.is-selected { padding-right: 2.25rem; }
 
 .kiln-live-controls-panel .control-form-glaze {
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1450,7 +1685,10 @@
     bottom: .35rem;
     left: .35rem;
     width: auto;
+    height: 86vh;
+    height: 86dvh;
     max-height: 86vh;
+    max-height: 86dvh;
   }
 }
 

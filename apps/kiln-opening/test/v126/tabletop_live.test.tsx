@@ -4,21 +4,68 @@ import { describe, expect, it } from "vitest";
 import { projectPublicGameState } from "../../src/multiplayer/index.ts";
 import { ActionPanel } from "../../src/ui/ActionPanel.tsx";
 import { commandNotice } from "../../src/ui/App.tsx";
+import { eventDescription } from "../../src/ui/PlaytestExperience.tsx";
 import {
   TabletopGameExperience,
+  actionLocationForPhase,
+  actionControlsVisibilityReducer,
+  actionDraftDecisionKey,
   computerRecapHighlights,
-  keepCommissionControlsOpenAfterCommand,
+  currentCeramicsForPlayer,
+  hasActionControlsContext,
+  keepActionControlsOpenAfterCommand,
 } from "../../src/ui/TabletopGameExperience.tsx";
 import { LanguageProvider } from "../../src/ui/i18n.tsx";
 import type { Locale } from "../../src/ui/i18n.tsx";
 import type { PublicGameEvent, PublicSeat } from "../../src/multiplayer/index.ts";
-import { addFinished, addLoaded, addShaped, startedGame, workerId } from "./helpers.ts";
+import { addFinished, addLoaded, addShaped, addTechnique, startedGame, workerId } from "./helpers.ts";
 
 function localizedMarkup(locale: Locale, child: ReturnType<typeof createElement>): string {
   return renderToStaticMarkup(createElement(LanguageProvider, { initialLocale: locale, children: child }));
 }
 
 describe("V1.2.6 functional tabletop", () => {
+  it("keeps an unfinished action mounted while inspecting the table, then discards it after resolution", () => {
+    const empty = { open: false, mounted: false };
+    const open = actionControlsVisibilityReducer(empty, { type: "OPEN" });
+    const inspecting = actionControlsVisibilityReducer(open, { type: "CLOSE" });
+
+    expect(open).toEqual({ open: true, mounted: true });
+    expect(inspecting).toEqual({ open: false, mounted: true });
+    expect(actionControlsVisibilityReducer(inspecting, { type: "OPEN" })).toEqual(open);
+    expect(actionControlsVisibilityReducer(open, { type: "DISCARD" })).toEqual({
+      open: false,
+      mounted: false,
+    });
+    expect(actionControlsVisibilityReducer(inspecting, { type: "CLOSE" })).toBe(inspecting);
+    expect(actionControlsVisibilityReducer(empty, { type: "DISCARD" })).toBe(empty);
+  });
+
+  it("invalidates drafts for a new authoritative decision but not another player's simultaneous submission", () => {
+    const work = projectPublicGameState(startedGame(2, 12_659).state);
+    const workKey = actionDraftDecisionKey(work, "P1", "glaze_workshop", null);
+    const revisedWork = structuredClone(work);
+    revisedWork.revision += 1;
+
+    expect(actionDraftDecisionKey(revisedWork, "P1", "glaze_workshop", null)).not.toBe(workKey);
+    expect(actionDraftDecisionKey(work, "P1", "forming_studio", null)).not.toBe(workKey);
+    expect(actionDraftDecisionKey(work, "P2", "glaze_workshop", null)).not.toBe(workKey);
+
+    const contributions = structuredClone(work);
+    contributions.phase = {
+      type: "firing_contributions",
+      windowId: "draft-window",
+      eligiblePlayerIds: ["P1", "P2"],
+      submittedPlayerIds: [],
+    };
+    const contributionKey = actionDraftDecisionKey(contributions, "P1", null, null);
+    contributions.revision += 1;
+    contributions.phase.submittedPlayerIds.push("P2");
+    expect(actionDraftDecisionKey(contributions, "P1", null, null)).toBe(contributionKey);
+    contributions.phase.submittedPlayerIds.push("P1");
+    expect(actionDraftDecisionKey(contributions, "P1", null, null)).not.toBe(contributionKey);
+  });
+
   it("renders the approved board from live public state with owned pieces and player-count locks", () => {
     const state = structuredClone(startedGame(2, 12_660).state);
     const marked = addLoaded(state, "P1", "plate", "celadon", "carved", "high_1", true);
@@ -63,8 +110,12 @@ describe("V1.2.6 functional tabletop", () => {
     expect(markup).not.toContain('class="kiln-tabletop-actionbar"');
     expect(markup).toContain("Pass round");
     expect(markup).toContain("Face-up Main Orders");
+    expect(markup).toContain('class="kiln-tabletop-order-crowns"');
     expect(markup).toContain("Shared Kiln");
     expect(markup).toContain("Face-up Techs");
+    expect(markup).toContain('class="kiln-tabletop-cash-coin"');
+    expect(markup).toMatch(/class="kiln-tabletop-tech-cost" aria-label="[23] Coins"/);
+    expect(markup).not.toContain("◉");
     expect(markup).toContain('data-hover-preview="order"');
     expect(markup).toContain('data-hover-preview="advanced-technique"');
     expect(markup).toMatch(/aria-describedby="kiln-order-preview-[^"]+-description"/);
@@ -96,6 +147,12 @@ describe("V1.2.6 functional tabletop", () => {
     expect(markup).toContain('class="kiln-tabletop-decoration-pattern is-crackle"');
     expect(markup).toContain("BELONGS TO");
     expect(markup).toContain("Preferred Heat");
+    expect(markup).toContain('data-hover-preview="ceramic"');
+    const ceramicDescriptionIds = [...markup.matchAll(/aria-describedby="(kiln-ceramic-preview-[^"]+-description)"/g)].map((match) => match[1]);
+    expect(ceramicDescriptionIds.length).toBeGreaterThan(1);
+    expect(new Set(ceramicDescriptionIds).size).toBe(ceramicDescriptionIds.length);
+    for (const id of ceramicDescriptionIds) expect(markup).toContain(`class="sr-only" id="${id}"`);
+    expect(markup).toContain('data-turn-label="TURN"');
     expect(markup).not.toContain(`>${marked.id} ·`);
     expect(markup).not.toContain(`>${finished.id} ·`);
     expect(markup).toContain("Furniture");
@@ -144,6 +201,35 @@ describe("V1.2.6 functional tabletop", () => {
     expect(markup).toContain("View full log");
   });
 
+  it("renders owned Orders and Techs as readable cards without the Starting Tech footer", () => {
+    const state = structuredClone(startedGame(2, 12_660_1).state);
+    addTechnique(state, "P1", "T01");
+    const game = projectPublicGameState(state);
+    const render = (locale: Locale) => localizedMarkup(locale, createElement(TabletopGameExperience, {
+      game,
+      ownPlayerId: "P1",
+      ownPendingContribution: null,
+      events: [],
+      describeEvent: (record) => record.event.type,
+      busy: false,
+      send: async () => true,
+    }));
+    const english = render("en");
+    const chinese = render("zh-CN");
+
+    expect(english).toMatch(/class="kiln-tabletop-order-card[^"]*is-owned/);
+    expect(english).toMatch(/class="kiln-tabletop-starting-tech[^"]*is-owned/);
+    expect(english).toMatch(/class="kiln-tabletop-tech-tile[^"]*is-owned/);
+    expect(english).toContain('class="kiln-tabletop-tech-endgame-vp" title="Scores 1 VP at game end"');
+    expect(english).toContain('>1VP</b>');
+    expect(chinese).toContain('title="终局计分时获得1分"');
+    const ownedStartingTile = english.match(/<button[^>]*class="kiln-tabletop-starting-tech[^"]*is-owned"[\s\S]*?<\/button>/)?.[0];
+    expect(ownedStartingTile).toBeDefined();
+    expect(ownedStartingTile).not.toContain("kiln-tabletop-tech-endgame-vp");
+    expect(english).not.toContain("Workshop foundation");
+    expect(chinese).not.toContain("作坊基础");
+  });
+
   it("uses a tabletop selection to focus the matching action form", () => {
     const state = startedGame(2, 12_661).state;
     const selectedWorkerId = workerId(state, "P1", "apprentice", 1);
@@ -161,7 +247,9 @@ describe("V1.2.6 functional tabletop", () => {
     expect(markup).toContain("Send to Labour");
     expect(markup).not.toContain("Gather materials");
     expect(markup).not.toContain("Shape vessels");
-    expect(markup).toContain(`value="${selectedWorkerId}" selected=""`);
+    const selectedWorkerButton = markup.match(new RegExp(`<button[^>]*data-worker-choice="${selectedWorkerId}"[^>]*>`))?.[0] ?? "";
+    expect(selectedWorkerButton).toContain('aria-pressed="true"');
+    expect(selectedWorkerButton).not.toContain("disabled");
   });
 
   it("offers both privately viewed and face-up Orders during a Colour Samples choice", () => {
@@ -200,8 +288,40 @@ describe("V1.2.6 functional tabletop", () => {
     expect(markup).toContain(`aria-label="Reserve face-up ${marketDisplay[0]}"`);
   });
 
-  it("keeps one Commission modal open through chained reservation decisions", () => {
+  it("keeps chained Guild and Commission decisions open without exposing the old all-actions Work modal", () => {
     const state = structuredClone(startedGame(2, 12_671).state);
+    let game = projectPublicGameState(state);
+
+    expect(hasActionControlsContext(game, null)).toBe(false);
+    expect(hasActionControlsContext(game, "materials_yard")).toBe(true);
+    expect(keepActionControlsOpenAfterCommand(game, "P1", {
+      type: "BEGIN_GUILD_ACTION",
+      workerId: workerId(state, "P1", "shifu"),
+    })).toBe(true);
+    expect(keepActionControlsOpenAfterCommand(game, "P1", {
+      type: "BEGIN_OFFICE_ORDERS",
+      workerId: workerId(state, "P1", "shifu"),
+      mode: "take_up_to_two",
+    })).toBe(true);
+
+    state.phase = {
+      type: "work_guild",
+      actorId: "P1",
+      workerId: workerId(state, "P1", "shifu"),
+      step: "inspect",
+    };
+    game = projectPublicGameState(state);
+    expect(hasActionControlsContext(game, null)).toBe(true);
+    expect(actionLocationForPhase(game)).toBe("guild_academy");
+    expect(keepActionControlsOpenAfterCommand(game, "P1", {
+      type: "GUILD_INSPECT_DISCIPLINE",
+      discipline: "forming",
+    })).toBe(true);
+    expect(keepActionControlsOpenAfterCommand(game, "P1", {
+      type: "GUILD_BUY_TECHNIQUE",
+      techniqueId: game.displays.techniques.forming[0]!,
+    })).toBe(false);
+
     state.phase = {
       type: "work_office_orders",
       actorId: "P1",
@@ -212,22 +332,76 @@ describe("V1.2.6 functional tabletop", () => {
       step: "gain_advance",
       colourSamplesUsed: false,
     };
-    const game = projectPublicGameState(state);
+    game = projectPublicGameState(state);
+    expect(actionLocationForPhase(game)).toBe("market_imperial_office");
 
-    expect(keepCommissionControlsOpenAfterCommand(game, "P1", {
+    expect(keepActionControlsOpenAfterCommand(game, "P1", {
       type: "COMMISSION_GAIN_ADVANCE",
       resource: "clay",
     })).toBe(true);
-    expect(keepCommissionControlsOpenAfterCommand(game, "P1", {
+    expect(keepActionControlsOpenAfterCommand(game, "P1", {
       type: "OFFICE_END_ORDERS",
     })).toBe(false);
 
     if (game.phase.type !== "work_office_orders") throw new Error("Missing Commission phase");
     game.phase.remainingTakes = 0;
-    expect(keepCommissionControlsOpenAfterCommand(game, "P1", {
+    expect(keepActionControlsOpenAfterCommand(game, "P1", {
       type: "COMMISSION_GAIN_ADVANCE",
       resource: "wood",
     })).toBe(false);
+  });
+
+  it("names every ability source clearly in English and Chinese logs and computer recaps", () => {
+    const game = projectPublicGameState(startedGame(2, 12_671_1).state);
+    const events: PublicGameEvent[] = [
+      { type: "RESOURCES_CHANGED", playerId: "P1", clay: 0, wood: -1, coins: 0 },
+      { type: "STARTING_TECH_USED", playerId: "P1", techniqueId: "ST03" },
+      { type: "TECHNIQUE_USED", playerId: "P1", techniqueId: "T06" },
+      { type: "KILN_ABILITY_USED", playerId: "P1", kilnId: "GU" },
+    ];
+
+    expect(eventDescription(events[1]!, game, "en")).toBe("Player 1 used Starting Tech ST03 · Rapid Drying.");
+    expect(eventDescription(events[2]!, game, "en")).toBe("Player 1 used Tech T06 · Glaze Palette.");
+    expect(eventDescription(events[3]!, game, "en")).toBe("Player 1 used Guan Kiln ability: Imperial Patronage.");
+    expect(eventDescription(events[1]!, game, "zh-CN")).toBe("Player 1使用起始技艺 ST03 · 催干。");
+    expect(eventDescription(events[2]!, game, "zh-CN")).toBe("Player 1使用技艺 T06 · 釉色谱。");
+    expect(eventDescription(events[3]!, game, "zh-CN")).toBe("Player 1发动官窑能力：内府恩眷。");
+    expect(computerRecapHighlights(events).map((event) => event.type)).toEqual([
+      "STARTING_TECH_USED",
+      "TECHNIQUE_USED",
+      "KILN_ABILITY_USED",
+    ]);
+  });
+
+  it("keeps delivered ceramics out of every player's current ceramic display", () => {
+    const state = structuredClone(startedGame(2, 12_671_2).state);
+    const current = addShaped(state, "P1", "bowl");
+    const delivered = addFinished(state, "P1", "censer", "fine", "celadon", "carved");
+    state.ceramics[delivered.id] = {
+      id: delivered.id,
+      vesselInstanceId: delivered.vesselInstanceId,
+      ownerId: delivered.ownerId,
+      shape: delivered.shape,
+      stage: "delivered",
+      glaze: delivered.glaze,
+      decoration: delivered.decoration,
+      quality: delivered.quality,
+      orderId: "S01",
+    };
+    const game = projectPublicGameState(state);
+
+    expect(currentCeramicsForPlayer(game, "P1").map((ceramic) => ceramic.id)).toEqual([current.id]);
+    const markup = localizedMarkup("en", createElement(TabletopGameExperience, {
+      game,
+      ownPlayerId: "P1",
+      ownPendingContribution: null,
+      events: [],
+      busy: false,
+      describeEvent: () => "event",
+      send: async () => true,
+    }));
+    expect(markup).toContain('data-shape="bowl"');
+    expect(markup).not.toContain('data-shape="censer"');
   });
 
   it("describes blind and face-up reservations by their actual source", () => {
@@ -499,6 +673,7 @@ describe("V1.2.6 functional tabletop", () => {
     expect(markup).toContain("共窑");
     expect(markup).toContain("御府声望");
     expect(markup).toContain("你的作坊");
+    expect(markup).toContain('data-turn-label="行动中"');
     expect(markup).toContain('data-hover-preview="order"');
     expect(markup).toContain('data-hover-preview="advanced-technique"');
     expect(markup).toContain('data-hover-preview="starting-technique"');

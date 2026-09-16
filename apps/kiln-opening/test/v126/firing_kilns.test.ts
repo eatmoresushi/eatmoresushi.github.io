@@ -142,6 +142,11 @@ describe("V1.2.6 firing, Tech timing, and Kiln Traditions", () => {
       contributions: { P1: "BANK", P2: "STOKE" },
       effectiveHeatAdjustments: { P1: -2, P2: 1 },
     });
+    expect(second.events).toContainEqual({
+      type: "TECHNIQUE_USED",
+      playerId: "P1",
+      techniqueId: "T12",
+    });
     expect(state.phase).toEqual({ type: "firing_reveal_fire", actorId: "P1" });
     expect(state.firingContext).toEqual(expect.objectContaining({
       baseHeat: 1,

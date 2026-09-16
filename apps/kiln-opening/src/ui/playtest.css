@@ -510,21 +510,20 @@
     background: #fff;
   }
 
-  .action-card summary {
-    align-items: center;
+  .action-card-heading {
     padding: .65rem;
   }
 
-  .action-card summary span {
+  .action-card-heading h3 {
     font-family: var(--sans);
   }
 
-  .action-card summary small {
+  .action-card-heading small {
     font-size: .65rem;
     text-align: right;
   }
 
-  .action-card summary small span {
+  .action-card-heading small span {
     display: inline;
   }
 

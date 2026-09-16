@@ -776,6 +776,9 @@ function gainMaterials(
     wood: woodDelta,
     coins: coinDelta,
   });
+  if (preparedClayShape !== undefined) {
+    events.push({ type: "STARTING_TECH_USED", playerId: actorId, techniqueId: "ST01" });
+  }
   completeWorkerAction(next, actorId, events);
   return success(next, events);
 }
@@ -936,6 +939,9 @@ function formCeramics(
       });
     }
   }
+  if (action.whiteSlip !== undefined) {
+    events.push({ type: "STARTING_TECH_USED", playerId: actorId, techniqueId: "ST02" });
+  }
   for (const techniqueId of useTechniqueIds) exhaustTechnique(player, actorId, techniqueId, events);
   if (dingExtraShape !== undefined) {
     player.kilnAbilityUsedThisRound = true;
@@ -994,6 +1000,10 @@ function glazeCeramics(
     return applyFailure(ruleError("INVALID_SELECTION", "The Shifu's free Decoration must be on this action."));
   }
   let totalCoins = 0;
+  const unusedDecorationWaivers = new Set<Decoration>();
+  if (useTechniqueIds.includes("T07")) unusedDecorationWaivers.add("carved");
+  if (useTechniqueIds.includes("T08")) unusedDecorationWaivers.add("impressed");
+  if (useTechniqueIds.includes("T09")) unusedDecorationWaivers.add("crackle");
   for (const selection of action.selections) {
     const ceramic = state.ceramics[selection.ceramicId];
     if (ceramic === undefined || ceramic.ownerId !== actorId || ceramic.stage !== "shaped") {
@@ -1007,10 +1017,9 @@ function glazeCeramics(
         return applyFailure(ruleError("INVALID_SELECTION", "Reworking Table needs a different Shape."));
       }
     }
-    const freeByTech = (selection.decoration === "carved" && useTechniqueIds.includes("T07"))
-      || (selection.decoration === "impressed" && useTechniqueIds.includes("T08"))
-      || (selection.decoration === "crackle" && useTechniqueIds.includes("T09"));
-    if (selection.ceramicId !== freeDecorationCeramicId && !freeByTech) totalCoins += DECORATION_COSTS[selection.decoration];
+    if (selection.ceramicId !== freeDecorationCeramicId && !unusedDecorationWaivers.delete(selection.decoration)) {
+      totalCoins += DECORATION_COSTS[selection.decoration];
+    }
   }
   for (const [techniqueId, decoration] of [["T07", "carved"], ["T08", "impressed"], ["T09", "crackle"]] as const) {
     if (useTechniqueIds.includes(techniqueId) && !action.selections.some((selection) => selection.decoration === decoration)) {
@@ -1073,6 +1082,7 @@ function glazeCeramics(
     next.ceramics[target.id] = { ...target, stage: "loaded", kilnSpaceId: action.rapidDrying.kilnSpaceId };
     events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: -1, coins: 0 });
     events.push({ type: "CERAMIC_LOADED", playerId: actorId, ceramicId: target.id, kilnSpaceId: action.rapidDrying.kilnSpaceId });
+    events.push({ type: "STARTING_TECH_USED", playerId: actorId, techniqueId: "ST03" });
   }
   for (const techniqueId of useTechniqueIds) exhaustTechnique(player, actorId, techniqueId, events);
   completeWorkerAction(next, actorId, events);
@@ -1179,6 +1189,7 @@ function useKilnYard(
     const clay = gainFromSupply(next, player, "clay", action.kilnTendingClay ?? 0);
     const wood = gainFromSupply(next, player, "wood", action.kilnTendingWood ?? 0);
     events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay, wood, coins: 0 });
+    events.push({ type: "STARTING_TECH_USED", playerId: actorId, techniqueId: "ST04" });
   }
   completeWorkerAction(next, actorId, events);
   return success(next, events);
@@ -1903,6 +1914,9 @@ export function submitWoodContribution(
         nextPrivate.fuelLedgerCommittedBy,
       ),
     });
+    for (const playerId of nextPrivate.fuelLedgerCommittedBy) {
+      events.push({ type: "TECHNIQUE_USED", playerId, techniqueId: "T12" });
+    }
     nextPrivate.windowId = null;
     nextPrivate.contributions = {};
     nextPrivate.fuelLedgerCommittedBy = [];
