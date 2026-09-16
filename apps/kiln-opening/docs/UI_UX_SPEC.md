@@ -26,13 +26,22 @@ Opponents may appear as compact workshop strips/cards around the top/side.
 
 - Clicking/selecting a worker highlights legal locations.
 - Selecting a location opens only the choices relevant to that action.
+- Work action forms remain expanded with static headings; do not nest expand/collapse controls inside an action window.
 - Illegal choices should be disabled with a reason.
+- If no available worker can perform a location's required action, show one localized explanation and hide its worker choices, options, and submit button. Keep Pass available. Evaluate free Decoration effects, Shifu discounts, and available Imperial Kiln destinations before declaring an action unavailable; a full Order hand does not prevent reservation.
+- Bound action windows to the viewport with a fixed title and one scrollable body. Preserve each action card's full content height so long forms scroll instead of clipping their submit button, including at narrow breakpoints.
 - Show cost before confirmation.
 - Show each shared location's global printed capacity and remaining spaces visually. Materials Yard, Potter's Wheel, Glaze & Decoration, Commission Market, and Guild & Academy scale to 2 / 3 / 4 spaces; Kiln Yard and Labour are uncapped.
 - Do not group printed spaces by player. Highlight that a Shifu may overfill a full location while an Apprentice cannot.
 - Shifu and Apprentice effects should be visible without opening rules.
 - Present the Main Order display as an ordered shelf: label or visually imply oldest at left and newest at right. When a face-up Order leaves, animate later cards sliding left and the replacement entering at the right. Do not animate or reorder the display for a blind or privately viewed deck reservation.
+- Give owned Orders and Techs the same readable card treatment as public cards, including their gameplay summary; do not spend tile space on a redundant "Workshop foundation" label.
+- Show a bottom-right `1VP` end-game scoring reminder on every Advanced Tech tile. Never show it on a Starting Tech, which scores no VP by itself.
+- Keep an unfinished action form mounted when its modal is closed to inspect public or owned table information, so reopening Action restores every unsent choice. Discard the local draft after a successful action, when the selected worker/location changes, or when the decision is no longer the player's; drafts are interface state and are never sent to the server until submission.
+- Log every Starting Tech, Advanced Tech, and Kiln ability activation explicitly by localized name in both the complete game log and computer-turn recap. Keep secret choices such as Fuel Ledger private until their normal reveal.
 - Always show Preferred Heat on a glazed ceramic.
+- Ceramic detail previews float outside clipped board/inspector containers, stay inside the viewport, and support hover, keyboard focus, and tap. Escape or an outside click dismisses the preview; a short viewport provides a scrollable preview instead of hiding it.
+- Player inspectors and clicked card detail views show full, untruncated Order and Tech descriptions. Use wider cards and vertical scrolling rather than squeezing descriptions into the market's compact layout.
 - Kiln spaces show zone and modifier.
 - During firing, focus UI attention on kiln and contribution workflow.
 - Use clear timing banners: `Before Contributions`, `Contributions Revealed`, `After Base Heat / Before Fire`, `Before Quality`, etc.

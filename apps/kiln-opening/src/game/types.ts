@@ -589,6 +589,7 @@ export interface GameRuleError {
 export type GameEvent =
   | { type: "KILN_SELECTED"; playerId: PlayerId; kilnId: KilnId }
   | { type: "STARTING_TECH_SELECTED"; playerId: PlayerId; techniqueId: StartingTechniqueId }
+  | { type: "STARTING_TECH_USED"; playerId: PlayerId; techniqueId: StartingTechniqueId }
   | { type: "STARTING_ORDERS_SUBMITTED"; playerId: PlayerId }
   | { type: "STARTING_ORDERS_REVEALED"; ordersByPlayer: Record<PlayerId, OrderId[]> }
   | { type: "WORKER_PLACED"; playerId: PlayerId; workerId: WorkerId; locationId: LocationId }

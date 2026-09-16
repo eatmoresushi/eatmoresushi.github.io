@@ -1,6 +1,6 @@
 import type { AuthoritativeCommand, PendingContribution, PrivateDecisionState, PublicEventRecord, PublicGameEvent, PublicGameState, PublicSeat } from "../multiplayer";
 import type { PlayerId } from "../game";
-import { CONTRIBUTION_CARD_DEFINITIONS, KILN_DEFINITIONS, ORDER_DEFINITIONS, TECHNIQUE_DEFINITIONS } from "../game";
+import { CONTRIBUTION_CARD_DEFINITIONS, KILN_DEFINITIONS, ORDER_DEFINITIONS, STARTING_TECHNIQUE_DEFINITIONS, TECHNIQUE_DEFINITIONS } from "../game";
 import { TabletopGameExperience } from "./TabletopGameExperience";
 import type { ComputerTurnRecap } from "./TabletopGameExperience";
 import { term } from "./i18n";
@@ -59,7 +59,9 @@ export function eventDescription(event: PublicGameEvent, game: PublicGameState, 
     case "KILN_SELECTED":
       return `${player(event.playerId)} selected ${KILN_DEFINITIONS[event.kilnId].name}.`;
     case "STARTING_TECH_SELECTED":
-      return `${player(event.playerId)} selected Starting Tech ${event.techniqueId}.`;
+      return `${player(event.playerId)} selected Starting Tech ${event.techniqueId} · ${STARTING_TECHNIQUE_DEFINITIONS[event.techniqueId]?.name ?? "Unknown Starting Tech"}.`;
+    case "STARTING_TECH_USED":
+      return `${player(event.playerId)} used Starting Tech ${event.techniqueId} · ${STARTING_TECHNIQUE_DEFINITIONS[event.techniqueId]?.name ?? "Unknown Starting Tech"}.`;
     case "STARTING_ORDERS_SUBMITTED":
       return `${player(event.playerId)} locked an opening Order choice.`;
     case "STARTING_ORDERS_REVEALED":
@@ -91,9 +93,9 @@ export function eventDescription(event: PublicGameEvent, game: PublicGameState, 
     case "TECHNIQUE_ACQUIRED":
       return `${player(event.playerId)} bought ${event.techniqueId} · ${TECHNIQUE_DEFINITIONS[event.techniqueId]?.name ?? "Unknown Technique"} for ${event.cost} Coins.`;
     case "TECHNIQUE_USED":
-      return `${player(event.playerId)} used ${event.techniqueId} · ${TECHNIQUE_DEFINITIONS[event.techniqueId]?.name ?? "Unknown Technique"}.`;
+      return `${player(event.playerId)} used Tech ${event.techniqueId} · ${TECHNIQUE_DEFINITIONS[event.techniqueId]?.name ?? "Unknown Tech"}.`;
     case "KILN_ABILITY_USED":
-      return `${player(event.playerId)} used ${KILN_DEFINITIONS[event.kilnId].name}: ${KILN_DEFINITIONS[event.kilnId].abilityName}.`;
+      return `${player(event.playerId)} used ${KILN_DEFINITIONS[event.kilnId].name} ability: ${KILN_DEFINITIONS[event.kilnId].abilityName}.`;
     case "IMPERIAL_PRIORITY_USED":
       return `${player(event.playerId)} spent Imperial Priority to load one additional ceramic into their Imperial Kiln.`;
     case "JUN_ACTIVATION_PAID":
@@ -155,7 +157,8 @@ function eventDescriptionZh(event: PublicGameEvent, game: PublicGameState): stri
   };
   switch (event.type) {
     case "KILN_SELECTED": return `${player(event.playerId)}选择了${KILN_DEFINITIONS[event.kilnId].nameZh}。`;
-    case "STARTING_TECH_SELECTED": return `${player(event.playerId)}选择了起始技艺${event.techniqueId}。`;
+    case "STARTING_TECH_SELECTED": return `${player(event.playerId)}选择了起始技艺 ${event.techniqueId} · ${STARTING_TECHNIQUE_DEFINITIONS[event.techniqueId]?.nameZh ?? "未知起始技艺"}。`;
+    case "STARTING_TECH_USED": return `${player(event.playerId)}使用起始技艺 ${event.techniqueId} · ${STARTING_TECHNIQUE_DEFINITIONS[event.techniqueId]?.nameZh ?? "未知起始技艺"}。`;
     case "STARTING_ORDERS_SUBMITTED": return `${player(event.playerId)}已锁定起始委托选择。`;
     case "STARTING_ORDERS_REVEALED": return `起始委托同时公开：${Object.entries(event.ordersByPlayer).map(([id, orders]) => `${player(id)}保留${orders.join("、")}`).join("；")}。`;
     case "WORKER_PLACED": return `${player(event.playerId)}将${workerName(event.workerId, "zh-CN")}放到${locationName(event.locationId, "zh-CN")}。`;
@@ -171,8 +174,8 @@ function eventDescriptionZh(event: PublicGameEvent, game: PublicGameState): stri
     case "COLOUR_SAMPLES_USED": return `${player(event.playerId)}使用色样簿，承接${event.selectedOrderId ?? "1张委托"}，并弃掉${event.discardedCount}张未承接的已查看委托。`;
     case "GUILD_DISCIPLINE_INSPECTED": return `${player(event.playerId)}查看了${DISCIPLINE_ZH[event.discipline]}牌堆顶${event.count}个技艺。`;
     case "TECHNIQUE_ACQUIRED": return `${player(event.playerId)}以${event.cost}铜钱取得${event.techniqueId} · ${TECHNIQUE_DEFINITIONS[event.techniqueId]?.nameZh ?? "未知技艺"}。`;
-    case "TECHNIQUE_USED": return `${player(event.playerId)}使用${event.techniqueId} · ${TECHNIQUE_DEFINITIONS[event.techniqueId]?.nameZh ?? "未知技艺"}。`;
-    case "KILN_ABILITY_USED": return `${player(event.playerId)}使用${KILN_DEFINITIONS[event.kilnId].nameZh}：${KILN_DEFINITIONS[event.kilnId].abilityNameZh}。`;
+    case "TECHNIQUE_USED": return `${player(event.playerId)}使用技艺 ${event.techniqueId} · ${TECHNIQUE_DEFINITIONS[event.techniqueId]?.nameZh ?? "未知技艺"}。`;
+    case "KILN_ABILITY_USED": return `${player(event.playerId)}发动${KILN_DEFINITIONS[event.kilnId].nameZh}能力：${KILN_DEFINITIONS[event.kilnId].abilityNameZh}。`;
     case "IMPERIAL_PRIORITY_USED": return `${player(event.playerId)}花费御烧优先标记，将1件已施釉陶瓷装入自己的御窑。`;
     case "JUN_ACTIVATION_PAID": return `${player(event.playerId)}为钧窑的窑变天成支付${event.wood}柴。`;
     case "WORK_PHASE_ENDED": return "所有玩家完成作业阶段，开始烧成。";

@@ -254,12 +254,9 @@
   .action-heading h2 { margin-top: .2rem; }
   .action-card { border: 1px solid var(--line); border-radius: 12px; background: rgb(255 253 248 / 82%); overflow: hidden; }
   .action-card.is-unavailable { opacity: .68; }
-  .action-card summary { display: flex; justify-content: space-between; padding: .8rem; cursor: pointer; list-style: none; }
-  .action-card summary::-webkit-details-marker { display: none; }
-  .action-card summary::after { color: var(--cinnabar); content: "+"; font-size: 1.1rem; }
-  .action-card[open] summary::after { content: "−"; }
-  .action-card summary span { font-family: var(--serif); font-weight: 700; }
-  .action-card summary small { margin-left: auto; margin-right: .7rem; color: var(--ink-soft); }
+  .action-card-heading { display: flex; flex-wrap: wrap; gap: .4rem 1rem; align-items: center; justify-content: space-between; padding: .8rem; }
+  .action-card-heading h3 { min-width: 0; margin: 0; font-size: 1rem; line-height: 1.25; }
+  .action-card-heading small { margin-left: auto; color: var(--ink-soft); line-height: 1.4; }
   .control-form { display: grid; gap: .65rem; border-top: 1px solid var(--line); padding: .8rem; }
   .control-form > small { color: var(--ink-soft); }
   .control-form > .control-error { color: var(--cinnabar-dark); font-weight: 800; }

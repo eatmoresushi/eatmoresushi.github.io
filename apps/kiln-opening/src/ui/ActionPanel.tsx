@@ -58,6 +58,7 @@ import type {
 import { OrderCard } from "./GameTable";
 import { term as localizedTerm, useI18n } from "./i18n";
 import type { Locale } from "./i18n";
+import { WorkerMeeple } from "./WorkerMeeple";
 
 type SendCommand = (command: AuthoritativeCommand) => Promise<boolean>;
 
@@ -318,18 +319,22 @@ function WorkControls({ game, player, selectedLocation, selectedWorkerId, busy, 
     const capacity = locationLimit(locationId);
     const capacityLabel = Number.isFinite(capacity) ? String(capacity) : "∞";
     return (
-    <details
+    <section
       className={`action-card ${full(locationId) && !shifuAvailable ? "is-unavailable" : ""}`}
-      open={selectedLocation === locationId || (selectedLocation == null && locationId === "materials_yard")}
+      aria-label={term(locationId)}
       key={`${locationId}:${selectedWorkerId ?? "auto"}`}
     >
-      <summary><span>{term(locationId)}</span><small>{used}/{capacityLabel} {t("workers")} · <span>{full(locationId) ? (shifuAvailable ? t("Shifu may overfill") : t("Full")) : t(hint)}</span></small></summary>
-      {content}
-    </details>
+      <header className="action-card-heading"><h3>{term(locationId)}</h3><small>{used}/{capacityLabel} {t("workers")} · <span>{full(locationId) ? (shifuAvailable ? t("Shifu may overfill") : t("Full")) : t(hint)}</span></small></header>
+      {full(locationId) && !shifuAvailable
+        ? <ActionUnavailable message={locale === "zh-CN"
+          ? `${term(locationId)}的工位已满，且你没有可用的师傅。`
+          : `${term(locationId)} is full and you have no available Shifu.`} />
+        : content}
+    </section>
     );
   };
   const actions: Partial<Record<LocationId, ReactNode>> = {
-    labour: action("labour", "Send workers to Labour", <LabourForm workers={workers} busy={busy} send={send} />),
+    labour: action("labour", "Send workers to Labour", <LabourForm game={game} player={player} workers={workers} busy={busy} send={send} />),
     materials_yard: action("materials_yard", "Gain Clay and Wood", <MaterialsForm game={game} player={player} workers={workers} locationFull={full("materials_yard")} busy={busy} send={send} />),
     forming_studio: action("forming_studio", "Shape vessels", <FormCeramicsForm game={game} player={player} workers={workers} locationFull={full("forming_studio")} busy={busy} send={send} />),
     glaze_workshop: action("glaze_workshop", "Glaze and decorate", <GlazeForm game={game} player={player} workers={workers} locationFull={full("glaze_workshop")} busy={busy} send={send} />),
@@ -385,42 +390,47 @@ interface WorkerFormProps {
   send: SendCommand;
 }
 
+function ActionUnavailable({ message }: { message: string }) {
+  const { locale } = useI18n();
+  return <p className="kiln-action-unavailable" role="status">{localizeActionError(locale, message)}</p>;
+}
+
 /** Labour has no worker limit, so it never shows a "location full" state. */
-function LabourForm({ workers, busy, send }: {
-  workers: Array<{ id: string; kind: "shifu" | "apprentice" }>;
+function LabourForm({ game, player, workers, busy, send }: {
+  game: PublicGameState;
+  player: PublicPlayerState;
+  workers: AvailableWorker[];
   busy: boolean;
   send: SendCommand;
 }) {
-  const { locale, t, term } = useI18n();
-  const [workerId, setWorkerId] = useState(workers[0]?.id ?? "");
+  const { locale, t } = useI18n();
+  const supplyEmpty = game.commonSupply.coins < 1;
+  const [workerId, setWorkerId] = useState(firstLegalWorkerId(workers, false, () => !supplyEmpty));
   const selected = workers.find((worker) => worker.id === workerId) ?? workers[0];
   if (selected === undefined) return <p className="control-hint">{t("No available workers.")}</p>;
-  const coins = selected.kind === "shifu" ? 4 : 2;
+  if (supplyEmpty) return <ActionUnavailable message="No Coins remain in the supply." />;
+  const coins = Math.min(game.commonSupply.coins, selected.kind === "shifu" ? 4 : 2);
   return (
     <form
       className="control-form"
       onSubmit={(event) => { event.preventDefault(); void send({ type: "USE_LABOUR", workerId: selected.id }); }}
     >
-      <label className="field">
-        <span className="field-label">{t("Worker")}</span>
-        <select value={selected.id} onChange={(event) => setWorkerId(event.target.value)}>
-          {workers.map((worker, index) => (
-            <option key={worker.id} value={worker.id}>{term(worker.kind)}{worker.kind === "apprentice" ? ` ${workers.slice(0, index + 1).filter(({ kind }) => kind === "apprentice").length}` : ""}</option>
-          ))}
-        </select>
-      </label>
+      <WorkerChoice player={player} workers={workers} value={selected.id} onChange={setWorkerId} disabledReason={() => supplyEmpty ? (locale === "zh-CN" ? "供应区没有铜钱" : "No Coins remain in the supply") : null} />
       <p className="control-hint">{locale === "zh-CN"
-        ? `获得${coins}铜钱。杂作行没有工人数量限制，始终可用。`
-        : `Gain ${coins} Coins. Labour has no worker limit, so it is always available.`}</p>
-      <button type="submit" disabled={busy}>{t("Send to Labour")}</button>
+        ? `获得${coins}铜钱。`
+        : `Gain ${coins} Coin${coins === 1 ? "" : "s"}.`}</p>
+      <button className="primary-button" type="submit" disabled={busy || supplyEmpty}>{t("Send to Labour")}</button>
     </form>
   );
 }
 
 function MaterialsForm({ game, player, workers, locationFull, busy, send }: WorkerFormProps & { game: PublicGameState; player: PublicPlayerState }) {
   const { locale, t, term } = useI18n();
-  const [workerId, setWorkerId] = useState(workers[0]?.id ?? "");
-  const [clay, setClay] = useState(workers[0]?.kind === "shifu" ? 3 : 2);
+  const materialSupplyEmpty = game.commonSupply.clay + game.commonSupply.wood < 1;
+  const initialWorkerId = firstLegalWorkerId(workers, locationFull, () => !materialSupplyEmpty);
+  const initialWorker = workers.find((worker) => worker.id === initialWorkerId);
+  const [workerId, setWorkerId] = useState(initialWorkerId);
+  const [clay, setClay] = useState(initialWorker?.kind === "shifu" ? 3 : 2);
   const [wood, setWood] = useState(1);
   const [buyShifuBonus, setBuyShifuBonus] = useState(false);
   const [preparedClayShape, setPreparedClayShape] = useState<Shape | "">("");
@@ -431,6 +441,21 @@ function MaterialsForm({ game, player, workers, locationFull, busy, send }: Work
   const activeBonus = selectedWorker?.kind === "shifu" && buyShifuBonus;
   const preparedCost = preparedClayShape === "" ? 0 : SHAPE_COSTS[preparedClayShape] + 1;
   const projectedClay = player.resources.clay + Math.min(clay, game.commonSupply.clay) + (activeBonus ? Math.min(1, Math.max(0, game.commonSupply.clay - clay)) : 0);
+  const allocationOptions: ChoiceTileOption[] = Array.from({ length: requiredTotal + 1 }, (_, clayAmount) => {
+    const woodAmount = requiredTotal - clayAmount;
+    const actualClay = Math.min(clayAmount, game.commonSupply.clay);
+    const actualWood = Math.min(woodAmount, game.commonSupply.wood);
+    const gainsNothing = actualClay + actualWood === 0;
+    return {
+      value: `${clayAmount}:${woodAmount}`,
+      label: locale === "zh-CN" ? `${clayAmount}泥 + ${woodAmount}柴` : `${clayAmount} Clay + ${woodAmount} Wood`,
+      detail: actualClay === clayAmount && actualWood === woodAmount
+        ? undefined
+        : locale === "zh-CN" ? `供应区实际获得${actualClay}泥 + ${actualWood}柴` : `Supply gives ${actualClay} Clay + ${actualWood} Wood`,
+      disabled: gainsNothing,
+      disabledReason: gainsNothing ? (locale === "zh-CN" ? "供应区没有这些资源" : "None available in the supply") : undefined,
+    };
+  });
   const error = locationFull && selectedWorker?.kind !== "shifu"
     ? "Materials Yard is full."
     : invalidAmount
@@ -463,24 +488,20 @@ function MaterialsForm({ game, player, workers, locationFull, busy, send }: Work
       ...(preparedClayShape === "" ? {} : { preparedClayShape }),
     });
   }
+  if (materialSupplyEmpty) return <ActionUnavailable message="No Clay or Wood remains in the supply." />;
   return (
     <form className="control-form" onSubmit={submit}>
-      <label>
-        {t("Worker")}
-        <select name="worker" value={selectedWorker?.id ?? ""} onChange={(event) => chooseWorker(event.target.value)} required>
-          {workers.map((worker, index) => (
-            <option key={worker.id} value={worker.id}>
-              {term(worker.kind)}{worker.kind === "apprentice" ? ` ${workers.slice(0, index + 1).filter(({ kind }) => kind === "apprentice").length}` : ""}
-            </option>
-          ))}
-        </select>
-      </label>
-      <div className="split-fields">
-        <label>{t("Clay")}<input type="number" name="clay" min={0} max={requiredTotal} step={1} value={clay} onChange={(event) => setClay(Number.isNaN(event.target.valueAsNumber) ? 0 : event.target.valueAsNumber)} required /></label>
-        <label>{t("Wood")}<input type="number" name="wood" min={0} max={requiredTotal} step={1} value={wood} onChange={(event) => setWood(Number.isNaN(event.target.valueAsNumber) ? 0 : event.target.valueAsNumber)} required /></label>
-      </div>
-      {selectedWorker?.kind === "shifu" && <label className="check-row"><input type="checkbox" checked={buyShifuBonus} onChange={(event) => setBuyShifuBonus(event.target.checked)} />{locale === "zh-CN" ? "支付1铜钱，额外获得1泥和1柴" : "Pay 1 Coin for +1 Clay and +1 Wood"}</label>}
-      {player.startingTechniqueId === "ST01" && <label>{locale === "zh-CN" ? "练泥：额外成型" : "Prepared Clay: form after gathering"}<select value={preparedClayShape} onChange={(event) => setPreparedClayShape(event.target.value as Shape | "")}><option value="">{t("Do not use")}</option>{SHAPES.map((shape) => <option key={shape} value={shape}>{term(shape)} · {SHAPE_COSTS[shape] + 1} {t("Clay")}</option>)}</select></label>}
+      <WorkerChoice player={player} workers={workers} value={selectedWorker?.id ?? ""} onChange={chooseWorker} locationFull={locationFull} disabledReason={() => materialSupplyEmpty ? (locale === "zh-CN" ? "供应区没有泥或柴" : "No Clay or Wood remains in the supply") : null} />
+      <ChoiceTiles name="materials-allocation" label={locale === "zh-CN" ? "选择资源组合" : "Choose resources"} options={allocationOptions} value={`${clay}:${wood}`} onChange={(value) => { const [nextClay, nextWood] = value.split(":").map(Number); setClay(nextClay ?? 0); setWood(nextWood ?? 0); }} />
+      {selectedWorker?.kind === "shifu" && <button className={`kiln-action-toggle ${buyShifuBonus ? "is-selected" : ""}`} type="button" aria-pressed={buyShifuBonus} disabled={player.resources.coins < 1} onClick={() => setBuyShifuBonus((current) => !current)}><span>{locale === "zh-CN" ? "师傅额外收益" : "Shifu bonus"}</span><small>{locale === "zh-CN" ? "支付1铜钱，额外获得1泥和1柴" : "Pay 1 Coin for +1 Clay and +1 Wood"}</small>{player.resources.coins < 1 && <em>{locale === "zh-CN" ? "铜钱不足" : "Not enough Coins"}</em>}</button>}
+      {player.startingTechniqueId === "ST01" && <ChoiceTiles name="prepared-clay" label={locale === "zh-CN" ? "练泥：额外成型" : "Prepared Clay: form after gathering"} value={preparedClayShape} onChange={(value) => setPreparedClayShape(value as Shape | "")} options={[
+        { value: "", label: t("Do not use") },
+        ...SHAPES.map((shape) => {
+          const cost = SHAPE_COSTS[shape] + 1;
+          const disabled = projectedClay < cost;
+          return { value: shape, label: term(shape), detail: `${cost} ${t("Clay")}`, disabled, disabledReason: disabled ? (locale === "zh-CN" ? `需要${cost}泥` : `Requires ${cost} Clay`) : undefined };
+        }),
+      ]} />}
       <small role="status" className={error === null ? "" : "control-error"}>
         {error === null
           ? locale === "zh-CN" ? `${clay}泥 + ${wood}柴 = ${requiredTotal}份资源。` : `${clay} Clay + ${wood} Wood = ${requiredTotal} resources.`
@@ -501,8 +522,10 @@ function FormCeramicsForm({ game, player, workers, locationFull, busy, send }: {
 }) {
   const { locale, t, term } = useI18n();
   const techniques = ownedAvailableTechniques(player, ["T01", "T04"]);
-  const [workerId, setWorkerId] = useState(workers[0]?.id ?? "");
-  const [shape1, setShape1] = useState<Shape>(SHAPES[0]!);
+  const hasAffordableShape = SHAPES.some((shape) => SHAPE_COSTS[shape] <= player.resources.clay);
+  const initialWorkerId = firstLegalWorkerId(workers, locationFull, () => hasAffordableShape);
+  const [workerId, setWorkerId] = useState(initialWorkerId);
+  const [shape1, setShape1] = useState<Shape>(SHAPES.find((shape) => SHAPE_COSTS[shape] <= player.resources.clay) ?? SHAPES[0]!);
   const [shape2, setShape2] = useState<Shape | "">("");
   const [selectedTechniques, setSelectedTechniques] = useState<TechniqueId[]>([]);
   const [dryingGlaze, setDryingGlaze] = useState<Glaze>(GLAZES[0]!);
@@ -523,6 +546,32 @@ function FormCeramicsForm({ game, player, workers, locationFull, busy, send }: {
   const clayCost = baseClayCost - shifuDiscount - wheelDiscount + dingClayCost;
   const whiteSlip = whiteSlipIndex === "" ? undefined : { formedIndex: Number(whiteSlipIndex) };
   const formingCoins = (activeTechniqueIds.includes("T04") ? DECORATION_COSTS[dryingDecoration] : 0) + (whiteSlip === undefined ? 0 : DECORATION_COSTS.plain);
+
+  function clayCostFor(candidateShapes: Shape[], candidateDing: Shape | "" = activeDing): number {
+    const base = candidateShapes.reduce((total, shape) => total + SHAPE_COSTS[shape], 0);
+    const discount = (selectedWorker?.kind === "shifu" && candidateShapes.length === 2 ? 1 : 0)
+      + (activeTechniqueIds.includes("T01") ? 1 : 0);
+    const legalDing = candidateDing !== "" && candidateShapes.includes(candidateDing) ? SHAPE_COSTS[candidateDing] : 0;
+    return base - discount + legalDing;
+  }
+
+  function chooseWorker(nextWorkerId: string): void {
+    setWorkerId(nextWorkerId);
+    if (workers.find((worker) => worker.id === nextWorkerId)?.kind !== "shifu") setShape2("");
+  }
+
+  function chooseFirstShape(value: string): void {
+    const next = value as Shape;
+    setShape1(next);
+    if (ding !== "" && ![next, shape2].includes(ding)) setDing("");
+  }
+
+  function chooseSecondShape(value: string): void {
+    const next = value as Shape | "";
+    setShape2(next);
+    if (ding !== "" && ![shape1, next].includes(ding)) setDing("");
+    if (next === "" && whiteSlipIndex === "1") setWhiteSlipIndex("");
+  }
 
   function validationError(): string | null {
     if (selectedWorker === undefined) return "Choose an available worker.";
@@ -558,15 +607,42 @@ function FormCeramicsForm({ game, player, workers, locationFull, busy, send }: {
     if (activeDing !== "") command.dingExtraShape = activeDing;
     void send(command);
   }
+  if (!hasAffordableShape) return <ActionUnavailable message="You do not have enough Clay to form a vessel." />;
   return (
     <form className="control-form" onSubmit={submit}>
-      <WorkerChoice workers={workers} value={selectedWorker?.id ?? ""} onChange={setWorkerId} />
-      <label>{t("First shape")}<select name="shape1" value={shape1} onChange={(event) => setShape1(event.target.value as Shape)}>{SHAPES.map((shape) => <option key={shape} value={shape}>{term(shape)} · {formingClayCost(shape)} {t("Clay")}</option>)}</select></label>
-      <label>{t("Second shape (Shifu only)")}<select name="shape2" value={shape2} onChange={(event) => setShape2(event.target.value as Shape | "")}><option value="">{t("None")}</option>{SHAPES.map((shape) => <option key={shape} value={shape}>{term(shape)} · {formingClayCost(shape)} {t("Clay")}</option>)}</select></label>
+      <WorkerChoice player={player} workers={workers} value={selectedWorker?.id ?? ""} onChange={chooseWorker} locationFull={locationFull} disabledReason={() => hasAffordableShape ? null : (locale === "zh-CN" ? "没有足够的泥形成任何器物" : "Not enough Clay to form any vessel")} />
+      <ChoiceTiles name="shape1" label="First shape" value={shape1} onChange={chooseFirstShape} options={SHAPES.map((shape) => {
+        const candidateShapes = [shape, ...(selectedWorker?.kind === "shifu" && shape2 !== "" ? [shape2] : [])];
+        const candidateCost = clayCostFor(candidateShapes);
+        const disabled = candidateCost > player.resources.clay;
+        return { value: shape, label: term(shape), detail: `${formingClayCost(shape)} ${t("Clay")}`, disabled, disabledReason: disabled ? (locale === "zh-CN" ? `当前组合需要${candidateCost}泥` : `Current combination requires ${candidateCost} Clay`) : undefined };
+      })} />
+      {selectedWorker?.kind === "shifu" && <ChoiceTiles name="shape2" label="Second shape (Shifu only)" value={shape2} onChange={chooseSecondShape} options={[
+        { value: "", label: t("None") },
+        ...SHAPES.map((shape) => {
+          const candidateCost = clayCostFor([shape1, shape]);
+          const disabled = candidateCost > player.resources.clay;
+          return { value: shape, label: term(shape), detail: `${formingClayCost(shape)} ${t("Clay")}`, disabled, disabledReason: disabled ? (locale === "zh-CN" ? `两件共需${candidateCost}泥` : `Two vessels require ${candidateCost} Clay`) : undefined };
+        }),
+      ]} />}
       <TechniqueChecks techniqueIds={techniques} selected={activeTechniqueIds} onChange={setSelectedTechniques} />
       {activeTechniqueIds.includes("T04") && <><EnumChoice name="drying-glaze" label="Drying Frames glaze for first formed vessel" options={GLAZES} value={dryingGlaze} onChange={(value) => setDryingGlaze(value as Glaze)} /><EnumChoice name="drying-decoration" label="Drying Frames Decoration" options={DECORATIONS} value={dryingDecoration} onChange={(value) => setDryingDecoration(value as Decoration)} formatOption={(option) => decorationOptionLabel(option, locale)} /></>}
-      {player.startingTechniqueId === "ST02" && <label>{locale === "zh-CN" ? "白陶衣：选择本次成型器物（白釉 + 素面）" : "White Slip: choose a vessel formed now (White + Plain)"}<select value={whiteSlipIndex} onChange={(event) => setWhiteSlipIndex(event.target.value as "" | "0" | "1")}><option value="">{t("Do not use")}</option>{shapes.map((shape, index) => <option key={index} value={index}>{index + 1} · {term(shape)}</option>)}</select></label>}
-      {canUseDing && <label>{t("Ding extra matching shape")}<select name="ding" value={activeDing} onChange={(event) => setDing(event.target.value as Shape | "")}><option value="">{t("Do not use")}</option>{(["bowl", "plate", "washer"] as Shape[]).map((shape) => <option key={shape} value={shape}>{term(shape)} · {locale === "zh-CN" ? "额外支付1泥" : "pay 1 Clay"}</option>)}</select></label>}
+      {player.startingTechniqueId === "ST02" && <ChoiceTiles name="white-slip" label={locale === "zh-CN" ? "白陶衣：选择本次成型器物（白釉 + 素面）" : "White Slip: choose a vessel formed now (White + Plain)"} value={whiteSlipIndex} onChange={(value) => setWhiteSlipIndex(value as "" | "0" | "1")} options={[
+        { value: "", label: t("Do not use") },
+        ...shapes.map((shape, index) => {
+          const disabled = player.resources.coins < DECORATION_COSTS.plain || (activeTechniqueIds.includes("T04") && index === 0);
+          return { value: String(index), label: `${index + 1} · ${term(shape)}`, detail: locale === "zh-CN" ? "1铜钱" : "1 Coin", disabled, disabledReason: disabled ? (player.resources.coins < 1 ? (locale === "zh-CN" ? "铜钱不足" : "Not enough Coins") : (locale === "zh-CN" ? "晾坯架已使用第1件器物" : "Drying Frames already uses the first vessel")) : undefined };
+        }),
+      ]} />}
+      {canUseDing && <ChoiceTiles name="ding" label="Ding extra matching shape" value={activeDing} onChange={(value) => setDing(value as Shape | "")} options={[
+        { value: "", label: t("Do not use") },
+        ...(["bowl", "plate", "washer"] as Shape[]).map((shape) => {
+          const matches = shapes.includes(shape);
+          const candidateCost = clayCostFor(shapes, shape);
+          const disabled = !matches || candidateCost > player.resources.clay;
+          return { value: shape, label: term(shape), detail: locale === "zh-CN" ? "额外支付1泥" : "pay 1 Clay", disabled, disabledReason: !matches ? (locale === "zh-CN" ? "先形成该器形" : "Form this Shape first") : disabled ? (locale === "zh-CN" ? `共需${candidateCost}泥` : `Requires ${candidateCost} Clay total`) : undefined };
+        }),
+      ]} />}
       <small role="status" className={error === null ? "" : "control-error"}>{error === null ? (locale === "zh-CN" ? `费用：${clayCost}泥、${formingCoins}铜钱。` : `Cost: ${clayCost} Clay and ${formingCoins} Coins.`) : localizeActionError(locale, error)}</small>
       <button className="primary-button" disabled={busy || error !== null}>{t("Form ceramics")}</button>
     </form>
@@ -585,14 +661,17 @@ function GlazeForm({ game, player, workers, locationFull, busy, send }: {
   const ceramics = ownCeramics(game, player.id, "shaped");
   const paletteTargets = ownCeramics(game, player.id, "glazed");
   const techniques = ownedAvailableTechniques(player, ["T05", "T06", "T07", "T08", "T09"]);
-  const [workerId, setWorkerId] = useState(workers[0]?.id ?? "");
+  const apprenticeHasFreeDecoration = techniques.some((techniqueId) => techniqueId === "T07" || techniqueId === "T08" || techniqueId === "T09");
+  const canWorkerGlaze = (worker: AvailableWorker): boolean => ceramics.length > 0
+    && (worker.kind === "shifu" || player.resources.coins >= Math.min(...DECORATIONS.map((decoration) => DECORATION_COSTS[decoration])) || apprenticeHasFreeDecoration);
+  const [workerId, setWorkerId] = useState(firstLegalWorkerId(workers, locationFull, canWorkerGlaze));
   const [ceramic1, setCeramic1] = useState(ceramics[0]?.id ?? "");
   const [glaze1, setGlaze1] = useState<Glaze>(GLAZES[0]!);
   const [decoration1, setDecoration1] = useState<Decoration>(DECORATIONS[0]!);
   const [ceramic2, setCeramic2] = useState("");
   const [glaze2, setGlaze2] = useState<Glaze>(GLAZES[0]!);
   const [decoration2, setDecoration2] = useState<Decoration>(DECORATIONS[0]!);
-  const [freeFirstDecoration, setFreeFirstDecoration] = useState(false);
+  const [freeDecorationIndex, setFreeDecorationIndex] = useState<"0" | "1">("0");
   const [selectedTechniques, setSelectedTechniques] = useState<TechniqueId[]>([]);
   const [reworkedShape, setReworkedShape] = useState<Shape | "">("");
   const [paletteTargetId, setPaletteTargetId] = useState("");
@@ -607,18 +686,49 @@ function GlazeForm({ game, player, workers, locationFull, busy, send }: {
     ...(firstId === "" ? [] : [{ ceramicId: firstId, glaze: glaze1, decoration: decoration1, ...(activeTechniqueIds.includes("T05") && reworkedShape !== "" ? { newShape: reworkedShape } : {}) }]),
     ...(secondId === "" ? [] : [{ ceramicId: secondId, glaze: glaze2, decoration: decoration2 }]),
   ];
-  const freeDecorationCeramicId = selectedWorker?.kind === "shifu" && freeFirstDecoration ? firstId : undefined;
+  const freeDecorationCeramicId = selectedWorker?.kind === "shifu" ? selections[Number(freeDecorationIndex)]?.ceramicId : undefined;
   const occupiedShared = new Set(Object.values(game.ceramics).filter((ceramic) => ceramic.stage === "loaded" && ceramic.kilnSpaceId !== "imperial").map((ceramic) => ceramic.stage === "loaded" ? ceramic.kilnSpaceId : ""));
   const rapidDestinations: Array<KilnSpaceId | "imperial"> = activeKilnSpaceIds(game.playerCount).filter((space) => !occupiedShared.has(space));
   const imperialOccupied = Object.values(game.ceramics).some((ceramic) => ceramic.stage === "loaded" && ceramic.ownerId === player.id && ceramic.kilnSpaceId === "imperial");
   if (player.imperialKilnUnlocked && !imperialOccupied) rapidDestinations.push("imperial");
   const [rapidDestination, setRapidDestination] = useState<KilnSpaceId | "imperial" | "">(rapidDestinations[0] ?? "");
-  const totalCoins = selections.reduce((total, selection) => {
-    const freeByTechnique = (selection.decoration === "carved" && activeTechniqueIds.includes("T07"))
-      || (selection.decoration === "impressed" && activeTechniqueIds.includes("T08"))
-      || (selection.decoration === "crackle" && activeTechniqueIds.includes("T09"));
-    return total + (selection.ceramicId === freeDecorationCeramicId || freeByTechnique ? 0 : DECORATION_COSTS[selection.decoration]);
-  }, 0);
+  function decorationCost(candidateSelections: typeof selections, shifuFreeId = freeDecorationCeramicId): number {
+    const availableWaivers = new Set<Decoration>();
+    if (activeTechniqueIds.includes("T07")) availableWaivers.add("carved");
+    if (activeTechniqueIds.includes("T08")) availableWaivers.add("impressed");
+    if (activeTechniqueIds.includes("T09")) availableWaivers.add("crackle");
+    return candidateSelections.reduce((total, selection) => {
+      if (selection.ceramicId === shifuFreeId) return total;
+      if (availableWaivers.delete(selection.decoration)) return total;
+      return total + DECORATION_COSTS[selection.decoration];
+    }, 0);
+  }
+  const totalCoins = decorationCost(selections);
+
+  function chooseWorker(nextWorkerId: string): void {
+    setWorkerId(nextWorkerId);
+    if (workers.find((worker) => worker.id === nextWorkerId)?.kind !== "shifu") {
+      setCeramic2("");
+      setFreeDecorationIndex("0");
+    }
+  }
+
+  function decorationOptions(index: 0 | 1): ChoiceTileOption[] {
+    return DECORATIONS.map((decoration) => {
+      const base = index === 0
+        ? selections.map((selection, selectionIndex) => selectionIndex === 0 ? { ...selection, decoration } : selection)
+        : selections.map((selection, selectionIndex) => selectionIndex === 1 ? { ...selection, decoration } : selection);
+      const cost = decorationCost(base);
+      const disabled = cost > player.resources.coins;
+      return {
+        value: decoration,
+        label: term(decoration),
+        detail: `${DECORATION_COSTS[decoration]} ${locale === "zh-CN" ? "铜钱" : `Coin${DECORATION_COSTS[decoration] === 1 ? "" : "s"}`}`,
+        disabled,
+        disabledReason: disabled ? (locale === "zh-CN" ? `当前组合需要${cost}铜钱` : `Current combination requires ${cost} Coins`) : undefined,
+      };
+    });
+  }
 
   function validationError(): string | null {
     if (selectedWorker === undefined) return "Choose an available worker.";
@@ -653,19 +763,34 @@ function GlazeForm({ game, player, workers, locationFull, busy, send }: {
       ...(rapidDryingId !== "" && rapidDestination !== "" ? { rapidDrying: { ceramicId: rapidDryingId, kilnSpaceId: rapidDestination } } : {}),
     });
   }
+  if (ceramics.length === 0) return <ActionUnavailable message="You have no Shaped vessel to glaze." />;
+  if (!workers.some((worker) => (!locationFull || worker.kind === "shifu") && canWorkerGlaze(worker))) {
+    return <ActionUnavailable message="You do not have enough Coins to apply a Decoration." />;
+  }
   return (
     <form className="control-form control-form-glaze" onSubmit={submit}>
-      <WorkerChoice workers={workers} value={selectedWorker?.id ?? ""} onChange={setWorkerId} />
+      <WorkerChoice player={player} workers={workers} value={selectedWorker?.id ?? ""} onChange={chooseWorker} locationFull={locationFull} disabledReason={(worker) => {
+        if (ceramics.length === 0) return locale === "zh-CN" ? "没有已成型器物" : "No Shaped vessels available";
+        if (!canWorkerGlaze(worker)) return locale === "zh-CN" ? "没有买得起的装饰；师傅可免费施加1个装饰" : "No affordable Decoration; a Shifu can apply one for free";
+        return null;
+      }} />
       <CeramicChoice name="ceramic1" label="First ceramic" ceramics={ceramics} value={firstId} onChange={setCeramic1} />
       <EnumChoice name="glaze1" label="First glaze" options={GLAZES} value={glaze1} onChange={(value) => setGlaze1(value as Glaze)} />
-      <EnumChoice name="decoration1" label="First decoration" options={DECORATIONS} value={decoration1} onChange={(value) => setDecoration1(value as Decoration)} formatOption={(option) => decorationOptionLabel(option, locale)} />
-      <CeramicChoice name="ceramic2" label="Second ceramic (Shifu only)" ceramics={ceramics} value={secondId} onChange={setCeramic2} blank="None" />
-      {secondId !== "" && <><EnumChoice name="glaze2" label="Second glaze" options={GLAZES} value={glaze2} onChange={(value) => setGlaze2(value as Glaze)} /><EnumChoice name="decoration2" label="Second decoration" options={DECORATIONS} value={decoration2} onChange={(value) => setDecoration2(value as Decoration)} formatOption={(option) => decorationOptionLabel(option, locale)} /></>}
-      {selectedWorker?.kind === "shifu" && <label className="check-row"><input type="checkbox" checked={freeFirstDecoration} onChange={(event) => setFreeFirstDecoration(event.target.checked)} />{locale === "zh-CN" ? "师傅：第1件陶瓷的装饰免费" : "Shifu: make the first ceramic's Decoration free"}</label>}
+      <ChoiceTiles compact name="decoration1" label="First decoration" options={decorationOptions(0)} value={decoration1} onChange={(value) => setDecoration1(value as Decoration)} />
+      {selectedWorker?.kind === "shifu" && <CeramicChoice name="ceramic2" label="Second ceramic (Shifu only)" ceramics={ceramics} value={secondId} onChange={(value) => { setCeramic2(value); if (value === "") setFreeDecorationIndex("0"); }} blank="None" disabledIds={firstId === "" ? [] : [firstId]} />}
+      {selectedWorker?.kind === "shifu" && secondId !== "" && <><EnumChoice name="glaze2" label="Second glaze" options={GLAZES} value={glaze2} onChange={(value) => setGlaze2(value as Glaze)} /><ChoiceTiles compact name="decoration2" label="Second decoration" options={decorationOptions(1)} value={decoration2} onChange={(value) => setDecoration2(value as Decoration)} /></>}
+      {selectedWorker?.kind === "shifu" && <ChoiceTiles compact name="shifu-free-decoration" label={locale === "zh-CN" ? "师傅：免费装饰" : "Shifu: free Decoration"} value={freeDecorationIndex} onChange={(value) => setFreeDecorationIndex(value as "0" | "1")} options={selections.map((selection, index) => ({ value: String(index), label: `${index + 1} · ${ceramicLabel(game.ceramics[selection.ceramicId]!, locale)}`, detail: locale === "zh-CN" ? "本件装饰费用为0" : "This Decoration costs 0" }))} />}
       <TechniqueChecks techniqueIds={techniques} selected={activeTechniqueIds} onChange={setSelectedTechniques} />
-      {activeTechniqueIds.includes("T05") && <label>{locale === "zh-CN" ? "改坯案：新器型" : "Reworking Table: new Shape"}<select value={reworkedShape} onChange={(event) => setReworkedShape(event.target.value as Shape | "")}><option value="">{t("Choose a Shape")}</option>{SHAPES.filter((shape) => shape !== firstCeramic?.shape).map((shape) => <option key={shape} value={shape}>{term(shape)}</option>)}</select></label>}
+      {activeTechniqueIds.includes("T05") && <ChoiceTiles compact name="reworked-shape" label={locale === "zh-CN" ? "改坯案：新器型" : "Reworking Table: new Shape"} value={reworkedShape} onChange={(value) => setReworkedShape(value as Shape)} options={SHAPES.filter((shape) => shape !== firstCeramic?.shape).map((shape) => ({ value: shape, label: term(shape) }))} />}
       {activeTechniqueIds.includes("T06") && <><CeramicChoice name="palette-target" label="Glaze Palette target" ceramics={paletteTargets} value={paletteTargetId} onChange={setPaletteTargetId} blank="Choose a ceramic" /><EnumChoice name="palette-glaze" label="New Glaze" options={GLAZES} value={paletteGlaze} onChange={(value) => setPaletteGlaze(value as Glaze)} /></>}
-      {player.startingTechniqueId === "ST03" && <><label>{locale === "zh-CN" ? "催干：立即装窑" : "Rapid Drying: load immediately"}<select value={rapidDryingId} onChange={(event) => setRapidDryingId(event.target.value)}><option value="">{t("Do not use")}</option>{selections.map((selection, index) => { const source = game.ceramics[selection.ceramicId]; return <option key={selection.ceramicId} value={selection.ceramicId}>{index + 1} · {source === undefined ? t("Ceramic") : ceramicLabel(source, locale)} · {term(selection.glaze)} · {term(selection.decoration)}</option>; })}</select></label>{rapidDryingId !== "" && <EnumChoice name="rapid-destination" label="Rapid Drying destination" options={rapidDestinations} value={rapidDestination} onChange={(value) => setRapidDestination(value as KilnSpaceId | "imperial")} />}</>}
+      {player.startingTechniqueId === "ST03" && <><ChoiceTiles name="rapid-drying" label={locale === "zh-CN" ? "催干：立即装窑" : "Rapid Drying: load immediately"} value={rapidDryingId} onChange={setRapidDryingId} options={[
+        { value: "", label: t("Do not use") },
+        ...selections.map((selection, index) => {
+          const source = game.ceramics[selection.ceramicId];
+          const disabled = player.resources.wood < 1 || rapidDestinations.length === 0;
+          return { value: selection.ceramicId, label: `${index + 1} · ${source === undefined ? t("Ceramic") : ceramicLabel(source, locale)}`, detail: `${term(selection.glaze)} · ${term(selection.decoration)} · 1 ${t("Wood")}`, disabled, disabledReason: disabled ? (player.resources.wood < 1 ? (locale === "zh-CN" ? "需要1柴" : "Requires 1 Wood") : (locale === "zh-CN" ? "没有空窑位" : "No empty kiln space")) : undefined };
+        }),
+      ]} />{rapidDryingId !== "" && <EnumChoice name="rapid-destination" label="Rapid Drying destination" options={rapidDestinations} value={rapidDestination} onChange={(value) => setRapidDestination(value as KilnSpaceId | "imperial")} />}</>}
       <div className="control-submit-bar">
         <small role="status" className={error === null ? "" : "control-error"}>{error === null ? (locale === "zh-CN" ? `费用：${totalCoins}铜钱。` : `Cost: ${totalCoins} Coins.`) : localizeActionError(locale, error)}</small>
         <button className="primary-button" disabled={busy || error !== null}>{t("Apply glaze")}</button>
@@ -688,7 +813,13 @@ function KilnYardForm({ game, player, workers, locationFull, busy, send }: {
   const destinations: Array<KilnSpaceId | "imperial"> = activeKilnSpaceIds(game.playerCount).filter((space) => !occupiedShared.has(space));
   const imperialOccupied = Object.values(game.ceramics).some((ceramic) => ceramic.stage === "loaded" && ceramic.ownerId === player.id && ceramic.kilnSpaceId === "imperial");
   if (player.imperialKilnUnlocked && !imperialOccupied) destinations.push("imperial");
-  const [workerId, setWorkerId] = useState(workers[0]?.id ?? "");
+  const canLoad = ceramics.length > 0 && destinations.length > 0;
+  const noLoadReason = ceramics.length === 0
+    ? locale === "zh-CN" ? "没有可装窑的已施釉陶瓷" : "No Glazed ceramic is available to load"
+    : destinations.length === 0
+      ? locale === "zh-CN" ? "没有空窑位" : "No kiln destination is empty"
+      : null;
+  const [workerId, setWorkerId] = useState(firstLegalWorkerId(workers, locationFull, () => canLoad));
   const [ceramicIds, setCeramicIds] = useState(["", ""]);
   const [kilnSpaces, setKilnSpaces] = useState<Array<KilnSpaceId | "imperial" | "">>([
     destinations[0] ?? "",
@@ -727,6 +858,15 @@ function KilnYardForm({ game, player, workers, locationFull, busy, send }: {
   function setDestination(index: number, value: string): void {
     setKilnSpaces((current) => current.map((entry, entryIndex) => entryIndex === index ? value as KilnSpaceId | "imperial" | "" : entry));
   }
+  function chooseWorker(nextWorkerId: string): void {
+    setWorkerId(nextWorkerId);
+    if (workers.find((worker) => worker.id === nextWorkerId)?.kind !== "shifu") {
+      setCeramicIds((current) => [current[0] ?? "", ""]);
+      setKilnSpaces((current) => [current[0] ?? destinations[0] ?? "", destinations[1] ?? ""]);
+      setFurnitureIndex((current) => current === "1" ? "" : current);
+      setShifuCeramicId("");
+    }
+  }
   function validationError(): string | null {
     if (selectedWorker === undefined) return "Choose an available worker.";
     if (locationFull && selectedWorker.kind !== "shifu") return "Kiln Yard is full for Apprentices.";
@@ -757,20 +897,29 @@ function KilnYardForm({ game, player, workers, locationFull, busy, send }: {
       ...(player.startingTechniqueId === "ST04" ? { kilnTendingClay: tendingClay, kilnTendingWood: 1 - tendingClay } : {}),
     });
   }
+  if (ceramics.length === 0) return <ActionUnavailable message="You have no Glazed ceramic to load." />;
+  if (destinations.length === 0) return <ActionUnavailable message="No Shared or Imperial kiln destination is empty." />;
   return (
     <form className="control-form" onSubmit={submit}>
-      <WorkerChoice workers={workers} value={selectedWorker?.id ?? ""} onChange={setWorkerId} />
+      <WorkerChoice player={player} workers={workers} value={selectedWorker?.id ?? ""} onChange={chooseWorker} locationFull={locationFull} disabledReason={() => noLoadReason} />
       {Array.from({ length: maximumLoads }, (_, index) => (
         <div className="split-fields" key={index}>
-          <CeramicChoice name={`ceramic${index + 1}`} label={`Ceramic ${index + 1}`} ceramics={ceramics} value={ceramicIds[index] ?? ""} onChange={(value) => setCeramic(index, value)} blank={index === 0 ? "Choose a ceramic" : "None"} />
-          <EnumChoice name={`space${index + 1}`} label={`Kiln destination ${index + 1}`} options={destinations} value={kilnSpaces[index] ?? ""} onChange={(value) => setDestination(index, value)} />
+          <CeramicChoice name={`ceramic${index + 1}`} label={`Ceramic ${index + 1}`} ceramics={ceramics} value={ceramicIds[index] ?? ""} onChange={(value) => setCeramic(index, value)} blank={index === 0 ? "Choose a ceramic" : "None"} disabledIds={index === 0 || ceramicIds[0] === "" ? [] : [ceramicIds[0]!]} />
+          <EnumChoice name={`space${index + 1}`} label={`Kiln destination ${index + 1}`} options={destinations} value={kilnSpaces[index] ?? ""} onChange={(value) => setDestination(index, value)} disabledOptions={index === 0 || kilnSpaces[0] === "" ? [] : [kilnSpaces[0]!]} />
         </div>
       ))}
-      {ownsFurniture && <label>{locale === "zh-CN" ? "支烧窑具：将1件高温区或低温区陶瓷的窑位修正视为0" : "Kiln Furniture: treat one High/Low load as zone 0"}<select value={furnitureIndex} onChange={(event) => setFurnitureIndex(event.target.value as "" | "0" | "1")}><option value="">{t("Do not use")}</option>{loads.map((load, index) => { const ceramic = game.ceramics[load.ceramicId]; return <option key={index} value={index}>{index + 1} · {ceramic === undefined ? t("Ceramic") : ceramicLabel(ceramic, locale)} · {term(load.kilnSpaceId)}</option>; })}</select></label>}
+      {ownsFurniture && <ChoiceTiles name="kiln-furniture" label={locale === "zh-CN" ? "支烧窑具：将1件高温区或低温区陶瓷的窑位修正视为0" : "Kiln Furniture: treat one High/Low load as zone 0"} value={furnitureIndex} onChange={(value) => setFurnitureIndex(value as "" | "0" | "1")} options={[
+        { value: "", label: t("Do not use") },
+        ...loads.map((load, index) => {
+          const ceramic = game.ceramics[load.ceramicId];
+          const legalSpace = load.kilnSpaceId !== "imperial" && (load.kilnSpaceId.startsWith("high_") || load.kilnSpaceId.startsWith("low_"));
+          return { value: String(index), label: `${index + 1} · ${ceramic === undefined ? t("Ceramic") : ceramicLabel(ceramic, locale)}`, detail: term(load.kilnSpaceId), disabled: !legalSpace, disabledReason: !legalSpace ? (locale === "zh-CN" ? "仅可用于共窑高温区或低温区" : "High or Low Shared Kiln only") : undefined };
+        }),
+      ]} />}
       {selectedWorker?.kind === "shifu" && (shifuTargets.length > 0
         ? <CeramicChoice name="shifu-ceramic" label={locale === "zh-CN" ? "师傅所在的共窑陶瓷" : "Shared-Kiln ceramic carrying the Shifu"} ceramics={shifuTargets} value={selectedShifuCeramicId} onChange={setShifuCeramicId} />
         : <p className="control-hint">{locale === "zh-CN" ? "若只装入御窑且共窑中没有己方陶瓷，则不放置师傅，也不能进行调位。" : "With no ceramic of yours in the Shared Kiln after loading, this Shifu receives no reposition target."}</p>)}
-      {player.startingTechniqueId === "ST04" && <label>{locale === "zh-CN" ? "看火：选择获得的资源" : "Kiln Tending: choose the resource"}<select value={tendingClay} onChange={(event) => setTendingClay(Number(event.target.value))}><option value={1}>{locale === "zh-CN" ? "1泥" : "1 Clay"}</option><option value={0}>{locale === "zh-CN" ? "1柴" : "1 Wood"}</option></select></label>}
+      {player.startingTechniqueId === "ST04" && <ChoiceTiles compact name="kiln-tending" label={locale === "zh-CN" ? "看火：选择获得的资源" : "Kiln Tending: choose the resource"} value={String(tendingClay)} onChange={(value) => setTendingClay(Number(value))} options={[{ value: "1", label: locale === "zh-CN" ? "1泥" : "1 Clay" }, { value: "0", label: locale === "zh-CN" ? "1柴" : "1 Wood" }]} />}
       <small role="status" className={error === null ? "" : "control-error"}>{error === null ? (locale === "zh-CN" ? `已选择${loads.length}件器物。` : `${loads.length} ceramic${loads.length === 1 ? "" : "s"} selected.`) : localizeActionError(locale, error)}</small>
       <button className="primary-button" disabled={busy || error !== null}>{t("Load kiln")}</button>
     </form>
@@ -788,14 +937,11 @@ function OfficeActionForms({ game, player, workers, locationFull, busy, send }: 
   send: SendCommand;
 }) {
   const { locale, t } = useI18n();
-  const [workerId, setWorkerId] = useState(workers[0]?.id ?? "");
-  const [officeAction, setOfficeAction] = useState<OfficeActionChoice>("take_one");
-  const selectedWorker = workers.find((worker) => worker.id === workerId) ?? workers[0];
-  const orderModes: OfficeActionChoice[] = selectedWorker?.kind === "shifu"
-    ? ["take_up_to_two"]
-    : ["take_one"];
-  const action = orderModes.includes(officeAction) ? officeAction : orderModes[0]!;
   const orderSourceCount = game.displays.market.length + game.decks.marketRemaining + game.discards.market.length;
+  const canReserve = orderSourceCount > 0;
+  const [workerId, setWorkerId] = useState(firstLegalWorkerId(workers, locationFull, () => canReserve));
+  const selectedWorker = workers.find((worker) => worker.id === workerId) ?? workers[0];
+  const action: OfficeActionChoice = selectedWorker?.kind === "shifu" ? "take_up_to_two" : "take_one";
 
   function validationError(): string | null {
     if (selectedWorker === undefined) return "Choose an available worker.";
@@ -812,12 +958,13 @@ function OfficeActionForms({ game, player, workers, locationFull, busy, send }: 
     if (error !== null || selectedWorker === undefined) return;
     void send({ type: "BEGIN_OFFICE_ORDERS", workerId: selectedWorker.id, mode: action });
   }
+  if (!canReserve) return <ActionUnavailable message="No Order source is available." />;
   return (
     <form className="control-form" onSubmit={submit}>
-      <p className="control-hint"><strong>{t("Apprentice:")}</strong> {locale === "zh-CN" ? "承接1张主委托：移走公开委托时，其右侧委托左移并在最右侧补牌；盲抽牌库顶不会移动展示。然后获得1泥、1柴或1铜钱。" : "Reserve 1 Main Order: a face-up removal slides later Orders left and refills at the right; an unseen top-deck draw does not move the display. Then gain one reservation advance."}</p>
-      <p className="control-hint"><strong>{t("Shifu:")}</strong> {locale === "zh-CN" ? "承接至多2张主委托，逐张完整结算；完成第1张的展示移动与资源收益后，再选择第2张。" : "Reserve up to 2 Main Orders, resolving each fully; update the display and gain the first reward before choosing the second."}</p>
-      <WorkerChoice workers={workers} value={selectedWorker?.id ?? ""} onChange={setWorkerId} />
-      <EnumChoice name="officeAction" label="Commission Market action" options={orderModes} value={action} onChange={(value) => setOfficeAction(value as OfficeActionChoice)} formatOption={(value) => officeActionLabel(value as OfficeActionChoice, locale)} />
+      <WorkerChoice player={player} workers={workers} value={selectedWorker?.id ?? ""} onChange={setWorkerId} locationFull={locationFull} disabledReason={() => canReserve ? null : (locale === "zh-CN" ? "没有可承接的委托" : "No Order source is available")} />
+      <p className="control-hint">{selectedWorker?.kind === "shifu"
+        ? <><strong>{t("Shifu:")}</strong> {locale === "zh-CN" ? "承接至多2张主委托，逐张完整结算；完成第1张的展示移动与资源收益后，再选择第2张。" : "Reserve up to 2 Main Orders, resolving each fully; update the display and gain the first reward before choosing the second."}</>
+        : <><strong>{t("Apprentice:")}</strong> {locale === "zh-CN" ? "承接1张主委托：移走公开委托时，其右侧委托左移并在最右侧补牌；盲抽牌库顶不会移动展示。然后获得1泥、1柴或1铜钱。" : "Reserve 1 Main Order: a face-up removal slides later Orders left and refills at the right; an unseen top-deck draw does not move the display. Then gain one reservation advance."}</>}</p>
       <small role="status" className={error === null ? "" : "control-error"}>{error === null ? officeActionHint(action, selectedWorker?.kind, locale) : localizeActionError(locale, error)}</small>
       <button className="primary-button" disabled={busy || error !== null}>{t("Visit the Commission Market")}</button>
     </form>
@@ -833,9 +980,12 @@ function GuildBeginForm({ game, player, workers, locationFull, busy, send }: {
   send: SendCommand;
 }) {
   const { locale, t } = useI18n();
-  const [workerId, setWorkerId] = useState(workers[0]?.id ?? "");
-  const worker = workers.find((candidate) => candidate.id === workerId) ?? workers[0];
   const displayed = Object.values(game.displays.techniques).flat();
+  const ownsMaximum = player.techniques.length >= GAME_CONFIG.techniques.maxOwned;
+  const canAcquireWith = (candidate: AvailableWorker): boolean => !ownsMaximum
+    && displayed.some((techniqueId) => guildTechniqueCost(techniqueId, candidate.kind) <= player.resources.coins);
+  const [workerId, setWorkerId] = useState(firstLegalWorkerId(workers, locationFull, canAcquireWith));
+  const worker = workers.find((candidate) => candidate.id === workerId) ?? workers[0];
   const affordable = worker === undefined ? [] : displayed.filter((techniqueId) =>
     guildTechniqueCost(techniqueId, worker.kind) <= player.resources.coins,
   );
@@ -843,20 +993,33 @@ function GuildBeginForm({ game, player, workers, locationFull, busy, send }: {
       ? "Choose an available worker."
       : locationFull && worker.kind !== "shifu"
       ? "Guild & Academy is full for Apprentices."
-      : player.techniques.length >= GAME_CONFIG.techniques.maxOwned
+      : ownsMaximum
       ? `You already own the maximum of ${GAME_CONFIG.techniques.maxOwned} Techniques.`
       : displayed.length === 0
         ? "No face-up Technique is available."
         : affordable.length === 0
           ? "No face-up Technique is affordable."
           : null;
+  if (ownsMaximum) return <ActionUnavailable message={locale === "zh-CN"
+    ? `你已拥有最多${GAME_CONFIG.techniques.maxOwned}项进阶技艺。`
+    : `You already own the maximum of ${GAME_CONFIG.techniques.maxOwned} Advanced Techs.`} />;
+  if (displayed.length === 0) return <ActionUnavailable message="No face-up Advanced Tech is available." />;
+  if (!workers.some((candidate) => (!locationFull || candidate.kind === "shifu") && canAcquireWith(candidate))) {
+    return <ActionUnavailable message="No face-up Advanced Tech is affordable." />;
+  }
   return (
     <form className="control-form" onSubmit={(event) => {
       event.preventDefault();
       if (error === null && worker !== undefined) void send({ type: "BEGIN_GUILD_ACTION", workerId: worker.id });
     }}>
-      <WorkerChoice workers={workers} value={worker?.id ?? ""} onChange={setWorkerId} />
-      <p className="control-hint"><strong>{t("Apprentice:")}</strong> {t("pay printed cost.")} <strong>{t("Shifu:")}</strong> {locale === "zh-CN" ? "查看一个类别牌堆顶2项技艺，再从已查看或任意公开技艺中购入1项，少支付1铜钱（最低0）。" : "inspect the top 2 Techs of one discipline, then buy an inspected or any face-up Tech for 1 Coin less (minimum 0)."}</p>
+      <WorkerChoice player={player} workers={workers} value={worker?.id ?? ""} onChange={setWorkerId} locationFull={locationFull} disabledReason={(candidate) => {
+        if (ownsMaximum) return locale === "zh-CN" ? `已拥有最多${GAME_CONFIG.techniques.maxOwned}项进阶技艺` : `Maximum ${GAME_CONFIG.techniques.maxOwned} Advanced Techs already owned`;
+        if (displayed.length === 0) return locale === "zh-CN" ? "没有公开进阶技艺" : "No face-up Advanced Tech is available";
+        return canAcquireWith(candidate) ? null : (locale === "zh-CN" ? "没有买得起的公开进阶技艺" : "No face-up Advanced Tech is affordable");
+      }} />
+      <p className="control-hint">{worker?.kind === "shifu"
+        ? <><strong>{t("Shifu:")}</strong> {locale === "zh-CN" ? "查看一个类别牌堆顶2项技艺，再从已查看或任意公开技艺中购入1项，少支付1铜钱（最低0）。" : "Inspect the top 2 Techs of one discipline, then buy an inspected or any face-up Tech for 1 Coin less (minimum 0)."}</>
+        : <><strong>{t("Apprentice:")}</strong> {t("pay printed cost.")}</>}</p>
       <small role="status" className={error === null ? "" : "control-error"}>{error === null ? (locale === "zh-CN" ? `有${affordable.length}个买得起的公开进阶技艺。` : `${affordable.length} affordable face-up Technique${affordable.length === 1 ? "" : "s"}.`) : localizeActionError(locale, error)}</small>
       <button className="primary-button" disabled={busy || error !== null}>{t("Begin Guild action")}</button>
     </form>
@@ -1577,13 +1740,77 @@ function SelectionSubmission({ title, hint, options, maximum, exact = false, bus
   return <ControlSection title={title} hint={hint}><fieldset><legend>{exact ? (locale === "zh-CN" ? `恰好选择${maximum}项` : `Select exactly ${maximum}`) : t("Select up to {maximum}", { maximum })}</legend>{options.map((option) => <label className="check-row" key={option.value}><input type="checkbox" checked={selected.includes(option.value)} disabled={!selected.includes(option.value) && selected.length >= maximum} onChange={(event) => setSelected((current) => event.target.checked ? [...current, option.value] : current.filter((value) => value !== option.value))} />{option.label}</label>)}</fieldset><button className="primary-button" type="button" disabled={busy || (exact && selected.length !== maximum)} onClick={() => void onSubmit(selected)}>{t(submitLabel)}</button></ControlSection>;
 }
 
-function WorkerChoice({ workers, value, onChange }: {
+function firstLegalWorkerId(
+  workers: AvailableWorker[],
+  locationFull: boolean,
+  workerEnabled: (worker: AvailableWorker) => boolean = () => true,
+): string {
+  return workers.find((worker) => (!locationFull || worker.kind === "shifu") && workerEnabled(worker))?.id
+    ?? workers.find((worker) => !locationFull || worker.kind === "shifu")?.id
+    ?? workers[0]?.id
+    ?? "";
+}
+
+function WorkerChoice({ player, workers, value, onChange, locationFull = false, disabledReason }: {
+  player: PublicPlayerState;
   workers: AvailableWorker[];
   value: string;
   onChange: (workerId: string) => void;
+  locationFull?: boolean;
+  disabledReason?: ((worker: AvailableWorker) => string | null) | undefined;
 }) {
-  const { t, term } = useI18n();
-  return <label>{t("Worker")}<select name="worker" value={value} onChange={(event) => onChange(event.target.value)} required>{workers.map((worker, index) => <option key={worker.id} value={worker.id}>{term(worker.kind)}{worker.kind === "apprentice" ? ` ${workers.slice(0, index + 1).filter(({ kind }) => kind === "apprentice").length}` : ""}</option>)}</select></label>;
+  const { locale, t, term } = useI18n();
+  let apprenticeIndex = 0;
+  return <fieldset className="kiln-action-choice-group kiln-worker-choice"><legend>{t("Worker")}</legend><div className="kiln-action-choice-grid">{workers.map((worker) => {
+    const index = worker.kind === "apprentice" ? ++apprenticeIndex : 0;
+    const label = `${term(worker.kind)}${index > 0 ? ` ${index}` : ""}`;
+    const capacityReason = locationFull && worker.kind === "apprentice"
+      ? locale === "zh-CN" ? "普通工位已满；只有师傅仍可放置。" : "Printed spaces are full; only the Shifu may overfill."
+      : null;
+    const unavailableReason = capacityReason ?? disabledReason?.(worker) ?? null;
+    const unavailable = unavailableReason !== null;
+    return <button
+      className={`kiln-worker-choice-button ${value === worker.id ? "is-selected" : ""}`}
+      type="button"
+      aria-pressed={value === worker.id}
+      aria-label={unavailable ? `${label}. ${unavailableReason}` : label}
+      title={unavailableReason ?? label}
+      data-worker-choice={worker.id}
+      disabled={unavailable}
+      onClick={() => onChange(worker.id)}
+      key={worker.id}
+    ><WorkerMeeple player={player} kind={worker.kind} locale={locale} /><span className="kiln-worker-choice-copy"><span className="kiln-worker-choice-name">{label}</span><small className="kiln-worker-choice-kind">{worker.kind === "shifu" ? (locale === "zh-CN" ? "师傅行动" : "Shifu action") : (locale === "zh-CN" ? "学徒行动" : "Apprentice action")}</small>{unavailable && <em className="kiln-action-choice-reason">{unavailableReason}</em>}</span></button>;
+  })}</div></fieldset>;
+}
+
+interface ChoiceTileOption {
+  value: string;
+  label: string;
+  detail?: string | undefined;
+  disabled?: boolean | undefined;
+  disabledReason?: string | undefined;
+  visual?: ReactNode | undefined;
+}
+
+function ChoiceTiles({ name, label, options, value, onChange, compact = false }: {
+  name: string;
+  label: string;
+  options: readonly ChoiceTileOption[];
+  value: string;
+  onChange: (value: string) => void;
+  compact?: boolean;
+}) {
+  const { t } = useI18n();
+  return <fieldset className={`kiln-action-choice-group ${compact ? "is-compact" : ""}`} data-choice-group={name}><legend>{t(label)}</legend><div className="kiln-action-choice-grid">{options.map((option) => <button
+    className={`kiln-action-choice ${value === option.value ? "is-selected" : ""}`}
+    type="button"
+    aria-pressed={value === option.value}
+    data-choice-value={option.value}
+    disabled={option.disabled === true}
+    title={option.disabledReason}
+    onClick={() => onChange(option.value)}
+    key={option.value}
+  >{option.visual}<span className="kiln-action-choice-copy"><span className="kiln-action-choice-label">{option.label}</span>{option.detail !== undefined && <small className="kiln-action-choice-detail">{option.detail}</small>}{option.disabled === true && option.disabledReason !== undefined && <em className="kiln-action-choice-reason">{option.disabledReason}</em>}</span></button>)}</div></fieldset>;
 }
 
 function CeramicSelect({ name, label, ceramics, blank }: {
@@ -1596,16 +1823,25 @@ function CeramicSelect({ name, label, ceramics, blank }: {
   return <label>{t(label)}<select name={name} required={blank === undefined}>{blank !== undefined && <option value="">{t(blank)}</option>}{ceramics.map((ceramic) => <option key={ceramic.id} value={ceramic.id}>{ceramicLabel(ceramic, locale)}</option>)}</select></label>;
 }
 
-function CeramicChoice({ name, label, ceramics, blank, value, onChange }: {
+function CeramicChoice({ name, label, ceramics, blank, value, onChange, disabledIds = [] }: {
   name: string;
   label: string;
   ceramics: ReturnType<typeof ownCeramics>;
   blank?: string;
   value: string;
   onChange: (ceramicId: string) => void;
+  disabledIds?: readonly string[];
 }) {
   const { locale, t } = useI18n();
-  return <label>{t(label)}<select name={name} value={value} required={blank === undefined} onChange={(event) => onChange(event.target.value)}>{blank !== undefined && <option value="">{t(blank)}</option>}{ceramics.map((ceramic) => <option key={ceramic.id} value={ceramic.id}>{ceramicLabel(ceramic, locale)}</option>)}</select></label>;
+  return <ChoiceTiles name={name} label={label} value={value} onChange={onChange} options={[
+    ...(blank === undefined ? [] : [{ value: "", label: t(blank) }]),
+    ...ceramics.map((ceramic) => ({
+      value: ceramic.id,
+      label: ceramicLabel(ceramic, locale),
+      disabled: disabledIds.includes(ceramic.id),
+      disabledReason: disabledIds.includes(ceramic.id) ? (locale === "zh-CN" ? "已在本次行动中选择" : "Already selected for this action") : undefined,
+    })),
+  ]} />;
 }
 
 function SelectField({ name, label, options, blank }: {
@@ -1624,16 +1860,17 @@ function decorationOptionLabel(option: string, locale: Locale = "en"): string {
   return `${localizedTerm(locale, option)} · ${cost} ${locale === "zh-CN" ? "铜钱" : `Coin${cost === 1 ? "" : "s"}`}`;
 }
 
-function EnumChoice({ name, label, options, value, onChange, formatOption }: {
+function EnumChoice({ name, label, options, value, onChange, formatOption, disabledOptions = [] }: {
   name: string;
   label: string;
   options: readonly string[];
   value: string;
   onChange: (value: string) => void;
   formatOption?: (option: string) => string;
+  disabledOptions?: readonly string[];
 }) {
-  const { t, term } = useI18n();
-  return <label>{t(label)}<select name={name} value={value} onChange={(event) => onChange(event.target.value)} required>{options.map((option) => <option key={option} value={option}>{formatOption?.(option) ?? term(option)}</option>)}</select></label>;
+  const { locale, term } = useI18n();
+  return <ChoiceTiles compact name={name} label={label} value={value} onChange={onChange} options={options.map((option) => ({ value: option, label: formatOption?.(option) ?? term(option), disabled: disabledOptions.includes(option), disabledReason: disabledOptions.includes(option) ? (locale === "zh-CN" ? "已在本次行动中选择" : "Already selected for this action") : undefined }))} />;
 }
 
 function TechniqueChecks({ techniqueIds, selected, onChange }: {
@@ -1727,6 +1964,12 @@ function officeActionHint(action: OfficeActionChoice, workerKind: AvailableWorke
 function localizeActionError(locale: Locale, error: string): string {
   if (locale === "en") return error;
   const errors: Record<string, string> = {
+    "No Coins remain in the supply.": "供应区没有剩余铜钱。",
+    "No Clay or Wood remains in the supply.": "供应区没有剩余的泥或柴。",
+    "You do not have enough Clay to form a vessel.": "你没有足够的泥形成器物。",
+    "You do not have enough Coins to apply a Decoration.": "你没有足够的铜钱施加装饰。",
+    "No face-up Advanced Tech is available.": "没有可购入的公开进阶技艺。",
+    "No face-up Advanced Tech is affordable.": "你没有足够的铜钱购入任何公开进阶技艺。",
     "Forming Studio is full.": "陶车坊已满。",
     "Potter's Wheel is full.": "陶车坊已满。",
     "Potter's Wheel is full for Apprentices.": "陶车坊的印刷工位已满；师傅仍可放置。",
@@ -1801,14 +2044,6 @@ function localizeActionError(locale: Locale, error: string): string {
   }
   if (error.startsWith("Requires ")) return `资源不足：${error.slice(9).replaceAll("Clay", "泥").replaceAll("Wood", "柴").replaceAll("Coins", "铜钱").replaceAll("Coin", "铜钱")}`;
   return error;
-}
-
-function officeActionLabel(action: OfficeActionChoice, locale: Locale): string {
-  if (locale === "en") return action.replaceAll("_", " ");
-  switch (action) {
-    case "take_one": return "承接1张委托";
-    case "take_up_to_two": return "承接至多2张委托";
-  }
 }
 
 export function ceramicLabel(ceramic: ReturnType<typeof ownCeramics>[number], locale: Locale = "en"): string {

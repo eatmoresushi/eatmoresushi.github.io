@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FORMING_TECH_COINS, GUILD_SHIFU_INSPECT, SHAPE_COSTS, TECHNIQUE_DEFINITIONS, applyAction } from "../../src/game/index.ts";
+import { DECORATION_COSTS, FORMING_TECH_COINS, GUILD_SHIFU_INSPECT, SHAPE_COSTS, TECHNIQUE_DEFINITIONS, applyAction } from "../../src/game/index.ts";
 import {
   addGlazed,
   addShaped,
@@ -18,9 +18,15 @@ describe("V1.2.6 worker actions and Techs", () => {
     let state = structuredClone(initial);
     const apprentice = workerId(state, "P1", "apprentice");
     const before = { ...state.players["P1"]!.resources };
-    state = mustApply(state, "P1", {
+    const preparedClay = mustResult(state, "P1", {
       type: "GAIN_MATERIALS", workerId: apprentice, clay: 1, wood: 2, preparedClayShape: "vase",
     }, rng);
+    state = preparedClay.state;
+    expect(preparedClay.events).toContainEqual({
+      type: "STARTING_TECH_USED",
+      playerId: "P1",
+      techniqueId: "ST01",
+    });
     expect(state.players["P1"]!.resources.clay).toBe(before.clay + 1 - (2 + 1));
     expect(state.players["P1"]!.resources.wood).toBe(before.wood + 2);
     expect(Object.values(state.ceramics)).toEqual([
@@ -207,7 +213,7 @@ describe("V1.2.6 worker actions and Techs", () => {
     let state = structuredClone(initial);
     state.players["P1"]!.resources = { clay: 10, wood: 10, coins: 10 };
     addTechnique(state, "P1", "T04");
-    state = mustApply(state, "P1", {
+    const formed = mustResult(state, "P1", {
       type: "FORM_CERAMICS",
       workerId: workerId(state, "P1", "shifu"),
       shapes: ["bowl", "plate"],
@@ -215,6 +221,7 @@ describe("V1.2.6 worker actions and Techs", () => {
       whiteSlip: { formedIndex: 0 },
       dryingFrames: { formedIndex: 1, glaze: "moon_white", decoration: "carved" },
     }, rng);
+    state = formed.state;
     const glazed = Object.values(state.ceramics).filter(({ stage }) => stage === "glazed");
     expect(glazed).toEqual(expect.arrayContaining([
       expect.objectContaining({ shape: "bowl", glaze: "white", decoration: "plain" }),
@@ -222,6 +229,10 @@ describe("V1.2.6 worker actions and Techs", () => {
     ]));
     expect(state.players["P1"]!.resources.coins).toBe(7);
     expect(state.players["P1"]!.techniques.find(({ id }) => id === "T04")?.exhausted).toBe(true);
+    expect(formed.events).toEqual(expect.arrayContaining([
+      { type: "STARTING_TECH_USED", playerId: "P1", techniqueId: "ST02" },
+      { type: "TECHNIQUE_USED", playerId: "P1", techniqueId: "T04" },
+    ]));
   });
 
   it("implements all five Forming Advanced Tech effects", () => {
@@ -322,19 +333,47 @@ describe("V1.2.6 worker actions and Techs", () => {
     expect(state.ceramics[other.id]).toEqual(expect.objectContaining({ stage: "glazed", glaze: "moon_white" }));
   });
 
+  it("uses each free-Decoration Tech for only one matching Decoration per action", () => {
+    const { state: initial, rng } = startedGame(2, 1307_1);
+    let state = structuredClone(initial);
+    state.players["P1"]!.resources.coins = 10;
+    addTechnique(state, "P1", "T07");
+    const first = addShaped(state, "P1", "bowl");
+    const second = addShaped(state, "P1", "plate");
+
+    const before = state.players["P1"]!.resources.coins;
+    state = mustApply(state, "P1", {
+      type: "GLAZE_CERAMICS",
+      workerId: workerId(state, "P1", "shifu"),
+      selections: [
+        { ceramicId: first.id, glaze: "white", decoration: "carved" },
+        { ceramicId: second.id, glaze: "celadon", decoration: "carved" },
+      ],
+      useTechniqueIds: ["T07"],
+    }, rng);
+
+    expect(state.players["P1"]!.resources.coins).toBe(before - DECORATION_COSTS.carved);
+  });
+
   it("implements Rapid Drying without consuming a Kiln Yard space or triggering Kiln Tending", () => {
     const { state: initial, rng } = startedGame(2, 1308, ["ST03"]);
     let state = structuredClone(initial);
     state.players["P1"]!.resources = { clay: 10, wood: 2, coins: 10 };
     const ceramic = addShaped(state, "P1", "plate");
-    state = mustApply(state, "P1", {
+    const dried = mustResult(state, "P1", {
       type: "GLAZE_CERAMICS", workerId: workerId(state, "P1", "apprentice"),
       selections: [{ ceramicId: ceramic.id, glaze: "celadon", decoration: "plain" }],
       rapidDrying: { ceramicId: ceramic.id, kilnSpaceId: "middle_1" },
     }, rng);
+    state = dried.state;
     expect(state.ceramics[ceramic.id]).toEqual(expect.objectContaining({ stage: "loaded", kilnSpaceId: "middle_1" }));
     expect(state.actionBoard.placements.kiln_yard).toEqual([]);
     expect(state.players["P1"]!.resources.wood).toBe(1);
+    expect(dried.events).toContainEqual({
+      type: "STARTING_TECH_USED",
+      playerId: "P1",
+      techniqueId: "ST03",
+    });
   });
 
   it("loads through Kiln Yard, applies Kiln Tending, and treats the location as uncapped", () => {
@@ -343,12 +382,18 @@ describe("V1.2.6 worker actions and Techs", () => {
     const p1 = addGlazed(state, "P1", "bowl", "white", "plain");
     const p2 = addGlazed(state, "P2", "plate", "celadon", "plain");
     const resources = { ...state.players["P1"]!.resources };
-    state = mustApply(state, "P1", {
+    const tended = mustResult(state, "P1", {
       type: "USE_KILN_YARD", workerId: workerId(state, "P1", "apprentice"),
       loads: [{ ceramicId: p1.id, kilnSpaceId: "high_1" }], kilnTendingClay: 1, kilnTendingWood: 0,
     }, rng);
+    state = tended.state;
     expect(state.players["P1"]!.resources.clay).toBe(resources.clay + 1);
     expect(state.players["P1"]!.resources.wood).toBe(resources.wood);
+    expect(tended.events).toContainEqual({
+      type: "STARTING_TECH_USED",
+      playerId: "P1",
+      techniqueId: "ST04",
+    });
     setWorkTurn(state, "P2");
     state = mustApply(state, "P2", {
       type: "USE_KILN_YARD", workerId: workerId(state, "P2", "apprentice"),
