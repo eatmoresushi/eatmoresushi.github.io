@@ -7,7 +7,7 @@ import {
   contributionWoodCost,
   orderHandLimit,
 } from "../game/index.ts";
-import { useState } from "react";
+import { useId, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import {
   DECORATIONS,
@@ -905,7 +905,7 @@ function KilnYardForm({ game, player, workers, locationFull, busy, send }: {
       <WorkerChoice player={player} workers={workers} value={selectedWorker?.id ?? ""} onChange={chooseWorker} locationFull={locationFull} disabledReason={() => noLoadReason} />
       {Array.from({ length: maximumLoads }, (_, index) => (
         <div className="split-fields" key={index}>
-          <CeramicChoice name={`ceramic${index + 1}`} label={`Ceramic ${index + 1}`} ceramics={ceramics} value={ceramicIds[index] ?? ""} onChange={(value) => setCeramic(index, value)} blank={index === 0 ? "Choose a ceramic" : "None"} disabledIds={index === 0 || ceramicIds[0] === "" ? [] : [ceramicIds[0]!]} />
+          <CeramicChoice name={`ceramic${index + 1}`} label={`Ceramic ${index + 1}`} ceramics={ceramics} value={ceramicIds[index] ?? ""} onChange={(value) => setCeramic(index, value)} {...(index === 0 ? { hint: "Choose a ceramic" } : { blank: "None" })} disabledIds={index === 0 || ceramicIds[0] === "" ? [] : [ceramicIds[0]!]} />
           <EnumChoice name={`space${index + 1}`} label={`Kiln destination ${index + 1}`} options={destinations} value={kilnSpaces[index] ?? ""} onChange={(value) => setDestination(index, value)} disabledOptions={index === 0 || kilnSpaces[0] === "" ? [] : [kilnSpaces[0]!]} />
         </div>
       ))}
@@ -1793,16 +1793,21 @@ interface ChoiceTileOption {
   visual?: ReactNode | undefined;
 }
 
-function ChoiceTiles({ name, label, options, value, onChange, compact = false }: {
+function ChoiceTiles({ name, label, hint, options, value, onChange, compact = false }: {
   name: string;
   label: string;
+  hint?: string | undefined;
   options: readonly ChoiceTileOption[];
   value: string;
   onChange: (value: string) => void;
   compact?: boolean;
 }) {
   const { t } = useI18n();
-  return <fieldset className={`kiln-action-choice-group ${compact ? "is-compact" : ""}`} data-choice-group={name}><legend>{t(label)}</legend><div className="kiln-action-choice-grid">{options.map((option) => <button
+  const hintId = useId();
+  return <fieldset className={`kiln-action-choice-group ${compact ? "is-compact" : ""}`} data-choice-group={name} aria-describedby={hint === undefined ? undefined : hintId}>
+    <legend>{t(label)}</legend>
+    {hint !== undefined && <p id={hintId} className="kiln-action-choice-hint">{t(hint)}</p>}
+    <div className="kiln-action-choice-grid">{options.map((option) => <button
     className={`kiln-action-choice ${value === option.value ? "is-selected" : ""}`}
     type="button"
     aria-pressed={value === option.value}
@@ -1824,9 +1829,10 @@ function CeramicSelect({ name, label, ceramics, blank }: {
   return <label>{t(label)}<select name={name} required={blank === undefined}>{blank !== undefined && <option value="">{t(blank)}</option>}{ceramics.map((ceramic) => <option key={ceramic.id} value={ceramic.id}>{ceramicLabel(ceramic, locale)}</option>)}</select></label>;
 }
 
-function CeramicChoice({ name, label, ceramics, blank, value, onChange, disabledIds = [] }: {
+function CeramicChoice({ name, label, hint, ceramics, blank, value, onChange, disabledIds = [] }: {
   name: string;
   label: string;
+  hint?: string;
   ceramics: ReturnType<typeof ownCeramics>;
   blank?: string;
   value: string;
@@ -1834,7 +1840,7 @@ function CeramicChoice({ name, label, ceramics, blank, value, onChange, disabled
   disabledIds?: readonly string[];
 }) {
   const { locale, t } = useI18n();
-  return <ChoiceTiles name={name} label={label} value={value} onChange={onChange} options={[
+  return <ChoiceTiles name={name} label={label} hint={hint} value={value} onChange={onChange} options={[
     ...(blank === undefined ? [] : [{ value: "", label: t(blank) }]),
     ...ceramics.map((ceramic) => ({
       value: ceramic.id,
