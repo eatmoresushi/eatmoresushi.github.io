@@ -68,7 +68,7 @@
       "nameZh": "晾坯架",
       "cost": 3,
       "ability": "Once per round after a Potter’s Wheel action, choose 1 Shaped vessel formed by that action. Immediately give it any Glaze and any Decoration, paying the Decoration’s cost.",
-      "abilityZh": "每轮一次，在一次陶车坊行动后，选择该行动刚成型的 1 件器物。立即赋予其任意釉与任意装饰，并支付该装饰的费用。",
+      "abilityZh": "每轮一次，在一次陶车坊行动后，选择该行动刚成型的 1 件器物。立即赋予其任意釉与任意纹饰，并支付该纹饰的费用。",
       "oncePerRound": true
     },
     {
@@ -98,7 +98,7 @@
       "nameZh": "刻花刀",
       "cost": 2,
       "ability": "Once per round, one Carved Decoration you apply costs 0 Coins.",
-      "abilityZh": "每轮一次，你施加的 1 个刻花装饰费用为 0 铜钱。",
+      "abilityZh": "每轮一次，你施加的 1 个刻花纹饰费用为 0 铜钱。",
       "oncePerRound": true
     },
     {
@@ -108,7 +108,7 @@
       "nameZh": "印花范",
       "cost": 2,
       "ability": "Once per round, one Impressed Decoration you apply costs 0 Coins.",
-      "abilityZh": "每轮一次，你施加的 1 个印花装饰费用为 0 铜钱。",
+      "abilityZh": "每轮一次，你施加的 1 个印花纹饰费用为 0 铜钱。",
       "oncePerRound": true
     },
     {
@@ -118,7 +118,7 @@
       "nameZh": "开片釉",
       "cost": 2,
       "ability": "Once per round, one Crackle Decoration you apply costs 0 Coins.",
-      "abilityZh": "每轮一次，你施加的 1 个开片装饰费用为 0 铜钱。",
+      "abilityZh": "每轮一次，你施加的 1 个开片纹饰费用为 0 铜钱。",
       "oncePerRound": true
     },
     {

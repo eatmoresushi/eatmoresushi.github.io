@@ -7,7 +7,7 @@ The current ruleset is V1.2.6 and has two complementary authorities:
 | Scope | Checked-in source | Owner-supplied filename | Original supplied SHA-256 | Current adopted SHA-256 |
 |---|---|---|---|---|
 | Mechanics, timing, costs, limits, setup, cards, abilities and scoring | `KILN_OPENING_v1.2.6_EN_SOURCE.md` | `KILN OPENING 开窑 v1.2.6 — Player Rulebook.md` | `0ab4d42fb1efe66e2f98e9dd2ebec5d2c32a547360e4ad3be2d43bd3665a24e0` | `c662943fe1a3b5cef0e7adc47034bd8dcfc0df9cadd831eacf137842f108d36f` |
-| Simplified Chinese terminology, labels, names and player-facing wording | `KILN_OPENING_v1.2.6_ZH_SOURCE.md` | `《开窑》KILN OPENING v1.2.6 — 玩家规则书.md` | `6508adbdbdaf80afde39dec1d7deca048486166a7ff6c4f06e9be9aa54484b42` | `d76b2f5995b1904096258c86e73dfef6908c66ff86fdcb3260a61626d424dc76` |
+| Simplified Chinese terminology, labels, names and player-facing wording | `KILN_OPENING_v1.2.6_ZH_SOURCE.md` | `《开窑》KILN OPENING v1.2.6 — 玩家规则书.md` | `6508adbdbdaf80afde39dec1d7deca048486166a7ff6c4f06e9be9aa54484b42` | `243ba8e3a8d6dfbe791b28f3594f750e4890fbb828ba4749fb9dd1bfa5bb5506` |
 
 The original import hashes are retained for provenance. The rules owner subsequently authorized the narrow Main Order queue clarification recorded below, and it has been incorporated bilingually into the checked-in adopted sources; consequently, those files are no longer byte-for-byte copies of the initial attachments. Recompute and update the current adopted hashes whenever another authorized source amendment is made.
 
@@ -36,6 +36,10 @@ All other mechanics, data values and established localisation remain unchanged u
 ## Cross-language check
 
 The English and Chinese V1.2.6 sources agree on the new Shifu commitment timing, restriction to the marked ceramic, First Player ordering, neighbouring-zone movement, Imperial Kiln exclusion, Ding's 1-Clay payment, and every Main Order queue operation. The Chinese source establishes the corresponding wording with `师傅所在的陶瓷`, names Ding's ability `范制成器`, and uses `最旧／最新` plus `向左移动／最右侧` for the queue orientation and movement.
+
+## Owner terminology amendment — 2026-09-17
+
+The owner requested that the Simplified Chinese translation of Decoration use `纹饰` throughout. This terminology amendment is applied to the current Chinese source, structured Chinese card and action text, and UI translations. The English wording, stable IDs, costs, and mechanics are unchanged.
 
 ## Historical sources
 

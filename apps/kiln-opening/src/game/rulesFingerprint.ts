@@ -108,7 +108,14 @@ function canonical(value: unknown): string {
     // reused for a number, that number must still reach the digest.
     .filter(([key, item]) => !(PROSE_KEYS.has(key) && typeof item === "string"))
     .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0));
-  return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${canonical(item)}`).join(",")}}`;
+  return `{${entries.map(([key, item]) => {
+    // Order requirements prose was included in existing room fingerprints. Preserve its
+    // original spelling in the digest so the Chinese terminology update keeps those rooms valid.
+    const compatibleItem = key === "requirementsZh" && typeof item === "string"
+      ? item.replaceAll("纹饰", "装饰")
+      : item;
+    return `${JSON.stringify(key)}:${canonical(compatibleItem)}`;
+  }).join(",")}}`;
 }
 
 /** FNV-1a, 64-bit. Chosen for being short, dependency-free and identical in every runtime. */

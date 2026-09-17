@@ -431,13 +431,13 @@ export function relationLabel(order: OrderDefinition, locale: Locale = "en"): st
       case "different_shape": return locale === "zh-CN" ? "器型不同" : "different Shapes";
       case "all_different_shape": return locale === "zh-CN" ? "器型各不相同" : "all different Shapes";
       case "same_shape": return locale === "zh-CN" ? "器型相同" : "same Shape";
-      case "same_decoration": return locale === "zh-CN" ? "装饰相同" : "same Decoration";
-      case "different_decoration": return locale === "zh-CN" ? "装饰不同" : "different Decorations";
+      case "same_decoration": return locale === "zh-CN" ? "纹饰相同" : "same Decoration";
+      case "different_decoration": return locale === "zh-CN" ? "纹饰不同" : "different Decorations";
       case "at_least_n_quality": return locale === "zh-CN" ? `至少${relation.count}件${localizedTerm(locale, relation.quality)}` : `at least ${relation.count} ${localizedTerm(locale, relation.quality)}`;
       case "at_least_n_distinct_glazes": return locale === "zh-CN" ? `至少${relation.count}种不同釉` : `at least ${relation.count} distinct Glazes`;
-      case "at_least_n_distinct_decorations": return locale === "zh-CN" ? `至少${relation.count}种不同装饰` : `at least ${relation.count} distinct Decorations`;
+      case "at_least_n_distinct_decorations": return locale === "zh-CN" ? `至少${relation.count}种不同纹饰` : `at least ${relation.count} distinct Decorations`;
       case "required_glazes": return locale === "zh-CN" ? `所用釉包括：${relation.values.map((value) => localizedTerm(locale, value)).join("、")}` : `required Glazes: ${relation.values.map((value) => localizedTerm(locale, value)).join(", ")}`;
-      case "required_decorations": return locale === "zh-CN" ? `所用装饰包括：${relation.values.map((value) => localizedTerm(locale, value)).join("、")}` : `required Decorations: ${relation.values.map((value) => localizedTerm(locale, value)).join(", ")}`;
+      case "required_decorations": return locale === "zh-CN" ? `所用纹饰包括：${relation.values.map((value) => localizedTerm(locale, value)).join("、")}` : `required Decorations: ${relation.values.map((value) => localizedTerm(locale, value)).join(", ")}`;
       case "glaze_categories": {
         // Name the Glazes. The generic phrasing left I13 unplayable from its own card: the
         // data requires White, Celadon and Moon White, and the card said only that some

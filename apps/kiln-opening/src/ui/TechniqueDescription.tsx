@@ -56,7 +56,7 @@ export const TECHNIQUE_SHORT_COPY = {
   },
   T04: {
     en: "Once/round, after **Potter’s Wheel**: give 1 vessel formed by that action **any Glaze + any Decoration**; pay its Decoration cost.",
-    "zh-CN": "每轮一次，**陶车坊**行动后：将本次行动形成的 1 件器物施以**任意釉色 + 任意装饰**；支付该装饰费用。",
+    "zh-CN": "每轮一次，**陶车坊**行动后：将本次行动形成的 1 件器物施以**任意釉色 + 任意纹饰**；支付该纹饰费用。",
   },
   T05: {
     en: "Once/round, while glazing: change that vessel to **any other Shape**.",
@@ -68,15 +68,15 @@ export const TECHNIQUE_SHORT_COPY = {
   },
   T07: {
     en: "Once/round: one **Carved** Decoration you apply costs **0 Coins**.",
-    "zh-CN": "每轮一次：你施加的 1 个**刻花**装饰费用为 **0 铜钱**。",
+    "zh-CN": "每轮一次：你施加的 1 个**刻花**纹饰费用为 **0 铜钱**。",
   },
   T08: {
     en: "Once/round: one **Impressed** Decoration you apply costs **0 Coins**.",
-    "zh-CN": "每轮一次：你施加的 1 个**印花**装饰费用为 **0 铜钱**。",
+    "zh-CN": "每轮一次：你施加的 1 个**印花**纹饰费用为 **0 铜钱**。",
   },
   T09: {
     en: "Once/round: one **Crackle** Decoration you apply costs **0 Coins**.",
-    "zh-CN": "每轮一次：你施加的 1 个**开片**装饰费用为 **0 铜钱**。",
+    "zh-CN": "每轮一次：你施加的 1 个**开片**纹饰费用为 **0 铜钱**。",
   },
   T10: {
     en: "Once/round, when reserving: look at the **top 3 Orders**. Reserve 1 of them **or 1 face-up Order**; discard the other looked-at Orders.",
@@ -115,7 +115,7 @@ export const KILN_SHORT_COPY = {
   },
   GE: {
     en: "**Once/round, before Quality:** Choose 1 of your ceramics whose **Actual Heat is exactly 1 above or below its Preferred Heat** → set its Actual Heat to **Preferred Heat** and change its Decoration to **Crackle** for free.",
-    "zh-CN": "**每轮一次，判定品质前：**\n选择 1 件实际火候与适烧火候正好相差 **±1** 的陶瓷 → 将其实际火候设为**适烧火候**，并免费将装饰改为**开片**。",
+    "zh-CN": "**每轮一次，判定品质前：**\n选择 1 件实际火候与适烧火候正好相差 **±1** 的陶瓷 → 将其实际火候设为**适烧火候**，并免费将纹饰改为**开片**。",
   },
   DI: {
     en: "**Once/round, Potter’s Wheel:**\nAfter forming a **Bowl, Plate or Brush Washer**, pay **1 Clay** → form **+1 of the same Shape**.",

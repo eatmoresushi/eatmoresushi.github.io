@@ -1153,7 +1153,7 @@ function Ceramic({ ceramic, game, locale, compact = false, inspectable = false, 
     <span className="kiln-tabletop-ceramic-tooltip-title"><strong>{shape}</strong><small>{stageLabel(ceramic.stage, locale)}{zone === null ? "" : ` · ${zone} ${signed(kilnZoneModifier ?? 0)}`}</small></span>
     <span className="kiln-tabletop-ceramic-tooltip-facts">
       <span><small>{text(locale, "Glaze", "釉色")}</small><strong>{glaze === null ? text(locale, "Not yet glazed", "尚未施釉") : glazeLabel(glaze, locale)}</strong></span>
-      <span><small>{text(locale, "Decoration", "装饰")}</small><strong>{decoration === null ? text(locale, "Not yet decorated", "尚未装饰") : decorationLabel(decoration, locale)}</strong></span>
+      <span><small>{text(locale, "Decoration", "纹饰")}</small><strong>{decoration === null ? text(locale, "Not yet decorated", "尚未纹饰") : decorationLabel(decoration, locale)}</strong></span>
       <span><small>{text(locale, "Preferred Heat", "适烧火候")}</small><strong>{heat ?? "—"}</strong></span>
     </span>
     {quality !== null && <span className="kiln-tabletop-ceramic-tooltip-note is-quality">{text(locale, "Quality", "品质")} · {qualityLabel(quality, locale)}</span>}
