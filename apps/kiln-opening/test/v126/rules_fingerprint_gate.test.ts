@@ -56,6 +56,16 @@ describe("rules fingerprint gate", () => {
     }
   });
 
+  it("reconnects rooms created before the Chinese Decoration terminology update", async () => {
+    const { service, store, room } = await host();
+    const rooms = (store as unknown as { rooms: Map<string, { contentDigest: string | null }> }).rooms;
+    // Captured from the shipped V1.2.6 content before the translation-only change.
+    for (const record of rooms.values()) record.contentDigest = "r15-329394b4497525e2";
+
+    const result = await service.reconnect({ roomCode: room.room.code, seatToken: room.seatToken });
+    expect(result.ok).toBe(true);
+  });
+
   it("treats a missing fingerprint field as legacy rather than as a mismatch", async () => {
     // A room row returned without the column at all arrives as undefined, not null. Refusing
     // it would lock players out of a room whose rules never changed.

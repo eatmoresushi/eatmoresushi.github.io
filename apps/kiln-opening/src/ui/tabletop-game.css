@@ -1189,6 +1189,17 @@
   text-transform: uppercase;
 }
 
+.kiln-live-controls-panel .kiln-action-choice-group:has(> .kiln-action-choice-hint) {
+  align-content: start;
+}
+
+.kiln-live-controls-panel .kiln-action-choice-hint {
+  margin: 0;
+  color: var(--tabletop-ink-soft);
+  font-size: .72rem;
+  line-height: 1.4;
+}
+
 .kiln-live-controls-panel .kiln-action-choice-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));

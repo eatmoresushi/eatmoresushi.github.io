@@ -7,7 +7,7 @@ import {
   contributionWoodCost,
   orderHandLimit,
 } from "../game/index.ts";
-import { useState } from "react";
+import { useId, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import {
   DECORATIONS,
@@ -772,7 +772,7 @@ function GlazeForm({ game, player, workers, locationFull, busy, send }: {
     <form className="control-form control-form-glaze" onSubmit={submit}>
       <WorkerChoice player={player} workers={workers} value={selectedWorker?.id ?? ""} onChange={chooseWorker} locationFull={locationFull} disabledReason={(worker) => {
         if (ceramics.length === 0) return locale === "zh-CN" ? "没有已成型器物" : "No Shaped vessels available";
-        if (!canWorkerGlaze(worker)) return locale === "zh-CN" ? "没有买得起的装饰；师傅可免费施加1个装饰" : "No affordable Decoration; a Shifu can apply one for free";
+        if (!canWorkerGlaze(worker)) return locale === "zh-CN" ? "没有买得起的纹饰；师傅可免费施加1个纹饰" : "No affordable Decoration; a Shifu can apply one for free";
         return null;
       }} />
       <CeramicChoice name="ceramic1" label="First ceramic" ceramics={ceramics} value={firstId} onChange={setCeramic1} />
@@ -780,7 +780,7 @@ function GlazeForm({ game, player, workers, locationFull, busy, send }: {
       <ChoiceTiles compact name="decoration1" label="First decoration" options={decorationOptions(0)} value={decoration1} onChange={(value) => setDecoration1(value as Decoration)} />
       {selectedWorker?.kind === "shifu" && <CeramicChoice name="ceramic2" label="Second ceramic (Shifu only)" ceramics={ceramics} value={secondId} onChange={(value) => { setCeramic2(value); if (value === "") setFreeDecorationIndex("0"); }} blank="None" disabledIds={firstId === "" ? [] : [firstId]} />}
       {selectedWorker?.kind === "shifu" && secondId !== "" && <><EnumChoice name="glaze2" label="Second glaze" options={GLAZES} value={glaze2} onChange={(value) => setGlaze2(value as Glaze)} /><ChoiceTiles compact name="decoration2" label="Second decoration" options={decorationOptions(1)} value={decoration2} onChange={(value) => setDecoration2(value as Decoration)} /></>}
-      {selectedWorker?.kind === "shifu" && <ChoiceTiles compact name="shifu-free-decoration" label={locale === "zh-CN" ? "师傅：免费装饰" : "Shifu: free Decoration"} value={freeDecorationIndex} onChange={(value) => setFreeDecorationIndex(value as "0" | "1")} options={selections.map((selection, index) => ({ value: String(index), label: `${index + 1} · ${ceramicLabel(game.ceramics[selection.ceramicId]!, locale)}`, detail: locale === "zh-CN" ? "本件装饰费用为0" : "This Decoration costs 0" }))} />}
+      {selectedWorker?.kind === "shifu" && <ChoiceTiles compact name="shifu-free-decoration" label={locale === "zh-CN" ? "师傅：免费纹饰" : "Shifu: free Decoration"} value={freeDecorationIndex} onChange={(value) => setFreeDecorationIndex(value as "0" | "1")} options={selections.map((selection, index) => ({ value: String(index), label: `${index + 1} · ${ceramicLabel(game.ceramics[selection.ceramicId]!, locale)}`, detail: locale === "zh-CN" ? "本件纹饰费用为0" : "This Decoration costs 0" }))} />}
       <TechniqueChecks techniqueIds={techniques} selected={activeTechniqueIds} onChange={setSelectedTechniques} />
       {activeTechniqueIds.includes("T05") && <ChoiceTiles compact name="reworked-shape" label={locale === "zh-CN" ? "改坯案：新器型" : "Reworking Table: new Shape"} value={reworkedShape} onChange={(value) => setReworkedShape(value as Shape)} options={SHAPES.filter((shape) => shape !== firstCeramic?.shape).map((shape) => ({ value: shape, label: term(shape) }))} />}
       {activeTechniqueIds.includes("T06") && <><CeramicChoice name="palette-target" label="Glaze Palette target" ceramics={paletteTargets} value={paletteTargetId} onChange={setPaletteTargetId} blank="Choose a ceramic" /><EnumChoice name="palette-glaze" label="New Glaze" options={GLAZES} value={paletteGlaze} onChange={(value) => setPaletteGlaze(value as Glaze)} /></>}
@@ -905,7 +905,7 @@ function KilnYardForm({ game, player, workers, locationFull, busy, send }: {
       <WorkerChoice player={player} workers={workers} value={selectedWorker?.id ?? ""} onChange={chooseWorker} locationFull={locationFull} disabledReason={() => noLoadReason} />
       {Array.from({ length: maximumLoads }, (_, index) => (
         <div className="split-fields" key={index}>
-          <CeramicChoice name={`ceramic${index + 1}`} label={`Ceramic ${index + 1}`} ceramics={ceramics} value={ceramicIds[index] ?? ""} onChange={(value) => setCeramic(index, value)} blank={index === 0 ? "Choose a ceramic" : "None"} disabledIds={index === 0 || ceramicIds[0] === "" ? [] : [ceramicIds[0]!]} />
+          <CeramicChoice name={`ceramic${index + 1}`} label={`Ceramic ${index + 1}`} ceramics={ceramics} value={ceramicIds[index] ?? ""} onChange={(value) => setCeramic(index, value)} {...(index === 0 ? { hint: "Choose a ceramic" } : { blank: "None" })} disabledIds={index === 0 || ceramicIds[0] === "" ? [] : [ceramicIds[0]!]} />
           <EnumChoice name={`space${index + 1}`} label={`Kiln destination ${index + 1}`} options={destinations} value={kilnSpaces[index] ?? ""} onChange={(value) => setDestination(index, value)} disabledOptions={index === 0 || kilnSpaces[0] === "" ? [] : [kilnSpaces[0]!]} />
         </div>
       ))}
@@ -1598,7 +1598,7 @@ function OrderCompletion({ orderId, ceramics, recognition, busy, send }: {
         ? `已选择${selected.length}件；此委托需要恰好${requiredCount}件。`
         : matches
           ? "所选陶瓷符合此委托，可以完成。"
-          : "所选器物不符合委托的器型、釉、装饰、组合关系或最低品质要求。"
+          : "所选器物不符合委托的器型、釉、纹饰、组合关系或最低品质要求。"
     : selected.length === 0
       ? `Select exactly ${requiredCount} Finished ceramic${requiredCount === 1 ? "" : "s"}.`
       : selected.length !== requiredCount
@@ -1793,16 +1793,21 @@ interface ChoiceTileOption {
   visual?: ReactNode | undefined;
 }
 
-function ChoiceTiles({ name, label, options, value, onChange, compact = false }: {
+function ChoiceTiles({ name, label, hint, options, value, onChange, compact = false }: {
   name: string;
   label: string;
+  hint?: string | undefined;
   options: readonly ChoiceTileOption[];
   value: string;
   onChange: (value: string) => void;
   compact?: boolean;
 }) {
   const { t } = useI18n();
-  return <fieldset className={`kiln-action-choice-group ${compact ? "is-compact" : ""}`} data-choice-group={name}><legend>{t(label)}</legend><div className="kiln-action-choice-grid">{options.map((option) => <button
+  const hintId = useId();
+  return <fieldset className={`kiln-action-choice-group ${compact ? "is-compact" : ""}`} data-choice-group={name} aria-describedby={hint === undefined ? undefined : hintId}>
+    <legend>{t(label)}</legend>
+    {hint !== undefined && <p id={hintId} className="kiln-action-choice-hint">{t(hint)}</p>}
+    <div className="kiln-action-choice-grid">{options.map((option) => <button
     className={`kiln-action-choice ${value === option.value ? "is-selected" : ""}`}
     type="button"
     aria-pressed={value === option.value}
@@ -1824,9 +1829,10 @@ function CeramicSelect({ name, label, ceramics, blank }: {
   return <label>{t(label)}<select name={name} required={blank === undefined}>{blank !== undefined && <option value="">{t(blank)}</option>}{ceramics.map((ceramic) => <option key={ceramic.id} value={ceramic.id}>{ceramicLabel(ceramic, locale)}</option>)}</select></label>;
 }
 
-function CeramicChoice({ name, label, ceramics, blank, value, onChange, disabledIds = [] }: {
+function CeramicChoice({ name, label, hint, ceramics, blank, value, onChange, disabledIds = [] }: {
   name: string;
   label: string;
+  hint?: string;
   ceramics: ReturnType<typeof ownCeramics>;
   blank?: string;
   value: string;
@@ -1834,7 +1840,7 @@ function CeramicChoice({ name, label, ceramics, blank, value, onChange, disabled
   disabledIds?: readonly string[];
 }) {
   const { locale, t } = useI18n();
-  return <ChoiceTiles name={name} label={label} value={value} onChange={onChange} options={[
+  return <ChoiceTiles name={name} label={label} hint={hint} value={value} onChange={onChange} options={[
     ...(blank === undefined ? [] : [{ value: "", label: t(blank) }]),
     ...ceramics.map((ceramic) => ({
       value: ceramic.id,
@@ -1968,7 +1974,7 @@ function localizeActionError(locale: Locale, error: string): string {
     "No Coins remain in the supply.": "供应区没有剩余铜钱。",
     "No Clay or Wood remains in the supply.": "供应区没有剩余的泥或柴。",
     "You do not have enough Clay to form a vessel.": "你没有足够的泥形成器物。",
-    "You do not have enough Coins to apply a Decoration.": "你没有足够的铜钱施加装饰。",
+    "You do not have enough Coins to apply a Decoration.": "你没有足够的铜钱施加纹饰。",
     "No face-up Advanced Tech is available.": "没有可购入的公开进阶技艺。",
     "No face-up Advanced Tech is affordable.": "你没有足够的铜钱购入任何公开进阶技艺。",
     "Forming Studio is full.": "陶车坊已满。",
@@ -1996,10 +2002,10 @@ function localizeActionError(locale: Locale, error: string): string {
     "White Slip and Drying Frames must select different vessels.": "白陶衣和晾坯架必须选择不同器物。",
     "Reworking Table must change the first vessel to a different Shape.": "改坯案必须将第一件器物改为不同器型。",
     "Glaze Palette must choose one other Glazed ceramic.": "釉色板必须选择作坊中另一件未装窑的已施釉陶瓷。",
-    "Only the Shifu may ignore a Decoration cost.": "只有师傅可以忽略装饰费用。",
+    "Only the Shifu may ignore a Decoration cost.": "只有师傅可以忽略纹饰费用。",
     "Choose each ceramic only once.": "每件陶瓷只能选择一次。",
-    "Carving Knives requires a paid Carved Decoration.": "刻花刀需要1次需付费的刻花装饰。",
-    "Seal Stamps requires a paid Impressed Decoration.": "印花范需要1次需付费的印花装饰。",
+    "Carving Knives requires a paid Carved Decoration.": "刻花刀需要1次需付费的刻花纹饰。",
+    "Seal Stamps requires a paid Impressed Decoration.": "印花范需要1次需付费的印花纹饰。",
     "You have no Glazed ceramic to load.": "你没有可入窑的已施釉陶瓷。",
     "The kiln has no empty space.": "窑内没有空窑位。",
     "No Shared or Imperial kiln destination is empty.": "共窑和御窑都没有可用空窑位。",
@@ -2041,7 +2047,7 @@ function localizeActionError(locale: Locale, error: string): string {
     return `练泥结算时需要${clay}泥。`;
   }
   if (error.endsWith(" needs its matching Decoration.")) {
-    return "所选技艺需要本次行动施加对应装饰。";
+    return "所选技艺需要本次行动施加对应纹饰。";
   }
   if (error.startsWith("Requires ")) return `资源不足：${error.slice(9).replaceAll("Clay", "泥").replaceAll("Wood", "柴").replaceAll("Coins", "铜钱").replaceAll("Coin", "铜钱")}`;
   return error;

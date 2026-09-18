@@ -24,7 +24,7 @@
     "abilityName": "Crackle from Fire",
     "abilityNameZh": "窑火开片",
     "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, you may choose one of your ceramics whose Actual Heat differs from its Preferred Heat by exactly 1. Set its Actual Heat equal to its Preferred Heat and change its Decoration to Crackle without paying the Crackle cost.",
-    "abilityZh": "每轮一次，在计算实际火候后、决定品质前，你可以选择自己1件实际火候与适烧火候恰好相差1的陶瓷。将其实际火候设为适烧火候，并把其装饰改为开片，无需支付开片费用。"
+    "abilityZh": "每轮一次，在计算实际火候后、决定品质前，你可以选择自己1件实际火候与适烧火候恰好相差1的陶瓷。将其实际火候设为适烧火候，并把其纹饰改为开片，无需支付开片费用。"
   },
   {
     "id": "DI",
