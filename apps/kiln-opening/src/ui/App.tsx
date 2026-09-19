@@ -74,19 +74,20 @@ export function imperialOrderNotice(result: CommandSuccess, locale: Locale = "en
 export function commandNotice(result: CommandSuccess, locale: Locale = "en"): string | null {
   const order = result.events.find((event) => event.type === "ORDER_TAKEN");
   if (order?.type === "ORDER_TAKEN") {
+    const orderSuffix = order.orderId === undefined ? "" : ` ${order.orderId}`;
     if (order.acquisition === "colour_samples") {
       return locale === "zh-CN"
-        ? `通过色样簿承接主委托${order.orderId}。`
-        : `Reserved Main Order ${order.orderId} through Colour Samples.`;
+        ? `通过色样簿承接主委托${order.orderId ?? ""}。`
+        : `Reserved Main Order${orderSuffix} through Colour Samples.`;
     }
     if (order.acquisition === "blind_deck") {
       return locale === "zh-CN"
-        ? `不看牌面承接主委托牌库顶${order.orderId}。`
-        : `Reserved unseen top Main Order ${order.orderId}.`;
+        ? `不看牌面承接主委托牌库顶${order.orderId ?? ""}。`
+        : `Reserved unseen top Main Order${orderSuffix}.`;
     }
     return locale === "zh-CN"
-      ? `承接公开主委托${order.orderId}。`
-      : `Reserved face-up Main Order ${order.orderId}.`;
+      ? `承接公开主委托${order.orderId ?? ""}。`
+      : `Reserved face-up Main Order${orderSuffix}.`;
   }
   const colour = result.events.find((event) => event.type === "COLOUR_SAMPLES_USED");
   if (colour?.type === "COLOUR_SAMPLES_USED") {
@@ -101,6 +102,8 @@ export function commandNotice(result: CommandSuccess, locale: Locale = "en"): st
       ? `以${technique.cost}铜钱获得${definition?.nameZh ?? technique.techniqueId}。`
       : `Acquired ${definition?.name ?? technique.techniqueId} for ${technique.cost} Coins.`;
   }
+  const patronage = result.events.find((event) => event.type === "IMPERIAL_RECOGNITION_ADVANCED" && event.orderId === null);
+  if (patronage?.type === "IMPERIAL_RECOGNITION_ADVANCED") return locale === "zh-CN" ? `朝廷赞助：御府声望 ${patronage.from} → ${patronage.to}。` : `Court Patronage: Imperial Recognition ${patronage.from} → ${patronage.to}.`;
   return imperialOrderNotice(result, locale);
 }
 

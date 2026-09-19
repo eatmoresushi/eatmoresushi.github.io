@@ -1,5 +1,4 @@
 import {
-  COMMON_SUPPLY,
   GAME_CONFIG,
   KILN_IDS,
   MAIN_ORDERS,
@@ -92,13 +91,15 @@ function integer(
   path: string,
   issues: PlaytestValidationIssue[],
   min: number,
-  max: number,
+  max?: number,
   nullable = false,
 ): number | null {
   const value = record[key];
   if (nullable && (value === null || value === "" || value === undefined)) return null;
-  if (typeof value !== "number" || !Number.isInteger(value) || value < min || value > max) {
-    issue(issues, path, `Enter a whole number from ${min} to ${max}.`);
+  if (typeof value !== "number" || !Number.isSafeInteger(value) || value < min || (max !== undefined && value > max)) {
+    issue(issues, path, max === undefined
+      ? `Enter a whole number of at least ${min}.`
+      : `Enter a whole number from ${min} to ${max}.`);
     return nullable ? null : min;
   }
   return value;
@@ -171,9 +172,9 @@ function parsePlayer(value: unknown, index: number, issues: PlaytestValidationIs
     ),
     completedOrderIds: parseCompletedOrders(record, path, issues),
     recognition: integer(record, "recognition", `${path}.recognition`, issues, 0, 4)!,
-    coinsRemaining: integer(record, "coinsRemaining", `${path}.coinsRemaining`, issues, 0, COMMON_SUPPLY.coins)!,
-    clayRemaining: integer(record, "clayRemaining", `${path}.clayRemaining`, issues, 0, COMMON_SUPPLY.clay)!,
-    woodRemaining: integer(record, "woodRemaining", `${path}.woodRemaining`, issues, 0, COMMON_SUPPLY.wood)!,
+    coinsRemaining: integer(record, "coinsRemaining", `${path}.coinsRemaining`, issues, 0)!,
+    clayRemaining: integer(record, "clayRemaining", `${path}.clayRemaining`, issues, 0)!,
+    woodRemaining: integer(record, "woodRemaining", `${path}.woodRemaining`, issues, 0)!,
     kilnAbilityUses: integer(record, "kilnAbilityUses", `${path}.kilnAbilityUses`, issues, 0, 5)!,
     finalVp: integer(record, "finalVp", `${path}.finalVp`, issues, -100, 500)!,
     orderVp: integer(record, "orderVp", `${path}.orderVp`, issues, -100, 500, true),

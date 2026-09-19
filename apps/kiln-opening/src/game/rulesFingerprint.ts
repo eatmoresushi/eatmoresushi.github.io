@@ -71,8 +71,12 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  *        bonus vessel now costs 1 Clay and remains outside the Shifu vessel count.
  *  15 -- V1.2.6 Main Order amendment. Every face-up removal slides later Orders left and
  *        appends its replacement on the right; Rounds 2-5 rotate the two oldest Orders.
+ *  16 -- V1.2.7: private one-plus-one opening hands, six-card market, mandatory Work,
+ *        Court Patronage, revised Ge/Techs, unlimited resources and Exhibition.
+ *  17 -- Owner amendment: Ge treats Standard Crackle as Fine only for Orders and
+ *        Exhibition scoring, preserving actual firing Quality and Decoration.
  */
-export const RULES_BEHAVIOUR_REVISION = 15;
+export const RULES_BEHAVIOUR_REVISION = 17;
 
 /**
  * Display-only keys, excluded so that a typo fix or a translation improvement does not

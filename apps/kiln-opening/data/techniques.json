@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.2.6",
+  "rulesVersion": "1.2.7",
   "starting": [
     {
       "id": "ST01",
@@ -26,8 +26,8 @@
       "id": "ST04",
       "name": "Kiln Tending",
       "nameZh": "看火",
-      "ability": "Once during each Kiln Yard action you take, after loading at least 1, gain 1 Clay or 1 Wood.",
-      "abilityZh": "每次你执行窑坊行动时一次，在至少装窑 1 件后，获得 1 泥或 1 柴。"
+      "ability": "Once during each Kiln Yard action you take, after loading at least 1, gain 1 Clay + 1 Wood.",
+      "abilityZh": "每次窑坊行动中至少装窑1件后，获得1泥和1柴。"
     }
   ],
   "advanced": [
@@ -37,8 +37,8 @@
       "name": "Large Throwing Wheel",
       "nameZh": "大陶车",
       "cost": 2,
-      "ability": "Once per round, during a Potter’s Wheel action in which you form at least 1 Vase or 1 Censer, reduce that action’s total Clay cost by 1.",
-      "abilityZh": "每轮一次，在某次陶车坊行动中，只要你成型至少 1 个瓶或香炉，该行动的泥总费用减少 1。",
+      "ability": "Once per round, during a Potter’s Wheel action in which you form at least 1 Vase or 1 Censer, reduce that action’s total Clay cost by 2, to a minimum of 0. This reduction stacks with the Shifu’s two-vessel discount.",
+      "abilityZh": "每轮一次，在陶车坊行动中形成至少1个瓶或香炉时，该行动的泥总费用减少2，最低为0。可与师傅优惠叠加。",
       "oncePerRound": true
     },
     {
@@ -77,8 +77,8 @@
       "name": "Reworking Table",
       "nameZh": "改坯案",
       "cost": 2,
-      "ability": "Once per round, during a Glaze & Decoration action, you may change the Shape of 1 Shaped vessel being glazed to any other Shape. Return its current Vessel card to its supply and take the new Shape card.",
-      "abilityZh": "每轮一次，在一次釉饰坊行动中，你可以把正在施釉的 1 件已成型器物改为任意其他器型。将原器型卡放回供应区，并拿取新器型卡。",
+      "ability": "Once per round, during a Glaze & Decoration action, you may change the Shape of 1 Shaped vessel being glazed to any other Shape. Return its current Vessel card to its supply and take the new Shape card. No additional Clay is paid.",
+      "abilityZh": "每轮一次，在釉饰坊行动中，可将正在施釉的1件已成型器物改为任意其他器型，无需额外支付泥。",
       "oncePerRound": true
     },
     {
@@ -87,8 +87,8 @@
       "name": "Glaze Palette",
       "nameZh": "釉色谱",
       "cost": 2,
-      "ability": "Once per round, during a Glaze & Decoration action, change the Glaze of 1 other unloaded Glazed ceramic in your workshop to any Glaze.",
-      "abilityZh": "每轮一次，在一次釉饰坊行动中，将你作坊里另 1 件未装窑的已施釉陶瓷改为任意釉。",
+      "ability": "Once per round, immediately before loading 1 of your Glazed ceramics, you may change its Glaze to any Glaze at no cost. Its Shape and Decoration do not change.",
+      "abilityZh": "每轮一次，装窑前，可免费将即将装窑的1件已施釉陶瓷改为任意釉色，器型与纹饰不变。适用于窑坊、催干和御烧优先。",
       "oncePerRound": true
     },
     {
@@ -127,8 +127,8 @@
       "name": "Colour Samples",
       "nameZh": "色样簿",
       "cost": 2,
-      "ability": "Once per round, during one reservation of a Commission Market action, look at the top 3 Main Orders (or as many as remain). Then reserve either 1 of those Orders or 1 face-up Main Order. Discard every looked-at Order you did not reserve; if you reserve from the display, slide later Orders left and refill the rightmost position immediately.",
-      "abilityZh": "每轮一次，在瓷牙行行动中的一次承接时，查看主委托牌库顶端 3 张（不足则尽量查看）。然后承接其中 1 张，或承接公开展示中的 1 张主委托。未承接的已查看委托全部弃掉；若承接公开委托，将其右侧委托向左移动，并立即补入最右侧空位。",
+      "ability": "When acquired: Immediately reserve 1 Main Order using the selection below, without placing another worker or gaining a Commission Market resource bonus. Once per round: During one reservation of a Commission Market action, use this selection instead of the normal reservation choice. Selection: Privately look at the top 3 Main Orders (or as many as remain). Reserve either 1 of those Orders or 1 face-up Main Order. Discard every looked-at Order you did not reserve; if you reserve from the display, slide later Orders left and refill the rightmost position immediately.",
+      "abilityZh": "获得时立即进行1次选择，不获得承接资源奖励。每轮一次，可用此选择替代瓷牙行行动中的1次承接。选择：私下查看牌堆顶3张主委托（不足则尽量查看），承接其中1张或1张公开委托，弃掉其余已查看委托。公开展示正常左移并补牌。",
       "oncePerRound": true
     },
     {
@@ -137,7 +137,7 @@
       "name": "Protective Saggars",
       "nameZh": "匣钵护烧",
       "cost": 2,
-      "ability": "Once per round after Quality is assigned, spend 1 Wood to improve 1 ceramic one level: Flawed → Standard or Standard → Fine. Cannot create a Masterpiece.",
+      "ability": "Once per round, after Quality is assigned, you may spend 1 Wood to improve the Quality of 1 of your Flawed or Standard ceramics participating in this firing by one level: Flawed → Standard or Standard → Fine. This cannot create a Masterpiece.",
       "abilityZh": "每轮一次，在决定品质后，支付 1 柴，使 1 件陶瓷提升一个品质等级：瑕品 → 良品，或良品 → 上品。不能因此成为臻品。",
       "oncePerRound": true
     },
@@ -167,7 +167,7 @@
       "name": "Second Firing",
       "nameZh": "复烧",
       "cost": 2,
-      "ability": "Once per round, after Quality is assigned, choose 1 Flawed or Standard ceramic. Reveal 1 extra Fire card and recalculate that ceramic's Actual Heat and Quality using the same Base Heat and kiln position but the new Fire modifier. Previous Actual Heat adjustments do not carry over. The new Quality replaces the old, even if worse. Discard the extra Fire card after resolving it. Any unused once-per-round firing abilities may still be used at their normal timing.",
+      "ability": "Once per round, after Quality is assigned, choose 1 of your Flawed or Standard ceramics participating in this firing. Reveal 1 extra Fire card and recalculate that ceramic's Actual Heat and Quality using the same Base Heat and kiln position but the new Fire modifier. Previous Actual Heat adjustments do not carry over. The new Quality replaces the old, even if worse. Discard the extra Fire card after resolving it. Any unused once-per-round firing abilities may still be used at their normal timing.",
       "abilityZh": "每轮一次，在决定品质后，选择 1 件瑕品或良品陶瓷。额外翻开 1 张窑火牌，使用相同基础火候及窑位、但采用新的窑火修正，重新计算该陶瓷的实际火候与品质。之前对实际火候的调整不会保留。新结果取代旧结果，即使更差也如此。结算后弃掉额外窑火牌。任何本轮尚未使用、且时机适用的每轮一次烧成能力，仍可在正常时机结算。",
       "oncePerRound": true
     },

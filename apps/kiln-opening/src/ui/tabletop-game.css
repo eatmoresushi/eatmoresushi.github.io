@@ -317,7 +317,7 @@
 .kiln-tabletop-order-deck span { position: relative; z-index: 1; font-size: 1rem; }
 .kiln-tabletop-order-deck small { position: absolute; z-index: 2; right: 3px; bottom: 2px; font-family: var(--sans); font-size: .48rem; }
 
-.kiln-tabletop-order-row { display: grid; grid-template-columns: repeat(5, minmax(126px, 1fr)); gap: .42rem; min-width: 0; }
+.kiln-tabletop-order-row { display: grid; grid-template-columns: repeat(6, minmax(110px, 1fr)); gap: .42rem; min-width: 0; }
 .kiln-tabletop-order-card {
   position: relative;
   display: grid;
@@ -380,6 +380,9 @@
 .kiln-tabletop-board::before { top: 8%; left: -2%; transform: rotate(-9deg); }
 .kiln-tabletop-board::after { right: -1%; bottom: 2%; content: "山"; transform: rotate(6deg); }
 .kiln-tabletop-board > * { position: relative; z-index: 1; }
+
+.kiln-tabletop-board-header { display: grid; grid-template-columns: minmax(0, 1fr) 190px; gap: .45rem; }
+.kiln-tabletop-board-header .kiln-tabletop-fire-card { width: 28px; }
 
 .kiln-tabletop-round-track {
   display: grid;
@@ -450,6 +453,7 @@
 .position-east { grid-area: 2 / 3; }
 .position-south-west { grid-area: 3 / 1; }
 .position-south { grid-area: 3 / 2; }
+.position-south-east { grid-area: 3 / 3; }
 
 .kiln-tabletop-turn-order {
   grid-area: 1 / 4 / 4;
@@ -630,7 +634,6 @@
 .kiln-tabletop-shared-kiln > footer strong { color: #f2ddaf; }
 
 .kiln-tabletop-firing-deck {
-  grid-area: 3 / 3;
   display: grid;
   grid-template-columns: auto 1fr;
   gap: .55rem;
@@ -1105,7 +1108,7 @@
   .kiln-tabletop-inspector { animation: none; transition: none; }
 }
 
-/* Live V1.2.6 integration --------------------------------------------------- */
+/* Live V1.2.7 integration --------------------------------------------------- */
 .playtest-shell.has-tabletop-live {
   display: block;
   width: 100%;

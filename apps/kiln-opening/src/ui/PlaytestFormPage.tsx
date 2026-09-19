@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import {
   BASE_HEAT_START,
-  COMMON_SUPPLY,
   KILN_DEFINITIONS,
   KILN_IDS,
   MAIN_ORDERS,
@@ -77,7 +76,7 @@ function NumberField({
   value,
   onChange,
   min = 0,
-  max = 500,
+  max,
   required = false,
 }: {
   label: string;
@@ -653,9 +652,9 @@ export function PlaytestFormPage() {
                   <div className="metric-subsection">
                     <h4>Resources remaining</h4>
                     <div className="metric-grid">
-                      <NumberField label="Coins" value={player.coinsRemaining} max={COMMON_SUPPLY.coins} required onChange={(coinsRemaining) => updatePlayer(playerIndex, { coinsRemaining })} />
-                      <NumberField label="Clay" value={player.clayRemaining} max={COMMON_SUPPLY.clay} required onChange={(clayRemaining) => updatePlayer(playerIndex, { clayRemaining })} />
-                      <NumberField label="Wood" value={player.woodRemaining} max={COMMON_SUPPLY.wood} required onChange={(woodRemaining) => updatePlayer(playerIndex, { woodRemaining })} />
+                      <NumberField label="Coins" value={player.coinsRemaining} required onChange={(coinsRemaining) => updatePlayer(playerIndex, { coinsRemaining })} />
+                      <NumberField label="Clay" value={player.clayRemaining} required onChange={(clayRemaining) => updatePlayer(playerIndex, { clayRemaining })} />
+                      <NumberField label="Wood" value={player.woodRemaining} required onChange={(woodRemaining) => updatePlayer(playerIndex, { woodRemaining })} />
                     </div>
                   </div>
                   <div className="metric-subsection">

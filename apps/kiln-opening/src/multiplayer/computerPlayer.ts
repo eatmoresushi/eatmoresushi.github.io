@@ -1,9 +1,12 @@
+import { withOwnOrderHand } from "./projection.ts";
 import {
   DECORATION_COSTS,
   DECORATIONS,
   DING_EXTRA_SHAPES,
   FIRE_CARDS,
   GAME_CONFIG,
+  formingTechniqueRewards,
+  FORMING_TECH_COINS,
   GLAZES,
   IMPERIAL_PROGRESS,
   KILN_IDS,
@@ -18,9 +21,12 @@ import {
   locationCapacity,
   DISCIPLINES,
   matchingOrderCeramicGroups,
+  matchesOrder,
+  findGeDecoration,
   orderHandLimit,
   preferredHeat,
   qualityFromDifference,
+  qualityForOrderOrExhibition,
 } from "../game/index.ts";
 import type {
   CeramicState,
@@ -31,6 +37,7 @@ import type {
   Glaze,
   GlazedCeramic,
   KilnSpaceId,
+  KilnLoadSelection,
   LocationId,
   LoadedCeramic,
   OrderDefinition,
@@ -45,8 +52,8 @@ import type {
 import type { ComputerObservation } from "./computerObservation.ts";
 import type { AuthoritativeCommand, PublicGameState, StoredSeat, SubmitWoodCommand } from "./types.ts";
 
-export const ONLINE_COMPUTER_POLICY_VERSION = "rules-v1.2.6-strategic-002" as const;
-export const PREVIOUS_ONLINE_COMPUTER_POLICY_VERSION = "rules-v1.2.6-heuristic-001" as const;
+export const ONLINE_COMPUTER_POLICY_VERSION = "rules-v1.2.7-strategic-002" as const;
+export const PREVIOUS_ONLINE_COMPUTER_POLICY_VERSION = "rules-v1.2.6-strategic-002" as const;
 export const LEGACY_ONLINE_COMPUTER_POLICY_VERSION = "selfplay-003" as const;
 
 export function nextOnlineDecisionActor(state: Pick<GameState, "phase">): PlayerId | null {
@@ -135,7 +142,7 @@ const glazeAssignments = new Map<OrderId, Glaze[][]>();
 const decorationAssignments = new Map<OrderId, Decoration[][]>();
 
 /**
- * Enumerate each rules-legal attribute route independently, exactly as V1.2.6 Orders are
+ * Enumerate each rules-legal attribute route independently, exactly as V1.2.7 Orders are
  * read. The deck has at most three slots, so this is bounded to 5^3 Shape routes and 4^3
  * Glaze/Decoration routes and can be cached by stable Order ID.
  */
@@ -241,7 +248,7 @@ function canCompleteNow(state: PublicGameState, playerId: PlayerId, order: Order
   const finished = Object.values(state.ceramics).filter(
     (ceramic): ceramic is FinishedCeramic => ceramic.ownerId === playerId && ceramic.stage === "finished",
   );
-  return canCompleteOrder(order, finished);
+  return canCompleteOrder(order, finished, state.players[playerId]);
 }
 
 function recognitionValue(player: PlayerState, crowns: number): number {
@@ -371,11 +378,11 @@ function orderAction(state: PublicGameState, playerId: PlayerId): GameAction {
   for (const orderId of orderIds) {
     const order = ORDER_DEFINITIONS[orderId];
     if (order === undefined) continue;
-    const matching = matchingOrderCeramicGroups(order, finished)
+    const matching = matchingOrderCeramicGroups(order, finished, player)
       // Preserve Masterpieces and diverse ceramics for the Exhibition when a cheaper
       // ceramic delivers the same Order. Required minimum Quality is already validated.
-      .sort((left, right) => left.reduce((sum, ceramic) => sum + QUALITY_RANK[ceramic.quality], 0)
-        - right.reduce((sum, ceramic) => sum + QUALITY_RANK[ceramic.quality], 0)
+      .sort((left, right) => left.reduce((sum, ceramic) => sum + QUALITY_RANK[qualityForOrderOrExhibition(ceramic, player.kilnId)], 0)
+        - right.reduce((sum, ceramic) => sum + QUALITY_RANK[qualityForOrderOrExhibition(ceramic, player.kilnId)], 0)
         || left.map(({ id }) => id).join("|").localeCompare(right.map(({ id }) => id).join("|")));
     for (const group of matching) {
       const crossesGrant = player.imperialRecognition < 1 && player.imperialRecognition + order.crowns >= 1;
@@ -383,6 +390,7 @@ function orderAction(state: PublicGameState, playerId: PlayerId): GameAction {
         type: "COMPLETE_ORDER",
         orderId,
         ceramicIds: group.map((ceramic) => ceramic.id),
+        ...(!matchesOrder(order, group, player.kilnId) ? { geDecoration: findGeDecoration(order, group)! } : {}),
         ...(crossesGrant ? {
           imperialGrantChoice: player.resources.clay + player.resources.wood < 3
             ? "resources" as const
@@ -604,16 +612,18 @@ function buildKilnAction(state: PublicGameState, player: PlayerState): GameActio
   if (worker === null) return null;
   const destinations: Array<KilnSpaceId | "imperial"> = [...sharedSpaces, ...(imperialEmpty ? ["imperial" as const] : [])];
   const maximum = worker.kind === "shifu" ? 2 : 1;
-  const loads: Array<{ ceramicId: string; kilnSpaceId: KilnSpaceId | "imperial"; useKilnFurniture?: boolean }> = [];
+  const loads: KilnLoadSelection[] = [];
+  const palette = paletteImprovement(state, player, []);
   const remainingDestinations = [...destinations];
   for (const ceramic of glazed.slice(0, maximum)) {
-    const wantedZone = preferredHeat(ceramic.glaze) - 2;
+    const glazePalette = palette?.ceramicId === ceramic.id ? palette.glaze : undefined;
+    const wantedZone = preferredHeat(glazePalette ?? ceramic.glaze) - 2;
     const destination = [...remainingDestinations].sort((left, right) =>
       Math.abs(zoneModifierOf(left) - wantedZone) - Math.abs(zoneModifierOf(right) - wantedZone)
       || String(left).localeCompare(String(right)),
     )[0];
     if (destination === undefined) break;
-    loads.push({ ceramicId: ceramic.id, kilnSpaceId: destination });
+    loads.push({ ceramicId: ceramic.id, kilnSpaceId: destination, ...(glazePalette === undefined ? {} : { glazePalette }) });
     remainingDestinations.splice(remainingDestinations.indexOf(destination), 1);
   }
   if (loads.length === 0) return null;
@@ -624,7 +634,7 @@ function buildKilnAction(state: PublicGameState, player: PlayerState): GameActio
   if (ownedUnexhausted(player, "T15") !== undefined) {
     const candidate = loads.map((load) => {
       const ceramic = state.ceramics[load.ceramicId];
-      const wanted = ceramic !== undefined && "glaze" in ceramic ? preferredHeat(ceramic.glaze) - 2 : 0;
+      const wanted = ceramic !== undefined && "glaze" in ceramic ? preferredHeat(load.glazePalette ?? ceramic.glaze) - 2 : 0;
       const normal = Math.abs(zoneModifierOf(load.kilnSpaceId) - wanted);
       const withFurniture = Math.abs(wanted);
       return { load, improvement: normal - withFurniture };
@@ -642,15 +652,11 @@ function buildKilnAction(state: PublicGameState, player: PlayerState): GameActio
   const shifuCeramicId = worker.kind === "shifu"
     ? loads.find(({ kilnSpaceId }) => kilnSpaceId !== "imperial")?.ceramicId ?? existingShared?.id
     : undefined;
-  const tendClay = player.resources.clay <= player.resources.wood ? 1 : 0;
   return {
     type: "USE_KILN_YARD",
     workerId: worker.id,
     loads,
     ...(shifuCeramicId === undefined ? {} : { shifuCeramicId }),
-    ...(player.startingTechniqueId === "ST04"
-      ? { kilnTendingClay: tendClay, kilnTendingWood: 1 - tendClay }
-      : {}),
   };
 }
 
@@ -724,8 +730,7 @@ function buildGlazeAction(state: PublicGameState, player: PlayerState): GameActi
       && selections.some((selection) => selection.decoration === decoration && selection.ceramicId !== freeDecorationCeramicId)
     ) useTechniqueIds.push(techniqueId);
   }
-  const palette = paletteImprovement(state, player, plannedGlazes);
-  if (palette !== null) useTechniqueIds.push("T06");
+
 
   const costOf = (selection: typeof selections[number]) => {
     if (selection.ceramicId === freeDecorationCeramicId) return 0;
@@ -774,7 +779,7 @@ function buildGlazeAction(state: PublicGameState, player: PlayerState): GameActi
       ? {}
       : { freeDecorationCeramicId }),
     ...(useTechniqueIds.length === 0 ? {} : { useTechniqueIds }),
-    ...(palette === null ? {} : { glazePalette: palette }),
+
     ...(rapidCeramic === undefined || rapidDestination === undefined
       ? {}
       : { rapidDrying: { ceramicId: rapidCeramic.ceramicId, kilnSpaceId: rapidDestination } }),
@@ -789,9 +794,9 @@ function buildFormAction(state: PublicGameState, player: PlayerState): GameActio
   const formShapes = targetShapes(state, player, maximum);
   const techniqueIds: TechniqueId[] = [];
   const formCost = (values: readonly Shape[], useWheel: boolean, ding: Shape | undefined) =>
-    values.reduce((sum, shape) => sum + SHAPE_COSTS[shape], 0)
+    Math.max(0, values.reduce((sum, shape) => sum + SHAPE_COSTS[shape], 0)
       - (preferred.kind === "shifu" && values.length === 2 ? 1 : 0)
-      - (useWheel ? 1 : 0)
+      - (useWheel ? 2 : 0))
       + (ding === undefined ? 0 : SHAPE_COSTS[ding]);
   while (formShapes.length > 0) {
     const wheel = ownedUnexhausted(player, "T01") !== undefined && formShapes.some((shape) => shape === "vase" || shape === "censer");
@@ -811,8 +816,9 @@ function buildFormAction(state: PublicGameState, player: PlayerState): GameActio
 
   const glaze = targetGlaze(state, player);
   const decoration = targetDecoration(state, player, glaze);
+  const availableCoins = player.resources.coins + formingTechniqueRewards(state, player, [...formShapes, ...(affordableDing === undefined ? [] : [affordableDing])]).length * FORMING_TECH_COINS;
   const whiteWanted = glaze === "white";
-  const canWhiteSlip = player.startingTechniqueId === "ST02" && player.resources.coins >= DECORATION_COSTS.plain;
+  const canWhiteSlip = player.startingTechniqueId === "ST02" && availableCoins >= DECORATION_COSTS.plain;
   // White Slip is optional: use it only when the current Order route actually wants White.
   // Automatically glazing every vessel White merely because Drying Frames is absent can
   // break an otherwise coherent Celadon, Grey-green, or Moon-white plan.
@@ -822,7 +828,7 @@ function buildFormAction(state: PublicGameState, player: PlayerState): GameActio
     : undefined;
   const dryingCost = dryingIndex === undefined ? 0 : DECORATION_COSTS[decoration];
   const whiteCost = whiteSlipIndex === undefined ? 0 : DECORATION_COSTS.plain;
-  const affordableDryingIndex = dryingIndex !== undefined && dryingCost + whiteCost <= player.resources.coins
+  const affordableDryingIndex = dryingIndex !== undefined && dryingCost + whiteCost <= availableCoins
     ? dryingIndex
     : undefined;
   if (affordableDryingIndex !== undefined) techniqueIds.push("T04");
@@ -840,7 +846,7 @@ function buildFormAction(state: PublicGameState, player: PlayerState): GameActio
 }
 
 function buildMaterialsAction(state: PublicGameState, player: PlayerState): GameAction | null {
-  if (state.commonSupply.clay + state.commonSupply.wood < 1 || player.resources.clay + player.resources.wood >= 6) return null;
+  if (player.resources.clay + player.resources.wood >= 6) return null;
   const worker = availableWorker(state, player, "materials_yard", player.resources.clay + player.resources.wood <= 2);
   if (worker === null) return null;
   const amount = worker.kind === "shifu" ? 4 : 3;
@@ -851,7 +857,7 @@ function buildMaterialsAction(state: PublicGameState, player: PlayerState): Game
     : Math.ceil(amount / 2);
   clay = Math.max(0, Math.min(amount, clay));
   const wood = amount - clay;
-  const gainedClay = Math.min(clay, state.commonSupply.clay);
+  const gainedClay = clay;
   const preparedClayShape = player.startingTechniqueId === "ST01" && player.resources.clay + gainedClay >= preparedCost
     ? wantedShape
     : undefined;
@@ -906,7 +912,7 @@ function workAction(state: PublicGameState, playerId: PlayerId): GameAction {
   const orderSourceAvailable = state.displays.market.length > 0
     || state.decks.marketRemaining + state.discards.market.length > 0;
   const marketWorker = availableWorker(state, player, "market_imperial_office", player.orderHand.length <= 1);
-  // V1.2.6 has no hand limit during the round. Keeping at most one speculative Order above
+  // V1.2.7 has no hand limit during the round. Keeping at most one speculative Order above
   // the Cleanup limit gives the bot room to improve its hand without spending every spare
   // worker on Orders it already knows it must discard.
   if (marketWorker !== null && orderSourceAvailable && player.orderHand.length < orderHandLimit() + 1) {
@@ -918,6 +924,8 @@ function workAction(state: PublicGameState, playerId: PlayerId): GameAction {
   }
   const materials = buildMaterialsAction(state, player);
   if (materials !== null) return materials;
+  const courtWorker = availableWorker(state, player, "court_patronage", false);
+  if (courtWorker !== null && player.imperialRecognition < 3 && player.resources.coins >= 4 && (player.resources.coins >= 8 || player.imperialRecognition === 1)) return { type: "USE_COURT_PATRONAGE", workerId: courtWorker.id, imperialGrantChoice: "resources" };
   const labourWorker = availableWorker(state, player, "labour", false);
   return labourWorker === null ? { type: "PASS_WORK_PHASE" } : { type: "USE_LABOUR", workerId: labourWorker.id };
 }
@@ -1016,9 +1024,6 @@ function qualityAdjustmentAction(state: PublicGameState, player: PlayerState): G
   const results = Object.values(state.firingContext?.ceramicResults ?? {})
     .filter((result) => state.ceramics[result.ceramicId]?.ownerId === player.id && (second === null || result.ceramicId === second))
     .sort((left, right) => right.finalHeatDifference - left.finalHeatDifference || left.ceramicId.localeCompare(right.ceramicId));
-  if (player.kilnId === "GE") {
-    return { type: "RESOLVE_GE", ceramicId: results.find(({ finalHeatDifference }) => finalHeatDifference === 1)?.ceramicId ?? null };
-  }
   if (player.kilnId === "JU" && player.resources.wood > 0) {
     const result = results.find(({ finalHeatDifference }) => finalHeatDifference > 0);
     if (result !== undefined) {
@@ -1032,9 +1037,7 @@ function qualityAdjustmentAction(state: PublicGameState, player: PlayerState): G
       }
     }
   }
-  return player.kilnId === "JU"
-    ? { type: "RESOLVE_JUN", ceramicId: null, delta: null }
-    : { type: "RESOLVE_GE", ceramicId: null };
+  return { type: "RESOLVE_JUN", ceramicId: null, delta: null };
 }
 
 function remainingFireCards(state: PublicGameState): number[] {
@@ -1054,14 +1057,17 @@ function afterQualityAction(state: PublicGameState, player: PlayerState): GameAc
     return { type: "RESOLVE_SECOND_FIRING", ceramicId: null };
   }
   if (state.phase.techniqueIds.includes("T11")) {
-    const best = [...eligible].sort((left, right) => {
-      const gain = (quality: "flawed" | "standard") => quality === "flawed" ? 2 : 1;
-      return gain(right.assignedQuality as "flawed" | "standard") - gain(left.assignedQuality as "flawed" | "standard")
-        || left.ceramicId.localeCompare(right.ceramicId);
-    })[0];
+    const best = eligible.map((result) => {
+      const ceramic = state.ceramics[result.ceramicId];
+      if (ceramic?.stage !== "loaded" || result.assignedQuality === null) {
+        return { result, gain: Number.NEGATIVE_INFINITY };
+      }
+      const currentQuality = qualityForOrderOrExhibition({ ...ceramic, quality: result.assignedQuality }, player.kilnId);
+      return { result, gain: QUALITY_RANK.fine - QUALITY_RANK[currentQuality] };
+    }).sort((left, right) => right.gain - left.gain || left.result.ceramicId.localeCompare(right.result.ceramicId))[0];
     return {
       type: "RESOLVE_PROTECTIVE_SAGGARS",
-      ceramicId: player.resources.wood > 0 ? best?.ceramicId ?? null : null,
+      ceramicId: player.resources.wood > 0 && best !== undefined && best.gain > 0 ? best.result.ceramicId : null,
     };
   }
 
@@ -1077,9 +1083,13 @@ function afterQualityAction(state: PublicGameState, player: PlayerState): GameAc
       ? 0
       : zoneModifierOf(ceramic.kilnSpaceId);
     const expectedRank = fireCards.reduce((sum, fire) => sum + QUALITY_RANK[
-      qualityFromDifference(Math.abs(baseHeat + fire + zone - preferredHeat(ceramic.glaze)))
+      qualityForOrderOrExhibition({
+        ...ceramic,
+        quality: qualityFromDifference(Math.abs(baseHeat + fire + zone - preferredHeat(ceramic.glaze))),
+      }, player.kilnId)
     ], 0) / fireCards.length;
-    return { result, gain: expectedRank - QUALITY_RANK[assignedQuality] };
+    const currentRank = QUALITY_RANK[qualityForOrderOrExhibition({ ...ceramic, quality: assignedQuality }, player.kilnId)];
+    return { result, gain: expectedRank - currentRank };
   }).sort((left, right) => right.gain - left.gain || left.result.ceramicId.localeCompare(right.result.ceramicId))[0];
   return {
     type: "RESOLVE_SECOND_FIRING",
@@ -1102,31 +1112,7 @@ function presentationAction(state: PublicGameState, playerId: PlayerId): GameAct
     (ceramic): ceramic is FinishedCeramic & { quality: "standard" | "fine" | "masterpiece" } =>
       ceramic.ownerId === playerId && ceramic.stage === "finished" && ceramic.quality !== "flawed",
   );
-  const capacity = Math.min(IMPERIAL_PROGRESS.exhibition.capacity, eligible.length);
-  const exhibits = combinations(eligible, capacity);
-  const featuredFor = (ceramics: readonly FinishedCeramic[]) => {
-    if (ceramics.length < IMPERIAL_PROGRESS.exhibition.featuredCollectionSize) return [];
-    return combinations(ceramics, IMPERIAL_PROGRESS.exhibition.featuredCollectionSize).sort((left, right) => {
-      const diversity = (values: readonly FinishedCeramic[]) =>
-        (new Set(values.map(({ shape }) => shape)).size === values.length ? IMPERIAL_PROGRESS.exhibition.threeDifferentShapesBonus : 0)
-        + (new Set(values.map(({ glaze }) => glaze)).size === values.length ? IMPERIAL_PROGRESS.exhibition.threeDifferentGlazesBonus : 0);
-      return diversity(right) - diversity(left)
-        || left.map(({ id }) => id).join("|").localeCompare(right.map(({ id }) => id).join("|"));
-    })[0] ?? [];
-  };
-  const best = exhibits.map((ceramics) => {
-    const featured = featuredFor(ceramics);
-    const score = ceramics.reduce((sum, ceramic) => sum + IMPERIAL_PROGRESS.exhibition.qualityVp[ceramic.quality], 0)
-      + (new Set(featured.map(({ shape }) => shape)).size === 3 ? IMPERIAL_PROGRESS.exhibition.threeDifferentShapesBonus : 0)
-      + (new Set(featured.map(({ glaze }) => glaze)).size === 3 ? IMPERIAL_PROGRESS.exhibition.threeDifferentGlazesBonus : 0);
-    return { ceramics, featured, score };
-  }).sort((left, right) => right.score - left.score
-    || left.ceramics.map(({ id }) => id).join("|").localeCompare(right.ceramics.map(({ id }) => id).join("|")))[0];
-  return {
-    type: "SUBMIT_PRESENTATION",
-    ceramicIds: best?.ceramics.map(({ id }) => id) ?? [],
-    featuredCeramicIds: best?.featured.map(({ id }) => id) ?? [],
-  };
+  return { type: "SUBMIT_PRESENTATION", ceramicIds: eligible.map(({ id }) => id) };
 }
 
 export async function chooseOnlineComputerAction(
@@ -1134,10 +1120,11 @@ export async function chooseOnlineComputerAction(
   seat: StoredSeat,
 ): Promise<AuthoritativeCommand> {
   if (!seat.isComputer || seat.aiPolicyVersion !== ONLINE_COMPUTER_POLICY_VERSION || seat.aiSeed === null) {
-    throw new Error(`Seat ${seat.seatId} is not a configured V1.2.6 computer seat`);
+    throw new Error(`Seat ${seat.seatId} is not a configured V1.2.7 computer seat`);
   }
   const aiSeed = seat.aiSeed;
-  const { game: state, ownPrivate, playerId } = observation;
+  const { ownPrivate, playerId } = observation;
+  const state = withOwnOrderHand(observation.game, playerId, ownPrivate.orderHand);
   if (playerId !== seat.playerId) throw new Error(`Observation does not belong to ${seat.playerId}`);
   if (nextOnlineDecisionActor(state) !== playerId) throw new Error(`Computer ${playerId} is not the current actor`);
   const player = state.players[playerId];
@@ -1239,11 +1226,9 @@ export async function chooseOnlineComputerAction(
     case "firing_workshop_seconds":
       return {
         type: "RESOLVE_WORKSHOP_SECONDS",
-        ceramicId: state.commonSupply.coins > 0
-          ? Object.values(state.firingContext?.ceramicResults ?? {})
+        ceramicId: Object.values(state.firingContext?.ceramicResults ?? {})
             .find((result) => result.assignedQuality === "flawed" && state.ceramics[result.ceramicId]?.ownerId === playerId)
-            ?.ceramicId ?? null
-          : null,
+            ?.ceramicId ?? null,
       };
     case "orders":
       return orderAction(state, playerId);
@@ -1257,8 +1242,8 @@ export async function chooseOnlineComputerAction(
 }
 
 export function computerPolicyLabel(policyVersion: string | null): string {
-  if (policyVersion === ONLINE_COMPUTER_POLICY_VERSION) return "V1.2.6 Strategic";
-  if (policyVersion === PREVIOUS_ONLINE_COMPUTER_POLICY_VERSION) return "V1.2.6 Legacy";
+  if (policyVersion === ONLINE_COMPUTER_POLICY_VERSION) return "V1.2.7 Strategic";
+  if (policyVersion === PREVIOUS_ONLINE_COMPUTER_POLICY_VERSION) return "V1.2.6 Strategic";
   if (policyVersion === LEGACY_ONLINE_COMPUTER_POLICY_VERSION) return "V003";
   return policyVersion ?? "—";
 }

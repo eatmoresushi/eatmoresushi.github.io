@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.2.6",
+  "rulesVersion": "1.2.7",
   "orderCards": {
     "status": "REGENERATE_FROM_DATA",
     "source": "data/orders.json",
@@ -29,7 +29,8 @@
       "Imperial Recognition",
       "2/3/4 shared action spaces by player count",
       "Shifu overfill",
-      "Shifu repositioning after Base Heat"
+      "Shifu repositioning after Base Heat",
+      "Court Patronage"
     ],
     "mustShowPlayerCountKilnCovers": true
   },
@@ -78,6 +79,6 @@
     "roundSource": "data/round_structure.json",
     "firingSource": "data/firing.json",
     "mustUseBaseHeatStartTwo": true,
-    "mustShowFiveCardMainOrderDisplay": true
+    "mustShowSixCardMainOrderDisplay": true
   }
 }

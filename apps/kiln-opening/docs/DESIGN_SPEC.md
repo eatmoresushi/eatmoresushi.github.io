@@ -26,7 +26,7 @@ Do not add digital conveniences that remove this inference.
 
 ### 2. Controlled uncertainty, not chaos
 
-The V1.2.6 Fire deck contains -2/-1/0/+1/+2 in a 1/3/4/3/1 distribution. Zero is the most common result and the negative and positive sides are symmetric.
+The V1.2.7 Fire deck contains -2/-1/0/+1/+2 in a 1/3/4/3/1 distribution. Zero is the most common result and the negative and positive sides are symmetric.
 
 The larger strategic uncertainty comes from other players' secret Bank, Tend, or Stoke Contribution choices, including Fuel Ledger's upgraded −2/+2 commitments. Wood costs are paid only after every eligible contributor has committed and the choices are revealed together. Base Heat starts at 2, applies all Contributions and clamps to 0–5; planning, zone choice and abilities remain the tools for managing uncapped Global and Actual Heat.
 
@@ -77,7 +77,7 @@ Clay preparation is abstracted into Forming.
 
 Prefer:
 
-- seven meaningful shared locations with clear global capacity, over private or unnecessary narrow sub-locations;
+- eight meaningful shared locations with clear global capacity, over private or unnecessary narrow sub-locations;
 - small permanent effects over combo-heavy engines;
 - visible card requirements;
 - few timing windows with explicit names.
@@ -86,7 +86,7 @@ Avoid:
 
 - specialists;
 - trained/untrained worker states;
-- extra firing sub-systems beyond the concise V1.2.6 Tech and Kiln abilities.
+- extra firing sub-systems beyond the concise V1.2.7 Tech and Kiln abilities.
 
 ## Desired strategic identities
 

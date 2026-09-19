@@ -85,7 +85,7 @@ export function eventDescription(event: PublicGameEvent, game: PublicGameState, 
     case "KILN_YARD_SHIFU_REPOSITION_DECLINED":
       return `${player(event.playerId)} kept the Shifu-marked ${ceramic(event.ceramicId)} ceramic in place.`;
     case "ORDER_TAKEN":
-      return `${player(event.playerId)} ${event.acquisition === "colour_samples" ? "selected" : "took"} ${event.orderId} from the Main Orders${event.acquisition === "colour_samples" ? " through Colour Samples" : ""}.`;
+      return `${player(event.playerId)} ${event.acquisition === "colour_samples" ? "selected" : "took"} a private Order from the Main Orders${event.acquisition === "colour_samples" ? " through Colour Samples" : ""}.`;
     case "COLOUR_SAMPLES_USED":
       return `${player(event.playerId)} used Colour Samples, reserved ${event.selectedOrderId ?? "an Order"}, and discarded ${event.discardedCount} looked-at Order${event.discardedCount === 1 ? "" : "s"}.`;
     case "GUILD_DISCIPLINE_INSPECTED":
@@ -127,6 +127,7 @@ export function eventDescription(event: PublicGameEvent, game: PublicGameState, 
       return `${player(event.playerId)} completed ${event.orderId} with ${event.ceramicIds.length} ceramic${event.ceramicIds.length === 1 ? "" : "s"}.${reward}`;
     }
     case "IMPERIAL_RECOGNITION_ADVANCED":
+      if (event.orderId === null) return `${player(event.playerId)} used Court Patronage: Imperial Recognition ${event.from} → ${event.to}.`;
       return `${player(event.playerId)} gained ${event.crowns} Crown${event.crowns === 1 ? "" : "s"}: Imperial Recognition ${event.from} → ${event.to}${event.overflowVp > 0 ? `; +${event.overflowVp} VP beyond Recognition 4` : ""}.`;
     case "IMPERIAL_GRANT_RECEIVED":
       return `${player(event.playerId)} resolved Imperial Grant: ${event.choice === "coins" ? `${event.coins} Coins` : `${event.clay} Clay, ${event.wood} Wood and ${event.coins} Coin`}.`;
@@ -137,7 +138,7 @@ export function eventDescription(event: PublicGameEvent, game: PublicGameState, 
     case "IMPERIAL_AUDIENCE_GAINED":
       return `${player(event.playerId)} reached Imperial Audience and gained ${event.vp} VP.`;
     case "ORDERS_DISCARDED_FOR_CLEANUP":
-      return `${player(event.playerId)} discarded ${event.orderIds.join(", ")} during Cleanup.`;
+      return `${player(event.playerId)} discarded ${event.count} Orders during Cleanup.`;
     case "ORDER_DISPLAYS_ROTATED":
       return `Round ${event.round} Order rotation discarded Main Orders ${event.marketOrderIds.join(", ")}.`;
     case "ROUND_STARTED":
@@ -170,7 +171,7 @@ function eventDescriptionZh(event: PublicGameEvent, game: PublicGameState): stri
     case "KILN_YARD_SHIFU_MARKED": return `${player(event.playerId)}将窑坊师傅放在本次烧成所选的${ceramic(event.ceramicId)}陶瓷上。`;
     case "KILN_YARD_SHIFU_REPOSITIONED": return `${player(event.playerId)}将师傅所在的${ceramic(event.ceramicId)}陶瓷从${term("zh-CN", event.fromSpaceId)}移至${term("zh-CN", event.toSpaceId)}。`;
     case "KILN_YARD_SHIFU_REPOSITION_DECLINED": return `${player(event.playerId)}选择不移动师傅所在的${ceramic(event.ceramicId)}陶瓷。`;
-    case "ORDER_TAKEN": return `${player(event.playerId)}${event.acquisition === "colour_samples" ? "通过色样簿承接" : "承接"}了主委托${event.orderId}。`;
+    case "ORDER_TAKEN": return `${player(event.playerId)}${event.acquisition === "colour_samples" ? "通过色样簿承接" : "承接"}了1张秘密主委托。`;
     case "COLOUR_SAMPLES_USED": return `${player(event.playerId)}使用色样簿，承接${event.selectedOrderId ?? "1张委托"}，并弃掉${event.discardedCount}张未承接的已查看委托。`;
     case "GUILD_DISCIPLINE_INSPECTED": return `${player(event.playerId)}查看了${DISCIPLINE_ZH[event.discipline]}牌堆顶${event.count}个技艺。`;
     case "TECHNIQUE_ACQUIRED": return `${player(event.playerId)}以${event.cost}铜钱取得${event.techniqueId} · ${TECHNIQUE_DEFINITIONS[event.techniqueId]?.nameZh ?? "未知技艺"}。`;
@@ -196,15 +197,17 @@ function eventDescriptionZh(event: PublicGameEvent, game: PublicGameState): stri
       const reward = definition === undefined ? "" : ` +${definition.vp}分${definition.coins > 0 ? `、+${definition.coins}铜钱` : ""}`;
       return `${player(event.playerId)}以${event.ceramicIds.length}件陶瓷完成${event.orderId}。${reward}`;
     }
-    case "IMPERIAL_RECOGNITION_ADVANCED": return `${player(event.playerId)}获得${event.crowns}个👑：御府声望${event.from} → ${event.to}${event.overflowVp > 0 ? `；超出声望4的${event.overflowVp}个👑立即获得${event.overflowVp}分` : ""}。`;
+    case "IMPERIAL_RECOGNITION_ADVANCED":
+      if (event.orderId === null) return `${player(event.playerId)}通过朝廷赞助提升御府声望：${event.from} → ${event.to}。`;
+      return `${player(event.playerId)}获得${event.crowns}个👑：御府声望${event.from} → ${event.to}${event.overflowVp > 0 ? `；超出声望4的${event.overflowVp}个👑立即获得${event.overflowVp}分` : ""}。`;
     case "IMPERIAL_GRANT_RECEIVED": return `${player(event.playerId)}结算御赐：${event.choice === "coins" ? `${event.coins}铜钱` : `${event.clay}泥、${event.wood}柴和${event.coins}铜钱`}。`;
     case "IMPERIAL_KILN_UNLOCKED": return `${player(event.playerId)}到达赐御窑，获得御窑。`;
     case "IMPERIAL_PRIORITY_GAINED": return `${player(event.playerId)}获得御烧优先标记。`;
     case "IMPERIAL_AUDIENCE_GAINED": return `${player(event.playerId)}到达御前召见，获得${event.vp}分。`;
-    case "ORDERS_DISCARDED_FOR_CLEANUP": return `${player(event.playerId)}在整备阶段弃掉${event.orderIds.join("、")}。`;
+    case "ORDERS_DISCARDED_FOR_CLEANUP": return `${player(event.playerId)}在整备阶段弃掉${event.count}张委托。`;
     case "ORDER_DISPLAYS_ROTATED": return `第${event.round}轮委托轮换弃掉主委托${event.marketOrderIds.join("、")}。`;
     case "ROUND_STARTED": return `第${event.round}轮开始。${player(event.firstPlayerId)}为起始玩家。`;
-    case "PRESENTATION_SUBMITTED": return `${player(event.playerId)}为终局陈列提交${event.ceramicIds.length}件陶瓷，其中${event.featuredCeramicIds.length}件为主题藏品。`;
+    case "PRESENTATION_SUBMITTED": return `${player(event.playerId)}为终局陈列提交${event.ceramicIds.length}件陶瓷。`;
     case "FINAL_SCORE_CALCULATED": return `最终计分完成。胜者：${event.result.winnerIds.map(player).join("、")}。`;
   }
 }
@@ -213,7 +216,7 @@ function workerName(workerId: string, locale: Locale = "en"): string {
   return workerId.toLowerCase().includes("shifu") ? term(locale, "shifu") : term(locale, "apprentice");
 }
 
-/** Both locales read the V1.2.6 location names from the shared term table. */
+/** Both locales read the V1.2.7 location names from the shared term table. */
 function locationName(locationId: string, locale: Locale = "en"): string {
   return term(locale, locationId);
 }

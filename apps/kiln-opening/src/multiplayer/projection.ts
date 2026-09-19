@@ -19,8 +19,8 @@ function projectPlayer(state: GameState, playerId: PlayerId): PublicPlayerState 
     kilnId: player.kilnId,
     resources: clone(player.resources),
     workers: clone(player.workers),
-    // Opening selections remain hidden until the final simultaneous reveal.
-    orderHand: state.phase.type === "setup_starting_orders" ? [] : [...player.orderHand],
+    orderHand: [],
+    orderHandCount: player.orderHand.length,
     completedOrders: clone(player.completedOrders),
     techniques: clone(player.techniques),
     startingTechniqueId: player.startingTechniqueId,
@@ -41,8 +41,8 @@ function projectPlayer(state: GameState, playerId: PlayerId): PublicPlayerState 
 }
 
 export function projectPublicGameState(state: GameState): PublicGameState {
-  if (state.schemaVersion !== 4 || state.rulesVersion !== "1.2.6") {
-    throw new Error("Only schema-4 V1.2.6 games may be projected by the current client");
+  if (state.schemaVersion !== 4 || state.rulesVersion !== "1.2.7") {
+    throw new Error("Only schema-4 V1.2.7 games may be projected by the current client");
   }
   if (state.phase.type === "firing_contributions" && state.firingContext !== null) {
     throw new Error("Unrevealed Contributions must never enter the public firing context");
@@ -68,6 +68,7 @@ export function projectPublicGameState(state: GameState): PublicGameState {
   if (phase.type === "work_office_orders" && phase.step === "colour_samples_choose") {
     phase.colourSamplesChoices = [];
   }
+  if (phase.type === "orders") delete phase.declinedCompletableOrderIdsByPlayer;
   // The Guild Shifu's inspected Techs are private to that player.
   if (phase.type === "work_guild" && phase.inspectedTechniqueIds !== undefined) {
     phase.inspectedTechniqueIds = [];
@@ -85,8 +86,8 @@ export function projectPublicGameState(state: GameState): PublicGameState {
     phase,
     players,
     actionBoard: clone(state.actionBoard),
+    // All ceramic attributes are public, including opponents' workshop/Imperial pieces.
     ceramics: clone(state.ceramics),
-    commonSupply: clone(state.commonSupply),
     vesselSupplyCounts,
     decks: {
       marketRemaining: state.marketDeck.length,
@@ -108,6 +109,9 @@ export function projectPublicGameState(state: GameState): PublicGameState {
 }
 
 export function projectPublicEvent(event: GameEvent): PublicGameEvent {
+  if (event.type === "ORDER_TAKEN") return { type: event.type, playerId: event.playerId, deck: event.deck, acquisition: event.acquisition };
+  if (event.type === "STARTING_ORDERS_REVEALED") return { type: event.type, ordersByPlayer: {} };
+  if (event.type === "ORDERS_DISCARDED_FOR_CLEANUP") return { type: event.type, playerId: event.playerId, count: event.orderIds.length, orderIds: [] };
   if (event.type === "WOOD_SUBMITTED") {
     // Construct this record explicitly. Even if the private engine event gains more
     // fields later, a Fuel Ledger commitment must not cross the public event boundary.
@@ -119,7 +123,7 @@ export function projectPublicEvent(event: GameEvent): PublicGameEvent {
       playerId: event.playerId,
       deck: event.deck,
       discardedCount: event.discardedOrderIds.length,
-      selectedOrderId: event.selectedOrderId,
+
     };
   }
   return clone(event) as PublicGameEvent;
@@ -127,4 +131,11 @@ export function projectPublicEvent(event: GameEvent): PublicGameEvent {
 
 export function projectPublicEvents(events: readonly GameEvent[]): PublicGameEvent[] {
   return events.map(projectPublicEvent);
+}
+
+/** Owner-only composition for rendering/AI. Never persist or broadcast this view. */
+export function withOwnOrderHand(game: PublicGameState, playerId: PlayerId, orderHand: readonly string[] | undefined): PublicGameState {
+  const player = game.players[playerId];
+  if (player === undefined || orderHand === undefined) return game;
+  return { ...game, players: { ...game.players, [playerId]: { ...player, orderHand: [...orderHand] } } };
 }

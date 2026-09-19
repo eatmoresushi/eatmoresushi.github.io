@@ -1,5 +1,4 @@
 import {
-  COMMON_SUPPLY,
   DISCIPLINES,
   FIRE_CARDS,
   GAME_CONFIG,
@@ -153,7 +152,7 @@ export function createGame(input: CreateGameInput, rng: RandomSource): CreateGam
   const turnOrder = [...playerOrder.slice(firstIndex), ...playerOrder.slice(0, firstIndex)];
   const selectionOrder = [...turnOrder].reverse();
 
-  const marketDeck = shuffle(
+  let marketDeck = shuffle(
     MAIN_ORDERS.map((order) => order.id),
     rng,
   );
@@ -161,7 +160,7 @@ export function createGame(input: CreateGameInput, rng: RandomSource): CreateGam
     STARTING_ORDERS.map((order) => order.id),
     rng,
   );
-  const marketDisplay = drawMany(marketDeck, GAME_CONFIG.orderDisplay.market);
+
   const techniqueState = makeTechniqueState(rng);
   const fireDeck = shuffle(FIRE_CARDS, rng);
 
@@ -169,11 +168,13 @@ export function createGame(input: CreateGameInput, rng: RandomSource): CreateGam
     input.players.map((player, index) => [player.id, makePlayer(player, index)]),
   ) as Record<PlayerId, PlayerState>;
 
-  const commonSupply = {
-    clay: COMMON_SUPPLY.clay - GAME_CONFIG.startingResources.clay * playerCount,
-    wood: COMMON_SUPPLY.wood - GAME_CONFIG.startingResources.wood * playerCount,
-    coins: COMMON_SUPPLY.coins - GAME_CONFIG.startingResources.coins * playerCount,
-  };
+  // Hands are dealt before the remaining Main deck is reshuffled for the public display.
+  for (const playerId of turnOrder) {
+    players[playerId]!.orderHand = [startingOrderDeck.shift()!, marketDeck.shift()!];
+  }
+  const returnedStartingOrderIds = startingOrderDeck.splice(0);
+  marketDeck = shuffle(marketDeck, rng);
+  const marketDisplay = drawMany(marketDeck, GAME_CONFIG.orderDisplay.market);
 
   const state: GameState = {
     schemaVersion: 4,
@@ -194,13 +195,12 @@ export function createGame(input: CreateGameInput, rng: RandomSource): CreateGam
     players,
     actionBoard: { placements: emptyActionBoard() },
     ceramics: {},
-    commonSupply,
     vesselSupply: makeVesselSupply(),
     marketDeck,
     marketDiscard: [],
     marketDisplay,
     startingOrderDeck,
-    returnedStartingOrderIds: [],
+    returnedStartingOrderIds,
     techniqueDecks: techniqueState.decks,
     techniqueDisplay: techniqueState.display,
     fireDeck,
