@@ -19,6 +19,7 @@ export interface ComputerObservation {
   game: PublicGameState;
   playerId: PlayerId;
   ownPrivate: {
+    orderHand: OrderId[];
     startingOrderOffer: OrderId[];
     colourSamplesChoices: OrderId[];
     inspectedTechniqueIds: TechniqueId[];
@@ -52,6 +53,7 @@ export function createComputerObservation(
     game: projectPublicGameState(state),
     playerId,
     ownPrivate: {
+      orderHand: [...state.players[playerId]!.orderHand],
       startingOrderOffer,
       colourSamplesChoices,
       inspectedTechniqueIds,

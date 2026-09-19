@@ -5,7 +5,7 @@
     "nameZh": "汝窑",
     "abilityName": "Quiet Perfection",
     "abilityNameZh": "天青无瑕",
-    "ability": "Once per round, when you complete an Order using a Masterpiece with Celadon Glaze and Plain Decoration, gain 4 VP.",
+    "ability": "Once per round, when you complete an Order using a Masterpiece with Celadon Glaze and Plain Decoration, gain 4 VP. The Order itself does not need to require Masterpiece, Celadon or Plain; the delivered ceramic must actually have those attributes.",
     "abilityZh": "每轮一次，当你完成委托时，若使用了一件臻品、青釉、素面陶瓷，获得4 VP。该委托本身不必要求臻品、青釉或素面；实际交付的陶瓷拥有这些属性即可。"
   },
   {
@@ -21,10 +21,10 @@
     "id": "GE",
     "name": "Ge Kiln",
     "nameZh": "哥窑",
-    "abilityName": "Crackle from Fire",
-    "abilityNameZh": "窑火开片",
-    "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, you may choose one of your ceramics whose Actual Heat differs from its Preferred Heat by exactly 1. Set its Actual Heat equal to its Preferred Heat and change its Decoration to Crackle without paying the Crackle cost.",
-    "abilityZh": "每轮一次，在计算实际火候后、决定品质前，你可以选择自己1件实际火候与适烧火候恰好相差1的陶瓷。将其实际火候设为适烧火候，并把其纹饰改为开片，无需支付开片费用。"
+    "abilityName": "Crackle Mastery",
+    "abilityNameZh": "开片精艺",
+    "ability": "When completing Orders or scoring the Exhibition, treat your Standard-quality Crackle ceramics as Fine. Once per round: When completing an Order, you may treat 1 of your Crackle ceramics used as having any one Decoration for all that Order’s Decoration requirements. Its actual Decoration stays Crackle.",
+    "abilityZh": "完成委托或进行展览计分时，将你的良品开片陶瓷视为上品。每轮一次：完成委托时，可将所用1件开片陶瓷视为具有任意一种纹饰，适用于该委托全部纹饰要求。其实际纹饰仍为开片。"
   },
   {
     "id": "DI",
@@ -32,7 +32,7 @@
     "nameZh": "定窑",
     "abilityName": "Moulded Production",
     "abilityNameZh": "范制成器",
-    "ability": "Once per round, when resolving a Potter’s Wheel action, after you form a Bowl, Plate or Brush Washer, you may pay 1 Clay to form one additional vessel of the same Shape. This additional vessel does not count as one of the vessels formed by the worker effect.",
+    "ability": "Once per round, when resolving a Potter’s Wheel action, after you form a Bowl, Plate or Brush Washer, you may pay 1 Clay to form one additional vessel of the same Shape. This additional vessel does not count against that action's normal vessel limit and does not count as a vessel formed by the worker effect for the Shifu's two-vessel discount. For effects that refer to vessels formed by that Potter’s Wheel action, including White Slip and Drying Frames, the additional vessel counts as formed by that action. Each effect still follows its normal timing, eligibility requirements and usage limit.",
     "abilityZh": "每轮一次，在结算陶车坊行动时，当你成型一个碗、盘或笔洗后，可以额外支付1泥，再成型1件相同器物。该额外器物不计入该工人效果所形成的器物数量。"
   },
   {

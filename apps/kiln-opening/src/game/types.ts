@@ -1,5 +1,5 @@
 export type PlayerId = string;
-export type RulesVersion = "1.2.6";
+export type RulesVersion = "1.2.7";
 
 /**
  * The three v1.1.4 Contribution cards. Bank (-1 Heat, 1 Wood), Tend (0, 0) and
@@ -37,7 +37,8 @@ export type LocationId =
   | "kiln_yard"
   | "market_imperial_office"
   | "guild_academy"
-  | "labour";
+  | "labour"
+  | "court_patronage";
 /** V1.1.1: Base Heat is a clamped formula result, not a three-band table. */
 export type BaseHeat = 0 | 1 | 2 | 3 | 4 | 5;
 
@@ -50,6 +51,7 @@ export type KilnSpaceId =
   | "low_1"
   | "low_2";
 
+/** A workshop's owned resources. The shared bank has unlimited supply. */
 export interface ResourceState {
   clay: number;
   wood: number;
@@ -101,7 +103,7 @@ export interface PlayerState {
   passedWorkPhase: boolean;
   kilnAbilityUsedThisRound: boolean;
   kilnYardShifuUsedThisRound: boolean;
-  /** V1.2.6: the Shared-Kiln ceramic chosen when this round's Kiln Yard Shifu resolved. */
+  /** V1.2.7: the Shared-Kiln ceramic chosen when this round's Kiln Yard Shifu resolved. */
   kilnYardShifuCeramicId: CeramicId | null;
   /** Distinct Shapes formed this round, used by Measuring Calipers. */
   shapesFormedThisRound: Shape[];
@@ -319,6 +321,8 @@ export type GamePhase =
       ordersTaken: number;
       step: "colour_samples_or_skip" | "colour_samples_choose" | "take_or_end" | "gain_advance";
       colourSamplesUsed: boolean;
+      /** Immediate reservation granted by acquiring Colour Samples; no resource bonus. */
+      onAcquisition?: true;
       colourSamplesDeck?: OrderDeck;
       colourSamplesChoices?: OrderId[];
     }
@@ -327,7 +331,7 @@ export type GamePhase =
       actorId: PlayerId;
       workerId: WorkerId;
       step: "inspect" | "buy";
-      /** V1.2.6 Shifu: the top Techs drawn off one discipline, private to the actor. */
+      /** V1.2.7 Shifu: the top Techs drawn off one discipline, private to the actor. */
       inspectedDiscipline?: TechniqueDiscipline;
       inspectedTechniqueIds?: TechniqueId[];
     }
@@ -399,7 +403,6 @@ export interface GameState {
   players: Record<PlayerId, PlayerState>;
   actionBoard: ActionBoardState;
   ceramics: Record<CeramicId, CeramicState>;
-  commonSupply: ResourceState;
   vesselSupply: Record<Shape, VesselInstanceId[]>;
   marketDeck: OrderId[];
   marketDiscard: OrderId[];
@@ -454,6 +457,7 @@ export interface KilnLoadSelection {
   ceramicId: CeramicId;
   kilnSpaceId: KilnSpaceId | "imperial";
   useKilnFurniture?: boolean;
+  glazePalette?: Glaze;
 }
 
 export type GameAction =
@@ -486,7 +490,7 @@ export type GameAction =
       freeDecorationCeramicId?: CeramicId;
       useTechniqueIds?: TechniqueId[];
       glazePalette?: { ceramicId: CeramicId; glaze: Glaze };
-      rapidDrying?: { ceramicId: CeramicId; kilnSpaceId: KilnSpaceId | "imperial" };
+      rapidDrying?: KilnLoadSelection;
     }
   | {
       type: "USE_KILN_YARD";
@@ -504,6 +508,7 @@ export type GameAction =
    * against 0% in Round 1.
    */
   | { type: "USE_LABOUR"; workerId: WorkerId }
+  | { type: "USE_COURT_PATRONAGE"; workerId: WorkerId; imperialGrantChoice?: "coins" | "resources" }
   | {
       type: "BEGIN_OFFICE_ORDERS";
       workerId: WorkerId;
@@ -525,7 +530,7 @@ export type GameAction =
       type: "GUILD_BUY_TECHNIQUE";
       techniqueId: TechniqueId;
     }
-  | { type: "RESOLVE_IMPERIAL_PRIORITY"; ceramicId: CeramicId | null }
+  | { type: "RESOLVE_IMPERIAL_PRIORITY"; ceramicId: CeramicId | null; glazePalette?: Glaze }
   | { type: "RESOLVE_KILN_YARD_REPOSITION"; ceramicId: CeramicId | null; toSpaceId: KilnSpaceId | null }
   | { type: "REVEAL_FIRE_CARD" }
   | { type: "RESOLVE_JUN"; ceramicId: CeramicId | null; delta: -1 | 1 | null }
@@ -539,6 +544,7 @@ export type GameAction =
       orderId: OrderId;
       ceramicIds: CeramicId[];
       imperialGrantChoice?: "coins" | "resources";
+      geDecoration?: { ceramicId: CeramicId; decoration: Decoration };
     }
   | { type: "END_ORDER_TURN" }
   | { type: "DISCARD_ORDERS_FOR_CLEANUP"; orderIds: OrderId[] }
@@ -562,7 +568,6 @@ export type GameRuleErrorCode =
   | "PLAYER_ALREADY_PASSED"
   | "INVALID_SELECTION"
   | "INSUFFICIENT_RESOURCES"
-  | "SUPPLY_EMPTY"
   | "CERAMIC_NOT_FOUND"
   | "ILLEGAL_CERAMIC_STAGE"
   | "KILN_SPACE_OCCUPIED"
@@ -618,7 +623,7 @@ export type GameEvent =
       type: "COLOUR_SAMPLES_USED";
       playerId: PlayerId;
       deck: OrderDeck;
-      /** V1.2.6 discards every looked-at Order the player did not reserve. */
+      /** V1.2.7 discards every looked-at Order the player did not reserve. */
       discardedOrderIds: OrderId[];
       selectedOrderId: OrderId;
       reservedFromDisplay: boolean;
@@ -656,10 +661,11 @@ export type GameEvent =
   | {
       type: "IMPERIAL_RECOGNITION_ADVANCED";
       playerId: PlayerId;
-      orderId: OrderId;
+      /** Null for Court Patronage, which grants no Crown icons. */
+      orderId: OrderId | null;
       from: 0 | 1 | 2 | 3 | 4;
       to: 0 | 1 | 2 | 3 | 4;
-      crowns: 1 | 2 | 3;
+      crowns: 0 | 1 | 2 | 3;
       appliedCrowns: number;
       overflowVp: number;
     }

@@ -350,13 +350,13 @@ function OrderDisplays({ game, ownPlayerId }: { game: PublicGameState; ownPlayer
         <div><h3>{t("Main Order display")} ({game.displays.market.length})</h3><p className="muted">{t("Oldest → newest. Face-up removals slide later Orders left and refill at the right.")}</p><div className="card-row">{game.displays.market.map((orderId) => <OrderCard orderId={orderId} key={orderId} />)}</div></div>
       </div>
       <section className="workshop-orders" aria-label={t("Workshop Orders")}>
-        <h3>{t("Uncompleted Order hands — public information")}</h3>
+        <h3>{t("Order hands — private contents, public counts")}</h3>
         <div className="workshop-order-grid">{game.playerOrder.map((playerId) => {
           const player = game.players[playerId]!;
           return (
             <article className="workshop-order-hand" key={playerId}>
-              <h4>{player.displayName}{playerId === ownPlayerId ? ` (${t("You")})` : ""} · {player.orderHand.length} {t("open")} / {player.completedOrders.length} {t("completed")}</h4>
-              {player.orderHand.length === 0 ? <p className="muted">{t("No open Orders.")}</p> : <div className="card-row">{player.orderHand.map((orderId) => <OrderCard orderId={orderId} key={orderId} />)}</div>}
+              <h4>{player.displayName}{playerId === ownPlayerId ? ` (${t("You")})` : ""} · {player.orderHandCount} {t("open")} / {player.completedOrders.length} {t("completed")}</h4>
+              {player.orderHand.length === 0 ? <p className="muted">{player.orderHandCount > 0 ? (locale === "zh-CN" ? "持有委托为秘密信息。" : "Orders in hand are private.") : t("No open Orders.")}</p> : <div className="card-row">{player.orderHand.map((orderId) => <OrderCard orderId={orderId} key={orderId} />)}</div>}
             </article>
           );
         })}</div>
@@ -397,7 +397,7 @@ function ImperialProgressTable({ game }: { game: PublicGameState }) {
           })}</tbody>
         </table>
       </div>
-      <p className="progress-legend">{locale === "zh-CN" ? "只有已完成委托上的👑推进御府声望；逐个结算每个👑与跨过的里程碑。到达声望4后，每个额外👑立即获得1 VP。" : "Only Crowns on completed Orders advance Recognition; resolve every crossed milestone in order. Each Crown beyond Recognition 4 scores 1 VP immediately."}</p>
+      <p className="progress-legend">{locale === "zh-CN" ? "已完成委托上的👑推进御府声望；朝廷赞助可支付4铜钱，从声望0、1或2提升1格。依次结算到达的里程碑。到达声望4后，每个额外👑立即获得1 VP。" : "Crowns on completed Orders advance Recognition. Court Patronage costs 4 Coins to advance 1 space from Recognition 0, 1 or 2. Resolve each reached milestone in order. Each Crown beyond Recognition 4 scores 1 VP immediately."}</p>
     </section>
   );
 }

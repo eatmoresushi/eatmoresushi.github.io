@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.2.6",
+  "rulesVersion": "1.2.7",
   "track": [
     {
       "space": 0,
@@ -38,14 +38,13 @@
     }
   ],
   "exhibition": {
-    "capacity": 5,
+    "capacity": null,
     "minimumQuality": "standard",
     "qualityVp": {
       "standard": 2,
       "fine": 3,
       "masterpiece": 5
     },
-    "featuredCollectionSize": 3,
     "threeDifferentShapesBonus": 3,
     "threeDifferentGlazesBonus": 3,
     "flawedEligible": false,

@@ -6,6 +6,8 @@ Create a synchronous 2–4 player browser version suitable for remote playtestin
 
 The digital version should automate administration while preserving decisions and hidden information.
 
+Clay, Wood and Coins have unlimited shared supplies. Track each player's earned resources and payments without a finite bank counter or physical-token cap.
+
 ## MVP user flow
 
 ### Home
@@ -46,7 +48,7 @@ Host starts only with 2–4 players.
 
 The host may add or remove computer seats while the room is in the lobby. A room must retain at least one human seat and may contain up to three computer players, for the normal four-seat maximum.
 
-Computer seats use the single `rules-v1.2.6-strategic-002` production policy through the V1.2.6 authoritative engine, with no live exploration or learning. Historical calibration labels remain honest and are not claims of human-calibrated strength. Each seat has a private persistent seed and stable player/seat identity. The browser never chooses an AI command: an authenticated client only asks the Edge Function to advance. The server derives the active computer, creates a sanitized observation containing public state plus only that seat's private decisions, preflights the strategic command and conservative fallbacks through the engine, and commits the first legal result with the same revision checks as a human command.
+Computer seats use the single `rules-v1.2.7-strategic-002` production policy through the V1.2.7 authoritative engine, with no live exploration or learning. Historical calibration labels remain honest and are not claims of human-calibrated strength. Each seat has a private persistent seed and stable player/seat identity. The browser never chooses an AI command: an authenticated client only asks the Edge Function to advance. The server derives the active computer, creates a sanitized observation containing public state plus only that seat's private decisions, preflights the strategic command and conservative fallbacks through the engine, and commits the first legal result with the same revision checks as a human command.
 
 Consecutive computer turns run in bounded batches so an Edge Function invocation cannot monopolize the session. Concurrent advance requests are safe; compare-and-swap persistence accepts each revision only once. Contribution-card choices remain private in the server-only schema until the normal simultaneous reveal, including when computers contribute. The client times out a stalled advance request without changing local game state, pauses automatic retries for that revision, and offers an explicit retry. Successful batches produce a paced public-event recap while the complete authoritative history remains available in the log.
 
@@ -54,15 +56,15 @@ Consecutive computer turns run in bounded batches so an Edge Function invocation
 
 - random First Player;
 - reverse-order Kiln selection;
-- each player receives 4 private Starting Orders, secretly keeps exactly 2, and all kept Starting Orders become public after every player submits;
+- each player receives 1 Starting Order and 1 Main Order in a secret hand; only hand counts are public;
 - each player chooses 1 Starting Tech from the common supply;
 - every player starts with 1 Shifu + 3 Apprentices and an empty Imperial Kiln area;
-- all seven action locations are shared; Materials Yard, Potter's Wheel, Glaze & Decoration, Commission Market, and Guild & Academy use 2 / 3 / 4 global printed spaces at 2 / 3 / 4 players, while Kiln Yard and Labour are uncapped;
-- game begins Round 1 with a five-card Main Order queue, oldest on the left and newest on the right.
+- all eight action locations are shared; Materials Yard, Potter's Wheel, Glaze & Decoration, Commission Market, and Guild & Academy use 2 / 3 / 4 global printed spaces at 2 / 3 / 4 players, while Kiln Yard, Labour and Court Patronage are uncapped;
+- game begins Round 1 with a six-card Main Order queue, oldest on the left and newest on the right.
 
 ## Synchronous turn model
 
-Work Phase has one active player at a time.
+Work Phase has one active player at a time. Every player must place all four workers; there is no Work pass. Court Patronage costs 4 Coins and advances Recognition only from 0, 1 or 2.
 
 UI shows:
 
@@ -74,7 +76,7 @@ UI shows:
 
 Players cannot submit actions out of turn except special simultaneous/timing-window submissions.
 
-The Main Order display behaves as a left-to-right queue. Whenever a face-up Order is reserved or completed, all later cards slide left and the replacement is appended at the right. Blind deck reservations and privately viewed Colour Samples reservations leave the display unchanged. A multi-reservation Commission action resolves one reservation completely before presenting the updated choices for the next. At the start of Rounds 2–5, discard the two leftmost Orders, retain the other three in order, then append two replacements.
+The Main Order display behaves as a left-to-right queue. Whenever a face-up Order is reserved or completed, all later cards slide left and the replacement is appended at the right. Blind deck reservations and privately viewed Colour Samples reservations leave the display unchanged. A multi-reservation Commission action resolves one reservation completely before presenting the updated choices for the next. At the start of Rounds 2–5, discard the two leftmost Orders, retain the other four in order, then append two replacements.
 
 During the Order Phase, the action panel shows only held or face-up Orders that the active player can fulfil with a legal Finished-ceramic group. An explicit pass remembers the legal Orders declined at that opportunity. When later completions advance and refill the public display, the server checks every player in reverse Work order: it prompts a prior passer again only when a newly displayed Order is now completable, skips unchanged or impossible opportunities, and ends the phase after a complete circuit with no completion. This automates repeated no-choice passes without suppressing a newly created decision.
 
@@ -90,7 +92,7 @@ Firing is the most important digital interaction.
 6. during each Kiln Yard Shifu action, if the player has an owned ceramic in the Shared Kiln after loading, require the player to mark exactly one of those ceramics and show that association publicly;
 7. before revealing Fire, offer each player with a marked Kiln Yard Shifu target one reposition decision in First Player order. Only the ceramic marked during that Work-Phase action may move, and only to an empty active space in a neighbouring zone: High ↔ Middle ↔ Low. It never enters or leaves an Imperial Kiln, and Kiln Furniture travels with its ceramic;
 8. after all adjustments, prompt the First Player to reveal the Fire card (a ceremonial confirmation only); the server reshuffles the discard first if needed, draws the card, and calculates uncapped Global Heat;
-9. calculate each ceramic's Actual Heat and resolve Jun/Ge adjustments in the rulebook timing window;
+9. calculate each ceramic's Actual Heat and resolve Jun adjustments in the rulebook timing window;
 10. assign Quality;
 11. in First Player order, resolve Protective Saggars, Second Firing and similar after-Quality choices; a player controlling multiple abilities at that timing chooses their order. Relevant unused once-per-round abilities may resolve at their normal timing inside a Second Firing recalculation;
 12. resolve the Flawed salvage: each player may discard at most one ceramic still Flawed from this firing for 2 Coins, returning its Vessel card to the matching Shape supply;
@@ -127,7 +129,9 @@ On reconnect:
 
 ## Hidden information
 
-Opening Starting Order offers/selections, Colour Samples top-three choices and ordering, Test Pieces peeks, and Contribution/Fuel Ledger submissions are private. Contribution and Fuel Ledger choices remain strictly secret until the simultaneous reveal.
+Every player's undelivered ceramics are public, including Shaped, Glazed, loaded (Shared or Imperial Kiln), and Finished ceramics, with all recorded attributes. Every seat can inspect them through the player panel, including after reconnect.
+
+Held Starting/Main Orders, Colour Samples top-three choices and ordering, Guild Shifu Tech inspections, Test Pieces peeks, and Contribution/Fuel Ledger submissions are private. Order hand counts are public. Contribution and Fuel Ledger choices remain strictly secret until the simultaneous reveal.
 
 Never put unrevealed contribution values in public realtime state.
 
@@ -153,7 +157,7 @@ Not required for MVP. Voice/chat can be external.
 
 Imperial Recognition is server-authoritative and public. Every public snapshot and reconnect response includes each player's current 0–4 space, resolved milestone rewards, whether their Imperial Kiln has been gained, whether their Imperial Priority token is available, and immediate VP earned from Crowns beyond 4.
 
-Only Crown icons printed on completed Orders advance Recognition. The server resolves Crowns one at a time, caps the marker at 4, and resolves every newly crossed milestone in ascending order: Recognition 1 **Imperial Grant** grants either 3 Coins or 1 Clay + 1 Wood + 1 Coin; Recognition 2 **Imperial Gift** grants the Imperial Kiln; Recognition 3 **Imperial Priority** grants its once-per-game token; and Recognition 4 **Imperial Audience** grants 6 VP. Every Crown gained after the marker reaches 4 grants 1 VP immediately, including remaining Crowns from the Order that first reaches 4.
+Recognition advances through Crown icons printed on completed Orders or Court Patronage, which costs 4 Coins and may advance only from spaces 0, 1 or 2. The server resolves Crowns one at a time, caps the marker at 4, and resolves every newly crossed milestone in ascending order: Recognition 1 **Imperial Grant** grants either 3 Coins or 1 Clay + 1 Wood + 1 Coin; Recognition 2 **Imperial Gift** grants the Imperial Kiln; Recognition 3 **Imperial Priority** grants its once-per-game token; and Recognition 4 **Imperial Audience** grants 6 VP. Every Crown gained after the marker reaches 4 grants 1 VP immediately, including remaining Crowns from the Order that first reaches 4.
 
 Imperial Priority is a separate choice before or after one of the owner's worker actions. Spending it loads one unloaded Glazed ceramic into the owner's empty Imperial Kiln; it does not increase Kiln Yard's normal load allowance and cannot move an already loaded ceramic. The client never predicts the unlock, token spend, overflow-Crown VP or Audience VP locally.
 
@@ -173,7 +177,7 @@ Results screen shows VP breakdown by:
 - Kiln Tradition and other immediate ability VP;
 - leftover Coins.
 
-Every player may submit up to 5 Finished, undelivered Standard-or-better ceramics to the End-game Exhibition. Standard, Fine, and Masterpiece ceramics score 2/3/5 VP. A player exhibiting at least three ceramics chooses exactly three as the featured collection; three different Shapes and three different Glazes within that collection each score +3 VP. Each owned Advanced Tech scores 1 VP. Remaining Coins score 1 VP per 3 Coins, to a maximum of 5 VP.
+Every player may submit any number of Finished, undelivered Standard-or-better ceramics to the End-game Exhibition. Standard, Fine, and Masterpiece ceramics score 2/3/5 VP. At least three different Shapes and at least three different Glazes across the entire exhibition each score +3 VP independently. Each owned Advanced Tech scores 1 VP. Remaining Coins score 1 VP per 3 Coins, to a maximum of 5 VP.
 
 ## Localization
 

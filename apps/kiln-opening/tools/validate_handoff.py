@@ -7,7 +7,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
-RULES_VERSION = "1.2.6"
+RULES_VERSION = "1.2.7"
 errors: list[str] = []
 
 
@@ -97,7 +97,7 @@ check(config["rounds"] == 5, "Game must last 5 rounds")
 check(config["startingResources"] == {"clay": 2, "wood": 2, "coins": 3}, "Starting resources mismatch")
 check(config["workers"] == {"shifu": 1, "apprenticesTotal": 3, "apprenticesStarting": 3}, "Every player must start with 1 Shifu and 3 Apprentices")
 check(
-    config["orderDisplay"] == {"market": 5, "roundStartDiscard": 2, "baseHandLimit": 3},
+    config["orderDisplay"] == {"market": 6, "roundStartDiscard": 2, "baseHandLimit": 3},
     "Main Order display, rotation, or hand limit mismatch",
 )
 check(config["techniques"] == {"maxOwned": 2, "faceUpPerDiscipline": 2}, "Advanced Tech limits mismatch")
@@ -111,9 +111,10 @@ expected_locations = {
     "market_imperial_office": {"2": 2, "3": 3, "4": 4},
     "guild_academy": {"2": 2, "3": 3, "4": 4},
     "labour": {"2": None, "3": None, "4": None},
+    "court_patronage": {"2": None, "3": None, "4": None},
 }
 locations = {location["id"]: location for location in actions["locations"]}
-check(set(locations) == set(expected_locations), "Expected exactly the seven V1.2.6 action locations")
+check(set(locations) == set(expected_locations), "Expected exactly the eight V1.2.7 action locations")
 for location_id, capacity in expected_locations.items():
     location = locations.get(location_id, {})
     check(location.get("capacity") == capacity, f"{location_id} capacity mismatch")
@@ -171,11 +172,10 @@ check(track[1]["reward"] == "Gain 3 Coins or 1 Clay + 1 Wood + 1 Coin.", "Imperi
 check(track[2]["reward"] == "Gain your Imperial Kiln tile.", "Imperial Gift must grant the Imperial Kiln tile")
 check("before or after your worker action" in track[3]["reward"] and "1 unloaded Glazed ceramic" in track[3]["reward"], "Imperial Priority effect mismatch")
 check(track[4]["reward"] == "Gain 6 VP. Each later Crown scores 1 VP.", "Imperial Audience reward mismatch")
-check(recognition["exhibition"]["capacity"] == 5, "Exhibition capacity mismatch")
+check(recognition["exhibition"]["capacity"] is None, "Exhibition capacity mismatch")
 check(recognition["exhibition"]["qualityVp"] == {"standard": 2, "fine": 3, "masterpiece": 5}, "Exhibition VP mismatch")
-check(recognition["exhibition"]["featuredCollectionSize"] == 3, "Featured Collection size mismatch")
-check(recognition["exhibition"]["threeDifferentShapesBonus"] == 3, "Featured Collection Shape bonus mismatch")
-check(recognition["exhibition"]["threeDifferentGlazesBonus"] == 3, "Featured Collection Glaze bonus mismatch")
+check(recognition["exhibition"]["threeDifferentShapesBonus"] == 3, "Exhibition Shape bonus mismatch")
+check(recognition["exhibition"]["threeDifferentGlazesBonus"] == 3, "Exhibition Glaze bonus mismatch")
 
 component_counts = {component["name"]: component["qty"] for component in components["components"]}
 check(component_counts.get("Main Order Cards") == 48 and component_counts.get("Starting Order Cards") == 16, "Order component counts mismatch")
@@ -184,42 +184,42 @@ check(component_counts.get("Fire Cards") == 12 and component_counts.get("Imperia
 check(rounds["roundCount"] == 5, "Round structure must contain five rounds")
 check(
     "discard the two leftmost" in rounds["phases"][0]["summary"]
-    and "remaining three" in rounds["phases"][0]["summary"]
+    and "remaining four" in rounds["phases"][0]["summary"]
     and "two new Main Orders" in rounds["phases"][0]["summary"],
-    "Round-start five-card market rotation mismatch",
+    "Round-start six-card market rotation mismatch",
 )
 check(assets["orderCards"].get("total") == 64 and assets["orderCards"].get("main") == 48 and assets["orderCards"].get("starting") == 16, "Order asset counts mismatch")
-check(assets["playerReference"].get("mustShowFiveCardMainOrderDisplay") is True, "Reference asset must show a five-card Main Order display")
+check(assets["playerReference"].get("mustShowSixCardMainOrderDisplay") is True, "Reference asset must show a six-card Main Order display")
 
-adopted_rules = (ROOT / "docs" / "KILN_OPENING_v1.2.6_EN_SOURCE.md").read_text(encoding="utf-8")
+adopted_rules = (ROOT / "docs" / "KILN_OPENING_v1.2.7_EN_SOURCE.md").read_text(encoding="utf-8")
 for required in (
-    "reveal **5 face-up Main Orders**",
+    "reveal **6 face-up Main Orders**",
     "Discard the **2 leftmost face-up Main Orders**",
     "rightmost Order is the newest",
-    "Slide every later Order left",
+    "slide every Order to its right **one position left**",
     "Multiple Shifu may overfill the same location.",
     "the ceramic that has the Shifu worker",
     "before or after your worker action",
     "reserve the **top card of the Main Order deck without looking at it first**",
     "same Base Heat and kiln position",
     "gain **2 Coins and 1 VP**",
-    "pay 1 Clay",
+    "pay **1 Clay**",
     "look at the top 2 Techs of that deck",
-    "+3 VP if the 3 have **3 different Shapes**",
+    "at least **3 different Shapes**",
     "**1 VP per 3 Coins remaining**",
     "Each Advanced Tech you own scores **1 VP at game end**.",
 ):
     check(required in adopted_rules, f"Adopted rulebook is missing: {required}")
 
 if errors:
-    print("V1.2.6 HANDOFF VALIDATION FAILED")
+    print("V1.2.7 HANDOFF VALIDATION FAILED")
     for item in errors:
         print(f"- {item}")
     sys.exit(1)
 
-print("V1.2.6 HANDOFF VALIDATION PASSED")
-print("Rules/data: 2-4 players, 5 rounds, 1 Shifu + 3 Apprentices, seven shared locations.")
-print("Orders: 16 Starting + 48 Main; five-card queue rotates its two oldest cards.")
+print("V1.2.7 HANDOFF VALIDATION PASSED")
+print("Rules/data: 2-4 players, 5 rounds, 1 Shifu + 3 Apprentices, eight shared locations.")
+print("Orders: 16 Starting + 48 Main; six-card queue rotates its two oldest cards.")
 print("Tech: 4 Starting + 15 Advanced; Fuel Ledger and Second Firing match owner rulings.")
 print("Firing: Bank/Tend/Stoke, 12-card Fire deck, seven Shared Kiln spaces, current Quality ladder.")
 print("Recognition: Imperial Grant at 1, Gift at 2, Priority at 3, Audience at 4.")

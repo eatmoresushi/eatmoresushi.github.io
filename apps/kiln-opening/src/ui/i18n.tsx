@@ -6,6 +6,9 @@ export type Locale = "en" | "zh-CN";
 const LANGUAGE_STORAGE_KEY = "kiln-opening:language";
 
 const ZH_CN: Record<string, string> = {
+  "court_patronage": "朝廷赞助",
+  "Court Patronage": "朝廷赞助",
+  "Advance Recognition": "提升御府声望",
   "Kiln Opening": "开窑",
   "Song workshop strategy": "宋代陶瓷作坊策略游戏",
   "English": "English",
@@ -160,7 +163,7 @@ const ZH_CN: Record<string, string> = {
   "Main Order display": "公开主委托展示区",
   "Oldest → newest. Face-up removals slide later Orders left and refill at the right.": "最旧 → 最新。移走公开委托时，其右侧委托左移并在最右侧补牌。",
   "Workshop Orders": "作坊委托",
-  "Uncompleted Order hands — public information": "未完成委托手牌 — 公开信息",
+  "Order hands — private contents, public counts": "委托手牌 — 内容保密、数量公开",
   "open": "未完成",
   "completed": "已完成",
   "No open Orders.": "没有未完成委托。",
@@ -216,7 +219,6 @@ const ZH_CN: Record<string, string> = {
   "Selection runs in reverse seating order.": "按席位逆序选择。",
   "Taken": "已被选择",
   "No workers remain": "没有剩余工人",
-  "Pass to finish your Work Phase participation.": "跳过以结束你本轮的作业阶段。",
   "Pass for this round": "本轮跳过",
   "Pass round": "本轮跳过",
   "Full": "已满",
@@ -304,7 +306,6 @@ const ZH_CN: Record<string, string> = {
   "Choose a Contribution card in secret": "秘密选择1张控火牌",
   "Reveal the Fire card": "揭示窑火牌",
   "Your card stays private until every eligible player has locked a choice.": "所有符合条件的玩家锁定选择前，你的控火牌保持秘密。",
-  "Ge · Crackle from Fire": "哥窑 · 窑火开片",
   "Jun · Kiln Transformation": "钧窑 · 窑变天成",
   "Skip Jun ability": "跳过钧窑能力",
   "Heat change": "火候变化",
@@ -323,13 +324,12 @@ const ZH_CN: Record<string, string> = {
   "Waiting for": "正在等待",
   "Gather materials": "采集原料",
   "Choose opening Orders": "选择起始委托",
-  "Privately keep exactly two of your four Starting Orders. All kept Starting Orders are revealed together.": "从你秘密持有的4张起始委托中恰好保留2张。所有玩家选择完成后，同时公开保留的起始委托。",
   "Keep selected Orders": "保留所选委托",
   "Choose a Starting Tech": "选择起始技艺",
   "Reservation advance": "承接后收益",
   "Imperial Priority": "御烧优先",
   "Glazed ceramic": "已施釉陶瓷",
-  "Drying Frames glaze for first formed vessel": "晾坯架为第一件成型器物选择的釉",
+  "Drying Frames glaze": "晾坯架为第一件成型器物选择的釉",
   "Drying Frames Decoration": "晾坯架纹饰",
   "Glaze Palette target": "釉色板目标陶瓷",
   "New Glaze": "新釉",
@@ -350,7 +350,7 @@ const ZH_CN: Record<string, string> = {
   "Flawed salvage": "瑕品处理",
   "After all after-Quality abilities, you may discard 1 ceramic still Flawed from this firing to gain 2 Coins, or keep it.": "所有“判定品质后”能力结算完毕后，你可以弃置1件本次烧成后仍为瑕品的陶瓷并获得2铜钱，或保留它。",
   "Complete an Order": "完成委托",
-  "On this opportunity, complete at most one held Order or one of the five face-up Main Orders, or pass. The Order Phase continues in reverse order until a full circuit has no completion.": "本次机会可完成至多1张持有委托或5张公开主委托之一，也可以跳过。委托阶段按反向顺序重复进行，直到完整一圈无人完成委托。",
+  "On this opportunity, complete at most one held Order or one of the six face-up Main Orders, or pass. The Order Phase continues in reverse order until a full circuit has no completion.": "本次机会可完成至多1张持有委托或6张公开主委托之一，也可以跳过。委托阶段按反向顺序重复进行，直到完整一圈无人完成委托。",
   "Pass this Order opportunity": "跳过本次委托机会",
 };
 
@@ -374,7 +374,7 @@ const TERM_LABELS: Record<Locale, Record<string, string>> = {
     materials_yard: "Materials Yard", forming_studio: "Potter’s Wheel",
     glaze_workshop: "Glaze & Decoration", kiln_yard: "Kiln Yard",
     market_imperial_office: "Commission Market", guild_academy: "Guild & Academy",
-    labour: "Labour",
+    labour: "Labour", court_patronage: "Court Patronage",
   },
   "zh-CN": {
     bowl: "碗", plate: "盘", washer: "笔洗", vase: "瓶", censer: "香炉",
@@ -395,7 +395,7 @@ const TERM_LABELS: Record<Locale, Record<string, string>> = {
     materials_yard: "泥柴场", forming_studio: "陶车坊",
     glaze_workshop: "釉饰坊", kiln_yard: "窑坊",
     market_imperial_office: "瓷牙行", guild_academy: "陶工行",
-    labour: "杂作行",
+    labour: "杂作行", court_patronage: "朝廷赞助",
   },
 };
 
@@ -488,7 +488,6 @@ export function localizeMultiplayerError(locale: Locale, code: string, fallback:
     PLAYER_ALREADY_PASSED: "你已经跳过本轮剩余作业阶段。",
     INVALID_SELECTION: "所选项目不符合要求。",
     INSUFFICIENT_RESOURCES: "资源不足，无法执行此操作。",
-    SUPPLY_EMPTY: "公共供应中没有足够资源。",
     CERAMIC_NOT_FOUND: "找不到所选陶瓷。",
     ILLEGAL_CERAMIC_STAGE: "所选陶瓷当前阶段不符合要求。",
     KILN_SPACE_OCCUPIED: "所选窑位已被占用。",

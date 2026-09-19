@@ -1,6 +1,18 @@
 import type { OrderDefinition, OrderRelationDefinition } from "./content.ts";
 import { QUALITY_RANK } from "./firingRules.ts";
-import type { FinishedCeramic } from "./types.ts";
+import type { Decoration, FinishedCeramic, KilnId, PlayerState, Quality } from "./types.ts";
+
+/** Ge counts Standard Crackle as Fine only for Order requirements and Exhibition VP. */
+export function qualityForOrderOrExhibition<Q extends Quality>(
+  ceramic: { quality: Q; decoration: Decoration },
+  kilnId: KilnId | null,
+): Q | "fine" {
+  return kilnId === "GE" && ceramic.quality === "standard" && ceramic.decoration === "crackle"
+    ? "fine"
+    : ceramic.quality;
+}
+
+type OrderKilnContext = Pick<PlayerState, "kilnId" | "kilnAbilityUsedThisRound">;
 
 function requirementMatches(
   order: OrderDefinition,
@@ -168,7 +180,7 @@ function shapeSlotsMatch(order: OrderDefinition, selected: readonly FinishedCera
 }
 
 /**
- * V1.2.6 evaluates Shape, Glaze and Decoration groups independently.
+ * V1.2.7 evaluates Shape, Glaze and Decoration groups independently.
  *
  * V1.2.2's Guan Decoration waiver is gone: Imperial Patronage now pays 2 Coins and 1 VP and
  * exempts nothing, so every submitted ceramic faces every printed requirement.
@@ -176,9 +188,10 @@ function shapeSlotsMatch(order: OrderDefinition, selected: readonly FinishedCera
 export function matchesOrder(
   order: OrderDefinition,
   selected: readonly FinishedCeramic[],
+  kilnId: KilnId | null = null,
 ): boolean {
   if (selected.length !== order.ceramics.length || new Set(selected.map((ceramic) => ceramic.id)).size !== selected.length) return false;
-  if (selected.some((ceramic) => QUALITY_RANK[ceramic.quality] < QUALITY_RANK[order.minQuality])) return false;
+  if (selected.some((ceramic) => QUALITY_RANK[qualityForOrderOrExhibition(ceramic, kilnId)] < QUALITY_RANK[order.minQuality])) return false;
   if (!shapeSlotsMatch(order, selected)) return false;
   if (selected.length === 1) {
     const requirement = order.ceramics[0];
@@ -218,7 +231,7 @@ export function matchesOrder(
         if (!multisetContains(decorations.map((ceramic) => ceramic.decoration), relation.values)) return false;
         break;
       case "at_least_n_quality":
-        if (selected.filter((ceramic) => QUALITY_RANK[ceramic.quality] >= QUALITY_RANK[relation.quality]).length < relation.count) return false;
+        if (selected.filter((ceramic) => QUALITY_RANK[qualityForOrderOrExhibition(ceramic, kilnId)] >= QUALITY_RANK[relation.quality]).length < relation.count) return false;
         break;
       case "at_least_n_distinct_glazes":
         if (new Set(selected.map((ceramic) => ceramic.glaze)).size < relation.count) return false;
@@ -237,13 +250,14 @@ export function matchesOrder(
 /**
  * Return every distinct group of Finished ceramics that can fulfil an Order.
  *
- * `matchesOrder` owns the V1.2.6 attribute-assignment rules; this helper only
+ * `matchesOrder` owns the V1.2.7 attribute-assignment rules; this helper only
  * enumerates unordered groups so the engine, computer player, and UI can ask
  * the same higher-level legality question without reimplementing those rules.
  */
 export function matchingOrderCeramicGroups(
   order: OrderDefinition,
   ceramics: readonly FinishedCeramic[],
+  player?: OrderKilnContext,
 ): FinishedCeramic[][] {
   const requiredCount = order.ceramics.length;
   if (requiredCount === 0 || requiredCount > ceramics.length) return [];
@@ -253,7 +267,8 @@ export function matchingOrderCeramicGroups(
 
   const search = (startIndex: number): void => {
     if (selected.length === requiredCount) {
-      if (matchesOrder(order, selected)) groups.push([...selected]);
+      if (matchesOrder(order, selected, player?.kilnId)
+        || player?.kilnId === "GE" && !player.kilnAbilityUsedThisRound && findGeDecoration(order, selected) !== null) groups.push([...selected]);
       return;
     }
 
@@ -275,8 +290,9 @@ export function matchingOrderCeramicGroups(
 export function canCompleteOrder(
   order: OrderDefinition,
   ceramics: readonly FinishedCeramic[],
+  player?: OrderKilnContext,
 ): boolean {
-  return matchingOrderCeramicGroups(order, ceramics).length > 0;
+  return matchingOrderCeramicGroups(order, ceramics, player).length > 0;
 }
 
 /**
@@ -329,24 +345,6 @@ export function orderAdmitsRuBonus(order: OrderDefinition): boolean {
 }
 
 /**
- * Ge's ability rewrites the chosen ceramic's Decoration to Crackle as a side effect of
- * correcting its Heat. An Order slot that demands some other Decoration therefore cannot
- * receive a ceramic Ge has fixed -- using the ability would break the match.
- *
- * The evaluator already checks this when deciding whether to *fire* the ability
- * (`forced_crackle_breaks_plan`). This predicate is the same rule one step earlier, at the
- * point where the Order is taken: 38 of the 52 Orders leave at least one slot open to
- * Crackle, and an agent that does not look for them takes the other 14 just as readily.
- */
-export const GE_BONUS_DECORATION = "crackle" as const;
-
-export function orderAdmitsGeCrackle(order: OrderDefinition): boolean {
-  return order.ceramics.some((requirement) => (
-    requirement.decoration === undefined || requirement.decoration === GE_BONUS_DECORATION
-  ));
-}
-
-/**
  * Guan's Order bonus.
  *
  * Unlike Ru, Guan has no execution problem to solve: measured over 1,400 seat-games it
@@ -355,7 +353,7 @@ export function orderAdmitsGeCrackle(order: OrderDefinition): boolean {
  * Orders. It completes 1.70 per game against Jun's 2.03, despite being the only Tradition
  * paid for them, because nothing in the Order valuation knew the ability existed.
  */
-/** V1.2.6 Imperial Patronage: 2 Coins and 1 VP on a Crown Order, and no Decoration waiver. */
+/** V1.2.7 Imperial Patronage: 2 Coins and 1 VP on a Crown Order, and no Decoration waiver. */
 export const GUAN_ORDER_COINS = 2;
 export const GUAN_ORDER_VP = 1;
 
@@ -371,3 +369,26 @@ export const GUAN_ORDER_VP = 1;
  * `applyFormCeramics`, which meant the AI had no way to ask the question.
  */
 export const DING_EXTRA_SHAPES = ["bowl", "plate", "washer"] as const;
+
+/** Substitute one consistent Decoration for one Crackle ceramic for this Order only. */
+export function matchesOrderWithGe(order: OrderDefinition, selected: readonly FinishedCeramic[], choice: { ceramicId: string; decoration: Decoration }): boolean {
+  if (!["plain", "carved", "impressed", "crackle"].includes(choice.decoration)) return false;
+  if (!selected.some((ceramic) => ceramic.id === choice.ceramicId && ceramic.decoration === "crackle")) return false;
+  // Determine effective Quality from the actual Decoration before its temporary replacement.
+  return matchesOrder(order, selected.map((ceramic) => ({
+    ...ceramic,
+    quality: qualityForOrderOrExhibition(ceramic, "GE"),
+    decoration: ceramic.id === choice.ceramicId ? choice.decoration : ceramic.decoration,
+  })));
+}
+
+export function findGeDecoration(order: OrderDefinition, selected: readonly FinishedCeramic[]): { ceramicId: string; decoration: Decoration } | null {
+  for (const ceramic of selected) {
+    if (ceramic.decoration !== "crackle") continue;
+    for (const decoration of ["plain", "carved", "impressed", "crackle"] as const) {
+      const choice = { ceramicId: ceramic.id, decoration };
+      if (matchesOrderWithGe(order, selected, choice)) return choice;
+    }
+  }
+  return null;
+}

@@ -23,7 +23,7 @@ import type {
 } from "./types.ts";
 
 interface GameConfigDefinition {
-  rulesVersion: "1.2.6";
+  rulesVersion: "1.2.7";
   players: { min: number; max: number };
   rounds: number;
   startingResources: { clay: number; wood: number; coins: number };
@@ -129,7 +129,7 @@ export interface ContributionCardDefinition {
 }
 
 interface FiringDefinition {
-  rulesVersion: "1.2.6";
+  rulesVersion: "1.2.7";
   kilnSpaces: Array<{ id: KilnSpaceId; zone: "high" | "middle" | "low"; modifier: -1 | 0 | 1 }>;
   fireDeck: FireModifier[];
   contributionCards: ContributionCardDefinition[];
@@ -153,22 +153,22 @@ export interface KilnDefinition {
 
 export const GAME_CONFIG = gameConfigJson as unknown as GameConfigDefinition;
 const ACTION_LOCATION_FILE = actionLocationsJson as unknown as {
-  rulesVersion: "1.2.6";
+  rulesVersion: "1.2.7";
   locations: LocationDefinition[];
 };
 const ORDER_FILE = ordersJson as unknown as {
-  rulesVersion: "1.2.6";
+  rulesVersion: "1.2.7";
   starting: OrderDefinition[];
   main: OrderDefinition[];
 };
 const TECHNIQUE_FILE = techniquesJson as unknown as {
-  rulesVersion: "1.2.6";
+  rulesVersion: "1.2.7";
   starting: StartingTechniqueDefinition[];
   advanced: TechniqueDefinition[];
 };
 const FIRING_FILE = firingJson as unknown as FiringDefinition;
 const COMPONENT_FILE = componentsJson as unknown as {
-  rulesVersion: "1.2.6";
+  rulesVersion: "1.2.7";
   components: ComponentDefinition[];
 };
 
@@ -180,6 +180,7 @@ export const LOCATION_IDS: readonly LocationId[] = [
   "market_imperial_office",
   "guild_academy",
   "labour",
+  "court_patronage",
 ];
 
 export const SHAPES: readonly Shape[] = ["bowl", "plate", "washer", "vase", "censer"];
@@ -219,7 +220,7 @@ export const SHAPE_COSTS = GAME_CONFIG.shapes;
 export const DECORATION_COSTS = GAME_CONFIG.decorations;
 
 export interface ImperialProgressDefinition {
-  rulesVersion: "1.2.6";
+  rulesVersion: "1.2.7";
   track: Array<{
     space: number;
     title: string;
@@ -228,8 +229,7 @@ export interface ImperialProgressDefinition {
     rewardZh: string | null;
   }>;
   exhibition: {
-    capacity: number;
-    featuredCollectionSize: number;
+    capacity: null;
     minimumQuality: Quality;
     qualityVp: Record<"standard" | "fine" | "masterpiece", number>;
     threeDifferentShapesBonus: number;
@@ -262,39 +262,25 @@ export function activeKilnSpaceIds(playerCount: PlayerCount): KilnSpaceId[] {
   return [...GAME_CONFIG.kiln.activeSpacesByPlayerCount[String(playerCount) as "2" | "3" | "4"]];
 }
 
-function componentQuantity(name: string): number {
-  const component = COMPONENT_FILE.components.find((entry) => entry.name === name);
-  if (component === undefined || typeof component.qty !== "number") {
-    throw new Error(`Missing numeric component quantity for ${name}`);
-  }
-  return component.qty;
-}
-
-export const COMMON_SUPPLY = {
-  clay: componentQuantity("Clay"),
-  wood: componentQuantity("Wood"),
-  coins: componentQuantity("Coins"),
-};
-
 function validateContent(): void {
   if (
-    GAME_CONFIG.rulesVersion !== "1.2.6" ||
-    ACTION_LOCATION_FILE.rulesVersion !== "1.2.6" ||
-    FIRING_FILE.rulesVersion !== "1.2.6" ||
-    COMPONENT_FILE.rulesVersion !== "1.2.6" ||
-    IMPERIAL_PROGRESS.rulesVersion !== "1.2.6" ||
-    ORDER_FILE.rulesVersion !== "1.2.6" ||
-    TECHNIQUE_FILE.rulesVersion !== "1.2.6"
+    GAME_CONFIG.rulesVersion !== "1.2.7" ||
+    ACTION_LOCATION_FILE.rulesVersion !== "1.2.7" ||
+    FIRING_FILE.rulesVersion !== "1.2.7" ||
+    COMPONENT_FILE.rulesVersion !== "1.2.7" ||
+    IMPERIAL_PROGRESS.rulesVersion !== "1.2.7" ||
+    ORDER_FILE.rulesVersion !== "1.2.7" ||
+    TECHNIQUE_FILE.rulesVersion !== "1.2.7"
   ) {
     throw new Error("Rules content version mismatch");
   }
   const actualLocationIds = new Set(ACTION_LOCATION_FILE.locations.map((location) => location.id));
   if (
-    ACTION_LOCATION_FILE.locations.length !== 7 ||
-    new Set(LOCATION_IDS).size !== 7 ||
+    ACTION_LOCATION_FILE.locations.length !== 8 ||
+    new Set(LOCATION_IDS).size !== 8 ||
     LOCATION_IDS.some((locationId) => !actualLocationIds.has(locationId))
   ) {
-    throw new Error("Expected exactly seven V1.2.6 action locations");
+    throw new Error("Expected exactly eight V1.2.7 action locations");
   }
   if (MAIN_ORDERS.length !== 48 || STARTING_ORDERS.length !== 16) {
     throw new Error("Order deck size mismatch");
@@ -325,9 +311,10 @@ validateContent();
  * cost of 5 while charging 4.
  */
 export const ACTION_LOCATION_PRICES = {
+  courtPatronageCoins: 4,
   labourApprenticeCoins: 2,
   labourShifuCoins: 4,
-  /** Coins the V1.2.6 firing salvage step pays for a ceramic still Flawed from this firing. */
+  /** Coins the V1.2.7 firing salvage step pays for a ceramic still Flawed from this firing. */
   flawedSalvageCoins: 2,
 } as const;
 
@@ -341,10 +328,10 @@ export const COLOUR_SAMPLES_LOOK = 3;
 /**
  * Coins Measuring Calipers and Standardised Moulds each pay.
  *
- * V1.2.6 keeps both at 2 Coins. They were inline `1`s in `applyFormCeramics`, which is
+ * V1.2.7 keeps both at 2 Coins. They were inline `1`s in `applyFormCeramics`, which is
  * how a repricing reaches the card text and misses the handler.
  */
 export const FORMING_TECH_COINS = 2;
 
-/** Techs a V1.2.6 Guild Shifu draws off the chosen discipline to inspect. */
+/** Techs a V1.2.7 Guild Shifu draws off the chosen discipline to inspect. */
 export const GUILD_SHIFU_INSPECT = 2;

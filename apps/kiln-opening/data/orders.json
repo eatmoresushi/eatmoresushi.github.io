@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.2.6",
+  "rulesVersion": "1.2.7",
   "starting": [
     {
       "id": "S01",
@@ -195,7 +195,7 @@
         }
       ],
       "minQuality": "standard",
-      "vp": 2,
+      "vp": 3,
       "coins": 3,
       "crowns": 0,
       "requirements": "Bowl, Plate or Brush Washer · any Glaze · any Decoration",
@@ -224,8 +224,8 @@
         {}
       ],
       "minQuality": "standard",
-      "vp": 1,
-      "coins": 4,
+      "vp": 2,
+      "coins": 3,
       "crowns": 0,
       "requirements": "any Shape · any Glaze · any Decoration",
       "requirementsZh": "任意器型 · 任意釉 · 任意纹饰"
@@ -381,8 +381,8 @@
           "decoration": "carved"
         }
       ],
-      "minQuality": "fine",
-      "vp": 6,
+      "minQuality": "masterpiece",
+      "vp": 9,
       "coins": 3,
       "crowns": 0,
       "requirements": "any Shape · any Glaze · Carved",
@@ -395,8 +395,8 @@
           "decoration": "impressed"
         }
       ],
-      "minQuality": "fine",
-      "vp": 6,
+      "minQuality": "masterpiece",
+      "vp": 9,
       "coins": 3,
       "crowns": 0,
       "requirements": "any Shape · any Glaze · Impressed",
@@ -409,8 +409,8 @@
           "decoration": "crackle"
         }
       ],
-      "minQuality": "fine",
-      "vp": 6,
+      "minQuality": "masterpiece",
+      "vp": 9,
       "coins": 3,
       "crowns": 0,
       "requirements": "any Shape · any Glaze · Crackle",
@@ -736,7 +736,7 @@
         }
       ],
       "minQuality": "fine",
-      "vp": 11,
+      "vp": 12,
       "coins": 5,
       "crowns": 0,
       "requirements": "Bowl + Brush Washer; one White, one Moon White; any Decorations",
@@ -801,7 +801,7 @@
         }
       ],
       "minQuality": "fine",
-      "vp": 12,
+      "vp": 13,
       "coins": 5,
       "crowns": 0,
       "requirements": "Vase + Bowl; both White; different Decorations",
@@ -942,7 +942,7 @@
         }
       ],
       "minQuality": "fine",
-      "vp": 13,
+      "vp": 14,
       "coins": 2,
       "crowns": 1,
       "requirements": "Brush Washer + Vase; one White, one Moon White; different Decorations",
