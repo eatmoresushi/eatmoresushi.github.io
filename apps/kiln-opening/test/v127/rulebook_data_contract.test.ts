@@ -83,6 +83,11 @@ describe("V1.2.7 checked-in data matches the adopted English rulebook", () => {
           ? "Fine"
           : "Masterpiece";
       expect(en[2]?.startsWith(quality), `${order.id} minimum Quality`).toBe(true);
+      const minimumMasterpieces = Number(en[2]?.match(/≥(\d+) Masterpiece/)?.[1] ?? 0);
+      const qualityRelations = (order.relations ?? []).filter((relation) => relation.type === "at_least_n_quality");
+      expect(qualityRelations, `${order.id} additional Quality requirements`).toEqual(minimumMasterpieces === 0
+        ? []
+        : [{ type: "at_least_n_quality", quality: "masterpiece", count: minimumMasterpieces }]);
     }
   });
 

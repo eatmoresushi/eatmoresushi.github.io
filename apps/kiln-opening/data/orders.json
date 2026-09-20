@@ -684,6 +684,11 @@
             0,
             1
           ]
+        },
+        {
+          "type": "at_least_n_quality",
+          "quality": "masterpiece",
+          "count": 1
         }
       ],
       "minQuality": "fine",

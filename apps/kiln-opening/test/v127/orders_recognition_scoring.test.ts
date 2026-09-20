@@ -98,6 +98,38 @@ describe("V1.2.7 Orders, Recognition, and scoring", () => {
     expect(matchesOrder(order, crossedPairing)).toBe(true);
   });
 
+  it.each([
+    ["fine", "fine", false],
+    ["fine", "masterpiece", true],
+    ["masterpiece", "fine", true],
+    ["masterpiece", "masterpiece", true],
+    ["standard", "masterpiece", false],
+    ["masterpiece", "standard", false],
+    ["flawed", "masterpiece", false],
+    ["masterpiece", "flawed", false],
+  ] as const)("O32 completion with %s Vase and %s Bowl requires Fine+ each and at least one Masterpiece", (vaseQuality, bowlQuality, allowed) => {
+    const { state, rng } = startedGame(2, 15_032);
+    state.players["P1"]!.orderHand = ["O32"];
+    const vase = addFinished(state, "P1", "vase", vaseQuality, "white", "plain");
+    const bowl = addFinished(state, "P1", "bowl", bowlQuality, "white", "carved");
+    keepFollowingActorLegallyActive(state);
+    openOrderTurn(state);
+    const before = structuredClone(state);
+    expect(matchesOrder(ORDER_DEFINITIONS["O32"]!, [vase, bowl])).toBe(allowed);
+    const result = applyAction(state, "P1", { type: "COMPLETE_ORDER", orderId: "O32", ceramicIds: [vase.id, bowl.id] }, rng);
+    if (!allowed) {
+      expectError(result, "ORDER_REQUIREMENTS_NOT_MET");
+      expect(state).toEqual(before);
+    } else {
+      expect(result.ok).toBe(true);
+      if (!result.ok) throw new Error(result.error.message);
+      expect(result.state.players["P1"]!.score.orderVp).toBe(before.players["P1"]!.score.orderVp + 13);
+      expect(result.state.players["P1"]!.resources.coins).toBe(before.players["P1"]!.resources.coins + 5);
+      expect(result.state.ceramics[vase.id]?.stage).toBe("delivered");
+      expect(result.state.ceramics[bowl.id]?.stage).toBe("delivered");
+    }
+  });
+
   it("uses the shared legality helper to identify Orders with a valid Finished-ceramic group", () => {
     const bowl = ceramic("bowl", "bowl", "white", "plain", "standard");
     const flawedBowl = ceramic("flawed", "bowl", "white", "plain", "flawed");

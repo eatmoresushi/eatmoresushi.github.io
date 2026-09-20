@@ -782,18 +782,39 @@ function MarketShelf({ game, locale, onInspect }: { game: PublicGameState; local
   );
 }
 
-function OrderCard({ id, locale, displayIndex, owned = false, onInspect }: { id: OrderId; locale: Locale; displayIndex?: number; owned?: boolean; onInspect: (id: OrderId) => void }) {
+function additionalOrderQuality(id: OrderId, locale: Locale) {
+  return (ORDER_DEFINITIONS[id]?.relations ?? []).flatMap((relation) => {
+    if (relation.type !== "at_least_n_quality") return [];
+    const quality = qualityLabel(relation.quality, locale);
+    const englishQuality = `${quality}${relation.count === 1 ? "" : "s"}`;
+    return [{
+      key: `${relation.quality}:${relation.count}`,
+      compact: text(locale, `≥${relation.count} ${englishQuality}`, `≥${relation.count}件${quality}`),
+      full: text(locale, `At least ${relation.count} ${englishQuality}`, `至少${relation.count}件${quality}`),
+    }];
+  });
+}
+
+function OrderQualityRequirements({ id, locale }: { id: OrderId; locale: Locale }) {
+  const requirements = additionalOrderQuality(id, locale);
+  if (requirements.length === 0) return null;
+  return <div className="kiln-tabletop-order-quality-requirements">{requirements.map((requirement) => <span key={requirement.key} aria-label={requirement.full}>{requirement.compact}</span>)}</div>;
+}
+
+export function OrderCard({ id, locale, displayIndex, owned = false, onInspect }: { id: OrderId; locale: Locale; displayIndex?: number; owned?: boolean; onInspect: (id: OrderId) => void }) {
   const order = ORDER_DEFINITIONS[id];
   const previewId = `kiln-order-preview-${id}-${owned ? "owned" : "market"}`;
   const descriptionId = `${previewId}-description`;
   const preview = useCardPreview<HTMLButtonElement>(previewId);
   if (order === undefined) return null;
-  const description = text(locale, `Order ${id}. ${order.requirements}. ${order.ceramics.length} ceramics. Minimum Quality: ${qualityLabel(order.minQuality, locale)}. Reward: ${order.vp} VP, ${order.coins} Coins${order.crowns > 0 ? `, ${order.crowns} Crown${order.crowns === 1 ? "" : "s"}` : ""}.`, `委托 ${id}。${order.requirementsZh}。${order.ceramics.length}件陶瓷。最低品质：${qualityLabel(order.minQuality, locale)}。奖励：${order.vp}分、${order.coins}铜钱${order.crowns > 0 ? `、${order.crowns}皇冠` : ""}。`);
+  const additionalQuality = additionalOrderQuality(id, locale);
+  const qualityDescription = additionalQuality.map((requirement) => `${requirement.full}${text(locale, ". ", "。")}`).join("");
+  const description = text(locale, `Order ${id}. ${order.requirements}. ${order.ceramics.length} ceramics. Minimum Quality: ${qualityLabel(order.minQuality, locale)}. ${qualityDescription}Reward: ${order.vp} VP, ${order.coins} Coins${order.crowns > 0 ? `, ${order.crowns} Crown${order.crowns === 1 ? "" : "s"}` : ""}.`, `委托 ${id}。${order.requirementsZh}。${order.ceramics.length}件陶瓷。最低品质：${qualityLabel(order.minQuality, locale)}。${qualityDescription}奖励：${order.vp}分、${order.coins}铜钱${order.crowns > 0 ? `、${order.crowns}皇冠` : ""}。`);
   return (
     <>
       <button
         ref={preview.anchorRef}
-        className={`kiln-tabletop-order-card kiln-tabletop-art-surface ${order.crowns > 0 ? "is-crown" : ""} ${owned ? "is-owned" : ""}`}
+        className={`kiln-tabletop-order-card kiln-tabletop-art-surface ${order.crowns > 0 ? "is-crown" : ""} ${owned ? "is-owned" : ""} ${additionalQuality.length > 0 ? "has-quality-requirement" : ""}`}
         type="button"
         onClick={() => { preview.dismiss(); onInspect(id); }}
         onPointerEnter={(event) => { if (event.pointerType !== "touch") preview.pointerEnter(); }}
@@ -813,6 +834,7 @@ function OrderCard({ id, locale, displayIndex, owned = false, onInspect }: { id:
         <header><b>{id}</b><span className="kiln-tabletop-order-crowns" aria-hidden="true">{"♛".repeat(order.crowns)}</span></header>
         <div className="kiln-tabletop-order-seal" aria-hidden="true">{order.ceramics.length}</div>
         <p>{locale === "zh-CN" ? order.requirementsZh : order.requirements}</p>
+        <OrderQualityRequirements id={id} locale={locale} />
         <footer><span><small>{text(locale, "MIN", "最低")}</small><b>{qualityLabel(order.minQuality, locale)}</b></span><span><small>{text(locale, "VP", "分")}</small><b>{order.vp}</b></span><span><small>{text(locale, "COIN", "钱")}</small><b>{order.coins}</b></span></footer>
       </button>
       <span className="sr-only" id={descriptionId}>{description}</span>
@@ -823,13 +845,14 @@ function OrderCard({ id, locale, displayIndex, owned = false, onInspect }: { id:
   );
 }
 
-function StaticOrderCard({ id, locale }: { id: OrderId; locale: Locale }) {
+export function StaticOrderCard({ id, locale }: { id: OrderId; locale: Locale }) {
   const order = ORDER_DEFINITIONS[id];
   if (order === undefined) return null;
   return (
-    <article className={`kiln-tabletop-order-card kiln-tabletop-static-order kiln-tabletop-art-surface ${order.crowns > 0 ? "is-crown" : ""}`} data-order-id={id}>
+    <article className={`kiln-tabletop-order-card kiln-tabletop-static-order kiln-tabletop-art-surface ${order.crowns > 0 ? "is-crown" : ""} ${additionalOrderQuality(id, locale).length > 0 ? "has-quality-requirement" : ""}`} data-order-id={id}>
       <ArtworkLayer source={TABLETOP_ARTWORK.orders[id]} slot={`order:${id}`} />
       <header><b>{id}</b><span className="kiln-tabletop-order-crowns" aria-hidden="true">{"♛".repeat(order.crowns)}</span></header><div className="kiln-tabletop-order-seal" aria-hidden="true">{order.ceramics.length}</div><p>{locale === "zh-CN" ? order.requirementsZh : order.requirements}</p>
+      <OrderQualityRequirements id={id} locale={locale} />
       <footer><span><small>{text(locale, "MIN", "最低")}</small><b>{qualityLabel(order.minQuality, locale)}</b></span><span><small>{text(locale, "VP", "分")}</small><b>{order.vp}</b></span><span><small>{text(locale, "COIN", "钱")}</small><b>{order.coins}</b></span></footer>
     </article>
   );
@@ -1335,10 +1358,10 @@ export function currentCeramicsForPlayer(
   );
 }
 
-function OrderInspection({ id, locale }: { id: OrderId; locale: Locale }) {
+export function OrderInspection({ id, locale }: { id: OrderId; locale: Locale }) {
   const order = ORDER_DEFINITIONS[id];
   if (order === undefined) return null;
-  return <div className="kiln-tabletop-inspector-content kiln-tabletop-detail-view"><StaticOrderCard id={id} locale={locale} /><dl><div><dt>{text(locale, "Ceramics", "陶瓷")}</dt><dd>{order.ceramics.length}</dd></div><div><dt>{text(locale, "Minimum Quality", "最低品质")}</dt><dd>{qualityLabel(order.minQuality, locale)}</dd></div><div><dt>{text(locale, "Reward", "奖励")}</dt><dd>{order.vp} {text(locale, "VP", "分")} · {order.coins} {text(locale, "Coins", "铜钱")} {order.crowns > 0 ? `· ${order.crowns} ♛` : ""}</dd></div></dl><p>{text(locale, "Each ceramic must independently match the attributes printed for its requirement.", "每件陶瓷都必须分别符合其对应条件中列出的全部属性。")}</p></div>;
+  return <div className="kiln-tabletop-inspector-content kiln-tabletop-detail-view"><StaticOrderCard id={id} locale={locale} /><dl><div><dt>{text(locale, "Ceramics", "陶瓷")}</dt><dd>{order.ceramics.length}</dd></div><div><dt>{text(locale, "Minimum Quality", "最低品质")}</dt><dd>{qualityLabel(order.minQuality, locale)}</dd></div>{additionalOrderQuality(id, locale).map((requirement) => <div key={requirement.key}><dt>{text(locale, "Also required", "额外要求")}</dt><dd>{requirement.full}</dd></div>)}<div><dt>{text(locale, "Reward", "奖励")}</dt><dd>{order.vp} {text(locale, "VP", "分")} · {order.coins} {text(locale, "Coins", "铜钱")} {order.crowns > 0 ? `· ${order.crowns} ♛` : ""}</dd></div></dl><p>{text(locale, "Shape, Glaze and Decoration requirements are independent unless the Order explicitly pairs them.", "除非委托明确将属性配对，器型、釉色与纹饰要求均独立匹配。")}</p></div>;
 }
 
 function TechniqueInspection({ id, locale }: { id: TechniqueId; locale: Locale }) {

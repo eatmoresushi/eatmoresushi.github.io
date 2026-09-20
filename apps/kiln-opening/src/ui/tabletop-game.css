@@ -338,12 +338,15 @@
   transition: transform .15s ease, box-shadow .15s ease;
 }
 .kiln-tabletop-order-card.is-crown { border-color: #b65b3f; background: radial-gradient(circle at 78% 18%, rgb(183 95 58 / 18%), transparent 4rem), linear-gradient(145deg, #fff9e9, #e6d4bd); }
+.kiln-tabletop-order-card.has-quality-requirement { grid-template-rows: auto auto 1fr auto auto; }
 .kiln-tabletop-order-card header { display: flex; gap: .35rem; justify-content: space-between; }
 .kiln-tabletop-order-card header b { font-size: .58rem; letter-spacing: .08em; }
 .kiln-tabletop-order-card header span { min-height: .8rem; }
 .kiln-tabletop-order-card header .kiln-tabletop-order-crowns { color: #a33f2d; font-size: 1.35rem; line-height: .8; letter-spacing: .02em; filter: drop-shadow(0 1px 0 rgb(255 250 231 / 85%)); }
 .kiln-tabletop-order-seal { display: grid; width: 22px; aspect-ratio: 1; place-items: center; border: 1px solid #b84f3f; border-radius: 50%; color: #fff8e8; font-family: var(--tabletop-serif); font-size: .56rem; background: #a84436; }
 .kiln-tabletop-order-card p { display: -webkit-box; overflow: hidden; color: #4f554e; font-size: clamp(.56rem, .68vw, .68rem); line-height: 1.25; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.kiln-tabletop-order-quality-requirements { display: flex; flex-wrap: wrap; gap: .18rem; align-self: end; }
+.kiln-tabletop-order-quality-requirements > span { border: 1px solid rgb(151 109 44 / 35%); border-radius: .18rem; padding: .13rem .25rem; color: #79511e; background: rgb(209 166 78 / 14%); font-size: clamp(.52rem, .64vw, .64rem); font-weight: 750; line-height: 1.2; }
 .kiln-tabletop-order-card footer { display: grid; grid-template-columns: 1.25fr .6fr .6fr; gap: .18rem; border-top: 1px solid rgb(91 70 39 / 20%); padding-top: .25rem; }
 .kiln-tabletop-order-card footer span { min-width: 0; }
 .kiln-tabletop-order-card footer small,
@@ -877,6 +880,8 @@
 .kiln-tabletop-card-preview .kiln-tabletop-order-card footer b,
 .kiln-tabletop-card-preview .kiln-tabletop-tech-tile > strong,
 .kiln-tabletop-card-preview .kiln-tabletop-starting-tech > strong { font-size: .78rem; }
+.kiln-tabletop-card-preview .kiln-tabletop-order-quality-requirements > span,
+.kiln-tabletop-detail-view .kiln-tabletop-order-quality-requirements > span { font-size: .7rem; }
 
 @keyframes kiln-tabletop-card-preview-above { from { opacity: 0; transform: translate(-50%, calc(-100% + 7px)) scale(.98); } }
 @keyframes kiln-tabletop-card-preview-below { from { opacity: 0; transform: translate(-50%, -7px) scale(.98); } }
