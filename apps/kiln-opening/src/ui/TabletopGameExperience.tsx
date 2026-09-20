@@ -56,6 +56,7 @@ import type { Locale } from "./i18n";
 import { TABLETOP_ARTWORK } from "./tabletopArtwork";
 import { WorkerMeeple, workerLabel } from "./WorkerMeeple";
 import { BoardActionIcon } from "./BoardActionIcon";
+import { BoardActionEffect } from "./BoardActionEffect";
 import { ImperialKilnIllustration } from "./ImperialKilnIllustration";
 import { fireCardHistory } from "./fireCardHistory";
 import type { FireCardHistoryEntry } from "./fireCardHistory";
@@ -926,7 +927,7 @@ function TurnOrderTrack({ game, locale, currentActorId }: { game: PublicGameStat
   );
 }
 
-function ActionSpace({ game, ownPlayer, id, glyph, locale, selectedWorkerId, selected, onChoose }: { game: PublicGameState; ownPlayer: PublicPlayerState; id: LocationId; glyph: string; locale: Locale; selectedWorkerId: WorkerId | null; selected: boolean; onChoose: () => void }) {
+export function ActionSpace({ game, ownPlayer, id, glyph, locale, selectedWorkerId, selected, onChoose }: { game: PublicGameState; ownPlayer: PublicPlayerState; id: LocationId; glyph: string; locale: Locale; selectedWorkerId: WorkerId | null; selected: boolean; onChoose: () => void }) {
   const definition = LOCATION_DEFINITIONS[id];
   const occupants = game.actionBoard.placements[id].map((workerId) => findWorker(game, workerId)).filter((entry): entry is NonNullable<typeof entry> => entry !== null);
   const worker = selectedWorkerId === null ? undefined : ownPlayer.workers[selectedWorkerId];
@@ -934,12 +935,18 @@ function ActionSpace({ game, ownPlayer, id, glyph, locale, selectedWorkerId, sel
   const maximumCapacity = definition.capacity["4"];
   const activeCapacity = definition.capacity[String(game.playerCount) as "2" | "3" | "4"];
   const legal = worker?.status === "available" && reason === null;
-  const effect = worker?.kind === "shifu" ? locale === "zh-CN" ? definition.shifuZh : definition.shifu : locale === "zh-CN" ? definition.apprenticeZh : definition.apprentice;
+  const status = worker === undefined ? null : reason ?? (worker.kind === "shifu" && activeCapacity !== null && occupants.length >= activeCapacity ? text(locale, "Shifu may overfill", "师傅可超容量") : null);
   return (
     <button className={`kiln-tabletop-action-space kiln-tabletop-art-surface ${legal ? "is-available" : ""} ${worker !== undefined && !legal ? "is-illegal" : ""} ${selected ? "is-selected" : ""}`} type="button" onClick={onChoose} aria-pressed={selected} data-location-id={id}>
       <ArtworkLayer source={TABLETOP_ARTWORK.actionSpaces[id]} slot={`action-space:${id}`} />
-      <header><span className="kiln-tabletop-action-emblem" aria-hidden="true"><BoardActionIcon locationId={id} /></span><div><strong>{locale === "zh-CN" ? definition.nameZh : definition.name}</strong><small>{worker === undefined ? text(locale, "Choose a worker", "选择工人") : reason ?? (worker.kind === "shifu" && activeCapacity !== null && occupants.length >= activeCapacity ? text(locale, "Shifu may overfill", "师傅可超容量") : text(locale, `${worker.kind === "shifu" ? "Shifu" : "Apprentice"} effect`, `${worker.kind === "shifu" ? "师傅" : "学徒"}效果`))}</small></div><i className="kiln-tabletop-action-seal" aria-hidden="true">{glyph}</i></header>
-      <div className="kiln-tabletop-action-effect"><small>{worker?.kind === "shifu" ? text(locale, "SHIFU", "师傅") : text(locale, "APPRENTICE", "学徒")}</small><p>{effect}</p></div>
+      <header><span className="kiln-tabletop-action-emblem" aria-hidden="true"><BoardActionIcon locationId={id} /></span><div><strong>{locale === "zh-CN" ? definition.nameZh : definition.name}</strong>{status !== null && <small>{status}</small>}</div><i className="kiln-tabletop-action-seal" aria-hidden="true">{glyph}</i></header>
+      <div className="kiln-tabletop-action-effects">{(["apprentice", "shifu"] as const).map((kind) => {
+        const fullEffect = kind === "shifu" ? locale === "zh-CN" ? definition.shifuZh : definition.shifu : locale === "zh-CN" ? definition.apprenticeZh : definition.apprentice;
+        return <div className={`kiln-tabletop-action-effect ${worker?.kind === kind ? "is-current-worker" : ""}`} data-effect-worker={kind} title={fullEffect} key={kind}>
+          <WorkerMeeple kind={kind} small locale={locale} />
+          <BoardActionEffect id={id} kind={kind} locale={locale} />
+        </div>;
+      })}</div>
       <footer>
         <div className="kiln-tabletop-worker-spaces"><small>{text(locale, "WORKER SPACES", "工人位置")}</small>
         <span className="kiln-tabletop-capacity">

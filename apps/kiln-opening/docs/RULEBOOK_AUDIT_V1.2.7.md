@@ -147,3 +147,10 @@ Glazing one vessel pays its normal Decoration cost. Glazing two reduces their co
 The checked-in English rulebook, quick reference, structured action text, Chinese translation, engine, human cost previews and computer decisions use this amendment. Behaviour revision 20 and `202609200003_v127_shifu_glaze_discount.sql` distinguish new games from games with the old free-Decoration rule. This migration preserves historical rows and advances the active write gates; it has not been applied to a database.
 
 Verification: all 567 tests pass, including 15 dedicated payment/waiver cases, eight new AI cases, five new UI cases, earlier-fingerprint rejection and the new SQL gate contract. The production build, client/engine and Edge Function type checks, handoff validation and diff checks pass. Browser checks confirm one Carved vessel costs 2 Coins, two Carved vessels cost 3 Coins, and removing the second vessel restores the full single-vessel cost. No backend migration or deployment was performed.
+
+
+## Shared action-space presentation (2026-09-20)
+
+All eight shared action spaces show both Apprentice and Shifu effects simultaneously, with the shared meeple silhouettes identifying each row. The chosen worker's row is highlighted. Compact bilingual reminders use accessible Clay, Wood and Coin icons; full wording remains in the effect tooltip. The redundant “Choose a worker” caption and Court Patronage's numeric transition parenthetical are removed from displayed action text. Court Patronage still advances only to Recognition 3, as enforced by the existing engine and action controls; this is a presentation change with no rules-fingerprint change.
+
+All 573 tests pass, including both worker rows with no worker, an Apprentice or a Shifu selected at every location in both languages. The production build, handoff validation and diff checks pass. Browser checks confirm the two effect rows fit without card overflow on desktop and narrow layouts; the longer Guild and Kiln Yard reminders remain visible.

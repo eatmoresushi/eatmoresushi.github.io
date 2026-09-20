@@ -65,8 +65,8 @@ const cases: Array<[string, string, number[]]> = [
   ["kiln GE", KILN_DEFINITIONS.GE.ability, [1]],
   ["kiln DI", KILN_DEFINITIONS.DI.ability, [SHAPE_COSTS.bowl]],
   ["kiln JU", KILN_DEFINITIONS.JU.ability, [JUN_ACTIVATION_WOOD, 1, 1]],
-  ["court_patronage.apprentice", L("court_patronage").apprentice, [4, 1, 0, 1, 1, 2, 2, 3]],
-  ["court_patronage.shifu", L("court_patronage").shifu, [4, 1, 0, 1, 1, 2, 2, 3]],
+  ["court_patronage.apprentice", L("court_patronage").apprentice, [4, 1]],
+  ["court_patronage.shifu", L("court_patronage").shifu, [4, 1]],
   // Action locations
   ["materials_yard.apprentice", L("materials_yard").apprentice, [3]],
   ["materials_yard.shifu", L("materials_yard").shifu, [4, 1, 1, 1]],
