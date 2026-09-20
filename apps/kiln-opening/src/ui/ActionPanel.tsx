@@ -64,7 +64,7 @@ import { OrderCard } from "./GameTable";
 import { term as localizedTerm, useI18n } from "./i18n";
 import type { Locale } from "./i18n";
 import { WorkerMeeple } from "./WorkerMeeple";
-import { kilnShortPlainText } from "./TechniqueDescription";
+import { KilnDescription, kilnShortPlainText } from "./TechniqueDescription";
 
 type SendCommand = (command: AuthoritativeCommand) => Promise<boolean>;
 
@@ -269,7 +269,7 @@ function KilnSelection({ game, busy, send }: Pick<ActionPanelProps, "game" | "bu
             >
               <span><strong>{locale === "zh-CN" ? kiln.nameZh : kiln.name}</strong><b>{locale === "zh-CN" ? kiln.name : kiln.nameZh}</b></span>
               <small>{locale === "zh-CN" ? kiln.abilityNameZh : kiln.abilityName}</small>
-              <p>{locale === "zh-CN" ? kiln.abilityZh : kiln.ability}</p>
+              <p><KilnDescription id={kilnId} locale={locale} layer="preview" /></p>
               {taken.has(kilnId) && <em>{t("Taken")}</em>}
             </button>
           );
