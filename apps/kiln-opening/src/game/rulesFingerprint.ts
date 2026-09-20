@@ -75,8 +75,13 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  *        Court Patronage, revised Ge/Techs, unlimited resources and Exhibition.
  *  17 -- Owner amendment: Ge treats Standard Crackle as Fine only for Orders and
  *        Exhibition scoring, preserving actual firing Quality and Decoration.
+ *  18 -- Owner amendment: replace the sixteen-card Starting Order deck with S01-S08,
+ *        with revised requirements and rewards. Existing rooms retain their original
+ *        fingerprint so remapped Order IDs are never reinterpreted mid-game.
+ *  19 -- Owner amendment: ST04 may gain 1 Clay or 1 Wood. The Coin rewards from
+ *        T02 and T03 are optional, and declining preserves their once-per-round use.
  */
-export const RULES_BEHAVIOUR_REVISION = 17;
+export const RULES_BEHAVIOUR_REVISION = 19;
 
 /**
  * Display-only keys, excluded so that a typo fix or a translation improvement does not

@@ -657,6 +657,9 @@ function buildKilnAction(state: PublicGameState, player: PlayerState): GameActio
     workerId: worker.id,
     loads,
     ...(shifuCeramicId === undefined ? {} : { shifuCeramicId }),
+    ...(player.startingTechniqueId === "ST04"
+      ? player.resources.wood < 2 ? { kilnTendingWood: 1 } : { kilnTendingClay: 1 }
+      : {}),
   };
 }
 
@@ -816,7 +819,9 @@ function buildFormAction(state: PublicGameState, player: PlayerState): GameActio
 
   const glaze = targetGlaze(state, player);
   const decoration = targetDecoration(state, player, glaze);
-  const availableCoins = player.resources.coins + formingTechniqueRewards(state, player, [...formShapes, ...(affordableDing === undefined ? [] : [affordableDing])]).length * FORMING_TECH_COINS;
+  const selectedRewards = formingTechniqueRewards(state, player, [...formShapes, ...(affordableDing === undefined ? [] : [affordableDing])]);
+  techniqueIds.push(...selectedRewards);
+  const availableCoins = player.resources.coins + selectedRewards.length * FORMING_TECH_COINS;
   const whiteWanted = glaze === "white";
   const canWhiteSlip = player.startingTechniqueId === "ST02" && availableCoins >= DECORATION_COSTS.plain;
   // White Slip is optional: use it only when the current Order route actually wants White.
@@ -861,6 +866,7 @@ function buildMaterialsAction(state: PublicGameState, player: PlayerState): Game
   const preparedClayShape = player.startingTechniqueId === "ST01" && player.resources.clay + gainedClay >= preparedCost
     ? wantedShape
     : undefined;
+  const selectedRewards = formingTechniqueRewards(state, player, preparedClayShape === undefined ? [] : [preparedClayShape]);
   return {
     type: "GAIN_MATERIALS",
     workerId: worker.id,
@@ -868,6 +874,7 @@ function buildMaterialsAction(state: PublicGameState, player: PlayerState): Game
     wood,
     ...(worker.kind === "shifu" && player.resources.coins > 1 ? { buyShifuBonus: true } : {}),
     ...(preparedClayShape === undefined ? {} : { preparedClayShape }),
+    ...(selectedRewards.length === 0 ? {} : { useTechniqueIds: selectedRewards }),
   };
 }
 

@@ -27,7 +27,7 @@ function openOrderTurn(state: GameState, actorId = "P1"): void {
 function keepFollowingActorLegallyActive(state: GameState, actorId = "P1"): void {
   const followingActor = state.playerOrder.find((playerId) => playerId !== actorId);
   if (followingActor === undefined) throw new Error("Order test requires another player");
-  state.players[followingActor]!.orderHand = ["S16"];
+  state.players[followingActor]!.orderHand = ["S01"];
   addFinished(state, followingActor, "bowl", "standard");
 }
 
@@ -78,7 +78,7 @@ function witnessFor(order: OrderDefinition): FinishedCeramic[] | null {
 }
 
 describe("V1.2.7 Orders, Recognition, and scoring", () => {
-  it("has a valid independent-attribute witness for every one of the 64 Orders", () => {
+  it("has a valid independent-attribute witness for every one of the 56 Orders", () => {
     for (const order of [...STARTING_ORDERS, ...MAIN_ORDERS]) {
       expect(witnessFor(order), `${order.id}: ${order.requirements}`).not.toBeNull();
     }
@@ -152,7 +152,7 @@ describe("V1.2.7 Orders, Recognition, and scoring", () => {
     const { state: initial, rng } = startedGame(2, 15_021);
     let state = structuredClone(initial);
     state.players["P1"]!.orderHand = [];
-    state.players["P2"]!.orderHand = ["S16"];
+    state.players["P2"]!.orderHand = ["S01"];
     state.marketDisplay = ["O01"];
     state.marketDeck = state.marketDeck.filter((orderId) => orderId !== "O01");
     addFinished(state, "P1", "bowl", "standard");
@@ -170,7 +170,7 @@ describe("V1.2.7 Orders, Recognition, and scoring", () => {
     // still-legal O01 was already declined and is skipped in the next circuit.
     state = mustApply(state, "P2", {
       type: "COMPLETE_ORDER",
-      orderId: "S16",
+      orderId: "S01",
       ceramicIds: [p2Bowl.id],
     }, rng);
     expect(state.players["P1"]!.completedOrders).toHaveLength(0);
@@ -208,7 +208,7 @@ describe("V1.2.7 Orders, Recognition, and scoring", () => {
     const { state: initial, rng } = startedGame(2, 15_023);
     let state = structuredClone(initial);
     state.players["P1"]!.orderHand = [];
-    state.players["P2"]!.orderHand = ["S16"];
+    state.players["P2"]!.orderHand = ["S01"];
     state.marketDisplay = ["O02"];
     state.marketDeck = ["O03", ...state.marketDeck.filter((orderId) => orderId !== "O02" && orderId !== "O03")];
     addFinished(state, "P1", "bowl", "standard");

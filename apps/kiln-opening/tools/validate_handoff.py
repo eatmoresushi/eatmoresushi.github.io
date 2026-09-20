@@ -121,9 +121,9 @@ for location_id, capacity in expected_locations.items():
     check(location.get("scope") == "shared", f"{location_id} must be shared")
     check(bool(location.get("nameZh")) and bool(location.get("apprenticeZh")) and bool(location.get("shifuZh")), f"{location_id} needs Chinese text")
 
-check(len(orders["starting"]) == 16, "Expected 16 Starting Orders")
+check(len(orders["starting"]) == 8, "Expected 8 Starting Orders")
 check(len(orders["main"]) == 48, "Expected 48 Main Orders")
-check([order["id"] for order in orders["starting"]] == [f"S{number:02d}" for number in range(1, 17)], "Starting Order IDs mismatch")
+check([order["id"] for order in orders["starting"]] == [f"S{number:02d}" for number in range(1, 9)], "Starting Order IDs mismatch")
 check([order["id"] for order in orders["main"]] == [f"O{number:02d}" for number in range(1, 49)], "Main Order IDs mismatch")
 all_orders = orders["starting"] + orders["main"]
 check(all(order.get("requirements") and order.get("requirementsZh") for order in all_orders), "Every Order needs English and Chinese Requirements text")
@@ -178,7 +178,7 @@ check(recognition["exhibition"]["threeDifferentShapesBonus"] == 3, "Exhibition S
 check(recognition["exhibition"]["threeDifferentGlazesBonus"] == 3, "Exhibition Glaze bonus mismatch")
 
 component_counts = {component["name"]: component["qty"] for component in components["components"]}
-check(component_counts.get("Main Order Cards") == 48 and component_counts.get("Starting Order Cards") == 16, "Order component counts mismatch")
+check(component_counts.get("Main Order Cards") == 48 and component_counts.get("Starting Order Cards") == 8, "Order component counts mismatch")
 check(component_counts.get("Starting Tech Tiles") == 16 and component_counts.get("Advanced Tech Tiles") == 15, "Tech component counts mismatch")
 check(component_counts.get("Fire Cards") == 12 and component_counts.get("Imperial Priority Tokens") == 4, "Fire/Priority component counts mismatch")
 check(rounds["roundCount"] == 5, "Round structure must contain five rounds")
@@ -188,7 +188,7 @@ check(
     and "two new Main Orders" in rounds["phases"][0]["summary"],
     "Round-start six-card market rotation mismatch",
 )
-check(assets["orderCards"].get("total") == 64 and assets["orderCards"].get("main") == 48 and assets["orderCards"].get("starting") == 16, "Order asset counts mismatch")
+check(assets["orderCards"].get("total") == 56 and assets["orderCards"].get("main") == 48 and assets["orderCards"].get("starting") == 8, "Order asset counts mismatch")
 check(assets["playerReference"].get("mustShowSixCardMainOrderDisplay") is True, "Reference asset must show a six-card Main Order display")
 
 adopted_rules = (ROOT / "docs" / "KILN_OPENING_v1.2.7_EN_SOURCE.md").read_text(encoding="utf-8")
@@ -219,7 +219,7 @@ if errors:
 
 print("V1.2.7 HANDOFF VALIDATION PASSED")
 print("Rules/data: 2-4 players, 5 rounds, 1 Shifu + 3 Apprentices, eight shared locations.")
-print("Orders: 16 Starting + 48 Main; six-card queue rotates its two oldest cards.")
+print("Orders: 8 Starting + 48 Main; six-card queue rotates its two oldest cards.")
 print("Tech: 4 Starting + 15 Advanced; Fuel Ledger and Second Firing match owner rulings.")
 print("Firing: Bank/Tend/Stoke, 12-card Fire deck, seven Shared Kiln spaces, current Quality ladder.")
 print("Recognition: Imperial Grant at 1, Gift at 2, Priority at 3, Audience at 4.")

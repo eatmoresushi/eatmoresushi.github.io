@@ -108,17 +108,17 @@ describe("V1.2.7 Ge", () => {
   });
   it("reveals a completed held Order and preserves actual Crackle while consuming only one round use", () => {
     const { state, rng } = startedGame(2);
-    state.players["P1"]!.kilnId = "GE"; state.players["P1"]!.orderHand = ["S10"];
+    state.players["P1"]!.kilnId = "GE"; state.players["P1"]!.orderHand = ["O10"];
     const c = addFinished(state, "P1", "bowl", "standard", "celadon", "crackle");
     orders(state);
-    const result = mustResult(state, "P1", { type: "COMPLETE_ORDER", orderId: "S10", ceramicIds: [c.id], geDecoration: { ceramicId: c.id, decoration: "plain" } }, rng);
+    const result = mustResult(state, "P1", { type: "COMPLETE_ORDER", orderId: "O10", ceramicIds: [c.id], geDecoration: { ceramicId: c.id, decoration: "plain" } }, rng);
     expect(result.state.ceramics[c.id]).toMatchObject({ stage: "delivered", decoration: "crackle" });
-    expect(projectPublicEvents(result.events)).toContainEqual({ type: "ORDER_COMPLETED", playerId: "P1", orderId: "S10", ceramicIds: [c.id] });
+    expect(projectPublicEvents(result.events)).toContainEqual({ type: "ORDER_COMPLETED", playerId: "P1", orderId: "O10", ceramicIds: [c.id] });
     // Reset opportunity only; the round-use restriction still applies.
     orders(result.state); result.state.players["P1"]!.kilnAbilityUsedThisRound = true;
-    result.state.players["P1"]!.orderHand = ["S11"];
-    const d = addFinished(result.state, "P1", "bowl", "standard", "white", "crackle");
-    expectError(applyAction(result.state, "P1", { type: "COMPLETE_ORDER", orderId: "S11", ceramicIds: [d.id], geDecoration: { ceramicId: d.id, decoration: "carved" } }, rng), "ABILITY_ALREADY_USED");
+    result.state.players["P1"]!.orderHand = ["O11"];
+    const d = addFinished(result.state, "P1", "bowl", "masterpiece", "white", "crackle");
+    expectError(applyAction(result.state, "P1", { type: "COMPLETE_ORDER", orderId: "O11", ceramicIds: [d.id], geDecoration: { ceramicId: d.id, decoration: "carved" } }, rng), "ABILITY_ALREADY_USED");
   });
 });
 
@@ -180,7 +180,7 @@ describe("V1.2.7 Tech timing", () => {
   it("Prepared Clay triggers forming Techs and Drying Frames accepts a Decoration waiver", () => {
     const { state, rng } = startedGame(2, 1271, ["ST01"]);
     addTechnique(state, "P1", "T02"); addShaped(state, "P1", "plate");
-    const next = mustApply(state, "P1", { type: "GAIN_MATERIALS", workerId: workerId(state, "P1", "apprentice"), clay: 3, wood: 0, preparedClayShape: "vase" }, rng);
+    const next = mustApply(state, "P1", { type: "GAIN_MATERIALS", workerId: workerId(state, "P1", "apprentice"), clay: 3, wood: 0, preparedClayShape: "vase", useTechniqueIds: ["T02"] }, rng);
     expect(next.players["P1"]!.resources.coins).toBe(5);
     next.players["P1"]!.techniques = [{ id: "T04", exhausted: false }, { id: "T07", exhausted: false }];
     next.players["P1"]!.resources.coins = 0; setWorkTurn(next, "P1");
@@ -192,22 +192,22 @@ describe("V1.2.7 Tech timing", () => {
 
 describe("V1.2.7 privacy and Exhibition", () => {
   it("redacts hand IDs and passed choices from public state, events and rival observations", () => {
-    const { state } = startedGame(2); state.players["P1"]!.orderHand = ["S01", "O11"]; state.players["P2"]!.orderHand = ["S16", "O48"];
+    const { state } = startedGame(2); state.players["P1"]!.orderHand = ["S01", "O11"]; state.players["P2"]!.orderHand = ["S08", "O48"];
     state.marketDisplay = ["O01"]; state.marketDiscard = []; orders(state);
-    if (state.phase.type === "orders") state.phase.declinedCompletableOrderIdsByPlayer = { P2: ["S16", "O48"] };
+    if (state.phase.type === "orders") state.phase.declinedCompletableOrderIdsByPlayer = { P2: ["S08", "O48"] };
     const publicState = projectPublicGameState(state);
     expect(publicState.players["P2"]!.orderHandCount).toBe(2);
     const publicJson = JSON.stringify(publicState);
-    for (const id of ["S01", "O11", "S16", "O48"]) expect(publicJson).not.toContain(`"${id}"`);
+    for (const id of ["S01", "O11", "S08", "O48"]) expect(publicJson).not.toContain(`"${id}"`);
     const observation = createComputerObservation(state, "P1");
     expect(observation.ownPrivate.orderHand).toEqual(["S01", "O11"]);
     expect(JSON.stringify(observation)).not.toContain('"O48"');
     const events = projectPublicEvents([
       { type: "ORDER_TAKEN", playerId: "P2", orderId: "O48", deck: "market", acquisition: "blind_deck" },
       { type: "COLOUR_SAMPLES_USED", playerId: "P2", deck: "market", selectedOrderId: "O48", discardedOrderIds: ["O47"], reservedFromDisplay: false },
-      { type: "ORDERS_DISCARDED_FOR_CLEANUP", playerId: "P2", orderIds: ["S16"] },
+      { type: "ORDERS_DISCARDED_FOR_CLEANUP", playerId: "P2", orderIds: ["S08"] },
     ]);
-    for (const id of ["O48", "O47", "S16"]) expect(JSON.stringify(events)).not.toContain(id);
+    for (const id of ["O48", "O47", "S08"]) expect(JSON.stringify(events)).not.toContain(id);
   });
   it("exhibits more than five and checks independent diversity bonuses across the whole collection", () => {
     const { state, rng } = startedGame(2);
@@ -229,7 +229,7 @@ describe("post-forming payment timing", () => {
     addTechnique(state, "P1", "T02"); addTechnique(state, "P1", "T04");
     addShaped(state, "P1", "bowl");
     state.players["P1"]!.resources.coins = 0;
-    const result = mustApply(state, "P1", { type: "FORM_CERAMICS", workerId: workerId(state, "P1", "apprentice"), shapes: ["vase"], useTechniqueIds: ["T04"], dryingFrames: { formedIndex: 0, glaze: "celadon", decoration: "carved" } }, rng);
+    const result = mustApply(state, "P1", { type: "FORM_CERAMICS", workerId: workerId(state, "P1", "apprentice"), shapes: ["vase"], useTechniqueIds: ["T02", "T04"], dryingFrames: { formedIndex: 0, glaze: "celadon", decoration: "carved" } }, rng);
     expect(result.players["P1"]!.resources.coins).toBe(0);
     expect(Object.values(result.ceramics)).toContainEqual(expect.objectContaining({ shape: "vase", stage: "glazed", decoration: "carved" }));
     expect(result.players["P1"]!.techniques.every((tech) => tech.exhausted)).toBe(true);

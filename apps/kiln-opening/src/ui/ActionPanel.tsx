@@ -320,7 +320,7 @@ function WorkControls({ game, player, selectedLocation, selectedWorkerId, busy, 
   const actions: Partial<Record<LocationId, ReactNode>> = {
     court_patronage: action("court_patronage", "Advance Recognition", <CourtPatronageForm player={player} workers={workers} busy={busy} send={send} />),
     labour: action("labour", "Send workers to Labour", <LabourForm player={player} workers={workers} busy={busy} send={send} />),
-    materials_yard: action("materials_yard", "Gain Clay and Wood", <MaterialsForm player={player} workers={workers} locationFull={full("materials_yard")} busy={busy} send={send} />),
+    materials_yard: action("materials_yard", "Gain Clay and Wood", <MaterialsForm game={game} player={player} workers={workers} locationFull={full("materials_yard")} busy={busy} send={send} />),
     forming_studio: action("forming_studio", "Shape vessels", <FormCeramicsForm game={game} player={player} workers={workers} locationFull={full("forming_studio")} busy={busy} send={send} />),
     glaze_workshop: action("glaze_workshop", "Glaze and decorate", <GlazeForm game={game} player={player} workers={workers} locationFull={full("glaze_workshop")} busy={busy} send={send} />),
     kiln_yard: action("kiln_yard", "Load ceramics", <KilnYardForm game={game} player={player} workers={workers} locationFull={full("kiln_yard")} busy={busy} send={send} />),
@@ -424,7 +424,7 @@ function LabourForm({ player, workers, busy, send }: {
   );
 }
 
-function MaterialsForm({ player, workers, locationFull, busy, send }: WorkerFormProps & { player: PublicPlayerState }) {
+function MaterialsForm({ game, player, workers, locationFull, busy, send }: WorkerFormProps & { game: PublicGameState; player: PublicPlayerState }) {
   const { locale, t, term } = useI18n();
   const initialWorkerId = firstLegalWorkerId(workers, locationFull);
   const initialWorker = workers.find((worker) => worker.id === initialWorkerId);
@@ -433,6 +433,9 @@ function MaterialsForm({ player, workers, locationFull, busy, send }: WorkerForm
   const [wood, setWood] = useState(1);
   const [buyShifuBonus, setBuyShifuBonus] = useState(false);
   const [preparedClayShape, setPreparedClayShape] = useState<Shape | "">("");
+  const [selectedRewards, setSelectedRewards] = useState<TechniqueId[]>([]);
+  const eligibleRewards = formingTechniqueRewards(game, player, preparedClayShape === "" ? [] : [preparedClayShape]);
+  const activeRewards = selectedRewards.filter((id) => eligibleRewards.includes(id));
   const selectedWorker = workers.find((worker) => worker.id === workerId) ?? workers[0];
   const requiredTotal = selectedWorker?.kind === "shifu" ? 4 : 3;
   const invalidAmount = !Number.isInteger(clay) || !Number.isInteger(wood) || clay < 0 || wood < 0;
@@ -477,6 +480,7 @@ function MaterialsForm({ player, workers, locationFull, busy, send }: WorkerForm
       wood,
       ...(activeBonus ? { buyShifuBonus: true } : {}),
       ...(preparedClayShape === "" ? {} : { preparedClayShape }),
+      ...(activeRewards.length === 0 ? {} : { useTechniqueIds: activeRewards }),
     });
   }
   return (
@@ -492,6 +496,7 @@ function MaterialsForm({ player, workers, locationFull, busy, send }: WorkerForm
           return { value: shape, label: term(shape), detail: `${cost} ${t("Clay")}`, disabled, disabledReason: disabled ? (locale === "zh-CN" ? `需要${cost}泥` : `Requires ${cost} Clay`) : undefined };
         }),
       ]} />}
+      <TechniqueChecks techniqueIds={eligibleRewards} selected={activeRewards} onChange={setSelectedRewards} />
       <small role="status" className={error === null ? "" : "control-error"}>
         {error === null
           ? locale === "zh-CN" ? `${clay}泥 + ${wood}柴 = ${requiredTotal}份资源。` : `${clay} Clay + ${wood} Wood = ${requiredTotal} resources.`
@@ -511,8 +516,8 @@ function FormCeramicsForm({ game, player, workers, locationFull, busy, send }: {
   send: SendCommand;
 }) {
   const { locale, t, term } = useI18n();
-  const techniques = ownedAvailableTechniques(player, ["T01", "T04"]);
-  const canUseWheel = techniques.includes("T01");
+  const availableTechniques = ownedAvailableTechniques(player, ["T01", "T04"]);
+  const canUseWheel = availableTechniques.includes("T01");
   const hasAffordableShape = canUseWheel || SHAPES.some((shape) => SHAPE_COSTS[shape] <= player.resources.clay);
   const initialWorkerId = firstLegalWorkerId(workers, locationFull, () => hasAffordableShape);
   const [workerId, setWorkerId] = useState(initialWorkerId);
@@ -526,12 +531,14 @@ function FormCeramicsForm({ game, player, workers, locationFull, busy, send }: {
   const [dryingWaiver, setDryingWaiver] = useState(false);
   const [ding, setDing] = useState<Shape | "">("");
   const selectedWorker = workers.find((worker) => worker.id === workerId) ?? workers[0];
-  const activeTechniqueIds = selectedTechniques.filter((techniqueId) => techniques.includes(techniqueId));
   const canUseDing = player.kilnId === "DI" && !player.kilnAbilityUsedThisRound;
   const activeDing = canUseDing ? ding : "";
   const shapes = [shape1, shape2].filter((shape): shape is Shape => shape !== "");
   const allShapes = activeDing === "" ? shapes : [...shapes, activeDing];
-  const availableCoins = player.resources.coins + formingTechniqueRewards(game, player, allShapes).length * FORMING_TECH_COINS;
+  const eligibleRewards = formingTechniqueRewards(game, player, allShapes);
+  const techniques = [...availableTechniques, ...eligibleRewards];
+  const activeTechniqueIds = selectedTechniques.filter((techniqueId) => techniques.includes(techniqueId));
+  const availableCoins = player.resources.coins + activeTechniqueIds.filter((id) => eligibleRewards.includes(id)).length * FORMING_TECH_COINS;
   const formingClayCost = (shape: Shape): number => SHAPE_COSTS[shape];
   const baseClayCost = shapes.reduce((total, shape) => total + SHAPE_COSTS[shape], 0);
   const shifuDiscount = selectedWorker?.kind === "shifu" && shapes.length === 2 ? 1 : 0;
@@ -820,6 +827,7 @@ function KilnYardForm({ game, player, workers, locationFull, busy, send }: {
     destinations[1] ?? "",
   ]);
   const [furnitureIndex, setFurnitureIndex] = useState<"" | "0" | "1">("");
+  const [kilnTendingResource, setKilnTendingResource] = useState<"" | "clay" | "wood">("");
   const [shifuCeramicId, setShifuCeramicId] = useState("");
   const [paletteIndex, setPaletteIndex] = useState("0");
   const [loadingGlaze, setLoadingGlaze] = useState("");
@@ -889,6 +897,8 @@ function KilnYardForm({ game, player, workers, locationFull, busy, send }: {
       workerId: selectedWorker.id,
       loads,
       ...(selectedWorker.kind === "shifu" && selectedShifuCeramicId !== "" ? { shifuCeramicId: selectedShifuCeramicId } : {}),
+      ...(player.startingTechniqueId === "ST04" && kilnTendingResource === "clay" ? { kilnTendingClay: 1 } : {}),
+      ...(player.startingTechniqueId === "ST04" && kilnTendingResource === "wood" ? { kilnTendingWood: 1 } : {}),
     });
   }
   if (ceramics.length === 0) return <ActionUnavailable message="You have no Glazed ceramic to load." />;
@@ -915,7 +925,11 @@ function KilnYardForm({ game, player, workers, locationFull, busy, send }: {
         : <p className="control-hint">{locale === "zh-CN" ? "若只装入御窑且共窑中没有己方陶瓷，则不放置师傅，也不能进行调位。" : "With no ceramic of yours in the Shared Kiln after loading, this Shifu receives no reposition target."}</p>)}
       <LoadingPaletteChoice player={player} value={loadingGlaze} onChange={setLoadingGlaze} />
       {loadingGlaze !== "" && maximumLoads > 1 && <ChoiceTiles name="palette-load" label={locale === "zh-CN" ? "釉色谱：选择装窑器物" : "Glaze Palette: choose the load"} value={paletteIndex} onChange={setPaletteIndex} options={[{ value: "0", label: "1" }, { value: "1", label: "2" }]} />}
-      {player.startingTechniqueId === "ST04" && <p>{locale === "zh-CN" ? "看火：装窑后获得1泥和1柴。" : "Kiln Tending: gain 1 Clay and 1 Wood after loading."}</p>}
+      {player.startingTechniqueId === "ST04" && <ChoiceTiles name="kiln-tending" label={locale === "zh-CN" ? "看火：装窑后获得资源" : "Kiln Tending: gain after loading"} value={kilnTendingResource} onChange={(value) => setKilnTendingResource(value as "" | "clay" | "wood")} options={[
+        { value: "", label: t("Do not use") },
+        { value: "clay", label: locale === "zh-CN" ? "1泥" : "1 Clay" },
+        { value: "wood", label: locale === "zh-CN" ? "1柴" : "1 Wood" },
+      ]} />}
       <small role="status" className={error === null ? "" : "control-error"}>{error === null ? (locale === "zh-CN" ? `已选择${loads.length}件器物。` : `${loads.length} ceramic${loads.length === 1 ? "" : "s"} selected.`) : localizeActionError(locale, error)}</small>
       <button className="primary-button" disabled={busy || error !== null}>{t("Load kiln")}</button>
     </form>

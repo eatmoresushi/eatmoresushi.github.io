@@ -235,7 +235,7 @@ describe("V1.2.7 worker actions and Techs", () => {
     addShaped(state, "P1", "bowl");
     const calipersCoins = state.players["P1"]!.resources.coins;
     state = mustApply(state, "P1", {
-      type: "FORM_CERAMICS", workerId: workerId(state, "P1", "apprentice"), shapes: ["plate"],
+      type: "FORM_CERAMICS", workerId: workerId(state, "P1", "apprentice"), shapes: ["plate"], useTechniqueIds: ["T02"],
     }, rng);
     expect(state.players["P1"]!.resources.coins).toBe(calipersCoins + FORMING_TECH_COINS);
     expect(state.players["P1"]!.techniques.find(({ id }) => id === "T02")?.exhausted).toBe(true);
@@ -246,7 +246,7 @@ describe("V1.2.7 worker actions and Techs", () => {
     addShaped(state, "P1", "bowl");
     const mouldCoins = state.players["P1"]!.resources.coins;
     state = mustApply(state, "P1", {
-      type: "FORM_CERAMICS", workerId: workerId(state, "P1", "apprentice"), shapes: ["bowl"],
+      type: "FORM_CERAMICS", workerId: workerId(state, "P1", "apprentice"), shapes: ["bowl"], useTechniqueIds: ["T03"],
     }, rng);
     expect(state.players["P1"]!.resources.coins).toBe(mouldCoins + FORMING_TECH_COINS);
 
@@ -369,7 +369,7 @@ describe("V1.2.7 worker actions and Techs", () => {
     }, rng);
     state = tended.state;
     expect(state.players["P1"]!.resources.clay).toBe(resources.clay + 1);
-    expect(state.players["P1"]!.resources.wood).toBe(resources.wood + 1);
+    expect(state.players["P1"]!.resources.wood).toBe(resources.wood);
     expect(tended.events).toContainEqual({
       type: "STARTING_TECH_USED",
       playerId: "P1",

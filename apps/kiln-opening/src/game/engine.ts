@@ -620,6 +620,13 @@ function gainMaterials(
   if (preparedClayShape !== undefined && (context.player.startingTechniqueId !== "ST01" || !SHAPES.includes(preparedClayShape))) {
     return applyFailure(ruleError("INVALID_ACTION", "Prepared Clay is required to form during Materials Yard."));
   }
+  const useTechniqueIds = action.useTechniqueIds ?? [];
+  const techniqueFailure = validateTechniqueUses(context.player, useTechniqueIds, ["T02", "T03"]);
+  if (techniqueFailure !== null) return techniqueFailure;
+  const eligibleRewards = formingTechniqueRewards(state, context.player, preparedClayShape === undefined ? [] : [preparedClayShape]);
+  if (useTechniqueIds.some((id) => !eligibleRewards.includes(id))) {
+    return applyFailure(ruleError("INVALID_SELECTION", "The selected forming reward requires an eligible vessel formed by Prepared Clay."));
+  }
 
   const next = cloneState(state);
   const events: GameEvent[] = [];
@@ -662,16 +669,14 @@ function gainMaterials(
   });
   if (preparedClayShape !== undefined) {
     events.push({ type: "STARTING_TECH_USED", playerId: actorId, techniqueId: "ST01" });
-    rewardFormingTechs(state, player, actorId, [preparedClayShape], events);
+    rewardFormingTechs(player, actorId, [preparedClayShape], useTechniqueIds, events);
   }
   completeWorkerAction(next, actorId, events);
   return success(next, events);
 }
 
-function rewardFormingTechs(before: GameState, player: PlayerState, actorId: PlayerId, formedShapes: Shape[], events: GameEvent[]): void {
-  const triggers = formingTechniqueRewards(before, player, formedShapes);
-  for (const id of triggers) {
-    if (ownedTechnique(player, id)?.exhausted !== false) continue;
+function rewardFormingTechs(player: PlayerState, actorId: PlayerId, formedShapes: Shape[], selectedRewards: readonly TechniqueId[], events: GameEvent[]): void {
+  for (const id of selectedRewards) {
     gainResource(player, "coins", FORMING_TECH_COINS);
     exhaustTechnique(player, actorId, id, events);
     events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins: FORMING_TECH_COINS });
@@ -702,7 +707,7 @@ function formCeramics(
   const techniqueFailure = validateTechniqueUses(
     context.player,
     useTechniqueIds,
-    ["T01", "T04", "T07", "T08", "T09"],
+    ["T01", "T02", "T03", "T04", "T07", "T08", "T09"],
   );
   if (techniqueFailure !== null) return techniqueFailure;
 
@@ -724,6 +729,11 @@ function formCeramics(
   }
   const allFormedShapes =
     dingExtraShape === undefined ? [...action.shapes] : [...action.shapes, dingExtraShape];
+  const eligibleRewards = formingTechniqueRewards(state, context.player, allFormedShapes);
+  const selectedRewards: TechniqueId[] = useTechniqueIds.filter((id) => id === "T02" || id === "T03");
+  if (selectedRewards.some((id) => !eligibleRewards.includes(id))) {
+    return applyFailure(ruleError("INVALID_SELECTION", "The selected forming reward does not match the vessels formed by this action."));
+  }
   if (
     useTechniqueIds.includes("T01") &&
     !allFormedShapes.some((shape) => shape === "vase" || shape === "censer")
@@ -774,7 +784,7 @@ function formCeramics(
   const dryingFramesCoins = action.dryingFrames === undefined || useTechniqueIds.includes(waiver) ? 0 : DECORATION_COSTS[action.dryingFrames.decoration];
   const whiteSlipCoins = action.whiteSlip === undefined ? 0 : DECORATION_COSTS.plain;
   const formingCoins = dryingFramesCoins + whiteSlipCoins;
-  if (context.player.resources.clay < clayPaid || context.player.resources.coins + formingTechniqueRewards(state, context.player, allFormedShapes).length * FORMING_TECH_COINS < formingCoins) {
+  if (context.player.resources.clay < clayPaid || context.player.resources.coins + selectedRewards.length * FORMING_TECH_COINS < formingCoins) {
     return applyFailure(
       ruleError("INSUFFICIENT_RESOURCES", "Not enough resources to form the selected vessels.", {
         requiredClay: clayPaid,
@@ -790,7 +800,7 @@ function formCeramics(
   }
   player.resources.clay -= clayPaid;
   if (clayPaid > 0) events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: -clayPaid, wood: 0, coins: 0 });
-  rewardFormingTechs(state, player, actorId, allFormedShapes, events);
+  rewardFormingTechs(player, actorId, allFormedShapes, selectedRewards, events);
   player.resources.coins -= formingCoins;
   if (formingCoins > 0) events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins: -formingCoins });
   for (const [formedIndex, shape] of allFormedShapes.entries()) {
@@ -832,7 +842,9 @@ function formCeramics(
   if (action.whiteSlip !== undefined) {
     events.push({ type: "STARTING_TECH_USED", playerId: actorId, techniqueId: "ST02" });
   }
-  for (const techniqueId of useTechniqueIds) exhaustTechnique(player, actorId, techniqueId, events);
+  for (const techniqueId of useTechniqueIds) {
+    if (!selectedRewards.includes(techniqueId)) exhaustTechnique(player, actorId, techniqueId, events);
+  }
   if (dingExtraShape !== undefined) {
     player.kilnAbilityUsedThisRound = true;
     events.push({ type: "KILN_ABILITY_USED", playerId: actorId, kilnId: "DI" });
@@ -952,6 +964,14 @@ function useKilnYard(
 ): ApplyResult {
   const context = validateWorkerAction(state, actorId, action.workerId, "kiln_yard");
   if (!isWorkerContext(context)) return context;
+  const kilnTendingClay = action.kilnTendingClay ?? 0;
+  const kilnTendingWood = action.kilnTendingWood ?? 0;
+  if (!isNonNegativeInteger(kilnTendingClay) || !isNonNegativeInteger(kilnTendingWood) || kilnTendingClay + kilnTendingWood > 1) {
+    return applyFailure(ruleError("INVALID_SELECTION", "Kiln Tending may gain 1 Clay or 1 Wood, or be declined."));
+  }
+  if (kilnTendingClay + kilnTendingWood > 0 && context.player.startingTechniqueId !== "ST04") {
+    return applyFailure(ruleError("INVALID_ACTION", "Kiln Tending is required to gain a resource after loading."));
+  }
   const normalMaximum = context.worker.kind === "shifu" ? 2 : 1;
   const normalCount = action.loads.length;
   if (normalCount < 1 || normalCount > normalMaximum) {
@@ -1032,9 +1052,9 @@ function useKilnYard(
       events.push({ type: "KILN_YARD_SHIFU_MARKED", playerId: actorId, ceramicId: action.shifuCeramicId });
     }
   }
-  if (player.startingTechniqueId === "ST04") {
-    const clay = gainResource(player, "clay", 1);
-    const wood = gainResource(player, "wood", 1);
+  if (kilnTendingClay + kilnTendingWood > 0) {
+    const clay = gainResource(player, "clay", kilnTendingClay);
+    const wood = gainResource(player, "wood", kilnTendingWood);
     events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay, wood, coins: 0 });
     events.push({ type: "STARTING_TECH_USED", playerId: actorId, techniqueId: "ST04" });
   }

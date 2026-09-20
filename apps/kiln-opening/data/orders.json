@@ -47,34 +47,6 @@
       "id": "S04",
       "ceramics": [
         {
-          "shape": "vase"
-        }
-      ],
-      "minQuality": "standard",
-      "vp": 3,
-      "coins": 5,
-      "crowns": 0,
-      "requirements": "Vase · any Glaze · any Decoration",
-      "requirementsZh": "瓶 · 任意釉 · 任意纹饰"
-    },
-    {
-      "id": "S05",
-      "ceramics": [
-        {
-          "shape": "censer"
-        }
-      ],
-      "minQuality": "standard",
-      "vp": 3,
-      "coins": 5,
-      "crowns": 0,
-      "requirements": "Censer · any Glaze · any Decoration",
-      "requirementsZh": "香炉 · 任意釉 · 任意纹饰"
-    },
-    {
-      "id": "S06",
-      "ceramics": [
-        {
           "glaze": "white"
         }
       ],
@@ -86,7 +58,7 @@
       "requirementsZh": "任意器型 · 白釉 · 任意纹饰"
     },
     {
-      "id": "S07",
+      "id": "S05",
       "ceramics": [
         {
           "glaze": "celadon"
@@ -100,7 +72,7 @@
       "requirementsZh": "任意器型 · 青釉 · 任意纹饰"
     },
     {
-      "id": "S08",
+      "id": "S06",
       "ceramics": [
         {
           "glaze": "grey_green"
@@ -114,7 +86,7 @@
       "requirementsZh": "任意器型 · 灰青釉 · 任意纹饰"
     },
     {
-      "id": "S09",
+      "id": "S07",
       "ceramics": [
         {
           "glaze": "moon_white"
@@ -128,81 +100,7 @@
       "requirementsZh": "任意器型 · 月白釉 · 任意纹饰"
     },
     {
-      "id": "S10",
-      "ceramics": [
-        {
-          "decoration": "plain"
-        }
-      ],
-      "minQuality": "standard",
-      "vp": 3,
-      "coins": 4,
-      "crowns": 0,
-      "requirements": "any Shape · any Glaze · Plain",
-      "requirementsZh": "任意器型 · 任意釉 · 素面"
-    },
-    {
-      "id": "S11",
-      "ceramics": [
-        {
-          "decoration": "carved"
-        }
-      ],
-      "minQuality": "standard",
-      "vp": 4,
-      "coins": 4,
-      "crowns": 0,
-      "requirements": "any Shape · any Glaze · Carved",
-      "requirementsZh": "任意器型 · 任意釉 · 刻花"
-    },
-    {
-      "id": "S12",
-      "ceramics": [
-        {
-          "decoration": "impressed"
-        }
-      ],
-      "minQuality": "standard",
-      "vp": 4,
-      "coins": 4,
-      "crowns": 0,
-      "requirements": "any Shape · any Glaze · Impressed",
-      "requirementsZh": "任意器型 · 任意釉 · 印花"
-    },
-    {
-      "id": "S13",
-      "ceramics": [
-        {
-          "decoration": "crackle"
-        }
-      ],
-      "minQuality": "standard",
-      "vp": 4,
-      "coins": 4,
-      "crowns": 0,
-      "requirements": "any Shape · any Glaze · Crackle",
-      "requirementsZh": "任意器型 · 任意釉 · 开片"
-    },
-    {
-      "id": "S14",
-      "ceramics": [
-        {
-          "shapes": [
-            "bowl",
-            "plate",
-            "washer"
-          ]
-        }
-      ],
-      "minQuality": "standard",
-      "vp": 3,
-      "coins": 3,
-      "crowns": 0,
-      "requirements": "Bowl, Plate or Brush Washer · any Glaze · any Decoration",
-      "requirementsZh": "碗、盘或笔洗 · 任意釉 · 任意纹饰"
-    },
-    {
-      "id": "S15",
+      "id": "S08",
       "ceramics": [
         {
           "shapes": [
@@ -217,18 +115,6 @@
       "crowns": 0,
       "requirements": "Vase or Censer · any Glaze · any Decoration",
       "requirementsZh": "瓶或香炉 · 任意釉 · 任意纹饰"
-    },
-    {
-      "id": "S16",
-      "ceramics": [
-        {}
-      ],
-      "minQuality": "standard",
-      "vp": 2,
-      "coins": 3,
-      "crowns": 0,
-      "requirements": "any Shape · any Glaze · any Decoration",
-      "requirementsZh": "任意器型 · 任意釉 · 任意纹饰"
     }
   ],
   "main": [

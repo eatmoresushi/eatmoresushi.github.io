@@ -19,7 +19,9 @@ Codex should read files in this order:
 11. `docs/IMPLEMENTATION_DECISIONS.md`
 12. `docs/DESIGN_HISTORY.md` only when historical context is useful
 
-The **current mechanical source of truth is the adopted V1.2.7 English source** at `docs/KILN_OPENING_v1.2.7_EN_SOURCE.md`; it is the unmodified owner-supplied rulebook. The archived Chinese terminology source at `docs/KILN_OPENING_v1.2.6_ZH_SOURCE.md` supplies established Chinese terminology; changed mechanics and wording follow V1.2.7. Source checksums and adoption notes are recorded in `docs/RULEBOOK_AUDIT_V1.2.7.md`. English and Simplified Chinese player-facing rules derive from the same stable IDs. Visual references remain restricted to `assets/current_v04/`; that directory name is retained only as a legacy path. Older rules and simulations remain historical evidence and must not override V1.2.7.
+The **current mechanical source of truth is the adopted V1.2.7 English source** at `docs/KILN_OPENING_v1.2.7_EN_SOURCE.md`; it includes the owner's 2026-09-20 amendments to eight Starting Orders, S01–S08, optional Tech abilities, and Kiln Tending's choice of 1 Clay or 1 Wood. The archived Chinese terminology source at `docs/KILN_OPENING_v1.2.6_ZH_SOURCE.md` supplies established Chinese terminology; changed mechanics and wording follow V1.2.7. Original and current source checksums, adoption notes and the owner's Ge amendment are recorded in `docs/RULEBOOK_AUDIT_V1.2.7.md`. English and Simplified Chinese player-facing rules derive from the same stable IDs. Visual references remain restricted to `assets/current_v04/`; that directory name is retained only as a legacy path. Older rules and simulations remain historical evidence and must not override V1.2.7.
+
+Tech faces and hover previews use `docs/KILN_OPENING_v1.2.7_TECH_SHORT_TEXT_SOURCE.md`; click-through details use `docs/KILN_OPENING_v1.2.7_TECH_DETAIL_TEXT_SOURCE.md` with the recorded owner corrections. Kiln hover and workshop reminders use `docs/KILN_OPENING_v1.2.7_KILN_SHORT_TEXT_SOURCE.md`; the original component draft remains archived as provenance.
 
 ## Important rule for Codex
 

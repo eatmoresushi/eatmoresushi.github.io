@@ -83,7 +83,7 @@ describe("tabletop compact Technique copy", () => {
   });
 
   it("preserves every supplied English Tech reminder", () => {
-    const source = readFileSync("docs/KILN_OPENING_v1.2.7_COMPONENT_TEXT_SOURCE.md", "utf8");
+    const source = readFileSync("docs/KILN_OPENING_v1.2.7_TECH_SHORT_TEXT_SOURCE.md", "utf8");
     for (const id of ALL_TECHNIQUE_IDS) {
       const definition = id.startsWith("ST") ? STARTING_TECHNIQUE_DEFINITIONS[id as "ST01"] : TECHNIQUE_DEFINITIONS[id]!;
       const section = source.split(`### ${definition.name}\n`)[1]!.split(/^##/m)[0]!.trim().replace(/\n{3,}/g, "\n\n");
@@ -127,21 +127,21 @@ describe("tabletop compact Kiln copy", () => {
     }
   });
 
-  it("preserves the supplied English Kiln reminders with the owner's Ge amendment", () => {
-    const source = readFileSync("docs/KILN_OPENING_v1.2.7_COMPONENT_TEXT_SOURCE.md", "utf8");
-    const audit = readFileSync("docs/RULEBOOK_AUDIT_V1.2.7.md", "utf8");
-    const geAmendment = audit.split("<!-- GE_OWNER_SHORT_START -->")[1]!.split("<!-- GE_OWNER_SHORT_END -->")[0]!.trim();
+  it("preserves all five current owner-supplied English Kiln reminders", () => {
+    const source = readFileSync("docs/KILN_OPENING_v1.2.7_KILN_SHORT_TEXT_SOURCE.md", "utf8");
     for (const id of KILN_COPY_IDS) {
       const heading = source.split("\n").find((line) => line.startsWith(`### ${KILN_DEFINITIONS[id].name} /`))!;
       const section = source.split(heading + "\n")[1]!.split(/^##/m)[0]!.trim().replace(/\n{3,}/g, "\n\n");
-      expect(KILN_SHORT_COPY[id].en).toBe(id === "GE" ? geAmendment : section);
+      expect(KILN_SHORT_COPY[id].en).toBe(section);
     }
   });
 
   it("explains Ge's Order and Exhibition timing in both display layers and languages", () => {
     for (const layer of ["preview", "full"] as const) {
       const english = renderedText(renderToStaticMarkup(createElement(KilnDescription, { id: "GE", locale: "en", layer })));
-      expect(english).toContain("When completing Orders or scoring the Exhibition, treat your Standard-quality Crackle ceramics as Fine.");
+      expect(english).toContain(layer === "preview"
+        ? "For Orders and Exhibition scoring, your Standard Crackle ceramics count as Fine."
+        : "When completing Orders or scoring the Exhibition, treat your Standard-quality Crackle ceramics as Fine.");
       if (layer === "full") expect(english).toContain("Its actual Decoration stays Crackle.");
       else expect(english).not.toContain("Its actual Decoration stays Crackle.");
       expect(english).not.toContain("Heat Difference");

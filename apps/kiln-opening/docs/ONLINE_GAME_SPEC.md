@@ -56,7 +56,7 @@ Consecutive computer turns run in bounded batches so an Edge Function invocation
 
 - random First Player;
 - reverse-order Kiln selection;
-- each player receives 1 Starting Order and 1 Main Order in a secret hand; only hand counts are public;
+- the separate Starting Order deck contains eight cards, S01–S08; each player receives 1 Starting Order and 1 Main Order in a secret hand; only hand counts are public;
 - each player chooses 1 Starting Tech from the common supply;
 - every player starts with 1 Shifu + 3 Apprentices and an empty Imperial Kiln area;
 - all eight action locations are shared; Materials Yard, Potter's Wheel, Glaze & Decoration, Commission Market, and Guild & Academy use 2 / 3 / 4 global printed spaces at 2 / 3 / 4 players, while Kiln Yard, Labour and Court Patronage are uncapped;

@@ -98,6 +98,7 @@ describe("V1.2.7 Ding Moulded Production", () => {
       workerId: workerId(state, "P1", "apprentice"),
       shapes: ["plate"],
       dingExtraShape: "plate",
+      useTechniqueIds: ["T03"],
     }, rng);
     expect(state.players["P1"]!.resources.coins).toBe(2);
     expect(state.players["P1"]!.techniques.find((technique) => technique.id === "T03")?.exhausted).toBe(true);

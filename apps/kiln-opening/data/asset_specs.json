@@ -3,9 +3,9 @@
   "orderCards": {
     "status": "REGENERATE_FROM_DATA",
     "source": "data/orders.json",
-    "total": 64,
+    "total": 56,
     "main": 48,
-    "starting": 16,
+    "starting": 8,
     "mustShowCrowns": true,
     "obsoleteSheetsDirectory": "assets/obsolete_v061"
   },

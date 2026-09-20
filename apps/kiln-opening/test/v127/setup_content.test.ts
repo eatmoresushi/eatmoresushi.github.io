@@ -26,7 +26,11 @@ describe("V1.2.7 setup and authoritative content", () => {
     expect(state.marketDisplay).toHaveLength(6);
     expect(state.marketDeck).toHaveLength(42 - playerCount);
     expect(state.startingOrderDeck).toHaveLength(0);
-    expect(state.returnedStartingOrderIds).toHaveLength(16 - playerCount);
+    expect(state.returnedStartingOrderIds).toHaveLength(8 - playerCount);
+    const dealtStarting = Object.values(state.players).flatMap((player) => player.orderHand.filter((id) => id.startsWith("S")));
+    expect(dealtStarting).toHaveLength(playerCount);
+    expect(new Set([...dealtStarting, ...state.returnedStartingOrderIds]).size).toBe(8);
+    expect([...dealtStarting, ...state.returnedStartingOrderIds].sort()).toEqual(STARTING_ORDERS.map(({ id }) => id));
     expect(state.phase.type).toBe("setup_kiln_selection");
     if (state.phase.type !== "setup_kiln_selection") return;
     expect(state.phase.selectionOrder).toEqual([...turnOrderFromFirst(state)].reverse());
@@ -42,8 +46,8 @@ describe("V1.2.7 setup and authoritative content", () => {
     }
   });
 
-  it("deals one Starting and one Main Order, then allows shared Starting Tech choices", () => {
-    const { state: created, rng } = createdGame(3, 1221);
+  it.each([2, 3, 4] as const)("deals one Starting and one Main Order at %i players, then allows shared Starting Tech choices", (playerCount) => {
+    const { state: created, rng } = createdGame(playerCount, 1221);
     let state = created;
     let kilnIndex = 0;
     while (state.phase.type === "setup_kiln_selection") {
@@ -52,7 +56,7 @@ describe("V1.2.7 setup and authoritative content", () => {
       kilnIndex += 1;
     }
     const hands = Object.values(state.players).flatMap((player) => player.orderHand);
-    expect(new Set(hands).size).toBe(6);
+    expect(new Set(hands).size).toBe(playerCount * 2);
     for (const player of Object.values(state.players)) {
       expect(player.orderHand.filter((id) => id.startsWith("S"))).toHaveLength(1);
       expect(player.orderHand.filter((id) => id.startsWith("O"))).toHaveLength(1);
@@ -69,7 +73,7 @@ describe("V1.2.7 setup and authoritative content", () => {
   });
 
   it("contains exactly the V1.2.7 decks, spaces, locations, and bilingual records", () => {
-    expect(STARTING_ORDERS.map(({ id }) => id)).toEqual(Array.from({ length: 16 }, (_, i) => `S${String(i + 1).padStart(2, "0")}`));
+    expect(STARTING_ORDERS.map(({ id }) => id)).toEqual(Array.from({ length: 8 }, (_, i) => `S${String(i + 1).padStart(2, "0")}`));
     expect(MAIN_ORDERS.map(({ id }) => id)).toEqual(Array.from({ length: 48 }, (_, i) => `O${String(i + 1).padStart(2, "0")}`));
     expect(STARTING_TECHNIQUES).toHaveLength(4);
     expect(TECHNIQUES).toHaveLength(15);

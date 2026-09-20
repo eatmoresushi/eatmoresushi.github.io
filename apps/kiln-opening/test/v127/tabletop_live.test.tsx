@@ -634,7 +634,7 @@ describe("V1.2.7 functional tabletop", () => {
     addFinished(state, "P1", "plate", "standard", "celadon", "carved");
     addFinished(state, "P1", "washer", "standard", "grey_green", "impressed");
     addFinished(state, "P1", "censer", "flawed", "moon_white", "crackle");
-    state.players["P1"]!.orderHand = ["S01", "S04", "O43", "O44"];
+    state.players["P1"]!.orderHand = ["S01", "S08", "O43", "O44"];
     state.marketDisplay = ["O02"];
     state.phase = { type: "orders", turnOrder: ["P1", "P2"], currentIndex: 0, activePlayerId: "P1", completedInCircuit: 0 };
 
@@ -650,7 +650,7 @@ describe("V1.2.7 functional tabletop", () => {
     expect(markup).toContain(">Complete S01</button>");
     expect(markup).toContain(">Complete O02</button>");
     expect(markup).toContain(">Complete O43</button>");
-    expect(markup).not.toContain(">Complete S04</button>");
+    expect(markup).not.toContain(">Complete S08</button>");
     expect(markup).not.toContain(">Complete O44</button>");
     expect(markup).not.toContain("Censer · Moon White · Crackle · Flawed");
   });

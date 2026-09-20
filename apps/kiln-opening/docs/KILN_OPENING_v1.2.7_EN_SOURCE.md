@@ -41,7 +41,7 @@ The game lasts exactly **5 rounds**.
 | Coins                        | 50       | Decoration, Advanced Tech and Court Patronage currency.                       |
 | Vessel Cards                 | 50       | Ten each: Bowl, Plate, Brush Washer, Vase and Censer.        |
 | Main Order Cards             | 48       | One unified public/reservable deck; see Appendix A.          |
-| Starting Order Cards         | 16       | Separate easy opening deck; never shuffled into the Main Order deck. |
+| Starting Order Cards         | 8        | Separate easy opening deck; never shuffled into the Main Order deck. |
 | Starting Tech tiles          | 16       | Four copies each of Prepared Clay, White Slip, Rapid Drying and Kiln Tending. |
 | Advanced Tech tiles          | 15       | Five Forming, five Glazing & Decoration, five Firing.        |
 | Fire Cards                   | 12       | −2×1, −1×3, 0×4, +1×3, +2×1.                                 |
@@ -60,7 +60,7 @@ The game lasts exactly **5 rounds**.
    - **4 players:** use all 7 spaces.
    - **3 players:** use 6 spaces; do not use 1 High space.
    - **2 players:** use 5 spaces; do not use 1 High and 1 Middle space.
-2. Shuffle the separate **16-card Starting Order deck** and the **48-card Main Order deck** separately. Deal each player **1 Starting Order and 1 Main Order**. These 2 Orders form that player's starting hand and are **kept secret from other players**.
+2. Shuffle the separate **8-card Starting Order deck** and the **48-card Main Order deck** separately. Deal each player **1 Starting Order and 1 Main Order**. These 2 Orders form that player's starting hand and are **kept secret from other players**.
 3. Return all undealt Starting Orders to the box. Reshuffle the remaining Main Order deck, then reveal **6 face-up Main Orders** from left to right.
 4. Separate the 15 Advanced Techs into Forming, Glazing & Decoration and Firing decks of 5. Shuffle each discipline and reveal **2 face-up tiles from each**.
 5. Shuffle the 12-card Fire deck and place it face down beside a face-up discard pile.
@@ -292,6 +292,8 @@ A player's long-term workshop engine consists of:
 > **1 Starting Tech + 1 Kiln Tradition + up to 2 Advanced Techs**
 ## Tech Effects and Worker Actions
 **A Tech effect is not a worker action.** If a Starting Tech or Advanced Tech lets you perform part of a worker action—such as forming, glazing, decorating or loading—that does **not** count as taking that worker action and does not trigger effects that require that action, unless explicitly stated otherwise.
+
+**Tech abilities are optional unless explicitly required.** Pay every stated cost when using an ability. You may decline a benefit, including a discount or resource gain, without using its once-per-round allowance. Colour Samples' immediate selection when acquired is required; its Commission Market effect is optional.
 ## Starting Tech
 Each player chooses exactly **1 Starting Tech** during Setup. It does not count toward the Advanced Tech limit and scores no VP by itself. See **Appendix B** for all Starting Tech abilities.
 ## Advanced Tech Rules
@@ -304,7 +306,7 @@ Each player chooses exactly **1 Starting Tech** during Setup. It does not count 
 See Appendix B for all 15 tiles.
 # Orders and Imperial Recognition
 ## Main Order Market
-There is one **48-card Main Order deck** and one **6-card public display**. The separate 16-card Starting Order deck is used only during Setup.
+There is one **48-card Main Order deck** and one **6-card public display**. The separate 8-card Starting Order deck is used only during Setup.
 
 The Main Order display is ordered from oldest to newest: the **leftmost Order is the oldest** and the **rightmost Order is the newest**.
 
@@ -413,9 +415,9 @@ The player with the most VP wins.
 - If the Main Order deck is empty when a card is needed, shuffle its discard pile to form a new deck.
 - If the Fire deck is empty when a card is needed, shuffle its discard pile to form a new deck.
 - If an Advanced Tech discipline cannot refill its display to 2, leave the display partially empty.
-# Appendix A — Order Decks: 16 Starting + 48 Main
+# Appendix A — Order Decks: 8 Starting + 48 Main
 **Standard+** means Standard, Fine or Masterpiece. **Fine+** means Fine or Masterpiece.
-## A0. Starting Order Deck — 16
+## A0. Starting Order Deck — 8
 Starting Orders are easy **commercial Orders** that give each workshop achievable opening targets.
 - Shuffle this deck separately during Setup.
 - Deal each player **1 Starting Order and 1 Main Order**. Both begin in that player's **secret hand**.
@@ -428,19 +430,11 @@ Starting Orders are easy **commercial Orders** that give each workshop achievabl
 |  S01   | Bowl · any Glaze · any Decoration                        | Standard+   |   2    |     4     |
 |  S02   | Plate · any Glaze · any Decoration                       | Standard+   |   2    |     4     |
 |  S03   | Brush Washer · any Glaze · any Decoration                | Standard+   |   2    |     4     |
-|  S04   | Vase · any Glaze · any Decoration                        | Standard+   |   3    |     5     |
-|  S05   | Censer · any Glaze · any Decoration                      | Standard+   |   3    |     5     |
-|  S06   | any Shape · White · any Decoration                       | Standard+   |   3    |     4     |
-|  S07   | any Shape · Celadon · any Decoration                     | Standard+   |   3    |     4     |
-|  S08   | any Shape · Grey-Green · any Decoration                  | Standard+   |   3    |     4     |
-|  S09   | any Shape · Moon White · any Decoration                  | Standard+   |   4    |     4     |
-|  S10   | any Shape · any Glaze · Plain                            | Standard+   |   3    |     4     |
-|  S11   | any Shape · any Glaze · Carved                           | Standard+   |   4    |     4     |
-|  S12   | any Shape · any Glaze · Impressed                        | Standard+   |   4    |     4     |
-|  S13   | any Shape · any Glaze · Crackle                          | Standard+   |   4    |     4     |
-|  S14   | Bowl, Plate or Brush Washer · any Glaze · any Decoration | Standard+   |   3    |     3     |
-|  S15   | Vase or Censer · any Glaze · any Decoration              | Standard+   |   3    |     4     |
-|  S16   | any Shape · any Glaze · any Decoration                   | Standard+   |   2    |     3     |
+|  S04   | any Shape · White · any Decoration                       | Standard+   |   3    |     4     |
+|  S05   | any Shape · Celadon · any Decoration                     | Standard+   |   3    |     4     |
+|  S06   | any Shape · Grey-Green · any Decoration                  | Standard+   |   3    |     4     |
+|  S07   | any Shape · Moon White · any Decoration                  | Standard+   |   4    |     4     |
+|  S08   | Vase or Censer · any Glaze · any Decoration              | Standard+   |   3    |     4     |
 ## A1. Main Single-Ceramic Orders — 24
 | **ID** | **Requirements**                                         | **Quality**     | **VP** | **Coins** | **Crowns** |
 |:------:|----------------------------------------------------------|-----------------|:------:|:---------:|:----------:|
@@ -507,7 +501,7 @@ Tech tiles use abbreviated reminder text. The rules in this appendix give the fu
 | **Prepared Clay** | Once during each **Materials Yard** action you take, after gaining resources, you may form **1 vessel of any Shape** by paying **1 more Clay than its Clay cost**. |
 | **White Slip**    | Once during each Potter’s Wheel action you take, after forming, choose 1 vessel formed by that action. You may immediately give it **White Glaze + Plain Decoration**, paying the cost of Plain. |
 | **Rapid Drying**  | Once during each **Glaze & Decoration** action you take, after glazing, you may **pay 1 Wood** to load 1 ceramic from that action into an empty active Shared Kiln space or your empty Imperial Kiln, if gained. |
-| **Kiln Tending**  | Once during each Kiln Yard action you take, after loading at least 1, gain **1 Clay + 1 Wood**. |
+| **Kiln Tending**  | Once during each Kiln Yard action you take, after loading at least 1, you may gain **1 Clay or 1 Wood**. |
 ## B2. Forming Advanced Tech
 | **Advanced Tech**        | **Cost** | **Ability**                                                  |
 | ------------------------ | :------: | ------------------------------------------------------------ |

@@ -282,13 +282,13 @@ function validateContent(): void {
   ) {
     throw new Error("Expected exactly eight V1.2.7 action locations");
   }
-  if (MAIN_ORDERS.length !== 48 || STARTING_ORDERS.length !== 16) {
+  if (MAIN_ORDERS.length !== 48 || STARTING_ORDERS.length !== 8) {
     throw new Error("Order deck size mismatch");
   }
   if (TECHNIQUES.length !== 15 || KILN_IDS.length !== 5 || KILN_SPACE_IDS.length !== 7) {
     throw new Error("Technique, Kiln, or kiln-space count mismatch");
   }
-  if (new Set([...MAIN_ORDERS, ...STARTING_ORDERS].map((order) => order.id)).size !== 64) {
+  if (new Set([...MAIN_ORDERS, ...STARTING_ORDERS].map((order) => order.id)).size !== 56) {
     throw new Error("Order IDs must be unique");
   }
   if (new Set(TECHNIQUES.map((technique) => technique.id)).size !== 15) {

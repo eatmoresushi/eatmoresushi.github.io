@@ -6,7 +6,7 @@ import type { GameState, LocationId, WorkerKind } from "../../src/game/index.ts"
 import { projectPublicGameState } from "../../src/multiplayer/index.ts";
 import { ActionPanel } from "../../src/ui/ActionPanel.tsx";
 import { LanguageProvider } from "../../src/ui/i18n.tsx";
-import { addGlazed, addLoaded, addShaped, startedGame, workerId } from "./helpers.ts";
+import { addGlazed, addLoaded, addShaped, addTechnique, startedGame, workerId } from "./helpers.ts";
 
 const ACTION_LOCATIONS: readonly LocationId[] = [
   "materials_yard",
@@ -102,6 +102,43 @@ function renderAction(
 }
 
 describe("V1.2.7 smart worker-action choices", () => {
+  it("offers Kiln Tending as an optional choice of one Clay or one Wood", () => {
+    const { markup } = renderAction("kiln_yard", "apprentice", (state) => {
+      state.players["P1"]!.startingTechniqueId = "ST04";
+    });
+    const choice = markup.match(/<fieldset[^>]*data-choice-group="kiln-tending"[\s\S]*?<\/fieldset>/)?.[0] ?? "";
+    expect(choice).toContain("Do not use");
+    expect(choice).toContain("1 Clay");
+    expect(choice).toContain("1 Wood");
+    expect(buttonWithAttribute(choice, "data-choice-value", "")).toContain('aria-pressed="true"');
+    expect(buttonWithAttribute(choice, "data-choice-value", "clay")).toContain('aria-pressed="false"');
+    expect(buttonWithAttribute(choice, "data-choice-value", "wood")).toContain('aria-pressed="false"');
+  });
+
+  it("does not offer Kiln Tending to another Starting Tech", () => {
+    const { markup } = renderAction("kiln_yard", "apprentice", (state) => {
+      state.players["P1"]!.startingTechniqueId = "ST01";
+    });
+    expect(markup).not.toContain('data-choice-group="kiln-tending"');
+  });
+
+  it("renders eligible forming rewards unchecked and cannot spend their unselected income on White Slip", () => {
+    const { markup } = renderAction("forming_studio", "apprentice", (state) => {
+      state.players["P1"]!.startingTechniqueId = "ST02";
+      state.players["P1"]!.resources.coins = 0;
+      addTechnique(state, "P1", "T02"); addTechnique(state, "P1", "T03");
+      addShaped(state, "P1", "bowl"); addShaped(state, "P1", "plate");
+    });
+    for (const id of ["T02", "T03"]) {
+      const input = markup.match(new RegExp(`<input[^>]*value="${id}"[^>]*>`))?.[0] ?? "";
+      expect(input).toContain('type="checkbox"');
+      expect(input).not.toContain("checked=");
+    }
+    const whiteSlip = markup.match(/<fieldset[^>]*data-choice-group="white-slip"[\s\S]*?<\/fieldset>/)?.[0] ?? "";
+    expect(buttonWithAttribute(whiteSlip, "data-choice-value", "0")).toContain('disabled=""');
+    expect(whiteSlip).toContain("Not enough Coins");
+  });
+
   it.each(ACTION_LOCATIONS)("uses the shared physical meeple buttons at %s", (locationId) => {
     const { markup, selectedWorkerId } = renderAction(locationId, "apprentice");
     const selected = buttonWithAttribute(markup, "data-worker-choice", selectedWorkerId);

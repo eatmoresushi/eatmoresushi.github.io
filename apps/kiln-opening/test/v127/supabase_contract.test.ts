@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import migration from "../../supabase/migrations/202609190001_v127_rules.sql?raw";
 import strategicAiMigration from "../../supabase/migrations/202609190001_v127_rules.sql?raw";
 import orderQueueMigration from "../../supabase/migrations/202609190001_v127_rules.sql?raw";
+import eightStartingOrdersMigration from "../../supabase/migrations/202609200001_v127_eight_starting_orders.sql?raw";
+import optionalTechsMigration from "../../supabase/migrations/202609200002_v127_optional_techs.sql?raw";
 import supabaseStore from "../../supabase/functions/_shared/supabaseStore.ts?raw";
 
 describe("V1.2.7 Supabase contract", () => {
@@ -40,10 +42,34 @@ describe("V1.2.7 Supabase contract", () => {
     );
   });
 
-  it("requires the current behaviour fingerprint without rewriting old rooms", () => {
+  it("installed the original V1.2.7 behaviour fingerprint without rewriting old rooms", () => {
     expect(orderQueueMigration).toContain("'^r17-[0-9a-f]{16}$'");
     expect(orderQueueMigration).toContain("public.server_commit_start");
     expect(orderQueueMigration).toContain("public.server_commit_transition");
     expect(orderQueueMigration).not.toContain("set rules_version = '1.2.7'");
+  });
+
+  it("advanced every write gate to the eight-Starting-Order fingerprint while preserving historical rooms", () => {
+    expect(eightStartingOrdersMigration).toContain("'^r(17|18)-[0-9a-f]{16}$'");
+    const replacedFunctions = [...eightStartingOrdersMigration.matchAll(/'public\.(server_\w+)\([^']+\)'::regprocedure/g)]
+      .map((match) => match[1]);
+    expect(replacedFunctions).toEqual([
+      "server_add_computer_seat", "server_create_room", "server_commit_start", "server_commit_transition",
+    ]);
+    expect(eightStartingOrdersMigration).toContain("if position('^r17-' in v_definition) = 0 then");
+    expect(eightStartingOrdersMigration).toContain("execute replace(v_definition, '^r17-', '^r18-')");
+    expect(eightStartingOrdersMigration).not.toMatch(/\bupdate\s+(?:public\.|private\.)/i);
+  });
+
+  it("advances every current write gate to optional Tech rewards while preserving r17 and r18 rooms", () => {
+    expect(optionalTechsMigration).toContain("'^r(17|18|19)-[0-9a-f]{16}$'");
+    const replacedFunctions = [...optionalTechsMigration.matchAll(/'public\.(server_\w+)\([^']+\)'::regprocedure/g)]
+      .map((match) => match[1]);
+    expect(replacedFunctions).toEqual([
+      "server_add_computer_seat", "server_create_room", "server_commit_start", "server_commit_transition",
+    ]);
+    expect(optionalTechsMigration).toContain("if position('^r18-' in v_definition) = 0 then");
+    expect(optionalTechsMigration).toContain("execute replace(v_definition, '^r18-', '^r19-')");
+    expect(optionalTechsMigration).not.toMatch(/\bupdate\s+(?:public\.|private\.)/i);
   });
 });

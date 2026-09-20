@@ -6,7 +6,7 @@
       "name": "Prepared Clay",
       "nameZh": "练泥",
       "ability": "Once during each Materials Yard action you take, after gaining resources, you may form 1 vessel of any Shape by paying 1 more Clay than its Clay cost.",
-      "abilityZh": "每次你执行泥柴场行动时一次，在取得资源后，你可以额外支付1 泥，成型任意器型 1 件。"
+      "abilityZh": "每次你执行泥柴场行动时一次，在取得资源后，你可以支付任意器型的正常泥费用加1泥，成型该器型1件。"
     },
     {
       "id": "ST02",
@@ -26,8 +26,8 @@
       "id": "ST04",
       "name": "Kiln Tending",
       "nameZh": "看火",
-      "ability": "Once during each Kiln Yard action you take, after loading at least 1, gain 1 Clay + 1 Wood.",
-      "abilityZh": "每次窑坊行动中至少装窑1件后，获得1泥和1柴。"
+      "ability": "Once during each Kiln Yard action you take, after loading at least 1, you may gain 1 Clay or 1 Wood.",
+      "abilityZh": "每次窑坊行动中至少装窑1件后，你可以获得1泥或1柴。"
     }
   ],
   "advanced": [

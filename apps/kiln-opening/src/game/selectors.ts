@@ -93,7 +93,7 @@ export function emptyActionBoard(): Record<LocationId, WorkerId[]> {
   };
 }
 
-/** Mandatory forming rewards resolve before optional post-forming Decoration costs. */
+/** Eligible optional forming rewards; selected rewards resolve before Decoration costs. */
 export function formingTechniqueRewards(
   state: Pick<GameState, "ceramics">,
   player: Pick<PlayerState, "id" | "techniques">,

@@ -473,6 +473,8 @@ export type GameAction =
       exchange?: MaterialExchange;
       buyShifuBonus?: boolean;
       preparedClayShape?: Shape;
+      /** Optional eligible forming rewards to claim after Prepared Clay. */
+      useTechniqueIds?: TechniqueId[];
     }
   | {
       type: "FORM_CERAMICS";
@@ -498,6 +500,7 @@ export type GameAction =
       loads: KilnLoadSelection[];
       /** Required for a Shifu when the player has any ceramic in the Shared Kiln after loading. */
       shifuCeramicId?: CeramicId;
+      /** Kiln Tending may gain one Clay or one Wood; omit both to decline. */
       kilnTendingClay?: number;
       kilnTendingWood?: number;
     }

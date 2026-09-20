@@ -298,21 +298,32 @@ class SupabaseGameApi implements GameApi {
 
   async listPublicEvents(roomId: string, afterSequence = 0): Promise<PublicEventRecord[]> {
     await this.ensureSession();
-    const { data, error } = await this.client
-      .from("game_public_events")
-      .select("room_id, sequence, revision, command_id, actor_player_id, payload")
-      .eq("room_id", roomId)
-      .gt("sequence", afterSequence)
-      .order("sequence", { ascending: true });
-    if (error !== null || data === null) return [];
-    return data.map((row) => ({
-      roomId: String(row.room_id),
-      sequence: Number(row.sequence),
-      revision: Number(row.revision),
-      commandId: String(row.command_id),
-      actorId: String(row.actor_player_id),
-      event: row.payload as PublicGameEvent,
-    }));
+    const events: PublicEventRecord[] = [];
+    let cursor = afterSequence;
+    while (true) {
+      const { data, error } = await this.client
+        .from("game_public_events")
+        .select("room_id, sequence, revision, command_id, actor_player_id, payload")
+        .eq("room_id", roomId)
+        .gt("sequence", cursor)
+        .order("sequence", { ascending: true })
+        .limit(500);
+      if (error !== null || data === null) return [];
+      // An API row cap may be smaller than our page size. Only an empty page
+      // establishes that the entire public history has been read.
+      if (data.length === 0) return events;
+      const nextCursor = Number(data[data.length - 1]?.sequence);
+      if (!Number.isFinite(nextCursor) || nextCursor <= cursor) return [];
+      events.push(...data.map((row) => ({
+        roomId: String(row.room_id),
+        sequence: Number(row.sequence),
+        revision: Number(row.revision),
+        commandId: String(row.command_id),
+        actorId: String(row.actor_player_id),
+        event: row.payload as PublicGameEvent,
+      })));
+      cursor = nextCursor;
+    }
   }
 
   subscribe(roomId: string, onPublicChange: () => void): () => void {

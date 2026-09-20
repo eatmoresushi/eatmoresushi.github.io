@@ -40,6 +40,7 @@ describe("rules fingerprint gate", () => {
     const rooms = (store as unknown as { rooms: Map<string, { code: string; contentDigest: string | null }> }).rooms;
     const stored = [...rooms.values()].find((record) => record.code === room.room.code);
     expect(stored?.contentDigest).toBe(rulesFingerprint());
+    expect(stored?.contentDigest).toMatch(/^r19-[0-9a-f]{16}$/);
   });
 
   it("refuses a room created under a different ruleset rather than reinterpreting it", async () => {
@@ -69,10 +70,37 @@ describe("rules fingerprint gate", () => {
   it("refuses V1.2.7 rooms that applied Ge's old firing-Quality bonus", async () => {
     const { service, store, room } = await host();
     const rooms = (store as unknown as { rooms: Map<string, { contentDigest: string | null }> }).rooms;
-    for (const record of rooms.values()) record.contentDigest = rulesFingerprint().replace(/^r17-/, "r16-");
+    for (const record of rooms.values()) record.contentDigest = rulesFingerprint().replace(/^r\d+-/, "r16-");
     const result = await service.reconnect({ roomCode: room.room.code, seatToken: room.seatToken });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.code).toBe("RULES_FINGERPRINT_MISMATCH");
+  });
+
+  it("refuses sixteen-Starting-Order V1.2.7 rooms rather than reinterpreting their dealt cards", async () => {
+    const { service, store, room } = await host();
+    const rooms = (store as unknown as { rooms: Map<string, { contentDigest: string | null }> }).rooms;
+    for (const record of rooms.values()) record.contentDigest = rulesFingerprint().replace(/^r\d+-/, "r17-");
+    const result = await service.reconnect({ roomCode: room.room.code, seatToken: room.seatToken });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("RULES_FINGERPRINT_MISMATCH");
+  });
+
+  it("refuses r18 rooms whose Tech rewards predate the optional-choice amendment", async () => {
+    const { service, store, room } = await host();
+    const rooms = (store as unknown as { rooms: Map<string, { contentDigest: string | null }> }).rooms;
+    const previousFingerprint = rulesFingerprint().replace(/^r\d+-/, "r18-");
+    for (const record of rooms.values()) record.contentDigest = previousFingerprint;
+
+    const result = await service.reconnect({ roomCode: room.room.code, seatToken: room.seatToken });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe("RULES_FINGERPRINT_MISMATCH");
+      expect(result.error.details).toMatchObject({
+        roomFingerprint: previousFingerprint,
+        serverFingerprint: rulesFingerprint(),
+      });
+    }
+    expect([...rooms.values()].every((record) => record.contentDigest === previousFingerprint)).toBe(true);
   });
 
   it("treats a missing fingerprint field as legacy rather than as a mismatch", async () => {

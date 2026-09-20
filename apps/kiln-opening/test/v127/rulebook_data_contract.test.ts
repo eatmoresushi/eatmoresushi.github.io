@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
@@ -49,10 +50,23 @@ function namedTableRow(source: string, name: string): string[] {
 }
 
 describe("V1.2.7 checked-in data matches the adopted English rulebook", () => {
+  it("records the original provenance and separate current checksum for the owner-amended rulebook", () => {
+    const currentDigest = createHash("sha256").update(EN_SOURCE).digest("hex");
+    const originalDigest = "a0ec9271fba9be3583623d003683865aa649fdb39b288566c503da2b5c887253";
+    const currentRecord = OWNER_AMENDMENTS.split("\n").find((line) => line.startsWith("- Current checked-in `KILN_OPENING_v1.2.7_EN_SOURCE.md`"));
+    const originalRecord = OWNER_AMENDMENTS.split("\n").find((line) => line.startsWith("- Original supplied `KILN_OPENING_v1.2.7_EN_SOURCE.md`"));
+    expect(currentRecord).toContain(`SHA-256 \`${currentDigest}\``);
+    expect(originalRecord).toContain(`SHA-256 \`${originalDigest}\``);
+    expect(currentDigest).not.toBe(originalDigest);
+    const componentSource = readFileSync(join(import.meta.dirname, "../../docs/KILN_OPENING_v1.2.7_COMPONENT_TEXT_SOURCE.md"));
+    expect(createHash("sha256").update(componentSource).digest("hex"))
+      .toBe("8679fb6c70e8763ff98abfc95866faefc29513ce04222c95d5ea79d8bf7d6db1");
+  });
+
   it("matches every English Order row exactly", () => {
     const english = orderRows(EN_SOURCE);
     const orders = [...STARTING_ORDERS, ...MAIN_ORDERS];
-    expect(english.size).toBe(64);
+    expect(english.size).toBe(56);
 
     for (const order of orders) {
       const en = english.get(order.id);

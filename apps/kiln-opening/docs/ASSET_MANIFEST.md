@@ -30,7 +30,7 @@ The online client must cover or replace stale raster wording with data-driven bi
 
 ### Orders
 
-Generate all 64 fronts from `data/orders.json`: 16 separate Starting Orders and 48 unified Main Orders. Main cards print their Coin, VP and Crown rewards. Use distinct Starting and Main backs and matching English / Simplified Chinese text from the same stable card IDs.
+Generate all 56 fronts from `data/orders.json`: 8 separate Starting Orders (S01–S08) and 48 unified Main Orders. Main cards print their Coin, VP and Crown rewards. Use distinct Starting and Main backs and matching English / Simplified Chinese text from the same stable card IDs.
 
 ### Central Action Board
 

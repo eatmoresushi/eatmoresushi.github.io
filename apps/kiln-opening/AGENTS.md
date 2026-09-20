@@ -11,7 +11,7 @@ Target session length for the physical design is approximately 90–120 minutes.
 Priority order:
 
 1. `docs/KILN_OPENING_v1.2.7_EN_SOURCE.md` — owner-supplied mechanical authority.
-2. `docs/KILN_OPENING_v1.2.7_COMPONENT_TEXT_SOURCE.md` — owner-supplied short Tech and Kiln copy.
+2. `docs/KILN_OPENING_v1.2.7_TECH_SHORT_TEXT_SOURCE.md` — current owner-supplied Tech face/hover copy; `docs/KILN_OPENING_v1.2.7_TECH_DETAIL_TEXT_SOURCE.md` — pasted click-through text, subject to owner corrections. `docs/KILN_OPENING_v1.2.7_KILN_SHORT_TEXT_SOURCE.md` supplies current Kiln hover/workshop reminders. The original component draft is retained as provenance; its reminder copy is superseded.
 3. `docs/RULEBOOK_AUDIT_V1.2.7.md` — source checksums and interpretations; the archived V1.2.6 Chinese source supplies terminology, not superseded mechanics.
 4. `docs/GAME_RULES.md` — source index.
 5. `data/*.json` — derived V1.2.7 content.
@@ -22,7 +22,7 @@ Priority order:
 
 Never implement an older mechanic because it appears in historical discussion or art.
 
-Explicit owner amendments recorded in `docs/RULEBOOK_AUDIT_V1.2.7.md` supersede the supplied sources only for the amended rule. Ge's owner amendment treats Standard-quality Crackle ceramics as Fine only when completing Orders or scoring the Exhibition; firing still records their actual Quality. The supplied source files remain unchanged.
+Explicit owner amendments recorded in `docs/RULEBOOK_AUDIT_V1.2.7.md` supersede the supplied sources only for the amended rule. Ge's owner amendment treats Standard-quality Crackle ceramics as Fine only when completing Orders or scoring the Exhibition; firing still records their actual Quality. The 2026-09-20 amendments replace the Starting Order deck with eight cards, S01–S08, make Tech abilities optional unless explicitly required, and make Kiln Tending a choice of 1 Clay or 1 Wood. They are incorporated into the checked-in English rulebook. All stated ability costs must be paid; declining preserves use for later. The audit retains original and current source checksums.
 
 
 ## Approved asset rule
@@ -123,7 +123,7 @@ At minimum:
 - Quality assignment
 - Jun/Ge/Protective Saggars/Test Pieces/Second Firing/Ru timing
 - the optional 2-Coin discard of a still-Flawed ceramic after firing
-- all 16 Starting Orders and 48 Main Orders, including independent multi-ceramic attribute matching
+- all 8 Starting Orders and 48 Main Orders, including independent multi-ceramic attribute matching
 - secret setup deal-one Starting plus one Main Order
 - Commission reservation benefits and immediate Main-display refill
 - ordered Main-display queue removal/refill and discard-two, retain-four rotation at the start of Rounds 2–5

@@ -11,7 +11,7 @@ These are digital-flow decisions and implementation notes only. `docs/KILN_OPENI
 - A player may visit the same location more than once with different workers while legal space remains. Occupancy by that player or an opponent at another space does not prevent placement.
 - Potter's Wheel and Glaze & Decoration are not private stations. Advanced Tech acquisition never creates or unlocks a worker space.
 - Starting Tech choices are public. One Starting Order and one Main Order are dealt secretly; hand counts are public.
-- Starting Orders remain distinct from the Main deck but are real held Orders for completion and the three-card Cleanup hand limit.
+- The Starting deck contains eight distinct cards, S01–S08, following the owner's 2026-09-20 amendment. Starting Orders remain distinct from the Main deck but are real held Orders for completion and the three-card Cleanup hand limit.
 - Vessel cards are represented by stable ceramic instances. When all ten physical cards of a Shape are in use, the engine creates a same-Shape proxy instead of rejecting a legal form action.
 
 ## Orders and Advanced Tech acquisition
@@ -33,6 +33,8 @@ These are digital-flow decisions and implementation notes only. `docs/KILN_OPENI
 - A Tech effect is not a worker action and does not trigger effects requiring that worker action unless its text explicitly says so.
 - The Advanced-Tech limit is two; Starting Tech does not count toward it. Every owned Advanced Tech scores 1 VP at game end.
 - Once-per-round Tech use is stored independently per Tech and readied at round start.
+- Tech abilities are optional unless explicitly required, and all stated costs are paid. Declining preserves the ability's availability. T01's discount and T02/T03's forming income require explicit selection; only selected income can fund White Slip or Drying Frames. Prepared Clay may also trigger selected T02/T03 rewards. Colour Samples' immediate acquisition selection remains required and does not spend its optional once-per-round Commission effect.
+- After loading at least one ceramic during Kiln Yard, Kiln Tending optionally grants either 1 Clay or 1 Wood, never both. The action panel offers Clay, Wood or no use.
 - Prepared Clay forms during the Materials Yard action for one more Clay than the chosen Shape's Clay cost.
 - White Slip changes one vessel formed during that Potter's Wheel action to White Glaze and Plain Decoration; the player pays the Plain Decoration cost.
 - Drying Frames applies any Glaze and any Decoration to one vessel just formed, paying that Decoration's cost.
@@ -74,7 +76,7 @@ English and Simplified Chinese UI text are presentation layers over identical st
 
 ## Saved-game compatibility
 
-V1.2.7 changes setup, hidden hands, Ge, Tech effects, the Main display, Court Patronage and Exhibition. New rooms use schema 4 and the V1.2.7 rules fingerprint (behaviour revision 17, including the owner's Ge amendment). The live service rejects started rooms, snapshots and commands with an older rules version, schema or fingerprint rather than attempting an unsafe translation.
+V1.2.7 changes setup, hidden hands, Ge, Tech effects, the Main display, Court Patronage and Exhibition. New rooms use schema 4 and the V1.2.7 rules fingerprint (behaviour revision 19, including the owner's Ge, eight-card Starting Order and optional-Tech amendments). The Starting Order amendment changes the meanings of S04–S08 and removes S09–S16; revision 19 makes forming income optional and Kiln Tending a single-resource choice. The live service rejects started rooms, snapshots and commands with an older rules version, schema or fingerprint rather than reinterpreting their rules.
 
 ## V1.2.7 details
 

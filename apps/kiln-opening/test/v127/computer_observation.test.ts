@@ -15,32 +15,24 @@ import {
 } from "./helpers.ts";
 
 describe("V1.2.7 computer observation boundary", () => {
-  it("reveals only the acting computer's private setup offer", () => {
+  it("reveals only the acting computer's secretly dealt Starting and Main Orders", () => {
     const { state } = createdGame(3, 12_601);
     if (state.phase.type !== "setup_kiln_selection") throw new Error("Expected kiln selection");
 
-    // Move directly to a representative simultaneous setup state. The privacy projection is
-    // what this test owns; setup sequencing itself is covered by the engine suite.
-    state.phase = {
-      type: "setup_starting_orders",
-      decisionOrder: ["P1", "P2", "P3"],
-      currentIndex: 0,
-      offeredOrderIds: {
-        P1: ["S01", "S02", "S03", "S04"],
-        P2: ["S05", "S06", "S07", "S08"],
-        P3: ["S09", "S10", "S11", "S12"],
-      },
-      initialOrderIds: { P1: "S01", P2: "S05", P3: "S09" },
-      submittedPlayerIds: [],
-    };
-
     const observation = createComputerObservation(state, "P2");
-    expect(observation.ownPrivate.startingOrderOffer).toEqual(["S05", "S06", "S07", "S08"]);
-    if (observation.game.phase.type !== "setup_starting_orders") throw new Error("Wrong public phase");
-    expect(observation.game.phase.offeredOrderIds).toEqual({});
-    expect(observation.game.phase.initialOrderIds).toEqual({});
-    expect(observation.game.players["P1"]?.orderHand).toEqual([]);
-    expect(observation.game.players["P2"]?.orderHand).toEqual([]);
+    expect(observation.ownPrivate.orderHand).toEqual(state.players["P2"]!.orderHand);
+    expect(observation.ownPrivate.orderHand.filter((id) => id.startsWith("S"))).toHaveLength(1);
+    expect(observation.ownPrivate.orderHand.filter((id) => id.startsWith("O"))).toHaveLength(1);
+    expect(observation.ownPrivate.startingOrderOffer).toEqual([]);
+    for (const player of Object.values(observation.game.players)) {
+      expect(player.orderHand).toEqual([]);
+      expect(player.orderHandCount).toBe(2);
+    }
+    for (const playerId of ["P1", "P3"]) {
+      for (const orderId of state.players[playerId]!.orderHand) {
+        expect(JSON.stringify(observation)).not.toContain(`"${orderId}"`);
+      }
+    }
   });
 
   it("contains deck counts rather than hidden deck order and exposes only its own Fire peek", () => {

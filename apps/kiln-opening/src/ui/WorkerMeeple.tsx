@@ -4,7 +4,7 @@ import type { Locale } from "./i18n";
 
 const PLAYER_ACCENTS = ["cinnabar", "river", "ochre", "plum"] as const;
 
-function workerLabel(player: PublicPlayerState, kind: WorkerKind, locale: Locale): string {
+export function workerLabel(player: PublicPlayerState, kind: WorkerKind, locale: Locale): string {
   if (locale === "zh-CN") return `${player.displayName}的${kind === "shifu" ? "师傅" : "学徒"}`;
   return `${player.displayName}'s ${kind === "shifu" ? "Shifu" : "Apprentice"}`;
 }
