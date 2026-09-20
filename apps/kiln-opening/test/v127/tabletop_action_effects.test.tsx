@@ -26,6 +26,11 @@ describe.each(["en", "zh-CN"] as const)("both worker effects on the board (%s)",
         expect(markup).not.toContain("仅限0");
         expect(markup).toContain("kiln-tabletop-cash-coin");
       }
+      if (id === "kiln_yard") {
+        expect(markup).toContain(locale === "en" ? "+1 or −1 Heat marker" : "+1或−1");
+        expect(markup).not.toContain("neighbouring");
+        expect(markup).not.toContain("相邻火候区");
+      }
     }
   });
 });

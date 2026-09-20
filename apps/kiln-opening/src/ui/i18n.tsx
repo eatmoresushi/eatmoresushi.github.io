@@ -292,7 +292,7 @@ const ZH_CN: Record<string, string> = {
   "Your Shifu pays printed cost minus 1 Coin (minimum 0).": "你的师傅少支付1铜钱（最低0）。",
   "Your Apprentice pays the printed Coin cost.": "你的学徒支付印刷的铜钱费用。",
   "Move ceramic": "移动陶瓷",
-  "Shifu kiln reposition": "师傅移窑",
+  "Kiln Yard Shifu adjustment": "窑坊师傅调火",
   "Keep kiln positions": "保持窑位不变",
   "Pay 1 Wood to privately look at the top Fire card, then return it to the top of the deck.": "支付1柴，私下查看窑火牌堆顶端1张，然后将其放回牌库顶。",
   "The kiln is being fired": "正在开窑烧成",

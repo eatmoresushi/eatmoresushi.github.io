@@ -36,7 +36,7 @@ export function currentDecisionActor(phase: GamePhase): PlayerId | null {
     case "firing_second_before_quality":
       return phase.actorId;
     case "firing_before_contribution":
-    case "firing_reposition":
+    case "firing_shifu_adjustment":
     case "firing_before_quality":
     case "firing_after_quality":
     case "firing_workshop_seconds":

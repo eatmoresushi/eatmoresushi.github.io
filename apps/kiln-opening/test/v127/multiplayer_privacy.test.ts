@@ -184,6 +184,35 @@ function seedContributionWindow(state: GameState): void {
 }
 
 describe("V1.2.7 multiplayer privacy and reconnect", () => {
+  it("reconnects all seats with the fixed public Shifu Heat marker and keeps Fire hidden until reveal", async () => {
+    const harness = await startedHarness();
+    let markedId = "";
+    await seedAuthoritativeState(harness, (state) => {
+      markedId = addLoaded(state, "P1", "bowl", "celadon", "plain", "high_1").id;
+      state.players["P1"]!.kilnYardShifuUsedThisRound = true;
+      state.players["P1"]!.kilnYardShifuCeramicId = markedId;
+      state.players["P1"]!.resources.wood = 0;
+      state.phase = { type: "firing_shifu_adjustment", queue: { actors: ["P1"], currentIndex: 0 } };
+      state.firingContext = {
+        round: state.round, contributors: ["P1"], contributions: { P1: "TEND" },
+        fuelLedgerUpgradedBy: [], baseHeat: 2, fireModifier: null, globalHeat: null,
+        kilnYardShifuAdjustments: [], ceramicResults: {},
+      };
+    });
+    const result = await command(harness, "P1", { type: "RESOLVE_KILN_YARD_ADJUSTMENT", ceramicId: markedId, adjustment: -1 });
+    expect(result.game.phase.type).toBe("firing_reveal_fire");
+    for (const seat of harness.connections) {
+      const connection = valueOf(await harness.service.reconnect({ roomCode: seat.room.code, seatToken: seat.seatToken }));
+      expect(connection.game!.ceramics[markedId]).toMatchObject({ kilnSpaceId: "high_1", shifuHeatAdjustment: -1 });
+      expect(connection.game!.players["P1"]!.kilnYardShifuCeramicId).toBeNull();
+      expect(connection.game!.players["P1"]!.resources.wood).toBe(0);
+      expect(connection.game!.firingContext).toMatchObject({
+        baseHeat: 2, fireModifier: null, globalHeat: null,
+        kilnYardShifuAdjustments: [{ playerId: "P1", ceramicId: markedId, adjustment: -1 }],
+      });
+    }
+  });
+
   it("publishes every player's undelivered ceramic attributes to all seats on reconnect", async () => {
     const harness = await startedHarness();
     await seedAuthoritativeState(harness, (state) => {

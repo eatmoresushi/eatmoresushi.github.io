@@ -22,7 +22,7 @@ Priority order:
 
 Never implement an older mechanic because it appears in historical discussion or art.
 
-Explicit owner amendments recorded in `docs/RULEBOOK_AUDIT_V1.2.7.md` supersede the supplied sources only for the amended rule. Ge's owner amendment treats Standard-quality Crackle ceramics as Fine only when completing Orders or scoring the Exhibition; firing still records their actual Quality. The 2026-09-20 amendments replace the Starting Order deck with eight cards, S01–S08, make Tech abilities optional unless explicitly required, make Kiln Tending a choice of 1 Clay or 1 Wood, and replace the Shifu's free Decoration with a total 1-Coin discount only when glazing two vessels. They are incorporated into the checked-in English rulebook. All stated ability costs must be paid; declining preserves use for later. The audit retains original and current source checksums.
+Explicit owner amendments recorded in `docs/RULEBOOK_AUDIT_V1.2.7.md` supersede the supplied sources only for the amended rule. Ge's owner amendment treats Standard-quality Crackle ceramics as Fine only when completing Orders or scoring the Exhibition; firing still records their actual Quality. The 2026-09-20 amendments replace the Starting Order deck with eight cards, S01–S08, make Tech abilities optional unless explicitly required, make Kiln Tending a choice of 1 Clay or 1 Wood, replace the Shifu's free Decoration with a total 1-Coin discount only when glazing two vessels, and replace Kiln Yard Shifu movement with an optional +1 or −1 Heat marker on its marked Shared-Kiln ceramic. The marker is chosen after Base Heat and before Fire at no Wood cost, changes only that ceramic's Actual Heat and remains fixed through Second Firing. The ceramic stays in its space; remove the marker after firing and keep the Shifu used until Cleanup. These amendments are incorporated into the checked-in English rulebook. All stated ability costs must be paid; declining preserves use for later. The audit retains original and current source checksums.
 
 
 ## Approved asset rule
@@ -46,6 +46,7 @@ Do not reintroduce any of these unless the user explicitly changes the rules:
 - starting with fewer than 1 Shifu + 3 Apprentices or unlocking additional workers
 - numeric 0–3 Wood bidding instead of Bank/Tend/Stoke cards
 - Kiln Yard Wood income
+- Kiln Yard Shifu ceramic movement or neighbouring-zone repositioning
 - separate Market and Imperial Order decks or displays
 - Office or separate Imperial Order actions (Court Patronage is restored by V1.2.7)
 - Imperial Progress, Apprentice-unlock, or Imperial Seal mechanics
@@ -118,7 +119,8 @@ At minimum:
 - Base Heat starting at 2, all contributions, and the 0–5 clamp
 - secret simultaneous Contribution-card reveal
 - Fuel Ledger's secret −2/+2 choices, two-Wood affordability, reveal, and payment
-- Kiln Yard Shifu target commitment during the Work action, then reposition of only that marked ceramic after Base Heat and before the Fire card, restricted to a neighbouring Shared-Kiln zone
+- Kiln Yard Shifu target commitment during the Work action, then optional +1/−1 Heat-marker selection in First Player order after Base Heat and before the Fire card, with no Wood cost and no movement
+- Shifu Heat-marker effects on only the marked ceramic's Actual Heat, independent of Base Heat, Global Heat and other ceramics; fixed value through Second Firing; stacking with the applicable zone modifier or Kiln Furniture's zero; marker removal after firing and Shifu remaining used until Cleanup
 - all five Fire modifiers, the V1.2.7 1/3/4/3/1 deck distribution, reshuffling, and kiln-zone modifiers
 - Quality assignment
 - Jun/Ge/Protective Saggars/Test Pieces/Second Firing/Ru timing

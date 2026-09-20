@@ -142,6 +142,8 @@ export type LoadedCeramic = CeramicCore & {
   decoration: Decoration;
   kilnSpaceId: KilnSpaceId | "imperial";
   kilnFurnitureUsed?: boolean;
+  /** Fixed pre-Fire Shifu marker; applies only to this ceramic for the current firing. */
+  shifuHeatAdjustment?: -1 | 1;
 };
 
 export type FinishedCeramic = CeramicCore & {
@@ -215,6 +217,8 @@ export interface OrderedDecisionQueue {
 export interface FiringCeramicResult {
   ceramicId: CeramicId;
   zoneModifier: -1 | 0 | 1;
+  /** Separate from the zone modifier, including when Kiln Furniture neutralizes that zone. */
+  shifuHeatAdjustment?: -1 | 0 | 1;
   naturalActualHeat: number;
   naturalHeatDifference: number;
   naturalExactMatch: boolean;
@@ -224,11 +228,10 @@ export interface FiringCeramicResult {
   assignedQuality: Quality | null;
 }
 
-export interface KilnYardShifuReposition {
+export interface KilnYardShifuAdjustment {
   playerId: PlayerId;
   ceramicId: CeramicId;
-  fromSpaceId: KilnSpaceId;
-  toSpaceId: KilnSpaceId | null;
+  adjustment: -1 | 1 | null;
 }
 
 export interface FiringContext {
@@ -245,7 +248,7 @@ export interface FiringContext {
   baseHeat: BaseHeat | null;
   fireModifier: FireModifier | null;
   globalHeat: number | null;
-  kilnYardShifuRepositions: KilnYardShifuReposition[];
+  kilnYardShifuAdjustments: KilnYardShifuAdjustment[];
   ceramicResults: Record<CeramicId, FiringCeramicResult>;
 }
 
@@ -260,7 +263,7 @@ export interface FiringResultSummary {
   baseHeat: BaseHeat;
   fireModifier: FireModifier;
   globalHeat: number;
-  kilnYardShifuRepositions: KilnYardShifuReposition[];
+  kilnYardShifuAdjustments: KilnYardShifuAdjustment[];
   /** Final per-ceramic Heat and Quality values retained for the local post-firing review. */
   ceramicResults?: Record<CeramicId, FiringCeramicResult>;
 }
@@ -347,7 +350,7 @@ export type GamePhase =
       eligiblePlayerIds: PlayerId[];
       submittedPlayerIds: PlayerId[];
     }
-  | { type: "firing_reposition"; queue: OrderedDecisionQueue }
+  | { type: "firing_shifu_adjustment"; queue: OrderedDecisionQueue }
   | { type: "firing_reveal_fire"; actorId: PlayerId }
   | {
       type: "firing_before_quality";
@@ -533,7 +536,7 @@ export type GameAction =
       techniqueId: TechniqueId;
     }
   | { type: "RESOLVE_IMPERIAL_PRIORITY"; ceramicId: CeramicId | null; glazePalette?: Glaze }
-  | { type: "RESOLVE_KILN_YARD_REPOSITION"; ceramicId: CeramicId | null; toSpaceId: KilnSpaceId | null }
+  | { type: "RESOLVE_KILN_YARD_ADJUSTMENT"; ceramicId: CeramicId | null; adjustment: -1 | 1 | null }
   | { type: "REVEAL_FIRE_CARD" }
   | { type: "RESOLVE_JUN"; ceramicId: CeramicId | null; delta: -1 | 1 | null }
   | { type: "RESOLVE_GE"; ceramicId: CeramicId | null }
@@ -607,13 +610,12 @@ export type GameEvent =
   | { type: "CERAMIC_LOADED"; playerId: PlayerId; ceramicId: CeramicId; kilnSpaceId: KilnSpaceId | "imperial" }
   | { type: "KILN_YARD_SHIFU_MARKED"; playerId: PlayerId; ceramicId: CeramicId }
   | {
-      type: "KILN_YARD_SHIFU_REPOSITIONED";
+      type: "KILN_YARD_SHIFU_ADJUSTED";
       playerId: PlayerId;
       ceramicId: CeramicId;
-      fromSpaceId: KilnSpaceId;
-      toSpaceId: KilnSpaceId;
+      adjustment: -1 | 1;
     }
-  | { type: "KILN_YARD_SHIFU_REPOSITION_DECLINED"; playerId: PlayerId; ceramicId: CeramicId }
+  | { type: "KILN_YARD_SHIFU_ADJUSTMENT_DECLINED"; playerId: PlayerId; ceramicId: CeramicId }
   | {
       type: "ORDER_TAKEN";
       playerId: PlayerId;
@@ -652,6 +654,7 @@ export type GameEvent =
       ceramicId: CeramicId;
       fireModifier: FireModifier;
       zoneModifier: -1 | 0 | 1;
+      shifuHeatAdjustment?: -1 | 0 | 1;
       naturalActualHeat: number;
       naturalHeatDifference: number;
       naturalQuality: Quality;

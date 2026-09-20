@@ -283,12 +283,14 @@ describe("V1.2.7 strategic computer policy: firing placement", () => {
     expect(resolved.players["P1"]!.techniques).toContainEqual({ id: "T15", exhausted: true });
   });
 
-  it("moves the marked ceramic when Base Heat makes a neighbouring zone strictly better", async () => {
-    const { state: initial } = startedGame(2, 4_922);
+  it("cools the marked ceramic even when neighbouring spaces are occupied and no Wood remains", async () => {
+    const { state: initial, rng } = startedGame(2, 4_922);
     const state = structuredClone(initial);
     const ceramic = addLoaded(state, "P1", "bowl", "celadon", "plain", "high_1");
     state.players["P1"]!.kilnYardShifuUsedThisRound = true;
     state.players["P1"]!.kilnYardShifuCeramicId = ceramic.id;
+    state.players["P1"]!.resources.wood = 0;
+    addLoaded(state, "P2", "plate", "white", "plain", "middle_1");
     state.firingContext = {
       round: state.round,
       contributors: ["P1"],
@@ -297,15 +299,38 @@ describe("V1.2.7 strategic computer policy: firing placement", () => {
       baseHeat: 2,
       fireModifier: null,
       globalHeat: null,
-      kilnYardShifuRepositions: [],
+      kilnYardShifuAdjustments: [],
       ceramicResults: {},
     };
-    state.phase = { type: "firing_reposition", queue: { actors: ["P1"], currentIndex: 0 } };
+    state.phase = { type: "firing_shifu_adjustment", queue: { actors: ["P1"], currentIndex: 0 } };
 
-    expect(await choose(state)).toEqual({
-      type: "RESOLVE_KILN_YARD_REPOSITION",
+    const action = await choose(state);
+    expect(action).toEqual({
+      type: "RESOLVE_KILN_YARD_ADJUSTMENT",
       ceramicId: ceramic.id,
-      toSpaceId: "middle_1",
+      adjustment: -1,
+    });
+    const resolved = mustApply(state, "P1", action, rng);
+    expect(resolved.ceramics[ceramic.id]).toMatchObject({ kilnSpaceId: "high_1", shifuHeatAdjustment: -1 });
+    expect(resolved.players["P1"]!.resources.wood).toBe(0);
+  });
+
+  it("can add heat to a ceramic carrying Kiln Furniture", async () => {
+    const { state, rng } = startedGame(2, 4_923);
+    const ceramic = addLoaded(state, "P1", "bowl", "grey_green", "plain", "low_1");
+    ceramic.kilnFurnitureUsed = true;
+    state.players["P1"]!.kilnYardShifuUsedThisRound = true;
+    state.players["P1"]!.kilnYardShifuCeramicId = ceramic.id;
+    state.firingContext = {
+      round: state.round, contributors: ["P1"], contributions: { P1: "TEND" },
+      fuelLedgerUpgradedBy: [], baseHeat: 2, fireModifier: null, globalHeat: null,
+      kilnYardShifuAdjustments: [], ceramicResults: {},
+    };
+    state.phase = { type: "firing_shifu_adjustment", queue: { actors: ["P1"], currentIndex: 0 } };
+    const action = await choose(state);
+    expect(action).toEqual({ type: "RESOLVE_KILN_YARD_ADJUSTMENT", ceramicId: ceramic.id, adjustment: 1 });
+    expect(mustApply(state, "P1", action, rng).ceramics[ceramic.id]).toMatchObject({
+      kilnSpaceId: "low_1", kilnFurnitureUsed: true, shifuHeatAdjustment: 1,
     });
   });
 });
@@ -323,7 +348,7 @@ describe("V1.2.7 strategic computer policy: audited timing and limits", () => {
       baseHeat: 2,
       fireModifier: 0,
       globalHeat: 2,
-      kilnYardShifuRepositions: [],
+      kilnYardShifuAdjustments: [],
       ceramicResults: {
         [ceramic.id]: {
           ceramicId: ceramic.id,
@@ -349,7 +374,7 @@ describe("V1.2.7 strategic computer policy: audited timing and limits", () => {
     expect(resolved.players["P1"]!.resources.coins).toBe(coinsBefore + 2);
   });
 
-  it("uses its private Test Pieces peek when deciding whether and where to reposition", async () => {
+  it("uses its private Test Pieces peek when choosing a heat marker or declining", async () => {
     const { state: initial } = startedGame(2, 4_932);
     const state = structuredClone(initial);
     const ceramic = addLoaded(state, "P1", "bowl", "celadon", "plain", "middle_1");
@@ -363,24 +388,24 @@ describe("V1.2.7 strategic computer policy: audited timing and limits", () => {
       baseHeat: 2,
       fireModifier: null,
       globalHeat: null,
-      kilnYardShifuRepositions: [],
+      kilnYardShifuAdjustments: [],
       ceramicResults: {},
     };
-    state.phase = { type: "firing_reposition", queue: { actors: ["P1"], currentIndex: 0 } };
+    state.phase = { type: "firing_shifu_adjustment", queue: { actors: ["P1"], currentIndex: 0 } };
 
     // Without private knowledge, Middle is already exact for Celadon at Base Heat 2.
     expect(await choose(state)).toEqual({
-      type: "RESOLVE_KILN_YARD_REPOSITION",
+      type: "RESOLVE_KILN_YARD_ADJUSTMENT",
       ceramicId: null,
-      toSpaceId: null,
+      adjustment: null,
     });
 
-    // A privately seen +1 Fire card makes Low the exact neighbouring zone instead.
+    // A privately seen +1 Fire card makes a -1 marker restore an exact match.
     state.privateFirePeeks = { P1: 1 };
     expect(await choose(state)).toEqual({
-      type: "RESOLVE_KILN_YARD_REPOSITION",
+      type: "RESOLVE_KILN_YARD_ADJUSTMENT",
       ceramicId: ceramic.id,
-      toSpaceId: "low_1",
+      adjustment: -1,
     });
   });
 

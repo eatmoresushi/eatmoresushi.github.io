@@ -98,8 +98,8 @@ export const TECHNIQUE_SHORT_COPY = {
     "zh-CN": "判定品质后：选择本次烧成中你的1件瑕品或良品 → 额外翻开1张窑火牌，使用相同基础火候和窑位，仅重新计算该陶瓷的实际火候与品质。"
   },
   "T15": {
-    "en": "When loading 1 of your ceramics into a High or Low Shared Kiln space: place this tile beneath it → its zone modifier is 0 for this firing, even if moved.",
-    "zh-CN": "将你的1件陶瓷装入共窑高温区或低温区时：将本牌置于其下 → 本次烧成的窑位修正为0，即使之后被移动。"
+    "en": "When loading 1 of your ceramics into a High or Low Shared Kiln space: place this tile beneath it → its zone modifier is 0 for this firing.",
+    "zh-CN": "将你的1件陶瓷装入共窑高温区或低温区时：将本牌置于其下 → 本次烧成的窑位修正为0。"
   }
 } as const satisfies Record<TechniqueCopyId, LocalizedShortCopy>;
 

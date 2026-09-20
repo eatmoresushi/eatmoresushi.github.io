@@ -82,8 +82,10 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  *        T02 and T03 are optional, and declining preserves their once-per-round use.
  *  20 -- Owner amendment: a Glaze & Decoration Shifu reduces the total Coin cost
  *        by 1 only when glazing two vessels, replacing the one-free-Decoration rule.
+ *  21 -- Owner amendment: the Kiln Yard Shifu replaces movement with a free, fixed
+ *        +1/-1 Actual Heat marker on its committed ceramic after Base Heat and before Fire.
  */
-export const RULES_BEHAVIOUR_REVISION = 20;
+export const RULES_BEHAVIOUR_REVISION = 21;
 
 /**
  * Display-only keys, excluded so that a typo fix or a translation improvement does not

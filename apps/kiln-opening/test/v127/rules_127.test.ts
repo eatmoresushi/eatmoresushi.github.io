@@ -6,7 +6,7 @@ import {
   createPrivateFiringState,
   submitWoodContribution,
 } from "../../src/game/index.ts";
-import type { GameState } from "../../src/game/index.ts";
+import type { GameAction, GameState } from "../../src/game/index.ts";
 import {
   addGlazed,
   addLoaded,
@@ -177,30 +177,50 @@ describe("V1.2.7 Kiln Yard Shifu commitment", () => {
     expect(Object.values(state.players["P1"]!.workers).filter((worker) => worker.kind === "shifu" && worker.status === "placed")).toHaveLength(1);
   });
 
-  it("allows only the marked ceramic to move to an empty active neighbouring zone", () => {
+  it("adjusts only the marked owned Shared-Kiln ceramic, even when the kiln is full, without Wood", () => {
     const { state: initial, rng } = startedGame(2, 12_611);
     let state = structuredClone(initial);
     const marked = addLoaded(state, "P1", "bowl", "celadon", "plain", "high_1");
     const other = addLoaded(state, "P1", "plate", "celadon", "plain", "high_2");
-    addLoaded(state, "P2", "washer", "celadon", "plain", "middle_1");
+    const opponent = addLoaded(state, "P2", "washer", "celadon", "plain", "middle_1");
+    addLoaded(state, "P2", "bowl", "celadon", "plain", "low_1");
+    const imperial = addLoaded(state, "P1", "bowl", "celadon", "plain", "imperial");
+    state.players["P1"]!.resources.wood = 0;
     state.players["P1"]!.kilnYardShifuUsedThisRound = true;
     state.players["P1"]!.kilnYardShifuCeramicId = marked.id;
     state.firingContext = {
       round: 1, contributors: ["P1"], contributions: { P1: "TEND" }, fuelLedgerUpgradedBy: [],
-      baseHeat: 2, fireModifier: null, globalHeat: null, kilnYardShifuRepositions: [], ceramicResults: {},
+      baseHeat: 2, fireModifier: null, globalHeat: null, kilnYardShifuAdjustments: [], ceramicResults: {},
     };
-    state.phase = { type: "firing_reposition", queue: { actors: ["P1"], currentIndex: 0 } };
-
-    expectError(applyAction(state, "P1", { type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: other.id, toSpaceId: "middle_2" }, rng), "INVALID_SELECTION");
-    expectError(applyAction(state, "P1", { type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: marked.id, toSpaceId: "low_1" }, rng), "INVALID_SELECTION");
-    expectError(applyAction(state, "P1", { type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: marked.id, toSpaceId: "middle_1" }, rng), "KILN_SPACE_OCCUPIED");
-    expectError(applyAction(state, "P1", { type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: marked.id, toSpaceId: "middle_2" }, rng), "INVALID_SELECTION");
+    const adjustment: GameAction = { type: "RESOLVE_KILN_YARD_ADJUSTMENT", ceramicId: marked.id, adjustment: -1 };
+    expectError(applyAction(state, "P1", adjustment, rng), "WRONG_PHASE");
+    state.phase = { type: "firing_shifu_adjustment", queue: { actors: ["P1"], currentIndex: 0 } };
+    for (const invalidTarget of [other.id, opponent.id, imperial.id]) {
+      expectError(applyAction(state, "P1", { ...adjustment, ceramicId: invalidTarget }, rng), "INVALID_SELECTION");
+    }
+    for (const invalidAdjustment of [0, 2, -2, undefined, "1"]) {
+      expectError(applyAction(state, "P1", { ...adjustment, adjustment: invalidAdjustment } as unknown as GameAction, rng), "INVALID_SELECTION");
+    }
+    expectError(applyAction(state, "P1", { ...adjustment, adjustment: null }, rng), "INVALID_SELECTION");
+    expectError(applyAction(state, "P1", { ...adjustment, ceramicId: null }, rng), "INVALID_SELECTION");
+    expectError(applyAction(state, "P2", adjustment, rng), "NOT_ACTIVE_PLAYER");
+    const resources = structuredClone(state.players["P1"]!.resources);
+    const result = mustResult(state, "P1", adjustment, rng);
+    state = result.state;
+    expect(state.ceramics[marked.id]).toMatchObject({ kilnSpaceId: "high_1", shifuHeatAdjustment: -1 });
+    expect(state.ceramics[other.id]).not.toHaveProperty("shifuHeatAdjustment");
+    expect(state.ceramics[opponent.id]).not.toHaveProperty("shifuHeatAdjustment");
+    expect(state.ceramics[imperial.id]).not.toHaveProperty("shifuHeatAdjustment");
+    expect(state.players["P1"]!.resources).toEqual(resources);
+    expect(state.firingContext).toMatchObject({ baseHeat: 2, fireModifier: null, globalHeat: null });
+    expect(result.events).toContainEqual({ type: "KILN_YARD_SHIFU_ADJUSTED", playerId: "P1", ceramicId: marked.id, adjustment: -1 });
+    expectError(applyAction(state, "P1", adjustment, rng), "WRONG_PHASE");
   });
 
-  it("resolves multiple marked Shifu in First Player order and lets an earlier move open a later destination", () => {
+  it("resolves in First Player order, preserves used Shifu until Cleanup, and removes markers after firing", () => {
     const { state: initial, rng } = startedGame(2, 12_612);
     let state = structuredClone(initial);
-    state.firstPlayerId = "P1";
+    state.firstPlayerId = "P2";
     const p1 = addGlazed(state, "P1", "bowl", "grey_green", "plain");
     const p2 = addGlazed(state, "P2", "plate", "celadon", "plain");
     state = mustApply(state, "P1", {
@@ -217,36 +237,51 @@ describe("V1.2.7 Kiln Yard Shifu commitment", () => {
     state.phase = { type: "work", activePlayerId: "P1" };
     state = finishWork(state, rng).state;
     let privateState = createPrivateFiringState(state);
-    let submitted = submitWoodContribution(state, privateState, "P1", "TEND", false, rng);
-    expect(submitted.ok).toBe(true);
-    if (!submitted.ok) return;
-    state = submitted.state;
-    privateState = submitted.privateState;
-    submitted = submitWoodContribution(state, privateState, "P2", "TEND", false, rng);
-    expect(submitted.ok).toBe(true);
-    if (!submitted.ok) return;
-    state = submitted.state;
-    expect(state.phase).toEqual({ type: "firing_reposition", queue: { actors: ["P1", "P2"], currentIndex: 0 } });
-
-    state = mustApply(state, "P1", { type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: p1.id, toSpaceId: "high_1" }, rng);
-    expect(state.phase).toEqual({ type: "firing_reposition", queue: { actors: ["P1", "P2"], currentIndex: 1 } });
-    expect(state.players["P1"]!.kilnYardShifuCeramicId).toBeNull();
-    expect(state.players["P1"]!.workers[`${state.players["P1"]!.id}:shifu`]?.status).toBe("placed");
-    const repositioned = mustResult(state, "P2", { type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: p2.id, toSpaceId: "middle_1" }, rng);
-    state = repositioned.state;
-    expect(state.phase).toEqual({ type: "firing_reveal_fire", actorId: "P1" });
-    expect(state.firingContext?.kilnYardShifuRepositions).toEqual([
-      { playerId: "P1", ceramicId: p1.id, fromSpaceId: "middle_1", toSpaceId: "high_1" },
-      { playerId: "P2", ceramicId: p2.id, fromSpaceId: "low_1", toSpaceId: "middle_1" },
-    ]);
-    const finished = mustResult(state, "P1", { type: "REVEAL_FIRE_CARD" }, rng);
-    expect(finished.state.lastFiringResult?.kilnYardShifuRepositions).toEqual([
-      { playerId: "P1", ceramicId: p1.id, fromSpaceId: "middle_1", toSpaceId: "high_1" },
-      { playerId: "P2", ceramicId: p2.id, fromSpaceId: "low_1", toSpaceId: "middle_1" },
-    ]);
+    for (const playerId of ["P1", "P2"]) {
+      const submitted = submitWoodContribution(state, privateState, playerId, "TEND", false, rng);
+      expect(submitted.ok).toBe(true);
+      if (!submitted.ok) return;
+      state = submitted.state;
+      privateState = submitted.privateState;
+    }
+    expect(state.phase).toEqual({ type: "firing_shifu_adjustment", queue: { actors: ["P2", "P1"], currentIndex: 0 } });
+    expectError(applyAction(state, "P1", { type: "RESOLVE_KILN_YARD_ADJUSTMENT", ceramicId: p1.id, adjustment: 1 }, rng), "NOT_ACTIVE_PLAYER");
+    state = mustApply(state, "P2", { type: "RESOLVE_KILN_YARD_ADJUSTMENT", ceramicId: p2.id, adjustment: 1 }, rng);
+    expect(state.phase).toEqual({ type: "firing_shifu_adjustment", queue: { actors: ["P2", "P1"], currentIndex: 1 } });
+    expect(state.players["P2"]!.kilnYardShifuCeramicId).toBeNull();
+    expectError(applyAction(state, "P2", { type: "RESOLVE_KILN_YARD_ADJUSTMENT", ceramicId: p2.id, adjustment: -1 }, rng), "NOT_ACTIVE_PLAYER");
+    const declined = mustResult(state, "P1", { type: "RESOLVE_KILN_YARD_ADJUSTMENT", ceramicId: null, adjustment: null }, rng);
+    state = declined.state;
+    expect(declined.events).toContainEqual({ type: "KILN_YARD_SHIFU_ADJUSTMENT_DECLINED", playerId: "P1", ceramicId: p1.id });
+    expect(state.ceramics[p1.id]).toMatchObject({ kilnSpaceId: "middle_1" });
+    expect(state.ceramics[p1.id]).not.toHaveProperty("shifuHeatAdjustment");
+    expect(state.ceramics[p2.id]).toMatchObject({ kilnSpaceId: "low_1", shifuHeatAdjustment: 1 });
+    expect(state.phase).toEqual({ type: "firing_reveal_fire", actorId: "P2" });
+    const history = [
+      { playerId: "P2", ceramicId: p2.id, adjustment: 1 },
+      { playerId: "P1", ceramicId: p1.id, adjustment: null },
+    ];
+    expect(state.firingContext?.kilnYardShifuAdjustments).toEqual(history);
+    state = mustApply(state, "P2", { type: "REVEAL_FIRE_CARD" }, rng);
+    expect(state.lastFiringResult?.kilnYardShifuAdjustments).toEqual(history);
+    expect(state.lastFiringResult).toMatchObject({ baseHeat: 2, fireModifier: 0, globalHeat: 2 });
+    expect(state.lastFiringResult?.ceramicResults?.[p1.id]).toMatchObject({ zoneModifier: 0, shifuHeatAdjustment: 0, finalActualHeat: 2 });
+    expect(state.lastFiringResult?.ceramicResults?.[p2.id]).toMatchObject({ zoneModifier: -1, shifuHeatAdjustment: 1, finalActualHeat: 2 });
+    for (const playerId of ["P1", "P2"]) {
+      expect(state.players[playerId]!.workers[`${playerId}:shifu`]?.status).toBe("placed");
+      expect(state.players[playerId]!.kilnYardShifuUsedThisRound).toBe(true);
+    }
+    expect(state.ceramics[p2.id]).not.toHaveProperty("shifuHeatAdjustment");
+    while (state.phase.type === "orders") state = mustApply(state, state.phase.activePlayerId, { type: "END_ORDER_TURN" }, rng);
+    expect(state.round).toBe(2);
+    for (const playerId of ["P1", "P2"]) {
+      expect(state.players[playerId]!.workers[`${playerId}:shifu`]?.status).toBe("available");
+      expect(state.players[playerId]!.kilnYardShifuUsedThisRound).toBe(false);
+      expect(state.players[playerId]!.kilnYardShifuCeramicId).toBeNull();
+    }
   });
 
-  it("keeps Kiln Furniture on the marked ceramic when it moves", () => {
+  it.each([-1, 1] as const)("adds the %s Shifu marker independently of Kiln Furniture's neutral zone", (adjustment) => {
     const { state: initial, rng } = startedGame(2, 12_613);
     let state = structuredClone(initial);
     const ceramic = addLoaded(state, "P1", "bowl", "celadon", "plain", "high_1", true);
@@ -254,22 +289,21 @@ describe("V1.2.7 Kiln Yard Shifu commitment", () => {
     state.players["P1"]!.kilnYardShifuCeramicId = ceramic.id;
     state.firingContext = {
       round: 1, contributors: ["P1"], contributions: { P1: "TEND" }, fuelLedgerUpgradedBy: [],
-      baseHeat: 2, fireModifier: null, globalHeat: null, kilnYardShifuRepositions: [], ceramicResults: {},
+      baseHeat: 2, fireModifier: null, globalHeat: null, kilnYardShifuAdjustments: [], ceramicResults: {},
     };
     state.fireDeck = [0];
-    state.phase = { type: "firing_reposition", queue: { actors: ["P1"], currentIndex: 0 } };
-    state = mustApply(state, "P1", { type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: ceramic.id, toSpaceId: "middle_1" }, rng);
-    expect(state.phase).toEqual({ type: "firing_reveal_fire", actorId: state.firstPlayerId });
-    expect(state.ceramics[ceramic.id]).toEqual(expect.objectContaining({
-      stage: "loaded",
-      kilnSpaceId: "middle_1",
-      kilnFurnitureUsed: true,
-    }));
+    state.phase = { type: "firing_shifu_adjustment", queue: { actors: ["P1"], currentIndex: 0 } };
+    state = mustApply(state, "P1", { type: "RESOLVE_KILN_YARD_ADJUSTMENT", ceramicId: ceramic.id, adjustment }, rng);
+    expect(state.ceramics[ceramic.id]).toMatchObject({ stage: "loaded", kilnSpaceId: "high_1", kilnFurnitureUsed: true, shifuHeatAdjustment: adjustment });
     const result = mustResult(state, state.firstPlayerId, { type: "REVEAL_FIRE_CARD" }, rng);
-    expect(result.events).toContainEqual(expect.objectContaining({ type: "FIRING_RESOLVED", ceramicId: ceramic.id, zoneModifier: 0 }));
+    expect(result.events).toContainEqual(expect.objectContaining({
+      type: "FIRING_RESOLVED", ceramicId: ceramic.id, zoneModifier: 0, shifuHeatAdjustment: adjustment, finalActualHeat: 2 + adjustment,
+    }));
+    expect(result.state.ceramics[ceramic.id]).not.toHaveProperty("shifuHeatAdjustment");
+    expect(result.state.ceramics[ceramic.id]).not.toHaveProperty("kilnFurnitureUsed");
   });
 
-  it("cannot mark the Imperial Kiln and gets no reposition when no owned Shared-Kiln ceramic exists", () => {
+  it("cannot mark the Imperial Kiln and gets no adjustment when no owned Shared-Kiln ceramic exists", () => {
     const { state: initial, rng } = startedGame(2, 12_614);
     let state = structuredClone(initial);
     const ceramic = addGlazed(state, "P1", "bowl", "celadon", "plain");
@@ -291,7 +325,7 @@ describe("V1.2.7 Kiln Yard Shifu commitment", () => {
     const submitted = submitWoodContribution(state, privateState, "P1", "TEND", false, rng);
     expect(submitted.ok).toBe(true);
     if (!submitted.ok) return;
-    expect(submitted.state.phase.type).not.toBe("firing_reposition");
+    expect(submitted.state.phase.type).not.toBe("firing_shifu_adjustment");
   });
 
   it("commits the Shifu target before Test Pieces and keeps it through the pre-Contribution window", () => {

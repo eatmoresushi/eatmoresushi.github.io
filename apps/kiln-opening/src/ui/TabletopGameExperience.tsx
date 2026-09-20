@@ -960,8 +960,10 @@ export function ActionSpace({ game, ownPlayer, id, glyph, locale, selectedWorker
         </span>
         </div>
         <span className="kiln-tabletop-occupants">{occupants.slice(activeCapacity ?? 0).map(({ player, worker }) => {
-          const markedShifu = id === "kiln_yard" && worker.kind === "shifu" && player.kilnYardShifuCeramicId !== null;
-          return markedShifu ? null : <WorkerMeeple player={player} kind={worker.kind} small locale={locale} key={worker.id} />;
+          const firing = game.firingContext ?? game.lastFiringResult;
+          const shifuSetAside = firing?.round === game.round && firing.kilnYardShifuAdjustments.some((entry) => entry.playerId === player.id);
+          const shifuOffBoard = id === "kiln_yard" && worker.kind === "shifu" && (player.kilnYardShifuCeramicId !== null || shifuSetAside);
+          return shifuOffBoard ? null : <WorkerMeeple player={player} kind={worker.kind} small locale={locale} key={worker.id} />;
         })}</span>
       </footer>
     </button>
@@ -1227,16 +1229,18 @@ function Ceramic({ ceramic, game, locale, compact = false, inspectable = false, 
   const quality = "quality" in ceramic ? ceramic.quality : null;
   const heat = glaze === null ? null : preferredHeat(glaze);
   const marked = player.kilnYardShifuCeramicId === ceramic.id;
+  const shifuHeat = ceramic.stage === "loaded" ? ceramic.shifuHeatAdjustment ?? null : null;
   const furniture = ceramic.stage === "loaded" && ceramic.kilnFurnitureUsed === true;
   const shape = shapeLabel(ceramic.shape, locale);
   const imperial = ceramic.stage === "loaded" && ceramic.kilnSpaceId === "imperial";
   const zone = kilnZone === undefined ? null : text(locale, `${titleCase(kilnZone)} zone`, zoneZh(kilnZone));
-  const kilnLocation = imperial ? text(locale, "Imperial Kiln +0", "御窑 +0") : zone === null ? null : `${zone} ${signed(kilnZoneModifier ?? 0)}`;
+  const kilnLocation = imperial ? text(locale, "Imperial Kiln +0", "御窑 +0") : zone === null ? null : `${zone} ${signed(furniture ? 0 : kilnZoneModifier ?? 0)}${furniture ? text(locale, " (Kiln Furniture)", "（支烧窑具）") : ""}`;
   const className = `kiln-tabletop-ceramic glaze-${glaze ?? "raw"} decoration-${decoration ?? "none"} shape-${ceramic.shape} kiln-tabletop-accent-${accent(player)} ${compact ? "is-compact" : ""} ${inspectable ? "is-inspectable" : ""}`;
   const visual = <>
     <svg viewBox="0 0 80 72" aria-hidden="true"><CeramicShape shape={ceramic.shape} /><CeramicDecoration decoration={decoration} /></svg>
     {quality !== null && <b className={`kiln-tabletop-quality-badge is-${quality}`} title={qualityLabel(quality, locale)}>{qualityLabel(quality, locale)}</b>}
-    {marked && <em className="kiln-tabletop-shifu-marker" title={text(locale, "Kiln Yard Shifu committed to this ceramic", "窑坊师傅已标记此陶瓷")}>{text(locale, "S", "师")}</em>}
+    {marked && shifuHeat === null && <em className="kiln-tabletop-shifu-marker" title={text(locale, "Kiln Yard Shifu committed to this ceramic", "窑坊师傅已标记此陶瓷")}>{text(locale, "S", "师")}</em>}
+    {shifuHeat !== null && <em className={`kiln-tabletop-shifu-heat-marker is-${shifuHeat === 1 ? "warmer" : "cooler"}`} title={text(locale, `Shifu Heat marker: ${signed(shifuHeat)} Actual Heat for this firing`, `师傅火候标记：本次烧成实际火候${signed(shifuHeat)}`)}>{signed(shifuHeat)}</em>}
     {furniture && <em className="kiln-live-furniture-marker" title={text(locale, "Kiln Furniture attached", "已附窑具")}>{text(locale, "Furniture", "窑具")}</em>}
   </>;
   const details = <>
@@ -1248,7 +1252,8 @@ function Ceramic({ ceramic, game, locale, compact = false, inspectable = false, 
       <span><small>{text(locale, "Preferred Heat", "适烧火候")}</small><strong>{heat ?? "—"}</strong></span>
     </span>
     {quality !== null && <span className="kiln-tabletop-ceramic-tooltip-note is-quality">{text(locale, "Quality", "品质")} · {qualityLabel(quality, locale)}</span>}
-    {marked && <span className="kiln-tabletop-ceramic-tooltip-note">{text(locale, "Shifu reposition marker attached", "已附师傅调位标记")}</span>}
+    {marked && shifuHeat === null && <span className="kiln-tabletop-ceramic-tooltip-note">{text(locale, "Shifu committed: may choose +1 or −1 Heat before Fire", "师傅已放置：揭示火牌前可选择+1或−1火候")}</span>}
+    {shifuHeat !== null && <span className="kiln-tabletop-ceramic-tooltip-note">{text(locale, `Shifu Heat marker: ${signed(shifuHeat)} Actual Heat, in addition to its zone modifier. Fixed for this firing.`, `师傅火候标记：实际火候${signed(shifuHeat)}，与窑位修正叠加。本次烧成中数值固定。`)}</span>}
     {furniture && <span className="kiln-tabletop-ceramic-tooltip-note">{text(locale, "Kiln Furniture used", "已使用窑具")}</span>}
   </>;
   if (!inspectable) return <span className={className} data-decoration={decoration ?? undefined} data-glaze={glaze ?? undefined} data-shape={ceramic.shape} aria-label={`${player.displayName} · ${shape}`}>{visual}</span>;
@@ -1472,7 +1477,7 @@ function phaseName(game: PublicGameState, locale: Locale): string {
   if (type.startsWith("work")) return type === "work" ? text(locale, "Work", "作业") : text(locale, "Work resolution", "作业结算");
   if (type === "firing_before_contribution") return text(locale, "Pre-firing Techniques", "烧成前技艺");
   if (type === "firing_contributions") return text(locale, "Secret Contributions", "秘密控火");
-  if (type === "firing_reposition") return text(locale, "Shifu kiln reposition", "窑坊师傅调位");
+  if (type === "firing_shifu_adjustment") return text(locale, "Kiln Yard Shifu adjustment", "窑坊师傅调火");
   if (type === "firing_reveal_fire") return text(locale, "Reveal Fire", "揭示窑火");
   if (type === "firing_before_quality") return text(locale, "Kiln ability", "窑口能力");
   if (type === "firing_second_before_quality") return text(locale, "Second Firing", "复烧");

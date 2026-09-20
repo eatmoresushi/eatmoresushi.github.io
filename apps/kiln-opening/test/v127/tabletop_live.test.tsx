@@ -551,7 +551,7 @@ describe("V1.2.7 functional tabletop", () => {
       baseHeat: 2,
       fireModifier: null,
       globalHeat: null,
-      kilnYardShifuRepositions: [],
+      kilnYardShifuAdjustments: [],
       ceramicResults: {},
     };
     game = projectPublicGameState(state);
@@ -595,7 +595,7 @@ describe("V1.2.7 functional tabletop", () => {
       baseHeat: 3,
       fireModifier: -1,
       globalHeat: 2,
-      kilnYardShifuRepositions: [],
+      kilnYardShifuAdjustments: [],
       ceramicResults: {
         [ceramic.id]: {
           ceramicId: ceramic.id,

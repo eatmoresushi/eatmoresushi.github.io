@@ -27,7 +27,7 @@ function round(sequence: number, value: RoundNumber): PublicEventRecord {
 }
 
 function summary(value: RoundNumber, modifier: FireModifier): FiringResultSummary {
-  return { round: value, baseHeat: 2, fireModifier: modifier, globalHeat: 2 + modifier, kilnYardShifuRepositions: [] };
+  return { round: value, baseHeat: 2, fireModifier: modifier, globalHeat: 2 + modifier, kilnYardShifuAdjustments: [] };
 }
 
 function context(value: RoundNumber, modifier: FireModifier | null): FiringContext {
@@ -39,7 +39,7 @@ function context(value: RoundNumber, modifier: FireModifier | null): FiringConte
     baseHeat: 2,
     fireModifier: modifier,
     globalHeat: modifier === null ? null : 2 + modifier,
-    kilnYardShifuRepositions: [],
+    kilnYardShifuAdjustments: [],
     ceramicResults: {},
   };
 }

@@ -15,7 +15,7 @@ function reveal(state: GameState, baseHeat: 0 | 1 | 2 | 3 | 4 | 5 = 4): void {
   state.firstPlayerId = "P1";
   state.phase = { type: "firing_reveal_fire", actorId: "P1" };
   state.fireDeck = [0];
-  state.firingContext = { round: state.round, contributors: ["P1"], contributions: { P1: "TEND" }, fuelLedgerUpgradedBy: [], baseHeat, fireModifier: null, globalHeat: null, kilnYardShifuRepositions: [], ceramicResults: {} };
+  state.firingContext = { round: state.round, contributors: ["P1"], contributions: { P1: "TEND" }, fuelLedgerUpgradedBy: [], baseHeat, fireModifier: null, globalHeat: null, kilnYardShifuAdjustments: [], ceramicResults: {} };
 }
 
 describe("V1.2.7 Court Patronage and mandatory Work", () => {

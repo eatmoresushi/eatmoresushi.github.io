@@ -58,4 +58,4 @@ Before Contributions, if you have a ceramic in this firing: pay 1 Wood → priva
 After Quality is assigned: choose 1 of your Flawed or Standard ceramics in this firing → reveal 1 extra Fire card and recalculate only its Actual Heat and Quality using the same Base Heat and kiln position.
 
 ### Kiln Furniture
-When loading 1 of your ceramics into a High or Low Shared Kiln space: place this tile beneath it → its zone modifier is 0 for this firing, even if moved.
+When loading 1 of your ceramics into a High or Low Shared Kiln space: place this tile beneath it → its zone modifier is 0 for this firing.

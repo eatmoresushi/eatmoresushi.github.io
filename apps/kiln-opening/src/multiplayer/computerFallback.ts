@@ -152,8 +152,8 @@ export function fallbackComputerCommands(
         card: "TEND",
         useFuelLedger: false,
       }];
-    case "firing_reposition":
-      return [{ type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: null, toSpaceId: null }];
+    case "firing_shifu_adjustment":
+      return [{ type: "RESOLVE_KILN_YARD_ADJUSTMENT", ceramicId: null, adjustment: null }];
     case "firing_reveal_fire":
       return [{ type: "REVEAL_FIRE_CARD" }];
     case "firing_before_quality":

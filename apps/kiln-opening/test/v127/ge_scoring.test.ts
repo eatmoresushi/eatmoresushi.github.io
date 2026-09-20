@@ -92,7 +92,7 @@ describe("Ge owner amendment: contextual Quality", () => {
     const ceramic = addLoaded(state, "P1", "bowl", "celadon", "crackle", "middle_1");
     state.phase = { type: "firing_reveal_fire", actorId: "P1" };
     state.fireDeck = [0, -2];
-    state.firingContext = { round: 1, contributors: ["P1"], contributions: { P1: "TEND" }, fuelLedgerUpgradedBy: [], baseHeat: 4, fireModifier: null, globalHeat: null, kilnYardShifuRepositions: [], ceramicResults: {} };
+    state.firingContext = { round: 1, contributors: ["P1"], contributions: { P1: "TEND" }, fuelLedgerUpgradedBy: [], baseHeat: 4, fireModifier: null, globalHeat: null, kilnYardShifuAdjustments: [], ceramicResults: {} };
     const fired = mustApply(state, "P1", { type: "REVEAL_FIRE_CARD" }, rng);
     expect(fired.firingContext?.ceramicResults[ceramic.id]?.assignedQuality).toBe("standard");
     expect(fired.phase).toMatchObject({ type: "firing_after_quality", techniqueIds: ["T14"] });
@@ -108,7 +108,7 @@ describe("Ge owner amendment: contextual Quality", () => {
     const ceramic = addLoaded(state, "P1", "bowl", "white", "crackle", "middle_1");
     state.phase = { type: "firing_reveal_fire", actorId: "P1" };
     state.fireDeck = [0];
-    state.firingContext = { round: 1, contributors: ["P1"], contributions: { P1: "TEND" }, fuelLedgerUpgradedBy: [], baseHeat: 4, fireModifier: null, globalHeat: null, kilnYardShifuRepositions: [], ceramicResults: {} };
+    state.firingContext = { round: 1, contributors: ["P1"], contributions: { P1: "TEND" }, fuelLedgerUpgradedBy: [], baseHeat: 4, fireModifier: null, globalHeat: null, kilnYardShifuAdjustments: [], ceramicResults: {} };
     const fired = mustApply(state, "P1", { type: "REVEAL_FIRE_CARD" }, rng);
     expect(fired.firingContext?.ceramicResults[ceramic.id]?.assignedQuality).toBe("flawed");
     const saved = mustApply(fired, "P1", { type: "RESOLVE_PROTECTIVE_SAGGARS", ceramicId: ceramic.id }, rng);

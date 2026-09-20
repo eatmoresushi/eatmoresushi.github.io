@@ -1056,6 +1056,9 @@
 .kiln-tabletop-ceramic.is-compact > b.kiln-tabletop-quality-badge { right: -8px; min-width: 27px; height: 13px; padding-inline: 3px; font-size: .27rem; }
 .kiln-tabletop-ceramic > em.kiln-tabletop-shifu-marker { position: absolute; z-index: 2; top: -3px; right: -3px; display: grid; width: 17px; aspect-ratio: 1; place-items: center; border: 1px solid #fff0ce; border-radius: 50%; color: white; font-family: var(--tabletop-serif); font-size: .39rem; font-style: normal; background: var(--player-color); box-shadow: 0 2px 5px rgb(0 0 0 / 35%); }
 .kiln-tabletop-ceramic.is-compact > em.kiln-tabletop-shifu-marker { width: 13px; font-size: .31rem; }
+.kiln-tabletop-ceramic > em.kiln-tabletop-shifu-heat-marker { position: absolute; z-index: 2; top: -3px; right: -4px; display: grid; min-width: 22px; height: 19px; padding: 0 3px; place-items: center; border: 1px solid #fff0ce; border-radius: 5px; color: #fff6df; font-size: .5rem; font-weight: 800; font-style: normal; line-height: 1; background: #a74128; box-shadow: 0 2px 5px rgb(0 0 0 / 35%); }
+.kiln-tabletop-ceramic > em.kiln-tabletop-shifu-heat-marker.is-cooler { background: #326a75; }
+.kiln-tabletop-ceramic.is-compact > em.kiln-tabletop-shifu-heat-marker { min-width: 19px; height: 16px; font-size: .4rem; }
 
 .kiln-tabletop-card-preview.kiln-tabletop-ceramic-preview {
   /* Escape the inspector's scrolling/clipping region and appear above its backdrop. */

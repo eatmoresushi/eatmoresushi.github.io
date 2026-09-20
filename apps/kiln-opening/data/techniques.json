@@ -167,8 +167,8 @@
       "name": "Second Firing",
       "nameZh": "复烧",
       "cost": 2,
-      "ability": "Once per round, after Quality is assigned, choose 1 of your Flawed or Standard ceramics participating in this firing. Reveal 1 extra Fire card and recalculate that ceramic's Actual Heat and Quality using the same Base Heat and kiln position but the new Fire modifier. Previous Actual Heat adjustments do not carry over. The new Quality replaces the old, even if worse. Discard the extra Fire card after resolving it. Any unused once-per-round firing abilities may still be used at their normal timing.",
-      "abilityZh": "每轮一次，在决定品质后，选择 1 件瑕品或良品陶瓷。额外翻开 1 张窑火牌，使用相同基础火候及窑位、但采用新的窑火修正，重新计算该陶瓷的实际火候与品质。之前对实际火候的调整不会保留。新结果取代旧结果，即使更差也如此。结算后弃掉额外窑火牌。任何本轮尚未使用、且时机适用的每轮一次烧成能力，仍可在正常时机结算。",
+      "ability": "Once per round, after Quality is assigned, choose 1 of your Flawed or Standard ceramics participating in this firing. Reveal 1 extra Fire card and recalculate that ceramic's Actual Heat and Quality using the same Base Heat and kiln position but the new Fire modifier. Previous Jun adjustments do not carry over; fixed Shifu Heat markers still apply. The new Quality replaces the old, even if worse. Discard the extra Fire card after resolving it. Any unused once-per-round firing abilities may still be used at their normal timing.",
+      "abilityZh": "每轮一次，在决定品质后，选择 1 件瑕品或良品陶瓷。额外翻开 1 张窑火牌，使用相同基础火候及窑位、但采用新的窑火修正，重新计算该陶瓷的实际火候与品质。之前的钧窑火候调整不会保留；已固定的师傅火候标记仍然生效。新结果取代旧结果，即使更差也如此。结算后弃掉额外窑火牌。任何本轮尚未使用、且时机适用的每轮一次烧成能力，仍可在正常时机结算。",
       "oncePerRound": true
     },
     {
@@ -177,8 +177,8 @@
       "name": "Kiln Furniture",
       "nameZh": "支烧窑具",
       "cost": 2,
-      "ability": "Once per round, when loading 1 ceramic into a High or Low Shared Kiln space, you may place this tile beneath that ceramic. Its zone modifier is 0 for this firing, even if the ceramic is later moved. Move the tile with the ceramic and return it to your workshop after firing.",
-      "abilityZh": "每轮一次，当你将 1 件陶瓷装入共窑高温区或低温区时，可以把本技艺牌放在该陶瓷下方。本次烧成中，该陶瓷的窑位修正视为 0，即使之后被移动也不变。若移动该陶瓷，技艺牌随之移动；烧成结束后收回。",
+      "ability": "Once per round, when loading 1 ceramic into a High or Low Shared Kiln space, you may place this tile beneath that ceramic. Its zone modifier is 0 for this firing.",
+      "abilityZh": "每轮一次，当你将1件陶瓷装入共窑高温区或低温区时，可以把本技艺牌放在该陶瓷下方。本次烧成中，该陶瓷的窑位修正视为0。",
       "oncePerRound": true
     }
   ]

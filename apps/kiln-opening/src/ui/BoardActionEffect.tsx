@@ -75,14 +75,14 @@ export function BoardActionEffect({ id, kind, locale }: {
       copy = zh ? <>
         <p>装窑<strong>{shifu ? "至多2" : "1"}</strong>件陶瓷。</p>
         {shifu && <>
-          <p>若共窑中有己方陶瓷，标记其中<strong>1</strong>件。</p>
-          <p>确定基础火候后、揭示火牌前：可移至相邻火候区的空置有效窑位。</p>
+          <p>将师傅放在共窑中你的<strong>1</strong>件陶瓷上。</p>
+          <p>确定基础火候后、揭示火牌前：可用<strong>+1或−1</strong>火候标记替换师傅，仅用于本次烧成。</p>
         </>}
       </> : <>
-        <p>Load <strong>{shifu ? "up to 2" : "1"}</strong> {shifu ? "ceramics" : "ceramic"}.</p>
+        <p>Load <strong>{shifu ? "up to 2" : "1"}</strong>{shifu ? "." : " ceramic."}</p>
         {shifu && <>
-          <p>Mark <strong>1</strong> of yours in the Shared Kiln, if any.</p>
-          <p>After Base Heat, before Fire: may move it to an empty, active space in a neighbouring zone.</p>
+          <p>Place your Shifu on <strong>1</strong> of your ceramics in the Shared Kiln.</p>
+          <p>After Base Heat is determined, before Fire: you may replace your Shifu with a <strong>+1 or −1 Heat marker</strong> on that ceramic for this firing.</p>
         </>}
       </>;
       break;

@@ -57,7 +57,7 @@ function firingContext(ceramicResults: Record<string, FiringCeramicResult>): Fir
     baseHeat: 2,
     fireModifier: 0,
     globalHeat: 2,
-    kilnYardShifuRepositions: [],
+    kilnYardShifuAdjustments: [],
     ceramicResults,
   };
 }
@@ -221,7 +221,7 @@ describe("V1.2.7 firing, Tech timing, and Kiln Traditions", () => {
     expect(state.firingContext?.ceramicResults[furniture.id]?.zoneModifier).toBe(0);
   });
 
-  it("repositions a Shared-Kiln ceramic after Base Heat and before Fire, only to a neighbouring zone", () => {
+  it("places a fixed Shifu Heat marker after Base Heat and before Fire without changing the space", () => {
     const { state: initial, rng } = startedGame(2, 1404);
     let state = structuredClone(initial);
     const shared = addLoaded(state, "P1", "bowl", "celadon", "plain", "high_1");
@@ -246,19 +246,18 @@ describe("V1.2.7 firing, Tech timing, and Kiln Traditions", () => {
     state = contribution.state;
     privateState = contribution.privateState;
     expect(privateState.contributions).toEqual({});
-    expect(state.phase.type).toBe("firing_reposition");
+    expect(state.phase.type).toBe("firing_shifu_adjustment");
     expect(state.firingContext?.baseHeat).toBe(2);
     expect(state.firingContext?.fireModifier).toBeNull();
     expectError(applyAction(state, state.firstPlayerId, { type: "REVEAL_FIRE_CARD" }, rng), "WRONG_PHASE");
 
-    expectError(applyAction(state, "P1", { type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: imperial.id, toSpaceId: "low_1" }, rng), "INVALID_SELECTION");
-    expectError(applyAction(state, "P1", { type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: shared.id, toSpaceId: "low_1" }, rng), "INVALID_SELECTION");
-    const moved = mustResult(state, "P1", { type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: shared.id, toSpaceId: "middle_1" }, rng);
-    state = moved.state;
+    expectError(applyAction(state, "P1", { type: "RESOLVE_KILN_YARD_ADJUSTMENT", ceramicId: imperial.id, adjustment: -1 }, rng), "INVALID_SELECTION");
+    const adjusted = mustResult(state, "P1", { type: "RESOLVE_KILN_YARD_ADJUSTMENT", ceramicId: shared.id, adjustment: -1 }, rng);
+    state = adjusted.state;
     expect(state.phase).toEqual({ type: "firing_reveal_fire", actorId: state.firstPlayerId });
-    expect(state.ceramics[shared.id]).toEqual(expect.objectContaining({ stage: "loaded", kilnSpaceId: "middle_1" }));
+    expect(state.ceramics[shared.id]).toEqual(expect.objectContaining({ stage: "loaded", kilnSpaceId: "high_1", shifuHeatAdjustment: -1 }));
     expect(state.firingContext?.fireModifier).toBeNull();
-    expect(moved.events.some((event) => event.type === "FIRE_REVEALED" || event.type === "FIRING_RESOLVED")).toBe(false);
+    expect(adjusted.events.some((event) => event.type === "FIRE_REVEALED" || event.type === "FIRING_RESOLVED")).toBe(false);
 
     const revealed = mustResult(state, state.firstPlayerId, { type: "REVEAL_FIRE_CARD" }, rng);
     state = revealed.state;
@@ -267,8 +266,45 @@ describe("V1.2.7 firing, Tech timing, and Kiln Traditions", () => {
       type: "FIRING_RESOLVED",
       ceramicId: shared.id,
       fireModifier: 0,
-      zoneModifier: 0,
+      zoneModifier: 1,
+      shifuHeatAdjustment: -1,
     }));
+  });
+
+  it.each([
+    { adjustment: 1 as const, furniture: true, glaze: "moon_white" as const, zoneModifier: 0, expectedHeat: 4 },
+    { adjustment: -1 as const, furniture: false, glaze: "grey_green" as const, zoneModifier: 1, expectedHeat: 3 },
+  ])("keeps the $adjustment Shifu marker fixed through Second Firing (Furniture: $furniture)", ({ adjustment, furniture, glaze, zoneModifier, expectedHeat }) => {
+    const { state: initial, rng } = startedGame(2, 1404_1);
+    let state = structuredClone(initial);
+    const ceramic = addLoaded(state, "P1", "bowl", glaze, "plain", "high_1", furniture);
+    const other = addLoaded(state, "P1", "plate", "celadon", "plain", "middle_1");
+    state.players["P1"]!.kilnId = "RU";
+    state.players["P1"]!.resources.wood = 0;
+    state.players["P1"]!.kilnYardShifuUsedThisRound = true;
+    state.players["P1"]!.kilnYardShifuCeramicId = ceramic.id;
+    addTechnique(state, "P1", "T14");
+    state.fireDeck = [-1, 1];
+    state.fireDiscard = [];
+    state.firingContext = {
+      ...firingContext({}), fireModifier: null, globalHeat: null,
+    };
+    state.phase = { type: "firing_shifu_adjustment", queue: { actors: ["P1"], currentIndex: 0 } };
+    state = mustApply(state, "P1", { type: "RESOLVE_KILN_YARD_ADJUSTMENT", ceramicId: ceramic.id, adjustment }, rng);
+    state = mustApply(state, state.firstPlayerId, { type: "REVEAL_FIRE_CARD" }, rng);
+    expect(state.phase.type).toBe("firing_after_quality");
+    expect(state.firingContext?.ceramicResults[ceramic.id]).toMatchObject({ zoneModifier, shifuHeatAdjustment: adjustment, assignedQuality: "standard" });
+    expect(state.ceramics[ceramic.id]).toMatchObject({ stage: "loaded", kilnSpaceId: "high_1", shifuHeatAdjustment: adjustment });
+    expectError(applyAction(state, "P1", { type: "RESOLVE_KILN_YARD_ADJUSTMENT", ceramicId: ceramic.id, adjustment: adjustment === 1 ? -1 : 1 }, rng), "WRONG_PHASE");
+    const second = mustResult(state, "P1", { type: "RESOLVE_SECOND_FIRING", ceramicId: ceramic.id }, rng);
+    state = second.state;
+    expect(state.lastFiringResult).toMatchObject({ baseHeat: 2, fireModifier: -1, globalHeat: 1 });
+    expect(state.lastFiringResult?.ceramicResults?.[ceramic.id]).toMatchObject({ zoneModifier, shifuHeatAdjustment: adjustment, finalActualHeat: expectedHeat, assignedQuality: "masterpiece" });
+    expect(state.lastFiringResult?.ceramicResults?.[other.id]).toMatchObject({ zoneModifier: 0, shifuHeatAdjustment: 0, finalActualHeat: 1, assignedQuality: "fine" });
+    expect(second.events).toContainEqual({ type: "SECOND_FIRING_RESOLVED", playerId: "P1", ceramicId: ceramic.id, fireModifier: 1, quality: "masterpiece" });
+    expect(state.players["P1"]!.resources.wood).toBe(0);
+    expect(state.ceramics[ceramic.id]).toMatchObject({ stage: "finished", quality: "masterpiece" });
+    expect(state.ceramics[ceramic.id]).not.toHaveProperty("shifuHeatAdjustment");
   });
 
   it("uses Imperial Priority after a worker action to load one extra Glazed ceramic", () => {

@@ -26,6 +26,7 @@ The game lasts exactly **5 rounds**.
 | Base Heat       | Start at 2, add all Contribution modifiers, then clamp to 0–5. Shared by the firing. |
 | Global Heat     | Base Heat plus the Fire-card modifier. Not capped.           |
 | Actual Heat     | Global Heat plus a ceramic's kiln-space modifier, after applicable abilities. |
+| Shifu Heat marker | A +1 or −1 modifier to one marked Shared-Kiln ceramic's Actual Heat, fixed for the current firing and removed after firing. |
 | Heat Difference | Absolute difference between Actual Heat and Preferred Heat; determines Quality. |
 | Load            | Place glazed ceramics into empty active Shared Kiln spaces, or into your gained Imperial Kiln if it's empty. |
 # Components
@@ -133,10 +134,11 @@ Each player has **1 Shifu and 3 Apprentices** available each round. Each worker 
 | **Worker** | **Effect**                                                   |
 |------------|--------------------------------------------------------------|
 | Apprentice | Load 1.                                                      |
-| **Shifu**  | Load up to 2 ceramics. If you have at least 1 of your ceramics in the Shared Kiln, place your Shifu on 1 of them. After Contributions are revealed and Base Heat is determined, but before the Fire card is revealed, you may move **the ceramic with that Shifu** to an empty active space in a neighbouring heat zone. |
+| **Shifu**  | **Load up to 2.** Place your Shifu on **1 of your ceramics in the Shared Kiln**. After Base Heat is determined, before Fire: you may replace your Shifu with a **+1 or −1 Heat marker** on that ceramic for this firing. |
 - Covered Shared Kiln spaces are never empty or usable. The Imperial Kiln can hold only 1 ceramic per firing.
-- If multiple players used a Kiln Yard Shifu this round, resolve these repositions in **First Player order**.
-- The Shifu reposition cannot move a ceramic into or out of an Imperial Kiln.
+- After loading, choose exactly 1 of your Shared-Kiln ceramics for the Shifu; it may already have been in the Shared Kiln before this action. If you have none, do not place the Shifu on a ceramic.
+- After Base Heat is determined and before Fire is revealed, resolve Shifu Heat-marker choices in **First Player order**. The marker costs no Wood, adjusts only that ceramic's Actual Heat and leaves the ceramic in its space. Imperial Kiln ceramics cannot receive a Shifu Heat marker.
+- Set a removed Shifu aside; it remains used until Cleanup. Remove Shifu Heat markers after the firing is complete.
 
 ### Commission Market
 For each reservation, choose one:
@@ -181,9 +183,9 @@ If no ceramics are loaded in the Shared Kiln or any Imperial Kiln, **skip the Fi
 | **Step** | **What happens** | **Produces** |
 |:--:|--|--|
 | 1. Contributions | Participating players secretly choose Bank, Tend or Stoke and any Fuel Ledger commitment, then reveal and pay Wood. Start at 2 and clamp the final result to 0–5. | **Base Heat** |
-| 2. Shifu adjustment | In First Player order, eligible Kiln Yard Shifu may reposition **the Shared-Kiln ceramic carrying that Shifu** to an empty active space in a neighbouring heat zone. | — |
+| 2. Shifu adjustment | In First Player order, each eligible player may replace the Shifu on their Shared-Kiln ceramic with a **+1 or −1 Heat marker**, at no Wood cost. The ceramic remains in its space. | **Shifu Heat marker** |
 | 3. Fire | Reveal the top Fire card and add its modifier. | **Global Heat** |
-| 4. Position | Shared-Kiln ceramics add High +1 / Middle 0 / Low −1. Imperial Kiln ceramics use no zone modifier. | **Actual Heat** |
+| 4. Position | Shared-Kiln ceramics add High +1 / Middle 0 / Low −1, or 0 with Kiln Furniture, plus any fixed Shifu Heat marker. Imperial Kiln ceramics use no zone modifier. | **Actual Heat** |
 | 5. Compare | Compare Actual Heat with Preferred Heat after applicable abilities. | **Quality** |
 
 - **Base Heat and Global Heat belong to the whole firing. Actual Heat belongs to one ceramic.**
@@ -231,7 +233,7 @@ When you first reach **Imperial Recognition 2**, take an Imperial Kiln tile and 
 - Its ceramic fires during the normal shared Firing Phase.
 - Its ceramic has **Actual Heat = Global Heat** before other abilities and receives no High/Middle/Low modifier.
 - It counts for Contribution participation and firing abilities.
-- It does not occupy a Shared Kiln space and cannot be moved by the Kiln Yard Shifu.
+- It does not occupy a Shared Kiln space and cannot receive a Kiln Yard Shifu or Shifu Heat marker.
 - After firing, its ceramic resolves Quality and moves to the owner's Finished Ceramics area normally.
 At **Imperial Recognition 3**, take your coloured Imperial Priority token from the track. **Once per game, before or after your worker action, spend this token to load 1 Glazed ceramic into your empty Imperial Kiln.** The ceramic must be unloaded before you load it; Imperial Priority cannot move a ceramic from the Shared Kiln or another kiln. The Imperial Kiln still holds only 1 ceramic.
 
@@ -524,8 +526,8 @@ Tech tiles use abbreviated reminder text. The rules in this appendix give the fu
 | **Protective Saggars** | 2        | Once per round, after Quality is assigned, you may spend **1 Wood** to improve the Quality of **1 of your Flawed or Standard ceramics participating in this firing** by one level: Flawed → Standard or Standard → Fine. This cannot create a Masterpiece. |
 | **Fuel Ledger**        | 3        | When choosing Bank or Stoke, you may secretly commit 1 additional Wood with your Contribution card. Reveal them together. If you do, your Contribution becomes −2 or +2. |
 | **Test Pieces**        | 3        | Once per round, before Contributions are chosen, **if you have at least 1 ceramic participating in this firing**, you may pay **1 Wood** to privately look at the top Fire card, then return it to the top of the deck. |
-| **Second Firing**      | 2        | Once per round, after Quality is assigned, choose **1 of your Flawed or Standard ceramics participating in this firing**. Reveal 1 extra Fire card and recalculate that ceramic's Actual Heat and Quality using the same Base Heat and kiln position but the new Fire modifier. Previous Actual Heat adjustments do not carry over. The new Quality replaces the old, even if worse. Discard the extra Fire card after resolving it. Any unused once-per-round firing abilities may still be used at their normal timing. |
-| **Kiln Furniture**     | 2        | Once per round, when loading 1 ceramic into a **High or Low Shared Kiln space**, you may place this tile beneath that ceramic. Its zone modifier is **0 for this firing**, even if the ceramic is later moved. Move the tile with the ceramic and return it to your workshop after firing. |
+| **Second Firing**      | 2        | Once per round, after Quality is assigned, choose **1 of your Flawed or Standard ceramics participating in this firing**. Reveal 1 extra Fire card and recalculate that ceramic's Actual Heat and Quality using the same Base Heat and kiln position but the new Fire modifier. Previous Jun adjustments do not carry over; fixed Shifu Heat markers still apply. The new Quality replaces the old, even if worse. Discard the extra Fire card after resolving it. Any unused once-per-round firing abilities may still be used at their normal timing. |
+| **Kiln Furniture**     | 2        | Once per round, when loading 1 ceramic into a High or Low Shared Kiln space, you may place this tile beneath that ceramic. Its zone modifier is 0 for this firing. |
 ### Tech Clarifications
 - **Glaze Palette** changes only the ceramic about to be loaded. It may be used when loading through a **Kiln Yard action**, **Rapid Drying** or **Imperial Priority**, into the Shared Kiln or your Imperial Kiln. It does not itself load a ceramic; the loading must still follow its normal costs and restrictions. It cannot change a ceramic that is already loaded or has been fired.
 - **Colour Samples:** The one-off reservation when acquired is separate from its once-per-round Commission Market effect and does not use that effect for the round. It grants no Commission Market resource bonus and is not a Commission Market action. During a Commission Market action, the ongoing effect replaces the choice for **1 reservation**; it does not grant an extra reservation, and you still gain the normal **1 Clay, 1 Wood or 1 Coin** for that reservation. A Shifu's other reservation follows the normal rules.
@@ -534,6 +536,7 @@ Tech tiles use abbreviated reminder text. The rules in this appendix give the fu
 - **Protective Saggars** and **Second Firing** affect only your own eligible ceramics in the current firing, whether in the Shared Kiln or your Imperial Kiln. They cannot target ceramics fired in earlier rounds.
 - **Test Pieces** is private information; you may discuss what you saw but may not show the Fire card.
 - **Second Firing** affects only the chosen ceramic; its extra Fire card does not change Global Heat for any other ceramic. Any relevant once-per-round firing ability you have not yet used may resolve at its normal timing during the recalculation.
+- **Shifu Heat markers** keep their fixed +1 or −1 value during Second Firing, in addition to the ceramic's applicable zone modifier. Kiln Furniture makes only the zone modifier 0. Previous Jun Heat adjustments do not carry over; an unused Jun ability may be used at its normal timing.
 # Appendix C — Fire Deck
 **12 cards.**
 | **Modifier** | **Cards** |
@@ -549,14 +552,19 @@ If no ceramics are loaded in the Shared Kiln or any Imperial Kiln, **skip this p
 2. **Choose Contributions.** Every player with at least 1 ceramic in the Shared Kiln or an Imperial Kiln secretly chooses Bank, Tend or Stoke and must be able to pay its Wood cost. Fuel Ledger may add its hidden Wood commitment.
 3. **Reveal and pay.** Reveal all Contribution cards and committed Wood simultaneously, then pay all costs.
 4. **Determine Base Heat.** Start at 2, add all final Contribution modifiers, then clamp to 0–5.
-5. **Kiln Yard Shifu adjustment.** In **First Player order**, each player who used a Kiln Yard Shifu this round may move **the ceramic that has the Shifu worker in the Shared Kiln** to an empty active space in a **neighbouring heat zone** (High ↔ Middle ↔ Low). A Kiln Furniture tile moves with its ceramic. Imperial Kiln ceramics cannot be moved this way.
+5. **Kiln Yard Shifu adjustment.** After Base Heat is determined, **before the Fire card is revealed**, resolve in **First Player order**. Each player whose Shifu is on one of their ceramics in the **Shared Kiln** may replace that Shifu with a **+1 or −1 Heat marker**, at **no Wood cost**. The ceramic remains in its space.
+
+   The marker adjusts **only that ceramic’s Actual Heat**, in addition to its applicable zone modifier. It does not change Base Heat, Global Heat or any other ceramic. Its value is fixed for this firing. Players may decline to place a marker and leave their ceramic unadjusted.
+
+   Set removed Shifu aside; they remain used until Cleanup. Remove all Shifu Heat markers after the firing is complete.
+
 6. **Reveal Fire.** Reveal the top Fire card and add its modifier to Base Heat. This is Global Heat and is not capped.
-7. **Calculate Actual Heat.** Shared-Kiln ceramics add their zone modifier; Imperial Kiln ceramics initially equal Global Heat. A ceramic carrying Kiln Furniture uses a zone modifier of 0.
+7. **Calculate Actual Heat.** Shared-Kiln ceramics add their zone modifier and any fixed Shifu Heat marker; Imperial Kiln ceramics initially equal Global Heat. A ceramic carrying Kiln Furniture uses a zone modifier of 0 and still adds its Shifu Heat marker, if any.
 8. **Heat-adjustment abilities.** In First Player order, resolve Jun and any other abilities that occur after Actual Heat is calculated and before Quality is assigned.
 9. **Assign Quality.** Compare final Actual Heat with Preferred Heat. For Ge's Crackle ceramics, a Heat Difference of 2 gives Fine instead of Standard; a Heat Difference of 3 or more is still Flawed.
-10. **After-Quality abilities.** In First Player order, resolve Protective Saggars, Second Firing and similar effects. If you control multiple abilities in this window, choose their order.
+10. **After-Quality abilities.** In First Player order, resolve Protective Saggars, Second Firing and similar effects. If you control multiple abilities in this window, choose their order. A Shifu Heat marker keeps its fixed value during Second Firing and still applies to that ceramic's recalculated Actual Heat.
 11. **Salvage a Flawed ceramic, if desired.** Each player may discard **1 ceramic still Flawed from this firing** to gain **2 Coins**. Return its Vessel card to the matching Shape supply.
-12. **Finish firing.** Move all remaining fired ceramics to their owners' Finished Ceramics areas. Empty all Shared Kiln and Imperial Kiln spaces. Return Kiln Furniture tiles to their owners, discard the main Fire card face up, and return all Contribution cards.
+12. **Finish firing.** Move all remaining fired ceramics to their owners' Finished Ceramics areas. Empty all Shared Kiln and Imperial Kiln spaces. Remove all Shifu Heat markers, return Kiln Furniture tiles to their owners, discard the main Fire card face up, and return all Contribution cards. Shifu workers remain used until Cleanup.
 ### Timing Vocabulary
 | **Wording** | **Sequence Step** |
 |:-|:-:|
@@ -579,7 +587,7 @@ If no ceramics are loaded in the Shared Kiln or any Imperial Kiln, **skip this p
 | Materials          | Gain 3 Clay/Wood                  | Gain 4; may pay 1 Coin → +1 Clay +1 Wood                     |
 | Potter’s Wheel     | Form 1                            | Form up to 2; if 2, total cost −1 Clay                       |
 | Glaze & Decoration | Glaze/decorate 1                  | Glaze/decorate up to 2; if glazing 2, reduce total Coin cost by 1 |
-| Kiln Yard          | Load 1                            | Load up to 2; place Shifu on 1, after Base Heat, reposition it to an empty neighbouring zone |
+| Kiln Yard          | Load 1                            | Load up to 2; place Shifu on 1 own Shared-Kiln ceramic; after Base Heat, before Fire, optionally replace it with a +1 or −1 Heat marker |
 | Commission Market  | Reserve 1 + gain 1 Clay/Wood/Coin | Reserve up to 2 separately; gain 1 Clay/Wood/Coin after each reservation |
 | Guild              | Buy 1 Advanced Tech at cost       | Look at top 2 Techs of 1 discipline (or as many as remain); take 1 revealed Tech or any face-up Tech at −1 Coin |
 | Labour             | 2 Coins                           | 4 Coins                                                      |

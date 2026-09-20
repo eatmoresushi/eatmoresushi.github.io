@@ -191,8 +191,8 @@ function PhaseControls(props: Omit<ActionPanelProps, "ownPlayerId"> & {
         return <BinaryDecision title="Test Pieces" hint="Pay 1 Wood to privately look at the top Fire card, then return it to the top of the deck." action="RESOLVE_TEST_PIECES" busy={busy} send={send} />;
       }
       return <Waiting game={game} actorId={decisionActor ?? ownPlayerId} />;
-    case "firing_reposition":
-      return <>{firingProgress}<KilnRepositionControls game={game} player={player} busy={busy} send={send} /></>;
+    case "firing_shifu_adjustment":
+      return <>{firingProgress}<KilnShifuAdjustmentControls game={game} player={player} busy={busy} send={send} /></>;
     case "firing_before_quality":
     case "firing_second_before_quality":
       return <>{firingProgress}<KilnAbilityControls game={game} player={player} busy={busy} send={send} /></>;
@@ -918,7 +918,7 @@ function KilnYardForm({ game, player, workers, locationFull, busy, send }: {
       ]} />}
       {selectedWorker?.kind === "shifu" && (shifuTargets.length > 0
         ? <CeramicChoice name="shifu-ceramic" label={locale === "zh-CN" ? "师傅所在的共窑陶瓷" : "Shared-Kiln ceramic carrying the Shifu"} ceramics={shifuTargets} value={selectedShifuCeramicId} onChange={setShifuCeramicId} />
-        : <p className="control-hint">{locale === "zh-CN" ? "若只装入御窑且共窑中没有己方陶瓷，则不放置师傅，也不能进行调位。" : "With no ceramic of yours in the Shared Kiln after loading, this Shifu receives no reposition target."}</p>)}
+        : <p className="control-hint">{locale === "zh-CN" ? "若只装入御窑且共窑中没有己方陶瓷，则不放置师傅，也不能进行火候调整。" : "With no ceramic of yours in the Shared Kiln after loading, this Shifu receives no Heat adjustment target."}</p>)}
       <LoadingPaletteChoice player={player} value={loadingGlaze} onChange={setLoadingGlaze} />
       {loadingGlaze !== "" && maximumLoads > 1 && <ChoiceTiles name="palette-load" label={locale === "zh-CN" ? "釉色谱：选择装窑器物" : "Glaze Palette: choose the load"} value={paletteIndex} onChange={setPaletteIndex} options={[{ value: "0", label: "1" }, { value: "1", label: "2" }]} />}
       {player.startingTechniqueId === "ST04" && <ChoiceTiles name="kiln-tending" label={locale === "zh-CN" ? "看火：装窑后获得资源" : "Kiln Tending: gain after loading"} value={kilnTendingResource} onChange={(value) => setKilnTendingResource(value as "" | "clay" | "wood")} options={[
@@ -1134,41 +1134,28 @@ function GuildControls({ game, player, privateDecision, busy, send }: {
   );
 }
 
-function KilnRepositionControls({ game, player, busy, send }: {
+function KilnShifuAdjustmentControls({ game, player, busy, send }: {
   game: PublicGameState;
   player: PublicPlayerState;
   busy: boolean;
   send: SendCommand;
 }) {
-  const { locale, t, term } = useI18n();
+  const { locale, term } = useI18n();
   const selected = player.kilnYardShifuCeramicId === null
     ? undefined
     : game.ceramics[player.kilnYardShifuCeramicId];
   const ceramicId = selected?.stage === "loaded" && selected.kilnSpaceId !== "imperial"
     ? selected.id
     : "";
-  const occupied = new Set(Object.values(game.ceramics).filter((ceramic) => ceramic.stage === "loaded").map((ceramic) => ceramic.stage === "loaded" ? ceramic.kilnSpaceId : ""));
-  const kilnZone = (space: KilnSpaceId): "high" | "middle" | "low" => space.startsWith("high_") ? "high" : space.startsWith("middle_") ? "middle" : "low";
-  const selectedZone = selected?.stage === "loaded" && selected.kilnSpaceId !== "imperial" ? kilnZone(selected.kilnSpaceId) : null;
-  const spaces = activeKilnSpaceIds(game.playerCount).filter((space) => {
-    if (occupied.has(space) || selectedZone === null) return false;
-    const candidateZone = kilnZone(space);
-    return (selectedZone === "high" && candidateZone === "middle")
-      || (selectedZone === "middle" && (candidateZone === "high" || candidateZone === "low"))
-      || (selectedZone === "low" && candidateZone === "middle");
-  });
   return (
-    <ControlSection title="Shifu kiln reposition" hint={locale === "zh-CN" ? "基础火候确定后、火牌揭示前，可将师傅所在的那件共窑陶瓷移至相邻火候区中的一个空置有效窑位。" : "After Base Heat is known and before the Fire card is revealed, only the ceramic marked by this Shifu during the Kiln Yard action may move to an empty active space in a neighbouring heat zone."}>
-      <form className="control-form" onSubmit={(event) => {
-        event.preventDefault();
-        const data = new FormData(event.currentTarget);
-        void send({ type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId, toSpaceId: required(data, "space") as KilnSpaceId });
-      }}>
+    <ControlSection title="Kiln Yard Shifu adjustment" hint={locale === "zh-CN" ? "基础火候确定后、火牌揭示前，按起始玩家顺序结算。可将师傅替换为+1或−1火候标记，无需支付柴。仅调整师傅所在的那件共窑陶瓷的实际火候，并与其适用窑位修正叠加；陶瓷留在原位。标记数值在本次烧成中固定。" : "After Base Heat is determined, before the Fire card is revealed, resolve in First Player order. You may replace your Shifu with a +1 or −1 Heat marker at no Wood cost. It adjusts only that ceramic’s Actual Heat, in addition to its applicable zone modifier; the ceramic stays in its space. The marker’s value is fixed for this firing."}>
+      <div className="control-form">
         {selected !== undefined && <p className="control-hint"><strong>{locale === "zh-CN" ? "师傅所在陶瓷" : "Shifu-marked ceramic"}:</strong> {term(selected.shape)} · {selected.id}</p>}
-        <SelectField name="space" label="Empty destination" options={spaces} />
-        <button className="primary-button" disabled={busy || ceramicId === "" || spaces.length === 0}>{t("Move ceramic")}</button>
-      </form>
-      <CommandButton busy={busy} send={send} command={{ type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: null, toSpaceId: null }} secondary>Keep kiln positions</CommandButton>
+        <div className="button-row">
+          {([-1, 1] as const).map((adjustment) => <CommandButton key={adjustment} busy={busy || ceramicId === ""} send={send} command={{ type: "RESOLVE_KILN_YARD_ADJUSTMENT", ceramicId, adjustment }}>{locale === "zh-CN" ? `放置${adjustment === 1 ? "+1" : "−1"}火候标记` : `Place ${adjustment === 1 ? "+1" : "−1"} Heat marker`}</CommandButton>)}
+        </div>
+      </div>
+      <CommandButton busy={busy} send={send} command={{ type: "RESOLVE_KILN_YARD_ADJUSTMENT", ceramicId: null, adjustment: null }} secondary>{locale === "zh-CN" ? "不调整火候" : "Leave unadjusted"}</CommandButton>
     </ControlSection>
   );
 }
@@ -1281,13 +1268,15 @@ const PLAYER_ACCENTS = ["cinnabar", "river", "ochre", "plum"] as const;
 
 function actualHeatEquation(result: {
   zoneModifier: number;
+  shifuHeatAdjustment?: -1 | 0 | 1;
   naturalActualHeat: number;
   finalActualHeat: number;
 }, globalHeat: number): string {
   const zoneTerm = result.zoneModifier >= 0
     ? `+ ${result.zoneModifier}`
     : `− ${Math.abs(result.zoneModifier)}`;
-  const natural = `${globalHeat} ${zoneTerm} = ${result.naturalActualHeat}`;
+  const shifuTerm = (result.shifuHeatAdjustment ?? 0) === 0 ? "" : ` ${heatEquationTerm(result.shifuHeatAdjustment!)}`;
+  const natural = `${globalHeat} ${zoneTerm}${shifuTerm} = ${result.naturalActualHeat}`;
   return result.finalActualHeat === result.naturalActualHeat
     ? natural
     : `${natural} → ${result.finalActualHeat}`;
@@ -1369,6 +1358,7 @@ function FiringProgress({ game, ownPlayerId }: { game: PublicGameState; ownPlaye
         }) : ownLoaded.length > 0 ? ownLoaded.map((ceramic) => <article key={ceramic.id}>
           <span>{ceramicLabel(ceramic, locale)}</span>
           <small>{locale === "zh-CN" ? "揭示窑火牌后计算实际火候与品质。" : "Actual Heat and Quality appear after the Fire card is revealed."}</small>
+          {ceramic.stage === "loaded" && ceramic.shifuHeatAdjustment !== undefined && <small>{locale === "zh-CN" ? `师傅火候标记：${signedHeat(ceramic.shifuHeatAdjustment)}实际火候` : `Shifu Heat marker: ${signedHeat(ceramic.shifuHeatAdjustment)} Actual Heat`}</small>}
           <strong className="firing-quality is-pending">{locale === "zh-CN" ? "等待窑火" : "Awaiting Fire"}</strong>
         </article>) : <p>{locale === "zh-CN" ? "你没有陶瓷参与本次烧成。" : "You have no ceramic in this firing."}</p>}
       </section>

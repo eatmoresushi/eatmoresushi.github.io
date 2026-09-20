@@ -80,10 +80,10 @@ export function eventDescription(event: PublicGameEvent, game: PublicGameState, 
       return `${player(event.playerId)} loaded a ${ceramic(event.ceramicId)} ceramic into ${label(event.kilnSpaceId)}.`;
     case "KILN_YARD_SHIFU_MARKED":
       return `${player(event.playerId)} placed their Kiln Yard Shifu on the ${ceramic(event.ceramicId)} ceramic selected for this firing.`;
-    case "KILN_YARD_SHIFU_REPOSITIONED":
-      return `${player(event.playerId)} moved the Shifu-marked ${ceramic(event.ceramicId)} ceramic from ${label(event.fromSpaceId)} to ${label(event.toSpaceId)}.`;
-    case "KILN_YARD_SHIFU_REPOSITION_DECLINED":
-      return `${player(event.playerId)} kept the Shifu-marked ${ceramic(event.ceramicId)} ceramic in place.`;
+    case "KILN_YARD_SHIFU_ADJUSTED":
+      return `${player(event.playerId)} replaced their Shifu with a ${signed(event.adjustment)} Heat marker on the ${ceramic(event.ceramicId)} ceramic at no Wood cost. Only its Actual Heat changes for this firing; it stays in its space.`;
+    case "KILN_YARD_SHIFU_ADJUSTMENT_DECLINED":
+      return `${player(event.playerId)} left the Shifu-marked ${ceramic(event.ceramicId)} ceramic unadjusted.`;
     case "ORDER_TAKEN":
       return `${player(event.playerId)} ${event.acquisition === "colour_samples" ? "selected" : "took"} a private Order from the Main Orders${event.acquisition === "colour_samples" ? " through Colour Samples" : ""}.`;
     case "COLOUR_SAMPLES_USED":
@@ -120,7 +120,7 @@ export function eventDescription(event: PublicGameEvent, game: PublicGameState, 
     case "WORKSHOP_SECONDS_SOLD":
       return `${player(event.playerId)} discarded a still-Flawed ${ceramic(event.ceramicId)} to gain ${event.coins} Coins.`;
     case "FIRING_RESOLVED":
-      return `${ceramic(event.ceramicId)} ceramic firing recorded: Fire ${signed(event.fireModifier)}, natural Heat ${event.naturalActualHeat} (difference ${event.naturalHeatDifference}, ${label(event.naturalQuality)}), final Heat ${event.finalActualHeat} (difference ${event.finalHeatDifference}, ${label(event.finalQuality)}).`;
+      return `${ceramic(event.ceramicId)} ceramic firing recorded: Fire ${signed(event.fireModifier)}${(event.shifuHeatAdjustment ?? 0) === 0 ? "" : `, Shifu Heat ${signed(event.shifuHeatAdjustment!)}`}, natural Heat ${event.naturalActualHeat} (difference ${event.naturalHeatDifference}, ${label(event.naturalQuality)}), final Heat ${event.finalActualHeat} (difference ${event.finalHeatDifference}, ${label(event.finalQuality)}).`;
     case "ORDER_COMPLETED": {
       const definition = ORDER_DEFINITIONS[event.orderId];
       const reward = definition === undefined ? "" : ` +${definition.vp} VP${definition.coins > 0 ? ` and +${definition.coins} Coins` : ""}`;
@@ -169,8 +169,8 @@ function eventDescriptionZh(event: PublicGameEvent, game: PublicGameState): stri
     case "CERAMIC_GLAZED": return `${player(event.playerId)}为${ceramic(event.ceramicId)}施釉：${term("zh-CN", event.glaze)}、${term("zh-CN", event.decoration)}。`;
     case "CERAMIC_LOADED": return `${player(event.playerId)}将${ceramic(event.ceramicId)}放入${term("zh-CN", event.kilnSpaceId)}。`;
     case "KILN_YARD_SHIFU_MARKED": return `${player(event.playerId)}将窑坊师傅放在本次烧成所选的${ceramic(event.ceramicId)}陶瓷上。`;
-    case "KILN_YARD_SHIFU_REPOSITIONED": return `${player(event.playerId)}将师傅所在的${ceramic(event.ceramicId)}陶瓷从${term("zh-CN", event.fromSpaceId)}移至${term("zh-CN", event.toSpaceId)}。`;
-    case "KILN_YARD_SHIFU_REPOSITION_DECLINED": return `${player(event.playerId)}选择不移动师傅所在的${ceramic(event.ceramicId)}陶瓷。`;
+    case "KILN_YARD_SHIFU_ADJUSTED": return `${player(event.playerId)}将师傅替换为${ceramic(event.ceramicId)}陶瓷上的${signed(event.adjustment)}火候标记，无需支付柴。本次烧成仅调整其实际火候；陶瓷留在原位。`;
+    case "KILN_YARD_SHIFU_ADJUSTMENT_DECLINED": return `${player(event.playerId)}选择不调整师傅所在的${ceramic(event.ceramicId)}陶瓷的火候。`;
     case "ORDER_TAKEN": return `${player(event.playerId)}${event.acquisition === "colour_samples" ? "通过色样簿承接" : "承接"}了1张秘密主委托。`;
     case "COLOUR_SAMPLES_USED": return `${player(event.playerId)}使用色样簿，承接${event.selectedOrderId ?? "1张委托"}，并弃掉${event.discardedCount}张未承接的已查看委托。`;
     case "GUILD_DISCIPLINE_INSPECTED": return `${player(event.playerId)}查看了${DISCIPLINE_ZH[event.discipline]}牌堆顶${event.count}个技艺。`;
@@ -191,7 +191,7 @@ function eventDescriptionZh(event: PublicGameEvent, game: PublicGameState): stri
     case "QUALITY_ASSIGNED": return `${ceramic(event.ceramicId)}的品质判定为${term("zh-CN", event.quality)}。`;
     case "SECOND_FIRING_RESOLVED": return `${player(event.playerId)}对${ceramic(event.ceramicId)}结算复烧，额外窑火为${signed(event.fireModifier)}；替代后的品质为${term("zh-CN", event.quality)}。`;
     case "WORKSHOP_SECONDS_SOLD": return `${player(event.playerId)}弃掉1件仍为瑕品的${ceramic(event.ceramicId)}，获得${event.coins}铜钱。`;
-    case "FIRING_RESOLVED": return `${ceramic(event.ceramicId)}烧成记录：窑火${signed(event.fireModifier)}，自然实际火候${event.naturalActualHeat}（火候差${event.naturalHeatDifference}，${term("zh-CN", event.naturalQuality)}），最终实际火候${event.finalActualHeat}（火候差${event.finalHeatDifference}，${term("zh-CN", event.finalQuality)}）。`;
+    case "FIRING_RESOLVED": return `${ceramic(event.ceramicId)}烧成记录：窑火${signed(event.fireModifier)}${(event.shifuHeatAdjustment ?? 0) === 0 ? "" : `，师傅火候${signed(event.shifuHeatAdjustment!)}`}，自然实际火候${event.naturalActualHeat}（火候差${event.naturalHeatDifference}，${term("zh-CN", event.naturalQuality)}），最终实际火候${event.finalActualHeat}（火候差${event.finalHeatDifference}，${term("zh-CN", event.finalQuality)}）。`;
     case "ORDER_COMPLETED": {
       const definition = ORDER_DEFINITIONS[event.orderId];
       const reward = definition === undefined ? "" : ` +${definition.vp}分${definition.coins > 0 ? `、+${definition.coins}铜钱` : ""}`;

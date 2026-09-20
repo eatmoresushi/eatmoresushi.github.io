@@ -1,14 +1,16 @@
 # V1.2.7 adoption audit
 
-The owner requested adoption of both supplied V1.2.7 documents on 2026-09-19. This explicitly supersedes the V1.2.6 restrictions where V1.2.7 changes a rule, including Court Patronage. Their draft headings do not supersede the owner's request to implement them. The checked-in English rulebook now incorporates the owner's 2026-09-20 Starting Order, Tech and Shifu Glaze amendments below; the original component-text source remains an unmodified copy.
+The owner requested adoption of both supplied V1.2.7 documents on 2026-09-19. This explicitly supersedes the V1.2.6 restrictions where V1.2.7 changes a rule, including Court Patronage. Their draft headings do not supersede the owner's request to implement them. The checked-in English rulebook now incorporates the owner's 2026-09-20 Starting Order, Tech, Shifu Glaze and Shifu Heat-marker amendments below; the original component-text source remains an unmodified copy.
 
 - Original supplied `KILN_OPENING_v1.2.7_EN_SOURCE.md` — SHA-256 `a0ec9271fba9be3583623d003683865aa649fdb39b288566c503da2b5c887253`. Supplied as `KILN OPENING 开窑 v1.2.7 — Player Rulebook.md` on 2026-09-19; the external original is not modified.
-- Current checked-in `KILN_OPENING_v1.2.7_EN_SOURCE.md`, incorporating the eight-card Starting Order, optional-Tech and Shifu Glaze amendments — SHA-256 `a6a137d2d5216eb6848d145e2ceee6368c4e1aa7f3bbfd3597fd27007d603d4b`.
+- Current checked-in `KILN_OPENING_v1.2.7_EN_SOURCE.md`, incorporating the eight-card Starting Order, optional-Tech, Shifu Glaze and Shifu Heat-marker amendments — SHA-256 `28946ce4c53fbee0ea2f8136430a7f7c6539ba935c17f77784a6ea4263187c86`.
 - `KILN_OPENING_v1.2.7_COMPONENT_TEXT_SOURCE.md` — SHA-256 `8679fb6c70e8763ff98abfc95866faefc29513ce04222c95d5ea79d8bf7d6db1`
 
-- `KILN_OPENING_v1.2.7_TECH_SHORT_TEXT_SOURCE.md` — SHA-256 `40e55a475b535316dd5f78ab48b3c4e6057393474a41993351de78fe0af0a72b`
+- Original supplied `KILN_OPENING_v1.2.7_TECH_SHORT_TEXT_SOURCE.md` — SHA-256 `40e55a475b535316dd5f78ab48b3c4e6057393474a41993351de78fe0af0a72b`.
+- Current checked-in `KILN_OPENING_v1.2.7_TECH_SHORT_TEXT_SOURCE.md`, incorporating the Kiln Furniture reminder amendment — SHA-256 `f92fe630c41ebab1c759272e8412ea4a2c8cb94aa8d7c34c3ee1105353b21880`.
 
-- `KILN_OPENING_v1.2.7_TECH_DETAIL_TEXT_SOURCE.md` — SHA-256 `1534701f5701b5caf2a45c65857d16dd9bdf7fdb78858515a6415c76e6c9f291`
+- Original supplied `KILN_OPENING_v1.2.7_TECH_DETAIL_TEXT_SOURCE.md` — SHA-256 `1534701f5701b5caf2a45c65857d16dd9bdf7fdb78858515a6415c76e6c9f291`.
+- Current checked-in `KILN_OPENING_v1.2.7_TECH_DETAIL_TEXT_SOURCE.md`, incorporating the Kiln Furniture detail amendment and fixed Shifu Heat-marker clarification — SHA-256 `443610637c9dabc9e23b96b197a31d345ea7d86a0f8f90edba6ed93ca4165a3e`.
 
 ## Owner amendment: eight Starting Orders
 
@@ -29,11 +31,11 @@ Each Starting Order requires one ceramic and awards no Crowns. Setup still deals
 
 ## Owner amendment: Tech text and optional benefits
 
-On 2026-09-20, the owner supplied new reminders for all four Starting Techs and fifteen Advanced Techs, and a separate detailed appendix for clicked tiles. The short-text source is transcribed from that message; the detail-text source is a byte-identical copy of the pasted attachment. Tech faces and hover previews use the new reminders without acquisition/timing header duplicates or empty lines; the existing Once / round footer remains. Clicked Techs show their full effect, applicable clarifications, and the optional-use/cost rule.
+On 2026-09-20, the owner supplied new reminders for all four Starting Techs and fifteen Advanced Techs, and a separate detailed appendix for clicked tiles. The short-text source was transcribed from that message; the detail-text source was initially imported byte-identically from the pasted attachment. Their current versions incorporate the later Kiln Furniture amendment recorded below. Tech faces and hover previews use the new reminders without acquisition/timing header duplicates or empty lines; the existing Once / round footer remains. Clicked Techs show their full effect, applicable clarifications, and the optional-use/cost rule.
 
 The owner confirmed **Kiln Tending grants 1 Clay or 1 Wood**, superseding the pasted detail's both-resource wording. After loading at least one ceramic in a Kiln Yard action, the player chooses Clay, Wood or no use. All Tech abilities are optional unless explicitly required, and all stated costs must be paid. This includes declining Large Throwing Wheel's discount or Measuring Calipers/Standardised Moulds' income to preserve their use for later. Only opted-in income can fund immediate White Slip/Drying Frames costs. Colour Samples' immediate acquisition selection remains required; its once-per-round Commission Market effect is optional and separate.
 
-The current rulebook incorporates the optional-use rule and corrected Kiln Tending effect. The original component draft and pasted detail attachment remain unchanged as provenance, with this amendment taking priority over their conflicting text. The existing editorial correction assigning the Shifu discount sentence to Large Throwing Wheel also applies to the pasted details. Chinese copy uses established terminology and translates the amended effects.
+The current rulebook incorporates the optional-use rule and corrected Kiln Tending effect. The original component draft and external pasted detail attachment remain unchanged as provenance; the checked-in detail source now incorporates the later Kiln Furniture amendment. The confirmed Kiln Tending and optional-use amendments take priority over conflicting original text. The existing editorial correction assigning the Shifu discount sentence to Large Throwing Wheel also applies to the pasted details. Chinese copy uses established terminology and translates the amended effects.
 
 ## Owner amendment: Ge Kiln
 
@@ -65,6 +67,7 @@ Ge does not change recorded firing Quality. A Standard Crackle ceramic remains S
 - Ge treats its Standard-quality Crackle ceramics as Fine when completing Orders or scoring the Exhibition, under the owner amendment above. Once per round it may substitute one consistent Decoration for one Crackle ceramic for all requirements of a completed Order; actual Quality and Decoration are unchanged.
 - Kiln Tending optionally gains 1 Clay or 1 Wood under the owner amendment above. Large Throwing Wheel reduces the worker action's total Clay by 2, minimum zero, stacking with the Shifu discount; Ding's extra vessel still pays separately.
 - Glaze Palette changes only a ceramic immediately before loading through Kiln Yard, Rapid Drying or Imperial Priority. Colour Samples adds an immediate, separate reservation when acquired, without a Commission resource reward and without exhausting its round use.
+- Kiln Yard Shifu marks one owned Shared-Kiln ceramic during the Work action. After Base Heat and before Fire, its owner may replace the Shifu with a +1 or −1 Heat marker at no Wood cost. The ceramic stays in place; only its Actual Heat changes, and the chosen value persists through Second Firing. Kiln Furniture sets only its zone modifier to 0. Remove Shifu Heat markers after firing; Shifu remain used until Cleanup.
 - The current Order set is the eight Starting Orders above and 48 Main Orders. V1.2.7's Main Order changes remain: O11–O13 require Masterpiece / award 9 VP; O30 awards 12 VP; O32 requires Fine+ each with at least 1 Masterpiece and awards 13 VP; O36 awards 14 VP. Other Main Order attributes and rewards are unchanged.
 - Exhibition accepts any number of Standard-or-better undelivered ceramics. Each diversity bonus checks the entire Exhibition independently; no featured subset is selected.
 - Clay, Wood and Coins are unlimited. Physical component counts do not cap gains. Finite bank counters and empty-bank UI states are removed; playtest fields and persistence also accept resource totals above the physical component counts. Player costs and the 5-VP end-game Coin scoring cap still apply.
@@ -83,7 +86,7 @@ Prepared Clay's forming can trigger Measuring Calipers/Standardised Moulds becau
 
 All players' undelivered ceramics and their attributes remain public, including pieces in Imperial Kilns. This is independent of held Order privacy and is covered by multiplayer reconnect and workshop-inspection regressions.
 
-New games use rules version 1.2.7, schema 4 and behaviour revision 20. The Ge owner amendment advanced the behaviour revision to 17 because firing retains actual Quality; the eight-card Starting Order amendment advances it to 18 because S04–S08 change meaning and S09–S16 are removed. The optional-Tech amendment advances it to 19 for explicit forming-income choices and the single-resource Kiln Tending benefit. The Shifu Glaze amendment advances it to 20 because only a two-vessel action reduces the total Coin cost by 1, replacing the free Decoration. Older fingerprints and existing 1.2.6 games are refused rather than reinterpreted. New SQL migrations preserve historical rows and install current version gates. Database migration and Edge Function deployment are required before this branch can run against production.
+New games use rules version 1.2.7, schema 4 and behaviour revision 21. The Ge owner amendment advanced the behaviour revision to 17 because firing retains actual Quality; the eight-card Starting Order amendment advances it to 18 because S04–S08 change meaning and S09–S16 are removed. The optional-Tech amendment advances it to 19 for explicit forming-income choices and the single-resource Kiln Tending benefit. The Shifu Glaze amendment advances it to 20 because only a two-vessel action reduces the total Coin cost by 1, replacing the free Decoration. The Shifu Heat-marker amendment advances it to 21 because the marked ceramic stays in its space and gains a fixed optional Actual Heat adjustment instead of moving. Older fingerprints and existing 1.2.6 games are refused rather than reinterpreted. New SQL migrations preserve historical rows and install current version gates. Database migration and Edge Function deployment are required before this branch can run against production.
 
 
 ## Original adoption verification (2026-09-19)
@@ -159,3 +162,34 @@ All 573 tests pass, including both worker rows with no worker, an Apprentice or 
 ## Ding detailed reminder update (2026-09-20)
 
 The owner requested that Ding’s clicked detail contain only the two sentences describing its paid additional vessel and its exclusion from the normal vessel limit and Shifu two-vessel discount. The English detail now uses those sentences exactly, with the corresponding Chinese clarification. Its short hover/workshop reminder remains unchanged. The rulebook and Tech details retain the White Slip/Drying Frames eligibility clarification. This is a display-only wording change, with no gameplay or fingerprint change. The 54 focused compact/full copy, source/data and printed-number checks pass.
+
+## Owner amendment: Kiln Yard Shifu Heat markers (2026-09-20)
+
+The owner explicitly replaced the Kiln Yard Shifu action and firing-sequence step 5. This supersedes neighbouring-zone movement in all current gameplay guidance. The action wording is:
+
+> **Load up to 2.** Place your Shifu on **1 of your ceramics in the Shared Kiln**.
+> After Base Heat is determined, before Fire: you may replace your Shifu with a **+1 or −1 Heat marker** on that ceramic for this firing.
+
+The full firing-sequence wording is:
+
+> **Kiln Yard Shifu adjustment.** After Base Heat is determined, **before the Fire card is revealed**, resolve in **First Player order**. Each player whose Shifu is on one of their ceramics in the **Shared Kiln** may replace that Shifu with a **+1 or −1 Heat marker**, at **no Wood cost**. The ceramic remains in its space.
+>
+> The marker adjusts **only that ceramic’s Actual Heat**, in addition to its applicable zone modifier. It does not change Base Heat, Global Heat or any other ceramic. Its value is fixed for this firing. Players may decline to place a marker and leave their ceramic unadjusted.
+>
+> Set removed Shifu aside; they remain used until Cleanup. Remove all Shifu Heat markers after the firing is complete.
+
+The Work action still commits exactly one owned Shared-Kiln ceramic when one exists after loading. A Shifu that loads only into the Imperial Kiln while owning no Shared-Kiln ceramic has no target. The choice at firing is +1, −1 or decline and costs no Wood. A marker is additional to the applicable zone modifier and remains fixed during Second Firing. A prior Jun adjustment does not carry over to Second Firing; an unused Jun ability may still be used at its normal timing. At firing completion, remove the live marker while keeping the chosen adjustment in the public firing history. Shifu workers remain used until Cleanup.
+
+The owner also replaced Kiln Furniture's full text with:
+
+> Once per round, when loading 1 ceramic into a High or Low Shared Kiln space, you may place this tile beneath that ceramic. Its zone modifier is 0 for this firing.
+
+And its short reminder with:
+
+> When loading 1 of your ceramics into a High or Low Shared Kiln space: place this tile beneath it → its zone modifier is 0 for this firing.
+
+Kiln Furniture continues to zero only the zone modifier; a Shifu Heat marker still applies separately. The rulebook, current Tech detail and short sources, structured English/Chinese action and Tech text, operational guidance and AGENTS requirements incorporate these changes. The original component draft, external attachments and archived older-version sources remain unchanged. The prior checked-in English rulebook SHA-256 was `a6a137d2d5216eb6848d145e2ceee6368c4e1aa7f3bbfd3597fd27007d603d4b`; original and current hashes for the Tech sources are listed above.
+
+Behaviour revision 21 and `202609200004_v127_shifu_heat_markers.sql` distinguish these games from the earlier movement rule. Historical rows remain preserved; active room/write gates require the current fingerprint. The migration has not been applied to a database and nothing has been deployed.
+
+Verification: all 584 tests pass, including complete five-round 2/3/4-player games, target/timing and malformed-command rejection, First Player order, zero-Wood marker placement, decline, fixed Second Firing adjustments, Furniture stacking, used-worker cleanup, public reconnects and the revised SQL fingerprint gates. Production build, Edge Function type checks, handoff validation and diff checks pass. An isolated local browser check confirmed both Kiln Yard worker effects fit, a −1 marker replaces the committed Shifu without moving its ceramic, opponents' markers remain public, the Furniture/marker equation reads `2 + 0 − 1 = 1`, and live markers disappear after firing.

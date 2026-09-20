@@ -122,7 +122,7 @@ describe("Ge computer after-Quality decisions", () => {
     state.phase = { type: "firing_after_quality", queue: { actors: ["P1"], currentIndex: 0 }, techniqueIds: [technique], declinedTechniqueIds: {} };
     state.firingContext = {
       round: 1, contributors: ["P1"], contributions: { P1: "TEND" }, fuelLedgerUpgradedBy: [],
-      baseHeat: 2, fireModifier: 1, globalHeat: 3, kilnYardShifuRepositions: [],
+      baseHeat: 2, fireModifier: 1, globalHeat: 3, kilnYardShifuAdjustments: [],
       ceramicResults: { [ceramic.id]: {
         ceramicId: ceramic.id, zoneModifier: 0, naturalActualHeat: 3, naturalHeatDifference: 2,
         naturalExactMatch: false, finalActualHeat: 3, finalHeatDifference: 2, forcedQuality: null,

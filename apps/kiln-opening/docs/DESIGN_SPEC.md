@@ -65,7 +65,7 @@ A player may own at most 2 Advanced Techs. They modify actions and production bu
 
 The Shifu should be stronger than an Apprentice, but technical mastery should live in Kiln Traditions and Techniques.
 
-At the Kiln Yard, the Shifu may load up to two ceramics and, if the player has an owned Shared-Kiln ceramic after loading, is placed on exactly one of those ceramics. After Base Heat is known but before Fire is revealed, only that marked ceramic may move to an empty active space in a neighbouring heat zone. Imperial Priority is a separate once-per-game load into the owner's empty Imperial Kiln before or after a worker action.
+At the Kiln Yard, the Shifu may load up to two ceramics and, if the player has an owned Shared-Kiln ceramic after loading, is placed on exactly one of those ceramics. After Base Heat is known but before Fire is revealed, the player may replace that Shifu with a +1 or −1 Heat marker at no Wood cost. The ceramic remains in its space; the marker changes only its Actual Heat and stays fixed through the firing, including Second Firing. Remove Heat markers after firing; Shifu remain used until Cleanup. Imperial Priority is a separate once-per-game load into the owner's empty Imperial Kiln before or after a worker action.
 
 ### 6. Avoid mandatory transit resources
 

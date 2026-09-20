@@ -999,26 +999,25 @@ function commissionAdvanceResource(state: PublicGameState, player: PlayerState):
   return "wood";
 }
 
-function kilnYardReposition(state: PublicGameState, player: PlayerState, knownFire: number | null): GameAction {
+function kilnYardAdjustment(state: PublicGameState, player: PlayerState, knownFire: number | null): GameAction {
   const ceramicId = player.kilnYardShifuCeramicId;
   const ceramic = ceramicId === null ? undefined : state.ceramics[ceramicId];
-  if (ceramic === undefined || ceramic.stage !== "loaded" || ceramic.kilnSpaceId === "imperial" || ceramic.kilnFurnitureUsed === true) {
-    return { type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: null, toSpaceId: null };
+  if (ceramic === undefined || ceramic.ownerId !== player.id || ceramic.stage !== "loaded" || ceramic.kilnSpaceId === "imperial") {
+    return { type: "RESOLVE_KILN_YARD_ADJUSTMENT", ceramicId: null, adjustment: null };
   }
-  const currentModifier = zoneModifierOf(ceramic.kilnSpaceId);
+  const currentModifier = ceramic.kilnFurnitureUsed === true ? 0 : zoneModifierOf(ceramic.kilnSpaceId);
   const predictedGlobalHeat = (state.firingContext?.baseHeat ?? 2) + (knownFire ?? 0);
   const before = Math.abs(predictedGlobalHeat + currentModifier - preferredHeat(ceramic.glaze));
-  const destination = openSharedKilnSpaces(state)
-    .filter((spaceId) => Math.abs(zoneModifierOf(spaceId) - currentModifier) === 1)
-    .map((spaceId) => ({
-      spaceId,
-      difference: Math.abs(predictedGlobalHeat + zoneModifierOf(spaceId) - preferredHeat(ceramic.glaze)),
+  const adjustment = ([-1, 1] as const)
+    .map((delta) => ({
+      delta,
+      difference: Math.abs(predictedGlobalHeat + currentModifier + delta - preferredHeat(ceramic.glaze)),
     }))
     .filter(({ difference }) => difference < before)
-    .sort((left, right) => left.difference - right.difference || left.spaceId.localeCompare(right.spaceId))[0]?.spaceId;
-  return destination === undefined
-    ? { type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: null, toSpaceId: null }
-    : { type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId, toSpaceId: destination };
+    .sort((left, right) => left.difference - right.difference || left.delta - right.delta)[0]?.delta;
+  return adjustment === undefined
+    ? { type: "RESOLVE_KILN_YARD_ADJUSTMENT", ceramicId: null, adjustment: null }
+    : { type: "RESOLVE_KILN_YARD_ADJUSTMENT", ceramicId, adjustment };
 }
 
 function qualityAdjustmentAction(state: PublicGameState, player: PlayerState): GameAction {
@@ -1087,7 +1086,7 @@ function afterQualityAction(state: PublicGameState, player: PlayerState): GameAc
     const expectedRank = fireCards.reduce((sum, fire) => sum + QUALITY_RANK[
       qualityForOrderOrExhibition({
         ...ceramic,
-        quality: qualityFromDifference(Math.abs(baseHeat + fire + zone - preferredHeat(ceramic.glaze))),
+        quality: qualityFromDifference(Math.abs(baseHeat + fire + zone + (ceramic.shifuHeatAdjustment ?? 0) - preferredHeat(ceramic.glaze))),
       }, player.kilnId)
     ], 0) / fireCards.length;
     const currentRank = QUALITY_RANK[qualityForOrderOrExhibition({ ...ceramic, quality: assignedQuality }, player.kilnId)];
@@ -1216,8 +1215,8 @@ export async function chooseOnlineComputerAction(
       return { type: "RESOLVE_TEST_PIECES", use: player.resources.wood > 2 };
     case "firing_contributions":
       return chooseContribution(state, playerId, state.phase.windowId, ownPrivate.firePeek);
-    case "firing_reposition":
-      return kilnYardReposition(state, player, ownPrivate.firePeek);
+    case "firing_shifu_adjustment":
+      return kilnYardAdjustment(state, player, ownPrivate.firePeek);
     case "firing_reveal_fire":
       return { type: "REVEAL_FIRE_CARD" };
     case "firing_before_quality":

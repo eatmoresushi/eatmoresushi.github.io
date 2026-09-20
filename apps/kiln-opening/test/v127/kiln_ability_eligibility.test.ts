@@ -27,7 +27,7 @@ function revealFixture(baseHeat: BaseHeat = 2, playerCount: PlayerCount = 2) {
     baseHeat,
     fireModifier: null,
     globalHeat: null,
-    kilnYardShifuRepositions: [],
+    kilnYardShifuAdjustments: [],
     ceramicResults: {},
   } satisfies FiringContext;
   return { state, rng };

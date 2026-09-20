@@ -90,13 +90,13 @@ Firing is the most important digital interaction.
 4. UI shows only submission status, never card values, the extra commitment or derived heat;
 5. once all eligible players submit, the server atomically reveals and pays all Contributions, calculates Base Heat from 2, then clamps it to 0–5;
 6. during each Kiln Yard Shifu action, if the player has an owned ceramic in the Shared Kiln after loading, require the player to mark exactly one of those ceramics and show that association publicly;
-7. before revealing Fire, offer each player with a marked Kiln Yard Shifu target one reposition decision in First Player order. Only the ceramic marked during that Work-Phase action may move, and only to an empty active space in a neighbouring zone: High ↔ Middle ↔ Low. It never enters or leaves an Imperial Kiln, and Kiln Furniture travels with its ceramic;
+7. after Base Heat is determined and before revealing Fire, offer each player with a marked Kiln Yard Shifu target a +1 Heat marker, −1 Heat marker or decline in First Player order. Replacing the Shifu with a marker costs no Wood; the ceramic stays in its space. The removed Shifu remains used until Cleanup. Only that marked ceramic's Actual Heat changes, in addition to its applicable zone modifier; Base Heat, Global Heat and all other ceramics are unaffected;
 8. after all adjustments, prompt the First Player to reveal the Fire card (a ceremonial confirmation only); the server reshuffles the discard first if needed, draws the card, and calculates uncapped Global Heat;
-9. calculate each ceramic's Actual Heat and resolve Jun adjustments in the rulebook timing window;
+9. calculate each ceramic's Actual Heat using its applicable zone modifier and fixed Shifu Heat marker, if any, then resolve Jun adjustments in the rulebook timing window;
 10. assign Quality;
-11. in First Player order, resolve Protective Saggars, Second Firing and similar after-Quality choices; a player controlling multiple abilities at that timing chooses their order. Relevant unused once-per-round abilities may resolve at their normal timing inside a Second Firing recalculation;
+11. in First Player order, resolve Protective Saggars, Second Firing and similar after-Quality choices; a player controlling multiple abilities at that timing chooses their order. Relevant unused once-per-round abilities may resolve at their normal timing inside a Second Firing recalculation. The selected Shifu Heat marker keeps its value and applies again to that ceramic's recalculated Actual Heat;
 12. resolve the Flawed salvage: each player may discard at most one ceramic still Flawed from this firing for 2 Coins, returning its Vessel card to the matching Shape supply;
-13. move remaining ceramics to Finished areas, empty all kiln spaces, return Kiln Furniture tiles, discard used Fire cards and return Contribution cards.
+13. move remaining ceramics to Finished areas, empty all kiln spaces, remove all Shifu Heat markers, return Kiln Furniture tiles, discard used Fire cards and return Contribution cards. Shifu workers remain used until Cleanup.
 
 ## No timers in MVP
 

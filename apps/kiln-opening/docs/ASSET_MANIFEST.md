@@ -69,7 +69,7 @@ Generate four Starting Tech designs, with four physical copies each, and all 15 
 
 ### Reference
 
-Generate the five-phase round sequence, Contribution/Firing sequence, Work-Phase Shifu-to-ceramic marker and after-Base/before-Fire movement of only that marked ceramic, the 2-Coin Flawed salvage, Recognition 0–4 milestones and Crown overflow VP, unlimited Exhibition and whole-collection diversity bonuses from current structured data. All rules-bearing output must support matching English and Simplified Chinese text.
+Generate the five-phase round sequence, Contribution/Firing sequence, Work-Phase Shifu-to-ceramic marker and its optional replacement with a +1 or −1 Heat marker after Base Heat and before Fire, the 2-Coin Flawed salvage, Recognition 0–4 milestones and Crown overflow VP, unlimited Exhibition and whole-collection diversity bonuses from current structured data. A Shifu Heat marker changes only its ceramic's Actual Heat, costs no Wood and leaves the ceramic in place; remove it after firing. All rules-bearing output must support matching English and Simplified Chinese text.
 
 ## Authority
 

@@ -319,9 +319,9 @@ function openContributionPhase(state: GameState): void {
 
 /**
  * Players whose V1.2.7 Kiln Yard Shifu is still attached to its Work-Phase target.
- * The target is committed during the action; this window only moves or declines it.
+ * The target is committed during the action; this window sets or declines its Heat marker.
  */
-function kilnYardRepositionActors(state: GameState): PlayerId[] {
+function kilnYardAdjustmentActors(state: GameState): PlayerId[] {
   return turnOrderFromFirst(state).filter((playerId) => {
     const player = state.players[playerId];
     const target = player?.kilnYardShifuCeramicId === null || player?.kilnYardShifuCeramicId === undefined
@@ -1685,16 +1685,16 @@ function openFireReveal(state: GameState): void {
   state.phase = { type: "firing_reveal_fire", actorId: state.firstPlayerId };
 }
 
-function determineBaseHeatAndOpenReposition(
+function determineBaseHeatAndOpenShifuAdjustment(
   state: GameState,
   _events: GameEvent[],
 ): void {
   const context = state.firingContext;
   if (context === null) throw new Error("Base Heat requires firing context");
   context.baseHeat = provisionalBaseHeat(state);
-  const actors = kilnYardRepositionActors(state);
+  const actors = kilnYardAdjustmentActors(state);
   if (actors.length === 0) openFireReveal(state);
-  else state.phase = { type: "firing_reposition", queue: { actors, currentIndex: 0 } };
+  else state.phase = { type: "firing_shifu_adjustment", queue: { actors, currentIndex: 0 } };
 }
 
 export function submitWoodContribution(
@@ -1784,7 +1784,7 @@ export function submitWoodContribution(
       baseHeat: null,
       fireModifier: null,
       globalHeat: null,
-      kilnYardShifuRepositions: [],
+      kilnYardShifuAdjustments: [],
       ceramicResults: {},
     };
     events.push({
@@ -1801,86 +1801,63 @@ export function submitWoodContribution(
     nextPrivate.windowId = null;
     nextPrivate.contributions = {};
     nextPrivate.fuelLedgerCommittedBy = [];
-    determineBaseHeatAndOpenReposition(next, events);
+    determineBaseHeatAndOpenShifuAdjustment(next, events);
   }
   next.revision += 1;
   next.eventSequence += events.length;
   return { ok: true, state: next, privateState: nextPrivate, events };
 }
 
-function resolveKilnYardReposition(
+function resolveKilnYardAdjustment(
   state: GameState,
   actorId: PlayerId,
-  ceramicId: string | null,
-  toSpaceId: KilnSpaceId | null,
-  _rng: RandomSource,
+  ceramicId: CeramicId | null,
+  adjustment: -1 | 1 | null,
 ): ApplyResult {
-  const phase = requirePhase(state, "firing_reposition");
+  const phase = requirePhase(state, "firing_shifu_adjustment");
   if (isFailure(phase)) return phase;
   const actorError = actorFailure(state, actorId);
   if (actorError !== null) return actorError;
   const player = state.players[actorId];
   const markedCeramicId = player?.kilnYardShifuCeramicId ?? null;
-  if (markedCeramicId === null) {
+  const marked = markedCeramicId === null ? undefined : state.ceramics[markedCeramicId];
+  if (player?.kilnYardShifuUsedThisRound !== true || markedCeramicId === null) {
     return applyFailure(ruleError("INVALID_ACTION", "This Kiln Yard Shifu has no marked Shared-Kiln ceramic."));
   }
-  const isPass = ceramicId === null && toSpaceId === null;
-  if ((ceramicId === null) !== (toSpaceId === null)) {
-    return applyFailure(ruleError("INVALID_SELECTION", "Kiln Yard repositioning requires both a ceramic and destination."));
+  if (marked === undefined || marked.stage !== "loaded" || marked.ownerId !== actorId || marked.kilnSpaceId === "imperial") {
+    return applyFailure(ruleError("ILLEGAL_CERAMIC_STAGE", "The Shifu-marked Shared-Kiln ceramic is no longer eligible."));
   }
+  if (marked.shifuHeatAdjustment !== undefined) {
+    return applyFailure(ruleError("INVALID_ACTION", "This ceramic already has its fixed Shifu Heat marker for this firing."));
+  }
+  const context = state.firingContext;
+  if (context === null || context.baseHeat === null || context.fireModifier !== null) {
+    return applyFailure(ruleError("WRONG_PHASE", "Shifu Heat markers are chosen after Base Heat and before the Fire card is revealed."));
+  }
+  const isPass = ceramicId === null && adjustment === null;
   if (!isPass) {
-    const ceramic = ceramicId === null ? undefined : state.ceramics[ceramicId];
     if (ceramicId !== markedCeramicId) {
-      return applyFailure(ruleError("INVALID_SELECTION", "Only the ceramic marked by this Shifu during the Kiln Yard action may move."));
+      return applyFailure(ruleError("INVALID_SELECTION", "Only the ceramic marked by this Shifu during the Kiln Yard action may be adjusted."));
     }
-    if (ceramic === undefined || ceramic.stage !== "loaded" || ceramic.ownerId !== actorId || ceramic.kilnSpaceId === "imperial") {
-      return applyFailure(ruleError("ILLEGAL_CERAMIC_STAGE", "The Shifu-marked Shared-Kiln ceramic is no longer eligible."));
-    }
-    if (toSpaceId === null || !activeKilnSpaceIds(state.playerCount).includes(toSpaceId)) {
-      return applyFailure(ruleError("INVALID_SELECTION", "Choose an active kiln space."));
-    }
-    const zone = (spaceId: KilnSpaceId): "high" | "middle" | "low" =>
-      spaceId.startsWith("high_") ? "high" : spaceId.startsWith("middle_") ? "middle" : "low";
-    const fromZone = zone(ceramic.kilnSpaceId);
-    const toZone = zone(toSpaceId);
-    const neighboring = (fromZone === "high" && toZone === "middle")
-      || (fromZone === "middle" && (toZone === "high" || toZone === "low"))
-      || (fromZone === "low" && toZone === "middle");
-    if (!neighboring) {
-      return applyFailure(ruleError("INVALID_SELECTION", "The Shifu may move a ceramic only to a neighboring kiln zone."));
-    }
-    if (kilnOccupant(state, toSpaceId) !== null) {
-      return applyFailure(ruleError("KILN_SPACE_OCCUPIED", "The destination kiln space is occupied."));
+    if (adjustment !== -1 && adjustment !== 1) {
+      return applyFailure(ruleError("INVALID_SELECTION", "Choose a +1 or −1 Shifu Heat marker, or decline the adjustment."));
     }
   }
   const next = cloneState(state);
   const events: GameEvent[] = [];
   const nextPlayer = next.players[actorId];
-  const marked = next.ceramics[markedCeramicId];
-  if (nextPlayer === undefined || marked === undefined || marked.stage !== "loaded" || marked.kilnSpaceId === "imperial") {
+  const nextMarked = next.ceramics[markedCeramicId];
+  if (nextPlayer === undefined || nextMarked === undefined || nextMarked.stage !== "loaded" || next.firingContext === null) {
     throw new Error("Kiln Yard Shifu target invariant failed");
   }
-  const fromSpaceId = marked.kilnSpaceId;
-  if (!isPass && ceramicId !== null && toSpaceId !== null) {
-    const ceramic = next.ceramics[ceramicId];
-    if (ceramic === undefined || ceramic.stage !== "loaded") throw new Error("Kiln Yard reposition invariant failed");
-    ceramic.kilnSpaceId = toSpaceId;
-    next.firingContext?.kilnYardShifuRepositions.push({
-      playerId: actorId,
-      ceramicId,
-      fromSpaceId,
-      toSpaceId,
-    });
-    events.push({ type: "KILN_YARD_SHIFU_REPOSITIONED", playerId: actorId, ceramicId, fromSpaceId, toSpaceId });
+  if (!isPass && adjustment !== null) {
+    nextMarked.shifuHeatAdjustment = adjustment;
+    events.push({ type: "KILN_YARD_SHIFU_ADJUSTED", playerId: actorId, ceramicId: markedCeramicId, adjustment });
   } else {
-    next.firingContext?.kilnYardShifuRepositions.push({
-      playerId: actorId,
-      ceramicId: markedCeramicId,
-      fromSpaceId,
-      toSpaceId: null,
-    });
-    events.push({ type: "KILN_YARD_SHIFU_REPOSITION_DECLINED", playerId: actorId, ceramicId: markedCeramicId });
+    events.push({ type: "KILN_YARD_SHIFU_ADJUSTMENT_DECLINED", playerId: actorId, ceramicId: markedCeramicId });
   }
+  next.firingContext.kilnYardShifuAdjustments.push({ playerId: actorId, ceramicId: markedCeramicId, adjustment });
+  // The detached Shifu remains placed/used until Cleanup; it cannot take another action.
   nextPlayer.kilnYardShifuCeramicId = null;
   advanceQueuedWindow(next, () => openFireReveal(next));
   return success(next, events);
@@ -1934,13 +1911,15 @@ function calculateActualHeatAndOpenQualityWindow(state: GameState, events: GameE
     const zoneModifier = ceramic.kilnSpaceId === "imperial" || ceramic.kilnFurnitureUsed === true
       ? 0
       : kilnZoneModifier(ceramic.kilnSpaceId);
-    const naturalActualHeat = context.globalHeat + zoneModifier;
+    const shifuHeatAdjustment = ceramic.shifuHeatAdjustment ?? 0;
+    const naturalActualHeat = context.globalHeat + zoneModifier + shifuHeatAdjustment;
     const naturalDifference = Math.abs(naturalActualHeat - preferredHeat(ceramic.glaze));
     const actualHeat = naturalActualHeat;
     const difference = Math.abs(actualHeat - preferredHeat(ceramic.glaze));
     context.ceramicResults[ceramic.id] = {
       ceramicId: ceramic.id,
       zoneModifier,
+      shifuHeatAdjustment,
       naturalActualHeat,
       naturalHeatDifference: naturalDifference,
       naturalExactMatch: naturalDifference === 0,
@@ -2210,7 +2189,7 @@ function resolveSecondFiring(
     const extraFire = next.fireDeck.shift();
     const result = nextContext.ceramicResults[ceramicId];
     if (extraFire === undefined || result === undefined || nextContext.baseHeat === null) throw new Error("Second Firing card/result disappeared");
-    const actualHeat = nextContext.baseHeat + extraFire + result.zoneModifier;
+    const actualHeat = nextContext.baseHeat + extraFire + result.zoneModifier + (result.shifuHeatAdjustment ?? 0);
     result.finalActualHeat = actualHeat;
     result.finalHeatDifference = Math.abs(actualHeat - preferredHeat(ceramic.glaze));
     result.assignedQuality = null;
@@ -2334,6 +2313,7 @@ function finalizeFiring(state: GameState, events: GameEvent[]): void {
       ceramicId: result.ceramicId,
       fireModifier: context.fireModifier,
       zoneModifier: result.zoneModifier,
+      shifuHeatAdjustment: result.shifuHeatAdjustment ?? 0,
       naturalActualHeat: result.naturalActualHeat,
       naturalHeatDifference: result.naturalHeatDifference,
       naturalQuality: qualityFromDifference(result.naturalHeatDifference),
@@ -2358,7 +2338,7 @@ function finalizeFiring(state: GameState, events: GameEvent[]): void {
     baseHeat: context.baseHeat,
     fireModifier: context.fireModifier,
     globalHeat: context.globalHeat,
-    kilnYardShifuRepositions: context.kilnYardShifuRepositions.map((entry) => ({ ...entry })),
+    kilnYardShifuAdjustments: context.kilnYardShifuAdjustments.map((entry) => ({ ...entry })),
     ceramicResults: Object.fromEntries(
       Object.entries(context.ceramicResults).map(([ceramicId, result]) => [ceramicId, { ...result }]),
     ),
@@ -2929,8 +2909,8 @@ export function applyAction(
       return buyGuildTechnique(state, actorId, action.techniqueId, rng);
     case "RESOLVE_IMPERIAL_PRIORITY":
       return resolveImperialPriority(state, actorId, action.ceramicId, action.glazePalette);
-    case "RESOLVE_KILN_YARD_REPOSITION":
-      return resolveKilnYardReposition(state, actorId, action.ceramicId, action.toSpaceId, rng);
+    case "RESOLVE_KILN_YARD_ADJUSTMENT":
+      return resolveKilnYardAdjustment(state, actorId, action.ceramicId, action.adjustment);
     case "REVEAL_FIRE_CARD":
       return revealFireCard(state, actorId, rng);
     case "RESOLVE_JUN":
@@ -2966,6 +2946,6 @@ export function makeFinishedCeramic(
   if (ceramic.stage !== "loaded") {
     throw new Error("Only a Loaded ceramic can become Finished");
   }
-  const { kilnSpaceId: _kilnSpaceId, kilnFurnitureUsed: _kilnFurnitureUsed, ...rest } = ceramic;
+  const { kilnSpaceId: _kilnSpaceId, kilnFurnitureUsed: _kilnFurnitureUsed, shifuHeatAdjustment: _shifuHeatAdjustment, ...rest } = ceramic;
   return { ...rest, stage: "finished", quality, firedInRound: round };
 }

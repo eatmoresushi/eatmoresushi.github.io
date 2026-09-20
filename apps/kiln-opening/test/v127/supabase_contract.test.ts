@@ -5,6 +5,7 @@ import orderQueueMigration from "../../supabase/migrations/202609190001_v127_rul
 import eightStartingOrdersMigration from "../../supabase/migrations/202609200001_v127_eight_starting_orders.sql?raw";
 import optionalTechsMigration from "../../supabase/migrations/202609200002_v127_optional_techs.sql?raw";
 import shifuGlazeMigration from "../../supabase/migrations/202609200003_v127_shifu_glaze_discount.sql?raw";
+import shifuHeatMigration from "../../supabase/migrations/202609200004_v127_shifu_heat_markers.sql?raw";
 import supabaseStore from "../../supabase/functions/_shared/supabaseStore.ts?raw";
 
 describe("V1.2.7 Supabase contract", () => {
@@ -84,5 +85,17 @@ describe("V1.2.7 Supabase contract", () => {
     expect(shifuGlazeMigration).toContain("if position('^r19-' in v_definition) = 0 then");
     expect(shifuGlazeMigration).toContain("execute replace(v_definition, '^r19-', '^r20-')");
     expect(shifuGlazeMigration).not.toMatch(/\bupdate\s+(?:public\.|private\.)/i);
+  });
+
+  it("requires the heat-marker rules for writes while retaining historical movement-rule rooms", () => {
+    expect(shifuHeatMigration).toContain("'^r(17|18|19|20|21)-[0-9a-f]{16}$'");
+    const replacedFunctions = [...shifuHeatMigration.matchAll(/'public\.(server_\w+)\([^']+\)'::regprocedure/g)]
+      .map((match) => match[1]);
+    expect(replacedFunctions).toEqual([
+      "server_add_computer_seat", "server_create_room", "server_commit_start", "server_commit_transition",
+    ]);
+    expect(shifuHeatMigration).toContain("if position('^r20-' in v_definition) = 0 then");
+    expect(shifuHeatMigration).toContain("execute replace(v_definition, '^r20-', '^r21-')");
+    expect(shifuHeatMigration).not.toMatch(/\bupdate\s+(?:public\.|private\.)/i);
   });
 });
