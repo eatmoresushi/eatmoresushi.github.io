@@ -489,7 +489,6 @@ export type GameAction =
       type: "GLAZE_CERAMICS";
       workerId: WorkerId;
       selections: GlazeSelection[];
-      freeDecorationCeramicId?: CeramicId;
       useTechniqueIds?: TechniqueId[];
       glazePalette?: { ceramicId: CeramicId; glaze: Glaze };
       rapidDrying?: KilnLoadSelection;

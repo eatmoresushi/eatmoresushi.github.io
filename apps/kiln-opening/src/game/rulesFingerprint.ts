@@ -80,8 +80,10 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  *        fingerprint so remapped Order IDs are never reinterpreted mid-game.
  *  19 -- Owner amendment: ST04 may gain 1 Clay or 1 Wood. The Coin rewards from
  *        T02 and T03 are optional, and declining preserves their once-per-round use.
+ *  20 -- Owner amendment: a Glaze & Decoration Shifu reduces the total Coin cost
+ *        by 1 only when glazing two vessels, replacing the one-free-Decoration rule.
  */
-export const RULES_BEHAVIOUR_REVISION = 19;
+export const RULES_BEHAVIOUR_REVISION = 20;
 
 /**
  * Display-only keys, excluded so that a typo fix or a translation improvement does not

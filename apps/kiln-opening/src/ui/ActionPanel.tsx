@@ -664,9 +664,9 @@ function GlazeForm({ game, player, workers, locationFull, busy, send }: {
   const { locale, t, term } = useI18n();
   const ceramics = ownCeramics(game, player.id, "shaped");
   const techniques = ownedAvailableTechniques(player, ["T05", "T07", "T08", "T09"]);
-  const apprenticeHasFreeDecoration = techniques.some((techniqueId) => techniqueId === "T07" || techniqueId === "T08" || techniqueId === "T09");
-  const canWorkerGlaze = (worker: AvailableWorker): boolean => ceramics.length > 0
-    && (worker.kind === "shifu" || player.resources.coins >= Math.min(...DECORATIONS.map((decoration) => DECORATION_COSTS[decoration])) || apprenticeHasFreeDecoration);
+  const hasDecorationWaiver = techniques.some((techniqueId) => techniqueId === "T07" || techniqueId === "T08" || techniqueId === "T09");
+  const canWorkerGlaze = (): boolean => ceramics.length > 0
+    && (player.resources.coins >= Math.min(...DECORATIONS.map((decoration) => DECORATION_COSTS[decoration])) || hasDecorationWaiver);
   const [workerId, setWorkerId] = useState(firstLegalWorkerId(workers, locationFull, canWorkerGlaze));
   const [ceramic1, setCeramic1] = useState(ceramics[0]?.id ?? "");
   const [glaze1, setGlaze1] = useState<Glaze>(GLAZES[0]!);
@@ -674,7 +674,6 @@ function GlazeForm({ game, player, workers, locationFull, busy, send }: {
   const [ceramic2, setCeramic2] = useState("");
   const [glaze2, setGlaze2] = useState<Glaze>(GLAZES[0]!);
   const [decoration2, setDecoration2] = useState<Decoration>(DECORATIONS[0]!);
-  const [freeDecorationIndex, setFreeDecorationIndex] = useState<"0" | "1">("0");
   const [selectedTechniques, setSelectedTechniques] = useState<TechniqueId[]>([]);
   const [reworkedShape, setReworkedShape] = useState<Shape | "">("");
   const [loadingGlaze, setLoadingGlaze] = useState("");
@@ -689,22 +688,21 @@ function GlazeForm({ game, player, workers, locationFull, busy, send }: {
     ...(firstId === "" ? [] : [{ ceramicId: firstId, glaze: glaze1, decoration: decoration1, ...(activeTechniqueIds.includes("T05") && reworkedShape !== "" ? { newShape: reworkedShape } : {}) }]),
     ...(secondId === "" ? [] : [{ ceramicId: secondId, glaze: glaze2, decoration: decoration2 }]),
   ];
-  const freeDecorationCeramicId = selectedWorker?.kind === "shifu" ? selections[Number(freeDecorationIndex)]?.ceramicId : undefined;
   const occupiedShared = new Set(Object.values(game.ceramics).filter((ceramic) => ceramic.stage === "loaded" && ceramic.kilnSpaceId !== "imperial").map((ceramic) => ceramic.stage === "loaded" ? ceramic.kilnSpaceId : ""));
   const rapidDestinations: Array<KilnSpaceId | "imperial"> = activeKilnSpaceIds(game.playerCount).filter((space) => !occupiedShared.has(space));
   const imperialOccupied = Object.values(game.ceramics).some((ceramic) => ceramic.stage === "loaded" && ceramic.ownerId === player.id && ceramic.kilnSpaceId === "imperial");
   if (player.imperialKilnUnlocked && !imperialOccupied) rapidDestinations.push("imperial");
   const [rapidDestination, setRapidDestination] = useState<KilnSpaceId | "imperial" | "">(rapidDestinations[0] ?? "");
-  function decorationCost(candidateSelections: typeof selections, shifuFreeId = freeDecorationCeramicId): number {
+  function decorationCost(candidateSelections: typeof selections): number {
     const availableWaivers = new Set<Decoration>();
     if (activeTechniqueIds.includes("T07")) availableWaivers.add("carved");
     if (activeTechniqueIds.includes("T08")) availableWaivers.add("impressed");
     if (activeTechniqueIds.includes("T09")) availableWaivers.add("crackle");
-    return candidateSelections.reduce((total, selection) => {
-      if (selection.ceramicId === shifuFreeId) return total;
+    const subtotal = candidateSelections.reduce((total, selection) => {
       if (availableWaivers.delete(selection.decoration)) return total;
       return total + DECORATION_COSTS[selection.decoration];
     }, 0);
+    return Math.max(0, subtotal - (selectedWorker?.kind === "shifu" && candidateSelections.length === 2 ? 1 : 0));
   }
   const totalCoins = decorationCost(selections);
 
@@ -712,7 +710,6 @@ function GlazeForm({ game, player, workers, locationFull, busy, send }: {
     setWorkerId(nextWorkerId);
     if (workers.find((worker) => worker.id === nextWorkerId)?.kind !== "shifu") {
       setCeramic2("");
-      setFreeDecorationIndex("0");
     }
   }
 
@@ -728,7 +725,7 @@ function GlazeForm({ game, player, workers, locationFull, busy, send }: {
         label: term(decoration),
         detail: `${DECORATION_COSTS[decoration]} ${locale === "zh-CN" ? "铜钱" : `Coin${DECORATION_COSTS[decoration] === 1 ? "" : "s"}`}`,
         disabled,
-        disabledReason: disabled ? (locale === "zh-CN" ? `当前组合需要${cost}铜钱` : `Current combination requires ${cost} Coins`) : undefined,
+        disabledReason: disabled ? (locale === "zh-CN" ? `当前组合需要${cost}铜钱` : `Current combination requires ${cost} Coin${cost === 1 ? "" : "s"}`) : undefined,
       };
     });
   }
@@ -759,28 +756,27 @@ function GlazeForm({ game, player, workers, locationFull, busy, send }: {
       type: "GLAZE_CERAMICS",
       workerId: selectedWorker.id,
       selections,
-      ...(freeDecorationCeramicId === undefined ? {} : { freeDecorationCeramicId }),
       useTechniqueIds: activeTechniqueIds,
       ...(rapidDryingId !== "" && rapidDestination !== "" ? { rapidDrying: { ceramicId: rapidDryingId, kilnSpaceId: rapidDestination, ...(loadingGlaze === "" ? {} : { glazePalette: loadingGlaze as Glaze }), ...(rapidFurniture && /^(high|low)_/.test(rapidDestination) ? { useKilnFurniture: true } : {}) } } : {}),
     });
   }
   if (ceramics.length === 0) return <ActionUnavailable message="You have no Shaped vessel to glaze." />;
-  if (!workers.some((worker) => (!locationFull || worker.kind === "shifu") && canWorkerGlaze(worker))) {
+  if (!workers.some((worker) => (!locationFull || worker.kind === "shifu") && canWorkerGlaze())) {
     return <ActionUnavailable message="You do not have enough Coins to apply a Decoration." />;
   }
   return (
     <form className="control-form control-form-glaze" onSubmit={submit}>
-      <WorkerChoice player={player} workers={workers} value={selectedWorker?.id ?? ""} onChange={chooseWorker} locationFull={locationFull} disabledReason={(worker) => {
+      <WorkerChoice player={player} workers={workers} value={selectedWorker?.id ?? ""} onChange={chooseWorker} locationFull={locationFull} disabledReason={() => {
         if (ceramics.length === 0) return locale === "zh-CN" ? "没有已成型器物" : "No Shaped vessels available";
-        if (!canWorkerGlaze(worker)) return locale === "zh-CN" ? "没有买得起的纹饰；师傅可免费施加1个纹饰" : "No affordable Decoration; a Shifu can apply one for free";
+        if (!canWorkerGlaze()) return locale === "zh-CN" ? "没有买得起的纹饰" : "No affordable Decoration";
         return null;
       }} />
       <CeramicChoice name="ceramic1" label="First ceramic" ceramics={ceramics} value={firstId} onChange={setCeramic1} />
       <EnumChoice name="glaze1" label="First glaze" options={GLAZES} value={glaze1} onChange={(value) => setGlaze1(value as Glaze)} />
       <ChoiceTiles compact name="decoration1" label="First decoration" options={decorationOptions(0)} value={decoration1} onChange={(value) => setDecoration1(value as Decoration)} />
-      {selectedWorker?.kind === "shifu" && <CeramicChoice name="ceramic2" label="Second ceramic (Shifu only)" ceramics={ceramics} value={secondId} onChange={(value) => { setCeramic2(value); if (value === "") setFreeDecorationIndex("0"); }} blank="None" disabledIds={firstId === "" ? [] : [firstId]} />}
+      {selectedWorker?.kind === "shifu" && <CeramicChoice name="ceramic2" label="Second ceramic (Shifu only)" ceramics={ceramics} value={secondId} onChange={setCeramic2} blank="None" disabledIds={firstId === "" ? [] : [firstId]} />}
       {selectedWorker?.kind === "shifu" && secondId !== "" && <><EnumChoice name="glaze2" label="Second glaze" options={GLAZES} value={glaze2} onChange={(value) => setGlaze2(value as Glaze)} /><ChoiceTiles compact name="decoration2" label="Second decoration" options={decorationOptions(1)} value={decoration2} onChange={(value) => setDecoration2(value as Decoration)} /></>}
-      {selectedWorker?.kind === "shifu" && <ChoiceTiles compact name="shifu-free-decoration" label={locale === "zh-CN" ? "师傅：免费纹饰" : "Shifu: free Decoration"} value={freeDecorationIndex} onChange={(value) => setFreeDecorationIndex(value as "0" | "1")} options={selections.map((selection, index) => ({ value: String(index), label: `${index + 1} · ${ceramicLabel(game.ceramics[selection.ceramicId]!, locale)}`, detail: locale === "zh-CN" ? "本件纹饰费用为0" : "This Decoration costs 0" }))} />}
+      {selectedWorker?.kind === "shifu" && <p className="control-hint">{locale === "zh-CN" ? "师傅：若施釉2件器物，总铜钱费用减少1（最低为0）。" : "Shifu: if you glaze 2 vessels, reduce their total Coin cost by 1 (minimum 0)."}</p>}
       <TechniqueChecks techniqueIds={techniques} selected={activeTechniqueIds} onChange={setSelectedTechniques} />
       {activeTechniqueIds.includes("T05") && <ChoiceTiles compact name="reworked-shape" label={locale === "zh-CN" ? "改坯案：新器型" : "Reworking Table: new Shape"} value={reworkedShape} onChange={(value) => setReworkedShape(value as Shape)} options={SHAPES.filter((shape) => shape !== firstCeramic?.shape).map((shape) => ({ value: shape, label: term(shape) }))} />}
       {rapidDryingId !== "" && <><LoadingPaletteChoice player={player} value={loadingGlaze} onChange={setLoadingGlaze} />{player.techniques.some((tech) => tech.id === "T15" && !tech.exhausted) && /^(high|low)_/.test(rapidDestination) && <label><input type="checkbox" checked={rapidFurniture} onChange={(event) => setRapidFurniture(event.target.checked)} />{locale === "zh-CN" ? "使用支烧窑具" : "Use Kiln Furniture"}</label>}</>}
@@ -793,7 +789,7 @@ function GlazeForm({ game, player, workers, locationFull, busy, send }: {
         }),
       ]} />{rapidDryingId !== "" && <EnumChoice name="rapid-destination" label="Rapid Drying destination" options={rapidDestinations} value={rapidDestination} onChange={(value) => setRapidDestination(value as KilnSpaceId | "imperial")} />}</>}
       <div className="control-submit-bar">
-        <small role="status" className={error === null ? "" : "control-error"}>{error === null ? (locale === "zh-CN" ? `费用：${totalCoins}铜钱。` : `Cost: ${totalCoins} Coins.`) : localizeActionError(locale, error)}</small>
+        <small role="status" className={error === null ? "" : "control-error"}>{error === null ? (locale === "zh-CN" ? `费用：${totalCoins}铜钱。` : `Cost: ${totalCoins} Coin${totalCoins === 1 ? "" : "s"}.`) : localizeActionError(locale, error)}</small>
         <button className="primary-button" disabled={busy || error !== null}>{t("Apply glaze")}</button>
       </div>
     </form>
@@ -1985,7 +1981,6 @@ function localizeActionError(locale: Locale, error: string): string {
     "White Slip and Drying Frames must select different vessels.": "白陶衣和晾坯架必须选择不同器物。",
     "Reworking Table must change the first vessel to a different Shape.": "改坯案必须将第一件器物改为不同器型。",
     "Glaze Palette must choose one other Glazed ceramic.": "釉色板必须选择作坊中另一件未装窑的已施釉陶瓷。",
-    "Only the Shifu may ignore a Decoration cost.": "只有师傅可以忽略纹饰费用。",
     "Choose each ceramic only once.": "每件陶瓷只能选择一次。",
     "Carving Knives requires a paid Carved Decoration.": "刻花刀需要1次需付费的刻花纹饰。",
     "Seal Stamps requires a paid Impressed Decoration.": "印花范需要1次需付费的印花纹饰。",

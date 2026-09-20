@@ -76,7 +76,7 @@ English and Simplified Chinese UI text are presentation layers over identical st
 
 ## Saved-game compatibility
 
-V1.2.7 changes setup, hidden hands, Ge, Tech effects, the Main display, Court Patronage and Exhibition. New rooms use schema 4 and the V1.2.7 rules fingerprint (behaviour revision 19, including the owner's Ge, eight-card Starting Order and optional-Tech amendments). The Starting Order amendment changes the meanings of S04–S08 and removes S09–S16; revision 19 makes forming income optional and Kiln Tending a single-resource choice. The live service rejects started rooms, snapshots and commands with an older rules version, schema or fingerprint rather than reinterpreting their rules.
+V1.2.7 changes setup, hidden hands, Ge, Tech effects, the Main display, Court Patronage and Exhibition. New rooms use schema 4 and the V1.2.7 rules fingerprint (behaviour revision 20, including the owner's Ge, eight-card Starting Order, optional-Tech and Shifu Glaze amendments). The Starting Order amendment changes the meanings of S04–S08 and removes S09–S16; revision 19 makes forming income optional and Kiln Tending a single-resource choice. Revision 20 replaces the Shifu's free Decoration with a total 1-Coin discount only when glazing two vessels; optional Decoration waivers apply first, and the total cost cannot fall below zero. The live service rejects started rooms, snapshots and commands with an older rules version, schema or fingerprint rather than reinterpreting their rules.
 
 ## V1.2.7 details
 

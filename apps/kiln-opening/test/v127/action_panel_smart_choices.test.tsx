@@ -186,7 +186,8 @@ describe("V1.2.7 smart worker-action choices", () => {
     expect(apprenticeGlazing).not.toContain('data-choice-group="ceramic2"');
     expect(apprenticeGlazing).not.toContain('data-choice-group="shifu-free-decoration"');
     expect(shifuGlazing).toContain('data-choice-group="ceramic2"');
-    expect(shifuGlazing).toContain('data-choice-group="shifu-free-decoration"');
+    expect(shifuGlazing).not.toContain('data-choice-group="shifu-free-decoration"');
+    expect(shifuGlazing).toContain("Shifu: if you glaze 2 vessels, reduce their total Coin cost by 1 (minimum 0).");
 
     const kilnSetup = (state: GameState): void => {
       addLoaded(state, "P1", "washer", "grey_green", "plain", "high_1");
@@ -260,19 +261,33 @@ describe("V1.2.7 smart worker-action choices", () => {
     expectUnavailable(markup, "You have no Shaped vessel to glaze.");
   });
 
-  it("keeps the Glaze Shifu legal when no Apprentice can afford a Decoration", () => {
-    const { markup, state } = renderAction("glaze_workshop", "apprentice", (draft) => {
+  it("makes Glaze unavailable when neither worker kind can afford a Decoration", () => {
+    const { markup } = renderAction("glaze_workshop", "shifu", (draft) => {
       draft.players["P1"]!.resources.coins = 0;
       draft.players["P1"]!.techniques = [];
     });
-    const shifuId = workerId(state, "P1", "shifu");
+    expectUnavailable(markup, "You do not have enough Coins to apply a Decoration.");
+  });
 
-    expect(buttonWithAttribute(markup, "data-worker-choice", shifuId)).not.toContain("disabled");
-    for (const id of availableWorkerIds(state, "apprentice")) {
-      const button = buttonWithAttribute(markup, "data-worker-choice", id);
-      expect(button).toContain('disabled=""');
-      expect(button).toContain("No affordable Decoration; a Shifu can apply one for free");
+  it.each([1, 2])("charges normal Shifu single-vessel Decoration costs with exactly %i Coins", (coins) => {
+    const { markup } = renderAction("glaze_workshop", "shifu", (draft) => {
+      draft.players["P1"]!.resources.coins = coins;
+      draft.players["P1"]!.techniques = [];
+    });
+    const choices = markup.match(/<fieldset[^>]*data-choice-group="decoration1"[\s\S]*?<\/fieldset>/)?.[0] ?? "";
+    expect(markup).toContain("Cost: 1 Coin.");
+    expect(buttonWithAttribute(choices, "data-choice-value", "plain")).not.toContain("disabled");
+    for (const decoration of ["carved", "impressed", "crackle"]) {
+      const button = buttonWithAttribute(choices, "data-choice-value", decoration);
+      expect(button).not.toBe("");
+      if (coins === 1) {
+        expect(button).toContain('disabled=""');
+        expect(button).toContain('Current combination requires 2 Coins"');
+      } else {
+        expect(button).not.toContain("disabled");
+      }
     }
+    expect(markup).not.toContain("Shifu: free Decoration");
   });
 
   it("applies the Guild Shifu discount when the printed cost is unaffordable to Apprentices", () => {
@@ -383,6 +398,17 @@ describe("V1.2.7 smart worker-action choices", () => {
 
     expect(markup).toContain("<form");
     expect(buttonWithAttribute(markup, "data-worker-choice", selectedWorkerId)).not.toContain("disabled");
+  });
+
+  it.each(["T07", "T08", "T09"] as const)("keeps zero-Coin Shifu glazing usable with %s", (techniqueId) => {
+    const { markup, selectedWorkerId } = renderAction("glaze_workshop", "shifu", (draft) => {
+      draft.players["P1"]!.resources.coins = 0;
+      draft.players["P1"]!.techniques = [{ id: techniqueId, exhausted: false }];
+    });
+
+    expect(markup).toContain("<form");
+    expect(buttonWithAttribute(markup, "data-worker-choice", selectedWorkerId)).not.toContain("disabled");
+    expect(markup).toContain('data-choice-group="ceramic2"');
   });
 
   it.each([false, true])("hides Kiln controls when Shared Kiln is full and own Imperial is occupied %s", (unlocked) => {

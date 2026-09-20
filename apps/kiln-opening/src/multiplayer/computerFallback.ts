@@ -64,12 +64,11 @@ export function fallbackComputerCommands(
         const shaped = Object.values(game.ceramics).find(
           (ceramic) => ceramic.ownerId === playerId && ceramic.stage === "shaped",
         );
-        if (shaped !== undefined && (worker.kind === "shifu" || player.resources.coins >= DECORATION_COSTS.plain)) {
+        if (shaped !== undefined && player.resources.coins >= DECORATION_COSTS.plain) {
           commands.push({
             type: "GLAZE_CERAMICS",
             workerId: worker.id,
             selections: [{ ceramicId: shaped.id, glaze: "celadon", decoration: "plain" }],
-            ...(worker.kind === "shifu" ? { freeDecorationCeramicId: shaped.id } : {}),
           });
         }
         const glazed = Object.values(game.ceramics).find(

@@ -1,9 +1,9 @@
 # V1.2.7 adoption audit
 
-The owner requested adoption of both supplied V1.2.7 documents on 2026-09-19. This explicitly supersedes the V1.2.6 restrictions where V1.2.7 changes a rule, including Court Patronage. Their draft headings do not supersede the owner's request to implement them. The checked-in English rulebook now incorporates the owner's 2026-09-20 Starting Order and Tech amendments below; the original component-text source remains an unmodified copy.
+The owner requested adoption of both supplied V1.2.7 documents on 2026-09-19. This explicitly supersedes the V1.2.6 restrictions where V1.2.7 changes a rule, including Court Patronage. Their draft headings do not supersede the owner's request to implement them. The checked-in English rulebook now incorporates the owner's 2026-09-20 Starting Order, Tech and Shifu Glaze amendments below; the original component-text source remains an unmodified copy.
 
 - Original supplied `KILN_OPENING_v1.2.7_EN_SOURCE.md` — SHA-256 `a0ec9271fba9be3583623d003683865aa649fdb39b288566c503da2b5c887253`. Supplied as `KILN OPENING 开窑 v1.2.7 — Player Rulebook.md` on 2026-09-19; the external original is not modified.
-- Current checked-in `KILN_OPENING_v1.2.7_EN_SOURCE.md`, incorporating the eight-card Starting Order and optional-Tech amendments — SHA-256 `2c4799479b99a809a180b5bbf0e47986755e99833c7dfc076fa261235c52b491`.
+- Current checked-in `KILN_OPENING_v1.2.7_EN_SOURCE.md`, incorporating the eight-card Starting Order, optional-Tech and Shifu Glaze amendments — SHA-256 `a6a137d2d5216eb6848d145e2ceee6368c4e1aa7f3bbfd3597fd27007d603d4b`.
 - `KILN_OPENING_v1.2.7_COMPONENT_TEXT_SOURCE.md` — SHA-256 `8679fb6c70e8763ff98abfc95866faefc29513ce04222c95d5ea79d8bf7d6db1`
 
 - `KILN_OPENING_v1.2.7_TECH_SHORT_TEXT_SOURCE.md` — SHA-256 `40e55a475b535316dd5f78ab48b3c4e6057393474a41993351de78fe0af0a72b`
@@ -83,7 +83,7 @@ Prepared Clay's forming can trigger Measuring Calipers/Standardised Moulds becau
 
 All players' undelivered ceramics and their attributes remain public, including pieces in Imperial Kilns. This is independent of held Order privacy and is covered by multiplayer reconnect and workshop-inspection regressions.
 
-New games use rules version 1.2.7, schema 4 and behaviour revision 19. The Ge owner amendment advanced the behaviour revision to 17 because firing retains actual Quality; the eight-card Starting Order amendment advances it to 18 because S04–S08 change meaning and S09–S16 are removed. The optional-Tech amendment advances it to 19 for explicit forming-income choices and the single-resource Kiln Tending benefit. Older fingerprints and existing 1.2.6 games are refused rather than reinterpreted. New SQL migrations preserve historical rows and install current version gates. Database migration and Edge Function deployment are required before this branch can run against production.
+New games use rules version 1.2.7, schema 4 and behaviour revision 20. The Ge owner amendment advanced the behaviour revision to 17 because firing retains actual Quality; the eight-card Starting Order amendment advances it to 18 because S04–S08 change meaning and S09–S16 are removed. The optional-Tech amendment advances it to 19 for explicit forming-income choices and the single-resource Kiln Tending benefit. The Shifu Glaze amendment advances it to 20 because only a two-vessel action reduces the total Coin cost by 1, replacing the free Decoration. Older fingerprints and existing 1.2.6 games are refused rather than reinterpreted. New SQL migrations preserve historical rows and install current version gates. Database migration and Edge Function deployment are required before this branch can run against production.
 
 
 ## Original adoption verification (2026-09-19)
@@ -134,3 +134,16 @@ All 495 tests, the production build, Edge Function type checks, handoff validati
 - Confirmed Kiln Tending grants an optional choice of 1 Clay or 1 Wood after loading at least 1 ceramic during a Kiln Yard action. Short and detailed descriptions, the action choices and the engine agree; claiming both is rejected, and declining grants neither.
 - All 537 tests pass, including eight new O32 completion cases and 34 card/hover/detail Quality cases, alongside the full source/data contract and existing Kiln Tending Clay/Wood/skip/invalid-claim coverage. Production build, Edge Function type checks, handoff validation and diff checks pass. Local browser inspection confirms O32's badge fits on the market card, hover preview and clicked details.
 - The Order-data correction changes the content-derived rules fingerprint automatically; schema 4 and behaviour revision 19 are unchanged. Migrations remain unapplied and nothing has been deployed.
+
+
+## Owner amendment: Shifu Glaze & Decoration (2026-09-20)
+
+The owner replaced the Shifu effect with this final wording, including the two-vessel condition:
+
+> Apply Glaze and Decoration to up to **2 shaped vessels**, if you glazed 2, reduce their total Coin cost by 1.
+
+Glazing one vessel pays its normal Decoration cost. Glazing two reduces their combined Coin cost by 1 after any selected Tech waivers, with a minimum cost of zero. Each Decoration-waiver Tech still affects only one matching Decoration, remains optional, and is exhausted only when used. There is no longer a free-Decoration target to select.
+
+The checked-in English rulebook, quick reference, structured action text, Chinese translation, engine, human cost previews and computer decisions use this amendment. Behaviour revision 20 and `202609200003_v127_shifu_glaze_discount.sql` distinguish new games from games with the old free-Decoration rule. This migration preserves historical rows and advances the active write gates; it has not been applied to a database.
+
+Verification: all 567 tests pass, including 15 dedicated payment/waiver cases, eight new AI cases, five new UI cases, earlier-fingerprint rejection and the new SQL gate contract. The production build, client/engine and Edge Function type checks, handoff validation and diff checks pass. Browser checks confirm one Carved vessel costs 2 Coins, two Carved vessels cost 3 Coins, and removing the second vessel restores the full single-vessel cost. No backend migration or deployment was performed.

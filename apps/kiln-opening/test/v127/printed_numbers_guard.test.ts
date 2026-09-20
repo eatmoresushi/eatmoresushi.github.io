@@ -73,7 +73,7 @@ const cases: Array<[string, string, number[]]> = [
   ["forming_studio.apprentice", L("forming_studio").apprentice, [1]],
   ["forming_studio.shifu", L("forming_studio").shifu, [1, 2, 2, 1]],
   ["glaze_workshop.apprentice", L("glaze_workshop").apprentice, [1]],
-  ["glaze_workshop.shifu", L("glaze_workshop").shifu, [2, 0]],
+  ["glaze_workshop.shifu", L("glaze_workshop").shifu, [2, 2, 1]],
   ["kiln_yard.apprentice", L("kiln_yard").apprentice, [1]],
   ["kiln_yard.shifu", L("kiln_yard").shifu, [2, 1, 1]],
   ["market_imperial_office.apprentice", L("market_imperial_office").apprentice, [1, 1, 1, 1]],

@@ -38,8 +38,8 @@
       "nameZh": "釉饰坊",
       "apprentice": "Apply a Glaze and Decoration to 1 shaped vessel; pay the Decoration cost.",
       "apprenticeZh": "为1件已成型器物施加1种釉与1种纹饰，支付纹饰费用。",
-      "shifu": "Apply Glaze and Decoration to up to 2 shaped vessels; one Decoration applied by this action costs 0 Coins.",
-      "shifuZh": "为最多2件已成型器物施釉与纹饰；本行动所施加的其中1个纹饰费用为0铜钱。",
+      "shifu": "Apply Glaze and Decoration to up to 2 shaped vessels, if you glazed 2, reduce their total Coin cost by 1.",
+      "shifuZh": "为最多2件已成型器物施釉与纹饰；若施釉2件，总铜钱费用减少1。",
       "capacity": {
         "2": 2,
         "3": 3,

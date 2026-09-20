@@ -127,7 +127,6 @@ describe("V1.2.7 worker actions and Techs", () => {
       type: "GLAZE_CERAMICS",
       workerId: workerId(state, "P2", "shifu"),
       selections: [{ ceramicId: opponent.id, glaze: "grey_green", decoration: "plain" }],
-      freeDecorationCeramicId: opponent.id,
     }, rng);
     expect(state.actionBoard.placements.glaze_workshop).toHaveLength(3);
   });
@@ -273,15 +272,14 @@ describe("V1.2.7 worker actions and Techs", () => {
     expect(state.players["P1"]!.resources.clay).toBe(clayBeforeRework);
   });
 
-  it("applies the Shifu free Decoration even when glazing one vessel", () => {
+  it("charges the normal Decoration cost when the Shifu glazes only one vessel", () => {
     const { state: initial, rng } = startedGame(2, 1306);
     let state = structuredClone(initial);
-    state.players["P1"]!.resources.coins = 0;
+    state.players["P1"]!.resources.coins = 2;
     const ceramic = addShaped(state, "P1", "censer");
     state = mustApply(state, "P1", {
       type: "GLAZE_CERAMICS", workerId: workerId(state, "P1", "shifu"),
       selections: [{ ceramicId: ceramic.id, glaze: "grey_green", decoration: "crackle" }],
-      freeDecorationCeramicId: ceramic.id,
     }, rng);
     expect(state.ceramics[ceramic.id]).toEqual(expect.objectContaining({ stage: "glazed", glaze: "grey_green", decoration: "crackle" }));
     expect(state.players["P1"]!.resources.coins).toBe(0);
@@ -314,7 +312,7 @@ describe("V1.2.7 worker actions and Techs", () => {
     expect(state.ceramics[other.id]).toEqual(expect.objectContaining({ stage: "loaded", glaze: "moon_white" }));
   });
 
-  it("combines one free-Decoration Tech with the Shifu free Decoration", () => {
+  it("waives one matching Decoration before the Shifu two-vessel discount", () => {
     const { state: initial, rng } = startedGame(2, 1307_1);
     let state = structuredClone(initial);
     state.players["P1"]!.resources.coins = 10;
@@ -333,7 +331,7 @@ describe("V1.2.7 worker actions and Techs", () => {
       useTechniqueIds: ["T07"],
     }, rng);
 
-    expect(state.players["P1"]!.resources.coins).toBe(before);
+    expect(state.players["P1"]!.resources.coins).toBe(before - 1);
   });
 
   it("implements Rapid Drying without consuming a Kiln Yard space or triggering Kiln Tending", () => {

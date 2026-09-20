@@ -22,7 +22,7 @@ Priority order:
 
 Never implement an older mechanic because it appears in historical discussion or art.
 
-Explicit owner amendments recorded in `docs/RULEBOOK_AUDIT_V1.2.7.md` supersede the supplied sources only for the amended rule. Ge's owner amendment treats Standard-quality Crackle ceramics as Fine only when completing Orders or scoring the Exhibition; firing still records their actual Quality. The 2026-09-20 amendments replace the Starting Order deck with eight cards, S01–S08, make Tech abilities optional unless explicitly required, and make Kiln Tending a choice of 1 Clay or 1 Wood. They are incorporated into the checked-in English rulebook. All stated ability costs must be paid; declining preserves use for later. The audit retains original and current source checksums.
+Explicit owner amendments recorded in `docs/RULEBOOK_AUDIT_V1.2.7.md` supersede the supplied sources only for the amended rule. Ge's owner amendment treats Standard-quality Crackle ceramics as Fine only when completing Orders or scoring the Exhibition; firing still records their actual Quality. The 2026-09-20 amendments replace the Starting Order deck with eight cards, S01–S08, make Tech abilities optional unless explicitly required, make Kiln Tending a choice of 1 Clay or 1 Wood, and replace the Shifu's free Decoration with a total 1-Coin discount only when glazing two vessels. They are incorporated into the checked-in English rulebook. All stated ability costs must be paid; declining preserves use for later. The audit retains original and current source checksums.
 
 
 ## Approved asset rule

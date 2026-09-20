@@ -128,7 +128,7 @@ Each player has **1 Shifu and 3 Apprentices** available each round. Each worker 
 | **Worker** | **Effect**                                                   |
 |------------|--------------------------------------------------------------|
 | Apprentice | Apply a Glaze and Decoration to **1 shaped vessel**; pay the Decoration cost. |
-| **Shifu**  | Apply Glaze and Decoration to up to **2 shaped vessels**; one Decoration applied by this action costs **0 Coins**. |
+| **Shifu**  | Apply Glaze and Decoration to up to **2 shaped vessels**, if you glazed 2, reduce their total Coin cost by 1. |
 ### Kiln Yard
 | **Worker** | **Effect**                                                   |
 |------------|--------------------------------------------------------------|
@@ -578,7 +578,7 @@ If no ceramics are loaded in the Shared Kiln or any Imperial Kiln, **skip this p
 |--------------------|-----------------------------------|--------------------------------------------------------------|
 | Materials          | Gain 3 Clay/Wood                  | Gain 4; may pay 1 Coin → +1 Clay +1 Wood                     |
 | Potter’s Wheel     | Form 1                            | Form up to 2; if 2, total cost −1 Clay                       |
-| Glaze & Decoration | Glaze/decorate 1                  | Glaze/decorate up to 2; one Decoration free                  |
+| Glaze & Decoration | Glaze/decorate 1                  | Glaze/decorate up to 2; if glazing 2, reduce total Coin cost by 1 |
 | Kiln Yard          | Load 1                            | Load up to 2; place Shifu on 1, after Base Heat, reposition it to an empty neighbouring zone |
 | Commission Market  | Reserve 1 + gain 1 Clay/Wood/Coin | Reserve up to 2 separately; gain 1 Clay/Wood/Coin after each reservation |
 | Guild              | Buy 1 Advanced Tech at cost       | Look at top 2 Techs of 1 discipline (or as many as remain); take 1 revealed Tech or any face-up Tech at −1 Coin |

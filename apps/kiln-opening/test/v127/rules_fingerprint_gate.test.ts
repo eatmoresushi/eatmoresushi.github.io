@@ -40,7 +40,7 @@ describe("rules fingerprint gate", () => {
     const rooms = (store as unknown as { rooms: Map<string, { code: string; contentDigest: string | null }> }).rooms;
     const stored = [...rooms.values()].find((record) => record.code === room.room.code);
     expect(stored?.contentDigest).toBe(rulesFingerprint());
-    expect(stored?.contentDigest).toMatch(/^r19-[0-9a-f]{16}$/);
+    expect(stored?.contentDigest).toMatch(/^r20-[0-9a-f]{16}$/);
   });
 
   it("refuses a room created under a different ruleset rather than reinterpreting it", async () => {
@@ -85,10 +85,10 @@ describe("rules fingerprint gate", () => {
     if (!result.ok) expect(result.error.code).toBe("RULES_FINGERPRINT_MISMATCH");
   });
 
-  it("refuses r18 rooms whose Tech rewards predate the optional-choice amendment", async () => {
+  it.each([18, 19])("refuses r%s rooms that predate current Tech or Shifu Glaze rules", async (revision) => {
     const { service, store, room } = await host();
     const rooms = (store as unknown as { rooms: Map<string, { contentDigest: string | null }> }).rooms;
-    const previousFingerprint = rulesFingerprint().replace(/^r\d+-/, "r18-");
+    const previousFingerprint = rulesFingerprint().replace(/^r\d+-/, `r${revision}-`);
     for (const record of rooms.values()) record.contentDigest = previousFingerprint;
 
     const result = await service.reconnect({ roomCode: room.room.code, seatToken: room.seatToken });

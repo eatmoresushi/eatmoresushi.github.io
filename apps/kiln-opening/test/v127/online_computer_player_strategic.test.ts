@@ -5,6 +5,7 @@ import {
   chooseOnlineComputerAction,
 } from "../../src/multiplayer/computerPlayer.ts";
 import { createComputerObservation } from "../../src/multiplayer/computerObservation.ts";
+import { fallbackComputerCommands } from "../../src/multiplayer/computerFallback.ts";
 import type { StoredSeat } from "../../src/multiplayer/types.ts";
 import {
   addGlazed,
@@ -47,6 +48,65 @@ async function choose(state: GameState, playerId: PlayerId = "P1"): Promise<Game
 function closeGuild(state: GameState): void {
   state.techniqueDisplay = { forming: [], glazing: [], firing: [] };
 }
+
+describe("V1.2.7 strategic computer policy: Shifu Glaze & Decoration discount", () => {
+  it.each([
+    { coins: 0, carvingKnives: false, count: 0, paid: 0 },
+    { coins: 1, carvingKnives: false, count: 0, paid: 0 },
+    { coins: 2, carvingKnives: false, count: 1, paid: 2 },
+    { coins: 3, carvingKnives: false, count: 2, paid: 3 },
+    { coins: 0, carvingKnives: true, count: 1, paid: 0 },
+    { coins: 1, carvingKnives: true, count: 2, paid: 1 },
+  ])("glazes $count Carved vessels with $coins Coins and Carving Knives=$carvingKnives", async ({ coins, carvingKnives, count, paid }) => {
+    const { state: initial, rng } = startedGame(2, 4_941);
+    const state = structuredClone(initial);
+    const player = state.players["P1"]!;
+    player.startingTechniqueId = "ST01";
+    player.orderHand = ["O38"];
+    player.resources = { clay: 0, wood: 0, coins };
+    if (carvingKnives) addTechnique(state, "P1", "T07");
+    addShaped(state, "P1", "plate");
+    addShaped(state, "P1", "washer");
+    closeGuild(state);
+    setWorkTurn(state, "P1");
+
+    const action = await choose(state);
+    if (count === 0) {
+      expect(action.type).not.toBe("GLAZE_CERAMICS");
+      return;
+    }
+    expect(action.type).toBe("GLAZE_CERAMICS");
+    if (action.type !== "GLAZE_CERAMICS") throw new Error("Expected glazing");
+    expect(player.workers[action.workerId]?.kind).toBe("shifu");
+    expect(action.selections).toHaveLength(count);
+    expect(action.selections.every(({ decoration }) => decoration === "carved")).toBe(true);
+    expect(action).not.toHaveProperty("freeDecorationCeramicId");
+
+    const resolved = mustApply(state, "P1", action, rng);
+    expect(resolved.players["P1"]!.resources.coins).toBe(coins - paid);
+    expect(Object.values(resolved.ceramics).filter(({ stage }) => stage === "glazed")).toHaveLength(count);
+    if (carvingKnives) expect(resolved.players["P1"]!.techniques).toContainEqual({ id: "T07", exhausted: true });
+  });
+
+  it.each([0, 1])("fallback pays full cost for one Plain vessel with %i Coins", (coins) => {
+    const { state: initial, rng } = startedGame(2, 4_942);
+    const state = structuredClone(initial);
+    state.players["P1"]!.resources = { clay: 0, wood: 0, coins };
+    const ceramic = addShaped(state, "P1", "bowl");
+    setWorkTurn(state, "P1");
+
+    const commands = fallbackComputerCommands(createComputerObservation(state, "P1"));
+    const glazeCommands = commands.filter((command) => command.type === "GLAZE_CERAMICS");
+    expect(glazeCommands).toHaveLength(coins === 0 ? 0 : 4);
+    if (coins === 0) return;
+    const action = glazeCommands.find(({ workerId }) => state.players["P1"]!.workers[workerId]?.kind === "shifu")!;
+    expect(state.players["P1"]!.workers[action.workerId]?.kind).toBe("shifu");
+    expect(action).not.toHaveProperty("freeDecorationCeramicId");
+    const resolved = mustApply(state, "P1", action, rng);
+    expect(resolved.players["P1"]!.resources.coins).toBe(0);
+    expect(resolved.ceramics[ceramic.id]?.stage).toBe("glazed");
+  });
+});
 
 describe("V1.2.7 strategic computer policy: Starting Techs and Ding", () => {
   it("uses Prepared Clay when a Materials Yard gain can pay its surcharge", async () => {

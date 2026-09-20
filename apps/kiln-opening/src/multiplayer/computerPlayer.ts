@@ -724,28 +724,26 @@ function buildGlazeAction(state: PublicGameState, player: PlayerState): GameActi
     }
   }
 
-  const freeDecorationCeramicId = worker.kind === "shifu"
-    ? [...selections].sort((left, right) => DECORATION_COSTS[right.decoration] - DECORATION_COSTS[left.decoration])[0]?.ceramicId
-    : undefined;
   for (const [techniqueId, decoration] of [["T07", "carved"], ["T08", "impressed"], ["T09", "crackle"]] as const) {
     if (
       ownedUnexhausted(player, techniqueId) !== undefined
-      && selections.some((selection) => selection.decoration === decoration && selection.ceramicId !== freeDecorationCeramicId)
+      && selections.some((selection) => selection.decoration === decoration)
     ) useTechniqueIds.push(techniqueId);
   }
 
-
-  const costOf = (selection: typeof selections[number]) => {
-    if (selection.ceramicId === freeDecorationCeramicId) return 0;
-    const freeTechnique = selection.decoration === "carved" ? "T07"
-      : selection.decoration === "impressed" ? "T08"
-      : selection.decoration === "crackle" ? "T09"
-      : null;
-    return freeTechnique !== null && useTechniqueIds.includes(freeTechnique)
-      ? 0
-      : DECORATION_COSTS[selection.decoration];
+  const totalCost = () => {
+    const unusedWaivers = new Set(useTechniqueIds);
+    const decorationCost = selections.reduce((sum, selection) => {
+      const freeTechnique = selection.decoration === "carved" ? "T07"
+        : selection.decoration === "impressed" ? "T08"
+        : selection.decoration === "crackle" ? "T09"
+        : null;
+      if (freeTechnique !== null && unusedWaivers.delete(freeTechnique)) return sum;
+      return sum + DECORATION_COSTS[selection.decoration];
+    }, 0);
+    return Math.max(0, decorationCost - (worker.kind === "shifu" && selections.length === 2 ? 1 : 0));
   };
-  while (selections.length > 0 && selections.reduce((sum, selection) => sum + costOf(selection), 0) > player.resources.coins) {
+  while (selections.length > 0 && totalCost() > player.resources.coins) {
     selections.pop();
   }
   if (selections.length === 0) return null;
@@ -757,7 +755,7 @@ function buildGlazeAction(state: PublicGameState, player: PlayerState): GameActi
     if (at >= 0) useTechniqueIds.splice(at, 1);
   }
   for (const [techniqueId, decoration] of [["T07", "carved"], ["T08", "impressed"], ["T09", "crackle"]] as const) {
-    if (!selections.some((selection) => selection.decoration === decoration && selection.ceramicId !== freeDecorationCeramicId)) {
+    if (!selections.some((selection) => selection.decoration === decoration)) {
       const at = useTechniqueIds.indexOf(techniqueId);
       if (at >= 0) useTechniqueIds.splice(at, 1);
     }
@@ -778,9 +776,6 @@ function buildGlazeAction(state: PublicGameState, player: PlayerState): GameActi
     type: "GLAZE_CERAMICS",
     workerId: worker.id,
     selections,
-    ...(freeDecorationCeramicId === undefined || !selections.some(({ ceramicId }) => ceramicId === freeDecorationCeramicId)
-      ? {}
-      : { freeDecorationCeramicId }),
     ...(useTechniqueIds.length === 0 ? {} : { useTechniqueIds }),
 
     ...(rapidCeramic === undefined || rapidDestination === undefined

@@ -874,10 +874,6 @@ function glazeCeramics(
     return applyFailure(ruleError("INVALID_SELECTION", "Reworking Table must change exactly one selected vessel."));
   }
   if (action.glazePalette !== undefined) return applyFailure(ruleError("INVALID_ACTION", "Glaze Palette is used immediately before loading the chosen ceramic."));
-  const freeDecorationCeramicId = action.freeDecorationCeramicId ?? (context.worker.kind === "shifu" ? ids[0] : undefined);
-  if (freeDecorationCeramicId !== undefined && (context.worker.kind !== "shifu" || !ids.includes(freeDecorationCeramicId))) {
-    return applyFailure(ruleError("INVALID_SELECTION", "The Shifu's free Decoration must be on this action."));
-  }
   let totalCoins = 0;
   const unusedDecorationWaivers = new Set<Decoration>();
   if (useTechniqueIds.includes("T07")) unusedDecorationWaivers.add("carved");
@@ -896,7 +892,7 @@ function glazeCeramics(
         return applyFailure(ruleError("INVALID_SELECTION", "Reworking Table needs a different Shape."));
       }
     }
-    if (selection.ceramicId !== freeDecorationCeramicId && !unusedDecorationWaivers.delete(selection.decoration)) {
+    if (!unusedDecorationWaivers.delete(selection.decoration)) {
       totalCoins += DECORATION_COSTS[selection.decoration];
     }
   }
@@ -905,6 +901,7 @@ function glazeCeramics(
       return applyFailure(ruleError("INVALID_SELECTION", `${TECHNIQUE_DEFINITIONS[techniqueId]?.name ?? techniqueId} must waive its matching Decoration.`));
     }
   }
+  if (context.worker.kind === "shifu" && action.selections.length === 2) totalCoins = Math.max(0, totalCoins - 1);
   if (context.player.resources.coins < totalCoins) {
     return applyFailure(ruleError("INSUFFICIENT_RESOURCES", "The selected Decoration costs cannot be paid."));
   }

@@ -4,6 +4,7 @@ import strategicAiMigration from "../../supabase/migrations/202609190001_v127_ru
 import orderQueueMigration from "../../supabase/migrations/202609190001_v127_rules.sql?raw";
 import eightStartingOrdersMigration from "../../supabase/migrations/202609200001_v127_eight_starting_orders.sql?raw";
 import optionalTechsMigration from "../../supabase/migrations/202609200002_v127_optional_techs.sql?raw";
+import shifuGlazeMigration from "../../supabase/migrations/202609200003_v127_shifu_glaze_discount.sql?raw";
 import supabaseStore from "../../supabase/functions/_shared/supabaseStore.ts?raw";
 
 describe("V1.2.7 Supabase contract", () => {
@@ -71,5 +72,17 @@ describe("V1.2.7 Supabase contract", () => {
     expect(optionalTechsMigration).toContain("if position('^r18-' in v_definition) = 0 then");
     expect(optionalTechsMigration).toContain("execute replace(v_definition, '^r18-', '^r19-')");
     expect(optionalTechsMigration).not.toMatch(/\bupdate\s+(?:public\.|private\.)/i);
+  });
+
+  it("advances every write gate to the Shifu two-vessel discount without rewriting previous rooms", () => {
+    expect(shifuGlazeMigration).toContain("'^r(17|18|19|20)-[0-9a-f]{16}$'");
+    const replacedFunctions = [...shifuGlazeMigration.matchAll(/'public\.(server_\w+)\([^']+\)'::regprocedure/g)]
+      .map((match) => match[1]);
+    expect(replacedFunctions).toEqual([
+      "server_add_computer_seat", "server_create_room", "server_commit_start", "server_commit_transition",
+    ]);
+    expect(shifuGlazeMigration).toContain("if position('^r19-' in v_definition) = 0 then");
+    expect(shifuGlazeMigration).toContain("execute replace(v_definition, '^r19-', '^r20-')");
+    expect(shifuGlazeMigration).not.toMatch(/\bupdate\s+(?:public\.|private\.)/i);
   });
 });
