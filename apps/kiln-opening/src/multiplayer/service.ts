@@ -76,6 +76,7 @@ function error(
 function privateDecisionState(state: GameState, playerId: PlayerId): PrivateDecisionState {
   const phase = state.phase;
   return {
+    orderHand: [...(state.players[playerId]?.orderHand ?? [])],
     startingOrderIds: phase.type === "setup_starting_orders" ? [...(phase.offeredOrderIds[playerId] ?? [])] : [],
     colourSamplesOrderIds: phase.type === "work_office_orders" && phase.actorId === playerId && phase.step === "colour_samples_choose"
       ? [...(phase.colourSamplesChoices ?? [])]
@@ -136,10 +137,10 @@ function gameFailure(ruleError: GameRuleError, revision: number): MultiplayerErr
 }
 
 function gameCompatibilityError(state: GameState, revision: number): MultiplayerError | null {
-  if (state.schemaVersion === 4 && state.rulesVersion === "1.2.6") return null;
+  if (state.schemaVersion === 4 && state.rulesVersion === "1.2.7") return null;
   return error(
     "UNSUPPORTED_RULES_VERSION",
-    "This saved game uses an older rules or save format and cannot continue under V1.2.6. Please create a new room.",
+    "This saved game uses an older rules or save format and cannot continue under V1.2.7. Please create a new room.",
     revision,
     { schemaVersion: state.schemaVersion, rulesVersion: state.rulesVersion },
   );
@@ -258,8 +259,8 @@ export class AuthoritativeGameService {
         code,
         status: "lobby",
         hostSeatId: seatId,
-        rulesVersion: "1.2.6",
-        contentVersion: "1.2.6",
+        rulesVersion: "1.2.7",
+        contentVersion: "1.2.7",
         contentDigest: rulesFingerprint(),
         latestRevision: 0,
         endedAt: null,
@@ -913,13 +914,13 @@ export class AuthoritativeGameService {
       return failed(error("AUTHENTICATION_FAILED", "The room or seat credential is invalid."));
     }
     if (
-      authenticated.room.rulesVersion !== "1.2.6" ||
-      authenticated.room.contentVersion !== "1.2.6"
+      authenticated.room.rulesVersion !== "1.2.7" ||
+      authenticated.room.contentVersion !== "1.2.7"
     ) {
       return failed(
         error(
           "UNSUPPORTED_RULES_VERSION",
-          "This room uses an older rules version and cannot continue under V1.2.6. Please create a new room.",
+          "This room uses an older rules version and cannot continue under V1.2.7. Please create a new room.",
         ),
       );
     }

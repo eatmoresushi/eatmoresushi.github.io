@@ -1,5 +1,5 @@
 export type PlayerId = string;
-export type RulesVersion = "1.2.6";
+export type RulesVersion = "1.2.7";
 
 /**
  * The three v1.1.4 Contribution cards. Bank (-1 Heat, 1 Wood), Tend (0, 0) and
@@ -37,7 +37,8 @@ export type LocationId =
   | "kiln_yard"
   | "market_imperial_office"
   | "guild_academy"
-  | "labour";
+  | "labour"
+  | "court_patronage";
 /** V1.1.1: Base Heat is a clamped formula result, not a three-band table. */
 export type BaseHeat = 0 | 1 | 2 | 3 | 4 | 5;
 
@@ -50,6 +51,7 @@ export type KilnSpaceId =
   | "low_1"
   | "low_2";
 
+/** A workshop's owned resources. The shared bank has unlimited supply. */
 export interface ResourceState {
   clay: number;
   wood: number;
@@ -101,7 +103,7 @@ export interface PlayerState {
   passedWorkPhase: boolean;
   kilnAbilityUsedThisRound: boolean;
   kilnYardShifuUsedThisRound: boolean;
-  /** V1.2.6: the Shared-Kiln ceramic chosen when this round's Kiln Yard Shifu resolved. */
+  /** V1.2.7: the Shared-Kiln ceramic chosen when this round's Kiln Yard Shifu resolved. */
   kilnYardShifuCeramicId: CeramicId | null;
   /** Distinct Shapes formed this round, used by Measuring Calipers. */
   shapesFormedThisRound: Shape[];
@@ -140,6 +142,8 @@ export type LoadedCeramic = CeramicCore & {
   decoration: Decoration;
   kilnSpaceId: KilnSpaceId | "imperial";
   kilnFurnitureUsed?: boolean;
+  /** Fixed pre-Fire Shifu marker; applies only to this ceramic for the current firing. */
+  shifuHeatAdjustment?: -1 | 1;
 };
 
 export type FinishedCeramic = CeramicCore & {
@@ -213,6 +217,8 @@ export interface OrderedDecisionQueue {
 export interface FiringCeramicResult {
   ceramicId: CeramicId;
   zoneModifier: -1 | 0 | 1;
+  /** Separate from the zone modifier, including when Kiln Furniture neutralizes that zone. */
+  shifuHeatAdjustment?: -1 | 0 | 1;
   naturalActualHeat: number;
   naturalHeatDifference: number;
   naturalExactMatch: boolean;
@@ -222,11 +228,10 @@ export interface FiringCeramicResult {
   assignedQuality: Quality | null;
 }
 
-export interface KilnYardShifuReposition {
+export interface KilnYardShifuAdjustment {
   playerId: PlayerId;
   ceramicId: CeramicId;
-  fromSpaceId: KilnSpaceId;
-  toSpaceId: KilnSpaceId | null;
+  adjustment: -1 | 1 | null;
 }
 
 export interface FiringContext {
@@ -243,7 +248,7 @@ export interface FiringContext {
   baseHeat: BaseHeat | null;
   fireModifier: FireModifier | null;
   globalHeat: number | null;
-  kilnYardShifuRepositions: KilnYardShifuReposition[];
+  kilnYardShifuAdjustments: KilnYardShifuAdjustment[];
   ceramicResults: Record<CeramicId, FiringCeramicResult>;
 }
 
@@ -258,7 +263,7 @@ export interface FiringResultSummary {
   baseHeat: BaseHeat;
   fireModifier: FireModifier;
   globalHeat: number;
-  kilnYardShifuRepositions: KilnYardShifuReposition[];
+  kilnYardShifuAdjustments: KilnYardShifuAdjustment[];
   /** Final per-ceramic Heat and Quality values retained for the local post-firing review. */
   ceramicResults?: Record<CeramicId, FiringCeramicResult>;
 }
@@ -319,6 +324,8 @@ export type GamePhase =
       ordersTaken: number;
       step: "colour_samples_or_skip" | "colour_samples_choose" | "take_or_end" | "gain_advance";
       colourSamplesUsed: boolean;
+      /** Immediate reservation granted by acquiring Colour Samples; no resource bonus. */
+      onAcquisition?: true;
       colourSamplesDeck?: OrderDeck;
       colourSamplesChoices?: OrderId[];
     }
@@ -327,7 +334,7 @@ export type GamePhase =
       actorId: PlayerId;
       workerId: WorkerId;
       step: "inspect" | "buy";
-      /** V1.2.6 Shifu: the top Techs drawn off one discipline, private to the actor. */
+      /** V1.2.7 Shifu: the top Techs drawn off one discipline, private to the actor. */
       inspectedDiscipline?: TechniqueDiscipline;
       inspectedTechniqueIds?: TechniqueId[];
     }
@@ -343,7 +350,7 @@ export type GamePhase =
       eligiblePlayerIds: PlayerId[];
       submittedPlayerIds: PlayerId[];
     }
-  | { type: "firing_reposition"; queue: OrderedDecisionQueue }
+  | { type: "firing_shifu_adjustment"; queue: OrderedDecisionQueue }
   | { type: "firing_reveal_fire"; actorId: PlayerId }
   | {
       type: "firing_before_quality";
@@ -399,7 +406,6 @@ export interface GameState {
   players: Record<PlayerId, PlayerState>;
   actionBoard: ActionBoardState;
   ceramics: Record<CeramicId, CeramicState>;
-  commonSupply: ResourceState;
   vesselSupply: Record<Shape, VesselInstanceId[]>;
   marketDeck: OrderId[];
   marketDiscard: OrderId[];
@@ -454,6 +460,7 @@ export interface KilnLoadSelection {
   ceramicId: CeramicId;
   kilnSpaceId: KilnSpaceId | "imperial";
   useKilnFurniture?: boolean;
+  glazePalette?: Glaze;
 }
 
 export type GameAction =
@@ -469,6 +476,8 @@ export type GameAction =
       exchange?: MaterialExchange;
       buyShifuBonus?: boolean;
       preparedClayShape?: Shape;
+      /** Optional eligible forming rewards to claim after Prepared Clay. */
+      useTechniqueIds?: TechniqueId[];
     }
   | {
       type: "FORM_CERAMICS";
@@ -483,10 +492,9 @@ export type GameAction =
       type: "GLAZE_CERAMICS";
       workerId: WorkerId;
       selections: GlazeSelection[];
-      freeDecorationCeramicId?: CeramicId;
       useTechniqueIds?: TechniqueId[];
       glazePalette?: { ceramicId: CeramicId; glaze: Glaze };
-      rapidDrying?: { ceramicId: CeramicId; kilnSpaceId: KilnSpaceId | "imperial" };
+      rapidDrying?: KilnLoadSelection;
     }
   | {
       type: "USE_KILN_YARD";
@@ -494,6 +502,7 @@ export type GameAction =
       loads: KilnLoadSelection[];
       /** Required for a Shifu when the player has any ceramic in the Shared Kiln after loading. */
       shifuCeramicId?: CeramicId;
+      /** Kiln Tending may gain one Clay or one Wood; omit both to decline. */
       kilnTendingClay?: number;
       kilnTendingWood?: number;
     }
@@ -504,6 +513,7 @@ export type GameAction =
    * against 0% in Round 1.
    */
   | { type: "USE_LABOUR"; workerId: WorkerId }
+  | { type: "USE_COURT_PATRONAGE"; workerId: WorkerId; imperialGrantChoice?: "coins" | "resources" }
   | {
       type: "BEGIN_OFFICE_ORDERS";
       workerId: WorkerId;
@@ -525,8 +535,8 @@ export type GameAction =
       type: "GUILD_BUY_TECHNIQUE";
       techniqueId: TechniqueId;
     }
-  | { type: "RESOLVE_IMPERIAL_PRIORITY"; ceramicId: CeramicId | null }
-  | { type: "RESOLVE_KILN_YARD_REPOSITION"; ceramicId: CeramicId | null; toSpaceId: KilnSpaceId | null }
+  | { type: "RESOLVE_IMPERIAL_PRIORITY"; ceramicId: CeramicId | null; glazePalette?: Glaze }
+  | { type: "RESOLVE_KILN_YARD_ADJUSTMENT"; ceramicId: CeramicId | null; adjustment: -1 | 1 | null }
   | { type: "REVEAL_FIRE_CARD" }
   | { type: "RESOLVE_JUN"; ceramicId: CeramicId | null; delta: -1 | 1 | null }
   | { type: "RESOLVE_GE"; ceramicId: CeramicId | null }
@@ -539,6 +549,7 @@ export type GameAction =
       orderId: OrderId;
       ceramicIds: CeramicId[];
       imperialGrantChoice?: "coins" | "resources";
+      geDecoration?: { ceramicId: CeramicId; decoration: Decoration };
     }
   | { type: "END_ORDER_TURN" }
   | { type: "DISCARD_ORDERS_FOR_CLEANUP"; orderIds: OrderId[] }
@@ -562,7 +573,6 @@ export type GameRuleErrorCode =
   | "PLAYER_ALREADY_PASSED"
   | "INVALID_SELECTION"
   | "INSUFFICIENT_RESOURCES"
-  | "SUPPLY_EMPTY"
   | "CERAMIC_NOT_FOUND"
   | "ILLEGAL_CERAMIC_STAGE"
   | "KILN_SPACE_OCCUPIED"
@@ -600,13 +610,12 @@ export type GameEvent =
   | { type: "CERAMIC_LOADED"; playerId: PlayerId; ceramicId: CeramicId; kilnSpaceId: KilnSpaceId | "imperial" }
   | { type: "KILN_YARD_SHIFU_MARKED"; playerId: PlayerId; ceramicId: CeramicId }
   | {
-      type: "KILN_YARD_SHIFU_REPOSITIONED";
+      type: "KILN_YARD_SHIFU_ADJUSTED";
       playerId: PlayerId;
       ceramicId: CeramicId;
-      fromSpaceId: KilnSpaceId;
-      toSpaceId: KilnSpaceId;
+      adjustment: -1 | 1;
     }
-  | { type: "KILN_YARD_SHIFU_REPOSITION_DECLINED"; playerId: PlayerId; ceramicId: CeramicId }
+  | { type: "KILN_YARD_SHIFU_ADJUSTMENT_DECLINED"; playerId: PlayerId; ceramicId: CeramicId }
   | {
       type: "ORDER_TAKEN";
       playerId: PlayerId;
@@ -618,7 +627,7 @@ export type GameEvent =
       type: "COLOUR_SAMPLES_USED";
       playerId: PlayerId;
       deck: OrderDeck;
-      /** V1.2.6 discards every looked-at Order the player did not reserve. */
+      /** V1.2.7 discards every looked-at Order the player did not reserve. */
       discardedOrderIds: OrderId[];
       selectedOrderId: OrderId;
       reservedFromDisplay: boolean;
@@ -645,6 +654,7 @@ export type GameEvent =
       ceramicId: CeramicId;
       fireModifier: FireModifier;
       zoneModifier: -1 | 0 | 1;
+      shifuHeatAdjustment?: -1 | 0 | 1;
       naturalActualHeat: number;
       naturalHeatDifference: number;
       naturalQuality: Quality;
@@ -656,10 +666,11 @@ export type GameEvent =
   | {
       type: "IMPERIAL_RECOGNITION_ADVANCED";
       playerId: PlayerId;
-      orderId: OrderId;
+      /** Null for Court Patronage, which grants no Crown icons. */
+      orderId: OrderId | null;
       from: 0 | 1 | 2 | 3 | 4;
       to: 0 | 1 | 2 | 3 | 4;
-      crowns: 1 | 2 | 3;
+      crowns: 0 | 1 | 2 | 3;
       appliedCrowns: number;
       overflowVp: number;
     }

@@ -1,11 +1,11 @@
 {
-  "rulesVersion": "1.2.6",
+  "rulesVersion": "1.2.7",
   "orderCards": {
     "status": "REGENERATE_FROM_DATA",
     "source": "data/orders.json",
-    "total": 64,
+    "total": 56,
     "main": 48,
-    "starting": 16,
+    "starting": 8,
     "mustShowCrowns": true,
     "obsoleteSheetsDirectory": "assets/obsolete_v061"
   },
@@ -16,7 +16,8 @@
     "mustNotContain": [
       "Refining House",
       "Refined Clay",
-      "fixed 0-2 / 3-5 / 6+ Base Heat reference"
+      "fixed 0-2 / 3-5 / 6+ Base Heat reference",
+      "Kiln Yard Shifu repositioning"
     ],
     "mustContain": [
       "Materials Yard",
@@ -29,7 +30,8 @@
       "Imperial Recognition",
       "2/3/4 shared action spaces by player count",
       "Shifu overfill",
-      "Shifu repositioning after Base Heat"
+      "Shifu +1/-1 Heat markers after Base Heat and before Fire",
+      "Court Patronage"
     ],
     "mustShowPlayerCountKilnCovers": true
   },
@@ -78,6 +80,6 @@
     "roundSource": "data/round_structure.json",
     "firingSource": "data/firing.json",
     "mustUseBaseHeatStartTwo": true,
-    "mustShowFiveCardMainOrderDisplay": true
+    "mustShowSixCardMainOrderDisplay": true
   }
 }

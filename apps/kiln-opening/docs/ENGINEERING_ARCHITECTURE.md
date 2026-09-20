@@ -100,7 +100,7 @@ interface GameState {
 }
 ```
 
-Ceramics should be instances, not just Shape counts, because each acquires Glaze/Decoration/Quality and moves through zones/orders.
+Ceramics should be instances, not just Shape counts, because each acquires Glaze/Decoration/Quality, occupies a kiln space and may be used for an Order. A loaded ceramic may also carry a fixed Shifu Heat adjustment for its current firing.
 
 ## Commands
 
@@ -117,7 +117,7 @@ type GameAction =
   | { type: "USE_LABOUR"; workerId: WorkerId }
   | { type: "PASS_WORK_PHASE" }
   | { type: "RESOLVE_IMPERIAL_PRIORITY"; ceramicId: CeramicId | null }
-  | { type: "RESOLVE_KILN_YARD_REPOSITION"; ceramicId: CeramicId | null; toSpaceId: KilnSpaceId | null }
+  | { type: "RESOLVE_KILN_YARD_ADJUSTMENT"; ceramicId: CeramicId | null; adjustment: -1 | 1 | null }
   | { type: "RESOLVE_JUN"; ceramicId: CeramicId | null; delta: -1|1|null }
   | { type: "RESOLVE_GE"; ceramicId: CeramicId | null }
   | { type: "RESOLVE_PROTECTIVE_SAGGARS"; ceramicId: CeramicId | null }
@@ -127,6 +127,8 @@ type GameAction =
 ```
 
 Some actions are two-step UI interactions but should commit atomically when possible.
+
+`RESOLVE_KILN_YARD_ADJUSTMENT` resolves during `firing_shifu_adjustment`. Passing both fields as `null` declines. A selected marker is public as `LoadedCeramic.shifuHeatAdjustment`; the firing context and summary retain `kilnYardShifuAdjustments` records with player, ceramic and adjustment. The server validates the Work-Phase target and keeps its selected value fixed through Second Firing without changing the ceramic's kiln space.
 
 ## Event log
 

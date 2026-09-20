@@ -26,7 +26,7 @@ import type {
 
 export type RoomStatus = "lobby" | "playing" | "finished" | "abandoned";
 export type StoredRulesVersion = "0.4" | "0.5" | "0.6.1" | "0.6.3" | "0.6.5" | "1.0.0" | "1.0.1" | "1.0.2" | "1.0.4" | "1.0.9" | "1.1.1" | "1.1.4" | "1.1.5"
-  | "1.1.6" | "1.2.2" | "1.2.4" | "1.2.5" | "1.2.6";
+  | "1.1.6" | "1.2.2" | "1.2.4" | "1.2.5" | "1.2.6" | "1.2.7";
 
 export interface PublicRoom {
   id: string;
@@ -48,7 +48,7 @@ export interface PublicSeat {
   colour: string;
   isHost: boolean;
   isComputer: boolean;
-  aiPolicyVersion: "selfplay-003" | "rules-v1.1.1-wood-001" | "rules-v1.1.4-contribution-001" | "rules-v1.1.5-order-001" | "rules-v1.2.2-heuristic-001" | "rules-v1.2.4-heuristic-001" | "rules-v1.2.5-heuristic-001" | "rules-v1.2.6-heuristic-001" | "rules-v1.2.6-strategic-002" | null;
+  aiPolicyVersion: "selfplay-003" | "rules-v1.1.1-wood-001" | "rules-v1.1.4-contribution-001" | "rules-v1.1.5-order-001" | "rules-v1.2.2-heuristic-001" | "rules-v1.2.4-heuristic-001" | "rules-v1.2.5-heuristic-001" | "rules-v1.2.6-heuristic-001" | "rules-v1.2.6-strategic-002" | "rules-v1.2.7-strategic-002" | null;
 }
 
 export interface PublicPlayerState {
@@ -58,7 +58,9 @@ export interface PublicPlayerState {
   kilnId: KilnId | null;
   resources: ResourceState;
   workers: PlayerState["workers"];
+  /** Empty in the public projection; filled only in an owner-local view. */
   orderHand: OrderId[];
+  orderHandCount: number;
   completedOrders: PlayerState["completedOrders"];
   techniques: PlayerState["techniques"];
   startingTechniqueId: PlayerState["startingTechniqueId"];
@@ -95,7 +97,7 @@ export interface PublicDiscards {
 
 export interface PublicGameState {
   schemaVersion: 4;
-  rulesVersion: "1.2.6";
+  rulesVersion: "1.2.7";
   gameId: string;
   revision: number;
   eventSequence: number;
@@ -107,7 +109,6 @@ export interface PublicGameState {
   players: Record<PlayerId, PublicPlayerState>;
   actionBoard: ActionBoardState;
   ceramics: Record<string, CeramicState>;
-  commonSupply: ResourceState;
   vesselSupplyCounts: Record<Shape, number>;
   decks: PublicDeckState;
   displays: PublicDisplays;
@@ -118,7 +119,10 @@ export interface PublicGameState {
 }
 
 export type PublicGameEvent =
-  | Exclude<GameEvent, { type: "COLOUR_SAMPLES_USED" }>
+  | Exclude<GameEvent, { type: "COLOUR_SAMPLES_USED" | "ORDER_TAKEN" | "STARTING_ORDERS_REVEALED" | "ORDERS_DISCARDED_FOR_CLEANUP" }>
+  | { type: "ORDER_TAKEN"; playerId: PlayerId; deck: "market"; acquisition: "face_up" | "colour_samples" | "blind_deck"; orderId?: OrderId }
+  | { type: "STARTING_ORDERS_REVEALED"; ordersByPlayer: Record<PlayerId, OrderId[]> }
+  | { type: "ORDERS_DISCARDED_FOR_CLEANUP"; playerId: PlayerId; count: number; orderIds: OrderId[] }
   | {
       type: "COLOUR_SAMPLES_USED";
       playerId: PlayerId;
@@ -145,9 +149,10 @@ export interface PendingContribution {
 }
 
 export interface PrivateDecisionState {
+  orderHand: OrderId[];
   startingOrderIds: OrderId[];
   colourSamplesOrderIds: OrderId[];
-  /** V1.2.6 Guild Shifu: the Techs this player drew off a discipline to inspect. */
+  /** V1.2.7 Guild Shifu: the Techs this player drew off a discipline to inspect. */
   guildInspectedTechniqueIds: TechniqueId[];
   fireModifierPeek: FireModifier | null;
 }

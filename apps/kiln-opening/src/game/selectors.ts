@@ -1,6 +1,8 @@
 import { GAME_CONFIG } from "./content.ts";
 import type {
   GamePhase,
+  Shape,
+  TechniqueId,
   GameState,
   KilnSpaceId,
   LocationId,
@@ -34,7 +36,7 @@ export function currentDecisionActor(phase: GamePhase): PlayerId | null {
     case "firing_second_before_quality":
       return phase.actorId;
     case "firing_before_contribution":
-    case "firing_reposition":
+    case "firing_shifu_adjustment":
     case "firing_before_quality":
     case "firing_after_quality":
     case "firing_workshop_seconds":
@@ -82,10 +84,29 @@ export function emptyActionBoard(): Record<LocationId, WorkerId[]> {
   return {
     materials_yard: [],
     labour: [],
+    court_patronage: [],
     forming_studio: [],
     glaze_workshop: [],
     kiln_yard: [],
     market_imperial_office: [],
     guild_academy: [],
   };
+}
+
+/** Eligible optional forming rewards; selected rewards resolve before Decoration costs. */
+export function formingTechniqueRewards(
+  state: Pick<GameState, "ceramics">,
+  player: Pick<PlayerState, "id" | "techniques">,
+  formedShapes: readonly Shape[],
+): TechniqueId[] {
+  const previousShapes = Object.values(state.ceramics)
+    .filter((ceramic) => ceramic.ownerId === player.id && (ceramic.stage === "shaped" || ceramic.stage === "glazed"))
+    .map((ceramic) => ceramic.shape);
+  const allShapes = [...previousShapes, ...formedShapes];
+  return (["T02", "T03"] as const).filter((id) =>
+    player.techniques.some((tech) => tech.id === id && !tech.exhausted)
+    && formedShapes.some((shape) => id === "T02"
+      ? allShapes.some((other) => other !== shape)
+      : allShapes.filter((other) => other === shape).length >= 2),
+  );
 }

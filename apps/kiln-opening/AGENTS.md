@@ -10,22 +10,24 @@ Target session length for the physical design is approximately 90–120 minutes.
 
 Priority order:
 
-1. `docs/KILN_OPENING_v1.2.6_EN_SOURCE.md` — the mechanical authority; it contains the owner-supplied V1.2.6 English rulebook plus the owner's adopted Main Order queue amendment recorded in the V1.2.6 audit.
-2. `docs/KILN_OPENING_v1.2.6_ZH_SOURCE.md` — the Simplified Chinese terminology and localization authority; it contains the owner-supplied V1.2.6 Chinese rulebook plus the corresponding adopted Main Order queue amendment.
-3. `docs/RULEBOOK_AUDIT_V1.2.6.md` — source checksums, cross-language review, and recorded owner clarifications.
-4. `docs/GAME_RULES.md` — source index and implementation note, not an independent rules authority.
-5. `data/*.json` — machine-readable values derived from V1.2.6.
-6. `docs/IMPLEMENTATION_DECISIONS.md` — digital interpretations of rules where necessary.
-7. `docs/ONLINE_GAME_SPEC.md` — digital-only behaviour.
-8. `docs/DESIGN_SPEC.md` — design intent and constraints.
-9. `assets/print_reference/*` — visual direction only.
+1. `docs/KILN_OPENING_v1.2.7_EN_SOURCE.md` — owner-supplied mechanical authority.
+2. `docs/KILN_OPENING_v1.2.7_TECH_SHORT_TEXT_SOURCE.md` — current owner-supplied Tech face/hover copy; `docs/KILN_OPENING_v1.2.7_TECH_DETAIL_TEXT_SOURCE.md` — pasted click-through text, subject to owner corrections. `docs/KILN_OPENING_v1.2.7_KILN_SHORT_TEXT_SOURCE.md` supplies current Kiln hover/workshop reminders. The original component draft is retained as provenance; its reminder copy is superseded.
+3. `docs/RULEBOOK_AUDIT_V1.2.7.md` — source checksums and interpretations; the archived V1.2.6 Chinese source supplies terminology, not superseded mechanics.
+4. `docs/GAME_RULES.md` — source index.
+5. `data/*.json` — derived V1.2.7 content.
+6. `docs/IMPLEMENTATION_DECISIONS.md` — digital interpretations.
+7. `docs/ONLINE_GAME_SPEC.md` — digital behaviour.
+8. `docs/DESIGN_SPEC.md` — design intent.
+9. `assets/current_v04/` — visual reference only.
 
 Never implement an older mechanic because it appears in historical discussion or art.
+
+Explicit owner amendments recorded in `docs/RULEBOOK_AUDIT_V1.2.7.md` supersede the supplied sources only for the amended rule. Ge's owner amendment treats Standard-quality Crackle ceramics as Fine only when completing Orders or scoring the Exhibition; firing still records their actual Quality. The 2026-09-20 amendments replace the Starting Order deck with eight cards, S01–S08, make Tech abilities optional unless explicitly required, make Kiln Tending a choice of 1 Clay or 1 Wood, replace the Shifu's free Decoration with a total 1-Coin discount only when glazing two vessels, and replace Kiln Yard Shifu movement with an optional +1 or −1 Heat marker on its marked Shared-Kiln ceramic. The marker is chosen after Base Heat and before Fire at no Wood cost, changes only that ceramic's Actual Heat and remains fixed through Second Firing. The ceramic stays in its space; remove the marker after firing and keep the Shifu used until Cleanup. These amendments are incorporated into the checked-in English rulebook. All stated ability costs must be paid; declining preserves use for later. The audit retains original and current source checksums.
 
 
 ## Approved asset rule
 
-Only `assets/current_v04/` is an approved visual-reference directory. The directory name remains unchanged as a stable legacy path; rules-bearing visuals must follow V1.2.6 data and localized gameplay text must come from structured data or the i18n layer.
+Only `assets/current_v04/` is an approved visual-reference directory. The directory name remains unchanged as a stable legacy path; rules-bearing visuals must follow V1.2.7 data and localized gameplay text must come from structured data or the i18n layer.
 
 Do not search conversation history or older images for missing boards/cards. Missing current assets are intentionally specified in `data/asset_specs.json` and `docs/V0.4_ASSETS_TO_REGENERATE.md` and must be rebuilt from current data.
 
@@ -44,8 +46,9 @@ Do not reintroduce any of these unless the user explicitly changes the rules:
 - starting with fewer than 1 Shifu + 3 Apprentices or unlocking additional workers
 - numeric 0–3 Wood bidding instead of Bank/Tend/Stoke cards
 - Kiln Yard Wood income
+- Kiln Yard Shifu ceramic movement or neighbouring-zone repositioning
 - separate Market and Imperial Order decks or displays
-- Office, Court Patronage, or separate Imperial Order actions
+- Office or separate Imperial Order actions (Court Patronage is restored by V1.2.7)
 - Imperial Progress, Apprentice-unlock, or Imperial Seal mechanics
 - private Potter's Wheel or Glaze & Decoration action locations
 - Tech-based worker spaces or workshop-location unlocks
@@ -92,7 +95,9 @@ function applyAction(
 
 ## Hidden information
 
-Contribution-card selections are secret until every eligible contributor has submitted. Do not expose other players' unrevealed cards in realtime payloads, logs visible to clients, browser state, or database rows readable under client credentials.
+All undelivered ceramics and their recorded attributes are public for every player, including Shaped, Glazed, loaded (Shared or Imperial Kiln), and Finished ceramics. An Imperial Kiln belongs to one player but its contents are public.
+
+Orders in hand are secret; hand counts are public. Only the authenticated owner's private response may include their hand. Contribution-card selections are secret until every eligible contributor has submitted. Do not expose other players' unrevealed cards in realtime payloads, logs visible to clients, browser state, or database rows readable under client credentials.
 
 ## Tests that must exist
 
@@ -101,33 +106,34 @@ At minimum:
 - setup for 2/3/4 players
 - reverse-order Kiln selection
 - worker capacity by player count
-- passing with unused workers
+- rejection of Work passing and all four workers placed each round
 - all players starting with 1 Shifu + 3 Apprentices
 - global 2/3/4-player capacity at Materials Yard, Potter's Wheel, Glaze & Decoration, Commission Market, and Guild & Academy
 - Shifu over-capacity placement, including multiple Shifu overfilling the same shared location
-- Shifu vs Apprentice effects at all seven shared locations
+- Shifu vs Apprentice effects at all eight shared locations
 - Shape costs and non-limiting Vessel-card proxies
 - Decoration costs
-- all 4 Starting Techs and all 15 V1.2.6 Advanced Techs
+- all 4 Starting Techs and all 15 V1.2.7 Advanced Techs
 - Advanced-Tech acquisition limit, discipline refresh, printed cost, Shifu discount, and end-game VP
 - all five Kiln abilities
 - Base Heat starting at 2, all contributions, and the 0–5 clamp
 - secret simultaneous Contribution-card reveal
 - Fuel Ledger's secret −2/+2 choices, two-Wood affordability, reveal, and payment
-- Kiln Yard Shifu target commitment during the Work action, then reposition of only that marked ceramic after Base Heat and before the Fire card, restricted to a neighbouring Shared-Kiln zone
-- all five Fire modifiers, the V1.2.6 1/3/4/3/1 deck distribution, reshuffling, and kiln-zone modifiers
+- Kiln Yard Shifu target commitment during the Work action, then optional +1/−1 Heat-marker selection in First Player order after Base Heat and before the Fire card, with no Wood cost and no movement
+- Shifu Heat-marker effects on only the marked ceramic's Actual Heat, independent of Base Heat, Global Heat and other ceramics; fixed value through Second Firing; stacking with the applicable zone modifier or Kiln Furniture's zero; marker removal after firing and Shifu remaining used until Cleanup
+- all five Fire modifiers, the V1.2.7 1/3/4/3/1 deck distribution, reshuffling, and kiln-zone modifiers
 - Quality assignment
 - Jun/Ge/Protective Saggars/Test Pieces/Second Firing/Ru timing
 - the optional 2-Coin discard of a still-Flawed ceramic after firing
-- all 16 Starting Orders and 48 Main Orders, including independent multi-ceramic attribute matching
-- setup deal-four/keep-two Starting Orders
+- all 8 Starting Orders and 48 Main Orders, including independent multi-ceramic attribute matching
+- secret setup deal-one Starting plus one Main Order
 - Commission reservation benefits and immediate Main-display refill
-- ordered Main-display queue removal/refill and discard-two, retain-three rotation at the start of Rounds 2–5
+- ordered Main-display queue removal/refill and discard-two, retain-four rotation at the start of Rounds 2–5
 - reverse-Work-order completion circuits until a complete pass circuit
 - uniform three-Order hand limit across Starting and reserved Main Orders
 - Crown advancement, every crossed Recognition milestone, the 0–4 cap, and immediate VP for Crowns beyond 4
 - Imperial Gift at Recognition 2, Imperial Priority at Recognition 3 before or after a worker action, and Imperial Audience VP at Recognition 4
-- universal five-ceramic End-game Exhibition and its three-ceramic featured collection
+- unlimited End-game Exhibition with diversity across all exhibited ceramics
 - English/Simplified Chinese rendering from the same stable IDs without changing game state
 - end-game Coin VP cap
 - all tie breakers
@@ -140,6 +146,6 @@ If a desired implementation requires changing the board-game rules:
 1. stop,
 2. explain the conflict,
 3. propose the smallest rule change,
-4. wait for user approval before modifying either checked-in V1.2.6 source, its recorded rulings, or balance data.
+4. wait for user approval before modifying either checked-in V1.2.7 source, its recorded rulings, or balance data.
 
 Do not silently “improve” balance values.

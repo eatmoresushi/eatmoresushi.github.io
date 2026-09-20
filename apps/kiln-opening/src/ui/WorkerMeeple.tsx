@@ -4,7 +4,7 @@ import type { Locale } from "./i18n";
 
 const PLAYER_ACCENTS = ["cinnabar", "river", "ochre", "plum"] as const;
 
-function workerLabel(player: PublicPlayerState, kind: WorkerKind, locale: Locale): string {
+export function workerLabel(player: PublicPlayerState, kind: WorkerKind, locale: Locale): string {
   if (locale === "zh-CN") return `${player.displayName}的${kind === "shifu" ? "师傅" : "学徒"}`;
   return `${player.displayName}'s ${kind === "shifu" ? "Shifu" : "Apprentice"}`;
 }
@@ -16,15 +16,17 @@ export function WorkerMeeple({
   locale,
   small = false,
 }: {
-  player: PublicPlayerState;
+  player?: PublicPlayerState;
   kind: WorkerKind;
   locale: Locale;
   small?: boolean;
 }) {
-  const label = workerLabel(player, kind, locale);
-  const accent = PLAYER_ACCENTS[player.seatIndex] ?? PLAYER_ACCENTS[0];
+  const label = player === undefined
+    ? locale === "zh-CN" ? kind === "shifu" ? "师傅" : "学徒" : kind === "shifu" ? "Shifu" : "Apprentice"
+    : workerLabel(player, kind, locale);
+  const accent = player === undefined ? "neutral" : PLAYER_ACCENTS[player.seatIndex] ?? PLAYER_ACCENTS[0];
   return (
-    <span className={`kiln-tabletop-worker kiln-tabletop-accent-${accent} is-${kind} ${small ? "is-small" : ""}`} data-player-id={player.id} data-worker-kind={kind} aria-label={label} title={label}>
+    <span className={`kiln-tabletop-worker kiln-tabletop-accent-${accent} is-${kind} ${small ? "is-small" : ""}`} data-player-id={player?.id} data-worker-kind={kind} role="img" aria-label={label} title={label}>
       <svg viewBox="0 0 44 54" aria-hidden="true" focusable="false">
         {kind === "shifu" ? <>
           <path className="kiln-tabletop-worker-hat" d="M15 5h14l3 5H12zM9 10h26l-2 4H11z" />

@@ -234,9 +234,10 @@ function KilnTable({ game }: { game: PublicGameState }) {
             const enabled = active.has(spaceId);
             const shifuMarked = ceramic !== undefined
               && game.players[ceramic.ownerId]?.kilnYardShifuCeramicId === ceramic.id;
+            const shifuHeat = ceramic?.stage === "loaded" ? ceramic.shifuHeatAdjustment ?? null : null;
             return (
               <tr className={`${enabled ? "" : "inactive-row"} ${shifuMarked ? "shifu-marked-row" : ""}`} key={spaceId} data-space={spaceId}>
-                <th>{spaceId}</th><td>{term(definition.zone)}</td><td>{signed(definition.modifier)}</td><td>{enabled ? t("Yes") : t("No — covered")}</td><td>{ceramic === undefined ? t("Empty") : `${ceramicDescription(ceramic, locale)}${shifuMarked ? locale === "zh-CN" ? " · 师傅所在陶瓷" : " · Shifu-marked" : ""}`}</td><td>{ceramic === undefined ? "—" : game.players[ceramic.ownerId]?.displayName ?? ceramic.ownerId}</td>
+                <th>{spaceId}</th><td>{term(definition.zone)}</td><td>{signed(ceramic?.stage === "loaded" && ceramic.kilnFurnitureUsed ? 0 : definition.modifier)}</td><td>{enabled ? t("Yes") : t("No — covered")}</td><td>{ceramic === undefined ? t("Empty") : `${ceramicDescription(ceramic, locale)}${shifuHeat !== null ? locale === "zh-CN" ? ` · 师傅火候${signed(shifuHeat)}` : ` · Shifu Heat ${signed(shifuHeat)}` : shifuMarked ? locale === "zh-CN" ? " · 师傅所在陶瓷" : " · Shifu-marked" : ""}`}</td><td>{ceramic === undefined ? "—" : game.players[ceramic.ownerId]?.displayName ?? ceramic.ownerId}</td>
               </tr>
             );
           })}</tbody>
@@ -261,7 +262,7 @@ function FiringInspector({ game, context, live }: { game: PublicGameState; conte
   const latest = context ?? summary;
   const contributions = context?.contributions ?? summary?.contributions ?? {};
   const contributorCount = (context?.contributors ?? summary?.contributors ?? Object.keys(contributions)).length;
-  const shifuAdjustments = latest?.kilnYardShifuRepositions ?? [];
+  const shifuAdjustments = latest?.kilnYardShifuAdjustments ?? [];
   return (
     <section className="playtest-panel firing-inspector" aria-labelledby="firing-inspector-title" data-testid="firing-inspector">
       <div className="playtest-panel-heading">
@@ -279,13 +280,13 @@ function FiringInspector({ game, context, live }: { game: PublicGameState; conte
             <div><dt>{t("Base Heat")}</dt><dd>{latest.baseHeat ?? "—"}</dd></div>
             <div><dt>{t("Fire modifier")}</dt><dd>{latest.fireModifier === null ? "—" : signed(latest.fireModifier)}</dd></div>
             <div><dt>{t("Global Heat")}</dt><dd>{latest.globalHeat ?? "—"}</dd></div>
-            <div><dt>{locale === "zh-CN" ? "窑坊师傅调位" : "Kiln Yard Shifu adjustments"}</dt><dd>{shifuAdjustments.length === 0
+            <div><dt>{locale === "zh-CN" ? "窑坊师傅调火" : "Kiln Yard Shifu adjustments"}</dt><dd>{shifuAdjustments.length === 0
               ? t("None.")
               : shifuAdjustments.map((entry) => {
                 const owner = game.players[entry.playerId]?.displayName ?? entry.playerId;
-                return entry.toSpaceId === null
-                  ? locale === "zh-CN" ? `${owner}保留${entry.fromSpaceId}` : `${owner} kept ${entry.fromSpaceId}`
-                  : locale === "zh-CN" ? `${owner}：${entry.fromSpaceId} → ${entry.toSpaceId}` : `${owner}: ${entry.fromSpaceId} → ${entry.toSpaceId}`;
+                return entry.adjustment === null
+                  ? locale === "zh-CN" ? `${owner}：${entry.ceramicId}不调整` : `${owner}: ${entry.ceramicId} unadjusted`
+                  : locale === "zh-CN" ? `${owner}：${entry.ceramicId}实际火候${signed(entry.adjustment)}` : `${owner}: ${entry.ceramicId} Actual Heat ${signed(entry.adjustment)}`;
               }).join(" · ")}</dd></div>
           </dl>
           {context !== null && Object.keys(context.ceramicResults).length > 0 && <div className="table-scroll">
@@ -295,6 +296,7 @@ function FiringInspector({ game, context, live }: { game: PublicGameState; conte
                 const ceramic = game.ceramics[result.ceramicId];
                 const glaze = ceramic !== undefined && ceramic.stage !== "shaped" && ceramic.stage !== "sold" ? ceramic.glaze : null;
                 const changes = [
+                  (result.shifuHeatAdjustment ?? 0) !== 0 ? (locale === "zh-CN" ? `师傅火候${signed(result.shifuHeatAdjustment!)}` : `Shifu Heat ${signed(result.shifuHeatAdjustment!)}`) : null,
                   result.finalActualHeat !== result.naturalActualHeat ? (locale === "zh-CN" ? `实际火候${result.naturalActualHeat} → ${result.finalActualHeat}` : `Actual Heat ${result.naturalActualHeat} → ${result.finalActualHeat}`) : null,
                   result.forcedQuality !== null ? (locale === "zh-CN" ? `强制改为${term(result.forcedQuality)}` : `Forced ${term(result.forcedQuality)}`) : null,
                 ].filter((value): value is string => value !== null);
@@ -350,13 +352,13 @@ function OrderDisplays({ game, ownPlayerId }: { game: PublicGameState; ownPlayer
         <div><h3>{t("Main Order display")} ({game.displays.market.length})</h3><p className="muted">{t("Oldest → newest. Face-up removals slide later Orders left and refill at the right.")}</p><div className="card-row">{game.displays.market.map((orderId) => <OrderCard orderId={orderId} key={orderId} />)}</div></div>
       </div>
       <section className="workshop-orders" aria-label={t("Workshop Orders")}>
-        <h3>{t("Uncompleted Order hands — public information")}</h3>
+        <h3>{t("Order hands — private contents, public counts")}</h3>
         <div className="workshop-order-grid">{game.playerOrder.map((playerId) => {
           const player = game.players[playerId]!;
           return (
             <article className="workshop-order-hand" key={playerId}>
-              <h4>{player.displayName}{playerId === ownPlayerId ? ` (${t("You")})` : ""} · {player.orderHand.length} {t("open")} / {player.completedOrders.length} {t("completed")}</h4>
-              {player.orderHand.length === 0 ? <p className="muted">{t("No open Orders.")}</p> : <div className="card-row">{player.orderHand.map((orderId) => <OrderCard orderId={orderId} key={orderId} />)}</div>}
+              <h4>{player.displayName}{playerId === ownPlayerId ? ` (${t("You")})` : ""} · {player.orderHandCount} {t("open")} / {player.completedOrders.length} {t("completed")}</h4>
+              {player.orderHand.length === 0 ? <p className="muted">{player.orderHandCount > 0 ? (locale === "zh-CN" ? "持有委托为秘密信息。" : "Orders in hand are private.") : t("No open Orders.")}</p> : <div className="card-row">{player.orderHand.map((orderId) => <OrderCard orderId={orderId} key={orderId} />)}</div>}
             </article>
           );
         })}</div>
@@ -397,7 +399,7 @@ function ImperialProgressTable({ game }: { game: PublicGameState }) {
           })}</tbody>
         </table>
       </div>
-      <p className="progress-legend">{locale === "zh-CN" ? "只有已完成委托上的👑推进御府声望；逐个结算每个👑与跨过的里程碑。到达声望4后，每个额外👑立即获得1 VP。" : "Only Crowns on completed Orders advance Recognition; resolve every crossed milestone in order. Each Crown beyond Recognition 4 scores 1 VP immediately."}</p>
+      <p className="progress-legend">{locale === "zh-CN" ? "已完成委托上的👑推进御府声望；朝廷赞助可支付4铜钱，从声望0、1或2提升1格。依次结算到达的里程碑。到达声望4后，每个额外👑立即获得1 VP。" : "Crowns on completed Orders advance Recognition. Court Patronage costs 4 Coins to advance 1 space from Recognition 0, 1 or 2. Resolve each reached milestone in order. Each Crown beyond Recognition 4 scores 1 VP immediately."}</p>
     </section>
   );
 }
@@ -492,7 +494,7 @@ function phaseName(game: PublicGameState, locale: Locale = "en"): string {
     "Kiln selection": "选择窑口", "Starting Orders": "起始委托", "Starting Tech": "起始技艺", "Work Phase": "作业阶段",
     "Imperial Priority": "御烧优先", "Commission Market — Orders": "瓷牙行 — 委托", "Guild & Academy": "陶工行",
     "Pre-firing Techniques": "烧成前技艺", "Secret Contributions": "秘密控火", "Fuel Ledger": "柴簿",
-    "Shifu kiln reposition": "窑坊师傅调位", "Reveal Fire": "揭示窑火", "Kiln ability": "窑口能力", "Second Firing": "复烧",
+    "Kiln Yard Shifu adjustment": "窑坊师傅调火", "Reveal Fire": "揭示窑火", "Kiln ability": "窑口能力", "Second Firing": "复烧",
     "After-Quality abilities": "品质判定后能力", "Protective Saggars": "匣钵护烧", "Test Pieces": "火照", "Cleanup Orders": "整理委托",
     "Reservation advance": "承接后收益", "Flawed salvage": "瑕品处理", "Order Phase": "委托阶段", "End-game Exhibition": "终局陈列", "Final results": "最终计分",
   } as Record<string, string>)[english] ?? english : english;
@@ -506,7 +508,7 @@ function phaseName(game: PublicGameState, locale: Locale = "en"): string {
     case "work_guild": return tx("Guild & Academy");
     case "firing_before_contribution": return tx("Pre-firing Techniques");
     case "firing_contributions": return tx("Secret Contributions");
-    case "firing_reposition": return tx("Shifu kiln reposition");
+    case "firing_shifu_adjustment": return tx("Kiln Yard Shifu adjustment");
     case "firing_reveal_fire": return tx("Reveal Fire");
     case "firing_before_quality": return tx("Kiln ability");
     case "firing_second_before_quality": return tx("Second Firing");

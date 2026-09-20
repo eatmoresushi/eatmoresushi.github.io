@@ -1,3 +1,4 @@
+import { withOwnOrderHand } from "./projection.ts";
 import {
   DECORATION_COSTS,
   DISCIPLINES,
@@ -21,7 +22,8 @@ import type { AuthoritativeCommand } from "./types.ts";
 export function fallbackComputerCommands(
   observation: ComputerObservation,
 ): AuthoritativeCommand[] {
-  const { game, ownPrivate, playerId } = observation;
+  const { ownPrivate, playerId } = observation;
+  const game = withOwnOrderHand(observation.game, playerId, ownPrivate.orderHand);
   const player = game.players[playerId];
   if (player === undefined) return [];
   const phase = game.phase;
@@ -47,13 +49,13 @@ export function fallbackComputerCommands(
       const commands: AuthoritativeCommand[] = [];
       for (const worker of workers) {
         commands.push({ type: "USE_LABOUR", workerId: worker.id });
-        if (game.commonSupply.clay > 0 || game.commonSupply.wood > 0) {
+        {
           const amount = worker.kind === "shifu" ? 4 : 3;
           commands.push({
             type: "GAIN_MATERIALS",
             workerId: worker.id,
-            clay: game.commonSupply.clay > 0 ? amount : 0,
-            wood: game.commonSupply.clay > 0 ? 0 : amount,
+            clay: amount,
+            wood: 0,
           });
         }
         if (player.resources.clay >= 1) {
@@ -62,12 +64,11 @@ export function fallbackComputerCommands(
         const shaped = Object.values(game.ceramics).find(
           (ceramic) => ceramic.ownerId === playerId && ceramic.stage === "shaped",
         );
-        if (shaped !== undefined && (worker.kind === "shifu" || player.resources.coins >= DECORATION_COSTS.plain)) {
+        if (shaped !== undefined && player.resources.coins >= DECORATION_COSTS.plain) {
           commands.push({
             type: "GLAZE_CERAMICS",
             workerId: worker.id,
             selections: [{ ceramicId: shaped.id, glaze: "celadon", decoration: "plain" }],
-            ...(worker.kind === "shifu" ? { freeDecorationCeramicId: shaped.id } : {}),
           });
         }
         const glazed = Object.values(game.ceramics).find(
@@ -103,7 +104,6 @@ export function fallbackComputerCommands(
           });
         }
       }
-      if (!forcedWorkerAction) commands.push({ type: "PASS_WORK_PHASE" });
       return commands;
     }
     case "work_office_orders":
@@ -152,26 +152,22 @@ export function fallbackComputerCommands(
         card: "TEND",
         useFuelLedger: false,
       }];
-    case "firing_reposition":
-      return [{ type: "RESOLVE_KILN_YARD_REPOSITION", ceramicId: null, toSpaceId: null }];
+    case "firing_shifu_adjustment":
+      return [{ type: "RESOLVE_KILN_YARD_ADJUSTMENT", ceramicId: null, adjustment: null }];
     case "firing_reveal_fire":
       return [{ type: "REVEAL_FIRE_CARD" }];
     case "firing_before_quality":
     case "firing_second_before_quality":
-      return player.kilnId === "JU"
-        ? [{ type: "RESOLVE_JUN", ceramicId: null, delta: null }]
-        : [{ type: "RESOLVE_GE", ceramicId: null }];
+      return [{ type: "RESOLVE_JUN", ceramicId: null, delta: null }];
     case "firing_after_quality":
       return phase.techniqueIds.includes("T11")
         ? [{ type: "RESOLVE_PROTECTIVE_SAGGARS", ceramicId: null }]
         : [{ type: "RESOLVE_SECOND_FIRING", ceramicId: null }];
     case "firing_workshop_seconds":
       return [
-        ...(game.commonSupply.coins > 0
-          ? Object.values(game.firingContext?.ceramicResults ?? {})
+        ...Object.values(game.firingContext?.ceramicResults ?? {})
             .filter((result) => result.assignedQuality === "flawed" && game.ceramics[result.ceramicId]?.ownerId === playerId)
-            .map((result) => ({ type: "RESOLVE_WORKSHOP_SECONDS" as const, ceramicId: result.ceramicId }))
-          : []),
+            .map((result) => ({ type: "RESOLVE_WORKSHOP_SECONDS" as const, ceramicId: result.ceramicId })),
         { type: "RESOLVE_WORKSHOP_SECONDS", ceramicId: null },
       ];
     case "orders":
@@ -185,13 +181,10 @@ export function fallbackComputerCommands(
       const ceramics = Object.values(game.ceramics).filter(
         (ceramic): ceramic is FinishedCeramic =>
           ceramic.ownerId === playerId && ceramic.stage === "finished" && ceramic.quality !== "flawed",
-      ).slice(0, 5);
+      );
       return [{
         type: "SUBMIT_PRESENTATION",
         ceramicIds: ceramics.map((ceramic) => ceramic.id),
-        featuredCeramicIds: ceramics.length >= 3
-          ? ceramics.slice(0, 3).map((ceramic) => ceramic.id)
-          : [],
       }];
     }
     case "finished":
@@ -203,7 +196,8 @@ function techniqueFallbacks(
   observation: ComputerObservation,
   workerId: string,
 ): AuthoritativeCommand[] {
-  const { game, ownPrivate, playerId } = observation;
+  const { ownPrivate, playerId } = observation;
+  const game = withOwnOrderHand(observation.game, playerId, ownPrivate.orderHand);
   const player = game.players[playerId];
   const worker = player?.workers[workerId];
   if (player === undefined || worker === undefined) return [];

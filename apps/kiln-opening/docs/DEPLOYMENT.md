@@ -43,4 +43,11 @@ In the repository settings, choose **GitHub Actions** as the Pages source. A pus
 - Game: `https://luyuan.me/kiln-opening/`
 - Playtest form: `https://luyuan.me/kiln-opening/playtest/`
 
-The workflow deliberately does not run the browser test because GitHub-hosted runners would need a separate Chromium download. Run `npm run test:e2e` from `apps/kiln-opening/` before publishing UI changes.
+The workflow deliberately does not run the browser test because GitHub-hosted runners would need a separate Chromium download. Use `npm run dev:local` for a browser smoke test before publishing UI changes.
+
+
+## V1.2.7 rollout
+
+Apply migrations `202609190001_v127_rules.sql` and `202609190002_playtest_v127.sql`, then deploy the current `game-action` and `playtest-submit` Edge Functions and rebuild/publish the client together. New games require rules/content version 1.2.7 and an `r17` fingerprint. Historical room and playtest rows are preserved; old rooms cannot be resumed with this ruleset. The migration files do not themselves deploy anything.
+
+The public game projection contains only Order-hand counts. The authenticated seat response supplies its private hand; never persist that combined client view into public snapshots or Realtime events.

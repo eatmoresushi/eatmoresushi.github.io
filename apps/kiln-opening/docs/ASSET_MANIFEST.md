@@ -1,4 +1,4 @@
-# ASSET_MANIFEST.md — V1.2.6 rules / legacy visual audit
+# ASSET_MANIFEST.md — V1.2.7 rules / legacy visual audit
 
 Only files under `assets/current_v04/` are approved as visual references. The directory name is a stable legacy path, not a rules-version claim. No raster text is authoritative.
 
@@ -10,7 +10,7 @@ Only files under `assets/current_v04/` are approved as visual references. The di
 - `vessel_cards_page_2_washer_vase.png`
 - `vessel_cards_page_3_censer.png`
 
-Together these provide 8 each of Bowl, Plate, Brush Washer, Vase and Censer. Their writable Glaze, Decoration and Quality fields remain usable, but all labels and rules must be checked against the V1.2.6 sources and current structured data. The physical card count is not a gameplay limit; provide a same-Shape proxy when all available cards are in use.
+Together these provide 8 each of Bowl, Plate, Brush Washer, Vase and Censer. Their writable Glaze, Decoration and Quality fields remain usable, but all labels and rules must be checked against the V1.2.7 sources and current structured data. The physical card count is not a gameplay limit; provide a same-Shape proxy when all available cards are in use.
 
 ## Obsolete rules-bearing raster sets
 
@@ -19,22 +19,22 @@ Any image showing an earlier ruleset is obsolete, including:
 - incomplete or incorrectly distributed Fire-card sheets;
 - numeric 0/1/2/3 Wood bidding rather than Bank, Tend and Stoke;
 - separate Market and Imperial Order decks or displays;
-- Office, Court Patronage, private Potter's Wheel or private Glaze & Decoration locations;
+- Office, private Potter's Wheel or private Glaze & Decoration locations;
 - worker unlocks, Imperial Progress or the Imperial Seal;
-- older Craft Technique sets rather than V1.2.6 Starting and Advanced Techs;
+- older Craft Technique sets rather than V1.2.7 Starting and Advanced Techs;
 - an Imperial token that adjusts firing heat or is embedded as an additional Kiln Yard load rather than the before-or-after-action Imperial Priority load.
 
 The online client must cover or replace stale raster wording with data-driven bilingual UI; it must never expose obsolete text as the current rule.
 
-## Assets to regenerate from V1.2.6 data
+## Assets to regenerate from V1.2.7 data
 
 ### Orders
 
-Generate all 64 fronts from `data/orders.json`: 16 separate Starting Orders and 48 unified Main Orders. Main cards print their Coin, VP and Crown rewards. Use distinct Starting and Main backs and matching English / Simplified Chinese text from the same stable card IDs.
+Generate all 56 fronts from `data/orders.json`: 8 separate Starting Orders (S01–S08) and 48 unified Main Orders. Main cards print their Coin, VP and Crown rewards. Use distinct Starting and Main backs and matching English / Simplified Chinese text from the same stable card IDs.
 
 ### Central Action Board
 
-Generate the seven shared worker locations from `data/action_locations.json`:
+Generate the eight shared worker locations from `data/action_locations.json`:
 
 1. Materials Yard
 2. Potter's Wheel
@@ -43,8 +43,9 @@ Generate the seven shared worker locations from `data/action_locations.json`:
 5. Commission Market
 6. Guild & Academy
 7. Labour
+8. Court Patronage
 
-Materials, Wheel, Glaze, Commission and Guild use one global 2/3/4 capacity for 2/3/4 players. Kiln Yard and Labour are uncapped. Printed spaces do not belong to individual players; a Shifu may overfill a full location. Also show the Round track and the 0–4 Imperial Recognition track; Recognition is not a worker location.
+Materials, Wheel, Glaze, Commission and Guild use one global 2/3/4 capacity for 2/3/4 players. Kiln Yard, Labour and Court Patronage are uncapped. Printed spaces do not belong to individual players; a Shifu may overfill a full location. Also show the Round track and the 0–4 Imperial Recognition track; Recognition is not a worker location.
 
 ### Shared Kiln and Fire deck
 
@@ -68,15 +69,15 @@ Generate four Starting Tech designs, with four physical copies each, and all 15 
 
 ### Reference
 
-Generate the five-phase round sequence, Contribution/Firing sequence, Work-Phase Shifu-to-ceramic marker and after-Base/before-Fire movement of only that marked ceramic, the 2-Coin Flawed salvage, Recognition 0–4 milestones and Crown overflow VP, universal five-ceramic Exhibition and featured-three diversity rule from current structured data. All rules-bearing output must support matching English and Simplified Chinese text.
+Generate the five-phase round sequence, Contribution/Firing sequence, Work-Phase Shifu-to-ceramic marker and its optional replacement with a +1 or −1 Heat marker after Base Heat and before Fire, the 2-Coin Flawed salvage, Recognition 0–4 milestones and Crown overflow VP, unlimited Exhibition and whole-collection diversity bonuses from current structured data. A Shifu Heat marker changes only its ceramic's Actual Heat, costs no Wood and leaves the ceramic in place; remove it after firing. All rules-bearing output must support matching English and Simplified Chinese text.
 
 ## Authority
 
 For current gameplay use, in order:
 
-1. `docs/KILN_OPENING_v1.2.6_EN_SOURCE.md` for mechanics
-2. `docs/KILN_OPENING_v1.2.6_ZH_SOURCE.md` for Chinese localization
-3. `docs/RULEBOOK_AUDIT_V1.2.6.md`
+1. `docs/KILN_OPENING_v1.2.7_EN_SOURCE.md` for mechanics
+2. `docs/KILN_OPENING_v1.2.6_ZH_SOURCE.md` for established Chinese terminology
+3. `docs/RULEBOOK_AUDIT_V1.2.7.md`
 4. current `data/*.json`
 5. `docs/IMPLEMENTATION_DECISIONS.md`
 

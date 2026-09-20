@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.2.6",
+  "rulesVersion": "1.2.7",
   "players": {
     "min": 2,
     "max": 4
@@ -16,7 +16,7 @@
     "apprenticesStarting": 3
   },
   "orderDisplay": {
-    "market": 5,
+    "market": 6,
     "roundStartDiscard": 2,
     "baseHandLimit": 3
   },

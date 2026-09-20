@@ -1,10 +1,10 @@
 {
-  "rulesVersion": "1.2.6",
+  "rulesVersion": "1.2.7",
   "components": [
     {
       "name": "Central Action Board",
       "qty": 1,
-      "notes": "All seven shared action locations plus the Imperial Recognition track. Materials Yard, Potter's Wheel, Glaze & Decoration, Commission Market and Guild & Academy use 2/3/4 spaces by player count; Kiln Yard and Labour are uncapped."
+      "notes": "All eight shared action locations plus the Imperial Recognition track. Materials Yard, Potter's Wheel, Glaze & Decoration, Commission Market and Guild & Academy use 2/3/4 spaces by player count; Kiln Yard, Labour and Court Patronage are uncapped."
     },
     {
       "name": "Shared Kiln Board",
@@ -29,17 +29,17 @@
     {
       "name": "Clay",
       "qty": 40,
-      "notes": "Brown cubes or tokens."
+      "notes": "Brown cubes or tokens. Physical quantity only; the resource supply is unlimited."
     },
     {
       "name": "Wood",
       "qty": 40,
-      "notes": "Sticks or tokens distinct from Clay."
+      "notes": "Sticks or tokens distinct from Clay. Physical quantity only; the resource supply is unlimited."
     },
     {
       "name": "Coins",
       "qty": 50,
-      "notes": "Values 1 and 5 are useful."
+      "notes": "Values 1 and 5 are useful. Physical quantity only; the resource supply is unlimited."
     },
     {
       "name": "Vessel Cards",
@@ -49,12 +49,12 @@
     {
       "name": "Main Order Cards",
       "qty": 48,
-      "notes": "One unified public and reservable deck with a five-card display."
+      "notes": "One unified public and reservable deck with a six-card display."
     },
     {
       "name": "Starting Order Cards",
-      "qty": 16,
-      "notes": "Separate Setup-only deck; each player is dealt four and keeps two."
+      "qty": 8,
+      "notes": "Separate Setup-only deck; each player is secretly dealt one Starting Order alongside one Main Order."
     },
     {
       "name": "Starting Tech Tiles",

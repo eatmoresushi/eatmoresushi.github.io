@@ -1,18 +1,18 @@
 {
-  "rulesVersion": "1.2.6",
+  "rulesVersion": "1.2.7",
   "roundCount": 5,
   "phases": [
     {
       "order": 1,
       "id": "start",
       "name": "Start of Round",
-      "summary": "In Rounds 2-5, discard the two leftmost face-up Main Orders, slide the remaining three left and reveal two new Main Orders into the rightmost positions; refill Tech displays and ready once-per-round abilities."
+      "summary": "In Rounds 2-5, discard the two leftmost face-up Main Orders, slide the remaining four left and reveal two new Main Orders into the rightmost positions; refill Tech displays and ready once-per-round abilities."
     },
     {
       "order": 2,
       "id": "work",
       "name": "Work Phase",
-      "summary": "Players alternate placing one worker and resolving that shared location until all have passed. Printed spaces are global; a Shifu may overfill a fully occupied action location. A worker may be placed only if it can perform at least one instance of that location's main action."
+      "summary": "Players alternate placing one worker and resolving that shared location until every worker has been placed; passing is not allowed. Printed spaces are global; a Shifu may overfill a fully occupied action location. A worker may be placed only if it can perform at least one instance of that location's main action."
     },
     {
       "order": 3,

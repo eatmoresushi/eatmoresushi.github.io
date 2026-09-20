@@ -1,0 +1,171 @@
+import { describe, expect, it } from "vitest";
+import {
+  FIRE_CARDS,
+  GAME_CONFIG,
+  KILN_IDS,
+  LOCATION_IDS,
+  MAIN_ORDERS,
+  STARTING_ORDERS,
+  STARTING_TECHNIQUES,
+  TECHNIQUES,
+  activeKilnSpaceIds,
+  applyAction,
+  currentDecisionActor,
+  locationCapacity,
+  turnOrderFromFirst,
+} from "../../src/game/index.ts";
+import { createdGame, mustApply, mustResult, startedGame } from "./helpers.ts";
+
+describe("V1.2.7 setup and authoritative content", () => {
+  it.each([2, 3, 4] as const)("creates the exact %i-player setup", (playerCount) => {
+    const { state } = createdGame(playerCount, 1200 + playerCount);
+
+    expect(state.rulesVersion).toBe("1.2.7");
+    expect(state.schemaVersion).toBe(4);
+    expect(state.round).toBe(1);
+    expect(state.marketDisplay).toHaveLength(6);
+    expect(state.marketDeck).toHaveLength(42 - playerCount);
+    expect(state.startingOrderDeck).toHaveLength(0);
+    expect(state.returnedStartingOrderIds).toHaveLength(8 - playerCount);
+    const dealtStarting = Object.values(state.players).flatMap((player) => player.orderHand.filter((id) => id.startsWith("S")));
+    expect(dealtStarting).toHaveLength(playerCount);
+    expect(new Set([...dealtStarting, ...state.returnedStartingOrderIds]).size).toBe(8);
+    expect([...dealtStarting, ...state.returnedStartingOrderIds].sort()).toEqual(STARTING_ORDERS.map(({ id }) => id));
+    expect(state.phase.type).toBe("setup_kiln_selection");
+    if (state.phase.type !== "setup_kiln_selection") return;
+    expect(state.phase.selectionOrder).toEqual([...turnOrderFromFirst(state)].reverse());
+
+    for (const player of Object.values(state.players)) {
+      expect(Object.values(player.workers)).toHaveLength(4);
+      expect(Object.values(player.workers).filter(({ kind }) => kind === "shifu")).toHaveLength(1);
+      expect(Object.values(player.workers).filter(({ kind }) => kind === "apprentice")).toHaveLength(3);
+      expect(Object.values(player.workers).every(({ status }) => status === "available")).toBe(true);
+      expect(player.imperialRecognition).toBe(0);
+      expect(player.imperialKilnUnlocked).toBe(false);
+      expect(player.imperialPriorityAvailable).toBe(false);
+    }
+  });
+
+  it.each([2, 3, 4] as const)("deals one Starting and one Main Order at %i players, then allows shared Starting Tech choices", (playerCount) => {
+    const { state: created, rng } = createdGame(playerCount, 1221);
+    let state = created;
+    let kilnIndex = 0;
+    while (state.phase.type === "setup_kiln_selection") {
+      const actor = currentDecisionActor(state.phase)!;
+      state = mustApply(state, actor, { type: "SELECT_KILN", kilnId: KILN_IDS[kilnIndex]! }, rng);
+      kilnIndex += 1;
+    }
+    const hands = Object.values(state.players).flatMap((player) => player.orderHand);
+    expect(new Set(hands).size).toBe(playerCount * 2);
+    for (const player of Object.values(state.players)) {
+      expect(player.orderHand.filter((id) => id.startsWith("S"))).toHaveLength(1);
+      expect(player.orderHand.filter((id) => id.startsWith("O"))).toHaveLength(1);
+    }
+    expect(state.phase.type).toBe("setup_starting_tech");
+    for (const player of Object.values(state.players)) expect(player.orderHand).toHaveLength(2);
+
+    while (state.phase.type === "setup_starting_tech") {
+      const actor = currentDecisionActor(state.phase)!;
+      state = mustApply(state, actor, { type: "SELECT_STARTING_TECH", techniqueId: "ST01" }, rng);
+    }
+    expect(state.phase.type).toBe("work");
+    expect(Object.values(state.players).every(({ startingTechniqueId }) => startingTechniqueId === "ST01")).toBe(true);
+  });
+
+  it("contains exactly the V1.2.7 decks, spaces, locations, and bilingual records", () => {
+    expect(STARTING_ORDERS.map(({ id }) => id)).toEqual(Array.from({ length: 8 }, (_, i) => `S${String(i + 1).padStart(2, "0")}`));
+    expect(MAIN_ORDERS.map(({ id }) => id)).toEqual(Array.from({ length: 48 }, (_, i) => `O${String(i + 1).padStart(2, "0")}`));
+    expect(STARTING_TECHNIQUES).toHaveLength(4);
+    expect(TECHNIQUES).toHaveLength(15);
+    expect(TECHNIQUES.filter(({ discipline }) => discipline === "forming")).toHaveLength(5);
+    expect(TECHNIQUES.filter(({ discipline }) => discipline === "glazing")).toHaveLength(5);
+    expect(TECHNIQUES.filter(({ discipline }) => discipline === "firing")).toHaveLength(5);
+    expect([...STARTING_ORDERS, ...MAIN_ORDERS].every(({ requirements, requirementsZh }) => requirements.length > 0 && requirementsZh.length > 0)).toBe(true);
+    expect([...STARTING_TECHNIQUES, ...TECHNIQUES].every(({ name, nameZh, ability, abilityZh }) => name.length > 0 && nameZh.length > 0 && ability.length > 0 && abilityZh.length > 0)).toBe(true);
+    expect(LOCATION_IDS).toHaveLength(8);
+    expect(LOCATION_IDS).toContain("court_patronage");
+    expect(activeKilnSpaceIds(2)).toHaveLength(5);
+    expect(activeKilnSpaceIds(3)).toHaveLength(6);
+    expect(activeKilnSpaceIds(4)).toHaveLength(7);
+    expect(FIRE_CARDS).toHaveLength(12);
+    expect(Object.fromEntries([-2, -1, 0, 1, 2].map((value) => [value, FIRE_CARDS.filter((card) => card === value).length]))).toEqual({ "-2": 1, "-1": 3, "0": 4, "1": 3, "2": 1 });
+  });
+
+  it("uses 2/3/4 capacity for shared contested locations and no cap for Kiln Yard/Labour", () => {
+    for (const playerCount of [2, 3, 4] as const) {
+      for (const location of [
+        "materials_yard",
+        "forming_studio",
+        "glaze_workshop",
+        "market_imperial_office",
+        "guild_academy",
+      ] as const) {
+        expect(locationCapacity(location, playerCount)).toBe(playerCount);
+      }
+      expect(locationCapacity("kiln_yard", playerCount)).toBe(Number.POSITIVE_INFINITY);
+      expect(locationCapacity("labour", playerCount)).toBe(Number.POSITIVE_INFINITY);
+    }
+  });
+
+  it("rotates a six-card market by discarding the two oldest and preserving the remaining four", () => {
+    const { state: started, rng } = startedGame(2, 1222);
+    let state = structuredClone(started);
+    const oldDisplay = [...state.marketDisplay];
+    const nextTwo = state.marketDeck.slice(0, 2);
+    const reverseOrder = [...turnOrderFromFirst(state)].reverse();
+    state.phase = { type: "orders", turnOrder: reverseOrder, currentIndex: 0, activePlayerId: reverseOrder[0]!, completedInCircuit: 0 };
+
+    let finalEvents: ReturnType<typeof mustResult>["events"] = [];
+    while (state.phase.type === "orders") {
+      const result = mustResult(state, state.phase.activePlayerId, { type: "END_ORDER_TURN" }, rng);
+      state = result.state;
+      finalEvents = result.events;
+    }
+
+    expect(state.round).toBe(2);
+    expect(state.marketDisplay).toEqual([...oldDisplay.slice(2), ...nextTwo]);
+    expect(state.marketDisplay).toHaveLength(GAME_CONFIG.orderDisplay.market);
+    expect(state.marketDiscard.slice(-2)).toEqual(oldDisplay.slice(0, 2));
+    expect(finalEvents).toContainEqual(expect.objectContaining({ type: "ORDER_DISPLAYS_ROTATED", marketOrderIds: oldDisplay.slice(0, 2) }));
+  });
+
+  it("finishes a six-card rotation when the Main deck runs out mid-refill", () => {
+    const { state: started, rng } = startedGame(2, 1223);
+    let state = structuredClone(started);
+    const remaining = [...state.marketDeck];
+    state.marketDeck = remaining.slice(0, 1);
+    state.marketDiscard = remaining.slice(1, 5);
+    const reverseOrder = [...turnOrderFromFirst(state)].reverse();
+    state.phase = { type: "orders", turnOrder: reverseOrder, currentIndex: 0, activePlayerId: reverseOrder[0]!, completedInCircuit: 0 };
+
+    while (state.phase.type === "orders") {
+      state = mustApply(state, state.phase.activePlayerId, { type: "END_ORDER_TURN" }, rng);
+    }
+
+    expect(state.round).toBe(2);
+    expect(state.marketDisplay).toHaveLength(6);
+    expect(state.marketDiscard).toEqual([]);
+  });
+
+  it("does not pass the First Player marker after the fifth-round Cleanup", () => {
+    const { state: initial, rng } = startedGame(2, 1224);
+    let state = structuredClone(initial);
+    state.round = 5;
+    const firstPlayerId = state.firstPlayerId;
+    const reverseOrder = [...turnOrderFromFirst(state)].reverse();
+    state.phase = {
+      type: "orders",
+      turnOrder: reverseOrder,
+      currentIndex: 0,
+      activePlayerId: reverseOrder[0]!,
+      completedInCircuit: 0,
+    };
+
+    while (state.phase.type === "orders") {
+      state = mustApply(state, state.phase.activePlayerId, { type: "END_ORDER_TURN" }, rng);
+    }
+
+    expect(state.phase.type).toBe("presentation");
+    expect(state.firstPlayerId).toBe(firstPlayerId);
+  });
+});

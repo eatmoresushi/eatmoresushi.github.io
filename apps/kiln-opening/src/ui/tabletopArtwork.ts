@@ -9,7 +9,7 @@ import type {
  * Optional, decorative artwork for the live tabletop.
  *
  * Rules-bearing text, costs, rewards, capacities, and legal-move state stay in the
- * structured V1.2.6 data and React markup. That makes an illustration replaceable
+ * structured V1.2.7 data and React markup. That makes an illustration replaceable
  * without changing the engine, commands, localization, or accessibility text.
  */
 export interface TabletopArtworkManifest {
