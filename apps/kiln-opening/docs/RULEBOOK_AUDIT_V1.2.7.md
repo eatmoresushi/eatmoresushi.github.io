@@ -154,3 +154,8 @@ Verification: all 567 tests pass, including 15 dedicated payment/waiver cases, e
 All eight shared action spaces show both Apprentice and Shifu effects simultaneously, with the shared meeple silhouettes identifying each row. The chosen worker's row is highlighted. Compact bilingual reminders use accessible Clay, Wood and Coin icons; full wording remains in the effect tooltip. The redundant “Choose a worker” caption and Court Patronage's numeric transition parenthetical are removed from displayed action text. Court Patronage still advances only to Recognition 3, as enforced by the existing engine and action controls; this is a presentation change with no rules-fingerprint change.
 
 All 573 tests pass, including both worker rows with no worker, an Apprentice or a Shifu selected at every location in both languages. The production build, handoff validation and diff checks pass. Browser checks confirm the two effect rows fit without card overflow on desktop and narrow layouts; the longer Guild and Kiln Yard reminders remain visible.
+
+
+## Ding detailed reminder update (2026-09-20)
+
+The owner requested that Ding’s clicked detail contain only the two sentences describing its paid additional vessel and its exclusion from the normal vessel limit and Shifu two-vessel discount. The English detail now uses those sentences exactly, with the corresponding Chinese clarification. Its short hover/workshop reminder remains unchanged. The rulebook and Tech details retain the White Slip/Drying Frames eligibility clarification. This is a display-only wording change, with no gameplay or fingerprint change. The 54 focused compact/full copy, source/data and printed-number checks pass.
