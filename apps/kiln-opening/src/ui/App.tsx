@@ -16,6 +16,7 @@ import { PlaytestExperience } from "./PlaytestExperience";
 import type { ComputerTurnRecap } from "./TabletopGameExperience";
 import { localizeMultiplayerError, useI18n } from "./i18n";
 import type { Locale } from "./i18n";
+import "./session-responsive.css";
 
 const LAST_SEAT_KEY = "kiln-opening:last-seat";
 const COMPUTER_TURN_TIMEOUT_MS = 20_000;

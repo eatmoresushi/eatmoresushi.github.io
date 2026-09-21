@@ -3,7 +3,6 @@ import { useEffect, useId, useReducer, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, ReactNode } from "react";
 import { createPortal } from "react-dom";
 import {
-  BASE_HEAT_START,
   GAME_CONFIG,
   IMPERIAL_PROGRESS,
   KILN_DEFINITIONS,
@@ -55,15 +54,19 @@ import { useI18n } from "./i18n";
 import type { Locale } from "./i18n";
 import { TABLETOP_ARTWORK } from "./tabletopArtwork";
 import { WorkerMeeple, workerLabel } from "./WorkerMeeple";
-import { BoardActionIcon } from "./BoardActionIcon";
 import { BoardActionEffect } from "./BoardActionEffect";
+import { BoardActionSummary } from "./BoardActionSummary";
 import { ImperialKilnIllustration } from "./ImperialKilnIllustration";
+import { RecognitionMarker } from "./RecognitionMarker";
+import { ResponsiveGameBoard } from "./ResponsiveGameBoard";
 import { fireCardHistory } from "./fireCardHistory";
 import type { FireCardHistoryEntry } from "./fireCardHistory";
-import sharedKilnArtwork from "../../assets/current_v04/shared_kiln_owner_reference.png";
 import { previewPosition } from "./previewPosition";
 import type { PreviewPosition as CardPreviewPosition } from "./previewPosition";
 import "./tabletop-game.css";
+import "./illustrated-board.css";
+import "./tabletop-responsive.css";
+import "./tabletop-dialogs.css";
 
 type SendCommand = (command: AuthoritativeCommand) => Promise<boolean>;
 
@@ -78,15 +81,15 @@ type Inspection =
 const CARD_PREVIEW_OPEN_EVENT = "kiln-card-preview-open";
 
 export const TABLETOP_BOARD_LOCATIONS = [
-  { id: "materials_yard", glyph: "泥" },
-  { id: "forming_studio", glyph: "陶" },
-  { id: "glaze_workshop", glyph: "釉" },
-  { id: "kiln_yard", glyph: "窑" },
-  { id: "market_imperial_office", glyph: "单" },
-  { id: "guild_academy", glyph: "艺" },
-  { id: "labour", glyph: "工" },
-  { id: "court_patronage", glyph: "御" },
-] as const satisfies ReadonlyArray<{ id: LocationId; glyph: string }>;
+  { id: "materials_yard" },
+  { id: "forming_studio" },
+  { id: "glaze_workshop" },
+  { id: "kiln_yard" },
+  { id: "market_imperial_office" },
+  { id: "guild_academy" },
+  { id: "labour" },
+  { id: "court_patronage" },
+] as const satisfies ReadonlyArray<{ id: LocationId }>;
 
 const ACCENTS = ["cinnabar", "river", "ochre", "plum"] as const;
 type Accent = (typeof ACCENTS)[number];
@@ -534,18 +537,14 @@ export function TabletopGameExperience({
         <MarketShelf game={game} locale={locale} onInspect={(id) => inspect({ type: "order", id })} />
         <div className="kiln-tabletop-play-area">
           <div className="kiln-tabletop-board-scroll">
-            <section className="kiln-tabletop-board kiln-tabletop-art-surface" aria-label={text(locale, "Shared game board", "共享游戏板")}>
-              <ArtworkLayer source={TABLETOP_ARTWORK.sharedBoard} slot="shared-board" />
-              <div className="kiln-tabletop-board-caption"><span>{text(locale, "THE WORKSHOP DISTRICT", "陶坊街市")}</span><span>{text(locale, "Earth · Glaze · Fire", "泥 · 釉 · 火")}</span></div>
-              <div className="kiln-tabletop-board-header"><RoundTrack game={game} locale={locale} /><FiringDeck game={game} events={events} locale={locale} /></div>
-              <div className="kiln-tabletop-board-body">
-                <div className="kiln-tabletop-actions-grid">
-                  {TABLETOP_BOARD_LOCATIONS.map(({ id, glyph }) => (
+            <section className="kiln-tabletop-board kiln-tabletop-art-surface" id="kiln-live-shared-board" aria-label={text(locale, "Shared game board", "共享游戏板")}>
+              <ResponsiveGameBoard>
+                <div className="kiln-tabletop-actions-grid kiln-illustrated-district">
+                  {TABLETOP_BOARD_LOCATIONS.map(({ id }) => (
                     <ActionSpace
                       game={game}
                       ownPlayer={ownPlayer}
                       id={id}
-                      glyph={glyph}
                       locale={locale}
                       selectedWorkerId={selectedWorkerId}
                       selected={selectedLocation === id}
@@ -553,11 +552,11 @@ export function TabletopGameExperience({
                       key={id}
                     />
                   ))}
-                  <SharedKiln game={game} locale={locale} />
+                  <SharedKiln game={game} events={events} locale={locale} />
+                  <div className="kiln-illustrated-recognition-band"><ImperialTrack game={game} locale={locale} /></div>
                 </div>
                 <TurnOrderTrack game={game} locale={locale} currentActorId={decisionActor} />
-              </div>
-              <ImperialTrack game={game} locale={locale} />
+              </ResponsiveGameBoard>
             </section>
           </div>
           <TechniqueMarket game={game} locale={locale} onInspect={(id) => inspect({ type: "technique", id })} />
@@ -893,7 +892,7 @@ function TurnOrderTrack({ game, locale, currentActorId }: { game: PublicGameStat
       <header><strong>{text(locale, "TURN ORDER", "行动顺序")}</strong></header>
       <div className="kiln-tabletop-turn-direction is-order">
         <b aria-hidden="true">↑</b>
-        <span><strong>{text(locale, "ORDER PHASE", "交付阶段")}</strong><small>{text(locale, "Bottom to top", "由下至上")}</small></span>
+        <span><strong>{text(locale, "ORDER PHASE", "交付阶段")}</strong></span>
       </div>
       <ol style={{ gridTemplateRows: `repeat(${workOrder.length}, minmax(42px, 1fr))` }}>
         {workOrder.map((playerId) => {
@@ -921,13 +920,14 @@ function TurnOrderTrack({ game, locale, currentActorId }: { game: PublicGameStat
       </ol>
       <div className="kiln-tabletop-turn-direction is-work">
         <b aria-hidden="true">↓</b>
-        <span><strong>{text(locale, "WORK PHASE", "工作阶段")}</strong><small>{text(locale, "Top to bottom", "由上至下")}</small></span>
+        <span><strong>{text(locale, "WORK PHASE", "工作阶段")}</strong></span>
       </div>
     </aside>
   );
 }
 
-export function ActionSpace({ game, ownPlayer, id, glyph, locale, selectedWorkerId, selected, onChoose }: { game: PublicGameState; ownPlayer: PublicPlayerState; id: LocationId; glyph: string; locale: Locale; selectedWorkerId: WorkerId | null; selected: boolean; onChoose: () => void }) {
+export function ActionSpace({ game, ownPlayer, id, locale, selectedWorkerId, selected, onChoose }: { game: PublicGameState; ownPlayer: PublicPlayerState; id: LocationId; locale: Locale; selectedWorkerId: WorkerId | null; selected: boolean; onChoose: () => void }) {
+  const descriptionId = `kiln-action-${useId()}`;
   const definition = LOCATION_DEFINITIONS[id];
   const occupants = game.actionBoard.placements[id].map((workerId) => findWorker(game, workerId)).filter((entry): entry is NonNullable<typeof entry> => entry !== null);
   const worker = selectedWorkerId === null ? undefined : ownPlayer.workers[selectedWorkerId];
@@ -937,62 +937,70 @@ export function ActionSpace({ game, ownPlayer, id, glyph, locale, selectedWorker
   const legal = worker?.status === "available" && reason === null;
   const status = worker === undefined ? null : reason ?? (worker.kind === "shifu" && activeCapacity !== null && occupants.length >= activeCapacity ? text(locale, "Shifu may overfill", "师傅可超容量") : null);
   return (
-    <button className={`kiln-tabletop-action-space kiln-tabletop-art-surface ${legal ? "is-available" : ""} ${worker !== undefined && !legal ? "is-illegal" : ""} ${selected ? "is-selected" : ""}`} type="button" onClick={onChoose} aria-pressed={selected} data-location-id={id}>
+    <button
+      className={`kiln-tabletop-action-space kiln-tabletop-art-surface ${legal ? "is-available" : ""} ${worker !== undefined && !legal ? "is-illegal" : ""} ${selected ? "is-selected" : ""}`}
+      type="button"
+      onClick={onChoose}
+      aria-pressed={selected}
+      aria-haspopup="dialog"
+      aria-label={locale === "zh-CN" ? definition.nameZh : definition.name}
+      aria-describedby={`${descriptionId}-rules ${descriptionId}-capacity${status === null ? "" : ` ${descriptionId}-status`}`}
+      data-location-id={id}
+    >
       <ArtworkLayer source={TABLETOP_ARTWORK.actionSpaces[id]} slot={`action-space:${id}`} />
-      <header><span className="kiln-tabletop-action-emblem" aria-hidden="true"><BoardActionIcon locationId={id} /></span><div><strong>{locale === "zh-CN" ? definition.nameZh : definition.name}</strong>{status !== null && <small>{status}</small>}</div><i className="kiln-tabletop-action-seal" aria-hidden="true">{glyph}</i></header>
-      <div className="kiln-tabletop-action-effects">{(["apprentice", "shifu"] as const).map((kind) => {
-        const fullEffect = kind === "shifu" ? locale === "zh-CN" ? definition.shifuZh : definition.shifu : locale === "zh-CN" ? definition.apprenticeZh : definition.apprentice;
-        return <div className={`kiln-tabletop-action-effect ${worker?.kind === kind ? "is-current-worker" : ""}`} data-effect-worker={kind} title={fullEffect} key={kind}>
-          <WorkerMeeple kind={kind} small locale={locale} />
-          <BoardActionEffect id={id} kind={kind} locale={locale} />
-        </div>;
-      })}</div>
-      <footer>
-        <div className="kiln-tabletop-worker-spaces"><small>{text(locale, "WORKER SPACES", "工人位置")}</small>
-        <span className="kiln-tabletop-capacity">
-          <span className="sr-only">{activeCapacity === null ? text(locale, "Unlimited capacity", "无限容量") : text(locale, `${occupants.length} of ${activeCapacity} active spaces occupied in this ${game.playerCount}-player game`, `${game.playerCount}人游戏：已占${occupants.length}/${activeCapacity}个可用位置`)}</span>
-          {maximumCapacity === null ? <i aria-hidden="true">∞</i> : Array.from({ length: maximumCapacity }, (_, index) => {
-            const minimumPlayers = index >= 2 ? index + 1 : null;
-            const locked = activeCapacity !== null && index >= activeCapacity;
-            const occupant = !locked ? occupants[index] : undefined;
-            return <i className={`${occupant !== undefined ? "is-filled" : ""} ${locked ? "is-locked" : ""}`} data-min-players={minimumPlayers ?? undefined} key={index} title={minimumPlayers === null ? undefined : locked ? text(locale, `Locked — requires ${minimumPlayers} players`, `未开放——需要${minimumPlayers}名玩家`) : text(locale, `Available with ${minimumPlayers} or more players`, `${minimumPlayers}人及以上可用`)}>{occupant !== undefined ? <WorkerMeeple player={occupant.player} kind={occupant.worker.kind} small locale={locale} /> : <span aria-hidden="true">{minimumPlayers === null ? "" : `${minimumPlayers}P`}</span>}</i>;
-          })}
-        </span>
-        </div>
-        <span className="kiln-tabletop-occupants">{occupants.slice(activeCapacity ?? 0).map(({ player, worker }) => {
-          const firing = game.firingContext ?? game.lastFiringResult;
-          const shifuSetAside = firing?.round === game.round && firing.kilnYardShifuAdjustments.some((entry) => entry.playerId === player.id);
-          const shifuOffBoard = id === "kiln_yard" && worker.kind === "shifu" && (player.kilnYardShifuCeramicId !== null || shifuSetAside);
-          return shifuOffBoard ? null : <WorkerMeeple player={player} kind={worker.kind} small locale={locale} key={worker.id} />;
-        })}</span>
-      </footer>
+      <div className="kiln-illustrated-action-plaque">
+        <header><div><strong>{locale === "zh-CN" ? definition.nameZh : definition.name}</strong>{status !== null && <small className="sr-only" id={`${descriptionId}-status`}>{status}</small>}</div></header>
+        <div className="kiln-tabletop-action-effects" id={`${descriptionId}-rules`}>{(["apprentice", "shifu"] as const).map((kind) => {
+          return <div className={`kiln-tabletop-action-effect ${worker?.kind === kind ? "is-current-worker" : ""}`} data-effect-worker={kind} key={kind}>
+            <WorkerMeeple kind={kind} small locale={locale} />
+            <span aria-hidden="true"><BoardActionSummary id={id} kind={kind} locale={locale} /></span>
+            <span className="sr-only"><BoardActionEffect id={id} kind={kind} locale={locale} /></span>
+          </div>;
+        })}</div>
+        <footer id={`${descriptionId}-capacity`}>
+          <div className="kiln-tabletop-worker-spaces"><small>{text(locale, "WORKER SPACES", "工人位置")}</small>
+          <span className="kiln-tabletop-capacity">
+            <span className="sr-only">{activeCapacity === null ? text(locale, "Unlimited capacity", "无限容量") : text(locale, `${occupants.length} of ${activeCapacity} active spaces occupied in this ${game.playerCount}-player game`, `${game.playerCount}人游戏：已占${occupants.length}/${activeCapacity}个可用位置`)}</span>
+            {maximumCapacity === null ? <i aria-hidden="true">∞</i> : Array.from({ length: maximumCapacity }, (_, index) => {
+              const minimumPlayers = index >= 2 ? index + 1 : null;
+              const locked = activeCapacity !== null && index >= activeCapacity;
+              const occupant = !locked ? occupants[index] : undefined;
+              return <i className={`${occupant !== undefined ? "is-filled" : ""} ${locked ? "is-locked" : ""}`} data-min-players={minimumPlayers ?? undefined} key={index} title={minimumPlayers === null ? undefined : locked ? text(locale, `Locked — requires ${minimumPlayers} players`, `未开放——需要${minimumPlayers}名玩家`) : text(locale, `Available with ${minimumPlayers} or more players`, `${minimumPlayers}人及以上可用`)}>{occupant !== undefined ? <WorkerMeeple player={occupant.player} kind={occupant.worker.kind} small locale={locale} /> : <span aria-hidden="true">{minimumPlayers === null ? "" : `${minimumPlayers}P`}</span>}</i>;
+            })}
+          </span>
+          </div>
+          <span className="kiln-tabletop-occupants">{occupants.slice(activeCapacity ?? 0).map(({ player, worker }) => {
+            const firing = game.firingContext ?? game.lastFiringResult;
+            const shifuSetAside = firing?.round === game.round && firing.kilnYardShifuAdjustments.some((entry) => entry.playerId === player.id);
+            const shifuOffBoard = id === "kiln_yard" && worker.kind === "shifu" && (player.kilnYardShifuCeramicId !== null || shifuSetAside);
+            return shifuOffBoard ? null : <WorkerMeeple player={player} kind={worker.kind} small locale={locale} key={worker.id} />;
+          })}</span>
+        </footer>
+      </div>
     </button>
   );
 }
 
-function SharedKiln({ game, locale }: { game: PublicGameState; locale: Locale }) {
+function SharedKiln({ game, events, locale }: { game: PublicGameState; events: PublicEventRecord[]; locale: Locale }) {
   const activeSpaces = new Set(activeKilnSpaceIds(game.playerCount));
   const loaded = Object.values(game.ceramics).filter((ceramic) => ceramic.stage === "loaded" && ceramic.kilnSpaceId !== "imperial");
   const firingInProgress = game.firingContext !== null;
-  const currentBase = firingInProgress ? game.firingContext?.baseHeat ?? "—" : BASE_HEAT_START;
-  const currentFire = firingInProgress ? game.firingContext?.fireModifier ?? null : game.lastFiringResult?.fireModifier ?? null;
   return (
     <section className={`kiln-tabletop-shared-kiln ${firingInProgress ? "is-firing" : ""}`} aria-labelledby="kiln-live-kiln-title">
-      <header><div><small>{text(locale, "BASE HEAT", "基础火候")}</small><strong>{currentBase}</strong></div><div><small>{firingInProgress ? text(locale, "FIRE CARD", "窑火牌") : text(locale, "LAST FIRE", "上次窑火")}</small><strong>{currentFire === null ? "—" : signed(currentFire)}</strong></div></header>
-      <div className="kiln-tabletop-kiln-art">
-        <img className="kiln-tabletop-kiln-art-image" src={sharedKilnArtwork} alt="" width="2482" height="3508" draggable={false} decoding="async" />
-        <strong className={locale === "zh-CN" ? "kiln-tabletop-kiln-art-title" : "sr-only"} id="kiln-live-kiln-title">{text(locale, "Shared Kiln", "共窑")}</strong>
+      <div className="kiln-illustrated-round-band"><RoundTrack game={game} locale={locale} /><FiringDeck game={game} events={events} locale={locale} /></div>
+      <div className="kiln-tabletop-kiln-interior">
+        <strong className="sr-only" id="kiln-live-kiln-title">{text(locale, "Shared Kiln", "共窑")}</strong>
         <div className="kiln-tabletop-kiln-zones">{(["low", "middle", "high"] as const).map((zone) => {
           const spaces = KILN_SPACE_IDS.filter((id) => KILN_SPACE_DEFINITIONS[id].zone === zone);
           const modifier = zone === "high" ? 1 : zone === "low" ? -1 : 0;
           return (
             <div className={`kiln-tabletop-kiln-zone is-${zone}`} key={zone}>
-              <span className={locale === "zh-CN" ? "kiln-tabletop-kiln-art-zone-label" : "sr-only"}><b>{locale === "zh-CN" ? zoneZh(zone) : titleCase(zone)}</b><i>{signed(modifier)}</i></span>
+              <span className="kiln-tabletop-kiln-zone-label"><b>{locale === "zh-CN" ? zoneZh(zone) : titleCase(zone)}</b><i>{signed(modifier)}</i></span>
               <div>{spaces.map((spaceId) => {
                 const ceramic = loaded.find((candidate) => candidate.stage === "loaded" && candidate.kilnSpaceId === spaceId);
                 const active = activeSpaces.has(spaceId);
                 const minimumPlayers = minimumPlayersForKilnSpace(spaceId);
-                return <div className="kiln-tabletop-kiln-art-slot" data-kiln-space-id={spaceId} key={spaceId}>{!active
+                return <div className={`kiln-tabletop-kiln-slot${!active ? " is-locked" : ceramic === undefined ? "" : " is-occupied"}`} data-kiln-space-id={spaceId} key={spaceId}>{!active
                   ? <i className="kiln-tabletop-empty-slot is-locked" data-min-players={minimumPlayers} aria-label={text(locale, `Locked kiln space — requires ${minimumPlayers} players`, `未开放窑位——需要${minimumPlayers}名玩家`)}>{minimumPlayers}P</i>
                   : ceramic === undefined
                     ? <i className="kiln-tabletop-empty-slot" aria-label={text(locale, "Empty kiln space", "空窑位")} />
@@ -1002,7 +1010,6 @@ function SharedKiln({ game, locale }: { game: PublicGameState; locale: Locale })
           );
         })}</div>
       </div>
-      <footer><span>{text(locale, "Fires after every worker is placed", "全部工人放置后烧成")}</span><strong>{text(locale, `${loaded.length} / ${activeSpaces.size} occupied`, `已占 ${loaded.length} / ${activeSpaces.size}`)}</strong></footer>
     </section>
   );
 }
@@ -1054,17 +1061,31 @@ function ImperialTrack({ game, locale }: { game: PublicGameState; locale: Locale
   const unclaimedPriority = game.playerOrder.map((id) => game.players[id]!).filter((player) => player.imperialRecognition < 3);
   return (
     <section className="kiln-tabletop-imperial-track" aria-label={text(locale, "Imperial Recognition track", "御府声望轨")}>
-      <div className="kiln-tabletop-track-heading"><span aria-hidden="true">御</span><div><small>{text(locale, "IMPERIAL RECOGNITION", "御府声望")}</small><strong>{text(locale, "Court recognition and rewards", "宫廷认可与奖赏")}</strong></div></div>
-      <ol>{IMPERIAL_PROGRESS.track.map((space) => (
+      <div className="kiln-tabletop-track-heading"><span aria-hidden="true">御</span><div><small>{text(locale, "COURT", "御府")}</small><strong>{text(locale, "Imperial Recognition", "声望轨")}</strong></div></div>
+      <ol>{IMPERIAL_PROGRESS.track.map((space) => {
+        const playersHere = game.playerOrder.map((id) => game.players[id]!).filter((player) => player.imperialRecognition === space.space);
+        return (
         <li data-recognition-space={space.space} key={space.space}>
-          <span className="kiln-tabletop-track-number">{space.space}</span>
-          <div><strong>{locale === "zh-CN" ? space.titleZh : space.title}</strong><small>{space.space === 3 ? text(locale, "Take your Imperial Priority token.", "获得御烧优先标记。") : locale === "zh-CN" ? space.rewardZh ?? "—" : space.reward ?? "—"}</small></div>
-          {space.space === 3 && unclaimedPriority.length > 0 && <div className="kiln-tabletop-priority-supply" data-testid="imperial-priority-supply" aria-label={text(locale, "Unclaimed Imperial Priority markers", "待领取的御烧优先标记")}>
-            {unclaimedPriority.map((player) => <ImperialPriorityToken player={player} locale={locale} location="track" key={player.id} />)}
-          </div>}
-          <span className="kiln-tabletop-track-markers">{game.playerOrder.filter((id) => game.players[id]?.imperialRecognition === space.space).map((id) => { const player = game.players[id]!; return <i className={`kiln-tabletop-accent-${accent(player)}`} title={player.displayName} key={id}>{player.displayName.slice(0, 1).toUpperCase()}</i>; })}</span>
+          <div className="kiln-recognition-stop">
+            <span className="kiln-recognition-number">{space.space}</span>
+            <div className="kiln-recognition-pieces">
+              <span className="kiln-tabletop-track-markers" data-marker-count={playersHere.length}>
+                {playersHere.map((player) => <RecognitionMarker
+                  accent={accent(player)}
+                  className={`kiln-recognition-cylinder kiln-tabletop-accent-${accent(player)}`}
+                  label={text(locale, `${player.displayName} · Recognition ${space.space}`, `${player.displayName} · 声望${space.space}`)}
+                  key={player.id}
+                />)}
+              </span>
+              {space.space === 3 && unclaimedPriority.length > 0 && <div className="kiln-tabletop-priority-supply" data-testid="imperial-priority-supply" aria-label={text(locale, "Unclaimed Imperial Priority markers", "待领取的御烧优先标记")}>
+                {unclaimedPriority.map((player) => <ImperialPriorityToken player={player} locale={locale} location="track" key={player.id} />)}
+              </div>}
+            </div>
+          </div>
+          <div className="kiln-recognition-milestone"><strong>{locale === "zh-CN" ? space.titleZh : space.title}</strong><small>{space.space === 3 ? text(locale, "Take your Imperial Priority token.", "获得御烧优先标记。") : locale === "zh-CN" ? space.rewardZh ?? "—" : space.reward ?? "—"}</small></div>
         </li>
-      ))}</ol>
+        );
+      })}</ol>
     </section>
   );
 }

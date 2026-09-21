@@ -381,10 +381,6 @@
   box-shadow: 0 16px 38px rgb(0 0 0 / 24%), inset 0 0 0 5px #e2d9c2, inset 0 0 0 6px #bdb39b;
 }
 .kiln-tabletop-board > * { position: relative; z-index: 1; }
-.kiln-tabletop-board-caption { display: flex; justify-content: space-between; gap: 1rem; padding: .15rem .1rem 0; color: #647264; font-size: .58rem; font-weight: 800; letter-spacing: .17em; }
-.kiln-tabletop-board-caption > span:last-child { font-weight: 500; letter-spacing: .11em; }
-.kiln-tabletop-board-header { display: grid; grid-template-columns: minmax(0, 1fr) 180px; gap: .75rem; }
-.kiln-tabletop-board-header .kiln-tabletop-fire-card { width: 28px; }
 .kiln-tabletop-round-track {
   display: grid;
   grid-template-columns: 70px repeat(5, 1fr);
@@ -618,7 +614,7 @@
   box-shadow: 0 2px 4px rgb(0 0 0 / 24%);
 }
 
-/* Owner-selected portrait artwork; all playable slots remain live DOM controls. */
+/* Live kiln zones and spaces; scenery is provided by the illustrated board. */
 .kiln-tabletop-shared-kiln {
   grid-area: kiln;
   align-self: start;
@@ -635,57 +631,35 @@
   box-shadow: 0 4px 0 #b6a98d, 0 8px 18px rgb(58 44 24 / 22%);
 }
 .kiln-tabletop-shared-kiln.is-firing { border-color: #d4995b; }
-.kiln-tabletop-shared-kiln > header { display: grid; grid-template-columns: 1fr 1fr; padding: .45rem .35rem .55rem; }
-.kiln-tabletop-shared-kiln > header div { display: flex; gap: .6rem; justify-content: center; align-items: center; }
-.kiln-tabletop-shared-kiln > header div:last-child { border-left: 1px solid #72684f; }
-.kiln-tabletop-shared-kiln > header small { color: #d2c5a5; font-size: .5rem; letter-spacing: .08em; }
-.kiln-tabletop-shared-kiln > header strong { color: #f5d294; font-size: 1rem; font-variant-numeric: tabular-nums; }
-.kiln-tabletop-kiln-art { position: relative; aspect-ratio: 2482 / 3508; min-width: 0; isolation: isolate; }
-.kiln-tabletop-kiln-art-image { display: block; width: 100%; height: 100%; border-radius: 3px; pointer-events: none; user-select: none; }
-.kiln-tabletop-kiln-art-title {
-  position: absolute;
-  top: 2.35%;
-  left: 17.4%;
-  display: grid;
-  place-items: center;
-  width: 59%;
-  height: 5.3%;
-  color: #24170c;
-  font-size: clamp(1rem, 2.7vw, 2.4rem);
-  letter-spacing: .2em;
-  background: linear-gradient(100deg, #d9c5a4, #e2ceb0 45%, #d7bf9c);
-  box-shadow: 0 0 5px 3px #d8c19f;
-}
+.kiln-tabletop-kiln-interior { position: relative; min-width: 0; isolation: isolate; }
 .kiln-tabletop-kiln-zones { position: absolute; inset: 0; }
 .kiln-tabletop-kiln-zone { position: absolute; }
-.kiln-tabletop-kiln-zone.is-low { top: 18.8%; left: 28%; width: 43.6%; height: 16.1%; }
-.kiln-tabletop-kiln-zone.is-middle { top: 42.9%; left: 28%; width: 43.6%; height: 14.8%; }
-.kiln-tabletop-kiln-zone.is-high { top: 65%; left: 18.7%; width: 62.4%; height: 14.8%; }
-.kiln-tabletop-kiln-zone > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4.8%; width: 100%; height: 100%; }
-.kiln-tabletop-kiln-zone.is-high > div { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2.6%; }
-.kiln-tabletop-kiln-art-zone-label {
+.kiln-tabletop-kiln-zone.is-low { top: 24.9%; left: 29.5%; width: 43%; height: 10.5%; }
+.kiln-tabletop-kiln-zone.is-middle { top: 41%; left: 29.5%; width: 43%; height: 10.5%; }
+.kiln-tabletop-kiln-zone.is-high { top: 57.5%; left: 18%; width: 66%; height: 10.5%; }
+.kiln-tabletop-kiln-zone > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8%; width: 100%; height: 100%; }
+.kiln-tabletop-kiln-zone.is-high > div { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5%; }
+.kiln-tabletop-kiln-zone-label {
   position: absolute;
-  top: -26%;
-  left: -6%;
+  bottom: calc(100% + .2rem);
+  left: -10%;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: .6em;
-  width: 112%;
-  height: 20%;
-  border-radius: 3px;
-  color: #e7debe;
-  font-size: clamp(.65rem, 1.15vw, 1.1rem);
-  background: linear-gradient(90deg, transparent, #283432 15% 85%, transparent);
+  width: 120%;
+  padding: .1rem 0;
+  color: #35483e;
+  font-size: clamp(.75rem, 1.1vw, 1rem);
+  line-height: 1.3;
+  background: linear-gradient(90deg, transparent, #fbf3dce6 20% 80%, transparent);
 }
-.kiln-tabletop-kiln-art-zone-label i { font-style: normal; }
-.kiln-tabletop-kiln-zone.is-middle > .kiln-tabletop-kiln-art-zone-label { top: -24%; background: linear-gradient(90deg, transparent, #483a24 15% 85%, transparent); }
-.kiln-tabletop-kiln-zone.is-high > .kiln-tabletop-kiln-art-zone-label { top: -24%; left: 0; width: 100%; background: linear-gradient(90deg, transparent, #512c14 15% 85%, transparent); }
-.kiln-tabletop-kiln-art-slot { display: grid; place-items: center; min-width: 0; min-height: 0; }
-.kiln-tabletop-kiln-art-slot > .kiln-tabletop-empty-slot { width: 100%; height: 100%; border: 0; border-radius: 8px; background: transparent; }
-.kiln-tabletop-shared-kiln .kiln-tabletop-ceramic.is-compact { width: 76%; max-width: 94px; min-height: 0; aspect-ratio: 1; border-bottom: 4px solid var(--player-color); border-radius: 50%; background: rgb(8 13 11 / 55%); box-shadow: 0 4px 8px rgb(0 0 0 / 35%); }
-.kiln-tabletop-shared-kiln > footer { display: flex; flex-wrap: wrap; gap: .4rem; justify-content: space-between; align-items: center; padding: .45rem .4rem .2rem; color: #d5c8a8; font-size: .5rem; line-height: 1.4; }
-.kiln-tabletop-shared-kiln > footer strong { border: 1px solid #787858; border-radius: 4px; padding: .2rem .4rem; color: #f2ddaf; white-space: nowrap; }
+.kiln-tabletop-kiln-zone-label i { font-style: normal; }
+.kiln-tabletop-kiln-zone.is-middle > .kiln-tabletop-kiln-zone-label { color: #65552f; }
+.kiln-tabletop-kiln-zone.is-high > .kiln-tabletop-kiln-zone-label { left: 0; width: 100%; color: #863f29; }
+.kiln-tabletop-kiln-slot { display: grid; place-items: center; min-width: 0; min-height: 0; border: 2px dashed #586252b3; border-radius: 8px; background: #fbf3dc33; }
+.kiln-tabletop-kiln-slot > .kiln-tabletop-empty-slot { width: 100%; height: 100%; border: 0; border-radius: 6px; background: transparent; }
+.kiln-tabletop-shared-kiln .kiln-tabletop-ceramic.is-compact { width: 76%; max-width: 112px; min-height: 0; aspect-ratio: 1; border-bottom: 4px solid var(--player-color); border-radius: 50%; background: #f9f1d7cc; box-shadow: 0 3px 7px #3a332733; }
 
 .kiln-tabletop-firing-deck {
   display: grid;
@@ -729,14 +703,12 @@
 .kiln-tabletop-track-heading strong { margin-top: .08rem; font-family: var(--tabletop-serif); font-size: .61rem; }
 .kiln-tabletop-imperial-track ol { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .25rem; min-width: 0; margin: 0; padding: 0; list-style: none; }
 .kiln-tabletop-imperial-track li { position: relative; display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto minmax(0, 1fr) auto; gap: .2rem .3rem; min-width: 0; min-height: 86px; border: 1px solid rgb(104 78 44 / 23%); border-radius: 8px; padding: .32rem; background: rgb(255 251 238 / 68%); }
-.kiln-tabletop-track-number { display: grid; width: 22px; aspect-ratio: 1; place-items: center; border: 1px solid #b99455; border-radius: 50%; color: #7c4335; font-family: var(--tabletop-serif); font-size: .55rem; background: #f5e4bd; }
 .kiln-tabletop-imperial-track li div { min-width: 0; }
 .kiln-tabletop-imperial-track li strong,
 .kiln-tabletop-imperial-track li small { display: block; }
 .kiln-tabletop-imperial-track li strong { overflow: hidden; font-family: var(--tabletop-serif); font-size: .62rem; text-overflow: ellipsis; white-space: nowrap; }
 .kiln-tabletop-imperial-track li small { display: -webkit-box; overflow: hidden; margin-top: .2rem; color: #736c5d; font-size: .56rem; line-height: 1.35; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
 .kiln-tabletop-track-markers { grid-column: span 2; grid-row: 3; display: flex; flex-wrap: wrap; gap: .15rem; align-items: center; align-self: end; min-height: 25px; }
-.kiln-tabletop-track-markers i { display: grid; width: 23px; aspect-ratio: 1; place-items: center; border: 2px solid #fff2d4; border-radius: 50%; color: white; font-size: .43rem; font-style: normal; font-weight: 900; background: var(--player-color); box-shadow: 0 2px 4px rgb(0 0 0 / 24%); }
 .kiln-tabletop-priority-supply { grid-column: span 2; grid-row: 2; display: flex; flex-wrap: wrap; align-content: start; gap: .18rem; padding: .3rem 0 .12rem; }
 .kiln-tabletop-priority-token { display: inline-block; flex: 0 0 auto; width: 42px; height: 50px; border: 0; border-radius: 6px; padding: 0; vertical-align: middle; background: transparent; cursor: help; filter: drop-shadow(0 3px 2px rgb(68 43 19 / 28%)); }
 .kiln-tabletop-priority-token:hover,
@@ -1891,7 +1863,6 @@
   .kiln-tabletop-track-heading { padding: .4rem .6rem; }
 }
 @media (max-width: 860px) {
-  .kiln-tabletop-board-header { grid-template-columns: 1fr 150px; }
   .kiln-tabletop-round-track { grid-template-columns: 45px repeat(5, 1fr); padding-inline: .1rem; }
   .kiln-tabletop-round-track small { display: none; }
   .kiln-tabletop-action-space header { gap: .4rem; }
@@ -1903,12 +1874,6 @@
 }
 @media (max-width: 620px) {
   .kiln-tabletop-board { padding: .75rem; gap: .65rem; }
-  .kiln-tabletop-board-caption { font-size: .49rem; letter-spacing: .09em; }
-  .kiln-tabletop-board-caption > span:last-child { display: none; }
-  .kiln-tabletop-board-header { grid-template-columns: 1fr; gap: .4rem; }
-  .kiln-tabletop-board-header .kiln-tabletop-firing-deck { display: flex; gap: .6rem; padding: .4rem .65rem; }
-  .kiln-tabletop-board-header .kiln-tabletop-firing-deck > div:last-child { display: flex; flex: 1; align-items: center; justify-content: space-between; gap: .6rem; }
-  .kiln-tabletop-board-header .kiln-tabletop-fire-card { width: 22px; }
   .kiln-tabletop-board-body {
     grid-template-columns: minmax(0, 1fr) 62px;
     grid-template-areas: "materials turn" "forming turn" "glazing turn" "yard turn" "market turn" "academy turn" "labour turn" "court turn" "kiln kiln";
@@ -1923,12 +1888,73 @@
 
 }
 
-.kiln-tabletop-kiln-art-slot > .kiln-tabletop-empty-slot.is-locked {
+.kiln-tabletop-kiln-slot.is-locked { border-color: #817f736e; }
+.kiln-tabletop-kiln-slot > .kiln-tabletop-empty-slot.is-locked {
   display: grid;
   place-items: center;
-  border: 1px solid rgb(234 213 167 / 45%);
-  color: #e5d2ad;
+  border: 0;
+  color: #5e604e;
   font-size: .8rem;
-  background: repeating-linear-gradient(135deg, rgb(20 23 19 / 82%) 0 5px, rgb(39 38 27 / 78%) 5px 10px);
-  box-shadow: inset 0 0 15px rgb(0 0 0 / 45%);
+  background: repeating-linear-gradient(135deg, #ebe2c64d 0 5px, #797c6726 5px 10px);
+  box-shadow: none;
+}
+
+/* Surrounding shelves reflow while the illustrated board keeps its full layout. */
+@media (max-width: 1050px) {
+  .kiln-live-root { min-width: 0; }
+  .kiln-live-root .kiln-tabletop-table,
+  .kiln-live-root .kiln-tabletop-workshop,
+  .kiln-live-root .kiln-tabletop-workshop-zones { min-width: 0; }
+  .kiln-live-root .kiln-tabletop-table { grid-template-columns: minmax(0, 1fr); }
+
+  .kiln-live-root .kiln-tabletop-player-dock {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: visible;
+    row-gap: .7rem;
+  }
+  .kiln-live-root .kiln-tabletop-player-resources,
+  .kiln-live-root .kiln-tabletop-player-public { flex-wrap: wrap; }
+
+  .kiln-live-root .kiln-tabletop-market {
+    grid-template-columns: minmax(0, 1fr) auto;
+    overflow: visible;
+  }
+  .kiln-live-root .kiln-tabletop-market > .kiln-tabletop-section-title { grid-column: 1; }
+  .kiln-live-root .kiln-tabletop-order-deck { grid-column: 2; width: 32px; margin: .2rem .35rem .2rem 0; }
+  .kiln-live-root .kiln-tabletop-order-row {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .kiln-live-root .kiln-tabletop-tech-market {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow: visible;
+  }
+  .kiln-live-root .kiln-tabletop-tech-market > .kiln-tabletop-section-title { grid-column: 1 / -1; }
+  .kiln-live-root .kiln-tabletop-tech-discipline,
+  .kiln-live-root .kiln-tabletop-tech-discipline > div { min-width: 0; }
+  .kiln-live-root .kiln-tabletop-tech-discipline > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  .kiln-live-root .kiln-tabletop-workshop-zones {
+    grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr) minmax(0, 1fr);
+  }
+  .kiln-live-root .kiln-tabletop-ceramic-shelf > div {
+    flex-wrap: wrap;
+    align-content: start;
+    gap: .65rem .5rem;
+    padding: .3rem .35rem .35rem 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .kiln-live-root .kiln-tabletop-tech-market { grid-template-columns: minmax(0, 1fr); }
+  .kiln-live-root .kiln-tabletop-workshop-zones { grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); }
+}
+
+@media (max-width: 480px) {
+  .kiln-live-root .kiln-tabletop-player-dock,
+  .kiln-live-root .kiln-tabletop-workshop-zones { grid-template-columns: minmax(0, 1fr); }
+  .kiln-live-root .kiln-tabletop-order-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kiln-live-root .kiln-tabletop-resource-bank { flex-wrap: wrap; overflow: visible; }
 }
