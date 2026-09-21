@@ -10,9 +10,9 @@ describe.each(["en", "zh-CN"] as const)("both worker effects on the board (%s)",
     const { state } = startedGame(2, 27_920);
     const game = projectPublicGameState(state);
     const selectedWorkerId = kind === null ? null : workerId(state, "P1", kind);
-    for (const { id, glyph } of TABLETOP_BOARD_LOCATIONS) {
+    for (const { id } of TABLETOP_BOARD_LOCATIONS) {
       const markup = renderToStaticMarkup(createElement(ActionSpace, {
-        game, ownPlayer: game.players["P1"]!, id, glyph, locale, selectedWorkerId, selected: false, onChoose: () => {},
+        game, ownPlayer: game.players["P1"]!, id, locale, selectedWorkerId, selected: false, onChoose: () => {},
       }));
       expect(markup, id).toContain('data-effect-worker="apprentice"');
       expect(markup, id).toContain('data-effect-worker="shifu"');

@@ -1,0 +1,206 @@
+/* A continuous illustrated district. Artwork is scenery; every game value stays live. */
+.kiln-tabletop-root {
+  --district-art: url("../../assets/current_v04/illustrated-board/pottery-village-ink.webp");
+  --district-wash: linear-gradient(rgb(255 250 240 / 60%), rgb(255 250 240 / 60%));
+  --district-scene-height: 100%;
+}
+[data-board-art="painted"] .kiln-tabletop-root {
+  --district-art: url("../../assets/current_v04/illustrated-board/pottery-village-painted.webp");
+}
+.kiln-tabletop-play-area { grid-template-columns: minmax(0, 1fr); }
+.kiln-tabletop-tech-market { grid-template-columns: 150px repeat(3, minmax(240px, 1fr)); overflow-x: auto; }
+.kiln-tabletop-board {
+  scroll-margin-top: 80px;
+  gap: .7rem;
+  padding: .8rem;
+  border-color: #b6a079;
+  border-radius: 10px;
+  background: linear-gradient(115deg, #f4ead1, #e9dbb9);
+  box-shadow: 0 14px 35px #071b1766, inset 0 0 0 3px #dbc9a6, inset 0 0 0 4px #b29a74;
+}
+.kiln-tabletop-board-body { grid-template-columns: minmax(0, 1fr) 78px; gap: .6rem; }
+.kiln-illustrated-district {
+  display: grid;
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: 32% 32% 36%;
+  grid-template-rows: repeat(4, minmax(min-content, 1fr));
+  grid-template-areas: "materials forming kiln" "glazing yard kiln" "market academy kiln" "labour court kiln";
+  gap: 0;
+  aspect-ratio: 3 / 2;
+  min-height: 710px;
+  /* The landscape's lower strip carries the Recognition milestones. */
+  padding: 0 0 10%;
+  overflow: clip;
+  border: 1px solid #8c7a54;
+  border-radius: 5px;
+  background: var(--district-wash), var(--district-art) center top / 100% var(--district-scene-height) no-repeat #cabb96;
+  box-shadow: inset 0 0 18px #3c332d33;
+}
+.kiln-illustrated-district .kiln-tabletop-action-space {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  min-height: 0;
+  margin: 0;
+  padding: 5% 5% 1.5%;
+  border: 0;
+  border-radius: 0;
+  background: var(--action-surface, none);
+  box-shadow: var(--action-shadow, none);
+  outline: none;
+  transition: none;
+}
+/* Action hover stays visually still; state and keyboard-focus cues live on the plaque. */
+.kiln-illustrated-district .kiln-tabletop-action-space:hover {
+  transform: none;
+  border: 0;
+  background: var(--action-surface, none);
+  box-shadow: var(--action-shadow, none);
+}
+.kiln-illustrated-action-plaque {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  width: 100%;
+  min-width: 0;
+  gap: .1rem;
+  border: 1px dotted #7b7d74;
+  border-radius: 5px;
+  padding: .25rem .5rem .2rem;
+  color: #172e25;
+  background: transparent;
+  box-shadow: none;
+  text-shadow: none;
+}
+.kiln-illustrated-district .kiln-tabletop-action-space.is-available .kiln-illustrated-action-plaque { border-color: #3c694b; border-style: dashed; }
+.kiln-illustrated-district .kiln-tabletop-action-space.is-selected .kiln-illustrated-action-plaque { border: 2px solid #a44332; padding: calc(.25rem - 1px) calc(.5rem - 1px) calc(.2rem - 1px); }
+.kiln-illustrated-district .kiln-tabletop-action-space.is-illegal .kiln-illustrated-action-plaque { background: transparent; color: #352e22; }
+.kiln-tabletop-root .kiln-illustrated-district .kiln-tabletop-action-space:focus-visible { outline: none; }
+.kiln-tabletop-root .kiln-illustrated-district .kiln-tabletop-action-space:focus-visible .kiln-illustrated-action-plaque { outline: 3px solid #8f3929; outline-offset: 3px; }
+.kiln-illustrated-action-plaque header { gap: .4rem; margin-bottom: .2rem; }
+.kiln-illustrated-action-plaque header strong {
+  display: inline-block;
+  max-width: 100%;
+  padding: .2rem .65rem .22rem .55rem;
+  border-radius: 2px 5px 5px 2px;
+  color: #24392c;
+  background: linear-gradient(105deg, #fff6deed, color-mix(in srgb, var(--action-tint) 90%, transparent) 80%, color-mix(in srgb, var(--action-tint) 60%, transparent));
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--action-accent) 70%, transparent), 0 1px 0 #fff9e6b3;
+  font-size: clamp(1rem, 1.1vw, 1.125rem);
+  line-height: 1.25;
+}
+.kiln-illustrated-action-plaque .kiln-tabletop-action-effects { gap: .04rem; }
+.kiln-illustrated-action-plaque .kiln-tabletop-action-effect { grid-template-columns: 18px minmax(0, 1fr); gap: .25rem; align-items: center; padding: .08rem 0; }
+.kiln-illustrated-action-plaque .kiln-tabletop-action-effect + .kiln-tabletop-action-effect { border: none; padding-top: .06rem; }
+.kiln-illustrated-action-plaque .kiln-tabletop-action-effect.is-current-worker { background: transparent; box-shadow: inset 2px 0 var(--action-accent); }
+.kiln-illustrated-action-plaque .kiln-tabletop-action-effect > .kiln-tabletop-worker { width: 16px; height: 18px; margin: 0; }
+.kiln-illustrated-action-plaque .kiln-tabletop-action-effect .kiln-tabletop-accent-neutral { --player-color: #65543b; }
+.kiln-board-action-summary { display: block; font-size: clamp(.8125rem, .88vw, .875rem); line-height: 1.45; }
+.kiln-illustrated-action-plaque > footer { display: flex; gap: .3rem; align-items: center; justify-content: space-between; flex-wrap: wrap; border-top: 0; margin-top: .1rem; padding-top: .12rem; }
+.kiln-illustrated-action-plaque .kiln-tabletop-worker-spaces > small { display: none; }
+.kiln-illustrated-action-plaque .kiln-tabletop-capacity { gap: .35rem; }
+.kiln-illustrated-action-plaque .kiln-tabletop-capacity i { width: 27px; height: 27px; color: #4c4c3d; font-size: .625rem; border-color: #796d51; background-color: #fff8e7c7; }
+.kiln-illustrated-action-plaque .kiln-tabletop-capacity i:only-of-type { width: 35px; height: 25px; }
+.kiln-illustrated-action-plaque .kiln-tabletop-occupants { min-height: 27px; }
+.kiln-illustrated-district .kiln-tabletop-shared-kiln {
+  position: absolute;
+  grid-area: auto;
+  inset: 0 0 0 64%;
+  width: auto;
+  height: var(--district-scene-height);
+  align-self: stretch;
+  justify-self: stretch;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: #354438;
+  background: transparent;
+  box-shadow: none;
+}
+.kiln-illustrated-district .kiln-tabletop-kiln-interior { position: absolute; inset: 0; }
+.kiln-illustrated-round-band {
+  position: absolute;
+  z-index: 4;
+  inset: 3% 5% auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 115px;
+  align-items: center;
+  gap: .55rem;
+  min-width: 0;
+  padding: .5rem .6rem;
+  border: 1px solid #b7a47c9e;
+  border-radius: 7px;
+  background: linear-gradient(105deg, #faf3dfed, #eee3c8d9);
+  box-shadow: inset 0 1px 0 #fffbed, 0 3px 9px #5d4d3521;
+}
+.kiln-illustrated-round-band .kiln-tabletop-round-track {
+  grid-template-columns: 28px repeat(5, minmax(0, 1fr));
+  gap: 0;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+}
+.kiln-illustrated-round-band .kiln-tabletop-round-track > strong { padding-bottom: 14px; color: #536253; font-size: .45rem; letter-spacing: .08em; }
+.kiln-illustrated-round-band .kiln-tabletop-round-track > span { display: grid; grid-template-rows: 28px 11px; justify-items: center; gap: 3px; min-height: 42px; isolation: isolate; }
+.kiln-illustrated-round-band .kiln-tabletop-round-track > span::before { top: 14px; left: calc(-50% + 17px); right: calc(50% + 17px); height: 1px; background: #b7a57e; }
+.kiln-illustrated-round-band .kiln-tabletop-round-track i { width: 26px; align-self: center; border-color: #b6a98b; color: #727665; font-size: .6875rem; background: #fff8e9b3; box-shadow: inset 0 1px 0 #fffdf5; }
+.kiln-illustrated-round-band .kiln-tabletop-round-track .is-complete i { border-color: #587568; color: #fff8df; background: #355e50; box-shadow: inset 0 0 0 2px #ffffff18; }
+.kiln-illustrated-round-band .kiln-tabletop-round-track .is-current i { border-color: #fff3d6; color: #fff9e9; background: #a84332; box-shadow: 0 0 0 2px #c8a275, 0 2px 5px #65402c26; }
+.kiln-illustrated-round-band .kiln-tabletop-round-track small { display: block; min-height: 11px; color: #813f30; font-size: .5rem; line-height: 11px; white-space: nowrap; }
+.kiln-illustrated-round-band .kiln-tabletop-firing-deck { min-width: 0; min-height: 48px; gap: .4rem; border-color: transparent; border-left-color: #b6a27b80; border-radius: 0; padding: .2rem 0 .2rem .45rem; background: transparent; }
+.kiln-illustrated-round-band .kiln-tabletop-firing-deck:hover,
+.kiln-illustrated-round-band .kiln-tabletop-firing-deck[aria-expanded="true"] { border-color: #b6a27b80; border-radius: 5px; background: #fff7e473; box-shadow: 0 2px 6px #65402c14; }
+.kiln-illustrated-round-band .kiln-tabletop-firing-deck:focus-visible { outline: 2px solid #8f3929; outline-offset: 3px; }
+.kiln-illustrated-round-band .kiln-tabletop-fire-card { width: 24px; }
+.kiln-illustrated-round-band .kiln-tabletop-firing-deck > div:last-child small { color: #645b43; font-size: .5625rem; letter-spacing: 0; }
+.kiln-illustrated-round-band .kiln-tabletop-firing-deck > div:last-child strong { margin-top: .05rem; font-size: .8125rem; }
+.kiln-illustrated-round-band .kiln-tabletop-firing-deck > div:last-child p { margin-top: .05rem; color: #666758; font-size: .5rem; }
+/* A single printed track: adjacent rectangles share edges over the landscape. */
+.kiln-illustrated-recognition-band {
+  --recognition-marker-height: clamp(44px, 3.5vw, 60px);
+  --recognition-marker-width: clamp(30px, 2.2vw, 38px);
+  position: absolute;
+  z-index: 4;
+  inset: 85.8% 1.6% 1.2%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.kiln-illustrated-recognition-band > .kiln-tabletop-imperial-track { height: 100%; grid-template-columns: 114px minmax(0, 1fr); gap: .6rem; }
+.kiln-illustrated-recognition-band .kiln-tabletop-track-heading { gap: .45rem; border: 0; border-radius: 0; padding: .3rem; color: #3d4435; background: transparent; }
+.kiln-illustrated-recognition-band .kiln-tabletop-track-heading > span { flex: 0 0 26px; width: 26px; border: 1px solid #873e31; border-radius: 3px; color: #873e31; background: #fff4db66; box-shadow: inset 0 0 0 2px #f4e7ce; }
+.kiln-illustrated-recognition-band .kiln-tabletop-track-heading small { color: #70533d; font-size: .5rem; letter-spacing: .16em; }
+.kiln-illustrated-recognition-band .kiln-tabletop-track-heading strong { margin-top: .2rem; font-size: .75rem; line-height: 1.2; }
+.kiln-illustrated-recognition-band .kiln-tabletop-imperial-track ol { position: relative; isolation: isolate; gap: 0; border: 1.5px solid #70664f; border-radius: 1px; background: transparent; box-shadow: 0 1px 0 #fffae780, inset 0 1px 0 #fffae780; }
+.kiln-illustrated-recognition-band .kiln-tabletop-imperial-track li { grid-template-columns: minmax(0, 1fr); grid-template-rows: var(--recognition-marker-height) minmax(0, 1fr); min-height: 0; gap: .1rem; padding: .15rem 0 .25rem; border: 0; border-right: 1.5px solid #70664f; border-radius: 0; background: transparent; }
+.kiln-illustrated-recognition-band .kiln-tabletop-imperial-track li:last-child { border-right: 0; }
+.kiln-recognition-stop { position: relative; height: var(--recognition-marker-height); }
+.kiln-recognition-number { position: absolute; left: .45rem; top: .55rem; color: #4c4939; font: 500 clamp(26px, 2vw, 34px)/1 Georgia, serif; text-shadow: 0 1px 2px #fff8e9; }
+.kiln-recognition-pieces { position: absolute; inset: 0 3px 0 30px; display: flex; align-items: flex-end; justify-content: center; gap: 4px; }
+.kiln-recognition-pieces .kiln-tabletop-track-markers { grid-area: auto; display: flex; flex-wrap: nowrap; align-items: flex-end; justify-content: center; gap: 1px; min-height: 0; height: var(--recognition-marker-height); }
+.kiln-recognition-pieces .kiln-tabletop-track-markers:empty { display: none; }
+.kiln-recognition-cylinder { display: block; flex: 0 0 var(--recognition-marker-width); width: var(--recognition-marker-width); height: var(--recognition-marker-height); overflow: hidden; }
+.kiln-recognition-pieces .kiln-tabletop-priority-supply { grid-area: auto; display: flex; flex-wrap: nowrap; align-items: flex-end; gap: 1px; padding: 0 0 3px; }
+.kiln-recognition-pieces .kiln-tabletop-priority-token.is-track { width: 25px; height: 32px; padding: 0; }
+.kiln-recognition-milestone { padding: 0 .45rem; text-align: left; text-shadow: 0 1px 2px #fff8e9; }
+.kiln-illustrated-recognition-band .kiln-recognition-milestone strong { display: block; color: #344437; font-size: clamp(.6875rem, .8vw, .875rem); line-height: 1.2; white-space: normal; }
+.kiln-illustrated-recognition-band .kiln-recognition-milestone small { display: block; overflow: visible; margin-top: .16rem; color: #464c3f; font-size: clamp(.6rem, .7vw, .7625rem); line-height: 1.15; }
+/* Scale this one physical surface, never crop/reflow its individual locations. */
+.kiln-responsive-board-viewport { width: 100%; min-width: 0; overflow: clip; }
+.kiln-responsive-board-scene { transform-origin: top left; grid-template-areas: none; }
+.kiln-responsive-board-scene .kiln-tabletop-turn-order { position: static; grid-area: auto; align-self: stretch; height: auto; }
+.kiln-responsive-board-scene .kiln-tabletop-turn-direction { grid-template-columns: 16px minmax(0, 1fr); justify-items: stretch; text-align: left; padding: .35rem .2rem; }
+.kiln-responsive-board-scene .kiln-tabletop-turn-direction strong { font-size: .5rem; overflow-wrap: normal; }
+.kiln-responsive-board-scene .kiln-tabletop-turn-order li > i { width: 38px; }
+.kiln-responsive-board-scene .kiln-tabletop-turn-order li > b { left: calc(50% + 12px); }
+.kiln-responsive-board-scene .kiln-tabletop-imperial-track ol { grid-template-columns: repeat(5, minmax(0, 1fr)); overflow: visible; padding-bottom: 0; }
+@media (max-width: 620px) {
+  .kiln-tabletop-board { padding: .35rem; }
+}

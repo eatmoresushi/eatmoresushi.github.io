@@ -1646,7 +1646,16 @@ function FinalResults({ game }: { game: PublicGameState }) {
           <tbody>{game.playerOrder.map((playerId) => {
             const score = game.finalResult?.scores[playerId];
             const winner = game.finalResult?.winnerIds.includes(playerId) ?? false;
-            return <tr className={winner ? "winner" : ""} key={playerId}><th>{game.players[playerId]?.displayName}{winner && <em>{locale === "zh-CN" ? "胜者" : "Winner"}</em>}</th><td>{score?.orders ?? 0}</td><td>{score?.imperialAudience ?? 0}</td><td>{score?.presentation ?? 0}</td><td>{score?.advancedTechniques ?? 0}</td><td>{score?.immediateAbilities ?? 0}</td><td>{score?.leftoverCoins ?? 0}</td><td><strong>{score?.total ?? 0} {t("VP")}</strong></td></tr>;
+            return <tr className={winner ? "winner" : ""} key={playerId}>
+              <th scope="row">{game.players[playerId]?.displayName}{winner && <em>{locale === "zh-CN" ? "胜者" : "Winner"}</em>}</th>
+              <td data-label={t("Orders")}>{score?.orders ?? 0}</td>
+              <td data-label={locale === "zh-CN" ? "御前召见" : "Imperial Audience"}>{score?.imperialAudience ?? 0}</td>
+              <td data-label={t("End-game Exhibition")}>{score?.presentation ?? 0}</td>
+              <td data-label={locale === "zh-CN" ? "进阶技艺" : "Advanced Techs"}>{score?.advancedTechniques ?? 0}</td>
+              <td data-label={locale === "zh-CN" ? "窑口／皇冠溢出" : "Kiln / Crown overflow"}>{score?.immediateAbilities ?? 0}</td>
+              <td data-label={t("Coins")}>{score?.leftoverCoins ?? 0}</td>
+              <td data-label={locale === "zh-CN" ? "总分" : "Total"}><strong>{score?.total ?? 0} {t("VP")}</strong></td>
+            </tr>;
           })}</tbody>
         </table>
       </div>

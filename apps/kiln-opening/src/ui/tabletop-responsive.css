@@ -1,0 +1,185 @@
+/* The table around the illustrated board uses one readable, fluid UI scale.
+   The physical board keeps its own coordinate system in ResponsiveGameBoard. */
+.kiln-live-root {
+  --ui-text: .875rem;
+  --ui-small: .75rem;
+  --ui-label: .6875rem;
+  --ui-title: 1.125rem;
+  --ui-gap: clamp(.75rem, 1.4vw, 1.25rem);
+  --ui-panel: #f4ead2;
+  --ui-panel-light: #fff9eb;
+  --ui-border: #b8a783;
+  min-width: 0;
+  font-size: var(--ui-text);
+  line-height: 1.45;
+}
+.kiln-live-root .kiln-tabletop-table,
+.kiln-live-root .kiln-tabletop-player-dock { width: min(1840px, calc(100% - 2 * var(--ui-gap))); min-width: 0; }
+.kiln-live-root .kiln-tabletop-table { gap: var(--ui-gap); margin-top: var(--ui-gap); }
+.kiln-live-root .kiln-tabletop-play-area,
+.kiln-live-root .kiln-tabletop-workshop-area { gap: var(--ui-gap); }
+
+/* Persistent status and public player summaries. */
+.kiln-live-root .kiln-tabletop-topbar { grid-template-columns: minmax(150px, .65fr) minmax(0, 1.5fr) auto; gap: .75rem; padding: .7rem var(--ui-gap); }
+.kiln-live-root .kiln-tabletop-brand strong { font-size: 1rem; }
+.kiln-live-root .kiln-tabletop-brand small { font-size: var(--ui-label); }
+.kiln-live-root .kiln-tabletop-turn-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.kiln-live-root .kiln-tabletop-turn-summary > span { padding: .45rem .65rem; }
+.kiln-live-root .kiln-tabletop-turn-summary small { font-size: var(--ui-label); letter-spacing: .06em; }
+.kiln-live-root .kiln-tabletop-turn-summary strong { font-size: var(--ui-text); line-height: 1.4; }
+.kiln-live-root .kiln-tabletop-action-link,
+.kiln-live-root .kiln-tabletop-icon-button { min-width: 44px; min-height: 44px; font-size: var(--ui-text); }
+.kiln-live-root .kiln-tabletop-player-dock { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; overflow: visible; margin-top: var(--ui-gap); }
+.kiln-live-root .kiln-tabletop-player { grid-template-columns: 42px minmax(0, 1fr) auto; gap: .4rem .6rem; padding: .8rem; border-radius: 10px; }
+.kiln-live-root .kiln-tabletop-avatar { width: 42px; font-size: 1.125rem; }
+.kiln-live-root .kiln-tabletop-player-name strong { font-size: var(--ui-text); white-space: normal; overflow-wrap: anywhere; }
+.kiln-live-root .kiln-tabletop-player-name small { font-size: var(--ui-small); margin-top: .2rem; }
+.kiln-live-root .kiln-tabletop-player-score small { font-size: var(--ui-label); }
+.kiln-live-root .kiln-tabletop-player-score b { font-size: 1.5rem; }
+.kiln-live-root .kiln-tabletop-player-resources,
+.kiln-live-root .kiln-tabletop-player-public { flex-wrap: wrap; gap: .3rem; }
+.kiln-live-root .kiln-tabletop-player-resources i,
+.kiln-live-root .kiln-tabletop-player-public i { padding: .2rem .45rem; font-size: var(--ui-small); }
+.kiln-live-root .kiln-tabletop-player.is-active::after { top: -.45rem; font-size: .625rem; padding: .15rem .45rem; }
+.kiln-live-root .kiln-tabletop-ai-badge { height: auto; min-height: 18px; font-size: .625rem; }
+.kiln-live-root .kiln-tabletop-computer-recap { max-height: min(480px, 60dvh); overflow-y: auto; overscroll-behavior: contain; padding: .9rem; }
+.kiln-live-root .kiln-tabletop-computer-recap > header strong { font-size: 1rem; white-space: normal; overflow-wrap: anywhere; }
+.kiln-live-root .kiln-tabletop-computer-recap > header :is(small, em),
+.kiln-live-root .kiln-tabletop-computer-recap > footer small { font-size: var(--ui-small); }
+.kiln-live-root .kiln-tabletop-computer-recap > header button { width: 44px; height: 44px; }
+.kiln-live-root .kiln-tabletop-computer-recap > ol li,
+.kiln-live-root .kiln-tabletop-computer-recap > p { font-size: var(--ui-text); line-height: 1.5; }
+.kiln-live-root .kiln-tabletop-computer-recap > footer button { min-height: 44px; font-size: var(--ui-small); }
+
+/* Market headings sit above their cards so the cards keep usable widths. */
+.kiln-live-root .kiln-tabletop-market,
+.kiln-live-root .kiln-tabletop-tech-market { min-width: 0; padding: var(--ui-gap); gap: .85rem; overflow: visible; border: 1px solid var(--ui-border); border-radius: 12px; background: linear-gradient(120deg, #f4ead2, #e5d5b1); box-shadow: 0 6px 18px #061c1729, inset 0 1px 0 #fff9e7b3; }
+.kiln-live-root .kiln-tabletop-market { grid-template-columns: minmax(0, 1fr) auto; }
+.kiln-live-root .kiln-tabletop-section-title { gap: .65rem; }
+.kiln-live-root .kiln-tabletop-section-title > span { width: 38px; flex-basis: 38px; }
+.kiln-live-root .kiln-tabletop-section-title small { font-size: var(--ui-label); letter-spacing: .08em; }
+.kiln-live-root .kiln-tabletop-section-title strong { font-size: var(--ui-title); margin-top: .15rem; }
+.kiln-live-root .kiln-tabletop-order-deck { grid-column: 2; width: 34px; margin: .3rem .4rem .3rem 0; }
+.kiln-live-root .kiln-tabletop-order-row { grid-column: 1 / -1; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .65rem; }
+.kiln-live-root .kiln-tabletop-market-note { display: flex; grid-column: 1 / -1; flex-wrap: wrap; justify-content: space-between; gap: .35rem .75rem; border: 0; padding: 0; }
+.kiln-live-root .kiln-tabletop-market-note small,
+.kiln-live-root .kiln-tabletop-market-note strong { font-size: var(--ui-small); }
+.kiln-live-root .kiln-tabletop-tech-market { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.kiln-live-root .kiln-tabletop-tech-market > .kiln-tabletop-section-title { grid-column: 1 / -1; }
+.kiln-live-root .kiln-tabletop-tech-discipline { min-width: 0; grid-template-rows: auto minmax(0, 1fr); gap: .6rem; padding-top: .55rem; }
+.kiln-live-root .kiln-tabletop-tech-discipline > header strong { font-size: var(--ui-text); }
+.kiln-live-root .kiln-tabletop-tech-discipline > header small { font-size: var(--ui-small); }
+.kiln-live-root .kiln-tabletop-tech-discipline > div { min-width: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem; align-items: stretch; }
+
+/* Every card uses readable live copy, including the personal hand and hover. */
+.kiln-live-root .kiln-tabletop-order-card,
+.kiln-live-root .kiln-tabletop-tech-tile,
+.kiln-live-root .kiln-tabletop-starting-tech { gap: .6rem; min-width: 0; min-height: 210px; height: auto; padding: .8rem; border-radius: 8px; }
+.kiln-live-root .kiln-tabletop-order-card { grid-template-rows: auto auto 1fr auto; }
+.kiln-live-root .kiln-tabletop-order-card.has-quality-requirement { grid-template-rows: auto auto 1fr auto auto; }
+.kiln-live-root .kiln-tabletop-order-card header b,
+.kiln-live-root .kiln-tabletop-tech-tile header,
+.kiln-live-root .kiln-tabletop-starting-tech header { font-size: var(--ui-small); }
+.kiln-live-root .kiln-tabletop-order-seal { width: 28px; font-size: var(--ui-small); }
+.kiln-live-root .kiln-tabletop-order-card p,
+.kiln-live-root .kiln-tabletop-tech-tile p,
+.kiln-live-root .kiln-tabletop-starting-tech p { display: block; overflow: visible; -webkit-line-clamp: unset; font-size: var(--ui-text); line-height: 1.5; color: #414e43; overflow-wrap: anywhere; }
+.kiln-live-root .kiln-tabletop-order-card footer { padding-top: .6rem; gap: .4rem; }
+.kiln-live-root .kiln-tabletop-order-card footer small { font-size: var(--ui-label); }
+.kiln-live-root .kiln-tabletop-order-card footer b { font-size: var(--ui-text); white-space: normal; overflow-wrap: anywhere; }
+.kiln-live-root .kiln-tabletop-order-quality-requirements > span { font-size: var(--ui-small); line-height: 1.35; }
+.kiln-live-root .kiln-tabletop-display-index { position: absolute; top: 2.9rem; right: .75rem; width: 23px; font-size: var(--ui-small); }
+.kiln-live-root .kiln-tabletop-tech-tile > strong,
+.kiln-live-root .kiln-tabletop-starting-tech > strong { font-size: 1rem; line-height: 1.3; }
+.kiln-live-root .kiln-tabletop-tech-tile header .kiln-tabletop-tech-cost { font-size: var(--ui-text); gap: .3rem; }
+.kiln-live-root .kiln-tabletop-tech-tile footer { flex-wrap: wrap; gap: .35rem; font-size: var(--ui-label); line-height: 1.35; letter-spacing: .025em; text-transform: none; }
+.kiln-live-root .kiln-tabletop-tech-endgame-vp { padding: .2rem .35rem; font-size: var(--ui-small); }
+.kiln-live-root .kiln-tabletop-tech-tile > i { position: static; justify-self: end; font-size: var(--ui-small); padding: .15rem .4rem; }
+.kiln-live-root .kiln-tabletop-kiln-card { gap: .65rem; padding: 1rem; }
+.kiln-live-root .kiln-tabletop-kiln-card header { font-size: var(--ui-small); }
+.kiln-live-root .kiln-tabletop-kiln-card > strong { font-size: 1.5rem; }
+.kiln-live-root .kiln-tabletop-kiln-card > b { font-size: 1rem; }
+.kiln-live-root .kiln-tabletop-kiln-card p { font-size: var(--ui-text); line-height: 1.55; }
+
+/* The workshop grows with its contents instead of squeezing cards into a shelf. */
+.kiln-live-root .kiln-tabletop-workshop-area.has-one-imperial { grid-template-columns: minmax(0, 1fr); }
+.kiln-live-root .kiln-tabletop-workshop,
+.kiln-live-root .kiln-tabletop-workshop-zones { min-width: 0; }
+.kiln-live-root #kiln-live-workshop-title { scroll-margin-top: 7rem; }
+.kiln-live-root .kiln-tabletop-workshop > header { flex-wrap: wrap; padding: var(--ui-gap); gap: 1rem; }
+.kiln-live-root .kiln-tabletop-workshop-name { flex: 1 1 460px; gap: .75rem; align-items: flex-start; }
+.kiln-live-root .kiln-tabletop-workshop-name > div { min-width: 0; }
+.kiln-live-root .kiln-tabletop-workshop-name small { font-size: var(--ui-label); }
+.kiln-live-root .kiln-tabletop-workshop-name strong { font-size: 1.4rem; line-height: 1.3; }
+.kiln-live-root .kiln-tabletop-workshop-name p { display: block; max-width: 900px; margin-top: .35rem; overflow: visible; -webkit-line-clamp: unset; color: #414e43; font-size: var(--ui-text); line-height: 1.5; }
+.kiln-live-root .kiln-tabletop-resource-bank { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); width: auto; min-width: 0; gap: .5rem; overflow: visible; }
+.kiln-live-root .kiln-tabletop-resource { min-width: 74px; gap: .2rem .4rem; padding: .5rem; }
+.kiln-live-root .kiln-tabletop-resource i { width: 28px; font-size: var(--ui-small); }
+.kiln-live-root .kiln-tabletop-resource b { font-size: 1.125rem; }
+.kiln-live-root .kiln-tabletop-resource small { font-size: var(--ui-label); line-height: 1.2; }
+.kiln-live-root .kiln-tabletop-workshop-zones { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: var(--ui-gap); gap: var(--ui-gap); }
+.kiln-live-root .kiln-tabletop-workshop-zones > section { grid-column: auto; padding: .9rem; border-radius: 9px; }
+.kiln-live-root .kiln-tabletop-workshop-zones h3 { flex-wrap: wrap; gap: .3rem .5rem; margin-bottom: .75rem; font-size: var(--ui-text); line-height: 1.4; letter-spacing: .03em; text-transform: none; }
+.kiln-live-root .kiln-tabletop-workshop-zones h3 span { font-size: var(--ui-small); }
+.kiln-live-root .kiln-tabletop-worker-supply > div { min-height: 94px; gap: .5rem; }
+.kiln-live-root .kiln-tabletop-worker-supply > div > button { min-height: 64px; padding: .5rem; }
+.kiln-live-root .kiln-tabletop-priority-reserve { gap: .6rem; margin-top: .75rem; padding-top: .75rem; }
+.kiln-live-root .kiln-tabletop-priority-reserve strong { font-size: var(--ui-text); }
+.kiln-live-root .kiln-tabletop-priority-reserve small { font-size: var(--ui-small); }
+.kiln-live-root .kiln-tabletop-ceramic-shelf > div { min-height: 94px; flex-wrap: wrap; align-content: flex-start; gap: .9rem; padding: .5rem .5rem 1rem; overflow: visible; }
+.kiln-live-root .kiln-tabletop-own-orders > div,
+.kiln-live-root .kiln-tabletop-own-techs > div { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: .75rem; align-items: stretch; overflow: visible; min-height: 0; }
+.kiln-live-root .kiln-tabletop-order-card.is-owned,
+.kiln-live-root .kiln-tabletop-tech-tile.is-owned,
+.kiln-live-root .kiln-tabletop-starting-tech.is-owned { width: 100%; max-width: none; min-width: 0; }
+.kiln-live-root .kiln-tabletop-ceramic-shelf .kiln-tabletop-quality-badge { height: auto; min-height: 21px; padding: .15rem .35rem; font-size: var(--ui-label); }
+.kiln-live-root .kiln-tabletop-imperial-gallery { padding: var(--ui-gap); border-radius: 12px; }
+.kiln-live-root .kiln-tabletop-workshop-area.has-one-imperial .kiln-tabletop-imperial-gallery { max-width: none; }
+.kiln-live-root .kiln-tabletop-imperial-gallery h2 { font-size: var(--ui-title); }
+.kiln-live-root .kiln-tabletop-imperial-gallery > header p { font-size: var(--ui-small); }
+.kiln-live-root .kiln-tabletop-imperial-gallery > div { grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 1rem; }
+.kiln-live-root .kiln-tabletop-imperial-kiln { padding: 1rem; }
+.kiln-live-root .kiln-tabletop-imperial-owner { font-size: var(--ui-text); }
+.kiln-live-root .kiln-tabletop-imperial-grant { font-size: var(--ui-label); }
+.kiln-live-root .kiln-tabletop-imperial-title h3 { font-size: var(--ui-title); }
+.kiln-live-root .kiln-tabletop-imperial-kiln > footer { font-size: var(--ui-small); }
+
+@media (max-width: 1300px) {
+  .kiln-live-root .kiln-tabletop-player-dock { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kiln-live-root .kiln-tabletop-order-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 1050px) {
+  .kiln-live-root .kiln-tabletop-tech-market { grid-template-columns: minmax(0, 1fr); }
+  .kiln-live-root .kiln-tabletop-workshop-zones { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kiln-live-root .kiln-tabletop-own-orders,
+  .kiln-live-root .kiln-tabletop-own-techs { grid-column: 1 / -1; }
+}
+@media (max-width: 760px) {
+  .kiln-live-root .kiln-tabletop-topbar { position: relative; grid-template-columns: minmax(0, 1fr) auto; gap: .6rem; }
+  .kiln-live-root .kiln-tabletop-turn-summary { grid-column: 1 / -1; grid-row: 2; }
+  .kiln-live-root .kiln-tabletop-turn-summary > span { padding: .45rem; }
+  .kiln-live-root .kiln-tabletop-turn-summary small { font-size: .625rem; }
+  .kiln-live-root .kiln-tabletop-turn-summary strong { white-space: normal; overflow-wrap: anywhere; }
+  .kiln-live-root .kiln-tabletop-header-actions { grid-column: 2; grid-row: 1; }
+  .kiln-live-root .kiln-tabletop-workshop > header { display: flex; }
+  .kiln-live-root .kiln-tabletop-resource-bank { width: 100%; }
+  .kiln-live-root .kiln-tabletop-resource { min-width: 0; }
+}
+@media (max-width: 600px) {
+  .kiln-live-root .kiln-tabletop-player-dock { grid-template-columns: minmax(0, 1fr); }
+  .kiln-live-root .kiln-tabletop-order-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kiln-live-root .kiln-tabletop-order-card,
+  .kiln-live-root .kiln-tabletop-tech-tile,
+  .kiln-live-root .kiln-tabletop-starting-tech { padding: .65rem; }
+  .kiln-live-root .kiln-tabletop-order-card footer { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kiln-live-root .kiln-tabletop-order-card footer > span:first-child { grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; }
+  .kiln-live-root .kiln-tabletop-order-card footer b { overflow-wrap: normal; }
+  .kiln-live-root .kiln-tabletop-workshop-zones { grid-template-columns: minmax(0, 1fr); }
+  .kiln-live-root .kiln-tabletop-workshop-zones > section { grid-column: auto; }
+  .kiln-live-root .kiln-tabletop-resource { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: .35rem; }
+  .kiln-live-root .kiln-tabletop-resource i { grid-row: auto; }
+}
+@media (max-width: 380px) {
+  .kiln-live-root .kiln-tabletop-tech-discipline > div { grid-template-columns: minmax(0, 1fr); }
+  .kiln-live-root .kiln-tabletop-order-card { padding: .5rem; }
+}
