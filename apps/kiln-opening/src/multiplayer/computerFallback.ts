@@ -62,28 +62,27 @@ export function fallbackComputerCommands(
           commands.push({ type: "FORM_CERAMICS", workerId: worker.id, shapes: ["bowl"] });
         }
         const shaped = Object.values(game.ceramics).find(
-          (ceramic) => ceramic.ownerId === playerId && ceramic.stage === "shaped",
+          (ceramic) => ceramic.ownerId === playerId && ceramic.stage === "workshop" && ceramic.decoration === "plain",
         );
-        if (shaped !== undefined && player.resources.coins >= DECORATION_COSTS.plain) {
+        if (shaped !== undefined && (worker.kind === "shifu" || player.resources.coins >= 2)) {
           commands.push({
-            type: "GLAZE_CERAMICS",
+            type: "DECORATE_CERAMICS",
             workerId: worker.id,
-            selections: [{ ceramicId: shaped.id, glaze: "celadon", decoration: "plain" }],
+            selections: [{ ceramicId: shaped.id, decoration: "carved" }],
           });
         }
         const glazed = Object.values(game.ceramics).find(
           (ceramic) => ceramic.ownerId === playerId
-            && ceramic.stage === "glazed"
-            && (ceramic.loadableFromRound === undefined || game.round >= ceramic.loadableFromRound),
+            && ceramic.stage === "workshop",
         );
         const openKilnSpace = activeKilnSpaceIds(game.playerCount).find((spaceId) =>
           !Object.values(game.ceramics).some((ceramic) => ceramic.stage === "loaded" && ceramic.kilnSpaceId === spaceId),
         );
-        if (glazed !== undefined && openKilnSpace !== undefined) {
+        if (glazed !== undefined && openKilnSpace !== undefined && player.resources.coins >= 1) {
           commands.push({
             type: "USE_KILN_YARD",
             workerId: worker.id,
-            loads: [{ ceramicId: glazed.id, kilnSpaceId: openKilnSpace }],
+            loads: [{ ceramicId: glazed.id, kilnSpaceId: openKilnSpace, glaze: "celadon" }],
             ...(worker.kind === "shifu" ? { shifuCeramicId: glazed.id } : {}),
             ...(player.startingTechniqueId === "ST04" ? { kilnTendingClay: 1, kilnTendingWood: 0 } : {}),
           });
@@ -143,6 +142,10 @@ export function fallbackComputerCommands(
       return techniqueFallbacks(observation, phase.workerId);
     case "work_imperial_priority":
       return [{ type: "RESOLVE_IMPERIAL_PRIORITY", ceramicId: null }];
+    case "work_glaze_palette":
+      return [{ type: "RESOLVE_GLAZE_PALETTE", ceramicId: null, glaze: null }];
+    case "firing_ge":
+      return [{ type: "RESOLVE_GE", ceramicId: null }];
     case "firing_before_contribution":
       return [{ type: "RESOLVE_TEST_PIECES", use: false }];
     case "firing_contributions":
@@ -150,7 +153,6 @@ export function fallbackComputerCommands(
         type: "SUBMIT_WOOD_CONTRIBUTION",
         windowId: phase.windowId,
         card: "TEND",
-        useFuelLedger: false,
       }];
     case "firing_shifu_adjustment":
       return [{ type: "RESOLVE_KILN_YARD_ADJUSTMENT", ceramicId: null, adjustment: null }];
@@ -213,7 +215,7 @@ function techniqueFallbacks(
       const cost = TECHNIQUE_DEFINITIONS[techniqueId]?.cost;
       return cost !== undefined && Math.max(0, cost - discount) <= player.resources.coins;
     })
-    .map((techniqueId) => ({ type: "GUILD_BUY_TECHNIQUE" as const, techniqueId }));
+    .map((techniqueId) => ({ type: "GUILD_BUY_TECHNIQUE" as const, techniqueId, returnTechniqueIds: ownPrivate.inspectedTechniqueIds.filter((id) => id !== techniqueId) }));
 }
 
 export interface ComputerCandidateFailure {

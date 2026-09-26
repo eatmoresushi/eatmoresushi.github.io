@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.2.7",
+  "rulesVersion": "1.4",
   "kilnSpaces": [
     {
       "id": "high_1",
@@ -33,6 +33,11 @@
     },
     {
       "id": "low_2",
+      "zone": "low",
+      "modifier": -1
+    },
+    {
+      "id": "low_3",
       "zone": "low",
       "modifier": -1
     }
@@ -91,6 +96,24 @@
       "heatAdjustment": 1,
       "meaning": "Feed the kiln enough to raise the fire one step.",
       "meaningZh": "添柴助火，使窑温上升一级。"
+    },
+    {
+      "id": "BANK_2",
+      "name": "−2 Bank",
+      "nameZh": "强压火",
+      "woodCost": 2,
+      "heatAdjustment": -2,
+      "meaning": "Fuel Ledger: bank the fire by two steps.",
+      "meaningZh": "柴簿：使基础火候降低两级。"
+    },
+    {
+      "id": "STOKE_2",
+      "name": "+2 Stoke",
+      "nameZh": "猛添柴",
+      "woodCost": 2,
+      "heatAdjustment": 2,
+      "meaning": "Fuel Ledger: stoke the fire by two steps.",
+      "meaningZh": "柴簿：使基础火候提高两级。"
     }
   ]
 }

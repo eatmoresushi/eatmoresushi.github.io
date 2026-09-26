@@ -53,26 +53,5 @@ export const QUALITY_RANK: Record<Quality, number> = {
   masterpiece: 3,
 };
 
-/**
- * Kiln Tradition activation costs, in Wood.
- *
- * Both were previously module-private in `engine.ts` with hand-copied duplicates in
- * `src/ai/evaluator.ts`, so a repricing updated the engine and left the AI valuing the old
- * number. They live here now and are imported by both.
- */
-/** Extra Wood a revealed Bank or Stoke pays to become -2 / +2 Heat instead of -1 / +1. */
-export const FUEL_LEDGER_WOOD = 1;
-
-/**
- * The Heat a Fuel Ledger commitment adds on top of the printed Contribution card.
- *
- * Both the provisional and the revealed adjustment paths needed this, and each carried its
- * own copy of the ternary -- the same duplication the constant above was extracted to end.
- * Tend never qualifies: V1.2.2 allows the commitment with Bank or Stoke only.
- */
-export function fuelLedgerHeatDelta(card: ContributionCardId): number {
-  return card === "BANK" ? -1 : card === "STOKE" ? 1 : 0;
-}
-
-/** Jun's activation price, in Wood. V1.2.7 keeps it at 1. */
+/** Jun pays one Wood each time its once-per-round ability is used. */
 export const JUN_ACTIVATION_WOOD = 1;

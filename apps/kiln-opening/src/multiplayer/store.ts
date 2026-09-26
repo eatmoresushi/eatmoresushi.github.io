@@ -79,7 +79,6 @@ export interface CommitStartInput {
 export interface PrivateCommitInput {
   windowId: string;
   card: ContributionCardId;
-  useFuelLedger: boolean;
   revealed: boolean;
 }
 

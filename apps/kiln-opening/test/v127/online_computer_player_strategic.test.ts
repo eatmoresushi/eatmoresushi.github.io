@@ -49,15 +49,15 @@ function closeGuild(state: GameState): void {
   state.techniqueDisplay = { forming: [], glazing: [], firing: [] };
 }
 
-describe("V1.2.7 strategic computer policy: Shifu Glaze & Decoration discount", () => {
+describe("V1.4 strategic computer policy: Shifu free Decoration", () => {
   it.each([
-    { coins: 0, carvingKnives: false, count: 0, paid: 0 },
-    { coins: 1, carvingKnives: false, count: 0, paid: 0 },
-    { coins: 2, carvingKnives: false, count: 1, paid: 2 },
-    { coins: 3, carvingKnives: false, count: 2, paid: 3 },
-    { coins: 0, carvingKnives: true, count: 1, paid: 0 },
-    { coins: 1, carvingKnives: true, count: 2, paid: 1 },
-  ])("glazes $count Carved vessels with $coins Coins and Carving Knives=$carvingKnives", async ({ coins, carvingKnives, count, paid }) => {
+    { coins: 0, carvingKnives: false, count: 1, paid: 0 },
+    { coins: 1, carvingKnives: false, count: 1, paid: 0 },
+    { coins: 2, carvingKnives: false, count: 2, paid: 2 },
+    { coins: 3, carvingKnives: false, count: 2, paid: 2 },
+    { coins: 0, carvingKnives: true, count: 2, paid: 0 },
+    { coins: 1, carvingKnives: true, count: 2, paid: 0 },
+  ])("decorates $count Carved vessels with $coins Coins and Carving Knives=$carvingKnives", async ({ coins, carvingKnives, count, paid }) => {
     const { state: initial, rng } = startedGame(2, 4_941);
     const state = structuredClone(initial);
     const player = state.players["P1"]!;
@@ -72,11 +72,11 @@ describe("V1.2.7 strategic computer policy: Shifu Glaze & Decoration discount", 
 
     const action = await choose(state);
     if (count === 0) {
-      expect(action.type).not.toBe("GLAZE_CERAMICS");
+      expect(action.type).not.toBe("DECORATE_CERAMICS");
       return;
     }
-    expect(action.type).toBe("GLAZE_CERAMICS");
-    if (action.type !== "GLAZE_CERAMICS") throw new Error("Expected glazing");
+    expect(action.type).toBe("DECORATE_CERAMICS");
+    if (action.type !== "DECORATE_CERAMICS") throw new Error("Expected glazing");
     expect(player.workers[action.workerId]?.kind).toBe("shifu");
     expect(action.selections).toHaveLength(count);
     expect(action.selections.every(({ decoration }) => decoration === "carved")).toBe(true);
@@ -84,11 +84,11 @@ describe("V1.2.7 strategic computer policy: Shifu Glaze & Decoration discount", 
 
     const resolved = mustApply(state, "P1", action, rng);
     expect(resolved.players["P1"]!.resources.coins).toBe(coins - paid);
-    expect(Object.values(resolved.ceramics).filter(({ stage }) => stage === "glazed")).toHaveLength(count);
+    expect(Object.values(resolved.ceramics).filter((ceramic) => ceramic.stage === "workshop" && ceramic.decoration === "carved")).toHaveLength(count);
     if (carvingKnives) expect(resolved.players["P1"]!.techniques).toContainEqual({ id: "T07", exhausted: true });
   });
 
-  it.each([0, 1])("fallback pays full cost for one Plain vessel with %i Coins", (coins) => {
+  it.each([0, 1])("fallback can decorate one Plain vessel free with a Shifu holding %i Coins", (coins) => {
     const { state: initial, rng } = startedGame(2, 4_942);
     const state = structuredClone(initial);
     state.players["P1"]!.resources = { clay: 0, wood: 0, coins };
@@ -96,19 +96,18 @@ describe("V1.2.7 strategic computer policy: Shifu Glaze & Decoration discount", 
     setWorkTurn(state, "P1");
 
     const commands = fallbackComputerCommands(createComputerObservation(state, "P1"));
-    const glazeCommands = commands.filter((command) => command.type === "GLAZE_CERAMICS");
-    expect(glazeCommands).toHaveLength(coins === 0 ? 0 : 4);
-    if (coins === 0) return;
+    const glazeCommands = commands.filter((command) => command.type === "DECORATE_CERAMICS");
+    expect(glazeCommands).toHaveLength(1);
     const action = glazeCommands.find(({ workerId }) => state.players["P1"]!.workers[workerId]?.kind === "shifu")!;
     expect(state.players["P1"]!.workers[action.workerId]?.kind).toBe("shifu");
     expect(action).not.toHaveProperty("freeDecorationCeramicId");
     const resolved = mustApply(state, "P1", action, rng);
-    expect(resolved.players["P1"]!.resources.coins).toBe(0);
-    expect(resolved.ceramics[ceramic.id]?.stage).toBe("glazed");
+    expect(resolved.players["P1"]!.resources.coins).toBe(coins);
+    expect(resolved.ceramics[ceramic.id]?.stage).toBe("workshop");
   });
 });
 
-describe("V1.2.7 strategic computer policy: Starting Techs and Ding", () => {
+describe("V1.4 strategic computer policy: Starting Techs and Ding", () => {
   it("uses Prepared Clay when a Materials Yard gain can pay its surcharge", async () => {
     const { state: initial, rng } = startedGame(2, 4_901);
     const state = structuredClone(initial);
@@ -130,41 +129,40 @@ describe("V1.2.7 strategic computer policy: Starting Techs and Ding", () => {
     expect(Object.values(resolved.ceramics)).toContainEqual(expect.objectContaining({
       ownerId: "P1",
       shape: "bowl",
-      stage: "shaped",
+      stage: "workshop",
     }));
   });
 
-  it("uses White Slip on a newly formed vessel when its Order calls for White", async () => {
+  it("uses White Slip on a newly formed vessel when its Order calls for Painted", async () => {
     const { state: initial, rng } = startedGame(2, 4_902);
     const state = structuredClone(initial);
     state.players["P1"]!.startingTechniqueId = "ST02";
-    state.players["P1"]!.orderHand = ["O21"];
-    state.players["P1"]!.resources = { clay: 2, wood: 0, coins: 1 };
+    state.players["P1"]!.orderHand = ["O17"];
+    state.players["P1"]!.resources = { clay: 2, wood: 0, coins: 2 };
     closeGuild(state);
     setWorkTurn(state, "P1");
 
     const action = await choose(state);
     expect(action).toEqual(expect.objectContaining({
       type: "FORM_CERAMICS",
-      shapes: expect.arrayContaining(["plate"]),
+      shapes: expect.arrayContaining(["washer"]),
       whiteSlip: { formedIndex: 0 },
     }));
 
     const resolved = mustApply(state, "P1", action, rng);
     expect(Object.values(resolved.ceramics)).toContainEqual(expect.objectContaining({
       ownerId: "P1",
-      shape: "plate",
-      stage: "glazed",
-      glaze: "white",
-      decoration: "plain",
+      shape: "washer",
+      stage: "workshop",
+      decoration: "painted",
     }));
   });
 
-  it("uses Rapid Drying to load a ceramic glazed by the same action", async () => {
+  it("uses Rapid Drying to glaze and load a ceramic decorated by the same action", async () => {
     const { state: initial, rng } = startedGame(2, 4_903);
     const state = structuredClone(initial);
     state.players["P1"]!.startingTechniqueId = "ST03";
-    state.players["P1"]!.orderHand = ["O04"];
+    state.players["P1"]!.orderHand = ["O23"];
     state.players["P1"]!.resources = { clay: 0, wood: 1, coins: 1 };
     const shaped = addShaped(state, "P1", "vase");
     closeGuild(state);
@@ -172,14 +170,14 @@ describe("V1.2.7 strategic computer policy: Starting Techs and Ding", () => {
 
     const action = await choose(state);
     expect(action).toEqual(expect.objectContaining({
-      type: "GLAZE_CERAMICS",
+      type: "DECORATE_CERAMICS",
       rapidDrying: expect.objectContaining({ ceramicId: shaped.id }),
     }));
 
     const resolved = mustApply(state, "P1", action, rng);
     expect(resolved.ceramics[shaped.id]).toEqual(expect.objectContaining({
       stage: "loaded",
-      glaze: "moon_white",
+      glaze: "grey_green",
     }));
     expect(resolved.players["P1"]!.resources.wood).toBe(0);
   });
@@ -210,12 +208,12 @@ describe("V1.2.7 strategic computer policy: Starting Techs and Ding", () => {
   });
 });
 
-describe("V1.2.7 strategic computer policy: route-repair Techs", () => {
+describe("V1.4 strategic computer policy: route-repair Techs", () => {
   it("uses Reworking Table when changing Shape closes an Order-route deficit", async () => {
     const { state: initial, rng } = startedGame(2, 4_911);
     const state = structuredClone(initial);
     addTechnique(state, "P1", "T05");
-    state.players["P1"]!.orderHand = ["O04"];
+    state.players["P1"]!.orderHand = ["O23"];
     state.players["P1"]!.resources = { clay: 0, wood: 0, coins: 1 };
     const bowl = addShaped(state, "P1", "bowl");
     closeGuild(state);
@@ -223,7 +221,7 @@ describe("V1.2.7 strategic computer policy: route-repair Techs", () => {
 
     const action = await choose(state);
     expect(action).toEqual(expect.objectContaining({
-      type: "GLAZE_CERAMICS",
+      type: "DECORATE_CERAMICS",
       useTechniqueIds: expect.arrayContaining(["T05"]),
       selections: [expect.objectContaining({ ceramicId: bowl.id, newShape: "vase" })],
     }));
@@ -231,42 +229,44 @@ describe("V1.2.7 strategic computer policy: route-repair Techs", () => {
     const resolved = mustApply(state, "P1", action, rng);
     expect(resolved.ceramics[bowl.id]).toEqual(expect.objectContaining({
       shape: "vase",
-      stage: "glazed",
+      stage: "workshop",
     }));
     expect(resolved.players["P1"]!.techniques).toContainEqual({ id: "T05", exhausted: true });
   });
 
-  it("uses Glaze Palette to change a ceramic immediately before loading", async () => {
+  it("uses Glaze Palette at the end of Work on an already loaded ceramic", async () => {
     const { state: initial, rng } = startedGame(2, 4_912);
     const state = structuredClone(initial);
     addTechnique(state, "P1", "T06");
     state.players["P1"]!.orderHand = ["O30"];
     state.players["P1"]!.resources = { clay: 0, wood: 0, coins: 2 };
-    const wrongGlaze = addGlazed(state, "P1", "washer", "celadon", "plain");
-    setWorkTurn(state, "P1");
+    const wrongGlaze = addLoaded(state, "P1", "washer", "celadon", "plain", "middle_1");
+    state.phase = { type: "work_glaze_palette", queue: { actors: ["P1"], currentIndex: 0 } };
 
     const action = await choose(state);
-    expect(action.type).toBe("USE_KILN_YARD");
-    if (action.type !== "USE_KILN_YARD") throw new Error("Expected loading");
-    const load = action.loads.find(({ ceramicId }) => ceramicId === wrongGlaze.id)!;
-    expect(["white", "moon_white"]).toContain(load.glazePalette);
+    expect(action.type).toBe("RESOLVE_GLAZE_PALETTE");
+    if (action.type !== "RESOLVE_GLAZE_PALETTE") throw new Error("Expected palette choice");
+    expect(action.ceramicId).toBe(wrongGlaze.id);
+    expect(["white", "moon_white"]).toContain(action.glaze);
 
     const resolved = mustApply(state, "P1", action, rng);
     expect(resolved.ceramics[wrongGlaze.id]).toEqual(expect.objectContaining({
       stage: "loaded",
-      glaze: load.glazePalette,
+      glaze: action.glaze,
     }));
     expect(resolved.players["P1"]!.techniques).toContainEqual({ id: "T06", exhausted: true });
   });
 });
 
-describe("V1.2.7 strategic computer policy: firing placement", () => {
+describe("V1.4 strategic computer policy: firing placement", () => {
   it("uses Kiln Furniture when only a forced zone is available for neutral heat", async () => {
     const { state: initial, rng } = startedGame(2, 4_921);
     const state = structuredClone(initial);
     addTechnique(state, "P1", "T15");
     const ceramic = addGlazed(state, "P1", "bowl", "celadon", "plain");
     addLoaded(state, "P2", "plate", "celadon", "plain", "middle_1");
+    addLoaded(state, "P2", "washer", "celadon", "plain", "middle_2");
+    state.players["P1"]!.orderHand = [];
     setWorkTurn(state, "P1");
 
     const action = await choose(state);
@@ -295,7 +295,6 @@ describe("V1.2.7 strategic computer policy: firing placement", () => {
       round: state.round,
       contributors: ["P1"],
       contributions: { P1: "TEND" },
-      fuelLedgerUpgradedBy: [],
       baseHeat: 2,
       fireModifier: null,
       globalHeat: null,
@@ -323,7 +322,7 @@ describe("V1.2.7 strategic computer policy: firing placement", () => {
     state.players["P1"]!.kilnYardShifuCeramicId = ceramic.id;
     state.firingContext = {
       round: state.round, contributors: ["P1"], contributions: { P1: "TEND" },
-      fuelLedgerUpgradedBy: [], baseHeat: 2, fireModifier: null, globalHeat: null,
+      baseHeat: 2, fireModifier: null, globalHeat: null,
       kilnYardShifuAdjustments: [], ceramicResults: {},
     };
     state.phase = { type: "firing_shifu_adjustment", queue: { actors: ["P1"], currentIndex: 0 } };
@@ -335,7 +334,7 @@ describe("V1.2.7 strategic computer policy: firing placement", () => {
   });
 });
 
-describe("V1.2.7 strategic computer policy: audited timing and limits", () => {
+describe("V1.4 strategic computer policy: audited timing and limits", () => {
   it("discards an owned Flawed firing result when the 2-Coin salvage is available", async () => {
     const { state: initial, rng } = startedGame(2, 4_931);
     const state = structuredClone(initial);
@@ -344,7 +343,6 @@ describe("V1.2.7 strategic computer policy: audited timing and limits", () => {
       round: state.round,
       contributors: ["P1"],
       contributions: { P1: "TEND" },
-      fuelLedgerUpgradedBy: [],
       baseHeat: 2,
       fireModifier: 0,
       globalHeat: 2,
@@ -384,7 +382,6 @@ describe("V1.2.7 strategic computer policy: audited timing and limits", () => {
       round: state.round,
       contributors: ["P1"],
       contributions: { P1: "TEND" },
-      fuelLedgerUpgradedBy: [],
       baseHeat: 2,
       fireModifier: null,
       globalHeat: null,

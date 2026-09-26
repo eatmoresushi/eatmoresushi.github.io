@@ -104,7 +104,7 @@ export function commandNotice(result: CommandSuccess, locale: Locale = "en"): st
       : `Acquired ${definition?.name ?? technique.techniqueId} for ${technique.cost} Coins.`;
   }
   const patronage = result.events.find((event) => event.type === "IMPERIAL_RECOGNITION_ADVANCED" && event.orderId === null);
-  if (patronage?.type === "IMPERIAL_RECOGNITION_ADVANCED") return locale === "zh-CN" ? `朝廷赞助：御府声望 ${patronage.from} → ${patronage.to}。` : `Court Patronage: Imperial Recognition ${patronage.from} → ${patronage.to}.`;
+  if (patronage?.type === "IMPERIAL_RECOGNITION_ADVANCED") return locale === "zh-CN" ? `朝廷赞助：御府声望 ${patronage.from} → ${patronage.to}。` : `Imperial Court: Imperial Recognition ${patronage.from} → ${patronage.to}.`;
   return imperialOrderNotice(result, locale);
 }
 

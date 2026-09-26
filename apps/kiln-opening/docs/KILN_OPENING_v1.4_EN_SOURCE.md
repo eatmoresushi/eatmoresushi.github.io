@@ -70,7 +70,7 @@ The game lasts exactly **5 rounds**.
 # Setup
 
 1. Place the Central Action Board and Shared Kiln in the centre. Use the following active Shared Kiln spaces:
-   - **2 players:** **1 High / 2 Middle / 1 Low — 4 spaces**. Cover 2 High spaces and 2 Low space.
+   - **2 players:** **1 High / 2 Middle / 1 Low — 4 spaces**. Cover 2 High spaces and 2 Low spaces.
    - **3 players:** **2 High / 2 Middle / 2 Low — 6 spaces**. Cover 1 High space and 1 Low space
    - **4 players:** **3 High / 2 Middle / 3 Low — 8 spaces**. Use all spaces.
 2. Shuffle the separate **8-card Starting Order deck** and **48-card Main Order deck**.
@@ -267,7 +267,7 @@ For each reservation, choose one:
 | Worker | Effect |
 |---|---|
 | Apprentice | Pay the printed Coin cost and take **1 face-up Advanced Tech**. |
-| **Shifu** | Choose 1 discipline and look at the top 2 Techs of that deck, or as many as remain. Then take either 1 face-up Advanced Tech from any discipline or 1 of the revealed Techs, paying **1 Coin less**, minimum 0. Put revealed Techs not taken on the bottom of that discipline's deck. |
+| **Shifu** | Choose 1 discipline and privately look at the top 2 Techs of that deck, or as many as remain. Then take either 1 face-up Advanced Tech from any discipline or 1 of the inspected Techs, paying **1 Coin less**, minimum 0. Put inspected Techs not taken on the bottom of that discipline's deck in an order you choose; their identities and return order remain private. |
 
 - Refill a discipline's display to 2 after a tile is taken, if possible.
 - A player may own at most **2 Advanced Techs**.
@@ -576,7 +576,7 @@ The player with the most VP wins.
 - Workshop and Fired ceramics remain between rounds until changed, delivered or discarded. Loaded ceramics and Fired ceramics cannot be decorated or loaded again unless an ability explicitly allows it.
 - Loaded ceramics always resolve in that round's Firing Phase.
 - Uncompleted Orders and unused ceramics have no end-game penalty.
-- If the Main Order deck empties, shuffle its discard pile to form a new deck.
+- If the Main Order deck empties, shuffle its discard pile to form a new deck. If both are empty, draw or inspect only as many cards as are available and leave unfillable display positions empty. A reservation must take an available Order; a blind reservation requires a card in the deck after any reshuffle.
 - **Fire discards are public information.** Players may inspect the face-up Fire discard pile at any time. Keep the currently revealed main Fire card face up until the firing is complete, then discard it.
 - If the Fire deck empties, shuffle its discard pile to form a new deck. Do not include a Fire card still resolving in that firing.
 - If an Advanced Tech discipline cannot refill to 2, leave the display partially empty.
@@ -728,7 +728,7 @@ Tech tiles use abbreviated reminder text. The rules here give the full effects.
 - **Fuel Ledger** changes the available Contribution cards, not the number played. Its two special cards are reusable and do not require a separate hidden Wood commitment.
 - **Protective Saggars** and **Second Firing** affect only your own ceramics from the current firing.
 - **Test Pieces** is private information; you may discuss what you saw but may not show the Fire card. Looking at the card does not discard it or change its position.
-- During **Second Firing**, the same Base Heat, kiln position, **Kiln Furniture** and **Shifu Heat marker** remain in effect. The new Fire card affects only the selected ceramic. Previous post-Fire Actual Heat adjustments do not carry over. Jun or another post-Fire adjustment applies only if that ability has not already been used this round and its timing is reached again.
+- During **Second Firing**, the same Base Heat, kiln position, **Kiln Furniture** and **Shifu Heat marker** remain in effect. The new Fire card affects only the selected ceramic. Previous post-Fire Actual Heat adjustments do not carry over. Jun or another post-Fire adjustment applies only if that ability has not already been used this round and its timing is reached again. Jun may be used only once per round: if used before Second Firing, it cannot be used again; if still unused, it may be used during Second Firing after Actual Heat is recalculated and before the new Quality is assigned.
 - **Ge** checks the ceramic's Quality after its owner's other after-Quality effects. A Flawed ceramic improved to Standard by Protective Saggars, or a ceramic left Standard by Second Firing, can therefore become Crackle and Fine. The once-per-round limit applies to creating Crackle, not to using existing Crackle ceramics in Orders.
 
 # Appendix C — Fire Deck
@@ -848,7 +848,7 @@ Fuel Ledger: **−2 Bank or +2 Stoke / 2 Wood**. Choose **exactly 1 card** per p
 - Decoration Workshop replaces Plain with **Carved, Impressed or Painted for 2 Coins per vessel**. The Shifu still works up to two vessels with one Decoration free.
 - **Workshop** describes all formed, unfired, unloaded vessels, whether Plain or specialised. It replaces the separate Shaped/Decorated state distinction; loaded and finished ceramics do not count as workshop inventory.
 - Kiln Yard continues to glaze and immediately load for **1 Coin per ceramic**. Imperial Priority can use a workshop ceramic with any Decoration, including Plain.
-- Shared Kiln allocation is **2 players: 1 High / 2 Middle / 1 Low; 3 players: 2 / 2 / 2; 4 players: 3 / 2 / 2**. Two-player Shared capacity is now **4**.
+- Shared Kiln allocation is **2 players: 1 High / 2 Middle / 1 Low; 3 players: 2 / 2 / 2; 4 players: 3 / 2 / 3**. Two-player Shared capacity is now **4**.
 - Appendix A now uses the full **Glaze-agency Order deck**: all 48 Main requirements and rewards match that proposal; the 8 Starting Orders are unchanged. Main Orders contain no explicit Plain-only requirement.
 - **White Slip:** after each Potter's Wheel action, pay the **2-Coin Decoration cost** to replace Plain with **Painted** on one vessel formed by that action.
 - **Prepared Clay**, **Rapid Drying** and **Kiln Tending** remain per-action Starting Techs. Rapid Drying's payment is **1 Wood + the 1-Coin Glazing cost**; Kiln Tending grants **1 Clay or 1 Wood**.

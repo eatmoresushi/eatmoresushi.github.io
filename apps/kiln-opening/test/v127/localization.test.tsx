@@ -19,7 +19,7 @@ import { startedGame } from "./helpers.ts";
 /**
  * Switching language must change only what is drawn, never what is true.
  *
- * The pre-V1.2.7 version of this suite asserted `court_patronage` and I-prefixed Imperial
+ * The pre-V1.4 version of this suite asserted `court_patronage` and I-prefixed Imperial
  * Orders, so it pinned a ruleset the engine had already left. What it was actually guarding
  * -- that both locales render from one set of structural data, and that rendering mutates
  * nothing -- outlived those values, so it is the part kept here.
@@ -71,7 +71,7 @@ describe("English / Simplified Chinese localization", () => {
       expect(english).toContain(orderId);
       expect(chinese).toContain(orderId);
     }
-    // A Crown Order carries its Crowns in both locales; Crowns are the V1.2.7 Imperial marker.
+    // A Crown Order carries its Crowns in both locales; Crowns are the V1.4 Imperial marker.
     expect(localizedMarkup("en", createElement(OrderCard, { orderId: CROWN_ORDER }))).toContain("👑");
     expect(localizedMarkup("zh-CN", createElement(OrderCard, { orderId: CROWN_ORDER }))).toContain("👑");
     expect(localizedMarkup("en", createElement(OrderCard, { orderId: MASTERPIECE_ORDER }))).toContain("Masterpiece");
@@ -99,7 +99,7 @@ describe("English / Simplified Chinese localization", () => {
     expect(JSON.stringify(publicGame)).toBe(before);
   });
 
-  it("localizes the live tabletop from the same V1.2.7 data", () => {
+  it("localizes the live tabletop from the same V1.4 data", () => {
     const publicGame = projectPublicGameState(startedGame(2, 10_402).state);
     const ownPlayerId = publicGame.playerOrder[0]!;
     const before = JSON.stringify(publicGame);
@@ -112,7 +112,7 @@ describe("English / Simplified Chinese localization", () => {
       busy: false,
       send: async () => true,
     }));
-    for (const label of ["泥柴场", "陶车坊", "釉饰坊", "瓷牙行", "陶工行", "御府声望", "进阶技艺"]) {
+    for (const label of ["泥柴场", "陶车坊", "纹饰坊", "瓷牙行", "陶工行", "御府声望", "进阶技艺"]) {
       expect(chinese).toContain(label);
     }
     expect(chinese).toContain(LOCATION_DEFINITIONS.market_imperial_office.apprenticeZh);

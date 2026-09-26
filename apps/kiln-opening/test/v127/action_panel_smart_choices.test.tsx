@@ -101,7 +101,7 @@ function renderAction(
   return { markup, selectedWorkerId, state };
 }
 
-describe("V1.2.7 smart worker-action choices", () => {
+describe("V1.4 smart worker-action choices", () => {
   it("offers Kiln Tending as an optional choice of one Clay or one Wood", () => {
     const { markup } = renderAction("kiln_yard", "apprentice", (state) => {
       state.players["P1"]!.startingTechniqueId = "ST04";
@@ -167,7 +167,7 @@ describe("V1.2.7 smart worker-action choices", () => {
     expect(shifu).toContain("Gain 4 Coins.");
     expect(largeBalance).toContain("Gain 4 Coins.");
     expect(apprentice).not.toContain("Labour has no worker limit");
-    expect(apprentice).toMatch(/<button[^>]*class="primary-button"[^>]*>Send to Labour<\/button>/);
+    expect(apprentice).toMatch(/<button[^>]*class="primary-button"[^>]*>Send to Paid Work<\/button>/);
   });
 
   it("hides Apprentice-inapplicable controls and reveals them for a Shifu", () => {
@@ -187,7 +187,7 @@ describe("V1.2.7 smart worker-action choices", () => {
     expect(apprenticeGlazing).not.toContain('data-choice-group="shifu-free-decoration"');
     expect(shifuGlazing).toContain('data-choice-group="ceramic2"');
     expect(shifuGlazing).not.toContain('data-choice-group="shifu-free-decoration"');
-    expect(shifuGlazing).toContain("Shifu: if you glaze 2 vessels, reduce their total Coin cost by 1 (minimum 0).");
+    expect(shifuGlazing).toContain("Shifu: one Decoration is free; the second costs 2 Coins before Tech waivers.");
 
     const kilnSetup = (state: GameState): void => {
       addLoaded(state, "P1", "washer", "grey_green", "plain", "high_1");
@@ -197,7 +197,8 @@ describe("V1.2.7 smart worker-action choices", () => {
     expect(apprenticeKiln).not.toContain('data-choice-group="ceramic2"');
     expect(apprenticeKiln).not.toContain('data-choice-group="shifu-ceramic"');
     expect(shifuKiln).toContain('data-choice-group="ceramic2"');
-    expect(shifuKiln).toContain('data-choice-group="shifu-ceramic"');
+    expect(shifuKiln).not.toContain('data-choice-group="shifu-ceramic"');
+    expect(shifuKiln).toContain("Choose a ceramic loaded by this action, in either kiln");
   });
 
   it.each(CAPPED_LOCATIONS)("disables only Apprentices when %s is full", (locationId) => {
@@ -234,16 +235,16 @@ describe("V1.2.7 smart worker-action choices", () => {
     });
 
     expect(markup).toContain("Gain 2 Coins.");
-    expect(markup).toContain("Send to Labour");
+    expect(markup).toContain("Send to Paid Work");
   });
 
   it("replaces Kiln Yard controls without a Glazed ceramic and restores them when one is available", () => {
     const empty = renderAction("kiln_yard", "apprentice", (state) => {
       for (const ceramic of Object.values(state.ceramics)) {
-        if (ceramic.ownerId === "P1" && ceramic.stage === "glazed") delete state.ceramics[ceramic.id];
+        if (ceramic.ownerId === "P1" && ceramic.stage === "workshop") delete state.ceramics[ceramic.id];
       }
     });
-    expectUnavailable(empty.markup, "You have no Glazed ceramic to load.");
+    expectUnavailable(empty.markup, "You have no Workshop ceramic to load.");
 
     const prepared = renderAction("kiln_yard", "apprentice");
     for (const id of availableWorkerIds(prepared.state)) {
@@ -254,40 +255,34 @@ describe("V1.2.7 smart worker-action choices", () => {
   it("replaces Glaze controls with the requested explanation when there is no Shaped vessel", () => {
     const { markup } = renderAction("glaze_workshop", "apprentice", (draft) => {
       for (const ceramic of Object.values(draft.ceramics)) {
-        if (ceramic.ownerId === "P1" && ceramic.stage === "shaped") delete draft.ceramics[ceramic.id];
+        if (ceramic.ownerId === "P1" && ceramic.stage === "workshop") delete draft.ceramics[ceramic.id];
       }
     });
 
-    expectUnavailable(markup, "You have no Shaped vessel to glaze.");
+    expectUnavailable(markup, "You have no Plain Workshop vessel to decorate.");
   });
 
-  it("makes Glaze unavailable when neither worker kind can afford a Decoration", () => {
-    const { markup } = renderAction("glaze_workshop", "shifu", (draft) => {
+  it("makes Decoration unavailable when no Shifu remains and the Apprentice cannot afford it", () => {
+    const { markup } = renderAction("glaze_workshop", "apprentice", (draft) => {
+      useShifu(draft);
       draft.players["P1"]!.resources.coins = 0;
       draft.players["P1"]!.techniques = [];
     });
     expectUnavailable(markup, "You do not have enough Coins to apply a Decoration.");
   });
 
-  it.each([1, 2])("charges normal Shifu single-vessel Decoration costs with exactly %i Coins", (coins) => {
+  it.each([0, 1, 2])("makes a Shifu’s single Decoration free with %i Coins", (coins) => {
     const { markup } = renderAction("glaze_workshop", "shifu", (draft) => {
       draft.players["P1"]!.resources.coins = coins;
       draft.players["P1"]!.techniques = [];
     });
     const choices = markup.match(/<fieldset[^>]*data-choice-group="decoration1"[\s\S]*?<\/fieldset>/)?.[0] ?? "";
-    expect(markup).toContain("Cost: 1 Coin.");
-    expect(buttonWithAttribute(choices, "data-choice-value", "plain")).not.toContain("disabled");
-    for (const decoration of ["carved", "impressed", "crackle"]) {
-      const button = buttonWithAttribute(choices, "data-choice-value", decoration);
-      expect(button).not.toBe("");
-      if (coins === 1) {
-        expect(button).toContain('disabled=""');
-        expect(button).toContain('Current combination requires 2 Coins"');
-      } else {
-        expect(button).not.toContain("disabled");
-      }
+    expect(markup).toContain("Cost: 0 Coins.");
+    expect(buttonWithAttribute(choices, "data-choice-value", "plain")).toBe("");
+    for (const decoration of ["carved", "impressed", "painted"]) {
+      expect(buttonWithAttribute(choices, "data-choice-value", decoration)).not.toContain("disabled");
     }
-    expect(markup).not.toContain("Shifu: free Decoration");
+    expect(markup).toContain("one Decoration is free");
   });
 
   it("applies the Guild Shifu discount when the printed cost is unaffordable to Apprentices", () => {

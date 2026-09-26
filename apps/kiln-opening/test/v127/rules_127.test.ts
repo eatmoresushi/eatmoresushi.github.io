@@ -29,7 +29,7 @@ function ownedShapes(state: GameState, playerId = "P1"): string[] {
     .map((ceramic) => ceramic.shape);
 }
 
-describe("V1.2.7 Ding Moulded Production", () => {
+describe("v1.4 Ding Moulded Production", () => {
   it("charges Apprentice + Ding 2 Clay for two matching eligible vessels", () => {
     const { state: initial, rng } = startedGame(2, 12_601);
     const before = structuredClone(initial);
@@ -46,32 +46,17 @@ describe("V1.2.7 Ding Moulded Production", () => {
     expect(ownedShapes(after)).toEqual(["bowl", "bowl"]);
   });
 
-  it("keeps the Shifu effect and Ding vessel separate in all three cost cases", () => {
-    const run = (seed: number, shapes: Array<"bowl" | "plate">, useDing: boolean) => {
-      const { state: initial, rng } = startedGame(2, seed);
-      const before = structuredClone(initial);
-      before.players["P1"]!.kilnId = "DI";
-      before.players["P1"]!.resources.clay = 10;
-      const after = mustApply(before, "P1", {
-        type: "FORM_CERAMICS",
-        workerId: workerId(before, "P1", "shifu"),
-        shapes,
-        ...(useDing ? { dingExtraShape: "bowl" as const } : {}),
-      }, rng);
-      return { before, after };
-    };
-
-    const shifuTwo = run(12_602, ["bowl", "bowl"], false);
-    expect(claySpent(shifuTwo.before, shifuTwo.after)).toBe(1);
-    expect(ownedShapes(shifuTwo.after)).toHaveLength(2);
-
-    const shifuOnePlusDing = run(12_603, ["bowl"], true);
-    expect(claySpent(shifuOnePlusDing.before, shifuOnePlusDing.after)).toBe(2);
-    expect(ownedShapes(shifuOnePlusDing.after)).toHaveLength(2);
-
-    const shifuTwoPlusDing = run(12_604, ["bowl", "bowl"], true);
-    expect(claySpent(shifuTwoPlusDing.before, shifuTwoPlusDing.after)).toBe(2);
-    expect(ownedShapes(shifuTwoPlusDing.after)).toHaveLength(3);
+  it("keeps the Shifu two-vessel discount but rejects Ding during a Shifu action", () => {
+    const { state, rng } = startedGame(2, 12_602);
+    state.players["P1"]!.kilnId = "DI";
+    state.players["P1"]!.resources.clay = 10;
+    const base: Extract<GameAction, { type: "FORM_CERAMICS" }> = { type: "FORM_CERAMICS", workerId: workerId(state, "P1", "shifu"), shapes: ["bowl", "bowl"] };
+    const after = mustApply(state, "P1", base, rng);
+    expect(claySpent(state, after)).toBe(1);
+    expect(ownedShapes(after)).toHaveLength(2);
+    for (const shapes of [["bowl"], ["bowl", "bowl"]] as const) {
+      expectError(applyAction(state, "P1", { ...base, shapes: [...shapes], dingExtraShape: "bowl" }, rng), "INVALID_ACTION");
+    }
   });
 
   it("rejects Vase/Censer triggers, remains once per round, and still triggers Standardised Moulds", () => {
@@ -129,7 +114,7 @@ describe("V1.2.7 Ding Moulded Production", () => {
   });
 });
 
-describe("V1.2.7 Kiln Yard Shifu commitment", () => {
+describe("v1.4 Kiln Yard Shifu commitment", () => {
   it("loads one ceramic and marks it during the Kiln Yard action", () => {
     const { state: initial, rng } = startedGame(2, 12_609);
     const state = structuredClone(initial);
@@ -137,7 +122,7 @@ describe("V1.2.7 Kiln Yard Shifu commitment", () => {
     const result = mustResult(state, "P1", {
       type: "USE_KILN_YARD",
       workerId: workerId(state, "P1", "shifu"),
-      loads: [{ ceramicId: ceramic.id, kilnSpaceId: "high_1" }],
+      loads: [{ ceramicId: ceramic.id, kilnSpaceId: "high_1" , glaze: "white"}],
       shifuCeramicId: ceramic.id,
     }, rng);
 
@@ -159,15 +144,15 @@ describe("V1.2.7 Kiln Yard Shifu commitment", () => {
     expectError(applyAction(state, "P1", {
       type: "USE_KILN_YARD",
       workerId: shifu,
-      loads: [{ ceramicId: first.id, kilnSpaceId: "high_1" }],
+      loads: [{ ceramicId: first.id, kilnSpaceId: "high_1" , glaze: "white"}],
     }, rng), "INVALID_SELECTION");
 
     const loaded = mustResult(state, "P1", {
       type: "USE_KILN_YARD",
       workerId: shifu,
       loads: [
-        { ceramicId: first.id, kilnSpaceId: "high_1" },
-        { ceramicId: second.id, kilnSpaceId: "middle_1" },
+        { ceramicId: first.id, kilnSpaceId: "high_1" , glaze: "white"},
+        { ceramicId: second.id, kilnSpaceId: "middle_1" , glaze: "white"},
       ],
       shifuCeramicId: second.id,
     }, rng);
@@ -189,7 +174,7 @@ describe("V1.2.7 Kiln Yard Shifu commitment", () => {
     state.players["P1"]!.kilnYardShifuUsedThisRound = true;
     state.players["P1"]!.kilnYardShifuCeramicId = marked.id;
     state.firingContext = {
-      round: 1, contributors: ["P1"], contributions: { P1: "TEND" }, fuelLedgerUpgradedBy: [],
+      round: 1, contributors: ["P1"], contributions: { P1: "TEND" },
       baseHeat: 2, fireModifier: null, globalHeat: null, kilnYardShifuAdjustments: [], ceramicResults: {},
     };
     const adjustment: GameAction = { type: "RESOLVE_KILN_YARD_ADJUSTMENT", ceramicId: marked.id, adjustment: -1 };
@@ -225,12 +210,12 @@ describe("V1.2.7 Kiln Yard Shifu commitment", () => {
     const p2 = addGlazed(state, "P2", "plate", "celadon", "plain");
     state = mustApply(state, "P1", {
       type: "USE_KILN_YARD", workerId: workerId(state, "P1", "shifu"),
-      loads: [{ ceramicId: p1.id, kilnSpaceId: "middle_1" }], shifuCeramicId: p1.id,
+      loads: [{ ceramicId: p1.id, kilnSpaceId: "middle_1" , glaze: "white"}], shifuCeramicId: p1.id,
     }, rng);
     setWorkTurn(state, "P2");
     state = mustApply(state, "P2", {
       type: "USE_KILN_YARD", workerId: workerId(state, "P2", "shifu"),
-      loads: [{ ceramicId: p2.id, kilnSpaceId: "low_1" }], shifuCeramicId: p2.id,
+      loads: [{ ceramicId: p2.id, kilnSpaceId: "low_1" , glaze: "white"}], shifuCeramicId: p2.id,
     }, rng);
     state.fireDeck = [0];
     state.fireDiscard = [];
@@ -238,7 +223,7 @@ describe("V1.2.7 Kiln Yard Shifu commitment", () => {
     state = finishWork(state, rng).state;
     let privateState = createPrivateFiringState(state);
     for (const playerId of ["P1", "P2"]) {
-      const submitted = submitWoodContribution(state, privateState, playerId, "TEND", false, rng);
+      const submitted = submitWoodContribution(state, privateState, playerId, "TEND", rng);
       expect(submitted.ok).toBe(true);
       if (!submitted.ok) return;
       state = submitted.state;
@@ -288,7 +273,7 @@ describe("V1.2.7 Kiln Yard Shifu commitment", () => {
     state.players["P1"]!.kilnYardShifuUsedThisRound = true;
     state.players["P1"]!.kilnYardShifuCeramicId = ceramic.id;
     state.firingContext = {
-      round: 1, contributors: ["P1"], contributions: { P1: "TEND" }, fuelLedgerUpgradedBy: [],
+      round: 1, contributors: ["P1"], contributions: { P1: "TEND" },
       baseHeat: 2, fireModifier: null, globalHeat: null, kilnYardShifuAdjustments: [], ceramicResults: {},
     };
     state.fireDeck = [0];
@@ -303,29 +288,22 @@ describe("V1.2.7 Kiln Yard Shifu commitment", () => {
     expect(result.state.ceramics[ceramic.id]).not.toHaveProperty("kilnFurnitureUsed");
   });
 
-  it("cannot mark the Imperial Kiln and gets no adjustment when no owned Shared-Kiln ceramic exists", () => {
+  it("marks a newly loaded Imperial ceramic and receives the same optional Heat adjustment", () => {
     const { state: initial, rng } = startedGame(2, 12_614);
     let state = structuredClone(initial);
     const ceramic = addGlazed(state, "P1", "bowl", "celadon", "plain");
     state.players["P1"]!.imperialKilnUnlocked = true;
     const shifu = workerId(state, "P1", "shifu");
-    expectError(applyAction(state, "P1", {
-      type: "USE_KILN_YARD", workerId: shifu,
-      loads: [{ ceramicId: ceramic.id, kilnSpaceId: "imperial" }], shifuCeramicId: ceramic.id,
-    }, rng), "INVALID_SELECTION");
-    state = mustApply(state, "P1", {
-      type: "USE_KILN_YARD", workerId: shifu,
-      loads: [{ ceramicId: ceramic.id, kilnSpaceId: "imperial" }],
-    }, rng);
-    expect(state.players["P1"]!.kilnYardShifuCeramicId).toBeNull();
-    state.phase = { type: "work", activePlayerId: "P1" };
+    expectError(applyAction(state, "P1", { type: "USE_KILN_YARD", workerId: shifu, loads: [{ ceramicId: ceramic.id, kilnSpaceId: "imperial", glaze: "celadon" }] }, rng), "INVALID_SELECTION");
+    state = mustApply(state, "P1", { type: "USE_KILN_YARD", workerId: shifu, loads: [{ ceramicId: ceramic.id, kilnSpaceId: "imperial", glaze: "celadon" }], shifuCeramicId: ceramic.id }, rng);
+    expect(state.players["P1"]!.kilnYardShifuCeramicId).toBe(ceramic.id);
     state = finishWork(state, rng).state;
-    expect(state.phase.type).toBe("firing_contributions");
-    let privateState = createPrivateFiringState(state);
-    const submitted = submitWoodContribution(state, privateState, "P1", "TEND", false, rng);
+    const submitted = submitWoodContribution(state, createPrivateFiringState(state), "P1", "TEND", rng);
     expect(submitted.ok).toBe(true);
     if (!submitted.ok) return;
-    expect(submitted.state.phase.type).not.toBe("firing_shifu_adjustment");
+    expect(submitted.state.phase.type).toBe("firing_shifu_adjustment");
+    state = mustApply(submitted.state, "P1", { type: "RESOLVE_KILN_YARD_ADJUSTMENT", ceramicId: ceramic.id, adjustment: 1 }, rng);
+    expect(state.ceramics[ceramic.id]).toMatchObject({ stage: "loaded", kilnSpaceId: "imperial", shifuHeatAdjustment: 1 });
   });
 
   it("commits the Shifu target before Test Pieces and keeps it through the pre-Contribution window", () => {
@@ -336,7 +314,7 @@ describe("V1.2.7 Kiln Yard Shifu commitment", () => {
     state.players["P1"]!.resources.wood = 2;
     state = mustApply(state, "P1", {
       type: "USE_KILN_YARD", workerId: workerId(state, "P1", "shifu"),
-      loads: [{ ceramicId: ceramic.id, kilnSpaceId: "middle_1" }], shifuCeramicId: ceramic.id,
+      loads: [{ ceramicId: ceramic.id, kilnSpaceId: "middle_1" , glaze: "white"}], shifuCeramicId: ceramic.id,
     }, rng);
     state.phase = { type: "work", activePlayerId: "P1" };
     state = finishWork(state, rng).state;

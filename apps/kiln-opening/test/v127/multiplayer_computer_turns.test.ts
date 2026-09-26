@@ -208,7 +208,7 @@ function seedContributionWindow(state: GameState): void {
   state.privateFirePeeks = {};
 }
 
-describe("V1.2.7 authoritative computer-turn integration", () => {
+describe("V1.4 authoritative computer-turn integration", () => {
   it("advances consecutive computer decisions and stops cleanly at the human turn", async () => {
     const harness = await startedHarness(2);
     await seedAuthoritativeState(harness, (state) => seedStartingTechniqueRun(state, ["P2", "P3"]));
@@ -250,8 +250,7 @@ describe("V1.2.7 authoritative computer-turn integration", () => {
       (submission) => submission.playerId === "P2" && submission.windowId === windowId,
     );
     expect(privateSubmission).toEqual(expect.objectContaining({
-      card: "STOKE",
-      useFuelLedger: true,
+      card: "STOKE_2",
       revealedRevision: null,
     }));
 
@@ -264,12 +263,11 @@ describe("V1.2.7 authoritative computer-turn integration", () => {
         type: "SUBMIT_WOOD_CONTRIBUTION",
         windowId,
         card: "TEND",
-        useFuelLedger: false,
       },
     }));
     expect(revealed.events).toContainEqual({
       type: "WOOD_REVEALED",
-      contributions: { P2: "STOKE", P1: "TEND" },
+      contributions: { P2: "STOKE_2", P1: "TEND" },
       effectiveHeatAdjustments: { P2: 2, P1: 0 },
     });
     expect(harness.store.audit().privateSubmissions.find(

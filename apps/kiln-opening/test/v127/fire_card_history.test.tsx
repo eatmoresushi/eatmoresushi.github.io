@@ -35,7 +35,7 @@ function context(value: RoundNumber, modifier: FireModifier | null): FiringConte
     round: value,
     contributors: ["P1"],
     contributions: { P1: "TEND" },
-    fuelLedgerUpgradedBy: [],
+
     baseHeat: 2,
     fireModifier: modifier,
     globalHeat: modifier === null ? null : 2 + modifier,

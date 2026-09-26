@@ -26,9 +26,9 @@ Do not add digital conveniences that remove this inference.
 
 ### 2. Controlled uncertainty, not chaos
 
-The V1.2.7 Fire deck contains -2/-1/0/+1/+2 in a 1/3/4/3/1 distribution. Zero is the most common result and the negative and positive sides are symmetric.
+The V1.4 Fire deck contains -2/-1/0/+1/+2 in a 1/3/4/3/1 distribution. Zero is the most common result and the negative and positive sides are symmetric.
 
-The larger strategic uncertainty comes from other players' secret Bank, Tend, or Stoke Contribution choices, including Fuel Ledger's upgraded −2/+2 commitments. Wood costs are paid only after every eligible contributor has committed and the choices are revealed together. Base Heat starts at 2, applies all Contributions and clamps to 0–5; planning, zone choice and abilities remain the tools for managing uncapped Global and Actual Heat.
+The larger strategic uncertainty comes from other players' secret Bank, Tend, or Stoke Contribution choices, including Fuel Ledger's separate −2/+2 cards. Wood costs are paid only after every eligible contributor has committed and the choices are revealed together. Base Heat starts at 2, applies all Contributions and clamps to 0–5; planning, zone choice and abilities remain the tools for managing uncapped Global and Actual Heat.
 
 ### 3. Commercial and Crown commissions must both be viable
 
@@ -49,7 +49,7 @@ Crown route:
 - Imperial Audience grants 6 VP at Recognition 4;
 - each Crown after Recognition 4 grants 1 VP immediately.
 
-End-game Exhibition is universal: every player may exhibit up to five qualifying ceramics, independent of Imperial Recognition.
+End-game Exhibition is universal: every player may exhibit any number of qualifying ceramics, independent of Imperial Recognition.
 
 Imperial Recognition should be attractive but not mandatory.
 
@@ -65,7 +65,7 @@ A player may own at most 2 Advanced Techs. They modify actions and production bu
 
 The Shifu should be stronger than an Apprentice, but technical mastery should live in Kiln Traditions and Techniques.
 
-At the Kiln Yard, the Shifu may load up to two ceramics and, if the player has an owned Shared-Kiln ceramic after loading, is placed on exactly one of those ceramics. After Base Heat is known but before Fire is revealed, the player may replace that Shifu with a +1 or −1 Heat marker at no Wood cost. The ceramic remains in its space; the marker changes only its Actual Heat and stays fixed through the firing, including Second Firing. Remove Heat markers after firing; Shifu remain used until Cleanup. Imperial Priority is a separate once-per-game load into the owner's empty Imperial Kiln before or after a worker action.
+At the Kiln Yard, the Shifu may glaze and load up to two ceramics for 1 Coin each and marks one loaded by that action, in either kiln. After Base Heat and before Fire, the player may replace the Shifu with a free +1 or −1 Heat marker. It affects only that ceramic and remains fixed through Second Firing. Shifu remain used until Cleanup. Imperial Priority separately permits a once-per-game 1-Coin Glaze & Load into the owner's empty Imperial Kiln before or after a worker action.
 
 ### 6. Avoid mandatory transit resources
 
@@ -86,7 +86,7 @@ Avoid:
 
 - specialists;
 - trained/untrained worker states;
-- extra firing sub-systems beyond the concise V1.2.7 Tech and Kiln abilities.
+- extra firing sub-systems beyond the concise V1.4 Tech and Kiln abilities.
 
 ## Desired strategic identities
 

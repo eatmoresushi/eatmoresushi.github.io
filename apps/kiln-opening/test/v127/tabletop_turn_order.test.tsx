@@ -37,7 +37,7 @@ function markerTags(track: string): string[] {
   return [...track.matchAll(/<[^>]*data-player-id="P[1-4]"[^>]*>/g)].map(([tag]) => tag);
 }
 
-describe("V1.2.7 tabletop turn-order presentation", () => {
+describe("V1.4 tabletop turn-order presentation", () => {
   it("shows one colour-marker track in clockwise Work order from the First Player", () => {
     const state = structuredClone(startedGame(4, 12_690).state);
     state.firstPlayerId = "P3";

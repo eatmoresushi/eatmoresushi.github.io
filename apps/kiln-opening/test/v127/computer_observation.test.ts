@@ -14,7 +14,7 @@ import {
   workerId,
 } from "./helpers.ts";
 
-describe("V1.2.7 computer observation boundary", () => {
+describe("V1.4 computer observation boundary", () => {
   it("reveals only the acting computer's secretly dealt Starting and Main Orders", () => {
     const { state } = createdGame(3, 12_601);
     if (state.phase.type !== "setup_kiln_selection") throw new Error("Expected kiln selection");

@@ -5,7 +5,7 @@ import { addFinished, mustResult, startedGame } from "./helpers.ts";
 
 const shapes: readonly Shape[] = ["bowl", "plate", "washer", "vase", "censer"];
 const glazes: readonly Glaze[] = ["white", "celadon", "grey_green", "moon_white"];
-const decorations: readonly Decoration[] = ["plain", "carved", "impressed", "crackle"];
+const decorations: readonly Decoration[] = ["plain", "carved", "impressed", "painted"];
 const qualities = ["flawed", "standard", "fine", "masterpiece"] as const;
 const ownerDeck = [
   { id: "S01", ceramics: [{ shape: "bowl" }], shape: "bowl", glaze: "white", vp: 2, accepts: (shape: Shape, _glaze: Glaze) => shape === "bowl" },

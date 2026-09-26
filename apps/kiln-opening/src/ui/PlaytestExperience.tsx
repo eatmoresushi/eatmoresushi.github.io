@@ -74,6 +74,12 @@ export function eventDescription(event: PublicGameEvent, game: PublicGameState, 
       return `${player(event.playerId)} resources changed: ${resourceChanges(event)}.`;
     case "CERAMIC_SHAPED":
       return `${player(event.playerId)} shaped a ${label(event.shape)}.`;
+    case "CERAMIC_DECORATED":
+      return `${player(event.playerId)} decorated a ${ceramic(event.ceramicId)} ceramic: ${label(event.decoration)}.`;
+    case "GLAZE_CHANGED":
+      return `${player(event.playerId)} changed a ceramic’s Glaze to ${label(event.glaze)}.`;
+    case "CRACKLE_CREATED":
+      return `${player(event.playerId)} created Fine Crackle.`;
     case "CERAMIC_GLAZED":
       return `${player(event.playerId)} glazed a ${ceramic(event.ceramicId)} ceramic: ${label(event.glaze)}, ${label(event.decoration)}.`;
     case "CERAMIC_LOADED":
@@ -127,7 +133,7 @@ export function eventDescription(event: PublicGameEvent, game: PublicGameState, 
       return `${player(event.playerId)} completed ${event.orderId} with ${event.ceramicIds.length} ceramic${event.ceramicIds.length === 1 ? "" : "s"}.${reward}`;
     }
     case "IMPERIAL_RECOGNITION_ADVANCED":
-      if (event.orderId === null) return `${player(event.playerId)} used Court Patronage: Imperial Recognition ${event.from} → ${event.to}.`;
+      if (event.orderId === null) return `${player(event.playerId)} used Imperial Court: Imperial Recognition ${event.from} → ${event.to}.`;
       return `${player(event.playerId)} gained ${event.crowns} Crown${event.crowns === 1 ? "" : "s"}: Imperial Recognition ${event.from} → ${event.to}${event.overflowVp > 0 ? `; +${event.overflowVp} VP beyond Recognition 4` : ""}.`;
     case "IMPERIAL_GRANT_RECEIVED":
       return `${player(event.playerId)} resolved Imperial Grant: ${event.choice === "coins" ? `${event.coins} Coins` : `${event.clay} Clay, ${event.wood} Wood and ${event.coins} Coin`}.`;
@@ -166,6 +172,12 @@ function eventDescriptionZh(event: PublicGameEvent, game: PublicGameState): stri
     case "PLAYER_PASSED": return `${player(event.playerId)}跳过本轮剩余作业阶段。`;
     case "RESOURCES_CHANGED": return `${player(event.playerId)}的资源变化：${resourceChanges(event, "zh-CN")}。`;
     case "CERAMIC_SHAPED": return `${player(event.playerId)}成型了1件${term("zh-CN", event.shape)}。`;
+    case "CERAMIC_DECORATED":
+      return `${player(event.playerId)}为${ceramic(event.ceramicId)}装饰：${term("zh-CN", event.decoration)}。`;
+    case "GLAZE_CHANGED":
+      return `${player(event.playerId)}将陶瓷釉色改为${term("zh-CN", event.glaze)}。`;
+    case "CRACKLE_CREATED":
+      return `${player(event.playerId)}烧成了上品开片陶瓷。`;
     case "CERAMIC_GLAZED": return `${player(event.playerId)}为${ceramic(event.ceramicId)}施釉：${term("zh-CN", event.glaze)}、${term("zh-CN", event.decoration)}。`;
     case "CERAMIC_LOADED": return `${player(event.playerId)}将${ceramic(event.ceramicId)}放入${term("zh-CN", event.kilnSpaceId)}。`;
     case "KILN_YARD_SHIFU_MARKED": return `${player(event.playerId)}将窑坊师傅放在本次烧成所选的${ceramic(event.ceramicId)}陶瓷上。`;
@@ -216,7 +228,7 @@ function workerName(workerId: string, locale: Locale = "en"): string {
   return workerId.toLowerCase().includes("shifu") ? term(locale, "shifu") : term(locale, "apprentice");
 }
 
-/** Both locales read the V1.2.7 location names from the shared term table. */
+/** Both locales read the V1.4 location names from the shared term table. */
 function locationName(locationId: string, locale: Locale = "en"): string {
   return term(locale, locationId);
 }

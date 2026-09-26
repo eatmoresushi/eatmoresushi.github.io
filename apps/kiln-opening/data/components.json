@@ -1,15 +1,15 @@
 {
-  "rulesVersion": "1.2.7",
+  "rulesVersion": "1.4",
   "components": [
     {
       "name": "Central Action Board",
       "qty": 1,
-      "notes": "All eight shared action locations plus the Imperial Recognition track. Materials Yard, Potter's Wheel, Glaze & Decoration, Commission Market and Guild & Academy use 2/3/4 spaces by player count; Kiln Yard, Labour and Court Patronage are uncapped."
+      "notes": "Eight locations: Materials Yard, Potter's Wheel, Decoration Workshop, Kiln Yard, Commission Market, Craft Academy, Paid Work and Imperial Court. Materials Yard, Potter's Wheel, Decoration Workshop, Commission Market and Craft Academy use 2/3/4 shared spaces; Kiln Yard, Paid Work and Imperial Court are uncapped."
     },
     {
       "name": "Shared Kiln Board",
       "qty": 1,
-      "notes": "Seven spaces: 3 High (+1), 2 Middle (0) and 2 Low (-1); cover 1 High at 3 players and 1 High plus 1 Middle at 2 players."
+      "notes": "Eight spaces: 3 High (+1), 2 Middle (0), 3 Low (−1). Use 1/2/1 at 2 players, 2/2/2 at 3 players and 3/2/3 at 4 players."
     },
     {
       "name": "Kiln Player Boards",
@@ -64,7 +64,7 @@
     {
       "name": "Advanced Tech Tiles",
       "qty": 15,
-      "notes": "Five Forming, five Glazing & Decoration and five Firing Techs."
+      "notes": "Five Forming, five Decoration & Glazing and five Firing Techs."
     },
     {
       "name": "Fire Cards",
@@ -105,6 +105,21 @@
       "name": "Imperial Kiln Tiles",
       "qty": 4,
       "notes": "One-space private kiln tiles; gained at 2 Imperial Recognition and placed in the owner's Imperial Kiln area."
+    },
+    {
+      "name": "Shifu Heat Markers",
+      "qty": 4,
+      "notes": "Double-sided +1 / −1."
+    },
+    {
+      "name": "Crackle Markers",
+      "qty": 5,
+      "notes": "Permanent Ge-only property, separate from Decoration and Glaze."
+    },
+    {
+      "name": "Fuel Ledger Contribution Cards",
+      "qty": 2,
+      "notes": "+2 Stoke and −2 Bank; each costs 2 Wood to play."
     }
   ]
 }

@@ -13,7 +13,7 @@ import type {
   FinishedCeramic,
   GameAction,
   GameState,
-  GlazedCeramic,
+  WorkshopCeramic,
   Glaze,
   KilnId,
   LoadedCeramic,
@@ -21,7 +21,6 @@ import type {
   PlayerId,
   Quality,
   Shape,
-  ShapedCeramic,
   StartingTechniqueId,
   TechniqueId,
   WorkerKind,
@@ -152,9 +151,9 @@ function nextId(state: GameState): CeramicId {
   return `${state.gameId}:fixture:${state.nextCeramicSequence++}`;
 }
 
-export function addShaped(state: GameState, ownerId: PlayerId, shape: Shape = "bowl"): ShapedCeramic {
-  const ceramic: ShapedCeramic = {
-    id: nextId(state), vesselInstanceId: takeVessel(state, shape), ownerId, shape, stage: "shaped",
+export function addShaped(state: GameState, ownerId: PlayerId, shape: Shape = "bowl"): WorkshopCeramic {
+  const ceramic: WorkshopCeramic = {
+    id: nextId(state), vesselInstanceId: takeVessel(state, shape), ownerId, shape, stage: "workshop", decoration: "plain",
   };
   state.ceramics[ceramic.id] = ceramic;
   return ceramic;
@@ -164,15 +163,19 @@ export function addGlazed(
   state: GameState,
   ownerId: PlayerId,
   shape: Shape = "bowl",
-  glaze: Glaze = "white",
+  _glaze: Glaze = "white",
   decoration: Decoration = "plain",
-): GlazedCeramic {
-  const ceramic: GlazedCeramic = {
+): WorkshopCeramic {
+  const ceramic: WorkshopCeramic = {
     id: nextId(state), vesselInstanceId: takeVessel(state, shape), ownerId, shape,
-    stage: "glazed", glaze, decoration,
+    stage: "workshop", decoration,
   };
   state.ceramics[ceramic.id] = ceramic;
   return ceramic;
+}
+
+export function addWorkshop(state: GameState, ownerId: PlayerId, shape: Shape = "bowl", decoration: Decoration = "plain"): WorkshopCeramic {
+  return addGlazed(state, ownerId, shape, "white", decoration);
 }
 
 export function addLoaded(

@@ -137,10 +137,10 @@ function gameFailure(ruleError: GameRuleError, revision: number): MultiplayerErr
 }
 
 function gameCompatibilityError(state: GameState, revision: number): MultiplayerError | null {
-  if (state.schemaVersion === 4 && state.rulesVersion === "1.2.7") return null;
+  if (state.schemaVersion === 5 && state.rulesVersion === "1.4") return null;
   return error(
     "UNSUPPORTED_RULES_VERSION",
-    "This saved game uses an older rules or save format and cannot continue under V1.2.7. Please create a new room.",
+    "This saved game uses an older rules or save format and cannot continue under V1.4. Please create a new room.",
     revision,
     { schemaVersion: state.schemaVersion, rulesVersion: state.rulesVersion },
   );
@@ -208,7 +208,6 @@ function applyComputerCandidate(
       privateState,
       actorId,
       command.card,
-      command.useFuelLedger,
       rng,
     );
     if (!applied.ok) return { ok: false, code: applied.error.code, message: applied.error.message };
@@ -220,7 +219,6 @@ function applyComputerCandidate(
       privateSubmission: {
         windowId: command.windowId,
         card: command.card,
-        useFuelLedger: command.useFuelLedger,
         revealed: applied.privateState.windowId === null,
       },
     };
@@ -259,8 +257,8 @@ export class AuthoritativeGameService {
         code,
         status: "lobby",
         hostSeatId: seatId,
-        rulesVersion: "1.2.7",
-        contentVersion: "1.2.7",
+        rulesVersion: "1.4",
+        contentVersion: "1.4",
         contentDigest: rulesFingerprint(),
         latestRevision: 0,
         endedAt: null,
@@ -362,7 +360,6 @@ export class AuthoritativeGameService {
             : {
                 windowId: pending.windowId,
                 card: pending.card,
-                useFuelLedger: pending.useFuelLedger,
                 submitted: true,
               },
         ...(head === null ? {} : { ownPrivateDecision: privateDecisionState(head.state, seat.playerId) }),
@@ -736,7 +733,6 @@ export class AuthoritativeGameService {
             : {
                 windowId: pending.windowId,
                 card: pending.card,
-                useFuelLedger: pending.useFuelLedger,
                 submitted: true,
               },
         ownPrivateDecision: privateDecisionState(head.state, requestingSeat.playerId),
@@ -800,12 +796,6 @@ export class AuthoritativeGameService {
     if (request.command.windowId.trim().length === 0) {
       return failed(error("INVALID_REQUEST", "A Wood Contribution windowId is required."));
     }
-    if (typeof request.command.useFuelLedger !== "boolean") {
-      return failed(error("INVALID_REQUEST", "A Fuel Ledger choice is required."));
-    }
-    if (request.command.useFuelLedger && request.command.card === "TEND") {
-      return failed(error("INVALID_CONTRIBUTION", "Fuel Ledger can modify only Bank or Stoke."));
-    }
     for (let attempt = 0; attempt < CONTRIBUTION_CAS_ATTEMPTS; attempt += 1) {
       const prior = await this.store.getProcessed(room.id, request.commandId);
       if (prior !== null) return this.processedResult(prior.actorId, seat.playerId, prior.response);
@@ -833,9 +823,6 @@ export class AuthoritativeGameService {
         contributions: Object.fromEntries(
           storedSubmissions.map((submission) => [submission.playerId, submission.card]),
         ),
-        fuelLedgerCommittedBy: storedSubmissions
-          .filter((submission) => submission.useFuelLedger)
-          .map((submission) => submission.playerId),
       };
       const rng = new SeededRandom(head.rngState);
       const applied = submitWoodContribution(
@@ -843,7 +830,6 @@ export class AuthoritativeGameService {
         privateState,
         seat.playerId,
         request.command.card,
-        request.command.useFuelLedger,
         rng,
       );
       if (!applied.ok) return failed(gameFailure(applied.error, head.revision));
@@ -853,7 +839,6 @@ export class AuthoritativeGameService {
         : {
             windowId: request.command.windowId,
             card: request.command.card,
-            useFuelLedger: request.command.useFuelLedger,
             submitted: true,
           };
       const publicEvents = projectPublicEvents(applied.events);
@@ -883,7 +868,6 @@ export class AuthoritativeGameService {
         privateSubmission: {
           windowId: request.command.windowId,
           card: request.command.card,
-          useFuelLedger: request.command.useFuelLedger,
           revealed,
         },
       };
@@ -914,27 +898,24 @@ export class AuthoritativeGameService {
       return failed(error("AUTHENTICATION_FAILED", "The room or seat credential is invalid."));
     }
     if (
-      authenticated.room.rulesVersion !== "1.2.7" ||
-      authenticated.room.contentVersion !== "1.2.7"
+      authenticated.room.rulesVersion !== "1.4" ||
+      authenticated.room.contentVersion !== "1.4"
     ) {
       return failed(
         error(
           "UNSUPPORTED_RULES_VERSION",
-          "This room uses an older rules version and cannot continue under V1.2.7. Please create a new room.",
+          "This room uses an older rules version and cannot continue under V1.4. Please create a new room.",
         ),
       );
     }
     // A room can carry the current rules *version* and still have been created under
     // different rules, because a change can land inside an unchanged version string. Refuse
     // rather than reinterpret: continuing would silently alter the rules mid-game.
-    // Null means the room predates fingerprinting and cannot have one reconstructed.
+    // Every V1.4 room is created after fingerprinting was introduced. Missing digests
+    // cannot prove compatibility and must not bypass the version/schema boundary.
     const fingerprint = rulesFingerprint();
-    // `?? null` on purpose: a room row that predates the column, or one returned by an RPC
-    // that does not select it, arrives as undefined. Treating undefined as a mismatch would
-    // lock every such player out of a room whose rules never actually changed -- a strictly
-    // worse failure than the silent reinterpretation this guard exists to prevent.
     const roomFingerprint = authenticated.room.contentDigest ?? null;
-    if (roomFingerprint !== null && roomFingerprint !== fingerprint) {
+    if (roomFingerprint !== fingerprint) {
       return failed(
         error(
           "RULES_FINGERPRINT_MISMATCH",
@@ -942,7 +923,7 @@ export class AuthoritativeGameService {
             + "cannot continue without changing the rules mid-game. Please create a new room.",
           null,
           {
-            roomFingerprint,
+            roomFingerprint: roomFingerprint ?? "missing",
             serverFingerprint: fingerprint,
           },
         ),
@@ -964,9 +945,6 @@ export class AuthoritativeGameService {
       contributions: Object.fromEntries(
         submissions.map((submission) => [submission.playerId, submission.card]),
       ),
-      fuelLedgerCommittedBy: submissions
-        .filter((submission) => submission.useFuelLedger)
-        .map((submission) => submission.playerId),
     };
   }
 

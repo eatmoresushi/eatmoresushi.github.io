@@ -35,6 +35,8 @@ export function currentDecisionActor(phase: GamePhase): PlayerId | null {
     case "firing_reveal_fire":
     case "firing_second_before_quality":
       return phase.actorId;
+    case "work_glaze_palette":
+    case "firing_ge":
     case "firing_before_contribution":
     case "firing_shifu_adjustment":
     case "firing_before_quality":
@@ -100,7 +102,7 @@ export function formingTechniqueRewards(
   formedShapes: readonly Shape[],
 ): TechniqueId[] {
   const previousShapes = Object.values(state.ceramics)
-    .filter((ceramic) => ceramic.ownerId === player.id && (ceramic.stage === "shaped" || ceramic.stage === "glazed"))
+    .filter((ceramic) => ceramic.ownerId === player.id && ceramic.stage === "workshop")
     .map((ceramic) => ceramic.shape);
   const allShapes = [...previousShapes, ...formedShapes];
   return (["T02", "T03"] as const).filter((id) =>

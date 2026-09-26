@@ -82,13 +82,14 @@ describe("tabletop compact Technique copy", () => {
     expect(previewLength).toBeGreaterThan(0);
   });
 
-  it("preserves every supplied English Tech reminder", () => {
-    const source = readFileSync("docs/KILN_OPENING_v1.2.7_TECH_SHORT_TEXT_SOURCE.md", "utf8");
+  it("uses the current structured V1.4 Tech text instead of obsolete reminder overrides", () => {
     for (const id of ALL_TECHNIQUE_IDS) {
       const definition = id.startsWith("ST") ? STARTING_TECHNIQUE_DEFINITIONS[id as "ST01"] : TECHNIQUE_DEFINITIONS[id]!;
-      const section = source.split(`### ${definition.name}\n`)[1]!.split(/^##/m)[0]!.trim().replace(/\n{3,}/g, "\n\n");
-      expect(TECHNIQUE_SHORT_COPY[id].en).toBe(section);
+      expect(TECHNIQUE_SHORT_COPY[id]).toEqual({ en: definition.ability, "zh-CN": definition.abilityZh });
     }
+    expect(TECHNIQUE_SHORT_COPY.ST02.en).toContain("Painted");
+    expect(TECHNIQUE_SHORT_COPY.T06.en).toContain("end of the Work Phase");
+    expect(TECHNIQUE_SHORT_COPY.T12.en).not.toContain("extra Wood");
   });
 
   it("wires compact copy into every face-up and owned hover/focus target", () => {
@@ -127,29 +128,19 @@ describe("tabletop compact Kiln copy", () => {
     }
   });
 
-  it("preserves all five current owner-supplied English Kiln reminders", () => {
-    const source = readFileSync("docs/KILN_OPENING_v1.2.7_KILN_SHORT_TEXT_SOURCE.md", "utf8");
-    for (const id of KILN_COPY_IDS) {
-      const heading = source.split("\n").find((line) => line.startsWith(`### ${KILN_DEFINITIONS[id].name} /`))!;
-      const section = source.split(heading + "\n")[1]!.split(/^##/m)[0]!.trim().replace(/\n{3,}/g, "\n\n");
-      expect(KILN_SHORT_COPY[id].en).toBe(section);
-    }
+  it("uses the current structured V1.4 Kiln abilities in both languages", () => {
+    for (const id of KILN_COPY_IDS) expect(KILN_SHORT_COPY[id]).toEqual({ en: KILN_DEFINITIONS[id].ability, "zh-CN": KILN_DEFINITIONS[id].abilityZh });
   });
 
-  it("explains Ge's Order and Exhibition timing in both display layers and languages", () => {
+  it("explains Ge’s actual Fine upgrade and independent Crackle property", () => {
     for (const layer of ["preview", "full"] as const) {
       const english = renderedText(renderToStaticMarkup(createElement(KilnDescription, { id: "GE", locale: "en", layer })));
-      expect(english).toContain(layer === "preview"
-        ? "For Orders and Exhibition scoring, your Standard Crackle ceramics count as Fine."
-        : "When completing Orders or scoring the Exhibition, treat your Standard-quality Crackle ceramics as Fine.");
-      if (layer === "full") expect(english).toContain("Its actual Decoration stays Crackle.");
-      else expect(english).not.toContain("Its actual Decoration stays Crackle.");
-      expect(english).not.toContain("Heat Difference");
+      expect(english).toContain("Crackle and becomes Fine");
+      expect(english).toContain("actual Glaze and Decoration do not change");
+      expect(english).toContain("Its actual Quality is Fine");
       const chinese = renderedText(renderToStaticMarkup(createElement(KilnDescription, { id: "GE", locale: "zh-CN", layer })));
-      expect(chinese).toContain("完成委托或进行展览计分时，将你的良品开片陶瓷视为上品。");
-      if (layer === "full") expect(chinese).toContain("其实际纹饰仍为开片。");
-      else expect(chinese).not.toContain("其实际纹饰仍为开片。");
-      expect(chinese).not.toContain("判定品质时");
+      expect(chinese).toContain("开片");
+      expect(chinese).toContain("上品");
     }
   });
 

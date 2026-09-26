@@ -167,7 +167,7 @@ function PlayerPanel({
 
       <section className="plain-subsection workshop-ceramics">
         <h4>{t("Workshop ceramics")}</h4>
-        {(["shaped", "glazed", "loaded", "finished", "delivered", "presented"] as const).map((stage) => {
+        {(["workshop", "loaded", "finished", "delivered", "presented"] as const).map((stage) => {
           const matches = ceramics.filter((ceramic) => ceramic.stage === stage);
           return (
             <div className="ceramic-stage" key={stage}>
@@ -294,7 +294,7 @@ function FiringInspector({ game, context, live }: { game: PublicGameState; conte
               <thead><tr><th>{t("Ceramic")}</th><th>{t("Owner")}</th><th>{t("Preferred")}</th><th>{t("Base Heat")}</th><th>{t("Fire used")}</th><th>{t("Zone")}</th><th>{t("Ability changes")}</th><th>{t("Actual")}</th><th>{t("Difference")}</th><th>{t("Quality")}</th></tr></thead>
               <tbody>{Object.values(context.ceramicResults).map((result) => {
                 const ceramic = game.ceramics[result.ceramicId];
-                const glaze = ceramic !== undefined && ceramic.stage !== "shaped" && ceramic.stage !== "sold" ? ceramic.glaze : null;
+                const glaze = ceramic !== undefined && ceramic.stage !== "workshop" && ceramic.stage !== "sold" ? ceramic.glaze : null;
                 const changes = [
                   (result.shifuHeatAdjustment ?? 0) !== 0 ? (locale === "zh-CN" ? `师傅火候${signed(result.shifuHeatAdjustment!)}` : `Shifu Heat ${signed(result.shifuHeatAdjustment!)}`) : null,
                   result.finalActualHeat !== result.naturalActualHeat ? (locale === "zh-CN" ? `实际火候${result.naturalActualHeat} → ${result.finalActualHeat}` : `Actual Heat ${result.naturalActualHeat} → ${result.finalActualHeat}`) : null,
@@ -371,7 +371,7 @@ function TechniqueDisplays({ game }: { game: PublicGameState }) {
   const { locale, t, term } = useI18n();
   return (
     <section className="playtest-panel techniques-board" aria-labelledby="techniques-title">
-      <div className="playtest-panel-heading"><div><p className="eyebrow">{t("Guild & Academy")}</p><h2 id="techniques-title">{t("Face-up Techniques")}</h2></div><span>2 {t("per discipline")}</span></div>
+      <div className="playtest-panel-heading"><div><p className="eyebrow">{t("Craft Academy")}</p><h2 id="techniques-title">{t("Face-up Techniques")}</h2></div><span>2 {t("per discipline")}</span></div>
       <div className="technique-columns">{(["forming", "glazing", "firing"] as const).map((discipline) => (
         <div key={discipline}>
           <h3>{term(discipline)} · {t("deck")} {game.decks.techniqueRemaining[discipline]}</h3>
@@ -399,7 +399,7 @@ function ImperialProgressTable({ game }: { game: PublicGameState }) {
           })}</tbody>
         </table>
       </div>
-      <p className="progress-legend">{locale === "zh-CN" ? "已完成委托上的👑推进御府声望；朝廷赞助可支付4铜钱，从声望0、1或2提升1格。依次结算到达的里程碑。到达声望4后，每个额外👑立即获得1 VP。" : "Crowns on completed Orders advance Recognition. Court Patronage costs 4 Coins to advance 1 space from Recognition 0, 1 or 2. Resolve each reached milestone in order. Each Crown beyond Recognition 4 scores 1 VP immediately."}</p>
+      <p className="progress-legend">{locale === "zh-CN" ? "已完成委托上的👑推进御府声望；朝廷赞助可支付4铜钱，从声望0、1或2提升1格。依次结算到达的里程碑。到达声望4后，每个额外👑立即获得1 VP。" : "Crowns on completed Orders advance Recognition. Imperial Court costs 4 Coins to advance 1 space from Recognition 0, 1 or 2. Resolve each reached milestone in order. Each Crown beyond Recognition 4 scores 1 VP immediately."}</p>
     </section>
   );
 }
@@ -412,7 +412,7 @@ export function OrderCard({ orderId }: { orderId: string }) {
     <article className={`order-card ${order.crowns > 0 ? "order-imperial" : ""}`} data-order-id={orderId}>
       <header><strong>{orderId}</strong><span>{order.vp} {t("VP")}{order.coins > 0 ? ` · ${order.coins} ${t("Coins")}` : ""}{order.crowns > 0 ? ` · ${"👑".repeat(order.crowns)}` : ""}</span></header>
       <ol className="order-slots">{order.ceramics.map((requirement, index) => (
-        <li key={index}>{requirement.shapes?.map((shape) => term(shape)).join(` ${t("or")} `) ?? (requirement.shape === undefined ? t("Any Shape") : term(requirement.shape))} · {requirement.glaze === undefined ? t("Any Glaze") : term(requirement.glaze)} · {requirement.decoration === undefined ? t("Any Decoration") : term(requirement.decoration)}</li>
+        <li key={index}>{requirement.shapes?.map((shape) => term(shape)).join(` ${t("or")} `) ?? (requirement.shape === undefined ? t("Any Shape") : term(requirement.shape))} · {requirement.glaze === undefined ? t("Any Glaze") : term(requirement.glaze)} · {requirement.decorations !== undefined ? requirement.decorations.map((decoration) => term(decoration)).join(` ${t("or")} `) : requirement.decoration === undefined ? t("Any Decoration") : term(requirement.decoration)}</li>
       ))}</ol>
       <footer>{qualityLabel(order, locale)}{relationLabel(order, locale)}</footer>
     </article>
@@ -433,6 +433,7 @@ export function relationLabel(order: OrderDefinition, locale: Locale = "en"): st
       case "different_shape": return locale === "zh-CN" ? "器型不同" : "different Shapes";
       case "all_different_shape": return locale === "zh-CN" ? "器型各不相同" : "all different Shapes";
       case "same_shape": return locale === "zh-CN" ? "器型相同" : "same Shape";
+      case "same_nonplain_decoration": return locale === "zh-CN" ? "相同非素面纹饰" : "same non-Plain Decoration";
       case "same_decoration": return locale === "zh-CN" ? "纹饰相同" : "same Decoration";
       case "different_decoration": return locale === "zh-CN" ? "纹饰不同" : "different Decorations";
       case "at_least_n_quality": return locale === "zh-CN" ? `至少${relation.count}件${localizedTerm(locale, relation.quality)}` : `at least ${relation.count} ${localizedTerm(locale, relation.quality)}`;
@@ -463,9 +464,9 @@ export function relationLabel(order: OrderDefinition, locale: Locale = "en"): st
 
 export function ceramicDescription(ceramic: CeramicState, locale: Locale = "en"): string {
   const parts = [localizedTerm(locale, ceramic.shape), localizedTerm(locale, ceramic.stage)];
-  if (ceramic.stage !== "shaped" && ceramic.stage !== "sold") {
-    parts.push(localizedTerm(locale, ceramic.glaze), localizedTerm(locale, ceramic.decoration));
-  }
+  if ("decoration" in ceramic) parts.push(localizedTerm(locale, ceramic.decoration));
+  if ("glaze" in ceramic) parts.push(localizedTerm(locale, ceramic.glaze));
+  if ("crackle" in ceramic && ceramic.crackle) parts.push(localizedTerm(locale, "crackle"));
   if (ceramic.stage === "finished" || ceramic.stage === "delivered" || ceramic.stage === "presented") {
     parts.push(locale === "zh-CN" ? `品质：${localizedTerm(locale, ceramic.quality)}` : `Quality: ${localizedTerm(locale, ceramic.quality)}`);
   }
@@ -475,9 +476,9 @@ export function ceramicDescription(ceramic: CeramicState, locale: Locale = "en")
 
 function ceramicAttributes(ceramic: CeramicState, locale: Locale = "en"): string {
   const parts: string[] = [localizedTerm(locale, ceramic.shape)];
-  if (ceramic.stage !== "shaped" && ceramic.stage !== "sold") {
-    parts.push(localizedTerm(locale, ceramic.glaze), localizedTerm(locale, ceramic.decoration));
-  }
+  if ("decoration" in ceramic) parts.push(localizedTerm(locale, ceramic.decoration));
+  if ("glaze" in ceramic) parts.push(localizedTerm(locale, ceramic.glaze));
+  if ("crackle" in ceramic && ceramic.crackle) parts.push(localizedTerm(locale, "crackle"));
   return parts.join(" · ");
 }
 
@@ -492,7 +493,7 @@ function placedWorkerLabel(game: PublicGameState, workerId: string, locale: Loca
 function phaseName(game: PublicGameState, locale: Locale = "en"): string {
   const tx = (english: string): string => locale === "zh-CN" ? ({
     "Kiln selection": "选择窑口", "Starting Orders": "起始委托", "Starting Tech": "起始技艺", "Work Phase": "作业阶段",
-    "Imperial Priority": "御烧优先", "Commission Market — Orders": "瓷牙行 — 委托", "Guild & Academy": "陶工行",
+    "Imperial Priority": "御烧优先", "Commission Market — Orders": "瓷牙行 — 委托", "Craft Academy": "陶工行",
     "Pre-firing Techniques": "烧成前技艺", "Secret Contributions": "秘密控火", "Fuel Ledger": "柴簿",
     "Kiln Yard Shifu adjustment": "窑坊师傅调火", "Reveal Fire": "揭示窑火", "Kiln ability": "窑口能力", "Second Firing": "复烧",
     "After-Quality abilities": "品质判定后能力", "Protective Saggars": "匣钵护烧", "Test Pieces": "火照", "Cleanup Orders": "整理委托",
@@ -505,7 +506,9 @@ function phaseName(game: PublicGameState, locale: Locale = "en"): string {
     case "work": return tx("Work Phase");
     case "work_imperial_priority": return tx("Imperial Priority");
     case "work_office_orders": return tx("Commission Market — Orders");
-    case "work_guild": return tx("Guild & Academy");
+    case "work_guild": return tx("Craft Academy");
+    case "work_glaze_palette": return locale === "zh-CN" ? "釉色谱" : "Glaze Palette";
+    case "firing_ge": return locale === "zh-CN" ? "哥窑开片" : "Ge Crackle";
     case "firing_before_contribution": return tx("Pre-firing Techniques");
     case "firing_contributions": return tx("Secret Contributions");
     case "firing_shifu_adjustment": return tx("Kiln Yard Shifu adjustment");

@@ -33,7 +33,7 @@ function tokenOwner(token: string): string | undefined {
   return token.match(/data-player-id="([^"]+)"/)?.[1];
 }
 
-describe("V1.2.7 physical Imperial Priority markers", () => {
+describe("V1.4 physical Imperial Priority markers", () => {
   it.each([2, 3, 4] as const)("places one matching player-colour token at Recognition 3 for each of %i players", (count) => {
     const { state } = startedGame(count, 127_960 + count);
     const markup = renderTable(state);

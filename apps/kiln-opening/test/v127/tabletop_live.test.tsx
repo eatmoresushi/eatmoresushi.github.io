@@ -24,7 +24,7 @@ function localizedMarkup(locale: Locale, child: ReturnType<typeof createElement>
   return renderToStaticMarkup(createElement(LanguageProvider, { initialLocale: locale, children: child }));
 }
 
-describe("V1.2.7 functional tabletop", () => {
+describe("V1.4 functional tabletop", () => {
   it("keeps an unfinished action mounted while inspecting the table, then discards it after resolution", () => {
     const empty = { open: false, mounted: false };
     const open = actionControlsVisibilityReducer(empty, { type: "OPEN" });
@@ -69,7 +69,7 @@ describe("V1.2.7 functional tabletop", () => {
   it("renders the approved board from live public state with owned pieces and player-count locks", () => {
     const state = structuredClone(startedGame(2, 12_660).state);
     const marked = addLoaded(state, "P1", "plate", "celadon", "carved", "high_1", true);
-    const finished = addFinished(state, "P1", "censer", "fine", "grey_green", "crackle");
+    const finished = addFinished(state, "P1", "censer", "fine", "grey_green", "painted");
     state.players["P1"]!.kilnYardShifuCeramicId = marked.id;
     state.players["P1"]!.kilnYardShifuUsedThisRound = true;
 
@@ -88,7 +88,7 @@ describe("V1.2.7 functional tabletop", () => {
       colour: ["cinnabar", "river", "ochre", "plum"][index]!,
       isHost: index === 0,
       isComputer: playerId === "P2",
-      aiPolicyVersion: playerId === "P2" ? "rules-v1.2.7-strategic-002" : null,
+      aiPolicyVersion: playerId === "P2" ? "rules-v1.4-strategic-001" : null,
     }));
     const markup = localizedMarkup("en", createElement(TabletopGameExperience, {
       game,
@@ -144,7 +144,7 @@ describe("V1.2.7 functional tabletop", () => {
     expect(markup).toContain('data-glaze="celadon"');
     expect(markup).toContain('data-decoration="carved"');
     expect(markup).toContain('class="kiln-tabletop-decoration-pattern is-carved"');
-    expect(markup).toContain('class="kiln-tabletop-decoration-pattern is-crackle"');
+    expect(markup).toContain('class="kiln-tabletop-decoration-pattern is-painted"');
     expect(markup).toContain("BELONGS TO");
     expect(markup).toContain("Preferred Heat");
     expect(markup).toContain('data-hover-preview="ceramic"');
@@ -245,7 +245,7 @@ describe("V1.2.7 functional tabletop", () => {
       send: async () => true,
     }));
 
-    expect(markup).toContain("Send to Labour");
+    expect(markup).toContain("Send to Paid Work");
     expect(markup).not.toContain("Gather materials");
     expect(markup).not.toContain("Shape vessels");
     const selectedWorkerButton = markup.match(new RegExp(`<button[^>]*data-worker-choice="${selectedWorkerId}"[^>]*>`))?.[0] ?? "";
@@ -382,7 +382,7 @@ describe("V1.2.7 functional tabletop", () => {
       const pieces = [
         addShaped(state, playerId, "bowl"),
         addGlazed(state, playerId, "plate", "white", "impressed"),
-        addLoaded(state, playerId, "washer", "moon_white", "crackle", sharedSpaces[index]!, true),
+        addLoaded(state, playerId, "washer", "moon_white", "painted", sharedSpaces[index]!, true),
         addLoaded(state, playerId, "censer", "grey_green", "carved", "imperial"),
         addFinished(state, playerId, "vase", "fine", "celadon", "plain"),
         addFinished(state, playerId, "bowl", "flawed", "white", "carved"),
@@ -434,7 +434,7 @@ describe("V1.2.7 functional tabletop", () => {
         code: "NOTICE",
         status: "playing" as const,
         hostSeatId: "seat-1",
-        rulesVersion: "1.2.7" as const,
+        rulesVersion: "1.4" as const,
         latestRevision: game.revision,
         endedAt: null,
         endedByPlayerId: null,
@@ -470,7 +470,7 @@ describe("V1.2.7 functional tabletop", () => {
 
     expect(markup).toContain('class="control-form control-form-glaze"');
     expect(markup).toContain('class="control-submit-bar"');
-    expect(markup).toContain("Apply glaze");
+    expect(markup).toContain("Decorate ceramics");
     expect(markup).not.toContain("Authoritative controls");
     expect(markup).not.toContain("Every command is validated by the server");
   });
@@ -531,7 +531,7 @@ describe("V1.2.7 functional tabletop", () => {
     let markup = localizedMarkup("en", createElement(ActionPanel, {
       game,
       ownPlayerId: "P1",
-      ownPendingContribution: { windowId: "firing-ui-window", card: "BANK", useFuelLedger: false, submitted: true },
+      ownPendingContribution: { windowId: "firing-ui-window", card: "BANK", submitted: true },
       busy: false,
       send: async () => true,
     }));
@@ -547,7 +547,7 @@ describe("V1.2.7 functional tabletop", () => {
       round: state.round,
       contributors: ["P1", "P2"],
       contributions: { P1: "BANK", P2: "STOKE" },
-      fuelLedgerUpgradedBy: [],
+
       baseHeat: 2,
       fireModifier: null,
       globalHeat: null,
@@ -633,7 +633,7 @@ describe("V1.2.7 functional tabletop", () => {
     addFinished(state, "P1", "bowl", "standard", "white", "plain");
     addFinished(state, "P1", "plate", "standard", "celadon", "carved");
     addFinished(state, "P1", "washer", "standard", "grey_green", "impressed");
-    addFinished(state, "P1", "censer", "flawed", "moon_white", "crackle");
+    addFinished(state, "P1", "censer", "flawed", "moon_white", "painted");
     state.players["P1"]!.orderHand = ["S01", "S08", "O43", "O44"];
     state.marketDisplay = ["O02"];
     state.phase = { type: "orders", turnOrder: ["P1", "P2"], currentIndex: 0, activePlayerId: "P1", completedInCircuit: 0 };

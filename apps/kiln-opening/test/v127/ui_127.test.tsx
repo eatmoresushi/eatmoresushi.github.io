@@ -16,7 +16,7 @@ function localizedMarkup(locale: Locale, child: ReturnType<typeof createElement>
   );
 }
 
-describe("V1.2.7 player-facing controls", () => {
+describe("V1.4 player-facing controls", () => {
   it("shows Ding's separate 1-Clay payment in English and Chinese", () => {
     const state = structuredClone(startedGame(2, 12_620).state);
     state.players["P1"]!.kilnId = "DI";
@@ -25,6 +25,7 @@ describe("V1.2.7 player-facing controls", () => {
     const game = projectPublicGameState(state);
     const panel = createElement(ActionPanel, {
       game,
+      selectedWorkerId: workerId(state, "P1", "apprentice"),
       ownPlayerId: "P1",
       ownPendingContribution: null,
       busy: false,
@@ -144,7 +145,7 @@ describe("V1.2.7 player-facing controls", () => {
     state.phase = { type: "firing_reveal_fire", actorId: "P1" };
     state.firingContext = {
       round: state.round, contributors: ["P1"], contributions: { P1: "TEND" },
-      fuelLedgerUpgradedBy: [], baseHeat: 2, fireModifier: null, globalHeat: null,
+       baseHeat: 2, fireModifier: null, globalHeat: null,
       kilnYardShifuAdjustments: [{ playerId: "P1", ceramicId: ceramic.id, adjustment: -1 }], ceramicResults: {},
     };
     const result = applyAction(state, "P1", { type: "REVEAL_FIRE_CARD" }, initial.rng);

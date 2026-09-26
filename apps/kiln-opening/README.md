@@ -1,78 +1,14 @@
-# Kiln Opening — Codex Handoff Pack
+# Kiln Opening / 开窑 — V1.4
 
-This folder is the engineering handoff for **Kiln Opening / 开窑**, a 2–4 player medium-weight worker-placement game about Song Dynasty ceramic workshops.
+A server-authoritative, 2–4 player online adaptation of the Song Dynasty ceramic workshop board game, built with TypeScript, React, Vite and Supabase.
 
-## Start here
+## Rules authority
 
-Codex should read files in this order:
+The [V1.4 Player Rulebook](docs/KILN_OPENING_v1.4_EN_SOURCE.md) is the source of truth. The [V1.4 audit](docs/RULEBOOK_AUDIT_V1.4.md) records the original source hash, owner-approved corrections and implementation validation. Earlier rulebooks, component copy and audits remain historical references. The archived Chinese source supplies terminology only; current English and Chinese gameplay text follows V1.4.
 
-1. `AGENTS.md`
-2. `docs/KILN_OPENING_v1.2.7_EN_SOURCE.md` for mechanics
-3. `docs/KILN_OPENING_v1.2.6_ZH_SOURCE.md` for Simplified Chinese localization
-4. `docs/RULEBOOK_AUDIT_V1.2.7.md`
-5. `docs/KILN_OPENING_v1.2.7_COMPONENT_TEXT_SOURCE.md` for compact descriptions
-6. `docs/GAME_RULES.md`
-7. `docs/DESIGN_SPEC.md`
-8. `docs/ONLINE_GAME_SPEC.md`
-9. `docs/ENGINEERING_ARCHITECTURE.md`
-10. `data/*.json`
-11. `docs/IMPLEMENTATION_DECISIONS.md`
-12. `docs/DESIGN_HISTORY.md` only when historical context is useful
+Read [AGENTS.md](AGENTS.md), the rulebook and audit before changing mechanics. Structured data in `data/` drives the engine and localized component reminders. Artwork in `assets/current_v04/` is visual reference only and never overrides rules.
 
-The **current mechanical source of truth is the adopted V1.2.7 English source** at `docs/KILN_OPENING_v1.2.7_EN_SOURCE.md`; it includes the owner's 2026-09-20 amendments to eight Starting Orders, S01–S08, optional Tech abilities, and Kiln Tending's choice of 1 Clay or 1 Wood. The archived Chinese terminology source at `docs/KILN_OPENING_v1.2.6_ZH_SOURCE.md` supplies established Chinese terminology; changed mechanics and wording follow V1.2.7. Original and current source checksums, adoption notes and the owner's Ge amendment are recorded in `docs/RULEBOOK_AUDIT_V1.2.7.md`. English and Simplified Chinese player-facing rules derive from the same stable IDs. Visual references remain restricted to `assets/current_v04/`; that directory name is retained only as a legacy path. Older rules and simulations remain historical evidence and must not override V1.2.7.
-
-Tech faces and hover previews use `docs/KILN_OPENING_v1.2.7_TECH_SHORT_TEXT_SOURCE.md`; click-through details use `docs/KILN_OPENING_v1.2.7_TECH_DETAIL_TEXT_SOURCE.md` with the recorded owner corrections. Kiln hover and workshop reminders use `docs/KILN_OPENING_v1.2.7_KILN_SHORT_TEXT_SOURCE.md`; the original component draft remains archived as provenance.
-
-## Important rule for Codex
-
-Do **not** infer gameplay rules from the artwork. Print assets are visual references only. If image text, derived documentation, structured JSON, tests, saved games or UI copy conflict with `docs/KILN_OPENING_v1.2.7_EN_SOURCE.md`, the checked-in English source wins for mechanics. Use established Chinese terms, with changed gameplay text translated from V1.2.7.
-
-Earlier Order-card, central-board, player-board, Tech and reference-card raster art is intentionally **not authoritative** where any text or component count differs from current V1.2.7 rules. See `docs/ASSET_MANIFEST.md`.
-
-## Recommended workflow
-
-Copy this folder into the root of a new Git repository, or copy its contents into your online-game repository. Then open that repository in Codex.
-
-Do not ask Codex to build the whole multiplayer game in one pass. Start with `prompts/01_engineering_design.md`, review the proposal, then continue in order.
-
-## Suggested repository layout after implementation
-
-```text
-kiln-opening-online/
-├── AGENTS.md
-├── README.md
-├── docs/
-├── data/
-├── assets/
-├── source_rulebook/
-├── prompts/
-├── src/
-│   ├── game/          # pure rules engine; no React/Supabase
-│   ├── ui/
-│   └── multiplayer/
-├── supabase/
-│   ├── migrations/
-│   └── functions/
-└── tests/
-```
-
-## Deployment target
-
-Recommended MVP:
-
-- **Client:** React + TypeScript + Vite
-- **Static hosting:** GitHub Pages, using the user's existing custom domain or a `play.` subdomain
-- **Realtime/backend:** Supabase
-- **Rules authority:** server-side validated actions
-- **Testing:** Vitest for game logic; Playwright for end-to-end multiplayer flows
-
-The architecture is intentionally replaceable: the game engine must not depend on React, Supabase, or browser APIs.
-
-## Web client
-
-The V1.2.7 implementation includes the strict TypeScript engine, server-authoritative Supabase backend, React/Vite interface, reconnect handling, the 1/3/4/3/1 twelve-card Fire deck, secret Bank/Tend/Stoke Contributions with Fuel Ledger ±2 choices, a six-card unified Main Order display, separate Starting Orders, eight shared worker locations, Starting and Advanced Techs, Imperial Recognition 0–4 and the private Imperial Kiln, the 2-Coin discard of a still-Flawed ceramic, the unlimited End-game Exhibition with whole-collection diversity bonuses, and a persistent English / 简体中文 toggle.
-
-Materials Yard, Potter's Wheel, Glaze & Decoration, Commission Market, and Guild & Academy have a global capacity of 2/3/4 spaces in 2/3/4-player games. Kiln Yard, Labour and Court Patronage are uncapped. Workers may use any unoccupied printed space regardless of who occupies other spaces; a Shifu may overfill a full location. There are no private workshop actions or Tech-based worker-space unlocks.
+## Development
 
 ```bash
 npm ci
@@ -80,11 +16,25 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Production configuration uses only the public Supabase project URL and anonymous/publishable key in the browser. See `docs/DEPLOYMENT.md` for the GitHub Pages folder layout and the separate Edge Function secret boundary.
+Use `npm run dev:local` for an in-memory multiplayer backend that requires no Supabase credentials. Its rooms last only as long as the development server.
 
+```bash
+npm test
+npm run typecheck
+npm run typecheck:edge
+npm run build
+```
 
-## Audit
+The historical `test/v127/` directory name is retained; its active assertions now follow V1.4. Seeded full-game tests cover 2, 3 and 4 players.
 
-See `docs/RULEBOOK_AUDIT_V1.2.7.md` for the current rules audit and `docs/V0.4_HANDOFF_AUDIT.md` only for historical context. Run the TypeScript and Vitest checks to validate the current structured rules and implementation.
+## Implementation
 
-V1.2.7 short copy comes from `docs/KILN_OPENING_v1.2.7_COMPONENT_TEXT_SOURCE.md`. No V1.2.7 Chinese rulebook was supplied; updated Chinese UI copy is translated from the new English rules using established terminology.
+- `src/game/`: pure, deterministic rules engine and explicit decision windows.
+- `src/multiplayer/`: authenticated commands, private projections, persistence and computer players.
+- `src/ui/`: English/Simplified Chinese interface using stable IDs.
+- `supabase/`: server functions and ordered database migrations.
+- [Implementation decisions](docs/IMPLEMENTATION_DECISIONS.md): digital timing and privacy details.
+- [Online specification](docs/ONLINE_GAME_SPEC.md): multiplayer behavior.
+- [Deployment](docs/DEPLOYMENT.md): separate backend and GitHub Pages rollout.
+
+V1.4 uses Workshop → optional Decoration → paid Glaze & Load → Firing, 4/6/8 Shared-Kiln spaces, four starting Coins, updated Orders and Techs, and permanent Ge Crackle separate from Decoration. New rooms use schema 5 and the `r22` rules fingerprint. Older rooms are preserved but cannot continue under the new rules.

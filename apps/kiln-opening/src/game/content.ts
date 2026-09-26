@@ -23,7 +23,7 @@ import type {
 } from "./types.ts";
 
 interface GameConfigDefinition {
-  rulesVersion: "1.2.7";
+  rulesVersion: "1.4";
   players: { min: number; max: number };
   rounds: number;
   startingResources: { clay: number; wood: number; coins: number };
@@ -69,6 +69,7 @@ export interface OrderRequirementDefinition {
   glaze?: Glaze;
   glazes?: Glaze[];
   decoration?: Decoration;
+  decorations?: Decoration[];
 }
 
 export interface OrderDefinition {
@@ -91,6 +92,7 @@ export type OrderRelationDefinition =
   | { type: "different_shape"; indices: number[] }
   | { type: "all_different_shape"; indices: number[] }
   | { type: "same_decoration"; indices: number[] }
+  | { type: "same_nonplain_decoration"; indices: number[] }
   | { type: "different_decoration"; indices: number[] }
   | { type: "at_least_n_quality"; quality: Quality; count: number }
   | { type: "at_least_n_distinct_glazes"; indices: number[]; count: number }
@@ -129,7 +131,7 @@ export interface ContributionCardDefinition {
 }
 
 interface FiringDefinition {
-  rulesVersion: "1.2.7";
+  rulesVersion: "1.4";
   kilnSpaces: Array<{ id: KilnSpaceId; zone: "high" | "middle" | "low"; modifier: -1 | 0 | 1 }>;
   fireDeck: FireModifier[];
   contributionCards: ContributionCardDefinition[];
@@ -153,22 +155,22 @@ export interface KilnDefinition {
 
 export const GAME_CONFIG = gameConfigJson as unknown as GameConfigDefinition;
 const ACTION_LOCATION_FILE = actionLocationsJson as unknown as {
-  rulesVersion: "1.2.7";
+  rulesVersion: "1.4";
   locations: LocationDefinition[];
 };
 const ORDER_FILE = ordersJson as unknown as {
-  rulesVersion: "1.2.7";
+  rulesVersion: "1.4";
   starting: OrderDefinition[];
   main: OrderDefinition[];
 };
 const TECHNIQUE_FILE = techniquesJson as unknown as {
-  rulesVersion: "1.2.7";
+  rulesVersion: "1.4";
   starting: StartingTechniqueDefinition[];
   advanced: TechniqueDefinition[];
 };
 const FIRING_FILE = firingJson as unknown as FiringDefinition;
 const COMPONENT_FILE = componentsJson as unknown as {
-  rulesVersion: "1.2.7";
+  rulesVersion: "1.4";
   components: ComponentDefinition[];
 };
 
@@ -185,7 +187,7 @@ export const LOCATION_IDS: readonly LocationId[] = [
 
 export const SHAPES: readonly Shape[] = ["bowl", "plate", "washer", "vase", "censer"];
 export const GLAZES: readonly Glaze[] = ["white", "celadon", "grey_green", "moon_white"];
-export const DECORATIONS: readonly Decoration[] = ["plain", "carved", "impressed", "crackle"];
+export const DECORATIONS: readonly Decoration[] = ["plain", "carved", "impressed", "painted"];
 export const DISCIPLINES: readonly TechniqueDiscipline[] = ["forming", "glazing", "firing"];
 export const KILN_DEFINITIONS = Object.fromEntries(
   (kilnsJson as unknown as KilnDefinition[]).map((kiln) => [kiln.id, kiln]),
@@ -220,7 +222,7 @@ export const SHAPE_COSTS = GAME_CONFIG.shapes;
 export const DECORATION_COSTS = GAME_CONFIG.decorations;
 
 export interface ImperialProgressDefinition {
-  rulesVersion: "1.2.7";
+  rulesVersion: "1.4";
   track: Array<{
     space: number;
     title: string;
@@ -241,7 +243,7 @@ export interface ImperialProgressDefinition {
 
 export const IMPERIAL_PROGRESS = imperialProgressJson as unknown as ImperialProgressDefinition;
 
-/** The three v1.1.4 Contribution cards, in Bank / Tend / Stoke order. */
+/** Three standard Contribution cards and the two Fuel Ledger cards. */
 export const CONTRIBUTION_CARDS: readonly ContributionCardDefinition[] = FIRING_FILE.contributionCards;
 
 export const CONTRIBUTION_CARD_DEFINITIONS = Object.fromEntries(
@@ -264,13 +266,13 @@ export function activeKilnSpaceIds(playerCount: PlayerCount): KilnSpaceId[] {
 
 function validateContent(): void {
   if (
-    GAME_CONFIG.rulesVersion !== "1.2.7" ||
-    ACTION_LOCATION_FILE.rulesVersion !== "1.2.7" ||
-    FIRING_FILE.rulesVersion !== "1.2.7" ||
-    COMPONENT_FILE.rulesVersion !== "1.2.7" ||
-    IMPERIAL_PROGRESS.rulesVersion !== "1.2.7" ||
-    ORDER_FILE.rulesVersion !== "1.2.7" ||
-    TECHNIQUE_FILE.rulesVersion !== "1.2.7"
+    GAME_CONFIG.rulesVersion !== "1.4" ||
+    ACTION_LOCATION_FILE.rulesVersion !== "1.4" ||
+    FIRING_FILE.rulesVersion !== "1.4" ||
+    COMPONENT_FILE.rulesVersion !== "1.4" ||
+    IMPERIAL_PROGRESS.rulesVersion !== "1.4" ||
+    ORDER_FILE.rulesVersion !== "1.4" ||
+    TECHNIQUE_FILE.rulesVersion !== "1.4"
   ) {
     throw new Error("Rules content version mismatch");
   }
@@ -280,12 +282,12 @@ function validateContent(): void {
     new Set(LOCATION_IDS).size !== 8 ||
     LOCATION_IDS.some((locationId) => !actualLocationIds.has(locationId))
   ) {
-    throw new Error("Expected exactly eight V1.2.7 action locations");
+    throw new Error("Expected exactly eight V1.4 action locations");
   }
   if (MAIN_ORDERS.length !== 48 || STARTING_ORDERS.length !== 8) {
     throw new Error("Order deck size mismatch");
   }
-  if (TECHNIQUES.length !== 15 || KILN_IDS.length !== 5 || KILN_SPACE_IDS.length !== 7) {
+  if (TECHNIQUES.length !== 15 || KILN_IDS.length !== 5 || KILN_SPACE_IDS.length !== 8) {
     throw new Error("Technique, Kiln, or kiln-space count mismatch");
   }
   if (new Set([...MAIN_ORDERS, ...STARTING_ORDERS].map((order) => order.id)).size !== 56) {
@@ -314,7 +316,7 @@ export const ACTION_LOCATION_PRICES = {
   courtPatronageCoins: 4,
   labourApprenticeCoins: 2,
   labourShifuCoins: 4,
-  /** Coins the V1.2.7 firing salvage step pays for a ceramic still Flawed from this firing. */
+  /** Coins the V1.4 firing salvage step pays for a ceramic still Flawed from this firing. */
   flawedSalvageCoins: 2,
 } as const;
 
@@ -328,10 +330,10 @@ export const COLOUR_SAMPLES_LOOK = 3;
 /**
  * Coins Measuring Calipers and Standardised Moulds each pay.
  *
- * V1.2.7 keeps both at 2 Coins. They were inline `1`s in `applyFormCeramics`, which is
+ * V1.4 keeps both at 2 Coins. They were inline `1`s in `applyFormCeramics`, which is
  * how a repricing reaches the card text and misses the handler.
  */
 export const FORMING_TECH_COINS = 2;
 
-/** Techs a V1.2.7 Guild Shifu draws off the chosen discipline to inspect. */
+/** Techs a V1.4 Guild Shifu draws off the chosen discipline to inspect. */
 export const GUILD_SHIFU_INSPECT = 2;

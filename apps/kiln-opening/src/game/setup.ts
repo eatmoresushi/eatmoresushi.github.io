@@ -177,7 +177,7 @@ export function createGame(input: CreateGameInput, rng: RandomSource): CreateGam
   const marketDisplay = drawMany(marketDeck, GAME_CONFIG.orderDisplay.market);
 
   const state: GameState = {
-    schemaVersion: 4,
+    schemaVersion: 5,
     rulesVersion: GAME_CONFIG.rulesVersion,
     gameId: input.gameId,
     revision: 0,

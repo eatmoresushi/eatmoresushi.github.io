@@ -1,3 +1,4 @@
+import { rulesFingerprint } from "../game/rulesFingerprint.ts";
 import { ONLINE_COMPUTER_POLICY_VERSION } from "./computerPlayer.ts";
 import type { GameEvent, PlayerId } from "../game";
 import type {
@@ -96,6 +97,9 @@ export class InMemoryMultiplayerStore implements MultiplayerStore {
     const room = this.rooms.get(roomId);
     if (room === undefined) return { status: "error", code: "room_not_found" };
     if (room.status !== "lobby") return { status: "error", code: "game_already_started" };
+    if (room.rulesVersion !== "1.4" || room.contentVersion !== "1.4" || room.contentDigest !== rulesFingerprint()) {
+      return { status: "error", code: "session_not_active" };
+    }
     const roomSeats = this.seats.get(roomId) ?? [];
     if (roomSeats.length >= 4) return { status: "error", code: "room_full" };
     const used = new Set(roomSeats.map((seat) => seat.seatIndex));
@@ -337,7 +341,6 @@ export class InMemoryMultiplayerStore implements MultiplayerStore {
         playerId: input.actorId,
         commandId: input.commandId,
         card: input.privateSubmission.card,
-        useFuelLedger: input.privateSubmission.useFuelLedger,
         revealedRevision: input.privateSubmission.revealed ? input.nextHead.revision : null,
       };
       this.privateSubmissions.set(

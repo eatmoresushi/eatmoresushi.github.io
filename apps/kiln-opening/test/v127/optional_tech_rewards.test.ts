@@ -95,8 +95,8 @@ describe("optional forming Tech rewards", () => {
     expectError(applyAction(state, "P1", action, rng), "INSUFFICIENT_RESOURCES");
     expect(state).toEqual(before);
     const next = mustApply(state, "P1", { ...action, useTechniqueIds: [id] }, rng);
-    expect(next.players["P1"]!.resources.coins).toBe(1);
-    expect(Object.values(next.ceramics)).toContainEqual(expect.objectContaining({ stage: "glazed", shape: "bowl", glaze: "white", decoration: "plain" }));
+    expect(next.players["P1"]!.resources.coins).toBe(0);
+    expect(Object.values(next.ceramics)).toContainEqual(expect.objectContaining({ stage: "workshop", shape: "bowl", decoration: "painted" }));
     expect(isExhausted(next, id)).toBe(true);
   });
 
@@ -104,10 +104,10 @@ describe("optional forming Tech rewards", () => {
     const { state, rng } = startedGame(2, 20_093, ["ST02"]);
     for (const id of ["T02", "T04"]) addTechnique(state, "P1", id);
     addShaped(state, "P1", "bowl");
-    state.players["P1"]!.resources.coins = 1;
+    state.players["P1"]!.resources.coins = 2;
     const action: Extract<GameAction, { type: "FORM_CERAMICS" }> = {
       type: "FORM_CERAMICS", workerId: workerId(state, "P1", "shifu"), shapes: ["bowl", "plate"],
-      whiteSlip: { formedIndex: 0 }, dryingFrames: { formedIndex: 1, glaze: "celadon", decoration: "carved" },
+      whiteSlip: { formedIndex: 0 }, dryingFrames: { formedIndex: 1,  decoration: "carved" },
     };
     expectError(applyAction(state, "P1", { ...action, useTechniqueIds: ["T04"] }, rng), "INSUFFICIENT_RESOURCES");
     const next = mustApply(state, "P1", { ...action, useTechniqueIds: ["T02", "T04"] }, rng);
@@ -158,10 +158,10 @@ describe("optional Kiln Tending", () => {
     const ceramic = addGlazed(state, "P1");
     const before = { ...state.players["P1"]!.resources };
     const result = mustResult(state, "P1", {
-      type: "USE_KILN_YARD", workerId: workerId(state, "P1", "apprentice"), loads: [{ ceramicId: ceramic.id, kilnSpaceId: "high_1" }], ...choice,
+      type: "USE_KILN_YARD", workerId: workerId(state, "P1", "apprentice"), loads: [{ ceramicId: ceramic.id, kilnSpaceId: "high_1" , glaze: "white"}], ...choice,
     }, rng);
     expect(result.state.ceramics[ceramic.id]?.stage).toBe("loaded");
-    expect(result.state.players["P1"]!.resources).toEqual({ clay: before.clay + clay, wood: before.wood + wood, coins: before.coins });
+    expect(result.state.players["P1"]!.resources).toEqual({ clay: before.clay + clay, wood: before.wood + wood, coins: before.coins - 1 });
     const techEvents = result.events.filter((event) => event.type === "STARTING_TECH_USED" && event.techniqueId === "ST04");
     expect(techEvents).toHaveLength(clay + wood);
   });
@@ -176,7 +176,7 @@ describe("optional Kiln Tending", () => {
     const ceramic = addGlazed(state, "P1");
     const before = structuredClone(state);
     expect(applyAction(state, "P1", {
-      type: "USE_KILN_YARD", workerId: workerId(state, "P1", "apprentice"), loads: [{ ceramicId: ceramic.id, kilnSpaceId: "high_1" }], ...choice,
+      type: "USE_KILN_YARD", workerId: workerId(state, "P1", "apprentice"), loads: [{ ceramicId: ceramic.id, kilnSpaceId: "high_1" , glaze: "white"}], ...choice,
     }, rng).ok).toBe(false);
     expect(state).toEqual(before);
   });
@@ -185,7 +185,7 @@ describe("optional Kiln Tending", () => {
     const { state, rng } = startedGame(2, 20_098, ["ST01"]);
     const ceramic = addGlazed(state, "P1");
     expect(applyAction(state, "P1", {
-      type: "USE_KILN_YARD", workerId: workerId(state, "P1", "apprentice"), loads: [{ ceramicId: ceramic.id, kilnSpaceId: "high_1" }], ...choice,
+      type: "USE_KILN_YARD", workerId: workerId(state, "P1", "apprentice"), loads: [{ ceramicId: ceramic.id, kilnSpaceId: "high_1" , glaze: "white"}], ...choice,
     }, rng).ok).toBe(false);
   });
 
@@ -194,12 +194,12 @@ describe("optional Kiln Tending", () => {
     const first = addGlazed(state, "P1"); const second = addGlazed(state, "P1", "plate");
     const coins = { ...state.players["P1"]!.resources };
     const skipped = mustApply(state, "P1", {
-      type: "USE_KILN_YARD", workerId: workerId(state, "P1", "apprentice"), loads: [{ ceramicId: first.id, kilnSpaceId: "high_1" }],
+      type: "USE_KILN_YARD", workerId: workerId(state, "P1", "apprentice"), loads: [{ ceramicId: first.id, kilnSpaceId: "high_1" , glaze: "white"}],
     }, rng);
     setWorkTurn(skipped, "P1");
     const next = mustApply(skipped, "P1", {
-      type: "USE_KILN_YARD", workerId: workerId(skipped, "P1", "apprentice"), loads: [{ ceramicId: second.id, kilnSpaceId: "low_1" }], kilnTendingWood: 1,
+      type: "USE_KILN_YARD", workerId: workerId(skipped, "P1", "apprentice"), loads: [{ ceramicId: second.id, kilnSpaceId: "low_1" , glaze: "white"}], kilnTendingWood: 1,
     }, rng);
-    expect(next.players["P1"]!.resources).toEqual({ ...coins, wood: coins.wood + 1 });
+    expect(next.players["P1"]!.resources).toEqual({ ...coins, wood: coins.wood + 1, coins: coins.coins - 2 });
   });
 });

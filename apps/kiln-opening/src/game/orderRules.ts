@@ -1,152 +1,16 @@
-import type { OrderDefinition, OrderRelationDefinition } from "./content.ts";
+import { DECORATIONS, type OrderDefinition } from "./content.ts";
 import { QUALITY_RANK } from "./firingRules.ts";
 import type { Decoration, FinishedCeramic, KilnId, PlayerState, Quality } from "./types.ts";
 
-/** Ge counts Standard Crackle as Fine only for Order requirements and Exhibition VP. */
+/** V1.4 records Ge's Fine upgrade in the firing result, so scoring uses actual Quality. */
 export function qualityForOrderOrExhibition<Q extends Quality>(
-  ceramic: { quality: Q; decoration: Decoration },
-  kilnId: KilnId | null,
-): Q | "fine" {
-  return kilnId === "GE" && ceramic.quality === "standard" && ceramic.decoration === "crackle"
-    ? "fine"
-    : ceramic.quality;
+  ceramic: { quality: Q },
+  _kilnId: KilnId | null,
+): Q {
+  return ceramic.quality;
 }
 
 type OrderKilnContext = Pick<PlayerState, "kilnId" | "kilnAbilityUsedThisRound">;
-
-function requirementMatches(
-  order: OrderDefinition,
-  slotIndex: number,
-  ceramic: FinishedCeramic,
-  ignoredDecorationIndex: number | null,
-): boolean {
-  const requirement = order.ceramics[slotIndex];
-  if (requirement === undefined) return false;
-  if (requirement.shape !== undefined && requirement.shape !== ceramic.shape) return false;
-  if (requirement.shapes !== undefined && !requirement.shapes.includes(ceramic.shape)) return false;
-  if (requirement.glaze !== undefined && requirement.glaze !== ceramic.glaze) return false;
-  if (requirement.glazes !== undefined && !requirement.glazes.includes(ceramic.glaze)) return false;
-  if (
-    ignoredDecorationIndex !== slotIndex &&
-    requirement.decoration !== undefined &&
-    requirement.decoration !== ceramic.decoration
-  ) {
-    return false;
-  }
-  return QUALITY_RANK[ceramic.quality] >= QUALITY_RANK[order.minQuality];
-}
-
-function indexedValues<T>(
-  ceramics: readonly FinishedCeramic[],
-  indices: readonly number[],
-  select: (ceramic: FinishedCeramic) => T,
-): T[] | null {
-  const values: T[] = [];
-  for (const index of indices) {
-    const ceramic = ceramics[index];
-    if (ceramic === undefined) return null;
-    values.push(select(ceramic));
-  }
-  return values;
-}
-
-function relationMatches(
-  relation: OrderRelationDefinition,
-  assigned: readonly FinishedCeramic[],
-): boolean {
-  switch (relation.type) {
-    case "same_glaze": {
-      const values = indexedValues(assigned, relation.indices, (ceramic) => ceramic.glaze);
-      return values !== null && new Set(values).size === 1;
-    }
-    case "same_shape": {
-      const values = indexedValues(assigned, relation.indices, (ceramic) => ceramic.shape);
-      return values !== null && new Set(values).size === 1;
-    }
-    case "different_glaze":
-    case "all_different_glaze": {
-      const values = indexedValues(assigned, relation.indices, (ceramic) => ceramic.glaze);
-      return values !== null && new Set(values).size === values.length;
-    }
-    case "different_shape":
-    case "all_different_shape": {
-      const values = indexedValues(assigned, relation.indices, (ceramic) => ceramic.shape);
-      return values !== null && new Set(values).size === values.length;
-    }
-    case "same_decoration": {
-      const values = indexedValues(assigned, relation.indices, (ceramic) => ceramic.decoration);
-      return values !== null && new Set(values).size === 1;
-    }
-    case "different_decoration": {
-      const values = indexedValues(assigned, relation.indices, (ceramic) => ceramic.decoration);
-      return values !== null && new Set(values).size === values.length;
-    }
-    case "at_least_n_quality":
-      return (
-        assigned.filter(
-          (ceramic) => QUALITY_RANK[ceramic.quality] >= QUALITY_RANK[relation.quality],
-        ).length >= relation.count
-      );
-    case "at_least_n_distinct_glazes": {
-      const values = indexedValues(assigned, relation.indices, (ceramic) => ceramic.glaze);
-      return values !== null && new Set(values).size >= relation.count;
-    }
-    case "at_least_n_distinct_decorations": {
-      const values = indexedValues(assigned, relation.indices, (ceramic) => ceramic.decoration);
-      return values !== null && new Set(values).size >= relation.count;
-    }
-    case "required_glazes":
-      return multisetContains(assigned.map((ceramic) => ceramic.glaze), relation.values);
-    case "required_decorations":
-      return multisetContains(assigned.map((ceramic) => ceramic.decoration), relation.values);
-    case "glaze_categories":
-      return relation.indices.every((index, categoryIndex) => {
-        const ceramic = assigned[index];
-        const category = relation.categories[categoryIndex];
-        return ceramic !== undefined && category !== undefined && category.includes(ceramic.glaze);
-      });
-  }
-}
-
-function assignmentMatchesRelations(
-  order: OrderDefinition,
-  assigned: readonly FinishedCeramic[],
-): boolean {
-  return (order.relations ?? []).every((relation) => relationMatches(relation, assigned));
-}
-
-function hasValidAssignment(
-  order: OrderDefinition,
-  selected: readonly FinishedCeramic[],
-  ignoredDecorationIndex: number | null,
-): boolean {
-  const assigned: FinishedCeramic[] = [];
-  const used = new Set<number>();
-
-  const search = (slotIndex: number): boolean => {
-    if (slotIndex === order.ceramics.length) {
-      return assignmentMatchesRelations(order, assigned);
-    }
-    for (let ceramicIndex = 0; ceramicIndex < selected.length; ceramicIndex += 1) {
-      if (used.has(ceramicIndex)) continue;
-      const ceramic = selected[ceramicIndex];
-      if (
-        ceramic === undefined ||
-        !requirementMatches(order, slotIndex, ceramic, ignoredDecorationIndex)
-      ) {
-        continue;
-      }
-      used.add(ceramicIndex);
-      assigned[slotIndex] = ceramic;
-      if (search(slotIndex + 1)) return true;
-      used.delete(ceramicIndex);
-    }
-    return false;
-  };
-
-  return search(0);
-}
-
 
 function multisetContains<T>(actual: readonly T[], required: readonly T[]): boolean {
   const remaining = [...actual];
@@ -180,7 +44,7 @@ function shapeSlotsMatch(order: OrderDefinition, selected: readonly FinishedCera
 }
 
 /**
- * V1.2.7 evaluates Shape, Glaze and Decoration groups independently.
+ * V1.4 evaluates Shape, Glaze and Decoration groups independently.
  *
  * V1.2.2's Guan Decoration waiver is gone: Imperial Patronage now pays 2 Coins and 1 VP and
  * exempts nothing, so every submitted ceramic faces every printed requirement.
@@ -200,6 +64,7 @@ export function matchesOrder(
     if (requirement.glaze !== undefined && ceramic.glaze !== requirement.glaze) return false;
     if (requirement.glazes !== undefined && !requirement.glazes.includes(ceramic.glaze)) return false;
     if (requirement.decoration !== undefined && ceramic.decoration !== requirement.decoration) return false;
+    if (requirement.decorations !== undefined && !requirement.decorations.includes(ceramic.decoration)) return false;
   }
   const decorations = selected;
   for (const relation of order.relations ?? []) {
@@ -217,6 +82,10 @@ export function matchesOrder(
       case "different_glaze":
       case "all_different_glaze":
         if (new Set(selected.map((ceramic) => ceramic.glaze)).size !== selected.length) return false;
+        break;
+      case "same_nonplain_decoration":
+        if (decorations.some((ceramic) => ceramic.decoration === "plain")) return false;
+        if (new Set(decorations.map((ceramic) => ceramic.decoration)).size !== 1) return false;
         break;
       case "same_decoration":
         if (decorations.length > 1 && new Set(decorations.map((ceramic) => ceramic.decoration)).size !== 1) return false;
@@ -237,7 +106,7 @@ export function matchesOrder(
         if (new Set(selected.map((ceramic) => ceramic.glaze)).size < relation.count) return false;
         break;
       case "at_least_n_distinct_decorations":
-        if (new Set(decorations.map((ceramic) => ceramic.decoration)).size < Math.min(relation.count, decorations.length)) return false;
+        if (new Set(decorations.map((ceramic) => ceramic.decoration)).size < relation.count) return false;
         break;
       case "glaze_categories":
         if (!relation.categories.every((category) => selected.some((ceramic) => category.includes(ceramic.glaze)))) return false;
@@ -250,7 +119,7 @@ export function matchesOrder(
 /**
  * Return every distinct group of Finished ceramics that can fulfil an Order.
  *
- * `matchesOrder` owns the V1.2.7 attribute-assignment rules; this helper only
+ * `matchesOrder` owns the V1.4 attribute-assignment rules; this helper only
  * enumerates unordered groups so the engine, computer player, and UI can ask
  * the same higher-level legality question without reimplementing those rules.
  */
@@ -268,7 +137,7 @@ export function matchingOrderCeramicGroups(
   const search = (startIndex: number): void => {
     if (selected.length === requiredCount) {
       if (matchesOrder(order, selected, player?.kilnId)
-        || player?.kilnId === "GE" && !player.kilnAbilityUsedThisRound && findGeDecoration(order, selected) !== null) groups.push([...selected]);
+        || findGeDecorations(order, selected) !== null) groups.push([...selected]);
       return;
     }
 
@@ -334,12 +203,16 @@ export function ruBonusCeramic(
  * the ceramic actually fires to Masterpiece is a firing question, not an Order-choice one.
  */
 export function orderAdmitsRuBonus(order: OrderDefinition): boolean {
+  if ((order.relations ?? []).some((relation) => relation.type === "same_nonplain_decoration"
+    || relation.type === "required_decorations" && relation.values.length === order.ceramics.length && !relation.values.includes("plain")
+    || relation.type === "required_glazes" && relation.values.length === order.ceramics.length && !relation.values.includes("celadon"))) return false;
   return order.ceramics.some((requirement) => {
     const glazeOk = requirement.glaze === undefined
       ? requirement.glazes === undefined || requirement.glazes.includes(RU_BONUS_GLAZE)
       : requirement.glaze === RU_BONUS_GLAZE;
     const decorationOk = requirement.decoration === undefined
-      || requirement.decoration === RU_BONUS_DECORATION;
+      ? requirement.decorations === undefined || requirement.decorations.includes(RU_BONUS_DECORATION)
+      : requirement.decoration === RU_BONUS_DECORATION;
     return glazeOk && decorationOk;
   });
 }
@@ -353,7 +226,7 @@ export function orderAdmitsRuBonus(order: OrderDefinition): boolean {
  * Orders. It completes 1.70 per game against Jun's 2.03, despite being the only Tradition
  * paid for them, because nothing in the Order valuation knew the ability existed.
  */
-/** V1.2.7 Imperial Patronage: 2 Coins and 1 VP on a Crown Order, and no Decoration waiver. */
+/** V1.4 Imperial Patronage: 2 Coins and 1 VP on a Crown Order, and no Decoration waiver. */
 export const GUAN_ORDER_COINS = 2;
 export const GUAN_ORDER_VP = 1;
 
@@ -370,25 +243,48 @@ export const GUAN_ORDER_VP = 1;
  */
 export const DING_EXTRA_SHAPES = ["bowl", "plate", "washer"] as const;
 
-/** Substitute one consistent Decoration for one Crackle ceramic for this Order only. */
-export function matchesOrderWithGe(order: OrderDefinition, selected: readonly FinishedCeramic[], choice: { ceramicId: string; decoration: Decoration }): boolean {
-  if (!["plain", "carved", "impressed", "crackle"].includes(choice.decoration)) return false;
-  if (!selected.some((ceramic) => ceramic.id === choice.ceramicId && ceramic.decoration === "crackle")) return false;
-  // Determine effective Quality from the actual Decoration before its temporary replacement.
+export interface GeDecorationChoice {
+  ceramicId: string;
+  decoration: Decoration;
+}
+
+/** Each permanent Crackle marker can choose one Decoration consistently across this Order. */
+export function matchesOrderWithGe(
+  order: OrderDefinition,
+  selected: readonly FinishedCeramic[],
+  choices: readonly GeDecorationChoice[],
+): boolean {
+  if (new Set(choices.map((choice) => choice.ceramicId)).size !== choices.length) return false;
+  if (choices.some((choice) => !DECORATIONS.includes(choice.decoration)
+    || !selected.some((ceramic) => ceramic.id === choice.ceramicId && ceramic.crackle === true))) return false;
+  const substitutions = new Map(choices.map((choice) => [choice.ceramicId, choice.decoration]));
   return matchesOrder(order, selected.map((ceramic) => ({
     ...ceramic,
-    quality: qualityForOrderOrExhibition(ceramic, "GE"),
-    decoration: ceramic.id === choice.ceramicId ? choice.decoration : ceramic.decoration,
+    decoration: substitutions.get(ceramic.id) ?? ceramic.decoration,
   })));
 }
 
-export function findGeDecoration(order: OrderDefinition, selected: readonly FinishedCeramic[]): { ceramicId: string; decoration: Decoration } | null {
-  for (const ceramic of selected) {
-    if (ceramic.decoration !== "crackle") continue;
-    for (const decoration of ["plain", "carved", "impressed", "crackle"] as const) {
-      const choice = { ceramicId: ceramic.id, decoration };
-      if (matchesOrderWithGe(order, selected, choice)) return choice;
+/** Find a legal independent Decoration choice for each selected Crackle ceramic. */
+export function findGeDecorations(
+  order: OrderDefinition,
+  selected: readonly FinishedCeramic[],
+): GeDecorationChoice[] | null {
+  if (matchesOrder(order, selected)) return [];
+  const crackleCeramics = selected.filter((ceramic) => ceramic.crackle === true);
+  if (crackleCeramics.length === 0) return null;
+  const choices: GeDecorationChoice[] = [];
+  const search = (index: number): GeDecorationChoice[] | null => {
+    if (index === crackleCeramics.length) {
+      return matchesOrderWithGe(order, selected, choices) ? [...choices] : null;
     }
-  }
-  return null;
+    const ceramic = crackleCeramics[index]!;
+    for (const decoration of DECORATIONS) {
+      choices.push({ ceramicId: ceramic.id, decoration });
+      const result = search(index + 1);
+      if (result !== null) return result;
+      choices.pop();
+    }
+    return null;
+  };
+  return search(0);
 }

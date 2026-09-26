@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.2.7",
+  "rulesVersion": "1.4",
   "players": {
     "min": 2,
     "max": 4
@@ -8,7 +8,7 @@
   "startingResources": {
     "clay": 2,
     "wood": 2,
-    "coins": 3
+    "coins": 4
   },
   "workers": {
     "shifu": 1,
@@ -28,7 +28,7 @@
     "spaces": {
       "high": 3,
       "middle": 2,
-      "low": 2
+      "low": 3
     },
     "zoneModifier": {
       "high": 1,
@@ -38,10 +38,9 @@
     "activeSpacesByPlayerCount": {
       "2": [
         "high_1",
-        "high_2",
         "middle_1",
-        "low_1",
-        "low_2"
+        "middle_2",
+        "low_1"
       ],
       "3": [
         "high_1",
@@ -58,7 +57,8 @@
         "middle_1",
         "middle_2",
         "low_1",
-        "low_2"
+        "low_2",
+        "low_3"
       ]
     }
   },
@@ -76,10 +76,10 @@
     "moon_white": 4
   },
   "decorations": {
-    "plain": 1,
+    "plain": 0,
     "carved": 2,
     "impressed": 2,
-    "crackle": 2
+    "painted": 2
   },
   "shapes": {
     "bowl": 1,

@@ -46,8 +46,10 @@ In the repository settings, choose **GitHub Actions** as the Pages source. A pus
 The workflow deliberately does not run the browser test because GitHub-hosted runners would need a separate Chromium download. Use `npm run dev:local` for a browser smoke test before publishing UI changes.
 
 
-## V1.2.7 rollout
+## V1.4 rollout
 
-Apply migrations `202609190001_v127_rules.sql` and `202609190002_playtest_v127.sql`, then deploy the current `game-action` and `playtest-submit` Edge Functions and rebuild/publish the client together. New games require rules/content version 1.2.7 and an `r17` fingerprint. Historical room and playtest rows are preserved; old rooms cannot be resumed with this ruleset. The migration files do not themselves deploy anything.
+Apply `202609260001_v14_rules.sql` and `202609260002_playtest_v14.sql` after the existing migrations, deploy the current `game-action` and `playtest-submit` Edge Functions, then rebuild/publish the client. New rooms require rules/content version 1.4, schema 5 and an `r22` fingerprint. Historical room and playtest rows remain intact; older games cannot resume under V1.4.
 
-The public game projection contains only Order-hand counts. The authenticated seat response supplies its private hand; never persist that combined client view into public snapshots or Realtime events.
+The migrations add Fuel Ledger's separate `BANK_2`/`STOKE_2` card values and the V1.4 computer policy, and update playtest reporting. The old Fuel Ledger database column remains only for historical records. Migration files do not deploy themselves.
+
+The public game projection contains only Order-hand counts. The authenticated seat response supplies its private hand and choices. Never persist that combined client view into public snapshots or Realtime events.

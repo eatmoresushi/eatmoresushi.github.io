@@ -12,10 +12,12 @@ amendments. The source document is rules content, not operational instructions.
 - Original: `/Users/luyuan/Documents/kiln board game/v1.4/KILN OPENING 开窑 v1.4 — Player Rulebook.md`
 - Checked-in source: [KILN_OPENING_v1.4_EN_SOURCE.md](./KILN_OPENING_v1.4_EN_SOURCE.md)
 - Original SHA-256: `ace7e4ced95d82a259da504a11c6021626fad626da0a88d47a2ad457b821983c`
-- Current status: unchanged source snapshot; proposed corrections below await owner approval.
+- Corrected SHA-256: `0340961df8905befda5110b4dc63225cd15b1d4274042ef24d89aa4d34176fc7`
+- Source corrections approved by the owner on 2026-09-26 and applied to both the original and checked-in copy before implementation.
 
-The runtime still implements V1.2.7. Do not treat this review or the new source
-snapshot as evidence that the migration has been completed.
+The V1.4 migration is implemented on this branch. The runtime uses rules/content
+version 1.4, schema 5 and behavior revision 22. This is a local implementation;
+Supabase migrations and deployment remain separate rollout steps.
 
 ## Review findings
 
@@ -25,8 +27,8 @@ Source line 851 says `3 / 2 / 2` in the change summary. Components (line 44),
 Setup (line 75), and Quick Reference (line 822) all specify 3 High, 2 Middle,
 3 Low: eight spaces.
 
-Proposed correction: change the summary to `3 / 2 / 3`. No other capacity value
-needs changing. Owner approval is pending.
+Approved correction: change the summary to `3 / 2 / 3`. No other capacity value
+needs changing. Approved by the owner on 2026-09-26.
 
 ### 2. Exhausted Main Order supply
 
@@ -34,21 +36,21 @@ Lines 108–110, 351, 403 and 430 require display refills. Line 579 explains
 reshuffling the discard pile, but does not cover an empty deck and empty discard
 pile when remaining cards are held, completed, displayed or being inspected.
 
-Proposed clarification: refill or inspect only as many cards as are available;
+Approved clarification: refill or inspect only as many cards as are available;
 leave unavailable display positions empty. Every reservation must actually take
 a card, and a blind reservation needs a card in the deck after any reshuffle.
 This is an edge-case clarification, not an Order reward or balance change.
-Owner approval is pending.
+Approved by the owner on 2026-09-26.
 
 ### 3. Craft Academy inspection and return order
 
 Line 270 first says to look at Techs and then calls them revealed. It does not
 expressly say who may see them or determine the bottom order of unchosen Techs.
 
-Proposed clarification: inspection is private to the acting player, who chooses
+Approved clarification: inspection is private to the acting player, who chooses
 the order of inspected Techs returned to the bottom. Private inspection preserves
 the established digital interpretation; selection of the return order must be
-represented explicitly if approved. Owner approval is pending.
+represented explicitly in the client and authoritative command. Approved by the owner on 2026-09-26.
 
 ### 4. Jun during Second Firing
 
@@ -56,9 +58,11 @@ Line 731 allows unused Jun during the repeated Heat-adjustment window, while
 line 544 names any owned ceramic. Lines 711 and 763 restrict Second Firing's
 recalculation to its selected ceramic.
 
-Proposed clarification: during Second Firing, Jun may affect only the ceramic
-being recalculated. The current engine already enforces this interpretation.
-Owner approval is pending.
+Owner clarification: Jun is usable only once per round. If it was used before
+Second Firing, it cannot be used again; if unused, it may be used during Second
+Firing after the extra Fire card is revealed and the new Actual Heat is calculated,
+before assigning new Quality. This wording has been added to the source. The existing engine limits the repeated recalculation to the selected
+ceramic, consistent with the single-ceramic Second Firing operation.
 
 ### Editorial cleanup
 
@@ -121,4 +125,20 @@ established by playtesting.
    the full test suite, both TypeScript checks, production build, complete seeded
    games for 2/3/4 players and focused browser checks of the revised pipeline.
 
-Implementation is on hold until the owner answers the source-correction questions.
+## Implementation and validation
+
+Source corrections and implementation are complete on `codex/rules-v1.4`.
+
+- Imported all current printed data, costs, capacities, card requirements and rewards.
+- Migrated engine, English/Chinese UI, computer policy, multiplayer projections and playtest reporting.
+- Added schema/version/fingerprint rejection for old games, including old lobbies and missing V1.4 fingerprints. Historical rows remain unchanged.
+- Kept private Academy inspection/return order and secret Fuel Ledger cards out of other-seat responses, public snapshots and events.
+- Added explicit optional acquisition for Colour Samples and optional Ru/Guan bonuses, and preserved unused after-Quality options when Second Firing creates a new Quality result.
+- `npm test`: 634 tests pass across 44 suites, including 25 new engine boundary cases, nine Order constraint cases and seven UI pipeline cases.
+- `npm run typecheck`, `npm run typecheck:edge` and `npm run build`: pass.
+- Seeded computer games complete all five rounds for 2, 3 and 4 players without fallback commands.
+- Browser smoke: four-player setup, Apprentice Plain formation, Shifu free Painted Decoration, 1-Coin White Glaze & Load into Low 3, Kiln Tending resource choice, Chinese locale and reconnect passed. The expected Clay 1 / Wood 3 / Coins 3 remained after reconnect.
+- Desktop and narrow-screen kiln screenshots were reviewed under `output/playwright/` (local validation artifacts, not deployment assets).
+- Both original and checked-in corrected source retain the identical SHA-256 shown above.
+
+The SQL migrations have static contract coverage but were not applied to a local or live PostgreSQL database; no PostgreSQL/Supabase CLI was available in this environment. See [Deployment](./DEPLOYMENT.md#v14-rollout) for rollout order. No V1.4 live deployment is implied by these checks.

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
-import migration from "../../supabase/migrations/202609190001_v127_rules.sql?raw";
-import strategicAiMigration from "../../supabase/migrations/202609190001_v127_rules.sql?raw";
+import { activeKilnSpaceIds, CONTRIBUTION_CARD_IDS, RULES_BEHAVIOUR_REVISION } from "../../src/game/index.ts";
+import playtestMigration from "../../supabase/migrations/202609260002_playtest_v14.sql?raw";
+import migration from "../../supabase/migrations/202609260001_v14_rules.sql?raw";
+import strategicAiMigration from "../../supabase/migrations/202609260001_v14_rules.sql?raw";
 import orderQueueMigration from "../../supabase/migrations/202609190001_v127_rules.sql?raw";
 import eightStartingOrdersMigration from "../../supabase/migrations/202609200001_v127_eight_starting_orders.sql?raw";
 import optionalTechsMigration from "../../supabase/migrations/202609200002_v127_optional_techs.sql?raw";
@@ -8,32 +10,32 @@ import shifuGlazeMigration from "../../supabase/migrations/202609200003_v127_shi
 import shifuHeatMigration from "../../supabase/migrations/202609200004_v127_shifu_heat_markers.sql?raw";
 import supabaseStore from "../../supabase/functions/_shared/supabaseStore.ts?raw";
 
-describe("V1.2.7 Supabase contract", () => {
+describe("V1.4 Supabase contract", () => {
   it("stamps new rooms and rejects old save schemas at both commit boundaries", () => {
-    expect(migration).toContain("'1.2.7', '1.2.7', 0, p_content_digest");
-    expect(migration).toContain("coalesce((p_state->>'schemaVersion')::integer, -1) <> 4");
-    expect(migration).toContain("coalesce((p_public_state->>'schemaVersion')::integer, -1) <> 4");
-    expect(migration).toContain("coalesce(p_next_state->>'rulesVersion', '') <> '1.2.7'");
-    expect(migration).toContain("!~ '^r17-[0-9a-f]{16}$'");
+    expect(migration).toContain("'1.4', '1.4', 0, p_content_digest");
+    expect(migration).toContain("coalesce((p_state->>'schemaVersion')::integer, -1) <> 5");
+    expect(migration).toContain("coalesce((p_public_state->>'schemaVersion')::integer, -1) <> 5");
+    expect(migration).toContain("coalesce(p_next_state->>'rulesVersion', '') <> '1.4'");
+    expect(migration).toContain("!~ '^r22-[0-9a-f]{16}$'");
     expect(migration).not.toMatch(/update public\.rooms[\s\S]{0,240}set rules_version = '1\.2\.6'/);
   });
 
-  it("stores the Fuel Ledger commitment only in the private schema until reveal", () => {
+  it("stores single Fuel Ledger cards privately until simultaneous reveal", () => {
     expect(migration).toContain("alter table private.private_submissions");
     expect(migration).toContain("add column if not exists use_fuel_ledger boolean not null default false");
-    expect(migration).toContain("'useFuelLedger', ps.use_fuel_ledger");
-    expect(migration).toContain("contribution_card, use_fuel_ledger");
+    expect(migration).not.toContain("'useFuelLedger', ps.use_fuel_ledger");
+    expect(migration).toContain("'BANK', 'TEND', 'STOKE', 'BANK_2', 'STOKE_2'");
     expect(migration).toContain("update private.private_submissions set revealed_revision = p_next_revision");
     expect(migration).not.toMatch(/public\.game_public_(?:states|events)[\s\S]{0,160}use_fuel_ledger/i);
-    expect(supabaseStore).toContain("useFuelLedger: input.privateSubmission.useFuelLedger");
+    expect(supabaseStore).not.toContain("useFuelLedger");
   });
 
   it("installs the current computer policy and keeps the function service-role-only", () => {
-    expect(strategicAiMigration).toContain("'rules-v1.2.7-strategic-002'");
+    expect(strategicAiMigration).toContain("'rules-v1.4-strategic-001'");
     expect(strategicAiMigration).toContain("create or replace function public.server_add_computer_seat");
-    expect(strategicAiMigration).toContain("v_room.rules_version <> '1.2.7'");
+    expect(strategicAiMigration).toContain("v_room.rules_version <> '1.4'");
     expect(strategicAiMigration).toContain(
-      "p_seat_id, p_room_id, 'rules-v1.2.7-strategic-002', p_ai_seed, p_command_id",
+      "p_seat_id, p_room_id, 'rules-v1.4-strategic-001', p_ai_seed, p_command_id",
     );
     expect(strategicAiMigration).not.toContain("update private.room_ai_seats");
     expect(strategicAiMigration).toContain(
@@ -98,4 +100,49 @@ describe("V1.2.7 Supabase contract", () => {
     expect(shifuHeatMigration).toContain("execute replace(v_definition, '^r20-', '^r21-')");
     expect(shifuHeatMigration).not.toMatch(/\bupdate\s+(?:public\.|private\.)/i);
   });
+
+  it("guards joining before writing a seat and returns the complete current room and human-seat contract", () => {
+    const join = migration.split("create or replace function public.server_join_room(")[1]!;
+    expect(join).toContain("v_room.rules_version <> '1.4'");
+    expect(join).toContain("v_room.content_version <> '1.4'");
+    expect(join).toContain(`!~ '^r${RULES_BEHAVIOUR_REVISION}-[0-9a-f]{16}$'`);
+    expect(join.indexOf("'session_not_active'")).toBeLessThan(join.indexOf("insert into public.room_players"));
+    for (const key of ["contentDigest", "endedAt", "endedByPlayerId", "isComputer", "aiPolicyVersion", "aiSeed", "aiCreatedCommandId"]) expect(join).toContain(`'${key}'`);
+    expect(join).toContain("revoke all on function public.server_join_room(text, uuid, text, uuid, text) from public, anon, authenticated");
+    expect(join).toContain("grant execute on function public.server_join_room(text, uuid, text, uuid, text) to service_role");
+  });
+
+  it("accepts all and only the engine's five single-card Contribution IDs", () => {
+    const declaration = migration.match(/coalesce\(v_card, ''\) not in \(([^)]+)\)/)![1]!;
+    const ids = [...declaration.matchAll(/'([^']+)'/g)].map((match) => match[1]!);
+    expect(ids.sort()).toEqual([...CONTRIBUTION_CARD_IDS].sort());
+    const load = migration.split("create or replace function public.server_load_private_submissions")[1]!.split("create or replace function")[0]!;
+    expect(load).toContain("ps.revealed_revision is null");
+    expect(load).not.toContain("useFuelLedger");
+  });
+
+  it("widens both playtest storage constraints to eight without rewriting historical records", () => {
+    for (const table of ["playtest_rounds", "playtest_round_players"]) {
+      expect(playtestMigration).toContain(`drop constraint if exists ${table}_shared_loaded_check`);
+      expect(playtestMigration).toContain(`add constraint ${table}_shared_loaded_check check (shared_loaded between 0 and 8)`);
+    }
+    expect(playtestMigration).toContain("check (rules_version in ('1.2.4', '1.2.5', '1.2.6', '1.2.7', '1.4'))");
+    expect(playtestMigration).not.toMatch(/\b(?:truncate|delete from)\s/i);
+    expect(playtestMigration).not.toMatch(/set rules_version\s*=/i);
+  });
+
+  it("enforces current player-count capacities in the playtest RPC and preserves historical occupancy denominators", () => {
+    const sqlCapacity = `case v_player_count when 2 then ${activeKilnSpaceIds(2).length} when 3 then ${activeKilnSpaceIds(3).length} else ${activeKilnSpaceIds(4).length} end`;
+    expect(playtestMigration).toContain(`v_shared_capacity := ${sqlCapacity}`);
+    expect(playtestMigration).toContain("if v_shared_loaded > v_shared_capacity or v_imperial_loaded > v_player_count then");
+    expect(playtestMigration).toContain("jsonb_array_length(v_round->'players') <> v_player_count");
+    const view = playtestMigration.split("create or replace view private.playtest_firing_log as")[1]!.split("create or replace view")[0]!;
+    expect(view).toContain("case when submission.rules_version = '1.4'");
+    expect(view).toContain("then case submission.player_count when 2 then 4 when 3 then 6 else 8 end");
+    expect(view).toContain("else case submission.player_count when 2 then 5 when 3 then 6 else 7 end");
+    expect(view).toContain("nullif(capacity.shared_capacity, 0) as occupancy");
+    expect(playtestMigration).toContain("coalesce(p_payload->>'rulesVersion', '') <> '1.4'");
+    expect(playtestMigration).toContain("revoke all on function public.server_submit_playtest(jsonb, uuid) from public, anon, authenticated");
+  });
+
 });

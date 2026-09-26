@@ -1,5 +1,6 @@
 import {
   GAME_CONFIG,
+  activeKilnSpaceIds,
   KILN_IDS,
   MAIN_ORDERS,
   STARTING_ORDERS,
@@ -188,6 +189,7 @@ function parseRoundPlayer(
   value: unknown,
   index: number,
   roundPath: string,
+  sharedCapacity: number,
   issues: PlaytestValidationIssue[],
 ): RoundPlayerMetrics {
   const path = `${roundPath}.players.${index}`;
@@ -202,7 +204,7 @@ function parseRoundPlayer(
       FIRE_CONTRIBUTIONS,
       true,
     ),
-    sharedLoaded: integer(record, "sharedLoaded", `${path}.sharedLoaded`, issues, 0, 7, true),
+    sharedLoaded: integer(record, "sharedLoaded", `${path}.sharedLoaded`, issues, 0, sharedCapacity, true),
     imperialLoaded: integer(record, "imperialLoaded", `${path}.imperialLoaded`, issues, 0, 1)!,
     ordersCompleted: integer(record, "ordersCompleted", `${path}.ordersCompleted`, issues, 0, 20, true),
     kilnAbilityUses: integer(record, "kilnAbilityUses", `${path}.kilnAbilityUses`, issues, 0, 1)!,
@@ -240,14 +242,14 @@ function parseRound(
   if (playerValues.length !== playerCount) {
     issue(issues, `${path}.players`, `Add exactly ${playerCount} player rows for this round.`);
   }
-  const players = playerValues.map((player, playerIndex) => parseRoundPlayer(player, playerIndex, path, issues));
+  const sharedCapacity = [2, 3, 4].includes(playerCount) ? activeKilnSpaceIds(playerCount).length : 0;
+  const players = playerValues.map((player, playerIndex) => parseRoundPlayer(player, playerIndex, path, sharedCapacity, issues));
   for (const [playerIndex, player] of players.entries()) {
     if (player.playerIndex !== playerIndex) {
       issue(issues, `${path}.players.${playerIndex}.playerIndex`, "Player rows must stay in seat order.");
     }
   }
   const sharedLoaded = players.reduce((total, player) => total + (player.sharedLoaded ?? 0), 0);
-  const sharedCapacity = playerCount === 2 ? 5 : playerCount === 3 ? 6 : 7;
   if (sharedLoaded > sharedCapacity) {
     issue(issues, `${path}.players`, `Shared Kiln loading cannot exceed ${sharedCapacity} ceramics.`);
   }

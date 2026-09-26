@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.2.7",
+  "rulesVersion": "1.4",
   "orderCards": {
     "status": "REGENERATE_FROM_DATA",
     "source": "data/orders.json",
@@ -22,16 +22,16 @@
     "mustContain": [
       "Materials Yard",
       "Potter's Wheel",
-      "Glaze & Decoration",
+      "Decoration Workshop",
       "Kiln Yard",
       "Commission Market",
-      "Guild & Academy",
-      "Labour",
+      "Craft Academy",
+      "Paid Work",
       "Imperial Recognition",
       "2/3/4 shared action spaces by player count",
       "Shifu overfill",
       "Shifu +1/-1 Heat markers after Base Heat and before Fire",
-      "Court Patronage"
+      "Imperial Court"
     ],
     "mustShowPlayerCountKilnCovers": true
   },
@@ -56,7 +56,12 @@
       "STOKE"
     ],
     "totalCards": 12,
-    "source": "data/firing.json"
+    "source": "data/firing.json",
+    "fuelLedgerCards": [
+      "BANK_2",
+      "STOKE_2"
+    ],
+    "fuelLedgerTotal": 2
   },
   "fireCards": {
     "status": "REGENERATE_FROM_DATA",

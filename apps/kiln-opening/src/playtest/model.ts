@@ -1,4 +1,4 @@
-import { GAME_CONFIG, TECHNIQUES } from "../game/content.ts";
+import { GAME_CONFIG, TECHNIQUES, activeKilnSpaceIds } from "../game/content.ts";
 import type {
   PlaytestDraft,
   PlaytestFeedback,
@@ -106,7 +106,7 @@ export function resizePlayers(draft: PlaytestDraft, playerCount: 2 | 3 | 4): Pla
 }
 
 export function sharedKilnCapacity(playerCount: 2 | 3 | 4): number {
-  return playerCount === 2 ? 5 : playerCount === 3 ? 6 : 7;
+  return activeKilnSpaceIds(playerCount).length;
 }
 
 const FIRING_TECHNIQUE_IDS = new Set(

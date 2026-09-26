@@ -1249,6 +1249,7 @@ function Ceramic({ ceramic, game, locale, compact = false, inspectable = false, 
   const glaze = "glaze" in ceramic ? ceramic.glaze : null;
   const decoration = "decoration" in ceramic ? ceramic.decoration : null;
   const quality = "quality" in ceramic ? ceramic.quality : null;
+  const crackle = "crackle" in ceramic && ceramic.crackle === true;
   const heat = glaze === null ? null : preferredHeat(glaze);
   const marked = player.kilnYardShifuCeramicId === ceramic.id;
   const shifuHeat = ceramic.stage === "loaded" ? ceramic.shifuHeatAdjustment ?? null : null;
@@ -1260,6 +1261,7 @@ function Ceramic({ ceramic, game, locale, compact = false, inspectable = false, 
   const className = `kiln-tabletop-ceramic glaze-${glaze ?? "raw"} decoration-${decoration ?? "none"} shape-${ceramic.shape} kiln-tabletop-accent-${accent(player)} ${compact ? "is-compact" : ""} ${inspectable ? "is-inspectable" : ""}`;
   const visual = <>
     <svg viewBox="0 0 80 72" aria-hidden="true"><CeramicShape shape={ceramic.shape} /><CeramicDecoration decoration={decoration} /></svg>
+    {crackle && <em className="kiln-live-crackle-marker" title={text(locale, "Crackle: wild Decoration for Orders", "开片：完成委托时可视为任意纹饰")}>{text(locale, "Crackle", "开片")}</em>}
     {quality !== null && <b className={`kiln-tabletop-quality-badge is-${quality}`} title={qualityLabel(quality, locale)}>{qualityLabel(quality, locale)}</b>}
     {marked && shifuHeat === null && <em className="kiln-tabletop-shifu-marker" title={text(locale, "Kiln Yard Shifu committed to this ceramic", "窑坊师傅已标记此陶瓷")}>{text(locale, "S", "师")}</em>}
     {shifuHeat !== null && <em className={`kiln-tabletop-shifu-heat-marker is-${shifuHeat === 1 ? "warmer" : "cooler"}`} title={text(locale, `Shifu Heat marker: ${signed(shifuHeat)} Actual Heat for this firing`, `师傅火候标记：本次烧成实际火候${signed(shifuHeat)}`)}>{signed(shifuHeat)}</em>}
@@ -1273,18 +1275,19 @@ function Ceramic({ ceramic, game, locale, compact = false, inspectable = false, 
       <span><small>{text(locale, "Decoration", "纹饰")}</small><strong>{decoration === null ? text(locale, "Not yet decorated", "尚未纹饰") : decorationLabel(decoration, locale)}</strong></span>
       <span><small>{text(locale, "Preferred Heat", "适烧火候")}</small><strong>{heat ?? "—"}</strong></span>
     </span>
+    {crackle && <span className="kiln-tabletop-ceramic-tooltip-note">{text(locale, "Crackle · wild Decoration for Orders; actual Glaze and Decoration remain unchanged", "开片 · 完成委托时可代替任意纹饰；实际釉色与纹饰不变")}</span>}
     {quality !== null && <span className="kiln-tabletop-ceramic-tooltip-note is-quality">{text(locale, "Quality", "品质")} · {qualityLabel(quality, locale)}</span>}
     {marked && shifuHeat === null && <span className="kiln-tabletop-ceramic-tooltip-note">{text(locale, "Shifu committed: may choose +1 or −1 Heat before Fire", "师傅已放置：揭示火牌前可选择+1或−1火候")}</span>}
     {shifuHeat !== null && <span className="kiln-tabletop-ceramic-tooltip-note">{text(locale, `Shifu Heat marker: ${signed(shifuHeat)} Actual Heat, in addition to its zone modifier. Fixed for this firing.`, `师傅火候标记：实际火候${signed(shifuHeat)}，与窑位修正叠加。本次烧成中数值固定。`)}</span>}
     {furniture && <span className="kiln-tabletop-ceramic-tooltip-note">{text(locale, "Kiln Furniture used", "已使用窑具")}</span>}
   </>;
-  if (!inspectable) return <span className={className} data-decoration={decoration ?? undefined} data-glaze={glaze ?? undefined} data-shape={ceramic.shape} aria-label={`${player.displayName} · ${shape}`}>{visual}</span>;
+  if (!inspectable) return <span className={className} data-decoration={decoration ?? undefined} data-crackle={crackle || undefined} data-glaze={glaze ?? undefined} data-shape={ceramic.shape} aria-label={`${player.displayName} · ${shape}`}>{visual}</span>;
   return <>
     <button
       ref={preview.anchorRef}
       className={className}
       type="button"
-      data-decoration={decoration ?? undefined}
+      data-decoration={decoration ?? undefined} data-crackle={crackle || undefined}
       data-glaze={glaze ?? undefined}
       data-shape={ceramic.shape}
       data-hover-preview="ceramic"
@@ -1327,7 +1330,7 @@ function CeramicShape({ shape }: { shape: Shape }) {
 function CeramicDecoration({ decoration }: { decoration: Decoration | null }) {
   if (decoration === "carved") return <g className="kiln-tabletop-decoration-pattern is-carved"><path d="M31 33q9 6 18 0M29 40q11 7 22 0M31 47q9 6 18 0" /></g>;
   if (decoration === "impressed") return <g className="kiln-tabletop-decoration-pattern is-impressed"><circle cx="34" cy="36" r="2.2" /><circle cx="43" cy="36" r="2.2" /><circle cx="38.5" cy="44" r="2.2" /><circle cx="47.5" cy="44" r="2.2" /></g>;
-  if (decoration === "crackle") return <g className="kiln-tabletop-decoration-pattern is-crackle"><path d="M40 29l-3 8 4 5-5 9M37 37l-7-4-4 3M41 42l7-6 6 2M39 46l7 5" /></g>;
+  if (decoration === "painted") return <g className="kiln-tabletop-decoration-pattern is-painted"><path d="M29 46q11-24 22 0M30 45q10 12 20 0M40 32v23M33 37l14 14M47 37L33 51" /></g>;
   return null;
 }
 
@@ -1446,7 +1449,7 @@ function ImperialPriorityToken({ player, locale, location }: { player: PublicPla
   const descriptionId = `${previewId}-description`;
   const preview = useCardPreview<HTMLButtonElement>(previewId);
   const label = text(locale, `${player.displayName}'s Imperial Priority`, `${player.displayName}的御烧优先`);
-  const description = text(locale, "Once per game, before or after your worker action, spend it to load 1 Glazed ceramic into your empty Imperial Kiln.", "每局一次，在你的工人行动之前或之后，花费它将1件已施釉陶瓷装入你的空置御窑。");
+  const description = text(locale, "Once per game, before or after your worker action, spend it and 1 Coin to glaze and load 1 Workshop ceramic into your empty Imperial Kiln.", "每局一次，在你的工人行动之前或之后，花费此标记及1铜钱，为1件作坊器物施釉并装入你的空置御窑。");
   return <><button
     ref={preview.anchorRef}
     type="button"
@@ -1496,6 +1499,8 @@ function phaseName(game: PublicGameState, locale: Locale): string {
   if (type === "setup_kiln_selection") return text(locale, "Kiln selection", "选择窑口");
   if (type === "setup_starting_orders") return text(locale, "Starting Orders", "起始委托");
   if (type === "setup_starting_tech") return text(locale, "Starting Tech", "起始技艺");
+  if (type === "work_glaze_palette") return text(locale, "Glaze Palette", "釉色谱");
+  if (type === "firing_ge") return text(locale, "Ge Crackle", "哥窑开片");
   if (type.startsWith("work")) return type === "work" ? text(locale, "Work", "作业") : text(locale, "Work resolution", "作业结算");
   if (type === "firing_before_contribution") return text(locale, "Pre-firing Techniques", "烧成前技艺");
   if (type === "firing_contributions") return text(locale, "Secret Contributions", "秘密控火");
@@ -1512,8 +1517,8 @@ function phaseName(game: PublicGameState, locale: Locale): string {
 }
 
 function minimumPlayersForKilnSpace(id: (typeof KILN_SPACE_IDS)[number]): 2 | 3 | 4 {
-  if (id === "middle_2") return 3;
-  if (id === "high_3") return 4;
+  if (id === "high_2" || id === "low_2") return 3;
+  if (id === "high_3" || id === "low_3") return 4;
   return 2;
 }
 
@@ -1524,5 +1529,5 @@ function zoneZh(value: "high" | "middle" | "low"): string { return value === "hi
 function qualityLabel(value: Quality, locale: Locale): string { return locale === "zh-CN" ? value === "flawed" ? "瑕品" : value === "standard" ? "良品" : value === "fine" ? "上品" : "臻品" : titleCase(value); }
 function shapeLabel(value: Shape, locale: Locale): string { return locale === "zh-CN" ? value === "bowl" ? "碗" : value === "plate" ? "盘" : value === "washer" ? "笔洗" : value === "vase" ? "瓶" : "香炉" : value === "washer" ? "Brush Washer" : titleCase(value); }
 function glazeLabel(value: Glaze, locale: Locale): string { return locale === "zh-CN" ? value === "white" ? "白釉" : value === "celadon" ? "青釉" : value === "grey_green" ? "灰青釉" : "月白釉" : value === "grey_green" ? "Grey-Green" : value === "moon_white" ? "Moon White" : titleCase(value); }
-function decorationLabel(value: Decoration, locale: Locale): string { return locale === "zh-CN" ? value === "plain" ? "素面" : value === "carved" ? "刻花" : value === "impressed" ? "印花" : "开片" : titleCase(value); }
-function stageLabel(value: CeramicState["stage"], locale: Locale): string { const english = titleCase(value); if (locale !== "zh-CN") return english; return value === "shaped" ? "已成型" : value === "glazed" ? "已施釉" : value === "loaded" ? "已装窑" : value === "finished" ? "已烧成" : value === "delivered" ? "已交付" : value === "presented" ? "已陈列" : "已出售"; }
+function decorationLabel(value: Decoration, locale: Locale): string { return locale === "zh-CN" ? value === "plain" ? "素面" : value === "carved" ? "刻花" : value === "impressed" ? "印花" : "彩绘" : titleCase(value); }
+function stageLabel(value: CeramicState["stage"], locale: Locale): string { const english = titleCase(value); if (locale !== "zh-CN") return english; return value === "workshop" ? "作坊器物" : value === "loaded" ? "已装窑" : value === "finished" ? "已烧成" : value === "delivered" ? "已交付" : value === "presented" ? "已陈列" : "已出售"; }

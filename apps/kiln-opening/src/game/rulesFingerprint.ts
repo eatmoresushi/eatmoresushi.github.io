@@ -85,7 +85,8 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  *  21 -- Owner amendment: the Kiln Yard Shifu replaces movement with a free, fixed
  *        +1/-1 Actual Heat marker on its committed ceramic after Base Heat and before Fire.
  */
-export const RULES_BEHAVIOUR_REVISION = 21;
+/** v1.4: Plain workshop pipeline, paid glaze/load, permanent Ge Crackle, end-Work Palette, special Fuel Ledger cards and revised Orders. */
+export const RULES_BEHAVIOUR_REVISION = 22;
 
 /**
  * Display-only keys, excluded so that a typo fix or a translation improvement does not
