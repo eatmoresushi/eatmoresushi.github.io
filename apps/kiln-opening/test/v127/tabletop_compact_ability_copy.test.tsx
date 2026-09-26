@@ -82,10 +82,14 @@ describe("tabletop compact Technique copy", () => {
     expect(previewLength).toBeGreaterThan(0);
   });
 
-  it("uses the current structured V1.4 Tech text instead of obsolete reminder overrides", () => {
+  it("retains full structured V1.4 rules while shortening Starting Tech reminders", () => {
     for (const id of ALL_TECHNIQUE_IDS) {
       const definition = id.startsWith("ST") ? STARTING_TECHNIQUE_DEFINITIONS[id as "ST01"] : TECHNIQUE_DEFINITIONS[id]!;
-      expect(TECHNIQUE_SHORT_COPY[id]).toEqual({ en: definition.ability, "zh-CN": definition.abilityZh });
+      expect(techniqueFullCopy(id, "en")).toBe(definition.ability);
+      expect(techniqueFullCopy(id, "zh-CN")).toBe(definition.abilityZh);
+      if (id.startsWith("ST")) {
+        for (const locale of ["en", "zh-CN"] as const) expect(techniqueShortPlainText(id, locale).length).toBeLessThan(techniqueFullCopy(id, locale).length);
+      }
     }
     expect(TECHNIQUE_SHORT_COPY.ST02.en).toContain("Painted");
     expect(TECHNIQUE_SHORT_COPY.T06.en).toContain("end of the Work Phase");
@@ -128,16 +132,27 @@ describe("tabletop compact Kiln copy", () => {
     }
   });
 
-  it("uses the current structured V1.4 Kiln abilities in both languages", () => {
-    for (const id of KILN_COPY_IDS) expect(KILN_SHORT_COPY[id]).toEqual({ en: KILN_DEFINITIONS[id].ability, "zh-CN": KILN_DEFINITIONS[id].abilityZh });
+  it("retains full structured V1.4 Kiln rules while shortening reminders in both languages", () => {
+    for (const id of KILN_COPY_IDS) {
+      expect(kilnFullCopy(id, "en")).toBe(KILN_DEFINITIONS[id].ability);
+      expect(kilnFullCopy(id, "zh-CN")).toBe(KILN_DEFINITIONS[id].abilityZh);
+      for (const locale of ["en", "zh-CN"] as const) expect(kilnShortPlainText(id, locale).length).toBeLessThan(kilnFullCopy(id, locale).length);
+    }
   });
 
   it("explains Ge’s actual Fine upgrade and independent Crackle property", () => {
     for (const layer of ["preview", "full"] as const) {
       const english = renderedText(renderToStaticMarkup(createElement(KilnDescription, { id: "GE", locale: "en", layer })));
-      expect(english).toContain("Crackle and becomes Fine");
-      expect(english).toContain("actual Glaze and Decoration do not change");
-      expect(english).toContain("Its actual Quality is Fine");
+      expect(english).toContain("Crackle");
+      expect(english).toContain("Fine");
+      expect(english).toContain("from this firing");
+      if (layer === "full") {
+        expect(english).toContain("actual Glaze and Decoration do not change");
+        expect(english).toContain("Its actual Quality is Fine");
+      } else {
+        expect(english).toContain("permanent Crackle");
+        expect(english).toContain("any one Decoration per Order");
+      }
       const chinese = renderedText(renderToStaticMarkup(createElement(KilnDescription, { id: "GE", locale: "zh-CN", layer })));
       expect(chinese).toContain("开片");
       expect(chinese).toContain("上品");

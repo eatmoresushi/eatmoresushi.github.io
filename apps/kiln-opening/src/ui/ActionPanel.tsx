@@ -64,7 +64,7 @@ import { OrderCard } from "./GameTable";
 import { term as localizedTerm, useI18n } from "./i18n";
 import type { Locale } from "./i18n";
 import { WorkerMeeple } from "./WorkerMeeple";
-import { KilnDescription, kilnShortPlainText } from "./TechniqueDescription";
+import { KilnDescription, TechniqueDescription, kilnShortPlainText } from "./TechniqueDescription";
 
 type SendCommand = (command: AuthoritativeCommand) => Promise<boolean>;
 
@@ -228,7 +228,7 @@ function StartingTechControls({ busy, send }: { busy: boolean; send: SendCommand
           >
             <span className="plain-technique-summary">
               <strong>{locale === "zh-CN" ? technique.nameZh : technique.name}</strong>
-              <span>{locale === "zh-CN" ? technique.abilityZh : technique.ability}</span>
+              <span><TechniqueDescription id={technique.id} locale={locale} layer="preview" /></span>
             </span>
           </CommandButton>
         ))}
