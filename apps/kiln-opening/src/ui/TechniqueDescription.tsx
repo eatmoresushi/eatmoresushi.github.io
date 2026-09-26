@@ -23,27 +23,90 @@ type LocalizedShortCopy = Readonly<Record<Locale, string>>;
 /** Localized V1.4 reminders; complete rules remain in structured content. */
 const STARTING_TECHNIQUE_SHORT_COPY = {
   ST01: {
-    en: "After each Materials Yard action: form 1 Plain vessel for its normal Clay cost +1 Clay.",
-    "zh-CN": "每次泥柴场行动后：支付器型泥费用＋1泥，成型1件素面器物。",
+    en: "After each Materials Yard action: pay the vessel's Clay cost + 1 Clay → form 1 vessel.",
+    "zh-CN": "每次泥柴场行动后：支付器型泥费用＋1泥 → 成型1件器物。",
   },
   ST02: {
-    en: "After each Potter’s Wheel action: pay 2 Coins to replace Plain with Painted on 1 vessel just formed.",
-    "zh-CN": "每次陶车坊行动后：支付2铜钱，将本次成型的1件素面器物改为彩绘。",
+    en: "After each Potter’s Wheel action: pay 2 Coins → replace Plain with Painted on 1 vessel just formed.",
+    "zh-CN": "每次陶车坊行动后：支付2铜钱 → 将本次成型的1件素面器物改为彩绘。",
   },
   ST03: {
-    en: "After each Decoration Workshop action: pay 1 Wood + 1 Coin to glaze and load 1 just-decorated vessel into an empty Shared or owned Imperial Kiln space.",
-    "zh-CN": "每次纹饰坊行动后：支付1柴＋1铜钱，为本次装饰的1件器物施釉，装入空置共窑位或自己的御窑。",
+    en: "After each Decoration Workshop action: pay 1 Wood + 1 Coin → glaze and load 1 vessel decorated by that action.",
+    "zh-CN": "每次纹饰坊行动后：支付1柴＋1铜钱 → 为本次行动装饰的1件器物施釉并装窑。",
   },
   ST04: {
-    en: "Each Kiln Yard action: after loading, gain 1 Clay or 1 Wood once.",
-    "zh-CN": "每次窑坊行动装窑后：获得1泥或1柴，仅一次。",
+    en: "After each Kiln Yard action: gain 1 Clay or 1 Wood.",
+    "zh-CN": "每次窑坊行动后：获得1泥或1柴。",
   },
 } satisfies Record<StartingTechniqueId, LocalizedShortCopy>;
 
-export const TECHNIQUE_SHORT_COPY = { ...Object.fromEntries(
-  [...Object.values(STARTING_TECHNIQUE_DEFINITIONS), ...Object.values(TECHNIQUE_DEFINITIONS)]
-    .map((technique) => [technique.id, { en: technique.ability, "zh-CN": technique.abilityZh }]),
-), ...STARTING_TECHNIQUE_SHORT_COPY } as Record<TechniqueCopyId, LocalizedShortCopy>;
+const ADVANCED_TECHNIQUE_SHORT_COPY = {
+  T01: {
+    en: "Once per round, during a Potter’s Wheel action forming a Vase or Censer → reduce the action’s total Clay cost by 2, minimum 0.",
+    "zh-CN": "每轮一次，陶车坊行动至少成型1件瓶或香炉 → 该行动的泥总费用减2，最低为0。",
+  },
+  T02: {
+    en: "Once per round, after forming a vessel: another vessel in your workshop has a different Shape → gain 2 Coins.",
+    "zh-CN": "每轮一次，成型器物后：作坊内另有1件不同器型器物 → 获得2铜钱。",
+  },
+  T03: {
+    en: "Once per round, after forming a vessel: another vessel in your workshop has the same Shape → gain 2 Coins.",
+    "zh-CN": "每轮一次，成型器物后：作坊内另有1件相同器型器物 → 获得2铜钱。",
+  },
+  T04: {
+    en: "Once per round, after a Potter’s Wheel action: pay 2 Coins → replace Plain with Carved, Impressed or Painted on 1 vessel just formed.",
+    "zh-CN": "每轮一次，陶车坊行动后：支付2铜钱 → 将本次成型的1件素面器物改为刻花、印花或彩绘。",
+  },
+  T05: {
+    en: "Once per round, during a Decoration Workshop action: before decorating 1 Plain vessel → change its Shape for no extra Clay.",
+    "zh-CN": "每轮一次，纹饰坊行动中：为1件素面器物施加纹饰前 → 改为任意其他器型，无需额外支付泥。",
+  },
+  T06: {
+    en: "Once per round, at the end of the Work Phase, before pre-firing abilities → change 1 of your loaded ceramics to any Glaze for free.",
+    "zh-CN": "每轮一次，工人阶段结束、烧成前能力前 → 免费将己方1件已装窑陶瓷改为任意釉色。",
+  },
+  T07: {
+    en: "Once per round, when replacing Plain with Carved → pay 0 Coins.",
+    "zh-CN": "每轮一次，素面改为刻花时 → 支付0铜钱。",
+  },
+  T08: {
+    en: "Once per round, when replacing Plain with Impressed → pay 0 Coins.",
+    "zh-CN": "每轮一次，素面改为印花时 → 支付0铜钱。",
+  },
+  T09: {
+    en: "Once per round, when replacing Plain with Painted → pay 0 Coins.",
+    "zh-CN": "每轮一次，素面改为彩绘时 → 支付0铜钱。",
+  },
+  T10: {
+    en: "When acquired + once per round instead of 1 Commission Market reservation: privately inspect the top 3 Main Orders → reserve 1 inspected or face-up Order; discard unchosen inspected cards. No resource bonus when acquired.",
+    "zh-CN": "获得时＋每轮一次替代瓷牙行的1次承接：私下查看牌堆顶3张主委托 → 承接其中1张或1张公开委托，弃掉其余已查看委托。获得时无资源奖励。",
+  },
+  T11: {
+    en: "Once per round, after Quality is assigned: pay 1 Wood → improve 1 of your ceramics from this firing: Flawed → Standard or Standard → Fine.",
+    "zh-CN": "每轮一次，决定品质后：支付1柴 → 将自己本次烧成的1件陶瓷提升一级：瑕品→良品，或良品→上品。",
+  },
+  T12: {
+    en: "When acquired → gain reusable +2 Stoke and −2 Bank cards. Pay 2 Wood to play either; still choose only 1 Contribution card per firing.",
+    "zh-CN": "获得时 → 取得可重复使用的＋2添柴和－2压火牌。使用任一张支付2柴；每次烧成仍只选1张控火牌。",
+  },
+  T13: {
+    en: "Once per round, before Contributions, if you have a ceramic in this firing: pay 1 Wood → privately peek at the top Fire card, then put it back.",
+    "zh-CN": "每轮一次，选择控火牌前，若有自己的陶瓷参与本次烧成：支付1柴 → 私下查看窑火牌堆顶1张，再放回原位。",
+  },
+  T14: {
+    en: "Once per round, after Quality is assigned: choose 1 of your Flawed or Standard ceramics from this firing → reveal 1 extra Fire card and recalculate only its Actual Heat + Quality. The new Quality replaces the old, even if worse.",
+    "zh-CN": "每轮一次，决定品质后：选择自己本次烧成的1件瑕品或良品 → 额外揭示1张窑火牌，仅重算其实际火候与品质。新品质取代旧品质，即使更差。",
+  },
+  T15: {
+    en: "Once per round, when loading 1 ceramic into a High or Low Shared Kiln space → its zone modifier is 0 for this firing.",
+    "zh-CN": "每轮一次，将1件陶瓷装入共窑高温区或低温区时 → 该陶瓷本次烧成的窑位修正为0。",
+  },
+} satisfies Record<AdvancedTechniqueId, LocalizedShortCopy>;
+
+export const TECHNIQUE_SHORT_COPY = {
+  ...STARTING_TECHNIQUE_SHORT_COPY,
+  ...ADVANCED_TECHNIQUE_SHORT_COPY,
+} satisfies Record<TechniqueCopyId, LocalizedShortCopy>;
 
 export const KILN_SHORT_COPY = {
   RU: {

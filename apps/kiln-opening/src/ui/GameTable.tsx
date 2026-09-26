@@ -22,6 +22,7 @@ import type { OrderDefinition } from "../game/content";
 import type { PublicGameState, PublicPlayerState } from "../multiplayer";
 import { term as localizedTerm, useI18n } from "./i18n";
 import type { Locale } from "./i18n";
+import { TechniqueDescription } from "./TechniqueDescription";
 
 const LOCATION_COPY = Object.fromEntries(
   actionLocationsJson.locations.map((location) => [location.id, location]),
@@ -160,7 +161,7 @@ function PlayerPanel({
         {player.techniques.length === 0 ? <p>{t("None.")}</p> : (
           <ul className="plain-technique-list">{player.techniques.map((owned) => {
             const technique = TECHNIQUE_DEFINITIONS[owned.id];
-            return <li key={owned.id}><strong>{owned.id} · {locale === "zh-CN" ? technique?.nameZh : technique?.name}</strong><span className={owned.exhausted ? "state-exhausted" : "state-ready"}>{owned.exhausted ? t("Exhausted") : t("Ready")}</span><p>{locale === "zh-CN" ? technique?.abilityZh : technique?.ability}</p></li>;
+            return <li key={owned.id}><strong>{owned.id} · {locale === "zh-CN" ? technique?.nameZh : technique?.name}</strong><span className={owned.exhausted ? "state-exhausted" : "state-ready"}>{owned.exhausted ? t("Exhausted") : t("Ready")}</span><p><TechniqueDescription id={owned.id} locale={locale} layer="preview" /></p></li>;
           })}</ul>
         )}
       </section>
@@ -377,7 +378,7 @@ function TechniqueDisplays({ game }: { game: PublicGameState }) {
           <h3>{term(discipline)} · {t("deck")} {game.decks.techniqueRemaining[discipline]}</h3>
           {game.displays.techniques[discipline].map((techniqueId) => {
             const technique = TECHNIQUE_DEFINITIONS[techniqueId];
-            return <article className="technique-tile" data-technique-id={techniqueId} key={techniqueId}><strong>{techniqueId} · {locale === "zh-CN" ? technique?.nameZh : technique?.name}</strong><span>{technique?.cost} {t("Coins")} · {technique?.oncePerRound ? t("Once per round") : t("Continuous")}</span><p>{locale === "zh-CN" ? technique?.abilityZh : technique?.ability}</p></article>;
+            return <article className="technique-tile" data-technique-id={techniqueId} key={techniqueId}><strong>{techniqueId} · {locale === "zh-CN" ? technique?.nameZh : technique?.name}</strong><span>{technique?.cost} {t("Coins")} · {technique?.oncePerRound ? t("Once per round") : t("Continuous")}</span><p><TechniqueDescription id={techniqueId} locale={locale} layer="preview" /></p></article>;
           })}
         </div>
       ))}</div>

@@ -82,14 +82,12 @@ describe("tabletop compact Technique copy", () => {
     expect(previewLength).toBeGreaterThan(0);
   });
 
-  it("retains full structured V1.4 rules while shortening Starting Tech reminders", () => {
+  it("retains full structured V1.4 rules while shortening all Tech reminders", () => {
     for (const id of ALL_TECHNIQUE_IDS) {
       const definition = id.startsWith("ST") ? STARTING_TECHNIQUE_DEFINITIONS[id as "ST01"] : TECHNIQUE_DEFINITIONS[id]!;
       expect(techniqueFullCopy(id, "en")).toBe(definition.ability);
       expect(techniqueFullCopy(id, "zh-CN")).toBe(definition.abilityZh);
-      if (id.startsWith("ST")) {
-        for (const locale of ["en", "zh-CN"] as const) expect(techniqueShortPlainText(id, locale).length).toBeLessThan(techniqueFullCopy(id, locale).length);
-      }
+      for (const locale of ["en", "zh-CN"] as const) expect(techniqueShortPlainText(id, locale).length, `${id} ${locale}`).toBeLessThan(techniqueFullCopy(id, locale).length);
     }
     expect(TECHNIQUE_SHORT_COPY.ST02.en).toContain("Painted");
     expect(TECHNIQUE_SHORT_COPY.T06.en).toContain("end of the Work Phase");

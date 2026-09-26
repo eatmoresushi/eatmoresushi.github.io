@@ -1925,7 +1925,7 @@ function TechniqueSummary({ techniqueId, shownCost }: { techniqueId: TechniqueId
     <span className="plain-technique-summary">
       <strong>{technique.id} · {locale === "zh-CN" ? technique.nameZh : technique.name}</strong>
       <small>{term(technique.discipline)} · {shownCost ?? technique.cost} {t("Coins")}</small>
-      <span>{locale === "zh-CN" ? technique.abilityZh : technique.ability}</span>
+      <span><TechniqueDescription id={techniqueId} locale={locale} layer="preview" /></span>
     </span>
   );
 }
