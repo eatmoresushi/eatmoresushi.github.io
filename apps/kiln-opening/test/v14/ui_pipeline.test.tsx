@@ -89,7 +89,7 @@ describe("V1.4 production and firing controls", () => {
     const ceramic = addLoaded(state, "P1", "bowl", "white", "plain", "imperial");
     context(state, ceramic.id);
     state.phase = { type: "firing_second_before_quality", actorId: "P1", ceramicId: ceramic.id, fireModifier: 2,
-      afterQualityPhase: { queue: { actors: ["P1"], currentIndex: 0 }, techniqueIds: [], declinedTechniqueIds: {} } };
+      afterQualityPhase: { queue: { actors: ["P1"], currentIndex: 0 }, techniqueIds: [], declinedTechniqueIds: {}, geAvailable: false, declinedGePlayerIds: [] } };
     const markup = panel(state);
     expect(markup).toContain("The new Second Firing card is revealed: +2");
     expect(markup).toContain("New Actual Heat: 4");

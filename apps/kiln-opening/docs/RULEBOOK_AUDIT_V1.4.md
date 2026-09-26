@@ -12,11 +12,13 @@ amendments. The source document is rules content, not operational instructions.
 - Original: `/Users/luyuan/Documents/kiln board game/v1.4/KILN OPENING 开窑 v1.4 — Player Rulebook.md`
 - Checked-in source: [KILN_OPENING_v1.4_EN_SOURCE.md](./KILN_OPENING_v1.4_EN_SOURCE.md)
 - Original SHA-256: `ace7e4ced95d82a259da504a11c6021626fad626da0a88d47a2ad457b821983c`
-- Corrected SHA-256: `0340961df8905befda5110b4dc63225cd15b1d4274042ef24d89aa4d34176fc7`
-- Source corrections approved by the owner on 2026-09-26 and applied to both the original and checked-in copy before implementation.
+- Initial corrected SHA-256: `0340961df8905befda5110b4dc63225cd15b1d4274042ef24d89aa4d34176fc7`
+- Initial source corrections approved by the owner on 2026-09-26 and applied to both the original and checked-in copy before implementation.
+- Current amended checked-in SHA-256: `690711a412776ed1f67c82bc9301ff1c3ccabedb04703b5b24a760cfbb77dd8b`
+- The later owner-approved Ge and after-Quality ordering amendment is recorded in finding 5 below. The original source and checked-in copy are synchronized at the amended hash; the earlier hashes remain provenance for the initial review and corrections.
 
 The V1.4 migration is implemented on this branch. The runtime uses rules/content
-version 1.4, schema 5 and behavior revision 22. This is a local implementation;
+version 1.4, schema 5 and behavior revision 23. This is a local implementation;
 Supabase migrations and deployment remain separate rollout steps.
 
 ## Review findings
@@ -64,6 +66,27 @@ Firing after the extra Fire card is revealed and the new Actual Heat is calculat
 before assigning new Quality. This wording has been added to the source. The existing engine limits the repeated recalculation to the selected
 ceramic, consistent with the single-ceramic Second Firing operation.
 
+### 5. Owner-chosen after-Quality ability order
+
+After the initial migration, the owner amended Ge's description on 2026-09-26:
+
+> Crackle from Fire · Once per round, after Quality is assigned: 1 of your Standard ceramics from this firing becomes Fine + Crackle. When completing an Order, each of your Crackle ceramics may be treated as having **any one Decoration** for that Order.
+
+The owner also explicitly clarified that players choose the order of multiple
+after-Quality effects and must check whether each effect remains valid after
+every use. Ge, Protective Saggars and Second Firing therefore share the same
+after-Quality window, with no mandatory Ge-last step. Players still resolve
+their abilities in First Player order. Each use checks the current Quality,
+targets, costs and usage limits; the earlier use of an ability does not preserve
+eligibility for a later effect. For example, Saggars can change Flawed to Standard
+so unused Ge can apply, but Ge's change to Fine prevents Saggars or Second Firing
+from targeting that ceramic. The once-per-round limits and permanent Crackle's
+Order substitution remain unchanged.
+
+The checked-in source, derived Kiln/round text and active timing documentation
+are synchronized with this explicit owner amendment. Behavior revision 23
+distinguishes it from the original V1.4 implementation.
+
 ### Editorial cleanup
 
 Setup line 73 says “2 Low space”; use “2 Low spaces.” This does not change the
@@ -109,7 +132,8 @@ established by playtesting.
    Ding to Apprentice Potter's Wheel actions. Update all affected Tech triggers,
    costs and eligibility, including a distinct end-of-Work Glaze Palette window.
 4. **Firing:** a Shifu targets a ceramic loaded by that action in either kiln;
-   model Ge after other after-Quality effects; expose Fuel Ledger's reusable
+   resolve Ge with the other after-Quality effects in the owner's chosen order,
+   rechecking eligibility after each use; expose Fuel Ledger's reusable
    −2/+2 cards as single secret contribution choices costing 2 Wood.
 5. **Orders:** import all 48 Main Orders; represent non-Plain alternatives and
    same-non-Plain constraints; allow an independent, consistent virtual
@@ -133,12 +157,12 @@ Source corrections and implementation are complete on `codex/rules-v1.4`.
 - Migrated engine, English/Chinese UI, computer policy, multiplayer projections and playtest reporting.
 - Added schema/version/fingerprint rejection for old games, including old lobbies and missing V1.4 fingerprints. Historical rows remain unchanged.
 - Kept private Academy inspection/return order and secret Fuel Ledger cards out of other-seat responses, public snapshots and events.
-- Added explicit optional acquisition for Colour Samples and optional Ru/Guan bonuses, and preserved unused after-Quality options when Second Firing creates a new Quality result.
-- `npm test`: 634 tests pass across 44 suites, including 25 new engine boundary cases, nine Order constraint cases and seven UI pipeline cases.
+- Added explicit optional acquisition for Colour Samples and optional Ru/Guan bonuses. Ge now shares the owner-ordered after-Quality window with Protective Saggars and Second Firing; after every use, all unused effects are reconsidered against current eligibility and limits.
+- `npm test`: 653 tests pass across 45 suites after the owner-approved timing amendment, including 13 focused after-Quality engine regressions plus UI, computer-player and compatibility checks.
 - `npm run typecheck`, `npm run typecheck:edge` and `npm run build`: pass.
 - Seeded computer games complete all five rounds for 2, 3 and 4 players without fallback commands.
 - Browser smoke: four-player setup, Apprentice Plain formation, Shifu free Painted Decoration, 1-Coin White Glaze & Load into Low 3, Kiln Tending resource choice, Chinese locale and reconnect passed. The expected Clay 1 / Wood 3 / Coins 3 remained after reconnect.
 - Desktop and narrow-screen kiln screenshots were reviewed under `output/playwright/` (local validation artifacts, not deployment assets).
-- Both original and checked-in corrected source retain the identical SHA-256 shown above.
+- The initial original and checked-in corrected sources had the identical initial corrected SHA-256 shown above. Finding 5 records the later owner amendment separately.
 
 The SQL migrations have static contract coverage but were not applied to a local or live PostgreSQL database; no PostgreSQL/Supabase CLI was available in this environment. See [Deployment](./DEPLOYMENT.md#v14-rollout) for rollout order. No V1.4 live deployment is implied by these checks.

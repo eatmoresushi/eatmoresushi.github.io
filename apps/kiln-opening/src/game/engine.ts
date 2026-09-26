@@ -1948,7 +1948,8 @@ function availableAfterQualityTechniques(
   if (context === null || player === undefined) return [];
   const eligibleCeramic = Object.values(context.ceramicResults).some(
     (result) => (result.assignedQuality === "flawed" || result.assignedQuality === "standard")
-      && state.ceramics[result.ceramicId]?.ownerId === playerId,
+      && state.ceramics[result.ceramicId]?.ownerId === playerId
+      && state.ceramics[result.ceramicId]?.stage === "loaded",
   );
   if (!eligibleCeramic) return [];
   const available: TechniqueId[] = [];
@@ -1959,13 +1960,22 @@ function availableAfterQualityTechniques(
   return available;
 }
 
+function geAvailableAfterQuality(state: GameState, playerId: PlayerId): boolean {
+  const player = state.players[playerId];
+  return player?.kilnId === "GE" && !player.kilnAbilityUsedThisRound
+    && Object.values(state.firingContext?.ceramicResults ?? {}).some((result) =>
+      result.assignedQuality === "standard"
+      && state.ceramics[result.ceramicId]?.ownerId === playerId
+      && state.ceramics[result.ceramicId]?.stage === "loaded");
+}
+
 function openAfterQualityWindow(state: GameState, events: GameEvent[]): void {
   const actors = turnOrderFromFirst(state).filter(
-    (playerId) => availableAfterQualityTechniques(state, playerId).length > 0,
+    (playerId) => availableAfterQualityTechniques(state, playerId).length > 0 || geAvailableAfterQuality(state, playerId),
   );
   const first = actors[0];
   if (first === undefined) {
-    openGeWindow(state, events);
+    openFlawedSalvage(state, events);
     return;
   }
   state.phase = {
@@ -1973,32 +1983,34 @@ function openAfterQualityWindow(state: GameState, events: GameEvent[]): void {
     queue: { actors, currentIndex: 0 },
     techniqueIds: availableAfterQualityTechniques(state, first),
     declinedTechniqueIds: {},
+    geAvailable: geAvailableAfterQuality(state, first),
+    declinedGePlayerIds: [],
   };
 }
 
 function advanceAfterQualityDecision(state: GameState, events: GameEvent[]): void {
   if (state.phase.type !== "firing_after_quality") throw new Error("After-Quality phase invariant failed");
-  const actorId = state.phase.queue.actors[state.phase.queue.currentIndex];
-  if (actorId !== undefined) {
-    const remaining = availableAfterQualityTechniques(state, actorId, state.phase.declinedTechniqueIds[actorId] ?? []);
-    if (remaining.length > 0) {
-      state.phase.techniqueIds = remaining;
-      return;
-    }
-  }
-  state.phase.queue.currentIndex += 1;
   while (state.phase.queue.currentIndex < state.phase.queue.actors.length) {
-    const nextActor = state.phase.queue.actors[state.phase.queue.currentIndex];
-    if (nextActor !== undefined) {
-      const available = availableAfterQualityTechniques(state, nextActor, state.phase.declinedTechniqueIds[nextActor] ?? []);
-      if (available.length > 0) {
+    const actorId = state.phase.queue.actors[state.phase.queue.currentIndex];
+    if (actorId !== undefined) {
+      const available = availableAfterQualityTechniques(state, actorId, state.phase.declinedTechniqueIds[actorId] ?? []);
+      const geAvailable = !state.phase.declinedGePlayerIds.includes(actorId) && geAvailableAfterQuality(state, actorId);
+      if (available.length > 0 || geAvailable) {
         state.phase.techniqueIds = available;
+        state.phase.geAvailable = geAvailable;
         return;
       }
     }
     state.phase.queue.currentIndex += 1;
   }
-  openGeWindow(state, events);
+  openFlawedSalvage(state, events);
+}
+
+/** Using an effect changes the result; reconsider every unused ability against that result. */
+function reconsiderAfterQualityEffects(state: GameState, actorId: PlayerId): void {
+  if (state.phase.type !== "firing_after_quality") throw new Error("After-Quality phase invariant failed");
+  state.phase.declinedTechniqueIds[actorId] = [];
+  state.phase.declinedGePlayerIds = state.phase.declinedGePlayerIds.filter((id) => id !== actorId);
 }
 
 function finishSecondFiringRecalculation(state: GameState, events: GameEvent[]): void {
@@ -2010,8 +2022,7 @@ function finishSecondFiringRecalculation(state: GameState, events: GameEvent[]):
   state.fireDiscard.push(fireModifier);
   events.push({ type: "SECOND_FIRING_RESOLVED", playerId: actorId, ceramicId, fireModifier, quality: result.assignedQuality });
   state.phase = { type: "firing_after_quality", ...afterQualityPhase };
-  // A new Quality opens a new after-Quality opportunity for unused abilities.
-  state.phase.declinedTechniqueIds[actorId] = [];
+  reconsiderAfterQualityEffects(state, actorId);
   advanceAfterQualityDecision(state, events);
 }
 
@@ -2074,19 +2085,14 @@ function resolveJun(
   return success(next, events);
 }
 
-function openGeWindow(state: GameState, events: GameEvent[]): void {
-  const actors = turnOrderFromFirst(state).filter((id) => state.players[id]?.kilnId === "GE" && !state.players[id]?.kilnAbilityUsedThisRound && Object.values(state.firingContext?.ceramicResults ?? {}).some((result) => result.assignedQuality === "standard" && state.ceramics[result.ceramicId]?.ownerId === id));
-  if (actors.length === 0) openFlawedSalvage(state, events);
-  else state.phase = { type: "firing_ge", queue: { actors, currentIndex: 0 } };
-}
-
 function resolveGe(state: GameState, actorId: PlayerId, ceramicId: string | null): ApplyResult {
-  const phase = requirePhase(state, "firing_ge");
+  const phase = requirePhase(state, "firing_after_quality");
   if (isFailure(phase)) return phase;
   const actorError = actorFailure(state, actorId);
   if (actorError !== null) return actorError;
   const player = state.players[actorId]!;
   if (player.kilnId !== "GE" || player.kilnAbilityUsedThisRound) return applyFailure(ruleError("ABILITY_ALREADY_USED", "Ge is unavailable."));
+  if (!phase.geAvailable || !geAvailableAfterQuality(state, actorId)) return applyFailure(ruleError("INVALID_ACTION", "Ge requires an available Standard ceramic from this firing."));
   if (ceramicId !== null && (state.ceramics[ceramicId]?.ownerId !== actorId || state.ceramics[ceramicId]?.stage !== "loaded" || state.firingContext?.ceramicResults[ceramicId]?.assignedQuality !== "standard")) return applyFailure(ruleError("INVALID_SELECTION", "Ge requires your Standard ceramic from this firing."));
   const next = cloneState(state);
   const events: GameEvent[] = [];
@@ -2095,8 +2101,11 @@ function resolveGe(state: GameState, actorId: PlayerId, ceramicId: string | null
     next.ceramics[ceramicId]!.crackle = true;
     next.players[actorId]!.kilnAbilityUsedThisRound = true;
     events.push({ type: "CRACKLE_CREATED", playerId: actorId, ceramicId }, { type: "QUALITY_ASSIGNED", ceramicId, quality: "fine" }, { type: "KILN_ABILITY_USED", playerId: actorId, kilnId: "GE" });
+    reconsiderAfterQualityEffects(next, actorId);
+  } else if (next.phase.type === "firing_after_quality") {
+    next.phase.declinedGePlayerIds.push(actorId);
   }
-  advanceQueuedWindow(next, () => openFlawedSalvage(next, events));
+  advanceAfterQualityDecision(next, events);
   return success(next, events);
 }
 
@@ -2124,6 +2133,7 @@ function resolveProtectiveSaggars(
       player === undefined ||
       player.resources.wood < 1 ||
       ceramic === undefined ||
+      ceramic.stage !== "loaded" ||
       ceramic.ownerId !== actorId ||
       (result?.assignedQuality !== "flawed" && result?.assignedQuality !== "standard")
     ) {
@@ -2142,6 +2152,7 @@ function resolveProtectiveSaggars(
     result.assignedQuality = result.assignedQuality === "flawed" ? "standard" : "fine";
     exhaustTechnique(nextPlayer, actorId, "T11", events);
     events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: -1, coins: 0 });
+    reconsiderAfterQualityEffects(next, actorId);
   } else if (next.phase.type === "firing_after_quality") {
     next.phase.declinedTechniqueIds[actorId] = [...(next.phase.declinedTechniqueIds[actorId] ?? []), "T11"];
   }
@@ -2210,13 +2221,15 @@ function resolveSecondFiring(
         queue: next.phase.queue,
         techniqueIds: next.phase.techniqueIds,
         declinedTechniqueIds: next.phase.declinedTechniqueIds,
+        geAvailable: next.phase.geAvailable,
+        declinedGePlayerIds: next.phase.declinedGePlayerIds,
       };
       next.phase = { type: "firing_second_before_quality", actorId, ceramicId, fireModifier: extraFire, afterQualityPhase };
       return success(next, events);
     }
     result.assignedQuality = qualityFromDifference(result.finalHeatDifference);
     next.fireDiscard.push(extraFire);
-    if (next.phase.type === "firing_after_quality") next.phase.declinedTechniqueIds[actorId] = [];
+    reconsiderAfterQualityEffects(next, actorId);
     events.push({ type: "SECOND_FIRING_RESOLVED", playerId: actorId, ceramicId, fireModifier: extraFire, quality: result.assignedQuality });
   } else if (next.phase.type === "firing_after_quality") {
     next.phase.declinedTechniqueIds[actorId] = [...(next.phase.declinedTechniqueIds[actorId] ?? []), "T14"];

@@ -20,7 +20,7 @@ alter table public.rooms add constraint rooms_v14_fingerprint_check
     rules_version <> '1.4'
     or (
       content_version = '1.4'
-      and coalesce(content_digest, '') ~ '^r22-[0-9a-f]{16}$'
+      and coalesce(content_digest, '') ~ '^r23-[0-9a-f]{16}$'
     )
   );
 
@@ -64,7 +64,7 @@ begin
   end if;
   if v_room.rules_version <> '1.4'
      or v_room.content_version <> '1.4'
-     or coalesce(v_room.content_digest, '') !~ '^r22-[0-9a-f]{16}$' then
+     or coalesce(v_room.content_digest, '') !~ '^r23-[0-9a-f]{16}$' then
     return jsonb_build_object('status', 'error', 'code', 'session_not_active');
   end if;
 
@@ -171,7 +171,7 @@ set search_path = public, private, extensions, pg_temp
 as $$
 declare v_room jsonb; v_seat jsonb;
 begin
-  if coalesce(p_content_digest, '') !~ '^r22-[0-9a-f]{16}$' then
+  if coalesce(p_content_digest, '') !~ '^r23-[0-9a-f]{16}$' then
     return jsonb_build_object('status', 'error', 'code', 'session_not_active');
   end if;
   insert into public.rooms (id, code, status, host_seat_id, rules_version, content_version, latest_revision, content_digest)
@@ -239,7 +239,7 @@ begin
   end if;
   if coalesce(v_room.rules_version, '') <> '1.4'
      or coalesce(v_room.content_version, '') <> '1.4'
-     or coalesce(v_room.content_digest, '') !~ '^r22-[0-9a-f]{16}$'
+     or coalesce(v_room.content_digest, '') !~ '^r23-[0-9a-f]{16}$'
      or coalesce(p_state->>'rulesVersion', '') <> '1.4'
      or coalesce(p_public_state->>'rulesVersion', '') <> '1.4'
      or coalesce((p_state->>'schemaVersion')::integer, -1) <> 5
@@ -308,7 +308,7 @@ begin
        where room.id = p_room_id
          and room.rules_version = '1.4'
          and room.content_version = '1.4'
-         and coalesce(room.content_digest, '') ~ '^r22-[0-9a-f]{16}$'
+         and coalesce(room.content_digest, '') ~ '^r23-[0-9a-f]{16}$'
      )
      or coalesce(v_head.state_json->>'rulesVersion', '') <> '1.4'
      or coalesce((v_head.state_json->>'schemaVersion')::integer, -1) <> 5
@@ -428,7 +428,7 @@ begin
   end if;
   if v_room.rules_version <> '1.4'
      or v_room.content_version <> '1.4'
-     or coalesce(v_room.content_digest, '') !~ '^r22-[0-9a-f]{16}$' then
+     or coalesce(v_room.content_digest, '') !~ '^r23-[0-9a-f]{16}$' then
     return jsonb_build_object('status', 'error', 'code', 'session_not_active');
   end if;
   select candidate into v_seat_index

@@ -60,6 +60,8 @@ function secondFiringFixture(kilnId: KilnId, fireModifier: FireModifier, wood = 
     queue: { actors: ["P1"], currentIndex: 0 },
     techniqueIds: ["T14"],
     declinedTechniqueIds: {},
+    geAvailable: kilnId === "GE" && !used,
+    declinedGePlayerIds: [],
   };
   return { state, rng, ceramic };
 }
@@ -92,7 +94,7 @@ describe("v1.4 eligibility for before-Quality Kiln ability prompts", () => {
     expect(result.state.phase.type).not.toBe("firing_before_quality");
     expect(result.events).toContainEqual(expect.objectContaining({ type: "QUALITY_ASSIGNED", ceramicId: ceramic.id }));
     expect(result.state.players["P1"]!.kilnAbilityUsedThisRound).toBe(false);
-    if (difference === 2) expect(result.state.phase.type).toBe("firing_ge");
+    if (difference === 2) expect(result.state.phase).toMatchObject({ type: "firing_after_quality", geAvailable: true });
     else expect(renderPanel(result.state)).not.toContain("Ge · Crackle from Fire");
     if (difference === 0) expect(renderPanel(result.state)).not.toContain("Skip");
   });

@@ -84,9 +84,13 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  *        by 1 only when glazing two vessels, replacing the one-free-Decoration rule.
  *  21 -- Owner amendment: the Kiln Yard Shifu replaces movement with a free, fixed
  *        +1/-1 Actual Heat marker on its committed ceramic after Base Heat and before Fire.
+ *  22 -- V1.4: Plain workshop pipeline, paid glaze/load, permanent Ge Crackle,
+ *        end-of-Work Glaze Palette, Fuel Ledger cards and revised Orders.
+ *  23 -- Owner amendment: choose the order of all after-Quality effects, including Ge,
+ *        and recheck eligibility after each use.
  */
-/** v1.4: Plain workshop pipeline, paid glaze/load, permanent Ge Crackle, end-Work Palette, special Fuel Ledger cards and revised Orders. */
-export const RULES_BEHAVIOUR_REVISION = 22;
+/** v1.4: owner-chosen order for all after-Quality effects, including Ge, with eligibility rechecked after every use. */
+export const RULES_BEHAVIOUR_REVISION = 23;
 
 /**
  * Display-only keys, excluded so that a typo fix or a translation improvement does not

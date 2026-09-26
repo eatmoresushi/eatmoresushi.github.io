@@ -125,7 +125,12 @@ describe("tabletop compact Kiln copy", () => {
 
         const previewMarkup = renderToStaticMarkup(createElement(KilnDescription, { id, locale, layer: "preview" }));
         const fullMarkup = renderToStaticMarkup(createElement(KilnDescription, { id, locale, layer: "full" }));
-        expect(previewMarkup, `${id} ${locale} preview`).not.toContain("<strong>");
+        if (id === "GE") {
+          expect(previewMarkup).toContain(locale === "en" ? "<strong>any one Decoration</strong>" : "<strong>任意一种纹饰</strong>");
+          expect(previewMarkup.match(/<strong>/g)).toHaveLength(1);
+        } else {
+          expect(previewMarkup, `${id} ${locale} preview`).not.toContain("<strong>");
+        }
         expect(previewMarkup, `${id} ${locale} preview`).not.toContain("**");
         expect(fullMarkup.length).toBeGreaterThan(0);
       }
@@ -150,8 +155,7 @@ describe("tabletop compact Kiln copy", () => {
         expect(english).toContain("actual Glaze and Decoration do not change");
         expect(english).toContain("Its actual Quality is Fine");
       } else {
-        expect(english).toContain("permanent Crackle");
-        expect(english).toContain("any one Decoration per Order");
+        expect(english).toBe("Once per round, after Quality is assigned: 1 of your Standard ceramics from this firing becomes Fine + Crackle. When completing an Order, each of your Crackle ceramics may be treated as having any one Decoration for that Order.");
       }
       const chinese = renderedText(renderToStaticMarkup(createElement(KilnDescription, { id: "GE", locale: "zh-CN", layer })));
       expect(chinese).toContain("开片");

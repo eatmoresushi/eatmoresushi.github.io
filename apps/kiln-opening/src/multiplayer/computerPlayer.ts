@@ -977,9 +977,13 @@ function remainingFireCards(state: PublicGameState): number[] {
 function afterQualityAction(state: PublicGameState, player: PlayerState): GameAction {
   const eligible = Object.values(state.firingContext?.ceramicResults ?? {})
     .filter((result) => state.ceramics[result.ceramicId]?.ownerId === player.id
+      && state.ceramics[result.ceramicId]?.stage === "loaded"
       && (result.assignedQuality === "flawed" || result.assignedQuality === "standard"));
   if (state.phase.type !== "firing_after_quality") {
     return { type: "RESOLVE_SECOND_FIRING", ceramicId: null };
+  }
+  if (state.phase.geAvailable) {
+    return { type: "RESOLVE_GE", ceramicId: eligible.find((result) => result.assignedQuality === "standard")?.ceramicId ?? null };
   }
   if (state.phase.techniqueIds.includes("T11")) {
     const best = eligible.map((result) => {
@@ -1140,9 +1144,6 @@ export async function chooseOnlineComputerAction(
       const improvement = paletteImprovement(state, player, []);
       return { type: "RESOLVE_GLAZE_PALETTE", ceramicId: improvement?.ceramicId ?? null, glaze: improvement?.glaze ?? null };
     }
-    case "firing_ge":
-      return { type: "RESOLVE_GE", ceramicId: Object.values(state.firingContext?.ceramicResults ?? {})
-        .find((result) => state.ceramics[result.ceramicId]?.ownerId === playerId && result.assignedQuality === "standard")?.ceramicId ?? null };
     case "firing_before_contribution":
       return { type: "RESOLVE_TEST_PIECES", use: player.resources.wood > 2 };
     case "firing_contributions":

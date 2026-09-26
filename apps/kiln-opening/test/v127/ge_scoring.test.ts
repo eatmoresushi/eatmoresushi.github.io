@@ -83,7 +83,7 @@ describe("V1.4 permanent Crackle and actual Quality", () => {
     for (const ceramic of ceramics) expect(final.ceramics[ceramic.id]).toMatchObject({ stage: "presented", quality: "fine", decoration: ceramic.decoration, glaze: ceramic.glaze, crackle: true });
   });
 
-  it("resolves Second Firing before deciding whether Ge may create Crackle", () => {
+  it("can choose Second Firing before Ge and rechecks the resulting Quality", () => {
     const { state, rng } = startedGame(2); state.players["P1"]!.kilnId = "GE";
     addTechnique(state, "P1", "T14");
     const ceramic = addLoaded(state, "P1", "bowl", "celadon", "plain", "middle_1"); firing(state);
@@ -102,7 +102,7 @@ describe("V1.4 permanent Crackle and actual Quality", () => {
     const fired = mustApply(state, "P1", { type: "REVEAL_FIRE_CARD" }, rng);
     expect(fired.firingContext?.ceramicResults[ceramic.id]?.assignedQuality).toBe("flawed");
     const saved = mustApply(fired, "P1", { type: "RESOLVE_PROTECTIVE_SAGGARS", ceramicId: ceramic.id }, rng);
-    expect(saved.phase.type).toBe("firing_ge");
+    expect(saved.phase).toMatchObject({ type: "firing_after_quality", geAvailable: true });
     const cracked = mustApply(saved, "P1", { type: "RESOLVE_GE", ceramicId: ceramic.id }, rng);
     expect(cracked.ceramics[ceramic.id]).toMatchObject({ stage: "finished", quality: "fine", decoration: "carved", crackle: true });
     orderPhase(cracked);

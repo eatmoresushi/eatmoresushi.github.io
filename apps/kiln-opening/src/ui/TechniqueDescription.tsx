@@ -55,8 +55,8 @@ export const KILN_SHORT_COPY = {
     "zh-CN": "每轮一次：完成带皇冠的委托，获得2铜钱＋1分。",
   },
   GE: {
-    en: "Once per round, after your other Quality effects: 1 of your Standard ceramics from this firing becomes Fine + permanent Crackle. Each Crackle ceramic can use any one Decoration per Order.",
-    "zh-CN": "每轮一次，其他品质能力结算后：将本次烧成的1件己方良品提升为上品并获得永久开片。每件开片陶瓷完成委托时可视为任意一种纹饰。",
+    en: "Once per round, after Quality is assigned: 1 of your Standard ceramics from this firing becomes Fine + Crackle. When completing an Order, each of your Crackle ceramics may be treated as having **any one Decoration** for that Order.",
+    "zh-CN": "每轮一次，品质判定后：将本次烧成的1件己方良品提升为上品并获得开片。完成委托时，你的每件开片陶瓷可在该委托中视为具有**任意一种纹饰**。",
   },
   DI: {
     en: "Once per round, after an Apprentice forms a Bowl, Plate or Brush Washer at Potter’s Wheel: pay 1 Clay for 1 extra Plain vessel of the same Shape.",
@@ -94,10 +94,14 @@ export function techniqueFullCopy(id: string, locale: Locale): string {
   return locale === "zh-CN" ? advanced.abilityZh : advanced.ability;
 }
 
-function richShortCopy(copy: string): ReactNode[] {
-  return copy.replaceAll("**", "").split(/\r?\n/).filter((line) => line.trim().length > 0).flatMap((line, lineIndex) => [
+function richShortCopy(copy: string, emphasize = false): ReactNode[] {
+  return copy.split(/\r?\n/).filter((line) => line.trim().length > 0).flatMap((line, lineIndex) => [
     ...(lineIndex === 0 ? [] : [<br key={`break-${lineIndex}`} />]),
-    line,
+    ...(emphasize
+      ? line.split(/(\*\*[^*]+\*\*)/).map((part, partIndex) => part.startsWith("**")
+        ? <strong key={`emphasis-${lineIndex}-${partIndex}`}>{part.slice(2, -2)}</strong>
+        : part)
+      : [line.replaceAll("**", "")]),
   ]);
 }
 
@@ -123,6 +127,6 @@ export function kilnFullCopy(id: string, locale: Locale): string {
 
 export function KilnDescription({ id, locale, layer }: { id: KilnId; locale: Locale; layer: "preview" | "full" }) {
   return layer === "preview"
-    ? <>{richShortCopy(kilnShortCopy(id, locale))}</>
+    ? <>{richShortCopy(kilnShortCopy(id, locale), id === "GE")}</>
     : <>{kilnFullCopy(id, locale)}</>;
 }

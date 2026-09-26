@@ -508,7 +508,6 @@ function phaseName(game: PublicGameState, locale: Locale = "en"): string {
     case "work_office_orders": return tx("Commission Market — Orders");
     case "work_guild": return tx("Craft Academy");
     case "work_glaze_palette": return locale === "zh-CN" ? "釉色谱" : "Glaze Palette";
-    case "firing_ge": return locale === "zh-CN" ? "哥窑开片" : "Ge Crackle";
     case "firing_before_contribution": return tx("Pre-firing Techniques");
     case "firing_contributions": return tx("Secret Contributions");
     case "firing_shifu_adjustment": return tx("Kiln Yard Shifu adjustment");

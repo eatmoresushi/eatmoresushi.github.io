@@ -1500,7 +1500,6 @@ function phaseName(game: PublicGameState, locale: Locale): string {
   if (type === "setup_starting_orders") return text(locale, "Starting Orders", "起始委托");
   if (type === "setup_starting_tech") return text(locale, "Starting Tech", "起始技艺");
   if (type === "work_glaze_palette") return text(locale, "Glaze Palette", "釉色谱");
-  if (type === "firing_ge") return text(locale, "Ge Crackle", "哥窑开片");
   if (type.startsWith("work")) return type === "work" ? text(locale, "Work", "作业") : text(locale, "Work resolution", "作业结算");
   if (type === "firing_before_contribution") return text(locale, "Pre-firing Techniques", "烧成前技艺");
   if (type === "firing_contributions") return text(locale, "Secret Contributions", "秘密控火");

@@ -52,7 +52,7 @@ function namedTableRow(source: string, name: string): string[] {
 describe("V1.4 checked-in data matches the adopted English rulebook", () => {
   it("records original provenance and the corrected current source checksum", () => {
     const currentDigest = createHash("sha256").update(EN_SOURCE).digest("hex");
-    expect(OWNER_AMENDMENTS).toContain(`Corrected SHA-256: \`${currentDigest}\``);
+    expect(OWNER_AMENDMENTS).toContain(`Current amended checked-in SHA-256: \`${currentDigest}\``);
     expect(OWNER_AMENDMENTS).toContain("Original SHA-256: `ace7e4ced95d82a259da504a11c6021626fad626da0a88d47a2ad457b821983c`");
   });
 

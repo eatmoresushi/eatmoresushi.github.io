@@ -323,7 +323,6 @@ export type GamePhase =
     }
   | { type: "work_imperial_priority"; actorId: PlayerId }
   | { type: "work_glaze_palette"; queue: OrderedDecisionQueue }
-  | { type: "firing_ge"; queue: OrderedDecisionQueue }
   | {
       type: "firing_before_contribution";
       queue: OrderedDecisionQueue;
@@ -346,6 +345,8 @@ export type GamePhase =
       queue: OrderedDecisionQueue;
       techniqueIds: TechniqueId[];
       declinedTechniqueIds: Record<PlayerId, TechniqueId[]>;
+      geAvailable: boolean;
+      declinedGePlayerIds: PlayerId[];
     }
   | {
       type: "firing_second_before_quality";
@@ -356,6 +357,8 @@ export type GamePhase =
         queue: OrderedDecisionQueue;
         techniqueIds: TechniqueId[];
         declinedTechniqueIds: Record<PlayerId, TechniqueId[]>;
+        geAvailable: boolean;
+        declinedGePlayerIds: PlayerId[];
       };
     }
   | { type: "firing_workshop_seconds"; queue: OrderedDecisionQueue }

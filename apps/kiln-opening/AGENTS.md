@@ -25,6 +25,7 @@ not active rules. The approved four-player kiln allocation is 3 High / 2 Middle 
 an available card. Academy Shifu inspection and chosen return order are private.
 Jun is once per round; an unused ability may be used during Second Firing, but a
 previously used ability may not be used again. The Second Firing window follows the extra Fire-card reveal and recalculation of Actual Heat, before assigning new Quality.
+All after-Quality abilities, including Ge, Protective Saggars and Second Firing, resolve in the owner's chosen order. Recheck current Quality, targets, costs and usage limits after each use; Ge is not required to resolve last.
 
 ## Approved asset rule
 

@@ -87,7 +87,7 @@ During the Order Phase, the action panel shows only held or face-up Orders that 
 
 Firing is the most important digital interaction.
 
-The exact decision sequence is documented in [Implementation decisions](./IMPLEMENTATION_DECISIONS.md#explicit-firing-windows). Resolve Glaze Palette at the end of Work, then Test Pieces, secret Contributions, Shifu Heat markers, initial Fire reveal, Actual Heat, Jun and Quality. After-Quality choices include Second Firing; Ge follows these choices, then Flawed salvage and unloading.
+The exact decision sequence is documented in [Implementation decisions](./IMPLEMENTATION_DECISIONS.md#explicit-firing-windows). Resolve Glaze Palette at the end of Work, then Test Pieces, secret Contributions, Shifu Heat markers, initial Fire reveal, Actual Heat, Jun and Quality. Resolve after-Quality choices, including Ge, Protective Saggars and Second Firing, in First Player order; each owner chooses their ability order. Recheck each remaining ability's targets, current Quality, costs and usage limits after every use. Flawed salvage and unloading follow the completed after-Quality window.
 
 Fuel Ledger provides two additional single-card choices, Bank −2 and Stoke +2, each costing 2 Wood. Store them privately until simultaneous reveal. No public payload exposes a pending card, cost or derived Heat.
 

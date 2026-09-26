@@ -144,8 +144,6 @@ export function fallbackComputerCommands(
       return [{ type: "RESOLVE_IMPERIAL_PRIORITY", ceramicId: null }];
     case "work_glaze_palette":
       return [{ type: "RESOLVE_GLAZE_PALETTE", ceramicId: null, glaze: null }];
-    case "firing_ge":
-      return [{ type: "RESOLVE_GE", ceramicId: null }];
     case "firing_before_contribution":
       return [{ type: "RESOLVE_TEST_PIECES", use: false }];
     case "firing_contributions":
@@ -162,9 +160,11 @@ export function fallbackComputerCommands(
     case "firing_second_before_quality":
       return [{ type: "RESOLVE_JUN", ceramicId: null, delta: null }];
     case "firing_after_quality":
-      return phase.techniqueIds.includes("T11")
-        ? [{ type: "RESOLVE_PROTECTIVE_SAGGARS", ceramicId: null }]
-        : [{ type: "RESOLVE_SECOND_FIRING", ceramicId: null }];
+      return [
+        ...(phase.geAvailable ? [{ type: "RESOLVE_GE" as const, ceramicId: null }] : []),
+        ...(phase.techniqueIds.includes("T11") ? [{ type: "RESOLVE_PROTECTIVE_SAGGARS" as const, ceramicId: null }] : []),
+        ...(phase.techniqueIds.includes("T14") ? [{ type: "RESOLVE_SECOND_FIRING" as const, ceramicId: null }] : []),
+      ];
     case "firing_workshop_seconds":
       return [
         ...Object.values(game.firingContext?.ceramicResults ?? {})

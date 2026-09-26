@@ -16,7 +16,7 @@ describe("V1.4 Supabase contract", () => {
     expect(migration).toContain("coalesce((p_state->>'schemaVersion')::integer, -1) <> 5");
     expect(migration).toContain("coalesce((p_public_state->>'schemaVersion')::integer, -1) <> 5");
     expect(migration).toContain("coalesce(p_next_state->>'rulesVersion', '') <> '1.4'");
-    expect(migration).toContain("!~ '^r22-[0-9a-f]{16}$'");
+    expect(migration).toContain("!~ '^r23-[0-9a-f]{16}$'");
     expect(migration).not.toMatch(/update public\.rooms[\s\S]{0,240}set rules_version = '1\.2\.6'/);
   });
 

@@ -76,7 +76,7 @@ describe("V1.4 Ge", () => {
     const b = addLoaded(state, "P2", "plate", "celadon", "painted", "middle_2"); state.players["P2"]!.kilnId = "RU";
     reveal(state);
     const fired = mustApply(state, "P1", { type: "REVEAL_FIRE_CARD" }, rng);
-    expect(fired.phase.type).toBe("firing_ge");
+    expect(fired.phase).toMatchObject({ type: "firing_after_quality", geAvailable: true });
     const result = mustResult(fired, "P1", { type: "RESOLVE_GE", ceramicId: a.id }, rng);
     expect(result.state.ceramics[a.id]).toMatchObject({ stage: "finished", quality: "fine", decoration: "plain", crackle: true });
     expect(result.state.ceramics[b.id]).toMatchObject({ stage: "finished", quality: "standard", decoration: "painted" });
@@ -89,7 +89,7 @@ describe("V1.4 Ge", () => {
     reveal(state); state.fireDeck = [0, -1];
     const fired = mustApply(state, "P1", { type: "REVEAL_FIRE_CARD" }, rng);
     const refired = mustApply(fired, "P1", { type: "RESOLVE_SECOND_FIRING", ceramicId: ceramic.id }, rng);
-    expect(refired.phase.type).toBe("firing_ge");
+    expect(refired.phase).toMatchObject({ type: "firing_after_quality", geAvailable: true });
     const declined = mustApply(refired, "P1", { type: "RESOLVE_GE", ceramicId: null }, rng);
     expect(declined.ceramics[ceramic.id]).toMatchObject({ stage: "finished", quality: "standard", decoration: "plain" });
     expect(declined.players["P1"]!.kilnAbilityUsedThisRound).toBe(false);

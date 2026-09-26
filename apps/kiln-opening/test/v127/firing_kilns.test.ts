@@ -422,6 +422,8 @@ describe("v1.4 firing, Tech timing, and Kiln Traditions", () => {
       queue: { actors: ["P1"], currentIndex: 0 },
       techniqueIds: ["T11"],
       declinedTechniqueIds: {},
+      geAvailable: false,
+      declinedGePlayerIds: [],
     };
     state = mustApply(state, "P1", { type: "RESOLVE_PROTECTIVE_SAGGARS", ceramicId: protectedCeramic.id }, rng);
     expect(state.ceramics[protectedCeramic.id]).toEqual(expect.objectContaining({ stage: "finished", quality: "fine" }));
@@ -438,6 +440,8 @@ describe("v1.4 firing, Tech timing, and Kiln Traditions", () => {
       queue: { actors: ["P1"], currentIndex: 0 },
       techniqueIds: ["T14"],
       declinedTechniqueIds: {},
+      geAvailable: false,
+      declinedGePlayerIds: [],
     };
     const second = mustResult(state, "P1", { type: "RESOLVE_SECOND_FIRING", ceramicId: refired.id }, rng);
     state = second.state;
@@ -469,6 +473,8 @@ describe("v1.4 firing, Tech timing, and Kiln Traditions", () => {
       queue: { actors: ["P1"], currentIndex: 0 },
       techniqueIds: ["T14"],
       declinedTechniqueIds: {},
+      geAvailable: false,
+      declinedGePlayerIds: [],
     };
     state = mustApply(state, "P1", { type: "RESOLVE_SECOND_FIRING", ceramicId: junCeramic.id }, rng);
     expect(state.phase).toEqual(expect.objectContaining({

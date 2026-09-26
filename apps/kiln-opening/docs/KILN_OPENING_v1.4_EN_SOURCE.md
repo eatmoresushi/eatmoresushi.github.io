@@ -337,7 +337,9 @@ Examples:
 | 2 | **Standard** | Meets Standard+ only. |
 | 3+ | **Flawed** | Cannot complete Orders or enter the Exhibition. |
 
-After all after-Quality abilities and Ge's Crackle ability have resolved, each player may discard **1 ceramic that is still Flawed from this firing** to gain **2 Coins**.
+After Quality is assigned, resolve after-Quality abilities, including Ge, Protective Saggars and Second Firing, in **First Player order**. Each player chooses the order of their own abilities. After each use, check the current Quality, targets, costs and usage limits again; an ability may be used only if it is still valid.
+
+After all after-Quality abilities have resolved, each player may discard **1 ceramic that is still Flawed from this firing** to gain **2 Coins**.
 
 ## Phase 4 — Order Phase
 
@@ -380,6 +382,7 @@ All **Starting Tech, Advanced Tech and Kiln Tradition abilities are optional**, 
 - Once an ability is used, resolve all required instructions and consequences.
 - Timing restrictions and usage limits still apply.
 - If several players have abilities in the same timing window, resolve them in **First Player order**. Each player chooses the order of their own abilities.
+- After each after-Quality ability resolves, check eligibility again using the current game state. An unused after-Quality ability may be used later in the same timing window only if its requirements, costs and usage limit are still met.
 
 ## Starting Techs
 
@@ -522,7 +525,7 @@ The Order itself does not need to require those attributes; the delivered cerami
 
 ## Ge Kiln / 哥窑 — Crackle from Fire
 
-**Once per round, after resolving your other after-Quality abilities:** choose **1 of your Standard ceramics from this firing**. It develops **Crackle** and becomes **Fine**. Place a Crackle marker on it.
+**Once per round, after Quality is assigned:** **1 of your Standard ceramics from this firing** becomes **Fine + Crackle**. Place a Crackle marker on it.
 
 When completing an Order, each of your Crackle ceramics may be treated as having **any one Decoration** for that Order.
 
@@ -530,6 +533,7 @@ When completing an Order, each of your Crackle ceramics may be treated as having
 - The ceramic's **actual Glaze and Decoration do not change**. Crackle does **not** provide a wild Glaze.
 - Choose one Decoration independently for each Crackle ceramic used in an Order, and use that choice for every requirement on that Order. This substitution applies only to Order requirements.
 - Its actual Quality is **Fine**, including for Exhibition. Use its actual Glaze when checking Exhibition diversity.
+- Choose when to use Ge among your after-Quality abilities. Check the ceramic's current Quality when using it; Ge requires Standard. After it becomes Fine, it is no longer a valid target for Protective Saggars or Second Firing.
 
 ## Ding Kiln / 定窑 — Moulded Production
 
@@ -729,7 +733,7 @@ Tech tiles use abbreviated reminder text. The rules here give the full effects.
 - **Protective Saggars** and **Second Firing** affect only your own ceramics from the current firing.
 - **Test Pieces** is private information; you may discuss what you saw but may not show the Fire card. Looking at the card does not discard it or change its position.
 - During **Second Firing**, the same Base Heat, kiln position, **Kiln Furniture** and **Shifu Heat marker** remain in effect. The new Fire card affects only the selected ceramic. Previous post-Fire Actual Heat adjustments do not carry over. Jun or another post-Fire adjustment applies only if that ability has not already been used this round and its timing is reached again. Jun may be used only once per round: if used before Second Firing, it cannot be used again; if still unused, it may be used during Second Firing after Actual Heat is recalculated and before the new Quality is assigned.
-- **Ge** checks the ceramic's Quality after its owner's other after-Quality effects. A Flawed ceramic improved to Standard by Protective Saggars, or a ceramic left Standard by Second Firing, can therefore become Crackle and Fine. The once-per-round limit applies to creating Crackle, not to using existing Crackle ceramics in Orders.
+- **After-Quality abilities**, including Ge, Protective Saggars and Second Firing, may be used in any order chosen by their owner. After each use, recheck the current Quality, available targets, costs and usage limits before using another ability. A Flawed ceramic improved to Standard by Protective Saggars, or a ceramic left Standard by Second Firing, can therefore become Crackle and Fine through unused Ge. A ceramic made Fine by Ge is no longer eligible for Protective Saggars or Second Firing. Ge's once-per-round limit applies to creating Crackle, not to using existing Crackle ceramics in Orders.
 
 # Appendix C — Fire Deck
 
@@ -760,10 +764,9 @@ If no ceramics are loaded in the Shared Kiln or any Imperial Kiln, skip this pha
 7. **Calculate Actual Heat.** Shared-Kiln ceramics add their zone modifier; Imperial Kiln ceramics have no zone modifier. Kiln Furniture makes its ceramic's zone modifier **0**. Then add any Shifu Heat marker. Actual Heat is not capped.
 8. **Heat-adjustment abilities.** Resolve Jun and any other effects that occur after Actual Heat is calculated and before Quality is assigned.
 9. **Assign Quality.** Compare final Actual Heat with Preferred Heat. Use the absolute difference and the Quality table.
-10. **After-Quality abilities.** Resolve Protective Saggars, Second Firing and similar effects. If you control several, choose their order. Second Firing replaces only its selected ceramic's result; it does not change the shared Global Heat or other ceramics.
-11. **Ge — Crackle from Fire.** After the other after-Quality effects are complete, Ge may choose **1 of its Standard ceramics from this firing**, give it Crackle and change its Quality to **Fine**. Crackle provides a wild **Decoration only** when completing Orders.
-12. **Salvage.** Each player may discard **1 ceramic still Flawed from this firing** to gain **2 Coins**.
-13. **Finish firing.** Move remaining fired ceramics to their owners' Finished Ceramics areas. Empty all kiln spaces, return Kiln Furniture, remove Shifu Heat markers, set any Shifu still on ceramics aside until Cleanup, discard the main Fire card face up and return Contribution cards to their owners. Crackle markers remain with their ceramics.
+10. **After-Quality abilities.** Resolve Ge, Protective Saggars, Second Firing and similar effects. If you control several, choose their order. After each use, check the current Quality, available targets, costs and usage limits again; use another ability only if it is still valid. Ge may choose **1 of its Standard ceramics from this firing** and make it **Fine + Crackle**. Crackle provides a wild **Decoration only** when completing Orders. Second Firing replaces only its selected ceramic's result; it does not change the shared Global Heat or other ceramics.
+11. **Salvage.** Each player may discard **1 ceramic still Flawed from this firing** to gain **2 Coins**.
+12. **Finish firing.** Move remaining fired ceramics to their owners' Finished Ceramics areas. Empty all kiln spaces, return Kiln Furniture, remove Shifu Heat markers, set any Shifu still on ceramics aside until Cleanup, discard the main Fire card face up and return Contribution cards to their owners. Crackle markers remain with their ceramics.
 
 ## Timing Vocabulary
 
@@ -775,7 +778,7 @@ If no ceramics are loaded in the Shared Kiln or any Imperial Kiln, skip this pha
 | After Base Heat is determined, before Fire | 5 |
 | After Actual Heat is calculated, before Quality | 8 |
 | After Quality is assigned | 10 |
-| Ge, after its owner's other after-Quality effects | 11 |
+| Ge — Crackle from Fire | 10 |
 
 # Appendix E — Quick Reference
 
@@ -783,7 +786,7 @@ If no ceramics are loaded in the Shared Kiln or any Imperial Kiln, skip this pha
 
 1. **Start:** rotate and refill Main Orders; ready abilities.
 2. **Work:** First Player clockwise; place all **4 workers**, with no passing. Then resolve **Glaze Palette** and other end-of-Work-Phase abilities.
-3. **Fire:** Contributions → Base Heat → optional Shifu Heat marker → Fire → Actual Heat → abilities → Quality → after-Quality effects → Ge Crackle → salvage.
+3. **Fire:** Contributions → Base Heat → optional Shifu Heat marker → Fire → Actual Heat → abilities → Quality → after-Quality effects, including Ge, in each owner's chosen order → salvage. Recheck eligibility after each ability use.
 4. **Orders:** reverse Work order; one Order per opportunity; repeat until a full circuit completes no Orders.
 5. **Cleanup:** return workers; trim Orders to 3; after Round 5 score the game, otherwise pass First Player and advance the round.
 
@@ -839,7 +842,7 @@ Fuel Ledger: **−2 Bank or +2 Stoke / 2 Wood**. Choose **exactly 1 card** per p
 2 → **Standard**  
 3+ → **Flawed**
 
-**Ge:** once per round, after its owner's other after-Quality effects, 1 Standard → **Fine + Crackle**. For Orders, Crackle may count as **any 1 Decoration**, not a different Glaze.
+**Ge:** once per round, after Quality is assigned, 1 Standard from this firing → **Fine + Crackle**. For Orders, each Crackle ceramic may count as **any 1 Decoration**, not a different Glaze. Choose the order of your after-Quality abilities and recheck eligibility after each use.
 
 # Version 1.4 Change Summary
 
@@ -856,7 +859,7 @@ Fuel Ledger: **−2 Bank or +2 Stoke / 2 Wood**. Choose **exactly 1 card** per p
 - **Measuring Calipers**, **Standardised Moulds** and **Reworking Table** use the updated workshop/Plain eligibility wording.
 - **Glaze Palette** moves to the **end of the Work Phase**, after all worker effects and before Test Pieces or other pre-firing abilities. No additional Glazing payment is required.
 - Decoration discount Techs waive the matching **2-Coin Decoration cost**, including eligible White Slip and Drying Frames uses.
-- **Ge:** one Standard ceramic becomes **Fine + Crackle** after other after-Quality effects. Crackle is permanent and provides a wild **Decoration only**, never a wild Glaze.
+- **Ge:** once per round, after Quality is assigned, one Standard ceramic from this firing becomes **Fine + Crackle**. The owner chooses the order of Ge and their other after-Quality abilities, rechecking eligibility after each use. Crackle is permanent and provides a wild **Decoration only**, never a wild Glaze.
 - **Ding** triggers only during an **Apprentice's Potter's Wheel action**; pay **1 Clay** for one extra Bowl, Plate or Brush Washer matching a vessel formed by that action. It does not trigger from a Shifu or a Tech effect.
 - **Ru, Guan and Jun** retain their abilities. Starting resources remain **2 Clay, 2 Wood and 4 Coins**; each player has **1 Shifu and 3 Apprentices** throughout the five rounds.
 - Kiln Yard Shifu may supervise **one ceramic loaded by that action in either kiln**. Its optional **+1/−1** marker is chosen after Contributions and before Fire, costs no Wood and persists through Second Firing. The removed Shifu is not available again until Cleanup.

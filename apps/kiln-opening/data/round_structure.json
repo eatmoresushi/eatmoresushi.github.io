@@ -18,7 +18,7 @@
       "order": 3,
       "id": "firing",
       "name": "Firing Phase",
-      "summary": "If ceramics are loaded in either kiln, resolve Test Pieces, secret Contribution-card choices, simultaneous reveal and payment, Base Heat, optional Shifu Heat markers in First Player order, Fire, Actual Heat, Heat adjustments, Quality, player-ordered after-Quality Techs, Ge Crackle, then optional salvage of one still-Flawed ceramic for 2 Coins per player."
+      "summary": "If ceramics are loaded in either kiln, resolve Test Pieces, secret Contribution-card choices, simultaneous reveal and payment, Base Heat, optional Shifu Heat markers in First Player order, Fire, Actual Heat, Heat adjustments, Quality, then after-Quality abilities including Ge in each owner's chosen order. Recheck eligibility after each ability use, then allow optional salvage of one still-Flawed ceramic for 2 Coins per player."
     },
     {
       "order": 4,

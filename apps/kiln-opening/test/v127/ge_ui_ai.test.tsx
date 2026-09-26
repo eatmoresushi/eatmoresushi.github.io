@@ -1,7 +1,8 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import type { GameState } from "../../src/game/index.ts";
+import type { GameState, Quality } from "../../src/game/index.ts";
+import { fallbackComputerCommands } from "../../src/multiplayer/computerFallback.ts";
 import { createComputerObservation } from "../../src/multiplayer/computerObservation.ts";
 import { chooseOnlineComputerAction, ONLINE_COMPUTER_POLICY_VERSION } from "../../src/multiplayer/computerPlayer.ts";
 import { projectPublicGameState } from "../../src/multiplayer/projection.ts";
@@ -9,7 +10,7 @@ import type { StoredSeat } from "../../src/multiplayer/types.ts";
 import { ActionPanel } from "../../src/ui/ActionPanel.tsx";
 import { LanguageProvider } from "../../src/ui/i18n.tsx";
 import type { Locale } from "../../src/ui/i18n.tsx";
-import { addFinished, addLoaded, mustApply, startedGame } from "./helpers.ts";
+import { addFinished, addLoaded, addTechnique, mustApply, startedGame } from "./helpers.ts";
 
 const computerSeat: StoredSeat = {
   seatId: "seat-P1", roomId: "ge-rule", playerId: "P1", seatIndex: 0,
@@ -114,20 +115,107 @@ describe("Ge computer Order decisions", () => {
 });
 
 
+function firingFixture(quality: Quality = "standard", withTechniques = true) {
+  const { state, rng } = startedGame(2, 127_902);
+  state.players["P1"]!.kilnId = "GE";
+  state.players["P2"]!.kilnId = "RU";
+  state.players["P1"]!.resources.wood = 1;
+  const ceramic = addLoaded(state, "P1", "bowl", "white", "painted", "imperial");
+  if (withTechniques) {
+    addTechnique(state, "P1", "T11");
+    addTechnique(state, "P1", "T14");
+  }
+  state.phase = {
+    type: "firing_after_quality", queue: { actors: ["P1"], currentIndex: 0 },
+    techniqueIds: withTechniques ? ["T11", "T14"] : [], declinedTechniqueIds: {},
+    geAvailable: quality === "standard", declinedGePlayerIds: [],
+  };
+  state.firingContext = {
+    round: 1, contributors: ["P1"], contributions: { P1: "TEND" },
+    baseHeat: 2, fireModifier: 1, globalHeat: 3, kilnYardShifuAdjustments: [],
+    ceramicResults: { [ceramic.id]: { ceramicId: ceramic.id, zoneModifier: 0, naturalActualHeat: 3, naturalHeatDifference: 2, naturalExactMatch: false, finalActualHeat: 3, finalHeatDifference: 2, forcedQuality: null, assignedQuality: quality } },
+  };
+  return { state, rng, ceramic };
+}
+
+function controlMarkup(state: GameState, title: string): string {
+  return panelMarkup(state).split('<section class="control-section">')
+    .find((section) => section.startsWith(`<h3>${title}</h3>`))?.split("</section>")[0] ?? "";
+}
+
 describe("Ge firing controls", () => {
-  it("offers current Standard ceramics in its separate after-Quality window", () => {
-    const { state } = startedGame(2, 127_902);
-    state.players["P1"]!.kilnId = "GE";
-    const ceramic = addLoaded(state, "P1", "bowl", "white", "painted", "imperial");
-    state.phase = { type: "firing_ge", queue: { actors: ["P1"], currentIndex: 0 } };
-    state.firingContext = {
-      round: 1, contributors: ["P1"], contributions: { P1: "TEND" },
-      baseHeat: 2, fireModifier: 1, globalHeat: 3, kilnYardShifuAdjustments: [],
-      ceramicResults: { [ceramic.id]: { ceramicId: ceramic.id, zoneModifier: 0, naturalActualHeat: 3, naturalHeatDifference: 2, naturalExactMatch: false, finalActualHeat: 3, finalHeatDifference: 2, forcedQuality: null, assignedQuality: "standard" } },
-    };
-    expect(panelMarkup(state)).toContain("Ge · Crackle from Fire");
-    expect(panelMarkup(state)).toContain("permanent Crackle");
-    expect(panelMarkup(state)).toContain("Painted");
-    expect(panelMarkup(state, "zh-CN")).toContain("良品提升为上品");
+  it("offers Ge and both Techs together and explains the player's choice of order", () => {
+    const { state } = firingFixture();
+    const english = panelMarkup(state);
+    expect(english).toContain("Ge · Crackle from Fire");
+    expect(english).toContain("Protective Saggars");
+    expect(english).toContain("Second Firing");
+    expect(english).toContain("Use after-Quality abilities in your chosen order");
+    expect(english).toContain("After each use, the remaining abilities and eligible ceramics are checked again");
+    expect(english).toContain("permanent Crackle");
+    expect(english).toContain("Painted");
+    expect(english).not.toContain("After other Quality abilities");
+    const chinese = panelMarkup(state, "zh-CN");
+    expect(chinese).toContain("良品提升为上品");
+    expect(chinese).toContain("按你选择的顺序使用品质判定后能力");
+  });
+
+  it("removes a Ge-upgraded ceramic from both remaining Tech target lists", () => {
+    const { state, rng, ceramic } = firingFixture();
+    const other = addLoaded(state, "P1", "plate", "white", "plain", "middle_1");
+    state.firingContext!.ceramicResults[other.id] = { ...state.firingContext!.ceramicResults[ceramic.id]!, ceramicId: other.id };
+
+    const resolved = mustApply(state, "P1", { type: "RESOLVE_GE", ceramicId: ceramic.id }, rng);
+
+    expect(panelMarkup(resolved)).not.toContain("Ge · Crackle from Fire");
+    for (const title of ["Protective Saggars", "Second Firing"]) {
+      const controls = controlMarkup(resolved, title);
+      expect(controls).toContain("Plate");
+      expect(controls).not.toContain("Bowl");
+    }
+  });
+
+  it("offers Ge as soon as Protective Saggars makes a Flawed ceramic Standard", () => {
+    const { state, rng, ceramic } = firingFixture("flawed");
+    expect(panelMarkup(state)).not.toContain("Ge · Crackle from Fire");
+
+    const resolved = mustApply(state, "P1", { type: "RESOLVE_PROTECTIVE_SAGGARS", ceramicId: ceramic.id }, rng);
+
+    expect(controlMarkup(resolved, "Ge · Crackle from Fire")).toContain("Bowl");
+    expect(controlMarkup(resolved, "Second Firing")).toContain("Bowl");
+    expect(panelMarkup(resolved)).not.toContain("<h3>Protective Saggars</h3>");
+  });
+});
+
+describe("Ge computer after-Quality choices", () => {
+  it("uses free Ge before spending Wood on Protective Saggars for a Standard ceramic", async () => {
+    const { state, rng, ceramic } = firingFixture();
+    const command = await chooseOnlineComputerAction(createComputerObservation(state, "P1"), computerSeat);
+    expect(command).toEqual({ type: "RESOLVE_GE", ceramicId: ceramic.id });
+    if (command.type !== "RESOLVE_GE") throw new Error("Expected Ge");
+    const resolved = mustApply(state, "P1", command, rng);
+    expect(resolved.players["P1"]!.resources.wood).toBe(1);
+    expect(resolved.ceramics[ceramic.id]).toMatchObject({ quality: "fine", crackle: true });
+  });
+
+  it("uses Ge on the new Standard target after Saggars, then cannot select the upgraded ceramic again", async () => {
+    const { state, rng, ceramic } = firingFixture("flawed");
+    const first = await chooseOnlineComputerAction(createComputerObservation(state, "P1"), computerSeat);
+    expect(first).toEqual({ type: "RESOLVE_PROTECTIVE_SAGGARS", ceramicId: ceramic.id });
+    if (first.type !== "RESOLVE_PROTECTIVE_SAGGARS") throw new Error("Expected Saggars");
+    const afterSaggars = mustApply(state, "P1", first, rng);
+    const second = await chooseOnlineComputerAction(createComputerObservation(afterSaggars, "P1"), computerSeat);
+    expect(second).toEqual({ type: "RESOLVE_GE", ceramicId: ceramic.id });
+    if (second.type !== "RESOLVE_GE") throw new Error("Expected Ge");
+    const afterGe = mustApply(afterSaggars, "P1", second, rng);
+    expect(afterGe.phase.type).not.toBe("firing_after_quality");
+    expect(afterGe.ceramics[ceramic.id]).toMatchObject({ quality: "fine", crackle: true });
+  });
+
+  it("fallback can decline a Ge-only decision without inventing an unavailable Tech", () => {
+    const { state, rng } = firingFixture("standard", false);
+    const commands = fallbackComputerCommands(createComputerObservation(state, "P1"));
+    expect(commands).toEqual([{ type: "RESOLVE_GE", ceramicId: null }]);
+    expect(mustApply(state, "P1", { type: "RESOLVE_GE", ceramicId: null }, rng).phase.type).not.toBe("firing_after_quality");
   });
 });

@@ -184,6 +184,8 @@ describe("public Fire card history", () => {
         queue: { actors: ["P2"], currentIndex: 0 },
         techniqueIds: ["T14"],
         declinedTechniqueIds: {},
+        geAvailable: false,
+        declinedGePlayerIds: [],
       },
     };
     const events = [round(1, 2), reveal(2, -1)];

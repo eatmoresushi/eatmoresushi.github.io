@@ -186,8 +186,6 @@ function PhaseControls(props: Omit<ActionPanelProps, "ownPlayerId"> & {
       return <OfficeControls game={game} player={player} privateDecision={ownPrivateDecision} busy={busy} send={send} />;
     case "work_glaze_palette":
       return <GlazePaletteControls game={game} player={player} busy={busy} send={send} />;
-    case "firing_ge":
-      return <>{firingProgress}<GeControls game={game} player={player} busy={busy} send={send} /></>;
     case "work_guild":
       return <GuildControls game={game} player={player} privateDecision={ownPrivateDecision} busy={busy} send={send} />;
     case "firing_before_contribution":
@@ -201,7 +199,15 @@ function PhaseControls(props: Omit<ActionPanelProps, "ownPlayerId"> & {
     case "firing_second_before_quality":
       return <>{firingProgress}<KilnAbilityControls game={game} player={player} busy={busy} send={send} /></>;
     case "firing_after_quality":
-      return <>{firingProgress}{phase.techniqueIds.includes("T11") && <SaggarsControls game={game} player={player} busy={busy} send={send} />}{phase.techniqueIds.includes("T14") && <SecondFiringControls game={game} player={player} busy={busy} send={send} />}</>;
+      return <>
+        {firingProgress}
+        <p className="control-hint">{locale === "zh-CN"
+          ? "按你选择的顺序使用品质判定后能力。每次使用后，重新检查其余能力的使用条件与有效目标。"
+          : "Use after-Quality abilities in your chosen order. After each use, the remaining abilities and eligible ceramics are checked again."}</p>
+        {phase.geAvailable && <GeControls game={game} player={player} busy={busy} send={send} />}
+        {phase.techniqueIds.includes("T11") && <SaggarsControls game={game} player={player} busy={busy} send={send} />}
+        {phase.techniqueIds.includes("T14") && <SecondFiringControls game={game} player={player} busy={busy} send={send} />}
+      </>;
     case "firing_workshop_seconds":
       return <>{firingProgress}<WorkshopSecondsControls game={game} player={player} busy={busy} send={send} /></>;
     case "orders":
@@ -1477,7 +1483,7 @@ function GeControls({ game, player, busy, send }: {
   const { locale } = useI18n();
   const eligible = ownCeramics(game, player.id, "loaded").filter((ceramic) => game.firingContext?.ceramicResults[ceramic.id]?.assignedQuality === "standard");
   return <CeramicDecision title={locale === "zh-CN" ? "哥窑 · 窑火开片" : "Ge · Crackle from Fire"}
-    hint={locale === "zh-CN" ? "其他品质能力结算后，将本次烧成的1件良品提升为上品并获得永久开片。完成委托时，开片可视为任意1种纹饰。" : "After other Quality abilities, improve one Standard ceramic from this firing to Fine and give it permanent Crackle. Crackle may substitute any one Decoration for each Order."}
+    hint={locale === "zh-CN" ? "品质判定后，将本次烧成的1件良品提升为上品并获得永久开片。完成委托时，每件开片陶瓷可视为具有任意一种纹饰。" : "After Quality is assigned, improve one Standard ceramic from this firing to Fine and give it permanent Crackle. Each Crackle ceramic may be treated as having any one Decoration for each Order."}
     ceramics={eligible} busy={busy} send={send} make={(ceramicId) => ({ type: "RESOLVE_GE", ceramicId })} skip={{ type: "RESOLVE_GE", ceramicId: null }} />;
 }
 
