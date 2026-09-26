@@ -293,7 +293,7 @@
   .saved-session span, .saved-session strong { display: block; }
   .saved-session span { color: var(--ink-soft); font-size: .62rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
   .saved-session strong { margin-top: .15rem; font-family: var(--serif); }
-  .session-ended { display: grid; gap: 1rem; width: min(680px, calc(100% - 2rem)); min-height: calc(100vh - 210px); align-content: center; margin: 0 auto; text-align: center; }
+  .session-ended { display: grid; gap: 1rem; width: min(680px, calc(100% - 2rem)); align-content: center; margin: 0 auto; text-align: center; }
   .session-ended .button-row { justify-content: center; }
   .dialog-backdrop { position: fixed; z-index: 80; inset: 0; display: grid; place-items: center; padding: 1rem; background: rgb(23 32 29 / 58%); backdrop-filter: blur(5px); }
   .confirmation-dialog { display: grid; gap: .9rem; width: min(500px, 100%); border: 1px solid var(--line); border-radius: var(--radius); padding: clamp(1.1rem, 4vw, 1.7rem); background: var(--porcelain); box-shadow: var(--shadow); }
@@ -305,7 +305,11 @@
 }
 
 @layer layout {
-  .home-screen { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(290px, .7fr); gap: clamp(2rem, 7vw, 8rem); align-items: center; min-height: calc(100vh - 150px); max-width: 1260px; margin: 0 auto; padding: clamp(3rem, 8vw, 8rem) clamp(1rem, 4vw, 3rem); }
+  /* Keep short screens and their footer inside a full-height application surface. */
+  .app-shell { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
+  .app-shell > main { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+  .app-shell > main > :is(.home-screen, .lobby-screen, .session-ended) { flex: 1; }
+  .home-screen { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(290px, .7fr); gap: clamp(2rem, 7vw, 8rem); align-items: center; width: 100%; max-width: 1260px; margin: 0 auto; padding: clamp(3rem, 8vw, 8rem) clamp(1rem, 4vw, 3rem); }
   .hero-copy h1 { max-width: 12ch; margin: .7rem 0 1rem; }
   .hero-lead { max-width: 55ch; color: var(--ink-soft); font-family: var(--serif); font-size: clamp(1.03rem, 2vw, 1.3rem); }
   .hero-facts { display: flex; flex-wrap: wrap; gap: 1.2rem; margin-top: 2rem; }
@@ -317,7 +321,7 @@
   .segmented button { border: 0; border-radius: 7px; padding: .55rem; color: var(--ink-soft); background: transparent; }
   .segmented button[aria-selected="true"] { color: var(--ink); background: var(--porcelain); box-shadow: 0 2px 6px rgb(49 41 30 / 8%); }
   .privacy-note { margin-top: .75rem; color: var(--ink-soft); font-size: .65rem; text-align: center; }
-  .lobby-screen { max-width: 1040px; min-height: calc(100vh - 150px); margin: 0 auto; padding: clamp(3rem, 7vw, 6rem) clamp(1rem, 4vw, 3rem); }
+  .lobby-screen { max-width: 1040px; margin: 0 auto; padding: clamp(3rem, 7vw, 6rem) clamp(1rem, 4vw, 3rem); }
   .section-heading { max-width: 650px; }
   .section-heading h1 { margin: .45rem 0 1rem; }
   .section-heading > p:last-child { color: var(--ink-soft); }
