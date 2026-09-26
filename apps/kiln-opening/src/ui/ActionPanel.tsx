@@ -64,7 +64,8 @@ import { OrderCard } from "./GameTable";
 import { term as localizedTerm, useI18n } from "./i18n";
 import type { Locale } from "./i18n";
 import { WorkerMeeple } from "./WorkerMeeple";
-import { KilnDescription, TechniqueDescription, kilnShortPlainText } from "./TechniqueDescription";
+import { KilnDescription, kilnShortPlainText } from "./TechniqueDescription";
+import { TechniqueFace, pieceSurfaceClass } from "./PieceFaces";
 
 type SendCommand = (command: AuthoritativeCommand) => Promise<boolean>;
 
@@ -226,17 +227,16 @@ function StartingTechControls({ busy, send }: { busy: boolean; send: SendCommand
     >
       <div className="choice-stack technique-commands">
         {STARTING_TECHNIQUES.map((technique) => (
-          <CommandButton
+          <PieceCommandButton
             key={technique.id}
             busy={busy}
-            send={send}
-            command={{ type: "SELECT_STARTING_TECH", techniqueId: technique.id as StartingTechniqueId }}
+            label={locale === "zh-CN" ? `选择${technique.nameZh}` : `Select ${technique.name}`}
+            onClick={() => send({ type: "SELECT_STARTING_TECH", techniqueId: technique.id as StartingTechniqueId })}
           >
-            <span className="plain-technique-summary">
-              <strong>{locale === "zh-CN" ? technique.nameZh : technique.name}</strong>
-              <span><TechniqueDescription id={technique.id} locale={locale} layer="preview" /></span>
-            </span>
-          </CommandButton>
+            <article className={pieceSurfaceClass(technique.id)} data-starting-technique-id={technique.id}>
+              <TechniqueFace id={technique.id} locale={locale} />
+            </article>
+          </PieceCommandButton>
         ))}
       </div>
     </ControlSection>
@@ -1130,7 +1130,7 @@ function GuildControls({ game, player, privateDecision, busy, send }: {
       <div className="choice-stack playtest-command-grid technique-commands">{ids.map((techniqueId) => {
         const technique = TECHNIQUE_DEFINITIONS[techniqueId];
         const cost = guildTechniqueCost(techniqueId, worker?.kind ?? "apprentice");
-        return <PieceCommandButton key={techniqueId} busy={busy || player.resources.coins < cost} label={`${techniqueId} · ${locale === "zh-CN" ? technique?.nameZh : technique?.name ?? t("Unknown Technique")} · ${cost} ${t("Coins")}`} onClick={() => send({ type: "GUILD_BUY_TECHNIQUE", techniqueId, returnTechniqueIds: reverseReturn ? [...(privateDecision?.guildInspectedTechniqueIds ?? [])].filter((id) => id !== techniqueId).reverse() : (privateDecision?.guildInspectedTechniqueIds ?? []).filter((id) => id !== techniqueId) })}><TechniqueSummary techniqueId={techniqueId} shownCost={cost} /></PieceCommandButton>;
+        return <PieceCommandButton key={techniqueId} busy={busy || player.resources.coins < cost} label={`${techniqueId} · ${locale === "zh-CN" ? technique?.nameZh : technique?.name ?? t("Unknown Technique")} · ${cost} ${t("Coins")}`} onClick={() => send({ type: "GUILD_BUY_TECHNIQUE", techniqueId, returnTechniqueIds: reverseReturn ? [...(privateDecision?.guildInspectedTechniqueIds ?? [])].filter((id) => id !== techniqueId).reverse() : (privateDecision?.guildInspectedTechniqueIds ?? []).filter((id) => id !== techniqueId) })}><TechniqueSummary techniqueId={techniqueId} /></PieceCommandButton>;
       })}</div>
     </ControlSection>
   );
@@ -1909,24 +1909,23 @@ function PieceCommandButton({ busy, label, onClick, children }: {
   onClick: () => Promise<boolean>;
   children: ReactNode;
 }) {
+  const descriptionId = `kiln-piece-choice-${useId()}-description`;
   return (
-    <button className="playtest-piece-command" type="button" disabled={busy} onClick={() => void onClick()} aria-label={label} title={label}>
-      {children}
+    <button className="playtest-piece-command kiln-piece-choice" type="button" disabled={busy} onClick={() => void onClick()} aria-label={label} aria-describedby={descriptionId}>
+      <div className="kiln-piece-choice-description" id={descriptionId}>{children}</div>
       <span className="command-label">{label}</span>
     </button>
   );
 }
 
-function TechniqueSummary({ techniqueId, shownCost }: { techniqueId: TechniqueId; shownCost?: number }) {
-  const { locale, t, term } = useI18n();
+function TechniqueSummary({ techniqueId }: { techniqueId: TechniqueId }) {
+  const { locale } = useI18n();
   const technique = TECHNIQUE_DEFINITIONS[techniqueId];
   if (technique === undefined) return <span>{techniqueId}</span>;
   return (
-    <span className="plain-technique-summary">
-      <strong>{technique.id} · {locale === "zh-CN" ? technique.nameZh : technique.name}</strong>
-      <small>{term(technique.discipline)} · {shownCost ?? technique.cost} {t("Coins")}</small>
-      <span><TechniqueDescription id={techniqueId} locale={locale} layer="preview" /></span>
-    </span>
+    <article className={pieceSurfaceClass(techniqueId)} data-technique-id={techniqueId}>
+      <TechniqueFace id={techniqueId} locale={locale} />
+    </article>
   );
 }
 

@@ -1,4 +1,9 @@
 /* Tabletop decisions and reference sheets keep their reading size as the board scales. */
+.kiln-live-root:has(> .kiln-tabletop-inspector-backdrop:not([hidden])) {
+  /* The table is an isolated stack; lift open dialogs above the room masthead. */
+  z-index: 30;
+}
+
 .kiln-live-root .kiln-tabletop-inspector-backdrop {
   background: rgb(9 28 22 / 48%);
   backdrop-filter: blur(3px);

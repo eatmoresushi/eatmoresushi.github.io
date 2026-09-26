@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { STARTING_TECHNIQUE_DEFINITIONS, TECHNIQUE_DEFINITIONS, KILN_DEFINITIONS } from "../../src/game/index.ts";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -94,12 +93,15 @@ describe("tabletop compact Technique copy", () => {
     expect(TECHNIQUE_SHORT_COPY.T12.en).not.toContain("extra Wood");
   });
 
-  it("wires compact copy into every face-up and owned hover/focus target", () => {
+  it("shows compact copy on face-up and owned cards with click inspection and no hover preview", () => {
     for (const locale of ["en", "zh-CN"] as const) {
       const markups = (["P1", "P2", "P3", "P4"] as const).map((playerId) => tabletopMarkup(playerId, locale));
       const combinedText = markups.map(renderedText).join("\n");
-      expect(markups[0]).toContain('data-hover-preview="advanced-technique"');
-      expect(markups[0]).toContain('data-hover-preview="starting-technique"');
+      for (const markup of markups) {
+        expect(markup).not.toMatch(/data-hover-preview="(?:advanced-technique|starting-technique)"/);
+        expect(markup).toMatch(/<button[^>]*aria-haspopup="dialog"[^>]*data-technique-id="T\d+"/);
+        expect(markup).toMatch(/<button[^>]*aria-haspopup="dialog"[^>]*data-starting-technique-id="ST\d+"/);
+      }
       for (const id of ALL_TECHNIQUE_IDS) {
         expect(combinedText, `${id} ${locale} preview`).toContain(techniqueShortPlainText(id, locale));
         if (!techniqueShortPlainText(id, locale).includes(techniqueFullCopy(id, locale))) expect(combinedText, `${id} ${locale} full`).not.toContain(techniqueFullCopy(id, locale));

@@ -9,7 +9,6 @@ import {
   KILN_SPACE_IDS,
   LOCATION_IDS,
   ORDER_DEFINITIONS,
-  TECHNIQUE_DEFINITIONS,
   activeKilnSpaceIds,
   contributionWoodCost,
   currentDecisionActor,
@@ -22,7 +21,7 @@ import type { OrderDefinition } from "../game/content";
 import type { PublicGameState, PublicPlayerState } from "../multiplayer";
 import { term as localizedTerm, useI18n } from "./i18n";
 import type { Locale } from "./i18n";
-import { TechniqueDescription } from "./TechniqueDescription";
+import { OrderFace, TechniqueFace, pieceSurfaceClass } from "./PieceFaces";
 
 const LOCATION_COPY = Object.fromEntries(
   actionLocationsJson.locations.map((location) => [location.id, location]),
@@ -160,8 +159,7 @@ function PlayerPanel({
         <h4>{t("Owned Techniques")} ({player.techniques.length}/2)</h4>
         {player.techniques.length === 0 ? <p>{t("None.")}</p> : (
           <ul className="plain-technique-list">{player.techniques.map((owned) => {
-            const technique = TECHNIQUE_DEFINITIONS[owned.id];
-            return <li key={owned.id}><strong>{owned.id} · {locale === "zh-CN" ? technique?.nameZh : technique?.name}</strong><span className={owned.exhausted ? "state-exhausted" : "state-ready"}>{owned.exhausted ? t("Exhausted") : t("Ready")}</span><p><TechniqueDescription id={owned.id} locale={locale} layer="preview" /></p></li>;
+            return <li className={`${pieceSurfaceClass(owned.id)}${owned.exhausted ? " is-exhausted" : ""}`} data-technique-id={owned.id} key={owned.id}><TechniqueFace id={owned.id} locale={locale} exhausted={owned.exhausted} /></li>;
           })}</ul>
         )}
       </section>
@@ -377,8 +375,7 @@ function TechniqueDisplays({ game }: { game: PublicGameState }) {
         <div key={discipline}>
           <h3>{term(discipline)} · {t("deck")} {game.decks.techniqueRemaining[discipline]}</h3>
           {game.displays.techniques[discipline].map((techniqueId) => {
-            const technique = TECHNIQUE_DEFINITIONS[techniqueId];
-            return <article className="technique-tile" data-technique-id={techniqueId} key={techniqueId}><strong>{techniqueId} · {locale === "zh-CN" ? technique?.nameZh : technique?.name}</strong><span>{technique?.cost} {t("Coins")} · {technique?.oncePerRound ? t("Once per round") : t("Continuous")}</span><p><TechniqueDescription id={techniqueId} locale={locale} layer="preview" /></p></article>;
+            return <article className={pieceSurfaceClass(techniqueId)} data-technique-id={techniqueId} key={techniqueId}><TechniqueFace id={techniqueId} locale={locale} /></article>;
           })}
         </div>
       ))}</div>
@@ -406,16 +403,12 @@ function ImperialProgressTable({ game }: { game: PublicGameState }) {
 }
 
 export function OrderCard({ orderId }: { orderId: string }) {
-  const { locale, t, term } = useI18n();
+  const { locale } = useI18n();
   const order = ORDER_DEFINITIONS[orderId];
   if (order === undefined) return null;
   return (
-    <article className={`order-card ${order.crowns > 0 ? "order-imperial" : ""}`} data-order-id={orderId}>
-      <header><strong>{orderId}</strong><span>{order.vp} {t("VP")}{order.coins > 0 ? ` · ${order.coins} ${t("Coins")}` : ""}{order.crowns > 0 ? ` · ${"👑".repeat(order.crowns)}` : ""}</span></header>
-      <ol className="order-slots">{order.ceramics.map((requirement, index) => (
-        <li key={index}>{requirement.shapes?.map((shape) => term(shape)).join(` ${t("or")} `) ?? (requirement.shape === undefined ? t("Any Shape") : term(requirement.shape))} · {requirement.glaze === undefined ? t("Any Glaze") : term(requirement.glaze)} · {requirement.decorations !== undefined ? requirement.decorations.map((decoration) => term(decoration)).join(` ${t("or")} `) : requirement.decoration === undefined ? t("Any Decoration") : term(requirement.decoration)}</li>
-      ))}</ol>
-      <footer>{qualityLabel(order, locale)}{relationLabel(order, locale)}</footer>
+    <article className={pieceSurfaceClass(orderId)} data-order-id={orderId}>
+      <OrderFace id={orderId} locale={locale} />
     </article>
   );
 }

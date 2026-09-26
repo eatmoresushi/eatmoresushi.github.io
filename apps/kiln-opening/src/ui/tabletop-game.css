@@ -824,11 +824,6 @@
 .kiln-tabletop-kiln-card > b { color: #5d796c; font-family: var(--tabletop-serif); font-size: .78rem; }
 .kiln-tabletop-kiln-card p { color: #4e554d; font-size: .76rem; line-height: 1.48; }
 
-@media (hover: hover) and (pointer: fine) {
-  button.kiln-tabletop-order-card:hover { z-index: 2; transform: translateY(-4px); box-shadow: 0 9px 16px rgb(61 44 18 / 25%); }
-  button.kiln-tabletop-tech-tile:hover,
-  button.kiln-tabletop-starting-tech:hover { z-index: 2; transform: translateY(-3px); box-shadow: 0 8px 14px rgb(54 41 20 / 24%); }
-}
 
 .kiln-tabletop-card-preview {
   position: fixed;
@@ -1833,9 +1828,9 @@
   .firing-heat-calculation > i { display: none; }
 }
 
-/* Player-facing text uses one family and one regular weight. Size, colour, and spacing carry hierarchy. */
+/* Interface text uses a regular sans face; illustrated pieces retain their printed typography. */
 .kiln-tabletop-root.kiln-live-root,
-.kiln-tabletop-root.kiln-live-root * {
+.kiln-tabletop-root.kiln-live-root :not(.kiln-piece, .kiln-piece *) {
   font-family: var(--sans) !important;
   font-weight: 400 !important;
 }

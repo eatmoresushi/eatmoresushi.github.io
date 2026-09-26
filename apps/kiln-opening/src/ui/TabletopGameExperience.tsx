@@ -43,9 +43,9 @@ import type {
   PublicSeat,
 } from "../multiplayer";
 import { ActionPanel } from "./ActionPanel";
+import { OrderFace, TechniqueFace, pieceSurfaceClass } from "./PieceFaces";
 import {
   KilnDescription,
-  TechniqueDescription,
   kilnShortPlainText,
   techniqueShortPlainText,
 } from "./TechniqueDescription";
@@ -801,67 +801,34 @@ function additionalOrderQuality(id: OrderId, locale: Locale) {
   });
 }
 
-function OrderQualityRequirements({ id, locale }: { id: OrderId; locale: Locale }) {
-  const requirements = additionalOrderQuality(id, locale);
-  if (requirements.length === 0) return null;
-  return <div className="kiln-tabletop-order-quality-requirements">{requirements.map((requirement) => <span key={requirement.key} aria-label={requirement.full}>{requirement.compact}</span>)}</div>;
-}
-
 export function OrderCard({ id, locale, displayIndex, owned = false, onInspect }: { id: OrderId; locale: Locale; displayIndex?: number; owned?: boolean; onInspect: (id: OrderId) => void }) {
+  const descriptionId = `kiln-order-${useId()}-description`;
   const order = ORDER_DEFINITIONS[id];
-  const previewId = `kiln-order-preview-${id}-${owned ? "owned" : "market"}`;
-  const descriptionId = `${previewId}-description`;
-  const preview = useCardPreview<HTMLButtonElement>(previewId);
   if (order === undefined) return null;
-  const additionalQuality = additionalOrderQuality(id, locale);
-  const qualityDescription = additionalQuality.map((requirement) => `${requirement.full}${text(locale, ". ", "。")}`).join("");
-  const description = text(locale, `Order ${id}. ${order.requirements}. ${order.ceramics.length} ceramics. Minimum Quality: ${qualityLabel(order.minQuality, locale)}. ${qualityDescription}Reward: ${order.vp} VP, ${order.coins} Coins${order.crowns > 0 ? `, ${order.crowns} Crown${order.crowns === 1 ? "" : "s"}` : ""}.`, `委托 ${id}。${order.requirementsZh}。${order.ceramics.length}件陶瓷。最低品质：${qualityLabel(order.minQuality, locale)}。${qualityDescription}奖励：${order.vp}分、${order.coins}铜钱${order.crowns > 0 ? `、${order.crowns}皇冠` : ""}。`);
-  return (
-    <>
-      <button
-        ref={preview.anchorRef}
-        className={`kiln-tabletop-order-card kiln-tabletop-art-surface ${order.crowns > 0 ? "is-crown" : ""} ${owned ? "is-owned" : ""} ${additionalQuality.length > 0 ? "has-quality-requirement" : ""}`}
-        type="button"
-        onClick={() => { preview.dismiss(); onInspect(id); }}
-        onPointerEnter={(event) => { if (event.pointerType !== "touch") preview.pointerEnter(); }}
-        onPointerLeave={preview.pointerLeave}
-        onFocus={preview.focus}
-        onBlur={preview.blur}
-        onKeyDown={(event) => { if (event.key === "Escape") preview.dismiss(); }}
-        aria-label={text(locale, `Inspect Order ${id}`, `查看委托 ${id}`)}
-        aria-describedby={descriptionId}
-        aria-haspopup="dialog"
-        data-hover-preview="order"
-        data-preview-id={previewId}
-        data-order-id={id}
-      >
-        <ArtworkLayer source={TABLETOP_ARTWORK.orders[id]} slot={`order:${id}`} />
-        {displayIndex !== undefined && <span className="kiln-tabletop-display-index">{displayIndex}</span>}
-        <header><b>{id}</b><span className="kiln-tabletop-order-crowns" aria-hidden="true">{"♛".repeat(order.crowns)}</span></header>
-        <div className="kiln-tabletop-order-seal" aria-hidden="true">{order.ceramics.length}</div>
-        <p>{locale === "zh-CN" ? order.requirementsZh : order.requirements}</p>
-        <OrderQualityRequirements id={id} locale={locale} />
-        <footer><span><small>{text(locale, "MIN", "最低")}</small><b>{qualityLabel(order.minQuality, locale)}</b></span><span><small>{text(locale, "VP", "分")}</small><b>{order.vp}</b></span><span><small>{text(locale, "COIN", "钱")}</small><b>{order.coins}</b></span></footer>
-      </button>
-      <span className="sr-only" id={descriptionId}>{description}</span>
-      <CardHoverPreview id={previewId} position={preview.position} eyebrow={text(locale, "ORDER PREVIEW · CLICK FOR DETAILS", "委托预览 · 点击查看详情")} onPointerEnter={preview.pointerEnter} onPointerLeave={preview.pointerLeave}>
-        <StaticOrderCard id={id} locale={locale} />
-      </CardHoverPreview>
-    </>
-  );
+  const qualityDescription = additionalOrderQuality(id, locale).map((requirement) => requirement.full).join(". ");
+  return <>
+    <button
+      className={`${pieceSurfaceClass(id)} ${owned ? "is-owned" : ""}`}
+      type="button"
+      onClick={() => onInspect(id)}
+      aria-label={text(locale, `Inspect Order ${id}`, `查看委托 ${id}`)}
+      aria-describedby={descriptionId}
+      aria-haspopup="dialog"
+      data-order-id={id}
+    >
+      <OrderFace id={id} locale={locale} {...(displayIndex === undefined ? {} : { displayIndex })} />
+    </button>
+    <span className="sr-only" id={descriptionId}>{text(locale,
+      `Order ${id}. ${order.requirements}. ${order.ceramics.length} ceramics. Minimum Quality: ${qualityLabel(order.minQuality, locale)}. ${qualityDescription} Reward: ${order.vp} VP, ${order.coins} Coins, ${order.crowns} Crowns.`,
+      `委托 ${id}。${order.requirementsZh}。${order.ceramics.length}件陶瓷。最低品质：${qualityLabel(order.minQuality, locale)}。${qualityDescription} 奖励：${order.vp}分、${order.coins}铜钱、${order.crowns}皇冠。`)}</span>
+  </>;
 }
 
 export function StaticOrderCard({ id, locale }: { id: OrderId; locale: Locale }) {
-  const order = ORDER_DEFINITIONS[id];
-  if (order === undefined) return null;
-  return (
-    <article className={`kiln-tabletop-order-card kiln-tabletop-static-order kiln-tabletop-art-surface ${order.crowns > 0 ? "is-crown" : ""} ${additionalOrderQuality(id, locale).length > 0 ? "has-quality-requirement" : ""}`} data-order-id={id}>
-      <ArtworkLayer source={TABLETOP_ARTWORK.orders[id]} slot={`order:${id}`} />
-      <header><b>{id}</b><span className="kiln-tabletop-order-crowns" aria-hidden="true">{"♛".repeat(order.crowns)}</span></header><div className="kiln-tabletop-order-seal" aria-hidden="true">{order.ceramics.length}</div><p>{locale === "zh-CN" ? order.requirementsZh : order.requirements}</p>
-      <OrderQualityRequirements id={id} locale={locale} />
-      <footer><span><small>{text(locale, "MIN", "最低")}</small><b>{qualityLabel(order.minQuality, locale)}</b></span><span><small>{text(locale, "VP", "分")}</small><b>{order.vp}</b></span><span><small>{text(locale, "COIN", "钱")}</small><b>{order.coins}</b></span></footer>
-    </article>
-  );
+  if (ORDER_DEFINITIONS[id] === undefined) return null;
+  return <article className={`kiln-tabletop-static-order ${pieceSurfaceClass(id)}`} data-order-id={id}>
+    <OrderFace id={id} locale={locale} />
+  </article>;
 }
 
 function RoundTrack({ game, locale }: { game: PublicGameState; locale: Locale }) {
@@ -1107,89 +1074,43 @@ function TechniqueMarket({ game, locale, onInspect }: { game: PublicGameState; l
 }
 
 function TechniqueTile({ id, locale, owned = false, exhausted = false, onInspect }: { id: TechniqueId; locale: Locale; owned?: boolean; exhausted?: boolean; onInspect: (id: TechniqueId) => void }) {
+  const descriptionId = `kiln-technique-${useId()}-description`;
   const technique = TECHNIQUE_DEFINITIONS[id];
-  const previewId = `kiln-technique-preview-${id}-${owned ? "owned" : "market"}`;
-  const descriptionId = `${previewId}-description`;
-  const preview = useCardPreview<HTMLButtonElement>(previewId);
   if (technique === undefined) return null;
-  const description = techniqueShortPlainText(id, locale);
-  return (
-    <>
-      <button
-        ref={preview.anchorRef}
-        className={`kiln-tabletop-tech-tile kiln-tabletop-art-surface is-${technique.discipline} ${owned ? "is-owned" : ""} ${exhausted ? "is-exhausted" : ""}`}
-        type="button"
-        onClick={() => { preview.dismiss(); onInspect(id); }}
-        onPointerEnter={(event) => { if (event.pointerType !== "touch") preview.pointerEnter(); }}
-        onPointerLeave={preview.pointerLeave}
-        onFocus={preview.focus}
-        onBlur={preview.blur}
-        onKeyDown={(event) => { if (event.key === "Escape") preview.dismiss(); }}
-        aria-label={text(locale, `Inspect ${technique.name}`, `查看${technique.nameZh}`)}
-        aria-describedby={descriptionId}
-        aria-haspopup="dialog"
-        data-hover-preview="advanced-technique"
-        data-preview-id={previewId}
-        data-technique-id={id}
-      >
-        <ArtworkLayer source={TABLETOP_ARTWORK.techniques[id]} slot={`technique:${id}`} />
-        <header><span>{id}</span><TechniqueCoinCost cost={technique.cost} locale={locale} /></header><strong>{locale === "zh-CN" ? technique.nameZh : technique.name}</strong><p><TechniqueDescription id={id} locale={locale} layer="preview" /></p><footer><span>{technique.oncePerRound ? text(locale, "Once per round", "每轮一次") : text(locale, "Continuous", "持续生效")}</span><TechniqueEndGameVp locale={locale} /></footer>{exhausted && <i>{text(locale, "Used", "已用")}</i>}
-      </button>
-      <span className="sr-only" id={descriptionId}>{description}</span>
-      <CardHoverPreview id={previewId} position={preview.position} eyebrow={text(locale, "ADVANCED TECH PREVIEW · CLICK FOR DETAILS", "进阶技艺预览 · 点击查看详情")} onPointerEnter={preview.pointerEnter} onPointerLeave={preview.pointerLeave}>
-        <StaticTechniqueTile id={id} locale={locale} exhausted={exhausted} layer="preview" />
-      </CardHoverPreview>
-    </>
-  );
+  return <>
+    <button
+      className={`${pieceSurfaceClass(id)} ${owned ? "is-owned" : ""} ${exhausted ? "is-exhausted" : ""}`}
+      type="button"
+      onClick={() => onInspect(id)}
+      aria-label={text(locale, `Inspect ${technique.name}`, `查看${technique.nameZh}`)}
+      aria-describedby={descriptionId}
+      aria-haspopup="dialog"
+      data-technique-id={id}
+    ><TechniqueFace id={id} locale={locale} exhausted={exhausted} /></button>
+    <span className="sr-only" id={descriptionId}>{techniqueShortPlainText(id, locale)}</span>
+  </>;
 }
 
 function StaticTechniqueTile({ id, locale, exhausted = false, layer = "full" }: { id: TechniqueId; locale: Locale; exhausted?: boolean; layer?: "preview" | "full" }) {
-  const technique = TECHNIQUE_DEFINITIONS[id];
-  if (technique === undefined) return null;
-  return <article className={`kiln-tabletop-tech-tile kiln-tabletop-static-tech kiln-tabletop-art-surface is-${technique.discipline} ${exhausted ? "is-exhausted" : ""}`} data-technique-id={id} data-description-layer={layer}><ArtworkLayer source={TABLETOP_ARTWORK.techniques[id]} slot={`technique:${id}`} /><header><span>{id}</span><TechniqueCoinCost cost={technique.cost} locale={locale} /></header><strong>{locale === "zh-CN" ? technique.nameZh : technique.name}</strong><p><TechniqueDescription id={id} locale={locale} layer={layer} /></p><footer><span>{technique.oncePerRound ? text(locale, "Once per round", "每轮一次") : text(locale, "Continuous", "持续生效")}</span><TechniqueEndGameVp locale={locale} /></footer>{exhausted && <i>{text(locale, "Used", "已用")}</i>}</article>;
-}
-
-function TechniqueCoinCost({ cost, locale }: { cost: number; locale: Locale }) {
-  return <b className="kiln-tabletop-tech-cost" aria-label={text(locale, `${cost} Coins`, `${cost}铜钱`)}><span>{cost}</span><i className="kiln-tabletop-cash-coin" aria-hidden="true" /></b>;
-}
-
-function TechniqueEndGameVp({ locale }: { locale: Locale }) {
-  return <b className="kiln-tabletop-tech-endgame-vp" title={text(locale, "Scores 1 VP at game end", "终局计分时获得1分")} aria-label={text(locale, "Scores 1 VP at game end", "终局计分时获得1分")}>1VP</b>;
+  if (TECHNIQUE_DEFINITIONS[id] === undefined) return null;
+  return <article className={`kiln-tabletop-static-tech ${pieceSurfaceClass(id)} ${exhausted ? "is-exhausted" : ""}`} data-technique-id={id} data-description-layer={layer}>
+    <TechniqueFace id={id} locale={locale} exhausted={exhausted} layer={layer} />
+  </article>;
 }
 
 function StartingTechniqueTile({ id, locale, owned = false, onInspect, layer = onInspect === undefined ? "full" : "preview" }: { id: StartingTechniqueId; locale: Locale; owned?: boolean; onInspect?: (id: StartingTechniqueId) => void; layer?: "preview" | "full" }) {
+  const descriptionId = `kiln-starting-technique-${useId()}-description`;
   const technique = STARTING_TECHNIQUE_DEFINITIONS[id];
-  const previewId = `kiln-starting-technique-preview-${id}`;
-  const descriptionId = `${previewId}-description`;
-  const preview = useCardPreview<HTMLButtonElement>(previewId);
-  const className = `kiln-tabletop-starting-tech kiln-tabletop-art-surface ${owned ? "is-owned" : ""}`;
-  const contents = <><ArtworkLayer source={TABLETOP_ARTWORK.techniques[id]} slot={`starting-technique:${id}`} /><header><span>{id}</span><small>{text(locale, "Starting Tech", "起始技艺")}</small></header><strong>{locale === "zh-CN" ? technique.nameZh : technique.name}</strong><p><TechniqueDescription id={id} locale={locale} layer={layer} /></p></>;
+  const className = `${pieceSurfaceClass(id)} ${owned ? "is-owned" : ""}`;
+  const contents = <TechniqueFace id={id} locale={locale} layer={layer} />;
   if (onInspect === undefined) return <article className={className} data-starting-technique-id={id} data-description-layer={layer}>{contents}</article>;
-  return (
-    <>
-      <button
-        ref={preview.anchorRef}
-        className={className}
-        type="button"
-        onClick={() => { preview.dismiss(); onInspect(id); }}
-        onPointerEnter={(event) => { if (event.pointerType !== "touch") preview.pointerEnter(); }}
-        onPointerLeave={preview.pointerLeave}
-        onFocus={preview.focus}
-        onBlur={preview.blur}
-        onKeyDown={(event) => { if (event.key === "Escape") preview.dismiss(); }}
-        aria-label={text(locale, `Inspect ${technique.name}`, `查看${technique.nameZh}`)}
-        aria-describedby={descriptionId}
-        aria-haspopup="dialog"
-        data-hover-preview="starting-technique"
-        data-preview-id={previewId}
-        data-starting-technique-id={id}
-      >{contents}</button>
-      <span className="sr-only" id={descriptionId}>{techniqueShortPlainText(id, locale)}</span>
-      <CardHoverPreview id={previewId} position={preview.position} eyebrow={text(locale, "STARTING TECH PREVIEW · CLICK FOR DETAILS", "起始技艺预览 · 点击查看详情")} onPointerEnter={preview.pointerEnter} onPointerLeave={preview.pointerLeave}>
-        <StartingTechniqueTile id={id} locale={locale} layer="preview" />
-      </CardHoverPreview>
-    </>
-  );
+  return <>
+    <button className={className} type="button" onClick={() => onInspect(id)}
+      aria-label={text(locale, `Inspect ${technique.name}`, `查看${technique.nameZh}`)}
+      aria-describedby={descriptionId} aria-haspopup="dialog" data-starting-technique-id={id}
+    >{contents}</button>
+    <span className="sr-only" id={descriptionId}>{techniqueShortPlainText(id, locale)}</span>
+  </>;
 }
 
 function OwnWorkshop({
