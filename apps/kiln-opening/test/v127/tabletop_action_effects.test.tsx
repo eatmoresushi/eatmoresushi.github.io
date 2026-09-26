@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { LOCATION_DEFINITIONS } from "../../src/game/index.ts";
 import { projectPublicGameState } from "../../src/multiplayer/index.ts";
 import { ActionSpace, TABLETOP_BOARD_LOCATIONS } from "../../src/ui/TabletopGameExperience.tsx";
 import { startedGame, workerId } from "./helpers.ts";
@@ -16,6 +17,13 @@ describe.each(["en", "zh-CN"] as const)("both worker effects on the board (%s)",
       }));
       expect(markup, id).toContain('data-effect-worker="apprentice"');
       expect(markup, id).toContain('data-effect-worker="shifu"');
+      const definition = LOCATION_DEFINITIONS[id];
+      // Compact board labels must retain the full, data-backed rules on hover.
+      for (const workerKind of ["apprentice", "shifu"] as const) {
+        const reminder = locale === "zh-CN" ? definition[`${workerKind}Zh`] : definition[workerKind];
+        const title = renderToStaticMarkup(createElement("span", { title: reminder })).match(/title="[^"]*"/)![0];
+        expect(markup, `${id}.${workerKind}`).toContain(`data-effect-worker="${workerKind}" ${title}`);
+      }
       expect(markup, id).toContain('role="img" aria-label="' + (locale === "en" ? "Apprentice" : "学徒") + '"');
       expect(markup, id).toContain('role="img" aria-label="' + (locale === "en" ? "Shifu" : "师傅") + '"');
       expect(markup.match(/class="kiln-board-effect-copy"/g), id).toHaveLength(2);

@@ -951,7 +951,8 @@ export function ActionSpace({ game, ownPlayer, id, locale, selectedWorkerId, sel
       <div className="kiln-illustrated-action-plaque">
         <header><div><strong>{locale === "zh-CN" ? definition.nameZh : definition.name}</strong>{status !== null && <small className="sr-only" id={`${descriptionId}-status`}>{status}</small>}</div></header>
         <div className="kiln-tabletop-action-effects" id={`${descriptionId}-rules`}>{(["apprentice", "shifu"] as const).map((kind) => {
-          return <div className={`kiln-tabletop-action-effect ${worker?.kind === kind ? "is-current-worker" : ""}`} data-effect-worker={kind} key={kind}>
+          const fullEffect = kind === "shifu" ? locale === "zh-CN" ? definition.shifuZh : definition.shifu : locale === "zh-CN" ? definition.apprenticeZh : definition.apprentice;
+          return <div className={`kiln-tabletop-action-effect ${worker?.kind === kind ? "is-current-worker" : ""}`} data-effect-worker={kind} title={fullEffect} key={kind}>
             <WorkerMeeple kind={kind} small locale={locale} />
             <span aria-hidden="true"><BoardActionSummary id={id} kind={kind} locale={locale} /></span>
             <span className="sr-only"><BoardActionEffect id={id} kind={kind} locale={locale} /></span>
