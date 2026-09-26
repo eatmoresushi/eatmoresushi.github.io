@@ -373,12 +373,18 @@ export function actionDraftDecisionKey(
   return [game.gameId, ownPlayerId, game.round, decision, selectedLocation ?? "all", selectedWorkerId ?? "auto"].join("|");
 }
 
-/** Keep a multi-step worker action in one uninterrupted modal flow. */
+/** Keep setup and multi-step worker actions in one uninterrupted modal flow. */
 export function keepActionControlsOpenAfterCommand(
   game: PublicGameState,
   ownPlayerId: PlayerId,
   command: AuthoritativeCommand,
 ): boolean {
+  if (command.type === "SELECT_KILN") {
+    return game.phase.type === "setup_kiln_selection" && currentDecisionActor(game.phase) === ownPlayerId;
+  }
+  if (command.type === "SELECT_STARTING_TECH") {
+    return game.phase.type === "setup_starting_tech" && currentDecisionActor(game.phase) === ownPlayerId;
+  }
   if (command.type === "BEGIN_OFFICE_ORDERS" || command.type === "BEGIN_GUILD_ACTION") return true;
   if (game.phase.type === "work_guild" && game.phase.actorId === ownPlayerId) {
     return command.type === "GUILD_INSPECT_DISCIPLINE";
@@ -1367,6 +1373,13 @@ function ModalPanel({ title, eyebrow, locale, onClose, open = true, className = 
       delete returnTarget.dataset["kilnSuppressCardPreviewFocus"];
     };
   }, [open]);
+  useEffect(() => {
+    // A new decision replaces the form inside this still-open dialog. Recover
+    // focus if its selected button disappeared, without scrolling or remounting.
+    if (open && document.activeElement === document.body) {
+      closeButtonRef.current?.focus({ preventScroll: true });
+    }
+  });
   function keyDown(event: ReactKeyboardEvent<HTMLElement>): void {
     if (event.key === "Escape") { event.preventDefault(); onClose(); return; }
     if (event.key !== "Tab") return;

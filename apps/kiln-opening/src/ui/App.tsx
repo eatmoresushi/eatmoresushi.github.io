@@ -571,7 +571,8 @@ export function App() {
         {notice !== null && <div className="banner banner-info" role="status" aria-live="polite">{notice}</div>}
         {(busy || computerThinking) && <div className="progress-line" role="progressbar" aria-label={t("Please wait")} />}
         {computerThinking && (
-          <div className="banner banner-info" role="status" aria-live="polite">{t("Computer is choosing…")}</div>
+          // The fixed progress line shows activity without a transient banner shifting the table.
+          <div className="sr-only" role="status" aria-live="polite">{t("Computer is choosing…")}</div>
         )}
 
         {connection === null ? (

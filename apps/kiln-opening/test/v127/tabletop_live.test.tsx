@@ -25,6 +25,33 @@ function localizedMarkup(locale: Locale, child: ReturnType<typeof createElement>
 }
 
 describe("V1.4 functional tabletop", () => {
+  it("keeps the setup dialog open across own selections until Work removes its context", () => {
+    const state = structuredClone(startedGame(2, 12_675).state);
+    const workPhase = state.phase;
+    state.phase = { type: "setup_kiln_selection", selectionOrder: ["P2", "P1"], currentIndex: 1 };
+    let game = projectPublicGameState(state);
+    const selectKiln = { type: "SELECT_KILN", kilnId: "GE" } as const;
+    const selectTech = { type: "SELECT_STARTING_TECH", techniqueId: "ST01" } as const;
+
+    expect(keepActionControlsOpenAfterCommand(game, "P1", selectKiln)).toBe(true);
+    expect(keepActionControlsOpenAfterCommand(game, "P2", selectKiln)).toBe(false);
+    expect(keepActionControlsOpenAfterCommand(game, "P1", selectTech)).toBe(false);
+    expect(hasActionControlsContext(game, null)).toBe(true);
+
+    state.phase = { type: "setup_starting_tech", decisionOrder: ["P1", "P2"], currentIndex: 0 };
+    game = projectPublicGameState(state);
+    expect(keepActionControlsOpenAfterCommand(game, "P1", selectTech)).toBe(true);
+    expect(keepActionControlsOpenAfterCommand(game, "P2", selectTech)).toBe(false);
+    expect(keepActionControlsOpenAfterCommand(game, "P1", selectKiln)).toBe(false);
+    expect(hasActionControlsContext(game, null)).toBe(true);
+
+    state.phase = workPhase;
+    game = projectPublicGameState(state);
+    expect(hasActionControlsContext(game, null)).toBe(false);
+    expect(keepActionControlsOpenAfterCommand(game, "P1", selectKiln)).toBe(false);
+    expect(keepActionControlsOpenAfterCommand(game, "P1", selectTech)).toBe(false);
+  });
+
   it("keeps an unfinished action mounted while inspecting the table, then discards it after resolution", () => {
     const empty = { open: false, mounted: false };
     const open = actionControlsVisibilityReducer(empty, { type: "OPEN" });
