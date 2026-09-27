@@ -1,0 +1,156 @@
+/* Dialogs stay outside the scaled table. Their dimensions follow the viewport,
+   while body text and controls keep a readable, usable size. */
+.kiln-live-root .kiln-tabletop-inspector-backdrop {
+  --dialog-inset: clamp(.5rem, 1.2vw, 1.25rem);
+  --dialog-padding: clamp(.75rem, 1.5vw, 1.25rem);
+  --dialog-top: max(var(--dialog-inset), env(safe-area-inset-top));
+  --dialog-bottom: max(var(--dialog-inset), env(safe-area-inset-bottom));
+}
+
+.kiln-live-root .kiln-tabletop-inspector {
+  top: var(--dialog-top);
+  right: max(var(--dialog-inset), env(safe-area-inset-right));
+  bottom: var(--dialog-bottom);
+  left: auto;
+  width: min(42rem, 46vw, calc(100vw - 2 * var(--dialog-inset)));
+  min-width: min(24rem, calc(100vw - 2 * var(--dialog-inset)));
+  max-height: calc(100dvh - var(--dialog-top) - var(--dialog-bottom));
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.kiln-live-root .kiln-live-controls-panel {
+  width: min(56rem, 62vw, calc(100vw - 2 * var(--dialog-inset)));
+  min-width: min(34rem, calc(100vw - 2 * var(--dialog-inset)));
+}
+
+.kiln-live-root .kiln-tabletop-inspector > header {
+  flex: none;
+  padding: clamp(.65rem, 1.2vw, 1rem) var(--dialog-padding);
+}
+
+/* Log and Recognition inspectors have direct content children instead of the
+   usual content wrapper. They need the same bounded scroll area. */
+.kiln-live-root .kiln-tabletop-inspector > :not(header) {
+  min-width: 0;
+  min-height: 0;
+  max-height: 100%;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scroll-padding-block: var(--dialog-padding);
+}
+
+.kiln-live-root .kiln-tabletop-inspector-content,
+.kiln-live-root .kiln-live-controls-panel > .action-rail,
+.kiln-live-root .kiln-tabletop-inspector > .kiln-tabletop-log {
+  padding: var(--dialog-padding);
+}
+
+.kiln-live-root .kiln-tabletop-inspector .kiln-tabletop-detail-view {
+  align-content: start;
+}
+
+/* The same printed tile keeps the same physical size in every surface. Only
+   the tile scales here; full rules and action controls retain reading size. */
+.kiln-live-root .kiln-tabletop-inspector .kiln-tech-tile {
+  zoom: var(--tabletop-card-scale, 1);
+}
+
+.kiln-live-root .kiln-tabletop-inspector .kiln-tech-tile .kiln-piece-copy {
+  font-size: clamp(.625rem, 6.6cqw, .75rem);
+  line-height: 1.2;
+}
+
+.kiln-live-root .kiln-live-controls-panel .choice-stack.technique-commands {
+  grid-template-columns: repeat(auto-fit, calc(var(--tech-tile-size) * var(--tabletop-card-scale, 1)));
+}
+
+.kiln-live-controls-panel .kiln-choice-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+  align-items: start;
+}
+
+.kiln-live-controls-panel .control-submit-bar {
+  position: sticky;
+  bottom: calc(-1 * var(--dialog-padding));
+  flex-wrap: wrap;
+  z-index: 3;
+}
+
+.kiln-live-root .kiln-tabletop-inspector :is(button, summary) {
+  touch-action: manipulation;
+}
+
+/* Prevent the table behind a dialog from scrolling while a decision is open. */
+body:has(.kiln-tabletop-inspector-backdrop:not([hidden])) {
+  overflow: hidden;
+}
+
+@media (max-width: 760px) {
+  .kiln-live-root .kiln-tabletop-inspector,
+  .kiln-live-root .kiln-live-controls-panel {
+    left: max(var(--dialog-inset), env(safe-area-inset-left));
+    right: max(var(--dialog-inset), env(safe-area-inset-right));
+    width: auto;
+    min-width: 0;
+  }
+
+  .kiln-live-controls-panel .control-submit-bar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .kiln-live-root .kiln-tabletop-inspector-backdrop {
+    --dialog-inset: .375rem;
+    --dialog-padding: .75rem;
+  }
+
+  .kiln-live-root .kiln-tabletop-inspector {
+    border-width: 1px;
+    border-radius: 12px;
+  }
+
+  .kiln-live-root .kiln-tabletop-inspector > header strong {
+    font-size: 1.125rem;
+  }
+
+  .kiln-live-root .kiln-tabletop-inspector > :not(header) {
+    scrollbar-gutter: auto;
+  }
+
+  .kiln-live-root .kiln-tabletop-detail-view dl > div {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    gap: .65rem;
+  }
+
+  .kiln-live-controls-panel .button-row > button {
+    flex-basis: 100%;
+  }
+
+  .kiln-live-controls-panel :is(button:not(.kiln-piece-choice), input:not([type="checkbox"]):not([type="radio"]), select, summary) {
+    min-height: 44px;
+  }
+}
+
+/* Short landscape windows keep a compact header and scroll the decision body;
+   neither the close button nor the final confirmation can fall off-screen. */
+@media (max-height: 540px) {
+  .kiln-live-root .kiln-tabletop-inspector-backdrop {
+    --dialog-inset: .375rem;
+    --dialog-padding: .65rem;
+  }
+
+  .kiln-live-root .kiln-tabletop-inspector > header {
+    padding-block: .35rem;
+  }
+
+  .kiln-live-root .kiln-tabletop-inspector > header small {
+    display: none;
+  }
+
+  .kiln-live-controls-panel .control-submit-bar {
+    position: static;
+  }
+}

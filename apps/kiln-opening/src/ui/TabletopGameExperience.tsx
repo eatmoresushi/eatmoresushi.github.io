@@ -61,6 +61,8 @@ import { ImperialKilnIllustration } from "./ImperialKilnIllustration";
 import { RecognitionMarker } from "./RecognitionMarker";
 import { useTabletopPieceSizes } from "./useTabletopPieceSizes";
 import { ResponsiveGameBoard } from "./ResponsiveGameBoard";
+import { ResponsiveTabletop } from "./ResponsiveTabletop";
+import type { TabletopLayout } from "./tabletopLayout";
 import { fireCardHistory } from "./fireCardHistory";
 import type { FireCardHistoryEntry } from "./fireCardHistory";
 import { previewPosition } from "./previewPosition";
@@ -72,6 +74,8 @@ import "./tabletop-dialogs.css";
 import "./tabletop-overview.css";
 import "./recognition-track.css";
 import "./personal-piece-sizes.css";
+import "./responsive-tabletop.css";
+import "./responsive-overlays.css";
 
 type SendCommand = (command: AuthoritativeCommand) => Promise<boolean>;
 
@@ -432,6 +436,8 @@ export function TabletopGameExperience({
   game = withOwnOrderHand(game, ownPlayerId, ownPrivateDecision?.orderHand);
   const { locale } = useI18n();
   const tableRootRef = useRef<HTMLDivElement>(null);
+  const publicSidebarRef = useRef<HTMLDivElement>(null);
+  const [tabletopLayout, setTabletopLayout] = useState<TabletopLayout>({ mode: "wide", scale: 1, cardScale: 1 });
   useTabletopPieceSizes(tableRootRef);
   const ownPlayer = game.players[ownPlayerId];
   const [selectedWorkerId, setSelectedWorkerId] = useState<WorkerId | null>(null);
@@ -507,7 +513,10 @@ export function TabletopGameExperience({
   const showContextAction = actionControlsHaveContext;
 
   return (
-    <div className="kiln-tabletop-root kiln-live-root" ref={tableRootRef} data-testid="tabletop-live-ui">
+    <div className="kiln-tabletop-root kiln-live-root" ref={tableRootRef} data-testid="tabletop-live-ui"
+      data-tabletop-layout={tabletopLayout.mode}
+      style={{ "--tabletop-card-scale": tabletopLayout.cardScale, "--tabletop-player-count": game.playerOrder.length } as CSSProperties}>
+      <ResponsiveTabletop onLayoutChange={setTabletopLayout}>
       <header className="kiln-tabletop-topbar kiln-live-topbar">
         <div className="kiln-tabletop-brand" aria-label={text(locale, "Game table", "游戏桌面")}>
           <span aria-hidden="true">窑</span>
@@ -552,7 +561,7 @@ export function TabletopGameExperience({
         <div className="kiln-tabletop-play-area">
           <div className="kiln-tabletop-board-scroll">
             <section className="kiln-tabletop-board kiln-tabletop-art-surface" id="kiln-live-shared-board" aria-label={text(locale, "Shared game board", "共享游戏板")}>
-              <ResponsiveGameBoard>
+              <ResponsiveGameBoard matchHeightRef={publicSidebarRef} matchHeight={tabletopLayout.mode === "wide"}>
                 <div className="kiln-tabletop-actions-grid kiln-illustrated-district">
                   {TABLETOP_BOARD_LOCATIONS.map(({ id }) => (
                     <ActionSpace
@@ -572,7 +581,7 @@ export function TabletopGameExperience({
               </ResponsiveGameBoard>
             </section>
           </div>
-          <div className="kiln-tabletop-public-sidebar">
+          <div className="kiln-tabletop-public-sidebar" ref={publicSidebarRef}>
             <TechniqueMarket game={game} locale={locale} onInspect={(id) => inspect({ type: "technique", id })} />
             <ImperialTrack game={game} locale={locale} compact onInspect={() => inspect({ type: "recognition" })} />
           </div>
@@ -593,6 +602,7 @@ export function TabletopGameExperience({
           <ImperialKilnGallery game={game} locale={locale} />
         </div>
       </main>
+      </ResponsiveTabletop>
 
       {controlsVisibility.mounted && actionControlsHaveContext && (
         <ModalPanel open={controlsOpen} title={selectedDefinition === null ? phaseName(game, locale) : locale === "zh-CN" ? selectedDefinition.nameZh : selectedDefinition.name} eyebrow={text(locale, "ACTION", "行动")} locale={locale} onClose={() => updateControlsVisibility({ type: "CLOSE" })} className="kiln-live-controls-panel">

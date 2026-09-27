@@ -42,13 +42,6 @@
 :is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-crown-icon { width: .95rem; height: .8rem; }
 
 @media (min-width: 1100px) {
-  .app-shell:has(> .masthead .room-meta):has(.kiln-live-root) > .masthead { min-height: 46px; padding: .25rem .75rem; }
-  .app-shell:has(> .masthead .room-meta):has(.kiln-live-root) .masthead .brand-mark { flex-basis: 30px; width: 30px; font-size: 1rem; }
-  .app-shell:has(> .masthead .room-meta):has(.kiln-live-root) .masthead .brand strong { font-size: .95rem; }
-  .app-shell:has(> .masthead .room-meta):has(.kiln-live-root) .masthead .brand small { font-size: .6rem; }
-  .app-shell:has(> .masthead .room-meta):has(.kiln-live-root) .masthead .language-toggle button { min-width: 32px; min-height: 30px; padding: .2rem .35rem; font-size: .7rem; }
-  .app-shell:has(> .masthead .room-meta):has(.kiln-live-root) .room-meta { gap: .5rem; font-size: .7rem; }
-  .app-shell:has(> .masthead .room-meta):has(.kiln-live-root) .room-meta .text-button { min-height: 30px; padding: .25rem .4rem; font-size: .7rem; }
   .kiln-live-root { --ui-gap: .5rem; }
   .kiln-tabletop-root.kiln-live-root .kiln-tabletop-topbar { min-height: 44px; padding: .3rem .75rem; }
   .kiln-live-root .kiln-tabletop-brand > span:first-child { width: 28px; font-size: 1rem; }

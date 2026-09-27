@@ -42,8 +42,9 @@ export function useTabletopPieceSizes(rootRef: RefObject<HTMLElement | null>): v
       }
       observed = nextObserved;
 
-      // Read every public border box before changing any inherited custom properties.
-      const orderRects = orders.map((element) => element.getBoundingClientRect());
+      // Measure layout pixels, not transformed screen pixels, so personal Orders
+      // receive the same single table scale as public Orders.
+      const orderRects = orders.map((element) => ({ width: element.offsetWidth, height: element.offsetHeight }));
       writeSize("--table-order-width", Math.max(0, ...orderRects.map(({ width }) => width)));
       writeSize("--table-order-height", Math.max(0, ...orderRects.map(({ height }) => height)));
     }
