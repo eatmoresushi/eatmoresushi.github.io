@@ -68,6 +68,7 @@
 /* Keep frame details a fixed size so they never cross corner labels. */
 .kiln-tech-tile::before { inset: 3px; border: 1px solid var(--piece-accent); outline: 1px solid var(--piece-accent); outline-offset: -3px; background: none; mask: none; opacity: .6; }
 .kiln-order-card { display: grid; grid-template-rows: auto minmax(1.5rem, 1fr) auto auto auto auto; --piece-accent: #af915c; container-type: inline-size; box-sizing: border-box; width: 100%; max-width: 320px; min-height: 0; aspect-ratio: 5 / 7; align-self: start; justify-self: center; gap: .35rem; border-radius: 10px; padding: 1rem; box-shadow: 0 1px 0 #b3a483, 0 2px 5px #17291f26; }
+.kiln-order-card { grid-template-columns: minmax(0, 1fr); }
 .kiln-order-card::before { inset: 5px; border-radius: 6px; }
 .kiln-piece > .kiln-piece-art { pointer-events: none; }
 .kiln-order-card > .kiln-piece-art { display: none; }
@@ -151,9 +152,9 @@
 .kiln-order-card .kiln-piece-heading { grid-row: 1; order: 0; justify-content: space-between; }
 .kiln-order-card .kiln-piece-id { order: 2; font-family: var(--sans); font-size: .7rem; font-weight: 400; color: #82765f; }
 .kiln-order-card .kiln-piece-category { font-size: .65rem; letter-spacing: .08em; text-transform: uppercase; }
-.kiln-piece-order-illustration { grid-row: 2; order: 1; display: flex; flex: 1; align-items: center; justify-content: center; width: 100%; min-height: 0; aspect-ratio: 1.9; pointer-events: none; mix-blend-mode: multiply; }
-.kiln-piece-order-illustration img { width: 50%; min-width: 0; max-height: 100%; object-fit: contain; }
-.kiln-piece-order-illustration img:only-child { width: 80%; }
+.kiln-piece-order-illustration { grid-row: 2; order: 1; display: flex; flex: 1; align-items: center; justify-content: center; width: 100%; min-width: 0; min-height: 0; aspect-ratio: 1.9; pointer-events: none; mix-blend-mode: multiply; }
+.kiln-piece-order-illustration > .kiln-ceramic-art { display: block; flex: 0 1 50%; width: 50%; min-width: 0; height: 100%; max-height: 100%; }
+.kiln-piece-order-illustration > .kiln-ceramic-art:only-child { flex-basis: 80%; width: 80%; }
 .kiln-piece .kiln-piece-requirement-label { grid-row: 3; order: 2; font-size: .83rem; font-weight: 700; letter-spacing: .035em; text-transform: uppercase; }
 .kiln-piece .kiln-piece-count { font-size: .67rem; font-weight: 400; text-transform: none; letter-spacing: 0; }
 .kiln-order-card .kiln-piece-copy { grid-row: 4; order: 3; padding: 0; border: 0; font-size: clamp(.8rem, 5.2cqw, 1rem); line-height: 1.25; }

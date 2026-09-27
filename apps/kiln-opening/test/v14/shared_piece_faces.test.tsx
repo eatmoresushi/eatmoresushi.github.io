@@ -36,6 +36,18 @@ function expectStaticFace(markup: string): void {
   expect(markup).not.toMatch(/\stitle=|data-hover-preview=|data-preview-id=|role="tooltip"/u);
 }
 
+function normalizeCeramicSvgIds(markup: string): string {
+  // useId reflects the React wrapper tree; preserve each SVG's distinct IDs
+  // and references while comparing its artwork, glaze and other face content.
+  const ids = new Map<string, string>();
+  return markup.replace(/<svg\b[^>]*class="kiln-ceramic-art"[\s\S]*?<\/svg>/gu, (svg) =>
+    svg.replace(/ceramic-glaze-[^"\s()]+/gu, (id: string) => {
+      if (!ids.has(id)) ids.set(id, `ceramic-glaze-illustration-${ids.size}`);
+      return ids.get(id)!;
+    }),
+  );
+}
+
 function expectTechInspectionDescription(markup: string, tile: string, id: string, locale: Locale): void {
   expect(tile).toContain('aria-haspopup="dialog"');
   const descriptionId = tile.match(/aria-describedby="([^"]+)"/u)?.[1];
@@ -76,22 +88,26 @@ describe("individual piece illustrations", () => {
     }
   });
 
-  it("illustrates each required ceramic with a decorative vessel without replacing rule text", () => {
+  it("reuses the live ceramic artwork on every Order without replacing rule text", () => {
     const renderedShapes = new Set<string>();
     for (const order of orders) {
       const markup = renderToStaticMarkup(createElement(OrderIllustration, { id: order.id }));
       expect(markup).toMatch(/class="kiln-piece-order-illustration"[^>]*aria-hidden="true"/u);
-      const images = [...markup.matchAll(/<img\b[^>]*>/gu)].map(([image]) => image);
+      const images = [...markup.matchAll(/<svg\b[^>]*data-ceramic-art[^>]*>/gu)].map(([image]) => image);
       expect(images, order.id).toHaveLength(order.ceramics.length);
       images.forEach((image, index) => {
-        expect(image).toContain('alt=""');
-        expect(image).not.toMatch(/\stitle=|data-glaze=|data-decoration=|data-quality=/u);
-        const shape = image.match(/data-vessel-shape="([^"]+)"/u)![1]!;
+        expect(image).toContain('aria-hidden="true"');
+        expect(image).toContain('data-glaze="');
+        expect(image).toContain('data-decoration="');
+        expect(image).not.toMatch(/\stitle=|data-quality=/u);
+        const shape = image.match(/data-ceramic-art="([^-]+)-/u)![1]!;
         const requirement = order.ceramics[index]!;
         if (requirement.shape !== undefined) expect(shape).toBe(requirement.shape);
         if (requirement.shapes !== undefined) expect(requirement.shapes).toContain(shape);
         renderedShapes.add(shape);
       });
+      expect(markup).toContain("/ceramics/ceramic-");
+      expect(markup).not.toContain("/pieces/vessel-");
     }
     expect([...renderedShapes].sort()).toEqual(["bowl", "censer", "plate", "vase", "washer"]);
   });
@@ -143,7 +159,7 @@ describe.each(["en", "zh-CN"] as const)("shared Order and Tech faces (%s)", (loc
     expect(orders).toHaveLength(56);
     for (const order of orders) {
       // React hoists image preload hints outside each wrapper; compare the visible face only.
-      const face = renderToStaticMarkup(createElement(OrderFace, { id: order.id, locale })).replace(/<link\b[^>]*>/gu, "");
+      const face = normalizeCeramicSvgIds(renderToStaticMarkup(createElement(OrderFace, { id: order.id, locale })).replace(/<link\b[^>]*>/gu, ""));
       expectStaticFace(face);
       expect(text(face)).toContain(locale === "en" ? order.requirements : order.requirementsZh);
       expect(face).toContain(`<b>${order.vp}</b>`);
@@ -157,13 +173,13 @@ describe.each(["en", "zh-CN"] as const)("shared Order and Tech faces (%s)", (loc
       }
       for (const owned of [false, true]) {
         const markup = renderToStaticMarkup(createElement(OrderCard, { id: order.id, locale, owned, onInspect: () => {} }));
-        expect(markup).toContain(face);
+        expect(normalizeCeramicSvgIds(markup)).toContain(face);
         expect(markup).toContain('aria-haspopup="dialog"');
         expect(markup).toContain(`aria-label="${locale === "en" ? "Inspect Order" : "查看委托"} ${order.id}"`);
         expectStaticFace(markup);
       }
-      expect(renderToStaticMarkup(createElement(StaticOrderCard, { id: order.id, locale }))).toContain(face);
-      expect(localized(locale, createElement(ReferenceOrderCard, { orderId: order.id }))).toContain(face);
+      expect(normalizeCeramicSvgIds(renderToStaticMarkup(createElement(StaticOrderCard, { id: order.id, locale })))).toContain(face);
+      expect(normalizeCeramicSvgIds(localized(locale, createElement(ReferenceOrderCard, { orderId: order.id })))).toContain(face);
     }
   });
 

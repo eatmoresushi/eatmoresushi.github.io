@@ -585,7 +585,7 @@ export function TabletopGameExperience({
           <div className="kiln-tabletop-public-sidebar">
             <TechniqueMarket game={game} locale={locale} onInspect={(id) => inspect({ type: "technique", id })} />
             <div className="kiln-tabletop-public-tracks">
-              <ImperialTrack game={game} locale={locale} compact onInspect={() => inspect({ type: "recognition" })} />
+              <ImperialTrack game={game} locale={locale} compact />
               <TurnOrderTrack game={game} locale={locale} currentActorId={decisionActor} />
             </div>
           </div>
@@ -1059,11 +1059,11 @@ function FireHistoryList({ history, game, locale }: { history: FireCardHistoryEn
   </li>)}</ol>;
 }
 
-function ImperialTrack({ game, locale, compact = false, onInspect }: { game: PublicGameState; locale: Locale; compact?: boolean; onInspect?: () => void }) {
+function ImperialTrack({ game, locale, compact = false }: { game: PublicGameState; locale: Locale; compact?: boolean }) {
   const unclaimedPriority = game.playerOrder.map((id) => game.players[id]!).filter((player) => player.imperialRecognition < 3);
   return (
     <section className={`kiln-tabletop-imperial-track kiln-recognition-track ${compact ? "is-compact" : "is-detail"}`} aria-label={text(locale, "Imperial Recognition track", "御府声望轨")}>
-      <div className="kiln-tabletop-track-heading"><span aria-hidden="true">御</span><div><small>{text(locale, "COURT", "御府")}</small><strong>{text(locale, "Imperial Recognition", "声望轨")}</strong></div>{onInspect !== undefined && <button type="button" onClick={onInspect} aria-haspopup="dialog">{text(locale, "Rewards", "奖励")}</button>}</div>
+      <div className="kiln-tabletop-track-heading"><span aria-hidden="true">御</span><div><small>{text(locale, "COURT", "御府")}</small><strong>{text(locale, "Imperial Recognition", "声望轨")}</strong></div></div>
       <ol>{IMPERIAL_PROGRESS.track.map((space) => {
         const playersHere = game.playerOrder.map((id) => game.players[id]!).filter((player) => player.imperialRecognition === space.space);
         return (
@@ -1084,7 +1084,7 @@ function ImperialTrack({ game, locale, compact = false, onInspect }: { game: Pub
               </div>}
             </div>
           </div>
-          <div className="kiln-recognition-milestone"><strong>{compact ? (locale === "zh-CN" ? ["本地作坊", "赏赐", "御窑", "御烧优先", "御前呈器"] : ["Workshop", "Grant", "Gift", "Priority", "Audience"])[space.space] : locale === "zh-CN" ? space.titleZh : space.title}</strong><small className={compact ? "sr-only" : undefined}>{compact && space.space === 3 ? text(locale, "Take your Imperial Priority token.", "获得御烧优先标记。") : locale === "zh-CN" ? space.rewardZh ?? "—" : space.reward ?? "—"}</small></div>
+          <div className="kiln-recognition-milestone"><strong>{compact ? (locale === "zh-CN" ? ["本地作坊", "赏赐", "御窑", "御烧优先", "御前呈器"] : ["Workshop", "Grant", "Gift", "Priority", "Audience"])[space.space] : locale === "zh-CN" ? space.titleZh : space.title}</strong><small className="kiln-recognition-reward">{compact && space.space === 3 ? text(locale, "Take your Imperial Priority token.", "获得御烧优先标记。") : locale === "zh-CN" ? space.rewardZh ?? "—" : space.reward ?? "—"}</small></div>
         </li>
         );
       })}</ol>
