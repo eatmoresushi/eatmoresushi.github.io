@@ -437,7 +437,6 @@ export function TabletopGameExperience({
   game = withOwnOrderHand(game, ownPlayerId, ownPrivateDecision?.orderHand);
   const { locale } = useI18n();
   const tableRootRef = useRef<HTMLDivElement>(null);
-  const publicSidebarRef = useRef<HTMLDivElement>(null);
   const [tabletopLayout, setTabletopLayout] = useState<TabletopLayout>({ mode: "wide", scale: 1, cardScale: 1 });
   useTabletopPieceSizes(tableRootRef);
   const ownPlayer = game.players[ownPlayerId];
@@ -562,7 +561,7 @@ export function TabletopGameExperience({
         <div className="kiln-tabletop-play-area">
           <div className="kiln-tabletop-board-scroll">
             <section className="kiln-tabletop-board kiln-tabletop-art-surface" id="kiln-live-shared-board" aria-label={text(locale, "Shared game board", "共享游戏板")}>
-              <ResponsiveGameBoard matchHeightRef={publicSidebarRef} matchHeight={tabletopLayout.mode === "wide"}>
+              <ResponsiveGameBoard scaleToFit={tabletopLayout.mode === "compact"}>
                 <div className="kiln-tabletop-actions-grid kiln-illustrated-district">
                   {TABLETOP_BOARD_LOCATIONS.map(({ id }) => (
                     <ActionSpace
@@ -578,13 +577,15 @@ export function TabletopGameExperience({
                   ))}
                   <SharedKiln game={game} events={events} locale={locale} />
                 </div>
-                <TurnOrderTrack game={game} locale={locale} currentActorId={decisionActor} />
               </ResponsiveGameBoard>
             </section>
           </div>
-          <div className="kiln-tabletop-public-sidebar" ref={publicSidebarRef}>
+          <div className="kiln-tabletop-public-sidebar">
             <TechniqueMarket game={game} locale={locale} onInspect={(id) => inspect({ type: "technique", id })} />
-            <ImperialTrack game={game} locale={locale} compact showRewards={tabletopLayout.mode === "wide"} onInspect={() => inspect({ type: "recognition" })} />
+            <div className="kiln-tabletop-public-tracks">
+              <ImperialTrack game={game} locale={locale} compact onInspect={() => inspect({ type: "recognition" })} />
+              <TurnOrderTrack game={game} locale={locale} currentActorId={decisionActor} />
+            </div>
           </div>
         </div>
         <div className={`kiln-tabletop-workshop-area ${Object.values(game.players).filter(hasImperialKiln).length === 1 ? "has-one-imperial" : ""}`}>
@@ -868,8 +869,8 @@ function RoundTrack({ game, locale }: { game: PublicGameState; locale: Locale })
 
 /**
  * The physical turn-order track uses one sequence in two directions: Work begins
- * with the First Player and proceeds clockwise (top to bottom here), while the
- * Order Phase uses the exact reverse seating order (bottom to top here).
+ * with the First Player and proceeds clockwise (left to right here), while the
+ * Order Phase uses the exact reverse seating order (right to left here).
  */
 function TurnOrderTrack({ game, locale, currentActorId }: { game: PublicGameState; locale: Locale; currentActorId: PlayerId | null }) {
   const firstPlayerIndex = game.playerOrder.indexOf(game.firstPlayerId);
@@ -884,16 +885,15 @@ function TurnOrderTrack({ game, locale, currentActorId }: { game: PublicGameStat
 
   return (
     <aside
-      className={`kiln-tabletop-turn-order is-${activeDirection}-direction`}
+      className={`kiln-tabletop-turn-order is-horizontal is-${activeDirection}-direction`}
       aria-label={text(locale, "Turn order", "行动顺序")}
       data-testid="turn-order-track"
     >
-      <header><strong>{text(locale, "TURN ORDER", "行动顺序")}</strong></header>
       <div className="kiln-tabletop-turn-direction is-order">
-        <b aria-hidden="true">↑</b>
+        <b aria-hidden="true">←</b>
         <span><strong>{text(locale, "ORDER PHASE", "交付阶段")}</strong></span>
       </div>
-      <ol style={{ gridTemplateRows: `repeat(${workOrder.length}, minmax(42px, 1fr))` }}>
+      <ol style={{ gridTemplateColumns: `repeat(${workOrder.length}, minmax(0, 1fr))` }}>
         {workOrder.map((playerId) => {
           const player = game.players[playerId];
           if (player === undefined) return null;
@@ -918,7 +918,7 @@ function TurnOrderTrack({ game, locale, currentActorId }: { game: PublicGameStat
         })}
       </ol>
       <div className="kiln-tabletop-turn-direction is-work">
-        <b aria-hidden="true">↓</b>
+        <b aria-hidden="true">→</b>
         <span><strong>{text(locale, "WORK PHASE", "工作阶段")}</strong></span>
       </div>
     </aside>
@@ -1057,7 +1057,7 @@ function FireHistoryList({ history, game, locale }: { history: FireCardHistoryEn
   </li>)}</ol>;
 }
 
-function ImperialTrack({ game, locale, compact = false, showRewards = false, onInspect }: { game: PublicGameState; locale: Locale; compact?: boolean; showRewards?: boolean; onInspect?: () => void }) {
+function ImperialTrack({ game, locale, compact = false, onInspect }: { game: PublicGameState; locale: Locale; compact?: boolean; onInspect?: () => void }) {
   const unclaimedPriority = game.playerOrder.map((id) => game.players[id]!).filter((player) => player.imperialRecognition < 3);
   return (
     <section className={`kiln-tabletop-imperial-track kiln-recognition-track ${compact ? "is-compact" : "is-detail"}`} aria-label={text(locale, "Imperial Recognition track", "御府声望轨")}>
@@ -1082,7 +1082,7 @@ function ImperialTrack({ game, locale, compact = false, showRewards = false, onI
               </div>}
             </div>
           </div>
-          <div className="kiln-recognition-milestone"><strong>{compact ? (locale === "zh-CN" ? ["本地作坊", "赏赐", "御窑", "御烧优先", "御前呈器"] : ["Workshop", "Grant", "Gift", "Priority", "Audience"])[space.space] : locale === "zh-CN" ? space.titleZh : space.title}</strong><small className={compact && !showRewards ? "sr-only" : undefined}>{compact && space.space === 3 ? text(locale, "Take your Imperial Priority token.", "获得御烧优先标记。") : locale === "zh-CN" ? space.rewardZh ?? "—" : space.reward ?? "—"}</small></div>
+          <div className="kiln-recognition-milestone"><strong>{compact ? (locale === "zh-CN" ? ["本地作坊", "赏赐", "御窑", "御烧优先", "御前呈器"] : ["Workshop", "Grant", "Gift", "Priority", "Audience"])[space.space] : locale === "zh-CN" ? space.titleZh : space.title}</strong><small className={compact ? "sr-only" : undefined}>{compact && space.space === 3 ? text(locale, "Take your Imperial Priority token.", "获得御烧优先标记。") : locale === "zh-CN" ? space.rewardZh ?? "—" : space.reward ?? "—"}</small></div>
         </li>
         );
       })}</ol>

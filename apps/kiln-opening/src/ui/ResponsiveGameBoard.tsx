@@ -1,57 +1,48 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import type { ReactNode, RefObject } from "react";
+import type { ReactNode } from "react";
 
 // Keep the physical board's coordinates intact; only its display size changes.
 const MIN_BOARD_WIDTH = 1200;
 
-export function ResponsiveGameBoard({ children, matchHeightRef, matchHeight = false }: {
+export function ResponsiveGameBoard({ children, scaleToFit = true }: {
   children: ReactNode;
-  matchHeightRef?: RefObject<HTMLElement | null>;
-  matchHeight?: boolean;
+  scaleToFit?: boolean;
 }) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState({ availableWidth: MIN_BOARD_WIDTH, height: 0, minimumHeight: 0 });
+  const [size, setSize] = useState({ availableWidth: MIN_BOARD_WIDTH, height: 0 });
 
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
     const board = boardRef.current;
-    if (!viewport || !board) return;
+    if (!scaleToFit || !viewport || !board) return;
 
     const measure = () => {
       const availableWidth = viewport.clientWidth;
       const height = board.offsetHeight;
       if (!availableWidth) return;
-      const target = matchHeight ? matchHeightRef?.current : null;
-      const frame = viewport.parentElement;
-      const frameStyle = frame ? getComputedStyle(frame) : null;
-      const insets = frameStyle ? [frameStyle.paddingTop, frameStyle.paddingBottom, frameStyle.borderTopWidth, frameStyle.borderBottomWidth]
-        .reduce((total, value) => total + (parseFloat(value) || 0), 0) : 0;
-      const scale = Math.min(1, availableWidth / MIN_BOARD_WIDTH);
-      const minimumHeight = target ? Math.max(0, (target.offsetHeight - insets) / scale) : 0;
-      setSize((previous) => previous.availableWidth === availableWidth && previous.height === height && previous.minimumHeight === minimumHeight
+      setSize((previous) => previous.availableWidth === availableWidth && previous.height === height
         ? previous
-        : { availableWidth, height, minimumHeight });
+        : { availableWidth, height });
     };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(viewport);
     observer.observe(board);
-    if (matchHeightRef?.current) observer.observe(matchHeightRef.current);
     return () => observer.disconnect();
-  }, [matchHeight, matchHeightRef]);
+  }, [scaleToFit]);
 
   const scale = Math.min(1, size.availableWidth / MIN_BOARD_WIDTH);
   return (
     <div
-      className="kiln-responsive-board-viewport"
+      className={`kiln-responsive-board-viewport${scaleToFit ? "" : " is-fluid"}`}
       ref={viewportRef}
-      style={{ height: size.height ? size.height * scale : undefined }}
+      style={scaleToFit ? { height: size.height ? size.height * scale : undefined } : undefined}
     >
       <div
-        className={`kiln-tabletop-board-body kiln-responsive-board-scene${matchHeight ? " has-matched-height" : ""}`}
+        className="kiln-tabletop-board-body kiln-responsive-board-scene"
         ref={boardRef}
-        style={{ width: Math.max(MIN_BOARD_WIDTH, size.availableWidth), minHeight: size.minimumHeight || undefined, transform: `scale(${scale})` }}
+        style={scaleToFit ? { width: Math.max(MIN_BOARD_WIDTH, size.availableWidth), transform: `scale(${scale})` } : undefined}
       >
         {children}
       </div>

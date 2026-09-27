@@ -1,7 +1,10 @@
-/* Recognition has its own flow layout beneath the public Techs, away from actions. */
+/* Both public tracks share the paper, border and spacing beneath the Techs. */
 .kiln-tabletop-public-sidebar { display: grid; gap: .5rem; min-width: 0; align-content: start; }
+.kiln-tabletop-public-tracks { display: grid; gap: .5rem; min-width: 0; container: public-tracks / inline-size; }
 .kiln-tabletop-root .kiln-recognition-track,
-.kiln-tabletop-inspector .kiln-recognition-track {
+.kiln-tabletop-inspector .kiln-recognition-track,
+.kiln-tabletop-root .kiln-tabletop-turn-order.is-horizontal {
+  --turn-marker-size: clamp(24px, 1.75rem, 32px);
   --recognition-marker-height: clamp(22px, 1.75vw, 30px);
   --recognition-marker-width: calc(var(--recognition-marker-height) * 350 / 590);
   display: grid;
@@ -14,6 +17,27 @@
   color: #344437;
   background: linear-gradient(120deg, #f4ead2, #e5d5b1);
 }
+.kiln-tabletop-root .kiln-tabletop-turn-order.is-horizontal {
+  position: static;
+  grid-area: auto;
+  align-self: stretch;
+  height: auto;
+  min-height: 5rem;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  box-shadow: none;
+}
+.kiln-tabletop-turn-order.is-horizontal .kiln-tabletop-turn-direction { align-self: center; justify-self: stretch; grid-template-columns: max-content max-content; justify-content: start; gap: .3rem; padding: .08rem .4rem; text-align: left; justify-items: start; }
+.kiln-tabletop-turn-order.is-horizontal .kiln-tabletop-turn-direction strong { font-size: .65rem; white-space: nowrap; }
+.kiln-tabletop-turn-order.is-horizontal .kiln-tabletop-turn-direction.is-order { grid-column: 1; grid-row: 1; }
+.kiln-tabletop-turn-order.is-horizontal .kiln-tabletop-turn-direction.is-work { grid-column: 1 / -1; grid-row: 3; }
+.kiln-tabletop-turn-order.is-horizontal .kiln-tabletop-turn-direction > b { grid-column: 2; grid-row: 1; font-size: .95rem; }
+.kiln-tabletop-turn-order.is-horizontal .kiln-tabletop-turn-direction > span { grid-column: 1; grid-row: 1; }
+.kiln-tabletop-turn-order.is-horizontal ol { grid-column: 1 / -1; grid-row: 2; grid-template-rows: minmax(0, 1fr); min-width: 0; padding: .15rem .4rem; }
+.kiln-tabletop-turn-order.is-horizontal li { min-width: 0; min-height: 2.25rem; }
+.kiln-tabletop-turn-order.is-horizontal li:not(:last-child)::after { top: 50%; bottom: auto; left: 50%; width: 100%; height: 2px; transform: translateY(-50%); }
+.kiln-tabletop-turn-order.is-horizontal li > i { width: var(--turn-marker-size); }
+.kiln-tabletop-turn-order.is-horizontal li > b { width: 14px; top: calc(50% - var(--turn-marker-size) / 2 - 7px); left: calc(50% + var(--turn-marker-size) / 2 - 5px); font-size: 8px; }
 .kiln-recognition-track .kiln-tabletop-track-heading { display: flex; align-items: center; gap: .35rem; padding: 0; border: 0; background: none; }
 .kiln-recognition-track .kiln-tabletop-track-heading > span,
 .kiln-recognition-track .kiln-tabletop-track-heading small { display: none; }
@@ -31,6 +55,13 @@
 .kiln-recognition-pieces .kiln-tabletop-priority-supply { display: flex; flex-wrap: nowrap; align-items: flex-end; gap: 0; padding: 0; }
 .kiln-recognition-pieces .kiln-tabletop-priority-token.is-track { width: var(--recognition-marker-width); height: 20px; min-width: 0; min-height: 0; padding: 0; }
 .kiln-recognition-track .kiln-recognition-milestone strong { font-size: .6rem; line-height: 1.1; white-space: normal; overflow: visible; text-align: center; }
+/* Reserve a separate marker row when four players cannot fit beside a number. */
+@container public-tracks (max-width: 24rem) {
+  .kiln-tabletop-root .kiln-recognition-track { --recognition-marker-height: clamp(14px, 5cqw, 22px); }
+  .kiln-recognition-stop { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto var(--recognition-marker-height); gap: .15rem; }
+  .kiln-recognition-pieces { justify-content: center; }
+  .kiln-recognition-pieces .kiln-tabletop-priority-token.is-track { height: var(--recognition-marker-height); }
+}
 /* The compact track links to these complete, readable milestone rewards. */
 .kiln-recognition-track.is-detail { align-self: start; align-content: start; margin: 1rem; }
 .kiln-recognition-track.is-detail .kiln-tabletop-track-heading { display: none; }

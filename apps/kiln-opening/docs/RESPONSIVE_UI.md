@@ -1,7 +1,7 @@
 # Responsive game UI
 
 The table uses a shared layout scale so the board, public Orders and Techs,
-Recognition track, player summaries, and personal workshop resize together.
+Recognition and Turn Order tracks, player summaries, and personal workshop resize together.
 Game state and rules do not depend on layout dimensions.
 
 ## Wide layout
@@ -19,14 +19,22 @@ remains beyond the maximum width. `ResizeObserver` tracks changes to the
 wrapper width and scene height. The pure calculation is in
 `src/ui/tabletopLayout.ts`.
 
-`ResponsiveGameBoard` keeps the board's own coordinates intact. In wide mode,
-it also matches the public sidebar's height, accounting for the board frame's
-padding and its internal scale.
+`ResponsiveGameBoard` scales the board's own coordinates in compact mode. In
+wide mode it participates directly in the shared CSS grid, which stretches the
+board and sidebar to the same height. Neither side measures the other's
+stretched height; this prevents a larger height being retained after resizing.
 
 The shared area assigns two thirds of its width to the board and one third to
-the Techs and Recognition track. Tech tiles divide their column equally and
-stay square. Recognition rewards use the remaining sidebar height, keeping
-the two sides aligned without stretching the Tech tiles.
+the Techs and public tracks. Tech tiles divide their column equally and stay
+square. The remaining sidebar height is split evenly between Recognition and
+Turn Order, keeping the two sides aligned without stretching the Tech tiles.
+Recognition shows milestone names and markers; its Rewards button opens the
+complete reward descriptions. Turn Order uses three rows: Order Phase ←,
+coloured player markers, and Work Phase →. Both phase bars span the track and
+have left-aligned labels; there is no separate title. The marker sequence is always Work
+order from left to right, starting with the First Player; Orders follow it in
+reverse. The current-player ring and First Player badge remain visible.
+The illustrated board uses the full width of its frame, with no turn strip.
 
 The six face-up Orders and draw pile form one tightly spaced row. At the
 reference size, each card is 160 × 224 px; the deck follows the measured card
@@ -36,7 +44,9 @@ height. The row stays shallow instead of enlarging cards to fill spare width.
 
 Below 960 px, the surrounding UI uses normal document flow without a scene
 transform. Public Orders wrap into a grid, the board and public sidebar stack,
-and personal areas reflow. Techs remain equal squares. Pieces use a shared zoom
+and personal areas reflow. The two public tracks remain stacked beneath Techs,
+with Turn Order horizontal and both panels sized to their content. Techs remain
+equal squares. Pieces use a shared zoom
 of `clamp(0.8, availableWidth / 430, 1)`; this smaller adjustment does not shrink
 the surrounding controls and reading text.
 

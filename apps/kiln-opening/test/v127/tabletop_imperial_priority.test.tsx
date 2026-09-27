@@ -53,8 +53,8 @@ describe("V1.4 physical Imperial Priority markers", () => {
     expect(ancestors.some((tag) => tag.includes("kiln-tabletop-actions-grid") || tag.includes('id="kiln-live-shared-board"'))).toBe(false);
     const sidebarStart = markup.lastIndexOf('<div class="kiln-tabletop-public-sidebar">', trackStart);
     const precedingSidebar = markup.slice(sidebarStart, trackStart);
-    expect(precedingSidebar).toContain('<aside class="kiln-tabletop-tech-market"');
-    expect(precedingSidebar.endsWith("</aside>")).toBe(true);
+    expect(precedingSidebar).toMatch(/<aside class="kiln-tabletop-tech-market"[\s\S]*<\/aside>/u);
+    expect(ancestors.some((tag) => tag.includes('class="kiln-tabletop-tech-market"'))).toBe(false);
     const track = markup.slice(trackStart).match(/^<section\b[\s\S]*?<\/section>/u)![0];
     expect(track).toContain("kiln-recognition-track is-compact");
     expect(track).toContain(`<button type="button" aria-haspopup="dialog">${locale === "en" ? "Rewards" : "奖励"}</button>`);

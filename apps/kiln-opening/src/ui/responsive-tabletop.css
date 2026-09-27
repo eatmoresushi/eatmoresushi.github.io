@@ -14,7 +14,10 @@ html:has(.kiln-live-root) { min-width: 0; }
   --overview-order-height: 14rem;
 }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout] .kiln-responsive-tabletop-scene :is(.kiln-tabletop-table, .kiln-tabletop-player-dock) { width: calc(100% - 2 * var(--ui-gap)); max-width: none; }
-.kiln-responsive-board-scene.has-matched-height .kiln-illustrated-district { min-height: 0; }
+/* The wide scene already scales as a whole. Native grid stretching aligns the
+   board and sidebar without measuring their heights against each other. */
+.kiln-responsive-board-viewport.is-fluid { display: grid; overflow: visible; }
+.kiln-responsive-board-viewport.is-fluid .kiln-illustrated-district { min-height: 0; }
 
 /* Freeze the wide scene's arrangement while its entire surface scales. Physical
    viewport media queries must not independently resize cards or player panels. */
@@ -70,14 +73,14 @@ html:has(.kiln-live-root) { min-width: 0; }
 .kiln-tabletop-order-row > .kiln-tabletop-order-deck small { position: static; font-size: .7rem; }
 
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-play-area { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); align-items: stretch; gap: .6rem; }
-.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-board-scroll { width: 100%; min-width: 0; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-board-scroll { display: grid; width: 100%; min-width: 0; }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-board { padding: .4rem; }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-public-sidebar { width: 100%; max-width: none; justify-self: stretch; grid-template-rows: auto minmax(0, 1fr); align-content: stretch; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-public-tracks { grid-template-rows: repeat(2, minmax(min-content, 1fr)); }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-tech-market { width: 100%; max-width: none; grid-template-columns: repeat(3, var(--tech-tile-size)); }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-tech-discipline > div { grid-template-columns: var(--tech-tile-size); }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-recognition-track { --recognition-marker-height: 26px; grid-template-rows: auto minmax(0, 1fr); }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-recognition-track li { align-content: start; }
-.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-recognition-milestone small { display: block; margin: .35rem .2rem 0; overflow: visible; font-size: .7rem; line-height: 1.35; white-space: normal; -webkit-line-clamp: unset; }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-board-action-summary { font-size: .875rem; }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-workshop-area { grid-template-columns: minmax(0, 1fr); }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-workshop-zones { grid-template-columns: repeat(2, minmax(0, 1fr)); }

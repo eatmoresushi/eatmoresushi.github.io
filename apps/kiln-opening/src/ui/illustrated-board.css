@@ -19,9 +19,8 @@
   box-shadow: 0 14px 35px #071b1766, inset 0 0 0 3px #dbc9a6, inset 0 0 0 4px #b29a74;
 }
 .kiln-tabletop-board-body {
-  --board-turn-width: max(78px, 4.875rem);
-  grid-template-columns: minmax(0, 1fr) var(--board-turn-width);
-  gap: .6rem;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
 }
 .kiln-illustrated-district {
   display: grid;
@@ -35,7 +34,7 @@
   gap: 0;
   /* The artwork's ratio is preferred, but every action row must fit its text
      and worker spaces when players enlarge their text. */
-  min-height: calc((100cqw - var(--board-turn-width) - .6rem) * 2 / 3);
+  min-height: calc(100cqw * 2 / 3);
   padding: 0;
   overflow: clip;
   border: 1px solid #8c7a54;
@@ -168,11 +167,6 @@
 /* Scale this one physical surface, never crop/reflow its individual locations. */
 .kiln-responsive-board-viewport { width: 100%; min-width: 0; overflow: clip; }
 .kiln-responsive-board-scene { container-type: inline-size; transform-origin: top left; grid-template-areas: none; }
-.kiln-responsive-board-scene .kiln-tabletop-turn-order { position: static; grid-area: auto; align-self: stretch; height: auto; }
-.kiln-responsive-board-scene .kiln-tabletop-turn-direction { grid-template-columns: 1rem minmax(0, 1fr); justify-items: stretch; text-align: left; padding: .35rem .2rem; }
-.kiln-responsive-board-scene .kiln-tabletop-turn-direction strong { font-size: .5rem; overflow-wrap: normal; }
-.kiln-responsive-board-scene .kiln-tabletop-turn-order li > i { width: 38px; }
-.kiln-responsive-board-scene .kiln-tabletop-turn-order li > b { left: calc(50% + 12px); }
 @media (max-width: 620px) {
   .kiln-tabletop-board { padding: .35rem; }
 }
