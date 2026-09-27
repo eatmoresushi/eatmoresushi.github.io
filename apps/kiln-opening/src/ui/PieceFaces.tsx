@@ -34,6 +34,8 @@ export function pieceSurfaceClass(id: OrderId | TechniqueId | StartingTechniqueI
 export function OrderFace({ id, locale }: { id: OrderId; locale: Locale }) {
   const order = ORDER_DEFINITIONS[id];
   if (order === undefined) return null;
+  const requirements = locale === "zh-CN" ? order.requirementsZh : order.requirements;
+  const denseCopy = requirements.length > (locale === "zh-CN" ? 30 : 80);
   const additionalQuality = (order.relations ?? []).flatMap((relation) => {
     if (relation.type !== "at_least_n_quality") return [];
     const quality = qualityLabel(relation.quality, locale);
@@ -52,7 +54,7 @@ export function OrderFace({ id, locale }: { id: OrderId; locale: Locale }) {
     </div>
     <OrderIllustration id={id} />
     <span className="kiln-piece-requirement-label">{text(locale, "Requirement", "要求")} <span className="kiln-piece-count">· {text(locale, `${order.ceramics.length} ceramic${order.ceramics.length === 1 ? "" : "s"}`, `${order.ceramics.length}件陶瓷`)}</span></span>
-    <p className="kiln-piece-copy">{locale === "zh-CN" ? order.requirementsZh : order.requirements}</p>
+    <p className="kiln-piece-copy" data-copy-density={denseCopy ? "dense" : undefined}>{requirements}</p>
     <div className="kiln-piece-quality">
       <small>{text(locale, "Quality", "品质")}</small>
       <b>{qualityLabel(order.minQuality, locale)}{order.ceramics.length > 1 ? text(locale, " each", "（每件）") : ""}</b>

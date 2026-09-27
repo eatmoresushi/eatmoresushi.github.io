@@ -50,7 +50,7 @@ html:has(.kiln-live-root) { min-width: 0; }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-market .kiln-tabletop-section-title small { font-size: .6rem; }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-market .kiln-tabletop-section-title strong { font-size: .85rem; }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-order-row { grid-column: 2; grid-row: 1; grid-template-columns: repeat(7, var(--overview-order-width)); justify-content: center; gap: .35rem; }
-.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] :is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-copy { font-size: clamp(.65rem, 5.2cqw, .8rem); }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] :is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-copy { font-size: calc(clamp(.65rem, 5.2cqw, .8rem) * var(--order-copy-scale, 1)); }
 
 /* The draw pile is the final card in the queue, with the same printed size. */
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout] .kiln-tabletop-order-row > .kiln-tabletop-order-deck {
