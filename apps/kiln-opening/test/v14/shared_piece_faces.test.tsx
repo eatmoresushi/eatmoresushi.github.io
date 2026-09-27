@@ -2,13 +2,13 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { MAIN_ORDERS, STARTING_ORDERS, STARTING_TECHNIQUES, TECHNIQUE_DEFINITIONS } from "../../src/game";
-import type { GameState } from "../../src/game";
+import type { GameState, StartingTechniqueId } from "../../src/game";
 import { projectPublicGameState } from "../../src/multiplayer";
 import { ActionPanel } from "../../src/ui/ActionPanel";
 import { GameTable, OrderCard as ReferenceOrderCard } from "../../src/ui/GameTable";
 import { OrderFace, TechniqueFace } from "../../src/ui/PieceFaces";
 import { OrderIllustration } from "../../src/ui/OrderIllustration";
-import { OrderCard, StaticOrderCard, TabletopGameExperience } from "../../src/ui/TabletopGameExperience";
+import { OrderCard, PlayerInspection, StartingTechniqueInspection, StaticOrderCard, TabletopGameExperience, TechniqueInspection } from "../../src/ui/TabletopGameExperience";
 import { techniqueFullCopy, techniqueShortPlainText } from "../../src/ui/TechniqueDescription";
 import { TECHNIQUE_ARTWORK } from "../../src/ui/techniqueArtwork";
 import { LanguageProvider, type Locale } from "../../src/ui/i18n";
@@ -103,6 +103,47 @@ describe("individual piece illustrations", () => {
 });
 
 describe.each(["en", "zh-CN"] as const)("shared Order and Tech faces (%s)", (locale) => {
+  it("shows short reminders on all inspection tiles and full rules immediately below them", () => {
+    for (const technique of [...STARTING_TECHNIQUES, ...techniques]) {
+      const isAdvanced = "cost" in technique;
+      const inspection = isAdvanced
+        ? createElement(TechniqueInspection, { id: technique.id, locale })
+        : createElement(StartingTechniqueInspection, { id: technique.id as StartingTechniqueId, locale });
+      const markup = renderToStaticMarkup(inspection);
+      const tile = card(markup, isAdvanced ? "data-technique-id" : "data-starting-technique-id", technique.id);
+      expect(tile).toContain('data-description-layer="preview"');
+      expect(text(tile)).toContain(techniqueShortPlainText(technique.id, locale));
+      expect(text(tile)).not.toContain(techniqueFullCopy(technique.id, locale));
+      const rules = markup.match(new RegExp(`<section[^>]*data-full-technique-id="${technique.id}"[^>]*>[\\s\\S]*?</section>`, "u"))?.[0];
+      expect(rules).toBeDefined();
+      expect(rules).toContain(`<h3>${locale === "en" ? "Full rules" : "完整规则"}</h3>`);
+      expect(text(rules!)).toContain(techniqueFullCopy(technique.id, locale));
+      expect(markup).toContain(`${tile}${rules}`);
+      expect(markup).toContain(locale === "en" ? "Tech abilities are optional" : "技艺能力均可选择使用");
+    }
+  });
+
+  it("keeps each player's full Tech rules in keyboard-accessible expandable sections outside the square tiles", () => {
+    const game = projectPublicGameState(startedGame(2, 14053).state);
+    const player = game.players["P1"]!;
+    for (const technique of [...STARTING_TECHNIQUES, ...techniques]) {
+      const isAdvanced = "cost" in technique;
+      player.startingTechniqueId = isAdvanced ? null : technique.id as StartingTechniqueId;
+      player.techniques = isAdvanced ? [{ id: technique.id, exhausted: true }] : [];
+      const markup = renderToStaticMarkup(createElement(PlayerInspection, { player, game, locale }));
+      const tile = card(markup, isAdvanced ? "data-technique-id" : "data-starting-technique-id", technique.id);
+      expect(tile).toContain('data-description-layer="preview"');
+      expect(text(tile)).toContain(techniqueShortPlainText(technique.id, locale));
+      expect(text(tile)).not.toContain(techniqueFullCopy(technique.id, locale));
+      if (isAdvanced) expect(text(tile)).toContain(locale === "en" ? "Used" : "已用");
+      const rules = markup.match(new RegExp(`<details[^>]*data-full-technique-id="${technique.id}"[^>]*>[\\s\\S]*?</details>`, "u"))?.[0];
+      expect(rules).toBeDefined();
+      expect(rules).toContain(`<summary tabindex="0">${locale === "en" ? "Full rules" : "完整规则"} · ${technique.id}</summary>`);
+      expect(text(rules!)).toContain(techniqueFullCopy(technique.id, locale));
+      expect(markup).toContain(`${tile}${rules}`);
+    }
+  });
+
   it("retains the same illustrated requirements and rewards on all 56 Orders across board, owned and reference wrappers", () => {
     expect(orders).toHaveLength(56);
     for (const order of orders) {

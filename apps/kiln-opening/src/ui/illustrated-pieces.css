@@ -41,25 +41,48 @@
 .kiln-piece[data-starting-technique-id="ST02"] { --piece-accent: #376666; }
 .kiln-piece[data-starting-technique-id="ST03"] { --piece-accent: #785936; }
 .kiln-piece[data-starting-technique-id="ST04"] { --piece-accent: #874c32; }
-.kiln-tech-tile { width: min(100%, 280px); max-width: 280px; min-height: min-content; gap: .3rem; padding: 1rem; justify-self: center; }
+.kiln-tech-tile {
+  container-type: inline-size;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 1.5rem auto auto minmax(12px, 1fr) auto 1.4rem;
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+  aspect-ratio: 1;
+  align-self: start;
+  justify-self: stretch;
+  gap: .2rem;
+  padding: .8rem;
+  border-radius: 0;
+  box-shadow: none;
+}
+/* Keep frame details a fixed size so they never cross corner labels. */
+.kiln-tech-tile::before { inset: 6px; border: 2px solid var(--piece-accent); outline: 1px solid var(--piece-accent); outline-offset: -6px; background: none; mask: none; opacity: .6; }
+.kiln-tech-tile::after { position: absolute; z-index: 2; inset: 6px; content: ""; pointer-events: none; background: var(--piece-accent); opacity: .6; mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2022%2022%22%3E%3Cg%20transform%3D%22rotate%280%2011%2011%29%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.3%22%3E%3Cpath%20d%3D%22M0%2021H8V13H14V7H21V0M0%209H4V0%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"), url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2022%2022%22%3E%3Cg%20transform%3D%22rotate%2890%2011%2011%29%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.3%22%3E%3Cpath%20d%3D%22M0%2021H8V13H14V7H21V0M0%209H4V0%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"), url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2022%2022%22%3E%3Cg%20transform%3D%22rotate%28180%2011%2011%29%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.3%22%3E%3Cpath%20d%3D%22M0%2021H8V13H14V7H21V0M0%209H4V0%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"), url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2022%2022%22%3E%3Cg%20transform%3D%22rotate%28270%2011%2011%29%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.3%22%3E%3Cpath%20d%3D%22M0%2021H8V13H14V7H21V0M0%209H4V0%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); mask-position: top left, top right, bottom right, bottom left; mask-size: 22px 22px; mask-repeat: no-repeat; }
 .kiln-order-card { --piece-accent: #af915c; min-height: 370px; }
 .kiln-piece > .kiln-piece-art { pointer-events: none; }
 .kiln-order-card > .kiln-piece-art { display: none; }
 .kiln-tech-tile > .kiln-piece-art {
   position: relative;
   z-index: 0;
-  order: 3;
-  flex: none;
+  grid-column: 1;
+  grid-row: 1 / 5;
   display: block;
-  width: calc(100% + 1rem);
-  margin: -.2rem -.5rem;
-  aspect-ratio: 2.6;
+  align-self: stretch;
+  width: calc(100% + .8rem);
+  height: auto;
+  min-height: 0;
+  margin: -.4rem -.4rem 0;
+  aspect-ratio: auto;
   background-repeat: no-repeat;
-  background-size: 100% auto;
-  background-position: center top;
+  background-size: cover;
+  background-position: center 35%;
   mix-blend-mode: multiply;
-  mask-image: linear-gradient(to bottom, transparent, #000 7%, #000 76%, transparent);
+  opacity: .62;
+  mask-image: none;
 }
+.kiln-tech-tile > .kiln-piece-art::after { position: absolute; inset: 0; content: ""; background: linear-gradient(to bottom, #fff8e8b3, #fff8e84d 40%, #fff8e81a 75%, #f3ecdb66); }
 .kiln-piece .kiln-piece-name {
   order: 1;
   display: block;
@@ -83,13 +106,13 @@
   line-height: 1.2;
 }
 .kiln-piece-id { font-family: var(--serif); font-size: .9rem; }
-.kiln-tech-tile .kiln-piece-heading { order: 0; justify-content: space-between; min-height: 1.5rem; margin: .1rem .6rem 0; }
+.kiln-tech-tile .kiln-piece-heading { grid-column: 1; grid-row: 1; order: 0; justify-content: space-between; min-height: 0; margin: 0 .6rem; }
 .kiln-tech-tile .kiln-piece-id { font-size: .8rem; }
-.kiln-tech-tile .kiln-piece-name { margin: 0; font-size: 1.2rem; line-height: 1.15; }
+.kiln-tech-tile .kiln-piece-name { grid-column: 1; grid-row: 2; margin: 0; font-size: clamp(1rem, 5.7cqw, 1.5rem); line-height: 1.1; text-shadow: 0 1px 2px #fff8e8; }
 .kiln-tech-tile .kiln-piece-category,
 .kiln-tech-tile .kiln-piece-timing,
 .kiln-tech-tile .kiln-piece-endgame-vp { border: 3px double #f1ead3; outline: 1px solid var(--piece-accent); border-radius: 0; padding: .08rem .4rem; color: #fffae9; background: var(--piece-accent); font-weight: 700; line-height: 1.2; }
-.kiln-tech-tile .kiln-piece-category { order: 2; align-self: center; margin-block: .1rem .2rem; font-size: .78rem; }
+.kiln-tech-tile .kiln-piece-category { grid-column: 1; grid-row: 3; order: 2; justify-self: center; margin-block: .1rem; font-size: .72rem; }
 .kiln-piece-cost { display: inline-flex; align-items: center; gap: .22rem; color: #775223; font-family: var(--sans); font-size: .82rem; }
 .kiln-tech-tile .kiln-piece-cost { gap: .3rem; font-size: 1rem; }
 .kiln-tech-tile .kiln-piece-cost .kiln-piece-coin { width: 1.5rem; height: 1.5rem; }
@@ -111,7 +134,7 @@
   -webkit-line-clamp: unset;
 }
 .kiln-tech-tile .kiln-piece-copy::before { position: absolute; top: -.23rem; left: calc(50% - .23rem); width: .46rem; height: .46rem; border: 1px solid var(--piece-accent); content: ""; transform: rotate(45deg); background: #f3ecdb; }
-.kiln-tech-tile .kiln-piece-copy { padding-top: .55rem; font-size: .86rem; line-height: 1.32; }
+.kiln-tech-tile .kiln-piece-copy { grid-column: 1; grid-row: 5; min-height: 0; padding: .45rem 0 .25rem; font-size: clamp(.78rem, 4cqw, .95rem); line-height: 1.22; }
 .kiln-piece-copy strong { font-weight: inherit; color: inherit; }
 .kiln-piece .kiln-piece-footer {
   order: 6;
@@ -129,12 +152,13 @@
   font-size: .7rem;
   line-height: 1.3;
 }
-.kiln-tech-tile .kiln-piece-footer { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: .25rem; padding: .4rem .5rem .5rem; }
-.kiln-piece-timing { grid-column: 2; font-size: .62rem; white-space: nowrap; }
-.kiln-piece-endgame-vp { grid-column: 3; justify-self: end; font-size: .7rem; white-space: nowrap; }
+.kiln-tech-tile .kiln-piece-footer { grid-column: 1; grid-row: 6; display: flex; justify-content: space-between; flex-wrap: nowrap; gap: .25rem; margin: 0 .4rem; padding: 0; }
+.kiln-piece-timing { font-size: .62rem; white-space: nowrap; }
+.kiln-piece-endgame-vp { font-size: .7rem; white-space: nowrap; }
 .kiln-piece .kiln-piece-state { order: 7; align-self: center; border: 1px solid #9a7059; padding: .2rem .6rem; color: #754630; background: #f5e5c9; font-family: var(--sans); font-size: .72rem; font-weight: 800; }
 .kiln-piece.is-exhausted { border-style: dashed; }
 .kiln-piece.is-exhausted > .kiln-piece-art { filter: saturate(.4); }
+.kiln-tech-tile .kiln-piece-state { position: absolute; right: 1rem; top: 30%; padding: .15rem .4rem; font-size: .62rem; }
 
 .kiln-order-card .kiln-piece-heading { order: 0; justify-content: space-between; }
 .kiln-order-card .kiln-piece-id { order: 2; font-size: 1.2rem; color: #302d24; }
@@ -186,18 +210,44 @@ button.kiln-piece[aria-pressed="true"],
 .kiln-piece-choice[aria-pressed="true"] .kiln-piece { outline: 3px solid #416957; outline-offset: 2px; }
 .kiln-piece-choice:disabled { opacity: .55; }
 .technique-commands,
-.kiln-live-controls-panel .choice-stack.technique-commands { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 280px)); justify-content: center; gap: .75rem; }
-.technique-commands .kiln-piece-choice-description { justify-content: center; }
-.kiln-live-root .kiln-tabletop-tech-market .kiln-tabletop-tech-discipline > div { grid-template-columns: minmax(0, 1fr); }
-.kiln-live-root .kiln-tabletop-workshop .kiln-tabletop-own-techs > div { grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 280px)); }
+.kiln-live-controls-panel .choice-stack.technique-commands { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: .5rem; }
+.technique-commands .kiln-piece-choice-description { flex: none; }
+.kiln-live-root .kiln-tabletop-workshop .kiln-tabletop-own-techs > div { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); align-items: start; gap: 0; overflow: visible; }
 .kiln-tabletop-inspector-techs > .kiln-piece,
 .kiln-tabletop-inspector-orders > .kiln-piece { width: 100%; min-width: 0; }
 .kiln-tabletop-detail-view > .kiln-piece { max-width: 440px; margin-inline: auto; }
-.kiln-tabletop-detail-view > .kiln-tech-tile { max-width: 280px; }
+.kiln-tabletop-detail-view > .kiln-tech-tile { max-width: 420px; }
 .kiln-tabletop-detail-view > .kiln-order-card { max-width: 320px; min-height: 470px; }
 .kiln-tabletop-detail-view .kiln-piece-copy { font-size: 1.05rem; line-height: 1.45; }
-.kiln-tabletop-detail-view .kiln-tech-tile .kiln-piece-copy { font-size: .9rem; line-height: 1.35; }
+.kiln-tabletop-detail-view .kiln-tech-tile .kiln-piece-copy { font-size: clamp(.78rem, 4cqw, .95rem); line-height: 1.22; }
+
+/* Face-up tiles share edges. Breakpoints follow the market's available width. */
+.kiln-tabletop-root.kiln-live-root .kiln-tabletop-tech-market {
+  container: tech-market / inline-size;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  overflow: visible;
+}
+.kiln-tabletop-root.kiln-live-root .kiln-tabletop-tech-market > .kiln-tabletop-section-title { flex: 0 0 100%; margin-bottom: .85rem; }
+.kiln-tabletop-root.kiln-live-root .kiln-tabletop-tech-market > .kiln-tabletop-tech-discipline { flex: 0 0 calc(100% / 3); min-width: 0; gap: 0; padding-top: 0; align-content: start; grid-template-rows: auto auto; }
+.kiln-tabletop-root.kiln-live-root .kiln-tabletop-tech-discipline > header { align-items: center; min-height: 2.25rem; padding: .3rem .6rem; }
+.kiln-tabletop-root.kiln-live-root .kiln-tabletop-tech-discipline > div { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; gap: 0; align-items: start; }
+.kiln-tabletop-tech-market button.kiln-tech-tile:focus-visible { z-index: 3; outline-offset: -4px; }
+.kiln-tabletop-tech-full-rules { width: 100%; color: #33483a; font-size: .9rem; line-height: 1.5; }
+.kiln-tabletop-tech-full-rules h3 { margin-bottom: .4rem; font-size: 1rem; }
+.kiln-tabletop-tech-full-rules p { margin: .4rem 0 0; }
+@container tech-market (min-width: 1680px) {
+  .kiln-tabletop-root.kiln-live-root .kiln-tabletop-tech-discipline > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container tech-market (max-width: 899px) {
+  .kiln-tabletop-root.kiln-live-root .kiln-tabletop-tech-market > .kiln-tabletop-tech-discipline { flex-basis: 100%; }
+  .kiln-tabletop-root.kiln-live-root .kiln-tabletop-tech-discipline > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container tech-market (max-width: 579px) {
+  .kiln-tabletop-root.kiln-live-root .kiln-tabletop-tech-discipline > div { grid-template-columns: minmax(0, 1fr); }
+}
 @media (max-width: 560px) {
-  .kiln-piece { padding: .9rem; }
+  .kiln-order-card { padding: .9rem; }
   .kiln-order-card .kiln-piece-copy { font-size: .85rem; }
 }
