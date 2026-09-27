@@ -162,15 +162,14 @@ describe("V1.4 functional tabletop", () => {
     expect(markup).toMatch(/class="kiln-tabletop-ai-badge"[^>]*aria-label="Computer player"[^>]*>AI<\/span>/);
     expect(markup).toContain('data-worker-kind="apprentice"');
     expect(markup).toContain('data-worker-kind="shifu"');
-    expect(markup).toContain('class="kiln-tabletop-worker-hat"');
-    expect(markup).toContain('>S</text>');
-    expect(markup).toContain('>A</text>');
+    expect(markup).not.toMatch(/>[SA]<\/text>/);
 
     expect(markup).toContain('data-shape="plate"');
     expect(markup).toContain('data-glaze="celadon"');
     expect(markup).toContain('data-decoration="carved"');
-    expect(markup).toContain('class="kiln-tabletop-decoration-pattern is-carved"');
-    expect(markup).toContain('class="kiln-tabletop-decoration-pattern is-painted"');
+    expect(markup).toContain('data-ceramic-art="plate-carved"');
+    expect(markup).toContain('data-ceramic-art="censer-painted"');
+    expect(markup).toMatch(/<image\b[^>]*href="[^"]*ceramic-plate-carved-v1\.webp"/);
     expect(markup).toContain("BELONGS TO");
     expect(markup).toContain("Preferred Heat");
     expect(markup).toContain('data-hover-preview="ceramic"');
@@ -184,7 +183,8 @@ describe("V1.4 functional tabletop", () => {
     expect(markup).toContain("Furniture");
     expect(markup).toContain('class="kiln-tabletop-quality-badge is-fine"');
     expect(markup).toContain(">Fine</b>");
-    expect(markup).toMatch(/class="kiln-tabletop-shifu-marker"[^>]*>S<\/em>/);
+    expect(markup).toMatch(/<span class="kiln-tabletop-shifu-marker"[^>]*><span[^>]*data-worker-kind="shifu"/);
+    expect(markup).not.toMatch(/class="kiln-tabletop-shifu-marker"[^>]*>[S师]<\/em>/);
     expect(markup).not.toMatch(/<i>素<\/i>|<i>刻<\/i>|<i>印<\/i>|<i>裂<\/i>/);
   });
 

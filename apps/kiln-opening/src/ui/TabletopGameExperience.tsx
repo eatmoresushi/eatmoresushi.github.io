@@ -59,6 +59,7 @@ import { BoardActionEffect } from "./BoardActionEffect";
 import { BoardActionSummary } from "./BoardActionSummary";
 import { ImperialKilnIllustration } from "./ImperialKilnIllustration";
 import { RecognitionMarker } from "./RecognitionMarker";
+import { CeramicArtwork } from "./CeramicArtwork";
 import { useTabletopPieceSizes } from "./useTabletopPieceSizes";
 import { ResponsiveGameBoard } from "./ResponsiveGameBoard";
 import { ResponsiveTabletop } from "./ResponsiveTabletop";
@@ -77,6 +78,7 @@ import "./recognition-track.css";
 import "./personal-piece-sizes.css";
 import "./responsive-tabletop.css";
 import "./responsive-overlays.css";
+import "./ceramic-artwork.css";
 
 type SendCommand = (command: AuthoritativeCommand) => Promise<boolean>;
 
@@ -1212,12 +1214,12 @@ function Ceramic({ ceramic, game, locale, compact = false, inspectable = false, 
   const imperial = ceramic.stage === "loaded" && ceramic.kilnSpaceId === "imperial";
   const zone = kilnZone === undefined ? null : text(locale, `${titleCase(kilnZone)} zone`, zoneZh(kilnZone));
   const kilnLocation = imperial ? text(locale, "Imperial Kiln +0", "御窑 +0") : zone === null ? null : `${zone} ${signed(furniture ? 0 : kilnZoneModifier ?? 0)}${furniture ? text(locale, " (Kiln Furniture)", "（支烧窑具）") : ""}`;
-  const className = `kiln-tabletop-ceramic glaze-${glaze ?? "raw"} decoration-${decoration ?? "none"} shape-${ceramic.shape} kiln-tabletop-accent-${accent(player)} ${compact ? "is-compact" : ""} ${inspectable ? "is-inspectable" : ""}`;
+  const className = `kiln-tabletop-ceramic kiln-has-ceramic-art glaze-${glaze ?? "raw"} decoration-${decoration ?? "none"} shape-${ceramic.shape} kiln-tabletop-accent-${accent(player)} ${compact ? "is-compact" : ""} ${inspectable ? "is-inspectable" : ""}`;
   const visual = <>
-    <svg viewBox="0 0 80 72" aria-hidden="true"><CeramicShape shape={ceramic.shape} /><CeramicDecoration decoration={decoration} /></svg>
+    <CeramicArtwork shape={ceramic.shape} glaze={glaze} decoration={decoration} />
     {crackle && <em className="kiln-live-crackle-marker" title={text(locale, "Crackle: wild Decoration for Orders", "开片：完成委托时可视为任意纹饰")}>{text(locale, "Crackle", "开片")}</em>}
     {quality !== null && <b className={`kiln-tabletop-quality-badge is-${quality}`} title={qualityLabel(quality, locale)}>{qualityLabel(quality, locale)}</b>}
-    {marked && shifuHeat === null && <em className="kiln-tabletop-shifu-marker" title={text(locale, "Kiln Yard Shifu committed to this ceramic", "窑坊师傅已标记此陶瓷")}>{text(locale, "S", "师")}</em>}
+    {marked && shifuHeat === null && <span className="kiln-tabletop-shifu-marker" title={text(locale, "Kiln Yard Shifu committed to this ceramic", "窑坊师傅已标记此陶瓷")}><WorkerMeeple player={player} kind="shifu" locale={locale} small /></span>}
     {shifuHeat !== null && <em className={`kiln-tabletop-shifu-heat-marker is-${shifuHeat === 1 ? "warmer" : "cooler"}`} title={text(locale, `Shifu Heat marker: ${signed(shifuHeat)} Actual Heat for this firing`, `师傅火候标记：本次烧成实际火候${signed(shifuHeat)}`)}>{signed(shifuHeat)}</em>}
     {furniture && <em className="kiln-live-furniture-marker" title={text(locale, "Kiln Furniture attached", "已附窑具")}>{text(locale, "Furniture", "窑具")}</em>}
   </>;
@@ -1235,7 +1237,7 @@ function Ceramic({ ceramic, game, locale, compact = false, inspectable = false, 
     {shifuHeat !== null && <span className="kiln-tabletop-ceramic-tooltip-note">{text(locale, `Shifu Heat marker: ${signed(shifuHeat)} Actual Heat, in addition to its zone modifier. Fixed for this firing.`, `师傅火候标记：实际火候${signed(shifuHeat)}，与窑位修正叠加。本次烧成中数值固定。`)}</span>}
     {furniture && <span className="kiln-tabletop-ceramic-tooltip-note">{text(locale, "Kiln Furniture used", "已使用窑具")}</span>}
   </>;
-  if (!inspectable) return <span className={className} data-decoration={decoration ?? undefined} data-crackle={crackle || undefined} data-glaze={glaze ?? undefined} data-shape={ceramic.shape} aria-label={`${player.displayName} · ${shape}`}>{visual}</span>;
+  if (!inspectable) return <span className={className} data-decoration={decoration ?? undefined} data-crackle={crackle || undefined} data-glaze={glaze ?? undefined} data-shape={ceramic.shape} data-owner-id={ceramic.ownerId} aria-label={`${player.displayName} · ${shape}`}>{visual}</span>;
   return <>
     <button
       ref={preview.anchorRef}
@@ -1244,6 +1246,7 @@ function Ceramic({ ceramic, game, locale, compact = false, inspectable = false, 
       data-decoration={decoration ?? undefined} data-crackle={crackle || undefined}
       data-glaze={glaze ?? undefined}
       data-shape={ceramic.shape}
+      data-owner-id={ceramic.ownerId}
       data-hover-preview="ceramic"
       data-preview-id={previewId}
       aria-label={text(locale, `Inspect ${player.displayName}'s ${shape}`, `查看${player.displayName}的${shape}`)}
@@ -1271,21 +1274,6 @@ function Ceramic({ ceramic, game, locale, compact = false, inspectable = false, 
       onPointerLeave={preview.pointerLeave}
     ><div className="kiln-tabletop-ceramic-tooltip">{details}</div></CardHoverPreview>
   </>;
-}
-
-function CeramicShape({ shape }: { shape: Shape }) {
-  if (shape === "bowl") return <path d="M8 22h64c-3 26-14 38-32 38S11 48 8 22zM18 64h44" />;
-  if (shape === "plate") return <path d="M7 35c10 22 56 22 66 0M13 35h54M25 55h30" />;
-  if (shape === "washer") return <path d="M12 28h56l-7 30H19zM27 62h26M25 25c0-10 30-10 30 0" />;
-  if (shape === "vase") return <path d="M29 8h22l-3 13c15 9 19 34 5 42H27c-14-8-10-33 5-42zM29 9h22" />;
-  return <path d="M18 27h44l-5 29H23zM29 17h22l5 10H24zM19 59l-5 7M61 59l5 7M36 12c-3-5 2-7 0-11M46 12c-3-5 2-7 0-11" />;
-}
-
-function CeramicDecoration({ decoration }: { decoration: Decoration | null }) {
-  if (decoration === "carved") return <g className="kiln-tabletop-decoration-pattern is-carved"><path d="M31 33q9 6 18 0M29 40q11 7 22 0M31 47q9 6 18 0" /></g>;
-  if (decoration === "impressed") return <g className="kiln-tabletop-decoration-pattern is-impressed"><circle cx="34" cy="36" r="2.2" /><circle cx="43" cy="36" r="2.2" /><circle cx="38.5" cy="44" r="2.2" /><circle cx="47.5" cy="44" r="2.2" /></g>;
-  if (decoration === "painted") return <g className="kiln-tabletop-decoration-pattern is-painted"><path d="M29 46q11-24 22 0M30 45q10 12 20 0M40 32v23M33 37l14 14M47 37L33 51" /></g>;
-  return null;
 }
 
 function Inspector({ inspection, game, events, describeEvent, locale, onClose }: { inspection: Exclude<Inspection, null>; game: PublicGameState; events: PublicEventRecord[]; describeEvent: TabletopGameExperienceProps["describeEvent"]; locale: Locale; onClose: () => void }) {

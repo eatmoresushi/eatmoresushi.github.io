@@ -61,7 +61,7 @@ describe("V1.4 player-facing controls", () => {
     const english = localizedMarkup("en", scene);
     expect(english).toContain("kiln-tabletop-shifu-marker");
     expect(english).toContain("Kiln Yard Shifu committed to this ceramic");
-    expect(english).toMatch(/class="kiln-tabletop-shifu-marker"[^>]*>S<\/em>/);
+    expect(english).toMatch(/<span class="kiln-tabletop-shifu-marker"[^>]*><span[^>]*data-player-id="P1"[^>]*data-worker-kind="shifu"/);
     const chinese = localizedMarkup("zh-CN", scene);
     expect(chinese).toContain("窑坊师傅已标记此陶瓷");
   });

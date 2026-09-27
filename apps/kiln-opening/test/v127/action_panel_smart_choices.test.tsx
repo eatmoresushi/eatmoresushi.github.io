@@ -149,7 +149,9 @@ describe("V1.4 smart worker-action choices", () => {
     expect(markup).toContain('class="kiln-tabletop-worker');
     expect(markup).toContain('data-player-id="P1" data-worker-kind="shifu"');
     expect(markup).toContain('data-player-id="P1" data-worker-kind="apprentice"');
-    expect(markup).toContain('class="kiln-tabletop-worker-hat"');
+    expect(markup).toContain("workers/shifu-wood-v1.webp");
+    expect(markup).toContain("workers/apprentice-wood-v1.webp");
+    expect(markup).not.toContain("kiln-tabletop-worker-role");
     expect(markup).not.toContain('<select name="worker"');
     expect(markup).toContain('<header class="action-card-heading"><h3>');
     expect(markup).not.toContain("<details");

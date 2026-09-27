@@ -904,7 +904,6 @@
 .kiln-tabletop-imperial-slot { position: absolute; left: 50%; top: 52%; display: grid; place-items: center; width: 32%; height: 43%; transform: translate(-50%, -50%); }
 .kiln-tabletop-imperial-empty { display: grid; width: 86%; height: 86%; place-items: center; border: 1px dashed rgb(246 219 164 / 66%); border-radius: 45% 45% 14% 14%; color: #e0c491; font-size: .7rem; background: rgb(14 21 17 / 26%); }
 .kiln-tabletop-imperial-slot > .kiln-tabletop-ceramic.is-compact { width: 95%; height: auto; aspect-ratio: 1; border-bottom: 3px solid var(--player-color); border-radius: 50%; background: rgb(15 20 17 / 48%); filter: drop-shadow(0 3px 3px rgb(0 0 0 / 42%)); }
-.kiln-tabletop-imperial-slot > .kiln-tabletop-ceramic svg { width: 100%; height: auto; }
 .kiln-tabletop-imperial-kiln > footer { display: flex; justify-content: space-between; gap: .5rem; padding-top: .4rem; border-top: 1px solid rgb(148 109 49 / 22%); color: #756044; font-size: .53rem; }
 .kiln-tabletop-imperial-kiln.is-loaded > footer { color: color-mix(in srgb, var(--player-color) 65%, #362d20); }
 @media (max-width: 1100px) {
@@ -982,11 +981,6 @@
   filter: drop-shadow(0 3px 2px rgb(0 0 0 / 27%));
 }
 .kiln-tabletop-worker.is-apprentice { flex-basis: 34px; width: 34px; height: 45px; }
-.kiln-tabletop-worker svg { display: block; width: 100%; height: 100%; overflow: visible; }
-.kiln-tabletop-worker-piece { fill: var(--player-color); stroke: #fff4d9; stroke-width: 2; stroke-linejoin: round; }
-.kiln-tabletop-worker-hat { fill: color-mix(in srgb, var(--player-color) 78%, #172821); stroke: #fff4d9; stroke-width: 1.6; stroke-linejoin: round; }
-.kiln-tabletop-worker-detail { fill: none; stroke: #fff4d9; stroke-width: 1.3; stroke-linecap: round; }
-.kiln-tabletop-worker-role { fill: #fff; stroke: rgb(25 31 28 / 72%); stroke-width: 1.5; paint-order: stroke; font-family: var(--sans); font-size: 9px; font-weight: 950; text-anchor: middle; dominant-baseline: middle; }
 .kiln-tabletop-worker.is-small { flex-basis: 29px; width: 29px; height: 36px; }
 .kiln-tabletop-worker.is-small.is-apprentice { flex-basis: 25px; width: 25px; height: 34px; }
 
@@ -1002,25 +996,12 @@
 .kiln-tabletop-ceramic.is-inspectable { border: 0; padding: 0; cursor: help; background: transparent; transition: transform .14s ease, filter .14s ease; }
 .kiln-tabletop-ceramic.is-inspectable:hover,
 .kiln-tabletop-ceramic.is-inspectable:focus { z-index: 25; transform: translateY(-2px) scale(1.08); filter: drop-shadow(0 6px 5px rgb(0 0 0 / 38%)); }
-.kiln-tabletop-ceramic svg { width: 100%; overflow: visible; }
-.kiln-tabletop-ceramic path { fill: color-mix(in srgb, currentColor 78%, white); stroke: color-mix(in srgb, currentColor 56%, #3e473f); stroke-width: 3; stroke-linejoin: round; }
-.kiln-tabletop-ceramic .kiln-tabletop-decoration-pattern { pointer-events: none; }
-.kiln-tabletop-ceramic .kiln-tabletop-decoration-pattern path { fill: none; stroke: color-mix(in srgb, currentColor 30%, #26372f); stroke-linecap: round; stroke-linejoin: round; }
-.kiln-tabletop-ceramic .kiln-tabletop-decoration-pattern.is-carved path { stroke-width: 2.1; }
-.kiln-tabletop-ceramic .kiln-tabletop-decoration-pattern.is-painted path { stroke-width: 1.45; }
-.kiln-tabletop-ceramic .kiln-tabletop-decoration-pattern.is-impressed circle { fill: color-mix(in srgb, currentColor 28%, #26372f); stroke: rgb(255 255 255 / 38%); stroke-width: .8; }
-.kiln-tabletop-ceramic.glaze-white { color: #eee9dc; }
-.kiln-tabletop-ceramic.glaze-grey_green { color: #84988e; }
-.kiln-tabletop-ceramic.glaze-moon_white { color: #b8c9d5; }
-.kiln-tabletop-ceramic.glaze-raw { color: #b79268; }
 .kiln-tabletop-ceramic > b.kiln-tabletop-quality-badge { position: absolute; z-index: 3; right: -6px; bottom: -1px; display: grid; min-width: 34px; height: 17px; place-items: center; border: 1px solid #fff6df; border-radius: 99px; padding: 0 5px; color: white; font-size: .36rem; font-style: normal; line-height: 1; background: #315f51; box-shadow: 0 1px 3px rgb(0 0 0 / 25%); }
 .kiln-tabletop-ceramic > b.kiln-tabletop-quality-badge.is-masterpiece { color: #3d2d15; background: #d4ad58; }
 .kiln-tabletop-ceramic > b.kiln-tabletop-quality-badge.is-standard { background: #65766e; }
 .kiln-tabletop-ceramic > b.kiln-tabletop-quality-badge.is-flawed { background: #8d493c; }
 .kiln-tabletop-ceramic.is-compact { flex-basis: 39px; width: 39px; }
 .kiln-tabletop-ceramic.is-compact > b.kiln-tabletop-quality-badge { right: -8px; min-width: 27px; height: 13px; padding-inline: 3px; font-size: .27rem; }
-.kiln-tabletop-ceramic > em.kiln-tabletop-shifu-marker { position: absolute; z-index: 2; top: -3px; right: -3px; display: grid; width: 17px; aspect-ratio: 1; place-items: center; border: 1px solid #fff0ce; border-radius: 50%; color: white; font-family: var(--tabletop-serif); font-size: .39rem; font-style: normal; background: var(--player-color); box-shadow: 0 2px 5px rgb(0 0 0 / 35%); }
-.kiln-tabletop-ceramic.is-compact > em.kiln-tabletop-shifu-marker { width: 13px; font-size: .31rem; }
 .kiln-tabletop-ceramic > em.kiln-tabletop-shifu-heat-marker { position: absolute; z-index: 2; top: -3px; right: -4px; display: grid; min-width: 22px; height: 19px; padding: 0 3px; place-items: center; border: 1px solid #fff0ce; border-radius: 5px; color: #fff6df; font-size: .5rem; font-weight: 800; font-style: normal; line-height: 1; background: #a74128; box-shadow: 0 2px 5px rgb(0 0 0 / 35%); }
 .kiln-tabletop-ceramic > em.kiln-tabletop-shifu-heat-marker.is-cooler { background: #326a75; }
 .kiln-tabletop-ceramic.is-compact > em.kiln-tabletop-shifu-heat-marker { min-width: 19px; height: 16px; font-size: .4rem; }
