@@ -86,13 +86,13 @@ export function TechniqueFace({ id, locale, layer = "preview", exhausted = false
     <span className="kiln-piece-art" aria-hidden="true" style={{ backgroundImage: `url(${TECHNIQUE_ARTWORK[id]})` }} />
     <div className="kiln-piece-heading">
       <span className="kiln-piece-id">{id}</span>
-      <span className="kiln-piece-category">{discipline}</span>
       {advanced !== undefined && <span className="kiln-piece-cost" aria-label={text(locale, `${advanced.cost} Coins`, `${advanced.cost}铜钱`)}><b>{advanced.cost}</b><i className="kiln-piece-coin" aria-hidden="true" /></span>}
     </div>
     <strong className="kiln-piece-name">{locale === "zh-CN" ? technique.nameZh : technique.name}</strong>
+    <span className="kiln-piece-category">{discipline}</span>
     <p className="kiln-piece-copy"><TechniqueDescription id={id} locale={locale} layer={layer} /></p>
     {advanced !== undefined && <div className="kiln-piece-footer">
-      <span>{advanced.oncePerRound ? text(locale, "Once per round", "每轮一次") : text(locale, "Continuous", "持续生效")}</span>
+      <span className="kiln-piece-timing">{advanced.oncePerRound ? text(locale, "Once per round", "每轮一次") : text(locale, "Continuous", "持续生效")}</span>
       <b className="kiln-piece-endgame-vp" aria-label={text(locale, "Scores 1 VP at game end", "终局计分时获得1分")}>1VP</b>
     </div>}
     {exhausted && <span className="kiln-piece-state">{text(locale, "Used", "已用")}</span>}
