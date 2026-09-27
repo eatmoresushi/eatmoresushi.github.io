@@ -1,5 +1,5 @@
 /* Shared printed pieces: text-only Tech tiles and illustrated Order cards. */
-:root { --tech-tile-size: clamp(10.75rem, 13vw, 12rem); }
+:root { --tech-tile-size: clamp(10.75rem, 13vw, 12rem); --tech-forming-accent: #425e88; }
 .kiln-piece {
   --piece-accent: #4f6547;
   position: relative;
@@ -35,7 +35,8 @@
 }
 .kiln-piece > :not(.kiln-piece-art) { position: relative; z-index: 1; }
 .kiln-piece.is-starting { --piece-accent: #526348; }
-.kiln-piece.is-forming { --piece-accent: #716041; }
+.kiln-piece.is-forming { --piece-accent: var(--tech-forming-accent); }
+.kiln-tabletop-tech-discipline.is-forming { border-color: var(--tech-forming-accent); }
 .kiln-piece.is-glazing { --piece-accent: #376666; }
 .kiln-piece.is-firing { --piece-accent: #725436; }
 .kiln-piece.is-crown { --piece-accent: #9b7543; }
@@ -43,10 +44,12 @@
 .kiln-piece[data-starting-technique-id="ST03"] { --piece-accent: #785936; }
 .kiln-piece[data-starting-technique-id="ST04"] { --piece-accent: #874c32; }
 .kiln-tech-tile {
+  --tech-heading-height: 2.6rem;
+  --tech-copy-size: clamp(.5625rem, 5.8cqw, .6875rem);
   container-type: inline-size;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: var(--tech-heading-height) minmax(0, 1fr) auto;
   box-sizing: border-box;
   width: var(--tech-tile-size);
   min-width: var(--tech-tile-size);
@@ -68,7 +71,7 @@
 .kiln-order-card::before { inset: 5px; border-radius: 6px; }
 .kiln-piece > .kiln-piece-art { pointer-events: none; }
 .kiln-order-card > .kiln-piece-art { display: none; }
-.kiln-tech-heading { grid-column: 1; grid-row: 1; display: grid; grid-template-rows: .75rem auto auto; align-items: center; gap: .1rem; min-width: 0; min-height: 0; }
+.kiln-tech-heading { grid-column: 1; grid-row: 1; display: grid; grid-template-rows: .75rem .9rem .75rem; align-items: center; align-content: start; gap: .1rem; min-width: 0; min-height: 0; }
 .kiln-piece .kiln-piece-name {
   order: 1;
   display: block;
@@ -94,7 +97,7 @@
 .kiln-piece-id { font-family: var(--serif); font-size: .9rem; }
 .kiln-tech-tile .kiln-piece-heading { grid-row: 1; order: 0; justify-content: space-between; min-height: 0; margin: 0 .1rem; line-height: 1; }
 .kiln-tech-tile .kiln-piece-id { font-size: .55rem; }
-.kiln-tech-tile .kiln-piece-name { grid-row: 2; margin: 0; font-size: clamp(.75rem, 8cqw, .95rem); line-height: 1.08; }
+.kiln-tech-tile .kiln-piece-name { grid-row: 2; margin: 0; font-size: clamp(.625rem, 7cqw, .8rem); line-height: 1.08; white-space: nowrap; text-wrap: nowrap; }
 .kiln-tech-tile .kiln-piece-category,
 .kiln-tech-tile .kiln-piece-timing,
 .kiln-tech-tile .kiln-piece-endgame-vp { border: 1px solid #f1ead3; outline: 0; border-radius: 0; padding: .07rem .2rem; color: #fffae9; background: var(--piece-accent); font-weight: 700; line-height: 1.2; }
@@ -119,7 +122,7 @@
   overflow-wrap: anywhere;
   -webkit-line-clamp: unset;
 }
-.kiln-tech-tile .kiln-piece-copy { grid-column: 1; grid-row: 2; align-self: stretch; min-height: 0; padding: .3rem 0 0; font-size: clamp(.625rem, 6.6cqw, .75rem); line-height: 1.2; text-align: left; overflow-wrap: normal; }
+.kiln-tech-tile .kiln-piece-copy { grid-column: 1; grid-row: 2; align-self: stretch; min-height: 0; padding: .3rem 0 0; font-size: var(--tech-copy-size); line-height: 1.18; text-align: left; overflow-wrap: normal; }
 .kiln-piece-copy strong { font-weight: 700; color: inherit; }
 .kiln-piece .kiln-piece-footer {
   order: 6;
@@ -138,7 +141,7 @@
   line-height: 1.3;
 }
 .kiln-tech-tile .kiln-piece-footer { grid-column: 1; grid-row: 3; display: flex; justify-content: space-between; flex-wrap: nowrap; gap: .15rem; margin: 0; padding: 0; }
-.kiln-tech-tile.is-starting { grid-template-rows: auto minmax(0, 1fr); }
+.kiln-tech-tile.is-starting { grid-template-rows: var(--tech-heading-height) minmax(0, 1fr); }
 .kiln-piece-timing { font-size: .5rem; white-space: nowrap; }
 .kiln-piece-endgame-vp { font-size: .55rem; white-space: nowrap; }
 .kiln-piece .kiln-piece-state { order: 7; align-self: center; border: 1px solid #9a7059; padding: .2rem .6rem; color: #754630; background: #f5e5c9; font-family: var(--sans); font-size: .72rem; font-weight: 800; }

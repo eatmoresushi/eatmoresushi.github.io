@@ -58,8 +58,8 @@
 }
 
 .kiln-live-root .kiln-tabletop-inspector .kiln-tech-tile .kiln-piece-copy {
-  font-size: clamp(.625rem, 6.6cqw, .75rem);
-  line-height: 1.2;
+  font-size: var(--tech-copy-size);
+  line-height: 1.18;
 }
 
 .kiln-live-root .kiln-live-controls-panel .choice-stack.technique-commands {
