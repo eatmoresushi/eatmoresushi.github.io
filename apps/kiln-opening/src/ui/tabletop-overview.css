@@ -16,7 +16,6 @@
 .kiln-tabletop-root.kiln-live-root .kiln-tabletop-tech-market .kiln-tabletop-tech-discipline > header strong { font-size: .68rem; }
 .kiln-tabletop-root.kiln-live-root .kiln-tabletop-tech-market .kiln-tabletop-tech-discipline > header small { font-size: .56rem; }
 .kiln-tabletop-root.kiln-live-root .kiln-tabletop-tech-market .kiln-tabletop-tech-discipline > div { grid-template-columns: minmax(0, 1fr); gap: 0; }
-.kiln-tabletop-tech-market .kiln-tabletop-section-title > span { width: 24px; flex-basis: 24px; }
 .kiln-tabletop-tech-market .kiln-tabletop-section-title small { display: none; }
 .kiln-tabletop-tech-market .kiln-tabletop-section-title strong { font-size: .84rem; }
 
@@ -44,7 +43,6 @@
 @media (min-width: 1100px) {
   .kiln-live-root { --ui-gap: .5rem; }
   .kiln-tabletop-root.kiln-live-root .kiln-tabletop-topbar { min-height: 44px; padding: .3rem .75rem; }
-  .kiln-live-root .kiln-tabletop-brand > span:first-child { width: 28px; font-size: 1rem; }
   .kiln-live-root .kiln-tabletop-brand strong { font-size: .8rem; }
   .kiln-live-root .kiln-tabletop-brand small { display: none; }
   .kiln-live-root .kiln-tabletop-turn-summary > span { padding: .15rem .5rem; }
@@ -69,7 +67,6 @@
 
   .kiln-tabletop-root.kiln-live-root .kiln-tabletop-market { grid-template-columns: 108px minmax(0, 1fr); padding: .4rem; gap: .2rem .4rem; align-items: start; }
   .kiln-tabletop-market > .kiln-tabletop-section-title { grid-column: 1; grid-row: 1; align-self: start; }
-  .kiln-tabletop-market .kiln-tabletop-section-title > span { display: none; }
   .kiln-tabletop-market .kiln-tabletop-section-title small { font-size: .55rem; }
   .kiln-tabletop-market .kiln-tabletop-section-title strong { font-size: .8rem; }
   .kiln-tabletop-root.kiln-live-root .kiln-tabletop-order-deck { grid-column: 1; grid-row: 1; align-self: end; width: 30px; margin: 0; }

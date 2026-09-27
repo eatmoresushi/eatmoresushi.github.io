@@ -22,7 +22,6 @@ html:has(.kiln-live-root) { min-width: 0; }
 /* Freeze the wide scene's arrangement while its entire surface scales. Physical
    viewport media queries must not independently resize cards or player panels. */
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-topbar { position: relative; grid-template-columns: 190px minmax(0, 1fr) auto; gap: .6rem; min-height: 44px; padding: .4rem .75rem; }
-.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-brand > span:first-child { width: 30px; font-size: 1rem; }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-brand strong { font-size: .85rem; }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-brand small { display: none; }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-turn-summary { grid-column: 2; grid-row: 1; }
@@ -46,7 +45,6 @@ html:has(.kiln-live-root) { min-width: 0; }
 
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-market { grid-template-columns: 108px minmax(0, 1fr); padding: .5rem; gap: .3rem .6rem; align-items: start; }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-market > .kiln-tabletop-section-title { grid-column: 1; grid-row: 1; }
-.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-market .kiln-tabletop-section-title > span { display: none; }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-market .kiln-tabletop-section-title small { font-size: .6rem; }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-market .kiln-tabletop-section-title strong { font-size: .85rem; }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-order-row { grid-column: 2; grid-row: 1; grid-template-columns: repeat(7, var(--overview-order-width)); justify-content: center; gap: .35rem; }
@@ -86,7 +84,7 @@ html:has(.kiln-live-root) { min-width: 0; }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-workshop-zones { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-workshop-zones > section { grid-column: auto; }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-resource-bank { width: auto; }
-.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-resource { grid-template-columns: auto minmax(0, 1fr); min-width: 74px; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-resource { grid-template-columns: minmax(0, 1fr); min-width: 74px; }
 
 /* Compact mode preserves readable controls and flows the public information.
    Pieces still share one proportional scale, including the personal area. */

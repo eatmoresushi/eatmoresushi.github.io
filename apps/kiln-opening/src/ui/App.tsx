@@ -502,7 +502,6 @@ export function App() {
       <a className="skip-link" href="#main-content">{t("Skip to main content")}</a>
       <header className="masthead">
         <a className="brand" href={import.meta.env.BASE_URL} aria-label={t("Kiln Opening")}>
-          <span className="brand-mark" aria-hidden="true">窑</span>
           <span><strong>{t("Kiln Opening")}</strong><small>{locale === "zh-CN" ? "Kiln Opening" : "开窑"} · {t("Song workshop strategy")}</small></span>
         </a>
         <div className="language-toggle" role="group" aria-label="Language / 语言">

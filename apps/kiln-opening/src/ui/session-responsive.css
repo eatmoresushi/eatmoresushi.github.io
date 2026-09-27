@@ -34,14 +34,6 @@
   min-width: 0;
 }
 
-.app-shell:has(> .masthead .room-meta) .masthead .brand-mark {
-  flex: 0 0 44px;
-  width: 44px;
-  border: 1px solid #d0916b;
-  border-radius: 50%;
-  background: #a84433;
-  box-shadow: inset 0 0 0 3px #f1b89622;
-}
 
 .app-shell:has(> .masthead .room-meta) .masthead .brand strong {
   font-size: 1.2rem;
@@ -394,11 +386,6 @@
   gap: clamp(.4rem, .7vw, .7rem);
 }
 
-.app-shell:has(> .masthead .room-meta):has(.kiln-live-root) .masthead .brand-mark {
-  flex-basis: clamp(32px, 2.5vw, 44px);
-  width: clamp(32px, 2.5vw, 44px);
-  font-size: clamp(1rem, 1.25vw, 1.3rem);
-}
 
 .app-shell:has(> .masthead .room-meta):has(.kiln-live-root) .masthead .brand strong {
   font-size: clamp(.95rem, 1.05vw, 1.2rem);

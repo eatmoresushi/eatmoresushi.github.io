@@ -39,7 +39,6 @@
 .kiln-tabletop-turn-order.is-horizontal li > i { width: var(--turn-marker-size); }
 .kiln-tabletop-turn-order.is-horizontal li > b { width: 14px; top: calc(50% - var(--turn-marker-size) / 2 - 7px); left: calc(50% + var(--turn-marker-size) / 2 - 5px); font-size: 8px; }
 .kiln-recognition-track .kiln-tabletop-track-heading { display: flex; align-items: center; gap: .35rem; padding: 0; border: 0; background: none; }
-.kiln-recognition-track .kiln-tabletop-track-heading > span,
 .kiln-recognition-track .kiln-tabletop-track-heading small { display: none; }
 .kiln-recognition-track .kiln-tabletop-track-heading strong { margin: 0; color: #344437; font-size: .7rem; line-height: 1.1; }
 .kiln-recognition-track ol { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; overflow: visible; padding: 0; border: 1px solid #aa9775; }
