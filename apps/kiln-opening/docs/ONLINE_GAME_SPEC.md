@@ -56,7 +56,7 @@ Consecutive computer turns run in bounded batches so an Edge Function invocation
 
 - random First Player;
 - reverse-order Kiln selection;
-- the separate Starting Order deck contains eight cards, S01–S08; each player receives 1 Starting Order and 1 Main Order in a secret hand; only hand counts are public;
+- the separate Starting Order deck contains eight cards, S01–S08; each player receives 2 Starting Orders and no Main Order in a secret hand; only hand counts are public;
 - each player chooses 1 Starting Tech from the common supply;
 - every player starts with 2 Clay, 2 Wood, 4 Coins, 1 Shifu + 3 Apprentices and an empty Imperial Kiln area;
 - Shared-Kiln High/Middle/Low capacities are 1/2/1, 2/2/2 and 3/2/3 at 2/3/4 players;

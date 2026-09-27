@@ -26,6 +26,7 @@ an available card. Academy Shifu inspection and chosen return order are private.
 Jun is once per round; an unused ability may be used during Second Firing, but a
 previously used ability may not be used again. The Second Firing window follows the extra Fire-card reveal and recalculation of Actual Heat, before assigning new Quality.
 All after-Quality abilities, including Ge, Protective Saggars and Second Firing, resolve in the owner's chosen order. Recheck current Quality, targets, costs and usage limits after each use; Ge is not required to resolve last.
+The 2026-09-27 owner amendment deals two Starting Orders and no Main Order to each player at setup, and raises O01–O03 to 4 VP each; their other requirements and rewards are unchanged.
 
 ## Approved asset rule
 
@@ -133,7 +134,7 @@ At minimum:
 - Jun/Ge/Protective Saggars/Test Pieces/Second Firing/Ru timing
 - the optional 2-Coin discard of a still-Flawed ceramic after firing
 - all 8 Starting Orders and 48 Main Orders, including independent multi-ceramic attribute matching
-- secret setup deal-one Starting plus one Main Order
+- secret setup deal-two Starting Orders and no Main Order
 - Commission reservation benefits and immediate Main-display refill
 - ordered Main-display queue removal/refill and discard-two, retain-four rotation at the start of Rounds 2–5
 - reverse-Work-order completion circuits until a complete pass circuit

@@ -74,7 +74,7 @@ The game lasts exactly **5 rounds**.
    - **3 players:** **2 High / 2 Middle / 2 Low — 6 spaces**. Cover 1 High space and 1 Low space
    - **4 players:** **3 High / 2 Middle / 3 Low — 8 spaces**. Use all spaces.
 2. Shuffle the separate **8-card Starting Order deck** and **48-card Main Order deck**.
-3. Deal each player **1 Starting Order and 1 Main Order**. These form the player's starting hand and are secret.
+3. Deal each player **2 Starting Orders and no Main Order**. These form the player's starting hand and are secret.
 4. Return undealt Starting Orders to the box. Reshuffle the remaining Main Order deck and reveal **6 face-up Main Orders** from left to right.
 5. Separate the 15 Advanced Techs into Forming, Decoration & Glazing and Firing decks of 5. Shuffle each discipline and reveal **2 face-up tiles from each**.
 6. Shuffle the Fire deck and place it face down beside a face-up discard pile.
@@ -611,9 +611,9 @@ All Starting Orders are commercial Orders and have no Crowns.
 
 | ID | Requirements | Quality | VP | Coins | Crowns |
 |:---:|---|---|:---:|:---:|:---:|
-| O01 | Bowl · any Glaze · any Decoration | Standard+ | 3 | 3 | — |
-| O02 | Plate · any Glaze · any Decoration | Standard+ | 3 | 3 | — |
-| O03 | Brush Washer · any Glaze · any Decoration | Standard+ | 3 | 3 | — |
+| O01 | Bowl · any Glaze · any Decoration | Standard+ | 4 | 3 | — |
+| O02 | Plate · any Glaze · any Decoration | Standard+ | 4 | 3 | — |
+| O03 | Brush Washer · any Glaze · any Decoration | Standard+ | 4 | 3 | — |
 | O04 | Vase · Moon White · any Decoration | Fine+ | 7 | 4 | — |
 | O05 | Censer · any Glaze · Carved | Fine+ | 8 | 4 | — |
 | O06 | any Shape · White · any Decoration | Fine+ | 5 | 3 | — |

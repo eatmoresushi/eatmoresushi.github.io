@@ -48,7 +48,7 @@ The workflow deliberately does not run the browser test because GitHub-hosted ru
 
 ## V1.4 rollout
 
-Apply `202609260001_v14_rules.sql` and `202609260002_playtest_v14.sql` after the existing migrations, deploy the current `game-action` and `playtest-submit` Edge Functions, then rebuild/publish the client. New rooms require rules/content version 1.4, schema 5 and an `r23` fingerprint. Historical room and playtest rows remain intact; older games cannot resume under V1.4.
+Apply `202609260001_v14_rules.sql`, `202609260002_playtest_v14.sql` and `202609270001_v14_starting_orders.sql` after the existing migrations, deploy the current `game-action` and `playtest-submit` Edge Functions, then rebuild/publish the client. New rooms require rules/content version 1.4, schema 5 and an `r24` fingerprint. Historical room and playtest rows remain intact; older games, including pre-amendment `r23` rooms, cannot resume under the updated rules.
 
 The migrations add Fuel Ledger's separate `BANK_2`/`STOKE_2` card values and the V1.4 computer policy, and update playtest reporting. The old Fuel Ledger database column remains only for historical records. Migration files do not deploy themselves.
 

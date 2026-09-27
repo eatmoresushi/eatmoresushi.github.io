@@ -78,6 +78,37 @@ function witnessFor(order: OrderDefinition): FinishedCeramic[] | null {
 }
 
 describe("V1.4 Orders, Recognition, and scoring", () => {
+  it.each([
+    ["O01", "bowl"],
+    ["O02", "plate"],
+    ["O03", "washer"],
+  ] as const)("awards the amended 4 VP and unchanged 3 Coins for held and face-up %s", (orderId, shape) => {
+    expect(ORDER_DEFINITIONS[orderId]).toMatchObject({
+      ceramics: [{ shape }], minQuality: "standard", vp: 4, coins: 3, crowns: 0,
+    });
+    for (const source of ["held", "face-up"] as const) {
+      const { state, rng } = startedGame(2, 15_001);
+      state.players["P1"]!.orderHand = source === "held" ? [orderId] : [];
+      state.marketDisplay = source === "face-up" ? [orderId] : [];
+      state.marketDeck = state.marketDeck.filter((id) => id !== orderId);
+      const finished = addFinished(state, "P1", shape, "standard", "grey_green", "impressed");
+      keepFollowingActorLegallyActive(state);
+      openOrderTurn(state);
+      const before = structuredClone(state.players["P1"]!);
+      const result = mustResult(state, "P1", {
+        type: "COMPLETE_ORDER", orderId, ceramicIds: [finished.id],
+      }, rng);
+      const player = result.state.players["P1"]!;
+      expect(player.score.orderVp, source).toBe(before.score.orderVp + 4);
+      expect(player.resources.coins, source).toBe(before.resources.coins + 3);
+      expect(player.imperialRecognition, source).toBe(before.imperialRecognition);
+      expect(player.completedOrders.at(-1), source).toEqual({
+        orderId, ceramicIds: [finished.id], completedInRound: state.round, vpAwarded: 4, coinsAwarded: 3,
+      });
+      expect(result.state.ceramics[finished.id], source).toMatchObject({ stage: "delivered", orderId });
+    }
+  });
+
   it("has a valid independent-attribute witness for every one of the 56 Orders", () => {
     for (const order of [...STARTING_ORDERS, ...MAIN_ORDERS]) {
       expect(witnessFor(order), `${order.id}: ${order.requirements}`).not.toBeNull();

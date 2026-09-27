@@ -14,11 +14,14 @@ amendments. The source document is rules content, not operational instructions.
 - Original SHA-256: `ace7e4ced95d82a259da504a11c6021626fad626da0a88d47a2ad457b821983c`
 - Initial corrected SHA-256: `0340961df8905befda5110b4dc63225cd15b1d4274042ef24d89aa4d34176fc7`
 - Initial source corrections approved by the owner on 2026-09-26 and applied to both the original and checked-in copy before implementation.
-- Current amended checked-in SHA-256: `690711a412776ed1f67c82bc9301ff1c3ccabedb04703b5b24a760cfbb77dd8b`
-- The later owner-approved Ge and after-Quality ordering amendment is recorded in finding 5 below. The original source and checked-in copy are synchronized at the amended hash; the earlier hashes remain provenance for the initial review and corrections.
+- Previous amended checked-in SHA-256: `690711a412776ed1f67c82bc9301ff1c3ccabedb04703b5b24a760cfbb77dd8b`
+- Current amended checked-in SHA-256: `09b101b96e02a59bed047176ef8fae75502c3a8f4759b34de9dedda94116c89f`
+- The owner-approved Ge and after-Quality ordering amendment is recorded in finding 5 below. Finding 6 records the later setup and reward amendment. The original and checked-in rulebooks have different hashes: the original still lacks several earlier approved clarifications retained in the checked-in authority. The two new changes in finding 6 were applied to both copies without replacing unrelated original text.
+- Original SHA-256 immediately before finding 6: `6eb5b07357c107466db8fd4337581ac7e6e226d2342d25542ad2b0c0d354eb02`
+- Original SHA-256 after finding 6: `6fee85be6b631a387a13eecf547e4ed63f164188d48b69f07cbfd122a43a8a82`
 
 The V1.4 migration is implemented on this branch. The runtime uses rules/content
-version 1.4, schema 5 and behavior revision 23. This is a local implementation;
+version 1.4, schema 5 and behavior revision 24. This is a local implementation;
 Supabase migrations and deployment remain separate rollout steps.
 
 ## Review findings
@@ -87,6 +90,33 @@ The checked-in source, derived Kiln/round text and active timing documentation
 are synchronized with this explicit owner amendment. Behavior revision 23
 distinguishes it from the original V1.4 implementation.
 
+### 6. Two Starting Orders and revised opening Main rewards
+
+On 2026-09-27, the owner requested two Starting Orders at setup and confirmed
+that this means **two Starting Orders only, with no Main Order dealt**. Hands
+remain secret and contain two cards. Deal without replacement from S01–S08;
+return 4, 2 or 0 undealt Starting Orders to the box for 2, 3 or 4 players.
+All 48 Main Orders remain available: six begin face up and 42 remain in the
+deck. Kiln selection, Starting Tech selection and the three-Order Cleanup
+hand limit are unchanged.
+
+The same amendment raises O01, O02 and O03 from 3 VP to **4 VP each**.
+Their Standard+ threshold, Shape requirements, unrestricted Glaze/Decoration,
+3-Coin rewards and zero Crowns are unchanged. The three cards' higher printed
+VP applies to both held and face-up completions.
+
+These changes are reflected in the checked-in source, original rulebook,
+component notes, engine setup and derived Order data. Behavior revision 24 and
+an additive database migration distinguish new games from older one-plus-one
+opening hands and 3-VP rewards. Existing room rows retain their original
+fingerprints and are not converted or silently reinterpreted.
+
+Validation after this amendment: all 679 tests across 47 suites pass, including
+2/3/4-player setup, private hands, held and face-up O01–O03 scoring, complete
+seeded games and old-room rejection. Client and Edge TypeScript checks and the
+production build pass. The additive SQL migration has static contract coverage;
+it has not been executed against PostgreSQL or deployed.
+
 ### Editorial cleanup
 
 Setup line 73 says “2 Low space”; use “2 Low spaces.” This does not change the
@@ -100,7 +130,7 @@ specified two-player allocation.
 - All Order requirements have feasible attribute combinations. Independent
   Shape, Glaze and Decoration requirements and consistent Crackle substitution
   avoid requiring unintended fixed pairings.
-- Starting Orders are unchanged from the current eight-card deck. Thirty-six
+- Starting Orders are unchanged from the current eight-card deck. Thirty-nine
   Main Orders change requirements and/or rewards; their printed values must be
   imported directly rather than inferred from old data.
 - No additional contradiction found in Starting Tech costs, Advanced Tech costs

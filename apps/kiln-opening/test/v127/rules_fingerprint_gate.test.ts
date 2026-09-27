@@ -40,7 +40,7 @@ describe("rules fingerprint gate", () => {
     const rooms = (store as unknown as { rooms: Map<string, { code: string; contentDigest: string | null }> }).rooms;
     const stored = [...rooms.values()].find((record) => record.code === room.room.code);
     expect(stored?.contentDigest).toBe(rulesFingerprint());
-    expect(stored?.contentDigest).toMatch(/^r23-[0-9a-f]{16}$/);
+    expect(stored?.contentDigest).toMatch(/^r24-[0-9a-f]{16}$/);
   });
 
   it("refuses a room created under a different ruleset rather than reinterpreting it", async () => {
@@ -64,6 +64,27 @@ describe("rules fingerprint gate", () => {
     const result = await service.reconnect({ roomCode: room.room.code, seatToken: room.seatToken });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.code).toBe("RULES_FINGERPRINT_MISMATCH");
+  });
+
+  it("refuses r23 rooms with the former opening hand and O01-O03 rewards without relabelling them", async () => {
+    const { service, store, room } = await host();
+    const rooms = (store as unknown as { rooms: Map<string, { contentDigest: string | null }> }).rooms;
+    const previousFingerprint = rulesFingerprint().replace(/^r\d+-/, "r23-");
+    for (const record of rooms.values()) record.contentDigest = previousFingerprint;
+
+    const reconnect = await service.reconnect({ roomCode: room.room.code, seatToken: room.seatToken });
+    expect(reconnect.ok).toBe(false);
+    if (!reconnect.ok) {
+      expect(reconnect.error.code).toBe("RULES_FINGERPRINT_MISMATCH");
+      expect(reconnect.error.details).toMatchObject({
+        roomFingerprint: previousFingerprint,
+        serverFingerprint: rulesFingerprint(),
+      });
+    }
+    const join = await service.joinRoom({ roomCode: room.room.code, displayName: "Guest", authUserId: "guest-user" });
+    expect(join.ok).toBe(false);
+    expect(await store.getSeats(room.room.id)).toHaveLength(1);
+    expect([...rooms.values()].every((record) => record.contentDigest === previousFingerprint)).toBe(true);
   });
 
   it("refuses the previous V1.2.6 fingerprint even with a changed version label", async () => {

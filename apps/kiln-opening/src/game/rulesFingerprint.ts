@@ -88,9 +88,12 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  *        end-of-Work Glaze Palette, Fuel Ledger cards and revised Orders.
  *  23 -- Owner amendment: choose the order of all after-Quality effects, including Ge,
  *        and recheck eligibility after each use.
+ *  24 -- Owner amendment: deal two Starting Orders and no Main Order at setup.
+ *        O01-O03 now award 4 VP, captured by the content digest. Existing rooms keep
+ *        their original fingerprint and cannot resume under the amended rules.
  */
-/** v1.4: owner-chosen order for all after-Quality effects, including Ge, with eligibility rechecked after every use. */
-export const RULES_BEHAVIOUR_REVISION = 23;
+/** V1.4 owner amendment: opening hands contain two Starting Orders and no Main Order. */
+export const RULES_BEHAVIOUR_REVISION = 24;
 
 /**
  * Display-only keys, excluded so that a typo fix or a translation improvement does not

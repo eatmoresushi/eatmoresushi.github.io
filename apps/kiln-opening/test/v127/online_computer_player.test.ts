@@ -79,7 +79,7 @@ describe("V1.4 online computer policy: Commission Market", () => {
   it("prefers the highest-VP deliverable face-up Order over whatever sits leftmost", async () => {
     const { state: initial, rng } = startedGame(2, 4402);
     const state = structuredClone(initial);
-    // O01 pays 3 VP and sits leftmost; O24 pays 10 and is equally deliverable.
+    // O01 pays 4 VP and sits leftmost; O24 pays 10 and is equally deliverable.
     state.marketDisplay = ["O01", "O24", "O43", "O44", "O45"];
     marketTurn(state, "P1");
     const opened = mustApply(state, "P1", await choose(state, "P1"), rng);
@@ -269,6 +269,8 @@ describe("V1.4 online computer policy: Tech activation", () => {
     const { state: initial } = startedGame(2, 4702);
     const state = structuredClone(initial);
     addTechnique(state, "P1", "T04");
+    // Drying Frames is useful when the chosen Order requires a non-Plain Decoration.
+    state.players["P1"]!.orderHand = ["O20"];
     state.players["P1"]!.resources = { clay: 4, wood: 0, coins: 3 };
     setWorkTurn(state, "P1");
     const action = await choose(state, "P1");

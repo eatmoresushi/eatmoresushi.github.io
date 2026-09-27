@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { activeKilnSpaceIds, CONTRIBUTION_CARD_IDS, RULES_BEHAVIOUR_REVISION } from "../../src/game/index.ts";
 import playtestMigration from "../../supabase/migrations/202609260002_playtest_v14.sql?raw";
 import migration from "../../supabase/migrations/202609260001_v14_rules.sql?raw";
+import startingHandMigration from "../../supabase/migrations/202609270001_v14_starting_orders.sql?raw";
 import strategicAiMigration from "../../supabase/migrations/202609260001_v14_rules.sql?raw";
 import orderQueueMigration from "../../supabase/migrations/202609190001_v127_rules.sql?raw";
 import eightStartingOrdersMigration from "../../supabase/migrations/202609200001_v127_eight_starting_orders.sql?raw";
@@ -11,7 +12,7 @@ import shifuHeatMigration from "../../supabase/migrations/202609200004_v127_shif
 import supabaseStore from "../../supabase/functions/_shared/supabaseStore.ts?raw";
 
 describe("V1.4 Supabase contract", () => {
-  it("stamps new rooms and rejects old save schemas at both commit boundaries", () => {
+  it("installed V1.4 room stamps and rejected old save schemas at both commit boundaries", () => {
     expect(migration).toContain("'1.4', '1.4', 0, p_content_digest");
     expect(migration).toContain("coalesce((p_state->>'schemaVersion')::integer, -1) <> 5");
     expect(migration).toContain("coalesce((p_public_state->>'schemaVersion')::integer, -1) <> 5");
@@ -101,11 +102,37 @@ describe("V1.4 Supabase contract", () => {
     expect(shifuHeatMigration).not.toMatch(/\bupdate\s+(?:public\.|private\.)/i);
   });
 
+  it("advances all five room write gates to the amended opening hand while retaining r23 history", () => {
+    expect(startingHandMigration).toContain("'^r(23|24)-[0-9a-f]{16}$'");
+    expect(startingHandMigration).not.toMatch(/\b(?:update|delete from|truncate)\s+(?:public\.|private\.)/i);
+    const replacedFunctions = [...startingHandMigration.matchAll(/'public\.(server_\w+)\([^']+\)'::regprocedure/g)]
+      .map((match) => match[1]!);
+    expect(replacedFunctions).toEqual([
+      "server_add_computer_seat", "server_create_room", "server_commit_start", "server_commit_transition", "server_join_room",
+    ]);
+    const replacement = startingHandMigration.match(/execute replace\(v_definition, '([^']+)', '([^']+)'\)/)!;
+    const previousGate = replacement[1]!;
+    const currentGate = replacement[2]!;
+    expect(previousGate).toBe("^r23-[0-9a-f]{16}$");
+    expect(currentGate).toBe(`^r${RULES_BEHAVIOUR_REVISION}-[0-9a-f]{16}$`);
+    expect(startingHandMigration).toContain(`if position('${previousGate}' in v_definition) = 0 then`);
+    expect(startingHandMigration).toContain("raise exception 'Expected r23 fingerprint gate in %', v_signature");
+    for (const name of replacedFunctions) {
+      const original = migration.split(`create or replace function public.${name}(`)[1]!.split("create or replace function")[0]!;
+      expect(original).toContain(previousGate);
+      const amended = original.replaceAll(previousGate, currentGate);
+      expect(amended).toContain(currentGate);
+      expect(amended).not.toContain(previousGate);
+      expect(migration).toContain(`revoke all on function public.${name}(`);
+      expect(migration).toContain(`grant execute on function public.${name}(`);
+    }
+  });
+
   it("guards joining before writing a seat and returns the complete current room and human-seat contract", () => {
     const join = migration.split("create or replace function public.server_join_room(")[1]!;
     expect(join).toContain("v_room.rules_version <> '1.4'");
     expect(join).toContain("v_room.content_version <> '1.4'");
-    expect(join).toContain(`!~ '^r${RULES_BEHAVIOUR_REVISION}-[0-9a-f]{16}$'`);
+    expect(join).toContain("!~ '^r23-[0-9a-f]{16}$'");
     expect(join.indexOf("'session_not_active'")).toBeLessThan(join.indexOf("insert into public.room_players"));
     for (const key of ["contentDigest", "endedAt", "endedByPlayerId", "isComputer", "aiPolicyVersion", "aiSeed", "aiCreatedCommandId"]) expect(join).toContain(`'${key}'`);
     expect(join).toContain("revoke all on function public.server_join_room(text, uuid, text, uuid, text) from public, anon, authenticated");

@@ -15,14 +15,14 @@ import {
 } from "./helpers.ts";
 
 describe("V1.4 computer observation boundary", () => {
-  it("reveals only the acting computer's secretly dealt Starting and Main Orders", () => {
+  it("reveals only the acting computer's two secretly dealt Starting Orders", () => {
     const { state } = createdGame(3, 12_601);
     if (state.phase.type !== "setup_kiln_selection") throw new Error("Expected kiln selection");
 
     const observation = createComputerObservation(state, "P2");
     expect(observation.ownPrivate.orderHand).toEqual(state.players["P2"]!.orderHand);
-    expect(observation.ownPrivate.orderHand.filter((id) => id.startsWith("S"))).toHaveLength(1);
-    expect(observation.ownPrivate.orderHand.filter((id) => id.startsWith("O"))).toHaveLength(1);
+    expect(observation.ownPrivate.orderHand.filter((id) => id.startsWith("S"))).toHaveLength(2);
+    expect(observation.ownPrivate.orderHand.filter((id) => id.startsWith("O"))).toHaveLength(0);
     expect(observation.ownPrivate.startingOrderOffer).toEqual([]);
     for (const player of Object.values(observation.game.players)) {
       expect(player.orderHand).toEqual([]);

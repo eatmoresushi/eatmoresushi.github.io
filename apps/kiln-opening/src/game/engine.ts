@@ -582,7 +582,7 @@ function selectKiln(state: GameState, actorId: PlayerId, kilnId: KilnId): ApplyR
 }
 
 function submitStartingOrders(_state: GameState, _actorId: PlayerId, _orderIds: OrderId[], _rng: RandomSource): ApplyResult {
-  return applyFailure(ruleError("INVALID_ACTION", "Opening hands are dealt automatically: one Starting Order and one Main Order."));
+  return applyFailure(ruleError("INVALID_ACTION", "Opening hands are dealt automatically: two Starting Orders and no Main Order."));
 }
 
 function selectStartingTech(

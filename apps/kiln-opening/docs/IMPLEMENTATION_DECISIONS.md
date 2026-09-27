@@ -13,7 +13,7 @@ The [V1.4 Player Rulebook](./KILN_OPENING_v1.4_EN_SOURCE.md) governs mechanics. 
 
 ## Orders and private Academy choices
 
-- Players secretly receive one of eight Starting Orders and one Main Order. Both count toward the three-Order Cleanup hand limit.
+- Players secretly receive two of the eight Starting Orders and no Main Order. All eight Starting Orders are dealt at four players; undealt Starting Orders return to the box. Both held Orders count toward the three-Order Cleanup hand limit.
 - The six-card Main display is an ordered queue. Remove, slide left and append when reserving or completing a face-up Order. At the start of Rounds 2–5 discard the oldest two, retain the rest in order and refill. If both deck and discard are empty, draw only available cards and leave the display short. Every reservation must take a card.
 - Shifu reservations resolve sequentially, including each chosen resource advance and display refill. Colour Samples inspection is private; untaken inspected Orders go to discard.
 - A Craft Academy Shifu privately inspects up to two Techs of a discipline. The acquisition command explicitly supplies the bottom order of multiple untaken inspected Techs. The server validates the exact permutation; inspection, deck order and returned IDs remain private.
@@ -42,4 +42,4 @@ Ge records actual Fine Quality, so completion and Exhibition use recorded Qualit
 
 All undelivered ceramics and their recorded attributes are public. Hands, inspections, hidden deck order and unrevealed Contributions are private. Public projections redact them; authenticated private responses contain only the requesting seat's information. The same sanitized boundary applies to computer players. English and Simplified Chinese render identical stable IDs and never change game state.
 
-V1.4 rooms use schema 5, behavior revision 23 and policy `rules-v1.4-strategic-001`. Older room rows and playtest reports are retained as history. Version/schema/fingerprint mismatches are rejected rather than reinterpreted. SQL migrations, both Edge Functions and the client must be rolled out together; checked-in migrations do not apply themselves.
+V1.4 rooms use schema 5, behavior revision 24 and policy `rules-v1.4-strategic-001`. Older room rows and playtest reports are retained as history. Version/schema/fingerprint mismatches are rejected rather than reinterpreted. SQL migrations, both Edge Functions and the client must be rolled out together; checked-in migrations do not apply themselves.
