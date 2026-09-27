@@ -33,7 +33,34 @@ function tokenOwner(token: string): string | undefined {
   return token.match(/data-player-id="([^"]+)"/)?.[1];
 }
 
+function ancestorTagsAt(markup: string, position: number): string[] {
+  const stack: string[] = [];
+  for (const [tag, name] of markup.slice(0, position).matchAll(/<\/?([a-z][a-z\d]*)\b[^>]*>/giu)) {
+    if (tag.startsWith("</")) stack.pop();
+    else if (!/\/$/u.test(tag.slice(0, -1)) && !/^(?:area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/u.test(name!)) stack.push(tag);
+  }
+  return stack;
+}
+
 describe("V1.4 physical Imperial Priority markers", () => {
+  it.each(["en", "zh-CN"] as const)("places Recognition after face-up Techs outside the board action spaces (%s)", (locale) => {
+    const { state } = startedGame(4, 127_972);
+    const markup = renderTable(state, "P1", locale);
+    const trackStart = markup.indexOf('<section class="kiln-tabletop-imperial-track');
+    expect(trackStart).toBeGreaterThan(0);
+    const ancestors = ancestorTagsAt(markup, trackStart);
+    expect(ancestors.some((tag) => tag.includes('class="kiln-tabletop-public-sidebar"'))).toBe(true);
+    expect(ancestors.some((tag) => tag.includes("kiln-tabletop-actions-grid") || tag.includes('id="kiln-live-shared-board"'))).toBe(false);
+    const sidebarStart = markup.lastIndexOf('<div class="kiln-tabletop-public-sidebar">', trackStart);
+    const precedingSidebar = markup.slice(sidebarStart, trackStart);
+    expect(precedingSidebar).toContain('<aside class="kiln-tabletop-tech-market"');
+    expect(precedingSidebar.endsWith("</aside>")).toBe(true);
+    const track = markup.slice(trackStart).match(/^<section\b[\s\S]*?<\/section>/u)![0];
+    expect(track).toContain("kiln-recognition-track is-compact");
+    expect(track).toContain(`<button type="button" aria-haspopup="dialog">${locale === "en" ? "Rewards" : "奖励"}</button>`);
+    expect([...track.matchAll(/data-recognition-space="[0-4]"/gu)]).toHaveLength(5);
+  });
+
   it.each([2, 3, 4] as const)("places one matching player-colour token at Recognition 3 for each of %i players", (count) => {
     const { state } = startedGame(count, 127_960 + count);
     const markup = renderTable(state);

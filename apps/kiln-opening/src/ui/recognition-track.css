@@ -1,0 +1,45 @@
+/* Recognition has its own flow layout beneath the public Techs, away from actions. */
+.kiln-tabletop-public-sidebar { display: grid; gap: .5rem; min-width: 0; align-content: start; }
+.kiln-tabletop-root .kiln-recognition-track,
+.kiln-tabletop-inspector .kiln-recognition-track {
+  --recognition-marker-height: clamp(22px, 1.75vw, 30px);
+  --recognition-marker-width: calc(var(--recognition-marker-height) * 350 / 590);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: .2rem;
+  min-width: 0;
+  padding: .3rem .4rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  color: #344437;
+  background: linear-gradient(120deg, #f4ead2, #e5d5b1);
+}
+.kiln-recognition-track .kiln-tabletop-track-heading { display: flex; align-items: center; gap: .35rem; padding: 0; border: 0; background: none; }
+.kiln-recognition-track .kiln-tabletop-track-heading > span,
+.kiln-recognition-track .kiln-tabletop-track-heading small { display: none; }
+.kiln-recognition-track .kiln-tabletop-track-heading strong { margin: 0; color: #344437; font-size: .7rem; line-height: 1.1; }
+.kiln-recognition-track .kiln-tabletop-track-heading button { margin-left: auto; min-height: 0; padding: 0 .15rem; border: 0; border-radius: 2px; color: #355e50; background: none; font-size: .65rem; line-height: 1.2; text-decoration: underline; }
+.kiln-recognition-track ol { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; overflow: visible; padding: 0; border: 1px solid #aa9775; }
+.kiln-recognition-track li { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; gap: .1rem; min-height: 0; padding: .15rem; border: 0; border-right: 1px solid #aa9775; border-radius: 0; background: #fff8e833; }
+.kiln-recognition-track li:last-child { border-right: 0; }
+.kiln-recognition-stop { display: flex; align-items: center; gap: 2px; min-height: var(--recognition-marker-height); }
+.kiln-recognition-number { color: #4c4939; font: 500 .875rem/1 Georgia, serif; }
+.kiln-recognition-pieces { display: flex; align-items: flex-end; justify-content: flex-end; flex: 1; min-width: 0; }
+.kiln-recognition-pieces .kiln-tabletop-track-markers { display: flex; flex-wrap: nowrap; align-items: flex-end; justify-content: center; gap: 0; min-height: 0; height: var(--recognition-marker-height); }
+.kiln-recognition-pieces .kiln-tabletop-track-markers:empty { display: none; }
+.kiln-recognition-cylinder { display: block; flex: 0 0 var(--recognition-marker-width); width: var(--recognition-marker-width); height: var(--recognition-marker-height); overflow: hidden; }
+.kiln-recognition-pieces .kiln-tabletop-priority-supply { display: flex; flex-wrap: nowrap; align-items: flex-end; gap: 0; padding: 0; }
+.kiln-recognition-pieces .kiln-tabletop-priority-token.is-track { width: var(--recognition-marker-width); height: 20px; min-width: 0; min-height: 0; padding: 0; }
+.kiln-recognition-track .kiln-recognition-milestone strong { font-size: .6rem; line-height: 1.1; white-space: normal; overflow: visible; text-align: center; }
+/* The compact track links to these complete, readable milestone rewards. */
+.kiln-recognition-track.is-detail { align-self: start; align-content: start; margin: 1rem; }
+.kiln-recognition-track.is-detail .kiln-tabletop-track-heading { display: none; }
+.kiln-recognition-track.is-detail ol { grid-template-columns: minmax(0, 1fr); }
+.kiln-recognition-track.is-detail li { grid-template-columns: 100px minmax(0, 1fr); grid-template-rows: auto; padding: .65rem; border-right: 0; border-bottom: 1px solid #aa9775; }
+.kiln-recognition-track.is-detail li:last-child { border-bottom: 0; }
+.kiln-recognition-track.is-detail .kiln-recognition-milestone strong { font-size: .95rem; text-align: left; white-space: normal; }
+.kiln-recognition-track.is-detail .kiln-recognition-milestone small { display: block; overflow: visible; font-size: .85rem; line-height: 1.4; -webkit-line-clamp: unset; }
+@media (max-width: 1099px) {
+  .kiln-tabletop-public-sidebar { width: min(100%, 540px); justify-self: center; }
+  .kiln-tabletop-root.kiln-live-root .kiln-tabletop-public-sidebar .kiln-tabletop-tech-market { width: 100%; }
+}

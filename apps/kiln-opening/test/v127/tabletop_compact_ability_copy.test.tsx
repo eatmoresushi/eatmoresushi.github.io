@@ -94,7 +94,7 @@ describe("tabletop compact Technique copy", () => {
     expect(TECHNIQUE_SHORT_COPY.T12.en).not.toContain("extra Wood");
   });
 
-  it("shows overview copy on face-up cards with complete short descriptions and click inspection, while owned cards keep normal reminders", () => {
+  it("shows overview copy on public and personal cards while retaining complete short descriptions and click inspection", () => {
     for (const locale of ["en", "zh-CN"] as const) {
       const markups = (["P1", "P2", "P3", "P4"] as const).map((playerId) => tabletopMarkup(playerId, locale));
       const combinedText = markups.map(renderedText).join("\n");
@@ -107,8 +107,9 @@ describe("tabletop compact Technique copy", () => {
         expect(combinedText, `${id} ${locale} preview`).toContain(techniqueShortPlainText(id, locale));
         if (!techniqueShortPlainText(id, locale).includes(techniqueFullCopy(id, locale))) expect(combinedText, `${id} ${locale} full`).not.toContain(techniqueFullCopy(id, locale));
       }
-      for (const id of ADVANCED_TECHNIQUE_IDS) {
-        const tile = markups[0]!.match(new RegExp(`<button[^>]*data-technique-id="${id}"[^>]*>[\\s\\S]*?</button>`, "u"))?.[0];
+      for (const id of ALL_TECHNIQUE_IDS) {
+        const attribute = id.startsWith("ST") ? "data-starting-technique-id" : "data-technique-id";
+        const tile = markups.map((markup) => markup.match(new RegExp(`<button[^>]*${attribute}="${id}"[^>]*>[\\s\\S]*?</button>`, "u"))?.[0]).find((markup) => markup !== undefined);
         expect(tile, `${id} ${locale} visible overview`).toBeDefined();
         expect(tile).toContain('data-overview="true"');
         expect(renderedText(tile!)).toContain(techniqueOverviewCopy(id, locale));

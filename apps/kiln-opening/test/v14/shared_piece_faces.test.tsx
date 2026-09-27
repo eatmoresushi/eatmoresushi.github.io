@@ -44,6 +44,15 @@ function expectStaticFace(markup: string): void {
   expect(markup).not.toMatch(/\stitle=|data-hover-preview=|data-preview-id=|role="tooltip"/u);
 }
 
+function expectTechInspectionDescription(markup: string, tile: string, id: string, locale: Locale): void {
+  expect(tile).toContain('aria-haspopup="dialog"');
+  const descriptionId = tile.match(/aria-describedby="([^"]+)"/u)?.[1];
+  expect(descriptionId).toBeDefined();
+  const description = markup.match(new RegExp(`<span class="sr-only" id="${descriptionId}">([\\s\\S]*?)</span>`, "u"))?.[1];
+  expect(description).toBeDefined();
+  expect(text(description!)).toBe(techniqueShortPlainText(id, locale));
+}
+
 function expectChoiceDescriptions(markup: string, expectedCount: number): void {
   const choices = [...markup.matchAll(/<button\b[^>]*class="[^"]*kiln-piece-choice[^"]*"[^>]*>[\s\S]*?<\/button>/gu)].map(([choice]) => choice);
   expect(choices).toHaveLength(expectedCount);
@@ -192,6 +201,7 @@ describe.each(["en", "zh-CN"] as const)("shared Order and Tech faces (%s)", (loc
     const { state } = startedGame(2, 14051);
     showAllTechniques(state);
     const publicGame = projectPublicGameState(state);
+    publicGame.players["P1"]!.techniques = techniques.map(({ id }) => ({ id, exhausted: false }));
     const tabletop = localized(locale, createElement(TabletopGameExperience, {
       game: publicGame, ownPlayerId: "P1", ownPendingContribution: null, busy: false, send: async () => true,
       events: [], describeEvent: (record) => record.event.type,
@@ -202,17 +212,19 @@ describe.each(["en", "zh-CN"] as const)("shared Order and Tech faces (%s)", (loc
     const buying = localized(locale, createElement(ActionPanel, {
       game: projectPublicGameState(state), ownPlayerId: "P1", ownPendingContribution: null, busy: false, send: async () => true,
     }));
+    const ownTechs = tabletop.match(/<section class="kiln-tabletop-own-techs">[\s\S]*?<\/section>/u)?.[0];
+    expect(ownTechs).toBeDefined();
     for (const technique of techniques) {
       const face = renderToStaticMarkup(createElement(TechniqueFace, { id: technique.id, locale }));
       const overviewFace = renderToStaticMarkup(createElement(TechniqueFace, { id: technique.id, locale, overview: true }));
       const tableCard = card(tabletop, "data-technique-id", technique.id);
       expect(tableCard).toContain(overviewFace);
-      expect(tableCard).toContain('aria-haspopup="dialog"');
+      expectTechInspectionDescription(tabletop, tableCard, technique.id, locale);
       expectStaticFace(tableCard);
-      const descriptionId = tableCard.match(/aria-describedby="([^"]+)"/u)![1]!;
-      const description = tabletop.match(new RegExp(`<span class="sr-only" id="${descriptionId}">([\\s\\S]*?)</span>`, "u"))?.[1];
-      expect(description).toBeDefined();
-      expect(text(description!)).toBe(techniqueShortPlainText(technique.id, locale));
+      const ownCard = card(ownTechs!, "data-technique-id", technique.id);
+      expect(ownCard).toContain(overviewFace);
+      expectTechInspectionDescription(tabletop, ownCard, technique.id, locale);
+      expectStaticFace(ownCard);
       for (const surface of [reference, buying]) {
         const renderedCard = card(surface, "data-technique-id", technique.id);
         expect(renderedCard).toContain(face);
@@ -226,7 +238,7 @@ describe.each(["en", "zh-CN"] as const)("shared Order and Tech faces (%s)", (loc
     expectChoiceDescriptions(buying, techniques.length);
   });
 
-  it("uses the same four Starting Tech faces in setup and each owner's workshop without native tooltips", () => {
+  it("keeps Starting Tech setup text and uses compact workshop faces with complete accessible reminders", () => {
     const { state } = startedGame(4, 14052);
     const game = projectPublicGameState(state);
     state.phase = { type: "setup_starting_tech", decisionOrder: ["P1", "P2", "P3", "P4"], currentIndex: 0 };
@@ -240,11 +252,14 @@ describe.each(["en", "zh-CN"] as const)("shared Order and Tech faces (%s)", (loc
         events: [], describeEvent: (record) => record.event.type,
       }));
       const face = renderToStaticMarkup(createElement(TechniqueFace, { id: technique.id, locale }));
-      for (const surface of [setup, tabletop]) {
-        const renderedCard = card(surface, "data-starting-technique-id", technique.id);
-        expect(renderedCard).toContain(face);
-        expectStaticFace(renderedCard);
-      }
+      const setupCard = card(setup, "data-starting-technique-id", technique.id);
+      expect(setupCard).toContain(face);
+      expectStaticFace(setupCard);
+      const ownCard = card(tabletop, "data-starting-technique-id", technique.id);
+      const overviewFace = renderToStaticMarkup(createElement(TechniqueFace, { id: technique.id, locale, overview: true }));
+      expect(ownCard).toContain(overviewFace);
+      expectTechInspectionDescription(tabletop, ownCard, technique.id, locale);
+      expectStaticFace(ownCard);
     }
     expect(setup).not.toMatch(/\stitle=|data-hover-preview=|role="tooltip"/u);
     expectChoiceDescriptions(setup, STARTING_TECHNIQUES.length);

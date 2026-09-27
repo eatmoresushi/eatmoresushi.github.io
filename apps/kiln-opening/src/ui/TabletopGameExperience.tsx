@@ -59,6 +59,7 @@ import { BoardActionEffect } from "./BoardActionEffect";
 import { BoardActionSummary } from "./BoardActionSummary";
 import { ImperialKilnIllustration } from "./ImperialKilnIllustration";
 import { RecognitionMarker } from "./RecognitionMarker";
+import { useTabletopPieceSizes } from "./useTabletopPieceSizes";
 import { ResponsiveGameBoard } from "./ResponsiveGameBoard";
 import { fireCardHistory } from "./fireCardHistory";
 import type { FireCardHistoryEntry } from "./fireCardHistory";
@@ -69,6 +70,8 @@ import "./illustrated-board.css";
 import "./tabletop-responsive.css";
 import "./tabletop-dialogs.css";
 import "./tabletop-overview.css";
+import "./recognition-track.css";
+import "./personal-piece-sizes.css";
 
 type SendCommand = (command: AuthoritativeCommand) => Promise<boolean>;
 
@@ -77,6 +80,7 @@ type Inspection =
   | { type: "order"; id: OrderId }
   | { type: "technique"; id: TechniqueId }
   | { type: "startingTechnique"; id: StartingTechniqueId }
+  | { type: "recognition" }
   | { type: "log" }
   | null;
 
@@ -427,6 +431,8 @@ export function TabletopGameExperience({
 }: TabletopGameExperienceProps) {
   game = withOwnOrderHand(game, ownPlayerId, ownPrivateDecision?.orderHand);
   const { locale } = useI18n();
+  const tableRootRef = useRef<HTMLDivElement>(null);
+  useTabletopPieceSizes(tableRootRef);
   const ownPlayer = game.players[ownPlayerId];
   const [selectedWorkerId, setSelectedWorkerId] = useState<WorkerId | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<LocationId | null>(null);
@@ -501,7 +507,7 @@ export function TabletopGameExperience({
   const showContextAction = actionControlsHaveContext;
 
   return (
-    <div className="kiln-tabletop-root kiln-live-root" data-testid="tabletop-live-ui">
+    <div className="kiln-tabletop-root kiln-live-root" ref={tableRootRef} data-testid="tabletop-live-ui">
       <header className="kiln-tabletop-topbar kiln-live-topbar">
         <div className="kiln-tabletop-brand" aria-label={text(locale, "Game table", "游戏桌面")}>
           <span aria-hidden="true">窑</span>
@@ -561,13 +567,15 @@ export function TabletopGameExperience({
                     />
                   ))}
                   <SharedKiln game={game} events={events} locale={locale} />
-                  <div className="kiln-illustrated-recognition-band"><ImperialTrack game={game} locale={locale} /></div>
                 </div>
                 <TurnOrderTrack game={game} locale={locale} currentActorId={decisionActor} />
               </ResponsiveGameBoard>
             </section>
           </div>
-          <TechniqueMarket game={game} locale={locale} onInspect={(id) => inspect({ type: "technique", id })} />
+          <div className="kiln-tabletop-public-sidebar">
+            <TechniqueMarket game={game} locale={locale} onInspect={(id) => inspect({ type: "technique", id })} />
+            <ImperialTrack game={game} locale={locale} compact onInspect={() => inspect({ type: "recognition" })} />
+          </div>
         </div>
         <div className={`kiln-tabletop-workshop-area ${Object.values(game.players).filter(hasImperialKiln).length === 1 ? "has-one-imperial" : ""}`}>
           <OwnWorkshop
@@ -1033,11 +1041,11 @@ function FireHistoryList({ history, game, locale }: { history: FireCardHistoryEn
   </li>)}</ol>;
 }
 
-function ImperialTrack({ game, locale }: { game: PublicGameState; locale: Locale }) {
+function ImperialTrack({ game, locale, compact = false, onInspect }: { game: PublicGameState; locale: Locale; compact?: boolean; onInspect?: () => void }) {
   const unclaimedPriority = game.playerOrder.map((id) => game.players[id]!).filter((player) => player.imperialRecognition < 3);
   return (
-    <section className="kiln-tabletop-imperial-track" aria-label={text(locale, "Imperial Recognition track", "御府声望轨")}>
-      <div className="kiln-tabletop-track-heading"><span aria-hidden="true">御</span><div><small>{text(locale, "COURT", "御府")}</small><strong>{text(locale, "Imperial Recognition", "声望轨")}</strong></div></div>
+    <section className={`kiln-tabletop-imperial-track kiln-recognition-track ${compact ? "is-compact" : "is-detail"}`} aria-label={text(locale, "Imperial Recognition track", "御府声望轨")}>
+      <div className="kiln-tabletop-track-heading"><span aria-hidden="true">御</span><div><small>{text(locale, "COURT", "御府")}</small><strong>{text(locale, "Imperial Recognition", "声望轨")}</strong></div>{onInspect !== undefined && <button type="button" onClick={onInspect} aria-haspopup="dialog">{text(locale, "Rewards", "奖励")}</button>}</div>
       <ol>{IMPERIAL_PROGRESS.track.map((space) => {
         const playersHere = game.playerOrder.map((id) => game.players[id]!).filter((player) => player.imperialRecognition === space.space);
         return (
@@ -1058,7 +1066,7 @@ function ImperialTrack({ game, locale }: { game: PublicGameState; locale: Locale
               </div>}
             </div>
           </div>
-          <div className="kiln-recognition-milestone"><strong>{locale === "zh-CN" ? space.titleZh : space.title}</strong><small>{space.space === 3 ? text(locale, "Take your Imperial Priority token.", "获得御烧优先标记。") : locale === "zh-CN" ? space.rewardZh ?? "—" : space.reward ?? "—"}</small></div>
+          <div className="kiln-recognition-milestone"><strong>{compact ? (locale === "zh-CN" ? ["本地作坊", "赏赐", "御窑", "御烧优先", "御前呈器"] : ["Workshop", "Grant", "Gift", "Priority", "Audience"])[space.space] : locale === "zh-CN" ? space.titleZh : space.title}</strong><small className={compact ? "sr-only" : undefined}>{compact && space.space === 3 ? text(locale, "Take your Imperial Priority token.", "获得御烧优先标记。") : locale === "zh-CN" ? space.rewardZh ?? "—" : space.reward ?? "—"}</small></div>
         </li>
         );
       })}</ol>
@@ -1101,16 +1109,16 @@ function StaticTechniqueTile({ id, locale, exhausted = false }: { id: TechniqueI
   </article>;
 }
 
-function StartingTechniqueTile({ id, locale, owned = false, onInspect }: { id: StartingTechniqueId; locale: Locale; owned?: boolean; onInspect?: (id: StartingTechniqueId) => void }) {
+function StartingTechniqueTile({ id, locale, owned = false, overview = false, onInspect }: { id: StartingTechniqueId; locale: Locale; owned?: boolean; overview?: boolean; onInspect?: (id: StartingTechniqueId) => void }) {
   const descriptionId = `kiln-starting-technique-${useId()}-description`;
   const technique = STARTING_TECHNIQUE_DEFINITIONS[id];
   const className = `${pieceSurfaceClass(id)} ${owned ? "is-owned" : ""}`;
-  const contents = <TechniqueFace id={id} locale={locale} layer="preview" />;
+  const contents = <TechniqueFace id={id} locale={locale} layer="preview" overview={overview} />;
   if (onInspect === undefined) return <article className={className} data-starting-technique-id={id} data-description-layer="preview">{contents}</article>;
   return <>
     <button className={className} type="button" onClick={() => onInspect(id)}
       aria-label={text(locale, `Inspect ${technique.name}`, `查看${technique.nameZh}`)}
-      aria-describedby={descriptionId} aria-haspopup="dialog" data-starting-technique-id={id}
+      aria-describedby={descriptionId} aria-haspopup="dialog" data-starting-technique-id={id} data-overview={overview || undefined}
     >{contents}</button>
     <span className="sr-only" id={descriptionId}>{techniqueShortPlainText(id, locale)}</span>
   </>;
@@ -1159,7 +1167,7 @@ function OwnWorkshop({
         </section>
         <section className="kiln-tabletop-ceramic-shelf"><h3>{text(locale, "Ceramics", "陶瓷")} <span>{ceramics.length}</span></h3><div>{ceramics.map((ceramic) => <Ceramic ceramic={ceramic} game={game} locale={locale} inspectable key={ceramic.id} />)}{ceramics.length === 0 && <span className="kiln-live-empty-copy">{text(locale, "No ceramics in workshop", "作坊中没有陶瓷")}</span>}</div></section>
         <section className="kiln-tabletop-own-orders"><h3>{text(locale, "Your Orders", "你的委托")} <span>{player.orderHandCount} / {GAME_CONFIG.orderDisplay.baseHandLimit}</span></h3><div>{player.orderHand.map((id) => <OrderCard id={id} locale={locale} owned onInspect={onInspectOrder} key={id} />)}{player.orderHand.length === 0 && <span className="kiln-live-empty-copy">{text(locale, "No held Orders", "没有持有委托")}</span>}</div></section>
-        <section className="kiln-tabletop-own-techs"><h3>{text(locale, "Your Techs", "你的技艺")} <span>{text(locale, `${player.startingTechniqueId === null ? 0 : 1} Starting · ${player.techniques.length} / ${GAME_CONFIG.techniques.maxOwned} Advanced`, `${player.startingTechniqueId === null ? 0 : 1}起始 · ${player.techniques.length} / ${GAME_CONFIG.techniques.maxOwned}进阶`)}</span></h3><div>{player.startingTechniqueId !== null && <StartingTechniqueTile id={player.startingTechniqueId} locale={locale} owned onInspect={onInspectStartingTechnique} />}{player.techniques.map((technique) => <TechniqueTile id={technique.id} locale={locale} owned exhausted={technique.exhausted} onInspect={onInspectTechnique} key={technique.id} />)}{player.startingTechniqueId === null && player.techniques.length === 0 && <span className="kiln-live-empty-copy">{text(locale, "No Tech selected", "尚未选择技艺")}</span>}</div></section>
+        <section className="kiln-tabletop-own-techs"><h3>{text(locale, "Your Techs", "你的技艺")} <span>{text(locale, `${player.startingTechniqueId === null ? 0 : 1} Starting · ${player.techniques.length} / ${GAME_CONFIG.techniques.maxOwned} Advanced`, `${player.startingTechniqueId === null ? 0 : 1}起始 · ${player.techniques.length} / ${GAME_CONFIG.techniques.maxOwned}进阶`)}</span></h3><div>{player.startingTechniqueId !== null && <StartingTechniqueTile id={player.startingTechniqueId} locale={locale} owned overview onInspect={onInspectStartingTechnique} />}{player.techniques.map((technique) => <TechniqueTile id={technique.id} locale={locale} owned overview exhausted={technique.exhausted} onInspect={onInspectTechnique} key={technique.id} />)}{player.startingTechniqueId === null && player.techniques.length === 0 && <span className="kiln-live-empty-copy">{text(locale, "No Tech selected", "尚未选择技艺")}</span>}</div></section>
       </div>
     </section>
   );
@@ -1269,13 +1277,14 @@ function Inspector({ inspection, game, events, describeEvent, locale, onClose }:
   const order = inspection.type === "order" ? ORDER_DEFINITIONS[inspection.id] : undefined;
   const technique = inspection.type === "technique" ? TECHNIQUE_DEFINITIONS[inspection.id] : undefined;
   const startingTechnique = inspection.type === "startingTechnique" ? STARTING_TECHNIQUE_DEFINITIONS[inspection.id] : undefined;
-  const title = player !== undefined ? text(locale, `${player.displayName}'s workshop`, `${player.displayName}的作坊`) : order !== undefined ? text(locale, `Order ${order.id}`, `委托 ${order.id}`) : technique !== undefined ? locale === "zh-CN" ? technique.nameZh : technique.name : startingTechnique !== undefined ? locale === "zh-CN" ? startingTechnique.nameZh : startingTechnique.name : text(locale, "Game log", "游戏记录");
+  const title = player !== undefined ? text(locale, `${player.displayName}'s workshop`, `${player.displayName}的作坊`) : order !== undefined ? text(locale, `Order ${order.id}`, `委托 ${order.id}`) : technique !== undefined ? locale === "zh-CN" ? technique.nameZh : technique.name : startingTechnique !== undefined ? locale === "zh-CN" ? startingTechnique.nameZh : startingTechnique.name : inspection.type === "recognition" ? text(locale, "Imperial Recognition", "御府声望") : text(locale, "Game log", "游戏记录");
   return (
     <ModalPanel title={title} eyebrow={text(locale, "TABLE INSPECTOR", "桌面查看")} locale={locale} onClose={onClose}>
       {player !== undefined && <PlayerInspection player={player} game={game} locale={locale} />}
       {order !== undefined && <OrderInspection id={order.id} locale={locale} />}
       {technique !== undefined && <TechniqueInspection id={technique.id} locale={locale} />}
       {startingTechnique !== undefined && <StartingTechniqueInspection id={startingTechnique.id} locale={locale} />}
+      {inspection.type === "recognition" && <ImperialTrack game={game} locale={locale} />}
       {inspection.type === "log" && <LogInspection game={game} events={events} describeEvent={describeEvent} locale={locale} />}
     </ModalPanel>
   );
