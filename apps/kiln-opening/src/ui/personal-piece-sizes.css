@@ -14,7 +14,7 @@
 }
 
 .kiln-tabletop-root.kiln-live-root .kiln-tabletop-workshop .kiln-tabletop-own-orders > div {
-  grid-template-columns: repeat(auto-fit, var(--table-order-width, 160px));
+  grid-template-columns: repeat(auto-fit, var(--table-order-width, var(--overview-order-width, 140px)));
 }
 .kiln-tabletop-root.kiln-live-root .kiln-tabletop-workshop .kiln-tabletop-own-techs > div {
   grid-template-columns: repeat(auto-fit, var(--table-tech-width, 130px));
@@ -22,13 +22,13 @@
 
 .kiln-tabletop-root.kiln-live-root .kiln-tabletop-workshop .kiln-tabletop-own-orders > div > .kiln-order-card {
   box-sizing: border-box;
-  width: var(--table-order-width, 160px);
-  min-width: var(--table-order-width, 160px);
-  max-width: var(--table-order-width, 160px);
-  height: var(--table-order-height, 160px);
-  min-height: var(--table-order-height, 160px);
-  max-height: var(--table-order-height, 160px);
-  aspect-ratio: auto;
+  width: var(--table-order-width, var(--overview-order-width, 140px));
+  min-width: var(--table-order-width, var(--overview-order-width, 140px));
+  max-width: var(--table-order-width, var(--overview-order-width, 140px));
+  height: var(--table-order-height, var(--overview-order-height, 196px));
+  min-height: var(--table-order-height, var(--overview-order-height, 196px));
+  max-height: var(--table-order-height, var(--overview-order-height, 196px));
+  aspect-ratio: 5 / 7;
   margin: 0;
 }
 .kiln-tabletop-root.kiln-live-root .kiln-tabletop-workshop .kiln-tabletop-own-techs > div > .kiln-tech-tile {

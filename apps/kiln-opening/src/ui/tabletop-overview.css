@@ -17,48 +17,49 @@
 .kiln-tabletop-root.kiln-live-root .kiln-tabletop-tech-market .kiln-tabletop-tech-discipline > header small { font-size: .56rem; }
 .kiln-tabletop-root.kiln-live-root .kiln-tabletop-tech-market .kiln-tabletop-tech-discipline > div { grid-template-columns: minmax(0, 1fr); gap: 0; }
 .kiln-live-root :is(.kiln-tabletop-tech-market, .kiln-tabletop-own-techs) .kiln-tech-tile[data-overview] {
-  grid-template-rows: 1rem auto minmax(0, 1fr) auto 1rem;
-  padding: .5rem;
+  grid-template-rows: 2.6rem minmax(0, 1.4fr) minmax(min-content, 1fr) .75rem;
+  padding: .4rem;
   gap: .12rem;
 }
 .kiln-live-root :is(.kiln-tabletop-tech-market, .kiln-tabletop-own-techs) .kiln-tech-tile[data-overview]::before { inset: 3px; border-width: 1px; outline-offset: -3px; }
 .kiln-live-root :is(.kiln-tabletop-tech-market, .kiln-tabletop-own-techs) .kiln-tech-tile[data-overview]::after { display: none; }
-.kiln-live-root :is(.kiln-tabletop-tech-market, .kiln-tabletop-own-techs) .kiln-piece-art { grid-row: 1 / 4; margin: -.25rem -.25rem 0; width: calc(100% + .5rem); }
-.kiln-live-root :is(.kiln-tabletop-tech-market, .kiln-tabletop-own-techs) .kiln-piece-heading { margin: 0 .1rem; }
+.kiln-live-root :is(.kiln-tabletop-tech-market, .kiln-tabletop-own-techs) .kiln-tech-tile.is-starting { grid-template-rows: 2.6rem minmax(0, 1.4fr) minmax(min-content, 1fr); }
+.kiln-live-root :is(.kiln-tabletop-tech-market, .kiln-tabletop-own-techs) .kiln-tech-heading { grid-template-rows: .65rem minmax(0, 1fr) auto; gap: .05rem; }
+.kiln-live-root :is(.kiln-tabletop-tech-market, .kiln-tabletop-own-techs) .kiln-piece-art { grid-row: 2; margin: 0; width: 100%; }
+.kiln-live-root :is(.kiln-tabletop-tech-market, .kiln-tabletop-own-techs) .kiln-piece-heading { margin: 0 .1rem; font-size: .55rem; line-height: 1; }
 .kiln-live-root :is(.kiln-tabletop-tech-market, .kiln-tabletop-own-techs) .kiln-piece-id { font-size: .57rem; }
-.kiln-live-root :is(.kiln-tabletop-tech-market, .kiln-tabletop-own-techs) .kiln-piece-cost { gap: .15rem; font-size: .73rem; }
-.kiln-live-root :is(.kiln-tabletop-tech-market, .kiln-tabletop-own-techs) .kiln-piece-cost .kiln-piece-coin { width: 1rem; height: 1rem; }
-.kiln-live-root :is(.kiln-tabletop-tech-market, .kiln-tabletop-own-techs) .kiln-piece-name { font-size: clamp(.7rem, 8.2cqw, .95rem); line-height: 1.08; }
-.kiln-live-root :is(.kiln-tabletop-tech-market, .kiln-tabletop-own-techs) .kiln-piece-category { display: none; }
-.kiln-live-root :is(.kiln-tabletop-tech-market, .kiln-tabletop-own-techs) .kiln-piece-copy { grid-row: 4; padding: .25rem 0 .1rem; font-size: clamp(.62rem, 6.6cqw, .78rem); line-height: 1.15; }
+.kiln-live-root :is(.kiln-tabletop-tech-market, .kiln-tabletop-own-techs) .kiln-piece-cost { gap: .15rem; font-size: .6rem; line-height: 1; }
+.kiln-live-root :is(.kiln-tabletop-tech-market, .kiln-tabletop-own-techs) .kiln-piece-cost .kiln-piece-coin { width: .65rem; height: .65rem; border-width: 1px; }
+.kiln-live-root :is(.kiln-tabletop-tech-market, .kiln-tabletop-own-techs) .kiln-piece-name { font-size: clamp(.64rem, 8.2cqw, .95rem); line-height: 1.06; }
+.kiln-live-root :is(.kiln-tabletop-tech-market, .kiln-tabletop-own-techs) .kiln-piece-category { display: block; border-width: 1px; outline: 0; margin: 0; padding: .03rem .2rem; font-size: clamp(.4rem, 4.8cqw, .55rem); }
+.kiln-live-root :is(.kiln-tabletop-tech-market, .kiln-tabletop-own-techs) .kiln-piece-copy { grid-row: 3; padding: .2rem 0 .1rem; font-size: clamp(.52rem, 7cqw, .75rem); line-height: 1.1; }
 .kiln-live-root :is(.kiln-tabletop-tech-market, .kiln-tabletop-own-techs) .kiln-piece-copy::before { width: .3rem; height: .3rem; top: -.15rem; left: calc(50% - .15rem); }
-.kiln-live-root :is(.kiln-tabletop-tech-market, .kiln-tabletop-own-techs) .kiln-piece-footer { grid-row: 5; margin: 0; gap: .1rem; }
+.kiln-live-root :is(.kiln-tabletop-tech-market, .kiln-tabletop-own-techs) .kiln-piece-footer { grid-row: 4; margin: 0; gap: .1rem; }
 .kiln-live-root :is(.kiln-tabletop-tech-market, .kiln-tabletop-own-techs) :is(.kiln-piece-timing, .kiln-piece-endgame-vp) { border-width: 1px; padding: .08rem .15rem; outline: 0; font-size: clamp(.43rem, 4.6cqw, .6rem); }
 .kiln-tabletop-tech-market .kiln-tabletop-section-title > span { width: 24px; flex-basis: 24px; }
 .kiln-tabletop-tech-market .kiln-tabletop-section-title small { display: none; }
 .kiln-tabletop-tech-market .kiln-tabletop-section-title strong { font-size: .84rem; }
 
-.kiln-live-root { --overview-order-height: 180px; }
-:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-order-card { height: var(--overview-order-height); min-height: var(--overview-order-height); gap: .15rem; padding: .55rem; box-shadow: none; }
-:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-heading { min-height: 1.25rem; }
+.kiln-live-root { --overview-order-width: 140px; --overview-order-height: 196px; }
+.kiln-tabletop-root.kiln-live-root .kiln-tabletop-order-row { grid-template-columns: repeat(6, var(--overview-order-width)); justify-content: start; gap: .35rem; overflow-x: auto; padding-bottom: .2rem; }
+:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-order-card { width: var(--overview-order-width); height: var(--overview-order-height); min-height: var(--overview-order-height); gap: .2rem; border-radius: 7px; padding: .55rem; }
+:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-order-card::before { inset: 3px; border-radius: 4px; }
+:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-heading { min-height: .9rem; }
 :is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-id { font-size: .78rem; }
 :is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-category { font-size: .5rem; }
-:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-order-illustration { position: absolute; top: .25rem; left: calc(50% - 25px); width: 50px; height: 28px; min-height: 0; aspect-ratio: auto; opacity: .8; }
+:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-order-illustration { flex: 1; width: 100%; height: auto; min-height: 24px; aspect-ratio: auto; }
 :is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-requirement-label { display: none; }
-:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-copy { font-size: .65rem; line-height: 1.15; }
+:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-copy { font-size: .65rem; line-height: 1.15; overflow-wrap: normal; }
 :is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-quality { display: flex; justify-content: center; align-items: baseline; flex-wrap: wrap; gap: .1rem .3rem; margin: 0; padding-top: .2rem; }
 :is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-quality > small { display: none; }
 :is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-quality > b,
 :is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-quality-requirements > span { font-size: .65rem; }
-:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-footer { gap: .15rem; padding: .2rem 0 .15rem; }
+:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-footer { flex: none; gap: .15rem; margin: 0; padding: .2rem 0 .15rem; }
 :is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-stat { gap: .15rem; }
 :is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-stat b { font-size: .85rem; }
 :is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-vp-label { width: 1rem; height: 1.1rem; font-size: .5rem; }
 :is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-coin { width: .8rem; height: .8rem; border-width: 1px; }
-:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-crowns { font-size: .7rem; }
-:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-display-index { top: auto; right: auto; bottom: .5rem; left: calc(50% - .4rem); width: .8rem; height: .8rem; font-size: .48rem; }
-@media (min-width: 600px) { .kiln-live-root { --overview-order-height: 160px; } }
-@media (min-width: 1280px) { .kiln-live-root { --overview-order-height: 140px; } }
+:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-crown-icon { width: 1.05rem; height: .84rem; }
 
 @media (min-width: 1100px) {
   .app-shell:has(> .masthead .room-meta):has(.kiln-live-root) > .masthead { min-height: 46px; padding: .25rem .75rem; }
@@ -99,15 +100,19 @@
   .kiln-tabletop-market .kiln-tabletop-section-title small { font-size: .55rem; }
   .kiln-tabletop-market .kiln-tabletop-section-title strong { font-size: .8rem; }
   .kiln-tabletop-root.kiln-live-root .kiln-tabletop-order-deck { grid-column: 1; grid-row: 1; align-self: end; width: 30px; margin: 0; }
-  .kiln-tabletop-root.kiln-live-root .kiln-tabletop-order-row { grid-column: 2; grid-row: 1; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .25rem; }
+  .kiln-tabletop-root.kiln-live-root .kiln-tabletop-order-row { grid-column: 2; grid-row: 1; }
   .kiln-tabletop-root.kiln-live-root .kiln-tabletop-market-note { grid-column: 2; grid-row: 2; }
   .kiln-tabletop-root.kiln-live-root .kiln-tabletop-market-note :is(small, strong) { font-size: .56rem; }
 
   /* Leave room for session/player controls and the longest public Order reminders. */
-  .kiln-tabletop-root.kiln-live-root .kiln-tabletop-play-area { grid-template-columns: minmax(0, calc((100dvh - 355px) * 1.55)) clamp(350px, 29vw, 470px); justify-content: center; align-items: start; gap: .5rem; }
+  .kiln-tabletop-root.kiln-live-root .kiln-tabletop-play-area { grid-template-columns: minmax(0, calc((100dvh - 411px) * 1.55)) clamp(420px, 31vw, 480px); justify-content: center; align-items: start; gap: .5rem; }
   .kiln-live-root .kiln-tabletop-board-scroll { width: 100%; }
   .kiln-live-root .kiln-tabletop-board { padding: .4rem; }
 }
 @media (max-width: 1099px) {
   .kiln-tabletop-root.kiln-live-root .kiln-tabletop-tech-market { width: min(100%, 540px); justify-self: center; }
+}
+@media (max-width: 599px) {
+  .kiln-tabletop-root.kiln-live-root .kiln-tabletop-tech-market { grid-template-columns: minmax(0, 1fr); }
+  .kiln-tabletop-root.kiln-live-root .kiln-tabletop-tech-market .kiln-tabletop-tech-discipline > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

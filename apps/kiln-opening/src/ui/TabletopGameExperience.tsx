@@ -792,7 +792,7 @@ function MarketShelf({ game, locale, onInspect }: { game: PublicGameState; local
     <section className="kiln-tabletop-market" aria-labelledby="kiln-live-market-title">
       <div className="kiln-tabletop-section-title"><span aria-hidden="true">单</span><div><small>{text(locale, "COMMISSION MARKET", "瓷牙行")}</small><strong id="kiln-live-market-title">{text(locale, "Face-up Main Orders", "公开主委托")}</strong></div></div>
       <div className="kiln-tabletop-order-deck" role="img" aria-label={text(locale, `Main Order deck, ${game.decks.marketRemaining} remaining`, `主委托牌库，剩余${game.decks.marketRemaining}张`)}><span aria-hidden="true">委</span><small>{game.decks.marketRemaining}</small></div>
-      <div className="kiln-tabletop-order-row">{game.displays.market.map((id, index) => <OrderCard id={id} locale={locale} displayIndex={index + 1} onInspect={onInspect} key={id} />)}</div>
+      <div className="kiln-tabletop-order-row">{game.displays.market.map((id) => <OrderCard id={id} locale={locale} onInspect={onInspect} key={id} />)}</div>
       <div className="kiln-tabletop-market-note"><small>{text(locale, "Oldest → newest · remove, slide left, refill right", "最旧 → 最新 · 移走、左移、右端补牌")}</small><strong>{text(locale, `Live Round ${game.round} display`, `第${game.round}轮实时展示`)}</strong></div>
     </section>
   );
@@ -811,7 +811,7 @@ function additionalOrderQuality(id: OrderId, locale: Locale) {
   });
 }
 
-export function OrderCard({ id, locale, displayIndex, owned = false, onInspect }: { id: OrderId; locale: Locale; displayIndex?: number; owned?: boolean; onInspect: (id: OrderId) => void }) {
+export function OrderCard({ id, locale, owned = false, onInspect }: { id: OrderId; locale: Locale; owned?: boolean; onInspect: (id: OrderId) => void }) {
   const descriptionId = `kiln-order-${useId()}-description`;
   const order = ORDER_DEFINITIONS[id];
   if (order === undefined) return null;
@@ -826,7 +826,7 @@ export function OrderCard({ id, locale, displayIndex, owned = false, onInspect }
       aria-haspopup="dialog"
       data-order-id={id}
     >
-      <OrderFace id={id} locale={locale} {...(displayIndex === undefined ? {} : { displayIndex })} />
+      <OrderFace id={id} locale={locale} />
     </button>
     <span className="sr-only" id={descriptionId}>{text(locale,
       `Order ${id}. ${order.requirements}. ${order.ceramics.length} ceramics. Minimum Quality: ${qualityLabel(order.minQuality, locale)}. ${qualityDescription} Reward: ${order.vp} VP, ${order.coins} Coins, ${order.crowns} Crowns.`,

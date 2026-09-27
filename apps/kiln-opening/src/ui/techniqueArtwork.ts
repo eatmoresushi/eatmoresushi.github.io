@@ -1,23 +1,23 @@
 import type { StartingTechniqueId, TechniqueId } from "../game";
-import artworkST01 from "../../assets/current_v04/pieces/tech-ST01-v1.webp";
-import artworkST02 from "../../assets/current_v04/pieces/tech-ST02-v1.webp";
-import artworkST03 from "../../assets/current_v04/pieces/tech-ST03-v1.webp";
-import artworkST04 from "../../assets/current_v04/pieces/tech-ST04-v1.webp";
-import artworkT01 from "../../assets/current_v04/pieces/tech-T01-v1.webp";
-import artworkT02 from "../../assets/current_v04/pieces/tech-T02-v1.webp";
-import artworkT03 from "../../assets/current_v04/pieces/tech-T03-v1.webp";
-import artworkT04 from "../../assets/current_v04/pieces/tech-T04-v1.webp";
-import artworkT05 from "../../assets/current_v04/pieces/tech-T05-v1.webp";
-import artworkT06 from "../../assets/current_v04/pieces/tech-T06-v1.webp";
-import artworkT07 from "../../assets/current_v04/pieces/tech-T07-v1.webp";
-import artworkT08 from "../../assets/current_v04/pieces/tech-T08-v1.webp";
-import artworkT09 from "../../assets/current_v04/pieces/tech-T09-v1.webp";
-import artworkT10 from "../../assets/current_v04/pieces/tech-T10-v1.webp";
-import artworkT11 from "../../assets/current_v04/pieces/tech-T11-v1.webp";
-import artworkT12 from "../../assets/current_v04/pieces/tech-T12-v1.webp";
-import artworkT13 from "../../assets/current_v04/pieces/tech-T13-v1.webp";
-import artworkT14 from "../../assets/current_v04/pieces/tech-T14-v1.webp";
-import artworkT15 from "../../assets/current_v04/pieces/tech-T15-v1.webp";
+import artworkST01 from "../../assets/current_v04/pieces/tech-ST01-v2.webp";
+import artworkST02 from "../../assets/current_v04/pieces/tech-ST02-v2.webp";
+import artworkST03 from "../../assets/current_v04/pieces/tech-ST03-v2.webp";
+import artworkST04 from "../../assets/current_v04/pieces/tech-ST04-v2.webp";
+import artworkT01 from "../../assets/current_v04/pieces/tech-T01-v2.webp";
+import artworkT02 from "../../assets/current_v04/pieces/tech-T02-v2.webp";
+import artworkT03 from "../../assets/current_v04/pieces/tech-T03-v2.webp";
+import artworkT04 from "../../assets/current_v04/pieces/tech-T04-v2.webp";
+import artworkT05 from "../../assets/current_v04/pieces/tech-T05-v2.webp";
+import artworkT06 from "../../assets/current_v04/pieces/tech-T06-v2.webp";
+import artworkT07 from "../../assets/current_v04/pieces/tech-T07-v2.webp";
+import artworkT08 from "../../assets/current_v04/pieces/tech-T08-v2.webp";
+import artworkT09 from "../../assets/current_v04/pieces/tech-T09-v2.webp";
+import artworkT10 from "../../assets/current_v04/pieces/tech-T10-v2.webp";
+import artworkT11 from "../../assets/current_v04/pieces/tech-T11-v2.webp";
+import artworkT12 from "../../assets/current_v04/pieces/tech-T12-v2.webp";
+import artworkT13 from "../../assets/current_v04/pieces/tech-T13-v2.webp";
+import artworkT14 from "../../assets/current_v04/pieces/tech-T14-v2.webp";
+import artworkT15 from "../../assets/current_v04/pieces/tech-T15-v2.webp";
 
 /** Each Tech uses its own text-free illustration across every shared face. */
 export const TECHNIQUE_ARTWORK: Readonly<Record<TechniqueId | StartingTechniqueId, string>> = {

@@ -7,6 +7,7 @@ import type { OrderId, Quality, StartingTechniqueId, TechniqueId } from "../game
 import { term } from "./i18n";
 import type { Locale } from "./i18n";
 import { OrderIllustration } from "./OrderIllustration";
+import { CrownIcon } from "./CrownIcon";
 import { TechniqueDescription } from "./TechniqueDescription";
 import { techniqueOverviewCopy } from "./TechniqueOverview";
 import { TECHNIQUE_ARTWORK } from "./techniqueArtwork";
@@ -32,7 +33,7 @@ export function pieceSurfaceClass(id: OrderId | TechniqueId | StartingTechniqueI
   return `kiln-piece kiln-tech-tile is-${technique.discipline}`;
 }
 
-export function OrderFace({ id, locale, displayIndex }: { id: OrderId; locale: Locale; displayIndex?: number }) {
+export function OrderFace({ id, locale }: { id: OrderId; locale: Locale }) {
   const order = ORDER_DEFINITIONS[id];
   if (order === undefined) return null;
   const additionalQuality = (order.relations ?? []).flatMap((relation) => {
@@ -47,7 +48,6 @@ export function OrderFace({ id, locale, displayIndex }: { id: OrderId; locale: L
   });
   return <>
     <span className="kiln-piece-art" aria-hidden="true" />
-    {displayIndex !== undefined && <span className="kiln-piece-display-index">{displayIndex}</span>}
     <div className="kiln-piece-heading">
       <span className="kiln-piece-id">{id}</span>
       <span className="kiln-piece-category">{text(locale, "Order", "委托")}</span>
@@ -63,7 +63,7 @@ export function OrderFace({ id, locale, displayIndex }: { id: OrderId; locale: L
     <div className="kiln-piece-footer">
       <span className="kiln-piece-stat"><small className="kiln-piece-vp-label">{text(locale, "VP", "分")}</small><b>{order.vp}</b></span>
       <span className="kiln-piece-stat" aria-label={text(locale, `${order.coins} Coins`, `${order.coins}铜钱`)}><i className="kiln-piece-coin" aria-hidden="true" /><b>{order.coins}</b></span>
-      {order.crowns > 0 && <span className="kiln-piece-crowns" aria-label={text(locale, `${order.crowns} Crown${order.crowns === 1 ? "" : "s"}`, `${order.crowns}皇冠`)}>{"👑".repeat(order.crowns)}</span>}
+      {order.crowns > 0 && <span className="kiln-piece-crowns" role="img" aria-label={text(locale, `${order.crowns} Crown${order.crowns === 1 ? "" : "s"}`, `${order.crowns}皇冠`)}>{Array.from({ length: order.crowns }, (_, index) => <CrownIcon key={index} />)}</span>}
     </div>
   </>;
 }
@@ -86,12 +86,14 @@ export function TechniqueFace({ id, locale, layer = "preview", exhausted = false
       : advanced.discipline[0]!.toUpperCase() + advanced.discipline.slice(1);
   return <>
     <span className="kiln-piece-art" aria-hidden="true" style={{ backgroundImage: `url(${TECHNIQUE_ARTWORK[id]})` }} />
-    <div className="kiln-piece-heading">
-      <span className="kiln-piece-id">{id}</span>
-      {advanced !== undefined && <span className="kiln-piece-cost" aria-label={text(locale, `${advanced.cost} Coins`, `${advanced.cost}铜钱`)}><b>{advanced.cost}</b><i className="kiln-piece-coin" aria-hidden="true" /></span>}
-    </div>
-    <strong className="kiln-piece-name">{locale === "zh-CN" ? technique.nameZh : technique.name}</strong>
-    <span className="kiln-piece-category">{discipline}</span>
+    <header className="kiln-tech-heading">
+      <div className="kiln-piece-heading">
+        <span className="kiln-piece-id">{id}</span>
+        {advanced !== undefined && <span className="kiln-piece-cost" aria-label={text(locale, `${advanced.cost} Coins`, `${advanced.cost}铜钱`)}><b>{advanced.cost}</b><i className="kiln-piece-coin" aria-hidden="true" /></span>}
+      </div>
+      <strong className="kiln-piece-name">{locale === "zh-CN" ? technique.nameZh : technique.name}</strong>
+      <span className="kiln-piece-category">{discipline}</span>
+    </header>
     <p className="kiln-piece-copy" data-overview={overview ? "true" : undefined}>{overview
       ? techniqueOverviewCopy(id, locale)
       : <TechniqueDescription id={id} locale={locale} layer={layer} />}</p>

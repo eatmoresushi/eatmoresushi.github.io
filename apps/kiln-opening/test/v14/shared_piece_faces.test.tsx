@@ -162,6 +162,13 @@ describe.each(["en", "zh-CN"] as const)("shared Order and Tech faces (%s)", (loc
       expect(text(face)).toContain(locale === "en" ? order.requirements : order.requirementsZh);
       expect(face).toContain(`<b>${order.vp}</b>`);
       expect(face).toContain(`<b>${order.coins}</b>`);
+      if (order.crowns > 0) {
+        const crownLabel = locale === "en" ? `${order.crowns} Crown${order.crowns === 1 ? "" : "s"}` : `${order.crowns}皇冠`;
+        expect(face).toContain(`role="img" aria-label="${crownLabel}"`);
+        expect((face.match(/class="kiln-piece-crown-icon"/gu) ?? [])).toHaveLength(order.crowns);
+      } else {
+        expect(face).not.toContain("kiln-piece-crown-icon");
+      }
       for (const owned of [false, true]) {
         const markup = renderToStaticMarkup(createElement(OrderCard, { id: order.id, locale, owned, onInspect: () => {} }));
         expect(markup).toContain(face);

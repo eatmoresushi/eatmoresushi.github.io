@@ -72,8 +72,13 @@ describe("English / Simplified Chinese localization", () => {
       expect(chinese).toContain(orderId);
     }
     // A Crown Order carries its Crowns in both locales; Crowns are the V1.4 Imperial marker.
-    expect(localizedMarkup("en", createElement(OrderCard, { orderId: CROWN_ORDER }))).toContain("👑");
-    expect(localizedMarkup("zh-CN", createElement(OrderCard, { orderId: CROWN_ORDER }))).toContain("👑");
+    const crowns = ORDER_DEFINITIONS[CROWN_ORDER]!.crowns;
+    for (const locale of ["en", "zh-CN"] as const) {
+      const markup = localizedMarkup(locale, createElement(OrderCard, { orderId: CROWN_ORDER }));
+      const label = locale === "en" ? `${crowns} Crown${crowns === 1 ? "" : "s"}` : `${crowns}皇冠`;
+      expect(markup).toContain(`role="img" aria-label="${label}"`);
+      expect((markup.match(/class="kiln-piece-crown-icon"/gu) ?? [])).toHaveLength(crowns);
+    }
     expect(localizedMarkup("en", createElement(OrderCard, { orderId: MASTERPIECE_ORDER }))).toContain("Masterpiece");
     expect(localizedMarkup("zh-CN", createElement(OrderCard, { orderId: MASTERPIECE_ORDER }))).toContain("臻品");
     expect(JSON.stringify([ORDER_DEFINITIONS[CROWN_ORDER], ORDER_DEFINITIONS[MASTERPIECE_ORDER]])).toBe(snapshot);

@@ -36,7 +36,7 @@
 .kiln-piece.is-starting { --piece-accent: #526348; }
 .kiln-piece.is-forming { --piece-accent: #716041; }
 .kiln-piece.is-glazing { --piece-accent: #376666; }
-.kiln-piece.is-firing { --piece-accent: #844930; }
+.kiln-piece.is-firing { --piece-accent: #725436; }
 .kiln-piece.is-crown { --piece-accent: #9b7543; }
 .kiln-piece[data-starting-technique-id="ST02"] { --piece-accent: #376666; }
 .kiln-piece[data-starting-technique-id="ST03"] { --piece-accent: #785936; }
@@ -45,7 +45,7 @@
   container-type: inline-size;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: 1.5rem auto auto minmax(12px, 1fr) auto 1.4rem;
+  grid-template-rows: minmax(4.75rem, .65fr) minmax(0, 1.6fr) minmax(min-content, 1.05fr) 1.4rem;
   width: 100%;
   max-width: none;
   min-height: 0;
@@ -60,29 +60,30 @@
 /* Keep frame details a fixed size so they never cross corner labels. */
 .kiln-tech-tile::before { inset: 6px; border: 2px solid var(--piece-accent); outline: 1px solid var(--piece-accent); outline-offset: -6px; background: none; mask: none; opacity: .6; }
 .kiln-tech-tile::after { position: absolute; z-index: 2; inset: 6px; content: ""; pointer-events: none; background: var(--piece-accent); opacity: .6; mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2022%2022%22%3E%3Cg%20transform%3D%22rotate%280%2011%2011%29%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.3%22%3E%3Cpath%20d%3D%22M0%2021H8V13H14V7H21V0M0%209H4V0%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"), url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2022%2022%22%3E%3Cg%20transform%3D%22rotate%2890%2011%2011%29%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.3%22%3E%3Cpath%20d%3D%22M0%2021H8V13H14V7H21V0M0%209H4V0%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"), url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2022%2022%22%3E%3Cg%20transform%3D%22rotate%28180%2011%2011%29%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.3%22%3E%3Cpath%20d%3D%22M0%2021H8V13H14V7H21V0M0%209H4V0%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"), url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2022%2022%22%3E%3Cg%20transform%3D%22rotate%28270%2011%2011%29%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.3%22%3E%3Cpath%20d%3D%22M0%2021H8V13H14V7H21V0M0%209H4V0%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); mask-position: top left, top right, bottom right, bottom left; mask-size: 22px 22px; mask-repeat: no-repeat; }
-.kiln-order-card { --piece-accent: #af915c; min-height: 370px; }
+.kiln-order-card { --piece-accent: #af915c; container-type: inline-size; box-sizing: border-box; width: 100%; max-width: 320px; min-height: 0; aspect-ratio: 5 / 7; align-self: start; justify-self: center; gap: .35rem; border-radius: 10px; padding: 1rem; box-shadow: 0 1px 0 #b3a483, 0 2px 5px #17291f26; }
+.kiln-order-card::before { inset: 5px; border-radius: 6px; }
 .kiln-piece > .kiln-piece-art { pointer-events: none; }
 .kiln-order-card > .kiln-piece-art { display: none; }
 .kiln-tech-tile > .kiln-piece-art {
   position: relative;
   z-index: 0;
   grid-column: 1;
-  grid-row: 1 / 5;
+  grid-row: 2;
   display: block;
   align-self: stretch;
-  width: calc(100% + .8rem);
+  width: 100%;
   height: auto;
   min-height: 0;
-  margin: -.4rem -.4rem 0;
+  margin: 0;
   aspect-ratio: auto;
   background-repeat: no-repeat;
-  background-size: cover;
-  background-position: center 35%;
+  background-size: contain;
+  background-position: center;
   mix-blend-mode: multiply;
-  opacity: .62;
+  opacity: 1;
   mask-image: none;
 }
-.kiln-tech-tile > .kiln-piece-art::after { position: absolute; inset: 0; content: ""; background: linear-gradient(to bottom, #fff8e8b3, #fff8e84d 40%, #fff8e81a 75%, #f3ecdb66); }
+.kiln-tech-heading { grid-column: 1; grid-row: 1; display: grid; grid-template-rows: 1.5rem minmax(0, 1fr) auto; align-items: center; gap: .1rem; min-width: 0; min-height: 0; }
 .kiln-piece .kiln-piece-name {
   order: 1;
   display: block;
@@ -106,9 +107,9 @@
   line-height: 1.2;
 }
 .kiln-piece-id { font-family: var(--serif); font-size: .9rem; }
-.kiln-tech-tile .kiln-piece-heading { grid-column: 1; grid-row: 1; order: 0; justify-content: space-between; min-height: 0; margin: 0 .6rem; }
+.kiln-tech-tile .kiln-piece-heading { grid-row: 1; order: 0; justify-content: space-between; min-height: 0; margin: 0 .6rem; }
 .kiln-tech-tile .kiln-piece-id { font-size: .8rem; }
-.kiln-tech-tile .kiln-piece-name { grid-column: 1; grid-row: 2; margin: 0; font-size: clamp(1rem, 5.7cqw, 1.5rem); line-height: 1.1; text-shadow: 0 1px 2px #fff8e8; }
+.kiln-tech-tile .kiln-piece-name { grid-row: 2; margin: 0; font-size: clamp(1rem, 5.7cqw, 1.5rem); line-height: 1.1; }
 .kiln-tech-tile .kiln-piece-category,
 .kiln-tech-tile .kiln-piece-timing,
 .kiln-tech-tile .kiln-piece-endgame-vp { border: 3px double #f1ead3; outline: 1px solid var(--piece-accent); border-radius: 0; padding: .08rem .4rem; color: #fffae9; background: var(--piece-accent); font-weight: 700; line-height: 1.2; }
@@ -134,7 +135,7 @@
   -webkit-line-clamp: unset;
 }
 .kiln-tech-tile .kiln-piece-copy::before { position: absolute; top: -.23rem; left: calc(50% - .23rem); width: .46rem; height: .46rem; border: 1px solid var(--piece-accent); content: ""; transform: rotate(45deg); background: #f3ecdb; }
-.kiln-tech-tile .kiln-piece-copy { grid-column: 1; grid-row: 5; min-height: 0; padding: .45rem 0 .25rem; font-size: clamp(.78rem, 4cqw, .95rem); line-height: 1.22; }
+.kiln-tech-tile .kiln-piece-copy { grid-column: 1; grid-row: 3; align-self: stretch; align-content: center; min-height: 0; padding: .45rem 0 .25rem; font-size: clamp(.78rem, 4cqw, .95rem); line-height: 1.22; }
 .kiln-piece-copy strong { font-weight: inherit; color: inherit; }
 .kiln-piece .kiln-piece-footer {
   order: 6;
@@ -152,7 +153,8 @@
   font-size: .7rem;
   line-height: 1.3;
 }
-.kiln-tech-tile .kiln-piece-footer { grid-column: 1; grid-row: 6; display: flex; justify-content: space-between; flex-wrap: nowrap; gap: .25rem; margin: 0 .4rem; padding: 0; }
+.kiln-tech-tile .kiln-piece-footer { grid-column: 1; grid-row: 4; display: flex; justify-content: space-between; flex-wrap: nowrap; gap: .25rem; margin: 0 .4rem; padding: 0; }
+.kiln-tech-tile.is-starting { grid-template-rows: minmax(4.75rem, .65fr) minmax(0, 1.6fr) minmax(min-content, 1.05fr); }
 .kiln-piece-timing { font-size: .62rem; white-space: nowrap; }
 .kiln-piece-endgame-vp { font-size: .7rem; white-space: nowrap; }
 .kiln-piece .kiln-piece-state { order: 7; align-self: center; border: 1px solid #9a7059; padding: .2rem .6rem; color: #754630; background: #f5e5c9; font-family: var(--sans); font-size: .72rem; font-weight: 800; }
@@ -163,24 +165,24 @@
 .kiln-order-card .kiln-piece-heading { order: 0; justify-content: space-between; }
 .kiln-order-card .kiln-piece-id { order: 2; font-size: 1.2rem; color: #302d24; }
 .kiln-order-card .kiln-piece-category { font-size: .65rem; letter-spacing: .08em; text-transform: uppercase; }
-.kiln-piece-order-illustration { order: 1; display: flex; align-items: center; justify-content: center; width: 100%; min-height: 100px; aspect-ratio: 1.9; pointer-events: none; mix-blend-mode: multiply; }
+.kiln-piece-order-illustration { order: 1; display: flex; flex: 1; align-items: center; justify-content: center; width: 100%; min-height: 0; aspect-ratio: 1.9; pointer-events: none; mix-blend-mode: multiply; }
 .kiln-piece-order-illustration img { width: 50%; min-width: 0; max-height: 100%; object-fit: contain; }
 .kiln-piece-order-illustration img:only-child { width: 80%; }
 .kiln-piece .kiln-piece-requirement-label { order: 2; font-size: .83rem; font-weight: 700; letter-spacing: .035em; text-transform: uppercase; }
 .kiln-piece .kiln-piece-count { font-size: .67rem; font-weight: 400; text-transform: none; letter-spacing: 0; }
-.kiln-order-card .kiln-piece-copy { order: 3; padding: 0; border: 0; font-size: .94rem; line-height: 1.3; }
+.kiln-order-card .kiln-piece-copy { order: 3; padding: 0; border: 0; font-size: clamp(.8rem, 5.2cqw, 1rem); line-height: 1.25; }
 .kiln-piece-quality { order: 4; display: grid; justify-items: center; gap: .3rem; margin-top: .15rem; border-top: 1px solid #aa905a80; padding-top: .5rem; }
 .kiln-piece-quality > small { color: #3b624b; font-size: .82rem; letter-spacing: .03em; text-transform: uppercase; }
 .kiln-piece-quality > b { color: #2c352a; font-size: .94rem; font-weight: 600; }
 .kiln-piece-quality-requirements { display: grid; gap: .2rem; }
 .kiln-piece-quality-requirements > span { color: #8c372d; font-size: .85rem; font-weight: 700; }
-.kiln-order-card .kiln-piece-footer { flex-wrap: nowrap; gap: .3rem; border-top: 0; padding-top: .7rem; }
+.kiln-order-card .kiln-piece-footer { flex-wrap: nowrap; gap: .3rem; margin-top: .1rem; border-top: 0; padding: .4rem .15rem .25rem; }
 .kiln-piece-stat { display: inline-flex; align-items: center; gap: .3rem; min-width: 0; }
 .kiln-piece-stat small { font-family: var(--serif); font-size: .64rem; }
 .kiln-piece-stat b { color: #382f21; font-family: var(--serif); font-size: 1.25rem; font-weight: 600; }
 .kiln-piece-vp-label { display: grid; place-items: center; width: 1.4rem; height: 1.55rem; color: #fff8df; background: #755432; clip-path: polygon(50% 0,100% 24%,100% 77%,50% 100%,0 77%,0 24%); }
-.kiln-piece-crowns { display: flex; color: #99502b; white-space: nowrap; font-size: 1.05rem; }
-.kiln-piece .kiln-piece-display-index { position: absolute; top: 2.9rem; right: 1rem; display: grid; place-items: center; width: 1.2rem; height: 1.2rem; border: 1px solid #aa905a80; border-radius: 50%; color: #6e694e; font-family: var(--sans); font-size: .6rem; }
+.kiln-piece-crowns { display: inline-flex; flex: none; align-items: center; gap: .06rem; }
+.kiln-piece-crown-icon { display: block; width: 1.4rem; height: 1.12rem; overflow: visible; }
 
 /* Inspection and keyboard focus remain available; pointer hover is deliberately inert. */
 button.kiln-piece-choice,
@@ -217,9 +219,10 @@ button.kiln-piece[aria-pressed="true"],
 .kiln-tabletop-inspector-orders > .kiln-piece { width: 100%; min-width: 0; }
 .kiln-tabletop-detail-view > .kiln-piece { max-width: 440px; margin-inline: auto; }
 .kiln-tabletop-detail-view > .kiln-tech-tile { max-width: 420px; }
-.kiln-tabletop-detail-view > .kiln-order-card { max-width: 320px; min-height: 470px; }
+.kiln-tabletop-detail-view > .kiln-order-card { max-width: 320px; min-height: 0; }
 .kiln-tabletop-detail-view .kiln-piece-copy { font-size: 1.05rem; line-height: 1.45; }
 .kiln-tabletop-detail-view .kiln-tech-tile .kiln-piece-copy { font-size: clamp(.78rem, 4cqw, .95rem); line-height: 1.22; }
+.kiln-tabletop-detail-view .kiln-order-card .kiln-piece-copy { font-size: clamp(.85rem, 5.2cqw, 1.05rem); line-height: 1.25; }
 
 /* Face-up tiles share edges. Breakpoints follow the market's available width. */
 .kiln-tabletop-root.kiln-live-root .kiln-tabletop-tech-market {
