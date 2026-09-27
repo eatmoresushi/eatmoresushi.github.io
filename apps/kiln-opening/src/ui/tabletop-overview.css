@@ -21,7 +21,7 @@
 .kiln-tabletop-tech-market .kiln-tabletop-section-title strong { font-size: .84rem; }
 
 .kiln-live-root { --overview-order-width: 8.75rem; --overview-order-height: 12.25rem; }
-.kiln-tabletop-root.kiln-live-root .kiln-tabletop-order-row { grid-template-columns: repeat(6, var(--overview-order-width)); justify-content: start; gap: .35rem; overflow-x: auto; padding-bottom: .2rem; }
+.kiln-tabletop-root.kiln-live-root .kiln-tabletop-order-row { grid-template-columns: repeat(6, var(--overview-order-width)); justify-content: start; gap: .35rem; overflow-x: auto; padding-block: 0; }
 :is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-order-card { width: var(--overview-order-width); height: auto; min-height: var(--overview-order-height); gap: .2rem; border-radius: 7px; padding: .55rem .55rem .75rem; }
 :is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-order-card::before { inset: 3px; border-radius: 4px; }
 :is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-heading { min-height: .9rem; }
@@ -74,8 +74,6 @@
   .kiln-tabletop-market .kiln-tabletop-section-title strong { font-size: .8rem; }
   .kiln-tabletop-root.kiln-live-root .kiln-tabletop-order-deck { grid-column: 1; grid-row: 1; align-self: end; width: 30px; margin: 0; }
   .kiln-tabletop-root.kiln-live-root .kiln-tabletop-order-row { grid-column: 2; grid-row: 1; }
-  .kiln-tabletop-root.kiln-live-root .kiln-tabletop-market-note { grid-column: 2; grid-row: 2; }
-  .kiln-tabletop-root.kiln-live-root .kiln-tabletop-market-note :is(small, strong) { font-size: .56rem; }
 
   /* Leave room for session/player controls and the longest public Order reminders. */
   .kiln-tabletop-root.kiln-live-root .kiln-tabletop-play-area { grid-template-columns: minmax(0, calc((100dvh - 411px) * 1.55)) calc(3 * var(--tech-tile-size) + .4rem + 2px); justify-content: center; align-items: start; gap: .5rem; }

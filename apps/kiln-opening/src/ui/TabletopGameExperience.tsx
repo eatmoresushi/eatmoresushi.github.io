@@ -810,7 +810,6 @@ function MarketShelf({ game, locale, onInspect }: { game: PublicGameState; local
           <small>{text(locale, `${game.decks.marketRemaining} remaining`, `剩余${game.decks.marketRemaining}张`)}</small>
         </div>
       </div>
-      <div className="kiln-tabletop-market-note"><small>{text(locale, "Oldest → newest · remove, slide left, refill right", "最旧 → 最新 · 移走、左移、右端补牌")}</small><strong>{text(locale, `Live Round ${game.round} display`, `第${game.round}轮实时展示`)}</strong></div>
     </section>
   );
 }

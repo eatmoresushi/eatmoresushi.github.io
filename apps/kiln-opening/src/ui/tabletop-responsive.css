@@ -61,9 +61,6 @@
 .kiln-live-root .kiln-tabletop-section-title strong { font-size: var(--ui-title); margin-top: .15rem; }
 .kiln-live-root .kiln-tabletop-order-deck { grid-column: 2; width: 34px; margin: .3rem .4rem .3rem 0; }
 .kiln-live-root .kiln-tabletop-order-row { grid-column: 1 / -1; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .65rem; }
-.kiln-live-root .kiln-tabletop-market-note { display: flex; grid-column: 1 / -1; flex-wrap: wrap; justify-content: space-between; gap: .35rem .75rem; border: 0; padding: 0; }
-.kiln-live-root .kiln-tabletop-market-note small,
-.kiln-live-root .kiln-tabletop-market-note strong { font-size: var(--ui-small); }
 .kiln-live-root .kiln-tabletop-tech-market { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .kiln-live-root .kiln-tabletop-tech-market > .kiln-tabletop-section-title { grid-column: 1 / -1; }
 .kiln-live-root .kiln-tabletop-tech-discipline { min-width: 0; grid-template-rows: auto minmax(0, 1fr); gap: .6rem; padding-top: .55rem; }

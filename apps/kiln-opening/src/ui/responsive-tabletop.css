@@ -47,8 +47,6 @@ html:has(.kiln-live-root) { min-width: 0; }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-market .kiln-tabletop-section-title small { font-size: .6rem; }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-market .kiln-tabletop-section-title strong { font-size: .85rem; }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-order-row { grid-column: 2; grid-row: 1; grid-template-columns: repeat(7, var(--overview-order-width)); justify-content: center; gap: .35rem; }
-.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-market-note { grid-column: 2; grid-row: 2; }
-.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-market-note :is(small, strong) { font-size: .62rem; }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] :is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-copy { font-size: clamp(.65rem, 5.2cqw, .8rem); }
 
 /* The draw pile is the final card in the queue, with the same printed size. */
@@ -108,8 +106,6 @@ html:has(.kiln-live-root) { min-width: 0; }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] :is(.kiln-tabletop-player-resources, .kiln-tabletop-player-public) i { padding: .1rem .2rem; font-size: .62rem; }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-market { grid-template-columns: minmax(0, 1fr) auto; padding: .5rem; gap: .4rem; }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-order-row { grid-column: 1 / -1; grid-row: auto; grid-template-columns: repeat(auto-fit, calc(var(--overview-order-width) * var(--tabletop-card-scale))); width: 100%; max-width: calc(3 * var(--overview-order-width) * var(--tabletop-card-scale) + .8rem); justify-self: center; justify-content: center; gap: .4rem; overflow: visible; }
-.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-market-note { grid-column: 1 / -1; }
-.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-market-note :is(small, strong) { font-size: .65rem; }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-play-area { grid-template-columns: minmax(0, 1fr); gap: .5rem; }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-public-sidebar { width: 100%; max-width: none; }
 .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-tech-market { width: 100%; max-width: none; grid-template-columns: repeat(auto-fit, calc(var(--tech-tile-size) * var(--tabletop-card-scale))); justify-content: center; overflow: visible; }
