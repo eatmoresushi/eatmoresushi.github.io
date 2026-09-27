@@ -20,6 +20,7 @@ import censer_plain from "../../assets/current_v04/ceramics/ceramic-censer-plain
 import censer_carved from "../../assets/current_v04/ceramics/ceramic-censer-carved-v1.webp";
 import censer_impressed from "../../assets/current_v04/ceramics/ceramic-censer-impressed-v1.webp";
 import censer_painted from "../../assets/current_v04/ceramics/ceramic-censer-painted-v1.webp";
+import crackleArtwork from "../../assets/current_v04/ceramics/ceramic-crackle-overlay-v1.webp";
 
 export const CERAMIC_ARTWORK: Record<Shape, Record<Decoration, string>> = {
   bowl: { plain: bowl_plain, carved: bowl_carved, impressed: bowl_impressed, painted: bowl_painted },
@@ -39,22 +40,33 @@ const GLAZE_COLOURS: Record<Glaze | "raw", readonly [number, number, number]> = 
   moon_white: [0.65, 0.81, 0.94],
 };
 
-export function CeramicArtwork({ shape, glaze, decoration }: {
+export function CeramicArtwork({ shape, glaze, decoration, crackle = false }: {
   shape: Shape;
   glaze: Glaze | null;
   decoration: Decoration | null;
+  crackle?: boolean;
 }) {
   const filterId = `ceramic-glaze-${useId().replace(/:/g, "")}`;
+  const crackleMaskId = `${filterId}-crackle-mask`;
   const surface = decoration ?? "plain";
   const colour = GLAZE_COLOURS[glaze ?? "raw"];
   const matrix = [...colour.flatMap((channel) => [
     0.2126 * channel / 0.85, 0.7152 * channel / 0.85, 0.0722 * channel / 0.85, 0, 0,
   ]), 0, 0, 0, 1, 0].join(" ");
   return <svg className="kiln-ceramic-art" viewBox="0 0 384 384" aria-hidden="true" focusable="false"
-    data-ceramic-art={`${shape}-${surface}`} data-glaze={glaze ?? "raw"} data-decoration={surface}>
-    <defs><filter id={filterId} colorInterpolationFilters="sRGB">
-      <feColorMatrix type="matrix" values={matrix} />
-    </filter></defs>
+    data-ceramic-art={`${shape}-${surface}`} data-glaze={glaze ?? "raw"} data-decoration={surface} data-crackle={crackle || undefined}>
+    <defs>
+      <filter id={filterId} colorInterpolationFilters="sRGB">
+        <feColorMatrix type="matrix" values={matrix} />
+      </filter>
+      {crackle && <mask id={crackleMaskId} maskUnits="userSpaceOnUse" x="0" y="0" width="384" height="384" style={{ maskType: "alpha" }}>
+        <image href={CERAMIC_ARTWORK[shape][surface]} width="384" height="384" />
+      </mask>}
+    </defs>
     <image href={CERAMIC_ARTWORK[shape][surface]} width="384" height="384" filter={`url(#${filterId})`} />
+    {/* Ge's permanent property overlays the actual finish; it never substitutes it. */}
+    {crackle && <g className="kiln-ceramic-crackle-overlay" mask={`url(#${crackleMaskId})`} opacity="0.8" style={{ mixBlendMode: "multiply" }}>
+      <image href={crackleArtwork} width="384" height="384" />
+    </g>}
   </svg>;
 }

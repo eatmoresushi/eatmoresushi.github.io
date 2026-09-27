@@ -188,6 +188,37 @@ describe("V1.4 functional tabletop", () => {
     expect(markup).not.toMatch(/<i>素<\/i>|<i>刻<\/i>|<i>印<\/i>|<i>裂<\/i>/);
   });
 
+  it("shows permanent Ge Crackle over the finished ceramic while retaining owner, actual finish and Quality", () => {
+    const state = structuredClone(startedGame(2, 12_678).state);
+    const crackled = addFinished(state, "P1", "vase", "fine", "moon_white", "painted");
+    crackled.crackle = true;
+    addFinished(state, "P1", "vase", "fine", "moon_white", "painted");
+    const game = projectPublicGameState(state);
+    const before = JSON.stringify(game);
+    const markup = localizedMarkup("en", createElement(TabletopGameExperience, {
+      game,
+      ownPlayerId: "P1",
+      ownPendingContribution: null,
+      events: [],
+      seats: [],
+      describeEvent: (record) => record.event.type,
+      busy: false,
+      send: async () => true,
+    }));
+    const ceramic = markup.match(/<button\b[^>]*data-crackle="true"[^>]*>[\s\S]*?<\/button>/u)?.[0];
+    expect(ceramic).toBeDefined();
+    expect(ceramic).toContain('data-owner-id="P1"');
+    expect(ceramic).toContain('data-glaze="moon_white"');
+    expect(ceramic).toContain('data-decoration="painted"');
+    expect(ceramic).toContain('data-ceramic-art="vase-painted"');
+    expect(ceramic).toContain("ceramic-crackle-overlay-v1.webp");
+    expect(ceramic).toContain('class="kiln-tabletop-quality-badge is-fine"');
+    expect(ceramic).toContain('class="kiln-live-crackle-marker"');
+    expect(ceramic).toContain(">Crackle</em>");
+    expect(markup).toContain("Crackle · wild Decoration for Orders; actual Glaze and Decoration remain unchanged");
+    expect(JSON.stringify(game)).toBe(before);
+  });
+
   it("shows a concise computer recap without backend implementation details", () => {
     const state = structuredClone(startedGame(2, 12_663).state);
     const game = projectPublicGameState(state);

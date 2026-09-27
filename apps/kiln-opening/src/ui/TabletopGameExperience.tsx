@@ -1216,7 +1216,7 @@ function Ceramic({ ceramic, game, locale, compact = false, inspectable = false, 
   const kilnLocation = imperial ? text(locale, "Imperial Kiln +0", "御窑 +0") : zone === null ? null : `${zone} ${signed(furniture ? 0 : kilnZoneModifier ?? 0)}${furniture ? text(locale, " (Kiln Furniture)", "（支烧窑具）") : ""}`;
   const className = `kiln-tabletop-ceramic kiln-has-ceramic-art glaze-${glaze ?? "raw"} decoration-${decoration ?? "none"} shape-${ceramic.shape} kiln-tabletop-accent-${accent(player)} ${compact ? "is-compact" : ""} ${inspectable ? "is-inspectable" : ""}`;
   const visual = <>
-    <CeramicArtwork shape={ceramic.shape} glaze={glaze} decoration={decoration} />
+    <CeramicArtwork shape={ceramic.shape} glaze={glaze} decoration={decoration} crackle={crackle} />
     {crackle && <em className="kiln-live-crackle-marker" title={text(locale, "Crackle: wild Decoration for Orders", "开片：完成委托时可视为任意纹饰")}>{text(locale, "Crackle", "开片")}</em>}
     {quality !== null && <b className={`kiln-tabletop-quality-badge is-${quality}`} title={qualityLabel(quality, locale)}>{qualityLabel(quality, locale)}</b>}
     {marked && shifuHeat === null && <span className="kiln-tabletop-shifu-marker" title={text(locale, "Kiln Yard Shifu committed to this ceramic", "窑坊师傅已标记此陶瓷")}><WorkerMeeple player={player} kind="shifu" locale={locale} small /></span>}
