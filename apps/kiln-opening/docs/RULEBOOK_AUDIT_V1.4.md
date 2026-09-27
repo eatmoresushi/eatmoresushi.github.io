@@ -196,3 +196,24 @@ Source corrections and implementation are complete on `codex/rules-v1.4`.
 - The initial original and checked-in corrected sources had the identical initial corrected SHA-256 shown above. Finding 5 records the later owner amendment separately.
 
 The SQL migrations have static contract coverage but were not applied to a local or live PostgreSQL database; no PostgreSQL/Supabase CLI was available in this environment. See [Deployment](./DEPLOYMENT.md#v14-rollout) for rollout order. No V1.4 live deployment is implied by these checks.
+
+## Owner-approved component reminders — 2026-09-27
+
+The owner supplied new on-tile wording for all 19 Techs and five Kiln Traditions.
+The exact English reminders and emphasis are recorded in
+[KILN_OPENING_v1.4_COMPONENT_TEXT_SOURCE.md](./KILN_OPENING_v1.4_COMPONENT_TEXT_SOURCE.md),
+with corresponding Chinese UI translations. All tile contexts share these reminders;
+click-through details continue to use the complete structured V1.4 abilities.
+
+The supplied Ge reminder initially said “after your other after-Quality abilities.”
+The owner confirmed that the existing player-chosen order remains in effect, so its
+reminder instead says “after Quality is assigned.” Current Quality, eligibility,
+costs and usage limits are rechecked after each use. This reminder update does not
+change mechanics, balance values or the previously approved timing amendment.
+
+The owner subsequently shortened the 15 Advanced Tech reminders and removed their
+inline emphasis and repeated “once per round” wording. The tile footer retains
+frequency; click-through details retain the full rules. This includes the workshop
+restriction on Measuring Calipers and Standardised Moulds, Glaze Palette’s timing
+before pre-firing abilities, and Fuel Ledger’s single-card limit and card return.
+The four Starting Tech and five Kiln reminders remain as approved above.

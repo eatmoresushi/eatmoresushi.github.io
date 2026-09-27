@@ -25,6 +25,7 @@ const ALL_TECHNIQUE_IDS = [...STARTING_TECHNIQUE_IDS, ...ADVANCED_TECHNIQUE_IDS]
 
 function renderedText(markup: string): string {
   return markup
+    .replace(/<br\s*\/?\s*>/gu, "\n")
     .replace(/<[^>]*>/gu, "")
     .replaceAll("&amp;", "&")
     .replaceAll("&quot;", "\"")
@@ -74,7 +75,8 @@ describe("tabletop compact Technique copy", () => {
 
         const previewMarkup = renderToStaticMarkup(createElement(TechniqueDescription, { id, locale, layer: "preview" }));
         const fullMarkup = renderToStaticMarkup(createElement(TechniqueDescription, { id, locale, layer: "full" }));
-        expect(previewMarkup, `${id} ${locale} preview`).not.toContain("<strong>");
+        if (id.startsWith("ST")) expect(previewMarkup, `${id} ${locale} preview`).toContain("<strong>");
+        else expect(previewMarkup, `${id} ${locale} preview`).not.toContain("<strong>");
         expect(previewMarkup, `${id} ${locale} preview`).not.toContain("**");
         expect(fullMarkup.length).toBeGreaterThan(0);
       }
@@ -82,19 +84,19 @@ describe("tabletop compact Technique copy", () => {
     expect(previewLength).toBeGreaterThan(0);
   });
 
-  it("retains full structured V1.4 rules while shortening all Tech reminders", () => {
+  it("retains full structured V1.4 rules separately from owner-supplied Tech reminders", () => {
     for (const id of ALL_TECHNIQUE_IDS) {
       const definition = id.startsWith("ST") ? STARTING_TECHNIQUE_DEFINITIONS[id as "ST01"] : TECHNIQUE_DEFINITIONS[id]!;
       expect(techniqueFullCopy(id, "en")).toBe(definition.ability);
       expect(techniqueFullCopy(id, "zh-CN")).toBe(definition.abilityZh);
-      for (const locale of ["en", "zh-CN"] as const) expect(techniqueShortPlainText(id, locale).length, `${id} ${locale}`).toBeLessThan(techniqueFullCopy(id, locale).length);
+
     }
     expect(TECHNIQUE_SHORT_COPY.ST02.en).toContain("Painted");
     expect(TECHNIQUE_SHORT_COPY.T06.en).toContain("end of the Work Phase");
     expect(TECHNIQUE_SHORT_COPY.T12.en).not.toContain("extra Wood");
   });
 
-  it("shows overview copy on public and personal cards while retaining complete short descriptions and click inspection", () => {
+  it("shows the same component copy on public and personal cards while retaining click inspection", () => {
     for (const locale of ["en", "zh-CN"] as const) {
       const markups = (["P1", "P2", "P3", "P4"] as const).map((playerId) => tabletopMarkup(playerId, locale));
       const combinedText = markups.map(renderedText).join("\n");
@@ -113,7 +115,7 @@ describe("tabletop compact Technique copy", () => {
         expect(tile, `${id} ${locale} visible overview`).toBeDefined();
         expect(tile).toContain('data-overview="true"');
         expect(renderedText(tile!)).toContain(techniqueOverviewCopy(id, locale));
-        expect(renderedText(tile!)).not.toContain(techniqueShortPlainText(id, locale));
+        expect(renderedText(tile!)).toContain(techniqueShortPlainText(id, locale));
       }
     }
   });
@@ -134,23 +136,18 @@ describe("tabletop compact Kiln copy", () => {
 
         const previewMarkup = renderToStaticMarkup(createElement(KilnDescription, { id, locale, layer: "preview" }));
         const fullMarkup = renderToStaticMarkup(createElement(KilnDescription, { id, locale, layer: "full" }));
-        if (id === "GE") {
-          expect(previewMarkup).toContain(locale === "en" ? "<strong>any one Decoration</strong>" : "<strong>任意一种纹饰</strong>");
-          expect(previewMarkup.match(/<strong>/g)).toHaveLength(1);
-        } else {
-          expect(previewMarkup, `${id} ${locale} preview`).not.toContain("<strong>");
-        }
+        expect(previewMarkup, `${id} ${locale} preview`).toContain("<strong>");
         expect(previewMarkup, `${id} ${locale} preview`).not.toContain("**");
         expect(fullMarkup.length).toBeGreaterThan(0);
       }
     }
   });
 
-  it("retains full structured V1.4 Kiln rules while shortening reminders in both languages", () => {
+  it("retains full structured V1.4 Kiln rules separately from reminders in both languages", () => {
     for (const id of KILN_COPY_IDS) {
       expect(kilnFullCopy(id, "en")).toBe(KILN_DEFINITIONS[id].ability);
       expect(kilnFullCopy(id, "zh-CN")).toBe(KILN_DEFINITIONS[id].abilityZh);
-      for (const locale of ["en", "zh-CN"] as const) expect(kilnShortPlainText(id, locale).length).toBeLessThan(kilnFullCopy(id, locale).length);
+
     }
   });
 
@@ -164,7 +161,7 @@ describe("tabletop compact Kiln copy", () => {
         expect(english).toContain("actual Glaze and Decoration do not change");
         expect(english).toContain("Its actual Quality is Fine");
       } else {
-        expect(english).toBe("Once per round, after Quality is assigned: 1 of your Standard ceramics from this firing becomes Fine + Crackle. When completing an Order, each of your Crackle ceramics may be treated as having any one Decoration for that Order.");
+        expect(english).toBe("Once per round, after Quality is assigned: 1 of your Standard ceramics from this firing → Fine + Crackle.\nOrders: each Crackle ceramic may count as any 1 Decoration.");
       }
       const chinese = renderedText(renderToStaticMarkup(createElement(KilnDescription, { id: "GE", locale: "zh-CN", layer })));
       expect(chinese).toContain("开片");

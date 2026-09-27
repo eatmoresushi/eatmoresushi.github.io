@@ -1,4 +1,12 @@
-/* Only personal pieces consume these measurements; the public display is authoritative. */
+/* Personal Orders follow the public display; all Techs use one shared square size. */
+.kiln-tabletop-root.kiln-live-root .kiln-tabletop-workshop .kiln-tabletop-workshop-name p strong {
+  display: inline;
+  margin: 0;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+}
+
 .kiln-tabletop-root.kiln-live-root .kiln-tabletop-workshop .kiln-tabletop-own-orders > div,
 .kiln-tabletop-root.kiln-live-root .kiln-tabletop-workshop .kiln-tabletop-own-techs > div {
   display: grid;
@@ -17,7 +25,7 @@
   grid-template-columns: repeat(auto-fit, var(--table-order-width, var(--overview-order-width, 140px)));
 }
 .kiln-tabletop-root.kiln-live-root .kiln-tabletop-workshop .kiln-tabletop-own-techs > div {
-  grid-template-columns: repeat(auto-fit, var(--table-tech-width, 130px));
+  grid-template-columns: repeat(auto-fit, var(--tech-tile-size));
 }
 
 .kiln-tabletop-root.kiln-live-root .kiln-tabletop-workshop .kiln-tabletop-own-orders > div > .kiln-order-card {
@@ -25,32 +33,21 @@
   width: var(--table-order-width, var(--overview-order-width, 140px));
   min-width: var(--table-order-width, var(--overview-order-width, 140px));
   max-width: var(--table-order-width, var(--overview-order-width, 140px));
-  height: var(--table-order-height, var(--overview-order-height, 196px));
+  height: auto;
   min-height: var(--table-order-height, var(--overview-order-height, 196px));
-  max-height: var(--table-order-height, var(--overview-order-height, 196px));
   aspect-ratio: 5 / 7;
   margin: 0;
 }
 .kiln-tabletop-root.kiln-live-root .kiln-tabletop-workshop .kiln-tabletop-own-techs > div > .kiln-tech-tile {
   box-sizing: border-box;
-  width: var(--table-tech-width, 130px);
-  min-width: var(--table-tech-width, 130px);
-  max-width: var(--table-tech-width, 130px);
-  height: var(--table-tech-width, 130px);
-  min-height: var(--table-tech-width, 130px);
-  max-height: var(--table-tech-width, 130px);
+  width: var(--tech-tile-size);
+  min-width: var(--tech-tile-size);
+  max-width: var(--tech-tile-size);
+  height: var(--tech-tile-size);
+  min-height: var(--tech-tile-size);
+  max-height: var(--tech-tile-size);
   aspect-ratio: 1;
   margin: 0;
-}
-
-/* Keep a used Tech's state in its metadata row, clear of its name and effect. */
-.kiln-live-root .kiln-tabletop-own-techs .kiln-piece-state {
-  top: .52rem;
-  left: 50%;
-  right: auto;
-  transform: translateX(-50%);
-  padding: .04rem .2rem;
-  font-size: .5rem;
 }
 
 .kiln-tabletop-root.kiln-live-root .kiln-tabletop-workshop .kiln-tabletop-own-orders > div > .kiln-live-empty-copy,

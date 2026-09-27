@@ -10,7 +10,6 @@ import { OrderFace, TechniqueFace } from "../../src/ui/PieceFaces";
 import { OrderIllustration } from "../../src/ui/OrderIllustration";
 import { OrderCard, PlayerInspection, StartingTechniqueInspection, StaticOrderCard, TabletopGameExperience, TechniqueInspection } from "../../src/ui/TabletopGameExperience";
 import { techniqueFullCopy, techniqueShortPlainText } from "../../src/ui/TechniqueDescription";
-import { TECHNIQUE_ARTWORK } from "../../src/ui/techniqueArtwork";
 import { LanguageProvider, type Locale } from "../../src/ui/i18n";
 import { startedGame, workerId } from "../v127/helpers";
 
@@ -22,7 +21,7 @@ function localized(locale: Locale, children: ReturnType<typeof createElement>): 
 }
 
 function text(markup: string): string {
-  return markup.replace(/<[^>]*>/gu, "")
+  return markup.replace(/<br\s*\/?>/gu, "\n").replace(/<[^>]*>/gu, "")
     .replaceAll("&amp;", "&").replaceAll("&quot;", '"').replaceAll("&#x27;", "'")
     .replaceAll("&lt;", "<").replaceAll("&gt;", ">");
 }
@@ -33,14 +32,7 @@ function card(markup: string, attribute: string, id: string): string {
   return match![0];
 }
 
-function artworkElement(markup: string): string {
-  const element = markup.match(/<span(?=[^>]*\bclass="[^"]*\bkiln-piece-art\b[^"]*")[^>]*>/u)?.[0];
-  expect(element, "the face includes its decorative illustration").toBeDefined();
-  return element!;
-}
-
 function expectStaticFace(markup: string): void {
-  expect(artworkElement(markup)).toContain('aria-hidden="true"');
   expect(markup).not.toMatch(/\stitle=|data-hover-preview=|data-preview-id=|role="tooltip"/u);
 }
 
@@ -73,18 +65,12 @@ function showAllTechniques(state: GameState): void {
 }
 
 describe("individual piece illustrations", () => {
-  it("assigns a distinct resolved artwork URL to each of the 19 canonical Tech IDs", () => {
-    const canonicalIds = [...STARTING_TECHNIQUES, ...techniques].map(({ id }) => id).sort();
-    expect(Object.keys(TECHNIQUE_ARTWORK).sort()).toEqual(canonicalIds);
-    const urls = canonicalIds.map((id) => TECHNIQUE_ARTWORK[id]);
-    expect(urls.every((url) => typeof url === "string" && url.length > 0)).toBe(true);
-    expect(new Set(urls).size).toBe(19);
-    for (const id of canonicalIds) {
+  it("renders all 19 Techs without illustrations in preview and full-detail faces", () => {
+    for (const { id } of [...STARTING_TECHNIQUES, ...techniques]) {
       for (const locale of ["en", "zh-CN"] as const) {
         for (const layer of ["preview", "full"] as const) {
           const face = renderToStaticMarkup(createElement(TechniqueFace, { id, locale, layer }));
-          const illustration = artworkElement(face).replaceAll("&amp;", "&");
-          expect(illustration, `${id} ${locale} ${layer}`).toContain(`background-image:url(${TECHNIQUE_ARTWORK[id]})`);
+          expect(face, `${id} ${locale} ${layer}`).not.toMatch(/kiln-piece-art|<img|background-image/u);
         }
       }
     }

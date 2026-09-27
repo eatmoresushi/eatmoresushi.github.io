@@ -9,8 +9,6 @@ import type { Locale } from "./i18n";
 import { OrderIllustration } from "./OrderIllustration";
 import { CrownIcon } from "./CrownIcon";
 import { TechniqueDescription } from "./TechniqueDescription";
-import { techniqueOverviewCopy } from "./TechniqueOverview";
-import { TECHNIQUE_ARTWORK } from "./techniqueArtwork";
 import "./illustrated-pieces.css";
 
 function text(locale: Locale, english: string, chinese: string): string {
@@ -85,7 +83,6 @@ export function TechniqueFace({ id, locale, layer = "preview", exhausted = false
       ? { forming: "成型", glazing: "施釉", firing: "烧成" }[advanced.discipline]
       : advanced.discipline[0]!.toUpperCase() + advanced.discipline.slice(1);
   return <>
-    <span className="kiln-piece-art" aria-hidden="true" style={{ backgroundImage: `url(${TECHNIQUE_ARTWORK[id]})` }} />
     <header className="kiln-tech-heading">
       <div className="kiln-piece-heading">
         <span className="kiln-piece-id">{id}</span>
@@ -94,9 +91,7 @@ export function TechniqueFace({ id, locale, layer = "preview", exhausted = false
       <strong className="kiln-piece-name">{locale === "zh-CN" ? technique.nameZh : technique.name}</strong>
       <span className="kiln-piece-category">{discipline}</span>
     </header>
-    <p className="kiln-piece-copy" data-overview={overview ? "true" : undefined}>{overview
-      ? techniqueOverviewCopy(id, locale)
-      : <TechniqueDescription id={id} locale={locale} layer={layer} />}</p>
+    <p className="kiln-piece-copy" data-overview={overview ? "true" : undefined}><TechniqueDescription id={id} locale={locale} layer={layer} /></p>
     {advanced !== undefined && <div className="kiln-piece-footer">
       <span className="kiln-piece-timing">{advanced.oncePerRound ? text(locale, "Once per round", "每轮一次") : text(locale, "Continuous", "持续生效")}</span>
       <b className="kiln-piece-endgame-vp" aria-label={text(locale, "Scores 1 VP at game end", "终局计分时获得1分")}>1VP</b>

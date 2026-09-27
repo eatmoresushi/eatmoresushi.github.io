@@ -2,10 +2,9 @@ import { useLayoutEffect } from "react";
 import type { RefObject } from "react";
 
 const ORDER_SELECTOR = ".kiln-tabletop-market .kiln-order-card";
-const TECH_SELECTOR = ".kiln-tabletop-tech-market .kiln-tech-tile";
-const SIZE_PROPERTIES = ["--table-order-width", "--table-order-height", "--table-tech-width"] as const;
+const SIZE_PROPERTIES = ["--table-order-width", "--table-order-height"] as const;
 
-/** Public pieces set the size of personal pieces, never the other way around. */
+/** Public Orders set personal Order sizes; Techs share a responsive CSS size. */
 export function useTabletopPieceSizes(rootRef: RefObject<HTMLElement | null>): void {
   useLayoutEffect(() => {
     const root = rootRef.current;
@@ -34,8 +33,7 @@ export function useTabletopPieceSizes(rootRef: RefObject<HTMLElement | null>): v
     function measure(): void {
       if (disposed) return;
       const orders = [...root!.querySelectorAll<HTMLElement>(ORDER_SELECTOR)];
-      const techs = [...root!.querySelectorAll<HTMLElement>(TECH_SELECTOR)];
-      const nextObserved = new Set([...orders, ...techs]);
+      const nextObserved = new Set(orders);
       for (const element of observed) {
         if (!nextObserved.has(element)) resizeObserver?.unobserve(element);
       }
@@ -46,10 +44,8 @@ export function useTabletopPieceSizes(rootRef: RefObject<HTMLElement | null>): v
 
       // Read every public border box before changing any inherited custom properties.
       const orderRects = orders.map((element) => element.getBoundingClientRect());
-      const techRects = techs.map((element) => element.getBoundingClientRect());
       writeSize("--table-order-width", Math.max(0, ...orderRects.map(({ width }) => width)));
       writeSize("--table-order-height", Math.max(0, ...orderRects.map(({ height }) => height)));
-      writeSize("--table-tech-width", Math.max(0, ...techRects.map(({ width }) => width)));
     }
 
     function scheduleMeasure(): void {
