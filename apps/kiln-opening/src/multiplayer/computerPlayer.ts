@@ -1,5 +1,6 @@
 import { withOwnOrderHand } from "./projection.ts";
 import {
+  ACTION_LOCATION_PRICES,
   DECORATION_COSTS,
   DECORATIONS,
   DING_EXTRA_SHAPES,
@@ -22,7 +23,7 @@ import {
   DISCIPLINES,
   matchingOrderCeramicGroups,
   matchesOrder,
-  findGeDecorations,
+  findGeGlazes,
   orderHandLimit,
   preferredHeat,
   qualityFromDifference,
@@ -390,7 +391,7 @@ function orderAction(state: PublicGameState, playerId: PlayerId): GameAction {
         type: "COMPLETE_ORDER",
         orderId,
         ceramicIds: group.map((ceramic) => ceramic.id),
-        ...(!matchesOrder(order, group, player.kilnId) ? { geDecorations: findGeDecorations(order, group)! } : {}),
+        ...(!matchesOrder(order, group, player.kilnId) ? { geGlazes: findGeGlazes(order, group)! } : {}),
         ...(crossesGrant ? {
           imperialGrantChoice: player.resources.clay + player.resources.wood < 3
             ? "resources" as const
@@ -851,7 +852,7 @@ function workAction(state: PublicGameState, playerId: PlayerId): GameAction {
   const materials = buildMaterialsAction(state, player);
   if (materials !== null) return materials;
   const courtWorker = availableWorker(state, player, "court_patronage", false);
-  if (courtWorker !== null && player.imperialRecognition < 3 && player.resources.coins >= 4 && (player.resources.coins >= 8 || player.imperialRecognition === 1)) return { type: "USE_COURT_PATRONAGE", workerId: courtWorker.id, imperialGrantChoice: "resources" };
+  if (courtWorker !== null && player.imperialRecognition < 3 && player.resources.coins >= ACTION_LOCATION_PRICES.courtPatronageCoins && (player.resources.coins >= 8 || player.imperialRecognition === 1)) return { type: "USE_COURT_PATRONAGE", workerId: courtWorker.id, imperialGrantChoice: "resources" };
   const labourWorker = availableWorker(state, player, "labour", false);
   return labourWorker === null ? { type: "PASS_WORK_PHASE" } : { type: "USE_LABOUR", workerId: labourWorker.id };
 }

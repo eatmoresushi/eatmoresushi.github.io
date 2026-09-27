@@ -313,7 +313,7 @@ validateContent();
  * cost of 5 while charging 4.
  */
 export const ACTION_LOCATION_PRICES = {
-  courtPatronageCoins: 4,
+  courtPatronageCoins: 5,
   labourApprenticeCoins: 2,
   labourShifuCoins: 4,
   /** Coins the V1.4 firing salvage step pays for a ceramic still Flawed from this firing. */

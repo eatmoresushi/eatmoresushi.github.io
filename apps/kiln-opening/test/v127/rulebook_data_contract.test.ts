@@ -3,7 +3,9 @@ import { createHash } from "node:crypto";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  ACTION_LOCATION_PRICES,
   KILN_DEFINITIONS,
+  LOCATION_DEFINITIONS,
   MAIN_ORDERS,
   STARTING_ORDERS,
   STARTING_TECHNIQUES,
@@ -54,6 +56,21 @@ describe("V1.4 checked-in data matches the adopted English rulebook", () => {
     const currentDigest = createHash("sha256").update(EN_SOURCE).digest("hex");
     expect(OWNER_AMENDMENTS).toContain(`Current amended checked-in SHA-256: \`${currentDigest}\``);
     expect(OWNER_AMENDMENTS).toContain("Original SHA-256: `ace7e4ced95d82a259da504a11c6021626fad626da0a88d47a2ad457b821983c`");
+  });
+
+  it("records the approved 5-Coin Court cost and Glaze-only Crackle substitution", () => {
+    expect(ACTION_LOCATION_PRICES.courtPatronageCoins).toBe(5);
+    expect(EN_SOURCE).toContain("| Any worker | Pay **5 Coins** to advance your Imperial Recognition");
+    const court = LOCATION_DEFINITIONS.court_patronage;
+    expect(court.apprentice).toContain("Pay 5 Coins");
+    expect(court.shifu).toContain("Pay 5 Coins");
+    expect(court.apprenticeZh).toContain("支付5铜钱");
+    expect(court.shifuZh).toContain("支付5铜钱");
+    expect(KILN_DEFINITIONS.GE.ability).toContain("any one Glaze for that Order");
+    expect(KILN_DEFINITIONS.GE.ability).toContain("does not provide a wild Decoration");
+    expect(KILN_DEFINITIONS.GE.abilityZh).toContain("任意一种釉色");
+    expect(KILN_DEFINITIONS.GE.abilityZh).toContain("开片不能替代纹饰");
+    expect(OWNER_AMENDMENTS).toContain("### 7. Imperial Court cost and Ge Glaze substitution");
   });
 
   it("matches every English Order row exactly", () => {

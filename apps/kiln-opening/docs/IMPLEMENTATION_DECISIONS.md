@@ -18,7 +18,7 @@ The [V1.4 Player Rulebook](./KILN_OPENING_v1.4_EN_SOURCE.md) governs mechanics. 
 - Shifu reservations resolve sequentially, including each chosen resource advance and display refill. Colour Samples inspection is private; untaken inspected Orders go to discard.
 - A Craft Academy Shifu privately inspects up to two Techs of a discipline. The acquisition command explicitly supplies the bottom order of multiple untaken inspected Techs. The server validates the exact permutation; inspection, deck order and returned IDs remain private.
 - Shape, Glaze and Decoration requirements on multi-ceramic Orders are independent unless expressly paired. Non-Plain requirements use Carved, Impressed and Painted alternatives.
-- Each permanent Crackle ceramic may independently use one virtual Decoration consistently across all Decoration checks for that Order. This is unlimited across Orders and Crackle ceramics. It never changes the recorded Decoration or the Exhibition's attributes.
+- Each permanent Crackle ceramic may independently use one virtual Glaze consistently across all Glaze checks for that Order. This is unlimited across Orders and Crackle ceramics. It does not substitute Decoration and never changes the recorded Glaze or Decoration. Exhibition always uses actual attributes.
 - Completion opportunities run in reverse Work order until a complete circuit without completion. The service can skip unchanged legal choices previously declined, but prompts again for newly available completable Orders. It never bypasses a new decision.
 
 ## Explicit firing windows
@@ -34,7 +34,7 @@ The [V1.4 Player Rulebook](./KILN_OPENING_v1.4_EN_SOURCE.md) governs mechanics. 
 
 ## Imperial Recognition and scoring
 
-Recognition and every crossed milestone are server-authoritative. Imperial Priority is a separate once-per-game choice before or after a worker action, glazing and loading one Workshop ceramic into the empty Imperial Kiln for 1 Coin. It does not increase Kiln Yard's load allowance.
+Recognition and every crossed milestone are server-authoritative. Imperial Court costs 5 Coins for either worker type and advances Recognition by one only from 0, 1 or 2. Imperial Priority is a separate once-per-game choice before or after a worker action, glazing and loading one Workshop ceramic into the empty Imperial Kiln for 1 Coin. It does not increase Kiln Yard's load allowance.
 
 Ge records actual Fine Quality, so completion and Exhibition use recorded Quality normally. Exhibition accepts any number of Standard-or-better undelivered ceramics; its Shape and Glaze diversity bonuses check the entire exhibited collection independently. Every owned Advanced Tech scores 1 VP. Coin VP is capped at 5. Other printed values and tie breakers follow the source unchanged.
 
@@ -42,4 +42,4 @@ Ge records actual Fine Quality, so completion and Exhibition use recorded Qualit
 
 All undelivered ceramics and their recorded attributes are public. Hands, inspections, hidden deck order and unrevealed Contributions are private. Public projections redact them; authenticated private responses contain only the requesting seat's information. The same sanitized boundary applies to computer players. English and Simplified Chinese render identical stable IDs and never change game state.
 
-V1.4 rooms use schema 5, behavior revision 24 and policy `rules-v1.4-strategic-001`. Older room rows and playtest reports are retained as history. Version/schema/fingerprint mismatches are rejected rather than reinterpreted. SQL migrations, both Edge Functions and the client must be rolled out together; checked-in migrations do not apply themselves.
+V1.4 rooms use schema 5, behavior revision 25 and policy `rules-v1.4-strategic-001`. Older room rows and playtest reports are retained as history. Version/schema/fingerprint mismatches are rejected rather than reinterpreted. SQL migrations, both Edge Functions and the client must be rolled out together; checked-in migrations do not apply themselves.

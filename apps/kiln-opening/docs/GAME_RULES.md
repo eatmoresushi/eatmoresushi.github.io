@@ -8,3 +8,5 @@
 - The archived [V1.2.6 Chinese source](./KILN_OPENING_v1.2.6_ZH_SOURCE.md) supplies established terminology only. Changed Chinese gameplay text is translated from V1.4 English.
 
 V1.4 supersedes earlier sources and owner amendments. V1.2.7 rulebooks, Tech/Kiln copy and audits remain historical records. Visual references remain restricted to `assets/current_v04/`; obsolete rules text must be rendered from current structured data.
+
+The 2026-09-28 owner amendment makes Imperial Court cost 5 Coins and changes Ge Crackle to one virtual Glaze per ceramic for Order requirements. Actual Glaze and Decoration remain unchanged; Crackle does not substitute Decoration.

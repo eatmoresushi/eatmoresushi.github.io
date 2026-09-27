@@ -6,7 +6,7 @@ Generated with the built-in image generation tool on 2026-09-27.
 - Original transparent PNG: `/Users/luyuan/.codex/generated_images/01a0dcc5-5096-7330-aab8-c68c76ed05f0/exec-0c53002d-7850-46db-b4bd-fd1e74c85a21.png`
 - Conversion: `cwebp -q 90 -alpha_q 100 -resize 384 384`, preserving generated alpha.
 
-The shared ceramic renderer clips this independent texture to the exact alpha silhouette of the current Shape/Decoration artwork. Crackle is drawn after the Glaze colour mapping, over the original surface at 80% opacity using multiply blending. It does not change the ceramic's Glaze, Decoration, Quality or rules. Player-colour rims and the existing Crackle reminder remain separate.
+The shared ceramic renderer clips this independent texture to the exact alpha silhouette of the current Shape/Decoration artwork. Crackle is drawn after the Glaze colour mapping, over the original surface at 80% opacity using multiply blending. It does not change the ceramic's Glaze, Decoration, Quality or rules. Player-colour rims and the existing Crackle reminder remain separate. Under the 2026-09-28 owner amendment, a Crackle ceramic may use one virtual Glaze when completing an Order; its artwork continues to show its actual Glaze and Decoration, which remain unchanged.
 
 ## Exact generation prompt
 

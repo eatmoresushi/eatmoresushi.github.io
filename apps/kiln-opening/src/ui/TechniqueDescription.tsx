@@ -118,8 +118,8 @@ export const KILN_SHORT_COPY = {
     "zh-CN": "**每轮一次：**完成**带皇冠的委托** → 获得**2铜钱＋1分**。",
   },
   GE: {
-    en: "**Once per round, after Quality is assigned:** **1 of your Standard ceramics from this firing → Fine + Crackle**.\n**Orders:** each Crackle ceramic may count as **any 1 Decoration**.",
-    "zh-CN": "**每轮一次，决定品质后：****自己本次烧成的1件良品陶瓷 → 上品＋开片**。\n**委托：**每件开片陶瓷可视为具有**任意1种纹饰**。",
+    en: "**Once per round, after Quality is assigned:** **1 of your Standard ceramics from this firing → Fine + Crackle**.\n**Orders:** each Crackle ceramic may count as **any 1 Glaze**.",
+    "zh-CN": "**每轮一次，决定品质后：****自己本次烧成的1件良品陶瓷 → 上品＋开片**。\n**委托：**每件开片陶瓷可视为具有**任意1种釉色**。",
   },
   DI: {
     en: "**Once per round, during an Apprentice’s Potter’s Wheel action:** after forming a **Bowl, Plate or Brush Washer**, pay **1 Clay** → form **1 extra vessel of the same Shape**. It counts as formed by that action.",

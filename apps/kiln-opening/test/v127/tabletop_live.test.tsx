@@ -215,7 +215,7 @@ describe("V1.4 functional tabletop", () => {
     expect(ceramic).toContain('class="kiln-tabletop-quality-badge is-fine"');
     expect(ceramic).toContain('class="kiln-live-crackle-marker"');
     expect(ceramic).toContain(">Crackle</em>");
-    expect(markup).toContain("Crackle · wild Decoration for Orders; actual Glaze and Decoration remain unchanged");
+    expect(markup).toContain("Crackle · wild Glaze for Orders; actual Glaze and Decoration remain unchanged");
     expect(JSON.stringify(game)).toBe(before);
   });
 

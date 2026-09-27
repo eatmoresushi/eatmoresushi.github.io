@@ -1,5 +1,6 @@
 import { withOwnOrderHand } from "../multiplayer/projection";
 import {
+  ACTION_LOCATION_PRICES,
   BASE_HEAT_START,
   CONTRIBUTION_CARDS,
   CONTRIBUTION_CARD_DEFINITIONS,
@@ -33,7 +34,7 @@ import {
   locationCapacity,
   matchingOrderCeramicGroups,
   matchesOrder,
-  findGeDecorations,
+  findGeGlazes,
   preferredHeat,
   qualityForOrderOrExhibition,
 } from "../game";
@@ -398,9 +399,9 @@ function CourtPatronageForm({ player, workers, busy, send }: { player: PublicPla
   const [choice, setChoice] = useState<"coins" | "resources">("coins");
   return <div className="control-form">
     <WorkerChoice player={player} workers={workers} value={workerId} onChange={setWorkerId} />
-    <p>{locale === "zh-CN" ? "支付4铜钱，御府声望提升1格；最高可提升至3。" : "Pay 4 Coins to advance Recognition by 1, up to Recognition 3."}</p>
+    <p>{locale === "zh-CN" ? `支付${ACTION_LOCATION_PRICES.courtPatronageCoins}铜钱，御府声望提升1格；最高可提升至3。` : `Pay ${ACTION_LOCATION_PRICES.courtPatronageCoins} Coins to advance Recognition by 1, up to Recognition 3.`}</p>
     {player.imperialRecognition === 0 && <ChoiceTiles name="court-grant" label={locale === "zh-CN" ? "御赐收益" : "Imperial Grant reward"} value={choice} onChange={(value) => setChoice(value as "coins" | "resources")} options={[{ value: "coins", label: locale === "zh-CN" ? "3铜钱" : "3 Coins" }, { value: "resources", label: locale === "zh-CN" ? "1泥 + 1柴 + 1铜钱" : "1 Clay + 1 Wood + 1 Coin" }]} />}
-    <CommandButton busy={busy} disabled={workerId === "" || player.resources.coins < 4 || player.imperialRecognition >= 3} send={send} command={{ type: "USE_COURT_PATRONAGE", workerId, imperialGrantChoice: choice }}>{locale === "zh-CN" ? "朝廷赞助" : "Use Imperial Court"}</CommandButton>
+    <CommandButton busy={busy} disabled={workerId === "" || player.resources.coins < ACTION_LOCATION_PRICES.courtPatronageCoins || player.imperialRecognition >= 3} send={send} command={{ type: "USE_COURT_PATRONAGE", workerId, imperialGrantChoice: choice }}>{locale === "zh-CN" ? "朝廷赞助" : "Use Imperial Court"}</CommandButton>
   </div>;
 }
 
@@ -1483,7 +1484,7 @@ function GeControls({ game, player, busy, send }: {
   const { locale } = useI18n();
   const eligible = ownCeramics(game, player.id, "loaded").filter((ceramic) => game.firingContext?.ceramicResults[ceramic.id]?.assignedQuality === "standard");
   return <CeramicDecision title={locale === "zh-CN" ? "哥窑 · 窑火开片" : "Ge · Crackle from Fire"}
-    hint={locale === "zh-CN" ? "品质判定后，将本次烧成的1件良品提升为上品并获得永久开片。完成委托时，每件开片陶瓷可视为具有任意一种纹饰。" : "After Quality is assigned, improve one Standard ceramic from this firing to Fine and give it permanent Crackle. Each Crackle ceramic may be treated as having any one Decoration for each Order."}
+    hint={locale === "zh-CN" ? "品质判定后，将本次烧成的1件良品提升为上品并获得永久开片。完成委托时，每件开片陶瓷可视为具有任意一种釉色。" : "After Quality is assigned, improve one Standard ceramic from this firing to Fine and give it permanent Crackle. Each Crackle ceramic may be treated as having any one Glaze for each Order."}
     ceramics={eligible} busy={busy} send={send} make={(ceramicId) => ({ type: "RESOLVE_GE", ceramicId })} skip={{ type: "RESOLVE_GE", ceramicId: null }} />;
 }
 
@@ -1607,8 +1608,8 @@ function OrderCompletion({ orderId, ceramics, recognition, busy, send, player }:
     .map((ceramicId) => ceramics.find((ceramic) => ceramic.id === ceramicId))
     .filter((ceramic): ceramic is FinishedCeramic => ceramic?.stage === "finished");
   const normalMatch = definition !== undefined && matchesOrder(definition, selectedCeramics, player.kilnId);
-  const geDecorations = !normalMatch && player.kilnId === "GE" && definition !== undefined ? findGeDecorations(definition, selectedCeramics) : null;
-  const matches = normalMatch || geDecorations !== null;
+  const geGlazes = !normalMatch && player.kilnId === "GE" && definition !== undefined ? findGeGlazes(definition, selectedCeramics) : null;
+  const matches = normalMatch || geGlazes !== null;
   const bonusEligible = !player.kilnAbilityUsedThisRound && ((player.kilnId === "GU" && (definition?.crowns ?? 0) > 0) || (player.kilnId === "RU" && selectedCeramics.some((ceramic) => ceramic.quality === "masterpiece" && ceramic.glaze === "celadon" && ceramic.decoration === "plain")));
   const requiredCount = definition?.ceramics.length ?? 0;
   const crossesGrant = definition !== undefined && recognition < 1 && recognition + definition.crowns >= 1;
@@ -1635,14 +1636,14 @@ function OrderCompletion({ orderId, ceramics, recognition, busy, send, player }:
       ))}</fieldset>
       {crossesGrant && <label>{locale === "zh-CN" ? "御赐收益" : "Imperial Grant reward"}<select value={grantChoice} onChange={(event) => setGrantChoice(event.target.value as "coins" | "resources")}><option value="coins">{locale === "zh-CN" ? "3铜钱" : "3 Coins"}</option><option value="resources">{locale === "zh-CN" ? "1泥 + 1柴 + 1铜钱" : "1 Clay + 1 Wood + 1 Coin"}</option></select></label>}
       {bonusEligible && <label><input type="checkbox" checked={useKilnAbility} onChange={(event) => setUseKilnAbility(event.target.checked)} />{locale === "zh-CN" ? `使用${player.kilnId === "RU" ? "汝窑" : "官窑"}奖励` : `Use ${player.kilnId === "RU" ? "Ru" : "Guan"} bonus`}</label>}
-      {geDecorations !== null && <p>{locale === "zh-CN" ? `使用哥窑：将所选开片陶瓷视为${geDecorations.map((choice) => localizedTerm(locale, choice.decoration)).join("、")}。` : `Use Ge: treat the selected Crackle ceramic as ${geDecorations.map((choice) => choice.decoration).join(", ")} for this Order.`}</p>}
+      {geGlazes !== null && <p>{locale === "zh-CN" ? `使用哥窑：将所选开片陶瓷的釉色视为${geGlazes.map((choice) => localizedTerm(locale, choice.glaze)).join("、")}。` : `Use Ge: treat the selected Crackle ceramics’ Glazes as ${geGlazes.map((choice) => localizedTerm(locale, choice.glaze)).join(", ")} for this Order.`}</p>}
       <p className={matches ? "selection-valid" : "control-hint"} role="status">{selectionStatus}</p>
       <button
         className="primary-button"
         type="button"
         disabled={busy || !matches}
         onClick={() => {
-          void send({ type: "COMPLETE_ORDER", orderId, ceramicIds: selected, ...(bonusEligible ? { useKilnAbility } : {}), ...(geDecorations === null ? {} : { geDecorations }), ...(crossesGrant ? { imperialGrantChoice: grantChoice } : {}) });
+          void send({ type: "COMPLETE_ORDER", orderId, ceramicIds: selected, ...(bonusEligible ? { useKilnAbility } : {}), ...(geGlazes === null ? {} : { geGlazes }), ...(crossesGrant ? { imperialGrantChoice: grantChoice } : {}) });
         }}
       >{locale === "zh-CN" ? `完成${orderId}` : `Complete ${orderId}`}</button>
     </article>

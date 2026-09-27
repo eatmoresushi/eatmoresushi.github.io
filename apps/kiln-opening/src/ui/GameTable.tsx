@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import actionLocationsJson from "../../data/action_locations.json" with { type: "json" };
 import {
+  ACTION_LOCATION_PRICES,
   CONTRIBUTION_CARD_DEFINITIONS,
   GAME_CONFIG,
   IMPERIAL_PROGRESS,
@@ -397,7 +398,7 @@ function ImperialProgressTable({ game }: { game: PublicGameState }) {
           })}</tbody>
         </table>
       </div>
-      <p className="progress-legend">{locale === "zh-CN" ? "已完成委托上的👑推进御府声望；朝廷赞助可支付4铜钱，从声望0、1或2提升1格。依次结算到达的里程碑。到达声望4后，每个额外👑立即获得1 VP。" : "Crowns on completed Orders advance Recognition. Imperial Court costs 4 Coins to advance 1 space from Recognition 0, 1 or 2. Resolve each reached milestone in order. Each Crown beyond Recognition 4 scores 1 VP immediately."}</p>
+      <p className="progress-legend">{locale === "zh-CN" ? `已完成委托上的👑推进御府声望；朝廷赞助可支付${ACTION_LOCATION_PRICES.courtPatronageCoins}铜钱，从声望0、1或2提升1格。依次结算到达的里程碑。到达声望4后，每个额外👑立即获得1 VP。` : `Crowns on completed Orders advance Recognition. Imperial Court costs ${ACTION_LOCATION_PRICES.courtPatronageCoins} Coins to advance 1 space from Recognition 0, 1 or 2. Resolve each reached milestone in order. Each Crown beyond Recognition 4 scores 1 VP immediately.`}</p>
     </section>
   );
 }

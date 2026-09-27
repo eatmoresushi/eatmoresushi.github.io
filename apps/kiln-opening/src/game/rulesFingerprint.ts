@@ -91,9 +91,11 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  *  24 -- Owner amendment: deal two Starting Orders and no Main Order at setup.
  *        O01-O03 now award 4 VP, captured by the content digest. Existing rooms keep
  *        their original fingerprint and cannot resume under the amended rules.
+ *  25 -- Owner amendment: Imperial Court costs 5 Coins; Ge Crackle substitutes
+ *        one Glaze per ceramic for Order requirements instead of one Decoration.
  */
-/** V1.4 owner amendment: opening hands contain two Starting Orders and no Main Order. */
-export const RULES_BEHAVIOUR_REVISION = 24;
+/** V1.4 owner amendment: five-Coin Imperial Court and Ge's Order-only Glaze choice. */
+export const RULES_BEHAVIOUR_REVISION = 25;
 
 /**
  * Display-only keys, excluded so that a typo fix or a translation improvement does not

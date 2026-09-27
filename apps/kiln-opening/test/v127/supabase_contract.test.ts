@@ -3,6 +3,7 @@ import { activeKilnSpaceIds, CONTRIBUTION_CARD_IDS, RULES_BEHAVIOUR_REVISION } f
 import playtestMigration from "../../supabase/migrations/202609260002_playtest_v14.sql?raw";
 import migration from "../../supabase/migrations/202609260001_v14_rules.sql?raw";
 import startingHandMigration from "../../supabase/migrations/202609270001_v14_starting_orders.sql?raw";
+import courtGeMigration from "../../supabase/migrations/202609280001_v14_court_ge_amendment.sql?raw";
 import strategicAiMigration from "../../supabase/migrations/202609260001_v14_rules.sql?raw";
 import orderQueueMigration from "../../supabase/migrations/202609190001_v127_rules.sql?raw";
 import eightStartingOrdersMigration from "../../supabase/migrations/202609200001_v127_eight_starting_orders.sql?raw";
@@ -114,7 +115,7 @@ describe("V1.4 Supabase contract", () => {
     const previousGate = replacement[1]!;
     const currentGate = replacement[2]!;
     expect(previousGate).toBe("^r23-[0-9a-f]{16}$");
-    expect(currentGate).toBe(`^r${RULES_BEHAVIOUR_REVISION}-[0-9a-f]{16}$`);
+    expect(currentGate).toBe("^r24-[0-9a-f]{16}$");
     expect(startingHandMigration).toContain(`if position('${previousGate}' in v_definition) = 0 then`);
     expect(startingHandMigration).toContain("raise exception 'Expected r23 fingerprint gate in %', v_signature");
     for (const name of replacedFunctions) {
@@ -125,6 +126,31 @@ describe("V1.4 Supabase contract", () => {
       expect(amended).not.toContain(previousGate);
       expect(migration).toContain(`revoke all on function public.${name}(`);
       expect(migration).toContain(`grant execute on function public.${name}(`);
+    }
+  });
+
+  it("requires the amended Court and Ge rules for all five write gates while preserving room history", () => {
+    expect(courtGeMigration).toContain("'^r(23|24|25)-[0-9a-f]{16}$'");
+    expect(courtGeMigration).not.toMatch(/\b(?:update|delete from|truncate)\s+(?:public\.|private\.)/i);
+    const replacedFunctions = [...courtGeMigration.matchAll(/'public\.(server_\w+)\([^']+\)'::regprocedure/g)]
+      .map((match) => match[1]!);
+    expect(replacedFunctions).toEqual([
+      "server_add_computer_seat", "server_create_room", "server_commit_start", "server_commit_transition", "server_join_room",
+    ]);
+    const replacement = courtGeMigration.match(/execute replace\(v_definition, '([^']+)', '([^']+)'\)/)!;
+    const previousGate = replacement[1]!;
+    const currentGate = replacement[2]!;
+    expect(previousGate).toBe("^r24-[0-9a-f]{16}$");
+    expect(currentGate).toBe(`^r${RULES_BEHAVIOUR_REVISION}-[0-9a-f]{16}$`);
+    expect(courtGeMigration).toContain(`if position('${previousGate}' in v_definition) = 0 then`);
+    expect(courtGeMigration).toContain("raise exception 'Expected r24 fingerprint gate in %', v_signature");
+    for (const name of replacedFunctions) {
+      const original = migration.split(`create or replace function public.${name}(`)[1]!.split("create or replace function")[0]!;
+      const prior = original.replaceAll("^r23-[0-9a-f]{16}$", previousGate);
+      expect(prior).toContain(previousGate);
+      const amended = prior.replaceAll(previousGate, currentGate);
+      expect(amended).toContain(currentGate);
+      expect(amended).not.toContain(previousGate);
     }
   });
 

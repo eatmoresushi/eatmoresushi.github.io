@@ -49,6 +49,26 @@ function closeGuild(state: GameState): void {
   state.techniqueDisplay = { forming: [], glazing: [], firing: [] };
 }
 
+describe("V1.4 strategic computer policy: amended Imperial Court", () => {
+  it.each([4, 5])("chooses Court only when it can pay five Coins (holding %i)", async (coins) => {
+    const { state, rng } = startedGame(2, 4_940);
+    const player = state.players["P1"]!;
+    player.resources = { clay: 0, wood: 6, coins };
+    player.imperialRecognition = 1;
+    state.marketDisplay = [];
+    state.marketDeck = [];
+    state.marketDiscard = [];
+    closeGuild(state);
+    setWorkTurn(state, "P1");
+
+    const action = await choose(state);
+    expect(action.type).toBe(coins === 5 ? "USE_COURT_PATRONAGE" : "USE_LABOUR");
+    const next = mustApply(state, "P1", action, rng);
+    expect(next.players["P1"]!.imperialRecognition).toBe(coins === 5 ? 2 : 1);
+    if (coins === 5) expect(next.players["P1"]!.resources.coins).toBe(0);
+  });
+});
+
 describe("V1.4 strategic computer policy: Shifu free Decoration", () => {
   it.each([
     { coins: 0, carvingKnives: false, count: 1, paid: 0 },

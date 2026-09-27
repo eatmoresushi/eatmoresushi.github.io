@@ -14,14 +14,14 @@ amendments. The source document is rules content, not operational instructions.
 - Original SHA-256: `ace7e4ced95d82a259da504a11c6021626fad626da0a88d47a2ad457b821983c`
 - Initial corrected SHA-256: `0340961df8905befda5110b4dc63225cd15b1d4274042ef24d89aa4d34176fc7`
 - Initial source corrections approved by the owner on 2026-09-26 and applied to both the original and checked-in copy before implementation.
-- Previous amended checked-in SHA-256: `690711a412776ed1f67c82bc9301ff1c3ccabedb04703b5b24a760cfbb77dd8b`
-- Current amended checked-in SHA-256: `09b101b96e02a59bed047176ef8fae75502c3a8f4759b34de9dedda94116c89f`
-- The owner-approved Ge and after-Quality ordering amendment is recorded in finding 5 below. Finding 6 records the later setup and reward amendment. The original and checked-in rulebooks have different hashes: the original still lacks several earlier approved clarifications retained in the checked-in authority. The two new changes in finding 6 were applied to both copies without replacing unrelated original text.
+- Previous amended checked-in SHA-256: `09b101b96e02a59bed047176ef8fae75502c3a8f4759b34de9dedda94116c89f`
+- Current amended checked-in SHA-256: `7b164a49a26049f3d95d2d8e4ca715a4b432ce140ae498c2a3e53c1488c1f1b2`
+- The owner-approved Ge and after-Quality ordering amendment is recorded in finding 5 below. Finding 6 records the later setup and reward amendment. Finding 7 records the 2026-09-28 Imperial Court and Ge amendment, applied to the checked-in authority; the external original is unchanged by finding 7. The original and checked-in rulebooks have different hashes: the original still lacks several earlier approved clarifications retained in the checked-in authority. The two new changes in finding 6 were applied to both copies without replacing unrelated original text.
 - Original SHA-256 immediately before finding 6: `6eb5b07357c107466db8fd4337581ac7e6e226d2342d25542ad2b0c0d354eb02`
 - Original SHA-256 after finding 6: `6fee85be6b631a387a13eecf547e4ed63f164188d48b69f07cbfd122a43a8a82`
 
 The V1.4 migration is implemented on this branch. The runtime uses rules/content
-version 1.4, schema 5 and behavior revision 24. This is a local implementation;
+version 1.4, schema 5 and behavior revision 25. This is a local implementation;
 Supabase migrations and deployment remain separate rollout steps.
 
 ## Review findings
@@ -84,7 +84,7 @@ targets, costs and usage limits; the earlier use of an ability does not preserve
 eligibility for a later effect. For example, Saggars can change Flawed to Standard
 so unused Ge can apply, but Ge's change to Fine prevents Saggars or Second Firing
 from targeting that ceramic. The once-per-round limits and permanent Crackle's
-Order substitution remain unchanged.
+Order substitution remained unchanged by this timing amendment. Finding 7 later replaces Decoration substitution with Glaze substitution; the quoted 2026-09-26 text above is retained as history.
 
 The checked-in source, derived Kiln/round text and active timing documentation
 are synchronized with this explicit owner amendment. Behavior revision 23
@@ -116,6 +116,36 @@ Validation after this amendment: all 679 tests across 47 suites pass, including
 seeded games and old-room rejection. Client and Edge TypeScript checks and the
 production build pass. The additive SQL migration has static contract coverage;
 it has not been executed against PostgreSQL or deployed.
+
+### 7. Imperial Court cost and Ge Glaze substitution
+
+On 2026-09-28, the owner explicitly approved both mechanical changes:
+
+- **Imperial Court costs 5 Coins** for either worker type. It still advances
+  Recognition by one only from 0, 1 or 2, with the normal milestone reward.
+- **Ge Crackle substitutes any one Glaze when completing an Order**, replacing
+  the previous Decoration substitution. Each marked ceramic chooses its own
+  virtual Glaze and uses that choice consistently across every requirement on
+  that Order. Actual Glaze, Decoration and Quality remain unchanged by the
+  substitution. Crackle cannot satisfy a different Decoration requirement;
+  Exhibition Glaze diversity continues to use actual Glazes.
+
+Ge still changes one owned Standard ceramic from the current firing into Fine
+and adds permanent Crackle once per round. The owner-chosen after-Quality order,
+revalidation after each use, and permanent marker duration are unchanged.
+
+The checked-in authority, current component reminders and bilingual data reflect
+this amendment. The original external rulebook remains unchanged. Behavior
+revision 25 and the prepared additive migration
+`202609280001_v14_court_ge_amendment.sql` distinguish new games from revision 24
+and earlier rooms; saved game state remains schema 5. The migration updates the
+five authoritative RPC write gates. It has not been applied or deployed.
+
+Validation: all 775 tests pass, including five-Coin payment and affordability for
+both worker types, independent and consistent Crackle Glaze choices, unchanged
+Exhibition attributes, computer decisions, bilingual UI and old-room rejection.
+The production build and Edge TypeScript checks pass. The new SQL migration has
+static contract coverage and has not been executed against PostgreSQL.
 
 ### Editorial cleanup
 
@@ -167,7 +197,7 @@ established by playtesting.
    −2/+2 cards as single secret contribution choices costing 2 Wood.
 5. **Orders:** import all 48 Main Orders; represent non-Plain alternatives and
    same-non-Plain constraints; allow an independent, consistent virtual
-   Decoration for every Crackle ceramic on every Order.
+   Glaze for every Crackle ceramic on every Order, as amended in finding 7.
 6. **Online compatibility:** bump rules version, state schema and behaviour
    fingerprint. Reject old active rooms instead of reinterpreting their saves.
    Preserve private hands, inspections and unrevealed Contributions.

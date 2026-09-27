@@ -27,6 +27,7 @@ Jun is once per round; an unused ability may be used during Second Firing, but a
 previously used ability may not be used again. The Second Firing window follows the extra Fire-card reveal and recalculation of Actual Heat, before assigning new Quality.
 All after-Quality abilities, including Ge, Protective Saggars and Second Firing, resolve in the owner's chosen order. Recheck current Quality, targets, costs and usage limits after each use; Ge is not required to resolve last.
 The 2026-09-27 owner amendment deals two Starting Orders and no Main Order to each player at setup, and raises O01–O03 to 4 VP each; their other requirements and rewards are unchanged.
+The 2026-09-28 owner amendment makes Imperial Court cost 5 Coins for either worker type. Each permanent Ge Crackle ceramic may use any one Glaze consistently for every requirement when completing an Order; it no longer substitutes Decoration. Actual Glaze and Decoration remain unchanged, and Exhibition uses actual Glaze.
 
 ## Approved asset rule
 
@@ -119,7 +120,7 @@ At minimum:
 - Ding Apprentice-only bonus, White Slip/Drying Frames costs and eligibility, and Rapid Drying
 - private Craft Academy inspection and owner-chosen bottom order
 - exhausted Main Order deck/discard fallback
-- end-of-Work Glaze Palette window and permanent Ge Crackle independent of Decoration
+- end-of-Work Glaze Palette window and permanent Ge Crackle independent of Glaze and Decoration, with one consistent virtual Glaze per marked ceramic for Orders only
 - Decoration costs
 - all 4 Starting Techs and all 15 V1.4 Advanced Techs
 - Advanced-Tech acquisition limit, discipline refresh, printed cost, Shifu discount, and end-game VP

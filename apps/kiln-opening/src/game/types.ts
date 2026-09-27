@@ -117,7 +117,7 @@ interface CeramicCore {
   shape: Shape;
   /** Set on creation so delayed loading effects remain deterministic after reconnect. */
   formedInRound?: RoundNumber;
-  /** Permanent Ge firing property; independent of actual Decoration. */
+  /** Permanent Ge firing property; independent of actual Glaze and Decoration. */
   crackle?: boolean;
 }
 
@@ -536,7 +536,7 @@ export type GameAction =
       orderId: OrderId;
       ceramicIds: CeramicId[];
       imperialGrantChoice?: "coins" | "resources";
-      geDecorations?: Array<{ ceramicId: CeramicId; decoration: Decoration }>;
+      geGlazes?: Array<{ ceramicId: CeramicId; glaze: Glaze }>;
       /** Ru/Guan Order bonuses may be declined, preserving the once-per-round use. */
       useKilnAbility?: boolean;
     }

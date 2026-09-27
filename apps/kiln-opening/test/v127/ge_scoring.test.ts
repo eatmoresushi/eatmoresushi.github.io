@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { ORDER_DEFINITIONS, applyAction, findGeDecorations, matchesOrder, matchesOrderWithGe } from "../../src/game/index.ts";
-import type { GameState } from "../../src/game/index.ts";
+import { ORDER_DEFINITIONS, applyAction, findGeGlazes, matchesOrder, matchesOrderWithGe } from "../../src/game/index.ts";
+import type { GameAction, GameState, GeGlazeChoice } from "../../src/game/index.ts";
 import { addFinished, addLoaded, addTechnique, expectError, mustApply, mustResult, startedGame } from "./helpers.ts";
 
 function orderPhase(state: GameState): void {
@@ -20,66 +20,89 @@ describe("V1.4 permanent Crackle and actual Quality", () => {
     const player = state.players["P1"]!;
     player.kilnId = "GE"; player.kilnAbilityUsedThisRound = used;
     player.orderHand = held ? ["O46"] : []; state.marketDisplay = held ? [] : ["O46"];
-    const ceramics = [addFinished(state, "P1", "plate", "fine", "grey_green", "plain"), addFinished(state, "P1", "vase", "fine", "moon_white", "plain"), addFinished(state, "P1", "censer", "fine", "celadon", "plain")];
+    const ceramics = [addFinished(state, "P1", "plate", "fine", "white", "painted"), addFinished(state, "P1", "vase", "fine", "white", "impressed"), addFinished(state, "P1", "censer", "fine", "white", "carved")];
     for (const ceramic of ceramics) ceramic.crackle = true;
     orderPhase(state);
-    const choices = [{ ceramicId: ceramics[0]!.id, decoration: "painted" as const }, { ceramicId: ceramics[1]!.id, decoration: "impressed" as const }, { ceramicId: ceramics[2]!.id, decoration: "carved" as const }];
+    const choices = [{ ceramicId: ceramics[0]!.id, glaze: "grey_green" as const }, { ceramicId: ceramics[1]!.id, glaze: "moon_white" as const }, { ceramicId: ceramics[2]!.id, glaze: "celadon" as const }];
     expect(matchesOrder(ORDER_DEFINITIONS["O46"]!, ceramics)).toBe(false);
-    const result = mustResult(state, "P1", { type: "COMPLETE_ORDER", orderId: "O46", ceramicIds: ceramics.map(({ id }) => id), geDecorations: choices, imperialGrantChoice: "coins" }, rng);
+    const result = mustResult(state, "P1", { type: "COMPLETE_ORDER", orderId: "O46", ceramicIds: ceramics.map(({ id }) => id), geGlazes: choices, imperialGrantChoice: "coins" }, rng);
     expect(result.state.players["P1"]!.kilnAbilityUsedThisRound).toBe(used);
     expect(result.events).not.toContainEqual({ type: "KILN_ABILITY_USED", playerId: "P1", kilnId: "GE" });
-    for (const ceramic of ceramics) expect(result.state.ceramics[ceramic.id]).toMatchObject({ stage: "delivered", quality: ceramic.quality, decoration: "plain", crackle: true });
+    for (const ceramic of ceramics) expect(result.state.ceramics[ceramic.id]).toMatchObject({ stage: "delivered", quality: ceramic.quality, glaze: "white", decoration: ceramic.decoration, crackle: true });
   });
 
   it("can substitute on consecutive Orders even after this round's Crackle creation", () => {
     const { state, rng } = startedGame(2);
     state.players["P1"]!.kilnId = "GE"; state.players["P1"]!.kilnAbilityUsedThisRound = true;
-    state.players["P1"]!.orderHand = ["O10", "O05"];
+    state.players["P1"]!.orderHand = ["O07", "O08"];
     const a = addFinished(state, "P1", "bowl", "fine", "white", "plain");
     const b = addFinished(state, "P1", "censer", "fine", "white", "plain"); a.crackle = true; b.crackle = true;
     orderPhase(state);
-    expectError(applyAction(state, "P1", { type: "COMPLETE_ORDER", orderId: "O10", ceramicIds: [a.id] }, rng), "ORDER_REQUIREMENTS_NOT_MET");
-    let next = mustApply(state, "P1", { type: "COMPLETE_ORDER", orderId: "O10", ceramicIds: [a.id], geDecorations: [{ ceramicId: a.id, decoration: "painted" }] }, rng);
+    expectError(applyAction(state, "P1", { type: "COMPLETE_ORDER", orderId: "O07", ceramicIds: [a.id] }, rng), "ORDER_REQUIREMENTS_NOT_MET");
+    let next = mustApply(state, "P1", { type: "COMPLETE_ORDER", orderId: "O07", ceramicIds: [a.id], geGlazes: [{ ceramicId: a.id, glaze: "celadon" }] }, rng);
     orderPhase(next);
-    next = mustApply(next, "P1", { type: "COMPLETE_ORDER", orderId: "O05", ceramicIds: [b.id], geDecorations: [{ ceramicId: b.id, decoration: "carved" }] }, rng);
-    expect(next.ceramics[b.id]).toMatchObject({ stage: "delivered", quality: "fine", decoration: "plain", crackle: true });
+    next = mustApply(next, "P1", { type: "COMPLETE_ORDER", orderId: "O08", ceramicIds: [b.id], geGlazes: [{ ceramicId: b.id, glaze: "grey_green" }] }, rng);
+    expect(next.ceramics[b.id]).toMatchObject({ stage: "delivered", quality: "fine", glaze: "white", decoration: "plain", crackle: true });
   });
 
-  it("does not substitute Quality or Glaze, and rejects duplicate or unmarked choices", () => {
+  it("does not substitute Quality, Shape or Decoration, and requires a distinct marked target", () => {
     const { state } = startedGame(2);
     const a = addFinished(state, "P1", "bowl", "standard", "white", "plain"); a.crackle = true;
-    const choice = [{ ceramicId: a.id, decoration: "painted" as const }];
+    const choice = [{ ceramicId: a.id, glaze: "celadon" as const }];
     expect(matchesOrder(ORDER_DEFINITIONS["O06"]!, [a], "GE")).toBe(false);
-    expect(matchesOrderWithGe(ORDER_DEFINITIONS["O10"]!, [a], choice)).toBe(false);
-    expect(matchesOrderWithGe(ORDER_DEFINITIONS["O10"]!, [{ ...a, quality: "flawed" }], choice)).toBe(false);
-    expect(matchesOrderWithGe(ORDER_DEFINITIONS["O17"]!, [{ ...a, shape: "washer", quality: "fine", glaze: "celadon" }], choice)).toBe(false);
+    expect(matchesOrderWithGe(ORDER_DEFINITIONS["O07"]!, [a], choice)).toBe(false);
+    expect(matchesOrderWithGe(ORDER_DEFINITIONS["O07"]!, [{ ...a, quality: "flawed" }], choice)).toBe(false);
+    expect(matchesOrderWithGe(ORDER_DEFINITIONS["O18"]!, [{ ...a, quality: "fine" }], choice)).toBe(false);
+    expect(matchesOrderWithGe(ORDER_DEFINITIONS["O10"]!, [{ ...a, quality: "fine" }], choice)).toBe(false);
     expect(matchesOrderWithGe(ORDER_DEFINITIONS["O16"]!, [{ ...a, quality: "fine" }], choice)).toBe(false);
-    expect(matchesOrderWithGe(ORDER_DEFINITIONS["O10"]!, [{ ...a, quality: "fine", crackle: false }], choice)).toBe(false);
-    expect(matchesOrderWithGe(ORDER_DEFINITIONS["O10"]!, [{ ...a, quality: "fine" }], [...choice, ...choice])).toBe(false);
-    expect(findGeDecorations(ORDER_DEFINITIONS["O10"]!, [{ ...a, quality: "fine" }])).not.toBeNull();
+    expect(matchesOrderWithGe(ORDER_DEFINITIONS["O07"]!, [{ ...a, quality: "fine", crackle: false }], choice)).toBe(false);
+    expect(matchesOrderWithGe(ORDER_DEFINITIONS["O07"]!, [{ ...a, quality: "fine" }], [...choice, ...choice])).toBe(false);
+    expect(matchesOrderWithGe(ORDER_DEFINITIONS["O07"]!, [{ ...a, quality: "fine" }], [{ ceramicId: "not-selected", glaze: "celadon" }])).toBe(false);
+    expect(findGeGlazes(ORDER_DEFINITIONS["O07"]!, [{ ...a, quality: "fine" }])).toEqual(choice);
+    expect(findGeGlazes(ORDER_DEFINITIONS["O10"]!, [{ ...a, quality: "fine" }])).toBeNull();
   });
 
-  it("uses one consistent virtual Decoration for every same/different/required check", () => {
+  it("uses one consistent virtual Glaze for every named, same, different and category check", () => {
     const { state } = startedGame(2);
-    const a = addFinished(state, "P1", "bowl", "fine", "celadon", "plain"); a.crackle = true;
-    const b = addFinished(state, "P1", "censer", "fine", "grey_green", "carved");
-    const same = ORDER_DEFINITIONS["O37"]!;
-    const choice = [{ ceramicId: a.id, decoration: "carved" as const }];
-    expect(matchesOrderWithGe(same, [a, b], choice)).toBe(true);
-    expect(matchesOrderWithGe({ ...same, relations: [...same.relations!, { type: "different_decoration", indices: [0, 1] }] }, [a, b], choice)).toBe(false);
-    expect(a.decoration).toBe("plain");
+    const a = addFinished(state, "P1", "bowl", "fine", "white", "plain"); a.crackle = true;
+    const b = addFinished(state, "P1", "plate", "fine", "celadon", "carved");
+    const bothCeladon = ORDER_DEFINITIONS["O35"]!;
+    const choice = [{ ceramicId: a.id, glaze: "celadon" as const }];
+    expect(matchesOrderWithGe(bothCeladon, [a, b], choice)).toBe(true);
+    expect(matchesOrderWithGe({ ...bothCeladon, relations: [...bothCeladon.relations!, { type: "same_glaze", indices: [0, 1] }] }, [a, b], choice)).toBe(true);
+    expect(matchesOrderWithGe({ ...bothCeladon, relations: [...bothCeladon.relations!, { type: "different_glaze", indices: [0, 1] }] }, [a, b], choice)).toBe(false);
+    expect(matchesOrderWithGe({ ...bothCeladon, relations: [...bothCeladon.relations!, { type: "required_glazes", values: ["white", "celadon"] }] }, [a, b], choice)).toBe(false);
+    expect(matchesOrderWithGe({ ...bothCeladon, relations: [...bothCeladon.relations!, { type: "glaze_categories", indices: [0, 1], categories: [["white"], ["celadon"]] }] }, [a, b], choice)).toBe(false);
+    expect(matchesOrderWithGe({ ...bothCeladon, relations: [...bothCeladon.relations!, { type: "at_least_n_distinct_glazes", indices: [0, 1], count: 2 }] }, [a, b], choice)).toBe(false);
+    expect(a).toMatchObject({ glaze: "white", decoration: "plain" });
   });
 
-  it("scores actual Fine Crackle in Exhibition and leaves actual Glaze and Decoration unchanged", () => {
+  it("rejects malformed Glaze choices and obsolete Decoration commands without changing the state", () => {
+    const { state, rng } = startedGame(2);
+    state.players["P1"]!.kilnId = "GE";
+    state.players["P1"]!.orderHand = ["O07"];
+    const ceramic = addFinished(state, "P1", "bowl", "fine", "white", "plain"); ceramic.crackle = true;
+    orderPhase(state);
+    const before = structuredClone(state);
+    for (const geGlazes of [null, {}, [null], [{ ceramicId: ceramic.id, glaze: "painted" }], [{ ceramicId: ceramic.id, decoration: "painted" }], [{ ceramicId: ceramic.id, glaze: "celadon" }, { ceramicId: ceramic.id, glaze: "white" }]]) {
+      const action = { type: "COMPLETE_ORDER", orderId: "O07", ceramicIds: [ceramic.id], geGlazes } as unknown as GameAction;
+      expectError(applyAction(state, "P1", action, rng), "ORDER_REQUIREMENTS_NOT_MET");
+    }
+    expectError(applyAction(state, "P1", { type: "COMPLETE_ORDER", orderId: "O07", ceramicIds: [ceramic.id], geDecorations: [{ ceramicId: ceramic.id, decoration: "painted" }] } as unknown as GameAction, rng), "INVALID_SELECTION");
+    expect(state).toEqual(before);
+    expect(matchesOrderWithGe(ORDER_DEFINITIONS["O07"]!, [ceramic], [{ ceramicId: ceramic.id, glaze: "invalid" }] as unknown as GeGlazeChoice[])).toBe(false);
+  });
+
+  it.each([false, true])("scores only actual Fine Quality and Glaze diversity in Exhibition (diverse Glazes: %s)", (diverseGlazes) => {
     const { state, rng } = startedGame(2); state.players["P1"]!.kilnId = "GE";
     const ceramics = [addFinished(state, "P1", "bowl", "fine", "white", "plain"), addFinished(state, "P1", "plate", "fine", "celadon", "carved"), addFinished(state, "P1", "vase", "fine", "moon_white", "painted")];
-    ceramics.forEach((ceramic) => { ceramic.crackle = true; });
+    ceramics.forEach((ceramic) => { ceramic.crackle = true; if (!diverseGlazes) ceramic.glaze = "white"; });
     const flawed = addFinished(state, "P1", "washer", "flawed", "white", "plain"); flawed.crackle = true;
     state.phase = { type: "presentation", eligiblePlayerIds: ["P1", "P2"], submittedPlayerIds: [] };
     expectError(applyAction(state, "P1", { type: "SUBMIT_PRESENTATION", ceramicIds: [flawed.id] }, rng), "PRESENTATION_NOT_ELIGIBLE");
     const first = mustApply(state, "P1", { type: "SUBMIT_PRESENTATION", ceramicIds: ceramics.map(({ id }) => id) }, rng);
     const final = mustApply(first, "P2", { type: "SUBMIT_PRESENTATION", ceramicIds: [] }, rng);
-    expect(final.finalResult!.scores["P1"]!.presentation).toBe(15);
+    expect(final.finalResult!.scores["P1"]!.presentation).toBe(diverseGlazes ? 15 : 12);
     for (const ceramic of ceramics) expect(final.ceramics[ceramic.id]).toMatchObject({ stage: "presented", quality: "fine", decoration: ceramic.decoration, glaze: ceramic.glaze, crackle: true });
   });
 

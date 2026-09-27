@@ -161,11 +161,12 @@ describe("tabletop compact Kiln copy", () => {
         expect(english).toContain("actual Glaze and Decoration do not change");
         expect(english).toContain("Its actual Quality is Fine");
       } else {
-        expect(english).toBe("Once per round, after Quality is assigned: 1 of your Standard ceramics from this firing → Fine + Crackle.\nOrders: each Crackle ceramic may count as any 1 Decoration.");
+        expect(english).toBe("Once per round, after Quality is assigned: 1 of your Standard ceramics from this firing → Fine + Crackle.\nOrders: each Crackle ceramic may count as any 1 Glaze.");
       }
       const chinese = renderedText(renderToStaticMarkup(createElement(KilnDescription, { id: "GE", locale: "zh-CN", layer })));
       expect(chinese).toContain("开片");
       expect(chinese).toContain("上品");
+      expect(chinese).toContain(layer === "preview" ? "任意1种釉色" : "任意一种釉色");
     }
   });
 

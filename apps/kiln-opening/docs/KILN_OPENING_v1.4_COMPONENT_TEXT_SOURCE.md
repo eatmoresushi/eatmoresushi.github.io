@@ -7,7 +7,7 @@ component text. Advanced Tech reminders use the owner’s subsequent shorter, pl
 
 Ge’s timing below incorporates the owner’s confirmation to keep the chosen order
 of after-Quality abilities. Recheck current eligibility after each use. Ge is not
-required to resolve last. No other mechanical change is introduced by this copy. In particular, Measuring Calipers and Standardised Moulds still require another workshop ceramic; their reminder wording does not replace the full eligibility rule. Fuel Ledger still permits only one Contribution card per firing.
+required to resolve last. The Ge reminder also incorporates the 2026-09-28 owner amendment: Crackle substitutes one Glaze when completing an Order, rather than one Decoration. No other mechanical change is introduced by this copy. In particular, Measuring Calipers and Standardised Moulds still require another workshop ceramic; their reminder wording does not replace the full eligibility rule. Fuel Ledger still permits only one Contribution card per firing.
 
 ## Starting Techs
 
@@ -107,7 +107,7 @@ When loading 1 of your ceramics into a High or Low Shared Kiln space: place this
 ### Ge Kiln / 哥窑 — Crackle from Fire
 
 **Once per round, after Quality is assigned:** **1 of your Standard ceramics from this firing → Fine + Crackle**.
-**Orders:** each Crackle ceramic may count as **any 1 Decoration**.
+**Orders:** each Crackle ceramic may count as **any 1 Glaze**.
 
 ### Ding Kiln / 定窑 — Moulded Production
 

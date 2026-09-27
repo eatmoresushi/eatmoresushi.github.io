@@ -5,6 +5,7 @@ import { activeKilnSpaceIds } from "../../src/game/index.ts";
 import type { GameState, LocationId, WorkerKind } from "../../src/game/index.ts";
 import { projectPublicGameState } from "../../src/multiplayer/index.ts";
 import { ActionPanel } from "../../src/ui/ActionPanel.tsx";
+import { BoardActionSummary } from "../../src/ui/BoardActionSummary.tsx";
 import { LanguageProvider } from "../../src/ui/i18n.tsx";
 import { addGlazed, addLoaded, addShaped, addTechnique, startedGame, workerId } from "./helpers.ts";
 
@@ -102,6 +103,26 @@ function renderAction(
 }
 
 describe("V1.4 smart worker-action choices", () => {
+  it.each(["apprentice", "shifu"] as const)("requires 5 Coins for the %s Imperial Court action", (kind) => {
+    for (const coins of [4, 5]) {
+      const { markup } = renderAction("court_patronage", kind, (state) => {
+        state.players["P1"]!.resources.coins = coins;
+      });
+      expect(markup).toContain("Pay 5 Coins to advance Recognition by 1, up to Recognition 3.");
+      const command = markup.match(/<button[^>]*>Use Imperial Court<\/button>/u)?.[0];
+      expect(command).toBeDefined();
+      if (coins < 5) expect(command).toContain('disabled=""');
+      else expect(command).not.toContain('disabled=""');
+    }
+  });
+
+  it.each(["apprentice", "shifu"] as const)("shows the 5-Coin Court cost on the %s board summary in both languages", (kind) => {
+    const english = renderToStaticMarkup(createElement(BoardActionSummary, { id: "court_patronage", kind, locale: "en" }));
+    const chinese = renderToStaticMarkup(createElement(BoardActionSummary, { id: "court_patronage", kind, locale: "zh-CN" }));
+    expect(english).toContain("Pay 5 Coins → Recognition +1 · up to 3");
+    expect(chinese).toContain("支付5铜钱 → 御府声望＋1 · 最高3格");
+  });
+
   it("offers Kiln Tending as an optional choice of one Clay or one Wood", () => {
     const { markup } = renderAction("kiln_yard", "apprentice", (state) => {
       state.players["P1"]!.startingTechniqueId = "ST04";

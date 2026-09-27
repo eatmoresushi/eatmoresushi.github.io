@@ -1,6 +1,6 @@
-import { DECORATIONS, type OrderDefinition } from "./content.ts";
+import { GLAZES, type OrderDefinition } from "./content.ts";
 import { QUALITY_RANK } from "./firingRules.ts";
-import type { Decoration, FinishedCeramic, KilnId, PlayerState, Quality } from "./types.ts";
+import type { Glaze, FinishedCeramic, KilnId, PlayerState, Quality } from "./types.ts";
 
 /** V1.4 records Ge's Fine upgrade in the firing result, so scoring uses actual Quality. */
 export function qualityForOrderOrExhibition<Q extends Quality>(
@@ -137,7 +137,7 @@ export function matchingOrderCeramicGroups(
   const search = (startIndex: number): void => {
     if (selected.length === requiredCount) {
       if (matchesOrder(order, selected, player?.kilnId)
-        || findGeDecorations(order, selected) !== null) groups.push([...selected]);
+        || findGeGlazes(order, selected) !== null) groups.push([...selected]);
       return;
     }
 
@@ -243,43 +243,44 @@ export const GUAN_ORDER_VP = 1;
  */
 export const DING_EXTRA_SHAPES = ["bowl", "plate", "washer"] as const;
 
-export interface GeDecorationChoice {
+export interface GeGlazeChoice {
   ceramicId: string;
-  decoration: Decoration;
+  glaze: Glaze;
 }
 
-/** Each permanent Crackle marker can choose one Decoration consistently across this Order. */
+/** Each permanent Crackle marker can choose one Glaze consistently across this Order. */
 export function matchesOrderWithGe(
   order: OrderDefinition,
   selected: readonly FinishedCeramic[],
-  choices: readonly GeDecorationChoice[],
+  choices: readonly GeGlazeChoice[],
 ): boolean {
+  if (!Array.isArray(choices) || choices.some((choice) => choice === null || typeof choice !== "object")) return false;
   if (new Set(choices.map((choice) => choice.ceramicId)).size !== choices.length) return false;
-  if (choices.some((choice) => !DECORATIONS.includes(choice.decoration)
+  if (choices.some((choice) => !GLAZES.includes(choice.glaze)
     || !selected.some((ceramic) => ceramic.id === choice.ceramicId && ceramic.crackle === true))) return false;
-  const substitutions = new Map(choices.map((choice) => [choice.ceramicId, choice.decoration]));
+  const substitutions = new Map(choices.map((choice) => [choice.ceramicId, choice.glaze]));
   return matchesOrder(order, selected.map((ceramic) => ({
     ...ceramic,
-    decoration: substitutions.get(ceramic.id) ?? ceramic.decoration,
+    glaze: substitutions.get(ceramic.id) ?? ceramic.glaze,
   })));
 }
 
-/** Find a legal independent Decoration choice for each selected Crackle ceramic. */
-export function findGeDecorations(
+/** Find a legal independent Glaze choice for each selected Crackle ceramic. */
+export function findGeGlazes(
   order: OrderDefinition,
   selected: readonly FinishedCeramic[],
-): GeDecorationChoice[] | null {
+): GeGlazeChoice[] | null {
   if (matchesOrder(order, selected)) return [];
   const crackleCeramics = selected.filter((ceramic) => ceramic.crackle === true);
   if (crackleCeramics.length === 0) return null;
-  const choices: GeDecorationChoice[] = [];
-  const search = (index: number): GeDecorationChoice[] | null => {
+  const choices: GeGlazeChoice[] = [];
+  const search = (index: number): GeGlazeChoice[] | null => {
     if (index === crackleCeramics.length) {
       return matchesOrderWithGe(order, selected, choices) ? [...choices] : null;
     }
     const ceramic = crackleCeramics[index]!;
-    for (const decoration of DECORATIONS) {
-      choices.push({ ceramicId: ceramic.id, decoration });
+    for (const glaze of GLAZES) {
+      choices.push({ ceramicId: ceramic.id, glaze });
       const result = search(index + 1);
       if (result !== null) return result;
       choices.pop();

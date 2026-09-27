@@ -61,12 +61,12 @@ const cases: Array<[string, string, number[]]> = [
   ["kiln RU", KILN_DEFINITIONS.RU.ability, [RU_ORDER_VP]],
   // "at least 1 Crown", then the 2 Coins and 1 VP V1.4 pays.
   ["kiln GU", KILN_DEFINITIONS.GU.ability, [1, GUAN_ORDER_COINS, GUAN_ORDER_VP]],
-  // Ge may substitute a Decoration for one Crackle ceramic used in an Order.
+  // Ge may substitute a Glaze for each Crackle ceramic used in an Order.
   ["kiln GE", KILN_DEFINITIONS.GE.ability, [1]],
   ["kiln DI", KILN_DEFINITIONS.DI.ability, [SHAPE_COSTS.bowl, 1]],
   ["kiln JU", KILN_DEFINITIONS.JU.ability, [JUN_ACTIVATION_WOOD, 1, 1, 1]],
-  ["court_patronage.apprentice", L("court_patronage").apprentice, [4, 1, 3]],
-  ["court_patronage.shifu", L("court_patronage").shifu, [4, 1, 3]],
+  ["court_patronage.apprentice", L("court_patronage").apprentice, [ACTION_LOCATION_PRICES.courtPatronageCoins, 1, 3]],
+  ["court_patronage.shifu", L("court_patronage").shifu, [ACTION_LOCATION_PRICES.courtPatronageCoins, 1, 3]],
   // Action locations
   ["materials_yard.apprentice", L("materials_yard").apprentice, [3]],
   ["materials_yard.shifu", L("materials_yard").shifu, [4, 1, 1, 1]],

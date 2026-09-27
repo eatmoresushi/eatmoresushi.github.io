@@ -1080,7 +1080,7 @@ function useCourtPatronage(state: GameState, actorId: PlayerId, action: Extract<
   const context = validateWorkerAction(state, actorId, action.workerId, "court_patronage");
   if (!isWorkerContext(context)) return context;
   if (context.player.imperialRecognition >= 3) return applyFailure(ruleError("INVALID_ACTION", "Court Patronage cannot advance Recognition to 4."));
-  if (context.player.resources.coins < ACTION_LOCATION_PRICES.courtPatronageCoins) return applyFailure(ruleError("INSUFFICIENT_RESOURCES", "Court Patronage costs 4 Coins."));
+  if (context.player.resources.coins < ACTION_LOCATION_PRICES.courtPatronageCoins) return applyFailure(ruleError("INSUFFICIENT_RESOURCES", `Court Patronage costs ${ACTION_LOCATION_PRICES.courtPatronageCoins} Coins.`));
   if (context.player.imperialRecognition === 0 && action.imperialGrantChoice === undefined) return applyFailure(ruleError("INVALID_SELECTION", "Choose the Imperial Grant reward."));
   const next = cloneState(state);
   const events: GameEvent[] = [];
@@ -2522,7 +2522,8 @@ function completeOrder(
   const guanTriggers = action.useKilnAbility !== false && isCrownOrder && player.kilnId === "GU" && !player.kilnAbilityUsedThisRound;
   const ruTriggers = action.useKilnAbility !== false && player.kilnId === "RU" && !player.kilnAbilityUsedThisRound
     && selected.some((ceramic) => ruBonusCeramic(ceramic, RU_BONUS_QUALITY));
-  const geChoice = action.geDecorations;
+  if ("geDecorations" in action) return applyFailure(ruleError("INVALID_SELECTION", "Crackle substitutes a Glaze, not a Decoration."));
+  const geChoice = action.geGlazes;
   if (!(geChoice === undefined ? matchesOrder(definition, selected, player.kilnId) : matchesOrderWithGe(definition, selected, geChoice))) {
     return applyFailure(
       ruleError("ORDER_REQUIREMENTS_NOT_MET", "The selected ceramics do not fulfil this Order."),

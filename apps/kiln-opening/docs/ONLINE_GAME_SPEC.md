@@ -65,9 +65,9 @@ Consecutive computer turns run in bounded batches so an Edge Function invocation
 
 ## Synchronous turn model
 
-Production uses Workshop (Plain, no Glaze) → optional Decoration → paid Glaze & Load → Firing. Decoration costs 2 Coins per vessel, with one free for the Shifu. Glazing and loading costs 1 Coin per ceramic and chooses Glaze at placement. Crackle is a permanent Ge property separate from Decoration.
+Production uses Workshop (Plain, no Glaze) → optional Decoration → paid Glaze & Load → Firing. Decoration costs 2 Coins per vessel, with one free for the Shifu. Glazing and loading costs 1 Coin per ceramic and chooses Glaze at placement. Crackle is a permanent Ge property separate from Decoration and Glaze. When completing an Order, each Crackle ceramic may use one independently chosen virtual Glaze consistently for every requirement of that Order. It cannot substitute Decoration; actual attributes remain unchanged, including Glaze for Exhibition diversity.
 
-Work Phase has one active player at a time. Every player must place all four workers; there is no Work pass. Imperial Court costs 4 Coins and advances Recognition only from 0, 1 or 2.
+Work Phase has one active player at a time. Every player must place all four workers; there is no Work pass. Imperial Court costs 5 Coins and advances Recognition only from 0, 1 or 2.
 
 UI shows:
 
@@ -152,7 +152,7 @@ Not required for MVP. Voice/chat can be external.
 
 Imperial Recognition is server-authoritative and public. Every public snapshot and reconnect response includes each player's current 0–4 space, resolved milestone rewards, whether their Imperial Kiln has been gained, whether their Imperial Priority token is available, and immediate VP earned from Crowns beyond 4.
 
-Recognition advances through Crown icons printed on completed Orders or Imperial Court, which costs 4 Coins and may advance only from spaces 0, 1 or 2. The server resolves Crowns one at a time, caps the marker at 4, and resolves every newly crossed milestone in ascending order: Recognition 1 **Imperial Grant** grants either 3 Coins or 1 Clay + 1 Wood + 1 Coin; Recognition 2 **Imperial Gift** grants the Imperial Kiln; Recognition 3 **Imperial Priority** grants its once-per-game token; and Recognition 4 **Imperial Audience** grants 6 VP. Every Crown gained after the marker reaches 4 grants 1 VP immediately, including remaining Crowns from the Order that first reaches 4.
+Recognition advances through Crown icons printed on completed Orders or Imperial Court, which costs 5 Coins and may advance only from spaces 0, 1 or 2. The server resolves Crowns one at a time, caps the marker at 4, and resolves every newly crossed milestone in ascending order: Recognition 1 **Imperial Grant** grants either 3 Coins or 1 Clay + 1 Wood + 1 Coin; Recognition 2 **Imperial Gift** grants the Imperial Kiln; Recognition 3 **Imperial Priority** grants its once-per-game token; and Recognition 4 **Imperial Audience** grants 6 VP. Every Crown gained after the marker reaches 4 grants 1 VP immediately, including remaining Crowns from the Order that first reaches 4.
 
 Imperial Priority is a separate choice before or after one of the owner's worker actions. Spending it selects a Glaze, pays 1 Coin and loads one Workshop ceramic into the owner's empty Imperial Kiln; it does not increase Kiln Yard's normal load allowance and cannot move an already loaded ceramic. The client never predicts the unlock, token spend, overflow-Crown VP or Audience VP locally.
 

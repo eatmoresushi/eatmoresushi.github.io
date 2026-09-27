@@ -48,7 +48,7 @@ function panelMarkup(state: GameState, locale: Locale = "en"): string {
 }
 
 describe("Ge Order and Exhibition controls", () => {
-  it.each([false, true])("offers Fine Orders without spending the Decoration use (already used: %s)", (abilityUsed) => {
+  it.each([false, true])("offers Fine Orders without spending the Crackle creation use (already used: %s)", (abilityUsed) => {
     const { state } = orderFixture("O06", abilityUsed);
     const english = panelMarkup(state);
     expect(english).toContain(">Complete O06</button>");
@@ -59,11 +59,11 @@ describe("Ge Order and Exhibition controls", () => {
     expect(chinese).toContain("素面 · 开片 · 上品");
   });
 
-  it("offers the combined Fine and virtual Decoration match even when the round’s Crackle creation is spent", () => {
-    const { state } = orderFixture("O10");
-    expect(panelMarkup(state)).toContain(">Complete O10</button>");
+  it("offers the combined Fine and virtual Glaze match even when the round’s Crackle creation is spent", () => {
+    const { state } = orderFixture("O07");
+    expect(panelMarkup(state)).toContain(">Complete O07</button>");
     state.players["P1"]!.kilnAbilityUsedThisRound = true;
-    expect(panelMarkup(state)).toContain(">Complete O10</button>");
+    expect(panelMarkup(state)).toContain(">Complete O07</button>");
   });
 
   it("shows actual Fine Exhibition quality and separate public Crackle", () => {
@@ -72,6 +72,12 @@ describe("Ge Order and Exhibition controls", () => {
     expect(panelMarkup(state)).toContain("Plain · Crackle · Fine");
     expect(panelMarkup(state, "zh-CN")).toContain("素面 · 开片 · 上品");
     expect(projectPublicGameState(state).ceramics[ceramic.id]).toMatchObject({ quality: "fine", decoration: "plain", crackle: true });
+  });
+
+  it("does not offer a Decoration-restricted Order for Plain Crackle", () => {
+    const { state } = orderFixture("O10");
+    expect(panelMarkup(state)).not.toContain(">Complete O10</button>");
+    expect(panelMarkup(state, "zh-CN")).not.toContain(">完成O10</button>");
   });
 
   it("does not offer Fine Orders for another kiln's Standard Crackle", () => {
@@ -83,29 +89,34 @@ describe("Ge Order and Exhibition controls", () => {
 });
 
 describe("Ge computer Order decisions", () => {
-  it.each([false, true])("uses passive Fine matching without sending a Decoration substitution (already used: %s)", async (abilityUsed) => {
+  it.each([false, true])("uses passive Fine matching without sending a Glaze substitution (already used: %s)", async (abilityUsed) => {
     const { state, ceramic, rng } = orderFixture("O06", abilityUsed);
     const action = await chooseOnlineComputerAction(createComputerObservation(state, "P1"), computerSeat);
     expect(action).toEqual({ type: "COMPLETE_ORDER", orderId: "O06", ceramicIds: [ceramic.id] });
     if (action.type !== "COMPLETE_ORDER") throw new Error("Expected Order completion");
     const resolved = mustApply(state, "P1", action, rng);
     expect(resolved.players["P1"]!.kilnAbilityUsedThisRound).toBe(abilityUsed);
-    expect(resolved.ceramics[ceramic.id]).toMatchObject({ stage: "delivered", quality: "fine", decoration: "plain", crackle: true });
+    expect(resolved.ceramics[ceramic.id]).toMatchObject({ stage: "delivered", quality: "fine", glaze: "white", decoration: "plain", crackle: true });
   });
 
-  it("combines passive Fine matching with one consistent virtual Decoration", async () => {
-    const { state, ceramic, rng } = orderFixture("O10");
+  it("combines passive Fine matching with one consistent virtual Glaze", async () => {
+    const { state, ceramic, rng } = orderFixture("O07");
     const action = await chooseOnlineComputerAction(createComputerObservation(state, "P1"), computerSeat);
-    expect(action).toEqual({ type: "COMPLETE_ORDER", orderId: "O10", ceramicIds: [ceramic.id], geDecorations: [{ ceramicId: ceramic.id, decoration: "carved" }] });
+    expect(action).toEqual({ type: "COMPLETE_ORDER", orderId: "O07", ceramicIds: [ceramic.id], geGlazes: [{ ceramicId: ceramic.id, glaze: "celadon" }] });
     if (action.type !== "COMPLETE_ORDER") throw new Error("Expected Order completion");
     const resolved = mustApply(state, "P1", action, rng);
     expect(resolved.players["P1"]!.kilnAbilityUsedThisRound).toBe(false);
-    expect(resolved.ceramics[ceramic.id]).toMatchObject({ stage: "delivered", quality: "fine", decoration: "plain", crackle: true });
+    expect(resolved.ceramics[ceramic.id]).toMatchObject({ stage: "delivered", quality: "fine", glaze: "white", decoration: "plain", crackle: true });
   });
 
   it("allows Crackle substitution after its creation ability is spent", async () => {
-    const { state, ceramic } = orderFixture("O10", true);
-    expect(await chooseOnlineComputerAction(createComputerObservation(state, "P1"), computerSeat)).toEqual({ type: "COMPLETE_ORDER", orderId: "O10", ceramicIds: [ceramic.id], geDecorations: [{ ceramicId: ceramic.id, decoration: "carved" }] });
+    const { state, ceramic } = orderFixture("O07", true);
+    expect(await chooseOnlineComputerAction(createComputerObservation(state, "P1"), computerSeat)).toEqual({ type: "COMPLETE_ORDER", orderId: "O07", ceramicIds: [ceramic.id], geGlazes: [{ ceramicId: ceramic.id, glaze: "celadon" }] });
+  });
+
+  it("does not substitute a missing Decoration", async () => {
+    const { state } = orderFixture("O10");
+    expect(await chooseOnlineComputerAction(createComputerObservation(state, "P1"), computerSeat)).toEqual({ type: "END_ORDER_TURN" });
   });
 
   it("does not promote a Standard Crackle to Masterpiece", async () => {

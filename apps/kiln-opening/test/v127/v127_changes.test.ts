@@ -24,11 +24,12 @@ describe("V1.4 Court Patronage and mandatory Work", () => {
     for (const from of [0, 1, 2] as const) {
       const state = structuredClone(initial);
       state.players["P1"]!.imperialRecognition = from;
-      state.players["P1"]!.resources.coins = 4;
+      state.players["P1"]!.resources.coins = 5;
       state.actionBoard.placements.court_patronage = Array(20).fill("occupied");
       const result = mustResult(state, "P1", { type: "USE_COURT_PATRONAGE", workerId: workerId(state, "P1", kind), imperialGrantChoice: "resources" }, rng);
       expect(result.state.players["P1"]!.imperialRecognition).toBe(from + 1);
       expect(result.state.players["P1"]!.resources.coins).toBe(from === 0 ? 1 : 0);
+      expect(result.events).toContainEqual({ type: "RESOURCES_CHANGED", playerId: "P1", clay: 0, wood: 0, coins: -5 });
       if (from === 0) expect(result.state.players["P1"]!.resources).toEqual({ clay: 3, wood: 3, coins: 1 });
       if (from === 1) expect(result.state.players["P1"]!.imperialKilnUnlocked).toBe(true);
       if (from === 2) expect(result.state.players["P1"]!.imperialPriorityAvailable).toBe(true);
@@ -37,10 +38,19 @@ describe("V1.4 Court Patronage and mandatory Work", () => {
     }
     expect(locationCapacity("court_patronage", 4)).toBe(Infinity);
   });
+  it.each(["shifu", "apprentice"] as const)("rejects a %s with only four Coins without changing state", (kind) => {
+    const { state, rng } = startedGame(2);
+    state.players["P1"]!.resources.coins = 4;
+    const before = structuredClone(state);
+    const result = applyAction(state, "P1", { type: "USE_COURT_PATRONAGE", workerId: workerId(state, "P1", kind), imperialGrantChoice: "coins" }, rng);
+    expectError(result, "INSUFFICIENT_RESOURCES");
+    if (!result.ok) expect(result.error.message).toBe("Court Patronage costs 5 Coins.");
+    expect(state).toEqual(before);
+  });
   it("requires payment and a Grant choice, forbids advancing to 4, and permits repeat visits", () => {
     const { state, rng } = startedGame(2);
     const id = workerId(state, "P1", "apprentice");
-    state.players["P1"]!.resources.coins = 3;
+    state.players["P1"]!.resources.coins = 4;
     expectError(applyAction(state, "P1", { type: "USE_COURT_PATRONAGE", workerId: id, imperialGrantChoice: "coins" }, rng), "INSUFFICIENT_RESOURCES");
     state.players["P1"]!.resources.coins = 12;
     expectError(applyAction(state, "P1", { type: "USE_COURT_PATRONAGE", workerId: id }, rng), "INVALID_SELECTION");
@@ -50,6 +60,7 @@ describe("V1.4 Court Patronage and mandatory Work", () => {
       next = mustApply(next, "P1", { type: "USE_COURT_PATRONAGE", workerId: workerId(next, "P1", "apprentice"), imperialGrantChoice: "coins" }, rng);
     }
     expect(next.actionBoard.placements.court_patronage).toHaveLength(3);
+    expect(next.players["P1"]!.resources.coins).toBe(0);
     for (const recognition of [3, 4] as const) {
       setWorkTurn(next, "P1"); next.players["P1"]!.imperialRecognition = recognition;
       expectError(applyAction(next, "P1", { type: "USE_COURT_PATRONAGE", workerId: workerId(next, "P1", "shifu") }, rng), "INVALID_ACTION");
@@ -94,13 +105,13 @@ describe("V1.4 Ge", () => {
     expect(declined.ceramics[ceramic.id]).toMatchObject({ stage: "finished", quality: "standard", decoration: "plain" });
     expect(declined.players["P1"]!.kilnAbilityUsedThisRound).toBe(false);
   });
-  it("reveals a held Order while retaining actual Decoration and permanent Crackle", () => {
-    const { state, rng } = startedGame(2); state.players["P1"]!.kilnId = "GE"; state.players["P1"]!.orderHand = ["O10"];
+  it("reveals a held Order while retaining actual Glaze, Decoration and permanent Crackle", () => {
+    const { state, rng } = startedGame(2); state.players["P1"]!.kilnId = "GE"; state.players["P1"]!.orderHand = ["O06"];
     const ceramic = addFinished(state, "P1", "bowl", "fine", "celadon", "plain"); ceramic.crackle = true;
     orders(state);
-    const result = mustResult(state, "P1", { type: "COMPLETE_ORDER", orderId: "O10", ceramicIds: [ceramic.id], geDecorations: [{ ceramicId: ceramic.id, decoration: "painted" }] }, rng);
-    expect(result.state.ceramics[ceramic.id]).toMatchObject({ stage: "delivered", decoration: "plain", crackle: true });
-    expect(projectPublicEvents(result.events)).toContainEqual({ type: "ORDER_COMPLETED", playerId: "P1", orderId: "O10", ceramicIds: [ceramic.id] });
+    const result = mustResult(state, "P1", { type: "COMPLETE_ORDER", orderId: "O06", ceramicIds: [ceramic.id], geGlazes: [{ ceramicId: ceramic.id, glaze: "white" }] }, rng);
+    expect(result.state.ceramics[ceramic.id]).toMatchObject({ stage: "delivered", glaze: "celadon", decoration: "plain", crackle: true });
+    expect(projectPublicEvents(result.events)).toContainEqual({ type: "ORDER_COMPLETED", playerId: "P1", orderId: "O06", ceramicIds: [ceramic.id] });
   });
 });
 

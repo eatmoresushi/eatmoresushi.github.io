@@ -1,3 +1,4 @@
+import { ACTION_LOCATION_PRICES } from "../game";
 import type { LocationId, WorkerKind } from "../game";
 import type { Locale } from "./i18n";
 
@@ -74,12 +75,12 @@ const ACTION_SUMMARIES = {
   },
   court_patronage: {
     apprentice: {
-      en: "Pay 4 Coins → Recognition +1 · up to 3",
-      "zh-CN": "支付4铜钱 → 御府声望＋1 · 最高3格",
+      en: `Pay ${ACTION_LOCATION_PRICES.courtPatronageCoins} Coins → Recognition +1 · up to 3`,
+      "zh-CN": `支付${ACTION_LOCATION_PRICES.courtPatronageCoins}铜钱 → 御府声望＋1 · 最高3格`,
     },
     shifu: {
-      en: "Pay 4 Coins → Recognition +1 · up to 3",
-      "zh-CN": "支付4铜钱 → 御府声望＋1 · 最高3格",
+      en: `Pay ${ACTION_LOCATION_PRICES.courtPatronageCoins} Coins → Recognition +1 · up to 3`,
+      "zh-CN": `支付${ACTION_LOCATION_PRICES.courtPatronageCoins}铜钱 → 御府声望＋1 · 最高3格`,
     },
   },
 } satisfies Record<LocationId, Record<WorkerKind, Record<Locale, string>>>;

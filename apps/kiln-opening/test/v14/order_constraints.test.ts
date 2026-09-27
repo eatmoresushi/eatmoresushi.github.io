@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DECORATIONS, MAIN_ORDERS, ORDER_DEFINITIONS, findGeDecorations, matchesOrder, matchesOrderWithGe, orderAdmitsRuBonus } from "../../src/game/index.ts";
+import { DECORATIONS, MAIN_ORDERS, ORDER_DEFINITIONS, findGeGlazes, matchesOrder, matchesOrderWithGe, orderAdmitsRuBonus } from "../../src/game/index.ts";
 import type { Decoration, FinishedCeramic, Glaze, Shape } from "../../src/game/index.ts";
 
 function ceramic(id: string, shape: Shape, glaze: Glaze, decoration: Decoration): FinishedCeramic {
@@ -45,15 +45,16 @@ describe("V1.4 Glaze-agency Order constraints", () => {
     expect(matchesOrder(ORDER_DEFINITIONS["O44"]!, [{ ...a, glaze: "moon_white" }, b, { ...c, glaze: "celadon" }])).toBe(false);
   });
 
-  it("lets three Crackle ceramics make separate consistent substitutions for one Order", () => {
-    const ceramics = [ceramic("a", "censer", "celadon", "plain"), ceramic("b", "plate", "moon_white", "plain"), ceramic("c", "vase", "grey_green", "plain")].map((piece) => ({ ...piece, quality: "fine" as const, crackle: true }));
+  it("lets three Crackle ceramics make separate consistent Glaze substitutions for one Order", () => {
+    const ceramics = [ceramic("a", "censer", "white", "carved"), ceramic("b", "plate", "white", "impressed"), ceramic("c", "vase", "white", "painted")].map((piece) => ({ ...piece, quality: "fine" as const, crackle: true }));
     expect(matchesOrder(ORDER_DEFINITIONS["O46"]!, ceramics)).toBe(false);
-    const choices = findGeDecorations(ORDER_DEFINITIONS["O46"]!, ceramics);
+    const choices = findGeGlazes(ORDER_DEFINITIONS["O46"]!, ceramics);
     expect(choices).toHaveLength(3);
-    expect(new Set(choices!.map(({ decoration }) => decoration)).size).toBe(3);
+    expect(new Set(choices!.map(({ glaze }) => glaze))).toEqual(new Set(["celadon", "grey_green", "moon_white"]));
     expect(matchesOrderWithGe(ORDER_DEFINITIONS["O46"]!, ceramics, choices!)).toBe(true);
-    expect(ceramics.every(({ decoration }) => decoration === "plain")).toBe(true);
-    expect(matchesOrderWithGe(ORDER_DEFINITIONS["O46"]!, ceramics.map((piece) => ({ ...piece, glaze: "white" })), choices!)).toBe(false);
+    expect(ceramics.every(({ glaze }) => glaze === "white")).toBe(true);
+    expect(ceramics.map(({ decoration }) => decoration)).toEqual(["carved", "impressed", "painted"]);
+    expect(matchesOrderWithGe(ORDER_DEFINITIONS["O46"]!, ceramics.map((piece) => ({ ...piece, decoration: "plain" })), choices!)).toBe(false);
   });
 
   it("keeps the approved deck composition and allows Plain only where unrestricted", () => {

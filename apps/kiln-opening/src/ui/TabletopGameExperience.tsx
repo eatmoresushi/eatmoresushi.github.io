@@ -1216,7 +1216,7 @@ function Ceramic({ ceramic, game, locale, compact = false, inspectable = false, 
   const className = `kiln-tabletop-ceramic kiln-has-ceramic-art glaze-${glaze ?? "raw"} decoration-${decoration ?? "none"} shape-${ceramic.shape} kiln-tabletop-accent-${accent(player)} ${compact ? "is-compact" : ""} ${inspectable ? "is-inspectable" : ""}`;
   const visual = <>
     <CeramicArtwork shape={ceramic.shape} glaze={glaze} decoration={decoration} crackle={crackle} />
-    {crackle && <em className="kiln-live-crackle-marker" title={text(locale, "Crackle: wild Decoration for Orders", "开片：完成委托时可视为任意纹饰")}>{text(locale, "Crackle", "开片")}</em>}
+    {crackle && <em className="kiln-live-crackle-marker" title={text(locale, "Crackle: wild Glaze for Orders", "开片：完成委托时可视为任意釉色")}>{text(locale, "Crackle", "开片")}</em>}
     {quality !== null && <b className={`kiln-tabletop-quality-badge is-${quality}`} title={qualityLabel(quality, locale)}>{qualityLabel(quality, locale)}</b>}
     {marked && shifuHeat === null && <span className="kiln-tabletop-shifu-marker" title={text(locale, "Kiln Yard Shifu committed to this ceramic", "窑坊师傅已标记此陶瓷")}><WorkerMeeple player={player} kind="shifu" locale={locale} small /></span>}
     {shifuHeat !== null && <em className={`kiln-tabletop-shifu-heat-marker is-${shifuHeat === 1 ? "warmer" : "cooler"}`} title={text(locale, `Shifu Heat marker: ${signed(shifuHeat)} Actual Heat for this firing`, `师傅火候标记：本次烧成实际火候${signed(shifuHeat)}`)}>{signed(shifuHeat)}</em>}
@@ -1230,7 +1230,7 @@ function Ceramic({ ceramic, game, locale, compact = false, inspectable = false, 
       <span><small>{text(locale, "Decoration", "纹饰")}</small><strong>{decoration === null ? text(locale, "Not yet decorated", "尚未纹饰") : decorationLabel(decoration, locale)}</strong></span>
       <span><small>{text(locale, "Preferred Heat", "适烧火候")}</small><strong>{heat ?? "—"}</strong></span>
     </span>
-    {crackle && <span className="kiln-tabletop-ceramic-tooltip-note">{text(locale, "Crackle · wild Decoration for Orders; actual Glaze and Decoration remain unchanged", "开片 · 完成委托时可代替任意纹饰；实际釉色与纹饰不变")}</span>}
+    {crackle && <span className="kiln-tabletop-ceramic-tooltip-note">{text(locale, "Crackle · wild Glaze for Orders; actual Glaze and Decoration remain unchanged", "开片 · 完成委托时可代替任意釉色；实际釉色与纹饰不变")}</span>}
     {quality !== null && <span className="kiln-tabletop-ceramic-tooltip-note is-quality">{text(locale, "Quality", "品质")} · {qualityLabel(quality, locale)}</span>}
     {marked && shifuHeat === null && <span className="kiln-tabletop-ceramic-tooltip-note">{text(locale, "Shifu committed: may choose +1 or −1 Heat before Fire", "师傅已放置：揭示火牌前可选择+1或−1火候")}</span>}
     {shifuHeat !== null && <span className="kiln-tabletop-ceramic-tooltip-note">{text(locale, `Shifu Heat marker: ${signed(shifuHeat)} Actual Heat, in addition to its zone modifier. Fixed for this firing.`, `师傅火候标记：实际火候${signed(shifuHeat)}，与窑位修正叠加。本次烧成中数值固定。`)}</span>}
