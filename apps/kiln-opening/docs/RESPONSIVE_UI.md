@@ -6,22 +6,31 @@ Game state and rules do not depend on layout dimensions.
 
 ## Wide layout
 
-`ResponsiveTabletop` places the table in a 1440 px reference scene when its
+`ResponsiveTabletop` places the table in an 1800 px reference scene when its
 available width is at least 960 px. The scene scale follows available width,
-with enlargement capped at 1.25. Short windows may reduce that scale by up to
-20% to fit the shared overview, through the bottom of the board and public
-sidebar. The personal workshop remains in the document's vertical flow; its
-contents do not force the whole table to shrink.
+with enlargement capped at 2, for a maximum table width of 3600 px. Window
+height does not reduce the scale: shorter windows keep the same piece sizes
+and scroll vertically. The personal workshop remains in the document's
+vertical flow; its contents do not force the whole table to shrink.
 
 The outer wrapper reserves the scene's scaled height. The scene's layout stays
 fixed while it scales, and the reference surface is centered when spare width
-remains. `ResizeObserver` tracks changes to the wrapper and scene, and window
-resizing updates the height budget. The pure calculation is in
+remains beyond the maximum width. `ResizeObserver` tracks changes to the
+wrapper width and scene height. The pure calculation is in
 `src/ui/tabletopLayout.ts`.
 
 `ResponsiveGameBoard` keeps the board's own coordinates intact. In wide mode,
 it also matches the public sidebar's height, accounting for the board frame's
 padding and its internal scale.
+
+The shared area assigns two thirds of its width to the board and one third to
+the Techs and Recognition track. Tech tiles divide their column equally and
+stay square. Recognition rewards use the remaining sidebar height, keeping
+the two sides aligned without stretching the Tech tiles.
+
+The six face-up Orders and draw pile form one tightly spaced row. At the
+reference size, each card is 160 × 224 px; the deck follows the measured card
+height. The row stays shallow instead of enlarging cards to fill spare width.
 
 ## Compact layout
 
@@ -64,8 +73,10 @@ open. Also check the 960 px layout boundary.
 | 768 × 1024 | Compact tablet | Wrapped Orders, three Tech disciplines, stacked board/sidebar |
 | 844 × 390 | Compact landscape | Scrollable decisions with close and submit controls reachable |
 | 1024 × 768 | Scaled wide table | Stable reference layout and complete board actions |
-| 1366 × 768 | Scaled wide table | Shared overview fits where permitted by the height limit |
-| 1920 × 1080 | Enlarged wide table | Proportional growth without exceeding the 1.25 scale cap |
+| 1366 × 768 | Scaled wide table | Table fills available width and scrolls vertically |
+| 1920 × 1080 | Enlarged wide table | Proportional growth across the browser width |
+| 3440 × 1440 | Enlarged wide table | Table continues filling the available width |
+| 3840 × 2160 | Maximum wide table | Reference scene stops growing at 3600 px and is centered |
 
 At every size, verify that all eight board locations are reachable, Order
 rewards remain within their card, Tech descriptions are complete, and clicking

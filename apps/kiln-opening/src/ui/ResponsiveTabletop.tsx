@@ -26,21 +26,8 @@ export function ResponsiveTabletop({ children, onLayoutChange }: {
 
     const measure = () => {
       if (disposed || viewport.clientWidth <= 0) return;
-      const playArea = scene.querySelector<HTMLElement>(".kiln-tabletop-play-area");
-      // The scene is positioned, so offset parents lead to it without transform math.
-      let overviewHeight = playArea?.offsetHeight ?? scene.offsetHeight;
-      if (playArea) {
-        let element: HTMLElement | null = playArea;
-        while (element && element !== scene) {
-          overviewHeight += element.offsetTop;
-          element = element.offsetParent as HTMLElement | null;
-        }
-      }
-      // Document position keeps a resize while scrolled from changing the scale.
-      const top = Math.max(0, viewport.getBoundingClientRect().top + view.scrollY);
-      const availableHeight = Math.max(1, view.innerHeight - top);
       const layout = calculateTabletopLayout({
-        availableWidth: viewport.clientWidth, availableHeight, overviewHeight,
+        availableWidth: viewport.clientWidth,
         textScale: parseFloat(view.getComputedStyle(viewport.ownerDocument.documentElement).fontSize) / 16,
       });
       const next = { ...layout, availableWidth: viewport.clientWidth, sceneHeight: scene.offsetHeight };

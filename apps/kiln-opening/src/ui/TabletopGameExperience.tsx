@@ -62,6 +62,7 @@ import { RecognitionMarker } from "./RecognitionMarker";
 import { useTabletopPieceSizes } from "./useTabletopPieceSizes";
 import { ResponsiveGameBoard } from "./ResponsiveGameBoard";
 import { ResponsiveTabletop } from "./ResponsiveTabletop";
+import { TABLETOP_REFERENCE_WIDTH } from "./tabletopLayout";
 import type { TabletopLayout } from "./tabletopLayout";
 import { fireCardHistory } from "./fireCardHistory";
 import type { FireCardHistoryEntry } from "./fireCardHistory";
@@ -515,7 +516,7 @@ export function TabletopGameExperience({
   return (
     <div className="kiln-tabletop-root kiln-live-root" ref={tableRootRef} data-testid="tabletop-live-ui"
       data-tabletop-layout={tabletopLayout.mode}
-      style={{ "--tabletop-card-scale": tabletopLayout.cardScale, "--tabletop-player-count": game.playerOrder.length } as CSSProperties}>
+      style={{ "--tabletop-card-scale": tabletopLayout.cardScale, "--tabletop-player-count": game.playerOrder.length, "--tabletop-reference-width": `${TABLETOP_REFERENCE_WIDTH}px` } as CSSProperties}>
       <ResponsiveTabletop onLayoutChange={setTabletopLayout}>
       <header className="kiln-tabletop-topbar kiln-live-topbar">
         <div className="kiln-tabletop-brand" aria-label={text(locale, "Game table", "游戏桌面")}>
@@ -583,7 +584,7 @@ export function TabletopGameExperience({
           </div>
           <div className="kiln-tabletop-public-sidebar" ref={publicSidebarRef}>
             <TechniqueMarket game={game} locale={locale} onInspect={(id) => inspect({ type: "technique", id })} />
-            <ImperialTrack game={game} locale={locale} compact onInspect={() => inspect({ type: "recognition" })} />
+            <ImperialTrack game={game} locale={locale} compact showRewards={tabletopLayout.mode === "wide"} onInspect={() => inspect({ type: "recognition" })} />
           </div>
         </div>
         <div className={`kiln-tabletop-workshop-area ${Object.values(game.players).filter(hasImperialKiln).length === 1 ? "has-one-imperial" : ""}`}>
@@ -801,8 +802,14 @@ function MarketShelf({ game, locale, onInspect }: { game: PublicGameState; local
   return (
     <section className="kiln-tabletop-market" aria-labelledby="kiln-live-market-title">
       <div className="kiln-tabletop-section-title"><span aria-hidden="true">单</span><div><small>{text(locale, "COMMISSION MARKET", "瓷牙行")}</small><strong id="kiln-live-market-title">{text(locale, "Face-up Main Orders", "公开主委托")}</strong></div></div>
-      <div className="kiln-tabletop-order-deck" role="img" aria-label={text(locale, `Main Order deck, ${game.decks.marketRemaining} remaining`, `主委托牌库，剩余${game.decks.marketRemaining}张`)}><span aria-hidden="true">委</span><small>{game.decks.marketRemaining}</small></div>
-      <div className="kiln-tabletop-order-row">{game.displays.market.map((id) => <OrderCard id={id} locale={locale} onInspect={onInspect} key={id} />)}</div>
+      <div className="kiln-tabletop-order-row">
+        {game.displays.market.map((id) => <OrderCard id={id} locale={locale} onInspect={onInspect} key={id} />)}
+        <div className="kiln-tabletop-order-deck" role="img" aria-label={text(locale, `Main Order deck, ${game.decks.marketRemaining} remaining`, `主委托牌库，剩余${game.decks.marketRemaining}张`)}>
+          <span aria-hidden="true">委</span>
+          <strong>{text(locale, "Main Orders", "主委托")}</strong>
+          <small>{text(locale, `${game.decks.marketRemaining} remaining`, `剩余${game.decks.marketRemaining}张`)}</small>
+        </div>
+      </div>
       <div className="kiln-tabletop-market-note"><small>{text(locale, "Oldest → newest · remove, slide left, refill right", "最旧 → 最新 · 移走、左移、右端补牌")}</small><strong>{text(locale, `Live Round ${game.round} display`, `第${game.round}轮实时展示`)}</strong></div>
     </section>
   );
@@ -1051,7 +1058,7 @@ function FireHistoryList({ history, game, locale }: { history: FireCardHistoryEn
   </li>)}</ol>;
 }
 
-function ImperialTrack({ game, locale, compact = false, onInspect }: { game: PublicGameState; locale: Locale; compact?: boolean; onInspect?: () => void }) {
+function ImperialTrack({ game, locale, compact = false, showRewards = false, onInspect }: { game: PublicGameState; locale: Locale; compact?: boolean; showRewards?: boolean; onInspect?: () => void }) {
   const unclaimedPriority = game.playerOrder.map((id) => game.players[id]!).filter((player) => player.imperialRecognition < 3);
   return (
     <section className={`kiln-tabletop-imperial-track kiln-recognition-track ${compact ? "is-compact" : "is-detail"}`} aria-label={text(locale, "Imperial Recognition track", "御府声望轨")}>
@@ -1076,7 +1083,7 @@ function ImperialTrack({ game, locale, compact = false, onInspect }: { game: Pub
               </div>}
             </div>
           </div>
-          <div className="kiln-recognition-milestone"><strong>{compact ? (locale === "zh-CN" ? ["本地作坊", "赏赐", "御窑", "御烧优先", "御前呈器"] : ["Workshop", "Grant", "Gift", "Priority", "Audience"])[space.space] : locale === "zh-CN" ? space.titleZh : space.title}</strong><small className={compact ? "sr-only" : undefined}>{compact && space.space === 3 ? text(locale, "Take your Imperial Priority token.", "获得御烧优先标记。") : locale === "zh-CN" ? space.rewardZh ?? "—" : space.reward ?? "—"}</small></div>
+          <div className="kiln-recognition-milestone"><strong>{compact ? (locale === "zh-CN" ? ["本地作坊", "赏赐", "御窑", "御烧优先", "御前呈器"] : ["Workshop", "Grant", "Gift", "Priority", "Audience"])[space.space] : locale === "zh-CN" ? space.titleZh : space.title}</strong><small className={compact && !showRewards ? "sr-only" : undefined}>{compact && space.space === 3 ? text(locale, "Take your Imperial Priority token.", "获得御烧优先标记。") : locale === "zh-CN" ? space.rewardZh ?? "—" : space.reward ?? "—"}</small></div>
         </li>
         );
       })}</ol>

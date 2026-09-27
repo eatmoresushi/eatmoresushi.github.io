@@ -1,4 +1,4 @@
-export const TABLETOP_REFERENCE_WIDTH = 1440;
+export const TABLETOP_REFERENCE_WIDTH = 1800;
 export const TABLETOP_COMPACT_BREAKPOINT = 960;
 
 export type TabletopLayout = {
@@ -9,13 +9,11 @@ export type TabletopLayout = {
 
 type TabletopMeasurements = {
   availableWidth: number;
-  availableHeight: number;
-  overviewHeight: number;
   textScale?: number;
 };
 
-/** Fit the shared overview, allowing at most 20% extra reduction for short windows. */
-export function calculateTabletopLayout({ availableWidth, availableHeight, overviewHeight, textScale = 1 }: TabletopMeasurements): TabletopLayout {
+/** Fill the available width; short windows scroll without shrinking the table. */
+export function calculateTabletopLayout({ availableWidth, textScale = 1 }: TabletopMeasurements): TabletopLayout {
   if (availableWidth < TABLETOP_COMPACT_BREAKPOINT || !Number.isFinite(availableWidth) || textScale > 1.25) {
     return {
       mode: "compact",
@@ -24,12 +22,6 @@ export function calculateTabletopLayout({ availableWidth, availableHeight, overv
     };
   }
 
-  const widthScale = Math.min(1.25, availableWidth / TABLETOP_REFERENCE_WIDTH);
-  const heightScale = availableHeight > 0 && overviewHeight > 0
-    && Number.isFinite(availableHeight) && Number.isFinite(overviewHeight)
-    ? availableHeight / overviewHeight
-    : widthScale;
-
-  const scale = Math.max(widthScale * .8, Math.min(widthScale, heightScale));
+  const scale = Math.min(2, availableWidth / TABLETOP_REFERENCE_WIDTH);
   return { mode: "wide", scale, cardScale: scale };
 }
