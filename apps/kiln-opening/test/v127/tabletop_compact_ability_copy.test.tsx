@@ -16,6 +16,7 @@ import {
   techniqueShortPlainText,
 } from "../../src/ui/TechniqueDescription.tsx";
 import { TabletopGameExperience } from "../../src/ui/TabletopGameExperience.tsx";
+import { techniqueOverviewCopy } from "../../src/ui/TechniqueOverview.ts";
 import { LanguageProvider } from "../../src/ui/i18n.tsx";
 import { startedGame } from "./helpers.ts";
 
@@ -93,7 +94,7 @@ describe("tabletop compact Technique copy", () => {
     expect(TECHNIQUE_SHORT_COPY.T12.en).not.toContain("extra Wood");
   });
 
-  it("shows compact copy on face-up and owned cards with click inspection and no hover preview", () => {
+  it("shows overview copy on face-up cards with complete short descriptions and click inspection, while owned cards keep normal reminders", () => {
     for (const locale of ["en", "zh-CN"] as const) {
       const markups = (["P1", "P2", "P3", "P4"] as const).map((playerId) => tabletopMarkup(playerId, locale));
       const combinedText = markups.map(renderedText).join("\n");
@@ -105,6 +106,13 @@ describe("tabletop compact Technique copy", () => {
       for (const id of ALL_TECHNIQUE_IDS) {
         expect(combinedText, `${id} ${locale} preview`).toContain(techniqueShortPlainText(id, locale));
         if (!techniqueShortPlainText(id, locale).includes(techniqueFullCopy(id, locale))) expect(combinedText, `${id} ${locale} full`).not.toContain(techniqueFullCopy(id, locale));
+      }
+      for (const id of ADVANCED_TECHNIQUE_IDS) {
+        const tile = markups[0]!.match(new RegExp(`<button[^>]*data-technique-id="${id}"[^>]*>[\\s\\S]*?</button>`, "u"))?.[0];
+        expect(tile, `${id} ${locale} visible overview`).toBeDefined();
+        expect(tile).toContain('data-overview="true"');
+        expect(renderedText(tile!)).toContain(techniqueOverviewCopy(id, locale));
+        expect(renderedText(tile!)).not.toContain(techniqueShortPlainText(id, locale));
       }
     }
   });

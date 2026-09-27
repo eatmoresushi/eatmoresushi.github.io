@@ -68,6 +68,7 @@ import "./tabletop-game.css";
 import "./illustrated-board.css";
 import "./tabletop-responsive.css";
 import "./tabletop-dialogs.css";
+import "./tabletop-overview.css";
 
 type SendCommand = (command: AuthoritativeCommand) => Promise<boolean>;
 
@@ -1069,12 +1070,12 @@ function TechniqueMarket({ game, locale, onInspect }: { game: PublicGameState; l
   return (
     <aside className="kiln-tabletop-tech-market" aria-labelledby="kiln-live-tech-title">
       <div className="kiln-tabletop-section-title"><span aria-hidden="true">艺</span><div><small>{text(locale, "GUILD & ACADEMY", "陶工行")}</small><strong id="kiln-live-tech-title">{text(locale, "Face-up Techs", "公开进阶技艺")}</strong></div></div>
-      {(["forming", "glazing", "firing"] as TechniqueDiscipline[]).map((discipline) => <section className={`kiln-tabletop-tech-discipline is-${discipline}`} key={discipline}><header><strong>{locale === "zh-CN" ? disciplineZh(discipline) : titleCase(discipline)}</strong><small>{text(locale, "deck", "牌库")} · {game.decks.techniqueRemaining[discipline]}</small></header><div>{game.displays.techniques[discipline].map((id) => <TechniqueTile id={id} locale={locale} onInspect={onInspect} key={id} />)}{game.displays.techniques[discipline].length === 0 && <span className="kiln-live-empty-tile">{text(locale, "Empty", "空")}</span>}</div></section>)}
+      {(["forming", "glazing", "firing"] as TechniqueDiscipline[]).map((discipline) => <section className={`kiln-tabletop-tech-discipline is-${discipline}`} key={discipline}><header><strong>{locale === "zh-CN" ? disciplineZh(discipline) : titleCase(discipline)}</strong><small>{text(locale, "deck", "牌库")} · {game.decks.techniqueRemaining[discipline]}</small></header><div>{game.displays.techniques[discipline].map((id) => <TechniqueTile id={id} locale={locale} onInspect={onInspect} overview key={id} />)}{game.displays.techniques[discipline].length === 0 && <span className="kiln-live-empty-tile">{text(locale, "Empty", "空")}</span>}</div></section>)}
     </aside>
   );
 }
 
-function TechniqueTile({ id, locale, owned = false, exhausted = false, onInspect }: { id: TechniqueId; locale: Locale; owned?: boolean; exhausted?: boolean; onInspect: (id: TechniqueId) => void }) {
+function TechniqueTile({ id, locale, owned = false, exhausted = false, overview = false, onInspect }: { id: TechniqueId; locale: Locale; owned?: boolean; exhausted?: boolean; overview?: boolean; onInspect: (id: TechniqueId) => void }) {
   const descriptionId = `kiln-technique-${useId()}-description`;
   const technique = TECHNIQUE_DEFINITIONS[id];
   if (technique === undefined) return null;
@@ -1087,7 +1088,8 @@ function TechniqueTile({ id, locale, owned = false, exhausted = false, onInspect
       aria-describedby={descriptionId}
       aria-haspopup="dialog"
       data-technique-id={id}
-    ><TechniqueFace id={id} locale={locale} exhausted={exhausted} /></button>
+      data-overview={overview || undefined}
+    ><TechniqueFace id={id} locale={locale} exhausted={exhausted} overview={overview} /></button>
     <span className="sr-only" id={descriptionId}>{techniqueShortPlainText(id, locale)}</span>
   </>;
 }

@@ -188,7 +188,7 @@ describe.each(["en", "zh-CN"] as const)("shared Order and Tech faces (%s)", (loc
     }
   });
 
-  it("uses the canonical Tech faces for public displays and purchase choices while preserving the Shifu's actual price", () => {
+  it("uses compact shared faces on the table and normal shared faces for reference/purchase while preserving the Shifu's actual price", () => {
     const { state } = startedGame(2, 14051);
     showAllTechniques(state);
     const publicGame = projectPublicGameState(state);
@@ -204,7 +204,16 @@ describe.each(["en", "zh-CN"] as const)("shared Order and Tech faces (%s)", (loc
     }));
     for (const technique of techniques) {
       const face = renderToStaticMarkup(createElement(TechniqueFace, { id: technique.id, locale }));
-      for (const surface of [tabletop, reference, buying]) {
+      const overviewFace = renderToStaticMarkup(createElement(TechniqueFace, { id: technique.id, locale, overview: true }));
+      const tableCard = card(tabletop, "data-technique-id", technique.id);
+      expect(tableCard).toContain(overviewFace);
+      expect(tableCard).toContain('aria-haspopup="dialog"');
+      expectStaticFace(tableCard);
+      const descriptionId = tableCard.match(/aria-describedby="([^"]+)"/u)![1]!;
+      const description = tabletop.match(new RegExp(`<span class="sr-only" id="${descriptionId}">([\\s\\S]*?)</span>`, "u"))?.[1];
+      expect(description).toBeDefined();
+      expect(text(description!)).toBe(techniqueShortPlainText(technique.id, locale));
+      for (const surface of [reference, buying]) {
         const renderedCard = card(surface, "data-technique-id", technique.id);
         expect(renderedCard).toContain(face);
         expectStaticFace(renderedCard);

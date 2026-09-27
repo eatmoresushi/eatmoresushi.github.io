@@ -8,6 +8,7 @@ import { term } from "./i18n";
 import type { Locale } from "./i18n";
 import { OrderIllustration } from "./OrderIllustration";
 import { TechniqueDescription } from "./TechniqueDescription";
+import { techniqueOverviewCopy } from "./TechniqueOverview";
 import { TECHNIQUE_ARTWORK } from "./techniqueArtwork";
 import "./illustrated-pieces.css";
 
@@ -67,11 +68,12 @@ export function OrderFace({ id, locale, displayIndex }: { id: OrderId; locale: L
   </>;
 }
 
-export function TechniqueFace({ id, locale, layer = "preview", exhausted = false }: {
+export function TechniqueFace({ id, locale, layer = "preview", exhausted = false, overview = false }: {
   id: TechniqueId | StartingTechniqueId;
   locale: Locale;
   layer?: "preview" | "full";
   exhausted?: boolean;
+  overview?: boolean;
 }) {
   const starting = STARTING_TECHNIQUE_DEFINITIONS[id as StartingTechniqueId];
   const advanced = starting === undefined ? TECHNIQUE_DEFINITIONS[id] : undefined;
@@ -90,7 +92,9 @@ export function TechniqueFace({ id, locale, layer = "preview", exhausted = false
     </div>
     <strong className="kiln-piece-name">{locale === "zh-CN" ? technique.nameZh : technique.name}</strong>
     <span className="kiln-piece-category">{discipline}</span>
-    <p className="kiln-piece-copy"><TechniqueDescription id={id} locale={locale} layer={layer} /></p>
+    <p className="kiln-piece-copy" data-overview={overview ? "true" : undefined}>{overview
+      ? techniqueOverviewCopy(id, locale)
+      : <TechniqueDescription id={id} locale={locale} layer={layer} />}</p>
     {advanced !== undefined && <div className="kiln-piece-footer">
       <span className="kiln-piece-timing">{advanced.oncePerRound ? text(locale, "Once per round", "每轮一次") : text(locale, "Continuous", "持续生效")}</span>
       <b className="kiln-piece-endgame-vp" aria-label={text(locale, "Scores 1 VP at game end", "终局计分时获得1分")}>1VP</b>
