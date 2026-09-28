@@ -4,6 +4,7 @@ import playtestMigration from "../../supabase/migrations/202609260002_playtest_v
 import migration from "../../supabase/migrations/202609260001_v14_rules.sql?raw";
 import startingHandMigration from "../../supabase/migrations/202609270001_v14_starting_orders.sql?raw";
 import courtGeMigration from "../../supabase/migrations/202609280001_v14_court_ge_amendment.sql?raw";
+import formingTechMigration from "../../supabase/migrations/202609280002_v14_forming_techs.sql?raw";
 import strategicAiMigration from "../../supabase/migrations/202609260001_v14_rules.sql?raw";
 import orderQueueMigration from "../../supabase/migrations/202609190001_v127_rules.sql?raw";
 import eightStartingOrdersMigration from "../../supabase/migrations/202609200001_v127_eight_starting_orders.sql?raw";
@@ -141,7 +142,7 @@ describe("V1.4 Supabase contract", () => {
     const previousGate = replacement[1]!;
     const currentGate = replacement[2]!;
     expect(previousGate).toBe("^r24-[0-9a-f]{16}$");
-    expect(currentGate).toBe(`^r${RULES_BEHAVIOUR_REVISION}-[0-9a-f]{16}$`);
+    expect(currentGate).toBe("^r25-[0-9a-f]{16}$");
     expect(courtGeMigration).toContain(`if position('${previousGate}' in v_definition) = 0 then`);
     expect(courtGeMigration).toContain("raise exception 'Expected r24 fingerprint gate in %', v_signature");
     for (const name of replacedFunctions) {
@@ -152,6 +153,21 @@ describe("V1.4 Supabase contract", () => {
       expect(amended).toContain(currentGate);
       expect(amended).not.toContain(previousGate);
     }
+  });
+
+  it("requires the revised Forming Techs without remapping historical T03 tiles", () => {
+    expect(formingTechMigration).toContain("'^r(23|24|25|26)-[0-9a-f]{16}$'");
+    expect(formingTechMigration).not.toMatch(/\b(?:update|delete from|truncate)\s+(?:public\.|private\.)/i);
+    const replacedFunctions = [...formingTechMigration.matchAll(/'public\.(server_\w+)\([^']+\)'::regprocedure/g)]
+      .map((match) => match[1]!);
+    expect(replacedFunctions).toEqual([
+      "server_add_computer_seat", "server_create_room", "server_commit_start", "server_commit_transition", "server_join_room",
+    ]);
+    const replacement = formingTechMigration.match(/execute replace\(v_definition, '([^']+)', '([^']+)'\)/)!;
+    expect(replacement[1]).toBe("^r25-[0-9a-f]{16}$");
+    expect(replacement[2]).toBe(`^r${RULES_BEHAVIOUR_REVISION}-[0-9a-f]{16}$`);
+    expect(formingTechMigration).toContain("if position('^r25-[0-9a-f]{16}$' in v_definition) = 0 then");
+    expect(formingTechMigration).toContain("raise exception 'Expected r25 fingerprint gate in %', v_signature");
   });
 
   it("guards joining before writing a seat and returns the complete current room and human-seat contract", () => {

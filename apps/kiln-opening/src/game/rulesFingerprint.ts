@@ -93,9 +93,12 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  *        their original fingerprint and cannot resume under the amended rules.
  *  25 -- Owner amendment: Imperial Court costs 5 Coins; Ge Crackle substitutes
  *        one Glaze per ceramic for Order requirements instead of one Decoration.
+ *  26 -- Revised V1.4 source: Measuring Calipers accepts any other workshop vessel;
+ *        Dipping Vats replaces Standardised Moulds and waives Plain glazing costs
+ *        in one Kiln Yard action per round.
  */
-/** V1.4 owner amendment: five-Coin Imperial Court and Ge's Order-only Glaze choice. */
-export const RULES_BEHAVIOUR_REVISION = 25;
+/** Revised V1.4 Forming Techs: broader Measuring Calipers and Dipping Vats. */
+export const RULES_BEHAVIOUR_REVISION = 26;
 
 /**
  * Display-only keys, excluded so that a typo fix or a translation improvement does not

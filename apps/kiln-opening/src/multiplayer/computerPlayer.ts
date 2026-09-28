@@ -20,6 +20,7 @@ import {
   canCompleteOrder,
   currentDecisionActor,
   locationCapacity,
+  kilnYardGlazingCost,
   DISCIPLINES,
   matchingOrderCeramicGroups,
   matchesOrder,
@@ -500,7 +501,9 @@ function ownedUnexhausted(player: PlayerState, techniqueId: TechniqueId) {
  *   T13 Test Pieces         +0.62   fires 0.67x per game
  *   T01 Large Throwing Wheel +0.04  fires 2.05x per game -- fires often, worth nothing
  *
- * The original measured values remain the anchor. Newly supported route-repair effects use
+ * These measurements predate the amended Measuring Calipers and Dipping Vats rules.
+ * Calipers retains its conservative historical baseline; Dipping Vats uses an estimate
+ * for its glazing savings, not the old T03 forming reward. Newly supported route-repair effects use
  * conservative utilities below until a larger post-change self-play sample is available;
  * none is ranked above Drying Frames merely because it has just been implemented.
  */
@@ -513,7 +516,7 @@ const MEASURED_TECHNIQUE_VALUE: Partial<Record<TechniqueId, number>> = {
   T05: 1.45,
   T09: 1.91,
   T14: 1.91,
-  T03: 1.40,
+  T03: 1.40, // Dipping Vats: conservative estimate for saving 1–2 Coins per use.
   T01: 1.50,
   T12: 1.20,
   T11: 1.19,
@@ -604,12 +607,23 @@ function buildKilnAction(state: PublicGameState, player: PlayerState): GameActio
   const imperialEmpty = player.imperialKilnUnlocked && !Object.values(state.ceramics).some(
     (ceramic) => ceramic.ownerId === player.id && ceramic.stage === "loaded" && ceramic.kilnSpaceId === "imperial");
   const destinations: Array<KilnSpaceId | "imperial"> = [...openSharedKilnSpaces(state), ...(imperialEmpty ? ["imperial" as const] : [])];
-  if (workshop.length === 0 || destinations.length === 0 || player.resources.coins < 1) return null;
-  const worker = availableWorker(state, player, "kiln_yard", workshop.length >= 2 && destinations.length >= 2 && player.resources.coins >= 2);
+  if (workshop.length === 0 || destinations.length === 0) return null;
+  const dippingVatsReady = ownedUnexhausted(player, "T03") !== undefined;
+  const affordable: WorkshopCeramic[] = [];
+  // Free Plain loads come first so a paid vessel cannot crowd them out of a Shifu batch.
+  const byCost = [...workshop].sort((left, right) =>
+    kilnYardGlazingCost([left], dippingVatsReady) - kilnYardGlazingCost([right], dippingVatsReady));
+  for (const ceramic of byCost) {
+    if (kilnYardGlazingCost([...affordable, ceramic], dippingVatsReady) <= player.resources.coins) affordable.push(ceramic);
+    if (affordable.length >= Math.min(2, destinations.length)) break;
+  }
+  if (affordable.length === 0) return null;
+  const worker = availableWorker(state, player, "kiln_yard", affordable.length >= 2);
   if (worker === null) return null;
-  const maximum = Math.min(worker.kind === "shifu" ? 2 : 1, player.resources.coins);
+  const selectedCeramics = affordable.slice(0, worker.kind === "shifu" ? 2 : 1);
+  const useDippingVats = dippingVatsReady && selectedCeramics.some((ceramic) => ceramic.decoration === "plain");
   const loads: KilnLoadSelection[] = [];
-  for (const ceramic of workshop.slice(0, maximum)) {
+  for (const ceramic of selectedCeramics) {
     const glaze = targetGlaze(state, player, loads.map((load) => load.glaze));
     const wantedZone = preferredHeat(glaze) - 2;
     const destination = [...destinations].sort((left, right) =>
@@ -628,6 +642,7 @@ function buildKilnAction(state: PublicGameState, player: PlayerState): GameActio
   }
   return {
     type: "USE_KILN_YARD", workerId: worker.id, loads,
+    ...(useDippingVats ? { useDippingVats: true } : {}),
     ...(worker.kind === "shifu" ? { shifuCeramicId: loads[0]!.ceramicId } : {}),
     ...(player.startingTechniqueId === "ST04" ? player.resources.wood < 2 ? { kilnTendingWood: 1 } : { kilnTendingClay: 1 } : {}),
   };

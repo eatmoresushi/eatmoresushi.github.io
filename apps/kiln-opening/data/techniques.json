@@ -47,18 +47,18 @@
       "name": "Measuring Calipers",
       "nameZh": "量形规",
       "cost": 2,
-      "ability": "Once per round, after you form a vessel, if you have another vessel in your workshop of a different Shape, gain 2 Coins.",
-      "abilityZh": "每轮一次，成型1件器物后，若你的作坊内另有1件不同器型器物，获得2铜钱。",
+      "ability": "Once per round, after you form a vessel, if you have another vessel in your workshop, gain 2 Coins.",
+      "abilityZh": "每轮一次，成型1件器物后，若你的作坊内另有1件器物，获得2铜钱。",
       "oncePerRound": true
     },
     {
       "id": "T03",
       "discipline": "forming",
-      "name": "Standardised Moulds",
-      "nameZh": "定式陶范",
+      "name": "Dipping Vats",
+      "nameZh": "浸釉缸",
       "cost": 2,
-      "ability": "Once per round, after you form a vessel, if you have another vessel in your workshop of the same Shape, gain 2 Coins.",
-      "abilityZh": "每轮一次，成型1件器物后，若你的作坊内另有1件相同器型器物，获得2铜钱。",
+      "ability": "Once per round, during a Kiln Yard action, the Plain ceramics loaded by that action pay no Glazing cost.",
+      "abilityZh": "每轮一次，在一次窑坊行动中，该行动装窑的素面陶瓷无需支付上釉费用。",
       "oncePerRound": true
     },
     {

@@ -485,6 +485,8 @@ export type GameAction =
       type: "USE_KILN_YARD";
       workerId: WorkerId;
       loads: KilnLoadSelection[];
+      /** Waive Glazing costs for all Plain loads in this action using ready Dipping Vats. */
+      useDippingVats?: boolean;
       /** Required for a Shifu; must identify one ceramic loaded by this action. */
       shifuCeramicId?: CeramicId;
       /** Kiln Tending may gain one Clay or one Wood; omit both to decline. */

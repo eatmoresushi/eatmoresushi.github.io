@@ -7,7 +7,13 @@ component text. Advanced Tech reminders use the owner’s subsequent shorter, pl
 
 Ge’s timing below incorporates the owner’s confirmation to keep the chosen order
 of after-Quality abilities. Recheck current eligibility after each use. Ge is not
-required to resolve last. The Ge reminder also incorporates the 2026-09-28 owner amendment: Crackle substitutes one Glaze when completing an Order, rather than one Decoration. No other mechanical change is introduced by this copy. In particular, Measuring Calipers and Standardised Moulds still require another workshop ceramic; their reminder wording does not replace the full eligibility rule. Fuel Ledger still permits only one Contribution card per firing.
+required to resolve last. The Ge reminder also incorporates the 2026-09-28 owner
+amendment: Crackle substitutes one Glaze when completing an Order, rather than
+one Decoration. The replacement rulebook supplied later that day broadens
+Measuring Calipers to any other workshop vessel and replaces Standardised Moulds
+with Dipping Vats. The reminders below follow that source; their wording does not
+replace the full eligibility rule or introduce other mechanical changes. Fuel
+Ledger still permits only one Contribution card per firing.
 
 ## Starting Techs
 
@@ -35,11 +41,11 @@ During a Potter’s Wheel action forming at least 1 Vase or Censer: reduce the a
 
 ### Measuring Calipers
 
-After forming a vessel: if another of your ceramics has a different Shape → gain 2 Coins.
+After forming a vessel: if you have another vessel in your workshop → gain 2 Coins.
 
-### Standardised Moulds
+### Dipping Vats
 
-After forming a vessel: if another of your ceramics has the same Shape → gain 2 Coins.
+During a Kiln Yard action: Plain ceramics loaded by that action pay no Glazing cost.
 
 ### Drying Frames
 

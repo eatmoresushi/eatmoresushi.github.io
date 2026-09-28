@@ -234,7 +234,7 @@ You must have a legal empty destination and be able to pay before glazing. Glazi
 
 #### Glaze Cost and Preferred Heat
 
-Applying a Glaze costs **1 Coin per ceramic**, including when glazing through Rapid Drying or Imperial Priority. Those effects include this payment; it is not paid a second time.
+Applying a Glaze costs **1 Coin per ceramic**, including when glazing through Rapid Drying or Imperial Priority. Those effects include this payment; it is not paid a second time. **Dipping Vats** waives it for Plain ceramics in one Kiln Yard action per round.
 
 | Glaze | Preferred Heat |
 |---|:---:|
@@ -690,8 +690,8 @@ Tech tiles use abbreviated reminder text. The rules here give the full effects.
 | Advanced Tech | Cost | Ability |
 |---|:---:|---|
 | **Large Throwing Wheel** | 2 | **Once per round**, during a Potter's Wheel action in which you form at least **1 Vase or Censer**, reduce that action's **total Clay cost by 2**, minimum 0. |
-| **Measuring Calipers** | 2 | **Once per round**, after you form a vessel, if you have **another vessel in your workshop of a different Shape**, gain **2 Coins**. |
-| **Standardised Moulds** | 2 | **Once per round**, after you form a vessel, if you have **another vessel in your workshop of the same Shape**, gain **2 Coins**. |
+| **Measuring Calipers** | 2 | **Once per round**, after you form a vessel, if you have **another vessel in your workshop**, gain **2 Coins**. |
+| **Dipping Vats** | 2 | **Once per round**, during a Kiln Yard action, the **Plain** ceramics loaded by that action pay **no Glazing cost**. |
 | **Drying Frames** | 3 | **Once per round, after a Potter's Wheel action:** choose **1 Plain vessel formed by that action**. Pay its **2-Coin Decoration cost** to replace Plain with **Carved, Impressed or Painted**. |
 | **Reworking Table** | 2 | **Once per round, during a Decoration Workshop action:** before decorating **1 Plain vessel being worked**, change its Shape to any other Shape. Exchange its Vessel card; **pay no additional Clay**. |
 
@@ -722,10 +722,11 @@ Tech tiles use abbreviated reminder text. The rules here give the full effects.
 - **White Slip** and **Drying Frames** may both resolve after the same Potter's Wheel action, but must affect different vessels that are still Plain. Ding's additional vessel is eligible for either.
 - The **2-Coin payments in White Slip and Drying Frames are Decoration costs**, not additional surcharges. **Carving Knives**, **Seal Stamps** and **Painting Brushes** may waive the matching cost, subject to their limits. The Decoration Shifu's free Decoration applies only to one Decoration performed by its own Decoration Workshop action.
 - **Drying Frames** costs **3 Coins to acquire** and **2 Coins per use** before waivers. It is once per round; **White Slip** may be used once after each Potter's Wheel action.
-- **Measuring Calipers** and **Standardised Moulds** check another vessel still in your **workshop**, whether Plain or specialised. Loaded, Fired and Delivered ceramics do not count.
+- **Measuring Calipers** checks for another vessel still in your **workshop**, whether Plain or specialised, including one formed by the same action. Loaded, Fired and Delivered ceramics do not count.
+- **Dipping Vats** applies to one Kiln Yard action per round and covers every Plain ceramic that action loads, in either kiln. Specialised ceramics loaded by that action pay the Glazing cost normally. Because abilities are optional, you may save it for a later Kiln Yard action that round.
 - **Reworking Table** changes a vessel's Shape before replacing its Plain Decoration in that Decoration Workshop action; it is not a separate forming action.
 - **Rapid Drying** may affect only a vessel decorated by that Decoration Workshop action. Neither White Slip nor Drying Frames is a Decoration Workshop action, so neither triggers Rapid Drying.
-- **Rapid Drying** and **Imperial Priority** are not Kiln Yard actions and do not trigger **Kiln Tending** or grant a Shifu Heat marker.
+- **Rapid Drying** and **Imperial Priority** are not Kiln Yard actions and do not trigger **Kiln Tending** or **Dipping Vats**, or grant a Shifu Heat marker.
 - **Glaze Palette** resolves after all workers and their associated effects, including Imperial Priority, have finished. It may change any one of your loaded ceramics, including one loaded through Rapid Drying or Imperial Priority.
 - **Glaze Palette resolves before Test Pieces** and other pre-firing abilities. It cannot be delayed until after Contributions or Fire.
 - The one-off **Colour Samples** reservation is separate from its once-per-round Commission Market effect. During a Shifu Commission Market action, Colour Samples improves only **1 reservation**; it does not add another reservation.
@@ -814,7 +815,7 @@ Plain counts for any/same/different Decoration requirements; **same non-Plain** 
 ## Glazes
 
 White **1** · Celadon **2** · Grey-Green **3** · Moon White **4** — Preferred Heat.  
-**Applying a Glaze costs 1 Coin per ceramic.**
+**Applying a Glaze costs 1 Coin per ceramic** before waivers.
 
 ## Shared Kiln Spaces
 
@@ -856,7 +857,9 @@ Fuel Ledger: **−2 Bank or +2 Stoke / 2 Wood**. Choose **exactly 1 card** per p
 - **White Slip:** after each Potter's Wheel action, pay the **2-Coin Decoration cost** to replace Plain with **Painted** on one vessel formed by that action.
 - **Prepared Clay**, **Rapid Drying** and **Kiln Tending** remain per-action Starting Techs. Rapid Drying's payment is **1 Wood + the 1-Coin Glazing cost**; Kiln Tending grants **1 Clay or 1 Wood**.
 - **Drying Frames:** costs **3 Coins to acquire**; once per round after Potter's Wheel, pay the **2-Coin Decoration cost** for Carved, Impressed or Painted on one newly formed Plain vessel.
-- **Measuring Calipers**, **Standardised Moulds** and **Reworking Table** use the updated workshop/Plain eligibility wording.
+- **Measuring Calipers** requires any other vessel still in your workshop, regardless of Shape.
+- **Dipping Vats** replaces Standardised Moulds: once per round, waive the Glazing cost for all Plain ceramics loaded by one Kiln Yard action.
+- **Reworking Table** uses the updated workshop/Plain eligibility wording.
 - **Glaze Palette** moves to the **end of the Work Phase**, after all worker effects and before Test Pieces or other pre-firing abilities. No additional Glazing payment is required.
 - Decoration discount Techs waive the matching **2-Coin Decoration cost**, including eligible White Slip and Drying Frames uses.
 - **Ge:** once per round, after Quality is assigned, one Standard ceramic from this firing becomes **Fine + Crackle**. The owner chooses the order of Ge and their other after-Quality abilities, rechecking eligibility after each use. Crackle is permanent and provides a wild **Glaze only**, never a wild Decoration.

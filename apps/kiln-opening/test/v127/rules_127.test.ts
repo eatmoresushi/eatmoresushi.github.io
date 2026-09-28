@@ -59,7 +59,7 @@ describe("v1.4 Ding Moulded Production", () => {
     }
   });
 
-  it("rejects Vase/Censer triggers, remains once per round, and still triggers Standardised Moulds", () => {
+  it("rejects Vase/Censer triggers, remains once per round, and still triggers Measuring Calipers", () => {
     const { state: initial, rng } = startedGame(2, 12_605);
     let state = structuredClone(initial);
     state.players["P1"]!.kilnId = "DI";
@@ -77,16 +77,16 @@ describe("v1.4 Ding Moulded Production", () => {
       dingExtraShape: "censer",
     }, rng), "INVALID_ACTION");
 
-    addTechnique(state, "P1", "T03");
+    addTechnique(state, "P1", "T02");
     state = mustApply(state, "P1", {
       type: "FORM_CERAMICS",
       workerId: workerId(state, "P1", "apprentice"),
       shapes: ["plate"],
       dingExtraShape: "plate",
-      useTechniqueIds: ["T03"],
+      useTechniqueIds: ["T02"],
     }, rng);
     expect(state.players["P1"]!.resources.coins).toBe(2);
-    expect(state.players["P1"]!.techniques.find((technique) => technique.id === "T03")?.exhausted).toBe(true);
+    expect(state.players["P1"]!.techniques.find((technique) => technique.id === "T02")?.exhausted).toBe(true);
 
     setWorkTurn(state, "P1");
     expectError(applyAction(state, "P1", {

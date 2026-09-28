@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { activeKilnSpaceIds } from "../../src/game/index.ts";
 import type { GameAction, GameState, PlayerId } from "../../src/game/index.ts";
 import {
   ONLINE_COMPUTER_POLICY_VERSION,
@@ -66,6 +67,79 @@ describe("V1.4 strategic computer policy: amended Imperial Court", () => {
     const next = mustApply(state, "P1", action, rng);
     expect(next.players["P1"]!.imperialRecognition).toBe(coins === 5 ? 2 : 1);
     if (coins === 5) expect(next.players["P1"]!.resources.coins).toBe(0);
+  });
+});
+
+describe("V1.4 strategic computer policy: Dipping Vats", () => {
+  function fixture(coins: number) {
+    const { state, rng } = startedGame(2, 4_950);
+    const player = state.players["P1"]!;
+    player.resources = { clay: 0, wood: 0, coins };
+    player.orderHand = ["S01"];
+    state.marketDisplay = [];
+    closeGuild(state);
+    addTechnique(state, "P1", "T03");
+    setWorkTurn(state, "P1");
+    return { state, rng };
+  }
+
+  it("loads two Plain ceramics with a Shifu and no Coins", async () => {
+    const { state, rng } = fixture(0);
+    addShaped(state, "P1", "bowl");
+    addShaped(state, "P1", "bowl");
+    const action = await choose(state);
+    expect(action).toMatchObject({ type: "USE_KILN_YARD", useDippingVats: true });
+    if (action.type !== "USE_KILN_YARD") throw new Error("Expected Kiln Yard");
+    expect(action.loads).toHaveLength(2);
+    expect(state.players["P1"]!.workers[action.workerId]?.kind).toBe("shifu");
+    const next = mustApply(state, "P1", action, rng);
+    expect(next.players["P1"]!.resources.coins).toBe(0);
+    expect(next.players["P1"]!.techniques).toContainEqual({ id: "T03", exhausted: true });
+  });
+
+  it.each([0, 1])("charges only the decorated ceramic in a mixed batch with %i Coins", async (coins) => {
+    const { state, rng } = fixture(coins);
+    const decorated = addGlazed(state, "P1", "bowl", "white", "carved");
+    const plain = addShaped(state, "P1", "bowl");
+    const action = await choose(state);
+    expect(action).toMatchObject({ type: "USE_KILN_YARD", useDippingVats: true });
+    if (action.type !== "USE_KILN_YARD") throw new Error("Expected Kiln Yard");
+    expect(action.loads.map((load) => load.ceramicId)).toEqual(coins === 0 ? [plain.id] : [plain.id, decorated.id]);
+    const next = mustApply(state, "P1", action, rng);
+    expect(next.players["P1"]!.resources.coins).toBe(0);
+  });
+
+  it("preserves Dipping Vats when loading only a decorated ceramic", async () => {
+    const { state, rng } = fixture(1);
+    addGlazed(state, "P1", "bowl", "white", "carved");
+    const action = await choose(state);
+    expect(action.type).toBe("USE_KILN_YARD");
+    expect(action).not.toHaveProperty("useDippingVats");
+    const next = mustApply(state, "P1", action, rng);
+    expect(next.players["P1"]!.resources.coins).toBe(0);
+    expect(next.players["P1"]!.techniques).toContainEqual({ id: "T03", exhausted: false });
+  });
+
+  it.each(["shared", "imperial"] as const)("offers legal free fallback loading into the %s kiln", (destination) => {
+    const { state, rng } = fixture(0);
+    if (destination === "imperial") {
+      state.players["P1"]!.imperialRecognition = 2;
+      state.players["P1"]!.imperialKilnUnlocked = true;
+      for (const spaceId of activeKilnSpaceIds(state.playerCount)) addLoaded(state, "P2", "bowl", "white", "plain", spaceId);
+    }
+    const plain = addShaped(state, "P1", "bowl");
+    const loads = fallbackComputerCommands(createComputerObservation(state, "P1"))
+      .filter((action) => action.type === "USE_KILN_YARD");
+    expect(loads.length).toBeGreaterThan(0);
+    for (const action of loads) {
+      expect(action.useDippingVats).toBe(true);
+      expect(action.loads[0]?.ceramicId).toBe(plain.id);
+      if (destination === "imperial") expect(action.loads[0]?.kilnSpaceId).toBe("imperial");
+      const next = mustApply(state, "P1", action, rng);
+      expect(next.players["P1"]!.resources.coins).toBe(0);
+    }
+    state.players["P1"]!.techniques.find((technique) => technique.id === "T03")!.exhausted = true;
+    expect(fallbackComputerCommands(createComputerObservation(state, "P1")).some((action) => action.type === "USE_KILN_YARD")).toBe(false);
   });
 });
 

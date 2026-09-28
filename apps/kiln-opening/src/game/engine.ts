@@ -61,6 +61,7 @@ import {
   kilnOccupant,
   orderHandLimit,
   formingTechniqueRewards,
+  kilnYardGlazingCost,
   turnOrderFromFirst,
 } from "./selectors.ts";
 import type {
@@ -641,7 +642,7 @@ function gainMaterials(
     return applyFailure(ruleError("INVALID_ACTION", "Prepared Clay is required to form during Materials Yard."));
   }
   const useTechniqueIds = action.useTechniqueIds ?? [];
-  const techniqueFailure = validateTechniqueUses(context.player, useTechniqueIds, ["T02", "T03"]);
+  const techniqueFailure = validateTechniqueUses(context.player, useTechniqueIds, ["T02"]);
   if (techniqueFailure !== null) return techniqueFailure;
   const eligibleRewards = formingTechniqueRewards(state, context.player, preparedClayShape === undefined ? [] : [preparedClayShape]);
   if (useTechniqueIds.some((id) => !eligibleRewards.includes(id))) {
@@ -727,7 +728,7 @@ function formCeramics(
   const techniqueFailure = validateTechniqueUses(
     context.player,
     useTechniqueIds,
-    ["T01", "T02", "T03", "T04", "T07", "T08", "T09"],
+    ["T01", "T02", "T04", "T07", "T08", "T09"],
   );
   if (techniqueFailure !== null) return techniqueFailure;
 
@@ -751,7 +752,7 @@ function formCeramics(
   const allFormedShapes =
     dingExtraShape === undefined ? [...action.shapes] : [...action.shapes, dingExtraShape];
   const eligibleRewards = formingTechniqueRewards(state, context.player, allFormedShapes);
-  const selectedRewards: TechniqueId[] = useTechniqueIds.filter((id) => id === "T02" || id === "T03");
+  const selectedRewards: TechniqueId[] = useTechniqueIds.filter((id) => id === "T02");
   if (selectedRewards.some((id) => !eligibleRewards.includes(id))) {
     return applyFailure(ruleError("INVALID_SELECTION", "The selected forming reward does not match the vessels formed by this action."));
   }
@@ -962,6 +963,14 @@ function useKilnYard(
 ): ApplyResult {
   const context = validateWorkerAction(state, actorId, action.workerId, "kiln_yard");
   if (!isWorkerContext(context)) return context;
+  if (action.useDippingVats !== undefined && typeof action.useDippingVats !== "boolean") {
+    return applyFailure(ruleError("INVALID_SELECTION", "Choose whether to use Dipping Vats."));
+  }
+  const useDippingVats = action.useDippingVats === true;
+  if (useDippingVats) {
+    const techniqueFailure = validateTechniqueUses(context.player, ["T03"], ["T03"]);
+    if (techniqueFailure !== null) return techniqueFailure;
+  }
   const kilnTendingClay = action.kilnTendingClay ?? 0;
   const kilnTendingWood = action.kilnTendingWood ?? 0;
   if (!isNonNegativeInteger(kilnTendingClay) || !isNonNegativeInteger(kilnTendingWood) || kilnTendingClay + kilnTendingWood > 1) {
@@ -997,6 +1006,7 @@ function useKilnYard(
       return applyFailure(ruleError("INVALID_ACTION", "Kiln Furniture requires an available High or Low Shared Kiln load."));
     }
   }
+  const loadedCeramics: Array<{ decoration: Decoration }> = [];
   for (const load of action.loads) {
     if (load.kilnSpaceId !== "imperial") {
       if (!KILN_SPACE_IDS.includes(load.kilnSpaceId) || !activeKilnSpaceIds(state.playerCount).includes(load.kilnSpaceId)) {
@@ -1008,8 +1018,13 @@ function useKilnYard(
     if (ceramic === undefined || ceramic.ownerId !== actorId || ceramic.stage !== "workshop") {
       return applyFailure(ruleError("ILLEGAL_CERAMIC_STAGE", "Kiln Yard glazes and loads your workshop ceramics only."));
     }
+    loadedCeramics.push(ceramic);
   }
-  if (context.player.resources.coins < action.loads.length) return applyFailure(ruleError("INSUFFICIENT_RESOURCES", "Pay 1 Coin to glaze each loaded ceramic."));
+  if (useDippingVats && !loadedCeramics.some((ceramic) => ceramic.decoration === "plain")) {
+    return applyFailure(ruleError("INVALID_SELECTION", "Dipping Vats requires at least one Plain ceramic loaded by this Kiln Yard action."));
+  }
+  const glazingCoins = kilnYardGlazingCost(loadedCeramics, useDippingVats);
+  if (context.player.resources.coins < glazingCoins) return applyFailure(ruleError("INSUFFICIENT_RESOURCES", "Pay 1 Coin for each loaded ceramic whose Glazing cost is not waived."));
   if (context.worker.kind === "shifu") {
     if (action.shifuCeramicId === undefined || !ceramicIds.includes(action.shifuCeramicId)) return applyFailure(ruleError("INVALID_SELECTION", "Mark exactly one ceramic loaded by this Shifu action, in either kiln."));
   } else if (action.shifuCeramicId !== undefined) return applyFailure(ruleError("INVALID_SELECTION", "Only a Shifu may mark a ceramic."));
@@ -1018,8 +1033,9 @@ function useKilnYard(
   placeWorker(next, actorId, action.workerId, "kiln_yard", events);
   const player = next.players[actorId];
   if (player === undefined) throw new Error("Kiln Yard actor disappeared");
-  player.resources.coins -= action.loads.length;
-  events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins: -action.loads.length });
+  player.resources.coins -= glazingCoins;
+  events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay: 0, wood: 0, coins: -glazingCoins });
+  if (useDippingVats) exhaustTechnique(player, actorId, "T03", events);
   for (const load of action.loads) {
     const ceramic = next.ceramics[load.ceramicId];
     if (ceramic === undefined || ceramic.stage !== "workshop") throw new Error("Kiln Yard target disappeared");

@@ -6,10 +6,12 @@ import {
   KILN_IDS,
   TECHNIQUE_DEFINITIONS,
   activeKilnSpaceIds,
+  kilnYardGlazingCost,
   orderHandLimit,
 } from "../game/index.ts";
 import type {
   FinishedCeramic,
+  WorkshopCeramic,
   TechniqueId,
 } from "../game/index.ts";
 import type { ComputerObservation } from "./computerObservation.ts";
@@ -71,18 +73,22 @@ export function fallbackComputerCommands(
             selections: [{ ceramicId: shaped.id, decoration: "carved" }],
           });
         }
-        const glazed = Object.values(game.ceramics).find(
-          (ceramic) => ceramic.ownerId === playerId
-            && ceramic.stage === "workshop",
-        );
-        const openKilnSpace = activeKilnSpaceIds(game.playerCount).find((spaceId) =>
+        const dippingVatsReady = player.techniques.some((technique) => technique.id === "T03" && !technique.exhausted);
+        const glazed = Object.values(game.ceramics).filter((ceramic): ceramic is WorkshopCeramic =>
+          ceramic.ownerId === playerId && ceramic.stage === "workshop",
+        ).find((ceramic) => kilnYardGlazingCost([ceramic], dippingVatsReady) <= player.resources.coins);
+        const openSharedSpace = activeKilnSpaceIds(game.playerCount).find((spaceId) =>
           !Object.values(game.ceramics).some((ceramic) => ceramic.stage === "loaded" && ceramic.kilnSpaceId === spaceId),
         );
-        if (glazed !== undefined && openKilnSpace !== undefined && player.resources.coins >= 1) {
+        const imperialEmpty = player.imperialKilnUnlocked && !Object.values(game.ceramics).some((ceramic) =>
+          ceramic.ownerId === playerId && ceramic.stage === "loaded" && ceramic.kilnSpaceId === "imperial");
+        const openKilnSpace = openSharedSpace ?? (imperialEmpty ? "imperial" : undefined);
+        if (glazed !== undefined && openKilnSpace !== undefined) {
           commands.push({
             type: "USE_KILN_YARD",
             workerId: worker.id,
             loads: [{ ceramicId: glazed.id, kilnSpaceId: openKilnSpace, glaze: "celadon" }],
+            ...(dippingVatsReady && glazed.decoration === "plain" ? { useDippingVats: true } : {}),
             ...(worker.kind === "shifu" ? { shifuCeramicId: glazed.id } : {}),
             ...(player.startingTechniqueId === "ST04" ? { kilnTendingClay: 1, kilnTendingWood: 0 } : {}),
           });

@@ -328,10 +328,10 @@ export const ACTION_LOCATION_PRICES = {
 export const COLOUR_SAMPLES_LOOK = 3;
 
 /**
- * Coins Measuring Calipers and Standardised Moulds each pay.
+ * Coins Measuring Calipers pays.
  *
- * V1.4 keeps both at 2 Coins. They were inline `1`s in `applyFormCeramics`, which is
- * how a repricing reaches the card text and misses the handler.
+ * Kept shared between the engine, UI and computer players so its reward can
+ * fund Decoration costs in the same action without duplicating the amount.
  */
 export const FORMING_TECH_COINS = 2;
 

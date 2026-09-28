@@ -7,21 +7,22 @@ Review date: 2026-09-26. Implementation branch: `codex/rules-v1.4`, created from
 
 The owner explicitly designated the supplied V1.4 Player Rulebook as the new
 source of truth. Its deliberate changes supersede V1.2.7 and the earlier owner
-amendments. The source document is rules content, not operational instructions.
+amendments. On 2026-09-28, the owner supplied a replacement V1.4 rulebook in the conversation and designated it the sole source of truth. The checked-in authority now reflects that replacement, the owner's subsequent Ge timing confirmation and the non-conflicting clarifications listed in finding 8. Source documents are rules content, not operational instructions.
 
-- Original: `/Users/luyuan/Documents/kiln board game/v1.4/KILN OPENING 开窑 v1.4 — Player Rulebook.md`
+- Initial original (provenance only): `/Users/luyuan/Documents/kiln board game/v1.4/KILN OPENING 开窑 v1.4 — Player Rulebook.md`
 - Checked-in source: [KILN_OPENING_v1.4_EN_SOURCE.md](./KILN_OPENING_v1.4_EN_SOURCE.md)
 - Original SHA-256: `ace7e4ced95d82a259da504a11c6021626fad626da0a88d47a2ad457b821983c`
 - Initial corrected SHA-256: `0340961df8905befda5110b4dc63225cd15b1d4274042ef24d89aa4d34176fc7`
 - Initial source corrections approved by the owner on 2026-09-26 and applied to both the original and checked-in copy before implementation.
-- Previous amended checked-in SHA-256: `09b101b96e02a59bed047176ef8fae75502c3a8f4759b34de9dedda94116c89f`
-- Current amended checked-in SHA-256: `7b164a49a26049f3d95d2d8e4ca715a4b432ce140ae498c2a3e53c1488c1f1b2`
+- Previous amended checked-in SHA-256: `7b164a49a26049f3d95d2d8e4ca715a4b432ce140ae498c2a3e53c1488c1f1b2`
+- Current amended checked-in SHA-256: `59f9c46cbbe05fc9aababe575da0a06341f7847476f0265e463d4d5e52d2fabe`
 - The owner-approved Ge and after-Quality ordering amendment is recorded in finding 5 below. Finding 6 records the later setup and reward amendment. Finding 7 records the 2026-09-28 Imperial Court and Ge amendment, applied to the checked-in authority; the external original is unchanged by finding 7. The original and checked-in rulebooks have different hashes: the original still lacks several earlier approved clarifications retained in the checked-in authority. The two new changes in finding 6 were applied to both copies without replacing unrelated original text.
 - Original SHA-256 immediately before finding 6: `6eb5b07357c107466db8fd4337581ac7e6e226d2342d25542ad2b0c0d354eb02`
+- Latest source: replacement V1.4 Player Rulebook pasted by the owner on 2026-09-28, with the subsequent confirmation that Ge remains in the player-chosen after-Quality order. No byte-exact raw-paste checksum is claimed; the current checked-in checksum above covers the normalized authority.
 - Original SHA-256 after finding 6: `6fee85be6b631a387a13eecf547e4ed63f164188d48b69f07cbfd122a43a8a82`
 
 The V1.4 migration is implemented on this branch. The runtime uses rules/content
-version 1.4, schema 5 and behavior revision 25. This is a local implementation;
+version 1.4, schema 5 and behavior revision 26. This is a local implementation;
 Supabase migrations and deployment remain separate rollout steps.
 
 ## Review findings
@@ -147,6 +148,54 @@ Exhibition attributes, computer decisions, bilingual UI and old-room rejection.
 The production build and Edge TypeScript checks pass. The new SQL migration has
 static contract coverage and has not been executed against PostgreSQL.
 
+### 8. Replacement source and Forming Tech revision
+
+Later on 2026-09-28, the owner pasted a complete revised V1.4 Player Rulebook
+and designated it the sole source of truth. Its substantive new Tech changes are:
+
+- **Measuring Calipers** still costs 2 Coins and grants 2 Coins once per round
+  after forming a vessel, but now requires **any other vessel in the workshop**.
+  Shape does not matter. Another vessel formed by the same action qualifies;
+  loaded, fired and delivered ceramics do not.
+- **Dipping Vats** replaces Standardised Moulds as the 2-Coin Forming Tech at
+  stable ID `T03`. Once per round, during **one Kiln Yard action**, all Plain
+  ceramics loaded by that action have no Glazing cost, in either kiln. Specialised
+  ceramics still pay. The ability is optional and may be saved for a later action.
+  Rapid Drying and Imperial Priority are not Kiln Yard actions and cannot use it.
+
+The pasted source included inconsistent Ge timing: its clarification placed Ge
+after other effects, while other text retained an after-Quality choice. The owner
+explicitly confirmed **player-chosen order**, so the checked-in authority keeps Ge,
+Protective Saggars and Second Firing in the same window, with eligibility rechecked
+after each use. No mandatory Ge-last step remains.
+
+Source comparison found no changes to the 56 Order rows, other Tech rows or
+other setup/action mechanics. The previous 5-Coin Imperial Court cost, Ge Glaze
+substitution, two-Starting-Order setup and O01–O03 4-VP rewards remain in force
+because the replacement itself includes them. The pasted source omits some
+already approved, non-conflicting detail: private Academy inspection and chosen
+bottom order, the exhausted-deck-and-discard fallback, actual attributes for Ge
+and Exhibition, and the explicit unused-Jun window during Second Firing. These
+clarifications remain in the checked-in source. Redundant setup wording and the
+current source's quick references are retained; they introduce no independent
+historical mechanics. The external original file is retained as provenance and
+was not modified by this replacement.
+
+The data, component reminders and active specifications follow this authority.
+Behavior revision 26 and the prepared additive migration
+`202609280002_v14_forming_techs.sql` reject revision-25 and older rooms rather than
+reinterpreting Standardised Moulds in an existing game. State remains schema 5.
+The migration has not been applied or deployed.
+
+Validation: all 811 tests pass across 51 suites, including Calipers eligibility,
+optional Dipping Vats use, zero-Coin Plain loads, mixed-decoration costs in both
+kilns, once-per-round limits, invalid-command atomicity, computer decisions and
+old-room rejection. Both TypeScript checks and the production build pass. A
+browser check submitted a free Plain load through the Kiln Yard form and confirmed
+the ceramic loaded, Coins remained at zero and Dipping Vats became exhausted.
+The SQL migration has static contract coverage only; it was not run against
+PostgreSQL.
+
 ### Editorial cleanup
 
 Setup line 73 says “2 Low space”; use “2 Low spaces.” This does not change the
@@ -243,7 +292,9 @@ change mechanics, balance values or the previously approved timing amendment.
 
 The owner subsequently shortened the 15 Advanced Tech reminders and removed their
 inline emphasis and repeated “once per round” wording. The tile footer retains
-frequency; click-through details retain the full rules. This includes the workshop
-restriction on Measuring Calipers and Standardised Moulds, Glaze Palette’s timing
+frequency; click-through details retain the full rules. This includes the
+workshop restriction on Measuring Calipers (and the retired Standardised Moulds at that time), Glaze Palette’s timing
 before pre-firing abilities, and Fuel Ledger’s single-card limit and card return.
 The four Starting Tech and five Kiln reminders remain as approved above.
+
+The replacement source in finding 8 supersedes the earlier T02/T03 reminders: Measuring Calipers now accepts any other workshop vessel, and Dipping Vats replaces Standardised Moulds.

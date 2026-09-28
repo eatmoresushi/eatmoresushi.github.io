@@ -10,7 +10,7 @@ Target session length for the physical design is approximately 90–120 minutes.
 
 Priority order:
 
-1. `docs/KILN_OPENING_v1.4_EN_SOURCE.md` — owner-supplied V1.4 mechanical authority, with approved corrections recorded in the audit.
+1. `docs/KILN_OPENING_v1.4_EN_SOURCE.md` — latest owner-supplied V1.4 mechanical authority, with the confirmed Ge timing correction and retained non-conflicting clarifications recorded in the audit.
 2. `docs/RULEBOOK_AUDIT_V1.4.md` — source checksums, approved clarifications and migration status.
 3. `docs/GAME_RULES.md` — source index.
 4. `data/*.json` — derived content.
@@ -28,6 +28,7 @@ previously used ability may not be used again. The Second Firing window follows 
 All after-Quality abilities, including Ge, Protective Saggars and Second Firing, resolve in the owner's chosen order. Recheck current Quality, targets, costs and usage limits after each use; Ge is not required to resolve last.
 The 2026-09-27 owner amendment deals two Starting Orders and no Main Order to each player at setup, and raises O01–O03 to 4 VP each; their other requirements and rewards are unchanged.
 The 2026-09-28 owner amendment makes Imperial Court cost 5 Coins for either worker type. Each permanent Ge Crackle ceramic may use any one Glaze consistently for every requirement when completing an Order; it no longer substitutes Decoration. Actual Glaze and Decoration remain unchanged, and Exhibition uses actual Glaze.
+The replacement rulebook supplied later on 2026-09-28 is the sole mechanical source: Measuring Calipers needs any other workshop vessel, including one formed by the same action; Shape does not matter. T03 is Dipping Vats (Forming, 2 Coins), replacing Standardised Moulds. Once per round it may waive Glazing costs for all Plain ceramics loaded by one Kiln Yard action into either kiln; specialised ceramics still pay. Rapid Drying and Imperial Priority cannot use the waiver. The owner reconfirmed player-chosen after-Quality ordering, correcting contradictory Ge wording in that replacement.
 
 ## Approved asset rule
 

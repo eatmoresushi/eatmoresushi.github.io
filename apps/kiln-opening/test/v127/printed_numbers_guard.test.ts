@@ -36,7 +36,7 @@ const cases: Array<[string, string, number[]]> = [
   // "at least 1 Vase or 1 Censer", then the 1 Clay the action saves.
   ["Large Throwing Wheel", T("Large Throwing Wheel"), [1, 2, 0]],
   ["Measuring Calipers", T("Measuring Calipers"), [FORMING_TECH_COINS]],
-  ["Standardised Moulds", T("Standardised Moulds"), [FORMING_TECH_COINS]],
+  ["Dipping Vats", T("Dipping Vats"), []],
   ["Drying Frames", T("Drying Frames"), [1, DECORATION_COSTS.carved]],
   ["Reworking Table", T("Reworking Table"), [1]],
   ["Glaze Palette", T("Glaze Palette"), [1]],

@@ -46,12 +46,12 @@ const ADVANCED_TECHNIQUE_SHORT_COPY = {
     "zh-CN": "陶车坊行动成型至少1件瓶或香炉时：该行动的泥总费用减2，最低为0。可与师傅折扣叠加。",
   },
   T02: {
-    en: "After forming a vessel: if another of your ceramics has a different Shape → gain 2 Coins.",
-    "zh-CN": "成型器物后：若你的另一件陶瓷具有不同器型 → 获得2铜钱。",
+    en: "After forming a vessel: if you have another vessel in your workshop → gain 2 Coins.",
+    "zh-CN": "成型器物后：若作坊中还有你的另一件器物 → 获得2铜钱。",
   },
   T03: {
-    en: "After forming a vessel: if another of your ceramics has the same Shape → gain 2 Coins.",
-    "zh-CN": "成型器物后：若你的另一件陶瓷具有相同器型 → 获得2铜钱。",
+    en: "During one Kiln Yard action: glazing costs 0 Coins for all Plain ceramics loaded by that action.",
+    "zh-CN": "一次窑坊行动中：本次装窑的所有素面陶瓷施釉费用为0铜钱。",
   },
   T04: {
     en: "After a Potter’s Wheel action: pay the 2-Coin Decoration cost → replace Plain with Carved, Impressed or Painted on 1 vessel formed by that action.",

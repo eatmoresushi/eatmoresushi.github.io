@@ -10,6 +10,7 @@ import {
   STARTING_ORDERS,
   STARTING_TECHNIQUES,
   TECHNIQUES,
+  TECHNIQUE_DEFINITIONS,
 } from "../../src/game/index.ts";
 
 const EN_SOURCE = readFileSync(
@@ -71,6 +72,23 @@ describe("V1.4 checked-in data matches the adopted English rulebook", () => {
     expect(KILN_DEFINITIONS.GE.abilityZh).toContain("任意一种釉色");
     expect(KILN_DEFINITIONS.GE.abilityZh).toContain("开片不能替代纹饰");
     expect(OWNER_AMENDMENTS).toContain("### 7. Imperial Court cost and Ge Glaze substitution");
+  });
+
+  it("follows the replacement rulebook's Measuring Calipers and Dipping Vats", () => {
+    expect(TECHNIQUE_DEFINITIONS["T02"]!.ability).toContain("if you have another vessel in your workshop, gain 2 Coins");
+    expect(TECHNIQUE_DEFINITIONS["T02"]!.ability).not.toContain("different Shape");
+    expect(TECHNIQUE_DEFINITIONS["T03"]!).toMatchObject({
+      name: "Dipping Vats",
+      nameZh: "浸釉缸",
+      discipline: "forming",
+      cost: 2,
+      oncePerRound: true,
+    });
+    expect(TECHNIQUE_DEFINITIONS["T03"]!.ability).toContain("the Plain ceramics loaded by that action pay no Glazing cost");
+    expect(EN_SOURCE).toContain("including one formed by the same action");
+    expect(EN_SOURCE).toContain("**Dipping Vats** applies to one Kiln Yard action per round and covers every Plain ceramic that action loads, in either kiln");
+    expect(EN_SOURCE).toContain("do not trigger **Kiln Tending** or **Dipping Vats**");
+    expect(EN_SOURCE).toContain("**Applying a Glaze costs 1 Coin per ceramic** before waivers.");
   });
 
   it("matches every English Order row exactly", () => {

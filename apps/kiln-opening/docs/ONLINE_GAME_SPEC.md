@@ -65,7 +65,9 @@ Consecutive computer turns run in bounded batches so an Edge Function invocation
 
 ## Synchronous turn model
 
-Production uses Workshop (Plain, no Glaze) → optional Decoration → paid Glaze & Load → Firing. Decoration costs 2 Coins per vessel, with one free for the Shifu. Glazing and loading costs 1 Coin per ceramic and chooses Glaze at placement. Crackle is a permanent Ge property separate from Decoration and Glaze. When completing an Order, each Crackle ceramic may use one independently chosen virtual Glaze consistently for every requirement of that Order. It cannot substitute Decoration; actual attributes remain unchanged, including Glaze for Exhibition diversity.
+Production uses Workshop (Plain, no Glaze) → optional Decoration → paid Glaze & Load → Firing. Decoration costs 2 Coins per vessel, with one free for the Shifu. Glazing and loading normally costs 1 Coin per ceramic and chooses Glaze at placement. Once per round, Dipping Vats may waive that cost for every Plain ceramic loaded by one Kiln Yard action into either kiln; specialised ceramics still pay. Rapid Drying and Imperial Priority are not Kiln Yard actions and receive no Dipping Vats waiver. Crackle is a permanent Ge property separate from Decoration and Glaze. When completing an Order, each Crackle ceramic may use one independently chosen virtual Glaze consistently for every requirement of that Order. It cannot substitute Decoration; actual attributes remain unchanged, including Glaze for Exhibition diversity.
+
+Measuring Calipers requires another vessel still in the owner's workshop after formation, of any Shape and including another formed by the same action. Loaded, fired and delivered ceramics do not qualify.
 
 Work Phase has one active player at a time. Every player must place all four workers; there is no Work pass. Imperial Court costs 5 Coins and advances Recognition only from 0, 1 or 2.
 

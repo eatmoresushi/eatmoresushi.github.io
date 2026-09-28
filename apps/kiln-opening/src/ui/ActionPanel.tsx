@@ -32,6 +32,7 @@ import {
   activeKilnSpaceIds,
   currentDecisionActor,
   locationCapacity,
+  kilnYardGlazingCost,
   matchingOrderCeramicGroups,
   matchesOrder,
   findGeGlazes,
@@ -53,6 +54,7 @@ import type {
   TechniqueDiscipline,
   TechniqueId,
   WorkerId,
+  WorkshopCeramic,
 } from "../game";
 import type {
   AuthoritativeCommand,
@@ -812,12 +814,15 @@ function KilnYardForm({ game, player, workers, locationFull, busy, send }: {
   send: SendCommand;
 }) {
   const { locale, t, term } = useI18n();
-  const ceramics = ownCeramics(game, player.id, "workshop");
+  const ceramics = Object.values(game.ceramics).filter((ceramic): ceramic is WorkshopCeramic => ceramic.ownerId === player.id && ceramic.stage === "workshop");
+  const dippingVatsReady = ownedAvailableTechniques(player, ["T03"]).length > 0;
+  const [useDippingVats, setUseDippingVats] = useState(false);
   const occupiedShared = new Set(Object.values(game.ceramics).filter((ceramic) => ceramic.stage === "loaded" && ceramic.kilnSpaceId !== "imperial").map((ceramic) => ceramic.stage === "loaded" ? ceramic.kilnSpaceId : ""));
   const destinations: Array<KilnSpaceId | "imperial"> = activeKilnSpaceIds(game.playerCount).filter((space) => !occupiedShared.has(space));
   const imperialOccupied = Object.values(game.ceramics).some((ceramic) => ceramic.stage === "loaded" && ceramic.ownerId === player.id && ceramic.kilnSpaceId === "imperial");
   if (player.imperialKilnUnlocked && !imperialOccupied) destinations.push("imperial");
-  const canLoad = ceramics.length > 0 && destinations.length > 0 && player.resources.coins >= 1;
+  const canAffordLoad = ceramics.some((ceramic) => kilnYardGlazingCost([ceramic], dippingVatsReady) <= player.resources.coins);
+  const canLoad = destinations.length > 0 && canAffordLoad;
   const noLoadReason = ceramics.length === 0
     ? locale === "zh-CN" ? "没有可装窑的作坊器物" : "No Workshop ceramic is available to load"
     : destinations.length === 0
@@ -845,11 +850,18 @@ function KilnYardForm({ game, player, workers, locationFull, busy, send }: {
     const ceramic = ceramics.find((candidate) => candidate.id === load.ceramicId);
     return ceramic === undefined ? [] : [ceramic];
   });
+  const hasPlainLoad = shifuTargets.some((ceramic) => ceramic.decoration === "plain");
+  const applyDippingVats = useDippingVats && dippingVatsReady && hasPlainLoad;
+  const glazingCost = kilnYardGlazingCost(shifuTargets, applyDippingVats);
   const selectedShifuCeramicId = shifuTargets.some((ceramic) => ceramic.id === shifuCeramicId)
     ? shifuCeramicId
     : shifuTargets[0]?.id ?? "";
   const ownsFurniture = player.techniques.some((technique) => technique.id === "T15" && !technique.exhausted);
 
+  function selectedGlazingCost(index: number): number {
+    const ceramic = ceramics.find((candidate) => candidate.id === ceramicIds[index]);
+    return ceramic === undefined ? 1 : kilnYardGlazingCost([ceramic], applyDippingVats);
+  }
   function setCeramic(index: number, value: string): void {
     setCeramicIds((current) => current.map((entry, entryIndex) => entryIndex === index ? value : entry));
   }
@@ -870,7 +882,7 @@ function KilnYardForm({ game, player, workers, locationFull, busy, send }: {
     if (locationFull && selectedWorker.kind !== "shifu") return "Kiln Yard is full for Apprentices.";
     if (ceramics.length === 0) return "You have no Workshop ceramic to load.";
     if (destinations.length === 0) return "No Shared or Imperial kiln destination is empty.";
-    if (player.resources.coins < loads.length) return `Requires ${loads.length} Coins.`;
+    if (player.resources.coins < glazingCost) return `Requires ${glazingCost} Coins.`;
     if (loads.length < 1) return "Select at least one Workshop ceramic and destination.";
     if (new Set(loads.map((load) => load.ceramicId)).size !== loads.length) return "Choose each ceramic only once.";
     if (new Set(loads.map((load) => load.kilnSpaceId)).size !== loads.length) return "Choose each kiln destination only once.";
@@ -892,13 +904,14 @@ function KilnYardForm({ game, player, workers, locationFull, busy, send }: {
       type: "USE_KILN_YARD",
       workerId: selectedWorker.id,
       loads,
+      ...(applyDippingVats ? { useDippingVats: true } : {}),
       ...(selectedWorker.kind === "shifu" && selectedShifuCeramicId !== "" ? { shifuCeramicId: selectedShifuCeramicId } : {}),
       ...(player.startingTechniqueId === "ST04" && kilnTendingResource === "clay" ? { kilnTendingClay: 1 } : {}),
       ...(player.startingTechniqueId === "ST04" && kilnTendingResource === "wood" ? { kilnTendingWood: 1 } : {}),
     });
   }
   if (ceramics.length === 0) return <ActionUnavailable message="You have no Workshop ceramic to load." />;
-  if (player.resources.coins < 1) return <ActionUnavailable message="Glazing and loading requires 1 Coin per ceramic." />;
+  if (!canAffordLoad) return <ActionUnavailable message="Glazing and loading requires 1 Coin per ceramic." />;
   if (destinations.length === 0) return <ActionUnavailable message="No Shared or Imperial kiln destination is empty." />;
   return (
     <form className="control-form" onSubmit={submit}>
@@ -906,10 +919,12 @@ function KilnYardForm({ game, player, workers, locationFull, busy, send }: {
       {Array.from({ length: maximumLoads }, (_, index) => (
         <div className="split-fields" key={index}>
           <CeramicChoice name={`ceramic${index + 1}`} label={`Ceramic ${index + 1}`} ceramics={ceramics} value={ceramicIds[index] ?? ""} onChange={(value) => setCeramic(index, value)} {...(index === 0 ? { hint: "Choose a ceramic" } : { blank: "None" })} disabledIds={index === 0 || ceramicIds[0] === "" ? [] : [ceramicIds[0]!]} />
-          <EnumChoice name={`load-glaze${index + 1}`} label={locale === "zh-CN" ? `釉色 ${index + 1}（1铜钱）` : `Glaze ${index + 1} (1 Coin)`} options={GLAZES} value={glazes[index] ?? "white"} onChange={(value) => setGlazes((current) => current.map((glaze, i) => i === index ? value as Glaze : glaze))} />
+          <EnumChoice name={`load-glaze${index + 1}`} label={locale === "zh-CN" ? `釉色 ${index + 1}（${selectedGlazingCost(index)}铜钱）` : `Glaze ${index + 1} (${selectedGlazingCost(index)} Coin)`} options={GLAZES} value={glazes[index] ?? "white"} onChange={(value) => setGlazes((current) => current.map((glaze, i) => i === index ? value as Glaze : glaze))} />
           <EnumChoice name={`space${index + 1}`} label={`Kiln destination ${index + 1}`} options={destinations} value={kilnSpaces[index] ?? ""} onChange={(value) => setDestination(index, value)} disabledOptions={index === 0 || kilnSpaces[0] === "" ? [] : [kilnSpaces[0]!]} />
         </div>
       ))}
+      {dippingVatsReady && <label><input type="checkbox" name="use-dipping-vats" checked={applyDippingVats} disabled={!hasPlainLoad} onChange={(event) => setUseDippingVats(event.target.checked)} />{locale === "zh-CN" ? "使用浸釉缸：本次窑坊行动中，所有素面陶瓷的施釉费用为0铜钱" : "Use Dipping Vats: glaze all Plain ceramics loaded by this Kiln Yard action for 0 Coins"}</label>}
+      <p className="control-hint">{locale === "zh-CN" ? `施釉总费用：${glazingCost}铜钱` : `Total glazing cost: ${glazingCost} Coins`}</p>
       {ownsFurniture && <ChoiceTiles name="kiln-furniture" label={locale === "zh-CN" ? "支烧窑具：将1件高温区或低温区陶瓷的窑位修正视为0" : "Kiln Furniture: treat one High/Low load as zone 0"} value={furnitureIndex} onChange={(value) => setFurnitureIndex(value as "" | "0" | "1")} options={[
         { value: "", label: t("Do not use") },
         ...loads.map((load, index) => {
@@ -2005,7 +2020,7 @@ function localizeActionError(locale: Locale, error: string): string {
     "Ding's extra vessel must match a selected base Shape.": "定窑额外器物必须与所选基础器型相同。",
     "Choose a Ding vessel before substituting its Clay.": "请先选择定窑要额外成型的器物。",
     "Large Throwing Wheel requires a Vase or Censer.": "大陶车需要本次成型至少1个瓶或香炉。",
-    "Measuring Calipers requires two different Shapes.": "量形规需要另有1件不同器型的已成型或已施釉器物。",
+    "Measuring Calipers requires another vessel in your workshop.": "量形规需要作坊中还有你的另一件器物。",
     "Drying Frames requires a Shape matching an Order in hand.": "晾坯架需要本次陶车坊行动成型的器物。",
     "White Slip must select a vessel formed by this action.": "白陶衣必须选择本次行动成型的1件器物。",
     "White Slip and Drying Frames must select different vessels.": "白陶衣和晾坯架必须选择不同器物。",
@@ -2026,6 +2041,9 @@ function localizeActionError(locale: Locale, error: string): string {
     "Select at least one Workshop ceramic and destination.": "请至少选择1件作坊器物及其窑位。",
     "Painting Brushes may waive only one Decoration per round.": "彩绘笔每轮只能免除1件纹饰的费用。",
     "Glazing and loading requires 1 Coin per ceramic.": "施釉并装窑每件需要1铜钱。",
+    "Choose whether to use Dipping Vats.": "请选择是否使用浸釉缸。",
+    "Dipping Vats requires at least one Plain ceramic loaded by this Kiln Yard action.": "浸釉缸要求本次窑坊行动至少装窑1件素面陶瓷。",
+    "Pay 1 Coin for each loaded ceramic whose Glazing cost is not waived.": "每件施釉费用未获减免的装窑陶瓷需要支付1铜钱。",
     "Rapid Drying requires 1 Wood.": "催干需要支付1柴。",
     "No Order source is available.": "没有可承接的委托来源。",
     "No face-up Technique is available.": "没有公开进阶技艺可用。",

@@ -8,8 +8,10 @@ The [V1.4 Player Rulebook](./KILN_OPENING_v1.4_EN_SOURCE.md) governs mechanics. 
 - Shared-Kiln allocations (High/Middle/Low) are 1/2/1, 2/2/2 and 3/2/3 at 2/3/4 players. The eighth space has stable ID `low_3`.
 - Materials Yard, Potter's Wheel, Decoration Workshop, Commission Market and Craft Academy have 2/3/4 global worker spaces. Kiln Yard, Paid Work and Imperial Court are uncapped. Multiple Shifu may overfill a location. Internal location IDs remain stable across the label changes.
 - A formed ceramic starts in `workshop`, Plain and without a Glaze. Optional Decoration changes it to Carved, Impressed or Painted without loading it. Decoration costs 2 Coins per ceramic; a Shifu may decorate one or two with one free Decoration.
-- Every load chooses a Glaze and costs 1 Coin, including Rapid Drying and Imperial Priority. Payment and placement are atomic; an invalid multi-load changes nothing. Plain ceramics can skip Decoration.
+- Every load chooses a Glaze and normally costs 1 Coin. Dipping Vats may waive the Glazing cost of every Plain ceramic loaded by one Kiln Yard action per round, including loads into the Shared or Imperial Kiln; specialised ceramics still pay normally. Rapid Drying and Imperial Priority remain 1-Coin loads and cannot use Dipping Vats. Payment and placement are atomic; an invalid multi-load changes nothing. Plain ceramics can skip Decoration.
 - Tech use is optional unless explicitly required. Stated costs remain payable; waivers and selected income apply only at their printed timings. Ding's extra small ceramic belongs only to an Apprentice Potter's Wheel action. White Slip and Drying Frames decorate eligible newly formed Plain ceramics; neither is a Decoration Workshop action or triggers Rapid Drying.
+
+Measuring Calipers grants 2 Coins once per round after forming a vessel if another vessel remains in the owner's workshop, regardless of Shape. Another vessel formed by the same action qualifies; loaded, fired and delivered ceramics do not. Stable ID `T03` now identifies Dipping Vats, replacing Standardised Moulds under the revised source.
 
 ## Orders and private Academy choices
 
@@ -42,4 +44,4 @@ Ge records actual Fine Quality, so completion and Exhibition use recorded Qualit
 
 All undelivered ceramics and their recorded attributes are public. Hands, inspections, hidden deck order and unrevealed Contributions are private. Public projections redact them; authenticated private responses contain only the requesting seat's information. The same sanitized boundary applies to computer players. English and Simplified Chinese render identical stable IDs and never change game state.
 
-V1.4 rooms use schema 5, behavior revision 25 and policy `rules-v1.4-strategic-001`. Older room rows and playtest reports are retained as history. Version/schema/fingerprint mismatches are rejected rather than reinterpreted. SQL migrations, both Edge Functions and the client must be rolled out together; checked-in migrations do not apply themselves.
+V1.4 rooms use schema 5, behavior revision 26 and policy `rules-v1.4-strategic-001`. Older room rows and playtest reports are retained as history. Version/schema/fingerprint mismatches are rejected rather than reinterpreted. SQL migrations, both Edge Functions and the client must be rolled out together; checked-in migrations do not apply themselves.

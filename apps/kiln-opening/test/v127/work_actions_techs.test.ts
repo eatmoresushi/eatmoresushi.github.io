@@ -243,12 +243,15 @@ describe("v1.4 worker actions and Techs", () => {
     state = structuredClone(initial);
     state.players["P1"]!.resources = { clay: 10, wood: 10, coins: 10 };
     addTechnique(state, "P1", "T03");
-    addShaped(state, "P1", "bowl");
-    const mouldCoins = state.players["P1"]!.resources.coins;
+    const dipped = addShaped(state, "P1", "bowl");
+    const dippingCoins = state.players["P1"]!.resources.coins;
     state = mustApply(state, "P1", {
-      type: "FORM_CERAMICS", workerId: workerId(state, "P1", "apprentice"), shapes: ["bowl"], useTechniqueIds: ["T03"],
+      type: "USE_KILN_YARD", workerId: workerId(state, "P1", "apprentice"),
+      loads: [{ ceramicId: dipped.id, glaze: "white", kilnSpaceId: "middle_1" }], useDippingVats: true,
     }, rng);
-    expect(state.players["P1"]!.resources.coins).toBe(mouldCoins + FORMING_TECH_COINS);
+    expect(state.players["P1"]!.resources.coins).toBe(dippingCoins);
+    expect(state.ceramics[dipped.id]?.stage).toBe("loaded");
+    expect(state.players["P1"]!.techniques.find(({ id }) => id === "T03")?.exhausted).toBe(true);
 
     state = structuredClone(initial);
     state.players["P1"]!.resources = { clay: 10, wood: 10, coins: 10 };

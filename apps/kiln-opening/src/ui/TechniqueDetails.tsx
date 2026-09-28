@@ -25,6 +25,14 @@ export const TECHNIQUE_CLARIFICATIONS = {
     en: "Large Throwing Wheel stacks with the Shifu Potter’s Wheel discount.",
     "zh-CN": "大陶车可与师傅的陶车坊优惠叠加。",
   }],
+  T02: [{
+    en: "The other vessel may have the same or a different Shape. It must still be in your workshop when Measuring Calipers is used.",
+    "zh-CN": "另一件器物可以具有相同或不同器型。使用量形规时，它必须仍在你的作坊中。",
+  }],
+  T03: [{
+    en: "Dipping Vats is optional and applies to all Plain ceramics loaded by one Kiln Yard action, into the Shared Kiln or your Imperial Kiln. Ceramics with other Decorations pay their normal glazing cost. It does not apply to Rapid Drying or Imperial Priority.",
+    "zh-CN": "浸釉缸可选择使用，作用于一次窑坊行动中装入共窑或御窑的所有素面陶瓷。具有其他纹饰的陶瓷照常支付施釉费用。不能用于催干或御烧优先。",
+  }],
   T04: [whiteSlipAndDryingFrames],
   T06: [{
     en: "Glaze Palette resolves at the end of the Work Phase after all worker effects, including Imperial Priority, and before Test Pieces. Change one loaded ceramic to any Glaze at no additional cost.",

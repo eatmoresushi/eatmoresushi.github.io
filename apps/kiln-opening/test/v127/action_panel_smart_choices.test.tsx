@@ -143,21 +143,44 @@ describe("V1.4 smart worker-action choices", () => {
     expect(markup).not.toContain('data-choice-group="kiln-tending"');
   });
 
-  it("renders eligible forming rewards unchecked and cannot spend their unselected income on White Slip", () => {
+  it("offers only optional Calipers income for another same-Shape vessel and does not spend it on White Slip unless selected", () => {
     const { markup } = renderAction("forming_studio", "apprentice", (state) => {
       state.players["P1"]!.startingTechniqueId = "ST02";
       state.players["P1"]!.resources.coins = 0;
       addTechnique(state, "P1", "T02"); addTechnique(state, "P1", "T03");
-      addShaped(state, "P1", "bowl"); addShaped(state, "P1", "plate");
+      addShaped(state, "P1", "bowl");
     });
-    for (const id of ["T02", "T03"]) {
+    for (const id of ["T02"]) {
       const input = markup.match(new RegExp(`<input[^>]*value="${id}"[^>]*>`))?.[0] ?? "";
       expect(input).toContain('type="checkbox"');
       expect(input).not.toContain("checked=");
     }
+    expect(markup).not.toMatch(/<input[^>]*value="T03"/u);
     const whiteSlip = markup.match(/<fieldset[^>]*data-choice-group="white-slip"[\s\S]*?<\/fieldset>/)?.[0] ?? "";
     expect(buttonWithAttribute(whiteSlip, "data-choice-value", "0")).toContain('disabled=""');
     expect(whiteSlip).toContain("Not enough Coins");
+  });
+
+  it("offers Dipping Vats as an optional Kiln Yard choice even with zero Coins", () => {
+    const { markup } = renderAction("kiln_yard", "shifu", (state) => {
+      state.players["P1"]!.resources.coins = 0;
+      addTechnique(state, "P1", "T03");
+    });
+    const toggle = markup.match(/<input[^>]*name="use-dipping-vats"[^>]*>/u)?.[0] ?? "";
+    expect(toggle).toContain('type="checkbox"');
+    expect(toggle).not.toContain('checked=""');
+    expect(markup).toContain("Use Dipping Vats: glaze all Plain ceramics loaded by this Kiln Yard action for 0 Coins");
+    expect(markup).toContain('data-choice-group="load-glaze1"');
+    expect(markup).not.toContain("Glazing and loading requires 1 Coin per ceramic.");
+  });
+
+  it("does not waive glazing with an exhausted Dipping Vats", () => {
+    const { markup } = renderAction("kiln_yard", "apprentice", (state) => {
+      state.players["P1"]!.resources.coins = 0;
+      addTechnique(state, "P1", "T03", true);
+    });
+    expect(markup).not.toContain('name="use-dipping-vats"');
+    expect(markup).toContain("Glazing and loading requires 1 Coin per ceramic.");
   });
 
   it.each(ACTION_LOCATIONS)("uses the shared physical meeple buttons at %s", (locationId) => {

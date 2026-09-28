@@ -54,6 +54,9 @@ describe("shared Tech component reminders", () => {
     expect(techniqueOverviewCopy("T14", "en")).toContain("recalculate only its Actual Heat and Quality.");
     expect(techniqueOverviewCopy("T15", "en")).toContain("its zone modifier is 0 for this firing.");
     expect(techniqueFullCopy("T02", "en")).toContain("workshop");
-    expect(techniqueFullCopy("T03", "en")).toContain("workshop");
+    expect(techniqueOverviewCopy("T02", "en")).toBe("After forming a vessel: if you have another vessel in your workshop → gain 2 Coins.");
+    expect(techniqueOverviewCopy("T03", "en")).toBe("During one Kiln Yard action: glazing costs 0 Coins for all Plain ceramics loaded by that action.");
+    expect(techniqueFullCopy("T03", "en")).toContain("Plain");
+    expect(TECHNIQUE_DEFINITIONS["T03"]?.name).toBe("Dipping Vats");
   });
 });
