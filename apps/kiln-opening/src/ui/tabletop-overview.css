@@ -1,0 +1,90 @@
+/* The shared table is an overview. Printed-size reading lives in the inspector. */
+.kiln-tabletop-root.kiln-live-root .kiln-tabletop-tech-market {
+  container: none;
+  display: grid;
+  grid-template-columns: repeat(3, var(--tech-tile-size));
+  align-content: start;
+  gap: 0;
+  padding: .2rem;
+}
+.kiln-tabletop-root.kiln-live-root .kiln-tabletop-tech-market > .kiln-tabletop-section-title {
+  grid-column: 1 / -1;
+  margin: 0 0 .35rem;
+}
+.kiln-tabletop-root.kiln-live-root .kiln-tabletop-tech-market > .kiln-tabletop-tech-discipline { display: grid; min-width: 0; grid-template-rows: auto auto; }
+.kiln-tabletop-root.kiln-live-root .kiln-tabletop-tech-market .kiln-tabletop-tech-discipline > header { min-height: 1.6rem; padding: .2rem .25rem; }
+.kiln-tabletop-root.kiln-live-root .kiln-tabletop-tech-market .kiln-tabletop-tech-discipline > header strong { font-size: .68rem; }
+.kiln-tabletop-root.kiln-live-root .kiln-tabletop-tech-market .kiln-tabletop-tech-discipline > header small { font-size: .56rem; }
+.kiln-tabletop-root.kiln-live-root .kiln-tabletop-tech-market .kiln-tabletop-tech-discipline > div { grid-template-columns: minmax(0, 1fr); gap: 0; }
+.kiln-tabletop-tech-market .kiln-tabletop-section-title small { display: none; }
+.kiln-tabletop-tech-market .kiln-tabletop-section-title strong { font-size: .84rem; }
+
+.kiln-live-root { --overview-order-width: 8.75rem; --overview-order-height: 12.25rem; }
+.kiln-tabletop-root.kiln-live-root .kiln-tabletop-order-row { grid-template-columns: repeat(6, var(--overview-order-width)); justify-content: start; gap: .35rem; overflow-x: auto; padding-block: 0; }
+:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-order-card { --order-quality-height: 2rem; --order-reward-height: 1.6rem; width: var(--overview-order-width); height: auto; min-height: var(--overview-order-height); gap: .2rem; border-radius: 7px; padding: .55rem .55rem .75rem; }
+:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-order-card::before { inset: 3px; border-radius: 4px; }
+:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-heading { min-height: .9rem; }
+:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-id { font-size: .55rem; }
+:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-category { font-size: .5rem; }
+:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-order-illustration { flex: none; width: 100%; height: 100%; min-height: 0; }
+:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-requirement-label { display: none; }
+:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-copy { font-size: calc(.65rem * var(--order-copy-scale, 1)); line-height: 1.15; overflow-wrap: normal; }
+:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-quality { display: grid; justify-items: center; align-content: start; gap: .1rem; margin: 0; padding-top: .2rem; }
+:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-quality > small { display: none; }
+:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-quality > b,
+:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-quality-requirements > span { font-size: .65rem; }
+:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-footer { flex: none; min-height: 1.5rem; gap: .2rem; margin: 0; padding: .15rem 0 0; }
+:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-stat { gap: .15rem; }
+:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-stat b { font-size: .85rem; }
+:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-vp-label { width: 1rem; height: 1.1rem; font-size: .5rem; }
+:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-coin { width: .8rem; height: .8rem; border-width: 1px; }
+:is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-crown-icon { width: .95rem; height: .8rem; }
+
+@media (min-width: 1100px) {
+  .kiln-live-root { --ui-gap: .5rem; }
+  .kiln-tabletop-root.kiln-live-root .kiln-tabletop-topbar { min-height: 44px; padding: .3rem .75rem; }
+  .kiln-live-root .kiln-tabletop-brand strong { font-size: .8rem; }
+  .kiln-live-root .kiln-tabletop-brand small { display: none; }
+  .kiln-live-root .kiln-tabletop-turn-summary > span { padding: .15rem .5rem; }
+  .kiln-live-root .kiln-tabletop-turn-summary small { font-size: .58rem; }
+  .kiln-live-root .kiln-tabletop-turn-summary strong { font-size: .76rem; line-height: 1.15; }
+  .kiln-live-root .kiln-tabletop-icon-button,
+  .kiln-live-root .kiln-tabletop-action-link { min-height: 32px; height: 32px; }
+  .kiln-tabletop-root.kiln-live-root .kiln-tabletop-player-dock { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .5rem; margin-top: .4rem; }
+  .kiln-live-root .kiln-tabletop-player { grid-template-columns: 28px minmax(0, 1fr) auto; padding: .3rem .5rem; gap: .12rem .4rem; }
+  .kiln-live-root .kiln-tabletop-avatar { width: 28px; font-size: .8rem; }
+  .kiln-live-root .kiln-tabletop-player-name { display: flex; align-items: baseline; flex-wrap: wrap; gap: .1rem .4rem; }
+  .kiln-live-root .kiln-tabletop-player-name strong { font-size: .74rem; }
+  .kiln-live-root .kiln-tabletop-player-name small { margin: 0; font-size: .6rem; }
+  .kiln-live-root .kiln-tabletop-player-score { display: flex; align-items: baseline; gap: .25rem; }
+  .kiln-live-root .kiln-tabletop-player-score b { font-size: 1rem; }
+  .kiln-live-root .kiln-tabletop-player-score small { font-size: .6rem; }
+  .kiln-live-root .kiln-tabletop-player-resources,
+  .kiln-live-root .kiln-tabletop-player-public { gap: .2rem; }
+  .kiln-live-root .kiln-tabletop-player-resources i,
+  .kiln-live-root .kiln-tabletop-player-public i { padding: .1rem .25rem; font-size: .62rem; }
+  .kiln-live-root .kiln-tabletop-first-player { width: 18px; bottom: -.15rem; font-size: .6rem; }
+
+  .kiln-tabletop-root.kiln-live-root .kiln-tabletop-market { grid-template-columns: 108px minmax(0, 1fr); padding: .4rem; gap: .2rem .4rem; align-items: start; }
+  .kiln-tabletop-market > .kiln-tabletop-section-title { grid-column: 1; grid-row: 1; align-self: start; }
+  .kiln-tabletop-market .kiln-tabletop-section-title small { font-size: .55rem; }
+  .kiln-tabletop-market .kiln-tabletop-section-title strong { font-size: .8rem; }
+  .kiln-tabletop-root.kiln-live-root .kiln-tabletop-order-deck { grid-column: 1; grid-row: 1; align-self: end; width: 30px; margin: 0; }
+  .kiln-tabletop-root.kiln-live-root .kiln-tabletop-order-row { grid-column: 2; grid-row: 1; }
+
+  /* Leave room for session/player controls and the longest public Order reminders. */
+  .kiln-tabletop-root.kiln-live-root .kiln-tabletop-play-area { grid-template-columns: minmax(0, calc((100dvh - 411px) * 1.55)) calc(3 * var(--tech-tile-size) + .4rem + 2px); justify-content: center; align-items: start; gap: .5rem; }
+  .kiln-live-root .kiln-tabletop-board-scroll { width: 100%; }
+  .kiln-live-root .kiln-tabletop-board { padding: .4rem; }
+}
+@media (max-width: 1099px) {
+  .kiln-tabletop-root.kiln-live-root .kiln-tabletop-tech-market { width: max-content; max-width: 100%; justify-self: center; overflow-x: auto; }
+}
+@media (max-width: 599px) {
+  .kiln-tabletop-root.kiln-live-root .kiln-tabletop-tech-market { grid-template-columns: minmax(0, 1fr); }
+  .kiln-tabletop-root.kiln-live-root .kiln-tabletop-tech-market .kiln-tabletop-tech-discipline > div { grid-template-columns: repeat(2, var(--tech-tile-size)); }
+}
+
+@media (max-width: 380px) {
+  .kiln-tabletop-root.kiln-live-root .kiln-tabletop-tech-market .kiln-tabletop-tech-discipline > div { grid-template-columns: var(--tech-tile-size); }
+}

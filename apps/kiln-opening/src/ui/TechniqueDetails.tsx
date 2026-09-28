@@ -7,7 +7,7 @@ interface LocalizedClarification {
 }
 
 // The owner's full appendix is preserved verbatim in
-// docs/KILN_OPENING_v1.2.7_TECH_DETAIL_TEXT_SOURCE.md. These are its relevant
+// docs/KILN_OPENING_v1.4_EN_SOURCE.md. These are its relevant
 // clarifications, shared where one paragraph applies to multiple Techs.
 const whiteSlipAndDryingFrames: LocalizedClarification = {
   en: "White Slip and Drying Frames may both be used with the same Potter’s Wheel action, including an Apprentice action that forms an additional vessel through Ding’s Moulded Production. They must affect different vessels, and each vessel must meet the chosen effect’s requirements. Ding’s additional vessel is eligible for either effect.",
@@ -25,10 +25,18 @@ export const TECHNIQUE_CLARIFICATIONS = {
     en: "Large Throwing Wheel stacks with the Shifu Potter’s Wheel discount.",
     "zh-CN": "大陶车可与师傅的陶车坊优惠叠加。",
   }],
+  T02: [{
+    en: "The other vessel may have the same or a different Shape. It must still be in your workshop when Measuring Calipers is used.",
+    "zh-CN": "另一件器物可以具有相同或不同器型。使用量形规时，它必须仍在你的作坊中。",
+  }],
+  T03: [{
+    en: "Dipping Vats is optional and applies to all Plain ceramics loaded by one Kiln Yard action, into the Shared Kiln or your Imperial Kiln. Ceramics with other Decorations pay their normal glazing cost. It does not apply to Rapid Drying or Imperial Priority.",
+    "zh-CN": "浸釉缸可选择使用，作用于一次窑坊行动中装入共窑或御窑的所有素面陶瓷。具有其他纹饰的陶瓷照常支付施釉费用。不能用于催干或御烧优先。",
+  }],
   T04: [whiteSlipAndDryingFrames],
   T06: [{
-    en: "Glaze Palette changes only the ceramic about to be loaded. It may be used when loading through a Kiln Yard action, Rapid Drying or Imperial Priority, into the Shared Kiln or your Imperial Kiln. It does not itself load a ceramic; the loading must still follow its normal costs and restrictions. It cannot change a ceramic that is already loaded or has been fired.",
-    "zh-CN": "釉色谱只能改变即将装窑的陶瓷。通过窑坊行动、催干或御烧优先装入共窑或你的御窑时，均可使用。此技艺本身不会装窑；装窑仍须遵守正常费用和限制。不能改变已装窑或已烧成的陶瓷。",
+    en: "Glaze Palette resolves at the end of the Work Phase after all worker effects, including Imperial Priority, and before Test Pieces. Change one loaded ceramic to any Glaze at no additional cost.",
+    "zh-CN": "釉色谱在作业阶段结束、全部工人效果（包括御烧优先）结算后、火照之前使用。免费改变1件已装窑陶瓷的釉色。",
   }],
   T10: [{
     en: "Colour Samples: The one-off reservation when acquired is separate from its once-per-round Commission Market effect and does not use that effect for the round. It grants no Commission Market resource bonus and is not a Commission Market action. During a Commission Market action, the ongoing effect replaces the choice for 1 reservation; it does not grant an extra reservation, and you still gain the normal 1 Clay, 1 Wood or 1 Coin for that reservation. A Shifu's other reservation follows the normal rules.",
@@ -53,9 +61,7 @@ export function techniqueClarificationCopy(id: string, locale: Locale): readonly
 export function TechniqueUseNote({ id, locale }: { id: string; locale: Locale }) {
   return <p className="kiln-tabletop-tech-use-note">{locale === "zh-CN"
     ? "除非明确要求，否则技艺能力均可选择使用。使用时须支付列出的费用。放弃使用不会消耗每轮使用次数。"
-    : "Tech abilities are optional unless explicitly required. Pay any stated cost when using an ability. Declining does not spend a once-per-round use."}{id === "T10" && (locale === "zh-CN"
-      ? "色样簿获得时的立即选择必须结算。"
-      : " Colour Samples’ immediate selection when acquired is required.")}</p>;
+    : "Tech abilities are optional unless explicitly required. Pay any stated cost when using an ability. Declining does not spend a once-per-round use."}</p>;
 }
 
 /** Additional rules shown only in the clicked Tech's detailed inspection. */

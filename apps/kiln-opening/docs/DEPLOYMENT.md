@@ -46,8 +46,18 @@ In the repository settings, choose **GitHub Actions** as the Pages source. A pus
 The workflow deliberately does not run the browser test because GitHub-hosted runners would need a separate Chromium download. Use `npm run dev:local` for a browser smoke test before publishing UI changes.
 
 
-## V1.2.7 rollout
+## V1.4 rollout
 
-Apply migrations `202609190001_v127_rules.sql` and `202609190002_playtest_v127.sql`, then deploy the current `game-action` and `playtest-submit` Edge Functions and rebuild/publish the client together. New games require rules/content version 1.2.7 and an `r17` fingerprint. Historical room and playtest rows are preserved; old rooms cannot be resumed with this ruleset. The migration files do not themselves deploy anything.
+Apply `202609260001_v14_rules.sql`, `202609260002_playtest_v14.sql`, `202609270001_v14_starting_orders.sql`, `202609280001_v14_court_ge_amendment.sql` and `202609280002_v14_forming_techs.sql` after the existing migrations, deploy the current `game-action` and `playtest-submit` Edge Functions, then rebuild/publish the client. New rooms require rules/content version 1.4, schema 5 and an `r26` fingerprint. Historical room and playtest rows remain intact; older games, including pre-amendment `r25` rooms, cannot resume under the updated rules.
 
-The public game projection contains only Order-hand counts. The authenticated seat response supplies its private hand; never persist that combined client view into public snapshots or Realtime events.
+The migrations add Fuel Ledger's separate `BANK_2`/`STOKE_2` card values and the V1.4 computer policy, and update playtest reporting. The old Fuel Ledger database column remains only for historical records. The 2026-09-28 amendment migration updates all five authoritative RPC write gates for the 5-Coin Imperial Court cost and Ge Glaze substitution. The later Forming Tech migration updates those gates again for Measuring Calipers and Dipping Vats. Both 2026-09-28 migrations are prepared locally and have not been deployed. Migration files do not deploy themselves.
+
+The client also rejects successful multiplayer responses with older room rules or
+game schemas. An older Edge Function can accept its own old rooms, including
+ceramics with `decoration: "crackle"`, which the V1.4 artwork cannot render.
+Starting another game on that older service does not upgrade its rules. Deploy
+the matching server and client; do not relabel old snapshots or guess a replacement
+Decoration. Current Ge preserves the actual Glaze and Decoration and adds the
+separate permanent `crackle: true` property.
+
+The public game projection contains only Order-hand counts. The authenticated seat response supplies its private hand and choices. Never persist that combined client view into public snapshots or Realtime events.

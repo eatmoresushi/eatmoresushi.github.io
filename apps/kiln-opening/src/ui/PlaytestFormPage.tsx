@@ -399,7 +399,6 @@ export function PlaytestFormPage() {
     <div className="playtest-shell">
       <header className="playtest-masthead">
         <a className="brand" href={import.meta.env.BASE_URL}>
-          <span className="brand-mark" aria-hidden="true">窑</span>
           <span><strong>Kiln Opening</strong><small>PLAYTEST RECORD · V{draft.rulesVersion}</small></span>
         </a>
         <a className="text-button" href={import.meta.env.BASE_URL}>Back to game</a>

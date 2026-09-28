@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.2.7",
+  "rulesVersion": "1.4",
   "roundCount": 5,
   "phases": [
     {
@@ -12,13 +12,13 @@
       "order": 2,
       "id": "work",
       "name": "Work Phase",
-      "summary": "Players alternate placing one worker and resolving that shared location until every worker has been placed; passing is not allowed. Printed spaces are global; a Shifu may overfill a fully occupied action location. A worker may be placed only if it can perform at least one instance of that location's main action."
+      "summary": "Players alternate placing one worker and resolving that shared location until every worker has been placed; passing is not allowed. Printed spaces are global; a Shifu may overfill a fully occupied action location. A worker may be placed only if it can perform at least one instance of that location's main action. After every worker and associated effect, resolve end-of-Work abilities, including Glaze Palette, in First Player order."
     },
     {
       "order": 3,
       "id": "firing",
       "name": "Firing Phase",
-      "summary": "If either Shared or Imperial Kiln contains ceramics, resolve Test Pieces, secret Contributions (including secret Fuel Ledger commitments), Base Heat, each Kiln Yard Shifu's previously marked ceramic in First Player order, Fire, Actual Heat, Kiln abilities, Quality, player-ordered after-Quality Techs and the optional 2-Coin discard of one still-Flawed ceramic per player."
+      "summary": "If ceramics are loaded in either kiln, resolve Test Pieces, secret Contribution-card choices, simultaneous reveal and payment, Base Heat, optional Shifu Heat markers in First Player order, Fire, Actual Heat, Heat adjustments, Quality, then after-Quality abilities including Ge in each owner's chosen order. Recheck eligibility after each ability use, then allow optional salvage of one still-Flawed ceramic for 2 Coins per player."
     },
     {
       "order": 4,

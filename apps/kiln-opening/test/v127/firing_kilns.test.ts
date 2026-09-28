@@ -53,7 +53,7 @@ function firingContext(ceramicResults: Record<string, FiringCeramicResult>): Fir
     round: 1,
     contributors: ["P1"],
     contributions: { P1: "TEND" },
-    fuelLedgerUpgradedBy: [],
+
     baseHeat: 2,
     fireModifier: 0,
     globalHeat: 2,
@@ -62,7 +62,7 @@ function firingContext(ceramicResults: Record<string, FiringCeramicResult>): Fir
   };
 }
 
-describe("V1.2.7 firing, Tech timing, and Kiln Traditions", () => {
+describe("v1.4 firing, Tech timing, and Kiln Traditions", () => {
   it("skips the Firing Phase without revealing a Fire card when no ceramic is loaded", () => {
     const { state: initial, rng } = startedGame(2, 1400);
     let state = structuredClone(initial);
@@ -118,7 +118,7 @@ describe("V1.2.7 firing, Tech timing, and Kiln Traditions", () => {
     openContributions(state, ["P1", "P2"]);
     let privateState = createPrivateFiringState(state);
 
-    const first = submitWoodContribution(state, privateState, "P1", "BANK", true, rng);
+    const first = submitWoodContribution(state, privateState, "P1", "BANK_2", rng);
     expect(first.ok).toBe(true);
     if (!first.ok) return;
     state = first.state;
@@ -126,12 +126,11 @@ describe("V1.2.7 firing, Tech timing, and Kiln Traditions", () => {
     expect(state.phase).toEqual(expect.objectContaining({ type: "firing_contributions", submittedPlayerIds: ["P1"] }));
     expect(state.firingContext).toBeNull();
     expect(state.players["P1"]!.resources.wood).toBe(2);
-    expect(privateState.contributions).toEqual({ P1: "BANK" });
-    expect(privateState.fuelLedgerCommittedBy).toEqual(["P1"]);
+    expect(privateState.contributions).toEqual({ P1: "BANK_2" });
     expect(first.events).toEqual([expect.objectContaining({ type: "WOOD_SUBMITTED", playerId: "P1" })]);
     expectError(applyAction(state, "P1", { type: "REVEAL_FIRE_CARD" }, rng), "WRONG_PHASE");
 
-    const second = submitWoodContribution(state, privateState, "P2", "STOKE", false, rng);
+    const second = submitWoodContribution(state, privateState, "P2", "STOKE", rng);
     expect(second.ok).toBe(true);
     if (!second.ok) return;
     state = second.state;
@@ -139,7 +138,7 @@ describe("V1.2.7 firing, Tech timing, and Kiln Traditions", () => {
     expect(state.players["P2"]!.resources.wood).toBe(0);
     expect(second.events).toContainEqual({
       type: "WOOD_REVEALED",
-      contributions: { P1: "BANK", P2: "STOKE" },
+      contributions: { P1: "BANK_2", P2: "STOKE" },
       effectiveHeatAdjustments: { P1: -2, P2: 1 },
     });
     expect(second.events).toContainEqual({
@@ -156,7 +155,6 @@ describe("V1.2.7 firing, Tech timing, and Kiln Traditions", () => {
     expect(second.events.some((event) => event.type === "FIRE_REVEALED")).toBe(false);
     expectError(applyAction(state, "P2", { type: "REVEAL_FIRE_CARD" }, rng), "NOT_ACTIVE_PLAYER");
     expect(second.privateState.contributions).toEqual({});
-    expect(second.privateState.fuelLedgerCommittedBy).toEqual([]);
 
     const fire = mustResult(state, "P1", { type: "REVEAL_FIRE_CARD" }, rng);
     expect(fire.events).toContainEqual(expect.objectContaining({
@@ -173,18 +171,18 @@ describe("V1.2.7 firing, Tech timing, and Kiln Traditions", () => {
     addLoaded(state, "P1", "bowl", "white", "plain", "middle_1");
     openContributions(state, ["P1"]);
     let privateState = createPrivateFiringState(state);
-    let result = submitWoodContribution(state, privateState, "P1", "STOKE", true, rng);
+    let result = submitWoodContribution(state, privateState, "P1", "STOKE_2", rng);
     expect(result.ok).toBe(false);
 
     addTechnique(state, "P1", "T12");
     state.players["P1"]!.resources.wood = 2;
     privateState = createPrivateFiringState(state);
-    result = submitWoodContribution(state, privateState, "P1", "TEND", true, rng);
+    result = submitWoodContribution(state, privateState, "P1", "TEND_2" as never, rng);
     expect(result.ok).toBe(false);
 
     state.players["P1"]!.resources.wood = 1;
     privateState = createPrivateFiringState(state);
-    result = submitWoodContribution(state, privateState, "P1", "BANK", true, rng);
+    result = submitWoodContribution(state, privateState, "P1", "BANK_2", rng);
     expect(result.ok).toBe(false);
   });
 
@@ -204,7 +202,7 @@ describe("V1.2.7 firing, Tech timing, and Kiln Traditions", () => {
     openContributions(state, ["P1", "P2", "P3", "P4"]);
     let privateState = createPrivateFiringState(state);
     for (const id of ["P1", "P2", "P3", "P4"] as const) {
-      const result = submitWoodContribution(state, privateState, id, "STOKE", false, rng);
+      const result = submitWoodContribution(state, privateState, id, "STOKE", rng);
       expect(result.ok).toBe(true);
       if (!result.ok) return;
       state = result.state;
@@ -240,7 +238,7 @@ describe("V1.2.7 firing, Tech timing, and Kiln Traditions", () => {
     state = finishWork(state, rng).state;
     expect(state.phase.type).toBe("firing_contributions");
     let privateState = createPrivateFiringState(state);
-    const contribution = submitWoodContribution(state, privateState, "P1", "TEND", false, rng);
+    const contribution = submitWoodContribution(state, privateState, "P1", "TEND", rng);
     expect(contribution.ok).toBe(true);
     if (!contribution.ok) return;
     state = contribution.state;
@@ -317,14 +315,67 @@ describe("V1.2.7 firing, Tech timing, and Kiln Traditions", () => {
     state = mustApply(state, "P1", {
       type: "USE_KILN_YARD",
       workerId: workerId(state, "P1", "apprentice"),
-      loads: [{ ceramicId: shared.id, kilnSpaceId: "high_1" }],
+      loads: [{ ceramicId: shared.id, kilnSpaceId: "high_1" , glaze: "white"}],
     }, rng);
     expect(state.phase).toEqual({ type: "work_imperial_priority", actorId: "P1" });
-    const result = mustResult(state, "P1", { type: "RESOLVE_IMPERIAL_PRIORITY", ceramicId: imperial.id }, rng);
+    const result = mustResult(state, "P1", { type: "RESOLVE_IMPERIAL_PRIORITY", ceramicId: imperial.id , glaze: "white"}, rng);
     state = result.state;
     expect(state.players["P1"]!.imperialPriorityAvailable).toBe(false);
     expect(result.events).toContainEqual({ type: "IMPERIAL_PRIORITY_USED", playerId: "P1" });
     expect(state.ceramics[imperial.id]).toEqual(expect.objectContaining({ stage: "loaded", kilnSpaceId: "imperial" }));
+  });
+
+  it.each([false, true])("keeps Imperial Priority and Coins when declining after an action (final worker: %s)", (finalWorker) => {
+    const { state, rng } = startedGame(2, 1413);
+    const selectedWorkerId = workerId(state, "P1", "apprentice");
+    const ceramic = addGlazed(state, "P1", "plate", "celadon", "plain");
+    addLoaded(state, "P2", "bowl", "white", "plain", "middle_1");
+    Object.assign(state.players["P1"]!, { imperialKilnUnlocked: true, imperialPriorityAvailable: true });
+    if (finalWorker) {
+      for (const player of Object.values(state.players)) {
+        for (const worker of Object.values(player.workers)) worker.status = "placed";
+      }
+      state.players["P1"]!.workers[selectedWorkerId]!.status = "available";
+    }
+    const actionResult = mustResult(state, "P1", { type: "USE_LABOUR", workerId: selectedWorkerId }, rng);
+    expect(actionResult.state.phase).toEqual({ type: "work_imperial_priority", actorId: "P1" });
+    expect(actionResult.events).not.toContainEqual({ type: "WORK_PHASE_ENDED" });
+    const resources = { ...actionResult.state.players["P1"]!.resources };
+
+    const declined = mustResult(actionResult.state, "P1", { type: "RESOLVE_IMPERIAL_PRIORITY", ceramicId: null }, rng);
+    expect(declined.state.players["P1"]!.imperialPriorityAvailable).toBe(true);
+    expect(declined.state.players["P1"]!.resources).toEqual(resources);
+    expect(declined.state.ceramics[ceramic.id]).toMatchObject({ stage: "workshop", decoration: "plain" });
+    expect(declined.events).not.toContainEqual({ type: "IMPERIAL_PRIORITY_USED", playerId: "P1" });
+    if (finalWorker) {
+      expect(declined.state.phase).toMatchObject({ type: "firing_contributions", eligiblePlayerIds: ["P2"] });
+      expect(declined.events).toContainEqual({ type: "WORK_PHASE_ENDED" });
+    } else {
+      expect(declined.state.phase).toEqual({ type: "work", activePlayerId: "P2" });
+      expect(declined.events).not.toContainEqual({ type: "WORK_PHASE_ENDED" });
+    }
+  });
+
+  it.each(["forming", "income"] as const)("offers Imperial Priority after %s makes its requirements available", (source) => {
+    const { state, rng } = startedGame(2, 1414);
+    const player = state.players["P1"]!;
+    Object.assign(player, { imperialKilnUnlocked: true, imperialPriorityAvailable: true });
+    player.resources.coins = source === "forming" ? 1 : 0;
+    if (source === "income") addGlazed(state, "P1", "bowl", "white", "plain");
+    expectError(applyAction(state, "P1", { type: "RESOLVE_IMPERIAL_PRIORITY", ceramicId: "not-yet-available", glaze: "white" }, rng), "ABILITY_ALREADY_USED");
+
+    const worker = workerId(state, "P1", "apprentice");
+    const afterAction = source === "forming"
+      ? mustApply(state, "P1", { type: "FORM_CERAMICS", workerId: worker, shapes: ["bowl"] }, rng)
+      : mustApply(state, "P1", { type: "USE_LABOUR", workerId: worker }, rng);
+    expect(afterAction.phase).toEqual({ type: "work_imperial_priority", actorId: "P1" });
+    const ceramic = Object.values(afterAction.ceramics).find((entry) => entry.ownerId === "P1" && entry.stage === "workshop")!;
+    const beforeCoins = afterAction.players["P1"]!.resources.coins;
+    const loaded = mustApply(afterAction, "P1", { type: "RESOLVE_IMPERIAL_PRIORITY", ceramicId: ceramic.id, glaze: "celadon" }, rng);
+    expect(loaded.players["P1"]!.imperialPriorityAvailable).toBe(false);
+    expect(loaded.players["P1"]!.resources.coins).toBe(beforeCoins - 1);
+    expect(loaded.ceramics[ceramic.id]).toMatchObject({ stage: "loaded", kilnSpaceId: "imperial", glaze: "celadon" });
+    expect(loaded.phase).toEqual({ type: "work", activePlayerId: "P2" });
   });
 
   it("requires a worker action after Imperial Priority is used before the action", () => {
@@ -334,7 +385,7 @@ describe("V1.2.7 firing, Tech timing, and Kiln Traditions", () => {
     state.players["P1"]!.imperialKilnUnlocked = true;
     state.players["P1"]!.imperialPriorityAvailable = true;
 
-    state = mustApply(state, "P1", { type: "RESOLVE_IMPERIAL_PRIORITY", ceramicId: imperial.id }, rng);
+    state = mustApply(state, "P1", { type: "RESOLVE_IMPERIAL_PRIORITY", ceramicId: imperial.id , glaze: "white"}, rng);
     expect(state.phase).toEqual({
       type: "work",
       activePlayerId: "P1",
@@ -366,7 +417,7 @@ describe("V1.2.7 firing, Tech timing, and Kiln Traditions", () => {
     const ceramic = addGlazed(state, "P1", "bowl", "white", "plain");
     state = mustApply(state, "P1", {
       type: "USE_KILN_YARD", workerId: workerId(state, "P1", "apprentice"),
-      loads: [{ ceramicId: ceramic.id, kilnSpaceId: "high_1", useKilnFurniture: true }],
+      loads: [{ ceramicId: ceramic.id, kilnSpaceId: "high_1", useKilnFurniture: true , glaze: "white"}],
     }, rng);
     expect(state.ceramics[ceramic.id]).toEqual(expect.objectContaining({ kilnFurnitureUsed: true }));
     expect(state.players["P1"]!.techniques.find(({ id }) => id === "T15")?.exhausted).toBe(true);
@@ -407,7 +458,7 @@ describe("V1.2.7 firing, Tech timing, and Kiln Traditions", () => {
     state.players["P1"]!.resources.wood = 0;
     state.firingContext = firingContext({ [geCeramic.id]: pendingResult(geCeramic.id, { zoneModifier: 1, finalActualHeat: 3, finalHeatDifference: 1 }) });
     state.phase = { type: "firing_before_quality", queue: { actors: ["P1"], currentIndex: 0 } };
-    expectError(applyAction(state, "P1", { type: "RESOLVE_GE", ceramicId: geCeramic.id }, rng), "INVALID_ACTION");
+    expectError(applyAction(state, "P1", { type: "RESOLVE_GE", ceramicId: geCeramic.id }, rng), "WRONG_PHASE");
     expect(state.ceramics[geCeramic.id]).toEqual(expect.objectContaining({ decoration: "plain" }));
   });
 
@@ -424,6 +475,8 @@ describe("V1.2.7 firing, Tech timing, and Kiln Traditions", () => {
       queue: { actors: ["P1"], currentIndex: 0 },
       techniqueIds: ["T11"],
       declinedTechniqueIds: {},
+      geAvailable: false,
+      declinedGePlayerIds: [],
     };
     state = mustApply(state, "P1", { type: "RESOLVE_PROTECTIVE_SAGGARS", ceramicId: protectedCeramic.id }, rng);
     expect(state.ceramics[protectedCeramic.id]).toEqual(expect.objectContaining({ stage: "finished", quality: "fine" }));
@@ -440,6 +493,8 @@ describe("V1.2.7 firing, Tech timing, and Kiln Traditions", () => {
       queue: { actors: ["P1"], currentIndex: 0 },
       techniqueIds: ["T14"],
       declinedTechniqueIds: {},
+      geAvailable: false,
+      declinedGePlayerIds: [],
     };
     const second = mustResult(state, "P1", { type: "RESOLVE_SECOND_FIRING", ceramicId: refired.id }, rng);
     state = second.state;
@@ -471,6 +526,8 @@ describe("V1.2.7 firing, Tech timing, and Kiln Traditions", () => {
       queue: { actors: ["P1"], currentIndex: 0 },
       techniqueIds: ["T14"],
       declinedTechniqueIds: {},
+      geAvailable: false,
+      declinedGePlayerIds: [],
     };
     state = mustApply(state, "P1", { type: "RESOLVE_SECOND_FIRING", ceramicId: junCeramic.id }, rng);
     expect(state.phase).toEqual(expect.objectContaining({

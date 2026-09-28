@@ -43,7 +43,7 @@ function marketTurn(state: GameState, playerId: PlayerId): void {
 }
 
 /**
- * V1.2.7 lets a Commission Market reservation take the top Main Order unseen.
+ * V1.4 lets a Commission Market reservation take the top Main Order unseen.
  *
  * The branch shipped dead: the work-phase gate only placed a worker when the display held
  * cards, while the branch itself only fired when the display was empty -- and the display
@@ -51,7 +51,7 @@ function marketTurn(state: GameState, playerId: PlayerId): void {
  * the blind take would draw from. The two conditions could never hold at once, so across
  * 60 measured games the option was chosen zero times.
  */
-describe("V1.2.7 online computer policy: Commission Market", () => {
+describe("V1.4 online computer policy: Commission Market", () => {
   it("reserves the top Main Order unseen when nothing face up is deliverable", async () => {
     const { state: initial, rng } = startedGame(2, 4401);
     const state = structuredClone(initial);
@@ -79,7 +79,7 @@ describe("V1.2.7 online computer policy: Commission Market", () => {
   it("prefers the highest-VP deliverable face-up Order over whatever sits leftmost", async () => {
     const { state: initial, rng } = startedGame(2, 4402);
     const state = structuredClone(initial);
-    // O01 pays 3 VP and sits leftmost; O24 pays 10 and is equally deliverable.
+    // O01 pays 4 VP and sits leftmost; O24 pays 10 and is equally deliverable.
     state.marketDisplay = ["O01", "O24", "O43", "O44", "O45"];
     marketTurn(state, "P1");
     const opened = mustApply(state, "P1", await choose(state, "P1"), rng);
@@ -89,7 +89,7 @@ describe("V1.2.7 online computer policy: Commission Market", () => {
   it("still places a Commission Market worker when only the deck can supply an Order", async () => {
     const { state: initial, rng } = startedGame(2, 4403);
     const state = structuredClone(initial);
-    // An empty display with a stocked deck is legal in V1.2.7; the policy used to refuse it.
+    // An empty display with a stocked deck is legal in V1.4; the policy used to refuse it.
     state.marketDisplay = [];
     expect(state.marketDeck.length).toBeGreaterThan(0);
     marketTurn(state, "P1");
@@ -110,7 +110,7 @@ describe("V1.2.7 online computer policy: Commission Market", () => {
 });
 
 /**
- * V1.2.7's Shifu Guild action -- inspect the top 2 Techs of a discipline, then take any
+ * V1.4's Shifu Guild action -- inspect the top 2 Techs of a discipline, then take any
  * face-up tile at 1 Coin less -- needs a Shifu to reach the Guild, and Apprentices cannot
  * inspect. The policy spent the Shifu on production first, so across 312 measured Guild
  * actions the inspect fired twice.
@@ -120,7 +120,7 @@ describe("V1.2.7 online computer policy: Commission Market", () => {
  * measured 2.4 VP per seat worse over 60 games. It now diverts only when the discount buys
  * a tile no Apprentice here could afford, which is strength-neutral.
  */
-describe("V1.2.7 online computer policy: Guild & Academy", () => {
+describe("V1.4 online computer policy: Guild & Academy", () => {
   it("sends the Shifu when only the Shifu discount can afford a tile", async () => {
     const { state: initial } = startedGame(2, 4501);
     const state = structuredClone(initial);
@@ -168,7 +168,7 @@ describe("V1.2.7 online computer policy: Guild & Academy", () => {
  * bought a Firing tile zero times -- including Second Firing, which measurement puts at
  * +2.17 per game, the most valuable tile it can actually resolve.
  */
-describe("V1.2.7 online computer policy: which Tech it buys", () => {
+describe("V1.4 online computer policy: which Tech it buys", () => {
   const buy = async (state: GameState) => {
     const action = await choose(state, "P1");
     expect(action).toEqual(expect.objectContaining({ type: "BEGIN_GUILD_ACTION" }));
@@ -243,7 +243,7 @@ describe("V1.2.7 online computer policy: which Tech it buys", () => {
  * `useTechniqueIds`, `dryingFrames`, `glazePalette`, `reworkingTable` or
  * `useKilnFurniture` anywhere. These cases pin the ones worth activating.
  */
-describe("V1.2.7 online computer policy: Tech activation", () => {
+describe("V1.4 online computer policy: Tech activation", () => {
   const glazeTurn = (state: GameState) => {
     state.players["P1"]!.resources = { clay: 0, wood: 0, coins: 5 };
     addShaped(state, "P1", "bowl");
@@ -259,16 +259,18 @@ describe("V1.2.7 online computer policy: Tech activation", () => {
     state.players["P1"]!.orderHand = ["O20"];
     glazeTurn(state);
     const action = await choose(state, "P1");
-    expect(action).toEqual(expect.objectContaining({ type: "GLAZE_CERAMICS" }));
+    expect(action).toEqual(expect.objectContaining({ type: "DECORATE_CERAMICS" }));
     const glaze = action as { selections: Array<{ decoration: string }>; useTechniqueIds?: string[] };
     expect(glaze.selections[0]!.decoration).toBe("carved");
     expect(glaze.useTechniqueIds).toContain("T07");
   });
 
-  it("glazes a vessel it just formed with Drying Frames", async () => {
+  it("decorates a vessel it just formed with Drying Frames", async () => {
     const { state: initial } = startedGame(2, 4702);
     const state = structuredClone(initial);
     addTechnique(state, "P1", "T04");
+    // Drying Frames is useful when the chosen Order requires a non-Plain Decoration.
+    state.players["P1"]!.orderHand = ["O20"];
     state.players["P1"]!.resources = { clay: 4, wood: 0, coins: 3 };
     setWorkTurn(state, "P1");
     const action = await choose(state, "P1");
@@ -303,12 +305,14 @@ describe("V1.2.7 online computer policy: Tech activation", () => {
     expect(rng).toBeDefined();
   });
 
-  it("leaves Kiln Furniture alone, which measured worse than not owning it", async () => {
+  it("preserves Kiln Furniture when a matching Middle space is available", async () => {
     const { state: initial } = startedGame(2, 4704);
     const state = structuredClone(initial);
     addTechnique(state, "P1", "T15");
     addGlazed(state, "P1", "bowl", "celadon", "plain");
-    state.players["P1"]!.resources = { clay: 0, wood: 0, coins: 0 };
+    state.players["P1"]!.orderHand = [];
+    state.players["P1"]!.resources = { clay: 0, wood: 0, coins: 1 };
+    state.techniqueDisplay = { forming: [], glazing: [], firing: [] };
     setWorkTurn(state, "P1");
     const action = await choose(state, "P1");
     expect(action).toEqual(expect.objectContaining({ type: "USE_KILN_YARD" }));
@@ -322,7 +326,7 @@ describe("V1.2.7 online computer policy: Tech activation", () => {
  * Orders are reachable that way and 13 of the 20 Crown Orders demand another Glaze, so the
  * Imperial Recognition track was closed off by construction.
  */
-describe("V1.2.7 online computer policy: what it makes", () => {
+describe("V1.4 online computer policy: what it makes", () => {
   const glazeTurn = (state: GameState) => {
     state.players["P1"]!.resources = { clay: 0, wood: 0, coins: 6 };
     addShaped(state, "P1", "bowl");
@@ -336,7 +340,8 @@ describe("V1.2.7 online computer policy: what it makes", () => {
     state.players["P1"]!.orderHand = ["O24"];
     glazeTurn(state);
     const action = await choose(state, "P1");
-    const glaze = (action as { selections: Array<{ glaze: string }> }).selections[0]!.glaze;
+    expect(action.type).toBe("USE_KILN_YARD");
+    const glaze = (action as { loads: Array<{ glaze: string }> }).loads[0]!.glaze;
     expect(glaze).toBe("moon_white");
   });
 
@@ -347,8 +352,9 @@ describe("V1.2.7 online computer policy: what it makes", () => {
     state.players["P1"]!.orderHand = ["O19"];
     glazeTurn(state);
     const action = await choose(state, "P1");
-    const selection = (action as { selections: Array<{ glaze: string; decoration: string }> }).selections[0]!;
-    expect(selection.glaze).toBe("grey_green");
+    const selection = (action as { selections: Array<{ decoration: string }> }).selections[0]!;
+    expect(action.type).toBe("DECORATE_CERAMICS");
+    expect(selection).not.toHaveProperty("glaze");
     expect(selection.decoration).toBe("impressed");
   });
 
@@ -358,9 +364,9 @@ describe("V1.2.7 online computer policy: what it makes", () => {
     state.players["P1"]!.orderHand = [];
     glazeTurn(state);
     const action = await choose(state, "P1");
-    const selection = (action as { selections: Array<{ glaze: string; decoration: string }> }).selections[0]!;
+    expect(action.type).toBe("USE_KILN_YARD");
+    const selection = (action as { loads: Array<{ glaze: string }> }).loads[0]!;
     expect(selection.glaze).toBe("celadon");
-    expect(selection.decoration).toBe("plain");
   });
 
   it("loads into the zone that suits the Glaze it made", async () => {
@@ -368,7 +374,9 @@ describe("V1.2.7 online computer policy: what it makes", () => {
     const state = structuredClone(initial);
     // White has Preferred Heat 1, so it wants a Low space against a Base Heat of 2.
     addGlazed(state, "P1", "bowl", "white", "plain");
-    state.players["P1"]!.resources = { clay: 0, wood: 0, coins: 0 };
+    state.players["P1"]!.orderHand = ["S04"];
+    state.players["P1"]!.resources = { clay: 0, wood: 0, coins: 1 };
+    state.techniqueDisplay = { forming: [], glazing: [], firing: [] };
     setWorkTurn(state, "P1");
     const action = await choose(state, "P1");
     expect(action).toEqual(expect.objectContaining({ type: "USE_KILN_YARD" }));

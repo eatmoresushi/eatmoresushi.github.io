@@ -168,16 +168,16 @@ export function createGame(input: CreateGameInput, rng: RandomSource): CreateGam
     input.players.map((player, index) => [player.id, makePlayer(player, index)]),
   ) as Record<PlayerId, PlayerState>;
 
-  // Hands are dealt before the remaining Main deck is reshuffled for the public display.
+  // Opening hands use only the Starting deck; all Main Orders remain for the public display and deck.
   for (const playerId of turnOrder) {
-    players[playerId]!.orderHand = [startingOrderDeck.shift()!, marketDeck.shift()!];
+    players[playerId]!.orderHand = drawMany(startingOrderDeck, 2);
   }
   const returnedStartingOrderIds = startingOrderDeck.splice(0);
   marketDeck = shuffle(marketDeck, rng);
   const marketDisplay = drawMany(marketDeck, GAME_CONFIG.orderDisplay.market);
 
   const state: GameState = {
-    schemaVersion: 4,
+    schemaVersion: 5,
     rulesVersion: GAME_CONFIG.rulesVersion,
     gameId: input.gameId,
     revision: 0,

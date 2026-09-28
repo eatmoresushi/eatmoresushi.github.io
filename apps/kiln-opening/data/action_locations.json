@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.2.7",
+  "rulesVersion": "1.4",
   "locations": [
     {
       "id": "materials_yard",
@@ -23,8 +23,8 @@
       "nameZh": "陶车坊",
       "apprentice": "Pay the Clay cost to form 1 vessel.",
       "apprenticeZh": "支付泥费用，成型1件器物。",
-      "shifu": "Form 1 or 2 vessels. If you form 2 vessels using this Shifu effect, reduce their total Clay cost by 1. Ding's additional vessel is paid for separately and does not count toward the Shifu Potter’s Wheel discount.",
-      "shifuZh": "成型最多2件器物。若成型2件，则这2件器物所需的泥总数减少1。",
+      "shifu": "Form up to 2 vessels, each starting Plain for free. If you form 2, reduce their total Clay cost by 1.",
+      "shifuZh": "成型最多2件器物，均免费获得素面。若成型2件，泥总费用减少1。",
       "capacity": {
         "2": 2,
         "3": 3,
@@ -34,12 +34,12 @@
     {
       "id": "glaze_workshop",
       "scope": "shared",
-      "name": "Glaze & Decoration",
-      "nameZh": "釉饰坊",
-      "apprentice": "Apply a Glaze and Decoration to 1 shaped vessel; pay the Decoration cost.",
-      "apprenticeZh": "为1件已成型器物施加1种釉与1种纹饰，支付纹饰费用。",
-      "shifu": "Apply Glaze and Decoration to up to 2 shaped vessels, if you glazed 2, reduce their total Coin cost by 1.",
-      "shifuZh": "为最多2件已成型器物施釉与纹饰；若施釉2件，总铜钱费用减少1。",
+      "name": "Decoration Workshop",
+      "nameZh": "纹饰坊",
+      "apprentice": "Replace Plain with Carved, Impressed or Painted on 1 of your workshop ceramics; pay 2 Coins.",
+      "apprenticeZh": "将作坊内1件素面器物改为刻花、印花或彩绘，支付2铜钱。",
+      "shifu": "Replace Plain with Carved, Impressed or Painted on up to 2 of your workshop ceramics. One Decoration is free; pay 2 Coins for the other before waivers.",
+      "shifuZh": "将作坊内最多2件素面器物改为刻花、印花或彩绘。其中1件纹饰免费，另一件在减免前支付2铜钱。",
       "capacity": {
         "2": 2,
         "3": 3,
@@ -51,10 +51,10 @@
       "scope": "shared",
       "name": "Kiln Yard",
       "nameZh": "窑坊",
-      "apprentice": "Load 1.",
-      "apprenticeZh": "装窑1件。",
-      "shifu": "Load up to 2. Place your Shifu on 1 of your ceramics in the Shared Kiln. After Base Heat is determined, before Fire: you may replace your Shifu with a +1 or −1 Heat marker on that ceramic for this firing.",
-      "shifuZh": "装窑至多2件。将师傅放在共窑中的1件己方陶瓷上。基础火候确定后、揭示窑火牌前：你可以将该师傅替换为+1或−1火候标记，本次烧成作用于该陶瓷。",
+      "apprentice": "Pay 1 Coin to glaze and immediately load 1 of your workshop ceramics.",
+      "apprenticeZh": "支付1铜钱，为作坊内1件器物施釉并立即装窑。",
+      "shifu": "Pay 1 Coin each to glaze and immediately load up to 2 workshop ceramics. Place your Shifu on 1 ceramic loaded by this action in either kiln. After Base Heat, before Fire, optionally replace it with a +1 or −1 Heat marker at no Wood cost.",
+      "shifuZh": "每件支付1铜钱，为作坊内最多2件器物施釉并立即装窑。将师傅放在本次行动装入共窑或御窑的1件陶瓷上。基础火候确定后、揭示窑火前，可免费将师傅替换为+1或−1火候标记。",
       "capacity": {
         "2": null,
         "3": null,
@@ -79,12 +79,12 @@
     {
       "id": "guild_academy",
       "scope": "shared",
-      "name": "Guild & Academy",
+      "name": "Craft Academy",
       "nameZh": "陶工行",
       "apprentice": "Pay the printed Coin cost and take 1 face-up Advanced Tech.",
       "apprenticeZh": "支付牌面铜钱费用，取得1个公开进阶技艺。",
-      "shifu": "Choose 1 discipline and look at the top 2 Techs of that deck, or as many as remain. Then take either 1 face-up Advanced Tech from any discipline or 1 of the revealed Techs, paying 1 Coin less, minimum 0. Put any revealed Tech not taken on the bottom of its deck.",
-      "shifuZh": "选择1个技艺类别，查看该叠顶端2个技艺（不足则尽量查看）。然后取得任意类别的1个公开技艺，或其中1个刚查看的技艺，支付费用−1铜钱，最低为0。未取得的已查看技艺放到该叠底。",
+      "shifu": "Choose 1 discipline and privately inspect its top 2 Techs, or as many as remain. Take 1 face-up Advanced Tech from any discipline or 1 inspected Tech, paying 1 Coin less, minimum 0. Return unchosen inspected Techs to the bottom in your chosen order.",
+      "shifuZh": "选择1个类别，私下查看该叠顶端2个技艺（不足则尽量查看）。取得任意类别的1个公开技艺或其中1个已查看技艺，支付费用减1铜钱，最低为0。自行决定未取得的已查看技艺顺序，并放到该叠底。",
       "capacity": {
         "2": 2,
         "3": 3,
@@ -94,7 +94,7 @@
     {
       "id": "labour",
       "scope": "shared",
-      "name": "Labour",
+      "name": "Paid Work",
       "nameZh": "杂作行",
       "apprentice": "Gain 2 Coins.",
       "apprenticeZh": "获得2铜钱。",
@@ -109,12 +109,12 @@
     {
       "id": "court_patronage",
       "scope": "shared",
-      "name": "Court Patronage",
+      "name": "Imperial Court",
       "nameZh": "朝廷赞助",
-      "apprentice": "Pay 4 Coins to advance Recognition by 1. Resolve the milestone normally.",
-      "apprenticeZh": "支付4铜钱，御府声望提升1格，正常结算奖励。",
-      "shifu": "Pay 4 Coins to advance Recognition by 1. Resolve the milestone normally.",
-      "shifuZh": "支付4铜钱，御府声望提升1格，正常结算奖励。",
+      "apprentice": "Pay 5 Coins to advance Recognition by 1, up to space 3 only. Resolve the milestone normally.",
+      "apprenticeZh": "支付5铜钱，御府声望提升1格，最高到第3格，正常结算奖励。",
+      "shifu": "Pay 5 Coins to advance Recognition by 1, up to space 3 only. Resolve the milestone normally.",
+      "shifuZh": "支付5铜钱，御府声望提升1格，最高到第3格，正常结算奖励。",
       "capacity": {
         "2": null,
         "3": null,

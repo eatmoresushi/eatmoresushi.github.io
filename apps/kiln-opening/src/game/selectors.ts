@@ -9,6 +9,7 @@ import type {
   PlayerId,
   PlayerState,
   WorkerId,
+  WorkshopCeramic,
 } from "./types.ts";
 
 export function turnOrderFromFirst(state: Pick<GameState, "playerOrder" | "firstPlayerId">): PlayerId[] {
@@ -35,6 +36,7 @@ export function currentDecisionActor(phase: GamePhase): PlayerId | null {
     case "firing_reveal_fire":
     case "firing_second_before_quality":
       return phase.actorId;
+    case "work_glaze_palette":
     case "firing_before_contribution":
     case "firing_shifu_adjustment":
     case "firing_before_quality":
@@ -99,14 +101,16 @@ export function formingTechniqueRewards(
   player: Pick<PlayerState, "id" | "techniques">,
   formedShapes: readonly Shape[],
 ): TechniqueId[] {
-  const previousShapes = Object.values(state.ceramics)
-    .filter((ceramic) => ceramic.ownerId === player.id && (ceramic.stage === "shaped" || ceramic.stage === "glazed"))
-    .map((ceramic) => ceramic.shape);
-  const allShapes = [...previousShapes, ...formedShapes];
-  return (["T02", "T03"] as const).filter((id) =>
-    player.techniques.some((tech) => tech.id === id && !tech.exhausted)
-    && formedShapes.some((shape) => id === "T02"
-      ? allShapes.some((other) => other !== shape)
-      : allShapes.filter((other) => other === shape).length >= 2),
-  );
+  if (formedShapes.length === 0 || !player.techniques.some((tech) => tech.id === "T02" && !tech.exhausted)) return [];
+  const workshopCount = Object.values(state.ceramics)
+    .filter((ceramic) => ceramic.ownerId === player.id && ceramic.stage === "workshop").length;
+  return workshopCount + formedShapes.length >= 2 ? ["T02"] : [];
+}
+
+/** Dipping Vats waives only Plain ceramics in the selected Kiln Yard action. */
+export function kilnYardGlazingCost(
+  ceramics: readonly Pick<WorkshopCeramic, "decoration">[],
+  useDippingVats: boolean,
+): number {
+  return ceramics.filter((ceramic) => !useDippingVats || ceramic.decoration !== "plain").length;
 }

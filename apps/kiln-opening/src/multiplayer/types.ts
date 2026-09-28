@@ -26,7 +26,7 @@ import type {
 
 export type RoomStatus = "lobby" | "playing" | "finished" | "abandoned";
 export type StoredRulesVersion = "0.4" | "0.5" | "0.6.1" | "0.6.3" | "0.6.5" | "1.0.0" | "1.0.1" | "1.0.2" | "1.0.4" | "1.0.9" | "1.1.1" | "1.1.4" | "1.1.5"
-  | "1.1.6" | "1.2.2" | "1.2.4" | "1.2.5" | "1.2.6" | "1.2.7";
+  | "1.1.6" | "1.2.2" | "1.2.4" | "1.2.5" | "1.2.6" | "1.2.7" | "1.4";
 
 export interface PublicRoom {
   id: string;
@@ -48,7 +48,7 @@ export interface PublicSeat {
   colour: string;
   isHost: boolean;
   isComputer: boolean;
-  aiPolicyVersion: "selfplay-003" | "rules-v1.1.1-wood-001" | "rules-v1.1.4-contribution-001" | "rules-v1.1.5-order-001" | "rules-v1.2.2-heuristic-001" | "rules-v1.2.4-heuristic-001" | "rules-v1.2.5-heuristic-001" | "rules-v1.2.6-heuristic-001" | "rules-v1.2.6-strategic-002" | "rules-v1.2.7-strategic-002" | null;
+  aiPolicyVersion: "selfplay-003" | "rules-v1.1.1-wood-001" | "rules-v1.1.4-contribution-001" | "rules-v1.1.5-order-001" | "rules-v1.2.2-heuristic-001" | "rules-v1.2.4-heuristic-001" | "rules-v1.2.5-heuristic-001" | "rules-v1.2.6-heuristic-001" | "rules-v1.2.6-strategic-002" | "rules-v1.2.7-strategic-002" | "rules-v1.4-strategic-001" | null;
 }
 
 export interface PublicPlayerState {
@@ -96,8 +96,8 @@ export interface PublicDiscards {
 }
 
 export interface PublicGameState {
-  schemaVersion: 4;
-  rulesVersion: "1.2.7";
+  schemaVersion: 5;
+  rulesVersion: "1.4";
   gameId: string;
   revision: number;
   eventSequence: number;
@@ -143,8 +143,6 @@ export interface PublicEventRecord {
 export interface PendingContribution {
   windowId: string;
   card: ContributionCardId;
-  /** Visible only to the seat that submitted it, never in PublicGameState or public events. */
-  useFuelLedger: boolean;
   submitted: true;
 }
 
@@ -152,7 +150,7 @@ export interface PrivateDecisionState {
   orderHand: OrderId[];
   startingOrderIds: OrderId[];
   colourSamplesOrderIds: OrderId[];
-  /** V1.2.7 Guild Shifu: the Techs this player drew off a discipline to inspect. */
+  /** V1.4 Craft Academy Shifu: the Techs this player drew off a discipline to inspect. */
   guildInspectedTechniqueIds: TechniqueId[];
   fireModifierPeek: FireModifier | null;
 }
@@ -274,13 +272,8 @@ export interface ComputerAdvanceSuccess {
 export interface SubmitWoodCommand {
   type: "SUBMIT_WOOD_CONTRIBUTION";
   windowId: string;
-  /** The printed Bank, Tend or Stoke card. */
+  /** One printed Contribution card, including Fuel Ledger’s −2/+2 cards. */
   card: ContributionCardId;
-  /**
-   * Secretly spend the additional Wood for Fuel Ledger. Legal only with Bank or Stoke;
-   * the engine remains authoritative for ownership and affordability.
-   */
-  useFuelLedger: boolean;
 }
 
 export type AuthoritativeCommand = GameAction | SubmitWoodCommand;
@@ -317,7 +310,6 @@ export interface PrivateSubmissionRecord {
   playerId: PlayerId;
   commandId: string;
   card: ContributionCardId;
-  useFuelLedger: boolean;
   revealedRevision: number | null;
 }
 

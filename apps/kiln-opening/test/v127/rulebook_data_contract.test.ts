@@ -3,19 +3,22 @@ import { createHash } from "node:crypto";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  ACTION_LOCATION_PRICES,
   KILN_DEFINITIONS,
+  LOCATION_DEFINITIONS,
   MAIN_ORDERS,
   STARTING_ORDERS,
   STARTING_TECHNIQUES,
   TECHNIQUES,
+  TECHNIQUE_DEFINITIONS,
 } from "../../src/game/index.ts";
 
 const EN_SOURCE = readFileSync(
-  join(import.meta.dirname, "../../docs/KILN_OPENING_v1.2.7_EN_SOURCE.md"),
+  join(import.meta.dirname, "../../docs/KILN_OPENING_v1.4_EN_SOURCE.md"),
   "utf8",
 );
 const OWNER_AMENDMENTS = readFileSync(
-  join(import.meta.dirname, "../../docs/RULEBOOK_AUDIT_V1.2.7.md"),
+  join(import.meta.dirname, "../../docs/RULEBOOK_AUDIT_V1.4.md"),
   "utf8",
 );
 
@@ -49,18 +52,43 @@ function namedTableRow(source: string, name: string): string[] {
   return tableCells(row);
 }
 
-describe("V1.2.7 checked-in data matches the adopted English rulebook", () => {
-  it("records the original provenance and separate current checksum for the owner-amended rulebook", () => {
+describe("V1.4 checked-in data matches the adopted English rulebook", () => {
+  it("records original provenance and the corrected current source checksum", () => {
     const currentDigest = createHash("sha256").update(EN_SOURCE).digest("hex");
-    const originalDigest = "a0ec9271fba9be3583623d003683865aa649fdb39b288566c503da2b5c887253";
-    const currentRecord = OWNER_AMENDMENTS.split("\n").find((line) => line.startsWith("- Current checked-in `KILN_OPENING_v1.2.7_EN_SOURCE.md`"));
-    const originalRecord = OWNER_AMENDMENTS.split("\n").find((line) => line.startsWith("- Original supplied `KILN_OPENING_v1.2.7_EN_SOURCE.md`"));
-    expect(currentRecord).toContain(`SHA-256 \`${currentDigest}\``);
-    expect(originalRecord).toContain(`SHA-256 \`${originalDigest}\``);
-    expect(currentDigest).not.toBe(originalDigest);
-    const componentSource = readFileSync(join(import.meta.dirname, "../../docs/KILN_OPENING_v1.2.7_COMPONENT_TEXT_SOURCE.md"));
-    expect(createHash("sha256").update(componentSource).digest("hex"))
-      .toBe("8679fb6c70e8763ff98abfc95866faefc29513ce04222c95d5ea79d8bf7d6db1");
+    expect(OWNER_AMENDMENTS).toContain(`Current amended checked-in SHA-256: \`${currentDigest}\``);
+    expect(OWNER_AMENDMENTS).toContain("Original SHA-256: `ace7e4ced95d82a259da504a11c6021626fad626da0a88d47a2ad457b821983c`");
+  });
+
+  it("records the approved 5-Coin Court cost and Glaze-only Crackle substitution", () => {
+    expect(ACTION_LOCATION_PRICES.courtPatronageCoins).toBe(5);
+    expect(EN_SOURCE).toContain("| Any worker | Pay **5 Coins** to advance your Imperial Recognition");
+    const court = LOCATION_DEFINITIONS.court_patronage;
+    expect(court.apprentice).toContain("Pay 5 Coins");
+    expect(court.shifu).toContain("Pay 5 Coins");
+    expect(court.apprenticeZh).toContain("支付5铜钱");
+    expect(court.shifuZh).toContain("支付5铜钱");
+    expect(KILN_DEFINITIONS.GE.ability).toContain("any one Glaze for that Order");
+    expect(KILN_DEFINITIONS.GE.ability).toContain("does not provide a wild Decoration");
+    expect(KILN_DEFINITIONS.GE.abilityZh).toContain("任意一种釉色");
+    expect(KILN_DEFINITIONS.GE.abilityZh).toContain("开片不能替代纹饰");
+    expect(OWNER_AMENDMENTS).toContain("### 7. Imperial Court cost and Ge Glaze substitution");
+  });
+
+  it("follows the replacement rulebook's Measuring Calipers and Dipping Vats", () => {
+    expect(TECHNIQUE_DEFINITIONS["T02"]!.ability).toContain("if you have another vessel in your workshop, gain 2 Coins");
+    expect(TECHNIQUE_DEFINITIONS["T02"]!.ability).not.toContain("different Shape");
+    expect(TECHNIQUE_DEFINITIONS["T03"]!).toMatchObject({
+      name: "Dipping Vats",
+      nameZh: "浸釉缸",
+      discipline: "forming",
+      cost: 2,
+      oncePerRound: true,
+    });
+    expect(TECHNIQUE_DEFINITIONS["T03"]!.ability).toContain("the Plain ceramics loaded by that action pay no Glazing cost");
+    expect(EN_SOURCE).toContain("including one formed by the same action");
+    expect(EN_SOURCE).toContain("**Dipping Vats** applies to one Kiln Yard action per round and covers every Plain ceramic that action loads, in either kiln");
+    expect(EN_SOURCE).toContain("do not trigger **Kiln Tending** or **Dipping Vats**");
+    expect(EN_SOURCE).toContain("**Applying a Glaze costs 1 Coin per ceramic** before waivers.");
   });
 
   it("matches every English Order row exactly", () => {
@@ -95,10 +123,7 @@ describe("V1.2.7 checked-in data matches the adopted English rulebook", () => {
     for (const technique of [...STARTING_TECHNIQUES, ...TECHNIQUES]) {
       const en = namedTableRow(EN_SOURCE, technique.name);
       const advanced = "cost" in technique;
-      let ability = en[advanced ? 2 : 1]!;
-      const stack = "This reduction stacks with the Shifu’s two-vessel discount.";
-      if (technique.id === "T02") ability = ability.replace(stack, "");
-      if (technique.id === "T01") ability += ` ${stack}`;
+      const ability = en[advanced ? 2 : 1]!;
       expect(ability, `${technique.id} English ability`).toBe(clean(technique.ability));
       expect(technique.abilityZh.length).toBeGreaterThan(0);
       if (advanced) {
@@ -107,13 +132,14 @@ describe("V1.2.7 checked-in data matches the adopted English rulebook", () => {
     }
   });
 
-  it("keeps every Kiln Tradition's bilingual name and full ability in the sources or explicit owner amendment", () => {
-    const normalizedEnglish = clean(EN_SOURCE);
-    const geAmendment = clean(OWNER_AMENDMENTS.split("<!-- GE_OWNER_ABILITY_START -->")[1]!.split("<!-- GE_OWNER_ABILITY_END -->")[0]!);
+  it("keeps every Kiln Tradition's bilingual name and full ability in the current source", () => {
     for (const kiln of Object.values(KILN_DEFINITIONS)) {
-      expect(normalizedEnglish).toContain(clean(`${kiln.name} / ${kiln.nameZh} — ${kiln.abilityName}`));
-      if (kiln.id === "GE") expect(clean(kiln.ability)).toBe(geAmendment);
-      else expect(normalizedEnglish).toContain(clean(kiln.ability));
+      const heading = `## ${kiln.name} / ${kiln.nameZh} — ${kiln.abilityName}`;
+      expect(EN_SOURCE).toContain(heading);
+      const body = EN_SOURCE.split(`${heading}\n`)[1]!.split("\n#")[0]!;
+      const ability = body.split("\n").map((line) => line.replace(/^- /, "")).join(" ");
+      expect(clean(kiln.ability)).toBe(clean(ability));
+      expect(kiln.abilityZh.length).toBeGreaterThan(0);
     }
   });
 });

@@ -5,6 +5,7 @@ import { activeKilnSpaceIds } from "../../src/game/index.ts";
 import type { GameState, LocationId, WorkerKind } from "../../src/game/index.ts";
 import { projectPublicGameState } from "../../src/multiplayer/index.ts";
 import { ActionPanel } from "../../src/ui/ActionPanel.tsx";
+import { BoardActionSummary } from "../../src/ui/BoardActionSummary.tsx";
 import { LanguageProvider } from "../../src/ui/i18n.tsx";
 import { addGlazed, addLoaded, addShaped, addTechnique, startedGame, workerId } from "./helpers.ts";
 
@@ -101,7 +102,27 @@ function renderAction(
   return { markup, selectedWorkerId, state };
 }
 
-describe("V1.2.7 smart worker-action choices", () => {
+describe("V1.4 smart worker-action choices", () => {
+  it.each(["apprentice", "shifu"] as const)("requires 5 Coins for the %s Imperial Court action", (kind) => {
+    for (const coins of [4, 5]) {
+      const { markup } = renderAction("court_patronage", kind, (state) => {
+        state.players["P1"]!.resources.coins = coins;
+      });
+      expect(markup).toContain("Pay 5 Coins to advance Recognition by 1, up to Recognition 3.");
+      const command = markup.match(/<button[^>]*>Use Imperial Court<\/button>/u)?.[0];
+      expect(command).toBeDefined();
+      if (coins < 5) expect(command).toContain('disabled=""');
+      else expect(command).not.toContain('disabled=""');
+    }
+  });
+
+  it.each(["apprentice", "shifu"] as const)("shows the 5-Coin Court cost on the %s board summary in both languages", (kind) => {
+    const english = renderToStaticMarkup(createElement(BoardActionSummary, { id: "court_patronage", kind, locale: "en" }));
+    const chinese = renderToStaticMarkup(createElement(BoardActionSummary, { id: "court_patronage", kind, locale: "zh-CN" }));
+    expect(english).toContain("Pay 5 Coins → Recognition +1 · up to 3");
+    expect(chinese).toContain("支付5铜钱 → 御府声望＋1 · 最高3格");
+  });
+
   it("offers Kiln Tending as an optional choice of one Clay or one Wood", () => {
     const { markup } = renderAction("kiln_yard", "apprentice", (state) => {
       state.players["P1"]!.startingTechniqueId = "ST04";
@@ -122,21 +143,44 @@ describe("V1.2.7 smart worker-action choices", () => {
     expect(markup).not.toContain('data-choice-group="kiln-tending"');
   });
 
-  it("renders eligible forming rewards unchecked and cannot spend their unselected income on White Slip", () => {
+  it("offers only optional Calipers income for another same-Shape vessel and does not spend it on White Slip unless selected", () => {
     const { markup } = renderAction("forming_studio", "apprentice", (state) => {
       state.players["P1"]!.startingTechniqueId = "ST02";
       state.players["P1"]!.resources.coins = 0;
       addTechnique(state, "P1", "T02"); addTechnique(state, "P1", "T03");
-      addShaped(state, "P1", "bowl"); addShaped(state, "P1", "plate");
+      addShaped(state, "P1", "bowl");
     });
-    for (const id of ["T02", "T03"]) {
+    for (const id of ["T02"]) {
       const input = markup.match(new RegExp(`<input[^>]*value="${id}"[^>]*>`))?.[0] ?? "";
       expect(input).toContain('type="checkbox"');
       expect(input).not.toContain("checked=");
     }
+    expect(markup).not.toMatch(/<input[^>]*value="T03"/u);
     const whiteSlip = markup.match(/<fieldset[^>]*data-choice-group="white-slip"[\s\S]*?<\/fieldset>/)?.[0] ?? "";
     expect(buttonWithAttribute(whiteSlip, "data-choice-value", "0")).toContain('disabled=""');
     expect(whiteSlip).toContain("Not enough Coins");
+  });
+
+  it("offers Dipping Vats as an optional Kiln Yard choice even with zero Coins", () => {
+    const { markup } = renderAction("kiln_yard", "shifu", (state) => {
+      state.players["P1"]!.resources.coins = 0;
+      addTechnique(state, "P1", "T03");
+    });
+    const toggle = markup.match(/<input[^>]*name="use-dipping-vats"[^>]*>/u)?.[0] ?? "";
+    expect(toggle).toContain('type="checkbox"');
+    expect(toggle).not.toContain('checked=""');
+    expect(markup).toContain("Use Dipping Vats: glaze all Plain ceramics loaded by this Kiln Yard action for 0 Coins");
+    expect(markup).toContain('data-choice-group="load-glaze1"');
+    expect(markup).not.toContain("Glazing and loading requires 1 Coin per ceramic.");
+  });
+
+  it("does not waive glazing with an exhausted Dipping Vats", () => {
+    const { markup } = renderAction("kiln_yard", "apprentice", (state) => {
+      state.players["P1"]!.resources.coins = 0;
+      addTechnique(state, "P1", "T03", true);
+    });
+    expect(markup).not.toContain('name="use-dipping-vats"');
+    expect(markup).toContain("Glazing and loading requires 1 Coin per ceramic.");
   });
 
   it.each(ACTION_LOCATIONS)("uses the shared physical meeple buttons at %s", (locationId) => {
@@ -149,7 +193,9 @@ describe("V1.2.7 smart worker-action choices", () => {
     expect(markup).toContain('class="kiln-tabletop-worker');
     expect(markup).toContain('data-player-id="P1" data-worker-kind="shifu"');
     expect(markup).toContain('data-player-id="P1" data-worker-kind="apprentice"');
-    expect(markup).toContain('class="kiln-tabletop-worker-hat"');
+    expect(markup).toContain("workers/shifu-wood-v1.webp");
+    expect(markup).toContain("workers/apprentice-wood-v1.webp");
+    expect(markup).not.toContain("kiln-tabletop-worker-role");
     expect(markup).not.toContain('<select name="worker"');
     expect(markup).toContain('<header class="action-card-heading"><h3>');
     expect(markup).not.toContain("<details");
@@ -167,7 +213,7 @@ describe("V1.2.7 smart worker-action choices", () => {
     expect(shifu).toContain("Gain 4 Coins.");
     expect(largeBalance).toContain("Gain 4 Coins.");
     expect(apprentice).not.toContain("Labour has no worker limit");
-    expect(apprentice).toMatch(/<button[^>]*class="primary-button"[^>]*>Send to Labour<\/button>/);
+    expect(apprentice).toMatch(/<button[^>]*class="primary-button"[^>]*>Send to Paid Work<\/button>/);
   });
 
   it("hides Apprentice-inapplicable controls and reveals them for a Shifu", () => {
@@ -187,7 +233,7 @@ describe("V1.2.7 smart worker-action choices", () => {
     expect(apprenticeGlazing).not.toContain('data-choice-group="shifu-free-decoration"');
     expect(shifuGlazing).toContain('data-choice-group="ceramic2"');
     expect(shifuGlazing).not.toContain('data-choice-group="shifu-free-decoration"');
-    expect(shifuGlazing).toContain("Shifu: if you glaze 2 vessels, reduce their total Coin cost by 1 (minimum 0).");
+    expect(shifuGlazing).toContain("Shifu: one Decoration is free; the second costs 2 Coins before Tech waivers.");
 
     const kilnSetup = (state: GameState): void => {
       addLoaded(state, "P1", "washer", "grey_green", "plain", "high_1");
@@ -197,7 +243,8 @@ describe("V1.2.7 smart worker-action choices", () => {
     expect(apprenticeKiln).not.toContain('data-choice-group="ceramic2"');
     expect(apprenticeKiln).not.toContain('data-choice-group="shifu-ceramic"');
     expect(shifuKiln).toContain('data-choice-group="ceramic2"');
-    expect(shifuKiln).toContain('data-choice-group="shifu-ceramic"');
+    expect(shifuKiln).not.toContain('data-choice-group="shifu-ceramic"');
+    expect(shifuKiln).toContain("Choose a ceramic loaded by this action, in either kiln");
   });
 
   it.each(CAPPED_LOCATIONS)("disables only Apprentices when %s is full", (locationId) => {
@@ -234,16 +281,16 @@ describe("V1.2.7 smart worker-action choices", () => {
     });
 
     expect(markup).toContain("Gain 2 Coins.");
-    expect(markup).toContain("Send to Labour");
+    expect(markup).toContain("Send to Paid Work");
   });
 
   it("replaces Kiln Yard controls without a Glazed ceramic and restores them when one is available", () => {
     const empty = renderAction("kiln_yard", "apprentice", (state) => {
       for (const ceramic of Object.values(state.ceramics)) {
-        if (ceramic.ownerId === "P1" && ceramic.stage === "glazed") delete state.ceramics[ceramic.id];
+        if (ceramic.ownerId === "P1" && ceramic.stage === "workshop") delete state.ceramics[ceramic.id];
       }
     });
-    expectUnavailable(empty.markup, "You have no Glazed ceramic to load.");
+    expectUnavailable(empty.markup, "You have no Workshop ceramic to load.");
 
     const prepared = renderAction("kiln_yard", "apprentice");
     for (const id of availableWorkerIds(prepared.state)) {
@@ -254,40 +301,34 @@ describe("V1.2.7 smart worker-action choices", () => {
   it("replaces Glaze controls with the requested explanation when there is no Shaped vessel", () => {
     const { markup } = renderAction("glaze_workshop", "apprentice", (draft) => {
       for (const ceramic of Object.values(draft.ceramics)) {
-        if (ceramic.ownerId === "P1" && ceramic.stage === "shaped") delete draft.ceramics[ceramic.id];
+        if (ceramic.ownerId === "P1" && ceramic.stage === "workshop") delete draft.ceramics[ceramic.id];
       }
     });
 
-    expectUnavailable(markup, "You have no Shaped vessel to glaze.");
+    expectUnavailable(markup, "You have no Plain Workshop vessel to decorate.");
   });
 
-  it("makes Glaze unavailable when neither worker kind can afford a Decoration", () => {
-    const { markup } = renderAction("glaze_workshop", "shifu", (draft) => {
+  it("makes Decoration unavailable when no Shifu remains and the Apprentice cannot afford it", () => {
+    const { markup } = renderAction("glaze_workshop", "apprentice", (draft) => {
+      useShifu(draft);
       draft.players["P1"]!.resources.coins = 0;
       draft.players["P1"]!.techniques = [];
     });
     expectUnavailable(markup, "You do not have enough Coins to apply a Decoration.");
   });
 
-  it.each([1, 2])("charges normal Shifu single-vessel Decoration costs with exactly %i Coins", (coins) => {
+  it.each([0, 1, 2])("makes a Shifu’s single Decoration free with %i Coins", (coins) => {
     const { markup } = renderAction("glaze_workshop", "shifu", (draft) => {
       draft.players["P1"]!.resources.coins = coins;
       draft.players["P1"]!.techniques = [];
     });
     const choices = markup.match(/<fieldset[^>]*data-choice-group="decoration1"[\s\S]*?<\/fieldset>/)?.[0] ?? "";
-    expect(markup).toContain("Cost: 1 Coin.");
-    expect(buttonWithAttribute(choices, "data-choice-value", "plain")).not.toContain("disabled");
-    for (const decoration of ["carved", "impressed", "crackle"]) {
-      const button = buttonWithAttribute(choices, "data-choice-value", decoration);
-      expect(button).not.toBe("");
-      if (coins === 1) {
-        expect(button).toContain('disabled=""');
-        expect(button).toContain('Current combination requires 2 Coins"');
-      } else {
-        expect(button).not.toContain("disabled");
-      }
+    expect(markup).toContain("Cost: 0 Coins.");
+    expect(buttonWithAttribute(choices, "data-choice-value", "plain")).toBe("");
+    for (const decoration of ["carved", "impressed", "painted"]) {
+      expect(buttonWithAttribute(choices, "data-choice-value", decoration)).not.toContain("disabled");
     }
-    expect(markup).not.toContain("Shifu: free Decoration");
+    expect(markup).toContain("one Decoration is free");
   });
 
   it("applies the Guild Shifu discount when the printed cost is unaffordable to Apprentices", () => {

@@ -34,14 +34,6 @@
   min-width: 0;
 }
 
-.app-shell:has(> .masthead .room-meta) .masthead .brand-mark {
-  flex: 0 0 44px;
-  width: 44px;
-  border: 1px solid #d0916b;
-  border-radius: 50%;
-  background: #a84433;
-  box-shadow: inset 0 0 0 3px #f1b89622;
-}
 
 .app-shell:has(> .masthead .room-meta) .masthead .brand strong {
   font-size: 1.2rem;
@@ -156,7 +148,6 @@
 .lobby-screen {
   width: min(1100px, 100%);
   min-width: 0;
-  min-height: calc(100svh - 12rem);
   padding: clamp(1.5rem, 4vw, 4rem) clamp(.75rem, 3vw, 2.5rem);
   color: var(--session-ink, #293e35);
 }
@@ -249,7 +240,6 @@
 .session-ended {
   width: min(700px, calc(100% - 1.5rem));
   min-width: 0;
-  min-height: min(600px, calc(100svh - 13rem));
   gap: 1.25rem;
   padding: clamp(2rem, 6vw, 4rem) 0;
   color: var(--session-ink, #293e35);
@@ -380,5 +370,68 @@
   .session-ended .button-row > button,
   .confirmation-dialog .button-row > button {
     width: 100%;
+  }
+}
+
+/* The room chrome responds with the table, using fluid spacing on desktops
+   and wrapping into two rows before its controls become cramped. */
+.app-shell:has(> .masthead .room-meta):has(.kiln-live-root) > .masthead {
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, auto);
+  gap: clamp(.4rem, .8vw, .9rem);
+  min-height: 0;
+  padding: clamp(.3rem, .5vw, .65rem) clamp(.5rem, 1.1vw, 1.25rem);
+}
+
+.app-shell:has(> .masthead .room-meta):has(.kiln-live-root) .masthead .brand {
+  gap: clamp(.4rem, .7vw, .7rem);
+}
+
+
+.app-shell:has(> .masthead .room-meta):has(.kiln-live-root) .masthead .brand strong {
+  font-size: clamp(.95rem, 1.05vw, 1.2rem);
+}
+
+.app-shell:has(> .masthead .room-meta):has(.kiln-live-root) .masthead .brand small {
+  font-size: clamp(.65rem, .72vw, .75rem);
+}
+
+.app-shell:has(> .masthead .room-meta):has(.kiln-live-root) .room-meta {
+  grid-column: auto;
+  gap: clamp(.35rem, .65vw, .7rem);
+  padding-top: 0;
+  border-top: 0;
+  font-size: clamp(.75rem, .8vw, .875rem);
+}
+
+.app-shell:has(> .masthead .room-meta):has(.kiln-live-root) .masthead .language-toggle button,
+.app-shell:has(> .masthead .room-meta):has(.kiln-live-root) .room-meta .text-button {
+  min-width: 40px;
+  min-height: 40px;
+  padding: .4rem .5rem;
+  font-size: clamp(.75rem, .8vw, .875rem);
+}
+
+@media (max-width: 980px) {
+  .app-shell:has(> .masthead .room-meta):has(.kiln-live-root) > .masthead {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .app-shell:has(> .masthead .room-meta):has(.kiln-live-root) .room-meta {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    padding-top: .3rem;
+    border-top: 1px solid #b7b28e33;
+  }
+
+  .app-shell:has(> .masthead .room-meta):has(.kiln-live-root) .room-meta > span:first-child {
+    margin-right: auto;
+  }
+}
+
+@media (max-width: 600px), (pointer: coarse) {
+  .app-shell:has(> .masthead .room-meta):has(.kiln-live-root) .masthead .language-toggle button,
+  .app-shell:has(> .masthead .room-meta):has(.kiln-live-root) .room-meta .text-button {
+    min-width: 44px;
+    min-height: 44px;
   }
 }

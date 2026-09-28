@@ -35,7 +35,7 @@ function context(value: RoundNumber, modifier: FireModifier | null): FiringConte
     round: value,
     contributors: ["P1"],
     contributions: { P1: "TEND" },
-    fuelLedgerUpgradedBy: [],
+
     baseHeat: 2,
     fireModifier: modifier,
     globalHeat: modifier === null ? null : 2 + modifier,
@@ -184,6 +184,8 @@ describe("public Fire card history", () => {
         queue: { actors: ["P2"], currentIndex: 0 },
         techniqueIds: ["T14"],
         declinedTechniqueIds: {},
+        geAvailable: false,
+        declinedGePlayerIds: [],
       },
     };
     const events = [round(1, 2), reveal(2, -1)];

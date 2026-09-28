@@ -13,8 +13,8 @@ export function RecognitionMarker({ label, className, accent }: {
     <svg
       className={className}
       viewBox={`${SPRITE_X[accent]} 155 350 590`}
-      width="30"
-      height="44"
+      width="15"
+      height="22"
       preserveAspectRatio="xMidYMid meet"
       style={{ overflow: "hidden" }}
       role="img"

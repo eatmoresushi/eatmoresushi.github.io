@@ -1,9 +1,14 @@
-# GAME_RULES.md — V1.2.7 source index
+# GAME_RULES.md — V1.4 source index
 
-- [Player Rulebook](./KILN_OPENING_v1.2.7_EN_SOURCE.md) is the mechanical authority and includes the owner's eight-card Starting Order deck, optional Tech abilities, Kiln Tending choice, Shifu Glaze discount and Shifu Heat-marker amendments.
-- [Tech short text](./KILN_OPENING_v1.2.7_TECH_SHORT_TEXT_SOURCE.md) supplies current tile-face and hover reminders; [Tech detail text](./KILN_OPENING_v1.2.7_TECH_DETAIL_TEXT_SOURCE.md) contains the owner's pasted click-through abilities and clarifications with the approved Kiln Furniture replacement and Shifu Heat-marker clarification, subject to the confirmed Kiln Tending correction and optional-use rule. Original and current source hashes are recorded in the audit.
-- [Kiln short text](./KILN_OPENING_v1.2.7_KILN_SHORT_TEXT_SOURCE.md) supplies current hover and Your workshop descriptions for all five Kilns. [Component Text Draft](./KILN_OPENING_v1.2.7_COMPONENT_TEXT_SOURCE.md) remains the original provenance; its reminders are superseded by the current Tech and Kiln short-text sources.
-- [V1.2.7 audit](./RULEBOOK_AUDIT_V1.2.7.md) records original and current checksums, all changes, editorial interpretation and the owner's amendments. The Ge amendment supersedes the original Ge ability in both supplied sources; the Starting Order, Tech and Shifu amendments are incorporated into the Player Rulebook.
-- The archived [V1.2.6 Chinese source](./KILN_OPENING_v1.2.6_ZH_SOURCE.md) supplies established terminology only. Changed Chinese copy is derived from V1.2.7 English; no V1.2.7 Chinese source was supplied.
+- [V1.4 Player Rulebook](./KILN_OPENING_v1.4_EN_SOURCE.md) is the mechanical authority, based on the owner's replacement rulebook supplied on 2026-09-28 and the confirmed Ge timing correction. The audit records retained non-conflicting clarifications.
+- [V1.4 audit](./RULEBOOK_AUDIT_V1.4.md) records source provenance, original and corrected checksums, approved clarifications and implementation validation.
+- [V1.4 component text](./KILN_OPENING_v1.4_COMPONENT_TEXT_SOURCE.md) records the owner-approved Tech and Kiln tile reminders; click-through details retain complete structured rules.
+- `data/*.json` derives current component definitions, costs, reminders and localized rules text from V1.4.
+- [Implementation decisions](./IMPLEMENTATION_DECISIONS.md) and [Online specification](./ONLINE_GAME_SPEC.md) document digital behavior without changing the board-game rules.
+- The archived [V1.2.6 Chinese source](./KILN_OPENING_v1.2.6_ZH_SOURCE.md) supplies established terminology only. Changed Chinese gameplay text is translated from V1.4 English.
 
-The source documents and explicit owner amendments outrank structured data and implementation. Older sources and audits are retained as history. Visual references remain restricted to `assets/current_v04/`; obsolete text must be rebuilt from current structured data.
+V1.4 supersedes earlier sources and owner amendments. V1.2.7 rulebooks, Tech/Kiln copy and audits remain historical records. Visual references remain restricted to `assets/current_v04/`; obsolete rules text must be rendered from current structured data.
+
+The 2026-09-28 owner amendment makes Imperial Court cost 5 Coins and changes Ge Crackle to one virtual Glaze per ceramic for Order requirements. Actual Glaze and Decoration remain unchanged; Crackle does not substitute Decoration.
+
+The replacement rulebook broadens Measuring Calipers to any other workshop vessel and replaces Standardised Moulds with Dipping Vats: once per round, waive Glazing costs for all Plain ceramics loaded by one Kiln Yard action into either kiln. Rapid Drying and Imperial Priority are excluded. Ge remains in the owner-chosen after-Quality order.

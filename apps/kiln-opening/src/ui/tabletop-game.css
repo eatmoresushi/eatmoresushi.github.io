@@ -80,19 +80,6 @@
   text-decoration: none;
 }
 
-.kiln-tabletop-brand > span:first-child {
-  display: grid;
-  width: 43px;
-  aspect-ratio: 1;
-  place-items: center;
-  border: 1px solid #d98f75;
-  border-radius: 50% 50% 45% 48%;
-  font-family: var(--tabletop-serif);
-  font-size: 1.3rem;
-  background: var(--tabletop-cinnabar);
-  box-shadow: inset 0 0 0 3px rgb(255 255 255 / 12%);
-}
-
 .kiln-tabletop-brand strong,
 .kiln-tabletop-brand small { display: block; }
 .kiln-tabletop-brand strong { font-family: var(--tabletop-serif); font-size: .98rem; letter-spacing: .06em; }
@@ -294,7 +281,6 @@
 }
 
 .kiln-tabletop-section-title { display: flex; gap: .5rem; align-items: center; min-width: 0; }
-.kiln-tabletop-section-title > span { display: grid; flex: 0 0 34px; width: 34px; aspect-ratio: 1; place-items: center; border-radius: 50%; color: #fff6e2; font-family: var(--tabletop-serif); background: var(--tabletop-celadon-dark); }
 .kiln-tabletop-section-title small,
 .kiln-tabletop-section-title strong { display: block; }
 .kiln-tabletop-section-title small { color: #7a694b; font-size: .46rem; font-weight: 900; letter-spacing: .1em; }
@@ -356,9 +342,6 @@
 .kiln-tabletop-display-index { position: absolute; top: 38%; right: .28rem; display: grid; width: 17px; aspect-ratio: 1; place-items: center; border-radius: 50%; color: #657269; font-size: .43rem; background: rgb(255 255 255 / 60%); }
 .kiln-tabletop-order-card.is-owned { flex: 1 1 126px; width: 146px; min-width: 126px; max-width: 146px; min-height: 136px; }
 
-.kiln-tabletop-market-note { display: grid; gap: .2rem; align-content: center; border-left: 1px solid var(--tabletop-line); padding-left: .55rem; }
-.kiln-tabletop-market-note small { color: #615944; font-size: .52rem; line-height: 1.3; }
-.kiln-tabletop-market-note strong { color: #884236; font-size: .55rem; }
 
 /* The shared board is a printed ivory surface with glazed action plaques. */
 .kiln-tabletop-play-area { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: .85rem; align-items: start; min-width: 0; }
@@ -634,10 +617,11 @@
 .kiln-tabletop-kiln-interior { position: relative; min-width: 0; isolation: isolate; }
 .kiln-tabletop-kiln-zones { position: absolute; inset: 0; }
 .kiln-tabletop-kiln-zone { position: absolute; }
-.kiln-tabletop-kiln-zone.is-low { top: 24.9%; left: 29.5%; width: 43%; height: 10.5%; }
+.kiln-tabletop-kiln-zone.is-low { top: 24.9%; left: 21%; width: 60%; height: 10.5%; }
 .kiln-tabletop-kiln-zone.is-middle { top: 41%; left: 29.5%; width: 43%; height: 10.5%; }
 .kiln-tabletop-kiln-zone.is-high { top: 57.5%; left: 18%; width: 66%; height: 10.5%; }
 .kiln-tabletop-kiln-zone > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8%; width: 100%; height: 100%; }
+.kiln-tabletop-kiln-zone.is-low > div,
 .kiln-tabletop-kiln-zone.is-high > div { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5%; }
 .kiln-tabletop-kiln-zone-label {
   position: absolute;
@@ -696,7 +680,6 @@
 
 .kiln-tabletop-imperial-track { display: grid; grid-template-columns: 165px minmax(0, 1fr); gap: .45rem; align-items: stretch; }
 .kiln-tabletop-track-heading { display: flex; gap: .4rem; align-items: center; border-radius: 8px; padding: .4rem; color: #fff0ce; background: linear-gradient(145deg, #8f4034, #6f2a24); }
-.kiln-tabletop-track-heading > span { display: grid; width: 34px; aspect-ratio: 1; place-items: center; border: 1px solid #e4bd73; border-radius: 50%; font-family: var(--tabletop-serif); }
 .kiln-tabletop-track-heading small,
 .kiln-tabletop-track-heading strong { display: block; }
 .kiln-tabletop-track-heading small { color: #e9cda2; font-size: .4rem; letter-spacing: .09em; }
@@ -823,11 +806,6 @@
 .kiln-tabletop-kiln-card > b { color: #5d796c; font-family: var(--tabletop-serif); font-size: .78rem; }
 .kiln-tabletop-kiln-card p { color: #4e554d; font-size: .76rem; line-height: 1.48; }
 
-@media (hover: hover) and (pointer: fine) {
-  button.kiln-tabletop-order-card:hover { z-index: 2; transform: translateY(-4px); box-shadow: 0 9px 16px rgb(61 44 18 / 25%); }
-  button.kiln-tabletop-tech-tile:hover,
-  button.kiln-tabletop-starting-tech:hover { z-index: 2; transform: translateY(-3px); box-shadow: 0 8px 14px rgb(54 41 20 / 24%); }
-}
 
 .kiln-tabletop-card-preview {
   position: fixed;
@@ -911,7 +889,6 @@
 .kiln-tabletop-imperial-slot { position: absolute; left: 50%; top: 52%; display: grid; place-items: center; width: 32%; height: 43%; transform: translate(-50%, -50%); }
 .kiln-tabletop-imperial-empty { display: grid; width: 86%; height: 86%; place-items: center; border: 1px dashed rgb(246 219 164 / 66%); border-radius: 45% 45% 14% 14%; color: #e0c491; font-size: .7rem; background: rgb(14 21 17 / 26%); }
 .kiln-tabletop-imperial-slot > .kiln-tabletop-ceramic.is-compact { width: 95%; height: auto; aspect-ratio: 1; border-bottom: 3px solid var(--player-color); border-radius: 50%; background: rgb(15 20 17 / 48%); filter: drop-shadow(0 3px 3px rgb(0 0 0 / 42%)); }
-.kiln-tabletop-imperial-slot > .kiln-tabletop-ceramic svg { width: 100%; height: auto; }
 .kiln-tabletop-imperial-kiln > footer { display: flex; justify-content: space-between; gap: .5rem; padding-top: .4rem; border-top: 1px solid rgb(148 109 49 / 22%); color: #756044; font-size: .53rem; }
 .kiln-tabletop-imperial-kiln.is-loaded > footer { color: color-mix(in srgb, var(--player-color) 65%, #362d20); }
 @media (max-width: 1100px) {
@@ -939,18 +916,13 @@
 }
 .kiln-tabletop-workshop > header { display: flex; gap: 1rem; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--tabletop-line); border-radius: 11px 11px 0 0; padding: .55rem .7rem; background: rgb(255 251 239 / 52%); }
 .kiln-tabletop-workshop-name { display: flex; gap: .55rem; align-items: center; min-width: 0; }
-.kiln-tabletop-workshop-name > span { display: grid; flex: 0 0 40px; width: 40px; aspect-ratio: 1; place-items: center; border-radius: 50%; color: white; font-family: var(--tabletop-serif); background: #b04d3e; }
 .kiln-tabletop-workshop-name small,
 .kiln-tabletop-workshop-name strong { display: block; }
 .kiln-tabletop-workshop-name small { color: #8c4437; font-size: .46rem; font-weight: 900; letter-spacing: .1em; }
 .kiln-tabletop-workshop-name strong { font-family: var(--tabletop-serif); font-size: .83rem; }
 .kiln-tabletop-workshop-name p { display: -webkit-box; max-width: 760px; overflow: hidden; margin-top: .08rem; color: #5e655d; font-size: .56rem; line-height: 1.3; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .kiln-tabletop-resource-bank { display: flex; gap: .3rem; flex: 0 0 auto; }
-.kiln-tabletop-resource { display: grid; grid-template-columns: auto auto; gap: 0 .18rem; align-items: center; min-width: 55px; border: 1px solid rgb(88 67 37 / 20%); border-radius: 8px; padding: .22rem .3rem; background: rgb(255 252 241 / 74%); }
-.kiln-tabletop-resource i { grid-row: span 2; display: grid; width: 25px; aspect-ratio: 1; place-items: center; border-radius: 50%; color: #fff7e7; font-size: .48rem; font-style: normal; background: #865444; }
-.kiln-tabletop-resource:nth-child(2) i { background: #6a5931; }
-.kiln-tabletop-resource:nth-child(3) i { color: #5c3d0f; background: #d6ad53; }
-.kiln-tabletop-resource:nth-child(4) i { background: #3f7163; }
+.kiln-tabletop-resource { display: grid; grid-template-columns: minmax(0, 1fr); gap: .2rem; align-items: center; justify-items: center; text-align: center; min-width: 55px; border: 1px solid rgb(88 67 37 / 20%); border-radius: 8px; padding: .22rem .3rem; background: rgb(255 252 241 / 74%); }
 .kiln-tabletop-resource b { font-family: var(--tabletop-serif); font-size: .72rem; line-height: 1; }
 .kiln-tabletop-resource small { color: #6a6b61; font-size: .4rem; line-height: 1; }
 .kiln-tabletop-workshop-zones { display: grid; grid-template-columns: .62fr .88fr 1.22fr 1.28fr; gap: .45rem; padding: .55rem; }
@@ -989,11 +961,6 @@
   filter: drop-shadow(0 3px 2px rgb(0 0 0 / 27%));
 }
 .kiln-tabletop-worker.is-apprentice { flex-basis: 34px; width: 34px; height: 45px; }
-.kiln-tabletop-worker svg { display: block; width: 100%; height: 100%; overflow: visible; }
-.kiln-tabletop-worker-piece { fill: var(--player-color); stroke: #fff4d9; stroke-width: 2; stroke-linejoin: round; }
-.kiln-tabletop-worker-hat { fill: color-mix(in srgb, var(--player-color) 78%, #172821); stroke: #fff4d9; stroke-width: 1.6; stroke-linejoin: round; }
-.kiln-tabletop-worker-detail { fill: none; stroke: #fff4d9; stroke-width: 1.3; stroke-linecap: round; }
-.kiln-tabletop-worker-role { fill: #fff; stroke: rgb(25 31 28 / 72%); stroke-width: 1.5; paint-order: stroke; font-family: var(--sans); font-size: 9px; font-weight: 950; text-anchor: middle; dominant-baseline: middle; }
 .kiln-tabletop-worker.is-small { flex-basis: 29px; width: 29px; height: 36px; }
 .kiln-tabletop-worker.is-small.is-apprentice { flex-basis: 25px; width: 25px; height: 34px; }
 
@@ -1009,25 +976,12 @@
 .kiln-tabletop-ceramic.is-inspectable { border: 0; padding: 0; cursor: help; background: transparent; transition: transform .14s ease, filter .14s ease; }
 .kiln-tabletop-ceramic.is-inspectable:hover,
 .kiln-tabletop-ceramic.is-inspectable:focus { z-index: 25; transform: translateY(-2px) scale(1.08); filter: drop-shadow(0 6px 5px rgb(0 0 0 / 38%)); }
-.kiln-tabletop-ceramic svg { width: 100%; overflow: visible; }
-.kiln-tabletop-ceramic path { fill: color-mix(in srgb, currentColor 78%, white); stroke: color-mix(in srgb, currentColor 56%, #3e473f); stroke-width: 3; stroke-linejoin: round; }
-.kiln-tabletop-ceramic .kiln-tabletop-decoration-pattern { pointer-events: none; }
-.kiln-tabletop-ceramic .kiln-tabletop-decoration-pattern path { fill: none; stroke: color-mix(in srgb, currentColor 30%, #26372f); stroke-linecap: round; stroke-linejoin: round; }
-.kiln-tabletop-ceramic .kiln-tabletop-decoration-pattern.is-carved path { stroke-width: 2.1; }
-.kiln-tabletop-ceramic .kiln-tabletop-decoration-pattern.is-crackle path { stroke-width: 1.45; }
-.kiln-tabletop-ceramic .kiln-tabletop-decoration-pattern.is-impressed circle { fill: color-mix(in srgb, currentColor 28%, #26372f); stroke: rgb(255 255 255 / 38%); stroke-width: .8; }
-.kiln-tabletop-ceramic.glaze-white { color: #eee9dc; }
-.kiln-tabletop-ceramic.glaze-grey_green { color: #84988e; }
-.kiln-tabletop-ceramic.glaze-moon_white { color: #b8c9d5; }
-.kiln-tabletop-ceramic.glaze-raw { color: #b79268; }
 .kiln-tabletop-ceramic > b.kiln-tabletop-quality-badge { position: absolute; z-index: 3; right: -6px; bottom: -1px; display: grid; min-width: 34px; height: 17px; place-items: center; border: 1px solid #fff6df; border-radius: 99px; padding: 0 5px; color: white; font-size: .36rem; font-style: normal; line-height: 1; background: #315f51; box-shadow: 0 1px 3px rgb(0 0 0 / 25%); }
 .kiln-tabletop-ceramic > b.kiln-tabletop-quality-badge.is-masterpiece { color: #3d2d15; background: #d4ad58; }
 .kiln-tabletop-ceramic > b.kiln-tabletop-quality-badge.is-standard { background: #65766e; }
 .kiln-tabletop-ceramic > b.kiln-tabletop-quality-badge.is-flawed { background: #8d493c; }
 .kiln-tabletop-ceramic.is-compact { flex-basis: 39px; width: 39px; }
 .kiln-tabletop-ceramic.is-compact > b.kiln-tabletop-quality-badge { right: -8px; min-width: 27px; height: 13px; padding-inline: 3px; font-size: .27rem; }
-.kiln-tabletop-ceramic > em.kiln-tabletop-shifu-marker { position: absolute; z-index: 2; top: -3px; right: -3px; display: grid; width: 17px; aspect-ratio: 1; place-items: center; border: 1px solid #fff0ce; border-radius: 50%; color: white; font-family: var(--tabletop-serif); font-size: .39rem; font-style: normal; background: var(--player-color); box-shadow: 0 2px 5px rgb(0 0 0 / 35%); }
-.kiln-tabletop-ceramic.is-compact > em.kiln-tabletop-shifu-marker { width: 13px; font-size: .31rem; }
 .kiln-tabletop-ceramic > em.kiln-tabletop-shifu-heat-marker { position: absolute; z-index: 2; top: -3px; right: -4px; display: grid; min-width: 22px; height: 19px; padding: 0 3px; place-items: center; border: 1px solid #fff0ce; border-radius: 5px; color: #fff6df; font-size: .5rem; font-weight: 800; font-style: normal; line-height: 1; background: #a74128; box-shadow: 0 2px 5px rgb(0 0 0 / 35%); }
 .kiln-tabletop-ceramic > em.kiln-tabletop-shifu-heat-marker.is-cooler { background: #326a75; }
 .kiln-tabletop-ceramic.is-compact > em.kiln-tabletop-shifu-heat-marker { min-width: 19px; height: 16px; font-size: .4rem; }
@@ -1147,7 +1101,6 @@
 @media (max-width: 1320px) {
   .kiln-tabletop-topbar { grid-template-columns: 190px 1fr auto; }
   .kiln-tabletop-market { grid-template-columns: 155px 58px minmax(680px, 1fr); overflow-x: auto; }
-  .kiln-tabletop-market-note { display: none; }
   .kiln-tabletop-play-area { grid-template-columns: minmax(0, 1fr) 260px; }
   .kiln-tabletop-tech-tile { min-height: 120px; }
 }
@@ -1195,7 +1148,6 @@
 
 @media (max-width: 480px) {
   .kiln-tabletop-brand strong { font-size: .83rem; }
-  .kiln-tabletop-brand > span:first-child { width: 37px; }
   .kiln-tabletop-turn-summary > span { padding: .3rem .38rem; }
   .kiln-tabletop-player { flex-basis: 205px; }
   .kiln-tabletop-workshop > header { display: grid; }
@@ -1832,9 +1784,9 @@
   .firing-heat-calculation > i { display: none; }
 }
 
-/* Player-facing text uses one family and one regular weight. Size, colour, and spacing carry hierarchy. */
+/* Interface text uses a regular sans face; illustrated pieces retain their printed typography. */
 .kiln-tabletop-root.kiln-live-root,
-.kiln-tabletop-root.kiln-live-root * {
+.kiln-tabletop-root.kiln-live-root :not(.kiln-piece, .kiln-piece *) {
   font-family: var(--sans) !important;
   font-weight: 400 !important;
 }
@@ -1958,3 +1910,5 @@
   .kiln-live-root .kiln-tabletop-order-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .kiln-live-root .kiln-tabletop-resource-bank { flex-wrap: wrap; overflow: visible; }
 }
+
+.kiln-live-crackle-marker { position: absolute; top: 2px; left: 2px; border-radius: 3px; padding: 2px 4px; background: #e8d8b8; color: #503e2d; font: 600 9px/1.2 sans-serif; }

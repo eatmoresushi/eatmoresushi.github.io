@@ -4,7 +4,10 @@ import type { ReactNode } from "react";
 // Keep the physical board's coordinates intact; only its display size changes.
 const MIN_BOARD_WIDTH = 1200;
 
-export function ResponsiveGameBoard({ children }: { children: ReactNode }) {
+export function ResponsiveGameBoard({ children, scaleToFit = true }: {
+  children: ReactNode;
+  scaleToFit?: boolean;
+}) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ availableWidth: MIN_BOARD_WIDTH, height: 0 });
@@ -12,7 +15,7 @@ export function ResponsiveGameBoard({ children }: { children: ReactNode }) {
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
     const board = boardRef.current;
-    if (!viewport || !board) return;
+    if (!scaleToFit || !viewport || !board) return;
 
     const measure = () => {
       const availableWidth = viewport.clientWidth;
@@ -27,19 +30,19 @@ export function ResponsiveGameBoard({ children }: { children: ReactNode }) {
     observer.observe(viewport);
     observer.observe(board);
     return () => observer.disconnect();
-  }, []);
+  }, [scaleToFit]);
 
   const scale = Math.min(1, size.availableWidth / MIN_BOARD_WIDTH);
   return (
     <div
-      className="kiln-responsive-board-viewport"
+      className={`kiln-responsive-board-viewport${scaleToFit ? "" : " is-fluid"}`}
       ref={viewportRef}
-      style={{ height: size.height ? size.height * scale : undefined }}
+      style={scaleToFit ? { height: size.height ? size.height * scale : undefined } : undefined}
     >
       <div
         className="kiln-tabletop-board-body kiln-responsive-board-scene"
         ref={boardRef}
-        style={{ width: Math.max(MIN_BOARD_WIDTH, size.availableWidth), transform: `scale(${scale})` }}
+        style={scaleToFit ? { width: Math.max(MIN_BOARD_WIDTH, size.availableWidth), transform: `scale(${scale})` } : undefined}
       >
         {children}
       </div>

@@ -1,3 +1,4 @@
+import { ACTION_LOCATION_PRICES } from "../game";
 import type { LocationId, WorkerKind } from "../game";
 import type { Locale } from "./i18n";
 
@@ -24,22 +25,22 @@ const ACTION_SUMMARIES = {
   },
   glaze_workshop: {
     apprentice: {
-      en: "Glaze & decorate 1",
-      "zh-CN": "为1件施釉与纹饰",
+      en: "Decorate 1 · pay 2 Coins",
+      "zh-CN": "为1件装饰 · 付2铜钱",
     },
     shifu: {
-      en: "Glaze & decorate up to 2 · −1 total Coin for two",
-      "zh-CN": "为至多2件施釉与纹饰 · 2件总费用−1铜钱",
+      en: "Decorate up to 2 · one Decoration free",
+      "zh-CN": "为至多2件装饰 · 其中1件免费",
     },
   },
   kiln_yard: {
     apprentice: {
-      en: "Load 1",
-      "zh-CN": "装窑1件",
+      en: "Glaze & load 1 · pay 1 Coin",
+      "zh-CN": "施釉并装窑1件 · 付1铜钱",
     },
     shifu: {
-      en: "Load up to 2 · mark 1 of yours in Shared Kiln · optional ±1 Heat later",
-      "zh-CN": "装窑至多2件 · 标记1件己方共窑陶瓷 · 之后可±1火候",
+      en: "Glaze & load up to 2 · 1 Coin each · mark 1 loaded now in either kiln",
+      "zh-CN": "施釉并装窑至多2件 · 每件1铜钱 · 标记本次装窑的1件陶瓷",
     },
   },
   market_imperial_office: {
@@ -74,12 +75,12 @@ const ACTION_SUMMARIES = {
   },
   court_patronage: {
     apprentice: {
-      en: "Pay 4 Coins → Recognition +1",
-      "zh-CN": "支付4铜钱 → 御府声望＋1",
+      en: `Pay ${ACTION_LOCATION_PRICES.courtPatronageCoins} Coins → Recognition +1 · up to 3`,
+      "zh-CN": `支付${ACTION_LOCATION_PRICES.courtPatronageCoins}铜钱 → 御府声望＋1 · 最高3格`,
     },
     shifu: {
-      en: "Pay 4 Coins → Recognition +1",
-      "zh-CN": "支付4铜钱 → 御府声望＋1",
+      en: `Pay ${ACTION_LOCATION_PRICES.courtPatronageCoins} Coins → Recognition +1 · up to 3`,
+      "zh-CN": `支付${ACTION_LOCATION_PRICES.courtPatronageCoins}铜钱 → 御府声望＋1 · 最高3格`,
     },
   },
 } satisfies Record<LocationId, Record<WorkerKind, Record<Locale, string>>>;

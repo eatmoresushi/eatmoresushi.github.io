@@ -56,14 +56,10 @@
 .kiln-live-root .kiln-tabletop-tech-market { min-width: 0; padding: var(--ui-gap); gap: .85rem; overflow: visible; border: 1px solid var(--ui-border); border-radius: 12px; background: linear-gradient(120deg, #f4ead2, #e5d5b1); box-shadow: 0 6px 18px #061c1729, inset 0 1px 0 #fff9e7b3; }
 .kiln-live-root .kiln-tabletop-market { grid-template-columns: minmax(0, 1fr) auto; }
 .kiln-live-root .kiln-tabletop-section-title { gap: .65rem; }
-.kiln-live-root .kiln-tabletop-section-title > span { width: 38px; flex-basis: 38px; }
 .kiln-live-root .kiln-tabletop-section-title small { font-size: var(--ui-label); letter-spacing: .08em; }
 .kiln-live-root .kiln-tabletop-section-title strong { font-size: var(--ui-title); margin-top: .15rem; }
 .kiln-live-root .kiln-tabletop-order-deck { grid-column: 2; width: 34px; margin: .3rem .4rem .3rem 0; }
 .kiln-live-root .kiln-tabletop-order-row { grid-column: 1 / -1; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .65rem; }
-.kiln-live-root .kiln-tabletop-market-note { display: flex; grid-column: 1 / -1; flex-wrap: wrap; justify-content: space-between; gap: .35rem .75rem; border: 0; padding: 0; }
-.kiln-live-root .kiln-tabletop-market-note small,
-.kiln-live-root .kiln-tabletop-market-note strong { font-size: var(--ui-small); }
 .kiln-live-root .kiln-tabletop-tech-market { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .kiln-live-root .kiln-tabletop-tech-market > .kiln-tabletop-section-title { grid-column: 1 / -1; }
 .kiln-live-root .kiln-tabletop-tech-discipline { min-width: 0; grid-template-rows: auto minmax(0, 1fr); gap: .6rem; padding-top: .55rem; }
@@ -114,7 +110,6 @@
 .kiln-live-root .kiln-tabletop-workshop-name p { display: block; max-width: 900px; margin-top: .35rem; overflow: visible; -webkit-line-clamp: unset; color: #414e43; font-size: var(--ui-text); line-height: 1.5; }
 .kiln-live-root .kiln-tabletop-resource-bank { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); width: auto; min-width: 0; gap: .5rem; overflow: visible; }
 .kiln-live-root .kiln-tabletop-resource { min-width: 74px; gap: .2rem .4rem; padding: .5rem; }
-.kiln-live-root .kiln-tabletop-resource i { width: 28px; font-size: var(--ui-small); }
 .kiln-live-root .kiln-tabletop-resource b { font-size: 1.125rem; }
 .kiln-live-root .kiln-tabletop-resource small { font-size: var(--ui-label); line-height: 1.2; }
 .kiln-live-root .kiln-tabletop-workshop-zones { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: var(--ui-gap); gap: var(--ui-gap); }
@@ -177,7 +172,6 @@
   .kiln-live-root .kiln-tabletop-workshop-zones { grid-template-columns: minmax(0, 1fr); }
   .kiln-live-root .kiln-tabletop-workshop-zones > section { grid-column: auto; }
   .kiln-live-root .kiln-tabletop-resource { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: .35rem; }
-  .kiln-live-root .kiln-tabletop-resource i { grid-row: auto; }
 }
 @media (max-width: 380px) {
   .kiln-live-root .kiln-tabletop-tech-discipline > div { grid-template-columns: minmax(0, 1fr); }

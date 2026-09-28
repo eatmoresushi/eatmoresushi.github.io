@@ -24,7 +24,34 @@ function localizedMarkup(locale: Locale, child: ReturnType<typeof createElement>
   return renderToStaticMarkup(createElement(LanguageProvider, { initialLocale: locale, children: child }));
 }
 
-describe("V1.2.7 functional tabletop", () => {
+describe("V1.4 functional tabletop", () => {
+  it("keeps the setup dialog open across own selections until Work removes its context", () => {
+    const state = structuredClone(startedGame(2, 12_675).state);
+    const workPhase = state.phase;
+    state.phase = { type: "setup_kiln_selection", selectionOrder: ["P2", "P1"], currentIndex: 1 };
+    let game = projectPublicGameState(state);
+    const selectKiln = { type: "SELECT_KILN", kilnId: "GE" } as const;
+    const selectTech = { type: "SELECT_STARTING_TECH", techniqueId: "ST01" } as const;
+
+    expect(keepActionControlsOpenAfterCommand(game, "P1", selectKiln)).toBe(true);
+    expect(keepActionControlsOpenAfterCommand(game, "P2", selectKiln)).toBe(false);
+    expect(keepActionControlsOpenAfterCommand(game, "P1", selectTech)).toBe(false);
+    expect(hasActionControlsContext(game, null)).toBe(true);
+
+    state.phase = { type: "setup_starting_tech", decisionOrder: ["P1", "P2"], currentIndex: 0 };
+    game = projectPublicGameState(state);
+    expect(keepActionControlsOpenAfterCommand(game, "P1", selectTech)).toBe(true);
+    expect(keepActionControlsOpenAfterCommand(game, "P2", selectTech)).toBe(false);
+    expect(keepActionControlsOpenAfterCommand(game, "P1", selectKiln)).toBe(false);
+    expect(hasActionControlsContext(game, null)).toBe(true);
+
+    state.phase = workPhase;
+    game = projectPublicGameState(state);
+    expect(hasActionControlsContext(game, null)).toBe(false);
+    expect(keepActionControlsOpenAfterCommand(game, "P1", selectKiln)).toBe(false);
+    expect(keepActionControlsOpenAfterCommand(game, "P1", selectTech)).toBe(false);
+  });
+
   it("keeps an unfinished action mounted while inspecting the table, then discards it after resolution", () => {
     const empty = { open: false, mounted: false };
     const open = actionControlsVisibilityReducer(empty, { type: "OPEN" });
@@ -69,7 +96,7 @@ describe("V1.2.7 functional tabletop", () => {
   it("renders the approved board from live public state with owned pieces and player-count locks", () => {
     const state = structuredClone(startedGame(2, 12_660).state);
     const marked = addLoaded(state, "P1", "plate", "celadon", "carved", "high_1", true);
-    const finished = addFinished(state, "P1", "censer", "fine", "grey_green", "crackle");
+    const finished = addFinished(state, "P1", "censer", "fine", "grey_green", "painted");
     state.players["P1"]!.kilnYardShifuCeramicId = marked.id;
     state.players["P1"]!.kilnYardShifuUsedThisRound = true;
 
@@ -88,7 +115,7 @@ describe("V1.2.7 functional tabletop", () => {
       colour: ["cinnabar", "river", "ochre", "plum"][index]!,
       isHost: index === 0,
       isComputer: playerId === "P2",
-      aiPolicyVersion: playerId === "P2" ? "rules-v1.2.7-strategic-002" : null,
+      aiPolicyVersion: playerId === "P2" ? "rules-v1.4-strategic-001" : null,
     }));
     const markup = localizedMarkup("en", createElement(TabletopGameExperience, {
       game,
@@ -110,20 +137,19 @@ describe("V1.2.7 functional tabletop", () => {
     expect(markup).not.toContain('class="kiln-tabletop-actionbar"');
     expect(markup).not.toContain("Pass round");
     expect(markup).toContain("Face-up Main Orders");
-    expect(markup).toContain('class="kiln-tabletop-order-crowns"');
+    expect(markup).toContain('class="kiln-piece-crowns"');
     expect(markup).toContain("Shared Kiln");
     expect(markup).toContain("Face-up Techs");
-    expect(markup).toContain('class="kiln-tabletop-cash-coin"');
-    expect(markup).toMatch(/class="kiln-tabletop-tech-cost" aria-label="[23] Coins"/);
+    expect(markup).toContain('class="kiln-piece-coin"');
+    expect(markup).toMatch(/class="kiln-piece-cost" aria-label="[23] Coins"/);
     expect(markup).not.toContain("◉");
-    expect(markup).toContain('data-hover-preview="order"');
-    expect(markup).toContain('data-hover-preview="advanced-technique"');
-    expect(markup).toMatch(/aria-describedby="kiln-order-preview-[^"]+-description"/);
-    expect(markup).toMatch(/aria-describedby="kiln-technique-preview-[^"]+-description"/);
-    expect(markup).toMatch(/aria-describedby="kiln-starting-technique-preview-[^"]+-description"/);
-    expect(markup).toMatch(/<button[^>]*aria-haspopup="dialog"[^>]*data-hover-preview="starting-technique"[^>]*data-preview-id="kiln-starting-technique-preview-ST0[1-4]"[^>]*data-starting-technique-id="ST0[1-4]"/);
-    expect(markup).toMatch(/<button[^>]*aria-label="Inspect Order [^"]+"[^>]*aria-haspopup="dialog"[^>]*data-hover-preview="order"/);
-    expect(markup).toMatch(/<button[^>]*aria-label="Inspect [^"]+"[^>]*aria-haspopup="dialog"[^>]*data-hover-preview="advanced-technique"/);
+    expect(markup).not.toMatch(/data-hover-preview="(?:order|advanced-technique|starting-technique)"/);
+    expect(markup).toMatch(/aria-describedby="kiln-order-[^"]+-description"/);
+    expect(markup).toMatch(/aria-describedby="kiln-technique-[^"]+-description"/);
+    expect(markup).toMatch(/aria-describedby="kiln-starting-technique-[^"]+-description"/);
+    expect(markup).toMatch(/<button[^>]*aria-haspopup="dialog"[^>]*data-starting-technique-id="ST0[1-4]"/);
+    expect(markup).toMatch(/<button[^>]*aria-label="Inspect Order [^"]+"[^>]*aria-haspopup="dialog"[^>]*data-order-id="[^"]+"/);
+    expect(markup).toMatch(/<button[^>]*aria-label="Inspect [^"]+"[^>]*aria-haspopup="dialog"[^>]*data-technique-id="T\d+"/);
     expect(markup).toMatch(/class="kiln-tabletop-player-resources" aria-label="Resources"><i>Clay \d+<\/i><i>Wood \d+<\/i><i>Coins \d+<\/i>/);
     expect(markup).toContain('title="First Player">1</span>');
     expect(markup).not.toContain('title="First Player">一</span>');
@@ -136,15 +162,14 @@ describe("V1.2.7 functional tabletop", () => {
     expect(markup).toMatch(/class="kiln-tabletop-ai-badge"[^>]*aria-label="Computer player"[^>]*>AI<\/span>/);
     expect(markup).toContain('data-worker-kind="apprentice"');
     expect(markup).toContain('data-worker-kind="shifu"');
-    expect(markup).toContain('class="kiln-tabletop-worker-hat"');
-    expect(markup).toContain('>S</text>');
-    expect(markup).toContain('>A</text>');
+    expect(markup).not.toMatch(/>[SA]<\/text>/);
 
     expect(markup).toContain('data-shape="plate"');
     expect(markup).toContain('data-glaze="celadon"');
     expect(markup).toContain('data-decoration="carved"');
-    expect(markup).toContain('class="kiln-tabletop-decoration-pattern is-carved"');
-    expect(markup).toContain('class="kiln-tabletop-decoration-pattern is-crackle"');
+    expect(markup).toContain('data-ceramic-art="plate-carved"');
+    expect(markup).toContain('data-ceramic-art="censer-painted"');
+    expect(markup).toMatch(/<image\b[^>]*href="[^"]*ceramic-plate-carved-v1\.webp"/);
     expect(markup).toContain("BELONGS TO");
     expect(markup).toContain("Preferred Heat");
     expect(markup).toContain('data-hover-preview="ceramic"');
@@ -158,8 +183,40 @@ describe("V1.2.7 functional tabletop", () => {
     expect(markup).toContain("Furniture");
     expect(markup).toContain('class="kiln-tabletop-quality-badge is-fine"');
     expect(markup).toContain(">Fine</b>");
-    expect(markup).toMatch(/class="kiln-tabletop-shifu-marker"[^>]*>S<\/em>/);
+    expect(markup).toMatch(/<span class="kiln-tabletop-shifu-marker"[^>]*><span[^>]*data-worker-kind="shifu"/);
+    expect(markup).not.toMatch(/class="kiln-tabletop-shifu-marker"[^>]*>[S师]<\/em>/);
     expect(markup).not.toMatch(/<i>素<\/i>|<i>刻<\/i>|<i>印<\/i>|<i>裂<\/i>/);
+  });
+
+  it("shows permanent Ge Crackle over the finished ceramic while retaining owner, actual finish and Quality", () => {
+    const state = structuredClone(startedGame(2, 12_678).state);
+    const crackled = addFinished(state, "P1", "vase", "fine", "moon_white", "painted");
+    crackled.crackle = true;
+    addFinished(state, "P1", "vase", "fine", "moon_white", "painted");
+    const game = projectPublicGameState(state);
+    const before = JSON.stringify(game);
+    const markup = localizedMarkup("en", createElement(TabletopGameExperience, {
+      game,
+      ownPlayerId: "P1",
+      ownPendingContribution: null,
+      events: [],
+      seats: [],
+      describeEvent: (record) => record.event.type,
+      busy: false,
+      send: async () => true,
+    }));
+    const ceramic = markup.match(/<button\b[^>]*data-crackle="true"[^>]*>[\s\S]*?<\/button>/u)?.[0];
+    expect(ceramic).toBeDefined();
+    expect(ceramic).toContain('data-owner-id="P1"');
+    expect(ceramic).toContain('data-glaze="moon_white"');
+    expect(ceramic).toContain('data-decoration="painted"');
+    expect(ceramic).toContain('data-ceramic-art="vase-painted"');
+    expect(ceramic).toContain("ceramic-crackle-overlay-v1.webp");
+    expect(ceramic).toContain('class="kiln-tabletop-quality-badge is-fine"');
+    expect(ceramic).toContain('class="kiln-live-crackle-marker"');
+    expect(ceramic).toContain(">Crackle</em>");
+    expect(markup).toContain("Crackle · wild Glaze for Orders; actual Glaze and Decoration remain unchanged");
+    expect(JSON.stringify(game)).toBe(before);
   });
 
   it("shows a concise computer recap without backend implementation details", () => {
@@ -218,15 +275,18 @@ describe("V1.2.7 functional tabletop", () => {
     const english = render("en");
     const chinese = render("zh-CN");
 
-    expect(english).toMatch(/class="kiln-tabletop-order-card[^"]*is-owned/);
-    expect(english).toMatch(/class="kiln-tabletop-starting-tech[^"]*is-owned/);
-    expect(english).toMatch(/class="kiln-tabletop-tech-tile[^"]*is-owned/);
-    expect(english).toContain('class="kiln-tabletop-tech-endgame-vp" title="Scores 1 VP at game end"');
+    expect(english).toMatch(/class="kiln-piece kiln-order-card[^"]*is-owned/);
+    expect(english).toMatch(/class="kiln-piece kiln-tech-tile is-starting[^"]*is-owned/);
+    expect(english).toMatch(/class="kiln-piece kiln-tech-tile is-forming[^"]*is-owned/);
+    expect(english).toContain('class="kiln-piece-endgame-vp" aria-label="Scores 1 VP at game end"');
     expect(english).toContain('>1VP</b>');
-    expect(chinese).toContain('title="终局计分时获得1分"');
-    const ownedStartingTile = english.match(/<button[^>]*class="kiln-tabletop-starting-tech[^"]*is-owned"[\s\S]*?<\/button>/)?.[0];
+    expect(chinese).toContain('aria-label="终局计分时获得1分"');
+    expect(english).not.toContain('title="Scores 1 VP at game end"');
+    expect(chinese).not.toContain('title="终局计分时获得1分"');
+    const ownedStartingTile = english.match(/<button[^>]*class="kiln-piece kiln-tech-tile is-starting[^"]*is-owned"[\s\S]*?<\/button>/)?.[0];
     expect(ownedStartingTile).toBeDefined();
-    expect(ownedStartingTile).not.toContain("kiln-tabletop-tech-endgame-vp");
+    expect(ownedStartingTile).not.toContain("kiln-piece-endgame-vp");
+    expect(ownedStartingTile).not.toContain("kiln-piece-cost");
     expect(english).not.toContain("Workshop foundation");
     expect(chinese).not.toContain("作坊基础");
   });
@@ -245,7 +305,7 @@ describe("V1.2.7 functional tabletop", () => {
       send: async () => true,
     }));
 
-    expect(markup).toContain("Send to Labour");
+    expect(markup).toContain("Send to Paid Work");
     expect(markup).not.toContain("Gather materials");
     expect(markup).not.toContain("Shape vessels");
     const selectedWorkerButton = markup.match(new RegExp(`<button[^>]*data-worker-choice="${selectedWorkerId}"[^>]*>`))?.[0] ?? "";
@@ -382,7 +442,7 @@ describe("V1.2.7 functional tabletop", () => {
       const pieces = [
         addShaped(state, playerId, "bowl"),
         addGlazed(state, playerId, "plate", "white", "impressed"),
-        addLoaded(state, playerId, "washer", "moon_white", "crackle", sharedSpaces[index]!, true),
+        addLoaded(state, playerId, "washer", "moon_white", "painted", sharedSpaces[index]!, true),
         addLoaded(state, playerId, "censer", "grey_green", "carved", "imperial"),
         addFinished(state, playerId, "vase", "fine", "celadon", "plain"),
         addFinished(state, playerId, "bowl", "flawed", "white", "carved"),
@@ -434,7 +494,7 @@ describe("V1.2.7 functional tabletop", () => {
         code: "NOTICE",
         status: "playing" as const,
         hostSeatId: "seat-1",
-        rulesVersion: "1.2.7" as const,
+        rulesVersion: "1.4" as const,
         latestRevision: game.revision,
         endedAt: null,
         endedByPlayerId: null,
@@ -470,7 +530,7 @@ describe("V1.2.7 functional tabletop", () => {
 
     expect(markup).toContain('class="control-form control-form-glaze"');
     expect(markup).toContain('class="control-submit-bar"');
-    expect(markup).toContain("Apply glaze");
+    expect(markup).toContain("Decorate ceramics");
     expect(markup).not.toContain("Authoritative controls");
     expect(markup).not.toContain("Every command is validated by the server");
   });
@@ -531,7 +591,7 @@ describe("V1.2.7 functional tabletop", () => {
     let markup = localizedMarkup("en", createElement(ActionPanel, {
       game,
       ownPlayerId: "P1",
-      ownPendingContribution: { windowId: "firing-ui-window", card: "BANK", useFuelLedger: false, submitted: true },
+      ownPendingContribution: { windowId: "firing-ui-window", card: "BANK", submitted: true },
       busy: false,
       send: async () => true,
     }));
@@ -547,7 +607,7 @@ describe("V1.2.7 functional tabletop", () => {
       round: state.round,
       contributors: ["P1", "P2"],
       contributions: { P1: "BANK", P2: "STOKE" },
-      fuelLedgerUpgradedBy: [],
+
       baseHeat: 2,
       fireModifier: null,
       globalHeat: null,
@@ -633,7 +693,7 @@ describe("V1.2.7 functional tabletop", () => {
     addFinished(state, "P1", "bowl", "standard", "white", "plain");
     addFinished(state, "P1", "plate", "standard", "celadon", "carved");
     addFinished(state, "P1", "washer", "standard", "grey_green", "impressed");
-    addFinished(state, "P1", "censer", "flawed", "moon_white", "crackle");
+    addFinished(state, "P1", "censer", "flawed", "moon_white", "painted");
     state.players["P1"]!.orderHand = ["S01", "S08", "O43", "O44"];
     state.marketDisplay = ["O02"];
     state.phase = { type: "orders", turnOrder: ["P1", "P2"], currentIndex: 0, activePlayerId: "P1", completedInCircuit: 0 };
@@ -695,9 +755,8 @@ describe("V1.2.7 functional tabletop", () => {
     expect(markup).toContain("御府声望");
     expect(markup).toContain("你的作坊");
     expect(markup).toContain('data-turn-label="行动中"');
-    expect(markup).toContain('data-hover-preview="order"');
-    expect(markup).toContain('data-hover-preview="advanced-technique"');
-    expect(markup).toContain('data-hover-preview="starting-technique"');
+    expect(markup).not.toMatch(/data-hover-preview="(?:order|advanced-technique|starting-technique)"/);
+    expect(markup).toMatch(/aria-label="查看委托 [^"]+"[^>]*aria-describedby="[^"]+"[^>]*aria-haspopup="dialog"/);
     expect(markup).toMatch(/class="kiln-tabletop-player-resources" aria-label="资源"><i>泥 \d+<\/i><i>柴 \d+<\/i><i>钱 \d+<\/i>/);
     expect(JSON.stringify(game)).toBe(before);
   });

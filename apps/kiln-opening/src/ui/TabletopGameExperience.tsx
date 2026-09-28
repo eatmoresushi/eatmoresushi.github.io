@@ -43,6 +43,7 @@ import type {
   PublicSeat,
 } from "../multiplayer";
 import { ActionPanel } from "./ActionPanel";
+import { OrderFace, TechniqueFace, pieceSurfaceClass } from "./PieceFaces";
 import {
   KilnDescription,
   TechniqueDescription,
@@ -58,7 +59,12 @@ import { BoardActionEffect } from "./BoardActionEffect";
 import { BoardActionSummary } from "./BoardActionSummary";
 import { ImperialKilnIllustration } from "./ImperialKilnIllustration";
 import { RecognitionMarker } from "./RecognitionMarker";
+import { CeramicArtwork } from "./CeramicArtwork";
+import { useTabletopPieceSizes } from "./useTabletopPieceSizes";
 import { ResponsiveGameBoard } from "./ResponsiveGameBoard";
+import { ResponsiveTabletop } from "./ResponsiveTabletop";
+import { TABLETOP_REFERENCE_WIDTH } from "./tabletopLayout";
+import type { TabletopLayout } from "./tabletopLayout";
 import { fireCardHistory } from "./fireCardHistory";
 import type { FireCardHistoryEntry } from "./fireCardHistory";
 import { previewPosition } from "./previewPosition";
@@ -67,6 +73,12 @@ import "./tabletop-game.css";
 import "./illustrated-board.css";
 import "./tabletop-responsive.css";
 import "./tabletop-dialogs.css";
+import "./tabletop-overview.css";
+import "./recognition-track.css";
+import "./personal-piece-sizes.css";
+import "./responsive-tabletop.css";
+import "./responsive-overlays.css";
+import "./ceramic-artwork.css";
 
 type SendCommand = (command: AuthoritativeCommand) => Promise<boolean>;
 
@@ -75,6 +87,7 @@ type Inspection =
   | { type: "order"; id: OrderId }
   | { type: "technique"; id: TechniqueId }
   | { type: "startingTechnique"; id: StartingTechniqueId }
+  | { type: "recognition" }
   | { type: "log" }
   | null;
 
@@ -373,12 +386,18 @@ export function actionDraftDecisionKey(
   return [game.gameId, ownPlayerId, game.round, decision, selectedLocation ?? "all", selectedWorkerId ?? "auto"].join("|");
 }
 
-/** Keep a multi-step worker action in one uninterrupted modal flow. */
+/** Keep setup and multi-step worker actions in one uninterrupted modal flow. */
 export function keepActionControlsOpenAfterCommand(
   game: PublicGameState,
   ownPlayerId: PlayerId,
   command: AuthoritativeCommand,
 ): boolean {
+  if (command.type === "SELECT_KILN") {
+    return game.phase.type === "setup_kiln_selection" && currentDecisionActor(game.phase) === ownPlayerId;
+  }
+  if (command.type === "SELECT_STARTING_TECH") {
+    return game.phase.type === "setup_starting_tech" && currentDecisionActor(game.phase) === ownPlayerId;
+  }
   if (command.type === "BEGIN_OFFICE_ORDERS" || command.type === "BEGIN_GUILD_ACTION") return true;
   if (game.phase.type === "work_guild" && game.phase.actorId === ownPlayerId) {
     return command.type === "GUILD_INSPECT_DISCIPLINE";
@@ -419,6 +438,9 @@ export function TabletopGameExperience({
 }: TabletopGameExperienceProps) {
   game = withOwnOrderHand(game, ownPlayerId, ownPrivateDecision?.orderHand);
   const { locale } = useI18n();
+  const tableRootRef = useRef<HTMLDivElement>(null);
+  const [tabletopLayout, setTabletopLayout] = useState<TabletopLayout>({ mode: "wide", scale: 1, cardScale: 1 });
+  useTabletopPieceSizes(tableRootRef);
   const ownPlayer = game.players[ownPlayerId];
   const [selectedWorkerId, setSelectedWorkerId] = useState<WorkerId | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<LocationId | null>(null);
@@ -493,10 +515,12 @@ export function TabletopGameExperience({
   const showContextAction = actionControlsHaveContext;
 
   return (
-    <div className="kiln-tabletop-root kiln-live-root" data-testid="tabletop-live-ui">
+    <div className="kiln-tabletop-root kiln-live-root" ref={tableRootRef} data-testid="tabletop-live-ui"
+      data-tabletop-layout={tabletopLayout.mode}
+      style={{ "--tabletop-card-scale": tabletopLayout.cardScale, "--tabletop-player-count": game.playerOrder.length, "--tabletop-reference-width": `${TABLETOP_REFERENCE_WIDTH}px` } as CSSProperties}>
+      <ResponsiveTabletop onLayoutChange={setTabletopLayout}>
       <header className="kiln-tabletop-topbar kiln-live-topbar">
         <div className="kiln-tabletop-brand" aria-label={text(locale, "Game table", "游戏桌面")}>
-          <span aria-hidden="true">窑</span>
           <span><strong>{text(locale, "GAME TABLE", "游戏桌面")}</strong><small>V{game.rulesVersion}</small></span>
         </div>
         <div className="kiln-tabletop-turn-summary" aria-label={text(locale, "Current game status", "当前游戏状态")}>
@@ -538,7 +562,7 @@ export function TabletopGameExperience({
         <div className="kiln-tabletop-play-area">
           <div className="kiln-tabletop-board-scroll">
             <section className="kiln-tabletop-board kiln-tabletop-art-surface" id="kiln-live-shared-board" aria-label={text(locale, "Shared game board", "共享游戏板")}>
-              <ResponsiveGameBoard>
+              <ResponsiveGameBoard scaleToFit={tabletopLayout.mode === "compact"}>
                 <div className="kiln-tabletop-actions-grid kiln-illustrated-district">
                   {TABLETOP_BOARD_LOCATIONS.map(({ id }) => (
                     <ActionSpace
@@ -553,13 +577,17 @@ export function TabletopGameExperience({
                     />
                   ))}
                   <SharedKiln game={game} events={events} locale={locale} />
-                  <div className="kiln-illustrated-recognition-band"><ImperialTrack game={game} locale={locale} /></div>
                 </div>
-                <TurnOrderTrack game={game} locale={locale} currentActorId={decisionActor} />
               </ResponsiveGameBoard>
             </section>
           </div>
-          <TechniqueMarket game={game} locale={locale} onInspect={(id) => inspect({ type: "technique", id })} />
+          <div className="kiln-tabletop-public-sidebar">
+            <TechniqueMarket game={game} locale={locale} onInspect={(id) => inspect({ type: "technique", id })} />
+            <div className="kiln-tabletop-public-tracks">
+              <ImperialTrack game={game} locale={locale} compact />
+              <TurnOrderTrack game={game} locale={locale} currentActorId={decisionActor} />
+            </div>
+          </div>
         </div>
         <div className={`kiln-tabletop-workshop-area ${Object.values(game.players).filter(hasImperialKiln).length === 1 ? "has-one-imperial" : ""}`}>
           <OwnWorkshop
@@ -577,6 +605,7 @@ export function TabletopGameExperience({
           <ImperialKilnGallery game={game} locale={locale} />
         </div>
       </main>
+      </ResponsiveTabletop>
 
       {controlsVisibility.mounted && actionControlsHaveContext && (
         <ModalPanel open={controlsOpen} title={selectedDefinition === null ? phaseName(game, locale) : locale === "zh-CN" ? selectedDefinition.nameZh : selectedDefinition.name} eyebrow={text(locale, "ACTION", "行动")} locale={locale} onClose={() => updateControlsVisibility({ type: "CLOSE" })} className="kiln-live-controls-panel">
@@ -774,10 +803,15 @@ function ComputerRecapPanel({
 function MarketShelf({ game, locale, onInspect }: { game: PublicGameState; locale: Locale; onInspect: (id: OrderId) => void }) {
   return (
     <section className="kiln-tabletop-market" aria-labelledby="kiln-live-market-title">
-      <div className="kiln-tabletop-section-title"><span aria-hidden="true">单</span><div><small>{text(locale, "COMMISSION MARKET", "瓷牙行")}</small><strong id="kiln-live-market-title">{text(locale, "Face-up Main Orders", "公开主委托")}</strong></div></div>
-      <div className="kiln-tabletop-order-deck" role="img" aria-label={text(locale, `Main Order deck, ${game.decks.marketRemaining} remaining`, `主委托牌库，剩余${game.decks.marketRemaining}张`)}><span aria-hidden="true">委</span><small>{game.decks.marketRemaining}</small></div>
-      <div className="kiln-tabletop-order-row">{game.displays.market.map((id, index) => <OrderCard id={id} locale={locale} displayIndex={index + 1} onInspect={onInspect} key={id} />)}</div>
-      <div className="kiln-tabletop-market-note"><small>{text(locale, "Oldest → newest · remove, slide left, refill right", "最旧 → 最新 · 移走、左移、右端补牌")}</small><strong>{text(locale, `Live Round ${game.round} display`, `第${game.round}轮实时展示`)}</strong></div>
+      <div className="kiln-tabletop-section-title"><div><small>{text(locale, "COMMISSION MARKET", "瓷牙行")}</small><strong id="kiln-live-market-title">{text(locale, "Face-up Main Orders", "公开主委托")}</strong></div></div>
+      <div className="kiln-tabletop-order-row">
+        {game.displays.market.map((id) => <OrderCard id={id} locale={locale} onInspect={onInspect} key={id} />)}
+        <div className="kiln-tabletop-order-deck" role="img" aria-label={text(locale, `Main Order deck, ${game.decks.marketRemaining} remaining`, `主委托牌库，剩余${game.decks.marketRemaining}张`)}>
+          <span aria-hidden="true">委</span>
+          <strong>{text(locale, "Main Orders", "主委托")}</strong>
+          <small>{text(locale, `${game.decks.marketRemaining} remaining`, `剩余${game.decks.marketRemaining}张`)}</small>
+        </div>
+      </div>
     </section>
   );
 }
@@ -795,67 +829,34 @@ function additionalOrderQuality(id: OrderId, locale: Locale) {
   });
 }
 
-function OrderQualityRequirements({ id, locale }: { id: OrderId; locale: Locale }) {
-  const requirements = additionalOrderQuality(id, locale);
-  if (requirements.length === 0) return null;
-  return <div className="kiln-tabletop-order-quality-requirements">{requirements.map((requirement) => <span key={requirement.key} aria-label={requirement.full}>{requirement.compact}</span>)}</div>;
-}
-
-export function OrderCard({ id, locale, displayIndex, owned = false, onInspect }: { id: OrderId; locale: Locale; displayIndex?: number; owned?: boolean; onInspect: (id: OrderId) => void }) {
+export function OrderCard({ id, locale, owned = false, onInspect }: { id: OrderId; locale: Locale; owned?: boolean; onInspect: (id: OrderId) => void }) {
+  const descriptionId = `kiln-order-${useId()}-description`;
   const order = ORDER_DEFINITIONS[id];
-  const previewId = `kiln-order-preview-${id}-${owned ? "owned" : "market"}`;
-  const descriptionId = `${previewId}-description`;
-  const preview = useCardPreview<HTMLButtonElement>(previewId);
   if (order === undefined) return null;
-  const additionalQuality = additionalOrderQuality(id, locale);
-  const qualityDescription = additionalQuality.map((requirement) => `${requirement.full}${text(locale, ". ", "。")}`).join("");
-  const description = text(locale, `Order ${id}. ${order.requirements}. ${order.ceramics.length} ceramics. Minimum Quality: ${qualityLabel(order.minQuality, locale)}. ${qualityDescription}Reward: ${order.vp} VP, ${order.coins} Coins${order.crowns > 0 ? `, ${order.crowns} Crown${order.crowns === 1 ? "" : "s"}` : ""}.`, `委托 ${id}。${order.requirementsZh}。${order.ceramics.length}件陶瓷。最低品质：${qualityLabel(order.minQuality, locale)}。${qualityDescription}奖励：${order.vp}分、${order.coins}铜钱${order.crowns > 0 ? `、${order.crowns}皇冠` : ""}。`);
-  return (
-    <>
-      <button
-        ref={preview.anchorRef}
-        className={`kiln-tabletop-order-card kiln-tabletop-art-surface ${order.crowns > 0 ? "is-crown" : ""} ${owned ? "is-owned" : ""} ${additionalQuality.length > 0 ? "has-quality-requirement" : ""}`}
-        type="button"
-        onClick={() => { preview.dismiss(); onInspect(id); }}
-        onPointerEnter={(event) => { if (event.pointerType !== "touch") preview.pointerEnter(); }}
-        onPointerLeave={preview.pointerLeave}
-        onFocus={preview.focus}
-        onBlur={preview.blur}
-        onKeyDown={(event) => { if (event.key === "Escape") preview.dismiss(); }}
-        aria-label={text(locale, `Inspect Order ${id}`, `查看委托 ${id}`)}
-        aria-describedby={descriptionId}
-        aria-haspopup="dialog"
-        data-hover-preview="order"
-        data-preview-id={previewId}
-        data-order-id={id}
-      >
-        <ArtworkLayer source={TABLETOP_ARTWORK.orders[id]} slot={`order:${id}`} />
-        {displayIndex !== undefined && <span className="kiln-tabletop-display-index">{displayIndex}</span>}
-        <header><b>{id}</b><span className="kiln-tabletop-order-crowns" aria-hidden="true">{"♛".repeat(order.crowns)}</span></header>
-        <div className="kiln-tabletop-order-seal" aria-hidden="true">{order.ceramics.length}</div>
-        <p>{locale === "zh-CN" ? order.requirementsZh : order.requirements}</p>
-        <OrderQualityRequirements id={id} locale={locale} />
-        <footer><span><small>{text(locale, "MIN", "最低")}</small><b>{qualityLabel(order.minQuality, locale)}</b></span><span><small>{text(locale, "VP", "分")}</small><b>{order.vp}</b></span><span><small>{text(locale, "COIN", "钱")}</small><b>{order.coins}</b></span></footer>
-      </button>
-      <span className="sr-only" id={descriptionId}>{description}</span>
-      <CardHoverPreview id={previewId} position={preview.position} eyebrow={text(locale, "ORDER PREVIEW · CLICK FOR DETAILS", "委托预览 · 点击查看详情")} onPointerEnter={preview.pointerEnter} onPointerLeave={preview.pointerLeave}>
-        <StaticOrderCard id={id} locale={locale} />
-      </CardHoverPreview>
-    </>
-  );
+  const qualityDescription = additionalOrderQuality(id, locale).map((requirement) => requirement.full).join(". ");
+  return <>
+    <button
+      className={`${pieceSurfaceClass(id)} ${owned ? "is-owned" : ""}`}
+      type="button"
+      onClick={() => onInspect(id)}
+      aria-label={text(locale, `Inspect Order ${id}`, `查看委托 ${id}`)}
+      aria-describedby={descriptionId}
+      aria-haspopup="dialog"
+      data-order-id={id}
+    >
+      <OrderFace id={id} locale={locale} />
+    </button>
+    <span className="sr-only" id={descriptionId}>{text(locale,
+      `Order ${id}. ${order.requirements}. ${order.ceramics.length} ceramics. Minimum Quality: ${qualityLabel(order.minQuality, locale)}. ${qualityDescription} Reward: ${order.vp} VP, ${order.coins} Coins, ${order.crowns} Crowns.`,
+      `委托 ${id}。${order.requirementsZh}。${order.ceramics.length}件陶瓷。最低品质：${qualityLabel(order.minQuality, locale)}。${qualityDescription} 奖励：${order.vp}分、${order.coins}铜钱、${order.crowns}皇冠。`)}</span>
+  </>;
 }
 
 export function StaticOrderCard({ id, locale }: { id: OrderId; locale: Locale }) {
-  const order = ORDER_DEFINITIONS[id];
-  if (order === undefined) return null;
-  return (
-    <article className={`kiln-tabletop-order-card kiln-tabletop-static-order kiln-tabletop-art-surface ${order.crowns > 0 ? "is-crown" : ""} ${additionalOrderQuality(id, locale).length > 0 ? "has-quality-requirement" : ""}`} data-order-id={id}>
-      <ArtworkLayer source={TABLETOP_ARTWORK.orders[id]} slot={`order:${id}`} />
-      <header><b>{id}</b><span className="kiln-tabletop-order-crowns" aria-hidden="true">{"♛".repeat(order.crowns)}</span></header><div className="kiln-tabletop-order-seal" aria-hidden="true">{order.ceramics.length}</div><p>{locale === "zh-CN" ? order.requirementsZh : order.requirements}</p>
-      <OrderQualityRequirements id={id} locale={locale} />
-      <footer><span><small>{text(locale, "MIN", "最低")}</small><b>{qualityLabel(order.minQuality, locale)}</b></span><span><small>{text(locale, "VP", "分")}</small><b>{order.vp}</b></span><span><small>{text(locale, "COIN", "钱")}</small><b>{order.coins}</b></span></footer>
-    </article>
-  );
+  if (ORDER_DEFINITIONS[id] === undefined) return null;
+  return <article className={`kiln-tabletop-static-order ${pieceSurfaceClass(id)}`} data-order-id={id}>
+    <OrderFace id={id} locale={locale} />
+  </article>;
 }
 
 function RoundTrack({ game, locale }: { game: PublicGameState; locale: Locale }) {
@@ -869,8 +870,8 @@ function RoundTrack({ game, locale }: { game: PublicGameState; locale: Locale })
 
 /**
  * The physical turn-order track uses one sequence in two directions: Work begins
- * with the First Player and proceeds clockwise (top to bottom here), while the
- * Order Phase uses the exact reverse seating order (bottom to top here).
+ * with the First Player and proceeds clockwise (left to right here), while the
+ * Order Phase uses the exact reverse seating order (right to left here).
  */
 function TurnOrderTrack({ game, locale, currentActorId }: { game: PublicGameState; locale: Locale; currentActorId: PlayerId | null }) {
   const firstPlayerIndex = game.playerOrder.indexOf(game.firstPlayerId);
@@ -885,16 +886,15 @@ function TurnOrderTrack({ game, locale, currentActorId }: { game: PublicGameStat
 
   return (
     <aside
-      className={`kiln-tabletop-turn-order is-${activeDirection}-direction`}
+      className={`kiln-tabletop-turn-order is-horizontal is-${activeDirection}-direction`}
       aria-label={text(locale, "Turn order", "行动顺序")}
       data-testid="turn-order-track"
     >
-      <header><strong>{text(locale, "TURN ORDER", "行动顺序")}</strong></header>
       <div className="kiln-tabletop-turn-direction is-order">
-        <b aria-hidden="true">↑</b>
+        <b aria-hidden="true">←</b>
         <span><strong>{text(locale, "ORDER PHASE", "交付阶段")}</strong></span>
       </div>
-      <ol style={{ gridTemplateRows: `repeat(${workOrder.length}, minmax(42px, 1fr))` }}>
+      <ol style={{ gridTemplateColumns: `repeat(${workOrder.length}, minmax(0, 1fr))` }}>
         {workOrder.map((playerId) => {
           const player = game.players[playerId];
           if (player === undefined) return null;
@@ -919,7 +919,7 @@ function TurnOrderTrack({ game, locale, currentActorId }: { game: PublicGameStat
         })}
       </ol>
       <div className="kiln-tabletop-turn-direction is-work">
-        <b aria-hidden="true">↓</b>
+        <b aria-hidden="true">→</b>
         <span><strong>{text(locale, "WORK PHASE", "工作阶段")}</strong></span>
       </div>
     </aside>
@@ -929,6 +929,8 @@ function TurnOrderTrack({ game, locale, currentActorId }: { game: PublicGameStat
 export function ActionSpace({ game, ownPlayer, id, locale, selectedWorkerId, selected, onChoose }: { game: PublicGameState; ownPlayer: PublicPlayerState; id: LocationId; locale: Locale; selectedWorkerId: WorkerId | null; selected: boolean; onChoose: () => void }) {
   const descriptionId = `kiln-action-${useId()}`;
   const definition = LOCATION_DEFINITIONS[id];
+  const sharedWorkerEffect = id === "court_patronage";
+  const effectKinds = sharedWorkerEffect ? ["apprentice"] as const : ["apprentice", "shifu"] as const;
   const occupants = game.actionBoard.placements[id].map((workerId) => findWorker(game, workerId)).filter((entry): entry is NonNullable<typeof entry> => entry !== null);
   const worker = selectedWorkerId === null ? undefined : ownPlayer.workers[selectedWorkerId];
   const reason = tabletopLocationReason(game, ownPlayer, selectedWorkerId, id, locale);
@@ -950,12 +952,12 @@ export function ActionSpace({ game, ownPlayer, id, locale, selectedWorkerId, sel
       <ArtworkLayer source={TABLETOP_ARTWORK.actionSpaces[id]} slot={`action-space:${id}`} />
       <div className="kiln-illustrated-action-plaque">
         <header><div><strong>{locale === "zh-CN" ? definition.nameZh : definition.name}</strong>{status !== null && <small className="sr-only" id={`${descriptionId}-status`}>{status}</small>}</div></header>
-        <div className="kiln-tabletop-action-effects" id={`${descriptionId}-rules`}>{(["apprentice", "shifu"] as const).map((kind) => {
+        <div className="kiln-tabletop-action-effects" id={`${descriptionId}-rules`}>{effectKinds.map((kind) => {
           const fullEffect = kind === "shifu" ? locale === "zh-CN" ? definition.shifuZh : definition.shifu : locale === "zh-CN" ? definition.apprenticeZh : definition.apprentice;
-          return <div className={`kiln-tabletop-action-effect ${worker?.kind === kind ? "is-current-worker" : ""}`} data-effect-worker={kind} title={fullEffect} key={kind}>
-            <WorkerMeeple kind={kind} small locale={locale} />
+          return <div className={`kiln-tabletop-action-effect ${sharedWorkerEffect ? "is-shared-worker" : ""} ${worker !== undefined && (sharedWorkerEffect || worker.kind === kind) ? "is-current-worker" : ""}`} data-effect-worker={sharedWorkerEffect ? "both" : kind} title={fullEffect} key={kind}>
+            {sharedWorkerEffect ? <span className="kiln-tabletop-effect-workers" aria-hidden="true"><WorkerMeeple kind="apprentice" small locale={locale} /><span>/</span><WorkerMeeple kind="shifu" small locale={locale} /></span> : <WorkerMeeple kind={kind} small locale={locale} />}
             <span aria-hidden="true"><BoardActionSummary id={id} kind={kind} locale={locale} /></span>
-            <span className="sr-only"><BoardActionEffect id={id} kind={kind} locale={locale} /></span>
+            <span className="sr-only">{sharedWorkerEffect && text(locale, "Apprentice or Shifu: ", "学徒或师傅：")}<BoardActionEffect id={id} kind={kind} locale={locale} /></span>
           </div>;
         })}</div>
         <footer id={`${descriptionId}-capacity`}>
@@ -1058,11 +1060,11 @@ function FireHistoryList({ history, game, locale }: { history: FireCardHistoryEn
   </li>)}</ol>;
 }
 
-function ImperialTrack({ game, locale }: { game: PublicGameState; locale: Locale }) {
+function ImperialTrack({ game, locale, compact = false }: { game: PublicGameState; locale: Locale; compact?: boolean }) {
   const unclaimedPriority = game.playerOrder.map((id) => game.players[id]!).filter((player) => player.imperialRecognition < 3);
   return (
-    <section className="kiln-tabletop-imperial-track" aria-label={text(locale, "Imperial Recognition track", "御府声望轨")}>
-      <div className="kiln-tabletop-track-heading"><span aria-hidden="true">御</span><div><small>{text(locale, "COURT", "御府")}</small><strong>{text(locale, "Imperial Recognition", "声望轨")}</strong></div></div>
+    <section className={`kiln-tabletop-imperial-track kiln-recognition-track ${compact ? "is-compact" : "is-detail"}`} aria-label={text(locale, "Imperial Recognition track", "御府声望轨")}>
+      <div className="kiln-tabletop-track-heading"><div><small>{text(locale, "COURT", "御府")}</small><strong>{text(locale, "Imperial Recognition", "声望轨")}</strong></div></div>
       <ol>{IMPERIAL_PROGRESS.track.map((space) => {
         const playersHere = game.playerOrder.map((id) => game.players[id]!).filter((player) => player.imperialRecognition === space.space);
         return (
@@ -1083,7 +1085,7 @@ function ImperialTrack({ game, locale }: { game: PublicGameState; locale: Locale
               </div>}
             </div>
           </div>
-          <div className="kiln-recognition-milestone"><strong>{locale === "zh-CN" ? space.titleZh : space.title}</strong><small>{space.space === 3 ? text(locale, "Take your Imperial Priority token.", "获得御烧优先标记。") : locale === "zh-CN" ? space.rewardZh ?? "—" : space.reward ?? "—"}</small></div>
+          <div className="kiln-recognition-milestone"><strong>{compact ? (locale === "zh-CN" ? ["本地作坊", "赏赐", "御窑", "御烧优先", "御前呈器"] : ["Workshop", "Grant", "Gift", "Priority", "Audience"])[space.space] : locale === "zh-CN" ? space.titleZh : space.title}</strong><small className="kiln-recognition-reward">{compact && space.space === 3 ? text(locale, "Take your Imperial Priority token.", "获得御烧优先标记。") : locale === "zh-CN" ? space.rewardZh ?? "—" : space.reward ?? "—"}</small></div>
         </li>
         );
       })}</ol>
@@ -1094,96 +1096,51 @@ function ImperialTrack({ game, locale }: { game: PublicGameState; locale: Locale
 function TechniqueMarket({ game, locale, onInspect }: { game: PublicGameState; locale: Locale; onInspect: (id: TechniqueId) => void }) {
   return (
     <aside className="kiln-tabletop-tech-market" aria-labelledby="kiln-live-tech-title">
-      <div className="kiln-tabletop-section-title"><span aria-hidden="true">艺</span><div><small>{text(locale, "GUILD & ACADEMY", "陶工行")}</small><strong id="kiln-live-tech-title">{text(locale, "Face-up Techs", "公开进阶技艺")}</strong></div></div>
-      {(["forming", "glazing", "firing"] as TechniqueDiscipline[]).map((discipline) => <section className={`kiln-tabletop-tech-discipline is-${discipline}`} key={discipline}><header><strong>{locale === "zh-CN" ? disciplineZh(discipline) : titleCase(discipline)}</strong><small>{text(locale, "deck", "牌库")} · {game.decks.techniqueRemaining[discipline]}</small></header><div>{game.displays.techniques[discipline].map((id) => <TechniqueTile id={id} locale={locale} onInspect={onInspect} key={id} />)}{game.displays.techniques[discipline].length === 0 && <span className="kiln-live-empty-tile">{text(locale, "Empty", "空")}</span>}</div></section>)}
+      <div className="kiln-tabletop-section-title"><div><small>{text(locale, "GUILD & ACADEMY", "陶工行")}</small><strong id="kiln-live-tech-title">{text(locale, "Face-up Techs", "公开进阶技艺")}</strong></div></div>
+      {(["forming", "glazing", "firing"] as TechniqueDiscipline[]).map((discipline) => <section className={`kiln-tabletop-tech-discipline is-${discipline}`} key={discipline}><header><strong>{locale === "zh-CN" ? disciplineZh(discipline) : titleCase(discipline)}</strong><small>{text(locale, "deck", "牌库")} · {game.decks.techniqueRemaining[discipline]}</small></header><div>{game.displays.techniques[discipline].map((id) => <TechniqueTile id={id} locale={locale} onInspect={onInspect} overview key={id} />)}{game.displays.techniques[discipline].length === 0 && <span className="kiln-live-empty-tile">{text(locale, "Empty", "空")}</span>}</div></section>)}
     </aside>
   );
 }
 
-function TechniqueTile({ id, locale, owned = false, exhausted = false, onInspect }: { id: TechniqueId; locale: Locale; owned?: boolean; exhausted?: boolean; onInspect: (id: TechniqueId) => void }) {
-  const technique = TECHNIQUE_DEFINITIONS[id];
-  const previewId = `kiln-technique-preview-${id}-${owned ? "owned" : "market"}`;
-  const descriptionId = `${previewId}-description`;
-  const preview = useCardPreview<HTMLButtonElement>(previewId);
-  if (technique === undefined) return null;
-  const description = techniqueShortPlainText(id, locale);
-  return (
-    <>
-      <button
-        ref={preview.anchorRef}
-        className={`kiln-tabletop-tech-tile kiln-tabletop-art-surface is-${technique.discipline} ${owned ? "is-owned" : ""} ${exhausted ? "is-exhausted" : ""}`}
-        type="button"
-        onClick={() => { preview.dismiss(); onInspect(id); }}
-        onPointerEnter={(event) => { if (event.pointerType !== "touch") preview.pointerEnter(); }}
-        onPointerLeave={preview.pointerLeave}
-        onFocus={preview.focus}
-        onBlur={preview.blur}
-        onKeyDown={(event) => { if (event.key === "Escape") preview.dismiss(); }}
-        aria-label={text(locale, `Inspect ${technique.name}`, `查看${technique.nameZh}`)}
-        aria-describedby={descriptionId}
-        aria-haspopup="dialog"
-        data-hover-preview="advanced-technique"
-        data-preview-id={previewId}
-        data-technique-id={id}
-      >
-        <ArtworkLayer source={TABLETOP_ARTWORK.techniques[id]} slot={`technique:${id}`} />
-        <header><span>{id}</span><TechniqueCoinCost cost={technique.cost} locale={locale} /></header><strong>{locale === "zh-CN" ? technique.nameZh : technique.name}</strong><p><TechniqueDescription id={id} locale={locale} layer="preview" /></p><footer><span>{technique.oncePerRound ? text(locale, "Once per round", "每轮一次") : text(locale, "Continuous", "持续生效")}</span><TechniqueEndGameVp locale={locale} /></footer>{exhausted && <i>{text(locale, "Used", "已用")}</i>}
-      </button>
-      <span className="sr-only" id={descriptionId}>{description}</span>
-      <CardHoverPreview id={previewId} position={preview.position} eyebrow={text(locale, "ADVANCED TECH PREVIEW · CLICK FOR DETAILS", "进阶技艺预览 · 点击查看详情")} onPointerEnter={preview.pointerEnter} onPointerLeave={preview.pointerLeave}>
-        <StaticTechniqueTile id={id} locale={locale} exhausted={exhausted} layer="preview" />
-      </CardHoverPreview>
-    </>
-  );
-}
-
-function StaticTechniqueTile({ id, locale, exhausted = false, layer = "full" }: { id: TechniqueId; locale: Locale; exhausted?: boolean; layer?: "preview" | "full" }) {
+function TechniqueTile({ id, locale, owned = false, exhausted = false, overview = false, onInspect }: { id: TechniqueId; locale: Locale; owned?: boolean; exhausted?: boolean; overview?: boolean; onInspect: (id: TechniqueId) => void }) {
+  const descriptionId = `kiln-technique-${useId()}-description`;
   const technique = TECHNIQUE_DEFINITIONS[id];
   if (technique === undefined) return null;
-  return <article className={`kiln-tabletop-tech-tile kiln-tabletop-static-tech kiln-tabletop-art-surface is-${technique.discipline} ${exhausted ? "is-exhausted" : ""}`} data-technique-id={id} data-description-layer={layer}><ArtworkLayer source={TABLETOP_ARTWORK.techniques[id]} slot={`technique:${id}`} /><header><span>{id}</span><TechniqueCoinCost cost={technique.cost} locale={locale} /></header><strong>{locale === "zh-CN" ? technique.nameZh : technique.name}</strong><p><TechniqueDescription id={id} locale={locale} layer={layer} /></p><footer><span>{technique.oncePerRound ? text(locale, "Once per round", "每轮一次") : text(locale, "Continuous", "持续生效")}</span><TechniqueEndGameVp locale={locale} /></footer>{exhausted && <i>{text(locale, "Used", "已用")}</i>}</article>;
+  return <>
+    <button
+      className={`${pieceSurfaceClass(id)} ${owned ? "is-owned" : ""} ${exhausted ? "is-exhausted" : ""}`}
+      type="button"
+      onClick={() => onInspect(id)}
+      aria-label={text(locale, `Inspect ${technique.name}`, `查看${technique.nameZh}`)}
+      aria-describedby={descriptionId}
+      aria-haspopup="dialog"
+      data-technique-id={id}
+      data-overview={overview || undefined}
+    ><TechniqueFace id={id} locale={locale} exhausted={exhausted} overview={overview} /></button>
+    <span className="sr-only" id={descriptionId}>{techniqueShortPlainText(id, locale)}</span>
+  </>;
 }
 
-function TechniqueCoinCost({ cost, locale }: { cost: number; locale: Locale }) {
-  return <b className="kiln-tabletop-tech-cost" aria-label={text(locale, `${cost} Coins`, `${cost}铜钱`)}><span>{cost}</span><i className="kiln-tabletop-cash-coin" aria-hidden="true" /></b>;
+function StaticTechniqueTile({ id, locale, exhausted = false }: { id: TechniqueId; locale: Locale; exhausted?: boolean }) {
+  if (TECHNIQUE_DEFINITIONS[id] === undefined) return null;
+  return <article className={`kiln-tabletop-static-tech ${pieceSurfaceClass(id)} ${exhausted ? "is-exhausted" : ""}`} data-technique-id={id} data-description-layer="preview">
+    <TechniqueFace id={id} locale={locale} exhausted={exhausted} layer="preview" />
+  </article>;
 }
 
-function TechniqueEndGameVp({ locale }: { locale: Locale }) {
-  return <b className="kiln-tabletop-tech-endgame-vp" title={text(locale, "Scores 1 VP at game end", "终局计分时获得1分")} aria-label={text(locale, "Scores 1 VP at game end", "终局计分时获得1分")}>1VP</b>;
-}
-
-function StartingTechniqueTile({ id, locale, owned = false, onInspect, layer = onInspect === undefined ? "full" : "preview" }: { id: StartingTechniqueId; locale: Locale; owned?: boolean; onInspect?: (id: StartingTechniqueId) => void; layer?: "preview" | "full" }) {
+function StartingTechniqueTile({ id, locale, owned = false, overview = false, onInspect }: { id: StartingTechniqueId; locale: Locale; owned?: boolean; overview?: boolean; onInspect?: (id: StartingTechniqueId) => void }) {
+  const descriptionId = `kiln-starting-technique-${useId()}-description`;
   const technique = STARTING_TECHNIQUE_DEFINITIONS[id];
-  const previewId = `kiln-starting-technique-preview-${id}`;
-  const descriptionId = `${previewId}-description`;
-  const preview = useCardPreview<HTMLButtonElement>(previewId);
-  const className = `kiln-tabletop-starting-tech kiln-tabletop-art-surface ${owned ? "is-owned" : ""}`;
-  const contents = <><ArtworkLayer source={TABLETOP_ARTWORK.techniques[id]} slot={`starting-technique:${id}`} /><header><span>{id}</span><small>{text(locale, "Starting Tech", "起始技艺")}</small></header><strong>{locale === "zh-CN" ? technique.nameZh : technique.name}</strong><p><TechniqueDescription id={id} locale={locale} layer={layer} /></p></>;
-  if (onInspect === undefined) return <article className={className} data-starting-technique-id={id} data-description-layer={layer}>{contents}</article>;
-  return (
-    <>
-      <button
-        ref={preview.anchorRef}
-        className={className}
-        type="button"
-        onClick={() => { preview.dismiss(); onInspect(id); }}
-        onPointerEnter={(event) => { if (event.pointerType !== "touch") preview.pointerEnter(); }}
-        onPointerLeave={preview.pointerLeave}
-        onFocus={preview.focus}
-        onBlur={preview.blur}
-        onKeyDown={(event) => { if (event.key === "Escape") preview.dismiss(); }}
-        aria-label={text(locale, `Inspect ${technique.name}`, `查看${technique.nameZh}`)}
-        aria-describedby={descriptionId}
-        aria-haspopup="dialog"
-        data-hover-preview="starting-technique"
-        data-preview-id={previewId}
-        data-starting-technique-id={id}
-      >{contents}</button>
-      <span className="sr-only" id={descriptionId}>{techniqueShortPlainText(id, locale)}</span>
-      <CardHoverPreview id={previewId} position={preview.position} eyebrow={text(locale, "STARTING TECH PREVIEW · CLICK FOR DETAILS", "起始技艺预览 · 点击查看详情")} onPointerEnter={preview.pointerEnter} onPointerLeave={preview.pointerLeave}>
-        <StartingTechniqueTile id={id} locale={locale} layer="preview" />
-      </CardHoverPreview>
-    </>
-  );
+  const className = `${pieceSurfaceClass(id)} ${owned ? "is-owned" : ""}`;
+  const contents = <TechniqueFace id={id} locale={locale} layer="preview" overview={overview} />;
+  if (onInspect === undefined) return <article className={className} data-starting-technique-id={id} data-description-layer="preview">{contents}</article>;
+  return <>
+    <button className={className} type="button" onClick={() => onInspect(id)}
+      aria-label={text(locale, `Inspect ${technique.name}`, `查看${technique.nameZh}`)}
+      aria-describedby={descriptionId} aria-haspopup="dialog" data-starting-technique-id={id} data-overview={overview || undefined}
+    >{contents}</button>
+    <span className="sr-only" id={descriptionId}>{techniqueShortPlainText(id, locale)}</span>
+  </>;
 }
 
 function OwnWorkshop({
@@ -1215,8 +1172,8 @@ function OwnWorkshop({
   return (
     <section className="kiln-tabletop-workshop" aria-labelledby="kiln-live-workshop-title">
       <header>
-        <div className="kiln-tabletop-workshop-name"><span aria-hidden="true">{kiln?.nameZh.slice(0, 1) ?? "窑"}</span><div><small>{text(locale, "YOUR WORKSHOP", "你的作坊")}</small><strong id="kiln-live-workshop-title">{kiln === null ? text(locale, "Kiln not selected", "尚未选择窑口") : locale === "zh-CN" ? kiln.nameZh : kiln.name}</strong>{kiln !== null && <p><b>{locale === "zh-CN" ? kiln.abilityNameZh : kiln.abilityName}</b> · <KilnDescription id={kiln.id} locale={locale} layer="preview" /></p>}</div></div>
-        <div className="kiln-tabletop-resource-bank"><Resource glyph="泥" label={text(locale, "Clay", "泥")} value={player.resources.clay} /><Resource glyph="柴" label={text(locale, "Wood", "柴")} value={player.resources.wood} /><Resource glyph="宋" label={text(locale, "Coins", "铜钱")} value={player.resources.coins} /><Resource glyph="分" label={text(locale, "VP", "分数")} value={playerVp(game, player)} /></div>
+        <div className="kiln-tabletop-workshop-name"><div><small>{text(locale, "YOUR WORKSHOP", "你的作坊")}</small><strong id="kiln-live-workshop-title">{kiln === null ? text(locale, "Kiln not selected", "尚未选择窑口") : locale === "zh-CN" ? kiln.nameZh : kiln.name}</strong>{kiln !== null && <p><b>{locale === "zh-CN" ? kiln.abilityNameZh : kiln.abilityName}</b> · <KilnDescription id={kiln.id} locale={locale} layer="preview" /></p>}</div></div>
+        <div className="kiln-tabletop-resource-bank"><Resource label={text(locale, "Clay", "泥")} value={player.resources.clay} /><Resource label={text(locale, "Wood", "柴")} value={player.resources.wood} /><Resource label={text(locale, "Coins", "铜钱")} value={player.resources.coins} /><Resource label={text(locale, "VP", "分数")} value={playerVp(game, player)} /></div>
       </header>
       <div className="kiln-tabletop-workshop-zones">
         <section className="kiln-tabletop-worker-supply">
@@ -1229,14 +1186,14 @@ function OwnWorkshop({
         </section>
         <section className="kiln-tabletop-ceramic-shelf"><h3>{text(locale, "Ceramics", "陶瓷")} <span>{ceramics.length}</span></h3><div>{ceramics.map((ceramic) => <Ceramic ceramic={ceramic} game={game} locale={locale} inspectable key={ceramic.id} />)}{ceramics.length === 0 && <span className="kiln-live-empty-copy">{text(locale, "No ceramics in workshop", "作坊中没有陶瓷")}</span>}</div></section>
         <section className="kiln-tabletop-own-orders"><h3>{text(locale, "Your Orders", "你的委托")} <span>{player.orderHandCount} / {GAME_CONFIG.orderDisplay.baseHandLimit}</span></h3><div>{player.orderHand.map((id) => <OrderCard id={id} locale={locale} owned onInspect={onInspectOrder} key={id} />)}{player.orderHand.length === 0 && <span className="kiln-live-empty-copy">{text(locale, "No held Orders", "没有持有委托")}</span>}</div></section>
-        <section className="kiln-tabletop-own-techs"><h3>{text(locale, "Your Techs", "你的技艺")} <span>{text(locale, `${player.startingTechniqueId === null ? 0 : 1} Starting · ${player.techniques.length} / ${GAME_CONFIG.techniques.maxOwned} Advanced`, `${player.startingTechniqueId === null ? 0 : 1}起始 · ${player.techniques.length} / ${GAME_CONFIG.techniques.maxOwned}进阶`)}</span></h3><div>{player.startingTechniqueId !== null && <StartingTechniqueTile id={player.startingTechniqueId} locale={locale} owned onInspect={onInspectStartingTechnique} />}{player.techniques.map((technique) => <TechniqueTile id={technique.id} locale={locale} owned exhausted={technique.exhausted} onInspect={onInspectTechnique} key={technique.id} />)}{player.startingTechniqueId === null && player.techniques.length === 0 && <span className="kiln-live-empty-copy">{text(locale, "No Tech selected", "尚未选择技艺")}</span>}</div></section>
+        <section className="kiln-tabletop-own-techs"><h3>{text(locale, "Your Techs", "你的技艺")} <span>{text(locale, `${player.startingTechniqueId === null ? 0 : 1} Starting · ${player.techniques.length} / ${GAME_CONFIG.techniques.maxOwned} Advanced`, `${player.startingTechniqueId === null ? 0 : 1}起始 · ${player.techniques.length} / ${GAME_CONFIG.techniques.maxOwned}进阶`)}</span></h3><div>{player.startingTechniqueId !== null && <StartingTechniqueTile id={player.startingTechniqueId} locale={locale} owned overview onInspect={onInspectStartingTechnique} />}{player.techniques.map((technique) => <TechniqueTile id={technique.id} locale={locale} owned overview exhausted={technique.exhausted} onInspect={onInspectTechnique} key={technique.id} />)}{player.startingTechniqueId === null && player.techniques.length === 0 && <span className="kiln-live-empty-copy">{text(locale, "No Tech selected", "尚未选择技艺")}</span>}</div></section>
       </div>
     </section>
   );
 }
 
-function Resource({ glyph, label, value }: { glyph: string; label: string; value: number }) {
-  return <span className="kiln-tabletop-resource"><i aria-hidden="true">{glyph}</i><b>{value}</b><small>{label}</small></span>;
+function Resource({ label, value }: { label: string; value: number }) {
+  return <span className="kiln-tabletop-resource"><b>{value}</b><small>{label}</small></span>;
 }
 
 function Ceramic({ ceramic, game, locale, compact = false, inspectable = false, kilnZone, kilnZoneModifier }: { ceramic: CeramicState; game: PublicGameState; locale: Locale; compact?: boolean; inspectable?: boolean; kilnZone?: "high" | "middle" | "low"; kilnZoneModifier?: number }) {
@@ -1249,6 +1206,7 @@ function Ceramic({ ceramic, game, locale, compact = false, inspectable = false, 
   const glaze = "glaze" in ceramic ? ceramic.glaze : null;
   const decoration = "decoration" in ceramic ? ceramic.decoration : null;
   const quality = "quality" in ceramic ? ceramic.quality : null;
+  const crackle = "crackle" in ceramic && ceramic.crackle === true;
   const heat = glaze === null ? null : preferredHeat(glaze);
   const marked = player.kilnYardShifuCeramicId === ceramic.id;
   const shifuHeat = ceramic.stage === "loaded" ? ceramic.shifuHeatAdjustment ?? null : null;
@@ -1257,11 +1215,12 @@ function Ceramic({ ceramic, game, locale, compact = false, inspectable = false, 
   const imperial = ceramic.stage === "loaded" && ceramic.kilnSpaceId === "imperial";
   const zone = kilnZone === undefined ? null : text(locale, `${titleCase(kilnZone)} zone`, zoneZh(kilnZone));
   const kilnLocation = imperial ? text(locale, "Imperial Kiln +0", "御窑 +0") : zone === null ? null : `${zone} ${signed(furniture ? 0 : kilnZoneModifier ?? 0)}${furniture ? text(locale, " (Kiln Furniture)", "（支烧窑具）") : ""}`;
-  const className = `kiln-tabletop-ceramic glaze-${glaze ?? "raw"} decoration-${decoration ?? "none"} shape-${ceramic.shape} kiln-tabletop-accent-${accent(player)} ${compact ? "is-compact" : ""} ${inspectable ? "is-inspectable" : ""}`;
+  const className = `kiln-tabletop-ceramic kiln-has-ceramic-art glaze-${glaze ?? "raw"} decoration-${decoration ?? "none"} shape-${ceramic.shape} kiln-tabletop-accent-${accent(player)} ${compact ? "is-compact" : ""} ${inspectable ? "is-inspectable" : ""}`;
   const visual = <>
-    <svg viewBox="0 0 80 72" aria-hidden="true"><CeramicShape shape={ceramic.shape} /><CeramicDecoration decoration={decoration} /></svg>
+    <CeramicArtwork shape={ceramic.shape} glaze={glaze} decoration={decoration} crackle={crackle} />
+    {crackle && <em className="kiln-live-crackle-marker" title={text(locale, "Crackle: wild Glaze for Orders", "开片：完成委托时可视为任意釉色")}>{text(locale, "Crackle", "开片")}</em>}
     {quality !== null && <b className={`kiln-tabletop-quality-badge is-${quality}`} title={qualityLabel(quality, locale)}>{qualityLabel(quality, locale)}</b>}
-    {marked && shifuHeat === null && <em className="kiln-tabletop-shifu-marker" title={text(locale, "Kiln Yard Shifu committed to this ceramic", "窑坊师傅已标记此陶瓷")}>{text(locale, "S", "师")}</em>}
+    {marked && shifuHeat === null && <span className="kiln-tabletop-shifu-marker" title={text(locale, "Kiln Yard Shifu committed to this ceramic", "窑坊师傅已标记此陶瓷")}><WorkerMeeple player={player} kind="shifu" locale={locale} small /></span>}
     {shifuHeat !== null && <em className={`kiln-tabletop-shifu-heat-marker is-${shifuHeat === 1 ? "warmer" : "cooler"}`} title={text(locale, `Shifu Heat marker: ${signed(shifuHeat)} Actual Heat for this firing`, `师傅火候标记：本次烧成实际火候${signed(shifuHeat)}`)}>{signed(shifuHeat)}</em>}
     {furniture && <em className="kiln-live-furniture-marker" title={text(locale, "Kiln Furniture attached", "已附窑具")}>{text(locale, "Furniture", "窑具")}</em>}
   </>;
@@ -1273,20 +1232,22 @@ function Ceramic({ ceramic, game, locale, compact = false, inspectable = false, 
       <span><small>{text(locale, "Decoration", "纹饰")}</small><strong>{decoration === null ? text(locale, "Not yet decorated", "尚未纹饰") : decorationLabel(decoration, locale)}</strong></span>
       <span><small>{text(locale, "Preferred Heat", "适烧火候")}</small><strong>{heat ?? "—"}</strong></span>
     </span>
+    {crackle && <span className="kiln-tabletop-ceramic-tooltip-note">{text(locale, "Crackle · wild Glaze for Orders; actual Glaze and Decoration remain unchanged", "开片 · 完成委托时可代替任意釉色；实际釉色与纹饰不变")}</span>}
     {quality !== null && <span className="kiln-tabletop-ceramic-tooltip-note is-quality">{text(locale, "Quality", "品质")} · {qualityLabel(quality, locale)}</span>}
     {marked && shifuHeat === null && <span className="kiln-tabletop-ceramic-tooltip-note">{text(locale, "Shifu committed: may choose +1 or −1 Heat before Fire", "师傅已放置：揭示火牌前可选择+1或−1火候")}</span>}
     {shifuHeat !== null && <span className="kiln-tabletop-ceramic-tooltip-note">{text(locale, `Shifu Heat marker: ${signed(shifuHeat)} Actual Heat, in addition to its zone modifier. Fixed for this firing.`, `师傅火候标记：实际火候${signed(shifuHeat)}，与窑位修正叠加。本次烧成中数值固定。`)}</span>}
     {furniture && <span className="kiln-tabletop-ceramic-tooltip-note">{text(locale, "Kiln Furniture used", "已使用窑具")}</span>}
   </>;
-  if (!inspectable) return <span className={className} data-decoration={decoration ?? undefined} data-glaze={glaze ?? undefined} data-shape={ceramic.shape} aria-label={`${player.displayName} · ${shape}`}>{visual}</span>;
+  if (!inspectable) return <span className={className} data-decoration={decoration ?? undefined} data-crackle={crackle || undefined} data-glaze={glaze ?? undefined} data-shape={ceramic.shape} data-owner-id={ceramic.ownerId} aria-label={`${player.displayName} · ${shape}`}>{visual}</span>;
   return <>
     <button
       ref={preview.anchorRef}
       className={className}
       type="button"
-      data-decoration={decoration ?? undefined}
+      data-decoration={decoration ?? undefined} data-crackle={crackle || undefined}
       data-glaze={glaze ?? undefined}
       data-shape={ceramic.shape}
+      data-owner-id={ceramic.ownerId}
       data-hover-preview="ceramic"
       data-preview-id={previewId}
       aria-label={text(locale, `Inspect ${player.displayName}'s ${shape}`, `查看${player.displayName}的${shape}`)}
@@ -1316,33 +1277,19 @@ function Ceramic({ ceramic, game, locale, compact = false, inspectable = false, 
   </>;
 }
 
-function CeramicShape({ shape }: { shape: Shape }) {
-  if (shape === "bowl") return <path d="M8 22h64c-3 26-14 38-32 38S11 48 8 22zM18 64h44" />;
-  if (shape === "plate") return <path d="M7 35c10 22 56 22 66 0M13 35h54M25 55h30" />;
-  if (shape === "washer") return <path d="M12 28h56l-7 30H19zM27 62h26M25 25c0-10 30-10 30 0" />;
-  if (shape === "vase") return <path d="M29 8h22l-3 13c15 9 19 34 5 42H27c-14-8-10-33 5-42zM29 9h22" />;
-  return <path d="M18 27h44l-5 29H23zM29 17h22l5 10H24zM19 59l-5 7M61 59l5 7M36 12c-3-5 2-7 0-11M46 12c-3-5 2-7 0-11" />;
-}
-
-function CeramicDecoration({ decoration }: { decoration: Decoration | null }) {
-  if (decoration === "carved") return <g className="kiln-tabletop-decoration-pattern is-carved"><path d="M31 33q9 6 18 0M29 40q11 7 22 0M31 47q9 6 18 0" /></g>;
-  if (decoration === "impressed") return <g className="kiln-tabletop-decoration-pattern is-impressed"><circle cx="34" cy="36" r="2.2" /><circle cx="43" cy="36" r="2.2" /><circle cx="38.5" cy="44" r="2.2" /><circle cx="47.5" cy="44" r="2.2" /></g>;
-  if (decoration === "crackle") return <g className="kiln-tabletop-decoration-pattern is-crackle"><path d="M40 29l-3 8 4 5-5 9M37 37l-7-4-4 3M41 42l7-6 6 2M39 46l7 5" /></g>;
-  return null;
-}
-
 function Inspector({ inspection, game, events, describeEvent, locale, onClose }: { inspection: Exclude<Inspection, null>; game: PublicGameState; events: PublicEventRecord[]; describeEvent: TabletopGameExperienceProps["describeEvent"]; locale: Locale; onClose: () => void }) {
   const player = inspection.type === "player" ? game.players[inspection.id] : undefined;
   const order = inspection.type === "order" ? ORDER_DEFINITIONS[inspection.id] : undefined;
   const technique = inspection.type === "technique" ? TECHNIQUE_DEFINITIONS[inspection.id] : undefined;
   const startingTechnique = inspection.type === "startingTechnique" ? STARTING_TECHNIQUE_DEFINITIONS[inspection.id] : undefined;
-  const title = player !== undefined ? text(locale, `${player.displayName}'s workshop`, `${player.displayName}的作坊`) : order !== undefined ? text(locale, `Order ${order.id}`, `委托 ${order.id}`) : technique !== undefined ? locale === "zh-CN" ? technique.nameZh : technique.name : startingTechnique !== undefined ? locale === "zh-CN" ? startingTechnique.nameZh : startingTechnique.name : text(locale, "Game log", "游戏记录");
+  const title = player !== undefined ? text(locale, `${player.displayName}'s workshop`, `${player.displayName}的作坊`) : order !== undefined ? text(locale, `Order ${order.id}`, `委托 ${order.id}`) : technique !== undefined ? locale === "zh-CN" ? technique.nameZh : technique.name : startingTechnique !== undefined ? locale === "zh-CN" ? startingTechnique.nameZh : startingTechnique.name : inspection.type === "recognition" ? text(locale, "Imperial Recognition", "御府声望") : text(locale, "Game log", "游戏记录");
   return (
     <ModalPanel title={title} eyebrow={text(locale, "TABLE INSPECTOR", "桌面查看")} locale={locale} onClose={onClose}>
       {player !== undefined && <PlayerInspection player={player} game={game} locale={locale} />}
       {order !== undefined && <OrderInspection id={order.id} locale={locale} />}
       {technique !== undefined && <TechniqueInspection id={technique.id} locale={locale} />}
       {startingTechnique !== undefined && <StartingTechniqueInspection id={startingTechnique.id} locale={locale} />}
+      {inspection.type === "recognition" && <ImperialTrack game={game} locale={locale} />}
       {inspection.type === "log" && <LogInspection game={game} events={events} describeEvent={describeEvent} locale={locale} />}
     </ModalPanel>
   );
@@ -1364,6 +1311,13 @@ function ModalPanel({ title, eyebrow, locale, onClose, open = true, className = 
       delete returnTarget.dataset["kilnSuppressCardPreviewFocus"];
     };
   }, [open]);
+  useEffect(() => {
+    // A new decision replaces the form inside this still-open dialog. Recover
+    // focus if its selected button disappeared, without scrolling or remounting.
+    if (open && document.activeElement === document.body) {
+      closeButtonRef.current?.focus({ preventScroll: true });
+    }
+  });
   function keyDown(event: ReactKeyboardEvent<HTMLElement>): void {
     if (event.key === "Escape") { event.preventDefault(); onClose(); return; }
     if (event.key !== "Tab") return;
@@ -1376,10 +1330,33 @@ function ModalPanel({ title, eyebrow, locale, onClose, open = true, className = 
   return <div className="kiln-tabletop-inspector-backdrop" hidden={!open} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><aside className={`kiln-tabletop-inspector ${className}`} role="dialog" aria-modal="true" aria-label={title} onKeyDown={keyDown}><header><div><small>{eyebrow}</small><strong>{title}</strong></div><button ref={closeButtonRef} type="button" onClick={onClose} aria-label={text(locale, "Close panel", "关闭面板")}>×</button></header>{children}</aside></div>;
 }
 
-function PlayerInspection({ player, game, locale }: { player: PublicPlayerState; game: PublicGameState; locale: Locale }) {
+function TechniqueFullRules({ id, locale, collapsible = false }: { id: TechniqueId | StartingTechniqueId; locale: Locale; collapsible?: boolean }) {
+  const title = text(locale, "Full rules", "完整规则");
+  const rules = <p className="kiln-tabletop-ability-copy"><TechniqueDescription id={id} locale={locale} layer="full" /></p>;
+  if (collapsible) return <details className="kiln-tabletop-tech-full-rules" data-full-technique-id={id}>
+    <summary tabIndex={0}>{title} · {id}</summary>
+    {rules}
+  </details>;
+  return <section className="kiln-tabletop-tech-full-rules" data-full-technique-id={id} aria-label={title}>
+    <h3>{title}</h3>
+    {rules}
+  </section>;
+}
+
+function PlayerTechniqueReference({ id, locale, exhausted = false }: { id: TechniqueId | StartingTechniqueId; locale: Locale; exhausted?: boolean }) {
+  const isStarting = STARTING_TECHNIQUE_DEFINITIONS[id as StartingTechniqueId] !== undefined;
+  return <>
+    {isStarting
+      ? <StartingTechniqueTile id={id as StartingTechniqueId} locale={locale} />
+      : <StaticTechniqueTile id={id} locale={locale} exhausted={exhausted} />}
+    <TechniqueFullRules id={id} locale={locale} collapsible />
+  </>;
+}
+
+export function PlayerInspection({ player, game, locale }: { player: PublicPlayerState; game: PublicGameState; locale: Locale }) {
   const kiln = player.kilnId === null ? null : KILN_DEFINITIONS[player.kilnId];
   const ceramics = currentCeramicsForPlayer(game, player.id);
-  return <div className="kiln-tabletop-inspector-content"><section className={`kiln-tabletop-inspector-player kiln-tabletop-accent-${accent(player)}`}><span>{player.displayName.slice(0, 1).toUpperCase()}</span><div><strong>{kiln === null ? text(locale, "Kiln not selected", "尚未选择窑口") : locale === "zh-CN" ? kiln.nameZh : kiln.name}</strong><small>{kiln === null ? text(locale, "Choosing kiln", "正在选择窑口") : locale === "zh-CN" ? kiln.abilityNameZh : kiln.abilityName}</small></div><b>{playerVp(game, player)} {text(locale, "VP", "分")}</b></section>{kiln !== null && <p className="kiln-tabletop-ability-copy"><KilnDescription id={kiln.id} locale={locale} layer="full" /></p>}<section className="kiln-tabletop-inspector-resources"><Resource glyph="泥" label={text(locale, "Clay", "泥")} value={player.resources.clay} /><Resource glyph="柴" label={text(locale, "Wood", "柴")} value={player.resources.wood} /><Resource glyph="宋" label={text(locale, "Coins", "铜钱")} value={player.resources.coins} /><Resource glyph="御" label={text(locale, "Recognition", "御府声望")} value={player.imperialRecognition} /></section><ImperialPriorityReserve player={player} locale={locale} location="inspection" /><section className="kiln-tabletop-inspector-section"><h3>{text(locale, "Held Orders", "持有委托")} <span>{player.orderHandCount} / {GAME_CONFIG.orderDisplay.baseHandLimit}</span></h3><div className="kiln-tabletop-inspector-orders">{player.orderHand.map((id) => <StaticOrderCard id={id} locale={locale} key={id} />)}{player.orderHand.length === 0 && <p>{player.orderHandCount > 0 ? text(locale, "Orders in hand are private.", "持有委托为秘密信息。") : text(locale, "No held Orders.", "没有持有委托。")}</p>}</div></section><section className="kiln-tabletop-inspector-section"><h3>{text(locale, "Techs", "技艺")} <span>{player.techniques.length} / {GAME_CONFIG.techniques.maxOwned} {text(locale, "Advanced", "进阶")}</span></h3><div className="kiln-tabletop-inspector-techs">{player.startingTechniqueId !== null && <StartingTechniqueTile id={player.startingTechniqueId} locale={locale} />}{player.techniques.map((owned) => <StaticTechniqueTile id={owned.id} locale={locale} exhausted={owned.exhausted} key={owned.id} />)}</div></section><section className="kiln-tabletop-inspector-section"><h3>{text(locale, "Current ceramics", "当前陶瓷")} <span>{ceramics.length}</span></h3><div className="kiln-live-inspector-ceramics">{ceramics.map((ceramic) => <Ceramic ceramic={ceramic} game={game} locale={locale} inspectable key={ceramic.id} />)}</div></section>{player.completedOrders.length > 0 && <details className="kiln-live-completed-orders"><summary>{text(locale, "Completed Orders", "已完成委托")} · {player.completedOrders.length}</summary><ul>{player.completedOrders.map((completed) => <li key={`${completed.orderId}-${completed.completedInRound}`}>{completed.orderId} · {completed.vpAwarded} {text(locale, "VP", "分")}</li>)}</ul></details>}</div>;
+  return <div className="kiln-tabletop-inspector-content"><section className={`kiln-tabletop-inspector-player kiln-tabletop-accent-${accent(player)}`}><span>{player.displayName.slice(0, 1).toUpperCase()}</span><div><strong>{kiln === null ? text(locale, "Kiln not selected", "尚未选择窑口") : locale === "zh-CN" ? kiln.nameZh : kiln.name}</strong><small>{kiln === null ? text(locale, "Choosing kiln", "正在选择窑口") : locale === "zh-CN" ? kiln.abilityNameZh : kiln.abilityName}</small></div><b>{playerVp(game, player)} {text(locale, "VP", "分")}</b></section>{kiln !== null && <p className="kiln-tabletop-ability-copy"><KilnDescription id={kiln.id} locale={locale} layer="full" /></p>}<section className="kiln-tabletop-inspector-resources"><Resource label={text(locale, "Clay", "泥")} value={player.resources.clay} /><Resource label={text(locale, "Wood", "柴")} value={player.resources.wood} /><Resource label={text(locale, "Coins", "铜钱")} value={player.resources.coins} /><Resource label={text(locale, "Recognition", "御府声望")} value={player.imperialRecognition} /></section><ImperialPriorityReserve player={player} locale={locale} location="inspection" /><section className="kiln-tabletop-inspector-section"><h3>{text(locale, "Held Orders", "持有委托")} <span>{player.orderHandCount} / {GAME_CONFIG.orderDisplay.baseHandLimit}</span></h3><div className="kiln-tabletop-inspector-orders">{player.orderHand.map((id) => <StaticOrderCard id={id} locale={locale} key={id} />)}{player.orderHand.length === 0 && <p>{player.orderHandCount > 0 ? text(locale, "Orders in hand are private.", "持有委托为秘密信息。") : text(locale, "No held Orders.", "没有持有委托。")}</p>}</div></section><section className="kiln-tabletop-inspector-section"><h3>{text(locale, "Techs", "技艺")} <span>{player.techniques.length} / {GAME_CONFIG.techniques.maxOwned} {text(locale, "Advanced", "进阶")}</span></h3><div className="kiln-tabletop-inspector-techs">{player.startingTechniqueId !== null && <PlayerTechniqueReference id={player.startingTechniqueId} locale={locale} />}{player.techniques.map((owned) => <PlayerTechniqueReference id={owned.id} locale={locale} exhausted={owned.exhausted} key={owned.id} />)}</div></section><section className="kiln-tabletop-inspector-section"><h3>{text(locale, "Current ceramics", "当前陶瓷")} <span>{ceramics.length}</span></h3><div className="kiln-live-inspector-ceramics">{ceramics.map((ceramic) => <Ceramic ceramic={ceramic} game={game} locale={locale} inspectable key={ceramic.id} />)}</div></section>{player.completedOrders.length > 0 && <details className="kiln-live-completed-orders"><summary>{text(locale, "Completed Orders", "已完成委托")} · {player.completedOrders.length}</summary><ul>{player.completedOrders.map((completed) => <li key={`${completed.orderId}-${completed.completedInRound}`}>{completed.orderId} · {completed.vpAwarded} {text(locale, "VP", "分")}</li>)}</ul></details>}</div>;
 }
 
 /** Delivered and sold pieces are historical records, not ceramics still held by a player. */
@@ -1398,14 +1375,14 @@ export function OrderInspection({ id, locale }: { id: OrderId; locale: Locale })
   return <div className="kiln-tabletop-inspector-content kiln-tabletop-detail-view"><StaticOrderCard id={id} locale={locale} /><dl><div><dt>{text(locale, "Ceramics", "陶瓷")}</dt><dd>{order.ceramics.length}</dd></div><div><dt>{text(locale, "Minimum Quality", "最低品质")}</dt><dd>{qualityLabel(order.minQuality, locale)}</dd></div>{additionalOrderQuality(id, locale).map((requirement) => <div key={requirement.key}><dt>{text(locale, "Also required", "额外要求")}</dt><dd>{requirement.full}</dd></div>)}<div><dt>{text(locale, "Reward", "奖励")}</dt><dd>{order.vp} {text(locale, "VP", "分")} · {order.coins} {text(locale, "Coins", "铜钱")} {order.crowns > 0 ? `· ${order.crowns} ♛` : ""}</dd></div></dl><p>{text(locale, "Shape, Glaze and Decoration requirements are independent unless the Order explicitly pairs them.", "除非委托明确将属性配对，器型、釉色与纹饰要求均独立匹配。")}</p></div>;
 }
 
-function TechniqueInspection({ id, locale }: { id: TechniqueId; locale: Locale }) {
+export function TechniqueInspection({ id, locale }: { id: TechniqueId; locale: Locale }) {
   const technique = TECHNIQUE_DEFINITIONS[id];
   if (technique === undefined) return null;
-  return <div className="kiln-tabletop-inspector-content kiln-tabletop-detail-view"><StaticTechniqueTile id={id} locale={locale} /><TechniqueUseNote id={id} locale={locale} /><dl><div><dt>{text(locale, "Discipline", "类别")}</dt><dd>{locale === "zh-CN" ? disciplineZh(technique.discipline) : titleCase(technique.discipline)}</dd></div><div><dt>{text(locale, "Printed cost", "牌面费用")}</dt><dd>{technique.cost} {text(locale, "Coins", "铜钱")}</dd></div><div><dt>{text(locale, "Timing", "时机")}</dt><dd>{technique.oncePerRound ? text(locale, "Once per round", "每轮一次") : text(locale, "Continuous", "持续生效")}</dd></div></dl><TechniqueClarifications id={id} locale={locale} /></div>;
+  return <div className="kiln-tabletop-inspector-content kiln-tabletop-detail-view"><StaticTechniqueTile id={id} locale={locale} /><TechniqueFullRules id={id} locale={locale} /><TechniqueUseNote id={id} locale={locale} /><dl><div><dt>{text(locale, "Discipline", "类别")}</dt><dd>{locale === "zh-CN" ? disciplineZh(technique.discipline) : titleCase(technique.discipline)}</dd></div><div><dt>{text(locale, "Printed cost", "牌面费用")}</dt><dd>{technique.cost} {text(locale, "Coins", "铜钱")}</dd></div><div><dt>{text(locale, "Timing", "时机")}</dt><dd>{technique.oncePerRound ? text(locale, "Once per round", "每轮一次") : text(locale, "Continuous", "持续生效")}</dd></div></dl><TechniqueClarifications id={id} locale={locale} /></div>;
 }
 
-function StartingTechniqueInspection({ id, locale }: { id: StartingTechniqueId; locale: Locale }) {
-  return <div className="kiln-tabletop-inspector-content kiln-tabletop-detail-view"><StartingTechniqueTile id={id} locale={locale} /><TechniqueUseNote id={id} locale={locale} /><dl><div><dt>{text(locale, "Type", "类型")}</dt><dd>{text(locale, "Starting Tech", "起始技艺")}</dd></div></dl><TechniqueClarifications id={id} locale={locale} /></div>;
+export function StartingTechniqueInspection({ id, locale }: { id: StartingTechniqueId; locale: Locale }) {
+  return <div className="kiln-tabletop-inspector-content kiln-tabletop-detail-view"><StartingTechniqueTile id={id} locale={locale} /><TechniqueFullRules id={id} locale={locale} /><TechniqueUseNote id={id} locale={locale} /><dl><div><dt>{text(locale, "Type", "类型")}</dt><dd>{text(locale, "Starting Tech", "起始技艺")}</dd></div></dl><TechniqueClarifications id={id} locale={locale} /></div>;
 }
 
 function LogInspection({ game, events, describeEvent, locale }: { game: PublicGameState; events: PublicEventRecord[]; describeEvent: TabletopGameExperienceProps["describeEvent"]; locale: Locale }) {
@@ -1446,7 +1423,7 @@ function ImperialPriorityToken({ player, locale, location }: { player: PublicPla
   const descriptionId = `${previewId}-description`;
   const preview = useCardPreview<HTMLButtonElement>(previewId);
   const label = text(locale, `${player.displayName}'s Imperial Priority`, `${player.displayName}的御烧优先`);
-  const description = text(locale, "Once per game, before or after your worker action, spend it to load 1 Glazed ceramic into your empty Imperial Kiln.", "每局一次，在你的工人行动之前或之后，花费它将1件已施釉陶瓷装入你的空置御窑。");
+  const description = text(locale, "Once per game, before or after your worker action, spend it and 1 Coin to glaze and load 1 Workshop ceramic into your empty Imperial Kiln.", "每局一次，在你的工人行动之前或之后，花费此标记及1铜钱，为1件作坊器物施釉并装入你的空置御窑。");
   return <><button
     ref={preview.anchorRef}
     type="button"
@@ -1496,6 +1473,7 @@ function phaseName(game: PublicGameState, locale: Locale): string {
   if (type === "setup_kiln_selection") return text(locale, "Kiln selection", "选择窑口");
   if (type === "setup_starting_orders") return text(locale, "Starting Orders", "起始委托");
   if (type === "setup_starting_tech") return text(locale, "Starting Tech", "起始技艺");
+  if (type === "work_glaze_palette") return text(locale, "Glaze Palette", "釉色谱");
   if (type.startsWith("work")) return type === "work" ? text(locale, "Work", "作业") : text(locale, "Work resolution", "作业结算");
   if (type === "firing_before_contribution") return text(locale, "Pre-firing Techniques", "烧成前技艺");
   if (type === "firing_contributions") return text(locale, "Secret Contributions", "秘密控火");
@@ -1512,8 +1490,8 @@ function phaseName(game: PublicGameState, locale: Locale): string {
 }
 
 function minimumPlayersForKilnSpace(id: (typeof KILN_SPACE_IDS)[number]): 2 | 3 | 4 {
-  if (id === "middle_2") return 3;
-  if (id === "high_3") return 4;
+  if (id === "high_2" || id === "low_2") return 3;
+  if (id === "high_3" || id === "low_3") return 4;
   return 2;
 }
 
@@ -1524,5 +1502,5 @@ function zoneZh(value: "high" | "middle" | "low"): string { return value === "hi
 function qualityLabel(value: Quality, locale: Locale): string { return locale === "zh-CN" ? value === "flawed" ? "瑕品" : value === "standard" ? "良品" : value === "fine" ? "上品" : "臻品" : titleCase(value); }
 function shapeLabel(value: Shape, locale: Locale): string { return locale === "zh-CN" ? value === "bowl" ? "碗" : value === "plate" ? "盘" : value === "washer" ? "笔洗" : value === "vase" ? "瓶" : "香炉" : value === "washer" ? "Brush Washer" : titleCase(value); }
 function glazeLabel(value: Glaze, locale: Locale): string { return locale === "zh-CN" ? value === "white" ? "白釉" : value === "celadon" ? "青釉" : value === "grey_green" ? "灰青釉" : "月白釉" : value === "grey_green" ? "Grey-Green" : value === "moon_white" ? "Moon White" : titleCase(value); }
-function decorationLabel(value: Decoration, locale: Locale): string { return locale === "zh-CN" ? value === "plain" ? "素面" : value === "carved" ? "刻花" : value === "impressed" ? "印花" : "开片" : titleCase(value); }
-function stageLabel(value: CeramicState["stage"], locale: Locale): string { const english = titleCase(value); if (locale !== "zh-CN") return english; return value === "shaped" ? "已成型" : value === "glazed" ? "已施釉" : value === "loaded" ? "已装窑" : value === "finished" ? "已烧成" : value === "delivered" ? "已交付" : value === "presented" ? "已陈列" : "已出售"; }
+function decorationLabel(value: Decoration, locale: Locale): string { return locale === "zh-CN" ? value === "plain" ? "素面" : value === "carved" ? "刻花" : value === "impressed" ? "印花" : "彩绘" : titleCase(value); }
+function stageLabel(value: CeramicState["stage"], locale: Locale): string { const english = titleCase(value); if (locale !== "zh-CN") return english; return value === "workshop" ? "作坊器物" : value === "loaded" ? "已装窑" : value === "finished" ? "已烧成" : value === "delivered" ? "已交付" : value === "presented" ? "已陈列" : "已出售"; }

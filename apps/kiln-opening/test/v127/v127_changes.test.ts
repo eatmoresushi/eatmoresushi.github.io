@@ -15,20 +15,21 @@ function reveal(state: GameState, baseHeat: 0 | 1 | 2 | 3 | 4 | 5 = 4): void {
   state.firstPlayerId = "P1";
   state.phase = { type: "firing_reveal_fire", actorId: "P1" };
   state.fireDeck = [0];
-  state.firingContext = { round: state.round, contributors: ["P1"], contributions: { P1: "TEND" }, fuelLedgerUpgradedBy: [], baseHeat, fireModifier: null, globalHeat: null, kilnYardShifuAdjustments: [], ceramicResults: {} };
+  state.firingContext = { round: state.round, contributors: ["P1"], contributions: { P1: "TEND" }, baseHeat, fireModifier: null, globalHeat: null, kilnYardShifuAdjustments: [], ceramicResults: {} };
 }
 
-describe("V1.2.7 Court Patronage and mandatory Work", () => {
+describe("V1.4 Court Patronage and mandatory Work", () => {
   it.each(["shifu", "apprentice"] as const)("uses %s at each permitted Recognition step and resolves every milestone", (kind) => {
     const { state: initial, rng } = startedGame(2);
     for (const from of [0, 1, 2] as const) {
       const state = structuredClone(initial);
       state.players["P1"]!.imperialRecognition = from;
-      state.players["P1"]!.resources.coins = 4;
+      state.players["P1"]!.resources.coins = 5;
       state.actionBoard.placements.court_patronage = Array(20).fill("occupied");
       const result = mustResult(state, "P1", { type: "USE_COURT_PATRONAGE", workerId: workerId(state, "P1", kind), imperialGrantChoice: "resources" }, rng);
       expect(result.state.players["P1"]!.imperialRecognition).toBe(from + 1);
       expect(result.state.players["P1"]!.resources.coins).toBe(from === 0 ? 1 : 0);
+      expect(result.events).toContainEqual({ type: "RESOURCES_CHANGED", playerId: "P1", clay: 0, wood: 0, coins: -5 });
       if (from === 0) expect(result.state.players["P1"]!.resources).toEqual({ clay: 3, wood: 3, coins: 1 });
       if (from === 1) expect(result.state.players["P1"]!.imperialKilnUnlocked).toBe(true);
       if (from === 2) expect(result.state.players["P1"]!.imperialPriorityAvailable).toBe(true);
@@ -37,9 +38,19 @@ describe("V1.2.7 Court Patronage and mandatory Work", () => {
     }
     expect(locationCapacity("court_patronage", 4)).toBe(Infinity);
   });
+  it.each(["shifu", "apprentice"] as const)("rejects a %s with only four Coins without changing state", (kind) => {
+    const { state, rng } = startedGame(2);
+    state.players["P1"]!.resources.coins = 4;
+    const before = structuredClone(state);
+    const result = applyAction(state, "P1", { type: "USE_COURT_PATRONAGE", workerId: workerId(state, "P1", kind), imperialGrantChoice: "coins" }, rng);
+    expectError(result, "INSUFFICIENT_RESOURCES");
+    if (!result.ok) expect(result.error.message).toBe("Court Patronage costs 5 Coins.");
+    expect(state).toEqual(before);
+  });
   it("requires payment and a Grant choice, forbids advancing to 4, and permits repeat visits", () => {
     const { state, rng } = startedGame(2);
     const id = workerId(state, "P1", "apprentice");
+    state.players["P1"]!.resources.coins = 4;
     expectError(applyAction(state, "P1", { type: "USE_COURT_PATRONAGE", workerId: id, imperialGrantChoice: "coins" }, rng), "INSUFFICIENT_RESOURCES");
     state.players["P1"]!.resources.coins = 12;
     expectError(applyAction(state, "P1", { type: "USE_COURT_PATRONAGE", workerId: id }, rng), "INVALID_SELECTION");
@@ -49,6 +60,7 @@ describe("V1.2.7 Court Patronage and mandatory Work", () => {
       next = mustApply(next, "P1", { type: "USE_COURT_PATRONAGE", workerId: workerId(next, "P1", "apprentice"), imperialGrantChoice: "coins" }, rng);
     }
     expect(next.actionBoard.placements.court_patronage).toHaveLength(3);
+    expect(next.players["P1"]!.resources.coins).toBe(0);
     for (const recognition of [3, 4] as const) {
       setWorkTurn(next, "P1"); next.players["P1"]!.imperialRecognition = recognition;
       expectError(applyAction(next, "P1", { type: "USE_COURT_PATRONAGE", workerId: workerId(next, "P1", "shifu") }, rng), "INVALID_ACTION");
@@ -59,86 +71,69 @@ describe("V1.2.7 Court Patronage and mandatory Work", () => {
     expectError(applyAction(state, "P1", { type: "PASS_WORK_PHASE" }, rng), "INVALID_ACTION");
     const result = finishWork(state, rng);
     expect(result.events.filter((event) => event.type === "WORKER_PLACED")).toHaveLength(count * 4);
-    for (const player of Object.values(result.state.players)) expect(player.resources.coins).toBe(13);
+    for (const player of Object.values(result.state.players)) expect(player.resources.coins).toBe(14);
     expect(result.state.phase.type).toBe("orders");
   });
 });
 
-describe("V1.2.7 Ge", () => {
-  it.each(["flawed", "standard", "fine", "masterpiece"] as const)("counts %s Crackle Quality only for Orders and Exhibition", (quality) => {
-    expect(qualityForOrderOrExhibition({ quality, decoration: "crackle" }, "GE")).toBe(quality === "standard" ? "fine" : quality);
-    expect(qualityForOrderOrExhibition({ quality, decoration: "plain" }, "GE")).toBe(quality);
-    expect(qualityForOrderOrExhibition({ quality, decoration: "crackle" }, "RU")).toBe(quality);
+describe("V1.4 Ge", () => {
+  it.each(["flawed", "standard", "fine", "masterpiece"] as const)("uses actual %s Quality for Orders and Exhibition", (quality) => {
+    expect(qualityForOrderOrExhibition({ quality }, "GE")).toBe(quality);
+    expect(qualityForOrderOrExhibition({ quality }, "RU")).toBe(quality);
   });
-  it("preserves actual Standard Quality on Ge Shared and Imperial ceramics", () => {
-    const { state, rng } = startedGame(2);
-    state.players["P1"]!.kilnId = "GE"; state.players["P1"]!.kilnAbilityUsedThisRound = true;
-    const a = addLoaded(state, "P1", "bowl", "celadon", "crackle", "middle_1");
-    const b = addLoaded(state, "P1", "plate", "celadon", "crackle", "imperial");
-    const c = addLoaded(state, "P2", "vase", "celadon", "crackle", "middle_2");
-    state.players["P2"]!.kilnId = "RU";
+  it.each(["middle_1", "imperial"] as const)("upgrades only its selected Standard ceramic in %s", (space) => {
+    const { state, rng } = startedGame(2); state.players["P1"]!.kilnId = "GE";
+    const a = addLoaded(state, "P1", "bowl", "celadon", "plain", space);
+    const b = addLoaded(state, "P2", "plate", "celadon", "painted", "middle_2"); state.players["P2"]!.kilnId = "RU";
     reveal(state);
-    const result = mustResult(state, "P1", { type: "REVEAL_FIRE_CARD" }, rng);
-    for (const id of [a.id, b.id]) expect(result.state.ceramics[id]).toMatchObject({ stage: "finished", quality: "standard", decoration: "crackle" });
-    expect(result.state.ceramics[c.id]).toMatchObject({ stage: "finished", quality: "standard" });
+    const fired = mustApply(state, "P1", { type: "REVEAL_FIRE_CARD" }, rng);
+    expect(fired.phase).toMatchObject({ type: "firing_after_quality", geAvailable: true });
+    const result = mustResult(fired, "P1", { type: "RESOLVE_GE", ceramicId: a.id }, rng);
+    expect(result.state.ceramics[a.id]).toMatchObject({ stage: "finished", quality: "fine", decoration: "plain", crackle: true });
+    expect(result.state.ceramics[b.id]).toMatchObject({ stage: "finished", quality: "standard", decoration: "painted" });
+    expect(result.state.ceramics[b.id]?.crackle).toBeUndefined();
     expect(result.state.lastFiringResult!.ceramicResults![a.id]!.finalHeatDifference).toBe(2);
   });
-  it("preserves actual Standard Quality after Second Firing without a Ge prompt", () => {
-    const { state, rng } = startedGame(2);
-    state.players["P1"]!.kilnId = "GE";
-    const ceramic = addLoaded(state, "P1", "bowl", "white", "crackle", "middle_1");
-    addTechnique(state, "P1", "T14");
-    reveal(state, 4); state.fireDeck = [0, -1];
+  it("opens Ge after Second Firing leaves a ceramic Standard and preserves use when declined", () => {
+    const { state, rng } = startedGame(2); state.players["P1"]!.kilnId = "GE";
+    const ceramic = addLoaded(state, "P1", "bowl", "white", "plain", "middle_1"); addTechnique(state, "P1", "T14");
+    reveal(state); state.fireDeck = [0, -1];
     const fired = mustApply(state, "P1", { type: "REVEAL_FIRE_CARD" }, rng);
-    const result = mustResult(fired, "P1", { type: "RESOLVE_SECOND_FIRING", ceramicId: ceramic.id }, rng);
-    expect(result.state.ceramics[ceramic.id]).toMatchObject({ stage: "finished", quality: "standard", decoration: "crackle" });
-    expect(result.state.players["P1"]!.kilnAbilityUsedThisRound).toBe(false);
+    const refired = mustApply(fired, "P1", { type: "RESOLVE_SECOND_FIRING", ceramicId: ceramic.id }, rng);
+    expect(refired.phase).toMatchObject({ type: "firing_after_quality", geAvailable: true });
+    const declined = mustApply(refired, "P1", { type: "RESOLVE_GE", ceramicId: null }, rng);
+    expect(declined.ceramics[ceramic.id]).toMatchObject({ stage: "finished", quality: "standard", decoration: "plain" });
+    expect(declined.players["P1"]!.kilnAbilityUsedThisRound).toBe(false);
   });
-  it("uses one consistent virtual Decoration for same/different and required decorations", () => {
-    const { state } = startedGame(2);
-    const a = addFinished(state, "P1", "bowl", "standard", "celadon", "crackle");
-    const b = addFinished(state, "P1", "censer", "fine", "grey_green", "carved");
-    const same = ORDER_DEFINITIONS["O37"]!;
-    expect(matchesOrder(same, [a,b])).toBe(false);
-    expect(matchesOrderWithGe(same, [a,b], { ceramicId: a.id, decoration: "carved" })).toBe(true);
-    expect(matchesOrderWithGe(same, [a,b], { ceramicId: b.id, decoration: "crackle" })).toBe(false);
-    const contradiction = { ...same, relations: [...same.relations!, { type: "different_decoration" as const, indices: [0,1] }] };
-    expect(matchesOrderWithGe(contradiction, [a,b], { ceramicId: a.id, decoration: "carved" })).toBe(false);
-    expect(a.decoration).toBe("crackle");
-  });
-  it("reveals a completed held Order and preserves actual Crackle while consuming only one round use", () => {
-    const { state, rng } = startedGame(2);
-    state.players["P1"]!.kilnId = "GE"; state.players["P1"]!.orderHand = ["O10"];
-    const c = addFinished(state, "P1", "bowl", "standard", "celadon", "crackle");
+  it("reveals a held Order while retaining actual Glaze, Decoration and permanent Crackle", () => {
+    const { state, rng } = startedGame(2); state.players["P1"]!.kilnId = "GE"; state.players["P1"]!.orderHand = ["O06"];
+    const ceramic = addFinished(state, "P1", "bowl", "fine", "celadon", "plain"); ceramic.crackle = true;
     orders(state);
-    const result = mustResult(state, "P1", { type: "COMPLETE_ORDER", orderId: "O10", ceramicIds: [c.id], geDecoration: { ceramicId: c.id, decoration: "plain" } }, rng);
-    expect(result.state.ceramics[c.id]).toMatchObject({ stage: "delivered", decoration: "crackle" });
-    expect(projectPublicEvents(result.events)).toContainEqual({ type: "ORDER_COMPLETED", playerId: "P1", orderId: "O10", ceramicIds: [c.id] });
-    // Reset opportunity only; the round-use restriction still applies.
-    orders(result.state); result.state.players["P1"]!.kilnAbilityUsedThisRound = true;
-    result.state.players["P1"]!.orderHand = ["O11"];
-    const d = addFinished(result.state, "P1", "bowl", "masterpiece", "white", "crackle");
-    expectError(applyAction(result.state, "P1", { type: "COMPLETE_ORDER", orderId: "O11", ceramicIds: [d.id], geDecoration: { ceramicId: d.id, decoration: "carved" } }, rng), "ABILITY_ALREADY_USED");
+    const result = mustResult(state, "P1", { type: "COMPLETE_ORDER", orderId: "O06", ceramicIds: [ceramic.id], geGlazes: [{ ceramicId: ceramic.id, glaze: "white" }] }, rng);
+    expect(result.state.ceramics[ceramic.id]).toMatchObject({ stage: "delivered", glaze: "celadon", decoration: "plain", crackle: true });
+    expect(projectPublicEvents(result.events)).toContainEqual({ type: "ORDER_COMPLETED", playerId: "P1", orderId: "O06", ceramicIds: [ceramic.id] });
   });
 });
 
-describe("V1.2.7 Tech timing", () => {
-  it.each(["kiln", "rapid", "priority"] as const)("uses Glaze Palette immediately before %s loading", (path) => {
-    const { state, rng } = startedGame(2, 1274, ["ST03"]);
-    addTechnique(state, "P1", "T06");
+describe("V1.4 Tech timing", () => {
+  it.each(["kiln", "rapid", "priority"] as const)("uses Glaze Palette after Work on a %s load, without another Glazing payment", (path) => {
+    const { state, rng } = startedGame(2, 1274, ["ST03"]); addTechnique(state, "P1", "T06");
     state.players["P1"]!.imperialKilnUnlocked = true; state.players["P1"]!.imperialPriorityAvailable = path === "priority";
-    const c = path === "rapid" ? addShaped(state, "P1", "bowl") : addGlazed(state, "P1", "bowl", "white", "carved");
-    const resources = { ...state.players["P1"]!.resources };
-    const action = path === "kiln" ? { type: "USE_KILN_YARD" as const, workerId: workerId(state, "P1", "apprentice"), loads: [{ ceramicId: c.id, kilnSpaceId: "imperial" as const, glazePalette: "moon_white" as const }] }
-      : path === "rapid" ? { type: "GLAZE_CERAMICS" as const, workerId: workerId(state, "P1", "apprentice"), selections: [{ ceramicId: c.id, glaze: "white" as const, decoration: "carved" as const }], rapidDrying: { ceramicId: c.id, kilnSpaceId: "imperial" as const, glazePalette: "moon_white" as const } }
-      : { type: "RESOLVE_IMPERIAL_PRIORITY" as const, ceramicId: c.id, glazePalette: "moon_white" as const };
-    const next = mustApply(state, "P1", action, rng);
-    expect(next.ceramics[c.id]).toMatchObject({ stage: "loaded", kilnSpaceId: "imperial", glaze: "moon_white", decoration: "carved", shape: "bowl" });
-    expect(next.players["P1"]!.resources.coins).toBe(resources.coins - (path === "rapid" ? 2 : 0));
-    expect(next.players["P1"]!.techniques).toContainEqual({ id: "T06", exhausted: true });
-    setWorkTurn(next, "P1");
-    const second = addGlazed(next, "P1");
-    expectError(applyAction(next, "P1", { type: "USE_KILN_YARD", workerId: workerId(next, "P1", "apprentice"), loads: [{ ceramicId: second.id, kilnSpaceId: "low_1", glazePalette: "celadon" }] }, rng), "INVALID_ACTION");
+    const ceramic = path === "rapid" ? addShaped(state, "P1", "bowl") : addGlazed(state, "P1", "bowl", "white", "carved");
+    const coins = state.players["P1"]!.resources.coins;
+    const action = path === "kiln" ? { type: "USE_KILN_YARD" as const, workerId: workerId(state, "P1", "apprentice"), loads: [{ ceramicId: ceramic.id, kilnSpaceId: "imperial" as const, glaze: "white" as const }] }
+      : path === "rapid" ? { type: "DECORATE_CERAMICS" as const, workerId: workerId(state, "P1", "apprentice"), selections: [{ ceramicId: ceramic.id, decoration: "carved" as const }], rapidDrying: { ceramicId: ceramic.id, kilnSpaceId: "imperial" as const, glaze: "white" as const } }
+      : { type: "RESOLVE_IMPERIAL_PRIORITY" as const, ceramicId: ceramic.id, glaze: "white" as const };
+    let next = mustApply(state, "P1", action, rng);
+    expect(next.ceramics[ceramic.id]).toMatchObject({ stage: "loaded", glaze: "white" });
+    expect(next.players["P1"]!.resources.coins).toBe(coins - (path === "rapid" ? 3 : 1));
+    expectError(applyAction(next, "P1", { type: "RESOLVE_GLAZE_PALETTE", ceramicId: ceramic.id, glaze: "moon_white" }, rng), "WRONG_PHASE");
+    next = finishWork(next, rng).state;
+    expect(next.phase.type).toBe("work_glaze_palette"); const before = { ...next.players["P1"]!.resources };
+    next = mustApply(next, "P1", { type: "RESOLVE_GLAZE_PALETTE", ceramicId: ceramic.id, glaze: "moon_white" }, rng);
+    expect(next.ceramics[ceramic.id]).toMatchObject({ stage: "loaded", kilnSpaceId: "imperial", glaze: "moon_white", decoration: "carved", shape: "bowl" });
+    expect(next.players["P1"]!.resources).toEqual(before); expect(next.players["P1"]!.techniques).toContainEqual({ id: "T06", exhausted: true });
+    expectError(applyAction(next, "P1", { type: "RESOLVE_GLAZE_PALETTE", ceramicId: ceramic.id, glaze: "white" }, rng), "WRONG_PHASE");
   });
   it.each([false, true])("Colour Samples acquisition reserves immediately, preserves round use and gives no advance (display %s)", (fromDisplay) => {
     const { state, rng } = startedGame(2);
@@ -152,6 +147,9 @@ describe("V1.2.7 Tech timing", () => {
     const display = [...next.marketDisplay];
     const deck = [...next.marketDeck];
     next = mustApply(next, "P1", { type: "GUILD_BUY_TECHNIQUE", techniqueId: "T10" }, rng);
+    expect(next.phase).toMatchObject({ step: "colour_samples_or_skip" });
+    expect(next.marketDeck).toEqual(deck);
+    next = mustApply(next, "P1", { type: "OFFICE_USE_COLOUR_SAMPLES" }, rng);
     expect(next.phase).toMatchObject({ type: "work_office_orders", onAcquisition: true, colourSamplesChoices: deck.slice(0,3) });
     const selected = fromDisplay ? display[2]! : deck[1]!;
     const result = mustResult(next, "P1", { type: "OFFICE_CHOOSE_COLOUR_SAMPLES_ORDER", orderId: selected }, rng);
@@ -170,27 +168,28 @@ describe("V1.2.7 Tech timing", () => {
     expect(next.phase).toMatchObject({ type: "work_office_orders", step: "gain_advance" });
     expect(next.players["P1"]!.techniques).toContainEqual({ id: "T10", exhausted: true });
   });
-  it("Large Throwing Wheel stacks, clamps to zero and charges Ding separately", () => {
-    const { state, rng } = startedGame(2); state.players["P1"]!.kilnId = "DI"; state.players["P1"]!.resources.clay = 1;
+  it("Large Throwing Wheel stacks with Shifu and clamps to zero; Ding rejects Shifu", () => {
+    const { state, rng } = startedGame(2); state.players["P1"]!.kilnId = "DI"; state.players["P1"]!.resources.clay = 0;
     addTechnique(state, "P1", "T01");
-    const next = mustApply(state, "P1", { type: "FORM_CERAMICS", workerId: workerId(state, "P1", "shifu"), shapes: ["vase", "bowl"], dingExtraShape: "bowl", useTechniqueIds: ["T01"] }, rng);
+    expectError(applyAction(state, "P1", { type: "FORM_CERAMICS", workerId: workerId(state, "P1", "shifu"), shapes: ["vase", "bowl"], dingExtraShape: "bowl", useTechniqueIds: ["T01"] }, rng), "INVALID_ACTION");
+    const next = mustApply(state, "P1", { type: "FORM_CERAMICS", workerId: workerId(state, "P1", "shifu"), shapes: ["vase", "bowl"], useTechniqueIds: ["T01"] }, rng);
     expect(next.players["P1"]!.resources.clay).toBe(0);
-    expect(Object.values(next.ceramics)).toHaveLength(3);
+    expect(Object.values(next.ceramics)).toHaveLength(2);
   });
   it("Prepared Clay triggers forming Techs and Drying Frames accepts a Decoration waiver", () => {
     const { state, rng } = startedGame(2, 1271, ["ST01"]);
     addTechnique(state, "P1", "T02"); addShaped(state, "P1", "plate");
     const next = mustApply(state, "P1", { type: "GAIN_MATERIALS", workerId: workerId(state, "P1", "apprentice"), clay: 3, wood: 0, preparedClayShape: "vase", useTechniqueIds: ["T02"] }, rng);
-    expect(next.players["P1"]!.resources.coins).toBe(5);
+    expect(next.players["P1"]!.resources.coins).toBe(6);
     next.players["P1"]!.techniques = [{ id: "T04", exhausted: false }, { id: "T07", exhausted: false }];
     next.players["P1"]!.resources.coins = 0; setWorkTurn(next, "P1");
-    const formed = mustApply(next, "P1", { type: "FORM_CERAMICS", workerId: workerId(next, "P1", "apprentice"), shapes: ["bowl"], useTechniqueIds: ["T04", "T07"], dryingFrames: { formedIndex: 0, glaze: "white", decoration: "carved" } }, rng);
-    expect(Object.values(formed.ceramics)).toContainEqual(expect.objectContaining({ stage: "glazed", decoration: "carved" }));
+    const formed = mustApply(next, "P1", { type: "FORM_CERAMICS", workerId: workerId(next, "P1", "apprentice"), shapes: ["bowl"], useTechniqueIds: ["T04", "T07"], dryingFrames: { formedIndex: 0, decoration: "carved" } }, rng);
+    expect(Object.values(formed.ceramics)).toContainEqual(expect.objectContaining({ stage: "workshop", decoration: "carved" }));
     expect(formed.players["P1"]!.resources.coins).toBe(0);
   });
 });
 
-describe("V1.2.7 privacy and Exhibition", () => {
+describe("V1.4 privacy and Exhibition", () => {
   it("redacts hand IDs and passed choices from public state, events and rival observations", () => {
     const { state } = startedGame(2); state.players["P1"]!.orderHand = ["S01", "O11"]; state.players["P2"]!.orderHand = ["S08", "O48"];
     state.marketDisplay = ["O01"]; state.marketDiscard = []; orders(state);
@@ -229,9 +228,9 @@ describe("post-forming payment timing", () => {
     addTechnique(state, "P1", "T02"); addTechnique(state, "P1", "T04");
     addShaped(state, "P1", "bowl");
     state.players["P1"]!.resources.coins = 0;
-    const result = mustApply(state, "P1", { type: "FORM_CERAMICS", workerId: workerId(state, "P1", "apprentice"), shapes: ["vase"], useTechniqueIds: ["T02", "T04"], dryingFrames: { formedIndex: 0, glaze: "celadon", decoration: "carved" } }, rng);
+    const result = mustApply(state, "P1", { type: "FORM_CERAMICS", workerId: workerId(state, "P1", "apprentice"), shapes: ["vase"], useTechniqueIds: ["T02", "T04"], dryingFrames: { formedIndex: 0, decoration: "carved" } }, rng);
     expect(result.players["P1"]!.resources.coins).toBe(0);
-    expect(Object.values(result.ceramics)).toContainEqual(expect.objectContaining({ shape: "vase", stage: "glazed", decoration: "carved" }));
+    expect(Object.values(result.ceramics)).toContainEqual(expect.objectContaining({ shape: "vase", stage: "workshop", decoration: "carved" }));
     expect(result.players["P1"]!.techniques.every((tech) => tech.exhausted)).toBe(true);
   });
 });

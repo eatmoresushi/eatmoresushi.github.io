@@ -5,7 +5,9 @@ import {
   createPlaytestDraft,
   reconcileFiringTechniqueOwnership,
   submissionCandidate,
+  sharedKilnCapacity,
 } from "../../src/playtest/model.ts";
+import { activeKilnSpaceIds, KILN_IDS } from "../../src/game/index.ts";
 import { validatePlaytestSubmission } from "../../src/playtest/schema.ts";
 import { PlaytestFormPage } from "../../src/ui/PlaytestFormPage.tsx";
 import migration from "../../supabase/migrations/202609050001_playtest_submissions.sql?raw";
@@ -59,7 +61,7 @@ function validCandidate(): unknown {
   return submissionCandidate(draft);
 }
 
-describe("V1.2.7 playtest form", () => {
+describe("V1.4 playtest form", () => {
   it("accepts the concise setup, firing, and end-game metrics", () => {
     const result = validatePlaytestSubmission(validCandidate());
     expect(result.ok).toBe(true);
@@ -72,8 +74,25 @@ describe("V1.2.7 playtest form", () => {
     expect(result.value.players[0]!.coinsRemaining).toBe(4);
     expect(result.value.rounds).toHaveLength(5);
     expect(result.value.rounds[0]!.players[0]!.contribution).toBe("stoke");
-    expect(result.value.rulesVersion).toBe("1.2.7");
+    expect(result.value.rulesVersion).toBe("1.4");
     expect(result.value.formVersion).toBe(2);
+  });
+
+  it.each([2, 3, 4] as const)("uses the authoritative %i-player kiln capacity in UI summaries and submission validation", (playerCount) => {
+    const draft = createPlaytestDraft(playerCount);
+    draft.players = draft.players.map((player, index) => ({
+      ...player, kilnId: KILN_IDS[index]!, startingTechniqueId: "ST01", recognition: 0,
+      coinsRemaining: 0, clayRemaining: 0, woodRemaining: 0, finalVp: 0,
+    }));
+    const capacity = activeKilnSpaceIds(playerCount).length;
+    expect(sharedKilnCapacity(playerCount)).toBe(capacity);
+    draft.rounds[0]!.players[0]!.sharedLoaded = capacity;
+    expect(validatePlaytestSubmission(submissionCandidate(draft)).ok).toBe(true);
+    draft.rounds[0]!.players[0]!.sharedLoaded = capacity + 1;
+    expect(validatePlaytestSubmission(submissionCandidate(draft)).ok).toBe(false);
+    draft.rounds[0]!.players[0]!.sharedLoaded = capacity;
+    draft.rounds[0]!.players[1]!.sharedLoaded = 1;
+    expect(validatePlaytestSubmission(submissionCandidate(draft)).ok).toBe(false);
   });
 
   it.each([0, 100_000, Number.MAX_SAFE_INTEGER])("accepts resource reports of %s without a physical supply cap", (amount) => {

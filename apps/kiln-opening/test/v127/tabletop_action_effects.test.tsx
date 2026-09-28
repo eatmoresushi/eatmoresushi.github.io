@@ -15,24 +15,33 @@ describe.each(["en", "zh-CN"] as const)("both worker effects on the board (%s)",
       const markup = renderToStaticMarkup(createElement(ActionSpace, {
         game, ownPlayer: game.players["P1"]!, id, locale, selectedWorkerId, selected: false, onChoose: () => {},
       }));
-      expect(markup, id).toContain('data-effect-worker="apprentice"');
-      expect(markup, id).toContain('data-effect-worker="shifu"');
+      const shared = id === "court_patronage";
+      if (shared) {
+        expect(markup).toContain('data-effect-worker="both"');
+        expect(markup).toContain(locale === "en" ? "Apprentice or Shifu: " : "学徒或师傅：");
+        expect(markup.match(/class="kiln-board-action-summary"/g)).toHaveLength(1);
+      } else {
+        expect(markup, id).toContain('data-effect-worker="apprentice"');
+        expect(markup, id).toContain('data-effect-worker="shifu"');
+      }
       const definition = LOCATION_DEFINITIONS[id];
       // Compact board labels must retain the full, data-backed rules on hover.
       for (const workerKind of ["apprentice", "shifu"] as const) {
         const reminder = locale === "zh-CN" ? definition[`${workerKind}Zh`] : definition[workerKind];
         const title = renderToStaticMarkup(createElement("span", { title: reminder })).match(/title="[^"]*"/)![0];
-        expect(markup, `${id}.${workerKind}`).toContain(`data-effect-worker="${workerKind}" ${title}`);
+        expect(markup, `${id}.${workerKind}`).toContain(`data-effect-worker="${shared ? "both" : workerKind}" ${title}`);
       }
       expect(markup, id).toContain('role="img" aria-label="' + (locale === "en" ? "Apprentice" : "学徒") + '"');
       expect(markup, id).toContain('role="img" aria-label="' + (locale === "en" ? "Shifu" : "师傅") + '"');
-      expect(markup.match(/class="kiln-board-effect-copy"/g), id).toHaveLength(2);
+      expect(markup.match(/class="kiln-board-effect-copy"/g), id).toHaveLength(shared ? 1 : 2);
       expect(markup, id).not.toContain(locale === "en" ? "Choose a worker" : "选择工人");
       expect(markup.match(/is-current-worker/g) ?? [], id).toHaveLength(kind === null ? 0 : 1);
       if (id === "court_patronage") {
         expect(markup).not.toContain("only 0");
         expect(markup).not.toContain("仅限0");
         expect(markup).toContain("kiln-tabletop-cash-coin");
+        expect(markup).toContain("<strong>5</strong>");
+        expect(markup).not.toContain("<strong>4</strong>");
       }
       if (id === "kiln_yard") {
         expect(markup).toContain(locale === "en" ? "+1 or −1 Heat marker" : "+1或−1");

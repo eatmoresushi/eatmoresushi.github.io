@@ -1,0 +1,57 @@
+/* Personal Orders follow the public display; all Techs use one shared square size. */
+.kiln-tabletop-root.kiln-live-root .kiln-tabletop-workshop .kiln-tabletop-workshop-name p strong {
+  display: inline;
+  margin: 0;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+}
+
+.kiln-tabletop-root.kiln-live-root .kiln-tabletop-workshop .kiln-tabletop-own-orders > div,
+.kiln-tabletop-root.kiln-live-root .kiln-tabletop-workshop .kiln-tabletop-own-techs > div {
+  display: grid;
+  grid-auto-rows: auto;
+  align-items: start;
+  align-content: start;
+  justify-items: start;
+  justify-content: start;
+  min-width: 0;
+  min-height: 0;
+  gap: .5rem;
+  overflow: visible;
+}
+
+.kiln-tabletop-root.kiln-live-root .kiln-tabletop-workshop .kiln-tabletop-own-orders > div {
+  grid-template-columns: repeat(auto-fit, var(--table-order-width, var(--overview-order-width, 140px)));
+}
+.kiln-tabletop-root.kiln-live-root .kiln-tabletop-workshop .kiln-tabletop-own-techs > div {
+  grid-template-columns: repeat(auto-fit, var(--tech-tile-size));
+}
+
+.kiln-tabletop-root.kiln-live-root .kiln-tabletop-workshop .kiln-tabletop-own-orders > div > .kiln-order-card {
+  box-sizing: border-box;
+  width: var(--table-order-width, var(--overview-order-width, 140px));
+  min-width: var(--table-order-width, var(--overview-order-width, 140px));
+  max-width: var(--table-order-width, var(--overview-order-width, 140px));
+  height: auto;
+  min-height: var(--table-order-height, var(--overview-order-height, 196px));
+  aspect-ratio: 5 / 7;
+  margin: 0;
+}
+.kiln-tabletop-root.kiln-live-root .kiln-tabletop-workshop .kiln-tabletop-own-techs > div > .kiln-tech-tile {
+  box-sizing: border-box;
+  width: var(--tech-tile-size);
+  min-width: var(--tech-tile-size);
+  max-width: var(--tech-tile-size);
+  height: var(--tech-tile-size);
+  min-height: var(--tech-tile-size);
+  max-height: var(--tech-tile-size);
+  aspect-ratio: 1;
+  margin: 0;
+}
+
+.kiln-tabletop-root.kiln-live-root .kiln-tabletop-workshop .kiln-tabletop-own-orders > div > .kiln-live-empty-copy,
+.kiln-tabletop-root.kiln-live-root .kiln-tabletop-workshop .kiln-tabletop-own-techs > div > .kiln-live-empty-copy {
+  grid-column: 1 / -1;
+  min-width: 0;
+}

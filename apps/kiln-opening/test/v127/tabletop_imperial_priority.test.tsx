@@ -33,7 +33,48 @@ function tokenOwner(token: string): string | undefined {
   return token.match(/data-player-id="([^"]+)"/)?.[1];
 }
 
-describe("V1.2.7 physical Imperial Priority markers", () => {
+function ancestorTagsAt(markup: string, position: number): string[] {
+  const stack: string[] = [];
+  for (const [tag, name] of markup.slice(0, position).matchAll(/<\/?([a-z][a-z\d]*)\b[^>]*>/giu)) {
+    if (tag.startsWith("</")) stack.pop();
+    else if (!/\/$/u.test(tag.slice(0, -1)) && !/^(?:area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/u.test(name!)) stack.push(tag);
+  }
+  return stack;
+}
+
+describe("V1.4 physical Imperial Priority markers", () => {
+  it.each(["en", "zh-CN"] as const)("places Recognition after face-up Techs outside the board action spaces (%s)", (locale) => {
+    const { state } = startedGame(4, 127_972);
+    const markup = renderTable(state, "P1", locale);
+    const trackStart = markup.indexOf('<section class="kiln-tabletop-imperial-track');
+    expect(trackStart).toBeGreaterThan(0);
+    const ancestors = ancestorTagsAt(markup, trackStart);
+    expect(ancestors.some((tag) => tag.includes('class="kiln-tabletop-public-sidebar"'))).toBe(true);
+    expect(ancestors.some((tag) => tag.includes("kiln-tabletop-actions-grid") || tag.includes('id="kiln-live-shared-board"'))).toBe(false);
+    const sidebarStart = markup.lastIndexOf('<div class="kiln-tabletop-public-sidebar">', trackStart);
+    const precedingSidebar = markup.slice(sidebarStart, trackStart);
+    expect(precedingSidebar).toMatch(/<aside class="kiln-tabletop-tech-market"[\s\S]*<\/aside>/u);
+    expect(ancestors.some((tag) => tag.includes('class="kiln-tabletop-tech-market"'))).toBe(false);
+    const track = markup.slice(trackStart).match(/^<section\b[\s\S]*?<\/section>/u)![0];
+    expect(track).toContain("kiln-recognition-track is-compact");
+    expect(track).not.toContain(`>${locale === "en" ? "Rewards" : "奖励"}</button>`);
+    const rewards = [...track.matchAll(/<small class="kiln-recognition-reward">([^<]+)<\/small>/gu)].map(([, reward]) => reward);
+    expect(rewards).toEqual(locale === "en" ? [
+      "—",
+      "Gain 3 Coins or 1 Clay + 1 Wood + 1 Coin.",
+      "Gain your Imperial Kiln tile.",
+      "Take your Imperial Priority token.",
+      "Gain 6 VP. Each later Crown scores 1 VP.",
+    ] : [
+      "—",
+      "获得3铜钱，或1泥、1柴和1铜钱。",
+      "获得你的御窑。",
+      "获得御烧优先标记。",
+      "获得6 VP。之后每个 👑 获得1 VP。",
+    ]);
+    expect([...track.matchAll(/data-recognition-space="[0-4]"/gu)]).toHaveLength(5);
+  });
+
   it.each([2, 3, 4] as const)("places one matching player-colour token at Recognition 3 for each of %i players", (count) => {
     const { state } = startedGame(count, 127_960 + count);
     const markup = renderTable(state);

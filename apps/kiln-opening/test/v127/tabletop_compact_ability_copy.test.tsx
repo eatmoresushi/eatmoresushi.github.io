@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { STARTING_TECHNIQUE_DEFINITIONS, TECHNIQUE_DEFINITIONS, KILN_DEFINITIONS } from "../../src/game/index.ts";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -17,6 +16,7 @@ import {
   techniqueShortPlainText,
 } from "../../src/ui/TechniqueDescription.tsx";
 import { TabletopGameExperience } from "../../src/ui/TabletopGameExperience.tsx";
+import { techniqueOverviewCopy } from "../../src/ui/TechniqueOverview.ts";
 import { LanguageProvider } from "../../src/ui/i18n.tsx";
 import { startedGame } from "./helpers.ts";
 
@@ -25,6 +25,7 @@ const ALL_TECHNIQUE_IDS = [...STARTING_TECHNIQUE_IDS, ...ADVANCED_TECHNIQUE_IDS]
 
 function renderedText(markup: string): string {
   return markup
+    .replace(/<br\s*\/?\s*>/gu, "\n")
     .replace(/<[^>]*>/gu, "")
     .replaceAll("&amp;", "&")
     .replaceAll("&quot;", "\"")
@@ -74,7 +75,8 @@ describe("tabletop compact Technique copy", () => {
 
         const previewMarkup = renderToStaticMarkup(createElement(TechniqueDescription, { id, locale, layer: "preview" }));
         const fullMarkup = renderToStaticMarkup(createElement(TechniqueDescription, { id, locale, layer: "full" }));
-        expect(previewMarkup, `${id} ${locale} preview`).not.toContain("<strong>");
+        if (id.startsWith("ST")) expect(previewMarkup, `${id} ${locale} preview`).toContain("<strong>");
+        else expect(previewMarkup, `${id} ${locale} preview`).not.toContain("<strong>");
         expect(previewMarkup, `${id} ${locale} preview`).not.toContain("**");
         expect(fullMarkup.length).toBeGreaterThan(0);
       }
@@ -82,24 +84,38 @@ describe("tabletop compact Technique copy", () => {
     expect(previewLength).toBeGreaterThan(0);
   });
 
-  it("preserves every supplied English Tech reminder", () => {
-    const source = readFileSync("docs/KILN_OPENING_v1.2.7_TECH_SHORT_TEXT_SOURCE.md", "utf8");
+  it("retains full structured V1.4 rules separately from owner-supplied Tech reminders", () => {
     for (const id of ALL_TECHNIQUE_IDS) {
       const definition = id.startsWith("ST") ? STARTING_TECHNIQUE_DEFINITIONS[id as "ST01"] : TECHNIQUE_DEFINITIONS[id]!;
-      const section = source.split(`### ${definition.name}\n`)[1]!.split(/^##/m)[0]!.trim().replace(/\n{3,}/g, "\n\n");
-      expect(TECHNIQUE_SHORT_COPY[id].en).toBe(section);
+      expect(techniqueFullCopy(id, "en")).toBe(definition.ability);
+      expect(techniqueFullCopy(id, "zh-CN")).toBe(definition.abilityZh);
+
     }
+    expect(TECHNIQUE_SHORT_COPY.ST02.en).toContain("Painted");
+    expect(TECHNIQUE_SHORT_COPY.T06.en).toContain("end of the Work Phase");
+    expect(TECHNIQUE_SHORT_COPY.T12.en).not.toContain("extra Wood");
   });
 
-  it("wires compact copy into every face-up and owned hover/focus target", () => {
+  it("shows the same component copy on public and personal cards while retaining click inspection", () => {
     for (const locale of ["en", "zh-CN"] as const) {
       const markups = (["P1", "P2", "P3", "P4"] as const).map((playerId) => tabletopMarkup(playerId, locale));
       const combinedText = markups.map(renderedText).join("\n");
-      expect(markups[0]).toContain('data-hover-preview="advanced-technique"');
-      expect(markups[0]).toContain('data-hover-preview="starting-technique"');
+      for (const markup of markups) {
+        expect(markup).not.toMatch(/data-hover-preview="(?:advanced-technique|starting-technique)"/);
+        expect(markup).toMatch(/<button[^>]*aria-haspopup="dialog"[^>]*data-technique-id="T\d+"/);
+        expect(markup).toMatch(/<button[^>]*aria-haspopup="dialog"[^>]*data-starting-technique-id="ST\d+"/);
+      }
       for (const id of ALL_TECHNIQUE_IDS) {
         expect(combinedText, `${id} ${locale} preview`).toContain(techniqueShortPlainText(id, locale));
         if (!techniqueShortPlainText(id, locale).includes(techniqueFullCopy(id, locale))) expect(combinedText, `${id} ${locale} full`).not.toContain(techniqueFullCopy(id, locale));
+      }
+      for (const id of ALL_TECHNIQUE_IDS) {
+        const attribute = id.startsWith("ST") ? "data-starting-technique-id" : "data-technique-id";
+        const tile = markups.map((markup) => markup.match(new RegExp(`<button[^>]*${attribute}="${id}"[^>]*>[\\s\\S]*?</button>`, "u"))?.[0]).find((markup) => markup !== undefined);
+        expect(tile, `${id} ${locale} visible overview`).toBeDefined();
+        expect(tile).toContain('data-overview="true"');
+        expect(renderedText(tile!)).toContain(techniqueOverviewCopy(id, locale));
+        expect(renderedText(tile!)).toContain(techniqueShortPlainText(id, locale));
       }
     }
   });
@@ -120,36 +136,37 @@ describe("tabletop compact Kiln copy", () => {
 
         const previewMarkup = renderToStaticMarkup(createElement(KilnDescription, { id, locale, layer: "preview" }));
         const fullMarkup = renderToStaticMarkup(createElement(KilnDescription, { id, locale, layer: "full" }));
-        expect(previewMarkup, `${id} ${locale} preview`).not.toContain("<strong>");
+        expect(previewMarkup, `${id} ${locale} preview`).toContain("<strong>");
         expect(previewMarkup, `${id} ${locale} preview`).not.toContain("**");
         expect(fullMarkup.length).toBeGreaterThan(0);
       }
     }
   });
 
-  it("preserves all five current owner-supplied English Kiln reminders", () => {
-    const source = readFileSync("docs/KILN_OPENING_v1.2.7_KILN_SHORT_TEXT_SOURCE.md", "utf8");
+  it("retains full structured V1.4 Kiln rules separately from reminders in both languages", () => {
     for (const id of KILN_COPY_IDS) {
-      const heading = source.split("\n").find((line) => line.startsWith(`### ${KILN_DEFINITIONS[id].name} /`))!;
-      const section = source.split(heading + "\n")[1]!.split(/^##/m)[0]!.trim().replace(/\n{3,}/g, "\n\n");
-      expect(KILN_SHORT_COPY[id].en).toBe(section);
+      expect(kilnFullCopy(id, "en")).toBe(KILN_DEFINITIONS[id].ability);
+      expect(kilnFullCopy(id, "zh-CN")).toBe(KILN_DEFINITIONS[id].abilityZh);
+
     }
   });
 
-  it("explains Ge's Order and Exhibition timing in both display layers and languages", () => {
+  it("explains Ge’s actual Fine upgrade and independent Crackle property", () => {
     for (const layer of ["preview", "full"] as const) {
       const english = renderedText(renderToStaticMarkup(createElement(KilnDescription, { id: "GE", locale: "en", layer })));
-      expect(english).toContain(layer === "preview"
-        ? "For Orders and Exhibition scoring, your Standard Crackle ceramics count as Fine."
-        : "When completing Orders or scoring the Exhibition, treat your Standard-quality Crackle ceramics as Fine.");
-      if (layer === "full") expect(english).toContain("Its actual Decoration stays Crackle.");
-      else expect(english).not.toContain("Its actual Decoration stays Crackle.");
-      expect(english).not.toContain("Heat Difference");
+      expect(english).toContain("Crackle");
+      expect(english).toContain("Fine");
+      expect(english).toContain("from this firing");
+      if (layer === "full") {
+        expect(english).toContain("actual Glaze and Decoration do not change");
+        expect(english).toContain("Its actual Quality is Fine");
+      } else {
+        expect(english).toBe("Once per round, after Quality is assigned: 1 of your Standard ceramics from this firing → Fine + Crackle.\nOrders: each Crackle ceramic may count as any 1 Glaze.");
+      }
       const chinese = renderedText(renderToStaticMarkup(createElement(KilnDescription, { id: "GE", locale: "zh-CN", layer })));
-      expect(chinese).toContain("完成委托或进行展览计分时，将你的良品开片陶瓷视为上品。");
-      if (layer === "full") expect(chinese).toContain("其实际纹饰仍为开片。");
-      else expect(chinese).not.toContain("其实际纹饰仍为开片。");
-      expect(chinese).not.toContain("判定品质时");
+      expect(chinese).toContain("开片");
+      expect(chinese).toContain("上品");
+      expect(chinese).toContain(layer === "preview" ? "任意1种釉色" : "任意一种釉色");
     }
   });
 

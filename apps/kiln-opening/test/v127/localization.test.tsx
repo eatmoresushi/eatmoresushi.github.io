@@ -19,7 +19,7 @@ import { startedGame } from "./helpers.ts";
 /**
  * Switching language must change only what is drawn, never what is true.
  *
- * The pre-V1.2.7 version of this suite asserted `court_patronage` and I-prefixed Imperial
+ * The pre-V1.4 version of this suite asserted `court_patronage` and I-prefixed Imperial
  * Orders, so it pinned a ruleset the engine had already left. What it was actually guarding
  * -- that both locales render from one set of structural data, and that rendering mutates
  * nothing -- outlived those values, so it is the part kept here.
@@ -71,9 +71,14 @@ describe("English / Simplified Chinese localization", () => {
       expect(english).toContain(orderId);
       expect(chinese).toContain(orderId);
     }
-    // A Crown Order carries its Crowns in both locales; Crowns are the V1.2.7 Imperial marker.
-    expect(localizedMarkup("en", createElement(OrderCard, { orderId: CROWN_ORDER }))).toContain("👑");
-    expect(localizedMarkup("zh-CN", createElement(OrderCard, { orderId: CROWN_ORDER }))).toContain("👑");
+    // A Crown Order carries its Crowns in both locales; Crowns are the V1.4 Imperial marker.
+    const crowns = ORDER_DEFINITIONS[CROWN_ORDER]!.crowns;
+    for (const locale of ["en", "zh-CN"] as const) {
+      const markup = localizedMarkup(locale, createElement(OrderCard, { orderId: CROWN_ORDER }));
+      const label = locale === "en" ? `${crowns} Crown${crowns === 1 ? "" : "s"}` : `${crowns}皇冠`;
+      expect(markup).toContain(`role="img" aria-label="${label}"`);
+      expect((markup.match(/class="kiln-piece-crown-icon"/gu) ?? [])).toHaveLength(crowns);
+    }
     expect(localizedMarkup("en", createElement(OrderCard, { orderId: MASTERPIECE_ORDER }))).toContain("Masterpiece");
     expect(localizedMarkup("zh-CN", createElement(OrderCard, { orderId: MASTERPIECE_ORDER }))).toContain("臻品");
     expect(JSON.stringify([ORDER_DEFINITIONS[CROWN_ORDER], ORDER_DEFINITIONS[MASTERPIECE_ORDER]])).toBe(snapshot);
@@ -99,7 +104,7 @@ describe("English / Simplified Chinese localization", () => {
     expect(JSON.stringify(publicGame)).toBe(before);
   });
 
-  it("localizes the live tabletop from the same V1.2.7 data", () => {
+  it("localizes the live tabletop from the same V1.4 data", () => {
     const publicGame = projectPublicGameState(startedGame(2, 10_402).state);
     const ownPlayerId = publicGame.playerOrder[0]!;
     const before = JSON.stringify(publicGame);
@@ -112,7 +117,7 @@ describe("English / Simplified Chinese localization", () => {
       busy: false,
       send: async () => true,
     }));
-    for (const label of ["泥柴场", "陶车坊", "釉饰坊", "瓷牙行", "陶工行", "御府声望", "进阶技艺"]) {
+    for (const label of ["泥柴场", "陶车坊", "纹饰坊", "瓷牙行", "陶工行", "御府声望", "进阶技艺"]) {
       expect(chinese).toContain(label);
     }
     expect(chinese).toContain(LOCATION_DEFINITIONS.market_imperial_office.apprenticeZh);

@@ -16,21 +16,22 @@ import {
 } from "../../src/game/index.ts";
 import { createdGame, mustApply, mustResult, startedGame } from "./helpers.ts";
 
-describe("V1.2.7 setup and authoritative content", () => {
+describe("v1.4 setup and authoritative content", () => {
   it.each([2, 3, 4] as const)("creates the exact %i-player setup", (playerCount) => {
     const { state } = createdGame(playerCount, 1200 + playerCount);
 
-    expect(state.rulesVersion).toBe("1.2.7");
-    expect(state.schemaVersion).toBe(4);
+    expect(state.rulesVersion).toBe("1.4");
+    expect(state.schemaVersion).toBe(5);
     expect(state.round).toBe(1);
     expect(state.marketDisplay).toHaveLength(6);
-    expect(state.marketDeck).toHaveLength(42 - playerCount);
+    expect(state.marketDeck).toHaveLength(42);
     expect(state.startingOrderDeck).toHaveLength(0);
-    expect(state.returnedStartingOrderIds).toHaveLength(8 - playerCount);
+    expect(state.returnedStartingOrderIds).toHaveLength(8 - 2 * playerCount);
     const dealtStarting = Object.values(state.players).flatMap((player) => player.orderHand.filter((id) => id.startsWith("S")));
-    expect(dealtStarting).toHaveLength(playerCount);
+    expect(dealtStarting).toHaveLength(2 * playerCount);
     expect(new Set([...dealtStarting, ...state.returnedStartingOrderIds]).size).toBe(8);
     expect([...dealtStarting, ...state.returnedStartingOrderIds].sort()).toEqual(STARTING_ORDERS.map(({ id }) => id));
+    expect([...state.marketDeck, ...state.marketDisplay].sort()).toEqual(MAIN_ORDERS.map(({ id }) => id));
     expect(state.phase.type).toBe("setup_kiln_selection");
     if (state.phase.type !== "setup_kiln_selection") return;
     expect(state.phase.selectionOrder).toEqual([...turnOrderFromFirst(state)].reverse());
@@ -46,7 +47,7 @@ describe("V1.2.7 setup and authoritative content", () => {
     }
   });
 
-  it.each([2, 3, 4] as const)("deals one Starting and one Main Order at %i players, then allows shared Starting Tech choices", (playerCount) => {
+  it.each([2, 3, 4] as const)("deals two Starting Orders and no Main Order at %i players, then allows shared Starting Tech choices", (playerCount) => {
     const { state: created, rng } = createdGame(playerCount, 1221);
     let state = created;
     let kilnIndex = 0;
@@ -58,8 +59,8 @@ describe("V1.2.7 setup and authoritative content", () => {
     const hands = Object.values(state.players).flatMap((player) => player.orderHand);
     expect(new Set(hands).size).toBe(playerCount * 2);
     for (const player of Object.values(state.players)) {
-      expect(player.orderHand.filter((id) => id.startsWith("S"))).toHaveLength(1);
-      expect(player.orderHand.filter((id) => id.startsWith("O"))).toHaveLength(1);
+      expect(player.orderHand.filter((id) => id.startsWith("S"))).toHaveLength(2);
+      expect(player.orderHand.filter((id) => id.startsWith("O"))).toHaveLength(0);
     }
     expect(state.phase.type).toBe("setup_starting_tech");
     for (const player of Object.values(state.players)) expect(player.orderHand).toHaveLength(2);
@@ -72,7 +73,7 @@ describe("V1.2.7 setup and authoritative content", () => {
     expect(Object.values(state.players).every(({ startingTechniqueId }) => startingTechniqueId === "ST01")).toBe(true);
   });
 
-  it("contains exactly the V1.2.7 decks, spaces, locations, and bilingual records", () => {
+  it("contains exactly the v1.4 decks, spaces, locations, and bilingual records", () => {
     expect(STARTING_ORDERS.map(({ id }) => id)).toEqual(Array.from({ length: 8 }, (_, i) => `S${String(i + 1).padStart(2, "0")}`));
     expect(MAIN_ORDERS.map(({ id }) => id)).toEqual(Array.from({ length: 48 }, (_, i) => `O${String(i + 1).padStart(2, "0")}`));
     expect(STARTING_TECHNIQUES).toHaveLength(4);
@@ -84,9 +85,9 @@ describe("V1.2.7 setup and authoritative content", () => {
     expect([...STARTING_TECHNIQUES, ...TECHNIQUES].every(({ name, nameZh, ability, abilityZh }) => name.length > 0 && nameZh.length > 0 && ability.length > 0 && abilityZh.length > 0)).toBe(true);
     expect(LOCATION_IDS).toHaveLength(8);
     expect(LOCATION_IDS).toContain("court_patronage");
-    expect(activeKilnSpaceIds(2)).toHaveLength(5);
+    expect(activeKilnSpaceIds(2)).toHaveLength(4);
     expect(activeKilnSpaceIds(3)).toHaveLength(6);
-    expect(activeKilnSpaceIds(4)).toHaveLength(7);
+    expect(activeKilnSpaceIds(4)).toHaveLength(8);
     expect(FIRE_CARDS).toHaveLength(12);
     expect(Object.fromEntries([-2, -1, 0, 1, 2].map((value) => [value, FIRE_CARDS.filter((card) => card === value).length]))).toEqual({ "-2": 1, "-1": 3, "0": 4, "1": 3, "2": 1 });
   });

@@ -23,7 +23,7 @@ function revealFixture(baseHeat: BaseHeat = 2, playerCount: PlayerCount = 2) {
     round: state.round,
     contributors: ["P1"],
     contributions: { P1: "TEND" },
-    fuelLedgerUpgradedBy: [],
+
     baseHeat,
     fireModifier: null,
     globalHeat: null,
@@ -60,6 +60,8 @@ function secondFiringFixture(kilnId: KilnId, fireModifier: FireModifier, wood = 
     queue: { actors: ["P1"], currentIndex: 0 },
     techniqueIds: ["T14"],
     declinedTechniqueIds: {},
+    geAvailable: kilnId === "GE" && !used,
+    declinedGePlayerIds: [],
   };
   return { state, rng, ceramic };
 }
@@ -77,7 +79,7 @@ function renderPanel(state: GameState): string {
   }));
 }
 
-describe("V1.2.7 eligibility for before-Quality Kiln ability prompts", () => {
+describe("v1.4 eligibility for before-Quality Kiln ability prompts", () => {
   it.each([
     { difference: 0, baseHeat: 2 },
     { difference: 2, baseHeat: 4 },
@@ -92,7 +94,8 @@ describe("V1.2.7 eligibility for before-Quality Kiln ability prompts", () => {
     expect(result.state.phase.type).not.toBe("firing_before_quality");
     expect(result.events).toContainEqual(expect.objectContaining({ type: "QUALITY_ASSIGNED", ceramicId: ceramic.id }));
     expect(result.state.players["P1"]!.kilnAbilityUsedThisRound).toBe(false);
-    expect(renderPanel(result.state)).not.toContain("Ge · Crackle from Fire");
+    if (difference === 2) expect(result.state.phase).toMatchObject({ type: "firing_after_quality", geAvailable: true });
+    else expect(renderPanel(result.state)).not.toContain("Ge · Crackle from Fire");
     if (difference === 0) expect(renderPanel(result.state)).not.toContain("Skip");
   });
 
@@ -183,7 +186,7 @@ describe("V1.2.7 eligibility for before-Quality Kiln ability prompts", () => {
 
   it.each([
     { kilnId: "GE", fireModifier: 0, wood: 0, used: false },
-    { kilnId: "GE", fireModifier: 2, wood: 0, used: false },
+    { kilnId: "GE", fireModifier: 2, wood: 0, used: true },
     { kilnId: "GE", fireModifier: 1, wood: 0, used: true },
     { kilnId: "JU", fireModifier: 1, wood: 0, used: false },
     { kilnId: "JU", fireModifier: 1, wood: 1, used: true },

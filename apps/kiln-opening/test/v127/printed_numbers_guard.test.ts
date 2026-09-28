@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  ACTION_LOCATION_PRICES, COLOUR_SAMPLES_LOOK, FORMING_TECH_COINS, FUEL_LEDGER_WOOD,
+  ACTION_LOCATION_PRICES, COLOUR_SAMPLES_LOOK, FORMING_TECH_COINS, CONTRIBUTION_CARD_DEFINITIONS, DECORATION_COSTS,
   GUILD_SHIFU_INSPECT, GUAN_ORDER_VP,
   GUAN_ORDER_COINS, JUN_ACTIVATION_WOOD,
   KILN_DEFINITIONS, LOCATION_DEFINITIONS, LOCATION_IDS, RU_ORDER_VP,
@@ -34,48 +34,48 @@ const L = (id: LocationId) => LOCATION_DEFINITIONS[id];
 const cases: Array<[string, string, number[]]> = [
   // Advanced Techs
   // "at least 1 Vase or 1 Censer", then the 1 Clay the action saves.
-  ["Large Throwing Wheel", T("Large Throwing Wheel"), [1, 1, 2, 0]],
+  ["Large Throwing Wheel", T("Large Throwing Wheel"), [1, 2, 0]],
   ["Measuring Calipers", T("Measuring Calipers"), [FORMING_TECH_COINS]],
-  ["Standardised Moulds", T("Standardised Moulds"), [FORMING_TECH_COINS]],
-  ["Drying Frames", T("Drying Frames"), [1]],
+  ["Dipping Vats", T("Dipping Vats"), []],
+  ["Drying Frames", T("Drying Frames"), [1, DECORATION_COSTS.carved]],
   ["Reworking Table", T("Reworking Table"), [1]],
   ["Glaze Palette", T("Glaze Palette"), [1]],
   ["Carving Knives", T("Carving Knives"), [0]],
   ["Seal Stamps", T("Seal Stamps"), [0]],
-  ["Crackle Slips", T("Crackle Slips"), [0]],
+  ["Painting Brushes", T("Painting Brushes"), [0]],
   // Look at 3, reserve 1 of those or 1 face-up.
   ["Colour Samples", T("Colour Samples"), [1, COLOUR_SAMPLES_LOOK, 1, 1]],
   ["Protective Saggars", T("Protective Saggars"), [1, 1]],
-  // The commitment is 1 Wood; the two 2s are the -2/+2 Contribution it produces.
-  ["Fuel Ledger", T("Fuel Ledger"), [FUEL_LEDGER_WOOD, 2, 2]],
-  // V1.2.7 adds the "at least 1 ceramic participating" gate before the 1 Wood.
+  // Fuel Ledger grants −2/+2 choices at 2 Wood each; exactly one Contribution is played.
+  ["Fuel Ledger", T("Fuel Ledger"), [2, 2, CONTRIBUTION_CARD_DEFINITIONS.BANK_2.woodCost, 1]],
+  // V1.4 adds the "at least 1 ceramic participating" gate before the 1 Wood.
   ["Test Pieces", T("Test Pieces"), [1, 1]],
   ["Second Firing", T("Second Firing"), [1, 1]],
   ["Kiln Furniture", T("Kiln Furniture"), [1, 0]],
   // Starting Techs
   ["Prepared Clay", T("Prepared Clay"), [1, 1]],
-  ["White Slip", T("White Slip"), [1]],
-  ["Rapid Drying", T("Rapid Drying"), [1, 1]],
+  ["White Slip", T("White Slip"), [1, DECORATION_COSTS.painted]],
+  ["Rapid Drying", T("Rapid Drying"), [1, 1, 1]],
   ["Kiln Tending", T("Kiln Tending"), [1, 1, 1]],
   // Kiln Traditions
   ["kiln RU", KILN_DEFINITIONS.RU.ability, [RU_ORDER_VP]],
-  // "at least 1 Crown", then the 2 Coins and 1 VP V1.2.7 pays.
+  // "at least 1 Crown", then the 2 Coins and 1 VP V1.4 pays.
   ["kiln GU", KILN_DEFINITIONS.GU.ability, [1, GUAN_ORDER_COINS, GUAN_ORDER_VP]],
-  // Ge may substitute a Decoration for one Crackle ceramic used in an Order.
+  // Ge may substitute a Glaze for each Crackle ceramic used in an Order.
   ["kiln GE", KILN_DEFINITIONS.GE.ability, [1]],
-  ["kiln DI", KILN_DEFINITIONS.DI.ability, [SHAPE_COSTS.bowl]],
-  ["kiln JU", KILN_DEFINITIONS.JU.ability, [JUN_ACTIVATION_WOOD, 1, 1]],
-  ["court_patronage.apprentice", L("court_patronage").apprentice, [4, 1]],
-  ["court_patronage.shifu", L("court_patronage").shifu, [4, 1]],
+  ["kiln DI", KILN_DEFINITIONS.DI.ability, [SHAPE_COSTS.bowl, 1]],
+  ["kiln JU", KILN_DEFINITIONS.JU.ability, [JUN_ACTIVATION_WOOD, 1, 1, 1]],
+  ["court_patronage.apprentice", L("court_patronage").apprentice, [ACTION_LOCATION_PRICES.courtPatronageCoins, 1, 3]],
+  ["court_patronage.shifu", L("court_patronage").shifu, [ACTION_LOCATION_PRICES.courtPatronageCoins, 1, 3]],
   // Action locations
   ["materials_yard.apprentice", L("materials_yard").apprentice, [3]],
   ["materials_yard.shifu", L("materials_yard").shifu, [4, 1, 1, 1]],
   ["forming_studio.apprentice", L("forming_studio").apprentice, [1]],
-  ["forming_studio.shifu", L("forming_studio").shifu, [1, 2, 2, 1]],
-  ["glaze_workshop.apprentice", L("glaze_workshop").apprentice, [1]],
-  ["glaze_workshop.shifu", L("glaze_workshop").shifu, [2, 2, 1]],
-  ["kiln_yard.apprentice", L("kiln_yard").apprentice, [1]],
-  ["kiln_yard.shifu", L("kiln_yard").shifu, [2, 1, 1, 1]],
+  ["forming_studio.shifu", L("forming_studio").shifu, [2, 2, 1]],
+  ["glaze_workshop.apprentice", L("glaze_workshop").apprentice, [1, DECORATION_COSTS.carved]],
+  ["glaze_workshop.shifu", L("glaze_workshop").shifu, [2, DECORATION_COSTS.carved]],
+  ["kiln_yard.apprentice", L("kiln_yard").apprentice, [1, 1]],
+  ["kiln_yard.shifu", L("kiln_yard").shifu, [1, 2, 1, 1, 1]],
   ["market_imperial_office.apprentice", L("market_imperial_office").apprentice, [1, 1, 1, 1]],
   ["market_imperial_office.shifu", L("market_imperial_office").shifu, [2, 1, 1, 1]],
   ["guild_academy.apprentice", L("guild_academy").apprentice, [1]],
@@ -110,7 +110,7 @@ describe("printed numbers match the code exactly", () => {
   });
 
   /** The Flawed salvage prints its payout in the rulebook, not on a card, so guard it here. */
-  it("pays the Flawed salvage the Coins V1.2.7 firing step 10 prints", () => {
+  it("pays the Flawed salvage the Coins V1.4 firing step 10 prints", () => {
     expect(ACTION_LOCATION_PRICES.flawedSalvageCoins).toBe(2);
   });
 });

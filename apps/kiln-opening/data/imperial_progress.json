@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.2.7",
+  "rulesVersion": "1.4",
   "track": [
     {
       "space": 0,
@@ -26,8 +26,8 @@
       "space": 3,
       "title": "Imperial Priority",
       "titleZh": "御烧优先",
-      "reward": "Take your Imperial Priority token. Once per game, before or after your worker action, spend it to load 1 unloaded Glazed ceramic into your empty Imperial Kiln.",
-      "rewardZh": "获得御烧优先标记。每局一次，在你的工人行动之前或之后，花费它将1件未装窑的已施釉陶瓷装入空置御窑。"
+      "reward": "Take your Imperial Priority token. Once per game, before or after your worker action, pay 1 Coin to glaze 1 workshop ceramic with any Glaze and immediately load it into your empty Imperial Kiln.",
+      "rewardZh": "取得御烧优先标记。每局一次，在自己的工人行动前或后，支付1铜钱，为作坊内1件器物施加任意釉色并立即装入空置御窑。"
     },
     {
       "space": 4,

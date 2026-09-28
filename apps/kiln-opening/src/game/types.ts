@@ -1,12 +1,8 @@
 export type PlayerId = string;
-export type RulesVersion = "1.2.7";
+export type RulesVersion = "1.4";
 
-/**
- * The three v1.1.4 Contribution cards. Bank (-1 Heat, 1 Wood), Tend (0, 0) and
- * Stoke (+1, 1). There is deliberately no fourth card: Fire the Kiln Hard was removed
- * from the set, so no FIRE_HARD value exists to be chosen by mistake.
- */
-export type ContributionCardId = "BANK" | "TEND" | "STOKE";
+/** Reusable standard cards and the two additional cards granted by Fuel Ledger. */
+export type ContributionCardId = "BANK" | "TEND" | "STOKE" | "BANK_2" | "STOKE_2";
 export type ContributionHeatAdjustment = -2 | -1 | 0 | 1 | 2;
 export type WorkerId = string;
 export type CeramicId = string;
@@ -21,7 +17,7 @@ export type WorkerKind = "shifu" | "apprentice";
 export type WorkerStatus = "locked" | "available" | "placed";
 export type Shape = "bowl" | "plate" | "washer" | "vase" | "censer";
 export type Glaze = "white" | "celadon" | "grey_green" | "moon_white";
-export type Decoration = "plain" | "carved" | "impressed" | "crackle";
+export type Decoration = "plain" | "carved" | "impressed" | "painted";
 export type Quality = "flawed" | "standard" | "fine" | "masterpiece";
 export type FireModifier = -2 | -1 | 0 | 1 | 2;
 export type TechniqueDiscipline = "forming" | "glazing" | "firing";
@@ -49,7 +45,8 @@ export type KilnSpaceId =
   | "middle_1"
   | "middle_2"
   | "low_1"
-  | "low_2";
+  | "low_2"
+  | "low_3";
 
 /** A workshop's owned resources. The shared bank has unlimited supply. */
 export interface ResourceState {
@@ -103,12 +100,12 @@ export interface PlayerState {
   passedWorkPhase: boolean;
   kilnAbilityUsedThisRound: boolean;
   kilnYardShifuUsedThisRound: boolean;
-  /** V1.2.7: the Shared-Kiln ceramic chosen when this round's Kiln Yard Shifu resolved. */
+  /** The ceramic loaded and supervised by this round's Kiln Yard Shifu, in either kiln. */
   kilnYardShifuCeramicId: CeramicId | null;
   /** Distinct Shapes formed this round, used by Measuring Calipers. */
   shapesFormedThisRound: Shape[];
   presentationCeramicIds: CeramicId[];
-  /** The three exhibited ceramics chosen for the two diversity bonuses. */
+  /** Deprecated UI selection; diversity is checked across all exhibited ceramics. */
   presentationFeaturedCeramicIds: CeramicId[];
   score: ImmediateScoreState;
 }
@@ -120,19 +117,12 @@ interface CeramicCore {
   shape: Shape;
   /** Set on creation so delayed loading effects remain deterministic after reconnect. */
   formedInRound?: RoundNumber;
-  /** Drying Frames vessels cannot be loaded before this round number. */
-  loadableFromRound?: number;
-  /** Allows the later Glaze Workshop action to change Decoration without changing Glaze. */
-  dryingFramesApplied?: boolean;
+  /** Permanent Ge firing property; independent of actual Glaze and Decoration. */
+  crackle?: boolean;
 }
 
-export type ShapedCeramic = CeramicCore & {
-  stage: "shaped";
-};
-
-export type GlazedCeramic = CeramicCore & {
-  stage: "glazed";
-  glaze: Glaze;
+export type WorkshopCeramic = CeramicCore & {
+  stage: "workshop";
   decoration: Decoration;
 };
 
@@ -175,8 +165,7 @@ export type PresentedCeramic = CeramicCore & {
 };
 
 export type CeramicState =
-  | ShapedCeramic
-  | GlazedCeramic
+  | WorkshopCeramic
   | LoadedCeramic
   | FinishedCeramic
   | SoldCeramic
@@ -239,12 +228,6 @@ export interface FiringContext {
   contributors: PlayerId[];
   /** The Contribution card each contributor revealed. */
   contributions: Record<PlayerId, ContributionCardId>;
-  /**
-   * Contributors whose Stoke was upgraded to +2 Heat by Fuel Ledger this firing. The
-   * upgrade is resolved after the reveal and before Base Heat, so it cannot be read off
-   * the revealed card alone.
-   */
-  fuelLedgerUpgradedBy: PlayerId[];
   baseHeat: BaseHeat | null;
   fireModifier: FireModifier | null;
   globalHeat: number | null;
@@ -339,6 +322,7 @@ export type GamePhase =
       inspectedTechniqueIds?: TechniqueId[];
     }
   | { type: "work_imperial_priority"; actorId: PlayerId }
+  | { type: "work_glaze_palette"; queue: OrderedDecisionQueue }
   | {
       type: "firing_before_contribution";
       queue: OrderedDecisionQueue;
@@ -361,6 +345,8 @@ export type GamePhase =
       queue: OrderedDecisionQueue;
       techniqueIds: TechniqueId[];
       declinedTechniqueIds: Record<PlayerId, TechniqueId[]>;
+      geAvailable: boolean;
+      declinedGePlayerIds: PlayerId[];
     }
   | {
       type: "firing_second_before_quality";
@@ -371,6 +357,8 @@ export type GamePhase =
         queue: OrderedDecisionQueue;
         techniqueIds: TechniqueId[];
         declinedTechniqueIds: Record<PlayerId, TechniqueId[]>;
+        geAvailable: boolean;
+        declinedGePlayerIds: PlayerId[];
       };
     }
   | { type: "firing_workshop_seconds"; queue: OrderedDecisionQueue }
@@ -392,7 +380,7 @@ export type GamePhase =
   | { type: "finished" };
 
 export interface GameState {
-  schemaVersion: 4;
+  schemaVersion: 5;
   rulesVersion: RulesVersion;
   gameId: string;
   revision: number;
@@ -434,9 +422,8 @@ export interface CreateGameInput {
   players: PlayerSetup[];
 }
 
-export interface GlazeSelection {
+export interface DecorationSelection {
   ceramicId: CeramicId;
-  glaze: Glaze;
   decoration: Decoration;
   newShape?: Shape;
 }
@@ -448,7 +435,6 @@ export interface MaterialExchange {
 
 export interface DryingFramesSelection {
   formedIndex: number;
-  glaze: Glaze;
   decoration: Decoration;
 }
 
@@ -458,9 +444,9 @@ export interface WhiteSlipSelection {
 
 export interface KilnLoadSelection {
   ceramicId: CeramicId;
+  glaze: Glaze;
   kilnSpaceId: KilnSpaceId | "imperial";
   useKilnFurniture?: boolean;
-  glazePalette?: Glaze;
 }
 
 export type GameAction =
@@ -489,18 +475,19 @@ export type GameAction =
       dingExtraShape?: Shape;
     }
   | {
-      type: "GLAZE_CERAMICS";
+      type: "DECORATE_CERAMICS";
       workerId: WorkerId;
-      selections: GlazeSelection[];
+      selections: DecorationSelection[];
       useTechniqueIds?: TechniqueId[];
-      glazePalette?: { ceramicId: CeramicId; glaze: Glaze };
       rapidDrying?: KilnLoadSelection;
     }
   | {
       type: "USE_KILN_YARD";
       workerId: WorkerId;
       loads: KilnLoadSelection[];
-      /** Required for a Shifu when the player has any ceramic in the Shared Kiln after loading. */
+      /** Waive Glazing costs for all Plain loads in this action using ready Dipping Vats. */
+      useDippingVats?: boolean;
+      /** Required for a Shifu; must identify one ceramic loaded by this action. */
       shifuCeramicId?: CeramicId;
       /** Kiln Tending may gain one Clay or one Wood; omit both to decline. */
       kilnTendingClay?: number;
@@ -534,8 +521,10 @@ export type GameAction =
   | {
       type: "GUILD_BUY_TECHNIQUE";
       techniqueId: TechniqueId;
+      returnTechniqueIds?: TechniqueId[];
     }
-  | { type: "RESOLVE_IMPERIAL_PRIORITY"; ceramicId: CeramicId | null; glazePalette?: Glaze }
+  | { type: "RESOLVE_IMPERIAL_PRIORITY"; ceramicId: CeramicId | null; glaze?: Glaze }
+  | { type: "RESOLVE_GLAZE_PALETTE"; ceramicId: CeramicId | null; glaze: Glaze | null }
   | { type: "RESOLVE_KILN_YARD_ADJUSTMENT"; ceramicId: CeramicId | null; adjustment: -1 | 1 | null }
   | { type: "REVEAL_FIRE_CARD" }
   | { type: "RESOLVE_JUN"; ceramicId: CeramicId | null; delta: -1 | 1 | null }
@@ -549,7 +538,9 @@ export type GameAction =
       orderId: OrderId;
       ceramicIds: CeramicId[];
       imperialGrantChoice?: "coins" | "resources";
-      geDecoration?: { ceramicId: CeramicId; decoration: Decoration };
+      geGlazes?: Array<{ ceramicId: CeramicId; glaze: Glaze }>;
+      /** Ru/Guan Order bonuses may be declined, preserving the once-per-round use. */
+      useKilnAbility?: boolean;
     }
   | { type: "END_ORDER_TURN" }
   | { type: "DISCARD_ORDERS_FOR_CLEANUP"; orderIds: OrderId[] }
@@ -606,6 +597,9 @@ export type GameEvent =
   | { type: "PLAYER_PASSED"; playerId: PlayerId }
   | { type: "RESOURCES_CHANGED"; playerId: PlayerId; clay: number; wood: number; coins: number }
   | { type: "CERAMIC_SHAPED"; playerId: PlayerId; ceramicId: CeramicId; shape: Shape }
+  | { type: "CERAMIC_DECORATED"; playerId: PlayerId; ceramicId: CeramicId; decoration: Decoration }
+  | { type: "GLAZE_CHANGED"; playerId: PlayerId; ceramicId: CeramicId; glaze: Glaze }
+  | { type: "CRACKLE_CREATED"; playerId: PlayerId; ceramicId: CeramicId }
   | { type: "CERAMIC_GLAZED"; playerId: PlayerId; ceramicId: CeramicId; glaze: Glaze; decoration: Decoration }
   | { type: "CERAMIC_LOADED"; playerId: PlayerId; ceramicId: CeramicId; kilnSpaceId: KilnSpaceId | "imperial" }
   | { type: "KILN_YARD_SHIFU_MARKED"; playerId: PlayerId; ceramicId: CeramicId }
@@ -712,7 +706,6 @@ export interface PrivateFiringState {
   gameId: string;
   windowId: string | null;
   contributions: Record<PlayerId, ContributionCardId>;
-  fuelLedgerCommittedBy: PlayerId[];
 }
 
 export type SubmitContributionResult =

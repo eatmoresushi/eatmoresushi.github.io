@@ -59,7 +59,7 @@ function product<T>(values: readonly T[], count: number): T[][] {
 function witnessFor(order: OrderDefinition): FinishedCeramic[] | null {
   const shapes: readonly Shape[] = ["bowl", "plate", "washer", "vase", "censer"];
   const glazes: readonly Glaze[] = ["white", "celadon", "grey_green", "moon_white"];
-  const decorations: readonly Decoration[] = ["plain", "carved", "impressed", "crackle"];
+  const decorations: readonly Decoration[] = ["plain", "carved", "impressed", "painted"];
   const count = order.ceramics.length;
   for (const shapeValues of product(shapes, count)) {
     for (const glazeValues of product(glazes, count)) {
@@ -77,7 +77,38 @@ function witnessFor(order: OrderDefinition): FinishedCeramic[] | null {
   return null;
 }
 
-describe("V1.2.7 Orders, Recognition, and scoring", () => {
+describe("V1.4 Orders, Recognition, and scoring", () => {
+  it.each([
+    ["O01", "bowl"],
+    ["O02", "plate"],
+    ["O03", "washer"],
+  ] as const)("awards the amended 4 VP and unchanged 3 Coins for held and face-up %s", (orderId, shape) => {
+    expect(ORDER_DEFINITIONS[orderId]).toMatchObject({
+      ceramics: [{ shape }], minQuality: "standard", vp: 4, coins: 3, crowns: 0,
+    });
+    for (const source of ["held", "face-up"] as const) {
+      const { state, rng } = startedGame(2, 15_001);
+      state.players["P1"]!.orderHand = source === "held" ? [orderId] : [];
+      state.marketDisplay = source === "face-up" ? [orderId] : [];
+      state.marketDeck = state.marketDeck.filter((id) => id !== orderId);
+      const finished = addFinished(state, "P1", shape, "standard", "grey_green", "impressed");
+      keepFollowingActorLegallyActive(state);
+      openOrderTurn(state);
+      const before = structuredClone(state.players["P1"]!);
+      const result = mustResult(state, "P1", {
+        type: "COMPLETE_ORDER", orderId, ceramicIds: [finished.id],
+      }, rng);
+      const player = result.state.players["P1"]!;
+      expect(player.score.orderVp, source).toBe(before.score.orderVp + 4);
+      expect(player.resources.coins, source).toBe(before.resources.coins + 3);
+      expect(player.imperialRecognition, source).toBe(before.imperialRecognition);
+      expect(player.completedOrders.at(-1), source).toEqual({
+        orderId, ceramicIds: [finished.id], completedInRound: state.round, vpAwarded: 4, coinsAwarded: 3,
+      });
+      expect(result.state.ceramics[finished.id], source).toMatchObject({ stage: "delivered", orderId });
+    }
+  });
+
   it("has a valid independent-attribute witness for every one of the 56 Orders", () => {
     for (const order of [...STARTING_ORDERS, ...MAIN_ORDERS]) {
       expect(witnessFor(order), `${order.id}: ${order.requirements}`).not.toBeNull();
@@ -92,7 +123,7 @@ describe("V1.2.7 Orders, Recognition, and scoring", () => {
     ];
     const crossedPairing = [
       ceramic("c", "bowl", "moon_white", "impressed", "fine"),
-      ceramic("d", "washer", "white", "crackle", "fine"),
+      ceramic("d", "washer", "white", "painted", "fine"),
     ];
     expect(matchesOrder(order, firstPairing)).toBe(true);
     expect(matchesOrder(order, crossedPairing)).toBe(true);
@@ -123,7 +154,7 @@ describe("V1.2.7 Orders, Recognition, and scoring", () => {
     } else {
       expect(result.ok).toBe(true);
       if (!result.ok) throw new Error(result.error.message);
-      expect(result.state.players["P1"]!.score.orderVp).toBe(before.players["P1"]!.score.orderVp + 13);
+      expect(result.state.players["P1"]!.score.orderVp).toBe(before.players["P1"]!.score.orderVp + 15);
       expect(result.state.players["P1"]!.resources.coins).toBe(before.players["P1"]!.resources.coins + 5);
       expect(result.state.ceramics[vase.id]?.stage).toBe("delivered");
       expect(result.state.ceramics[bowl.id]?.stage).toBe("delivered");
@@ -277,7 +308,7 @@ describe("V1.2.7 Orders, Recognition, and scoring", () => {
 
   it("no longer waives any Decoration requirement for Guan", () => {
     // V1.2.2 let Guan exempt one ceramic from direct and relational Decoration checks.
-    // V1.2.7 pays 2 Coins and 1 VP instead and exempts nothing, so a wrong Decoration is
+    // V1.4 pays 2 Coins and 1 VP instead and exempts nothing, so a wrong Decoration is
     // simply a failed Order however the workshop is decorated.
     const single = ORDER_DEFINITIONS["O19"]!;
     const wrongDecoration = ceramic("single", "censer", "grey_green", "carved", "fine");
@@ -286,8 +317,8 @@ describe("V1.2.7 Orders, Recognition, and scoring", () => {
     expect(matchesOrder(single, [rightDecoration])).toBe(true);
 
     const relational = ORDER_DEFINITIONS["O39"]!;
-    const wrongPair = ceramic("wrong", "vase", "celadon", "carved", "fine");
-    const remaining = ceramic("remaining", "censer", "moon_white", "crackle", "fine");
+    const wrongPair = ceramic("wrong", "vase", "celadon", "painted", "fine");
+    const remaining = ceramic("remaining", "censer", "moon_white", "painted", "fine");
     expect(matchesOrder(relational, [wrongPair, remaining])).toBe(false);
     const rightPair = ceramic("right-pair", "vase", "celadon", "plain", "fine");
     expect(matchesOrder(relational, [rightPair, remaining])).toBe(true);
@@ -302,8 +333,8 @@ describe("V1.2.7 Orders, Recognition, and scoring", () => {
     state.players["P1"]!.resources.coins = 0;
     state.marketDisplay = ["O17"];
     keepFollowingActorLegallyActive(state);
-    // O17 is Brush Washer / White / Crackle: with the waiver gone it must match exactly.
-    const guanCeramic = addFinished(state, "P1", "washer", "fine", "white", "crackle");
+    // O17 is Brush Washer / White / Painted: with the waiver gone it must match exactly.
+    const guanCeramic = addFinished(state, "P1", "washer", "fine", "white", "painted");
     openOrderTurn(state);
     state = mustApply(state, "P1", {
       type: "COMPLETE_ORDER", orderId: "O17", ceramicIds: [guanCeramic.id],
@@ -367,7 +398,7 @@ describe("V1.2.7 Orders, Recognition, and scoring", () => {
     ]);
 
     state.marketDisplay = ["O17"];
-    const audienceCeramic = addFinished(state, "P1", "washer", "fine", "white", "crackle");
+    const audienceCeramic = addFinished(state, "P1", "washer", "fine", "white", "painted");
     openOrderTurn(state);
     const audience = mustResult(state, "P1", {
       type: "COMPLETE_ORDER", orderId: "O17", ceramicIds: [audienceCeramic.id],
@@ -396,7 +427,7 @@ describe("V1.2.7 Orders, Recognition, and scoring", () => {
     }));
   });
 
-  it("scores the five-slot Exhibition, Audience, Advanced Techs, overflow Crowns, and Coins", () => {
+  it("scores the unlimited Exhibition, Audience, Advanced Techs, overflow Crowns, and Coins", () => {
     const { state: initial, rng } = startedGame(2, 1506);
     let state = structuredClone(initial);
     state.players["P1"]!.score = { orderVp: 10, kilnTraditionVp: 4, imperialOverflowVp: 1 };
@@ -418,7 +449,7 @@ describe("V1.2.7 Orders, Recognition, and scoring", () => {
     expect(score).toEqual({
       orders: 10,
       imperialAudience: 6,
-      // Standard 2 + Fine 3 + Masterpiece 5, then V1.2.7's +3 Shapes and +3 Glazes.
+      // Standard 2 + Fine 3 + Masterpiece 5, then V1.4's +3 Shapes and +3 Glazes.
       presentation: 16,
       advancedTechniques: 2,
       immediateAbilities: 5,

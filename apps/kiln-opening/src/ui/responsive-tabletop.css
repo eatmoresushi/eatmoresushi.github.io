@@ -1,0 +1,131 @@
+/* One coordinate system for the wide table; a flowing layout for smaller screens.
+   Fixed dialogs/preview portals are siblings of this surface, never transformed. */
+html:has(.kiln-live-root) { min-width: 0; }
+.kiln-tabletop-root.kiln-live-root { min-width: 0; }
+.kiln-responsive-tabletop { width: 100%; min-width: 0; overflow-x: clip; }
+.kiln-responsive-tabletop-scene { display: flow-root; min-width: 0; }
+.kiln-responsive-tabletop-scene[data-layout="wide"] { --tabletop-card-scale: 1; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] {
+  --ui-gap: .6rem;
+  /* One third of the 1800px scene, less the sidebar frame, split into 3 tiles. */
+  --tech-tile-size: calc((var(--tabletop-reference-width) - 3 * var(--ui-gap)) / 9 - (.4rem + 2px) / 3);
+  /* Keep the seven-card row shallow instead of stretching cards across it. */
+  --overview-order-width: 10rem;
+  --overview-order-height: 14rem;
+}
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout] .kiln-responsive-tabletop-scene :is(.kiln-tabletop-table, .kiln-tabletop-player-dock) { width: calc(100% - 2 * var(--ui-gap)); max-width: none; }
+/* The wide scene already scales as a whole. Native grid stretching aligns the
+   board and sidebar without measuring their heights against each other. */
+.kiln-responsive-board-viewport.is-fluid { display: grid; overflow: visible; }
+.kiln-responsive-board-viewport.is-fluid .kiln-illustrated-district { min-height: 0; }
+
+/* Freeze the wide scene's arrangement while its entire surface scales. Physical
+   viewport media queries must not independently resize cards or player panels. */
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-topbar { position: relative; grid-template-columns: 190px minmax(0, 1fr) auto; gap: .6rem; min-height: 44px; padding: .4rem .75rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-brand strong { font-size: .85rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-brand small { display: none; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-turn-summary { grid-column: 2; grid-row: 1; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-turn-summary > span { padding: .25rem .6rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-turn-summary small { font-size: .62rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-turn-summary strong { font-size: .85rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-header-actions { grid-column: 3; grid-row: 1; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] :is(.kiln-tabletop-icon-button, .kiln-tabletop-action-link) { min-width: 38px; min-height: 38px; height: 38px; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-player-dock { grid-template-columns: repeat(var(--tabletop-player-count), minmax(0, 1fr)); gap: .6rem; margin-top: .6rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-player { grid-template-columns: 32px minmax(0, 1fr) auto; padding: .45rem .6rem; gap: .15rem .5rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-avatar { width: 32px; font-size: .9rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-player-name { display: flex; align-items: baseline; flex-wrap: wrap; gap: .15rem .5rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-player-name strong { font-size: .8rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-player-name small { margin: 0; font-size: .65rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-player-score { display: flex; align-items: baseline; gap: .25rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-player-score b { font-size: 1.15rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-player-score small { font-size: .65rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] :is(.kiln-tabletop-player-resources, .kiln-tabletop-player-public) { gap: .25rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] :is(.kiln-tabletop-player-resources, .kiln-tabletop-player-public) i { padding: .12rem .3rem; font-size: .68rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-first-player { width: 20px; font-size: .65rem; }
+
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-market { grid-template-columns: 108px minmax(0, 1fr); padding: .5rem; gap: .3rem .6rem; align-items: start; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-market > .kiln-tabletop-section-title { grid-column: 1; grid-row: 1; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-market .kiln-tabletop-section-title small { font-size: .6rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-market .kiln-tabletop-section-title strong { font-size: .85rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-order-row { grid-column: 2; grid-row: 1; grid-template-columns: repeat(7, var(--overview-order-width)); justify-content: center; gap: .35rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] :is(.kiln-tabletop-market, .kiln-tabletop-own-orders) .kiln-piece-copy { font-size: calc(clamp(.65rem, 5.2cqw, .8rem) * var(--order-copy-scale, 1)); }
+
+/* The draw pile is the final card in the queue, with the same printed size. */
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout] .kiln-tabletop-order-row > .kiln-tabletop-order-deck {
+  grid-column: auto;
+  grid-row: auto;
+  align-self: start;
+  width: var(--overview-order-width);
+  height: var(--table-order-height, var(--overview-order-height));
+  margin: 0;
+  padding: .75rem;
+  align-content: center;
+  justify-items: center;
+  gap: .65rem;
+  border-radius: 7px;
+  box-shadow: 1px -1px 0 #9a814e, 2px -2px 0 #5f4628, 0 2px 5px #17291f26;
+}
+.kiln-tabletop-order-row > .kiln-tabletop-order-deck::after { inset: 6px; border: 3px double #d6c49a; border-radius: 3px; }
+.kiln-tabletop-order-row > .kiln-tabletop-order-deck span { font-size: 3rem; line-height: 1.2; }
+.kiln-tabletop-order-row > .kiln-tabletop-order-deck strong { font-size: .85rem; text-align: center; }
+.kiln-tabletop-order-row > .kiln-tabletop-order-deck small { position: static; font-size: .7rem; }
+
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-play-area { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); align-items: stretch; gap: .6rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-board-scroll { display: grid; width: 100%; min-width: 0; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-board { padding: .4rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-public-sidebar { width: 100%; max-width: none; justify-self: stretch; grid-template-rows: auto minmax(0, 1fr); align-content: stretch; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-public-tracks { grid-template-rows: repeat(2, minmax(min-content, 1fr)); }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-tech-market { width: 100%; max-width: none; grid-template-columns: repeat(3, var(--tech-tile-size)); }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-tech-discipline > div { grid-template-columns: var(--tech-tile-size); }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-recognition-track { --recognition-marker-height: 26px; grid-template-rows: auto minmax(0, 1fr); }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-recognition-track li { align-content: start; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-board-action-summary { font-size: .875rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-workshop-area { grid-template-columns: minmax(0, 1fr); }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-workshop-zones { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-workshop-zones > section { grid-column: auto; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-resource-bank { width: auto; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="wide"] .kiln-tabletop-resource { grid-template-columns: minmax(0, 1fr); min-width: 74px; }
+
+/* Compact mode preserves readable controls and flows the public information.
+   Pieces still share one proportional scale, including the personal area. */
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] { --ui-gap: .5rem; --tech-tile-size: 10.75rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-responsive-tabletop-scene .kiln-piece { zoom: var(--tabletop-card-scale, 1); }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-order-deck { zoom: var(--tabletop-card-scale, 1); }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-topbar { position: relative; grid-template-columns: minmax(0, 1fr) auto; gap: .3rem; padding: .4rem .5rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-brand strong { font-size: .8rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-brand small { display: none; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-turn-summary { grid-column: 1 / -1; grid-row: 2; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-header-actions { grid-column: 2; grid-row: 1; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-player-dock { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .4rem; margin-top: .5rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-player { grid-template-columns: 24px minmax(0, 1fr) auto; padding: .4rem; gap: .2rem .3rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-avatar { width: 24px; font-size: .75rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-player-name strong { font-size: .72rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-player-name small { font-size: .63rem; margin-top: .1rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-player-score b { font-size: 1rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-player-score small { font-size: .6rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] :is(.kiln-tabletop-player-resources, .kiln-tabletop-player-public) { gap: .2rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] :is(.kiln-tabletop-player-resources, .kiln-tabletop-player-public) i { padding: .1rem .2rem; font-size: .62rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-market { grid-template-columns: minmax(0, 1fr) auto; padding: .5rem; gap: .4rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-order-row { grid-column: 1 / -1; grid-row: auto; grid-template-columns: repeat(auto-fit, calc(var(--overview-order-width) * var(--tabletop-card-scale))); width: 100%; max-width: calc(3 * var(--overview-order-width) * var(--tabletop-card-scale) + .8rem); justify-self: center; justify-content: center; gap: .4rem; overflow: visible; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-play-area { grid-template-columns: minmax(0, 1fr); gap: .5rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-public-sidebar { width: 100%; max-width: none; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-tech-market { width: 100%; max-width: none; grid-template-columns: repeat(auto-fit, calc(var(--tech-tile-size) * var(--tabletop-card-scale))); justify-content: center; overflow: visible; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-tech-discipline > div { grid-template-columns: calc(var(--tech-tile-size) * var(--tabletop-card-scale)); }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-own-techs > div { grid-template-columns: repeat(auto-fit, calc(var(--tech-tile-size) * var(--tabletop-card-scale))); }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-own-orders > div { grid-template-columns: repeat(auto-fit, calc(var(--table-order-width, var(--overview-order-width)) * var(--tabletop-card-scale))); }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-workshop-area { grid-template-columns: minmax(0, 1fr); }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-workshop-name { flex-basis: 100%; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-resource-bank { width: 100%; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-resource { min-width: 0; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-workshop-zones > section { min-width: 0; padding: .6rem; }
+.kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-ceramic-shelf > div { min-height: 0; gap: .5rem; padding: .3rem; }
+
+@media (max-width: 600px) {
+  .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-order-row { max-width: calc(2 * var(--overview-order-width) * var(--tabletop-card-scale) + .4rem); }
+  .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-tech-market { grid-template-columns: minmax(0, 1fr); }
+  .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-tech-discipline > div { grid-template-columns: repeat(auto-fit, calc(var(--tech-tile-size) * var(--tabletop-card-scale))); width: 100%; max-width: calc(2 * var(--tech-tile-size) * var(--tabletop-card-scale)); justify-self: center; justify-content: center; }
+  .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-workshop-zones { grid-template-columns: minmax(0, 1fr); }
+  .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-workshop-zones > section { grid-column: auto; }
+  .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-turn-summary > span { padding: .25rem .4rem; }
+  .kiln-tabletop-root.kiln-live-root[data-tabletop-layout="compact"] .kiln-tabletop-section-title strong { font-size: .9rem; }
+}

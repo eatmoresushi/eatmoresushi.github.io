@@ -11,3 +11,5 @@ supabase/.temp/
 # executable backend source and security tests, so keep them in the app.
 !supabase/migrations/*.sql
 !supabase/tests/*.sql
+
+.playwright-cli/

@@ -84,8 +84,21 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  *        by 1 only when glazing two vessels, replacing the one-free-Decoration rule.
  *  21 -- Owner amendment: the Kiln Yard Shifu replaces movement with a free, fixed
  *        +1/-1 Actual Heat marker on its committed ceramic after Base Heat and before Fire.
+ *  22 -- V1.4: Plain workshop pipeline, paid glaze/load, permanent Ge Crackle,
+ *        end-of-Work Glaze Palette, Fuel Ledger cards and revised Orders.
+ *  23 -- Owner amendment: choose the order of all after-Quality effects, including Ge,
+ *        and recheck eligibility after each use.
+ *  24 -- Owner amendment: deal two Starting Orders and no Main Order at setup.
+ *        O01-O03 now award 4 VP, captured by the content digest. Existing rooms keep
+ *        their original fingerprint and cannot resume under the amended rules.
+ *  25 -- Owner amendment: Imperial Court costs 5 Coins; Ge Crackle substitutes
+ *        one Glaze per ceramic for Order requirements instead of one Decoration.
+ *  26 -- Revised V1.4 source: Measuring Calipers accepts any other workshop vessel;
+ *        Dipping Vats replaces Standardised Moulds and waives Plain glazing costs
+ *        in one Kiln Yard action per round.
  */
-export const RULES_BEHAVIOUR_REVISION = 21;
+/** Revised V1.4 Forming Techs: broader Measuring Calipers and Dipping Vats. */
+export const RULES_BEHAVIOUR_REVISION = 26;
 
 /**
  * Display-only keys, excluded so that a typo fix or a translation improvement does not

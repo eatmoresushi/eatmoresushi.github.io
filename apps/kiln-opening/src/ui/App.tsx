@@ -104,7 +104,7 @@ export function commandNotice(result: CommandSuccess, locale: Locale = "en"): st
       : `Acquired ${definition?.name ?? technique.techniqueId} for ${technique.cost} Coins.`;
   }
   const patronage = result.events.find((event) => event.type === "IMPERIAL_RECOGNITION_ADVANCED" && event.orderId === null);
-  if (patronage?.type === "IMPERIAL_RECOGNITION_ADVANCED") return locale === "zh-CN" ? `朝廷赞助：御府声望 ${patronage.from} → ${patronage.to}。` : `Court Patronage: Imperial Recognition ${patronage.from} → ${patronage.to}.`;
+  if (patronage?.type === "IMPERIAL_RECOGNITION_ADVANCED") return locale === "zh-CN" ? `朝廷赞助：御府声望 ${patronage.from} → ${patronage.to}。` : `Imperial Court: Imperial Recognition ${patronage.from} → ${patronage.to}.`;
   return imperialOrderNotice(result, locale);
 }
 
@@ -502,7 +502,6 @@ export function App() {
       <a className="skip-link" href="#main-content">{t("Skip to main content")}</a>
       <header className="masthead">
         <a className="brand" href={import.meta.env.BASE_URL} aria-label={t("Kiln Opening")}>
-          <span className="brand-mark" aria-hidden="true">窑</span>
           <span><strong>{t("Kiln Opening")}</strong><small>{locale === "zh-CN" ? "Kiln Opening" : "开窑"} · {t("Song workshop strategy")}</small></span>
         </a>
         <div className="language-toggle" role="group" aria-label="Language / 语言">
@@ -571,7 +570,8 @@ export function App() {
         {notice !== null && <div className="banner banner-info" role="status" aria-live="polite">{notice}</div>}
         {(busy || computerThinking) && <div className="progress-line" role="progressbar" aria-label={t("Please wait")} />}
         {computerThinking && (
-          <div className="banner banner-info" role="status" aria-live="polite">{t("Computer is choosing…")}</div>
+          // The fixed progress line shows activity without a transient banner shifting the table.
+          <div className="sr-only" role="status" aria-live="polite">{t("Computer is choosing…")}</div>
         )}
 
         {connection === null ? (

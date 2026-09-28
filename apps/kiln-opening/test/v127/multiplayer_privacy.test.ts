@@ -183,7 +183,7 @@ function seedContributionWindow(state: GameState): void {
   state.firingContext = null;
 }
 
-describe("V1.2.7 multiplayer privacy and reconnect", () => {
+describe("V1.4 multiplayer privacy and reconnect", () => {
   it("reconnects all seats with the fixed public Shifu Heat marker and keeps Fire hidden until reveal", async () => {
     const harness = await startedHarness();
     let markedId = "";
@@ -195,7 +195,7 @@ describe("V1.2.7 multiplayer privacy and reconnect", () => {
       state.phase = { type: "firing_shifu_adjustment", queue: { actors: ["P1"], currentIndex: 0 } };
       state.firingContext = {
         round: state.round, contributors: ["P1"], contributions: { P1: "TEND" },
-        fuelLedgerUpgradedBy: [], baseHeat: 2, fireModifier: null, globalHeat: null,
+        baseHeat: 2, fireModifier: null, globalHeat: null,
         kilnYardShifuAdjustments: [], ceramicResults: {},
       };
     });
@@ -221,7 +221,7 @@ describe("V1.2.7 multiplayer privacy and reconnect", () => {
         addGlazed(state, playerId, "plate", "white", "carved");
         addLoaded(state, playerId, "washer", "moon_white", "impressed", index === 0 ? "high_1" : "high_2", true);
         state.players[playerId]!.imperialKilnUnlocked = true;
-        addLoaded(state, playerId, "censer", "grey_green", "crackle", "imperial");
+        addLoaded(state, playerId, "censer", "grey_green", "painted", "imperial");
         addFinished(state, playerId, "vase", "masterpiece", "celadon", "plain");
         addFinished(state, playerId, "bowl", "flawed", "white", "carved");
       }
@@ -270,14 +270,12 @@ describe("V1.2.7 multiplayer privacy and reconnect", () => {
     const first = await command(harness, "P1", {
       type: "SUBMIT_WOOD_CONTRIBUTION",
       windowId,
-      card: "BANK",
-      useFuelLedger: true,
+      card: "BANK_2",
     });
     expect(first.events).toEqual([{ type: "WOOD_SUBMITTED", playerId: "P1", windowId }]);
     expect(first.ownPendingContribution).toEqual({
       windowId,
-      card: "BANK",
-      useFuelLedger: true,
+      card: "BANK_2",
       submitted: true,
     });
     expect(JSON.stringify(first.game)).not.toContain("BANK");
@@ -295,16 +293,14 @@ describe("V1.2.7 multiplayer privacy and reconnect", () => {
       type: "SUBMIT_WOOD_CONTRIBUTION",
       windowId,
       card: "STOKE",
-      useFuelLedger: false,
     });
     expect(revealed.events).toContainEqual({
       type: "WOOD_REVEALED",
-      contributions: { P1: "BANK", P2: "STOKE" },
+      contributions: { P1: "BANK_2", P2: "STOKE" },
       effectiveHeatAdjustments: { P1: -2, P2: 1 },
     });
     expect(revealed.game.firingContext).toEqual(expect.objectContaining({
-      contributions: { P1: "BANK", P2: "STOKE" },
-      fuelLedgerUpgradedBy: ["P1"],
+      contributions: { P1: "BANK_2", P2: "STOKE" },
       baseHeat: 1,
       fireModifier: null,
       globalHeat: null,
@@ -366,11 +362,46 @@ describe("V1.2.7 multiplayer privacy and reconnect", () => {
     for (const orderId of lookedAt) expect(JSON.stringify(otherReconnect)).not.toContain(`"${orderId}"`);
   });
 
-  it("rejects projection of pre-V1.2.7 or pre-schema-4 authoritative states", () => {
+  it("keeps Academy inspection and the chosen return order out of public and other-seat payloads", async () => {
+    const harness = await startedHarness();
+    let inspected: string[] = [];
+    let purchase = "";
+    await seedAuthoritativeState(harness, (state) => {
+      const owner = state.players["P1"]!;
+      const shifu = Object.values(owner.workers).find((worker) => worker.kind === "shifu")!;
+      inspected = state.techniqueDecks.firing.splice(0, 2);
+      purchase = state.techniqueDisplay.forming[0]!;
+      owner.resources.coins = 10;
+      state.phase = { type: "work_guild", actorId: "P1", workerId: shifu.id, step: "buy", inspectedDiscipline: "firing", inspectedTechniqueIds: inspected };
+    });
+    expect(inspected).toHaveLength(2);
+    const p1 = connectionFor(harness, "P1");
+    const p2 = connectionFor(harness, "P2");
+    const own = valueOf(await harness.service.reconnect({ roomCode: p1.room.code, seatToken: p1.seatToken }));
+    const other = valueOf(await harness.service.reconnect({ roomCode: p2.room.code, seatToken: p2.seatToken }));
+    expect(own.ownPrivateDecision?.guildInspectedTechniqueIds).toEqual(inspected);
+    expect(other.ownPrivateDecision?.guildInspectedTechniqueIds).toEqual([]);
+    for (const id of inspected) {
+      expect(JSON.stringify(other)).not.toContain(`"${id}"`);
+      expect(JSON.stringify(own.game)).not.toContain(`"${id}"`);
+    }
+    const returned = [...inspected].reverse();
+    const result = await command(harness, "P1", { type: "GUILD_BUY_TECHNIQUE", techniqueId: purchase, returnTechniqueIds: returned });
+    const head = await harness.store.loadHead(harness.game.room.id);
+    expect(head!.state.techniqueDecks.firing.slice(-2)).toEqual(returned);
+    const after = valueOf(await harness.service.reconnect({ roomCode: p2.room.code, seatToken: p2.seatToken }));
+    for (const id of returned) {
+      expect(JSON.stringify(result.events)).not.toContain(`"${id}"`);
+      expect(JSON.stringify(result.game)).not.toContain(`"${id}"`);
+      expect(JSON.stringify(after)).not.toContain(`"${id}"`);
+    }
+  });
+
+  it("rejects projection of pre-V1.4 or pre-schema-5 authoritative states", () => {
     const state = {
       schemaVersion: 1,
       rulesVersion: "1.1.6",
     } as unknown as GameState;
-    expect(() => projectPublicGameState(state)).toThrow("Only schema-4 V1.2.7 games");
+    expect(() => projectPublicGameState(state)).toThrow("Only schema-5 V1.4 games");
   });
 });

@@ -29,7 +29,7 @@ function turnOrderTrack(markup: string): string {
   const match = markup.match(
     /<(aside|section)[^>]*data-testid="turn-order-track"[^>]*>[\s\S]*?<\/\1>/,
   );
-  expect(match, "the board should contain a semantic turn-order track").not.toBeNull();
+  expect(match, "the table should contain a semantic turn-order track").not.toBeNull();
   return match?.[0] ?? "";
 }
 
@@ -37,7 +37,7 @@ function markerTags(track: string): string[] {
   return [...track.matchAll(/<[^>]*data-player-id="P[1-4]"[^>]*>/g)].map(([tag]) => tag);
 }
 
-describe("V1.2.7 tabletop turn-order presentation", () => {
+describe("V1.4 tabletop turn-order presentation", () => {
   it("shows one colour-marker track in clockwise Work order from the First Player", () => {
     const state = structuredClone(startedGame(4, 12_690).state);
     state.firstPlayerId = "P3";
@@ -46,7 +46,7 @@ describe("V1.2.7 tabletop turn-order presentation", () => {
     const track = turnOrderTrack(renderTable(projectPublicGameState(state)));
     const markers = markerTags(track);
 
-    expect(track).toContain("TURN ORDER");
+    expect(track).not.toContain("TURN ORDER");
     expect(track).toContain("ORDER PHASE");
     expect(track).toContain("WORK PHASE");
     expect(markers).toHaveLength(4);
@@ -66,7 +66,7 @@ describe("V1.2.7 tabletop turn-order presentation", () => {
     expect(firstMarker).toMatch(/<b[^>]*>1<\/b>/);
   });
 
-  it("uses the same physical track upward for the reverse Order-phase direction", () => {
+  it("uses the same physical track right to left for the reverse Order-phase direction", () => {
     const state = structuredClone(startedGame(4, 12_691).state);
     state.firstPlayerId = "P3";
     const workOrder: PlayerId[] = ["P3", "P4", "P1", "P2"];
@@ -81,12 +81,29 @@ describe("V1.2.7 tabletop turn-order presentation", () => {
     const track = turnOrderTrack(renderTable(projectPublicGameState(state)));
     const markers = markerTags(track);
 
-    // The board order stays First-Player-first from top to bottom. Reading it upward
+    // The track stays First-Player-first from left to right. Reading it right to left
     // gives P2, P1, P4, P3: the counter-clockwise Order-phase circuit in the rules.
     expect(markers.map((tag) => tag.match(/data-player-id="([^"]+)"/)?.[1])).toEqual(workOrder);
     expect(markers[3]).toContain('aria-current="step"');
-    expect(track).toContain("↑");
-    expect(track).toContain("↓");
+    expect(track).toContain("←");
+    expect(track).toContain("→");
+    expect(track).not.toMatch(/[↑↓]/);
+  });
+
+  it.each([2, 3, 4] as const)("places the %i-player turn track after Recognition, outside the shared board", (playerCount) => {
+    const state = startedGame(playerCount, 12_693).state;
+    const markup = renderTable(projectPublicGameState(state));
+    const boardStart = markup.indexOf('id="kiln-live-shared-board"');
+    const sidebarStart = markup.indexOf('class="kiln-tabletop-public-sidebar"');
+    const recognitionStart = markup.indexOf('aria-label="Imperial Recognition track"');
+    const track = turnOrderTrack(markup);
+
+    expect(boardStart).toBeGreaterThanOrEqual(0);
+    expect(sidebarStart).toBeGreaterThan(boardStart);
+    expect(recognitionStart).toBeGreaterThan(sidebarStart);
+    expect(markup.indexOf(track)).toBeGreaterThan(recognitionStart);
+    expect(markup.slice(boardStart, sidebarStart)).not.toContain('data-testid="turn-order-track"');
+    expect(markerTags(track)).toHaveLength(playerCount);
   });
 
   it("uses names and player colours without rendering seat codes or ceramic instance IDs", () => {

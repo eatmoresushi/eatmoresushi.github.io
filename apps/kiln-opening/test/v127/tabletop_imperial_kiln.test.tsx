@@ -35,7 +35,7 @@ function tileFor(markup: string, playerId: string): string {
   return tile ?? "";
 }
 
-describe("V1.2.7 dedicated Imperial Kiln spaces", () => {
+describe("V1.4 dedicated Imperial Kiln spaces", () => {
   it("does not display Imperial Kiln spaces before any player unlocks one", () => {
     const { state } = startedGame(4, 127_950);
     const markup = renderTable(state);
@@ -87,7 +87,7 @@ describe("V1.2.7 dedicated Imperial Kiln spaces", () => {
     state.players["P3"]!.displayName = "Ochre Studio";
     state.players["P3"]!.orderHand = ["S08", "O48"];
     state.marketDisplay = ["O01", "O02", "O03", "O04", "O05", "O06"];
-    addLoaded(state, "P1", "bowl", "white", "crackle", "imperial");
+    addLoaded(state, "P1", "bowl", "white", "painted", "imperial");
     addLoaded(state, "P3", "vase", "grey_green", "impressed", "imperial");
     addLoaded(state, "P2", "plate", "celadon", "carved", "high_1");
     addLoaded(state, "P1", "washer", "moon_white", "plain", "low_1");
@@ -103,7 +103,7 @@ describe("V1.2.7 dedicated Imperial Kiln spaces", () => {
     expect(ochre).toContain("kiln-tabletop-accent-ochre");
     expect(cinnabar).toContain('aria-label="Inspect Cinnabar Studio&#x27;s Bowl"');
     expect(cinnabar).toContain('data-glaze="white"');
-    expect(cinnabar).toContain('data-decoration="crackle"');
+    expect(cinnabar).toContain('data-decoration="painted"');
     expect(ochre).toContain('aria-label="Inspect Ochre Studio&#x27;s Vase"');
     expect(ochre).toContain('data-glaze="grey_green"');
     expect(ochre).toContain('data-decoration="impressed"');
@@ -129,7 +129,7 @@ describe("V1.2.7 dedicated Imperial Kiln spaces", () => {
     const { state } = startedGame(2, 127_953);
     state.players["P2"]!.imperialRecognition = 2;
     state.players["P2"]!.imperialKilnUnlocked = true;
-    addLoaded(state, "P2", "bowl", "white", "crackle", "imperial");
+    addLoaded(state, "P2", "bowl", "white", "painted", "imperial");
     const before = JSON.stringify(state);
 
     const english = tileFor(renderTable(state), "P2");
@@ -138,11 +138,11 @@ describe("V1.2.7 dedicated Imperial Kiln spaces", () => {
     expect(english).toContain('aria-label="Inspect Player 2&#x27;s Bowl"');
     expect(english).toContain("Imperial Kiln +0");
     expect(english).toContain(">White</strong>");
-    expect(english).toContain(">Crackle</strong>");
+    expect(english).toContain(">Painted</strong>");
     expect(chinese).toContain('aria-label="查看Player 2的碗"');
     expect(chinese).toContain("御窑 +0");
     expect(chinese).toContain(">白釉</strong>");
-    expect(chinese).toContain(">开片</strong>");
+    expect(chinese).toContain(">彩绘</strong>");
     expect(chinese).not.toContain("Imperial Kiln");
     expect(JSON.stringify(state)).toBe(before);
   });

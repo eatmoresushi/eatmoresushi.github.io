@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ACTION_LOCATION_PRICES } from "../game";
 import type { LocationId, WorkerKind } from "../game";
 import type { Locale } from "./i18n";
 
@@ -64,24 +65,24 @@ export function BoardActionEffect({ id, kind, locale }: {
       break;
     case "glaze_workshop":
       copy = zh ? <>
-        <p>支付纹饰费用，为<strong>{shifu ? "至多2" : "1"}</strong>件已成型器物施釉与纹饰。</p>
-        {shifu && <p>若施釉<strong>2</strong>件：总费用<strong>−1</strong>{coin}。</p>}
+        <p>每件支付2铜钱，将素面改为专门纹饰：<strong>{shifu ? "至多2" : "1"}</strong>件作坊器物。</p>
+        {shifu && <p>其中<strong>1</strong>件纹饰免费。</p>}
       </> : <>
-        <p>Pay Decoration cost → glaze and decorate <strong>{shifu ? "up to 2" : "1"}</strong> Shaped {shifu ? "vessels" : "vessel"}.</p>
-        {shifu && <p>Glaze <strong>2</strong>: total cost <strong>−1</strong> {coin}.</p>}
+        <p>Pay 2 Coins each → decorate <strong>{shifu ? "up to 2" : "1"}</strong> Plain Workshop {shifu ? "vessels" : "vessel"}.</p>
+        {shifu && <p>One Decoration is <strong>free</strong>.</p>}
       </>;
       break;
     case "kiln_yard":
       copy = zh ? <>
-        <p>装窑<strong>{shifu ? "至多2" : "1"}</strong>件陶瓷。</p>
+        <p>每件支付1铜钱，施釉并装窑<strong>{shifu ? "至多2" : "1"}</strong>件陶瓷。</p>
         {shifu && <>
-          <p>将师傅放在共窑中你的<strong>1</strong>件陶瓷上。</p>
+          <p>将师傅放在本次装入共窑或御窑的<strong>1</strong>件陶瓷上。</p>
           <p>确定基础火候后、揭示火牌前：可用<strong>+1或−1</strong>火候标记替换师傅，仅用于本次烧成。</p>
         </>}
       </> : <>
-        <p>Load <strong>{shifu ? "up to 2" : "1"}</strong>{shifu ? "." : " ceramic."}</p>
+        <p>Pay 1 Coin each → glaze and load <strong>{shifu ? "up to 2" : "1"}</strong>{shifu ? "." : " ceramic."}</p>
         {shifu && <>
-          <p>Place your Shifu on <strong>1</strong> of your ceramics in the Shared Kiln.</p>
+          <p>Place your Shifu on <strong>1</strong> ceramic loaded by this action in either kiln.</p>
           <p>After Base Heat is determined, before Fire: you may replace your Shifu with a <strong>+1 or −1 Heat marker</strong> on that ceramic for this firing.</p>
         </>}
       </>;
@@ -111,11 +112,11 @@ export function BoardActionEffect({ id, kind, locale }: {
       break;
     case "court_patronage":
       copy = zh ? <>
-        <p>支付<strong>4</strong>{coin} → 御府声望<strong>+1</strong>。</p>
-        <p>正常结算里程碑奖励。</p>
+        <p>支付<strong>{ACTION_LOCATION_PRICES.courtPatronageCoins}</strong>{coin} → 御府声望<strong>+1</strong>。</p>
+        <p>最高到3格，正常结算里程碑奖励。</p>
       </> : <>
-        <p>Pay <strong>4</strong> {coin} → Recognition <strong>+1</strong>.</p>
-        <p>Resolve the milestone.</p>
+        <p>Pay <strong>{ACTION_LOCATION_PRICES.courtPatronageCoins}</strong> {coin} → Recognition <strong>+1</strong>.</p>
+        <p>Up to space 3. Resolve the milestone.</p>
       </>;
       break;
   }

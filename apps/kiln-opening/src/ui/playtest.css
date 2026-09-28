@@ -25,11 +25,6 @@
     backdrop-filter: none;
   }
 
-  .brand-mark {
-    width: 34px;
-    border-radius: 5px;
-    box-shadow: none;
-  }
 
   .room-meta {
     flex-wrap: wrap;

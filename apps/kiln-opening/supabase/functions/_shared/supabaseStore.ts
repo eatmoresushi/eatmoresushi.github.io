@@ -120,7 +120,6 @@ export class SupabaseMultiplayerStore implements MultiplayerStore {
       : {
           windowId: input.privateSubmission.windowId,
           card: input.privateSubmission.card,
-          useFuelLedger: input.privateSubmission.useFuelLedger,
           revealed: input.privateSubmission.revealed,
         };
     return this.rpc("server_commit_transition", {

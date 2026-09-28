@@ -21,17 +21,19 @@ describe.each(["en", "zh-CN"] as const)("tabletop Order quality requirements (%s
     const expected = labels(count, locale);
     for (const owned of [false, true]) {
       const markup = renderToStaticMarkup(createElement(OrderCard, { id, locale, owned, onInspect: () => {} }));
-      // The requirement stays outside the truncated attribute paragraph and outside the reward footer.
-      expect(markup).toContain(`</p><div class="kiln-tabletop-order-quality-requirements"><span aria-label="${expected.full}">${expected.compact}</span></div><footer>`);
+      // Extra Quality is visible in the Quality section, separately from the rewards.
+      const qualitySection = markup.slice(markup.indexOf('class="kiln-piece-quality"'), markup.indexOf('class="kiln-piece-footer"'));
+      expect(qualitySection).toContain(`class="kiln-piece-quality-requirements"><span aria-label="${expected.full}">${expected.compact}</span>`);
       const description = markup.match(/<span class="sr-only"[^>]*>(.*?)<\/span>/u)?.[1];
       expect(description).toContain(expected.full);
-      expect(markup).toContain(locale === "zh-CN" ? "<small>最低</small><b>上品</b>" : "<small>MIN</small><b>Fine</b>");
-      expect(markup).toContain(locale === "zh-CN" ? "<small>分</small>" : "<small>VP</small>");
-      expect(markup).toContain(locale === "zh-CN" ? "<small>钱</small>" : "<small>COIN</small>");
+      expect(qualitySection).toContain(locale === "zh-CN" ? "<small>品质</small>" : "<small>Quality</small>");
+      expect(qualitySection).toMatch(locale === "zh-CN" ? /<b>上品\+(?:（每件）)?<\/b>/u : /<b>Fine\+(?: each)?<\/b>/u);
+      expect(markup).toContain(locale === "zh-CN" ? '>分</small>' : '>VP</small>');
+      expect(markup).toMatch(locale === "zh-CN" ? /aria-label="\d+铜钱"/u : /aria-label="\d+ Coins"/u);
     }
   });
 
-  it.each(MASTERPIECE_ORDERS)("shows %s's Masterpiece requirement in hover and click details", (id, count) => {
+  it.each(MASTERPIECE_ORDERS)("shows %s's Masterpiece requirement on reference faces and click details", (id, count) => {
     const expected = labels(count, locale);
     const preview = renderToStaticMarkup(createElement(StaticOrderCard, { id, locale }));
     expect(preview).toContain(`aria-label="${expected.full}">${expected.compact}</span>`);
@@ -44,7 +46,7 @@ describe.each(["en", "zh-CN"] as const)("tabletop Order quality requirements (%s
     for (const id of ["S01", "O01", "O30", "O31", "O43", "O46", "O16"] as const) {
       for (const component of [StaticOrderCard, OrderInspection]) {
         const markup = renderToStaticMarkup(createElement(component, { id, locale }));
-        expect(markup).not.toContain("kiln-tabletop-order-quality-requirements");
+        expect(markup).not.toContain("kiln-piece-quality-requirements");
         expect(markup).not.toContain(locale === "zh-CN" ? "额外要求" : "Also required");
       }
     }
