@@ -37,4 +37,4 @@ The historical `test/v127/` directory name is retained; its active assertions no
 - [Online specification](docs/ONLINE_GAME_SPEC.md): multiplayer behavior.
 - [Deployment](docs/DEPLOYMENT.md): separate backend and GitHub Pages rollout.
 
-V1.4 uses Workshop → optional Decoration → paid Glaze & Load → Firing, 4/6/8 Shared-Kiln spaces, four starting Coins, updated Orders and Techs, and permanent Ge Crackle separate from Decoration. New rooms use schema 5 and the `r22` rules fingerprint. Older rooms are preserved but cannot continue under the new rules.
+V1.4 uses Workshop → optional Decoration → paid Glaze & Load → Firing, 4/6/8 Shared-Kiln spaces, four starting Coins, updated Orders and Techs, and permanent Ge Crackle separate from Decoration. New rooms use schema 5 and the `r26` rules fingerprint. Older rooms are preserved but cannot continue under the new rules.
