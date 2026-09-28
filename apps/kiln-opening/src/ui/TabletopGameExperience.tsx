@@ -929,6 +929,8 @@ function TurnOrderTrack({ game, locale, currentActorId }: { game: PublicGameStat
 export function ActionSpace({ game, ownPlayer, id, locale, selectedWorkerId, selected, onChoose }: { game: PublicGameState; ownPlayer: PublicPlayerState; id: LocationId; locale: Locale; selectedWorkerId: WorkerId | null; selected: boolean; onChoose: () => void }) {
   const descriptionId = `kiln-action-${useId()}`;
   const definition = LOCATION_DEFINITIONS[id];
+  const sharedWorkerEffect = id === "court_patronage";
+  const effectKinds = sharedWorkerEffect ? ["apprentice"] as const : ["apprentice", "shifu"] as const;
   const occupants = game.actionBoard.placements[id].map((workerId) => findWorker(game, workerId)).filter((entry): entry is NonNullable<typeof entry> => entry !== null);
   const worker = selectedWorkerId === null ? undefined : ownPlayer.workers[selectedWorkerId];
   const reason = tabletopLocationReason(game, ownPlayer, selectedWorkerId, id, locale);
@@ -950,12 +952,12 @@ export function ActionSpace({ game, ownPlayer, id, locale, selectedWorkerId, sel
       <ArtworkLayer source={TABLETOP_ARTWORK.actionSpaces[id]} slot={`action-space:${id}`} />
       <div className="kiln-illustrated-action-plaque">
         <header><div><strong>{locale === "zh-CN" ? definition.nameZh : definition.name}</strong>{status !== null && <small className="sr-only" id={`${descriptionId}-status`}>{status}</small>}</div></header>
-        <div className="kiln-tabletop-action-effects" id={`${descriptionId}-rules`}>{(["apprentice", "shifu"] as const).map((kind) => {
+        <div className="kiln-tabletop-action-effects" id={`${descriptionId}-rules`}>{effectKinds.map((kind) => {
           const fullEffect = kind === "shifu" ? locale === "zh-CN" ? definition.shifuZh : definition.shifu : locale === "zh-CN" ? definition.apprenticeZh : definition.apprentice;
-          return <div className={`kiln-tabletop-action-effect ${worker?.kind === kind ? "is-current-worker" : ""}`} data-effect-worker={kind} title={fullEffect} key={kind}>
-            <WorkerMeeple kind={kind} small locale={locale} />
+          return <div className={`kiln-tabletop-action-effect ${sharedWorkerEffect ? "is-shared-worker" : ""} ${worker !== undefined && (sharedWorkerEffect || worker.kind === kind) ? "is-current-worker" : ""}`} data-effect-worker={sharedWorkerEffect ? "both" : kind} title={fullEffect} key={kind}>
+            {sharedWorkerEffect ? <span className="kiln-tabletop-effect-workers" aria-hidden="true"><WorkerMeeple kind="apprentice" small locale={locale} /><span>/</span><WorkerMeeple kind="shifu" small locale={locale} /></span> : <WorkerMeeple kind={kind} small locale={locale} />}
             <span aria-hidden="true"><BoardActionSummary id={id} kind={kind} locale={locale} /></span>
-            <span className="sr-only"><BoardActionEffect id={id} kind={kind} locale={locale} /></span>
+            <span className="sr-only">{sharedWorkerEffect && text(locale, "Apprentice or Shifu: ", "学徒或师傅：")}<BoardActionEffect id={id} kind={kind} locale={locale} /></span>
           </div>;
         })}</div>
         <footer id={`${descriptionId}-capacity`}>

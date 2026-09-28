@@ -101,6 +101,9 @@
 .kiln-illustrated-action-plaque .kiln-tabletop-action-effect + .kiln-tabletop-action-effect { border: none; padding-top: .06rem; }
 .kiln-illustrated-action-plaque .kiln-tabletop-action-effect.is-current-worker { background: transparent; box-shadow: inset 2px 0 var(--action-accent); }
 .kiln-illustrated-action-plaque .kiln-tabletop-action-effect > .kiln-tabletop-worker { width: 16px; height: 18px; margin: 0; }
+.kiln-illustrated-action-plaque .kiln-tabletop-action-effect.is-shared-worker { grid-template-columns: auto minmax(0, 1fr); }
+.kiln-tabletop-effect-workers { display: inline-flex; align-items: center; gap: .15rem; color: #65543b; font-size: .75rem; }
+.kiln-illustrated-action-plaque .kiln-tabletop-effect-workers > .kiln-tabletop-worker { flex: 0 0 16px; width: 16px; height: 18px; margin: 0; }
 .kiln-illustrated-action-plaque .kiln-tabletop-action-effect .kiln-tabletop-accent-neutral { --player-color: #65543b; }
 .kiln-board-action-summary { display: block; font-size: clamp(.8125rem, .88vw, .875rem); line-height: 1.45; }
 .kiln-illustrated-action-plaque > footer { display: flex; gap: .3rem; align-items: center; justify-content: space-between; flex-wrap: wrap; border-top: 0; margin-top: .1rem; padding-top: .12rem; }

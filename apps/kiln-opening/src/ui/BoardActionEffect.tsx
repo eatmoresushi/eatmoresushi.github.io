@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ACTION_LOCATION_PRICES } from "../game";
 import type { LocationId, WorkerKind } from "../game";
 import type { Locale } from "./i18n";
 
@@ -111,10 +112,10 @@ export function BoardActionEffect({ id, kind, locale }: {
       break;
     case "court_patronage":
       copy = zh ? <>
-        <p>支付<strong>4</strong>{coin} → 御府声望<strong>+1</strong>。</p>
+        <p>支付<strong>{ACTION_LOCATION_PRICES.courtPatronageCoins}</strong>{coin} → 御府声望<strong>+1</strong>。</p>
         <p>最高到3格，正常结算里程碑奖励。</p>
       </> : <>
-        <p>Pay <strong>4</strong> {coin} → Recognition <strong>+1</strong>.</p>
+        <p>Pay <strong>{ACTION_LOCATION_PRICES.courtPatronageCoins}</strong> {coin} → Recognition <strong>+1</strong>.</p>
         <p>Up to space 3. Resolve the milestone.</p>
       </>;
       break;
