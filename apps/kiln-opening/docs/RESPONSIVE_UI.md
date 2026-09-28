@@ -28,8 +28,8 @@ The shared area assigns two thirds of its width to the board and one third to
 the Techs and public tracks. Tech tiles divide their column equally and stay
 square. The remaining sidebar height is split evenly between Recognition and
 Turn Order, keeping the two sides aligned without stretching the Tech tiles.
-Recognition shows milestone names and markers; its Rewards button opens the
-complete reward descriptions. Turn Order uses three rows: Order Phase ←,
+Recognition shows milestone names, markers and reward descriptions directly
+in each space. Turn Order uses three rows: Order Phase ←,
 coloured player markers, and Work Phase →. Both phase bars span the track and
 have left-aligned labels; there is no separate title. The marker sequence is always Work
 order from left to right, starting with the First Player; Orders follow it in
