@@ -263,6 +263,16 @@
   .turn-callout { border-left: 4px solid var(--cinnabar); padding: .6rem .7rem; font-size: .8rem; background: rgb(255 253 248 / 65%); }
   .control-section { display: grid; gap: .75rem; }
   .control-hint { color: var(--ink-soft); font-size: .8rem; line-height: 1.5; }
+  .optional-action { min-width: 0; border: 1px solid var(--ui-border, var(--line)); border-radius: 12px; background: var(--ui-panel-light, var(--porcelain)); }
+  .optional-action > summary { display: flex; align-items: center; gap: .75rem; min-height: 44px; padding: .7rem .85rem; color: var(--celadon-dark); cursor: pointer; list-style: none; }
+  .optional-action > summary::-webkit-details-marker { display: none; }
+  .optional-action > summary > span:first-child { display: grid; gap: .15rem; min-width: 0; flex: 1; }
+  .optional-action > summary strong { font-size: var(--ui-text, .875rem); line-height: 1.4; }
+  .optional-action > summary small { color: var(--ink-soft); font-size: .8125rem; line-height: 1.4; }
+  .optional-action-indicator { flex: 0 0 1rem; text-align: center; font-size: 1.25rem; line-height: 1; }
+  .optional-action-indicator::before { content: "+"; }
+  .optional-action[open] .optional-action-indicator::before { content: "−"; }
+  .optional-action > .control-section { border-top: 1px solid var(--ui-border, var(--line)); padding: .85rem; }
   .kiln-choice-grid { display: grid; gap: .5rem; }
   .kiln-choice { position: relative; display: grid; gap: .25rem; border: 1px solid var(--line); border-radius: 11px; padding: .7rem; text-align: left; color: var(--ink); background: var(--porcelain); }
   .kiln-choice:hover:not(:disabled) { border-color: var(--celadon-dark); box-shadow: 0 5px 15px rgb(49 91 76 / 11%); }

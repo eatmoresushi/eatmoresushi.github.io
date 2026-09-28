@@ -345,10 +345,9 @@ function WorkControls({ game, player, selectedLocation, selectedWorkerId, busy, 
       {priorityRequiresAction && <p className="turn-callout">{locale === "zh-CN"
         ? "你已在行动前使用御烧优先；现在必须放置1名工人并结算行动。"
         : "You used Imperial Priority before this action; now place one worker and resolve its action."}</p>}
-      {player.imperialPriorityAvailable && <ImperialPriorityControls game={game} player={player} busy={busy} send={send} />}
       {(selectedLocation === null || selectedLocation === undefined ? LOCATION_IDS : [selectedLocation])
         .map((locationId) => actions[locationId])}
-
+      {player.imperialPriorityAvailable && <ImperialPriorityControls key={selectedLocation ?? "all-actions"} game={game} player={player} busy={busy} send={send} />}
     </>
   );
 }
@@ -365,19 +364,25 @@ function ImperialPriorityControls({ game, player, afterAction = false, busy, sen
   const [ceramicId, setCeramicId] = useState(ceramics[0]?.id ?? "");
   const imperialOccupied = Object.values(game.ceramics).some((ceramic) => ceramic.ownerId === player.id && ceramic.stage === "loaded" && ceramic.kilnSpaceId === "imperial");
   const [loadingGlaze, setLoadingGlaze] = useState<Glaze>("white");
-  return (
-    <ControlSection
-      title="Imperial Priority"
-      hint={locale === "zh-CN"
-        ? `御烧优先：每局一次，在工人行动${afterAction ? "之后" : "之前"}，支付1铜钱，为1件作坊器物施釉并装入空置御窑。`
-        : `Once per game, ${afterAction ? "after" : "before"} your worker action, pay 1 Coin to glaze and load one Workshop ceramic into your empty Imperial Kiln.`}
-    >
+  const hint = locale === "zh-CN"
+    ? "每局一次，在你的工人行动之前或之后，支付1铜钱，为1件作坊器物施釉并装入空置御窑。"
+    : "Once per game, before or after your worker action, pay 1 Coin to glaze and load one Workshop ceramic into your empty Imperial Kiln.";
+  const controls = <>
       {ceramics.length > 0 && <CeramicChoice name="imperial-priority" label={locale === "zh-CN" ? "作坊器物" : "Workshop ceramic"} ceramics={ceramics} value={ceramicId} onChange={setCeramicId} />}
       <EnumChoice name="priority-glaze" label="Glaze" options={GLAZES} value={loadingGlaze} onChange={(value) => setLoadingGlaze(value as Glaze)} />
-      <CommandButton busy={busy} disabled={ceramicId === "" || player.resources.coins < 1 || imperialOccupied} send={send} command={{ type: "RESOLVE_IMPERIAL_PRIORITY", ceramicId, glaze: loadingGlaze }}>{locale === "zh-CN" ? "使用御烧优先" : "Use Imperial Priority"}</CommandButton>
+      <CommandButton busy={busy} disabled={ceramicId === "" || player.resources.coins < 1 || imperialOccupied} send={send} command={{ type: "RESOLVE_IMPERIAL_PRIORITY", ceramicId, glaze: loadingGlaze }}>{locale === "zh-CN" ? (afterAction ? "在行动后使用" : "在行动前使用") : (afterAction ? "Use after action" : "Use before action")}</CommandButton>
       {imperialOccupied && <p role="status">{locale === "zh-CN" ? "你的御窑已被占用。" : "Your Imperial Kiln is occupied."}</p>}
       {afterAction && <CommandButton busy={busy} send={send} command={{ type: "RESOLVE_IMPERIAL_PRIORITY", ceramicId: null }} secondary>{locale === "zh-CN" ? "保留标记" : "Keep the token"}</CommandButton>}
-    </ControlSection>
+    </>;
+  if (afterAction) return <ControlSection title="Imperial Priority" hint={hint}>{controls}</ControlSection>;
+  return (
+    <details className="optional-action">
+      <summary>
+        <span><strong>{locale === "zh-CN" ? "御烧优先" : "Imperial Priority"}</strong><small>{locale === "zh-CN" ? "可选 · 工人行动之前或之后" : "Optional · before or after your worker action"}</small></span>
+        <span className="optional-action-indicator" aria-hidden="true" />
+      </summary>
+      <section className="control-section"><p className="control-hint">{hint}</p>{controls}</section>
+    </details>
   );
 }
 

@@ -325,6 +325,59 @@ describe("v1.4 firing, Tech timing, and Kiln Traditions", () => {
     expect(state.ceramics[imperial.id]).toEqual(expect.objectContaining({ stage: "loaded", kilnSpaceId: "imperial" }));
   });
 
+  it.each([false, true])("keeps Imperial Priority and Coins when declining after an action (final worker: %s)", (finalWorker) => {
+    const { state, rng } = startedGame(2, 1413);
+    const selectedWorkerId = workerId(state, "P1", "apprentice");
+    const ceramic = addGlazed(state, "P1", "plate", "celadon", "plain");
+    addLoaded(state, "P2", "bowl", "white", "plain", "middle_1");
+    Object.assign(state.players["P1"]!, { imperialKilnUnlocked: true, imperialPriorityAvailable: true });
+    if (finalWorker) {
+      for (const player of Object.values(state.players)) {
+        for (const worker of Object.values(player.workers)) worker.status = "placed";
+      }
+      state.players["P1"]!.workers[selectedWorkerId]!.status = "available";
+    }
+    const actionResult = mustResult(state, "P1", { type: "USE_LABOUR", workerId: selectedWorkerId }, rng);
+    expect(actionResult.state.phase).toEqual({ type: "work_imperial_priority", actorId: "P1" });
+    expect(actionResult.events).not.toContainEqual({ type: "WORK_PHASE_ENDED" });
+    const resources = { ...actionResult.state.players["P1"]!.resources };
+
+    const declined = mustResult(actionResult.state, "P1", { type: "RESOLVE_IMPERIAL_PRIORITY", ceramicId: null }, rng);
+    expect(declined.state.players["P1"]!.imperialPriorityAvailable).toBe(true);
+    expect(declined.state.players["P1"]!.resources).toEqual(resources);
+    expect(declined.state.ceramics[ceramic.id]).toMatchObject({ stage: "workshop", decoration: "plain" });
+    expect(declined.events).not.toContainEqual({ type: "IMPERIAL_PRIORITY_USED", playerId: "P1" });
+    if (finalWorker) {
+      expect(declined.state.phase).toMatchObject({ type: "firing_contributions", eligiblePlayerIds: ["P2"] });
+      expect(declined.events).toContainEqual({ type: "WORK_PHASE_ENDED" });
+    } else {
+      expect(declined.state.phase).toEqual({ type: "work", activePlayerId: "P2" });
+      expect(declined.events).not.toContainEqual({ type: "WORK_PHASE_ENDED" });
+    }
+  });
+
+  it.each(["forming", "income"] as const)("offers Imperial Priority after %s makes its requirements available", (source) => {
+    const { state, rng } = startedGame(2, 1414);
+    const player = state.players["P1"]!;
+    Object.assign(player, { imperialKilnUnlocked: true, imperialPriorityAvailable: true });
+    player.resources.coins = source === "forming" ? 1 : 0;
+    if (source === "income") addGlazed(state, "P1", "bowl", "white", "plain");
+    expectError(applyAction(state, "P1", { type: "RESOLVE_IMPERIAL_PRIORITY", ceramicId: "not-yet-available", glaze: "white" }, rng), "ABILITY_ALREADY_USED");
+
+    const worker = workerId(state, "P1", "apprentice");
+    const afterAction = source === "forming"
+      ? mustApply(state, "P1", { type: "FORM_CERAMICS", workerId: worker, shapes: ["bowl"] }, rng)
+      : mustApply(state, "P1", { type: "USE_LABOUR", workerId: worker }, rng);
+    expect(afterAction.phase).toEqual({ type: "work_imperial_priority", actorId: "P1" });
+    const ceramic = Object.values(afterAction.ceramics).find((entry) => entry.ownerId === "P1" && entry.stage === "workshop")!;
+    const beforeCoins = afterAction.players["P1"]!.resources.coins;
+    const loaded = mustApply(afterAction, "P1", { type: "RESOLVE_IMPERIAL_PRIORITY", ceramicId: ceramic.id, glaze: "celadon" }, rng);
+    expect(loaded.players["P1"]!.imperialPriorityAvailable).toBe(false);
+    expect(loaded.players["P1"]!.resources.coins).toBe(beforeCoins - 1);
+    expect(loaded.ceramics[ceramic.id]).toMatchObject({ stage: "loaded", kilnSpaceId: "imperial", glaze: "celadon" });
+    expect(loaded.phase).toEqual({ type: "work", activePlayerId: "P2" });
+  });
+
   it("requires a worker action after Imperial Priority is used before the action", () => {
     const { state: initial, rng } = startedGame(2, 1411);
     let state = structuredClone(initial);
