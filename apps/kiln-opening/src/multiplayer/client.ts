@@ -1,5 +1,6 @@
 import { FunctionsHttpError, createClient } from "@supabase/supabase-js";
 import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
+import { GAME_CONFIG } from "../game/content";
 import type {
   ComputerAdvanceSuccess,
   AuthoritativeCommand,
@@ -13,6 +14,30 @@ import type {
   ReconnectResult,
   RoomConnection,
 } from "./types";
+
+function record(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/** An older Edge deployment can accept its own old rooms; that does not make
+ * their snapshots compatible with this client. Check before installing them. */
+function snapshotCompatibilityError(response: unknown): MultiplayerError | null {
+  if (!record(response) || response["ok"] !== true || !record(response["value"])) return null;
+  const value = response["value"];
+  const room = record(value["room"]) ? value["room"] : null;
+  const game = record(value["game"]) ? value["game"] : null;
+  if ((room !== null && room["rulesVersion"] !== GAME_CONFIG.rulesVersion)
+    || (game !== null && (game["rulesVersion"] !== GAME_CONFIG.rulesVersion || game["schemaVersion"] !== 5))) {
+    const revision = game?.["revision"] ?? room?.["latestRevision"];
+    return {
+      code: "UNSUPPORTED_RULES_VERSION",
+      message: "The multiplayer service returned a room or saved game that does not match V1.4. Update the game service and create a compatible room before continuing.",
+      details: { expectedRulesVersion: GAME_CONFIG.rulesVersion, expectedSchemaVersion: 5 },
+      currentRevision: typeof revision === "number" && Number.isFinite(revision) ? revision : null,
+    };
+  }
+  return null;
+}
 
 function isMultiplayerFailure(value: unknown): value is { ok: false; error: MultiplayerError } {
   if (typeof value !== "object" || value === null || !("ok" in value) || value.ok !== false) {
@@ -376,6 +401,8 @@ class SupabaseGameApi implements GameApi {
         },
       };
     }
+    const compatibilityError = snapshotCompatibilityError(data);
+    if (compatibilityError !== null) return { ok: false, error: compatibilityError };
     return data as MultiplayerResult<T>;
   }
 

@@ -472,7 +472,7 @@ export function localizeMultiplayerError(locale: Locale, code: string, fallback:
     HOST_ONLY: "只有房主可以执行此操作。",
     NOT_ENOUGH_PLAYERS: "开始游戏至少需要2名玩家。",
     DUPLICATE_COMMAND: "此操作已提交，无需重复执行。",
-    UNSUPPORTED_RULES_VERSION: "此房间使用不兼容的规则版本，请创建新房间。",
+    UNSUPPORTED_RULES_VERSION: "房间或服务器使用不兼容的规则版本。请确认服务器已更新，再创建兼容的新房间。",
     COMPUTER_TURN_FAILED: "电脑玩家未能完成行动，请重试。",
     INVALID_SETUP: "当前设置无效。",
     UNKNOWN_PLAYER: "找不到该玩家。",
