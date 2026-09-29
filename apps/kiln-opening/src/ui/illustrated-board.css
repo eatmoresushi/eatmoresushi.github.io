@@ -147,18 +147,19 @@
 }
 .kiln-illustrated-round-band .kiln-tabletop-round-track {
   grid-template-columns: 28px repeat(5, minmax(0, 1fr));
-  gap: 0;
+  grid-template-rows: 28px auto;
+  gap: 3px 0;
   min-width: 0;
   border: 0;
   padding: 0;
 }
-.kiln-illustrated-round-band .kiln-tabletop-round-track > strong { padding-bottom: 14px; color: #536253; font-size: .45rem; letter-spacing: .08em; }
-.kiln-illustrated-round-band .kiln-tabletop-round-track > span { display: grid; grid-template-rows: 28px 11px; justify-items: center; gap: 3px; min-height: 42px; isolation: isolate; }
+.kiln-illustrated-round-band .kiln-tabletop-round-track > strong { color: #536253; font-size: .45rem; letter-spacing: .08em; }
+.kiln-illustrated-round-band .kiln-tabletop-round-track > span { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; min-width: 0; min-height: 28px; isolation: isolate; }
 .kiln-illustrated-round-band .kiln-tabletop-round-track > span::before { top: 14px; left: calc(-50% + 17px); right: calc(50% + 17px); height: 1px; background: #b7a57e; }
 .kiln-illustrated-round-band .kiln-tabletop-round-track i { width: 26px; align-self: center; border-color: #b6a98b; color: #727665; font-size: .6875rem; background: #fff8e9b3; box-shadow: inset 0 1px 0 #fffdf5; }
 .kiln-illustrated-round-band .kiln-tabletop-round-track .is-complete i { border-color: #587568; color: #fff8df; background: #355e50; box-shadow: inset 0 0 0 2px #ffffff18; }
 .kiln-illustrated-round-band .kiln-tabletop-round-track .is-current i { border-color: #fff3d6; color: #fff9e9; background: #a84332; box-shadow: 0 0 0 2px #c8a275, 0 2px 5px #65402c26; }
-.kiln-illustrated-round-band .kiln-tabletop-round-track small { display: block; min-height: 11px; color: #813f30; font-size: .5rem; line-height: 11px; white-space: nowrap; }
+.kiln-illustrated-round-band .kiln-tabletop-round-phase { display: block; grid-column: 1 / -1; min-width: 0; min-height: 11px; color: #813f30; font-size: .5rem; line-height: 11px; text-align: center; white-space: normal; overflow-wrap: anywhere; }
 .kiln-illustrated-round-band .kiln-tabletop-firing-deck { min-width: 0; min-height: 48px; gap: .4rem; border-color: transparent; border-left-color: #b6a27b80; border-radius: 0; padding: .2rem 0 .2rem .45rem; background: transparent; }
 .kiln-illustrated-round-band .kiln-tabletop-firing-deck:hover,
 .kiln-illustrated-round-band .kiln-tabletop-firing-deck[aria-expanded="true"] { border-color: #b6a27b80; border-radius: 5px; background: #fff7e473; box-shadow: 0 2px 6px #65402c14; }
