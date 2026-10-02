@@ -342,7 +342,7 @@ describe("v1.4 worker actions and Techs", () => {
     expect(state.players["P1"]!.resources.coins).toBe(before);
   });
 
-  it("implements Rapid Drying without consuming a Kiln Yard space or triggering Kiln Tending", () => {
+  it("implements Rapid Drying without consuming a Kiln Yard worker space", () => {
     const { state: initial, rng } = startedGame(2, 1308, ["ST03"]);
     let state = structuredClone(initial);
     state.players["P1"]!.resources = { clay: 10, wood: 2, coins: 10 };
@@ -363,24 +363,20 @@ describe("v1.4 worker actions and Techs", () => {
     });
   });
 
-  it("loads through Kiln Yard, applies Kiln Tending, and treats the location as uncapped", () => {
-    const { state: initial, rng } = startedGame(2, 1309, ["ST04", "ST01"]);
+  it("loads through Kiln Yard without resource income and treats the location as uncapped", () => {
+    const { state: initial, rng } = startedGame(2, 1309, ["ST01", "ST01"]);
     let state = structuredClone(initial);
     const p1 = addGlazed(state, "P1", "bowl", "white", "plain");
     const p2 = addGlazed(state, "P2", "plate", "celadon", "plain");
     const resources = { ...state.players["P1"]!.resources };
     const tended = mustResult(state, "P1", {
       type: "USE_KILN_YARD", workerId: workerId(state, "P1", "apprentice"),
-      loads: [{ ceramicId: p1.id, kilnSpaceId: "high_1" , glaze: "white"}], kilnTendingClay: 1, kilnTendingWood: 0,
+      loads: [{ ceramicId: p1.id, kilnSpaceId: "high_1" , glaze: "white"}],
     }, rng);
     state = tended.state;
-    expect(state.players["P1"]!.resources.clay).toBe(resources.clay + 1);
+    expect(state.players["P1"]!.resources.clay).toBe(resources.clay);
     expect(state.players["P1"]!.resources.wood).toBe(resources.wood);
-    expect(tended.events).toContainEqual({
-      type: "STARTING_TECH_USED",
-      playerId: "P1",
-      techniqueId: "ST04",
-    });
+    expect(tended.events.some((event) => event.type === "STARTING_TECH_USED")).toBe(false);
     setWorkTurn(state, "P2");
     state = mustApply(state, "P2", {
       type: "USE_KILN_YARD", workerId: workerId(state, "P2", "apprentice"),

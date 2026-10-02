@@ -9,7 +9,7 @@ import {
   GAME_CONFIG,
   GLAZES,
   IMPERIAL_PROGRESS,
-  KILN_IDS,
+  AVAILABLE_KILN_IDS,
   KILN_SPACE_IDS,
   ORDER_DEFINITIONS,
   SHAPE_COSTS,
@@ -91,6 +91,7 @@ import type {
   RoundNumber,
   SubmitContributionResult,
   Shape,
+  StartingTechniqueId,
   TechniqueDiscipline,
   TechniqueId,
   WorkerState,
@@ -555,8 +556,8 @@ function selectKiln(state: GameState, actorId: PlayerId, kilnId: KilnId): ApplyR
   if (actorError !== null) {
     return actorError;
   }
-  if (!KILN_IDS.includes(kilnId)) {
-    return applyFailure(ruleError("KILN_UNAVAILABLE", "The selected Kiln does not exist.", { kilnId }));
+  if (!AVAILABLE_KILN_IDS.includes(kilnId)) {
+    return applyFailure(ruleError("KILN_UNAVAILABLE", "The selected Kiln is unavailable for new games.", { kilnId }));
   }
   if (Object.values(state.players).some((player) => player.kilnId === kilnId)) {
     return applyFailure(
@@ -589,14 +590,14 @@ function submitStartingOrders(_state: GameState, _actorId: PlayerId, _orderIds: 
 function selectStartingTech(
   state: GameState,
   actorId: PlayerId,
-  techniqueId: "ST01" | "ST02" | "ST03" | "ST04",
+  techniqueId: StartingTechniqueId,
 ): ApplyResult {
   const phase = requirePhase(state, "setup_starting_tech");
   if (isFailure(phase)) return phase;
   const actorError = actorFailure(state, actorId);
   if (actorError !== null) return actorError;
-  if (STARTING_TECHNIQUE_DEFINITIONS[techniqueId] === undefined) {
-    return applyFailure(ruleError("INVALID_SELECTION", "Choose one of the four Starting Techs."));
+  if (!Object.hasOwn(STARTING_TECHNIQUE_DEFINITIONS, techniqueId)) {
+    return applyFailure(ruleError("INVALID_SELECTION", "Choose one of the three Starting Techs."));
   }
   const next = cloneState(state);
   const player = next.players[actorId];
@@ -971,13 +972,8 @@ function useKilnYard(
     const techniqueFailure = validateTechniqueUses(context.player, ["T03"], ["T03"]);
     if (techniqueFailure !== null) return techniqueFailure;
   }
-  const kilnTendingClay = action.kilnTendingClay ?? 0;
-  const kilnTendingWood = action.kilnTendingWood ?? 0;
-  if (!isNonNegativeInteger(kilnTendingClay) || !isNonNegativeInteger(kilnTendingWood) || kilnTendingClay + kilnTendingWood > 1) {
-    return applyFailure(ruleError("INVALID_SELECTION", "Kiln Tending may gain 1 Clay or 1 Wood, or be declined."));
-  }
-  if (kilnTendingClay + kilnTendingWood > 0 && context.player.startingTechniqueId !== "ST04") {
-    return applyFailure(ruleError("INVALID_ACTION", "Kiln Tending is required to gain a resource after loading."));
+  if ("kilnTendingClay" in action || "kilnTendingWood" in action) {
+    return applyFailure(ruleError("INVALID_ACTION", "Kiln Tending has been removed. Submit the Kiln Yard action without a resource bonus."));
   }
   const normalMaximum = context.worker.kind === "shifu" ? 2 : 1;
   const normalCount = action.loads.length;
@@ -1051,12 +1047,6 @@ function useKilnYard(
     if (action.shifuCeramicId !== undefined) {
       events.push({ type: "KILN_YARD_SHIFU_MARKED", playerId: actorId, ceramicId: action.shifuCeramicId });
     }
-  }
-  if (kilnTendingClay + kilnTendingWood > 0) {
-    const clay = gainResource(player, "clay", kilnTendingClay);
-    const wood = gainResource(player, "wood", kilnTendingWood);
-    events.push({ type: "RESOURCES_CHANGED", playerId: actorId, clay, wood, coins: 0 });
-    events.push({ type: "STARTING_TECH_USED", playerId: actorId, techniqueId: "ST04" });
   }
   completeWorkerAction(next, actorId, events);
   return success(next, events);

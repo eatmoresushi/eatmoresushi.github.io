@@ -56,7 +56,6 @@ const cases: Array<[string, string, number[]]> = [
   ["Prepared Clay", T("Prepared Clay"), [1, 1]],
   ["White Slip", T("White Slip"), [1, DECORATION_COSTS.painted]],
   ["Rapid Drying", T("Rapid Drying"), [1, 1, 1]],
-  ["Kiln Tending", T("Kiln Tending"), [1, 1, 1]],
   // Kiln Traditions
   ["kiln RU", KILN_DEFINITIONS.RU.ability, [RU_ORDER_VP]],
   // "at least 1 Crown", then the 2 Coins and 1 VP V1.4 pays.

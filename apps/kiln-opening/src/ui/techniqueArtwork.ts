@@ -2,7 +2,6 @@ import type { StartingTechniqueId, TechniqueId } from "../game";
 import artworkST01 from "../../assets/current_v04/pieces/tech-ST01-v2.webp";
 import artworkST02 from "../../assets/current_v04/pieces/tech-ST02-v2.webp";
 import artworkST03 from "../../assets/current_v04/pieces/tech-ST03-v2.webp";
-import artworkST04 from "../../assets/current_v04/pieces/tech-ST04-v2.webp";
 import artworkT01 from "../../assets/current_v04/pieces/tech-T01-v2.webp";
 import artworkT02 from "../../assets/current_v04/pieces/tech-T02-v2.webp";
 import artworkT03 from "../../assets/current_v04/pieces/tech-T03-v2.webp";
@@ -24,7 +23,6 @@ export const TECHNIQUE_ARTWORK: Readonly<Record<TechniqueId | StartingTechniqueI
   ST01: artworkST01,
   ST02: artworkST02,
   ST03: artworkST03,
-  ST04: artworkST04,
   T01: artworkT01,
   T02: artworkT02,
   T03: artworkT03,

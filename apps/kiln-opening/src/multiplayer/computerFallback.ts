@@ -3,7 +3,8 @@ import {
   DECORATION_COSTS,
   DISCIPLINES,
   GAME_CONFIG,
-  KILN_IDS,
+  AVAILABLE_KILN_IDS,
+  STARTING_TECHNIQUES,
   TECHNIQUE_DEFINITIONS,
   activeKilnSpaceIds,
   kilnYardGlazingCost,
@@ -33,7 +34,7 @@ export function fallbackComputerCommands(
   switch (phase.type) {
     case "setup_kiln_selection": {
       const occupied = new Set(Object.values(game.players).map((entry) => entry.kilnId));
-      return KILN_IDS.filter((kilnId) => !occupied.has(kilnId)).map((kilnId) => ({
+      return AVAILABLE_KILN_IDS.filter((kilnId) => !occupied.has(kilnId)).map((kilnId) => ({
         type: "SELECT_KILN" as const,
         kilnId,
       }));
@@ -41,7 +42,7 @@ export function fallbackComputerCommands(
     case "setup_starting_orders":
       return [{ type: "SUBMIT_STARTING_ORDERS", orderIds: ownPrivate.startingOrderOffer.slice(0, 2) }];
     case "setup_starting_tech":
-      return (["ST01", "ST02", "ST03", "ST04"] as const).map((techniqueId) => ({
+      return STARTING_TECHNIQUES.map(({ id: techniqueId }) => ({
         type: "SELECT_STARTING_TECH" as const,
         techniqueId,
       }));
@@ -90,7 +91,6 @@ export function fallbackComputerCommands(
             loads: [{ ceramicId: glazed.id, kilnSpaceId: openKilnSpace, glaze: "celadon" }],
             ...(dippingVatsReady && glazed.decoration === "plain" ? { useDippingVats: true } : {}),
             ...(worker.kind === "shifu" ? { shifuCeramicId: glazed.id } : {}),
-            ...(player.startingTechniqueId === "ST04" ? { kilnTendingClay: 1, kilnTendingWood: 0 } : {}),
           });
         }
         const discount = worker.kind === "shifu" ? 1 : 0;

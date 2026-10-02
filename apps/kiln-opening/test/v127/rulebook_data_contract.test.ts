@@ -87,7 +87,7 @@ describe("V1.4 checked-in data matches the adopted English rulebook", () => {
     expect(TECHNIQUE_DEFINITIONS["T03"]!.ability).toContain("the Plain ceramics loaded by that action pay no Glazing cost");
     expect(EN_SOURCE).toContain("including one formed by the same action");
     expect(EN_SOURCE).toContain("**Dipping Vats** applies to one Kiln Yard action per round and covers every Plain ceramic that action loads, in either kiln");
-    expect(EN_SOURCE).toContain("do not trigger **Kiln Tending** or **Dipping Vats**");
+    expect(EN_SOURCE).toContain("cannot use **Dipping Vats**");
     expect(EN_SOURCE).toContain("**Applying a Glaze costs 1 Coin per ceramic** before waivers.");
   });
 
@@ -119,7 +119,7 @@ describe("V1.4 checked-in data matches the adopted English rulebook", () => {
     }
   });
 
-  it("matches all four Starting Tech and fifteen Advanced Tech table rows", () => {
+  it("matches all three Starting Tech and fifteen Advanced Tech table rows", () => {
     for (const technique of [...STARTING_TECHNIQUES, ...TECHNIQUES]) {
       const en = namedTableRow(EN_SOURCE, technique.name);
       const advanced = "cost" in technique;

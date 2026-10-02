@@ -11,6 +11,8 @@ In **Kiln Opening**, each player directs a ceramic workshop inspired by one of f
 **Worker placement determines what your workshop prepares. The shared firing determines what that preparation becomes.**
 The game lasts exactly **5 rounds**.
 
+**Online setup amendment — 2026-10-02:** new online games offer **Ru, Guan, Ge and Jun**. **Ding Kiln is disabled**. Its definition and ability remain below as historical content; player counts stay **2–4**.
+
 # Glossary
 
 | Term | Meaning |
@@ -42,7 +44,7 @@ The game lasts exactly **5 rounds**.
 |--------------------------------|:------:|--------------------------------------------------------------|
 | Central Action Board           | 1      | Materials Yard, Potter's Wheel, Decoration Workshop, Kiln Yard, Commission Market, Craft Academy, Paid Work and Imperial Court. |
 | Shared Kiln Board              | 1      | Eight printed spaces: 3 High (+1), 2 Middle (0), 3 Low (−1). Use 4 / 6 / 8 spaces at 2 / 3 / 4 players; see Setup. |
-| Kiln Player Boards             | 5      | Ru, Guan, Ge, Ding and Jun.                                  |
+| Kiln Player Boards             | 5      | Ru, Guan, Ge, Ding and Jun. Ding is retained historically and is unavailable in new online games. |
 | Shifu Workers                  | 4      | One per player colour.                                       |
 | Apprentice Workers             | 12     | Three per player.                                            |
 | Clay                           | 40     | Resource; supply is unlimited.                               |
@@ -51,7 +53,7 @@ The game lasts exactly **5 rounds**.
 | Vessel Cards                   | 50     | Ten each: Bowl, Plate, Brush Washer, Vase and Censer.        |
 | Main Order Cards               | 48     | One unified public/reservable deck.                          |
 | Starting Order Cards           | 8      | Separate easy opening deck; never enters the Main Order deck. |
-| Starting Tech Tiles            | 16     | Four copies each of Prepared Clay, White Slip, Rapid Drying and Kiln Tending. |
+| Starting Tech Tiles            | 12     | Four copies each of Prepared Clay, White Slip and Rapid Drying. |
 | Advanced Tech Tiles            | 15     | Five Forming, five Decoration & Glazing, five Firing.        |
 | Fire Cards                     | 12     | −2×1, −1×3, 0×4, +1×3, +2×1.                                 |
 | Kiln Contribution Cards        | 12     | Three per player: Bank, Tend, Stoke.                         |
@@ -86,9 +88,9 @@ The game lasts exactly **5 rounds**.
    - 1 Bank, 1 Tend and 1 Stoke Contribution card;
    - that colour's Imperial Priority token, placing it on Recognition space 3.
 9. Randomly choose the First Player.
-10. In reverse turn order, each player chooses an available Kiln Player Board.
-11. Each player receives **2 Clay, 2 Wood and 4 Coins**.
-12. Each player chooses **1 Starting Tech**. Starting Techs are public information.
+10. In reverse turn order, each player chooses an available Kiln Player Board from **Ru, Guan, Ge and Jun**. **Ding is disabled for new online games**.
+11. Each player receives **2 Clay, 2 Wood and 3 Coins**.
+12. Each player chooses **1 Starting Tech** from **Prepared Clay, White Slip and Rapid Drying**. Starting Techs are public information; multiple players may choose the same Tech.
 13. Place all Imperial Recognition markers on space 0 and the Round marker on Round 1.
 
 # Round Structure
@@ -386,7 +388,7 @@ All **Starting Tech, Advanced Tech and Kiln Tradition abilities are optional**, 
 
 ## Starting Techs
 
-Each player chooses exactly 1 Starting Tech during Setup. Starting Techs do not count toward the Advanced-Tech limit and score no VP.
+Each player chooses exactly 1 Starting Tech during Setup from Prepared Clay, White Slip and Rapid Drying. Multiple players may choose the same Tech. Starting Techs do not count toward the Advanced-Tech limit and score no VP.
 
 ## Advanced Tech Rules
 
@@ -512,7 +514,7 @@ Flawed ceramics cannot be exhibited.
 
 # Kiln Tradition Abilities
 
-Player boards may use abbreviated reminder text. The rules here give the full effects.
+Player boards may use abbreviated reminder text. The rules here give the full effects. New online games use **Ru, Guan, Ge and Jun**; **Ding is disabled under the 2026-10-02 owner amendment**. Its unchanged ability is retained for historical reference.
 
 ## Ru Kiln / 汝窑 — Quiet Perfection
 
@@ -598,35 +600,35 @@ All Starting Orders are commercial Orders and have no Crowns.
 
 | ID | Requirements | Quality | VP | Coins |
 |:---:|---|---|:---:|:---:|
-| S01 | Bowl · any Glaze · any Decoration | Standard+ | 2 | 4 |
-| S02 | Plate · any Glaze · any Decoration | Standard+ | 2 | 4 |
-| S03 | Brush Washer · any Glaze · any Decoration | Standard+ | 2 | 4 |
-| S04 | any Shape · White · any Decoration | Standard+ | 3 | 4 |
-| S05 | any Shape · Celadon · any Decoration | Standard+ | 3 | 4 |
-| S06 | any Shape · Grey-Green · any Decoration | Standard+ | 3 | 4 |
-| S07 | any Shape · Moon White · any Decoration | Standard+ | 4 | 4 |
-| S08 | Vase or Censer · any Glaze · any Decoration | Standard+ | 3 | 4 |
+| S01 | Bowl · any Glaze · any Decoration | Standard+ | 2 | 3 |
+| S02 | Plate · any Glaze · any Decoration | Standard+ | 2 | 3 |
+| S03 | Brush Washer · any Glaze · any Decoration | Standard+ | 2 | 3 |
+| S04 | any Shape · White · any Decoration | Standard+ | 3 | 3 |
+| S05 | any Shape · Celadon · any Decoration | Standard+ | 3 | 3 |
+| S06 | any Shape · Grey-Green · any Decoration | Standard+ | 3 | 3 |
+| S07 | any Shape · Moon White · any Decoration | Standard+ | 4 | 3 |
+| S08 | Vase or Censer · any Glaze · any Decoration | Standard+ | 3 | 3 |
 
 ## A1. Main Single-Ceramic Orders — 24
 
 | ID | Requirements | Quality | VP | Coins | Crowns |
 |:---:|---|---|:---:|:---:|:---:|
-| O01 | Bowl · any Glaze · any Decoration | Standard+ | 4 | 3 | — |
-| O02 | Plate · any Glaze · any Decoration | Standard+ | 4 | 3 | — |
-| O03 | Brush Washer · any Glaze · any Decoration | Standard+ | 4 | 3 | — |
-| O04 | Vase · Moon White · any Decoration | Fine+ | 7 | 4 | — |
-| O05 | Censer · any Glaze · Carved | Fine+ | 8 | 4 | — |
-| O06 | any Shape · White · any Decoration | Fine+ | 5 | 3 | — |
-| O07 | any Shape · Celadon · any Decoration | Fine+ | 5 | 3 | — |
-| O08 | any Shape · Grey-Green · any Decoration | Fine+ | 5 | 3 | — |
-| O09 | any Shape · Moon White · any Decoration | Fine+ | 6 | 3 | — |
-| O10 | any Shape · any Glaze · Carved, Impressed or Painted | Fine+ | 6 | 4 | — |
-| O11 | any Shape · any Glaze · Carved | Masterpiece | 9 | 4 | — |
-| O12 | any Shape · any Glaze · Impressed | Masterpiece | 9 | 4 | — |
-| O13 | any Shape · any Glaze · Painted | Masterpiece | 9 | 4 | — |
-| O14 | Brush Washer · Grey-Green · any Decoration | Fine+ | 6 | 3 | — |
-| O15 | Vase or Censer · White · any Decoration | Fine+ | 6 | 4 | — |
-| O16 | any Shape · any Glaze · any Decoration | Masterpiece | 7 | 2 | — |
+| O01 | Bowl · any Glaze · any Decoration | Standard+ | 4 | 2 | — |
+| O02 | Plate · any Glaze · any Decoration | Standard+ | 4 | 2 | — |
+| O03 | Brush Washer · any Glaze · any Decoration | Standard+ | 4 | 2 | — |
+| O04 | Vase · Moon White · any Decoration | Fine+ | 7 | 3 | — |
+| O05 | Censer · any Glaze · Carved | Fine+ | 8 | 3 | — |
+| O06 | any Shape · White · any Decoration | Fine+ | 5 | 2 | — |
+| O07 | any Shape · Celadon · any Decoration | Fine+ | 5 | 2 | — |
+| O08 | any Shape · Grey-Green · any Decoration | Fine+ | 5 | 2 | — |
+| O09 | any Shape · Moon White · any Decoration | Fine+ | 6 | 2 | — |
+| O10 | any Shape · any Glaze · Carved, Impressed or Painted | Fine+ | 6 | 3 | — |
+| O11 | any Shape · any Glaze · Carved | Masterpiece | 9 | 3 | — |
+| O12 | any Shape · any Glaze · Impressed | Masterpiece | 9 | 3 | — |
+| O13 | any Shape · any Glaze · Painted | Masterpiece | 9 | 3 | — |
+| O14 | Brush Washer · Grey-Green · any Decoration | Fine+ | 6 | 2 | — |
+| O15 | Vase or Censer · White · any Decoration | Fine+ | 6 | 3 | — |
+| O16 | any Shape · any Glaze · any Decoration | Masterpiece | 7 | 1 | — |
 | O17 | Brush Washer · White · Painted | Fine+ | 7 | 2 | 👑 |
 | O18 | Vase · Celadon · any Decoration | Fine+ | 6 | 2 | 👑 |
 | O19 | Censer · Grey-Green · Impressed | Fine+ | 8 | 2 | 👑 |
@@ -642,16 +644,16 @@ Unless a card explicitly pairs attributes, Shape, Glaze and Decoration requireme
 
 | ID | Requirements | Quality | VP | Coins | Crowns |
 |:---:|---|---|:---:|:---:|:---:|
-| O25 | 2 different Shapes; any Glazes; different Decorations | Standard+ each | 9 | 5 | — |
-| O26 | Bowl + Plate; both White; any Decorations | Fine+ each | 10 | 5 | — |
-| O27 | Brush Washer + Vase; one Grey-Green, one Moon White; any Decorations | Fine+ each | 12 | 5 | — |
-| O28 | 2 ceramics of the same Shape; one Celadon, one Moon White; any Decorations | Fine+ each | 11 | 5 | — |
-| O29 | Vase + Censer; any Glazes; different Decorations | Fine+ each | 14 | 5 | — |
-| O30 | Bowl + Brush Washer; one White, one Moon White; any Decorations | Fine+ each | 12 | 5 | — |
-| O31 | Plate + Vase; both Celadon; different Decorations | Fine+ each | 13 | 5 | — |
-| O32 | Vase + Bowl; both White; different Decorations | Fine+ each; ≥1 Masterpiece | 15 | 5 | — |
-| O33 | 2 different Shapes; same Glaze; different Decorations | Fine+ each; ≥1 Masterpiece | 14 | 4 | — |
-| O34 | 2 different Shapes; different Glazes; same non-Plain Decoration | Fine+ each; ≥1 Masterpiece | 15 | 6 | — |
+| O25 | 2 different Shapes; any Glazes; different Decorations | Standard+ each | 9 | 4 | — |
+| O26 | Bowl + Plate; both White; any Decorations | Fine+ each | 10 | 4 | — |
+| O27 | Brush Washer + Vase; one Grey-Green, one Moon White; any Decorations | Fine+ each | 12 | 4 | — |
+| O28 | 2 ceramics of the same Shape; one Celadon, one Moon White; any Decorations | Fine+ each | 11 | 4 | — |
+| O29 | Vase + Censer; any Glazes; different Decorations | Fine+ each | 14 | 4 | — |
+| O30 | Bowl + Brush Washer; one White, one Moon White; any Decorations | Fine+ each | 12 | 4 | — |
+| O31 | Plate + Vase; both Celadon; different Decorations | Fine+ each | 13 | 4 | — |
+| O32 | Vase + Bowl; both White; different Decorations | Fine+ each; ≥1 Masterpiece | 15 | 4 | — |
+| O33 | 2 different Shapes; same Glaze; different Decorations | Fine+ each; ≥1 Masterpiece | 14 | 3 | — |
+| O34 | 2 different Shapes; different Glazes; same non-Plain Decoration | Fine+ each; ≥1 Masterpiece | 15 | 5 | — |
 | O35 | Bowl + Plate; both Celadon; any Decorations | Fine+ each | 11 | 2 | 👑 |
 | O36 | Brush Washer + Vase; one White, one Moon White; different Decorations | Fine+ each | 15 | 3 | 👑 |
 | O37 | Censer + Bowl; one Grey-Green, one Celadon; same non-Plain Decoration | Fine+ each | 14 | 3 | 👑 |
@@ -665,8 +667,8 @@ Unless a card explicitly pairs attributes, Shape, Glaze and Decoration requireme
 
 | ID | Requirements | Quality | VP | Coins | Crowns |
 |:---:|---|---|:---:|:---:|:---:|
-| O43 | 3 different Shapes; one White, one Celadon, one Grey-Green; at least 2 different Decorations | Standard+ all | 15 | 6 | — |
-| O44 | 3 different Shapes; one Celadon, one Grey-Green, one Moon White; any Decorations | Fine+ all | 16 | 5 | — |
+| O43 | 3 different Shapes; one White, one Celadon, one Grey-Green; at least 2 different Decorations | Standard+ all | 15 | 5 | — |
+| O44 | 3 different Shapes; one Celadon, one Grey-Green, one Moon White; any Decorations | Fine+ all | 16 | 4 | — |
 | O45 | 3 different Shapes; one White, one Celadon, one Grey-Green; 3 different Decorations | Fine+ all | 20 | 2 | 👑👑 |
 | O46 | Plate + Vase + Censer; one Celadon, one Grey-Green, one Moon White; one Carved, one Impressed, one Painted | Fine+ all | 22 | 3 | 👑👑 |
 | O47 | 3 different Shapes; 3 different Glazes; 3 different Decorations | Fine+ all; ≥2 Masterpieces | 24 | 0 | 👑👑👑 |
@@ -683,7 +685,6 @@ Tech tiles use abbreviated reminder text. The rules here give the full effects.
 | **Prepared Clay** | **After each Materials Yard action:** form **1 vessel of any Shape** by paying **1 more Clay than its Clay cost**. It starts Plain for free. |
 | **White Slip** | **After each Potter's Wheel action:** choose **1 Plain vessel formed by that action**. Pay its **2-Coin Decoration cost** to replace Plain with **Painted**. |
 | **Rapid Drying** | **After each Decoration Workshop action:** choose **1 vessel decorated by that action**. Pay **1 Wood + the 1-Coin Glazing cost**, apply any one Glaze, then load it into an empty active Shared Kiln space or your empty Imperial Kiln, if gained. |
-| **Kiln Tending** | **Once during each Kiln Yard action**, after loading at least **1 ceramic**, gain **1 Clay or 1 Wood**. |
 
 ## B2. Forming Advanced Techs
 
@@ -726,7 +727,7 @@ Tech tiles use abbreviated reminder text. The rules here give the full effects.
 - **Dipping Vats** applies to one Kiln Yard action per round and covers every Plain ceramic that action loads, in either kiln. Specialised ceramics loaded by that action pay the Glazing cost normally. Because abilities are optional, you may save it for a later Kiln Yard action that round.
 - **Reworking Table** changes a vessel's Shape before replacing its Plain Decoration in that Decoration Workshop action; it is not a separate forming action.
 - **Rapid Drying** may affect only a vessel decorated by that Decoration Workshop action. Neither White Slip nor Drying Frames is a Decoration Workshop action, so neither triggers Rapid Drying.
-- **Rapid Drying** and **Imperial Priority** are not Kiln Yard actions and do not trigger **Kiln Tending** or **Dipping Vats**, or grant a Shifu Heat marker.
+- **Rapid Drying** and **Imperial Priority** are not Kiln Yard actions and cannot use **Dipping Vats** or grant a Shifu Heat marker.
 - **Glaze Palette** resolves after all workers and their associated effects, including Imperial Priority, have finished. It may change any one of your loaded ceramics, including one loaded through Rapid Drying or Imperial Priority.
 - **Glaze Palette resolves before Test Pieces** and other pre-firing abilities. It cannot be delayed until after Contributions or Fire.
 - The one-off **Colour Samples** reservation is separate from its once-per-round Commission Market effect. During a Shifu Commission Market action, Colour Samples improves only **1 reservation**; it does not add another reservation.
@@ -853,9 +854,9 @@ Fuel Ledger: **−2 Bank or +2 Stoke / 2 Wood**. Choose **exactly 1 card** per p
 - **Workshop** describes all formed, unfired, unloaded vessels, whether Plain or specialised. It replaces the separate Shaped/Decorated state distinction; loaded and finished ceramics do not count as workshop inventory.
 - Kiln Yard continues to glaze and immediately load for **1 Coin per ceramic**. Imperial Priority can use a workshop ceramic with any Decoration, including Plain.
 - Shared Kiln allocation is **2 players: 1 High / 2 Middle / 1 Low; 3 players: 2 / 2 / 2; 4 players: 3 / 2 / 3**. Two-player Shared capacity is now **4**.
-- Appendix A now uses the full **Glaze-agency Order deck**: all 48 Main requirements and rewards match that proposal; the 8 Starting Orders are unchanged. Main Orders contain no explicit Plain-only requirement.
+- Appendix A now uses the full **Glaze-agency Order deck**: all 48 Main requirements follow that proposal. The 2026-09-30 economy amendment reduces the Coin reward of every crownless Main Order by 1 and sets all 8 Starting Orders to 3 Coins; Crown Order rewards are unchanged. Main Orders contain no explicit Plain-only requirement.
 - **White Slip:** after each Potter's Wheel action, pay the **2-Coin Decoration cost** to replace Plain with **Painted** on one vessel formed by that action.
-- **Prepared Clay**, **Rapid Drying** and **Kiln Tending** remain per-action Starting Techs. Rapid Drying's payment is **1 Wood + the 1-Coin Glazing cost**; Kiln Tending grants **1 Clay or 1 Wood**.
+- **Prepared Clay**, **White Slip** and **Rapid Drying** are the three Starting Tech choices. Rapid Drying's payment is **1 Wood + the 1-Coin Glazing cost**. **Kiln Tending was removed by the 2026-09-30 economy amendment**.
 - **Drying Frames:** costs **3 Coins to acquire**; once per round after Potter's Wheel, pay the **2-Coin Decoration cost** for Carved, Impressed or Painted on one newly formed Plain vessel.
 - **Measuring Calipers** requires any other vessel still in your workshop, regardless of Shape.
 - **Dipping Vats** replaces Standardised Moulds: once per round, waive the Glazing cost for all Plain ceramics loaded by one Kiln Yard action.
@@ -863,8 +864,8 @@ Fuel Ledger: **−2 Bank or +2 Stoke / 2 Wood**. Choose **exactly 1 card** per p
 - **Glaze Palette** moves to the **end of the Work Phase**, after all worker effects and before Test Pieces or other pre-firing abilities. No additional Glazing payment is required.
 - Decoration discount Techs waive the matching **2-Coin Decoration cost**, including eligible White Slip and Drying Frames uses.
 - **Ge:** once per round, after Quality is assigned, one Standard ceramic from this firing becomes **Fine + Crackle**. The owner chooses the order of Ge and their other after-Quality abilities, rechecking eligibility after each use. Crackle is permanent and provides a wild **Glaze only**, never a wild Decoration.
-- **Ding** triggers only during an **Apprentice's Potter's Wheel action**; pay **1 Clay** for one extra Bowl, Plate or Brush Washer matching a vessel formed by that action. It does not trigger from a Shifu or a Tech effect.
-- **Ru, Guan and Jun** retain their abilities. Starting resources remain **2 Clay, 2 Wood and 4 Coins**; each player has **1 Shifu and 3 Apprentices** throughout the five rounds.
+- **Ding is disabled for new online games** under the 2026-10-02 owner amendment. Ru, Guan, Ge and Jun remain selectable; 2–4-player support is unchanged. The retained historical **Ding** ability triggers only during an **Apprentice's Potter's Wheel action**; pay **1 Clay** for one extra Bowl, Plate or Brush Washer matching a vessel formed by that action. It does not trigger from a Shifu or a Tech effect.
+- **Ru, Guan and Jun** retain their abilities. Starting resources are **2 Clay, 2 Wood and 3 Coins** under the 2026-09-30 economy amendment; each player has **1 Shifu and 3 Apprentices** throughout the five rounds.
 - Kiln Yard Shifu may supervise **one ceramic loaded by that action in either kiln**. Its optional **+1/−1** marker is chosen after Contributions and before Fire, costs no Wood and persists through Second Firing. The removed Shifu is not available again until Cleanup.
 - **Fuel Ledger** uses the reusable **+2 Stoke and −2 Bank** cards at **2 Wood** each. Each participating player still chooses **one** Contribution card; no separate hidden Wood commitment is used.
 - Fire discards are explicitly **public and inspectable**. No routine reshuffle occurs between rounds.

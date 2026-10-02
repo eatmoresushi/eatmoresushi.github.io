@@ -6,7 +6,7 @@ import type { GameState, LocationId, WorkerKind } from "../../src/game/index.ts"
 import { projectPublicGameState } from "../../src/multiplayer/index.ts";
 import { ActionPanel } from "../../src/ui/ActionPanel.tsx";
 import { BoardActionSummary } from "../../src/ui/BoardActionSummary.tsx";
-import { LanguageProvider } from "../../src/ui/i18n.tsx";
+import { LanguageProvider, localizeMultiplayerError } from "../../src/ui/i18n.tsx";
 import { addGlazed, addLoaded, addShaped, addTechnique, startedGame, workerId } from "./helpers.ts";
 
 const ACTION_LOCATIONS: readonly LocationId[] = [
@@ -103,6 +103,14 @@ function renderAction(
 }
 
 describe("V1.4 smart worker-action choices", () => {
+  it.each([
+    ["INVALID_SELECTION", "Choose one of the three Starting Techs.", "请从3个起始技艺中选择1个。"],
+    ["INVALID_ACTION", "Kiln Tending has been removed. Submit the Kiln Yard action without a resource bonus.", "看火已移除。请重新提交窑坊行动，不要附带资源奖励。"],
+  ])("explains obsolete Starting Tech requests returned by the server (%s)", (code, english, chinese) => {
+    expect(localizeMultiplayerError("en", code!, english!)).toBe(english);
+    expect(localizeMultiplayerError("zh-CN", code!, english!)).toBe(chinese);
+  });
+
   it.each(["apprentice", "shifu"] as const)("requires 5 Coins for the %s Imperial Court action", (kind) => {
     for (const coins of [4, 5]) {
       const { markup } = renderAction("court_patronage", kind, (state) => {
@@ -123,24 +131,13 @@ describe("V1.4 smart worker-action choices", () => {
     expect(chinese).toContain("支付5铜钱 → 御府声望＋1 · 最高3格");
   });
 
-  it("offers Kiln Tending as an optional choice of one Clay or one Wood", () => {
+  it.each(["ST01", "ST02", "ST03"] as const)("does not offer the removed Kiln Tending benefit with %s", (techniqueId) => {
     const { markup } = renderAction("kiln_yard", "apprentice", (state) => {
-      state.players["P1"]!.startingTechniqueId = "ST04";
-    });
-    const choice = markup.match(/<fieldset[^>]*data-choice-group="kiln-tending"[\s\S]*?<\/fieldset>/)?.[0] ?? "";
-    expect(choice).toContain("Do not use");
-    expect(choice).toContain("1 Clay");
-    expect(choice).toContain("1 Wood");
-    expect(buttonWithAttribute(choice, "data-choice-value", "")).toContain('aria-pressed="true"');
-    expect(buttonWithAttribute(choice, "data-choice-value", "clay")).toContain('aria-pressed="false"');
-    expect(buttonWithAttribute(choice, "data-choice-value", "wood")).toContain('aria-pressed="false"');
-  });
-
-  it("does not offer Kiln Tending to another Starting Tech", () => {
-    const { markup } = renderAction("kiln_yard", "apprentice", (state) => {
-      state.players["P1"]!.startingTechniqueId = "ST01";
+      state.players["P1"]!.startingTechniqueId = techniqueId;
     });
     expect(markup).not.toContain('data-choice-group="kiln-tending"');
+    expect(markup).not.toContain("gain after loading");
+    expect(markup).toContain("Load kiln");
   });
 
   it("offers only optional Calipers income for another same-Shape vessel and does not spend it on White Slip unless selected", () => {

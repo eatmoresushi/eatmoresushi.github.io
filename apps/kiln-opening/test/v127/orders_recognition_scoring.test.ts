@@ -82,9 +82,9 @@ describe("V1.4 Orders, Recognition, and scoring", () => {
     ["O01", "bowl"],
     ["O02", "plate"],
     ["O03", "washer"],
-  ] as const)("awards the amended 4 VP and unchanged 3 Coins for held and face-up %s", (orderId, shape) => {
+  ] as const)("awards 4 VP and the amended 2 Coins for held and face-up %s", (orderId, shape) => {
     expect(ORDER_DEFINITIONS[orderId]).toMatchObject({
-      ceramics: [{ shape }], minQuality: "standard", vp: 4, coins: 3, crowns: 0,
+      ceramics: [{ shape }], minQuality: "standard", vp: 4, coins: 2, crowns: 0,
     });
     for (const source of ["held", "face-up"] as const) {
       const { state, rng } = startedGame(2, 15_001);
@@ -100,10 +100,10 @@ describe("V1.4 Orders, Recognition, and scoring", () => {
       }, rng);
       const player = result.state.players["P1"]!;
       expect(player.score.orderVp, source).toBe(before.score.orderVp + 4);
-      expect(player.resources.coins, source).toBe(before.resources.coins + 3);
+      expect(player.resources.coins, source).toBe(before.resources.coins + 2);
       expect(player.imperialRecognition, source).toBe(before.imperialRecognition);
       expect(player.completedOrders.at(-1), source).toEqual({
-        orderId, ceramicIds: [finished.id], completedInRound: state.round, vpAwarded: 4, coinsAwarded: 3,
+        orderId, ceramicIds: [finished.id], completedInRound: state.round, vpAwarded: 4, coinsAwarded: 2,
       });
       expect(result.state.ceramics[finished.id], source).toMatchObject({ stage: "delivered", orderId });
     }
@@ -155,7 +155,7 @@ describe("V1.4 Orders, Recognition, and scoring", () => {
       expect(result.ok).toBe(true);
       if (!result.ok) throw new Error(result.error.message);
       expect(result.state.players["P1"]!.score.orderVp).toBe(before.players["P1"]!.score.orderVp + 15);
-      expect(result.state.players["P1"]!.resources.coins).toBe(before.players["P1"]!.resources.coins + 5);
+      expect(result.state.players["P1"]!.resources.coins).toBe(before.players["P1"]!.resources.coins + 4);
       expect(result.state.ceramics[vase.id]?.stage).toBe("delivered");
       expect(result.state.ceramics[bowl.id]?.stage).toBe("delivered");
     }

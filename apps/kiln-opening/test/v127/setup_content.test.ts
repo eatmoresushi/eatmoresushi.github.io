@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   FIRE_CARDS,
   GAME_CONFIG,
-  KILN_IDS,
+  AVAILABLE_KILN_IDS,
   LOCATION_IDS,
   MAIN_ORDERS,
   STARTING_ORDERS,
@@ -41,6 +41,7 @@ describe("v1.4 setup and authoritative content", () => {
       expect(Object.values(player.workers).filter(({ kind }) => kind === "shifu")).toHaveLength(1);
       expect(Object.values(player.workers).filter(({ kind }) => kind === "apprentice")).toHaveLength(3);
       expect(Object.values(player.workers).every(({ status }) => status === "available")).toBe(true);
+      expect(player.resources).toEqual({ clay: 2, wood: 2, coins: 3 });
       expect(player.imperialRecognition).toBe(0);
       expect(player.imperialKilnUnlocked).toBe(false);
       expect(player.imperialPriorityAvailable).toBe(false);
@@ -53,7 +54,7 @@ describe("v1.4 setup and authoritative content", () => {
     let kilnIndex = 0;
     while (state.phase.type === "setup_kiln_selection") {
       const actor = currentDecisionActor(state.phase)!;
-      state = mustApply(state, actor, { type: "SELECT_KILN", kilnId: KILN_IDS[kilnIndex]! }, rng);
+      state = mustApply(state, actor, { type: "SELECT_KILN", kilnId: AVAILABLE_KILN_IDS[kilnIndex]! }, rng);
       kilnIndex += 1;
     }
     const hands = Object.values(state.players).flatMap((player) => player.orderHand);
@@ -76,7 +77,7 @@ describe("v1.4 setup and authoritative content", () => {
   it("contains exactly the v1.4 decks, spaces, locations, and bilingual records", () => {
     expect(STARTING_ORDERS.map(({ id }) => id)).toEqual(Array.from({ length: 8 }, (_, i) => `S${String(i + 1).padStart(2, "0")}`));
     expect(MAIN_ORDERS.map(({ id }) => id)).toEqual(Array.from({ length: 48 }, (_, i) => `O${String(i + 1).padStart(2, "0")}`));
-    expect(STARTING_TECHNIQUES).toHaveLength(4);
+    expect(STARTING_TECHNIQUES).toHaveLength(3);
     expect(TECHNIQUES).toHaveLength(15);
     expect(TECHNIQUES.filter(({ discipline }) => discipline === "forming")).toHaveLength(5);
     expect(TECHNIQUES.filter(({ discipline }) => discipline === "glazing")).toHaveLength(5);

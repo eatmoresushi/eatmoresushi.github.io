@@ -4,7 +4,9 @@ The [V1.4 Player Rulebook](./KILN_OPENING_v1.4_EN_SOURCE.md) governs mechanics. 
 
 ## Setup and production
 
-- Each player starts with 2 Clay, 2 Wood, 4 Coins, 1 Shifu and 3 Apprentices. Resources have unlimited shared supplies. Stable ceramic instances represent physical Vessel cards; exhausted physical cards permit same-Shape proxies.
+- Each player starts with 2 Clay, 2 Wood, 3 Coins, 1 Shifu and 3 Apprentices. Resources have unlimited shared supplies. Stable ceramic instances represent physical Vessel cards; exhausted physical cards permit same-Shape proxies.
+- Kiln selection offers only Ru, Guan, Ge and Jun, in reverse turn order. Ding is disabled for new online games under the 2026-10-02 owner amendment. `DI` and its unchanged ability remain in the content catalog for historical references; enabled Kiln IDs govern human and computer choices, and the server rejects disabled selections. Player counts remain 2–4.
+- Starting Tech selection offers only Prepared Clay, White Slip and Rapid Drying. Multiple players may choose the same Tech. Kiln Tending (`ST04`) is retired and cannot be selected or activated.
 - Shared-Kiln allocations (High/Middle/Low) are 1/2/1, 2/2/2 and 3/2/3 at 2/3/4 players. The eighth space has stable ID `low_3`.
 - Materials Yard, Potter's Wheel, Decoration Workshop, Commission Market and Craft Academy have 2/3/4 global worker spaces. Kiln Yard, Paid Work and Imperial Court are uncapped. Multiple Shifu may overfill a location. Internal location IDs remain stable across the label changes.
 - A formed ceramic starts in `workshop`, Plain and without a Glaze. Optional Decoration changes it to Carved, Impressed or Painted without loading it. Decoration costs 2 Coins per ceramic; a Shifu may decorate one or two with one free Decoration.
@@ -16,6 +18,7 @@ Measuring Calipers grants 2 Coins once per round after forming a vessel if anoth
 ## Orders and private Academy choices
 
 - Players secretly receive two of the eight Starting Orders and no Main Order. All eight Starting Orders are dealt at four players; undealt Starting Orders return to the box. Both held Orders count toward the three-Order Cleanup hand limit.
+- The 2026-09-30 economy amendment sets all eight Starting Order rewards to 3 Coins and reduces each of the 28 crownless Commercial Main Orders by 1 Coin, leaving every Commercial Main reward at least 1 Coin. Crown rewards, VP, requirements and Shifu discounts are unchanged.
 - The six-card Main display is an ordered queue. Remove, slide left and append when reserving or completing a face-up Order. At the start of Rounds 2–5 discard the oldest two, retain the rest in order and refill. If both deck and discard are empty, draw only available cards and leave the display short. Every reservation must take a card.
 - Shifu reservations resolve sequentially, including each chosen resource advance and display refill. Colour Samples inspection is private; untaken inspected Orders go to discard.
 - A Craft Academy Shifu privately inspects up to two Techs of a discipline. The acquisition command explicitly supplies the bottom order of multiple untaken inspected Techs. The server validates the exact permutation; inspection, deck order and returned IDs remain private.
@@ -44,4 +47,4 @@ Ge records actual Fine Quality, so completion and Exhibition use recorded Qualit
 
 All undelivered ceramics and their recorded attributes are public. Hands, inspections, hidden deck order and unrevealed Contributions are private. Public projections redact them; authenticated private responses contain only the requesting seat's information. The same sanitized boundary applies to computer players. English and Simplified Chinese render identical stable IDs and never change game state.
 
-V1.4 rooms use schema 5, behavior revision 26 and policy `rules-v1.4-strategic-001`. Older room rows and playtest reports are retained as history. Version/schema/fingerprint mismatches are rejected rather than reinterpreted. SQL migrations, both Edge Functions and the client must be rolled out together; checked-in migrations do not apply themselves.
+V1.4 rooms use schema 5, behavior revision 28 and policy `rules-v1.4-strategic-001`. Older room rows and playtest reports are retained as history. Version/schema/fingerprint mismatches are rejected rather than reinterpreted. SQL migrations, both Edge Functions and the client must be rolled out together; checked-in migrations do not apply themselves.

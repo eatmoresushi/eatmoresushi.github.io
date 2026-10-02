@@ -57,7 +57,7 @@ Generate four identical three-card sets: Bank the Fire, Tend the Fire and Stoke 
 
 ### Player boards and Techs
 
-Generate the five Kiln player boards from `data/kilns.json`. Each board must show:
+Generate the four enabled Kiln player boards (Ru, Guan, Ge and Jun) from `data/kilns.json` for current online setup. Ding is disabled for new online games; retain its historical definition and existing assets. Each active board must show:
 
 - one Starting Tech area and two Advanced Tech slots;
 - one empty Imperial Kiln area that receives a one-ceramic tile at Recognition 2;
@@ -65,7 +65,7 @@ Generate the five Kiln player boards from `data/kilns.json`. Each board must sho
 
 Do not show private workshop worker spaces or Tech-based location unlocks. Potter's Wheel and Glaze & Decoration belong on the shared Central Action Board.
 
-Generate four Starting Tech designs, with four physical copies each, and all 15 unique Advanced Techs from `data/techniques.json`.
+Generate three Starting Tech designs, with four physical copies each, and all 15 unique Advanced Techs from `data/techniques.json`.
 
 ### Reference
 

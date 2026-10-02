@@ -71,7 +71,7 @@ describe("V1.4 Court Patronage and mandatory Work", () => {
     expectError(applyAction(state, "P1", { type: "PASS_WORK_PHASE" }, rng), "INVALID_ACTION");
     const result = finishWork(state, rng);
     expect(result.events.filter((event) => event.type === "WORKER_PLACED")).toHaveLength(count * 4);
-    for (const player of Object.values(result.state.players)) expect(player.resources.coins).toBe(14);
+    for (const player of Object.values(result.state.players)) expect(player.resources.coins).toBe(13);
     expect(result.state.phase.type).toBe("orders");
   });
 });
@@ -180,7 +180,7 @@ describe("V1.4 Tech timing", () => {
     const { state, rng } = startedGame(2, 1271, ["ST01"]);
     addTechnique(state, "P1", "T02"); addShaped(state, "P1", "plate");
     const next = mustApply(state, "P1", { type: "GAIN_MATERIALS", workerId: workerId(state, "P1", "apprentice"), clay: 3, wood: 0, preparedClayShape: "vase", useTechniqueIds: ["T02"] }, rng);
-    expect(next.players["P1"]!.resources.coins).toBe(6);
+    expect(next.players["P1"]!.resources.coins).toBe(5);
     next.players["P1"]!.techniques = [{ id: "T04", exhausted: false }, { id: "T07", exhausted: false }];
     next.players["P1"]!.resources.coins = 0; setWorkTurn(next, "P1");
     const formed = mustApply(next, "P1", { type: "FORM_CERAMICS", workerId: workerId(next, "P1", "apprentice"), shapes: ["bowl"], useTechniqueIds: ["T04", "T07"], dryingFrames: { formedIndex: 0, decoration: "carved" } }, rng);

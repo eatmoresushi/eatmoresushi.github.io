@@ -96,9 +96,14 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  *  26 -- Revised V1.4 source: Measuring Calipers accepts any other workshop vessel;
  *        Dipping Vats replaces Standardised Moulds and waives Plain glazing costs
  *        in one Kiln Yard action per round.
+ *  27 -- Owner economy amendment: start with 3 Coins, reduce crownless Main
+ *        Order rewards by 1 Coin, pay 3 Coins for Starting Orders, and remove
+ *        Kiln Tending from setup and Kiln Yard actions.
+ *  28 -- Owner amendment: Ding Kiln is disabled for new games. Its stable ID
+ *        and rules remain available for historical records.
  */
-/** Revised V1.4 Forming Techs: broader Measuring Calipers and Dipping Vats. */
-export const RULES_BEHAVIOUR_REVISION = 26;
+/** Revised V1.4 economy and four selectable Kiln Traditions. */
+export const RULES_BEHAVIOUR_REVISION = 28;
 
 /**
  * Display-only keys, excluded so that a typo fix or a translation improvement does not

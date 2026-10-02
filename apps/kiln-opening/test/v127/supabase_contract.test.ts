@@ -5,6 +5,8 @@ import migration from "../../supabase/migrations/202609260001_v14_rules.sql?raw"
 import startingHandMigration from "../../supabase/migrations/202609270001_v14_starting_orders.sql?raw";
 import courtGeMigration from "../../supabase/migrations/202609280001_v14_court_ge_amendment.sql?raw";
 import formingTechMigration from "../../supabase/migrations/202609280002_v14_forming_techs.sql?raw";
+import economyMigration from "../../supabase/migrations/202609300001_v14_economy.sql?raw";
+import dingMigration from "../../supabase/migrations/202610020001_v14_disable_ding.sql?raw";
 import strategicAiMigration from "../../supabase/migrations/202609260001_v14_rules.sql?raw";
 import orderQueueMigration from "../../supabase/migrations/202609190001_v127_rules.sql?raw";
 import eightStartingOrdersMigration from "../../supabase/migrations/202609200001_v127_eight_starting_orders.sql?raw";
@@ -165,9 +167,54 @@ describe("V1.4 Supabase contract", () => {
     ]);
     const replacement = formingTechMigration.match(/execute replace\(v_definition, '([^']+)', '([^']+)'\)/)!;
     expect(replacement[1]).toBe("^r25-[0-9a-f]{16}$");
-    expect(replacement[2]).toBe(`^r${RULES_BEHAVIOUR_REVISION}-[0-9a-f]{16}$`);
+    expect(replacement[2]).toBe("^r26-[0-9a-f]{16}$");
     expect(formingTechMigration).toContain("if position('^r25-[0-9a-f]{16}$' in v_definition) = 0 then");
     expect(formingTechMigration).toContain("raise exception 'Expected r25 fingerprint gate in %', v_signature");
+  });
+
+  it("requires the amended economy for all write gates while preserving historical room state", () => {
+    expect(economyMigration).toContain("'^r(23|24|25|26|27)-[0-9a-f]{16}$'");
+    expect(economyMigration).not.toMatch(/\b(?:update|delete from|truncate)\s+(?:public\.|private\.)/i);
+    const replacedFunctions = [...economyMigration.matchAll(/'public\.(server_\w+)\([^']+\)'::regprocedure/g)]
+      .map((match) => match[1]!);
+    expect(replacedFunctions).toEqual([
+      "server_add_computer_seat", "server_create_room", "server_commit_start", "server_commit_transition", "server_join_room",
+    ]);
+    const replacement = economyMigration.match(/execute replace\(v_definition, '([^']+)', '([^']+)'\)/)!;
+    expect(replacement[1]).toBe("^r26-[0-9a-f]{16}$");
+    expect(replacement[2]).toBe("^r27-[0-9a-f]{16}$");
+    expect(economyMigration).toContain("if position('^r26-[0-9a-f]{16}$' in v_definition) = 0 then");
+    expect(economyMigration).toContain("raise exception 'Expected r26 fingerprint gate in %', v_signature");
+    for (const name of replacedFunctions) {
+      const original = migration.split(`create or replace function public.${name}(`)[1]!.split("create or replace function")[0]!;
+      const prior = original.replaceAll("^r23-[0-9a-f]{16}$", replacement[1]!);
+      expect(prior).toContain(replacement[1]);
+      const amended = prior.replaceAll(replacement[1]!, replacement[2]!);
+      expect(amended).toContain(replacement[2]);
+      expect(amended).not.toContain(replacement[1]);
+    }
+  });
+
+  it("requires the four-Kiln roster for all write gates without changing historical room rows", () => {
+    expect(dingMigration).toContain("'^r(23|24|25|26|27|28)-[0-9a-f]{16}$'");
+    expect(dingMigration).not.toMatch(/\b(?:update|delete from|truncate)\s+(?:public\.|private\.)/i);
+    const replacedFunctions = [...dingMigration.matchAll(/'public\.(server_\w+)\([^']+\)'::regprocedure/g)]
+      .map((match) => match[1]!);
+    expect(replacedFunctions).toEqual([
+      "server_add_computer_seat", "server_create_room", "server_commit_start", "server_commit_transition", "server_join_room",
+    ]);
+    const replacement = dingMigration.match(/execute replace\(v_definition, '([^']+)', '([^']+)'\)/)!;
+    expect(replacement[1]).toBe("^r27-[0-9a-f]{16}$");
+    expect(replacement[2]).toBe(`^r${RULES_BEHAVIOUR_REVISION}-[0-9a-f]{16}$`);
+    expect(dingMigration).toContain("if position('^r27-[0-9a-f]{16}$' in v_definition) = 0 then");
+    expect(dingMigration).toContain("raise exception 'Expected r27 fingerprint gate in %', v_signature");
+    for (const name of replacedFunctions) {
+      const original = migration.split(`create or replace function public.${name}(`)[1]!.split("create or replace function")[0]!;
+      const prior = original.replaceAll("^r23-[0-9a-f]{16}$", replacement[1]!);
+      const amended = prior.replaceAll(replacement[1]!, replacement[2]!);
+      expect(amended).toContain(replacement[2]);
+      expect(amended).not.toContain(replacement[1]);
+    }
   });
 
   it("guards joining before writing a seat and returns the complete current room and human-seat contract", () => {

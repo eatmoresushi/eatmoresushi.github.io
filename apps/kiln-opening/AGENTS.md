@@ -29,6 +29,8 @@ All after-Quality abilities, including Ge, Protective Saggars and Second Firing,
 The 2026-09-27 owner amendment deals two Starting Orders and no Main Order to each player at setup, and raises O01–O03 to 4 VP each; their other requirements and rewards are unchanged.
 The 2026-09-28 owner amendment makes Imperial Court cost 5 Coins for either worker type. Each permanent Ge Crackle ceramic may use any one Glaze consistently for every requirement when completing an Order; it no longer substitutes Decoration. Actual Glaze and Decoration remain unchanged, and Exhibition uses actual Glaze.
 The replacement rulebook supplied later on 2026-09-28 is the sole mechanical source: Measuring Calipers needs any other workshop vessel, including one formed by the same action; Shape does not matter. T03 is Dipping Vats (Forming, 2 Coins), replacing Standardised Moulds. Once per round it may waive Glazing costs for all Plain ceramics loaded by one Kiln Yard action into either kiln; specialised ceramics still pay. Rapid Drying and Imperial Priority cannot use the waiver. The owner reconfirmed player-chosen after-Quality ordering, correcting contradictory Ge wording in that replacement.
+The 2026-09-30 owner economy amendment starts each player with 3 Coins, reduces the Coin reward of all 28 crownless Commercial Main Orders by 1, sets every Starting Order to 3 Coins, and removes Kiln Tending (ST04). The three Starting Tech choices are Prepared Clay, White Slip and Rapid Drying, with four physical copies each. Crown Order rewards, Order requirements and Shifu discounts are unchanged.
+The 2026-10-02 owner amendment disables Ding Kiln for new online games. Ru, Guan, Ge and Jun are the four selectable Kilns; 2–4-player support and reverse-order selection are unchanged. Retain Ding’s stable `DI` ID, definition and ability as historical content, but reject it during current setup and exclude it from human and computer selection.
 
 ## Approved asset rule
 
@@ -50,6 +52,8 @@ Do not reintroduce any of these unless the user explicitly changes the rules:
 - five-player mode
 - starting with fewer than 1 Shifu + 3 Apprentices or unlocking additional workers
 - numeric 0–3 Wood bidding instead of Bank/Tend/Stoke cards
+- Kiln Tending (ST04), including its per-action Clay/Wood income
+- selecting Ding Kiln in a new online game
 - Kiln Yard Wood income
 - Kiln Yard Shifu ceramic movement or neighbouring-zone repositioning
 - separate Market and Imperial Order decks or displays
@@ -123,9 +127,10 @@ At minimum:
 - exhausted Main Order deck/discard fallback
 - end-of-Work Glaze Palette window and permanent Ge Crackle independent of Glaze and Decoration, with one consistent virtual Glaze per marked ceramic for Orders only
 - Decoration costs
-- all 4 Starting Techs and all 15 V1.4 Advanced Techs
+- all 3 Starting Techs and all 15 V1.4 Advanced Techs
+- 3-Coin setup, 3-Coin Starting Orders, all 28 reduced Commercial Main rewards, unchanged Crown rewards and rejection of removed Kiln Tending
 - Advanced-Tech acquisition limit, discipline refresh, printed cost, Shifu discount, and end-game VP
-- all five Kiln abilities
+- all four selectable Kiln abilities, retained historical Ding ability coverage, and rejection of disabled Ding selection
 - Base Heat starting at 2, all contributions, and the 0–5 clamp
 - secret simultaneous Contribution-card reveal
 - Fuel Ledger's secret −2/+2 Contribution cards, two-Wood affordability, reveal, and payment

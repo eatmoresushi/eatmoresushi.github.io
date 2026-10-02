@@ -1,6 +1,6 @@
 import { expect } from "vitest";
 import {
-  KILN_IDS,
+  AVAILABLE_KILN_IDS,
   SeededRandom,
   applyAction,
   createGame,
@@ -81,7 +81,7 @@ export function createdGame(playerCount: PlayerCount, seed = 122): StartedGame {
 export function startedGame(
   playerCount: PlayerCount,
   seed = 122,
-  startingTechs: readonly StartingTechniqueId[] = ["ST01", "ST02", "ST03", "ST04"],
+  startingTechs: readonly StartingTechniqueId[] = ["ST01", "ST02", "ST03"],
 ): StartedGame {
   const fixture = createdGame(playerCount, seed);
   let { state } = fixture;
@@ -89,7 +89,7 @@ export function startedGame(
   let kilnIndex = 0;
   while (state.phase.type === "setup_kiln_selection") {
     const actorId = currentDecisionActor(state.phase);
-    const kilnId = KILN_IDS[kilnIndex] as KilnId | undefined;
+    const kilnId = AVAILABLE_KILN_IDS[kilnIndex] as KilnId | undefined;
     if (actorId === null || kilnId === undefined) throw new Error("Kiln setup fixture failed");
     state = mustApply(state, actorId, { type: "SELECT_KILN", kilnId }, rng);
     kilnIndex += 1;

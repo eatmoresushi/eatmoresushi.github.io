@@ -42,7 +42,6 @@
 .kiln-piece.is-crown { --piece-accent: #9b7543; }
 .kiln-piece[data-starting-technique-id="ST02"] { --piece-accent: #376666; }
 .kiln-piece[data-starting-technique-id="ST03"] { --piece-accent: #785936; }
-.kiln-piece[data-starting-technique-id="ST04"] { --piece-accent: #874c32; }
 .kiln-tech-tile {
   --tech-heading-height: 2.6rem;
   --tech-copy-size: clamp(.5625rem, 5.8cqw, .6875rem);

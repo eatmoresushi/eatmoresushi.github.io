@@ -20,7 +20,7 @@ import { techniqueOverviewCopy } from "../../src/ui/TechniqueOverview.ts";
 import { LanguageProvider } from "../../src/ui/i18n.tsx";
 import { startedGame } from "./helpers.ts";
 
-const STARTING_TECHNIQUE_IDS = ["ST01", "ST02", "ST03", "ST04"] as const;
+const STARTING_TECHNIQUE_IDS = ["ST01", "ST02", "ST03"] as const;
 const ALL_TECHNIQUE_IDS = [...STARTING_TECHNIQUE_IDS, ...ADVANCED_TECHNIQUE_IDS] as const;
 
 function renderedText(markup: string): string {
@@ -55,9 +55,9 @@ function tabletopMarkup(ownPlayerId: "P1" | "P2" | "P3" | "P4", locale: "en" | "
 }
 
 describe("tabletop compact Technique copy", () => {
-  it("covers every one of the 4 Starting and 15 Advanced Techs", () => {
+  it("covers every one of the 3 Starting and 15 Advanced Techs", () => {
     expect(Object.keys(TECHNIQUE_SHORT_COPY)).toEqual(ALL_TECHNIQUE_IDS);
-    expect(ALL_TECHNIQUE_IDS).toHaveLength(19);
+    expect(ALL_TECHNIQUE_IDS).toHaveLength(18);
     expect(STARTING_TECHNIQUE_IDS.every((id) => STARTING_TECHNIQUE_DEFINITIONS[id] !== undefined)).toBe(true);
     expect(ADVANCED_TECHNIQUE_IDS.every((id) => TECHNIQUE_DEFINITIONS[id] !== undefined)).toBe(true);
   });
