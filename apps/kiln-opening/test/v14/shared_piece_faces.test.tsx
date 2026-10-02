@@ -8,6 +8,7 @@ import { ActionPanel } from "../../src/ui/ActionPanel";
 import { GameTable, OrderCard as ReferenceOrderCard } from "../../src/ui/GameTable";
 import { OrderFace, TechniqueFace } from "../../src/ui/PieceFaces";
 import { OrderIllustration } from "../../src/ui/OrderIllustration";
+import { PlaytestFormPage } from "../../src/ui/PlaytestFormPage";
 import { OrderCard, PlayerInspection, StartingTechniqueInspection, StaticOrderCard, TabletopGameExperience, TechniqueInspection } from "../../src/ui/TabletopGameExperience";
 import { techniqueFullCopy, techniqueShortPlainText } from "../../src/ui/TechniqueDescription";
 import { LanguageProvider, type Locale } from "../../src/ui/i18n";
@@ -15,6 +16,16 @@ import { startedGame, workerId } from "../v127/helpers";
 
 const orders = [...STARTING_ORDERS, ...MAIN_ORDERS];
 const techniques = Object.values(TECHNIQUE_DEFINITIONS);
+
+it("offers only the three current Starting Techs on every playtest player form", () => {
+  const markup = renderToStaticMarkup(createElement(PlaytestFormPage));
+  const fields = [...markup.matchAll(/<label\b[^>]*><span>Starting Tech<\/span>([\s\S]*?)<\/label>/gu)];
+  expect(fields.length).toBeGreaterThanOrEqual(2);
+  for (const [, field] of fields) {
+    expect([...field!.matchAll(/<option value="(ST\d+)"/gu)].map((match) => match[1])).toEqual(["ST01", "ST02", "ST03"]);
+    expect(field).not.toMatch(/ST04|Kiln Tending/u);
+  }
+});
 
 function localized(locale: Locale, children: ReturnType<typeof createElement>): string {
   return renderToStaticMarkup(createElement(LanguageProvider, { initialLocale: locale, children }));
@@ -77,7 +88,7 @@ function showAllTechniques(state: GameState): void {
 }
 
 describe("individual piece illustrations", () => {
-  it("renders all 19 Techs without illustrations in preview and full-detail faces", () => {
+  it("renders all 18 Techs without illustrations in preview and full-detail faces", () => {
     for (const { id } of [...STARTING_TECHNIQUES, ...techniques]) {
       for (const locale of ["en", "zh-CN"] as const) {
         for (const layer of ["preview", "full"] as const) {
@@ -183,8 +194,8 @@ describe.each(["en", "zh-CN"] as const)("shared Order and Tech faces (%s)", (loc
     }
   });
 
-  it("keeps all 4 Starting and 15 Advanced Techs readable with full click rules and costs/VP only on Advanced Techs", () => {
-    expect(STARTING_TECHNIQUES).toHaveLength(4);
+  it("keeps all 3 Starting and 15 Advanced Techs readable with full click rules and costs/VP only on Advanced Techs", () => {
+    expect(STARTING_TECHNIQUES).toHaveLength(3);
     expect(techniques).toHaveLength(15);
     for (const technique of [...STARTING_TECHNIQUES, ...techniques]) {
       const id = technique.id;
@@ -254,6 +265,8 @@ describe.each(["en", "zh-CN"] as const)("shared Order and Tech faces (%s)", (loc
     const setup = localized(locale, createElement(ActionPanel, {
       game: projectPublicGameState(state), ownPlayerId: "P1", ownPendingContribution: null, busy: false, send: async () => true,
     }));
+    expect([...setup.matchAll(/data-starting-technique-id="([^"]+)"/gu)].map((match) => match[1])).toEqual(["ST01", "ST02", "ST03"]);
+    expect(setup).not.toMatch(/ST04|Kiln Tending|看火/u);
     for (const technique of STARTING_TECHNIQUES) {
       const playerId = game.playerOrder.find((id) => game.players[id]!.startingTechniqueId === technique.id)!;
       const tabletop = localized(locale, createElement(TabletopGameExperience, {

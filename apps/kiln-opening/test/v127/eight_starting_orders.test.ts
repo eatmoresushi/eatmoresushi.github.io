@@ -23,7 +23,7 @@ describe("owner's eight-card Starting Order amendment", () => {
     expect(STARTING_ORDERS.map(({ id, ceramics, minQuality, vp, coins, crowns, relations }) => ({
       id, ceramics, minQuality, vp, coins, crowns, relations,
     }))).toEqual(ownerDeck.map(({ id, ceramics, vp }) => ({
-      id, ceramics, minQuality: "standard", vp, coins: 4, crowns: 0, relations: undefined,
+      id, ceramics, minQuality: "standard", vp, coins: 3, crowns: 0, relations: undefined,
     })));
     for (let number = 9; number <= 16; number += 1) {
       expect(ORDER_DEFINITIONS[`S${String(number).padStart(2, "0")}`]).toBeUndefined();
@@ -52,7 +52,7 @@ describe("owner's eight-card Starting Order amendment", () => {
     }
   });
 
-  it.each(ownerDeck)("completing $id delivers one ceramic, awards $vp VP and 4 Coins, and gains no Recognition", ({ id, shape, glaze, vp }) => {
+  it.each(ownerDeck)("completing $id delivers one ceramic, awards $vp VP and 3 Coins, and gains no Recognition", ({ id, shape, glaze, vp }) => {
     const { state, rng } = startedGame(2, 20_920);
     state.players["P1"]!.kilnId = "DI";
     state.players["P1"]!.orderHand = [id];
@@ -63,12 +63,12 @@ describe("owner's eight-card Starting Order amendment", () => {
     const previousCoins = state.players["P1"]!.resources.coins;
     state.phase = { type: "orders", turnOrder: ["P1", "P2"], currentIndex: 0, activePlayerId: "P1", completedInCircuit: 0 };
     const result = mustResult(state, "P1", { type: "COMPLETE_ORDER", orderId: id, ceramicIds: [ceramic.id] }, rng);
-    expect(result.state.players["P1"]!.resources.coins).toBe(previousCoins + 4);
+    expect(result.state.players["P1"]!.resources.coins).toBe(previousCoins + 3);
     expect(result.state.players["P1"]!.score.orderVp).toBe(vp);
     expect(result.state.players["P1"]!.imperialRecognition).toBe(0);
     expect(result.state.players["P1"]!.orderHand).toEqual([]);
     expect(result.state.players["P1"]!.completedOrders).toEqual([
-      { orderId: id, ceramicIds: [ceramic.id], completedInRound: 1, vpAwarded: vp, coinsAwarded: 4 },
+      { orderId: id, ceramicIds: [ceramic.id], completedInRound: 1, vpAwarded: vp, coinsAwarded: 3 },
     ]);
     expect(result.state.ceramics[ceramic.id]).toMatchObject({ stage: "delivered", orderId: id });
     expect(result.events).not.toContainEqual(expect.objectContaining({ type: "IMPERIAL_RECOGNITION_ADVANCED" }));

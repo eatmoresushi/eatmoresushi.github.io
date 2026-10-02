@@ -7,7 +7,7 @@ import {
   submissionCandidate,
   sharedKilnCapacity,
 } from "../../src/playtest/model.ts";
-import { activeKilnSpaceIds, KILN_IDS } from "../../src/game/index.ts";
+import { activeKilnSpaceIds, AVAILABLE_KILN_IDS } from "../../src/game/index.ts";
 import { validatePlaytestSubmission } from "../../src/playtest/schema.ts";
 import { PlaytestFormPage } from "../../src/ui/PlaytestFormPage.tsx";
 import migration from "../../supabase/migrations/202609050001_playtest_submissions.sql?raw";
@@ -81,7 +81,7 @@ describe("V1.4 playtest form", () => {
   it.each([2, 3, 4] as const)("uses the authoritative %i-player kiln capacity in UI summaries and submission validation", (playerCount) => {
     const draft = createPlaytestDraft(playerCount);
     draft.players = draft.players.map((player, index) => ({
-      ...player, kilnId: KILN_IDS[index]!, startingTechniqueId: "ST01", recognition: 0,
+      ...player, kilnId: AVAILABLE_KILN_IDS[index]!, startingTechniqueId: "ST01", recognition: 0,
       coinsRemaining: 0, clayRemaining: 0, woodRemaining: 0, finalVp: 0,
     }));
     const capacity = activeKilnSpaceIds(playerCount).length;

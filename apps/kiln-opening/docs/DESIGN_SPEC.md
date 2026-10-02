@@ -55,7 +55,7 @@ Imperial Recognition should be attractive but not mandatory.
 
 ### 4. Kiln Tradition and Starting Tech establish identity; Advanced Techs develop it
 
-The five Kilns make players asymmetrical from setup.
+The four selectable Kilns—Ru, Guan, Ge and Jun—make players asymmetrical from setup. Ding is disabled for new online games under the 2026-10-02 owner amendment; its historical definition remains in the content catalog.
 
 Starting Tech and Advanced Tech choices answer: “What does my workshop become this game?”
 

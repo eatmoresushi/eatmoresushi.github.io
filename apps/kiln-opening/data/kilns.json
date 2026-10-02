@@ -28,6 +28,7 @@
   },
   {
     "id": "DI",
+    "enabled": false,
     "name": "Ding Kiln",
     "nameZh": "定窑",
     "abilityName": "Moulded Production",

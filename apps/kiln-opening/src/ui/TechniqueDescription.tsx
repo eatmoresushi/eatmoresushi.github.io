@@ -34,10 +34,6 @@ const STARTING_TECHNIQUE_SHORT_COPY = {
     en: "**After each Decoration Workshop action:** pay **1 Wood + 1 Coin** → glaze and load **1 vessel decorated by that action**.",
     "zh-CN": "**每次纹饰坊行动后：**支付**1柴＋1铜钱** → 为**本次行动装饰的1件器物**施釉并装窑。",
   },
-  ST04: {
-    en: "**Once during each Kiln Yard action, after loading at least 1 ceramic:** gain **1 Clay or 1 Wood**.",
-    "zh-CN": "**每次窑坊行动限一次，装窑至少1件陶瓷后：**获得**1泥或1柴**。",
-  },
 } satisfies Record<StartingTechniqueId, LocalizedShortCopy>;
 
 const ADVANCED_TECHNIQUE_SHORT_COPY = {

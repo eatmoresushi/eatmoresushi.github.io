@@ -863,7 +863,8 @@ function RoundTrack({ game, locale }: { game: PublicGameState; locale: Locale })
   return (
     <section className="kiln-tabletop-round-track" aria-label={text(locale, `Round track, round ${game.round} of ${GAME_CONFIG.rounds}`, `轮次轨，第${game.round}轮，共${GAME_CONFIG.rounds}轮`)}>
       <strong>{text(locale, "ROUND", "轮次")}</strong>
-      {Array.from({ length: GAME_CONFIG.rounds }, (_, index) => index + 1).map((round) => <span className={round === game.round ? "is-current" : round < game.round ? "is-complete" : ""} key={round}><i>{round}</i><small>{round === game.round ? phaseName(game, locale) : ""}</small></span>)}
+      {Array.from({ length: GAME_CONFIG.rounds }, (_, index) => index + 1).map((round) => <span className={round === game.round ? "is-current" : round < game.round ? "is-complete" : ""} aria-current={round === game.round ? "step" : undefined} key={round}><i>{round}</i></span>)}
+      <small className="kiln-tabletop-round-phase">{phaseName(game, locale)}</small>
     </section>
   );
 }

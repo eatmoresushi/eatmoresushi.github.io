@@ -122,20 +122,20 @@ describe("Dipping Vats", () => {
     expect(state).toEqual(before);
   });
 
-  it("stacks with Kiln Tending, Kiln Furniture and the Shifu marker", () => {
-    const { state, rng } = startedGame(2, 14_300, ["ST04"]);
+  it("stacks with Kiln Furniture and the Shifu marker without generating resources", () => {
+    const { state, rng } = startedGame(2, 14_300, ["ST01"]);
     addTechnique(state, "P1", "T03"); addTechnique(state, "P1", "T15");
     state.players["P1"]!.resources.coins = 0;
     const piece = addWorkshop(state, "P1"); const resources = { ...state.players["P1"]!.resources };
     const result = mustResult(state, "P1", {
       type: "USE_KILN_YARD", workerId: workerId(state, "P1", "shifu"),
       loads: [{ ceramicId: piece.id, kilnSpaceId: "high_1", glaze: "white", useKilnFurniture: true }],
-      useDippingVats: true, shifuCeramicId: piece.id, kilnTendingWood: 1,
+      useDippingVats: true, shifuCeramicId: piece.id,
     }, rng);
-    expect(result.state.players["P1"]!.resources).toEqual({ ...resources, wood: resources.wood + 1 });
+    expect(result.state.players["P1"]!.resources).toEqual(resources);
     expect(result.state.ceramics[piece.id]).toMatchObject({ stage: "loaded", kilnFurnitureUsed: true });
     expect(result.state.players["P1"]!.techniques.every(({ exhausted }) => exhausted)).toBe(true);
-    expect(result.events).toContainEqual({ type: "STARTING_TECH_USED", playerId: "P1", techniqueId: "ST04" });
+    expect(result.events.some((event) => event.type === "STARTING_TECH_USED")).toBe(false);
   });
 
   it("does not waive Rapid Drying's Coin or consume its use", () => {

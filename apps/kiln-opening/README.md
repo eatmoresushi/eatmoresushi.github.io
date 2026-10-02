@@ -37,4 +37,4 @@ The historical `test/v127/` directory name is retained; its active assertions no
 - [Online specification](docs/ONLINE_GAME_SPEC.md): multiplayer behavior.
 - [Deployment](docs/DEPLOYMENT.md): separate backend and GitHub Pages rollout.
 
-V1.4 uses Workshop → optional Decoration → paid Glaze & Load → Firing, 4/6/8 Shared-Kiln spaces, four starting Coins, updated Orders and Techs, and permanent Ge Crackle separate from Decoration. New rooms use schema 5 and the `r26` rules fingerprint. Older rooms are preserved but cannot continue under the new rules.
+V1.4 uses Workshop → optional Decoration → paid Glaze & Load → Firing, 4/6/8 Shared-Kiln spaces, three starting Coins, reduced Commercial and Starting Order Coin rewards, three Starting Tech choices, four selectable Kilns (Ru, Guan, Ge and Jun), and permanent Ge Crackle separate from Decoration. Ding is disabled for new online games. New rooms use schema 5 and the `r28` rules fingerprint. Older rooms are preserved but cannot continue under the new rules.

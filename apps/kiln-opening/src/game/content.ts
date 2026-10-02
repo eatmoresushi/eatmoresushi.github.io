@@ -18,6 +18,7 @@ import type {
   PlayerCount,
   Quality,
   Shape,
+  StartingTechniqueId,
   TechniqueDiscipline,
   TechniqueId,
 } from "./types.ts";
@@ -113,7 +114,7 @@ export interface TechniqueDefinition {
 }
 
 export interface StartingTechniqueDefinition {
-  id: "ST01" | "ST02" | "ST03" | "ST04";
+  id: StartingTechniqueId;
   name: string;
   nameZh: string;
   ability: string;
@@ -145,6 +146,8 @@ interface ComponentDefinition {
 
 export interface KilnDefinition {
   id: KilnId;
+  /** Retain disabled traditions for historical records, but exclude them from new games. */
+  enabled?: boolean;
   name: string;
   nameZh: string;
   abilityName: string;
@@ -193,6 +196,7 @@ export const KILN_DEFINITIONS = Object.fromEntries(
   (kilnsJson as unknown as KilnDefinition[]).map((kiln) => [kiln.id, kiln]),
 ) as Record<KilnId, KilnDefinition>;
 export const KILN_IDS = Object.keys(KILN_DEFINITIONS) as KilnId[];
+export const AVAILABLE_KILN_IDS = KILN_IDS.filter((id) => KILN_DEFINITIONS[id].enabled !== false);
 export const KILN_SPACE_IDS = FIRING_FILE.kilnSpaces.map((space) => space.id);
 
 export const LOCATION_DEFINITIONS = Object.fromEntries(
@@ -289,6 +293,9 @@ function validateContent(): void {
   }
   if (TECHNIQUES.length !== 15 || KILN_IDS.length !== 5 || KILN_SPACE_IDS.length !== 8) {
     throw new Error("Technique, Kiln, or kiln-space count mismatch");
+  }
+  if (AVAILABLE_KILN_IDS.length < GAME_CONFIG.players.max) {
+    throw new Error("Not enough available Kiln Traditions for the maximum player count");
   }
   if (new Set([...MAIN_ORDERS, ...STARTING_ORDERS].map((order) => order.id)).size !== 56) {
     throw new Error("Order IDs must be unique");

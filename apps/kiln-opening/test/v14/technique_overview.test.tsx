@@ -15,10 +15,10 @@ function visibleText(markup: string): string {
 }
 
 describe("shared Tech component reminders", () => {
-  it("uses one source for all 19 canonical IDs in both languages", () => {
+  it("uses one source for all 18 canonical IDs in both languages", () => {
     expect(TECHNIQUE_OVERVIEW_COPY).toBe(TECHNIQUE_SHORT_COPY);
     expect(Object.keys(TECHNIQUE_OVERVIEW_COPY).sort()).toEqual([...canonicalIds].sort());
-    expect(canonicalIds).toHaveLength(19);
+    expect(canonicalIds).toHaveLength(18);
     for (const id of canonicalIds) {
       for (const locale of ["en", "zh-CN"] as const) {
         expect(techniqueOverviewCopy(id, locale)).toBe(techniqueShortPlainText(id, locale));
@@ -47,7 +47,6 @@ describe("shared Tech component reminders", () => {
   });
 
   it("retains the owner-supplied costs, conditions and line breaks", () => {
-    expect(techniqueOverviewCopy("ST04", "en")).toBe("Once during each Kiln Yard action, after loading at least 1 ceramic: gain 1 Clay or 1 Wood.");
     expect(techniqueOverviewCopy("T01", "en")).toContain("Stacks with the Shifu discount.");
     expect(techniqueOverviewCopy("T10", "en")).toBe("When acquired: make 1 Selection, without a worker or resource bonus.\nDuring Commission Market: replace 1 reservation choice with a Selection.");
     expect(techniqueOverviewCopy("T12", "en")).toBe("When acquired: gain +2 Stoke and −2 Bank Contribution cards. Each costs 2 Wood to play.");

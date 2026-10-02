@@ -55,10 +55,10 @@ Consecutive computer turns run in bounded batches so an Edge Function invocation
 ### Game setup
 
 - random First Player;
-- reverse-order Kiln selection;
+- reverse-order Kiln selection from Ru, Guan, Ge and Jun; Ding is disabled for new online games and cannot be selected by humans or computers; its stable `DI` definition remains historical content;
 - the separate Starting Order deck contains eight cards, S01–S08; each player receives 2 Starting Orders and no Main Order in a secret hand; only hand counts are public;
-- each player chooses 1 Starting Tech from the common supply;
-- every player starts with 2 Clay, 2 Wood, 4 Coins, 1 Shifu + 3 Apprentices and an empty Imperial Kiln area;
+- each player chooses 1 Starting Tech from Prepared Clay, White Slip and Rapid Drying; multiple players may choose the same Tech; Kiln Tending is no longer available;
+- every player starts with 2 Clay, 2 Wood, 3 Coins, 1 Shifu + 3 Apprentices and an empty Imperial Kiln area;
 - Shared-Kiln High/Middle/Low capacities are 1/2/1, 2/2/2 and 3/2/3 at 2/3/4 players;
 - all eight action locations are shared; Materials Yard, Potter's Wheel, Decoration Workshop, Commission Market, and Craft Academy use 2 / 3 / 4 global printed spaces at 2 / 3 / 4 players, while Kiln Yard, Paid Work and Imperial Court are uncapped;
 - game begins Round 1 with a six-card Main Order queue, oldest on the left and newest on the right.
@@ -80,6 +80,8 @@ UI shows:
 - action-specific modal after location is selected.
 
 Players cannot submit actions out of turn except special simultaneous/timing-window submissions.
+
+All Starting Orders pay 3 Coins. Each of the 28 crownless Commercial Main Orders pays 1 Coin less than before the 2026-09-30 economy amendment, with no reward below 1 Coin. Crown Order rewards, Order requirements and Shifu discounts are unchanged.
 
 The Main Order display behaves as a left-to-right queue. Whenever a face-up Order is reserved or completed, all later cards slide left and the replacement is appended at the right. Blind deck reservations and privately viewed Colour Samples reservations leave the display unchanged. A multi-reservation Commission action resolves one reservation completely before presenting the updated choices for the next. At the start of Rounds 2–5, discard the two leftmost Orders, retain the others in order, then refill. If the deck and discard are both empty, draw only available cards and leave the display short. A reservation must still take an available card.
 

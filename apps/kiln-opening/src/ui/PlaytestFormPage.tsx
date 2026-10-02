@@ -3,7 +3,7 @@ import type { FormEvent, ReactNode } from "react";
 import {
   BASE_HEAT_START,
   KILN_DEFINITIONS,
-  KILN_IDS,
+  AVAILABLE_KILN_IDS,
   MAIN_ORDERS,
   STARTING_ORDERS,
   STARTING_TECHNIQUES,
@@ -463,7 +463,7 @@ export function PlaytestFormPage() {
                     <Field label="Kiln">
                       <select value={player.kilnId ?? ""} required onChange={(event) => updatePlayer(index, { kilnId: event.target.value as typeof player.kilnId })}>
                         <option value="" disabled>Choose…</option>
-                        {KILN_IDS.map((kilnId) => <option value={kilnId} key={kilnId}>{KILN_DEFINITIONS[kilnId].name}</option>)}
+                        {AVAILABLE_KILN_IDS.map((kilnId) => <option value={kilnId} key={kilnId}>{KILN_DEFINITIONS[kilnId].name}</option>)}
                       </select>
                     </Field>
                     <Field label="Starting Tech">

@@ -18,10 +18,10 @@ describe("v1.4 workshop pipeline", () => {
     const ceramic = Object.values(formed.ceramics)[0]!;
     expect(ceramic).toMatchObject({ stage: "workshop", decoration: "plain" });
     expect(ceramic).not.toHaveProperty("glaze");
-    expect(formed.players["P1"]!.resources.coins).toBe(4);
+    expect(formed.players["P1"]!.resources.coins).toBe(3);
     setWorkTurn(formed, "P1");
     const loaded = mustApply(formed, "P1", { type: "USE_KILN_YARD", workerId: workerId(formed, "P1", "apprentice"), loads: [{ ceramicId: ceramic.id, glaze: "celadon", kilnSpaceId: "middle_1" }] }, rng);
-    expect(loaded.players["P1"]!.resources.coins).toBe(3);
+    expect(loaded.players["P1"]!.resources.coins).toBe(2);
     expect(loaded.ceramics[ceramic.id]).toMatchObject({ stage: "loaded", glaze: "celadon", decoration: "plain" });
   });
 
@@ -60,6 +60,7 @@ describe("v1.4 workshop pipeline", () => {
 
   it("Ding's extra Apprentice vessel is eligible for White Slip independently from Drying Frames", () => {
     const { state, rng } = startedGame(2, 140_005, ["ST02"]);
+    state.players["P1"]!.resources.coins = 4;
     state.players["P1"]!.kilnId = "DI";
     addTechnique(state, "P1", "T04");
     const next = mustApply(state, "P1", { type: "FORM_CERAMICS", workerId: workerId(state, "P1", "apprentice"), shapes: ["bowl"], dingExtraShape: "bowl", whiteSlip: { formedIndex: 1 }, dryingFrames: { formedIndex: 0, decoration: "impressed" }, useTechniqueIds: ["T04"] }, rng);
@@ -233,7 +234,7 @@ describe("v1.4 optional abilities", () => {
     expect(next.phase).toMatchObject({ colourSamplesChoices: [] });
     next = mustApply(next, "P1", { type: "OFFICE_CHOOSE_COLOUR_SAMPLES_ORDER", orderId }, rng);
     expect(next.players["P1"]!.orderHand).toContain(orderId);
-    expect(next.players["P1"]!.resources.coins).toBe(2);
+    expect(next.players["P1"]!.resources.coins).toBe(1);
     expect(next.players["P1"]!.techniques[0]?.exhausted).toBe(false);
   });
 

@@ -10,11 +10,12 @@ import {
   FORMING_TECH_COINS,
   GLAZES,
   IMPERIAL_PROGRESS,
-  KILN_IDS,
+  AVAILABLE_KILN_IDS,
   ORDER_DEFINITIONS,
   QUALITY_RANK,
   SHAPE_COSTS,
   SHAPES,
+  STARTING_TECHNIQUES,
   TECHNIQUE_DEFINITIONS,
   activeKilnSpaceIds,
   canCompleteOrder,
@@ -644,7 +645,6 @@ function buildKilnAction(state: PublicGameState, player: PlayerState): GameActio
     type: "USE_KILN_YARD", workerId: worker.id, loads,
     ...(useDippingVats ? { useDippingVats: true } : {}),
     ...(worker.kind === "shifu" ? { shifuCeramicId: loads[0]!.ceramicId } : {}),
-    ...(player.startingTechniqueId === "ST04" ? player.resources.wood < 2 ? { kilnTendingWood: 1 } : { kilnTendingClay: 1 } : {}),
   };
 }
 
@@ -905,9 +905,8 @@ function chooseStartingTechnique(state: PublicGameState, player: PlayerState): S
     ST01: 3 + expensiveShapes * 1.25,
     ST02: 2.5 + paintedDemand * 3,
     ST03: 4 + routes.length * 0.5,
-    ST04: 3.5 + routes.length * 0.4,
   };
-  return [...(["ST01", "ST02", "ST03", "ST04"] as const)]
+  return STARTING_TECHNIQUES.map(({ id }) => id)
     .sort((left, right) => scores[right] - scores[left] || left.localeCompare(right))[0] ?? "ST03";
 }
 
@@ -1076,7 +1075,7 @@ export async function chooseOnlineComputerAction(
   if (player === undefined) throw new Error("Computer player disappeared");
   switch (state.phase.type) {
     case "setup_kiln_selection": {
-      const available = KILN_IDS.filter((id) => !Object.values(state.players).some((entry) => entry.kilnId === id));
+      const available = AVAILABLE_KILN_IDS.filter((id) => !Object.values(state.players).some((entry) => entry.kilnId === id));
       // Kiln Traditions are intentionally asymmetric. A stable per-seat seed breaks
       // otherwise identical opening choices so computer workshops develop distinct plans.
       const kilnId = [...available].sort((left, right) =>

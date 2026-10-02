@@ -10,7 +10,7 @@
       ],
       "minQuality": "standard",
       "vp": 2,
-      "coins": 4,
+      "coins": 3,
       "crowns": 0,
       "requirements": "Bowl · any Glaze · any Decoration",
       "requirementsZh": "碗 · 任意釉 · 任意纹饰"
@@ -24,7 +24,7 @@
       ],
       "minQuality": "standard",
       "vp": 2,
-      "coins": 4,
+      "coins": 3,
       "crowns": 0,
       "requirements": "Plate · any Glaze · any Decoration",
       "requirementsZh": "盘 · 任意釉 · 任意纹饰"
@@ -38,7 +38,7 @@
       ],
       "minQuality": "standard",
       "vp": 2,
-      "coins": 4,
+      "coins": 3,
       "crowns": 0,
       "requirements": "Brush Washer · any Glaze · any Decoration",
       "requirementsZh": "笔洗 · 任意釉 · 任意纹饰"
@@ -52,7 +52,7 @@
       ],
       "minQuality": "standard",
       "vp": 3,
-      "coins": 4,
+      "coins": 3,
       "crowns": 0,
       "requirements": "any Shape · White · any Decoration",
       "requirementsZh": "任意器型 · 白釉 · 任意纹饰"
@@ -66,7 +66,7 @@
       ],
       "minQuality": "standard",
       "vp": 3,
-      "coins": 4,
+      "coins": 3,
       "crowns": 0,
       "requirements": "any Shape · Celadon · any Decoration",
       "requirementsZh": "任意器型 · 青釉 · 任意纹饰"
@@ -80,7 +80,7 @@
       ],
       "minQuality": "standard",
       "vp": 3,
-      "coins": 4,
+      "coins": 3,
       "crowns": 0,
       "requirements": "any Shape · Grey-Green · any Decoration",
       "requirementsZh": "任意器型 · 灰青釉 · 任意纹饰"
@@ -94,7 +94,7 @@
       ],
       "minQuality": "standard",
       "vp": 4,
-      "coins": 4,
+      "coins": 3,
       "crowns": 0,
       "requirements": "any Shape · Moon White · any Decoration",
       "requirementsZh": "任意器型 · 月白釉 · 任意纹饰"
@@ -111,7 +111,7 @@
       ],
       "minQuality": "standard",
       "vp": 3,
-      "coins": 4,
+      "coins": 3,
       "crowns": 0,
       "requirements": "Vase or Censer · any Glaze · any Decoration",
       "requirementsZh": "瓶或香炉 · 任意釉 · 任意纹饰"
@@ -127,7 +127,7 @@
       ],
       "minQuality": "standard",
       "vp": 4,
-      "coins": 3,
+      "coins": 2,
       "crowns": 0,
       "requirements": "Bowl · any Glaze · any Decoration",
       "requirementsZh": "碗 · 任意釉 · 任意纹饰"
@@ -141,7 +141,7 @@
       ],
       "minQuality": "standard",
       "vp": 4,
-      "coins": 3,
+      "coins": 2,
       "crowns": 0,
       "requirements": "Plate · any Glaze · any Decoration",
       "requirementsZh": "盘 · 任意釉 · 任意纹饰"
@@ -155,7 +155,7 @@
       ],
       "minQuality": "standard",
       "vp": 4,
-      "coins": 3,
+      "coins": 2,
       "crowns": 0,
       "requirements": "Brush Washer · any Glaze · any Decoration",
       "requirementsZh": "笔洗 · 任意釉 · 任意纹饰"
@@ -170,7 +170,7 @@
       ],
       "minQuality": "fine",
       "vp": 7,
-      "coins": 4,
+      "coins": 3,
       "crowns": 0,
       "requirements": "Vase · Moon White · any Decoration",
       "requirementsZh": "瓶 · 月白釉 · 任意纹饰"
@@ -185,7 +185,7 @@
       ],
       "minQuality": "fine",
       "vp": 8,
-      "coins": 4,
+      "coins": 3,
       "crowns": 0,
       "requirements": "Censer · any Glaze · Carved",
       "requirementsZh": "香炉 · 任意釉 · 刻花"
@@ -199,7 +199,7 @@
       ],
       "minQuality": "fine",
       "vp": 5,
-      "coins": 3,
+      "coins": 2,
       "crowns": 0,
       "requirements": "any Shape · White · any Decoration",
       "requirementsZh": "任意器型 · 白釉 · 任意纹饰"
@@ -213,7 +213,7 @@
       ],
       "minQuality": "fine",
       "vp": 5,
-      "coins": 3,
+      "coins": 2,
       "crowns": 0,
       "requirements": "any Shape · Celadon · any Decoration",
       "requirementsZh": "任意器型 · 青釉 · 任意纹饰"
@@ -227,7 +227,7 @@
       ],
       "minQuality": "fine",
       "vp": 5,
-      "coins": 3,
+      "coins": 2,
       "crowns": 0,
       "requirements": "any Shape · Grey-Green · any Decoration",
       "requirementsZh": "任意器型 · 灰青釉 · 任意纹饰"
@@ -241,7 +241,7 @@
       ],
       "minQuality": "fine",
       "vp": 6,
-      "coins": 3,
+      "coins": 2,
       "crowns": 0,
       "requirements": "any Shape · Moon White · any Decoration",
       "requirementsZh": "任意器型 · 月白釉 · 任意纹饰"
@@ -259,7 +259,7 @@
       ],
       "minQuality": "fine",
       "vp": 6,
-      "coins": 4,
+      "coins": 3,
       "crowns": 0,
       "requirements": "any Shape · any Glaze · Carved, Impressed or Painted",
       "requirementsZh": "任意器型 · 任意釉 · 刻花、印花或彩绘"
@@ -273,7 +273,7 @@
       ],
       "minQuality": "masterpiece",
       "vp": 9,
-      "coins": 4,
+      "coins": 3,
       "crowns": 0,
       "requirements": "any Shape · any Glaze · Carved",
       "requirementsZh": "任意器型 · 任意釉 · 刻花"
@@ -287,7 +287,7 @@
       ],
       "minQuality": "masterpiece",
       "vp": 9,
-      "coins": 4,
+      "coins": 3,
       "crowns": 0,
       "requirements": "any Shape · any Glaze · Impressed",
       "requirementsZh": "任意器型 · 任意釉 · 印花"
@@ -301,7 +301,7 @@
       ],
       "minQuality": "masterpiece",
       "vp": 9,
-      "coins": 4,
+      "coins": 3,
       "crowns": 0,
       "requirements": "any Shape · any Glaze · Painted",
       "requirementsZh": "任意器型 · 任意釉 · 彩绘"
@@ -316,7 +316,7 @@
       ],
       "minQuality": "fine",
       "vp": 6,
-      "coins": 3,
+      "coins": 2,
       "crowns": 0,
       "requirements": "Brush Washer · Grey-Green · any Decoration",
       "requirementsZh": "笔洗 · 灰青釉 · 任意纹饰"
@@ -334,7 +334,7 @@
       ],
       "minQuality": "fine",
       "vp": 6,
-      "coins": 4,
+      "coins": 3,
       "crowns": 0,
       "requirements": "Vase or Censer · White · any Decoration",
       "requirementsZh": "瓶或香炉 · 白釉 · 任意纹饰"
@@ -346,7 +346,7 @@
       ],
       "minQuality": "masterpiece",
       "vp": 7,
-      "coins": 2,
+      "coins": 1,
       "crowns": 0,
       "requirements": "any Shape · any Glaze · any Decoration",
       "requirementsZh": "任意器型 · 任意釉 · 任意纹饰"
@@ -503,7 +503,7 @@
       ],
       "minQuality": "standard",
       "vp": 9,
-      "coins": 5,
+      "coins": 4,
       "crowns": 0,
       "requirements": "2 different Shapes; any Glazes; different Decorations",
       "requirementsZh": "2种不同器型；任意釉；不同纹饰"
@@ -529,7 +529,7 @@
       ],
       "minQuality": "fine",
       "vp": 10,
-      "coins": 5,
+      "coins": 4,
       "crowns": 0,
       "requirements": "Bowl + Plate; both White; any Decorations",
       "requirementsZh": "碗 + 盘；两件均白釉；任意纹饰"
@@ -555,7 +555,7 @@
       ],
       "minQuality": "fine",
       "vp": 12,
-      "coins": 5,
+      "coins": 4,
       "crowns": 0,
       "requirements": "Brush Washer + Vase; one Grey-Green, one Moon White; any Decorations",
       "requirementsZh": "笔洗 + 瓶；1件灰青釉、1件月白釉；任意纹饰"
@@ -584,7 +584,7 @@
       ],
       "minQuality": "fine",
       "vp": 11,
-      "coins": 5,
+      "coins": 4,
       "crowns": 0,
       "requirements": "2 ceramics of the same Shape; one Celadon, one Moon White; any Decorations",
       "requirementsZh": "2件相同器型；1件青釉、1件月白釉；任意纹饰"
@@ -610,7 +610,7 @@
       ],
       "minQuality": "fine",
       "vp": 14,
-      "coins": 5,
+      "coins": 4,
       "crowns": 0,
       "requirements": "Vase + Censer; any Glazes; different Decorations",
       "requirementsZh": "瓶 + 香炉；任意釉；不同纹饰"
@@ -636,7 +636,7 @@
       ],
       "minQuality": "fine",
       "vp": 12,
-      "coins": 5,
+      "coins": 4,
       "crowns": 0,
       "requirements": "Bowl + Brush Washer; one White, one Moon White; any Decorations",
       "requirementsZh": "碗 + 笔洗；1件白釉、1件月白釉；任意纹饰"
@@ -669,7 +669,7 @@
       ],
       "minQuality": "fine",
       "vp": 13,
-      "coins": 5,
+      "coins": 4,
       "crowns": 0,
       "requirements": "Plate + Vase; both Celadon; different Decorations",
       "requirementsZh": "盘 + 瓶；两件均青釉；不同纹饰"
@@ -707,7 +707,7 @@
       ],
       "minQuality": "fine",
       "vp": 15,
-      "coins": 5,
+      "coins": 4,
       "crowns": 0,
       "requirements": "Vase + Bowl; both White; different Decorations",
       "requirementsZh": "瓶 + 碗；两件均白釉；不同纹饰"
@@ -748,7 +748,7 @@
       ],
       "minQuality": "fine",
       "vp": 14,
-      "coins": 4,
+      "coins": 3,
       "crowns": 0,
       "requirements": "2 different Shapes; same Glaze; different Decorations",
       "requirementsZh": "2种不同器型；相同釉；不同纹饰"
@@ -789,7 +789,7 @@
       ],
       "minQuality": "fine",
       "vp": 15,
-      "coins": 6,
+      "coins": 5,
       "crowns": 0,
       "requirements": "2 different Shapes; different Glazes; same non-Plain Decoration",
       "requirementsZh": "2种不同器型；不同釉；相同的非素面纹饰"
@@ -1108,7 +1108,7 @@
       ],
       "minQuality": "standard",
       "vp": 15,
-      "coins": 6,
+      "coins": 5,
       "crowns": 0,
       "requirements": "3 different Shapes; one White, one Celadon, one Grey-Green; at least 2 different Decorations",
       "requirementsZh": "3种不同器型；1件白釉、1件青釉、1件灰青釉；至少2种不同纹饰"
@@ -1140,7 +1140,7 @@
       ],
       "minQuality": "fine",
       "vp": 16,
-      "coins": 5,
+      "coins": 4,
       "crowns": 0,
       "requirements": "3 different Shapes; one Celadon, one Grey-Green, one Moon White; any Decorations",
       "requirementsZh": "3种不同器型；1件青釉、1件灰青釉、1件月白釉；任意纹饰"

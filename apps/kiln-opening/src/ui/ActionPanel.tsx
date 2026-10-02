@@ -21,7 +21,7 @@ import {
   GLAZES,
   IMPERIAL_PROGRESS,
   KILN_DEFINITIONS,
-  KILN_IDS,
+  AVAILABLE_KILN_IDS,
   KILN_SPACE_IDS,
   LOCATION_IDS,
   ORDER_DEFINITIONS,
@@ -270,7 +270,7 @@ function KilnSelection({ game, busy, send }: Pick<ActionPanelProps, "game" | "bu
   return (
     <ControlSection title="Choose a kiln tradition" hint="Selection runs in reverse seating order.">
       <div className="kiln-choice-grid">
-        {KILN_IDS.map((kilnId) => {
+        {AVAILABLE_KILN_IDS.map((kilnId) => {
           const kiln = KILN_DEFINITIONS[kilnId];
           return (
             <button
@@ -840,7 +840,6 @@ function KilnYardForm({ game, player, workers, locationFull, busy, send }: {
     destinations[1] ?? "",
   ]);
   const [furnitureIndex, setFurnitureIndex] = useState<"" | "0" | "1">("");
-  const [kilnTendingResource, setKilnTendingResource] = useState<"" | "clay" | "wood">("");
   const [shifuCeramicId, setShifuCeramicId] = useState("");
   const [glazes, setGlazes] = useState<Glaze[]>(["white", "white"]);
   const selectedWorker = workers.find((worker) => worker.id === workerId) ?? workers[0];
@@ -911,8 +910,6 @@ function KilnYardForm({ game, player, workers, locationFull, busy, send }: {
       loads,
       ...(applyDippingVats ? { useDippingVats: true } : {}),
       ...(selectedWorker.kind === "shifu" && selectedShifuCeramicId !== "" ? { shifuCeramicId: selectedShifuCeramicId } : {}),
-      ...(player.startingTechniqueId === "ST04" && kilnTendingResource === "clay" ? { kilnTendingClay: 1 } : {}),
-      ...(player.startingTechniqueId === "ST04" && kilnTendingResource === "wood" ? { kilnTendingWood: 1 } : {}),
     });
   }
   if (ceramics.length === 0) return <ActionUnavailable message="You have no Workshop ceramic to load." />;
@@ -941,11 +938,6 @@ function KilnYardForm({ game, player, workers, locationFull, busy, send }: {
       {selectedWorker?.kind === "shifu" && (shifuTargets.length > 0
         ? <CeramicChoice name="shifu-ceramic" label={locale === "zh-CN" ? "师傅本次装窑的陶瓷" : "Ceramic loaded now carrying the Shifu"} ceramics={shifuTargets} value={selectedShifuCeramicId} onChange={setShifuCeramicId} />
         : <p className="control-hint">{locale === "zh-CN" ? "先选择本次装窑的陶瓷。共窑与御窑均可。" : "Choose a ceramic loaded by this action, in either kiln, to carry the Shifu."}</p>)}
-      {player.startingTechniqueId === "ST04" && <ChoiceTiles name="kiln-tending" label={locale === "zh-CN" ? "看火：装窑后获得资源" : "Kiln Tending: gain after loading"} value={kilnTendingResource} onChange={(value) => setKilnTendingResource(value as "" | "clay" | "wood")} options={[
-        { value: "", label: t("Do not use") },
-        { value: "clay", label: locale === "zh-CN" ? "1泥" : "1 Clay" },
-        { value: "wood", label: locale === "zh-CN" ? "1柴" : "1 Wood" },
-      ]} />}
       <small role="status" className={error === null ? "" : "control-error"}>{error === null ? (locale === "zh-CN" ? `已选择${loads.length}件器物。` : `${loads.length} ceramic${loads.length === 1 ? "" : "s"} selected.`) : localizeActionError(locale, error)}</small>
       <button className="primary-button" disabled={busy || error !== null}>{t("Load kiln")}</button>
     </form>
@@ -2004,6 +1996,8 @@ function officeActionHint(action: OfficeActionChoice, workerKind: AvailableWorke
 function localizeActionError(locale: Locale, error: string): string {
   if (locale === "en") return error;
   const errors: Record<string, string> = {
+    "Choose one of the three Starting Techs.": "请从3个起始技艺中选择1个。",
+    "Kiln Tending has been removed. Submit the Kiln Yard action without a resource bonus.": "看火已移除。请重新提交窑坊行动，不要附带资源奖励。",
     "You do not have enough Clay to form a vessel.": "你没有足够的泥形成器物。",
     "You do not have enough Coins to apply a Decoration.": "你没有足够的铜钱施加纹饰。",
     "No face-up Advanced Tech is available.": "没有可购入的公开进阶技艺。",

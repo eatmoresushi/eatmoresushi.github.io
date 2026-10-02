@@ -1,7 +1,7 @@
 import {
   GAME_CONFIG,
   activeKilnSpaceIds,
-  KILN_IDS,
+  AVAILABLE_KILN_IDS,
   MAIN_ORDERS,
   STARTING_ORDERS,
   STARTING_TECHNIQUES,
@@ -147,7 +147,7 @@ function parsePlayer(value: unknown, index: number, issues: PlaytestValidationIs
   const record = recordAt(value, path, issues);
   return {
     name: text(record, "name", `${path}.name`, issues, 40),
-    kilnId: enumValue(record, "kilnId", `${path}.kilnId`, issues, KILN_IDS)!,
+    kilnId: enumValue(record, "kilnId", `${path}.kilnId`, issues, AVAILABLE_KILN_IDS)!,
     startingTechniqueId: enumValue(
       record,
       "startingTechniqueId",

@@ -13,7 +13,9 @@ one Decoration. The replacement rulebook supplied later that day broadens
 Measuring Calipers to any other workshop vessel and replaces Standardised Moulds
 with Dipping Vats. The reminders below follow that source; their wording does not
 replace the full eligibility rule or introduce other mechanical changes. Fuel
-Ledger still permits only one Contribution card per firing.
+Ledger still permits only one Contribution card per firing. The 2026-09-30 owner
+amendment removes Kiln Tending; the three Starting Tech reminders below are the
+complete current selection.
 
 ## Starting Techs
 
@@ -28,10 +30,6 @@ Ledger still permits only one Contribution card per firing.
 ### Rapid Drying
 
 **After each Decoration Workshop action:** pay **1 Wood + 1 Coin** → glaze and load **1 vessel decorated by that action**.
-
-### Kiln Tending
-
-**Once during each Kiln Yard action, after loading at least 1 ceramic:** gain **1 Clay or 1 Wood**.
 
 ## Forming Advanced Techs
 
@@ -101,6 +99,8 @@ After Quality is assigned: choose 1 of your Flawed or Standard ceramics from thi
 When loading 1 of your ceramics into a High or Low Shared Kiln space: place this tile beneath it → its zone modifier is 0 for this firing.
 
 ## Kiln Player Boards
+
+The 2026-10-02 owner amendment disables Ding for new online games. Only Ru, Guan, Ge and Jun are selectable. Ding’s unchanged reminder below is retained as historical content.
 
 ### Ru Kiln / 汝窑 — Quiet Perfection
 

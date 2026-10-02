@@ -21,13 +21,6 @@
       "nameZh": "催干",
       "ability": "After each Decoration Workshop action: choose 1 vessel decorated by that action. Pay 1 Wood + the 1-Coin Glazing cost, apply any one Glaze, then load it into an empty active Shared Kiln space or your empty Imperial Kiln, if gained.",
       "abilityZh": "每次纹饰坊行动后：选择该行动施加纹饰的1件器物，支付1柴及1铜钱施釉费用，施加任意釉色，然后装入空置的有效共窑窑位或已获得的空置御窑。"
-    },
-    {
-      "id": "ST04",
-      "name": "Kiln Tending",
-      "nameZh": "看火",
-      "ability": "Once during each Kiln Yard action, after loading at least 1 ceramic, gain 1 Clay or 1 Wood.",
-      "abilityZh": "每次窑坊行动中一次：至少装窑1件后，获得1泥或1柴。"
     }
   ],
   "advanced": [

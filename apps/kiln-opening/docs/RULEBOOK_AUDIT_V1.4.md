@@ -7,7 +7,7 @@ Review date: 2026-09-26. Implementation branch: `codex/rules-v1.4`, created from
 
 The owner explicitly designated the supplied V1.4 Player Rulebook as the new
 source of truth. Its deliberate changes supersede V1.2.7 and the earlier owner
-amendments. On 2026-09-28, the owner supplied a replacement V1.4 rulebook in the conversation and designated it the sole source of truth. The checked-in authority now reflects that replacement, the owner's subsequent Ge timing confirmation and the non-conflicting clarifications listed in finding 8. Source documents are rules content, not operational instructions.
+amendments. On 2026-09-28, the owner supplied a replacement V1.4 rulebook in the conversation and designated it the sole source of truth. The checked-in authority now reflects that replacement, the owner's subsequent Ge timing confirmation, the non-conflicting clarifications listed in finding 8 and the 2026-09-30 economy amendment in finding 9 and the 2026-10-02 Ding availability amendment in finding 10. Source documents are rules content, not operational instructions.
 
 - Initial original (provenance only): `/Users/luyuan/Documents/kiln board game/v1.4/KILN OPENING 开窑 v1.4 — Player Rulebook.md`
 - Checked-in source: [KILN_OPENING_v1.4_EN_SOURCE.md](./KILN_OPENING_v1.4_EN_SOURCE.md)
@@ -15,14 +15,16 @@ amendments. On 2026-09-28, the owner supplied a replacement V1.4 rulebook in the
 - Initial corrected SHA-256: `0340961df8905befda5110b4dc63225cd15b1d4274042ef24d89aa4d34176fc7`
 - Initial source corrections approved by the owner on 2026-09-26 and applied to both the original and checked-in copy before implementation.
 - Previous amended checked-in SHA-256: `7b164a49a26049f3d95d2d8e4ca715a4b432ce140ae498c2a3e53c1488c1f1b2`
-- Current amended checked-in SHA-256: `59f9c46cbbe05fc9aababe575da0a06341f7847476f0265e463d4d5e52d2fabe`
+- Replacement-source SHA-256 before finding 9: `59f9c46cbbe05fc9aababe575da0a06341f7847476f0265e463d4d5e52d2fabe`
+- Economy-amended checked-in SHA-256 before finding 10: `53ca934447f609bd1b10f1f38b1234cc6240bf88d25134d182e4e03e7b513468`
+- Current amended checked-in SHA-256: `c71f9211bf49e40ebf3c08c73ead447eb648d5a8f70e11630e9e3ac609418a30`
 - The owner-approved Ge and after-Quality ordering amendment is recorded in finding 5 below. Finding 6 records the later setup and reward amendment. Finding 7 records the 2026-09-28 Imperial Court and Ge amendment, applied to the checked-in authority; the external original is unchanged by finding 7. The original and checked-in rulebooks have different hashes: the original still lacks several earlier approved clarifications retained in the checked-in authority. The two new changes in finding 6 were applied to both copies without replacing unrelated original text.
 - Original SHA-256 immediately before finding 6: `6eb5b07357c107466db8fd4337581ac7e6e226d2342d25542ad2b0c0d354eb02`
-- Latest source: replacement V1.4 Player Rulebook pasted by the owner on 2026-09-28, with the subsequent confirmation that Ge remains in the player-chosen after-Quality order. No byte-exact raw-paste checksum is claimed; the current checked-in checksum above covers the normalized authority.
+- Latest source: replacement V1.4 Player Rulebook pasted by the owner on 2026-09-28, with the subsequent confirmation that Ge remains in the player-chosen after-Quality order, then amended by the owner on 2026-09-30 as recorded in finding 9 and on 2026-10-02 as recorded in finding 10. No byte-exact raw-paste checksum is claimed; the current checked-in checksum above covers the normalized authority.
 - Original SHA-256 after finding 6: `6fee85be6b631a387a13eecf547e4ed63f164188d48b69f07cbfd122a43a8a82`
 
 The V1.4 migration is implemented on this branch. The runtime uses rules/content
-version 1.4, schema 5 and behavior revision 26. This is a local implementation;
+version 1.4, schema 5 and behavior revision 28. This is a local implementation;
 Supabase migrations and deployment remain separate rollout steps.
 
 ## Review findings
@@ -103,7 +105,7 @@ hand limit are unchanged.
 
 The same amendment raises O01, O02 and O03 from 3 VP to **4 VP each**.
 Their Standard+ threshold, Shape requirements, unrestricted Glaze/Decoration,
-3-Coin rewards and zero Crowns are unchanged. The three cards' higher printed
+3-Coin rewards and zero Crowns were unchanged by this amendment. Finding 9 later reduces those Coin rewards to 2; their 4-VP values and requirements remain unchanged. The three cards' higher printed
 VP applies to both held and face-up completions.
 
 These changes are reflected in the checked-in source, original rulebook,
@@ -196,12 +198,84 @@ the ceramic loaded, Coins remained at zero and Dipping Vats became exhausted.
 The SQL migration has static contract coverage only; it was not run against
 PostgreSQL.
 
+### 9. Starting resources, Order income and removal of Kiln Tending
+
+On 2026-09-30, the owner explicitly approved the following economy changes:
+
+- Each player starts with **2 Clay, 2 Wood and 3 Coins**.
+- Every **Commercial Main Order**, defined as an Order with **zero Crowns**, pays
+  **1 Coin less** than the preceding V1.4 deck. This changes exactly 28 cards:
+  O01–O16, O25–O34 and O43–O44. Every one still pays at least 1 Coin.
+- Every **Starting Order**, S01–S08, pays **3 Coins**.
+- **Kiln Tending (`ST04`) is removed**. Starting Tech choices are now Prepared
+  Clay, White Slip and Rapid Drying. Players still choose one, and multiple
+  players may choose the same Tech. The physical component list has twelve
+  Starting Tech tiles: four copies of each of the three remaining designs.
+
+All Order requirements, VP and Crown counts remain unchanged. Crown Order Coin
+rewards, the Shifu's forming discount and free Decoration, and the effects of
+the three retained Starting Techs are unchanged. Findings 6 and 8 retain their
+historical descriptions; this amendment supersedes their previous Coin rewards
+and four-tech setup wherever applicable. No other proposed balance experiment
+is included.
+
+The checked-in authority, current component reminders and active specifications
+reflect this amendment. The external original remains unchanged. Behavior
+revision 27 and the additive migration `202609300001_v14_economy.sql` distinguish
+new games from revision-26 and older rooms. State remains schema 5. Existing
+room rows retain their recorded resources, rewards and Tech ownership; they are
+rejected under the new fingerprint rather than silently converted. The migration
+must update all five authoritative RPC write gates and be deployed with matching
+Edge Functions and client code.
+
+Validation: all 843 tests pass across 55 files, including 2/3/4-player setup and
+complete seeded computer games, exact rewards for all 56 Orders, three-choice
+English/Chinese setup and playtest forms, rejection of retired Kiln Tending
+commands, and old-room rejection. Client and Edge TypeScript checks, the
+production build and diff checks pass. A comparison with the prior data confirms
+that Crown rewards, Order requirements/VP and retained Tech effects are unchanged.
+The additive SQL migration has static contract coverage only; it has not been
+executed against PostgreSQL or deployed. Earlier validation results below refer
+to their named historical revisions.
+
+### 10. Ding unavailable for new online games
+
+On 2026-10-02, the owner explicitly requested that Ding Kiln also be disabled.
+New online games offer **Ru, Guan, Ge and Jun** during reverse-order Kiln
+selection. The game still supports **2–4 players**, so a four-player game uses
+all four enabled Kilns. Human and computer setup choices exclude Ding, and the
+authoritative engine rejects a submitted Ding selection.
+
+Ding’s stable `DI` ID, definition, localized ability text and existing assets
+remain historical content. The amendment changes availability, not Ding’s
+retained ability or any other Kiln effect. The five-board physical component
+record is retained with Ding’s disabled status noted. The three Starting Tech
+choices and all economy changes in finding 9 remain in force.
+
+The checked-in authority, component notes, current data and active specifications
+reflect the amendment. The external original remains unchanged. Behavior
+revision 28 and the additive migration `202610020001_v14_disable_ding.sql`
+distinguish new games from revision-27 and older rooms. State remains schema 5.
+Historical room and playtest rows are preserved and are not relabeled or
+converted. The migration updates all five authoritative RPC write gates and
+requires matching Edge Functions and client code.
+
+Validation: all 857 tests pass across 56 files, including 12 focused regressions
+for authoritative Ding rejection, four-player setup, strategic and fallback
+computer choices, English/Chinese setup and playtest submission validation.
+Client and Edge TypeScript checks, the production build and diff checks pass.
+Review against the previous data confirms the approved economy changes and no
+changes to Crown rewards, Order requirements or retained Kiln abilities. The
+additive SQL migration has static contract coverage only; it has not been
+executed against PostgreSQL or deployed. Finding 9’s validation remains the
+historical record for behavior revision 27.
+
 ### Editorial cleanup
 
 Setup line 73 says “2 Low space”; use “2 Low spaces.” This does not change the
 specified two-player allocation.
 
-## Checks completed
+## Initial V1.4 checks completed (historical)
 
 - Exactly eight Starting Orders, S01–S08, and 48 Main Orders, O01–O48, with no
   missing or duplicate IDs.
@@ -209,7 +283,7 @@ specified two-player allocation.
 - All Order requirements have feasible attribute combinations. Independent
   Shape, Glaze and Decoration requirements and consistent Crackle substitution
   avoid requiring unintended fixed pairings.
-- Starting Orders are unchanged from the current eight-card deck. Thirty-nine
+- At initial V1.4 migration, Starting Orders were unchanged from the eight-card deck; finding 9 now sets all eight Coin rewards to 3. Thirty-nine
   Main Orders change requirements and/or rewards; their printed values must be
   imported directly rather than inferred from old data.
 - No additional contradiction found in Starting Tech costs, Advanced Tech costs
@@ -230,21 +304,23 @@ established by playtesting.
 
 1. **Content and authority:** import approved V1.4 source and all printed data;
    update the source index and active project instructions while retaining old
-   rulebooks and audits as history. Use four starting Coins and kiln allocations
-   1/2/1, 2/2/2 and 3/2/3 for 2/3/4 players.
+   rulebooks and audits as history. Use three starting Coins, the three Starting
+   Tech choices in finding 9, the four enabled Kilns in finding 10, and kiln allocations 1/2/1, 2/2/2 and 3/2/3 for
+   2/3/4 players.
 2. **Ceramic model:** Workshop ceramics always have Plain or a specialised
    Decoration and no Glaze. Decorating preserves Workshop state. Glazing and
    loading are one paid operation. Painted replaces Crackle as a Decoration;
    Crackle becomes a separate persistent Ge property.
 3. **Actions and abilities:** Decoration Workshop costs 2 Coins per vessel with
    one free Shifu Decoration; Kiln Yard charges 1 Coin per glaze/load. Restrict
-   Ding to Apprentice Potter's Wheel actions. Update all affected Tech triggers,
+   Ding’s retained historical ability to Apprentice Potter's Wheel actions; exclude
+   Ding from new online setup. Update all affected Tech triggers,
    costs and eligibility, including a distinct end-of-Work Glaze Palette window.
 4. **Firing:** a Shifu targets a ceramic loaded by that action in either kiln;
    resolve Ge with the other after-Quality effects in the owner's chosen order,
    rechecking eligibility after each use; expose Fuel Ledger's reusable
    −2/+2 cards as single secret contribution choices costing 2 Wood.
-5. **Orders:** import all 48 Main Orders; represent non-Plain alternatives and
+5. **Orders:** import all 48 Main Orders and the Coin rewards in finding 9; represent non-Plain alternatives and
    same-non-Plain constraints; allow an independent, consistent virtual
    Glaze for every Crackle ceramic on every Order, as amended in finding 7.
 6. **Online compatibility:** bump rules version, state schema and behaviour
@@ -258,9 +334,11 @@ established by playtesting.
    the full test suite, both TypeScript checks, production build, complete seeded
    games for 2/3/4 players and focused browser checks of the revised pipeline.
 
-## Implementation and validation
+## Initial implementation and validation (historical)
 
-Source corrections and implementation are complete on `codex/rules-v1.4`.
+Initial source corrections and implementation were completed on `codex/rules-v1.4`.
+These checks describe the initial implementation, including the since-retired
+Kiln Tending; finding 9 records the current economy amendment and its validation.
 
 - Imported all current printed data, costs, capacities, card requirements and rewards.
 - Migrated engine, English/Chinese UI, computer policy, multiplayer projections and playtest reporting.
@@ -278,7 +356,7 @@ The SQL migrations have static contract coverage but were not applied to a local
 
 ## Owner-approved component reminders — 2026-09-27
 
-The owner supplied new on-tile wording for all 19 Techs and five Kiln Traditions.
+The owner supplied new on-tile wording for the then-current 19 Techs and five Kiln Traditions. Finding 9 later removes Kiln Tending, leaving 18 active Techs.
 The exact English reminders and emphasis are recorded in
 [KILN_OPENING_v1.4_COMPONENT_TEXT_SOURCE.md](./KILN_OPENING_v1.4_COMPONENT_TEXT_SOURCE.md),
 with corresponding Chinese UI translations. All tile contexts share these reminders;
@@ -295,6 +373,6 @@ inline emphasis and repeated “once per round” wording. The tile footer retai
 frequency; click-through details retain the full rules. This includes the
 workshop restriction on Measuring Calipers (and the retired Standardised Moulds at that time), Glaze Palette’s timing
 before pre-firing abilities, and Fuel Ledger’s single-card limit and card return.
-The four Starting Tech and five Kiln reminders remain as approved above.
+The Starting Tech and five Kiln reminders otherwise remain as approved above; finding 9 later removes the Kiln Tending reminder.
 
 The replacement source in finding 8 supersedes the earlier T02/T03 reminders: Measuring Calipers now accepts any other workshop vessel, and Dipping Vats replaces Standardised Moulds.

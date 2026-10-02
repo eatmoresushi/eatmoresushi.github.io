@@ -463,6 +463,8 @@ export function useI18n(): LanguageContextValue {
 
 export function localizeMultiplayerError(locale: Locale, code: string, fallback: string): string {
   if (locale === "en") return fallback;
+  if (code === "INVALID_SELECTION" && fallback === "Choose one of the three Starting Techs.") return "请从3个起始技艺中选择1个。";
+  if (code === "INVALID_ACTION" && fallback === "Kiln Tending has been removed. Submit the Kiln Yard action without a resource bonus.") return "看火已移除。请重新提交窑坊行动，不要附带资源奖励。";
   const errors: Record<string, string> = {
     INVALID_REQUEST: "请求无效，请检查输入。",
     ROOM_CODE_CONFLICT: "房间代码冲突，请重新创建房间。",

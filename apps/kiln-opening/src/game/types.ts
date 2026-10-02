@@ -9,7 +9,7 @@ export type CeramicId = string;
 export type VesselInstanceId = string;
 export type OrderId = string;
 export type TechniqueId = string;
-export type StartingTechniqueId = "ST01" | "ST02" | "ST03" | "ST04";
+export type StartingTechniqueId = "ST01" | "ST02" | "ST03";
 
 export type PlayerCount = 2 | 3 | 4;
 export type RoundNumber = 1 | 2 | 3 | 4 | 5;
@@ -489,9 +489,6 @@ export type GameAction =
       useDippingVats?: boolean;
       /** Required for a Shifu; must identify one ceramic loaded by this action. */
       shifuCeramicId?: CeramicId;
-      /** Kiln Tending may gain one Clay or one Wood; omit both to decline. */
-      kilnTendingClay?: number;
-      kilnTendingWood?: number;
     }
   /**
    * Labour has no worker limit, so it is always available. It exists because the pipeline
