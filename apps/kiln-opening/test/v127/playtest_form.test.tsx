@@ -7,7 +7,7 @@ import {
   submissionCandidate,
   sharedKilnCapacity,
 } from "../../src/playtest/model.ts";
-import { activeKilnSpaceIds, AVAILABLE_KILN_IDS } from "../../src/game/index.ts";
+import { activeKilnSpaceIds, AVAILABLE_KILN_IDS } from "../../src/game-v14/index.ts";
 import { validatePlaytestSubmission } from "../../src/playtest/schema.ts";
 import { PlaytestFormPage } from "../../src/ui/PlaytestFormPage.tsx";
 import migration from "../../supabase/migrations/202609050001_playtest_submissions.sql?raw";

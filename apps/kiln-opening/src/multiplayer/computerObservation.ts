@@ -4,7 +4,7 @@ import type {
   OrderId,
   PlayerId,
   TechniqueId,
-} from "../game/index.ts";
+} from "../game-v14/index.ts";
 import { projectPublicGameState } from "./projection.ts";
 import type { PublicGameState } from "./types.ts";
 

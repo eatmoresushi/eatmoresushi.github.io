@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { GAME_CONFIG, turnOrderFromFirst } from "../../src/game/index.ts";
-import type { GameState, OrderId } from "../../src/game/index.ts";
+import { GAME_CONFIG, turnOrderFromFirst } from "../../src/game-v14/index.ts";
+import type { GameState, OrderId } from "../../src/game-v14/index.ts";
 import {
   addFinished,
   addTechnique,

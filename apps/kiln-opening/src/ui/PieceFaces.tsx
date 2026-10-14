@@ -2,8 +2,8 @@ import {
   ORDER_DEFINITIONS,
   STARTING_TECHNIQUE_DEFINITIONS,
   TECHNIQUE_DEFINITIONS,
-} from "../game";
-import type { OrderId, Quality, StartingTechniqueId, TechniqueId } from "../game";
+} from "../game-v14";
+import type { OrderId, Quality, StartingTechniqueId, TechniqueId } from "../game-v14";
 import { term } from "./i18n";
 import type { Locale } from "./i18n";
 import { OrderIllustration } from "./OrderIllustration";

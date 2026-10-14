@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DECORATIONS, GLAZES, SHAPES, preferredHeat } from "../../src/game/index.ts";
+import { DECORATIONS, GLAZES, SHAPES, preferredHeat } from "../../src/game-v14/index.ts";
 import { projectPublicGameState } from "../../src/multiplayer/index.ts";
 import { addLoaded, mustApply, startedGame } from "../v127/helpers.ts";
 

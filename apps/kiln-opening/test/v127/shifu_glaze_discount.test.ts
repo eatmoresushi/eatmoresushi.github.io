@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { applyAction } from "../../src/game/index.ts";
-import type { Decoration, GameAction, TechniqueId, WorkerKind } from "../../src/game/index.ts";
+import { applyAction } from "../../src/game-v14/index.ts";
+import type { Decoration, GameAction, TechniqueId, WorkerKind } from "../../src/game-v14/index.ts";
 import { addShaped, addTechnique, expectError, mustResult, startedGame, workerId } from "./helpers.ts";
 
 const cases: { name: string; worker: WorkerKind; decorations: Decoration[]; owned?: TechniqueId[]; use?: TechniqueId[]; cost: number }[] = [

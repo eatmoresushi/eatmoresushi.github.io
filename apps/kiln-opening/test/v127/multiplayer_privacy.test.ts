@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { currentDecisionActor } from "../../src/game/index.ts";
-import type { GameAction, GameState, OrderId, PlayerId } from "../../src/game/index.ts";
+import { currentDecisionActor } from "../../src/game-v14/index.ts";
+import type { GameAction, GameState, OrderId, PlayerId } from "../../src/game-v14/index.ts";
 import {
   AuthoritativeGameService,
   InMemoryMultiplayerStore,

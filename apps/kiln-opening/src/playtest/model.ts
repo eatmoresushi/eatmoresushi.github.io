@@ -1,4 +1,4 @@
-import { GAME_CONFIG, TECHNIQUES, activeKilnSpaceIds } from "../game/content.ts";
+import { GAME_CONFIG, TECHNIQUES, activeKilnSpaceIds } from "../game-v14/content.ts";
 import type {
   PlaytestDraft,
   PlaytestFeedback,

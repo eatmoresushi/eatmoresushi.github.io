@@ -1,4 +1,4 @@
-import type { GameEvent, GameState, PlayerId, Shape, TechniqueDiscipline } from "../game/index.ts";
+import type { GameEvent, GameState, PlayerId, Shape, TechniqueDiscipline } from "../game-v14/index.ts";
 import type {
   PublicGameEvent,
   PublicGameState,

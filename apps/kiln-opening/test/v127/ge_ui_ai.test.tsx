@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import type { GameState, Quality } from "../../src/game/index.ts";
+import type { GameState, Quality } from "../../src/game-v14/index.ts";
 import { fallbackComputerCommands } from "../../src/multiplayer/computerFallback.ts";
 import { createComputerObservation } from "../../src/multiplayer/computerObservation.ts";
 import { chooseOnlineComputerAction, ONLINE_COMPUTER_POLICY_VERSION } from "../../src/multiplayer/computerPlayer.ts";

@@ -1,6 +1,6 @@
 {
   "name": "kiln-opening-rules-engine",
-  "version": "1.4.0",
+  "version": "1.6.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "typecheck:edge": "tsc -p tsconfig.edge.json",
+    "typecheck:engine": "tsc -p tsconfig.engine.json",
     "test": "vitest run",
+    "test:engine": "vitest run test/v161/engine",
     "test:watch": "vitest",
     "dev:local": "VITE_E2E_LOCAL_BACKEND=1 vite"
   },

@@ -30,7 +30,7 @@ import {
   preferredHeat,
   qualityFromDifference,
   qualityForOrderOrExhibition,
-} from "../game/index.ts";
+} from "../game-v14/index.ts";
 import type {
   CeramicState,
   Decoration,
@@ -51,7 +51,7 @@ import type {
   StartingTechniqueId,
   TechniqueId,
   WorkerState,
-} from "../game/index.ts";
+} from "../game-v14/index.ts";
 import type { ComputerObservation } from "./computerObservation.ts";
 import type { AuthoritativeCommand, PublicGameState, StoredSeat, SubmitWoodCommand } from "./types.ts";
 

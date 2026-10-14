@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { DECORATIONS, GLAZES, SHAPES } from "../../src/game";
+import { DECORATIONS, GLAZES, SHAPES } from "../../src/game-v14";
 import { CERAMIC_ARTWORK, CeramicArtwork } from "../../src/ui/CeramicArtwork";
 
 describe("generated ceramic artwork", () => {

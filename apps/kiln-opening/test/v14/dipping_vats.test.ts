@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { applyAction } from "../../src/game/index.ts";
-import type { GameAction } from "../../src/game/index.ts";
+import { applyAction } from "../../src/game-v14/index.ts";
+import type { GameAction } from "../../src/game-v14/index.ts";
 import { addLoaded, addTechnique, addWorkshop, expectError, mustApply, mustResult, setWorkTurn, startedGame, workerId } from "../v127/helpers.ts";
 
 const ready = (state: ReturnType<typeof startedGame>["state"]) => state.players["P1"]!.techniques.find(({ id }) => id === "T03")?.exhausted === false;

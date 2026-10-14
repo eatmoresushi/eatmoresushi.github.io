@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { IMPERIAL_PROGRESS, KILN_SPACE_IDS, LOCATION_DEFINITIONS, LOCATION_IDS } from "../../src/game/index.ts";
+import { IMPERIAL_PROGRESS, KILN_SPACE_IDS, LOCATION_DEFINITIONS, LOCATION_IDS } from "../../src/game-v14/index.ts";
 import { TABLETOP_BOARD_LOCATIONS } from "../../src/ui/TabletopGameExperience.tsx";
 import { term } from "../../src/ui/i18n.tsx";
 

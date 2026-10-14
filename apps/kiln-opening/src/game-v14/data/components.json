@@ -1,0 +1,125 @@
+{
+  "rulesVersion": "1.4",
+  "components": [
+    {
+      "name": "Central Action Board",
+      "qty": 1,
+      "notes": "Eight locations: Materials Yard, Potter's Wheel, Decoration Workshop, Kiln Yard, Commission Market, Craft Academy, Paid Work and Imperial Court. Materials Yard, Potter's Wheel, Decoration Workshop, Commission Market and Craft Academy use 2/3/4 shared spaces; Kiln Yard, Paid Work and Imperial Court are uncapped."
+    },
+    {
+      "name": "Shared Kiln Board",
+      "qty": 1,
+      "notes": "Eight spaces: 3 High (+1), 2 Middle (0), 3 Low (−1). Use 1/2/1 at 2 players, 2/2/2 at 3 players and 3/2/3 at 4 players."
+    },
+    {
+      "name": "Kiln Player Boards",
+      "qty": 5,
+      "notes": "Ru, Guan, Ge, Ding and Jun. Each includes a Kiln Tradition, Tech area, Finished Ceramics area and an Imperial Kiln area; only 2-4 are used each game."
+    },
+    {
+      "name": "Shifu Workers",
+      "qty": 4,
+      "notes": "One in each player colour."
+    },
+    {
+      "name": "Apprentice Workers",
+      "qty": 12,
+      "notes": "Three per player; all begin available."
+    },
+    {
+      "name": "Clay",
+      "qty": 40,
+      "notes": "Brown cubes or tokens. Physical quantity only; the resource supply is unlimited."
+    },
+    {
+      "name": "Wood",
+      "qty": 40,
+      "notes": "Sticks or tokens distinct from Clay. Physical quantity only; the resource supply is unlimited."
+    },
+    {
+      "name": "Coins",
+      "qty": 50,
+      "notes": "Values 1 and 5 are useful. Physical quantity only; the resource supply is unlimited."
+    },
+    {
+      "name": "Vessel Cards",
+      "qty": 50,
+      "notes": "Ten each: Bowl, Plate, Brush Washer, Vase and Censer. Not a hard gameplay limit; use a proxy if all ten of a Shape are in use."
+    },
+    {
+      "name": "Main Order Cards",
+      "qty": 48,
+      "notes": "One unified public and reservable deck with a six-card display."
+    },
+    {
+      "name": "Starting Order Cards",
+      "qty": 8,
+      "notes": "Separate Setup-only deck; each player is secretly dealt two Starting Orders and no Main Order."
+    },
+    {
+      "name": "Starting Tech Tiles",
+      "qty": 12,
+      "notes": "Four copies each of Prepared Clay, White Slip and Rapid Drying."
+    },
+    {
+      "name": "Advanced Tech Tiles",
+      "qty": 15,
+      "notes": "Five Forming, five Decoration & Glazing and five Firing Techs."
+    },
+    {
+      "name": "Fire Cards",
+      "qty": 12,
+      "notes": "1 at -2, 3 at -1, 4 at 0, 3 at +1 and 1 at +2."
+    },
+    {
+      "name": "Kiln Contribution Cards",
+      "qty": 12,
+      "notes": "Three per player: Bank the Fire, Tend the Fire and Stoke the Fire."
+    },
+    {
+      "name": "Imperial Recognition Markers",
+      "qty": 4,
+      "notes": "One in each player colour."
+    },
+    {
+      "name": "VP Markers / Score Pad",
+      "qty": "4 or 1",
+      "notes": "Use a score track or record VP on paper."
+    },
+    {
+      "name": "First Player Marker",
+      "qty": 1,
+      "notes": "Passes clockwise each round."
+    },
+    {
+      "name": "Round Marker",
+      "qty": 1,
+      "notes": "Tracks rounds 1 to 5."
+    },
+    {
+      "name": "Imperial Priority Tokens",
+      "qty": 4,
+      "notes": "One per player colour; begins on Recognition space 3 and is taken when that player reaches it, then spent before or after a worker action for one Imperial Kiln load."
+    },
+    {
+      "name": "Imperial Kiln Tiles",
+      "qty": 4,
+      "notes": "One-space private kiln tiles; gained at 2 Imperial Recognition and placed in the owner's Imperial Kiln area."
+    },
+    {
+      "name": "Shifu Heat Markers",
+      "qty": 4,
+      "notes": "Double-sided +1 / −1."
+    },
+    {
+      "name": "Crackle Markers",
+      "qty": 5,
+      "notes": "Permanent Ge-only property, separate from Decoration and Glaze."
+    },
+    {
+      "name": "Fuel Ledger Contribution Cards",
+      "qty": 2,
+      "notes": "+2 Stoke and −2 Bank; each costs 2 Wood to play."
+    }
+  ]
+}

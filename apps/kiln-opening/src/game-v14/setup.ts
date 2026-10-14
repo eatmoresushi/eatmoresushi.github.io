@@ -1,0 +1,219 @@
+import {
+  DISCIPLINES,
+  FIRE_CARDS,
+  GAME_CONFIG,
+  STARTING_ORDERS,
+  KILN_IDS,
+  MAIN_ORDERS,
+  SHAPES,
+  TECHNIQUES,
+  TECHNIQUE_DEFINITIONS,
+} from "./content.ts";
+import { createFailure, ruleError } from "./errors.ts";
+import type { RandomSource } from "./rng.ts";
+import { shuffle } from "./rng.ts";
+import { emptyActionBoard } from "./selectors.ts";
+import type {
+  CreateGameInput,
+  OwnedTechniqueState,
+  CreateGameResult,
+  GameState,
+  PlayerCount,
+  PlayerId,
+  PlayerState,
+  Shape,
+  TechniqueDeckState,
+  TechniqueDisplayState,
+  WorkerState,
+} from "./types.ts";
+
+function makeWorkers(playerId: PlayerId): Record<string, WorkerState> {
+  const shifuId = `${playerId}:shifu`;
+  const workers: Record<string, WorkerState> = {
+    [shifuId]: {
+      id: shifuId,
+      kind: "shifu",
+      status: "available",
+      locationId: null,
+    },
+  };
+
+  for (let index = 1; index <= GAME_CONFIG.workers.apprenticesTotal; index += 1) {
+    const id = `${playerId}:apprentice:${index}`;
+    workers[id] = {
+      id,
+      kind: "apprentice",
+      status: index <= GAME_CONFIG.workers.apprenticesStarting ? "available" : "locked",
+      locationId: null,
+    };
+  }
+  return workers;
+}
+
+function makePlayer(input: CreateGameInput["players"][number], seatIndex: number): PlayerState {
+  return {
+    id: input.id,
+    seatIndex,
+    displayName: input.displayName,
+    kilnId: null,
+    resources: { ...GAME_CONFIG.startingResources },
+    workers: makeWorkers(input.id),
+    orderHand: [],
+    completedOrders: [],
+    techniques: [],
+    startingTechniqueId: null,
+    imperialRecognition: 0,
+    imperialGrantResolved: false,
+    imperialKilnUnlocked: false,
+    imperialPriorityAvailable: false,
+    imperialAudienceVpAwarded: false,
+    passedWorkPhase: false,
+    kilnAbilityUsedThisRound: false,
+    kilnYardShifuUsedThisRound: false,
+    kilnYardShifuCeramicId: null,
+    shapesFormedThisRound: [],
+    presentationCeramicIds: [],
+    presentationFeaturedCeramicIds: [],
+    score: { orderVp: 0, kilnTraditionVp: 0, imperialOverflowVp: 0 },
+  };
+}
+
+function drawMany<T>(deck: T[], count: number): T[] {
+  return deck.splice(0, count);
+}
+
+function makeTechniqueState(rng: RandomSource): {
+  decks: TechniqueDeckState;
+  display: TechniqueDisplayState;
+} {
+  const decks = {
+    forming: [] as string[],
+    glazing: [] as string[],
+    firing: [] as string[],
+  };
+  const display = {
+    forming: [] as string[],
+    glazing: [] as string[],
+    firing: [] as string[],
+  };
+
+  for (const discipline of DISCIPLINES) {
+    const shuffled = shuffle(
+      TECHNIQUES.filter((technique) => technique.discipline === discipline).map(
+        (technique) => technique.id,
+      ),
+      rng,
+    );
+    display[discipline] = drawMany(shuffled, GAME_CONFIG.techniques.faceUpPerDiscipline);
+    decks[discipline] = shuffled;
+  }
+  return { decks, display };
+}
+
+function makeVesselSupply(): Record<Shape, string[]> {
+  return Object.fromEntries(
+    SHAPES.map((shape) => [
+      shape,
+      Array.from(
+        { length: GAME_CONFIG.shapeSupplyEach },
+        (_, index) => `${shape}:vessel:${index + 1}`,
+      ),
+    ]),
+  ) as Record<Shape, string[]>;
+}
+
+export function createGame(input: CreateGameInput, rng: RandomSource): CreateGameResult {
+  const playerCount = input.players.length;
+  if (playerCount < GAME_CONFIG.players.min || playerCount > GAME_CONFIG.players.max) {
+    return createFailure(
+      ruleError("INVALID_SETUP", "Kiln Opening requires 2 to 4 players.", { playerCount }),
+    );
+  }
+  if (input.gameId.trim().length === 0) {
+    return createFailure(ruleError("INVALID_SETUP", "gameId must not be empty."));
+  }
+
+  const ids = input.players.map((player) => player.id);
+  if (ids.some((id) => id.trim().length === 0) || new Set(ids).size !== ids.length) {
+    return createFailure(
+      ruleError("INVALID_SETUP", "Player IDs must be non-empty and unique."),
+    );
+  }
+  if (input.players.some((player) => player.displayName.trim().length === 0)) {
+    return createFailure(ruleError("INVALID_SETUP", "Display names must not be empty."));
+  }
+  const typedPlayerCount = playerCount as PlayerCount;
+  const playerOrder = [...ids];
+  const firstPlayerId = playerOrder[rng.nextInt(playerOrder.length)];
+  if (firstPlayerId === undefined) {
+    return createFailure(ruleError("INVALID_SETUP", "Unable to choose First Player."));
+  }
+  const firstIndex = playerOrder.indexOf(firstPlayerId);
+  const turnOrder = [...playerOrder.slice(firstIndex), ...playerOrder.slice(0, firstIndex)];
+  const selectionOrder = [...turnOrder].reverse();
+
+  let marketDeck = shuffle(
+    MAIN_ORDERS.map((order) => order.id),
+    rng,
+  );
+  const startingOrderDeck = shuffle(
+    STARTING_ORDERS.map((order) => order.id),
+    rng,
+  );
+
+  const techniqueState = makeTechniqueState(rng);
+  const fireDeck = shuffle(FIRE_CARDS, rng);
+
+  const players = Object.fromEntries(
+    input.players.map((player, index) => [player.id, makePlayer(player, index)]),
+  ) as Record<PlayerId, PlayerState>;
+
+  // Opening hands use only the Starting deck; all Main Orders remain for the public display and deck.
+  for (const playerId of turnOrder) {
+    players[playerId]!.orderHand = drawMany(startingOrderDeck, 2);
+  }
+  const returnedStartingOrderIds = startingOrderDeck.splice(0);
+  marketDeck = shuffle(marketDeck, rng);
+  const marketDisplay = drawMany(marketDeck, GAME_CONFIG.orderDisplay.market);
+
+  const state: GameState = {
+    schemaVersion: 5,
+    rulesVersion: GAME_CONFIG.rulesVersion,
+    gameId: input.gameId,
+    revision: 0,
+    eventSequence: 0,
+    nextCeramicSequence: 1,
+    playerCount: typedPlayerCount,
+    round: 1,
+    playerOrder,
+    firstPlayerId,
+    phase: {
+      type: "setup_kiln_selection",
+      selectionOrder,
+      currentIndex: 0,
+    },
+    players,
+    actionBoard: { placements: emptyActionBoard() },
+    ceramics: {},
+    vesselSupply: makeVesselSupply(),
+    marketDeck,
+    marketDiscard: [],
+    marketDisplay,
+    startingOrderDeck,
+    returnedStartingOrderIds,
+    techniqueDecks: techniqueState.decks,
+    techniqueDisplay: techniqueState.display,
+    fireDeck,
+    fireDiscard: [],
+    firingContext: null,
+    lastFiringResult: null,
+    finalResult: null,
+    privateFirePeeks: {},
+  };
+
+  if (new Set(KILN_IDS).size !== KILN_IDS.length) {
+    return createFailure(ruleError("INVALID_SETUP", "Kiln definitions must be unique."));
+  }
+
+  return { ok: true, state };
+}

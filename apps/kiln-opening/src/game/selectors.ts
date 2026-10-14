@@ -1,116 +1,157 @@
-import { GAME_CONFIG } from "./content.ts";
+/**
+ * UI view models, quotes and step-wise option lists (DESIGN §5.4). React reads only these,
+ * plus `validateAction`, `decisionPrompt` and events.
+ *
+ * STUB written by P0 with the signatures of DESIGN §5.4; owned by P7. The option functions
+ * owned by P3, P5 and P6 are re-exported, never reimplemented (DESIGN §2.4). Replace the
+ * bodies, keep the signatures. Every stub throws `NotImplementedError`.
+ */
+
+import { NotImplementedError } from "./errors.ts";
 import type {
-  GamePhase,
-  Shape,
-  TechniqueId,
-  GameState,
+  BoardView,
+  CeramicId,
+  CommissionOptions,
+  ContributionOption,
+  CostQuote,
+  CrackleDeclaration,
+  FiringContext,
+  GameAction,
+  GuildInspectionOptions,
+  GuildOptions,
+  KilnSelectionOption,
   KilnSpaceId,
-  LocationId,
+  LoadSpec,
+  LookedOrderOptions,
+  OrderId,
+  OrderMatchOption,
+  OrderSelectionCheck,
+  PlacementOption,
   PlayerId,
-  PlayerState,
-  WorkerId,
-  WorkshopCeramic,
+  PlayerSummary,
+  PlayerView,
+  Recognition,
+  ScorePreview,
+  ShapedCeramic,
+  WorkerEffect,
 } from "./types.ts";
 
-export function turnOrderFromFirst(state: Pick<GameState, "playerOrder" | "firstPlayerId">): PlayerId[] {
-  const firstIndex = state.playerOrder.indexOf(state.firstPlayerId);
-  if (firstIndex < 0) {
-    throw new Error("First Player must be in playerOrder");
-  }
-  return [...state.playerOrder.slice(firstIndex), ...state.playerOrder.slice(0, firstIndex)];
+export { decisionPrompt } from "./state.ts";
+export { heatPreviews } from "./firing/heat.ts";
+export { quoteMaterialsYard } from "./work/materialsYard.ts";
+export { quoteFormDecorate } from "./work/formDecorate.ts";
+export { loadDestinationOptions } from "./kilnLoading.ts";
+export { heatMarkerStepOptions, junOptions, testPiecesOptions } from "./firing/pipeline.ts";
+export { afterQualityOptions, salvageOptions } from "./firing/afterQuality.ts";
+export { legalContributions } from "./firing/contributions.ts";
+export { findOrderMatches } from "./orders/matching.ts";
+
+function notImplemented(name: string): never {
+  throw new NotImplementedError(`selectors.${name}`);
 }
 
-export function currentDecisionActor(phase: GamePhase): PlayerId | null {
-  switch (phase.type) {
-    case "setup_kiln_selection":
-      return phase.selectionOrder[phase.currentIndex] ?? null;
-    case "setup_starting_orders":
-      return phase.decisionOrder[phase.currentIndex] ?? null;
-    case "setup_starting_tech":
-      return phase.decisionOrder[phase.currentIndex] ?? null;
-    case "work":
-      return phase.activePlayerId;
-    case "work_office_orders":
-    case "work_guild":
-    case "work_imperial_priority":
-    case "firing_reveal_fire":
-    case "firing_second_before_quality":
-      return phase.actorId;
-    case "work_glaze_palette":
-    case "firing_before_contribution":
-    case "firing_shifu_adjustment":
-    case "firing_before_quality":
-    case "firing_after_quality":
-    case "firing_workshop_seconds":
-      return phase.queue.actors[phase.queue.currentIndex] ?? null;
-    case "orders":
-      return phase.activePlayerId;
-    case "cleanup_orders":
-      return phase.queue.actors[phase.queue.currentIndex] ?? null;
-    case "firing_contributions":
-    case "presentation":
-    case "finished":
-      return null;
-  }
+// ── Who acts, the board and the players (public) ────────────────────────────────────
+
+export function boardView(_view: PlayerView): BoardView {
+  return notImplemented("boardView");
 }
 
-/**
- * Every workshop trims to the same limit. Guan's +1 hand size was removed along with its
- * Decoration waiver: measured over 360 seats it completed 2.99 Orders against the field's
- * 3.11, so neither clause was earning its text.
- */
-export function orderHandLimit(): number {
-  return GAME_CONFIG.orderDisplay.baseHandLimit;
+export function playerSummary(_view: PlayerView, _playerId: PlayerId): PlayerSummary {
+  return notImplemented("playerSummary");
 }
 
-export function availableWorkerIds(player: PlayerState): WorkerId[] {
-  return Object.values(player.workers)
-    .filter((worker) => worker.status === "available")
-    .map((worker) => worker.id);
+export function scorePreview(_view: PlayerView, _playerId: PlayerId): ScorePreview {
+  return notImplemented("scorePreview");
 }
 
-export function kilnOccupant(state: GameState, kilnSpaceId: KilnSpaceId): string | null {
-  for (const ceramic of Object.values(state.ceramics)) {
-    if (ceramic.stage === "loaded" && ceramic.kilnSpaceId === kilnSpaceId) {
-      return ceramic.id;
-    }
-  }
-  return null;
+export function handLimitStatus(_view: PlayerView, _playerId: PlayerId): { held: number; limit: number; mustDiscard: number } {
+  return notImplemented("handLimitStatus");
 }
 
-export function actionOccupancy(state: GameState, locationId: LocationId): number {
-  return state.actionBoard.placements[locationId].length;
+export function firingSummary(_view: PlayerView): FiringContext | null {
+  return notImplemented("firingSummary");
 }
 
-export function emptyActionBoard(): Record<LocationId, WorkerId[]> {
-  return {
-    materials_yard: [],
-    labour: [],
-    court_patronage: [],
-    forming_studio: [],
-    glaze_workshop: [],
-    kiln_yard: [],
-    market_imperial_office: [],
-    guild_academy: [],
-  };
+// ── Setup and Start of Round ─────────────────────────────────────────────────────────
+
+export function kilnSelectionOptions(_view: PlayerView): KilnSelectionOption[] {
+  return notImplemented("kilnSelectionOptions");
 }
 
-/** Eligible optional forming rewards; selected rewards resolve before Decoration costs. */
-export function formingTechniqueRewards(
-  state: Pick<GameState, "ceramics">,
-  player: Pick<PlayerState, "id" | "techniques">,
-  formedShapes: readonly Shape[],
-): TechniqueId[] {
-  if (formedShapes.length === 0 || !player.techniques.some((tech) => tech.id === "T02" && !tech.exhausted)) return [];
-  const workshopCount = Object.values(state.ceramics)
-    .filter((ceramic) => ceramic.ownerId === player.id && ceramic.stage === "workshop").length;
-  return workshopCount + formedShapes.length >= 2 ? ["T02"] : [];
+export function settersMarkOptions(_view: PlayerView): KilnSpaceId[] {
+  return notImplemented("settersMarkOptions");
 }
 
-/** Dipping Vats waives only Plain ceramics in the selected Kiln Yard action. */
-export function kilnYardGlazingCost(
-  ceramics: readonly Pick<WorkshopCeramic, "decoration">[],
-  useDippingVats: boolean,
-): number {
-  return ceramics.filter((ceramic) => !useDippingVats || ceramic.decoration !== "plain").length;
+// ── Work Phase ───────────────────────────────────────────────────────────────────────
+
+export function placementOptions(_view: PlayerView): PlacementOption[] {
+  return notImplemented("placementOptions");
+}
+
+export function dingCopyableVesselIndexes(
+  _view: PlayerView,
+  _draft: Extract<GameAction, { type: "PLACE_FORM_DECORATE" }>,
+): number[] {
+  return notImplemented("dingCopyableVesselIndexes");
+}
+
+export function shapedVessels(_view: PlayerView, _playerId: PlayerId): ShapedCeramic[] {
+  return notImplemented("shapedVessels");
+}
+
+export function heatMarkerTargets(_view: PlayerView, _playerId: PlayerId, _pendingLoads: readonly LoadSpec[]): CeramicId[] {
+  return notImplemented("heatMarkerTargets");
+}
+
+export function commissionOptions(_view: PlayerView, _effect: WorkerEffect): CommissionOptions {
+  return notImplemented("commissionOptions");
+}
+
+export function lookedOrderOptions(_view: PlayerView): LookedOrderOptions | null {
+  return notImplemented("lookedOrderOptions");
+}
+
+export function guildOptions(_view: PlayerView, _effect: WorkerEffect): GuildOptions {
+  return notImplemented("guildOptions");
+}
+
+export function guildInspectionOptions(_view: PlayerView): GuildInspectionOptions | null {
+  return notImplemented("guildInspectionOptions");
+}
+
+export function magistratesHallQuote(_view: PlayerView, _effect: WorkerEffect): CostQuote & { reachable: Recognition | null } {
+  return notImplemented("magistratesHallQuote");
+}
+
+export function canalBargeOptions(_view: PlayerView): OrderMatchOption[] {
+  return notImplemented("canalBargeOptions");
+}
+
+export function imperialPriorityOptions(_view: PlayerView): { usable: boolean; ceramicIds: CeramicId[] } {
+  return notImplemented("imperialPriorityOptions");
+}
+
+// ── Orders (Order Phase and Canal Barge pickers) ─────────────────────────────────────
+
+export function completableOrders(_view: PlayerView): OrderMatchOption[] {
+  return notImplemented("completableOrders");
+}
+
+export function orderMatchOptions(_view: PlayerView, _orderId: OrderId, _limit?: number): OrderMatchOption[] {
+  return notImplemented("orderMatchOptions");
+}
+
+export function orderSelectionCheck(
+  _view: PlayerView,
+  _orderId: OrderId,
+  _ceramicIds: readonly CeramicId[],
+  _declarations?: readonly CrackleDeclaration[],
+): OrderSelectionCheck {
+  return notImplemented("orderSelectionCheck");
+}
+
+// ── Firing ───────────────────────────────────────────────────────────────────────────
+
+export function contributionOptions(_view: PlayerView): ContributionOption[] {
+  return notImplemented("contributionOptions");
 }

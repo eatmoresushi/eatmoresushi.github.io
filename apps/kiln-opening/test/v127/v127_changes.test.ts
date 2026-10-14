@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   applyAction, createPrivateFiringState, currentDecisionActor, locationCapacity,
   matchesOrder, matchesOrderWithGe, ORDER_DEFINITIONS, qualityForOrderOrExhibition, submitWoodContribution,
-} from "../../src/game/index.ts";
-import type { Decoration, GameState, Glaze, Shape } from "../../src/game/index.ts";
+} from "../../src/game-v14/index.ts";
+import type { Decoration, GameState, Glaze, Shape } from "../../src/game-v14/index.ts";
 import { projectPublicEvents, projectPublicGameState } from "../../src/multiplayer/projection.ts";
 import { createComputerObservation } from "../../src/multiplayer/computerObservation.ts";
 import { addFinished, addGlazed, addLoaded, addShaped, addTechnique, expectError, finishWork, mustApply, mustResult, setWorkTurn, startedGame, workerId } from "./helpers.ts";

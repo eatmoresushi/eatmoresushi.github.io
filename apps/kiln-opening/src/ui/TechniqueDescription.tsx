@@ -3,8 +3,8 @@ import {
   KILN_DEFINITIONS,
   STARTING_TECHNIQUE_DEFINITIONS,
   TECHNIQUE_DEFINITIONS,
-} from "../game";
-import type { KilnId, StartingTechniqueId, TechniqueId } from "../game";
+} from "../game-v14";
+import type { KilnId, StartingTechniqueId, TechniqueId } from "../game-v14";
 import type { Locale } from "./i18n";
 
 export const ADVANCED_TECHNIQUE_IDS = [

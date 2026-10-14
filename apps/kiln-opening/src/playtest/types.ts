@@ -1,4 +1,4 @@
-import type { KilnId, StartingTechniqueId, TechniqueId } from "../game/types.ts";
+import type { KilnId, StartingTechniqueId, TechniqueId } from "../game-v14/types.ts";
 
 export type FireContribution = "bank_2" | "bank" | "tend" | "stoke" | "stoke_2";
 export type FiringTechniqueId = "T11" | "T12" | "T13" | "T14" | "T15";

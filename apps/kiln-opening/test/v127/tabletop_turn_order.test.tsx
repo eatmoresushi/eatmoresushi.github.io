@@ -5,7 +5,7 @@ import { projectPublicGameState } from "../../src/multiplayer/index.ts";
 import { LanguageProvider } from "../../src/ui/i18n.tsx";
 import { TabletopGameExperience } from "../../src/ui/TabletopGameExperience.tsx";
 import type { PublicGameState } from "../../src/multiplayer/index.ts";
-import type { PlayerId } from "../../src/game/index.ts";
+import type { PlayerId } from "../../src/game-v14/index.ts";
 import { addFinished, addLoaded, startedGame, workerId } from "./helpers.ts";
 
 function renderTable(game: PublicGameState): string {

@@ -8,8 +8,8 @@ import {
   calculateFinalResult,
   matchesOrder,
   turnOrderFromFirst,
-} from "../../src/game/index.ts";
-import type { Decoration, FinishedCeramic, GameState, Glaze, OrderDefinition, Shape } from "../../src/game/index.ts";
+} from "../../src/game-v14/index.ts";
+import type { Decoration, FinishedCeramic, GameState, Glaze, OrderDefinition, Shape } from "../../src/game-v14/index.ts";
 import {
   addFinished,
   expectError,

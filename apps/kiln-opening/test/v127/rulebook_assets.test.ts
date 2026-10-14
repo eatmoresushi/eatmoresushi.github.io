@@ -1,6 +1,6 @@
 import { readdirSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { GAME_CONFIG } from "../../src/game/index.ts";
+import { GAME_CONFIG } from "../../src/game-v14/index.ts";
 
 /**
  * The site must not publish a rulebook for a superseded ruleset.

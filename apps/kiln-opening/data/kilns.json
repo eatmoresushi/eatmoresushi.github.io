@@ -1,48 +1,96 @@
-[
-  {
-    "id": "RU",
-    "name": "Ru Kiln",
-    "nameZh": "汝窑",
-    "abilityName": "Quiet Perfection",
-    "abilityNameZh": "天青无瑕",
-    "ability": "Once per round, when you complete an Order using a Masterpiece with Celadon Glaze and Plain Decoration, gain 4 VP. The Order itself does not need to require those attributes; the delivered ceramic must actually have them.",
-    "abilityZh": "每轮一次，当你完成委托时，若使用了一件臻品、青釉、素面陶瓷，获得4 VP。该委托本身不必要求臻品、青釉或素面；实际交付的陶瓷拥有这些属性即可。"
-  },
-  {
-    "id": "GU",
-    "name": "Guan Kiln",
-    "nameZh": "官窑",
-    "abilityName": "Imperial Patronage",
-    "abilityNameZh": "内府恩眷",
-    "ability": "Once per round, when you complete an Order showing at least 1 Crown, gain 2 Coins and 1 VP.",
-    "abilityZh": "每轮一次，当你完成一张带有至少1个 👑 的委托时，获得2铜钱和1 VP。"
-  },
-  {
-    "id": "GE",
-    "name": "Ge Kiln",
-    "nameZh": "哥窑",
-    "abilityName": "Crackle from Fire",
-    "abilityNameZh": "窑火开片",
-    "ability": "Once per round, after Quality is assigned: 1 of your Standard ceramics from this firing becomes Fine + Crackle. Place a Crackle marker on it. When completing an Order, each of your Crackle ceramics may be treated as having any one Glaze for that Order. Crackle is permanent and is neither a Decoration nor a Glaze. Keep the marker with its ceramic until that ceramic is delivered, discarded or otherwise leaves play. The ceramic's actual Glaze and Decoration do not change. Crackle does not provide a wild Decoration. Choose one Glaze independently for each Crackle ceramic used in an Order, and use that choice for every requirement on that Order. This substitution applies only to Order requirements. Its actual Quality is Fine, including for Exhibition. Use its actual Glaze when checking Exhibition diversity. Choose when to use Ge among your after-Quality abilities. Check the ceramic's current Quality when using it; Ge requires Standard. After it becomes Fine, it is no longer a valid target for Protective Saggars or Second Firing.",
-    "abilityZh": "每轮一次，在决定品质后：自己参与本次烧成的1件良品陶瓷成为上品并获得开片。完成委托时，你的每件开片陶瓷可分别视为该委托所需的任意一种釉色。为陶瓷放置开片标记；开片永久存在，既不是纹饰，也不是釉色，直到该陶瓷被交付、弃置或离场才移除。陶瓷的实际纹饰和釉色不变，开片不能替代纹饰。每件开片陶瓷可独立选择一种釉色，并在该委托的全部要求中使用同一选择；此替代仅用于委托要求。实际品质为上品，展览时也如此，展览的釉色多样性仍使用实际釉色。你可以自行决定包括哥窑、匣钵护烧和复烧在内的决定品质后能力的使用顺序。每次使用后，重新检查当前品质、目标、费用和使用次数限制；只有仍满足条件的能力才能使用。被哥窑提升为上品的陶瓷不再符合匣钵护烧或复烧的目标条件。"
-  },
-  {
-    "id": "DI",
-    "enabled": false,
-    "name": "Ding Kiln",
-    "nameZh": "定窑",
-    "abilityName": "Moulded Production",
-    "abilityNameZh": "范制成器",
-    "ability": "Once per round, during an Apprentice's Potter's Wheel action, after you form a Bowl, Plate or Brush Washer, pay 1 Clay to form 1 additional vessel of the same Shape. The additional vessel starts Plain for free and does not count against that action's vessel limit. It counts as formed by that Potter's Wheel action for White Slip, Drying Frames and other effects referring to vessels formed by that action. This ability does not trigger during a Shifu action or from forming through a Tech effect.",
-    "abilityZh": "每轮一次，在学徒的陶车坊行动中成型碗、盘或笔洗后，支付1泥，额外成型1件相同器型器物。该器物免费获得素面，不计入行动数量上限，并视为该行动成型，可用于白陶衣和晾坯架。师傅行动或技艺效果不会触发此能力。"
-  },
-  {
-    "id": "JU",
-    "name": "Jun Kiln",
-    "nameZh": "钧窑",
-    "abilityName": "Kiln Transformation",
-    "abilityNameZh": "窑变天成",
-    "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, pay 1 Wood to adjust the Actual Heat of 1 of your ceramics by +1 or −1.",
-    "abilityZh": "每轮一次，在计算实际火候后、决定品质前，你可以支付1柴，将自己1件陶瓷的实际火候调整+1或−1。"
-  }
-]
+{
+  "rulesVersion": "1.6.1",
+  "kilns": [
+    {
+      "id": "RU",
+      "oncePerRound": true,
+      "params": {
+        "vp": 4,
+        "glaze": "celadon",
+        "decoration": "plain",
+        "quality": "masterpiece"
+      },
+      "name": "Ru Kiln",
+      "nameZh": "汝窑",
+      "abilityName": "Quiet Perfection",
+      "abilityNameZh": "天青无瑕",
+      "ability": "Once per round, when you complete an Order using a Masterpiece with Celadon Glaze and Plain Decoration, gain 4 VP. The Order itself does not need to require Masterpiece, Celadon or Plain; the delivered ceramic must actually have those attributes.",
+      "abilityZh": "每轮一次，当你完成委托时，若所交付器物中有1件为臻品、青釉、素面，获得4分。委托本身不必要求臻品、青釉或素面；只看实际交付器物的属性（开片器按原纹饰计）。经漕船完成亦可触发。",
+      "shortText": "Once per round: complete an Order with a Celadon, Plain Masterpiece for +4 VP",
+      "shortTextZh": "每轮一次：以臻品青釉素面器完成委托，+4分"
+    },
+    {
+      "id": "GU",
+      "oncePerRound": true,
+      "params": {
+        "coins": 2,
+        "vp": 1,
+        "minPrintedCrowns": 1
+      },
+      "name": "Guan Kiln",
+      "nameZh": "官窑",
+      "abilityName": "Imperial Patronage",
+      "abilityNameZh": "内府恩眷",
+      "ability": "Once per round, when you complete an Order showing at least 1 Crown, gain 2 Coins and 1 VP.",
+      "abilityZh": "每轮一次，当你完成一张印有至少1个御令的委托时，获得2铜钱和1分。经漕船完成亦可触发；贡瓷额外获得的御令不算“印有”。",
+      "shortText": "Once per round, completing an Order with 👑: gain 2 Coins and 1 VP",
+      "shortTextZh": "每轮一次，完成带👑委托时：得2铜钱1分"
+    },
+    {
+      "id": "GE",
+      "oncePerRound": true,
+      "params": {
+        "fromQuality": "standard",
+        "toQuality": "fine"
+      },
+      "name": "Ge Kiln",
+      "nameZh": "哥窑",
+      "abilityName": "Crackle Mastery",
+      "abilityNameZh": "金丝铁线",
+      "ability": "Once per round, after Quality is assigned, choose 1 of your ceramics from this firing that is Standard: it develops Crackle and becomes Fine. Place a Crackle marker on it; the ceramic keeps the marker. When completing an Order, each of your Crackle ceramics may count as having any one Decoration for that Order's Decoration requirements. Its printed Decoration is unchanged. A Crackle ceramic is never a Masterpiece, so it cannot fill a Masterpiece requirement.",
+      "abilityZh": "每轮一次，定品后，你可以选择你本次烧成中1件当时为良品的器物：其开片，品质变为上品。在其上放置开片标；开片标保留至该器物交付或陈列。不使用时不消耗本轮次数。完成委托时，你的每件开片器可视为具有任意一种纹饰，以满足该委托的纹饰要求（每件各自声明）；其原纹饰不变，陈列与汝窑仍按原纹饰。开片器永不是臻品，不能满足臻品要求。可在匣钵护烧之后作用于同一器物（瑕品→良品→上品）。与其他“定品后”能力的顺序由你自定，不必最后结算。",
+      "shortText": "Once per round, after Quality: you may crackle 1 of your Standard ceramics from this firing to Fine\nCompleting Orders, Crackle counts as any one Decoration; never a Masterpiece",
+      "shortTextZh": "每轮一次，定品后：可令己方本窑1件良品开片升上品\n完成委托时，开片器可作任一纹饰；永非臻品"
+    },
+    {
+      "id": "DI",
+      "oncePerRound": true,
+      "params": {
+        "shapes": [
+          "bowl",
+          "plate",
+          "washer"
+        ],
+        "clay": 1,
+        "coins": 1
+      },
+      "name": "Ding Kiln",
+      "nameZh": "定窑",
+      "abilityName": "Moulded Production",
+      "abilityNameZh": "范制成器",
+      "ability": "Once per round, when resolving a Form & Decorate action, after you form a Bowl, Plate or Brush Washer, you may pay 1 Clay and 1 Coin to form and decorate one additional vessel of the same Shape. Its Decoration, whichever you choose, costs that 1 Coin. This additional vessel does not count against the action's vessel limit and is not one of the 2 vessels for the Shifu's Decoration discount. For effects that refer to vessels formed by that action, it counts as formed by that action.",
+      "abilityZh": "每轮一次，在结算制坯饰纹行动时，你制成1件碗、盘或笔洗后，可支付1泥和1铜钱，再制1件同器型的坯，并任选1种纹饰；该纹饰费用即为这1铜钱。学徒或师傅行动皆可。此额外坯不计入该行动的件数上限，也不是师傅纹饰减免所指的“2件”之一；对提及“该行动所制坯”的效果，视为该行动所制。师傅减免与饰坯匣都不适用于此件；它也不是瓶或香炉。练泥所制坯不触发定窑。",
+      "shortText": "Once per round, in a Form & Decorate action:\nafter forming a Bowl/Plate/Brush Washer, you may pay 1 Clay + 1 Coin for 1 more of that Shape",
+      "shortTextZh": "每轮一次，制坯饰纹行动中：\n制碗／盘／笔洗后，可付1泥1铜钱再制1件同型坯"
+    },
+    {
+      "id": "JU",
+      "oncePerRound": true,
+      "params": {
+        "wood": 1,
+        "deltas": [
+          1,
+          -1
+        ]
+      },
+      "name": "Jun Kiln",
+      "nameZh": "钧窑",
+      "abilityName": "Kiln Transformation",
+      "abilityNameZh": "窑变天成",
+      "ability": "Once per round, after Actual Heat is calculated but before Quality is assigned, you may pay 1 Wood to adjust the Actual Heat of one of your ceramics by +1 or −1.",
+      "abilityZh": "每轮一次，实际火候算出后、定品前，你可以支付1柴，将你1件器物的实际火候调整+1或−1（火标已计入）。（若本轮尚未使用，也可在复烧重算实际火候后、定新品质前用于该器物；已用过则不可再用。）",
+      "shortText": "Once per round, before Quality: you may pay 1 Wood to adjust 1 of your ceramics' Actual Heat ±1",
+      "shortTextZh": "每轮一次，定品前：可付1柴，己方1件器物火候±1"
+    }
+  ]
+}

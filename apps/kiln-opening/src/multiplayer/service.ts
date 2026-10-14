@@ -5,7 +5,7 @@ import {
   createPrivateFiringState,
   createGame,
   submitWoodContribution,
-} from "../game/index.ts";
+} from "../game-v14/index.ts";
 import type {
   GameAction,
   GameEvent,
@@ -13,7 +13,7 @@ import type {
   GameRuleError,
   PlayerId,
   PrivateFiringState,
-} from "../game/index.ts";
+} from "../game-v14/index.ts";
 import { chooseOnlineComputerAction, nextOnlineDecisionActor } from "./computerPlayer.ts";
 import { createComputerObservation } from "./computerObservation.ts";
 import {

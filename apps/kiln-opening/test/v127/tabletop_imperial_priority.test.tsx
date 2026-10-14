@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import type { GameState, PlayerId } from "../../src/game/index.ts";
+import type { GameState, PlayerId } from "../../src/game-v14/index.ts";
 import { projectPublicGameState } from "../../src/multiplayer/index.ts";
 import { LanguageProvider } from "../../src/ui/i18n.tsx";
 import type { Locale } from "../../src/ui/i18n.tsx";

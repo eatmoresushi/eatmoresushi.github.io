@@ -22,7 +22,7 @@ import type {
   Shape,
   TechniqueDiscipline,
   TechniqueId,
-} from "../game/index.ts";
+} from "../game-v14/index.ts";
 
 export type RoomStatus = "lobby" | "playing" | "finished" | "abandoned";
 export type StoredRulesVersion = "0.4" | "0.5" | "0.6.1" | "0.6.3" | "0.6.5" | "1.0.0" | "1.0.1" | "1.0.2" | "1.0.4" | "1.0.9" | "1.1.1" | "1.1.4" | "1.1.5"
@@ -298,7 +298,7 @@ export interface CommandSuccess {
 export interface AuthoritativeHead {
   roomId: string;
   revision: number;
-  state: import("../game/index.ts").GameState;
+  state: import("../game-v14/index.ts").GameState;
   rngState: number;
   rootSeed: number;
   stateHash: string;

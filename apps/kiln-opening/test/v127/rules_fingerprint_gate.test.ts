@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { rulesFingerprint } from "../../src/game/index.ts";
+import { rulesFingerprint } from "../../src/game-v14/index.ts";
 import { AuthoritativeGameService, InMemoryMultiplayerStore } from "../../src/multiplayer/index.ts";
 import type { MultiplayerResult, RoomConnection, SecurityProvider } from "../../src/multiplayer/index.ts";
 

@@ -5,8 +5,8 @@ import {
   applyAction,
   createPrivateFiringState,
   submitWoodContribution,
-} from "../../src/game/index.ts";
-import type { GameAction, GameState } from "../../src/game/index.ts";
+} from "../../src/game-v14/index.ts";
+import type { GameAction, GameState } from "../../src/game-v14/index.ts";
 import {
   addGlazed,
   addLoaded,

@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import type { GameState, LocationId } from "../../src/game";
+import type { GameState, LocationId } from "../../src/game-v14";
 import { projectPublicGameState } from "../../src/multiplayer";
 import { ActionPanel } from "../../src/ui/ActionPanel";
 import { LanguageProvider, type Locale } from "../../src/ui/i18n";

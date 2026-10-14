@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import type { FireModifier, FiringContext, FiringResultSummary, RoundNumber } from "../../src/game/index.ts";
+import type { FireModifier, FiringContext, FiringResultSummary, RoundNumber } from "../../src/game-v14/index.ts";
 import { projectPublicGameState } from "../../src/multiplayer/index.ts";
 import type { PublicEventRecord, PublicGameEvent, PublicGameState } from "../../src/multiplayer/index.ts";
 import { fireCardHistory } from "../../src/ui/fireCardHistory.ts";

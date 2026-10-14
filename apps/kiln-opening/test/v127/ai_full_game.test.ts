@@ -5,8 +5,8 @@ import {
   createGame,
   createPrivateFiringState,
   submitWoodContribution,
-} from "../../src/game/index.ts";
-import type { GameState, PlayerCount, PrivateFiringState } from "../../src/game/index.ts";
+} from "../../src/game-v14/index.ts";
+import type { GameState, PlayerCount, PrivateFiringState } from "../../src/game-v14/index.ts";
 import {
   ONLINE_COMPUTER_POLICY_VERSION,
   chooseOnlineComputerAction,

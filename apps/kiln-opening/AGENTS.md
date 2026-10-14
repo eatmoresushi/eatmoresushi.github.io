@@ -10,33 +10,39 @@ Target session length for the physical design is approximately 90–120 minutes.
 
 Priority order:
 
-1. `docs/KILN_OPENING_v1.4_EN_SOURCE.md` — latest owner-supplied V1.4 mechanical authority, with the confirmed Ge timing correction and retained non-conflicting clarifications recorded in the audit.
-2. `docs/RULEBOOK_AUDIT_V1.4.md` — source checksums, approved clarifications and migration status.
+1. `docs/KILN_OPENING_v1.6.1_EN_SOURCE.md` — the V1.6.1 Player Rulebook, designated by the owner on 2026-10-14 as the **only** mechanical source of truth.
+2. `docs/RULEBOOK_AUDIT_V1.6.1.md` — source checksum, owner rulings R1–R13 and B1–B3, editorial corrections and recorded interpretations.
 3. `docs/GAME_RULES.md` — source index.
 4. `data/*.json` — derived content.
 5. `docs/IMPLEMENTATION_DECISIONS.md` — digital interpretations.
 6. `docs/ONLINE_GAME_SPEC.md` — digital behaviour.
 7. `docs/DESIGN_SPEC.md` — design intent.
-8. `assets/current_v04/` — visual reference only.
+8. `docs/GLOSSARY_ZH_V1.6.1.md` — fixed Simplified Chinese terminology.
+9. `assets/current_v04/` — visual reference only.
 
-V1.4 supersedes V1.2.7 and its owner amendments. Retain older sources as history,
-not active rules. The approved four-player kiln allocation is 3 High / 2 Middle /
-3 Low. Empty Main Order supply leaves a partial display and reservations require
-an available card. Academy Shifu inspection and chosen return order are private.
-Jun is once per round; an unused ability may be used during Second Firing, but a
-previously used ability may not be used again. The Second Firing window follows the extra Fire-card reveal and recalculation of Actual Heat, before assigning new Quality.
-All after-Quality abilities, including Ge, Protective Saggars and Second Firing, resolve in the owner's chosen order. Recheck current Quality, targets, costs and usage limits after each use; Ge is not required to resolve last.
-The 2026-09-27 owner amendment deals two Starting Orders and no Main Order to each player at setup, and raises O01–O03 to 4 VP each; their other requirements and rewards are unchanged.
-The 2026-09-28 owner amendment makes Imperial Court cost 5 Coins for either worker type. Each permanent Ge Crackle ceramic may use any one Glaze consistently for every requirement when completing an Order; it no longer substitutes Decoration. Actual Glaze and Decoration remain unchanged, and Exhibition uses actual Glaze.
-The replacement rulebook supplied later on 2026-09-28 is the sole mechanical source: Measuring Calipers needs any other workshop vessel, including one formed by the same action; Shape does not matter. T03 is Dipping Vats (Forming, 2 Coins), replacing Standardised Moulds. Once per round it may waive Glazing costs for all Plain ceramics loaded by one Kiln Yard action into either kiln; specialised ceramics still pay. Rapid Drying and Imperial Priority cannot use the waiver. The owner reconfirmed player-chosen after-Quality ordering, correcting contradictory Ge wording in that replacement.
-The 2026-09-30 owner economy amendment starts each player with 3 Coins, reduces the Coin reward of all 28 crownless Commercial Main Orders by 1, sets every Starting Order to 3 Coins, and removes Kiln Tending (ST04). The three Starting Tech choices are Prepared Clay, White Slip and Rapid Drying, with four physical copies each. Crown Order rewards, Order requirements and Shifu discounts are unchanged.
-The 2026-10-02 owner amendment disables Ding Kiln for new online games. Ru, Guan, Ge and Jun are the four selectable Kilns; 2–4-player support and reverse-order selection are unchanged. Retain Ding’s stable `DI` ID, definition and ability as historical content, but reject it during current setup and exclude it from human and computer selection.
+V1.6.1 is a rework of V1.2.7 and supersedes V1.4, every V1.4 owner amendment and the earlier V1.6 draft. Older sources and audits are history, not active rules.
+
+Key V1.6.1 facts that differ from V1.4:
+
+- **Locations:** five central locations (Materials Yard, Commission Market, Guild Hall, Canal Wharf, Magistrate's Hall) and two personal locations on each Kiln Player Board (Form & Decorate, Glaze & Load; 2 spaces each, the second locked until a Workshop or Glazing & Loading Tech unlocks it).
+- **Capacities** are absolute; there is no Shifu overfill.
+- **Kilns:** all five (Ru, Guan, Ge, Ding, Jun) are selectable.
+- **Firing setup:** the Shared Kiln is 3 High / 3 Middle / 2 Low, covered 2-1-1 / 2-2-2 / 3-3-2. Base Heat starts at a public Kiln Die roll (faces 1,1,2,2,3,3) every round.
+- **Decorations** are Plain, Carved, Impressed and Painted, all 2 Coins, chosen at forming. Glaze is chosen at loading.
+- **Ge** crackles 1 Standard ceramic per round after Quality (it becomes Fine and keeps a Crackle marker). Each Crackle ceramic may count as any one Decoration when completing an Order, and is never a Masterpiece.
+- **Advanced Techs:** 18, 6 per discipline; at most 3 owned, 1 per discipline. There are no Starting Techs.
+- **Orders:**
+  - Setup deals 2 Starting Orders + 1 Main Order. The hand limit is 4 (5 with Colour Samples).
+  - Only held Orders are completed, in a single First-Player-order pass.
+  - A reserved face-up Order is refilled only after the reserving player's turn ends.
+
+The Chinese UI uses a Song-dynasty kiln-workshop register, not literal translation (owner instruction, 2026-10-14). Use the glossary terms consistently.
 
 ## Approved asset rule
 
-Only `assets/current_v04/` is an approved visual-reference directory. The directory name remains unchanged as a stable legacy path; rules-bearing visuals must follow V1.4 data and localized gameplay text must come from structured data or the i18n layer.
+Only `assets/current_v04/` is an approved visual-reference directory. The directory name remains unchanged as a stable legacy path. Rules-bearing visuals must follow V1.6.1 data, and localized gameplay text must come from structured data or the i18n layer.
 
-Do not search conversation history or older images for missing boards/cards. Missing current assets are intentionally specified in `data/asset_specs.json` and `docs/V0.4_ASSETS_TO_REGENERATE.md` and must be rebuilt from current data.
+Do not search conversation history or older images for missing boards/cards. Missing current assets are specified in `data/asset_specs.json` and must be rebuilt from current data.
 
 A raster image with slightly different wording is considered obsolete even if the mechanic is similar.
 
@@ -44,28 +50,26 @@ A raster image with slightly different wording is considered obsolete even if th
 
 Do not reintroduce any of these unless the user explicitly changes the rules:
 
-- trained vs untrained Apprentices
-- specialist workers
-- Hire or Train worker-placement actions
-- Refined Clay
-- Refining House
+- trained vs untrained Apprentices; specialist workers; Hire or Train actions
+- Refined Clay; Refining House
 - five-player mode
-- starting with fewer than 1 Shifu + 3 Apprentices or unlocking additional workers
+- starting with fewer than 1 Shifu + 3 Apprentices, or unlocking additional workers
 - numeric 0–3 Wood bidding instead of Bank/Tend/Stoke cards
-- Kiln Tending (ST04), including its per-action Clay/Wood income
-- selecting Ding Kiln in a new online game
-- Kiln Yard Wood income
-- Kiln Yard Shifu ceramic movement or neighbouring-zone repositioning
-- separate Market and Imperial Order decks or displays
-- Office or separate Imperial Order actions (Imperial Court remains in V1.4)
+- the Kiln Yard, Kiln Yard Wood income, Kiln Yard Shifu targeting, or Shifu ceramic movement or repositioning
+- shared Potter's Wheel or Decoration Workshop locations; a separate Glazing step or a Glazed-but-unloaded state
+- Starting Techs (including Prepared Clay, White Slip, Rapid Drying, Kiln Tending as Starting Techs)
+- Shifu overfill of any location
+- separate Market and Imperial Order decks or displays; Office or separate Imperial Order actions
 - Imperial Progress, Apprentice-unlock, or Imperial Seal mechanics
-- private Potter's Wheel or Decoration Workshop action locations
-- Tech-based worker spaces or workshop-location unlocks
+- the V1.4 Imperial Court (5 Coins) or an Imperial Grant Coin/resource choice
+- Crackle as a Decoration; the V1.4 permanent Ge Crackle with a virtual Glaze
+- the V1.4 Glaze Palette, Dipping Vats, Measuring Calipers, White Slip, Drying Frames or Standardised Moulds
+- reverse-Work-order Order completion circuits; completing face-up Orders; immediate Main display refill on reservation
+- a fixed Base Heat start of 2
 - treating Tech effects as worker actions unless the Tech explicitly says so
 - Guan's extra Order-hand capacity
-- penalties for exhibiting nothing at the End-game Exhibition
-- presenting Flawed ceramics
-- direct VP printed on Techs
+- penalties for exhibiting nothing at the End-game Exhibition; exhibiting Flawed ceramics
+- fixed VP printed on Techs (every owned Tech's 1 VP at game end and Connoisseur's Cabinet are V1.6.1 rules)
 
 ## Engineering principles
 
@@ -74,10 +78,10 @@ Do not reintroduce any of these unless the user explicitly changes the rules:
 - Server-authoritative multiplayer state.
 - Clients submit typed commands; the server validates and applies them.
 - Never trust client-calculated resources, legal moves, VP, card draws, or hidden information.
-- Deterministic engine except explicit shuffle/draw randomness.
+- Deterministic engine except explicit shuffle/draw randomness (including the Kiln Die).
 - Prefer seeded RNG for tests and replay/debugging.
 - Store stable IDs for every Order, Technique, Kiln, Vessel and player.
-- Do not put core game rules in React components.
+- Do not put core game rules in React components. The UI consumes engine selectors and view models.
 - Model timing windows explicitly, especially firing.
 - Rule errors should return typed, user-readable failures.
 - Every rule implementation requires tests.
@@ -104,55 +108,81 @@ function applyAction(
 
 ## Hidden information
 
-All undelivered ceramics and their recorded attributes are public for every player, including Workshop, loaded (Shared or Imperial Kiln), and Finished ceramics. An Imperial Kiln belongs to one player but its contents are public.
+All undelivered ceramics and their recorded attributes are public for every player, including:
 
-Orders in hand are secret; hand counts are public. Only the authenticated owner's private response may include their hand. Contribution-card selections are secret until every eligible contributor has submitted. Do not expose other players' unrevealed cards in realtime payloads, logs visible to clients, browser state, or database rows readable under client credentials.
+- Shaped (workshop), loaded (Shared or Imperial Kiln) and Finished ceramics;
+- the chosen Imperial Kiln modifier, Kiln Furniture modifiers, Heat markers once turned, and Crackle markers.
+
+An Imperial Kiln belongs to one player, but its contents are public. The Kiln Die result and the Fire discard pile are public.
+
+The following are secret:
+
+- **Orders in hand.** Hand counts are public. Only the authenticated owner's private response may include their hand.
+- **Contribution cards and Fuel Ledger commitments**, until every eligible contributor has submitted.
+- **Private looks**, visible only to the actor: the Test Pieces peek, the Commission Market Shifu top-3, the Colour Samples top-3 and the Guild Hall Shifu inspection (including the bottom order chosen).
+- **The Main Order discard pile**, which is face down; only its count is public.
+
+Do not expose other players' secret information in realtime payloads, logs visible to clients, browser state, or database rows readable under client credentials.
 
 ## Tests that must exist
 
 At minimum:
 
-- setup for 2/3/4 players
-- reverse-order Kiln selection
-- worker capacity by player count
-- rejection of Work passing and all four workers placed each round
-- all players starting with 1 Shifu + 3 Apprentices
-- global 2/3/4-player capacity at Materials Yard, Potter's Wheel, Decoration Workshop, Commission Market, and Craft Academy
-- Shifu over-capacity placement, including multiple Shifu overfilling the same shared location
-- Shifu vs Apprentice effects at all eight shared locations
-- Shape costs and non-limiting Vessel-card proxies
-- Plain formation, optional Decoration costs and Shifu free Decoration, and paid Glaze & Load
-- Ding Apprentice-only bonus, White Slip/Drying Frames costs and eligibility, and Rapid Drying
-- private Craft Academy inspection and owner-chosen bottom order
-- exhausted Main Order deck/discard fallback
-- end-of-Work Glaze Palette window and permanent Ge Crackle independent of Glaze and Decoration, with one consistent virtual Glaze per marked ceramic for Orders only
-- Decoration costs
-- all 3 Starting Techs and all 15 V1.4 Advanced Techs
-- 3-Coin setup, 3-Coin Starting Orders, all 28 reduced Commercial Main rewards, unchanged Crown rewards and rejection of removed Kiln Tending
-- Advanced-Tech acquisition limit, discipline refresh, printed cost, Shifu discount, and end-game VP
-- all four selectable Kiln abilities, retained historical Ding ability coverage, and rejection of disabled Ding selection
-- Base Heat starting at 2, all contributions, and the 0–5 clamp
-- secret simultaneous Contribution-card reveal
-- Fuel Ledger's secret −2/+2 Contribution cards, two-Wood affordability, reveal, and payment
-- Kiln Yard Shifu target commitment during the Work action, then optional +1/−1 Heat-marker selection in First Player order after Base Heat and before the Fire card, with no Wood cost and no movement
-- Shifu Heat-marker effects on only the marked ceramic's Actual Heat, independent of Base Heat, Global Heat and other ceramics; fixed value through Second Firing; stacking with the applicable zone modifier or Kiln Furniture's zero; marker removal after firing and Shifu remaining used until Cleanup
-- all five Fire modifiers, the V1.4 1/3/4/3/1 deck distribution, reshuffling, and kiln-zone modifiers
-- Quality assignment
-- Jun/Ge/Protective Saggars/Test Pieces/Second Firing/Ru timing
-- the optional 2-Coin discard of a still-Flawed ceramic after firing
-- all 8 Starting Orders and 48 Main Orders, including independent multi-ceramic attribute matching
-- secret setup deal-two Starting Orders and no Main Order
-- Commission reservation benefits and immediate Main-display refill
-- ordered Main-display queue removal/refill and discard-two, retain-four rotation at the start of Rounds 2–5
-- reverse-Work-order completion circuits until a complete pass circuit
-- uniform three-Order hand limit across Starting and reserved Main Orders
-- Crown advancement, every crossed Recognition milestone, the 0–4 cap, and immediate VP for Crowns beyond 4
-- Imperial Gift at Recognition 2, Imperial Priority at Recognition 3 before or after a worker action, and Imperial Audience VP at Recognition 4
-- unlimited End-game Exhibition with diversity across all exhibited ceramics
-- English/Simplified Chinese rendering from the same stable IDs without changing game state
-- end-game Coin VP cap
-- all tie breakers
-- reconnect without changing player seat/state
+- **Setup**
+  - setup for 2/3/4 players; reverse-order selection of all five Kilns
+  - 2 Clay / 2 Wood / 3 Coins; 1 Shifu + 3 Apprentices
+  - secret deal of 2 Starting + 1 Main Order
+  - 6-card Main display; 2 face-up Techs per discipline
+- **Work Phase placement**
+  - no passing; all four workers placed each round
+  - absolute capacity at Materials Yard, Commission Market and Guild Hall (2/3/4) and Magistrate's Hall (1/1/2); Canal Wharf uncapped
+  - the "at least 1 instance of the main action" legality rule at every location
+- **Personal spaces:** once per round each; the second space locked; unlocked by a Workshop or Glazing & Loading Tech, usable later the same round
+- **Location effects:** Apprentice and Shifu effects at all seven locations
+  - Materials Yard Shifu 1-Coin bonus
+  - Form & Decorate Decoration costs and the Shifu −1 discount when forming 2
+  - Glaze & Load: Imperial modifier choice and optional Heat-marker placement
+  - Commission Market: deferred refill, blind reservation, private Shifu top-3, resource after each reservation
+  - Guild Hall: private inspection and chosen bottom order
+  - Canal Wharf
+  - Magistrate's Hall: 4/3 Coins, Recognition 0–2 only, never to 4
+- **Shapes and Kilns**
+  - Shape costs and non-limiting Vessel-card proxies
+  - all five Kiln abilities: Ru, Guan, Ge Crackle (including after Saggars, wildcard Decoration, never Masterpiece), Ding (1 Clay + 1 Coin, outside discounts), Jun (including during Second Firing per R7)
+- **Advanced Techs**
+  - all 18, including when-acquired Colour Samples, Kiln Master, Inverted Firing stacks, Setter's Mark reservation, and Canal Barge before/after a worker action
+  - the 3-total / 1-per-discipline limit, discipline refill and partial display, printed cost, Shifu discount, 1 VP each at game end
+  - optional abilities (R4): declining keeps the once-per-round use
+- **Firing**
+  - the Kiln Die every round (seeded, public)
+  - Contribution eligibility from Shared Kiln ceramics only, including the zero-participant path
+  - secret simultaneous Contribution reveal; Fuel Ledger −2/+2 with its extra Wood
+  - Base Heat clamp 0–5
+  - Test Pieces after Base Heat (private peek, public bury)
+  - Heat-marker step in First Player order (+1/−1/return); Kiln Master
+  - Fire deck 1/3/4/3/1, open discard, reshuffle only when empty
+  - Actual Heat for Shared Kiln (zone or Kiln Furniture modifier + marker) and court-fired Imperial Kiln ceramics
+  - Quality assignment
+  - after-Quality abilities in the owner's chosen order: Saggars, Second Firing, Ge
+  - optional 2-Coin salvage of a still-Flawed ceramic
+  - skipping the firing when nothing is loaded
+- **Orders**
+  - all 16 Starting and 48 Main Orders, including independent multi-ceramic matching and Crackle wildcards
+  - empty Main Order supply (B1)
+  - round-start discard-2 / slide / reveal-2 rotation
+  - single-pass Order Phase in First Player order, held Orders only
+  - hand limit 4/5 at Cleanup
+- **Recognition**
+  - Crown advancement one at a time, every crossed milestone, the 0–4 cap and +1 VP per Crown beyond 4
+  - fixed Imperial Grant (1 Clay + 1 Wood + 1 Coin), Imperial Kiln at 2, Imperial Priority at 3 (free, before or after a worker action, chooses the modifier), Imperial Audience 6 VP at 4
+  - Tribute Ware's bonus Crown (R13)
+- **Final scoring**
+  - automatic unlimited Exhibition (2/3/5) with +3 for 3 Shapes and +3 for 3 Glazes, and Connoisseur's Cabinet (+1 per Fine or Masterpiece, max +5)
+  - Coin VP (1 per 3, max 5); all tie-breakers
+- **Platform**
+  - English/Simplified Chinese rendering from the same stable IDs without changing game state
+  - full random legal games for 2/3/4 players completing without error
+  - reconnect without changing player seat/state
 
 ## Change discipline
 
@@ -161,6 +191,6 @@ If a desired implementation requires changing the board-game rules:
 1. stop,
 2. explain the conflict,
 3. propose the smallest rule change,
-4. wait for user approval before modifying either checked-in V1.4 source, its recorded rulings, or balance data.
+4. wait for user approval before modifying the checked-in V1.6.1 source, its recorded rulings, or balance data.
 
 Do not silently “improve” balance values.

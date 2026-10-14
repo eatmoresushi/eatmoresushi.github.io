@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import type { OrderId } from "../../src/game/index.ts";
+import type { OrderId } from "../../src/game-v14/index.ts";
 import { OrderCard, OrderInspection, StaticOrderCard } from "../../src/ui/TabletopGameExperience.tsx";
 import type { Locale } from "../../src/ui/i18n.tsx";
 

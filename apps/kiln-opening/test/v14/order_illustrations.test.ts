@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAIN_ORDERS, STARTING_ORDERS, matchesOrder } from "../../src/game/index.ts";
+import { MAIN_ORDERS, STARTING_ORDERS, matchesOrder } from "../../src/game-v14/index.ts";
 import { orderIllustrationCeramics } from "../../src/ui/orderIllustrations.ts";
 
 describe("Order ceramic illustrations", () => {

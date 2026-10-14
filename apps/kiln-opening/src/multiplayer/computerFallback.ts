@@ -9,12 +9,12 @@ import {
   activeKilnSpaceIds,
   kilnYardGlazingCost,
   orderHandLimit,
-} from "../game/index.ts";
+} from "../game-v14/index.ts";
 import type {
   FinishedCeramic,
   WorkshopCeramic,
   TechniqueId,
-} from "../game/index.ts";
+} from "../game-v14/index.ts";
 import type { ComputerObservation } from "./computerObservation.ts";
 import type { AuthoritativeCommand } from "./types.ts";
 

@@ -1,53 +1,79 @@
 {
-  "rulesVersion": "1.4",
+  "rulesVersion": "1.6.1",
   "track": [
     {
       "space": 0,
+      "id": "local_workshop",
+      "reward": null,
       "title": "Local Workshop",
       "titleZh": "民间作坊",
-      "reward": null,
-      "rewardZh": null
+      "rewardText": null,
+      "rewardTextZh": null
     },
     {
       "space": 1,
+      "id": "imperial_grant",
+      "reward": {
+        "kind": "resources",
+        "clay": 1,
+        "wood": 1,
+        "coins": 1
+      },
       "title": "Imperial Grant",
       "titleZh": "御赐",
-      "reward": "Gain 3 Coins or 1 Clay + 1 Wood + 1 Coin.",
-      "rewardZh": "获得3铜钱，或1泥、1柴和1铜钱。"
+      "rewardText": "Gain 1 Clay, 1 Wood and 1 Coin.",
+      "rewardTextZh": "获得1泥、1柴和1铜钱。"
     },
     {
       "space": 2,
+      "id": "imperial_gift",
+      "reward": {
+        "kind": "imperial_kiln"
+      },
       "title": "Imperial Gift",
       "titleZh": "赐御窑",
-      "reward": "Gain your Imperial Kiln tile.",
-      "rewardZh": "获得你的御窑。"
+      "rewardText": "Gain your Imperial Kiln tile: a private space fired by the court at the Kiln Die result + Fire + a modifier you choose when loading, immune to Contributions.",
+      "rewardTextZh": "获得御窑板块，放入你的御窑区：私人单格窑，由御匠代烧，实际火候 = 窑骰点数 + 窑火修正 + 装窑时自选的御窑修正 + 火标，不受控火影响。"
     },
     {
       "space": 3,
+      "id": "imperial_priority",
+      "reward": {
+        "kind": "imperial_priority"
+      },
       "title": "Imperial Priority",
       "titleZh": "御烧优先",
-      "reward": "Take your Imperial Priority token. Once per game, before or after your worker action, pay 1 Coin to glaze 1 workshop ceramic with any Glaze and immediately load it into your empty Imperial Kiln.",
-      "rewardZh": "取得御烧优先标记。每局一次，在自己的工人行动前或后，支付1铜钱，为作坊内1件器物施加任意釉色并立即装入空置御窑。"
+      "rewardText": "Take your coloured Imperial Priority token. Once per game, before or after your worker action, spend it to give 1 of your Shaped vessels a Glaze and load it into your empty Imperial Kiln.",
+      "rewardTextZh": "从声望轨第3格取回你颜色的御烧优先标。每局一次，在你的工人行动之前或之后，你可以交出此标，为你的1件坯施釉并装入你空置的御窑。"
     },
     {
       "space": 4,
+      "id": "imperial_audience",
+      "reward": {
+        "kind": "vp",
+        "vp": 6
+      },
       "title": "Imperial Audience",
       "titleZh": "御前召见",
-      "reward": "Gain 6 VP. Each later Crown scores 1 VP.",
-      "rewardZh": "获得6 VP。之后每个 👑 获得1 VP。"
+      "rewardText": "Gain 6 VP. After this, each further Crown scores 1 VP immediately.",
+      "rewardTextZh": "获得6分。此后每获得1个御令，立即得1分。"
     }
   ],
+  "overflowVpPerCrown": 1,
   "exhibition": {
-    "capacity": null,
     "minimumQuality": "standard",
     "qualityVp": {
       "standard": 2,
       "fine": 3,
       "masterpiece": 5
     },
-    "threeDifferentShapesBonus": 3,
-    "threeDifferentGlazesBonus": 3,
-    "flawedEligible": false,
-    "emptyExhibitionPenalty": 0
+    "distinctShapes": {
+      "threshold": 3,
+      "vp": 3
+    },
+    "distinctGlazes": {
+      "threshold": 3,
+      "vp": 3
+    }
   }
 }

@@ -1,6 +1,6 @@
-import { rulesFingerprint } from "../game/rulesFingerprint.ts";
+import { rulesFingerprint } from "../game-v14/rulesFingerprint.ts";
 import { ONLINE_COMPUTER_POLICY_VERSION } from "./computerPlayer.ts";
-import type { GameEvent, PlayerId } from "../game";
+import type { GameEvent, PlayerId } from "../game-v14";
 import type {
   AuthenticatedSeat,
   CommitStartInput,

@@ -8,7 +8,7 @@ import {
   contributionHeatAdjustment,
   contributionWoodCost,
   orderHandLimit,
-} from "../game/index.ts";
+} from "../game-v14/index.ts";
 import { useId, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import {
@@ -38,7 +38,7 @@ import {
   findGeGlazes,
   preferredHeat,
   qualityForOrderOrExhibition,
-} from "../game";
+} from "../game-v14";
 import type {
   Decoration,
   FinishedCeramic,
@@ -55,7 +55,7 @@ import type {
   TechniqueId,
   WorkerId,
   WorkshopCeramic,
-} from "../game";
+} from "../game-v14";
 import type {
   AuthoritativeCommand,
   PendingContribution,

@@ -1,6 +1,6 @@
 import { FunctionsHttpError, createClient } from "@supabase/supabase-js";
 import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
-import { GAME_CONFIG } from "../game/content";
+import { GAME_CONFIG } from "../game-v14/content";
 import type {
   ComputerAdvanceSuccess,
   AuthoritativeCommand,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { GameState, PlayerId } from "../../src/game/index.ts";
+import type { GameState, PlayerId } from "../../src/game-v14/index.ts";
 import { ONLINE_COMPUTER_POLICY_VERSION } from "../../src/multiplayer/computerPlayer.ts";
 import {
   AuthoritativeGameService,

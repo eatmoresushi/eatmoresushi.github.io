@@ -3,7 +3,7 @@ import type {
   OrderId,
   StartingTechniqueId,
   TechniqueId,
-} from "../game";
+} from "../game-v14";
 
 /**
  * Optional, decorative artwork for the live tabletop.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { ORDER_DEFINITIONS, SeededRandom } from "../../src/game/index.ts";
-import type { GameAction, GameState, PlayerId } from "../../src/game/index.ts";
+import { ORDER_DEFINITIONS, SeededRandom } from "../../src/game-v14/index.ts";
+import type { GameAction, GameState, PlayerId } from "../../src/game-v14/index.ts";
 import {
   ONLINE_COMPUTER_POLICY_VERSION,
   chooseOnlineComputerAction,

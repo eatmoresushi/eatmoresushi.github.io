@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { applyAction, createPrivateFiringState, submitWoodContribution } from "../../src/game/index.ts";
-import type { GameAction, GameState, SeededRandom } from "../../src/game/index.ts";
+import { applyAction, createPrivateFiringState, submitWoodContribution } from "../../src/game-v14/index.ts";
+import type { GameAction, GameState, SeededRandom } from "../../src/game-v14/index.ts";
 import { addFinished, addLoaded, addTechnique, addWorkshop, expectError, finishWork, mustApply, mustResult, setWorkTurn, startedGame, workerId } from "../v127/helpers.ts";
 
 function reveal(state: GameState, rng: SeededRandom): GameState {

@@ -1,8 +1,8 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { MAIN_ORDERS, STARTING_ORDERS, STARTING_TECHNIQUES, TECHNIQUE_DEFINITIONS } from "../../src/game";
-import type { GameState, StartingTechniqueId } from "../../src/game";
+import { MAIN_ORDERS, STARTING_ORDERS, STARTING_TECHNIQUES, TECHNIQUE_DEFINITIONS } from "../../src/game-v14";
+import type { GameState, StartingTechniqueId } from "../../src/game-v14";
 import { projectPublicGameState } from "../../src/multiplayer";
 import { ActionPanel } from "../../src/ui/ActionPanel";
 import { GameTable, OrderCard as ReferenceOrderCard } from "../../src/ui/GameTable";

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { createGameApi } from "../multiplayer/client";
-import { GAME_CONFIG } from "../game/index.ts";
+import { GAME_CONFIG } from "../game-v14/index.ts";
 import { computerPolicyLabel } from "../multiplayer/computerPlayer.ts";
 import type { GameApi } from "../multiplayer/client";
 import type {
@@ -11,7 +11,7 @@ import type {
   PublicEventRecord,
   RoomConnection,
 } from "../multiplayer";
-import { ORDER_DEFINITIONS, TECHNIQUE_DEFINITIONS, currentDecisionActor } from "../game";
+import { ORDER_DEFINITIONS, TECHNIQUE_DEFINITIONS, currentDecisionActor } from "../game-v14";
 import { PlaytestExperience } from "./PlaytestExperience";
 import type { ComputerTurnRecap } from "./TabletopGameExperience";
 import { localizeMultiplayerError, useI18n } from "./i18n";

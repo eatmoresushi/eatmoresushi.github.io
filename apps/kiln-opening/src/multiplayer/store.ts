@@ -1,5 +1,5 @@
 import type {
-  ContributionCardId, GameEvent, PlayerId } from "../game/index.ts";
+  ContributionCardId, GameEvent, PlayerId } from "../game-v14/index.ts";
 import type {
   AuthoritativeHead,
   CommandSuccess,

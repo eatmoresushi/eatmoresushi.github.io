@@ -5,7 +5,7 @@ import {
   applyAction,
   createGame,
   currentDecisionActor,
-} from "../../src/game/index.ts";
+} from "../../src/game-v14/index.ts";
 import type {
   ApplyResult,
   CeramicId,
@@ -24,7 +24,7 @@ import type {
   StartingTechniqueId,
   TechniqueId,
   WorkerKind,
-} from "../../src/game/index.ts";
+} from "../../src/game-v14/index.ts";
 
 export interface StartedGame {
   state: GameState;

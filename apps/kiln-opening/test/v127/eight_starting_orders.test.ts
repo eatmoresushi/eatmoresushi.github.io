@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { ORDER_DEFINITIONS, STARTING_ORDERS, matchesOrder } from "../../src/game/index.ts";
-import type { Decoration, FinishedCeramic, Glaze, Shape } from "../../src/game/index.ts";
+import { ORDER_DEFINITIONS, STARTING_ORDERS, matchesOrder } from "../../src/game-v14/index.ts";
+import type { Decoration, FinishedCeramic, Glaze, Shape } from "../../src/game-v14/index.ts";
 import { addFinished, mustResult, startedGame } from "./helpers.ts";
 
 const shapes: readonly Shape[] = ["bowl", "plate", "washer", "vase", "censer"];

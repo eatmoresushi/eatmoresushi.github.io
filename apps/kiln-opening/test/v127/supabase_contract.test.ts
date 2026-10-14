@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activeKilnSpaceIds, CONTRIBUTION_CARD_IDS, RULES_BEHAVIOUR_REVISION } from "../../src/game/index.ts";
+import { activeKilnSpaceIds, CONTRIBUTION_CARD_IDS, RULES_BEHAVIOUR_REVISION } from "../../src/game-v14/index.ts";
 import playtestMigration from "../../supabase/migrations/202609260002_playtest_v14.sql?raw";
 import migration from "../../supabase/migrations/202609260001_v14_rules.sql?raw";
 import startingHandMigration from "../../supabase/migrations/202609270001_v14_starting_orders.sql?raw";

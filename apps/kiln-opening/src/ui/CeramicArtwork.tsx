@@ -1,5 +1,5 @@
 import { useId } from "react";
-import type { Decoration, Glaze, Shape } from "../game";
+import type { Decoration, Glaze, Shape } from "../game-v14";
 import bowl_plain from "../../assets/current_v04/ceramics/ceramic-bowl-plain-v1.webp";
 import bowl_carved from "../../assets/current_v04/ceramics/ceramic-bowl-carved-v1.webp";
 import bowl_impressed from "../../assets/current_v04/ceramics/ceramic-bowl-impressed-v1.webp";

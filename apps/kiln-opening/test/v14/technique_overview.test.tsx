@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { STARTING_TECHNIQUES, TECHNIQUE_DEFINITIONS } from "../../src/game";
+import { STARTING_TECHNIQUES, TECHNIQUE_DEFINITIONS } from "../../src/game-v14";
 import { TechniqueFace } from "../../src/ui/PieceFaces";
 import { TECHNIQUE_SHORT_COPY, techniqueFullCopy, techniqueShortPlainText } from "../../src/ui/TechniqueDescription";
 import { TECHNIQUE_OVERVIEW_COPY, techniqueOverviewCopy } from "../../src/ui/TechniqueOverview";

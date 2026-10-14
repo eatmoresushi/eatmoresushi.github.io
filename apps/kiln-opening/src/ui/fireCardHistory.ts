@@ -1,4 +1,4 @@
-import type { FireModifier, PlayerId } from "../game";
+import type { FireModifier, PlayerId } from "../game-v14";
 import type { PublicEventRecord, PublicGameState } from "../multiplayer";
 
 export interface FireCardHistoryEntry {

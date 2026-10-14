@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { AVAILABLE_KILN_IDS, MAIN_ORDERS, ORDER_DEFINITIONS, STARTING_ORDERS, STARTING_TECHNIQUES, applyAction, currentDecisionActor } from "../../src/game/index.ts";
-import type { GameAction, StartingTechniqueId } from "../../src/game/index.ts";
+import { AVAILABLE_KILN_IDS, MAIN_ORDERS, ORDER_DEFINITIONS, STARTING_ORDERS, STARTING_TECHNIQUES, applyAction, currentDecisionActor } from "../../src/game-v14/index.ts";
+import type { GameAction, StartingTechniqueId } from "../../src/game-v14/index.ts";
 import { fallbackComputerCommands } from "../../src/multiplayer/computerFallback.ts";
 import { createComputerObservation } from "../../src/multiplayer/computerObservation.ts";
 import { chooseOnlineComputerAction, ONLINE_COMPUTER_POLICY_VERSION } from "../../src/multiplayer/computerPlayer.ts";

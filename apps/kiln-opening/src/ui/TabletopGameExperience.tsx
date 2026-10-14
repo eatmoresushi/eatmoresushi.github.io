@@ -16,7 +16,7 @@ import {
   currentDecisionActor,
   locationCapacity,
   preferredHeat,
-} from "../game";
+} from "../game-v14";
 import type {
   CeramicState,
   Decoration,
@@ -31,7 +31,7 @@ import type {
   TechniqueDiscipline,
   TechniqueId,
   WorkerId,
-} from "../game";
+} from "../game-v14";
 import type {
   AuthoritativeCommand,
   PendingContribution,

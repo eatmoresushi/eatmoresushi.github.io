@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { DECORATIONS, MAIN_ORDERS, ORDER_DEFINITIONS, findGeGlazes, matchesOrder, matchesOrderWithGe, orderAdmitsRuBonus } from "../../src/game/index.ts";
-import type { Decoration, FinishedCeramic, Glaze, Shape } from "../../src/game/index.ts";
+import { DECORATIONS, MAIN_ORDERS, ORDER_DEFINITIONS, findGeGlazes, matchesOrder, matchesOrderWithGe, orderAdmitsRuBonus } from "../../src/game-v14/index.ts";
+import type { Decoration, FinishedCeramic, Glaze, Shape } from "../../src/game-v14/index.ts";
 
 function ceramic(id: string, shape: Shape, glaze: Glaze, decoration: Decoration): FinishedCeramic {
   return { id, ownerId: "P1", vesselInstanceId: id, stage: "finished", shape, glaze, decoration, quality: "masterpiece", firedInRound: 1 };

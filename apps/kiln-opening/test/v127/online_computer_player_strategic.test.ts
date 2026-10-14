@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { activeKilnSpaceIds } from "../../src/game/index.ts";
-import type { GameAction, GameState, PlayerId } from "../../src/game/index.ts";
+import { activeKilnSpaceIds } from "../../src/game-v14/index.ts";
+import type { GameAction, GameState, PlayerId } from "../../src/game-v14/index.ts";
 import {
   ONLINE_COMPUTER_POLICY_VERSION,
   chooseOnlineComputerAction,

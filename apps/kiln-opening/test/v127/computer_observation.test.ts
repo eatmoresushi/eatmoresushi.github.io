@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyAction } from "../../src/game/index.ts";
+import { applyAction } from "../../src/game-v14/index.ts";
 import { createComputerObservation } from "../../src/multiplayer/index.ts";
 import {
   fallbackComputerCommands,

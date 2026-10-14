@@ -6,7 +6,7 @@ import {
   STARTING_ORDERS,
   STARTING_TECHNIQUES,
   TECHNIQUES,
-} from "../game/content.ts";
+} from "../game-v14/content.ts";
 import type {
   FireContribution,
   FiringTechniqueId,
