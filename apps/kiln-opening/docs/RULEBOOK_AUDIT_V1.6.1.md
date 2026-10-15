@@ -67,6 +67,7 @@ numbers refer to the V1.6.1 source.
 
 - The **Kiln Die** is rolled publicly by the server at the start of every round, including Round 1, after Kiln selection. The result stays visible all round.
 - **No Contribution participants** (only Imperial Kiln ceramics loaded): skip Contributions. Base Heat = Kiln Die result (clamped). The Fire card is still revealed.
+- **Second Firing on an Imperial Kiln ceramic** (lines 62, 288, 640, 651) recalculates with the same Kiln Die result, the same Imperial modifier chosen at loading and the same Heat marker, plus the new Fire card. Line 651 allows Second Firing in the Imperial Kiln, and an Imperial ceramic's Actual Heat never uses Base Heat or a zone modifier, so these are the values it keeps. The engine implements this.
 - **Test Pieces** eligibility counts any of your ceramics in this firing, Imperial Kiln included. The Wood payment and the bury are public; the peeked value is private to its owner.
 - **Heat-marker step:** the +1 / −1 face is chosen in the step, in First Player order, so nothing hidden is committed at placement. Within a player's turn they choose the order of their own marker and Kiln Master. If their own marker is returned, Kiln Master may then go on that ceramic.
 - **Ge Crackle** (lines 467–469, 483, 654):

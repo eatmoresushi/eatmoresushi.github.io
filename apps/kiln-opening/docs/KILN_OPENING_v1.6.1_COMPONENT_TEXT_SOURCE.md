@@ -11,7 +11,7 @@ This text is a reminder. The [V1.6.1 rulebook](./KILN_OPENING_v1.6.1_EN_SOURCE.m
 - Chinese follows the [glossary](./GLOSSARY_ZH_V1.6.1.md) register and punctuation.
 - The data files store this text as `shortText` / `shortTextZh`.
 
-## Workshop Techs (坯作)
+## Form & Decorate Techs (坯作)
 
 ### Large Throwing Wheel / 大陶车 (T01)
 - EN: Once per round, during a Form & Decorate action forming at least 1 Vase or Censer: reduce that action's total Clay cost by 2, minimum 0.

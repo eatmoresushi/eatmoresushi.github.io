@@ -729,7 +729,7 @@ ZH rules enforced by `zh_punctuation.test.ts` (§6.4):
 
 D7 wording:
 
-- **Before the space is added:** `formatRuleError` `PERSONAL_SPACE_LOCKED`: "Learn a Workshop Tech to add this space." / 习得坯作技艺即添此工位.
+- **Before the space is added:** `formatRuleError` `PERSONAL_SPACE_LOCKED`: "Learn a Form & Decorate Tech to add this space." / 习得坯作技艺即添此工位.
 - **After:** `boards.addedBy`: "Added by {tech}" / 由「{tech}」添设.
 - **Internal identifiers** (`unlocked`, `PERSONAL_SPACE_LOCKED`, `unlocks`) never reach rendered text.
 
