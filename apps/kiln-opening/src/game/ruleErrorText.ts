@@ -15,6 +15,9 @@
  *   whose placeholders are all available is used; failing that, a neutral word fills the gap.
  * - Chinese follows `docs/GLOSSARY_ZH_V1.6.1.md` §7 (result first, then the cause; no
  *   exclamation marks; never mentions hidden information).
+ * - No player-facing text says lock/unlock (owner decision D7): a second personal space is one
+ *   you *add* by learning a Tech. Internal identifiers such as `PERSONAL_SPACE_LOCKED` keep
+ *   their names.
  *
  * Layer 2: imports `content.ts` for names.
  */
@@ -141,8 +144,8 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
     detailKeys: keys("locationId", "capacity"),
   },
   PERSONAL_SPACE_LOCKED: {
-    en: "This space is still locked; acquire a {discipline} Tech to unlock it.",
-    zh: "此工位尚有封条，习得{discipline}技艺后启封",
+    en: "Learn a {discipline} Tech to add this space.",
+    zh: "习得{discipline}技艺即添此工位",
     detailKeys: keys("locationId", "discipline", "spaceIndex"),
   },
   PERSONAL_SPACE_USED: {

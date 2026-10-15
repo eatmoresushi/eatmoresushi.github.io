@@ -12,7 +12,7 @@
         "mode": "single",
         "phaseType": "work_turn"
       },
-      "description": "The viewer owns a Workshop Tech, so the second Form & Decorate space is unlocked; the second Glaze & Load space still carries its Lock token. Placement options, quotes and the Commission / Guild / Magistrate option lists are for this exact state.",
+      "description": "The viewer owns a Workshop Tech, so they have added the second Form & Decorate space; they have not yet added the second Glaze & Load space. Placement options, quotes and the Commission / Guild / Magistrate option lists are for this exact state.",
       "id": "m1_work_phase_r2_3p",
       "notes": [],
       "playerView": {
@@ -24668,19 +24668,19 @@
         "zh": "窑口传承"
       },
       {
-        "en": "Lock token",
-        "note": "新名。盖住第二工位，形象且一目了然。",
-        "zh": "封条"
+        "en": "second (personal) space",
+        "note": "制坯饰纹、施釉装窑各有第二工位，习得相应门类技艺后添设（D7）。界面与文字不说“锁”“封”。",
+        "zh": "第二工位"
       },
       {
-        "en": "locked space",
-        "note": "—",
-        "zh": "封存工位"
+        "en": "add (a second space, by learning a Tech)",
+        "note": "未有时写“习得坯作技艺即添此工位”（施釉装窑写“习得釉作技艺即添此工位”）；已有时写“由「⟨技艺⟩」添设”。",
+        "zh": "添设"
       },
       {
-        "en": "unlock",
-        "note": "“习得坯作技艺时，揭去制坯饰纹第二工位的封条（启封）”。",
-        "zh": "启封"
+        "en": "second-space cover (physical prototype only)",
+        "note": "实体原型盖住尚未添设的第二工位；数字版无此配件（D7）。",
+        "zh": "第二工位盖片"
       },
       {
         "en": "Tech slot",
@@ -25033,7 +25033,7 @@
       },
       {
         "en": "covered space (by player count)",
-        "note": "不称“封”，以免与封条混淆。停用窑位不算空位，也不可使用。",
+        "note": "不称“封”。停用窑位不算空位，也不可使用。",
         "zh": "停用窑位"
       },
       {
@@ -27469,8 +27469,8 @@
         "zh": "主委托牌堆与弃牌堆皆空，无可承接"
       },
       "PERSONAL_SPACE_LOCKED": {
-        "en": "This space is still locked; acquire a {discipline} Tech to unlock it.",
-        "zh": "此工位尚有封条，习得{discipline}技艺后启封"
+        "en": "Learn a {discipline} Tech to add this space.",
+        "zh": "习得{discipline}技艺即添此工位"
       },
       "PERSONAL_SPACE_USED": {
         "en": "This space has already been used this round.",

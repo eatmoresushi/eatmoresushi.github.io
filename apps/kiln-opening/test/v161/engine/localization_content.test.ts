@@ -183,8 +183,11 @@ describe("every stable ID resolves to English and Chinese text", () => {
     expect(full).toBe("铜钱不足：需3，现有1");
     expect(formatRuleError({ code: "INSUFFICIENT_RESOURCES", details: {} }, "zh")).toBe("资源不足");
     expect(formatRuleError({ code: "LOCATION_FULL", details: { locationId: "guild_hall", capacity: 2 } }, "en")).toBe("Guild Hall is full.");
+    // Owner decision D7: a second personal space is added by learning a Tech, never "unlocked".
     expect(formatRuleError({ code: "PERSONAL_SPACE_LOCKED", details: { locationId: "glaze_load" } }, "zh"))
-      .toBe("此工位尚有封条，习得釉作技艺后启封");
+      .toBe("习得釉作技艺即添此工位");
+    expect(formatRuleError({ code: "PERSONAL_SPACE_LOCKED", details: { locationId: "form_decorate" } }, "en"))
+      .toBe("Learn a Workshop Tech to add this space.");
     expect(formatRuleError({ code: "TECH_ALREADY_USED", details: { techId: "T13" } }, "zh")).toBe("火照本轮已用");
     expect(formatRuleError({ code: "WORKER_UNAVAILABLE", details: { workerId: "p1:shifu" } }, "zh")).toBe("你没有可派的师傅");
     expect(formatRuleError({ code: "NOT_YOUR_DECISION", details: { waitingFor: "p2" } }, "zh", { playerName: () => "乙" }))
@@ -364,6 +367,7 @@ const RETIRED_TERMS: ReadonlyArray<[string, string]> = [
   ["御印", "御令"], ["御玺", "御令"], ["展览", "陈列"], ["公开委托区", "委托榜"], ["展示区", "委托榜"],
   ["暗注", "柴簿加柴"], ["强压火", "压火−2"], ["猛添柴", "添柴+2"], ["装饰", "纹饰"], ["陶瓷件", "器物"],
   ["已成型", "坯"], ["商业委托", "商贾委托"], ["师傅火候标记", "火标"], ["公开展示", "委托榜"],
+  ["封条", "第二工位（D7）"], ["启封", "添设（D7）"], ["封存", "添设（D7）"], ["锁", "第二工位／添设（D7）"],
 ];
 
 describe("Chinese strings avoid retired terms and follow the glossary's punctuation", () => {
@@ -557,5 +561,62 @@ describe("rendering from stable IDs", () => {
     expect(en).toContain("Ding Kiln — Moulded Production");
     // Same IDs, same rendering: rendering is a pure function of state and locale.
     expect(renderState(state, "zh")).toEqual(zh);
+  });
+});
+
+// ── Owner decision D7: no lock/unlock in player-facing text ─────────────────────────────
+
+describe("player-facing text never says lock or unlock (owner decision D7)", () => {
+  const ENGLISH = /\b(un)?lock(s|ed|ing)?\b/i;
+  const CHINESE = /锁|封条|启封|封存/;
+
+  /** Every string value of every data file, except stable IDs (e.g. the component ID `lock_tokens`). */
+  function dataTexts(): Array<[string, string]> {
+    const found: Array<[string, string]> = [];
+    const walk = (value: unknown, path: string, key: string): void => {
+      if (typeof value === "string") {
+        if (!/^(id|.*Id|.*Ids)$/.test(key)) found.push([path, value]);
+      } else if (Array.isArray(value)) value.forEach((item, index) => walk(item, `${path}[${index}]`, key));
+      else if (value !== null && typeof value === "object") {
+        for (const [child, item] of Object.entries(value as Record<string, unknown>)) walk(item, `${path}.${child}`, child);
+      }
+    };
+    for (const file of readdirSync(join(ROOT, "data")).filter((name) => name.endsWith(".json"))) {
+      walk(JSON.parse(readFileSync(join(ROOT, "data", file), "utf8")), file, "");
+    }
+    return found;
+  }
+
+  function errorTexts(): Array<[string, string]> {
+    return Object.entries(RULE_ERROR_TEXT).flatMap(([code, entry]) =>
+      [entry, ...(entry.fallbacks ?? [])].flatMap((template, index): Array<[string, string]> => [
+        [`error ${code}#${index} en`, template.en],
+        [`error ${code}#${index} zh`, template.zh],
+      ]));
+  }
+
+  it("collects the text fields of every data file and every rule-error template", () => {
+    expect(dataTexts().length).toBeGreaterThan(600);
+    expect(errorTexts().length).toBe(2 * Object.values(RULE_ERROR_TEXT).reduce((n, entry) => n + 1 + (entry.fallbacks ?? []).length, 0));
+  });
+
+  it("no data text field or rule-error template says lock, locked, unlock, 封条, 启封, 封存 or 锁", () => {
+    const offences = [...dataTexts(), ...errorTexts()]
+      .filter(([, text]) => ENGLISH.test(text) || CHINESE.test(text))
+      .map(([path, text]) => `${path}: ${text}`);
+    expect(offences).toEqual([]);
+  });
+
+  it("the guard catches the retired wording", () => {
+    expect(ENGLISH.test("This space is still locked; acquire a Tech to unlock it.")).toBe(true);
+    expect(ENGLISH.test("Lock tokens")).toBe(true);
+    expect(ENGLISH.test("Passes clockwise each round.")).toBe(false);
+    expect(CHINESE.test("此工位尚有封条，习得釉作技艺后启封")).toBe(true);
+  });
+
+  it("keeps the internal identifiers (wording only, not a rule change)", () => {
+    expect(RULE_ERROR_TEXT.PERSONAL_SPACE_LOCKED.detailKeys).toEqual(expect.arrayContaining(["locationId", "discipline", "spaceIndex"]));
+    expect(LOCATIONS.form_decorate.personalSpaces).toEqual({ total: 2, unlockedAtStart: 1 });
+    expect(TECH_IDS.filter((id) => TECHS[id].unlocks !== null)).toHaveLength(12);
   });
 });

@@ -14,6 +14,7 @@ term; where two Chinese forms exist (e.g. 装窑 and 施釉入窑), each answers
 wording, as listed in §2.
 
 Revision 2 (2026-10-14) applies the terminology review; see §10.
+Owner decision D7 (2026-10-15) retires every lock/unlock term for the second personal space; see §10.
 
 ---
 
@@ -104,6 +105,7 @@ Revision 2 (2026-10-14) applies the terminology review; see §10.
 | 跳过、弃权（指派工阶段不派工） | “跳过”是界面按钮（放弃可选步骤） | 停派（不允许） |
 | 暗注、强压火、猛添柴 | “暗注”有赌博意味；后两者是英文源没有的自造牌名，易被当作额外控火牌 | 柴簿加柴；压火−2／添柴+2 |
 | 泛指句中的“施釉装窑”“制坯饰纹” | 会被读作限于该地点行动 | 施釉入窑；制坯（见1.1） |
+| 封条、启封、封存、上锁、解锁（指第二工位） | D7：数字版没有“锁”的概念，第二工位是习得技艺后添设的 | 第二工位；添设；“习得…技艺即添此工位”；“由「…」添设” |
 
 ---
 
@@ -176,9 +178,9 @@ Revision 2 (2026-10-14) applies the terminology review; see §10.
 | --- | --- | --- |
 | Kiln Player Board | 窑口板 | 原“窑口玩家板”，简化。 |
 | Kiln Tradition | 窑口传承 | 沿用。 |
-| Lock token | 封条 | 新名。盖住第二工位，形象且一目了然。 |
-| locked space | 封存工位 | — |
-| unlock | 启封 | “习得坯作技艺时，揭去制坯饰纹第二工位的封条（启封）”。 |
+| second (personal) space | 第二工位 | 制坯饰纹、施釉装窑各有第二工位，习得相应门类技艺后添设（D7）。界面与文字不说“锁”“封”。 |
+| add (a second space, by learning a Tech) | 添设 | 未有时写“习得坯作技艺即添此工位”（施釉装窑写“习得釉作技艺即添此工位”）；已有时写“由「⟨技艺⟩」添设”。 |
+| second-space cover (physical prototype only) | 第二工位盖片 | 实体原型盖住尚未添设的第二工位；数字版无此配件（D7）。 |
 | Tech slot | 技艺位 | 每板3个。 |
 | Imperial Kiln area | 御窑区 | — |
 | Shared Kiln Board | 共窑板 | 8个窑位：高温区3、中温区3、低温区2。按人数盖住部分窑位（停用）：4人不盖（3-3-2）；3人盖1高1中（2-2-2）；2人盖1高2中1低（2-1-1）。2–3人另盖州衙第二工位。 |
@@ -265,7 +267,7 @@ Revision 2 (2026-10-14) applies the terminology review; see §10.
 | Shared Kiln | 共窑 | 沿用。 |
 | kiln space | 窑位 | 沿用。 |
 | active space | 启用窑位 | — |
-| covered space (by player count) | 停用窑位 | 不称“封”，以免与封条混淆。停用窑位不算空位，也不可使用。 |
+| covered space (by player count) | 停用窑位 | 不称“封”。停用窑位不算空位，也不可使用。 |
 | zone High / Middle / Low | 高温区（+1）／中温区（0）／低温区（−1） | 沿用。4人3-3-2，3人2-2-2，2人2-1-1（高-中-低）。 |
 | zone modifier | 温区修正 | — |
 | Kiln Die result | 窑骰点数 | 每轮开工时公开掷出。 |
@@ -380,9 +382,9 @@ Revision 2 (2026-10-14) applies the terminology review; see §10.
 | --- | --- | --- |
 | Advanced Tech | 技艺 | 改称（旧“进阶技艺”）：V1.6.1 无起始技艺。牌用“张”，拥有用“项”。 |
 | discipline | 门类 | — |
-| Workshop (discipline) | 坯作 | 新名。宋代官府匠作分“某作”（如文思院诸作）；习得启封制坯饰纹第二工位。 |
-| Glazing & Loading (discipline) | 釉作 | 新名。习得启封施釉装窑第二工位。 |
-| Firing (discipline) | 火作 | 新名。不启封任何工位。 |
+| Workshop (discipline) | 坯作 | 新名。宋代官府匠作分“某作”（如文思院诸作）；习得即添设制坯饰纹第二工位。 |
+| Glazing & Loading (discipline) | 釉作 | 新名。习得即添设施釉装窑第二工位。 |
+| Firing (discipline) | 火作 | 新名。不添设任何工位。 |
 | acquire / buy a Tech | 习得技艺 | 付牌面铜钱费用；唯一途径是陶工行。习得时立即得1分（A1）。 |
 | printed cost | 牌面费用 | — |
 | limit: 3 total, 1 per discipline | 至多3项，每门类1项 | — |
@@ -602,7 +604,7 @@ Revision 2 (2026-10-14) applies the terminology review; see §10.
 | 学徒 | 得3泥／柴 | 获得共3份泥和柴，任意组合。 |
 | 师傅 | 得4泥／柴；可付1铜钱再得1泥1柴 | 获得共4份泥和柴，任意组合。然后可支付1铜钱，额外获得1泥和1柴。 |
 
-### 4.2 制坯饰纹（坊内；1个工位，启封后2个；每个工位每轮一次）
+### 4.2 制坯饰纹（坊内；1个工位，习得坯作技艺即添第二工位；每个工位每轮一次）
 
 | 工人 | 短 | 完整 |
 | --- | --- | --- |
@@ -612,7 +614,7 @@ Revision 2 (2026-10-14) applies the terminology review; see §10.
 - 须至少能为1件坯支付泥费用和纹饰费用，方可派工。
 - 坯记录器型与纹饰，留在作坊中等待装窑。
 
-### 4.3 施釉装窑（坊内；1个工位，启封后2个；每个工位每轮一次）
+### 4.3 施釉装窑（坊内；1个工位，习得釉作技艺即添第二工位；每个工位每轮一次）
 
 | 工人 | 短 | 完整 |
 | --- | --- | --- |
@@ -647,8 +649,8 @@ Revision 2 (2026-10-14) applies the terminology review; see §10.
 | 师傅 | 看1门类顶2张；习得其一或任一公开技艺，−1铜钱 | 选择1个门类，私下查看该牌堆顶2张（不足则看余数）。然后习得任一门类的1张公开技艺或所看的1张，少付1铜钱，最低为0。未取的所看技艺按你自定的顺序（保密）置于该牌堆底。 |
 
 - 习得后，先将所看之牌置底，再为该门类补至2张；无牌则留空。
-- 每人至多3项技艺，每门类至多1项。习得坯作技艺启封制坯饰纹第二工位；习得釉作技艺启封施釉装窑
-  第二工位；火作技艺不启封。启封的工位本轮稍后即可使用。
+- 每人至多3项技艺，每门类至多1项。习得坯作技艺即添设制坯饰纹第二工位；习得釉作技艺即添设施釉装窑
+  第二工位；火作技艺不添设工位。新添设的工位本轮稍后即可使用。
 - 派学徒须付得起1张你尚无其门类的公开技艺；派师傅须在减免后付得起这样一张。师傅可查看任何门类（B2）。
 - “习得时”效果立即结算；技艺时机允许即可于本轮使用。
 
@@ -775,7 +777,7 @@ Revision 2 (2026-10-14) applies the terminology review; see §10.
 | 回合开始／作业阶段／烧成阶段／委托阶段／整理阶段 | 开工／派工阶段／烧窑阶段／交货阶段／收工 | 一日窑务的节奏，阶段名即动作。 |
 | 处理瑕品 | 折卖瑕品 | 点明“弃置换钱”。 |
 | 窑口玩家板 | 窑口板 | 简化。 |
-| — | 封条／启封 | 新配件 Lock token。 |
+| 封条／启封／封存工位（本表初稿） | 第二工位／添设 | D7：玩家所见文字不说“锁”“封”；第二工位是习得技艺后添设的。 |
 | — | 窑骰 | 新配件 Kiln Die。 |
 | VP（正文） | 分 | 统一中文。 |
 
@@ -814,7 +816,7 @@ Revision 2 (2026-10-14) applies the terminology review; see §10.
 | `WORKER_ACTION_REQUIRED` | 试图停派 | 派工阶段不得停派，请派1名工人（漕运码头永远可派） |
 | `WORKER_ACTION_ALREADY_TAKEN` | 本回合已派工 | 本回合你已派过工 |
 | `LOCATION_FULL` | 地点已满 | {location}已满 |
-| `PERSONAL_SPACE_LOCKED` | 工位封存 | 此工位尚有封条，习得{discipline}技艺后启封 |
+| `PERSONAL_SPACE_LOCKED` | 尚无第二工位 | 习得{discipline}技艺即添此工位 |
 | `PERSONAL_SPACE_USED` | 工位本轮已用 | 此工位本轮已用 |
 | `NO_MAIN_ACTION_POSSIBLE` | 无法执行主行动 | 你无法在{location}执行至少1次主行动，不能派工 |
 | `SENIOR_APPRENTICE_NOT_APPLICABLE` | 高徒不适用 | 高徒只适用于泥柴场或瓷牙行的学徒 |
@@ -927,3 +929,11 @@ Terminology review of revision 1, applied in revision 2 (2026-10-14).
 - Tech VP is scored when the Tech is gained, no longer at game end (audit, “Owner amendments”). §2.14 技艺分,
   §2.15 习得技艺 and the §3 preamble now say 立即得1分 on gaining a Tech and 终局不再另计. The fixed timing label
   终局时 (§1.4) remains in use for 清玩斋 and the other end-game items.
+
+**Owner decision D7 (2026-10-15)**
+- No player-facing text says lock or unlock ([OWNER_DECISIONS.md](./ui-v1.6.1/OWNER_DECISIONS.md) D7). 封条／启封／封存工位
+  are retired: §2.5 now lists 第二工位, 添设 and the physical-prototype-only 第二工位盖片; §2.15, §4.2, §4.3, §4.5 say
+  习得…技艺即添设; §6 records the change and §7 `PERSONAL_SPACE_LOCKED` reads 习得{discipline}技艺即添此工位, the same sentence as the board label.
+  Board labels: 习得坯作技艺即添此工位（施釉装窑：习得釉作技艺即添此工位）before, 由「⟨技艺⟩」添设 after. Internal
+  identifiers (`unlocked`, `PERSONAL_SPACE_LOCKED`, `unlocks`) are unchanged, and the English rulebook's “Lock tokens”
+  stays byte-identical; this is wording only, not a rule change.

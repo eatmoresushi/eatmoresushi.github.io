@@ -159,7 +159,7 @@ export function validatePlacement(
     if (nextPersonalSpace(game, actorId, locationId) === null) {
       const anyLocked = PERSONAL_SPACE_INDEXES.some((index) => !p.personalSpaces[locationId][index].unlocked);
       return anyLocked
-        ? ruleError("PERSONAL_SPACE_LOCKED", "Your free space at this location is locked.", { locationId })
+        ? ruleError("PERSONAL_SPACE_LOCKED", "You have not added a free space at this location yet.", { locationId })
         : ruleError("PERSONAL_SPACE_USED", "Each personal space may be used once per round.", { locationId });
     }
     return null;

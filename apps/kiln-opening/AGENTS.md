@@ -38,6 +38,8 @@ Key V1.6.1 facts that differ from V1.4:
 
 The Chinese UI uses a Song-dynasty kiln-workshop register, not literal translation (owner instruction, 2026-10-14). Use the glossary terms consistently.
 
+Player-facing text never says lock or unlock (owner decision D7, `docs/ui-v1.6.1/OWNER_DECISIONS.md`): a second personal space is one you add by learning a Tech ("Learn a Workshop Tech to add this space" / 习得坯作技艺即添此工位; "Added by ⟨Tech⟩" / 由「⟨技艺⟩」添设). Internal identifiers (`unlocked`, `unlocks`, `unlockedAtStart`, `PERSONAL_SPACE_LOCKED`, `PERSONAL_SPACE_UNLOCKED`) keep their names.
+
 ## Approved asset rule
 
 Only `assets/current_v04/` is an approved visual-reference directory. The directory name remains unchanged as a stable legacy path. Rules-bearing visuals must follow V1.6.1 data, and localized gameplay text must come from structured data or the i18n layer.

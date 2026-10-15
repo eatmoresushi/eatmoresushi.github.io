@@ -577,7 +577,7 @@ function workSelectors(view: PlayerView, actor: ActorView): Record<string, unkno
 }
 
 /** 1. 3-player Round 2 Work Phase: viewer's before_action, Workshop Tech owned (Form &
- * Decorate space 2 unlocked) and the Glaze & Load second space still locked. */
+ * Decorate space 2 added) and the Glaze & Load second space not yet added. */
 function findWorkPhaseR2(): Found {
   let best: Found = null;
   for (let seed = 1; seed <= 120 && (best === null || best.score < 4); seed += 1) {
@@ -605,7 +605,7 @@ function findWorkPhaseR2(): Found {
             id: "m1_work_phase_r2_3p",
             title: "3P · Round 2 · Work Phase · your turn (before action)",
             description:
-              "The viewer owns a Workshop Tech, so the second Form & Decorate space is unlocked; the second Glaze & Load space still carries its Lock token. Placement options, quotes and the Commission / Guild / Magistrate option lists are for this exact state.",
+              "The viewer owns a Workshop Tech, so they have added the second Form & Decorate space; they have not yet added the second Glaze & Load space. Placement options, quotes and the Commission / Guild / Magistrate option lists are for this exact state.",
           },
           workSelectors,
         ),

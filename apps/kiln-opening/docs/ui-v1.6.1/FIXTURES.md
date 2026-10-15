@@ -56,7 +56,7 @@ not part of `npm test`.
 
   They cover:
   - locations, with Apprentice and Shifu text, capacities and personal spaces;
-  - all 18 Techs, with short text, ability, cost, timing and the space each unlocks;
+  - all 18 Techs, with short text, ability, cost, timing and the second space each adds;
   - all 5 Kilns, with ability name, short text and ability;
   - Shapes (with Clay), Glazes (with Preferred Heat), Decorations (with Coins);
   - Qualities (and their high-to-low order), resources, workers, disciplines, zones, ceramic
@@ -75,7 +75,7 @@ not part of `npm test`.
 
 | # | id | Seed · players · round | Viewer | What it shows | Extra selectors |
 | --- | --- | --- | --- | --- | --- |
-| 1 | `m1_work_phase_r2_3p` | 27 · 3P · R2 | p3 | Work Phase, the viewer's turn before acting. The viewer owns Prepared Clay (Workshop), so the 2nd Form & Decorate space is unlocked, while the 2nd Glaze & Load space is still locked. The viewer has Shaped vessels. | `placementOptions`, `quotes` (Materials Yard and Form & Decorate for Apprentice and Shifu), `shapedVessels`, `loadDestinationOptions`, `heatMarkerTargets`, `commissionOptions`, `guildOptions`, `magistratesHallQuote`, `canalBargeOptions`, `imperialPriorityOptions` |
+| 1 | `m1_work_phase_r2_3p` | 27 · 3P · R2 | p3 | Work Phase, the viewer's turn before acting. The viewer owns Prepared Clay (Workshop), so they have added the 2nd Form & Decorate space but not yet the 2nd Glaze & Load space. The viewer has Shaped vessels. | `placementOptions`, `quotes` (Materials Yard and Form & Decorate for Apprentice and Shifu), `shapedVessels`, `loadDestinationOptions`, `heatMarkerTargets`, `commissionOptions`, `guildOptions`, `magistratesHallQuote`, `canalBargeOptions`, `imperialPriorityOptions` |
 | 2 | `m2_commission_market_look_r3_4p` | 1 · 4P · R3 | p2 | The viewer's Commission Market Shifu, in the middle of the action. It reserved display slot 0 face up, and that slot stays `null` with `market.refillPendingFor = p2` until the turn ends. The viewer then chose to look at the top 3, which only they can see in `own.pendingLook`; other players see only `counts.pendingLook` (the kind and a count of 3). **Steered** (2 commands, see `source.steered`). | `commissionOptions`, `lookedOrderOptions`, `market`, `publicLookIndicator` |
 | 3 | `m3_heat_marker_step_3p` | 17 · 3P · R5 | p2 | Firing step 5, the Heat-marker step. The Kiln Die shows 3. Contributions are revealed (Tend, Tend, Stoke), so Base Heat is 4; the Fire card is not revealed yet. Three Heat markers are face down, including the viewer's marker on their Imperial Kiln ceramic (Imperial modifier 0). Kiln Furniture sits under a Low ceramic. p3 owns Kiln Master. The Fire discard is open. | `heatLadder`, `heatMarkerStepOptions`, `contributionOptions`, `testPiecesOptions`, `junOptions`, `afterQualityOptions`, `salvageOptions`, `fireDiscard`, `fireDeckCount` |
 | 4 | `m4_after_quality_3p` | 17 · 3P · R5 | p2 | The same firing, after Quality in step 10. The viewer can use Second Firing or Ge Crackle on their Standard ceramic. `heatLadder.chips` gives, for every ceramic: heat source, position modifier, Heat marker, Jun ±1, Actual and final Actual Heat, Heat Difference, Quality and history. It includes a Jun-adjusted ceramic, a Kiln Master marker, Kiln Furniture and an Imperial ceramic. | same as #3 |

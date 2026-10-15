@@ -735,7 +735,7 @@ The chooser RNG is separate from the game RNG, so fuzz choices never perturb eng
 
 ### 5.4 Selectors and view models (`selectors.ts`, P7)
 
-React reads only these, plus `validateAction`, `decisionPrompt` and events. It never compares rule constants, sums score fields or scans workers itself. Types are in `types.ts` §16. Functions owned by other packages are re-exported, not reimplemented (§2.4).
+React reads only these, plus `validateAction`, `decisionPrompt` and events. It never compares rule constants, sums score fields or scans workers itself. Types are in `types.ts` §16. A personal space's `unlocked: false` is rendered as a space not yet added ("Learn a Workshop Tech to add this space" / 习得坯作技艺即添此工位), and `true` on space 1 as "Added by ⟨Tech⟩" / 由「⟨技艺⟩」添设; player-facing text never says lock or unlock (owner decision D7). Functions owned by other packages are re-exported, not reimplemented (§2.4).
 
 ```ts
 // Who acts, the board and the players (public)
@@ -936,7 +936,7 @@ There are 10 data files in all: the 7 mechanical files of §6.1–6.7 and these 
 
 ### 6.10 Rule-error text (`src/game/ruleErrorText.ts`, P1)
 
-`RULE_ERROR_TEXT: Record<GameRuleErrorCode, { en: string; zh: string; detailKeys: string[] }>`. Templates interpolate `details` by key. The UI localises errors from `code` + `details` through this table only. `content_contract.test.ts` checks that every code has non-empty EN and ZH text, and the fuzz loop checks that every emitted error's `details` keys are listed in `detailKeys`.
+`RULE_ERROR_TEXT: Record<GameRuleErrorCode, { en: string; zh: string; detailKeys: string[] }>`. Templates interpolate `details` by key. The UI localises errors from `code` + `details` through this table only. Player-facing text never says lock or unlock (owner decision D7): `PERSONAL_SPACE_LOCKED` reads "Learn a {discipline} Tech to add this space." / 习得{discipline}技艺即添此工位 (the same sentence as the board label), and board labels say a Tech *adds* the second space. The identifiers `unlocked`, `unlocks`, `PERSONAL_SPACE_LOCKED` and `PERSONAL_SPACE_UNLOCKED` are internal and keep their names; `localization_content.test.ts` guards every data text field and rule-error template. `content_contract.test.ts` checks that every code has non-empty EN and ZH text, and the fuzz loop checks that every emitted error's `details` keys are listed in `detailKeys`.
 
 ### 6.9 Content validation and fingerprint (P1)
 
@@ -1015,7 +1015,7 @@ There are 10 data files in all: the 7 mechanical files of §6.1–6.7 and these 
 | No passing; all four workers placed each round | `work_turn.test.ts` | P4 |
 | Absolute capacity MY/CM/GH 2/3/4, MH 1/1/2, CW uncapped | `capacity.test.ts` | P3 |
 | "At least 1 instance of the main action" at every location | P3: `placement_legality_materials.test.ts` (MY), `placement_legality_personal.test.ts` (F&D incl. Large Throwing Wheel with 0 Clay and Decorator's Kit with 1 Coin; G&L incl. R5 a/b/c), `placement_legality_central.test.ts` (CW, MH). P4: `placement_legality_commission.test.ts`, `placement_legality_guild.test.ts` | P3, P4 |
-| Personal spaces once per round; second locked; unlocked by Workshop / G&L Tech, usable later the same round | `personal_spaces.test.ts` | P3 |
+| Personal spaces once per round; second locked; unlocked by Workshop / G&L Tech, usable later the same round (player-facing text: the Tech *adds* the space, never lock/unlock, D7) | `personal_spaces.test.ts` | P3 |
 | Apprentice and Shifu effects at all seven locations | `materials_yard`, `form_decorate`, `glaze_load`, `simple_locations` (P3); `commission_market`, `guild_hall` (P4) | P3, P4 |
 | MY Shifu 1-Coin bonus | `materials_yard.test.ts` | P3 |
 | F&D Decoration costs and Shifu −1 when forming 2 | `form_decorate.test.ts` | P3 |

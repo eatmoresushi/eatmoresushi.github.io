@@ -22,8 +22,8 @@
       "name": "Kiln Player Boards",
       "nameZh": "窑口板",
       "qty": 5,
-      "notes": "Ru, Guan, Ge, Ding and Jun. Each shows its Kiln Tradition, a Form & Decorate with 2 spaces (1 locked), a Glaze & Load with 2 spaces (1 locked), 3 Tech slots and an Imperial Kiln area.",
-      "notesZh": "汝窑、官窑、哥窑、定窑与钧窑。每块印有窑口传承、制坯饰纹（2个工位，1个封存）、施釉装窑（2个工位，1个封存）、3个技艺位与御窑区。"
+      "notes": "Ru, Guan, Ge, Ding and Jun. Each shows its Kiln Tradition, a Form & Decorate with 2 spaces (the second added by learning a Workshop Tech), a Glaze & Load with 2 spaces (the second added by learning a Glazing & Loading Tech), 3 Tech slots and an Imperial Kiln area.",
+      "notesZh": "汝窑、官窑、哥窑、定窑与钧窑。每块印有窑口传承、制坯饰纹（2个工位，第二工位习得坯作技艺即添）、施釉装窑（2个工位，第二工位习得釉作技艺即添）、3个技艺位与御窑区。"
     },
     {
       "id": "shifu_workers",
@@ -147,11 +147,11 @@
     },
     {
       "id": "lock_tokens",
-      "name": "Lock tokens",
-      "nameZh": "封条",
+      "name": "Second-space covers",
+      "nameZh": "第二工位盖片",
       "qty": 8,
-      "notes": "Two per player, covering the locked personal spaces.",
-      "notesZh": "每人2个，盖住封存的坊内工位。"
+      "notes": "Physical prototype only: two per player, covering each second personal space until a matching Tech adds it. The digital game has no such token; it shows a second space as not yet added.",
+      "notesZh": "仅用于实体原型：每人2个，盖住两处第二工位，习得相应门类技艺即添设该工位。数字版无此配件，只显示第二工位尚未添设。"
     },
     {
       "id": "vp_markers_score_pad",

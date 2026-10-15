@@ -553,7 +553,6 @@ h1, h2, h3, h4 { font-family: var(--serif); font-weight: 600; margin: 0; line-he
 .gaps td:first-child code { overflow-wrap: normal; white-space: nowrap; }
 .golink { color: var(--teal-ink); font-weight: 700; text-underline-offset: 3px; white-space: nowrap; }
 .review { scroll-margin-top: 12px; }
-.dagger { color: var(--cinnabar-ink); font-weight: 700; }
 .sub-h { font-size: 16px; color: var(--teal-ink); margin: 16px 0 6px; }
 details.devnotes > summary { cursor: pointer; display: grid; gap: 4px; list-style: none; }
 details.devnotes > summary::-webkit-details-marker { display: none; }
@@ -577,7 +576,7 @@ details.devnotes[open] > summary h2::before { content: "▾"; }
 .faint { color: var(--ink-3); }
 
 /* top bar */
-.top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 8px 18px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.top { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 8px 18px; background: var(--surface); border-bottom: 1px solid var(--line); }
 .brand { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; }
 .brand strong { font-family: var(--serif); font-size: 19px; color: var(--teal-ink); }
 .brand strong:lang(zh-Hans) { font-family: var(--serif-zh); }
@@ -598,12 +597,14 @@ details.devnotes[open] > summary h2::before { content: "▾"; }
 .seat .sw { width: 8px; height: 20px; border-radius: 3px; background: var(--pc); flex: none; }
 .seat b { font-size: 13px; }
 .seat.me { background: var(--surface); border-color: var(--teal); }
+button.seat { color: var(--ink); line-height: 1.45; }
+button.seat:hover { border-color: var(--celadon); background: var(--surface); }
 .seat.acting { box-shadow: 0 0 0 2px var(--cinnabar); border-color: var(--cinnabar); }
 .seat .fp { font-size: 12px; font-weight: 700; color: var(--gold-ink); background: var(--gold-pale); border-radius: 999px; padding: 0 6px; }
 .seat .act { color: var(--cinnabar-ink); font-weight: 700; }
 .seat .hc { display: inline-flex; align-items: center; gap: 3px; }
 .phases .pn { display: none; }
-@container ko (max-width: 1399px) {
+@container ko (max-width: 1499px) {
   .phases .pn { display: inline; }
   .phases li:not(.on) .pl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .phases li:not(.on) { padding: 4px 8px; }
@@ -769,7 +770,7 @@ details.devnotes[open] > summary h2::before { content: "▾"; }
 .kilnbox { container: kw / inline-size; max-width: 660px; }
 .kilnwrap { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); align-items: start; }
 @container kw (min-width: 410px) { .kilnwrap { grid-template-columns: minmax(0, 1fr) 108px; } .kilnwrap .krow { grid-template-columns: 38px repeat(3, minmax(0, 1fr)); } }
-.kiln { position: relative; isolation: isolate; padding: 30px 10px 12px; border-radius: 46% 46% 16px 16px / 26% 26% 16px 16px; border: 2px solid var(--kiln-rim); background: var(--kiln-body); color: var(--kiln-ink); overflow: hidden; }
+.kiln { position: relative; isolation: isolate; padding: 30px 10px 12px; border-radius: min(46%, 200px) min(46%, 200px) 16px 16px / 60px 60px 16px 16px; border: 2px solid var(--kiln-rim); background: var(--kiln-body); color: var(--kiln-ink); overflow: hidden; }
 .kiln::before { content: ""; position: absolute; inset: 0; z-index: -1; background: radial-gradient(120% 70% at 50% 108%, color-mix(in srgb, var(--kiln-glow) var(--glow, 18%), transparent) 0, transparent 72%); }
 .kiln .klab { position: absolute; top: 9px; left: 0; right: 0; text-align: center; font-size: 12px; color: var(--kiln-ink-2); letter-spacing: .06em; }
 .krows { display: grid; gap: 6px; }
@@ -866,51 +867,32 @@ button.ksp { font: inherit; cursor: pointer; }
 .firec.back { background: repeating-linear-gradient(135deg, var(--fire-back-a) 0 3px, var(--fire-back-b) 3px 6px); color: var(--on-fire-back); }
 .discard { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
 .stage-main { display: grid; gap: 14px; padding: 12px 14px 14px; grid-template-columns: minmax(0, 1fr); }
-@container stage (min-width: 820px) { .stage-main { grid-template-columns: minmax(430px, 48%) minmax(0, 1fr); } }
+/* With no heat ladder (owner decision D3) the kiln has the stage to itself, Imperial Kilns beside it. */
+.stage .kilnbox { max-width: 900px; }
+@container kw (min-width: 700px) { .stage .kilnwrap { grid-template-columns: minmax(0, 1fr) 190px; } }
 .stage-foot { padding: 0 14px 14px; }
 
-/* heat ladder */
-.lad-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 0 0 8px; }
-.lad-h h3 { font-size: 16px; }
-.legend { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; color: var(--ink-2); }
-.legend i { display: inline-block; width: 14px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 4px; border: 1px solid var(--line); }
-.lgrid { display: grid; grid-template-columns: 92px repeat(var(--cols), minmax(0, 1fr)); border: 1px solid var(--line-2); border-radius: 8px; overflow: hidden; }
-.lgrid.has-unk { grid-template-columns: 92px repeat(var(--cols), minmax(0, 1fr)) minmax(72px, 1.4fr); }
-.lgrid .hd.unk-h .flag { overflow-wrap: anywhere; padding-inline: 2px; }
-.lgrid > div { border-right: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); min-height: 58px; position: relative; min-width: 0; }
-.lgrid .hd { min-height: 0; padding: 3px 0 4px; text-align: center; font-size: 12px; font-weight: 700; color: var(--ink-2); background: var(--surface-2); display: grid; align-content: end; }
-.lgrid .hd .flag { display: block; font-size: 12px; font-weight: 800; line-height: 1.15; }
-.lgrid .hd .flag.base { color: var(--d-glazing); }
-.lgrid .hd .flag.glob { color: var(--d-firing); }
-.lgrid .hd.isbase { box-shadow: inset 0 -3px 0 var(--d-glazing); }
-.lgrid .hd.isglob { box-shadow: inset 0 -3px 0 var(--d-firing); }
-.lgrid .rl { padding: 5px 7px; display: grid; align-content: center; gap: 1px; font-size: 12px; background: var(--surface-2); }
-.lgrid .rl b { font-size: 13px; display: flex; align-items: center; gap: 5px; }
-.lgrid .rl b i { width: 12px; height: 12px; border-radius: 50%; background: var(--g); border: 1px solid var(--line); flex: none; }
-.lc { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 2px; padding: 3px 1px 16px; }
-.lc .ql { position: absolute; bottom: 1px; left: 0; right: 0; text-align: center; font-size: 12px; line-height: 1.15; font-weight: 700; color: var(--ink-2); }
-.lc.d0 { background: color-mix(in srgb, var(--g) var(--mix-d0), var(--surface)); box-shadow: inset 0 0 0 2px var(--q-masterpiece); }
-.lc.d1 { background: color-mix(in srgb, var(--g) var(--mix-d1), var(--surface)); }
-.lc.d2 { background: color-mix(in srgb, var(--g) var(--mix-d2), var(--surface)); }
-.lc.d3 { background: repeating-linear-gradient(135deg, var(--hatch-a) 0 5px, var(--hatch-b) 5px 10px); }
-.lc.d3 .ql { color: var(--q-flawed); }
-.lc.d0 .ql { color: var(--q-masterpiece); }
-.lc.unk { background: var(--paper-2); }
-.lc .cer { --sz: 26px; }
-.ghost { width: 26px; height: 26px; border-radius: 50%; border: 1.5px dashed var(--ink-2); display: inline-grid; place-items: center; font-size: 12px; color: var(--ink-2); }
 .calc-wrap { overflow-x: auto; border: 1px solid var(--line-2); border-radius: 8px; }
 table.calc { border-collapse: collapse; width: 100%; font-size: 12px; font-variant-numeric: tabular-nums; }
 table.calc caption { text-align: left; padding: 6px 8px; font-size: 12px; color: var(--ink-2); caption-side: top; }
 table.calc th, table.calc td { padding: 5px 7px; border-bottom: 1px solid var(--line-2); text-align: center; white-space: nowrap; }
 table.calc thead th { background: var(--surface-2); font-weight: 700; color: var(--ink-2); }
 table.calc td:first-child, table.calc th:first-child { text-align: left; }
-table.calc tr.mine td { background: var(--teal-pale); }
 table.calc .sw { display: inline-block; width: 7px; height: 13px; border-radius: 2px; background: var(--pc); vertical-align: -2px; margin-right: 5px; }
 .idle { display: grid; gap: 10px; padding: 12px 14px; }
 .idle .last { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 16px; font-size: 12px; color: var(--ink-2); }
 .idle .last b { color: var(--ink); }
 
-/* ---------- player boards ---------- */
+/* ---------- player boards: one board area, tabs on its top edge (owner decision D1) ---------- */
+.boards { display: grid; min-width: 0; }
+.btabs { display: flex; align-items: flex-end; gap: 4px; padding: 0 10px; overflow-x: auto; scrollbar-width: thin; }
+.btab { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 5px 12px 4px; border: 1px solid var(--line-2); border-bottom: 0; border-top: 3px solid var(--pc); border-radius: 9px 9px 0 0; background: var(--surface-2); font-size: 13px; color: var(--ink-2); white-space: nowrap; }
+.btab:hover { color: var(--ink); background: var(--surface); }
+.btab .kn { font-size: 12px; opacity: .85; }
+.btab.home { color: var(--teal-ink); font-weight: 700; }
+.btab.home svg { width: 14px; height: 14px; flex: none; }
+.btab[aria-pressed="true"] { background: var(--pc); border-color: var(--pc); color: var(--on-seat); font-weight: 700; }
+.boards > .kpb { border-top-left-radius: 4px; }
 .kpb { container: kpb / inline-size; border-top: 4px solid var(--pc); padding: 10px 12px; display: grid; gap: 8px; }
 .kpb-h { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
 .kpb-h h4 { font-size: 16px; }
@@ -923,13 +905,18 @@ table.calc .sw { display: inline-block; width: 7px; height: 13px; border-radius:
 .pgrid { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
 @container kpb (min-width: 620px) { .pgrid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); } }
 .pspaces { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
-.psp { border-radius: 8px; padding: 5px 7px; display: grid; gap: 4px; font-size: 12px; color: var(--ink); }
+@container kpb (max-width: 420px) { .pspaces { grid-template-columns: minmax(0, 1fr); } }
+.psp { border-radius: 8px; padding: 5px 7px; display: grid; gap: 4px; font-size: 12px; color: var(--ink); align-content: start; }
 .psp.fd { background: var(--d-workshop-pale); }
 .psp.gl { background: var(--d-glazing-pale); }
-.psp .slots { display: flex; gap: 6px; }
-.psp .slot { width: 36px; height: 36px; border-radius: 8px; border: 1.5px dashed var(--line); display: grid; place-items: center; background: var(--surface); font-size: 12px; color: var(--ink-3); padding: 0; }
+.psp .slots { display: flex; gap: 6px; min-width: 0; }
+.psp .slot { width: 36px; height: 36px; flex: none; border-radius: 8px; border: 1.5px dashed var(--line); display: grid; place-items: center; background: var(--surface); font-size: 12px; color: var(--ink-3); padding: 0; }
 button.slot:hover { border-color: var(--teal); }
-.psp .slot.lock { border: 1.5px solid var(--gold-line); background: repeating-linear-gradient(45deg, var(--hatch-a) 0 4px, var(--hatch-b) 4px 8px); color: var(--ink); font-weight: 800; }
+/* D7: the second space is something you add by learning a Tech, never a lock. */
+.psp .slot.add { width: auto; height: auto; min-height: 36px; flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 6px; padding: 3px 8px; text-align: left; line-height: 1.3; border: 1.5px dashed var(--ink-3); background: transparent; color: var(--ink-2); }
+.psp .slot.add .plus { flex: none; font: 700 16px/1 var(--serif); color: var(--ink-3); }
+.psp .added { font-size: 12px; color: var(--ink-2); }
+.psp .added b { color: var(--ink); }
 .psp .slot.sel { border: 2px solid var(--teal); }
 .tslots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
 .tslot { border-radius: 7px; padding: 4px 6px; font-size: 12px; border: 1px solid var(--line-2); border-top: 3px solid var(--dc); background: var(--surface); min-height: 44px; display: grid; align-content: start; gap: 1px; min-width: 0; }
@@ -938,33 +925,29 @@ button.slot:hover { border-color: var(--teal); }
 .tslot.empty { border-style: dashed; border-top-style: solid; background: transparent; color: var(--ink-3); }
 .cerrow { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: flex-end; }
 .cerrow .lab { align-self: center; }
-.opps { display: grid; gap: 10px; }
 
-/* own board (pane) */
-.own { padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--surface); display: grid; gap: 7px; border-top: 4px solid var(--pc); }
-.own .l1 { display: flex; align-items: center; gap: 6px 8px; flex-wrap: wrap; }
+/* own summary row (pane): supports the decision; the full board lives in the board area */
+.own { padding: 8px 14px; border-bottom: 1px solid var(--line); background: var(--surface); border-top: 4px solid var(--pc); }
+.own .l1 { display: flex; align-items: center; gap: 6px 10px; flex-wrap: wrap; }
 .own .l1 strong { font-size: 15px; }
-.own .l1 > .chip { white-space: normal; min-width: 0; flex: 0 1 auto; }
 .own .l1 .vp { margin-left: auto; font: 700 18px var(--serif); white-space: nowrap; }
 .own .l1 .vp small { font: 500 12px var(--sans); color: var(--ink-2); }
-.own .tog { border: 1px solid var(--line); background: var(--surface-2); border-radius: 6px; width: 30px; height: 28px; font-size: 15px; line-height: 1; color: var(--ink); flex: none; }
-
-.own .row1 { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
-.own .wks { display: inline-flex; gap: 3px; align-items: center; }
-.own .mini { display: grid; gap: 6px; }
-.own.collapsed .mini { display: none; }
-.own .cline { font-size: 12px; color: var(--ink-2); display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.own .cline { font-size: 12px; color: var(--ink-2); display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; }
 .own .cline b { font: 700 14px var(--serif); color: var(--ink); }
-.ogrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; align-items: start; }
-.pspaces.rows { grid-template-columns: minmax(0, 1fr); gap: 4px; }
-.pspaces.rows .psp { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 3px 4px 3px 7px; }
-.pspaces.rows .slot { width: 30px; height: 30px; }
-.tlist { display: grid; gap: 4px; }
-.tl { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px; padding: 3px 6px; border-left: 4px solid var(--dc); border-radius: 4px; background: var(--surface-2); font-size: 12px; min-height: 30px; align-content: center; }
-.tl b { font-size: 12px; }
-.tl .ok { color: var(--ok-ink); }
-.tl.empty { color: var(--ink-3); background: transparent; border: 1px dashed var(--line); border-left: 4px solid var(--dc); }
-.own .hmloc { font-size: 12px; color: var(--ink-2); display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.own .tobd { flex: none; border: 1px solid var(--line); background: var(--surface-2); border-radius: 7px; padding: 3px 9px; font-size: 12px; font-weight: 700; color: var(--teal-ink); }
+.own .tobd:hover { border-color: var(--celadon); }
+
+/* game log dropdown (owner decision D5): every viewport */
+.logbtn { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; border: 1px solid var(--line); background: var(--surface-2); border-radius: 8px; padding: 3px 10px; font-size: 12px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+.logbtn:hover { border-color: var(--celadon); }
+.logbtn[aria-expanded="true"] { background: var(--teal); border-color: var(--teal); color: var(--on-teal); }
+.logbtn svg { width: 14px; height: 14px; flex: none; }
+.logbtn .ls { display: none; }
+.logpanel { position: absolute; z-index: 20; top: calc(100% + 4px); right: 12px; width: min(400px, calc(100% - 24px)); max-height: 440px; overflow-y: auto; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 14px 34px var(--shadow-c); padding: 8px 12px 10px; }
+.logpanel[hidden] { display: none; }
+.logpanel h3 { font-size: 14px; margin: 2px 0 4px; display: flex; align-items: baseline; gap: 8px; }
+.logpanel h3 span { font: 500 12px var(--sans); color: var(--ink-2); }
+.device[data-short] .logpanel { max-height: 300px; }
 
 /* decision pane */
 .sheet-strip { display: none; }
@@ -1018,14 +1001,6 @@ button.slot:hover { border-color: var(--teal); }
 .quote .tot { border-top: 1px solid var(--line-2); padding-top: 3px; font-weight: 700; }
 .choice { display: grid; gap: 6px; }
 .choice .big { font: 700 22px/1 var(--serif); min-width: 34px; }
-.outs { display: flex; flex-wrap: wrap; gap: 4px; }
-.out { display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px 1px 2px; border-radius: 6px; font-size: 12px; font-weight: 700; border: 1px solid var(--line-2); background: var(--surface); white-space: nowrap; }
-.out .firec { min-width: 22px; height: 20px; border-radius: 4px; }
-.out.zero { opacity: .5; font-weight: 500; }
-.dist { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--paper-2); }
-.dist i { display: block; height: 100%; }
-.dist .masterpiece { background: var(--q-masterpiece); } .dist .fine { background: var(--q-fine); } .dist .standard { background: var(--q-standard); } .dist .flawed { background: var(--q-flawed); }
-.distlab { font-size: 12px; color: var(--ink-2); }
 .decls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
 .decl { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 5px 7px; font-size: 12px; text-align: left; display: grid; gap: 2px; }
 .decl b { font-size: 13px; }
@@ -1090,7 +1065,8 @@ table.score td:not(:first-child), table.score thead th:not(:first-child) { text-
   .ko-world { padding: 10px 12px 18px; }
   .ko-world .sec:not(.on) { display: none; }
   .sec-h h2 { font-size: 18px; }
-  .top { padding: 6px 12px; gap: 4px 8px; }
+  .top { padding: 6px 12px; gap: 4px 6px; }
+  .top .phases li.on .pn { display: none; }
   .top .brand { display: none; }
   .top .phases li:not(.on) { display: none; }
   .top .phases { order: 0; flex-basis: auto; }
@@ -1099,6 +1075,9 @@ table.score td:not(:first-child), table.score thead th:not(:first-child) { text-
   .chain .sep { display: none; }
   .seat { padding: 2px 8px 2px 3px; }
   .seat .kn { display: none; }
+  .logbtn { margin-left: auto; padding: 3px 8px; gap: 5px; }
+  .logbtn .car, .logbtn .ll { display: none; }
+  .logbtn .ls { display: inline; }
   .ko-pane { border-left: 0; border-top: 1px solid var(--line); border-radius: 16px 16px 0 0; box-shadow: 0 -8px 24px var(--shadow-c); max-height: calc(var(--h) * .72); overflow: hidden; }
   .device.full .ko-pane { max-height: none; }
   .sheet-strip { display: flex; align-items: center; gap: 8px; width: 100%; border: 0; background: transparent; padding: 8px 14px; text-align: left; min-height: 44px; }
@@ -1122,13 +1101,6 @@ table.score td:not(:first-child), table.score thead th:not(:first-child) { text-
   .eqrow .op { font-size: 20px; }
   .eqrow .deck { margin-left: 0; }
   .eqrow .key b { font-size: 24px; line-height: 26px; }
-  .lgrid { grid-template-columns: 66px repeat(var(--cols), minmax(0, 1fr)); }
-  .lgrid.has-unk { grid-template-columns: 66px repeat(var(--cols), minmax(0, 1fr)) minmax(44px, 1.3fr); }
-  .lgrid .rl small { display: none; }
-  .lgrid > div { min-height: 50px; }
-  .lc .cer { --sz: 22px; }
-  .lc .cchip .cid { display: none; }
-  .lgrid .hd .flag { font-size: 12px; writing-mode: horizontal-tb; }
   .banner .go { display: none; }
   .recog { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
   .rs { padding: 5px; }
@@ -1187,24 +1159,38 @@ table.score td:not(:first-child), table.score thead th:not(:first-child) { text-
   <header class="wrap intro">
     <div class="kicker">Kiln Opening 开窑 · V1.6.1 · for owner sign-off</div>
     <h1>Interface wireframes<small>Nine real game moments, five screen sizes, English and 中文</small></h1>
-    <p class="lead">This is the wireframe set for sign-off. Every frame shows a real moment from a game the computer players played on the V1.6.1 rules, seen through one player's eyes, so it shows only what that player is allowed to see. The counts, choices, costs and error messages are the game's own, not invented for the picture. <span class="dagger">†</span> marks a number the wireframe works out for now; the game engine will supply it before launch.</p>
-    <p>Pick a moment, a screen and a language. The frames respond to clicks: choose a worker and a location, a Contribution card, a Heat-marker side or an Order to complete, and the summary line updates. Confirm shows what the game would receive; nothing is sent. <a href="#viewer" class="golink">Go to the wireframes ↓</a></p>
+    <p class="lead">This is the wireframe set, revised after your sign-off answers of 15 October 2026. Every frame shows a real moment from a game the computer players played on the V1.6.1 rules, seen through one player’s eyes, so it shows only what that player is allowed to see. The counts, choices, costs and error messages are the game’s own, not invented for the picture.</p>
+    <p>Pick a moment, a screen and a language. The frames respond to clicks: choose a worker and a location, a Contribution card, a Heat-marker side or an Order to complete, and the summary line updates. Click a seat in the top bar to open that player’s board, or open the Game log. Confirm shows what the game would receive; nothing is sent. <a href="#viewer" class="golink">Go to the wireframes ↓</a></p>
+    <section class="panel qs" aria-labelledby="h-decisions">
+      <h2 id="h-decisions">Owner decisions (15 Oct 2026)</h2>
+      <p style="margin:0 0 10px"><b>Guiding principle:</b> the screen shows only what a player could see at the physical table. No odds, no previews, no analysis tables. The engine may still work these out for the computer players, but no screen shows them.</p>
+      <ol>
+        <li><b>D1 · One board area.</b> Every Kiln Player Board lives in one place, the Workshops area. It opens on your own board. Tabs on the board’s top edge, one per other player in their seat colour, switch to their boards, and the <b>Your workshop</b> tab brings you back. Clicking a seat in the top bar opens that player’s board. Other players’ boards show public information only.</li>
+        <li><b>D2 · Opponents.</b> The seat chips along the top bar are the public opponent strips. Full boards are one click away through D1.</li>
+        <li><b>D3 · Firing.</b> Firing takes over the main column. It shows the step rail, the heat equation (Kiln Die + Contributions = Base Heat; Base Heat + Fire = Global Heat), the kiln with its ceramics, markers and modifiers, the Imperial Kilns and the Fire discard. A fired ceramic shows the Quality you would record on it. The heat ladder and the Heat ledger table are gone.</li>
+        <li><b>D4 · Fire cards.</b> No odds and no cards-left counts. The open Fire discard is visible at all times, and that is all the Fire-deck information shown.</li>
+        <li><b>D5 · Phones and the log.</b> Phones keep the Table, Kiln, Workshop and Orders tabs. The game log is a dropdown in the top bar at every screen size, not a tab or a section.</li>
+        <li><b>D6 · Chinese terms.</b> The glossary terms are approved as they are.</li>
+        <li><b>D7 · Second personal space.</b> No “lock” or “unlock” in anything a player reads. The second Form &amp; Decorate or Glaze &amp; Load space is something you <b>add by learning a Tech</b>: “Learn a Workshop Tech to add this space” (习得坯作技艺即添此工位), then “Added by Prepared Clay” (由「练泥」添设).</li>
+      </ol>
+    </section>
     <div class="cols">
       <section class="panel" aria-labelledby="h-principles">
         <h2 id="h-principles">How the layout works</h2>
         <ol>
           <li><b>Fluid grid, no scaled board.</b> Pages reflow with CSS grid, and each component (central board, Shared Kiln, player board, Order display, firing stage) responds to its own width through container queries. Nothing is a fixed 1800px picture shrunk to fit.</li>
           <li><b>12px floor.</b> No text renders below 12px at 100%. Long rules text opens in a keyboard-reachable disclosure instead of being cut off.</li>
-          <li><b>Your board above your decision.</b> The right panel always shows your own Kiln Player Board, then the current decision as one form: worker, location, details, a summary sentence, then Clear or Confirm. Place buttons on the board and clickable kiln spaces are shortcuts into the same form.</li>
-          <li><b>Firing is docked, not modal.</b> In the Firing Phase the kiln, the heat equation and the heat ladder lead the screen. The rest of the table stays live below.</li>
-          <li><b>Phones get tabs.</b> Below 900px the screen becomes Table, Kiln, Workshop and Orders with a bottom tab bar, and the decision becomes a one-line strip that opens into a sheet. The app switches tab at the start of Firing, on your Work turn and in the Order Phase.</li>
+          <li><b>Only what the table shows.</b> Resources, workers, Techs, ceramics, the Kiln Die, revealed Contributions, the turned Fire card, the Fire discard and recorded Quality are on screen. Nothing the physical game would make you work out yourself is worked out for you.</li>
+          <li><b>One board area, one decision panel.</b> All Kiln Player Boards share one board area with a tab per player. The right panel opens with a one-row summary of your resources, workers and hand, then the current decision as one form: worker, location, details, a summary sentence, then Clear or Confirm. Place buttons on the central board, the open spaces on your board and clickable kiln spaces are shortcuts into the same form.</li>
+          <li><b>Firing is docked, not modal.</b> In the Firing Phase the step rail, the heat equation and the kiln lead the main column. The rest of the table stays live below.</li>
+          <li><b>Phones get tabs.</b> Below 900px the screen becomes Table, Kiln, Workshop and Orders with a bottom tab bar, and the decision becomes a one-line strip that opens into a sheet. Workshop is the board area. The app switches tab at the start of Firing, on your Work turn and in the Order Phase. The Game log stays in the top bar.</li>
         </ol>
       </section>
       <section class="panel later" aria-labelledby="h-later">
         <h2 id="h-later">Not designed yet</h2>
         <ul>
           <li><b>Final art.</b> Card frames, board illustration, ink-wash backgrounds and the five kiln traditions. Ceramics use the existing neutral cutouts tinted by glaze; colours and type follow the current tokens.</li>
-          <li><b>Motion (phase 5).</b> Fire reveal, ceramics sliding along the heat ladder, worker placement. Elements carry <code>data-motion</code> hooks, and motion is off under reduced-motion settings.</li>
+          <li><b>Motion (phase 5).</b> Fire reveal, the Quality appearing on each fired ceramic, worker placement and the board tabs switching. Elements carry <code>data-motion</code> hooks, and motion is off under reduced-motion settings.</li>
           <li><b>WebGL kiln (phase 6).</b> Fire glow, heat haze, glaze reveal at Quality and Ge crackle growth. It mounts inside the dark kiln body. The DOM kiln underneath stays the accessible source of truth and the fallback.</li>
         </ul>
         <h3 class="sub-h">Not shown in these frames</h3>
@@ -1213,25 +1199,13 @@ table.score td:not(:first-child), table.score thead th:not(:first-child) { text-
           <li>A <b>Setter’s Mark</b> tile on a Shared Kiln space.</li>
           <li>The private <b>Test Pieces</b> peek at the top Fire card (step 4) and its bury choice.</li>
           <li>The private <b>Guild Hall Shifu inspection</b>: the top 2 Techs of a discipline and the secret order for returning them.</li>
-          <li>The <b>Jun</b> choice at step 8 (M4 shows its result) and the 2-Coin <b>Salvage</b> discard at step 11.</li>
+          <li>The <b>Jun</b> choice at step 8 (M4 shows its result in the game log) and the 2-Coin <b>Salvage</b> discard at step 11.</li>
         </ul>
         <div class="legend-strip" style="margin-top:14px">
-          <span><span class="dagger">†</span> worked out by the wireframe for now</span>
           <span>Blue dashed boxes are design notes (toggle with Notes)</span>
         </div>
       </section>
     </div>
-    <section class="panel qs" aria-labelledby="h-questions">
-      <h2 id="h-questions">Questions for you</h2>
-      <ol>
-        <li><b>Your board.</b> It sits at the top of the right panel and shrinks to one row during Firing, the Order Phase and Cleanup. Is that the right home, or would you rather have a docked mat along the bottom of the screen?</li>
-        <li><b>Opponents.</b> Opponents appear as public strips: resources, workers left, hand as card backs with a count, Recognition, labelled personal spaces and Tech slots, and ceramics. Is that enough detail, or should each strip open into a full board?</li>
-        <li><b>Firing prominence.</b> During Firing the kiln and heat ladder take over the main column and the central board moves below. Should Firing take over like this, or stay a panel beside the board?</li>
-        <li><b>Fire-card odds.</b> Second Firing and the Heat-marker step list, for each Fire card still in the deck, the Quality it would give and how many of those cards remain. For example, a −1 Fire card would give a Masterpiece, and 2 of those cards remain. It is all public information, but it makes the choice very calculable. Do you want these previews?</li>
-        <li><b>Phone tabs.</b> Table, Kiln, Workshop and Orders, switching automatically by phase. Keep these four, rename them, or add a fifth tab for the game log?</li>
-        <li><b>Chinese wording.</b> The 中文 frames use the glossary terms (停用窑位, 封条, 定品后结算, 委托榜…). Do any read wrongly in context?</li>
-      </ol>
-    </section>
   </header>
 
   <section class="review" id="viewer" aria-labelledby="h-review">
@@ -1258,13 +1232,13 @@ table.score td:not(:first-child), table.score thead th:not(:first-child) { text-
       <div class="tablewrap"><table>
         <thead><tr><th>Needed</th><th>Proposed shape</th><th>Used by</th></tr></thead>
         <tbody>
-          <tr><td><span class="dagger">†</span> <code>fireDeckComposition(view)</code></td><td>Count of each Fire value (−2…+2) still in the deck: the 12-card deck minus the open discard minus a revealed card not yet discarded. Must also say when a buried Test Pieces card makes the order known to one player.</td><td>Second Firing chips, Heat-marker previews, the ledger's “cards left” row</td></tr>
-          <tr><td><span class="dagger">†</span> <code>fireOutcomes(view, ceramicId, markerChoice?)</code></td><td><code>[{ fire, cardsLeft, actualHeat, quality }]</code> for one ceramic, optionally for a Heat-marker choice of +1, −1 or return. Today <code>heatPreviews</code> returns <code>null</code> while a marker is face down.</td><td>Heat-marker step (M3), Second Firing (M4)</td></tr>
           <tr><td><code>kilnLayout.freeActiveSpaces</code></td><td>Number (and ids) of empty active Shared Kiln spaces, so the Table summary does not count spaces itself.</td><td>Shared Kiln summary line, Kiln tab badge</td></tr>
           <tr><td>Location effect summaries (i18n)</td><td>A one-line <code>summary</code> per worker next to <code>apprenticeText</code> and <code>shifuText</code>. The wireframe hard-codes the rulebook Appendix E Action Summary (EN) and the glossary §4.1–4.7 short column (中文); the full text stays in a disclosure.</td><td>Central board cards, Location rows in the decision panel</td></tr>
           <tr><td>Order quality line (i18n)</td><td><code>labels.orders[id].qualityText</code> in the rulebook / glossary §5.1 form (“Fine+ each; ≥1 Masterpiece”, “均上品以上，至少1件臻品”, “Masterpiece”/“臻品”). The wireframe composes it from <code>minQuality</code> and the <code>at_least_n_quality</code> relation.</td><td>Every Order card and Order row</td></tr>
           <tr><td><code>handLimitStatus(view, pid).trimDue</code></td><td>Whether Cleanup will actually trim this round. Round 5 Cleanup skips the trim, but <code>mustDiscard</code> is reported regardless; the wireframe checks the round itself.</td><td>Hand header in the Order Phase</td></tr>
-          <tr><td>Event text templates (i18n)</td><td>EN/ZH templates per public event type for the log and the <code>aria-live</code> announcements. The wireframe formats events locally.</td><td>Log, screen-reader announcements</td></tr>
+          <tr><td>Event text templates (i18n)</td><td>EN/ZH templates per public event type for the log and the <code>aria-live</code> announcements. The wireframe formats events locally.</td><td>Game log dropdown, screen-reader announcements</td></tr>
+          <tr><td>Personal-space wording (i18n, D7)</td><td>Player-facing text for the second personal space and for <code>PERSONAL_SPACE_LOCKED</code>: “Learn a {discipline} Tech to add this space” / “习得{discipline}技艺即添此工位”, and “Added by {tech}” / “由「{tech}」添设”. <code>labels.ruleErrors.PERSONAL_SPACE_LOCKED</code> (from <code>src/game/ruleErrorText.ts</code>) already carries this sentence, and the page reads it from there. Identifiers stay as they are.</td><td>Board area personal spaces, Location rows, the Glaze &amp; Load reason in M5</td></tr>
+          <tr><td>Fire information (D3, D4)</td><td>No new selector. The client reads only the public <code>fireDiscard</code> and the revealed <code>fireModifier</code>. <code>fireDeckCount</code> and <code>heatPreviews</code> stay engine-side for the computer players and are not rendered.</td><td>Heat equation, Table kiln summary, idle firing stage</td></tr>
           <tr><td>Form &amp; Decorate quotes per draft</td><td><code>quoteFormDecorate(view, draft)</code> exists; the fixture only captured two drafts, so other Shape and Decoration choices show “quote not captured”.</td><td>Form &amp; Decorate sub-choices (M5)</td></tr>
         </tbody>
       </table></div>
@@ -1274,7 +1248,8 @@ table.score td:not(:first-child), table.score thead th:not(:first-child) { text-
         <h2>Accessibility and motion hooks</h2>
         <ul>
           <li>Each frame has a polite live region. The caption under the frame shows what a screen reader would announce for that moment (turn changes, reveals, Quality).</li>
-          <li>The heat ladder never relies on colour: every cell carries its Quality letter (M, F, S, ×), the legend lists Δ0 to Δ3+, and the Heat ledger table repeats the whole calculation for screen readers and 200% zoom.</li>
+          <li>Quality never relies on colour: every fired ceramic carries its Quality word, or its letter (M, F, S, ×) where space is tight, and the chip’s title gives the ceramic in full.</li>
+          <li>The Game log is a disclosure button in the top bar (<code>aria-expanded</code>, Escape closes it). The board tabs and the seat chips are buttons with pressed states, and focus stays on the control you used.</li>
           <li>All choices are buttons with pressed states; location cards, kiln spaces and personal spaces are reachable by keyboard. Rules text uses disclosures, not line clamps.</li>
           <li><code>data-motion</code> marks every element the motion phase will animate; <code>prefers-reduced-motion</code> turns transitions off.</li>
         </ul>
@@ -1282,9 +1257,10 @@ table.score td:not(:first-child), table.score thead th:not(:first-child) { text-
       <div class="panel">
         <h2>What came from where</h2>
         <ul>
-          <li><b>Concept C:</b> the two-pane shell, the structured decision form, phase-ordered sections, the heat ladder with Base and Global Heat columns, the 2-player board treatment.</li>
-          <li><b>Concept B:</b> the kiln-shaped Shared Kiln beside the ladder, Fire-card outcome chips, Place buttons on locations, clickable kiln spaces, public opponent strips.</li>
-          <li><b>Concept A:</b> the bottom tab bar and one-line action strip on phones, the Heat ledger table, the −1/0/+1 Imperial modifier chips, the labelled 12-step stepper with a queue row, the idle firing summary.</li>
+          <li><b>Concept C:</b> the two-pane shell, the structured decision form, phase-ordered sections, the 2-player board treatment.</li>
+          <li><b>Concept B:</b> the kiln-shaped Shared Kiln, Place buttons on locations, clickable kiln spaces.</li>
+          <li><b>Concept A:</b> the bottom tab bar and one-line action strip on phones, the −1/0/+1 Imperial modifier chips, the labelled 12-step stepper with a queue row, the idle firing summary.</li>
+          <li><b>Owner decisions (15 Oct 2026):</b> one board area with player tabs and a Your workshop return, seat chips as the opponent strips, the Game log dropdown, “add this space” wording, and no heat ladder, Heat ledger, Fire odds or previews.</li>
         </ul>
       </div>
     </div>
@@ -1306,7 +1282,7 @@ const FIX = {
         "mode": "single",
         "phaseType": "work_turn"
       },
-      "description": "The viewer owns a Workshop Tech, so the second Form & Decorate space is unlocked; the second Glaze & Load space still carries its Lock token. Placement options, quotes and the Commission / Guild / Magistrate option lists are for this exact state.",
+      "description": "The viewer owns a Workshop Tech, so they have added the second Form & Decorate space; they have not yet added the second Glaze & Load space. Placement options, quotes and the Commission / Guild / Magistrate option lists are for this exact state.",
       "id": "m1_work_phase_r2_3p",
       "notes": [],
       "playerView": {
@@ -25962,19 +25938,19 @@ const FIX = {
         "zh": "窑口传承"
       },
       {
-        "en": "Lock token",
-        "note": "新名。盖住第二工位，形象且一目了然。",
-        "zh": "封条"
+        "en": "second (personal) space",
+        "note": "制坯饰纹、施釉装窑各有第二工位，习得相应门类技艺后添设（D7）。界面与文字不说“锁”“封”。",
+        "zh": "第二工位"
       },
       {
-        "en": "locked space",
-        "note": "—",
-        "zh": "封存工位"
+        "en": "add (a second space, by learning a Tech)",
+        "note": "未有时写“习得坯作技艺即添此工位”（施釉装窑写“习得釉作技艺即添此工位”）；已有时写“由「⟨技艺⟩」添设”。",
+        "zh": "添设"
       },
       {
-        "en": "unlock",
-        "note": "“习得坯作技艺时，揭去制坯饰纹第二工位的封条（启封）”。",
-        "zh": "启封"
+        "en": "second-space cover (physical prototype only)",
+        "note": "实体原型盖住尚未添设的第二工位；数字版无此配件（D7）。",
+        "zh": "第二工位盖片"
       },
       {
         "en": "Tech slot",
@@ -26327,7 +26303,7 @@ const FIX = {
       },
       {
         "en": "covered space (by player count)",
-        "note": "不称“封”，以免与封条混淆。停用窑位不算空位，也不可使用。",
+        "note": "不称“封”。停用窑位不算空位，也不可使用。",
         "zh": "停用窑位"
       },
       {
@@ -28763,8 +28739,8 @@ const FIX = {
         "zh": "主委托牌堆与弃牌堆皆空，无可承接"
       },
       "PERSONAL_SPACE_LOCKED": {
-        "en": "This space is still locked; acquire a {discipline} Tech to unlock it.",
-        "zh": "此工位尚有封条，习得{discipline}技艺后启封"
+        "en": "Learn a {discipline} Tech to add this space.",
+        "zh": "习得{discipline}技艺即添此工位"
       },
       "PERSONAL_SPACE_USED": {
         "en": "This space has already been used this round.",
@@ -29407,32 +29383,38 @@ const VPS = {
 };
 const INFO = {
   m1: { short: 'Work turn', title: 'Work turn · Round 2 · 3 players', check: [
-    'Your Kiln Player Board sits above the decision. Prepared Clay unlocked the second Form &amp; Decorate space; the second Glaze &amp; Load space still has its Lock token.',
+    'Wen’s full Kiln Player Board is in the Workshops board area. Prepared Clay added the second Form &amp; Decorate space (“Added by Prepared Clay”); the second Glaze &amp; Load space is a dashed slot reading “Learn a Glazing &amp; Loading Tech to add this space”.',
+    'Click Lin or Zhao in the top bar, or their tab on the board’s top edge, to see their board (public information only). The Your workshop tab returns to Wen’s.',
     'The draft is a Shifu at Glaze &amp; Load: c4 glazed Celadon into Middle 1 shows as a dashed “pending” chip in the Shared Kiln. Click a highlighted kiln space to change the destination.',
-    'Place buttons on the location cards set the same draft. Form &amp; Decorate, Guild Hall and Magistrate’s Hall are listed as unavailable with the engine’s reason.',
-    'The Shared Kiln summary line, the Main Order display and your hand are all in the first screen at 1366×768.'] },
+    'Place buttons on the location cards set the same draft. Form &amp; Decorate, Guild Hall and Magistrate’s Hall are listed as unavailable with the engine’s reason. The decision panel opens with a one-row summary of Wen’s resources, workers and hand.'],
+    desc: 'The viewer owns a Workshop Tech, so the viewer has added the second Form & Decorate space; the second Glaze & Load space is not yet added. Placement options, quotes and the Commission / Guild / Magistrate option lists are for this exact state.',
+    engine: 'Engine identifiers in the list below stay as they are; player-facing text follows D7.' },
   m2: { short: 'Commission look', title: 'Commission Market Shifu · Round 3 · 4 players', check: [
     'Display slot 1 is empty and says it refills when Zhao’s turn ends (<code>market.refillPendingFor</code>).',
     'Only Zhao sees the three looked-at Orders. Everyone else sees “Zhao is looking at 3 Orders” and a hand count.',
-    'Four players: all 8 kiln spaces are active, the Magistrate’s Hall has 2 spaces, and the opponent strips wrap without clipping.'] },
+    'Four players: all 8 kiln spaces are active, the Magistrate’s Hall has 2 spaces, the seat chips wrap without clipping, and the board area has three player tabs.'] },
   m3: { short: 'Heat markers', title: 'Firing step 5 · Heat markers · Round 5', check: [
-    'The kiln and the heat ladder share the first screen. Ceramics whose Heat marker is not yet decided (+1, −1 or return) wait in the “?” column.',
-    'Each marker choice shows the Quality for every Fire card still in the deck, with card counts (<span class="dagger">†</span> proposed selector).',
-    'The queue row shows Zhao › Wen › Lin for this First-Player-order step. Zhao’s marker is on the Imperial Kiln, which ignores Contributions.'] },
+    'Firing takes over the main column: step rail, heat equation (Kiln Die + Contributions = Base Heat; the Fire card is still face down), the kiln with every ceramic, marker and modifier, the Imperial Kilns and the open Fire discard.',
+    'The decision offers Turn to +1, Turn to −1 and Return marker with the rule text only. There are no Quality previews and no Fire-card counts.',
+    'The queue row shows Zhao › Wen › Lin for this First-Player-order step. Zhao’s marker is on the Imperial Kiln, which ignores Contributions.'],
+    desc: 'Kiln Die and Base Heat after the revealed Contributions are known; the Fire card is not yet revealed. Face-down Heat markers have no value yet (the viewer turns or returns theirs now).',
+    engine: 'The engine also computes per-ceramic heat data for the computer players (<code>heatPreviews</code>); the screen does not show it (D3).' },
   m4: { short: 'After Quality', title: 'Firing step 10 · After-Quality abilities · Round 5', check: [
-    'Every ladder cell carries its Quality letter; the Base Heat and Global Heat columns are labelled; the dashed “Jun” ghost shows where c15 sat before Jun moved it.',
-    'Second Firing shows the Quality for each remaining Fire card (−1 Masterpiece ×2 …). Ge Crackle is a certain Standard → Fine.',
-    'The Heat ledger table under the ladder is the screen-reader and 200%-zoom form of the result.'] },
+    'Each fired ceramic in the kiln shows the Quality a player would record on it. No Actual Heat numbers are shown; they appear only in the Game log.',
+    'Ge Crackle reads “Standard → Fine, gains a Crackle marker”. Second Firing reads “Reveal 1 extra Fire card and recalculate; the new Quality stands even if worse.” Neither shows a prediction.',
+    'The Fire discard beside the equation shows every card discarded so far. Open the Game log to see Wen’s Jun adjustment and each Quality as it was assigned.'],
+    desc: 'Quality has been assigned. The viewer chooses after-Quality abilities in their own order (Ge Crackle, Protective Saggars, Second Firing), rechecked after each use. Each fired ceramic shows the Quality recorded on it.',
+    engine: 'The engine keeps per-ceramic heat numbers (<code>heatLadder</code>) for the Game log and the computer players; the screen shows only the recorded Quality (D3).' },
   m5: { short: '2-player board', title: '2-player board · Work turn · Round 2', check: [
     'The Shared Kiln uses the 2-1-1 cover: High 1–2, Middle 1 and Low 1 are active.',
     'Every location shows “n/cap taken”; the Magistrate’s Hall is 1/1 and the Commission Market 2/2.',
-    'Lin has one Apprentice left. The draft is Form &amp; Decorate (Bowl, Carved) with the engine’s quote.'] },
+    'Lin has one Apprentice left. The draft is Form &amp; Decorate (Bowl, Carved) with the engine’s quote. Glaze &amp; Load is unavailable: “Learn a Glazing &amp; Loading Tech to add this space.” The board area has a single tab, for Zhao.'] },
   m6: { short: 'Order Phase', title: 'Order Phase · Crackle wildcard · Round 5', check: [
     'Four of five held Orders can be completed. O39 needs the Crackle ceramic c18 (printed Plain) to count as Painted.',
     'The declaration picker shows the validator’s verdict for every Decoration; only Painted is accepted.',
     'Face-up Orders are shown for reference and cannot be completed.'] },
   m7: { short: 'Cleanup trim', title: 'Cleanup · hand limit · Round 3', check: [
-    'Wen holds 6 Orders against a limit of 4 and must discard exactly 2. Confirm unlocks at 2.',
+    'Wen holds 6 Orders against a limit of 4 and must discard exactly 2. Confirm becomes available at 2.',
     'The prompt is parallel: other players see only that Wen is trimming and his hand count.'] },
   m8: { short: 'Final results', title: 'Final results · 3 players', check: [
     'Shared victory: Lin and Wen tie on 47 VP and on all three tie-breakers.',
@@ -29442,7 +29424,7 @@ const INFO = {
     'Lin has submitted. Everyone sees only “submitted, card hidden”; nobody sees which card until all three are in. Wen is still choosing.',
     'Zhao owns Fuel Ledger: the toggle turns Bank or Stoke into −2 or +2 for 2 Wood. Costs and affordability come from <code>contributionOptions</code>.',
     'The Shared Kiln shows an Inverted Firing stack (Lin’s c12 and c11 share Middle 1), Kiln Furniture +1 under c9 and Wen’s face-down Heat marker.',
-    'Base Heat is unknown until every card is revealed, so the heat ladder shows the Preferred Heat bands but no positions yet.'] },
+    'Base Heat stays “?” until every card is revealed. The Fire discard is the only Fire-deck information on screen.'] },
 };
 const R = { m: 'm1', vp: 'desk', lang: 'en', fit: true, full: false, ftheme: 'auto', notes: true };
 (function restore() {
@@ -29482,10 +29464,16 @@ const UI = {
   stepN: { en: 'step {n}', zh: '步骤{n}' },
   tabTable: { en: 'Table', zh: '桌面' }, tabKiln: { en: 'Kiln', zh: '窑' }, tabWorkshop: { en: 'Workshop', zh: '作坊' }, tabOrders: { en: 'Orders', zh: '委托' },
   secTable: { en: 'Table', zh: '桌面' }, secOrders: { en: 'Orders', zh: '委托' }, secProgress: { en: 'Recognition & Techs', zh: '声望与技艺' },
-  secKiln: { en: 'Kiln', zh: '窑' }, secFiring: { en: 'Firing', zh: '烧窑' }, secWorkshops: { en: 'Workshops', zh: '作坊' }, secLog: { en: 'Log', zh: '记录' }, secResults: { en: 'Final results', zh: '终局计分' },
+  secKiln: { en: 'Kiln', zh: '窑' }, secFiring: { en: 'Firing', zh: '烧窑' }, secWorkshops: { en: 'Workshops', zh: '作坊' }, secResults: { en: 'Final results', zh: '终局计分' },
   jumpHint: { en: 'Sections follow the phase.', zh: '分区随阶段排序。' },
   firingSub: { en: 'Docked and non-modal: the rest of the table stays live below.', zh: '停靠显示，不遮挡：桌面其余部分仍在下方。' },
-  oppSub: { en: 'Your board on phones, then opponents (public information only)', zh: '手机上先显示你的窑口板，其后为对手（仅公开信息）' },
+  boardsSub: { en: 'Every Kiln Player Board · other players show public information only', zh: '各家窑口板 · 他人只显示公开信息' },
+  boardsLbl: { en: 'Kiln Player Boards', zh: '窑口板' },
+  yourWorkshop: { en: 'Your workshop', zh: '你的作坊' },
+  openBoard: { en: 'Open {name}’s board', zh: '查看{name}的窑口板' },
+  publicOnly: { en: 'Public information', zh: '公开信息' },
+  yourBoardBtn: { en: 'Board', zh: '窑口板' },
+  gameLog: { en: 'Game log', zh: '记录' }, gameLogShort: { en: 'Log', zh: '记录' },
   centralBoard: { en: 'Central Action Board', zh: '中央行动板' },
   centralSub: { en: '5 locations, capacities for {n} players', zh: '5处中央地点，{n}人容量' },
   effectsFor: { en: 'cards show your {w}’s effect', zh: '卡上显示你的{w}效果' },
@@ -29500,8 +29488,8 @@ const UI = {
   sharedKiln: { en: 'Shared Kiln', zh: '共窑' },
   nPlayers: { en: '{n}P', zh: '{n}人' },
   kmActive: { en: '{a} active ({z}) · {c} covered · {f} empty', zh: '启用{a}格（{z}）· 停用{c}格 · 空{f}格' },
-  fireDeckN: { en: 'Fire deck {n}', zh: '窑火牌堆{n}张' },
-  discardOpen: { en: 'discard (open)', zh: '弃牌堆（公开）' },
+  discardOpen: { en: 'Fire discard (open)', zh: '窑火弃牌堆（公开）' },
+  discardNone: { en: 'none yet', zh: '暂无' },
   lastFiring: { en: 'Last firing · Round {r}', zh: '上次烧窑 · 第{r}轮' },
   noFiringYet: { en: 'No firing yet', zh: '尚未烧窑' },
   openKiln: { en: 'Open Kiln', zh: '查看窑' },
@@ -29546,19 +29534,7 @@ const UI = {
   baseHeat: { en: 'Base Heat', zh: '基础火候' }, globalHeat: { en: 'Global Heat', zh: '全窑火候' },
   clamp: { en: '0–5', zh: '限定0–5' },
   notRevealed: { en: 'not revealed', zh: '未翻' },
-  heatLadder: { en: 'Heat ladder', zh: '火候梯' },
-  ladderPost: { en: 'Each ceramic sits at its Actual Heat. Distance from its glaze’s Preferred Heat is its Quality.', zh: '器物置于其实际火候；与该釉适烧火候的距离即品质。' },
-  ladderPre: { en: 'Before the Fire card: ceramics sit at their heat without Fire. A ceramic whose marker is not yet decided (+1, −1 or return) waits in the “?” column.', zh: '翻窑火前：器物置于未计窑火的火候；火标尚未翻定（+1、−1或收回）的器物暂列“?”栏。' },
-  ladderStep1: { en: 'Base Heat is not set until every Contribution is revealed (step 3), so no ceramic has a position yet. Each band shows its Preferred Heat.', zh: '所有控火亮牌后（步骤三）才定基础火候，故器物尚无位置。各釉带标出适烧火候。' },
-  noBase: { en: 'no Base Heat yet', zh: '基础火候未定' },
   prefers: { en: 'Preferred {n}', zh: '适烧{n}' },
-  hidden: { en: 'undecided', zh: '待翻定' },
-  ledgerT: { en: 'Heat ledger', zh: '火候账' },
-  ledgerSub: { en: 'The same result as a table, for screen readers and zoom.', zh: '同一结果的表格形式，供读屏与放大使用。' },
-  colCer: { en: 'Ceramic', zh: '器物' }, colWhere: { en: 'Where', zh: '位置' }, colSrc: { en: 'Source', zh: '火源' }, colPos: { en: 'Position', zh: '位置修正' },
-  colMarker: { en: 'Marker', zh: '火标' }, colJun: { en: 'Jun', zh: '钧' }, colActual: { en: 'Actual', zh: '实际' }, colPref: { en: 'Preferred', zh: '适烧' },
-  colDiff: { en: 'Diff.', zh: '火候差' }, colQ: { en: 'Quality', zh: '品质' }, colBefore: { en: 'Before Fire', zh: '未计窑火' },
-  cardsLeft: { en: '{n} left', zh: '余{n}张' },
   imperial: { en: 'Imperial', zh: '御窑' },
   idleTitle: { en: 'Firing stage · idle until the Firing Phase', zh: '烧窑台 · 烧窑阶段前待命' },
   thisRound: { en: 'this round', zh: '本轮' },
@@ -29567,7 +29543,9 @@ const UI = {
   workersLeft: { en: '{n} left', zh: '余{n}名' },
   workers: { en: 'Workers', zh: '工人' }, resources: { en: 'Resources', zh: '资源' }, hand: { en: 'Hand', zh: '手牌' },
   formDec: { en: 'Form & Decorate', zh: '制坯饰纹' }, glazeLoad: { en: 'Glaze & Load', zh: '施釉装窑' },
-  lock: { en: 'Lock', zh: '封条' },
+  addFD: { en: 'Learn a Workshop Tech to add this space', zh: '习得坯作技艺即添此工位' },
+  addGL: { en: 'Learn a Glazing & Loading Tech to add this space', zh: '习得釉作技艺即添此工位' },
+  addedBy: { en: 'Added by <b>{t}</b>', zh: '由「<b>{t}</b>」添设' },
   techSlots: { en: 'Tech slots', zh: '技艺位' }, emptySlot: { en: 'empty', zh: '空' },
   ceramics: { en: 'Ceramics', zh: '器物' }, shaped: { en: 'Shaped', zh: '坯' }, inKiln: { en: 'In kiln', zh: '入窑' }, finished: { en: 'Finished', zh: '成器' },
   none: { en: 'none', zh: '无' },
@@ -29576,7 +29554,6 @@ const UI = {
   hmFd: { en: ' (face-down)', zh: '（暗置）' },
   hmSupply: { en: 'Heat marker in supply', zh: '火标在手' },
   kmOn: { en: 'Kiln Master on {c}', zh: '窑工标在{c}' },
-  collapse: { en: 'Collapse', zh: '收起' }, expand: { en: 'Expand', zh: '展开' },
   // contributions (firing step 1)
   ctTitle: { en: 'Choose your Contribution', zh: '暗选控火' },
   ctSub: { en: 'Firing step 1. Everyone chooses in secret at the same time. All cards are revealed together once every firing player has chosen; Wood is paid then (step 2).', zh: '烧窑步骤一。各玩家同时暗选。所有参与烧窑者选定后一齐亮牌，并于此时付柴（步骤二）。' },
@@ -29604,7 +29581,7 @@ const UI = {
   availN: { en: '{n} available', zh: '可派{n}名' },
   legalN: { en: '{a} of {b} open', zh: '可派{a}/{b}处' },
   personalSpace: { en: 'your space {i} of 2', zh: '你的第{i}工位' },
-  lockedN: { en: '{n} locked', zh: '{n}处封存' },
+  notAddedN: { en: 'space 2 not added yet', zh: '第二工位尚未添设' },
   unavailable: { en: 'Unavailable ({n})', zh: '不可派（{n}）' },
   split: { en: 'Split {n} between Clay and Wood', zh: '共{n}份，泥柴任意组合' },
   bonus: { en: 'Then pay 1 Coin for +1 Clay +1 Wood', zh: '然后付1铜钱，再得1泥1柴' },
@@ -29640,16 +29617,17 @@ const UI = {
   queue: { en: 'Queue', zh: '顺序' },
   hmYour: { en: 'Your face-down marker', zh: '你的暗置火标' },
   hmPlus: { en: 'Turn to +1', zh: '翻为+1' }, hmMinus: { en: 'Turn to −1', zh: '翻为−1' }, hmReturn: { en: 'Return marker', zh: '收回火标' },
-  beforeFire: { en: 'Before Fire: {n}', zh: '未计窑火：{n}' },
-  ifFire: { en: 'Quality by Fire card (cards left)', zh: '按窑火牌的品质（余张）' },
-  chanceLine: { en: '{m} of {t} cards give Masterpiece', zh: '{t}张中{m}张得臻品' },
-  impFormula: { en: 'Imperial Kiln: Kiln Die {d} + Fire ? + modifier {m} + marker', zh: '御窑：窑骰{d} + 窑火? + 御窑修正{m} + 火标' },
+  hmTurn: { en: 'Turn or return your marker', zh: '翻定或收回火标' },
+  hmPlusD: { en: 'Adds +1 to this ceramic’s Actual Heat.', zh: '该器物实际火候+1。' },
+  hmMinusD: { en: 'Adds −1 to this ceramic’s Actual Heat.', zh: '该器物实际火候−1。' },
+  hmReturnD: { en: 'The marker goes back to your supply; this ceramic gets no marker.', zh: '火标收回，该器物不带火标。' },
+  hmRule: { en: 'A Heat marker adds its value to that ceramic’s Actual Heat only. It is not a zone modifier: it stacks with Kiln Furniture and stays in place for a Second Firing.', zh: '火标只加于该器物的实际火候，不是温区修正：可与窑具叠加，复烧时仍留在原处。' },
   kmNot: { en: 'You do not own Kiln Master.', zh: '你未拥有“窑工”。' },
   aqTitle: { en: 'After-Quality abilities', zh: '定品后结算' },
   aqSub: { en: 'Firing step 10. Use them in any order you like; the options are checked again after each use.', zh: '烧窑步骤十。顺序由你自定；每次使用后重新核验。' },
   aqYour: { en: 'Your ceramics in this firing', zh: '你本窑的器物' },
   aqCost: { en: 'Cost', zh: '费用' }, free: { en: 'free', zh: '免费' },
-  aqGeRes: { en: '{c}: {a} → {b}, gains a Crackle marker. Certain.', zh: '{c}：{a} → {b}，置开片标。结果确定。' },
+  aqGeRes: { en: '{a} → {b}, gains a Crackle marker.', zh: '{a} → {b}，置开片标。' },
   aqSFRes: { en: 'Reveal 1 extra Fire card and recalculate; the new Quality stands even if worse.', zh: '另翻1张窑火牌重算；结果更差也须接受。' },
   aqDone: { en: 'Done — decline the rest', zh: '完成——其余不使用' },
   useOn: { en: 'Use <b>{a}</b> on <b>{c}</b>', zh: '对<b>{c}</b>使用<b>{a}</b>' },
@@ -29688,6 +29666,7 @@ const UI = {
   waiting: { en: 'Waiting for {name}…', zh: '等候{name}……' },
   watching: { en: 'You can browse the table while you wait.', zh: '等候时可浏览桌面。' },
   logT: { en: 'Recent public events', zh: '近期公开事件' },
+  logNewest: { en: 'newest first', zh: '最新在前' },
   liveLbl: { en: 'Screen reader hears', zh: '读屏播报' },
 };
 const u = (k, v) => ((k === 'coinsN' || k === 'priceN') && v && +v.n === 1 ? tx(UI.coin1) : fmt(UI[k] ? tx(UI[k]) : k, v));
@@ -29802,6 +29781,8 @@ const REASONS = {
   declaration_does_not_satisfy: { en: 'this declaration does not satisfy the Order; another would', zh: '此声明不满足该委托，另有声明可满足' },
   wrong_count: { en: 'wrong number of ceramics', zh: '器物数量不符' },
 };
+/* Rule-error text comes straight from labels.ruleErrors (src/game/ruleErrorText.ts). D7 wording for
+   PERSONAL_SPACE_LOCKED lives there; the error code itself is unchanged. */
 function errText(code, details, extra = {}) {
   const tpl = L.ruleErrors[code]; if (!tpl) return code;
   const v = { ...(details || {}), ...extra };
@@ -29817,47 +29798,17 @@ const crowns = (n) => `<span class="chip gold" title="${zh() ? '御令' : 'Crown
 function note(html) { return `<div class="note">${html}</div>`; }
 const N = (en, zhs) => note(zh() ? zhs : en);
 
-/* ================= proposed selectors (not yet in DESIGN §5.4) =================
-   Computed here only so the screens can be reviewed. Production code must read these from
-   selectors.ts (fireDeckComposition, fireOutcomes) instead of computing them in React. */
-const PROPOSED = {
-  fireDeckComposition() {
-    const left = { '-2': 0, '-1': 0, '0': 0, '1': 0, '2': 0 };
-    for (const v of L.fireDeck) left[v]++;
-    for (const v of G.fireDiscard) left[v]--;
-    if (G.firing && G.firing.fireModifier != null) left[G.firing.fireModifier]--;
-    return { left, total: Object.values(left).reduce((a, b) => a + b, 0) };
-  },
-  quality(diff) { return SEL.heatLadder.qualityByHeatDifference.find((r) => r.maxDifference == null || diff <= r.maxDifference).quality; },
-  fromPreview(pv) { // heatPreviews(id).qualityByFire joined with the deck composition
-    const comp = this.fireDeckComposition();
-    return [-2, -1, 0, 1, 2].map((f) => ({ fire: f, cardsLeft: comp.left[f], quality: pv.qualityByFire[f] }));
-  },
-  markerChoices(ceramicId) {
-    const c = cer(ceramicId); const pl = c.placement; const lad = SEL.heatLadder;
-    let base;
-    if (pl.kiln === 'imperial') base = lad.kilnDie + pl.imperialModifier;
-    else {
-      const ks = SEL.boardView.kilnSpaces.find((s) => s.spaceId === pl.spaceId);
-      base = lad.baseHeat + (ks.kilnFurniture && ks.kilnFurniture.underCeramicId === ceramicId ? ks.kilnFurniture.modifier : ks.zoneModifier);
-    }
-    const pref = L.glazes[c.glaze].preferredHeat; const comp = this.fireDeckComposition();
-    return [['1', 1], ['-1', -1], ['return', 0]].map(([k, m]) => ({
-      choice: k, heatBeforeFire: base + m,
-      outcomes: [-2, -1, 0, 1, 2].map((f) => ({ fire: f, cardsLeft: comp.left[f], quality: this.quality(Math.abs(base + m + f - pref)) })),
-    }));
-  },
-};
+/* Open Fire discard: the only Fire-deck information on screen (owner decision D4). */
+function fireDiscardHtml(list) { return `<span class="discard">${list.length ? list.map((v) => fireCard(v)).join('') : `<span class="small faint">${u('discardNone')}</span>`}</span>`; }
 
 /* ================= app state (per moment) ================= */
 const A = {};
-function ownDefault() { const vp = VPS[R.vp]; return ['work', 'look', 'final', 'wait'].includes(decisionKind()) && !vp.phone; }
 function resetApp() {
   load();
   const dk = decisionKind();
   A.tab = { work: 'workshop', look: 'orders', contrib: 'kiln', hm: 'kiln', aq: 'kiln', orders: 'orders', trim: 'orders', final: 'table', wait: 'table' }[dk];
   A.sheet = { work: 'peek', look: 'open', contrib: 'peek', hm: 'peek', aq: 'open', orders: 'open', trim: 'open', final: 'peek', wait: 'peek' }[dk];
-  A.ownOpen = ownDefault();
+  A.board = VIEWER; A.logOpen = false;
   A.worker = null; A.loc = null; A.sent = null; A.announce = null;
   A.d = { my: { clay: 2, bonus: false }, fd: { shape: 'bowl', deco: 'carved' }, gl: { vessels: [], glaze: {}, dest: {}, marker: null }, cm: { slot: null, gain: 'clay' }, gh: { tech: null }, look: null, ct: { card: null, fl: false }, hm: null, aq: null, ord: null, grp: 0, decl: {}, trim: [] };
   if (dk === 'work') {
@@ -29873,6 +29824,7 @@ function resetApp() {
 }
 
 /* ================= top bar ================= */
+const LOG_ICON = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 2.5h8M3 5.5h8M3 8.5h8M3 11.5h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
 function topBar() {
   const pk = phaseKind();
   const pi = { start: 0, work: 1, firing: 2, orders: 3, cleanup: 4, final: 5 }[pk];
@@ -29880,13 +29832,15 @@ function topBar() {
   const stepNo = pk === 'firing' ? STEP_OF[G.phase.type] : null;
   const finalLi = pk === 'final' ? `<li class="on" aria-current="step"><span class="pl">${esc(tx(L.firingSteps.find((x) => x.en === 'Final scoring')))}</span></li>` : '';
   const phases = finalLi + L.roundPhases.map((p, i) => `<li class="${i === pi ? 'on' : i < pi ? 'done' : ''}"${i === pi ? ' aria-current="step"' : ''} title="${esc(tx(p))}"><span class="pn" aria-hidden="true">${i + 1}</span><span class="pl">${esc(tx(p))}</span>${i === pi && stepNo ? ` <span class="st">· ${u('stepN', { n: stepNo })}</span>` : ''}</li>`).join('');
+  const shownBoard = A.board && G.players[A.board] ? A.board : VIEWER;
   const chain = ORDER().map((pid, i) => {
     const ps = PS(pid); const acting = prompt.actorIds.includes(pid);
     const fr = SEL.finalResult; const vpShown = fr ? fr.scores[pid].total : ps.recordedVp;
     const kshort = zh() ? kilnName(P(pid).kilnId) : L.kilns[P(pid).kilnId].en.replace(/ Kiln$/, '');
-    return `${i ? '<span class="sep" aria-hidden="true">›</span>' : ''}<span class="seat${acting ? ' acting' : ''}${pid === VIEWER ? ' me' : ''}" style="--pc:${pc(pid)}" title="${esc(kilnName(P(pid).kilnId))}${acting ? ' · ' + esc(u('acting')) : ''}">
+    // D2: the seat chips are the public opponent strips; D1: clicking one opens that player's board.
+    return `${i ? '<span class="sep" aria-hidden="true">›</span>' : ''}<button class="seat${acting ? ' acting' : ''}${pid === VIEWER ? ' me' : ''}" style="--pc:${pc(pid)}" data-act="board" data-v="${pid}" aria-pressed="${shownBoard === pid}" title="${esc((pid === VIEWER ? u('yourWorkshop') : u('openBoard', { name: P(pid).displayName })) + ' · ' + kilnName(P(pid).kilnId))}${acting ? ' · ' + esc(u('acting')) : ''}">
       <span class="sw"></span>${ps.isFirstPlayer ? `<span class="fp" title="${esc(u('firstPlayer'))}">${u('first')}</span>` : ''}<b>${pn(pid)}</b><span class="kn muted">${esc(kshort)}</span>
-      <span class="num"${fr ? ` title="${esc(u('finalTotal'))}"` : ''}><b>${vpShown}</b>${sp()}${u('vp')}${fr ? ` <span class="small muted">${u('finalShort')}</span>` : ''}</span><span class="hc num" title="${esc(u('handsPublic'))}"><span class="cardback"></span>${ps.orderHandCount}</span>${acting ? `<span class="act" aria-label="${esc(u('acting'))}">●</span>` : ''}</span>`;
+      <span class="num"${fr ? ` title="${esc(u('finalTotal'))}"` : ''}><b>${vpShown}</b>${sp()}${u('vp')}${fr ? ` <span class="small muted">${u('finalShort')}</span>` : ''}</span><span class="hc num" title="${esc(u('handsPublic'))}"><span class="cardback"></span>${ps.orderHandCount}</span>${acting ? `<span class="act" aria-label="${esc(u('acting'))}">●</span>` : ''}</button>`;
   }).join('');
   const die = G.kilnDie ? G.kilnDie.value : '–';
   return `<header class="ko-top top">
@@ -29894,7 +29848,9 @@ function topBar() {
     <div class="round">${u('roundN', { n: G.round })}</div>
     <ol class="phases" aria-label="${zh() ? '阶段' : 'Phases'}">${phases}</ol>
     <span class="die-chip" title="${esc(u('kilnDie'))}"><span class="dl">${u('kilnDie')}</span><span class="die" data-motion="die">${die}</span></span>
-    <div class="chain" aria-label="${zh() ? '派工顺序' : 'Work order'}">${chain}</div>
+    <div class="chain" role="group" aria-label="${zh() ? '派工顺序' : 'Work order'}">${chain}</div>
+    <button class="logbtn" data-act="log" aria-expanded="${!!A.logOpen}" aria-controls="ko-log" aria-label="${esc(u('gameLog'))}">${LOG_ICON}<span class="ll">${u('gameLog')}</span><span class="ls">${u('gameLogShort')}</span><span class="car" aria-hidden="true">${A.logOpen ? '▴' : '▾'}</span></button>
+    <div class="logpanel" id="ko-log" role="region" aria-labelledby="ko-log-h"${A.logOpen ? '' : ' hidden'}><h3 id="ko-log-h">${u('logT')} <span>${u('logNewest')}</span></h3>${logList()}</div>
   </header>`;
 }
 
@@ -29911,7 +29867,7 @@ function kilnMini() {
   return `<button class="kmini" data-act="tab" data-v="kiln" title="${esc(u('openKiln'))}">
     <span class="grp"><span class="kglyph" aria-hidden="true">${glyph}</span><strong>${u('sharedKiln')}</strong>${u('kmActive', { a: lay.activeSpaces.length, z: zc, c: lay.coveredSpaces.length, f: free })}</span>
     <span class="grp">${u('kilnDie')} <span class="die">${G.kilnDie.value}</span></span>
-    <span class="grp">${u('fireDeckN', { n: SEL.boardView.counts.fireDeck })} · ${u('discardOpen')} <span class="discard">${G.fireDiscard.map((v) => fireCard(v)).join('')}</span></span>
+    <span class="grp">${u('discardOpen')} ${fireDiscardHtml(G.fireDiscard)}</span>
     <span class="go">${u('openKiln')} →</span></button>`;
 }
 function locCard(cl) {
@@ -30074,7 +30030,7 @@ function idleStage() {
     const cs = Object.values(fs.ceramics);
     last = `<span><b>${u('lastFiring', { r: fs.round })}</b></span><span>${u('kilnDie')} <b>${fs.kilnDie}</b> + ${Object.entries(fs.contributions).map(([p, c]) => `${pn(p)} ${esc(tx(L.contributionCards[c.card]))}`).join(zh() ? '、' : ', ')} = ${u('baseHeat')} <b>${fs.baseHeat}</b></span><span>${u('fire')} ${fireCard(fs.fireModifier)} → ${u('globalHeat')} <b>${fs.globalHeat}</b></span><span class="cerrow">${cs.map((c) => (cer(c.ceramicId) ? cchip(c.ceramicId, { sz: 30, q: c.quality }) : `<span class="chip q q-${c.quality}">${esc(c.ceramicId)} ${esc(qName(c.quality))}</span>`)).join('')}</span>`;
   }
-  return `<div class="stage"><div class="banner"><h3>${u('idleTitle')}</h3><span class="go">${u('kilnDie')} · ${u('thisRound')} <span class="die">${G.kilnDie.value}</span> · ${u('fireDeckN', { n: SEL.boardView.counts.fireDeck })} · ${u('discardOpen')} <span class="discard" style="display:inline-flex">${G.fireDiscard.map((v) => fireCard(v)).join('')}</span></span></div>
+  return `<div class="stage"><div class="banner"><h3>${u('idleTitle')}</h3><span class="go">${u('kilnDie')} · ${u('thisRound')} <span class="die">${G.kilnDie.value}</span> · ${u('discardOpen')} <span style="display:inline-flex">${fireDiscardHtml(G.fireDiscard)}</span></span></div>
     <div class="idle"><div class="last">${last}</div></div></div>`;
 }
 
@@ -30119,63 +30075,7 @@ function equation() {
     <div class="eq eq2">${baseTerm(true)}<span class="op">+</span>
     <div class="term"><span class="lab">${u('fire')}</span>${lad.fireModifier == null ? `<span class="firec big back" data-motion="fire">?</span>` : `<span data-motion="fire">${fireCard(lad.fireModifier, true)}</span>`}</div><span class="op">=</span>
     <div class="term key glob"><span class="lab">${u('globalHeat')}</span><b>${lad.globalHeat ?? '?'}</b></div></div>
-    <div class="term deck"><span class="lab">${u('fireDeckN', { n: SEL.fireDeckCount })} · ${u('discardOpen')}</span><span class="discard">${SEL.fireDiscard.map((v) => fireCard(v)).join('')}</span></div></div>`;
-}
-function heatLadder() {
-  const lad = SEL.heatLadder; const post = lad.fireModifier != null;
-  const hv = (c) => (post ? c.finalActualHeat : (c.heatBeforeFire ?? (SEL.heatPreviews.find((p) => p.ceramicId === c.ceramicId) || {}).heatBeforeFire ?? null));
-  const known = lad.chips.map(hv).filter((v) => v != null);
-  const lo = Math.min(0, ...known), hi = Math.max(7, ...known);
-  const cols = []; for (let h = lo; h <= hi; h++) cols.push(h);
-  const hasUnknown = lad.chips.some((c) => hv(c) == null);
-  const ql = QL[R.lang];
-  let html = `<div class="hd" aria-hidden="true"></div>` + cols.map((h) => {
-    const flags = [];
-    if (h === lad.baseHeat) flags.push(`<span class="flag base">${u('baseHeat')}</span>`);
-    if (lad.globalHeat != null && h === lad.globalHeat) flags.push(`<span class="flag glob">${u('globalHeat')}</span>`);
-    return `<div class="hd${h === lad.baseHeat ? ' isbase' : ''}${lad.globalHeat === h ? ' isglob' : ''}">${flags.join('')}${h}</div>`;
-  }).join('') + (hasUnknown ? `<div class="hd unk-h"><span class="flag">${lad.baseHeat == null ? u('noBase') : u('hidden')}</span>?</div>` : '');
-  for (const band of lad.preferredHeatBands) {
-    html += `<div class="rl" style="--g:var(--glz-${band.glaze})"><b><i></i>${esc(glazeName(band.glaze))}</b><small class="muted">${u('prefers', { n: band.preferredHeat })}</small></div>`;
-    for (const h of cols) {
-      const d = Math.abs(h - band.preferredHeat); const q = PROPOSED.quality(d);
-      const here = lad.chips.filter((c) => c.glaze === band.glaze && hv(c) === h);
-      const ghosts = post ? lad.chips.filter((c) => c.glaze === band.glaze && c.junAdjustment && c.actualHeat === h) : [];
-      const inner = ghosts.map((c) => `<span class="ghost" title="${esc(c.ceramicId + ' · ' + (zh() ? '钧窑调火前' : 'before Jun') + ' ' + sgn(c.junAdjustment))}">${zh() ? '钧' : 'Jun'}</span>`).join('') +
-        here.map((c) => cchip(c.ceramicId, { sz: 26, showQ: false, crkBadge: false, badge: c.secondFiring ? `<span class="chip warn">${zh() ? '复' : '2nd'}</span>` : '' })).join('');
-      html += `<div class="lc d${Math.min(d, 3)}" style="--g:var(--glz-${band.glaze})" title="${esc(qName(q))} · Δ${d}">${inner}<span class="ql">${ql[q]}</span></div>`;
-    }
-    if (hasUnknown) html += `<div class="lc unk">${lad.chips.filter((c) => c.glaze === band.glaze && hv(c) == null).map((c) => cchip(c.ceramicId, { sz: 26, showQ: false, badge: markerBadge((cer(c.ceramicId) || {}).heatMarker) })).join('')}</div>`;
-  }
-  const legend = ['masterpiece', 'fine', 'standard', 'flawed'].map((q, i) => `<span><i class="lc d${i}" style="--g:var(--glz-celadon)"></i><b>${ql[q]}</b> ${esc(qName(q))} Δ${i < 3 ? i : '3+'}</span>`).join('');
-  return `<div class="ladder"><div class="lad-h"><h3>${u('heatLadder')}</h3><span class="legend">${legend}</span></div>
-    <p class="small muted" style="margin:0 0 6px">${post ? u('ladderPost') : lad.baseHeat == null ? u('ladderStep1') : u('ladderPre')}</p>
-    <div class="lgrid${hasUnknown ? ' has-unk' : ''}" style="--cols:${cols.length}" role="img" aria-label="${esc(u('heatLadder') + ' — ' + u('ledgerSub'))}">${html}</div></div>`;
-}
-function heatLedger() {
-  const lad = SEL.heatLadder; const post = lad.fireModifier != null;
-  const where = (c) => (c.kiln === 'imperial' ? u('imperial') : spaceName(c.spaceId)) + (c.positionSource === 'kiln_furniture' ? (zh() ? ' · 窑具' : ' · Furniture') : '');
-  const own = (pid) => `<span class="sw" style="--pc:${pc(pid)}"></span>`;
-  let head, rows;
-  if (lad.baseHeat == null) {
-    const byId = Object.fromEntries(SEL.boardView.kilnSpaces.map((s) => [s.spaceId, s]));
-    head = ['colCer', 'colWhere', 'colPos', 'colMarker', 'colPref'].map((k) => `<th scope="col">${u(k)}</th>`).join('');
-    rows = lad.chips.map((c) => { const kc = cer(c.ceramicId); const ks = c.spaceId ? byId[c.spaceId] : null; const pos = c.kiln === 'imperial' ? (kc.placement ? sgn(kc.placement.imperialModifier) : '–') : ks ? sgn(ks.effectiveModifier) : '–';
-      return `<tr class="${c.ownerId === VIEWER ? 'mine' : ''}"><th scope="row">${own(c.ownerId)}${esc(c.ceramicId)} ${esc(cerShort(kc))}</th><td>${esc(where(c))}</td><td>${pos}</td><td>${markerBadge(kc.heatMarker) || '–'}</td><td>${c.preferredHeat}</td></tr>`; }).join('');
-  } else if (post) {
-    head = ['colCer', 'colWhere', 'colSrc', 'colPos', 'colMarker', 'colJun', 'colActual', 'colPref', 'colDiff', 'colQ'].map((k) => `<th scope="col">${u(k)}</th>`).join('');
-    rows = lad.chips.map((c) => `<tr class="${c.ownerId === VIEWER ? 'mine' : ''}"><th scope="row">${own(c.ownerId)}${esc(c.ceramicId)} ${esc(cerShort(cer(c.ceramicId)))}</th><td>${esc(where(c))}</td><td>${c.heatSource}${c.kiln === 'imperial' ? (zh() ? '（窑骰+窑火）' : ' (Die + Fire)') : ''}</td><td>${sgn(c.positionModifier)}</td><td>${sgn(c.heatMarker)}</td><td>${c.junAdjustment ? sgn(c.junAdjustment) : '–'}</td><td><b>${c.finalActualHeat}</b></td><td>${c.preferredHeat}</td><td>${c.heatDifference}</td><td class="q-${c.quality}"><b>${esc(qName(c.quality))}</b></td></tr>`).join('');
-  } else {
-    const comp = PROPOSED.fireDeckComposition();
-    head = `<th scope="col">${u('colCer')}</th><th scope="col">${u('colWhere')}</th><th scope="col">${u('colMarker')}</th><th scope="col">${u('colBefore')}</th><th scope="col">${u('colPref')}</th>` + [-2, -1, 0, 1, 2].map((f) => `<th scope="col">${u('fire')} ${sgn(f)}<br><span class="faint">${u('cardsLeft', { n: comp.left[f] })}<span class="dagger">†</span></span></th>`).join('');
-    rows = lad.chips.map((c) => {
-      const pv = SEL.heatPreviews.find((p) => p.ceramicId === c.ceramicId); const kc = cer(c.ceramicId);
-      return `<tr class="${c.ownerId === VIEWER ? 'mine' : ''}"><th scope="row">${own(c.ownerId)}${esc(c.ceramicId)} ${esc(cerShort(kc))}</th><td>${esc(where(c))}</td><td>${markerBadge(kc.heatMarker) || '–'}</td><td>${pv.heatBeforeFire ?? '?'}</td><td>${c.preferredHeat}</td>` +
-        [-2, -1, 0, 1, 2].map((f) => { const q = pv.qualityByFire && pv.qualityByFire[f]; return `<td class="${q ? 'q-' + q : 'faint'}">${q ? esc(qName(q)) : '?'}</td>`; }).join('') + '</tr>';
-    }).join('');
-  }
-  return `<div class="blk" style="margin:0"><div class="blk-h"><h3>${u('ledgerT')}</h3><span class="meta">${u('ledgerSub')}</span></div>
-    <div class="calc-wrap"><table class="calc"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div></div>`;
+    <div class="term deck"><span class="lab">${u('discardOpen')}</span>${fireDiscardHtml(SEL.fireDiscard)}</div></div>`;
 }
 function firingStage() {
   const dk = decisionKind();
@@ -30184,9 +30084,9 @@ function firingStage() {
   return `<div class="stage">
     <div class="banner"><span class="eyebrow">${mine ? u('yourTurn') + ' · ' : ''}${u('stepN', { n: STEP_OF[G.phase.type] })}/12</span><h3>${esc(title)}</h3>${G.phase.type === 'firing_contributions' ? submitRow() : queueRow()}<span class="go">${mine ? (zh() ? '在右侧面板中决断 →' : 'Decide in the panel →') : ''}</span></div>
     ${stepper()}${equation()}
-    <div class="stage-main"><div>${kilnBlock({ static: true })}</div><div>${heatLadder()}</div></div>
-    <div class="stage-foot">${heatLedger()}
-    ${N('<b>Motion hooks.</b> The Fire card, kiln, ceramics and die carry <code>data-motion</code>. Phase 5 animates the Fire reveal and chips moving along the ladder; reduced-motion users get the end state. The dark kiln body is the WebGL mount (<code>data-webgl-mount="shared-kiln"</code>).', '<b>动效挂钩。</b>窑火牌、窑、器物与窑骰均带 <code>data-motion</code>。第5阶段为翻窑火与器物沿火候梯移动加动画；减少动态效果的用户直接看到结果。深色窑身即 WebGL 挂载点（<code>data-webgl-mount="shared-kiln"</code>）。')}</div></div>`;
+    <div class="stage-main">${kilnBlock({ static: true })}</div>
+    <div class="stage-foot">
+    ${N('<b>Only what the table shows (D3, D4).</b> The kiln shows each ceramic’s position, markers and modifiers, and after Quality the Quality a player would record. There is no heat ladder, Heat ledger, Fire odds or preview; Actual Heat numbers appear only in the Game log. <b>Motion hooks:</b> the Fire card, kiln, ceramics and die carry <code>data-motion</code>; phase 5 animates the Fire reveal and the Quality appearing on each ceramic, and reduced-motion users get the end state. The dark kiln body is the WebGL mount (<code>data-webgl-mount="shared-kiln"</code>).', '<b>只显示桌面所见（D3、D4）。</b>窑中显示每件器物的位置、火标与修正；定品后显示玩家会记下的品质。不设火候梯、火候账、窑火概率或预览；实际火候数值只见于记录。<b>动效挂钩：</b>窑火牌、窑、器物与窑骰均带 <code>data-motion</code>；第5阶段为翻窑火与品质显现加动画，减少动态效果的用户直接看到结果。深色窑身即 WebGL 挂载点（<code>data-webgl-mount="shared-kiln"</code>）。')}</div></div>`;
 }
 
 /* ================= player boards ================= */
@@ -30199,20 +30099,26 @@ function techSlots(pid, mini) {
     return `<div class="tslot" style="--dc:${DISC_COLOR[d]}" title="${esc(tx(L.techs[t.techId].shortText))}"><span class="dn">${esc(discName(d))}</span><b>${esc(techName(t.techId))}</b><span class="${t.ready ? '' : 'faint'}">${state}</span></div>`;
   }).join('')}</div>`;
 }
-function personalSpaces(pid, interactive, rows) {
+/* D7: the second space is added by learning a Tech of the matching discipline; never “locked”. */
+const SPACE_DISC = { form_decorate: 'workshop', glaze_load: 'glazing_loading' };
+function personalSpaces(pid, interactive) {
   const ps = PS(pid);
   const grp = (loc, cls) => {
     const po = interactive ? placementFor(loc) : null; const w = po && po.workers.find((x) => x.kind === A.worker);
     const canPlace = interactive && w && w.legal;
-    const slots = ps.personalSpaces.filter((s) => s.locationId === loc).map((s) => {
-      if (!s.unlocked) return `<span class="slot lock" title="${esc(u('lock'))}">${u('lock')}</span>`;
+    const sps = ps.personalSpaces.filter((s) => s.locationId === loc);
+    const slots = sps.map((s) => {
+      if (!s.unlocked) return `<span class="slot add"><span class="plus" aria-hidden="true">+</span><span>${u(loc === 'form_decorate' ? 'addFD' : 'addGL')}</span></span>`;
       if (s.occupant) return `<span class="slot">${wk(pid, s.occupant.kind)}</span>`;
       if (canPlace && po.nextSpaceIndex === s.spaceIndex) return `<button class="slot${A.loc === loc ? ' sel' : ''}" data-act="loc" data-v="${loc}" aria-label="${esc(u('place', { w: workerName(A.worker) }) + ' · ' + locName(loc))}">+</button>`;
       return `<span class="slot" aria-label="${esc(u('empty'))}"></span>`;
     }).join('');
-    return `<div class="psp ${cls}"><span>${esc(locName(loc))}</span><div class="slots">${slots}</div></div>`;
+    const second = sps.find((s) => s.spaceIndex === 1);
+    const tech = second && second.unlocked ? ps.techs.find((t) => t.discipline === SPACE_DISC[loc]) : null;
+    const added = second && second.unlocked ? `<span class="added">${tech ? u('addedBy', { t: esc(techName(tech.techId)) }) : ''}</span>` : '';
+    return `<div class="psp ${cls}"><span>${esc(locName(loc))}</span><div class="slots">${slots}</div>${added}</div>`;
   };
-  return `<div class="pspaces${rows ? ' rows' : ''}">${grp('form_decorate', 'fd')}${grp('glaze_load', 'gl')}</div>`;
+  return `<div class="pspaces">${grp('form_decorate', 'fd')}${grp('glaze_load', 'gl')}</div>`;
 }
 function workersRow(pid) {
   return Object.values(P(pid).workers).sort((a, b) => (a.kind === 'shifu' ? -1 : b.kind === 'shifu' ? 1 : 0)).map((w) => wk(pid, w.kind, { dim: !!w.placement, title: w.placement ? locName(w.placement.locationId) : '' })).join('');
@@ -30238,60 +30144,45 @@ function hmLine(pid) {
   parts.push(imp.kilnGained ? `${u('imperialKiln')}${C()}${imp.kilnCeramic ? esc(imp.kilnCeramic.id) : u('impEmpty')}` : `${u('imperialKiln')}${C()}${zh() ? '尚无' : 'not yet'}`);
   return parts.join(' · ');
 }
-function oppStrip(pid) {
-  const ps = PS(pid); const h = SEL.handLimitStatus[pid];
+/* One full Kiln Player Board. Other players' boards show public information only: the hand is card backs and a count. */
+function boardFull(pid) {
+  const ps = PS(pid); const h = SEL.handLimitStatus[pid]; const me = pid === VIEWER;
   const comp = ps.completedOrders.length ? ps.completedOrders.map((o) => `<span class="chip">${o.orderId} · ${vpN(o.vp)}</span>`).join('') : `<span class="faint small">${u('none')}</span>`;
-  return `<article class="card kpb" style="--pc:${pc(pid)}" aria-label="${pn(pid)}">
-    <div class="kpb-h"><h4>${pname(pid)}</h4>${ps.isFirstPlayer ? `<span class="chip gold">${u('firstPlayer')}</span>` : ''}<span class="chip">${u('recog')} ${ps.recognition}/4</span><span class="vp">${ps.recordedVp}${sp()}<small>${u('vp')}</small></span></div>
+  const hand = me
+    ? `<span class="backs">${'<span class="cardback"></span>'.repeat(Math.min(h.held, 6))}</span><span class="chip priv">${u('handN', { n: h.held, l: h.limit })} · ${u('onlyYou')}</span>`
+    : `<span class="backs">${'<span class="cardback"></span>'.repeat(Math.min(h.held, 6))}</span><span class="small">${u('hiddenN', { n: h.held })}</span>`;
+  return `<article class="card kpb" style="--pc:${pc(pid)}" id="board-panel" aria-label="${esc(P(pid).displayName + ' · ' + u('boardsLbl'))}" data-motion="board">
+    <div class="kpb-h"><h4>${pname(pid)}</h4>${ps.isFirstPlayer ? `<span class="chip gold">${u('firstPlayer')}</span>` : ''}<span class="chip">${u('recog')} ${ps.recognition}/4</span>${me ? '' : `<span class="chip">${u('publicOnly')}</span>`}<span class="vp">${ps.recordedVp}${sp()}<small>${u('vp')}</small></span></div>
     <div class="pgrid"><div style="display:grid;gap:6px;min-width:0">
-      ${kilnTrad(pid, true)}
+      ${kilnTrad(pid)}
       <div class="prow"><span class="lab">${u('resources')}</span>${resRow(pid)}</div>
-      <div class="prow"><span class="lab">${u('workers')}</span><span class="wks" style="display:inline-flex;gap:3px">${workersRow(pid)}</span><span class="small muted">${u('workersLeft', { n: ps.availableWorkerIds.length })}</span></div>
-      <div class="prow"><span class="lab">${u('hand')}</span><span class="backs">${'<span class="cardback"></span>'.repeat(Math.min(h.held, 6))}</span><span class="small">${u('hiddenN', { n: h.held })}</span></div>
-    </div><div style="display:grid;gap:6px;min-width:0">
-      ${personalSpaces(pid, false)}
+      <div class="prow"><span class="lab">${u('workers')}</span><span style="display:inline-flex;gap:3px">${workersRow(pid)}</span><span class="small muted">${u('workersLeft', { n: ps.availableWorkerIds.length })}</span></div>
+      <div class="prow"><span class="lab">${u('hand')}</span>${hand}</div>
+    </div><div style="display:grid;gap:6px;min-width:0;align-content:start">
+      ${personalSpaces(pid, me && isWorkTurn())}
       ${techSlots(pid)}
     </div></div>
-    ${ceramicsRow(pid, 28)}
+    ${ceramicsRow(pid, me ? 32 : 30)}
     <div class="prow small muted">${hmLine(pid)}</div>
     <div class="prow"><span class="lab">${u('completed')}</span>${comp}</div>
   </article>`;
 }
-function techList(pid) {
-  const owned = PS(pid).techs;
-  return `<div class="tlist">${['workshop', 'glazing_loading', 'firing'].map((d) => {
-    const t = owned.find((x) => x.discipline === d);
-    if (!t) return `<div class="tl empty" style="--dc:${DISC_COLOR[d]}"><span>${esc(discName(d))} · ${u('emptySlot')}</span></div>`;
-    const state = t.oncePerRound ? (t.ready ? u('ready') : u('used')) : u('ongoing');
-    return `<div class="tl" style="--dc:${DISC_COLOR[d]}" title="${esc(discName(d) + ' · ' + tx(L.techs[t.techId].shortText))}"><span class="sr-only">${esc(discName(d))}${C()}</span><b>${esc(techName(t.techId))}</b><span class="${t.ready ? 'ok' : 'faint'}">${state}</span></div>`;
-  }).join('')}</div>`;
+const HOME_ICON = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M1.5 6.5 7 2l5.5 4.5M3 5.5v6.5h3V9h2v3h3V5.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>';
+/* D1: one board area. Your board by default; one tab per other player on the board's top edge; Your workshop returns. */
+function boardArea() {
+  const shown = A.board && G.players[A.board] ? A.board : VIEWER;
+  const kshort = (pid) => (zh() ? kilnName(P(pid).kilnId) : L.kilns[P(pid).kilnId].en.replace(/ Kiln$/, ''));
+  const home = `<button class="btab home" style="--pc:${pc(VIEWER)}" data-act="board" data-v="${VIEWER}" aria-pressed="${shown === VIEWER}" aria-controls="board-panel">${HOME_ICON}${u('yourWorkshop')}</button>`;
+  const others = ORDER().filter((pid) => pid !== VIEWER).map((pid) => `<button class="btab" style="--pc:${pc(pid)}" data-act="board" data-v="${pid}" aria-pressed="${shown === pid}" aria-controls="board-panel" aria-label="${esc(u('openBoard', { name: P(pid).displayName }))}">${pn(pid)}<span class="kn">${esc(kshort(pid))}</span></button>`).join('');
+  return `<div class="boards"><div class="btabs" role="group" aria-label="${esc(u('boardsLbl'))}">${home}${others}</div>${boardFull(shown)}</div>`;
 }
-function ownCompact() {
-  const ps = PS(VIEWER); const h = SEL.handLimitStatus[VIEWER];
-  const k = L.kilns[P(VIEWER).kilnId]; const r = P(VIEWER).resources;
-  const open = A.ownOpen;
-  const resShort = ['clay', 'wood', 'coins'].map((x) => `<b>${r[x]}</b>${esc(resName(x))}`).join(zh() ? ' ' : ' · ');
-  return `<section class="own${open ? '' : ' collapsed'}" style="--pc:${pc(VIEWER)}" aria-label="${esc(u('yourBoard'))}">
-    <div class="l1"><strong>${pn(VIEWER)}</strong>${open ? `<span class="chip ${ps.kilnAbilityReady ? 'ok' : 'used'}" title="${esc(tx(k.shortText))}">${esc(tx(k))} · ${esc(tx(k.abilityName))} · ${ps.kilnAbilityReady ? u('ready') : u('used')}</span>` : `<span class="cline">${resShort} · <span class="chip priv" title="${esc(u('onlyYou'))}"><span class="cardback"></span>${h.held}/${h.limit}</span></span>`}<span class="vp">${ps.recordedVp}${sp()}<small>${u('vp')}</small></span><button class="tog" data-act="own" aria-expanded="${open}" aria-label="${esc((open ? u('collapse') : u('expand')) + ' · ' + u('yourBoard'))}" title="${esc((open ? u('collapse') : u('expand')) + ' · ' + u('yourBoard'))}">${open ? '▴' : '▾'}</button></div>
-    ${open ? `<div class="mini">
-      <div class="row1">${resRow(VIEWER)}<span class="wks">${workersRow(VIEWER)}</span><span class="small muted">${u('workersLeft', { n: ps.availableWorkerIds.length })}</span><span class="chip priv" title="${esc(u('onlyYou'))}">${u('hand')} ${h.held}/${h.limit}</span><span class="chip">${u('recog')} ${ps.recognition}/4</span></div>
-      <div class="ogrid">${personalSpaces(VIEWER, isWorkTurn(), true)}${techList(VIEWER)}</div>
-      <div class="hmloc">${hmLine(VIEWER)}</div>
-      ${ceramicsRow(VIEWER, 26)}
-    </div>` : ''}</section>`;
-}
-function ownFull() {
-  const ps = PS(VIEWER); const h = SEL.handLimitStatus[VIEWER];
-  const comp = ps.completedOrders.length ? ps.completedOrders.map((o) => `<span class="chip">${o.orderId} · ${vpN(o.vp)}</span>`).join('') : `<span class="faint small">${u('none')}</span>`;
-  return `<div class="blk only-narrow"><div class="blk-h"><h3>${u('yourBoard')}</h3></div><article class="card kpb" style="--pc:${pc(VIEWER)}">
-    <div class="kpb-h"><h4>${pname(VIEWER)}</h4>${ps.isFirstPlayer ? `<span class="chip gold">${u('firstPlayer')}</span>` : ''}<span class="chip">${u('recog')} ${ps.recognition}/4</span><span class="vp">${ps.recordedVp}${sp()}<small>${u('vp')}</small></span></div>
-    ${kilnTrad(VIEWER)}
-    <div class="prow"><span class="lab">${u('resources')}</span>${resRow(VIEWER)}</div>
-    <div class="prow"><span class="lab">${u('workers')}</span><span style="display:inline-flex;gap:3px">${workersRow(VIEWER)}</span><span class="small muted">${u('workersLeft', { n: ps.availableWorkerIds.length })}</span></div>
-    <div class="prow"><span class="lab">${u('hand')}</span><span class="chip priv">${u('handN', { n: h.held, l: h.limit })} · ${u('onlyYou')}</span></div>
-    ${personalSpaces(VIEWER, isWorkTurn())}${techSlots(VIEWER)}${ceramicsRow(VIEWER, 32)}
-    <div class="prow small muted">${hmLine(VIEWER)}</div>
-    <div class="prow"><span class="lab">${u('completed')}</span>${comp}</div></article></div>`;
+/* Decision pane: a one-row summary of your own board, because it supports the decision. The full board is in the board area. */
+function ownSummary() {
+  const ps = PS(VIEWER); const h = SEL.handLimitStatus[VIEWER]; const r = P(VIEWER).resources;
+  const resShort = ['clay', 'wood', 'coins'].map((x) => `<span><b>${r[x]}</b> ${esc(resName(x))}</span>`).join('');
+  return `<section class="own" style="--pc:${pc(VIEWER)}" aria-label="${esc(u('yourBoard'))}">
+    <div class="l1"><strong>${pn(VIEWER)}</strong><span class="cline">${resShort}<span>${u('workersLeft', { n: ps.availableWorkerIds.length })}</span><span class="chip priv" title="${esc(u('onlyYou'))}"><span class="cardback"></span>${h.held}/${h.limit}</span><span>${u('recog')} ${ps.recognition}/4</span></span><span class="vp">${ps.recordedVp}${sp()}<small>${u('vp')}</small></span><button class="tobd" data-act="board" data-v="${VIEWER}" title="${esc(u('yourWorkshop'))}">${u('yourBoardBtn')} ↓</button></div>
+  </section>`;
 }
 
 /* ================= log ================= */
@@ -30344,7 +30235,7 @@ function evText(e) {
 }
 function logList() {
   const ev = M.recentPublicEvents.slice(-14).reverse();
-  return `<ol class="ledger" aria-label="${esc(u('logT'))}">${ev.map((x) => `<li><span class="rv">#${x.seq}</span><span>${esc(evText(x.event))}</span></li>`).join('')}</ol>`;
+  return `<ol class="ledger" aria-labelledby="ko-log-h">${ev.map((x) => `<li><span class="rv">#${x.seq}</span><span>${esc(evText(x.event))}</span></li>`).join('')}</ol>`;
 }
 
 /* ================= results ================= */
@@ -30389,13 +30280,14 @@ function results() {
 }
 
 /* ================= sections ================= */
-const SEC_TAB = { results: 'table', table: 'table', progress: 'table', orders: 'orders', kiln: 'kiln', firing: 'kiln', workshops: 'workshop', log: 'workshop' };
+const SEC_TAB = { results: 'table', table: 'table', progress: 'table', orders: 'orders', kiln: 'kiln', firing: 'kiln', workshops: 'workshop' };
+/* The game log is a top-bar dropdown (D5), not a section. */
 function sectionOrder() {
   switch (phaseKind()) {
-    case 'firing': return ['firing', 'orders', 'table', 'progress', 'workshops', 'log'];
-    case 'orders': case 'cleanup': return ['orders', 'table', 'progress', 'kiln', 'workshops', 'log'];
-    case 'final': return ['results', 'orders', 'progress', 'table', 'kiln', 'workshops', 'log'];
-    default: return ['table', 'orders', 'progress', 'kiln', 'workshops', 'log'];
+    case 'firing': return ['firing', 'orders', 'table', 'progress', 'workshops'];
+    case 'orders': case 'cleanup': return ['orders', 'table', 'progress', 'kiln', 'workshops'];
+    case 'final': return ['results', 'orders', 'progress', 'table', 'kiln', 'workshops'];
+    default: return ['table', 'orders', 'progress', 'kiln', 'workshops'];
   }
 }
 function secOrders() {
@@ -30428,8 +30320,7 @@ function sectionHtml(id) {
     case 'orders': return { title: u('secOrders'), html: secOrders() };
     case 'kiln': return { title: u('secKiln'), html: idleStage() + `<div style="height:12px"></div>` + kilnBlock({}) };
     case 'firing': return { title: u('secFiring'), sub: u('firingSub'), html: firingStage() };
-    case 'workshops': return { title: u('secWorkshops'), sub: u('oppSub'), html: ownFull() + `<div class="opps">${ORDER().filter((p) => p !== VIEWER).map(oppStrip).join('')}</div>` };
-    case 'log': return { title: u('secLog'), html: logList() };
+    case 'workshops': return { title: u('secWorkshops'), sub: u('boardsSub'), html: boardArea() };
     case 'results': return { title: u('secResults'), html: results() };
   }
   return { title: id, html: '' };
@@ -30450,7 +30341,7 @@ function decWork() {
     const lab = L.locations[o.locationId];
     const eff = locSum(o.locationId, A.worker);
     let capTxt;
-    if (lab.scope === 'personal') { const sp = ps.personalSpaces.filter((s) => s.locationId === o.locationId); const locked = sp.filter((s) => !s.unlocked).length; capTxt = (o.nextSpaceIndex != null ? u('personalSpace', { i: o.nextSpaceIndex + 1 }) : '') + (locked ? ' · ' + u('lockedN', { n: locked }) : ''); }
+    if (lab.scope === 'personal') { const sp = ps.personalSpaces.filter((s) => s.locationId === o.locationId); const notAdded = sp.some((s) => !s.unlocked); capTxt = [o.nextSpaceIndex != null ? u('personalSpace', { i: o.nextSpaceIndex + 1 }) : '', notAdded ? u('notAddedN') : ''].filter(Boolean).join(' · '); }
     else capTxt = o.capacity == null ? u('noLimit') : u('taken', { n: o.occupancy, c: o.capacity });
     const sel = A.loc === o.locationId && w.legal;
     return `<div><button class="opt" ${w.legal ? `data-act="loc" data-v="${o.locationId}"` : 'aria-disabled="true"'} aria-pressed="${sel}">
@@ -30590,28 +30481,19 @@ function decContrib() {
      <div class="dstep"><h3>${u('othersSee')}</h3><span class="looking">${pn(VIEWER)} · ${u('ctSubmitted')}</span>
      ${N('Options, Wood cost and affordability come from <code>contributionOptions</code>; <code>phase.submittedPlayerIds</code> says who has chosen. The sealed card stays in <code>own.pendingContribution</code>, which only this seat receives, until the reveal.', '选项、耗柴与是否付得起来自 <code>contributionOptions</code>；<code>phase.submittedPlayerIds</code> 只说明谁已选定。亮牌前，所选的牌只在本座位收到的 <code>own.pendingContribution</code> 中。')}</div>`;
 }
-function outcomeChips(outs) {
-  return `<div class="outs">${outs.map((o) => `<span class="out q-${o.quality}${o.cardsLeft ? '' : ' zero'}" title="${esc(u('fire') + ' ' + sgn(o.fire) + ' → ' + qName(o.quality))}">${fireCard(o.fire)}${esc(qName(o.quality))} ×${o.cardsLeft}</span>`).join('')}<span class="dagger" title="${zh() ? '线框图暂时自行推算；上线前由游戏引擎提供' : 'Worked out by the wireframe for now; the game engine will supply it'}">†</span></div>`;
-}
-function distBar(outs) {
-  const tot = outs.reduce((a, o) => a + o.cardsLeft, 0) || 1; const by = {};
-  for (const o of outs) by[o.quality] = (by[o.quality] || 0) + o.cardsLeft;
-  return `<div class="dist" role="img" aria-label="${esc(['masterpiece', 'fine', 'standard', 'flawed'].filter((q) => by[q]).map((q) => `${qName(q)} ${by[q]}/${tot}`).join(', '))}">${['masterpiece', 'fine', 'standard', 'flawed'].filter((q) => by[q]).map((q) => `<i class="${q}" style="width:${(by[q] / tot) * 100}%"></i>`).join('')}</div><div class="distlab">${u('chanceLine', { m: by.masterpiece || 0, t: tot })}</div>`;
-}
 function decHeatMarker() {
   const opt = SEL.heatMarkerStepOptions; const id = opt.ownMarkerCeramicId; const c = cer(id);
   const isImp = c.placement && c.placement.kiln === 'imperial';
-  const prev = PROPOSED.markerChoices(id);
-  const lab = { '1': [u('hmPlus'), '+1'], '-1': [u('hmMinus'), '−1'], return: [u('hmReturn'), '0'] };
-  const choices = prev.map((p) => `<button class="opt choice" data-act="hm" data-v="${p.choice}" aria-pressed="${A.d.hm === p.choice}">
-    <span class="o-h"><span class="radio"></span><span class="big">${lab[p.choice][1]}</span><strong>${esc(lab[p.choice][0])}</strong><span class="right">${u('beforeFire', { n: p.heatBeforeFire })}<span class="dagger">†</span></span></span>
-    ${outcomeChips(p.outcomes)}${distBar(p.outcomes)}</button>`).join('');
+  // The three sides with their rule effect only: no Quality previews or Fire odds (owner decisions D3, D4).
+  const choices = [['1', '+1', u('hmPlus'), u('hmPlusD')], ['-1', '−1', u('hmMinus'), u('hmMinusD')], ['return', '0', u('hmReturn'), u('hmReturnD')]].map(([v, big, name, d]) => `<button class="opt choice" data-act="hm" data-v="${v}" aria-pressed="${A.d.hm === v}">
+    <span class="o-h"><span class="radio"></span><span class="big">${big}</span><strong>${esc(name)}</strong></span><span class="o-d">${esc(d)}</span></button>`).join('');
   return promptBlock(`${esc(tx(L.roundPhases[2]))} · ${u('yourTurn')}`, u('hmTitle'), u('hmSub')) +
     `<div class="dstep"><h3>${u('queue')}</h3>${queueRow()}</div>
-     <div class="dstep"><h3>${u('hmYour')}</h3><div class="prow">${cchip(id, { sz: 44, badge: markerBadge(c.heatMarker) })}<span class="small"><b>${esc(cerTitle(c))}</b><br>${isImp ? esc(u('impFormula', { d: SEL.heatLadder.kilnDie, m: sgn(c.placement.imperialModifier) })) : esc(spaceName(c.placement.spaceId))}<br>${u('prefers', { n: L.glazes[c.glaze].preferredHeat })}</span></div></div>
-     <div class="dstep"><h3>${u('ifFire')}</h3>${choices}
+     <div class="dstep"><h3>${u('hmYour')}</h3><div class="prow">${cchip(id, { sz: 44, badge: markerBadge(c.heatMarker) })}<span class="small"><b>${esc(cerTitle(c))}</b><br>${isImp ? esc(u('imperialKiln')) : esc(spaceName(c.placement.spaceId))}</span></div></div>
+     <div class="dstep"><h3>${u('hmTurn')}</h3>${choices}
+     <div class="small muted">${u('hmRule')}</div>
      ${opt.kilnMaster ? '' : `<div class="small muted">${u('kmNot')}</div>`}
-     ${N('<b>†</b> <code>heatPreviews</code> returns <code>null</code> for c18 while its marker is face down. Proposed: <code>fireOutcomes(view, ceramicId, markerChoice)</code> plus <code>fireDeckComposition(view)</code>, so this panel shows the preview without computing it.', '<b>†</b> 火标暗置时 <code>heatPreviews</code> 对 c18 返回 <code>null</code>。建议新增 <code>fireOutcomes(view, ceramicId, markerChoice)</code> 与 <code>fireDeckComposition(view)</code>，由引擎给出预览，界面不自行推算。')}</div>`;
+     ${N('The three sides come from <code>heatMarkerStepOptions</code>. Following D3 and D4 the panel shows only the rule effect, as the physical marker would: no Quality previews, no Fire-card counts.', '三种选择取自 <code>heatMarkerStepOptions</code>。按 D3、D4，面板只给出规则效果，与实体火标一致：不预览品质，不列窑火余张。')}</div>`;
 }
 function decAfterQuality() {
   const opts = SEL.afterQualityOptions;
@@ -30619,12 +30501,12 @@ function decAfterQuality() {
   const cards = opts.map((o) => {
     const isGe = o.ability === 'ge_crackle'; const id = o.ceramicIds[0];
     const ch = SEL.heatLadder.chips.find((c) => c.ceramicId === id);
-    const pv = SEL.heatPreviews.find((p) => p.ceramicId === id);
     const free = !o.cost.clay && !o.cost.coins && !o.cost.wood;
     const name = isGe ? `${kilnName('GE')} · ${tx(L.kilns.GE.abilityName)}` : `${zh() ? '技艺' : 'Tech'} · ${techName('T14')}`;
+    // Rule effect only, no prediction (D3).
     const body = isGe
-      ? `<span class="o-d">${esc(u('aqGeRes', { c: id, a: qName(ch.quality), b: qName('fine') }))}</span><span class="o-d">${esc(tx(L.kilns.GE.shortText)).replace(/\n/g, '<br>')}</span>`
-      : (() => { const outs = PROPOSED.fromPreview(pv); return `<span class="o-d">${u('aqSFRes')}</span>${outcomeChips(outs)}${distBar(outs)}`; })();
+      ? `<span class="o-d"><b>${esc(u('aqGeRes', { a: qName(ch.quality), b: qName('fine') }))}</b></span><span class="o-d">${esc(tx(L.kilns.GE.shortText)).replace(/\n/g, '<br>')}</span>`
+      : `<span class="o-d"><b>${u('aqSFRes')}</b></span>`;
     const key = o.ability + ':' + id;
     return `<button class="opt choice" data-act="aq" data-v="${key}" aria-pressed="${A.d.aq === key}"><span class="o-h"><span class="radio"></span><strong>${esc(name)}</strong><span class="right">${u('aqCost')}${C()}${free ? u('free') : ''}</span></span>
       <span class="prow small"><span class="faint">${zh() ? '目标' : 'Target'}</span>${cchip(id, { sz: 28 })}</span>${body}</button>`;
@@ -30632,7 +30514,7 @@ function decAfterQuality() {
   return promptBlock(`${esc(tx(L.roundPhases[2]))} · ${u('yourTurn')}`, u('aqTitle'), u('aqSub')) +
     `<div class="dstep"><h3>${u('aqYour')}</h3><div class="cerrow">${mine.map((c) => cchip(c.ceramicId, { sz: 38 })).join('')}</div></div>
      <div class="dstep">${cards}
-     ${N('Options come from <code>afterQualityOptions</code> and are queried again after each use (after Crackle, c21 is Fine and Second Firing no longer applies). The Fire-card counts are <b>†</b> <code>heatPreviews(c21).qualityByFire</code> joined with the proposed <code>fireDeckComposition</code>: 12 cards minus the open discard minus this round’s Fire card.', '选项来自 <code>afterQualityOptions</code>，每次使用后重新查询（开片后 c21 为上品，不再可复烧）。余张数为 <b>†</b> <code>heatPreviews(c21).qualityByFire</code> 与拟新增的 <code>fireDeckComposition</code> 合并：12张减公开弃牌再减本轮窑火牌。')}</div>`;
+     ${N('Options come from <code>afterQualityOptions</code> and are queried again after each use (after Crackle, c21 is Fine and Second Firing no longer applies). Each option states its rule effect; nothing predicts the result (D3).', '选项来自 <code>afterQualityOptions</code>，每次使用后重新查询（开片后 c21 为上品，不再可复烧）。每项只写规则效果，不预测结果（D3）。')}</div>`;
 }
 function decOrders() {
   const compl = SEL.completableOrders; const sel = A.d.ord;
@@ -30728,7 +30610,7 @@ function pane() {
   A._sum = sum; A._altCmd = altCmd;
   return `<aside class="ko-pane" data-sheet="${A.sheet}" aria-label="${zh() ? '你的决断' : 'Your decision'}">
     <button class="sheet-strip" data-act="sheet" aria-expanded="${A.sheet === 'open'}"><span class="grab" aria-hidden="true"></span><span class="t">${stripText()}</span><span class="cta">${A.sheet === 'open' ? u('hide') + ' ▾' : (['final', 'wait'].includes(decisionKind()) ? u('details') : u('decide')) + ' ▴'}</span></button>
-    <div class="pane-body">${ownCompact()}<div class="pane-scroll">${body}</div>${confirm}</div></aside>`;
+    <div class="pane-body">${ownSummary()}<div class="pane-scroll">${body}</div>${confirm}</div></aside>`;
 }
 
 /* ================= tabs ================= */
@@ -30779,8 +30661,15 @@ function appHtml() {
   const jump = `<nav class="jump" aria-label="${zh() ? '跳转' : 'Jump to'}">${order.map((id) => `<button data-act="jump" data-v="${id}">${esc(sectionHtml(id).title)}</button>`).join('')}<span class="hint">${u('jumpHint')}</span></nav>`;
   return `<div class="ko${R.notes ? '' : ' nonotes'}">${topBar()}<main class="ko-world" id="ko-world">${jump}${secs}</main>${pane()}${tabBar()}<div class="sr-only" role="status" aria-live="polite" id="ko-live"></div></div>`;
 }
-function renderDevice(keepScroll) {
+/* Re-rendering replaces the frame's DOM, so focus returns to the control that was used. */
+function focusKey(el) {
+  if (!el || !el.dataset) return null;
+  const sel = ['act', 'v', 'loc', 'w', 'c', 'alt'].filter((k) => el.dataset[k] != null).map((k) => `[data-${k}="${CSS.escape(el.dataset[k])}"]`).join('');
+  return sel ? { sel, cls: el.classList[0] } : null;
+}
+function renderDevice(keepScroll, fromEl) {
   load();
+  const fk = fromEl && document.activeElement === fromEl ? focusKey(fromEl) : null;
   const dev = document.getElementById('device'); const vp = VPS[R.vp];
   const w = dev.querySelector('.ko-world'); const ps = dev.querySelector('.pane-scroll');
   const s1 = keepScroll && w ? w.scrollTop : 0, s2 = keepScroll && ps ? ps.scrollTop : 0;
@@ -30791,6 +30680,7 @@ function renderDevice(keepScroll) {
   dev.setAttribute('lang', zh() ? 'zh-Hans' : 'en');
   dev.innerHTML = appHtml();
   if (keepScroll) { const w2 = dev.querySelector('.ko-world'); if (w2) w2.scrollTop = s1; const p2 = dev.querySelector('.pane-scroll'); if (p2) p2.scrollTop = s2; }
+  if (fk) { const t = [...dev.querySelectorAll(fk.sel)].find((x) => x.classList[0] === fk.cls) || dev.querySelector(fk.sel); if (t) t.focus({ preventScroll: true }); }
   const st = dev.querySelector('.steps .on'); if (st) { const ol = st.parentElement; if (ol.scrollWidth > ol.clientWidth) ol.scrollLeft = Math.max(0, st.offsetLeft - 40); }
   const live = dev.querySelector('#ko-live'); const msg = A.announce || announcement();
   setTimeout(() => { if (live) live.textContent = msg; }, 60);
@@ -30820,7 +30710,7 @@ function renderInfo() {
   const m = MOMENTS[R.m]; load();
   const sels = Object.keys(m.selectors).sort();
   document.getElementById('momentinfo').innerHTML = `<div class="panel"><h2>What to look at</h2><ul>${INFO[R.m].check.map((c) => `<li>${c}</li>`).join('')}</ul></div>
-    <div class="panel"><h2>Engine data in this frame</h2><p class="muted" style="margin:0 0 8px">${esc(m.description)}</p><div class="selist">${sels.map((s) => `<code>${s}</code>`).join('')}${['m3', 'm4'].includes(R.m) ? '<code><span class="dagger">†</span> fireDeckComposition</code><code><span class="dagger">†</span> fireOutcomes</code>' : ''}</div>
+    <div class="panel"><h2>Engine data in this frame</h2><p class="muted" style="margin:0 0 8px">${esc(INFO[R.m].desc || m.description)}</p>${INFO[R.m].engine ? `<p class="muted" style="margin:0 0 8px">${INFO[R.m].engine}</p>` : ''}<div class="selist">${sels.map((s) => `<code>${s}</code>`).join('')}</div>
     <p style="margin:12px 0 0"><b>${u('liveLbl')}${C()}</b> <span class="muted">“${esc(announcement())}”</span></p></div>`;
 }
 let SCALE = 1;
@@ -30841,7 +30731,7 @@ document.querySelector('.controls').addEventListener('click', (ev) => {
   const b = ev.target.closest('[data-r]'); if (!b) return;
   const k = b.dataset.r, v = b.dataset.v;
   if (k === 'm') { R.m = v; resetApp(); try { history.replaceState(null, '', '#' + v); } catch (e) { /* ignore */ } }
-  else if (k === 'vp') { R.vp = v; A.ownOpen = ownDefault(); }
+  else if (k === 'vp') { R.vp = v; A.logOpen = false; }
   else if (k === 'lang') R.lang = v;
   else if (k === 'fit') R.fit = v === '1';
   else if (k === 'full') R.full = v === '1';
@@ -30860,7 +30750,12 @@ document.getElementById('device').addEventListener('click', (ev) => {
       break;
     case 'jump': jumpTo(v); return;
     case 'sheet': A.sheet = A.sheet === 'open' ? 'peek' : 'open'; break;
-    case 'own': A.ownOpen = !A.ownOpen; break;
+    case 'board': {
+      A.board = v; A.logOpen = false;
+      if (vp.phone) { A.tab = 'workshop'; if (A.sheet === 'open' && !vp.short) A.sheet = 'peek'; keep = false; renderDevice(keep, el); return; }
+      renderDevice(true, el); jumpTo('workshops'); return;
+    }
+    case 'log': A.logOpen = !A.logOpen; break;
     case 'worker': A.worker = v; A.sent = null; break;
     case 'loc': A.loc = v; A.sent = null; if (vp.phone) A.sheet = 'open'; break;
     case 'place': A.worker = el.dataset.w; A.loc = el.dataset.loc; A.sent = null; if (vp.phone) A.sheet = 'open'; break;
@@ -30890,7 +30785,13 @@ document.getElementById('device').addEventListener('click', (ev) => {
     }
     default: return;
   }
-  renderDevice(keep);
+  renderDevice(keep, el);
+});
+/* Keyboard: Escape closes the Game log and returns focus to its button. */
+document.getElementById('device').addEventListener('keydown', (ev) => {
+  if (ev.key !== 'Escape' || !A.logOpen) return;
+  A.logOpen = false; renderDevice(true);
+  const b = document.querySelector('#device .logbtn'); if (b) b.focus();
 });
 function jumpTo(id) {
   const t = document.getElementById('sec-' + id); if (!t) return;
