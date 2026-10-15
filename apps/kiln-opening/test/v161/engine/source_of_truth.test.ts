@@ -58,9 +58,9 @@ interface AssetSpecs {
 const ASSETS = JSON.parse(read("data/asset_specs.json")) as AssetSpecs;
 
 describe("the V1.6.1 rulebook is the source of truth", () => {
-  it("matches the checksum the audit records (original plus amendment A2)", () => {
+  it("matches the checksum the audit records (owner amendments A1 and A2 applied)", () => {
     const recorded = /SHA-256: `([0-9a-f]{64})`/.exec(AUDIT)?.[1];
-    expect(recorded).toBe("f677ee9636e6b9bc2141131cd9b751415b74c3764cbd77a731439933f5fff1a4");
+    expect(recorded).toBe("4c9923871218a12a5653cbc34cfa0817b0ab673030e11af27f7c0d7468406a7a");
     const actual = createHash("sha256").update(readFileSync(join(ROOT, SOURCE_PATH))).digest("hex");
     expect(actual).toBe(recorded);
   });

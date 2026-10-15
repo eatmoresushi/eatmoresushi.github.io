@@ -375,7 +375,7 @@ A player's long-term workshop engine consists of:
 - A Form & Decorate Tech unlocks your second Form & Decorate space; a Glazing & Loading Tech unlocks your second Glaze & Load space; Firing Techs unlock nothing.
 - Follow each tile's printed timing and usage limit.
 - If you control multiple abilities with the same timing, choose the order in which you resolve them. If several players have abilities in the same timing window, resolve players in First Player order; each player chooses the order of their own abilities.
-- Each Advanced Tech you own scores **1 VP at game end**.
+- Each Advanced Tech scores **1 VP immediately when you gain it**; it is not scored again at game end.
 
 See Appendix B for all 18 tiles.
 
@@ -488,8 +488,8 @@ Once per round, after Actual Heat is calculated but before Quality is assigned, 
 
 The game ends after Round 5 Cleanup. Score:
 
-1. all VP recorded during play, including Orders, Kiln Tradition abilities, **Imperial Audience** and VP from Crowns gained beyond Recognition 4;
-2. **1 VP for each Advanced Tech** you own;
+1. all VP recorded during play, including Orders, Kiln Tradition abilities, **1 VP for each Advanced Tech** (scored when gained), **Imperial Audience** and VP from Crowns gained beyond Recognition 4;
+2. nothing more for Advanced Techs: each already scored its **1 VP** when you gained it;
 3. the end-game Exhibition;
 4. **1 VP per 3 Coins remaining**, maximum **5 VP**.
 
@@ -606,7 +606,7 @@ Unless a card explicitly pairs attributes, Shape, Glaze and Decoration requireme
 
 ## Appendix B — Advanced Tech: 18 tiles
 
-Tech tiles use abbreviated reminder text; this appendix gives the full effects. Each Advanced Tech you own scores **1 VP at game end**. A player owns at most 3 and at most 1 per discipline. **Form & Decorate** tiles unlock your second Form & Decorate space, **Glazing & Loading** tiles your second Glaze & Load space; **Firing** tiles unlock nothing.
+Tech tiles use abbreviated reminder text; this appendix gives the full effects. Each Advanced Tech scores **1 VP immediately when you gain it**. A player owns at most 3 and at most 1 per discipline. **Form & Decorate** tiles unlock your second Form & Decorate space, **Glazing & Loading** tiles your second Glaze & Load space; **Firing** tiles unlock nothing.
 
 ### B1. Form & Decorate — 6
 
@@ -752,6 +752,6 @@ A Tech effect is **not a worker action**. It does not count toward location visi
 - Completed Order VP.
 - Kiln Tradition VP.
 - Imperial Audience: **6 VP when Recognition 4 is reached**; each later Crown scores **1 VP**.
-- Advanced Techs: **1 VP each**.
+- Advanced Techs: **1 VP each**, scored when you gain them.
 - Exhibition: any number of ceramics; Standard 2 / Fine 3 / Masterpiece 5; +3 VP for at least 3 different Shapes and +3 VP for at least 3 different Glazes; Connoisseur's Cabinet +1 per Fine or Masterpiece, max +5.
 - Coins: 1 VP per 3, maximum 5.

@@ -584,13 +584,15 @@ describe("setup, production, firing and scoring values", () => {
   it("scores each Tech's printed 1 VP when it is gained, per owner amendment A1 (L378, L492, L609, L755)", () => {
     const vp = GAME_CONFIG.techs.vpEach;
     expect(vp).toBe(1);
-    // The checked-in source keeps its printed value (its checksum must not change) …
+    // A1 is applied in the source itself (lines 378, 491, 492, 609, 755): scored on gain, never again at game end.
     const lines = SOURCE.split("\n");
-    expect(lines[377]).toContain(`Each Advanced Tech you own scores **${vp} VP`);
-    expect(lines[491]).toContain(`**${vp} VP for each Advanced Tech**`);
-    expect(lines[608]).toContain(`Each Advanced Tech you own scores **${vp} VP`);
-    expect(lines[754]).toContain(`Advanced Techs: **${vp} VP each**`);
-    // … and A1 overrides exactly those lines' timing: scored on gain, not at game end.
+    expect(lines[377]).toBe(`- Each Advanced Tech scores **${vp} VP immediately when you gain it**; it is not scored again at game end.`);
+    expect(lines[490]).toContain(`**${vp} VP for each Advanced Tech** (scored when gained)`);
+    expect(lines[491]).toBe(`2. nothing more for Advanced Techs: each already scored its **${vp} VP** when you gained it;`);
+    expect(lines[608]).toContain(`Each Advanced Tech scores **${vp} VP immediately when you gain it**.`);
+    expect(lines[754]).toBe(`- Advanced Techs: **${vp} VP each**, scored when you gain them.`);
+    expect(SOURCE).not.toMatch(/Advanced Tech[^\n]*\*\*1 VP at game end\*\*/);
+    // The audit records the amendment.
     const a1 = AUDIT.split("\n").find((line) => line.startsWith("| A1 |"));
     expect(a1).toBeDefined();
     const [id, date, amendment, overrides] = cellsOf(a1 ?? "");
