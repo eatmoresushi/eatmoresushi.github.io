@@ -31,5 +31,6 @@ Things the table does show, the UI shows too:
 | D5 | Phone tabs | **Table / Kiln / Workshop / Orders** is right. The **game log is a dropdown** available at every screen size, not a tab or section. |
 | D6 | Chinese terms | The glossary terms are approved. |
 | D7 | Second personal-action space | **No "lock" or "unlock" in any player-facing text.** The second Form & Decorate or Glaze & Load space is something you **add by learning a Tech**. Before you have it, it reads "Learn a Workshop Tech to add this space" / 习得坯作技艺即添此工位. Once you have it, it reads "Added by ⟨Tech⟩" / 由「⟨技艺⟩」添设. Internal identifiers (`unlocked`, `PERSONAL_SPACE_LOCKED`, `unlocks`) are unchanged. |
+| D8 | Shared Kiln layout (2026-10-15) | **Low at the top, High at the bottom.** The fire burns at the bottom of a wood-fired kiln, so the High (+1) row sits beside the firebox at the bottom. Middle (0) is in the middle, and the two Low (−1) spaces sit centred under the dome at the top, following the kiln's shape. This is layout only: zone modifiers, space counts and covered spaces per player count are unchanged. |
 
 D7 changes wording only, not rules. The checked-in V1.6.1 rulebook still names the physical component "Lock tokens", and it stays byte-identical. The digital UI has no such token.

@@ -673,8 +673,9 @@ button.seat:hover { border-color: var(--celadon); background: var(--surface); }
 .kmini { width: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); text-align: left; font-size: 12px; color: var(--ink-2); }
 .kmini:hover { border-color: var(--celadon); }
 .kmini strong { font-size: 13px; color: var(--ink); }
-.kglyph { display: grid; grid-template-columns: repeat(3, 10px); gap: 2px; padding: 4px; border-radius: 10px 10px 4px 4px; background: var(--kiln-body); }
-.kglyph i { width: 10px; height: 8px; border-radius: 2px; background: var(--kiln-cell); }
+.kglyph { display: grid; grid-template-columns: repeat(6, 4px); gap: 2px; padding: 4px; border-radius: 10px 10px 4px 4px; background: var(--kiln-body); }
+.kglyph i { grid-column: span 2; height: 8px; border-radius: 2px; background: var(--kiln-cell); }
+.kglyph b { grid-column: span 1; }
 .kglyph i.cov { background: repeating-linear-gradient(45deg, var(--kiln-covered-a) 0 2px, var(--kiln-covered-b) 2px 4px); }
 .kglyph i.full { background: var(--kiln-glow); }
 .kglyph i.none { visibility: hidden; }
@@ -775,7 +776,9 @@ button.seat:hover { border-color: var(--celadon); background: var(--surface); }
 .kiln .klab { position: absolute; top: 9px; left: 0; right: 0; text-align: center; font-size: 12px; color: var(--kiln-ink-2); letter-spacing: .06em; }
 .krows { display: grid; gap: 6px; }
 .krow { display: grid; grid-template-columns: 44px repeat(3, minmax(0, 1fr)); gap: 5px; align-items: stretch; }
-.krow.low .ksp:last-child { grid-column: span 1; }
+/* D8: the two Low spaces sit centred at the top of the dome; High is the bottom row, by the firebox. */
+.krow.low { grid-template-columns: 44px minmax(0, 1fr) minmax(0, 2fr) minmax(0, 2fr) minmax(0, 1fr); }
+@container kw (min-width: 410px) { .kilnwrap .krow.low { grid-template-columns: 38px minmax(0, 1fr) minmax(0, 2fr) minmax(0, 2fr) minmax(0, 1fr); } }
 .zlab { display: grid; align-content: center; justify-items: center; text-align: center; gap: 1px; font-size: 12px; color: var(--kiln-ink-2); line-height: 1.15; }
 .zlab b { font-size: 12px; color: var(--kiln-ink); }
 .zlab .zm { font: 700 15px/1 var(--serif); color: var(--kiln-ink); }
@@ -805,6 +808,7 @@ button.ksp { font: inherit; cursor: pointer; }
 .stack > *:nth-child(2) { transform: translate(12px, -10px); }
 .stack .cid { display: none; }
 .stk-l { display: block; font-size: 12px; line-height: 1.2; text-align: center; color: var(--kiln-cell-ink-2); }
+.ksp .kb .stk-l { flex-basis: 100%; }
 .ksp .tile.inv { background: var(--d-glazing-pale); color: var(--ink); }
 .firebox { margin: 10px auto 0; width: min(72%, 260px); display: flex; align-items: center; justify-content: center; gap: 8px; padding: 6px 10px; border-radius: 40px 40px 6px 6px; background: var(--kiln-body-2); color: var(--kiln-ink-2); font-size: 12px; border: 1px solid var(--kiln-rim); }
 .firebox b { color: var(--kiln-ink); font-size: 13px; }
@@ -29861,7 +29865,7 @@ function kilnMini() {
   const lay = SEL.kilnLayout; const sp = SEL.boardView.kilnSpaces;
   const byId = Object.fromEntries(sp.map((s) => [s.spaceId, s]));
   const zones = ['high', 'middle', 'low'];
-  const glyph = zones.map((z) => [1, 2, 3].map((i) => { const s = byId[`${z}_${i}`]; if (!s) return '<i class="none"></i>'; return `<i class="${!s.active ? 'cov' : s.ceramics.length ? 'full' : ''}"></i>`; }).join('')).join('');
+  const glyph = ['low', 'middle', 'high'].map((z) => { const row = [1, 2, 3].map((i) => { const s = byId[`${z}_${i}`]; if (!s) return ''; return `<i class="${!s.active ? 'cov' : s.ceramics.length ? 'full' : ''}"></i>`; }).join(''); return z === 'low' ? `<b></b>${row}<b></b>` : row; }).join('');
   const zc = zones.map((z) => lay.activeSpaces.filter((s) => s.startsWith(z)).length).join('-');
   const free = sp.filter((s) => s.active && !s.ceramics.length).length;
   return `<button class="kmini" data-act="tab" data-v="kiln" title="${esc(u('openKiln'))}">
@@ -29983,10 +29987,11 @@ function sharedKiln(opts = {}) {
   const byId = Object.fromEntries(SEL.boardView.kilnSpaces.map((s) => [s.spaceId, s]));
   const { t, ch } = draftTargets();
   const post = SEL.heatLadder && SEL.heatLadder.fireModifier != null;
-  const rows = ['high', 'middle', 'low'].map((z) => {
+  // Owner decision D8: Low at the top (two spaces, centred under the dome), High at the bottom by the firebox.
+  const rows = ['low', 'middle', 'high'].map((z) => {
     const cells = [1, 2, 3].map((i) => {
       const id = `${z}_${i}`; const s = byId[id];
-      if (!s) return '<div aria-hidden="true"></div>';
+      if (!s) return '';
       const label = spaceName(id);
       if (!s.active) return `<div class="ksp covered"><div class="kh">${esc(label)}</div><div class="kb">${u('covered', { n: G.playerCount })}</div></div>`;
       const mod = s.kilnFurniture ? s.kilnFurniture.modifier : s.effectiveModifier;
@@ -29999,7 +30004,8 @@ function sharedKiln(opts = {}) {
       const target = t.has(id) && !opts.static;
       return target ? `<button class="ksp target${ch.has(id) ? ' chosen' : ''}" data-act="dest" data-v="${id}" aria-pressed="${ch.has(id)}" aria-label="${esc(u('loadInto') + ' ' + label)}">${inner}</button>` : `<div class="ksp">${inner}</div>`;
     }).join('');
-    return `<div class="krow ${z}"><div class="zlab"><b>${esc(tx(L.zones[z]))}</b><span class="zm">${sgn(L.kilnSpaces[z + '_1'].modifier)}</span></div>${cells}</div>`;
+    const sp = '<div class="kspacer" aria-hidden="true"></div>';
+    return `<div class="krow ${z}"><div class="zlab"><b>${esc(tx(L.zones[z]))}</b><span class="zm">${sgn(L.kilnSpaces[z + '_1'].modifier)}</span></div>${z === 'low' ? sp + cells + sp : cells}</div>`;
   }).join('');
   const lad = SEL.heatLadder;
   const heat = lad ? (lad.globalHeat ?? lad.baseHeat) : (SEL.firingSummary ? 0 : 0);

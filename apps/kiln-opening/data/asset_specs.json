@@ -37,6 +37,8 @@
     "status": "GENERATE_FROM_DATA",
     "source": "data/firing.json kilnSpaces and data/game_config.json sharedKiln.activeSpacesByPlayerCount",
     "spaces": { "high": 3, "middle": 3, "low": 2 },
+    "layoutTopToBottom": ["low", "middle", "high"],
+    "layoutNote": "Owner decision D8: Low (2 spaces, centred) under the dome at the top, Middle in the middle, High (3 spaces) at the bottom beside the firebox, because the wood fire burns at the bottom of the kiln.",
     "zoneModifiers": { "high": 1, "middle": 0, "low": -1 },
     "activeByPlayerCount": { "2": "2-1-1", "3": "2-2-2", "4": "3-3-2" },
     "mustShowCoveredSpaces": true,
