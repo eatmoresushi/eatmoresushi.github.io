@@ -109,7 +109,7 @@ describe("computer fallback in every phase type", () => {
       expect(selection, scenario.name).not.toBeNull();
       expect(selection?.usedFallback, scenario.name).toBe(true);
       if (scenario.phase === "firing_contributions") {
-        // Tend first: always affordable (L260).
+        // Tend first: always affordable (L261).
         expect(selection?.command).toMatchObject({ type: "SUBMIT_CONTRIBUTION", card: "TEND" });
       }
     }

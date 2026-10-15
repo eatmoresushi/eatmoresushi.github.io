@@ -1,16 +1,16 @@
 /**
  * Work Phase: turns, the before/after-action window, END_TURN and the deferred Main display
- * refill (L133–143, L190, L292, L390, L631; DESIGN §3.2).
+ * refill (L134–144, L191, L293, L391, L631; DESIGN §3.2).
  *
  * - Turns run First Player clockwise, one worker per turn, until nobody has an available
- *   worker (L135). Passing is impossible: END_TURN before the worker action is
- *   `WORKER_ACTION_REQUIRED` (L142).
+ *   worker (L136). Passing is impossible: END_TURN before the worker action is
+ *   `WORKER_ACTION_REQUIRED` (L143).
  * - Every location module ends its worker action through `ctx.flow.workerActionDone`, which
  *   production wires to `completeWorkerAction` (DESIGN §2.2, §2.5).
  * - `completeWorkerAction` opens the after-action window only when Canal Barge is owned and
  *   unused this round (deliberately regardless of the hand, DESIGN §4.5) or Imperial Priority
  *   is usable; otherwise the turn ends automatically (DESIGN §3.7).
- * - `endTurn` runs the deferred refill (L190, L390) after the after-action window, so a Canal
+ * - `endTurn` runs the deferred refill (L191, L391) after the after-action window, so a Canal
  *   Barge there may complete an Order reserved by the same action (INT: deferred refill).
  *
  * Layer 4 (P4). Imports layers 0–3 only; `work/windowAbilities` imports this module.
@@ -62,8 +62,8 @@ function endWorkPhase(draft: GameState, ctx: ResolveContext): void {
 
 /**
  * Opens the Work Phase after the Start of Round (wired to `round_start_done`): the First
- * Player takes the first turn (L131, L135). With nobody holding a worker the phase ends at
- * once (unreachable in play: workers return at Cleanup, L302).
+ * Player takes the first turn (L132, L136). With nobody holding a worker the phase ends at
+ * once (unreachable in play: workers return at Cleanup, L303).
  */
 export function openWorkPhase(draft: GameState, ctx: ResolveContext): void {
   const first = firstWithWorker(draft, draft.firstPlayerId);
@@ -75,7 +75,7 @@ export function openWorkPhase(draft: GameState, ctx: ResolveContext): void {
 }
 
 /**
- * Imperial Priority may be used now (L292, R10): the token is held, the Imperial Kiln has been
+ * Imperial Priority may be used now (L293, R10): the token is held, the Imperial Kiln has been
  * gained and is empty, and the player has at least 1 Shaped vessel. All public facts.
  */
 export function imperialPriorityUsable(game: PublicCore, playerId: PlayerId): boolean {
@@ -129,10 +129,10 @@ export function afterWindowAbilityUsed(draft: GameState, playerId: PlayerId, ctx
 
 /**
  * Ends the active player's Work turn (DESIGN §3.2 step 4):
- * 1. the deferred Main display refill if this player reserved a face-up Order (L190, L390);
+ * 1. the deferred Main display refill if this player reserved a face-up Order (L191, L391);
  * 2. `WORK_TURN_ENDED`;
  * 3. the next clockwise player with an available worker starts a turn, or, when nobody has
- *    one, `WORK_PHASE_ENDED` and the hand-over to the Firing Phase (L135).
+ *    one, `WORK_PHASE_ENDED` and the hand-over to the Firing Phase (L136).
  */
 export function endTurn(draft: GameState, playerId: PlayerId, automatic: boolean, ctx: ResolveContext): void {
   const phase = phaseAs(draft, "work_turn");

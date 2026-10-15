@@ -1,4 +1,4 @@
-# KILN OPENING 开窑 v1.61 — Player Rulebook (Draft)
+# KILN OPENING 开窑 v1.6.1 — Player Rulebook (Draft)
 
 Oct 11, 2026 · @Allen
 
@@ -6,7 +6,7 @@ Oct 11, 2026 · @Allen
 
 ## Changes from v1.2.7
 
-Version v1.61 (the working name v1.3 was already used by an earlier draft). This draft applies every decided change and removes all text that referred to the Potter's Wheel, Glaze & Decoration, Kiln Yard, Starting Techs, the Shifu overfill rule, the Kiln Yard reposition, the Glazed/unloaded state and the old Order Phase.
+Version v1.6.1 (the working name v1.3 was already used by an earlier draft). This draft applies every decided change and removes all text that referred to the Potter's Wheel, Glaze & Decoration, Kiln Yard, Starting Techs, the Shifu overfill rule, the Kiln Yard reposition, the Glazed/unloaded state and the old Order Phase.
 
 1. **Personal locations.** Each player board has two actions you do in your own workshop, Form & Decorate and Glaze & Load, 2 spaces each, 1 open at the start. Private actions are named as verbs; public locations are the places you go to: Materials Yard, Commission Market, Guild Hall (was Guild & Academy), Canal Wharf (was Labour) and Magistrate's Hall (was Court Patronage).
 2. **Decoration at forming, Glaze at loading.** Form & Decorate forms and decorates; Glaze & Load glazes and loads. There is no Glazed-but-unloaded state.
@@ -27,6 +27,7 @@ Version v1.61 (the working name v1.3 was already used by an earlier draft). This
 17. **Order buffer for held-only completion.** Each player starts with 2 Starting Orders + 1 Main Order (was 1 + 1), and the hand limit is 4 (5 with Colour Samples; was 3 / 4). Reservation counts stay at Apprentice 1 / Shifu 2.
 18. **Track stays optional.** No worker on the Imperial track. The Magistrate's Hall (formerly Court Patronage) is open from Recognition 0 (the Recognition-1 gate is removed) and the Grant is 1 Clay + 1 Wood + 1 Coin, which together fix the step-1 refund with fewer words and let a Coin-rich player buy into the track as a sink. Imperial Priority stays as drafted; O17–O20 stay as printed.
 19. **Painted replaces Crackle** as the fourth Decoration (2 Coins). Crackle is now something only the Ge Kiln produces, in the kiln, with a marker. Cards renamed: S13, O13, O17, O23, O39, O40, O46; Decorator's Kit reads Carved, Impressed or Painted.
+20. **Tech VP scored on purchase.** The 1 VP per Advanced Tech is recorded the moment the tile is taken, not at game end. Bookkeeping only; Techs cannot be lost.
 
 **Yours, from the doc comments:** 1–4, the first two sentences of 6, the first sentence of 7, the marker turn order in 3, 12, and 15. **The review's recommendations, applied at your request so the draft plays as one piece:** 5, the Shifu selection and Colour Samples in 6, the court-fired Imperial Kiln in 7, 8, 9, 11, 13 and 14. Each is a sentence to revert.
 
@@ -166,7 +167,7 @@ Each player has **1 Shifu and 3 Apprentices** available each round. Each worker 
 | Worker | Effect |
 | --- | --- |
 | Apprentice | Form **1 vessel**: pay its Clay cost, choose a Decoration and pay the Decoration cost. |
-| **Shifu** | Form up to **2 vessels****, choosing and paying a Decoration for each. If you form 2, one of their Decorations costs 1 Coin less**. |
+| **Shifu** | Form up to **2 vessels**, choosing and paying a Decoration for each. **If you form 2, one of their Decorations costs 1 Coin less.** |
 
 - A placement here is legal only if you can pay the Clay cost and a Decoration cost for at least 1 vessel.
 - Formed vessels are **Shaped** ceramics: they record Shape and Decoration and wait in your workshop until loaded.
@@ -488,10 +489,9 @@ Once per round, after Actual Heat is calculated but before Quality is assigned, 
 
 The game ends after Round 5 Cleanup. Score:
 
-1. all VP recorded during play, including Orders, Kiln Tradition abilities, **1 VP for each Advanced Tech** (scored when gained), **Imperial Audience** and VP from Crowns gained beyond Recognition 4;
-2. nothing more for Advanced Techs: each already scored its **1 VP** when you gained it;
-3. the end-game Exhibition;
-4. **1 VP per 3 Coins remaining**, maximum **5 VP**.
+1. all VP recorded during play: Orders, Kiln Tradition abilities, **1 VP for each Advanced Tech** (scored when gained), **Imperial Audience** and VP from Crowns gained beyond Recognition 4;
+2. the end-game Exhibition;
+3. **1 VP per 3 Coins remaining**, maximum **5 VP**.
 
 The player with the most VP wins.
 

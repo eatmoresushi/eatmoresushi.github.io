@@ -1,5 +1,5 @@
 /**
- * Shape costs (L320–326) and Vessel cards (L79, L328): 10 cards per Shape, not a gameplay
+ * Shape costs (L321–327) and Vessel cards (L80, L329): 10 cards per Shape, not a gameplay
  * limit; a proxy is used when a Shape's cards are all in use; a returned card goes back to its
  * Shape's supply and a proxy simply vanishes.
  */
@@ -19,7 +19,7 @@ const fd = (workerId: string, shape: Shape, extra: Partial<Extract<GameAction, {
   ...extra,
 });
 
-describe("Shape Clay costs (L320–326)", () => {
+describe("Shape Clay costs (L321–327)", () => {
   it.each([
     ["bowl", 1],
     ["plate", 1],
@@ -35,7 +35,7 @@ describe("Shape Clay costs (L320–326)", () => {
   });
 });
 
-describe("Vessel cards are not a limit (L79, L328)", () => {
+describe("Vessel cards are not a limit (L80, L329)", () => {
   it("10 cards per Shape; forming takes the next card in the supply", () => {
     const t = table({ players: [RICH, {}] });
     expect(SHAPES.map((shape) => t.state.vesselSupply[shape].length)).toEqual(SHAPES.map(() => GAME_CONFIG.shapeSupplyEach));

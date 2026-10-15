@@ -1,5 +1,5 @@
 /**
- * Opening the Firing Phase and the Contribution window (L236, L252–262, L504, L638,
+ * Opening the Firing Phase and the Contribution window (L237, L253–263, L504, L638,
  * L670–674, change 16; INT "No Contribution participants").
  */
 
@@ -58,7 +58,7 @@ function expectError(error: GameRuleError | null, code: GameRuleError["code"]): 
   expectDocumentedDetails(error);
 }
 
-describe("skip check (L236, L670)", () => {
+describe("skip check (L237, L670)", () => {
   it("skips the Firing Phase when nothing is loaded: no Fire card, no firing, straight to firing_done", () => {
     const state = buildState({
       ceramics: [
@@ -80,7 +80,7 @@ describe("skip check (L236, L670)", () => {
   });
 });
 
-describe("participants (L260, change 16, L289)", () => {
+describe("participants (L261, change 16, L290)", () => {
   it("only Shared Kiln ceramics make a participant; an Imperial ceramic is in the firing but gives no say", () => {
     const table = openFiringTable({
       players: [{ recognition: 2 }, {}, { recognition: 2 }],
@@ -203,7 +203,7 @@ describe("secret simultaneous submission (L672–673)", () => {
         },
       },
     ]);
-    // Both Stoke and Bank pay their Wood, in First Player order; Tend pays nothing (L262).
+    // Both Stoke and Bank pay their Wood, in First Player order; Tend pays nothing (L263).
     expect(eventsOfType(events, "RESOURCES_CHANGED")).toEqual([
       { type: "RESOURCES_CHANGED", playerId: "p2", clay: 0, wood: -1, coins: 0, reason: "contribution" },
       { type: "RESOURCES_CHANGED", playerId: "p3", clay: 0, wood: -1, coins: 0, reason: "contribution" },
@@ -242,7 +242,7 @@ describe("secret simultaneous submission (L672–673)", () => {
   });
 });
 
-describe("Base Heat (L262, L674)", () => {
+describe("Base Heat (L263, L674)", () => {
   it.each([
     { die: 2 as const, cards: ["TEND", "TEND", "TEND"] as const, expected: 2 },
     { die: 2 as const, cards: ["STOKE", "TEND", "TEND"] as const, expected: 3 },
@@ -259,7 +259,7 @@ describe("Base Heat (L262, L674)", () => {
     expect(table.state.lastFiring?.baseHeat ?? table.state.firing?.baseHeat).toBe(expected);
   });
 
-  it("clamps to 5 above and 0 below, keeping the unclamped value (L248)", () => {
+  it("clamps to 5 above and 0 below, keeping the unclamped value (L249)", () => {
     const high = openFiringTable(
       threeParticipants({ kilnDie: 3, fireDeck: [0], players: [{ techs: ["T12"] }, {}, {}] }),
     );
@@ -326,7 +326,7 @@ describe("Fuel Ledger (T12, L638)", () => {
 });
 
 describe("affordability (L672) and legalContributions", () => {
-  it("Bank and Stoke need 1 Wood; Tend is always affordable (L260)", () => {
+  it("Bank and Stoke need 1 Wood; Tend is always affordable (L261)", () => {
     const table = openFiringTable(threeParticipants({ players: [{ resources: { wood: 0 } }, {}, {}] }));
     const view = table.actorView("p1");
     expectError(validateContribution(view, table.privateState, submitCommand("BANK")), "INVALID_CONTRIBUTION");

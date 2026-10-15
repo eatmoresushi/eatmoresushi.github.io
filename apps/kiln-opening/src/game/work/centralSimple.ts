@@ -1,12 +1,12 @@
 /**
- * Canal Wharf (L215–220) and Magistrate's Hall (L222–232).
+ * Canal Wharf (L216–221) and Magistrate's Hall (L223–233).
  *
  * - **Canal Wharf:** gain 2 Coins (Apprentice) or 4 Coins (Shifu). Uncapped and costless, so
- *   it is always a legal placement for an available worker (L142, the Work Phase's progress
+ *   it is always a legal placement for an available worker (L143, the Work Phase's progress
  *   guarantee, DESIGN §3.6).
- * - **Magistrate's Hall:** 1 space at 2–3 players, 2 at 4 (L224; capacity is the shared
+ * - **Magistrate's Hall:** 1 space at 2–3 players, 2 at 4 (L225; capacity is the shared
  *   placement check). Pay 4 Coins (Apprentice) or 3 Coins (Shifu) to advance Imperial
- *   Recognition by 1 step, only from Recognition 0, 1 or 2, so never to 4 (L231–232). No Crown
+ *   Recognition by 1 step, only from Recognition 0, 1 or 2, so never to 4 (L232–233). No Crown
  *   requirement; the milestone reached resolves normally (`recognition.advanceRecognitionStep`,
  *   P6). Senior Apprentice never applies here (R12; enforced by `validatePlacement`).
  *
@@ -48,12 +48,12 @@ function resolveCanalWharf(draft: GameState, playerId: PlayerId, action: CanalWh
 // ── Magistrate's Hall ────────────────────────────────────────────────────────────────
 
 /** The top of the Imperial track (Recognition 4, Imperial Audience), which the Magistrate's
- * Hall can never reach (L226, L232). */
+ * Hall can never reach (L227, L233). */
 function topRecognition(): number {
   return Math.max(...IMPERIAL_TRACK.track.map((space) => space.space));
 }
 
-/** Recognition 0–2 only (`magistratesHallOpen`, L224), and the step never reaches 4 (L232). */
+/** Recognition 0–2 only (`magistratesHallOpen`, L225), and the step never reaches 4 (L233). */
 function recognitionGateError(p: PlayerState, effect: WorkerEffect): GameRuleError | null {
   const from = p.imperial.recognition;
   const steps = LOCATIONS.magistrates_hall.effects[effect].recognitionSteps;

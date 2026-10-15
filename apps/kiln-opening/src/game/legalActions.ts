@@ -38,7 +38,7 @@
  * `PLACEMENT_GATE_CODES` (that error then applies to every command of the group), and Form &
  * Decorate skips candidates whose cost lower bound exceeds the player's resources, so an
  * unaffordable or blocked location costs a single validation. Combinations that the
- * 1-per-discipline Tech limit (L210) makes unreachable are never generated together (Prepared
+ * 1-per-discipline Tech limit (L211) makes unreachable are never generated together (Prepared
  * Clay with Senior Apprentice or Decorator's Kit; Kiln Furniture with Inverted Firing comes
  * from P3's option list, which never offers it); validators still handle them.
  *
@@ -345,7 +345,7 @@ function* singleLoads(ctx: EnumContext, earlier: readonly LoadSpec[], filter: Si
 function* materialsYardCandidates(ctx: EnumContext, choice: WorkerChoice): Generator<GameAction> {
   const total = LOCATIONS.materials_yard.effects[choice.effect].resources;
   const prepared: Array<{ shape: Shape; decoration: Decoration } | null> = [null];
-  // Senior Apprentice and Prepared Clay are both Workshop Techs (L210): never together.
+  // Senior Apprentice and Prepared Clay are both Workshop Techs (L211): never together.
   if (!choice.seniorApprentice && techReady(ctx.me, PREPARED_CLAY)) {
     for (const shape of SHAPES) {
       for (const decoration of DECORATIONS) {
@@ -1256,7 +1256,7 @@ function randomCompletion(ctx: EnumContext, type: CompletionType, rng: RandomSou
   const spec: OrderCompletionSpec = {
     orderId: match.orderId,
     ceramicIds: [...match.ceramicIds],
-    // Declared mode half the time (L469): the declarations the search would record.
+    // Declared mode half the time (L470): the declarations the search would record.
     ...(match.crackleDeclarations.length > 0 && coin(rng) ? { crackleDeclarations: match.crackleDeclarations.map((d) => ({ ...d })) } : {}),
     ...((match.triggers.ru || match.triggers.guan) && coin(rng) ? { declineKilnAbility: true } : {}),
     ...(match.triggers.tributeWare && coin(rng) ? { declineTributeWare: true } : {}),

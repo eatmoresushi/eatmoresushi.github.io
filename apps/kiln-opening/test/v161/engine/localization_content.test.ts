@@ -198,8 +198,9 @@ describe("Chinese text uses the glossary terms", () => {
     }
     expect(IMPERIAL_TRACK.track[1]?.rewardTextZh).toBe(track.find((cells) => cells[0] === "1")?.[3]);
     expect(IMPERIAL_TRACK.track[4]?.rewardTextZh).toBe(track.find((cells) => cells[0] === "4")?.[3]);
-    // Regression: the Imperial Gift formula must keep every Actual Heat term (glossary §4.8), including 火标.
-    expect(IMPERIAL_TRACK.track[2]?.rewardTextZh).toContain("实际火候 = 窑骰点数 + 窑火修正 + 装窑时自选的御窑修正 + 火标");
+    // The Imperial Gift formula keeps every term the English reward names (L433: Kiln Die result + Fire + the modifier
+    // chosen when loading). Like the English, it leaves the Heat marker to the Imperial Kiln rules (owner wording, 2026-10-16).
+    expect(IMPERIAL_TRACK.track[2]?.rewardTextZh).toContain("实际火候 = 窑骰点数 + 窑火修正 + 装窑时选定的御窑修正");
     for (const id of CONTRIBUTION_CARD_IDS) expect(contributionCard(id).nameZh).toBe(glossaryTerm(contributionCard(id).name));
     const roundStructure = JSON.parse(readFileSync(join(ROOT, "data/round_structure.json"), "utf8")) as {
       phases: Array<{ order: number; name: string; nameZh: string }>;
@@ -285,10 +286,10 @@ describe("Chinese text uses the glossary terms", () => {
     }
   });
 
-  it("keeps Tech and Kiln reminders to one line of at most 48 characters (glossary §3, two printed lines of 24)", () => {
+  it("keeps Tech and Kiln reminders to one line of at most 72 characters (glossary §3, three printed lines of 24)", () => {
     for (const definition of [...TECH_IDS.map((id) => TECHS[id]), ...KILN_IDS.map((id) => KILNS[id])]) {
       expect(definition.shortTextZh, definition.id).not.toContain("\n");
-      expect([...definition.shortTextZh].length, `${definition.id}: ${definition.shortTextZh}`).toBeLessThanOrEqual(48);
+      expect([...definition.shortTextZh].length, `${definition.id}: ${definition.shortTextZh}`).toBeLessThanOrEqual(72);
     }
   });
 });

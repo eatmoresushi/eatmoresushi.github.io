@@ -5,7 +5,7 @@
  *
  * 1. `legalCommands(view, {mode: "canonical"})`: built from the same validators the server
  *    runs. In `firing_contributions` it is `legalContributions(view)` with TEND first, which
- *    is always affordable (L260).
+ *    is always affordable (L261).
  * 2. `safeExitCommands(view)`: the progress-guarantee exit of every decision (DESIGN §3.6),
  *    built from the view alone without the enumerator, so the seat still has a way forward
  *    even if enumeration itself fails. Each one is validated by the service like any other
@@ -43,7 +43,7 @@ export function safeExitCommands(view: PlayerView): AuthoritativeCommand[] {
       const step = phase.step;
       switch (step.kind) {
         case "before_action":
-          // The Canal Wharf is uncapped and costs nothing (L142): always legal for an
+          // The Canal Wharf is uncapped and costs nothing (L143): always legal for an
           // available worker. Workers in ID order (never Record key order).
           return Object.keys(me.workers)
             .sort()

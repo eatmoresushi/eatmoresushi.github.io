@@ -77,12 +77,12 @@ describe("R5a — empty active Shared Kiln space not held by another's Setter's 
     });
     expect(sharedSpaceOpenFor(state, "p1", "high_2")).toBe(true);
     expect(sharedSpaceOpenFor(state, "p1", "high_1")).toBe(false); // occupied
-    expect(sharedSpaceOpenFor(state, "p1", "high_3")).toBe(false); // covered at 2 players (L99, L183)
+    expect(sharedSpaceOpenFor(state, "p1", "high_3")).toBe(false); // covered at 2 players (L100, L184)
     expect(sharedSpaceOpenFor(state, "p1", "middle_1")).toBe(false); // p2's Setter's Mark (L630)
     expect(sharedSpaceOpenFor(state, "p2", "middle_1")).toBe(true); // the owner may load there
   });
 
-  it.each([2, 3, 4] as const)("only the active spaces of a %i-player game are ever open (L99)", (n) => {
+  it.each([2, 3, 4] as const)("only the active spaces of a %i-player game are ever open (L100)", (n) => {
     const state = buildState({ players: n });
     const open = KILN_SPACE_IDS.filter((space) => sharedSpaceOpenFor(state, "p1", space));
     expect(open).toEqual(
@@ -92,7 +92,7 @@ describe("R5a — empty active Shared Kiln space not held by another's Setter's 
 });
 
 describe("R5b — your own gained, empty Imperial Kiln", () => {
-  it("needs Recognition 2's tile and holds 1 ceramic per firing (L183, L284, L286)", () => {
+  it("needs Recognition 2's tile and holds 1 ceramic per firing (L184, L285, L287)", () => {
     expect(imperialKilnEmpty(buildState(), "p1")).toBe(false);
     expect(imperialKilnEmpty(buildState({ players: [{ recognition: 2 }, {}] }), "p1")).toBe(true);
     const occupied = buildState({
@@ -123,7 +123,7 @@ describe("R5c — Inverted Firing target", () => {
   });
 });
 
-describe("hasAnyLegalLoad (L182, R5)", () => {
+describe("hasAnyLegalLoad (L183, R5)", () => {
   it("needs at least 1 Shaped vessel", () => {
     expect(hasAnyLegalLoad(buildState(), "p1")).toBe(false);
     expect(hasAnyLegalLoad(buildState({ ceramics: [{ owner: "p1", shape: "vase", stage: "shaped" }] }), "p1")).toBe(true);
@@ -214,7 +214,7 @@ describe("validateLoads — counts and ceramics", () => {
     expect(code(state, [shared("c1", "high_1"), shared("c1", "high_2")])).toBe("DUPLICATE_CERAMIC");
   });
 
-  it("the Imperial Kiln takes at most 1 vessel per action and per firing (L181, L183)", () => {
+  it("the Imperial Kiln takes at most 1 vessel per action and per firing (L182, L184)", () => {
     expect(code(state, [imperial("c3", 1)])).toBeNull();
     expect(code(state, [imperial("c3", -1), imperial("c1", 0)])).toBe("IMPERIAL_KILN_UNAVAILABLE");
     expect(code(buildState({ ceramics: [{ owner: "p1", shape: "vase", stage: "shaped" }] }), [imperial("c1")])).toBe(
@@ -222,14 +222,14 @@ describe("validateLoads — counts and ceramics", () => {
     );
   });
 
-  it("Imperial Priority loads only into the Imperial Kiln (L292)", () => {
+  it("Imperial Priority loads only into the Imperial Kiln (L293)", () => {
     expect(code(state, [imperial("c3", 0)], 1, "imperial_priority")).toBeNull();
     expect(code(state, [shared("c3", "high_1")], 1, "imperial_priority")).toBe("INVALID_CHOICE");
   });
 });
 
 describe("validateLoads — Shared Kiln destinations", () => {
-  it("rejects covered and occupied spaces (L183)", () => {
+  it("rejects covered and occupied spaces (L184)", () => {
     const state = buildState({
       ceramics: [
         { owner: "p1", shape: "bowl", stage: "shaped" },
@@ -465,7 +465,7 @@ describe("loadCeramic / reworkShape (resolution)", () => {
     expect(ctx.events[1]).toEqual({ type: "CERAMIC_RESHAPED", playerId: "p1", ceramicId: "c1", from: "vase", to: "bowl" });
   });
 
-  it("reworkShape with an exhausted supply takes a proxy; a reworked proxy vanishes (L328)", () => {
+  it("reworkShape with an exhausted supply takes a proxy; a reworked proxy vanishes (L329)", () => {
     const draft = buildState({ players: [{ techs: ["T05"] }, {}], ceramics: [{ owner: "p1", shape: "vase", stage: "shaped" }] });
     draft.vesselSupply.censer = [];
     const ctx = testContext();

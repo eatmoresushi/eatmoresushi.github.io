@@ -1,8 +1,8 @@
 /**
- * Start of Round, Setter's Mark window and Cleanup (L123–131, L300–304, L630). Package P2,
+ * Start of Round, Setter's Mark window and Cleanup (L124–132, L301–305, L630). Package P2,
  * layer 4.
  *
- * Start of Round (L117, L125–131), all automatic (DESIGN §3.7):
+ * Start of Round (L118, L126–132), all automatic (DESIGN §3.7):
  *   `ROUND_STARTED` → Kiln Die (`KILN_DIE_ROLLED`, every round incl. Round 1, public, INT)
  *   → Rounds 2–5: rotate the Main display (`MAIN_DISPLAY_ROTATED`, `DISPLAY_REFILLED`)
  *   → refill the Tech displays (idempotent; silent when nothing is revealed)
@@ -10,7 +10,7 @@
  *   → Setter's Mark window in First Player order, only when someone can place one (T22, L630,
  *     optional per INT) → `round_start_done`.
  *
- * Cleanup (L302–304):
+ * Cleanup (L303–305):
  *   return workers and Setter's Marks (`WORKERS_RETURNED`, `SETTERS_MARK_RETURNED`)
  *   → Rounds 1–4: players above their hand limit (4, or 5 with Colour Samples) trim in any
  *     order (`cleanup_hand_limit`, parallel); Round 5 skips the trim (INT)
@@ -75,29 +75,29 @@ function continueSettersMarkWindow(draft: GameState, ctx: ResolveContext): void 
   }
 }
 
-// ── Start of Round (L123–131) ────────────────────────────────────────────────────────
+// ── Start of Round (L124–132) ────────────────────────────────────────────────────────
 
 /** The automatic Start of Round, then the Setter's Mark window when someone can use it. */
 export function startRound(draft: GameState, ctx: ResolveContext): void {
   const round = draft.round;
   emit(ctx, { type: "ROUND_STARTED", round, firstPlayerId: draft.firstPlayerId });
 
-  // L125, INT: a public roll every round, Round 1 included.
+  // L126, INT: a public roll every round, Round 1 included.
   const value = rollDie(FIRING.kilnDie.faces, ctx.rng);
   draft.kilnDie = { round, value };
   emit(ctx, { type: "KILN_DIE_ROLLED", round, value });
 
-  // L127–129 (B1): Rounds 2–5 only.
+  // L128–130 (B1): Rounds 2–5 only.
   if (round > 1) {
     rotateMainDisplay(draft, ctx);
   }
-  // L117 "refill displays": Tech displays refill right after each take (L209); re-running
+  // L118 "refill displays": Tech displays refill right after each take (L210); re-running
   // the refill here only matters if a display was left short.
   for (const discipline of DISCIPLINES) {
     refillTechDisplay(draft, discipline, ctx);
   }
 
-  // L131.
+  // L132.
   readyAllAbilities(draft);
   emit(ctx, { type: "ABILITIES_READIED", round });
 
@@ -107,9 +107,9 @@ export function startRound(draft: GameState, ctx: ResolveContext): void {
   continueSettersMarkWindow(draft, ctx);
 }
 
-// ── Cleanup (L300–304) ───────────────────────────────────────────────────────────────
+// ── Cleanup (L301–305) ───────────────────────────────────────────────────────────────
 
-/** The last round (L489): Cleanup skips the hand-limit trim (INT) and the game ends. Shared
+/** The last round (L490): Cleanup skips the hand-limit trim (INT) and the game ends. Shared
  * with `handLimitStatus(...).trimDue`, so the UI and Cleanup use one predicate. */
 export function isFinalRound(round: RoundNumber): boolean {
   return round >= GAME_CONFIG.rounds;
@@ -119,7 +119,7 @@ function handOf(draft: GameState, playerId: PlayerId): OrderId[] {
   return lookup(draft.hidden.orderHands, playerId) ?? [];
 }
 
-/** Cleanup step 3 (L304). */
+/** Cleanup step 3 (L305). */
 function finishCleanup(draft: GameState, ctx: ResolveContext): void {
   if (isFinalRound(draft.round)) {
     ctx.flow.continueAfter("game_over", draft, ctx);
@@ -133,7 +133,7 @@ function finishCleanup(draft: GameState, ctx: ResolveContext): void {
   ctx.flow.continueAfter("cleanup_done", draft, ctx);
 }
 
-/** Cleanup steps 1–2 (L302–303); step 3 follows at once unless someone must trim. */
+/** Cleanup steps 1–2 (L303–304); step 3 follows at once unless someone must trim. */
 export function openCleanup(draft: GameState, ctx: ResolveContext): void {
   // Step 1: workers (the placement record is the only occupancy record) and Setter's Marks.
   for (const playerId of draft.playerOrder) {
@@ -210,7 +210,7 @@ export const handlers: Pick<ActionHandlerTable, "PLACE_SETTERS_MARK" | "DISCARD_
 
   DISCARD_TO_HAND_LIMIT: {
     phases: ["cleanup_hand_limit"],
-    /** Exactly `hand − limit` distinct held Orders (L303). */
+    /** Exactly `hand − limit` distinct held Orders (L304). */
     validate(view, action) {
       const hand = view.own.orderHand;
       const limit = handLimit(player(view.game, view.viewerId));
@@ -236,7 +236,7 @@ export const handlers: Pick<ActionHandlerTable, "PLACE_SETTERS_MARK" | "DISCARD_
       }
       return null;
     },
-    /** Starting Orders return to the box; Main Orders go face down to the discard (L303, B3). */
+    /** Starting Orders return to the box; Main Orders go face down to the discard (L304, B3). */
     resolve(draft, actorId, action, ctx) {
       const phase = phaseAs(draft, "cleanup_hand_limit");
       invariant(phase.pendingPlayerIds.includes(actorId), `${actorId} has no hand to trim`);

@@ -1,5 +1,5 @@
 /**
- * Materials Yard (L157–162): Apprentice and Shifu effects, the Shifu's 1-Coin bonus, Senior
+ * Materials Yard (L158–163): Apprentice and Shifu effects, the Shifu's 1-Coin bonus, Senior
  * Apprentice (T18, L619, R12) and Prepared Clay (T17, L618), resolved split → bonus →
  * Prepared Clay against the running totals (DESIGN §3.5).
  */
@@ -29,7 +29,7 @@ function my(workerId: string, clay: number, wood: number, extra: Partial<Omit<MY
   return { type: "PLACE_MATERIALS_YARD", workerId, clay, wood, ...extra };
 }
 
-describe("Apprentice effect: 3 Clay/Wood in any mix (L161)", () => {
+describe("Apprentice effect: 3 Clay/Wood in any mix (L162)", () => {
   it.each([
     [3, 0],
     [0, 3],
@@ -71,7 +71,7 @@ describe("Apprentice effect: 3 Clay/Wood in any mix (L161)", () => {
   });
 });
 
-describe("Shifu effect: 4 Clay/Wood, then may pay 1 Coin for +1 Clay +1 Wood (L162)", () => {
+describe("Shifu effect: 4 Clay/Wood, then may pay 1 Coin for +1 Clay +1 Wood (L163)", () => {
   it("gains 4 in any mix and may decline the bonus (R4)", () => {
     const t = table();
     t.act("p1", my("p1:shifu", 1, 3, { buyShifuBonus: false }));
@@ -179,7 +179,7 @@ describe("Prepared Clay (T17, L618): after gaining, form 1 vessel for Clay cost 
     reject(table(), "p1", my("p1:apprentice:1", 3, 0, { preparedClay: { shape: "plate", decoration: "plain" } }), "TECH_NOT_OWNED");
   });
 
-  it("Decorator's Kit may reduce its Decoration (audit INT; branch kept although L210 makes it unreachable)", () => {
+  it("Decorator's Kit may reduce its Decoration (audit INT; branch kept although L211 makes it unreachable)", () => {
     // T16 and T17 are both Workshop Techs, so no legal fixture owns both; the quote is pure,
     // so the branch is checked on a hand-built view.
     const state = buildState({ players: [{ techs: ["T17"] }, {}] });

@@ -1,6 +1,6 @@
 /**
- * P6 `orders/completion.ts`: the completion procedure (L409–418) and the completion
- * abilities Ru (L459), Guan (L463) and Tribute Ware (T25, L642), each optional and once per
+ * P6 `orders/completion.ts`: the completion procedure (L410–419) and the completion
+ * abilities Ru (L460), Guan (L464) and Tribute Ware (T25, L642), each optional and once per
  * round (R4), the same through Canal Barge (R6), with Tribute Ware's Crown never printed
  * (R13). DESIGN §8.2 "Ru, Guan", "Tribute Ware bonus Crown (R13)".
  */
@@ -55,7 +55,7 @@ function complete(state: GameState, playerId: PlayerId, spec: OrderCompletionSpe
   return { record, events: ctx.events };
 }
 
-describe("the completion procedure (L409–418)", () => {
+describe("the completion procedure (L410–419)", () => {
   it("reveals, delivers beneath the Order, records VP, gains Coins and keeps the record", () => {
     const state = table({ kilnId: "GE", hand: ["O04", "S16"] });
     const vase = fin(state, "p1", "vase moon_white carved fine");
@@ -85,7 +85,7 @@ describe("the completion procedure (L409–418)", () => {
     ]);
   });
 
-  it("a delivered Crackle ceramic keeps its Crackle marker and printed Decoration (L93, L469)", () => {
+  it("a delivered Crackle ceramic keeps its Crackle marker and printed Decoration (L94, L470)", () => {
     const state = table({ kilnId: "GE", hand: ["S13"] });
     const bowl = fin(state, "p1", "bowl white plain fine crackle");
     const { record } = complete(state, "p1", { orderId: "S13", ceramicIds: [bowl] });
@@ -100,7 +100,7 @@ describe("the completion procedure (L409–418)", () => {
     expect(complete(state, "p1", spec).record.crackleDeclarations).toEqual(spec.crackleDeclarations);
   });
 
-  it("a ceramic satisfies only one Order (L418)", () => {
+  it("a ceramic satisfies only one Order (L419)", () => {
     const state = table({ kilnId: "GE", hand: ["S16", "S01"] });
     const bowl = fin(state, "p1", "bowl white plain std");
     complete(state, "p1", { orderId: "S16", ceramicIds: [bowl] });
@@ -137,7 +137,7 @@ describe("the completion procedure (L409–418)", () => {
   });
 });
 
-describe("Ru Kiln (L459)", () => {
+describe("Ru Kiln (L460)", () => {
   it("delivering an actual Celadon Plain Masterpiece scores 4 VP, even for an Order that asks for none of it", () => {
     const state = table({ kilnId: "RU", hand: ["S16"] });
     const vase = fin(state, "p1", "vase celadon plain mp");
@@ -202,7 +202,7 @@ describe("Ru Kiln (L459)", () => {
   });
 });
 
-describe("Guan Kiln (L463)", () => {
+describe("Guan Kiln (L464)", () => {
   it("an Order showing at least 1 printed Crown gains 2 Coins and 1 VP", () => {
     const state = table({ kilnId: "GU", hand: ["O18"] });
     const vase = fin(state, "p1", "vase celadon carved fine");

@@ -1,5 +1,5 @@
 /**
- * The Heat-marker step (L58, L266–269, L641, L648, L676; R9; INT "Heat-marker step"):
+ * The Heat-marker step (L59, L267–270, L641, L648, L676; R9; INT "Heat-marker step"):
  * First Player order; each face-down own marker is turned to +1/−1 or returned; Kiln Master
  * places its face-up marker on an own unmarked ceramic in this firing; the Fire card is then
  * revealed automatically (L677).
@@ -34,7 +34,7 @@ function threeMarkers(extra: Partial<StateSpec> = {}): StateSpec {
   };
 }
 
-describe("own Heat markers (L267–269)", () => {
+describe("own Heat markers (L268–270)", () => {
   it("resolve in First Player order: turn to +1/−1 or return; the Fire card follows automatically", () => {
     const table = openFiringTable(threeMarkers());
     tendAll(table);
@@ -87,7 +87,7 @@ describe("own Heat markers (L267–269)", () => {
     expect(table.player("p2").techs.find((t) => t.id === "T24")?.usedThisRound).toBe(false);
   });
 
-  it("markers are returned when the ceramics leave the kiln (L269, L683)", () => {
+  it("markers are returned when the ceramics leave the kiln (L270, L683)", () => {
     const table = openFiringTable(threeMarkers({ ceramics: [marked("p1", "middle_1"), { owner: "p2", stage: "loaded", shape: "bowl", glaze: "celadon", at: "middle_2" }] }));
     tendAll(table);
     table.act("p1", { type: "RESOLVE_HEAT_MARKERS", ownMarker: 1 });

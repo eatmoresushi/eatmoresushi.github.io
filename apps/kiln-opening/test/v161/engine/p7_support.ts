@@ -267,7 +267,7 @@ export function richStartState(seed: number, playerCount: PlayerCount): GameStat
       const shape = pickOf(SHAPES, rng);
       const decoration = pickOf(DECORATIONS, rng);
       const glaze = pickOf(GLAZES, rng);
-      // Ru's owner holds one Ru-triggering ceramic (L459: Masterpiece, Celadon, Plain), so
+      // Ru's owner holds one Ru-triggering ceramic (L460: Masterpiece, Celadon, Plain), so
       // random play reaches Ru (fuzz coverage asserts every Kiln ability fires).
       if (n === 0 && kilns[seat] === "RU") {
         ceramics.push({ owner: id, stage: "finished", shape, decoration: KILNS.RU.params.decoration, glaze: KILNS.RU.params.glaze, quality: KILNS.RU.params.quality });

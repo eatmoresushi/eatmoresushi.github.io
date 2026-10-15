@@ -1,5 +1,5 @@
 /**
- * Kiln Tradition helpers (L453–485). Every Kiln ability is once per round; declining an
+ * Kiln Tradition helpers (L454–486). Every Kiln ability is once per round; declining an
  * optional use never consumes it (R4). All five Kilns are selectable (R1).
  *
  * Layer 2 (imports `state.ts` within P0).

@@ -1,7 +1,7 @@
 /**
- * Materials Yard placement legality (L139–141, L619, R12). Gaining resources is always
+ * Materials Yard placement legality (L140–142, L619, R12). Gaining resources is always
  * possible, so the only limits are the shared placement checks; optional bonuses never make a
- * placement illegal (L141 "Optional bonuses may still be declined").
+ * placement illegal (L142 "Optional bonuses may still be declined").
  */
 
 import { describe, expect, it } from "vitest";
@@ -18,7 +18,7 @@ const my = (workerId: string, clay: number, extra: Partial<Extract<GameAction, {
   ...extra,
 });
 
-describe("at least 1 instance of the main action (L141)", () => {
+describe("at least 1 instance of the main action (L142)", () => {
   it("is always possible: legal with no resources at all, for either worker", () => {
     const state = buildState({ players: [{ resources: { clay: 0, wood: 0, coins: 0 } }, {}] });
     expect(verdict(state, "p1", my("p1:apprentice:1", 3))).toBeNull();

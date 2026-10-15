@@ -1,5 +1,5 @@
 /**
- * Start of Round and the Setter's Mark window (P2 `round.ts`): L117, L123–131, L630, R4,
+ * Start of Round and the Setter's Mark window (P2 `round.ts`): L118, L124–132, L630, R4,
  * INT "Kiln Die", INT "Setter's Mark", B1; DESIGN §3.1, §3.6, §3.7, §7.
  */
 
@@ -38,7 +38,7 @@ function run(state: GameState, seed = 1): { events: GameEvent[]; halts: ReturnTy
   return { events: ctx.events, halts: ctx.halts };
 }
 
-describe("Kiln Die (L125, INT: every round, public)", () => {
+describe("Kiln Die (L126, INT: every round, public)", () => {
   it.each([1, 2, 3, 4, 5] as RoundNumber[])("Round %i: rolled first, recorded for the round, then handed over", (round) => {
     const state = buildState({ round, kilnDie: round === 1 ? null : 3, display: SIX, mainDeck: ["O20", "O21", "O22"] });
     const seed = 40 + round;
@@ -77,7 +77,7 @@ describe("Kiln Die (L125, INT: every round, public)", () => {
   });
 });
 
-describe("Main display rotation at the start of Rounds 2–5 (L127–129, B1)", () => {
+describe("Main display rotation at the start of Rounds 2–5 (L128–130, B1)", () => {
   it("does not rotate in Round 1", () => {
     const state = buildState({ round: 1, kilnDie: null, display: SIX, mainDeck: ["O20", "O21"] });
     run(state);
@@ -113,7 +113,7 @@ describe("Main display rotation at the start of Rounds 2–5 (L127–129, B1)", 
   });
 });
 
-describe("refill displays and ready abilities (L117, L131)", () => {
+describe("refill displays and ready abilities (L118, L132)", () => {
   it("readies every Tech and Kiln Tradition", () => {
     const state = buildState({
       round: 3,

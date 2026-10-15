@@ -1,15 +1,15 @@
 /**
- * Commission Market incl. Senior Apprentice and the Shifu top-3 (L186–200, L396, L619, L653,
+ * Commission Market incl. Senior Apprentice and the Shifu top-3 (L187–201, L397, L619, L653,
  * R12, B1, B3; DESIGN §3.2 "Commission Market sub-step").
  *
- * - `PLACE_COMMISSION_MARKET` carries the mandatory first reservation (L198). A face-up
+ * - `PLACE_COMMISSION_MARKET` carries the mandatory first reservation (L199). A face-up
  *   reservation names its resource in the same command (everything is known); a blind
- *   reservation reveals a card to the actor, so `COMMISSION_GAIN` follows (L195–196); the
+ *   reservation reveals a card to the actor, so `COMMISSION_GAIN` follows (L196–197); the
  *   Shifu top-3 look opens `look_choice`, then `COMMISSION_CHOOSE_LOOKED`.
- * - After each reservation the player gains 1 Clay, Wood or Coin (L196). With the Shifu effect
+ * - After each reservation the player gains 1 Clay, Wood or Coin (L197). With the Shifu effect
  *   (incl. Senior Apprentice, R12) a second reservation may follow (`COMMISSION_RESERVE`), or
- *   `COMMISSION_STOP` ends the action (L198).
- * - A face-up position stays empty until the turn ends (L190, L390): the second reservation
+ *   `COMMISSION_STOP` ends the action (L199).
+ * - A face-up position stays empty until the turn ends (L191, L391): the second reservation
  *   chooses among the Orders still showing, and `work/turn.endTurn` refills once.
  * - Every reservation must take an available card (B1). Legality reads public counts only
  *   (`market.reservable`), so it never depends on hidden information.
@@ -61,12 +61,12 @@ function publicGame(draft: GameState): PublicGameState {
   return { ...core, counts: publicCounts(draft) };
 }
 
-/** Top-3 looks this effect allows (L196: the Shifu, once per action). */
+/** Top-3 looks this effect allows (L197: the Shifu, once per action). */
 function topThreeLooks(effect: WorkerEffect): number {
   return effect === "shifu" ? EFFECTS.shifu.topThreeLooks : 0;
 }
 
-/** At least one reservation can be made (L141, B1). A look needs a card, so it never adds
+/** At least one reservation can be made (L142, B1). A look needs a card, so it never adds
  * an option that a blind reservation lacks; it is listed for clarity. */
 function anyReservation(supply: Supply, lookAvailable: boolean): boolean {
   return supply.faceUpSlots.length > 0 || supply.blind || (lookAvailable && supply.look);
@@ -151,7 +151,7 @@ function countReservation(step: CommissionStep): void {
   step.reservationsMade = step.reservationsMade === 0 ? 1 : 2;
 }
 
-/** Resolves one reservation (L190–191, L196). */
+/** Resolves one reservation (L191–192, L197). */
 function reserve(draft: GameState, playerId: PlayerId, choice: CommissionReservationChoice, ctx: ResolveContext): void {
   const step = commissionStep(draft, playerId);
   switch (choice.kind) {
@@ -211,7 +211,7 @@ function reserve(draft: GameState, playerId: PlayerId, choice: CommissionReserva
   }
 }
 
-/** Gains the resource after a reservation (L195–196), then offers another reservation or
+/** Gains the resource after a reservation (L196–197), then offers another reservation or
  * completes the worker action. */
 function gainAfterReservation(draft: GameState, playerId: PlayerId, resource: GainResource, ctx: ResolveContext): void {
   const step = commissionStep(draft, playerId);

@@ -1,19 +1,19 @@
 /**
- * Materials Yard (L157–162), incl. Senior Apprentice (T18, L619, R12) and Prepared Clay (T17,
+ * Materials Yard (L158–163), incl. Senior Apprentice (T18, L619, R12) and Prepared Clay (T17,
  * L618).
  *
  * One atomic command resolved in this order (DESIGN §3.5), each step validated against the
  * running totals:
- * 1. gain the split: 3 (Apprentice effect) or 4 (Shifu effect) Clay/Wood in any mix (L161–162);
- * 2. `buyShifuBonus` (Shifu effect, optional): pay 1 Coin, gain +1 Clay +1 Wood (L162 "Then");
+ * 1. gain the split: 3 (Apprentice effect) or 4 (Shifu effect) Clay/Wood in any mix (L162–163);
+ * 2. `buyShifuBonus` (Shifu effect, optional): pay 1 Coin, gain +1 Clay +1 Wood (L163 "Then");
  * 3. `preparedClay` (optional, L618 "after gaining resources"): form 1 vessel paying its Clay
  *    cost +1 and a Decoration cost, so it may spend Clay gained in steps 1–2. A Tech effect,
  *    not a Form & Decorate action (L646): Ding, Large Throwing Wheel and the Shifu discount
  *    never apply. Decorator's Kit may reduce its Decoration (audit INT; unreachable under
- *    L210 because T16 and T17 are both Workshop Techs, but the branch is implemented).
+ *    L211 because T16 and T17 are both Workshop Techs, but the branch is implemented).
  *
  * The main action (gain resources) is always possible, so placement legality is only the
- * shared placement check (L141).
+ * shared placement check (L142).
  *
  * Layer 4. Hands over through `ctx.flow.workerActionDone` (DESIGN §2.2).
  */
@@ -101,7 +101,7 @@ function quoteFor(game: PublicCore, playerId: PlayerId, action: MaterialsYardAct
   const gained = zero();
   const lines: CostLine[] = [];
 
-  // 1. The split (L161–162).
+  // 1. The split (L162–163).
   const total = LOCATIONS.materials_yard.effects[effect].resources;
   const validCount = (n: number) => Number.isSafeInteger(n) && n >= 0;
   if (!validCount(action.clay) || !validCount(action.wood) || action.clay + action.wood !== total) {
@@ -121,7 +121,7 @@ function quoteFor(game: PublicCore, playerId: PlayerId, action: MaterialsYardAct
   gained.clay += action.clay;
   gained.wood += action.wood;
 
-  // 2. The Shifu's optional 1-Coin bonus (L162, R12 incl. Senior Apprentice).
+  // 2. The Shifu's optional 1-Coin bonus (L163, R12 incl. Senior Apprentice).
   if (action.buyShifuBonus === true) {
     if (effect !== "shifu") {
       return failed(

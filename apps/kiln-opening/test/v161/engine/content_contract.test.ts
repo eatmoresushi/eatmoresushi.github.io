@@ -463,7 +463,7 @@ describe("printed numbers equal the data parameters", () => {
 
 // ── Kilns, locations, capacity ───────────────────────────────────────────────────────────
 
-describe("Kiln Traditions (L453–477)", () => {
+describe("Kiln Traditions (L454–478)", () => {
   it("defines all five selectable Kilns (R1) with their full printed abilities", () => {
     expect(KILN_IDS).toEqual(["RU", "GU", "GE", "DI", "JU"]);
     expect(SOURCE).toContain("| Kiln Player Boards | 5 | Ru, Guan, Ge, Ding and Jun.");
@@ -500,7 +500,7 @@ const LOCATION_HEADINGS: Readonly<Record<LocationId, string>> = {
   magistrates_hall: "### Magistrate's Hall",
 };
 
-describe("locations and capacity (L145–232)", () => {
+describe("locations and capacity (L146–233)", () => {
   it("defines the five central and two personal locations", () => {
     expect([...CENTRAL_LOCATION_IDS, ...PERSONAL_LOCATION_IDS].sort()).toEqual([...LOCATION_IDS].sort());
     expect(SOURCE).toContain("Materials Yard, Commission Market, Guild Hall, Canal Wharf, Magistrate's Hall.");
@@ -581,7 +581,7 @@ describe("locations and capacity (L145–232)", () => {
 // ── Components, setup, firing and scoring values ─────────────────────────────────────────
 
 describe("setup, production, firing and scoring values", () => {
-  it("sets up as L97–111 prints", () => {
+  it("sets up as L98–112 prints", () => {
     expect(SOURCE).toContain(`**2–4 players`);
     expect(GAME_CONFIG.players).toEqual({ min: 2, max: 4 });
     expect(SOURCE).toContain(`The game lasts exactly **${GAME_CONFIG.rounds} rounds**.`);
@@ -598,14 +598,18 @@ describe("setup, production, firing and scoring values", () => {
     expect(SOURCE).toContain(`Exactly ${GAME_CONFIG.techs.perDiscipline} Form & Decorate, ${GAME_CONFIG.techs.perDiscipline} Glazing & Loading and ${GAME_CONFIG.techs.perDiscipline} Firing`);
   });
 
-  it("scores each Tech's printed 1 VP when it is gained, per owner amendment A1 (L378, L492, L609, L755)", () => {
+  it("scores each Tech's printed 1 VP when it is gained, per owner amendment A1 (L30, L379, L492, L609, L755)", () => {
     const vp = GAME_CONFIG.techs.vpEach;
     expect(vp).toBe(1);
-    // A1 is applied in the source itself (lines 378, 491, 492, 609, 755): scored on gain, never again at game end.
+    // A1 is applied in the source itself (change 20 at line 30; lines 379, 492, 609, 755): scored on gain, never again at game end.
     const lines = SOURCE.split("\n");
-    expect(lines[377]).toBe(`- Each Advanced Tech scores **${vp} VP immediately when you gain it**; it is not scored again at game end.`);
-    expect(lines[490]).toContain(`**${vp} VP for each Advanced Tech** (scored when gained)`);
-    expect(lines[491]).toBe(`2. nothing more for Advanced Techs: each already scored its **${vp} VP** when you gained it;`);
+    expect(lines[29]).toBe(`20. **Tech VP scored on purchase.** The ${vp} VP per Advanced Tech is recorded the moment the tile is taken, not at game end. Bookkeeping only; Techs cannot be lost.`);
+    expect(lines[378]).toBe(`- Each Advanced Tech scores **${vp} VP immediately when you gain it**; it is not scored again at game end.`);
+    // Final scoring (L492–494, owner wording 2026-10-16): recorded VP (Tech VP included), Exhibition, Coins; no Tech step.
+    expect(lines[491]).toContain(`**${vp} VP for each Advanced Tech** (scored when gained)`);
+    expect(lines[492]).toBe("2. the end-game Exhibition;");
+    expect(lines[493]).toBe(`3. **1 VP per 3 Coins remaining**, maximum **5 VP**.`);
+    expect(lines[494]).toBe("");
     expect(lines[608]).toContain(`Each Advanced Tech scores **${vp} VP immediately when you gain it**.`);
     expect(lines[754]).toBe(`- Advanced Techs: **${vp} VP each**, scored when you gain them.`);
     expect(SOURCE).not.toMatch(/Advanced Tech[^\n]*\*\*1 VP at game end\*\*/);
@@ -616,10 +620,10 @@ describe("setup, production, firing and scoring values", () => {
     expect([id, date]).toEqual(["A1", "2026-10-15"]);
     expect(amendment).toContain(`Each Advanced Tech scores its ${vp} VP immediately when the player gains it`);
     expect(amendment).toContain("It is no longer added at game end.");
-    expect(overrides).toContain("Lines 378, 492, 609, 755");
+    expect(overrides).toContain("Lines 379, 492, 609, 755");
   });
 
-  it("prices Shapes, Decorations and Glazes as L318–352 print", () => {
+  it("prices Shapes, Decorations and Glazes as L319–353 print", () => {
     const shapes = section("### Shapes and Forming Costs");
     for (const shape of SHAPES) {
       const [, clay, cards] = row(shapes, Object.keys(SHAPE_NAMES).find((name) => SHAPE_NAMES[name] === shape) ?? "");
@@ -638,7 +642,7 @@ describe("setup, production, firing and scoring values", () => {
     }
   });
 
-  it("builds the Shared Kiln of L71 and covers spaces as L99 prints", () => {
+  it("builds the Shared Kiln of L72 and covers spaces as L100 prints", () => {
     expect(SOURCE).toContain("Eight spaces: 3 High (+1), 3 Middle (0), 2 Low (−1).");
     const counts: Record<KilnZone, number> = { high: 0, middle: 0, low: 0 };
     for (const id of KILN_SPACE_IDS) counts[zoneOf(id)] += 1;
@@ -654,7 +658,7 @@ describe("setup, production, firing and scoring values", () => {
     expect([activeKilnSpaces(2).length, activeKilnSpaces(3).length, activeKilnSpaces(4).length]).toEqual([4, 6, 8]);
   });
 
-  it("rolls the Kiln Die of L92 and clamps Base Heat to 0–5 (L248)", () => {
+  it("rolls the Kiln Die of L93 and clamps Base Heat to 0–5 (L249)", () => {
     expect(SOURCE).toContain(`Six-sided, faces ${FIRING.kilnDie.faces.join(", ")}.`);
     expect(FIRING.kilnDie.faces).toEqual([1, 1, 2, 2, 3, 3]);
     expect(SOURCE).toContain(`Clamp Base Heat to ${FIRING.baseHeat.minimum}–${FIRING.baseHeat.maximum}.`);
@@ -670,7 +674,7 @@ describe("setup, production, firing and scoring values", () => {
     expect(FIRING.fireDeck).toHaveLength(12);
   });
 
-  it("matches the Contribution card table (L254–258)", () => {
+  it("matches the Contribution card table (L255–259)", () => {
     const block = section("### Contribution Cards");
     expect(CONTRIBUTION_CARD_IDS).toEqual(["BANK", "TEND", "STOKE"]);
     for (const id of CONTRIBUTION_CARD_IDS) {
@@ -681,7 +685,7 @@ describe("setup, production, firing and scoring values", () => {
     }
   });
 
-  it("assigns Quality by the Quality table (L273–278)", () => {
+  it("assigns Quality by the Quality table (L274–279)", () => {
     const block = section("### Quality Table");
     expect(row(block, "0")[1]).toBe("Masterpiece");
     expect(row(block, "1")[1]).toBe("Fine");
@@ -696,7 +700,7 @@ describe("setup, production, firing and scoring values", () => {
     expect(FIRING.imperialModifiers).toEqual([-1, 0, 1]);
   });
 
-  it("scores the Exhibition, Recognition and Coins as L428–494 print", () => {
+  it("scores the Exhibition, Recognition and Coins as L429–494 print", () => {
     const exhibition = section("### End-game Exhibition");
     const vp = IMPERIAL_TRACK.exhibition.qualityVp;
     expect(row(exhibition, "Standard")[1]).toBe(String(vp.standard));
@@ -901,8 +905,8 @@ describe("full Tech and Kiln abilities are the rulebook text in both languages",
   });
 
   it("the Chinese edition defers to the English rulebook", () => {
-    expect(SOURCE_ZH.split("\n")[0]).toContain("v1.61");
-    expect(SOURCE_ZH).toContain("规则以英文版规则书为准");
+    expect(SOURCE_ZH.split("\n")[0]).toContain("v1.6.1");
+    expect(SOURCE_ZH).toContain("规则如有出入，以英文版规则书为准");
   });
 });
 
@@ -1050,13 +1054,13 @@ function resolveTag(tag: string): string | null {
  * line exactly.
  */
 const QUOTE_ADAPTATIONS: ReadonlyArray<readonly [string, string, string]> = [
-  ["T18", "Because the display is not refilled until your turn ends, a second face-up reservation", "L198 says \"a Shifu's\"; here an Apprentice resolves the Shifu effect"],
-  ["T10", "Starting Orders and reserved Main Orders both count toward the limit at Cleanup", "joins L199's last sentence to its Cleanup timing"],
-  ["T12", "A ceramic in an Imperial Kiln gives no say over the shared fire", "L260 abridged"],
+  ["T18", "Because the display is not refilled until your turn ends, a second face-up reservation", "L199 says \"a Shifu's\"; here an Apprentice resolves the Shifu effect"],
+  ["T10", "Starting Orders and reserved Main Orders both count toward the limit at Cleanup", "joins L200's last sentence to its Cleanup timing"],
+  ["T12", "A ceramic in an Imperial Kiln gives no say over the shared fire", "L261 abridged"],
   ["JU", "Jun's adjustment applies on top of either a Heat marker or the Kiln Master marker", "L648's \"either\" named"],
-  ["magistrates_hall", "You may place a worker only if you can perform at least 1 instance of the main action", "L141 \"that location's\" made specific"],
-  ["orders.starting", "Starting Orders and reserved Main Orders both count toward your hand limit of 4", "L199 and L303 combined"],
-  ["orders.main", "Starting Orders and reserved Main Orders both count toward your hand limit of 4", "L199 and L303 combined"],
+  ["magistrates_hall", "You may place a worker only if you can perform at least 1 instance of the main action", "L142 \"that location's\" made specific"],
+  ["orders.starting", "Starting Orders and reserved Main Orders both count toward your hand limit of 4", "L200 and L304 combined"],
+  ["orders.main", "Starting Orders and reserved Main Orders both count toward your hand limit of 4", "L200 and L304 combined"],
 ];
 
 describe("clarifications (owner decision D10, K15)", () => {
@@ -1084,13 +1088,13 @@ describe("clarifications (owner decision D10, K15)", () => {
         expect(() => clarificationSourceKind(tag)).not.toThrow();
         if (resolveTag(tag) === null) unresolved.push(`${key}: ${tag}`);
       }
-      // Inline line references such as "(L211)" must exist too.
+      // Inline line references such as "(L212)" must exist too.
       for (const match of item.en.matchAll(/\(L(\d+)\)/g)) {
         if (resolveTag(`L${match[1]}`) === null) unresolved.push(`${key}: inline L${match[1]}`);
       }
     }
     expect(unresolved).toEqual([]);
-    expect(clarificationSourceKind("L375")).toBe("rulebook");
+    expect(clarificationSourceKind("L376")).toBe("rulebook");
     expect(clarificationSourceKind("ED L649")).toBe("editorial");
     expect(clarificationSourceKind("INT Ge Crackle")).toBe("interpretation");
     expect(clarificationSourceKind("P1")).toBe("provisional");

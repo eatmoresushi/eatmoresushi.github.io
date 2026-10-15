@@ -70,7 +70,7 @@ export function player(game: PublicCore, playerId: PlayerId): PlayerState {
 
 // ── Turn order and decisions ─────────────────────────────────────────────────────────
 
-/** First Player, then clockwise (L135, L377). */
+/** First Player, then clockwise (L136, L378). */
 export function turnOrder(game: PublicCore): PlayerId[] {
   const order = game.playerOrder;
   const start = order.indexOf(game.firstPlayerId);
@@ -262,7 +262,7 @@ const PROXY_PATTERN = /-proxy-[1-9][0-9]*$/;
 
 /**
  * Takes the top Vessel card of a Shape, or mints a proxy when that supply is empty
- * (Vessel cards are not a limit, L328). Used by `formCeramic` and by Reworking Table.
+ * (Vessel cards are not a limit, L329). Used by `formCeramic` and by Reworking Table.
  */
 export function takeVesselCard(draft: GameState, shape: Shape): VesselInstanceId {
   const card = draft.vesselSupply[shape].shift();
@@ -328,7 +328,7 @@ export function heatMarkerOf(game: PublicCore, playerId: PlayerId, source: "own"
   return loadedCeramics(game).find((c) => c.ownerId === playerId && c.heatMarker?.source === source) ?? null;
 }
 
-/** This firing's ceramic in the player's Imperial Kiln, if any (L286). */
+/** This firing's ceramic in the player's Imperial Kiln, if any (L287). */
 export function imperialKilnCeramic(game: PublicCore, playerId: PlayerId): LoadedCeramic | null {
   return loadedCeramics(game).find((c) => c.ownerId === playerId && c.placement.kiln === "imperial") ?? null;
 }

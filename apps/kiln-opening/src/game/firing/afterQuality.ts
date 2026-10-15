@@ -1,12 +1,12 @@
 /**
  * Protective Saggars, Second Firing (+R7 Jun), Ge, salvage and finishing the firing
- * (Appendix D steps 10–12, L280, L637, L640, L467, L681–683).
+ * (Appendix D steps 10–12, L281, L637, L640, L468, L681–683).
  *
  * Step 10 (`firing_after_quality`): players act in First Player order (L681). The head of the
  * queue uses its after-Quality abilities in any order; eligibility is rechecked after each
  * use, and a player with nothing eligible left is advanced automatically (DESIGN §3.3, §3.7).
  * One player's turn holds at most one of Protective Saggars / Second Firing (both Firing
- * Techs, L210) plus Ge if they own the Ge Kiln, so the order matters only between Ge and that
+ * Techs, L211) plus Ge if they own the Ge Kiln, so the order matters only between Ge and that
  * Tech (Ge may follow Saggars on the same ceramic, L654).
  *
  * Second Firing (T14, L640, R7): an extra Fire card, the same Base Heat (Kiln Die for the
@@ -16,7 +16,7 @@
  * if worse) and the card discarded inside `USE_SECOND_FIRING`.
  *
  * Step 11 (`firing_salvage`, parallel): each player with a still-Flawed ceramic from this
- * firing may discard 1 for 2 Coins and return its Vessel card (L280, L682).
+ * firing may discard 1 for 2 Coins and return its Vessel card (L281, L682).
  *
  * Step 12 (`finishFiring`): ceramics become Finished, kilns empty, Kiln Furniture and markers
  * return, the Fire card goes face up to the discard, `lastFiring` records the firing, Test
@@ -75,7 +75,7 @@ const IMPROVABLE: readonly Quality[] = ["flawed", "standard"];
 // ── Shared firing helpers (also used by `firing/pipeline.ts`) ─────────────────────────
 
 /**
- * Validates "1 of your ceramics from this firing" (L637, L640, L641, L467, L477, L280) on a
+ * Validates "1 of your ceramics from this firing" (L637, L640, L641, L468, L478, L281) on a
  * view: it exists, it is the viewer's, and it is a loaded ceramic of the current firing (not
  * salvaged). Returns the firing record or a rule error.
  */
@@ -332,7 +332,7 @@ export function salvageOptions(view: PlayerView): SalvageOptions | null {
 }
 
 /** Discards a salvaged ceramic: off its kiln space (with any Kiln Furniture beneath it,
- * which would return after firing anyway), its Vessel card back to the supply (L280). */
+ * which would return after firing anyway), its Vessel card back to the supply (L281). */
 function discardSalvagedCeramic(draft: GameState, ceramicId: CeramicId): void {
   const salvaged = lookup(draft.ceramics, ceramicId);
   invariant(salvaged !== undefined && salvaged.stage === "loaded", `${ceramicId} is not a loaded ceramic`);
@@ -433,7 +433,7 @@ function useAbilityAndContinue(draft: GameState, actorId: PlayerId, ability: Aft
       invariant(first !== null && firing.baseHeat !== null, `${ceramicId} has no first calculation`);
       const extra = drawFire(draft, ctx);
       // Same Base Heat (Kiln Die for the Imperial Kiln), position modifier and Heat marker;
-      // Jun from the first calculation does not carry over (L640, L288).
+      // Jun from the first calculation does not carry over (L640, L289).
       const source = record.kiln === "imperial" ? firing.kilnDie : firing.baseHeat;
       record.second = heatCalculation({
         fireModifier: extra,

@@ -122,7 +122,7 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
     zh: "此窑口已被他人选走",
     detailKeys: keys("kilnId"),
   },
-  // ── Placement (L139–143) ──────────────────────────────────────────────────────────────
+  // ── Placement (L140–144) ──────────────────────────────────────────────────────────────
   WORKER_UNAVAILABLE: {
     en: "You have no {workerId} available.",
     zh: "你没有可派的{workerId}",
@@ -130,7 +130,7 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
   },
   WORKER_ACTION_REQUIRED: {
     en: "You may not pass in the Work Phase: place 1 worker (the Canal Wharf is always available).",
-    zh: "派工阶段不得停派，请派1名工人（漕运码头永远可派）",
+    zh: "派工阶段不能跳过，请派1名工人（漕运码头永远可派）",
     detailKeys: keys(),
   },
   WORKER_ACTION_ALREADY_TAKEN: {

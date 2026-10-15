@@ -42,7 +42,7 @@ describe("Tech readiness", () => {
     expect(() => markTechUsed(state, "p2", "T13", ctx)).toThrow(InvariantError);
   });
 
-  it("readyAllAbilities readies every Tech and Kiln Tradition (L131)", () => {
+  it("readyAllAbilities readies every Tech and Kiln Tradition (L132)", () => {
     const state = buildState({
       players: [{ techs: [{ id: "T05", usedThisRound: true }], kilnAbilityUsedThisRound: true }, { techs: [{ id: "T24", usedThisRound: true }] }],
     });
@@ -53,7 +53,7 @@ describe("Tech readiness", () => {
   });
 });
 
-describe("hand limit (L199, L303, L626)", () => {
+describe("hand limit (L200, L304, L626)", () => {
   it("is 4, or 5 with Colour Samples", () => {
     const state = buildState({ players: [{ techs: ["T10"] }, {}] });
     expect(handLimit(state.players["p1"]!)).toBe(5);
@@ -61,7 +61,7 @@ describe("hand limit (L199, L303, L626)", () => {
   });
 });
 
-describe("acquisition (L207–213, L374)", () => {
+describe("acquisition (L208–214, L375)", () => {
   it("allows at most 1 Tech per discipline and 3 in total", () => {
     const state = buildState({ players: [{ techs: ["T01", "T22"] }, {}] });
     const p1 = state.players["p1"]!;
@@ -74,14 +74,14 @@ describe("acquisition (L207–213, L374)", () => {
     expectDocumentedDetails(acquisitionError(p1, "T16"));
   });
 
-  it("prices at the printed cost, 1 Coin less for the Guild Hall Shifu (L206–207)", () => {
+  it("prices at the printed cost, 1 Coin less for the Guild Hall Shifu (L207–208)", () => {
     expect(techPrice("T25", "apprentice")).toBe(TECHS.T25.cost);
     expect(techPrice("T25", "shifu")).toBe(TECHS.T25.cost - 1);
     expect(techPrice("T01", "shifu")).toBe(1);
     expect(techPrice("T17", "apprentice")).toBe(3);
   });
 
-  it("grantTech adds the Tech and unlocks the matching personal space (L211)", () => {
+  it("grantTech adds the Tech and unlocks the matching personal space (L212)", () => {
     const state = buildState({ round: 3 });
     const ctx = testContext();
     grantTech(state, "p1", "T16", ctx);
@@ -107,7 +107,7 @@ describe("acquisition (L207–213, L374)", () => {
   });
 });
 
-describe("Kiln Traditions (L453–485, R1)", () => {
+describe("Kiln Traditions (L454–486, R1)", () => {
   it("tracks the once-per-round Kiln ability", () => {
     const state = buildState({ players: [{ kilnId: "JU" }, { kilnId: "DI" }] });
     const p1 = state.players["p1"]!;

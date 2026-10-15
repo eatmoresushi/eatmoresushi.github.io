@@ -1,5 +1,5 @@
 /**
- * Commission Market placement legality (L139, L141, L190–191, L198, B1): a worker may be
+ * Commission Market placement legality (L140, L142, L191–192, L199, B1): a worker may be
  * placed only if at least 1 reservation can be made, with every reservation taking an
  * available card. Legality reads public counts only. Also the shared placement checks as they
  * surface through this location: absolute capacity, worker availability, one worker action
@@ -36,7 +36,7 @@ function supplySpec(display: Array<OrderId | null>, mainDeck: OrderId[], mainDis
   };
 }
 
-describe("at least 1 reservation is possible (L141, B1)", () => {
+describe("at least 1 reservation is possible (L142, B1)", () => {
   it("is legal with face-up Orders only (deck and discard empty)", () => {
     const spec = supplySpec(["O01", null, null, null, null, null], [], []);
     expect(legality(spec, "p1:apprentice:1", { kind: "face_up", slotIndex: 0, orderId: "O01", gain: "coins" })).toBeNull();
@@ -99,7 +99,7 @@ describe("the first reservation's own checks", () => {
   });
 });
 
-describe("shared placement checks at the Commission Market (L139, L135)", () => {
+describe("shared placement checks at the Commission Market (L140, L136)", () => {
   it("capacity is absolute: 2 / 3 / 4 spaces, the Shifu included", () => {
     for (const players of [2, 3, 4] as const) {
       const placements = Array.from({ length: players }, (_, index) => ({

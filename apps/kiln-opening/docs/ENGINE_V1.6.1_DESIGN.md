@@ -3,7 +3,7 @@
 Branch `kiln-opening-next-version`. This document and [`src/game/types.ts`](../src/game/types.ts) together form the contract that implementation agents build against in parallel.
 
 - **Rules authority:** [V1.6.1 Player Rulebook](./KILN_OPENING_v1.6.1_EN_SOURCE.md) is the only rules source. [The audit](./RULEBOOK_AUDIT_V1.6.1.md) records owner rulings R1–R13 and B1–B3, editorial corrections, interpretations (INT) and digital decisions (DIG).
-- **Notation:** `L123` is a line of the V1.6.1 source. `R4`, `B2` are rulings. `INT:` and `DIG:` are audit entries.
+- **Notation:** `L124` is a line of the V1.6.1 source. `R4`, `B2` are rulings. `INT:` and `DIG:` are audit entries.
 - **Versions:** rules `1.6.1`, state schema `6`, `RULES_BEHAVIOUR_REVISION` `29`.
 
 V1.6.1 replaces the V1.4 engine wholesale. Nothing here changes a rule or a balance value. Where the text cannot decide a case, §11 lists it as an open question, together with the default the engine adopts until the owner answers.
@@ -175,10 +175,10 @@ export function centralCapacity(game: PublicCore, locationId: CentralLocationId)
 export function nextPersonalSpace(game: PublicCore, playerId: PlayerId, locationId: PersonalLocationId): PersonalSpaceIndex | null;
 export function validatePlacement(view: ActorView, workerId: WorkerId, locationId: LocationId,
                                   seniorApprentice: boolean): GameRuleError | null;
-//   phase work_turn, step before_action, active player; worker available; absolute capacity (L139);
-//   personal space unlocked and unused this round (L143); Senior Apprentice only for an Apprentice
+//   phase work_turn, step before_action, active player; worker available; absolute capacity (L140);
+//   personal space unlocked and unused this round (L144); Senior Apprentice only for an Apprentice
 //   at the Materials Yard or Commission Market with T18 ready (L619, R12).
-//   The location's "at least 1 instance" check (L141) is the location module's job.
+//   The location's "at least 1 instance" check (L142) is the location module's job.
 export function workerEffectFor(view: ActorView, workerId: WorkerId, seniorApprentice: boolean): WorkerEffect;
 export function placeWorker(draft: GameState, playerId: PlayerId, workerId: WorkerId, locationId: LocationId,
                             seniorApprentice: boolean, ctx: ResolveContext): WorkerPlacement; // WORKER_PLACED; marks T18 used
@@ -187,12 +187,12 @@ export function placeWorker(draft: GameState, playerId: PlayerId, workerId: Work
 export function ownsTech(p: PlayerState, techId: TechId): boolean;
 export function techReady(p: PlayerState, techId: TechId): boolean;            // owned and not (oncePerRound and used)
 export function markTechUsed(draft: GameState, playerId: PlayerId, techId: TechId, ctx: ResolveContext): void; // TECH_USED
-export function readyAllAbilities(draft: GameState): void;                       // Techs and Kiln Traditions (L131)
+export function readyAllAbilities(draft: GameState): void;                       // Techs and Kiln Traditions (L132)
 export function handLimit(p: PlayerState): number;                              // 4, or T10 params.handLimit (5)
 export function acquisitionError(p: PlayerState, techId: TechId): GameRuleError | null; // TECH_LIMIT / TECH_DISCIPLINE_OWNED
-export function techPrice(techId: TechId, effect: WorkerEffect): number;        // printed cost, Shifu −1, minimum 0 (L207)
+export function techPrice(techId: TechId, effect: WorkerEffect): number;        // printed cost, Shifu −1, minimum 0 (L208)
 export function grantTech(draft: GameState, playerId: PlayerId, techId: TechId, ctx: ResolveContext): void;
-//   adds OwnedTechState and unlocks space 1 of the matching personal location (L211); PERSONAL_SPACE_UNLOCKED.
+//   adds OwnedTechState and unlocks space 1 of the matching personal location (L212); PERSONAL_SPACE_UNLOCKED.
 //   Does not resolve when-acquired effects (guildHall.ts does).
 
 // kilns.ts
@@ -233,10 +233,10 @@ Every location and window module exports a `Pick<ActionHandlerTable, …>` of ha
 | `content.ts` (P1) | `GAME_CONFIG`, `FIRING`, `IMPERIAL_TRACK`, `LOCATIONS: {[K in LocationId]: LocationDefinition<K>}`, `KILNS`, `TECHS: {[K in TechId]: TechDefinition<K>}`, `ORDERS`, `STARTING_ORDER_IDS`, `MAIN_ORDER_IDS`, `KILN_IDS`, `TECH_IDS`, `LOCATION_IDS`, `CENTRAL_LOCATION_IDS`, `PERSONAL_LOCATION_IDS`, `SHAPES`, `GLAZES`, `DECORATIONS`, `DISCIPLINES`, `KILN_SPACE_IDS`, `QUALITY_RANK`; `preferredHeat(g)`, `shapeClay(s)`, `decorationCost(d)`, `zoneOf(space)`, `zoneModifier(space)`, `activeKilnSpaces(n)`, `locationCapacity(id, n)`, `qualityForDifference(diff)`, `contributionCard(id)`, `techsOfDiscipline(d)` | none | `types` |
 | `setup.ts` (P2) | `createInitialState(input, rng): CreateGameResult` | `SELECT_KILN`; `setup_kiln_selection`; emits `setup_done` | L0–3 |
 | `round.ts` (P2) | `startRound(draft, ctx)`, `openCleanup(draft, ctx)` | `PLACE_SETTERS_MARK`, `DISCARD_TO_HAND_LIMIT`; `round_start_setters_mark`, `cleanup_hand_limit`; emits `round_start_done`, `cleanup_done`, `game_over` | L0–3 |
-| `market.ts` (P2) | `drawMainOrder(draft, ctx): OrderId \| null` (reshuffles the discard only when the deck is empty, L511); `takeTopMainOrders(draft, max, ctx): OrderId[]` (looks: reshuffle only if the deck is empty when the look starts, never to complete it, B1); `discardMainOrders(draft, ids)` (face down); `takeFaceUpOrder(draft, playerId, slotIndex): OrderId` (leaves `null`, sets `refillPendingFor`); `refillMainDisplay(draft, cause, ctx)` (compact left, then fill empty positions from the deck, L190, B1); `rotateMainDisplay(draft, ctx)` (L127–129); `addToHand`, `removeFromHand`; `reservable(game: PublicGameState): { faceUpSlots: number[]; blind: boolean; look: boolean }`; `drawTechsForInspection(draft, d, n)`; `returnTechsToBottom(draft, d, ids)`; `takeFaceUpTech(draft, techId)`; `refillTechDisplay(draft, d, ctx)` | none | L0–2 |
+| `market.ts` (P2) | `drawMainOrder(draft, ctx): OrderId \| null` (reshuffles the discard only when the deck is empty, L511); `takeTopMainOrders(draft, max, ctx): OrderId[]` (looks: reshuffle only if the deck is empty when the look starts, never to complete it, B1); `discardMainOrders(draft, ids)` (face down); `takeFaceUpOrder(draft, playerId, slotIndex): OrderId` (leaves `null`, sets `refillPendingFor`); `refillMainDisplay(draft, cause, ctx)` (compact left, then fill empty positions from the deck, L191, B1); `rotateMainDisplay(draft, ctx)` (L128–130); `addToHand`, `removeFromHand`; `reservable(game: PublicGameState): { faceUpSlots: number[]; blind: boolean; look: boolean }`; `drawTechsForInspection(draft, d, n)`; `returnTechsToBottom(draft, d, ids)`; `takeFaceUpTech(draft, techId)`; `refillTechDisplay(draft, d, ctx)` | none | L0–2 |
 | `kilnLoading.ts` (P3) | `sharedSpaceOpenFor(game, pid, space)` (R5a); `invertedFiringTarget(game, pid, space)` (R5c/R8); `imperialKilnEmpty(game, pid)`; `hasAnyLegalLoad(game, pid)` (R5, current Shapes only: §11 Q3); `validateLoads(view, loads, maxLoads, loadedBy)` (sequential simulation, R8; per load: ceramic → `reworkShape` → destination incl. the Inverted Firing Shape test on the reworked Shape → Kiln Furniture, see the `LoadSpec` JSDoc); `loadCeramic(draft, pid, spec, loadedBy, ctx): LoadedCeramic`; `reworkShape(draft, ceramicId, shape, ctx)`; `loadDestinationOptions(view, pid, ceramicId, earlierLoads, reworkShape?)` | none | L0–2 |
 | `work/materialsYard.ts` (P3) | `quoteMaterialsYard(view, action): CostQuote` (order: split → Shifu bonus → Prepared Clay, each validated against the running totals, §3.5) | `PLACE_MATERIALS_YARD` | L0–3 |
-| `work/formDecorate.ts` (P3) | `quoteFormDecorate(view, action): CostQuote`; `canFormAny(game, pid): boolean` (L171, R4: tries every single Shape × Decoration with every ready Workshop discount — Large Throwing Wheel on a Vase/Censer, Decorator's Kit on a non-Plain; forming 2 is never cheaper than forming 1, so singles suffice) | `PLACE_FORM_DECORATE` | L0–3 |
+| `work/formDecorate.ts` (P3) | `quoteFormDecorate(view, action): CostQuote`; `canFormAny(game, pid): boolean` (L172, R4: tries every single Shape × Decoration with every ready Workshop discount — Large Throwing Wheel on a Vase/Censer, Decorator's Kit on a non-Plain; forming 2 is never cheaper than forming 1, so singles suffice) | `PLACE_FORM_DECORATE` | L0–3 |
 | `work/glazeLoad.ts` (P3) | none | `PLACE_GLAZE_LOAD` | L0–3 |
 | `work/centralSimple.ts` (P3) | none | `PLACE_CANAL_WHARF`, `PLACE_MAGISTRATES_HALL` | L0–3 |
 | `work/turn.ts` (P4) | `openWorkPhase(draft, ctx)`; `completeWorkerAction(draft, pid, ctx)` (wired as `flow.workerActionDone`); `afterActionWindowOpen(game, pid)`; `imperialPriorityUsable(game, pid)`; `afterWindowAbilityUsed(draft, pid, ctx)`; `endTurn(draft, pid, automatic, ctx)` | `END_TURN`; `work_turn`; emits `work_phase_done` | L0–3 |
@@ -363,7 +363,7 @@ A window marked `?` opens only when at least one player has a decision. Otherwis
 
 1. **`before_action`.**
    - The active player may use `USE_CANAL_BARGE` and `USE_IMPERIAL_PRIORITY`, in either order. A token or Imperial Kiln gained in the window can be used within it (INT).
-   - Then exactly one `PLACE_*` command. `END_TURN` here returns `WORKER_ACTION_REQUIRED`. The player cannot pass (L142).
+   - Then exactly one `PLACE_*` command. `END_TURN` here returns `WORKER_ACTION_REQUIRED`. The player cannot pass (L143).
 2. **Worker action.** It is atomic, except at the Commission Market, the Guild Hall Shifu inspection and Colour Samples (§3.5). Each of those runs its `WorkTurnStep` sub-step. Every location module ends its action with `ctx.flow.workerActionDone(draft, pid, ctx)`.
    - Kiln Tending (T20) resolves automatically at the end of the first Glaze & Load action each round (INT), inside `glazeLoad.ts`.
 3. **`completeWorkerAction`** (the production `workerActionDone`) chooses what happens next:
@@ -374,12 +374,12 @@ A window marked `?` opens only when at least one player has a decision. Otherwis
    - Otherwise it calls `endTurn(…, automatic: true)`.
    - After each use of an ability in `after_action`, it rechecks and ends the turn automatically when nothing is left.
 4. **`endTurn`.**
-   1. If `market.refillPendingFor` is the ending player, run `refillMainDisplay("end_of_turn")`. This is the deferred refill (L190, L390). Because it runs after the after-action window, a Canal Barge in that window may complete an Order reserved by the same action (INT).
+   1. If `market.refillPendingFor` is the ending player, run `refillMainDisplay("end_of_turn")`. This is the deferred refill (L191, L391). Because it runs after the after-action window, a Canal Barge in that window may complete an Order reserved by the same action (INT).
    2. Emit `WORK_TURN_ENDED`.
    3. The next active player is the next clockwise player with an available worker. With equal worker counts, players simply alternate.
    4. When nobody has an available worker, emit `WORK_PHASE_ENDED` and call `continueAfter("work_phase_done")`.
 
-**Commission Market sub-step** (L186–200, R12, B1):
+**Commission Market sub-step** (L187–201, R12, B1):
 
 1. `PLACE_COMMISSION_MARKET` carries the mandatory first reservation:
    - `face_up`: reserve the Order and gain the chosen resource in the same command;
@@ -387,7 +387,7 @@ A window marked `?` opens only when at least one player has a decision. Otherwis
    - `look_top_three`: then `awaiting: "look_choice"`, with the cards in `hidden.pendingLook`.
 2. `COMMISSION_CHOOSE_LOOKED` reserves one looked-at Order, discards the rest face down, then sets `awaiting: "resource"`.
 3. `COMMISSION_GAIN` grants the resource. If `reservationsMade < maxReservations` and `reservable()` still finds an Order, the step becomes `awaiting: "reservation"`, where `COMMISSION_RESERVE` or `COMMISSION_STOP` is legal. Otherwise the worker action completes.
-4. A face-up reservation leaves `display[slot] = null` until the turn ends. The Shifu's second reservation therefore chooses among the Orders still showing (L198).
+4. A face-up reservation leaves `display[slot] = null` until the turn ends. The Shifu's second reservation therefore chooses among the Orders still showing (L199).
 
 **Guild Hall:**
 
@@ -404,17 +404,17 @@ A window marked `?` opens only when at least one player has a decision. Otherwis
 
 | Appendix D step | Phase or automatic action | Module | Events |
 | --- | --- | --- | --- |
-| Skip check (L236, L670) | Automatic: nothing loaded in the Shared Kiln or any Imperial Kiln → `continueAfter("firing_done")`, no Fire card | contributions | `FIRING_SKIPPED` |
-| Setup | Automatic: build `FiringContext`. `participantIds` = players with ≥1 Shared Kiln ceramic (L260); `firingPlayerIds` = players with any ceramic in this firing | contributions | `FIRING_STARTED` |
+| Skip check (L237, L670) | Automatic: nothing loaded in the Shared Kiln or any Imperial Kiln → `continueAfter("firing_done")`, no Fire card | contributions | `FIRING_SKIPPED` |
+| Setup | Automatic: build `FiringContext`. `participantIds` = players with ≥1 Shared Kiln ceramic (L261); `firingPlayerIds` = players with any ceramic in this firing | contributions | `FIRING_STARTED` |
 | 1. Choose Contributions | `firing_contributions` (secret, simultaneous, any order); skipped with no participants (INT) | contributions | `CONTRIBUTION_SUBMITTED` (no card) |
 | 2. Reveal and pay | Automatic, on the last submission: revalidate every sealed choice, pay Wood, reveal | contributions | `CONTRIBUTIONS_REVEALED`, `RESOURCES_CHANGED` |
-| 3. Base Heat | Automatic: `clamp(kilnDie + Σheat, 0, 5)` (L262, L674) | contributions → pipeline | `BASE_HEAT_DETERMINED` |
+| 3. Base Heat | Automatic: `clamp(kilnDie + Σheat, 0, 5)` (L263, L674) | contributions → pipeline | `BASE_HEAT_DETERMINED` |
 | 4. Test Pieces | `firing_test_pieces`. Queue: First Player order, T13 ready, ≥1 ceramic in this firing (INT), ≥1 Wood. `TEST_PIECES_DECIDE`, then `TEST_PIECES_BURY` | pipeline | `TEST_PIECES_PEEKED` (secret), `TEST_PIECES_USED` |
 | 5. Heat markers | `firing_heat_markers`. Queue: First Player order, players with a face-down own marker or a ready T24 with an eligible ceramic. `RESOLVE_HEAT_MARKERS` | pipeline | `HEAT_MARKER_TURNED`, `HEAT_MARKER_RETURNED`, `KILN_MASTER_PLACED` |
 | 6. Reveal Fire | Automatic (L677), in the command that ends step 5, or that ends step 4 / 3 when step 5 has no actor. There is no player decision; pacing is a UI animation of `FIRE_REVEALED` | pipeline + fireDeck | `FIRE_REVEALED` (`FIRE_DECK_RESHUFFLED` only if empty) |
-| 7. Actual Heat | Automatic. Shared: `globalHeat + (Kiln Furniture modifier ?? zone modifier) + marker`. Imperial: `kilnDie + fire + imperialModifier + marker` (L244, L678) | pipeline + heat | `ACTUAL_HEAT_CALCULATED` |
+| 7. Actual Heat | Automatic. Shared: `globalHeat + (Kiln Furniture modifier ?? zone modifier) + marker`. Imperial: `kilnDie + fire + imperialModifier + marker` (L245, L678) | pipeline + heat | `ACTUAL_HEAT_CALCULATED` |
 | 8. Heat adjustment | `firing_heat_adjustment`. Queue: First Player order, Jun ready, ≥1 ceramic in this firing, ≥1 Wood. `RESOLVE_JUN` | pipeline | `JUN_ADJUSTED` |
-| 9. Quality | Automatic, from the heat difference (L273–278) | pipeline | `QUALITY_ASSIGNED` |
+| 9. Quality | Automatic, from the heat difference (L274–279) | pipeline | `QUALITY_ASSIGNED` |
 | 10. After-Quality | `firing_after_quality`. Queue: First Player order, players with a ready, affordable ability with an eligible target. The player uses abilities in any order and eligibility is rechecked after each one. `END_AFTER_QUALITY` ends early. A player with nothing left is advanced automatically | afterQuality | `QUALITY_IMPROVED`, `CRACKLE_APPLIED`, `SECOND_FIRING_REVEALED`, `QUALITY_ASSIGNED` |
 | 10 (R7) | `firing_second_firing_jun`, after Second Firing's extra card and recalculation, when the actor's Jun is ready and they have ≥1 Wood. The card waits in `firing.pendingExtraFire`. `RESOLVE_JUN`, then the new Quality is assigned and the extra card moved to `fireDiscard`, then back to step 10. Without the window, draw → recalculate → Quality → discard happen in the `USE_SECOND_FIRING` command | afterQuality | `JUN_ADJUSTED{during: second_firing}` |
 | 11. Salvage | `firing_salvage`: players with a still-Flawed ceramic from this firing, any order. `SALVAGE_FLAWED` | afterQuality | `CERAMIC_SALVAGED` |
@@ -429,19 +429,19 @@ Step 12 in detail:
 
 Second Firing (T14, L640) recalculates with the same Base Heat (or Kiln Die for the Imperial Kiln), the same position modifier and the same marker, plus the new Fire card. Jun from the first calculation does not carry over. The new Quality replaces the old one even if it is worse.
 
-Protective Saggars (T11): +1 level, never to Masterpiece. Ge (L467): a Standard ceramic becomes Fine and gains `crackle = true`. It may follow Saggars on the same ceramic (L654). Once Crackled, the ceramic is Fine for good: Saggars and Second Firing only target Flawed or Standard ceramics, so `FinishedQuality` types a Crackle ceramic as exactly Fine.
+Protective Saggars (T11): +1 level, never to Masterpiece. Ge (L468): a Standard ceramic becomes Fine and gains `crackle = true`. It may follow Saggars on the same ceramic (L654). Once Crackled, the ceramic is Fine for good: Saggars and Second Firing only target Flawed or Standard ceramics, so `FinishedQuality` types a Crackle ceramic as exactly Fine.
 
-Reachable after-Quality sets: Protective Saggars and Second Firing are both Firing Techs (L210), so one player's step-10 turn holds at most one of them, plus Ge if they own the Ge Kiln. The owner's chosen order (L681) therefore matters only between Ge and that one Tech.
+Reachable after-Quality sets: Protective Saggars and Second Firing are both Firing Techs (L211), so one player's step-10 turn holds at most one of them, plus Ge if they own the Ge Kiln. The owner's chosen order (L681) therefore matters only between Ge and that one Tech.
 
 ### 3.4 Orders, Cleanup, final scoring, and who acts
 
-**Order Phase** (L296, INT):
+**Order Phase** (L297, INT):
 
 - `turnOrder` is the First Player order.
 - A player is skipped automatically when `completableOrderIds(game, pid, hand)` is empty (`ORDER_TURN_ENDED{automatic: true}`). This happens at the start of their turn and after each completion.
 - `COMPLETE_ORDER` (only held Orders) and `END_ORDER_TURN` are the only actions. The display does not change.
 
-**Cleanup** (L302–304):
+**Cleanup** (L303–305):
 
 1. Return workers and remaining Setter's Marks. Reset `placementSequence`.
 2. In Rounds 1–4, players with a hand above `handLimit` enter `cleanup_hand_limit`. In Round 5 the trim is skipped (INT).
@@ -472,7 +472,7 @@ Every consumer routes on `decisionPrompt`, never on a phase-specific rule of its
 
 | Decision | Command shape | Why |
 | --- | --- | --- |
-| Materials Yard, incl. split, Shifu bonus, Senior Apprentice, Prepared Clay | 1 command, resolved in the order split → Shifu bonus (pay 1 Coin, +1 Clay +1 Wood, L162 "Then") → Prepared Clay (L618 "after gaining resources"). `quoteMaterialsYard` validates each step against the running totals, so Prepared Clay may spend the bonus Clay | All information is known |
+| Materials Yard, incl. split, Shifu bonus, Senior Apprentice, Prepared Clay | 1 command, resolved in the order split → Shifu bonus (pay 1 Coin, +1 Clay +1 Wood, L163 "Then") → Prepared Clay (L618 "after gaining resources"). `quoteMaterialsYard` validates each step against the running totals, so Prepared Clay may spend the bonus Clay | All information is known |
 | Form & Decorate, incl. vessels, Decorations, Ding extra, Large Throwing Wheel, Decorator's Kit | 1 command | All information is known. The cost is computed by the engine (`quoteFormDecorate`) |
 | Glaze & Load, incl. 1–2 ordered loads, Glaze, destination, Imperial modifier, Kiln Furniture, Inverted Firing, Reworking Table, Heat-marker target | 1 command | All information is known. Loads resolve in array order (R8) |
 | Commission face-up reservation + resource | 1 command | Known |
@@ -493,12 +493,12 @@ Every consumer routes on `decisionPrompt`, never on a phase-specific rule of its
 | --- | --- |
 | `setup_kiln_selection` | Any remaining Kiln (5 ≥ 4) |
 | `round_start_setters_mark` | `PLACE_SETTERS_MARK{spaceId: null}` |
-| `before_action` | `PLACE_CANAL_WHARF` (uncapped, no cost, L142) |
+| `before_action` | `PLACE_CANAL_WHARF` (uncapped, no cost, L143) |
 | `commission_market` | Placement legality guarantees a first reservation. Then `COMMISSION_GAIN`, `COMMISSION_CHOOSE_LOOKED` (≥1 card) or `COMMISSION_STOP` |
-| `guild_inspection` | Placement legality guaranteed an affordable face-up Tech of an unowned discipline (L212) |
+| `guild_inspection` | Placement legality guaranteed an affordable face-up Tech of an unowned discipline (L213) |
 | `colour_samples` | Opened only when ≥1 card was looked at |
 | `after_action` | `END_TURN` |
-| `firing_contributions` | `TEND` (always affordable, L260) |
+| `firing_contributions` | `TEND` (always affordable, L261) |
 | `firing_test_pieces` | `TEST_PIECES_DECIDE{peek: false}` / `TEST_PIECES_BURY{bury: false}` |
 | `firing_heat_markers` | `RESOLVE_HEAT_MARKERS{ownMarker: "return"}`, or without `kilnMaster` |
 | Jun windows | `RESOLVE_JUN{adjustment: null}` |
@@ -512,7 +512,7 @@ Every consumer routes on `decisionPrompt`, never on a phase-specific rule of its
 Each of these takes no player decision and runs inside the command that reaches it:
 
 - **Round flow:**
-  - the Kiln Die roll; the round-start rotation; readying abilities (L131);
+  - the Kiln Die roll; the round-start rotation; readying abilities (L132);
   - every window with no eligible actor; the Fire-card reveal when the Heat-marker step ends (L677); Actual Heat; Quality;
   - finishing the firing.
 - **Turns:**
@@ -557,22 +557,22 @@ The storage model stays the same. The **shape** changes:
 
 | Secret | Where it lives | Who may see it | Public projection | Persisted in |
 | --- | --- | --- | --- | --- |
-| Order hands (L200, L507) | `hidden.orderHands` | Owner | `counts.orderHands[pid]` | `game_heads` |
-| Setup deal (L100) | `hidden.orderHands`; `ORDERS_DEALT.secret` | Owner | Counts only | `game_heads`, `game_events.full_payload` |
+| Order hands (L201, L507) | `hidden.orderHands` | Owner | `counts.orderHands[pid]` | `game_heads` |
+| Setup deal (L101) | `hidden.orderHands`; `ORDERS_DEALT.secret` | Owner | Counts only | `game_heads`, `game_events.full_payload` |
 | Main deck order and identities | `hidden.mainDeck` | Nobody | `counts.mainDeck` | `game_heads` |
 | Main discard identities (B3) | `hidden.mainDiscard` | Nobody. Rotated-out display Orders were public when shown (`MAIN_DISPLAY_ROTATED`) | `counts.mainDiscard` | `game_heads` |
-| Starting box (L101, L303) | `hidden.startingBox` | Nobody | Omitted | `game_heads` |
+| Starting box (L102, L304) | `hidden.startingBox` | Nobody | Omitted | `game_heads` |
 | Tech deck order | `hidden.techDecks` | Nobody. The chooser's own bottom order reaches them again on reconnect through `server_list_private_events` (§4.6) | `counts.techDecks` | `game_heads` |
 | Fire deck order | `hidden.fireDeck` | Nobody | `counts.fireDeck`. The Fire discard is public (L512) | `game_heads` |
 | Test Pieces peek (L639, INT) | `hidden.firePeeks[pid]`; `TEST_PIECES_PEEKED.secret` | Owner, for the rest of the firing | `firing.testPieces[]` (peeked/buried); `TEST_PIECES_USED{buried}` | `game_heads`, events |
-| Commission Shifu top-3 (L196, B3) | `hidden.pendingLook`; `PRIVATE_LOOK_OPENED.secret` | Actor | `counts.pendingLook {playerId, kind, count}` | `game_heads`, events |
+| Commission Shifu top-3 (L197, B3) | `hidden.pendingLook`; `PRIVATE_LOOK_OPENED.secret` | Actor | `counts.pendingLook {playerId, kind, count}` | `game_heads`, events |
 | Colour Samples top-3 (L626, B3) | Same | Actor | Same | Same |
-| Guild Shifu inspection (L207, B2) | `hidden.pendingLook {discipline, techIds}`; `PRIVATE_LOOK_OPENED.secret` | Actor | Discipline and count (the deck picked up is visible at the table) | Same |
+| Guild Shifu inspection (L208, B2) | `hidden.pendingLook {discipline, techIds}`; `PRIVATE_LOOK_OPENED.secret` | Actor | Discipline and count (the deck picked up is visible at the table) | Same |
 | Guild bottom order (B2) | `hidden.techDecks`; `GUILD_TAKE.bottomOrder`; `TECHS_RETURNED_TO_BOTTOM.secret` | Actor | Count only | `game_heads`, `game_commands`, events |
 | Blind / top-3 / Colour Samples reservation | Hand; `ORDER_RESERVED.secret.orderId` | Owner | `source`, `via`; `orderId: null` | Events |
 | Face-up reservation | Hand | Everyone saw it taken | `ORDER_RESERVED.orderId`, `slotIndex` | Public events |
 | Unchosen looked-at Orders | `hidden.mainDiscard`; `LOOKED_ORDERS_DISCARDED.secret` | Actor | Count | Events |
-| Cleanup discards (L303) | `hidden.mainDiscard` / `startingBox`; `HAND_TRIMMED.secret` | Owner | Count | Events |
+| Cleanup discards (L304) | `hidden.mainDiscard` / `startingBox`; `HAND_TRIMMED.secret` | Owner | Count | Events |
 | Contribution and Fuel Ledger commitment (L504, L638, L672) | `PrivateFiringState` → `private.private_submissions` | Owner until every eligible participant submits | `firing_contributions.submittedPlayerIds`; after the reveal, `firing.contributions` | `private_submissions` |
 | Raw commands carrying secrets (`GUILD_TAKE`, `COMMISSION_CHOOSE_LOOKED`, `COLOUR_SAMPLES_CHOOSE`, `DISCARD_TO_HAND_LIMIT`, `SUBMIT_CONTRIBUTION`) | `private.game_commands.command_json` | Server | Never published | `game_commands` |
 
@@ -602,7 +602,7 @@ Events are the presentation timeline, in resolution order. The UI may animate th
 
 - **Events with `secret`:** `ORDERS_DEALT`, `ORDER_RESERVED` (blind / top-3 / Colour Samples), `PRIVATE_LOOK_OPENED`, `LOOKED_ORDERS_DISCARDED`, `TECHS_RETURNED_TO_BOTTOM`, `TEST_PIECES_PEEKED`, `HAND_TRIMMED`.
 - **`CONTRIBUTION_SUBMITTED`** carries no card at all. Revealed cards appear only in `CONTRIBUTIONS_REVEALED`.
-- **All other events are public.** `ORDER_COMPLETED` reveals the Order, as the physical game does (L409).
+- **All other events are public.** `ORDER_COMPLETED` reveals the Order, as the physical game does (L410).
 
 ### 4.5 Inference channels
 
@@ -698,7 +698,7 @@ Collapsed in **canonical** mode only:
 - **Equivalent targets.** Two empty Shared Kiln spaces of the same zone that are unmarked and carry no Kiln Furniture are equivalent; canonical uses one per zone (the lowest ID). Under Kiln Furniture the zone no longer matters, so Kiln Furniture variants use a single representative open space.
 - **Optional abilities (R4).** Every optional ability that applies yields **two** candidates: used and declined. The computer can therefore keep a once-per-round use for later.
 
-Command options that the 1-per-discipline limit (L210) makes unreachable together are never generated in one command: Prepared Clay with Decorator's Kit, Large Throwing Wheel with Decorator's Kit, Senior Apprentice with Prepared Clay, Kiln Furniture with Inverted Firing. Validators still handle them, and test fixtures cannot build such Tech sets (§8.1).
+Command options that the 1-per-discipline limit (L211) makes unreachable together are never generated in one command: Prepared Clay with Decorator's Kit, Large Throwing Wheel with Decorator's Kit, Senior Apprentice with Prepared Clay, Kiln Furniture with Inverted Firing. Validators still handle them, and test fixtures cannot build such Tech sets (§8.1).
 
 | Family | `canonical` | `exhaustive` |
 | --- | --- | --- |
@@ -748,7 +748,7 @@ scorePreview(view, pid): ScorePreview                   // public information on
 handLimitStatus(view, pid): HandLimitStatus             // held, limit, mustDiscard, trimDue (Rounds 1–4 only: isFinalRound)
 firingSummary(view): FiringContext | null               // current or last firing; computer player only (heat ledger, D3)
 heatPreviews(view): HeatPreview[]                       // re-export (P5); computer player only (D3)
-kilnLayout(view): KilnLayoutView                        // active / covered / empty active Shared Kiln spaces (L99)
+kilnLayout(view): KilnLayoutView                        // active / covered / empty active Shared Kiln spaces (L100)
 firingStageView(view): FiringStageView | null           // the current firing as the table shows it (D3, D4): step, queue,
                                                         //   Kiln Die, revealed Contributions, Base/Global Heat, Fire card,
                                                         //   open discard, Test Pieces record, R7 extra Fire card, per ceramic
@@ -757,7 +757,7 @@ firingStageView(view): FiringStageView | null           // the current firing as
 firingRecapView(view): FiringStageView | null           // the last finished firing (step 12, markers removed), for the recap
 ROUND_STRUCTURE / roundPhaseOf(phaseType)               // roundStructure.ts: display names of the 5 round phases (not a
                                                         //   fingerprint input); engine phase → round phase or "final"
-SCORE_BREAKDOWN_ROWS / TIE_BREAK_ORDER                  // scoring.ts: L491–494 row order; L498 tie-breakers (key, resolvedBy)
+SCORE_BREAKDOWN_ROWS / TIE_BREAK_ORDER                  // scoring.ts: L492–494 row order; L498 tie-breakers (key, resolvedBy)
 
 // Setup and Start of Round
 kilnSelectionOptions(view): KilnSelectionOption[]
@@ -770,7 +770,7 @@ placementLimits(view, locationId, effect)               // the printed effect re
 materialsYardOptions(view, worker): MaterialsYardOptions   // split total, Shifu bonus quote, Prepared Clay legal
                                                         //   Shape+Decoration `pairs` (each with `withShifuBonus`)
                                                         //   and their Shape/Decoration projections (null with
-                                                        //   Senior Apprentice, L349); probed. Legality is per pair:
+                                                        //   Senior Apprentice, L350); probed. Legality is per pair:
                                                         //   a form offers Decorations per chosen Shape from `pairs`
                                                         //   and the bonus only with `withShifuBonus`, never the
                                                         //   cross product; the split is gated by the quote
@@ -796,7 +796,7 @@ orderMatchOptions(view, orderId, limit?): OrderMatchOption[]   // every distinct
 orderSelectionCheck(view, orderId, ceramicIds, declarations?): OrderSelectionCheck
 crackleDeclarationChecks(view, orderId, ceramicIds, declarations): CrackleDeclarationChecks
                                                         // verdicts: auto (engine searches), as declared, and per Crackle
-                                                        //   ceramic each Decoration or undeclared (L469)
+                                                        //   ceramic each Decoration or undeclared (L470)
 
 // Firing
 contributionOptions(view): ContributionOption[]         // card × Fuel Ledger with Wood, heat and affordability
@@ -934,7 +934,7 @@ Painted replaces Crackle in S13, O13, O17, O23, O39 (`required_decorations:["pla
 1. Assign the selected ceramics to slots by permutation, satisfying each slot's `shape`/`shapes`/`glaze`/`decoration`.
 2. Every ceramic must be at least `minQuality`.
 3. Evaluate relations over the whole selection. Content validation requires every `indices` list to name all slots.
-4. **Crackle wildcard** (L469, R6). Each Crackle ceramic takes one declared Decoration ∈ 4 values for this Order. That value replaces the printed Decoration in the slot `decoration` check and in every Decoration relation. It never applies to Glaze, Shape or Quality.
+4. **Crackle wildcard** (L470, R6). Each Crackle ceramic takes one declared Decoration ∈ 4 values for this Order. That value replaces the printed Decoration in the slot `decoration` check and in every Decoration relation. It never applies to Glaze, Shape or Quality.
    - Declarations are either omitted (deterministic search, first hit recorded) or given and used exactly, never mixed; see the `OrderCompletionSpec.crackleDeclarations` JSDoc for the error codes.
    - The search covers at most 4^3 × 3! combinations, in a fixed order (ceramics by sequence, Decorations in `DECORATIONS` order).
    - Ru, Exhibition and diversity use the printed Decoration.
@@ -954,8 +954,8 @@ Painted replaces Crackle in S13, O13, O17, O23, O39 (`required_decorations:["pla
 
 These are not read by the engine:
 
-- `round_structure.json`: `{rulesVersion, roundCount:5, phases:[{order, id, name, nameZh, summary, summaryZh}]}`, rewritten from L115–121.
-- `components.json`: `{rulesVersion, components:[{id, name, nameZh, qty, notes, notesZh}]}`, from L68–93.
+- `round_structure.json`: `{rulesVersion, roundCount:5, phases:[{order, id, name, nameZh, summary, summaryZh}]}`, rewritten from L116–122.
+- `components.json`: `{rulesVersion, components:[{id, name, nameZh, qty, notes, notesZh}]}`, from L69–94.
 - `asset_specs.json` (P1): the specs of assets that must be rebuilt from current data (AGENTS "Approved asset rule"). P1 updates every rules-bearing spec to V1.6.1 names, locations, Techs, Decorations (Painted) and values, and removes specs for retired components (Kiln Yard, Starting Techs, Glaze Palette, …).
 
 There are 10 data files in all: the 7 mechanical files of §6.1–6.7 and these 3.
@@ -1023,7 +1023,7 @@ There are 10 data files in all: the 7 mechanical files of §6.1–6.7 and these 
   - `fixtures.ts`:
     - `buildState(spec)`: a complete, invariant-clean `GameState` from a compact spec (`players`, `round`, `phase`, resources, Techs, Kilns, ceramics, kiln contents, display, decks, hands). It does **not** depend on `setup.ts`, so every Phase 2 package can build scenarios before P2 lands.
     - `newGame(seed, n)`: `createGame` plus Kiln selection. Usable once P2 lands.
-    - `stageCeramic`, `giveTech`, `setResources`, `setHand`, `setDisplay`. `giveTech` calls `acquisitionError` and throws on an illegal Tech set, so tests never build a state the 3-total / 1-per-discipline limit (L210) excludes.
+    - `stageCeramic`, `giveTech`, `setResources`, `setHand`, `setDisplay`. `giveTech` calls `acquisitionError` and throws on an illegal Tech set, so tests never build a state the 3-total / 1-per-discipline limit (L211) excludes.
   - `haltingFlow(halts)`: a `FlowController` whose `continueAfter` and `workerActionDone` record the hand-over in `halts` and leave the draft as the resolver left it.
   - `LocalTable`: holds state, `PrivateFiringState` and RNG; exposes `act`, `contribute`, `expectRuleError` and `halts`; takes `{ flow: "full" | "halt" }`. With `"halt"`, a Phase 2 resolver test stops at the first cross-package hand-over instead of reaching another package's stub.
   - `invariants.ts` re-exports P7's `assertInvariants` (a no-op until P7 lands).
@@ -1113,7 +1113,7 @@ There are 10 data files in all: the 7 mechanical files of §6.1–6.7 and these 
   - **card conservation:** 16 Starting, 48 Main, 18 Techs and 12 Fire cards, each in exactly one zone. Order zones: hands, Main deck, Main discard, display, completed records, Starting box, pending look. Fire zones: `hidden.fireDeck`, `fireDiscard`, `firing.fireModifier` (the round's card until step 12) and `firing.pendingExtraFire` (only during the R7 Jun window). History records — `FiringCeramicRecord.second.fireModifier`, `lastFiring`, `kilnDie` — are never counted;
   - placements: workers ≤ 4 per player, each placed at most once per round; capacities never exceeded; personal spaces locked unless the matching discipline is owned;
   - kiln consistency: kiln space contents match the loaded ceramics (each loaded Shared ceramic's `spaceId` lists it, in loading order); ≤ 2 per space, only when stacked and with the same owner; covered spaces empty; ≤ 1 Imperial ceramic per player and only if `kilnGained`;
-  - **Setter's Mark:** only on an active, empty space; the owner owns T22; ≤ 1 per owner; none during `setup_kiln_selection`, `cleanup_hand_limit` or `finished` (returned at Cleanup step 1, L302);
+  - **Setter's Mark:** only on an active, empty space; the owner owns T22; ≤ 1 per owner; none during `setup_kiln_selection`, `cleanup_hand_limit` or `finished` (returned at Cleanup step 1, L303);
   - **Kiln Furniture:** `underCeramicId` is in that space's `ceramicIds` and owned by `ownerId`; `ownerId` owns T15; ≤ 1 tile in the Shared Kiln; none outside a loaded space;
   - **markers:** ≤ 1 marker per ceramic; markers only on loaded ceramics (structural); ≤ 1 `own` marker per player; ≤ 1 `kiln_master` marker in the game, owned by the T24 owner; face-down markers only before the Heat-marker step resolves that player;
   - **Crackle:** every Crackle ceramic (Finished, Delivered or in `firing.ceramics`) is exactly Fine (the type enforces it for stored ceramics; this checks casts and the firing record);
@@ -1251,156 +1251,156 @@ Abbreviations:
 - **Modules:** MY = `work/materialsYard`, FD = `work/formDecorate`, GL = `work/glazeLoad`, KL = `kilnLoading`, CS = `work/centralSimple`, TN = `work/turn`, CM = `work/commissionMarket`, GH = `work/guildHall`, WA = `work/windowAbilities`, CO = `firing/contributions`, PL = `firing/pipeline`, AQ = `firing/afterQuality`, HT = `firing/heat`, FDk = `firing/fireDeck`, OM = `orders/matching`, OC = `orders/completion`, OP = `orders/phase`, RC = `recognition`, SC = `scoring`, RD = `round`, SU = `setup`, MK = `market`, PLc = `placement`, TC = `techs`, KN = `kilns`, VW = `view`.
 - **State:** `p` = `PlayerState`, `g` = `GameState`.
 
-### 10.0 Overview, glossary and components (L33–95)
+### 10.0 Overview, glossary and components (L34–96)
 
 | Ref | Rule | Coverage |
 | --- | --- | --- |
-| L37, L39 | One shared firing; exactly 5 rounds | §3.1; `GameConfigDefinition.rounds` |
-| L43–64 | Glossary: ceramic stages, worker kinds, central and personal locations, Tech effect ≠ worker action, held Orders, Imperial Kiln and Priority, Heat marker, Preferred / Base / Global / Actual Heat, Heat Difference, Load | Defined where used: §10.3–10.9; `CeramicStage`, `WorkerKind`, `LocationId`, `FormedBy` / `loadedBy`, `HeatCalculation` |
-| L70–72 | Central board (Magistrate's Hall 2 spaces); Shared Kiln 3/3/2 with +1/0/−1; five Kiln boards with 2 + 2 personal spaces (1 locked each) | `action_locations.json`, `firing.json` `kilnSpaces`, `kilns.json`; `PlayerState.personalSpaces` |
-| L73–75, L85, L87–88 | 1 Shifu + 3 Apprentices, 1 Heat marker, 1 Recognition marker, 1 Imperial Priority token, 2 Lock tokens per colour | `p.workers`; `CeramicHeatMarker` (≤ 1 own per player, §8.3); `p.imperial`; `personalSpaces[*][1].unlocked` |
-| L76–78, L95 | Resources unlimited; quantities are not limits | `gain` / `spend`, no supply counters |
-| L79, L328 | 50 Vessel cards, 10 per Shape, not a limit | `g.vesselSupply`, proxies |
-| L80–81 | 48 Main + 16 Starting Orders; Starting never shuffled into Main | `hidden.mainDeck`, `hidden.startingBox` |
-| L82 | 18 Techs, 6 per discipline; Kiln Master has its own marker | `techniques.json`; one `kiln_master` marker game-wide (§8.3) |
-| L83, L92 | Fire deck 1/3/4/3/1; Kiln Die faces 1,1,2,2,3,3 | `firing.json`; `content_contract.test.ts` |
-| L84 | 3 Contribution cards per player | `ContributionCardId`, `firing.json` `contributionCards` |
-| L86 | 4 Imperial Kiln tiles | `p.imperial.kilnGained` |
-| L89–91 | VP track, First Player marker, Round marker | `ScoreLedger`, `g.firstPlayerId`, `g.round` |
-| L93 | Crackle markers (Ge only); kept until delivered or exhibited | `FinishedQuality.crackle` survives into `DeliveredCeramic`; Exhibition reads the finished ceramic |
+| L38, L40 | One shared firing; exactly 5 rounds | §3.1; `GameConfigDefinition.rounds` |
+| L44–65 | Glossary: ceramic stages, worker kinds, central and personal locations, Tech effect ≠ worker action, held Orders, Imperial Kiln and Priority, Heat marker, Preferred / Base / Global / Actual Heat, Heat Difference, Load | Defined where used: §10.3–10.9; `CeramicStage`, `WorkerKind`, `LocationId`, `FormedBy` / `loadedBy`, `HeatCalculation` |
+| L71–73 | Central board (Magistrate's Hall 2 spaces); Shared Kiln 3/3/2 with +1/0/−1; five Kiln boards with 2 + 2 personal spaces (1 locked each) | `action_locations.json`, `firing.json` `kilnSpaces`, `kilns.json`; `PlayerState.personalSpaces` |
+| L74–76, L86, L88–89 | 1 Shifu + 3 Apprentices, 1 Heat marker, 1 Recognition marker, 1 Imperial Priority token, 2 Lock tokens per colour | `p.workers`; `CeramicHeatMarker` (≤ 1 own per player, §8.3); `p.imperial`; `personalSpaces[*][1].unlocked` |
+| L77–79, L96 | Resources unlimited; quantities are not limits | `gain` / `spend`, no supply counters |
+| L80, L329 | 50 Vessel cards, 10 per Shape, not a limit | `g.vesselSupply`, proxies |
+| L81–82 | 48 Main + 16 Starting Orders; Starting never shuffled into Main | `hidden.mainDeck`, `hidden.startingBox` |
+| L83 | 18 Techs, 6 per discipline; Kiln Master has its own marker | `techniques.json`; one `kiln_master` marker game-wide (§8.3) |
+| L84, L93 | Fire deck 1/3/4/3/1; Kiln Die faces 1,1,2,2,3,3 | `firing.json`; `content_contract.test.ts` |
+| L85 | 3 Contribution cards per player | `ContributionCardId`, `firing.json` `contributionCards` |
+| L87 | 4 Imperial Kiln tiles | `p.imperial.kilnGained` |
+| L90–92 | VP track, First Player marker, Round marker | `ScoreLedger`, `g.firstPlayerId`, `g.round` |
+| L94 | Crackle markers (Ge only); kept until delivered or exhibited | `FinishedQuality.crackle` survives into `DeliveredCeramic`; Exhibition reads the finished ceramic |
 
-### 10.1 Setup (L97–111)
-
-| Ref | Rule | State | Phase / action | Module |
-| --- | --- | --- | --- | --- |
-| L99 | Shared Kiln covered 2-1-1 / 2-2-2 / 3-3-2; Magistrate's Hall second space covered at 2–3 players | `g.sharedKiln.spaces[].active`; MH capacity data | createGame | SU, content |
-| L100 | Shuffle Starting and Main decks separately; deal 2 Starting + 1 Main, secret | `hidden.orderHands`, `ORDERS_DEALT.secret` | createGame | SU, MK |
-| L101 | Undealt Starting Orders to the box; reshuffle Main; reveal 6 | `hidden.startingBox`, `hidden.mainDeck`, `g.market.display` | createGame | SU, MK |
-| L102 | 3 Tech decks of 6; reveal 2 each | `hidden.techDecks`, `g.techDisplay` | createGame | SU, MK |
-| L103 | Fire deck shuffled; open discard; Kiln Die | `hidden.fireDeck`, `g.fireDiscard` | createGame | SU |
-| L104 | Resources and Vessel cards by Shape | `g.vesselSupply` | createGame | SU |
-| L105 | 4 Imperial Kiln tiles | `p.imperial.kilnGained` | n/a | RC |
-| L106 | Colour components; Imperial Priority token on space 3 | `p.workers`, `p.imperial.priority = "on_track"` | createGame | SU |
-| L107 | Random First Player; reverse-order Kiln choice; lock second spaces | `g.firstPlayerId`, `p.kilnId`, `p.personalSpaces[*][1].unlocked = false` | `setup_kiln_selection` / `SELECT_KILN` | SU, KN |
-| L108 | 1 Shifu + 3 Apprentices | `p.workers` | createGame | SU |
-| L109 | Imperial Kiln area empty | `p.imperial.kilnGained = false` | createGame | SU |
-| L110 | 2 Clay, 2 Wood, 3 Coins | `p.resources` | createGame | SU |
-| L111 | Recognition 0; Round 1 | `p.imperial.recognition`, `g.round` | createGame | SU |
-
-### 10.2 Round structure and Start of Round (L113–131)
+### 10.1 Setup (L98–112)
 
 | Ref | Rule | State | Phase / action | Module |
 | --- | --- | --- | --- | --- |
-| L115–121, L39 | 5 rounds; 5 phases | `g.round`, `g.phase` | flow | engine, RD |
-| L125, change 15 | Kiln Die every round, incl. Round 1 (INT) | `g.kilnDie` | `startRound` / `KILN_DIE_ROLLED` | RD |
-| L127–129 | Rounds 2–5: discard 2 leftmost, slide, reveal 2 (B1: up to 2, slide, fill as available) | `g.market.display`, `hidden.mainDiscard` | `startRound` / `MAIN_DISPLAY_ROTATED`, `DISPLAY_REFILLED` | RD, MK |
-| L131 | Ready once-per-round abilities | `p.techs[].usedThisRound`, `p.kilnAbilityUsedThisRound` | `startRound` / `ABILITIES_READIED` | RD, TC |
-| L117 "refill displays" | Tech displays refill immediately after a take (L209); round start re-runs the refill idempotently | `g.techDisplay` | `startRound` | RD, MK |
+| L100 | Shared Kiln covered 2-1-1 / 2-2-2 / 3-3-2; Magistrate's Hall second space covered at 2–3 players | `g.sharedKiln.spaces[].active`; MH capacity data | createGame | SU, content |
+| L101 | Shuffle Starting and Main decks separately; deal 2 Starting + 1 Main, secret | `hidden.orderHands`, `ORDERS_DEALT.secret` | createGame | SU, MK |
+| L102 | Undealt Starting Orders to the box; reshuffle Main; reveal 6 | `hidden.startingBox`, `hidden.mainDeck`, `g.market.display` | createGame | SU, MK |
+| L103 | 3 Tech decks of 6; reveal 2 each | `hidden.techDecks`, `g.techDisplay` | createGame | SU, MK |
+| L104 | Fire deck shuffled; open discard; Kiln Die | `hidden.fireDeck`, `g.fireDiscard` | createGame | SU |
+| L105 | Resources and Vessel cards by Shape | `g.vesselSupply` | createGame | SU |
+| L106 | 4 Imperial Kiln tiles | `p.imperial.kilnGained` | n/a | RC |
+| L107 | Colour components; Imperial Priority token on space 3 | `p.workers`, `p.imperial.priority = "on_track"` | createGame | SU |
+| L108 | Random First Player; reverse-order Kiln choice; lock second spaces | `g.firstPlayerId`, `p.kilnId`, `p.personalSpaces[*][1].unlocked = false` | `setup_kiln_selection` / `SELECT_KILN` | SU, KN |
+| L109 | 1 Shifu + 3 Apprentices | `p.workers` | createGame | SU |
+| L110 | Imperial Kiln area empty | `p.imperial.kilnGained = false` | createGame | SU |
+| L111 | 2 Clay, 2 Wood, 3 Coins | `p.resources` | createGame | SU |
+| L112 | Recognition 0; Round 1 | `p.imperial.recognition`, `g.round` | createGame | SU |
 
-### 10.3 Work Phase general rules (L133–155)
-
-| Ref | Rule | State | Phase / action | Module |
-| --- | --- | --- | --- | --- |
-| L135 | First Player clockwise; 1 worker per turn, resolved immediately; until all placed | `work_turn.activePlayerId` | `PLACE_*`, `END_TURN` | TN |
-| L137 | 1 Shifu + 3 Apprentices each round | `p.workers` | n/a | PLc |
-| L139 | Any unoccupied space; capacities absolute; no overfill | `WorkerState.placement` | `validatePlacement` / `LOCATION_FULL` | PLc |
-| L140 | The Shifu follows Apprentice placement rules and receives the Shifu effect | `WorkerPlacement.effect` | `placeWorker` | PLc |
-| L141 | At least 1 instance of the main action; "up to 2" = 1 or 2; optional bonuses declinable | Per-location validators / `NO_MAIN_ACTION_POSSIBLE` | `PLACE_*` | MY, FD, GL, CM, GH, CS |
-| L142 | No passing; Canal Wharf always legal | `before_action` | `END_TURN` → `WORKER_ACTION_REQUIRED` | TN, CS |
-| L143 | Personal spaces once per round; locked spaces unusable | `p.personalSpaces`, `WorkerState.placement` | `PERSONAL_SPACE_LOCKED` / `PERSONAL_SPACE_USED` | PLc |
-| L147–155 | Capacity table | `LocationDefinition.capacity` | `validatePlacement` | content, PLc |
-
-### 10.4 Locations (L157–232)
+### 10.2 Round structure and Start of Round (L114–132)
 
 | Ref | Rule | State | Phase / action | Module |
 | --- | --- | --- | --- | --- |
-| L161 | MY Apprentice: 3 Clay/Wood in any mix | `p.resources` | `PLACE_MATERIALS_YARD` | MY |
-| L162 | MY Shifu: 4; then may pay 1 Coin for +1 Clay +1 Wood (resolved after the split, before Prepared Clay, §3.5) | Same | `buyShifuBonus` | MY |
-| L168 | F&D Apprentice: 1 vessel, Clay + Decoration | `g.ceramics` (`shaped`) | `PLACE_FORM_DECORATE` | FD |
-| L169 | F&D Shifu: up to 2; if 2, one Decoration −1 Coin | Same | `vessels` length 2 | FD |
-| L171, R4 | F&D legal only if Clay + a Decoration are payable for 1 vessel, after ready Workshop discounts (Large Throwing Wheel, Decorator's Kit) | n/a | `canFormAny` | FD |
-| L172, L356 | Shaped records Shape and Decoration | `ShapedCeramic` | n/a | state |
-| L178 | G&L Apprentice: 1 vessel, Glaze, load | `LoadedCeramic` | `PLACE_GLAZE_LOAD` | GL, KL |
-| L179, R9 | G&L Shifu: up to 2; optional Heat marker face down on any of your loaded ceramics without a marker | `LoadedCeramic.heatMarker` | `heatMarkerCeramicId` / `HEAT_MARKER_PLACED` | GL |
-| L181 | Empty active Shared space, or 1 load into your empty Imperial Kiln | `SharedKilnSpaceState.ceramicIds`, `LoadPlacement` | `LoadSpec.destination` | KL |
-| L182, R5 | Legal if ≥1 Shaped vessel has a legal destination (a/b/c) | n/a | `hasAnyLegalLoad` | KL |
-| L183 | Covered spaces unusable; Imperial Kiln 1 per firing | `space.active` | `KILN_SPACE_UNAVAILABLE` / `IMPERIAL_KILN_UNAVAILABLE` | KL |
-| L184 | Marker resolved in Firing; 1 per ceramic | `heatMarker` | `HEAT_MARKER_INVALID` | GL, PL |
-| L188–191 | Reservation: face-up (position empty until turn end, then slide and refill) or blind top card | `g.market`, `hidden.mainDeck` | `CommissionReservationChoice` | CM, MK |
-| L195 | CM Apprentice: reserve 1, then gain 1 Clay/Wood/Coin | `hidden.orderHands` | `PLACE_COMMISSION_MARKET`, `COMMISSION_GAIN` | CM |
-| L196 | CM Shifu: up to 2; one may be top-3 (look, reserve 1, discard rest; optional per editorial note); gain after each | `hidden.pendingLook`, `hidden.mainDiscard` | `look_top_three`, `COMMISSION_CHOOSE_LOOKED` | CM, MK |
-| L198 | Must reserve ≥1; may stop after first; second reservation from the Orders still showing | `WorkTurnStep.commission_market` | `COMMISSION_STOP` | CM |
-| L199, L303 | No hand limit during the round; limit 4/5 at Cleanup | n/a | `cleanup_hand_limit` | RD, TC |
-| L200, L507 | Hands secret; counts public | `hidden.orderHands`, `counts.orderHands` | projection | VW |
-| L206 | GH Apprentice: pay printed cost, take 1 face-up | `p.techs`, `g.techDisplay` | `PLACE_GUILD_HALL{buy_face_up}` | GH |
-| L207, B2 | GH Shifu: inspect top 2 (or remaining) of 1 discipline; take a face-up or inspected Tech at −1 (min 0); rest to bottom in chosen private order | `hidden.pendingLook`, `hidden.techDecks` | `inspect`, `GUILD_TAKE` | GH, MK |
-| L209 | Refill the discipline to 2 if possible (after the bottom return, B2) | `g.techDisplay` | `refillTechDisplay` | MK |
-| L210 | ≤ 3 Techs, ≤ 1 per discipline | `p.techs` | `acquisitionError` | TC |
-| L211 | Unlocking; usable later this round | `p.personalSpaces[*][1].unlocked` | `grantTech` / `PERSONAL_SPACE_UNLOCKED` | TC |
-| L212 | GH legality: affordable face-up Tech from an unowned discipline (after the Shifu discount for the Shifu) | n/a | GH validate | GH |
-| L213 | Newly acquired Tech usable this round if its timing permits; when-acquired resolves immediately | `OwnedTechState` | Colour Samples step | GH, TC |
-| L219–220 | CW 2 / 4 Coins | `p.resources` | `PLACE_CANAL_WHARF` | CS |
-| L224 | MH 1/1/2 spaces; Recognition 0–2; both spaces usable by one player | Capacity data, `usableAtRecognition` | `PLACE_MAGISTRATES_HALL` | CS, PLc |
-| L228–229 | Pay 4 / 3 Coins → +1 Recognition | `p.imperial` | Same | CS, RC |
-| L231–232 | No Crown requirement; 0→1, 1→2, 2→3; resolve reward; never to 4 | Same | `RECOGNITION_GATE` | CS, RC |
+| L116–122, L40 | 5 rounds; 5 phases | `g.round`, `g.phase` | flow | engine, RD |
+| L126, change 15 | Kiln Die every round, incl. Round 1 (INT) | `g.kilnDie` | `startRound` / `KILN_DIE_ROLLED` | RD |
+| L128–130 | Rounds 2–5: discard 2 leftmost, slide, reveal 2 (B1: up to 2, slide, fill as available) | `g.market.display`, `hidden.mainDiscard` | `startRound` / `MAIN_DISPLAY_ROTATED`, `DISPLAY_REFILLED` | RD, MK |
+| L132 | Ready once-per-round abilities | `p.techs[].usedThisRound`, `p.kilnAbilityUsedThisRound` | `startRound` / `ABILITIES_READIED` | RD, TC |
+| L118 "refill displays" | Tech displays refill immediately after a take (L210); round start re-runs the refill idempotently | `g.techDisplay` | `startRound` | RD, MK |
 
-### 10.5 Firing Phase (L234–292) and Appendix D (L668–693)
+### 10.3 Work Phase general rules (L134–156)
 
 | Ref | Rule | State | Phase / action | Module |
 | --- | --- | --- | --- | --- |
-| L236, L670 | Skip if nothing loaded; no Fire card | n/a | `openFiringPhase` / `FIRING_SKIPPED` | CO |
-| L240, L672, L260, change 16 | Participants: ≥1 Shared Kiln ceramic; secret choice; must afford | `FiringContext.participantIds`, `PrivateFiringState` | `firing_contributions` / `SUBMIT_CONTRIBUTION` | CO |
-| L252–258 | Bank 1/−1, Tend 0/0, Stoke 1/+1 | Content | `contributionHeat`, `contributionWood` | HT, content |
-| L260 | Tend always affordable; cards returned after firing | n/a | Progress guarantee | CO |
-| L262, L674 | Base Heat = die + Σ, clamp 0–5 | `firing.baseHeat`, `unclampedBaseHeat` | `BASE_HEAT_DETERMINED` | HT, CO |
+| L136 | First Player clockwise; 1 worker per turn, resolved immediately; until all placed | `work_turn.activePlayerId` | `PLACE_*`, `END_TURN` | TN |
+| L138 | 1 Shifu + 3 Apprentices each round | `p.workers` | n/a | PLc |
+| L140 | Any unoccupied space; capacities absolute; no overfill | `WorkerState.placement` | `validatePlacement` / `LOCATION_FULL` | PLc |
+| L141 | The Shifu follows Apprentice placement rules and receives the Shifu effect | `WorkerPlacement.effect` | `placeWorker` | PLc |
+| L142 | At least 1 instance of the main action; "up to 2" = 1 or 2; optional bonuses declinable | Per-location validators / `NO_MAIN_ACTION_POSSIBLE` | `PLACE_*` | MY, FD, GL, CM, GH, CS |
+| L143 | No passing; Canal Wharf always legal | `before_action` | `END_TURN` → `WORKER_ACTION_REQUIRED` | TN, CS |
+| L144 | Personal spaces once per round; locked spaces unusable | `p.personalSpaces`, `WorkerState.placement` | `PERSONAL_SPACE_LOCKED` / `PERSONAL_SPACE_USED` | PLc |
+| L148–156 | Capacity table | `LocationDefinition.capacity` | `validatePlacement` | content, PLc |
+
+### 10.4 Locations (L158–233)
+
+| Ref | Rule | State | Phase / action | Module |
+| --- | --- | --- | --- | --- |
+| L162 | MY Apprentice: 3 Clay/Wood in any mix | `p.resources` | `PLACE_MATERIALS_YARD` | MY |
+| L163 | MY Shifu: 4; then may pay 1 Coin for +1 Clay +1 Wood (resolved after the split, before Prepared Clay, §3.5) | Same | `buyShifuBonus` | MY |
+| L169 | F&D Apprentice: 1 vessel, Clay + Decoration | `g.ceramics` (`shaped`) | `PLACE_FORM_DECORATE` | FD |
+| L170 | F&D Shifu: up to 2; if 2, one Decoration −1 Coin | Same | `vessels` length 2 | FD |
+| L172, R4 | F&D legal only if Clay + a Decoration are payable for 1 vessel, after ready Workshop discounts (Large Throwing Wheel, Decorator's Kit) | n/a | `canFormAny` | FD |
+| L173, L357 | Shaped records Shape and Decoration | `ShapedCeramic` | n/a | state |
+| L179 | G&L Apprentice: 1 vessel, Glaze, load | `LoadedCeramic` | `PLACE_GLAZE_LOAD` | GL, KL |
+| L180, R9 | G&L Shifu: up to 2; optional Heat marker face down on any of your loaded ceramics without a marker | `LoadedCeramic.heatMarker` | `heatMarkerCeramicId` / `HEAT_MARKER_PLACED` | GL |
+| L182 | Empty active Shared space, or 1 load into your empty Imperial Kiln | `SharedKilnSpaceState.ceramicIds`, `LoadPlacement` | `LoadSpec.destination` | KL |
+| L183, R5 | Legal if ≥1 Shaped vessel has a legal destination (a/b/c) | n/a | `hasAnyLegalLoad` | KL |
+| L184 | Covered spaces unusable; Imperial Kiln 1 per firing | `space.active` | `KILN_SPACE_UNAVAILABLE` / `IMPERIAL_KILN_UNAVAILABLE` | KL |
+| L185 | Marker resolved in Firing; 1 per ceramic | `heatMarker` | `HEAT_MARKER_INVALID` | GL, PL |
+| L189–192 | Reservation: face-up (position empty until turn end, then slide and refill) or blind top card | `g.market`, `hidden.mainDeck` | `CommissionReservationChoice` | CM, MK |
+| L196 | CM Apprentice: reserve 1, then gain 1 Clay/Wood/Coin | `hidden.orderHands` | `PLACE_COMMISSION_MARKET`, `COMMISSION_GAIN` | CM |
+| L197 | CM Shifu: up to 2; one may be top-3 (look, reserve 1, discard rest; optional per editorial note); gain after each | `hidden.pendingLook`, `hidden.mainDiscard` | `look_top_three`, `COMMISSION_CHOOSE_LOOKED` | CM, MK |
+| L199 | Must reserve ≥1; may stop after first; second reservation from the Orders still showing | `WorkTurnStep.commission_market` | `COMMISSION_STOP` | CM |
+| L200, L304 | No hand limit during the round; limit 4/5 at Cleanup | n/a | `cleanup_hand_limit` | RD, TC |
+| L201, L507 | Hands secret; counts public | `hidden.orderHands`, `counts.orderHands` | projection | VW |
+| L207 | GH Apprentice: pay printed cost, take 1 face-up | `p.techs`, `g.techDisplay` | `PLACE_GUILD_HALL{buy_face_up}` | GH |
+| L208, B2 | GH Shifu: inspect top 2 (or remaining) of 1 discipline; take a face-up or inspected Tech at −1 (min 0); rest to bottom in chosen private order | `hidden.pendingLook`, `hidden.techDecks` | `inspect`, `GUILD_TAKE` | GH, MK |
+| L210 | Refill the discipline to 2 if possible (after the bottom return, B2) | `g.techDisplay` | `refillTechDisplay` | MK |
+| L211 | ≤ 3 Techs, ≤ 1 per discipline | `p.techs` | `acquisitionError` | TC |
+| L212 | Unlocking; usable later this round | `p.personalSpaces[*][1].unlocked` | `grantTech` / `PERSONAL_SPACE_UNLOCKED` | TC |
+| L213 | GH legality: affordable face-up Tech from an unowned discipline (after the Shifu discount for the Shifu) | n/a | GH validate | GH |
+| L214 | Newly acquired Tech usable this round if its timing permits; when-acquired resolves immediately | `OwnedTechState` | Colour Samples step | GH, TC |
+| L220–221 | CW 2 / 4 Coins | `p.resources` | `PLACE_CANAL_WHARF` | CS |
+| L225 | MH 1/1/2 spaces; Recognition 0–2; both spaces usable by one player | Capacity data, `usableAtRecognition` | `PLACE_MAGISTRATES_HALL` | CS, PLc |
+| L229–230 | Pay 4 / 3 Coins → +1 Recognition | `p.imperial` | Same | CS, RC |
+| L232–233 | No Crown requirement; 0→1, 1→2, 2→3; resolve reward; never to 4 | Same | `RECOGNITION_GATE` | CS, RC |
+
+### 10.5 Firing Phase (L235–293) and Appendix D (L668–693)
+
+| Ref | Rule | State | Phase / action | Module |
+| --- | --- | --- | --- | --- |
+| L237, L670 | Skip if nothing loaded; no Fire card | n/a | `openFiringPhase` / `FIRING_SKIPPED` | CO |
+| L241, L672, L261, change 16 | Participants: ≥1 Shared Kiln ceramic; secret choice; must afford | `FiringContext.participantIds`, `PrivateFiringState` | `firing_contributions` / `SUBMIT_CONTRIBUTION` | CO |
+| L253–259 | Bank 1/−1, Tend 0/0, Stoke 1/+1 | Content | `contributionHeat`, `contributionWood` | HT, content |
+| L261 | Tend always affordable; cards returned after firing | n/a | Progress guarantee | CO |
+| L263, L674 | Base Heat = die + Σ, clamp 0–5 | `firing.baseHeat`, `unclampedBaseHeat` | `BASE_HEAT_DETERMINED` | HT, CO |
 | L673 | Reveal all simultaneously, then pay | `firing.contributions` | `CONTRIBUTIONS_REVEALED` | CO |
-| L247–248 | Base and Global Heat per firing; only Base Heat clamped | `firing.globalHeat` | Automatic | HT, PL |
-| L242, L675 | Test Pieces in First Player order | `firing_test_pieces` | `TEST_PIECES_*` | PL |
-| L242, L266–269, L676 | Heat markers: First Player order; turn ±1 or return; Kiln Master now | `LoadedCeramic.heatMarker` | `RESOLVE_HEAT_MARKERS` | PL |
-| L268 | A marker is not a zone modifier; stacks with Kiln Furniture; stays for Second Firing | `HeatCalculation.heatMarker` | n/a | HT, AQ |
-| L269 | 1 marker per ceramic; returned when the ceramic leaves the kiln | Step 12 | `finishFiring` | AQ |
-| L243, L677 | Reveal Fire (automatic when the Heat-marker step ends); Global Heat = Base + Fire | `firing.fireModifier`, `globalHeat` | `FIRE_REVEALED` | PL, FDk |
-| L244, L678 | Actual Heat formulas (Shared, Imperial) | `FiringCeramicRecord.first` | `ACTUAL_HEAT_CALCULATED` | HT, PL |
-| L245, L679–680 | Jun and similar, then Quality | `firing_heat_adjustment` | `RESOLVE_JUN`, `QUALITY_ASSIGNED` | PL |
-| L273–278 | Quality table | `qualityForDifference` | n/a | HT |
-| L278 | Flawed cannot complete Orders or be exhibited | `minQuality`, exhibition filter | n/a | OM, SC |
-| L280, L682 | Salvage 1 still-Flawed ceramic from this firing for 2 Coins after after-Quality; Vessel card back | `firing.ceramics[].salvaged`, `g.vesselSupply` | `firing_salvage` / `SALVAGE_FLAWED` | AQ |
+| L248–249 | Base and Global Heat per firing; only Base Heat clamped | `firing.globalHeat` | Automatic | HT, PL |
+| L243, L675 | Test Pieces in First Player order | `firing_test_pieces` | `TEST_PIECES_*` | PL |
+| L243, L267–270, L676 | Heat markers: First Player order; turn ±1 or return; Kiln Master now | `LoadedCeramic.heatMarker` | `RESOLVE_HEAT_MARKERS` | PL |
+| L269 | A marker is not a zone modifier; stacks with Kiln Furniture; stays for Second Firing | `HeatCalculation.heatMarker` | n/a | HT, AQ |
+| L270 | 1 marker per ceramic; returned when the ceramic leaves the kiln | Step 12 | `finishFiring` | AQ |
+| L244, L677 | Reveal Fire (automatic when the Heat-marker step ends); Global Heat = Base + Fire | `firing.fireModifier`, `globalHeat` | `FIRE_REVEALED` | PL, FDk |
+| L245, L678 | Actual Heat formulas (Shared, Imperial) | `FiringCeramicRecord.first` | `ACTUAL_HEAT_CALCULATED` | HT, PL |
+| L246, L679–680 | Jun and similar, then Quality | `firing_heat_adjustment` | `RESOLVE_JUN`, `QUALITY_ASSIGNED` | PL |
+| L274–279 | Quality table | `qualityForDifference` | n/a | HT |
+| L279 | Flawed cannot complete Orders or be exhibited | `minQuality`, exhibition filter | n/a | OM, SC |
+| L281, L682 | Salvage 1 still-Flawed ceramic from this firing for 2 Coins after after-Quality; Vessel card back | `firing.ceramics[].salvaged`, `g.vesselSupply` | `firing_salvage` / `SALVAGE_FLAWED` | AQ |
 | L681 | After-Quality in First Player order; owner chooses own order | `firing_after_quality` | `USE_*`, `END_AFTER_QUALITY` | AQ |
 | L683 | Finish: finished area, empty kilns, return markers / Kiln Master / Furniture, discard Fire face up, return cards | `g.fireDiscard`, `g.lastFiring` | `finishFiring` / `FIRING_FINISHED` | AQ |
 | L686–693 | Timing vocabulary | `TechTiming` | n/a | content |
-| L284 | Imperial Kiln tile at Recognition 2 | `p.imperial.kilnGained` | `IMPERIAL_KILN_GAINED` | RC |
-| L286 | 1 ceramic per firing | Derived | KL validate | KL |
-| L287 | G&L (1 vessel) or Imperial Priority loads it; no Tech effect does | `loadedBy` | GL, WA | KL |
-| L288, R10, R11 | Court-fired: die + Fire + chosen modifier + marker; immune to Contributions; modifier public | `LoadPlacement.imperialModifier` | n/a | HT |
-| L289 | Counts for Techs/abilities in this firing; not a participant; no Shared space | `firing.firingPlayerIds` vs `participantIds` | n/a | CO |
-| L290 | Resolves Quality and finishes normally | n/a | AQ | AQ |
-| L292, L433, R10 | Imperial Priority: once per game, before/after worker action, free, Shaped → empty Imperial Kiln; token effect | `p.imperial.priority` | `USE_IMPERIAL_PRIORITY` | WA, TN |
+| L285 | Imperial Kiln tile at Recognition 2 | `p.imperial.kilnGained` | `IMPERIAL_KILN_GAINED` | RC |
+| L287 | 1 ceramic per firing | Derived | KL validate | KL |
+| L288 | G&L (1 vessel) or Imperial Priority loads it; no Tech effect does | `loadedBy` | GL, WA | KL |
+| L289, R10, R11 | Court-fired: die + Fire + chosen modifier + marker; immune to Contributions; modifier public | `LoadPlacement.imperialModifier` | n/a | HT |
+| L290 | Counts for Techs/abilities in this firing; not a participant; no Shared space | `firing.firingPlayerIds` vs `participantIds` | n/a | CO |
+| L291 | Resolves Quality and finishes normally | n/a | AQ | AQ |
+| L293, L434, R10 | Imperial Priority: once per game, before/after worker action, free, Shaped → empty Imperial Kiln; token effect | `p.imperial.priority` | `USE_IMPERIAL_PRIORITY` | WA, TN |
 
-### 10.6 Order Phase, Cleanup, production (L294–359)
-
-| Ref | Rule | State | Phase / action | Module |
-| --- | --- | --- | --- | --- |
-| L296, INT | First Player clockwise, single pass; held Orders only; face-up never; display unchanged; auto-skip | `orders` phase | `COMPLETE_ORDER`, `END_ORDER_TURN` | OP |
-| L302 | Return workers and Setter's Marks | `WorkerState.placement`, `space.setterMarkOwnerId` | `openCleanup` | RD |
-| L303 | Trim to 4/5; Starting → box, Main → discard | `hidden.*` | `DISCARD_TO_HAND_LIMIT` | RD |
-| L304 | Round 5 → scoring; else pass First Player, advance round | `g.firstPlayerId`, `g.round` | `FIRST_PLAYER_PASSED` | RD |
-| L310–316 | Production stages | Ceramic stages | n/a | n/a |
-| L320–326 | Shape Clay costs | Content | `shapeClay` | FD, MY |
-| L328 | Vessel cards non-limiting; proxies | `vesselSupply`, `nextProxySequence` | `formCeramic` | state |
-| L332–339 | Decorations 2 Coins at forming; Shifu and Kit each −1 on one | Content | `quoteFormDecorate` | FD |
-| L343–352 | Glaze chosen at loading; Preferred Heat 1–4 | `LoadedCeramic.glaze` | `LoadSpec.glaze` | GL, HT |
-| L356–359 | Shaped / Loaded / Fired / Delivered | `CeramicStage` | n/a | types |
-
-### 10.7 Workshop development and Techs (L361–380, Appendix B L607–654)
+### 10.6 Order Phase, Cleanup, production (L295–360)
 
 | Ref | Rule | State | Phase / action | Module |
 | --- | --- | --- | --- | --- |
-| L365, L373–375 | 1 Kiln + ≤ 3 Techs (1 per discipline) + ≤ 2 personal spaces; 6/6/6; unlocks | `p.techs`, `p.personalSpaces` | n/a | TC |
-| L369, L646 | Tech effects are not worker actions (Prepared Clay, Canal Barge, Imperial Priority) | `FormedBy`, `loadedBy`, `CompletedOrderRecord.via` | n/a | MY, WA |
-| L376–377, L481 | Printed timing; same-timing order chosen by the owner; players in First Player order | Queues | n/a | PL, AQ |
-| L378, L492, L609, L755 → A1 | 1 VP per Tech, recorded when the Tech is gained (owner amendment A1; no longer at game end); the final breakdown shows it as its own line from the ledger | `p.score.techs`, `FinalScoreBreakdown.techs` | `TECH_ACQUIRED.vp` (GH via `grantTech`) | TC, GH, SC |
-| L615 T01 Large Throwing Wheel | Once/round; F&D with ≥1 Vase/Censer; total Clay −2 (min 0); Ding's vessel never triggers it (L652); counts for F&D legality (L171) | `usedThisRound` | `useLargeThrowingWheel` | FD |
-| L616 T16 Decorator's Kit | Once/round; one Carved/Impressed/Painted −1 Coin; may stack with the Shifu discount; not Ding's vessel; may apply to Prepared Clay (INT, implemented but unreachable: T16 and T17 are both Workshop); counts for F&D legality (L171) | Same | `decoratorsKitVesselIndex`, `preparedClay.useDecoratorsKit` | FD, MY |
+| L297, INT | First Player clockwise, single pass; held Orders only; face-up never; display unchanged; auto-skip | `orders` phase | `COMPLETE_ORDER`, `END_ORDER_TURN` | OP |
+| L303 | Return workers and Setter's Marks | `WorkerState.placement`, `space.setterMarkOwnerId` | `openCleanup` | RD |
+| L304 | Trim to 4/5; Starting → box, Main → discard | `hidden.*` | `DISCARD_TO_HAND_LIMIT` | RD |
+| L305 | Round 5 → scoring; else pass First Player, advance round | `g.firstPlayerId`, `g.round` | `FIRST_PLAYER_PASSED` | RD |
+| L311–317 | Production stages | Ceramic stages | n/a | n/a |
+| L321–327 | Shape Clay costs | Content | `shapeClay` | FD, MY |
+| L329 | Vessel cards non-limiting; proxies | `vesselSupply`, `nextProxySequence` | `formCeramic` | state |
+| L333–340 | Decorations 2 Coins at forming; Shifu and Kit each −1 on one | Content | `quoteFormDecorate` | FD |
+| L344–353 | Glaze chosen at loading; Preferred Heat 1–4 | `LoadedCeramic.glaze` | `LoadSpec.glaze` | GL, HT |
+| L357–360 | Shaped / Loaded / Fired / Delivered | `CeramicStage` | n/a | types |
+
+### 10.7 Workshop development and Techs (L362–381, Appendix B L607–654)
+
+| Ref | Rule | State | Phase / action | Module |
+| --- | --- | --- | --- | --- |
+| L366, L374–376 | 1 Kiln + ≤ 3 Techs (1 per discipline) + ≤ 2 personal spaces; 6/6/6; unlocks | `p.techs`, `p.personalSpaces` | n/a | TC |
+| L370, L646 | Tech effects are not worker actions (Prepared Clay, Canal Barge, Imperial Priority) | `FormedBy`, `loadedBy`, `CompletedOrderRecord.via` | n/a | MY, WA |
+| L377–378, L482 | Printed timing; same-timing order chosen by the owner; players in First Player order | Queues | n/a | PL, AQ |
+| L379, L492, L609, L755 → A1 | 1 VP per Tech, recorded when the Tech is gained (owner amendment A1; no longer at game end); the final breakdown shows it as its own line from the ledger | `p.score.techs`, `FinalScoreBreakdown.techs` | `TECH_ACQUIRED.vp` (GH via `grantTech`) | TC, GH, SC |
+| L615 T01 Large Throwing Wheel | Once/round; F&D with ≥1 Vase/Censer; total Clay −2 (min 0); Ding's vessel never triggers it (L652); counts for F&D legality (L172) | `usedThisRound` | `useLargeThrowingWheel` | FD |
+| L616 T16 Decorator's Kit | Once/round; one Carved/Impressed/Painted −1 Coin; may stack with the Shifu discount; not Ding's vessel; may apply to Prepared Clay (INT, implemented but unreachable: T16 and T17 are both Workshop); counts for F&D legality (L172) | Same | `decoratorsKitVesselIndex`, `preparedClay.useDecoratorsKit` | FD, MY |
 | L617 T05 Reworking Table | Once/round; at glaze and load, change Shape first (applied before the Inverted Firing Shape test); return card; no Clay; Decoration stays; placement legality ignores possible reworks (Q3) | `CERAMIC_RESHAPED` | `LoadSpec.reworkShape`, IP `reworkShape` (Q1) | KL |
 | L618 T17 Prepared Clay | Once/round; MY action after gaining (incl. the Shifu bonus); form 1 at Clay +1 plus a Decoration; not an F&D action | `formedBy: "prepared_clay"` | `preparedClay` | MY |
 | L619, L653 T18 Senior Apprentice | Once/round; 1 Apprentice at MY/CM resolves the Shifu effect (incl. 1-Coin bonus, 2 reservations, top-3; R12); never at MH | `WorkerPlacement.viaSeniorApprentice` | `seniorApprentice` | PLc, MY, CM |
@@ -1419,42 +1419,42 @@ Abbreviations:
 | L642, R13 T25 Tribute Ware | Once/round; completing a printed-Crown Order: +1 bonus Crown (advances or +1 VP); not printed; no Guan trigger; not tie-breaker 2 | `CompletedOrderRecord.bonusCrowns` | `declineTributeWare` | OC, RC |
 | L652 | Three separate reductions; Shifu + Kit may hit the same Decoration (Carved for 0); Ding takes neither; LTW Clay only | n/a | `quoteFormDecorate` | FD |
 | L654 | Ge after Saggars on the same ceramic; Crackle never fills Masterpiece | n/a | AQ, OM | AQ, OM |
-| L210 + Appendix B | **Reachability.** Two Techs of one discipline never coexist, so these modelled combinations cannot occur: Prepared Clay + Decorator's Kit (the audit INT), Large Throwing Wheel + Decorator's Kit, Senior Apprentice + Prepared Clay, Reworking Table + Large Throwing Wheel; Kiln Furniture + Inverted Firing (R8's Furniture clause), Setter's Mark + either; Protective Saggars + Second Firing; Test Pieces + Kiln Master. Reachable cross-discipline pairs that need tests: Reworking Table + Inverted Firing, Reworking Table + Imperial Priority (Q1), Decorator's Kit or Large Throwing Wheel + Ding, Canal Barge + Tribute Ware, Fuel Ledger + any, Ge + Saggars or Second Firing, Jun + Second Firing (R7) | Validators keep every branch; enumeration skips the unreachable ones (§5.2); `giveTech` refuses them (§8.1) | n/a | all |
+| L211 + Appendix B | **Reachability.** Two Techs of one discipline never coexist, so these modelled combinations cannot occur: Prepared Clay + Decorator's Kit (the audit INT), Large Throwing Wheel + Decorator's Kit, Senior Apprentice + Prepared Clay, Reworking Table + Large Throwing Wheel; Kiln Furniture + Inverted Firing (R8's Furniture clause), Setter's Mark + either; Protective Saggars + Second Firing; Test Pieces + Kiln Master. Reachable cross-discipline pairs that need tests: Reworking Table + Inverted Firing, Reworking Table + Imperial Priority (Q1), Decorator's Kit or Large Throwing Wheel + Ding, Canal Barge + Tribute Ware, Fuel Ledger + any, Ge + Saggars or Second Firing, Jun + Second Firing (R7) | Validators keep every branch; enumeration skips the unreachable ones (§5.2); `giveTech` refuses them (§8.1) | n/a | all |
 
-### 10.8 Orders and Recognition (L382–451)
-
-| Ref | Rule | State | Phase / action | Module |
-| --- | --- | --- | --- | --- |
-| L386 | One 48-card Main deck and a 6-card display; the 16-card Starting deck at setup only | `g.market`, `hidden.mainDeck` | n/a | MK |
-| L388 | Display oldest (left) to newest | `display` order | n/a | MK |
-| L390 | Leaves only by reservation or round-start discard; refill after the reserving turn; multiple takes → one refill | `refillPendingFor` | `endTurn` | MK, TN |
-| L392 | VP, Coins, 0–3 Crowns | `OrderDefinition` | n/a | content |
-| L396 | Reservation options; Colour Samples | n/a | CM, GH | CM, GH |
-| L400–403 | Held: secret, counts for limit, completable later or via Canal Barge, scores as printed | `hidden.orderHands` | n/a | OC |
-| L409–416 | Completion steps 1–8 (reveal, select, confirm, beneath, VP, Coins, Crowns one at a time, scoring area) | `p.completedOrders`, `DeliveredCeramic`, `p.score.orders` | `COMPLETE_ORDER` / `ORDER_COMPLETED` | OC, RC |
-| L418 | A ceramic satisfies only one Order | `stage: "delivered"` | `DUPLICATE_CERAMIC` / `ILLEGAL_CERAMIC_STAGE` | OC |
-| L422 | Independent multi-ceramic requirements unless a pairing is printed | `OrderRelationDefinition` | `matchOrder` | OM |
-| L426, L429–435 | Recognition by Crowns or MH; milestones 1–4; +1 VP per Crown beyond 4 | `p.imperial`, `p.score` | `RECOGNITION_ADVANCED`, `CROWN_OVERFLOW_VP` | RC |
-| L437–439 | Overflow VP; one Crown at a time across milestones; each milestone once | Flags | `gainCrown` | RC |
-| L443–451 | Exhibition: any number of undelivered Standard+, 2/3/5, +3 Shapes, +3 Glazes; never Flawed; automatic (INT) | `FinalScoreBreakdown.exhibition` | `finishGame` | SC |
-
-### 10.9 Kiln Traditions (L453–485)
+### 10.8 Orders and Recognition (L383–452)
 
 | Ref | Rule | State | Phase / action | Module |
 | --- | --- | --- | --- | --- |
-| L459 Ru | Once/round; completing with an actual Celadon + Plain Masterpiece → 4 VP (also via Canal Barge) | `p.kilnAbilityUsedThisRound`, `score.kilnAbilities` | `COMPLETE_ORDER` / `USE_CANAL_BARGE` | OC, KN |
-| L463 Guan | Once/round; completing an Order with ≥ 1 printed Crown → 2 Coins + 1 VP | Same | Same | OC, KN |
-| L467–469 Ge | Once/round after Quality; your Standard ceramic from this firing → Fine + Crackle marker; wildcard Decoration for Orders; never Masterpiece (typed: `FinishedQuality` / `DeliveredQuality`) | `FinishedCeramic.crackle`, `firing.ceramics[].crackle` | `USE_GE_CRACKLE`; `crackleDeclarations` | AQ, OM |
-| L473, R1 Ding | Once/round in an F&D action (either worker); after forming a Bowl/Plate/Brush Washer, 1 Clay + 1 Coin for another of the same Shape with any Decoration; outside vessel limit and discounts; counts as formed by that action | `formedBy: "ding_extra"` | `dingExtra` | FD |
-| L477, R7 Jun | Once/round after Actual Heat, before Quality; 1 Wood; ±1 on your ceramic; also in Second Firing if unused | `HeatCalculation.junAdjustment` | `RESOLVE_JUN` | PL, AQ |
-| L481–485 | Timing summary; L484: the wildcard is declared while completing the Order (omitted → engine search; given → used exactly) | Queues | `crackleDeclarations` | PL, AQ, OC |
+| L387 | One 48-card Main deck and a 6-card display; the 16-card Starting deck at setup only | `g.market`, `hidden.mainDeck` | n/a | MK |
+| L389 | Display oldest (left) to newest | `display` order | n/a | MK |
+| L391 | Leaves only by reservation or round-start discard; refill after the reserving turn; multiple takes → one refill | `refillPendingFor` | `endTurn` | MK, TN |
+| L393 | VP, Coins, 0–3 Crowns | `OrderDefinition` | n/a | content |
+| L397 | Reservation options; Colour Samples | n/a | CM, GH | CM, GH |
+| L401–404 | Held: secret, counts for limit, completable later or via Canal Barge, scores as printed | `hidden.orderHands` | n/a | OC |
+| L410–417 | Completion steps 1–8 (reveal, select, confirm, beneath, VP, Coins, Crowns one at a time, scoring area) | `p.completedOrders`, `DeliveredCeramic`, `p.score.orders` | `COMPLETE_ORDER` / `ORDER_COMPLETED` | OC, RC |
+| L419 | A ceramic satisfies only one Order | `stage: "delivered"` | `DUPLICATE_CERAMIC` / `ILLEGAL_CERAMIC_STAGE` | OC |
+| L423 | Independent multi-ceramic requirements unless a pairing is printed | `OrderRelationDefinition` | `matchOrder` | OM |
+| L427, L430–436 | Recognition by Crowns or MH; milestones 1–4; +1 VP per Crown beyond 4 | `p.imperial`, `p.score` | `RECOGNITION_ADVANCED`, `CROWN_OVERFLOW_VP` | RC |
+| L438–440 | Overflow VP; one Crown at a time across milestones; each milestone once | Flags | `gainCrown` | RC |
+| L444–452 | Exhibition: any number of undelivered Standard+, 2/3/5, +3 Shapes, +3 Glazes; never Flawed; automatic (INT) | `FinalScoreBreakdown.exhibition` | `finishGame` | SC |
 
-### 10.10 End of game (L487–498)
+### 10.9 Kiln Traditions (L454–486)
 
 | Ref | Rule | State | Phase / action | Module |
 | --- | --- | --- | --- | --- |
-| L489 | Ends after Round 5 Cleanup | `game_over` | `finishGame` | RD, SC |
-| L491–494, A1 | Recorded VP (incl. Tech VP recorded on gain, A1) + Exhibition + Coins (1 per 3, max 5) | `FinalScoreBreakdown` | `FINAL_SCORE_CALCULATED` | SC |
+| L460 Ru | Once/round; completing with an actual Celadon + Plain Masterpiece → 4 VP (also via Canal Barge) | `p.kilnAbilityUsedThisRound`, `score.kilnAbilities` | `COMPLETE_ORDER` / `USE_CANAL_BARGE` | OC, KN |
+| L464 Guan | Once/round; completing an Order with ≥ 1 printed Crown → 2 Coins + 1 VP | Same | Same | OC, KN |
+| L468–470 Ge | Once/round after Quality; your Standard ceramic from this firing → Fine + Crackle marker; wildcard Decoration for Orders; never Masterpiece (typed: `FinishedQuality` / `DeliveredQuality`) | `FinishedCeramic.crackle`, `firing.ceramics[].crackle` | `USE_GE_CRACKLE`; `crackleDeclarations` | AQ, OM |
+| L474, R1 Ding | Once/round in an F&D action (either worker); after forming a Bowl/Plate/Brush Washer, 1 Clay + 1 Coin for another of the same Shape with any Decoration; outside vessel limit and discounts; counts as formed by that action | `formedBy: "ding_extra"` | `dingExtra` | FD |
+| L478, R7 Jun | Once/round after Actual Heat, before Quality; 1 Wood; ±1 on your ceramic; also in Second Firing if unused | `HeatCalculation.junAdjustment` | `RESOLVE_JUN` | PL, AQ |
+| L482–486 | Timing summary; L485: the wildcard is declared while completing the Order (omitted → engine search; given → used exactly) | Queues | `crackleDeclarations` | PL, AQ, OC |
+
+### 10.10 End of game (L488–498)
+
+| Ref | Rule | State | Phase / action | Module |
+| --- | --- | --- | --- | --- |
+| L490 | Ends after Round 5 Cleanup | `game_over` | `finishGame` | RD, SC |
+| L492–494, A1 | Recorded VP (incl. Tech VP recorded on gain, A1) + Exhibition + Coins (1 per 3, max 5) | `FinalScoreBreakdown` | `FINAL_SCORE_CALCULATED` | SC |
 | L496 | Most VP wins | `FinalResult.winnerIds` | n/a | SC |
 | L498, R13 | Ties: Recognition → printed Crowns → Masterpieces delivered or exhibited → shared | `TieBreakValues`, `resolvedBy` | n/a | SC |
 
@@ -1481,7 +1481,7 @@ Abbreviations:
 | Appendix C (L656–666) | `firing.json` `fireDeck`; `fire_deck.test.ts` |
 | Appendix D (L668–693) | §3.3 |
 | Appendix E (L695–757) | Summary of the rows above (L755's Tech VP → A1). `content_contract.test.ts` checks the quick-reference numbers (capacities, costs, Exhibition values, Coin cap, Tech VP and the A1 row) against data |
-| Changes 1–19 (L11–29) | 1 → §10.3–10.4; 2 → FD/GL; 3 → heat markers; 4 → L139; 5 → §10.7; 6 → CM/MK, OP; 7 → L288, L292; 8 → MH, Grant; 9 → kiln data; 10 → Ge; 11 → step 4; 12 → L512; 13 → orders data; 14 → FD/Kit/Ding/S10; 15 → Kiln Die; 16 → participants; 17 → setup deal and hand limit; 18 → MH from 0, Grant; 19 → Painted. Line 17's "2 + Fire" is superseded by change 15 (editorial) |
+| Changes 1–19 (L11–29) | 1 → §10.3–10.4; 2 → FD/GL; 3 → heat markers; 4 → L140; 5 → §10.7; 6 → CM/MK, OP; 7 → L289, L293; 8 → MH, Grant; 9 → kiln data; 10 → Ge; 11 → step 4; 12 → L512; 13 → orders data; 14 → FD/Kit/Ding/S10; 15 → Kiln Die; 16 → participants; 17 → setup deal and hand limit; 18 → MH from 0, Grant; 19 → Painted. Line 17's "2 + Fire" is superseded by change 15 (editorial) |
 
 ### 10.13 Owner rulings, editorial corrections, interpretations and digital decisions
 
@@ -1494,7 +1494,7 @@ Abbreviations:
 | R5 | `kilnLoading` a/b/c; `hasAnyLegalLoad` |
 | R6 | `resolveOrderCompletion(…, "canal_barge")` runs the same Ru/Guan/Tribute/Crackle code |
 | R7 | `firing_second_firing_jun` |
-| R8 | Sequential `validateLoads` (rework before the Inverted Firing Shape test); Kiln Furniture on the space. The Furniture-under-a-stack clause is implemented but unreachable (L210) |
+| R8 | Sequential `validateLoads` (rework before the Inverted Firing Shape test); Kiln Furniture on the space. The Furniture-under-a-stack clause is implemented but unreachable (L211) |
 | R9 | `heatMarkerCeramicId` optional; any of your loaded ceramics without a marker |
 | R10 | Imperial Priority free; `imperialModifier` required |
 | R11 | Imperial modifier stored on the ceramic and public |
@@ -1503,7 +1503,7 @@ Abbreviations:
 | B1 | MK draw/look/refill/rotation rules; `ORDER_SUPPLY_EMPTY`; `reservable()` from public counts |
 | B2 | `GUILD_TAKE.bottomOrder` private; return before refill; inspect any discipline |
 | B3 | Looks private; face-down discard (`counts.mainDiscard` only) |
-| Editorial L390 | Colour Samples takes from the deck only |
+| Editorial L391 | Colour Samples takes from the deck only |
 | Editorial L714 | Top-3 optional (`look_top_three` is a choice) |
 | Editorial L649 | Buried card at the end of the deck array |
 | Editorial L17 | Kiln Die replaces "2" |
@@ -1519,7 +1519,7 @@ Abbreviations:
 | INT Exhibition | Automatic, all eligible |
 | INT Kiln Tending | Automatic on the first qualifying G&L |
 | INT Setter's Mark | Optional; mid-round purchase → next round |
-| INT Decorator's Kit | Prepared Clay yes (implemented, unreachable under L210), Ding never |
+| INT Decorator's Kit | Prepared Clay yes (implemented, unreachable under L211), Ding never |
 | DIG Versioning | Rules 1.6.1, schema 6, revision 29; V1.4 rooms rejected |
 | DIG Stable IDs | `StartingOrderId`, `MainOrderId`, `TechId` mapping |
 | DIG Chinese | Glossary-driven `*Zh` strings (P1) |
@@ -1530,20 +1530,20 @@ Abbreviations:
 
 Only items the text cannot decide are listed. For each, the engine adopts the stated default, and changing it needs no change to the contract.
 
-1. **Reworking Table with Imperial Priority** (L617, L292, L646).
+1. **Reworking Table with Imperial Priority** (L617, L293, L646).
    - Reworking Table triggers "when you glaze and load a Shaped vessel". It does not require the Glaze & Load *action*.
    - Imperial Priority "give[s] 1 of your Shaped vessels a Glaze and load[s] it", but is "not a Glaze & Load action".
    - **Default:** allowed (`USE_IMPERIAL_PRIORITY.reworkShape`), consuming Reworking Table's once-per-round use. If the owner rules otherwise, the validator rejects `reworkShape` there.
-2. **Refilling more than two empty display positions** (L129, L190, B1). This is reachable only after the Main deck and discard were both exhausted.
-   - L129 says "reveal 2 … restoring the display to 6", and B1 leaves positions empty when no card is available.
+2. **Refilling more than two empty display positions** (L130, L191, B1). This is reachable only after the Main deck and discard were both exhausted.
+   - L130 says "reveal 2 … restoring the display to 6", and B1 leaves positions empty when no card is available.
    - **Default:** every refill (end of turn or round start) compacts the display and then fills **all** empty positions as cards allow, aiming at 6. The alternative is to reveal at most 2 at round start.
-3. **Does Glaze & Load placement legality (R5c) count a vessel that Reworking Table could make eligible for Inverted Firing?** (L617, L629, R5c, L141.)
+3. **Does Glaze & Load placement legality (R5c) count a vessel that Reworking Table could make eligible for Inverted Firing?** (L617, L629, R5c, L142.)
    - Reworking Table (Workshop) and Inverted Firing (Glazing & Loading) can be owned together. Example: no empty active Shared Kiln space, no Imperial Kiln, one of your ceramics alone in a space, both Techs ready, and your only Shaped vessel is a Vase.
    - R5c lists "a Bowl, Plate or Brush Washer with Inverted Firing unused". L617 lets the Shape change "first" when the vessel is glazed and loaded, which is during the action, after placement. R4's "apply valid discounts before payment" covers costs, not Shape changes.
    - **Default (literal):** placement legality looks only at each Shaped vessel's current Shape, so the example placement is illegal (`NO_MAIN_ACTION_POSSIBLE`). Within a legal action the order is settled: the rework is applied before the Inverted Firing Shape test (L617 "first"), so a Vase reworked to a Bowl may be stacked.
    - If the owner rules otherwise, only `hasAnyLegalLoad` changes (it also tries each reachable reworked Shape while T05 is ready). The contract does not change.
 
-Every other case in the rulebook and audit is decidable from the text and is mapped in §10. In particular these are decided, not open: the Materials Yard order split → Shifu bonus → Prepared Clay (L162 "Then", L618 "after gaining resources"); Form & Decorate legality counting ready discounts (L171 with R4); the automatic Fire reveal (L677).
+Every other case in the rulebook and audit is decidable from the text and is mapped in §10. In particular these are decided, not open: the Materials Yard order split → Shifu bonus → Prepared Clay (L163 "Then", L618 "after gaining resources"); Form & Decorate legality counting ready discounts (L172 with R4); the automatic Fire reveal (L677).
 
 ---
 
@@ -1588,4 +1588,4 @@ Revision 2 answers two independent reviews of revision 1: a **rules review** (RR
 
 ### 12.3 Coverage re-check
 
-After these changes the §10 matrix was re-checked against the source line by line. Revision 2 adds §10.0 (overview, glossary and components, L33–95), which revision 1 covered only indirectly. Every rule-bearing line in L33–693 now maps to a matrix row, and Appendix E (L695–757) is a summary of those rows. The open questions are §11 Q1–Q3.
+After these changes the §10 matrix was re-checked against the source line by line. Revision 2 adds §10.0 (overview, glossary and components, L34–96), which revision 1 covered only indirectly. Every rule-bearing line in L34–693 now maps to a matrix row, and Appendix E (L695–757) is a summary of those rows. The open questions are §11 Q1–Q3.

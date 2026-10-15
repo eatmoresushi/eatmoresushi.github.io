@@ -1,5 +1,5 @@
 /**
- * Appendix D steps 10–12 (L280, L467–469, L637, L640, L654, L681–683; R4, R7): Protective
+ * Appendix D steps 10–12 (L281, L468–470, L637, L640, L654, L681–683; R4, R7): Protective
  * Saggars, Second Firing (incl. the R7 Jun window), Ge's Crackle in the owner's chosen order
  * with eligibility rechecked after each use, the optional 2-Coin salvage, and finishing.
  */
@@ -180,7 +180,7 @@ describe("Second Firing (T14, L640, L651)", () => {
     expect(salvageOptions(table.view("p1"))).toEqual({ ceramicIds: ["c1", "c2"], coins: 2 });
   });
 
-  it("keeps the Heat marker and the Kiln Furniture modifier (L268, L640)", () => {
+  it("keeps the Heat marker and the Kiln Furniture modifier (L269, L640)", () => {
     const table = openFiringTable({
       players: [{ techs: ["T14", "T15"] }, {}],
       fireDeck: [0, -1],
@@ -207,7 +207,7 @@ describe("Second Firing (T14, L640, L651)", () => {
     expect(eventsOfType(events, "QUALITY_ASSIGNED")[0]).toMatchObject({ quality: "standard" });
   });
 
-  it("an Imperial ceramic uses the Kiln Die again, not Base Heat (L288)", () => {
+  it("an Imperial ceramic uses the Kiln Die again, not Base Heat (L289)", () => {
     const table = openFiringTable({
       players: [{ techs: ["T14"], recognition: 2 }, {}],
       fireDeck: [0, 1],
@@ -325,7 +325,7 @@ describe("R7: Jun during Second Firing", () => {
   });
 });
 
-describe("Ge Crackle (L467–469, L654)", () => {
+describe("Ge Crackle (L468–470, L654)", () => {
   it("turns one of your Standard ceramics Fine with a permanent Crackle marker", () => {
     const table = openFiringTable(aqSpec(withTechs([], "GE")));
     tendAll(table);
@@ -374,7 +374,7 @@ describe("Ge Crackle (L467–469, L654)", () => {
     expect(afterQualityOptions(table.view("p1"))).toEqual([
       { ability: "protective_saggars", ceramicIds: ["c1"], cost: { clay: 0, wood: 1, coins: 0 } },
     ]);
-    // A Crackle ceramic is Fine for good: Saggars cannot lift it to Masterpiece (L469, L637).
+    // A Crackle ceramic is Fine for good: Saggars cannot lift it to Masterpiece (L470, L637).
     expectDocumentedDetails(table.expectRuleError("p1", { type: "USE_PROTECTIVE_SAGGARS", ceramicId: "c2" }, "INVALID_TARGET"));
     table.act("p1", { type: "USE_PROTECTIVE_SAGGARS", ceramicId: "c1" });
     expect(table.halts).toEqual([{ kind: "continue_after", milestone: "firing_done" }]);
@@ -435,7 +435,7 @@ describe("Ge Crackle (L467–469, L654)", () => {
   });
 });
 
-describe("salvage (L280, L682)", () => {
+describe("salvage (L281, L682)", () => {
   function salvageSpec(): StateSpec {
     return {
       players: [{ techs: ["T15"] }, {}, {}],

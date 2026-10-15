@@ -147,7 +147,7 @@ const PREPARED_CLAY: TechId = "T17";
  * Rule-error codes that depend only on the phase, the actor, the worker, the location and the
  * worker effect — never on the rest of a placement command. Every placement validator checks
  * them before anything command-specific (`validatePlacement`, then the location's "at least 1
- * instance of the main action" test, L141; the Magistrate's Hall Recognition gate). When one
+ * instance of the main action" test, L142; the Magistrate's Hall Recognition gate). When one
  * placement command fails with one of these, every command for that worker and location
  * fails the same way, so enumerators and probes may stop there.
  */
@@ -313,8 +313,8 @@ export function playerSummary(view: PlayerView, playerId: PlayerId): PlayerSumma
   };
 }
 
-/** The owned Tech whose `unlocks` added a second personal space (L211, D7). At most one Tech
- * per discipline is owned (L210), so at most one matches. */
+/** The owned Tech whose `unlocks` added a second personal space (L212, D7). At most one Tech
+ * per discipline is owned (L211), so at most one matches. */
 function addedByTech(p: PlayerState, locationId: PersonalLocationId): TechId | null {
   return p.techs.find((tech) => TECHS[tech.id].unlocks === locationId)?.id ?? null;
 }
@@ -325,7 +325,7 @@ export function scorePreview(view: PlayerView, playerId: PlayerId): ScorePreview
 }
 
 /**
- * Held Orders against the Cleanup hand limit (4, or 5 with Colour Samples; L199, L303).
+ * Held Orders against the Cleanup hand limit (4, or 5 with Colour Samples; L200, L304).
  * `trimDue` uses Cleanup's own predicate: Rounds 1–4 only (INT: Round 5 skips the trim).
  */
 export function handLimitStatus(view: PlayerView, playerId: PlayerId): HandLimitStatus {
@@ -335,7 +335,7 @@ export function handLimitStatus(view: PlayerView, playerId: PlayerId): HandLimit
   return { held, limit, mustDiscard, trimDue: !isFinalRound(view.game.round) && mustDiscard > 0 };
 }
 
-/** The Shared Kiln cover for this player count (L99) and which active spaces hold nothing
+/** The Shared Kiln cover for this player count (L100) and which active spaces hold nothing
  * (UI_V1.6.1_ARCHITECTURE §5 gap 5). A Setter's Mark does not fill a space. */
 export function kilnLayout(view: PlayerView): KilnLayoutView {
   const game = view.game;
@@ -569,14 +569,14 @@ export function formDiscountVariants(
   if (kitIndex >= 0) {
     variants.push({ decoratorsKitVesselIndex: kitIndex });
     if (wheel) {
-      // Unreachable under L210 (both Workshop Techs), kept for completeness.
+      // Unreachable under L211 (both Workshop Techs), kept for completeness.
       variants.push({ useLargeThrowingWheel: true, decoratorsKitVesselIndex: kitIndex });
     }
   }
   return variants;
 }
 
-/** Commands that between them prove a location legal for a worker choice (L141). */
+/** Commands that between them prove a location legal for a worker choice (L142). */
 function* placementProbes(view: ActorView, locationId: LocationId, option: WorkerOption): Generator<GameAction> {
   const workerId = option.workerId;
   const game = view.game;
@@ -652,7 +652,7 @@ function placementWorkerOption(view: PlayerView, locationId: LocationId, option:
 
 /**
  * Every location with the viewer's worker choices (Shifu, lowest Apprentice, Apprentice via
- * Senior Apprentice) and whether each may be placed now (L139–143, L141). `legal` means some
+ * Senior Apprentice) and whether each may be placed now (L140–144, L142). `legal` means some
  * command placing that worker there passes `validateAction`.
  */
 export function placementOptions(view: PlayerView): PlacementOption[] {
@@ -713,13 +713,13 @@ export function placementLimits<L extends LocationId, E extends WorkerEffect>(
 }
 
 /**
- * Materials Yard choices for one `placementOptions` worker entry (L159–162, L618; §5 gap 14),
+ * Materials Yard choices for one `placementOptions` worker entry (L160–163, L618; §5 gap 14),
  * probed through `validateAction`:
  * - `resources`: the Clay/Wood split total for the worker's effect;
  * - `shifuBonus`: the Shifu effect's 1-Coin purchase, quoted (`ok` = affordable), else null;
  * - `preparedClay`: every Shape + Decoration pair some legal command names (any split, with
  *   or without the bonus), and the Shapes and Decorations of those pairs; null for a Senior
- *   Apprentice placement (L349: both Form & Decorate Techs, L210) or when Prepared Clay (T17)
+ *   Apprentice placement (L350: both Form & Decorate Techs, L211) or when Prepared Clay (T17)
  *   is not owned and ready. Legality is per pair: Shape Clay and Decoration Coins compete with
  *   the 1-Coin bonus, so `shapes` × `decorations` may contain illegal combinations, and each
  *   pair says whether it stays legal together with the Shifu bonus.
@@ -772,7 +772,7 @@ export function materialsYardOptions(view: PlayerView, worker: PlacementWorkerOp
 }
 
 /**
- * The Shaped vessels a Glaze & Load load may name after `earlierLoads` (L176–184, L343, L617;
+ * The Shaped vessels a Glaze & Load load may name after `earlierLoads` (L177–185, L344, L617;
  * §5 gap 15), each with its Glazes (any, when it has a legal destination with its Shape or a
  * reworked one) and its Reworking Table Shapes (T05 ready, no earlier load of this action
  * reworked, a legal destination for the new Shape). Destinations come from
@@ -796,7 +796,7 @@ export function glazeLoadVesselOptions(view: PlayerView, playerId: PlayerId, ear
 }
 
 /**
- * Indexes of `draft.vessels` that Ding may copy (L473, R1): a Bowl, Plate or Brush Washer of
+ * Indexes of `draft.vessels` that Ding may copy (L474, R1): a Bowl, Plate or Brush Washer of
  * this action, with Ding owned and ready. Affordability is the quote's business
  * (`quoteFormDecorate`), so an index stays listed when only the resources fall short.
  */
@@ -829,16 +829,16 @@ function isDingError(error: GameRuleError): boolean {
   return error.code === "KILN_ABILITY_NOT_OWNED" || error.code === "ABILITY_ALREADY_USED" || (typeof field === "string" && field.startsWith("dingExtra"));
 }
 
-/** The player's Shaped vessels in sequence order (L356). */
+/** The player's Shaped vessels in sequence order (L357). */
 export function shapedVessels(view: PlayerView, playerId: PlayerId): ShapedCeramic[] {
   return ceramicsOf(view.game, playerId, "shaped").map((c) => structuredClone(c));
 }
 
 /**
  * Ceramics the Glaze & Load Shifu may put the face-down Heat marker on with these loads (R9,
- * L179, L184): your loaded ceramics without a marker (Shared or Imperial, incl. earlier this
+ * L180, L185): your loaded ceramics without a marker (Shared or Imperial, incl. earlier this
  * round or by Imperial Priority), then the vessels these loads would load; `[]` when your
- * marker is already on a ceramic (L75).
+ * marker is already on a ceramic (L76).
  */
 export function heatMarkerTargets(view: PlayerView, playerId: PlayerId, pendingLoads: readonly LoadSpec[]): CeramicId[] {
   const game = view.game;
@@ -858,7 +858,7 @@ export function heatMarkerTargets(view: PlayerView, playerId: PlayerId, pendingL
 }
 
 /**
- * Commission Market choices (L186–200, B1): at placement for a worker effect, or — during the
+ * Commission Market choices (L187–201, B1): at placement for a worker effect, or — during the
  * viewer's own sub-step — what that step allows now (the step's effect wins).
  */
 export function commissionOptions(view: PlayerView, effect: WorkerEffect): CommissionOptions {
@@ -910,7 +910,7 @@ function techOption(p: PlayerState | null, techId: TechId, source: "face_up" | "
   return { techId, discipline: TECHS[techId].discipline, source, printedCost: TECHS[techId].cost, price, legal: reason === null, reason };
 }
 
-/** Guild Hall choices for a worker effect (L202–213): Techs to buy (Apprentice) or take after
+/** Guild Hall choices for a worker effect (L203–214): Techs to buy (Apprentice) or take after
  * inspecting (Shifu), with prices; the Shifu may inspect any discipline (B2). */
 export function guildOptions(view: PlayerView, effect: WorkerEffect): GuildOptions {
   const game = view.game;
@@ -939,7 +939,7 @@ export function guildInspectionOptions(view: PlayerView): GuildInspectionOptions
   };
 }
 
-/** The Magistrate's Hall for a worker effect (L222–232): 4 / 3 Coins, +1 Recognition, only
+/** The Magistrate's Hall for a worker effect (L223–233): 4 / 3 Coins, +1 Recognition, only
  * from Recognition 0–2 and never to 4; `reachable` is the Recognition it would reach. */
 export function magistratesHallQuote(view: PlayerView, effect: WorkerEffect): CostQuote & { reachable: Recognition | null } {
   const effects = LOCATIONS.magistrates_hall.effects[effect];
@@ -997,7 +997,7 @@ function imperialPriorityWindowUsable(game: PublicGameState, playerId: PlayerId)
 
 
 /**
- * Imperial Priority now (L292, R10): usable in your before/after-action window with the token
+ * Imperial Priority now (L293, R10): usable in your before/after-action window with the token
  * held, an empty gained Imperial Kiln and a Shaped vessel, which may be any of them. Per
  * vessel (§5 gap 16), probed through `validateAction`: its Glazes, Imperial modifiers and
  * Reworking Table Shapes (DESIGN §11 Q1).
@@ -1114,7 +1114,7 @@ export function orderSelectionCheck(
 }
 
 /**
- * Validator verdicts for a Crackle declaration picker (L469, L484; §5 gap 8). For the selected
+ * Validator verdicts for a Crackle declaration picker (L470, L485; §5 gap 8). For the selected
  * ceramics of one held Order and the picker's current explicit `declarations`:
  * - `auto`: declarations omitted, the engine searches (the picker's explicit "auto" mode);
  * - `declared`: the declarations exactly as given;
@@ -1167,7 +1167,7 @@ export function crackleDeclarationChecks(
 // ── Firing ───────────────────────────────────────────────────────────────────────────
 
 /**
- * The viewer's Contribution choices while they may submit (L252–262, L638): Tend, Bank, Stoke,
+ * The viewer's Contribution choices while they may submit (L253–263, L638): Tend, Bank, Stoke,
  * then Bank and Stoke with Fuel Ledger when owned, each with its Wood, Heat and whether it is
  * legal now (`legalContributions`, i.e. `validateContribution`).
  */

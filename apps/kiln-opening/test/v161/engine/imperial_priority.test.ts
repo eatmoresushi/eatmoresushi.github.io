@@ -1,5 +1,5 @@
 /**
- * Imperial Priority (L292, L287, L433, L646, R10, R11; DESIGN §11 Q1 / audit P1): once per
+ * Imperial Priority (L293, L288, L434, L646, R10, R11; DESIGN §11 Q1 / audit P1): once per
  * game, before or after your worker action, spend the token — free — to give 1 of your Shaped
  * vessels a Glaze and load it into your empty Imperial Kiln with a chosen public modifier. It
  * is a token effect, not a Glaze & Load action. Reworking Table may change the Shape first.
@@ -31,7 +31,7 @@ function reserveFaceUp(t: LocalTable, workerId: string): GameAction {
   return { type: "PLACE_COMMISSION_MARKET", workerId, first: { kind: "face_up", slotIndex: 0, orderId, gain: "coins" } };
 }
 
-/** p1 at Recognition 3: Imperial Kiln gained, token held (L284, L292). */
+/** p1 at Recognition 3: Imperial Kiln gained, token held (L285, L293). */
 function holder(extra: StateSpec = {}): StateSpec {
   return {
     players: [{ recognition: 3 }, {}],
@@ -101,7 +101,7 @@ describe("using the token", () => {
   });
 });
 
-describe("a token gained during the worker action (L292, L433)", () => {
+describe("a token gained during the worker action (L293, L434)", () => {
   it("reaching Recognition 3 at the Magistrate's Hall opens the after-action window for it", () => {
     const t = table(holder({ players: [{ recognition: 2, resources: { coins: 4 } }, {}] }));
     expect(imperialPriorityUsable(t.state, "p1")).toBe(false);
@@ -147,7 +147,7 @@ describe("when the token cannot be used", () => {
     t.expectRuleError("p1", priority("c1"), "IMPERIAL_PRIORITY_UNAVAILABLE");
   });
 
-  it("needs an empty Imperial Kiln (1 ceramic per firing, L286)", () => {
+  it("needs an empty Imperial Kiln (1 ceramic per firing, L287)", () => {
     const t = table(
       holder({
         ceramics: [

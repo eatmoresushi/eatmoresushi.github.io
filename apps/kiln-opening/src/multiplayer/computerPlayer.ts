@@ -16,7 +16,7 @@
  *
  * - **Orders.** Each held Order is planned against the seat's pipeline (Finished, Loaded and
  *   Shaped ceramics plus vessels still to form). Requirements are independent per dimension
- *   (L422): every Order is precompiled into its valid Shape, Glaze and Decoration multisets, so
+ *   (L423): every Order is precompiled into its valid Shape, Glaze and Decoration multisets, so
  *   a partial selection is feasible iff each dimension's fixed values fit one valid multiset.
  *   Plans give a completion probability, the vessels still to form (Shape and Decoration) and
  *   the Glazes that keep a plan alive when a vessel is loaded.
@@ -332,7 +332,7 @@ interface Know {
   readonly hand: readonly OrderId[];
   readonly seed: number;
   readonly deadline: Deadline;
-  /** This round's Kiln Die (L125); 2 before the first roll. */
+  /** This round's Kiln Die (L126); 2 before the first roll. */
   readonly die: number;
   readonly memo: Map<string, unknown>;
 }
@@ -671,7 +671,7 @@ interface PItem {
   readonly shape: number;
   /** Index into GLAZES, or -1 while still free (Shaped). */
   readonly glaze: number;
-  /** Index into DECORATIONS, or -1 for a Crackle wildcard (L469). */
+  /** Index into DECORATIONS, or -1 for a Crackle wildcard (L470). */
   readonly deco: number;
   /** P(final Quality rank ≥ r) for r = 0…3 (exact for Finished; Crackle counts as Fine for Orders). */
   readonly pAtLeast: readonly number[];
@@ -833,7 +833,7 @@ function poolItems(k: Know): PItem[] {
   });
 }
 
-/** Imperial Audience's VP (Recognition 4, L434). */
+/** Imperial Audience's VP (Recognition 4, L435). */
 function audienceVp(): number {
   const reward = IMPERIAL_TRACK.track.find((space) => space.space === 4)?.reward;
   return reward?.kind === "vp" ? reward.vp : 0;
@@ -850,7 +850,7 @@ function endCoinVp(coins: number): number {
   return Math.min(Math.floor(Math.max(0, coins) / rule.coinsPerVp), rule.maxVp);
 }
 
-/** Imperial Grant's Coins (Recognition 1, L431). */
+/** Imperial Grant's Coins (Recognition 1, L432). */
 function grantCoins(): number {
   const reward = IMPERIAL_TRACK.track.find((space) => space.space === 1)?.reward;
   return reward?.kind === "resources" ? reward.coins : 0;
@@ -1001,7 +1001,7 @@ function demandsOf(k: Know, plan: OrderPlan): VesselDemand[] {
   return demands;
 }
 
-/** What a ceramic earns when simply exhibited (L445–451), the baseline an Order must beat. */
+/** What a ceramic earns when simply exhibited (L446–452), the baseline an Order must beat. */
 const EXHIBIT_BASELINE = 2.6;
 
 /** The planning value of an Order: its chance times what it earns beyond exhibiting its
@@ -1151,7 +1151,7 @@ function expectedCompletionsBeforeCleanup(k: Know): number {
 
 /**
  * Whether one more Order — after `pending` reservations already counted for this action but
- * not yet in hand — would leave the seat over its hand limit at Cleanup (L303), once the
+ * not yet in hand — would leave the seat over its hand limit at Cleanup (L304), once the
  * Orders it expects to complete first have left the hand.
  */
 function reservationOverflows(k: Know, pending: number): boolean {
@@ -1172,7 +1172,7 @@ const RESERVATION_NEW_VESSEL_DISCOUNT = 0.75;
  * already claim, its chance scaled by the production capacity those Orders leave, and — when
  * the hand would be over its limit at Cleanup, counting `pending` reservations this action
  * has already planned and the Orders expected to be completed first — only what it adds over
- * the weakest held Order, which Cleanup would discard (L303).
+ * the weakest held Order, which Cleanup would discard (L304).
  */
 function reservationValue(k: Know, orderId: OrderId, pending = 0): number {
   return memo(k, `reserve:${orderId}:${pending}`, () => {
@@ -1300,7 +1300,7 @@ function techValue(k: Know, techId: TechId): number {
   return GAME_CONFIG.techs.vpEach + unlock + ability;
 }
 
-/** How well a Tech suits the seat's Kiln Tradition (L457–477, Appendix B). */
+/** How well a Tech suits the seat's Kiln Tradition (L458–478, Appendix B). */
 function kilnSynergy(kilnId: KilnId | null, techId: TechId): number {
   switch (kilnId) {
     case "RU":
@@ -1380,7 +1380,7 @@ function guildShifuValue(k: Know): { value: number; price: number; discipline: T
   return { value: Number.isFinite(value) ? value : -Infinity, price: faceUp?.price ?? 2, discipline: bestDiscipline ?? (faceUp === null ? null : TECHS[faceUp.techId].discipline) };
 }
 
-/** Exhibition score of a set of Finished ceramics (L443–451, T19). */
+/** Exhibition score of a set of Finished ceramics (L444–452, T19). */
 function exhibitionScore(k: Know, ceramics: readonly FinishedCeramic[]): number {
   const shown = ceramics.filter((c) => c.quality !== "flawed");
   let score = shown.reduce((sum, c) => sum + (c.quality === "masterpiece" ? 5 : c.quality === "fine" ? 3 : 2), 0);
@@ -1441,7 +1441,7 @@ function demandedGlazes(k: Know): Glaze[] {
   return wanted.size === 0 || wanted.size === GLAZE_COUNT ? [...GLAZES] : [...wanted];
 }
 
-// ── Contributions (secret, simultaneous; L252–262, L638) ─────────────────────────────
+// ── Contributions (secret, simultaneous; L253–263, L638) ─────────────────────────────
 
 /** My firing value at a known Base Heat: fixed markers as turned, a face-down own marker turned
  * optimally (step 5 comes after Base Heat), Kiln Master on the best target, and Jun's ±1 after
@@ -1715,7 +1715,7 @@ function decideSalvage(k: Know): GameAction | null {
 /**
  * The reward side of completing `options` one after another: printed VP and Coins, each Crown
  * from the Recognition it reaches, and each once-per-round trigger (Ru, Guan, Tribute Ware;
- * L457, L463, L642) at most once. After the last Work Phase every term is exact end-game VP:
+ * L458, L464, L642) at most once. After the last Work Phase every term is exact end-game VP:
  * Coins through the capped 1-per-3 rule (L494), and a Crown only for its Grant Coin, the
  * Audience or overflow VP.
  */
@@ -2650,7 +2650,7 @@ function decidePlacement(k: Know): GameAction | null {
     const chosen = firstValid(k, buildPlacement(k, root.action, root.workerId, root.effect, root.senior));
     if (chosen !== null) return chosen;
   }
-  // Canal Wharf is always legal (L142).
+  // Canal Wharf is always legal (L143).
   const anyWorker = legal.find((option) => option.locationId === "canal_wharf")?.workers.find((option) => option.legal);
   return anyWorker === undefined ? null : firstValid(k, [{ type: "PLACE_CANAL_WHARF", workerId: anyWorker.workerId }]);
 }

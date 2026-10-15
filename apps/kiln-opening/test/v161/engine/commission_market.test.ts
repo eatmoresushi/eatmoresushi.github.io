@@ -1,5 +1,5 @@
 /**
- * Commission Market (L186–200, L390, L396, L619, L653, R4, R12, B1, B3; DESIGN §3.2):
+ * Commission Market (L187–201, L391, L397, L619, L653, R4, R12, B1, B3; DESIGN §3.2):
  * Apprentice and Shifu effects, the resource after each reservation, the Shifu's optional
  * private top-3 selection, stopping after the first reservation, the second reservation
  * choosing from the Orders still showing, the single deferred refill at the end of the turn,
@@ -52,8 +52,8 @@ function allMainOrdersExcept(keep: readonly (OrderId | null)[]): OrderId[] {
 
 const DISPLAY: OrderId[] = ["O01", "O02", "O03", "O04", "O05", "O06"];
 
-describe("Apprentice effect (L195): reserve 1 Main Order, then gain 1 Clay, Wood or Coin", () => {
-  it("a face-up reservation and its resource resolve in one command; the position stays empty until the turn ends (L190)", () => {
+describe("Apprentice effect (L196): reserve 1 Main Order, then gain 1 Clay, Wood or Coin", () => {
+  it("a face-up reservation and its resource resolve in one command; the position stays empty until the turn ends (L191)", () => {
     const t = table();
     const events = t.act("p1", place("p1:apprentice:1", { kind: "face_up", slotIndex: 2, orderId: "O03", gain: "wood" }));
 
@@ -125,8 +125,8 @@ describe("Apprentice effect (L195): reserve 1 Main Order, then gain 1 Clay, Wood
   });
 });
 
-describe("Shifu effect (L196, L198): up to 2 separate reservations with a resource after each", () => {
-  it("the second reservation chooses from the Orders still showing; one refill after the turn (L390)", () => {
+describe("Shifu effect (L197, L199): up to 2 separate reservations with a resource after each", () => {
+  it("the second reservation chooses from the Orders still showing; one refill after the turn (L391)", () => {
     const t = table();
     t.act("p1", place("p1:shifu", { kind: "face_up", slotIndex: 0, orderId: "O01", gain: "clay" }));
     expect(commissionStep(t)).toMatchObject({ effect: "shifu", maxReservations: 2, reservationsMade: 1, awaiting: "reservation" });
@@ -154,7 +154,7 @@ describe("Shifu effect (L196, L198): up to 2 separate reservations with a resour
     expect(t.state.phase).toMatchObject({ activePlayerId: "p2", step: { kind: "before_action" } });
   });
 
-  it("the Shifu may stop after the first reservation (L198); stopping is legal only between reservations", () => {
+  it("the Shifu may stop after the first reservation (L199); stopping is legal only between reservations", () => {
     const t = table();
     t.act("p1", place("p1:shifu", { kind: "blind" }));
     const stopEarly = t.expectRuleError("p1", { type: "COMMISSION_STOP" }, "WRONG_PHASE");
@@ -168,7 +168,7 @@ describe("Shifu effect (L196, L198): up to 2 separate reservations with a resour
     expect(t.player("p1").resources.wood).toBe(3);
   });
 
-  it("the Shifu's private top-3 selection: reserve 1, discard the rest face down, then gain (L196, B3)", () => {
+  it("the Shifu's private top-3 selection: reserve 1, discard the rest face down, then gain (L197, B3)", () => {
     const t = table();
     const [a, b, c, next] = t.state.hidden.mainDeck as [OrderId, OrderId, OrderId, OrderId];
     const deckBefore = t.state.hidden.mainDeck.length;
@@ -214,7 +214,7 @@ describe("Shifu effect (L196, L198): up to 2 separate reservations with a resour
     expect(commissionStep(t)).toMatchObject({ reservationsMade: 1, awaiting: "resource" });
 
     t.act("p1", { type: "COMMISSION_GAIN", resource: "coins" });
-    // The top-3 selection replaces only 1 reservation (L196).
+    // The top-3 selection replaces only 1 reservation (L197).
     const twice = t.expectRuleError("p1", { type: "COMMISSION_RESERVE", choice: { kind: "look_top_three" } }, "INVALID_CHOICE");
     expectDocumentedDetails(twice);
 
@@ -337,7 +337,7 @@ describe("Empty Main supply (B1, L511)", () => {
   });
 });
 
-describe("hidden information (L200, B3)", () => {
+describe("hidden information (L201, B3)", () => {
   it("public events carry sources and counts only; the actor's secrets reach only the actor", () => {
     const t = table();
     t.act("p1", place("p1:shifu", { kind: "blind" }));

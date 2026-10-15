@@ -1,5 +1,5 @@
 /**
- * Setup and Kiln selection (P2 `setup.ts`): L97–111, R1, DESIGN §7 setup draw order,
+ * Setup and Kiln selection (P2 `setup.ts`): L98–112, R1, DESIGN §7 setup draw order,
  * §8.2 "Setup for 2/3/4", "2 Clay / 2 Wood / 3 Coins; 1 Shifu + 3 Apprentices",
  * "Secret deal of 2 Starting + 1 Main", "6-card Main display; 2 face-up Techs per discipline".
  */
@@ -58,7 +58,7 @@ function countBy<T extends string | number>(items: readonly T[]): Map<T, number>
   return counts;
 }
 
-describe("createInitialState for 2, 3 and 4 players (L97–111)", () => {
+describe("createInitialState for 2, 3 and 4 players (L98–112)", () => {
   it.each(COUNTS)("%i players: versions, round, phase and empty boards", (n) => {
     const { state } = created(11, n);
     expect(state.schemaVersion).toBe(6);
@@ -86,7 +86,7 @@ describe("createInitialState for 2, 3 and 4 players (L97–111)", () => {
     [2, { high: 2, middle: 1, low: 1 }, 1],
     [3, { high: 2, middle: 2, low: 2 }, 1],
     [4, { high: 3, middle: 3, low: 2 }, 2],
-  ] as const)("%i players: Shared Kiln %o and Magistrate's Hall capacity %i (L99)", (n, zones, hall) => {
+  ] as const)("%i players: Shared Kiln %o and Magistrate's Hall capacity %i (L100)", (n, zones, hall) => {
     const { state } = created(3, n);
     const active = KILN_SPACE_IDS.filter((id) => state.sharedKiln.spaces[id].active);
     expect(active).toHaveLength(2 * n);
@@ -97,7 +97,7 @@ describe("createInitialState for 2, 3 and 4 players (L97–111)", () => {
     expect(centralCapacity(state, "magistrates_hall")).toBe(hall);
   });
 
-  it.each(COUNTS)("%i players: 2 Clay, 2 Wood, 3 Coins; 1 Shifu + 3 Apprentices; Lock tokens; Recognition 0 (L106–111)", (n) => {
+  it.each(COUNTS)("%i players: 2 Clay, 2 Wood, 3 Coins; 1 Shifu + 3 Apprentices; Lock tokens; Recognition 0 (L107–112)", (n) => {
     const { state } = created(5, n);
     state.playerOrder.forEach((playerId, seatIndex) => {
       const p = state.players[playerId];
@@ -127,7 +127,7 @@ describe("createInitialState for 2, 3 and 4 players (L97–111)", () => {
     expect(GAME_CONFIG.startingResources).toEqual({ clay: 2, wood: 2, coins: 3 });
   });
 
-  it.each(COUNTS)("%i players: a secret hand of 2 Starting + 1 Main each; the rest of the Starting deck in the box (L100–101)", (n) => {
+  it.each(COUNTS)("%i players: a secret hand of 2 Starting + 1 Main each; the rest of the Starting deck in the box (L101–102)", (n) => {
     const { state } = created(9, n);
     const dealt: OrderId[] = [];
     for (const playerId of state.playerOrder) {
@@ -142,7 +142,7 @@ describe("createInitialState for 2, 3 and 4 players (L97–111)", () => {
     expect([...state.hidden.startingBox, ...dealt.filter(isStartingOrderId)].sort()).toEqual([...STARTING_ORDER_IDS]);
   });
 
-  it.each(COUNTS)("%i players: a 6-card Main display, the rest in the deck, an empty discard (L101)", (n) => {
+  it.each(COUNTS)("%i players: a 6-card Main display, the rest in the deck, an empty discard (L102)", (n) => {
     const { state } = created(13, n);
     expect(state.market.display).toHaveLength(6);
     expect(state.market.display.every((id) => id !== null && !isStartingOrderId(id))).toBe(true);
@@ -153,7 +153,7 @@ describe("createInitialState for 2, 3 and 4 players (L97–111)", () => {
     expect([...zones].sort()).toEqual([...STARTING_ORDER_IDS, ...MAIN_ORDER_IDS].sort());
   });
 
-  it.each(COUNTS)("%i players: three Tech decks of 6, 2 face up each (L102)", (n) => {
+  it.each(COUNTS)("%i players: three Tech decks of 6, 2 face up each (L103)", (n) => {
     const { state } = created(17, n);
     for (const discipline of DISCIPLINES) {
       expect(state.techDisplay[discipline]).toHaveLength(GAME_CONFIG.techs.faceUpPerDiscipline);
@@ -162,7 +162,7 @@ describe("createInitialState for 2, 3 and 4 players (L97–111)", () => {
     }
   });
 
-  it.each(COUNTS)("%i players: a shuffled 1/3/4/3/1 Fire deck, an empty open discard and 10 Vessel cards per Shape (L103–104)", (n) => {
+  it.each(COUNTS)("%i players: a shuffled 1/3/4/3/1 Fire deck, an empty open discard and 10 Vessel cards per Shape (L104–105)", (n) => {
     const { state } = created(19, n);
     expect(state.hidden.fireDeck).toHaveLength(12);
     expect(Object.fromEntries(countBy<FireModifier>(state.hidden.fireDeck))).toEqual({ "-2": 1, "-1": 3, "0": 4, "1": 3, "2": 1 });
@@ -291,7 +291,7 @@ describe("invalid setups (INVALID_SETUP)", () => {
   });
 });
 
-describe("Kiln selection (L107, R1)", () => {
+describe("Kiln selection (L108, R1)", () => {
   it.each(COUNTS)("%i players choose in reverse turn order: the First Player chooses last", (n) => {
     for (let seed = 1; seed <= 6; seed += 1) {
       const { state } = created(seed, n);

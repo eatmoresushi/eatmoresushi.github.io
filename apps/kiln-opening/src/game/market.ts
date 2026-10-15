@@ -1,12 +1,12 @@
 /**
  * Main Order deck, display and face-down discard; Tech decks and displays
- * (L127–129, L186–213, L386–390, L511–513, B1–B3). Package P2, layer 3.
+ * (L128–130, L187–214, L387–391, L511–513, B1–B3). Package P2, layer 3.
  *
  * Conventions:
  * - Every pile is top-first (index 0 is the top card, `types.ts` header).
  * - The Main display always has `GAME_CONFIG.mainMarket.displaySize` positions, oldest
- *   (left) to newest (L388). `null` is an empty position: a face-up reservation waiting for
- *   the deferred end-of-turn refill (L190, L390), or a gap left because the deck and the
+ *   (left) to newest (L389). `null` is an empty position: a face-up reservation waiting for
+ *   the deferred end-of-turn refill (L191, L391), or a gap left because the deck and the
  *   discard are both exhausted (B1).
  * - The Main discard is face down (B3): only its count is public. Nothing here emits an
  *   Order identity that was not already public; the callers emit the private events
@@ -79,9 +79,9 @@ export function takeTopMainOrders(draft: GameState, max: number, ctx: ResolveCon
 }
 
 /**
- * Puts Main Orders face down on the Main discard (L196, L303, L626, B3), in the given order,
+ * Puts Main Orders face down on the Main discard (L197, L304, L626, B3), in the given order,
  * each on top of the last (so the last ID ends on top). Starting Orders never go here: they
- * return to the box (L303).
+ * return to the box (L304).
  */
 export function discardMainOrders(draft: GameState, ids: readonly OrderId[]): void {
   const discard = draft.hidden.mainDiscard;
@@ -95,9 +95,9 @@ export function discardMainOrders(draft: GameState, ids: readonly OrderId[]): vo
 // ── Main display ─────────────────────────────────────────────────────────────────────
 
 /**
- * Takes the face-up Order at `slotIndex` for a reservation (L190): the position stays empty
+ * Takes the face-up Order at `slotIndex` for a reservation (L191): the position stays empty
  * (`null`) until the reserving player's turn ends, and `refillPendingFor` records who owes
- * the deferred refill (L390: several takes in one turn → one refill). Returns the Order; the
+ * the deferred refill (L391: several takes in one turn → one refill). Returns the Order; the
  * caller puts it in the hand (`addToHand`) and emits `ORDER_RESERVED`.
  */
 export function takeFaceUpOrder(draft: GameState, playerId: PlayerId, slotIndex: number): OrderId {
@@ -117,7 +117,7 @@ export function takeFaceUpOrder(draft: GameState, playerId: PlayerId, slotIndex:
 
 /**
  * Compacts the display left (oldest stays leftmost), then reveals Main Orders into the empty
- * positions from left to right (L129, L190, L390). Draws reshuffle the discard only when the
+ * positions from left to right (L130, L191, L391). Draws reshuffle the discard only when the
  * deck is empty (L511); when both piles are exhausted the remaining positions stay `null`
  * (B1). Every empty position is filled as cards allow, aiming at the full display (DESIGN
  * §11 Q2, audit P2). Clears `refillPendingFor` and emits `DISPLAY_REFILLED`.
@@ -145,7 +145,7 @@ export function refillMainDisplay(draft: GameState, cause: MainDisplayRefillCaus
 }
 
 /**
- * Start of Rounds 2–5 (L127–129, B1): discard the 2 leftmost face-up Orders face down (up to
+ * Start of Rounds 2–5 (L128–130, B1): discard the 2 leftmost face-up Orders face down (up to
  * 2 when fewer show), slide the rest left (`MAIN_DISPLAY_ROTATED`), then refill
  * (`DISPLAY_REFILLED`, cause `round_start`). The rotated-out Orders were public, so the
  * event names them.
@@ -167,7 +167,7 @@ export function rotateMainDisplay(draft: GameState, ctx: ResolveContext): void {
 /**
  * What a reservation could take right now, from public information only (B1):
  * - `faceUpSlots`: positions still showing an Order (a position taken this turn stays empty
- *   until the turn ends, L198);
+ *   until the turn ends, L199);
  * - `blind`: a card will be in the deck after any reshuffle (deck or discard non-empty);
  * - `look`: at least 1 card can be looked at (same test; a look never needs 3).
  */
@@ -182,7 +182,7 @@ export function reservable(game: PublicGameState): { faceUpSlots: number[]; blin
   return { faceUpSlots, blind: supply, look: supply };
 }
 
-// ── Order hands (secret, L200, L507) ─────────────────────────────────────────────────
+// ── Order hands (secret, L201, L507) ─────────────────────────────────────────────────
 
 function handOf(draft: GameState, playerId: PlayerId): OrderId[] {
   invariant(isSeated(draft, playerId), `Unknown player ${playerId}`);
@@ -211,14 +211,14 @@ export function removeFromHand(draft: GameState, playerId: PlayerId, orderId: Or
   hand.splice(index, 1);
 }
 
-// ── Tech decks and displays (L102, L206–209, L513, B2) ───────────────────────────────
+// ── Tech decks and displays (L103, L207–210, L513, B2) ───────────────────────────────
 
 function assertDiscipline(techId: TechId, discipline: TechDiscipline): void {
   invariant(TECHS[techId].discipline === discipline, `${techId} is not a ${discipline} Tech`);
 }
 
 /**
- * Guild Hall Shifu inspection (L207, B2): takes the top `count` Techs of a discipline's
+ * Guild Hall Shifu inspection (L208, B2): takes the top `count` Techs of a discipline's
  * deck, "or as many as remain" (possibly none). The caller holds them in
  * `hidden.pendingLook`.
  */
@@ -244,7 +244,7 @@ export function returnTechsToBottom(draft: GameState, discipline: TechDiscipline
 }
 
 /**
- * Removes a face-up Tech from its discipline's display (L206–207). The display keeps the
+ * Removes a face-up Tech from its discipline's display (L207–208). The display keeps the
  * order of the Techs that remain; refill it with `refillTechDisplay`.
  */
 export function takeFaceUpTech(draft: GameState, techId: TechId): void {
@@ -256,7 +256,7 @@ export function takeFaceUpTech(draft: GameState, techId: TechId): void {
 }
 
 /**
- * Refills a discipline's display to `faceUpPerDiscipline` (2) from the top of its deck (L209);
+ * Refills a discipline's display to `faceUpPerDiscipline` (2) from the top of its deck (L210);
  * when the deck runs short the display stays partial (L513). Emits `TECH_DISPLAY_REFILLED`
  * only when a Tech was revealed, so the idempotent re-run at Start of Round is silent.
  */

@@ -1,5 +1,5 @@
 /**
- * P6 `scoring.ts` (L441–451, L487–498, L510, L620, R13, owner amendment A1; DESIGN §8.2
+ * P6 `scoring.ts` (L442–452, L488–498, L510, L620, R13, owner amendment A1; DESIGN §8.2
  * "Automatic Exhibition 2/3/5, +3/+3, Connoisseur's Cabinet", "Coin VP; all tie-breakers",
  * "1 VP each"). Tech VP is recorded when gained (A1, `tech_vp_on_gain.test.ts`); the
  * breakdown's `techs` line reads it from the ledger.
@@ -53,7 +53,7 @@ describe("scoring values are the printed ones", () => {
   });
 });
 
-describe("End-game Exhibition (L443–451, INT: automatic)", () => {
+describe("End-game Exhibition (L444–452, INT: automatic)", () => {
   it("exhibits every Finished, undelivered Standard+ ceramic: 2 / 3 / 5", () => {
     const state = game([{}, {}]);
     const std = fin(state, "p1", "bowl white plain std");
@@ -112,7 +112,7 @@ describe("End-game Exhibition (L443–451, INT: automatic)", () => {
   });
 });
 
-describe("the total (L489–494)", () => {
+describe("the total (L490–494)", () => {
   it("adds recorded VP (Tech VP recorded on gain, A1), the Exhibition, the Cabinet and capped Coin VP", () => {
     const state = game([
       {
@@ -269,7 +269,7 @@ describe("winner and tie-breakers (L496, L498, R13)", () => {
   });
 });
 
-describe("finishGame (L489)", () => {
+describe("finishGame (L490)", () => {
   it("records the result, finishes the game and emits a public FINAL_SCORE_CALCULATED", () => {
     const state = game([{ score: { orders: 4 }, resources: { coins: 9 } }, { score: { orders: 6 } }]);
     fin(state, "p1", "bowl white plain fine");

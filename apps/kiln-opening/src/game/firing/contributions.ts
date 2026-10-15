@@ -1,11 +1,11 @@
 /**
- * Opening the Firing Phase and the secret Contribution window (L236–262, L504, L638,
+ * Opening the Firing Phase and the secret Contribution window (L237–263, L504, L638,
  * L670–674, change 16).
  *
- * - Skip check (L236, L670): with nothing loaded in the Shared Kiln or any Imperial Kiln, the
+ * - Skip check (L237, L670): with nothing loaded in the Shared Kiln or any Imperial Kiln, the
  *   phase is skipped and no Fire card is revealed.
- * - Participants (L260, change 16): players with at least 1 ceramic in the Shared Kiln. An
- *   Imperial Kiln ceramic is in this firing (`firingPlayerIds`, L289) but gives no say.
+ * - Participants (L261, change 16): players with at least 1 ceramic in the Shared Kiln. An
+ *   Imperial Kiln ceramic is in this firing (`firingPlayerIds`, L290) but gives no say.
  * - Steps 1–2 (L672–673): each participant secretly submits Bank / Tend / Stoke, optionally
  *   with Fuel Ledger's extra Wood (T12, L638), through `submitContribution`. Sealed choices
  *   live only in `PrivateFiringState` (DESIGN §4); the public state records who submitted.
@@ -51,7 +51,7 @@ function contributionWindowId(game: GameState): string {
 
 /**
  * The opener wired to `work_phase_done` (DESIGN §2.5). Skips the phase when nothing is
- * loaded (L236), else builds the `FiringContext`, emits `FIRING_STARTED` and opens the
+ * loaded (L237), else builds the `FiringContext`, emits `FIRING_STARTED` and opens the
  * Contribution window, or — with no participant (INT) — goes straight to Base Heat.
  */
 export function openFiringPhase(draft: GameState, ctx: ResolveContext): void {
@@ -126,7 +126,7 @@ export function createPrivateFiringState(state: GameState): PrivateFiringState {
  * Whether the actor may submit this Contribution (L672, L638): the window is open and
  * matches, the actor participates and has not submitted, Fuel Ledger is owned and used only
  * with Bank or Stoke, and the Wood (card + Fuel Ledger) is affordable. Tend is always
- * affordable (L260). Sees only the actor's view and their own sealed state.
+ * affordable (L261). Sees only the actor's view and their own sealed state.
  */
 export function validateContribution(
   view: ActorView,
@@ -253,7 +253,7 @@ function revealAndDetermineBaseHeat(
   openAfterBaseHeat(draft, ctx);
 }
 
-/** Candidate order: Tend first (always affordable, L260), Bank, Stoke, then Fuel Ledger. */
+/** Candidate order: Tend first (always affordable, L261), Bank, Stoke, then Fuel Ledger. */
 const CANDIDATES: ReadonlyArray<readonly [ContributionCardId, boolean]> = [
   ["TEND", false],
   ["BANK", false],

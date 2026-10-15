@@ -93,13 +93,13 @@ export interface ContentFiles {
 
 export const RULES_VERSION: RulesVersion = "1.6.1";
 
-/** Shapes in Clay-cost order (L320–326). */
+/** Shapes in Clay-cost order (L321–327). */
 export const SHAPES: readonly Shape[] = Object.freeze(["bowl", "plate", "washer", "vase", "censer"] as const);
-/** Glazes coolest to hottest (L345–350). */
+/** Glazes coolest to hottest (L346–351). */
 export const GLAZES: readonly Glaze[] = Object.freeze(["white", "celadon", "grey_green", "moon_white"] as const);
-/** Decorations (L334–339). Painted replaced Crackle (change 19). */
+/** Decorations (L335–340). Painted replaced Crackle (change 19). */
 export const DECORATIONS: readonly Decoration[] = Object.freeze(["plain", "carved", "impressed", "painted"] as const);
-/** Disciplines in rulebook order (L373); also the setup shuffle order (DESIGN §7). */
+/** Disciplines in rulebook order (L374); also the setup shuffle order (DESIGN §7). */
 export const DISCIPLINES: readonly TechDiscipline[] = Object.freeze(["workshop", "glazing_loading", "firing"] as const);
 /** Qualities lowest to highest. */
 export const QUALITIES: readonly Quality[] = Object.freeze(["flawed", "standard", "fine", "masterpiece"] as const);
@@ -111,7 +111,7 @@ export const QUALITY_RANK: Readonly<Record<Quality, number>> = Object.freeze({
   masterpiece: 3,
 });
 
-/** Kiln Player Boards in rulebook order (L72). All five are selectable (R1). */
+/** Kiln Player Boards in rulebook order (L73). All five are selectable (R1). */
 export const KILN_IDS: readonly KilnId[] = Object.freeze(["RU", "GU", "GE", "DI", "JU"] as const);
 
 /** The 18 Advanced Techs in Appendix B order (Form & Decorate, Glazing & Loading, Firing). */
@@ -121,7 +121,7 @@ export const TECH_IDS: readonly TechId[] = Object.freeze([
   "T11", "T12", "T13", "T14", "T24", "T25",
 ] as const);
 
-/** Central locations (L48, L70). */
+/** Central locations (L49, L71). */
 export const CENTRAL_LOCATION_IDS: readonly CentralLocationId[] = Object.freeze([
   "materials_yard",
   "commission_market",
@@ -130,10 +130,10 @@ export const CENTRAL_LOCATION_IDS: readonly CentralLocationId[] = Object.freeze(
   "magistrates_hall",
 ] as const);
 
-/** Personal locations on each Kiln Player Board (L49). */
+/** Personal locations on each Kiln Player Board (L50). */
 export const PERSONAL_LOCATION_IDS: readonly PersonalLocationId[] = Object.freeze(["form_decorate", "glaze_load"] as const);
 
-/** All seven locations in rulebook section order (L157–232; Appendix E action summary). */
+/** All seven locations in rulebook section order (L158–233; Appendix E action summary). */
 export const LOCATION_IDS: readonly LocationId[] = Object.freeze([
   "materials_yard",
   "form_decorate",
@@ -144,7 +144,7 @@ export const LOCATION_IDS: readonly LocationId[] = Object.freeze([
   "magistrates_hall",
 ] as const);
 
-/** Shared Kiln spaces: 3 High, 3 Middle, 2 Low (L71). Iterate this, never `sharedKiln.spaces`. */
+/** Shared Kiln spaces: 3 High, 3 Middle, 2 Low (L72). Iterate this, never `sharedKiln.spaces`. */
 export const KILN_SPACE_IDS: readonly KilnSpaceId[] = Object.freeze([
   "high_1", "high_2", "high_3",
   "middle_1", "middle_2", "middle_3",
@@ -164,20 +164,20 @@ export const MAIN_ORDER_IDS: readonly MainOrderId[] = Object.freeze(
 /** Every Order: Starting first, then Main. */
 export const ORDER_IDS: readonly OrderId[] = Object.freeze([...STARTING_ORDER_IDS, ...MAIN_ORDER_IDS]);
 
-/** Contribution cards (L252–258). */
+/** Contribution cards (L253–259). */
 export const CONTRIBUTION_CARD_IDS: readonly ContributionCardId[] = Object.freeze(["BANK", "TEND", "STOKE"] as const);
 
 const PLAYER_COUNT_KEYS = ["2", "3", "4"] as const;
 type PlayerCountKey = (typeof PLAYER_COUNT_KEYS)[number];
 
-/** Expected unlock per discipline (L211, L375). */
+/** Expected unlock per discipline (L212, L376). */
 const DISCIPLINE_UNLOCKS: Readonly<Record<TechDiscipline, PersonalLocationId | null>> = {
   workshop: "form_decorate",
   glazing_loading: "glaze_load",
   firing: null,
 };
 
-/** Shared Kiln zone layout by player count: High-Middle-Low (L99). */
+/** Shared Kiln zone layout by player count: High-Middle-Low (L100). */
 const ACTIVE_ZONE_COUNTS: Readonly<Record<PlayerCountKey, Record<KilnZone, number>>> = {
   "2": { high: 2, middle: 1, low: 1 },
   "3": { high: 2, middle: 2, low: 2 },
@@ -227,8 +227,8 @@ function collectTextProblems(value: unknown, path: string, problems: string[]): 
 
 /**
  * One source tag of a clarification (`docs/KILN_OPENING_v1.6.1_CLARIFICATIONS.md`, "Source
- * tags"): `L123` rulebook line, `A1` amendment, `R1`–`R13` and `B1`–`B3` owner rulings,
- * `ED L123` editorial correction, `INT <name>` recorded interpretation, `P1`–`P3` provisional
+ * tags"): `L124` rulebook line, `A1` amendment, `R1`–`R13` and `B1`–`B3` owner rulings,
+ * `ED L124` editorial correction, `INT <name>` recorded interpretation, `P1`–`P3` provisional
  * ruling, `D7` owner UI decision. A `source` joins one or more tags with " · ".
  */
 export const CLARIFICATION_TAG = /^(?:L[1-9]\d{0,3}|A[1-9]\d?|R(?:[1-9]|1[0-3])|B[1-3]|ED L[1-9]\d{0,3}|INT [A-Z][^·]*[^\s·]|P[1-3]|D(?:[1-9]|1[01]))$/;
@@ -236,7 +236,7 @@ export const CLARIFICATION_TAG = /^(?:L[1-9]\d{0,3}|A[1-9]\d?|R(?:[1-9]|1[0-3])|
 /** The kind of a source tag, which the UI labels (Rulebook, Owner amendment, Owner ruling, …). */
 export type ClarificationSourceKind = "rulebook" | "amendment" | "ruling" | "editorial" | "interpretation" | "provisional" | "wording";
 
-/** The tags of a clarification `source`, in order ("L375 · D7" → ["L375", "D7"]). */
+/** The tags of a clarification `source`, in order ("L376 · D7" → ["L376", "D7"]). */
 export function clarificationTags(source: string): string[] {
   return source.split(" · ");
 }
@@ -414,7 +414,7 @@ export function validateContentFiles(files: ContentFiles): string[] {
     for (const id of active) zones[zoneOfId(id)] += 1;
     const expected = ACTIVE_ZONE_COUNTS[key];
     if (zones.high !== expected.high || zones.middle !== expected.middle || zones.low !== expected.low) {
-      problems.push(`game_config: ${key} players must use ${expected.high}-${expected.middle}-${expected.low} active spaces (L99)`);
+      problems.push(`game_config: ${key} players must use ${expected.high}-${expected.middle}-${expected.low} active spaces (L100)`);
     }
   }
 
@@ -424,14 +424,14 @@ export function validateContentFiles(files: ContentFiles): string[] {
     if (space.zone !== zoneOfId(space.id)) problems.push(`firing: ${space.id} zone mismatch`);
     if (space.modifier !== ZONE_MODIFIERS[space.zone]) problems.push(`firing: ${space.id} modifier must be ${ZONE_MODIFIERS[space.zone]}`);
   }
-  if (!sameSequence(firing.kilnDie.faces, [1, 1, 2, 2, 3, 3])) problems.push("firing: Kiln Die faces must be 1,1,2,2,3,3 (L92)");
-  if (firing.baseHeat.minimum !== 0 || firing.baseHeat.maximum !== 5) problems.push("firing: Base Heat clamps to 0–5 (L248)");
+  if (!sameSequence(firing.kilnDie.faces, [1, 1, 2, 2, 3, 3])) problems.push("firing: Kiln Die faces must be 1,1,2,2,3,3 (L93)");
+  if (firing.baseHeat.minimum !== 0 || firing.baseHeat.maximum !== 5) problems.push("firing: Base Heat clamps to 0–5 (L249)");
   const fireCounts = [-2, -1, 0, 1, 2].map((modifier) => firing.fireDeck.filter((card) => card === modifier).length);
   if (firing.fireDeck.length !== 12 || !sameSequence(fireCounts, [1, 3, 4, 3, 1])) problems.push("firing: Fire deck must be −2×1, −1×3, 0×4, +1×3, +2×1 (L660–666)");
   const qualities = firing.qualityByHeatDifference;
   if (!sameSequence(qualities.map((row) => row.quality), ["masterpiece", "fine", "standard", "flawed"])
     || !sameSequence(qualities.map((row) => row.maxDifference), [0, 1, 2, null])) {
-    problems.push("firing: Quality table must be 0 Masterpiece, 1 Fine, 2 Standard, 3+ Flawed (L273–278)");
+    problems.push("firing: Quality table must be 0 Masterpiece, 1 Fine, 2 Standard, 3+ Flawed (L274–279)");
   }
   if (!sameSequence(firing.contributionCards.map((card) => card.id), CONTRIBUTION_CARD_IDS)) problems.push("firing: contribution cards must be BANK, TEND, STOKE");
   if (!sameSequence(firing.imperialModifiers, [-1, 0, 1])) problems.push("firing: Imperial modifiers must be −1, 0, +1");
@@ -446,7 +446,7 @@ export function validateContentFiles(files: ContentFiles): string[] {
     if (personal) {
       if (location.capacity !== null) problems.push(`action_locations: ${location.id} has no central capacity`);
       if (location.personalSpaces === null || location.personalSpaces.total !== 2 || location.personalSpaces.unlockedAtStart !== 1) {
-        problems.push(`action_locations: ${location.id} must have 2 spaces with 1 unlocked at start (L72)`);
+        problems.push(`action_locations: ${location.id} must have 2 spaces with 1 unlocked at start (L73)`);
       }
     } else {
       if (location.capacity === null || !PLAYER_COUNT_KEYS.every((key) => key in (location.capacity ?? {}))) {
@@ -479,7 +479,7 @@ export function validateContentFiles(files: ContentFiles): string[] {
   }
   for (const tech of techniques.advanced) {
     if (!DISCIPLINES.includes(tech.discipline)) problems.push(`techniques: ${tech.id} unknown discipline`);
-    else if (tech.unlocks !== DISCIPLINE_UNLOCKS[tech.discipline]) problems.push(`techniques: ${tech.id} unlocks must follow its discipline (L211)`);
+    else if (tech.unlocks !== DISCIPLINE_UNLOCKS[tech.discipline]) problems.push(`techniques: ${tech.id} unlocks must follow its discipline (L212)`);
     if (!isNonNegativeInteger(tech.cost) || tech.cost < 1) problems.push(`techniques: ${tech.id} cost must be a positive integer`);
     if (typeof tech.oncePerRound !== "boolean") problems.push(`techniques: ${tech.id} oncePerRound must be boolean`);
     if (tech.params === null || typeof tech.params !== "object") problems.push(`techniques: ${tech.id} needs params`);
@@ -498,10 +498,10 @@ export function validateContentFiles(files: ContentFiles): string[] {
     problems.push("imperial_progress: track milestone IDs out of order");
   }
   if (!sameSequence(track.map((space) => space.reward?.kind ?? null), [null, "resources", "imperial_kiln", "imperial_priority", "vp"])) {
-    problems.push("imperial_progress: rewards must be none, resources, Imperial Kiln, Imperial Priority, VP (L428–435)");
+    problems.push("imperial_progress: rewards must be none, resources, Imperial Kiln, Imperial Priority, VP (L429–436)");
   }
   if (!isNonNegativeInteger(imperialProgress.overflowVpPerCrown)) problems.push("imperial_progress: overflowVpPerCrown must be a non-negative integer");
-  if (imperialProgress.exhibition.minimumQuality !== "standard") problems.push("imperial_progress: Exhibition accepts Standard or better (L443)");
+  if (imperialProgress.exhibition.minimumQuality !== "standard") problems.push("imperial_progress: Exhibition accepts Standard or better (L444)");
 
   // Clarifications (D10): prose, outside the rules fingerprint; only their shape is checked here.
   for (const location of actionLocations.locations) validateClarifications(location.clarifications, `action_locations: ${location.id}`, problems);
@@ -613,38 +613,38 @@ function playerCountKey(playerCount: PlayerCount): PlayerCountKey {
 
 // ── Derived lookups ─────────────────────────────────────────────────────────────────────────
 
-/** Preferred Heat of a Glaze: White 1, Celadon 2, Grey-Green 3, Moon White 4 (L59, L345–350). */
+/** Preferred Heat of a Glaze: White 1, Celadon 2, Grey-Green 3, Moon White 4 (L60, L346–351). */
 export function preferredHeat(glaze: Glaze): number {
   return GAME_CONFIG.glazes[glaze];
 }
 
-/** Clay cost to form a Shape (L320–326). */
+/** Clay cost to form a Shape (L321–327). */
 export function shapeClay(shape: Shape): number {
   return GAME_CONFIG.shapes[shape];
 }
 
-/** Printed Coin cost of a Decoration before discounts: 2 each (L332–339). */
+/** Printed Coin cost of a Decoration before discounts: 2 each (L333–340). */
 export function decorationCost(decoration: Decoration): number {
   return GAME_CONFIG.decorations[decoration];
 }
 
-/** The zone of a Shared Kiln space (L71). */
+/** The zone of a Shared Kiln space (L72). */
 export function zoneOf(space: KilnSpaceId): KilnZone {
   return KILN_SPACES[space].zone;
 }
 
-/** The printed zone modifier of a Shared Kiln space: High +1, Middle 0, Low −1 (L71, L244). */
+/** The printed zone modifier of a Shared Kiln space: High +1, Middle 0, Low −1 (L72, L245). */
 export function zoneModifier(space: KilnSpaceId): ZoneModifier {
   return KILN_SPACES[space].modifier;
 }
 
-/** Active (uncovered) Shared Kiln spaces for a player count, in `KILN_SPACE_IDS` order (L99). */
+/** Active (uncovered) Shared Kiln spaces for a player count, in `KILN_SPACE_IDS` order (L100). */
 export function activeKilnSpaces(playerCount: PlayerCount): readonly KilnSpaceId[] {
   return ACTIVE_KILN_SPACES[playerCountKey(playerCount)];
 }
 
 /**
- * Absolute capacity of a central location for a player count (L145–155): a number, or `null`
+ * Absolute capacity of a central location for a player count (L146–156): a number, or `null`
  * for the uncapped Canal Wharf. Personal locations have no shared capacity — their spaces are
  * per player (`PlayerState.personalSpaces`) — so asking for one is an engine bug and throws.
  */
@@ -655,8 +655,8 @@ export function locationCapacity(locationId: LocationId, playerCount: PlayerCoun
 }
 
 /**
- * Quality for a Heat Difference (L273–278): 0 Masterpiece, 1 Fine, 2 Standard, 3+ Flawed.
- * The difference is absolute (L63); a signed value is taken by its absolute value.
+ * Quality for a Heat Difference (L274–279): 0 Masterpiece, 1 Fine, 2 Standard, 3+ Flawed.
+ * The difference is absolute (L64); a signed value is taken by its absolute value.
  */
 export function qualityForDifference(difference: number): Quality {
   if (!Number.isInteger(difference)) throw new Error(`Heat Difference must be an integer, got ${difference}`);
@@ -667,17 +667,17 @@ export function qualityForDifference(difference: number): Quality {
   throw new Error("Quality table has no open-ended row");
 }
 
-/** Wood cost and Heat of a Contribution card (L252–258). Fuel Ledger's ±1 lives in T12 params. */
+/** Wood cost and Heat of a Contribution card (L253–259). Fuel Ledger's ±1 lives in T12 params. */
 export function contributionCard(id: ContributionCardId): ContributionCardDefinition {
   return CONTRIBUTION_CARDS[id];
 }
 
-/** The six Techs of a discipline, in `TECH_IDS` order (L373). */
+/** The six Techs of a discipline, in `TECH_IDS` order (L374). */
 export function techsOfDiscipline(discipline: TechDiscipline): readonly TechId[] {
   return TECHS_BY_DISCIPLINE[discipline];
 }
 
-/** True for S01–S16. Discarded Starting Orders return to the box, never the Main discard (L303). */
+/** True for S01–S16. Discarded Starting Orders return to the box, never the Main discard (L304). */
 export function isStartingOrderId(orderId: OrderId): orderId is StartingOrderId {
   return ORDERS[orderId].deck === "starting";
 }

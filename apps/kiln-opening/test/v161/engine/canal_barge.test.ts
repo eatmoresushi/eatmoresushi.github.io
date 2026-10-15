@@ -53,7 +53,7 @@ describe("before the worker action", () => {
     expect(t.state.hidden.orderHands["p1"]).toEqual(["O02"]);
     expect(t.state.phase).toEqual({ type: "work_turn", activePlayerId: "p1", step: { kind: "before_action" } });
 
-    // Not a worker action: the turn cannot end yet (L142, L646).
+    // Not a worker action: the turn cannot end yet (L143, L646).
     t.expectRuleError("p1", { type: "END_TURN" }, "WORKER_ACTION_REQUIRED");
     expectDocumentedDetails(t.expectRuleError("p1", barge("O02", ["c2"]), "TECH_ALREADY_USED"));
 
@@ -119,7 +119,7 @@ describe("after the worker action", () => {
   });
 });
 
-describe("a Canal Barge acquired this round (L213)", () => {
+describe("a Canal Barge acquired this round (L214)", () => {
   it("is usable right after the Guild Hall action that acquired it", () => {
     const t = table({ players: [{ hand: ["S01"] }, {}], ceramics: [WHITE_BOWL], techDisplay: { glazing_loading: ["T23", "T10"] } });
     t.act("p1", { type: "PLACE_GUILD_HALL", workerId: "p1:apprentice:1", choice: { kind: "buy_face_up", techId: "T23" } });
@@ -204,7 +204,7 @@ describe("refusals", () => {
     expectDocumentedDetails(unowned.expectRuleError("p1", barge("O01", ["c1"]), "TECH_NOT_OWNED"));
 
     const t = table({ players: [{ techs: ["T23"], hand: ["O02"] }, {}], ceramics: [WHITE_BOWL] });
-    // Face-up Orders cannot be completed (L296): only held Orders.
+    // Face-up Orders cannot be completed (L297): only held Orders.
     expectDocumentedDetails(t.expectRuleError("p1", barge("O01", ["c1"]), "ORDER_NOT_HELD"));
     expectDocumentedDetails(t.expectRuleError("p1", barge("O02", ["c1"]), "ORDER_REQUIREMENTS_NOT_MET"));
     t.expectRuleError("p2", barge("O02", ["c1"]), "NOT_YOUR_DECISION");
@@ -221,7 +221,7 @@ describe("refusals", () => {
     expect(t.state.phase).toMatchObject({ activePlayerId: "p2" });
   });
 
-  it("the public log reveals the completed Order (L409) but no other held Order", () => {
+  it("the public log reveals the completed Order (L410) but no other held Order", () => {
     const t = table({ players: [{ techs: ["T23"], hand: ["O01", "O30"] }, {}], ceramics: [WHITE_BOWL] });
     t.act("p1", barge("O01", ["c1"]));
     const publicLog = JSON.stringify(t.events.map(projectEvent));

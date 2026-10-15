@@ -1,5 +1,5 @@
 /**
- * Canal Barge and Imperial Priority in the before/after-action window (L292, L433, L631, L646,
+ * Canal Barge and Imperial Priority in the before/after-action window (L293, L434, L631, L646,
  * R6, R10, R11; DESIGN §3.2 step 1 and 3, §11 Q1).
  *
  * - Both are usable in `before_action` and `after_action`, in either order (INT: before/after
@@ -8,7 +8,7 @@
  * - Canal Barge (T23): once per round, complete 1 held Order with every completion effect —
  *   Ru, Guan, Tribute Ware and Crackle wildcards — through `orders/completion` (R6).
  * - Imperial Priority: once per game, free, glaze and load 1 Shaped vessel into your empty
- *   Imperial Kiln with a chosen public modifier (L292, R10, R11). Reworking Table may change
+ *   Imperial Kiln with a chosen public modifier (L293, R10, R11). Reworking Table may change
  *   the Shape first (DESIGN §11 Q1 default P1: allowed, using its once-per-round allowance).
  * - After each use `work/turn.afterWindowAbilityUsed` rechecks the window and ends the turn
  *   when nothing is left after the worker action.

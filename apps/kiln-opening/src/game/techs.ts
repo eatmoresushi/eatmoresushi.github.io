@@ -1,6 +1,6 @@
 /**
  * Owned-Tech helpers: readiness, hand limit, acquisition limits, prices, unlocking and the
- * Tech's VP on gain (L207–213, L373–378, Appendix B, owner amendment A1).
+ * Tech's VP on gain (L208–214, L374–379, Appendix B, owner amendment A1).
  *
  * Layer 2 (imports `state.ts` within P0).
  */
@@ -27,7 +27,7 @@ export function ownsTech(p: PlayerState, techId: TechId): boolean {
   return ownedTech(p, techId) !== undefined;
 }
 
-/** Owned, and its once-per-round use (if it has one) is unspent (L377). */
+/** Owned, and its once-per-round use (if it has one) is unspent (L378). */
 export function techReady(p: PlayerState, techId: TechId): boolean {
   const owned = ownedTech(p, techId);
   if (owned === undefined) {
@@ -51,7 +51,7 @@ export function markTechUsed(draft: GameState, playerId: PlayerId, techId: TechI
   emit(ctx, { type: "TECH_USED", playerId, techId });
 }
 
-/** Start of Round: ready every once-per-round Tech and Kiln Tradition (L131). No event;
+/** Start of Round: ready every once-per-round Tech and Kiln Tradition (L132). No event;
  * `round.ts` emits `ABILITIES_READIED`. */
 export function readyAllAbilities(draft: GameState): void {
   for (const playerId of draft.playerOrder) {
@@ -63,12 +63,12 @@ export function readyAllAbilities(draft: GameState): void {
   }
 }
 
-/** 4, or 5 with Colour Samples (L199, L303, L626). */
+/** 4, or 5 with Colour Samples (L200, L304, L626). */
 export function handLimit(p: PlayerState): number {
   return ownsTech(p, "T10") ? TECHS.T10.params.handLimit : GAME_CONFIG.handLimit.base;
 }
 
-/** At most 3 Techs and at most 1 per discipline (L210, L374). */
+/** At most 3 Techs and at most 1 per discipline (L211, L375). */
 export function acquisitionError(p: PlayerState, techId: TechId): GameRuleError | null {
   const limits = GAME_CONFIG.techs;
   if (p.techs.length >= limits.maxOwned) {
@@ -88,7 +88,7 @@ export function acquisitionError(p: PlayerState, techId: TechId): GameRuleError 
   return null;
 }
 
-/** Printed cost, minus the Guild Hall Shifu discount, minimum 0 (L206–207). */
+/** Printed cost, minus the Guild Hall Shifu discount, minimum 0 (L207–208). */
 export function techPrice(techId: TechId, effect: WorkerEffect): number {
   return Math.max(0, TECHS[techId].cost - LOCATIONS.guild_hall.effects[effect].discount);
 }
@@ -100,7 +100,7 @@ export function techVp(): number {
 
 /**
  * Adds the Tech, records its VP in the score ledger immediately (owner amendment A1: no
- * longer at game end) and unlocks the second space of the matching personal location (L211),
+ * longer at game end) and unlocks the second space of the matching personal location (L212),
  * emitting `PERSONAL_SPACE_UNLOCKED`. Every path that grants a Tech goes through here. Does
  * not pay, does not emit `TECH_ACQUIRED` and does not resolve when-acquired effects
  * (`work/guildHall.ts` does those). An acquisition that `acquisitionError` rejects is an

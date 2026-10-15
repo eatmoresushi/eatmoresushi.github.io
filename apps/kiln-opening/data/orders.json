@@ -10,7 +10,7 @@
       {
         "en": "Only Orders in your hand can be completed.",
         "zh": "只能完成在手委托。",
-        "source": "L296"
+        "source": "L297"
       },
       {
         "en": "The Order Phase is a single pass in First Player order. A player with nothing completable is skipped automatically.",
@@ -24,23 +24,23 @@
       },
       {
         "en": "A ceramic may satisfy only one completed Order.",
-        "zh": "一件器物只能用于一张已完成的委托。",
-        "source": "L418"
+        "zh": "一件器物只能用于一张委托。",
+        "source": "L419"
       },
       {
         "en": "Flawed ceramics cannot complete Orders.",
         "zh": "瑕品不能用于完成委托。",
-        "source": "L278"
+        "source": "L279"
       },
       {
         "en": "When completing an Order, each of your Crackle ceramics may count as having any one Decoration for that Order's Decoration requirements. Its printed Decoration is unchanged.",
-        "zh": "完成委托时，你的每件开片器可视为具有任意一种纹饰，以满足该委托的纹饰要求；其原纹饰不变。",
-        "source": "L469"
+        "zh": "完成委托时，你的每件开片器都可以视为具有任意一种纹饰，以满足该委托的纹饰要求；它原本的纹饰不变。",
+        "source": "L470"
       },
       {
         "en": "Starting Orders and reserved Main Orders both count toward your hand limit of 4 (5 with Colour Samples), checked only at Cleanup.",
-        "zh": "起始委托与承接的主委托都计入委托上限4张（有色样簿5张），只在收工时检查。",
-        "source": "L199 · L303"
+        "zh": "起始委托与承接的主委托都计入委托上限4张（有色样簿则5张），只在收工时检查。",
+        "source": "L200 · L304"
       },
       {
         "en": "In Round 5 the hand trim has no scoring effect and is skipped.",
@@ -61,13 +61,13 @@
     "main": [
       {
         "en": "Face-up Main Orders cannot be completed; they are reserved at the Commission Market during the Work Phase.",
-        "zh": "榜上委托不能完成，须于派工阶段在瓷牙行承接。",
-        "source": "L296"
+        "zh": "榜上的委托不能完成，须于派工阶段在瓷牙行承接。",
+        "source": "L297"
       },
       {
         "en": "A held Order can be completed during any later Order Phase, or with Canal Barge.",
         "zh": "在手委托可于此后任一交货阶段完成，或经漕船完成。",
-        "source": "L402"
+        "source": "L403"
       },
       {
         "en": "Canal Barge completes an Order for every completion effect, including Ru, Guan, Tribute Ware and Crackle wildcards.",
@@ -82,22 +82,22 @@
       {
         "en": "Requirements are independent unless a specific pairing is explicitly printed.",
         "zh": "各项要求彼此独立，除非卡面直接写明配对。",
-        "source": "L422"
+        "source": "L423"
       },
       {
         "en": "A ceramic may satisfy only one completed Order.",
-        "zh": "一件器物只能用于一张已完成的委托。",
-        "source": "L418"
+        "zh": "一件器物只能用于一张委托。",
+        "source": "L419"
       },
       {
         "en": "Flawed ceramics cannot complete Orders.",
         "zh": "瑕品不能用于完成委托。",
-        "source": "L278"
+        "source": "L279"
       },
       {
         "en": "Each Crackle ceramic may count as having any one Decoration for that Order's Decoration requirements; its printed Decoration is unchanged.",
-        "zh": "每件开片器可视为具有任意一种纹饰，以满足该委托的纹饰要求；其原纹饰不变。",
-        "source": "L469 · INT Ge Crackle"
+        "zh": "每件开片器可视为具有任意一种纹饰，以满足该委托的纹饰要求；它原本的纹饰不变。",
+        "source": "L470 · INT Ge Crackle"
       },
       {
         "en": "A Crackle ceramic cannot fill a Masterpiece requirement, including Painted Masterpiece Orders.",
@@ -107,7 +107,7 @@
       {
         "en": "Resolve 1 Crown at a time. Each Crown advances Imperial Recognition by 1 until you reach Recognition 4; after that, each further Crown scores 1 VP immediately. Resolve every milestone crossed.",
         "zh": "御令逐个结算：每个御令推进声望1格，直至声望4；此后每个御令立即得1分。所跨各格奖励皆结算。",
-        "source": "L415"
+        "source": "L416"
       },
       {
         "en": "Tribute Ware's bonus Crown is not a printed Crown: it does not trigger Guan and does not count for tie-breaker 2.",
@@ -122,7 +122,7 @@
       {
         "en": "At the start of Rounds 2–5, discard the 2 leftmost face-up Main Orders, slide the remaining 4 left and reveal 2 new Orders to restore the display to 6.",
         "zh": "第2–5轮开工时轮换委托榜：弃最左2张榜上主委托，余4张左移，翻2张新委托补至6张。",
-        "source": "L127 · L129"
+        "source": "L128 · L130"
       },
       {
         "en": "If the deck and discard are both empty, only available cards can be reserved and display positions stay empty. The round-start rotation discards up to 2 and slides the rest.",
@@ -136,8 +136,8 @@
       },
       {
         "en": "Starting Orders and reserved Main Orders both count toward your hand limit of 4 (5 with Colour Samples), checked only at Cleanup. Discarded Main Orders go to the Main Order discard pile.",
-        "zh": "起始委托与承接的主委托都计入委托上限4张（有色样簿5张），只在收工时检查；弃置的主委托进入主委托弃牌堆。",
-        "source": "L199 · L303"
+        "zh": "起始委托与承接的主委托都计入委托上限4张（有色样簿则5张），只在收工时检查；弃置的主委托进入主委托弃牌堆。",
+        "source": "L200 · L304"
       },
       {
         "en": "In Round 5 the hand trim has no scoring effect and is skipped.",

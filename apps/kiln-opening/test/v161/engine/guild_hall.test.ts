@@ -1,5 +1,5 @@
 /**
- * Guild Hall (L202–213, L373–378, L626, L650, R4, B1, B2; DESIGN §3.2): the Apprentice buys a
+ * Guild Hall (L203–214, L374–379, L626, L650, R4, B1, B2; DESIGN §3.2): the Apprentice buys a
  * face-up Tech at its printed cost; the Shifu privately inspects any discipline's top 2 (or
  * as many as remain), takes a face-up or inspected Tech at 1 Coin less, returns the rest to
  * the bottom in a chosen order and only then refills; 3 total / 1 per discipline; unlocking;
@@ -45,8 +45,8 @@ function owned(t: LocalTable, playerId: string): TechId[] {
   return t.player(playerId).techs.map((tech) => tech.id);
 }
 
-describe("Apprentice (L206): pay the printed cost and take 1 face-up Advanced Tech", () => {
-  it("pays the printed cost, unlocks the matching personal space and refills the discipline (L209, L211)", () => {
+describe("Apprentice (L207): pay the printed cost and take 1 face-up Advanced Tech", () => {
+  it("pays the printed cost, unlocks the matching personal space and refills the discipline (L210, L212)", () => {
     const t = table();
     expect(t.state.techDisplay.workshop).toEqual(["T01", "T16"]);
     const events = t.act("p1", buy("p1:apprentice:1", "T01"));
@@ -70,7 +70,7 @@ describe("Apprentice (L206): pay the printed cost and take 1 face-up Advanced Te
     expect(only(events, "TECH_DISPLAY_REFILLED")).toMatchObject({ discipline: "workshop", revealedTechIds: ["T05"] });
   });
 
-  it("a Firing Tech unlocks nothing (L211); a 3-Coin Tech costs 3", () => {
+  it("a Firing Tech unlocks nothing (L212); a 3-Coin Tech costs 3", () => {
     const t = table();
     const events = t.act("p1", buy("p1:apprentice:1", "T12"));
     expect(t.player("p1").resources.coins).toBe(0);
@@ -79,7 +79,7 @@ describe("Apprentice (L206): pay the printed cost and take 1 face-up Advanced Te
     expect(t.player("p1").personalSpaces.glaze_load[1].unlocked).toBe(false);
   });
 
-  it("an unlocked space may be used later the same round (L211)", () => {
+  it("an unlocked space may be used later the same round (L212)", () => {
     const t = table({ placements: [{ player: "p1", worker: 2, locationId: "form_decorate" }] });
     expect(validatePlacement(t.actorView("p1"), "p1:shifu", "form_decorate", false)?.code).toBe("PERSONAL_SPACE_LOCKED");
     t.act("p1", buy("p1:apprentice:1", "T16"));
@@ -103,7 +103,7 @@ describe("Apprentice (L206): pay the printed cost and take 1 face-up Advanced Te
   });
 });
 
-describe("Shifu (L207, B2): private inspection, then take a face-up or inspected Tech at −1", () => {
+describe("Shifu (L208, B2): private inspection, then take a face-up or inspected Tech at −1", () => {
   it("inspects the top 2 of a discipline and takes one of them at 1 Coin less; the other goes to the bottom", () => {
     const t = table();
     expect(t.state.hidden.techDecks.firing).toEqual(["T13", "T14", "T24", "T25"]);
@@ -177,7 +177,7 @@ describe("Shifu (L207, B2): private inspection, then take a face-up or inspected
     expect(owned(t, "p1")).toEqual(["T13", "T01"]);
   });
 
-  it("sees as many as remain when fewer than 2 are left (L207)", () => {
+  it("sees as many as remain when fewer than 2 are left (L208)", () => {
     const t = table({ players: [{}, { techs: ["T13"] }, { techs: ["T14"] }, { techs: ["T24"] }] });
     expect(t.state.hidden.techDecks.firing).toEqual(["T25"]);
     t.act("p1", inspect("firing"));
@@ -307,7 +307,7 @@ describe("Colour Samples when acquired (L626, L650, R4, B1)", () => {
     expect(none.state.hidden.orderHands["p1"]).toEqual([]);
   });
 
-  it("takes from the deck only, reshuffling the discard when the deck is empty (editorial L390, L511)", () => {
+  it("takes from the deck only, reshuffling the discard when the deck is empty (editorial L391, L511)", () => {
     const keep: OrderId[] = ["O01", "O02", "O03", "O04", "O05", "O06", "O07", "O08"];
     const t = table({
       players: [{}, { hand: MAIN_ORDER_IDS.filter((id) => !keep.includes(id)) }],

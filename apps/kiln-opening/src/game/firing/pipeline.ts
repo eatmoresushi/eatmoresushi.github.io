@@ -1,20 +1,20 @@
 /**
  * Test Pieces, Heat markers, Fire reveal, Actual Heat, Jun and Quality (Appendix D steps
- * 4–9, L242–245, L266–278, L639, L641, L675–680).
+ * 4–9, L243–246, L267–279, L639, L641, L675–680).
  *
  * - Step 4 `firing_test_pieces` (L639, INT): First Player order; queued when Test Pieces
  *   (T13) is ready, the owner has a ceramic in this firing (Imperial included) and 1 Wood.
  *   `TEST_PIECES_DECIDE{peek}` pays and peeks privately (`hidden.firePeeks`,
  *   `TEST_PIECES_PEEKED.secret`), then `TEST_PIECES_BURY{bury}` publicly leaves the card or
  *   moves it to the bottom.
- * - Step 5 `firing_heat_markers` (L267, L676, INT): First Player order; players with a
+ * - Step 5 `firing_heat_markers` (L268, L676, INT): First Player order; players with a
  *   face-down own marker (who must turn or return it) or a ready Kiln Master (T24) with an
  *   eligible ceramic. One `RESOLVE_HEAT_MARKERS` per player; the own marker resolves first,
  *   so a returned marker frees its ceramic for Kiln Master.
  * - Steps 6–7 are automatic (L677–678): the command that ends step 5 (or the one that ends
  *   step 4 / 3 when step 5 has no actor) reveals the Fire card and calculates Actual Heat.
- * - Step 8 `firing_heat_adjustment` (L477, L679): Jun in First Player order (ready, a ceramic
- *   in this firing, 1 Wood). Step 9 assigns Quality automatically (L273–278).
+ * - Step 8 `firing_heat_adjustment` (L478, L679): Jun in First Player order (ready, a ceramic
+ *   in this firing, 1 Wood). Step 9 assigns Quality automatically (L274–279).
  *
  * Layer 4: imports layers 0–3 and, inside P5, `firing/afterQuality` (DESIGN §2.4).
  */
@@ -141,7 +141,7 @@ export function testPiecesOptions(view: PlayerView): TestPiecesOptions | null {
 
 // ── Step 5: Heat markers ──────────────────────────────────────────────────────────────
 
-/** The viewer's ceramic carrying their own face-down Heat marker (R9, L267), if any. */
+/** The viewer's ceramic carrying their own face-down Heat marker (R9, L268), if any. */
 function ownFaceDownMarker(game: PublicCore, playerId: PlayerId): LoadedCeramic | null {
   const carrier = heatMarkerOf(game, playerId, "own");
   return carrier !== null && carrier.heatMarker?.faceDown === true ? carrier : null;
@@ -225,7 +225,7 @@ export function heatMarkerStepOptions(view: PlayerView): HeatMarkerStepOptions |
  * Step 6 (L677): reveal the top Fire card (reshuffling only if the deck is empty); Global
  * Heat = Base Heat + Fire, unclamped. Step 7 (L678): every ceramic's Actual Heat — Shared:
  * Global Heat + (Kiln Furniture ?? zone) + marker; Imperial: Kiln Die + Fire + Imperial
- * modifier + marker, whatever the Contributions were (L288). Then step 8.
+ * modifier + marker, whatever the Contributions were (L289). Then step 8.
  */
 function revealFireAndCalculate(draft: GameState, ctx: ResolveContext): void {
   const firing = requireFiring(draft);
@@ -287,7 +287,7 @@ function advanceHeatAdjustment(draft: GameState, ctx: ResolveContext): void {
   phase.queue.index = index;
 }
 
-/** Step 9 (L273–278, L680): Quality from each ceramic's final Heat Difference, then step 10. */
+/** Step 9 (L274–279, L680): Quality from each ceramic's final Heat Difference, then step 10. */
 function assignQuality(draft: GameState, ctx: ResolveContext): void {
   const firing = requireFiring(draft);
   for (const record of firingRecordsInOrder(firing)) {

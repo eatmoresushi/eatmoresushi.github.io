@@ -1,5 +1,5 @@
 /**
- * Personal spaces (L72, L107, L143, L211): each Form & Decorate and Glaze & Load space is used
+ * Personal spaces (L73, L108, L144, L212): each Form & Decorate and Glaze & Load space is used
  * at most once per round; the second space of each starts locked; a Workshop Tech unlocks the
  * second Form & Decorate space and a Glazing & Loading Tech the second Glaze & Load space;
  * Firing Techs unlock nothing; an unlocked space may be used later the same round.
@@ -20,7 +20,7 @@ const gl = (workerId: string, ceramicId: string, spaceId: "high_1" | "high_2" | 
 
 const RICH = { resources: { clay: 9, wood: 9, coins: 9 } };
 
-describe("each personal space once per round; the second starts locked (L143, L107)", () => {
+describe("each personal space once per round; the second starts locked (L144, L108)", () => {
   it("Form & Decorate: space 0, then the locked space 1 is refused", () => {
     const t = table({ players: [RICH, {}] });
     const events = t.act("p1", fd("p1:apprentice:1"));
@@ -44,7 +44,7 @@ describe("each personal space once per round; the second starts locked (L143, L1
   });
 });
 
-describe("unlocking by discipline (L211, L375)", () => {
+describe("unlocking by discipline (L212, L376)", () => {
   it("a Workshop Tech unlocks only Form & Decorate", () => {
     const state = buildState({ players: [{ ...RICH, techs: ["T19"] }, {}], placements: [
       { player: "p1", worker: 1, locationId: "form_decorate" },
@@ -72,7 +72,7 @@ describe("unlocking by discipline (L211, L375)", () => {
     expect(verdict(state, "p1", gl("p1:shifu", "c1", "high_1"))).toBe("PERSONAL_SPACE_LOCKED");
   });
 
-  it("a space unlocked mid-round may be used later the same round (L211)", () => {
+  it("a space unlocked mid-round may be used later the same round (L212)", () => {
     const t = table({ players: [RICH, {}] });
     t.act("p1", fd("p1:apprentice:1"));
     reject(t, "p1", fd("p1:apprentice:2"), "PERSONAL_SPACE_LOCKED");
@@ -89,7 +89,7 @@ describe("unlocking by discipline (L211, L375)", () => {
   });
 });
 
-describe("personal spaces belong to one player (L143)", () => {
+describe("personal spaces belong to one player (L144)", () => {
   it("another player's use of their own spaces never touches yours", () => {
     const state = buildState({
       players: [RICH, RICH],

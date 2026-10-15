@@ -61,7 +61,7 @@ function secretRichState(): GameState {
       { owner: "p2", stage: "finished", shape: "vase", glaze: "celadon", quality: "fine", crackle: true },
     ],
   });
-  // A completed Order is public (L409).
+  // A completed Order is public (L410).
   state.hidden.mainDeck = state.hidden.mainDeck.filter((id) => id !== "O40");
   state.players["p3"]!.completedOrders.push({
     orderId: "O40",
