@@ -1,41 +1,273 @@
 /**
- * Completing one Order (Order Phase and Canal Barge) incl. Ru, Guan and Tribute Ware (L409–418, L459–463, L642, R6, R13).
+ * Completing one Order, in the Order Phase or through Canal Barge (L405–418, L459–463,
+ * L642, R4, R6, R13).
  *
- * STUB written by P0 with the exact exported signatures of DESIGN §2.4; owned by P6.
- * Replace the bodies, keep the signatures. Every stub throws `NotImplementedError`.
+ * Steps (L409–416): reveal a held Order; deliver the selected Finished ceramics beneath it;
+ * record the printed VP; gain the printed Coins; resolve the printed Crowns one at a time
+ * (`recognition.gainCrown`). Then the optional completion abilities, each once per round
+ * and declinable without using it (R4):
+ * - Tribute Ware (T25, L642): an Order showing ≥ 1 printed Crown gains 1 bonus Crown,
+ *   resolved like any Crown; it is not a printed Crown (R13).
+ * - Ru (L459): delivering an actual Celadon, Plain (printed) Masterpiece scores 4 VP.
+ * - Guan (L463): an Order showing ≥ 1 printed Crown gains 2 Coins and 1 VP (Tribute
+ *   Ware's Crown never counts, R13).
+ * Canal Barge runs exactly this code (R6), so every completion effect applies there too.
+ *
+ * Validation sees only the actor's view (DESIGN §1.3); errors name only what the actor chose.
+ *
+ * Layer 3: imports layer 0–2 and `recognition`.
  */
 
-import { NotImplementedError } from "../errors.ts";
+import { KILNS, ORDERS, TECHS } from "../content.ts";
+import { invariant, ruleError } from "../errors.ts";
+import { hasKiln, kilnAbilityReady, markKilnAbilityUsed } from "../kilns.ts";
+import { gainCrown } from "../recognition.ts";
+import { ceramic, ceramicsOf, emit, gain, lookup, player } from "../state.ts";
+import { markTechUsed, techReady } from "../techs.ts";
 import type {
   ActorView,
+  CeramicId,
   CompletedOrderRecord,
+  DeliveredCeramic,
+  FinishedCeramic,
   GameRuleError,
   GameState,
   OrderCompletionSpec,
+  OrderDefinition,
   OrderId,
   PlayerId,
+  PlayerState,
   PublicCore,
   ResolveContext,
 } from "../types.ts";
+import { explainOrderMismatch, findOrderMatches, matchOrder, ruTriggers } from "./matching.ts";
 
-function notImplemented(name: string): never {
-  throw new NotImplementedError(`orders/completion.${name}`);
+const TRIBUTE_WARE = "T25";
+
+function orderDefinition(orderId: OrderId): OrderDefinition | undefined {
+  return lookup(ORDERS, orderId);
 }
 
-export function validateOrderCompletion(_view: ActorView, _spec: OrderCompletionSpec): GameRuleError | null {
-  return notImplemented("validateOrderCompletion");
+/** The completion abilities this completion would trigger if not declined (R4, R6, R13). */
+export interface CompletionTriggers {
+  ru: boolean;
+  guan: boolean;
+  tributeWare: boolean;
 }
 
+/**
+ * Which optional completion abilities apply to completing `order` with `ceramics`, before
+ * any decline: Ru (actual Celadon Plain Masterpiece delivered), Guan and Tribute Ware (an
+ * Order showing ≥ 1 printed Crown), each only while its once-per-round use is unspent.
+ */
+export function completionTriggers(
+  p: PlayerState,
+  order: OrderDefinition,
+  ceramics: readonly FinishedCeramic[],
+): CompletionTriggers {
+  return {
+    ru: kilnAbilityReady(p, "RU") && ruTriggers(ceramics),
+    guan: kilnAbilityReady(p, "GU") && order.crowns >= KILNS.GU.params.minPrintedCrowns,
+    tributeWare: techReady(p, TRIBUTE_WARE) && order.crowns >= 1,
+  };
+}
+
+/**
+ * Checks one completion against the actor's view (L409–418): the Order is held; the
+ * ceramics are distinct, exist, are the actor's own and Finished (never delivered, L418);
+ * Crackle declarations, when given, are well formed; and the selection meets every
+ * requirement (`matchOrder`). Error codes follow the `OrderCompletionSpec` JSDoc.
+ */
+export function validateOrderCompletion(view: ActorView, spec: OrderCompletionSpec): GameRuleError | null {
+  const game = view.game;
+  const actorId = view.viewerId;
+  const order = orderDefinition(spec.orderId);
+  if (order === undefined || !view.own.orderHand.includes(spec.orderId)) {
+    return ruleError("ORDER_NOT_HELD", "You can complete only Orders in your hand.", { orderId: spec.orderId });
+  }
+  const selected: FinishedCeramic[] = [];
+  const seen = new Set<CeramicId>();
+  for (const ceramicId of spec.ceramicIds) {
+    if (seen.has(ceramicId)) {
+      return ruleError("DUPLICATE_CERAMIC", "The same ceramic cannot be chosen twice.", { ceramicId });
+    }
+    seen.add(ceramicId);
+    const found = lookup(game.ceramics, ceramicId);
+    if (found === undefined) {
+      return ruleError("CERAMIC_NOT_FOUND", "That ceramic does not exist.", { ceramicId });
+    }
+    if (found.ownerId !== actorId) {
+      return ruleError("CERAMIC_NOT_OWNED", "That ceramic is not yours.", { ceramicId, ownerId: found.ownerId });
+    }
+    if (found.stage !== "finished") {
+      return ruleError("ILLEGAL_CERAMIC_STAGE", `That ceramic is ${found.stage}; only Finished ceramics complete Orders.`, {
+        ceramicId,
+        stage: found.stage,
+        expectedStage: "finished",
+      });
+    }
+    selected.push(found);
+  }
+  const declared = spec.crackleDeclarations;
+  if (declared !== undefined) {
+    const declaredIds = new Set<CeramicId>();
+    for (const entry of declared) {
+      const target = selected.find((c) => c.id === entry.ceramicId);
+      const reason =
+        target === undefined
+          ? "crackle_not_selected"
+          : !target.crackle
+            ? "not_crackle"
+            : declaredIds.has(entry.ceramicId)
+              ? "crackle_declared_twice"
+              : null;
+      if (reason !== null) {
+        return ruleError(
+          "INVALID_CRACKLE_DECLARATION",
+          "Each declaration must name a different selected Crackle ceramic.",
+          { ceramicId: entry.ceramicId, decoration: entry.decoration, orderId: spec.orderId, reason },
+        );
+      }
+      declaredIds.add(entry.ceramicId);
+    }
+  }
+  if (matchOrder(order, selected, declared) !== null) {
+    return null;
+  }
+  if (declared !== undefined && matchOrder(order, selected) !== null) {
+    // Well formed, but another declaration would satisfy the Order (OrderCompletionSpec JSDoc).
+    return ruleError("INVALID_CRACKLE_DECLARATION", "These Crackle declarations do not satisfy the Order; others would.", {
+      orderId: spec.orderId,
+      reason: "declaration_does_not_satisfy",
+    });
+  }
+  const mismatch = explainOrderMismatch(order, selected, declared);
+  invariant(mismatch !== null, `${spec.orderId}: no match but no mismatch`);
+  const details: GameRuleError["details"] = { orderId: spec.orderId, reason: mismatch.reason };
+  if (mismatch.ceramicId !== null) details["ceramicId"] = mismatch.ceramicId;
+  if (mismatch.slotIndex !== null) details["slotIndex"] = mismatch.slotIndex;
+  return ruleError("ORDER_REQUIREMENTS_NOT_MET", `The chosen ceramics do not meet Order ${spec.orderId} (${mismatch.reason}).`, details);
+}
+
+function deliver(draft: GameState, finished: FinishedCeramic, orderId: OrderId): void {
+  const { stage: _stage, quality, crackle, ...core } = finished;
+  const base = { ...core, stage: "delivered" as const, orderId, deliveredInRound: draft.round };
+  let delivered: DeliveredCeramic;
+  if (crackle) {
+    delivered = { ...base, crackle: true, quality: "fine" };
+  } else {
+    invariant(quality !== "flawed", `${finished.id} is Flawed and cannot be delivered (L278)`);
+    delivered = { ...base, crackle: false, quality };
+  }
+  draft.ceramics[finished.id] = delivered;
+}
+
+/**
+ * Resolves a completion that `validateOrderCompletion` accepted (L409–416), then Tribute
+ * Ware, Ru and Guan unless declined (R4), and returns the record. `via` is `canal_barge`
+ * for T23 (R6); Canal Barge's own `TECH_USED` is its caller's.
+ *
+ * Event order: `ORDER_COMPLETED` (the reveal, with the full record); `RESOURCES_CHANGED`
+ * (printed Coins); each printed Crown (`RECOGNITION_ADVANCED` + milestone events, or
+ * `CROWN_OVERFLOW_VP`); Tribute Ware (`TECH_USED`, then its Crown); Ru or Guan
+ * (`KILN_ABILITY_USED`, then Guan's Coins).
+ */
 export function resolveOrderCompletion(
-  _draft: GameState,
-  _playerId: PlayerId,
-  _spec: OrderCompletionSpec,
-  _via: CompletedOrderRecord["via"],
-  _ctx: ResolveContext,
+  draft: GameState,
+  playerId: PlayerId,
+  spec: OrderCompletionSpec,
+  via: CompletedOrderRecord["via"],
+  ctx: ResolveContext,
 ): CompletedOrderRecord {
-  return notImplemented("resolveOrderCompletion");
+  const owner = player(draft, playerId);
+  const order = orderDefinition(spec.orderId);
+  invariant(order !== undefined, `Unknown Order ${spec.orderId}`);
+  const hand = draft.hidden.orderHands[playerId] ?? [];
+  const handIndex = hand.indexOf(spec.orderId);
+  invariant(handIndex >= 0, `${playerId} does not hold ${spec.orderId}`);
+
+  const selected = spec.ceramicIds.map((id) => {
+    const found = ceramic(draft, id);
+    invariant(found.stage === "finished" && found.ownerId === playerId, `${id} is not ${playerId}'s Finished ceramic`);
+    return found;
+  });
+  const match = matchOrder(order, selected, spec.crackleDeclarations);
+  invariant(match !== null, `${spec.ceramicIds.join(", ")} do not complete ${spec.orderId}`);
+
+  const triggers = completionTriggers(owner, order, selected);
+  const useTribute = triggers.tributeWare && spec.declineTributeWare !== true;
+  const useRu = triggers.ru && spec.declineKilnAbility !== true;
+  const useGuan = triggers.guan && spec.declineKilnAbility !== true;
+  invariant(!(useRu && useGuan), "A player has one Kiln");
+
+  const bonusCrowns = useTribute ? TECHS.T25.params.bonusCrowns : 0;
+  invariant(bonusCrowns === 0 || bonusCrowns === 1, "Tribute Ware grants 1 bonus Crown (L642)");
+  let kilnAbility: CompletedOrderRecord["kilnAbility"] = null;
+  if (useRu) {
+    kilnAbility = { kilnId: "RU", vp: KILNS.RU.params.vp, coins: 0 };
+  } else if (useGuan) {
+    kilnAbility = { kilnId: "GU", vp: KILNS.GU.params.vp, coins: KILNS.GU.params.coins };
+  }
+
+  // Steps 1–4 and 8: reveal, deliver beneath the Order, move it to the scoring area.
+  hand.splice(handIndex, 1);
+  for (const finished of selected) {
+    deliver(draft, finished, spec.orderId);
+  }
+  const record: CompletedOrderRecord = {
+    orderId: spec.orderId,
+    ceramicIds: match.ceramicIds,
+    round: draft.round,
+    via,
+    vp: order.vp,
+    coins: order.coins,
+    printedCrowns: order.crowns,
+    bonusCrowns: bonusCrowns as 0 | 1,
+    crackleDeclarations: match.crackleDeclarations,
+    kilnAbility,
+  };
+  owner.completedOrders.push(record);
+  emit(ctx, { type: "ORDER_COMPLETED", playerId, record: structuredClone(record) });
+
+  // Step 5–6: printed VP and Coins.
+  owner.score.orders += order.vp;
+  gain(draft, playerId, { coins: order.coins }, "order_reward", ctx);
+
+  // Step 7: printed Crowns, one at a time (L415, L438).
+  for (let crown = 0; crown < order.crowns; crown += 1) {
+    gainCrown(draft, playerId, "printed_crown", spec.orderId, ctx);
+  }
+
+  // Tribute Ware: a bonus Crown, resolved like any other (R13).
+  if (useTribute) {
+    markTechUsed(draft, playerId, TRIBUTE_WARE, ctx);
+    for (let crown = 0; crown < bonusCrowns; crown += 1) {
+      gainCrown(draft, playerId, "tribute_crown", spec.orderId, ctx);
+    }
+  }
+
+  // Ru / Guan (L459, L463).
+  if (kilnAbility !== null) {
+    invariant(hasKiln(owner, kilnAbility.kilnId), `${playerId} does not have ${kilnAbility.kilnId}`);
+    markKilnAbilityUsed(draft, playerId, ctx);
+    owner.score.kilnAbilities += kilnAbility.vp;
+    gain(draft, playerId, { coins: kilnAbility.coins }, "guan", ctx);
+  }
+  return record;
 }
 
-export function completableOrderIds(_game: PublicCore, _playerId: PlayerId, _hand: readonly OrderId[]): OrderId[] {
-  return notImplemented("completableOrderIds");
+/**
+ * Held Orders (in hand order) that the player's Finished ceramics can complete now. Takes
+ * the hand explicitly because it is hidden: resolvers pass `hidden.orderHands[pid]`, a
+ * view passes `own.orderHand`.
+ */
+export function completableOrderIds(game: PublicCore, playerId: PlayerId, hand: readonly OrderId[]): OrderId[] {
+  const pool = ceramicsOf(game, playerId, "finished");
+  if (pool.length === 0) {
+    return [];
+  }
+  return hand.filter((orderId) => {
+    const order = orderDefinition(orderId);
+    return order !== undefined && findOrderMatches(order, pool, 1).length > 0;
+  });
 }

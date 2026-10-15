@@ -275,9 +275,10 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
     ],
   },
   INVALID_CRACKLE_DECLARATION: {
-    en: "Only Crackle ceramics may declare a Decoration, and a Crackle ceramic never counts as a Masterpiece.",
-    zh: "只有开片器可声明纹饰，且开片器不能充作臻品",
+    en: "That Crackle declaration is not valid: {reason}.",
+    zh: "开片声明无效：{reason}",
     detailKeys: keys("ceramicId", "decoration", "orderId"),
+    fallbacks: [{ en: "That Crackle declaration is not valid.", zh: "开片声明无效" }],
   },
   HAND_LIMIT_DISCARD_COUNT: {
     en: "At Cleanup, discard down to {limit} Orders: discard {needed} more.",
@@ -473,6 +474,13 @@ export const REASON_TEXT: Readonly<Record<string, RuleErrorTemplate>> = {
   not_this_firing: { en: "the ceramic is not in this firing", zh: "本次烧成之外的器物" },
   wrong_count: { en: "the number of ceramics does not match", zh: "器物件数不符" },
   relation_mismatch: { en: "the combined requirements are not met", zh: "组合要求不符" },
+  crackle_not_selected: { en: "the declared ceramic is not one of those chosen", zh: "声明的器物不在所选之列" },
+  not_crackle: { en: "only Crackle ceramics may declare a Decoration", zh: "只有开片器可声明纹饰" },
+  crackle_declared_twice: { en: "a Crackle ceramic may be declared only once", zh: "同一开片器只能声明一次" },
+  declaration_does_not_satisfy: {
+    en: "these declarations do not satisfy the Order, but other declarations would",
+    zh: "所作声明不满足委托，换一种声明可满足",
+  },
 };
 
 /** Words used when a placeholder has no value and no fallback template fits. */

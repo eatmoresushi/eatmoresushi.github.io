@@ -833,7 +833,7 @@ Revision 2 (2026-10-14) applies the terminology review; see §10.
 | `ORDER_SUPPLY_EMPTY` | 主委托用尽 | 主委托牌堆与弃牌堆皆空，无可承接 |
 | `RESERVATION_LIMIT` | 承接次数已满 | 此行动已承接{limit}张 |
 | `ORDER_REQUIREMENTS_NOT_MET` | 要求未满足 | 所选器物不满足委托{order}的要求：{reason} |
-| `INVALID_CRACKLE_DECLARATION` | 开片声明无效 | 只有开片器可声明纹饰，且开片器不能充作臻品 |
+| `INVALID_CRACKLE_DECLARATION` | 开片声明无效 | 开片声明无效：{reason} |
 | `HAND_LIMIT_DISCARD_COUNT` | 收工弃牌数不符 | 收工须弃至{limit}张委托：请再弃{n}张 |
 | `TECH_NOT_AVAILABLE` | 技艺不可取 | 这张技艺牌不在可取之列 |
 | `TECH_LIMIT` | 技艺已满3项 | 你已拥有3项技艺 |
@@ -849,7 +849,7 @@ Revision 2 (2026-10-14) applies the terminology review; see §10.
 | `INVALID_CONTRIBUTION` | 控火不合法 | 柴不足，无法打出此控火牌（守火永远可选） |
 
 `{reason}` 常用短语：器型不符、釉不符、纹饰不符、品质不足、需臻品、器物已交付、瑕品不能完成委托、
-开片器不是臻品、本次烧成之外的器物。
+开片器不是臻品、本次烧成之外的器物、声明的器物不在所选之列、只有开片器可声明纹饰、同一开片器只能声明一次、所作声明不满足委托，换一种声明可满足。
 
 ---
 
