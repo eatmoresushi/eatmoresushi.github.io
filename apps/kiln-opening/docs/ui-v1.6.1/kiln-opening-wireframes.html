@@ -1021,7 +1021,9 @@ button.slot:hover { border-color: var(--teal); }
 .sent { font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--ink-2); background: var(--surface-2); border: 1px dashed var(--line); border-radius: 6px; padding: 5px 7px; overflow-wrap: anywhere; }
 .note { border: 1px dashed var(--note-line); background: var(--note-bg); color: var(--note-ink); border-radius: 8px; padding: 6px 9px; font-size: 12px; }
 .note b:first-child { font-weight: 800; }
-.ko.nonotes .note { display: none; }
+.ko.nonotes .note, .ko.nonotes .devtag { display: none; }
+.devtag { font: 600 12px/1.3 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; text-transform: none; letter-spacing: 0; color: var(--note-ink); background: var(--note-bg); border: 1px dashed var(--note-line); border-radius: 4px; padding: 0 4px; overflow-wrap: anywhere; }
+.note .sentcmd { display: block; margin-top: 3px; font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
 .ledger { margin: 0; padding: 0; display: grid; }
 .ledger li { list-style: none; display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--line-2); font-size: 13px; }
 .ledger li .rv { font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
@@ -1175,7 +1177,11 @@ table.score td:not(:first-child), table.score thead th:not(:first-child) { text-
         <li><b>D4 · Fire cards.</b> No odds and no cards-left counts. The open Fire discard is visible at all times, and that is all the Fire-deck information shown.</li>
         <li><b>D5 · Phones and the log.</b> Phones keep the Table, Kiln, Workshop and Orders tabs. The game log is a dropdown in the top bar at every screen size, not a tab or a section.</li>
         <li><b>D6 · Chinese terms.</b> The glossary terms are approved as they are.</li>
-        <li><b>D7 · Second personal space.</b> No “lock” or “unlock” in anything a player reads. The second Form &amp; Decorate or Glaze &amp; Load space is something you <b>add by learning a Tech</b>: “Learn a Workshop Tech to add this space” (习得坯作技艺即添此工位), then “Added by Prepared Clay” (由「练泥」添设).</li>
+        <li><b>D7 · Second personal space.</b> No “lock” or “unlock” in anything a player reads. The second Form &amp; Decorate or Glaze &amp; Load space is something you <b>add by learning a Tech</b>: “Learn a Form &amp; Decorate Tech to add this space” (习得坯作技艺即添此工位), then “Added by Prepared Clay” (由「练泥」添设).</li>
+        <li><b>D8 · Shared Kiln layout.</b> Low at the top, under the dome; High at the bottom, beside the firebox. Layout only: modifiers and space counts are unchanged.</li>
+        <li><b>D9 · No internal IDs.</b> A physical Vessel card has no number, so no ceramic or worker ID appears anywhere a player looks: chips, choices, the game log, error messages or screen-reader text. A ceramic is its picture (Shape, Decoration, Glaze tint, owner’s ring, Quality badge, Crackle marker) and, in words, “Lin’s Celadon Vase, Carved · Fine” (林的青釉瓶·刻花·上品). Where it is (“in High 2” / 高温2号窑位, “in your workshop” / 你的作坊) is added only when two would otherwise read the same. Printed Order numbers such as S01 and O33 stay.</li>
+        <li><b>D10 · Rules on demand.</b> Clicking or tapping a Tech tile, Kiln Player Board, location, Order or Recognition milestone opens its rules: the short text, the full rule from the rulebook and the clarifications for that card, each with its source. No advice, odds or previews.</li>
+        <li><b>D11 · Form &amp; Decorate Techs.</b> The Tech discipline that adds your second Form &amp; Decorate space is called Form &amp; Decorate (formerly Workshop), in the rulebook too. Chinese keeps 坯作. The Tech display picks up the new name with the next game-data update.</li>
       </ol>
     </section>
     <div class="cols">
@@ -1240,6 +1246,9 @@ table.score td:not(:first-child), table.score thead th:not(:first-child) { text-
           <tr><td>Location effect summaries (i18n)</td><td>A one-line <code>summary</code> per worker next to <code>apprenticeText</code> and <code>shifuText</code>. The wireframe hard-codes the rulebook Appendix E Action Summary (EN) and the glossary §4.1–4.7 short column (中文); the full text stays in a disclosure.</td><td>Central board cards, Location rows in the decision panel</td></tr>
           <tr><td>Order quality line (i18n)</td><td><code>labels.orders[id].qualityText</code> in the rulebook / glossary §5.1 form (“Fine+ each; ≥1 Masterpiece”, “均上品以上，至少1件臻品”, “Masterpiece”/“臻品”). The wireframe composes it from <code>minQuality</code> and the <code>at_least_n_quality</code> relation.</td><td>Every Order card and Order row</td></tr>
           <tr><td><code>handLimitStatus(view, pid).trimDue</code></td><td>Whether Cleanup will actually trim this round. Round 5 Cleanup skips the trim, but <code>mustDiscard</code> is reported regardless; the wireframe checks the round itself.</td><td>Hand header in the Order Phase</td></tr>
+          <tr><td><code>ceramicLabel</code> (i18n, D9)</td><td><code>ceramicLabel(ceramic, view, { withOwner, withPlace })</code> returning “Lin’s Celadon Vase, Carved · Fine” / “林的青釉瓶·刻花·上品”, adding the place (“in High 2” / 高温2号窑位, “in your workshop” / 你的作坊) only when another ceramic in the same list would read the same. The wireframe has a local version; event templates and rule-error text call it for every <code>ceramicId</code>, and no ceramic or worker ID is rendered. A Quality override describes only the ceramic it is for; every other ceramic is compared at its own Quality. Kiln-space names have two forms: short on buttons and kiln-space headers (“High 1” / 高温1) and the sentence form (“in High 1” / 高温1号窑位); the glossary should record both.</td><td>Ceramic chips, decision panels, Game log, announcements, error text</td></tr>
+          <tr><td>Rule-error placeholders (i18n, D9)</td><td>Every placeholder in <code>labels.ruleErrors</code> is rendered in words: <code>spaceId</code> as the kiln-space name, <code>workerId</code> as Shifu / Apprentice (师傅／学徒), <code>ownerId</code>, <code>playerId</code> and <code>waitingFor</code> as display names, <code>kilnId</code> and <code>techId</code> as names, <code>stage</code> as 坯／入窑／成器／已交付, <code>expectedPhase</code> as the phase name and ceramic IDs through <code>ceramicLabel</code>. A missing value takes a neutral word (“That kiln space” / 此窑位) and an unknown code a generic sentence (“That move is not allowed right now.” / 此时不能这样做。), never the code. This mirrors <code>detailLabel()</code> and <code>PLACEHOLDER_DEFAULTS</code> in <code>src/game/ruleErrorText.ts</code>, whose <code>ceramicName</code> option the UI fills with <code>ceramicLabel</code>.</td><td>Every <code>err</code> line and disabled-option reason</td></tr>
+          <tr><td>Event templates (i18n, D9)</td><td>Each public event has a template that names ceramics with <code>ceramicLabel</code> (display names, no Quality, place only to tell two apart). When the line’s subject owns the ceramic it says “their” / 其 instead of repeating the name (“Lin turned the Heat marker on their Celadon Censer, Painted to −1” / Lin将其青釉香炉·画花上的火标翻为−1). A ceramic that has left the view is described from the event payload, or as “a ceramic” / 一件器物. An event type without a template gets a generic line (“Lin took an action” / Lin有新动作), never the engine event name. Results cells fall back to “a ceramic” the same way.</td><td>Game log, announcements, results</td></tr>
           <tr><td>Event text templates (i18n)</td><td>EN/ZH templates per public event type for the log and the <code>aria-live</code> announcements. The wireframe formats events locally.</td><td>Game log dropdown, screen-reader announcements</td></tr>
           <tr><td>Personal-space wording (i18n, D7)</td><td>Player-facing text for the second personal space and for <code>PERSONAL_SPACE_LOCKED</code>: “Learn a {discipline} Tech to add this space” / “习得{discipline}技艺即添此工位”, and “Added by {tech}” / “由「{tech}」添设”. <code>labels.ruleErrors.PERSONAL_SPACE_LOCKED</code> (from <code>src/game/ruleErrorText.ts</code>) already carries this sentence, and the page reads it from there. Identifiers stay as they are.</td><td>Board area personal spaces, Location rows, the Glaze &amp; Load reason in M5</td></tr>
           <tr><td>Fire information (D3, D4)</td><td>No new selector. The client reads only the public <code>fireDiscard</code> and the revealed <code>fireModifier</code>. <code>fireDeckCount</code> and <code>heatPreviews</code> stay engine-side for the computer players and are not rendered.</td><td>Heat equation, Table kiln summary, idle firing stage</td></tr>
@@ -1252,7 +1261,7 @@ table.score td:not(:first-child), table.score thead th:not(:first-child) { text-
         <h2>Accessibility and motion hooks</h2>
         <ul>
           <li>Each frame has a polite live region. The caption under the frame shows what a screen reader would announce for that moment (turn changes, reveals, Quality).</li>
-          <li>Quality never relies on colour: every fired ceramic carries its Quality word, or its letter (M, F, S, ×) where space is tight, and the chip’s title gives the ceramic in full.</li>
+          <li>Quality never relies on colour: every fired ceramic carries its Quality word, or its letter (M, F, S, ×) where space is tight, and the chip’s accessible name gives the ceramic in words (“Lin’s Celadon Vase, Carved · Fine”), never an ID (D9).</li>
           <li>The Game log is a disclosure button in the top bar (<code>aria-expanded</code>, Escape closes it). The board tabs and the seat chips are buttons with pressed states, and focus stays on the control you used.</li>
           <li>All choices are buttons with pressed states; location cards, kiln spaces and personal spaces are reachable by keyboard. Rules text uses disclosures, not line clamps.</li>
           <li><code>data-motion</code> marks every element the motion phase will animate; <code>prefers-reduced-motion</code> turns transitions off.</li>
@@ -1264,7 +1273,7 @@ table.score td:not(:first-child), table.score thead th:not(:first-child) { text-
           <li><b>Concept C:</b> the two-pane shell, the structured decision form, phase-ordered sections, the 2-player board treatment.</li>
           <li><b>Concept B:</b> the kiln-shaped Shared Kiln, Place buttons on locations, clickable kiln spaces.</li>
           <li><b>Concept A:</b> the bottom tab bar and one-line action strip on phones, the −1/0/+1 Imperial modifier chips, the labelled 12-step stepper with a queue row, the idle firing summary.</li>
-          <li><b>Owner decisions (15 Oct 2026):</b> one board area with player tabs and a Your workshop return, seat chips as the opponent strips, the Game log dropdown, “add this space” wording, and no heat ladder, Heat ledger, Fire odds or previews.</li>
+          <li><b>Owner decisions (15 Oct 2026):</b> one board area with player tabs and a Your workshop return, seat chips as the opponent strips, the Game log dropdown, “add this space” wording, Low at the top of the Shared Kiln, ceramics described in words with no internal IDs, and no heat ladder, Heat ledger, Fire odds or previews.</li>
         </ul>
       </div>
     </div>
@@ -29389,9 +29398,9 @@ const INFO = {
   m1: { short: 'Work turn', title: 'Work turn · Round 2 · 3 players', check: [
     'Wen’s full Kiln Player Board is in the Workshops board area. Prepared Clay added the second Form &amp; Decorate space (“Added by Prepared Clay”); the second Glaze &amp; Load space is a dashed slot reading “Learn a Glazing &amp; Loading Tech to add this space”.',
     'Click Lin or Zhao in the top bar, or their tab on the board’s top edge, to see their board (public information only). The Your workshop tab returns to Wen’s.',
-    'The draft is a Shifu at Glaze &amp; Load: c4 glazed Celadon into Middle 1 shows as a dashed “pending” chip in the Shared Kiln. Click a highlighted kiln space to change the destination.',
+    'The draft is a Shifu at Glaze &amp; Load: Wen’s Plain Brush Washer, glazed Celadon into Middle 1, shows as a dashed “pending” chip in the Shared Kiln. Click a highlighted kiln space to change the destination. The vessel buttons read “Brush Washer, Plain” and “Brush Washer, Impressed”: no numbers (D9).',
     'Place buttons on the location cards set the same draft. Form &amp; Decorate, Guild Hall and Magistrate’s Hall are listed as unavailable with the engine’s reason. The decision panel opens with a one-row summary of Wen’s resources, workers and hand.'],
-    desc: 'The viewer owns a Workshop Tech, so the viewer has added the second Form & Decorate space; the second Glaze & Load space is not yet added. Placement options, quotes and the Commission / Guild / Magistrate option lists are for this exact state.',
+    desc: 'The viewer owns a Form & Decorate Tech, so the viewer has added the second Form & Decorate space; the second Glaze & Load space is not yet added. Placement options, quotes and the Commission / Guild / Magistrate option lists are for this exact state.',
     engine: 'Engine identifiers in the list below stay as they are; player-facing text follows D7.' },
   m2: { short: 'Commission look', title: 'Commission Market Shifu · Round 3 · 4 players', check: [
     'Display slot 1 is empty and says it refills when Zhao’s turn ends (<code>market.refillPendingFor</code>).',
@@ -29414,7 +29423,8 @@ const INFO = {
     'Every location shows “n/cap taken”; the Magistrate’s Hall is 1/1 and the Commission Market 2/2.',
     'Lin has one Apprentice left. The draft is Form &amp; Decorate (Bowl, Carved) with the engine’s quote. Glaze &amp; Load is unavailable: “Learn a Glazing &amp; Loading Tech to add this space.” The board area has a single tab, for Zhao.'] },
   m6: { short: 'Order Phase', title: 'Order Phase · Crackle wildcard · Round 5', check: [
-    'Four of five held Orders can be completed. O39 needs the Crackle ceramic c18 (printed Plain) to count as Painted.',
+    'Four of five held Orders can be completed. O39 needs Zhao’s Celadon Vase with Crackle (printed Plain) to count as Painted.',
+    'Each option lists its ceramics in words under the pictures, e.g. “Celadon Vase, Plain · Fine · Crackle; Moon White Censer, Plain · Masterpiece”. The Crackle step asks how that vase counts, not “c18” (D9).',
     'The declaration picker shows the validator’s verdict for every Decoration; only Painted is accepted.',
     'Face-up Orders are shown for reference and cannot be completed.'] },
   m7: { short: 'Cleanup trim', title: 'Cleanup · hand limit · Round 3', check: [
@@ -29427,7 +29437,7 @@ const INFO = {
   m9: { short: 'Contributions', title: 'Firing step 1 · secret Contributions · Round 4', check: [
     'Lin has submitted. Everyone sees only “submitted, card hidden”; nobody sees which card until all three are in. Wen is still choosing.',
     'Zhao owns Fuel Ledger: the toggle turns Bank or Stoke into −2 or +2 for 2 Wood. Costs and affordability come from <code>contributionOptions</code>.',
-    'The Shared Kiln shows an Inverted Firing stack (Lin’s c12 and c11 share Middle 1), Kiln Furniture +1 under c9 and Wen’s face-down Heat marker.',
+    'The Shared Kiln shows an Inverted Firing stack (Lin’s White Vase and White Bowl share Middle 1, labelled “2 stacked”), Kiln Furniture +1 under Wen’s Celadon Vase in Low 1 and Wen’s face-down Heat marker.',
     'Base Heat stays “?” until every card is revealed. The Fire discard is the only Fire-deck information on screen.'] },
 };
 const R = { m: 'm1', vp: 'desk', lang: 'en', fit: true, full: false, ftheme: 'auto', notes: true };
@@ -29525,6 +29535,7 @@ const UI = {
   furniture: { en: 'Furniture {m}', zh: '窑具{m}' },
   setter: { en: 'Setter’s Mark', zh: '窑位签' },
   pending: { en: 'pending', zh: '待确认' },
+  stackN: { en: '{n} stacked', zh: '{n}件叠烧' },
   imperialKiln: { en: 'Imperial Kiln', zh: '御窑' },
   imperialKilns: { en: 'Imperial Kilns', zh: '御窑' },
   impNone: { en: '{names}: none yet (Recognition 2)', zh: '{names}：尚无（御府声望2获得）' },
@@ -29547,17 +29558,17 @@ const UI = {
   workersLeft: { en: '{n} left', zh: '余{n}名' },
   workers: { en: 'Workers', zh: '工人' }, resources: { en: 'Resources', zh: '资源' }, hand: { en: 'Hand', zh: '手牌' },
   formDec: { en: 'Form & Decorate', zh: '制坯饰纹' }, glazeLoad: { en: 'Glaze & Load', zh: '施釉装窑' },
-  addFD: { en: 'Learn a Workshop Tech to add this space', zh: '习得坯作技艺即添此工位' },
+  addFD: { en: 'Learn a Form & Decorate Tech to add this space', zh: '习得坯作技艺即添此工位' },
   addGL: { en: 'Learn a Glazing & Loading Tech to add this space', zh: '习得釉作技艺即添此工位' },
   addedBy: { en: 'Added by <b>{t}</b>', zh: '由「<b>{t}</b>」添设' },
   techSlots: { en: 'Tech slots', zh: '技艺位' }, emptySlot: { en: 'empty', zh: '空' },
   ceramics: { en: 'Ceramics', zh: '器物' }, shaped: { en: 'Shaped', zh: '坯' }, inKiln: { en: 'In kiln', zh: '入窑' }, finished: { en: 'Finished', zh: '成器' },
   none: { en: 'none', zh: '无' },
   completed: { en: 'Completed', zh: '已完成' },
-  hmOn: { en: 'Heat marker on <b>{c}</b>{fd}', zh: '火标在<b>{c}</b>{fd}' },
+  hmOn: { en: 'Heat marker{fd} on <b>{c}</b>', zh: '火标{fd}在<b>{c}</b>上' },
   hmFd: { en: ' (face-down)', zh: '（暗置）' },
   hmSupply: { en: 'Heat marker in supply', zh: '火标在手' },
-  kmOn: { en: 'Kiln Master on {c}', zh: '窑工标在{c}' },
+  kmOn: { en: 'Kiln Master on {c}', zh: '窑工标在{c}上' },
   // contributions (firing step 1)
   ctTitle: { en: 'Choose your Contribution', zh: '暗选控火' },
   ctSub: { en: 'Firing step 1. Everyone chooses in secret at the same time. All cards are revealed together once every firing player has chosen; Wood is paid then (step 2).', zh: '烧窑步骤一。各玩家同时暗选。所有参与烧窑者选定后一齐亮牌，并于此时付柴（步骤二）。' },
@@ -29592,7 +29603,7 @@ const UI = {
   after: { en: 'After this action', zh: '行动后' },
   shapeT: { en: 'Shape', zh: '器型' }, decoT: { en: 'Decoration', zh: '纹饰' },
   quote: { en: 'Quote', zh: '报价' },
-  quoteMissing: { en: 'Quote not captured in this fixture: the client calls quoteFormDecorate(view, draft).', zh: '此夹具未采集该报价：客户端调用 quoteFormDecorate(view, draft)。' },
+  quoteMissing: { en: 'The cost for this choice is not shown in the wireframe.', zh: '线框图未列出此选择的费用。' },
   pickVessel: { en: 'Shaped vessels (up to {n})', zh: '坯（至多{n}件）' },
   glaze: { en: 'Glaze', zh: '釉' }, loadInto: { en: 'Load into', zh: '装入' },
   orKiln: { en: 'or click a highlighted kiln space', zh: '也可点击高亮窑位' },
@@ -29609,7 +29620,8 @@ const UI = {
   priceN: { en: '{n} Coins', zh: '{n}铜钱' },
   confirm: { en: 'Confirm', zh: '确认' }, clear: { en: 'Clear', zh: '取消' },
   incomplete: { en: 'Choose a worker and an open location.', zh: '请选择工人与可派地点。' },
-  sentLbl: { en: 'Would send (wireframe, nothing is sent):', zh: '将提交（线框图，不会真的发送）：' },
+  sentLbl: { en: 'What the client would send (design note; nothing is sent):', zh: '客户端将提交的指令（设计注释；不会真的发送）：' },
+  sentDone: { en: 'Submitted. (Wireframe: the table does not change.)', zh: '已提交。（线框图：牌桌不会变化。）' },
   serverNote: { en: 'One typed command; the server validates it again.', zh: '提交一条指令；服务器重新校验。' },
   lookT: { en: 'Choose 1 Order to reserve', zh: '选1张承接' },
   lookSub: { en: 'Commission Market, Shifu · reservation {a} of up to {b}. Only you can see these 3 Orders; the other 2 go face down to the discard.', zh: '瓷牙行 · 师傅 · 第{a}次承接（至多{b}次）。仅你可见这3张；其余2张面朝下弃置。' },
@@ -29641,7 +29653,7 @@ const UI = {
   stepOrder: { en: 'Order', zh: '委托' }, stepCer: { en: 'Ceramics', zh: '器物' }, stepDecl: { en: 'Crackle declaration', zh: '开片声明' },
   completable: { en: 'Can complete', zh: '可完成' }, notCompletable: { en: 'No matching ceramics', zh: '无可用器物' },
   groupN: { en: 'Option {n}', zh: '方案{n}' },
-  declAs: { en: '{c} counts as', zh: '{c}视为' },
+  declAs: { en: '{c} counts as:', zh: '{c}视为：' },
   declOk: { en: '✓ satisfies {o}', zh: '✓ 满足{o}' },
   declNo: { en: '✕ does not satisfy {o}', zh: '✕ 不满足{o}' },
   printed: { en: 'printed {d}', zh: '原为{d}' },
@@ -29719,7 +29731,9 @@ const resName = (r) => tx(L.resources[r]);
 const workerName = (k) => tx(L.workers[k]);
 const DISC_COLOR = { workshop: 'var(--d-workshop)', glazing_loading: 'var(--d-glazing)', firing: 'var(--d-firing)' };
 const QL = { en: { masterpiece: 'M', fine: 'F', standard: 'S', flawed: '×' }, zh: { masterpiece: '臻', fine: '上', standard: '良', flawed: '瑕' } };
-function spaceName(id) { const [z, i] = id.split('_'); return zh() ? `${tx(L.zones[z])}${i}` : `${tx(L.zones[z])} ${i}`; }
+/* Kiln-space names: a short form on buttons and kiln-space headers ("High 1" / 高温1) and the sentence form from
+   placeText() ("in High 1" / 高温1号窑位). Recorded in the developer gaps table for the glossary. */
+function spaceName(id) { const [z, i] = id.split('_'); return zh() ? `${{ high: '高温', middle: '中温', low: '低温' }[z]}${i}` : `${tx(L.zones[z])} ${i}`; }
 function phaseKind() {
   const t = G.phase.type;
   if (t === 'work_turn') return 'work';
@@ -29748,14 +29762,104 @@ function cer(id) {
   return null;
 }
 const firingRec = (id) => (G.firing && G.firing.ceramics[id]) || null;
-function cerTitle(c) {
-  if (!c) return '';
-  const q = c.quality || (firingRec(c.id) && firingRec(c.id).quality);
-  const crk = c.crackle || (firingRec(c.id) && firingRec(c.id).crackle);
-  return zh()
-    ? `${c.id} · ${c.glaze ? glazeName(c.glaze) : ''}${shapeName(c.shape)} · ${decoName(c.decoration)}${q ? ' · ' + qName(q) : ''}${crk ? ' · 开片' : ''}`
-    : `${c.id} · ${c.glaze ? glazeName(c.glaze) + ' ' : ''}${shapeName(c.shape)}, ${decoName(c.decoration)}${q ? ' · ' + qName(q) : ''}${crk ? ' · Crackle' : ''}`;
+/* ---- D9: a ceramic is described in words, never by its engine ID. ----
+   A physical Vessel card has no number, so ceramicLabel() names a ceramic from its own attributes:
+   owner, Glaze, Shape, Decoration, Quality and Crackle ("Lin's Celadon Vase, Carved · Fine" /
+   林的青釉瓶·刻花·上品). It adds where the ceramic is ("in High 2" / 高温2号窑位, "in your workshop" /
+   你的作坊) only when asked to, or when another ceramic in the same list would read the same.
+   The production helper is ceramicLabel(ceramic, view, { withOwner, withPlace }) in the i18n layer (K14). */
+const ZH_ZONE = { high: '高温', middle: '中温', low: '低温' };
+const cerRaw = (x) => (x == null ? null : typeof x === 'string' ? cer(x) : x);
+/* Where a ceramic is now: a Shared Kiln space, an Imperial Kiln, a workshop, the finished ceramics. */
+function cerPlace(c) {
+  if (!c) return null;
+  if (c.placement && c.placement.kiln === 'shared' && c.placement.spaceId) return { kind: 'space', spaceId: c.placement.spaceId };
+  if (c.placement && c.placement.kiln === 'imperial') return { kind: 'imperial', ownerId: c.ownerId };
+  for (const ks of SEL.boardView.kilnSpaces) if (ks.ceramics.some((x) => x.id === c.id)) return { kind: 'space', spaceId: ks.spaceId };
+  for (const ps of SEL.playerSummaries) if (ps.imperial.kilnCeramic && ps.imperial.kilnCeramic.id === c.id) return { kind: 'imperial', ownerId: ps.playerId };
+  const fr = firingRec(c.id);
+  if (fr && fr.kiln === 'shared' && fr.spaceId && c.stage === 'loaded') return { kind: 'space', spaceId: fr.spaceId };
+  if (c.stage === 'shaped') return { kind: 'workshop', ownerId: c.ownerId };
+  if (c.stage === 'finished') return { kind: 'finished', ownerId: c.ownerId };
+  if (c.stage === 'delivered') return { kind: 'delivered', ownerId: c.ownerId };
+  return null;
 }
+/* "Lin's" / "your" / 林的 / 你的. names:true always uses the display name (the game log speaks in names). */
+function ownerWord(pid, names) {
+  if (!pid || !G.players[pid]) return '';
+  if (pid === VIEWER && !names) return zh() ? '你的' : 'your';
+  const n = P(pid).displayName;
+  return zh() ? `${n}的` : `${n}’s`;
+}
+function placeText(pl, names) {
+  if (!pl) return '';
+  const Z = zh(); const ow = pl.ownerId ? ownerWord(pl.ownerId, names) : '';
+  switch (pl.kind) {
+    case 'space': { const [z, i] = pl.spaceId.split('_'); return Z ? `${ZH_ZONE[z]}${i}号窑位` : `in ${tx(L.zones[z])} ${i}`; }
+    case 'imperial': return Z ? `${ow}御窑` : `in ${ow} Imperial Kiln`;
+    case 'workshop': return Z ? `${ow}作坊` : `in ${ow} workshop`;
+    case 'finished': return Z ? `${ow}成器` : `among ${ow} finished ceramics`;
+    case 'delivered': return Z ? '已交付' : 'delivered';
+  }
+  return '';
+}
+/* The words for one ceramic. o.withOwner (default true), o.withPlace (true | false | 'auto', default 'auto'),
+   o.among: other ceramics (ids or objects) in the same list; with 'auto' the place is added only when one of
+   them would otherwise read the same. o.bare leaves out Quality and Crackle (the game log names the ceramic as
+   it was, then states the result). o.cap capitalises "your" at the start of a sentence. o.names: see ownerWord. */
+function ceramicLabel(x, o = {}) {
+  const c = cerRaw(x);
+  if (!c) return zh() ? '一件器物' : 'a ceramic';
+  const Z = zh(); const withOwner = o.withOwner !== false;
+  const fr = c.id ? firingRec(c.id) : null;
+  const q = o.bare ? null : (o.q !== undefined ? o.q : c.quality || (fr && fr.quality));
+  const crk = !o.bare && (c.crackle || (fr && fr.crackle));
+  const glaze = c.glaze || (fr && fr.glaze);
+  const core = (() => {
+    const own = withOwner ? ownerWord(c.ownerId, o.names) : '';
+    if (Z) {
+      const s = c.shape ? shapeName(c.shape) : '器物';
+      return `${own}${glaze ? glazeName(glaze) : ''}${s}${c.decoration ? '·' + decoName(c.decoration) : ''}${q ? '·' + qName(q) : ''}${crk ? '·开片' : ''}`;
+    }
+    const s = c.shape ? shapeName(c.shape) : 'ceramic';
+    let t = `${own ? own + ' ' : ''}${glaze ? glazeName(glaze) + ' ' : ''}${s}${c.decoration ? ', ' + decoName(c.decoration) : ''}${q ? ' · ' + qName(q) : ''}${crk ? ' · Crackle' : ''}`;
+    if (o.cap) t = t.charAt(0).toUpperCase() + t.slice(1);
+    return t;
+  })();
+  const placeOf = o.placeOf || cerPlace;
+  const withPt = (txt, pt) => (pt ? (Z ? `${txt}（${pt}）` : `${txt}, ${pt}`) : txt);
+  const want = o.withPlace === undefined ? 'auto' : o.withPlace;
+  if (want !== 'auto') return want ? withPt(core, placeText(placeOf(c), o.names)) : core;
+  // 'auto': add the place only if another ceramic in the same list would read the same and the place tells
+  // them apart; a bare (log) label may instead add the Quality. Truly identical ceramics keep the same words.
+  // A Quality override (o.q) describes this ceramic only; every other ceramic is compared at its own Quality.
+  const plain = (y, extra = {}) => ceramicLabel(y, { ...o, ...(y === c ? {} : { q: undefined }), ...extra, withPlace: false, among: null });
+  const twins = (o.among || []).map(cerRaw).filter((y) => y && y.id !== c.id && plain(y) === core);
+  if (!twins.length) return core;
+  const pt = placeText(placeOf(c), o.names);
+  if (pt && twins.every((y) => placeText(placeOf(y), o.names) !== pt)) return withPt(core, pt);
+  if (o.bare) { const full = plain(c, { bare: false }); if (twins.every((y) => plain(y, { bare: false }) !== full)) return full; }
+  return core;
+}
+/* Where a ceramic sat in the current or most recent firing (the game log describes it as it was then). */
+function firingPlace(c) {
+  const id = c && c.id; if (!id) return null;
+  const rec = firingRec(id) || (SEL.firingSummary && SEL.firingSummary.ceramics[id]);
+  if (!rec) return null;
+  if (rec.kiln === 'shared' && rec.spaceId) return { kind: 'space', spaceId: rec.spaceId };
+  if (rec.kiln === 'imperial') return { kind: 'imperial', ownerId: rec.ownerId || c.ownerId };
+  return null;
+}
+/* Every undelivered ceramic on the table: the default context for telling two ceramics apart. */
+function tableCeramics() {
+  const ids = new Set(Object.keys(G.ceramics).filter((id) => G.ceramics[id].stage !== 'delivered'));
+  for (const ks of SEL.boardView.kilnSpaces) for (const c of ks.ceramics) ids.add(c.id);
+  for (const ps of SEL.playerSummaries) if (ps.imperial.kilnCeramic) ids.add(ps.imperial.kilnCeramic.id);
+  return [...ids];
+}
+/* Several ceramics as one phrase: "A and B", "A; B; C" (labels contain commas) / A、B、C. */
+const listJoin = (arr) => (zh() ? arr.join('、') : arr.length <= 2 ? arr.join(' and ') : arr.join('; '));
+function cerTitle(c, o = {}) { return c ? ceramicLabel(c, { cap: true, among: tableCeramics(), ...o }) : ''; }
 function cerShort(c) { return zh() ? `${glazeName(c.glaze)}${shapeName(c.shape)}` : `${c.glaze ? glazeName(c.glaze) + ' ' : ''}${shapeName(c.shape)}`; }
 function cerArt(c, sz, glaze, crk) {
   const g = glaze || c.glaze;
@@ -29767,10 +29871,19 @@ function cchip(id, o = {}) {
   const fr = firingRec(id);
   const q = o.q !== undefined ? o.q : (c.quality || (fr && fr.quality));
   const crk = c.crackle || (fr && fr.crackle);
-  const qt = q && o.showQ !== false ? `<span class="qt chip q q-${q}"><span class="ql-l">${esc(qName(q))}</span><span class="ql-s" aria-hidden="true">${QL[R.lang][q]}</span></span>` : '';
-  return `<span class="cchip${o.cls ? ' ' + o.cls : ''}${crk && o.crkBadge !== false ? ' has-crk' : ''}" title="${esc(cerTitle(c))}" style="--pc:${pc(c.ownerId)}" data-motion="ceramic">
-    <span class="ring">${cerArt(c, sz, o.glaze, crk)}</span>${o.badge ? `<span class="badge">${o.badge}</span>` : ''}${crk && o.crkBadge !== false ? `<span class="badge2"><span class="chip gold" title="${zh() ? '开片标' : 'Crackle marker'}">${zh() ? '片' : 'Cr'}</span></span>` : ''}
-    ${o.noid ? '' : `<span class="cid">${esc(c.id)}</span>`}${qt}</span>`;
+  const qt = q && o.showQ !== false ? `<span class="qt chip q q-${q}" aria-hidden="true"><span class="ql-l">${esc(qName(q))}</span><span class="ql-s" aria-hidden="true">${QL[R.lang][q]}</span></span>` : '';
+  // D9: the chip is the picture (art, owner ring, Quality and Crackle badges); its name is the ceramic in words.
+  const hmw = o.badge && c.heatMarker ? markerWords(c.heatMarker) : '';
+  const name = cerTitle(c, o.q !== undefined ? { q: o.q } : {}) + (hmw ? (zh() ? `，${hmw}` : `, ${hmw}`) : '');
+  return `<span class="cchip${o.cls ? ' ' + o.cls : ''}${crk && o.crkBadge !== false ? ' has-crk' : ''}" role="img" aria-label="${esc(name)}" title="${esc(name)}" style="--pc:${pc(c.ownerId)}" data-motion="ceramic">
+    <span class="ring" aria-hidden="true">${cerArt(c, sz, o.glaze, crk)}</span>${o.badge ? `<span class="badge">${o.badge}</span>` : ''}${crk && o.crkBadge !== false ? `<span class="badge2" aria-hidden="true"><span class="chip gold">${zh() ? '片' : 'Cr'}</span></span>` : ''}
+    ${qt}</span>`;
+}
+function markerWords(hm) {
+  if (!hm) return '';
+  const km = hm.source === 'kiln_master';
+  if (zh()) return `${km ? '窑工标' : '火标'}${hm.faceDown ? '（暗置）' : sgn(hm.value)}`;
+  return `${km ? 'Kiln Master marker' : 'Heat marker'} ${hm.faceDown ? 'face-down' : sgn(hm.value)}`;
 }
 function markerBadge(hm) {
   if (!hm) return '';
@@ -29787,19 +29900,49 @@ const REASONS = {
 };
 /* Rule-error text comes straight from labels.ruleErrors (src/game/ruleErrorText.ts). D7 wording for
    PERSONAL_SPACE_LOCKED lives there; the error code itself is unchanged. */
+/* D9: every placeholder is rendered as words, mirroring detailLabel() in src/game/ruleErrorText.ts: kiln spaces,
+   workers, players, Kilns, Techs, stages and phases by name, ceramics through ceramicLabel(). A placeholder with no
+   value takes a neutral word, and an unknown code gives a generic sentence, never the code itself. */
+const ERR_STAGE = { shaped: { en: 'Shaped', zh: '坯' }, loaded: { en: 'Loaded', zh: '入窑' }, finished: { en: 'Finished', zh: '成器' }, delivered: { en: 'Delivered', zh: '已交付' } };
+const ERR_DEFAULTS = {
+  expectedPhase: { en: 'the phase for that action', zh: '该行动所属的阶段' }, waitingFor: { en: 'the other players', zh: '其他玩家' },
+  workerId: { en: 'worker', zh: '工人' }, locationId: { en: 'This location', zh: '此地点' }, discipline: { en: 'the matching discipline’s', zh: '相应门类的' },
+  ownerId: { en: 'Another player', zh: '他人' }, techId: { en: 'That Tech', zh: '该技艺' }, kilnId: { en: 'That Kiln ability', zh: '该窑口能力' },
+  spaceId: { en: 'That kiln space', zh: '此窑位' }, orderId: { en: 'that Order', zh: '该张' }, reason: { en: 'requirements not met', zh: '要求未满足' },
+  stage: { en: 'not ready', zh: '不可用' }, resource: { en: 'resources', zh: '资源' },
+};
+function errDetail(k, val) {
+  if (typeof val !== 'string') return String(val);
+  const many = (f) => val.split(',').map((x) => f(x.trim())).join(zh() ? '、' : ', ');
+  switch (k) {
+    case 'playerId': case 'waitingFor': case 'ownerId': return many((id) => (G.players[id] ? P(id).displayName : tx(ERR_DEFAULTS.ownerId)));
+    case 'ceramicId': case 'ceramicIds': case 'underCeramicId': return many((id) => ceramicLabel(id, { among: tableCeramics() }));
+    case 'spaceId': return /^(high|middle|low)_\d$/.test(val) ? (zh() ? placeText({ kind: 'space', spaceId: val }) : spaceName(val)) : tx(ERR_DEFAULTS.spaceId);
+    case 'workerId': case 'workerKind': return val.includes('shifu') ? workerName('shifu') : val.includes('apprentice') ? workerName('apprentice') : tx(ERR_DEFAULTS.workerId);
+    case 'kilnId': return L.kilns[val] ? kilnName(val) : tx(ERR_DEFAULTS.kilnId);
+    case 'techId': return L.techs[val] ? techName(val) : tx(ERR_DEFAULTS.techId);
+    case 'stage': return ERR_STAGE[val] ? tx(ERR_STAGE[val]) : tx(ERR_DEFAULTS.stage);
+    case 'phase': case 'expectedPhase': return L.enginePhases[val] ? tx(L.enginePhases[val]) : tx(ERR_DEFAULTS.expectedPhase);
+    case 'resource': return L.resources[val] ? resName(val) : tx(ERR_DEFAULTS.resource);
+    case 'locationId': return L.locations[val] ? locName(val) : tx(ERR_DEFAULTS.locationId);
+    case 'discipline': return L.disciplines[val] ? discName(val) : tx(ERR_DEFAULTS.discipline);
+    case 'reason': return REASONS[val] ? tx(REASONS[val]) : tx(ERR_DEFAULTS.reason);
+    case 'orderId': return L.orders[val] ? val : tx(ERR_DEFAULTS.orderId);
+  }
+  return val;
+}
 function errText(code, details, extra = {}) {
-  const tpl = L.ruleErrors[code]; if (!tpl) return code;
+  const tpl = L.ruleErrors[code];
+  if (!tpl) return zh() ? '此时不能这样做。' : 'That move is not allowed right now.';
   const v = { ...(details || {}), ...extra };
-  if (v.resource && L.resources[v.resource]) v.resource = resName(v.resource);
-  if (v.locationId && L.locations[v.locationId]) v.locationId = locName(v.locationId);
-  if (v.discipline && L.disciplines[v.discipline]) v.discipline = discName(v.discipline);
-  if (v.reason && REASONS[v.reason]) v.reason = tx(REASONS[v.reason]);
-  return fmt(tx(tpl), v);
+  return String(tx(tpl)).replace(/\{(\w+)\}/g, (_, k) => (v[k] != null ? errDetail(k, v[k]) : ERR_DEFAULTS[k] ? tx(ERR_DEFAULTS[k]) : ''));
 }
 function fireCard(v, big) { return `<span class="firec${big ? ' big' : ''} ${v < 0 ? 'neg' : v > 0 ? 'pos' : ''}">${sgn(v)}</span>`; }
 const CROWN = '<svg width="13" height="11" viewBox="0 0 13 11" aria-hidden="true"><path d="M1 9.5h11L12 2.5 9 5.5 6.5 1 4 5.5 1 2.5z" fill="currentColor"/></svg>';
 const crowns = (n) => `<span class="chip gold" title="${zh() ? '御令' : 'Crowns'}">${CROWN}×${n}</span>`;
 function note(html) { return `<div class="note">${html}</div>`; }
+/* Engine names for reviewers: shown only with Notes on, never to players (D9). */
+const DEV = (t) => `<span class="devtag">${t}</span>`;
 const N = (en, zhs) => note(zh() ? zhs : en);
 
 /* Open Fire discard: the only Fire-deck information on screen (owner decision D4). */
@@ -29996,13 +30139,13 @@ function sharedKiln(opts = {}) {
       if (!s.active) return `<div class="ksp covered"><div class="kh">${esc(label)}</div><div class="kb">${u('covered', { n: G.playerCount })}</div></div>`;
       const mod = s.kilnFurniture ? s.kilnFurniture.modifier : s.effectiveModifier;
       let body = s.ceramics.map((c) => cchip(c.id, { sz: 30, badge: markerBadge(c.heatMarker), showQ: true })).join('');
-      if (s.ceramics.length > 1) body = `<span class="stack" title="${esc(techName('T21'))}">${body}</span><span class="stk-l">${s.ceramics.map((c) => esc(c.id)).join(' + ')}</span>`;
-      if (ch.has(id)) { const vid = ch.get(id); const v = SEL.shapedVessels.find((x) => x.id === vid); if (v) body += `<span class="cchip pending" style="--pc:${pc(VIEWER)}" title="${esc(u('pending'))}"><span class="ring">${cerArt(v, 30, A.d.gl.glaze[vid])}</span><span class="cid">${esc(vid)} · ${u('pending')}</span></span>`; }
+      if (s.ceramics.length > 1) body = `<span class="stack" title="${esc(techName('T21'))}">${body}</span><span class="stk-l">${u('stackN', { n: s.ceramics.length })}</span>`;
+      if (ch.has(id)) { const vid = ch.get(id); const v = SEL.shapedVessels.find((x) => x.id === vid); if (v) body += `<span class="cchip pending" style="--pc:${pc(VIEWER)}" role="img" aria-label="${esc(ceramicLabel({ ...v, glaze: A.d.gl.glaze[vid] }, { cap: true, withPlace: false }) + paren(u('pending')))}" title="${esc(ceramicLabel({ ...v, glaze: A.d.gl.glaze[vid] }, { cap: true, withPlace: false }) + paren(u('pending')))}"><span class="ring" aria-hidden="true">${cerArt(v, 30, A.d.gl.glaze[vid])}</span><span class="cid">${u('pending')}</span></span>`; }
       if (!body) body = `<span class="empty">${u('empty')}</span>`;
       const tiles = (s.ceramics.length > 1 ? `<span class="tile inv">${esc(techName('T21'))}</span>` : '') + (s.setterMarkOwnerId ? `<span class="tile setter" style="--pc:${pc(s.setterMarkOwnerId)}">${u('setter')}</span>` : '') + (s.kilnFurniture ? `<span class="tile furn" title="${pn(s.kilnFurniture.ownerId)}">${u('furniture', { m: sgn(s.kilnFurniture.modifier) })}</span>` : '');
       const inner = `<div class="kh">${esc(label)}<span class="mod">${sgn(mod)}</span></div><div class="kb">${body}</div>${tiles ? `<div class="tiles">${tiles}</div>` : ''}`;
       const target = t.has(id) && !opts.static;
-      return target ? `<button class="ksp target${ch.has(id) ? ' chosen' : ''}" data-act="dest" data-v="${id}" aria-pressed="${ch.has(id)}" aria-label="${esc(u('loadInto') + ' ' + label)}">${inner}</button>` : `<div class="ksp">${inner}</div>`;
+      return target ? `<button class="ksp target${ch.has(id) ? ' chosen' : ''}" data-act="dest" data-v="${id}" aria-pressed="${ch.has(id)}" aria-label="${esc(zh() ? u('loadInto') + placeText({ kind: 'space', spaceId: id }) : u('loadInto') + ' ' + label)}">${inner}</button>` : `<div class="ksp">${inner}</div>`;
     }).join('');
     const sp = '<div class="kspacer" aria-hidden="true"></div>';
     return `<div class="krow ${z}"><div class="zlab"><b>${esc(tx(L.zones[z]))}</b><span class="zm">${sgn(L.kilnSpaces[z + '_1'].modifier)}</span></div>${z === 'low' ? sp + cells + sp : cells}</div>`;
@@ -30034,7 +30177,7 @@ function idleStage() {
   let last = `<span>${u('noFiringYet')}</span>`;
   if (fs) {
     const cs = Object.values(fs.ceramics);
-    last = `<span><b>${u('lastFiring', { r: fs.round })}</b></span><span>${u('kilnDie')} <b>${fs.kilnDie}</b> + ${Object.entries(fs.contributions).map(([p, c]) => `${pn(p)} ${esc(tx(L.contributionCards[c.card]))}`).join(zh() ? '、' : ', ')} = ${u('baseHeat')} <b>${fs.baseHeat}</b></span><span>${u('fire')} ${fireCard(fs.fireModifier)} → ${u('globalHeat')} <b>${fs.globalHeat}</b></span><span class="cerrow">${cs.map((c) => (cer(c.ceramicId) ? cchip(c.ceramicId, { sz: 30, q: c.quality }) : `<span class="chip q q-${c.quality}">${esc(c.ceramicId)} ${esc(qName(c.quality))}</span>`)).join('')}</span>`;
+    last = `<span><b>${u('lastFiring', { r: fs.round })}</b></span><span>${u('kilnDie')} <b>${fs.kilnDie}</b> + ${Object.entries(fs.contributions).map(([p, c]) => `${pn(p)} ${esc(tx(L.contributionCards[c.card]))}`).join(zh() ? '、' : ', ')} = ${u('baseHeat')} <b>${fs.baseHeat}</b></span><span>${u('fire')} ${fireCard(fs.fireModifier)} → ${u('globalHeat')} <b>${fs.globalHeat}</b></span><span class="cerrow">${cs.map((c) => (cer(c.ceramicId) ? cchip(c.ceramicId, { sz: 30, q: c.quality }) : `<span class="chip q q-${c.quality}">${esc(ceramicLabel({ ownerId: c.ownerId, glaze: c.glaze }, { q: c.quality }))}</span>`)).join('')}</span>`;
   }
   return `<div class="stage"><div class="banner"><h3>${u('idleTitle')}</h3><span class="go">${u('kilnDie')} · ${u('thisRound')} <span class="die">${G.kilnDie.value}</span> · ${u('discardOpen')} <span style="display:inline-flex">${fireDiscardHtml(G.fireDiscard)}</span></span></div>
     <div class="idle"><div class="last">${last}</div></div></div>`;
@@ -30143,11 +30286,13 @@ function ceramicsRow(pid, sz = 30) {
 }
 function hmLine(pid) {
   const ps = PS(pid); const parts = [];
-  if (ps.heatMarkerCeramicId) { const c = cer(ps.heatMarkerCeramicId); parts.push(u('hmOn', { c: ps.heatMarkerCeramicId, fd: c && c.heatMarker && c.heatMarker.faceDown ? u('hmFd') : '' })); }
+  // D9: the board names the ceramic (its own, so no owner) and where it is.
+  const own = (id) => esc(ceramicLabel(id, { withOwner: false, withPlace: true }));
+  if (ps.heatMarkerCeramicId) { const c = cer(ps.heatMarkerCeramicId); parts.push(u('hmOn', { c: own(ps.heatMarkerCeramicId), fd: c && c.heatMarker && c.heatMarker.faceDown ? u('hmFd') : '' })); }
   else parts.push(u('hmSupply'));
-  if (ps.kilnMasterCeramicId) parts.push(esc(u('kmOn', { c: ps.kilnMasterCeramicId })));
+  if (ps.kilnMasterCeramicId) parts.push(u('kmOn', { c: own(ps.kilnMasterCeramicId) }));
   const imp = ps.imperial;
-  parts.push(imp.kilnGained ? `${u('imperialKiln')}${C()}${imp.kilnCeramic ? esc(imp.kilnCeramic.id) : u('impEmpty')}` : `${u('imperialKiln')}${C()}${zh() ? '尚无' : 'not yet'}`);
+  parts.push(imp.kilnGained ? `${u('imperialKiln')}${C()}${imp.kilnCeramic ? esc(ceramicLabel(imp.kilnCeramic, { withOwner: false, withPlace: false })) : u('impEmpty')}` : `${u('imperialKiln')}${C()}${zh() ? '尚无' : 'not yet'}`);
   return parts.join(' · ');
 }
 /* One full Kiln Player Board. Other players' boards show public information only: the hand is card backs and a count. */
@@ -30193,12 +30338,32 @@ function ownSummary() {
 
 /* ================= log ================= */
 function evText(e) {
-  const n = (pid) => (pid && G.players[pid] ? P(pid).displayName : pid);
+  const n = (pid) => (pid && G.players[pid] ? P(pid).displayName : (zh() ? '一名玩家' : 'a player'));
   const Z = zh();
+  /* D9: the log names ceramics in words. It uses display names (it is the public history), leaves out Quality
+     (the line states the result), and adds the place only when two ceramics on the table would read the same.
+     A ceramic no longer in the view is described from the event itself, or generically. */
+  const ctx = tableCeramics();
+  const cl = (id, hint = {}) => {
+    const c = id && cer(id);
+    if (c) return ceramicLabel(c, { names: true, bare: true, among: ctx, placeOf: (y) => (y.id === id && hint.place) || firingPlace(y) || cerPlace(y) });
+    if (hint.ownerId || hint.glaze || hint.shape) return ceramicLabel({ ownerId: hint.ownerId, glaze: hint.glaze, shape: hint.shape, decoration: hint.decoration }, { names: true, withPlace: false });
+    return Z ? '一件器物' : 'a ceramic';
+  };
+  // When the line's subject owns the ceramic, say "their" / 其 instead of repeating the name ("Lin turned the
+  // Heat marker on their Celadon Censer, Painted"). The twin check still runs on the full label.
+  const own = (id, hint = {}) => {
+    const t = cl(id, hint); const c = id && cer(id); const oid = c ? c.ownerId : hint.ownerId;
+    if (!oid || oid !== e.playerId || !G.players[oid]) return t;
+    const ow = ownerWord(oid, true); const pre = Z ? ow : ow + ' ';
+    return t.startsWith(pre) ? (Z ? '其' : 'their ') + t.slice(pre.length) : t;
+  };
+  const placeOfEv = (pl) => (pl && pl.kiln === 'shared' && pl.spaceId ? { kind: 'space', spaceId: pl.spaceId } : pl && pl.kiln === 'imperial' ? { kind: 'imperial', ownerId: e.playerId } : undefined);
+  const ceramicsIn = (ids) => { const known = ids.filter((id) => cer(id)); return known.length === ids.length ? listJoin(ids.map((id) => cl(id))) : (Z ? `${ids.length}件器物` : `${ids.length} ${plural(ids.length, 'ceramic', 'ceramics')}`); };
   switch (e.type) {
     case 'WORKER_PLACED': return Z ? `${n(e.playerId)}派${workerName(e.kind)}至${locName(e.locationId)}` : `${n(e.playerId)} placed ${workerName(e.kind)} at ${locName(e.locationId)}`;
-    case 'CERAMIC_FORMED': return Z ? `${n(e.playerId)}制坯：${decoName(e.decoration)}${shapeName(e.shape)}` : `${n(e.playerId)} formed a ${decoName(e.decoration)} ${shapeName(e.shape)}`;
-    case 'CERAMIC_LOADED': return Z ? `${n(e.playerId)}将${e.ceramicId}施${glazeName(e.glaze)}装窑` : `${n(e.playerId)} glazed ${e.ceramicId} ${glazeName(e.glaze)} and loaded it`;
+    case 'CERAMIC_FORMED': return Z ? `${n(e.playerId)}制坯：${shapeName(e.shape)}·${decoName(e.decoration)}` : `${n(e.playerId)} formed a ${decoName(e.decoration)} ${shapeName(e.shape)}`;
+    case 'CERAMIC_LOADED': { const c = cer(e.ceramicId); const evPl = placeOfEv(e.placement); const nm = own(e.ceramicId, { ownerId: e.playerId, glaze: e.glaze, place: evPl }); const pt = placeText(evPl || (c && cerPlace(c)), true); return Z ? `${n(e.playerId)}将${nm}施釉装入${pt || '窑中'}` : `${n(e.playerId)} glazed and loaded ${nm}${pt ? ' ' + pt : ''}`; }
     case 'ORDER_RESERVED': return Z ? `${n(e.playerId)}承接${e.source === 'face_up' ? e.orderId : '1张'}` : `${n(e.playerId)} reserved ${e.source === 'face_up' ? e.orderId : 'an Order'}`;
     case 'PRIVATE_LOOK_OPENED': return Z ? `${n(e.playerId)}私下查看${e.count}张委托` : `${n(e.playerId)} is privately looking at ${e.count} Orders`;
     case 'ORDER_COMPLETED': return Z ? `${n(e.playerId)}完成委托${e.record.orderId}（${e.record.vp}分）` : `${n(e.playerId)} completed ${e.record.orderId} (${e.record.vp} VP)`;
@@ -30208,18 +30373,22 @@ function evText(e) {
     case 'CONTRIBUTION_SUBMITTED': return Z ? `${n(e.playerId)}已暗选控火` : `${n(e.playerId)} chose a Contribution (hidden)`;
     case 'CONTRIBUTIONS_REVEALED': return (Z ? '控火亮牌：' : 'Contributions revealed: ') + Object.entries(e.contributions).map(([p, c]) => `${n(p)} ${tx(L.contributionCards[c.card])}`).join(Z ? '，' : ', ');
     case 'BASE_HEAT_DETERMINED': return Z ? `基础火候 ${e.baseHeat}` : `Base Heat ${e.baseHeat}`;
-    case 'HEAT_MARKER_TURNED': return Z ? `${n(e.playerId)}将${e.ceramicId}上的火标翻为${sgn(e.value)}` : `${n(e.playerId)} turned the Heat marker on ${e.ceramicId} to ${sgn(e.value)}`;
+    case 'HEAT_MARKER_TURNED': return Z ? `${n(e.playerId)}将${own(e.ceramicId)}上的火标翻为${sgn(e.value)}` : `${n(e.playerId)} turned the Heat marker on ${own(e.ceramicId)} to ${sgn(e.value)}`;
     case 'HEAT_MARKER_RETURNED': return Z ? `${n(e.playerId)}收回火标` : `${n(e.playerId)} returned their Heat marker`;
-    case 'KILN_MASTER_PLACED': return Z ? `${n(e.playerId)}将窑工标${sgn(e.value)}置于${e.ceramicId}` : `${n(e.playerId)} placed Kiln Master ${sgn(e.value)} on ${e.ceramicId}`;
+    case 'KILN_MASTER_PLACED': return Z ? `${n(e.playerId)}将窑工标${sgn(e.value)}置于${own(e.ceramicId)}` : `${n(e.playerId)} placed Kiln Master ${sgn(e.value)} on ${own(e.ceramicId)}`;
     case 'TECH_USED': return Z ? `${n(e.playerId)}使用${techName(e.techId)}` : `${n(e.playerId)} used ${techName(e.techId)}`;
     case 'TECH_ACQUIRED': return Z ? `${n(e.playerId)}习得${techName(e.techId)}（+${e.vp}分）` : `${n(e.playerId)} acquired ${techName(e.techId)} (+${e.vp} VP)`;
     case 'FIRE_REVEALED': return Z ? `窑火 ${sgn(e.modifier)}：全窑火候 ${e.globalHeat}` : `Fire ${sgn(e.modifier)}: Global Heat ${e.globalHeat}`;
     case 'ACTUAL_HEAT_CALCULATED': return Z ? `算出${e.results.length}件器物的实际火候` : `Actual Heat calculated for ${e.results.length} ceramics`;
     case 'KILN_ABILITY_USED': return Z ? `${n(e.playerId)}发动${tx(L.kilns[e.kilnId].abilityName)}` : `${n(e.playerId)} used ${tx(L.kilns[e.kilnId].abilityName)}`;
-    case 'JUN_ADJUSTED': return Z ? `${n(e.playerId)}钧窑调火：${e.ceramicId} ${sgn(e.delta)} → ${e.finalActualHeat}` : `${n(e.playerId)} Jun ${sgn(e.delta)} on ${e.ceramicId} → ${e.finalActualHeat}`;
-    case 'QUALITY_ASSIGNED': return Z ? `${e.ceramicId} 定品：${qName(e.quality)}（火候差${e.heatDifference}）` : `${e.ceramicId} → ${qName(e.quality)} (difference ${e.heatDifference})`;
+    case 'JUN_ADJUSTED': return Z ? `${n(e.playerId)}钧窑调火：${own(e.ceramicId)} ${sgn(e.delta)}，实际火候${e.finalActualHeat}` : `${n(e.playerId)} used Jun: ${own(e.ceramicId)} ${sgn(e.delta)} → Actual Heat ${e.finalActualHeat}`;
+    case 'QUALITY_ASSIGNED': return Z ? `${cl(e.ceramicId)}定品：${qName(e.quality)}（火候差${e.heatDifference}）` : `${cl(e.ceramicId)} → ${qName(e.quality)} (difference ${e.heatDifference})`;
+    case 'CERAMIC_SALVAGED': return Z ? `${n(e.playerId)}付铜钱弃置${own(e.ceramicId, { ownerId: e.playerId })}` : `${n(e.playerId)} paid to discard ${own(e.ceramicId, { ownerId: e.playerId })}`;
+    case 'GE_CRACKLE_USED': case 'SECOND_FIRING_STARTED': case 'SECOND_FIRING_RESOLVED': case 'PROTECTIVE_SAGGARS_USED': {
+      const what = { GE_CRACKLE_USED: Z ? '哥窑开片' : 'Ge Crackle', SECOND_FIRING_STARTED: Z ? '复烧' : 'Second Firing', SECOND_FIRING_RESOLVED: Z ? '复烧结果' : 'Second Firing result', PROTECTIVE_SAGGARS_USED: Z ? '匣钵护烧' : 'Protective Saggars' }[e.type];
+      return Z ? `${n(e.playerId)}：${what}，${own(e.ceramicId)}${e.quality ? '→' + qName(e.quality) : ''}` : `${n(e.playerId)}: ${what} on ${own(e.ceramicId)}${e.quality ? ' → ' + qName(e.quality) : ''}`; }
     case 'RESOURCES_CHANGED': { const parts = ['clay', 'wood', 'coins'].filter((k) => e[k]).map((k) => resDelta(k, e[k])); return `${n(e.playerId)} ${parts.join(Z ? '，' : ', ')}`; }
-    case 'FIRING_FINISHED': return Z ? `开窑取器：${e.finishedCeramicIds.join('、')}` : `Firing finished: ${e.finishedCeramicIds.join(', ')}`;
+    case 'FIRING_FINISHED': return Z ? `开窑取器：${ceramicsIn(e.finishedCeramicIds)}` : `Firing finished: ${ceramicsIn(e.finishedCeramicIds)}`;
     case 'FIRING_STARTED': return Z ? '烧窑开始' : 'Firing started';
     case 'WORK_PHASE_ENDED': return Z ? '派工阶段结束' : 'Work Phase ended';
     case 'ROUND_STARTED': return Z ? `第${e.round}轮开工` : `Round ${e.round} started`;
@@ -30236,7 +30405,8 @@ function evText(e) {
     case 'ORDER_TURN_STARTED': return Z ? `交货阶段：轮到${n(e.playerId)}` : `${n(e.playerId)}’s Order turn`;
     case 'ORDER_TURN_ENDED': return Z ? `${n(e.playerId)}结束回合${e.automatic ? '（无可完成的委托）' : ''}` : `${n(e.playerId)} ended their Order turn${e.automatic ? ' (nothing to complete)' : ''}`;
     case 'FINAL_SCORE_CALCULATED': return Z ? '终局计分完成' : 'Final scores calculated';
-    default: return e.type.toLowerCase().replace(/_/g, ' ');
+    // An event without a template is never shown by its engine name.
+    default: return e.playerId && G.players[e.playerId] ? (Z ? `${n(e.playerId)}有新动作` : `${n(e.playerId)} took an action`) : (Z ? '对局有新进展' : 'The game moved on');
   }
 }
 function logList() {
@@ -30269,7 +30439,7 @@ function results() {
   const rows = SEL.scoreBreakdownRows.map((r) => {
     const cells = pids.map((pid) => {
       const v = fr.scores[pid][r];
-      if (r === 'exhibition') return `<td><b>${v.total}</b><br><span class="faint">${u('exhib', { q: v.qualityVp, s: v.shapesBonus, g: v.glazesBonus })}</span><br><span class="cerrow" style="justify-content:flex-end">${v.ceramicIds.map((id) => (cer(id) ? cchip(id, { sz: 26 }) : esc(id))).join('')}</span></td>`;
+      if (r === 'exhibition') return `<td><b>${v.total}</b><br><span class="faint">${u('exhib', { q: v.qualityVp, s: v.shapesBonus, g: v.glazesBonus })}</span><br><span class="cerrow" style="justify-content:flex-end">${v.ceramicIds.map((id) => (cer(id) ? cchip(id, { sz: 26 }) : `<span class="small">${esc(ceramicLabel(null))}</span>`)).join('')}</span></td>`;
       return `<td class="${r === 'techs' ? 'a1' : ''}">${r === 'total' ? `<b>${v}</b>` : v}</td>`;
     }).join('');
     return `<tr class="${r === 'total' ? 'total' : ''}"><th scope="row">${esc(tx(SCORE_ROWS[r] || { en: r, zh: r }))}</th>${cells}</tr>`;
@@ -30278,7 +30448,7 @@ function results() {
   const tie = SEL.tieBreakOrder.map((k) => `<tr><th scope="row">${esc(tx(TIE_ROWS[k]))}</th>${pids.map((pid) => { const s = st.find((x) => x.playerId === pid); return `<td>${k === 'shared_victory' ? (fr.winnerIds.includes(pid) && shared ? '✓' : '–') : s.tieBreak[k]}</td>`; }).join('')}</tr>`).join('');
   const head = `<tr><th scope="col"></th>${pids.map((pid) => `<th scope="col"><span class="sw" style="--pc:${pc(pid)}"></span>${pname(pid)}</th>`).join('')}</tr>`;
   return `<div class="blk"><div class="podium">${podium}</div></div>
-    <div class="blk"><div class="blk-h"><h3>${u('scoreT')}</h3><span class="meta">scoreBreakdownRows · finalResult</span></div>
+    <div class="blk"><div class="blk-h"><h3>${u('scoreT')}</h3><span class="meta">${DEV('scoreBreakdownRows · finalResult')}</span></div>
       <div class="calc-wrap"><table class="calc score"><thead>${head}</thead><tbody>${rows}</tbody></table></div>
       <p class="small muted" style="margin:6px 0 0">${u('a1note')}</p></div>
     <div class="blk"><div class="blk-h"><h3>${u('tieT')}</h3><span class="meta">${tied.length > 1 ? (zh() ? `并列：${tied.map((s) => pn(s.playerId)).join('、')}` : `tied: ${tied.map((s) => pn(s.playerId)).join(', ')}`) : ''}</span></div>
@@ -30390,24 +30560,35 @@ function subEditor(loc) {
     if (q) {
       const lines = q.lines.map((ln) => `<div class="ln"><span>${ln.kind === 'shape_clay' ? esc(shapeName(f.shape)) : ln.kind === 'decoration' ? esc(decoName(f.deco)) : esc(ln.kind)}</span><span>${sgn(ln.amount).replace('+', '')} ${esc(resName(ln.resource))}</span></div>`).join('');
       qhtml = `<div class="quote">${lines}<div class="ln tot"><span>${u('quote')}</span><span>${['clay', 'coins'].filter((k) => q.pay[k]).map((k) => `${q.pay[k]} ${esc(resName(k))}`).join(' + ')}</span></div></div>${q.ok ? deltaRow(q.gain, q.pay) : `<div class="err">${esc(errText(q.error.code, q.error.details))}</div>`}`;
-    } else qhtml = `<div class="small faint">${u('quoteMissing')}</div>`;
+    } else qhtml = `<div class="small faint">${u('quoteMissing')}</div>${N('Quote not captured in this fixture: the client calls <code>quoteFormDecorate(view, draft)</code>.', '此夹具未采集该报价：客户端调用 <code>quoteFormDecorate(view, draft)</code>。')}`;
     return `<div class="sub"><h4>${u('shapeT')}</h4><div class="pills">${shapes}</div><h4>${u('decoT')}</h4><div class="pills">${decos}</div>${qhtml}</div>`;
   }
   if (loc === 'glaze_load') {
     const vessels = SEL.shapedVessels; const max = isS ? 2 : 1; const g = A.d.gl;
     if (!g.vessels.length) g.vessels = [vessels[0].id];
     g.vessels = g.vessels.slice(0, max);
-    const first = g.vessels[0];
-    if (!g.glaze[first]) g.glaze[first] = 'celadon';
-    const vsel = vessels.map((v) => `<button class="pill" data-act="vessel" data-v="${v.id}" aria-pressed="${g.vessels.includes(v.id)}">${cerArt(v, 22, g.glaze[v.id])}${esc(v.id)} · ${esc(shapeName(v.shape))} · ${esc(decoName(v.decoration))}</button>`).join('');
-    const gl = Object.keys(L.glazes).map((k) => `<button class="pill" data-act="glaze" data-v="${k}" style="--g:var(--glz-${k})" aria-pressed="${g.glaze[first] === k}"><span class="g"></span>${esc(glazeName(k))} · ${u('prefers', { n: L.glazes[k].preferredHeat })}</button>`).join('');
-    const dests = SEL.loadDestinationOptions.ceramicId === first ? SEL.loadDestinationOptions.options : [];
-    const ds = dests.map((o) => { const id = o.destination.spaceId; return `<button class="pill" data-act="dest" data-v="${id}" aria-pressed="${g.dest[first] === id}">${esc(spaceName(id))} <b>${sgn(o.modifier)}</b></button>`; }).join('');
-    const mk = isS ? `<div><h4>${u('markerQ')}</h4><div class="pills">${SEL.heatMarkerTargets.map((id) => `<button class="pill" data-act="marker" data-v="${id}" aria-pressed="${g.marker === id}"><span class="hm fd" style="min-width:18px;height:18px">?</span>${esc(id)}</button>`).join('')}<button class="pill" data-act="marker" data-v="" aria-pressed="${!g.marker}">${u('noMarker')}</button></div><div class="small muted" style="margin-top:4px">${u('markerNote')}</div></div>` : '';
+    for (const v of g.vessels) if (!g.glaze[v]) g.glaze[v] = 'celadon';
+    const first = g.vessels[0]; const two = g.vessels.length > 1;
+    // D9: your shaped vessels are named by Shape and Decoration (the glaze is chosen below).
+    const vName = (id) => ceramicLabel(id, { withOwner: false, among: vessels, cap: true });
+    const vsel = vessels.map((v) => `<button class="pill" data-act="vessel" data-v="${v.id}" aria-pressed="${g.vessels.includes(v.id)}"><span aria-hidden="true">${cerArt(v, 22, g.glaze[v.id])}</span>${esc(vName(v.id))}</button>`).join('');
+    const glRow = (vid) => Object.keys(L.glazes).map((k) => `<button class="pill" data-act="glaze" data-c="${vid}" data-v="${k}" style="--g:var(--glz-${k})" aria-pressed="${g.glaze[vid] === k}"><span class="g"></span>${esc(glazeName(k))} · ${u('prefers', { n: L.glazes[k].preferredHeat })}</button>`).join('');
+    // Destinations come from loadDestinationOptions for the draft; the second vessel's list is the same query
+    // with the first load included, so here a space the first vessel takes drops out.
+    const dests = SEL.loadDestinationOptions ? SEL.loadDestinationOptions.options : [];
+    const dsRow = (vid, skip) => dests.filter((o) => !skip || o.destination.spaceId !== skip).map((o) => { const id = o.destination.spaceId; return `<button class="pill" data-act="dest" data-c="${vid}" data-v="${id}" aria-pressed="${g.dest[vid] === id}">${esc(spaceName(id))} <b>${sgn(o.modifier)}</b></button>`; }).join('');
+    // Heat-marker targets: your loaded ceramics without a marker, then the vessels this action loads.
+    const isVessel = (id) => vessels.some((v) => v.id === id);
+    const mTargets = [...SEL.heatMarkerTargets.filter((id) => !isVessel(id)), ...(SEL.heatMarkerTargets.length ? g.vessels : [])];
+    if (g.marker && !mTargets.includes(g.marker)) g.marker = null;
+    const mName = (id) => (!two && id === first ? (zh() ? '此件' : 'This vessel') : isVessel(id) ? vName(id) : ceramicLabel(id, { withOwner: false, among: mTargets, cap: true }));
+    const mk = isS ? `<div><h4>${u('markerQ')}</h4><div class="pills">${mTargets.map((id) => `<button class="pill" data-act="marker" data-v="${id}" aria-pressed="${g.marker === id}"><span class="hm fd" style="min-width:18px;height:18px" aria-hidden="true">?</span>${esc(mName(id))}</button>`).join('')}<button class="pill" data-act="marker" data-v="" aria-pressed="${!g.marker}">${u('noMarker')}</button></div><div class="small muted" style="margin-top:4px">${u('markerNote')}</div></div>` : '';
+    const head = (vid, what, aside) => `<h4>${esc(vName(vid))}${zh() ? '：' : ' · '}${what}${aside ? `${zh() ? '' : ' '}<span class="aside">${paren(aside).trim()}</span>` : ''}</h4>`;
+    const perVessel = g.vessels.map((vid, i) => `<div>${head(vid, u('glaze'))}<div class="pills">${glRow(vid)}</div></div>
+      <div>${head(vid, u('loadInto'), i === 0 ? u('orKiln') : '')}<div class="pills">${dsRow(vid, i === 0 ? null : g.dest[first])}</div></div>`).join('');
     return `<div class="sub"><h4>${u('pickVessel', { n: max })}</h4><div class="pills">${vsel}</div>
-      <div><h4>${esc(first)} · ${u('glaze')}</h4><div class="pills">${gl}</div></div>
-      <div><h4>${esc(first)} · ${u('loadInto')} <span class="aside">${paren(u('orKiln')).trim()}</span></h4><div class="pills">${ds}</div></div>
-      ${g.vessels.length > 1 ? N(u('secondVessel'), u('secondVessel')) : ''}${mk}
+      ${perVessel}
+      ${two ? N('The second vessel’s spaces come from <code>loadDestinationOptions</code> queried again with the first load in the draft; this fixture only captured the first query, so the wireframe drops the first vessel’s space. Heat-marker targets likewise come from <code>heatMarkerTargets(view, pid, loads)</code> with both loads.', '第二件坯的可装窑位来自把第一件装入计入草稿后重新查询的 <code>loadDestinationOptions</code>；本夹具只采集了第一次查询，线框图因此仅去掉第一件所占窑位。火标目标同样取自含两次装入的 <code>heatMarkerTargets(view, pid, loads)</code>。') : ''}${mk}
       ${N('When <code>loadDestinationOptions</code> includes the player’s Imperial Kiln, this row adds it with the same −1 / 0 / +1 chip set as the Imperial Kiln tile.', '当 <code>loadDestinationOptions</code> 含御窑时，此行增加御窑选项，并使用与御窑板块相同的 −1／0／+1 修正选择。')}</div>`;
   }
   if (loc === 'commission_market') {
@@ -30435,23 +30616,31 @@ function workSummary() {
   const wid = PS(VIEWER).availableWorkerIds.find((x) => (A.worker === 'shifu' ? x.endsWith('shifu') : x.includes('apprentice')));
   let extra = ''; let cmd = { type: 'PLACE_' + A.loc.toUpperCase(), workerId: wid };
   if (A.loc === 'glaze_load') {
-    const g = A.d.gl; const f = g.vessels[0];
-    extra = ` — ${f} → ${glazeName(g.glaze[f])}, ${g.dest[f] ? spaceName(g.dest[f]) : '?'}${g.marker ? (zh() ? `；火标暗置于${g.marker}` : `; Heat marker face-down on ${g.marker}`) : ''}`;
-    cmd.loads = [{ ceramicId: f, destination: { kiln: 'shared', spaceId: g.dest[f] }, glaze: g.glaze[f] }]; if (g.marker) cmd.heatMarkerCeramicId = g.marker;
-    if (!g.dest[f]) return { ok: false, text: zh() ? '请选择装入的窑位。' : 'Choose a kiln space.' };
+    const g = A.d.gl; const vs = g.vessels; const two = vs.length > 1;
+    const vl = (id) => ceramicLabel(id, { withOwner: false, among: SEL.shapedVessels, cap: true });
+    const isVessel = (id) => SEL.shapedVessels.some((v) => v.id === id);
+    const ml = g.marker && (!two && g.marker === vs[0] ? (zh() ? '此件' : 'it') : isVessel(g.marker) ? vl(g.marker) : ceramicLabel(g.marker, { withOwner: false, withPlace: true }));
+    const one = (id) => (zh()
+      ? `${vl(id)}施${glazeName(g.glaze[id])}，装入${g.dest[id] ? placeText({ kind: 'space', spaceId: g.dest[id] }) : '?'}`
+      : `${vl(id)} → ${glazeName(g.glaze[id])}, ${g.dest[id] ? spaceName(g.dest[id]) : '?'}`);
+    extra = (zh() ? ' — ' + vs.map(one).join('；') : ' — ' + vs.map(one).join('; ')) + (g.marker ? (zh() ? `；火标暗置于${ml}` : `; Heat marker face-down on ${ml}`) : '');
+    cmd.loads = vs.map((id) => ({ ceramicId: id, destination: { kiln: 'shared', spaceId: g.dest[id] }, glaze: g.glaze[id] })); if (g.marker) cmd.heatMarkerCeramicId = g.marker;
+    const missing = vs.find((id) => !g.dest[id]);
+    if (missing) return { ok: false, text: two ? (zh() ? `请为${esc(vl(missing))}选择窑位。` : `Choose a kiln space for the ${esc(vl(missing))}.`) : (zh() ? '请选择装入的窑位。' : 'Choose a kiln space.') };
   }
   if (A.loc === 'materials_yard') {
     const ex = SEL.legalCommands.byType.PLACE_MATERIALS_YARD.examples.find((c) => c.workerId === wid);
     const total = ex ? ex.clay + ex.wood : 3;
-    extra = ` — +${A.d.my.clay} ${resName('clay')}, +${total - A.d.my.clay} ${resName('wood')}`; cmd.clay = A.d.my.clay; cmd.wood = total - A.d.my.clay;
+    extra = zh() ? ` — +${A.d.my.clay}${resName('clay')}，+${total - A.d.my.clay}${resName('wood')}` : ` — +${A.d.my.clay} ${resName('clay')}, +${total - A.d.my.clay} ${resName('wood')}`; cmd.clay = A.d.my.clay; cmd.wood = total - A.d.my.clay;
   }
-  if (A.loc === 'form_decorate') { extra = ` — ${decoName(A.d.fd.deco)} ${shapeName(A.d.fd.shape)}`; cmd.vessels = [{ shape: A.d.fd.shape, decoration: A.d.fd.deco }]; }
+  if (A.loc === 'form_decorate') { extra = ' — ' + ceramicLabel({ shape: A.d.fd.shape, decoration: A.d.fd.deco }, { withOwner: false, withPlace: false, cap: true }); cmd.vessels = [{ shape: A.d.fd.shape, decoration: A.d.fd.deco }]; }
   if (A.loc === 'commission_market') {
     const d = A.d.cm; if (d.slot == null) return { ok: false, text: zh() ? '请选择要承接的委托。' : 'Choose an Order to reserve.' };
     extra = ` — ${d.slot === 'blind' ? u('cmBlind') : d.slot === 'look' ? u('cmLook') : SEL.boardView.mainDisplay[d.slot] + ', ' + resDelta(d.gain, 1)}`;
     cmd.first = d.slot === 'blind' ? { kind: 'blind' } : d.slot === 'look' ? { kind: 'look_top_three' } : { kind: 'face_up', slotIndex: d.slot, orderId: SEL.boardView.mainDisplay[d.slot], gain: d.gain };
   }
   if (A.loc === 'guild_hall') { if (!A.d.gh.tech) return { ok: false, text: zh() ? '请选择要习得的技艺。' : 'Choose a Tech to buy.' }; extra = ` — ${techName(A.d.gh.tech)}`; cmd.choice = { kind: 'buy_face_up', techId: A.d.gh.tech }; }
+  if (zh() && extra.startsWith(' — ')) extra = '：' + extra.slice(3);
   return { ok: true, cmd, text: zh() ? `派<b>${esc(w)}</b>至<b>${esc(l)}</b>${esc(extra)}` : `Place <b>${esc(w)}</b> at <b>${esc(l)}</b>${esc(extra)}` };
 }
 function decLook() {
@@ -30495,7 +30684,7 @@ function decHeatMarker() {
     <span class="o-h"><span class="radio"></span><span class="big">${big}</span><strong>${esc(name)}</strong></span><span class="o-d">${esc(d)}</span></button>`).join('');
   return promptBlock(`${esc(tx(L.roundPhases[2]))} · ${u('yourTurn')}`, u('hmTitle'), u('hmSub')) +
     `<div class="dstep"><h3>${u('queue')}</h3>${queueRow()}</div>
-     <div class="dstep"><h3>${u('hmYour')}</h3><div class="prow">${cchip(id, { sz: 44, badge: markerBadge(c.heatMarker) })}<span class="small"><b>${esc(cerTitle(c))}</b><br>${isImp ? esc(u('imperialKiln')) : esc(spaceName(c.placement.spaceId))}</span></div></div>
+     <div class="dstep"><h3>${u('hmYour')}</h3><div class="prow">${cchip(id, { sz: 44, badge: markerBadge(c.heatMarker) })}<span class="small"><b>${esc(ceramicLabel(c, { withOwner: false, withPlace: false, cap: true }))}</b><br>${esc(isImp ? (zh() ? '你的御窑' : 'Your Imperial Kiln') : zh() ? placeText({ kind: 'space', spaceId: c.placement.spaceId }) : spaceName(c.placement.spaceId))}</span></div></div>
      <div class="dstep"><h3>${u('hmTurn')}</h3>${choices}
      <div class="small muted">${u('hmRule')}</div>
      ${opt.kilnMaster ? '' : `<div class="small muted">${u('kmNot')}</div>`}
@@ -30515,12 +30704,12 @@ function decAfterQuality() {
       : `<span class="o-d"><b>${u('aqSFRes')}</b></span>`;
     const key = o.ability + ':' + id;
     return `<button class="opt choice" data-act="aq" data-v="${key}" aria-pressed="${A.d.aq === key}"><span class="o-h"><span class="radio"></span><strong>${esc(name)}</strong><span class="right">${u('aqCost')}${C()}${free ? u('free') : ''}</span></span>
-      <span class="prow small"><span class="faint">${zh() ? '目标' : 'Target'}</span>${cchip(id, { sz: 28 })}</span>${body}</button>`;
+      <span class="prow small"><span class="faint">${zh() ? '目标' : 'Target'}</span>${cchip(id, { sz: 28 })}<span>${esc(ceramicLabel(id, { withOwner: false, among: mine.map((m) => m.ceramicId), cap: true }))}</span></span>${body}</button>`;
   }).join('');
   return promptBlock(`${esc(tx(L.roundPhases[2]))} · ${u('yourTurn')}`, u('aqTitle'), u('aqSub')) +
     `<div class="dstep"><h3>${u('aqYour')}</h3><div class="cerrow">${mine.map((c) => cchip(c.ceramicId, { sz: 38 })).join('')}</div></div>
      <div class="dstep">${cards}
-     ${N('Options come from <code>afterQualityOptions</code> and are queried again after each use (after Crackle, c21 is Fine and Second Firing no longer applies). Each option states its rule effect; nothing predicts the result (D3).', '选项来自 <code>afterQualityOptions</code>，每次使用后重新查询（开片后 c21 为上品，不再可复烧）。每项只写规则效果，不预测结果（D3）。')}</div>`;
+     ${N('Options come from <code>afterQualityOptions</code> and are queried again after each use (after Crackle, your ' + esc(ceramicLabel('c21', { withOwner: false, bare: true, withPlace: true })) + ' is Fine and Second Firing no longer applies). Each option states its rule effect; nothing predicts the result (D3).', '选项来自 <code>afterQualityOptions</code>，每次使用后重新查询（开片后你的' + esc(ceramicLabel('c21', { withOwner: false, bare: true, withPlace: true })) + '为上品，不再可复烧）。每项只写规则效果，不预测结果（D3）。')}</div>`;
 }
 function decOrders() {
   const compl = SEL.completableOrders; const sel = A.d.ord;
@@ -30531,11 +30720,14 @@ function decOrders() {
   let groups = '', decl = '', sum = '';
   if (sel) {
     const gs = SEL.orderMatchOptions[sel] || [];
-    groups = `<div class="dstep"><h3><span class="n">2</span>${u('stepCer')} <span class="aside">· orderMatchOptions</span></h3>${gs.map((g, i) => `<button class="opt" data-act="grp" data-v="${i}" aria-pressed="${A.d.grp === i}"><span class="o-h"><span class="radio"></span><strong>${u('groupN', { n: i + 1 })}</strong></span><span class="cerrow">${g.ceramicIds.map((id) => cchip(id, { sz: 32 })).join('')}</span></button>`).join('')}</div>`;
+    // D9: each option lists its ceramics in words under the pictures; the place is added only if two of your ceramics read the same.
+    const fin = SEL.viewerFinishedCeramicIds;
+    const gName = (id) => ceramicLabel(id, { withOwner: false, among: fin, cap: true });
+    groups = `<div class="dstep"><h3><span class="n">2</span>${u('stepCer')} ${DEV('orderMatchOptions')}</h3>${gs.map((g, i) => `<button class="opt" data-act="grp" data-v="${i}" aria-pressed="${A.d.grp === i}"><span class="o-h"><span class="radio"></span><strong>${u('groupN', { n: i + 1 })}</strong></span><span class="cerrow" aria-hidden="true">${g.ceramicIds.map((id) => cchip(id, { sz: 32 })).join('')}</span><span class="o-d">${g.ceramicIds.map((id) => esc(gName(id))).join(zh() ? '；' : '; ')}</span></button>`).join('')}</div>`;
     const g = gs[A.d.grp] || gs[0];
     const checks = SEL.crackleDeclarationChecks.find((x) => x.orderId === sel && g && x.ceramicIds.join() === g.ceramicIds.join());
     if (checks) {
-      decl = `<div class="dstep"><h3><span class="n">3</span>${u('stepDecl')} <span class="aside">· crackleDeclarationChecks</span></h3>${checks.perDecoration.map((pd) => `<div class="small">${u('declAs', { c: `<b>${pd.ceramicId}</b>` })} <span class="faint">${paren(u('printed', { d: decoName(pd.printedDecoration) }))}</span></div><div class="decls">${pd.checks.map((ck) => `<button class="decl" data-act="decl" data-c="${pd.ceramicId}" data-v="${ck.decoration}" aria-pressed="${A.d.decl[pd.ceramicId] === ck.decoration}"><b>${esc(decoName(ck.decoration))}</b><span class="${ck.ok ? 'v-ok' : 'v-no'}">${ck.ok ? u('declOk', { o: sel }) : u('declNo', { o: sel })}</span></button>`).join('')}</div>`).join('')}
+      decl = `<div class="dstep"><h3><span class="n">3</span>${u('stepDecl')} ${DEV('crackleDeclarationChecks')}</h3>${checks.perDecoration.map((pd) => `<div class="small">${u('declAs', { c: `<b>${esc(gName(pd.ceramicId))}</b>` })}</div><div class="decls">${pd.checks.map((ck) => `<button class="decl" data-act="decl" data-c="${pd.ceramicId}" data-v="${ck.decoration}" aria-pressed="${A.d.decl[pd.ceramicId] === ck.decoration}"><b>${esc(decoName(ck.decoration))}</b><span class="${ck.ok ? 'v-ok' : 'v-no'}">${ck.ok ? u('declOk', { o: sel }) : u('declNo', { o: sel })}</span></button>`).join('')}</div>`).join('')}
         <div class="err">${esc(u('undeclared', { m: errText(checks.undeclared.error.code, checks.undeclared.error.details) }))}</div></div>`;
     }
     if (g) {
@@ -30545,13 +30737,13 @@ function decOrders() {
   }
   return promptBlock(`${esc(tx(L.roundPhases[3]))} · ${u('yourTurn')}`, u('ordTitle'), u('ordSub')) +
     `<div class="dstep"><h3><span class="n">1</span>${u('stepOrder')} <span class="aside">· ${compl.length}/${OWN.orderHand.length} ${u('completable')}</span></h3>${list}</div>${groups}${decl}${sum}
-     <div class="dstep">${N('c20 matches both O48 and O05: completing one re-queries <code>completableOrders</code>, and the other drops out. The Crackle verdicts come from the validator, so the picker never re-implements Order rules.', 'c20 同时满足 O48 与 O05：完成其一后重新查询 <code>completableOrders</code>，另一张随之失效。开片声明的判定来自校验器，选择器不重写委托规则。')}</div>`;
+     <div class="dstep">${N('Your ' + esc(ceramicLabel('c20', { withOwner: false })) + ' matches both O48 and O05: completing one re-queries <code>completableOrders</code>, and the other drops out. The Crackle verdicts come from the validator, so the picker never re-implements Order rules.', '你的' + esc(ceramicLabel('c20', { withOwner: false })) + '同时满足 O48 与 O05：完成其一后重新查询 <code>completableOrders</code>，另一张随之失效。开片声明的判定来自校验器，选择器不重写委托规则。')}</div>`;
 }
 function decTrim() {
   const hv = SEL.handLimitViewer; const chosen = A.d.trim;
   const list = SEL.heldOrders.map((id) => { const o = L.orders[id]; return `<button class="opt" data-act="trim" data-v="${id}" aria-pressed="${chosen.includes(id)}"><span class="o-h"><span class="check"></span><strong>${id}</strong><span class="right">${vpN(o.vp)} · ${u('coinsN', { n: o.coins })}${o.crowns ? ' · ' + CROWN + '×' + o.crowns : ''}</span></span><span class="o-d">${esc(tx(o.requirements))} · ${esc(qualityText(id))}</span></button>`; }).join('');
   return promptBlock(`${esc(tx(L.roundPhases[4]))} · ${u('yourTurn')}`, u('trimTitle'), u('trimSub', { h: hv.held, l: hv.limit, n: hv.mustDiscard })) +
-    `<div class="dstep"><h3>${u('trimCount', { a: chosen.length, n: hv.mustDiscard })} <span class="aside">· ${SEL.legalCommands.total} ${zh() ? '种合法组合' : 'legal pairs'}</span></h3>${list}${chosen.length > hv.mustDiscard ? `<div class="err">${esc(errText('HAND_LIMIT_DISCARD_COUNT', { limit: hv.limit, needed: hv.mustDiscard }))}</div>` : ''}</div>
+    `<div class="dstep"><h3>${u('trimCount', { a: chosen.length, n: hv.mustDiscard })} ${DEV(`legalCommands.total ${SEL.legalCommands.total}`)}</h3>${list}${chosen.length > hv.mustDiscard ? `<div class="err">${esc(errText('HAND_LIMIT_DISCARD_COUNT', { limit: hv.limit, needed: hv.mustDiscard }))}</div>` : ''}</div>
      <div class="dstep">${N(u('parallel'), u('parallel'))}</div>`;
 }
 function decFinal() {
@@ -30574,12 +30766,12 @@ function decision() {
     return { body: decContrib(), sum: o ? { ok: true, cmd: o.command, text: u('ctSum', { c: esc(tx(L.contributionCards[d.card]) + (o.command.fuelLedger ? ' · ' + techName('T12') : '')), h: sgn(o.heat), w: o.woodCost ? u('ctWood', { n: o.woodCost }) : u('ctNoWood') }) } : { ok: false, text: u('ctPick') } };
   }
   if (dk === 'hm') {
-    const v = A.d.hm; const c = SEL.heatMarkerStepOptions.ownMarkerCeramicId;
-    return { body: decHeatMarker(), sum: v ? { ok: true, cmd: { type: 'RESOLVE_HEAT_MARKERS', ownMarker: v === 'return' ? 'return' : +v }, text: v === 'return' ? (zh() ? `收回<b>${c}</b>上的火标` : `Return the Heat marker on <b>${c}</b>`) : (zh() ? `将<b>${c}</b>上的火标翻为<b>${sgn(+v)}</b>` : `Turn the marker on <b>${c}</b> to <b>${sgn(+v)}</b>`) } : { ok: false, text: zh() ? '请选择+1、−1或收回。' : 'Choose +1, −1 or return.' } };
+    const v = A.d.hm; const hl = esc(ceramicLabel(SEL.heatMarkerStepOptions.ownMarkerCeramicId, { names: false, withPlace: false }));
+    return { body: decHeatMarker(), sum: v ? { ok: true, cmd: { type: 'RESOLVE_HEAT_MARKERS', ownMarker: v === 'return' ? 'return' : +v }, text: v === 'return' ? (zh() ? `收回<b>${hl}</b>上的火标` : `Return the Heat marker on <b>${hl}</b>`) : (zh() ? `将<b>${hl}</b>上的火标翻为<b>${sgn(+v)}</b>` : `Turn the marker on <b>${hl}</b> to <b>${sgn(+v)}</b>`) } : { ok: false, text: zh() ? '请选择+1、−1或收回。' : 'Choose +1, −1 or return.' } };
   }
   if (dk === 'aq') {
     const v = A.d.aq; let sum = { ok: false, text: u('pickAbility') };
-    if (v) { const [a, c] = v.split(':'); sum = { ok: true, cmd: { type: a === 'ge_crackle' ? 'USE_GE_CRACKLE' : 'USE_SECOND_FIRING', ceramicId: c }, text: u('useOn', { a: a === 'ge_crackle' ? tx(L.kilns.GE.abilityName) : techName('T14'), c }) }; }
+    if (v) { const [a, c] = v.split(':'); const mineIds = SEL.heatLadder.chips.filter((x) => x.ownerId === VIEWER).map((x) => x.ceramicId); sum = { ok: true, cmd: { type: a === 'ge_crackle' ? 'USE_GE_CRACKLE' : 'USE_SECOND_FIRING', ceramicId: c }, text: u('useOn', { a: esc(a === 'ge_crackle' ? tx(L.kilns.GE.abilityName) : techName('T14')), c: esc(ceramicLabel(c, { among: mineIds })) }) }; }
     return { body: decAfterQuality(), sum, alt: u('aqDone'), altCmd: { type: 'END_AFTER_QUALITY' } };
   }
   if (dk === 'orders') {
@@ -30589,7 +30781,8 @@ function decision() {
       const decls = Object.entries(A.d.decl).filter(([cid]) => g.ceramicIds.includes(cid)).map(([ceramicId, decoration]) => ({ ceramicId, decoration }));
       const checks = SEL.crackleDeclarationChecks.find((x) => x.orderId === sel && x.ceramicIds.join() === g.ceramicIds.join());
       const bad = checks && decls.some((d) => { const pd = checks.perDecoration.find((p) => p.ceramicId === d.ceramicId); const ck = pd && pd.checks.find((k) => k.decoration === d.decoration); return !ck || !ck.ok; });
-      const cTxt = g.ceramicIds.map((id) => { const d = decls.find((x) => x.ceramicId === id); return id + (d ? (zh() ? `（视为${decoName(d.decoration)}）` : ` (as ${decoName(d.decoration)})`) : ''); }).join(zh() ? '、' : ', ');
+      const fin = SEL.viewerFinishedCeramicIds;
+      const cTxt = listJoin(g.ceramicIds.map((id) => { const d = decls.find((x) => x.ceramicId === id); return ceramicLabel(id, { among: fin }) + (d ? (zh() ? `（视为${decoName(d.decoration)}）` : ` (as ${decoName(d.decoration)})`) : ''); }));
       sum = { ok: !bad, cmd: { type: 'COMPLETE_ORDER', orderId: sel, ceramicIds: g.ceramicIds, ...(checks ? { crackleDeclarations: decls } : {}) }, text: u('completeSum', { o: sel, c: esc(cTxt) }) + (bad ? `<br><span class="why" style="color:var(--bad-ink)">${esc(errText('INVALID_CRACKLE_DECLARATION', { reason: 'declaration_does_not_satisfy' }))}</span>` : '') };
     }
     return { body: decOrders(), sum, alt: u('endTurn'), altCmd: { type: 'END_ORDER_TURN' } };
@@ -30612,7 +30805,7 @@ function stripText() {
 function pane() {
   const { body, sum, alt, altCmd } = decision();
   const confirm = sum ? `<div class="confirm"><div class="sum">${sum.text}</div><div class="btns">${alt ? `<button class="btn" data-act="send" data-alt="1">${esc(alt)}</button>` : `<button class="btn" data-act="clear">${u('clear')}</button>`}<button class="btn primary" data-act="send" ${sum.ok ? '' : 'disabled'}>${u('confirm')}</button></div>
-    ${A.sent ? `<div class="sent" role="status">${u('sentLbl')} ${esc(JSON.stringify(A.sent))}</div>` : `<div class="small faint">${u('serverNote')}</div>`}</div>` : '';
+    ${A.sent ? `<div class="small" role="status">${u('sentDone')}</div>${R.notes ? note(`<b>${u('sentLbl')}</b><code class="sentcmd">${esc(JSON.stringify(A.sent))}</code>`) : ''}` : `<div class="small faint">${u('serverNote')}</div>`}</div>` : '';
   A._sum = sum; A._altCmd = altCmd;
   return `<aside class="ko-pane" data-sheet="${A.sheet}" aria-label="${zh() ? '你的决断' : 'Your decision'}">
     <button class="sheet-strip" data-act="sheet" aria-expanded="${A.sheet === 'open'}"><span class="grab" aria-hidden="true"></span><span class="t">${stripText()}</span><span class="cta">${A.sheet === 'open' ? u('hide') + ' ▾' : (['final', 'wait'].includes(decisionKind()) ? u('details') : u('decide')) + ' ▴'}</span></button>
@@ -30710,7 +30903,7 @@ function renderCaption() {
   const m = MOMENTS[R.m]; const vp = VPS[R.vp];
   const players = Object.values(m.playerView.game.players);
   const viewer = m.playerView.game.players[m.viewerId];
-  document.getElementById('caption').innerHTML = `<h2>${R.m.toUpperCase()} · ${INFO[R.m].title}</h2><span class="src">Viewing as ${esc(viewer.displayName)} (${m.viewerId}) · ${players.length} players · seed ${m.source.seed} · revision ${m.source.revision}${m.source.steered.length ? ` · ${m.source.steered.length} steered commands` : ''}</span><span class="scale" id="scale-note">${vp.label} ${vp.sub}</span>`;
+  document.getElementById('caption').innerHTML = `<h2>${R.m.toUpperCase()} · ${INFO[R.m].title}</h2><span class="src">Viewing as ${esc(viewer.displayName)} · ${players.length} players · seed ${m.source.seed} · revision ${m.source.revision}${m.source.steered.length ? ` · ${m.source.steered.length} steered commands` : ''}</span><span class="scale" id="scale-note">${vp.label} ${vp.sub}</span>`;
 }
 function renderInfo() {
   const m = MOMENTS[R.m]; load();
@@ -30769,8 +30962,16 @@ document.getElementById('device').addEventListener('click', (ev) => {
     case 'fdshape': A.d.fd.shape = v; break;
     case 'fddeco': A.d.fd.deco = v; break;
     case 'vessel': { const g = A.d.gl; const max = A.worker === 'shifu' ? 2 : 1; if (g.vessels.includes(v)) { if (g.vessels.length > 1) g.vessels = g.vessels.filter((x) => x !== v); } else g.vessels = max > 1 ? [...g.vessels, v].slice(0, 2) : [v]; break; }
-    case 'glaze': A.d.gl.glaze[A.d.gl.vessels[0]] = v; break;
-    case 'dest': { if (A.loc !== 'glaze_load') { A.loc = 'glaze_load'; } const g = A.d.gl; if (!g.vessels.length) g.vessels = [SEL.shapedVessels[0].id]; const f = g.vessels[0]; if (!g.glaze[f]) g.glaze[f] = 'celadon'; g.dest[f] = v; A.sent = null; break; }
+    case 'glaze': A.d.gl.glaze[el.dataset.c || A.d.gl.vessels[0]] = v; break;
+    case 'dest': {
+      if (A.loc !== 'glaze_load') { A.loc = 'glaze_load'; }
+      const g = A.d.gl; if (!g.vessels.length) g.vessels = [SEL.shapedVessels[0].id];
+      const [f, s2] = g.vessels; if (!g.glaze[f]) g.glaze[f] = 'celadon';
+      // A kiln-space click fills the first vessel, then the second; a pill names its vessel (data-c).
+      const vid = el.dataset.c || (s2 && g.dest[f] && g.dest[f] !== v && !g.dest[s2] ? s2 : f);
+      g.dest[vid] = v; if (s2 && vid === f && g.dest[s2] === v) delete g.dest[s2];
+      A.sent = null; break;
+    }
     case 'marker': A.d.gl.marker = v || null; break;
     case 'slot': A.d.cm.slot = isNaN(+v) ? v : +v; break;
     case 'cmgain': A.d.cm.gain = v; break;
