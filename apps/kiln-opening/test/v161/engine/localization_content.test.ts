@@ -217,7 +217,7 @@ describe("Chinese text uses the glossary terms", () => {
     for (const decoration of DECORATIONS) expect(DECORATION_TEXT[decoration].zh, decoration).toBe(glossaryTerm(name(decoration)));
     for (const quality of QUALITIES) expect(QUALITY_TEXT[quality].zh, quality).toBe(glossaryTerm(name(quality)));
     for (const resource of ["clay", "wood", "coins"] as const) expect(RESOURCE_TEXT[resource].zh).toBe(glossaryTerm(name(resource)));
-    expect(DISCIPLINE_TEXT.workshop.zh).toBe(glossaryTerm("Workshop (discipline)"));
+    expect(DISCIPLINE_TEXT.workshop.zh).toBe(glossaryTerm("Form & Decorate (discipline)"));
     // Owner decision D11 / amendment A2: the English discipline name is Form & Decorate (ID `workshop`).
     expect(DISCIPLINE_TEXT.workshop.en).toBe("Form & Decorate");
     expect(DISCIPLINE_TEXT.glazing_loading.zh).toBe(glossaryTerm("Glazing & Loading (discipline)"));
@@ -285,9 +285,10 @@ describe("Chinese text uses the glossary terms", () => {
     }
   });
 
-  it("keeps Tech and Kiln reminders within 24 characters per line (glossary §3)", () => {
+  it("keeps Tech and Kiln reminders to one line of at most 48 characters (glossary §3, two printed lines of 24)", () => {
     for (const definition of [...TECH_IDS.map((id) => TECHS[id]), ...KILN_IDS.map((id) => KILNS[id])]) {
-      for (const line of definition.shortTextZh.split("\n")) expect([...line].length, `${definition.id}: ${line}`).toBeLessThanOrEqual(24);
+      expect(definition.shortTextZh, definition.id).not.toContain("\n");
+      expect([...definition.shortTextZh].length, `${definition.id}: ${definition.shortTextZh}`).toBeLessThanOrEqual(48);
     }
   });
 });
@@ -301,7 +302,8 @@ function chineseStrings(): Array<[string, string]> {
     if (Array.isArray(value)) value.forEach((item, index) => walk(item, `${path}[${index}]`));
     else if (value !== null && typeof value === "object") {
       for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
-        if (key.endsWith("Zh") && typeof item === "string") found.push([`${path}.${key}`, item]);
+        // `…Zh` text fields, and the `zh` half of every D10 clarification.
+        if ((key.endsWith("Zh") || (key === "zh" && path.includes(".clarifications"))) && typeof item === "string") found.push([`${path}.${key}`, item]);
         else walk(item, `${path}.${key}`);
       }
     }
@@ -323,6 +325,8 @@ describe("Chinese strings avoid retired terms and follow the glossary's punctuat
 
   it("collects the Chinese text of every data file", () => {
     expect(strings.length).toBeGreaterThan(300);
+    // Every D10 clarification's Chinese half is checked too (292 items in the clarifications doc).
+    expect(strings.filter(([path]) => path.includes(".clarifications")).length).toBe(292);
   });
 
   it("uses none of the retired or banned terms (glossary §1.5, §6)", () => {

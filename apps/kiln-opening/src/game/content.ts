@@ -19,6 +19,7 @@ import ordersJson from "../../data/orders.json" with { type: "json" };
 import techniquesJson from "../../data/techniques.json" with { type: "json" };
 import type {
   CentralLocationId,
+  ClarificationDefinition,
   ContributionCardDefinition,
   ContributionCardId,
   Decoration,
@@ -66,8 +67,15 @@ export interface TechniquesFile {
 
 export interface OrdersFile {
   rulesVersion: RulesVersion;
+  /** D10 clarifications for Orders in general: `starting` (S01–S16) and `main` (O01–O48). */
+  clarifications: OrderClarifications;
   starting: OrderDefinition[];
   main: OrderDefinition[];
+}
+
+export interface OrderClarifications {
+  starting: ClarificationDefinition[];
+  main: ClarificationDefinition[];
 }
 
 /** The seven mechanical data files, as loaded. `validateContentFiles` checks any such set. */
@@ -106,7 +114,7 @@ export const QUALITY_RANK: Readonly<Record<Quality, number>> = Object.freeze({
 /** Kiln Player Boards in rulebook order (L72). All five are selectable (R1). */
 export const KILN_IDS: readonly KilnId[] = Object.freeze(["RU", "GU", "GE", "DI", "JU"] as const);
 
-/** The 18 Advanced Techs in Appendix B order (Workshop, Glazing & Loading, Firing). */
+/** The 18 Advanced Techs in Appendix B order (Form & Decorate, Glazing & Loading, Firing). */
 export const TECH_IDS: readonly TechId[] = Object.freeze([
   "T01", "T16", "T05", "T17", "T18", "T19",
   "T10", "T20", "T15", "T21", "T22", "T23",
@@ -213,6 +221,96 @@ function collectTextProblems(value: unknown, path: string, problems: string[]): 
       collectTextProblems(item, itemPath, problems);
     }
   }
+}
+
+// ── Clarifications and short text (owner decision D10, UI architecture K15) ──────────────────
+
+/**
+ * One source tag of a clarification (`docs/KILN_OPENING_v1.6.1_CLARIFICATIONS.md`, "Source
+ * tags"): `L123` rulebook line, `A1` amendment, `R1`–`R13` and `B1`–`B3` owner rulings,
+ * `ED L123` editorial correction, `INT <name>` recorded interpretation, `P1`–`P3` provisional
+ * ruling, `D7` owner UI decision. A `source` joins one or more tags with " · ".
+ */
+export const CLARIFICATION_TAG = /^(?:L[1-9]\d{0,3}|A[1-9]\d?|R(?:[1-9]|1[0-3])|B[1-3]|ED L[1-9]\d{0,3}|INT [A-Z][^·]*[^\s·]|P[1-3]|D(?:[1-9]|1[01]))$/;
+
+/** The kind of a source tag, which the UI labels (Rulebook, Owner amendment, Owner ruling, …). */
+export type ClarificationSourceKind = "rulebook" | "amendment" | "ruling" | "editorial" | "interpretation" | "provisional" | "wording";
+
+/** The tags of a clarification `source`, in order ("L375 · D7" → ["L375", "D7"]). */
+export function clarificationTags(source: string): string[] {
+  return source.split(" · ");
+}
+
+/** The kind of one well-formed source tag. Throws on a malformed tag (content is validated at load). */
+export function clarificationSourceKind(tag: string): ClarificationSourceKind {
+  if (!CLARIFICATION_TAG.test(tag)) throw new Error(`Malformed clarification source tag "${tag}"`);
+  if (tag.startsWith("ED ")) return "editorial";
+  if (tag.startsWith("INT ")) return "interpretation";
+  switch (tag.charAt(0)) {
+    case "L": return "rulebook";
+    case "A": return "amendment";
+    case "R":
+    case "B": return "ruling";
+    case "P": return "provisional";
+    default: return "wording";
+  }
+}
+
+function validateClarifications(items: unknown, where: string, problems: string[], allowEmpty = false): void {
+  if (!Array.isArray(items)) {
+    problems.push(`${where}: clarifications must be an array`);
+    return;
+  }
+  if (items.length === 0 && !allowEmpty) problems.push(`${where}: needs at least 1 clarification (D10)`);
+  for (const [index, item] of items.entries()) {
+    const record = item as Partial<ClarificationDefinition> | null;
+    const at = `${where}.clarifications[${index}]`;
+    if (record === null || typeof record !== "object" || Object.keys(record).sort().join() !== "en,source,zh") {
+      problems.push(`${at}: must be exactly { en, zh, source }`);
+      continue;
+    }
+    for (const key of ["en", "zh", "source"] as const) {
+      const value = record[key];
+      if (typeof value !== "string" || value.trim() !== value || value.length === 0) problems.push(`${at}.${key}: must be a trimmed non-empty string`);
+    }
+    if (typeof record.source === "string" && !clarificationTags(record.source).every((tag) => CLARIFICATION_TAG.test(tag))) {
+      problems.push(`${at}.source: malformed tag in "${record.source}"`);
+    }
+  }
+}
+
+/**
+ * Secondary labels of the short component text (`docs/KILN_OPENING_v1.6.1_COMPONENT_TEXT_SOURCE.md`,
+ * "Format rules"). The timing clause runs to the first colon; after it, these labels open a
+ * second clause (Colour Samples' "Ongoing:", Ge's "Orders:"). The UI bolds both.
+ */
+export const SHORT_TEXT_SECONDARY_LABELS: readonly string[] = Object.freeze(["Ongoing:", "Orders:", "持续：", "完成委托时："]);
+
+/**
+ * Splits a plain-text `shortText` / `shortTextZh` into runs for display: the timing clause up to
+ * and including the first ":" or "：" is emphasised, and so is each secondary label that follows
+ * it. The text carries no Markdown; joining the runs gives the text back unchanged.
+ */
+export function shortTextSegments(text: string): Array<{ text: string; emphasis: boolean }> {
+  const colon = text.search(/[:：]/);
+  if (colon < 0) return [{ text, emphasis: false }];
+  const segments: Array<{ text: string; emphasis: boolean }> = [{ text: text.slice(0, colon + 1), emphasis: true }];
+  let rest = text.slice(colon + 1);
+  while (rest.length > 0) {
+    const hits = SHORT_TEXT_SECONDARY_LABELS
+      .map((label) => ({ label, at: rest.indexOf(label) }))
+      .filter((hit) => hit.at >= 0)
+      .sort((left, right) => left.at - right.at);
+    const next = hits[0];
+    if (next === undefined) {
+      segments.push({ text: rest, emphasis: false });
+      break;
+    }
+    if (next.at > 0) segments.push({ text: rest.slice(0, next.at), emphasis: false });
+    segments.push({ text: next.label, emphasis: true });
+    rest = rest.slice(next.at + next.label.length);
+  }
+  return segments;
 }
 
 function validateOrder(order: OrderDefinition, deck: "starting" | "main", problems: string[]): void {
@@ -405,6 +503,26 @@ export function validateContentFiles(files: ContentFiles): string[] {
   if (!isNonNegativeInteger(imperialProgress.overflowVpPerCrown)) problems.push("imperial_progress: overflowVpPerCrown must be a non-negative integer");
   if (imperialProgress.exhibition.minimumQuality !== "standard") problems.push("imperial_progress: Exhibition accepts Standard or better (L443)");
 
+  // Clarifications (D10): prose, outside the rules fingerprint; only their shape is checked here.
+  for (const location of actionLocations.locations) validateClarifications(location.clarifications, `action_locations: ${location.id}`, problems);
+  for (const kiln of kilns.kilns) validateClarifications(kiln.clarifications, `kilns: ${kiln.id}`, problems);
+  for (const tech of techniques.advanced) validateClarifications(tech.clarifications, `techniques: ${tech.id}`, problems);
+  for (const space of track) {
+    validateClarifications(space.clarifications, `imperial_progress: ${space.id}`, problems, space.reward === null);
+  }
+  validateClarifications(imperialProgress.clarifications?.imperial_overflow, "imperial_progress: imperial_overflow", problems);
+  validateClarifications(orders.clarifications?.starting, "orders: starting", problems);
+  validateClarifications(orders.clarifications?.main, "orders: main", problems);
+
+  // Short component text: plain text with a timing clause ending in a colon (component text source).
+  for (const definition of [...kilns.kilns, ...techniques.advanced]) {
+    for (const text of [definition.shortText, definition.shortTextZh]) {
+      if (typeof text === "string" && (!/[:：]/.test(text) || /[*_`#]/.test(text) || text.includes("\n"))) {
+        problems.push(`${definition.id}: short text must be one plain line with a timing clause ending in a colon`);
+      }
+    }
+  }
+
   // Display text, Chinese included.
   collectTextProblems(firing.contributionCards, "firing.contributionCards", problems);
   collectTextProblems(actionLocations.locations, "action_locations", problems);
@@ -468,6 +586,9 @@ export const TECHS: { readonly [K in TechId]: TechDefinition<K> } =
 
 export const ORDERS: Readonly<Record<OrderId, OrderDefinition>> =
   byId([...FILES.orders.starting, ...FILES.orders.main]) as Readonly<Record<OrderId, OrderDefinition>>;
+
+/** D10 clarifications for Starting Orders and for Main Orders in general (prose). */
+export const ORDER_CLARIFICATIONS: Readonly<OrderClarifications> = FILES.orders.clarifications;
 
 const CONTRIBUTION_CARDS = byId(FILES.firing.contributionCards) as Readonly<Record<ContributionCardId, ContributionCardDefinition>>;
 const KILN_SPACES = byId(FILES.firing.kilnSpaces) as Readonly<Record<KilnSpaceId, FiringDefinition["kilnSpaces"][number]>>;

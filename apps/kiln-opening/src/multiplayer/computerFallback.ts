@@ -9,13 +9,15 @@
  * 2. `safeExitCommands(view)`: the progress-guarantee exit of every decision (DESIGN §3.6),
  *    built from the view alone without the enumerator, so the seat still has a way forward
  *    even if enumeration itself fails. Each one is validated by the service like any other
- *    candidate, so an exit that does not apply is simply skipped.
+ *    candidate, but each must also be legal whenever it is offered: the canonical baseline
+ *    policy samples its proposal from this whole list, so an illegal exit would become a
+ *    rejected proposal (`computer_legality.test.ts`).
  *
  * Everything here reads only the seat's `PlayerView` (public projection plus its own private
  * data), never `GameState`.
  */
 
-import { KILN_IDS, guildInspectionOptions, handLimitStatus, legalCommands, lookedOrderOptions } from "../game/index.ts";
+import { KILN_IDS, guildInspectionOptions, handLimitStatus, heatMarkerStepOptions, legalCommands, lookedOrderOptions } from "../game/index.ts";
 import type { AuthoritativeCommand, LegalActionOptions, PlayerView } from "../game/index.ts";
 
 export const FALLBACK_LEGAL_ACTION_OPTIONS: LegalActionOptions = { mode: "canonical", perFamilyLimit: 8 };
@@ -76,12 +78,18 @@ export function safeExitCommands(view: PlayerView): AuthoritativeCommand[] {
       return [{ type: "SUBMIT_CONTRIBUTION", windowId: phase.windowId, card: "TEND", fuelLedger: false }];
     case "firing_test_pieces":
       return phase.awaiting === "decision" ? [{ type: "TEST_PIECES_DECIDE", peek: false }] : [{ type: "TEST_PIECES_BURY", bury: false }];
-    case "firing_heat_markers":
-      // Return a face-down own marker; without one, decline Kiln Master (R4).
-      return [
-        { type: "RESOLVE_HEAT_MARKERS", ownMarker: "return" },
-        { type: "RESOLVE_HEAT_MARKERS" },
-      ];
+    case "firing_heat_markers": {
+      // Return a face-down own marker; without one (a Kiln Master-only turn), decline Kiln
+      // Master (R4). Exactly one of the two is legal, so only that one is offered: the
+      // validator rejects an own-marker choice without a face-down marker and requires one
+      // with it (INVALID_CHOICE either way), and the canonical baseline policy picks
+      // uniformly among these candidates, so an illegal exit here became its proposal.
+      const options = heatMarkerStepOptions(view);
+      if (options === null) return [];
+      return options.ownMarkerCeramicId === null
+        ? [{ type: "RESOLVE_HEAT_MARKERS" }]
+        : [{ type: "RESOLVE_HEAT_MARKERS", ownMarker: "return" }];
+    }
     case "firing_heat_adjustment":
     case "firing_second_firing_jun":
       return [{ type: "RESOLVE_JUN", adjustment: null }];

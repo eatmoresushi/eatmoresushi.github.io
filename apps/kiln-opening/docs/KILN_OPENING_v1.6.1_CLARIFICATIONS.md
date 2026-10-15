@@ -31,7 +31,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 ### T01 — Large Throwing Wheel / 大陶车
 
 - [L374] A player may own at most 3, and at most 1 from each discipline. / 每人至多3项技艺，每门类至多1项。
-- [L375 · D7] A Form & Decorate Tech adds your second Form & Decorate space. A space added this way may be used later the same round (L211). / 习得坯作技艺即添设制坯饰纹第二工位；新添设的工位本轮稍后即可使用。
+- [L375 · L211 · D7] A Form & Decorate Tech adds your second Form & Decorate space. A space added this way may be used later the same round. / 习得坯作技艺即添设制坯饰纹第二工位；新添设的工位本轮稍后即可使用。
 - [A1] This Tech scores 1 VP immediately when you gain it. It is not scored again at game end. / 习得时立即得1分；终局不再另计。
 - [L213] A newly acquired Advanced Tech may be used in the same round if its timing permits. / 新习得的技艺，时机允许即可于本轮使用。
 - [R4] Tech abilities are optional. Declining does not use the once-per-round allowance. Valid discounts apply before payment. / 技艺效果可选用；放弃不消耗“每轮一次”。折扣在支付前计算。
@@ -41,7 +41,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 ### T16 — Decorator's Kit / 饰坯匣
 
 - [L374] A player may own at most 3, and at most 1 from each discipline. / 每人至多3项技艺，每门类至多1项。
-- [L375 · D7] A Form & Decorate Tech adds your second Form & Decorate space. A space added this way may be used later the same round (L211). / 习得坯作技艺即添设制坯饰纹第二工位；新添设的工位本轮稍后即可使用。
+- [L375 · L211 · D7] A Form & Decorate Tech adds your second Form & Decorate space. A space added this way may be used later the same round. / 习得坯作技艺即添设制坯饰纹第二工位；新添设的工位本轮稍后即可使用。
 - [A1] This Tech scores 1 VP immediately when you gain it. It is not scored again at game end. / 习得时立即得1分；终局不再另计。
 - [L213] A newly acquired Advanced Tech may be used in the same round if its timing permits. / 新习得的技艺，时机允许即可于本轮使用。
 - [R4] Tech abilities are optional. Declining does not use the once-per-round allowance. Valid discounts apply before payment. / 技艺效果可选用；放弃不消耗“每轮一次”。折扣在支付前计算。
@@ -52,7 +52,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 ### T05 — Reworking Table / 改坯案
 
 - [L374] A player may own at most 3, and at most 1 from each discipline. / 每人至多3项技艺，每门类至多1项。
-- [L375 · D7] A Form & Decorate Tech adds your second Form & Decorate space. A space added this way may be used later the same round (L211). / 习得坯作技艺即添设制坯饰纹第二工位；新添设的工位本轮稍后即可使用。
+- [L375 · L211 · D7] A Form & Decorate Tech adds your second Form & Decorate space. A space added this way may be used later the same round. / 习得坯作技艺即添设制坯饰纹第二工位；新添设的工位本轮稍后即可使用。
 - [A1] This Tech scores 1 VP immediately when you gain it. It is not scored again at game end. / 习得时立即得1分；终局不再另计。
 - [L213] A newly acquired Advanced Tech may be used in the same round if its timing permits. / 新习得的技艺，时机允许即可于本轮使用。
 - [R4] Tech abilities are optional. Declining does not use the once-per-round allowance. / 技艺效果可选用；放弃不消耗“每轮一次”。
@@ -63,12 +63,12 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 ### T17 — Prepared Clay / 练泥
 
 - [L374] A player may own at most 3, and at most 1 from each discipline. / 每人至多3项技艺，每门类至多1项。
-- [L375 · D7] A Form & Decorate Tech adds your second Form & Decorate space. A space added this way may be used later the same round (L211). / 习得坯作技艺即添设制坯饰纹第二工位；新添设的工位本轮稍后即可使用。
+- [L375 · L211 · D7] A Form & Decorate Tech adds your second Form & Decorate space. A space added this way may be used later the same round. / 习得坯作技艺即添设制坯饰纹第二工位；新添设的工位本轮稍后即可使用。
 - [A1] This Tech scores 1 VP immediately when you gain it. It is not scored again at game end. / 习得时立即得1分；终局不再另计。
 - [L213] A newly acquired Advanced Tech may be used in the same round if its timing permits. / 新习得的技艺，时机允许即可于本轮使用。
 - [R4] Tech abilities are optional. Declining does not use the once-per-round allowance. Pay all costs in full and apply valid discounts before payment. / 技艺效果可选用；放弃不消耗“每轮一次”。须足额支付费用，折扣在支付前计算。
 - [L646] Prepared Clay is a Tech effect, not a worker action. It never counts as a Form & Decorate action and does not trigger effects that require that action. / 练泥是技艺效果，不是工人行动；不算制坯饰纹行动，也不触发需要该行动的效果。
-- [L485 · L646] Ding triggers during its Form & Decorate action, so forming through Prepared Clay does not trigger Ding; Large Throwing Wheel (L615) likewise needs a Form & Decorate action. / 定窑于制坯饰纹行动中触发，故练泥所制坯不触发定窑；大陶车同样须在制坯饰纹行动中。
+- [L485 · L646 · L615] Ding triggers during its Form & Decorate action, so forming through Prepared Clay does not trigger Ding; Large Throwing Wheel likewise needs a Form & Decorate action. / 定窑于制坯饰纹行动中触发，故练泥所制坯不触发定窑；大陶车同样须在制坯饰纹行动中。
 - [L169 · L646] The Shifu's one-Decoration discount belongs to the Shifu's Form & Decorate action, so it does not apply to a vessel formed through Prepared Clay. / 师傅的纹饰减免属于师傅的制坯饰纹行动，不适用于经练泥所制的坯。
 - [L332] Every Decoration costs 2 Coins. / 每种纹饰均为2铜钱。
 - [INT Decorator's Kit] Decorator's Kit may reduce the Decoration paid through Prepared Clay. / 饰坯匣可用于经练泥所付的纹饰。
@@ -76,7 +76,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 ### T18 — Senior Apprentice / 高徒
 
 - [L374] A player may own at most 3, and at most 1 from each discipline. / 每人至多3项技艺，每门类至多1项。
-- [L375 · D7] A Form & Decorate Tech adds your second Form & Decorate space. A space added this way may be used later the same round (L211). / 习得坯作技艺即添设制坯饰纹第二工位；新添设的工位本轮稍后即可使用。
+- [L375 · L211 · D7] A Form & Decorate Tech adds your second Form & Decorate space. A space added this way may be used later the same round. / 习得坯作技艺即添设制坯饰纹第二工位；新添设的工位本轮稍后即可使用。
 - [A1] This Tech scores 1 VP immediately when you gain it. It is not scored again at game end. / 习得时立即得1分；终局不再另计。
 - [L213] A newly acquired Advanced Tech may be used in the same round if its timing permits. / 新习得的技艺，时机允许即可于本轮使用。
 - [R4] Tech abilities are optional. Declining does not use the once-per-round allowance: an Apprentice that does not use it resolves the Apprentice effect, and the tile stays available for another Apprentice this round. / 技艺效果可选用；放弃不消耗“每轮一次”：不使用时，该学徒照常结算学徒效果，本轮仍可留待另一名学徒使用。
@@ -89,7 +89,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 ### T19 — Connoisseur's Cabinet / 清玩斋
 
 - [L374] A player may own at most 3, and at most 1 from each discipline. / 每人至多3项技艺，每门类至多1项。
-- [L375 · D7] A Form & Decorate Tech adds your second Form & Decorate space. A space added this way may be used later the same round (L211). / 习得坯作技艺即添设制坯饰纹第二工位；新添设的工位本轮稍后即可使用。
+- [L375 · L211 · D7] A Form & Decorate Tech adds your second Form & Decorate space. A space added this way may be used later the same round. / 习得坯作技艺即添设制坯饰纹第二工位；新添设的工位本轮稍后即可使用。
 - [A1] The tile's own 1 VP is scored immediately when you gain it; its Exhibition bonus is scored at game end. / 本牌自身的1分于习得时立即计入；陈列加分于终局计算。
 - [L443 · L451] At game end, exhibit any number of your undelivered ceramics of Standard Quality or better. Flawed ceramics cannot be exhibited. / 终局时，陈列任意数量的良品以上未交付器物；瑕品不能陈列。
 - [INT Exhibition] Every eligible undelivered ceramic is exhibited automatically. / 数字版自动陈列所有符合条件的未交付器物。
@@ -97,7 +97,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 ### T10 — Colour Samples / 色样簿
 
 - [L374] A player may own at most 3, and at most 1 from each discipline. / 每人至多3项技艺，每门类至多1项。
-- [L375 · D7] A Glazing & Loading Tech adds your second Glaze & Load space. A space added this way may be used later the same round (L211). / 习得釉作技艺即添设施釉装窑第二工位；新添设的工位本轮稍后即可使用。
+- [L375 · L211 · D7] A Glazing & Loading Tech adds your second Glaze & Load space. A space added this way may be used later the same round. / 习得釉作技艺即添设施釉装窑第二工位；新添设的工位本轮稍后即可使用。
 - [A1] This Tech scores 1 VP immediately when you gain it. It is not scored again at game end. / 习得时立即得1分；终局不再另计。
 - [L213] Resolve any when acquired effect immediately. / “习得时”效果立即结算。
 - [R4] The when-acquired reservation is mandatory whenever at least 1 Main Order can be looked at. / 只要至少能看1张主委托，习得时的承接即为强制。
@@ -109,7 +109,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 ### T20 — Kiln Tending / 看火
 
 - [L374] A player may own at most 3, and at most 1 from each discipline. / 每人至多3项技艺，每门类至多1项。
-- [L375 · D7] A Glazing & Loading Tech adds your second Glaze & Load space. A space added this way may be used later the same round (L211). / 习得釉作技艺即添设施釉装窑第二工位；新添设的工位本轮稍后即可使用。
+- [L375 · L211 · D7] A Glazing & Loading Tech adds your second Glaze & Load space. A space added this way may be used later the same round. / 习得釉作技艺即添设施釉装窑第二工位；新添设的工位本轮稍后即可使用。
 - [A1] This Tech scores 1 VP immediately when you gain it. It is not scored again at game end. / 习得时立即得1分；终局不再另计。
 - [L213] A newly acquired Advanced Tech may be used in the same round if its timing permits. / 新习得的技艺，时机允许即可于本轮使用。
 - [INT Kiln Tending] Kiln Tending resolves automatically on the first qualifying Glaze & Load action each round; saving it gains nothing. / 数字版于每轮首次符合条件的施釉装窑行动后自动结算；留待以后毫无所得。
@@ -119,7 +119,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 ### T15 — Kiln Furniture / 支烧窑具
 
 - [L374] A player may own at most 3, and at most 1 from each discipline. / 每人至多3项技艺，每门类至多1项。
-- [L375 · D7] A Glazing & Loading Tech adds your second Glaze & Load space. A space added this way may be used later the same round (L211). / 习得釉作技艺即添设施釉装窑第二工位；新添设的工位本轮稍后即可使用。
+- [L375 · L211 · D7] A Glazing & Loading Tech adds your second Glaze & Load space. A space added this way may be used later the same round. / 习得釉作技艺即添设施釉装窑第二工位；新添设的工位本轮稍后即可使用。
 - [A1] This Tech scores 1 VP immediately when you gain it. It is not scored again at game end. / 习得时立即得1分；终局不再另计。
 - [L213] A newly acquired Advanced Tech may be used in the same round if its timing permits. / 新习得的技艺，时机允许即可于本轮使用。
 - [R4] Tech abilities are optional. Declining does not use the once-per-round allowance. / 技艺效果可选用；放弃不消耗“每轮一次”。
@@ -131,7 +131,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 ### T21 — Inverted Firing / 覆烧
 
 - [L374] A player may own at most 3, and at most 1 from each discipline. / 每人至多3项技艺，每门类至多1项。
-- [L375 · D7] A Glazing & Loading Tech adds your second Glaze & Load space. A space added this way may be used later the same round (L211). / 习得釉作技艺即添设施釉装窑第二工位；新添设的工位本轮稍后即可使用。
+- [L375 · L211 · D7] A Glazing & Loading Tech adds your second Glaze & Load space. A space added this way may be used later the same round. / 习得釉作技艺即添设施釉装窑第二工位；新添设的工位本轮稍后即可使用。
 - [A1] This Tech scores 1 VP immediately when you gain it. It is not scored again at game end. / 习得时立即得1分；终局不再另计。
 - [L213] A newly acquired Advanced Tech may be used in the same round if its timing permits. / 新习得的技艺，时机允许即可于本轮使用。
 - [R4] Tech abilities are optional. Declining does not use the once-per-round allowance. / 技艺效果可选用；放弃不消耗“每轮一次”。
@@ -143,7 +143,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 ### T22 — Setter's Mark / 窑位签
 
 - [L374] A player may own at most 3, and at most 1 from each discipline. / 每人至多3项技艺，每门类至多1项。
-- [L375 · D7] A Glazing & Loading Tech adds your second Glaze & Load space. A space added this way may be used later the same round (L211). / 习得釉作技艺即添设施釉装窑第二工位；新添设的工位本轮稍后即可使用。
+- [L375 · L211 · D7] A Glazing & Loading Tech adds your second Glaze & Load space. A space added this way may be used later the same round. / 习得釉作技艺即添设施釉装窑第二工位；新添设的工位本轮稍后即可使用。
 - [A1] This Tech scores 1 VP immediately when you gain it. It is not scored again at game end. / 习得时立即得1分；终局不再另计。
 - [INT Setter's Mark] Placement is optional. A Setter's Mark bought mid-round is first placed at the next Work Phase start. / 放置可选；本轮中途习得者，从下一次派工阶段开始时起放置。
 - [R5 · L630] An empty active Shared Kiln space marked by another player's Setter's Mark is not a legal destination for you. Only the Setter's Mark owner may load there this round. / 他人窑位签所占的空启用窑位，不是你的合法去处；本轮只有窑位签的主人可装入该窑位。
@@ -152,7 +152,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 ### T23 — Canal Barge / 漕船
 
 - [L374] A player may own at most 3, and at most 1 from each discipline. / 每人至多3项技艺，每门类至多1项。
-- [L375 · D7] A Glazing & Loading Tech adds your second Glaze & Load space. A space added this way may be used later the same round (L211). / 习得釉作技艺即添设施釉装窑第二工位；新添设的工位本轮稍后即可使用。
+- [L375 · L211 · D7] A Glazing & Loading Tech adds your second Glaze & Load space. A space added this way may be used later the same round. / 习得釉作技艺即添设施釉装窑第二工位；新添设的工位本轮稍后即可使用。
 - [A1] This Tech scores 1 VP immediately when you gain it. It is not scored again at game end. / 习得时立即得1分；终局不再另计。
 - [L213] A newly acquired Advanced Tech may be used in the same round if its timing permits. / 新习得的技艺，时机允许即可于本轮使用。
 - [R4] Tech abilities are optional. Declining does not use the once-per-round allowance. / 技艺效果可选用；放弃不消耗“每轮一次”。
@@ -298,7 +298,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 ### form_decorate — Form & Decorate / 制坯饰纹
 
 - [L143] Personal locations are on your own board. Each personal space may be used once per round. / 坊内地点在你自己的窑口板上；每个工位每轮只能用一次。
-- [L154 · D7] You start with 1 space. Learning a Form & Decorate Tech adds the second space, which may be used later the same round (L211). / 起初只有1个工位；习得坯作技艺即添设第二工位，新添设的工位本轮稍后即可使用。
+- [L154 · L211 · D7] You start with 1 space. Learning a Form & Decorate Tech adds the second space, which may be used later the same round. / 起初只有1个工位；习得坯作技艺即添设第二工位，新添设的工位本轮稍后即可使用。
 - [L141] "Up to 2" means 1 or 2, never 0. / “至多2”即1或2，不能为0。
 - [L332] Every Decoration costs 2 Coins; the Shifu's Form & Decorate action and Decorator's Kit each reduce one Decoration by 1 Coin. / 每种纹饰均为2铜钱；师傅的制坯饰纹行动与饰坯匣各令1项纹饰少付1铜钱。
 - [L652] The Shifu's Decoration discount, Decorator's Kit and Ding's 1-Coin vessel are three separate reductions. The first two may apply to the same Decoration (a Carved for 0). Ding's vessel takes neither. / 师傅纹饰减免、饰坯匣、定窑1铜钱额外坯是三项各自独立的减免。前两项可作用于同一纹饰（刻花0铜钱）；定窑额外坯两者皆不适用。
@@ -309,7 +309,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 ### glaze_load — Glaze & Load / 施釉装窑
 
 - [L143] Personal locations are on your own board. Each personal space may be used once per round. / 坊内地点在你自己的窑口板上；每个工位每轮只能用一次。
-- [L155 · D7] You start with 1 space. Learning a Glazing & Loading Tech adds the second space, which may be used later the same round (L211). / 起初只有1个工位；习得釉作技艺即添设第二工位，新添设的工位本轮稍后即可使用。
+- [L155 · L211 · D7] You start with 1 space. Learning a Glazing & Loading Tech adds the second space, which may be used later the same round. / 起初只有1个工位；习得釉作技艺即添设第二工位，新添设的工位本轮稍后即可使用。
 - [L141] "Up to 2" means 1 or 2, never 0. / “至多2”即1或2，不能为0。
 - [R5] A placement is legal if at least 1 of your Shaped vessels has a legal destination: an empty active Shared Kiln space not marked by another player's Setter's Mark; your own empty Imperial Kiln; or, for a Bowl, Plate or Brush Washer with Inverted Firing unused this round, an active space holding exactly 1 of your ceramics. / 可派工条件：你至少有1件坯拥有合法去处——空的启用窑位（非他人窑位签所占）、你空置的御窑，或（覆烧本轮未用时，碗／盘／笔洗）恰有1件你的器物的启用窑位。
 - [L99] Active Shared Kiln spaces by player count: 4 players 8 (3 High, 3 Middle, 2 Low); 3 players 6 (2-2-2); 2 players 4 (2-1-1). / 启用窑位按人数：4人8个（高3、中3、低2）；3人6个（2-2-2）；2人4个（2-1-1）。
@@ -372,7 +372,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 
 ### imperial_gift — Imperial Gift / 赐御窑
 
-- [L286] The Imperial Kiln holds 1 ceramic per firing. It does not occupy a Shared Kiln space (L289). / 御窑每次烧成容纳1件，不占共窑窑位。
+- [L286 · L289] The Imperial Kiln holds 1 ceramic per firing. It does not occupy a Shared Kiln space. / 御窑每次烧成容纳1件，不占共窑窑位。
 - [L287] During a Glaze & Load action, 1 vessel loaded by that action may be placed in your empty Imperial Kiln instead of the Shared Kiln. Imperial Priority also loads it. No Tech effect loads it. / 施釉装窑行动中所装器物可有1件改放入你空置的御窑；御烧优先也可装入。任何技艺效果都不能装入御窑。
 - [L288 · R11] Loading it chooses the −1, 0 or +1 Imperial modifier. The modifier is public when chosen and is recorded on the ceramic. / 装入时选定御窑修正−1、0或+1；选定即公开，并记录在该器物上。
 - [L288] Its Actual Heat is the Kiln Die result + the Fire modifier + that modifier, plus any Heat marker, whatever the Contributions were. It still fires during the shared Firing Phase. / 其实际火候 = 窑骰点数 + 窑火修正 + 御窑修正 + 火标，不论控火如何；仍于共同的烧窑阶段烧成。
@@ -385,7 +385,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 
 ### imperial_priority — Imperial Priority / 御烧优先
 
-- [R10] Imperial Priority is free. Loading through it chooses the −1, 0 or +1 Imperial modifier like any Imperial load, and the modifier is public (R11). / 御烧优先免费；经其装窑同样选定御窑修正−1、0或+1，且公开。
+- [R10 · R11] Imperial Priority is free. Loading through it chooses the −1, 0 or +1 Imperial modifier like any Imperial load, and the modifier is public. / 御烧优先免费；经其装窑同样选定御窑修正−1、0或+1，且公开。
 - [L646] Imperial Priority is a token effect, not a worker action. It never counts as a Glaze & Load action and does not trigger effects that require that action. / 御烧优先是令牌效果，不是工人行动；不算施釉装窑行动，也不触发需要该行动的效果。
 - [R9] A later Glaze & Load Shifu may place the Heat marker on a ceramic loaded by Imperial Priority. / 之后施釉装窑行动的师傅可将火标暗置于经御烧优先装入的器物上。
 - [INT Before/after-action window] Canal Barge and Imperial Priority may share the window in an order you choose. A token gained during the window is usable within it. / 与漕船同在“工人行动之前或之后”时，二者先后由你自定；在此时机中刚获得的令牌即可使用。

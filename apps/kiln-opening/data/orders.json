@@ -1,5 +1,161 @@
 {
   "rulesVersion": "1.6.1",
+  "clarifications": {
+    "starting": [
+      {
+        "en": "Starting Orders never enter the Main Order deck and have no Crowns; if discarded from your hand during Cleanup, return them to the box. They are Orders for all rules and Kiln Tradition abilities. A player is never required to complete a Starting Order.",
+        "zh": "起始委托永不进入主委托牌堆，不印御令；收工时弃置则放回盒中。在一切规则与窑口能力中皆算委托。玩家无须完成起始委托。",
+        "source": "L521"
+      },
+      {
+        "en": "Only Orders in your hand can be completed.",
+        "zh": "只能完成在手委托。",
+        "source": "L296"
+      },
+      {
+        "en": "The Order Phase is a single pass in First Player order. A player with nothing completable is skipped automatically.",
+        "zh": "交货阶段按起始玩家顺序依次进行一遍，不再循环；无可完成委托者自动略过。",
+        "source": "INT Order Phase"
+      },
+      {
+        "en": "An Order may also be completed through Canal Barge, which counts for every completion effect.",
+        "zh": "亦可经漕船完成委托，在一切完成效果上皆算。",
+        "source": "R6"
+      },
+      {
+        "en": "A ceramic may satisfy only one completed Order.",
+        "zh": "一件器物只能用于一张已完成的委托。",
+        "source": "L418"
+      },
+      {
+        "en": "Flawed ceramics cannot complete Orders.",
+        "zh": "瑕品不能用于完成委托。",
+        "source": "L278"
+      },
+      {
+        "en": "When completing an Order, each of your Crackle ceramics may count as having any one Decoration for that Order's Decoration requirements. Its printed Decoration is unchanged.",
+        "zh": "完成委托时，你的每件开片器可视为具有任意一种纹饰，以满足该委托的纹饰要求；其原纹饰不变。",
+        "source": "L469"
+      },
+      {
+        "en": "Starting Orders and reserved Main Orders both count toward your hand limit of 4 (5 with Colour Samples), checked only at Cleanup.",
+        "zh": "起始委托与承接的主委托都计入委托上限4张（有色样簿5张），只在收工时检查。",
+        "source": "L199 · L303"
+      },
+      {
+        "en": "In Round 5 the hand trim has no scoring effect and is skipped.",
+        "zh": "第5轮收工不削减委托（对计分无影响）。",
+        "source": "INT Cleanup in Round 5"
+      },
+      {
+        "en": "Orders in hand are secret information. The number of Orders in each player's hand is public.",
+        "zh": "手中委托保密，张数公开。",
+        "source": "L507"
+      },
+      {
+        "en": "Uncompleted Orders have no end-game penalty.",
+        "zh": "未完成的委托终局不扣分。",
+        "source": "L510"
+      }
+    ],
+    "main": [
+      {
+        "en": "Face-up Main Orders cannot be completed; they are reserved at the Commission Market during the Work Phase.",
+        "zh": "榜上委托不能完成，须于派工阶段在瓷牙行承接。",
+        "source": "L296"
+      },
+      {
+        "en": "A held Order can be completed during any later Order Phase, or with Canal Barge.",
+        "zh": "在手委托可于此后任一交货阶段完成，或经漕船完成。",
+        "source": "L402"
+      },
+      {
+        "en": "Canal Barge completes an Order for every completion effect, including Ru, Guan, Tribute Ware and Crackle wildcards.",
+        "zh": "经漕船完成在一切方面视为完成委托：触发汝窑、官窑与贡瓷，开片器亦可充作纹饰。",
+        "source": "R6"
+      },
+      {
+        "en": "The Order Phase is a single pass in First Player order. A player with nothing completable is skipped automatically.",
+        "zh": "交货阶段按起始玩家顺序依次进行一遍，不再循环；无可完成委托者自动略过。",
+        "source": "INT Order Phase"
+      },
+      {
+        "en": "Requirements are independent unless a specific pairing is explicitly printed.",
+        "zh": "各项要求彼此独立，除非卡面直接写明配对。",
+        "source": "L422"
+      },
+      {
+        "en": "A ceramic may satisfy only one completed Order.",
+        "zh": "一件器物只能用于一张已完成的委托。",
+        "source": "L418"
+      },
+      {
+        "en": "Flawed ceramics cannot complete Orders.",
+        "zh": "瑕品不能用于完成委托。",
+        "source": "L278"
+      },
+      {
+        "en": "Each Crackle ceramic may count as having any one Decoration for that Order's Decoration requirements; its printed Decoration is unchanged.",
+        "zh": "每件开片器可视为具有任意一种纹饰，以满足该委托的纹饰要求；其原纹饰不变。",
+        "source": "L469 · INT Ge Crackle"
+      },
+      {
+        "en": "A Crackle ceramic cannot fill a Masterpiece requirement, including Painted Masterpiece Orders.",
+        "zh": "开片器不能满足任何臻品要求（含画花臻品委托）。",
+        "source": "L654"
+      },
+      {
+        "en": "Resolve 1 Crown at a time. Each Crown advances Imperial Recognition by 1 until you reach Recognition 4; after that, each further Crown scores 1 VP immediately. Resolve every milestone crossed.",
+        "zh": "御令逐个结算：每个御令推进声望1格，直至声望4；此后每个御令立即得1分。所跨各格奖励皆结算。",
+        "source": "L415"
+      },
+      {
+        "en": "Tribute Ware's bonus Crown is not a printed Crown: it does not trigger Guan and does not count for tie-breaker 2.",
+        "zh": "贡瓷的额外御令不是印刷御令：不触发官窑，不计入平局判定②。",
+        "source": "R13"
+      },
+      {
+        "en": "Tie-breaker 2 counts Crown icons printed across completed Orders.",
+        "zh": "平局判定②计已完成委托上印有的御令总数。",
+        "source": "L498"
+      },
+      {
+        "en": "At the start of Rounds 2–5, discard the 2 leftmost face-up Main Orders, slide the remaining 4 left and reveal 2 new Orders to restore the display to 6.",
+        "zh": "第2–5轮开工时轮换委托榜：弃最左2张榜上主委托，余4张左移，翻2张新委托补至6张。",
+        "source": "L127 · L129"
+      },
+      {
+        "en": "If the deck and discard are both empty, only available cards can be reserved and display positions stay empty. The round-start rotation discards up to 2 and slides the rest.",
+        "zh": "主委托牌堆与弃牌堆皆空时，只能承接现有之牌，榜位留空；开工轮换至多弃2张，余者左移。",
+        "source": "B1"
+      },
+      {
+        "en": "The Main Order discard pile is face down; only its count is public. Display Orders discarded at round start were already public.",
+        "zh": "主委托弃牌堆面朝下，只公开张数；开工时弃置的榜上委托本已公开。",
+        "source": "B3"
+      },
+      {
+        "en": "Starting Orders and reserved Main Orders both count toward your hand limit of 4 (5 with Colour Samples), checked only at Cleanup. Discarded Main Orders go to the Main Order discard pile.",
+        "zh": "起始委托与承接的主委托都计入委托上限4张（有色样簿5张），只在收工时检查；弃置的主委托进入主委托弃牌堆。",
+        "source": "L199 · L303"
+      },
+      {
+        "en": "In Round 5 the hand trim has no scoring effect and is skipped.",
+        "zh": "第5轮收工不削减委托（对计分无影响）。",
+        "source": "INT Cleanup in Round 5"
+      },
+      {
+        "en": "Orders in hand are secret information. The number of Orders in each player's hand is public.",
+        "zh": "手中委托保密，张数公开。",
+        "source": "L507"
+      },
+      {
+        "en": "Uncompleted Orders have no end-game penalty.",
+        "zh": "未完成的委托终局不扣分。",
+        "source": "L510"
+      }
+    ]
+  },
   "starting": [
     {
       "id": "S01",

@@ -8,7 +8,8 @@
       "title": "Local Workshop",
       "titleZh": "民间作坊",
       "rewardText": null,
-      "rewardTextZh": null
+      "rewardTextZh": null,
+      "clarifications": []
     },
     {
       "space": 1,
@@ -22,7 +23,29 @@
       "title": "Imperial Grant",
       "titleZh": "御赐",
       "rewardText": "Gain 1 Clay, 1 Wood and 1 Coin.",
-      "rewardTextZh": "获得1泥、1柴和1铜钱。"
+      "rewardTextZh": "获得1泥、1柴和1铜钱。",
+      "clarifications": [
+        {
+          "en": "Recognition is advanced by Crown icons on completed Orders or by paying at the Magistrate's Hall.",
+          "zh": "声望经已完成委托上的御令或在州衙付费推进。",
+          "source": "L426"
+        },
+        {
+          "en": "Advancing at the Magistrate's Hall resolves the reward of the space you reach normally.",
+          "zh": "在州衙推进声望，照常结算所到之格的奖励。",
+          "source": "L231"
+        },
+        {
+          "en": "Resolve 1 Crown at a time. Resolve every milestone crossed.",
+          "zh": "御令逐个结算，所跨各格奖励皆结算。",
+          "source": "L415"
+        },
+        {
+          "en": "Each milestone reward is gained only once.",
+          "zh": "每项声望奖励只得一次。",
+          "source": "L439"
+        }
+      ]
     },
     {
       "space": 2,
@@ -33,7 +56,59 @@
       "title": "Imperial Gift",
       "titleZh": "赐御窑",
       "rewardText": "Gain your Imperial Kiln tile: a private space fired by the court at the Kiln Die result + Fire + a modifier you choose when loading, immune to Contributions.",
-      "rewardTextZh": "获得御窑板块，放入你的御窑区：私人单格窑，由御匠代烧，实际火候 = 窑骰点数 + 窑火修正 + 装窑时自选的御窑修正 + 火标，不受控火影响。"
+      "rewardTextZh": "获得御窑板块，放入你的御窑区：私人单格窑，由御匠代烧，实际火候 = 窑骰点数 + 窑火修正 + 装窑时自选的御窑修正 + 火标，不受控火影响。",
+      "clarifications": [
+        {
+          "en": "The Imperial Kiln holds 1 ceramic per firing. It does not occupy a Shared Kiln space.",
+          "zh": "御窑每次烧成容纳1件，不占共窑窑位。",
+          "source": "L286 · L289"
+        },
+        {
+          "en": "During a Glaze & Load action, 1 vessel loaded by that action may be placed in your empty Imperial Kiln instead of the Shared Kiln. Imperial Priority also loads it. No Tech effect loads it.",
+          "zh": "施釉装窑行动中所装器物可有1件改放入你空置的御窑；御烧优先也可装入。任何技艺效果都不能装入御窑。",
+          "source": "L287"
+        },
+        {
+          "en": "Loading it chooses the −1, 0 or +1 Imperial modifier. The modifier is public when chosen and is recorded on the ceramic.",
+          "zh": "装入时选定御窑修正−1、0或+1；选定即公开，并记录在该器物上。",
+          "source": "L288 · R11"
+        },
+        {
+          "en": "Its Actual Heat is the Kiln Die result + the Fire modifier + that modifier, plus any Heat marker, whatever the Contributions were. It still fires during the shared Firing Phase.",
+          "zh": "其实际火候 = 窑骰点数 + 窑火修正 + 御窑修正 + 火标，不论控火如何；仍于共同的烧窑阶段烧成。",
+          "source": "L288"
+        },
+        {
+          "en": "It counts as a ceramic in this firing for your Techs and abilities, but it does not make you a Contribution participant: only a ceramic in the Shared Kiln does.",
+          "zh": "对你的技艺与窑口能力而言，它算作本次烧成中的器物；但不使你成为控火者，只有共窑中的器物才算。",
+          "source": "L289"
+        },
+        {
+          "en": "If only Imperial Kiln ceramics are loaded, Contributions are skipped and Base Heat is the Kiln Die result; the Fire card is still revealed.",
+          "zh": "若只有御窑器物入窑，则无人控火，基础火候即窑骰点数；仍翻窑火牌。",
+          "source": "INT No Contribution participants"
+        },
+        {
+          "en": "Kiln Furniture, Inverted Firing and Setter's Mark affect the Shared Kiln only.",
+          "zh": "支烧窑具、覆烧、窑位签只用于共窑。",
+          "source": "L647"
+        },
+        {
+          "en": "After firing, its ceramic resolves Quality and moves to the owner's Finished Ceramics area normally.",
+          "zh": "烧成后照常定品，移入成器区。",
+          "source": "L290"
+        },
+        {
+          "en": "An Imperial Kiln gained during the before-or-after-action window is usable within it.",
+          "zh": "在“工人行动之前或之后”时机中刚获得的御窑，即可于该时机使用。",
+          "source": "INT Before/after-action window"
+        },
+        {
+          "en": "The Imperial Kiln is gained only once.",
+          "zh": "御窑只得一次。",
+          "source": "L439"
+        }
+      ]
     },
     {
       "space": 3,
@@ -44,7 +119,44 @@
       "title": "Imperial Priority",
       "titleZh": "御烧优先",
       "rewardText": "Take your coloured Imperial Priority token. Once per game, before or after your worker action, spend it to give 1 of your Shaped vessels a Glaze and load it into your empty Imperial Kiln.",
-      "rewardTextZh": "从声望轨第3格取回你颜色的御烧优先标。每局一次，在你的工人行动之前或之后，你可以交出此标，为你的1件坯施釉并装入你空置的御窑。"
+      "rewardTextZh": "从声望轨第3格取回你颜色的御烧优先标。每局一次，在你的工人行动之前或之后，你可以交出此标，为你的1件坯施釉并装入你空置的御窑。",
+      "clarifications": [
+        {
+          "en": "Imperial Priority is free. Loading through it chooses the −1, 0 or +1 Imperial modifier like any Imperial load, and the modifier is public.",
+          "zh": "御烧优先免费；经其装窑同样选定御窑修正−1、0或+1，且公开。",
+          "source": "R10 · R11"
+        },
+        {
+          "en": "Imperial Priority is a token effect, not a worker action. It never counts as a Glaze & Load action and does not trigger effects that require that action.",
+          "zh": "御烧优先是令牌效果，不是工人行动；不算施釉装窑行动，也不触发需要该行动的效果。",
+          "source": "L646"
+        },
+        {
+          "en": "A later Glaze & Load Shifu may place the Heat marker on a ceramic loaded by Imperial Priority.",
+          "zh": "之后施釉装窑行动的师傅可将火标暗置于经御烧优先装入的器物上。",
+          "source": "R9"
+        },
+        {
+          "en": "Canal Barge and Imperial Priority may share the window in an order you choose. A token gained during the window is usable within it.",
+          "zh": "与漕船同在“工人行动之前或之后”时，二者先后由你自定；在此时机中刚获得的令牌即可使用。",
+          "source": "INT Before/after-action window"
+        },
+        {
+          "en": "After a Commission Market action, the display refills after any after-action Imperial Priority.",
+          "zh": "瓷牙行行动后，委托榜在行动后的御烧优先之后才补。",
+          "source": "INT Deferred refill"
+        },
+        {
+          "en": "Provisional ruling: Reworking Table may be used when Imperial Priority glazes and loads a vessel, using its once-per-round allowance.",
+          "zh": "暂定裁定：御烧优先施釉入窑时亦可用改坯案，并消耗其“每轮一次”。",
+          "source": "P1"
+        },
+        {
+          "en": "The Imperial Priority token is gained only once.",
+          "zh": "御烧优先标只得一次。",
+          "source": "L439"
+        }
+      ]
     },
     {
       "space": 4,
@@ -56,10 +168,56 @@
       "title": "Imperial Audience",
       "titleZh": "御前召见",
       "rewardText": "Gain 6 VP. After this, each further Crown scores 1 VP immediately.",
-      "rewardTextZh": "获得6分。此后每获得1个御令，立即得1分。"
+      "rewardTextZh": "获得6分。此后每获得1个御令，立即得1分。",
+      "clarifications": [
+        {
+          "en": "The Magistrate's Hall cannot advance you to Recognition 4; only Crowns reach it.",
+          "zh": "州衙不能推进至声望4，只有御令可达。",
+          "source": "L426"
+        },
+        {
+          "en": "Resolve Crowns one at a time. A multi-Crown Order may cross several milestones, reach Recognition 4 and then score VP from any remaining Crowns on that same Order.",
+          "zh": "御令逐个结算；一张多御令委托可连跨数格，到达声望4后，同一委托余下的御令即各计1分。",
+          "source": "L438"
+        },
+        {
+          "en": "Tribute Ware's bonus Crown also advances Recognition.",
+          "zh": "贡瓷的额外御令同样推进御府声望。",
+          "source": "R13"
+        },
+        {
+          "en": "Imperial Audience is gained only once.",
+          "zh": "御前召见只得一次。",
+          "source": "L439"
+        }
+      ]
     }
   ],
   "overflowVpPerCrown": 1,
+  "clarifications": {
+    "imperial_overflow": [
+      {
+        "en": "After you are at Recognition 4, each additional Crown you gain scores 1 VP immediately.",
+        "zh": "声望满4后，每获得1个御令，立即得1分。",
+        "source": "L437"
+      },
+      {
+        "en": "A multi-Crown Order may reach Recognition 4 and then score VP from any remaining Crowns on that same Order.",
+        "zh": "一张多御令委托可先到达声望4，再以余下的御令计分。",
+        "source": "L438"
+      },
+      {
+        "en": "Tribute Ware's bonus Crown scores past Recognition 4, but it is not a printed Crown and does not count for tie-breaker 2.",
+        "zh": "贡瓷的额外御令在声望满4后计1分，但不是印刷御令，不计入平局判定②。",
+        "source": "R13"
+      },
+      {
+        "en": "Tie-breaker 2 counts Crown icons printed across completed Orders, including those scored beyond Recognition 4.",
+        "zh": "平局判定②计已完成委托上印有的御令总数，含声望满4后计分的御令。",
+        "source": "L498"
+      }
+    ]
+  },
   "exhibition": {
     "minimumQuality": "standard",
     "qualityVp": {

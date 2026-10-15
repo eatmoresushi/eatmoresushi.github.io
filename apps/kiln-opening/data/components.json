@@ -22,7 +22,7 @@
       "name": "Kiln Player Boards",
       "nameZh": "窑口板",
       "qty": 5,
-      "notes": "Ru, Guan, Ge, Ding and Jun. Each shows its Kiln Tradition, a Form & Decorate with 2 spaces (the second added by learning a Workshop Tech), a Glaze & Load with 2 spaces (the second added by learning a Glazing & Loading Tech), 3 Tech slots and an Imperial Kiln area.",
+      "notes": "Ru, Guan, Ge, Ding and Jun. Each shows its Kiln Tradition, a Form & Decorate with 2 spaces (the second added by learning a Form & Decorate Tech), a Glaze & Load with 2 spaces (the second added by learning a Glazing & Loading Tech), 3 Tech slots and an Imperial Kiln area.",
       "notesZh": "汝窑、官窑、哥窑、定窑与钧窑。每块印有窑口传承、制坯饰纹（2个工位，第二工位习得坯作技艺即添）、施釉装窑（2个工位，第二工位习得釉作技艺即添）、3个技艺位与御窑区。"
     },
     {
@@ -102,7 +102,7 @@
       "name": "Advanced Tech tiles",
       "nameZh": "技艺牌",
       "qty": 18,
-      "notes": "Six Workshop, six Glazing & Loading, six Firing. The Kiln Master tile comes with its own marker.",
+      "notes": "Six Form & Decorate, six Glazing & Loading, six Firing. The Kiln Master tile comes with its own marker.",
       "notesZh": "坯作、釉作、火作各6张。窑工技艺附带窑工标。"
     },
     {

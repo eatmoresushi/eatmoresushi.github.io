@@ -1635,6 +1635,29 @@ export interface TechParamsById {
   T25: { bonusCrowns: number };
 }
 
+/**
+ * One rules clarification shown in a component's rules details (owner decision D10, UI
+ * architecture K15), parsed from `docs/KILN_OPENING_v1.6.1_CLARIFICATIONS.md`. Display prose:
+ * outside the rules fingerprint (`PROSE_LIST_KEYS`), never read by a rule.
+ */
+export interface ClarificationDefinition {
+  en: string;
+  zh: string;
+  /**
+   * The source label, one or more tags joined by " · ": `L123` (rulebook line), `A1`
+   * (amendment), `R1`–`R13` / `B1`–`B3` (owner rulings), `ED L123` (editorial correction),
+   * `INT <name>` (recorded interpretation), `P1`–`P3` (provisional ruling), `D7` (owner UI decision).
+   */
+  source: string;
+}
+
+/**
+ * Short component text convention (`shortText` / `shortTextZh`, from
+ * `docs/KILN_OPENING_v1.6.1_COMPONENT_TEXT_SOURCE.md`): plain text, no Markdown. The timing
+ * clause is everything before the first colon (":" or "："); after it, the secondary labels
+ * "Ongoing:" / "持续：" and "Orders:" / "完成委托时：" start a second clause. The UI bolds the
+ * timing clause and the secondary labels (`shortTextSegments` in `content.ts`).
+ */
 export interface TechDefinition<Id extends TechId = TechId> {
   id: Id;
   discipline: TechDiscipline;
@@ -1651,10 +1674,14 @@ export interface TechDefinition<Id extends TechId = TechId> {
   params: TechParamsById[Id];
   name: string;
   nameZh: string;
+  /** Appendix B Ability cell of the English rulebook, verbatim (bold markup removed). */
   ability: string;
+  /** The same cell of the Chinese rulebook edition `docs/KILN_OPENING_v1.6.1_ZH.md`. */
   abilityZh: string;
   shortText: string;
   shortTextZh: string;
+  /** D10 clarifications for this Tech only. */
+  clarifications: ClarificationDefinition[];
 }
 
 export interface KilnParamsById {
@@ -1673,10 +1700,14 @@ export interface KilnDefinition<Id extends KilnId = KilnId> {
   nameZh: string;
   abilityName: string;
   abilityNameZh: string;
+  /** The Kiln Tradition Abilities section of the English rulebook, paragraphs joined by a space. */
   ability: string;
+  /** The same section of the Chinese rulebook edition `docs/KILN_OPENING_v1.6.1_ZH.md`, paragraphs joined. */
   abilityZh: string;
   shortText: string;
   shortTextZh: string;
+  /** D10 clarifications for this Kiln only. */
+  clarifications: ClarificationDefinition[];
 }
 
 /** Printed location effects, mechanical half (DESIGN §6.3). */
@@ -1732,6 +1763,8 @@ export interface LocationDefinition<Id extends LocationId = LocationId> {
   apprenticeTextZh: string;
   shifuText: string;
   shifuTextZh: string;
+  /** D10 clarifications for this location only. */
+  clarifications: ClarificationDefinition[];
 }
 
 export interface GameConfigDefinition {
@@ -1795,8 +1828,12 @@ export interface ImperialTrackDefinition {
     titleZh: string;
     rewardText: string | null;
     rewardTextZh: string | null;
+    /** D10 clarifications for this milestone (none for Recognition 0). */
+    clarifications: ClarificationDefinition[];
   }>;
   overflowVpPerCrown: number;
+  /** D10 clarifications for Crowns beyond Recognition 4 (`overflowVpPerCrown`). */
+  clarifications: { imperial_overflow: ClarificationDefinition[] };
   exhibition: {
     minimumQuality: Exclude<Quality, "flawed">;
     qualityVp: Record<Exclude<Quality, "flawed">, number>;

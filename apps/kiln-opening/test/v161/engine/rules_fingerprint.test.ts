@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   CONTENT_SOURCES,
   PROSE_KEYS,
+  PROSE_LIST_KEYS,
   RULES_BEHAVIOUR_REVISION,
   contentDigest,
   contentDigestOf,
@@ -88,6 +89,19 @@ describe("V1.6.1 rules fingerprint", () => {
     }
     expect(PROSE_KEYS.has("requirements")).toBe(false);
     expect(PROSE_KEYS.has("requirementsZh")).toBe(false);
+    // D10 clarifications are lists of { en, zh, source } prose records (owner decision D10).
+    expect([...PROSE_LIST_KEYS]).toEqual(["clarifications"]);
+  });
+
+  it("leaves the D10 clarifications out of the digest", () => {
+    const sources = copySources();
+    const strip = (value: unknown): unknown => {
+      if (Array.isArray(value)) return value.map(strip);
+      if (value === null || typeof value !== "object") return value;
+      return Object.fromEntries(Object.entries(value as Record<string, unknown>)
+        .filter(([key]) => key !== "clarifications").map(([key, item]) => [key, strip(item)]));
+    };
+    expect(contentDigestOf(sources.map(([name, data]) => [name, strip(data)] as [string, unknown]))).toBe(contentDigest());
   });
 
   const proseEdits: Array<[string, (sources: Sources) => void]> = [
@@ -99,6 +113,19 @@ describe("V1.6.1 rules fingerprint", () => {
     ["a Recognition title", (s) => { entries(s, "imperial_progress", "track")[4]!["titleZh"] = "改名"; }],
     ["a Contribution card name", (s) => {
       (file(s, "firing")["contributionCards"] as Array<Record<string, unknown>>)[0]!["nameZh"] = "改名";
+    }],
+    ["a Tech clarification", (s) => {
+      (entries(s, "techniques", "advanced")[5]!["clarifications"] as Array<Record<string, unknown>>)[0]!["en"] = "Reworded.";
+    }],
+    ["a new Kiln clarification", (s) => {
+      (entries(s, "kilns", "kilns")[0]!["clarifications"] as unknown[]).push({ en: "New.", zh: "新。", source: "R4" });
+    }],
+    ["a location's clarifications removed", (s) => { delete entries(s, "action_locations", "locations")[2]!["clarifications"]; }],
+    ["an Order clarification source", (s) => {
+      ((file(s, "orders")["clarifications"] as Record<string, Array<Record<string, unknown>>>)["main"]!)[0]!["source"] = "L297";
+    }],
+    ["a Recognition overflow clarification", (s) => {
+      ((file(s, "imperial_progress")["clarifications"] as Record<string, unknown[]>)["imperial_overflow"]!).pop();
     }],
   ];
 
@@ -136,6 +163,7 @@ describe("V1.6.1 rules fingerprint", () => {
       (entries(s, "imperial_progress", "track")[1]!["reward"] as Record<string, unknown>)["coins"] = 3;
     }],
     ["a source name", (s) => { s[0]![0] = "locations"; }],
+    ["a non-prose value under the clarifications key", (s) => { entries(s, "techniques", "advanced")[0]!["clarifications"] = 3; }],
   ];
 
   it.each(mechanicalEdits)("changes with %s", (_, edit) => {

@@ -18,8 +18,9 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  * 2. **Behaviour** — `RULES_BEHAVIOUR_REVISION`, bumped by hand when engine semantics change
  *    with no data field behind them.
  *
- * Display prose (`PROSE_KEYS`) is excluded so that a typo fix or a translation improvement does
- * not invalidate every game in progress. Order `requirements` text stays in the digest.
+ * Display prose (`PROSE_KEYS`, `PROSE_LIST_KEYS`) is excluded so that a typo fix or a translation
+ * improvement does not invalidate every game in progress. Order `requirements` text stays in
+ * the digest.
  *
  * This is drift detection, not security: FNV-1a is not a defence against a crafted collision.
  * Rooms store `r<revision>-<digest>`; the V1.6.1 Supabase gate requires `^r29-[0-9a-f]{16}$`.
@@ -85,12 +86,39 @@ export const PROSE_KEYS: ReadonlySet<string> = new Set([
   "notesZh",
 ]);
 
+/**
+ * Display-only keys whose value is a list of prose records rather than one string: the D10
+ * `clarifications` (owner decision D10, `docs/KILN_OPENING_v1.6.1_CLARIFICATIONS.md`, which is
+ * itself outside the fingerprint). A key is dropped only when its value is prose: an array of
+ * records whose every value is a string, or an object whose every value is such an array (the
+ * top-level `clarifications` of `orders.json` and `imperial_progress.json`). Anything else under
+ * this name still reaches the digest.
+ */
+export const PROSE_LIST_KEYS: ReadonlySet<string> = new Set(["clarifications"]);
+
+function isProseRecordList(value: unknown): boolean {
+  return Array.isArray(value) && value.every((item) => item !== null && typeof item === "object" && !Array.isArray(item)
+    && Object.values(item as Record<string, unknown>).every((field) => typeof field === "string"));
+}
+
+function isProseList(value: unknown): boolean {
+  if (isProseRecordList(value)) return true;
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    && Object.values(value as Record<string, unknown>).every(isProseRecordList);
+}
+
+/** True when a key/value pair is display prose and stays out of the digest. */
+function isProse(key: string, item: unknown): boolean {
+  if (PROSE_KEYS.has(key)) return typeof item === "string" || item === null;
+  return PROSE_LIST_KEYS.has(key) && isProseList(item);
+}
+
 /** Deterministic serialisation: keys sorted, prose dropped, no incidental whitespace. */
 function canonical(value: unknown): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value) ?? "null";
   if (Array.isArray(value)) return `[${value.map((item) => canonical(item)).join(",")}]`;
   const entries = Object.entries(value as Record<string, unknown>)
-    .filter(([key, item]) => !(PROSE_KEYS.has(key) && (typeof item === "string" || item === null)))
+    .filter(([key, item]) => !isProse(key, item))
     .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0));
   return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${canonical(item)}`).join(",")}}`;
 }

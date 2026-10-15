@@ -83,6 +83,15 @@ describe("the V1.6.1 rulebook is the source of truth", () => {
     expect(GAME_RULES).toContain("(./GLOSSARY_ZH_V1.6.1.md)");
   });
 
+  it("has a checked-in Chinese edition, derived from it and deferring to it", () => {
+    // Byte-identical copy of the owner's Chinese rulebook (2026-10-15), translated to match the
+    // English rulebook exactly. It is the source of every Tech and Kiln `abilityZh`; the English
+    // rulebook remains the only mechanical authority.
+    const zh = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.1_ZH.md"));
+    expect(createHash("sha256").update(zh).digest("hex")).toBe("5d06268e93517896199088fc61a09203d3fe24b2859fb4b79785dc51f1b0e2a1");
+    expect(zh.toString("utf8")).toContain("规则以英文版规则书为准");
+  });
+
   it("calls itself v1.61, which the audit maps to rules version 1.6.1", () => {
     expect(read(SOURCE_PATH).split("\n")[0]).toContain("v1.61");
     expect(AUDIT).toContain("the engine uses the rules version string `1.6.1`");
@@ -129,8 +138,9 @@ describe("every data file is V1.6.1 content with current IDs only", () => {
   });
 
   it("never mentions Crackle as an Order Decoration", () => {
-    const orders = read("data/orders.json");
-    expect(orders).not.toMatch(/Crackle|开片/);
+    // The Order cards themselves; the D10 clarifications prose explains Crackle wildcards.
+    const orders = JSON.parse(read("data/orders.json")) as { starting: unknown[]; main: unknown[] };
+    expect(JSON.stringify([...orders.starting, ...orders.main])).not.toMatch(/Crackle|开片/);
   });
 });
 

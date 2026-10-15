@@ -16,6 +16,7 @@ import {
   LOCATION_IDS,
   LOCATIONS,
   MAIN_ORDER_IDS,
+  ORDER_CLARIFICATIONS,
   ORDER_IDS,
   ORDERS,
   PERSONAL_LOCATION_IDS,
@@ -24,7 +25,11 @@ import {
   STARTING_ORDER_IDS,
   TECH_IDS,
   TECHS,
+  CLARIFICATION_TAG,
+  SHORT_TEXT_SECONDARY_LABELS,
   activeKilnSpaces,
+  clarificationSourceKind,
+  clarificationTags,
   contributionCard,
   decorationCost,
   isStartingOrderId,
@@ -32,6 +37,7 @@ import {
   preferredHeat,
   qualityForDifference,
   shapeClay,
+  shortTextSegments,
   techsOfDiscipline,
   validateContentFiles,
   zoneModifier,
@@ -40,6 +46,7 @@ import {
 } from "../../../src/game/content.ts";
 import { COMMON_DETAIL_KEYS, RULE_ERROR_TEXT } from "../../../src/game/ruleErrorText.ts";
 import type {
+  ClarificationDefinition,
   Decoration,
   Glaze,
   GameRuleErrorCode,
@@ -67,6 +74,11 @@ const SOURCE = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.1_EN_SOURCE.md"),
 const DESIGN = readFileSync(join(ROOT, "docs/ENGINE_V1.6.1_DESIGN.md"), "utf8");
 const AUDIT = readFileSync(join(ROOT, "docs/RULEBOOK_AUDIT_V1.6.1.md"), "utf8");
 const TYPES = readFileSync(join(ROOT, "src/game/types.ts"), "utf8");
+/** The Chinese rulebook edition, translated to match the English rulebook sentence for sentence. */
+const SOURCE_ZH = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.1_ZH.md"), "utf8");
+const COMPONENT_TEXT = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.1_COMPONENT_TEXT_SOURCE.md"), "utf8");
+const CLARIFICATIONS_DOC = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.1_CLARIFICATIONS.md"), "utf8");
+const OWNER_DECISIONS = readFileSync(join(ROOT, "docs/ui-v1.6.1/OWNER_DECISIONS.md"), "utf8");
 
 const clean = (text: string): string => text.replaceAll("**", "").replace(/\s+/g, " ").trim();
 const cellsOf = (line: string): string[] => line.split("|").slice(1, -1).map(clean);
@@ -438,8 +450,13 @@ describe("printed numbers equal the data parameters", () => {
   });
 
   it("prints the same numbers in the English and Chinese reminder text", () => {
+    // Chinese counts with a measure word where English says "a" ("a Shaped vessel" / 1件坯),
+    // so the Chinese may add a 1 and nothing else.
     for (const definition of [...TECH_IDS.map((id) => TECHS[id]), ...KILN_IDS.map((id) => KILNS[id])]) {
-      expect(new Set(numbersIn(definition.shortTextZh)), definition.id).toEqual(new Set(numbersIn(definition.shortText)));
+      const en = new Set(numbersIn(definition.shortText));
+      const zh = new Set(numbersIn(definition.shortTextZh));
+      for (const number of en) expect(zh.has(number), `${definition.id}: ${number} missing from the Chinese`).toBe(true);
+      for (const number of zh) expect(number === 1 || en.has(number), `${definition.id}: ${number} not in the English`).toBe(true);
     }
   });
 });
@@ -747,6 +764,7 @@ function currentFiles(): ContentFiles {
     techniques: { rulesVersion: "1.6.1", advanced: TECH_IDS.map((id) => TECHS[id]) },
     orders: {
       rulesVersion: "1.6.1",
+      clarifications: ORDER_CLARIFICATIONS,
       starting: STARTING_ORDER_IDS.map((id) => ORDERS[id]),
       main: MAIN_ORDER_IDS.map((id) => ORDERS[id]),
     },
@@ -775,7 +793,7 @@ describe("content validation", () => {
       const order = files.orders.main.find((candidate) => candidate.id === "O30") as OrderDefinition;
       order.relations = [{ type: "required_glazes", values: ["white", "moon_white", "celadon"] }];
     }],
-    ["a seventh Workshop Tech", (files) => { (files.techniques.advanced[6] as { discipline: string }).discipline = "workshop"; }],
+    ["a seventh Form & Decorate Tech", (files) => { (files.techniques.advanced[6] as { discipline: string }).discipline = "workshop"; }],
     ["a Firing Tech that unlocks a space", (files) => {
       (files.techniques.advanced[12] as { unlocks: string | null }).unlocks = "glaze_load";
     }],
@@ -791,6 +809,16 @@ describe("content validation", () => {
     }],
     ["an empty Chinese name", (files) => { (files.techniques.advanced[0] as { nameZh: string }).nameZh = " "; }],
     ["an empty Chinese requirement", (files) => { (files.orders.main[0] as { requirementsZh: string }).requirementsZh = ""; }],
+    ["a Tech without clarifications", (files) => { (files.techniques.advanced[4] as { clarifications: unknown }).clarifications = []; }],
+    ["a malformed clarification source tag", (files) => {
+      (files.kilns.kilns[1]?.clarifications[0] as { source: string }).source = "Rule 4";
+    }],
+    ["a clarification with an extra field", (files) => {
+      (files.actionLocations.locations[0]?.clarifications[0] as unknown as Record<string, string>)["note"] = "x";
+    }],
+    ["missing Order clarifications", (files) => { (files.orders as { clarifications: unknown }).clarifications = undefined; }],
+    ["a short text with Markdown", (files) => { (files.techniques.advanced[0] as { shortText: string }).shortText = "**Once per round:** x"; }],
+    ["a short text with no timing clause", (files) => { (files.kilns.kilns[0] as { shortTextZh: string }).shortTextZh = "得4分"; }],
   ];
 
   it.each(mutations)("rejects %s", (_, mutate) => {
@@ -832,5 +860,272 @@ describe("one source per value", () => {
       });
     }
     expect(offenders).toEqual([]);
+  });
+});
+
+// ── Full ability text: the English rulebook and its Chinese edition ─────────────────────
+
+describe("full Tech and Kiln abilities are the rulebook text in both languages", () => {
+  const ZH_B_SECTIONS: ReadonlyArray<readonly [TechDiscipline, string]> = [
+    ["workshop", "### B1. 坯作——6张"],
+    ["glazing_loading", "### B2. 釉作——6张"],
+    ["firing", "### B3. 火作——6张"],
+  ];
+  const zhTechRows = ZH_B_SECTIONS.flatMap(([discipline, heading]) =>
+    tableRows(section(heading, SOURCE_ZH)).filter((cells) => /^\d+$/.test(cells[1] ?? "")).map((cells) => ({ discipline, cells })));
+
+  it("the Chinese Appendix B prints the same 18 tiles, disciplines and costs", () => {
+    expect(zhTechRows).toHaveLength(18);
+    for (const { discipline, cells } of zhTechRows) {
+      const id = TECH_IDS.find((techId) => TECHS[techId].nameZh === cells[0]);
+      expect(id, cells[0]).toBeDefined();
+      if (id === undefined) continue;
+      expect(TECHS[id].discipline, id).toBe(discipline);
+      expect(TECHS[id].cost, id).toBe(Number(cells[1]));
+    }
+  });
+
+  it.each(TECH_IDS)("Tech %s: ability is the English Appendix B cell, abilityZh the Chinese one", (id) => {
+    const tech = TECHS[id];
+    const en = techRows.find((entry) => techByPrintedName(entry.cells[0] ?? "").id === id);
+    const zh = zhTechRows.find((entry) => entry.cells[0] === tech.nameZh);
+    expect(tech.ability).toBe(en?.cells[2]);
+    expect(tech.abilityZh).toBe(zh?.cells[2]);
+  });
+
+  it.each(KILN_IDS)("Kiln %s: ability and abilityZh are the Kiln Tradition Abilities sections", (id) => {
+    const kiln = KILNS[id];
+    const paragraphs = (heading: string, source: string): string[] => section(heading, source).trim().split(/\n\s*\n/).map(clean);
+    expect(kiln.ability).toBe(paragraphs(`### ${kiln.name} / ${kiln.nameZh} — ${kiln.abilityName}`, SOURCE).join(" "));
+    expect(kiln.abilityZh).toBe(paragraphs(`### ${kiln.nameZh} · ${kiln.abilityNameZh}`, SOURCE_ZH).join(""));
+  });
+
+  it("the Chinese edition defers to the English rulebook", () => {
+    expect(SOURCE_ZH.split("\n")[0]).toContain("v1.61");
+    expect(SOURCE_ZH).toContain("规则以英文版规则书为准");
+  });
+});
+
+// ── Short component text (docs/KILN_OPENING_v1.6.1_COMPONENT_TEXT_SOURCE.md) ──────────────
+
+/** `### Name / 名 (T01)` sections with `- EN:` and `- ZH:` lines; the Review notes have none. */
+function componentTexts(): Map<string, { heading: string; en?: string; zh?: string }> {
+  const found = new Map<string, { heading: string; en?: string; zh?: string }>();
+  let current: { heading: string; en?: string; zh?: string } | null = null;
+  for (const line of COMPONENT_TEXT.split("\n")) {
+    if (line.startsWith("## ")) current = null;
+    const heading = /^### (.+) \(([A-Z0-9]{2,3})\)$/.exec(line);
+    if (heading !== null) {
+      current = { heading: heading[1] ?? "" };
+      found.set(heading[2] ?? "", current);
+      continue;
+    }
+    const text = /^- (EN|ZH): (.+)$/.exec(line);
+    if (current !== null && text !== null) current[text[1] === "EN" ? "en" : "zh"] = text[2] ?? "";
+  }
+  return found;
+}
+
+describe("short component text (component text source)", () => {
+  const texts = componentTexts();
+
+  it("covers exactly the 18 Techs and 5 Kilns", () => {
+    expect([...texts.keys()].sort()).toEqual([...TECH_IDS, ...KILN_IDS].sort());
+  });
+
+  it.each([...TECH_IDS, ...KILN_IDS])("%s: shortText and shortTextZh equal the doc lines", (id) => {
+    const definition = (TECH_IDS as readonly string[]).includes(id) ? TECHS[id as TechId] : KILNS[id as keyof typeof KILNS];
+    const entry = texts.get(id);
+    expect(definition.shortText).toBe(entry?.en);
+    expect(definition.shortTextZh).toBe(entry?.zh);
+    const heading = "abilityName" in definition
+      ? `${definition.name} / ${definition.nameZh} — ${definition.abilityName} / ${definition.abilityNameZh}`
+      : `${definition.name} / ${definition.nameZh}`;
+    expect(entry?.heading).toBe(heading);
+  });
+
+  it("is plain text whose timing clause and secondary labels the UI emphasises", () => {
+    const emphasised = new Map<string, string[]>();
+    for (const definition of [...TECH_IDS.map((id) => TECHS[id]), ...KILN_IDS.map((id) => KILNS[id])]) {
+      for (const text of [definition.shortText, definition.shortTextZh]) {
+        expect(text, definition.id).not.toMatch(/[*_`#\n]|<br>/);
+        const segments = shortTextSegments(text);
+        expect(segments.map((segment) => segment.text).join(""), definition.id).toBe(text);
+        expect(segments[0]?.emphasis && /[:：]$/.test(segments[0].text), `${definition.id}: timing clause`).toBe(true);
+        const labels = segments.slice(1).filter((segment) => segment.emphasis).map((segment) => segment.text);
+        if (labels.length > 0) emphasised.set(`${definition.id}:${text === definition.shortText ? "en" : "zh"}`, labels);
+      }
+    }
+    expect(Object.fromEntries(emphasised)).toEqual({
+      "T10:en": ["Ongoing:"],
+      "T10:zh": ["持续："],
+      "GE:en": ["Orders:"],
+      "GE:zh": ["完成委托时："],
+    });
+    expect(SHORT_TEXT_SECONDARY_LABELS).toEqual(["Ongoing:", "Orders:", "持续：", "完成委托时："]);
+    expect(shortTextSegments("Game end: score.")).toEqual([{ text: "Game end:", emphasis: true }, { text: " score.", emphasis: false }]);
+  });
+});
+
+// ── Clarifications (owner decision D10, UI architecture K15) ─────────────────────────────
+
+/** `### <key> — <name>` sections of `- [source] English / 中文` items; header and Review notes skipped. */
+function clarificationsDoc(): Map<string, { heading: string; items: ClarificationDefinition[] }> {
+  const found = new Map<string, { heading: string; items: ClarificationDefinition[] }>();
+  let current: { heading: string; items: ClarificationDefinition[] } | null = null;
+  for (const line of CLARIFICATIONS_DOC.split("\n")) {
+    if (line.startsWith("## ")) current = null;
+    const heading = /^### (\S+) — (.+)$/.exec(line);
+    if (heading !== null) {
+      current = { heading: heading[2] ?? "", items: [] };
+      found.set(heading[1] ?? "", current);
+      continue;
+    }
+    if (current === null || !line.startsWith("- ")) continue;
+    const item = /^- \[([^\]]+)\] (.+)$/.exec(line);
+    const halves = item?.[2]?.split(" / ") ?? [];
+    if (item === null || halves.length !== 2) throw new Error(`Malformed clarification line: ${line}`);
+    current.items.push({ en: halves[0] ?? "", zh: halves[1] ?? "", source: item[1] ?? "" });
+  }
+  return found;
+}
+
+/** Every component's clarifications from data, keyed like the doc sections. */
+function dataClarifications(): Map<string, { heading: string; items: readonly ClarificationDefinition[] }> {
+  const found = new Map<string, { heading: string; items: readonly ClarificationDefinition[] }>();
+  for (const id of TECH_IDS) found.set(id, { heading: `${TECHS[id].name} / ${TECHS[id].nameZh}`, items: TECHS[id].clarifications });
+  for (const id of KILN_IDS) {
+    const kiln = KILNS[id];
+    found.set(id, { heading: `${kiln.name}, ${kiln.abilityName} / ${kiln.nameZh} · ${kiln.abilityNameZh}`, items: kiln.clarifications });
+  }
+  for (const id of LOCATION_IDS) found.set(id, { heading: `${LOCATIONS[id].name} / ${LOCATIONS[id].nameZh}`, items: LOCATIONS[id].clarifications });
+  for (const space of IMPERIAL_TRACK.track) {
+    if (space.reward !== null) found.set(space.id, { heading: `${space.title} / ${space.titleZh}`, items: space.clarifications });
+  }
+  found.set("imperial_overflow", { heading: "Crowns beyond Recognition 4 / 声望满后每个御令+1分", items: IMPERIAL_TRACK.clarifications.imperial_overflow });
+  found.set("orders.starting", { heading: "Starting Orders / 起始委托", items: ORDER_CLARIFICATIONS.starting });
+  found.set("orders.main", { heading: "Main Orders and Crown Orders / 主委托与御令委托", items: ORDER_CLARIFICATIONS.main });
+  return found;
+}
+
+const AUDIT_SECTION = (heading: string): string => section(heading, AUDIT);
+
+/** Where a source tag points, or null when it points nowhere. */
+function resolveTag(tag: string): string | null {
+  const lines = SOURCE.split("\n");
+  const line = /^(?:ED )?L(\d+)$/.exec(tag);
+  if (line !== null && !tag.startsWith("ED ")) {
+    const text = lines[Number(line[1]) - 1] ?? "";
+    return text.trim() === "" ? null : text;
+  }
+  if (line !== null) {
+    const editorial = AUDIT_SECTION("### Editorial corrections (no rule change)");
+    return editorial.split("\n").find((entry) => entry.startsWith(`- Line ${line[1]}:`)) ?? null;
+  }
+  if (/^A\d+$/.test(tag)) return tableRows(AUDIT_SECTION("## Owner amendments")).find((cells) => cells[0] === tag)?.join(" | ") ?? null;
+  if (/^[RB]\d+$/.test(tag)) {
+    return tableRows(AUDIT_SECTION("## Owner rulings (approved 2026-10-14)")).find((cells) => cells[0] === tag)?.join(" | ") ?? null;
+  }
+  if (/^P\d$/.test(tag)) {
+    return AUDIT_SECTION("### Provisional defaults (edge cases the text leaves open; owner may overrule)").split("\n")
+      .find((entry) => entry.startsWith(`- **${tag} —`)) ?? null;
+  }
+  if (/^D\d+$/.test(tag)) return tableRows(OWNER_DECISIONS).find((cells) => cells[0] === tag)?.join(" | ") ?? null;
+  if (tag.startsWith("INT ")) {
+    // The bold label of an "Interpretations of V1.6.1 text" bullet containing every word of the name.
+    const words = tag.slice(4).toLowerCase().split(" ");
+    return AUDIT_SECTION("### Interpretations of V1.6.1 text, recorded for implementers").split("\n")
+      .filter((entry) => entry.startsWith("- **"))
+      .find((entry) => {
+        const label = (/^- \*\*([^*]+)\*\*/.exec(entry)?.[1] ?? "").toLowerCase();
+        return words.every((word) => label.includes(word));
+      }) ?? null;
+  }
+  return null;
+}
+
+/**
+ * Clauses that start by quoting their cited rulebook line but deliberately adapt it, with the
+ * reason. Any other clause that opens with six or more words of a cited line must match that
+ * line exactly.
+ */
+const QUOTE_ADAPTATIONS: ReadonlyArray<readonly [string, string, string]> = [
+  ["T18", "Because the display is not refilled until your turn ends, a second face-up reservation", "L198 says \"a Shifu's\"; here an Apprentice resolves the Shifu effect"],
+  ["T10", "Starting Orders and reserved Main Orders both count toward the limit at Cleanup", "joins L199's last sentence to its Cleanup timing"],
+  ["T12", "A ceramic in an Imperial Kiln gives no say over the shared fire", "L260 abridged"],
+  ["JU", "Jun's adjustment applies on top of either a Heat marker or the Kiln Master marker", "L648's \"either\" named"],
+  ["magistrates_hall", "You may place a worker only if you can perform at least 1 instance of the main action", "L141 \"that location's\" made specific"],
+  ["orders.starting", "Starting Orders and reserved Main Orders both count toward your hand limit of 4", "L199 and L303 combined"],
+  ["orders.main", "Starting Orders and reserved Main Orders both count toward your hand limit of 4", "L199 and L303 combined"],
+];
+
+describe("clarifications (owner decision D10, K15)", () => {
+  const doc = clarificationsDoc();
+  const data = dataClarifications();
+  const all = [...data.entries()].flatMap(([key, entry]) => entry.items.map((item) => ({ key, item })));
+
+  it("every doc item appears in data, in order, and vice versa", () => {
+    const fromDoc = Object.fromEntries([...doc.entries()].map(([key, entry]) => [key, entry.items]));
+    const fromData = Object.fromEntries([...data.entries()].map(([key, entry]) => [key, entry.items]));
+    expect(fromData).toEqual(fromDoc);
+    expect(all).toHaveLength(292);
+    expect(IMPERIAL_TRACK.track.filter((space) => space.clarifications.length === 0).map((space) => space.id)).toEqual(["local_workshop"]);
+  });
+
+  it("keys every doc section to the component it names", () => {
+    for (const [key, entry] of doc) expect(entry.heading, key).toBe(data.get(key)?.heading);
+  });
+
+  it("gives every item a well-formed source whose tags point at a rulebook line or an audit entry", () => {
+    const unresolved: string[] = [];
+    for (const { key, item } of all) {
+      for (const tag of clarificationTags(item.source)) {
+        expect(CLARIFICATION_TAG.test(tag), `${key}: ${tag}`).toBe(true);
+        expect(() => clarificationSourceKind(tag)).not.toThrow();
+        if (resolveTag(tag) === null) unresolved.push(`${key}: ${tag}`);
+      }
+      // Inline line references such as "(L211)" must exist too.
+      for (const match of item.en.matchAll(/\(L(\d+)\)/g)) {
+        if (resolveTag(`L${match[1]}`) === null) unresolved.push(`${key}: inline L${match[1]}`);
+      }
+    }
+    expect(unresolved).toEqual([]);
+    expect(clarificationSourceKind("L375")).toBe("rulebook");
+    expect(clarificationSourceKind("ED L649")).toBe("editorial");
+    expect(clarificationSourceKind("INT Ge Crackle")).toBe("interpretation");
+    expect(clarificationSourceKind("P1")).toBe("provisional");
+    expect(clarificationSourceKind("D7")).toBe("wording");
+    expect(clarificationSourceKind("A1")).toBe("amendment");
+    expect(clarificationSourceKind("B3")).toBe("ruling");
+    for (const bad of ["L0", "R14", "B4", "P4", "INT", "ED 649", "l375"]) expect(CLARIFICATION_TAG.test(bad), bad).toBe(false);
+    expect(resolveTag("L9999")).toBeNull();
+    expect(resolveTag("INT Imaginary ruling")).toBeNull();
+  });
+
+  it("quotes cited rulebook sentences exactly", () => {
+    const lines = SOURCE.split("\n");
+    const mismatches: string[] = [];
+    const adaptationsUsed = new Set<string>();
+    for (const { key, item } of all) {
+      const cited = clarificationTags(item.source).filter((tag) => /^L\d+$/.test(tag))
+        .map((tag) => clean(lines[Number(tag.slice(1)) - 1] ?? "")).join(" ");
+      if (cited === "") continue;
+      const clauses = item.en.replace(/ \(L\d+\)/g, "").split(/(?<=\.) |; |: |, so /)
+        .map((clause) => clause.trim().replace(/\.$/, "")).filter((clause) => clause.split(" ").length >= 6);
+      for (const clause of clauses) {
+        if (!cited.includes(clause.split(" ").slice(0, 6).join(" ")) || cited.includes(clause)) continue;
+        const adaptation = QUOTE_ADAPTATIONS.find(([adaptedKey, start]) => adaptedKey === key && clause.startsWith(start));
+        if (adaptation === undefined) mismatches.push(`${key} [${item.source}]: ${clause}`);
+        else adaptationsUsed.add(`${adaptation[0]}:${adaptation[1]}`);
+      }
+    }
+    expect(mismatches).toEqual([]);
+    // Every recorded adaptation is still needed.
+    expect(adaptationsUsed.size).toBe(QUOTE_ADAPTATIONS.length);
+  });
+
+  it("never repeats a component's own full rule text", () => {
+    for (const id of TECH_IDS) for (const item of TECHS[id].clarifications) expect(item.en, id).not.toBe(TECHS[id].ability);
+    for (const id of KILN_IDS) for (const item of KILNS[id].clarifications) expect(item.en, id).not.toBe(KILNS[id].ability);
   });
 });
