@@ -250,7 +250,7 @@ describe("Appendix A: all 16 Starting and 48 Main Orders", () => {
 // ── Appendix B: all 18 Advanced Techs ────────────────────────────────────────────────────
 
 const B_SECTIONS: ReadonlyArray<readonly [TechDiscipline, string]> = [
-  ["workshop", "### B1. Workshop — 6"],
+  ["workshop", "### B1. Form & Decorate — 6"],
   ["glazing_loading", "### B2. Glazing & Loading — 6"],
   ["firing", "### B3. Firing — 6"],
 ];
@@ -578,7 +578,7 @@ describe("setup, production, firing and scoring values", () => {
     expect(SOURCE).toContain(`Discard the **${GAME_CONFIG.mainMarket.roundStartDiscard} leftmost face-up Main Orders**`);
     expect(SOURCE).toContain(`hand limit of **${GAME_CONFIG.handLimit.base}** (${TECHS.T10.params.handLimit} with Colour Samples)`);
     expect(SOURCE).toContain(`at most **${GAME_CONFIG.techs.maxOwned} Advanced Techs and at most ${GAME_CONFIG.techs.maxPerDiscipline} from each discipline**`);
-    expect(SOURCE).toContain(`Exactly ${GAME_CONFIG.techs.perDiscipline} Workshop, ${GAME_CONFIG.techs.perDiscipline} Glazing & Loading and ${GAME_CONFIG.techs.perDiscipline} Firing`);
+    expect(SOURCE).toContain(`Exactly ${GAME_CONFIG.techs.perDiscipline} Form & Decorate, ${GAME_CONFIG.techs.perDiscipline} Glazing & Loading and ${GAME_CONFIG.techs.perDiscipline} Firing`);
   });
 
   it("scores each Tech's printed 1 VP when it is gained, per owner amendment A1 (L378, L492, L609, L755)", () => {
@@ -810,10 +810,14 @@ function sourceFiles(dir: string): string[] {
 describe("one source per value", () => {
   const engineFiles = sourceFiles(join(ROOT, "src/game")).map((file) => relative(ROOT, file).replaceAll("\\", "/"));
 
-  it("reads data/*.json only through content.ts and rulesFingerprint.ts", () => {
+  it("reads data/*.json only through content.ts and rulesFingerprint.ts (and the display-only round structure)", () => {
     const readers = engineFiles.filter((file) =>
       /from\s+["'][./]*data\/[a-z_]+\.json["']/.test(readFileSync(join(ROOT, file), "utf8")));
-    expect(readers.sort()).toEqual(["src/game/content.ts", "src/game/rulesFingerprint.ts"]);
+    // roundStructure.ts reads only data/round_structure.json: round-phase names and summaries
+    // for display, no rule value and no fingerprint input (UI_V1.6.1_ARCHITECTURE §5 gap 17).
+    expect(readers.sort()).toEqual(["src/game/content.ts", "src/game/roundStructure.ts", "src/game/rulesFingerprint.ts"]);
+    const display = readFileSync(join(ROOT, "src/game/roundStructure.ts"), "utf8").match(/data\/[a-z_]+\.json/g);
+    expect([...new Set(display)]).toEqual(["data/round_structure.json"]);
   });
 
   it("declares no Glaze heat literal outside content.ts", () => {

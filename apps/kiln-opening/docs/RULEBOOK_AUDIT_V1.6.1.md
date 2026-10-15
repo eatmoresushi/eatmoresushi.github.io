@@ -11,8 +11,9 @@ rework of V1.2.7. The rulebook calls itself "v1.61" and the file is named
 "v1.6.1"; the engine uses the rules version string `1.6.1`.
 
 - Original: `/Users/luyuan/Documents/kiln board game/v1.6/KILN OPENING 开窑 v1.6.1 — Player Rulebook (Draft).md`
-- Checked-in copy (byte-identical): [KILN_OPENING_v1.6.1_EN_SOURCE.md](./KILN_OPENING_v1.6.1_EN_SOURCE.md)
-- SHA-256: `ce106f76d034291a942e6b9e9bb5a823f5e9af12cec3800c451c98b840457835`
+- Checked-in copy: [KILN_OPENING_v1.6.1_EN_SOURCE.md](./KILN_OPENING_v1.6.1_EN_SOURCE.md), the original with amendment A2 applied in place (line numbers unchanged)
+- SHA-256: `f677ee9636e6b9bc2141131cd9b751415b74c3764cbd77a731439933f5fff1a4`
+- Original SHA-256 (as supplied, before A2): `ce106f76d034291a942e6b9e9bb5a823f5e9af12cec3800c451c98b840457835`
 - History: [V1.6 draft](./KILN_OPENING_v1.6_EN_SOURCE.md) (`8529c0ce…`) and its [review](./RULEBOOK_AUDIT_V1.6.md). These are records only, not rules.
 
 V1.6.1 resolves these V1.6 questions in its own text:
@@ -24,11 +25,12 @@ V1.6.1 resolves these V1.6 questions in its own text:
 
 ## Owner amendments
 
-Amendments change V1.6.1 text after it became the authority. The checked-in source stays byte-identical to the owner's file, so its checksum still verifies; these amendments override the lines they name.
+Amendments change V1.6.1 text after it became the authority. A1 is recorded here and overrides the lines it names, without editing the source. A2 was applied to the checked-in source itself at the owner's request; each edit replaced text within a line, so every line-number citation stays valid.
 
 | ID | Date | Amendment | Overrides |
 | --- | --- | --- | --- |
 | A1 | 2026-10-15 | **Tech VP on purchase.** Each Advanced Tech scores its 1 VP immediately when the player gains it, recorded like other in-game VP. It is no longer added at game end. This is bookkeeping only: no V1.6.1 effect removes a Tech, so final totals and tie-breakers are unchanged. Mid-game scores now include Tech VP. | Lines 378, 492, 609, 755 ("1 VP at game end" / "1 VP for each Advanced Tech you own" in final scoring) |
+| A2 | 2026-10-15 | **Discipline name.** The "Workshop" Advanced Tech discipline is renamed **"Form & Decorate"**, matching the personal location whose second space it adds (owner decision D11). Applied in the checked-in source at lines 15, 50, 82, 102, 211, 373, 375, 609, 611 and 720. "Workshop Development" (line 361), "Local Workshop" (line 430) and the ordinary word "workshop" are unchanged. Wording only: no rule changes, and the internal ID stays `workshop`. | Lines 15, 50, 82, 102, 211, 373, 375, 609, 611, 720 |
 
 ## Owner rulings (approved 2026-10-14)
 

@@ -382,7 +382,7 @@ Owner decision D7 (2026-10-15) retires every lock/unlock term for the second per
 | --- | --- | --- |
 | Advanced Tech | 技艺 | 改称（旧“进阶技艺”）：V1.6.1 无起始技艺。牌用“张”，拥有用“项”。 |
 | discipline | 门类 | — |
-| Form & Decorate (discipline; rulebook "Workshop", renamed in English by owner decision D11) | 坯作 | 新名。宋代官府匠作分“某作”（如文思院诸作）；习得即添设制坯饰纹第二工位。 |
+| Workshop (discipline) | 坯作 | 英文名已改为 Form & Decorate（业主决定 D11、规则修订 A2）；数据与界面英文随后同步。新名。宋代官府匠作分“某作”（如文思院诸作）；习得即添设制坯饰纹第二工位。 |
 | Glazing & Loading (discipline) | 釉作 | 新名。习得即添设施釉装窑第二工位。 |
 | Firing (discipline) | 火作 | 新名。不添设任何工位。 |
 | acquire / buy a Tech | 习得技艺 | 付牌面铜钱费用；唯一途径是陶工行。习得时立即得1分（A1）。 |
@@ -547,8 +547,7 @@ Owner decision D7 (2026-10-15) retires every lock/unlock term for the second per
 每轮一次，定品后，你可以选择你本次烧成中的1件瑕品或良品，额外翻1张窑火牌，以**相同的基础火候、
 温区修正、窑具修正与火标**配合新的窑火修正，重新计算该器物的实际火候与品质。首次计算时的
 钧窑调整不保留。新品质取代旧品质，即使更差。结算后弃置这张额外窑火牌；它不影响其他器物。
-（R7：若本轮尚未使用钧窑，可在重算实际火候后、定新品质前使用。御窑器物复烧时，沿用同一窑骰点数、
-装窑时自选的御窑修正与火标，配合新的窑火修正重算。）
+（R7：若本轮尚未使用钧窑，可在重算实际火候后、定新品质前使用。）
 
 **窑工**（火作，2铜钱）
 每轮一次，在火标步骤中，你可以将窑工标（+1或−1面朝上）放在你本次烧成中1件未带火标的器物上。

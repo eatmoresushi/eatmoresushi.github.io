@@ -12,7 +12,7 @@ Version v1.61 (the working name v1.3 was already used by an earlier draft). This
 2. **Decoration at forming, Glaze at loading.** Form & Decorate forms and decorates; Glaze & Load glazes and loads. There is no Glazed-but-unloaded state.
 3. **Heat marker.** The Glaze & Load Shifu places the player's Heat marker face-down on one of their ceramics; after Base Heat, in First Player order, it is turned to +1 or −1 or returned.
 4. **No Shifu overfill.** All capacities are absolute.
-5. **No Starting Tech; up to 3 Advanced Techs, at most 1 per discipline;** 18 tiles, 6 per discipline. A Workshop Tech unlocks the second Form & Decorate space, a Glazing & Loading Tech the second Glaze & Load space; Firing Techs unlock nothing.
+5. **No Starting Tech; up to 3 Advanced Techs, at most 1 per discipline;** 18 tiles, 6 per discipline. A Form & Decorate Tech unlocks the second Form & Decorate space, a Glazing & Loading Tech the second Glaze & Load space; Firing Techs unlock nothing.
 6. **Orders.** Only held Orders may be completed, in Work-Phase turn order. A reserved face-up Order is replaced only after the reserving player's turn ends. The Shifu may use a top-3 selection for one reservation; Colour Samples is now a hand-limit tile.
 7. **Imperial Priority** glazes and loads a Shaped vessel. **The Imperial Kiln** is fired by the court: 2 + Fire + a modifier chosen at loading, immune to Contributions.
 8. **Magistrate's Hall (was Court Patronage)** is a capped location with 1 / 1 / 2 spaces (2p / 3p / 4p), usable from Recognition 0 to 2; the Shifu pays 3. The Imperial Grant is 1 Clay + 1 Wood + 1 Coin (the 3-Coin option is gone), so buying step 1 is a real cost rather than a refund.
@@ -47,7 +47,7 @@ The game lasts exactly **5 rounds**.
 | Shifu | A player's unique master worker. It receives the Shifu effect of the location it is placed at and follows the same placement rules as an Apprentice. |
 | Central location | A location on the Central Action Board, shared by all players: Materials Yard, Commission Market, Guild Hall, Canal Wharf, Magistrate's Hall. |
 | Personal location | A location on your own Kiln Player Board: Form & Decorate and Glaze & Load. Each has 2 spaces; 1 is locked until unlocked by an Advanced Tech. |
-| Advanced Tech | A permanent workshop technology acquired at the Guild Hall. A player may own at most 3, and at most 1 from each discipline. A Workshop Tech unlocks your second Form & Decorate space; a Glazing & Loading Tech unlocks your second Glaze & Load space; Firing Techs unlock nothing. |
+| Advanced Tech | A permanent workshop technology acquired at the Guild Hall. A player may own at most 3, and at most 1 from each discipline. A Form & Decorate Tech unlocks your second Form & Decorate space; a Glazing & Loading Tech unlocks your second Glaze & Load space; Firing Techs unlock nothing. |
 | Tech effect | An effect printed on an Advanced Tech. A Tech effect is **not a worker action** and does not trigger effects requiring that worker action unless explicitly stated otherwise. |
 | Order | A Starting Order or Main Order card showing ceramic requirements and rewards. Only Orders in your hand can be completed. |
 | Commission Market | The central location used to reserve Main Orders. |
@@ -79,7 +79,7 @@ The game lasts exactly **5 rounds**.
 | Vessel Cards | 50 | Ten each: Bowl, Plate, Brush Washer, Vase and Censer. |
 | Main Order Cards | 48 | One unified public/reservable deck; see Appendix A. |
 | Starting Order Cards | 16 | Separate easy opening deck; never shuffled into the Main Order deck. |
-| Advanced Tech tiles | 18 | Six Workshop, six Glazing & Loading, six Firing. The Kiln Master tile comes with its own marker. |
+| Advanced Tech tiles | 18 | Six Form & Decorate, six Glazing & Loading, six Firing. The Kiln Master tile comes with its own marker. |
 | Fire Cards | 12 | −2 ×1, −1 ×3, 0 ×4, +1 ×3, +2 ×1. |
 | Kiln Contribution Cards | 12 | Three per player: Bank, Tend, Stoke. |
 | Imperial Recognition Markers | 4 | One per player colour. |
@@ -99,7 +99,7 @@ The game lasts exactly **5 rounds**.
 1. Place the Central Action Board and Shared Kiln in the centre. For the Shared Kiln: **4 players** use all 8 spaces (3 High, 3 Middle, 2 Low); **3 players** use 6 spaces, covering 1 High and 1 Middle space (2-2-2); **2 players** use 4 spaces, covering 1 High, 2 Middle and 1 Low space (2-1-1). In 2- and 3-player games also cover the second Magistrate's Hall space.
 2. Shuffle the **16-card Starting Order deck** and the **48-card Main Order deck** separately. Deal each player **2 Starting Orders and 1 Main Order**. These 3 Orders form that player's starting hand and are **kept secret**.
 3. Return all undealt Starting Orders to the box. Reshuffle the remaining Main Order deck, then reveal **6 face-up Main Orders** from left to right.
-4. Separate the 18 Advanced Techs into Workshop, Glazing & Loading and Firing decks of 6. Shuffle each discipline and reveal **2 face-up tiles from each**.
+4. Separate the 18 Advanced Techs into Form & Decorate, Glazing & Loading and Firing decks of 6. Shuffle each discipline and reveal **2 face-up tiles from each**.
 5. Shuffle the 12-card Fire deck and place it face down beside a face-up discard pile. Place the Kiln Die beside the Base Heat track.
 6. Place Clay, Wood, Coins and Vessel cards within reach. Sort Vessel cards by Shape.
 7. Place the **4 Imperial Kiln tiles** beside the Imperial Recognition track.
@@ -208,7 +208,7 @@ For each reservation, choose one:
 
 - After a tile is taken, refill its discipline to 2 if possible.
 - A player may own at most **3 Advanced Techs and at most 1 from each discipline**.
-- **Unlocking.** When you gain a Workshop Tech, remove the Lock token from your second Form & Decorate space; when you gain a Glazing & Loading Tech, remove the Lock token from your second Glaze & Load space. Firing Techs unlock nothing. An unlocked space may be used later this round.
+- **Unlocking.** When you gain a Form & Decorate Tech, remove the Lock token from your second Form & Decorate space; when you gain a Glazing & Loading Tech, remove the Lock token from your second Glaze & Load space. Firing Techs unlock nothing. An unlocked space may be used later this round.
 - An Apprentice placement is legal only if you can afford at least 1 face-up Tech from a discipline you do not yet own. A Shifu placement is legal only if you can afford such a Tech after the Shifu discount.
 - A newly acquired Advanced Tech may be used in the same round if its timing permits. Resolve any **when acquired** effect immediately.
 
@@ -370,9 +370,9 @@ A player's long-term workshop engine consists of:
 
 ### Advanced Tech Rules
 
-- Exactly 6 Workshop, 6 Glazing & Loading and 6 Firing Advanced Techs exist.
+- Exactly 6 Form & Decorate, 6 Glazing & Loading and 6 Firing Advanced Techs exist.
 - A player may own at most 3, and at most 1 from each discipline.
-- A Workshop Tech unlocks your second Form & Decorate space; a Glazing & Loading Tech unlocks your second Glaze & Load space; Firing Techs unlock nothing.
+- A Form & Decorate Tech unlocks your second Form & Decorate space; a Glazing & Loading Tech unlocks your second Glaze & Load space; Firing Techs unlock nothing.
 - Follow each tile's printed timing and usage limit.
 - If you control multiple abilities with the same timing, choose the order in which you resolve them. If several players have abilities in the same timing window, resolve players in First Player order; each player chooses the order of their own abilities.
 - Each Advanced Tech you own scores **1 VP at game end**.
@@ -606,9 +606,9 @@ Unless a card explicitly pairs attributes, Shape, Glaze and Decoration requireme
 
 ## Appendix B — Advanced Tech: 18 tiles
 
-Tech tiles use abbreviated reminder text; this appendix gives the full effects. Each Advanced Tech you own scores **1 VP at game end**. A player owns at most 3 and at most 1 per discipline. **Workshop** tiles unlock your second Form & Decorate space, **Glazing & Loading** tiles your second Glaze & Load space; **Firing** tiles unlock nothing.
+Tech tiles use abbreviated reminder text; this appendix gives the full effects. Each Advanced Tech you own scores **1 VP at game end**. A player owns at most 3 and at most 1 per discipline. **Form & Decorate** tiles unlock your second Form & Decorate space, **Glazing & Loading** tiles your second Glaze & Load space; **Firing** tiles unlock nothing.
 
-### B1. Workshop — 6
+### B1. Form & Decorate — 6
 
 | Advanced Tech | Cost | Ability |
 | --- | --- | --- |
@@ -717,7 +717,7 @@ If no ceramics are loaded in the Shared Kiln or any Imperial Kiln, **skip this p
 | Magistrate's Hall | Pay 4 Coins → +1 Recognition (0 → 1, 1 → 2 or 2 → 3) | Pay 3 Coins → same |
 
 - A reserved face-up Order is replaced only after the reserving player's turn ends. Colour Samples: 1 reservation from the top 3 when acquired; hand limit 5.
-- A Workshop Tech unlocks the second Form & Decorate space; a Glazing & Loading Tech the second Glaze & Load space; Firing Techs unlock nothing. At most 3 Techs, 1 per discipline.
+- A Form & Decorate Tech unlocks the second Form & Decorate space; a Glazing & Loading Tech the second Glaze & Load space; Firing Techs unlock nothing. At most 3 Techs, 1 per discipline.
 - If you have gained your Imperial Kiln and it is empty, 1 ceramic loaded during a Glaze & Load action may enter it instead; choose its modifier (−1 / 0 / +1) as you load it.
 
 ### Imperial Recognition
