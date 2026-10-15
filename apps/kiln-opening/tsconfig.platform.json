@@ -7,6 +7,9 @@
     "src/multiplayer/**/*.ts",
     "src/playtest/**/*.ts",
     "supabase/functions/**/*.ts",
-    "test/v161/platform/**/*.ts"
+    "test/v161/platform/**/*.ts",
+    "tools/localBackendV161.ts",
+    "tools/uiFixtures.ts",
+    "tools/fixturePrivacy.ts"
   ]
 }

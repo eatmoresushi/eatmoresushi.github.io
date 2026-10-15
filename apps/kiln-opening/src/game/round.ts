@@ -109,7 +109,9 @@ export function startRound(draft: GameState, ctx: ResolveContext): void {
 
 // ── Cleanup (L300–304) ───────────────────────────────────────────────────────────────
 
-function isFinalRound(round: RoundNumber): boolean {
+/** The last round (L489): Cleanup skips the hand-limit trim (INT) and the game ends. Shared
+ * with `handLimitStatus(...).trimDue`, so the UI and Cleanup use one predicate. */
+export function isFinalRound(round: RoundNumber): boolean {
   return round >= GAME_CONFIG.rounds;
 }
 

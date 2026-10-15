@@ -1,0 +1,187 @@
+/**
+ * `GameModel` (UI_V1.6.1_ARCHITECTURE §3.3): the one read model every table, kiln, board and
+ * shell component receives. Frozen after phase A; changes go through B6.
+ *
+ * - Built from engine selectors only; React never recomputes a rule.
+ * - **Owner decisions D3/D4 by type (K6):** `TableBoardView` is assembled field by field from
+ *   `boardView(view)` through an allow-list (`Pick`), never by spreading it, so neither the
+ *   Fire-deck count nor a firing context (with its heat calculations) can reach a component.
+ *   All firing display goes through `firingStage` and `firingRecap` (`firingStageView`,
+ *   `firingRecapView`), which carry no heat ledger.
+ * - **Memoised on the identity of `snapshot.view`** (a `WeakMap`), and on the seat list for
+ *   `computerSeatIds`. Every store merge creates a new view object — a same-revision reconnect
+ *   that replaces `own` included — so the hand, the private look and the sealed Contribution are
+ *   never stale.
+ *
+ * `EngineView` (the raw `PlayerView` and `ActorView`) is for `decision/**`, `state/**` and
+ * `dev/**` only (§2, `useEngineView`).
+ */
+
+import {
+  asActorView,
+  boardView,
+  decisionPrompt,
+  firingRecapView,
+  firingStageView,
+  handLimitStatus,
+  kilnLayout,
+  lookedOrderOptions,
+  playerSummary,
+  roundPhaseOf,
+  viewerActs,
+} from "../../game/index.ts";
+import type {
+  ActorView,
+  BoardView,
+  DecisionPrompt,
+  FinalResult,
+  FiringStageView,
+  GamePhaseType,
+  HandLimitStatus,
+  KilnLayoutView,
+  LookedOrderOptions,
+  OrderId,
+  PlayerId,
+  PlayerSummary,
+  PlayerView,
+  PublicCounts,
+  RoundNumber,
+  RoundPhaseId,
+} from "../../game/index.ts";
+import type { PublicSeat } from "../../multiplayer/types.ts";
+import { decisionWindow } from "./decisionWindow.ts";
+import type { DecisionWindow } from "./decisionWindow.ts";
+
+/** The public counts a player at the table can see (D4: never the Fire deck's size). */
+export type TableCounts = Pick<PublicCounts, "orderHands" | "mainDeck" | "mainDiscard" | "techDecks" | "pendingLook">;
+
+/** `BoardView` as the table shows it: no firing context and no Fire-deck count (K6, D3, D4). */
+export type TableBoardView = Pick<
+  BoardView,
+  "round" | "prompt" | "firstPlayerId" | "turnOrder" | "kilnDie" | "centralLocations" | "kilnSpaces" | "mainDisplay" | "techDisplay" | "fireDiscard"
+> & { counts: TableCounts };
+
+export interface GameModel {
+  revision: number;
+  viewerId: PlayerId | null;
+  round: RoundNumber;
+  phaseType: GamePhaseType;
+  /** The round phase (gap 17), or `final` once the game is finished. */
+  roundPhase: RoundPhaseId | "final";
+  prompt: DecisionPrompt;
+  viewerActs: boolean;
+  board: TableBoardView;
+  /** `playerSummary` per `board.turnOrder` (First Player, then clockwise). */
+  players: readonly PlayerSummary[];
+  me: PlayerSummary | null;
+  /** The viewer's own Orders in hand (private; empty for a spectator). */
+  hand: readonly OrderId[];
+  /** The viewer's own private look only. */
+  look: LookedOrderOptions | null;
+  handLimits: Readonly<Record<PlayerId, HandLimitStatus>>;
+  kilnLayout: KilnLayoutView;
+  /** The firing in progress (gap 7). */
+  firingStage: FiringStageView | null;
+  /** The last finished firing (gap 18). */
+  firingRecap: FiringStageView | null;
+  finalResult: FinalResult | null;
+  window: DecisionWindow;
+  computerSeatIds: ReadonlySet<PlayerId>;
+}
+
+export interface EngineView {
+  view: PlayerView;
+  actor: ActorView | null;
+}
+
+/** Picks the table fields of `boardView` one by one (never a spread). */
+export function tableBoardView(board: BoardView): TableBoardView {
+  const counts = board.counts;
+  return {
+    round: board.round,
+    prompt: board.prompt,
+    firstPlayerId: board.firstPlayerId,
+    turnOrder: board.turnOrder,
+    kilnDie: board.kilnDie,
+    centralLocations: board.centralLocations,
+    kilnSpaces: board.kilnSpaces,
+    mainDisplay: board.mainDisplay,
+    techDisplay: board.techDisplay,
+    fireDiscard: board.fireDiscard,
+    counts: {
+      orderHands: counts.orderHands,
+      mainDeck: counts.mainDeck,
+      mainDiscard: counts.mainDiscard,
+      techDecks: counts.techDecks,
+      pendingLook: counts.pendingLook,
+    },
+  };
+}
+
+function computerIds(seats: readonly PublicSeat[]): ReadonlySet<PlayerId> {
+  return new Set(seats.filter((seat) => seat.isComputer).map((seat) => seat.playerId));
+}
+
+/** Builds the model for one view. Pure; prefer `gameModelOf`, which memoises. */
+export function buildGameModel(view: PlayerView, seats: readonly PublicSeat[]): GameModel {
+  const game = view.game;
+  const board = boardView(view);
+  const players = board.turnOrder.map((playerId) => playerSummary(view, playerId));
+  const viewerId = view.viewerId;
+  const me = viewerId === null ? null : players.find((summary) => summary.playerId === viewerId) ?? null;
+  const handLimits: Record<PlayerId, HandLimitStatus> = {};
+  for (const summary of players) handLimits[summary.playerId] = handLimitStatus(view, summary.playerId);
+  return {
+    revision: game.revision,
+    viewerId,
+    round: game.round,
+    phaseType: game.phase.type,
+    roundPhase: roundPhaseOf(game.phase.type),
+    prompt: decisionPrompt(game),
+    viewerActs: viewerActs(view),
+    board: tableBoardView(board),
+    players,
+    me,
+    hand: view.own === null ? [] : [...view.own.orderHand],
+    look: lookedOrderOptions(view),
+    handLimits,
+    kilnLayout: kilnLayout(view),
+    firingStage: firingStageView(view),
+    firingRecap: firingRecapView(view),
+    finalResult: game.finalResult,
+    window: decisionWindow(view),
+    computerSeatIds: computerIds(seats),
+  };
+}
+
+const MODELS = new WeakMap<PlayerView, { seats: readonly PublicSeat[]; model: GameModel }>();
+const ENGINE_VIEWS = new WeakMap<PlayerView, EngineView>();
+
+/** The model for a view, memoised on the view's identity (and the seat list). */
+export function gameModelOf(view: PlayerView, seats: readonly PublicSeat[]): GameModel {
+  const cached = MODELS.get(view);
+  if (cached !== undefined && cached.seats === seats) return cached.model;
+  if (cached !== undefined && sameComputers(cached.seats, seats)) {
+    MODELS.set(view, { seats, model: cached.model });
+    return cached.model;
+  }
+  const model = buildGameModel(view, seats);
+  MODELS.set(view, { seats, model });
+  return model;
+}
+
+function sameComputers(a: readonly PublicSeat[], b: readonly PublicSeat[]): boolean {
+  const left = computerIds(a);
+  const right = computerIds(b);
+  return left.size === right.size && [...left].every((id) => right.has(id));
+}
+
+/** `{ view, actor }`, memoised on the view's identity. */
+export function engineViewOf(view: PlayerView): EngineView {
+  let cached = ENGINE_VIEWS.get(view);
+  if (cached === undefined) {
+    cached = { view, actor: asActorView(view) };
+    ENGINE_VIEWS.set(view, cached);
+  }
+  return cached;
+}

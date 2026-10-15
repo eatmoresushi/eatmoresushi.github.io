@@ -1,0 +1,85 @@
+/* GameShell (B1; phase A stub layout by A2): world and pane side by side, stacked on phones. */
+@layer layout {
+  #root {
+    container: shell / inline-size;
+  }
+
+  .shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--pane-w);
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "skip skip"
+      "top top"
+      "banner banner"
+      "world pane"
+      "nav nav"
+      "live live";
+    min-height: 100dvh;
+  }
+
+  .shell-skip {
+    grid-area: skip;
+    min-width: 0;
+  }
+
+  .shell-live {
+    grid-area: live;
+    min-width: 0;
+  }
+
+  .shell-top {
+    grid-area: top;
+    min-width: 0;
+  }
+
+  .shell-banner {
+    grid-area: banner;
+    min-width: 0;
+  }
+
+  .shell-world {
+    grid-area: world;
+    display: grid;
+    align-content: start;
+    gap: var(--sp-6);
+    min-width: 0;
+    padding: var(--sp-6);
+  }
+
+  .shell-pane {
+    grid-area: pane;
+    min-width: 0;
+    border-inline-start: 1px solid var(--line);
+    background: var(--panel);
+  }
+
+  .shell-nav {
+    grid-area: nav;
+    min-width: 0;
+  }
+
+  @container shell (max-width: 899px) {
+    .shell {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto auto auto 1fr auto auto auto;
+      grid-template-areas:
+        "skip"
+        "top"
+        "banner"
+        "world"
+        "pane"
+        "nav"
+        "live";
+    }
+
+    .shell-world {
+      padding: var(--sp-4);
+    }
+
+    .shell-pane {
+      border-inline-start: 0;
+      border-block-start: 1px solid var(--line);
+    }
+  }
+}

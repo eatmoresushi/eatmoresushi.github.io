@@ -735,7 +735,7 @@ The chooser RNG is separate from the game RNG, so fuzz choices never perturb eng
 
 ### 5.4 Selectors and view models (`selectors.ts`, P7)
 
-React reads only these, plus `validateAction`, `decisionPrompt` and events. It never compares rule constants, sums score fields or scans workers itself. Types are in `types.ts` §16. A personal space's `unlocked: false` is rendered as a space not yet added ("Learn a Workshop Tech to add this space" / 习得坯作技艺即添此工位), and `true` on space 1 as "Added by ⟨Tech⟩" / 由「⟨技艺⟩」添设; player-facing text never says lock or unlock (owner decision D7). Functions owned by other packages are re-exported, not reimplemented (§2.4).
+React reads only these, plus `validateAction`, `decisionPrompt` and events. It never compares rule constants, sums score fields or scans workers itself. Types are in `types.ts` §16. A personal space's `unlocked: false` is rendered as a space not yet added ("Learn a Form & Decorate Tech to add this space" / 习得坯作技艺即添此工位), and `true` on space 1 as "Added by ⟨Tech⟩" / 由「⟨技艺⟩」添设; player-facing text never says lock or unlock (owner decision D7). Functions owned by other packages are re-exported, not reimplemented (§2.4).
 
 ```ts
 // Who acts, the board and the players (public)
@@ -744,35 +744,59 @@ boardView(view): BoardView                              // central occupants inc
                                                         //   Furniture / markers, displays, counts, Kiln Die, firing
 playerSummary(view, pid): PlayerSummary                 // recorded VP, Tech and Kiln readiness, workers, personal spaces
                                                         //   with occupants, Imperial status, marker locations, hand count
-scorePreview(view, pid): ScorePreview                   // public information only
-handLimitStatus(view, pid): { held: number; limit: number; mustDiscard: number }
-firingSummary(view): FiringContext | null               // current or last firing, for the recap
-heatPreviews(view): HeatPreview[]                       // re-export (P5)
+scorePreview(view, pid): ScorePreview                   // public information only; computer player only (never shown, D3)
+handLimitStatus(view, pid): HandLimitStatus             // held, limit, mustDiscard, trimDue (Rounds 1–4 only: isFinalRound)
+firingSummary(view): FiringContext | null               // current or last firing; computer player only (heat ledger, D3)
+heatPreviews(view): HeatPreview[]                       // re-export (P5); computer player only (D3)
+kilnLayout(view): KilnLayoutView                        // active / covered / empty active Shared Kiln spaces (L99)
+firingStageView(view): FiringStageView | null           // the current firing as the table shows it (D3, D4): step, queue,
+                                                        //   Kiln Die, revealed Contributions, Base/Global Heat, Fire card,
+                                                        //   open discard, Test Pieces record, R7 extra Fire card, per ceramic
+                                                        //   position, marker, Quality, Crackle, salvage, Second Firing card.
+                                                        //   No Actual Heat, Heat Difference, preview or Fire-deck count
+firingRecapView(view): FiringStageView | null           // the last finished firing (step 12, markers removed), for the recap
+ROUND_STRUCTURE / roundPhaseOf(phaseType)               // roundStructure.ts: display names of the 5 round phases (not a
+                                                        //   fingerprint input); engine phase → round phase or "final"
+SCORE_BREAKDOWN_ROWS / TIE_BREAK_ORDER                  // scoring.ts: L491–494 row order; L498 tie-breakers (key, resolvedBy)
 
 // Setup and Start of Round
 kilnSelectionOptions(view): KilnSelectionOption[]
 settersMarkOptions(view): KilnSpaceId[]                 // empty active spaces (T22, L630)
 
 // Work Phase
-placementOptions(view): PlacementOption[]               // per location and worker effect incl. Senior Apprentice
+placementOptions(view): PlacementOption[]               // per location and worker effect incl. Senior Apprentice; each
+                                                        //   worker entry carries the validator's `error` (with details)
+placementLimits(view, locationId, effect)               // the printed effect record (maxVessels, maxLoads, resources, …)
+materialsYardOptions(view, worker): MaterialsYardOptions   // split total, Shifu bonus quote, Prepared Clay legal
+                                                        //   Shape+Decoration `pairs` (each with `withShifuBonus`)
+                                                        //   and their Shape/Decoration projections (null with
+                                                        //   Senior Apprentice, L349); probed. Legality is per pair:
+                                                        //   a form offers Decorations per chosen Shape from `pairs`
+                                                        //   and the bonus only with `withShifuBonus`, never the
+                                                        //   cross product; the split is gated by the quote
 quoteMaterialsYard(view, draft): CostQuote              // re-export (P3); split → bonus → Prepared Clay
 quoteFormDecorate(view, draft): CostQuote               // re-export (P3); shape Clay, Decorations, Shifu −1, Kit, LTW, Ding
 dingCopyableVesselIndexes(view, draft): number[]
 shapedVessels(view, pid): ShapedCeramic[]
 loadDestinationOptions(view, pid, ceramicId, earlierLoads, reworkShape?): LoadDestinationOption[]  // re-export (P3)
 heatMarkerTargets(view, pid, pendingLoads): CeramicId[]                                            // R9
+glazeLoadVesselOptions(view, pid, earlierLoads): GlazeLoadVesselOption[]   // per Shaped vessel: Glazes, Reworking Table Shapes
 commissionOptions(view, effect): CommissionOptions      // at placement (by effect) and in the sub-step
 lookedOrderOptions(view): LookedOrderOptions | null     // Commission top-3 or Colour Samples (own private look)
 guildOptions(view, effect): GuildOptions                // Apprentice buy list or Shifu inspect list, with prices
 guildInspectionOptions(view): GuildInspectionOptions | null   // after inspecting (own private look)
 magistratesHallQuote(view, effect): CostQuote & { reachable: Recognition | null }
 canalBargeOptions(view): OrderMatchOption[]             // own view only
-imperialPriorityOptions(view): { usable: boolean; ceramicIds: CeramicId[] }
+imperialPriorityOptions(view): ImperialPriorityOptions // usable, ceramicIds, and per vessel its Glazes, Imperial modifiers
+                                                        //   and Reworking Table Shapes (probed)
 
 // Orders (Order Phase and Canal Barge pickers)
 completableOrders(view): OrderMatchOption[]             // one entry per completable held Order
 orderMatchOptions(view, orderId, limit?): OrderMatchOption[]   // every distinct ceramic group for one Order
 orderSelectionCheck(view, orderId, ceramicIds, declarations?): OrderSelectionCheck
+crackleDeclarationChecks(view, orderId, ceramicIds, declarations): CrackleDeclarationChecks
+                                                        // verdicts: auto (engine searches), as declared, and per Crackle
+                                                        //   ceramic each Decoration or undeclared (L469)
 
 // Firing
 contributionOptions(view): ContributionOption[]         // card × Fuel Ledger with Wood, heat and affordability
@@ -784,6 +808,8 @@ salvageOptions(view): SalvageOptions | null             // re-export (P5)
 ```
 
 **Agreement property (P7, `selector_agreement.test.ts`, also run inside the fuzz loop):** for every `legal` / `affordable` flag and every listed option, building the corresponding command and calling `validateAction` (or `validateContribution`) agrees. A selector that says "legal" for a command the validator rejects, or omits a target the validator accepts, fails the test.
+
+**Production-UI additions** (UI_V1.6.1_ARCHITECTURE §5 gaps 3, 5, 7–12, 14–18). All additive; none changes `RULES_BEHAVIOUR_REVISION` or the content digest. `ui_selectors.test.ts` checks their shapes and values; `firingStageView` and `firingRecapView` pass a key allow-list (any new key fails until reviewed against D3) and agree with the engine's firing record at every decision of seeded games; the option lists (`materialsYardOptions`, `glazeLoadVesselOptions`, `imperialPriorityOptions.ceramics`, `crackleDeclarationChecks`, `placementOptions[].workers[].error`, `playerSummary(...).personalSpaces[].addedByTechId`) agree with `validateAction` by exhaustive probes in `selector_agreement.test.ts` (`uiOptionAgreementViolations`). `formatRuleError` takes an optional `ceramicName` resolver, like `playerName`, so a ceramic detail is described in words (owner decision D9); no template prints a ceramic ID.
 
 ## 6. Content data schemas (`data/*.json`, P1)
 

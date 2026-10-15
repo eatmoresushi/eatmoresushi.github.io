@@ -1,0 +1,68 @@
+/* Tabs (kit; wireframe `.btabs`, `.btab`): tabs on the board's top edge (D1). */
+@layer components {
+  .kit-tabs {
+    display: grid;
+    min-width: 0;
+  }
+
+  .kit-tablist {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--sp-2);
+    padding: 0 var(--sp-5);
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  .kit-tab {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: var(--sp-3);
+    min-height: 2.125rem;
+    padding: var(--sp-2) var(--sp-6) var(--sp-2);
+    border: 1px solid var(--line-2);
+    border-bottom: 0;
+    border-top: 3px solid var(--pc, var(--line));
+    border-radius: var(--r-md) var(--r-md) 0 0;
+    background: var(--surface-2);
+    color: var(--ink-2);
+    font-size: var(--fs-label);
+    white-space: nowrap;
+  }
+
+  .kit-tab:hover {
+    background: var(--surface);
+    color: var(--ink);
+  }
+
+  .kit-tab--home {
+    color: var(--teal-ink);
+    font-weight: 700;
+  }
+
+  .kit-tab-icon {
+    display: inline-flex;
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+
+  .kit-tabpanel {
+    min-width: 0;
+  }
+
+  @media (max-width: 899px), (pointer: coarse) {
+    .kit-tab {
+      min-height: var(--target-min);
+    }
+  }
+}
+
+@layer states {
+  .kit-tab[aria-selected="true"] {
+    background: var(--pc, var(--teal));
+    border-color: var(--pc, var(--teal));
+    color: var(--on-seat);
+    font-weight: 700;
+  }
+}

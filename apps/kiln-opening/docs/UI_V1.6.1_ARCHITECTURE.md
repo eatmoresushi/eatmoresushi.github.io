@@ -174,6 +174,7 @@ Import rules are enforced by `test/v161/ui/import_boundaries.test.ts`. The test 
 
   The heat-calculation fields `actualHeat`, `finalActualHeat`, `heatSource` and `heatDifference` may appear only in `src/app/i18n/events.ts`, the game-log templates (public history, which D3 allows).
 - **`useEngineView`** (the raw `PlayerView` and `ActorView`) may be called only in `decision/**`, `state/**` and `dev/**`. Every other component receives only `GameModel`, whose types carry no Fire-deck count and no `FiringContext` (§3.3).
+- **`useSnapshot` and `useGameContext`** (the raw snapshot carries the raw `PlayerView`) may be called only in `decision/**`, `state/**`, `dev/**` and `App.tsx`. The log and the last event batch reach `GameLog` and `LiveAnnouncer` through `useLog()` (§3.3).
 - **Vocabulary arrays** (`SHAPES`, `GLAZES`, `DECORATIONS`, `QUALITIES`, `DISCIPLINES`, `KILN_SPACE_IDS`, `CENTRAL_LOCATION_IDS`, `PERSONAL_LOCATION_IDS`, `CONTRIBUTION_CARD_IDS`) may be used anywhere for display order. They never decide whether a choice is offered; selectors do. `KILN_IDS` still contains the disabled Ding, so Kiln choices come only from `kilnSelectionOptions`.
 - **Engine content constants** (`GAME_CONFIG`, `FIRING`, `IMPERIAL_TRACK`, `LOCATIONS`, `TECHS`, `KILNS`, `ORDERS`, `ROUND_STRUCTURE`) may be imported only by `src/app/i18n/**` (names, text and placeholder numbers) and `src/app/playtest/**` (option lists through `src/playtest/schema.ts`).
 - **`legalCommands`** may be called only in `src/app/dev/**` and tests.
@@ -248,6 +249,7 @@ Every storage call is wrapped in `try`/`catch`. The V1.4 keys `kiln-opening:last
 ```ts
 // src/app/state/hooks.ts (A2; frozen after phase A)
 useSession(): SessionApi;                 // snapshot.room/seats/seat/status + lobby actions
+useLog(): { log: readonly LogEntry[]; lastBatch: EventBatch | null };   // GameLog, LiveAnnouncer (§8.3)
 useGame(): GameModel;
 useModel<T>(pick: (m: GameModel) => T): T;
 useEngineView(): EngineView;              // decision/**, state/**, dev/** only (§2)
@@ -514,7 +516,7 @@ Every path is under `src/app/` unless stated. A component's CSS sits beside it (
 | `screens/GameScreen.tsx`, `screens/Placeholder.tsx` | composition only; renders the section, pane and nav components by fixed import paths |
 | `decision/DecisionPane.tsx`, `decision/windows.ts` (registry of `WindowSpec`s from the slices), `decision/OwnSummary.tsx`, `decision/ConfirmBar.tsx` | wireframe `pane`, `ownSummary`, `confirm` block, `stripText` |
 | `motion/timeline.ts` | `PresentationTimeline` interface; phase 4 `ImmediateTimeline` (§8.4) |
-| `dev/ScenarioGallery.tsx`, `dev/gallery-main.tsx` (discovers `dev/*.gallery.tsx` via `import.meta.glob`), `dev/CanonicalMoveButton.tsx` (removed in C1) | §9.5 |
+| `dev/ScenarioGallery.tsx`, `dev/gallery-main.tsx` (discovers `dev/*.gallery.tsx` via `import.meta.glob`), `dev/CanonicalMoveButton.tsx` (removed in C1), `dev/DevSessionPanel.tsx` (the phase A lobby driver inside the lobby stubs; gated like the canonical-move button, so a production build drops it; removed in C1 at the latest) | §9.5 |
 
 **Design system and i18n core (created and owned by A3 in phase A, then by B6)**
 
@@ -1232,7 +1234,7 @@ All six depend on phase A only. Inside phase B, the only cross-package link is B
 
 - all `full_game.spec.ts` projects green; axe-clean galleries in every project; the font-floor, overflow, target-size and hidden-content checks; the 200% text runs;
 - fixes land in the owning file, through B6 rules if that owner has finished;
-- remove `dev/CanonicalMoveButton.tsx`.
+- remove `dev/CanonicalMoveButton.tsx` and, if B1's lobby screens no longer render it, `dev/DevSessionPanel.tsx`.
 
 **C2: cutover**, as two commits, each green.
 

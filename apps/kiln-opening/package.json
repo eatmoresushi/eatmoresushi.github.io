@@ -14,15 +14,25 @@
     "test": "vitest run",
     "test:engine": "vitest run test/v161/engine",
     "test:platform": "vitest run test/v161/platform",
+    "test:ui": "vitest run test/v161/ui",
     "test:fuzz:long": "KILN_FUZZ_GAMES=${KILN_FUZZ_GAMES:-500} vitest run test/v161/engine/fuzz.test.ts",
     "test:watch": "vitest",
-    "dev:local": "VITE_E2E_LOCAL_BACKEND=1 vite"
+    "dev:local": "VITE_E2E_LOCAL_BACKEND=1 vite",
+    "test:e2e": "playwright test",
+    "test:e2e:update": "playwright test --update-snapshots",
+    "build:e2e": "VITE_E2E_LOCAL_BACKEND=1 vite build --outDir output/dist-e2e",
+    "test:e2e:ci": "KILN_E2E_SERVER=preview playwright test --project=ci-smoke --project=ci-full-game",
+    "fixtures": "vite-node tools/uiFixtures.ts --target tests",
+    "fixtures:check": "vite-node tools/uiFixtures.ts --target tests --check"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@playwright/test": "1.62.1",
     "@types/node": "^26.1.2",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^5.2.0",
+    "happy-dom": "20.14.5",
     "typescript": "^5.9.2",
     "vite": "^7.3.6",
     "vitest": "^3.2.4"

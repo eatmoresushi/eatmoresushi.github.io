@@ -1,0 +1,122 @@
+/* Kit gallery (dev only). */
+@layer components {
+  .kg {
+    display: grid;
+    gap: var(--sp-6);
+    padding: var(--sp-6) var(--gutter) var(--sp-8);
+  }
+
+  .kg-page-title {
+    font-size: var(--fs-24);
+    color: var(--teal-ink);
+  }
+
+  .kg-panes {
+    display: grid;
+    gap: var(--sp-6);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 34rem), 1fr));
+    align-items: start;
+  }
+
+  .kg-pane {
+    display: grid;
+    gap: var(--sp-6);
+    min-width: 0;
+    padding: var(--sp-6);
+    border: 1px solid var(--line);
+    border-radius: var(--r-xl);
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  .kg-title {
+    font-size: var(--fs-20);
+  }
+
+  .kg-section {
+    display: grid;
+    gap: var(--sp-4);
+    min-width: 0;
+    padding: var(--sp-5);
+    border: 1px solid var(--line-2);
+    border-radius: var(--r-lg);
+    background: var(--panel);
+  }
+
+  .kg-h {
+    font-size: var(--fs-15);
+    color: var(--teal-ink);
+  }
+
+  .kg-body {
+    display: grid;
+    gap: var(--sp-5);
+    min-width: 0;
+  }
+
+  .kg-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-4) var(--sp-5);
+    min-width: 0;
+  }
+
+  .kg-chips {
+    gap: var(--sp-6) var(--sp-7);
+    padding-top: var(--sp-4);
+  }
+
+  .kg-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-3);
+    font-size: var(--fs-meta);
+  }
+
+  .kg-sub {
+    margin-inline-start: var(--sp-7);
+    padding: var(--sp-4);
+    border: 1px dashed var(--line);
+    border-radius: var(--r-md);
+    font-size: var(--fs-meta);
+    color: var(--ink-2);
+  }
+
+  .kg-panel {
+    padding: var(--sp-5);
+    border: 1px solid var(--line-2);
+    border-top: 4px solid var(--line);
+    background: var(--surface);
+  }
+
+  .kg-sheet {
+    min-height: 6rem;
+  }
+
+  .kg-sheet-h {
+    font-size: var(--fs-18);
+  }
+
+  .kg-art-grid {
+    display: grid;
+    gap: var(--sp-4);
+    grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  }
+
+  .kg-art-cell {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-1);
+    padding: var(--sp-3);
+    border-radius: var(--r-md);
+    background: var(--surface);
+  }
+
+  .kg-caption {
+    flex-basis: 100%;
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+  }
+}

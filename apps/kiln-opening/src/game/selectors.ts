@@ -25,7 +25,10 @@
 import {
   CENTRAL_LOCATION_IDS,
   DECORATIONS,
+  activeKilnSpaces,
   DISCIPLINES,
+  FIRING,
+  GLAZES,
   KILNS,
   KILN_IDS,
   KILN_SPACE_IDS,
@@ -49,10 +52,11 @@ import { completionTriggers, validateOrderCompletion } from "./orders/completion
 import { findOrderMatches, matchOrder, type OrderMatch } from "./orders/matching.ts";
 import { availableWorkers, centralCapacity, nextPersonalSpace, workersAt } from "./placement.ts";
 import { magistratesHallOpen } from "./recognition.ts";
-import { settersMarkSpaces } from "./round.ts";
+import { isFinalRound, settersMarkSpaces } from "./round.ts";
 import { scorePreview as scorePreviewOf } from "./scoring.ts";
-import { ceramicsOf, decisionPrompt, heatMarkerOf, imperialKilnCeramic, lookup, player, turnOrder, workStep } from "./state.ts";
+import { ceramicSequence, ceramicsOf, decisionPrompt, heatMarkerOf, imperialKilnCeramic, lookup, player, turnOrder, workStep } from "./state.ts";
 import { acquisitionError, handLimit, ownsTech, techPrice, techReady } from "./techs.ts";
+import { quoteMaterialsYard } from "./work/materialsYard.ts";
 import { imperialPriorityUsable } from "./work/turn.ts";
 import type {
   ActorView,
@@ -62,37 +66,54 @@ import type {
   ContributionOption,
   CostQuote,
   CrackleDeclaration,
+  CrackleDeclarationChecks,
   FiringContext,
+  FiringStageCeramic,
+  FiringStageView,
+  FiringStep,
   FinishedCeramic,
   FormVesselSpec,
   GameAction,
   GameRuleError,
+  Glaze,
+  GlazeLoadVesselOption,
   GameRuleErrorCode,
   GuildInspectionOptions,
   GuildOptions,
   GuildTechOption,
+  HandLimitStatus,
+  ImperialModifier,
+  ImperialPriorityCeramicOption,
+  ImperialPriorityOptions,
+  KilnLayoutView,
   KilnSelectionOption,
   KilnSpaceId,
   KilnSpaceView,
   LoadSpec,
   LoadedCeramic,
+  LocationEffectsById,
   LocationId,
   LocationOccupant,
   LookedOrderOptions,
+  MaterialsYardOptions,
   OrderDefinition,
   OrderId,
   OrderMatchOption,
   OrderSelectionCheck,
+  PersonalLocationId,
   PersonalSpaceView,
+  PlacementLimits,
   PlacementOption,
   PlacementWorkerOption,
   PlayerId,
   PlayerState,
   PlayerSummary,
   PlayerView,
+  PreparedClayPair,
   PublicGameState,
   Recognition,
   ScorePreview,
+  Shape,
   ShapedCeramic,
   SubmitContributionCommand,
   TechId,
@@ -111,6 +132,7 @@ export { heatMarkerStepOptions, junOptions, testPiecesOptions } from "./firing/p
 export { afterQualityOptions, salvageOptions } from "./firing/afterQuality.ts";
 export { legalContributions } from "./firing/contributions.ts";
 export { findOrderMatches } from "./orders/matching.ts";
+export { SCORE_BREAKDOWN_ROWS, TIE_BREAK_ORDER } from "./scoring.ts";
 
 type FormDecorateAction = Extract<GameAction, { type: "PLACE_FORM_DECORATE" }>;
 
@@ -119,6 +141,7 @@ const LARGE_THROWING_WHEEL: TechId = "T01";
 const DECORATORS_KIT: TechId = "T16";
 const CANAL_BARGE: TechId = "T23";
 const FUEL_LEDGER: TechId = "T12";
+const PREPARED_CLAY: TechId = "T17";
 
 /**
  * Rule-error codes that depend only on the phase, the actor, the worker, the location and the
@@ -243,11 +266,13 @@ export function playerSummary(view: PlayerView, playerId: PlayerId): PlayerSumma
       const occupant = Object.values(p.workers)
         .filter((w) => w.placement?.locationId === locationId && w.placement.spaceIndex === spaceIndex)
         .map((w) => occupantOf(playerId, w))[0];
+      const unlocked = p.personalSpaces[locationId][spaceIndex].unlocked;
       personalSpaces.push({
         locationId,
         spaceIndex,
-        unlocked: p.personalSpaces[locationId][spaceIndex].unlocked,
+        unlocked,
         occupant: occupant ?? null,
+        addedByTechId: unlocked && spaceIndex === 1 ? addedByTech(p, locationId) : null,
       });
     }
   }
@@ -288,16 +313,142 @@ export function playerSummary(view: PlayerView, playerId: PlayerId): PlayerSumma
   };
 }
 
+/** The owned Tech whose `unlocks` added a second personal space (L211, D7). At most one Tech
+ * per discipline is owned (L210), so at most one matches. */
+function addedByTech(p: PlayerState, locationId: PersonalLocationId): TechId | null {
+  return p.techs.find((tech) => TECHS[tech.id].unlocks === locationId)?.id ?? null;
+}
+
 /** What the player would score if the game ended now (public information only). */
 export function scorePreview(view: PlayerView, playerId: PlayerId): ScorePreview {
   return scorePreviewOf(view.game, playerId);
 }
 
-/** Held Orders against the Cleanup hand limit (4, or 5 with Colour Samples; L199, L303). */
-export function handLimitStatus(view: PlayerView, playerId: PlayerId): { held: number; limit: number; mustDiscard: number } {
+/**
+ * Held Orders against the Cleanup hand limit (4, or 5 with Colour Samples; L199, L303).
+ * `trimDue` uses Cleanup's own predicate: Rounds 1–4 only (INT: Round 5 skips the trim).
+ */
+export function handLimitStatus(view: PlayerView, playerId: PlayerId): HandLimitStatus {
   const held = lookup(view.game.counts.orderHands, playerId) ?? 0;
   const limit = handLimit(player(view.game, playerId));
-  return { held, limit, mustDiscard: Math.max(0, held - limit) };
+  const mustDiscard = Math.max(0, held - limit);
+  return { held, limit, mustDiscard, trimDue: !isFinalRound(view.game.round) && mustDiscard > 0 };
+}
+
+/** The Shared Kiln cover for this player count (L99) and which active spaces hold nothing
+ * (UI_V1.6.1_ARCHITECTURE §5 gap 5). A Setter's Mark does not fill a space. */
+export function kilnLayout(view: PlayerView): KilnLayoutView {
+  const game = view.game;
+  const active = activeKilnSpaces(game.playerCount);
+  return {
+    activeSpaceIds: KILN_SPACE_IDS.filter((spaceId) => active.includes(spaceId)),
+    coveredSpaceIds: KILN_SPACE_IDS.filter((spaceId) => !active.includes(spaceId)),
+    emptyActiveSpaceIds: KILN_SPACE_IDS.filter((spaceId) => active.includes(spaceId) && game.sharedKiln.spaces[spaceId].ceramicIds.length === 0),
+  };
+}
+
+/** Appendix D steps resolved in First Player order: Test Pieces, Heat markers, heat
+ * adjustment, after-Quality (L675, L676, L679, L681). */
+const FIRST_PLAYER_ORDER_STEPS: readonly FiringStep[] = [4, 5, 8, 10];
+
+/** The Appendix D step a firing phase decides (L670–693); null outside the Firing Phase. */
+function firingStepOf(phase: PublicGameState["phase"]): FiringStep | null {
+  switch (phase.type) {
+    case "firing_contributions":
+      return 1;
+    case "firing_test_pieces":
+      return 4;
+    case "firing_heat_markers":
+      return 5;
+    case "firing_heat_adjustment":
+      return 8;
+    case "firing_after_quality":
+    case "firing_second_firing_jun":
+      return 10;
+    case "firing_salvage":
+      return 11;
+    default:
+      return null;
+  }
+}
+
+/**
+ * A firing as the table shows it (owner decisions D3, D4): never Actual Heat, a heat source,
+ * a Heat Difference, a preview or the Fire-deck count. `live` reads the ceramics' current
+ * markers; a finished firing (the recap) has had its markers removed (step 12).
+ */
+function stageOf(game: PublicGameState, firing: FiringContext, step: FiringStep, live: boolean): FiringStageView {
+  const phase = game.phase;
+  const queue =
+    live &&
+    (phase.type === "firing_test_pieces" ||
+      phase.type === "firing_heat_markers" ||
+      phase.type === "firing_heat_adjustment" ||
+      phase.type === "firing_after_quality")
+      ? { actorIds: [...phase.queue.actorIds], index: phase.queue.index }
+      : null;
+  const revealed = firing.contributions;
+  const submittedPlayerIds =
+    live && phase.type === "firing_contributions" ? [...phase.submittedPlayerIds] : revealed === null ? [] : [...firing.participantIds];
+  const ceramics: FiringStageCeramic[] = Object.values(firing.ceramics)
+    .filter((record): record is NonNullable<typeof record> => record !== undefined)
+    .sort((a, b) => ceramicSequence(a.ceramicId) - ceramicSequence(b.ceramicId))
+    .map((record) => {
+      const current = live ? lookup(game.ceramics, record.ceramicId) : undefined;
+      const marker = current !== undefined && current.stage === "loaded" && current.heatMarker !== null ? { ...current.heatMarker } : null;
+      return {
+        id: record.ceramicId,
+        ownerId: record.ownerId,
+        kiln: record.kiln,
+        spaceId: record.spaceId,
+        marker,
+        quality: record.quality,
+        crackle: record.crackle,
+        salvaged: record.salvaged,
+        secondFireModifier: record.second?.fireModifier ?? null,
+      };
+    });
+  return {
+    round: firing.round,
+    step,
+    firstPlayerOrder: [...FIRST_PLAYER_ORDER_STEPS],
+    queue,
+    submittedPlayerIds,
+    kilnDie: firing.kilnDie,
+    contributions: firing.participantIds.map((playerId) => {
+      const contribution = revealed === null ? undefined : lookup(revealed, playerId);
+      return {
+        playerId,
+        revealed: contribution === undefined ? null : { card: contribution.card, heat: contribution.heat, woodPaid: contribution.woodPaid },
+      };
+    }),
+    baseHeat: firing.baseHeat,
+    fireModifier: firing.fireModifier,
+    globalHeat: firing.globalHeat,
+    fireDiscard: [...game.fireDiscard],
+    testPieces: firing.testPieces.map((record) => ({ playerId: record.playerId, peeked: record.peeked, buried: record.buried })),
+    extraFire: live && firing.pendingExtraFire !== null ? { ...firing.pendingExtraFire } : null,
+    ceramics,
+  };
+}
+
+/** The firing in progress, as the table shows it (UI_V1.6.1_ARCHITECTURE §5 gap 7, D3, D4);
+ * null outside the Firing Phase. */
+export function firingStageView(view: PlayerView): FiringStageView | null {
+  const game = view.game;
+  const firing = game.firing;
+  const step = firingStepOf(game.phase);
+  if (firing === null || step === null) {
+    return null;
+  }
+  return stageOf(game, firing, step, true);
+}
+
+/** The last finished firing (step 12), for the recap between firings (§5 gap 18); null before
+ * the first firing and while the next one runs (its start clears the recap). */
+export function firingRecapView(view: PlayerView): FiringStageView | null {
+  const game = view.game;
+  return game.lastFiring === null ? null : stageOf(game, game.lastFiring, 12, false);
 }
 
 /** The current firing, else the most recent one (for the recap). */
@@ -481,21 +632,22 @@ function placementWorkerOption(view: PlayerView, locationId: LocationId, option:
   const base = { workerId: option.workerId, kind: option.kind, effect: option.effect, seniorApprentice: option.seniorApprentice };
   const actor = asActorView(view);
   if (actor === null) {
-    return { ...base, legal: false, reason: "UNKNOWN_PLAYER" };
+    const error = ruleError("UNKNOWN_PLAYER", "You are not seated in this game.", { playerId: String(view.viewerId) });
+    return { ...base, legal: false, reason: error.code, error };
   }
   const gate = validateAction(actor, gateProbe(actor, locationId, option));
   if (gate === null) {
-    return { ...base, legal: true, reason: null };
+    return { ...base, legal: true, reason: null, error: null };
   }
   if (PLACEMENT_GATE_CODES.has(gate.code)) {
-    return { ...base, legal: false, reason: gate.code };
+    return { ...base, legal: false, reason: gate.code, error: gate };
   }
   for (const probe of placementProbes(actor, locationId, option)) {
     if (validates(actor, probe)) {
-      return { ...base, legal: true, reason: null };
+      return { ...base, legal: true, reason: null, error: null };
     }
   }
-  return { ...base, legal: false, reason: gate.code };
+  return { ...base, legal: false, reason: gate.code, error: gate };
 }
 
 /**
@@ -542,6 +694,105 @@ export function placementOptions(view: PlayerView): PlacementOption[] {
       nextSpaceIndex,
     };
   });
+}
+
+/**
+ * The printed effect record of a location for a worker effect (Appendix E; §5 gap 10): Form &
+ * Decorate `maxVessels`, Glaze & Load `maxLoads` / `maxImperialLoads` / `placesHeatMarker`,
+ * Materials Yard `resources` / `bonus`, Canal Wharf `coins`, … so a form never reads rule
+ * constants. A copy; `view` keeps the selector shape (and the UI's import rule).
+ */
+export function placementLimits<L extends LocationId, E extends WorkerEffect>(
+  view: PlayerView,
+  locationId: L,
+  effect: E,
+): PlacementLimits<L, E> {
+  void view;
+  const effects = LOCATIONS[locationId].effects as LocationEffectsById[L];
+  return structuredClone(effects[effect]);
+}
+
+/**
+ * Materials Yard choices for one `placementOptions` worker entry (L159–162, L618; §5 gap 14),
+ * probed through `validateAction`:
+ * - `resources`: the Clay/Wood split total for the worker's effect;
+ * - `shifuBonus`: the Shifu effect's 1-Coin purchase, quoted (`ok` = affordable), else null;
+ * - `preparedClay`: every Shape + Decoration pair some legal command names (any split, with
+ *   or without the bonus), and the Shapes and Decorations of those pairs; null for a Senior
+ *   Apprentice placement (L349: both Form & Decorate Techs, L210) or when Prepared Clay (T17)
+ *   is not owned and ready. Legality is per pair: Shape Clay and Decoration Coins compete with
+ *   the 1-Coin bonus, so `shapes` × `decorations` may contain illegal combinations, and each
+ *   pair says whether it stays legal together with the Shifu bonus.
+ */
+export function materialsYardOptions(view: PlayerView, worker: PlacementWorkerOption): MaterialsYardOptions {
+  const resources = LOCATIONS.materials_yard.effects[worker.effect].resources;
+  const actor = asActorView(view);
+  const command = (clay: number, bonus: boolean, preparedClay?: { shape: Shape; decoration: (typeof DECORATIONS)[number] }): GameAction => ({
+    type: "PLACE_MATERIALS_YARD",
+    workerId: worker.workerId,
+    clay,
+    wood: resources - clay,
+    ...(worker.seniorApprentice ? { seniorApprentice: true } : {}),
+    ...(bonus ? { buyShifuBonus: true } : {}),
+    ...(preparedClay === undefined ? {} : { preparedClay }),
+  });
+  const shifuBonus =
+    actor === null || worker.effect !== "shifu"
+      ? null
+      : quoteMaterialsYard(actor, command(resources, true) as Extract<GameAction, { type: "PLACE_MATERIALS_YARD" }>);
+  if (actor === null || worker.seniorApprentice || !techReady(player(view.game, actor.viewerId), PREPARED_CLAY)) {
+    return { resources, shifuBonus, preparedClay: null };
+  }
+  const pairs: PreparedClayPair[] = [];
+  for (const shape of SHAPES) {
+    for (const decoration of DECORATIONS) {
+      // Prepared Clay is paid after gaining the split and the bonus (L618), so a pair is legal
+      // with a given bonus choice when some split validates.
+      const legalWith = (bonus: boolean): boolean => {
+        for (let clay = resources; clay >= 0; clay -= 1) {
+          if (validates(actor, command(clay, bonus, { shape, decoration }))) return true;
+        }
+        return false;
+      };
+      const withShifuBonus = worker.effect === "shifu" && legalWith(true);
+      if (withShifuBonus || legalWith(false)) {
+        pairs.push({ shape, decoration, withShifuBonus });
+      }
+    }
+  }
+  return {
+    resources,
+    shifuBonus,
+    preparedClay: {
+      shapes: SHAPES.filter((x) => pairs.some((pair) => pair.shape === x)),
+      decorations: DECORATIONS.filter((x) => pairs.some((pair) => pair.decoration === x)),
+      pairs,
+    },
+  };
+}
+
+/**
+ * The Shaped vessels a Glaze & Load load may name after `earlierLoads` (L176–184, L343, L617;
+ * §5 gap 15), each with its Glazes (any, when it has a legal destination with its Shape or a
+ * reworked one) and its Reworking Table Shapes (T05 ready, no earlier load of this action
+ * reworked, a legal destination for the new Shape). Destinations come from
+ * `loadDestinationOptions`, the validator's own simulation. Vessels already in
+ * `earlierLoads` are left out.
+ */
+export function glazeLoadVesselOptions(view: PlayerView, playerId: PlayerId, earlierLoads: readonly LoadSpec[]): GlazeLoadVesselOption[] {
+  if (seatedPlayer(view.game, playerId) === null) {
+    return [];
+  }
+  const used = new Set(earlierLoads.map((load) => load.ceramicId));
+  return ceramicsOf(view.game, playerId, "shaped")
+    .filter((vessel) => !used.has(vessel.id))
+    .map((vessel) => {
+      const reworkShapes = SHAPES.filter(
+        (shape) => shape !== vessel.shape && loadDestinationOptions(view, playerId, vessel.id, earlierLoads, shape).length > 0,
+      );
+      const loadable = reworkShapes.length > 0 || loadDestinationOptions(view, playerId, vessel.id, earlierLoads).length > 0;
+      return { ceramicId: vessel.id, glazes: loadable ? [...GLAZES] : [], reworkShapes };
+    });
 }
 
 /**
@@ -745,13 +996,29 @@ function imperialPriorityWindowUsable(game: PublicGameState, playerId: PlayerId)
 }
 
 
-/** Imperial Priority now (L292, R10): usable in your before/after-action window with the token
- * held, an empty gained Imperial Kiln and a Shaped vessel, which may be any of them. */
-export function imperialPriorityOptions(view: PlayerView): { usable: boolean; ceramicIds: CeramicId[] } {
-  if (view.viewerId === null || !imperialPriorityWindowUsable(view.game, view.viewerId)) {
-    return { usable: false, ceramicIds: [] };
+/**
+ * Imperial Priority now (L292, R10): usable in your before/after-action window with the token
+ * held, an empty gained Imperial Kiln and a Shaped vessel, which may be any of them. Per
+ * vessel (§5 gap 16), probed through `validateAction`: its Glazes, Imperial modifiers and
+ * Reworking Table Shapes (DESIGN §11 Q1).
+ */
+export function imperialPriorityOptions(view: PlayerView): ImperialPriorityOptions {
+  const actor = asActorView(view);
+  if (actor === null || !imperialPriorityWindowUsable(view.game, actor.viewerId)) {
+    return { usable: false, ceramicIds: [], ceramics: [] };
   }
-  return { usable: true, ceramicIds: ceramicsOf(view.game, view.viewerId, "shaped").map((c) => c.id) };
+  const vessels = ceramicsOf(view.game, actor.viewerId, "shaped");
+  const firstGlaze = GLAZES[0] as Glaze;
+  const firstModifier = FIRING.imperialModifiers[0] as ImperialModifier;
+  const probe = (ceramicId: CeramicId, glaze: Glaze, imperialModifier: ImperialModifier, reworkShape?: Shape): boolean =>
+    validates(actor, { type: "USE_IMPERIAL_PRIORITY", ceramicId, glaze, imperialModifier, ...(reworkShape === undefined ? {} : { reworkShape }) });
+  const ceramics: ImperialPriorityCeramicOption[] = vessels.map((vessel) => ({
+    ceramicId: vessel.id,
+    glazes: GLAZES.filter((glaze) => probe(vessel.id, glaze, firstModifier)),
+    imperialModifiers: FIRING.imperialModifiers.filter((modifier) => probe(vessel.id, firstGlaze, modifier)),
+    reworkShapes: SHAPES.filter((shape) => shape !== vessel.shape && probe(vessel.id, firstGlaze, firstModifier, shape)),
+  }));
+  return { usable: true, ceramicIds: vessels.map((c) => c.id), ceramics };
 }
 
 // ── Orders (Order Phase and Canal Barge pickers) ─────────────────────────────────────
@@ -844,6 +1111,57 @@ export function orderSelectionCheck(
     ceramicIds.length < order.ceramics.length &&
     findOrderMatches(order, finishedPool(view.game, actor.viewerId)).some((match) => ceramicIds.every((id) => match.ceramicIds.includes(id)));
   return { ok: false, error: failure, extendable };
+}
+
+/**
+ * Validator verdicts for a Crackle declaration picker (L469, L484; §5 gap 8). For the selected
+ * ceramics of one held Order and the picker's current explicit `declarations`:
+ * - `auto`: declarations omitted, the engine searches (the picker's explicit "auto" mode);
+ * - `declared`: the declarations exactly as given;
+ * - per selected Crackle ceramic, the verdict of declaring each Decoration, and of leaving it
+ *   undeclared (its printed Decoration), with the other ceramics' declarations as given.
+ * Every verdict is `orderSelectionCheck`, the validator's own matcher, so it agrees with
+ * `COMPLETE_ORDER` and `USE_CANAL_BARGE` in their windows.
+ */
+export function crackleDeclarationChecks(
+  view: PlayerView,
+  orderId: OrderId,
+  ceramicIds: readonly CeramicId[],
+  declarations: readonly CrackleDeclaration[],
+): CrackleDeclarationChecks {
+  const withDeclaration = (ceramicId: CeramicId, decoration: (typeof DECORATIONS)[number] | null): CrackleDeclaration[] => {
+    const replaced: CrackleDeclaration[] = [];
+    let placed = false;
+    for (const d of declarations) {
+      if (d.ceramicId !== ceramicId) {
+        replaced.push({ ...d });
+      } else if (decoration !== null && !placed) {
+        replaced.push({ ceramicId, decoration });
+        placed = true;
+      }
+    }
+    if (decoration !== null && !placed) {
+      replaced.push({ ceramicId, decoration });
+    }
+    return replaced;
+  };
+  const crackle = ceramicIds
+    .map((id) => lookup(view.game.ceramics, id))
+    .filter((c): c is FinishedCeramic => c !== undefined && c.stage === "finished" && c.crackle);
+  return {
+    orderId,
+    ceramicIds: [...ceramicIds],
+    auto: orderSelectionCheck(view, orderId, ceramicIds),
+    declared: orderSelectionCheck(view, orderId, ceramicIds, declarations),
+    ceramics: crackle.map((c) => ({
+      ceramicId: c.id,
+      printedDecoration: c.decoration,
+      options: [null, ...DECORATIONS].map((decoration) => ({
+        decoration,
+        check: orderSelectionCheck(view, orderId, ceramicIds, withDeclaration(c.id, decoration)),
+      })),
+    })),
+  };
 }
 
 // ── Firing ───────────────────────────────────────────────────────────────────────────

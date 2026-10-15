@@ -40,6 +40,7 @@ import { DIRECTED_WEIGHTS, FuzzTable, playFuzzGame, richStartState, selectorAgre
 import { phaseScenarios } from "./phase_scenarios.ts";
 import { buildState } from "./support/fixtures.ts";
 import { LocalTable } from "./support/localTable.ts";
+import { driveGame, uiOptionAgreementViolations, uiOptionScenarios } from "./ui_support.ts";
 
 function deepFreeze<T>(value: T): T {
   if (value !== null && typeof value === "object" && !Object.isFrozen(value)) {
@@ -174,7 +175,7 @@ describe("view models", () => {
     // Two Techs, each 1 VP recorded on gain (owner amendment A1).
     expect(summary.recorded.techs).toBe(2);
     expect(summary.recordedVp).toBe(2);
-    expect(handLimitStatus(viewOf(state, "p2"), "p1")).toEqual({ held: 6, limit: 5, mustDiscard: 1 });
+    expect(handLimitStatus(viewOf(state, "p2"), "p1")).toEqual({ held: 6, limit: 5, mustDiscard: 1, trimDue: true });
   });
 
   it("scorePreview is the final scoring of the public state", () => {
@@ -299,5 +300,42 @@ describe("view models", () => {
     const options = commissionOptions(table.view("p1"), "apprentice");
     expect(options).toMatchObject({ effect: "shifu", reservationsMade: 1, canStop: true, gainNow: false, lookTopThree: true });
     expect(options.faceUpSlots).not.toContain(2);
+  });
+});
+
+// ── Production-UI option selectors (UI_V1.6.1_ARCHITECTURE §5 gaps 8, 10–12, 14–16) ────────
+
+describe("production-UI option selectors agree with validateAction (exhaustive probes)", () => {
+  it.each(phaseScenarios().map((s) => [s.name, s] as const))("%s", (_name, scenario) => {
+    for (const playerId of scenario.table.state.playerOrder) {
+      expect(uiOptionAgreementViolations(scenario.table.state, scenario.table.privateState, playerId), playerId).toEqual([]);
+    }
+  });
+
+  it.each(uiOptionScenarios().map((s) => [s.name, s] as const))("%s", (_name, scenario) => {
+    for (const playerId of scenario.table.state.playerOrder) {
+      expect(uiOptionAgreementViolations(scenario.table.state, scenario.table.privateState, playerId), playerId).toEqual([]);
+    }
+  });
+
+  it("at sampled decisions of seeded games", () => {
+    let checked = 0;
+    for (const [seed, playerCount] of [
+      [4, 3],
+      [17, 4],
+      [29, 2],
+    ] as const) {
+      let decision = 0;
+      driveGame({ seed, playerCount, start: "rich" }, (table, actorId) => {
+        decision += 1;
+        const phase = table.state.phase;
+        const interesting = phase.type === "orders" || (phase.type === "work_turn" && phase.step.kind !== "commission_market");
+        if (interesting && decision % 3 === 0) {
+          expect(uiOptionAgreementViolations(table.state, table.privateState, actorId), `${seed}/${decision} ${phase.type}`).toEqual([]);
+          checked += 1;
+        }
+      });
+    }
+    expect(checked).toBeGreaterThan(30);
   });
 });

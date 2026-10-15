@@ -1,0 +1,39 @@
+/* CeramicArt (pieces; wireframe `.cer`): neutral cutout tinted by the Glaze token. */
+@layer components {
+  .cer {
+    position: relative;
+    display: inline-block;
+    flex: none;
+    width: var(--sz, 40px);
+    height: var(--sz, 40px);
+    isolation: isolate;
+  }
+
+  .cer::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--src) center / contain no-repeat;
+  }
+
+  .cer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--glz, var(--glz-clay));
+    mix-blend-mode: multiply;
+    -webkit-mask: var(--src) center / contain no-repeat;
+    mask: var(--src) center / contain no-repeat;
+  }
+
+  .cer-crackle {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: var(--crk) center / cover no-repeat;
+    -webkit-mask: var(--src) center / contain no-repeat;
+    mask: var(--src) center / contain no-repeat;
+    mix-blend-mode: multiply;
+    opacity: 0.75;
+  }
+}

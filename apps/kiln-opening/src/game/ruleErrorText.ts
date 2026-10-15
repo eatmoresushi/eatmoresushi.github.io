@@ -435,7 +435,7 @@ export const WORKER_TEXT: Labels<WorkerKind> = {
 
 /** Glossary §2.15. */
 export const DISCIPLINE_TEXT: Labels<TechDiscipline> = {
-  workshop: { en: "Workshop", zh: "坯作" },
+  workshop: { en: "Form & Decorate", zh: "坯作" },
   glazing_loading: { en: "Glazing & Loading", zh: "釉作" },
   firing: { en: "Firing", zh: "火作" },
 };
@@ -503,10 +503,18 @@ const PLACEHOLDER_DEFAULTS: Readonly<Record<string, RuleErrorTemplate>> = {
 
 /** Keys whose value is a player ID, rendered through `FormatOptions.playerName`. */
 const PLAYER_KEYS: ReadonlySet<string> = new Set(["playerId", "waitingFor", "ownerId"]);
+/** Detail keys that hold ceramic IDs (rendered through `FormatOptions.ceramicName`, D9). */
+const CERAMIC_KEYS: ReadonlySet<string> = new Set(["ceramicId", "ceramicIds", "underCeramicId"]);
 
 export interface FormatOptions {
   /** Display name for a player ID (e.g. from `PlayerState.displayName`). Default: the ID. */
   playerName?: (playerId: string) => string;
+  /**
+   * Description of a ceramic ID in words, e.g. "Lin's Celadon Vase, Carved · Fine" (owner
+   * decision D9: a Vessel card has no number, so player-facing text never shows `c12`).
+   * The UI passes its `ceramicLabel` helper. Default: the ID (logs and tests).
+   */
+  ceramicName?: (ceramicId: string) => string;
 }
 
 function pick(template: RuleErrorTemplate, locale: RuleTextLocale): string {
@@ -538,6 +546,10 @@ export function detailLabel(
   if (typeof value !== "string") return String(value);
   if (PLAYER_KEYS.has(key)) {
     const name = options.playerName ?? ((id: string) => id);
+    return value.split(",").map((id) => name(id.trim())).join(locale === "zh" ? "、" : ", ");
+  }
+  if (CERAMIC_KEYS.has(key)) {
+    const name = options.ceramicName ?? ((id: string) => id);
     return value.split(",").map((id) => name(id.trim())).join(locale === "zh" ? "、" : ", ");
   }
   switch (key) {

@@ -7,9 +7,15 @@
  *   cross-package hand-over (recorded in `halts`) instead of reaching another package's stub.
  *   `pass` lets chosen hand-overs run the production wiring.
  * - Every command runs with `checkInvariants: true`.
+ * - `commandMarks` records, per accepted command, where its events start in `events`, its
+ *   revision and its actor, so UI fixtures can number a scenario's log like the service.
+ *
+ * No `vitest` import: the UI fixture generator (`tools/uiFixtures.ts`, run by `vite-node`)
+ * builds the phase scenarios on this table outside the test runner. `expectRuleError` asserts
+ * with `node:assert`, which fails a test the same way.
  */
 
-import { expect } from "vitest";
+import { deepStrictEqual, equal, fail } from "node:assert/strict";
 import { applyAction, submitContribution } from "../../../../src/game/engine.ts";
 import { SeededRandom } from "../../../../src/game/rng.ts";
 import { decisionPrompt, player } from "../../../../src/game/state.ts";
@@ -52,6 +58,10 @@ export class LocalTable {
   readonly halts: FlowHalt[] = [];
   /** Every event of every accepted command, in order. */
   readonly events: GameEvent[] = [];
+  /** One entry per accepted command: the index of its first event in `events`, the revision
+   * it committed and its actor. Events pushed before any mark (setup, `openFiringTable`) have
+   * none. */
+  readonly commandMarks: Array<{ firstEventIndex: number; revision: number; actorId: PlayerId }> = [];
   private readonly flow: FlowController | undefined;
 
   constructor(state: GameState, options: LocalTableOptions = {}) {
@@ -97,6 +107,7 @@ export class LocalTable {
     const result = applyAction(this.state, actorId, action, this.rng, this.engineOptions());
     if (result.ok) {
       this.state = result.state;
+      this.commandMarks.push({ firstEventIndex: this.events.length, revision: result.state.revision, actorId });
       this.events.push(...result.events);
       this.syncPrivateWindow();
     }
@@ -125,6 +136,7 @@ export class LocalTable {
     if (result.ok) {
       this.state = result.state;
       this.privateState = result.privateState;
+      this.commandMarks.push({ firstEventIndex: this.events.length, revision: result.state.revision, actorId });
       this.events.push(...result.events);
       this.syncPrivateWindow();
     }
@@ -144,14 +156,13 @@ export class LocalTable {
   expectRuleError(actorId: PlayerId, action: GameAction, code?: GameRuleErrorCode): GameRuleError {
     const before = structuredClone(this.state);
     const result = this.tryAct(actorId, action);
-    expect(result.ok, `${action.type} should be rejected`).toBe(false);
     if (result.ok) {
-      throw new Error("unreachable");
+      fail(`${action.type} should be rejected`);
     }
     if (code !== undefined) {
-      expect(result.error.code).toBe(code);
+      equal(result.error.code, code, `${action.type} rejected with ${result.error.code}, expected ${code}`);
     }
-    expect(this.state).toEqual(before);
+    deepStrictEqual(this.state, before, `${action.type} was rejected but changed the state`);
     return result.error;
   }
 

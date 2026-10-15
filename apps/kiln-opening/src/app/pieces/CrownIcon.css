@@ -1,0 +1,23 @@
+/* CrownIcon (pieces; wireframe `CROWN`, `.chip.gold`). */
+@layer components {
+  .crown {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-1);
+    color: var(--gold-ink);
+  }
+
+  .crown--count {
+    padding: 0 var(--sp-3);
+    border-radius: var(--r-pill);
+    background: var(--gold-pale);
+    font-size: var(--fs-meta);
+    font-weight: 700;
+    line-height: 1.5;
+    white-space: nowrap;
+  }
+
+  .crown-glyph {
+    flex: none;
+  }
+}

@@ -1,0 +1,39 @@
+/* OwnSummary (A2; wireframe `.own`). */
+@layer components {
+  .own {
+    display: grid;
+    gap: var(--sp-2);
+    padding: var(--sp-4) var(--sp-6);
+    border-block-start: 4px solid var(--pc, var(--line));
+    border-block-end: 1px solid var(--line);
+    background: var(--surface);
+  }
+
+  .own-name {
+    font-size: var(--fs-15);
+  }
+
+  .own-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-2) var(--sp-5);
+    min-width: 0;
+    font-size: var(--fs-meta);
+    color: var(--ink-2);
+  }
+
+  .own-workers {
+    display: inline-flex;
+    gap: var(--sp-1);
+  }
+
+  .own-vp {
+    margin-inline-start: auto;
+    font-family: var(--serif);
+    font-size: var(--fs-18);
+    font-weight: 700;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+}

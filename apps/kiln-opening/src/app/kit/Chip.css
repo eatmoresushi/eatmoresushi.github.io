@@ -1,0 +1,58 @@
+/* Chip (kit; wireframe `.chip`). */
+@layer components {
+  .kit-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: 0 var(--sp-4);
+    border-radius: var(--r-pill);
+    background: var(--paper-2);
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+    line-height: 1.5;
+    white-space: nowrap;
+  }
+
+  .kit-chip--wrap {
+    white-space: normal;
+    border-radius: var(--r-md);
+    line-height: var(--lh-snug);
+    padding-block: var(--sp-1);
+  }
+
+  .kit-chip--ok {
+    background: var(--celadon-pale);
+    color: var(--celadon-ink);
+    font-weight: 700;
+  }
+
+  /* "Used this round": outlined rather than filled, text at --ink-2 so it keeps 4.5:1 on every
+     surface in both themes (§8.1). */
+  .kit-chip--used {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--line);
+    color: var(--ink-2);
+  }
+
+  .kit-chip--gold {
+    background: var(--gold-pale);
+    color: var(--gold-ink);
+    font-weight: 700;
+  }
+
+  .kit-chip--warn {
+    background: var(--cinnabar-pale);
+    color: var(--cinnabar-ink);
+    font-weight: 700;
+  }
+
+  .kit-chip--private {
+    background: var(--priv);
+    color: var(--on-priv);
+    font-weight: 700;
+  }
+
+  .kit-chip-icon {
+    display: inline-flex;
+  }
+}

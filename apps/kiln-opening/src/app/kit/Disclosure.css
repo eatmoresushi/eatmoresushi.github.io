@@ -1,0 +1,40 @@
+/* Disclosure (kit; wireframe `details`, `.unav`). */
+@layer components {
+  .kit-disclosure {
+    min-width: 0;
+    font-size: var(--fs-meta);
+    color: var(--ink-2);
+  }
+
+  .kit-disclosure-summary {
+    width: max-content;
+    max-width: 100%;
+    color: var(--teal-ink);
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .kit-disclosure--warn > .kit-disclosure-summary,
+  .kit-disclosure--warn > .kit-disclosure-body {
+    color: var(--bad-ink);
+  }
+
+  .kit-disclosure[open] > .kit-disclosure-summary {
+    margin-bottom: var(--sp-2);
+  }
+
+  .kit-disclosure-body {
+    display: grid;
+    gap: var(--sp-2);
+    min-width: 0;
+  }
+
+  @media (max-width: 899px), (pointer: coarse) {
+    .kit-disclosure-summary {
+      display: flex;
+      align-items: center;
+      min-height: var(--target-min);
+      min-width: var(--target-min);
+    }
+  }
+}

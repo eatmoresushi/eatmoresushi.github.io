@@ -1,0 +1,120 @@
+/* Button (kit; wireframe `.btn`). */
+@layer components {
+  .kit-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--sp-3);
+    min-height: 2.25rem;
+    padding: var(--sp-4) var(--sp-6);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--ink);
+    font-size: var(--fs-14);
+    font-weight: 700;
+    line-height: var(--lh-snug);
+    text-align: center;
+  }
+
+  .kit-btn:hover {
+    border-color: var(--celadon);
+  }
+
+  .kit-btn--sm {
+    min-height: 1.75rem;
+    padding: var(--sp-2) var(--sp-4);
+    border-radius: var(--r-sm);
+    font-size: var(--fs-meta);
+  }
+
+  .kit-btn--block {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+
+  .kit-btn--primary {
+    background: var(--teal);
+    border-color: var(--teal);
+    color: var(--on-teal);
+  }
+
+  .kit-btn--primary:hover {
+    border-color: var(--teal-ink);
+  }
+
+  .kit-btn--quiet {
+    border-color: transparent;
+    background: transparent;
+    color: var(--teal-ink);
+  }
+
+  .kit-btn--quiet:hover {
+    background: var(--teal-pale);
+    border-color: transparent;
+  }
+
+  .kit-btn--danger {
+    background: var(--cinnabar);
+    border-color: var(--cinnabar);
+    color: var(--on-cinnabar);
+  }
+
+  .kit-btn-icon {
+    display: inline-flex;
+    flex: none;
+  }
+
+  /* Phones and touch: 44px targets (WCAG 2.5.8, §8.1). */
+  @media (max-width: 899px), (pointer: coarse) {
+    .kit-btn,
+    .kit-btn--sm {
+      min-height: var(--target-min);
+    }
+  }
+}
+
+@layer states {
+  .kit-btn[aria-pressed="true"] {
+    background: var(--teal);
+    border-color: var(--teal);
+    color: var(--on-teal);
+  }
+
+  /* Unavailable: faded (axe exempts aria-disabled controls from colour contrast). */
+  .kit-btn[aria-disabled="true"] {
+    opacity: 0.5;
+  }
+
+  /* Sending: full-contrast text (it is still read, §8.1) plus a spinner ring. Reduced motion
+     stops the spin; the ring stays as a static busy mark. */
+  .kit-btn[aria-busy="true"] {
+    cursor: progress;
+  }
+
+  .kit-btn[aria-busy="true"]::before {
+    content: "";
+    flex: none;
+    width: 0.9em;
+    height: 0.9em;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: kit-btn-spin 0.8s linear infinite;
+  }
+
+  .kit-btn[aria-disabled="true"]:hover {
+    border-color: var(--line);
+  }
+
+  .kit-btn--primary[aria-disabled="true"]:hover,
+  .kit-btn--primary[aria-busy="true"]:hover {
+    border-color: var(--teal);
+  }
+
+  @keyframes kit-btn-spin {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+}

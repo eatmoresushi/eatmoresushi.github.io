@@ -1959,6 +1959,9 @@ export interface PlacementWorkerOption {
   seniorApprentice: boolean;
   legal: boolean;
   reason: GameRuleErrorCode | null;
+  /** The validator's error behind `reason`, with its details (e.g. the Magistrate's Hall
+   * Coins), for `formatRuleError`; null when legal (§5 gap 12). */
+  error: GameRuleError | null;
 }
 
 export interface PlacementOption {
@@ -2162,8 +2165,12 @@ export interface CentralLocationView {
 export interface PersonalSpaceView {
   locationId: PersonalLocationId;
   spaceIndex: PersonalSpaceIndex;
+  /** Internal name; player-facing text says a space is "added", never (un)locked (D7). */
   unlocked: boolean;
   occupant: LocationOccupant | null;
+  /** The owned Tech whose `unlocks` added this space ("Added by ⟨Tech⟩", D7); null for the
+   * space every board starts with and for a space not yet added (§5 gap 11). */
+  addedByTechId: TechId | null;
 }
 
 export interface KilnSpaceView {
@@ -2241,4 +2248,210 @@ export interface PlayerSummary {
   loadedCeramicIds: CeramicId[];
   finishedCeramicIds: CeramicId[];
   completedOrders: CompletedOrderRecord[];
+}
+
+// ── Production UI additions (UI_V1.6.1_ARCHITECTURE.md §5, DESIGN §5.4). ─────────────────
+// Additive view models and option lists. Every one is derived from the validators or from
+// public state; none is a rule, and none carries a heat calculation, a preview or the
+// Fire-deck count (owner decisions D3, D4).
+
+/** Held Orders against the Cleanup hand limit (L199, L303; `handLimitStatus`, §5 gap 3). */
+export interface HandLimitStatus {
+  held: number;
+  /** 4, or 5 with Colour Samples. */
+  limit: number;
+  mustDiscard: number;
+  /** A Cleanup trim would be due: Rounds 1–4 only (Round 5 skips it, INT) and
+   * `mustDiscard > 0`. The same predicate as Cleanup (`isFinalRound`). */
+  trimDue: boolean;
+}
+
+/** The Shared Kiln cover for this player count (L99; `kilnLayout`, §5 gap 5). All lists in
+ * `KILN_SPACE_IDS` order. Layout only: the UI's row order (owner decision D8) is presentation. */
+export interface KilnLayoutView {
+  activeSpaceIds: KilnSpaceId[];
+  coveredSpaceIds: KilnSpaceId[];
+  /** Active spaces holding no ceramic. A Setter's Mark does not fill a space. */
+  emptyActiveSpaceIds: KilnSpaceId[];
+}
+
+/** Appendix D firing steps (L670–693): 1 Contributions … 12 Finish. */
+export type FiringStep = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+
+/** One Contribution participant (L260) on the firing stage. */
+export interface FiringStageContribution {
+  playerId: PlayerId;
+  /** null until every Contribution is revealed together (step 2, L673). */
+  revealed: { card: ContributionCardId; heat: ContributionHeat; woodPaid: number } | null;
+}
+
+/** One ceramic of the firing as the table shows it: position, marker and the recorded result. */
+export interface FiringStageCeramic {
+  id: CeramicId;
+  ownerId: PlayerId;
+  kiln: "shared" | "imperial";
+  spaceId: KilnSpaceId | null;
+  /** The Heat marker on the ceramic while it is loaded (face down, or turned with its value);
+   * null without a marker and once the markers are removed (step 12). */
+  marker: CeramicHeatMarker | null;
+  /** Recorded from step 9 on (L273–278); null before. */
+  quality: Quality | null;
+  /** Ge Crackle applied this firing (L467). */
+  crackle: boolean;
+  /** Discarded in step 11 (L280). */
+  salvaged: boolean;
+  /** Second Firing's extra Fire card (T14, L640); null when not second-fired. */
+  secondFireModifier: FireModifier | null;
+}
+
+/**
+ * The firing as the physical table shows it (`firingStageView` / `firingRecapView`, §5 gaps 7
+ * and 18; owner decisions D3, D4): the step, the Kiln Die, the Contributions once revealed,
+ * Base Heat, the Fire card once turned, Global Heat, the open Fire discard, each ceramic's
+ * position, marker and recorded Quality.
+ *
+ * Deliberately absent (D3, D4): Actual Heat, heat sources, Heat Differences, Quality
+ * previews, before-Fire predictions and the Fire-deck count. A key allow-list test fails on
+ * any new key until it is reviewed against D3.
+ */
+export interface FiringStageView {
+  round: RoundNumber;
+  /** The Appendix D step now open (1, 4, 5, 8, 10 or 11), or 12 for a finished firing. */
+  step: FiringStep;
+  /** The Appendix D steps resolved in First Player order (4, 5, 8, 10), for the step rail. */
+  firstPlayerOrder: FiringStep[];
+  /** The decision queue of a queued step (4, 5, 8, 10), else null. */
+  queue: { actorIds: PlayerId[]; index: number } | null;
+  /** Who has submitted a Contribution (public; never what, until the reveal). */
+  submittedPlayerIds: PlayerId[];
+  kilnDie: KilnDieFace;
+  /** Contribution participants in First Player order; empty when nobody has a ceramic in the
+   * Shared Kiln (INT: Base Heat = Kiln Die). */
+  contributions: FiringStageContribution[];
+  /** After the 0–5 clamp (L248); null until step 3. */
+  baseHeat: BaseHeat | null;
+  /** The round's Fire card once revealed (step 6); null before. */
+  fireModifier: FireModifier | null;
+  /** Base Heat + Fire, unclamped (L248); null before step 6. */
+  globalHeat: number | null;
+  /** The open Fire discard, oldest first (L512): the only Fire-deck information (D4). */
+  fireDiscard: FireModifier[];
+  /** Public Test Pieces records: who paid and peeked, and whether they buried (never the card). */
+  testPieces: TestPiecesRecord[];
+  /** Second Firing's extra Fire card while the R7 Jun window is open; else null. */
+  extraFire: { playerId: PlayerId; ceramicId: CeramicId; modifier: FireModifier } | null;
+  /** In ceramic sequence order. */
+  ceramics: FiringStageCeramic[];
+}
+
+/** One Decoration a selected Crackle ceramic could declare (L469), or none. */
+export interface CrackleDeclarationOption {
+  /** null = left undeclared: the ceramic counts with its printed Decoration. */
+  decoration: Decoration | null;
+  /** `orderSelectionCheck` with this ceramic's declaration replaced and the others as given. */
+  check: OrderSelectionCheck;
+}
+
+/** `crackleDeclarationChecks` (§5 gap 8): validator verdicts for a Crackle declaration picker. */
+export interface CrackleDeclarationChecks {
+  orderId: OrderId;
+  ceramicIds: CeramicId[];
+  /** Declarations omitted: the engine searches (the picker's explicit "auto" mode). */
+  auto: OrderSelectionCheck;
+  /** The declarations exactly as given. */
+  declared: OrderSelectionCheck;
+  /** One entry per selected Crackle ceramic, in selection order. */
+  ceramics: Array<{ ceramicId: CeramicId; printedDecoration: Decoration; options: CrackleDeclarationOption[] }>;
+}
+
+/** A row of the final score table (L491–494), in `SCORE_BREAKDOWN_ROWS` order. */
+export type ScoreBreakdownRow = keyof FinalScoreBreakdown;
+
+/** One tie-breaker (L498), in `TIE_BREAK_ORDER` order. */
+export interface TieBreakStep {
+  /** The `TieBreakValues` field it compares (higher wins). */
+  key: keyof TieBreakValues;
+  /** The `FinalResult.resolvedBy` value when this tie-breaker separates the winner. */
+  resolvedBy: Exclude<FinalResult["resolvedBy"], "total_vp" | "shared_victory">;
+}
+
+/** `placementLimits` (§5 gap 10): the printed effect record of one location and worker effect. */
+export type PlacementLimits<L extends LocationId = LocationId, E extends WorkerEffect = WorkerEffect> = LocationEffectsById[L][E];
+
+/** Materials Yard choices for one worker option (L159–162, L618, L349; §5 gap 14). */
+export interface MaterialsYardOptions {
+  /** Resources split freely between Clay and Wood: 3 (Apprentice effect) or 4 (Shifu effect). */
+  resources: number;
+  /** The Shifu effect's optional purchase (L162), quoted (`ok` = affordable); null for the
+   * Apprentice effect. */
+  shifuBonus: CostQuote | null;
+  /**
+   * Prepared Clay (T17, L618) for this worker option. null for a Senior Apprentice placement
+   * (both Form & Decorate Techs, L210, L349) or when T17 is not owned and ready.
+   * - `pairs`: every Shape + Decoration combination some legal command names (some Clay/Wood
+   *   split, with or without the Shifu bonus; see `withShifuBonus`), in Shape then Decoration
+   *   order. Legality belongs
+   *   to the pair: the Shape's Clay (which the split and bonus supply) and the Decoration's
+   *   Coins (which the bonus also spends) compete, so a form offers a Decoration per chosen
+   *   Shape from `pairs`, never the cross product of `shapes` and `decorations`.
+   * - `shapes` / `decorations`: the projections of `pairs` (each value in some legal pair).
+   * The full draft (split, bonus and pair together) is still gated by `quoteMaterialsYard`.
+   */
+  preparedClay: { shapes: Shape[]; decorations: Decoration[]; pairs: PreparedClayPair[] } | null;
+}
+
+/** One legal Prepared Clay choice (T17, L618; §5 gap 14). */
+export interface PreparedClayPair {
+  shape: Shape;
+  decoration: Decoration;
+  /**
+   * Whether this pair is also legal together with the Shifu effect's 1-Coin bonus (L162) for
+   * some split. false for the Apprentice effect, and when the bonus Coin would leave too few
+   * Coins for the Decoration: a form then offers the pair or the bonus, not both.
+   */
+  withShifuBonus: boolean;
+}
+
+/** One Shaped vessel a Glaze & Load load may name after `earlierLoads` (L176–184; §5 gap 15). */
+export interface GlazeLoadVesselOption {
+  ceramicId: CeramicId;
+  /** Glazes it may take (free choice, L343); empty when it has no legal destination. */
+  glazes: Glaze[];
+  /** Reworking Table Shapes (T05, L617) with a legal destination; empty unless T05 is ready and
+   * no earlier load of this action was reworked. */
+  reworkShapes: Shape[];
+}
+
+/** One Shaped vessel Imperial Priority may load (L292, R10, DESIGN §11 Q1; §5 gap 16). */
+export interface ImperialPriorityCeramicOption {
+  ceramicId: CeramicId;
+  glazes: Glaze[];
+  imperialModifiers: ImperialModifier[];
+  /** Reworking Table Shapes; empty unless T05 is ready. */
+  reworkShapes: Shape[];
+}
+
+export interface ImperialPriorityOptions {
+  usable: boolean;
+  ceramicIds: CeramicId[];
+  ceramics: ImperialPriorityCeramicOption[];
+}
+
+/** The five round phases of `data/round_structure.json` (L113–131). */
+export type RoundPhaseId = "start" | "work" | "firing" | "orders" | "cleanup";
+
+export interface RoundPhaseDefinition {
+  order: number;
+  id: RoundPhaseId;
+  name: string;
+  nameZh: string;
+  summary: string;
+  summaryZh: string;
+}
+
+/** `data/round_structure.json`: display text only, never a rules-fingerprint input (§5 gap 17). */
+export interface RoundStructureDefinition {
+  rulesVersion: RulesVersion;
+  roundCount: number;
+  phases: RoundPhaseDefinition[];
 }

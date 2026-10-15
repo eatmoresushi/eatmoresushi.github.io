@@ -1,0 +1,116 @@
+/* MenuButton (kit, §8.1). */
+@layer components {
+  .kit-menu {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .kit-menu-button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-3);
+    min-height: 1.875rem;
+    padding: var(--sp-1) var(--sp-5);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    background: var(--surface-2);
+    font-size: var(--fs-meta);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .kit-menu-button:hover {
+    border-color: var(--celadon);
+  }
+
+  .kit-menu-list {
+    position: absolute;
+    top: calc(100% + 4px);
+    z-index: var(--z-popover);
+    display: grid;
+    min-width: 12rem;
+    max-width: min(20rem, calc(100vw - 2 * var(--gutter)));
+    margin: 0;
+    padding: var(--sp-3);
+    list-style: none;
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: 0 14px 34px var(--shadow-c);
+  }
+
+  .kit-menu-list[data-align="end"] {
+    right: 0;
+  }
+
+  .kit-menu-list[data-align="start"] {
+    left: 0;
+  }
+
+  .kit-menu-group {
+    display: grid;
+    margin: 0;
+    padding: var(--sp-2) 0;
+    list-style: none;
+    border-top: 1px solid var(--line-2);
+  }
+
+  .kit-menu-group-label {
+    padding: var(--sp-1) var(--sp-4);
+    color: var(--ink-3);
+    font-size: var(--fs-meta);
+    font-weight: 700;
+  }
+
+  .kit-menu-item {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    width: 100%;
+    min-height: 2.25rem;
+    padding: var(--sp-2) var(--sp-4);
+    border-radius: var(--r-sm);
+    font-size: var(--fs-label);
+    text-align: start;
+  }
+
+  .kit-menu-item:hover,
+  .kit-menu-item:focus-visible {
+    background: var(--teal-pale);
+  }
+
+  .kit-menu-item--danger {
+    color: var(--bad-ink);
+    font-weight: 700;
+  }
+
+  .kit-menu-check {
+    width: 1em;
+    color: var(--teal-ink);
+  }
+
+  @media (max-width: 899px), (pointer: coarse) {
+    .kit-menu-button,
+    .kit-menu-item {
+      min-height: var(--target-min);
+    }
+
+    .kit-menu-button {
+      min-width: var(--target-min);
+      justify-content: center;
+    }
+  }
+}
+
+@layer states {
+  .kit-menu-button[aria-expanded="true"] {
+    background: var(--teal);
+    border-color: var(--teal);
+    color: var(--on-teal);
+  }
+
+  .kit-menu-item[aria-disabled="true"] {
+    color: var(--ink-3);
+  }
+}

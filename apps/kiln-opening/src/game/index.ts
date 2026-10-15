@@ -2,7 +2,8 @@
  * Public barrel of the V1.6.1 engine. Consumers (multiplayer service, computer player, UI)
  * import from here; engine modules import each other directly.
  *
- * Exported: the contract types, content, the rules fingerprint, rule-error text, the
+ * Exported: the contract types, content, the rules fingerprint, the round-phase display
+ * structure (`ROUND_STRUCTURE`, `roundPhaseOf`), rule-error text, the
  * dispatcher, `parseCommand`, randomness, the hidden-information boundary (views,
  * projection, events), `decisionPrompt` and the selectors (via `selectors.ts`), and the
  * legal-action API. Engine-internal helpers
@@ -12,6 +13,7 @@
 export type * from "./types.ts";
 export * from "./content.ts";
 export * from "./rulesFingerprint.ts";
+export { ROUND_PHASE_IDS, ROUND_STRUCTURE, roundPhaseOf } from "./roundStructure.ts";
 export * from "./ruleErrorText.ts";
 export { applyAction, createGame, submitContribution, validateAction } from "./engine.ts";
 export { COMMAND_TYPES, parseCommand } from "./actionGuard.ts";

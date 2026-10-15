@@ -32,6 +32,18 @@ import {
   detailLabel,
   formatRuleError,
 } from "../../../src/game/ruleErrorText.ts";
+import {
+  GLOSSARY_LINES,
+  RETIRED_TERMS,
+  ROOT,
+  brToNewline,
+  cellsOf,
+  glossaryParagraph,
+  glossaryRow,
+  glossaryTableAfter,
+  glossaryTerm,
+  withoutApparatus,
+} from "../support/glossary.ts";
 import type {
   CeramicState,
   GameRuleErrorCode,
@@ -49,62 +61,7 @@ import type {
  * the retired V1.4 vocabulary; rendering either language never touches game state.
  */
 
-const ROOT = join(import.meta.dirname, "../../..");
-const GLOSSARY = readFileSync(join(ROOT, "docs/GLOSSARY_ZH_V1.6.1.md"), "utf8");
-const GLOSSARY_LINES = GLOSSARY.split("\n");
 const TYPES = readFileSync(join(ROOT, "src/game/types.ts"), "utf8");
-
-const cellsOf = (line: string): string[] => line.split("|").slice(1, -1).map((cell) => cell.trim());
-
-/** The first glossary table row whose first cell is exactly `first`, searching from `from`. */
-function glossaryRow(first: string, from = 0): string[] {
-  const line = GLOSSARY_LINES.slice(from).find((candidate) => candidate.startsWith("|") && cellsOf(candidate)[0] === first);
-  if (line === undefined) throw new Error(`Glossary has no row "${first}"`);
-  return cellsOf(line);
-}
-
-const glossaryTerm = (english: string): string => glossaryRow(english)[1] ?? "";
-
-/** Rows of the first glossary table after a heading that starts with `prefix`. */
-function glossaryTableAfter(prefix: string): string[][] {
-  const start = GLOSSARY_LINES.findIndex((line) => line.startsWith(prefix));
-  if (start < 0) throw new Error(`Glossary has no heading "${prefix}"`);
-  const rows: string[][] = [];
-  for (const line of GLOSSARY_LINES.slice(start + 1)) {
-    if (line.startsWith("#")) break;
-    if (line.startsWith("|") && !/^\|\s*-/.test(line)) rows.push(cellsOf(line));
-    else if (rows.length > 0 && line.trim() === "") break;
-  }
-  return rows.slice(1);
-}
-
-/** The full-text paragraph under a bold glossary heading such as `**大陶车**（坯作，2铜钱）`. */
-function glossaryParagraph(boldTitle: string): string {
-  const start = GLOSSARY_LINES.findIndex((line) => line.startsWith(`**${boldTitle}**`));
-  if (start < 0) throw new Error(`Glossary has no paragraph "${boldTitle}"`);
-  const body: string[] = [];
-  for (const line of GLOSSARY_LINES.slice(start + 1)) {
-    if (line.trim() === "") break;
-    body.push(line.trim());
-  }
-  return body.join("");
-}
-
-/**
- * Glossary text minus its editorial apparatus: bold markup, ruling citations (`R9，`, `（R12）`,
- * `B1、B3：`) and the sentences pointing at its open-question list (§9). Data text is player-facing
- * and carries none of these.
- */
-function withoutApparatus(text: string): string {
-  return text
-    .replaceAll("**", "")
-    .replace(/[^。（]*见第9节[^。]*。/g, "")
-    .replace(/（R\d+）/g, "")
-    .replace(/(?:[RB]\d+、)*[RB]\d+[：，]/g, "")
-    .replaceAll("（）", "");
-}
-
-const brToNewline = (text: string): string => text.replaceAll("<br>", "\n");
 
 // ── Every stable ID has EN and ZH text ──────────────────────────────────────────────────
 
@@ -187,7 +144,7 @@ describe("every stable ID resolves to English and Chinese text", () => {
     expect(formatRuleError({ code: "PERSONAL_SPACE_LOCKED", details: { locationId: "glaze_load" } }, "zh"))
       .toBe("习得釉作技艺即添此工位");
     expect(formatRuleError({ code: "PERSONAL_SPACE_LOCKED", details: { locationId: "form_decorate" } }, "en"))
-      .toBe("Learn a Workshop Tech to add this space.");
+      .toBe("Learn a Form & Decorate Tech to add this space.");
     expect(formatRuleError({ code: "TECH_ALREADY_USED", details: { techId: "T13" } }, "zh")).toBe("火照本轮已用");
     expect(formatRuleError({ code: "WORKER_UNAVAILABLE", details: { workerId: "p1:shifu" } }, "zh")).toBe("你没有可派的师傅");
     expect(formatRuleError({ code: "NOT_YOUR_DECISION", details: { waitingFor: "p2" } }, "zh", { playerName: () => "乙" }))
@@ -261,6 +218,8 @@ describe("Chinese text uses the glossary terms", () => {
     for (const quality of QUALITIES) expect(QUALITY_TEXT[quality].zh, quality).toBe(glossaryTerm(name(quality)));
     for (const resource of ["clay", "wood", "coins"] as const) expect(RESOURCE_TEXT[resource].zh).toBe(glossaryTerm(name(resource)));
     expect(DISCIPLINE_TEXT.workshop.zh).toBe(glossaryTerm("Workshop (discipline)"));
+    // Owner decision D11 / amendment A2: the English discipline name is Form & Decorate (ID `workshop`).
+    expect(DISCIPLINE_TEXT.workshop.en).toBe("Form & Decorate");
     expect(DISCIPLINE_TEXT.glazing_loading.zh).toBe(glossaryTerm("Glazing & Loading (discipline)"));
     expect(DISCIPLINE_TEXT.firing.zh).toBe(glossaryTerm("Firing (discipline)"));
     expect(DECORATION_TEXT.painted.zh).toBe("画花");
@@ -358,17 +317,6 @@ function chineseStrings(): Array<[string, string]> {
   }
   return found;
 }
-
-const RETIRED_TERMS: ReadonlyArray<[string, string]> = [
-  ["彩绘", "画花"], ["绘花", "画花"], ["开片釉", "开片器"], ["博古架", "清玩斋"], ["多宝格", "清玩斋"],
-  ["起始技艺", "技艺"], ["进阶技艺", "技艺"], ["陶车坊", "制坯饰纹"], ["纹饰坊", "制坯饰纹"], ["釉饰坊", "施釉装窑"],
-  ["窑坊", "施釉装窑"], ["杂作行", "漕运码头"], ["朝廷赞助", "州衙"], ["超容量", "容量绝对"], ["超放", "容量绝对"],
-  ["已施釉", "坯 → 入窑"], ["调位", "火标"], ["移窑", "火标"], ["胜利点", "分"], ["积分", "分"], ["VP", "分"],
-  ["御印", "御令"], ["御玺", "御令"], ["展览", "陈列"], ["公开委托区", "委托榜"], ["展示区", "委托榜"],
-  ["暗注", "柴簿加柴"], ["强压火", "压火−2"], ["猛添柴", "添柴+2"], ["装饰", "纹饰"], ["陶瓷件", "器物"],
-  ["已成型", "坯"], ["商业委托", "商贾委托"], ["师傅火候标记", "火标"], ["公开展示", "委托榜"],
-  ["封条", "第二工位（D7）"], ["启封", "添设（D7）"], ["封存", "添设（D7）"], ["锁", "第二工位／添设（D7）"],
-];
 
 describe("Chinese strings avoid retired terms and follow the glossary's punctuation", () => {
   const strings = chineseStrings();

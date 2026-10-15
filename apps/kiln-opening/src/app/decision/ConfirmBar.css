@@ -1,0 +1,30 @@
+/* ConfirmBar (A2; wireframe `.confirm`). */
+@layer components {
+  .confirm {
+    display: grid;
+    gap: var(--sp-3);
+    padding: var(--sp-4) var(--sp-6) var(--sp-5);
+    border-block-start: 1px solid var(--line);
+    background: var(--surface);
+  }
+
+  .confirm-summary {
+    font-size: var(--fs-label);
+    overflow-wrap: anywhere;
+  }
+
+  .confirm-summary strong {
+    color: var(--teal-ink);
+  }
+
+  .confirm-error {
+    font-size: var(--fs-meta);
+    color: var(--bad-ink);
+    overflow-wrap: anywhere;
+  }
+
+  .confirm-buttons {
+    display: flex;
+    gap: var(--sp-4);
+  }
+}

@@ -1,128 +1,111 @@
-# UI wireframe fixtures (V1.6.1)
+# UI fixtures (V1.6.1)
 
-`fixtures.json` holds real game states captured from the V1.6.1 engine (`src/game`). Use them when
-building wireframes so that every string, count and option on screen matches the rules. Nothing
-in the file is hand-written. Each value comes from seeded games played through `createGame`,
-`applyAction` and `submitContribution`. Every seat is played by the strategic computer policy
-(`rules-v1.6.1-strategic-001`), which falls back to the canonical commands when it has no
-choice of its own.
+Real game states captured from the V1.6.1 engine (`src/game`), so every string, count and option on screen matches the rules. Nothing is hand-written: each state comes from seeded games played through `createGame`, `applyAction` and `submitContribution`, or from scripted engine scenarios. One generator, `tools/uiFixtures.ts`, writes two sets:
+
+| Set | Files | Used by |
+| --- | --- | --- |
+| **Test fixtures** (`--target tests`, the default) | `test/v161/ui/fixtures/scenarios.json`, `moments.json`, `secrets.json` | the production UI: SSR tests, `FixtureGameSource`, the dev scenario gallery, the leak checks ([UI plan §9.1](../UI_V1.6.1_ARCHITECTURE.md)) |
+| **Wireframe fixtures** (`--target wireframe`) | `docs/ui-v1.6.1/fixtures.json` | the signed-off [wireframes](./kiln-opening-wireframes.html). **Frozen** with the sign-off; not part of any gate |
 
 ## Regenerate
 
 ```sh
-npx vite-node tools/uiFixtures.ts                               # writes fixtures.json and prints a summary
-npx vitest run --config tools/uiFixtures.vitest.config.ts       # same generator, run under Vitest
-npx vite-node tools/uiFixtures.ts --verify [path/to/fixtures.json]   # only re-run the file privacy check
+npm run fixtures            # vite-node tools/uiFixtures.ts --target tests: writes the three test files
+npm run fixtures:check      # regenerates in memory, byte-diffs and runs the privacy verification
+npx vitest run --config tools/uiFixtures.vitest.config.ts       # the tests target under Vitest
+npx vite-node tools/uiFixtures.ts --target wireframe           # the frozen wireframe file
+npx vite-node tools/uiFixtures.ts --verify [file]              # privacy check of the wireframe file
 ```
 
-The output is deterministic. Both commands produce byte-identical files because:
+The output is deterministic: the seeds are fixed, the policy's decision clock is frozen and object keys are sorted before writing. `fixtures:check` takes about 15 seconds and is a phase-exit gate. Importing the generator (as `fixtures_current.test.ts` does) runs nothing.
 
-- the seeds are fixed;
-- the policy's decision clock is frozen;
-- object keys are sorted before writing.
+`test/v161/ui/fixtures_current.test.ts` runs in `npm test`:
 
-A run takes about 13 seconds. The generator does not touch `src/`, `test/` or `data/`, and it is
-not part of `npm test`.
+- it regenerates `scenarios.json` in memory (tens of milliseconds) and requires it byte for byte, with the same scenario entries in `secrets.json`;
+- moments are played by the strategic policy, which is too slow for every run, so for each moment it requires the current `rulesFingerprint()`, the recorded `decisionPrompt` from its view, and that the viewer's recomputed canonical commands still validate;
+- it runs the privacy checks below, including negative tests that plant foreign secrets.
 
-## File layout
+## Test fixture entries
 
-- `moments[]`: one entry per captured moment. Each entry has these fields:
-  - `source`: seed, player count, `gameId`, round, revision, phase, policy, and `steered`. The
-    `steered` list holds any commands that were chosen for a seat instead of by the policy (see
-    below).
-  - `viewerId` / `viewerActs`: whose screen this is, and whether that player must act now.
-  - `playerView`: exactly what this viewer's client receives. It has two parts:
-    - `game`: the public projection, with `counts` that give hand and deck sizes but never their
-      contents;
-    - `own`: the viewer's own hand, private look, Test Pieces peek and sealed Contribution.
-  - `decisionPrompt`: the `decisionPrompt(game)` output.
-  - `selectors`: DESIGN §5.4 outputs, all computed from `playerView`.
-    - Every moment includes:
-      - `boardView`
-      - `playerSummaries` (all seats, public)
-      - `scorePreviews`
-      - `handLimitStatus`
-      - `heatPreviews`
-      - `firingSummary`
-      - `kilnLayout` (active and covered spaces, central capacities for this player count)
-      - `legalCommands` (canonical, grouped by type, up to 12 examples each)
-    - Each moment also adds its own selectors, listed in the table below.
-  - `recentPublicEvents`: the last 24 events, each run through `projectEvent`, so no `secret`
-    payloads.
-- `labels`: EN/ZH label tables built from:
-  - `data/*.json`
-  - `src/game/ruleErrorText.ts`
-  - `docs/GLOSSARY_ZH_V1.6.1.md`
+Each entry of `scenarios.json` and `moments.json` is one viewer's client data at one moment:
 
-  They cover:
-  - locations, with Apprentice and Shifu text, capacities and personal spaces;
-  - all 18 Techs, with short text, ability, cost, timing and the second space each adds;
-  - all 5 Kilns, with ability name, short text and ability;
-  - Shapes (with Clay), Glazes (with Preferred Heat), Decorations (with Coins);
-  - Qualities (and their high-to-low order), resources, workers, disciplines, zones, ceramic
-    stages and kiln spaces;
-  - round phases (开工 → 派工阶段 → 烧窑阶段 → 交货阶段 → 收工), engine timing windows and the
-    firing steps from glossary §2.11;
-  - Contribution cards, the Fire deck, Kiln Die faces and Imperial modifiers;
-  - Recognition milestones, Exhibition and Coin scoring;
-  - glossary tables §2.5, §2.10, §2.12 and §2.14;
-  - UI verbs (glossary §2.16);
-  - every rule-error message;
-  - requirement text, VP, Coins and Crowns for all 64 Orders;
-  - the ceramic-art file pattern.
+| Field | Content |
+| --- | --- |
+| `id` | `w-…` (decision-window scenario), `t-…` (table-state scenario) or `m…` (played moment) |
+| `name`, `description`, `notes` | developer labels for the gallery (not player-facing) |
+| `kind` | `window`, `table` or `moment` |
+| `viewerId`, `viewerActs` | whose screen this is, and whether they are among `decisionPrompt.actorIds` |
+| `decisionPrompt` | `decisionPrompt(game)` |
+| `playerView` | `actorViewOf(state, viewer, privateState)`: the public projection (with `counts`) plus the viewer's own hand, private look, Test Pieces peek and sealed Contribution |
+| `recentPublicEvents` | `{ sequence, revision, actorId, event }` with projected events: the last 24 of a moment, the whole log of a scenario. Sequences number the game's events from 1, as the service does |
+| `ownSecrets` | every secret event of the viewer's own so far: full events, `secret.visibleTo` = the viewer |
+| `source` | moments: `{ kind: "played", seed, playerCount, gameId, round, revision, phase, commandsPlayed, policy, steered }`; scenarios and fallbacks: `{ kind: "scripted", from, scenario, round, revision, phase }` |
 
-## Moments
+Selectors are not stored: the UI computes them from `playerView` (DESIGN §5.4).
 
-| # | id | Seed · players · round | Viewer | What it shows | Extra selectors |
-| --- | --- | --- | --- | --- | --- |
-| 1 | `m1_work_phase_r2_3p` | 27 · 3P · R2 | p3 | Work Phase, the viewer's turn before acting. The viewer owns Prepared Clay (Workshop), so they have added the 2nd Form & Decorate space but not yet the 2nd Glaze & Load space. The viewer has Shaped vessels. | `placementOptions`, `quotes` (Materials Yard and Form & Decorate for Apprentice and Shifu), `shapedVessels`, `loadDestinationOptions`, `heatMarkerTargets`, `commissionOptions`, `guildOptions`, `magistratesHallQuote`, `canalBargeOptions`, `imperialPriorityOptions` |
-| 2 | `m2_commission_market_look_r3_4p` | 1 · 4P · R3 | p2 | The viewer's Commission Market Shifu, in the middle of the action. It reserved display slot 0 face up, and that slot stays `null` with `market.refillPendingFor = p2` until the turn ends. The viewer then chose to look at the top 3, which only they can see in `own.pendingLook`; other players see only `counts.pendingLook` (the kind and a count of 3). **Steered** (2 commands, see `source.steered`). | `commissionOptions`, `lookedOrderOptions`, `market`, `publicLookIndicator` |
-| 3 | `m3_heat_marker_step_3p` | 17 · 3P · R5 | p2 | Firing step 5, the Heat-marker step. The Kiln Die shows 3. Contributions are revealed (Tend, Tend, Stoke), so Base Heat is 4; the Fire card is not revealed yet. Three Heat markers are face down, including the viewer's marker on their Imperial Kiln ceramic (Imperial modifier 0). Kiln Furniture sits under a Low ceramic. p3 owns Kiln Master. The Fire discard is open. | `heatLadder`, `heatMarkerStepOptions`, `contributionOptions`, `testPiecesOptions`, `junOptions`, `afterQualityOptions`, `salvageOptions`, `fireDiscard`, `fireDeckCount` |
-| 4 | `m4_after_quality_3p` | 17 · 3P · R5 | p2 | The same firing, after Quality in step 10. The viewer can use Second Firing or Ge Crackle on their Standard ceramic. `heatLadder.chips` gives, for every ceramic: heat source, position modifier, Heat marker, Jun ±1, Actual and final Actual Heat, Heat Difference, Quality and history. It includes a Jun-adjusted ceramic, a Kiln Master marker, Kiln Furniture and an Imperial ceramic. | same as #3 |
-| 5 | `m5_two_player_board_2p` | 35 · 2P · R2 | p1 | 2-player board. The Shared Kiln uses the 2-1-1 cover: High 1–2, Middle 1 and Low 1 active, the other spaces `active:false`. The Magistrate's Hall has capacity 1 and is occupied. | as #1 |
-| 6 | `m6_order_phase_crackle_3p` | 5 · 3P · R5 | p2 | Order Phase. The viewer holds 5 Orders, 4 of them completable, including multi-ceramic O48 and O39. O39 needs the Crackle ceramic c18, printed Plain, to be declared **Painted**. | `completableOrders`, `orderMatchOptions` (per held Order), `crackleDeclarationChecks` (validator verdict for each Decoration and for leaving it undeclared), `orderSelectionCheck` (partial selection that can still be completed, and the full selection), `crackleCeramicIds` |
-| 7 | `m7_cleanup_hand_limit_3p` | 2 · 3P · R3 | p3 | Cleanup hand-limit trim: 6 held against a limit of 4, so the viewer must discard 2 (15 legal discard pairs). The prompt is parallel. | `handLimitViewer`, `heldOrders` |
-| 8 | `m8_final_results_3p` | 10 · 3P · end | p1 | Final results. Each player's breakdown covers: orders, kiln abilities, Recognition overflow, Audience, Techs (A1, recorded when gained), Exhibition (quality VP + Shape/Glaze diversity), Connoisseur, Coins and total. p1 and p3 tie on 47 VP and on all three tie-breakers, so `resolvedBy = shared_victory`. | `finalResult`, `scoreBreakdownRows`, `tieBreakOrder` |
-| 9 | `m9_contributions_step1_3p` | 118 · 3P · R4 | p2 | Firing step 1, secret Contributions. p1 has submitted: the moment shows only that p1 is in `phase.submittedPlayerIds`, never the card. The viewer (p2) owns Fuel Ledger, so `contributionOptions` lists five choices with Wood cost and affordability. The Shared Kiln holds an Inverted Firing stack (c12 + c11 in Middle 1), Kiln Furniture under c9 and a face-down Heat marker. **Steered** (2 Guild Hall purchases, see `source.steered`). No Setter's Mark appears. | `submittedPlayerIds`, `contributionOptions` and the firing selectors of #3 |
+`secrets.json` maps each entry `id` to the Order and Tech IDs that viewer must never see: other seats' hands, other seats' private looks, the Main deck, its face-down discard, the Starting box and the Tech decks — minus IDs a public event revealed and IDs the viewer was shown privately (its own looks, trims and returned Techs). It is the oracle of the rendered-markup leak test (`rendered_text`, B6) and of the local backend's `e2e_secret_ids`; `src/app` never loads it.
 
-Heat ladder notes:
+## Scenarios (`scenarios.json`)
 
-- `heatLadder.preferredHeatBands` lists White 1 / Celadon 2 / Grey-Green 3 / Moon White 4.
-- `qualityByHeatDifference` gives the distance-to-Quality table.
-- Before the Fire card, a chip's `heatBeforeFire` comes from `heatPreviews`. It is `null` while
-  a face-down marker is still undecided (its +1 / −1 face is chosen at step 5).
+**Decision windows** (kind `window`, viewer = the actor) come from `phaseScenarios()` in `test/v161/engine/phase_scenarios.ts`: Kiln selection; Setter's Mark; before the worker action (rich 4-player start; Canal Barge, Imperial Priority with Reworking Table, Ding; Inverted Firing, Setter's Marks, Senior Apprentice); the three Commission Market steps; the Guild Hall Shifu inspection; Colour Samples; the after-action window; secret Contributions with Fuel Ledger; the Test Pieces decision and bury; Heat markers with Kiln Master; Jun; after-Quality (Saggars and Ge); Jun during Second Firing (R7); Salvage; the Order Phase with Ru, Tribute Ware and a Crackle wildcard; the hand limit.
 
-## Steering and limits
+**Table states** (kind `table`) come from `test/v161/ui/fixtures/tableScenarios.ts`. Each passes `assertInvariants`.
 
-- **Steered commands.** Moment 2 needed one seat to choose a face-up reservation and then
-  look at the top 3. In moment 9, two seats' Apprentices were steered to buy Inverted Firing and
-  Fuel Ledger at the Guild Hall; the policy then used them on its own. The other moments were reached by the policy alone. Moments 4 and 6 also
-  passed a hook to the generator that asks p1 to take Ge at Kiln selection, but in both seeds
-  the policy's own choices led to Ge. Their `steered` lists are empty. Every steered command
-  went through `validateAction` like any other command.
-- **Kiln choices.** The strategic policy often takes Ge and Prepared Clay, so most viewers are
-  Ge. Opponents show Jun and other kilns. Ding, Ru and Guan appear only in `labels`.
-- **Moment 3 compromises.** Kiln Master is owned (by p3), but its marker is not yet placed in
-  moment 3: p3 places it later in the same queue, and it is visible on c20 in moment 4. The
-  only Imperial Kiln ceramic in that firing uses modifier 0.
+| id | Viewer | What it shows |
+| --- | --- | --- |
+| `t-firing-skipped` | p1 (waiting) | Round 2 ended with nothing loaded: `FIRING_SKIPPED` in the log, Round 3 begins; the Round 1 recap stays (`firingRecapView`) |
+| `t-imperial-only-firing` | p2 (waiting) | Only an Imperial Kiln ceramic: no Contributions, Base Heat = Kiln Die 3 |
+| `t-fire-deck-reshuffle` | p2 (waiting) | The Fire deck was empty at the reveal: the open discard was shuffled back and is empty; Jun keeps the firing at step 8 |
+| `t-empty-main-supply` | p1 (acts) | 4 players, Round 5: Main deck and discard exhausted, display `O17–O20` + 2 empty positions; 28 Orders completed earlier |
+| `t-round5-over-limit` | p1 (acts) | Round 5 Order Phase holding 6 Orders: `handLimitStatus(...).trimDue` is false (no trim at the last Cleanup) |
+| `t-tie-break-winner` | p2 | Final: equal VP, won on Imperial Recognition |
+| `t-recognition-overflow` | p1 (waiting) | A Crown gained at Recognition 4 scored +1 VP (`CROWN_OVERFLOW_VP`) |
+| `t-final-2p`, `t-final-4p` | p1, p3 | Final results after a last Order Phase (Ru bonus, Guan, Tech VP, Exhibition, Connoisseur, Coins) |
+| `t-glaze-load-imperial-furniture` | p1 (acts) | Glaze & Load with an Imperial Kiln (−1/0/+1) and Kiln Furniture (−1/0/+1) to choose |
 
-## Privacy check
+Together the scenarios and moments reach every engine phase, every Work step (`before_action`, the three Commission steps, Guild inspection, Colour Samples, `after_action`), both Test Pieces steps, a waiting viewer, and 2-, 3- and 4-player finals; `fixtures_current.test.ts` checks this.
 
-Each moment is checked twice:
+## Moments (`moments.json`)
 
-1. **At capture.** `assertNoForeignSecrets` compares the moment with the authoritative state's
-   hidden piles. It fails the run if any of the following appears anywhere in the moment:
-   - an Order ID from another seat's hand, the Main deck or discard, or the Starting box;
-   - a Tech ID from a Tech deck;
-   - the contents of another seat's private look, a `hidden` key or a `secret` key;
-   - while the Contribution window is open, any sealed Contribution outside the viewer's own
-     view, or a card or Fuel Ledger flag on another seat's `CONTRIBUTION_SUBMITTED` event.
-     That another seat has submitted is public (`phase.submittedPlayerIds`).
+Seeded games played by the strategic computer policy (`rules-v1.6.1-strategic-001`, which falls back to the canonical commands when it has no choice). m1–m9 are the wireframe set, recaptured in the entry format (same seeds and states). A moment whose seed search exceeds its budget would fall back to the matching scripted scenario (`source.kind: "scripted"`); in the current set every moment was reached by play.
 
-   The exceptions are IDs that a public event already revealed (for example a face-up Order
-   that was later reserved or rotated away) and the viewer's own private look.
-2. **After writing.** `verifyFixtureFile` re-reads the JSON. It checks the following:
-   - `own` belongs to the viewer;
-   - any look, peek or sealed Contribution belongs to the viewer;
-   - there are no server-only keys or piles;
-   - other seats' hands appear only as counts.
+| id | Seed · players | Viewer | What it shows |
+| --- | --- | --- | --- |
+| `m1_work_phase_r2_3p` | 27 · 3P | p3 | Round 2, before the action. The viewer owns Prepared Clay (T17), which added the second Form & Decorate space; the second Glaze & Load space is not yet added |
+| `m2_commission_market_look_r3_4p` | 1 · 4P | p2 | Commission Shifu mid-action: a face-up slot stays empty until the turn ends; the private top-3 look (**steered**) |
+| `m3_heat_marker_step_3p` | 17 · 3P | p2 | Firing step 5: face-down markers, an Imperial ceramic, Kiln Furniture |
+| `m4_after_quality_3p` | 17 · 3P | p2 | Firing step 10: Second Firing or Ge Crackle |
+| `m5_two_player_board_2p` | 35 · 2P | p1 | The 2-1-1 Shared Kiln cover; Magistrate's Hall capacity 1 |
+| `m6_order_phase_crackle_3p` | 5 · 3P | p2 | Order Phase with multi-ceramic Orders and a Crackle ceramic that must be declared Painted (O39) |
+| `m7_cleanup_hand_limit_3p` | 2 · 3P | p3 | Cleanup trim: 6 held, limit 4 |
+| `m8_final_results_3p` | 10 · 3P | p1 | Final results, shared victory |
+| `m9_contributions_step1_3p` | 118 · 3P | p2 | Step 1, secret Contributions; another seat has submitted (never what) (**steered** Guild purchases) |
+| `m10a_setters_mark_window` | 1 · 3P | p3 | The Setter's Mark window at the start of the Work Phase (**steered** T22 purchase) |
+| `m10b_setters_mark_on_space` | 1 · 3P | p3 | The tile on its Shared Kiln space (**steered** placement) |
+| `m11a_test_pieces_decision` | 10 · 3P | p3 | Step 4: pay 1 Wood to peek? (**steered** T13 purchase) |
+| `m11b_test_pieces_bury` | 10 · 3P | p3 | The private peek (`own.firePeek`, own `TEST_PIECES_PEEKED`) before the public bury decision |
+| `m12_guild_shifu_inspection` | 1 · 3P | p1 | The private Guild Hall inspection (the policy's own, Round 1; a Shifu-inspect steer from Round 2 is the fallback) |
+| `m13_jun_heat_adjustment` | 1 · 3P | p1 | Step 8: Jun ±1 for 1 Wood (**steered** Kiln choice JU) |
+| `m14_salvage` | 7 · 3P | p3 | Step 11: salvage a still-Flawed ceramic |
+| `m15_kiln_selection` | 1 · 4P | p3 | Revision 0: reverse-order Kiln selection |
+| `m16_colour_samples` | 3 · 3P | p2 | Colour Samples' private top 3 (**steered** T10 purchase) |
+| `m17_after_action` | 1 · 3P | p2 | The after-action window with Canal Barge (**steered** T23 purchase) |
+| `m18_jun_second_firing` | 13 · 3P | p1 | Round 4, R7: Second Firing's extra Fire card is turned and Jun may still adjust (`firingStageView.extraFire`) (**steered** JU, T14, Jun kept unused in step 8, Second Firing) |
+
+Every steered command is recorded in `source.steered` and went through `validateAction` like any other. Searches try a hinted seed first (the one a previous run found), so a regeneration is quick; the result is the same either way.
+
+## Privacy rules
+
+Shared by both targets (`tools/fixturePrivacy.ts`):
+
+1. **At capture**, against the authoritative state and log (`entryPrivacyProblems`):
+   - `own` is the viewer's; any look, peek or sealed Contribution is the viewer's;
+   - a `secret` key appears **only** at `ownSecrets[i].event.secret`, and only with `visibleTo` = the viewer; each own secret equals the authoritative event with that sequence, and each public record is the projection of the authoritative event;
+   - none of the viewer's secret IDs (above) appears anywhere in the entry;
+   - while the Contribution window is open, no sealed card outside the viewer's own view, and no card or Fuel Ledger flag on another seat's `CONTRIBUTION_SUBMITTED` (that a seat has submitted is public, `phase.submittedPlayerIds`);
+   - no other seat's fire peek.
+2. **After writing**, without the state (`verifyFixtureEntries`): the structural rules above, and no entry containing one of its `secrets.json` IDs. Other seats' hands appear only as counts.
+
+## Wireframe fixtures (`docs/ui-v1.6.1/fixtures.json`, frozen)
+
+The legacy format the wireframe renders: per moment `source`, `viewerId`, `viewerActs`, `playerView`, `decisionPrompt`, a `selectors` block (DESIGN §5.4 outputs including `heatPreviews`, `firingSummary` and a `heatLadder` the production UI never shows, D3), and the last 24 projected events (`seq`), plus EN/ZH `labels` from `data/*.json`, `src/game/ruleErrorText.ts` and `docs/GLOSSARY_ZH_V1.6.1.md`. It covers m1–m9 above. It is kept byte-stable with the signed-off wireframe and is not regenerated as part of any gate; the production UI uses the test fixtures and the engine content exports instead.

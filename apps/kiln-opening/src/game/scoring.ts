@@ -37,11 +37,42 @@ import type {
   PlayerId,
   PublicCore,
   ResolveContext,
+  ScoreBreakdownRow,
   ScorePreview,
+  TieBreakStep,
   TieBreakValues,
 } from "./types.ts";
 
 const CONNOISSEURS_CABINET = "T19";
+
+/**
+ * The final score table's rows in L491–494 order: VP recorded during play (Orders, Kiln
+ * Tradition abilities, Imperial Audience, Crowns beyond Recognition 4), 1 VP per Advanced
+ * Tech (recorded when gained, A1), the End-game Exhibition, Connoisseur's Cabinet (T19, part
+ * of the Exhibition scoring, L620), Coins, then the total. Every `FinalScoreBreakdown` key
+ * exactly once (UI_V1.6.1_ARCHITECTURE §5 gap 9).
+ */
+export const SCORE_BREAKDOWN_ROWS: readonly ScoreBreakdownRow[] = Object.freeze([
+  "orders",
+  "kilnAbilities",
+  "imperialAudience",
+  "recognitionOverflow",
+  "techs",
+  "exhibition",
+  "connoisseur",
+  "coins",
+  "total",
+] as const);
+
+/**
+ * The tie-breakers after total VP, in L498 order; if all tie, victory is shared. Final
+ * scoring ranks by exactly this list (`CRITERIA`), so the results table and the engine agree.
+ */
+export const TIE_BREAK_ORDER: readonly TieBreakStep[] = Object.freeze([
+  Object.freeze({ key: "recognition", resolvedBy: "imperial_recognition" }),
+  Object.freeze({ key: "printedCrowns", resolvedBy: "printed_crowns" }),
+  Object.freeze({ key: "masterpieces", resolvedBy: "masterpieces" }),
+] as const satisfies readonly TieBreakStep[]);
 
 /** Every ceramic the player would exhibit now: Finished, undelivered, Standard or better. */
 function exhibitedCeramics(game: PublicCore, playerId: PlayerId): FinishedCeramic[] {
@@ -131,12 +162,10 @@ function tieBreakFor(game: PublicCore, playerId: PlayerId): TieBreakValues {
 
 type Criterion = Exclude<FinalResult["resolvedBy"], "shared_victory">;
 
-/** The tie-breaker ladder (L496, L498), best first. */
+/** The tie-breaker ladder (L496, L498), best first: total VP, then `TIE_BREAK_ORDER`. */
 const CRITERIA: ReadonlyArray<[Criterion, (s: FinalStanding) => number]> = [
   ["total_vp", (s) => s.total],
-  ["imperial_recognition", (s) => s.tieBreak.recognition],
-  ["printed_crowns", (s) => s.tieBreak.printedCrowns],
-  ["masterpieces", (s) => s.tieBreak.masterpieces],
+  ...TIE_BREAK_ORDER.map((step): [Criterion, (s: FinalStanding) => number] => [step.resolvedBy, (s) => s.tieBreak[step.key]]),
 ];
 
 /** Negative when `a` ranks ahead of `b`; 0 when every criterion ties (L498 step 4). */

@@ -1,22 +1,37 @@
 /**
- * UI wireframe fixtures from the real V1.6.1 engine (docs/ui-v1.6.1/fixtures.json).
+ * UI fixtures from the real V1.6.1 engine (UI_V1.6.1_ARCHITECTURE.md §9.1).
+ *
+ * Two targets:
+ * - `--target tests` (default): `test/v161/ui/fixtures/`
+ *   - `scenarios.json`: every scripted decision window (`phaseScenarios`, kind `window`) and
+ *     table state (`tableScenarios`, kind `table`), projected for one viewer. Fast and
+ *     deterministic; `fixtures_current.test.ts` regenerates it in memory on every `npm test`;
+ *   - `moments.json`: played moments m1–m18 (realistic text lengths, for layout, the gallery and
+ *     screenshots). A moment whose seed search exceeds its budget falls back to the matching
+ *     scripted scenario (`source.kind: "scripted"`);
+ *   - `secrets.json`: per entry, the Order and Tech IDs that viewer must never see (the oracle
+ *     of the rendered-markup leak test; never loaded by `src/app`).
+ * - `--target wireframe`: `docs/ui-v1.6.1/fixtures.json`, the legacy file the signed-off
+ *   wireframe renders. It is frozen with the wireframe; regenerating it is not part of any gate.
+ *
+ * Every entry holds only what the viewer's client may hold: the viewer's `PlayerView` (public
+ * projection + own private view), the public event records and the viewer's own secret events
+ * (`ownSecrets`, full events with `secret.visibleTo` = the viewer). `tools/fixturePrivacy.ts`
+ * checks each entry against the authoritative state and log at capture time, and the written
+ * files again without it.
  *
  * Seeded games are driven through `createGame` / `applyAction` / `submitContribution` by the
- * strategic computer policy (src/multiplayer/computerPlayer.ts). A few moments need one seat
- * to make a specific (legal, engine-validated) choice — e.g. a Commission Shifu that reserves
- * face up and then looks at the top 3. Those "steered" commands are recorded per moment.
+ * strategic computer policy (src/multiplayer/computerPlayer.ts). Some moments need one seat
+ * to make a specific (legal, engine-validated) choice; those "steered" commands are recorded
+ * per moment.
  *
- * Every captured moment stores only what the viewer's client may hold: the viewer's
- * `PlayerView` (public projection + the viewer's own private view), the decision prompt, the
- * DESIGN §5.4 selector / view-model outputs computed from that view, and recent public events.
- * A privacy check (`assertNoForeignSecrets`) compares each moment against the authoritative
- * state's hidden piles and fails the run if any non-viewer secret appears.
+ *   npm run fixtures                       # vite-node tools/uiFixtures.ts --target tests
+ *   npm run fixtures:check                 # regenerate in memory, byte-diff, privacy verify
+ *   npx vite-node tools/uiFixtures.ts --target wireframe      # the frozen wireframe file
+ *   npx vite-node tools/uiFixtures.ts --verify [file]         # privacy check of the wireframe file
+ *   npx vitest run --config tools/uiFixtures.vitest.config.ts # the tests target, under Vitest
  *
- * Regenerate (either works, no extra dependencies):
- *   npx vite-node tools/uiFixtures.ts
- *   npx vitest run --config tools/uiFixtures.vitest.config.ts
- * Re-check an existing file's privacy only:
- *   npx vite-node tools/uiFixtures.ts --verify [docs/ui-v1.6.1/fixtures.json]
+ * Importing this module (as `fixtures_current.test.ts` does) runs nothing.
  */
 
 import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
@@ -86,8 +101,10 @@ import {
   projectEvent,
   quoteFormDecorate,
   quoteMaterialsYard,
+  rulesFingerprint,
   salvageOptions,
   scorePreview,
+  settersMarkOptions,
   shapedVessels,
   submitContribution,
   testPiecesOptions,
@@ -96,6 +113,7 @@ import {
 import type {
   ActorView,
   AuthoritativeCommand,
+  DecisionPrompt,
   GameEvent,
   GameState,
   KilnId,
@@ -105,18 +123,43 @@ import type {
   PrivateFiringState,
   PublicGameEvent,
   RoundNumber,
+  TechId,
 } from "../src/game/index.ts";
 import { createStrategicComputerPolicy, fallbackComputerCommands } from "../src/multiplayer/index.ts";
+import { phaseScenarios } from "../test/v161/engine/phase_scenarios.ts";
+import type { LocalTable } from "../test/v161/engine/support/localTable.ts";
+import { tableScenarios } from "../test/v161/ui/fixtures/tableScenarios.ts";
+import {
+  assertNoForeignSecrets,
+  entryStructureProblems,
+  secretIdsFor,
+  verifyFixtureEntries,
+  type FixtureEventRecord,
+  type PrivacyCheckedEntry,
+} from "./fixturePrivacy.ts";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "..");
 const OUT_DIR = resolve(ROOT, "docs/ui-v1.6.1");
 const OUT_FILE = resolve(OUT_DIR, "fixtures.json");
+/** The tests target's directory (UI plan §9.1). */
+export const TEST_FIXTURE_DIR = resolve(ROOT, "test/v161/ui/fixtures");
+export const TEST_FIXTURE_FILES = {
+  scenarios: resolve(TEST_FIXTURE_DIR, "scenarios.json"),
+  moments: resolve(TEST_FIXTURE_DIR, "moments.json"),
+  secrets: resolve(TEST_FIXTURE_DIR, "secrets.json"),
+} as const;
 
 /** The clock never advances, so the policy's decision deadline never fires: deterministic. */
 const POLICY = createStrategicComputerPolicy({ now: () => 0 });
 const RECENT_EVENTS = 24;
+/** Scripted scenarios are short: their whole log is kept. */
+const SCENARIO_EVENTS = 60;
 const SEAT_NAMES = ["Lin", "Zhao", "Wen", "Su"] as const;
+
+type Target = "tests" | "wireframe";
+/** What `capture` builds: the legacy wireframe moment or the tests entry. */
+let TARGET: Target = "tests";
 
 // ═══════════════════════════════════════════════════════════════════════════════════════
 // Table driver
@@ -125,6 +168,7 @@ const SEAT_NAMES = ["Lin", "Zhao", "Wen", "Su"] as const;
 interface LoggedEvent {
   seq: number;
   revision: number;
+  actorId: PlayerId;
   event: GameEvent;
 }
 
@@ -156,12 +200,13 @@ class Table {
     if (!created.ok) throw new Error(`createGame failed: ${created.error.code}`);
     this.state = created.state;
     this.priv = { gameId: this.state.gameId, windowId: null, submissions: {} };
-    this.log(created.events);
+    // The service records the creation events under the host who started the game.
+    this.log(created.events, players[0]?.id ?? "p1");
     this.syncWindow();
   }
 
-  private log(events: readonly GameEvent[]): void {
-    for (const event of events) this.events.push({ seq: this.events.length + 1, revision: this.state.revision, event });
+  private log(events: readonly GameEvent[], actorId: PlayerId): void {
+    for (const event of events) this.events.push({ seq: this.events.length + 1, revision: this.state.revision, actorId, event });
   }
 
   private syncWindow(): void {
@@ -190,12 +235,12 @@ class Table {
       if (!result.ok) return false;
       this.state = result.state;
       this.priv = result.privateState;
-      this.log(result.events);
+      this.log(result.events, playerId);
     } else {
       const result = applyAction(this.state, playerId, command, this.rng, { checkInvariants: true });
       if (!result.ok) return false;
       this.state = result.state;
-      this.log(result.events);
+      this.log(result.events, playerId);
     }
     this.commands += 1;
     this.syncWindow();
@@ -245,8 +290,56 @@ class Table {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════════════
-// Capture
+// Entries (tests target) and legacy moments (wireframe target)
 // ═══════════════════════════════════════════════════════════════════════════════════════
+
+/** Where an entry comes from. */
+export type UiFixtureSource =
+  | {
+      kind: "played";
+      seed: number;
+      playerCount: PlayerCount;
+      gameId: string;
+      round: RoundNumber;
+      revision: number;
+      phase: string;
+      commandsPlayed: number;
+      policy: string;
+      steered: SteeredCommand[];
+    }
+  | {
+      kind: "scripted";
+      /** `phaseScenarios` (test/v161/engine/phase_scenarios.ts) or `tableScenarios`. */
+      from: "phaseScenarios" | "tableScenarios";
+      scenario: string;
+      round: RoundNumber;
+      revision: number;
+      phase: string;
+    };
+
+/**
+ * One fixture: what one viewer's client holds at one moment (`scenarios.json`,
+ * `moments.json`). `FixtureGameSource` (src/app/session/fixtureSource.ts) reads `id`, `name`,
+ * `kind`, `viewerId`, `playerView`, `recentPublicEvents` and `ownSecrets`.
+ */
+export interface UiFixtureEntry extends PrivacyCheckedEntry {
+  id: string;
+  name: string;
+  kind: "window" | "table" | "moment";
+  description: string;
+  viewerId: PlayerId;
+  /** The viewer is among `decisionPrompt.actorIds`. */
+  viewerActs: boolean;
+  decisionPrompt: DecisionPrompt;
+  /** `actorViewOf(state, viewer, privateState)`: public projection + the viewer's own view. */
+  playerView: PlayerView;
+  /** The last public events (all of a scripted scenario's), numbered from the first event. */
+  recentPublicEvents: Array<FixtureEventRecord<PublicGameEvent>>;
+  /** Every secret event of the viewer's own so far (full events, `secret.visibleTo` = viewer). */
+  ownSecrets: Array<FixtureEventRecord<GameEvent>>;
+  source: UiFixtureSource;
+  notes: string[];
+}
 
 interface Moment {
   id: string;
@@ -270,6 +363,71 @@ interface Moment {
   selectors: Record<string, unknown>;
   recentPublicEvents: Array<{ seq: number; revision: number; event: PublicGameEvent }>;
   notes: string[];
+}
+
+/** A capture in the current `TARGET`'s format, with its secrets oracle (tests target). */
+interface Captured {
+  id: string;
+  legacy: Moment | null;
+  entry: UiFixtureEntry | null;
+  secrets: string[] | null;
+}
+
+interface EventLog {
+  /** Full authoritative events, `sequence` = index + 1. */
+  records: ReadonlyArray<FixtureEventRecord<GameEvent>>;
+}
+
+/** Builds and privacy-checks one entry; returns it with its secrets oracle. */
+function entryOf(args: {
+  id: string;
+  name: string;
+  kind: UiFixtureEntry["kind"];
+  description: string;
+  notes: string[];
+  source: UiFixtureSource;
+  state: GameState;
+  privateState: PrivateFiringState;
+  log: EventLog;
+  viewerId: PlayerId;
+  recent: number;
+}): { entry: UiFixtureEntry; secrets: string[] } {
+  const { state, privateState, log, viewerId } = args;
+  const prompt = decisionPrompt(state);
+  const view = actorViewOf(state, viewerId, privateState);
+  const entry: UiFixtureEntry = {
+    id: args.id,
+    name: args.name,
+    kind: args.kind,
+    description: args.description,
+    viewerId,
+    viewerActs: state.phase.type !== "finished" && prompt.actorIds.includes(viewerId),
+    decisionPrompt: prompt,
+    playerView: { viewerId: view.viewerId, game: view.game, own: view.own },
+    recentPublicEvents: log.records.slice(-args.recent).map((r) => ({ sequence: r.sequence, revision: r.revision, actorId: r.actorId, event: projectEvent(r.event) })),
+    ownSecrets: log.records
+      .filter((r) => (r.event as { secret?: { visibleTo: PlayerId } }).secret?.visibleTo === viewerId)
+      .map((r) => ({ sequence: r.sequence, revision: r.revision, actorId: r.actorId, event: structuredClone(r.event) })),
+    source: args.source,
+    notes: args.notes,
+  };
+  const events = log.records.map((r) => r.event);
+  assertNoForeignSecrets(state, privateState, entry, events);
+  return { entry, secrets: secretIdsFor(state, viewerId, events) };
+}
+
+function tableLog(table: Table): EventLog {
+  return { records: table.events.map((e) => ({ sequence: e.seq, revision: e.revision, actorId: e.actorId, event: e.event })) };
+}
+
+/** A legacy moment, checked with the shared privacy rules (no own secrets in that format). */
+function checkLegacy(table: Table, moment: Moment): void {
+  const entry = {
+    ...moment,
+    recentPublicEvents: moment.recentPublicEvents.map((e) => ({ sequence: e.seq, revision: e.revision, actorId: "", event: e.event })),
+    ownSecrets: [],
+  };
+  assertNoForeignSecrets(table.state, table.priv, entry, table.events.map((e) => e.event));
 }
 
 /** Selectors every moment carries (all public information, or the viewer's own). */
@@ -309,7 +467,7 @@ function legalCommandSummary(view: PlayerView, perType = 12): Record<string, unk
   return { viewerActs: true, mode: "canonical", total: all.length, byType };
 }
 
-/** Heat ladder for the docked FiringStage: Preferred-Heat bands and each ceramic's chip. */
+/** Heat ladder for the legacy wireframe's docked FiringStage (the production UI never shows it, D3). */
 function heatLadder(view: PlayerView): Record<string, unknown> | null {
   const firing = firingSummary(view);
   if (firing === null) return null;
@@ -360,7 +518,34 @@ function capture(
   viewerId: PlayerId,
   meta: { id: string; title: string; description: string; notes?: string[] },
   extra: (view: PlayerView, actor: ActorView) => Record<string, unknown>,
-): Moment {
+): Captured {
+  const source = {
+    seed: table.seed,
+    playerCount: table.playerCount,
+    gameId: table.state.gameId,
+    round: table.state.round,
+    revision: table.state.revision,
+    phase: table.state.phase.type,
+    commandsPlayed: table.commands,
+    policy: POLICY.version,
+    steered: structuredClone(table.steered),
+  };
+  if (TARGET === "tests") {
+    const { entry, secrets } = entryOf({
+      id: meta.id,
+      name: meta.title,
+      kind: "moment",
+      description: meta.description,
+      notes: meta.notes ?? [],
+      source: { kind: "played", ...source },
+      state: table.state,
+      privateState: table.priv,
+      log: tableLog(table),
+      viewerId,
+      recent: RECENT_EVENTS,
+    });
+    return { id: meta.id, legacy: null, entry, secrets };
+  }
   const view = table.playerView(viewerId);
   const actor = table.view(viewerId);
   const prompt = decisionPrompt(view.game);
@@ -368,17 +553,7 @@ function capture(
     id: meta.id,
     title: meta.title,
     description: meta.description,
-    source: {
-      seed: table.seed,
-      playerCount: table.playerCount,
-      gameId: table.state.gameId,
-      round: table.state.round,
-      revision: table.state.revision,
-      phase: table.state.phase.type,
-      commandsPlayed: table.commands,
-      policy: POLICY.version,
-      steered: structuredClone(table.steered),
-    },
+    source,
     viewerId,
     viewerActs: prompt.actorIds.includes(viewerId),
     playerView: view,
@@ -387,110 +562,15 @@ function capture(
     recentPublicEvents: table.recentPublicEvents(),
     notes: meta.notes ?? [],
   };
-  assertNoForeignSecrets(table.state, table.priv, moment, publiclyRevealed(table.events));
-  return moment;
+  checkLegacy(table, moment);
+  return { id: meta.id, legacy: moment, entry: null, secrets: null };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════════════
-// Privacy check
+// Moment searches (m1–m9: the wireframe set)
 // ═══════════════════════════════════════════════════════════════════════════════════════
 
-/** Walks every key and string of a value. */
-function walk(value: unknown, visit: (key: string | null, v: unknown) => void, key: string | null = null): void {
-  visit(key, value);
-  if (Array.isArray(value)) {
-    for (const item of value) walk(item, visit, null);
-  } else if (value !== null && typeof value === "object") {
-    for (const [k, v] of Object.entries(value)) walk(v, visit, k);
-  }
-}
-
-/**
- * Fails if the moment holds anything a non-viewer seat keeps secret, or any server-only pile:
- * - structural: no `hidden` / `secret` key; `own` is the viewer's; any pending look, fire peek
- *   or sealed Contribution in `own` belongs to the viewer;
- * - by identity: no Order ID from another seat's hand, the Main deck or discard, or the
- *   Starting box, and no Tech ID from a Tech deck, appears anywhere in the moment — except the
- *   IDs in the viewer's own private look (which are the viewer's to see) and IDs some public
- *   event already revealed (a face-up Order that was reserved or rotated off the display);
- * - no other seat's unrevealed Contribution.
- */
-/** Every string any public event has ever carried (e.g. a face-up Order later reserved, or
- * the 2 face-up Orders discarded by the round-start rotation): public knowledge for all. */
-function publiclyRevealed(events: readonly LoggedEvent[]): Set<string> {
-  const seen = new Set<string>();
-  for (const e of events) {
-    walk(projectEvent(e.event), (_key, v) => {
-      if (typeof v === "string") seen.add(v);
-    });
-  }
-  return seen;
-}
-
-function assertNoForeignSecrets(state: GameState, priv: PrivateFiringState, moment: Moment, revealed: ReadonlySet<string>): void {
-  const problems: string[] = [];
-  const viewer = moment.viewerId;
-  const own = moment.playerView.own;
-  if (own === null || own.playerId !== viewer) problems.push("own view is not the viewer's");
-  if (own?.pendingLook && own.pendingLook.playerId !== viewer) problems.push("pending look of another seat");
-  if (own?.firePeek && own.firePeek.playerId !== viewer) problems.push("fire peek of another seat");
-  const ownLook = new Set<string>();
-  if (own?.pendingLook) {
-    for (const id of own.pendingLook.kind === "guild_inspection" ? own.pendingLook.techIds : own.pendingLook.orderIds) ownLook.add(id);
-  }
-  const forbidden = new Map<string, string>();
-  for (const [pid, hand] of Object.entries(state.hidden.orderHands)) {
-    if (pid !== viewer) for (const id of hand) forbidden.set(id, `${pid}'s hand`);
-  }
-  for (const id of state.hidden.mainDeck) if (!ownLook.has(id)) forbidden.set(id, "Main deck");
-  for (const id of state.hidden.mainDiscard) forbidden.set(id, "Main discard");
-  for (const id of state.hidden.startingBox) forbidden.set(id, "Starting box");
-  for (const discipline of DISCIPLINES) {
-    for (const id of state.hidden.techDecks[discipline]) if (!ownLook.has(id)) forbidden.set(id, `${discipline} Tech deck`);
-  }
-  // Once revealed by a public event, an ID is no longer secret (it may sit face down now).
-  for (const id of revealed) forbidden.delete(id);
-  const look = state.hidden.pendingLook;
-  if (look !== null && look.playerId !== viewer) {
-    for (const id of look.kind === "guild_inspection" ? look.techIds : look.orderIds) forbidden.set(id, `${look.playerId}'s private look`);
-  }
-  walk(moment, (key, v) => {
-    if (key === "hidden" || key === "secret") problems.push(`server-only key "${key}"`);
-    if (typeof v === "string" && forbidden.has(v)) problems.push(`${v} from ${forbidden.get(v)}`);
-  });
-  // Another seat may already have submitted (that fact is public via phase.submittedPlayerIds);
-  // what it submitted must not appear: no sealed card outside the viewer's own view, and no
-  // card or Fuel Ledger flag on that seat's projected CONTRIBUTION_SUBMITTED event.
-  if (state.phase.type === "firing_contributions") {
-    let sealed = 0;
-    walk(moment, (key, v) => {
-      if (key === "pendingContribution" && v !== null && v !== undefined) sealed += 1;
-    });
-    if (sealed > (own?.pendingContribution ? 1 : 0)) problems.push("a sealed Contribution outside the viewer's own view");
-    for (const [pid, submission] of Object.entries(priv.submissions)) {
-      if (pid === viewer || submission === undefined) continue;
-      const leaked = moment.recentPublicEvents.some((e) => {
-        const ev = e.event as unknown as Record<string, unknown>;
-        return ev["type"] === "CONTRIBUTION_SUBMITTED" && ev["playerId"] === pid && ("card" in ev || "fuelLedger" in ev);
-      });
-      if (leaked) problems.push(`unrevealed Contribution of ${pid} while the window is open`);
-    }
-  }
-  for (const [pid, peek] of Object.entries(state.hidden.firePeeks)) {
-    if (pid !== viewer && peek !== undefined && JSON.stringify(moment).includes(`"firePeek":{"playerId":"${pid}"`)) {
-      problems.push(`fire peek of ${pid}`);
-    }
-  }
-  if (problems.length > 0) {
-    throw new Error(`Privacy check failed for ${moment.id} (viewer ${viewer}):\n- ${[...new Set(problems)].join("\n- ")}`);
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════════════
-// Moment searches
-// ═══════════════════════════════════════════════════════════════════════════════════════
-
-type Found = { moment: Moment; score: number } | null;
+type Found = { moment: Captured; score: number } | null;
 
 function phaseIs(table: Table, type: GameState["phase"]["type"]): boolean {
   return table.state.phase.type === type;
@@ -576,11 +656,12 @@ function workSelectors(view: PlayerView, actor: ActorView): Record<string, unkno
   };
 }
 
-/** 1. 3-player Round 2 Work Phase: viewer's before_action, Workshop Tech owned (Form &
+/** 1. 3-player Round 2 Work Phase: viewer's before_action, Form & Decorate Tech owned (Form &
  * Decorate space 2 added) and the Glaze & Load second space not yet added. */
 function findWorkPhaseR2(): Found {
   let best: Found = null;
-  for (let seed = 1; seed <= 120 && (best === null || best.score < 4); seed += 1) {
+  for (const seed of seedOrder(120, 27)) {
+    if (best !== null && best.score >= 4) break;
     const table = new Table(seed, 3);
     const stop = (t: Table, actor: PlayerId): boolean => {
       if (t.state.round !== 2 || !beforeAction(t, actor)) return false;
@@ -605,7 +686,7 @@ function findWorkPhaseR2(): Found {
             id: "m1_work_phase_r2_3p",
             title: "3P · Round 2 · Work Phase · your turn (before action)",
             description:
-              "The viewer owns a Workshop Tech, so they have added the second Form & Decorate space; they have not yet added the second Glaze & Load space. Placement options, quotes and the Commission / Guild / Magistrate option lists are for this exact state.",
+              "The viewer owns a Form & Decorate Tech, so they have added the second Form & Decorate space; they have not yet added the second Glaze & Load space. Placement options, quotes and the Commission / Guild / Magistrate option lists are for this exact state.",
           },
           workSelectors,
         ),
@@ -704,7 +785,8 @@ function loadedCeramics(state: GameState): Array<Extract<GameState["ceramics"][s
 /** 3. 3-player Heat-marker step. Scores: face-down markers, an Imperial Kiln ceramic, Kiln Master owned. */
 function findHeatMarkers(): Found {
   let best: Found = null;
-  for (let seed = 1; seed <= 150 && (best === null || best.score < 9); seed += 1) {
+  for (const seed of seedOrder(150, 17)) {
+    if (best !== null && best.score >= 9) break;
     const table = new Table(seed, 3);
     const scoreOf = (t: Table, actor: PlayerId): number => {
       if (t.state.phase.type !== "firing_heat_markers") return -1;
@@ -720,7 +802,7 @@ function findHeatMarkers(): Found {
       return Math.min(faceDown, 2) + (imperial ? 2 : 0) + (kilnMaster ? 2 : 0) + (ownFaceDown ? 1 : 0) + (varied ? 2 : 0);
     };
     let localBest = -1;
-    let localMoment: Moment | null = null;
+    let localMoment: Captured | null = null;
     table.runUntil((t, actor) => {
       const s = scoreOf(t, actor);
       if (s > localBest) {
@@ -747,12 +829,13 @@ function findHeatMarkers(): Found {
 /** 4. After-Quality window with per-ceramic Actual Heat / Heat Difference / Quality. */
 function findAfterQuality(playerCount: PlayerCount): Found {
   let best: Found = null;
-  for (let seed = 1; seed <= 60 && (best === null || best.score < 5); seed += 1) {
+  for (const seed of seedOrder(60, 17)) {
+    if (best !== null && best.score >= 5) break;
     const table = new Table(seed, playerCount);
     const viewerSeat = "p1";
     const steer = kilnSteer(viewerSeat, "GE");
     let localBest = -1;
-    let localMoment: Moment | null = null;
+    let localMoment: Captured | null = null;
     table.runUntil((t, actor) => {
       if (t.state.phase.type !== "firing_after_quality") return false;
       const options = afterQualityOptions(t.playerView(actor)).filter((o) => o.ceramicIds.length > 0);
@@ -788,10 +871,11 @@ function loadedImperialRecord(table: Table): boolean {
 /** 5. 2-player game: 2-1-1 kiln cover and the 1-space Magistrate's Hall. */
 function findTwoPlayer(): Found {
   let best: Found = null;
-  for (let seed = 1; seed <= 60 && (best === null || best.score < 4); seed += 1) {
+  for (const seed of seedOrder(60, 35)) {
+    if (best !== null && best.score >= 4) break;
     const table = new Table(seed, 2);
     let localBest = -1;
-    let localMoment: Moment | null = null;
+    let localMoment: Captured | null = null;
     table.runUntil((t, actor) => {
       if (t.state.round < 2 || !beforeAction(t, actor)) return t.state.round > 3;
       const loaded = loadedCeramics(t.state).filter((c) => c.placement.kiln === "shared").length;
@@ -822,11 +906,12 @@ function findTwoPlayer(): Found {
  * Prefers a Crackle ceramic that must declare a Decoration other than its printed one. */
 function findOrderPhase(): Found {
   let best: Found = null;
-  for (let seed = 1; seed <= 150 && (best === null || best.score < 8); seed += 1) {
+  for (const seed of seedOrder(150, 5)) {
+    if (best !== null && best.score >= 8) break;
     const table = new Table(seed, 3);
     const steer = kilnSteer("p1", "GE");
     let localBest = -1;
-    let localMoment: Moment | null = null;
+    let localMoment: Captured | null = null;
     table.runUntil((t, actor) => {
       if (t.state.phase.type !== "orders") return false;
       const view = t.playerView(actor);
@@ -993,7 +1078,8 @@ function findHandLimitSteered(): Found {
 /** 8. Final results. Prefers a game decided by a tie-breaker. */
 function findFinal(): Found {
   let best: Found = null;
-  for (let seed = 1; seed <= 40 && (best === null || best.score < 2); seed += 1) {
+  for (const seed of seedOrder(40, 10)) {
+    if (best !== null && best.score >= 2) break;
     for (const playerCount of [4, 3] as const) {
       const table = new Table(seed, playerCount);
       table.runUntil(() => false);
@@ -1188,7 +1274,6 @@ function labels(): Record<string, unknown> {
   };
 }
 
-
 /** 9. Firing step 1: secret, simultaneous Contributions. Another seat has submitted (shown only
  * as "submitted"); the viewer still chooses, ideally with Fuel Ledger. Seats are steered to buy
  * Fuel Ledger, Inverted Firing or Setter's Mark at the Guild Hall when the policy would not, so
@@ -1211,10 +1296,11 @@ function step1Steer(): Steer {
 }
 function findContributions(): Found {
   let best: Found = null;
-  for (let seed = 1; seed <= 120 && (best === null || best.score < 9); seed += 1) {
+  for (const seed of seedOrder(120, 118)) {
+    if (best !== null && best.score >= 9) break;
     const table = new Table(seed, 3);
     let localBest = -1;
-    let localMoment: Moment | null = null;
+    let localMoment: Captured | null = null;
     table.runUntil((t, actor) => {
       const phase = t.state.phase;
       if (phase.type !== "firing_contributions") return t.state.round > 4;
@@ -1251,8 +1337,420 @@ function findContributions(): Found {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════════════
-// Main
+// Moment searches (m10–m18: the windows the wireframe could not reach; tests target only)
 // ═══════════════════════════════════════════════════════════════════════════════════════
+
+function techOwner(table: Table, techId: TechId): PlayerId | null {
+  return table.state.playerOrder.find((pid) => table.state.players[pid]?.techs.some((tech) => tech.id === techId)) ?? null;
+}
+
+/** Steers an Apprentice to buy `techId` face up at the Guild Hall (any seat, or only `seat`),
+ * while nobody owns it. An illegal attempt falls back to the policy. */
+function buyTechSteer(techId: TechId, seat: PlayerId | null = null): Steer {
+  return (t, actor) => {
+    if ((seat !== null && actor !== seat) || !beforeAction(t, actor) || techOwner(t, techId) !== null) return null;
+    const p = t.state.players[actor];
+    const worker = p === undefined ? undefined : Object.values(p.workers).find((w) => w.kind === "apprentice" && w.placement === null);
+    if (worker === undefined) return null;
+    const option = guildOptions(t.playerView(actor), "apprentice").faceUp.find((o) => o.techId === techId && o.legal);
+    if (option === undefined) return null;
+    return {
+      command: { type: "PLACE_GUILD_HALL", workerId: worker.id, choice: { kind: "buy_face_up", techId } },
+      why: `An Apprentice buys ${TECHS[techId].name} (${techId}) at the Guild Hall so the fixture can show it.`,
+    };
+  };
+}
+
+/**
+ * Seeds to try: `hint` first (the seed a previous run found, so a regeneration is quick), then
+ * 1…budget. Deterministic either way; if the engine or policy changes and the hint no longer
+ * reaches the moment, the search simply continues.
+ */
+function seedOrder(budget: number, hint?: number): number[] {
+  const seeds = Array.from({ length: budget }, (_, i) => i + 1);
+  return hint === undefined ? seeds : [hint, ...seeds.filter((seed) => seed !== hint)];
+}
+
+interface MomentMeta {
+  id: string;
+  title: string;
+  description: string;
+  notes?: string[];
+}
+
+/** The moment's scripted fallback: the matching window scenario, for its acting viewer. */
+function scriptedMoment(meta: MomentMeta, scenarioName: string, prepare?: (table: LocalTable, actor: PlayerId) => PlayerId): Captured {
+  const scenario = phaseScenarios().find((s) => s.name === scenarioName);
+  if (scenario === undefined) throw new Error(`No phase scenario "${scenarioName}" for ${meta.id}`);
+  const viewer = prepare === undefined ? scenario.actor : prepare(scenario.table, scenario.actor);
+  const { entry, secrets } = entryOf({
+    id: meta.id,
+    name: meta.title,
+    kind: "moment",
+    description: meta.description,
+    notes: [...(meta.notes ?? []), `Seed search exceeded its budget; this is the scripted scenario "${scenarioName}".`],
+    source: scriptedSource(scenario.table, "phaseScenarios", scenarioName),
+    state: scenario.table.state,
+    privateState: scenario.table.privateState,
+    log: localTableLog(scenario.table),
+    viewerId: viewer,
+    recent: RECENT_EVENTS,
+  });
+  return { id: meta.id, legacy: null, entry, secrets };
+}
+
+interface Search {
+  meta: MomentMeta;
+  playerCounts: readonly PlayerCount[];
+  seeds: number;
+  steer: () => Steer | null;
+  /** The viewer to capture before this decision, or null. */
+  at: (table: Table, actor: PlayerId) => PlayerId | null;
+  /** Stop playing this seed. */
+  giveUp: (table: Table) => boolean;
+  fallback: string;
+  /** The seed to try first (`seedOrder`). */
+  hint?: number;
+}
+
+/** Plays seeds until `at` names a viewer; captures there, else falls back to the scenario. */
+function search(spec: Search): Captured {
+  for (const playerCount of spec.playerCounts) {
+    for (const seed of seedOrder(spec.seeds, spec.hint)) {
+      const table = new Table(seed, playerCount);
+      let viewer: PlayerId | null = null;
+      table.runUntil((t, actor) => {
+        if (spec.giveUp(t)) return true;
+        viewer = spec.at(t, actor);
+        return viewer !== null;
+      }, spec.steer());
+      if (viewer !== null) return capture(table, viewer, spec.meta, () => ({}));
+    }
+  }
+  return scriptedMoment(spec.meta, spec.fallback);
+}
+
+/** m10: the Setter's Mark window at the start of a round, then the tile on its space. */
+function findSettersMark(): Captured[] {
+  const window: MomentMeta = {
+    id: "m10a_setters_mark_window",
+    title: "3P · Start of the Work Phase · Setter's Mark window",
+    description: "The viewer owns Setter's Mark (T22): at the start of the Work Phase they may place the tile on an empty active Shared Kiln space, or decline (settersMarkOptions).",
+  };
+  const tile: MomentMeta = {
+    id: "m10b_setters_mark_on_space",
+    title: "3P · Work Phase · a Setter's Mark tile on a Shared Kiln space",
+    description: "The viewer placed their Setter's Mark: only they may load into that space this round; the tile returns when they load there or at Cleanup.",
+  };
+  for (const seed of seedOrder(40, 1)) {
+    const table = new Table(seed, 3);
+    const buy = buyTechSteer("T22");
+    const giveUp = (t: Table) => t.state.round > 4;
+    const owner = table.runUntil((t, actor) => giveUp(t) || (t.state.phase.type === "round_start_setters_mark" && settersMarkOptions(t.playerView(actor)).length > 0), buy);
+    if (owner === null || table.state.phase.type !== "round_start_setters_mark") continue;
+    const first = capture(table, owner, window, () => ({}));
+    const place: Steer = (t, actor) => {
+      if (actor !== owner || t.state.phase.type !== "round_start_setters_mark") return null;
+      const spaceId = settersMarkOptions(t.playerView(actor))[0];
+      return spaceId === undefined ? null : { command: { type: "PLACE_SETTERS_MARK", spaceId }, why: "The owner places the Setter's Mark on the first open space." };
+    };
+    const marked = (t: Table) => KILN_SPACE_IDS.some((id) => t.state.sharedKiln.spaces[id].setterMarkOwnerId === owner);
+    table.runUntil((t) => t.state.phase.type === "work_turn" && marked(t), place);
+    const phaseNow = table.state.phase.type as string;
+    if (phaseNow !== "work_turn" || !marked(table)) continue;
+    return [first, capture(table, owner, tile, () => ({}))];
+  }
+  return [
+    scriptedMoment(window, "Setter's Mark window"),
+    scriptedMoment(tile, "Setter's Mark window", (t, actor) => {
+      t.act(actor, { type: "PLACE_SETTERS_MARK", spaceId: settersMarkOptionsFor(t, actor) });
+      return actor;
+    }),
+  ];
+}
+
+function settersMarkOptionsFor(table: LocalTable, actor: PlayerId) {
+  const spaceId = settersMarkOptions(table.view(actor))[0];
+  if (spaceId === undefined) throw new Error("No Setter's Mark space in the scripted scenario");
+  return spaceId;
+}
+
+/** m11: Test Pieces — the decision, then the private peek before the bury decision. */
+function findTestPieces(): Captured[] {
+  const decision: MomentMeta = {
+    id: "m11a_test_pieces_decision",
+    title: "3P · Firing step 4 · Test Pieces: pay 1 Wood to peek?",
+    description: "The viewer owns Test Pieces (T13) and has a ceramic in this firing: they may pay 1 Wood to look privately at the top Fire card (testPiecesOptions).",
+  };
+  const bury: MomentMeta = {
+    id: "m11b_test_pieces_bury",
+    title: "3P · Firing step 4 · Test Pieces: bury the card?",
+    description: "The viewer peeked: only they see the card (own.firePeek). Others see only that they paid and peeked. Next they decide, publicly, whether to bury it.",
+  };
+  for (const seed of seedOrder(40, 10)) {
+    const table = new Table(seed, 3);
+    const giveUp = (t: Table) => t.state.round > 5;
+    const owner = table.runUntil((t, actor) => {
+      if (giveUp(t)) return true;
+      const options = t.state.phase.type === "firing_test_pieces" ? testPiecesOptions(t.playerView(actor)) : null;
+      return options !== null && options.awaiting === "decision" && options.canPeek;
+    }, buyTechSteer("T13"));
+    if (owner === null || table.state.phase.type !== "firing_test_pieces") continue;
+    const first = capture(table, owner, decision, () => ({}));
+    if (!table.tryApply(owner, { type: "TEST_PIECES_DECIDE", peek: true })) continue;
+    table.steered.push({ revision: table.state.revision - 1, playerId: owner, command: { type: "TEST_PIECES_DECIDE", peek: true }, why: "The owner pays 1 Wood and peeks." });
+    if (table.state.phase.type !== "firing_test_pieces" || table.state.phase.awaiting !== "bury") continue;
+    return [first, capture(table, owner, bury, () => ({}))];
+  }
+  return [scriptedMoment(decision, "Test Pieces decision"), scriptedMoment(bury, "Test Pieces bury")];
+}
+
+/** m18: Jun during Second Firing (R7): the extra Fire card is turned, Jun may still adjust. */
+function findJunSecondFiring(): Captured {
+  const meta: MomentMeta = {
+    id: "m18_jun_second_firing",
+    title: "3P · Firing step 10 · Jun during Second Firing (R7)",
+    description:
+      "The viewer (Jun Kiln, Second Firing) kept Jun unused in step 8, then used Second Firing: the extra Fire card is turned (firingStageView.extraFire) and Actual Heat recalculated; before the new Quality, Jun may adjust that ceramic by ±1 for 1 Wood.",
+  };
+  const seat = "p1";
+  const steer = combine(
+    kilnSteer(seat, "JU"),
+    buyTechSteer("T14", seat),
+    (t, actor) =>
+      actor === seat && t.state.phase.type === "firing_heat_adjustment"
+        ? { command: { type: "RESOLVE_JUN", adjustment: null }, why: "Keep Jun unused in step 8 so it can act in Second Firing (R7)." }
+        : null,
+    (t, actor) => {
+      if (actor !== seat || t.state.phase.type !== "firing_after_quality") return null;
+      const second = afterQualityOptions(t.playerView(actor)).find((o) => o.ability === "second_firing");
+      const ceramicId = second?.ceramicIds[0];
+      return ceramicId === undefined ? null : { command: { type: "USE_SECOND_FIRING", ceramicId }, why: "Second Firing on an eligible ceramic." };
+    },
+  );
+  return search({
+    meta,
+    playerCounts: [3],
+    seeds: 40,
+    steer: () => steer,
+    at: (t) => (t.state.phase.type === "firing_second_firing_jun" ? t.state.phase.actorId : null),
+    giveUp: (t) => t.state.round > 5,
+    fallback: "Jun during Second Firing (R7)",
+    hint: 13,
+  });
+}
+
+function newMoments(): Captured[] {
+  const firingGiveUp = (t: Table) => t.state.round > 5;
+  return [
+    ...findSettersMark(),
+    ...findTestPieces(),
+    search({
+      meta: {
+        id: "m12_guild_shifu_inspection",
+        title: "3P · Work Phase · Guild Hall Shifu inspection (private)",
+        description: "The viewer's Shifu inspected the top Techs of one discipline: only they see them (guildInspectionOptions). They take one inspected Tech (−1 Coin) or a face-up one, and choose the bottom order of the rest.",
+      },
+      playerCounts: [3],
+      seeds: 30,
+      steer: () => (t, actor) => {
+        if (t.state.round < 2 || !beforeAction(t, actor)) return null;
+        const shifu = placementOptions(t.playerView(actor)).find((o) => o.locationId === "guild_hall")?.workers.find((w) => w.kind === "shifu" && w.legal);
+        const target = guildOptions(t.playerView(actor), "shifu").inspect.filter((d) => d.deckCount >= 2).sort((a, b) => b.deckCount - a.deckCount)[0];
+        if (shifu === undefined || target === undefined) return null;
+        return { command: { type: "PLACE_GUILD_HALL", workerId: shifu.workerId, choice: { kind: "inspect", discipline: target.discipline } }, why: "The Shifu inspects a Tech deck at the Guild Hall." };
+      },
+      at: (t, actor) => {
+        const phase = t.state.phase;
+        return phase.type === "work_turn" && phase.step.kind === "guild_inspection" ? actor : null;
+      },
+      giveUp: (t) => t.state.round > 3,
+      fallback: "Guild Hall: Shifu inspection",
+    }),
+    search({
+      meta: {
+        id: "m13_jun_heat_adjustment",
+        title: "3P · Firing step 8 · Jun heat adjustment",
+        description: "The Fire card is turned and Actual Heat known (shown only in the log); the viewer's Jun Kiln may pay 1 Wood to move one of their ceramics ±1 before Quality (junOptions).",
+      },
+      playerCounts: [3],
+      seeds: 30,
+      steer: () => kilnSteer("p1", "JU"),
+      at: (t, actor) => (t.state.phase.type === "firing_heat_adjustment" && actor === "p1" && (junOptions(t.playerView(actor))?.ready ?? false) ? actor : null),
+      giveUp: firingGiveUp,
+      fallback: "Jun heat adjustment",
+    }),
+    search({
+      meta: {
+        id: "m14_salvage",
+        title: "3P · Firing step 11 · salvage a Flawed ceramic",
+        description: "The viewer has a still-Flawed ceramic from this firing: discard it for 2 Coins or keep it (salvageOptions). Players decide independently, in any order.",
+      },
+      playerCounts: [3, 4],
+      seeds: 30,
+      steer: () => null,
+      at: (t) => (t.state.phase.type === "firing_salvage" ? (t.state.phase.pendingPlayerIds[0] ?? null) : null),
+      giveUp: firingGiveUp,
+      fallback: "salvage",
+      hint: 7,
+    }),
+    search({
+      meta: {
+        id: "m15_kiln_selection",
+        title: "4P · Setup · Kiln selection (reverse turn order)",
+        description: "Setup step 9: in reverse turn order each player takes one of the five Kiln Player Boards (kilnSelectionOptions). The viewer chooses first.",
+      },
+      playerCounts: [4],
+      seeds: 1,
+      steer: () => null,
+      at: (t, actor) => (t.state.phase.type === "setup_kiln_selection" ? actor : null),
+      giveUp: () => false,
+      fallback: "Kiln selection",
+    }),
+    search({
+      meta: {
+        id: "m16_colour_samples",
+        title: "3P · Work Phase · Colour Samples: reserve 1 of 3 (private)",
+        description: "The viewer just gained Colour Samples (T10): they look at the top 3 Main Orders privately and must reserve one; the rest go face down to the discard (lookedOrderOptions).",
+      },
+      playerCounts: [3],
+      seeds: 30,
+      steer: () => buyTechSteer("T10"),
+      at: (t, actor) => {
+        const phase = t.state.phase;
+        return phase.type === "work_turn" && phase.step.kind === "colour_samples" ? actor : null;
+      },
+      giveUp: (t) => t.state.round > 4,
+      fallback: "Colour Samples choice",
+      hint: 3,
+    }),
+    search({
+      meta: {
+        id: "m17_after_action",
+        title: "3P · Work Phase · after-action window (Canal Barge)",
+        description: "The viewer owns Canal Barge (T23): after their worker action they may complete a held Order now, use Imperial Priority if they have it, or end the turn (canalBargeOptions, imperialPriorityOptions).",
+      },
+      playerCounts: [3],
+      seeds: 30,
+      steer: () => buyTechSteer("T23"),
+      at: (t, actor) => {
+        const phase = t.state.phase;
+        return phase.type === "work_turn" && phase.activePlayerId === actor && phase.step.kind === "after_action" && t.state.round >= 2 ? actor : null;
+      },
+      giveUp: (t) => t.state.round > 4,
+      fallback: "after the worker action",
+    }),
+    findJunSecondFiring(),
+  ];
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// Scripted scenarios (scenarios.json)
+// ═══════════════════════════════════════════════════════════════════════════════════════
+
+/** A LocalTable's log, numbered from its first event like the service numbers a game's. */
+function localTableLog(table: LocalTable): EventLog {
+  const marks = table.commandMarks;
+  const initialRevision = marks[0] === undefined ? table.state.revision : marks[0].revision - 1;
+  const host = table.state.playerOrder[0] ?? "p1";
+  return {
+    records: table.events.map((event, index) => {
+      let mark: (typeof marks)[number] | undefined;
+      for (const candidate of marks) if (candidate.firstEventIndex <= index) mark = candidate;
+      return { sequence: index + 1, revision: mark?.revision ?? initialRevision, actorId: mark?.actorId ?? host, event };
+    }),
+  };
+}
+
+function scriptedSource(table: LocalTable, from: "phaseScenarios" | "tableScenarios", scenario: string): UiFixtureSource {
+  return { kind: "scripted", from, scenario, round: table.state.round, revision: table.state.revision, phase: table.state.phase.type };
+}
+
+/** `"Setter's Mark window"` → `w-setters-mark-window`. */
+function slug(prefix: string, name: string): string {
+  return `${prefix}-${name.toLowerCase().replace(/['’]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+}
+
+/** Every scripted scenario: the decision windows, then the table states. */
+export function buildScenarioFixtures(): { entries: UiFixtureEntry[]; secrets: Record<string, string[]> } {
+  const entries: UiFixtureEntry[] = [];
+  const secrets: Record<string, string[]> = {};
+  const add = (built: { entry: UiFixtureEntry; secrets: string[] }) => {
+    if (secrets[built.entry.id] !== undefined) throw new Error(`Duplicate fixture id ${built.entry.id}`);
+    entries.push(built.entry);
+    secrets[built.entry.id] = built.secrets;
+  };
+  for (const scenario of phaseScenarios()) {
+    add(
+      entryOf({
+        id: slug("w", scenario.name),
+        name: scenario.name,
+        kind: "window",
+        description: `Decision window: ${scenario.name} (${scenario.phase}), seen by the acting player.`,
+        notes: [],
+        source: scriptedSource(scenario.table, "phaseScenarios", scenario.name),
+        state: scenario.table.state,
+        privateState: scenario.table.privateState,
+        log: localTableLog(scenario.table),
+        viewerId: scenario.actor,
+        recent: SCENARIO_EVENTS,
+      }),
+    );
+  }
+  for (const scenario of tableScenarios()) {
+    add(
+      entryOf({
+        id: scenario.id,
+        name: scenario.name,
+        kind: "table",
+        description: `Table state: ${scenario.name}.`,
+        notes: [],
+        source: scriptedSource(scenario.table, "tableScenarios", scenario.id),
+        state: scenario.table.state,
+        privateState: scenario.table.privateState,
+        log: localTableLog(scenario.table),
+        viewerId: scenario.viewerId,
+        recent: SCENARIO_EVENTS,
+      }),
+    );
+  }
+  return { entries, secrets };
+}
+
+/** m1–m9 (the wireframe set, recaptured in the entry format) and m10–m18. */
+export function buildMomentFixtures(): { entries: UiFixtureEntry[]; secrets: Record<string, string[]>; missing: string[] } {
+  const previous = TARGET;
+  TARGET = "tests";
+  try {
+    const missing: string[] = [];
+    const captured: Captured[] = [];
+    const take = (name: string, found: Found) => {
+      if (found === null) missing.push(name);
+      else captured.push(found.moment);
+    };
+    take("1 work phase R2 3p", findWorkPhaseR2());
+    take("2 commission look R3 4p", findCommissionLook());
+    take("3 heat-marker step 3p", findHeatMarkers());
+    take("4 after-Quality window 3p", findAfterQuality(3));
+    take("5 two-player board", findTwoPlayer());
+    take("6 order phase with Crackle", findOrderPhase());
+    take("7 cleanup hand limit", findHandLimit() ?? findHandLimitSteered());
+    take("8 final results", findFinal());
+    take("9 contributions step 1", findContributions());
+    captured.push(...newMoments());
+    const entries: UiFixtureEntry[] = [];
+    const secrets: Record<string, string[]> = {};
+    for (const c of captured) {
+      if (c.entry === null || c.secrets === null) throw new Error(`${c.id} was not captured as an entry`);
+      if (secrets[c.id] !== undefined) throw new Error(`Duplicate moment id ${c.id}`);
+      entries.push(c.entry);
+      secrets[c.id] = c.secrets;
+    }
+    return { entries, secrets, missing };
+  } finally {
+    TARGET = previous;
+  }
+}
 
 /** Stable JSON: keys sorted so Record iteration order never changes the file. */
 function stable(value: unknown): unknown {
@@ -1267,88 +1765,186 @@ function stable(value: unknown): unknown {
   return value;
 }
 
-export function generate(): { file: string; moments: Array<{ id: string; seed: number; playerCount: number; round: number; phase: string; viewerId: string }>; missing: string[] } {
-  const missing: string[] = [];
-  const moments: Moment[] = [];
-  const take = (name: string, found: Found) => {
-    if (found === null) missing.push(name);
-    else moments.push(found.moment);
-  };
-  take("1 work phase R2 3p", findWorkPhaseR2());
-  take("2 commission look R3 4p", findCommissionLook());
-  take("3 heat-marker step 3p", findHeatMarkers());
-  take("4 after-Quality window 3p", findAfterQuality(3));
-  take("5 two-player board", findTwoPlayer());
-  take("6 order phase with Crackle", findOrderPhase());
-  take("7 cleanup hand limit", findHandLimit() ?? findHandLimitSteered());
-  take("8 final results", findFinal());
-  take("9 contributions step 1", findContributions());
-  const fixture = {
-    generatedBy: "tools/uiFixtures.ts",
-    rulesVersion: RULES_VERSION,
-    policy: POLICY.version,
-    privacy:
-      "Each moment holds only the viewer's PlayerView (public projection + own private view), selectors computed from it and projected public events. Checked against the authoritative hidden state at generation time.",
-    moments: moments.map((m) => stable(m)),
-    labels: stable(labels()),
-  };
-  mkdirSync(OUT_DIR, { recursive: true });
-  writeFileSync(OUT_FILE, `${JSON.stringify(fixture, null, 2)}\n`);
+/** The exact bytes written for a fixture file. */
+export function serializeFixture(value: unknown): string {
+  return `${JSON.stringify(stable(value), null, 2)}\n`;
+}
+
+export function scenariosFile(entries: readonly UiFixtureEntry[]): Record<string, unknown> {
   return {
-    file: OUT_FILE,
-    moments: moments.map((m) => ({ id: m.id, seed: m.source.seed, playerCount: m.source.playerCount, round: m.source.round, phase: m.source.phase, viewerId: m.viewerId })),
-    missing,
+    generatedBy: "tools/uiFixtures.ts --target tests",
+    rulesVersion: RULES_VERSION,
+    rulesFingerprint: rulesFingerprint(),
+    privacy: "Each entry holds only the viewer's PlayerView, projected public events and the viewer's own secret events; checked against the authoritative state when generated (tools/fixturePrivacy.ts).",
+    entries,
+  };
+}
+
+export function momentsFile(entries: readonly UiFixtureEntry[]): Record<string, unknown> {
+  return { ...scenariosFile(entries), policy: POLICY.version };
+}
+
+export function secretsFile(secrets: Readonly<Record<string, readonly string[]>>): Record<string, unknown> {
+  return {
+    generatedBy: "tools/uiFixtures.ts --target tests",
+    oracle: "Per entry id: the Order and Tech IDs that viewer must never see (other hands, other seats' looks, the decks, the Main discard and the Starting box), minus IDs a public event revealed and IDs the viewer was shown privately. A test oracle for the rendered-markup leak checks; never loaded by src/app.",
+    entries: secrets,
+  };
+}
+
+/** The three files of the tests target, as written. */
+export function generateTestFixtureTexts(): { files: Record<keyof typeof TEST_FIXTURE_FILES, string>; summary: Record<string, unknown> } {
+  const scenarios = buildScenarioFixtures();
+  const moments = buildMomentFixtures();
+  if (moments.missing.length > 0) throw new Error(`Moments not found: ${moments.missing.join(", ")}`);
+  const secrets = { ...scenarios.secrets, ...moments.secrets };
+  const problems = verifyFixtureEntries([...scenarios.entries, ...moments.entries], secrets);
+  if (problems.length > 0) throw new Error(`Fixture privacy verification failed:\n- ${problems.join("\n- ")}`);
+  return {
+    files: {
+      scenarios: serializeFixture(scenariosFile(scenarios.entries)),
+      moments: serializeFixture(momentsFile(moments.entries)),
+      secrets: serializeFixture(secretsFile(secrets)),
+    },
+    summary: {
+      scenarios: scenarios.entries.map((e) => `${e.id} (${e.playerView.game.phase.type}, viewer ${e.viewerId}${e.viewerActs ? " acts" : ""})`),
+      moments: moments.entries.map((e) => `${e.id} (${e.source.kind}${e.source.kind === "played" ? ` seed ${e.source.seed} ${e.source.playerCount}p` : ""}, ${e.playerView.game.phase.type}, viewer ${e.viewerId})`),
+    },
   };
 }
 
 /**
- * Re-reads the written file and checks, without the authoritative state, that each moment is
- * shaped like one viewer's client data: no server-only keys, `own` is the viewer's, private
- * looks / peeks / sealed Contributions are the viewer's, and other seats' Order hands appear
- * only as counts. (The identity check against the hidden piles runs at capture time.)
+ * Re-reads the written test fixtures and checks them without the authoritative state: the
+ * structural privacy rules for every entry, and no entry holding one of its secret IDs.
+ */
+export function verifyTestFixtureFiles(): string[] {
+  const read = (file: string) => JSON.parse(readFileSync(file, "utf8")) as { entries: unknown };
+  const scenarios = read(TEST_FIXTURE_FILES.scenarios).entries as UiFixtureEntry[];
+  const moments = read(TEST_FIXTURE_FILES.moments).entries as UiFixtureEntry[];
+  const secrets = read(TEST_FIXTURE_FILES.secrets).entries as Record<string, string[]>;
+  return verifyFixtureEntries([...scenarios, ...moments], secrets);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// The legacy wireframe target
+// ═══════════════════════════════════════════════════════════════════════════════════════
+
+export function generateWireframe(): { file: string; moments: Array<{ id: string; seed: number; playerCount: number; round: number; phase: string; viewerId: string }>; missing: string[] } {
+  const previous = TARGET;
+  TARGET = "wireframe";
+  try {
+    const missing: string[] = [];
+    const moments: Moment[] = [];
+    const take = (name: string, found: Found) => {
+      if (found === null || found.moment.legacy === null) missing.push(name);
+      else moments.push(found.moment.legacy);
+    };
+    take("1 work phase R2 3p", findWorkPhaseR2());
+    take("2 commission look R3 4p", findCommissionLook());
+    take("3 heat-marker step 3p", findHeatMarkers());
+    take("4 after-Quality window 3p", findAfterQuality(3));
+    take("5 two-player board", findTwoPlayer());
+    take("6 order phase with Crackle", findOrderPhase());
+    take("7 cleanup hand limit", findHandLimit() ?? findHandLimitSteered());
+    take("8 final results", findFinal());
+    take("9 contributions step 1", findContributions());
+    const fixture = {
+      generatedBy: "tools/uiFixtures.ts",
+      rulesVersion: RULES_VERSION,
+      policy: POLICY.version,
+      privacy:
+        "Each moment holds only the viewer's PlayerView (public projection + own private view), selectors computed from it and projected public events. Checked against the authoritative hidden state at generation time.",
+      moments: moments.map((m) => stable(m)),
+      labels: stable(labels()),
+    };
+    mkdirSync(OUT_DIR, { recursive: true });
+    writeFileSync(OUT_FILE, `${JSON.stringify(fixture, null, 2)}\n`);
+    return {
+      file: OUT_FILE,
+      moments: moments.map((m) => ({ id: m.id, seed: m.source.seed, playerCount: m.source.playerCount, round: m.source.round, phase: m.source.phase, viewerId: m.viewerId })),
+      missing,
+    };
+  } finally {
+    TARGET = previous;
+  }
+}
+
+/**
+ * Re-reads the wireframe file and checks, without the authoritative state, that each moment is
+ * shaped like one viewer's client data (`entryStructureProblems`).
  */
 export function verifyFixtureFile(file = OUT_FILE): string[] {
   const data = JSON.parse(readFileSync(file, "utf8")) as { moments: Moment[] };
   const problems: string[] = [];
   for (const m of data.moments) {
-    const own = m.playerView.own;
-    if (m.playerView.viewerId !== m.viewerId) problems.push(`${m.id}: playerView.viewerId differs from viewerId`);
-    if (own === null || own.playerId !== m.viewerId) problems.push(`${m.id}: own view missing or not the viewer's`);
-    if (own?.pendingLook && own.pendingLook.playerId !== m.viewerId) problems.push(`${m.id}: foreign pending look`);
-    if (own?.firePeek && own.firePeek.playerId !== m.viewerId) problems.push(`${m.id}: foreign fire peek`);
-    const look = m.playerView.game.counts.pendingLook;
-    if (look !== null && look.playerId !== m.viewerId && own?.pendingLook) problems.push(`${m.id}: look contents for another seat's look`);
-    walk(m, (key, v) => {
-      if (key === "hidden" || key === "secret" || key === "orderHands" && Array.isArray(v)) problems.push(`${m.id}: server-only key ${key}`);
-      if (key === "orderHand" && v !== own?.orderHand && Array.isArray(v)) problems.push(`${m.id}: a second orderHand`);
-      if (key === "submissions" || key === "mainDeck" && Array.isArray(v) || key === "techDecks" && v !== null && typeof v === "object" && Object.values(v).some(Array.isArray)) {
-        problems.push(`${m.id}: hidden pile ${key}`);
-      }
-    });
-    for (const [pid, n] of Object.entries(m.playerView.game.counts.orderHands)) {
-      if (typeof n !== "number") problems.push(`${m.id}: ${pid}'s hand is not a count`);
-    }
+    const entry = { ...m, recentPublicEvents: m.recentPublicEvents.map((e) => ({ sequence: e.seq, revision: e.revision, actorId: "", event: e.event })), ownSecrets: [] };
+    for (const problem of entryStructureProblems(entry)) problems.push(`${m.id}: ${problem}`);
   }
   return problems;
 }
 
-function report(): void {
-  const result = generate();
-  const problems = verifyFixtureFile(result.file);
-  if (problems.length > 0) throw new Error(`Fixture file privacy check failed:\n- ${problems.join("\n- ")}`);
-  console.log(JSON.stringify({ ...result, privacyCheck: "passed" }, null, 2));
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// CLI
+// ═══════════════════════════════════════════════════════════════════════════════════════
+
+function writeOrCheckTests(check: boolean): void {
+  const started = Date.now();
+  const { files, summary } = generateTestFixtureTexts();
+  const drift: string[] = [];
+  mkdirSync(TEST_FIXTURE_DIR, { recursive: true });
+  for (const [name, text] of Object.entries(files) as Array<[keyof typeof TEST_FIXTURE_FILES, string]>) {
+    const file = TEST_FIXTURE_FILES[name];
+    if (check) {
+      let current: string | null = null;
+      try {
+        current = readFileSync(file, "utf8");
+      } catch {
+        current = null;
+      }
+      if (current !== text) drift.push(`${name}.json differs from a fresh generation`);
+    } else {
+      writeFileSync(file, text);
+    }
+  }
+  const problems = verifyTestFixtureFiles();
+  console.log(JSON.stringify({ target: "tests", mode: check ? "check" : "write", ms: Date.now() - started, ...summary, drift, privacyCheck: problems.length === 0 ? "passed" : problems }, null, 2));
+  if (drift.length > 0 || problems.length > 0) {
+    throw new Error(`UI fixtures are not current:\n- ${[...drift, ...problems].join("\n- ")}\nRun \`npm run fixtures\` and review the diff.`);
+  }
 }
 
-if (process.env["VITEST"] !== undefined) {
+function main(argv: readonly string[]): void {
+  const verifyAt = argv.indexOf("--verify");
+  if (verifyAt >= 0) {
+    // Privacy check of an existing wireframe file only.
+    const file = argv[verifyAt + 1] ?? OUT_FILE;
+    const problems = verifyFixtureFile(resolve(file));
+    console.log(problems.length === 0 ? `privacy check passed: ${file}` : `privacy check FAILED:\n- ${problems.join("\n- ")}`);
+    if (problems.length > 0) process.exitCode = 1;
+    return;
+  }
+  const targetAt = argv.indexOf("--target");
+  const target = targetAt >= 0 ? argv[targetAt + 1] : "tests";
+  if (target === "wireframe") {
+    const result = generateWireframe();
+    const problems = verifyFixtureFile(result.file);
+    if (problems.length > 0) throw new Error(`Fixture file privacy check failed:\n- ${problems.join("\n- ")}`);
+    console.log(JSON.stringify({ ...result, privacyCheck: "passed" }, null, 2));
+    return;
+  }
+  if (target !== "tests") throw new Error(`Unknown --target ${String(target)} (tests | wireframe)`);
+  writeOrCheckTests(argv.includes("--check"));
+}
+
+if (process.env["KILN_UI_FIXTURES_VITEST"] === "1") {
+  // `npx vitest run --config tools/uiFixtures.vitest.config.ts`: the tests target, under Vitest.
   const { test } = await import("vitest");
-  test("generate UI fixtures", () => report(), 600_000);
-} else if (process.argv.includes("--verify")) {
-  // Privacy check of an existing file only: npx vite-node tools/uiFixtures.ts --verify [file]
-  const index = process.argv.indexOf("--verify");
-  const file = process.argv[index + 1] ?? OUT_FILE;
-  const problems = verifyFixtureFile(resolve(file));
-  console.log(problems.length === 0 ? `privacy check passed: ${file}` : `privacy check FAILED:\n- ${problems.join("\n- ")}`);
-  if (problems.length > 0) process.exitCode = 1;
-} else {
-  report();
+  test("generate UI test fixtures", () => writeOrCheckTests(process.env["KILN_UI_FIXTURES_CHECK"] === "1"), 600_000);
+} else if (process.env["VITEST"] === undefined) {
+  try {
+    main(process.argv.slice(2));
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : error);
+    process.exitCode = 1;
+  }
 }

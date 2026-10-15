@@ -1,0 +1,28 @@
+/* Utilities (UI_V1.6.1_ARCHITECTURE §7.2): few, and only layout-neutral helpers. */
+@layer utilities {
+  .u-stack {
+    display: grid;
+    gap: var(--sp-4);
+    align-content: start;
+  }
+
+  .u-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-3) var(--sp-4);
+    min-width: 0;
+  }
+
+  .u-push {
+    margin-inline-start: auto;
+  }
+
+  .u-nowrap {
+    white-space: nowrap;
+  }
+
+  .u-wrap-anywhere {
+    overflow-wrap: anywhere;
+  }
+}

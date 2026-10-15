@@ -1,0 +1,128 @@
+/* Scenario gallery chrome (A2, dev only). The stage is its own `shell` container, so the game
+   screen inside lays out by the stage's width, not the page's. */
+@layer components {
+  .gallery {
+    display: grid;
+    grid-template-columns: 16rem minmax(0, 1fr);
+    min-height: 100dvh;
+  }
+
+  .gallery-index {
+    display: grid;
+    align-content: start;
+    gap: var(--sp-4);
+    max-height: 100dvh;
+    overflow-y: auto;
+    padding: var(--sp-5);
+    border-inline-end: 1px solid var(--line);
+    background: var(--surface-2);
+    font-size: var(--fs-meta);
+  }
+
+  .gallery-title {
+    font-size: var(--fs-16);
+  }
+
+  .gallery-group h2 {
+    font-size: var(--fs-13);
+    color: var(--ink-2);
+  }
+
+  .gallery-group ul {
+    display: grid;
+    gap: var(--sp-1);
+    padding: 0;
+    list-style: none;
+  }
+
+  .gallery-group a {
+    color: var(--teal-ink);
+    overflow-wrap: anywhere;
+  }
+
+  .gallery-group a[aria-current="page"] {
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .gallery-main {
+    display: grid;
+    align-content: start;
+    min-width: 0;
+  }
+
+  .gallery-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--sp-3) var(--sp-6);
+    padding: var(--sp-4) var(--sp-6);
+    border-block-end: 1px solid var(--line);
+    background: var(--note-bg);
+    color: var(--note-ink);
+    font-size: var(--fs-meta);
+  }
+
+  .gallery-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-2);
+  }
+
+  /* Its own font size, so the 中文 button (lang="zh-Hans") takes the 13px Chinese floor. */
+  .gallery-controls button {
+    font-size: var(--fs-meta);
+    min-height: 2rem;
+    padding: 0 var(--sp-4);
+    border: 1px solid var(--note-line);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    color: var(--note-ink);
+  }
+
+  .gallery-controls button[aria-pressed="true"] {
+    background: var(--note-ink);
+    color: var(--surface);
+  }
+
+  .gallery-sent {
+    padding: var(--sp-2) var(--sp-6);
+    font-size: var(--fs-meta);
+    color: var(--note-ink);
+    overflow-wrap: anywhere;
+  }
+
+  .gallery-error {
+    color: var(--bad-ink);
+  }
+
+  .gallery-stage {
+    container: shell / inline-size;
+    min-width: 0;
+  }
+
+  @media (max-width: 899px) {
+    .gallery {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .gallery-index {
+      max-height: 40dvh;
+      border-inline-end: 0;
+      border-block-end: 1px solid var(--line);
+    }
+
+    /* §8.1 / §9.6: every gallery control is a 44px target at phone widths, like the app's own. */
+    .gallery-group a {
+      display: flex;
+      align-items: center;
+      min-height: var(--target-min);
+    }
+
+    .gallery-controls button,
+    .gallery-controls select {
+      min-height: var(--target-min);
+    }
+  }
+}

@@ -1,0 +1,36 @@
+/* CardBack (pieces; wireframe `.cardback`, `.backs`). */
+@layer components {
+  .backs {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+  }
+
+  .backs-cards {
+    display: inline-flex;
+  }
+
+  .cardback {
+    display: inline-block;
+    width: 11px;
+    height: 15px;
+    border-radius: 2px;
+    background: repeating-linear-gradient(135deg, var(--celadon-ink) 0 2px, var(--celadon) 2px 4px);
+  }
+
+  .cardback + .cardback {
+    margin-left: -5px;
+    box-shadow: -1px 0 0 var(--surface);
+  }
+
+  .cardback--none {
+    background: transparent;
+    outline: 1px dashed var(--line);
+  }
+
+  .backs-count {
+    font-size: var(--fs-meta);
+    font-weight: 700;
+    color: var(--ink-2);
+  }
+}

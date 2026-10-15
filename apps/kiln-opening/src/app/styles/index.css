@@ -1,0 +1,14 @@
+/*
+ * Stylesheet entry (UI_V1.6.1_ARCHITECTURE §7.2). It must be the FIRST import of every entry
+ * (main.tsx, playtest/main.tsx, dev/gallery-main.tsx) so the layer order below holds however
+ * Vite splits CSS chunks; `css_rules` checks this.
+ *
+ * Each file wraps its own rules in its layer. Component CSS (co-located `X.css`) is imported by
+ * its component and wraps itself in `@layer components { … }` (or `layout` / `states`).
+ */
+@layer reset, tokens, base, layout, components, states, utilities;
+
+@import "./reset.css";
+@import "./tokens.css";
+@import "./base.css";
+@import "./utilities.css";

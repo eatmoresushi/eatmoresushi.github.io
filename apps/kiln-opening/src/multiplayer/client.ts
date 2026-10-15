@@ -145,9 +145,14 @@ export interface GameApi {
   subscribe(roomId: string, onPublicChange: () => void): () => void;
 }
 
+/** The V1.4 app's local backend path, and the default of `createGameApi`. */
+export const DEFAULT_LOCAL_ENDPOINT = "/test-api";
+
 class TestHttpGameApi implements GameApi {
+  constructor(private readonly endpoint: string = DEFAULT_LOCAL_ENDPOINT) {}
+
   private async call<T>(body: Record<string, unknown>, signal?: AbortSignal): Promise<MultiplayerResult<T>> {
-    const response = await fetch("/test-api", {
+    const response = await fetch(this.endpoint, {
       method: "POST",
       headers: { "content-type": "application/json", "x-e2e-user": this.testUserId() },
       body: JSON.stringify(body),
@@ -353,8 +358,17 @@ class SupabaseGameApi implements GameApi {
   }
 }
 
-export function createGameApi(): GameApi {
-  if (import.meta.env.VITE_E2E_LOCAL_BACKEND === "1") return new TestHttpGameApi();
+export interface CreateGameApiOptions {
+  /**
+   * The local test backend's path, used only when `VITE_E2E_LOCAL_BACKEND=1`. Defaults to
+   * `/test-api`. The V1.6.1 app passes `/test-api-v161` until cutover (UI plan §3.9), when
+   * this option is removed again.
+   */
+  localEndpoint?: string;
+}
+
+export function createGameApi(options: CreateGameApiOptions = {}): GameApi {
+  if (import.meta.env.VITE_E2E_LOCAL_BACKEND === "1") return new TestHttpGameApi(options.localEndpoint ?? DEFAULT_LOCAL_ENDPOINT);
   const url = import.meta.env.VITE_SUPABASE_URL;
   const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   if (url === undefined || anonKey === undefined) {

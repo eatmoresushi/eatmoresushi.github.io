@@ -1,0 +1,284 @@
+/* OptionGroup and OptionCard (kit; wireframe `.dstep`, `.opt`, `.pill`, `.radio`, `.check`). */
+@layer components {
+  /* ── Group ───────────────────────────────────────────────────────────────────────────── */
+  .kit-optgroup {
+    display: grid;
+    gap: var(--sp-3);
+    min-width: 0;
+  }
+
+  .kit-optgroup-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--sp-2) var(--sp-3);
+    margin-bottom: var(--sp-3);
+    color: var(--ink-2);
+    font-size: var(--fs-12);
+    font-weight: 800;
+    line-height: var(--lh-snug);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .kit-optgroup-legend:lang(zh-Hans) {
+    font-size: var(--fs-label);
+    letter-spacing: 0;
+  }
+
+  .kit-optgroup-step {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 1.125rem;
+    height: 1.125rem;
+    border-radius: 50%;
+    background: var(--teal);
+    color: var(--on-teal);
+    font-size: var(--fs-12);
+    letter-spacing: 0;
+  }
+
+  .kit-optgroup-aside {
+    color: var(--ink-3);
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .kit-optgroup-desc {
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+  }
+
+  .kit-optgroup-error {
+    padding: var(--sp-2) var(--sp-3);
+    border-radius: var(--r-sm);
+    background: var(--cinnabar-pale);
+    color: var(--bad-ink);
+    font-size: var(--fs-meta);
+  }
+
+  .kit-optgroup-items {
+    display: grid;
+    gap: var(--sp-3);
+    min-width: 0;
+  }
+
+  .kit-optgroup-items[data-layout="grid"] {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 9.5rem), 1fr));
+  }
+
+  .kit-optgroup-items[data-layout="pills"] {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-2) var(--sp-3);
+  }
+
+  /* ── Card ────────────────────────────────────────────────────────────────────────────── */
+  .kit-opt {
+    display: grid;
+    gap: var(--sp-3);
+    min-width: 0;
+  }
+
+  .kit-opt-label {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--sp-4);
+    min-width: 0;
+    padding: var(--sp-4) var(--sp-5);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    cursor: pointer;
+  }
+
+  .kit-opt-label:hover {
+    border-color: var(--celadon);
+  }
+
+  /* The native input stays in the accessibility tree and takes focus; the mark draws it. */
+  .kit-opt-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: inherit;
+  }
+
+  .kit-opt-label:has(.kit-opt-input:focus-visible) {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  .kit-opt-mark {
+    flex: none;
+    width: 0.875rem;
+    height: 0.875rem;
+    margin-top: 0.1875rem;
+    border: 1.5px solid var(--ink-2);
+    background: var(--surface);
+  }
+
+  .kit-opt-mark--radio {
+    border-radius: 50%;
+  }
+
+  .kit-opt-mark--checkbox {
+    display: inline-grid;
+    place-items: center;
+    border-radius: var(--r-xs);
+    color: var(--on-teal);
+    font-size: var(--fs-12);
+    line-height: 1;
+  }
+
+  .kit-opt-body {
+    display: grid;
+    gap: var(--sp-2);
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .kit-opt-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-2) var(--sp-3);
+    min-width: 0;
+  }
+
+  .kit-opt-leading {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+  }
+
+  .kit-opt-title {
+    min-width: 0;
+    font-size: var(--fs-14);
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+
+  .kit-opt-meta {
+    margin-inline-start: auto;
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+    white-space: nowrap;
+  }
+
+  .kit-opt-desc {
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+  }
+
+  .kit-opt-reason {
+    color: var(--bad-ink);
+    font-size: var(--fs-meta);
+  }
+
+  /* ── Pill ────────────────────────────────────────────────────────────────────────────── */
+  .kit-opt--pill {
+    display: inline-grid;
+  }
+
+  .kit-opt--pill .kit-opt-label {
+    align-items: center;
+    gap: var(--sp-3);
+    padding: var(--sp-1) var(--sp-5);
+    border-radius: var(--r-pill);
+    min-height: 1.75rem;
+  }
+
+  .kit-opt--pill .kit-opt-mark {
+    display: none;
+  }
+
+  .kit-opt--pill .kit-opt-title {
+    font-size: var(--fs-label);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* A pill's note and its reason stay visible (§8.1: the reason is shown, not only linked),
+     as a short line after the title inside the pill. */
+  .kit-opt--pill .kit-opt-body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: var(--sp-3);
+  }
+
+  .kit-opt--pill .kit-opt-desc,
+  .kit-opt--pill .kit-opt-reason {
+    font-size: var(--fs-meta);
+    line-height: var(--lh-snug);
+  }
+
+  .kit-opt--pill .kit-opt-reason {
+    font-weight: 600;
+  }
+
+  @media (max-width: 899px), (pointer: coarse) {
+    .kit-opt-label,
+    .kit-opt--pill .kit-opt-label {
+      min-height: var(--target-min);
+    }
+
+    .kit-opt--pill .kit-opt-label {
+      min-width: var(--target-min);
+      justify-content: center;
+    }
+  }
+}
+
+@layer states {
+  .kit-opt[data-checked="true"] > .kit-opt-label {
+    border-color: var(--teal);
+    background: var(--teal-pale);
+    box-shadow: inset 0 0 0 1.5px var(--teal);
+  }
+
+  .kit-opt[data-checked="true"] .kit-opt-mark--radio {
+    border: 4px solid var(--teal);
+  }
+
+  .kit-opt[data-checked="true"] .kit-opt-mark--checkbox {
+    border-color: var(--teal);
+    background: var(--teal);
+  }
+
+  .kit-opt[data-checked="true"] .kit-opt-mark--checkbox::after {
+    content: "✓";
+  }
+
+  .kit-opt--pill[data-checked="true"] > .kit-opt-label {
+    background: var(--teal);
+    border-color: var(--teal);
+    color: var(--on-teal);
+    box-shadow: none;
+  }
+
+  .kit-opt--pill[data-checked="true"] .kit-opt-desc {
+    color: inherit;
+  }
+
+  .kit-opt[data-disabled="true"] > .kit-opt-label {
+    background: var(--surface-2);
+    color: var(--ink-3);
+    cursor: default;
+  }
+
+  .kit-opt[data-disabled="true"] > .kit-opt-label:hover {
+    border-color: var(--line);
+  }
+
+  .kit-opt--pill[data-disabled="true"] .kit-opt-title {
+    text-decoration: line-through;
+  }
+}

@@ -1,0 +1,290 @@
+/*
+ * Design tokens (UI_V1.6.1_ARCHITECTURE §7.1, K8). Frozen after phase A; changes go through B6.
+ *
+ * Every colour is defined twice, once per theme, with the same names; `css_rules` checks the
+ * parity. The values are the signed-off wireframe's light and dark palettes (its four duplicated
+ * blocks collapse into these two; the unused `--mix-d*` tokens are dropped). `data-theme` is
+ * always set on <html> at boot (`theme.ts` applyTheme), so there is no `prefers-color-scheme`
+ * block and no `light-dark()` (Safari before 17.5 would drop every colour). The same blocks
+ * also apply to any element carrying `data-theme` (the gallery shows both themes side by side;
+ * such an element sets its own `background` and `color`).
+ *
+ * Colour literals live only in this file. Components use the tokens.
+ *
+ * Groups: surfaces and ink · lines · teal / celadon / cinnabar / gold accents · disciplines
+ * (--d-*) · glazes (--glz-*, with --glz-clay for unglazed) · qualities (--q-*) · seats
+ * (--seat-0..3, wireframe hues that are not Glaze colours) · kiln body and cells · fire cards
+ * (--fire-*) · chrome · focus · design notes · shadow.
+ */
+@layer tokens {
+  :root,
+  [data-theme="light"] {
+    color-scheme: light;
+    --paper: #f4efe4;
+    --paper-2: #e9e1d0;
+    --surface: #fffdf8;
+    --surface-2: #faf6ee;
+    --panel: #f8f3e9;
+    --ink: #1a2420;
+    --ink-2: #4a5751;
+    --ink-3: #5f6b65;
+    --line: #cbbfa9;
+    --line-2: #e2d9c7;
+    --teal: #234e47;
+    --teal-ink: #234e47;
+    --on-teal: #fdfbf5;
+    --teal-pale: #e3eee9;
+    --celadon: #7f9c8c;
+    --celadon-ink: #2f5a4b;
+    --celadon-pale: #dbe7df;
+    --cinnabar: #a63e32;
+    --cinnabar-ink: #8a3024;
+    --cinnabar-pale: #f7e3dd;
+    --gold: #b8893f;
+    --gold-ink: #6d4f1c;
+    --gold-pale: #f3e6c8;
+    --gold-line: #d9c38e;
+    --d-workshop: #7a6a35;
+    --d-workshop-pale: #efe8d0;
+    --d-glazing: #2f7480;
+    --d-glazing-pale: #dcecee;
+    --d-firing: #a24e2a;
+    --d-firing-pale: #f5e2d6;
+    --glz-white: #f3f0e6;
+    --glz-celadon: #a4c3ad;
+    --glz-grey_green: #9aa893;
+    --glz-moon_white: #bfd0e2;
+    --glz-clay: #d8c09c;
+    --q-masterpiece: #1f5a4e;
+    --q-fine: #3a6c59;
+    --q-standard: #74653f;
+    --q-flawed: #a63e32;
+    --q-masterpiece-bg: #d3e7de;
+    --q-fine-bg: #e4eee6;
+    --q-standard-bg: #efe7d4;
+    --q-flawed-bg: #f6dfd8;
+    --seat-0: #34558b;
+    --seat-1: #84466f;
+    --seat-2: #8b5e34;
+    --seat-3: #46665e;
+    --on-seat: #ffffff;
+    --kiln-body: #3b2a21;
+    --kiln-body-2: #2b1e18;
+    --kiln-rim: #6b4c3a;
+    --kiln-cell: #f5ede0;
+    --kiln-cell-ink: #2b2420;
+    --kiln-cell-ink-2: #5d5148;
+    --kiln-ink: #f3e7d6;
+    --kiln-ink-2: #d6c3ad;
+    --kiln-glow: #e07a3c;
+    --kiln-covered-a: #4d3c31;
+    --kiln-covered-b: #43342a;
+    --note-ink: #2f4b86;
+    --note-bg: #eef2fb;
+    --note-line: #8193c2;
+    --chrome: #1d2a27;
+    --chrome-2: #2d3c38;
+    --chrome-ink: #ece6d6;
+    --chrome-ink-2: #b9c1ba;
+    --chrome-on: #ece6d6;
+    --chrome-on-ink: #1d2a27;
+    --focus: #2f7480;
+    --shadow-c: rgb(45 35 25 / 14%);
+    --hatch-a: #e9e0d0;
+    --hatch-b: #dfd4c1;
+    --fire-neg: #e1ebf3;
+    --fire-neg-ink: #2f5674;
+    --fire-zero: #ffffff;
+    --fire-pos: #f6e0d2;
+    --fire-pos-ink: #8c3a17;
+    --fire-back-a: #6f3b26;
+    --fire-back-b: #8c4a2f;
+    --on-fire-back: #fdf3ea;
+    --imp-bg: #fbf3df;
+    --priv: #2b3a36;
+    --on-priv: #f3eee2;
+    --ok-ink: #2f5a4b;
+    --bad-ink: #8a3024;
+    --win: #b8893f;
+    --on-firing: #fdfbf5;
+    --on-cinnabar: #fdfbf5;
+    --gold-fill: #7d5b20;
+    --on-gold: #fdfbf5;
+    --shade-inset: rgb(0 0 0 / 18%);
+    --scrim: rgb(26 36 32 / 40%);
+  }
+
+  :root[data-theme="dark"],
+  [data-theme="dark"] {
+    color-scheme: dark;
+    --paper: #131a18;
+    --paper-2: #0e1312;
+    --surface: #1c2422;
+    --surface-2: #19201e;
+    --panel: #171e1c;
+    --ink: #ece6d9;
+    --ink-2: #bfb9ac;
+    --ink-3: #a19d92;
+    --line: #3d4844;
+    --line-2: #2c3633;
+    --teal: #2e6a5f;
+    --teal-ink: #9fd3c4;
+    --on-teal: #f4f1e8;
+    --teal-pale: #1e302b;
+    --celadon: #7fa594;
+    --celadon-ink: #a9d3c1;
+    --celadon-pale: #223630;
+    --cinnabar: #d8705f;
+    --cinnabar-ink: #f2a798;
+    --cinnabar-pale: #3b231f;
+    --gold: #d2a65a;
+    --gold-ink: #ebcb8d;
+    --gold-pale: #322818;
+    --gold-line: #6b5530;
+    --d-workshop: #c4af6c;
+    --d-workshop-pale: #2b2818;
+    --d-glazing: #6db2bd;
+    --d-glazing-pale: #172a2d;
+    --d-firing: #e28b5d;
+    --d-firing-pale: #35221a;
+    --glz-white: #dedad0;
+    --glz-celadon: #8fb19b;
+    --glz-grey_green: #8c9a85;
+    --glz-moon_white: #a8bcd1;
+    --glz-clay: #bba582;
+    --q-masterpiece: #8fd3be;
+    --q-fine: #aed39f;
+    --q-standard: #d9c58f;
+    --q-flawed: #f2907d;
+    --q-masterpiece-bg: #1f3b33;
+    --q-fine-bg: #24362a;
+    --q-standard-bg: #393221;
+    --q-flawed-bg: #45251f;
+    --seat-0: #86a6dc;
+    --seat-1: #cc93ba;
+    --seat-2: #d7a670;
+    --seat-3: #93b7ad;
+    --on-seat: #111816;
+    --kiln-body: #2a1d17;
+    --kiln-body-2: #1d1410;
+    --kiln-rim: #5f4434;
+    --kiln-cell: #3a2e27;
+    --kiln-cell-ink: #efe4d4;
+    --kiln-cell-ink-2: #c9b8a5;
+    --kiln-ink: #f3e7d6;
+    --kiln-ink-2: #c8b49d;
+    --kiln-glow: #ff8a45;
+    --kiln-covered-a: #2e231d;
+    --kiln-covered-b: #261d18;
+    --note-ink: #b1c3f2;
+    --note-bg: #1b2236;
+    --note-line: #52659a;
+    --chrome: #0b100f;
+    --chrome-2: #1d2826;
+    --chrome-ink: #ece6d6;
+    --chrome-ink-2: #a9b2ab;
+    --chrome-on: #ece6d6;
+    --chrome-on-ink: #0b100f;
+    --focus: #7cc4cf;
+    --shadow-c: rgb(0 0 0 / 45%);
+    --hatch-a: #242c2a;
+    --hatch-b: #1d2422;
+    --fire-neg: #1d2b38;
+    --fire-neg-ink: #a9cbe8;
+    --fire-zero: #252d2b;
+    --fire-pos: #3a2418;
+    --fire-pos-ink: #f2ae86;
+    --fire-back-a: #5a2f1f;
+    --fire-back-b: #74402a;
+    --on-fire-back: #fdf3ea;
+    --imp-bg: #2a2416;
+    --priv: #dbe5e0;
+    --on-priv: #18201e;
+    --ok-ink: #a9d3c1;
+    --bad-ink: #f2a798;
+    --win: #d2a65a;
+    --on-firing: #1a120d;
+    --on-cinnabar: #1a120d;
+    --gold-fill: #d2a65a;
+    --on-gold: #1a120d;
+    --shade-inset: rgb(0 0 0 / 30%);
+    --scrim: rgb(0 0 0 / 60%);
+  }
+
+  /* Non-colour tokens: single values for both themes. */
+  :root {
+    /* Fonts (wireframe). */
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, "Noto Serif SC", "Songti SC", serif;
+    --serif-zh: "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif;
+    --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+    /* Type scale in rem, so the browser text-size setting applies (WCAG 1.4.4). Floor 12px. */
+    --fs-12: 0.75rem;
+    --fs-13: 0.8125rem;
+    --fs-14: 0.875rem;
+    --fs-15: 0.9375rem;
+    --fs-16: 1rem;
+    --fs-17: 1.0625rem;
+    --fs-18: 1.125rem;
+    --fs-19: 1.1875rem;
+    --fs-20: 1.25rem;
+    --fs-21: 1.3125rem;
+    --fs-22: 1.375rem;
+    --fs-24: 1.5rem;
+    --fs-28: 1.75rem;
+    --fs-30: 1.875rem;
+
+    /* Semantic sizes. Raised for Chinese below: Han glyphs are hard to read at 12px. */
+    --fs-meta: var(--fs-12);
+    --fs-body: var(--fs-14);
+    --fs-rule: var(--fs-12);
+    --fs-label: var(--fs-13);
+
+    /* Line heights. */
+    --lh-tight: 1.15;
+    --lh-snug: 1.3;
+    --lh-body: 1.45;
+    --lh-loose: 1.55;
+
+    /* Spacing. */
+    --sp-1: 0.125rem;
+    --sp-2: 0.25rem;
+    --sp-3: 0.375rem;
+    --sp-4: 0.5rem;
+    --sp-5: 0.625rem;
+    --sp-6: 0.875rem;
+    --sp-7: 1.125rem;
+    --sp-8: 1.5rem;
+
+    /* Radii. */
+    --r-xs: 3px;
+    --r-sm: 6px;
+    --r-md: 9px;
+    --r-lg: 12px;
+    --r-xl: 16px;
+    --r-pill: 999px;
+
+    /* Layout. */
+    --pane-w: 400px;
+    --gutter: 16px;
+    --target-min: 44px;
+
+    /* Stacking. */
+    --z-sticky: 4;
+    --z-popover: 20;
+    --z-sheet: 30;
+    --z-dialog: 40;
+    --z-toast: 50;
+
+    /* Motion (phase 5 widens this; reduced motion disables it, base.css). */
+    --dur-fast: 0.25s;
+  }
+
+  /* Chinese body and rule text never below 13px (§7.1). */
+  :lang(zh-Hans) {
+    --fs-meta: var(--fs-13);
+    --fs-rule: var(--fs-13);
+    --fs-label: var(--fs-14);
+  }
+}
