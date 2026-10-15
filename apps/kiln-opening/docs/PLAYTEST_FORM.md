@@ -22,6 +22,17 @@ Recognition VP is derived rather than manually entered. For current V1.2.6 submi
 
 There is no Game ID input. `public.server_submit_playtest` assigns the next private sequence value inside the database transaction and returns a reference such as `KO-000001` only after the submission is stored.
 
+## Form V3 (rules V1.6.1)
+
+`src/playtest` validates Form V3 for rules V1.6.1; the current form page still submits Form V2 for V1.4 through the pinned `src/playtest-v14` copy until the V1.6.1 form UI ships. Form V3 differs where the rules differ:
+
+- no Starting Tech; each player records at most one Tech per discipline (Workshop, Glazing & Loading, Firing);
+- all five Kilns, including Ding;
+- each round records its Kiln Die; Base Heat is the Kiln Die plus the revealed Contributions, clamped to 0–5;
+- the Firing Techs are Protective Saggars, Fuel Ledger, Test Pieces, Second Firing, Kiln Master and Tribute Ware.
+
+Every option list and capacity comes from the V1.6.1 content API. Migration `202610150002_playtest_v161.sql` accepts only Form V3 for V1.6.1, adds the per-discipline Tech columns and the round's Kiln Die, Kiln Master and Tribute Ware columns, and keeps all earlier submissions readable.
+
 ## Storage
 
 Use the existing Supabase project as the source of truth. The migration creates normalized tables in the non-exposed `private` schema:

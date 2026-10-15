@@ -36,6 +36,12 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  *        rebuilt Ge Crackle, 18 Advanced Techs and no Starting Techs, held-only single-pass
  *        Order Phase with deferred display refill. All five Kilns selectable. V1.4 rooms
  *        are rejected, never migrated (audit, Digital decisions).
+ *        Amended in place by owner amendment A1 (2026-10-15): each Advanced Tech's 1 VP is
+ *        recorded in the score ledger when the Tech is gained (`ScoreLedger.techs`,
+ *        `TECH_ACQUIRED.vp`) instead of being added at game end; config key
+ *        `techs.endGameVpEach` became `techs.vpEach`, which moves the content digest. Final
+ *        totals are unchanged. Not bumped: V1.6.1 was unreleased and no r29 room existed in
+ *        production when A1 landed.
  */
 export const RULES_BEHAVIOUR_REVISION = 29;
 

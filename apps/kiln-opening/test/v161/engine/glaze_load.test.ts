@@ -193,12 +193,15 @@ describe("Kiln Tending (T20, L627): +1 Clay +1 Wood after the first qualifying a
 
 describe("loading Techs through the command", () => {
   it("returns the owner's Setter's Mark; another player's Mark holds the space (L630)", () => {
-    const marked = { players: [{ techs: ["T22" as const] }, { techs: ["T22" as const] }], ceramics: [shaped("p1")], settersMarks: { low_1: "p1", high_1: "p2" } as const };
-    const t = table(marked);
+    // One Setter's Mark tile exists (L82), so "own Mark" and "another player's Mark" are two
+    // scenarios: a state where both players own T22 breaks Tech card conservation (§8.3).
+    const own = { players: [{ techs: ["T22" as const] }, {}], ceramics: [shaped("p1")], settersMarks: { low_1: "p1" } as const };
+    const t = table(own);
     const events = t.act("p1", gl("p1:apprentice:1", [load("c1", "low_1")]));
     expect(types(events)).toEqual(["WORKER_PLACED", "CERAMIC_LOADED", "SETTERS_MARK_RETURNED"]);
     expect(t.state.sharedKiln.spaces.low_1.setterMarkOwnerId).toBeNull();
-    reject(table(marked), "p1", gl("p1:apprentice:1", [load("c1", "high_1")]), "KILN_SPACE_MARKED");
+    const other = { players: [{}, { techs: ["T22" as const] }], ceramics: [shaped("p1")], settersMarks: { high_1: "p2" } as const };
+    reject(table(other), "p1", gl("p1:apprentice:1", [load("c1", "high_1")]), "KILN_SPACE_MARKED");
   });
 
   it("Inverted Firing stacks on a ceramic the same Shifu action loaded first (R8)", () => {

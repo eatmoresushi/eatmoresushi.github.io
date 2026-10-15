@@ -805,7 +805,7 @@ Every file has `"rulesVersion": "1.6.1"`.
   "setupDeal": { "startingOrders": 2, "mainOrders": 1 },
   "mainMarket": { "displaySize": 6, "roundStartDiscard": 2 },
   "handLimit": { "base": 4 },
-  "techs": { "perDiscipline": 6, "faceUpPerDiscipline": 2, "maxOwned": 3, "maxPerDiscipline": 1, "endGameVpEach": 1 },
+  "techs": { "perDiscipline": 6, "faceUpPerDiscipline": 2, "maxOwned": 3, "maxPerDiscipline": 1, "vpEach": 1 },
   "sharedKiln": { "activeSpacesByPlayerCount": {
     "2": ["high_1", "high_2", "middle_1", "low_1"],
     "3": ["high_1", "high_2", "middle_1", "middle_2", "low_1", "low_2"],
@@ -1030,7 +1030,7 @@ There are 10 data files in all: the 7 mechanical files of §6.1–6.7 and these 
 | Ding (1 Clay + 1 Coin, outside discounts) | `form_decorate.test.ts` | P3 |
 | Jun (incl. Second Firing, R7) | `heat_adjustment.test.ts`, `after_quality.test.ts` | P5 |
 | All 18 Techs, incl. Colour Samples when acquired, Kiln Master, Inverted Firing stacks, Setter's Mark reservation, Canal Barge before/after | Module tests + `tech_matrix.test.ts` (one scenario per Tech ID; fails if any `TechId` is uncovered) | P3–P6, P7 |
-| 3-total / 1-per-discipline limit, discipline refill and partial display, printed cost, Shifu discount, 1 VP each | `guild_hall.test.ts`, `scoring.test.ts` | P4, P6 |
+| 3-total / 1-per-discipline limit, discipline refill and partial display, printed cost, Shifu discount, 1 VP each recorded on gain (A1) | `guild_hall.test.ts`, `scoring.test.ts`, `tech_vp_on_gain.test.ts` | P4, P6 |
 | Optional abilities (R4): declining keeps the once-per-round use | `optional_abilities.test.ts` (table-driven over every optional Tech / Kiln ability) | P7 |
 | Kiln Die every round (seeded, public) | `round_start.test.ts` | P2 |
 | Contribution eligibility from the Shared Kiln only, incl. zero participants | `contributions.test.ts` | P5 |
@@ -1077,7 +1077,7 @@ There are 10 data files in all: the 7 mechanical files of §6.1–6.7 and these 
 
 ### 8.3 Fuzz test (`fuzz.test.ts`, P7)
 
-**Runs:** N seeded games each for 2, 3 and 4 players (default N = 30 in CI, 500 nightly). Each game runs `sampleLegalAction` until `finished`. Contributions go through `legalContributions` and `submitContribution`.
+**Runs:** N seeded games each for 2, 3 and 4 players (default N = 30 in CI, 500 nightly). Each game runs `sampleLegalAction` until `finished`. Contributions go through `legalContributions` and `submitContribution`. The long run is `npm run test:fuzz:long` (`KILN_FUZZ_GAMES`, default 500). Each game's test first yields one macrotask to the event loop: an all-synchronous file otherwise starves Vitest's worker RPC and, past 60 s, fails the run with "Timeout calling onTaskUpdate" although every game passed.
 
 **After every command, check:**
 
@@ -1093,7 +1093,8 @@ There are 10 data files in all: the 7 mechanical files of §6.1–6.7 and these 
   - **Crackle:** every Crackle ceramic (Finished, Delivered or in `firing.ceramics`) is exactly Fine (the type enforces it for stored ceramics; this checks casts and the firing record);
   - Techs ≤ 3 and ≤ 1 per discipline;
   - Recognition flags consistent with the Recognition value;
-  - the score ledger's `orders` equals Σ completed `vp`.
+  - the score ledger's `orders` equals Σ completed `vp`;
+  - the score ledger's `techs` equals 1 VP per owned Tech (A1: recorded on gain).
 - **Privacy:**
   - `projectPublicState` passes the §4.3 ID scan;
   - every projected event lacks `secret`;
@@ -1109,6 +1110,7 @@ There are 10 data files in all: the 7 mechanical files of §6.1–6.7 and these 
 
 - `computeFinalResult` recomputed from scratch equals `state.finalResult`;
 - totals equal the sum of the breakdown;
+- each breakdown's Tech line equals the old end-game count, 1 VP per owned Tech (A1), so totals are unchanged;
 - the game took fewer than 2,000 commands;
 - the replay from the command log reproduces the same final state hash.
 
@@ -1370,7 +1372,7 @@ Abbreviations:
 | L365, L373–375 | 1 Kiln + ≤ 3 Techs (1 per discipline) + ≤ 2 personal spaces; 6/6/6; unlocks | `p.techs`, `p.personalSpaces` | n/a | TC |
 | L369, L646 | Tech effects are not worker actions (Prepared Clay, Canal Barge, Imperial Priority) | `FormedBy`, `loadedBy`, `CompletedOrderRecord.via` | n/a | MY, WA |
 | L376–377, L481 | Printed timing; same-timing order chosen by the owner; players in First Player order | Queues | n/a | PL, AQ |
-| L378, L492 | 1 VP per Tech at game end | `FinalScoreBreakdown.techs` | n/a | SC |
+| L378, L492, L609, L755 → A1 | 1 VP per Tech, recorded when the Tech is gained (owner amendment A1; no longer at game end); the final breakdown shows it as its own line from the ledger | `p.score.techs`, `FinalScoreBreakdown.techs` | `TECH_ACQUIRED.vp` (GH via `grantTech`) | TC, GH, SC |
 | L615 T01 Large Throwing Wheel | Once/round; F&D with ≥1 Vase/Censer; total Clay −2 (min 0); Ding's vessel never triggers it (L652); counts for F&D legality (L171) | `usedThisRound` | `useLargeThrowingWheel` | FD |
 | L616 T16 Decorator's Kit | Once/round; one Carved/Impressed/Painted −1 Coin; may stack with the Shifu discount; not Ding's vessel; may apply to Prepared Clay (INT, implemented but unreachable: T16 and T17 are both Workshop); counts for F&D legality (L171) | Same | `decoratorsKitVesselIndex`, `preparedClay.useDecoratorsKit` | FD, MY |
 | L617 T05 Reworking Table | Once/round; at glaze and load, change Shape first (applied before the Inverted Firing Shape test); return card; no Clay; Decoration stays; placement legality ignores possible reworks (Q3) | `CERAMIC_RESHAPED` | `LoadSpec.reworkShape`, IP `reworkShape` (Q1) | KL |
@@ -1426,7 +1428,7 @@ Abbreviations:
 | Ref | Rule | State | Phase / action | Module |
 | --- | --- | --- | --- | --- |
 | L489 | Ends after Round 5 Cleanup | `game_over` | `finishGame` | RD, SC |
-| L491–494 | Recorded VP + Techs + Exhibition + Coins (1 per 3, max 5) | `FinalScoreBreakdown` | `FINAL_SCORE_CALCULATED` | SC |
+| L491–494, A1 | Recorded VP (incl. Tech VP recorded on gain, A1) + Exhibition + Coins (1 per 3, max 5) | `FinalScoreBreakdown` | `FINAL_SCORE_CALCULATED` | SC |
 | L496 | Most VP wins | `FinalResult.winnerIds` | n/a | SC |
 | L498, R13 | Ties: Recognition → printed Crowns → Masterpieces delivered or exhibited → shared | `TieBreakValues`, `resolvedBy` | n/a | SC |
 
@@ -1449,16 +1451,17 @@ Abbreviations:
 | Ref | Coverage |
 | --- | --- |
 | Appendix A (L515–605) | `orders.json` (§6.6); `order_matching.test.ts` covers every ID |
-| Appendix B (L607–654) | §10.7 |
+| Appendix B (L607–654) | §10.7 (L609's Tech VP timing → A1) |
 | Appendix C (L656–666) | `firing.json` `fireDeck`; `fire_deck.test.ts` |
 | Appendix D (L668–693) | §3.3 |
-| Appendix E (L695–757) | Summary of the rows above. `content_contract.test.ts` checks the quick-reference numbers (capacities, costs, Exhibition values, Coin cap) against data |
+| Appendix E (L695–757) | Summary of the rows above (L755's Tech VP → A1). `content_contract.test.ts` checks the quick-reference numbers (capacities, costs, Exhibition values, Coin cap, Tech VP and the A1 row) against data |
 | Changes 1–19 (L11–29) | 1 → §10.3–10.4; 2 → FD/GL; 3 → heat markers; 4 → L139; 5 → §10.7; 6 → CM/MK, OP; 7 → L288, L292; 8 → MH, Grant; 9 → kiln data; 10 → Ge; 11 → step 4; 12 → L512; 13 → orders data; 14 → FD/Kit/Ding/S10; 15 → Kiln Die; 16 → participants; 17 → setup deal and hand limit; 18 → MH from 0, Grant; 19 → Painted. Line 17's "2 + Fire" is superseded by change 15 (editorial) |
 
 ### 10.13 Owner rulings, editorial corrections, interpretations and digital decisions
 
 | Item | Implementation |
 | --- | --- |
+| A1 | Tech VP on gain: `grantTech` adds `GAME_CONFIG.techs.vpEach` to `p.score.techs`; `TECH_ACQUIRED.vp`; `breakdownFor` reads the ledger; invariant `score.techs = techs.length × vpEach`; fuzz final check against the old end-game count; `tech_vp_on_gain.test.ts`. Revision stays 29 (unreleased) |
 | R1 | `availableKilns` = all five; Ding either worker (FD) |
 | R2, R3 | Data values exactly as printed (P1 contract test) |
 | R4 | Optional flags (`decline*`, `use*`, `null` choices); `usedThisRound` set only on use; Colour Samples mandatory; `optional_abilities.test.ts` |

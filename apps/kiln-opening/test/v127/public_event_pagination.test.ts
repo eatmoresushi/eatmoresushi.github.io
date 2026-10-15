@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { PublicGameEvent } from "../../src/multiplayer/types";
-import { createGameApi } from "../../src/multiplayer/client";
+import type { PublicGameEvent } from "../../src/multiplayer-v14/types";
+import { createGameApi } from "../../src/multiplayer-v14/client";
 
 const mocks = vi.hoisted(() => ({ createClient: vi.fn() }));
 

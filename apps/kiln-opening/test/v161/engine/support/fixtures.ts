@@ -279,6 +279,8 @@ function makePlayer(spec: PlayerSpec & { id: PlayerId }, seatIndex: number, inSe
       kilnAbilities: 0,
       recognitionOverflow: 0,
       imperialAudience: imperial.audienceReceived ? audienceVp() : 0,
+      // Recorded by `grantTech` as each spec Tech is given (owner amendment A1).
+      techs: 0,
       ...spec.score,
     },
   };

@@ -20,7 +20,7 @@
     "noEmit": true
   },
   "include": [
-    "src/game-v14/**/*.ts",
+    "src/game/**/*.ts",
     "src/multiplayer/**/*.ts",
     "src/playtest/**/*.ts",
     "supabase/functions/**/*.ts"

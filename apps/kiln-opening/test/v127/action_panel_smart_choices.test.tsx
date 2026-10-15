@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { activeKilnSpaceIds } from "../../src/game-v14/index.ts";
 import type { GameState, LocationId, WorkerKind } from "../../src/game-v14/index.ts";
-import { projectPublicGameState } from "../../src/multiplayer/index.ts";
+import { projectPublicGameState } from "../../src/multiplayer-v14/index.ts";
 import { ActionPanel } from "../../src/ui/ActionPanel.tsx";
 import { BoardActionSummary } from "../../src/ui/BoardActionSummary.tsx";
 import { LanguageProvider, localizeMultiplayerError } from "../../src/ui/i18n.tsx";

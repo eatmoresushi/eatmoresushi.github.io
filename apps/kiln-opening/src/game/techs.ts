@@ -1,6 +1,6 @@
 /**
- * Owned-Tech helpers: readiness, hand limit, acquisition limits, prices and unlocking
- * (L207–213, L373–378, Appendix B).
+ * Owned-Tech helpers: readiness, hand limit, acquisition limits, prices, unlocking and the
+ * Tech's VP on gain (L207–213, L373–378, Appendix B, owner amendment A1).
  *
  * Layer 2 (imports `state.ts` within P0).
  */
@@ -93,17 +93,25 @@ export function techPrice(techId: TechId, effect: WorkerEffect): number {
   return Math.max(0, TECHS[techId].cost - LOCATIONS.guild_hall.effects[effect].discount);
 }
 
+/** The VP a Tech scores the moment it is gained (owner amendment A1; `TECH_ACQUIRED.vp`). */
+export function techVp(): number {
+  return GAME_CONFIG.techs.vpEach;
+}
+
 /**
- * Adds the Tech and unlocks the second space of the matching personal location (L211),
- * emitting `PERSONAL_SPACE_UNLOCKED`. Does not pay, does not emit `TECH_ACQUIRED` and does
- * not resolve when-acquired effects (`work/guildHall.ts` does those). An acquisition that
- * `acquisitionError` rejects is an engine bug.
+ * Adds the Tech, records its VP in the score ledger immediately (owner amendment A1: no
+ * longer at game end) and unlocks the second space of the matching personal location (L211),
+ * emitting `PERSONAL_SPACE_UNLOCKED`. Every path that grants a Tech goes through here. Does
+ * not pay, does not emit `TECH_ACQUIRED` and does not resolve when-acquired effects
+ * (`work/guildHall.ts` does those). An acquisition that `acquisitionError` rejects is an
+ * engine bug.
  */
 export function grantTech(draft: GameState, playerId: PlayerId, techId: TechId, ctx: ResolveContext): void {
   const owner = player(draft, playerId);
   const error = acquisitionError(owner, techId);
   invariant(error === null, `${playerId} cannot acquire ${techId}: ${error?.code}`);
   owner.techs.push({ id: techId, acquiredInRound: draft.round, usedThisRound: false });
+  owner.score.techs += techVp();
   const unlocks = TECHS[techId].unlocks;
   if (unlocks !== null) {
     const space = owner.personalSpaces[unlocks][1];

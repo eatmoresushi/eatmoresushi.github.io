@@ -1,5 +1,5 @@
 import type { FireModifier, PlayerId } from "../game-v14";
-import type { PublicEventRecord, PublicGameState } from "../multiplayer";
+import type { PublicEventRecord, PublicGameState } from "../multiplayer-v14";
 
 export interface FireCardHistoryEntry {
   round: number;

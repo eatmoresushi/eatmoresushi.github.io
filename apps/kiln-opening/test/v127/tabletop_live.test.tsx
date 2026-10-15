@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { projectPublicGameState } from "../../src/multiplayer/index.ts";
+import { projectPublicGameState } from "../../src/multiplayer-v14/index.ts";
 import { ActionPanel } from "../../src/ui/ActionPanel.tsx";
 import { commandNotice } from "../../src/ui/App.tsx";
 import { eventDescription } from "../../src/ui/PlaytestExperience.tsx";
@@ -17,7 +17,7 @@ import {
 } from "../../src/ui/TabletopGameExperience.tsx";
 import { LanguageProvider } from "../../src/ui/i18n.tsx";
 import type { Locale } from "../../src/ui/i18n.tsx";
-import type { PublicGameEvent, PublicSeat } from "../../src/multiplayer/index.ts";
+import type { PublicGameEvent, PublicSeat } from "../../src/multiplayer-v14/index.ts";
 import { addFinished, addGlazed, addLoaded, addShaped, addTechnique, startedGame, workerId } from "./helpers.ts";
 
 function localizedMarkup(locale: Locale, child: ReturnType<typeof createElement>): string {
@@ -278,11 +278,11 @@ describe("V1.4 functional tabletop", () => {
     expect(english).toMatch(/class="kiln-piece kiln-order-card[^"]*is-owned/);
     expect(english).toMatch(/class="kiln-piece kiln-tech-tile is-starting[^"]*is-owned/);
     expect(english).toMatch(/class="kiln-piece kiln-tech-tile is-forming[^"]*is-owned/);
-    expect(english).toContain('class="kiln-piece-endgame-vp" aria-label="Scores 1 VP at game end"');
+    expect(english).toContain('class="kiln-piece-endgame-vp" aria-label="Scores 1 VP when gained"');
     expect(english).toContain('>1VP</b>');
-    expect(chinese).toContain('aria-label="终局计分时获得1分"');
-    expect(english).not.toContain('title="Scores 1 VP at game end"');
-    expect(chinese).not.toContain('title="终局计分时获得1分"');
+    expect(chinese).toContain('aria-label="习得时立即得1分"');
+    expect(english).not.toContain('title="Scores 1 VP when gained"');
+    expect(chinese).not.toContain('title="习得时立即得1分"');
     const ownedStartingTile = english.match(/<button[^>]*class="kiln-piece kiln-tech-tile is-starting[^"]*is-owned"[\s\S]*?<\/button>/)?.[0];
     expect(ownedStartingTile).toBeDefined();
     expect(ownedStartingTile).not.toContain("kiln-piece-endgame-vp");

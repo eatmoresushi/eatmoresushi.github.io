@@ -1,15 +1,17 @@
 /**
- * Final scoring, tie-breakers and the score preview (L441–451, L487–498, L620, R13).
+ * Final scoring, tie-breakers and the score preview (L441–451, L487–498, L620, R13, A1).
  *
  * A player's total (L491–494) is:
- * 1. VP recorded during play (`ScoreLedger`): Orders, Ru/Guan, Imperial Audience and Crowns
- *    beyond Recognition 4;
- * 2. 1 VP per owned Advanced Tech (L378, L492);
- * 3. the End-game Exhibition, automatic (INT: Exhibition): every Finished, undelivered
+ * 1. VP recorded during play (`ScoreLedger`): Orders, Ru/Guan, Imperial Audience, Crowns
+ *    beyond Recognition 4 and — owner amendment A1, overriding L378/L492/L609/L755 — 1 VP
+ *    per Advanced Tech, recorded when the Tech is gained and no longer added at game end.
+ *    The breakdown keeps a separate `techs` line, read from the ledger, so players see where
+ *    those points came from; no effect removes a Tech, so totals and ties are unchanged;
+ * 2. the End-game Exhibition, automatic (INT: Exhibition): every Finished, undelivered
  *    ceramic of Standard or better (never Flawed, L451) scores 2/3/5 by Quality, plus +3 for
  *    ≥ 3 different Shapes and +3 for ≥ 3 different Glazes (L445–451); Connoisseur's Cabinet
  *    (T19, L620) adds +1 per exhibited Fine or Masterpiece, up to +5;
- * 4. 1 VP per 3 Coins, at most 5 (L494).
+ * 3. 1 VP per 3 Coins, at most 5 (L494).
  * No end-game penalties (L510).
  *
  * Ties (L498): farther Recognition → more printed Crowns on completed Orders (Tribute Ware's
@@ -86,7 +88,8 @@ function breakdownFor(game: PublicCore, playerId: PlayerId): FinalScoreBreakdown
   const p = player(game, playerId);
   const exhibited = exhibitedCeramics(game, playerId);
   const exhibition = exhibitionScore(exhibited);
-  const techs = p.techs.length * GAME_CONFIG.techs.endGameVpEach;
+  // Recorded when each Tech was gained (A1), never recomputed here.
+  const techs = p.score.techs;
   const connoisseur = connoisseurVp(game, playerId, exhibited);
   const coins = coinVp(p.resources.coins);
   const total =

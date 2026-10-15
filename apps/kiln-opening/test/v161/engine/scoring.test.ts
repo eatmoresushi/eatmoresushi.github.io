@@ -1,6 +1,8 @@
 /**
- * P6 `scoring.ts` (L441–451, L487–498, L378, L492, L510, L620, R13; DESIGN §8.2 "Automatic
- * Exhibition 2/3/5, +3/+3, Connoisseur's Cabinet", "Coin VP; all tie-breakers", "1 VP each").
+ * P6 `scoring.ts` (L441–451, L487–498, L510, L620, R13, owner amendment A1; DESIGN §8.2
+ * "Automatic Exhibition 2/3/5, +3/+3, Connoisseur's Cabinet", "Coin VP; all tie-breakers",
+ * "1 VP each"). Tech VP is recorded when gained (A1, `tech_vp_on_gain.test.ts`); the
+ * breakdown's `techs` line reads it from the ledger.
  */
 
 import { describe, expect, it } from "vitest";
@@ -46,7 +48,7 @@ describe("scoring values are the printed ones", () => {
       distinctGlazes: { threshold: 3, vp: 3 },
     });
     expect(GAME_CONFIG.coinEndGame).toEqual({ coinsPerVp: 3, maxVp: 5 });
-    expect(GAME_CONFIG.techs.endGameVpEach).toBe(1);
+    expect(GAME_CONFIG.techs.vpEach).toBe(1);
     expect(TECHS.T19.params).toEqual({ vpPerCeramic: 1, qualities: ["fine", "masterpiece"], maxVp: 5 });
   });
 });
@@ -111,7 +113,7 @@ describe("End-game Exhibition (L443–451, INT: automatic)", () => {
 });
 
 describe("the total (L489–494)", () => {
-  it("adds recorded VP, 1 VP per Tech, the Exhibition, the Cabinet and capped Coin VP", () => {
+  it("adds recorded VP (Tech VP recorded on gain, A1), the Exhibition, the Cabinet and capped Coin VP", () => {
     const state = game([
       {
         techs: ["T19", "T23", "T25"],
@@ -124,6 +126,7 @@ describe("the total (L489–494)", () => {
     fin(state, "p1", "bowl white plain fine");
     fin(state, "p1", "plate celadon plain mp");
     fin(state, "p1", "vase grey_green plain std");
+    expect(player(state, "p1").score.techs).toBe(3);
     expect(breakdown(state, "p1")).toEqual({
       orders: 20,
       kilnAbilities: 5,

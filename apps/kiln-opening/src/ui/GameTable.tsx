@@ -19,7 +19,7 @@ import {
 import type {
   ContributionCardId, CeramicState, FiringContext, LocationId, PlayerId } from "../game-v14";
 import type { OrderDefinition } from "../game-v14/content";
-import type { PublicGameState, PublicPlayerState } from "../multiplayer";
+import type { PublicGameState, PublicPlayerState } from "../multiplayer-v14";
 import { term as localizedTerm, useI18n } from "./i18n";
 import type { Locale } from "./i18n";
 import { OrderFace, TechniqueFace, pieceSurfaceClass } from "./PieceFaces";

@@ -121,7 +121,7 @@ describe("createInitialState for 2, 3 and 4 players (L97–111)", () => {
         kilnAbilityUsedThisRound: false,
         imperial: { recognition: 0, grantReceived: false, kilnGained: false, priority: "on_track", audienceReceived: false },
         completedOrders: [],
-        score: { orders: 0, kilnAbilities: 0, recognitionOverflow: 0, imperialAudience: 0 },
+        score: { orders: 0, kilnAbilities: 0, recognitionOverflow: 0, imperialAudience: 0, techs: 0 },
       });
     });
     expect(GAME_CONFIG.startingResources).toEqual({ clay: 2, wood: 2, coins: 3 });

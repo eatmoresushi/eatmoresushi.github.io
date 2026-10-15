@@ -368,7 +368,7 @@ Revision 2 (2026-10-14) applies the terminology review; see §10.
 | diversity bonus: 3 different Shapes | 器备三形 +3分 | 陈列中至少3种不同器型（共5种）。 |
 | diversity bonus: 3 different Glazes | 釉备三色 +3分 | 陈列中至少3种不同釉（共4种）。 |
 | Coin VP | 余钱折分 | 每3铜钱1分，至多5分。 |
-| Tech VP | 技艺分 | 每项拥有的技艺1分。 |
+| Tech VP | 技艺分 | 每习得1项技艺，立即得1分（A1）；终局不再另计，计分时单列一行。 |
 | tie-breakers | 平局判定 | 见下。 |
 
 平局判定：①御府声望更高；②已完成委托上**印有**的御令总数更多（贡瓷额外御令不计）；
@@ -383,7 +383,7 @@ Revision 2 (2026-10-14) applies the terminology review; see §10.
 | Workshop (discipline) | 坯作 | 新名。宋代官府匠作分“某作”（如文思院诸作）；习得启封制坯饰纹第二工位。 |
 | Glazing & Loading (discipline) | 釉作 | 新名。习得启封施釉装窑第二工位。 |
 | Firing (discipline) | 火作 | 新名。不启封任何工位。 |
-| acquire / buy a Tech | 习得技艺 | 付牌面铜钱费用；唯一途径是陶工行。 |
+| acquire / buy a Tech | 习得技艺 | 付牌面铜钱费用；唯一途径是陶工行。习得时立即得1分（A1）。 |
 | printed cost | 牌面费用 | — |
 | limit: 3 total, 1 per discipline | 至多3项，每门类1项 | — |
 | refill the discipline display to 2 | 补至每门类2张 | 无牌可补则留空。 |
@@ -438,7 +438,7 @@ Revision 2 (2026-10-14) applies the terminology review; see §10.
 
 除色样簿习得时承接（须）外，所有技艺与窑口能力均为可选（R4），放弃不消耗“每轮一次”；
 需选择或付费者在文字中写“可”，纯收益型效果见 1.1。须足额支付费用，折扣在支付前计算。
-每项技艺终局计1分。通则见第8节。
+每项技艺于习得时立即得1分（A1，2026-10-15起；终局不再另计）。通则见第8节。
 
 ### 3.1 坯作 Workshop（6）
 
@@ -922,3 +922,8 @@ Terminology review of revision 1, applied in revision 2 (2026-10-14).
 - The reviewer's §1.1 list put 大陶车／饰坯匣／汝窑／官窑 under “automatic”. This revision says only that
   they are written without 可, and leaves digital auto-resolution to IMPLEMENTATION_DECISIONS (open question 3),
   because the audit records it only for Kiln Tending.
+
+**Owner amendment A1 (2026-10-15)**
+- Tech VP is scored when the Tech is gained, no longer at game end (audit, “Owner amendments”). §2.14 技艺分,
+  §2.15 习得技艺 and the §3 preamble now say 立即得1分 on gaining a Tech and 终局不再另计. The fixed timing label
+  终局时 (§1.4) remains in use for 清玩斋 and the other end-game items.

@@ -22,6 +22,14 @@ V1.6.1 resolves these V1.6 questions in its own text:
 - locations are renamed (change 1);
 - Ding is one of the five Kiln Player Boards (line 72).
 
+## Owner amendments
+
+Amendments change V1.6.1 text after it became the authority. The checked-in source stays byte-identical to the owner's file, so its checksum still verifies; these amendments override the lines they name.
+
+| ID | Date | Amendment | Overrides |
+| --- | --- | --- | --- |
+| A1 | 2026-10-15 | **Tech VP on purchase.** Each Advanced Tech scores its 1 VP immediately when the player gains it, recorded like other in-game VP. It is no longer added at game end. This is bookkeeping only: no V1.6.1 effect removes a Tech, so final totals and tie-breakers are unchanged. Mid-game scores now include Tech VP. | Lines 378, 492, 609, 755 ("1 VP at game end" / "1 VP for each Advanced Tech you own" in final scoring) |
+
 ## Owner rulings (approved 2026-10-14)
 
 The owner approved the recommendations made in the V1.6 review. They apply

@@ -11,7 +11,7 @@ Target session length for the physical design is approximately 90–120 minutes.
 Priority order:
 
 1. `docs/KILN_OPENING_v1.6.1_EN_SOURCE.md` — the V1.6.1 Player Rulebook, designated by the owner on 2026-10-14 as the **only** mechanical source of truth.
-2. `docs/RULEBOOK_AUDIT_V1.6.1.md` — source checksum, owner rulings R1–R13 and B1–B3, editorial corrections and recorded interpretations.
+2. `docs/RULEBOOK_AUDIT_V1.6.1.md` — source checksum, owner amendments (A1), owner rulings R1–R13 and B1–B3, editorial corrections and recorded interpretations.
 3. `docs/GAME_RULES.md` — source index.
 4. `data/*.json` — derived content.
 5. `docs/IMPLEMENTATION_DECISIONS.md` — digital interpretations.
@@ -30,7 +30,7 @@ Key V1.6.1 facts that differ from V1.4:
 - **Firing setup:** the Shared Kiln is 3 High / 3 Middle / 2 Low, covered 2-1-1 / 2-2-2 / 3-3-2. Base Heat starts at a public Kiln Die roll (faces 1,1,2,2,3,3) every round.
 - **Decorations** are Plain, Carved, Impressed and Painted, all 2 Coins, chosen at forming. Glaze is chosen at loading.
 - **Ge** crackles 1 Standard ceramic per round after Quality (it becomes Fine and keeps a Crackle marker). Each Crackle ceramic may count as any one Decoration when completing an Order, and is never a Masterpiece.
-- **Advanced Techs:** 18, 6 per discipline; at most 3 owned, 1 per discipline. There are no Starting Techs.
+- **Advanced Techs:** 18, 6 per discipline; at most 3 owned, 1 per discipline. There are no Starting Techs. Each scores 1 VP immediately when gained (owner amendment A1, 2026-10-15), not at game end.
 - **Orders:**
   - Setup deals 2 Starting Orders + 1 Main Order. The hand limit is 4 (5 with Colour Samples).
   - Only held Orders are completed, in a single First-Player-order pass.
@@ -69,7 +69,8 @@ Do not reintroduce any of these unless the user explicitly changes the rules:
 - treating Tech effects as worker actions unless the Tech explicitly says so
 - Guan's extra Order-hand capacity
 - penalties for exhibiting nothing at the End-game Exhibition; exhibiting Flawed ceramics
-- fixed VP printed on Techs (every owned Tech's 1 VP at game end and Connoisseur's Cabinet are V1.6.1 rules)
+- fixed VP printed on Techs (each Tech's 1 VP, scored when gained per owner amendment A1, and Connoisseur's Cabinet are V1.6.1 rules)
+- adding Tech VP at game end (owner amendment A1 records it when the Tech is gained; it must never be counted twice)
 
 ## Engineering principles
 
@@ -151,7 +152,8 @@ At minimum:
   - all five Kiln abilities: Ru, Guan, Ge Crackle (including after Saggars, wildcard Decoration, never Masterpiece), Ding (1 Clay + 1 Coin, outside discounts), Jun (including during Second Firing per R7)
 - **Advanced Techs**
   - all 18, including when-acquired Colour Samples, Kiln Master, Inverted Firing stacks, Setter's Mark reservation, and Canal Barge before/after a worker action
-  - the 3-total / 1-per-discipline limit, discipline refill and partial display, printed cost, Shifu discount, 1 VP each at game end
+  - the 3-total / 1-per-discipline limit, discipline refill and partial display, printed cost, Shifu discount
+  - 1 VP each recorded in the score ledger the moment the Tech is gained (owner amendment A1: Apprentice buy, Shifu inspected or face-up take, Colour Samples itself), shown by the score preview at once, and listed once — not re-added — in final scoring
   - optional abilities (R4): declining keeps the once-per-round use
 - **Firing**
   - the Kiln Die every round (seeded, public)

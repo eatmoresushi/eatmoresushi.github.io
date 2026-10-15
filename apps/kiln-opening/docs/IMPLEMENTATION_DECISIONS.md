@@ -1,50 +1,64 @@
-# IMPLEMENTATION_DECISIONS.md — V1.4
+# IMPLEMENTATION_DECISIONS.md — V1.6.1
 
-The [V1.4 Player Rulebook](./KILN_OPENING_v1.4_EN_SOURCE.md) governs mechanics. The [audit](./RULEBOOK_AUDIT_V1.4.md) records owner-approved corrections. This document describes their digital representation.
+The [V1.6.1 Player Rulebook](./KILN_OPENING_v1.6.1_EN_SOURCE.md) governs mechanics. The [audit](./RULEBOOK_AUDIT_V1.6.1.md) records the owner's amendments and rulings (R1–R13, B1–B3), editorial corrections, interpretations and digital decisions. The [engine design](./ENGINE_V1.6.1_DESIGN.md) is the implementation contract. This document lists how the online game represents those rules; where it summarises a ruling, the audit is authoritative.
 
-## Setup and production
+## Versions and identifiers
 
-- Each player starts with 2 Clay, 2 Wood, 3 Coins, 1 Shifu and 3 Apprentices. Resources have unlimited shared supplies. Stable ceramic instances represent physical Vessel cards; exhausted physical cards permit same-Shape proxies.
-- Kiln selection offers only Ru, Guan, Ge and Jun, in reverse turn order. Ding is disabled for new online games under the 2026-10-02 owner amendment. `DI` and its unchanged ability remain in the content catalog for historical references; enabled Kiln IDs govern human and computer choices, and the server rejects disabled selections. Player counts remain 2–4.
-- Starting Tech selection offers only Prepared Clay, White Slip and Rapid Drying. Multiple players may choose the same Tech. Kiln Tending (`ST04`) is retired and cannot be selected or activated.
-- Shared-Kiln allocations (High/Middle/Low) are 1/2/1, 2/2/2 and 3/2/3 at 2/3/4 players. The eighth space has stable ID `low_3`.
-- Materials Yard, Potter's Wheel, Decoration Workshop, Commission Market and Craft Academy have 2/3/4 global worker spaces. Kiln Yard, Paid Work and Imperial Court are uncapped. Multiple Shifu may overfill a location. Internal location IDs remain stable across the label changes.
-- A formed ceramic starts in `workshop`, Plain and without a Glaze. Optional Decoration changes it to Carved, Impressed or Painted without loading it. Decoration costs 2 Coins per ceramic; a Shifu may decorate one or two with one free Decoration.
-- Every load chooses a Glaze and normally costs 1 Coin. Dipping Vats may waive the Glazing cost of every Plain ceramic loaded by one Kiln Yard action per round, including loads into the Shared or Imperial Kiln; specialised ceramics still pay normally. Rapid Drying and Imperial Priority remain 1-Coin loads and cannot use Dipping Vats. Payment and placement are atomic; an invalid multi-load changes nothing. Plain ceramics can skip Decoration.
-- Tech use is optional unless explicitly required. Stated costs remain payable; waivers and selected income apply only at their printed timings. Ding's extra small ceramic belongs only to an Apprentice Potter's Wheel action. White Slip and Drying Frames decorate eligible newly formed Plain ceramics; neither is a Decoration Workshop action or triggers Rapid Drying.
+- Rules `1.6.1`, state schema 6, `RULES_BEHAVIOUR_REVISION` 29. A room stores `r29-<content digest>`; a V1.4 room (schema 5, revision ≤ 28) is rejected, never migrated (DIG).
+- Stable IDs: Orders S01–S16 and O01–O48; Techs T01, T05, T10–T25 (retired T02–T04, T06–T09 and ST01–ST04 are never reused); Kilns RU, GU, GE, DI, JU; locations `materials_yard`, `commission_market`, `guild_hall`, `canal_wharf`, `magistrates_hall`, `form_decorate`, `glaze_load`; Shared Kiln spaces `high_1…3`, `middle_1…3`, `low_1…2`.
+- Content values come only from `data/*.json` through `src/game/content.ts`. Game state is plain JSON and must survive Postgres `jsonb`'s key reordering: no rule depends on the key order of a `Record`.
 
-Measuring Calipers grants 2 Coins once per round after forming a vessel if another vessel remains in the owner's workshop, regardless of Shape. Another vessel formed by the same action qualifies; loaded, fired and delivered ceramics do not. Stable ID `T03` now identifies Dipping Vats, replacing Standardised Moulds under the revised source.
+## Engine boundaries
 
-## Orders and private Academy choices
+- The engine is pure and deterministic. All randomness goes through the seeded `RandomSource`; the service stores the RNG state with every revision.
+- Validation sees only the actor's view (public projection + own private data). The UI, the computer player and the server call the same validators, so nothing offered to a client can be rejected for a reason it could not see.
+- Every secret is structurally separate: server-only state under `GameState.hidden`, unrevealed Contributions in `PrivateFiringState`, private event payloads under `secret`. The public projection drops all three by construction.
+- Timing windows mirror Appendix D one-to-one. A window opens only when someone has a decision; otherwise it resolves inside the command that reaches it. Every window has an always-legal exit.
 
-- Players secretly receive two of the eight Starting Orders and no Main Order. All eight Starting Orders are dealt at four players; undealt Starting Orders return to the box. Both held Orders count toward the three-Order Cleanup hand limit.
-- The 2026-09-30 economy amendment sets all eight Starting Order rewards to 3 Coins and reduces each of the 28 crownless Commercial Main Orders by 1 Coin, leaving every Commercial Main reward at least 1 Coin. Crown rewards, VP, requirements and Shifu discounts are unchanged.
-- The six-card Main display is an ordered queue. Remove, slide left and append when reserving or completing a face-up Order. At the start of Rounds 2–5 discard the oldest two, retain the rest in order and refill. If both deck and discard are empty, draw only available cards and leave the display short. Every reservation must take a card.
-- Shifu reservations resolve sequentially, including each chosen resource advance and display refill. Colour Samples inspection is private; untaken inspected Orders go to discard.
-- A Craft Academy Shifu privately inspects up to two Techs of a discipline. The acquisition command explicitly supplies the bottom order of multiple untaken inspected Techs. The server validates the exact permutation; inspection, deck order and returned IDs remain private.
-- Shape, Glaze and Decoration requirements on multi-ceramic Orders are independent unless expressly paired. Non-Plain requirements use Carved, Impressed and Painted alternatives.
-- Each permanent Crackle ceramic may independently use one virtual Glaze consistently across all Glaze checks for that Order. This is unlimited across Orders and Crackle ceramics. It does not substitute Decoration and never changes the recorded Glaze or Decoration. Exhibition always uses actual attributes.
-- Completion opportunities run in reverse Work order until a complete circuit without completion. The service can skip unchanged legal choices previously declined, but prompts again for newly available completable Orders. It never bypasses a new decision.
+## Setup and rounds
 
-## Explicit firing windows
+- Setup deals each player 2 Starting Orders and 1 Main Order secretly, reveals 6 Main Orders and 2 Techs per discipline, then picks the First Player at random. Kiln selection runs in reverse turn order over all five Kilns (R1).
+- The server rolls the Kiln Die publicly at the start of every round, Round 1 included (INT). The rotation in Rounds 2–5 discards the 2 leftmost Main Orders, slides and refills (B1 for an empty supply; every refill compacts and fills all empty positions as cards allow, design §11 Q2).
+- Setter's Mark placement is optional and asked at the start of the Work Phase (INT).
 
-1. At the end of Work, offer Glaze Palette to change one owned loaded ceramic's Glaze. Then resolve private Test Pieces before Contributions. Skip Firing entirely when no ceramic is loaded.
-2. Each eligible player secretly submits one Contribution card. Fuel Ledger adds the single cards `BANK_2` and `STOKE_2`, each costing 2 Wood; it is not a modifier attached to another card. Public state shows only submission status until all players submit. The server revalidates ownership and affordability for every contributor before atomic payment and reveal.
-3. Base Heat starts at 2, applies Contributions and clamps to 0–5. Global and Actual Heat are not clamped.
-4. A Kiln Yard Shifu marks exactly one ceramic loaded by that action, in either kiln. After Base Heat and before Fire, resolve each marked target in First Player order: choose +1, −1 or decline at no Wood cost. The marker affects only that ceramic and remains fixed through Second Firing. Kiln Furniture changes only its zone modifier to zero. Removed Shifu remain used until Cleanup.
-5. The First Player confirms the initial Fire reveal as a pacing step. The server draws the card, calculates Global and Actual Heat, offers Jun, then assigns Quality.
-6. Resolve after-Quality abilities, including Ge, Protective Saggars and Second Firing, in First Player order; each owner chooses their ability order. After every use, revalidate the current Quality, eligible targets, costs and usage limits. Ge upgrades one owned Standard ceramic from this firing to actual Fine and adds permanent Crackle without replacing its Decoration. Protective Saggars can create a Standard ceramic eligible for unused Ge; a ceramic upgraded to Fine by Ge is no longer eligible for Saggars or Second Firing.
-7. Second Firing affects only its selected Flawed or Standard ceramic, retains position/Furniture/Shifu marker, removes its earlier Jun adjustment, reveals the extra Fire card and calculates the new Actual Heat. Only then may unused Jun act, before new Quality is assigned. Jun can be used at most once per round. New Quality replaces old Quality even if worse. The extra card is discarded after its recalculation resolves. Return to the owner's remaining after-Quality choices and recheck eligibility against the new result.
-8. Resolve the optional discard of one still-Flawed ceramic per player for 2 Coins, then finish the firing, clear markers/Furniture and return Contribution cards.
+## Work Phase
 
-## Imperial Recognition and scoring
+- One worker action per Work turn; there is no pass. Canal Wharf is always legal.
+- The before/after-action window offers Canal Barge and Imperial Priority in either order (INT). The after-action window opens whenever Canal Barge is owned and unused this round, regardless of the hand, so its opening reveals nothing. A face-up reservation's display refill is deferred to the end of that turn (INT).
+- Commission Market: a face-up reservation and its resource are one command; a blind or top-3 reservation reveals a card first, so the resource is chosen in a following step. The Shifu top-3 look and Colour Samples look are private (B3); unchosen looked-at Orders go face down to the discard.
+- Guild Hall: the Shifu's inspection and the bottom order of untaken Techs are private; they return to the bottom before the display refills (B2).
+- Optional Tech and Kiln abilities may be declined without spending a once-per-round use (R4). Kiln Tending resolves automatically on the first qualifying Glaze & Load each round (INT). Colour Samples' when-acquired reservation is mandatory whenever a Main Order can be looked at (R4).
+- Reworking Table with Imperial Priority is allowed (design §11 Q1); Glaze & Load placement legality uses current Shapes only (Q3).
 
-Recognition and every crossed milestone are server-authoritative. Imperial Court costs 5 Coins for either worker type and advances Recognition by one only from 0, 1 or 2. Imperial Priority is a separate once-per-game choice before or after a worker action, glazing and loading one Workshop ceramic into the empty Imperial Kiln for 1 Coin. It does not increase Kiln Yard's load allowance.
+## Firing Phase
 
-Ge records actual Fine Quality, so completion and Exhibition use recorded Quality normally. Exhibition accepts any number of Standard-or-better undelivered ceramics; its Shape and Glaze diversity bonuses check the entire exhibited collection independently. Every owned Advanced Tech scores 1 VP. Coin VP is capped at 5. Other printed values and tie breakers follow the source unchanged.
+1. Nothing loaded: the firing is skipped and no Fire card is revealed.
+2. Contributions: players with a Shared Kiln ceramic seal one card each, in any order. Fuel Ledger is a separate secret commitment on Bank or Stoke (`fuelLedger: true`, ±2 Heat for 1 extra Wood), stored in `private.private_submissions.use_fuel_ledger`. With no participant the window is skipped (INT).
+3. On the last submission the server revalidates every sealed choice, pays, reveals all cards together and sets Base Heat = clamp(Kiln Die + Contributions, 0, 5).
+4. Test Pieces (private peek, public bury), then the Heat-marker step in First Player order (INT), then the Fire card is revealed automatically and Actual Heat calculated.
+5. Jun, Quality, then after-Quality abilities (Protective Saggars, Second Firing, Ge) in each owner's chosen order with eligibility rechecked after each use. Jun on the Second Firing ceramic follows R7.
+6. Salvage of a still-Flawed ceramic: every eligible player decides independently, in any order (a `parallel` window).
 
-## Privacy, localization and compatibility
+## Orders, Cleanup and scoring
 
-All undelivered ceramics and their recorded attributes are public. Hands, inspections, hidden deck order and unrevealed Contributions are private. Public projections redact them; authenticated private responses contain only the requesting seat's information. The same sanitized boundary applies to computer players. English and Simplified Chinese render identical stable IDs and never change game state.
+- The Order Phase is a single pass in First Player order; a player with nothing completable is skipped automatically (INT). Crackle declarations are either omitted (the engine searches and records the first that works) or given and used exactly.
+- Cleanup returns workers and Setter's Marks; players over their hand limit discard in any order (a `parallel` window). The trim is skipped in Round 5 (INT).
+- Exhibition is automatic (INT). Advanced Tech VP is recorded in the score ledger when the Tech is gained (owner amendment A1; `ScoreLedger.techs`, `TECH_ACQUIRED.vp`), so mid-game scores and the score preview include it; final scoring shows it as a separate Tech line read from the ledger and does not add it again. Final totals and tie-breakers are unchanged, because no effect removes a Tech. Final scoring and tie-breakers are computed by the server.
 
-V1.4 rooms use schema 5, behavior revision 28 and policy `rules-v1.4-strategic-001`. Older room rows and playtest reports are retained as history. Version/schema/fingerprint mismatches are rejected rather than reinterpreted. SQL migrations, both Edge Functions and the client must be rolled out together; checked-in migrations do not apply themselves.
+## Multiplayer
+
+- **Routing.** Clients and the service decide who acts from `decisionPrompt(state)` only: `single`, `parallel` (`firing_salvage`, `cleanup_hand_limit`) or `simultaneous_secret` (`firing_contributions`). A computer seat is advanced whenever it is among the actors, in every mode.
+- **Revisions.** Commands normally name the current revision. In a `parallel` window a command based on any revision since the window opened is validated against the current head while its actor is pending, and a commit conflict is retried up to 3 times. Contributions are compare-and-swap on the head and the window.
+- **Untrusted input.** `parseCommand` shape-checks every command before the service branches on it.
+- **Private delivery.** Responses carry the public projection and public events; the acting seat also receives its own `PrivatePlayerView` and its own event secrets. Reconnect rebuilds the private view from the head and the stored submissions and returns the seat's private event log. The game start persists `createGame`'s events, so the event count equals `eventSequence`.
+- **Computer players.** A policy sees only its seat's `ActorView`. Its proposal is shape-checked and validated; on failure the service falls back to the canonical legal commands. A policy's exception is logged server-side, never returned: the response says only "<name> could not choose an action." The stored response of a computer command carries no private view.
+- **Storage.** The in-memory store mirrors the Supabase RPCs and can apply `jsonb` key order on every read and write; a full seeded game ends in the same state hash either way.
+- **Database.** `202610150001_v161_rules.sql` rewrites every V1.4 gate (`server_create_room`, `server_join_room`, `server_add_computer_seat`, `server_commit_start`, `server_commit_transition`), allows `'1.6.1'` and `^r29-` fingerprints, restricts new private submissions to Bank/Tend/Stoke with the Fuel Ledger commitment, returns `fuelLedger` from the submission RPCs, persists the game start's events, refuses public rows carrying `hidden` or `secret`, and adds the seat-checked `server_list_private_events`. Older rows stay as history.
+
+## Playtest form
+
+Form V3 records V1.6.1 tables: Kilns (all five), at most one Tech per discipline, the round's Kiln Die (Base Heat = Kiln Die + Contributions, clamped 0–5), Contributions incl. Fuel Ledger's −2/+2, Shared and Imperial loads, Orders, Kiln ability uses, the Fire card and the Firing Techs used. `202610150002_playtest_v161.sql` accepts only Form V3 for V1.6.1 and keeps every earlier submission readable.
+
+## Localization
+
+English and Simplified Chinese render the same stable IDs; Chinese text follows the [glossary](./GLOSSARY_ZH_V1.6.1.md). Switching language never changes game state.

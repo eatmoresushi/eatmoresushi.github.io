@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { BaseHeat, FireModifier, FiringContext, GameState, KilnId, PlayerCount } from "../../src/game-v14/index.ts";
-import { projectPublicGameState } from "../../src/multiplayer/index.ts";
+import { projectPublicGameState } from "../../src/multiplayer-v14/index.ts";
 import { ActionPanel } from "../../src/ui/ActionPanel.tsx";
 import { kilnShortPlainText } from "../../src/ui/TechniqueDescription.tsx";
 import { LanguageProvider } from "../../src/ui/i18n.tsx";

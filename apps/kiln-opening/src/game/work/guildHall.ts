@@ -33,7 +33,7 @@ import {
 } from "../market.ts";
 import { placeWorker, validatePlacement, workerEffectFor } from "../placement.ts";
 import { emit, phaseAs, player, spend } from "../state.ts";
-import { acquisitionError, grantTech, techPrice } from "../techs.ts";
+import { acquisitionError, grantTech, techPrice, techVp } from "../techs.ts";
 import type {
   ActionHandlerTable,
   ActorView,
@@ -115,7 +115,10 @@ function stepError(view: ActorView, kind: "guild_inspection" | "colour_samples")
 
 // ── Resolution ───────────────────────────────────────────────────────────────────────
 
-/** Pays, takes and grants a Tech: `TECH_ACQUIRED`, then any `PERSONAL_SPACE_UNLOCKED` (L211). */
+/**
+ * Pays, takes and grants a Tech: `TECH_ACQUIRED` (with the VP `grantTech` records at once,
+ * owner amendment A1), then any `PERSONAL_SPACE_UNLOCKED` (L211).
+ */
 function acquire(
   draft: GameState,
   playerId: PlayerId,
@@ -129,7 +132,7 @@ function acquire(
   if (source === "face_up") {
     takeFaceUpTech(draft, techId);
   }
-  emit(ctx, { type: "TECH_ACQUIRED", playerId, techId, source, cost: price });
+  emit(ctx, { type: "TECH_ACQUIRED", playerId, techId, source, cost: price, vp: techVp() });
   grantTech(draft, playerId, techId, ctx);
 }
 

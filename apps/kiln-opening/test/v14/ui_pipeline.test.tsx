@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { GameState, LocationId } from "../../src/game-v14";
-import { projectPublicGameState } from "../../src/multiplayer";
+import { projectPublicGameState } from "../../src/multiplayer-v14";
 import { ActionPanel } from "../../src/ui/ActionPanel";
 import { LanguageProvider, type Locale } from "../../src/ui/i18n";
 import { addLoaded, addShaped, addTechnique, startedGame, workerId } from "../v127/helpers";

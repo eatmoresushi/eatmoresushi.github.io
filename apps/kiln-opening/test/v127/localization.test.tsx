@@ -5,7 +5,7 @@ import {
   GAME_CONFIG, LOCATION_DEFINITIONS, LOCATION_IDS, MAIN_ORDERS,
   ORDER_DEFINITIONS, STARTING_ORDERS, TECHNIQUE_DEFINITIONS,
 } from "../../src/game-v14/index.ts";
-import { projectPublicGameState } from "../../src/multiplayer/index.ts";
+import { projectPublicGameState } from "../../src/multiplayer-v14/index.ts";
 import { GameTable, OrderCard } from "../../src/ui/GameTable.tsx";
 import { LanguageProvider, localizeMultiplayerError, term, translate } from "../../src/ui/i18n.tsx";
 import type { Locale } from "../../src/ui/i18n.tsx";

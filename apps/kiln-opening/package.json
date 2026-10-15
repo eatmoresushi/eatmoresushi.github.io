@@ -10,8 +10,11 @@
     "typecheck": "tsc --noEmit",
     "typecheck:edge": "tsc -p tsconfig.edge.json",
     "typecheck:engine": "tsc -p tsconfig.engine.json",
+    "typecheck:platform": "tsc -p tsconfig.platform.json",
     "test": "vitest run",
     "test:engine": "vitest run test/v161/engine",
+    "test:platform": "vitest run test/v161/platform",
+    "test:fuzz:long": "KILN_FUZZ_GAMES=${KILN_FUZZ_GAMES:-500} vitest run test/v161/engine/fuzz.test.ts",
     "test:watch": "vitest",
     "dev:local": "VITE_E2E_LOCAL_BACKEND=1 vite"
   },

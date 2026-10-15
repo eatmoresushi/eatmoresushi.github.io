@@ -61,6 +61,8 @@ Starting Tech and Advanced Tech choices answer: “What does my workshop become 
 
 A player may own at most 2 Advanced Techs. They modify actions and production but never create or unlock worker positions; each also scores 1 VP at game end.
 
+> **V1.6.1 note.** The paragraphs above describe the V1.4 design and are retained as history. Under V1.6.1 there are no Starting Techs and all five Kilns (including Ding) are selectable. A player may own up to 3 Advanced Techs, at most 1 per discipline; a Workshop Tech unlocks the second Form & Decorate space and a Glazing & Loading Tech the second Glaze & Load space (Firing Techs unlock nothing). Each Tech scores 1 VP the moment it is gained (owner amendment A1, 2026-10-15), not at game end. See `docs/KILN_OPENING_v1.6.1_EN_SOURCE.md` and `docs/RULEBOOK_AUDIT_V1.6.1.md`.
+
 ### 5. Shifu = efficiency/flexibility, not every special power
 
 The Shifu should be stronger than an Apprentice, but technical mastery should live in Kiln Traditions and Techniques.

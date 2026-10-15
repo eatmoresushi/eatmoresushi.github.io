@@ -142,7 +142,7 @@ function makePlayer(seat: PlayerSetup, seatIndex: number): PlayerState {
     kilnAbilityUsedThisRound: false,
     imperial: { recognition: 0, grantReceived: false, kilnGained: false, priority: "on_track", audienceReceived: false },
     completedOrders: [],
-    score: { orders: 0, kilnAbilities: 0, recognitionOverflow: 0, imperialAudience: 0 },
+    score: { orders: 0, kilnAbilities: 0, recognitionOverflow: 0, imperialAudience: 0, techs: 0 },
   };
 }
 

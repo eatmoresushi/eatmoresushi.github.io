@@ -63,7 +63,17 @@ Deno.serve(async (request) => {
     const body = await request.json() as Record<string, unknown>;
     operation = body["operation"];
     const store = new SupabaseMultiplayerStore(supabaseUrl, serviceRoleKey);
-    const service = new AuthoritativeGameService(store, new EdgeSecurityProvider());
+    const service = new AuthoritativeGameService(store, new EdgeSecurityProvider(), {
+      // The engine reads no environment; the service opts in to invariant checks itself.
+      checkInvariants: Deno.env.get("KILN_ENGINE_INVARIANTS") === "1",
+      logger: {
+        // Operator-only: a computer policy's cause may name that seat's private cards, so
+        // it is logged here and never placed in a response (DESIGN §4.5).
+        error(message, context) {
+          console.error(message, context);
+        },
+      },
+    });
     let result: unknown;
     switch (operation) {
       case "create_room": {
@@ -127,13 +137,21 @@ Deno.serve(async (request) => {
           commandId: String(body["commandId"] ?? ""),
         });
         break;
+      case "list_private_events":
+        result = await service.listPrivateEvents({
+          roomCode: String(body["roomCode"] ?? ""),
+          seatToken: String(body["seatToken"] ?? ""),
+          afterSequence: Number(body["afterSequence"] ?? 0),
+        });
+        break;
       case "game_action":
         result = await service.executeCommand({
           roomCode: String(body["roomCode"] ?? ""),
           seatToken: String(body["seatToken"] ?? ""),
           commandId: String(body["commandId"] ?? ""),
           expectedRevision: Number(body["expectedRevision"]),
-          command: body["command"] as Parameters<AuthoritativeGameService["executeCommand"]>[0]["command"],
+          // Untrusted JSON: the service runs `parseCommand` on it before branching.
+          command: body["command"],
         });
         break;
       default:

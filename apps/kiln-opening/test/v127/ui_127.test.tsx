@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { applyAction } from "../../src/game-v14/index.ts";
-import { projectPublicGameState } from "../../src/multiplayer/index.ts";
+import { projectPublicGameState } from "../../src/multiplayer-v14/index.ts";
 import { ActionPanel } from "../../src/ui/ActionPanel.tsx";
 import { LanguageProvider } from "../../src/ui/i18n.tsx";
 import type { Locale } from "../../src/ui/i18n.tsx";

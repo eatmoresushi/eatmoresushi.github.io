@@ -1,8 +1,15 @@
-import type {
-  ContributionCardId, GameEvent, PlayerId } from "../game-v14/index.ts";
+/**
+ * Persistence port of the authoritative service. Two adapters implement it:
+ * `InMemoryMultiplayerStore` (tests and the local E2E backend) and
+ * `supabase/functions/_shared/supabaseStore.ts` (production RPCs). Both must behave the
+ * same, including compare-and-swap on the head and on private submissions.
+ */
+
+import type { ContributionCardId, GameEvent, PlayerId } from "../game/index.ts";
 import type {
   AuthoritativeHead,
   CommandSuccess,
+  PrivateEventRecord,
   PrivateSubmissionRecord,
   ProcessedCommandRecord,
   PublicEventRecord,
@@ -53,6 +60,8 @@ export interface AddComputerSeatRecord {
   seatId: string;
   displayName: string;
   aiSeed: number;
+  /** Stamped on the seat (`room_ai_seats.policy_version`); `rules-v1.6.1-…`. */
+  policyVersion: string;
   commandId: string;
 }
 
@@ -73,12 +82,19 @@ export interface CommitStartInput {
   actorId: PlayerId;
   head: AuthoritativeHead;
   publicState: PublicGameState;
+  /** `createGame`'s events (incl. each seat's secret deal), persisted like any command's. */
+  fullEvents: GameEvent[];
+  /** The same events with every `secret` removed; same length and order. */
+  publicEvents: PublicGameEvent[];
   response: CommandSuccess;
 }
 
 export interface PrivateCommitInput {
   windowId: string;
   card: ContributionCardId;
+  /** Fuel Ledger commitment (`use_fuel_ledger`). Dropping it would turn ±2 into ±1. */
+  fuelLedger: boolean;
+  /** This submission was the last one and revealed the window. */
   revealed: boolean;
 }
 
@@ -117,8 +133,20 @@ export interface MultiplayerStore {
   endSession(input: EndSessionRecord): Promise<StoreResult<StoredRoom>>;
   commitStart(input: CommitStartInput): Promise<StoreResult<CommandSuccess>>;
   commitTransition(input: CommitTransitionInput): Promise<StoreResult<CommandSuccess>>;
+  /** Unrevealed submissions of one window, with their Fuel Ledger commitments. */
   loadPrivateSubmissions(roomId: string, windowId: string): Promise<PrivateSubmissionRecord[]>;
   findOwnPendingSubmission(roomId: string, playerId: PlayerId): Promise<PrivateSubmissionRecord | null>;
   listPublicEvents(roomId: string, afterSequence?: number): Promise<PublicEventRecord[]>;
+  /**
+   * The events whose `secret.visibleTo` is `playerId`, secret intact, after `afterSequence`.
+   * `tokenHash` must be that seat's live credential (`server_list_private_events` checks it
+   * again), so the adapter can never be asked for another seat's secrets.
+   */
+  listPrivateEvents(
+    roomId: string,
+    playerId: PlayerId,
+    tokenHash: string,
+    afterSequence?: number,
+  ): Promise<PrivateEventRecord[]>;
   subscribePublic(roomId: string, listener: PublicStateListener): () => void;
 }

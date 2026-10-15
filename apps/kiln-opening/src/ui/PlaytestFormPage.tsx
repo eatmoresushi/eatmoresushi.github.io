@@ -16,15 +16,15 @@ import {
   restorePlaytestDraft,
   sharedKilnCapacity,
   submissionCandidate,
-} from "../playtest/model.ts";
-import { validatePlaytestSubmission } from "../playtest/schema.ts";
-import { submitPlaytest } from "../playtest/client.ts";
+} from "../playtest-v14/model.ts";
+import { validatePlaytestSubmission } from "../playtest-v14/schema.ts";
+import { submitPlaytest } from "../playtest-v14/client.ts";
 import type {
   FireContribution,
   FiringTechniqueId,
   PlaytestDraft,
   PlaytestFeedback,
-} from "../playtest/types.ts";
+} from "../playtest-v14/types.ts";
 
 const DRAFT_KEY = "kiln-opening:playtest-draft-v2";
 const ALL_ORDERS = [...STARTING_ORDERS, ...MAIN_ORDERS];

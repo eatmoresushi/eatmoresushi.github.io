@@ -243,7 +243,10 @@ export interface ImperialState {
   audienceReceived: boolean;
 }
 
-/** VP recorded during play (L491). Exhibition, Techs and Coins are computed at game end. */
+/**
+ * VP recorded during play (L491). Exhibition, Connoisseur's Cabinet and Coins are computed at
+ * game end; Tech VP is recorded when the Tech is gained (owner amendment A1).
+ */
 export interface ScoreLedger {
   /** Printed VP of completed Orders (L413). */
   orders: number;
@@ -253,6 +256,12 @@ export interface ScoreLedger {
   recognitionOverflow: number;
   /** 6 VP Imperial Audience (L434). */
   imperialAudience: number;
+  /**
+   * 1 VP per Advanced Tech, recorded when the Tech is gained (owner amendment A1, overriding
+   * L378/L492/L609/L755). Always `techs.length × GAME_CONFIG.techs.vpEach`: no effect
+   * removes a Tech.
+   */
+  techs: number;
 }
 
 export interface CrackleDeclaration {
@@ -296,7 +305,7 @@ export interface PlayerState {
   resources: ResourceState;
   workers: Record<WorkerId, WorkerState>;
   personalSpaces: Record<PersonalLocationId, [PersonalSpaceState, PersonalSpaceState]>;
-  /** At most 3 Techs and at most 1 per discipline (L210, L374). Each scores 1 VP (L378). */
+  /** At most 3 Techs and at most 1 per discipline (L210, L374). Each scores 1 VP when gained (A1). */
   techs: OwnedTechState[];
   /** Kiln Tradition once-per-round allowance (Ru, Guan, Ge, Ding, Jun all once per round). */
   kilnAbilityUsedThisRound: boolean;
@@ -1286,6 +1295,8 @@ export type GameEvent =
       techId: TechId;
       source: "face_up" | "inspected";
       cost: number;
+      /** The Tech's VP, recorded immediately in `ScoreLedger.techs` (owner amendment A1). */
+      vp: number;
     }
   | {
       /** B2: the identities and order are private to the acting player. */
@@ -1477,7 +1488,7 @@ export interface FinalScoreBreakdown {
   kilnAbilities: number;
   recognitionOverflow: number;
   imperialAudience: number;
-  /** 1 VP per owned Tech (L492). */
+  /** 1 VP per owned Tech, recorded when gained (A1); the ledger's `techs`. */
   techs: number;
   exhibition: ExhibitionScore;
   /** Connoisseur's Cabinet (T19, L620): +1 per exhibited Fine/Masterpiece, max +5. */
@@ -1733,7 +1744,14 @@ export interface GameConfigDefinition {
   mainMarket: { displaySize: number; roundStartDiscard: number };
   /** Base hand limit 4 (L199); Colour Samples' 5 lives in its params (T10). */
   handLimit: { base: number };
-  techs: { perDiscipline: number; faceUpPerDiscipline: number; maxOwned: number; maxPerDiscipline: number; endGameVpEach: number };
+  techs: {
+    perDiscipline: number;
+    faceUpPerDiscipline: number;
+    maxOwned: number;
+    maxPerDiscipline: number;
+    /** VP per Advanced Tech, scored when gained (owner amendment A1). */
+    vpEach: number;
+  };
   sharedKiln: { activeSpacesByPlayerCount: Record<"2" | "3" | "4", KilnSpaceId[]> };
   shapes: Record<Shape, number>;
   shapeSupplyEach: number;
@@ -2197,7 +2215,7 @@ export interface PlayerSummary {
   kilnId: KilnId | null;
   kilnAbilityReady: boolean;
   resources: ResourceState;
-  /** Sum of `recorded` (L491). End-game VP is in `scorePreview`. */
+  /** Sum of `recorded` (L491), including Tech VP (A1). End-game VP is in `scorePreview`. */
   recordedVp: number;
   recorded: ScoreLedger;
   techs: TechStatus[];

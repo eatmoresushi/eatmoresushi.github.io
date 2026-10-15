@@ -96,7 +96,7 @@ export function TechniqueFace({ id, locale, layer = "preview", exhausted = false
     <p className="kiln-piece-copy" data-overview={overview ? "true" : undefined}><TechniqueDescription id={id} locale={locale} layer={layer} /></p>
     {advanced !== undefined && <div className="kiln-piece-footer">
       <span className="kiln-piece-timing">{advanced.oncePerRound ? text(locale, "Once per round", "每轮一次") : text(locale, "Continuous", "持续生效")}</span>
-      <b className="kiln-piece-endgame-vp" aria-label={text(locale, "Scores 1 VP at game end", "终局计分时获得1分")}>1VP</b>
+      <b className="kiln-piece-endgame-vp" aria-label={text(locale, "Scores 1 VP when gained", "习得时立即得1分")}>1VP</b>
     </div>}
     {exhausted && <span className="kiln-piece-state">{text(locale, "Used", "已用")}</span>}
   </>;

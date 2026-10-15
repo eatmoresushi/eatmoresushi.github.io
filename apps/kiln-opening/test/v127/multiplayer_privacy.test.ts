@@ -5,7 +5,7 @@ import {
   AuthoritativeGameService,
   InMemoryMultiplayerStore,
   projectPublicGameState,
-} from "../../src/multiplayer/index.ts";
+} from "../../src/multiplayer-v14/index.ts";
 import { addFinished, addGlazed, addLoaded, addShaped } from "./helpers.ts";
 import type {
   CommandSuccess,
@@ -13,7 +13,7 @@ import type {
   RoomConnection,
   SecurityProvider,
   SubmitWoodCommand,
-} from "../../src/multiplayer/index.ts";
+} from "../../src/multiplayer-v14/index.ts";
 
 class TestSecurity implements SecurityProvider {
   private sequence = 0;

@@ -65,7 +65,7 @@ describe("Apprentice (L206): pay the printed cost and take 1 face-up Advanced Te
       "WORK_TURN_STARTED",
     ]);
     expect(only(events, "RESOURCES_CHANGED")).toMatchObject({ coins: -2, reason: "guild_hall" });
-    expect(only(events, "TECH_ACQUIRED")).toEqual({ type: "TECH_ACQUIRED", playerId: "p1", techId: "T01", source: "face_up", cost: 2 });
+    expect(only(events, "TECH_ACQUIRED")).toEqual({ type: "TECH_ACQUIRED", playerId: "p1", techId: "T01", source: "face_up", cost: 2, vp: 1 });
     expect(only(events, "PERSONAL_SPACE_UNLOCKED")).toMatchObject({ locationId: "form_decorate" });
     expect(only(events, "TECH_DISPLAY_REFILLED")).toMatchObject({ discipline: "workshop", revealedTechIds: ["T05"] });
   });

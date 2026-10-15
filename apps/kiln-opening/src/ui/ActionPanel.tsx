@@ -1,4 +1,4 @@
-import { withOwnOrderHand } from "../multiplayer/projection";
+import { withOwnOrderHand } from "../multiplayer-v14/projection";
 import {
   ACTION_LOCATION_PRICES,
   BASE_HEAT_START,
@@ -62,7 +62,7 @@ import type {
   PrivateDecisionState,
   PublicGameState,
   PublicPlayerState,
-} from "../multiplayer";
+} from "../multiplayer-v14";
 import { OrderCard } from "./GameTable";
 import { term as localizedTerm, useI18n } from "./i18n";
 import type { Locale } from "./i18n";

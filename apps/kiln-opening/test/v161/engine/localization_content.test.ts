@@ -443,7 +443,7 @@ function player(id: string, seatIndex: number, kilnId: PlayerState["kilnId"], te
       orderId: "S07", ceramicIds: ["c1"], round: 1, via: "order_phase", vp: 3, coins: 4,
       printedCrowns: 0, bonusCrowns: 0, crackleDeclarations: [], kilnAbility: null,
     }],
-    score: { orders: 3, kilnAbilities: 0, recognitionOverflow: 0, imperialAudience: 0 },
+    score: { orders: 3, kilnAbilities: 0, recognitionOverflow: 0, imperialAudience: 0, techs: techs.length },
   };
 }
 

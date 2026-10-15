@@ -1,4 +1,4 @@
-import type { AuthoritativeCommand, PendingContribution, PrivateDecisionState, PublicEventRecord, PublicGameEvent, PublicGameState, PublicSeat } from "../multiplayer";
+import type { AuthoritativeCommand, PendingContribution, PrivateDecisionState, PublicEventRecord, PublicGameEvent, PublicGameState, PublicSeat } from "../multiplayer-v14";
 import type { PlayerId } from "../game-v14";
 import { CONTRIBUTION_CARD_DEFINITIONS, KILN_DEFINITIONS, ORDER_DEFINITIONS, STARTING_TECHNIQUE_DEFINITIONS, TECHNIQUE_DEFINITIONS } from "../game-v14";
 import { TabletopGameExperience } from "./TabletopGameExperience";

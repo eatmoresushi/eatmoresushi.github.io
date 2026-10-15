@@ -65,6 +65,7 @@ import type {
 const ROOT = join(import.meta.dirname, "../../..");
 const SOURCE = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.1_EN_SOURCE.md"), "utf8");
 const DESIGN = readFileSync(join(ROOT, "docs/ENGINE_V1.6.1_DESIGN.md"), "utf8");
+const AUDIT = readFileSync(join(ROOT, "docs/RULEBOOK_AUDIT_V1.6.1.md"), "utf8");
 const TYPES = readFileSync(join(ROOT, "src/game/types.ts"), "utf8");
 
 const clean = (text: string): string => text.replaceAll("**", "").replace(/\s+/g, " ").trim();
@@ -578,7 +579,25 @@ describe("setup, production, firing and scoring values", () => {
     expect(SOURCE).toContain(`hand limit of **${GAME_CONFIG.handLimit.base}** (${TECHS.T10.params.handLimit} with Colour Samples)`);
     expect(SOURCE).toContain(`at most **${GAME_CONFIG.techs.maxOwned} Advanced Techs and at most ${GAME_CONFIG.techs.maxPerDiscipline} from each discipline**`);
     expect(SOURCE).toContain(`Exactly ${GAME_CONFIG.techs.perDiscipline} Workshop, ${GAME_CONFIG.techs.perDiscipline} Glazing & Loading and ${GAME_CONFIG.techs.perDiscipline} Firing`);
-    expect(SOURCE).toContain(`Each Advanced Tech you own scores **${GAME_CONFIG.techs.endGameVpEach} VP at game end**.`);
+  });
+
+  it("scores each Tech's printed 1 VP when it is gained, per owner amendment A1 (L378, L492, L609, L755)", () => {
+    const vp = GAME_CONFIG.techs.vpEach;
+    expect(vp).toBe(1);
+    // The checked-in source keeps its printed value (its checksum must not change) …
+    const lines = SOURCE.split("\n");
+    expect(lines[377]).toContain(`Each Advanced Tech you own scores **${vp} VP`);
+    expect(lines[491]).toContain(`**${vp} VP for each Advanced Tech**`);
+    expect(lines[608]).toContain(`Each Advanced Tech you own scores **${vp} VP`);
+    expect(lines[754]).toContain(`Advanced Techs: **${vp} VP each**`);
+    // … and A1 overrides exactly those lines' timing: scored on gain, not at game end.
+    const a1 = AUDIT.split("\n").find((line) => line.startsWith("| A1 |"));
+    expect(a1).toBeDefined();
+    const [id, date, amendment, overrides] = cellsOf(a1 ?? "");
+    expect([id, date]).toEqual(["A1", "2026-10-15"]);
+    expect(amendment).toContain(`Each Advanced Tech scores its ${vp} VP immediately when the player gains it`);
+    expect(amendment).toContain("It is no longer added at game end.");
+    expect(overrides).toContain("Lines 378, 492, 609, 755");
   });
 
   it("prices Shapes, Decorations and Glazes as L318–352 print", () => {

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createGameApi } from "../../src/multiplayer/client";
+import { createGameApi } from "../../src/multiplayer-v14/client";
 import { localizeMultiplayerError } from "../../src/ui/i18n";
 
 const mocks = vi.hoisted(() => ({ createClient: vi.fn(), invoke: vi.fn() }));

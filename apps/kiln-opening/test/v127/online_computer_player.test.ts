@@ -4,9 +4,9 @@ import type { GameAction, GameState, PlayerId } from "../../src/game-v14/index.t
 import {
   ONLINE_COMPUTER_POLICY_VERSION,
   chooseOnlineComputerAction,
-} from "../../src/multiplayer/computerPlayer.ts";
-import { createComputerObservation } from "../../src/multiplayer/computerObservation.ts";
-import type { StoredSeat } from "../../src/multiplayer/types.ts";
+} from "../../src/multiplayer-v14/computerPlayer.ts";
+import { createComputerObservation } from "../../src/multiplayer-v14/computerObservation.ts";
+import type { StoredSeat } from "../../src/multiplayer-v14/types.ts";
 import { addGlazed, addLoaded, addShaped, addTechnique, mustApply, setWorkTurn, startedGame } from "./helpers.ts";
 
 function seatFor(playerId: PlayerId): StoredSeat {

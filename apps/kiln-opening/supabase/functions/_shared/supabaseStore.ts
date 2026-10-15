@@ -1,18 +1,19 @@
 import type {
+  AddComputerSeatRecord,
   AuthenticatedSeat,
   CommitStartInput,
   CommitTransitionInput,
   CreateRoomRecord,
   EndSessionRecord,
   JoinRoomRecord,
-  AddComputerSeatRecord,
-  RemoveComputerSeatRecord,
   MultiplayerStore,
+  RemoveComputerSeatRecord,
   StoreResult,
 } from "../../../src/multiplayer/store.ts";
 import type {
   AuthoritativeHead,
   CommandSuccess,
+  PrivateEventRecord,
   PrivateSubmissionRecord,
   ProcessedCommandRecord,
   PublicEventRecord,
@@ -21,6 +22,46 @@ import type {
   StoredRoom,
   StoredSeat,
 } from "../../../src/multiplayer/types.ts";
+
+/**
+ * One stored private submission row as the V1.6.1 RPCs return it. `use_fuel_ledger` is
+ * returned as `fuelLedger`; a row without it (never written by V1.6.1) reads as false.
+ */
+interface PrivateSubmissionRow {
+  roomId: string;
+  windowId: string;
+  playerId: string;
+  commandId: string;
+  card: PrivateSubmissionRecord["card"];
+  fuelLedger?: boolean | null;
+  revealedRevision: number | null;
+}
+
+/** Maps a `private.private_submissions` row; the Fuel Ledger commitment must survive. */
+export function privateSubmissionFromRow(row: PrivateSubmissionRow): PrivateSubmissionRecord {
+  return {
+    roomId: row.roomId,
+    windowId: row.windowId,
+    playerId: row.playerId,
+    commandId: row.commandId,
+    card: row.card,
+    fuelLedger: row.fuelLedger === true,
+    revealedRevision: row.revealedRevision,
+  };
+}
+
+/** The `p_private_submission` payload of `server_commit_transition`. */
+export function privateSubmissionPayload(
+  submission: CommitTransitionInput["privateSubmission"],
+): { windowId: string; card: string; fuelLedger: boolean; revealed: boolean } | null {
+  if (submission === null) return null;
+  return {
+    windowId: submission.windowId,
+    card: submission.card,
+    fuelLedger: submission.fuelLedger,
+    revealed: submission.revealed,
+  };
+}
 
 export class SupabaseMultiplayerStore implements MultiplayerStore {
   constructor(
@@ -60,6 +101,7 @@ export class SupabaseMultiplayerStore implements MultiplayerStore {
       p_display_name: input.displayName,
       p_ai_seed: input.aiSeed,
       p_command_id: input.commandId,
+      p_policy_version: input.policyVersion,
     });
   }
 
@@ -111,17 +153,12 @@ export class SupabaseMultiplayerStore implements MultiplayerStore {
       p_state_hash: input.head.stateHash,
       p_public_state: input.publicState,
       p_response: input.response,
+      p_full_events: input.fullEvents,
+      p_public_events: input.publicEvents,
     });
   }
 
   commitTransition(input: CommitTransitionInput): Promise<StoreResult<CommandSuccess>> {
-    const privateSubmission = input.privateSubmission === null
-      ? null
-      : {
-          windowId: input.privateSubmission.windowId,
-          card: input.privateSubmission.card,
-          revealed: input.privateSubmission.revealed,
-        };
     return this.rpc("server_commit_transition", {
       p_room_id: input.roomId,
       p_command_id: input.commandId,
@@ -138,30 +175,40 @@ export class SupabaseMultiplayerStore implements MultiplayerStore {
       p_public_events: input.publicEvents,
       p_public_state: input.publicState,
       p_response: input.response,
-      p_private_submission: privateSubmission,
+      p_private_submission: privateSubmissionPayload(input.privateSubmission),
     });
   }
 
   async loadPrivateSubmissions(roomId: string, windowId: string): Promise<PrivateSubmissionRecord[]> {
-    return this.rpc("server_load_private_submissions", {
+    const rows = await this.rpc<PrivateSubmissionRow[]>("server_load_private_submissions", {
       p_room_id: roomId,
       p_window_id: windowId,
     });
+    return rows.map(privateSubmissionFromRow);
   }
 
-  async findOwnPendingSubmission(
-    roomId: string,
-    playerId: string,
-  ): Promise<PrivateSubmissionRecord | null> {
-    return this.rpc("server_find_own_pending", {
+  async findOwnPendingSubmission(roomId: string, playerId: string): Promise<PrivateSubmissionRecord | null> {
+    const row = await this.rpc<PrivateSubmissionRow | null>("server_find_own_pending", {
       p_room_id: roomId,
       p_player_id: playerId,
     });
+    return row === null ? null : privateSubmissionFromRow(row);
   }
 
   async listPublicEvents(roomId: string, afterSequence = 0): Promise<PublicEventRecord[]> {
-    return this.rpc("server_list_public_events", {
+    return this.rpc("server_list_public_events", { p_room_id: roomId, p_after_sequence: afterSequence });
+  }
+
+  async listPrivateEvents(
+    roomId: string,
+    playerId: string,
+    tokenHash: string,
+    afterSequence = 0,
+  ): Promise<PrivateEventRecord[]> {
+    return this.rpc("server_list_private_events", {
       p_room_id: roomId,
+      p_player_id: playerId,
+      p_token_hash: tokenHash,
       p_after_sequence: afterSequence,
     });
   }

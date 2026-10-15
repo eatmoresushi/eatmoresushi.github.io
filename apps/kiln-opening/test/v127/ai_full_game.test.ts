@@ -11,9 +11,9 @@ import {
   ONLINE_COMPUTER_POLICY_VERSION,
   chooseOnlineComputerAction,
   nextOnlineDecisionActor,
-} from "../../src/multiplayer/computerPlayer.ts";
-import { createComputerObservation } from "../../src/multiplayer/computerObservation.ts";
-import type { StoredSeat } from "../../src/multiplayer/types.ts";
+} from "../../src/multiplayer-v14/computerPlayer.ts";
+import { createComputerObservation } from "../../src/multiplayer-v14/computerObservation.ts";
+import type { StoredSeat } from "../../src/multiplayer-v14/types.ts";
 
 function computerSeat(playerId: string, seatIndex: number, seed: number): StoredSeat {
   return {
