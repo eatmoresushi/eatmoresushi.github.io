@@ -2,7 +2,7 @@
  * The draft model of the Cleanup hand trim (UI_V1.6.1_ARCHITECTURE §3.4 `hand_limit`, §3.5,
  * §3.7; wireframe `decTrim`). Owner: B5.
  *
- * Cleanup, Rounds 1–4, parallel (L303): a player over the hand limit (4, or 5 with Colour
+ * Cleanup, Rounds 1–4, parallel (L304): a player over the hand limit (4, or 5 with Colour
  * Samples) discards exactly the excess (`DISCARD_TO_HAND_LIMIT`). The held Orders come from the
  * viewer's own hand and the count from `handLimitStatus`; the draft keeps the chosen Orders in
  * the order chosen. It builds as soon as one is chosen, so a wrong count shows the engine's own

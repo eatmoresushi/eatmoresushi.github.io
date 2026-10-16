@@ -117,7 +117,7 @@ export function ShortText({ text }: { text: string }) {
 }
 
 /**
- * The tag as printed after its kind label. A rulebook line (`L139`, `ED L652`) is a line of the
+ * The tag as printed after its kind label. A rulebook line (`L140`, `ED L652`) is a line of the
  * Markdown source that no player can look up, so it prints as the name of the rulebook section it
  * sits in (`rules/rulebookSections.ts`): "“Materials Yard”" / "「泥柴场」". Other tags print as
  * themselves ("R4", "A1", "D7"), an interpretation as its name ("INT Decorator's Kit" →
@@ -167,7 +167,7 @@ function groupLabel(kind: ClarificationSourceKind, tags: readonly string[], t: T
 
 /**
  * A clarification's source label, per the clarifications doc's "Source tags" table. Consecutive
- * tags of one kind are grouped, and two lines of one section name it once: "L375 · L211 · D7" →
+ * tags of one kind are grouped, and two lines of one section name it once: "L376 · L212 · D7" →
  * "Rulebook “Advanced Tech Rules”, “Workshop Development” · Wording D7" /
  * "规则书「技艺规则」、「作坊发展」 · 措辞D7". No line number reaches the player.
  */

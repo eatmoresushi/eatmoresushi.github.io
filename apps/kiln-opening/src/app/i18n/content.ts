@@ -266,7 +266,7 @@ export function firingStepCount(): number {
 // text: each component's clarifications with their source tags, and the facts its card prints.
 // Pure functions over content by stable ID; no rule is decided here.
 
-/** A D10 clarification in the current language, with its raw source tags ("L375 · D7" → ["L375", "D7"]). */
+/** A D10 clarification in the current language, with its raw source tags ("L376 · D7" → ["L376", "D7"]). */
 export interface ClarificationText {
   readonly text: string;
   readonly tags: readonly string[];

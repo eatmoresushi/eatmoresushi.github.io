@@ -115,7 +115,7 @@ export function roundBaseHeat(round: RoundMetrics): number | null {
   );
 }
 
-/** Global Heat = Base Heat + the Fire card (L248), or null until both are recorded (CR B3-3). */
+/** Global Heat = Base Heat + the Fire card (L249), or null until both are recorded (CR B3-3). */
 export function roundGlobalHeat(round: RoundMetrics): number | null {
   const base = roundBaseHeat(round);
   return base === null || round.fireModifier === null ? null : base + round.fireModifier;

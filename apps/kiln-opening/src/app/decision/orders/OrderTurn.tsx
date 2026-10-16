@@ -1,7 +1,7 @@
 /**
  * OrderTurn (UI_V1.6.1_ARCHITECTURE §3.4 `orders`; wireframe `decOrders`). Owner: B5.
  *
- * The Order Phase is one pass in First Player order (L296). On your turn: choose a held Order,
+ * The Order Phase is one pass in First Player order (L297). On your turn: choose a held Order,
  * the ceramics that complete it (described in words, D9), Crackle declarations when needed, and
  * whether to use the optional abilities it triggers; Confirm completes it. The lists are re-read
  * after each completion. "End turn" (the window's alternative) ends your Order turn. Only held

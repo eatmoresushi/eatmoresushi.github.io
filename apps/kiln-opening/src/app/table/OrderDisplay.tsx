@@ -3,7 +3,7 @@
  * Source: wireframe `displayRow`: `board.mainDisplay` (pending empty slots), deck and discard counts.
  *
  * The six face-up Main Orders, oldest (#1) to newest. A position emptied by a reservation stays
- * empty until the reserving player's turn ends ("Refills when Zhao’s turn ends", L190, L390);
+ * empty until the reserving player's turn ends ("Refills when Zhao’s turn ends", L191, L391);
  * a position left empty because both piles ran out says so (B1). The Main deck and its face-down
  * discard show their counts, as on the table (§5 "Deck counts"); the Fire deck never does (D4).
  * Display slots are table targets keyed `slot:<i>` (the Commission Market adapter).

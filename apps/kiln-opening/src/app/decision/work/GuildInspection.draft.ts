@@ -3,7 +3,7 @@
  * `guild_inspection`, §8.1). Owner: B4.
  *
  * After inspecting a discipline (B2, private), the Shifu takes one inspected Tech or one
- * face-up Tech of any discipline at −1 Coin (L207), and returns every untaken inspected Tech
+ * face-up Tech of any discipline at −1 Coin (L208), and returns every untaken inspected Tech
  * to the bottom of that deck in an order only they know (`GUILD_TAKE.bottomOrder`). Prices,
  * legality and reasons come from `guildInspectionOptions(view)`. The bottom order starts in the
  * order the cards were seen and is changed with Move up / Move down (`ReorderList`).

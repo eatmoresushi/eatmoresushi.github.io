@@ -2,8 +2,8 @@
  * Playtest Form V3 for rules V1.6.1.
  *
  * Changes from Form V2 (V1.4): no Starting Tech (V1.6.1 has none); up to three Techs, at
- * most one per discipline (L210), recorded per discipline; all five Kilns; the round's
- * Kiln Die, because Base Heat is the Kiln Die plus the revealed Contributions (L262); and
+ * most one per discipline (L211), recorded per discipline; all five Kilns; the round's
+ * Kiln Die, because Base Heat is the Kiln Die plus the revealed Contributions (L263); and
  * the V1.6.1 Firing Techs. Every option list comes from the V1.6.1 content API, never
  * from literals here.
  */
@@ -16,7 +16,7 @@ export type FireContribution = "bank_2" | "bank" | "tend" | "stoke" | "stoke_2";
 export interface PlayerMetrics {
   name: string;
   kilnId: KilnId;
-  /** The player's Tech of each discipline, if any (at most one each, L210). */
+  /** The player's Tech of each discipline, if any (at most one each, L211). */
   workshopTechId: TechId | null;
   glazingLoadingTechId: TechId | null;
   firingTechId: TechId | null;
@@ -45,7 +45,7 @@ export interface RoundPlayerMetrics {
 
 export interface RoundMetrics {
   round: number;
-  /** The round's public Kiln Die (L125), 1–3. */
+  /** The round's public Kiln Die (L126), 1–3. */
   kilnDie: number | null;
   players: RoundPlayerMetrics[];
   fireModifier: number | null;

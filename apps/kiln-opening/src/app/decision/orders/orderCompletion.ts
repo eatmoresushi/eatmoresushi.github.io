@@ -9,7 +9,7 @@
  * - which held Orders are completable: `completableOrders` / `canalBargeOptions`;
  * - the ceramic groups: `orderMatchOptions` (the validator's matcher);
  * - Crackle verdicts: `crackleDeclarationChecks`, with an explicit "auto" mode in which the
- *   command omits `crackleDeclarations` and the engine searches (L469, L484, §9.4);
+ *   command omits `crackleDeclarations` and the engine searches (L470, L485, §9.4);
  * - the selection's verdict and the triggered optional abilities: `orderSelectionCheck`.
  */
 import { crackleDeclarationChecks, orderMatchOptions } from "../../../game/index.ts";

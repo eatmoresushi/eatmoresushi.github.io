@@ -2,7 +2,7 @@
  * The draft model of the Order Phase turn (UI_V1.6.1_ARCHITECTURE §3.4 `orders`, §3.5; wireframe
  * `decOrders`). Owner: B5.
  *
- * A single pass in First Player order (L296): on your turn, complete held Orders one at a time
+ * A single pass in First Player order (L297): on your turn, complete held Orders one at a time
  * (`COMPLETE_ORDER`; the lists are re-read after each, so an Order that shared ceramics with the
  * one just completed drops out), then end the turn (`END_ORDER_TURN`, the window's alternative).
  * The completion itself is the shared model of `orderCompletion.ts`.

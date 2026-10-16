@@ -32,7 +32,7 @@ export const orders = defineNamespace({
     "requirementLine": "{requirements} · {quality}",
     "barge.pick": "Choose a held Order to complete.",
 
-    // Crackle declarations (L469, L484; `crackleDeclarationChecks`).
+    // Crackle declarations (L470, L485; `crackleDeclarationChecks`).
     "decl.legend": "Crackle declaration",
     "decl.auto": "Find a declaration for me",
     "decl.autoDesc": "The game picks Decorations for your Crackle ceramics that complete the Order, and records them.",

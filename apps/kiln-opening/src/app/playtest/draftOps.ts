@@ -98,7 +98,7 @@ export function fuelLedgerOwnerIndex(draft: PlaytestDraft): number {
   return draft.players.findIndex((player) => player.firingTechId === FUEL_LEDGER_TECH_ID);
 }
 
-/** Global Heat = Base Heat + the Fire card (L248), for the round summary (`src/playtest/model.ts`, CR B3-3). */
+/** Global Heat = Base Heat + the Fire card (L249), for the round summary (`src/playtest/model.ts`, CR B3-3). */
 export { roundGlobalHeat } from "../../playtest/model.ts";
 
 /** Parses a number input: empty → null. */

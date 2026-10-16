@@ -136,7 +136,7 @@ export function tableScenarios(): TableScenario[] {
   const scenarios: TableScenario[] = [];
   const add = (id: string, name: string, table: LocalTable, viewerId: PlayerId) => scenarios.push({ id, name, table: checked(table), viewerId });
 
-  // 1. A round with nothing loaded: the Firing Phase is skipped (L236), and the previous
+  // 1. A round with nothing loaded: the Firing Phase is skipped (L237), and the previous
   //    firing's recap stays until the next firing starts.
   {
     const recap = roundOneRecap();
@@ -254,7 +254,7 @@ export function tableScenarios(): TableScenario[] {
     add("t-tie-break-winner", "Final results: equal VP, won on Imperial Recognition", table, "p2");
   }
 
-  // 7. Recognition overflow: a Crown gained at Recognition 4 scores +1 VP (L437).
+  // 7. Recognition overflow: a Crown gained at Recognition 4 scores +1 VP (L438).
   {
     const table = new LocalTable(
       buildState({

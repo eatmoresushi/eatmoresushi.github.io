@@ -2,7 +2,7 @@
  * The Canal Wharf sub-draft (UI_V1.6.1_ARCHITECTURE §3.4; wireframe `subEditor` canal_wharf).
  * Owner: B4.
  *
- * Nothing to choose: the location is uncapped and always legal (L142). The Coins gained come from
+ * Nothing to choose: the location is uncapped and always legal (L143). The Coins gained come from
  * `placementLimits(view, "canal_wharf", effect)`.
  */
 import { placementLimits } from "../../../../game/index.ts";

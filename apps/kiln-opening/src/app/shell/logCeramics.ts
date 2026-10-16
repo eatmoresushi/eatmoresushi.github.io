@@ -5,7 +5,7 @@
  * Every undelivered ceramic and its recorded attributes are public (AGENTS.md "Hidden
  * information"). The model's `ceramics` record (change request CR B1-1, landed by B6) describes
  * every ceramic still in the game. A salvaged ceramic leaves the game (its Vessel card returns to
- * the supply, L280), so the log's older lines would lose it; the public events of the log
+ * the supply, L281), so the log's older lines would lose it; the public events of the log
  * (formed, reshaped, glazed and loaded, Quality, Crackle, finished, delivered, salvaged) keep it
  * describable, and the model's record and the recorded firing results are laid over them.
  *

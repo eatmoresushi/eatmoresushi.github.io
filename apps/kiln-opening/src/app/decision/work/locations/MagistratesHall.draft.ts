@@ -3,7 +3,7 @@
  * magistrates_hall). Owner: B4.
  *
  * Nothing to choose: pay 4 / 3 Coins for +1 Imperial Recognition, only from Recognition 0–2 and
- * never to 4 (L222–232). The price, the Recognition reached and the engine's reason come from
+ * never to 4 (L223–233). The price, the Recognition reached and the engine's reason come from
  * `magistratesHallQuote(view, effect)`.
  */
 import { magistratesHallQuote } from "../../../../game/index.ts";

@@ -3,7 +3,7 @@ import { defineNamespace } from "../defineNamespace.ts";
 /**
  * `results` namespace: final results section. Owned by B3 (UI_V1.6.1_ARCHITECTURE §4.2).
  *
- * Score rows follow `SCORE_BREAKDOWN_ROWS` (L491–494) and tie-breakers `TIE_BREAK_ORDER` (L498);
+ * Score rows follow `SCORE_BREAKDOWN_ROWS` (L492–494) and tie-breakers `TIE_BREAK_ORDER` (L498);
  * every rule number is a placeholder filled from content (§5 gap 19). The Imperial Audience
  * and Connoisseur's Cabinet rows use their content names.
  */

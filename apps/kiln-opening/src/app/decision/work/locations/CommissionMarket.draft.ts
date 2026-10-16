@@ -5,7 +5,7 @@
  * The first reservation is part of the placement: a face-up Order (its display position and the
  * resource gained after it), a blind reservation, or — Shifu effect — a private look at the top
  * of the deck. Every choice comes from `commissionOptions(view, effect)`; the gain is one of the
- * three resources (L196). Later reservations, the look's choice and a blind reservation's gain
+ * three resources (L197). Later reservations, the look's choice and a blind reservation's gain
  * are the `commission` window (`CommissionStep`).
  */
 import { commissionOptions, placementLimits } from "../../../../game/index.ts";

@@ -69,17 +69,17 @@ function expectClarifications(html: string, items: readonly ClarificationDefinit
 
 describe("clarification source labels", () => {
   it("labels each tag kind as the clarifications doc's Source tags table says", () => {
-    expect(clarificationSourceLabel(["L375", "L211", "D7"], EN)).toBe("Rulebook “Advanced Tech Rules”, “Guild Hall” · Wording D7");
+    expect(clarificationSourceLabel(["L376", "L212", "D7"], EN)).toBe("Rulebook “Advanced Tech Rules”, “Guild Hall” · Wording D7");
     expect(clarificationSourceLabel(["A1"], EN)).toBe("Owner amendment A1");
     expect(clarificationSourceLabel(["R12", "L653"], EN)).toBe("Owner ruling R12 · Rulebook “Tech Clarifications (Appendix B)”");
     expect(clarificationSourceLabel(["B3"], EN)).toBe("Owner ruling B3");
     expect(clarificationSourceLabel(["ED L714"], EN)).toBe("Editorial correction to “Action Summary (Appendix E)”");
     // Two lines of one section name it once.
     expect(clarificationSourceLabel(["L647", "L652"], EN)).toBe("Rulebook “Tech Clarifications (Appendix B)”");
-    expect(clarificationSourceLabel(["L139"], EN)).toBe("Rulebook “Phase 2 — Work Phase”");
+    expect(clarificationSourceLabel(["L140"], EN)).toBe("Rulebook “Phase 2 — Work Phase”");
     expect(clarificationSourceLabel(["INT Decorator's Kit"], EN)).toBe("Recorded interpretation: Decorator's Kit");
     expect(clarificationSourceLabel(["P2"], EN)).toBe("Provisional ruling P2 (owner may change)");
-    expect(clarificationSourceLabel(["L375", "L211", "D7"], ZH)).toBe("规则书「技艺规则」、「陶工行」 · 措辞D7");
+    expect(clarificationSourceLabel(["L376", "L212", "D7"], ZH)).toBe("规则书「技艺规则」、「陶工行」 · 措辞D7");
     expect(clarificationSourceLabel(["ED L714"], ZH)).toBe("勘误「行动一览（附录E）」");
     expect(clarificationSourceLabel(["R4"], ZH)).toBe("业主裁定R4");
     expect(clarificationSourceLabel(["A1"], ZH)).toBe("规则修订A1");

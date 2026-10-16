@@ -272,7 +272,7 @@ test("the secret Contribution and the private Commission look stay with their ow
       if (window === "contributions") {
         // Lin submits first; Zhao's page waits for that.
         if (player === guest) continue;
-        // Both players have a Shared Kiln ceramic, so both are eligible (L238).
+        // Both players have a Shared Kiln ceramic, so both are eligible (L239).
         await expect(other.page.locator('form.pane-form[data-window="contributions"]')).toBeAttached({ timeout: 15_000 });
         await host.page.locator(ENABLED_CARD).first().click();
         const card = await host.page.locator('form.pane-form input[name="card"]:checked').getAttribute("value");

@@ -2,7 +2,7 @@
  * CrackleDeclarations (UI_V1.6.1_ARCHITECTURE §3.4, §5 gap 8; wireframe `decOrders` `.decl`).
  * Owner: B5.
  *
- * For a chosen ceramic group holding Crackle ceramics (Ge, L469): either the explicit **auto**
+ * For a chosen ceramic group holding Crackle ceramics (Ge, L470): either the explicit **auto**
  * mode — the command omits `crackleDeclarations` and the engine searches — or a declaration per
  * Crackle ceramic (its own Decoration, or any one Decoration for this Order only). Every verdict
  * ("satisfies O39" / "does not satisfy O39") is `crackleDeclarationChecks`, the validator's own

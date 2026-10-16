@@ -65,7 +65,7 @@ export function contributionHeat(contribution: FireContribution): number {
   }
 }
 
-/** Base Heat = Kiln Die + revealed Contributions, clamped to the printed range (L262). */
+/** Base Heat = Kiln Die + revealed Contributions, clamped to the printed range (L263). */
 export function baseHeatFor(kilnDie: number | null, contributions: ReadonlyArray<FireContribution | null>): number | null {
   if (kilnDie === null) return null;
   const sum = contributions.reduce<number>((total, contribution) => total + (contribution === null ? 0 : contributionHeat(contribution)), 0);

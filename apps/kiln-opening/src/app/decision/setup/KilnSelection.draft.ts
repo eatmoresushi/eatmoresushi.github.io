@@ -1,7 +1,7 @@
 /**
  * The draft model of Kiln selection (UI_V1.6.1_ARCHITECTURE §3.4 `kiln_selection`). Owner: B4.
  *
- * Setup step 9 (L107): Kilns are chosen in reverse turn order; all five are selectable (R1).
+ * Setup step 9 (L108): Kilns are chosen in reverse turn order; all five are selectable (R1).
  * The choices and who took which come from `kilnSelectionOptions(view)`; `KILN_IDS` (which
  * still lists every Kiln) never decides what is offered.
  */

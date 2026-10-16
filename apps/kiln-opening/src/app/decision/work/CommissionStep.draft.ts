@@ -2,7 +2,7 @@
  * The draft model of the Commission Market steps (UI_V1.6.1_ARCHITECTURE §3.4 `commission`;
  * wireframe `decLook`). Owner: B4.
  *
- * The `commission` window follows the placement's first reservation (L186–200, B1):
+ * The `commission` window follows the placement's first reservation (L187–201, B1):
  * - `reservation`: reserve again (a face-up Order and its gain, blind, or the Shifu's look) or
  *   stop (`COMMISSION_STOP`, once one reservation is made);
  * - `look_choice`: reserve one of the privately looked-at Orders (`COMMISSION_CHOOSE_LOOKED`);

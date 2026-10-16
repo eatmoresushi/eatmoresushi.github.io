@@ -4,7 +4,7 @@
  *
  * In the Order Phase, the viewer's Finished ceramics beside their hand, with the ceramics the
  * open Order decision has chosen highlighted (`highlightedCeramicIds`), and the reminder that
- * face-up Main Orders cannot be completed (L296). Only held Orders are completed; the picker
+ * face-up Main Orders cannot be completed (L297). Only held Orders are completed; the picker
  * itself is B5's decision window. Nothing renders outside the Order Phase or for a spectator.
  */
 import { useT } from "../i18n/I18nProvider.tsx";

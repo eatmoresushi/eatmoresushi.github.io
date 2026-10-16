@@ -65,7 +65,7 @@ export type TableBoardView = Pick<
   counts: TableCounts;
   /**
    * Who owes the deferred Main display refill (`game.market.refillPendingFor`): a reserved
-   * face-up position stays empty until that player's turn ends (L190, L390). Change request
+   * face-up position stays empty until that player's turn ends (L191, L391). Change request
    * CR B2-2.
    */
   refillPendingFor: PlayerId | null;

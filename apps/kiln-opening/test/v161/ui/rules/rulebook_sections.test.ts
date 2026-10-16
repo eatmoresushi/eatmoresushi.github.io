@@ -53,9 +53,9 @@ describe("rulebook sections", () => {
   });
 
   it("finds the section of a line", () => {
-    expect(rulebookSection(139)?.en).toBe("Phase 2 — Work Phase");
-    expect(rulebookSection(157)?.en).toBe("Materials Yard");
-    expect(rulebookSection(163)?.zh).toBe("泥柴场");
+    expect(rulebookSection(140)?.en).toBe("Phase 2 — Work Phase");
+    expect(rulebookSection(158)?.en).toBe("Materials Yard");
+    expect(rulebookSection(164)?.zh).toBe("泥柴场");
     expect(rulebookSection(649)?.en).toBe("Tech Clarifications (Appendix B)");
     expect(rulebookSection(740)?.en).toBe("Firing (Appendix E)");
     expect(rulebookSection(3)).toBeNull();
