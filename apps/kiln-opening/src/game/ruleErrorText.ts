@@ -119,7 +119,7 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
   // ── Setup ──────────────────────────────────────────────────────────────────────────────
   KILN_UNAVAILABLE: {
     en: "That Kiln has already been chosen.",
-    zh: "此窑口已被他人选走",
+    zh: "此窑口已被其他玩家选走",
     detailKeys: keys("kilnId"),
   },
   // ── Placement (L140–144) ──────────────────────────────────────────────────────────────
@@ -130,7 +130,7 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
   },
   WORKER_ACTION_REQUIRED: {
     en: "You may not pass in the Work Phase: place 1 worker (the Canal Wharf is always available).",
-    zh: "派工阶段不能跳过，请派1名工人（漕运码头永远可派）",
+    zh: "派工阶段不能跳过，请派1名工人（总是可以派往漕运码头）",
     detailKeys: keys(),
   },
   WORKER_ACTION_ALREADY_TAKEN: {
@@ -180,7 +180,7 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
   },
   INVALID_RESOURCE_SPLIT: {
     en: "That split is not allowed: gain exactly {total} Clay and Wood in total.",
-    zh: "资源分配不符：须恰好获得共{total}份泥和柴",
+    zh: "资源分配不符：必须恰好获得共{total}份泥和柴",
     detailKeys: keys("total", "clay", "wood"),
     fallbacks: [{ en: "That resource split is not allowed.", zh: "资源分配不符" }],
   },
@@ -219,11 +219,11 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
   // ── Loading (R5) ──────────────────────────────────────────────────────────────────────
   KILN_SPACE_UNAVAILABLE: {
     en: "{spaceId} is not available: it is covered or already holds a ceramic.",
-    zh: "{spaceId}不可用：已停用或已有器物",
+    zh: "{spaceId}不可用：已被盖住或已有器物",
     detailKeys: keys("spaceId", "ceramicId"),
     fallbacks: [{
       en: "There is nowhere to load: no empty active Shared Kiln space, and your Imperial Kiln is unavailable.",
-      zh: "没有可装窑的去处：共窑无空的启用窑位，你的御窑也不可用",
+      zh: "没有可装窑的去处：共窑没有空的启用窑位，你的御窑也不可用",
     }],
   },
   KILN_SPACE_MARKED: {
@@ -233,17 +233,17 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
   },
   IMPERIAL_KILN_UNAVAILABLE: {
     en: "You have no Imperial Kiln, or it already holds a ceramic this firing.",
-    zh: "你尚无御窑，或御窑本次烧成已有器物",
+    zh: "你还没有御窑，或御窑本次烧成已有器物",
     detailKeys: keys("ceramicId"),
   },
   INVERTED_FIRING_INVALID: {
     en: "Inverted Firing stacks only a Bowl, Plate or Brush Washer in an active space holding exactly 1 of your ceramics.",
-    zh: "覆烧只能将碗、盘或笔洗叠入恰有1件你的器物的启用窑位",
+    zh: "覆烧只能把碗、盘或笔洗叠放进恰好已有1件你的器物的启用窑位",
     detailKeys: keys("spaceId", "ceramicId", "shape"),
   },
   HEAT_MARKER_INVALID: {
     en: "A ceramic may carry at most 1 Heat marker.",
-    zh: "一件器物至多带1个火标",
+    zh: "每件器物至多带1个火标",
     detailKeys: keys("ceramicId", "source"),
   },
   // ── Orders and market (B1) ────────────────────────────────────────────────────────────
@@ -259,7 +259,7 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
   },
   ORDER_SUPPLY_EMPTY: {
     en: "The Main Order deck and discard pile are both empty; there is nothing to reserve.",
-    zh: "主委托牌堆与弃牌堆皆空，无可承接",
+    zh: "主委托牌堆和弃牌堆都空了，没有可承接的委托",
     detailKeys: keys(),
   },
   RESERVATION_LIMIT: {
@@ -285,14 +285,14 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
   },
   HAND_LIMIT_DISCARD_COUNT: {
     en: "At Cleanup, discard down to {limit} Orders: discard {needed} more.",
-    zh: "收工须弃至{limit}张委托：请再弃{needed}张",
+    zh: "收工时要把委托弃到{limit}张：请再弃{needed}张",
     detailKeys: keys("limit", "needed", "held", "given"),
-    fallbacks: [{ en: "At Cleanup, discard down to your hand limit.", zh: "收工须弃至委托上限" }],
+    fallbacks: [{ en: "At Cleanup, discard down to your hand limit.", zh: "收工时要把委托弃到上限" }],
   },
   // ── Techs and abilities (R4) ──────────────────────────────────────────────────────────
   TECH_NOT_AVAILABLE: {
     en: "That Tech is not available to take.",
-    zh: "这张技艺牌不在可取之列",
+    zh: "这张技艺牌不能拿取",
     detailKeys: keys("techId", "discipline"),
   },
   TECH_LIMIT: {
@@ -318,7 +318,7 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
   },
   INVALID_BOTTOM_ORDER: {
     en: "Put every untaken inspected Tech on the bottom exactly once, in the order you choose.",
-    zh: "请为每张未取的技艺牌排定置底顺序",
+    zh: "请为每张没有拿的所看技艺牌排定置底顺序",
     detailKeys: keys("expected", "given", "techId"),
   },
   KILN_ABILITY_NOT_OWNED: {
@@ -340,7 +340,7 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
   // ── Recognition ───────────────────────────────────────────────────────────────────────
   RECOGNITION_GATE: {
     en: "The Magistrate's Hall is usable only at Recognition 0–2 and never advances you to 4.",
-    zh: "州衙只能在声望0–2时使用，不能推进至4",
+    zh: "州衙只能在声望0–2时使用，不能推进到声望4",
     detailKeys: keys("recognition"),
   },
   IMPERIAL_PRIORITY_UNAVAILABLE: {
@@ -365,7 +365,7 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
     detailKeys: keys("card", "fuelLedger", "needed", "have"),
     fallbacks: [{
       en: "Not enough Wood for that Contribution (Tend the Fire is always available).",
-      zh: "柴不足，无法打出此控火牌（守火永远可选）",
+      zh: "柴不足，打不出这张控火牌（守火永远可选）",
     }],
   },
   PRIVATE_WINDOW_MISMATCH: {
@@ -473,16 +473,16 @@ export const REASON_TEXT: Readonly<Record<string, RuleErrorTemplate>> = {
   masterpiece_required: { en: "a Masterpiece is required", zh: "需臻品" },
   already_delivered: { en: "the ceramic has been delivered", zh: "器物已交付" },
   flawed: { en: "a Flawed ceramic cannot complete an Order", zh: "瑕品不能完成委托" },
-  crackle_not_masterpiece: { en: "a Crackle ceramic is never a Masterpiece", zh: "开片器不是臻品" },
-  not_this_firing: { en: "the ceramic is not in this firing", zh: "本次烧成之外的器物" },
+  crackle_not_masterpiece: { en: "a Crackle ceramic is never a Masterpiece", zh: "开片器永远不是臻品" },
+  not_this_firing: { en: "the ceramic is not in this firing", zh: "器物不在本次烧成中" },
   wrong_count: { en: "the number of ceramics does not match", zh: "器物件数不符" },
   relation_mismatch: { en: "the combined requirements are not met", zh: "组合要求不符" },
-  crackle_not_selected: { en: "the declared ceramic is not one of those chosen", zh: "声明的器物不在所选之列" },
-  not_crackle: { en: "only Crackle ceramics may declare a Decoration", zh: "只有开片器可声明纹饰" },
-  crackle_declared_twice: { en: "a Crackle ceramic may be declared only once", zh: "同一开片器只能声明一次" },
+  crackle_not_selected: { en: "the declared ceramic is not one of those chosen", zh: "声明的器物不在所选器物中" },
+  not_crackle: { en: "only Crackle ceramics may declare a Decoration", zh: "只有开片器可以声明纹饰" },
+  crackle_declared_twice: { en: "a Crackle ceramic may be declared only once", zh: "同一件开片器只能声明一次" },
   declaration_does_not_satisfy: {
     en: "these declarations do not satisfy the Order, but other declarations would",
-    zh: "所作声明不满足委托，换一种声明可满足",
+    zh: "这些声明不满足委托，换一种声明就可以满足",
   },
 };
 

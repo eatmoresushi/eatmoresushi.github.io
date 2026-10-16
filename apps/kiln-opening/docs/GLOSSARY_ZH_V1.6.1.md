@@ -591,8 +591,8 @@ The owner's own wording edits to the Chinese rulebook and component text (2026-1
 
 | 工人 | 短 | 完整 |
 | --- | --- | --- |
-| 学徒 | 1件坯施釉入窑 | 选择你的1件坯，为它选定釉并装窑。 |
-| 师傅 | 至多2件坯施釉入窑；可暗置火标 | 为你的至多2件坯施釉并装窑。然后你可以把火标暗置于你在共窑或御窑中1件未带火标的器物上（R9，含本轮先前装进或经御烧优先装进者）。师傅留在施釉装窑工位上。 |
+| 学徒 | 1件坯施釉装窑 | 选择你的1件坯，为它选定釉并装窑。 |
+| 师傅 | 至多2件坯施釉装窑；火标暗置于己方1件器物上 | 为你的至多2件坯施釉并装窑。然后可以把你的火标暗置于你在共窑或御窑中的1件没有火标的器物上（R9，包括本轮先前装进的，或通过御烧优先装进的）。师傅留在施釉装窑工位上。 |
 
 - 装窑：放入一个空的启用窑位；如果你已经获得御窑且御窑空着，本次行动装窑的器物中可以有1件改放进御窑，
   并公开选定御窑修正−1、0或+1。
@@ -609,7 +609,7 @@ The owner's own wording edits to the Chinese rulebook and component text (2026-1
 | 工人 | 短 | 完整 |
 | --- | --- | --- |
 | 学徒 | 承接1张，并得1泥／柴／铜钱 | 承接1张主委托，然后获得1泥、1柴或1铜钱。 |
-| 师傅 | 承接至多2张（1次可看三取一）；每张后得1泥／柴／铜钱 | 承接至多2张主委托，逐张结算。其中1张可以改为：私下查看主委托牌堆顶3张，承接其中1张，其余弃置。每承接1张，就获得1泥、1柴或1铜钱。 |
+| 师傅 | 承接至多2张，逐张结算（其中1张可看三取一）；每张后得1泥／柴／铜钱 | 承接至多2张主委托，逐张结算。其中1张可以改为：私下查看主委托牌堆顶3张，承接其中1张，其余弃置。每承接1张，就获得1泥、1柴或1铜钱。 |
 
 - 师傅至少要承接1张，承接第1张后可以停止；由于你的回合结束前委托榜不会补牌，师傅的第2次承接只能从榜上剩下的委托中选。
 - 一轮之中没有委托上限；收工时弃至4张（有色样簿则5张）。手中委托保密，张数公开。
@@ -618,8 +618,8 @@ The owner's own wording edits to the Chinese rulebook and component text (2026-1
 
 | 工人 | 短 | 完整 |
 | --- | --- | --- |
-| 学徒 | 按价习得1张公开技艺 | 支付牌面的铜钱费用，习得1张公开的技艺。 |
-| 师傅 | 看1门类顶2张；习得其一或任一公开技艺，−1铜钱 | 选择1个门类，私下查看该门类牌堆顶的2张（不足2张则看余下的）。然后习得任一门类的1张公开技艺，或所看的1张，少付1铜钱，最低为0。没有拿的所看技艺按你自定的顺序（保密）放回该牌堆底。 |
+| 学徒 | 按价习得1张公开技艺，得1分 | 支付牌面的铜钱费用，习得1张公开的技艺。 |
+| 师傅 | 看1个门类的顶2张（不足则看余下的）；习得其中1张或任一公开技艺，少付1铜钱 | 选择1个门类，私下查看该门类牌堆顶的2张（不足2张则看余下的）。然后习得任一门类的1张公开技艺，或所看的1张，少付1铜钱，最低为0。没有拿的所看技艺按你决定的顺序（保密）放回该牌堆底。 |
 
 - 习得后，先将所看之牌置底，再为该门类补至2张；无牌则留空。
 - 每人至多3项技艺，每门类至多1项。习得坯作技艺即添设你的制坯饰纹第二工位；习得釉作技艺即添设施釉装窑
@@ -640,8 +640,8 @@ The owner's own wording edits to the Chinese rulebook and component text (2026-1
 
 | 工人 | 短 | 完整 |
 | --- | --- | --- |
-| 学徒 | 付4铜钱，声望+1（限0–2） | 支付4铜钱，御府声望推进1格。 |
-| 师傅 | 付3铜钱，声望+1（限0–2） | 支付3铜钱，御府声望推进1格。 |
+| 学徒 | 付4铜钱，声望+1（0→1、1→2或2→3） | 支付4铜钱，御府声望推进1格。 |
+| 师傅 | 付3铜钱，声望+1（0→1、1→2或2→3） | 支付3铜钱，御府声望推进1格。 |
 
 - 无御令要求：可由0→1、1→2或2→3。不能推进至4，故声望3或4时不可使用。
 - 两个工位都空时，同一玩家可在一轮中都使用。
@@ -784,9 +784,9 @@ The owner's own wording edits to the Chinese rulebook and component text (2026-1
 | `GAME_FINISHED` | 已终局 | 本局已结束 |
 | `STALE_CHOICE` | 局面已变 | 局面已更新，请重新选择 |
 | `MALFORMED_ACTION` / `INVALID_CHOICE` | 选项无效 | 此选项不可用 |
-| `KILN_UNAVAILABLE` | 窑口已被选 | 此窑口已被他人选走 |
+| `KILN_UNAVAILABLE` | 窑口已被选 | 此窑口已被其他玩家选走 |
 | `WORKER_UNAVAILABLE` | 无可派工人 | 你没有可派的{worker} |
-| `WORKER_ACTION_REQUIRED` | 试图跳过派工 | 派工阶段不能跳过，请派1名工人（漕运码头永远可派） |
+| `WORKER_ACTION_REQUIRED` | 试图跳过派工 | 派工阶段不能跳过，请派1名工人（总是可以派往漕运码头） |
 | `WORKER_ACTION_ALREADY_TAKEN` | 本回合已派工 | 本回合你已派过工 |
 | `LOCATION_FULL` | 地点已满 | {location}已满 |
 | `PERSONAL_SPACE_LOCKED` | 尚无第二工位 | 习得{discipline}技艺即添此工位 |
@@ -798,30 +798,30 @@ The owner's own wording edits to the Chinese rulebook and component text (2026-1
 | `CERAMIC_NOT_FOUND` / `CERAMIC_NOT_OWNED` | 器物无效 | 找不到这件器物，或它不属于你 |
 | `ILLEGAL_CERAMIC_STAGE` | 器物状态不符 | 这件器物现在是{stage}，不能这样使用 |
 | `DUPLICATE_CERAMIC` | 重复选用 | 同一件器物不能重复选用 |
-| `KILN_SPACE_UNAVAILABLE` | 无合法去处 | 没有可装窑的去处：共窑无空的启用窑位，你的御窑也不可用 |
+| `KILN_SPACE_UNAVAILABLE` | 无合法去处 | 没有可装窑的去处：共窑没有空的启用窑位，你的御窑也不可用 |
 | `KILN_SPACE_MARKED` | 窑位签所占 | 此窑位本轮已由{name}的窑位签占用 |
-| `IMPERIAL_KILN_UNAVAILABLE` | 御窑不可用 | 你尚无御窑，或御窑本次烧成已有器物 |
-| `INVERTED_FIRING_INVALID` | 覆烧不合法 | 覆烧只能将碗、盘或笔洗叠入恰有1件你的器物的启用窑位 |
-| `HEAT_MARKER_INVALID` | 火标不合法 | 一件器物至多带1个火标 |
+| `IMPERIAL_KILN_UNAVAILABLE` | 御窑不可用 | 你还没有御窑，或御窑本次烧成已有器物 |
+| `INVERTED_FIRING_INVALID` | 覆烧不合法 | 覆烧只能把碗、盘或笔洗叠放进恰好已有1件你的器物的启用窑位 |
+| `HEAT_MARKER_INVALID` | 火标不合法 | 每件器物至多带1个火标 |
 | `ORDER_NOT_AVAILABLE` | 委托不在榜上 | 这张委托已不在委托榜上 |
 | `ORDER_NOT_HELD` | 非在手委托 | 只能完成在手委托 |
-| `ORDER_SUPPLY_EMPTY` | 主委托用尽 | 主委托牌堆与弃牌堆皆空，无可承接 |
+| `ORDER_SUPPLY_EMPTY` | 主委托用尽 | 主委托牌堆和弃牌堆都空了，没有可承接的委托 |
 | `RESERVATION_LIMIT` | 承接次数已满 | 此行动已承接{limit}张 |
 | `ORDER_REQUIREMENTS_NOT_MET` | 要求未满足 | 所选器物不满足委托{order}的要求：{reason} |
 | `INVALID_CRACKLE_DECLARATION` | 开片声明无效 | 开片声明无效：{reason} |
-| `HAND_LIMIT_DISCARD_COUNT` | 收工弃牌数不符 | 收工须弃至{limit}张委托：请再弃{n}张 |
-| `TECH_NOT_AVAILABLE` | 技艺不可取 | 这张技艺牌不在可取之列 |
+| `HAND_LIMIT_DISCARD_COUNT` | 收工弃牌数不符 | 收工时要把委托弃到{limit}张：请再弃{n}张 |
+| `TECH_NOT_AVAILABLE` | 技艺不可取 | 这张技艺牌不能拿取 |
 | `TECH_LIMIT` | 技艺已满3项 | 你已拥有3项技艺 |
 | `TECH_DISCIPLINE_OWNED` | 门类已有 | 你已拥有一项{discipline}技艺 |
 | `TECH_NOT_OWNED` / `KILN_ABILITY_NOT_OWNED` | 未拥有 | 你没有{tech} |
 | `TECH_ALREADY_USED` / `ABILITY_ALREADY_USED` | 本轮已用 | {tech}本轮已用 |
-| `INVALID_BOTTOM_ORDER` | 置底顺序无效 | 请为每张未取的技艺牌排定置底顺序 |
+| `INVALID_BOTTOM_ORDER` | 置底顺序无效 | 请为每张没有拿的所看技艺牌排定置底顺序 |
 | `INVALID_TARGET` | 目标不合法 | 此目标不合法：{reason} |
-| `RECOGNITION_GATE` | 州衙声望限制 | 州衙只能在声望0–2时使用，不能推进至4 |
+| `RECOGNITION_GATE` | 州衙声望限制 | 州衙只能在声望0–2时使用，不能推进到声望4 |
 | `IMPERIAL_PRIORITY_UNAVAILABLE` | 御烧优先不可用 | 你没有御烧优先标，或御窑不空，或没有坯 |
 | `NOT_CONTRIBUTOR` | 非控火者 | 你在共窑中没有器物，本轮不参与控火 |
 | `CONTRIBUTION_ALREADY_SUBMITTED` | 已提交控火 | 你已提交控火，等候其他作坊 |
-| `INVALID_CONTRIBUTION` | 控火不合法 | 柴不足，无法打出此控火牌（守火永远可选） |
+| `INVALID_CONTRIBUTION` | 控火不合法 | 柴不足，打不出这张控火牌（守火永远可选） |
 
 `{reason}` 常用短语：器型不符、釉不符、纹饰不符、品质不足、需臻品、器物已交付、瑕品不能完成委托、
 开片器不是臻品、本次烧成之外的器物、声明的器物不在所选之列、只有开片器可声明纹饰、同一开片器只能声明一次、所作声明不满足委托，换一种声明可满足。

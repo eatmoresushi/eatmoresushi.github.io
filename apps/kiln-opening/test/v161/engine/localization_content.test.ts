@@ -150,8 +150,8 @@ describe("every stable ID resolves to English and Chinese text", () => {
     expect(formatRuleError({ code: "NOT_YOUR_DECISION", details: { waitingFor: "p2" } }, "zh", { playerName: () => "乙" }))
       .toBe("尚未轮到你，请等候乙");
     expect(formatRuleError({ code: "ORDER_REQUIREMENTS_NOT_MET", details: { orderId: "O13", reason: "crackle_not_masterpiece" } }, "zh"))
-      .toBe("所选器物不满足委托O13的要求：开片器不是臻品");
-    expect(formatRuleError({ code: "KILN_SPACE_UNAVAILABLE", details: { spaceId: "low_2" } }, "zh")).toBe("低温区2号窑位不可用：已停用或已有器物");
+      .toBe("所选器物不满足委托O13的要求：开片器永远不是臻品");
+    expect(formatRuleError({ code: "KILN_SPACE_UNAVAILABLE", details: { spaceId: "low_2" } }, "zh")).toBe("低温区2号窑位不可用：已被盖住或已有器物");
     expect(formatRuleError({ code: "TECH_LIMIT", details: { maxOwned: 3 } }, "zh")).toBe("你已拥有3项技艺");
   });
 });
