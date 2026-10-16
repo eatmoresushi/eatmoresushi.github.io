@@ -29,6 +29,6 @@
       - text: 1柴
       - radio "1铜钱"
       - text: 1铜钱
-    - paragraph: 请选择所得。
+    - paragraph: 请选择要获得的资源。
     - button "取消"
     - button "确认" [disabled]

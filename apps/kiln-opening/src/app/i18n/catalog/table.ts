@@ -94,8 +94,8 @@ export const table = defineNamespace({
     "location.recognitionOnly": "仅限御府声望{from}–{to}",
     "location.fullRules": "完整规则",
     "location.placeHeading": "派工：",
-    "location.placeAt": "派{worker}至{location}",
-    "location.cantPlace": "不可派",
+    "location.placeAt": "派{worker}到{location}",
+    "location.cantPlace": "不能派",
     "location.occupants": "{location}的工人",
 
     "kilnMini.title": "共窑",
@@ -109,7 +109,7 @@ export const table = defineNamespace({
     "display.decks": "主委托牌堆{deck}张 · 弃牌堆{discard}张（面朝下）",
     "display.slot": "#{n}",
     "display.emptyRefill": "空位：<b>{name}</b>的回合结束时补榜。",
-    "display.emptyNone": "空位：无牌可补。",
+    "display.emptyNone": "空位：没有牌可补。",
 
     "order.kind.starting": "起始",
     "order.kind.commercial": "商贾",
@@ -136,10 +136,10 @@ export const table = defineNamespace({
     "finished.title": "你的成器",
     "finished.none": "暂无成器",
     "finished.count": "{n}件成器",
-    "finished.faceUpNote": "委托榜上的委托不能直接完成，须先在{market}承接。",
+    "finished.faceUpNote": "委托榜上的委托不能直接完成，要先在{market}承接。",
 
     "techs.title": "技艺",
-    "techs.sub": "每门类公开{n}张 · 于{guild}习得 · 习得即得{vp}分",
+    "techs.sub": "每门类公开{n}张 · 在{guild}习得 · 习得时得{vp}分",
     "techs.deck": "牌堆{n}张",
     "techs.none": "暂无公开技艺",
     "techs.looking": "{name}正在查看{n}张技艺",

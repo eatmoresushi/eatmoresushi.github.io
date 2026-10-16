@@ -17,4 +17,4 @@
     - text: /手中0张委托 声望4／4 \d+分/
   - form "等候Player 2……":
     - group "等候Player 2……":
-      - paragraph: 等候时可浏览桌面。
+      - paragraph: 等候时可以浏览桌面。

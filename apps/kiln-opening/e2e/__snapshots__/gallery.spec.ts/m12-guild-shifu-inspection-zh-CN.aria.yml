@@ -41,8 +41,8 @@
       - radio "复烧 2铜钱 → 1铜钱 火作"
       - text: 复烧 2铜钱 → 1铜钱 火作
       - button "规则：复烧"
-    - paragraph: 置于坯作牌堆底（自上而下）
-    - list "置于坯作牌堆底（自上而下）":
+    - paragraph: 放回坯作牌堆底（自上而下）
+    - list "放回坯作牌堆底（自上而下）":
       - listitem:
         - text: 改坯案
         - button "上移「改坯案」" [disabled]

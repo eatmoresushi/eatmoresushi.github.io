@@ -5,8 +5,10 @@
     flex-wrap: wrap;
     align-items: center;
     gap: var(--sp-2) var(--sp-4);
-    padding: var(--sp-3) var(--sp-6) var(--sp-5);
-    border-block-start: 1px dashed var(--note-line);
+    margin-block-start: var(--sp-5);
+    padding: var(--sp-3) var(--sp-4) var(--sp-4);
+    border: 1px dashed var(--note-line);
+    border-radius: var(--r-md);
     background: var(--note-bg);
     color: var(--note-ink);
   }

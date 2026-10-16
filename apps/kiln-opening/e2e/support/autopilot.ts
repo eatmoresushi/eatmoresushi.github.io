@@ -80,6 +80,8 @@ export function autopilotPick(args: AutopilotArgs): AutopilotPick {
   for (const button of Array.from(fields.querySelectorAll<HTMLButtonElement>("button"))) {
     if (!enabled(button) || !shown(button)) continue;
     if (button.hasAttribute("data-action") || button.closest(".kit-detail") !== null || button.classList.contains("kit-detail-close")) continue;
+    // Dev tools (the canonical-move button sits at the end of the scroll area) are never a player's choice.
+    if (button.hasAttribute("data-dev")) continue;
     if (button.type === "submit") continue;
     candidates.push(button);
   }

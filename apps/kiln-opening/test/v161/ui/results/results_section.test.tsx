@@ -88,8 +88,8 @@ describe("score table", () => {
     }
     expect(perceivable(html)).toContain("Each Tech scored 1 VP when it was gained. It is listed here once and never added again at game end.");
     const zh = render("m8_final_results_3p", "zh-CN");
-    expect(perceivable(zh)).toContain("技艺分 · 习得即得1分");
-    expect(perceivable(zh)).toContain("每项技艺习得时已得1分；此处单列，终局不再另计。");
+    expect(perceivable(zh)).toContain("技艺分 · 习得时得1分");
+    expect(perceivable(zh)).toContain("每项技艺在习得时已得1分；这里只列出一次，终局不再另计。");
     expect(perceivable(zh)).toContain("余钱折分 · 每3铜钱1分，至多5分");
     // The internal amendment code never shows in the table or its note (D10: source tags only in
     // rules details).

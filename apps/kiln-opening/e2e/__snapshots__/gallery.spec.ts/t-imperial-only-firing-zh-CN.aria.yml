@@ -17,7 +17,7 @@
     - text: 手中0张委托 声望0／4 0分
   - form "等候Lin……":
     - group "等候Lin……":
-      - paragraph: 等候时可浏览桌面。
+      - paragraph: 等候时可以浏览桌面。
       - heading "顺序" [level=3]
       - list "顺序":
         - listitem: Lin：决断中

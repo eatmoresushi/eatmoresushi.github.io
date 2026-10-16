@@ -78,7 +78,7 @@ describe("StoredError compatibility", () => {
     const { toStoredError } = await import("../../../../src/app/session/sessionStore.ts").catch(() => ({ toStoredError: undefined }));
     if (toStoredError === undefined) return;
     const stored = toStoredError({ code: "ROOM_NOT_FOUND", message: "x", details: {}, currentRevision: null });
-    expect(storedErrorText(stored, "zh-CN")).toBe("找不到这个房间代码");
+    expect(storedErrorText(stored, "zh-CN")).toBe("找不到这个房间码");
   });
 });
 

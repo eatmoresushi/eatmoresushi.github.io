@@ -197,7 +197,7 @@ describe("work draft: worker, location and per-location sub-drafts", () => {
     expect(validateAction(c.actor, command as GameAction)).toBeNull();
     const [en, zh] = sentences(WINDOWS.work, draft, c);
     expect(en).toBe("Place Shifu at Canal Wharf — +4 Coins");
-    expect(zh).toBe("派师傅至漕运码头：得4铜钱");
+    expect(zh).toBe("派师傅到漕运码头：得4铜钱");
   });
 
   it("offers Imperial Priority and Canal Barge before the action when they are usable", () => {

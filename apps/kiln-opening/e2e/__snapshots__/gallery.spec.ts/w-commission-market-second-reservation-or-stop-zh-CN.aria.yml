@@ -44,7 +44,7 @@
       - text: 看三取一（仅你可见）
       - radio "停止承接 本回合你已至少承接一张委托。"
       - text: 停止承接 本回合你已至少承接一张委托。
-    - paragraph: 被承接的榜位留空至你的回合结束。
+    - paragraph: 被承接的榜位空着，直到你的回合结束。
     - paragraph: 请选择要承接的委托。
     - button "停止承接"
     - button "确认" [disabled]

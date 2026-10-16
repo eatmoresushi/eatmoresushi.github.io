@@ -142,7 +142,7 @@ describe("ceramics, markers and tiles", () => {
     expect(furniture).toContain("<dt>Score</dt><dd>1 VP when gained</dd>");
     expect(furniture).toMatch(/<dt>Owner<\/dt><dd>Lin<\/dd><\/div><div class="rd-fact"><dt>This round<\/dt><dd>(Ready|Used this round)<\/dd>/);
     expect(zh).toContain("<dt>添设</dt><dd>施釉装窑第二工位</dd>");
-    expect(zh).toContain("习得即得1分");
+    expect(zh).toContain("习得时得1分");
     expect(perceivable(furniture)).not.toMatch(/\b(un)?lock/i);
   });
 

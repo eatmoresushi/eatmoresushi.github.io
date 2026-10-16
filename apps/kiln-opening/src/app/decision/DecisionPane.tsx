@@ -105,10 +105,12 @@ export function DecisionPane() {
               short pane: then the region itself takes keyboard focus (axe scrollable-region-focusable). */}
           <div className="pane-scroll" inert={sending} {...(acting ? {} : { tabIndex: 0, role: "group", "aria-labelledby": headingId })}>
             <Fields />
+            {/* Dev builds only. Inside the scroll area, so on a short pane it never takes height
+                from (or paints over) the ConfirmBar. */}
+            {DEV_TOOLS_BUILD && devTools && acting ? <CanonicalMoveButton /> : null}
           </div>
           {acting ? <ConfirmBar state={confirm} /> : null}
         </form>
-        {DEV_TOOLS_BUILD && devTools && acting ? <CanonicalMoveButton /> : null}
       </Sheet>
     </aside>
   );

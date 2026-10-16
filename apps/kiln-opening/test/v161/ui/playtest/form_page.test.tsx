@@ -186,7 +186,7 @@ describe("validation issues in the reader's language", () => {
     expect(issueField("rounds.2.players.0.contribution", draft, en)).toBe("Round 3 · Player 1 · Fire Contribution");
     expect(issueField("players.0.firingTechId", draft, zh)).toBe("玩家1 · 火作技艺");
     expect(issueMessage("Enter a whole number from 0 to 4.", zh)).toBe("请填写0–4之间的整数。");
-    expect(issueMessage("Shared Kiln loading cannot exceed 6 ceramics.", zh)).toBe("装入共窑的器物不能超过6件。");
+    expect(issueMessage("Shared Kiln loading cannot exceed 6 ceramics.", zh)).toBe("装进共窑的器物不能超过6件。");
     expect(issueMessage("An unknown message.", zh)).toBe("An unknown message.");
   });
 

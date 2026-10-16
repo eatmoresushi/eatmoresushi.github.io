@@ -43,8 +43,8 @@
       - radio "柴簿 3铜钱 → 2铜钱 火作"
       - text: 柴簿 3铜钱 → 2铜钱 火作
       - button "规则：柴簿"
-    - paragraph: 置于火作牌堆底（自上而下）
-    - list "置于火作牌堆底（自上而下）":
+    - paragraph: 放回火作牌堆底（自上而下）
+    - list "放回火作牌堆底（自上而下）":
       - listitem:
         - text: 火照
         - button "上移「火照」" [disabled]

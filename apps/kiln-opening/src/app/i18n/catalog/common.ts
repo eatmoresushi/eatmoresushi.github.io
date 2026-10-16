@@ -279,7 +279,7 @@ export const common = defineNamespace({
     "kit.moveDown": "下移",
     "kit.moveItemUp": "上移「{item}」",
     "kit.moveItemDown": "下移「{item}」",
-    "kit.movedTo": "「{item}」移至第{n}位",
+    "kit.movedTo": "「{item}」移到第{n}位",
     "kit.position": "第{n}位",
     "kit.stepperMore": "增加{item}",
     "kit.stepperFewer": "减少{item}",

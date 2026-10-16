@@ -83,7 +83,7 @@ export const boards = defineNamespace({
     "markers.heatSupply": "火标在手",
     "markers.kilnMasterOn": "窑工标{value}在<b>{ceramic}</b>上",
     "markers.imperial": "御窑：{state}",
-    "markers.imperialEmpty": "本轮空置",
+    "markers.imperialEmpty": "本轮空着",
     "markers.imperialNotYet": "尚未获得",
 
     "spaces.addedBy": "由「<b>{tech}</b>」添设",

@@ -121,7 +121,7 @@ The owner's own wording edits to the Chinese rulebook and component text (2026-1
 | --- | --- | --- |
 | Kiln Opening | 《开窑》 | 沿用。开窑即烧成后启窑取器，正是全局高潮。 |
 | Build the workshop. Share the kiln. Master the craft. | 立作坊，共窑火，精匠艺。 | 三字对句，替代旧“经营作坊，共用一窑，精进技艺”。 |
-| A medium-weight worker-placement game about Song Dynasty ceramic workshops | 一款以宋代窑场作坊为题的中度派工策略游戏 | “派工”即工人放置，见 2.2。 |
+| A medium-weight worker-placement game about Song Dynasty ceramic workshops | 一款以宋代窑场作坊为题材、中等重度的派工策略游戏 | “派工”即工人放置，见 2.2。 |
 | 2–4 players · 90–120 minutes · Ages 12+ | 2–4人 · 90–120分钟 · 12岁以上 | — |
 | Round (game lasts 5 rounds) | 轮（共5轮） | 一轮 = 开工至收工。 |
 | Turn | 回合 | 某位玩家的一次行动机会，如“轮到你的回合”。 |

@@ -105,7 +105,7 @@ export const rules = defineNamespace({
     "fact.adds": "添设",
     "fact.addsSpace": "{location}第二工位",
     "fact.vp": "得分",
-    "fact.vpWhenGained": "习得即得{n}分",
+    "fact.vpWhenGained": "习得时得{n}分",
     "fact.owner": "拥有者",
     "fact.kind": "类别",
     "fact.reward": "报酬",

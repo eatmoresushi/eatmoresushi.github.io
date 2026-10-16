@@ -240,7 +240,7 @@ describe("Order Phase lines", () => {
   it("says an automatic end without claiming the player completed nothing", () => {
     const ended = SAMPLES.ORDER_TURN_ENDED;
     expect(publicEventText(ended, context("en"))).toBe("Zhao has no more Orders to complete");
-    expect(publicEventText(ended, context("zh-CN"))).toBe("Zhao再无可完成的委托");
+    expect(publicEventText(ended, context("zh-CN"))).toBe("Zhao再没有可以完成的委托");
     expect(publicEventText({ ...ended, automatic: false }, context("en"))).toBe("Zhao ended their Order turn");
   });
 

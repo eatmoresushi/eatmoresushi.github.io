@@ -17,7 +17,7 @@
     - text: /手中3张委托 声望1／4 \d+分/
   - form "共享胜利":
     - group "共享胜利":
-      - paragraph: /Lin、Wen以\d+分并列第一，平局判定亦全部相同，共享胜利。/
+      - paragraph: /Lin、Wen以\d+分并列第一，平局判定也全部相同，共享胜利。/
       - heading "名次" [level=3]
       - list:
         - listitem: /第1名 Lin（你） \d+分/

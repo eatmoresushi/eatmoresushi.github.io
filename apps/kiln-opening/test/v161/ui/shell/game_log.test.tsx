@@ -91,7 +91,7 @@ describe("game log", () => {
     const snapshot = fixtureSnapshot(structuredClone(fixture("w-kiln-selection")));
     const html = renderComponent(new StaticSource({ ...snapshot, log: [] }), <GameLog />, { ui: { logOpen: true } });
     expect(html).toContain("Nothing has happened yet.");
-    expect(renderComponent(new StaticSource({ ...snapshot, log: [] }), <GameLog />, { ui: { logOpen: true }, locale: "zh-CN" })).toContain("暂无记录。");
+    expect(renderComponent(new StaticSource({ ...snapshot, log: [] }), <GameLog />, { ui: { logOpen: true }, locale: "zh-CN" })).toContain("还没有记录。");
   });
 
   it("marks the viewer's own secret lines and shows only theirs", () => {

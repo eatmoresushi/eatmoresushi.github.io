@@ -201,7 +201,7 @@ describe("the work turn", () => {
     const toggle = [...container.querySelectorAll("button")].find((button) => button.textContent === "中文");
     if (toggle === undefined) throw new Error("no language toggle");
     click(toggle);
-    expect(summary()).toBe("派师傅至漕运码头：得4铜钱");
+    expect(summary()).toBe("派师傅到漕运码头：得4铜钱");
     expect(radio("locationId", "canal_wharf").checked).toBe(true);
   });
 });

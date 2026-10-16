@@ -297,7 +297,7 @@ describe("sub-editors from seeded drafts", () => {
     const seen = perceivable(html);
     expect(seen).toContain("Bowl, Plain (1 of 2)");
     expect(seen).toContain("Bowl, Plain (2 of 2)");
-    expect(perceivable(zh(id, draftFor(id, command)))).toContain("同款2件之1");
+    expect(perceivable(zh(id, draftFor(id, command)))).toContain("同款2件中第1件");
     expect(seen).toContain("Your Imperial Kiln");
     expect(seen).toMatch(/Imperial modifier −1/);
     expect(summary(html)).toMatch(/Imperial Kiln \(−1\)$/);

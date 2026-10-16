@@ -36,7 +36,7 @@ Key V1.6.1 facts that differ from V1.4:
   - Only held Orders are completed, in a single First-Player-order pass.
   - A reserved face-up Order is refilled only after the reserving player's turn ends.
 
-The Chinese UI uses a Song-dynasty kiln-workshop register, not literal translation (owner instruction, 2026-10-14). Use the glossary terms consistently.
+The Chinese UI uses a Song-dynasty kiln-workshop register, not literal translation (owner instruction, 2026-10-14). Use the glossary terms consistently. The period flavour lives in those fixed terms; sentences are plain modern Chinese, as in the owner's 2026-10-16 revision of the Chinese rulebook: 把, 在, 不能, 才可以, 空着, 装进, not 将, 于, 不得, 方可, 空置, 装入 (owner instruction, 2026-10-16).
 
 Player-facing text never says lock or unlock (owner decision D7, `docs/ui-v1.6.1/OWNER_DECISIONS.md`): a second personal space is one you add by learning a Tech ("Learn a Form & Decorate Tech to add this space" / 习得坯作技艺即添此工位; "Added by ⟨Tech⟩" / 由「⟨技艺⟩」添设). Internal identifiers (`unlocked`, `unlocks`, `unlockedAtStart`, `PERSONAL_SPACE_LOCKED`, `PERSONAL_SPACE_UNLOCKED`) keep their names.
 

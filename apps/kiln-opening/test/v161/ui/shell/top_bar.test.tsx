@@ -142,6 +142,6 @@ describe("game shell", () => {
     expect(firstFocusable).toContain('href="#decision"');
     expect(html).toContain(">Skip to your decision</a>");
     expect(html).toContain('id="decision"');
-    expect(renderScreen(fixtureSource("m1_work_phase_r2_3p"), { locale: "zh-CN" })).toContain(">跳至你的决断</a>");
+    expect(renderScreen(fixtureSource("m1_work_phase_r2_3p"), { locale: "zh-CN" })).toContain(">跳到你的决断</a>");
   });
 });

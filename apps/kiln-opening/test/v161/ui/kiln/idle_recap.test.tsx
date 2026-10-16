@@ -40,7 +40,7 @@ describe("idle firing recap", () => {
     const text = perceivable(render("t-firing-skipped"));
     expect(text).toContain("Round 2: nothing was loaded, so there was no firing.");
     expect(text).toContain("Last firing · Round 1");
-    expect(perceivable(render("t-firing-skipped", "zh-CN"))).toContain("第2轮：无器物入窑，本轮不烧窑。");
+    expect(perceivable(render("t-firing-skipped", "zh-CN"))).toContain("第2轮：没有器物装窑，所以这一轮不烧窑。");
   });
 
   it("recaps an Imperial-only firing: no Contributions, so Base Heat is the Kiln Die", () => {

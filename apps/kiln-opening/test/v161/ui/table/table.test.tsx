@@ -346,7 +346,7 @@ describe("Order Phase: hand states and the Finished ceramics strip (m6)", () => 
     expect(textOf(html)).toContain("Face-up Main Orders cannot be completed; reserve them at the Commission Market.");
     // CR B2-1 has landed: the plain fixture source describes every Finished ceramic too.
     expect((render(id, <FinishedCeramicsStrip />).match(/data-motion="ceramic"/g) ?? []).length).toBe(finishedIds.length);
-    expect(textOf(renderComponent(withModelCeramics(fixtureSource(id)), <FinishedCeramicsStrip />, { locale: "zh-CN" }))).toContain("委托榜上的委托不能直接完成，须先在瓷牙行承接。");
+    expect(textOf(renderComponent(withModelCeramics(fixtureSource(id)), <FinishedCeramicsStrip />, { locale: "zh-CN" }))).toContain("委托榜上的委托不能直接完成，要先在瓷牙行承接。");
   });
 
   it("is shown only in the Order Phase", () => {

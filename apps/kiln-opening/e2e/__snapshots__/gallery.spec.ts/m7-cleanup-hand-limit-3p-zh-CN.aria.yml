@@ -1,6 +1,6 @@
 - complementary "你的决断":
   - paragraph: 收工·轮到你了
-  - heading "弃至委托上限" [level=2]
+  - heading "弃到委托上限" [level=2]
   - region "Wen（你）":
     - heading "Wen（你）" [level=3]
     - group "资源":
@@ -15,8 +15,8 @@
     - img "你的学徒"
     - img "你的学徒"
     - text: 手中6张委托 声望0／4 2分
-  - form "弃至委托上限":
-    - paragraph: 你持有6张委托，上限4张：须恰好弃置2张。起始委托放回盒中；主委托面朝下弃置。
+  - form "弃到委托上限":
+    - paragraph: 你持有6张委托，上限4张：必须恰好弃置2张。起始委托放回盒中；主委托面朝下弃置。
     - group "委托 仅你可见":
       - text: ""
       - paragraph: 已选0／2张
@@ -38,7 +38,7 @@
       - checkbox "O08 5分 3铜钱 任意器型 · 灰青釉 · 任意纹饰 · 上品以上"
       - text: O08 5分 3铜钱 任意器型 · 灰青釉 · 任意纹饰 · 上品以上
       - button "规则：委托O08"
-    - paragraph: 各玩家同时弃牌；他人只看到你持有的委托张数。
+    - paragraph: 所有玩家同时弃牌；其他玩家只看到你持有的委托张数。
     - paragraph: 已选0／2张
     - button "取消"
     - button "确认" [disabled]
