@@ -1,36 +1,48 @@
-/* GameShell (B1; phase A stub layout by A2): world and pane side by side, stacked on phones. */
+/*
+ * GameShell (B1; wireframe `.ko`, `.ko-world`, `.ko-pane`, `.ko-tabs`, phone and short-landscape
+ * grids). Layout only: the same markup at every width (§7.3). `#root` (or the gallery stage) is
+ * the `shell` container, so the breakpoints follow its width; short landscape follows the
+ * viewport height.
+ */
 @layer layout {
   #root {
     container: shell / inline-size;
   }
 
   .shell {
+    position: relative;
     display: grid;
     grid-template-columns: minmax(0, 1fr) var(--pane-w);
-    grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
+    grid-template-rows: auto auto minmax(0, 1fr);
     grid-template-areas:
-      "skip skip"
       "top top"
       "banner banner"
-      "world pane"
-      "nav nav"
-      "live live";
-    min-height: 100dvh;
+      "world pane";
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+    background: var(--paper);
+    color: var(--ink);
   }
 
-  .shell-skip {
-    grid-area: skip;
-    min-width: 0;
-  }
-
+  /* The skip link and the live regions take no grid space. */
+  .shell-skip,
   .shell-live {
-    grid-area: live;
-    min-width: 0;
+    position: absolute;
+    inset: 0 auto auto 0;
+    z-index: var(--z-toast);
+    width: 0;
+    height: 0;
   }
 
+  /* Above the phone sheet, so the log dropdown and the session menu open over it. */
   .shell-top {
+    position: relative;
+    z-index: calc(var(--z-sheet) + 1);
     grid-area: top;
     min-width: 0;
+    padding-top: env(safe-area-inset-top, 0);
+    background: var(--surface);
   }
 
   .shell-banner {
@@ -40,46 +52,103 @@
 
   .shell-world {
     grid-area: world;
+    container: world / inline-size;
     display: grid;
     align-content: start;
-    gap: var(--sp-6);
+    gap: var(--sp-7);
     min-width: 0;
-    padding: var(--sp-6);
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0 var(--sp-7) var(--sp-8);
   }
 
   .shell-pane {
     grid-area: pane;
+    display: flex;
+    flex-direction: column;
     min-width: 0;
+    min-height: 0;
     border-inline-start: 1px solid var(--line);
     background: var(--panel);
   }
 
+  .shell-pane > * {
+    flex: 1;
+    min-height: 0;
+  }
+
   .shell-nav {
     grid-area: nav;
+    display: none;
     min-width: 0;
   }
 
+  /* Tablet: a narrower pane. */
+  @container shell (max-width: 1199px) {
+    .shell {
+      --pane-w: 340px;
+    }
+
+    .shell-world {
+      padding: 0 var(--sp-6) var(--sp-8);
+    }
+  }
+
+  /* Phone (portrait): the pane is the bottom sheet, the nav the section bar. */
   @container shell (max-width: 899px) {
     .shell {
       grid-template-columns: minmax(0, 1fr);
-      grid-template-rows: auto auto auto 1fr auto auto auto;
+      grid-template-rows: auto auto minmax(0, 1fr) auto auto;
       grid-template-areas:
-        "skip"
         "top"
         "banner"
         "world"
         "pane"
-        "nav"
-        "live";
+        "nav";
     }
 
     .shell-world {
-      padding: var(--sp-4);
+      gap: var(--sp-6);
+      padding: var(--sp-5) var(--gutter) var(--sp-7);
     }
 
     .shell-pane {
+      position: relative;
+      z-index: var(--z-sheet);
       border-inline-start: 0;
-      border-block-start: 1px solid var(--line);
+      background: transparent;
+    }
+
+    .shell-nav {
+      display: block;
+    }
+  }
+
+  /* Short landscape (844×390 … 932×430): a left section rail and a side pane, nothing stacks. */
+  @media (orientation: landscape) and (max-height: 500px) {
+    .shell {
+      grid-template-columns: 4.75rem minmax(0, 1fr) min(330px, 40vw);
+      grid-template-rows: auto auto minmax(0, 1fr);
+      grid-template-areas:
+        "nav top top"
+        "nav banner banner"
+        "nav world pane";
+    }
+
+    .shell-world {
+      padding: var(--sp-4) var(--sp-6) var(--sp-6);
+    }
+
+    .shell-pane {
+      border-inline-start: 1px solid var(--line);
+      background: var(--panel);
+    }
+
+    .shell-nav {
+      display: block;
+      padding-inline-start: env(safe-area-inset-left, 0);
     }
   }
 }

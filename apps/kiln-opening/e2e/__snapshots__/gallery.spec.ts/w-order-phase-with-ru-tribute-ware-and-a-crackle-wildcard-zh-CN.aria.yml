@@ -1,0 +1,37 @@
+- complementary "你的决断":
+  - paragraph: 交货阶段·轮到你了
+  - heading "完成在手委托" [level=2]
+  - region "Player 1（你）":
+    - heading "Player 1（你）" [level=3]
+    - group "资源":
+      - strong: "2"
+      - text: 泥
+      - strong: "2"
+      - text: 柴
+      - strong: "3"
+      - text: 铜钱
+    - img "你的师傅"
+    - img "你的学徒"
+    - img "你的学徒"
+    - img "你的学徒"
+    - text: 手中4张委托 声望0／4 1分
+  - form "完成在手委托":
+    - paragraph: 按起始玩家顺序。可逐张完成任意张在手委托；每完成一张后重新核验。
+    - group "委托 4张中4张可完成":
+      - text: ""
+      - radio "O22 8分 1铜钱 1个御令 任意器型 · 青釉 · 素面 · 臻品"
+      - text: O22 8分 1铜钱 1个御令 任意器型 · 青釉 · 素面 · 臻品
+      - button "规则：委托O22"
+      - radio "O18 6分 2铜钱 1个御令 瓶 · 青釉 · 任意纹饰 · 上品以上"
+      - text: O18 6分 2铜钱 1个御令 瓶 · 青釉 · 任意纹饰 · 上品以上
+      - button "规则：委托O18"
+      - radio "S01 2分 4铜钱 碗 · 任意釉 · 任意纹饰 · 良品以上"
+      - text: S01 2分 4铜钱 碗 · 任意釉 · 任意纹饰 · 良品以上
+      - button "规则：委托S01"
+      - radio "S13 4分 4铜钱 任意器型 · 任意釉 · 画花 · 良品以上"
+      - text: S13 4分 4铜钱 任意器型 · 任意釉 · 画花 · 良品以上
+      - button "规则：委托S13"
+    - paragraph: 只能完成在手委托；委托榜上的委托不能完成。
+    - paragraph: 请选择要完成的委托，或结束回合。
+    - button "结束回合"
+    - button "确认" [disabled]

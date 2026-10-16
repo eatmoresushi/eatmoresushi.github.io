@@ -1,13 +1,50 @@
 /**
- * The draft model of the Magistrate's Hall sub-editor (UI_V1.6.1_ARCHITECTURE §3.5). Owner: B4 (work and setup decisions).
+ * The Magistrate's Hall sub-draft (UI_V1.6.1_ARCHITECTURE §3.4; wireframe `subEditor`
+ * magistrates_hall). Owner: B4.
  *
- * Phase A stub created by A2 (§4.3 rule 1): `stubDraft()` builds nothing and its `fromCommand`
- * returns null, so the expressibility helper reports this window as `todo` until its owner lands
- * the real model (`initial`, `reduce`, `options`, `build`, `fromCommand`, `summary`).
+ * Nothing to choose: pay 4 / 3 Coins for +1 Imperial Recognition, only from Recognition 0–2 and
+ * never to 4 (L222–232). The price, the Recognition reached and the engine's reason come from
+ * `magistratesHallQuote(view, effect)`.
  */
-import { stubDraft } from "../../../state/draftStore.ts";
-import type { StubDraft } from "../../../state/draftStore.ts";
+import { magistratesHallQuote } from "../../../../game/index.ts";
+import type { CostQuote, Recognition, ResourceState } from "../../../../game/index.ts";
+import { msg } from "../../../i18n/translator.ts";
+import type { LocationDraftModel } from "./editor.ts";
+import { amountsText, resourcesPlus } from "./shared.ts";
 
-export type MagistratesHallDraft = StubDraft;
+export interface MagistratesHallDraft {
+  readonly placed: true;
+}
 
-export const magistratesHallDraft = stubDraft();
+export type MagistratesHallAction = never;
+
+export interface MagistratesHallOptions {
+  quote: CostQuote;
+  from: Recognition;
+  reachable: Recognition | null;
+  after: ResourceState | null;
+}
+
+const BLANK: MagistratesHallDraft = Object.freeze({ placed: true });
+
+export const magistratesHallDraft: LocationDraftModel<"magistrates_hall", MagistratesHallDraft, MagistratesHallAction, MagistratesHallOptions> = {
+  locationId: "magistrates_hall",
+  blank: () => BLANK,
+  prepare: (draft) => draft,
+  reduce: (draft) => draft,
+  options(_draft, context) {
+    const quote = magistratesHallQuote(context.view, context.worker.effect);
+    return {
+      quote,
+      from: context.me.recognition,
+      reachable: quote.reachable,
+      after: quote.ok ? resourcesPlus(context.me.resources, quote.gain, quote.pay) : null,
+    };
+  },
+  build: (_draft, context) => ({ type: "PLACE_MAGISTRATES_HALL", workerId: context.worker.workerId }),
+  fromCommand: () => BLANK,
+  detail(_draft, context) {
+    const quote = magistratesHallQuote(context.view, context.worker.effect);
+    return msg("work.mh.pay", { pay: (t) => amountsText(t, quote.pay) });
+  },
+};

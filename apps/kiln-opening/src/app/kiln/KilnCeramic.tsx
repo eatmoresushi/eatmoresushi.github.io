@@ -1,0 +1,141 @@
+/**
+ * A ceramic in the Shared Kiln, an Imperial Kiln, the recap or the results (wireframe `cchip`).
+ * Owner: B3.
+ *
+ * The chip is the picture (art, owner ring, Quality, Crackle and Heat-marker badges); its name is
+ * the ceramic in words (`ceramicLabel`, D9). Wrapped in `PieceDetail` (§7.4, §8.1), it opens a
+ * panel with the full description, its place, marker, Quality and Second Firing card. Inside a
+ * kiln target button it renders as a plain chip (no nested controls).
+ *
+ * A ceramic the model holds no attributes for (see `tableCeramics.ts`) is shown in words only:
+ * "Lin's ceramic · Fine".
+ */
+import type { CeramicHeatMarker, CeramicId, FireModifier, PlayerId, Quality } from "../../game/index.ts";
+import { useT } from "../i18n/I18nProvider.tsx";
+import { techName, qualityName } from "../i18n/content.ts";
+import { KILN_TECHS } from "../i18n/catalog/kiln.ts";
+import { ceramicLabel, ceramicPlace, placeName } from "../i18n/ceramicLabel.ts";
+import { signed } from "../i18n/format.ts";
+import type { Translator } from "../i18n/translator.ts";
+import { PieceDetail } from "../kit/PieceDetail.tsx";
+import { CeramicChip } from "../pieces/CeramicChip.tsx";
+import { FireCard } from "../pieces/FireCard.tsx";
+import { heatMarkerWords } from "../pieces/HeatMarkerBadge.tsx";
+import { QualityChip } from "../pieces/QualityChip.tsx";
+import { useTableSelection } from "../state/hooks.ts";
+import { useTableCeramics } from "./tableCeramics.ts";
+import type { TableCeramics } from "./tableCeramics.ts";
+import { seatVar } from "./cssVars.ts";
+import "./KilnCeramic.css";
+
+export interface KilnCeramicProps {
+  id: CeramicId;
+  /** Shown when the model holds no attributes for the ceramic. */
+  ownerId: PlayerId;
+  /** The marker on the ceramic while it is loaded. */
+  marker?: CeramicHeatMarker | null;
+  /** A Quality to show when the model holds none (a recap or results record). */
+  quality?: Quality | null;
+  crackle?: boolean;
+  /** Second Firing's extra Fire card for this ceramic, if any. */
+  extraFire?: FireModifier | null;
+  size?: number;
+  /** Letters instead of Quality words (narrow kiln spaces). */
+  compactQuality?: boolean;
+  /** False inside a target button: a plain chip with no details control. */
+  interactive?: boolean;
+  className?: string;
+}
+
+/** The ceramic in words, owner included; the place only when another would read the same. */
+export function kilnCeramicLabel(ceramics: TableCeramics, id: CeramicId, ownerId: PlayerId, t: Translator, quality?: Quality | null): string {
+  const facts = ceramics.facts(id);
+  if (facts !== null) return ceramicLabel(facts, ceramics.view, { locale: t, among: ceramics.all });
+  const base = ownerId === ceramics.view.viewerId
+    ? t("kiln.recap.ceramicFallbackYours")
+    : t("kiln.recap.ceramicFallback", { owner: ceramics.displayName(ownerId) });
+  return quality === undefined || quality === null ? base : t("common.ceramic.withQuality", { ceramic: base, quality: qualityName(quality, t.locale) });
+}
+
+export function KilnCeramic({
+  id,
+  ownerId,
+  marker = null,
+  quality,
+  crackle,
+  extraFire = null,
+  size = 30,
+  compactQuality = false,
+  interactive = true,
+  className,
+}: KilnCeramicProps) {
+  const t = useT();
+  const ceramics = useTableCeramics();
+  const selection = useTableSelection();
+  const stored = ceramics.facts(id);
+  const facts = stored === null
+    ? null
+    : { ...stored, ...(quality === undefined || quality === null ? {} : { quality }), ...(crackle === undefined ? {} : { crackle: crackle || stored.crackle === true }) };
+  const highlighted = selection.highlightedCeramicIds.has(id);
+  const seat = ceramics.seat(facts?.ownerId ?? ownerId);
+  const label = facts === null
+    ? kilnCeramicLabel(ceramics, id, ownerId, t, quality)
+    : ceramicLabel(facts, ceramics.view, { locale: t, among: ceramics.all });
+
+  const chip = facts === null ? (
+    <span className={["cchip", "kcer-fallback", highlighted ? "cchip--highlighted" : ""].filter((part) => part !== "").join(" ")} style={seatVar(seat)} data-motion="ceramic" data-motion-key={id}>
+      <span className="sr-only">{label}</span>
+      <span className="cchip-ring kcer-fallback-ring" aria-hidden="true" />
+      {quality === undefined || quality === null ? null : <QualityChip quality={quality} compact={compactQuality} decorative className="cchip-quality" />}
+    </span>
+  ) : (
+    <CeramicChip
+      ceramic={facts}
+      seat={seat}
+      label={label}
+      marker={marker}
+      size={size}
+      compactQuality={compactQuality}
+      highlighted={highlighted}
+    />
+  );
+
+  const fire = extraFire === null ? null : (
+    <span className="kcer-extra" title={t("kiln.secondFireLabel", { tech: techName(KILN_TECHS.secondFiring, t.locale), value: signed(extraFire) })}>
+      <span className="sr-only">{t("kiln.secondFireLabel", { tech: techName(KILN_TECHS.secondFiring, t.locale), value: signed(extraFire) })}</span>
+      <span aria-hidden="true" className="kcer-extra-tag">{t("kiln.secondFireTag", { tech: techName(KILN_TECHS.secondFiring, t.locale) })}</span>
+      <span aria-hidden="true"><FireCard value={extraFire} /></span>
+    </span>
+  );
+
+  if (!interactive) {
+    return (
+      <span className={["kcer", className ?? ""].filter((part) => part !== "").join(" ")}>
+        {chip}
+        {fire}
+      </span>
+    );
+  }
+
+  const place = facts === null ? null : ceramicPlace(facts);
+  const lines: string[] = [];
+  if (place !== null) lines.push(t("kiln.detail.place", { place: placeName(place, facts?.ownerId === ceramics.view.viewerId, t) }));
+  const shownQuality = facts?.quality ?? quality ?? null;
+  lines.push(shownQuality === null ? t("kiln.detail.noQuality") : t("kiln.detail.quality", { quality: qualityName(shownQuality, t.locale) }));
+  if (marker !== null) lines.push(t("kiln.detail.marker", { marker: heatMarkerWords(marker, t) }));
+  if (facts?.crackle === true || crackle === true) lines.push(t("kiln.detail.crackle"));
+  if (extraFire !== null) lines.push(t("kiln.secondFireLabel", { tech: techName(KILN_TECHS.secondFiring, t.locale), value: signed(extraFire) }));
+
+  return (
+    <span className={["kcer", className ?? ""].filter((part) => part !== "").join(" ")}>
+      <PieceDetail label={label} title={label} trigger={chip} className="kcer-detail">
+        <ul className="kcer-lines">
+          {lines.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ul>
+      </PieceDetail>
+      {fire}
+    </span>
+  );
+}

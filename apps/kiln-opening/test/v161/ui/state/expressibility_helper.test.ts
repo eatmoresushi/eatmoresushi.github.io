@@ -1,12 +1,13 @@
 /**
- * The expressibility helper itself (UI_V1.6.1_ARCHITECTURE §9.4): stub windows report `todo`;
+ * The expressibility helper itself (UI_V1.6.1_ARCHITECTURE §9.4): stub windows report `todo`
+ * (CR B4-3, B5-3: checked on a registry of `stubDraft()` windows, since the real ones are real);
  * a real draft model passes; each of the four checks fails a model that breaks it; Canal Barge
  * routes to its own form; exhaustive mode samples above its cap.
  */
 import { describe, expect, it } from "vitest";
 import type { AuthoritativeCommand } from "../../../../src/game/index.ts";
 import { DECISION_WINDOW_KINDS } from "../../../../src/app/state/decisionWindow.ts";
-import { defineWindow } from "../../../../src/app/state/draftStore.ts";
+import { defineWindow, stubDraft } from "../../../../src/app/state/draftStore.ts";
 import type { DraftModel, WindowRegistry } from "../../../../src/app/state/draftStore.ts";
 import { WINDOWS } from "../../../../src/app/decision/windows.ts";
 import { checkView, commandsFor, formFor, normalizeCommand } from "../support/expressibility.ts";
@@ -14,17 +15,27 @@ import { allFixtures, fixture } from "../support/fixtures.ts";
 import { TOY_WINDOWS, ToyKilnForm, kilnDraft } from "../support/toyWindows.tsx";
 import type { KilnAction, KilnDraft } from "../support/toyWindows.tsx";
 
+/** The real registry with every draft model replaced by a phase A stub (`stubDraft()`). */
+function stubbed(): WindowRegistry {
+  const registry: Record<string, unknown> = {};
+  for (const [kind, spec] of Object.entries(WINDOWS)) registry[kind] = { ...spec, draft: stubDraft() };
+  return registry as unknown as WindowRegistry;
+}
+
 function withKiln(model: DraftModel<KilnDraft, KilnAction, readonly string[]>): WindowRegistry {
   return { ...WINDOWS, kiln_selection: defineWindow({ kind: "kiln_selection", Component: ToyKilnForm, draft: model, title: () => () => "" }) };
 }
 
 describe("expressibility helper", () => {
-  it("reports every phase A stub window as todo, never as a failure", () => {
+  it("reports a stub window (stubDraft) as todo, never as a failure", () => {
+    // The real windows are no longer stubs (B4, B5); a registry of stubs keeps the helper honest.
+    const registry = stubbed();
+    const canalBarge = stubDraft() as unknown as NonNullable<Parameters<typeof checkView>[1]>["canalBarge"];
     const acting = allFixtures().filter((entry) => entry.viewerActs === true);
     expect(acting.length).toBeGreaterThan(30);
     let rows = 0;
     for (const entry of acting) {
-      const report = checkView(entry.playerView);
+      const report = checkView(entry.playerView, canalBarge === undefined ? { registry } : { registry, canalBarge });
       expect(report.rows.length, entry.id).toBeGreaterThan(0);
       for (const row of report.rows) expect(row.status, `${entry.id} ${row.command.type}`).toBe("todo");
       rows += report.rows.length;

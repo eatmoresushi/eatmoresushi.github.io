@@ -44,6 +44,9 @@ export const common = defineNamespace({
     "status.waitingFor": "Waiting for {name}…",
     "status.waitingForOthers": "Waiting for other workshops…",
     "status.yourTurn": "Your turn",
+    // The decision pane's eyebrow above its heading (wireframe `promptBlock`): the round phase, and
+    // whose turn it is when the viewer acts.
+    "status.phaseYourTurn": "{phase} · Your turn",
     "status.usedThisRound": "Used this round",
     "status.ready": "Ready",
     "status.ongoing": "Ongoing",
@@ -61,6 +64,8 @@ export const common = defineNamespace({
     "payList": "pay {list}",
     "vp": "VP",
     "vpN": "{n} VP",
+    // The viewer's Imperial Recognition in the decision pane's own summary (wireframe `ownSummary`).
+    "recognitionN": "Recognition {n}/{max}",
     "vpGain": "+{n} VP",
     "roundN": "Round <b>{n}</b>/{total}",
     "kilnSpace": "{zone} {n}",
@@ -187,6 +192,7 @@ export const common = defineNamespace({
     "status.waitingFor": "等候{name}……",
     "status.waitingForOthers": "等候其他作坊……",
     "status.yourTurn": "轮到你了",
+    "status.phaseYourTurn": "{phase}·轮到你了",
     "status.usedThisRound": "本轮已用",
     "status.ready": "可用",
     "status.ongoing": "持续",
@@ -203,6 +209,7 @@ export const common = defineNamespace({
     "payList": "付{list}",
     "vp": "分",
     "vpN": "{n}分",
+    "recognitionN": "声望{n}／{max}",
     "vpGain": "+{n}分",
     "roundN": "第<b>{n}</b>轮／共{total}轮",
     "kilnSpace": "{zone}{n}",

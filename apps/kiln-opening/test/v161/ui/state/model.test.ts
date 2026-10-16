@@ -36,8 +36,12 @@ describe("TableBoardView (D3/D4 by type)", () => {
   it.each(allFixtures().map((entry) => [entry.id, entry] as const))("%s: the model holds neither at runtime", (_, entry) => {
     const model = buildGameModel(entry.playerView, []);
     expect(Object.keys(model.board).sort()).toEqual(
-      ["centralLocations", "counts", "fireDiscard", "firstPlayerId", "kilnDie", "kilnSpaces", "mainDisplay", "prompt", "round", "techDisplay", "turnOrder"].sort(),
+      ["centralLocations", "counts", "fireDiscard", "firstPlayerId", "kilnDie", "kilnSpaces", "mainDisplay", "prompt", "refillPendingFor", "round", "techDisplay", "turnOrder"].sort(),
     );
+    // CR B2-2: the deferred display refill, from the public market state.
+    expect(model.board.refillPendingFor).toBe(entry.playerView.game.market.refillPendingFor);
+    // CR B2-1: every public ceramic, as the view holds it.
+    expect(model.ceramics).toBe(entry.playerView.game.ceramics);
     expect(Object.keys(model.board.counts).sort()).toEqual(["mainDeck", "mainDiscard", "orderHands", "pendingLook", "techDecks"]);
     const text = JSON.stringify(model);
     expect(text).not.toMatch(/"fireDeck"|"heatSources?"|"actualHeat"|"heatDifference"|"qualityByFire"|"heatPreviews"/);

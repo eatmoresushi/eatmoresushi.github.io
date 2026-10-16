@@ -1,0 +1,36 @@
+- complementary "Your decision":
+  - paragraph: Order Phase · Your turn
+  - heading "Complete held Orders" [level=2]
+  - region "Zhao (you)":
+    - heading "Zhao (you)" [level=3]
+    - group "Resources":
+      - strong: "1"
+      - text: Clay
+      - strong: "1"
+      - text: Wood
+      - strong: "2"
+      - text: Coins
+    - text: 5 Orders in hand Recognition 0/4 2 VP
+  - form "Complete held Orders":
+    - paragraph: In First Player order. Complete any number of your held Orders, one at a time; the list is checked again after each one.
+    - group "Order 4 of 5 can be completed":
+      - text: ""
+      - radio /O48 \d+ VP 0 Coins 3 Crowns Brush Washer \+ Vase \+ Censer; one White, one Grey-Green, one Moon White; at least 2 different Decorations · Fine\+ all; ≥1 Masterpiece/
+      - text: /O48 \d+ VP 0 Coins 3 Crowns Brush Washer \+ Vase \+ Censer; one White, one Grey-Green, one Moon White; at least 2 different Decorations · Fine\+ all; ≥1 Masterpiece/
+      - 'button "Rules: Order O48"'
+      - radio /O39 \d+ VP 1 Coin 2 Crowns Vase \+ Censer; one Celadon, one Moon White; one Plain, one Painted · Fine\+ each/
+      - text: /O39 \d+ VP 1 Coin 2 Crowns Vase \+ Censer; one Celadon, one Moon White; one Plain, one Painted · Fine\+ each/
+      - 'button "Rules: Order O39"'
+      - radio "O05 7 VP 4 Coins Censer · any Glaze · Carved · Fine+"
+      - text: O05 7 VP 4 Coins Censer · any Glaze · Carved · Fine+
+      - 'button "Rules: Order O05"'
+      - radio /O37 \d+ VP 2 Coins 1 Crown Censer \+ Bowl; one Grey-Green, one Celadon; same Decoration · Fine\+ each No matching ceramics/ [disabled]
+      - text: /O37 \d+ VP 2 Coins 1 Crown Censer \+ Bowl; one Grey-Green, one Celadon; same Decoration · Fine\+ each No matching ceramics/
+      - 'button "Rules: Order O37"'
+      - radio "O08 5 VP 3 Coins any Shape · Grey-Green · any Decoration · Fine+"
+      - text: O08 5 VP 3 Coins any Shape · Grey-Green · any Decoration · Fine+
+      - 'button "Rules: Order O08"'
+    - paragraph: Only held Orders can be completed; Orders on the display cannot.
+    - paragraph: Choose an Order to complete, or end your turn.
+    - button "End turn"
+    - button "Confirm" [disabled]

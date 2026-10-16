@@ -1,0 +1,43 @@
+- complementary "你的决断":
+  - paragraph: 交货阶段·轮到你了
+  - heading "完成在手委托" [level=2]
+  - region "Player 1（你）":
+    - heading "Player 1（你）" [level=3]
+    - group "资源":
+      - strong: "2"
+      - text: 泥
+      - strong: "2"
+      - text: 柴
+      - strong: "3"
+      - text: 铜钱
+    - img "你的师傅"
+    - img "你的学徒"
+    - img "你的学徒"
+    - img "你的学徒"
+    - text: 手中6张委托 声望0／4 0分
+  - form "完成在手委托":
+    - paragraph: 按起始玩家顺序。可逐张完成任意张在手委托；每完成一张后重新核验。
+    - group "委托 6张中2张可完成":
+      - text: ""
+      - radio "S01 2分 4铜钱 碗 · 任意釉 · 任意纹饰 · 良品以上"
+      - text: S01 2分 4铜钱 碗 · 任意釉 · 任意纹饰 · 良品以上
+      - button "规则：委托S01"
+      - radio "S02 2分 4铜钱 盘 · 任意釉 · 任意纹饰 · 良品以上 无可用器物" [disabled]
+      - text: S02 2分 4铜钱 盘 · 任意釉 · 任意纹饰 · 良品以上 无可用器物
+      - button "规则：委托S02"
+      - radio "O01 3分 3铜钱 碗 · 任意釉 · 任意纹饰 · 良品以上"
+      - text: O01 3分 3铜钱 碗 · 任意釉 · 任意纹饰 · 良品以上
+      - button "规则：委托O01"
+      - radio "O02 3分 3铜钱 盘 · 任意釉 · 任意纹饰 · 良品以上 无可用器物" [disabled]
+      - text: O02 3分 3铜钱 盘 · 任意釉 · 任意纹饰 · 良品以上 无可用器物
+      - button "规则：委托O02"
+      - radio "O03 3分 3铜钱 笔洗 · 任意釉 · 任意纹饰 · 良品以上 无可用器物" [disabled]
+      - text: O03 3分 3铜钱 笔洗 · 任意釉 · 任意纹饰 · 良品以上 无可用器物
+      - button "规则：委托O03"
+      - radio "O04 7分 4铜钱 瓶 · 月白釉 · 任意纹饰 · 上品以上 无可用器物" [disabled]
+      - text: O04 7分 4铜钱 瓶 · 月白釉 · 任意纹饰 · 上品以上 无可用器物
+      - button "规则：委托O04"
+    - paragraph: 只能完成在手委托；委托榜上的委托不能完成。
+    - paragraph: 请选择要完成的委托，或结束回合。
+    - button "结束回合"
+    - button "确认" [disabled]

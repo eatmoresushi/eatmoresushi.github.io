@@ -26,6 +26,7 @@ import {
   useUi,
 } from "../../../../src/app/state/hooks.ts";
 import { WINDOWS } from "../../../../src/app/decision/windows.ts";
+import { engineViewOf, gameModelOf } from "../../../../src/app/state/model.ts";
 import { fixtureSource } from "../support/fixtures.ts";
 import { harness, renderComponent } from "../support/render.tsx";
 import { TOY_WINDOWS } from "../support/toyWindows.tsx";
@@ -88,8 +89,13 @@ describe("every hook renders on the server", () => {
     expect(valueOf(html, "round")).toBe("2");
     expect(valueOf(html, "engine")).toBe("p3");
     expect(valueOf(html, "window")).toBe("work");
-    expect(valueOf(html, "draft")).toBe("{&quot;stub&quot;:true}");
-    expect(valueOf(html, "table")).toBe("false");
+    // The work window's real initial draft (B4; CR B4-3, B5-3), from the fixture.
+    const source = fixtureSource("m1_work_phase_r2_3p");
+    const view = source.getServerSnapshot().view!;
+    const initial = WINDOWS.work.draft.initial(gameModelOf(view, source.getServerSnapshot().seats), engineViewOf(view));
+    expect(valueOf(html, "draft")).toBe(JSON.stringify(initial).replace(/"/g, "&quot;"));
+    // The real work window (B4) drives the table: Place shortcuts are live for the acting viewer.
+    expect(valueOf(html, "table")).toBe("true");
     expect(valueOf(html, "ui")).toBe("workshop");
     expect(valueOf(html, "layout")).toBe("phone");
     expect(valueOf(html, "dev")).toBe("false");

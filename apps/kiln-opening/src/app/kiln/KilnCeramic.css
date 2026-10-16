@@ -1,0 +1,43 @@
+/* A ceramic in a kiln, the recap or the results: chip, details panel, Second Firing card. */
+@layer components {
+  .kcer {
+    position: relative;
+    display: inline-flex;
+    align-items: flex-end;
+    gap: var(--sp-2);
+    min-width: 0;
+  }
+
+  .kcer-detail .kit-detail-trigger {
+    padding: var(--sp-2) var(--sp-1) 0;
+  }
+
+  .kcer-fallback-ring {
+    width: 1.875rem;
+    height: 1.875rem;
+    background: repeating-linear-gradient(45deg, var(--hatch-a) 0 4px, var(--hatch-b) 4px 8px);
+  }
+
+  .kcer-extra {
+    display: inline-grid;
+    justify-items: center;
+    gap: var(--sp-1);
+  }
+
+  .kcer-extra-tag {
+    max-width: 4.5rem;
+    font-size: var(--fs-12);
+    line-height: var(--lh-tight);
+    text-align: center;
+    color: inherit;
+    overflow-wrap: break-word;
+  }
+
+  .kcer-lines {
+    display: grid;
+    gap: var(--sp-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+}

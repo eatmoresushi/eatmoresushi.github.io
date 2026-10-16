@@ -1,0 +1,37 @@
+- complementary "Your decision":
+  - paragraph: Order Phase · Your turn
+  - heading "Complete held Orders" [level=2]
+  - region "Player 1 (you)":
+    - heading "Player 1 (you)" [level=3]
+    - group "Resources":
+      - strong: "2"
+      - text: Clay
+      - strong: "2"
+      - text: Wood
+      - strong: "3"
+      - text: Coins
+    - img "Your Shifu"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - text: 4 Orders in hand Recognition 0/4 1 VP
+  - form "Complete held Orders":
+    - paragraph: In First Player order. Complete any number of your held Orders, one at a time; the list is checked again after each one.
+    - group "Order 4 of 4 can be completed":
+      - text: ""
+      - radio "O22 8 VP 1 Coin 1 Crown any Shape · Celadon · Plain · Masterpiece"
+      - text: O22 8 VP 1 Coin 1 Crown any Shape · Celadon · Plain · Masterpiece
+      - 'button "Rules: Order O22"'
+      - radio "O18 6 VP 2 Coins 1 Crown Vase · Celadon · any Decoration · Fine+"
+      - text: O18 6 VP 2 Coins 1 Crown Vase · Celadon · any Decoration · Fine+
+      - 'button "Rules: Order O18"'
+      - radio "S01 2 VP 4 Coins Bowl · any Glaze · any Decoration · Standard+"
+      - text: S01 2 VP 4 Coins Bowl · any Glaze · any Decoration · Standard+
+      - 'button "Rules: Order S01"'
+      - radio "S13 4 VP 4 Coins any Shape · any Glaze · Painted · Standard+"
+      - text: S13 4 VP 4 Coins any Shape · any Glaze · Painted · Standard+
+      - 'button "Rules: Order S13"'
+    - paragraph: Only held Orders can be completed; Orders on the display cannot.
+    - paragraph: Choose an Order to complete, or end your turn.
+    - button "End turn"
+    - button "Confirm" [disabled]

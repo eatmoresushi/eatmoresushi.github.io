@@ -33,6 +33,8 @@ import {
 import type {
   ActorView,
   BoardView,
+  CeramicId,
+  CeramicState,
   DecisionPrompt,
   FinalResult,
   FiringStageView,
@@ -59,7 +61,15 @@ export type TableCounts = Pick<PublicCounts, "orderHands" | "mainDeck" | "mainDi
 export type TableBoardView = Pick<
   BoardView,
   "round" | "prompt" | "firstPlayerId" | "turnOrder" | "kilnDie" | "centralLocations" | "kilnSpaces" | "mainDisplay" | "techDisplay" | "fireDiscard"
-> & { counts: TableCounts };
+> & {
+  counts: TableCounts;
+  /**
+   * Who owes the deferred Main display refill (`game.market.refillPendingFor`): a reserved
+   * face-up position stays empty until that player's turn ends (L190, L390). Change request
+   * CR B2-2.
+   */
+  refillPendingFor: PlayerId | null;
+};
 
 export interface GameModel {
   revision: number;
@@ -87,6 +97,14 @@ export interface GameModel {
   finalResult: FinalResult | null;
   window: DecisionWindow;
   computerSeatIds: ReadonlySet<PlayerId>;
+  /**
+   * Every ceramic in the view (`view.game.ceramics`): Shaped, loaded, Finished and delivered.
+   * Public information (AGENTS.md "Hidden information": every undelivered ceramic and its
+   * recorded attributes are public). `CeramicState` carries no heat value, so D3 holds. With it
+   * `GameModel` is a `CeramicLabelModelView`, so `ceramicLabel(id, model)` describes any ceramic
+   * in words (D9). Change requests CR B1-1, CR B2-1, CR B3-1.
+   */
+  ceramics: Readonly<Record<CeramicId, CeramicState>>;
 }
 
 export interface EngineView {
@@ -94,8 +112,11 @@ export interface EngineView {
   actor: ActorView | null;
 }
 
-/** Picks the table fields of `boardView` one by one (never a spread). */
-export function tableBoardView(board: BoardView): TableBoardView {
+/**
+ * Picks the table fields of `boardView` one by one (never a spread). `refillPendingFor` comes
+ * from the public market state (`game.market.refillPendingFor`); `BoardView` has no market field.
+ */
+export function tableBoardView(board: BoardView, refillPendingFor: PlayerId | null = null): TableBoardView {
   const counts = board.counts;
   return {
     round: board.round,
@@ -108,6 +129,7 @@ export function tableBoardView(board: BoardView): TableBoardView {
     mainDisplay: board.mainDisplay,
     techDisplay: board.techDisplay,
     fireDiscard: board.fireDiscard,
+    refillPendingFor,
     counts: {
       orderHands: counts.orderHands,
       mainDeck: counts.mainDeck,
@@ -139,7 +161,7 @@ export function buildGameModel(view: PlayerView, seats: readonly PublicSeat[]): 
     roundPhase: roundPhaseOf(game.phase.type),
     prompt: decisionPrompt(game),
     viewerActs: viewerActs(view),
-    board: tableBoardView(board),
+    board: tableBoardView(board, game.market.refillPendingFor),
     players,
     me,
     hand: view.own === null ? [] : [...view.own.orderHand],
@@ -151,6 +173,7 @@ export function buildGameModel(view: PlayerView, seats: readonly PublicSeat[]): 
     finalResult: game.finalResult,
     window: decisionWindow(view),
     computerSeatIds: computerIds(seats),
+    ceramics: game.ceramics,
   };
 }
 

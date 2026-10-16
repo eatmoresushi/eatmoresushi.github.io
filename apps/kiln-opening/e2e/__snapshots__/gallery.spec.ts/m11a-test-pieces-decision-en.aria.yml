@@ -1,0 +1,30 @@
+- complementary "Your decision":
+  - paragraph: Firing Phase · Your turn
+  - heading "Use Test Pieces?" [level=2]
+  - region "Wen (you)":
+    - heading "Wen (you)" [level=3]
+    - group "Resources":
+      - strong: "2"
+      - text: Clay
+      - strong: "2"
+      - text: Wood
+      - strong: "0"
+      - text: Coins
+    - text: 6 Orders in hand Recognition 0/4 2 VP
+  - form "Use Test Pieces?":
+    - paragraph: Firing step 4, in First Player order
+    - paragraph:
+      - strong: "Once per round, after Base Heat, before Heat markers, if you have a ceramic in this firing:"
+      - text: pay 1 Wood → privately look at the top Fire card; you may put it on the bottom of the deck.
+    - heading "Queue" [level=3]
+    - list "Queue":
+      - listitem: "Wen (you): deciding"
+    - group "Test Pieces":
+      - button "Test Pieces"
+      - radio "Pay 1 Wood and look at the top Fire card Only you see the card. You then decide whether to put it on the bottom of the Fire deck."
+      - text: Pay 1 Wood and look at the top Fire card Only you see the card. You then decide whether to put it on the bottom of the Fire deck.
+      - radio "Decline"
+      - text: Decline
+    - paragraph: Choose one.
+    - button "Clear"
+    - button "Confirm" [disabled]

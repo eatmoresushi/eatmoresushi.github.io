@@ -1,0 +1,44 @@
+- complementary "Your decision":
+  - paragraph: Cleanup · Your turn
+  - heading "Discard down to your hand limit" [level=2]
+  - region "Player 1 (you)":
+    - heading "Player 1 (you)" [level=3]
+    - group "Resources":
+      - strong: "2"
+      - text: Clay
+      - strong: "2"
+      - text: Wood
+      - strong: "3"
+      - text: Coins
+    - img "Your Shifu"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - text: 6 Orders in hand Recognition 0/4 0 VP
+  - form "Discard down to your hand limit":
+    - paragraph: "You hold 6 Orders and your limit is 4: discard exactly 2. Starting Orders return to the box; Main Orders go face down to the discard."
+    - group "Order Only you can see":
+      - text: ""
+      - paragraph: 0 of 2 chosen
+      - checkbox "S01 2 VP 4 Coins Bowl · any Glaze · any Decoration · Standard+"
+      - text: S01 2 VP 4 Coins Bowl · any Glaze · any Decoration · Standard+
+      - 'button "Rules: Order S01"'
+      - checkbox "S02 2 VP 4 Coins Plate · any Glaze · any Decoration · Standard+"
+      - text: S02 2 VP 4 Coins Plate · any Glaze · any Decoration · Standard+
+      - 'button "Rules: Order S02"'
+      - checkbox "O01 3 VP 3 Coins Bowl · any Glaze · any Decoration · Standard+"
+      - text: O01 3 VP 3 Coins Bowl · any Glaze · any Decoration · Standard+
+      - 'button "Rules: Order O01"'
+      - checkbox "O02 3 VP 3 Coins Plate · any Glaze · any Decoration · Standard+"
+      - text: O02 3 VP 3 Coins Plate · any Glaze · any Decoration · Standard+
+      - 'button "Rules: Order O02"'
+      - checkbox "O03 3 VP 3 Coins Brush Washer · any Glaze · any Decoration · Standard+"
+      - text: O03 3 VP 3 Coins Brush Washer · any Glaze · any Decoration · Standard+
+      - 'button "Rules: Order O03"'
+      - checkbox "O04 7 VP 4 Coins Vase · Moon White · any Decoration · Fine+"
+      - text: O04 7 VP 4 Coins Vase · Moon White · any Decoration · Fine+
+      - 'button "Rules: Order O04"'
+    - paragraph: Everyone trims at the same time; others see only how many Orders you hold.
+    - paragraph: 0 of 2 chosen
+    - button "Clear"
+    - button "Confirm" [disabled]

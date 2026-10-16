@@ -1,0 +1,44 @@
+- complementary "你的决断":
+  - paragraph: 收工·轮到你了
+  - heading "弃至委托上限" [level=2]
+  - region "Wen（你）":
+    - heading "Wen（你）" [level=3]
+    - group "资源":
+      - strong: "1"
+      - text: 泥
+      - strong: "3"
+      - text: 柴
+      - strong: "0"
+      - text: 铜钱
+    - img "你的师傅"
+    - img "你的学徒"
+    - img "你的学徒"
+    - img "你的学徒"
+    - text: 手中6张委托 声望0／4 2分
+  - form "弃至委托上限":
+    - paragraph: 你持有6张委托，上限4张：须恰好弃置2张。起始委托放回盒中；主委托面朝下弃置。
+    - group "委托 仅你可见":
+      - text: ""
+      - paragraph: 已选0／2张
+      - checkbox "S02 2分 4铜钱 盘 · 任意釉 · 任意纹饰 · 良品以上"
+      - text: S02 2分 4铜钱 盘 · 任意釉 · 任意纹饰 · 良品以上
+      - button "规则：委托S02"
+      - checkbox "S10 4分 4铜钱 任意器型 · 任意釉 · 素面 · 良品以上"
+      - text: S10 4分 4铜钱 任意器型 · 任意釉 · 素面 · 良品以上
+      - button "规则：委托S10"
+      - checkbox /O38 \d+分 1铜钱 1个御令 盘 \+ 笔洗；釉不同；均为刻花 · 均上品以上/
+      - text: /O38 \d+分 1铜钱 1个御令 盘 \+ 笔洗；釉不同；均为刻花 · 均上品以上/
+      - button "规则：委托O38"
+      - checkbox "O05 7分 4铜钱 香炉 · 任意釉 · 刻花 · 上品以上"
+      - text: O05 7分 4铜钱 香炉 · 任意釉 · 刻花 · 上品以上
+      - button "规则：委托O05"
+      - checkbox /O43 \d+分 6铜钱 3种不同器型；任意釉；任意纹饰 · 均良品以上/
+      - text: /O43 \d+分 6铜钱 3种不同器型；任意釉；任意纹饰 · 均良品以上/
+      - button "规则：委托O43"
+      - checkbox "O08 5分 3铜钱 任意器型 · 灰青釉 · 任意纹饰 · 上品以上"
+      - text: O08 5分 3铜钱 任意器型 · 灰青釉 · 任意纹饰 · 上品以上
+      - button "规则：委托O08"
+    - paragraph: 各玩家同时弃牌；他人只看到你持有的委托张数。
+    - paragraph: 已选0／2张
+    - button "取消"
+    - button "确认" [disabled]

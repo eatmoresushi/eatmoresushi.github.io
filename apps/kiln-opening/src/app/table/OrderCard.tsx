@@ -2,19 +2,105 @@
  * OrderCard (UI_V1.6.1_ARCHITECTURE §4.2). Owner: B2 (table and boards).
  * Source: wireframe `orderCard`: one Order's printed face, its quality line and target state.
  *
- * Phase A stub created by A2 (§4.3 rule 1): it has its final export name and props and renders
- * a `Placeholder` until its owner lands the component.
+ * - The face (printed number, kind, VP, requirement line, quality line, Coins, Crowns) is the
+ *   trigger of its rules details (D10): click, tap or focus opens them.
+ * - When the open window's table adapter names this card in `orderTargets` (key: the OrderId, or
+ *   `slot:<i>` on the display), a separate toggle below the face chooses it
+ *   (`act({ type: "order", key })`, `aria-pressed`): Choose / Chosen / Can complete / Discard, or
+ *   "No matching ceramics" when the Order cannot be completed now. The table never decides the
+ *   state; the adapter does.
+ * - Printed Order numbers (S01, O33) are on the physical cards, so they are shown (D9).
  */
 import type { OrderId } from "../../game/index.ts";
-import { Placeholder } from "../screens/Placeholder.tsx";
+import { useT } from "../i18n/I18nProvider.tsx";
+import { orderRequirements } from "../i18n/content.ts";
+import { orderQualityLine } from "../i18n/orderText.ts";
+import { Chip } from "../kit/Chip.tsx";
+import { CrownIcon } from "../pieces/CrownIcon.tsx";
+import { useTableSelection } from "../state/hooks.ts";
+import type { OrderTargetState } from "../state/tableSelection.ts";
+import { orderFacts } from "../i18n/content.ts";
+import { RulesDetail, orderName } from "../rules/RulesDetail.tsx";
+import "./OrderCard.css";
 
 export interface OrderCardProps {
   /** The Order shown. */
   orderId: OrderId;
   /** Its key in `orderTargets` (the OrderId, or `slot:<i>` on the display). */
   targetKey?: string;
+  /** Display position, 1-based, shown as "#1" (the Main Order display only). */
+  slot?: number;
+  /** One of the viewer's own private cards (hand, look): drawn on the private card stock. */
+  own?: boolean;
 }
 
-export function OrderCard(_props: OrderCardProps) {
-  return <Placeholder name="OrderCard" />;
+const STATE_KEYS = {
+  choosable: "table.order.state.choosable",
+  chosen: "table.order.state.chosen",
+  completable: "table.order.state.completable",
+  blocked: "table.order.state.blocked",
+  discard: "table.order.state.discard",
+} as const satisfies Record<OrderTargetState, string>;
+
+export function OrderCard({ orderId, targetKey, slot, own = false }: OrderCardProps) {
+  const t = useT();
+  const selection = useTableSelection();
+  const key = targetKey ?? orderId;
+  const target = selection.orderTargets.get(key) ?? null;
+  const facts = orderFacts(orderId);
+  const kind = t(`table.order.kind.${facts.kind}`);
+  const classes = [
+    "ord",
+    `ord--${facts.kind}`,
+    own ? "ord--own" : "",
+    target === null ? "" : `ord--${target.state}`,
+  ].filter((part) => part !== "").join(" ");
+  const face = (
+    <span className="ord-face">
+      <span className="ord-o1">
+        <span className="ord-id">{orderId}</span>
+        <span className="ord-kind">{kind}</span>
+        <span className="ord-vp">{t.rich("boards.board.vp", { n: facts.vp })}</span>
+      </span>
+      <span className="ord-req">{orderRequirements(orderId, t.locale)}</span>
+      <span className="ord-o2">
+        <Chip wrap className="ord-quality">{orderQualityLine(orderId, t)}</Chip>
+        <Chip>{t("common.amount.coins", { n: facts.coins })}</Chip>
+        {facts.crowns > 0 ? <Chip tone="gold"><CrownIcon count={facts.crowns} /></Chip> : null}
+      </span>
+    </span>
+  );
+  const pressed = target !== null && (target.state === "chosen" || target.state === "discard");
+  const blocked = target !== null && (target.state === "blocked" || target.disabled);
+  const stateText = target === null ? "" : t(STATE_KEYS[target.state]);
+  return (
+    <article
+      className={classes}
+      data-order-id={orderId}
+      data-target={target === null ? undefined : target.state}
+      data-motion="order-slot"
+      data-motion-key={key}
+    >
+      {slot === undefined ? null : <span className="ord-slot" aria-hidden="true">{t("table.display.slot", { n: slot })}</span>}
+      <RulesDetail subject={{ kind: "order", id: orderId }} trigger={face} className="ord-detail" />
+      {target === null ? null : blocked && target.state === "blocked" ? (
+        <span className="ord-state ord-state--blocked">{stateText}</span>
+      ) : (
+        <button
+          type="button"
+          className="ord-pick"
+          data-act="order"
+          aria-pressed={pressed}
+          aria-disabled={blocked ? true : undefined}
+          aria-label={t("table.order.pick", { state: stateText, order: orderName(orderId, t) })}
+          onClick={() => {
+            if (!blocked) selection.act({ type: "order", key });
+          }}
+        >
+          {target.state === "completable" ? <span aria-hidden="true">✓ </span> : null}
+          {stateText}
+        </button>
+      )}
+    </article>
+  );
 }

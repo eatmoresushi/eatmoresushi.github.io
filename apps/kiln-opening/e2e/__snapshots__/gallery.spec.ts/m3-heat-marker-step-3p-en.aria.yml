@@ -1,0 +1,35 @@
+- complementary "Your decision":
+  - paragraph: Firing Phase · Your turn
+  - heading "Decide your Heat marker" [level=2]
+  - region "Zhao (you)":
+    - heading "Zhao (you)" [level=3]
+    - group "Resources":
+      - strong: "2"
+      - text: Clay
+      - strong: "2"
+      - text: Wood
+      - strong: "0"
+      - text: Coins
+    - text: /4 Orders in hand Recognition 2\/4 \d+ VP/
+  - form "Decide your Heat marker":
+    - paragraph: Firing step 5, in First Player order
+    - paragraph: Markers are decided in First Player order; the Fire card is still face down.
+    - heading "Queue" [level=3]
+    - list "Queue":
+      - listitem: "Zhao (you): deciding"
+      - listitem: "Wen: next"
+      - listitem: "Lin: next"
+    - heading "Your face-down marker" [level=3]
+    - text: Grey-Green Censer, Impressed (in the Imperial Kiln), Heat marker, face down
+    - group "Turn or return your marker":
+      - text: ""
+      - paragraph: "A Heat marker adds its value to that ceramic’s Actual Heat only. It is not a zone modifier: it stacks with Kiln Furniture and stays in place for a Second Firing."
+      - radio "Turn Heat marker to +1 Adds +1 to this ceramic’s Actual Heat."
+      - text: Turn Heat marker to +1 Adds +1 to this ceramic’s Actual Heat.
+      - radio "Turn Heat marker to −1 Adds −1 to this ceramic’s Actual Heat."
+      - text: Turn Heat marker to −1 Adds −1 to this ceramic’s Actual Heat.
+      - radio "Return Heat marker The marker goes back to your supply; this ceramic has no marker."
+      - text: Return Heat marker The marker goes back to your supply; this ceramic has no marker.
+    - paragraph: Turn your marker or return it.
+    - button "Clear"
+    - button "Confirm" [disabled]

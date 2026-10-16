@@ -1,0 +1,38 @@
+- complementary "Your decision":
+  - paragraph: Work Phase · Your turn
+  - heading "Place a worker" [level=2]
+  - region "Lin (you)":
+    - heading "Lin (you)" [level=3]
+    - group "Resources":
+      - strong: "2"
+      - text: Clay
+      - strong: "2"
+      - text: Wood
+      - strong: "2"
+      - text: Coins
+    - img "Your Apprentice"
+    - text: 4 Orders in hand Recognition 0/4 1 VP
+  - form "Place a worker":
+    - paragraph: 1 of your 4 workers left. The Work Phase cannot be passed.
+    - group "Worker":
+      - text: ""
+      - radio "Apprentice 1 available" [checked]
+      - text: Apprentice 1 available
+    - group "Location 4 of 7 open":
+      - text: ""
+      - radio "Materials Yard 1/2 taken Gain 3 Clay/Wood"
+      - text: Materials Yard 1/2 taken Gain 3 Clay/Wood
+      - 'button "Rules: Materials Yard"'
+      - radio "Form & Decorate your space 1 Form and decorate 1"
+      - text: Form & Decorate your space 1 Form and decorate 1
+      - 'button "Rules: Form & Decorate"'
+      - radio "Guild Hall 1/2 taken Buy 1 Advanced Tech at cost"
+      - text: Guild Hall 1/2 taken Buy 1 Advanced Tech at cost
+      - 'button "Rules: Guild Hall"'
+      - radio "Canal Wharf No limit 2 Coins"
+      - text: Canal Wharf No limit 2 Coins
+      - 'button "Rules: Canal Wharf"'
+      - group: Unavailable (3)
+    - paragraph: Choose an open location.
+    - button "Clear"
+    - button "Confirm" [disabled]

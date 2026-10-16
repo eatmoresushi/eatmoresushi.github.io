@@ -1,0 +1,20 @@
+- complementary "你的决断":
+  - paragraph: 派工阶段
+  - heading "等候Lin……" [level=2]
+  - region "Wen（你）":
+    - heading "Wen（你）" [level=3]
+    - group "资源":
+      - strong: "0"
+      - text: 泥
+      - strong: "2"
+      - text: 柴
+      - strong: "1"
+      - text: 铜钱
+    - img "你的师傅"
+    - img "你的学徒"
+    - img "你的学徒"
+    - img "你的学徒"
+    - text: 手中4张委托 声望0／4 3分
+  - form "等候Lin……":
+    - group "等候Lin……":
+      - paragraph: 等候时可浏览桌面。

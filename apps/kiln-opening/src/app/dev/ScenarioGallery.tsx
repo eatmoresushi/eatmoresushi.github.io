@@ -7,7 +7,10 @@
  * `dev/*.gallery.tsx` page. A fixture renders the **full `GameScreen`** on a `FixtureGameSource`;
  * Confirm shows "Would send …" after the same local check ConfirmBar runs.
  *
- * The URL hash selects the view: `#<id>?lang=zh-CN&theme=dark&board=p2`.
+ * The URL hash selects the view: `#<id>?lang=zh-CN&theme=dark&board=p2`. `&bare=1` drops the
+ * gallery chrome (index, bar), so the entry fills the viewport exactly as the app would: the
+ * Playwright gallery spec and screenshots use it. The layout mode follows the real viewport
+ * (`browserLayoutSource`), so phone behaviours (the sheet, section switches) work as in the app.
  *
  * Owners and Playwright review the windows the wireframe did not design and every table state
  * here; phase B agents check their components before the real game reaches them. The gallery's
@@ -30,8 +33,8 @@ import type { FixtureEntry, FixtureSourceOptions } from "../session/fixtureSourc
 import { EMPTY_SNAPSHOT } from "../session/gameSource.ts";
 import type { GameSnapshot, GameSource, SubmitOutcome } from "../session/gameSource.ts";
 import { GameProvider } from "../state/hooks.ts";
-import { fixedLayoutSource } from "../state/layoutMode.ts";
-import { UiStore } from "../state/uiStore.ts";
+import { browserLayoutSource } from "../state/layoutMode.ts";
+import { BROWSER_UI_EFFECTS, UiStore } from "../state/uiStore.ts";
 import { applyTheme, isThemeChoice } from "../theme.ts";
 import type { ThemeChoice } from "../theme.ts";
 import "./ScenarioGallery.css";
@@ -59,7 +62,7 @@ export interface ScenarioGalleryProps {
 
 type ScreenKind = "home" | "lobby" | "ended" | "game";
 
-interface GameEntry {
+export interface GameEntry {
   id: string;
   group: "Windows" | "Table states" | "Moments" | "Shell states";
   title: string;
@@ -69,7 +72,7 @@ interface GameEntry {
   players: readonly { playerId: PlayerId; name: string }[];
 }
 
-interface PageEntry {
+export interface PageEntry {
   id: string;
   group: "Pages";
   title: string;
@@ -77,7 +80,7 @@ interface PageEntry {
   Page: ComponentType;
 }
 
-type Entry = GameEntry | PageEntry;
+export type Entry = GameEntry | PageEntry;
 
 /** A source with one fixed snapshot (the shell states without a game). */
 class StaticGameSource implements GameSource {
@@ -183,6 +186,22 @@ function fixtureEntries(file: FixtureFile, group: (entry: FixtureFile["entries"]
   }));
 }
 
+/**
+ * Every gallery entry (§9.5): the `dev/*.gallery.tsx` pages, then — once the fixtures are
+ * loaded — the shell states, every scripted scenario (windows and table states) and every played
+ * moment. Pure; exported for tests.
+ */
+export function galleryEntries(pages: readonly GalleryPageModule[], files: readonly FixtureFile[] | null): Entry[] {
+  const list: Entry[] = pages.map((page) => ({ id: page.gallery.id, group: "Pages", title: page.gallery.title, description: "", Page: page.default }));
+  if (files === null) return list;
+  const [scenarios, moments] = files;
+  const firstMoment = moments?.entries[0];
+  if (firstMoment !== undefined) list.push(...shellEntries(firstMoment));
+  if (scenarios !== undefined) list.push(...fixtureEntries(scenarios, (entry) => (entry.kind === "table" ? "Table states" : "Windows")));
+  if (moments !== undefined) list.push(...fixtureEntries(moments, () => "Moments"));
+  return list;
+}
+
 // ── Hash ──────────────────────────────────────────────────────────────────────────────────
 
 export interface GalleryLocation {
@@ -190,9 +209,11 @@ export interface GalleryLocation {
   lang: Locale;
   theme: ThemeChoice;
   board: PlayerId | null;
+  /** No gallery chrome: the entry alone, as the app shows it. */
+  bare: boolean;
 }
 
-/** Parses `#<id>?lang=zh-CN&theme=dark&board=p2`. */
+/** Parses `#<id>?lang=zh-CN&theme=dark&board=p2&bare=1`. */
 export function parseGalleryHash(hash: string): GalleryLocation {
   const raw = hash.startsWith("#") ? hash.slice(1) : hash;
   const [idPart = "", query = ""] = raw.split("?", 2);
@@ -205,6 +226,7 @@ export function parseGalleryHash(hash: string): GalleryLocation {
     lang: isLocale(lang) ? lang : "en",
     theme: isThemeChoice(theme) ? theme : "light",
     board: board === null || board === "" ? null : board,
+    bare: params.get("bare") === "1",
   };
 }
 
@@ -213,6 +235,7 @@ export function galleryHash(location: GalleryLocation): string {
   if (location.lang !== "en") params.set("lang", location.lang);
   if (location.theme !== "light") params.set("theme", location.theme);
   if (location.board !== null) params.set("board", location.board);
+  if (location.bare) params.set("bare", "1");
   const query = params.toString();
   return `#${encodeURIComponent(location.id ?? "")}${query === "" ? "" : `?${query}`}`;
 }
@@ -243,17 +266,31 @@ function Submissions({ source }: { source: GameSource }) {
 
 function GameEntryView({ entry, location }: { entry: GameEntry; location: GalleryLocation }) {
   const source = useMemo(() => entry.makeSource(), [entry]);
-  const layout = useMemo(() => fixedLayoutSource("desktop"), []);
-  const ui = useMemo(() => new UiStore({ layout, initial: location.board === null ? {} : { boardShown: location.board } }), [layout, location.board]);
+  const layout = useMemo(() => browserLayoutSource(), []);
+  const ui = useMemo(
+    () => new UiStore({ layout, effects: BROWSER_UI_EFFECTS, theme: location.theme, initial: location.board === null ? {} : { boardShown: location.board } }),
+    [layout, location.board, location.theme],
+  );
   const Screen = entry.screen === "home" ? HomeScreen : entry.screen === "lobby" ? LobbyScreen : entry.screen === "ended" ? EndedScreen : GameScreen;
+  const stage = (
+    <div className="gallery-stage" data-gallery-entry={entry.id}>
+      <GameProvider source={source} registry={WINDOWS} ui={ui} layout={layout} devTools={false}>
+        <Screen />
+      </GameProvider>
+    </div>
+  );
+  if (location.bare) {
+    return (
+      <>
+        {stage}
+        <Submissions source={source} />
+      </>
+    );
+  }
   return (
     <>
       <Submissions source={source} />
-      <div className="gallery-stage" data-gallery-entry={entry.id}>
-        <GameProvider source={source} registry={WINDOWS} ui={ui} layout={layout} devTools={false}>
-          <Screen />
-        </GameProvider>
-      </div>
+      {stage}
     </>
   );
 }
@@ -283,16 +320,7 @@ export function ScenarioGallery({ pages, loadFixtures }: ScenarioGalleryProps) {
     applyTheme(location.theme);
   }, [location.theme]);
 
-  const entries = useMemo<Entry[]>(() => {
-    const list: Entry[] = pages.map((page) => ({ id: page.gallery.id, group: "Pages", title: page.gallery.title, description: "", Page: page.default }));
-    if (files === null) return list;
-    const [scenarios, moments] = files;
-    const firstMoment = moments?.entries[0];
-    if (firstMoment !== undefined) list.push(...shellEntries(firstMoment));
-    if (scenarios !== undefined) list.push(...fixtureEntries(scenarios, (entry) => (entry.kind === "table" ? "Table states" : "Windows")));
-    if (moments !== undefined) list.push(...fixtureEntries(moments, () => "Moments"));
-    return list;
-  }, [pages, files]);
+  const entries = useMemo<Entry[]>(() => galleryEntries(pages, files), [pages, files]);
 
   const selected = entries.find((entry) => entry.id === location.id) ?? entries.find((entry) => entry.group === "Windows") ?? entries[0] ?? null;
   const go = (patch: Partial<GalleryLocation>) => {
@@ -300,9 +328,24 @@ export function ScenarioGallery({ pages, loadFixtures }: ScenarioGalleryProps) {
   };
   const groups = ["Pages", "Shell states", "Windows", "Table states", "Moments"] as const;
 
+  if (location.bare) {
+    return (
+      <I18nProvider locale={location.lang}>
+        <div className="gallery-bare" data-gallery-ready={files === null ? undefined : ""}>
+          {failure === null ? null : <p className="gallery-error">Fixtures failed to load: {failure}</p>}
+          {selected === null ? null : selected.group === "Pages" ? (
+            <selected.Page />
+          ) : (
+            <GameEntryView key={`${selected.id}|${location.board ?? ""}|${location.theme}`} entry={selected} location={location} />
+          )}
+        </div>
+      </I18nProvider>
+    );
+  }
+
   return (
     <I18nProvider locale={location.lang}>
-      <div className="gallery" lang="en">
+      <div className="gallery" lang="en" data-gallery-ready={files === null ? undefined : ""}>
         <nav className="gallery-index" aria-label="Gallery entries">
           <h1 className="gallery-title">Kiln Opening · gallery</h1>
           {failure === null ? null : <p className="gallery-error">Fixtures failed to load: {failure}</p>}
@@ -364,7 +407,7 @@ export function ScenarioGallery({ pages, loadFixtures }: ScenarioGalleryProps) {
             {selected === null ? null : selected.group === "Pages" ? (
               <selected.Page />
             ) : (
-              <GameEntryView key={`${selected.id}|${location.board ?? ""}`} entry={selected} location={location} />
+              <GameEntryView key={`${selected.id}|${location.board ?? ""}|${location.theme}`} entry={selected} location={location} />
             )}
           </div>
         </div>

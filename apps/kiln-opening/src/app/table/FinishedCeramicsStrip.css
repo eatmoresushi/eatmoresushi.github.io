@@ -1,0 +1,32 @@
+/* FinishedCeramicsStrip (B2; wireframe `secOrders` orders branch, `.cerrow`). */
+@layer components {
+  .finished-strip {
+    display: grid;
+    gap: var(--sp-4);
+    min-width: 0;
+    margin-top: var(--sp-6);
+  }
+
+  .finished-title {
+    color: var(--ink);
+    font-size: var(--fs-15);
+  }
+
+  .finished-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--sp-5) var(--sp-6);
+    margin: 0;
+    padding: var(--sp-3) var(--sp-4) 0;
+    list-style: none;
+  }
+
+  .finished-none,
+  .finished-count,
+  .finished-note {
+    margin: 0;
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+  }
+}

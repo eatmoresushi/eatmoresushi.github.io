@@ -7,7 +7,9 @@
  * - `busy` renders `aria-busy="true"` and ignores activation too; ConfirmBar keeps focus on the
  *   button while a command is sending (§3.6, §8.2).
  * - `pressed` makes it a toggle (`aria-pressed`).
- * - `action` is the test-driver hook (`data-action="confirm" | "alt"`, §9.6).
+ * - `action` is the test-driver hook (`data-action="confirm" | "alt"`, §9.6). A `data-action`
+ *   passed by the caller (the lobby driver hooks) is kept when `action` is absent; `action` wins
+ *   when both are given (change request CR B1-4).
  * - `type` defaults to `"button"`, so a button inside a form never submits by accident.
  */
 import type { ButtonHTMLAttributes, MouseEvent, ReactNode, Ref } from "react";
@@ -52,6 +54,7 @@ export function Button({
   ...rest
 }: ButtonProps) {
   const inert = disabled || busy;
+  const passedAction = (rest as { "data-action"?: string })["data-action"];
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
     if (inert) {
       event.preventDefault();
@@ -71,7 +74,7 @@ export function Button({
       aria-disabled={disabled ? true : undefined}
       aria-busy={busy ? true : undefined}
       aria-pressed={pressed === undefined ? undefined : pressed}
-      data-action={action}
+      data-action={action ?? passedAction}
       onClick={handleClick}
     >
       {icon === undefined ? null : <span className="kit-btn-icon" aria-hidden="true">{icon}</span>}

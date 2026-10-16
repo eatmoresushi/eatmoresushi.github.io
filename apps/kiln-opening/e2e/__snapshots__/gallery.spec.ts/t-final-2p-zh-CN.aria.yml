@@ -1,0 +1,25 @@
+- complementary "你的决断":
+  - paragraph: 终局计分
+  - heading "终局" [level=2]
+  - region "Lin（你）":
+    - heading "Lin（你）" [level=3]
+    - group "资源":
+      - strong: "3"
+      - text: 泥
+      - strong: "3"
+      - text: 柴
+      - strong: /\d+/
+      - text: 铜钱
+    - img "你的师傅"
+    - img "你的学徒"
+    - img "你的学徒"
+    - img "你的学徒"
+    - text: /手中0张委托 声望1／4 \d+分/
+  - form "终局":
+    - group "终局":
+      - paragraph: /Lin以\d+分获胜。/
+      - heading "名次" [level=3]
+      - list:
+        - listitem: /第1名 Lin（你） \d+分/
+        - listitem: 第2名 Zhao 9分
+      - paragraph: 完整计分见终局结果。

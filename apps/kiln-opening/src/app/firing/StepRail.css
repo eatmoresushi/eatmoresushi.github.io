@@ -1,0 +1,80 @@
+/* Firing step rail (wireframe `.steps`): 12 steps; First Player marks; scrolls inside itself. */
+@layer components {
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    /* The rail takes keyboard focus (it may scroll): a full 44px target (WCAG 2.5.8). */
+    min-height: var(--target-min);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-bottom: 1px solid var(--line-2);
+    background: var(--surface-2);
+  }
+
+  .steps-item {
+    display: grid;
+    align-content: start;
+    gap: var(--sp-1);
+    min-width: 0;
+    padding: var(--sp-2) var(--sp-2) var(--sp-3);
+    border-inline-end: 1px solid var(--line-2);
+    font-size: var(--fs-12);
+    line-height: var(--lh-tight);
+    color: var(--ink-3);
+  }
+
+  .steps-item:last-child {
+    border-inline-end: 0;
+  }
+
+  .steps-n {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-1);
+    font-weight: 800;
+  }
+
+  .steps-label {
+    overflow-wrap: anywhere;
+  }
+
+  .steps-item--fp .steps-n::before {
+    content: "⇢";
+    font-weight: 400;
+    color: var(--ink-3);
+  }
+
+  .steps-item--done {
+    color: var(--ink-2);
+  }
+
+  .steps-item--done .steps-n::after {
+    content: "✓";
+    color: var(--celadon-ink);
+  }
+
+  .steps-item--on {
+    background: var(--d-firing);
+    color: var(--on-firing);
+  }
+
+  .steps-item--on .steps-n::before,
+  .steps-item--on .steps-n::after {
+    color: var(--on-firing);
+  }
+
+  @container stage (max-width: 53.75rem) {
+    .steps {
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x proximity;
+      scrollbar-width: thin;
+    }
+
+    .steps-item {
+      flex: 0 0 6rem;
+      scroll-snap-align: center;
+    }
+  }
+}

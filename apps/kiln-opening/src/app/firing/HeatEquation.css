@@ -1,0 +1,129 @@
+/* Heat equation (wireframe `.eqrow`): one line when wide, two lines when narrow (phones). */
+@layer components {
+  .eq {
+    container: heat-eq / inline-size;
+    display: grid;
+    gap: var(--sp-4);
+    min-width: 0;
+    padding: var(--sp-5) var(--sp-6);
+    border-bottom: 1px solid var(--line-2);
+  }
+
+  .eq-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--sp-4) var(--sp-5);
+    min-width: 0;
+  }
+
+  .eq-line {
+    display: contents;
+  }
+
+  .eq-term {
+    display: grid;
+    justify-items: start;
+    gap: var(--sp-2);
+    min-width: 0;
+  }
+
+  .eq-term--repeat {
+    display: none;
+  }
+
+  .eq-lab {
+    font-size: var(--fs-12);
+    color: var(--ink-2);
+  }
+
+  .eq-val {
+    font-family: var(--serif);
+    font-size: var(--fs-28);
+    line-height: 1.1;
+  }
+
+  .eq-term--global .eq-val {
+    color: var(--d-firing);
+  }
+
+  .eq-op {
+    padding-block-end: var(--sp-2);
+    font-family: var(--serif);
+    font-size: var(--fs-22);
+    color: var(--ink-3);
+  }
+
+  .eq-contribs {
+    display: grid;
+    gap: var(--sp-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .eq-cc {
+    padding: 2px var(--sp-4) 2px var(--sp-3);
+    border-inline-start: 4px solid var(--pc);
+    border-radius: var(--r-sm);
+    background: var(--surface-2);
+    font-size: var(--fs-12);
+    overflow-wrap: anywhere;
+  }
+
+  .eq-cc--wait {
+    border: 1px dashed var(--line);
+    border-inline-start: 4px solid var(--pc);
+    background: transparent;
+    color: var(--ink-2);
+  }
+
+  .eq-none {
+    margin: 0;
+    max-width: 16rem;
+    font-size: var(--fs-12);
+    color: var(--ink-2);
+  }
+
+  .eq-discard {
+    margin-inline-start: auto;
+  }
+
+  .eq-extra {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-4);
+    padding: var(--sp-3) var(--sp-4);
+    border: 1px solid var(--gold-line);
+    border-radius: var(--r-md);
+    background: var(--gold-pale);
+    color: var(--gold-ink);
+    font-size: var(--fs-13);
+    font-weight: 700;
+  }
+
+  /* Narrow stage (phones): Die + Contributions = Base; then Base + Fire = Global. */
+  @container heat-eq (max-width: 48rem) {
+    .eq-row {
+      display: grid;
+      gap: var(--sp-4);
+    }
+
+    .eq-line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: var(--sp-3) var(--sp-4);
+      min-width: 0;
+    }
+
+    .eq-term--repeat {
+      display: grid;
+    }
+
+    .eq-discard {
+      margin-inline-start: 0;
+    }
+  }
+}

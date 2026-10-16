@@ -7,7 +7,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { ScenarioGallery } from "../../../../src/app/dev/ScenarioGallery.tsx";
+import { ScenarioGallery, galleryEntries, galleryHash, parseGalleryHash } from "../../../../src/app/dev/ScenarioGallery.tsx";
+import { DECISION_WINDOW_KINDS, decisionWindow } from "../../../../src/app/state/decisionWindow.ts";
 import type { GalleryPageModule } from "../../../../src/app/dev/ScenarioGallery.tsx";
 import { ROOT } from "../../support/glossary.ts";
 
@@ -27,5 +28,37 @@ describe("scenario gallery chrome", () => {
     const phone = css.slice(css.indexOf("@media (max-width: 899px)"));
     expect(phone).toMatch(/\.gallery-group a \{[^}]*min-height: var\(--target-min\)/);
     expect(phone).toMatch(/\.gallery-controls button,\s*\.gallery-controls select \{[^}]*min-height: var\(--target-min\)/);
+  });
+});
+
+describe("scenario gallery entries (§9.5)", () => {
+  const files = [JSON.parse(readFileSync(join(ROOT, "test/v161/ui/fixtures/scenarios.json"), "utf8")), JSON.parse(readFileSync(join(ROOT, "test/v161/ui/fixtures/moments.json"), "utf8"))] as const;
+  const entries = galleryEntries([PAGE], files);
+
+  it("lists every scripted scenario, every played moment, the shell states and every page", () => {
+    const ids = new Set(entries.map((entry) => entry.id));
+    for (const file of files) for (const entry of file.entries as { id: string }[]) expect(ids.has(entry.id), entry.id).toBe(true);
+    for (const id of ["shell-home", "shell-home-saved", "shell-lobby-host", "shell-lobby-guest", "shell-reconnecting", "shell-offline", "shell-computer-failure", "shell-unsent", "shell-ended"]) {
+      expect(ids.has(id), id).toBe(true);
+    }
+    expect(ids.has("probe")).toBe(true);
+    expect(ids.size).toBe(entries.length);
+  });
+
+  it("covers every decision window kind, the windows the wireframe did not design included", () => {
+    const kinds = new Set(
+      entries.flatMap((entry) => {
+        if (entry.group === "Pages") return [];
+        const view = entry.makeSource().getServerSnapshot().view;
+        return view === null ? [] : [decisionWindow(view).kind];
+      }),
+    );
+    for (const kind of DECISION_WINDOW_KINDS) expect(kinds.has(kind), kind).toBe(true);
+  });
+
+  it("selects an entry, a language, a theme, a board and the bare view from the hash", () => {
+    expect(parseGalleryHash("#m14_salvage?lang=zh-CN&theme=dark&board=p2&bare=1")).toEqual({ id: "m14_salvage", lang: "zh-CN", theme: "dark", board: "p2", bare: true });
+    expect(parseGalleryHash("#w-salvage")).toEqual({ id: "w-salvage", lang: "en", theme: "light", board: null, bare: false });
+    expect(galleryHash({ id: "w-salvage", lang: "zh-CN", theme: "light", board: null, bare: true })).toBe("#w-salvage?lang=zh-CN&bare=1");
   });
 });

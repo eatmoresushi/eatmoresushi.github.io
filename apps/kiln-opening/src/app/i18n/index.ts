@@ -13,6 +13,7 @@
  * | `kiln`, `results`, `playtest` | B3                         |
  * | `work`           | B4                                      |
  * | `firing`, `orders` | B5                                    |
+ * | `rules`          | B6 (shared rules details, D10/K15)      |
  */
 import { boards } from "./catalog/boards.ts";
 import { common } from "./catalog/common.ts";
@@ -24,6 +25,7 @@ import { mp } from "./catalog/mp.ts";
 import { orders } from "./catalog/orders.ts";
 import { playtest } from "./catalog/playtest.ts";
 import { results } from "./catalog/results.ts";
+import { rules } from "./catalog/rules.ts";
 import { shell } from "./catalog/shell.ts";
 import { table } from "./catalog/table.ts";
 import { work } from "./catalog/work.ts";
@@ -42,6 +44,7 @@ export const CATALOG = {
   work,
   firing,
   orders,
+  rules,
 } as const;
 
 export type Catalog = typeof CATALOG;

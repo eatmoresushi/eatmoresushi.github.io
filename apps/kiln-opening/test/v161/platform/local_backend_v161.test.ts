@@ -1,7 +1,8 @@
 /**
  * The V1.6.1 local backend (`tools/localBackendV161.ts`, UI plan §3.9): every
  * `TestHttpGameApi` operation including `list_private_events`, the seeded and policy-aware
- * `e2e_reset`, deterministic security, the HTTP middleware and the Vite plugin hooks.
+ * `e2e_reset`, the `e2e_secret_ids` leak oracle, deterministic security, the HTTP middleware and
+ * the Vite plugin hooks.
  */
 
 import { once } from "node:events";
@@ -122,6 +123,28 @@ describe("LocalBackendV161", () => {
     const third = await startedRoom(backend);
     expect(third.lobby.seats.find((seat) => seat.isComputer)?.aiPolicyVersion).toBe(STRATEGIC_COMPUTER_POLICY.version);
     expect(third.start.game).not.toEqual(first);
+  });
+
+  it("e2e_secret_ids: another seat's hand and the decks are secret; the viewer's own hand and public IDs are not", async () => {
+    const backend = new LocalBackendV161({ policy: "canonical", ...silent });
+    const { host, start } = await startedRoom(backend);
+    const reconnect = ok<RoomConnection>(await backend.handle({ operation: "reconnect", roomCode: host.room.code, seatToken: host.seatToken }, "user-host"));
+    const hand = reconnect.ownPrivateView?.orderHand ?? [];
+    expect(hand.length).toBeGreaterThan(0);
+    const mine = ok<{ revision: number; ids: string[] }>(await backend.handle({ operation: "e2e_secret_ids", roomCode: host.room.code, viewerSeat: 0 }, "user-host"));
+    const theirs = ok<{ revision: number; ids: string[] }>(await backend.handle({ operation: "e2e_secret_ids", roomCode: host.room.code.toLowerCase(), viewerSeat: 1 }, "user-host"));
+    expect(mine.revision).toBe(start.game.revision);
+    expect(mine.ids.length).toBeGreaterThan(20);
+    for (const id of hand) {
+      expect(mine.ids).not.toContain(id);
+      expect(theirs.ids).toContain(id);
+    }
+    // Nothing public is secret: the display, the face-up Techs.
+    const publicText = JSON.stringify(start.game);
+    for (const id of mine.ids) expect(publicText).not.toMatch(new RegExp(`"${id}"`));
+    expect(mine.ids).toEqual([...mine.ids].sort());
+    expect((await backend.handle({ operation: "e2e_secret_ids", roomCode: "NOPE", viewerSeat: 0 }, "user-host")) as { ok: boolean }).toMatchObject({ ok: false });
+    expect((await backend.handle({ operation: "e2e_secret_ids", roomCode: host.room.code, viewerSeat: 7 }, "user-host")) as { ok: boolean }).toMatchObject({ ok: false });
   });
 
   it("rejects an unknown policy and an unknown operation", async () => {

@@ -8,6 +8,8 @@
  *   hidden (a phone sheet in `peek`) (§8.2).
  * - A table click (Place shortcut, kiln target) changes the pane's draft synchronously (§3.5).
  * - A language switch keeps the draft and re-renders the stored error in the new language (§6.1).
+ * - The heading block (wireframe `promptBlock`, `ownSummary`): an eyebrow with the round phase and
+ *   "Your turn" when the viewer acts, and the viewer's Imperial Recognition in the own summary.
  */
 import { act } from "react";
 import type { ReactElement } from "react";
@@ -16,6 +18,7 @@ import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { PlayerView } from "../../../../src/game/index.ts";
 import { DecisionPane } from "../../../../src/app/decision/DecisionPane.tsx";
+import { RULE_NUMBERS, roundPhases } from "../../../../src/app/i18n/content.ts";
 import { I18nProvider } from "../../../../src/app/i18n/I18nProvider.tsx";
 import { LanguageToggle } from "../../../../src/app/kit/LanguageToggle.tsx";
 import { DraftStore } from "../../../../src/app/state/draftStore.ts";
@@ -205,5 +208,35 @@ describe("language switch (§6.1, §9.3)", () => {
     expect(chinese).not.toBe(english);
     expect(chinese).toMatch(/[一-鿿]/);
     expect($('[data-action="confirm"]').textContent).toBe("确认");
+  });
+});
+
+describe("heading block (wireframe promptBlock, ownSummary)", () => {
+  const phaseName = (id: string, locale: "en" | "zh-CN") => roundPhases(locale).find((phase) => phase.id === id)!.name;
+
+  it("puts the round phase and Your turn above the heading, and Recognition in the own summary", () => {
+    const source = new ControlledSource("m1_work_phase_r2_3p");
+    mount(source, <DecisionPane />);
+    const eyebrow = $(".pane-eyebrow");
+    expect(eyebrow.textContent).toBe(`${phaseName("work", "en")} · Your turn`);
+    // Above the heading, which stays the focus target.
+    expect(eyebrow.nextElementSibling?.matches("h2.pane-heading")).toBe(true);
+    const recognition = $(".own .own-recognition");
+    const n = Number(recognition.getAttribute("data-recognition"));
+    expect(recognition.textContent).toBe(`Recognition ${n}/${RULE_NUMBERS.recognitionMax}`);
+  });
+
+  it("reads the same in Chinese", () => {
+    const source = new ControlledSource("m1_work_phase_r2_3p");
+    mount(source, <DecisionPane />, "zh-CN");
+    expect($(".pane-eyebrow").textContent).toBe(`${phaseName("work", "zh-CN")}·轮到你了`);
+    const recognition = $(".own .own-recognition");
+    expect(recognition.textContent).toBe(`声望${recognition.getAttribute("data-recognition")}／${RULE_NUMBERS.recognitionMax}`);
+  });
+
+  it("shows only the phase when the viewer does not act, and Final scoring once the game is over", () => {
+    const source = new ControlledSource("m8_final_results_3p");
+    mount(source, <DecisionPane />);
+    expect($(".pane-eyebrow").textContent).toBe("Final scoring");
   });
 });

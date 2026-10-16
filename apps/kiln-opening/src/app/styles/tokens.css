@@ -274,6 +274,8 @@
     --z-sticky: 4;
     --z-popover: 20;
     --z-sheet: 30;
+    /* Rules and piece details (kit PieceDetail's body-level layer): above the phone sheet. */
+    --z-detail: 35;
     --z-dialog: 40;
     --z-toast: 50;
 
@@ -283,6 +285,9 @@
 
   /* Chinese body and rule text never below 13px (§7.1). */
   :lang(zh-Hans) {
+    /* The 12px step itself, so a component that names `--fs-12` directly (a kiln label, an
+       empty-space mark) still reads at 13px in Chinese; Latin text keeps its 12px floor. */
+    --fs-12: 0.8125rem;
     --fs-meta: var(--fs-13);
     --fs-rule: var(--fs-13);
     --fs-label: var(--fs-14);

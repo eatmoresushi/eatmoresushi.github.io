@@ -8,6 +8,13 @@
  *   `list_private_events` (the V1.4 backend lacks it);
  * - `e2e_reset { seed?, policy?: "strategic" | "canonical" }`: a fresh store and service.
  *   `seed` is the game seed (default 720); `policy` the computer policy (default strategic);
+ * - `e2e_secret_ids { roomCode, viewerSeat }` (UI plan §3.9, phase B): the Order and Tech IDs
+ *   the seat at `viewerSeat` must not see right now — other seats' hands and private looks, the
+ *   Main deck and its face-down discard, the Starting box and the Tech decks — minus the IDs a
+ *   public event revealed or this seat was shown privately (`tools/fixturePrivacy.ts`, the same
+ *   definition as the fixtures' secrets oracle). A leak-test oracle for `e2e/full_game.spec.ts`
+ *   and `e2e/two_humans.spec.ts`: it reads the authoritative state, so it exists only in this
+ *   dev backend;
  * - `checkInvariants: true` on the service;
  * - a deterministic `BrowserTestSecurity`: room codes `T00001…`, ids, and every seed come
  *   from the reset. Seat tokens also carry a per-reset nonce, so a credential saved in a
@@ -27,7 +34,8 @@ import {
   InMemoryMultiplayerStore,
   STRATEGIC_COMPUTER_POLICY,
 } from "../src/multiplayer/index.ts";
-import type { CommandRequest, SecurityProvider } from "../src/multiplayer/index.ts";
+import type { CommandRequest, MultiplayerResult, RoomConnection, SecurityProvider } from "../src/multiplayer/index.ts";
+import { secretIdsFor } from "./fixturePrivacy.ts";
 
 export const LOCAL_BACKEND_V161_PATH = "/test-api-v161";
 export const DEFAULT_E2E_SEED = 720;
@@ -111,6 +119,8 @@ export interface LocalBackendOptions {
 export class LocalBackendV161 {
   private store = new InMemoryMultiplayerStore();
   private service: AuthoritativeGameService;
+  /** Room IDs by room code, remembered from `create_room` (the store keeps its own index private). */
+  private roomIds = new Map<string, string>();
   private readonly log: NonNullable<LocalBackendOptions["log"]>;
 
   constructor(options: LocalBackendOptions = {}) {
@@ -127,9 +137,12 @@ export class LocalBackendV161 {
           return invalid("policy must be \"strategic\" or \"canonical\".");
         }
         this.store = new InMemoryMultiplayerStore();
+        this.roomIds = new Map();
         this.service = this.makeService(integer(body, "seed", DEFAULT_E2E_SEED), policy ?? "strategic");
         return { ok: true, value: null };
       }
+      case "e2e_secret_ids":
+        return this.secretIds(text(body, "roomCode"), integer(body, "viewerSeat", -1));
       case "list_public_events":
         return {
           ok: true,
@@ -141,8 +154,11 @@ export class LocalBackendV161 {
           seatToken: text(body, "seatToken"),
           afterSequence: integer(body, "afterSequence", 0),
         });
-      case "create_room":
-        return this.service.createRoom({ displayName: text(body, "displayName"), authUserId });
+      case "create_room": {
+        const created: MultiplayerResult<RoomConnection> = await this.service.createRoom({ displayName: text(body, "displayName"), authUserId });
+        if (created.ok) this.roomIds.set(created.value.room.code.toUpperCase(), created.value.room.id);
+        return created;
+      }
       case "join_room":
         return this.service.joinRoom({ roomCode: text(body, "roomCode"), displayName: text(body, "displayName"), authUserId });
       case "reconnect":
@@ -179,6 +195,22 @@ export class LocalBackendV161 {
       default:
         return invalid("Unknown test operation.");
     }
+  }
+
+  /** `e2e_secret_ids`: the secret Order and Tech IDs of one seat, sorted (see the header). */
+  private async secretIds(roomCode: string, viewerSeat: number): Promise<unknown> {
+    const roomId = this.roomIds.get(roomCode.trim().toUpperCase());
+    if (roomId === undefined) return invalid("Unknown room code.");
+    const seat = (await this.store.getSeats(roomId)).find((candidate) => candidate.seatIndex === viewerSeat);
+    if (seat === undefined) return invalid("No seat at that index.");
+    const head = await this.store.loadHead(roomId);
+    if (head === null) return { ok: true, value: { revision: null, ids: [] } };
+    const events = this.store
+      .audit()
+      .fullEvents.filter((record) => record.roomId === roomId)
+      .sort((a, b) => a.sequence - b.sequence)
+      .map((record) => record.event);
+    return { ok: true, value: { revision: head.revision, ids: secretIdsFor(head.state, seat.playerId, events) } };
   }
 
   private makeService(seed: number, policy: LocalComputerPolicy): AuthoritativeGameService {

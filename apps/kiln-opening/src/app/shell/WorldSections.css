@@ -1,0 +1,111 @@
+/* World sections and the jump bar (B1; wireframe `.sec`, `.sec-h`, `.jump`). */
+@layer components {
+  .world-section {
+    container: section / inline-size;
+    min-width: 0;
+    scroll-margin-top: 3.25rem;
+  }
+
+  .world-section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--sp-2) var(--sp-5);
+    margin: 0 0 var(--sp-4);
+    padding-bottom: var(--sp-2);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .world-section-title {
+    color: var(--teal-ink);
+    font-size: var(--fs-18);
+  }
+
+  .world-section-title:focus {
+    outline: none;
+  }
+
+  .world-section-title:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  .world-section-sub {
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+  }
+
+  .world-section-body {
+    display: grid;
+    gap: var(--sp-5);
+    min-width: 0;
+  }
+
+  .jump-nav {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-sticky);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-3);
+    margin-inline: calc(-1 * var(--sp-2));
+    padding: var(--sp-3) var(--sp-2);
+    border-bottom: 1px solid var(--line-2);
+    background: var(--paper);
+  }
+
+  .jump-nav-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .jump-nav-button {
+    min-height: 1.75rem;
+    padding: var(--sp-1) var(--sp-5);
+    border: 1px solid var(--line);
+    border-radius: var(--r-pill);
+    background: var(--surface);
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+  }
+
+  .jump-nav-button:hover {
+    border-color: var(--celadon);
+    color: var(--ink);
+  }
+
+  .jump-nav-hint {
+    margin-inline-start: auto;
+    color: var(--ink-3);
+    font-size: var(--fs-meta);
+  }
+
+  @container shell (max-width: 899px) {
+    .jump-nav {
+      display: none;
+    }
+
+    .world-section:not([data-current]) {
+      display: none;
+    }
+
+    .world-section {
+      scroll-margin-top: 0;
+    }
+  }
+
+  @media (orientation: landscape) and (max-height: 500px) {
+    .jump-nav {
+      display: none;
+    }
+
+    .world-section:not([data-current]) {
+      display: none;
+    }
+  }
+}

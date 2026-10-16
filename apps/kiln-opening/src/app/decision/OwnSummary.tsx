@@ -3,12 +3,14 @@
  * changes go through B6.
  *
  * The viewer's own line at the top of the decision pane: name, resources, available workers,
- * Orders in hand (a private count: only you see the hand itself) and recorded VP. Nothing for a
+ * Orders in hand (a private count: only you see the hand itself), Imperial Recognition (n/4, which
+ * the Magistrate's Hall "Recognition 0–2 only" choice reads) and recorded VP. Nothing for a
  * spectator. Every value comes from `playerSummary` / `handLimitStatus`; nothing is computed.
  */
 import type { CSSProperties } from "react";
 import { useId } from "react";
 import { useT } from "../i18n/I18nProvider.tsx";
+import { RULE_NUMBERS } from "../i18n/content.ts";
 import { CardBack } from "../pieces/CardBack.tsx";
 import { ResourceRow } from "../pieces/ResourceRow.tsx";
 import { WorkerPiece } from "../pieces/WorkerPiece.tsx";
@@ -39,6 +41,9 @@ export function OwnSummary() {
           })}
         </span>
         <CardBack count={hand?.held ?? me.orderHandCount} label={t("common.piece.ordersInHand", { n: hand?.held ?? me.orderHandCount })} showCount maxDrawn={1} />
+        <span className="own-recognition num" data-recognition={me.recognition}>
+          {t("common.recognitionN", { n: me.recognition, max: RULE_NUMBERS.recognitionMax })}
+        </span>
         <span className="own-vp num">{t.rich("common.vpN", { n: me.recordedVp })}</span>
       </div>
     </section>

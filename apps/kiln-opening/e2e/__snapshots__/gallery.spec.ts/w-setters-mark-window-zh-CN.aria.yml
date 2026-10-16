@@ -1,0 +1,35 @@
+- complementary "你的决断":
+  - paragraph: 开工·轮到你了
+  - heading "放置窑位签" [level=2]
+  - region "Player 1（你）":
+    - heading "Player 1（你）" [level=3]
+    - group "资源":
+      - strong: "2"
+      - text: 泥
+      - strong: "2"
+      - text: 柴
+      - strong: "3"
+      - text: 铜钱
+    - img "你的师傅"
+    - img "你的学徒"
+    - img "你的学徒"
+    - img "你的学徒"
+    - text: 手中0张委托 声望0／4 1分
+  - form "放置窑位签":
+    - paragraph: 置于共窑一个空的启用窑位：本轮仅你可在此装窑。
+    - button "规则：窑位签"
+    - group "共窑窑位 也可点选高亮窑位":
+      - text: ""
+      - radio "高温区1（+1）"
+      - text: 高温区1（+1）
+      - radio "高温区2（+1）"
+      - text: 高温区2（+1）
+      - radio "中温区1（0）"
+      - text: 中温区1（0）
+      - radio "低温区1（−1）"
+      - text: 低温区1（−1）
+      - radio "本轮不放"
+      - text: 本轮不放
+    - paragraph: 请选择窑位，或不放。
+    - button "不使用"
+    - button "确认" [disabled]

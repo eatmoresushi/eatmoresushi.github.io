@@ -22,6 +22,7 @@ import { PLAYTEST_FORM_VERSION } from "./types.ts";
 import type {
   FireContribution,
   PlaytestFeedback,
+  PlaytestIssueCode,
   PlaytestValidationIssue,
   PlaytestValidationResult,
   PlayerMetrics,
@@ -85,13 +86,19 @@ function isIsoDate(value: string): boolean {
   return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
 }
 
-function issue(issues: PlaytestValidationIssue[], path: string, message: string): void {
-  issues.push({ path, message });
+function issue(
+  issues: PlaytestValidationIssue[],
+  path: string,
+  message: string,
+  code: PlaytestIssueCode,
+  params?: Readonly<Record<string, number | string>>,
+): void {
+  issues.push(params === undefined ? { path, message, code } : { path, message, code, params });
 }
 
 function recordAt(value: unknown, path: string, issues: PlaytestValidationIssue[]): Record<string, unknown> {
   if (!isRecord(value)) {
-    issue(issues, path, "This section is missing or invalid.");
+    issue(issues, path, "This section is missing or invalid.", "section_invalid");
     return {};
   }
   return value;
@@ -106,10 +113,10 @@ function arrayAt(
 ): unknown[] {
   const value = record[key];
   if (!Array.isArray(value)) {
-    issue(issues, path, "This list is missing or invalid.");
+    issue(issues, path, "This list is missing or invalid.", "list_invalid");
     return [];
   }
-  if (value.length > maxLength) issue(issues, path, `Keep this list to ${maxLength} entries or fewer.`);
+  if (value.length > maxLength) issue(issues, path, `Keep this list to ${maxLength} entries or fewer.`, "list_max", { max: maxLength });
   return value.slice(0, maxLength);
 }
 
@@ -122,11 +129,11 @@ function text(
 ): string {
   const value = record[key];
   if (typeof value !== "string") {
-    issue(issues, path, "Enter text or leave this blank.");
+    issue(issues, path, "Enter text or leave this blank.", "text_invalid");
     return "";
   }
   const normalized = value.trim();
-  if (normalized.length > maxLength) issue(issues, path, `Use ${maxLength} characters or fewer.`);
+  if (normalized.length > maxLength) issue(issues, path, `Use ${maxLength} characters or fewer.`, "text_max", { max: maxLength });
   return normalized.slice(0, maxLength);
 }
 
@@ -142,11 +149,8 @@ function integer(
   const value = record[key];
   if (nullable && (value === null || value === "" || value === undefined)) return null;
   if (typeof value !== "number" || !Number.isSafeInteger(value) || value < min || (max !== undefined && value > max)) {
-    issue(
-      issues,
-      path,
-      max === undefined ? `Enter a whole number of at least ${min}.` : `Enter a whole number from ${min} to ${max}.`,
-    );
+    if (max === undefined) issue(issues, path, `Enter a whole number of at least ${min}.`, "integer_min", { min });
+    else issue(issues, path, `Enter a whole number from ${min} to ${max}.`, "integer_range", { min, max });
     return nullable ? null : min;
   }
   return value;
@@ -163,7 +167,7 @@ function enumValue<T extends string>(
   const value = record[key];
   if (nullable && (value === null || value === "" || value === undefined)) return null;
   if (typeof value !== "string" || !allowed.includes(value as T)) {
-    issue(issues, path, "Choose one of the available options.");
+    issue(issues, path, "Choose one of the available options.", "option_invalid");
     return nullable ? null : (allowed[0] ?? null);
   }
   return value as T;
@@ -173,13 +177,13 @@ function parseCompletedOrders(record: Record<string, unknown>, path: string, iss
   const values = arrayAt(record, "completedOrderIds", `${path}.completedOrderIds`, issues, 20);
   const orderIds = values.flatMap((value, index) => {
     if (typeof value !== "string" || !(ORDER_IDS as readonly string[]).includes(value)) {
-      issue(issues, `${path}.completedOrderIds.${index}`, "Choose a valid Order.");
+      issue(issues, `${path}.completedOrderIds.${index}`, "Choose a valid Order.", "order_invalid");
       return [];
     }
     return [value as OrderId];
   });
   if (new Set(orderIds).size !== orderIds.length) {
-    issue(issues, `${path}.completedOrderIds`, "Record each completed Order once.");
+    issue(issues, `${path}.completedOrderIds`, "Record each completed Order once.", "order_once");
   }
   return orderIds;
 }
@@ -192,7 +196,7 @@ function parsePlayer(value: unknown, index: number, issues: PlaytestValidationIs
     return enumValue(record, field, `${path}.${field}`, issues, techsOfDiscipline(discipline), true);
   };
   if (Object.hasOwn(record, "startingTechniqueId")) {
-    issue(issues, `${path}.startingTechniqueId`, "V1.6.1 has no Starting Techs.");
+    issue(issues, `${path}.startingTechniqueId`, "V1.6.1 has no Starting Techs.", "starting_tech");
   }
   return {
     name: text(record, "name", `${path}.name`, issues, 40),
@@ -237,13 +241,13 @@ function parseFiringTechIds(record: Record<string, unknown>, path: string, issue
   const values = arrayAt(record, "firingTechIds", path, issues, FIRING_TECH_IDS.length);
   const techIds = values.flatMap((value, index) => {
     if (typeof value !== "string" || !FIRING_TECH_IDS.includes(value as TechId)) {
-      issue(issues, `${path}.${index}`, "Choose a valid Firing Tech.");
+      issue(issues, `${path}.${index}`, "Choose a valid Firing Tech.", "firing_tech_invalid");
       return [];
     }
     return [value as TechId];
   });
   if (new Set(techIds).size !== techIds.length) {
-    issue(issues, path, "Record each Firing Tech at most once per round.");
+    issue(issues, path, "Record each Firing Tech at most once per round.", "firing_tech_once");
   }
   return techIds;
 }
@@ -253,22 +257,22 @@ function parseRound(value: unknown, index: number, playerCount: PlayerCount, iss
   const record = recordAt(value, path, issues);
   const playerValues = arrayAt(record, "players", `${path}.players`, issues, 4);
   if (playerValues.length !== playerCount) {
-    issue(issues, `${path}.players`, `Add exactly ${playerCount} player rows for this round.`);
+    issue(issues, `${path}.players`, `Add exactly ${playerCount} player rows for this round.`, "round_rows", { count: playerCount });
   }
   const sharedCapacity = sharedKilnCapacityFor(playerCount);
   const players = playerValues.map((player, playerIndex) => parseRoundPlayer(player, playerIndex, path, sharedCapacity, issues));
   for (const [playerIndex, player] of players.entries()) {
     if (player.playerIndex !== playerIndex) {
-      issue(issues, `${path}.players.${playerIndex}.playerIndex`, "Player rows must stay in seat order.");
+      issue(issues, `${path}.players.${playerIndex}.playerIndex`, "Player rows must stay in seat order.", "seat_order");
     }
   }
   const sharedLoaded = players.reduce((total, player) => total + (player.sharedLoaded ?? 0), 0);
   if (sharedLoaded > sharedCapacity) {
-    issue(issues, `${path}.players`, `Shared Kiln loading cannot exceed ${sharedCapacity} ceramics.`);
+    issue(issues, `${path}.players`, `Shared Kiln loading cannot exceed ${sharedCapacity} ceramics.`, "shared_capacity", { capacity: sharedCapacity });
   }
   const kilnDie = integer(record, "kilnDie", `${path}.kilnDie`, issues, Math.min(...KILN_DIE_FACES), Math.max(...KILN_DIE_FACES), true);
   if (kilnDie !== null && !KILN_DIE_FACES.includes(kilnDie)) {
-    issue(issues, `${path}.kilnDie`, "Choose a Kiln Die face.");
+    issue(issues, `${path}.kilnDie`, "Choose a Kiln Die face.", "kiln_die_face");
   }
   const firingTechIds = parseFiringTechIds(record, `${path}.firingTechIds`, issues);
   const adjustedContributions = players.filter(
@@ -276,10 +280,10 @@ function parseRound(value: unknown, index: number, playerCount: PlayerCount, iss
   ).length;
   const fuelLedgerRecorded = firingTechIds.includes(FUEL_LEDGER_TECH_ID);
   if (adjustedContributions > 0 && !fuelLedgerRecorded) {
-    issue(issues, `${path}.firingTechIds`, "Check Fuel Ledger when a −2 or +2 Contribution was used.");
+    issue(issues, `${path}.firingTechIds`, "Check Fuel Ledger when a −2 or +2 Contribution was used.", "fuel_ledger_check");
   }
   if (fuelLedgerRecorded && adjustedContributions !== 1) {
-    issue(issues, `${path}.players`, "Fuel Ledger requires exactly one Bank −2 or Stoke +2 Contribution.");
+    issue(issues, `${path}.players`, "Fuel Ledger requires exactly one Bank −2 or Stoke +2 Contribution.", "fuel_ledger_one");
   }
   return {
     round: integer(record, "round", `${path}.round`, issues, 1, GAME_CONFIG.rounds) ?? 1,
@@ -315,49 +319,49 @@ export function validatePlaytestSubmission(input: unknown): PlaytestValidationRe
   const issues: PlaytestValidationIssue[] = [];
   const record = recordAt(input, "submission", issues);
   if (Object.hasOwn(record, "gameId")) {
-    issue(issues, "gameId", "The reference number is assigned by the server.");
+    issue(issues, "gameId", "The reference number is assigned by the server.", "reference_server");
   }
-  if (record["formVersion"] !== PLAYTEST_FORM_VERSION) issue(issues, "formVersion", "Unsupported form version.");
+  if (record["formVersion"] !== PLAYTEST_FORM_VERSION) issue(issues, "formVersion", "Unsupported form version.", "form_version");
   if (record["rulesVersion"] !== GAME_CONFIG.rulesVersion) {
-    issue(issues, "rulesVersion", `This form records rules V${GAME_CONFIG.rulesVersion}.`);
+    issue(issues, "rulesVersion", `This form records rules V${GAME_CONFIG.rulesVersion}.`, "rules_version", { version: GAME_CONFIG.rulesVersion });
   }
 
   const playedOn = text(record, "playedOn", "playedOn", issues, 10);
-  if (!isIsoDate(playedOn)) issue(issues, "playedOn", "Enter a valid play date.");
+  if (!isIsoDate(playedOn)) issue(issues, "playedOn", "Enter a valid play date.", "date_invalid");
   const playerCount = (integer(record, "playerCount", "playerCount", issues, GAME_CONFIG.players.min, GAME_CONFIG.players.max) ??
     GAME_CONFIG.players.min) as PlayerCount;
   const firstPlayerIndex = integer(record, "firstPlayerIndex", "firstPlayerIndex", issues, 0, playerCount - 1) ?? 0;
   const winnerIndex = integer(record, "winnerIndex", "winnerIndex", issues, 0, playerCount - 1) ?? 0;
 
   const playerValues = arrayAt(record, "players", "players", issues, 4);
-  if (playerValues.length !== playerCount) issue(issues, "players", `Add exactly ${playerCount} player records.`);
+  if (playerValues.length !== playerCount) issue(issues, "players", `Add exactly ${playerCount} player records.`, "player_records", { count: playerCount });
   const players = playerValues.map((value, index) => parsePlayer(value, index, issues));
   const kilnIds = players.map((player) => player.kilnId);
-  if (new Set(kilnIds).size !== kilnIds.length) issue(issues, "players", "Each player should have a different Kiln.");
+  if (new Set(kilnIds).size !== kilnIds.length) issue(issues, "players", "Each player should have a different Kiln.", "duplicate_kiln");
   const ownedTechIds = players.flatMap(playerTechIds);
   if (new Set(ownedTechIds).size !== ownedTechIds.length) {
-    issue(issues, "players", "A Tech tile can only belong to one player.");
+    issue(issues, "players", "A Tech tile can only belong to one player.", "tech_once");
   }
   const completedOrders = players.flatMap((player) => player.completedOrderIds);
   if (new Set(completedOrders).size !== completedOrders.length) {
-    issue(issues, "players", "A physical Order card can only be completed once per game.");
+    issue(issues, "players", "A physical Order card can only be completed once per game.", "order_per_game");
   }
 
   const rounds = arrayAt(record, "rounds", "rounds", issues, GAME_CONFIG.rounds).map((value, index) =>
     parseRound(value, index, playerCount, issues),
   );
   if (rounds.length !== GAME_CONFIG.rounds) {
-    issue(issues, "rounds", `Add exactly ${GAME_CONFIG.rounds} rounds.`);
+    issue(issues, "rounds", `Add exactly ${GAME_CONFIG.rounds} rounds.`, "rounds_count", { count: GAME_CONFIG.rounds });
   }
   if (new Set(rounds.map((round) => round.round)).size !== rounds.length) {
-    issue(issues, "rounds", "Record each round at most once.");
+    issue(issues, "rounds", "Record each round at most once.", "round_once");
   }
   const ownedFiringTechIds = new Set(players.flatMap((player) => (player.firingTechId === null ? [] : [player.firingTechId])));
   const fuelLedgerOwnerIndex = players.findIndex((player) => player.firingTechId === FUEL_LEDGER_TECH_ID);
   for (const [roundIndex, round] of rounds.entries()) {
     for (const techId of round.firingTechIds) {
       if (!ownedFiringTechIds.has(techId)) {
-        issue(issues, `rounds.${roundIndex}.firingTechIds`, "A Firing Tech can only be used after assigning it to a player.");
+        issue(issues, `rounds.${roundIndex}.firingTechIds`, "A Firing Tech can only be used after assigning it to a player.", "firing_tech_owner");
       }
     }
     for (const [playerIndex, roundPlayer] of round.players.entries()) {
@@ -366,6 +370,7 @@ export function validatePlaytestSubmission(input: unknown): PlaytestValidationRe
           issues,
           `rounds.${roundIndex}.players.${playerIndex}.contribution`,
           "Only the player who owns Fuel Ledger can record a −2 or +2 Contribution.",
+          "fuel_ledger_owner",
         );
       }
     }
@@ -373,13 +378,13 @@ export function validatePlaytestSubmission(input: unknown): PlaytestValidationRe
   for (const [playerIndex, player] of players.entries()) {
     const kilnAbilityUses = rounds.reduce((total, round) => total + (round.players[playerIndex]?.kilnAbilityUses ?? 0), 0);
     if (player.kilnAbilityUses !== kilnAbilityUses) {
-      issue(issues, `players.${playerIndex}.kilnAbilityUses`, "Kiln ability total must match the five round counters.");
+      issue(issues, `players.${playerIndex}.kilnAbilityUses`, "Kiln ability total must match the five round counters.", "ability_total");
     }
     const roundOrderCounts = rounds.map((round) => round.players[playerIndex]?.ordersCompleted ?? null);
     if (roundOrderCounts.every((count) => count !== null)) {
       const roundOrderTotal = roundOrderCounts.reduce<number>((total, count) => total + (count ?? 0), 0);
       if (roundOrderTotal !== player.completedOrderIds.length) {
-        issue(issues, `players.${playerIndex}.completedOrderIds`, "Completed Orders must match the total recorded across rounds.");
+        issue(issues, `players.${playerIndex}.completedOrderIds`, "Completed Orders must match the total recorded across rounds.", "order_total");
       }
     }
   }

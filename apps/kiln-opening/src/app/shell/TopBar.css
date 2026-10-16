@@ -1,0 +1,419 @@
+/* Top bar, phase strip, Kiln Die chip and seat chips (B1; wireframe `.top`, `.phases`, `.die-chip`, `.chain`, `.seat`). */
+@layer components {
+  .top-bar {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-4) var(--sp-6);
+    padding: var(--sp-4) var(--sp-7);
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+  }
+
+  .top-bar-brand {
+    margin: 0;
+    color: var(--teal-ink);
+    font-size: var(--fs-19);
+    font-weight: 700;
+    line-height: var(--lh-snug);
+    white-space: nowrap;
+  }
+
+  .top-bar-round {
+    color: var(--ink-2);
+    font-size: var(--fs-13);
+    white-space: nowrap;
+  }
+
+  .top-bar-round strong {
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: var(--fs-17);
+  }
+
+  /* "2/5": the phone's compact round; the full words stay for assistive technology there. */
+  .top-bar-round-short {
+    display: none;
+  }
+
+  /*
+   * The tools and the seat chips travel together at the end of the row, tools first (the markup
+   * order). The group's flex basis is 0 and its minimum is the tools plus room for about one
+   * chip, so it stays on the first row and the chips scroll inside it before anything wraps.
+   */
+  .top-bar-end {
+    display: flex;
+    flex: 1 1 0%;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--sp-4) var(--sp-6);
+    min-width: min(100%, 23rem);
+    margin-inline-start: auto;
+  }
+
+  .top-bar-seats {
+    flex: 0 1 auto;
+    min-width: 0;
+    /* Room for the focus ring and the acting outline inside the scroll area. */
+    padding: 3px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  .top-bar-tools {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--sp-3);
+  }
+
+  /* The compact language switch: one button naming the other language. */
+  .language-switch {
+    flex: none;
+    min-height: 1.875rem;
+    min-width: 2.5rem;
+    padding: var(--sp-1) var(--sp-4);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    background: var(--surface-2);
+    color: var(--ink);
+    font-size: var(--fs-meta);
+    font-weight: 700;
+    line-height: var(--lh-snug);
+    white-space: nowrap;
+  }
+
+  .language-switch:hover {
+    border-color: var(--celadon);
+  }
+
+  @media (max-width: 899px), (pointer: coarse) {
+    .language-switch {
+      min-height: var(--target-min);
+      min-width: var(--target-min);
+    }
+  }
+
+  /* Phase strip. */
+  .phase-strip {
+    display: flex;
+    align-items: stretch;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    overflow: hidden;
+  }
+
+  .phase-strip-item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: var(--sp-2) var(--sp-5);
+    border-inline-end: 1px solid var(--line-2);
+    background: var(--surface-2);
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+    white-space: nowrap;
+  }
+
+  .phase-strip-item:last-child {
+    border-inline-end: 0;
+  }
+
+  .phase-strip-item[data-state="done"] {
+    color: var(--ink-3);
+  }
+
+  .phase-strip-number {
+    display: none;
+  }
+
+  .phase-strip-step {
+    font-weight: 500;
+  }
+
+  /* Die chip. */
+  .die-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-3);
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+    white-space: nowrap;
+  }
+
+  /* Seat chips. */
+  .seat-chips {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: var(--sp-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .seat-chips-item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+  }
+
+  .seat-chips-sep {
+    color: var(--ink-3);
+    font-size: var(--fs-13);
+  }
+
+  .seat-chip {
+    --seat: var(--seat-0);
+
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-3);
+    min-height: 1.875rem;
+    padding: var(--sp-1) var(--sp-5) var(--sp-1) var(--sp-2);
+    border: 1px solid var(--line);
+    border-radius: var(--r-pill);
+    background: var(--surface-2);
+    color: var(--ink);
+    font-size: var(--fs-meta);
+    line-height: var(--lh-body);
+    white-space: nowrap;
+  }
+
+  .seat-chip:hover {
+    border-color: var(--celadon);
+    background: var(--surface);
+  }
+
+  .seat-chip-swatch {
+    flex: none;
+    width: 0.5rem;
+    height: 1.25rem;
+    border-radius: var(--r-xs);
+    background: var(--seat);
+  }
+
+  .seat-chip-first {
+    padding: 0 var(--sp-3);
+    border-radius: var(--r-pill);
+    background: var(--gold-pale);
+    color: var(--gold-ink);
+    font-weight: 700;
+  }
+
+  .seat-chip-name {
+    font-size: var(--fs-13);
+    font-weight: 700;
+  }
+
+  .seat-chip-kiln {
+    color: var(--ink-2);
+  }
+
+  .seat-chip-vp strong {
+    font-family: var(--serif);
+    font-size: var(--fs-14);
+  }
+
+  .seat-chip-final {
+    margin-inline-start: var(--sp-2);
+    color: var(--ink-2);
+  }
+
+  .seat-chip-hand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-1);
+  }
+
+  .seat-chip-computer {
+    padding: 0 var(--sp-3);
+    border: 1px solid var(--line);
+    border-radius: var(--r-pill);
+    color: var(--ink-2);
+  }
+
+  .seat-chip-acting {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--cinnabar);
+  }
+
+  /* Numbered phases below 1500px: the other phases show their number; their label stays for screen readers. */
+  @container shell (max-width: 1499px) {
+    .phase-strip-number {
+      display: inline;
+    }
+
+    .phase-strip-item:not([data-state="current"]) {
+      padding: var(--sp-2) var(--sp-4);
+    }
+
+    .phase-strip-item:not([data-state="current"]) .phase-strip-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+
+    .phase-strip-item[data-state="current"] .phase-strip-number {
+      opacity: 0.85;
+    }
+  }
+
+  /*
+   * Phone: two rows. Row one: round, current phase, Kiln Die, then the tools at its end; row two:
+   * the seat chips, scrolling. Below 390px, where the tools may not fit on row one, they start row
+   * two and the chips scroll beside them (the markup order), so the bar keeps to two rows.
+   */
+  @container shell (max-width: 899px) {
+    .top-bar {
+      gap: var(--sp-3) var(--sp-3);
+      padding: var(--sp-3) var(--gutter);
+    }
+
+    /* Visually hidden, still read: the brand (the screen's heading), the round's and the Kiln Die's words. */
+    .top-bar-brand,
+    .top-bar-round-full,
+    .die-chip-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      font-size: var(--fs-body);
+      white-space: nowrap;
+    }
+
+    .top-bar-round-short {
+      display: inline;
+    }
+
+    /* Row one shows the current phase only (number and label); the other phases stay readable by assistive technology. */
+    .phase-strip-item:not([data-state="current"]) {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+
+    /* The group's children join the bar's own rows. */
+    .top-bar-end {
+      display: contents;
+    }
+
+    .top-bar-tools {
+      gap: var(--sp-2);
+      margin-inline-start: auto;
+    }
+
+    .top-bar-tools .kit-menu-button,
+    .language-switch {
+      min-width: 2.5rem;
+      padding-inline: var(--sp-2);
+    }
+
+    .top-bar-seats {
+      flex: 1 1 100%;
+      min-width: 0;
+      scrollbar-width: none;
+    }
+
+    .seat-chips-sep {
+      display: none;
+    }
+
+    .seat-chip {
+      min-height: var(--target-min);
+    }
+  }
+
+  /* The narrowest phones: when the tools have to leave row one, the chips scroll beside them on row two. */
+  @container shell (max-width: 389px) {
+    .top-bar-seats {
+      flex: 1 1 9rem;
+      min-width: min(100%, 9rem);
+    }
+  }
+
+  /* Short landscape: one compact row; the chips scroll after the tools. */
+  @media (orientation: landscape) and (max-height: 500px) {
+    .top-bar {
+      flex-wrap: nowrap;
+      padding: var(--sp-2) var(--sp-6);
+    }
+
+    .top-bar-brand {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      font-size: var(--fs-body);
+    }
+
+    .top-bar-end {
+      display: flex;
+      flex: 1 1 12rem;
+      min-width: 0;
+    }
+
+    .top-bar-tools {
+      margin-inline-start: 0;
+    }
+
+    .seat-chip {
+      min-height: var(--target-min);
+    }
+
+    .top-bar-seats {
+      flex: 1 1 8rem;
+      margin-inline: 0;
+      padding-inline: 3px;
+      scroll-padding-inline: 3px;
+      scrollbar-width: none;
+    }
+
+    .seat-chips {
+      scroll-snap-type: x proximity;
+    }
+
+    .seat-chips-item {
+      scroll-snap-align: start;
+    }
+  }
+}
+
+@layer states {
+  .phase-strip-item[aria-current="step"] {
+    background: var(--teal);
+    color: var(--on-teal);
+    font-weight: 700;
+  }
+
+  .seat-chip[data-me] {
+    border-color: var(--teal);
+    background: var(--surface);
+  }
+
+  .seat-chip[aria-pressed="true"] {
+    background: var(--teal-pale);
+  }
+
+  .seat-chip[data-acting] {
+    border-color: var(--cinnabar);
+    box-shadow: 0 0 0 2px var(--cinnabar);
+  }
+}

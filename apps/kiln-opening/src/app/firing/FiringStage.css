@@ -1,0 +1,70 @@
+/* Firing stage (wireframe `.stage`, `.banner`, `.stage-main`): D3 takes over the column. */
+@layer components {
+  .stage {
+    container: stage / inline-size;
+    min-width: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--r-xl);
+    background: var(--surface);
+  }
+
+  /* No overflow clipping on the stage (rules-details panels open from its pieces); the banner
+     follows the corner radius itself. */
+  .stage-banner {
+    border-radius: calc(var(--r-xl) - 1px) calc(var(--r-xl) - 1px) 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-3) var(--sp-6);
+    padding: var(--sp-4) var(--sp-6);
+    border-bottom: 1px solid var(--line-2);
+    background: var(--d-firing-pale);
+  }
+
+  .stage-eyebrow {
+    font-size: var(--fs-12);
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--cinnabar-ink);
+  }
+
+  .stage-title {
+    margin: 0;
+    font-size: var(--fs-17);
+  }
+
+  .stage-go {
+    margin-inline-start: auto;
+    font-size: var(--fs-12);
+    color: var(--ink-2);
+  }
+
+  .stage-records {
+    display: grid;
+    gap: var(--sp-2);
+    margin: 0;
+    padding: var(--sp-4) var(--sp-6);
+    border-bottom: 1px solid var(--line-2);
+    list-style: none;
+    font-size: var(--fs-12);
+    color: var(--ink-2);
+  }
+
+  .stage-main {
+    display: grid;
+    gap: var(--sp-6);
+    min-width: 0;
+    padding: var(--sp-5) var(--sp-6) var(--sp-6);
+  }
+
+  .stage-main .kilnbox {
+    max-width: 56rem;
+  }
+
+  .stage-idle {
+    margin: 0;
+    padding: var(--sp-5) var(--sp-6) 0;
+    color: var(--ink-2);
+  }
+}

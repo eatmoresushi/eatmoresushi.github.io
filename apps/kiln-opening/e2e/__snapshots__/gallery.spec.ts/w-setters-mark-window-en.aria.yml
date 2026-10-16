@@ -1,0 +1,35 @@
+- complementary "Your decision":
+  - paragraph: Start of Round · Your turn
+  - heading "Place your Setter’s Mark" [level=2]
+  - region "Player 1 (you)":
+    - heading "Player 1 (you)" [level=3]
+    - group "Resources":
+      - strong: "2"
+      - text: Clay
+      - strong: "2"
+      - text: Wood
+      - strong: "3"
+      - text: Coins
+    - img "Your Shifu"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - text: 0 Orders in hand Recognition 0/4 1 VP
+  - form "Place your Setter’s Mark":
+    - paragraph: "Put it on an empty active space of the Shared Kiln: only you may load there this round."
+    - 'button "Rules: Setter''s Mark"'
+    - group "Shared Kiln space or choose a highlighted kiln space":
+      - text: ""
+      - radio "High 1 (+1)"
+      - text: High 1 (+1)
+      - radio "High 2 (+1)"
+      - text: High 2 (+1)
+      - radio "Middle 1 (0)"
+      - text: Middle 1 (0)
+      - radio "Low 1 (−1)"
+      - text: Low 1 (−1)
+      - radio "Do not place it this round"
+      - text: Do not place it this round
+    - paragraph: Choose a space, or decline.
+    - button "Decline"
+    - button "Confirm" [disabled]

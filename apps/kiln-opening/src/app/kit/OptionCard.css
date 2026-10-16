@@ -238,22 +238,24 @@
 }
 
 @layer states {
+  /* Scoped to the option's own label: an option's children (a sub-editor, §8.1) may hold
+     options of their own, which must not look checked or disabled with it (CR B4-6). */
   .kit-opt[data-checked="true"] > .kit-opt-label {
     border-color: var(--teal);
     background: var(--teal-pale);
     box-shadow: inset 0 0 0 1.5px var(--teal);
   }
 
-  .kit-opt[data-checked="true"] .kit-opt-mark--radio {
+  .kit-opt[data-checked="true"] > .kit-opt-label > .kit-opt-mark--radio {
     border: 4px solid var(--teal);
   }
 
-  .kit-opt[data-checked="true"] .kit-opt-mark--checkbox {
+  .kit-opt[data-checked="true"] > .kit-opt-label > .kit-opt-mark--checkbox {
     border-color: var(--teal);
     background: var(--teal);
   }
 
-  .kit-opt[data-checked="true"] .kit-opt-mark--checkbox::after {
+  .kit-opt[data-checked="true"] > .kit-opt-label > .kit-opt-mark--checkbox::after {
     content: "✓";
   }
 
@@ -264,7 +266,7 @@
     box-shadow: none;
   }
 
-  .kit-opt--pill[data-checked="true"] .kit-opt-desc {
+  .kit-opt--pill[data-checked="true"] > .kit-opt-label .kit-opt-desc {
     color: inherit;
   }
 
@@ -278,7 +280,7 @@
     border-color: var(--line);
   }
 
-  .kit-opt--pill[data-disabled="true"] .kit-opt-title {
+  .kit-opt--pill[data-disabled="true"] > .kit-opt-label .kit-opt-title {
     text-decoration: line-through;
   }
 }

@@ -107,9 +107,51 @@ export interface PlaytestDraft {
   feedback: PlaytestFeedback;
 }
 
+/**
+ * A stable code per validation issue, so a client can show it in the reader's language without
+ * matching the English sentence (change request CR B3-3). Parameters fill the numbers.
+ */
+export type PlaytestIssueCode =
+  | "section_invalid"
+  | "list_invalid"
+  | "list_max"
+  | "text_invalid"
+  | "text_max"
+  | "integer_min"
+  | "integer_range"
+  | "option_invalid"
+  | "order_invalid"
+  | "order_once"
+  | "starting_tech"
+  | "firing_tech_invalid"
+  | "firing_tech_once"
+  | "round_rows"
+  | "seat_order"
+  | "shared_capacity"
+  | "kiln_die_face"
+  | "fuel_ledger_check"
+  | "fuel_ledger_one"
+  | "fuel_ledger_owner"
+  | "reference_server"
+  | "form_version"
+  | "rules_version"
+  | "date_invalid"
+  | "player_records"
+  | "duplicate_kiln"
+  | "tech_once"
+  | "order_per_game"
+  | "rounds_count"
+  | "round_once"
+  | "firing_tech_owner"
+  | "ability_total"
+  | "order_total";
+
 export interface PlaytestValidationIssue {
   path: string;
+  /** English sentence (unchanged; the Edge Function returns it). */
   message: string;
+  code?: PlaytestIssueCode;
+  params?: Readonly<Record<string, number | string>>;
 }
 
 export type PlaytestValidationResult =

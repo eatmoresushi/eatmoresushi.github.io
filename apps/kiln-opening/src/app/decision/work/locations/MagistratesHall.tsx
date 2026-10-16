@@ -1,12 +1,40 @@
 /**
- * MagistratesHall (UI_V1.6.1_ARCHITECTURE §4.2). Owner: B4 (work and setup decisions).
- * Source: wireframe `subEditor` Magistrate's Hall: `magistratesHallQuote`.
+ * MagistratesHall (UI_V1.6.1_ARCHITECTURE §3.4; wireframe `subEditor` magistrates_hall). Owner: B4.
  *
- * Phase A stub created by A2 (§4.3 rule 1): it has its final export name and props and renders
- * a `Placeholder` until its owner lands the component.
+ * Nothing to choose: the price and the Imperial Recognition reached (`magistratesHallQuote`),
+ * that milestone's reward with its rules details (D10), and the resulting resources.
  */
-import { Placeholder } from "../../../screens/Placeholder.tsx";
+import { recognitionMilestones } from "../../../i18n/content.ts";
+import { useT } from "../../../i18n/I18nProvider.tsx";
+import { FormNote, ResourceDelta, useRuleErrorText } from "../pieces.tsx";
+import { RulesDetail } from "../../../rules/RulesDetail.tsx";
+import type { MagistratesHallAction, MagistratesHallDraft, MagistratesHallOptions } from "./MagistratesHall.draft.ts";
+import type { LocationEditorProps } from "./editor.ts";
+import { amountsText } from "./shared.ts";
 
-export function MagistratesHall() {
-  return <Placeholder name="MagistratesHall" />;
+export type MagistratesHallProps = LocationEditorProps<MagistratesHallDraft, MagistratesHallAction, MagistratesHallOptions>;
+
+export function MagistratesHall({ options, context }: MagistratesHallProps) {
+  const t = useT();
+  const errorText = useRuleErrorText();
+  const reachable = options.reachable;
+  const milestone = reachable === null ? undefined : recognitionMilestones(t.locale).find((space) => space.space === reachable);
+  return (
+    <div className="b4-sub" data-location="magistrates_hall">
+      <p>{t("work.mh.pay", { pay: amountsText(t, options.quote.pay) })}</p>
+      {reachable === null ? null : <p>{t("work.mh.recognition", { from: options.from, to: reachable })}</p>}
+      {milestone === undefined || reachable === null ? null : (
+        <div className="b4-sub-block">
+          <p className="b4-sub-title">{t("work.mh.reward", { to: reachable })}</p>
+          <p>
+            <strong>{milestone.title}</strong>
+            {milestone.reward === null ? null : <span> · {milestone.reward}</span>}
+          </p>
+          <RulesDetail subject={{ kind: "recognition", space: reachable }} />
+        </div>
+      )}
+      {options.quote.ok || options.quote.error === null ? null : <FormNote tone="error">{errorText(options.quote.error)}</FormNote>}
+      <ResourceDelta before={context.me.resources} after={options.after} />
+    </div>
+  );
 }

@@ -284,8 +284,10 @@ interface GameModel {
   finalResult: FinalResult | null;
   window: DecisionWindow;                           // decisionWindow(view), §3.4
   computerSeatIds: ReadonlySet<PlayerId>;           // from seats
+  ceramics: Readonly<Record<CeramicId, CeramicState>>;   // view.game.ceramics: public, no heat value (B6, CR B1-1/B2-1/B3-1)
 }
-type TableBoardView = Omit<BoardView, "counts" | "firing"> & { counts: Omit<PublicCounts, "fireDeck"> };
+type TableBoardView = Pick<BoardView, "round" | "prompt" | "firstPlayerId" | "turnOrder" | "kilnDie" | "centralLocations" | "kilnSpaces" | "mainDisplay" | "techDisplay" | "fireDiscard">
+  & { counts: Omit<PublicCounts, "fireDeck">; refillPendingFor: PlayerId | null };   // game.market.refillPendingFor (B6, CR B2-2)
 interface EngineView { view: PlayerView; actor: ActorView | null }
 ```
 
@@ -368,7 +370,7 @@ interface WindowSpec<D> {
   };
 }
 interface TableSelectionData {
-  placeTargets: ReadonlyMap<LocationId, readonly PlacementWorkerOption[]>;   // legal entries only
+  placeTargets: ReadonlyMap<LocationId, readonly PlacementWorkerOption[]>;   // every entry, legal or not; Place shortcuts for legal ones, the engine's reason otherwise (B6, CR B2-3)
   activePlacement: { locationId: LocationId; workerKey: string } | null;
   kilnTargets: ReadonlyMap<KilnSpaceId, { pressed: boolean }>;                // G&L destination, Setter's Mark space
   pendingCeramics: readonly { ceramicId: CeramicId; glaze: Glaze; at: KilnSpaceId | "imperial" }[];
@@ -593,7 +595,11 @@ Wireframe sources: `decWork`, `subEditor`, `deltaRow`, `workSummary`, `decLook`.
 
 Wireframe sources: `decContrib`, `decHeatMarker`, `decAfterQuality`, `decOrders`, `decTrim`, `decFinal`, `decWait`.
 
-**Contracts and integration (B6):** every frozen file of §4.3 after phase A; `tools/localBackendV161.ts`; the gallery; `test/v161/ui/{rendered_text,expressibility_complete,form_driver_games}.test.ts`; `e2e/{gallery,full_game,two_humans}.spec.ts`; the CI workflow (§9.6).
+**Contracts and integration (B6):** every frozen file of §4.3 after phase A; `tools/localBackendV161.ts`; the gallery; `test/v161/ui/{rendered_text,expressibility_complete,form_driver_games}.test.ts`; `e2e/{gallery,full_game,two_humans}.spec.ts` and `e2e/support/*`; the CI workflow (§9.6) and its local equivalent `tools/ci-ui-local.sh` (`npm run ci:ui`). Added in phase B through change requests:
+
+- `rules/RulesDetail.{tsx,css}` and `i18n/catalog/rules.ts`: the one rules-details panel of D10/K15 (`RulesDetail`, `ShortText`, `OrderReward`, `LocationSummaries`) over the content accessors in `i18n/content.ts` (`rulesClarifications`, `techFacts`, `kilnFacts`, `orderFacts`, `locationFacts`, `overflowClarifications`). It replaced four package copies (B2–B5);
+- `rules/rulebookSections.ts`: the V1.6.1 rulebook's section headings by line (EN source and the line-aligned Chinese rulebook), so a clarification's rulebook source (`L139`, `ED L652`) is shown as the section a player can find ("Rulebook “Materials Yard”" / "规则书「泥柴场」"), never as a line number; `test/v161/ui/rules/rulebook_sections.test.ts` derives it again from both files;
+- `decision/composition.tsx`: the Canal Barge composition seam (§4.3 rule 3).
 
 **Tests** live under `test/v161/ui/<area>/` and are owned by the area's owner. `test/v161/ui/support/*` (render harness, fixture loader, expressibility helper) is created by A2 and owned by B6 after phase A.
 
@@ -605,13 +611,14 @@ Wireframe sources: `decContrib`, `decHeatMarker`, `decAfterQuality`, `decOrders`
 
    `GameScreen`, the `WorldSections` imports and `decision/windows.ts` therefore never change in phase B.
 2. **Frozen contracts:**
-   - `state/*`, `session/gameSource.ts`, `decision/DecisionPane.tsx`, `decision/windows.ts`, `screens/*`;
+   - `state/*`, `session/gameSource.ts`, `decision/DecisionPane.tsx`, `decision/windows.ts`, `decision/composition.tsx`, `screens/*`, `rules/*`;
    - `kit/*`, `styles/tokens.css`, `i18n/index.ts`, `i18n/translator.ts`, `i18n/richText.tsx`;
    - `src/game/**`, `package.json`, `vite.config.ts`, `tsconfig*.json`, `tools/*`, `test/v161/ui/fixtures/*`, `test/v161/ui/support/*`.
 
    In phase B these change only through **B6**. A request is a short note, in the requesting agent's commit or PR, describing the signature it needs. B6 lands it as its own green commit.
 3. **Cross-package use goes through a stub created in phase A.**
    - B5 owns the Canal Barge form (`CanalBarge.tsx`, `canalBargeDraft.ts`), its picker and its expressibility rows. B4's `ActionWindow` only composes it, with the props `{ source: "before_action" | "after_action" }`, and works against the stub until B5 lands.
+   - As built (CR B4-2, B5-2): the work window keeps one draft, so B4's `workDraft` holds the Canal Barge draft as its `canalBarge` sub-draft (reduced, revalidated, built and `fromCommand`-ed through `canalBargeDraft`), and the window's ConfirmBar sends `USE_CANAL_BARGE`. `ActionWindow` renders `<CanalBarge>` inside `CanalBargeFormProvider` from the frozen `decision/composition.tsx`, whose types come from B5's draft only; inside it the form edits the sub-draft and has no button of its own, outside it (the gallery) it keeps a local draft and its own button.
    - Table and kiln components (B2, B3) talk to decision windows (B4, B5) only through `TableSelection`.
 4. **One namespace file per package** in `i18n/catalog/`. `index.ts` imports them all; A3 creates it in phase A with an empty namespace object per file.
 5. **No new runtime dependencies:** no router, no state library, no CSS-in-JS. React 19 provides `useSyncExternalStore`, `useId` and `inert`. The new devDependencies (exact pins, added by A2) are `@playwright/test`, `@axe-core/playwright` and `happy-dom`.
@@ -682,7 +689,7 @@ t.rich("shell.roundN", { n: 2 });                         // "Round <b>{n}</b>/{
 - **Locales:** `"en" | "zh-CN"`. `<html lang>` is `en` or `zh-Hans`.
 - **Preference:** the existing `kiln-opening:language` key. On a first visit, the first `navigator.languages` entry starting with `zh` selects `zh-CN`; otherwise `en`.
 - **Seed:** the wireframe's `UI` dictionary (215 keys), split by namespace. Its English-sentence keys become IDs. During seeding, every literal rule number becomes a placeholder (§5 gap 19). Concatenation helpers become whole templates (§6.3).
-- **Rich text.** Templates may contain only the tag placeholders `<b>…</b>` and `<em>…</em>`. `richText.tsx` parses them into React nodes; parameters are always inserted as text. HTML is never injected, and `dangerouslySetInnerHTML` is forbidden in `src/app` (§2). ConfirmBar summaries (`workSummary`, `completeSum`, `useOn`) are `RichMessage`s `{ key, params }` rendered through `t.rich`, so player names are never markup.
+- **Rich text.** Templates may contain only the tag placeholders `<b>…</b>` and `<em>…</em>`. `richText.tsx` parses them into React nodes; parameters are always inserted as text. HTML is never injected, and `dangerouslySetInnerHTML` is forbidden in `src/app` (§2). ConfirmBar summaries (`workSummary`, `completeSum`, `useOn`) are `RichMessage`s `{ key, params }` rendered through `t.rich`, so player names are never markup. `RichMessage` is one object type, not a union with one member per key (a per-key union of well over 1,000 keys made `tsc` give up with TS2590, CR B2-5); messages are built with `msg(key, params)`, which keeps the per-key parameter check.
 - **Plurals.** An EN entry may be `{ one, other }`, chosen with `Intl.PluralRules`. ZH is always one string. The placeholder type is the union of the placeholders of the EN forms, and the catalogue test requires ZH to use the same set. This replaces the wireframe's `coinsN`/`coin1` special case.
 - **Fallback.**
   - In development and tests, `t` throws for a missing key, and content lookups throw for an empty `*Zh` field, an unknown event type or an unknown `MultiplayerErrorCode`.
@@ -844,7 +851,7 @@ CSS checks run in vitest over `src/app/**/*.css` and `src/app/**/*.tsx` (`test/v
 - **`CeramicChip`** adds the seat-colour ring, the ID and the Quality word or letter (`QL`: M/F/S/× and 臻/上/良/瑕, never colour alone) plus the marker badges (`cchip`).
   - Its accessible name is visually hidden text from `ceramicLabel`, which replaces the wireframe's `title`-only `cerTitle`. Example: "Lin's c12: Celadon bowl, carved, Fine, Crackle, Heat marker face down".
   - `HeatMarkerBadge` likewise carries sr-only text ("Heat marker, face down" / "Heat marker +1").
-- **`PieceDetail`** (kit) is a button plus a positioned panel, opened by click, tap or keyboard. Escape and an outside click close it, and the panel stays inside the viewport. It shows the full details of a ceramic, a Tech slot (rule text) or a Kiln tradition. The `title` attribute is never the only carrier of game information.
+- **`PieceDetail`** (kit) is a button plus a positioned panel, opened by click, tap or keyboard. Escape and an outside click close it, and the panel stays inside the viewport. The open panel is rendered into one body-level layer (`#kit-detail-layer`, a portal) and fixed beside its button, so no scrolling column or container query wrapper clips it or paints over it (B6, CR B2-6 and B3-5). It shows the full details of a ceramic, a Tech slot (rule text) or a Kiln tradition. The `title` attribute is never the only carrier of game information.
 - **`ArtResolver` context** (default: the static cutouts) is phase 6's hook for baked WebGL glaze images.
 - **Seat colours** are `--seat-<seatIndex>`, wireframe-approved hues that are not Glaze colours. The store's `PublicSeat.colour` names (`cinnabar`, `celadon`, `ink`, `moon-white`) would be confused with Glaze tints, so the UI does not use them.
 - **Missing art** (8 Tech illustrations, the 5 boards, central scenery) renders as text-only cards. The existing `tech-*-v2.webp` files are used where `asset_specs.json` says `REUSE`.
@@ -1094,6 +1101,8 @@ None of them is part of `npm test`.
 4. `npm run build:e2e && npm run test:e2e:ci`.
 
 This exercises the **built** bundle (base path, asset URLs, CSS layer order after chunking), not the dev server. The existing `pages.yml` deploy workflow is unchanged.
+
+Until the owner approves the workflow, `npm run ci:ui` (`tools/ci-ui-local.sh`) runs the same steps locally: the root gate, then `build:e2e` and `test:e2e:ci`; `-- --install` adds `npm ci` and the Chromium download. On a machine without Playwright's WebKit build, `KILN_E2E_CHROMIUM_ONLY=1` runs the phone and tablet projects in Chromium with the same viewport, touch and mobile emulation; WebKit stays the reference.
 
 **Test-driver contract** (created by A2 and A3, used by every form):
 

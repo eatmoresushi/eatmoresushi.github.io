@@ -78,12 +78,18 @@ type IsPlural<E> = E extends string ? false : true;
 /** A formatter that runs with the current translator, so it follows the language. */
 export type Deferred = (t: Translator) => string;
 
-/** A stored message: a key and its parameters, formatted when rendered. */
-export type RichMessage = {
-  [K in MessageKey]: [EntryPlaceholders<EntryOf<K>>] extends [never]
-    ? { readonly key: K; readonly params?: undefined }
-    : { readonly key: K; readonly params: ParamsFor<K, MessageParam> };
-}[MessageKey];
+/**
+ * A stored message: a key and its parameters, formatted when rendered.
+ *
+ * One object type, not a union with one member per key: with every package's catalogue filled
+ * (well over 1,000 keys) a per-key union made TypeScript give up on any conditional or array
+ * literal that mixed messages (TS2590, change request CR B2-5). Build messages with `msg()`,
+ * which keeps the per-key parameter check; `t` and `t.rich` keep theirs too.
+ */
+export interface RichMessage {
+  readonly key: MessageKey;
+  readonly params?: Readonly<Record<string, MessageParam>> | undefined;
+}
 
 /** A plain-text parameter value. */
 export type MessageParam = string | number | RichMessage | Deferred;

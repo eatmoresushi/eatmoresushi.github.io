@@ -1,0 +1,233 @@
+/* Final results (wireframe `.podium`, `.stand`, `table.calc.score`). */
+@layer components {
+  .results {
+    container: results / inline-size;
+    display: grid;
+    gap: var(--sp-6);
+    min-width: 0;
+  }
+
+  .podium {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11.25rem, 1fr));
+    gap: var(--sp-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .stand {
+    display: grid;
+    gap: var(--sp-2);
+    align-content: start;
+    min-width: 0;
+    padding: var(--sp-5) var(--sp-6);
+    border: 1px solid var(--line-2);
+    border-top: 4px solid var(--pc);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+  }
+
+  .stand--win {
+    border-color: var(--win);
+    border-top-color: var(--pc);
+    box-shadow: inset 0 0 0 1px var(--gold-line);
+    background: linear-gradient(var(--imp-bg), var(--surface) 70%);
+  }
+
+  .stand-rank {
+    font-size: var(--fs-12);
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--gold-ink);
+  }
+
+  .stand-name {
+    font-size: var(--fs-16);
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+
+  .stand-total {
+    font-size: var(--fs-13);
+    color: var(--ink-2);
+  }
+
+  .stand-total strong {
+    font-family: var(--serif);
+    font-size: var(--fs-30);
+    line-height: 1;
+    color: var(--ink);
+  }
+
+  .stand-kiln,
+  .score-rule {
+    font-size: var(--fs-12);
+    color: var(--ink-2);
+    text-decoration: underline dotted;
+    text-underline-offset: 3px;
+  }
+
+  .results-decided {
+    margin: 0;
+    font-size: var(--fs-13);
+    color: var(--ink-2);
+  }
+
+  .results-block {
+    display: grid;
+    gap: var(--sp-4);
+    min-width: 0;
+  }
+
+  .results-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--sp-2) var(--sp-5);
+  }
+
+  .results-title {
+    margin: 0;
+    font-size: var(--fs-16);
+  }
+
+  .results-rules {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-2) var(--sp-4);
+    font-size: var(--fs-12);
+    color: var(--ink-2);
+  }
+
+  .results-rules-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-2) var(--sp-5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* A short name (清玩斋) is still a 44px target (WCAG 2.5.8); the rules-piece rule sets min-width 0. */
+  @media (max-width: 899px), (pointer: coarse) {
+    .results-rules-list .kit-detail.rd-piece > .kit-detail-trigger {
+      min-width: var(--target-min);
+      justify-content: center;
+    }
+  }
+
+  .results-meta,
+  .results-note {
+    margin: 0;
+    font-size: var(--fs-12);
+    color: var(--ink-2);
+  }
+
+  .calc-wrap {
+    min-width: 0;
+    overflow-x: auto;
+    border: 1px solid var(--line-2);
+    border-radius: var(--r-md);
+  }
+
+  .calc {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--fs-12);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .calc th,
+  .calc td {
+    padding: var(--sp-3) var(--sp-4);
+    border-bottom: 1px solid var(--line-2);
+    text-align: end;
+    vertical-align: top;
+  }
+
+  .calc th:first-child {
+    text-align: start;
+    font-weight: 600;
+  }
+
+  .calc thead th {
+    background: var(--surface-2);
+    color: var(--ink-2);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .score-swatch {
+    display: inline-block;
+    width: 0.4375rem;
+    height: 0.8125rem;
+    margin-inline-end: var(--sp-3);
+    border-radius: 2px;
+    background: var(--pc);
+    vertical-align: -2px;
+  }
+
+  .score-a1 {
+    background: var(--gold-pale);
+  }
+
+  .score-total td,
+  .score-total th {
+    border-top: 2px solid var(--line);
+    font-size: var(--fs-13);
+    font-weight: 800;
+  }
+
+  .score-exhib {
+    display: grid;
+    justify-items: end;
+    gap: var(--sp-1);
+  }
+
+  .score-exhib-parts {
+    color: var(--ink-3);
+  }
+
+  .score-exhib-cers {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--sp-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .tie-decisive th,
+  .tie-decisive td {
+    background: var(--gold-pale);
+  }
+
+  .tie-mark {
+    display: block;
+    font-size: var(--fs-12);
+    font-weight: 700;
+    color: var(--gold-ink);
+  }
+
+  @container results (max-width: 32.5rem) {
+    .podium {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--sp-3);
+    }
+
+    .stand {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      column-gap: var(--sp-5);
+    }
+
+    .stand-total {
+      grid-column: 2;
+      grid-row: 1 / span 3;
+    }
+  }
+}

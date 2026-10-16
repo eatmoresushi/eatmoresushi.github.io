@@ -1,0 +1,52 @@
+/* KilnTradition (B2; wireframe `.trad`): the Kiln Player Board's tradition block. */
+@layer components {
+  .trad {
+    display: grid;
+    min-width: 0;
+    border-radius: var(--r-sm);
+    background: var(--surface-2);
+  }
+
+  .trad--none {
+    margin: 0;
+    padding: var(--sp-3) var(--sp-4);
+    color: var(--ink-3);
+    font-size: var(--fs-meta);
+  }
+
+  .trad-detail {
+    min-width: 0;
+  }
+
+  .trad-face {
+    display: grid;
+    flex: 1 1 auto;
+    gap: var(--sp-1);
+    min-width: 0;
+    padding: var(--sp-3) var(--sp-4);
+    color: var(--ink-2);
+    font-size: var(--fs-rule);
+    text-align: start;
+  }
+
+  .trad-t1 {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-2) var(--sp-3);
+  }
+
+  .trad-name {
+    color: var(--ink);
+    font-size: var(--fs-label);
+  }
+
+  .trad-short strong {
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  .marker-part strong {
+    color: var(--ink);
+  }
+}

@@ -52,7 +52,10 @@
   }
 
   @media (max-width: 899px), (pointer: coarse) {
+    /* A 44px target both ways (WCAG 2.5.8): a one-letter player name is still a full tab. */
     .kit-tab {
+      justify-content: center;
+      min-width: var(--target-min);
       min-height: var(--target-min);
     }
   }

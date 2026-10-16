@@ -2,11 +2,21 @@
  * KilnBlock (UI_V1.6.1_ARCHITECTURE §4.2). Owner: B3 (kiln, firing stage, results, playtest).
  * Source: wireframe `kilnBlock`: SharedKiln and ImperialKilns.
  *
- * Phase A stub created by A2 (§4.3 rule 1): it has its final export name and props and renders
- * a `Placeholder` until its owner lands the component.
+ * The Shared Kiln with the Imperial Kilns beside it (below it in a narrow container). It is the
+ * same in the Kiln section and on the firing stage; kiln targets and pending chips come from the
+ * open decision through `useTableSelection()` (§3.5).
  */
-import { Placeholder } from "../screens/Placeholder.tsx";
+import { ImperialKilns } from "./ImperialKilns.tsx";
+import { SharedKiln } from "./SharedKiln.tsx";
+import "./KilnBlock.css";
 
 export function KilnBlock() {
-  return <Placeholder name="KilnBlock" />;
+  return (
+    <div className="kilnbox">
+      <div className="kilnwrap">
+        <SharedKiln />
+        <ImperialKilns />
+      </div>
+    </div>
+  );
 }

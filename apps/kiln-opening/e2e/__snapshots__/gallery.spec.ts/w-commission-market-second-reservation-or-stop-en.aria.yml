@@ -1,0 +1,50 @@
+- complementary "Your decision":
+  - paragraph: Work Phase · Your turn
+  - heading "Reserve another Order" [level=2]
+  - region "Player 1 (you)":
+    - heading "Player 1 (you)" [level=3]
+    - group "Resources":
+      - strong: /\d+/
+      - text: Clay
+      - strong: "9"
+      - text: Wood
+      - strong: "9"
+      - text: Coins
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - text: 1 Order in hand Recognition 0/4 0 VP
+  - form "Reserve another Order":
+    - paragraph: Reservation 2 of up to 2
+    - region "Already reserved this turn":
+      - paragraph: Already reserved this turn
+      - strong: "#1 O01"
+      - text: 3 VP 3 Coins Bowl · any Glaze · any Decoration Standard+
+      - 'button "Rules: Order O01"'
+    - group "Next reservation":
+      - text: ""
+      - radio "#2 O02 3 VP 3 Coins Plate · any Glaze · any Decoration Standard+"
+      - text: "#2 O02 3 VP 3 Coins Plate · any Glaze · any Decoration Standard+"
+      - 'button "Rules: Order O02"'
+      - radio "#3 O03 3 VP 3 Coins Brush Washer · any Glaze · any Decoration Standard+"
+      - text: "#3 O03 3 VP 3 Coins Brush Washer · any Glaze · any Decoration Standard+"
+      - 'button "Rules: Order O03"'
+      - radio "#4 O04 7 VP 4 Coins Vase · Moon White · any Decoration Fine+"
+      - text: "#4 O04 7 VP 4 Coins Vase · Moon White · any Decoration Fine+"
+      - 'button "Rules: Order O04"'
+      - radio "#5 O05 7 VP 4 Coins Censer · any Glaze · Carved Fine+"
+      - text: "#5 O05 7 VP 4 Coins Censer · any Glaze · Carved Fine+"
+      - 'button "Rules: Order O05"'
+      - radio "#6 O06 5 VP 3 Coins any Shape · White · any Decoration Fine+"
+      - text: "#6 O06 5 VP 3 Coins any Shape · White · any Decoration Fine+"
+      - 'button "Rules: Order O06"'
+      - radio "Blind reserve (top of the deck)"
+      - text: Blind reserve (top of the deck)
+      - radio "Look at the top of the deck and reserve one (only you see the cards)"
+      - text: Look at the top of the deck and reserve one (only you see the cards)
+      - 'radio "Stop: reserve no more You have reserved at least one Order this turn."'
+      - text: "Stop: reserve no more You have reserved at least one Order this turn."
+    - paragraph: A reserved position stays empty until your turn ends.
+    - paragraph: Choose an Order to reserve.
+    - 'button "Stop: reserve no more"'
+    - button "Confirm" [disabled]

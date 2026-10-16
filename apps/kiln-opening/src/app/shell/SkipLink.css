@@ -1,0 +1,25 @@
+/* SkipLink (B1, §8.1): off screen until focused. */
+@layer components {
+  .skip-link {
+    position: absolute;
+    top: var(--sp-3);
+    left: var(--sp-3);
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--target-min);
+    padding: var(--sp-3) var(--sp-6);
+    border-radius: var(--r-md);
+    background: var(--teal);
+    color: var(--on-teal);
+    font-size: var(--fs-label);
+    font-weight: 700;
+    white-space: nowrap;
+    text-decoration: none;
+    transform: translateY(-200%);
+  }
+
+  .skip-link:focus,
+  .skip-link:focus-visible {
+    transform: none;
+  }
+}

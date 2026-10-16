@@ -2,17 +2,66 @@
  * CeramicsRow (UI_V1.6.1_ARCHITECTURE §4.2). Owner: B2 (table and boards).
  * Source: wireframe `ceramicsRow`.
  *
- * Phase A stub created by A2 (§4.3 rule 1): it has its final export name and props and renders
- * a `Placeholder` until its owner lands the component.
+ * A board's ceramics by stage: Shaped (in the workshop), In kiln (Shared or Imperial Kiln, with
+ * this firing's recorded Quality once assigned), Finished. Each is a ceramic chip described in
+ * words (D9) with its details; chips the open decision points at are highlighted
+ * (`highlightedCeramicIds`). All undelivered ceramics are public (AGENTS.md). While a group's
+ * attributes are not in the model (CR B2-1), the group shows its count instead.
  */
-import type { PlayerId } from "../../game/index.ts";
-import { Placeholder } from "../screens/Placeholder.tsx";
+import type { CeramicId, PlayerId } from "../../game/index.ts";
+import { useT } from "../i18n/I18nProvider.tsx";
+import { useGame, useTableSelection } from "../state/hooks.ts";
+import { CeramicPiece } from "../table/CeramicPiece.tsx";
+import { ceramicsFor, summaryOf, tableCeramics } from "../table/tableData.ts";
+import "./CeramicsRow.css";
 
 export interface CeramicsRowProps {
   /** Whose ceramics. */
   playerId: PlayerId;
 }
 
-export function CeramicsRow(_props: CeramicsRowProps) {
-  return <Placeholder name="CeramicsRow" />;
+type Group = { key: "shaped" | "inKiln" | "finished"; ids: readonly CeramicId[] };
+
+export function CeramicsRow({ playerId }: CeramicsRowProps) {
+  const t = useT();
+  const model = useGame();
+  const selection = useTableSelection();
+  const summary = summaryOf(model, playerId);
+  if (summary === null) return null;
+  const { labelView, markers } = tableCeramics(model);
+  const groups: Group[] = [
+    { key: "shaped", ids: summary.shapedCeramicIds },
+    { key: "inKiln", ids: summary.loadedCeramicIds },
+    { key: "finished", ids: summary.finishedCeramicIds },
+  ];
+  const shown = groups.filter((group) => group.ids.length > 0);
+  return (
+    <div className="cerrow" role="group" aria-label={t("boards.ceramics.title")}>
+      <span className="prow-lab">{t("boards.ceramics.title")}</span>
+      {shown.length === 0 ? <span className="cerrow-none">{t("boards.ceramics.none")}</span> : null}
+      {shown.map((group) => {
+        const { known, unknown } = ceramicsFor(model, group.ids);
+        return (
+          <div key={group.key} className="cerrow-group" data-stage={group.key}>
+            <span className="cerrow-lab">{t(`boards.ceramics.${group.key}`)}</span>
+            <ul className="cerrow-list">
+              {known.map((ceramic) => (
+                <li key={ceramic.id}>
+                  <CeramicPiece
+                    ceramic={ceramic}
+                    seat={summary.seatIndex}
+                    view={labelView}
+                    marker={ceramic.id === undefined ? null : markers.get(ceramic.id) ?? null}
+                    highlighted={ceramic.id !== undefined && selection.highlightedCeramicIds.has(ceramic.id)}
+                    withOwner={false}
+                  />
+                </li>
+              ))}
+              {unknown === 0 ? null : <li className="cerrow-count">{t("boards.ceramics.count", { n: unknown })}</li>}
+            </ul>
+          </div>
+        );
+      })}
+    </div>
+  );
 }

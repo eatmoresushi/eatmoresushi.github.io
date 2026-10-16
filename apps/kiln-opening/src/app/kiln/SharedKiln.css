@@ -1,0 +1,100 @@
+/* Shared Kiln (wireframe `.kiln`, `.krow`, `.zlab`, `.firebox`): a kiln-shaped body, D8 rows. */
+@layer components {
+  .kiln {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    gap: var(--sp-5);
+    min-width: 0;
+    padding: 1.875rem var(--sp-5) var(--sp-6);
+    border: 2px solid var(--kiln-rim);
+    border-radius: min(46%, 200px) min(46%, 200px) 16px 16px / 60px 60px 16px 16px;
+    background: var(--kiln-body);
+    color: var(--kiln-ink);
+    /* No overflow clipping: a rules-details panel opened from a tile must not be cut off. The
+       glow follows the dome through its own radius instead. */
+  }
+
+  .kiln::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: radial-gradient(120% 70% at 50% 108%, color-mix(in srgb, var(--kiln-glow) var(--glow, 18%), transparent) 0, transparent 72%);
+  }
+
+  .kiln-label {
+    position: absolute;
+    top: var(--sp-4);
+    inset-inline: 0;
+    text-align: center;
+    font-size: var(--fs-12);
+    letter-spacing: 0.06em;
+    color: var(--kiln-ink-2);
+  }
+
+  .kiln-rows {
+    display: grid;
+    gap: var(--sp-3);
+    min-width: 0;
+  }
+
+  .kiln-row {
+    display: grid;
+    grid-template-columns: 3rem repeat(3, minmax(0, 1fr));
+    gap: var(--sp-3);
+    align-items: stretch;
+    min-width: 0;
+  }
+
+  /* D8: the two Low spaces sit centred at the top of the dome. */
+  .kiln-row--low {
+    grid-template-columns: 3rem minmax(0, 1fr) minmax(0, 2fr) minmax(0, 2fr) minmax(0, 1fr);
+  }
+
+  .kiln-zone {
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 1px;
+    min-width: 0;
+    text-align: center;
+    font-size: var(--fs-12);
+    line-height: var(--lh-tight);
+    color: var(--kiln-ink-2);
+    overflow-wrap: break-word;
+  }
+
+  .kiln-zone b {
+    color: var(--kiln-ink);
+  }
+
+  .kiln-zone-mod {
+    font-family: var(--serif);
+    font-size: var(--fs-15);
+    font-weight: 700;
+    color: var(--kiln-ink);
+  }
+
+  .firebox {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--sp-4);
+    justify-self: center;
+    width: min(80%, 18rem);
+    padding: var(--sp-3) var(--sp-5);
+    border: 1px solid var(--kiln-rim);
+    border-radius: 40px 40px 6px 6px;
+    background: var(--kiln-body-2);
+    color: var(--kiln-ink-2);
+    font-size: var(--fs-12);
+  }
+
+  .firebox-heat strong {
+    color: var(--kiln-ink);
+    font-size: var(--fs-14);
+  }
+}

@@ -1,0 +1,16 @@
+/* WorkersRow (B2; wireframe `workersRow`). */
+@layer components {
+  .wkrow {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .wkrow > li {
+    display: inline-flex;
+  }
+}

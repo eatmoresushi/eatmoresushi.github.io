@@ -1,0 +1,62 @@
+/* TechCard (B2; wireframe `.tech`). */
+@layer components {
+  .tech {
+    display: grid;
+    min-width: 0;
+    border: 1px solid var(--line-2);
+    border-top: 3px solid var(--dc, var(--line));
+    border-radius: var(--r-md);
+    background: var(--surface);
+  }
+
+  .tech-detail {
+    min-width: 0;
+  }
+
+  .tech-face {
+    display: grid;
+    flex: 1 1 auto;
+    gap: var(--sp-2);
+    min-width: 0;
+    padding: var(--sp-3) var(--sp-4);
+    text-align: start;
+  }
+
+  .tech-t1 {
+    display: flex;
+    align-items: baseline;
+    gap: var(--sp-3);
+    min-width: 0;
+  }
+
+  .tech-name {
+    min-width: 0;
+    color: var(--ink);
+    font-size: var(--fs-label);
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+
+  .tech-cost {
+    margin-inline-start: auto;
+    color: var(--gold-ink);
+    font-size: var(--fs-meta);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .tech-short {
+    color: var(--ink-2);
+    font-size: var(--fs-rule);
+    line-height: var(--lh-snug);
+  }
+
+  .tech-short strong {
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  .tech:hover {
+    border-color: var(--celadon);
+  }
+}

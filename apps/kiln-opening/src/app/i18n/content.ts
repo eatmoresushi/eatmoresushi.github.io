@@ -24,6 +24,7 @@ import {
   KILNS,
   LOCATIONS,
   ORDERS,
+  ORDER_CLARIFICATIONS,
   PHASE_TEXT,
   QUALITY_TEXT,
   RESOURCE_TEXT,
@@ -33,18 +34,22 @@ import {
   TECHS,
   WORKER_TEXT,
   ZONE_TEXT,
+  clarificationTags,
   contributionCard,
 } from "../../game/index.ts";
 import type {
   CeramicStage,
+  ClarificationDefinition,
   ContributionCardId,
   Decoration,
   GamePhaseType,
   Glaze,
+  ImperialModifier,
   KilnId,
   KilnZone,
   LocationId,
   OrderId,
+  PersonalLocationId,
   Quality,
   Recognition,
   ResourceKind,
@@ -253,4 +258,139 @@ export type RuleNumbers = typeof RULE_NUMBERS;
  */
 export function firingStepCount(): number {
   return Object.keys(CATALOG.kiln.en).filter((key) => /^step\.\d+\.full$/.test(key)).length;
+}
+
+// ── Rules details (owner decision D10, K15; change requests CR B2-4, B3-2, B4-1, B5-1) ────
+//
+// What the shared rules-details panel (`rules/RulesDetail.tsx`) needs beyond names and rule
+// text: each component's clarifications with their source tags, and the facts its card prints.
+// Pure functions over content by stable ID; no rule is decided here.
+
+/** A D10 clarification in the current language, with its raw source tags ("L375 · D7" → ["L375", "D7"]). */
+export interface ClarificationText {
+  readonly text: string;
+  readonly tags: readonly string[];
+}
+
+/** The component whose rules details are shown. */
+export type RulesRef =
+  | { readonly kind: "tech"; readonly id: TechId }
+  | { readonly kind: "kiln"; readonly id: KilnId }
+  | { readonly kind: "location"; readonly id: LocationId }
+  /** One Imperial Recognition milestone; the top one also carries the Crowns-beyond-it clarifications. */
+  | { readonly kind: "recognition"; readonly space: Recognition }
+  | { readonly kind: "order"; readonly id: OrderId };
+
+function clarificationTexts(items: readonly ClarificationDefinition[], locale: Locale): ClarificationText[] {
+  return items.map((item) => ({ text: locale === "en" ? item.en : item.zh, tags: clarificationTags(item.source) }));
+}
+
+/** The highest Recognition space (whose reward also opens Crown overflow). */
+export const RECOGNITION_MAX: Recognition = IMPERIAL_TRACK.track.reduce<Recognition>((max, entry) => (entry.space > max ? entry.space : max), 0);
+
+function milestoneSpace(kind: "imperial_kiln" | "imperial_priority" | "vp"): Recognition {
+  const entry = IMPERIAL_TRACK.track.find((space) => space.reward !== null && space.reward.kind === kind);
+  if (entry === undefined) throw new Error(`No Recognition milestone with a ${kind} reward`);
+  return entry.space;
+}
+
+/** The Recognition space whose reward is the Imperial Kiln (Imperial Gift). */
+export const IMPERIAL_KILN_RECOGNITION: Recognition = milestoneSpace("imperial_kiln");
+/** The Recognition space whose reward is Imperial Priority. */
+export const IMPERIAL_PRIORITY_RECOGNITION: Recognition = milestoneSpace("imperial_priority");
+/** The Recognition space whose reward is Imperial Audience (VP). */
+export const IMPERIAL_AUDIENCE_RECOGNITION: Recognition = milestoneSpace("vp");
+
+/** The printed Imperial modifiers, in display order (the Imperial Kiln tile's −1 / 0 / +1 strip). */
+export const IMPERIAL_MODIFIER_OPTIONS: readonly ImperialModifier[] = FIRING.imperialModifiers;
+
+/**
+ * The clarifications that apply to one component only (D10), in data order. The top
+ * Recognition milestone also carries the Crowns-beyond-it clarifications (`imperial_overflow`);
+ * an Order carries the Starting or Main Order clarifications of its deck.
+ */
+export function rulesClarifications(ref: RulesRef, locale: Locale): ClarificationText[] {
+  switch (ref.kind) {
+    case "tech":
+      return clarificationTexts(TECHS[ref.id].clarifications, locale);
+    case "kiln":
+      return clarificationTexts(KILNS[ref.id].clarifications, locale);
+    case "location":
+      return clarificationTexts(LOCATIONS[ref.id].clarifications, locale);
+    case "recognition": {
+      const space = IMPERIAL_TRACK.track.find((entry) => entry.space === ref.space);
+      const own = space === undefined ? [] : space.clarifications;
+      const overflow = ref.space === RECOGNITION_MAX ? IMPERIAL_TRACK.clarifications.imperial_overflow : [];
+      return clarificationTexts([...own, ...overflow], locale);
+    }
+    case "order":
+      return clarificationTexts(ORDERS[ref.id].deck === "starting" ? ORDER_CLARIFICATIONS.starting : ORDER_CLARIFICATIONS.main, locale);
+  }
+}
+
+/** The clarifications of Crowns beyond the top of the Recognition track (`imperial_overflow`). */
+export function overflowClarifications(locale: Locale): ClarificationText[] {
+  return clarificationTexts(IMPERIAL_TRACK.clarifications.imperial_overflow, locale);
+}
+
+/** Card facts a Tech tile prints (D10). */
+export interface TechFacts {
+  readonly discipline: TechDiscipline;
+  readonly cost: number;
+  readonly oncePerRound: boolean;
+  /** The personal location whose second space it adds (D7 wording: "adds", never "unlocks"). */
+  readonly adds: PersonalLocationId | null;
+}
+
+export function techFacts(id: TechId): TechFacts {
+  const tech = TECHS[id];
+  return { discipline: tech.discipline, cost: tech.cost, oncePerRound: tech.oncePerRound, adds: tech.unlocks };
+}
+
+/** Card facts a Kiln Player Board prints (read, never assumed). */
+export interface KilnFacts {
+  readonly oncePerRound: boolean;
+}
+
+export function kilnFacts(id: KilnId): KilnFacts {
+  return { oncePerRound: KILNS[id].oncePerRound };
+}
+
+/** Card facts an Order card prints. A Crown Order is a Main Order with at least 1 printed Crown. */
+export interface OrderFacts {
+  readonly deck: "starting" | "main";
+  readonly kind: "starting" | "commercial" | "crown";
+  readonly vp: number;
+  readonly coins: number;
+  readonly crowns: number;
+}
+
+export function orderFacts(id: OrderId): OrderFacts {
+  const order = ORDERS[id];
+  const kind = order.deck === "starting" ? "starting" : order.crowns > 0 ? "crown" : "commercial";
+  return { deck: order.deck, kind, vp: order.vp, coins: order.coins, crowns: order.crowns };
+}
+
+/** Facts a location prints: central or personal, its capacity for a player count, and Recognition limits. */
+export interface LocationFacts {
+  readonly scope: "central" | "personal";
+  /** Central: the absolute capacity for this player count, or null for no limit. Personal: null. */
+  readonly capacity: number | null;
+  /** Magistrate's Hall: the Recognition values it may be used at. */
+  readonly usableAtRecognition: readonly Recognition[] | null;
+}
+
+export function locationFacts(id: LocationId, playerCount: number): LocationFacts {
+  const location = LOCATIONS[id];
+  const key = String(playerCount) as "2" | "3" | "4";
+  return {
+    scope: location.scope,
+    capacity: location.capacity === null ? null : (location.capacity[key] ?? null),
+    usableAtRecognition: location.usableAtRecognition,
+  };
+}
+
+/** Central or personal (`LOCATIONS[id].scope`). */
+export function locationScope(id: LocationId): "central" | "personal" {
+  return LOCATIONS[id].scope;
 }

@@ -1,0 +1,76 @@
+/* OrderRow (B2; wireframe `.ordwrap`, `.orow-h`, `.odisp`): 6 → 3 → 2 cards per row. */
+@layer components {
+  .ordwrap {
+    container: orders / inline-size;
+    display: grid;
+    gap: var(--sp-4);
+    min-width: 0;
+  }
+
+  .ordwrap + .ordwrap {
+    margin-top: var(--sp-6);
+  }
+
+  .orow-h {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--sp-2) var(--sp-5);
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+  }
+
+  .orow-title {
+    color: var(--ink);
+    font-size: var(--fs-15);
+  }
+
+  .odisp {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: var(--sp-6) var(--sp-4);
+    margin: 0;
+    padding: var(--sp-3) 0 0;
+    list-style: none;
+  }
+
+  .odisp > li {
+    display: grid;
+    min-width: 0;
+  }
+
+  @container orders (max-width: 760px) {
+    .odisp {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @container orders (max-width: 420px) {
+    .odisp {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .ord-empty {
+    display: grid;
+    place-content: center;
+    position: relative;
+    min-height: 6.25rem;
+    padding: var(--sp-4);
+    border: 1.5px dashed var(--line);
+    border-radius: var(--r-md);
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+    text-align: center;
+  }
+
+  .ord-empty strong {
+    color: var(--ink);
+  }
+
+  .orow-note {
+    margin: 0;
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+  }
+}

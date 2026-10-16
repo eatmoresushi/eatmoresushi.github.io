@@ -1,0 +1,50 @@
+- complementary "你的决断":
+  - paragraph: 派工阶段·轮到你了
+  - heading "派工" [level=2]
+  - region "Player 1（你）":
+    - heading "Player 1（你）" [level=3]
+    - group "资源":
+      - strong: "2"
+      - text: 泥
+      - strong: "2"
+      - text: 柴
+      - strong: "3"
+      - text: 铜钱
+    - img "你的师傅"
+    - img "你的学徒"
+    - img "你的学徒"
+    - img "你的学徒"
+    - text: /手中4张委托 声望0／4 \d+分/
+  - form "派工":
+    - paragraph: 你还有4名工人未派（共4名）。派工阶段不得停派。
+    - group "工人":
+      - text: ""
+      - radio "师傅 可派1名"
+      - text: 师傅 可派1名
+      - radio "学徒 可派3名"
+      - text: 学徒 可派3名
+    - group "地点 可派6处（共7处）":
+      - text: ""
+      - paragraph: 先选工人，再看各地点效果。
+      - radio "泥柴场 已占0／4"
+      - text: 泥柴场 已占0／4
+      - button "规则：泥柴场"
+      - radio "制坯饰纹 你的第1工位 · 第2工位尚未添设"
+      - text: 制坯饰纹 你的第1工位 · 第2工位尚未添设
+      - button "规则：制坯饰纹"
+      - radio "瓷牙行 已占0／4"
+      - text: 瓷牙行 已占0／4
+      - button "规则：瓷牙行"
+      - radio "陶工行 已占0／4"
+      - text: 陶工行 已占0／4
+      - button "规则：陶工行"
+      - radio "漕运码头 不限"
+      - text: 漕运码头 不限
+      - button "规则：漕运码头"
+      - radio "州衙 已占0／2"
+      - text: 州衙 已占0／2
+      - button "规则：州衙"
+      - group: 不可派（1）
+    - paragraph: 请选择工人与可派地点。
+    - button "取消"
+    - button "确认" [disabled]

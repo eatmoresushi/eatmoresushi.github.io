@@ -1,25 +1,31 @@
 /**
- * WorldSections (UI_V1.6.1_ARCHITECTURE §4.1, §4.2). Owner: B1 (shell, log, lobby).
+ * WorldSections (UI_V1.6.1_ARCHITECTURE §4.1, §4.2, §7.3, §8.2). Owner: B1 (shell, log, lobby).
  * Source: wireframe `sectionOrder`, `SEC_TAB`, `sectionHtml`, `jump`.
  *
- * Phase A stub created by A2 (§4.3 rule 1). Its **imports are fixed in phase A** (they name every
- * B2 and B3 section component by its final path), so they never change in phase B; B1 adds the
- * section headings, the phone-section visibility and the jump bar's behaviour around them.
+ * Its **imports were fixed in phase A** (they name every B2 and B3 section component by its
+ * final path). B1 adds the section headings, the phone-section visibility and the jump bar.
  *
  * Sections, in `sectionOrder(model.roundPhase)` order (`state/uiStore.ts`):
  * - `firing`: FiringStage (D3: takes over the column during the Firing Phase);
  * - `results`: ResultsSection;
  * - `table`: KilnMini and CentralBoard;
- * - `orders`: LookedOrders, OrderDisplay, HandRow, FinishedCeramicsStrip, PublicHands;
+ * - `orders`: OrderDisplay, LookedOrders, HandRow, FinishedCeramicsStrip and PublicHands; the hand
+ *   before the display outside the Work Phase (wireframe `secOrders`);
  * - `progress`: RecognitionTrack and TechDisplay;
  * - `kiln`: IdleFiringRecap and KilnBlock;
  * - `workshops`: BoardArea (D1).
  *
- * Each section is `#sec-<id>` (the `jumpTo` scroll target) with `data-tab` naming its phone tab.
+ * Each section is `#sec-<id>` (the `jumpTo` scroll target) with `data-tab` naming its phone tab
+ * and `data-current` on the sections of the current phone tab. Markup is identical at every
+ * width (§7.3): below 900px the CSS hides the sections of the other tabs (the one width-dependent
+ * hiding the plan allows besides the collapsed sheet). Each heading is `tabIndex={-1}`, the
+ * focus target of the section switch and of focus rescue (§8.2), and each section is a
+ * `data-focus-fallback` container.
  */
 import type { ReactNode } from "react";
 import { BoardArea } from "../boards/BoardArea.tsx";
 import { FiringStage } from "../firing/FiringStage.tsx";
+import { useT } from "../i18n/I18nProvider.tsx";
 import { IdleFiringRecap } from "../kiln/IdleFiringRecap.tsx";
 import { KilnBlock } from "../kiln/KilnBlock.tsx";
 import { ResultsSection } from "../results/ResultsSection.tsx";
@@ -36,6 +42,38 @@ import { PublicHands } from "../table/PublicHands.tsx";
 import { RecognitionTrack } from "../table/RecognitionTrack.tsx";
 import { TechDisplay } from "../table/TechDisplay.tsx";
 import { JumpNav } from "./JumpNav.tsx";
+import { SECTION_TITLE, sectionHeadingId, sectionId } from "./sections.ts";
+import "./WorldSections.css";
+
+/**
+ * The Orders section in the wireframe's `secOrders` order: in the Work Phase the Main display
+ * comes first (reservations happen there), then the private look and the hand; in every other
+ * phase the hand (and, in the Order Phase, the Finished ceramics strip) comes first, so the
+ * player does not scroll past six display cards to reach the Orders they act on.
+ */
+function OrdersContent() {
+  const work = useModel((model) => model.roundPhase === "work");
+  if (work) {
+    return (
+      <>
+        <OrderDisplay />
+        <LookedOrders />
+        <HandRow />
+        <FinishedCeramicsStrip />
+        <PublicHands />
+      </>
+    );
+  }
+  return (
+    <>
+      <LookedOrders />
+      <HandRow />
+      <FinishedCeramicsStrip />
+      <OrderDisplay />
+      <PublicHands />
+    </>
+  );
+}
 
 /** The content of each world section. */
 const SECTION_CONTENT: Readonly<Record<WorldSectionId, () => ReactNode>> = {
@@ -47,15 +85,7 @@ const SECTION_CONTENT: Readonly<Record<WorldSectionId, () => ReactNode>> = {
       <CentralBoard />
     </>
   ),
-  orders: () => (
-    <>
-      <LookedOrders />
-      <OrderDisplay />
-      <HandRow />
-      <FinishedCeramicsStrip />
-      <PublicHands />
-    </>
-  ),
+  orders: () => <OrdersContent />,
   progress: () => (
     <>
       <RecognitionTrack />
@@ -71,7 +101,21 @@ const SECTION_CONTENT: Readonly<Record<WorldSectionId, () => ReactNode>> = {
   workshops: () => <BoardArea />,
 };
 
+function SectionSub({ id }: { id: WorldSectionId }) {
+  const t = useT();
+  const playerCount = useModel((model) => model.players.length);
+  switch (id) {
+    case "table":
+      return <span className="world-section-sub">{t("shell.section.tableSub", { n: playerCount })}</span>;
+    case "workshops":
+      return <span className="world-section-sub">{t("shell.section.workshopsSub")}</span>;
+    default:
+      return null;
+  }
+}
+
 export function WorldSections() {
+  const t = useT();
   const phase = useModel((model) => model.roundPhase);
   const { section: currentTab } = useUi();
   return (
@@ -80,14 +124,21 @@ export function WorldSections() {
       {sectionOrder(phase).map((id) => (
         <section
           key={id}
-          id={`sec-${id}`}
+          id={sectionId(id)}
           className="world-section"
           data-section={id}
           data-tab={SECTION_TAB[id]}
           data-current={SECTION_TAB[id] === currentTab ? "" : undefined}
           data-focus-fallback=""
+          aria-labelledby={sectionHeadingId(id)}
         >
-          {SECTION_CONTENT[id]()}
+          <div className="world-section-head">
+            <h2 id={sectionHeadingId(id)} className="world-section-title" tabIndex={-1}>
+              {t(SECTION_TITLE[id])}
+            </h2>
+            <SectionSub id={id} />
+          </div>
+          <div className="world-section-body">{SECTION_CONTENT[id]()}</div>
         </section>
       ))}
     </>

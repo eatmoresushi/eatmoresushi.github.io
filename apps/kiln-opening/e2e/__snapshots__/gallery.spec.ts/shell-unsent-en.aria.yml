@@ -1,0 +1,45 @@
+- complementary "Your decision":
+  - paragraph: Work Phase · Your turn
+  - heading "Place a worker" [level=2]
+  - region "Wen (you)":
+    - heading "Wen (you)" [level=3]
+    - group "Resources":
+      - strong: "0"
+      - text: Clay
+      - strong: "2"
+      - text: Wood
+      - strong: "0"
+      - text: Coins
+    - img "Your Shifu"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - text: 4 Orders in hand Recognition 0/4 1 VP
+  - form "Place a worker":
+    - paragraph: 4 of your 4 workers left. The Work Phase cannot be passed.
+    - group "Worker":
+      - text: ""
+      - radio "Shifu 1 available"
+      - text: Shifu 1 available
+      - radio "Apprentice 3 available"
+      - text: Apprentice 3 available
+    - group "Location 4 of 7 open":
+      - text: ""
+      - paragraph: Choose a worker to see what each location does.
+      - radio "Materials Yard 0/3 taken"
+      - text: Materials Yard 0/3 taken
+      - 'button "Rules: Materials Yard"'
+      - radio "Glaze & Load your space 1 · space 2 not added yet"
+      - text: Glaze & Load your space 1 · space 2 not added yet
+      - 'button "Rules: Glaze & Load"'
+      - radio "Commission Market 0/3 taken"
+      - text: Commission Market 0/3 taken
+      - 'button "Rules: Commission Market"'
+      - radio "Canal Wharf No limit"
+      - text: Canal Wharf No limit
+      - 'button "Rules: Canal Wharf"'
+      - group: Unavailable (3)
+    - paragraph: Choose a worker and an open location.
+    - paragraph: The online service cannot be reached. Please try again shortly.
+    - button "Clear"
+    - button "Confirm" [disabled]

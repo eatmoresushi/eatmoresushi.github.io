@@ -1,0 +1,35 @@
+- complementary "Your decision":
+  - paragraph: Firing Phase · Your turn
+  - heading "Jun Kiln · Kiln Transformation" [level=2]
+  - region "Lin (you)":
+    - heading "Lin (you)" [level=3]
+    - group "Resources":
+      - strong: "1"
+      - text: Clay
+      - strong: "5"
+      - text: Wood
+      - strong: "1"
+      - text: Coin
+    - text: 4 Orders in hand Recognition 0/4 3 VP
+  - form "Jun Kiln · Kiln Transformation":
+    - paragraph: /Firing step \d+, in First Player order/
+    - paragraph: Second Firing turned an extra Fire card for this ceramic. You may still use Kiln Transformation on it before its new Quality is assigned.
+    - heading "Ability Jun Kiln · Kiln Transformation" [level=3]:
+      - text: ""
+      - button "Jun Kiln · Kiln Transformation"
+    - paragraph: "Cost: 1 Wood"
+    - heading "Extra Fire card" [level=3]
+    - text: Fire card 0 Moon White Censer, Painted · Standard (in High 2)
+    - group "Ceramic":
+      - text: ""
+      - radio "Moon White Censer, Painted · Standard (in High 2)" [checked]
+      - text: Moon White Censer, Painted · Standard (in High 2)
+    - group "Adjustment":
+      - text: ""
+      - radio "+1"
+      - text: "+1"
+      - radio "−1"
+      - text: −1
+    - paragraph: Choose a ceramic and an adjustment, or decline.
+    - button "Decline"
+    - button "Confirm" [disabled]

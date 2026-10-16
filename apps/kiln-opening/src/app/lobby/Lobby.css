@@ -1,0 +1,322 @@
+/* Home, lobby, ended screen and the end-session dialog (B1; V1.4 `home-screen`, `lobby-screen`). */
+@layer components {
+  .lobby-page {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    min-height: 100dvh;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  .lobby-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-4) var(--sp-6);
+    padding: calc(var(--sp-4) + env(safe-area-inset-top, 0)) var(--gutter) var(--sp-4);
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+  }
+
+  .lobby-brand {
+    color: var(--teal-ink);
+    font-family: var(--serif);
+    font-size: var(--fs-19);
+    font-weight: 600;
+  }
+
+  .lobby-brand:lang(zh-Hans) {
+    font-family: var(--serif-zh);
+  }
+
+  .lobby-header-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-4);
+    margin-inline-start: auto;
+  }
+
+  .lobby-main {
+    display: grid;
+    align-content: start;
+    gap: var(--sp-7);
+    width: min(100%, 44rem);
+    margin: 0 auto;
+    padding: var(--sp-8) var(--gutter) var(--sp-8);
+  }
+
+  .home-hero {
+    display: grid;
+    gap: var(--sp-3);
+  }
+
+  .home-title {
+    color: var(--teal-ink);
+    font-size: var(--fs-30);
+  }
+
+  .home-tagline {
+    font-family: var(--serif);
+    font-size: var(--fs-18);
+  }
+
+  .home-tagline:lang(zh-Hans) {
+    font-family: var(--serif-zh);
+  }
+
+  .home-about,
+  .home-facts {
+    color: var(--ink-2);
+  }
+
+  .lobby-card {
+    display: grid;
+    gap: var(--sp-5);
+    min-width: 0;
+    padding: var(--sp-7);
+    border: 1px solid var(--line-2);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+  }
+
+  .lobby-card-title {
+    font-size: var(--fs-16);
+  }
+
+  .home-form {
+    display: grid;
+    gap: var(--sp-4);
+  }
+
+  .home-join {
+    padding-top: var(--sp-6);
+    border-top: 1px solid var(--line-2);
+  }
+
+  .home-saved-room {
+    font-family: var(--serif);
+    font-size: var(--fs-20);
+    font-weight: 600;
+  }
+
+  .lobby-field {
+    display: grid;
+    gap: var(--sp-2);
+  }
+
+  .lobby-label {
+    font-size: var(--fs-label);
+    font-weight: 700;
+  }
+
+  .lobby-input {
+    width: 100%;
+    max-width: 22rem;
+    min-height: var(--target-min);
+    padding: var(--sp-3) var(--sp-5);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--ink);
+    font-size: var(--fs-16);
+  }
+
+  .lobby-input--code {
+    max-width: 12rem;
+    font-family: var(--mono);
+    letter-spacing: 0.08em;
+  }
+
+  .lobby-input[aria-invalid="true"] {
+    border-color: var(--cinnabar);
+  }
+
+  .lobby-note {
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+  }
+
+  .lobby-field-error,
+  .lobby-error {
+    color: var(--bad-ink);
+    font-size: var(--fs-label);
+    font-weight: 700;
+  }
+
+  .lobby-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-4);
+  }
+
+  .lobby-actions--secondary {
+    padding-top: var(--sp-4);
+    border-top: 1px solid var(--line-2);
+  }
+
+  .lobby-eyebrow {
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  .lobby-title {
+    color: var(--teal-ink);
+    font-size: var(--fs-28);
+  }
+
+  .lobby-room {
+    display: grid;
+    gap: var(--sp-4);
+  }
+
+  .room-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-3) var(--sp-5);
+  }
+
+  .room-bar-label {
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+  }
+
+  .room-bar-value {
+    font-family: var(--mono);
+    font-size: var(--fs-20);
+    letter-spacing: 0.08em;
+  }
+
+  .room-bar-status {
+    color: var(--ok-ink);
+    font-size: var(--fs-meta);
+  }
+
+  .room-bar-seats {
+    flex-basis: 100%;
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+  }
+
+  .lobby-seats {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+    gap: var(--sp-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* A seat card: the seat colour down its edge, then its lines stacked from the top. */
+  .lobby-seat {
+    display: flex;
+    align-items: stretch;
+    gap: var(--sp-4);
+    min-width: 0;
+    padding: var(--sp-5) var(--sp-6);
+    border: 1px solid var(--line-2);
+    border-radius: var(--r-md);
+    background: var(--surface-2);
+  }
+
+  .lobby-seat-body {
+    display: grid;
+    flex: 1 1 auto;
+    align-content: start;
+    justify-items: start;
+    gap: var(--sp-1);
+    min-width: 0;
+  }
+
+  .lobby-seat[data-open] {
+    border-style: dashed;
+    background: transparent;
+  }
+
+  .lobby-seat-swatch {
+    flex: none;
+    width: 0.5rem;
+    min-height: 2.5rem;
+    border-radius: var(--r-xs);
+    background: var(--seat);
+  }
+
+  .lobby-seat[data-open] .lobby-seat-swatch {
+    background: var(--line-2);
+  }
+
+  .lobby-seat-number {
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+  }
+
+  .lobby-seat-name {
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+
+  .lobby-seat-name--open {
+    color: var(--ink-3);
+    font-weight: 500;
+  }
+
+  .lobby-seat-role {
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+  }
+
+  /* Details and Remove share one row that starts at the text column. */
+  .lobby-seat-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--sp-2) var(--sp-6);
+    margin-top: var(--sp-1);
+  }
+
+  /* A Remove button that starts the row lines its text up with the lines above. */
+  .lobby-seat-actions > .lobby-seat-remove:first-child {
+    margin-inline-start: calc(-1 * var(--sp-4));
+  }
+
+  .lobby-waiting {
+    font-weight: 700;
+  }
+
+  .lobby-ended {
+    margin-top: var(--sp-6);
+  }
+
+  .end-dialog {
+    width: min(28rem, calc(100vw - 2 * var(--gutter)));
+    padding: var(--sp-7);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: 0 18px 44px var(--shadow-c);
+  }
+
+  .end-dialog::backdrop {
+    background: var(--scrim);
+  }
+
+  .end-dialog-title {
+    font-size: var(--fs-19);
+  }
+
+  .end-dialog-body {
+    margin: var(--sp-4) 0 var(--sp-6);
+    color: var(--ink-2);
+  }
+
+  .end-dialog-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--sp-4);
+  }
+}

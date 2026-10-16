@@ -21,14 +21,23 @@ const baseURL = `${origin}/kiln-opening/`;
 
 type Project = NonNullable<PlaywrightTestConfig["projects"]>[number];
 
+/**
+ * `KILN_E2E_CHROMIUM_ONLY=1` runs the phone and tablet projects in Chromium with the same
+ * viewport, touch and mobile emulation, for a machine without Playwright's WebKit build
+ * (`npx playwright install webkit`). The WebKit runs stay the reference; say which one ran.
+ */
+const chromiumOnly = process.env["KILN_E2E_CHROMIUM_ONLY"] === "1";
+
 function phone(name: string, width: number, height: number): Project {
+  const device = chromiumOnly ? devices["Pixel 7"] : devices["iPhone 13"];
   return {
     name,
-    use: { ...devices["iPhone 13"], viewport: { width, height }, isMobile: true, hasTouch: true },
+    use: { ...device, viewport: { width, height }, isMobile: true, hasTouch: true },
   };
 }
 
 function tablet(name: string, width: number, height: number): Project {
+  if (chromiumOnly) return { name, use: { ...devices["Desktop Chrome"], viewport: { width, height }, hasTouch: true } };
   return { name, use: { ...devices["iPad (gen 7)"], viewport: { width, height } } };
 }
 

@@ -1,0 +1,23 @@
+- complementary "你的决断":
+  - paragraph: 烧窑阶段·轮到你了
+  - heading "折卖瑕品" [level=2]
+  - region "Wen（你）":
+    - heading "Wen（你）" [level=3]
+    - group "资源":
+      - strong: "1"
+      - text: 泥
+      - strong: "0"
+      - text: 柴
+      - strong: "3"
+      - text: 铜钱
+    - text: 手中3张委托 声望1／4 8分
+  - form "折卖瑕品":
+    - paragraph: /烧窑步骤\d+/
+    - paragraph: 可从本窑仍为瑕品的器物中择一弃置，得2铜钱，其器型卡退回供应。各玩家同时决定。
+    - group "器物":
+      - text: ""
+      - radio "月白釉瓶 · 画花 · 瑕品（中温区1），火标+1 得2铜钱"
+      - text: 月白釉瓶 · 画花 · 瑕品（中温区1），火标+1 得2铜钱
+    - paragraph: 请选择要折卖的器物，或保留。
+    - button "保留"
+    - button "确认" [disabled]

@@ -54,8 +54,9 @@ function click(target: Element): void {
   });
 }
 
+/** In the container, or in the body-level detail layer an open PieceDetail panel lives in. */
 const $ = <E extends Element = HTMLElement>(selector: string): E => {
-  const found = container.querySelector<E>(selector);
+  const found = container.querySelector<E>(selector) ?? document.querySelector<E>(selector);
   if (found === null) throw new Error(`no ${selector}`);
   return found;
 };
@@ -223,6 +224,56 @@ describe("PieceDetail", () => {
       $("#outside").dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
     });
     expect(panel.hidden).toBe(true);
+  });
+});
+
+describe("PieceDetail in the body-level layer (CR B2-6, CR B3-5)", () => {
+  function focus(target: HTMLElement): void {
+    act(() => target.focus());
+  }
+
+  it("renders its panel in one layer outside every clipping container, still controlled by the button", () => {
+    mount(<div style={{ overflow: "hidden" }}><PieceDetail label="Kiln Furniture" trigger={<span>Kiln Furniture</span>}>details</PieceDetail></div>);
+    const trigger = $<HTMLButtonElement>(".kit-detail-trigger");
+    const panel = $(".kit-detail-panel");
+    expect(container.contains(panel)).toBe(false);
+    expect(panel.closest("#kit-detail-layer")).not.toBeNull();
+    expect(panel.dataset["layer"]).toBe("true");
+    expect(trigger.getAttribute("aria-controls")).toBe(panel.id);
+    click(trigger);
+    expect(panel.hidden).toBe(false);
+    // A pointer press inside the panel is not an outside click.
+    act(() => {
+      panel.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+    });
+    expect(panel.hidden).toBe(false);
+    // Escape from inside the panel (React events bubble through the portal).
+    $<HTMLButtonElement>(".kit-detail-close").focus();
+    key($(".kit-detail-close"), "Escape");
+    expect(panel.hidden).toBe(true);
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it("Tab moves into the open panel, Shift+Tab returns to the button, Tab past it continues after the piece", () => {
+    mount(<div><button id="before">before</button><PieceDetail label="Kiln Furniture" trigger={<span>Kiln Furniture</span>}>details</PieceDetail><button id="next">next</button></div>);
+    const trigger = $<HTMLButtonElement>(".kit-detail-trigger");
+    focus(trigger);
+    expect($(".kit-detail-panel").hidden).toBe(false);
+    key(trigger, "Tab");
+    const closeButton = $<HTMLButtonElement>(".kit-detail-close");
+    expect(document.activeElement).toBe(closeButton);
+    expect($(".kit-detail-panel").hidden).toBe(false);
+    act(() => {
+      closeButton.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", shiftKey: true, bubbles: true, cancelable: true }));
+    });
+    expect(document.activeElement).toBe(trigger);
+    expect($(".kit-detail-panel").hidden).toBe(false);
+    key(trigger, "Tab");
+    act(() => {
+      closeButton.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true }));
+    });
+    expect(document.activeElement).toBe($("#next"));
+    expect($(".kit-detail-panel").hidden).toBe(true);
   });
 });
 

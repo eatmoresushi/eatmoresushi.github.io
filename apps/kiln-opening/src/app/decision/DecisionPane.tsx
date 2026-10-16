@@ -3,6 +3,7 @@
  * after phase A; changes go through B6.
  *
  * `<aside aria-label="Your decision">` (a stable landmark name, §8.1) · phone sheet (`kit/Sheet`) ·
+ * eyebrow (the round phase, "· Your turn" when the viewer acts; wireframe `promptBlock`) ·
  * `<h2 tabIndex={-1}>` (the focus target) · OwnSummary ·
  * `<form data-window>` [ `.pane-scroll`: the window's fields ] · ConfirmBar `</form>`.
  *
@@ -21,6 +22,7 @@ import { useEffect, useId, useRef } from "react";
 import type { FormEvent } from "react";
 import { CanonicalMoveButton } from "../dev/CanonicalMoveButton.tsx";
 import { useT } from "../i18n/I18nProvider.tsx";
+import { roundPhases } from "../i18n/content.ts";
 import { Sheet } from "../kit/Sheet.tsx";
 import { isActingWindow, windowDraftKey } from "../state/decisionWindow.ts";
 import { DEV_TOOLS_BUILD, useDecision, useDevTools, useEngineView, useGame, useUi } from "../state/hooks.ts";
@@ -48,6 +50,8 @@ export function DecisionPane() {
   const acting = isActingWindow(window);
   const key = windowDraftKey(window);
   const title = renderWindowText(t, spec.title(model, engine));
+  const phaseName = model.roundPhase === "final" ? t("shell.phase.final") : (roundPhases(t.locale).find((phase) => phase.id === model.roundPhase)?.name ?? null);
+  const eyebrow = phaseName === null ? null : acting ? t("common.status.phaseYourTurn", { phase: phaseName }) : phaseName;
 
   const previousKey = useRef(key);
   useEffect(() => {
@@ -80,6 +84,11 @@ export function DecisionPane() {
   return (
     <aside ref={paneRef} className="pane" aria-label={t("common.landmark.decision")} data-window={window.kind} data-revision={model.revision}>
       <Sheet state={ui.sheet} onStateChange={ui.setSheet} strip={strip} stripAction={stripAction} stripRef={stripRef}>
+        {eyebrow === null ? null : (
+          <p className="pane-eyebrow" data-phase={model.roundPhase}>
+            {eyebrow}
+          </p>
+        )}
         <h2 ref={headingRef} id={headingId} className="pane-heading" tabIndex={-1} data-sheet-focus="">
           {title}
         </h2>
@@ -92,7 +101,9 @@ export function DecisionPane() {
           noValidate
           onSubmit={onSubmit}
         >
-          <div className="pane-scroll" inert={sending}>
+          {/* A window with no fields of its own (final results, waiting) may still scroll inside a
+              short pane: then the region itself takes keyboard focus (axe scrollable-region-focusable). */}
+          <div className="pane-scroll" inert={sending} {...(acting ? {} : { tabIndex: 0, role: "group", "aria-labelledby": headingId })}>
             <Fields />
           </div>
           {acting ? <ConfirmBar state={confirm} /> : null}

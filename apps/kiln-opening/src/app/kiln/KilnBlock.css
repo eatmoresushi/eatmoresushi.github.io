@@ -1,0 +1,39 @@
+/* Kiln block (wireframe `.kilnbox`, `.kilnwrap`): Shared Kiln with the Imperial Kilns beside it. */
+@layer components {
+  .kilnbox {
+    container: kiln / inline-size;
+    min-width: 0;
+    max-width: 56rem;
+  }
+
+  .kilnwrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--sp-5);
+    align-items: start;
+  }
+
+  @container kiln (min-width: 26rem) {
+    .kilnwrap {
+      grid-template-columns: minmax(0, 1fr) 7.5rem;
+    }
+  }
+
+  @container kiln (min-width: 44rem) {
+    .kilnwrap {
+      grid-template-columns: minmax(0, 1fr) 12rem;
+    }
+  }
+
+  @container kiln (max-width: 25.99rem) {
+    .kilnwrap .imps {
+      grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+    }
+
+    .kilnwrap .imps > .kit-detail,
+    .kilnwrap .imps > .imp--none,
+    .kilnwrap .imps > .imps-note {
+      grid-column: 1 / -1;
+    }
+  }
+}

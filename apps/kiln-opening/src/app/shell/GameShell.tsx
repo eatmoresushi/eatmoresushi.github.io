@@ -1,13 +1,22 @@
 /**
- * GameShell (UI_V1.6.1_ARCHITECTURE §4.1, §4.2, §7.3). Owner: B1 (shell, log, lobby).
- * Source: wireframe `.ko` grid "top top" / "banner banner" / "world pane" (+ "nav" on phones).
+ * GameShell (UI_V1.6.1_ARCHITECTURE §4.1, §4.2, §7.3, §8.2). Owner: B1 (shell, log, lobby).
+ * Source: wireframe `.ko` grid "top top" / "world pane", the phone grid
+ * "top" / "world" / "pane" / "tabs" and the short-landscape rail.
  *
- * Phase A stub created by A2 (§4.3 rule 1): it has its final export name and props. Unlike the
- * leaf stubs it lays out its slots (a plain two-column grid, stacked below 900px), because
- * `screens/GameScreen.tsx` composes the whole screen through it and the dev game must stay
- * playable. B1 replaces the layout (phone grid, sheet, short-landscape rail) and keeps the props.
+ * Layout only; the same markup at every width (§7.3), with the grid chosen by CSS:
+ * - 900px and wider: "top top" / "banner banner" / "world pane";
+ * - below 900px: "top" / "banner" / "world" / "pane" / "nav" — the pane is the bottom sheet
+ *   (`kit/Sheet` inside `DecisionPane`), the nav the phone section bar;
+ * - short landscape (`(orientation: landscape) and (max-height: 500px)`): a left section rail and
+ *   the pane as a side column, "nav top top" / "nav banner banner" / "nav world pane".
+ *
+ * The app fills the viewport (`100dvh`); the world and the pane scroll inside themselves, so the
+ * top bar, the sheet and the section bar stay put. The skip link comes first in the tab order,
+ * the live regions take no space. Focus rescue (§8.2) is installed on the shell's root.
  */
+import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
+import { installFocusRescue } from "./focusRescue.ts";
 import "./GameShell.css";
 
 export interface GameShellProps {
@@ -28,15 +37,23 @@ export interface GameShellProps {
 }
 
 export function GameShell({ skipLink, top, banner, world, pane, nav, live }: GameShellProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const root = rootRef.current;
+    if (root === null) return undefined;
+    return installFocusRescue(root);
+  }, []);
   return (
-    <div className="shell">
+    <div ref={rootRef} className="shell" data-shell="">
       <div className="shell-skip">{skipLink}</div>
       <div className="shell-top">{top}</div>
       <div className="shell-banner">{banner}</div>
       <main className="shell-world" id="world" data-focus-fallback="">
         {world}
       </main>
-      <div className="shell-pane">{pane}</div>
+      <div className="shell-pane" id="decision">
+        {pane}
+      </div>
       <div className="shell-nav">{nav}</div>
       <div className="shell-live">{live}</div>
     </div>

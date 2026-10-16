@@ -34,6 +34,13 @@ describe("Button", () => {
     expect(render(<Button>Go</Button>)).toContain('type="button"');
   });
 
+  it("keeps a caller's data-action unless action is given (CR B1-4)", () => {
+    const passed = { "data-action": "create-room" } as Record<string, string>;
+    expect(render(<Button {...passed}>Create room</Button>)).toContain('data-action="create-room"');
+    expect(render(<Button action="confirm" {...{ "data-action": "x" }}>Confirm</Button>)).toContain('data-action="confirm"');
+    expect(render(<Button>Go</Button>)).not.toContain("data-action");
+  });
+
   it("stays focusable when disabled or busy", () => {
     const html = render(<Button disabled busy pressed={false}>Go</Button>);
     expect(html).toContain('aria-disabled="true"');

@@ -1,0 +1,33 @@
+/* ConnectionBanner (B1, §4.1): full width under the top bar; no space when empty. */
+@layer components {
+  .conn-banner {
+    display: grid;
+    min-width: 0;
+  }
+
+  .conn-banner-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-3) var(--sp-6);
+    margin: 0;
+    padding: var(--sp-3) var(--sp-7);
+    border-bottom: 1px solid var(--line);
+    background: var(--note-bg);
+    color: var(--note-ink);
+    font-size: var(--fs-label);
+    font-weight: 700;
+  }
+
+  .conn-banner-line[data-state="computer-failure"],
+  .conn-banner-line[data-state="unsent"] {
+    background: var(--cinnabar-pale);
+    color: var(--cinnabar-ink);
+  }
+
+  @container shell (max-width: 899px) {
+    .conn-banner-line {
+      padding: var(--sp-3) var(--gutter);
+    }
+  }
+}

@@ -13,10 +13,28 @@
     flex: 1;
   }
 
+  /* Wireframe `.eyebrow`: the round phase (and "Your turn") above the heading. */
+  .pane-eyebrow {
+    padding: var(--sp-5) var(--sp-6) 0;
+    font-size: var(--fs-meta);
+    font-weight: 800;
+    color: var(--cinnabar-ink);
+    overflow-wrap: anywhere;
+  }
+
+  .pane-eyebrow:lang(en) {
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
   .pane-heading {
     padding: var(--sp-5) var(--sp-6) var(--sp-3);
     font-size: var(--fs-19);
     overflow-wrap: anywhere;
+  }
+
+  .pane-eyebrow + .pane-heading {
+    padding-block-start: var(--sp-1);
   }
 
   .pane-heading:focus {

@@ -1,0 +1,48 @@
+- complementary "Your decision":
+  - paragraph: Firing Phase · Your turn
+  - heading "After-Quality abilities" [level=2]
+  - region "Player 1 (you)":
+    - heading "Player 1 (you)" [level=3]
+    - group "Resources":
+      - strong: "2"
+      - text: Clay
+      - strong: "2"
+      - text: Wood
+      - strong: "3"
+      - text: Coins
+    - img "Your Shifu"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - text: 0 Orders in hand Recognition 0/4 1 VP
+  - form "After-Quality abilities":
+    - paragraph: /Firing step \d+, in First Player order/
+    - paragraph: Use them in any order you like; the options are checked again after each use.
+    - heading "Queue" [level=3]
+    - list "Queue":
+      - listitem: "Player 1 (you): deciding"
+    - heading "Your ceramics in this firing" [level=3]
+    - text: Moon White Bowl, Plain · Standard Moon White Plate, Plain · Flawed Celadon Vase, Plain · Fine
+    - 'group "Protective Saggars Cost: 1 Wood"':
+      - button "Protective Saggars"
+      - text: ""
+      - paragraph:
+        - strong: "Once per round, after Quality is assigned:"
+        - text: "pay 1 Wood → improve 1 of your ceramics from this firing: Flawed → Standard or Standard → Fine."
+      - radio "Moon White Bowl, Plain · Standard"
+      - text: Moon White Bowl, Plain · Standard
+      - radio "Moon White Plate, Plain · Flawed"
+      - text: Moon White Plate, Plain · Flawed
+    - 'group "Ge Kiln · Crackle Mastery Cost: free"':
+      - button "Ge Kiln · Crackle Mastery"
+      - text: ""
+      - paragraph:
+        - strong: "Once per round, after Quality is assigned:"
+        - text: 1 of your Standard ceramics from this firing → Fine + Crackle.
+        - strong: "Orders:"
+        - text: each Crackle ceramic may count as any 1 Decoration; it is never a Masterpiece.
+      - radio "Moon White Bowl, Plain · Standard"
+      - text: Moon White Bowl, Plain · Standard
+    - paragraph: Pick an ability, or finish.
+    - button "Done — decline the rest"
+    - button "Confirm" [disabled]

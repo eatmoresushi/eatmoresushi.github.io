@@ -1,0 +1,23 @@
+- complementary "你的决断":
+  - paragraph: 烧窑阶段
+  - heading "等候Lin……" [level=2]
+  - region "Zhao（你）":
+    - heading "Zhao（你）" [level=3]
+    - group "资源":
+      - strong: "2"
+      - text: 泥
+      - strong: "2"
+      - text: 柴
+      - strong: "3"
+      - text: 铜钱
+    - img "你的师傅"
+    - img "你的学徒"
+    - img "你的学徒"
+    - img "你的学徒"
+    - text: 手中0张委托 声望0／4 0分
+  - form "等候Lin……":
+    - group "等候Lin……":
+      - paragraph: 等候时可浏览桌面。
+      - heading "顺序" [level=3]
+      - list "顺序":
+        - listitem: Lin：决断中

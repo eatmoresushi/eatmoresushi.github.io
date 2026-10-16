@@ -1,0 +1,37 @@
+- complementary "Your decision":
+  - paragraph: Firing Phase · Your turn
+  - heading "Jun Kiln · Kiln Transformation" [level=2]
+  - region "Lin (you)":
+    - heading "Lin (you)" [level=3]
+    - group "Resources":
+      - strong: "0"
+      - text: Clay
+      - strong: "2"
+      - text: Wood
+      - strong: "2"
+      - text: Coins
+    - text: 3 Orders in hand Recognition 0/4 1 VP
+  - form "Jun Kiln · Kiln Transformation":
+    - paragraph: Firing step 8, in First Player order
+    - paragraph:
+      - strong: "Once per round, after Actual Heat is calculated, before Quality:"
+      - text: pay 1 Wood → adjust 1 of your ceramics' Actual Heat by +1 or −1.
+    - heading "Ability Jun Kiln · Kiln Transformation" [level=3]:
+      - text: ""
+      - button "Jun Kiln · Kiln Transformation"
+    - list "Queue":
+      - listitem: "Lin (you): deciding"
+    - paragraph: "Cost: 1 Wood"
+    - group "Ceramic":
+      - text: ""
+      - radio "Grey-Green Censer, Plain (in Middle 2)" [checked]
+      - text: Grey-Green Censer, Plain (in Middle 2)
+    - group "Adjustment":
+      - text: ""
+      - radio "+1"
+      - text: "+1"
+      - radio "−1"
+      - text: −1
+    - paragraph: Choose a ceramic and an adjustment, or decline.
+    - button "Decline"
+    - button "Confirm" [disabled]

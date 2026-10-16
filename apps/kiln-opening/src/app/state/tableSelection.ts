@@ -16,7 +16,12 @@ import type { EngineView, GameModel } from "./model.ts";
 export type OrderTargetState = "choosable" | "chosen" | "completable" | "blocked" | "discard";
 
 export interface TableSelectionData {
-  /** Legal worker entries per location: the Place shortcuts. */
+  /**
+   * Per location, every worker entry of the viewer's open work turn
+   * (`placementOptions(view)[i].workers`, legal or not; change request CR B2-3). Table
+   * components draw a Place shortcut only for `legal` entries, and show the engine's reason
+   * (`error` through `ruleErrorText`) on a location none of whose entries is legal.
+   */
   placeTargets: ReadonlyMap<LocationId, readonly PlacementWorkerOption[]>;
   /** The location and worker the pane's draft has chosen. */
   activePlacement: { locationId: LocationId; workerKey: string } | null;

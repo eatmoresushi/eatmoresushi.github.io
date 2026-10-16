@@ -1,0 +1,35 @@
+- complementary "你的决断":
+  - paragraph: 烧窑阶段·轮到你了
+  - heading "钧窑·窑变天成" [level=2]
+  - region "Lin（你）":
+    - heading "Lin（你）" [level=3]
+    - group "资源":
+      - strong: "1"
+      - text: 泥
+      - strong: "5"
+      - text: 柴
+      - strong: "1"
+      - text: 铜钱
+    - text: 手中4张委托 声望0／4 3分
+  - form "钧窑·窑变天成":
+    - paragraph: /烧窑步骤\d+，按起始玩家顺序/
+    - paragraph: 「复烧」已为该器物另翻窑火牌；定新品质前，你仍可对其使用「窑变天成」。
+    - heading "能力 钧窑 · 窑变天成" [level=3]:
+      - text: ""
+      - button "钧窑 · 窑变天成"
+    - paragraph: 费用：1柴
+    - heading "复烧所翻窑火牌" [level=3]
+    - text: 窑火牌0 月白釉香炉 · 画花 · 良品（高温区2）
+    - group "器物":
+      - text: ""
+      - radio "月白釉香炉 · 画花 · 良品（高温区2）" [checked]
+      - text: 月白釉香炉 · 画花 · 良品（高温区2）
+    - group "调整":
+      - text: ""
+      - radio "+1"
+      - text: "+1"
+      - radio "−1"
+      - text: −1
+    - paragraph: 请选择器物与调整，或不使用。
+    - button "不使用"
+    - button "确认" [disabled]

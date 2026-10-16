@@ -1,0 +1,85 @@
+/* Idle firing stage between firings (wireframe `idleStage`, `.idle`): the last firing's recap. */
+@layer components {
+  .recap {
+    min-width: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--r-xl);
+    background: var(--surface);
+  }
+
+  /* No overflow clipping (ceramic details open from the recap); the banner keeps the radius. */
+  .recap-banner {
+    border-radius: calc(var(--r-xl) - 1px) calc(var(--r-xl) - 1px) 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-3) var(--sp-6);
+    padding: var(--sp-4) var(--sp-6);
+    border-bottom: 1px solid var(--line-2);
+    background: var(--d-firing-pale);
+  }
+
+  .recap-heading {
+    margin: 0;
+    font-size: var(--fs-16);
+  }
+
+  .recap-die {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-3);
+    font-size: var(--fs-12);
+    color: var(--ink-2);
+  }
+
+  .recap-discard {
+    margin-inline-start: auto;
+  }
+
+  .recap-body {
+    display: grid;
+    gap: var(--sp-4);
+    padding: var(--sp-5) var(--sp-6);
+  }
+
+  .recap-last {
+    display: grid;
+    gap: var(--sp-3);
+  }
+
+  .recap-title {
+    margin: 0;
+    font-size: var(--fs-14);
+  }
+
+  .recap-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-2);
+    margin: 0;
+    font-size: var(--fs-13);
+    color: var(--ink-2);
+  }
+
+  .recap-line strong {
+    color: var(--ink);
+  }
+
+  .recap-cers {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--sp-4) var(--sp-5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .recap-none,
+  .recap-skipped {
+    margin: 0;
+    font-size: var(--fs-13);
+    color: var(--ink-2);
+  }
+}

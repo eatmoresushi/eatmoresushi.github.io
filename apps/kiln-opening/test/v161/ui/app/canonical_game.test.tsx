@@ -72,6 +72,10 @@ describe("the V1.6.1 app against the local backend", () => {
     try {
       root.render(<App store={store} locale="en" devTools />);
       await until("the home screen", () => $('[data-action="create-room"]') !== null);
+      // The real home screen (CR-B1-3) asks for a name first, as the smoke spec types it.
+      const nameInput = container.querySelector<HTMLInputElement>('input[name="displayName"]')!;
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(nameInput, "Lin");
+      nameInput.dispatchEvent(new Event("input", { bubbles: true }));
       $('[data-action="create-room"]')!.click();
       await until("the lobby", () => $("[data-room-code]") !== null);
       expect(store.getSnapshot().room?.status).toBe("lobby");

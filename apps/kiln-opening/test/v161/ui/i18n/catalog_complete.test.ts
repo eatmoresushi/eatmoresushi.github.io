@@ -9,7 +9,7 @@ describe("i18n catalogue completeness", () => {
 
   it("has the A3 namespaces filled and every package namespace present", () => {
     expect(Object.keys(CATALOG).sort()).toEqual(
-      ["boards", "common", "firing", "kiln", "lobby", "locationSummary", "mp", "orders", "playtest", "results", "shell", "table", "work"].sort(),
+      ["boards", "common", "firing", "kiln", "lobby", "locationSummary", "mp", "orders", "playtest", "results", "rules", "shell", "table", "work"].sort(),
     );
     expect(entries.filter((entry) => entry.namespace === "common").length).toBeGreaterThan(50);
     expect(entries.filter((entry) => entry.namespace === "locationSummary")).toHaveLength(14);

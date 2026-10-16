@@ -115,6 +115,12 @@ export function roundBaseHeat(round: RoundMetrics): number | null {
   );
 }
 
+/** Global Heat = Base Heat + the Fire card (L248), or null until both are recorded (CR B3-3). */
+export function roundGlobalHeat(round: RoundMetrics): number | null {
+  const base = roundBaseHeat(round);
+  return base === null || round.fireModifier === null ? null : base + round.fireModifier;
+}
+
 /** Remove firing-use data that no longer has a matching owner in player setup. */
 export function reconcileFiringTechOwnership(draft: PlaytestDraft): PlaytestDraft {
   const ownedFiringTechIds = new Set(draft.players.flatMap((player) => (player.firingTechId === null ? [] : [player.firingTechId])));
