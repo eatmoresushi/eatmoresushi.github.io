@@ -1,5 +1,5 @@
 /**
- * Guild Hall placement legality (L139, L141, L207, L210, L212, B2): an Apprentice placement is
+ * Guild Hall placement legality (L140, L142, L208, L211, L213, B2): an Apprentice placement is
  * legal only if you can afford at least 1 face-up Tech from a discipline you do not yet own;
  * a Shifu placement only if you can afford such a Tech after the Shifu discount. The Shifu
  * inspects (any discipline, B2) and the Apprentice buys; each choice belongs to one effect.
@@ -34,7 +34,7 @@ function noMainAction(spec: StateSpec, action: GameAction): void {
   new LocalTable(buildState(spec)).expectRuleError("p1", action, "NO_MAIN_ACTION_POSSIBLE");
 }
 
-describe("affordability after the Shifu discount (L212)", () => {
+describe("affordability after the Shifu discount (L213)", () => {
   it("1 Coin: illegal for the Apprentice (cheapest face-up Tech costs 2), legal for the Shifu (2 − 1)", () => {
     const spec: StateSpec = { players: [{ resources: { coins: 1 } }, {}] };
     noMainAction(spec, buy("p1:apprentice:1", "T01"));
@@ -52,8 +52,8 @@ describe("affordability after the Shifu discount (L212)", () => {
   });
 });
 
-describe("only Techs from a discipline you do not own count (L210, L212)", () => {
-  it("owning a Tech in every discipline (3 Techs, L210) makes the Guild Hall illegal however rich you are", () => {
+describe("only Techs from a discipline you do not own count (L211, L213)", () => {
+  it("owning a Tech in every discipline (3 Techs, L211) makes the Guild Hall illegal however rich you are", () => {
     const spec: StateSpec = { players: [{ techs: ["T01", "T20", "T11"], resources: { coins: 20 } }, {}] };
     noMainAction(spec, buy("p1:apprentice:1", "T16"));
     noMainAction(spec, inspect("workshop"));
@@ -83,7 +83,7 @@ describe("only Techs from a discipline you do not own count (L210, L212)", () =>
   });
 });
 
-describe("each choice belongs to one effect (L206–207)", () => {
+describe("each choice belongs to one effect (L207–208)", () => {
   it("the Shifu inspects instead of buying; the Apprentice cannot inspect", () => {
     const shifuBuy = check({}, buy("p1:shifu", "T01"));
     expect(shifuBuy?.code).toBe("INVALID_CHOICE");
@@ -94,7 +94,7 @@ describe("each choice belongs to one effect (L206–207)", () => {
     expect(apprenticeInspect?.details).toMatchObject({ choice: "inspect", effect: "apprentice" });
   });
 
-  it("the Shifu may inspect every discipline, including an exhausted deck (L207 'or as many as remain')", () => {
+  it("the Shifu may inspect every discipline, including an exhausted deck (L208 'or as many as remain')", () => {
     const spec: StateSpec = { players: [{ techs: ["T13"] }, { techs: ["T14"] }, { techs: ["T24"] }, { techs: ["T25"] }] };
     expect(buildState(spec).hidden.techDecks.firing).toEqual([]);
     for (const discipline of ["workshop", "glazing_loading", "firing"] as const) {
@@ -103,7 +103,7 @@ describe("each choice belongs to one effect (L206–207)", () => {
   });
 });
 
-describe("shared placement checks at the Guild Hall (L139)", () => {
+describe("shared placement checks at the Guild Hall (L140)", () => {
   it("capacity is absolute: 2 / 3 / 4 spaces", () => {
     for (const players of [2, 3, 4] as const) {
       const placements = Array.from({ length: players }, (_, index) => ({

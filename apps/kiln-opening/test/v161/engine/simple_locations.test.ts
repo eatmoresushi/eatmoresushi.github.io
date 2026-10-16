@@ -1,7 +1,7 @@
 /**
- * Canal Wharf (L215–220) and Magistrate's Hall (L222–232): Apprentice and Shifu effects,
- * Recognition 0–2 only, never to 4, the reached milestone resolved (fixed Grant 1/1/1, L431,
- * change 8), both spaces usable by one player at 4 players (L224).
+ * Canal Wharf (L216–221) and Magistrate's Hall (L223–233): Apprentice and Shifu effects,
+ * Recognition 0–2 only, never to 4, the reached milestone resolved (fixed Grant 1/1/1, L432,
+ * change 8), both spaces usable by one player at 4 players (L225).
  */
 
 import { describe, expect, it } from "vitest";
@@ -11,7 +11,7 @@ import { expectPublicEvents, keySorted, reject, scrambleHidden, table, types, ve
 const wharf = (workerId: string): GameAction => ({ type: "PLACE_CANAL_WHARF", workerId });
 const hall = (workerId: string): GameAction => ({ type: "PLACE_MAGISTRATES_HALL", workerId });
 
-describe("Canal Wharf: 2 Coins (Apprentice) / 4 Coins (Shifu) (L219–220)", () => {
+describe("Canal Wharf: 2 Coins (Apprentice) / 4 Coins (Shifu) (L220–221)", () => {
   it.each([
     ["p1:apprentice:2", "apprentice", 2],
     ["p1:shifu", "shifu", 4],
@@ -36,7 +36,7 @@ describe("Canal Wharf: 2 Coins (Apprentice) / 4 Coins (Shifu) (L219–220)", () 
     expectPublicEvents(events);
   });
 
-  it("is uncapped and costs nothing, so it is always legal (L142)", () => {
+  it("is uncapped and costs nothing, so it is always legal (L143)", () => {
     const t = table({
       players: [{ resources: { clay: 0, wood: 0, coins: 0 } }, {}, {}, {}],
       placements: [
@@ -55,8 +55,8 @@ describe("Canal Wharf: 2 Coins (Apprentice) / 4 Coins (Shifu) (L219–220)", () 
   });
 });
 
-describe("Magistrate's Hall: 4 Coins (Apprentice) / 3 Coins (Shifu) for +1 Recognition (L228–229)", () => {
-  it("Apprentice: pays 4, advances 0 → 1 and receives the fixed Imperial Grant (L431)", () => {
+describe("Magistrate's Hall: 4 Coins (Apprentice) / 3 Coins (Shifu) for +1 Recognition (L229–230)", () => {
+  it("Apprentice: pays 4, advances 0 → 1 and receives the fixed Imperial Grant (L432)", () => {
     const t = table({ players: [{ resources: { clay: 2, wood: 2, coins: 7 } }, {}] });
     const events = t.act("p1", hall("p1:apprentice:1"));
     expect(types(events)).toEqual([
@@ -75,7 +75,7 @@ describe("Magistrate's Hall: 4 Coins (Apprentice) / 3 Coins (Shifu) for +1 Recog
     expectPublicEvents(events);
   });
 
-  it("Shifu: pays 3, advances 1 → 2 and gains the Imperial Kiln tile (L284, L432)", () => {
+  it("Shifu: pays 3, advances 1 → 2 and gains the Imperial Kiln tile (L285, L433)", () => {
     const t = table({ players: [{ recognition: 1, resources: { coins: 3 } }, {}] });
     const events = t.act("p1", hall("p1:shifu"));
     expect(types(events)).toEqual(["WORKER_PLACED", "RESOURCES_CHANGED", "RECOGNITION_ADVANCED", "IMPERIAL_KILN_GAINED"]);
@@ -83,26 +83,26 @@ describe("Magistrate's Hall: 4 Coins (Apprentice) / 3 Coins (Shifu) for +1 Recog
     expect(t.player("p1").imperial).toMatchObject({ recognition: 2, kilnGained: true });
   });
 
-  it("advances 2 → 3 and takes the Imperial Priority token (L433)", () => {
+  it("advances 2 → 3 and takes the Imperial Priority token (L434)", () => {
     const t = table({ players: [{ recognition: 2, resources: { coins: 4 } }, {}] });
     const events = t.act("p1", hall("p1:apprentice:3"));
     expect(types(events).slice(2)).toEqual(["RECOGNITION_ADVANCED", "IMPERIAL_PRIORITY_GAINED"]);
     expect(t.player("p1").imperial).toMatchObject({ recognition: 3, priority: "held" });
   });
 
-  it.each([3, 4] as const)("cannot be used at Recognition %i: it never advances you to 4 (L231–232)", (recognition: Recognition) => {
+  it.each([3, 4] as const)("cannot be used at Recognition %i: it never advances you to 4 (L232–233)", (recognition: Recognition) => {
     const error = reject(table({ players: [{ recognition, resources: { coins: 9 } }, {}] }), "p1", hall("p1:shifu"), "RECOGNITION_GATE");
     expect(error.details).toMatchObject({ recognition });
   });
 
-  it("needs no Crown, only the Coins (L231)", () => {
+  it("needs no Crown, only the Coins (L232)", () => {
     expect(verdict(buildState({ players: [{ resources: { coins: 4 } }, {}] }), "p1", hall("p1:apprentice:1"))).toBeNull();
     const short = reject(table({ players: [{ resources: { coins: 3 } }, {}] }), "p1", hall("p1:apprentice:1"), "INSUFFICIENT_RESOURCES");
     expect(short.details).toMatchObject({ resource: "coins", needed: 4, have: 3 });
     reject(table({ players: [{ resources: { coins: 2 } }, {}] }), "p1", hall("p1:shifu"), "INSUFFICIENT_RESOURCES");
   });
 
-  it("a player may use both spaces in a 4-player round (L224)", () => {
+  it("a player may use both spaces in a 4-player round (L225)", () => {
     const t = table({ players: [{ resources: { coins: 10 } }, {}, {}, {}] });
     t.act("p1", hall("p1:apprentice:1"));
     t.act("p1", hall("p1:shifu"));

@@ -55,7 +55,7 @@ describe("lookups", () => {
 });
 
 describe("turn order", () => {
-  it("starts with the First Player and proceeds clockwise (L135)", () => {
+  it("starts with the First Player and proceeds clockwise (L136)", () => {
     const state = buildState({ players: 4, firstPlayerId: "p3" });
     expect(turnOrder(state)).toEqual(["p3", "p4", "p1", "p2"]);
     expect(turnOrder(buildState({ players: 3 }))).toEqual(["p1", "p2", "p3"]);
@@ -227,7 +227,7 @@ describe("ceramics", () => {
     ]);
   });
 
-  it("mints proxies when a Shape's Vessel cards run out (L328), and proxies vanish on return", () => {
+  it("mints proxies when a Shape's Vessel cards run out (L329), and proxies vanish on return", () => {
     const state = buildState();
     state.vesselSupply.plate = [];
     const ctx = testContext();

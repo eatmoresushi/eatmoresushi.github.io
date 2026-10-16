@@ -195,7 +195,7 @@ function expectSelectorsAgree(table: LocalTable): void {
   }
 }
 
-describe("the skip check through the production hand-over (L236, L670)", () => {
+describe("the skip check through the production hand-over (L237, L670)", () => {
   it("work_phase_done → openFiringPhase → FIRING_SKIPPED → firing_done, in one call", () => {
     const halts: FlowHalt[] = [];
     const flow = haltingFlow(halts, { pass: ["work_phase_done"] });

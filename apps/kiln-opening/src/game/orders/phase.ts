@@ -1,11 +1,11 @@
 /**
- * Order Phase: a single pass in First Player order (L294–298, INT: Order Phase).
+ * Order Phase: a single pass in First Player order (L295–299, INT: Order Phase).
  *
  * - Beginning with the First Player and going clockwise, each player may complete any number
  *   of held Orders, one at a time (`COMPLETE_ORDER`), then ends their turn (`END_ORDER_TURN`).
  *   Each player gets exactly one turn; nobody acts twice.
  * - Only held Orders can be completed; face-up Main Orders never can, and the display does
- *   not change during the phase (L296): nothing here touches `market`.
+ *   not change during the phase (L297): nothing here touches `market`.
  * - A player with nothing completable is skipped automatically, at the start of their turn
  *   and after each completion (`ORDER_TURN_ENDED{automatic: true}`, DESIGN §3.4, §4.5).
  * - When the pass ends the phase hands over through `ctx.flow.continueAfter("order_phase_done")`.

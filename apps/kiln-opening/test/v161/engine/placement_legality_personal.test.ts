@@ -1,9 +1,9 @@
 /**
- * Personal-location placement legality (L141):
- * - Form & Decorate (L171, R4): Clay plus a Decoration payable for 1 vessel after every ready
+ * Personal-location placement legality (L142):
+ * - Form & Decorate (L172, R4): Clay plus a Decoration payable for 1 vessel after every ready
  *   Workshop discount — Large Throwing Wheel (a Vase with 0 Clay), Decorator's Kit (a Carved
  *   with 1 Coin). Ding and the Shifu discount never make it legal.
- * - Glaze & Load (L182, R5 a/b/c): at least 1 Shaped vessel with a legal destination; current
+ * - Glaze & Load (L183, R5 a/b/c): at least 1 Shaped vessel with a legal destination; current
  *   Shapes only (DESIGN §11 Q3).
  */
 
@@ -24,7 +24,7 @@ function withResources(resources: Partial<ResourceState>, techs: TechSpec[] = []
   return buildState({ players: [{ resources, techs, ...more }, {}] });
 }
 
-describe("Form & Decorate: Clay and a Decoration for at least 1 vessel (L171)", () => {
+describe("Form & Decorate: Clay and a Decoration for at least 1 vessel (L172)", () => {
   it("is legal with 1 Clay and 2 Coins; illegal with less", () => {
     expect(canFormAny(withResources({ clay: 1, coins: 2 }), "p1")).toBe(true);
     expect(canFormAny(withResources({ clay: 0, coins: 9 }), "p1")).toBe(false);
@@ -62,7 +62,7 @@ describe("Form & Decorate: Clay and a Decoration for at least 1 vessel (L171)", 
   });
 });
 
-describe("Glaze & Load: a Shaped vessel with a legal destination (L182, R5)", () => {
+describe("Glaze & Load: a Shaped vessel with a legal destination (L183, R5)", () => {
   const gl = (loads: Extract<GameAction, { type: "PLACE_GLAZE_LOAD" }>["loads"]): GameAction => ({
     type: "PLACE_GLAZE_LOAD",
     workerId: "p1:apprentice:1",

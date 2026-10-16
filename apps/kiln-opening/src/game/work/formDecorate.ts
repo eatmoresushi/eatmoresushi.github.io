@@ -1,19 +1,19 @@
 /**
- * Form & Decorate (L164–172, L320–339), incl. the Shifu's two-vessel Decoration discount
- * (L169), Large Throwing Wheel (T01, L615), Decorator's Kit (T16, L616) and Ding (L473, R1).
+ * Form & Decorate (L165–173, L321–340), incl. the Shifu's two-vessel Decoration discount
+ * (L170), Large Throwing Wheel (T01, L615), Decorator's Kit (T16, L616) and Ding (L474, R1).
  *
  * Costs (L652: three separate reductions):
- * - Clay: each vessel's Shape cost (L320–326). Large Throwing Wheel, if used and at least 1
+ * - Clay: each vessel's Shape cost (L321–327). Large Throwing Wheel, if used and at least 1
  *   Vase or Censer is formed, reduces the action's total Clay by 2, to a minimum of 0.
- * - Coins: each vessel's Decoration (2 Coins, L332–339). Forming 2 with the Shifu effect
+ * - Coins: each vessel's Decoration (2 Coins, L333–340). Forming 2 with the Shifu effect
  *   reduces one Decoration by 1 (automatic, DESIGN §3.7). Decorator's Kit, if used, reduces
  *   one Carved/Impressed/Painted Decoration by 1 and may hit the same Decoration as the
  *   Shifu discount (a Carved for 0).
  * - Ding: after forming a Bowl/Plate/Brush Washer, 1 Clay + 1 Coin for one more of the same
- *   Shape with any Decoration; outside the vessel limit and every discount (L473, L652); either
+ *   Shape with any Decoration; outside the vessel limit and every discount (L474, L652); either
  *   worker type (R1).
  *
- * Placement legality (L171, R4, `canFormAny`): at least 1 single vessel is affordable after
+ * Placement legality (L172, R4, `canFormAny`): at least 1 single vessel is affordable after
  * every ready Workshop discount.
  *
  * Layer 4. Hands over through `ctx.flow.workerActionDone` (DESIGN §2.2).
@@ -103,7 +103,7 @@ function computeCost(game: PublicCore, playerId: PlayerId, action: FormDecorateA
   }
 
   const lines: CostLine[] = [];
-  // Clay (L320–326) and Large Throwing Wheel (L615).
+  // Clay (L321–327) and Large Throwing Wheel (L615).
   let clay = 0;
   for (const [index, vessel] of vessels.entries()) {
     const amount = shapeClay(vessel.shape);
@@ -129,7 +129,7 @@ function computeCost(game: PublicCore, playerId: PlayerId, action: FormDecorateA
     lines.push({ kind: "large_throwing_wheel", resource: "clay", amount: -reduction, itemIndex: null });
   }
 
-  // Decorations (L332–339), Decorator's Kit (L616) and the Shifu discount (L169).
+  // Decorations (L333–340), Decorator's Kit (L616) and the Shifu discount (L170).
   const remaining = vessels.map((vessel) => decorationCost(vessel.decoration));
   vessels.forEach((_, index) => {
     lines.push({ kind: "decoration", resource: "coins", amount: remaining[index] ?? 0, itemIndex: index });
@@ -175,7 +175,7 @@ function computeCost(game: PublicCore, playerId: PlayerId, action: FormDecorateA
   }
   const vesselCost: ResourceState = { clay, wood: 0, coins: remaining.reduce((sum, cost) => sum + cost, 0) };
 
-  // Ding (L473, R1): outside the vessel limit and every discount (L652).
+  // Ding (L474, R1): outside the vessel limit and every discount (L652).
   const dingCost = zero();
   const ding = action.dingExtra;
   if (ding !== undefined) {
@@ -242,7 +242,7 @@ export function quoteFormDecorate(view: ActorView, action: FormDecorateAction): 
 }
 
 /**
- * L171 with R4: some single Shape × Decoration is affordable after every ready Workshop
+ * L172 with R4: some single Shape × Decoration is affordable after every ready Workshop
  * discount — Large Throwing Wheel on a Vase/Censer, Decorator's Kit on a non-Plain
  * Decoration. Forming 2 is never cheaper than forming 1, so singles suffice; Ding needs a
  * vessel formed first, so it never makes the placement legal.
@@ -297,7 +297,7 @@ function resolve(draft: GameState, playerId: PlayerId, action: FormDecorateActio
     invariant(copied !== undefined, "Ding must copy a vessel of this action");
     markKilnAbilityUsed(draft, playerId, ctx);
     spend(draft, playerId, cost.ding, "ding_extra", ctx);
-    // Counts as formed by this action for effects that refer to it (L473).
+    // Counts as formed by this action for effects that refer to it (L474).
     formCeramic(draft, playerId, copied.shape, ding.decoration, "ding_extra", ctx);
   }
   ctx.flow.workerActionDone(draft, playerId, ctx);

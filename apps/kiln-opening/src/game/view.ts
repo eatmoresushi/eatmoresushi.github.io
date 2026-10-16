@@ -28,7 +28,7 @@ import type {
   PublicGameState,
 } from "./types.ts";
 
-/** Public counts of every hidden pile (L200, L507, B3). Never identities. */
+/** Public counts of every hidden pile (L201, L507, B3). Never identities. */
 export function publicCounts(state: GameState): PublicCounts {
   const hidden = state.hidden;
   const orderHands: Record<PlayerId, number> = {};

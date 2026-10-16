@@ -58,9 +58,9 @@ interface AssetSpecs {
 const ASSETS = JSON.parse(read("data/asset_specs.json")) as AssetSpecs;
 
 describe("the V1.6.1 rulebook is the source of truth", () => {
-  it("matches the checksum the audit records (owner amendments A1 and A2 applied)", () => {
+  it("matches the checksum the audit records (owner amendments A1 and A2, owner wording edits of 2026-10-16)", () => {
     const recorded = /SHA-256: `([0-9a-f]{64})`/.exec(AUDIT)?.[1];
-    expect(recorded).toBe("4c9923871218a12a5653cbc34cfa0817b0ab673030e11af27f7c0d7468406a7a");
+    expect(recorded).toBe("1e9dfc81a70de67b48770b445b584a616e8fb060eb6b554fbbd77cdf3a881f5f");
     const actual = createHash("sha256").update(readFileSync(join(ROOT, SOURCE_PATH))).digest("hex");
     expect(actual).toBe(recorded);
   });
@@ -84,16 +84,16 @@ describe("the V1.6.1 rulebook is the source of truth", () => {
   });
 
   it("has a checked-in Chinese edition, derived from it and deferring to it", () => {
-    // Byte-identical copy of the owner's Chinese rulebook (2026-10-15), translated to match the
-    // English rulebook exactly. It is the source of every Tech and Kiln `abilityZh`; the English
-    // rulebook remains the only mechanical authority.
+    // Byte-identical copy of the owner's Chinese rulebook (as revised by the owner on 2026-10-16),
+    // matching the English rulebook. It is the source of every Tech and Kiln `abilityZh`; the
+    // English rulebook remains the only mechanical authority.
     const zh = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.1_ZH.md"));
-    expect(createHash("sha256").update(zh).digest("hex")).toBe("5d06268e93517896199088fc61a09203d3fe24b2859fb4b79785dc51f1b0e2a1");
-    expect(zh.toString("utf8")).toContain("规则以英文版规则书为准");
+    expect(createHash("sha256").update(zh).digest("hex")).toBe("907d9aa1dbdb5c49414633cf301c5eddbfd8b32b4e55bc2a7c7af3727e72b755");
+    expect(zh.toString("utf8")).toContain("规则如有出入，以英文版规则书为准");
   });
 
-  it("calls itself v1.61, which the audit maps to rules version 1.6.1", () => {
-    expect(read(SOURCE_PATH).split("\n")[0]).toContain("v1.61");
+  it("calls itself v1.6.1, the engine's rules version", () => {
+    expect(read(SOURCE_PATH).split("\n")[0]).toContain("v1.6.1");
     expect(AUDIT).toContain("the engine uses the rules version string `1.6.1`");
   });
 });

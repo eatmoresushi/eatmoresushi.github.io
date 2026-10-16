@@ -1,6 +1,6 @@
 /**
- * Hidden information at setup (P2): the secret deal (L100, L200, L507), the Starting box
- * (L101), deck orders and Tech decks never reach the public projection or public events;
+ * Hidden information at setup (P2): the secret deal (L101, L201, L507), the Starting box
+ * (L102), deck orders and Tech decks never reach the public projection or public events;
  * each seat sees only its own hand (DESIGN §4.2–4.4, §8.2 "Secret deal of 2 Starting + 1
  * Main").
  */

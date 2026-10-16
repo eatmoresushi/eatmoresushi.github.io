@@ -1,7 +1,7 @@
 /**
  * Owner amendment A1 (2026-10-15, docs/RULEBOOK_AUDIT_V1.6.1.md "Owner amendments"): each
  * Advanced Tech scores its 1 VP immediately when the player gains it, recorded in the score
- * ledger like other in-game VP, and is no longer added at game end (overriding L378, L492,
+ * ledger like other in-game VP, and is no longer added at game end (overriding L379, L492,
  * L609, L755). No effect removes a Tech, so final totals and tie-breakers are unchanged.
  *
  * Covered here: the ledger, `TECH_ACQUIRED.vp`, `playerSummary.recordedVp` and `scorePreview`

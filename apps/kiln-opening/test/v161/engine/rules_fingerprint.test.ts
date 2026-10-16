@@ -122,7 +122,7 @@ describe("V1.6.1 rules fingerprint", () => {
     }],
     ["a location's clarifications removed", (s) => { delete entries(s, "action_locations", "locations")[2]!["clarifications"]; }],
     ["an Order clarification source", (s) => {
-      ((file(s, "orders")["clarifications"] as Record<string, Array<Record<string, unknown>>>)["main"]!)[0]!["source"] = "L297";
+      ((file(s, "orders")["clarifications"] as Record<string, Array<Record<string, unknown>>>)["main"]!)[0]!["source"] = "L298";
     }],
     ["a Recognition overflow clarification", (s) => {
       ((file(s, "imperial_progress")["clarifications"] as Record<string, unknown[]>)["imperial_overflow"]!).pop();

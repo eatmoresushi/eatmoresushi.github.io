@@ -63,7 +63,7 @@ describe("error text", () => {
     expect(names).toBe("Zhao’s Vase, Carved");
     const stored = storedErrorText({ kind: "rule", error: { code: "INVALID_TARGET", details: { ceramicId: "c4", reason: "not_this_firing" } } }, "zh-CN", errorTextOptions(VIEW, "zh-CN"));
     expect(stored).not.toMatch(/\bc\d+\b/);
-    expect(stored).toBe("此目标不合法：本次烧成之外的器物");
+    expect(stored).toBe("此目标不合法：器物不在本次烧成中");
   });
 
   it("re-renders a stored error in the current language", () => {
@@ -87,7 +87,7 @@ describe("kiln space names (one name per space)", () => {
     const error = { code: "KILN_SPACE_UNAVAILABLE", details: { spaceId: "high_2" } } as const;
     expect(ruleErrorText(error, "en")).toBe(`${kilnSpaceName("high_2", "en")} is not available: it is covered or already holds a ceramic.`);
     expect(ruleErrorText(error, "en")).toBe("High 2 is not available: it is covered or already holds a ceramic.");
-    expect(ruleErrorText(error, "zh-CN")).toBe(`${kilnSpaceName("high_2", "zh-CN")}不可用：已停用或已有器物`);
+    expect(ruleErrorText(error, "zh-CN")).toBe(`${kilnSpaceName("high_2", "zh-CN")}不可用：已被盖住或已有器物`);
     expect(ruleErrorText(error, "zh-CN")).not.toContain("号窑位");
     expect(ruleErrorText(error, "en")).not.toContain("space 2");
   });

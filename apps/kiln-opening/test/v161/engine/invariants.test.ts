@@ -178,7 +178,7 @@ describe("Inverted Firing stacks and salvage (found by the fuzz test)", () => {
   }
 
   it("a stacked ceramic left alone after the one beneath it is salvaged is sound", () => {
-    // Salvaging the bottom ceramic (step 11, L280) leaves the stacked one alone in its space;
+    // Salvaging the bottom ceramic (step 11, L281) leaves the stacked one alone in its space;
     // `stacked` records how it was loaded, and the kiln empties at step 12.
     const state = stackState();
     expect(invariantViolations(state)).toEqual([]);

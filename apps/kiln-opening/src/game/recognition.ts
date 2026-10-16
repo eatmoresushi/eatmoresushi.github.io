@@ -1,15 +1,15 @@
 /**
- * Crowns, Recognition steps, milestones and overflow VP (L424–439, R13).
+ * Crowns, Recognition steps, milestones and overflow VP (L425–440, R13).
  *
  * - Recognition advances one step at a time, by a Crown (printed, or Tribute Ware's bonus
- *   Crown, R13) or by the Magistrate's Hall (L426, L228–232).
- * - Reaching a space resolves its milestone (L428–435), each gained only once (L439):
+ *   Crown, R13) or by the Magistrate's Hall (L427, L229–233).
+ * - Reaching a space resolves its milestone (L429–436), each gained only once (L440):
  *   1 Imperial Grant (1 Clay, 1 Wood, 1 Coin), 2 Imperial Kiln tile, 3 Imperial Priority
  *   token, 4 Imperial Audience (6 VP). Rewards come from `data/imperial_progress.json`.
- * - At Recognition 4 every further Crown scores 1 VP immediately (L435, L437). Crowns are
+ * - At Recognition 4 every further Crown scores 1 VP immediately (L436, L438). Crowns are
  *   resolved one at a time, so a multi-Crown Order may cross several milestones and then
- *   score overflow VP (L438).
- * - The Magistrate's Hall never advances to 4 (L426, L232); its location module checks
+ *   score overflow VP (L439).
+ * - The Magistrate's Hall never advances to 4 (L427, L233); its location module checks
  *   `magistratesHallOpen` before calling `advanceRecognitionStep`.
  *
  * Layer 3: imports layer 0–2.
@@ -36,7 +36,7 @@ export type RecognitionSource = Extract<GameEvent, { type: "RECOGNITION_ADVANCED
 
 type TrackSpace = ImperialTrackDefinition["track"][number];
 
-/** The top of the track (Imperial Audience, L434). */
+/** The top of the track (Imperial Audience, L435). */
 export const MAX_RECOGNITION: Recognition = 4;
 
 function trackSpace(space: Recognition): TrackSpace {
@@ -46,8 +46,8 @@ function trackSpace(space: Recognition): TrackSpace {
 }
 
 /**
- * Resolves the milestone of the space just reached (L428–435). Each flag guards its own
- * reward, so a milestone is gained at most once (L439).
+ * Resolves the milestone of the space just reached (L429–436). Each flag guards its own
+ * reward, so a milestone is gained at most once (L440).
  */
 function resolveMilestone(draft: GameState, playerId: PlayerId, space: Recognition, ctx: ResolveContext): void {
   const owner = player(draft, playerId);
@@ -58,7 +58,7 @@ function resolveMilestone(draft: GameState, playerId: PlayerId, space: Recogniti
   switch (reward.kind) {
     case "resources": {
       if (owner.imperial.grantReceived) return;
-      invariant(reward.clay === 1 && reward.wood === 1 && reward.coins === 1, "Imperial Grant is 1 Clay, 1 Wood, 1 Coin (L431)");
+      invariant(reward.clay === 1 && reward.wood === 1 && reward.coins === 1, "Imperial Grant is 1 Clay, 1 Wood, 1 Coin (L432)");
       owner.imperial.grantReceived = true;
       emit(ctx, { type: "IMPERIAL_GRANT_RECEIVED", playerId, clay: 1, wood: 1, coins: 1 });
       gain(draft, playerId, { clay: reward.clay, wood: reward.wood, coins: reward.coins }, "imperial_grant", ctx);
@@ -78,7 +78,7 @@ function resolveMilestone(draft: GameState, playerId: PlayerId, space: Recogniti
     }
     case "vp": {
       if (owner.imperial.audienceReceived) return;
-      invariant(reward.vp === 6, "Imperial Audience is 6 VP (L434)");
+      invariant(reward.vp === 6, "Imperial Audience is 6 VP (L435)");
       owner.imperial.audienceReceived = true;
       owner.score.imperialAudience += reward.vp;
       emit(ctx, { type: "IMPERIAL_AUDIENCE_GAINED", playerId, vp: 6 });
@@ -88,9 +88,9 @@ function resolveMilestone(draft: GameState, playerId: PlayerId, space: Recogniti
 }
 
 /**
- * Resolves one Crown (L415, L437): one Recognition step while below 4, else +1 VP
+ * Resolves one Crown (L416, L438): one Recognition step while below 4, else +1 VP
  * immediately (`ScoreLedger.recognitionOverflow`, `CROWN_OVERFLOW_VP`). Callers resolve a
- * multi-Crown Order by calling this once per Crown (L438).
+ * multi-Crown Order by calling this once per Crown (L439).
  */
 export function gainCrown(
   draft: GameState,
@@ -105,14 +105,14 @@ export function gainCrown(
     return;
   }
   const vp = IMPERIAL_TRACK.overflowVpPerCrown;
-  invariant(vp === 1, "Each Crown beyond Recognition 4 scores 1 VP (L435)");
+  invariant(vp === 1, "Each Crown beyond Recognition 4 scores 1 VP (L436)");
   owner.score.recognitionOverflow += vp;
   emit(ctx, { type: "CROWN_OVERFLOW_VP", playerId, source, vp: 1 });
 }
 
 /**
- * Advances Recognition by exactly one step and resolves the milestone reached (L429–439).
- * Advancing past 4, or the Magistrate's Hall from a space it cannot use (L224, L232), is an
+ * Advances Recognition by exactly one step and resolves the milestone reached (L430–440).
+ * Advancing past 4, or the Magistrate's Hall from a space it cannot use (L225, L233), is an
  * engine bug: callers validate first.
  */
 export function advanceRecognitionStep(
@@ -127,7 +127,7 @@ export function advanceRecognitionStep(
   invariant(from < MAX_RECOGNITION, `${playerId} is already at Recognition ${MAX_RECOGNITION}`);
   invariant(
     source !== "magistrates_hall" || magistratesHallOpen(owner),
-    `The Magistrate's Hall cannot advance ${playerId} from Recognition ${from} (L232)`,
+    `The Magistrate's Hall cannot advance ${playerId} from Recognition ${from} (L233)`,
   );
   const to = (from + 1) as Recognition;
   owner.imperial.recognition = to;
@@ -135,7 +135,7 @@ export function advanceRecognitionStep(
   resolveMilestone(draft, playerId, to, ctx);
 }
 
-/** The Magistrate's Hall may advance this player: Recognition 0–2 only (L224, L231–232). */
+/** The Magistrate's Hall may advance this player: Recognition 0–2 only (L225, L232–233). */
 export function magistratesHallOpen(p: PlayerState): boolean {
   const usable = LOCATIONS.magistrates_hall.usableAtRecognition ?? [];
   return usable.includes(p.imperial.recognition);

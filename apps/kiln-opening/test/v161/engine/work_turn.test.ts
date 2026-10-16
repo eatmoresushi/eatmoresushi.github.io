@@ -1,5 +1,5 @@
 /**
- * Work Phase turns (L133–143, L190, L390, L631, L292; DESIGN §3.2, §3.6, §3.7, §4.5, §7):
+ * Work Phase turns (L134–144, L191, L391, L631, L293; DESIGN §3.2, §3.6, §3.7, §4.5, §7):
  * First Player clockwise, 1 worker per turn, no passing, until every worker is placed; the
  * after-action window (Canal Barge unused / Imperial Priority usable, regardless of the hand);
  * END_TURN; the deferred Main display refill at the end of the reserving player's turn; and
@@ -32,14 +32,14 @@ function types(events: readonly GameEvent[]): string[] {
   return events.map((event) => event.type);
 }
 
-/** Canal Wharf with the player's first available worker (always legal, L142). */
+/** Canal Wharf with the player's first available worker (always legal, L143). */
 function wharf(state: GameState, playerId: PlayerId): GameAction {
   const worker = availableWorkers(state, playerId)[0];
   if (worker === undefined) throw new Error(`${playerId} has no worker`);
   return { type: "PLACE_CANAL_WHARF", workerId: worker.id };
 }
 
-describe("opening the Work Phase (L131, L135)", () => {
+describe("opening the Work Phase (L132, L136)", () => {
   it("the First Player takes the first turn", () => {
     const state = buildState({ players: 3, firstPlayerId: "p2", phase: { type: "round_start_setters_mark", queue: { actorIds: [], index: 0 } } });
     const ctx = testContext();
@@ -74,7 +74,7 @@ describe("opening the Work Phase (L131, L135)", () => {
   });
 });
 
-describe("turn order and placements (L135, L137)", () => {
+describe("turn order and placements (L136, L138)", () => {
   it("First Player clockwise, 1 worker per turn, until every player has placed all 4 workers", () => {
     const t = table({ players: 3, firstPlayerId: "p2" });
     const actors: PlayerId[] = [];
@@ -91,7 +91,7 @@ describe("turn order and placements (L135, L137)", () => {
     expect(t.events.at(-1)).toEqual({ type: "WORK_PHASE_ENDED", round: 1 });
     for (const playerId of ["p1", "p2", "p3"]) {
       expect(availableWorkers(t.state, playerId)).toEqual([]);
-      // 20 placements over the game: 4 per round, the Shifu among them (L137).
+      // 20 placements over the game: 4 per round, the Shifu among them (L138).
       expect(Object.values(t.player(playerId).workers).map((w) => w.placement?.locationId)).toEqual(Array(4).fill("canal_wharf"));
       expect(t.player(playerId).resources.coins).toBe(3 + 4 + 2 + 2 + 2);
     }
@@ -114,7 +114,7 @@ describe("turn order and placements (L135, L137)", () => {
     expect(actors).toEqual(["p1", "p2", "p1", "p1", "p1"]);
   });
 
-  it("you may not pass (L142): END_TURN before the worker action is WORKER_ACTION_REQUIRED", () => {
+  it("you may not pass (L143): END_TURN before the worker action is WORKER_ACTION_REQUIRED", () => {
     const t = table();
     const error = t.expectRuleError("p1", { type: "END_TURN" }, "WORKER_ACTION_REQUIRED");
     expectDocumentedDetails(error);
@@ -203,7 +203,7 @@ describe("the after-action window (DESIGN §3.2 step 3, §4.5)", () => {
   });
 });
 
-describe("the deferred Main display refill (L190, L390; INT)", () => {
+describe("the deferred Main display refill (L191, L391; INT)", () => {
   it("runs at the end of the reserving player's turn, before WORK_TURN_ENDED, and only for them", () => {
     const state = buildState({
       display: [null, "O02", "O03", null, "O05", "O06"],

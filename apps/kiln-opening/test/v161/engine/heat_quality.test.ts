@@ -1,5 +1,5 @@
 /**
- * Heat and Quality (L244–278, L288, L674–680): Base Heat clamp, Contribution values, Actual
+ * Heat and Quality (L245–279, L289, L674–680): Base Heat clamp, Contribution values, Actual
  * Heat for the Shared Kiln (zone or Kiln Furniture + marker) and the Imperial Kiln, the
  * Quality table, Quality assignment, and the public heat previews.
  */
@@ -23,7 +23,7 @@ import { viewOf } from "../../../src/game/view.ts";
 import { buildState } from "./support/fixtures.ts";
 import { eventsOfType, openFiringTable, tendAll, typesOf } from "./support/firing.ts";
 
-describe("baseHeat (L248, L262, L674)", () => {
+describe("baseHeat (L249, L263, L674)", () => {
   it.each([
     [1, 0, 1],
     [2, 0, 2],
@@ -44,7 +44,7 @@ describe("baseHeat (L248, L262, L674)", () => {
   });
 });
 
-describe("Contribution values (L252–258, L638)", () => {
+describe("Contribution values (L253–259, L638)", () => {
   it("Bank −1 / 1 Wood, Tend 0 / 0, Stoke +1 / 1 Wood", () => {
     expect([contributionHeat({ card: "BANK", fuelLedger: false }), contributionWood({ card: "BANK", fuelLedger: false })]).toEqual([-1, 1]);
     expect([contributionHeat({ card: "TEND", fuelLedger: false }), contributionWood({ card: "TEND", fuelLedger: false })]).toEqual([0, 0]);
@@ -59,7 +59,7 @@ describe("Contribution values (L252–258, L638)", () => {
   });
 });
 
-describe("heatCalculation and the Quality table (L63, L244, L273–278)", () => {
+describe("heatCalculation and the Quality table (L64, L245, L274–279)", () => {
   it("sums source, position and marker, then Jun, and takes the absolute Heat Difference", () => {
     expect(heatCalculation({ fireModifier: 1, heatSource: 4, positionModifier: -1, heatMarker: 1, junAdjustment: -1, preferredHeat: 2 })).toEqual({
       fireModifier: 1,
@@ -94,7 +94,7 @@ describe("heatCalculation and the Quality table (L63, L244, L273–278)", () => 
   });
 });
 
-describe("positionFor (L71, L244, L288, L628, R8, R11)", () => {
+describe("positionFor (L72, L245, L289, L628, R8, R11)", () => {
   it("uses the printed zone modifier: High +1, Middle 0, Low −1", () => {
     const state = buildState({
       players: 4,
@@ -129,8 +129,8 @@ function results(events: Parameters<typeof eventsOfType>[0]): CeramicHeatResult[
   return eventsOfType(events, "ACTUAL_HEAT_CALCULATED")[0]?.results ?? [];
 }
 
-describe("Actual Heat in the firing (L244, L677–678)", () => {
-  it("Shared: Global Heat + zone + marker; Global Heat is Base + Fire and unclamped (L248)", () => {
+describe("Actual Heat in the firing (L245, L677–678)", () => {
+  it("Shared: Global Heat + zone + marker; Global Heat is Base + Fire and unclamped (L249)", () => {
     const table = openFiringTable({
       players: [{ techs: ["T12"], resources: { wood: 3 } }, {}],
       kilnDie: 3,
@@ -155,7 +155,7 @@ describe("Actual Heat in the firing (L244, L677–678)", () => {
     expect(table.state.lastFiring?.globalHeat ?? table.state.firing?.globalHeat).toBe(7);
   });
 
-  it("Imperial: Kiln Die + Fire + Imperial modifier + marker, whatever the Contributions were (L288, R10)", () => {
+  it("Imperial: Kiln Die + Fire + Imperial modifier + marker, whatever the Contributions were (L289, R10)", () => {
     const table = openFiringTable({
       players: [{ recognition: 2, techs: ["T11"], resources: { wood: 4 } }, {}],
       kilnDie: 1,
@@ -187,7 +187,7 @@ describe("Actual Heat in the firing (L244, L677–678)", () => {
     ]);
   });
 
-  it("Kiln Furniture's modifier replaces the zone and stacks with a Heat marker (L268, L628)", () => {
+  it("Kiln Furniture's modifier replaces the zone and stacks with a Heat marker (L269, L628)", () => {
     const table = openFiringTable({
       players: [{ techs: ["T15"] }, {}],
       fireDeck: [0],
@@ -203,7 +203,7 @@ describe("Actual Heat in the firing (L244, L677–678)", () => {
   });
 });
 
-describe("Quality assignment (L273–278, L680)", () => {
+describe("Quality assignment (L274–279, L680)", () => {
   it("assigns every ceramic's Quality from its Heat Difference, in ceramic order", () => {
     // Base 2, Fire 0, Global 2. Middle spaces (0): White 1 → Fine, Celadon 2 → Masterpiece,
     // Grey-Green 3 → Fine; Low (−1): Moon White 4 → 1, Flawed; High (+1): White 1 → 3, Standard.

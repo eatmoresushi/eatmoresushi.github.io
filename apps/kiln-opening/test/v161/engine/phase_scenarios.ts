@@ -40,7 +40,7 @@ export function phaseScenarios(): PhaseScenario[] {
     scenarios.push({ name, phase: table.state.phase.type, table, actor, exit });
   };
 
-  // Setup: reverse-order Kiln selection over all five Kilns (L107, R1).
+  // Setup: reverse-order Kiln selection over all five Kilns (L108, R1).
   {
     const created = createGame({ gameId: "scenario-setup", players: [{ id: "p1", displayName: "A" }, { id: "p2", displayName: "B" }, { id: "p3", displayName: "C" }] }, new SeededRandom(3));
     if (!created.ok) {

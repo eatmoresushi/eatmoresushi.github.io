@@ -1,15 +1,15 @@
 /**
- * Final scoring, tie-breakers and the score preview (L441–451, L487–498, L620, R13, A1).
+ * Final scoring, tie-breakers and the score preview (L442–452, L488–498, L620, R13, A1).
  *
- * A player's total (L491–494) is:
+ * A player's total (L492–494) is:
  * 1. VP recorded during play (`ScoreLedger`): Orders, Ru/Guan, Imperial Audience, Crowns
- *    beyond Recognition 4 and — owner amendment A1, overriding L378/L492/L609/L755 — 1 VP
+ *    beyond Recognition 4 and — owner amendment A1, overriding L379/L492/L609/L755 — 1 VP
  *    per Advanced Tech, recorded when the Tech is gained and no longer added at game end.
  *    The breakdown keeps a separate `techs` line, read from the ledger, so players see where
  *    those points came from; no effect removes a Tech, so totals and ties are unchanged;
  * 2. the End-game Exhibition, automatic (INT: Exhibition): every Finished, undelivered
- *    ceramic of Standard or better (never Flawed, L451) scores 2/3/5 by Quality, plus +3 for
- *    ≥ 3 different Shapes and +3 for ≥ 3 different Glazes (L445–451); Connoisseur's Cabinet
+ *    ceramic of Standard or better (never Flawed, L452) scores 2/3/5 by Quality, plus +3 for
+ *    ≥ 3 different Shapes and +3 for ≥ 3 different Glazes (L446–452); Connoisseur's Cabinet
  *    (T19, L620) adds +1 per exhibited Fine or Masterpiece, up to +5;
  * 3. 1 VP per 3 Coins, at most 5 (L494).
  * No end-game penalties (L510).
@@ -46,7 +46,7 @@ import type {
 const CONNOISSEURS_CABINET = "T19";
 
 /**
- * The final score table's rows in L491–494 order: VP recorded during play (Orders, Kiln
+ * The final score table's rows in L492–494 order: VP recorded during play (Orders, Kiln
  * Tradition abilities, Imperial Audience, Crowns beyond Recognition 4), 1 VP per Advanced
  * Tech (recorded when gained, A1), the End-game Exhibition, Connoisseur's Cabinet (T19, part
  * of the Exhibition scoring, L620), Coins, then the total. Every `FinalScoreBreakdown` key
@@ -178,7 +178,7 @@ function compareStandings(a: FinalStanding, b: FinalStanding): number {
 }
 
 /**
- * Final scores and standings from public state (L489–498). Standings are best first;
+ * Final scores and standings from public state (L490–498). Standings are best first;
  * players tied on every criterion share a rank (standard competition ranking: 1, 1, 3) and
  * keep seat order. `resolvedBy` is `shared_victory` when several players share first place,
  * else the first criterion that separates the winner from the runner-up.
@@ -212,7 +212,7 @@ export function scorePreview(game: PublicCore, playerId: PlayerId): ScorePreview
   return { playerId, breakdown: breakdownFor(game, playerId) };
 }
 
-/** After Round 5 Cleanup (wired to `game_over`, L489): score, record, finish. */
+/** After Round 5 Cleanup (wired to `game_over`, L490): score, record, finish. */
 export function finishGame(draft: GameState, ctx: ResolveContext): void {
   const result = computeFinalResult(draft);
   draft.finalResult = result;

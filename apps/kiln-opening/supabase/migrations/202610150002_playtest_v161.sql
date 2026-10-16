@@ -2,10 +2,10 @@
 --
 -- Form V3 differs from Form V2 (V1.4) where the rules differ:
 --   - no Starting Tech: `starting_technique_id` becomes nullable (old rows keep theirs);
---   - up to three Techs, at most one per discipline (L210), stored per discipline in new
+--   - up to three Techs, at most one per discipline (L211), stored per discipline in new
 --     columns; the V1.4 advanced-Tech columns stay for old rows;
 --   - all five Kilns (unchanged kiln_id check);
---   - the round's Kiln Die, because V1.6.1 Base Heat = Kiln Die + Contributions (L262);
+--   - the round's Kiln Die, because V1.6.1 Base Heat = Kiln Die + Contributions (L263);
 --   - the V1.6.1 Firing Techs Kiln Master (T24) and Tribute Ware (T25).
 -- The RPC is the only browser-facing write path and accepts only the current rules/form
 -- pair; the wider table checks keep every older submission queryable.
@@ -122,7 +122,7 @@ begin
     raise exception 'PLAYTEST_INVALID_PAYLOAD' using errcode = 'P0001';
   end if;
 
-  -- Active Shared Kiln spaces by player count: 2-1-1, 2-2-2, 3-3-2 (L99).
+  -- Active Shared Kiln spaces by player count: 2-1-1, 2-2-2, 3-3-2 (L100).
   v_shared_capacity := case v_player_count when 2 then 4 when 3 then 6 else 8 end;
 
   if (
@@ -235,7 +235,7 @@ begin
       raise exception 'PLAYTEST_INVALID_PAYLOAD' using errcode = 'P0001';
     end if;
     v_kiln_die := (v_round->>'kilnDie')::smallint;
-    -- V1.6.1 Base Heat: Kiln Die + revealed Contributions, clamped 0-5 (L262).
+    -- V1.6.1 Base Heat: Kiln Die + revealed Contributions, clamped 0-5 (L263).
     v_base_heat := case when v_kiln_die is null then null
       else greatest(0, least(5, v_kiln_die + v_contribution_heat))::smallint end;
     v_firing_techs := coalesce(v_round->'firingTechIds', '[]'::jsonb);

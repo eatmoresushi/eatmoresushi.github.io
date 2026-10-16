@@ -73,7 +73,7 @@ const INVERTED_FIRING: TechId = "T21";
 const KILN_MASTER: TechId = "T24";
 const SENIOR_APPRENTICE: TechId = "T18";
 
-/** Phases with every Setter's Mark returned or not yet placeable (L302, L630). */
+/** Phases with every Setter's Mark returned or not yet placeable (L303, L630). */
 const MARKLESS_PHASES: readonly GamePhaseType[] = ["setup_kiln_selection", "cleanup_hand_limit", "finished"];
 /** Phases that belong to an open firing (Appendix D steps 1–11). */
 const FIRING_PHASES: readonly GamePhaseType[] = [
@@ -418,7 +418,7 @@ function checkKiln(state: GameState, ceramics: readonly CeramicState[], v: Viola
       loaded.push(c);
       const placement = c.placement;
       // The second ceramic got there only through Inverted Firing; the first was loaded into
-      // an empty space — unless the ceramic beneath a stack was salvaged (step 11, L280), which
+      // an empty space — unless the ceramic beneath a stack was salvaged (step 11, L281), which
       // leaves the stacked one alone until the kiln empties (step 12). `stacked` records how a
       // ceramic was loaded (LoadPlacement JSDoc).
       const salvagedBeneath =
@@ -484,7 +484,7 @@ function checkMarkers(state: GameState, ceramics: readonly CeramicState[], v: Vi
       kilnMasterCarriers.push(c);
     }
     if (marker.faceDown) {
-      // Every face-down marker is turned or returned before the Fire card (L267, L677).
+      // Every face-down marker is turned or returned before the Fire card (L268, L677).
       v.check(!fireRevealed, () => `${c.id} still carries a face-down Heat marker after the Fire reveal`);
     } else {
       v.check(marker.value === 1 || marker.value === -1, () => `${c.id}'s Heat marker shows ${String(marker.value)}`);
@@ -500,7 +500,7 @@ function checkMarkers(state: GameState, ceramics: readonly CeramicState[], v: Vi
   }
   const phase = state.phase;
   if (phase.type === "firing_heat_markers") {
-    // Players before the queue head have resolved their own marker (L267, L676).
+    // Players before the queue head have resolved their own marker (L268, L676).
     for (const playerId of phase.queue.actorIds.slice(0, phase.queue.index)) {
       const faceDown = ceramics.some(
         (c) => c.stage === "loaded" && c.ownerId === playerId && c.heatMarker?.source === "own" && c.heatMarker.faceDown,
@@ -545,7 +545,7 @@ function checkPlayers(state: GameState, players: readonly PlayerState[], v: Viol
       v.check(!p.kilnAbilityUsedThisRound, () => `${p.id} used a Kiln ability without a Kiln`);
     }
 
-    // Techs: at most 3, at most 1 per discipline (L210, L374); no Tech without a limit is "used".
+    // Techs: at most 3, at most 1 per discipline (L211, L375); no Tech without a limit is "used".
     v.check(p.techs.length <= GAME_CONFIG.techs.maxOwned, () => `${p.id} owns ${p.techs.length} Techs`);
     const disciplines = tally(p.techs.map((tech) => lookup(TECHS, tech.id)?.discipline ?? "unknown"));
     for (const [discipline, count] of disciplines) {
@@ -558,7 +558,7 @@ function checkPlayers(state: GameState, players: readonly PlayerState[], v: Viol
       v.check(tech.acquiredInRound <= state.round, () => `${p.id}'s ${tech.id} was acquired in a later round`);
     }
 
-    // Personal spaces: space 0 open; space 1 open exactly when a matching Tech is owned (L211).
+    // Personal spaces: space 0 open; space 1 open exactly when a matching Tech is owned (L212).
     for (const locationId of PERSONAL_LOCATION_IDS) {
       const spaces = p.personalSpaces[locationId];
       v.check(spaces.length === 2 && spaces[0].unlocked, () => `${p.id}'s first ${locationId} space is locked`);
@@ -566,7 +566,7 @@ function checkPlayers(state: GameState, players: readonly PlayerState[], v: Viol
       v.check(spaces[1].unlocked === unlockedByTech, () => `${p.id}'s second ${locationId} space unlocked=${String(spaces[1].unlocked)}`);
     }
 
-    // Recognition 0–4 and every milestone gained exactly once when reached (L428–439).
+    // Recognition 0–4 and every milestone gained exactly once when reached (L429–440).
     const recognition = p.imperial.recognition;
     v.check(Number.isInteger(recognition) && recognition >= 0 && recognition <= 4, () => `${p.id} is at Recognition ${recognition}`);
     v.check(p.imperial.grantReceived === recognition >= 1, () => `${p.id}: Imperial Grant flag disagrees with Recognition ${recognition}`);
@@ -584,7 +584,7 @@ function checkPlayers(state: GameState, players: readonly PlayerState[], v: Viol
       v.check(Number.isSafeInteger(p.score[key]) && p.score[key] >= 0, () => `${p.id} recorded ${p.score[key]} ${key} VP`);
     }
 
-    // Workers: 1 Shifu + 3 Apprentices with conventional IDs (L73, L108).
+    // Workers: 1 Shifu + 3 Apprentices with conventional IDs (L74, L109).
     const expectedIds = [`${p.id}:shifu`, ...Array.from({ length: GAME_CONFIG.workers.apprentices }, (_, i) => `${p.id}:apprentice:${i + 1}`)];
     const workerIds = Object.keys(p.workers);
     v.check(workerIds.length === expectedIds.length && expectedIds.every((id) => workerIds.includes(id)), () => `${p.id} has workers ${workerIds.join(", ")}`);
@@ -785,7 +785,7 @@ function checkLive(state: GameState, players: readonly PlayerState[], ceramics: 
   v.check(phase.type === "finished" || prompt.actorIds.length > 0, () => `${phase.type} has no actor`);
   v.check((phase.type === "finished") === (state.finalResult !== null), () => `finalResult is ${state.finalResult === null ? "missing" : "present"} in ${phase.type}`);
 
-  // The Kiln Die belongs to this round (rolled at every Start of Round, L125).
+  // The Kiln Die belongs to this round (rolled at every Start of Round, L126).
   if (phase.type !== "setup_kiln_selection") {
     v.check(state.kilnDie !== null && state.kilnDie.round === state.round, () => "the Kiln Die was not rolled this round");
   }
@@ -904,7 +904,7 @@ function checkLive(state: GameState, players: readonly PlayerState[], ceramics: 
       v.check(record.bonusCrowns === 0 || record.printedCrowns >= 1, () => `${record.orderId} gained a Tribute Ware Crown without a printed Crown`);
       v.check(record.round <= state.round, () => `${record.orderId} was completed in a later round`);
     }
-    // Workers stay out until Cleanup (L302): none is placed before the Work Phase or after it.
+    // Workers stay out until Cleanup (L303): none is placed before the Work Phase or after it.
     if (["setup_kiln_selection", "round_start_setters_mark", "cleanup_hand_limit", "finished"].includes(phase.type)) {
       v.check(Object.values(p.workers).every((w) => w.placement === null), () => `${p.id} has placed workers in ${phase.type}`);
     }

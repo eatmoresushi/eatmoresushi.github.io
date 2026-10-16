@@ -477,7 +477,7 @@ describe("crackleDeclarationChecks (§5 gap 8)", () => {
 });
 
 describe("SCORE_BREAKDOWN_ROWS and TIE_BREAK_ORDER (§5 gap 9)", () => {
-  it("cover every FinalScoreBreakdown key once, in L491–494 order", () => {
+  it("cover every FinalScoreBreakdown key once, in L492–494 order", () => {
     const result = computeFinalResult(buildState({ players: 3 }));
     const keys = Object.keys(result.scores["p1"] ?? {});
     expect([...SCORE_BREAKDOWN_ROWS].sort()).toEqual([...keys].sort());
@@ -562,7 +562,7 @@ describe("materialsYardOptions (§5 gap 14)", () => {
       ?.workers.map((w) => ({ worker: w, options: materialsYardOptions(view, w), legal: legalMaterialsYardCommands(view, w) })) ?? [];
   };
 
-  it("offers Prepared Clay only with T17 ready and never with Senior Apprentice (L349)", () => {
+  it("offers Prepared Clay only with T17 ready and never with Senior Apprentice (L350)", () => {
     const senior = optionsFor("Materials Yard: Senior Apprentice, Prepared Clay used");
     expect(senior.map((x) => [x.worker.kind, x.worker.seniorApprentice, x.options.resources, x.options.preparedClay])).toEqual([
       ["shifu", false, 4, null],

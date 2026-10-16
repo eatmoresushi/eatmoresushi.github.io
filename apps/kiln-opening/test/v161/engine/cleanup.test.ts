@@ -1,5 +1,5 @@
 /**
- * Cleanup (P2 `round.ts`): L199, L300–304, L489, L626 (Colour Samples hand limit 5), B3,
+ * Cleanup (P2 `round.ts`): L200, L301–305, L490, L626 (Colour Samples hand limit 5), B3,
  * INT "Cleanup in Round 5"; DESIGN §3.4, §3.6, §4.2, §8.2 "Hand limit 4/5 at Cleanup".
  */
 
@@ -52,7 +52,7 @@ function open(state: GameState): { events: GameEvent[]; halts: ReturnType<typeof
   return { events: ctx.events, halts: ctx.halts };
 }
 
-describe("Cleanup step 1: return workers and Setter's Marks (L302)", () => {
+describe("Cleanup step 1: return workers and Setter's Marks (L303)", () => {
   it("returns every worker, resets the placement order and returns the Setter's Mark", () => {
     const state = cleanupState();
     expect(state.placementSequence).toBe(4);
@@ -69,7 +69,7 @@ describe("Cleanup step 1: return workers and Setter's Marks (L302)", () => {
   });
 });
 
-describe("Cleanup step 2: hand limit 4, or 5 with Colour Samples (L199, L303, L626)", () => {
+describe("Cleanup step 2: hand limit 4, or 5 with Colour Samples (L200, L304, L626)", () => {
   it("opens a trim window only for players above their limit, with the opening revision", () => {
     const state = cleanupState();
     const { halts } = open(state);
@@ -182,7 +182,7 @@ describe("Cleanup step 2: hand limit 4, or 5 with Colour Samples (L199, L303, L6
   });
 });
 
-describe("Cleanup step 3: First Player and round (L304, L489)", () => {
+describe("Cleanup step 3: First Player and round (L305, L490)", () => {
   it.each([1, 2, 3, 4] as RoundNumber[])("Round %i passes the First Player clockwise and advances", (round) => {
     const state = cleanupState({ round, firstPlayerId: "p3", players: [{ hand: [] }, { hand: [] }, { hand: [] }] });
     const { events, halts } = open(state);
@@ -228,7 +228,7 @@ describe("Cleanup step 3: First Player and round (L304, L489)", () => {
   });
 });
 
-describe("hidden information (L200, B3, DESIGN §4.2)", () => {
+describe("hidden information (L201, B3, DESIGN §4.2)", () => {
   it("HAND_TRIMMED shows the count to everyone and the Orders only to their owner", () => {
     const state = cleanupState();
     open(state);

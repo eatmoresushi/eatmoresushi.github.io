@@ -1,15 +1,15 @@
 /**
- * Completing one Order, in the Order Phase or through Canal Barge (L405–418, L459–463,
+ * Completing one Order, in the Order Phase or through Canal Barge (L406–419, L460–464,
  * L642, R4, R6, R13).
  *
- * Steps (L409–416): reveal a held Order; deliver the selected Finished ceramics beneath it;
+ * Steps (L410–417): reveal a held Order; deliver the selected Finished ceramics beneath it;
  * record the printed VP; gain the printed Coins; resolve the printed Crowns one at a time
  * (`recognition.gainCrown`). Then the optional completion abilities, each once per round
  * and declinable without using it (R4):
  * - Tribute Ware (T25, L642): an Order showing ≥ 1 printed Crown gains 1 bonus Crown,
  *   resolved like any Crown; it is not a printed Crown (R13).
- * - Ru (L459): delivering an actual Celadon, Plain (printed) Masterpiece scores 4 VP.
- * - Guan (L463): an Order showing ≥ 1 printed Crown gains 2 Coins and 1 VP (Tribute
+ * - Ru (L460): delivering an actual Celadon, Plain (printed) Masterpiece scores 4 VP.
+ * - Guan (L464): an Order showing ≥ 1 printed Crown gains 2 Coins and 1 VP (Tribute
  *   Ware's Crown never counts, R13).
  * Canal Barge runs exactly this code (R6), so every completion effect applies there too.
  *
@@ -73,8 +73,8 @@ export function completionTriggers(
 }
 
 /**
- * Checks one completion against the actor's view (L409–418): the Order is held; the
- * ceramics are distinct, exist, are the actor's own and Finished (never delivered, L418);
+ * Checks one completion against the actor's view (L410–419): the Order is held; the
+ * ceramics are distinct, exist, are the actor's own and Finished (never delivered, L419);
  * Crackle declarations, when given, are well formed; and the selection meets every
  * requirement (`matchOrder`). Error codes follow the `OrderCompletionSpec` JSDoc.
  */
@@ -156,14 +156,14 @@ function deliver(draft: GameState, finished: FinishedCeramic, orderId: OrderId):
   if (crackle) {
     delivered = { ...base, crackle: true, quality: "fine" };
   } else {
-    invariant(quality !== "flawed", `${finished.id} is Flawed and cannot be delivered (L278)`);
+    invariant(quality !== "flawed", `${finished.id} is Flawed and cannot be delivered (L279)`);
     delivered = { ...base, crackle: false, quality };
   }
   draft.ceramics[finished.id] = delivered;
 }
 
 /**
- * Resolves a completion that `validateOrderCompletion` accepted (L409–416), then Tribute
+ * Resolves a completion that `validateOrderCompletion` accepted (L410–417), then Tribute
  * Ware, Ru and Guan unless declined (R4), and returns the record. `via` is `canal_barge`
  * for T23 (R6); Canal Barge's own `TECH_USED` is its caller's.
  *
@@ -233,7 +233,7 @@ export function resolveOrderCompletion(
   owner.score.orders += order.vp;
   gain(draft, playerId, { coins: order.coins }, "order_reward", ctx);
 
-  // Step 7: printed Crowns, one at a time (L415, L438).
+  // Step 7: printed Crowns, one at a time (L416, L439).
   for (let crown = 0; crown < order.crowns; crown += 1) {
     gainCrown(draft, playerId, "printed_crown", spec.orderId, ctx);
   }
@@ -246,7 +246,7 @@ export function resolveOrderCompletion(
     }
   }
 
-  // Ru / Guan (L459, L463).
+  // Ru / Guan (L460, L464).
   if (kilnAbility !== null) {
     invariant(hasKiln(owner, kilnAbility.kilnId), `${playerId} does not have ${kilnAbility.kilnId}`);
     markKilnAbilityUsed(draft, playerId, ctx);

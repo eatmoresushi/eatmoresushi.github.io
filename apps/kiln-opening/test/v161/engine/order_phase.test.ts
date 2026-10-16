@@ -1,5 +1,5 @@
 /**
- * P6 `orders/phase.ts`: the Order Phase (L294–298, INT: Order Phase; DESIGN §3.4, §3.6,
+ * P6 `orders/phase.ts`: the Order Phase (L295–299, INT: Order Phase; DESIGN §3.4, §3.6,
  * §3.7, §8.2 "Single-pass Order Phase, held Orders only").
  *
  * - One pass, First Player then clockwise; any number of held Orders, one at a time.
@@ -110,7 +110,7 @@ describe("openOrderPhase", () => {
   });
 });
 
-describe("the single pass (L296)", () => {
+describe("the single pass (L297)", () => {
   it("completes any number of held Orders one at a time, auto-ends, skips, and nobody acts twice", () => {
     const { state, ids } = threePlayerTable();
     const table = new LocalTable(state, { flow: "halt" });
@@ -169,7 +169,7 @@ describe("the single pass (L296)", () => {
     }
   });
 
-  it("face-up Main Orders cannot be completed and the display never changes (L296)", () => {
+  it("face-up Main Orders cannot be completed and the display never changes (L297)", () => {
     const state = buildState({ players: [{ hand: ["S01"] }, {}], display: ["O01", "O02", "O03", "O04", "O05", "O06"] });
     const bowl = finished(state, "p1", "bowl");
     openOrderPhase(state, testContext());

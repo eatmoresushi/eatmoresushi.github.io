@@ -1,5 +1,5 @@
 /**
- * The five round phases (L113–131) for display, and which one an engine phase belongs to
+ * The five round phases (L114–132) for display, and which one an engine phase belongs to
  * (UI_V1.6.1_ARCHITECTURE.md §5 gap 17).
  *
  * `data/round_structure.json` is display text only (names and summaries). It is **not** a
@@ -13,7 +13,7 @@
 import roundStructureJson from "../../data/round_structure.json" with { type: "json" };
 import type { GamePhaseType, RoundPhaseDefinition, RoundPhaseId, RoundStructureDefinition } from "./types.ts";
 
-/** Round phases in play order (L117). */
+/** Round phases in play order (L118). */
 export const ROUND_PHASE_IDS: readonly RoundPhaseId[] = Object.freeze(["start", "work", "firing", "orders", "cleanup"] as const);
 
 function loadRoundStructure(raw: unknown): RoundStructureDefinition {
@@ -55,7 +55,7 @@ export const ROUND_STRUCTURE: RoundStructureDefinition = loadRoundStructure(roun
 
 /**
  * The round phase an engine phase belongs to, or `"final"` once the game is finished.
- * Kiln selection (setup step 9, L107) is shown with the Start of Round, as the wireframe does.
+ * Kiln selection (setup step 9, L108) is shown with the Start of Round, as the wireframe does.
  * Exhaustive over `GamePhaseType`, so a new engine phase fails `typecheck` here.
  */
 export function roundPhaseOf(phaseType: GamePhaseType): RoundPhaseId | "final" {

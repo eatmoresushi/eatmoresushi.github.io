@@ -45,7 +45,7 @@ describe("buildState", () => {
     [2, ["high_1", "high_2", "middle_1", "low_1"]],
     [3, ["high_1", "high_2", "middle_1", "middle_2", "low_1", "low_2"]],
     [4, ["high_1", "high_2", "high_3", "middle_1", "middle_2", "middle_3", "low_1", "low_2"]],
-  ] as const)("covers Shared Kiln spaces for %i players (L99)", (players, active) => {
+  ] as const)("covers Shared Kiln spaces for %i players (L100)", (players, active) => {
     const state = buildState({ players });
     const activeIds = Object.entries(state.sharedKiln.spaces)
       .filter(([, space]) => space.active)
@@ -92,13 +92,13 @@ describe("buildState", () => {
     expect(() => buildState({ display: ["S01"] })).toThrow(/Starting Orders/);
   });
 
-  it("refuses Tech sets the 3-total / 1-per-discipline limit excludes (L210)", () => {
+  it("refuses Tech sets the 3-total / 1-per-discipline limit excludes (L211)", () => {
     expect(() => buildState({ players: [{ techs: ["T01", "T16"] }, {}] })).toThrow(/TECH_DISCIPLINE_OWNED/);
     const state = buildState({ players: [{ techs: ["T01", "T10", "T11"] }, {}] });
     expect(() => giveTech(state, "p1", "T25")).toThrow(/TECH_LIMIT/);
   });
 
-  it("unlocks personal spaces exactly for owned Techs (L211)", () => {
+  it("unlocks personal spaces exactly for owned Techs (L212)", () => {
     const state = buildState({ players: [{ techs: ["T05", { id: "T21", usedThisRound: true }, "T14"] }, {}] });
     const p1 = state.players["p1"]!;
     expect(p1.personalSpaces.form_decorate[1].unlocked).toBe(true);

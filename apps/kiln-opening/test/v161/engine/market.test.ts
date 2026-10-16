@@ -1,5 +1,5 @@
 /**
- * Main Order market and Tech displays (P2 `market.ts`): L127–129, L186–213, L386–390,
+ * Main Order market and Tech displays (P2 `market.ts`): L128–130, L187–214, L387–391,
  * L511–513, B1–B3, DESIGN §2.4 and §11 Q2 (audit P2).
  */
 
@@ -147,7 +147,7 @@ describe("discardMainOrders (face down, B3)", () => {
   });
 });
 
-describe("takeFaceUpOrder and the deferred refill (L190, L198, L390)", () => {
+describe("takeFaceUpOrder and the deferred refill (L191, L199, L391)", () => {
   it("leaves the position empty until the turn ends and records who owes the refill", () => {
     const state = buildState({ display: SIX, mainDeck: ["O20", "O21"] });
     expect(takeFaceUpOrder(state, "p1", 2)).toBe("O03");
@@ -160,7 +160,7 @@ describe("takeFaceUpOrder and the deferred refill (L190, L198, L390)", () => {
   it("refills once after two takes in one turn: slide left, reveal into the rightmost positions", () => {
     const state = buildState({ display: SIX, mainDeck: ["O20", "O21", "O22"] });
     addToHand(state, "p1", takeFaceUpOrder(state, "p1", 1));
-    // The Shifu's second reservation sees only the Orders still showing (L198).
+    // The Shifu's second reservation sees only the Orders still showing (L199).
     expect(reservable(viewOf(state, "p1").game).faceUpSlots).toEqual([0, 2, 3, 4, 5]);
     addToHand(state, "p1", takeFaceUpOrder(state, "p1", 3));
     expect(state.market.display).toEqual(["O01", null, "O03", null, "O05", "O06"]);
@@ -238,7 +238,7 @@ describe("refillMainDisplay", () => {
   });
 });
 
-describe("rotateMainDisplay (L127–129, B1)", () => {
+describe("rotateMainDisplay (L128–130, B1)", () => {
   it("discards the 2 leftmost face down, slides the other 4 left and reveals 2", () => {
     const state = buildState({ round: 2, display: SIX, mainDeck: ["O20", "O21", "O22"] });
     const ctx = testContext(1);
@@ -309,7 +309,7 @@ describe("reservable (B1, public information only)", () => {
   });
 });
 
-describe("Order hands (secret, L200)", () => {
+describe("Order hands (secret, L201)", () => {
   it("adds and removes Orders in the hidden hand; only counts are public", () => {
     const state = buildState({ display: SIX, mainDeck: ["O20", "O21"] });
     const drawn = drawMainOrder(state, testContext(1)) as OrderId;
@@ -330,7 +330,7 @@ describe("Order hands (secret, L200)", () => {
   });
 });
 
-describe("Tech decks and displays (L207, L209, L513, B2)", () => {
+describe("Tech decks and displays (L208, L210, L513, B2)", () => {
   function techState(): GameState {
     return buildState({
       players: [{ techs: ["T18"] }, { techs: ["T19"] }],

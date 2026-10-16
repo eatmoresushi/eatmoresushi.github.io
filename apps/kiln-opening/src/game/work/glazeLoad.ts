@@ -1,5 +1,5 @@
 /**
- * Glaze & Load (L174–184), incl. the Shifu's optional face-down Heat marker (L179, R9) and
+ * Glaze & Load (L175–185), incl. the Shifu's optional face-down Heat marker (L180, R9) and
  * Kiln Tending (T20, L627; automatic on the first qualifying action each round, INT).
  *
  * One atomic command (DESIGN §3.5): every choice — 1 or 2 ordered loads, Glaze, destination,
@@ -32,9 +32,9 @@ type GlazeLoadAction = Extract<GameAction, { type: "PLACE_GLAZE_LOAD" }>;
 const KILN_TENDING: TechId = "T20";
 
 /**
- * R9: optional, Shifu effect only; your own marker (L75: 1 per player) on 1 of your ceramics
+ * R9: optional, Shifu effect only; your own marker (L76: 1 per player) on 1 of your ceramics
  * in the Shared Kiln or your Imperial Kiln — loaded by this action, earlier this round, or by
- * Imperial Priority — that carries no marker (L184).
+ * Imperial Priority — that carries no marker (L185).
  */
 function heatMarkerError(view: ActorView, action: GlazeLoadAction, effect: WorkerEffect): GameRuleError | null {
   const targetId = action.heatMarkerCeramicId;
@@ -94,7 +94,7 @@ function validate(view: ActorView, action: GlazeLoadAction): GameRuleError | nul
     return placementError;
   }
   const effect = workerEffectFor(view, action.workerId, false);
-  // L141, L182, R5: at least 1 Shaped vessel with a legal destination (current Shapes, §11 Q3).
+  // L142, L183, R5: at least 1 Shaped vessel with a legal destination (current Shapes, §11 Q3).
   if (!hasAnyLegalLoad(view.game, view.viewerId)) {
     return ruleError("NO_MAIN_ACTION_POSSIBLE", "You have no Shaped vessel with a legal destination.", {
       locationId: "glaze_load",

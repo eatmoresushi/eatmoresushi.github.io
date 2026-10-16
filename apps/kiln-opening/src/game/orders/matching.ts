@@ -1,19 +1,19 @@
 /**
- * Pure Order matcher incl. Crackle wildcards (L405–422, L469, L654, R6; DESIGN §6.6).
+ * Pure Order matcher incl. Crackle wildcards (L406–423, L470, L654, R6; DESIGN §6.6).
  *
- * - A selection must hold exactly one ceramic per Order slot (L422 "exactly one Bowl and one
+ * - A selection must hold exactly one ceramic per Order slot (L423 "exactly one Bowl and one
  *   Brush Washer"). Slots are filled by permutation; each slot's `shape`/`shapes`/`glaze`/
  *   `decoration` must match the ceramic assigned to it.
- * - Every ceramic must be Finished, never Flawed (L278), and at least `minQuality`.
+ * - Every ceramic must be Finished, never Flawed (L279), and at least `minQuality`.
  * - Relations are evaluated over the whole selection and are independent unless a pairing
- *   is printed (L422). `different_*` is pairwise (O45/O47 "3 different" = all different);
+ *   is printed (L423). `different_*` is pairwise (O45/O47 "3 different" = all different);
  *   `at_least_n_distinct_decorations` is "at least N different" (O48); `required_*` is
  *   multiset inclusion (O31 "at least one Plain"); `at_least_n_quality` counts ceramics of at
  *   least that Quality (≥N Masterpiece).
- * - **Crackle wildcard** (L469, INT: Ge Crackle). A Crackle ceramic may count as any one
+ * - **Crackle wildcard** (L470, INT: Ge Crackle). A Crackle ceramic may count as any one
  *   Decoration for this Order's Decoration requirements (slot `decoration` and every
  *   Decoration relation). It never changes Glaze, Shape or Quality, and a Crackle ceramic is
- *   never a Masterpiece (L469, L654). Its printed Decoration is unchanged (Ru, Exhibition).
+ *   never a Masterpiece (L470, L654). Its printed Decoration is unchanged (Ru, Exhibition).
  *   - `declared` absent: deterministic search. Crackle ceramics in ceramic-sequence order,
  *     Decorations in `DECORATIONS` order (the first Crackle ceramic varies slowest); the first
  *     combination that satisfies the Order is recorded, one declaration per selected Crackle
@@ -89,7 +89,7 @@ function bySequence(a: { id: CeramicId }, b: { id: CeramicId }): number {
 const MASTERPIECE_RANK = QUALITY_RANK.masterpiece;
 const FINE_RANK = QUALITY_RANK.fine;
 
-/** Quality rank for Order purposes: a Crackle ceramic is never a Masterpiece (L469, L654). */
+/** Quality rank for Order purposes: a Crackle ceramic is never a Masterpiece (L470, L654). */
 function orderRank(c: FinishedCeramic): number {
   const rank = QUALITY_RANK[c.quality];
   return c.crackle ? Math.min(rank, FINE_RANK) : rank;
@@ -124,7 +124,7 @@ function relationDimension(relation: OrderRelationDefinition): Dimension {
   }
 }
 
-/** The Order has a Decoration requirement, so a Crackle declaration can matter (L469). */
+/** The Order has a Decoration requirement, so a Crackle declaration can matter (L470). */
 function hasDecorationRequirement(order: OrderDefinition): boolean {
   return (
     order.ceramics.some((slot) => slot.decoration !== undefined) ||
@@ -293,7 +293,7 @@ function declarationsWellFormed(ceramics: readonly FinishedCeramic[], declared: 
   return true;
 }
 
-/** One distinct ceramic per slot (L422); shared by `matchOrder` and `explainOrderMismatch`. */
+/** One distinct ceramic per slot (L423); shared by `matchOrder` and `explainOrderMismatch`. */
 function selectionSizeOk(order: OrderDefinition, ceramics: readonly FinishedCeramic[]): boolean {
   return ceramics.length === order.ceramics.length && new Set(ceramics.map((c) => c.id)).size === ceramics.length;
 }
@@ -384,7 +384,7 @@ export function findOrderMatches(order: OrderDefinition, pool: readonly Finished
 }
 
 /**
- * Ru (L459): the delivered ceramics include an actual Masterpiece with Celadon Glaze and
+ * Ru (L460): the delivered ceramics include an actual Masterpiece with Celadon Glaze and
  * Plain printed Decoration. A Crackle wildcard never counts (printed Decoration; and a
  * Crackle ceramic is never a Masterpiece).
  */
@@ -445,7 +445,7 @@ export function explainOrderMismatch(
     if (QUALITY_RANK[failing.quality] < MASTERPIECE_RANK) {
       return { reason: "quality_too_low", ceramicId: null, slotIndex: null };
     }
-    // A Crackle ceramic would have closed the gap only if it could be a Masterpiece (L469, L654).
+    // A Crackle ceramic would have closed the gap only if it could be a Masterpiece (L470, L654).
     const crackled = ceramics.filter((c) => c.crackle).length;
     const masterpieces = printed.filter((c) => c.rank >= MASTERPIECE_RANK).length;
     const reason = crackled > 0 && masterpieces + crackled >= failing.count ? "crackle_not_masterpiece" : "masterpiece_required";

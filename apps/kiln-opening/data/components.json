@@ -7,7 +7,7 @@
       "nameZh": "中央行动板",
       "qty": 1,
       "notes": "Materials Yard, Commission Market, Guild Hall, Canal Wharf, Magistrate's Hall (2 spaces) and the Imperial Recognition track.",
-      "notesZh": "泥柴场、瓷牙行、陶工行、漕运码头、州衙（2个工位）与御府声望轨。"
+      "notesZh": "印有泥柴场、瓷牙行、陶工行、漕运码头、州衙（2个工位）与御府声望轨。"
     },
     {
       "id": "shared_kiln_board",
@@ -15,7 +15,7 @@
       "nameZh": "共窑板",
       "qty": 1,
       "notes": "Eight spaces: 3 High (+1), 3 Middle (0), 2 Low (−1). Cover spaces by player count.",
-      "notesZh": "8个窑位：高温区3（+1）、中温区3（0）、低温区2（−1）。按人数盖住部分窑位。"
+      "notesZh": "8个窑位：高温区3个（+1）、中温区3个（0）、低温区2个（−1）。按人数盖住部分窑位。"
     },
     {
       "id": "kiln_player_boards",
@@ -23,7 +23,7 @@
       "nameZh": "窑口板",
       "qty": 5,
       "notes": "Ru, Guan, Ge, Ding and Jun. Each shows its Kiln Tradition, a Form & Decorate with 2 spaces (the second added by learning a Form & Decorate Tech), a Glaze & Load with 2 spaces (the second added by learning a Glazing & Loading Tech), 3 Tech slots and an Imperial Kiln area.",
-      "notesZh": "汝窑、官窑、哥窑、定窑与钧窑。每块印有窑口传承、制坯饰纹（2个工位，第二工位习得坯作技艺即添）、施釉装窑（2个工位，第二工位习得釉作技艺即添）、3个技艺位与御窑区。"
+      "notesZh": "汝窑、官窑、哥窑、定窑、钧窑各1块。每块印有该窑口的传承能力、制坯饰纹（2个工位，第二工位待添设）、施釉装窑（2个工位，第二工位待添设）、3个技艺位与御窑区。"
     },
     {
       "id": "shifu_workers",
@@ -31,7 +31,7 @@
       "nameZh": "师傅",
       "qty": 4,
       "notes": "One per player colour.",
-      "notesZh": "每色1名。"
+      "notesZh": "每种颜色1名。"
     },
     {
       "id": "apprentice_workers",
@@ -39,7 +39,7 @@
       "nameZh": "学徒",
       "qty": 12,
       "notes": "Three per player.",
-      "notesZh": "每人3名。"
+      "notesZh": "每种颜色3名。"
     },
     {
       "id": "heat_markers",
@@ -47,7 +47,7 @@
       "nameZh": "火标",
       "qty": 4,
       "notes": "One per player colour; faces +1 and −1.",
-      "notesZh": "每色1个；两面为+1与−1。"
+      "notesZh": "每种颜色1个；一面+1，一面−1。"
     },
     {
       "id": "clay",
@@ -63,7 +63,7 @@
       "nameZh": "柴",
       "qty": 40,
       "notes": "Resource and firing fuel.",
-      "notesZh": "资源，兼作窑柴。"
+      "notesZh": "资源，也是烧窑的燃料。"
     },
     {
       "id": "coins",
@@ -71,7 +71,7 @@
       "nameZh": "铜钱",
       "qty": 50,
       "notes": "Decoration, Advanced Tech and Magistrate's Hall currency.",
-      "notesZh": "纹饰、技艺与州衙所用的货币。"
+      "notesZh": "用于支付纹饰、技艺与州衙费用的货币。"
     },
     {
       "id": "vessel_cards",
@@ -95,7 +95,7 @@
       "nameZh": "起始委托卡",
       "qty": 16,
       "notes": "Separate easy opening deck; never shuffled into the Main Order deck.",
-      "notesZh": "单独的开局委托牌堆；永不洗入主委托牌堆。"
+      "notesZh": "单独的开局委托牌堆，永不洗入主委托牌堆。"
     },
     {
       "id": "advanced_tech_tiles",
@@ -103,7 +103,7 @@
       "nameZh": "技艺牌",
       "qty": 18,
       "notes": "Six Form & Decorate, six Glazing & Loading, six Firing. The Kiln Master tile comes with its own marker.",
-      "notesZh": "坯作、釉作、火作各6张。窑工技艺附带窑工标。"
+      "notesZh": "坯作、釉作、火作各6张。窑工一牌附带窑工标。"
     },
     {
       "id": "fire_cards",
@@ -127,7 +127,7 @@
       "nameZh": "声望标",
       "qty": 4,
       "notes": "One per player colour.",
-      "notesZh": "每色1个。"
+      "notesZh": "每种颜色1个。"
     },
     {
       "id": "imperial_kiln_tiles",
@@ -135,7 +135,7 @@
       "nameZh": "御窑板块",
       "qty": 4,
       "notes": "One-space private kiln tiles; gained at Imperial Recognition 2.",
-      "notesZh": "单格私人窑板块；御府声望2时获得。"
+      "notesZh": "单格的私人窑板块，御府声望达到2时获得。"
     },
     {
       "id": "imperial_priority_tokens",
@@ -143,15 +143,15 @@
       "nameZh": "御烧优先标",
       "qty": 4,
       "notes": "One per player colour; begin on Recognition space 3 and are taken when that player reaches it.",
-      "notesZh": "每色1个；起始放在声望轨第3格，该玩家到达时取回。"
+      "notesZh": "每种颜色1个；开局放在声望轨第3格，该玩家到达时取走。"
     },
     {
       "id": "lock_tokens",
-      "name": "Second-space covers",
+      "name": "Cover tokens",
       "nameZh": "第二工位盖片",
       "qty": 8,
-      "notes": "Physical prototype only: two per player, covering each second personal space until a matching Tech adds it. The digital game has no such token; it shows a second space as not yet added.",
-      "notesZh": "仅用于实体原型：每人2个，盖住两处第二工位，习得相应门类技艺即添设该工位。数字版无此配件，只显示第二工位尚未添设。"
+      "notes": "Physical prototype only: two per player; each covers the second space of a personal action until the matching Tech removes it. The digital game has no such token; it shows a second space as not yet added.",
+      "notesZh": "仅实体原型使用：每人2个，盖住两个第二工位，习得相应门类的技艺后移去。数字版没有此配件，只显示第二工位尚未添设。"
     },
     {
       "id": "vp_markers_score_pad",
@@ -159,7 +159,7 @@
       "nameZh": "计分标／计分纸",
       "qty": "4 or 1",
       "notes": "Use a score track or paper.",
-      "notesZh": "使用计分轨或计分纸。"
+      "notesZh": "使用计分轨或计分纸均可。"
     },
     {
       "id": "first_player_marker",
@@ -183,7 +183,7 @@
       "nameZh": "窑骰",
       "qty": 1,
       "notes": "Six-sided, faces 1, 1, 2, 2, 3, 3. Rolled at the start of each round for the starting Base Heat. Prototype with an ordinary die: 1–2 = 1, 3–4 = 2, 5–6 = 3.",
-      "notesZh": "六面，点数1、1、2、2、3、3。每轮开工时掷出，作为基础火候起点。原型可用普通骰子：1–2 = 1，3–4 = 2，5–6 = 3。"
+      "notesZh": "六面骰，点数为1、1、2、2、3、3。每轮开工时掷出，作为基础火候的起点。原型可用普通骰子代替：1–2算作1，3–4算作2，5–6算作3。"
     },
     {
       "id": "crackle_markers",
@@ -191,7 +191,7 @@
       "nameZh": "开片标",
       "qty": 8,
       "notes": "Used by the Ge Kiln only. A marked ceramic keeps its marker until delivered or exhibited.",
-      "notesZh": "仅哥窑使用。带标器物保留其标，直至交付或陈列。"
+      "notesZh": "仅哥窑使用。带有开片标的器物一直保留此标，直到交付或陈列。"
     }
   ]
 }

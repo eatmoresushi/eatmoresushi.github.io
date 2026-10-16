@@ -504,7 +504,7 @@ const SENIOR_APPRENTICE: TechId = "T18";
 const INVERTED_FIRING: TechId = "T21";
 const SETTERS_MARK: TechId = "T22";
 const KILN_MASTER: TechId = "T24";
-/** Phases with every Setter's Mark returned or not yet placeable (§8.3, L302). */
+/** Phases with every Setter's Mark returned or not yet placeable (§8.3, L303). */
 const MARKLESS_PHASES: readonly GamePhase["type"][] = ["setup_kiln_selection", "cleanup_hand_limit", "finished"];
 
 function scratchContext(): ResolveContext {
@@ -514,7 +514,7 @@ function scratchContext(): ResolveContext {
 /**
  * Gives a Tech the way `grantTech` does (unlocking its personal space) and removes it from
  * the display, deck or pending inspection; a display gap is refilled from the deck top.
- * Throws on a Tech set the 3-total / 1-per-discipline limit (L210) excludes.
+ * Throws on a Tech set the 3-total / 1-per-discipline limit (L211) excludes.
  */
 export function giveTech(
   state: GameState,

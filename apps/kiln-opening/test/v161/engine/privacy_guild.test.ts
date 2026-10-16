@@ -1,5 +1,5 @@
 /**
- * Guild Hall privacy (L207, B2, DESIGN §4.2): the Shifu's inspection and the bottom order of
+ * Guild Hall privacy (L208, B2, DESIGN §4.2): the Shifu's inspection and the bottom order of
  * the untaken Techs are private to the acting player. The public projection and the public
  * event log carry the discipline and counts only; the actor's own view and the `secret` of
  * their events carry the identities. Legality never depends on the hidden deck order.
@@ -40,7 +40,7 @@ function expectNoHiddenTechs(json: string, state: GameState, hidden: readonly Te
 
 const INSPECT: GameAction = { type: "PLACE_GUILD_HALL", workerId: "p1:shifu", choice: { kind: "inspect", discipline: "firing" } };
 
-describe("the Shifu inspection is private (L207, B2)", () => {
+describe("the Shifu inspection is private (L208, B2)", () => {
   it("public state shows only who looks, at which discipline, and how many cards", () => {
     const t = table();
     const events = t.act("p1", INSPECT);

@@ -1,19 +1,19 @@
 /**
- * Initial state and Kiln selection (L97–111, R1). Package P2, layer 4.
+ * Initial state and Kiln selection (L98–112, R1). Package P2, layer 4.
  *
  * `createInitialState` follows the fixed setup draw order of DESIGN §7 exactly, so a seed
  * always produces the same game:
  * 1. shuffle the Starting deck; 2. shuffle the Main deck;
  * 3. deal 2 Starting Orders to each player in seat order, then 1 Main Order to each player
- *    in seat order (L100, secret);
- * 4. return the undealt Starting Orders to the box (L101);
- * 5. reshuffle the Main deck and reveal 6 (L101);
+ *    in seat order (L101, secret);
+ * 4. return the undealt Starting Orders to the box (L102);
+ * 5. reshuffle the Main deck and reveal 6 (L102);
  * 6. shuffle the Tech decks in the order Workshop, Glazing & Loading, Firing and reveal 2
- *    each (L102);
- * 7. shuffle the Fire deck (L103);
- * 8. choose the First Player: `playerOrder[rng.nextInt(n)]` (L107).
+ *    each (L103);
+ * 7. shuffle the Fire deck (L104);
+ * 8. choose the First Player: `playerOrder[rng.nextInt(n)]` (L108).
  *
- * Kiln selection then runs in reverse turn order over all five Kilns (L107, R1). The last
+ * Kiln selection then runs in reverse turn order over all five Kilns (L108, R1). The last
  * choice hands over `setup_done`; Start of Round (incl. Round 1's Kiln Die roll, INT) is
  * `round.startRound`.
  */
@@ -108,7 +108,7 @@ function setupError(input: CreateGameInput): CreateGameResult | null {
 
 function makeWorkers(playerId: PlayerId): Record<string, WorkerState> {
   const workers: Record<string, WorkerState> = {};
-  invariant(GAME_CONFIG.workers.shifu === 1, "Each player has exactly one Shifu (L73)");
+  invariant(GAME_CONFIG.workers.shifu === 1, "Each player has exactly one Shifu (L74)");
   const shifuId = `${playerId}:shifu`;
   workers[shifuId] = { id: shifuId, kind: "shifu", placement: null };
   for (let index = 1; index <= GAME_CONFIG.workers.apprentices; index += 1) {
@@ -118,7 +118,7 @@ function makeWorkers(playerId: PlayerId): Record<string, WorkerState> {
   return workers;
 }
 
-/** Space 0 open, space 1 under a Lock token (L72, L107). */
+/** Space 0 open, space 1 under a Lock token (L73, L108). */
 function makePersonalSpaces(): Record<PersonalLocationId, [PersonalSpaceState, PersonalSpaceState]> {
   const spaces = {} as Record<PersonalLocationId, [PersonalSpaceState, PersonalSpaceState]>;
   for (const locationId of PERSONAL_LOCATION_IDS) {
@@ -155,7 +155,7 @@ function makeSharedKiln(playerCount: PlayerCount): Record<KilnSpaceId, SharedKil
   return spaces;
 }
 
-/** Ten Vessel cards per Shape, `bowl-01` … `censer-10` (L79, L104). */
+/** Ten Vessel cards per Shape, `bowl-01` … `censer-10` (L80, L105). */
 function makeVesselSupply(): Record<Shape, VesselInstanceId[]> {
   const supply = {} as Record<Shape, VesselInstanceId[]>;
   for (const shape of SHAPES) {
@@ -203,7 +203,7 @@ export function createInitialState(input: CreateGameInput, rng: RandomSource): C
   const startingDeck: StartingOrderId[] = shuffle(STARTING_ORDER_IDS, rng);
   let mainDeck: MainOrderId[] = shuffle(MAIN_ORDER_IDS, rng);
 
-  // §7 step 3 (L100): 2 Starting each in seat order, then 1 Main each in seat order.
+  // §7 step 3 (L101): 2 Starting each in seat order, then 1 Main each in seat order.
   const dealtStarting = new Map<PlayerId, StartingOrderId[]>();
   const dealtMain = new Map<PlayerId, MainOrderId[]>();
   for (const playerId of playerOrder) {
@@ -213,9 +213,9 @@ export function createInitialState(input: CreateGameInput, rng: RandomSource): C
     dealtMain.set(playerId, takeTop(mainDeck, GAME_CONFIG.setupDeal.mainOrders, "Main Order"));
   }
 
-  // §7 step 4 (L101): the undealt Starting Orders go to the box.
+  // §7 step 4 (L102): the undealt Starting Orders go to the box.
   const startingBox: StartingOrderId[] = startingDeck.splice(0);
-  // §7 step 5 (L101): reshuffle the Main deck (the reveal follows below, drawing no randomness).
+  // §7 step 5 (L102): reshuffle the Main deck (the reveal follows below, drawing no randomness).
   mainDeck = shuffle(mainDeck, rng);
 
   const players: Record<PlayerId, PlayerState> = {};
@@ -281,16 +281,16 @@ export function createInitialState(input: CreateGameInput, rng: RandomSource): C
   // §7 step 5: reveal 6 face-up Main Orders from left to right.
   refillMainDisplay(draft, "setup", ctx);
 
-  // §7 step 6 (L102): shuffle each discipline in rulebook order and reveal 2.
+  // §7 step 6 (L103): shuffle each discipline in rulebook order and reveal 2.
   for (const discipline of DISCIPLINES) {
     draft.hidden.techDecks[discipline] = shuffle(techsOfDiscipline(discipline), rng);
     refillTechDisplay(draft, discipline, ctx);
   }
 
-  // §7 step 7 (L103): the Fire deck; the discard starts empty and is open (L512).
+  // §7 step 7 (L104): the Fire deck; the discard starts empty and is open (L512).
   draft.hidden.fireDeck = shuffle(FIRING.fireDeck, rng);
 
-  // §7 step 8 (L107): random First Player; Kilns are chosen in reverse turn order.
+  // §7 step 8 (L108): random First Player; Kilns are chosen in reverse turn order.
   const firstPlayerId = playerOrder[rng.nextInt(playerOrder.length)];
   invariant(firstPlayerId !== undefined, "The First Player is seated");
   draft.firstPlayerId = firstPlayerId;
@@ -320,7 +320,7 @@ export const handlers: Pick<ActionHandlerTable, "SELECT_KILN"> = {
     },
     /**
      * Takes the Kiln Player Board; its second personal spaces are already under Lock tokens
-     * (L107). After the last choice the phase becomes the Start of Round (no decision yet)
+     * (L108). After the last choice the phase becomes the Start of Round (no decision yet)
      * and `setup_done` hands over to `round.startRound`.
      */
     resolve(draft, actorId, action, ctx) {

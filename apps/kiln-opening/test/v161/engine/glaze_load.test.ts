@@ -1,6 +1,6 @@
 /**
- * Glaze & Load (L174–184): Apprentice 1 load, Shifu up to 2 loads plus the optional face-down
- * Heat marker (L179, R9), the Imperial modifier (R10, R11), Kiln Tending (T20, L627, INT) and
+ * Glaze & Load (L175–185): Apprentice 1 load, Shifu up to 2 loads plus the optional face-down
+ * Heat marker (L180, R9), the Imperial modifier (R10, R11), Kiln Tending (T20, L627, INT) and
  * the loading Techs through the command (Setter's Mark, Inverted Firing, Kiln Furniture,
  * Reworking Table).
  */
@@ -50,7 +50,7 @@ function spec(p1: PlayerSpec = {}, ceramics: CeramicSpec[] = [shaped("p1"), shap
   return { players: [p1, {}], ceramics };
 }
 
-describe("Apprentice effect: 1 Shaped vessel, a Glaze, loaded (L178)", () => {
+describe("Apprentice effect: 1 Shaped vessel, a Glaze, loaded (L179)", () => {
   it("loads into an empty active Shared Kiln space, then hands over", () => {
     const t = table(spec());
     const events = t.act("p1", gl("p1:apprentice:1", [load("c2", "high_2", { glaze: "celadon" })]));
@@ -80,7 +80,7 @@ describe("Apprentice effect: 1 Shaped vessel, a Glaze, loaded (L178)", () => {
     expectPublicEvents(events);
   });
 
-  it.each(GLAZES)("may choose %s at loading, at no cost (L343)", (glaze) => {
+  it.each(GLAZES)("may choose %s at loading, at no cost (L344)", (glaze) => {
     const t = table(spec());
     t.act("p1", gl("p1:apprentice:1", [load("c1", "low_1", { glaze })]));
     expect(ceramic(t.state, "c1")).toMatchObject({ glaze });
@@ -95,7 +95,7 @@ describe("Apprentice effect: 1 Shaped vessel, a Glaze, loaded (L178)", () => {
   });
 });
 
-describe("Shifu effect: up to 2 loads, then the optional face-down Heat marker (L179, R9)", () => {
+describe("Shifu effect: up to 2 loads, then the optional face-down Heat marker (L180, R9)", () => {
   it("loads 2 in order and marks one of them face down", () => {
     const t = table(spec());
     const events = t.act("p1", gl("p1:shifu", [load("c1", "high_1"), load("c2", "low_1")], "c2"));
@@ -133,7 +133,7 @@ describe("Shifu effect: up to 2 loads, then the optional face-down Heat marker (
     expect(ceramic(viaPriority.state, "c2")).toMatchObject({ heatMarker: { source: "own", faceDown: true } });
   });
 
-  it("goes only on your own loaded ceramic without a marker; you have 1 marker (L75, L184)", () => {
+  it("goes only on your own loaded ceramic without a marker; you have 1 marker (L76, L185)", () => {
     const ceramics: CeramicSpec[] = [
       shaped("p1"), // c1
       { owner: "p1", shape: "vase", stage: "loaded", glaze: "white", at: "high_1", heatMarker: { source: "kiln_master", faceDown: false, value: 1 } }, // c2
@@ -156,7 +156,7 @@ describe("Shifu effect: up to 2 loads, then the optional face-down Heat marker (
   });
 });
 
-describe("the Imperial Kiln (L181, L286–289, R10, R11)", () => {
+describe("the Imperial Kiln (L182, L287–290, R10, R11)", () => {
   it.each([-1, 0, 1] as const)("records the public modifier %i on the ceramic", (modifier) => {
     const t = table(spec({ recognition: 2 }));
     const events = t.act("p1", gl("p1:apprentice:1", [imperial("c2", modifier)]));
@@ -193,7 +193,7 @@ describe("Kiln Tending (T20, L627): +1 Clay +1 Wood after the first qualifying a
 
 describe("loading Techs through the command", () => {
   it("returns the owner's Setter's Mark; another player's Mark holds the space (L630)", () => {
-    // One Setter's Mark tile exists (L82), so "own Mark" and "another player's Mark" are two
+    // One Setter's Mark tile exists (L83), so "own Mark" and "another player's Mark" are two
     // scenarios: a state where both players own T22 breaks Tech card conservation (§8.3).
     const own = { players: [{ techs: ["T22" as const] }, {}], ceramics: [shaped("p1")], settersMarks: { low_1: "p1" } as const };
     const t = table(own);

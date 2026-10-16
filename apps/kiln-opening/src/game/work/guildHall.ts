@@ -1,16 +1,16 @@
 /**
- * Guild Hall incl. the private Shifu inspection and Colour Samples when acquired (L202–213,
- * L396, L626, L650, R4, B1, B2, B3; DESIGN §3.2 "Guild Hall").
+ * Guild Hall incl. the private Shifu inspection and Colour Samples when acquired (L203–214,
+ * L397, L626, L650, R4, B1, B2, B3; DESIGN §3.2 "Guild Hall").
  *
  * - Apprentice: `PLACE_GUILD_HALL{buy_face_up}` pays the printed cost, takes the face-up
- *   Tech, grants it (unlocking a personal space, L211) and refills its discipline (L209).
+ *   Tech, grants it (unlocking a personal space, L212) and refills its discipline (L210).
  * - Shifu: `PLACE_GUILD_HALL{inspect}` privately draws the top 2 Techs of any discipline, even
- *   one already owned, or as many as remain (L207, B2). `GUILD_TAKE` then takes 1 face-up
+ *   one already owned, or as many as remain (L208, B2). `GUILD_TAKE` then takes 1 face-up
  *   Tech of any discipline or 1 inspected Tech at 1 Coin less (minimum 0), returns every
  *   untaken inspected Tech to the bottom in a private chosen order, and only then refills
  *   (B2).
- * - Legality (L212): an affordable face-up Tech from a discipline the player does not own,
- *   after the Shifu discount for the Shifu; 3 total / 1 per discipline (L210).
+ * - Legality (L213): an affordable face-up Tech from a discipline the player does not own,
+ *   after the Shifu discount for the Shifu; 3 total / 1 per discipline (L211).
  * - Colour Samples (T10, L626): when acquired, look at the top 3 Main Orders (deck only, as
  *   many as remain, B1) and reserve 1 — mandatory whenever at least 1 card can be looked at
  *   (R4). No resource and no display refill (L626, L650). Its hand limit of 5 lives in
@@ -67,8 +67,8 @@ function isFaceUp(game: PublicCore, techId: TechId): boolean {
   return game.techDisplay[TECHS[techId].discipline].includes(techId);
 }
 
-/** L212: an affordable face-up Tech from a discipline you do not own (after the Shifu discount
- * for the Shifu), within the 3-total limit (L210). */
+/** L213: an affordable face-up Tech from a discipline you do not own (after the Shifu discount
+ * for the Shifu), within the 3-total limit (L211). */
 function mainActionPossible(p: PlayerState, game: PublicCore, effect: WorkerEffect): boolean {
   return faceUpTechs(game).some(
     (techId) => acquisitionError(p, techId) === null && techPrice(techId, effect) <= p.resources.coins,
@@ -117,7 +117,7 @@ function stepError(view: ActorView, kind: "guild_inspection" | "colour_samples")
 
 /**
  * Pays, takes and grants a Tech: `TECH_ACQUIRED` (with the VP `grantTech` records at once,
- * owner amendment A1), then any `PERSONAL_SPACE_UNLOCKED` (L211).
+ * owner amendment A1), then any `PERSONAL_SPACE_UNLOCKED` (L212).
  */
 function acquire(
   draft: GameState,
@@ -136,7 +136,7 @@ function acquire(
   grantTech(draft, playerId, techId, ctx);
 }
 
-/** Refills each listed discipline whose display is short, in `DISCIPLINES` order (L209, L513). */
+/** Refills each listed discipline whose display is short, in `DISCIPLINES` order (L210, L513). */
 function refillShort(draft: GameState, disciplines: readonly TechDiscipline[], ctx: ResolveContext): void {
   for (const discipline of DISCIPLINES) {
     if (disciplines.includes(discipline) && draft.techDisplay[discipline].length < GAME_CONFIG.techs.faceUpPerDiscipline) {
@@ -145,7 +145,7 @@ function refillShort(draft: GameState, disciplines: readonly TechDiscipline[], c
   }
 }
 
-/** When-acquired effects (L213), then the end of the worker action. */
+/** When-acquired effects (L214), then the end of the worker action. */
 function afterAcquired(draft: GameState, playerId: PlayerId, techId: TechId, ctx: ResolveContext): void {
   if (techId === COLOUR_SAMPLES && reservable(publicGame(draft)).look) {
     const orderIds = takeTopMainOrders(draft, TECHS.T10.params.lookSize, ctx);
@@ -298,7 +298,7 @@ export const handlers: Pick<ActionHandlerTable, "PLACE_GUILD_HALL" | "GUILD_TAKE
           secret: { visibleTo: actorId, techIds: [...action.bottomOrder] },
         });
       }
-      // … then the display refills (L209).
+      // … then the display refills (L210).
       refillShort(draft, [TECHS[take.techId].discipline, look.discipline], ctx);
       afterAcquired(draft, actorId, take.techId, ctx);
     },

@@ -8,7 +8,7 @@
       "name": "Start of Round",
       "nameZh": "开工",
       "summary": "Roll the Kiln Die for this round's starting Base Heat; rotate Orders; refill displays; ready abilities.",
-      "summaryZh": "掷窑骰，定本轮基础火候起点；第2–5轮轮换委托榜；补齐委托榜与技艺；重置“每轮一次”能力。"
+      "summaryZh": "掷窑骰，定出本轮基础火候的起点；轮换委托榜；补齐各公开区；重置“每轮一次”的能力。"
     },
     {
       "order": 2,
@@ -16,7 +16,7 @@
       "name": "Work Phase",
       "nameZh": "派工阶段",
       "summary": "Alternate worker placements at central and personal locations.",
-      "summaryZh": "按起始玩家顺序轮流派工至中央地点与坊内地点，不得停派，直到每人4名工人全部派出。"
+      "summaryZh": "轮流派工到中央地点与坊内地点。"
     },
     {
       "order": 3,
@@ -32,7 +32,7 @@
       "name": "Order Phase",
       "nameZh": "交货阶段",
       "summary": "Complete held Orders, one at a time, in turn order.",
-      "summaryZh": "按起始玩家顺序，逐张完成在手委托。"
+      "summaryZh": "按回合顺序，逐张完成在手委托。"
     },
     {
       "order": 5,
@@ -40,7 +40,7 @@
       "name": "Cleanup",
       "nameZh": "收工",
       "summary": "Return workers and markers; trim Order hands; pass First Player.",
-      "summaryZh": "收回工人与标记；削减委托至上限；传起始玩家标。"
+      "summaryZh": "收回工人与标记；削减手中委托；传递起始玩家标。"
     }
   ]
 }

@@ -1,6 +1,6 @@
 /**
  * Kiln loading: R5 destinations, sequential load validation, loading, Reworking Table,
- * Setter's Mark return, Kiln Furniture and Inverted Firing (L176–184, L286–289, L617,
+ * Setter's Mark return, Kiln Furniture and Inverted Firing (L177–185, L287–290, L617,
  * L628–630, L647, R5, R8, R11; DESIGN §2.4, §11 Q3).
  *
  * - **Destinations (R5).** (a) an empty active Shared Kiln space not marked by another
@@ -91,14 +91,14 @@ export function invertedFiringTarget(game: PublicCore, playerId: PlayerId, space
   return only !== undefined && lookup(game.ceramics, only)?.ownerId === playerId;
 }
 
-/** R5b: the player has gained the Imperial Kiln (L284) and it holds no ceramic this firing
- * (L183, L286). */
+/** R5b: the player has gained the Imperial Kiln (L285) and it holds no ceramic this firing
+ * (L184, L287). */
 export function imperialKilnEmpty(game: PublicCore, playerId: PlayerId): boolean {
   return player(game, playerId).imperial.kilnGained && imperialKilnCeramic(game, playerId) === null;
 }
 
 /**
- * Glaze & Load placement legality (L182, R5): at least 1 Shaped vessel with a legal
+ * Glaze & Load placement legality (L183, R5): at least 1 Shaped vessel with a legal
  * destination (a), (b) or (c). Current Shapes only (DESIGN §11 Q3 default): a Vase that
  * Reworking Table could turn into a Bowl does not make an Inverted Firing target count.
  */
@@ -226,7 +226,7 @@ function simulateLoad(
     shape = spec.reworkShape;
   }
 
-  // The Glaze is a free choice at loading (L343); only its value is checked.
+  // The Glaze is a free choice at loading (L344); only its value is checked.
   if (!GLAZES.includes(spec.glaze)) {
     return ruleError("INVALID_CHOICE", "Choose White, Celadon, Grey-Green or Moon White.", {
       value: String(spec.glaze),
@@ -314,7 +314,7 @@ function simulateLoad(
           field: `${field}.destination.kilnFurniture`,
         });
       }
-      // One tile per owner (L82). It is returned after every firing, so a ready tile is
+      // One tile per owner (L83). It is returned after every firing, so a ready tile is
       // normally in hand; refuse rather than move a tile that is still on the kiln.
       const tileOnKiln = KILN_SPACE_IDS.some((id) => lookup(sim.spaces, id)?.kilnFurniture?.ownerId === playerId);
       if (tileOnKiln) {
@@ -386,7 +386,7 @@ function validateLoadsFor(
  * Per load: ceramic → `reworkShape` → destination (incl. the Inverted Firing Shape test on the
  * reworked Shape) → Kiln Furniture. Reworking Table, Inverted Firing and Kiln Furniture may
  * each appear at most once across the loads. `loadedBy: "imperial_priority"` allows only the
- * Imperial Kiln (L292). Placement legality (`hasAnyLegalLoad`) is the caller's check.
+ * Imperial Kiln (L293). Placement legality (`hasAnyLegalLoad`) is the caller's check.
  */
 export function validateLoads(
   view: ActorView,
@@ -401,7 +401,7 @@ export function validateLoads(
 
 /**
  * Reworking Table (T05, L617): consumes its once-per-round use (`TECH_USED`), returns the
- * Vessel card (a proxy vanishes), takes one of the new Shape (or a proxy, L328) and changes
+ * Vessel card (a proxy vanishes), takes one of the new Shape (or a proxy, L329) and changes
  * the Shape. No Clay is paid; the Decoration stays. Emits `CERAMIC_RESHAPED`. Callers validate
  * first (`validateLoads`, or Imperial Priority's validator, §11 Q1).
  */

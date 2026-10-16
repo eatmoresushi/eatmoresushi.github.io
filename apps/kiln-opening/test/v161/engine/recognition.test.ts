@@ -1,5 +1,5 @@
 /**
- * P6 `recognition.ts` (L424–439, L284, L292, R13; DESIGN §8.2 "Crowns one at a time, every
+ * P6 `recognition.ts` (L425–440, L285, L293, R13; DESIGN §8.2 "Crowns one at a time, every
  * milestone, 0–4 cap, +1 VP beyond 4", "Fixed Grant, Imperial Kiln at 2, Imperial Priority
  * at 3, Audience 6 VP at 4", "Tribute Ware bonus Crown (R13)").
  */
@@ -18,7 +18,7 @@ function at(recognition: Recognition, resources = { clay: 0, wood: 0, coins: 0 }
   return buildState({ players: [{ recognition, resources }, {}] });
 }
 
-describe("milestones (L428–435)", () => {
+describe("milestones (L429–436)", () => {
   it("the data is the printed track: Grant 1/1/1, Imperial Kiln, Imperial Priority, Audience 6 VP, +1 VP beyond", () => {
     expect(IMPERIAL_TRACK.track.map((space) => space.reward)).toEqual([
       null,
@@ -44,7 +44,7 @@ describe("milestones (L428–435)", () => {
     ]);
   });
 
-  it("Recognition 2: the Imperial Kiln tile (L284)", () => {
+  it("Recognition 2: the Imperial Kiln tile (L285)", () => {
     const state = at(1);
     const ctx = testContext();
     gainCrown(state, "p1", "printed_crown", "O35", ctx);
@@ -56,7 +56,7 @@ describe("milestones (L428–435)", () => {
     ]);
   });
 
-  it("Recognition 3: the Imperial Priority token (L292)", () => {
+  it("Recognition 3: the Imperial Priority token (L293)", () => {
     const state = at(2);
     const ctx = testContext();
     gainCrown(state, "p1", "printed_crown", null, ctx);
@@ -81,7 +81,7 @@ describe("milestones (L428–435)", () => {
   });
 });
 
-describe("Crowns one at a time (L415, L437–439)", () => {
+describe("Crowns one at a time (L416, L438–440)", () => {
   it("three Crowns from 0 cross every milestone in order", () => {
     const state = at(0);
     const ctx = testContext();
@@ -100,7 +100,7 @@ describe("Crowns one at a time (L415, L437–439)", () => {
     ]);
   });
 
-  it("a multi-Crown Order reaches 4 and scores the remaining Crowns as 1 VP each (L438)", () => {
+  it("a multi-Crown Order reaches 4 and scores the remaining Crowns as 1 VP each (L439)", () => {
     const state = at(2);
     const ctx = testContext();
     for (let crown = 0; crown < 3; crown += 1) {
@@ -133,7 +133,7 @@ describe("Crowns one at a time (L415, L437–439)", () => {
     expect(() => advanceRecognitionStep(state, "p1", "printed_crown", null, ctx)).toThrow(InvariantError);
   });
 
-  it("each milestone reward is gained only once (L439)", () => {
+  it("each milestone reward is gained only once (L440)", () => {
     const state = buildState({
       players: [
         {
@@ -178,7 +178,7 @@ describe("Crowns one at a time (L415, L437–439)", () => {
   });
 });
 
-describe("Magistrate's Hall steps (L224, L228–232, L426)", () => {
+describe("Magistrate's Hall steps (L225, L229–233, L427)", () => {
   it("is open at Recognition 0–2 only", () => {
     expect(LOCATIONS.magistrates_hall.usableAtRecognition).toEqual([0, 1, 2]);
     const open = ([0, 1, 2, 3, 4] as const).map((r) => magistratesHallOpen(player(at(r), "p1")));
@@ -205,7 +205,7 @@ describe("Magistrate's Hall steps (L224, L228–232, L426)", () => {
   });
 });
 
-describe("via Order completion (L409–416)", () => {
+describe("via Order completion (L410–417)", () => {
   it("resolves each printed Crown of the Order, then Tribute Ware's, in order", () => {
     // O47 has 3 printed Crowns. From Recognition 1 with Tribute Ware: 2, 3, 4, then +1 VP.
     const state = buildState({ players: [{ kilnId: "GE", recognition: 1, techs: ["T25"], hand: ["O47"] }, {}] });

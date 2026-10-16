@@ -1,12 +1,12 @@
 /**
- * Pure Base / Global / Actual Heat and Quality math, and previews (L244–278, L674–680).
+ * Pure Base / Global / Actual Heat and Quality math, and previews (L245–279, L674–680).
  *
- * - Base Heat = Kiln Die + Σ Contributions, clamped to 0–5 (L248, L262, L674). Global and
+ * - Base Heat = Kiln Die + Σ Contributions, clamped to 0–5 (L249, L263, L674). Global and
  *   Actual Heat are never clamped.
- * - Actual Heat (L244, L678): Shared = Global Heat + (Kiln Furniture modifier ?? zone
+ * - Actual Heat (L245, L678): Shared = Global Heat + (Kiln Furniture modifier ?? zone
  *   modifier) + Heat marker; Imperial = Kiln Die + Fire + Imperial modifier + Heat marker.
- * - Heat Difference is the absolute difference from Preferred Heat (L63); Quality follows
- *   the table (L273–278).
+ * - Heat Difference is the absolute difference from Preferred Heat (L64); Quality follows
+ *   the table (L274–279).
  *
  * Layer 2: imports only types, `content.ts` and `errors.ts` (DESIGN §2.2). Nothing here
  * mutates its input or reads hidden information.
@@ -35,7 +35,7 @@ import type {
 /** Input of `heatCalculation`: everything Actual Heat and the Heat Difference depend on. */
 export interface HeatCalculationInput {
   fireModifier: FireModifier;
-  /** Shared: Global Heat. Imperial: Kiln Die + Fire (L288). */
+  /** Shared: Global Heat. Imperial: Kiln Die + Fire (L289). */
   heatSource: number;
   positionModifier: number;
   heatMarker: -1 | 0 | 1;
@@ -52,7 +52,7 @@ export interface PositionModifier {
 /** Fire modifiers in deck-value order: the keys of `HeatPreview.qualityByFire`. */
 export const FIRE_VALUES: readonly FireModifier[] = Object.freeze([-2, -1, 0, 1, 2] as const);
 
-/** Base Heat (L262, L674): Kiln Die + the sum of final Contribution modifiers, clamped 0–5. */
+/** Base Heat (L263, L674): Kiln Die + the sum of final Contribution modifiers, clamped 0–5. */
 export function baseHeat(die: KilnDieFace, contributionSum: number): BaseHeat {
   invariant(Number.isSafeInteger(contributionSum), `Contribution sum must be an integer, got ${contributionSum}`);
   const { minimum, maximum } = FIRING.baseHeat;
@@ -60,7 +60,7 @@ export function baseHeat(die: KilnDieFace, contributionSum: number): BaseHeat {
 }
 
 /**
- * A revealed Contribution's Heat (L252–258): Bank −1, Tend 0, Stoke +1. A Fuel Ledger
+ * A revealed Contribution's Heat (L253–259): Bank −1, Tend 0, Stoke +1. A Fuel Ledger
  * commitment adds T12's `heat` in the card's direction, so ±1 becomes ±2 (L638). Fuel Ledger
  * with Tend is rejected by validation; reaching it here is an engine bug.
  */
@@ -75,7 +75,7 @@ export function contributionHeat(submission: ContributionSubmission): Contributi
   return (printed + Math.sign(printed) * TECHS.T12.params.heat) as ContributionHeat;
 }
 
-/** Wood paid at the reveal: the card's cost plus Fuel Ledger's extra Wood (L252–258, L638). */
+/** Wood paid at the reveal: the card's cost plus Fuel Ledger's extra Wood (L253–259, L638). */
 export function contributionWood(submission: ContributionSubmission): number {
   const printed = contributionCard(submission.card).woodCost;
   if (!submission.fuelLedger) {
@@ -88,7 +88,7 @@ export function contributionWood(submission: ContributionSubmission): number {
 }
 
 /**
- * The position modifier a loaded ceramic uses (L244, L678): in the Shared Kiln the Kiln
+ * The position modifier a loaded ceramic uses (L245, L678): in the Shared Kiln the Kiln
  * Furniture modifier when a tile is in its space (every ceramic in the space uses it, R8),
  * else the printed zone modifier; in the Imperial Kiln the modifier chosen at loading (R11).
  */
@@ -104,14 +104,14 @@ export function positionFor(game: PublicCore, ceramic: LoadedCeramic): PositionM
   return { source: "zone", modifier: zoneModifier(placement.spaceId) };
 }
 
-/** The value a Heat marker adds (L58, L268): a face-down marker has none yet (0). */
+/** The value a Heat marker adds (L59, L269): a face-down marker has none yet (0). */
 export function markerValue(marker: CeramicHeatMarker | null): -1 | 0 | 1 {
   return marker === null || marker.faceDown ? 0 : marker.value;
 }
 
 /**
- * One Actual Heat calculation (L244, L678): heatSource + position + marker, then Jun's ±1
- * (L477), then the absolute Heat Difference from Preferred Heat (L63).
+ * One Actual Heat calculation (L245, L678): heatSource + position + marker, then Jun's ±1
+ * (L478), then the absolute Heat Difference from Preferred Heat (L64).
  */
 export function heatCalculation(input: HeatCalculationInput): HeatCalculation {
   const actualHeat = input.heatSource + input.positionModifier + input.heatMarker;
@@ -140,7 +140,7 @@ export function withJunAdjustment(calculation: HeatCalculation, junAdjustment: -
   });
 }
 
-/** Quality of a calculation (L273–278). */
+/** Quality of a calculation (L274–279). */
 export function qualityOf(calculation: HeatCalculation): Quality {
   return qualityForDifference(calculation.heatDifference);
 }
@@ -181,7 +181,7 @@ export function firingRecord(firing: FiringContext, ceramicId: CeramicId): Firin
  * Per loaded ceramic, in sequence order: Preferred Heat and, when everything except the Fire
  * card is known, the Actual Heat before the Fire card and the Quality each Fire card would
  * give. A Shared ceramic needs Base Heat (from the reveal on); an Imperial ceramic needs only
- * the public Kiln Die (L288). A face-down Heat marker has no value yet (INT), so its
+ * the public Kiln Die (L289). A face-down Heat marker has no value yet (INT), so its
  * ceramic's preview stays unknown until the marker is turned or returned. Jun is not included.
  */
 export function heatPreviews(view: PlayerView): HeatPreview[] {
