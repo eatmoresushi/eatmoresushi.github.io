@@ -517,7 +517,7 @@ describe("locations and capacity (L146–233)", () => {
       if (id === undefined) continue;
       const location = LOCATIONS[id];
       if (printedName.endsWith("(personal)")) {
-        expect(two).toBe("1 space, +1 when unlocked");
+        expect(two).toBe("1 space; 2 once its Cover token is removed");
         expect(location.capacity).toBeNull();
         expect(location.personalSpaces).toEqual({ total: 2, unlockedAtStart: 1 });
         expect(() => locationCapacity(id, 2)).toThrow();
@@ -560,7 +560,7 @@ describe("locations and capacity (L146–233)", () => {
       glaze_load: [[gl.apprentice.maxLoads], [gl.shifu.maxLoads, 1]],
       commission_market: [[cm.apprentice.maxReservations, cm.apprentice.gainAfterEach],
         [cm.shifu.maxReservations, cm.shifu.topThreeLooks, cm.shifu.lookSize, cm.shifu.gainAfterEach]],
-      guild_hall: [[1], [gh.shifu.inspectCount, 1, 1, gh.shifu.discount]],
+      guild_hall: [[1, GAME_CONFIG.techs.vpEach], [gh.shifu.inspectCount, 1, 1, gh.shifu.discount]],
       canal_wharf: [[cw.apprentice.coins], [cw.shifu.coins]],
       magistrates_hall: [
         [mh.apprentice.coins, mh.apprentice.recognitionSteps,

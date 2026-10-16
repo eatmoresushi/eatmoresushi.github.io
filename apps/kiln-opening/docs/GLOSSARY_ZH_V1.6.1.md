@@ -184,7 +184,7 @@ The owner's own wording edits to the Chinese rulebook and component text (2026-1
 | Kiln Tradition | 窑口传承 | 沿用。 |
 | second (personal) space | 第二工位 | 制坯饰纹、施釉装窑各有第二工位，习得相应门类技艺后添设（D7）。界面与文字不说“锁”“封”。 |
 | add (a second space, by learning a Tech) | 添设 | 未有时写“习得坯作技艺即添此工位”（施釉装窑写“习得釉作技艺即添此工位”）；已有时写“由「⟨技艺⟩」添设”。 |
-| second-space cover (physical prototype only) | 第二工位盖片 | 实体原型盖住尚未添设的第二工位；数字版无此配件（D7）。 |
+| Cover token (physical prototype only) | 第二工位盖片 | 实体原型盖住尚未添设的第二工位；数字版无此配件（D7）。 |
 | Tech slot | 技艺位 | 每板3个。 |
 | Imperial Kiln area | 御窑区 | — |
 | Shared Kiln Board | 共窑板 | 8个窑位：高温区3、中温区3、低温区2。按人数盖住部分窑位（停用）：4人不盖（3-3-2）；3人盖1高1中（2-2-2）；2人盖1高2中1低（2-1-1）。2–3人另盖州衙第二工位。 |
@@ -830,20 +830,17 @@ The owner's own wording edits to the Chinese rulebook and component text (2026-1
 
 ## 8. 技艺通则（Tech Clarifications 中文版）
 
-- **练泥、漕船、御烧优先**是技艺或令牌效果，不是工人行动；不算制坯饰纹行动、施釉装窑行动或交货阶段
-  的完成委托，也不触发需要这些行动的效果，除非文字写明（漕船触发汝窑与官窑）。
-- **支烧窑具、覆烧、窑位签**只用于共窑。御窑只容纳1件，用它自己的御窑修正。
-- **火标：**每件器物至多带1个火标；窑工标与你自己的火标不能放在同一件器物上。钧窑的调整叠加在二者之上。
-  复烧重算时，火标留在原处。
-- **火照**按起始玩家顺序、在任何火标翻定之前结算。置底的牌留在牌堆底。你可以谈论看到的内容，但不能把牌给别人看。
-- **色样簿：**习得时的承接取自牌堆，委托榜不补。拥有此牌期间，每次收工的上限都是5张。
-- **匣钵护烧与复烧**只作用于你本次烧成中（共窑或御窑）符合条件的器物，不作用于先前各轮烧成者；
-  复烧额外翻出的窑火牌不影响任何其他器物。
-- **折扣：**师傅纹饰减免、饰坯匣、定窑1铜钱额外坯是三项各自独立的减免。前两项可作用于同一纹饰
-  （刻花0铜钱）；定窑的额外坯两项都不适用。大陶车只减泥；定窑的额外坯不是瓶或香炉。
-- **高徒**在瓷牙行：该学徒获得师傅的2次承接、其中1次可看三取一，以及每次承接后的1份资源。
-- **哥窑开片**是定品后效果，可在匣钵护烧之后作用于同一器物（瑕品→良品→上品，每轮一次）。开片器
-  永不为臻品，不能满足任何臻品要求（含画花臻品委托）。
+逐字取自[中文规则书](./KILN_OPENING_v1.6.1_ZH.md)附录B“技艺通则”（业主2026-10-16修订）。
+
+- **练泥、漕船、御烧优先**是技艺或令牌效果，不是工人行动。它们不算制坯饰纹行动、施釉装窑行动或交货阶段的完成委托，也不触发需要这些行动的效果，除非文字写明（漕船触发汝窑与官窑）。
+- **支烧窑具、覆烧、窑位签**只作用于共窑。御窑只容纳1件，用它自己的御窑修正。
+- **火标：**每件器物至多带1个火标；窑工标与你自己的火标不能放在同一件器物上。钧窑的调整叠加在二者之上。复烧重算时，火标留在原处。
+- **火照**按起始玩家顺序结算，在任何火标翻定之前。置底的牌留在牌堆底；若窑火牌堆用尽，把弃牌堆洗混后放在它上面，所以置底的牌最后才翻出。你可以谈论看到的内容，但不能把牌给别人看。
+- **色样簿：**习得时的承接取自牌堆，委托榜不补牌。拥有此牌期间，每次收工的上限都是5张。
+- **匣钵护烧**与**复烧**只作用于你本次烧成中（共窑或御窑）符合条件的器物，不作用于先前各轮烧成的器物；复烧额外翻出的窑火牌不影响任何其他器物。
+- **减免：师傅的纹饰减免、饰坯匣、定窑的1铜钱额外坯是三项各自独立的减免。前两项可以作用于同一项纹饰（刻花可降到0铜钱）；定窑的额外坯两项都不适用。大陶车只减泥；定窑的额外坯不是瓶或香炉。**
+- **高徒**派往瓷牙行时，该学徒获得师傅的2次承接、其中1次可看三取一，以及每次承接后的1份资源。
+- **哥窑开片**是定品后效果，可以在匣钵护烧之后作用于同一件器物（瑕品→良品→上品，每轮一次）。开片器永远不是臻品，所以不能满足任何臻品要求，包括画花臻品委托。
 
 ---
 
@@ -908,8 +905,8 @@ Terminology review of revision 1, applied in revision 2 (2026-10-14).
   are retired: §2.5 now lists 第二工位, 添设 and the physical-prototype-only 第二工位盖片; §2.15, §4.2, §4.3, §4.5 say
   习得…技艺即添设; §6 records the change and §7 `PERSONAL_SPACE_LOCKED` reads 习得{discipline}技艺即添此工位, the same sentence as the board label.
   Board labels: 习得坯作技艺即添此工位（施釉装窑：习得釉作技艺即添此工位）before, 由「⟨技艺⟩」添设 after. Internal
-  identifiers (`unlocked`, `PERSONAL_SPACE_LOCKED`, `unlocks`) are unchanged, and the English rulebook's “Lock tokens”
-  stays byte-identical; this is wording only, not a rule change.
+  identifiers (`unlocked`, `PERSONAL_SPACE_LOCKED`, `unlocks`) are unchanged; this is wording only, not a rule change. The owner's
+  2026-10-16 edits brought the English rulebook in line as well: its “Lock tokens” are now Cover tokens (§2.5 第二工位盖片).
 
 **Component text and rules details (2026-10-15)**
 - §3 short reminders now come word for word from the V1.6.1 component text (`shortTextZh`), one plain line of

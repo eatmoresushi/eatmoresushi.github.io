@@ -76,7 +76,7 @@ describe("unlocking by discipline (L212, L376)", () => {
     const t = table({ players: [RICH, {}] });
     t.act("p1", fd("p1:apprentice:1"));
     reject(t, "p1", fd("p1:apprentice:2"), "PERSONAL_SPACE_LOCKED");
-    // The Guild Hall acquisition grants the Tech (`grantTech`), which removes the Lock token.
+    // The Guild Hall acquisition grants the Tech (`grantTech`), which removes the Cover token.
     const ctx = testContext();
     // Take T16 out of its zone first, as the Guild Hall does, so every Tech stays in exactly one
     // zone (card conservation, DESIGN §8.3).

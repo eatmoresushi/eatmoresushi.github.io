@@ -147,10 +147,10 @@
     },
     {
       "id": "lock_tokens",
-      "name": "Second-space covers",
+      "name": "Cover tokens",
       "nameZh": "第二工位盖片",
       "qty": 8,
-      "notes": "Physical prototype only: two per player, covering each second personal space until a matching Tech adds it. The digital game has no such token; it shows a second space as not yet added.",
+      "notes": "Physical prototype only: two per player; each covers the second space of a personal action until the matching Tech removes it. The digital game has no such token; it shows a second space as not yet added.",
       "notesZh": "仅实体原型使用：每人2个，盖住两个第二工位，习得相应门类的技艺后移去。数字版没有此配件，只显示第二工位尚未添设。"
     },
     {
