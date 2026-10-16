@@ -560,7 +560,7 @@ describe("locations and capacity (L146–233)", () => {
       glaze_load: [[gl.apprentice.maxLoads], [gl.shifu.maxLoads, 1]],
       commission_market: [[cm.apprentice.maxReservations, cm.apprentice.gainAfterEach],
         [cm.shifu.maxReservations, cm.shifu.topThreeLooks, cm.shifu.lookSize, cm.shifu.gainAfterEach]],
-      guild_hall: [[1, GAME_CONFIG.techs.vpEach], [gh.shifu.inspectCount, 1, 1, gh.shifu.discount]],
+      guild_hall: [[1], [gh.shifu.inspectCount, 1, 1, gh.shifu.discount]],
       canal_wharf: [[cw.apprentice.coins], [cw.shifu.coins]],
       magistrates_hall: [
         [mh.apprentice.coins, mh.apprentice.recognitionSteps,

@@ -26,8 +26,8 @@
       - radio "Form & Decorate your space 1 Form and decorate 1"
       - text: Form & Decorate your space 1 Form and decorate 1
       - 'button "Rules: Form & Decorate"'
-      - radio "Guild Hall 1/2 taken Buy 1 Advanced Tech at cost; score 1 VP"
-      - text: Guild Hall 1/2 taken Buy 1 Advanced Tech at cost; score 1 VP
+      - radio "Guild Hall 1/2 taken Buy 1 Advanced Tech at cost"
+      - text: Guild Hall 1/2 taken Buy 1 Advanced Tech at cost
       - 'button "Rules: Guild Hall"'
       - radio "Canal Wharf No limit 2 Coins"
       - text: Canal Wharf No limit 2 Coins

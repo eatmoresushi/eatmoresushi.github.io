@@ -12,7 +12,8 @@ owner's 2026-10-16 edits); the engine uses the rules version string `1.6.1`.
 
 - Original: `/Users/luyuan/Documents/kiln board game/v1.6/KILN OPENING 开窑 v1.6.1 — Player Rulebook (Draft).md`
 - Checked-in copy (byte-identical to the original): [KILN_OPENING_v1.6.1_EN_SOURCE.md](./KILN_OPENING_v1.6.1_EN_SOURCE.md). Owner amendments A1 and A2 are applied in place in both files, as the owner asked that rules updates also update the original. The owner's own wording edits of 2026-10-16 ([below](#owner-wording-edits-2026-10-16)) were copied in unchanged.
-- SHA-256: `1e9dfc81a70de67b48770b445b584a616e8fb060eb6b554fbbd77cdf3a881f5f`
+- SHA-256: `173ec74ade86587c671d65f4e7c2171c9fb5f70960fae2d5d8451744cd2785a1`
+- SHA-256 after the owner's 2026-10-16 edits: `1e9dfc81a70de67b48770b445b584a616e8fb060eb6b554fbbd77cdf3a881f5f`
 - SHA-256 after the owner's first 2026-10-16 edits: `49bd80ced9cc194938e4b8bbd422a1c9e02439facfb477f6325a42f31c2d1372`
 - SHA-256 after A1 and A2, before the owner's 2026-10-16 edits: `4c9923871218a12a5653cbc34cfa0817b0ab673030e11af27f7c0d7468406a7a`
 - SHA-256 as supplied on 2026-10-14, before A1 and A2: `ce106f76d034291a942e6b9e9bb5a823f5e9af12cec3800c451c98b840457835`
@@ -31,7 +32,7 @@ Amendments change V1.6.1 text after it became the authority. At the owner's requ
 
 | ID | Date | Amendment | Overrides |
 | --- | --- | --- | --- |
-| A1 | 2026-10-15 | **Tech VP on purchase.** Each Advanced Tech scores its 1 VP immediately when the player gains it, recorded like other in-game VP. It is no longer added at game end. This is bookkeeping only: no V1.6.1 effect removes a Tech, so final totals and tie-breakers are unchanged. Mid-game scores now include Tech VP. Applied in the source at lines 379, 492, 609 and 755. The owner's 2026-10-16 edits also list it as change 20 (line 30) fold the former "nothing more for Advanced Techs" scoring step into the first scoring item (line 492), and repeat it at the Guild Hall (lines 214 and 715). | Lines 379, 492, 609, 755 ("1 VP at game end" / "1 VP for each Advanced Tech you own" in final scoring) |
+| A1 | 2026-10-15 | **Tech VP on purchase.** Each Advanced Tech scores its 1 VP immediately when the player gains it, recorded like other in-game VP. It is no longer added at game end. This is bookkeeping only: no V1.6.1 effect removes a Tech, so final totals and tie-breakers are unchanged. Mid-game scores now include Tech VP. Applied in the source at lines 379, 492, 609 and 755. The owner's 2026-10-16 edits also list it as change 20 (line 30) fold the former "nothing more for Advanced Techs" scoring step into the first scoring item (line 492), and repeat it in Appendix E's Tech bullet (line 720). | Lines 379, 492, 609, 755 ("1 VP at game end" / "1 VP for each Advanced Tech you own" in final scoring) |
 | A2 | 2026-10-15 | **Discipline name.** The "Workshop" Advanced Tech discipline is renamed **"Form & Decorate"**, matching the personal location whose second space it adds (owner decision D11). Applied in the source at lines 15, 51, 83, 103, 212, 374, 376, 609, 611 and 720. "Workshop Development" (line 362), "Local Workshop" (line 431) and the ordinary word "workshop" are unchanged. Wording only: no rule changes, and the internal ID stays `workshop`. | Lines 15, 51, 83, 103, 212, 374, 376, 609, 611, 720 |
 
 ## Owner wording edits (2026-10-16)
@@ -52,7 +53,12 @@ A second round of edits later the same day also changes no rule and keeps every 
 - **Lock tokens become Cover tokens.** The English says a Tech "removes the Cover token" from a second personal space instead of "unlocking" it (lines 11, 15, 50–51, 73, 89, 107–108, 144, 155–156, 212, 366, 376, 609, 707 and 720). The printed rulebook now matches owner decision D7 too. The Chinese already used 第二工位盖片.
 - **Tech VP at the Guild Hall.** "A newly acquired Advanced Tech **scores 1 VP immediately**" (line 214), and the Appendix E Apprentice cell adds "score 1 VP" (line 715). These restate amendment A1. The Chinese matches at lines 216 and 717.
 
-Chinese edition (`docs/KILN_OPENING_v1.6.1_ZH.md`, SHA-256 `907d9aa1dbdb5c49414633cf301c5eddbfd8b32b4e55bc2a7c7af3727e72b755`; after the first 2026-10-16 edits `212cd84bc71e0bfe8d13d71dc2d5c0f13db745e11e9f9cf6604a3d0560c754e2`; before them `5d06268e93517896199088fc61a09203d3fe24b2859fb4b79785dc51f1b0e2a1`):
+On 2026-10-17 the owner made further edits. They change no rule and keep every line number:
+
+- **Tech VP belongs to the Tech rules.** The Guild Hall note (line 214) and the Appendix E Apprentice cell (line 715) no longer mention the 1 VP. The Advanced Tech Rules section already states it (line 379), and Appendix E's Tech bullet now adds "Each Tech scores **1 VP** when gained" (line 720). The Chinese matches at lines 216, 717, 381 and 723.
+- **Chinese wording only.** Line 263 now reads 玩家不能凭它对共窑的火发表意见, line 305 reads 玩家取回所有工人, and line 418 reads 每再获得1个御令，立即得1分.
+
+Chinese edition (`docs/KILN_OPENING_v1.6.1_ZH.md`, SHA-256 `d6d2f06025b3f64545fb03326ebee390a3cfa03e60b4008c08723204fcfa2502`; after the 2026-10-16 edits `907d9aa1dbdb5c49414633cf301c5eddbfd8b32b4e55bc2a7c7af3727e72b755`; after the first 2026-10-16 edits `212cd84bc71e0bfe8d13d71dc2d5c0f13db745e11e9f9cf6604a3d0560c754e2`; before them `5d06268e93517896199088fc61a09203d3fe24b2859fb4b79785dc51f1b0e2a1`):
 
 - The prose moves to a plainer register: 把, 在, 要, 不能, 才可以, 空着 and 装进 replace 将, 于, 须, 不得, 方可, 空置 and 装入.
 - Several summaries now follow the English more closely:

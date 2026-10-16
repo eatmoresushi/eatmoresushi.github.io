@@ -211,7 +211,7 @@ For each reservation, choose one:
 - A player may own at most **3 Advanced Techs and at most 1 from each discipline**.
 - **Cover tokens.** When you gain a Form & Decorate Tech, remove the Cover token from your second Form & Decorate space; when you gain a Glazing & Loading Tech, remove the Cover token from your second Glaze & Load space. Firing Techs remove nothing. A space whose token has been removed may be used later this round.
 - An Apprentice placement is legal only if you can afford at least 1 face-up Tech from a discipline you do not yet own. A Shifu placement is legal only if you can afford such a Tech after the Shifu discount.
-- A newly acquired Advanced Tech **scores 1 VP immediately** and may be used in the same round if its timing permits. Resolve any **when acquired** effect immediately.
+- A newly acquired Advanced Tech may be used in the same round if its timing permits. Resolve any **when acquired** effect immediately.
 
 ### Canal Wharf
 
@@ -712,12 +712,12 @@ If no ceramics are loaded in the Shared Kiln or any Imperial Kiln, **skip this p
 | Form & Decorate | Form and decorate 1 | Form and decorate up to 2; if 2, one Decoration −1 Coin |
 | Glaze & Load | Glaze and load 1 | Glaze and load up to 2; Heat marker face-down on 1 of your ceramics |
 | Commission Market | Reserve 1 + gain 1 Clay/Wood/Coin | Reserve up to 2 separately, 1 of them from the top 3; gain 1 Clay/Wood/Coin after each |
-| Guild Hall | Buy 1 Advanced Tech at cost; score 1 VP | Look at top 2 Techs of 1 discipline (or as many as remain); take 1 revealed Tech or any face-up Tech at −1 Coin |
+| Guild Hall | Buy 1 Advanced Tech at cost | Look at top 2 Techs of 1 discipline (or as many as remain); take 1 revealed Tech or any face-up Tech at −1 Coin |
 | Canal Wharf | 2 Coins | 4 Coins |
 | Magistrate's Hall | Pay 4 Coins → +1 Recognition (0 → 1, 1 → 2 or 2 → 3) | Pay 3 Coins → same |
 
 - A reserved face-up Order is replaced only after the reserving player's turn ends. Colour Samples: 1 reservation from the top 3 when acquired; hand limit 5.
-- A Form & Decorate Tech removes the Cover token from the second Form & Decorate space; a Glazing & Loading Tech the one from the second Glaze & Load space; Firing Techs remove nothing. At most 3 Techs, 1 per discipline.
+- A Form & Decorate Tech removes the Cover token from the second Form & Decorate space; a Glazing & Loading Tech the one from the second Glaze & Load space; Firing Techs remove nothing. At most 3 Techs, 1 per discipline. Each Tech scores **1 VP** when gained.
 - If you have gained your Imperial Kiln and it is empty, 1 ceramic loaded during a Glaze & Load action may enter it instead; choose its modifier (−1 / 0 / +1) as you load it.
 
 ### Imperial Recognition

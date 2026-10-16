@@ -33,7 +33,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 - [L375] A player may own at most 3, and at most 1 from each discipline. / 每人至多3项技艺，每门类至多1项。
 - [L376 · L212 · D7] A Form & Decorate Tech adds your second Form & Decorate space. A space added this way may be used later the same round. / 习得坯作技艺即添设你的制坯饰纹第二工位；新添设的工位本轮稍后就可以使用。
 - [A1] This Tech scores 1 VP immediately when you gain it. It is not scored again at game end. / 习得时立即得1分；终局不再另计。
-- [L214] A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits. / 新习得的技艺立即得1分；只要时机允许，本轮就可以使用。
+- [L214] A newly acquired Advanced Tech may be used in the same round if its timing permits. / 新习得的技艺只要时机允许，本轮就可以使用。
 - [R4] Tech abilities are optional. Declining does not use the once-per-round allowance. Valid discounts apply before payment. / 技艺效果可以选用；放弃不消耗“每轮一次”。减免在支付前计算。
 - [L652] Large Throwing Wheel reduces Clay only; Ding's vessel is not a Vase or Censer. / 大陶车只减泥；定窑的额外坯不是瓶或香炉。
 - [L646] Prepared Clay is a Tech effect, not a worker action, and never counts as a Form & Decorate action, so a vessel formed through Prepared Clay is not formed in a Form & Decorate action. / 练泥是技艺效果，不是工人行动，也不算制坯饰纹行动，所以通过练泥制成的坯不是在制坯饰纹行动中制成的。
@@ -43,7 +43,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 - [L375] A player may own at most 3, and at most 1 from each discipline. / 每人至多3项技艺，每门类至多1项。
 - [L376 · L212 · D7] A Form & Decorate Tech adds your second Form & Decorate space. A space added this way may be used later the same round. / 习得坯作技艺即添设你的制坯饰纹第二工位；新添设的工位本轮稍后就可以使用。
 - [A1] This Tech scores 1 VP immediately when you gain it. It is not scored again at game end. / 习得时立即得1分；终局不再另计。
-- [L214] A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits. / 新习得的技艺立即得1分；只要时机允许，本轮就可以使用。
+- [L214] A newly acquired Advanced Tech may be used in the same round if its timing permits. / 新习得的技艺只要时机允许，本轮就可以使用。
 - [R4] Tech abilities are optional. Declining does not use the once-per-round allowance. Valid discounts apply before payment. / 技艺效果可以选用；放弃不消耗“每轮一次”。减免在支付前计算。
 - [L333] Every Decoration costs 2 Coins; the Shifu's Form & Decorate action and Decorator's Kit each reduce one Decoration by 1 Coin. / 每种纹饰都是2铜钱；师傅的制坯饰纹行动与饰坯匣各能使1项纹饰少付1铜钱。
 - [L652] The Shifu's Decoration discount, Decorator's Kit and Ding's 1-Coin vessel are three separate reductions. The first two may apply to the same Decoration (a Carved for 0). Ding's vessel takes neither. / 师傅的纹饰减免、饰坯匣、定窑的1铜钱额外坯是三项各自独立的减免。前两项可以作用于同一项纹饰（刻花可降到0铜钱）；定窑的额外坯两项都不适用。
@@ -54,7 +54,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 - [L375] A player may own at most 3, and at most 1 from each discipline. / 每人至多3项技艺，每门类至多1项。
 - [L376 · L212 · D7] A Form & Decorate Tech adds your second Form & Decorate space. A space added this way may be used later the same round. / 习得坯作技艺即添设你的制坯饰纹第二工位；新添设的工位本轮稍后就可以使用。
 - [A1] This Tech scores 1 VP immediately when you gain it. It is not scored again at game end. / 习得时立即得1分；终局不再另计。
-- [L214] A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits. / 新习得的技艺立即得1分；只要时机允许，本轮就可以使用。
+- [L214] A newly acquired Advanced Tech may be used in the same round if its timing permits. / 新习得的技艺只要时机允许，本轮就可以使用。
 - [R4] Tech abilities are optional. Declining does not use the once-per-round allowance. / 技艺效果可以选用；放弃不消耗“每轮一次”。
 - [L329] Vessel cards are not a hard gameplay limit. If all 10 cards of a Shape are in use, use a suitable proxy until a matching Vessel card becomes available. / 器型卡不是硬性的游戏上限。若某种器型的10张卡都在使用中，先用合适的代用物代替，等有相应的器型卡空出来再换回。
 - [P1] Provisional ruling: Reworking Table may be used when Imperial Priority glazes and loads a vessel, and this uses its once-per-round allowance. The tile triggers "when you glaze and load a Shaped vessel" and does not require the Glaze & Load action. / 暂定裁定：御烧优先为1件坯施釉装窑时，也可以使用改坯案，并消耗改坯案的“每轮一次”。本牌的时机是“当你为1件坯施釉装窑时”，不限于施釉装窑行动。
@@ -65,7 +65,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 - [L375] A player may own at most 3, and at most 1 from each discipline. / 每人至多3项技艺，每门类至多1项。
 - [L376 · L212 · D7] A Form & Decorate Tech adds your second Form & Decorate space. A space added this way may be used later the same round. / 习得坯作技艺即添设你的制坯饰纹第二工位；新添设的工位本轮稍后就可以使用。
 - [A1] This Tech scores 1 VP immediately when you gain it. It is not scored again at game end. / 习得时立即得1分；终局不再另计。
-- [L214] A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits. / 新习得的技艺立即得1分；只要时机允许，本轮就可以使用。
+- [L214] A newly acquired Advanced Tech may be used in the same round if its timing permits. / 新习得的技艺只要时机允许，本轮就可以使用。
 - [R4] Tech abilities are optional. Declining does not use the once-per-round allowance. Pay all costs in full and apply valid discounts before payment. / 技艺效果可以选用；放弃不消耗“每轮一次”。必须足额支付费用，减免在支付前计算。
 - [L646] Prepared Clay is a Tech effect, not a worker action. It never counts as a Form & Decorate action and does not trigger effects that require that action. / 练泥是技艺效果，不是工人行动。它不算制坯饰纹行动，也不触发需要该行动的效果。
 - [L486 · L646 · L615] Ding triggers during its Form & Decorate action, so forming through Prepared Clay does not trigger Ding; Large Throwing Wheel likewise needs a Form & Decorate action. / 定窑在其制坯饰纹行动中触发，所以通过练泥制坯不会触发定窑；大陶车同样需要制坯饰纹行动。
@@ -78,7 +78,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 - [L375] A player may own at most 3, and at most 1 from each discipline. / 每人至多3项技艺，每门类至多1项。
 - [L376 · L212 · D7] A Form & Decorate Tech adds your second Form & Decorate space. A space added this way may be used later the same round. / 习得坯作技艺即添设你的制坯饰纹第二工位；新添设的工位本轮稍后就可以使用。
 - [A1] This Tech scores 1 VP immediately when you gain it. It is not scored again at game end. / 习得时立即得1分；终局不再另计。
-- [L214] A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits. / 新习得的技艺立即得1分；只要时机允许，本轮就可以使用。
+- [L214] A newly acquired Advanced Tech may be used in the same round if its timing permits. / 新习得的技艺只要时机允许，本轮就可以使用。
 - [R4] Tech abilities are optional. Declining does not use the once-per-round allowance: an Apprentice that does not use it resolves the Apprentice effect, and the tile stays available for another Apprentice this round. / 技艺效果可以选用；放弃不消耗“每轮一次”：不使用时，该学徒照常结算学徒效果，本轮仍可以留给另一名学徒使用。
 - [R12] Senior Apprentice resolves the whole Shifu effect, including the Materials Yard option to pay 1 Coin for +1 Clay and +1 Wood. It never applies at the Magistrate's Hall. / 高徒结算完整的师傅效果，在泥柴场包括“可付1铜钱再得1泥1柴”；不适用于州衙。
 - [L653] Senior Apprentice at the Commission Market gives that Apprentice the Shifu's 2 reservations, the top-3 selection on 1 of them, and a resource after each. / 高徒派往瓷牙行时，该学徒获得师傅的2次承接、其中1次可看三取一，以及每次承接后的1份资源。
@@ -111,7 +111,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 - [L375] A player may own at most 3, and at most 1 from each discipline. / 每人至多3项技艺，每门类至多1项。
 - [L376 · L212 · D7] A Glazing & Loading Tech adds your second Glaze & Load space. A space added this way may be used later the same round. / 习得釉作技艺即添设施釉装窑第二工位；新添设的工位本轮稍后就可以使用。
 - [A1] This Tech scores 1 VP immediately when you gain it. It is not scored again at game end. / 习得时立即得1分；终局不再另计。
-- [L214] A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits. / 新习得的技艺立即得1分；只要时机允许，本轮就可以使用。
+- [L214] A newly acquired Advanced Tech may be used in the same round if its timing permits. / 新习得的技艺只要时机允许，本轮就可以使用。
 - [INT Kiln Tending] Kiln Tending resolves automatically on the first qualifying Glaze & Load action each round; saving it gains nothing. / 数字版在每轮第一次符合条件的施釉装窑行动后自动结算看火；留到以后没有任何好处。
 - [L65] Loading includes placing a vessel in your empty Imperial Kiln, so a vessel the action loads into the Imperial Kiln counts as loaded. / 装窑包括把坯放进你空着的御窑，所以该行动装进御窑的器物也算已装窑。
 - [L293 · L646] Imperial Priority is a token effect, not a Glaze & Load action, so loading through it does not trigger Kiln Tending. / 御烧优先是令牌效果，不是施釉装窑行动，所以通过它装窑不会触发看火。
@@ -121,7 +121,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 - [L375] A player may own at most 3, and at most 1 from each discipline. / 每人至多3项技艺，每门类至多1项。
 - [L376 · L212 · D7] A Glazing & Loading Tech adds your second Glaze & Load space. A space added this way may be used later the same round. / 习得釉作技艺即添设施釉装窑第二工位；新添设的工位本轮稍后就可以使用。
 - [A1] This Tech scores 1 VP immediately when you gain it. It is not scored again at game end. / 习得时立即得1分；终局不再另计。
-- [L214] A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits. / 新习得的技艺立即得1分；只要时机允许，本轮就可以使用。
+- [L214] A newly acquired Advanced Tech may be used in the same round if its timing permits. / 新习得的技艺只要时机允许，本轮就可以使用。
 - [R4] Tech abilities are optional. Declining does not use the once-per-round allowance. / 技艺效果可以选用；放弃不消耗“每轮一次”。
 - [L647] Kiln Furniture, Inverted Firing and Setter's Mark affect the Shared Kiln only. The Imperial Kiln holds 1 ceramic and uses its own modifier. / 支烧窑具、覆烧、窑位签只作用于共窑。御窑只容纳1件，用它自己的御窑修正。
 - [L269] A Heat marker is not a zone modifier: it stacks with Kiln Furniture. / 火标不是温区修正：可以与支烧窑具叠加。
@@ -133,7 +133,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 - [L375] A player may own at most 3, and at most 1 from each discipline. / 每人至多3项技艺，每门类至多1项。
 - [L376 · L212 · D7] A Glazing & Loading Tech adds your second Glaze & Load space. A space added this way may be used later the same round. / 习得釉作技艺即添设施釉装窑第二工位；新添设的工位本轮稍后就可以使用。
 - [A1] This Tech scores 1 VP immediately when you gain it. It is not scored again at game end. / 习得时立即得1分；终局不再另计。
-- [L214] A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits. / 新习得的技艺立即得1分；只要时机允许，本轮就可以使用。
+- [L214] A newly acquired Advanced Tech may be used in the same round if its timing permits. / 新习得的技艺只要时机允许，本轮就可以使用。
 - [R4] Tech abilities are optional. Declining does not use the once-per-round allowance. / 技艺效果可以选用；放弃不消耗“每轮一次”。
 - [R8] The newly loaded ceramic must be a Bowl, Plate or Brush Washer. It may join any active space holding exactly 1 of your ceramics, including one loaded earlier by the same action. Both ceramics use the space's printed modifier, or the Kiln Furniture modifier if Kiln Furniture is in that space. / 新装进的器物必须是碗、盘或笔洗；它可以放进任意一个恰好已有1件你的器物的启用窑位，包括本次行动先装进的那件。两件器物都用该窑位的温区修正；如果该窑位垫有支烧窑具，就用窑具修正。
 - [R5] While Inverted Firing is unused this round, an active space holding exactly 1 of your ceramics is a legal destination for a Bowl, Plate or Brush Washer when checking whether a Glaze & Load placement is legal. / 覆烧本轮还没有使用时，恰好已有1件你的器物的启用窑位，算作碗、盘或笔洗的合法去处，用于判断能否派工到施釉装窑。
@@ -154,7 +154,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 - [L375] A player may own at most 3, and at most 1 from each discipline. / 每人至多3项技艺，每门类至多1项。
 - [L376 · L212 · D7] A Glazing & Loading Tech adds your second Glaze & Load space. A space added this way may be used later the same round. / 习得釉作技艺即添设施釉装窑第二工位；新添设的工位本轮稍后就可以使用。
 - [A1] This Tech scores 1 VP immediately when you gain it. It is not scored again at game end. / 习得时立即得1分；终局不再另计。
-- [L214] A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits. / 新习得的技艺立即得1分；只要时机允许，本轮就可以使用。
+- [L214] A newly acquired Advanced Tech may be used in the same round if its timing permits. / 新习得的技艺只要时机允许，本轮就可以使用。
 - [R4] Tech abilities are optional. Declining does not use the once-per-round allowance. / 技艺效果可以选用；放弃不消耗“每轮一次”。
 - [L646] Canal Barge is a Tech effect, not a worker action, and never counts as an Order-Phase action; Canal Barge triggers Ru and Guan. / 漕船是技艺效果，不是工人行动，不算交货阶段的完成委托；漕船触发汝窑与官窑。
 - [R6] Canal Barge completes an Order for every completion effect, including Ru, Guan, Tribute Ware and Crackle wildcards. / 对所有完成委托时的效果而言，漕船都算作完成委托：会触发汝窑、官窑与贡瓷，开片器也可以作任意一种纹饰。
@@ -166,7 +166,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 - [L375] A player may own at most 3, and at most 1 from each discipline. / 每人至多3项技艺，每门类至多1项。
 - [L376 · D7] Firing Techs add no personal space. / 火作技艺不添设工位。
 - [A1] This Tech scores 1 VP immediately when you gain it. It is not scored again at game end. / 习得时立即得1分；终局不再另计。
-- [L214] A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits. / 新习得的技艺立即得1分；只要时机允许，本轮就可以使用。
+- [L214] A newly acquired Advanced Tech may be used in the same round if its timing permits. / 新习得的技艺只要时机允许，本轮就可以使用。
 - [R4] Tech abilities are optional. Declining does not use the once-per-round allowance. / 技艺效果可以选用；放弃不消耗“每轮一次”。
 - [L651] Protective Saggars and Second Firing affect only your own eligible ceramics in the current firing, in the Shared Kiln or your Imperial Kiln; never ceramics fired in earlier rounds. / 匣钵护烧与复烧只作用于你本次烧成中（共窑或御窑）符合条件的器物，不作用于先前各轮烧成的器物。
 - [L654] Ge's Crackle may be resolved after Protective Saggars on the same ceramic (Flawed → Standard → Fine, once a round). / 哥窑开片可以在匣钵护烧之后作用于同一件器物（瑕品→良品→上品，每轮一次）。
@@ -178,9 +178,9 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 - [L375] A player may own at most 3, and at most 1 from each discipline. / 每人至多3项技艺，每门类至多1项。
 - [L376 · D7] Firing Techs add no personal space. / 火作技艺不添设工位。
 - [A1] This Tech scores 1 VP immediately when you gain it. It is not scored again at game end. / 习得时立即得1分；终局不再另计。
-- [L214] A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits. / 新习得的技艺立即得1分；只要时机允许，本轮就可以使用。
+- [L214] A newly acquired Advanced Tech may be used in the same round if its timing permits. / 新习得的技艺只要时机允许，本轮就可以使用。
 - [R4] Tech abilities are optional. Pay all costs in full. / 技艺效果可以选用；必须足额支付费用。
-- [L261] A player participates in Contributions only if they have at least 1 ceramic in the Shared Kiln. A ceramic in an Imperial Kiln gives no say over the shared fire. / 只有在共窑中至少有1件器物的玩家才参与控火；不能凭御窑中的器物对共窑的火发表意见。
+- [L261] A player participates in Contributions only if they have at least 1 ceramic in the Shared Kiln. A ceramic in an Imperial Kiln gives no say over the shared fire. / 只有在共窑中至少有1件器物的玩家才参与控火；玩家不能凭御窑中的器物对共窑的火发表意见。
 - [L672] Each participant secretly chooses Bank, Tend or Stoke and must be able to pay its Wood cost; with a Fuel Ledger commitment that is 2 Wood. / 每位控火者暗选压火、守火或添柴，而且必须付得起它的柴费；暗附柴簿加柴时，柴费一共是2柴。
 - [L504] Contribution choices and Fuel Ledger commitments remain secret until revealed. Wood committed to a Contribution remains in that player's total until it is paid. / 控火选择与柴簿加柴在亮牌前保密。为控火押下的柴，在支付之前仍计入该玩家的总数。
 - [L673 · L674] Reveal all Contribution cards and committed Wood simultaneously, then pay all costs. Start at the Kiln Die result, add all final Contribution modifiers, then clamp to 0–5. / 同时亮出所有控火牌与暗附的柴，然后支付全部费用；以窑骰点数为起点，加上所有最终的控火修正（包括柴簿加柴后的−2／+2），再限定在0–5。
@@ -190,7 +190,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 - [L375] A player may own at most 3, and at most 1 from each discipline. / 每人至多3项技艺，每门类至多1项。
 - [L376 · D7] Firing Techs add no personal space. / 火作技艺不添设工位。
 - [A1] This Tech scores 1 VP immediately when you gain it. It is not scored again at game end. / 习得时立即得1分；终局不再另计。
-- [L214] A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits. / 新习得的技艺立即得1分；只要时机允许，本轮就可以使用。
+- [L214] A newly acquired Advanced Tech may be used in the same round if its timing permits. / 新习得的技艺只要时机允许，本轮就可以使用。
 - [R4] Tech abilities are optional. Declining does not use the once-per-round allowance. / 技艺效果可以选用；放弃不消耗“每轮一次”。
 - [L649] Test Pieces resolves in First Player order, before any Heat marker is turned. A buried card stays on the bottom. You may discuss what you saw but may not show the card. / 火照按起始玩家顺序结算，在任何火标翻定之前。置底的牌留在牌堆底。你可以谈论看到的内容，但不能把牌给别人看。
 - [INT Test Pieces] Eligibility counts any of your ceramics in this firing, Imperial Kiln included. The Wood payment and the bury are public; the value you looked at is private to you. / 判断资格时，你本次烧成中的任何器物都算，包括御窑中的器物。付柴与置底是公开信息，你看到的内容只有你自己知道。
@@ -201,7 +201,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 - [L375] A player may own at most 3, and at most 1 from each discipline. / 每人至多3项技艺，每门类至多1项。
 - [L376 · D7] Firing Techs add no personal space. / 火作技艺不添设工位。
 - [A1] This Tech scores 1 VP immediately when you gain it. It is not scored again at game end. / 习得时立即得1分；终局不再另计。
-- [L214] A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits. / 新习得的技艺立即得1分；只要时机允许，本轮就可以使用。
+- [L214] A newly acquired Advanced Tech may be used in the same round if its timing permits. / 新习得的技艺只要时机允许，本轮就可以使用。
 - [R4] Tech abilities are optional. Declining does not use the once-per-round allowance. / 技艺效果可以选用；放弃不消耗“每轮一次”。
 - [L651] Second Firing affects only your own eligible ceramics in the current firing, in the Shared Kiln or your Imperial Kiln; never ceramics fired in earlier rounds. Second Firing's extra Fire card changes nothing for any other ceramic. / 复烧只作用于你本次烧成中（共窑或御窑）符合条件的器物，不作用于先前各轮烧成的器物；复烧额外翻出的窑火牌不影响任何其他器物。
 - [INT Imperial Second Firing] On an Imperial Kiln ceramic, Second Firing keeps the same Kiln Die result, the same Imperial modifier and the same Heat marker, with the new Fire card. / 复烧御窑中的器物时，用相同的窑骰点数、御窑修正与火标，配合新的窑火修正重新计算。
@@ -215,7 +215,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 - [L375] A player may own at most 3, and at most 1 from each discipline. / 每人至多3项技艺，每门类至多1项。
 - [L376 · D7] Firing Techs add no personal space. / 火作技艺不添设工位。
 - [A1] This Tech scores 1 VP immediately when you gain it. It is not scored again at game end. / 习得时立即得1分；终局不再另计。
-- [L214] A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits. / 新习得的技艺立即得1分；只要时机允许，本轮就可以使用。
+- [L214] A newly acquired Advanced Tech may be used in the same round if its timing permits. / 新习得的技艺只要时机允许，本轮就可以使用。
 - [R4] Tech abilities are optional. Declining does not use the once-per-round allowance. / 技艺效果可以选用；放弃不消耗“每轮一次”。
 - [L648] A ceramic carries at most 1 marker. Kiln Master's marker and your own Heat marker may not sit on the same ceramic. Jun's adjustment applies on top of either. Markers stay in place through a Second Firing recalculation. / 每件器物至多带1个火标；窑工标与你自己的火标不能放在同一件器物上。钧窑的调整叠加在二者之上。复烧重算时，火标留在原处。
 - [INT Heat-marker step] Within your turn of the Heat-marker step you choose the order of your own marker and Kiln Master. If your own marker is returned, Kiln Master may then go on that ceramic. / 翻火标步骤中轮到你时，由你决定自己的火标与窑工标的先后；如果你先收回了自己的火标，窑工标就可以放到那件器物上。
@@ -227,7 +227,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 - [L375] A player may own at most 3, and at most 1 from each discipline. / 每人至多3项技艺，每门类至多1项。
 - [L376 · D7] Firing Techs add no personal space. / 火作技艺不添设工位。
 - [A1] This Tech scores 1 VP immediately when you gain it. It is not scored again at game end. / 习得时立即得1分；终局不再另计。
-- [L214] A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits. / 新习得的技艺立即得1分；只要时机允许，本轮就可以使用。
+- [L214] A newly acquired Advanced Tech may be used in the same round if its timing permits. / 新习得的技艺只要时机允许，本轮就可以使用。
 - [R4] Tech abilities are optional. Declining does not use the once-per-round allowance. / 技艺效果可以选用；放弃不消耗“每轮一次”。
 - [R13] Tribute Ware's bonus Crown advances Recognition, or scores 1 VP past Recognition 4. It is not a printed Crown: it does not trigger Guan's "showing a Crown" and does not count for tie-breaker 2. / 贡瓷的额外御令会推进御府声望，到达声望4之后改为得1分；但它不是委托上印有的御令，不触发官窑，也不计入平局判定②。
 - [R6] An Order completed with Canal Barge triggers Tribute Ware. / 通过漕船完成的委托也会触发贡瓷。
@@ -436,7 +436,7 @@ Status: prose. This file is **outside the rules fingerprint**. It is not data, i
 - [L279] Flawed ceramics cannot complete Orders. / 瑕品不能用于完成委托。
 - [L470 · INT Ge Crackle] Each Crackle ceramic may count as having any one Decoration for that Order's Decoration requirements; its printed Decoration is unchanged. / 每件开片器都可以视为具有任意一种纹饰，以满足该委托的纹饰要求；它原本的纹饰不变。
 - [L654] A Crackle ceramic cannot fill a Masterpiece requirement, including Painted Masterpiece Orders. / 开片器不能满足任何臻品要求，包括画花臻品委托。
-- [L416] Resolve 1 Crown at a time. Each Crown advances Imperial Recognition by 1 until you reach Recognition 4; after that, each further Crown scores 1 VP immediately. Resolve every milestone crossed. / 逐个结算御令。每个御令使御府声望推进1格，直到声望4。到达声望4之后，此后每个御令立即得1分。途经的每一格奖励都要结算。
+- [L416] Resolve 1 Crown at a time. Each Crown advances Imperial Recognition by 1 until you reach Recognition 4; after that, each further Crown scores 1 VP immediately. Resolve every milestone crossed. / 逐个结算御令。每个御令使御府声望推进1格，直到声望4。到达声望4之后，每再获得1个御令，立即得1分。途经的每一格奖励都要结算。
 - [R13] Tribute Ware's bonus Crown is not a printed Crown: it does not trigger Guan and does not count for tie-breaker 2. / 贡瓷的额外御令不是委托上印有的御令：它不触发官窑，也不计入平局判定②。
 - [L498] Tie-breaker 2 counts Crown icons printed across completed Orders. / 平局判定②统计已完成委托上印的御令总数。
 - [L128 · L130] At the start of Rounds 2–5, discard the 2 leftmost face-up Main Orders, slide the remaining 4 left and reveal 2 new Orders to restore the display to 6. / 第2–5轮开工时轮换委托榜：弃置最左边的2张主委托，余下4张向左推，再翻开2张新委托，使委托榜恢复为6张。

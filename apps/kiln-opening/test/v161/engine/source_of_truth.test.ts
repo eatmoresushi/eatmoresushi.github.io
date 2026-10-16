@@ -58,9 +58,9 @@ interface AssetSpecs {
 const ASSETS = JSON.parse(read("data/asset_specs.json")) as AssetSpecs;
 
 describe("the V1.6.1 rulebook is the source of truth", () => {
-  it("matches the checksum the audit records (owner amendments A1 and A2, owner wording edits of 2026-10-16)", () => {
+  it("matches the checksum the audit records (owner amendments A1 and A2, owner wording edits of 2026-10-16 and 2026-10-17)", () => {
     const recorded = /SHA-256: `([0-9a-f]{64})`/.exec(AUDIT)?.[1];
-    expect(recorded).toBe("1e9dfc81a70de67b48770b445b584a616e8fb060eb6b554fbbd77cdf3a881f5f");
+    expect(recorded).toBe("173ec74ade86587c671d65f4e7c2171c9fb5f70960fae2d5d8451744cd2785a1");
     const actual = createHash("sha256").update(readFileSync(join(ROOT, SOURCE_PATH))).digest("hex");
     expect(actual).toBe(recorded);
   });
@@ -88,7 +88,7 @@ describe("the V1.6.1 rulebook is the source of truth", () => {
     // matching the English rulebook. It is the source of every Tech and Kiln `abilityZh`; the
     // English rulebook remains the only mechanical authority.
     const zh = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.1_ZH.md"));
-    expect(createHash("sha256").update(zh).digest("hex")).toBe("907d9aa1dbdb5c49414633cf301c5eddbfd8b32b4e55bc2a7c7af3727e72b755");
+    expect(createHash("sha256").update(zh).digest("hex")).toBe("d6d2f06025b3f64545fb03326ebee390a3cfa03e60b4008c08723204fcfa2502");
     expect(zh.toString("utf8")).toContain("规则如有出入，以英文版规则书为准");
   });
 

@@ -38,8 +38,8 @@
           "source": "A1"
         },
         {
-          "en": "A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺立即得1分；只要时机允许，本轮就可以使用。",
+          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
+          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
           "source": "L214"
         },
         {
@@ -97,8 +97,8 @@
           "source": "A1"
         },
         {
-          "en": "A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺立即得1分；只要时机允许，本轮就可以使用。",
+          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
+          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
           "source": "L214"
         },
         {
@@ -154,8 +154,8 @@
           "source": "A1"
         },
         {
-          "en": "A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺立即得1分；只要时机允许，本轮就可以使用。",
+          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
+          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
           "source": "L214"
         },
         {
@@ -213,8 +213,8 @@
           "source": "A1"
         },
         {
-          "en": "A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺立即得1分；只要时机允许，本轮就可以使用。",
+          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
+          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
           "source": "L214"
         },
         {
@@ -285,8 +285,8 @@
           "source": "A1"
         },
         {
-          "en": "A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺立即得1分；只要时机允许，本轮就可以使用。",
+          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
+          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
           "source": "L214"
         },
         {
@@ -469,8 +469,8 @@
           "source": "A1"
         },
         {
-          "en": "A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺立即得1分；只要时机允许，本轮就可以使用。",
+          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
+          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
           "source": "L214"
         },
         {
@@ -527,8 +527,8 @@
           "source": "A1"
         },
         {
-          "en": "A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺立即得1分；只要时机允许，本轮就可以使用。",
+          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
+          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
           "source": "L214"
         },
         {
@@ -595,8 +595,8 @@
           "source": "A1"
         },
         {
-          "en": "A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺立即得1分；只要时机允许，本轮就可以使用。",
+          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
+          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
           "source": "L214"
         },
         {
@@ -704,8 +704,8 @@
           "source": "A1"
         },
         {
-          "en": "A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺立即得1分；只要时机允许，本轮就可以使用。",
+          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
+          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
           "source": "L214"
         },
         {
@@ -768,8 +768,8 @@
           "source": "A1"
         },
         {
-          "en": "A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺立即得1分；只要时机允许，本轮就可以使用。",
+          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
+          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
           "source": "L214"
         },
         {
@@ -833,8 +833,8 @@
           "source": "A1"
         },
         {
-          "en": "A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺立即得1分；只要时机允许，本轮就可以使用。",
+          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
+          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
           "source": "L214"
         },
         {
@@ -844,7 +844,7 @@
         },
         {
           "en": "A player participates in Contributions only if they have at least 1 ceramic in the Shared Kiln. A ceramic in an Imperial Kiln gives no say over the shared fire.",
-          "zh": "只有在共窑中至少有1件器物的玩家才参与控火；不能凭御窑中的器物对共窑的火发表意见。",
+          "zh": "只有在共窑中至少有1件器物的玩家才参与控火；玩家不能凭御窑中的器物对共窑的火发表意见。",
           "source": "L261"
         },
         {
@@ -897,8 +897,8 @@
           "source": "A1"
         },
         {
-          "en": "A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺立即得1分；只要时机允许，本轮就可以使用。",
+          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
+          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
           "source": "L214"
         },
         {
@@ -954,8 +954,8 @@
           "source": "A1"
         },
         {
-          "en": "A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺立即得1分；只要时机允许，本轮就可以使用。",
+          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
+          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
           "source": "L214"
         },
         {
@@ -1031,8 +1031,8 @@
           "source": "A1"
         },
         {
-          "en": "A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺立即得1分；只要时机允许，本轮就可以使用。",
+          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
+          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
           "source": "L214"
         },
         {
@@ -1095,8 +1095,8 @@
           "source": "A1"
         },
         {
-          "en": "A newly acquired Advanced Tech scores 1 VP immediately and may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺立即得1分；只要时机允许，本轮就可以使用。",
+          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
+          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
           "source": "L214"
         },
         {
