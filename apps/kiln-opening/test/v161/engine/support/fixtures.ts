@@ -50,6 +50,8 @@ import {
   heatMarkerOf,
   imperialKilnCeramic,
   loadedCeramics,
+  lookOrderIds,
+  lookTechIds,
   lookup,
   player,
   takeVesselCard,
@@ -308,7 +310,7 @@ function multisetMinus(items: readonly FireModifier[], remove: readonly FireModi
 }
 
 function assignTechZones(state: GameState, spec: StateSpec): void {
-  const lookTechs = state.hidden.pendingLook?.kind === "guild_inspection" ? state.hidden.pendingLook.techIds : [];
+  const lookTechs = lookTechIds(state.hidden.pendingLook);
   for (const discipline of DISCIPLINES) {
     const owned = state.playerOrder.flatMap((pid) => player(state, pid).techs.map((tech) => tech.id));
     const pool = withoutAll(techsOfDiscipline(discipline), [...owned, ...lookTechs]);
@@ -327,7 +329,7 @@ function assignTechZones(state: GameState, spec: StateSpec): void {
 function assignOrderZones(state: GameState, spec: StateSpec): void {
   const hands = state.playerOrder.flatMap((pid) => state.hidden.orderHands[pid] ?? []);
   const look = state.hidden.pendingLook;
-  const looked = look !== null && look.kind !== "guild_inspection" ? look.orderIds : [];
+  const looked = lookOrderIds(look);
   const fixed = [...hands, ...looked, ...(spec.display ?? []).filter((id): id is OrderId => id !== null)];
   const pinned = [...fixed, ...(spec.mainDeck ?? []), ...(spec.mainDiscard ?? [])];
   if (new Set(pinned).size !== pinned.length) {
@@ -422,8 +424,8 @@ export function buildState(spec: StateSpec = {}): GameState {
   }
 
   const state: GameState = {
-    schemaVersion: 6,
-    rulesVersion: "1.6.1",
+    schemaVersion: 7,
+    rulesVersion: "1.6.2",
     gameId: spec.gameId ?? "test-game",
     revision: 0,
     eventSequence: 0,
@@ -536,6 +538,9 @@ export function giveTech(
   const look = state.hidden.pendingLook;
   if (look?.kind === "guild_inspection") {
     look.techIds = look.techIds.filter((id) => id !== techId);
+  }
+  if (look?.kind === "colour_samples" && look.inspection !== null) {
+    look.inspection.techIds = look.inspection.techIds.filter((id) => id !== techId);
   }
   if (wasDisplayed) {
     const refill = state.hidden.techDecks[discipline].shift();
@@ -823,12 +828,12 @@ export function cardZones(state: GameState): {
     ...hidden.startingBox,
     ...state.market.display.filter((id): id is OrderId => id !== null),
     ...state.playerOrder.flatMap((pid) => player(state, pid).completedOrders.map((record) => record.orderId)),
-    ...(look !== null && look.kind !== "guild_inspection" ? look.orderIds : []),
+    ...lookOrderIds(look),
   ];
   const techs: TechId[] = [
     ...state.playerOrder.flatMap((pid) => player(state, pid).techs.map((tech) => tech.id)),
     ...DISCIPLINES.flatMap((d) => [...state.techDisplay[d], ...hidden.techDecks[d]]),
-    ...(look?.kind === "guild_inspection" ? look.techIds : []),
+    ...lookTechIds(look),
   ];
   const fire: FireModifier[] = [...hidden.fireDeck, ...state.fireDiscard];
   if (state.firing?.fireModifier !== null && state.firing?.fireModifier !== undefined) {

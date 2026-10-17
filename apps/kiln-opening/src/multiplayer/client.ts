@@ -1,5 +1,5 @@
 /**
- * Browser transport for the V1.6.1 multiplayer service: the Supabase Edge Function in
+ * Browser transport for the V1.6.2 multiplayer service: the Supabase Edge Function in
  * production, the Vite test backend in local E2E runs.
  *
  * The client never decides who acts by a rule of its own: `shouldAdvanceComputers` routes
@@ -25,8 +25,8 @@ import type {
   RoomConnection,
 } from "./types.ts";
 
-const EXPECTED_RULES_VERSION = "1.6.1";
-const EXPECTED_SCHEMA_VERSION = 6;
+const EXPECTED_RULES_VERSION = "1.6.2";
+const EXPECTED_SCHEMA_VERSION = 7;
 
 function record(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -61,7 +61,7 @@ export function snapshotCompatibilityError(response: unknown): MultiplayerError 
     return {
       code: "UNSUPPORTED_RULES_VERSION",
       message:
-        "The multiplayer service returned a room or saved game that does not match V1.6.1. Update the game service and create a compatible room before continuing.",
+        "The multiplayer service returned a room or saved game that does not match V1.6.2. Update the game service and create a compatible room before continuing.",
       details: { expectedRulesVersion: EXPECTED_RULES_VERSION, expectedSchemaVersion: EXPECTED_SCHEMA_VERSION },
       currentRevision: typeof revision === "number" && Number.isFinite(revision) ? revision : null,
     };

@@ -79,9 +79,11 @@ describe("unlocking by discipline (L212, L376)", () => {
     // The Guild Hall acquisition grants the Tech (`grantTech`), which removes the Cover token.
     const ctx = testContext();
     // Take T16 out of its zone first, as the Guild Hall does, so every Tech stays in exactly one
-    // zone (card conservation, DESIGN §8.3).
+    // zone (card conservation, DESIGN §8.3), and refill its position as the end of the taker's
+    // turn does (v1.6.2 L209).
     t.state.techDisplay.workshop = t.state.techDisplay.workshop.filter((id) => id !== "T16");
     t.state.hidden.techDecks.workshop = t.state.hidden.techDecks.workshop.filter((id) => id !== "T16");
+    t.state.techDisplay.workshop.push(t.state.hidden.techDecks.workshop.shift()!);
     grantTech(t.state, "p1", "T16", ctx);
     expect(types(ctx.events)).toEqual(["PERSONAL_SPACE_UNLOCKED"]);
     const events = t.act("p1", fd("p1:apprentice:2"));

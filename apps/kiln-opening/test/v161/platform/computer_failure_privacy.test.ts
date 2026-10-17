@@ -14,7 +14,7 @@ const COMPUTER_HAND: OrderId[] = ["O03", "O04", "S05"];
 
 function leakingPolicy(): ComputerPolicy {
   return {
-    version: "rules-v1.6.1-leaky-001",
+    version: "rules-v1.6.2-leaky-001",
     label: "Leaky",
     chooseCommand(view: ActorView): AuthoritativeCommand | null {
       throw new Error(`cannot decide with hand ${view.own.orderHand.join(",")}`);
@@ -88,7 +88,7 @@ describe("computer failure privacy", () => {
   it("falls back from a malformed or illegal proposal", async () => {
     for (const proposal of [{ type: "NOT_A_COMMAND" }, { type: "PLACE_MAGISTRATES_HALL", workerId: "P1:shifu" }]) {
       const policy: ComputerPolicy = {
-        version: "rules-v1.6.1-wrong-001",
+        version: "rules-v1.6.2-wrong-001",
         label: "Wrong",
         chooseCommand: () => proposal as unknown as AuthoritativeCommand,
       };

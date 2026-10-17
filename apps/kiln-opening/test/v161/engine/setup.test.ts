@@ -61,8 +61,8 @@ function countBy<T extends string | number>(items: readonly T[]): Map<T, number>
 describe("createInitialState for 2, 3 and 4 players (L98–112)", () => {
   it.each(COUNTS)("%i players: versions, round, phase and empty boards", (n) => {
     const { state } = created(11, n);
-    expect(state.schemaVersion).toBe(6);
-    expect(state.rulesVersion).toBe("1.6.1");
+    expect(state.schemaVersion).toBe(7);
+    expect(state.rulesVersion).toBe("1.6.2");
     expect(state.gameId).toBe("g-setup");
     expect(state.playerCount).toBe(n);
     expect(state.playerOrder).toEqual(Array.from({ length: n }, (_, seat) => `p${seat + 1}`));

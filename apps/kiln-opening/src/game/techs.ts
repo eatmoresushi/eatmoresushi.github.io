@@ -1,11 +1,11 @@
 /**
  * Owned-Tech helpers: readiness, hand limit, acquisition limits, prices, unlocking and the
- * Tech's VP on gain (L208–214, L374–379, Appendix B, owner amendment A1).
+ * Tech's VP on gain (v1.6.2 L206–214, L374–379, Appendix B, owner amendment A1).
  *
  * Layer 2 (imports `state.ts` within P0).
  */
 
-import { GAME_CONFIG, LOCATIONS, TECHS } from "./content.ts";
+import { GAME_CONFIG, TECHS } from "./content.ts";
 import { invariant, ruleError } from "./errors.ts";
 import { emit, player } from "./state.ts";
 import type {
@@ -16,7 +16,6 @@ import type {
   PlayerState,
   ResolveContext,
   TechId,
-  WorkerEffect,
 } from "./types.ts";
 
 function ownedTech(p: PlayerState, techId: TechId): OwnedTechState | undefined {
@@ -88,9 +87,10 @@ export function acquisitionError(p: PlayerState, techId: TechId): GameRuleError 
   return null;
 }
 
-/** Printed cost, minus the Guild Hall Shifu discount, minimum 0 (L207–208). */
-export function techPrice(techId: TechId, effect: WorkerEffect): number {
-  return Math.max(0, TECHS[techId].cost - LOCATIONS.guild_hall.effects[effect].discount);
+/** What a Guild Hall take pays: the printed cost, for the Apprentice and the Shifu alike
+ * (v1.6.2 L206–207; V1.6.2 removed the Shifu discount). */
+export function techPrice(techId: TechId): number {
+  return TECHS[techId].cost;
 }
 
 /** The VP a Tech scores the moment it is gained (owner amendment A1; `TECH_ACQUIRED.vp`). */

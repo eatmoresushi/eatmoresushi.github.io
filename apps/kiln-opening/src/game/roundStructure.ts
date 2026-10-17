@@ -19,8 +19,8 @@ export const ROUND_PHASE_IDS: readonly RoundPhaseId[] = Object.freeze(["start", 
 function loadRoundStructure(raw: unknown): RoundStructureDefinition {
   const file = raw as RoundStructureDefinition;
   const problems: string[] = [];
-  if (file.rulesVersion !== "1.6.1") {
-    problems.push(`rulesVersion is ${String(file.rulesVersion)}, not 1.6.1`);
+  if (file.rulesVersion !== "1.6.2") {
+    problems.push(`rulesVersion is ${String(file.rulesVersion)}, not 1.6.2`);
   }
   if (!Number.isSafeInteger(file.roundCount) || file.roundCount < 1) {
     problems.push(`roundCount ${String(file.roundCount)} is not a positive integer`);

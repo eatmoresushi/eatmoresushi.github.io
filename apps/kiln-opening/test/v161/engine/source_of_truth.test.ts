@@ -16,14 +16,19 @@ import type { TechId } from "../../../src/game/types.ts";
 
 /**
  * Successor of the V1.2.7/V1.4 `source_of_truth` and `rulebook_assets` suites (DESIGN §8.2):
- * the checked-in V1.6.1 rulebook is the one the audit fingerprinted, AGENTS.md and GAME_RULES.md
- * point at it, and every data file — the asset contract included — uses only current IDs.
+ * the checked-in V1.6.2 rulebook files are the ones the audit fingerprinted, AGENTS.md and
+ * GAME_RULES.md point at them, the V1.6.1 rulebook stays as unchanged history, and every data
+ * file — the asset contract included — is stamped 1.6.2 and uses only current IDs. The V1.6.2
+ * engine track moves the data in stages (docs/ENGINE_V1.6.2_DELTA.md §3); the content contract
+ * test checks which parts still derive from V1.6.1.
  */
 
 const ROOT = join(import.meta.dirname, "../../..");
 const read = (path: string): string => readFileSync(join(ROOT, path), "utf8");
-const SOURCE_PATH = "docs/KILN_OPENING_v1.6.1_EN_SOURCE.md";
-const AUDIT = read("docs/RULEBOOK_AUDIT_V1.6.1.md");
+const sha256 = (path: string): string => createHash("sha256").update(readFileSync(join(ROOT, path))).digest("hex");
+const SOURCE_PATH = "docs/KILN_OPENING_v1.6.2_EN_SOURCE.md";
+const AUDIT = read("docs/RULEBOOK_AUDIT_V1.6.2.md");
+const AUDIT_V161 = read("docs/RULEBOOK_AUDIT_V1.6.1.md");
 const AGENTS = read("AGENTS.md");
 const GAME_RULES = read("docs/GAME_RULES.md");
 const DATA_FILES = readdirSync(join(ROOT, "data")).filter((name) => name.endsWith(".json")).sort();
@@ -57,55 +62,67 @@ interface AssetSpecs {
 
 const ASSETS = JSON.parse(read("data/asset_specs.json")) as AssetSpecs;
 
-describe("the V1.6.1 rulebook is the source of truth", () => {
-  it("matches the checksum the audit records (owner amendments A1 and A2, owner wording edits of 2026-10-16 and 2026-10-17)", () => {
-    const recorded = /SHA-256: `([0-9a-f]{64})`/.exec(AUDIT)?.[1];
-    expect(recorded).toBe("173ec74ade86587c671d65f4e7c2171c9fb5f70960fae2d5d8451744cd2785a1");
-    const actual = createHash("sha256").update(readFileSync(join(ROOT, SOURCE_PATH))).digest("hex");
-    expect(actual).toBe(recorded);
+describe("the V1.6.2 rulebook is the source of truth", () => {
+  /** The owner's three V1.6.2 files, byte-identical to the originals (audit, "Authority and
+   * provenance"). The English and Chinese rulebooks carry the owner's Guild Hall revision of
+   * 2026-10-17; the component text is unchanged. */
+  const V162_FILES: ReadonlyArray<readonly [string, string]> = [
+    [SOURCE_PATH, "8d5734c99f5801cc9920d96de5dfa9658d6fc3eb4a516c1ea19b4674c398e97c"],
+    ["docs/KILN_OPENING_v1.6.2_ZH.md", "f7270d2f44f3b9bf10de309b285bfde02b4cc9e217f4b152d38fbf3a19b0658a"],
+    ["docs/KILN_OPENING_v1.6.2_COMPONENT_TEXT.md", "3957a76b2fe50197664d4b45b131997011e50c21918c0949e2f3e0b9a81c91f9"],
+  ];
+
+  it.each(V162_FILES)("%s matches the checksum the audit records", (path, expected) => {
+    expect(sha256(path)).toBe(expected);
+    expect(AUDIT).toContain(`\`${expected}\``);
   });
 
   it("is named first in AGENTS.md, with the audit second", () => {
     const sources = AGENTS.split("## Sources of truth")[1]?.split("\n## ")[0] ?? "";
     const numbered = sources.split("\n").filter((line) => /^\d+\. /.test(line));
-    expect(numbered[0]).toContain("`docs/KILN_OPENING_v1.6.1_EN_SOURCE.md`");
+    expect(numbered[0]).toMatch(/^1\. `docs\/KILN_OPENING_v1\.6\.2_EN_SOURCE\.md`/);
     expect(numbered[0]).toContain("**only** mechanical source of truth");
-    expect(numbered[1]).toContain("`docs/RULEBOOK_AUDIT_V1.6.1.md`");
+    expect(numbered[1]).toMatch(/^2\. `docs\/RULEBOOK_AUDIT_V1\.6\.2\.md`/);
     expect(sources).toContain("`docs/GLOSSARY_ZH_V1.6.1.md`");
     expect(sources).not.toMatch(/^1\. .*v1\.4/m);
-    expect(AGENTS).toContain("V1.6.1 is a rework of V1.2.7 and supersedes V1.4");
+    expect(AGENTS).toContain("V1.6.2 revises V1.6.1, which reworked V1.2.7 and superseded V1.4");
   });
 
   it("is the index entry of GAME_RULES.md", () => {
-    expect(GAME_RULES.split("\n")[0]).toContain("V1.6.1");
-    expect(GAME_RULES).toContain("(./KILN_OPENING_v1.6.1_EN_SOURCE.md) is the only mechanical authority");
-    expect(GAME_RULES).toContain("(./RULEBOOK_AUDIT_V1.6.1.md)");
+    expect(GAME_RULES.split("\n")[0]).toContain("V1.6.2");
+    expect(GAME_RULES).toContain("(./KILN_OPENING_v1.6.2_EN_SOURCE.md) is the only mechanical authority");
+    expect(GAME_RULES).toContain("(./RULEBOOK_AUDIT_V1.6.2.md)");
+    expect(GAME_RULES).toContain("(./ENGINE_V1.6.2_DELTA.md)");
     expect(GAME_RULES).toContain("(./GLOSSARY_ZH_V1.6.1.md)");
   });
 
-  it("has a checked-in Chinese edition, derived from it and deferring to it", () => {
-    // Byte-identical copy of the owner's Chinese rulebook (as revised by the owner on 2026-10-16),
-    // matching the English rulebook. It is the source of every Tech and Kiln `abilityZh`; the
-    // English rulebook remains the only mechanical authority.
-    const zh = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.1_ZH.md"));
-    expect(createHash("sha256").update(zh).digest("hex")).toBe("d6d2f06025b3f64545fb03326ebee390a3cfa03e60b4008c08723204fcfa2502");
-    expect(zh.toString("utf8")).toContain("规则如有出入，以英文版规则书为准");
+  it("has a checked-in Chinese edition deferring to it", () => {
+    // Byte-identical copy of the owner's Chinese rulebook; the English rulebook remains the only
+    // mechanical authority.
+    expect(read("docs/KILN_OPENING_v1.6.2_ZH.md")).toContain("规则如有出入，以英文版规则书为准");
   });
 
-  it("calls itself v1.6.1, the engine's rules version", () => {
-    expect(read(SOURCE_PATH).split("\n")[0]).toContain("v1.6.1");
-    expect(AUDIT).toContain("the engine uses the rules version string `1.6.1`");
+  it("calls itself v1.6.2, the engine's rules version", () => {
+    expect(read(SOURCE_PATH).split("\n")[0]).toContain("v1.6.2");
+    expect(AUDIT).toContain("the engine uses the rules version string `1.6.2`");
+  });
+
+  it("keeps the V1.6.1 rulebook and its Chinese edition as unchanged history", () => {
+    const recorded = /SHA-256: `([0-9a-f]{64})`/.exec(AUDIT_V161)?.[1];
+    expect(recorded).toBe("173ec74ade86587c671d65f4e7c2171c9fb5f70960fae2d5d8451744cd2785a1");
+    expect(sha256("docs/KILN_OPENING_v1.6.1_EN_SOURCE.md")).toBe(recorded);
+    expect(sha256("docs/KILN_OPENING_v1.6.1_ZH.md")).toBe("d6d2f06025b3f64545fb03326ebee390a3cfa03e60b4008c08723204fcfa2502");
   });
 });
 
-describe("every data file is V1.6.1 content with current IDs only", () => {
-  it("has the ten data files, each stamped 1.6.1", () => {
+describe("every data file is V1.6.2 content with current IDs only", () => {
+  it("has the ten data files, each stamped 1.6.2", () => {
     expect(DATA_FILES).toEqual([
       "action_locations.json", "asset_specs.json", "components.json", "firing.json", "game_config.json",
       "imperial_progress.json", "kilns.json", "orders.json", "round_structure.json", "techniques.json",
     ]);
     for (const file of DATA_FILES) {
-      expect((JSON.parse(read(`data/${file}`)) as { rulesVersion?: string }).rulesVersion, file).toBe("1.6.1");
+      expect((JSON.parse(read(`data/${file}`)) as { rulesVersion?: string }).rulesVersion, file).toBe("1.6.2");
     }
   });
 
@@ -128,6 +145,12 @@ describe("every data file is V1.6.1 content with current IDs only", () => {
     [/BANK_2|STOKE_2/, "Fuel Ledger cards"],
     [/"crackle"/, "Crackle as a Decoration value"],
     [/overfill(?! space is drawn)/i, "Shifu overfill"],
+    // V1.6.2 (v1.6.2 L31): no blind reservation, no Commission resource, no 1-Coin Materials Yard option.
+    [/buyShifuBonus|"bonus"\s*:/, "Materials Yard Shifu bonus"],
+    [/"blind"|look_top_three|commission_top_three|topThreeLooks/, "blind reservation or Commission top-3 selection"],
+    [/gainAfterEach/, "Commission Market resource"],
+    // Owner revision 2026-10-17 (v1.6.2 L207, L714): the Guild Hall Shifu pays the printed cost.
+    [/"discount"\s*:|Coins? less, minimum 0|少付2铜钱/, "Guild Hall Shifu discount"],
   ];
 
   it.each(DATA_FILES)("%s names no retired ID or mechanic", (file) => {

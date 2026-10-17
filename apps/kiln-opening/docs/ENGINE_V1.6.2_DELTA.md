@@ -1,0 +1,909 @@
+# Kiln Opening V1.6.2: engine, data and test delta
+
+Branch `kiln-opening-v162-engine`. The design and records of the V1.6.2 engine track, written in stage 1 and kept current as the stages land.
+
+- **Rules authority:** the [V1.6.2 Player Rulebook](./KILN_OPENING_v1.6.2_EN_SOURCE.md), designated by the owner on 2026-10-17, with its [Chinese edition](./KILN_OPENING_v1.6.2_ZH.md) and [component text](./KILN_OPENING_v1.6.2_COMPONENT_TEXT.md). [The V1.6.2 audit](./RULEBOOK_AUDIT_V1.6.2.md) records the checksums, the owner rulings (R1–R18, B1–B3; R15–R18 are the owner's confirmations of 2026-10-17), interpretations (INT) and provisional defaults (P1–P3).
+- **Owner revision 2026-10-17 (Guild Hall).** After stage 1 was written, the owner revised the Guild Hall in the English and Chinese rulebooks (changes 21, L31; L207, L209, L212, L714). The Shifu takes up to 2 Techs from different disciplines at printed cost, with no discount. A taken Tech's position stays empty until the end of the taker's turn, for Apprentice and Shifu takes alike. Placement legality is the same for both workers. This document describes the revised rules; §1 rows 6–8, §4.3 and §13 say what changed.
+- **Base contract:** [ENGINE_V1.6.1_DESIGN.md](./ENGINE_V1.6.1_DESIGN.md) and `src/game/types.ts`. Everything this document does not change stays as that design says. Where the two disagree, this document wins.
+- **Notation:** `L124` is a line of the V1.6.2 English source. `1.6.1:L124` is a line of the V1.6.1 source. `R4`, `B1`, `R15`, `P3` are audit entries. `DESIGN §x` is a section of the V1.6.1 engine design.
+- **Versions after this track:** rules `1.6.2`, state schema `7`, `RULES_BEHAVIOUR_REVISION` `30`.
+
+Nothing here changes a rule or a balance value. Every value below is printed in V1.6.2. §13 lists the cases the text left open and the owner's rulings on them (2026-10-17).
+
+**Stage status.**
+
+- **Stage 2 (landed): the locations and the version bump.**
+  - Versions: rules `1.6.2`, schema 7, revision 30, `r30-` fingerprints (§3.6); the package version is `1.6.2`.
+  - Data: every `rulesVersion`, the four Tech costs (§3.1 cost column) and the location effects and texts (§3.2).
+  - Engine: Commission Market (§4.2), Materials Yard, Canal Wharf and Guild Hall (§4.3, with the owner's revision of 2026-10-17: up to 2 takes at printed cost, `GUILD_FINISH`, the deferred Tech refill and one placement rule for both workers), `reservable` and `lookCount` (§4.1), legality (§5) and the legal-action families, the rule errors `RESERVATION_REQUIRED`, `RESERVATION_LIMIT`, `TECH_TAKE_LIMIT` and `TECH_TAKE_REQUIRED` (§2.5), the Commission and Guild Hall step invariants and the deferred-refill check (§4.12), privacy (§7) and the events (§2.4).
+  - Platform pins (§9): the service, client, stores and policy labels; Playtest Form V3; the two Supabase migrations edited in place.
+  - Computer policy items 1–4 of §10, and the Commission and Guild Hall fallbacks of item 11.
+  - Glossary: the location texts (the Guild Hall per the owner revision), the deferred Tech refill, the Tech costs and the error sentences.
+- **Still to come:** every Tech behaviour change (Colour Samples swap, Canal Barge, Protective Saggars, Fuel Ledger, Second Firing) and the Fire reshuffle (R15), with their `params`, `ability` and short texts (§3.1, §3.3), and the rest of §10.
+  - Until then the content contract test keeps those five Techs' texts on their V1.6.1 rows (`STAGED_TECHS`).
+  - The clarifications (§3.4) still come from the V1.6.1 file. Its Materials Yard, Commission Market and Senior Apprentice items describe V1.6.1 (the 1-Coin option, blind reservations, a resource after each reservation) until §3.4 lands. Its Guild Hall items (B2, A1) still hold under the revision.
+- **Line citations in code:** an unchanged rule keeps its V1.6.1 `L` number until the renumbering pass (§1.1); a rule V1.6.2 changed is cited `v1.6.2 L195`.
+
+---
+
+## 1. What V1.6.2 changes (rulebook changes 21–22, L31–32)
+
+| # | Rule | V1.6.1 | V1.6.2 | Lines |
+| --- | --- | --- | --- | --- |
+| 1 | Commission Market, Apprentice | Reserve 1 (face-up or blind), then gain 1 Clay/Wood/Coin | Privately look at the top 2 Main Orders; reserve 1 from the display or those 2; discard the rest of the 2. No resource | L191, L195, L713 |
+| 2 | Commission Market, Shifu | Up to 2 separate reservations, one may be a top-3 selection; a resource after each | Privately look at the top 3; reserve up to 2 (at least 1) from the display and those 3; discard the rest of the 3. No resource | L191, L196, L198, L713 |
+| 3 | Blind reservation | Top card unseen, into the hand | Gone | L31 |
+| 4 | Display refill | After the reserving turn | Unchanged: after the reserving turn; both Shifu reservations choose from the Orders showing now | L191, L198, L390 |
+| 5 | Materials Yard, Shifu | 4 resources, then may pay 1 Coin for +1 Clay +1 Wood | 6 resources in any Clay/Wood split; no Coin option | L165, L710 |
+| 6 | Guild Hall, Shifu | Take 1 face-up Tech of any discipline or 1 inspected Tech, 1 Coin less (min 0) | Take up to 2 Techs (1 or 2, L144) from different disciplines, face-up or inspected, paying the printed cost of each; no discount (owner revision 2026-10-17; the first V1.6.2 draft had 2 Coins less) | L31, L207, L714 |
+| 7 | Tech display refill | Right after each take (1.6.1:L210) | A taken Tech's position stays empty until the end of the taker's turn; then each discipline refills to 2 if possible. A Shifu's second Tech is chosen from what shows now. Apprentice buys too (owner revision 2026-10-17) | L31, L209 |
+| 8 | Guild Hall legality | An affordable face-up Tech of an unowned discipline; for the Shifu, after the discount (1.6.1:L213) | The same for both workers: an affordable face-up Tech of a discipline you do not own, at printed cost (owner revision 2026-10-17) | L212 |
+| 9 | Canal Wharf, Shifu | 4 Coins | 4 Coins and the top Main Order card, unseen, into the hand | L220, L396, L715 |
+| 10 | Colour Samples (T10) | When acquired: top-3 reservation; hand limit 5 | Adds: once per round, before or after one of your worker actions, you may discard 1 held Order (Main → face-down discard, Starting → box) to look at the top 2 Main Orders and reserve 1. Owner ruling R14: the other is discarded | L625, L649, L718 |
+| 11 | Canal Barge (T23) | Once per round, before or after a worker action, complete 1 held Order (R6) | Once per round, when you complete an Order, gain 2 Coins. Orders are completed only in the Order Phase | L32, L402, L484, L630, L645 |
+| 12 | Protective Saggars (T11) | Cost 2; once per round, 1 Wood: Flawed → Standard or Standard → Fine | Cost 3. Your ceramics are never Flawed: Heat Difference 3+ counts as Standard. Once per round, after Quality, 1 of your Standard ceramics from this firing becomes Fine. Never a Masterpiece | L636, L650, L653 |
+| 13 | Fuel Ledger (T12) | Cost 3; secretly commit 1 additional Wood with Bank/Stoke for −2/+2 | Cost 2. Your Bank and Stoke cost no Wood. Committing 1 Wood still makes them −2/+2 | L637 |
+| 14 | Second Firing (T14) | Reveal 1 extra Fire card | Reveal 2 extra Fire cards, choose 1, discard both | L639, L650 |
+| 15 | Costs | Senior Apprentice 2, Kiln Tending 2 | Senior Apprentice 3, Kiln Tending 3. Test Pieces stays 3 | L32, L618, L626, L638 |
+| 16 | Fire deck | Reshuffled only when empty; the audit said it never runs out | Unchanged text (L511, L648, L657). With Second Firing taking 2 cards, a firing can use 3 cards, so 5 firings can need 15 of 12: the reshuffle with a buried card (L648) is now reachable (owner ruling R15) | L22, L511, L648, L657 |
+
+Consequences that need no new text:
+
+- Ru, Guan, Tribute Ware and Crackle wildcards trigger only in the Order Phase (L484, L402). Ruling R6 is obsolete.
+- Senior Apprentice (L618, L652) gives an Apprentice the V1.6.2 Shifu effect: 6 resources at the Materials Yard; look at 3 and reserve up to 2 at the Commission Market (R12 as re-checked).
+- Ge (L653): with Saggars, a ceramic that would have been Flawed is Standard and may be crackled; Saggars' Standard → Fine step and Crackle never both apply to one ceramic. Both target Standard only, so each excludes the other without a special rule.
+- Saggars and Second Firing are both Firing Techs (L210), so one player never owns both. Saggars' floor on a Second Firing recalculation is implemented but unreachable.
+- Guild Hall Shifu (rows 6–7): "from different disciplines" is the 1-per-discipline limit (L210) applied to the second take, so at most 1 of the 2 takes is an inspected Tech (the inspected Techs share one discipline). The 3-total limit (L210) may leave room for only 1 take. Each gain resolves at once, before the second take (L213): its VP (A1), its Cover token (L211) and any when-acquired effect, which for Colour Samples is a private look and a reservation. Because the taken position stays empty and the second take must come from another discipline, the deferred refill never changes which second Techs are legal; it decides only when the new Tech is revealed, after the bottom order (B2) and after the after-action window.
+
+### 1.1 Line map, V1.6.1 → V1.6.2
+
+Every citation in code, data, tests and documents must be renumbered when the file moves to V1.6.2.
+
+| V1.6.1 lines | V1.6.2 lines | Shift |
+| --- | --- | --- |
+| 1–30 | 1–30 | 0 (L1 and L9 reworded) |
+| — | 31–32 | new changes 21–22 |
+| 31–188 | 33–190 | +2 (1.6.1:L163 reworded → L165) |
+| 189–192 | 191 | rewritten (one paragraph replaces the two reservation options) |
+| 193–757 | 192–756 | −1 (changed lines: L195–196, L198, L207, L209, L212, L220, L390, L396, L402, L483–484, L618, L625–626, L630, L636–637, L639, L645, L649–650, L652–653, L710, L713–715, L718; L209 and L212 by the owner revision of 2026-10-17, which also rewrote L31, L207 and L714 again) |
+
+The Chinese edition moves the same way: Chinese 1.6.1 lines 1–32 keep their numbers, 33–190 → 35–192, 191–194 → 193, 195–759 → 194–758.
+
+---
+
+## 2. Contract changes (`src/game/types.ts`)
+
+The header JSDoc names V1.6.2, `RULEBOOK_AUDIT_V1.6.2.md` and this delta. All `L` citations are renumbered (§1.1).
+
+### 2.1 Versions and identifiers
+
+```ts
+export type RulesVersion = "1.6.2";
+export type SchemaVersion = 7;
+```
+
+The `TechId` table JSDoc gets the new costs: T18 3, T20 3, T11 3, T12 2. `GainResource` is deleted (no location gains a chosen resource any more).
+
+### 2.2 State
+
+```ts
+export interface OwnedTechState {
+  // JSDoc: Colour Samples (T10) now has a once-per-round allowance (the swap, L625).
+  // Unused only for Fuel Ledger (T12) and Connoisseur's Cabinet (T19).
+}
+
+export interface CompletedOrderRecord {
+  // `via` is deleted: Orders are completed only in the Order Phase (L296, L402).
+  /** Canal Barge (T23, L630): 2 Coins on the first Order you complete each round (INT Canal Barge). */
+  canalBargeCoins: 0 | 2;
+  // other fields unchanged
+}
+
+export type PendingLook =
+  | { /** Commission Market look: top 2 (Apprentice effect) or 3 (Shifu effect) (L195–196, B1, B3). */
+      kind: "commission_market"; playerId: PlayerId; orderIds: OrderId[] }
+  | { /** Colour Samples when acquired: top 3 (L625, R4, B1, B3). */
+      kind: "colour_samples"; playerId: PlayerId; orderIds: OrderId[] }
+  | { /** Colour Samples once-per-round swap: top 2 (L625, L649, R14, B1, B3). */
+      kind: "colour_samples_swap"; playerId: PlayerId; orderIds: OrderId[] }
+  | { kind: "guild_inspection"; playerId: PlayerId; discipline: TechDiscipline; techIds: TechId[] };
+  // "commission_top_three" is deleted. `guild_inspection.techIds` holds the inspected Techs not
+  // yet taken (an inspected take leaves it). The `colour_samples` look gains
+  //   inspection: { discipline: TechDiscipline; techIds: TechId[] } | null
+  // (owner revision 2026-10-17): a Guild Hall Shifu who takes Colour Samples while its
+  // inspection is open keeps the untaken Techs there, still private, until the reservation is
+  // made; null after an Apprentice buy.
+
+export interface HiddenState {
+  /** Fire deck, top first. Its last `fireBuried` cards are Test Pieces cards buried at the
+   * bottom (L638, L648, R15). */
+  fireDeck: FireModifier[];
+  /** 0 ≤ fireBuried ≤ fireDeck.length. */
+  fireBuried: number;
+  // other fields unchanged
+}
+
+export interface PublicCounts {
+  /** Buried Fire cards still in the deck. Public: every bury is public (TEST_PIECES_USED).
+   * Never shown by the UI (owner decision D4); the computer player reads it. */
+  fireBuried: number;
+  // other fields unchanged
+}
+
+export interface FiringCeramicRecord {
+  /** Second Firing's two revealed cards in reveal order (T14, L639); null if not second-fired.
+   * `second.fireModifier` is the chosen one. */
+  secondFiringCards: [FireModifier, FireModifier] | null;
+  /** Quality was assigned Standard by Protective Saggars from a Heat Difference of 3+ (L636). */
+  saggarsFloor: boolean;
+  // other fields unchanged
+}
+
+export interface FiringContext {
+  /** Second Firing's two extra cards while the actor chooses (T14, L639). Non-null only during
+   * `firing_second_firing_choice`; then both go to `fireDiscard` (DESIGN §8.3 conservation). */
+  pendingExtraFire: { playerId: PlayerId; ceramicId: CeramicId; modifiers: [FireModifier, FireModifier] } | null;
+  // other fields unchanged
+}
+```
+
+`WorkTurnStep` (DESIGN §3.2):
+
+```ts
+export type WorkTurnStep =
+  | { kind: "before_action" }       // USE_COLOUR_SAMPLES_SWAP, USE_IMPERIAL_PRIORITY or a PLACE_*
+  | {
+      /** The private look is in `hidden.pendingLook` (kind "commission_market"). Next: COMMISSION_CHOOSE. */
+      kind: "commission_market";
+      workerId: WorkerId;
+      effect: WorkerEffect;
+      lookSize: 2 | 3;
+      maxReservations: 1 | 2;
+      /** Cards the look shows: up to lookSize, possibly 0 (B1). */
+      lookedCount: number;
+    }
+  | GuildInspectionStep                                         // owner revision 2026-10-17, below
+  | {
+      /** Colour Samples when acquired. `resume` is the Guild Hall Shifu's inspection step to
+       * return to after the reservation (Colour Samples was one of its takes); null after an
+       * Apprentice buy. */
+      kind: "colour_samples";
+      lookedCount: number;
+      resume: GuildInspectionStep | null;
+    }
+  | {
+      /** The swap's private look (kind "colour_samples_swap"). Next: COLOUR_SAMPLES_SWAP_CHOOSE,
+       * then back to `returnTo`. */
+      kind: "colour_samples_swap";
+      returnTo: "before_action" | "after_action";
+      lookedCount: number;
+    }
+  | { kind: "after_action" };       // USE_COLOUR_SAMPLES_SWAP, USE_IMPERIAL_PRIORITY, END_TURN
+```
+
+```ts
+export type GuildTake = { kind: "face_up"; techId: TechId } | { kind: "inspected"; techId: TechId };
+
+export interface GuildInspectionStep {
+  /** The untaken inspected Techs are in `hidden.pendingLook` (kind "guild_inspection").
+   * Next: GUILD_TAKE (up to 2 in all) and, after at least 1 take, GUILD_FINISH. */
+  kind: "guild_inspection";
+  workerId: WorkerId;
+  discipline: TechDiscipline;
+  /** Techs the inspection drew: 2, or as many as remained (L207), possibly 0. */
+  inspectedCount: number;
+  /** The Techs taken so far, in order. Public: owned Techs are public. */
+  takes: GuildTake[];
+}
+```
+
+The Tech display (`GameState.techDisplay`) keeps its shape, `TechId[]` of 0–2 per discipline. Display positions carry no rule, so a taken Tech simply leaves the array; the refill at the end of the turn appends (L209).
+
+`GamePhase`: `firing_second_firing_jun` is replaced by
+
+```ts
+  | {
+      /** T14 (L639, R7): the actor chooses 1 of the 2 revealed cards, and, if Jun is unused and
+       * affordable, Jun's ±1 on this ceramic. Cards in `FiringContext.pendingExtraFire`. */
+      type: "firing_second_firing_choice";
+      actorId: PlayerId;
+      ceramicId: CeramicId;
+    }
+```
+
+`decisionPrompt`: `firing_second_firing_choice` → `[actorId]`, mode `single`.
+
+### 2.3 Commands
+
+| Command | V1.6.2 shape | Notes |
+| --- | --- | --- |
+| `PLACE_MATERIALS_YARD` | `buyShifuBonus` deleted | clay + wood = 3 (Apprentice) or 6 (Shifu effect, incl. Senior Apprentice) |
+| `PLACE_COMMISSION_MARKET` | `{ workerId, seniorApprentice? }` | `first` deleted: the look always comes first (L195–196, INT Commission Market looks) |
+| `COMMISSION_CHOOSE` (new) | `{ reservations: CommissionPick[] }` | 1 pick (Apprentice effect) or 1–2 (Shifu effect) |
+| `COMMISSION_RESERVE`, `COMMISSION_CHOOSE_LOOKED`, `COMMISSION_GAIN`, `COMMISSION_STOP` | deleted | `parseCommand` → `MALFORMED_ACTION` |
+| `PLACE_CANAL_WHARF` | unchanged | the Shifu effect also draws (§4.3) |
+| `PLACE_GUILD_HALL` | unchanged | one legality rule for both workers (§5); the Shifu still names the discipline to inspect |
+| `GUILD_TAKE` | `{ take: GuildTake }` | `bottomOrder` moves to `GUILD_FINISH`. One Tech per command, up to 2 per action (owner revision 2026-10-17, §4.3) |
+| `GUILD_FINISH` (new) | `{ bottomOrder: TechId[] }` | after at least 1 take: stop taking, put every untaken inspected Tech on the bottom in this order (B2) |
+| `USE_CANAL_BARGE` | deleted | Canal Barge has no command (§4.6) |
+| `USE_COLOUR_SAMPLES_SWAP` (new) | `{ discardOrderId: OrderId }` | before/after-action window |
+| `COLOUR_SAMPLES_SWAP_CHOOSE` (new) | `{ orderId: OrderId }` | in `colour_samples_swap` |
+| `USE_PROTECTIVE_SAGGARS` | unchanged shape | target must be Standard; no Wood |
+| `USE_SECOND_FIRING` | unchanged shape | reveals 2 cards, opens `firing_second_firing_choice` |
+| `SECOND_FIRING_CHOOSE` (new) | `{ cardIndex: 0 \| 1; jun: { delta: HeatMarkerValue } \| null }` | the card and R7's Jun in one command (§4.10) |
+| `RESOLVE_JUN` | unchanged shape | only in `firing_heat_adjustment` now |
+| `SUBMIT_CONTRIBUTION` | unchanged | Fuel Ledger cost changes only (§4.9) |
+
+```ts
+/** One Commission Market reservation (L195–196). */
+export type CommissionPick =
+  | { kind: "face_up"; slotIndex: number; orderId: OrderId }   // must equal market.display[slotIndex]
+  | { kind: "looked"; orderId: OrderId };                     // must be in own.pendingLook
+// `CommissionReservationChoice` is deleted.
+```
+
+`ActionHandlerTable` follows the union. `actionGuard.ts` gets parsers for the new commands and drops the deleted ones (`reservations`: array of 1–3 picks, each shape-checked; `cardIndex` ∈ {0, 1}; `jun` null or `{delta: ±1}`; `GUILD_TAKE` with a `bottomOrder` field is `MALFORMED_ACTION`; `GUILD_FINISH.bottomOrder` is an array of Tech IDs, its permutation checked by the validator).
+
+### 2.4 Events
+
+| Event | Change |
+| --- | --- |
+| `ORDER_RESERVED` | `via: "commission_market" \| "colour_samples" \| "colour_samples_swap" \| "canal_wharf"`; `source: "face_up" \| "looked" \| "deck_top"`. `face_up` is public (`slotIndex`, `orderId`); `looked` and `deck_top` carry `orderId: null` and `secret: {orderId}` (B3). `blind`, `top_three` and the source `colour_samples` are deleted |
+| `PRIVATE_LOOK_OPENED` | `kind` takes the new `PendingLook` kinds. Emitted for every look, a 0-card Commission look included |
+| `LOOKED_ORDERS_DISCARDED` | unchanged; also used for the swap's unreserved card (R14) |
+| `HELD_ORDER_DISCARDED` (new) | `{ playerId; cause: "colour_samples_swap"; to: "main_discard" \| "box"; secret: Secret<{ orderId }> }`. Where the card goes is public (it changes `counts.mainDiscard`); which card is private |
+| `RESOURCES_CHANGED.reason` | delete `materials_yard_bonus`, `commission_market`, `protective_saggars`; add `canal_barge` |
+| `QUALITY_ASSIGNED` | add `saggarsFloor: boolean` |
+| `SECOND_FIRING_REVEALED` | `{ playerId; ceramicId; modifiers: [FireModifier, FireModifier] }` (public, at the reveal) |
+| `SECOND_FIRING_CHOSEN` (new) | `{ playerId; ceramicId; cardIndex: 0 \| 1; modifier; calculation: HeatCalculation }` (before any R7 Jun) |
+| `FIRE_DECK_RESHUFFLED` | add `buriedBelow: number` (buried cards left under the new cards) |
+| `JUN_ADJUSTED` | unchanged (`during: "second_firing"` now comes from `SECOND_FIRING_CHOOSE`) |
+| `ORDER_COMPLETED` | the record carries `canalBargeCoins`, not `via` |
+| `TECH_ACQUIRED` | `cost` is the printed cost for every take (owner revision 2026-10-17) |
+| `TECH_DISPLAY_REFILLED` | emitted when the taker's turn ends (after the after-action window, after the Main display refill), once per discipline that reveals a Tech, in `DISCIPLINES` order (L209); no longer right after the take |
+| `TECHS_RETURNED_TO_BOTTOM` | at `GUILD_FINISH`, or when the inspection closes by itself (§4.3); before the end-of-turn refill (B2) |
+
+Canal Barge's use is `TECH_USED{T23}` followed by `RESOURCES_CHANGED{reason: "canal_barge", coins: 2}`, after the Ru/Guan events of the same completion.
+
+### 2.5 Rule errors (`GameRuleErrorCode`, `ruleErrorText.ts`)
+
+- **New `RESERVATION_REQUIRED`:** "Reserve at least 1 Order." / 至少要承接1张委托. detailKeys: none.
+- **`RESERVATION_LIMIT`:** "This action reserves at most {limit} Orders." / 此行动至多承接{limit}张. detailKeys `limit`, `requested`. The fallback stays.
+- **`ORDER_NOT_HELD`:** made general for completion, the Cleanup trim and the swap: "That Order is not in your hand." / 这张委托不在你手中. detailKeys `orderId`.
+- **`ORDER_SUPPLY_EMPTY`:** also returned when a swap would have no card to look at. The text becomes "The Main Order deck and discard pile are both empty." / 主委托牌堆和弃牌堆都空了.
+- **`INVALID_CHOICE`:** detailKeys gain `slotIndex` and `cardIndex`.
+- **New `TECH_TAKE_LIMIT`** (owner revision 2026-10-17): "This action takes at most {limit} Techs." / 此行动至多习得{limit}项技艺. detailKeys `limit`, `techId`; fallback "This action cannot take another Tech." / 此行动不能再习得技艺. A third Guild Hall take.
+- **New `TECH_TAKE_REQUIRED`:** "Take at least 1 Tech." / 至少要习得1项技艺. detailKeys: none. `GUILD_FINISH` before any take (L144).
+- A second take of the first take's discipline is `TECH_DISCIPLINE_OWNED`, an existing code: it is the 1-per-discipline limit (L210).
+
+No other code is added. Errors still come from validators on views, so they cannot name hidden cards.
+
+### 2.6 Content definitions
+
+```ts
+export interface LocationEffectsById {
+  materials_yard: { apprentice: { resources: number }; shifu: { resources: number } };   // 3 / 6
+  commission_market: {
+    apprentice: { lookSize: number; maxReservations: number };   // 2 / 1
+    shifu: { lookSize: number; maxReservations: number };        // 3 / 2
+  };
+  guild_hall: { apprentice: { maxTechs: number }; shifu: { inspectCount: number; maxTechs: number } }; // 1 / 2, 2
+  canal_wharf: {
+    apprentice: { coins: number };                               // 2
+    shifu: { coins: number; topMainOrders: number };             // 4, 1
+  };
+  // form_decorate, glaze_load, magistrates_hall unchanged
+}
+
+export interface TechParamsById {
+  T10: { lookSize: number; handLimit: number; swapDiscard: number; swapLookSize: number };  // 3, 5, 1, 2
+  T11: { floorQuality: "standard"; upgradeFrom: "standard"; upgradeTo: "fine" };
+  T12: { cardWood: number; extraWood: number; heat: number };                               // 0, 1, 1
+  T14: { extraCards: number; chosenCards: number };                                         // 2, 1
+  T23: { coins: number };                                                                   // 2
+  // others unchanged
+}
+```
+
+### 2.7 View models and selector types (DESIGN §5.4)
+
+```ts
+/** Commission Market at placement time for one worker effect (public information only). */
+export interface CommissionOptions {
+  effect: WorkerEffect;
+  lookSize: 2 | 3;
+  /** Cards the look would show now: the deck's top lookSize, or after the reshuffle the
+   * empty deck forces (B1); 0 when the deck and the discard are both empty. */
+  lookCount: number;
+  maxReservations: 1 | 2;
+  /** Display positions holding an Order. */
+  faceUpSlots: number[];
+  /** At least 1 reservation is possible (the placement's main action, L144). */
+  reservable: boolean;
+}
+
+/** An order look awaiting its choice (own private look). */
+export interface LookedOrderOptions {
+  kind: "commission_market" | "colour_samples" | "colour_samples_swap";
+  orderIds: OrderId[];
+  /** Commission Market only: display positions also reservable now; else []. */
+  faceUpSlots: number[];
+  /** 1, or 2 for the Commission Market Shifu effect. At least 1 is always required. */
+  maxReservations: 1 | 2;
+}
+
+export interface ColourSamplesSwapOptions {
+  /** T10 owned and unused this round, in your before/after-action window, with a held Order. */
+  usable: boolean;
+  /** Per held Order, in hand order: the cards the look would show after discarding it. */
+  discards: Array<{ orderId: OrderId; lookCount: number; legal: boolean }>;
+}
+
+export interface SecondFiringChoiceOptions {
+  ceramicId: CeramicId;
+  modifiers: [FireModifier, FireModifier];
+  /** R7: Jun usable on this ceramic now (Jun Kiln, unused this round, 1 Wood). */
+  jun: { ready: boolean; woodCost: number };
+}
+```
+
+- `MaterialsYardOptions.shifuBonus` and `PreparedClayPair.withShifuBonus` are deleted.
+- `OrderMatchOption.triggers` gains `canalBarge: boolean` (informational; it is never declined).
+- `AfterQualityOption`: Saggars lists Standard ceramics only, with zero cost.
+- `FiringStageView.extraFire` becomes `{ playerId; ceramicId; modifiers: FireModifier[] } | null` (non-null during `firing_second_firing_choice`). `FiringStageCeramic` gains `secondFireRevealed: FireModifier[] | null` and `saggarsFloor: boolean`. The key allow-list test (DESIGN §5.4) is updated with these keys. Both are physical facts on the table, not analysis (D3, D4).
+- `GuildTechOption`: `price` and `printedCost` are replaced by `cost`, the printed cost every take pays (owner revision 2026-10-17). `reason` may be `TECH_TAKE_LIMIT`.
+- `GuildInspectionOptions` (the viewer's open inspection): `discipline`; `inspected` (the untaken inspected Techs) and `faceUp` (the Techs showing now), each with the legality of taking it next; `takes`; `takesLeft` (2 − takes); `canFinish` (at least 1 take); `bottomOrderLength` (the untaken count). The `bottomOrderLengthIf…` fields are deleted.
+- `CostLineKind` loses `guild_shifu_discount`.
+
+---
+
+## 3. Data changes (`data/*.json`)
+
+Every file's `rulesVersion` becomes `"1.6.2"` (all ten files). `content.ts` (`RULES_VERSION`) and `roundStructure.ts` follow. Display text comes verbatim from the V1.6.2 files, as today. Ability cells come from Appendix B (L612–641), location cells from L164–229, and Chinese from the Chinese edition at the mapped lines.
+
+### 3.1 `techniques.json`
+
+| ID | Field | Value |
+| --- | --- | --- |
+| T18 Senior Apprentice | `cost` | 3 (L618) |
+| T20 Kiln Tending | `cost` | 3 (L626) |
+| T11 Protective Saggars | `cost`, `params` | 3; `{floorQuality: "standard", upgradeFrom: "standard", upgradeTo: "fine"}` (L636) |
+| T12 Fuel Ledger | `cost`, `params` | 2; `{cardWood: 0, extraWood: 1, heat: 1}` (L637) |
+| T10 Colour Samples | `oncePerRound`, `params` | `true`; `{lookSize: 3, handLimit: 5, swapDiscard: 1, swapLookSize: 2}` (L625) |
+| T14 Second Firing | `params` | `{extraCards: 2, chosenCards: 1}` (L639) |
+| T23 Canal Barge | `timing`, `params` | `"order_completion"`; `{coins: 2}` (L630) |
+| T10, T11, T12, T14, T23, T18, T20 | `ability`, `abilityZh` | V1.6.2 Appendix B cells (EN L618–639, ZH L620–641) |
+| T10, T11, T12, T14, T23 | `shortText`, `shortTextZh` | V1.6.2 component text lines 42/44, 67/69, 74/76, 79/81, 89/91 with `**` removed |
+
+`timing` stays informational (DESIGN §6.5): T11 keeps `after_quality`, T10 keeps `when_acquired_and_ongoing`.
+
+### 3.2 `action_locations.json`
+
+| Location | `effects` | Text |
+| --- | --- | --- |
+| `materials_yard` | apprentice `{resources: 3}`; shifu `{resources: 6}` | Shifu L165 / ZH L167 |
+| `commission_market` | apprentice `{lookSize: 2, maxReservations: 1}`; shifu `{lookSize: 3, maxReservations: 2}` | L195–196 / ZH L197–198 |
+| `guild_hall` | apprentice `{maxTechs: 1}`; shifu `{inspectCount: 2, maxTechs: 2}` | Shifu L207 / ZH L209 (owner revision 2026-10-17: no discount) |
+| `canal_wharf` | shifu `{coins: 4, topMainOrders: 1}` | Shifu L220 / ZH L222 |
+
+`content.ts` validation (DESIGN §6.9) checks these shapes. It adds Commission `lookSize` ≥ `maxReservations` ≥ 1, and Guild Hall `maxTechs` 1 for the Apprentice and at least 1 for the Shifu. The Chinese location texts come from the glossary §4, which follows the Chinese rulebook (§4.5 陶工行 per the owner revision).
+
+### 3.3 Short component text format
+
+The V1.6.2 component text marks every timing clause in bold, including clauses after the first (T10 "Ongoing:" and "Once per round, before or after one of your worker actions:"; T11 "Once per round, after Quality is assigned:"; T12 "When you choose Bank or Stoke:"; GE "Orders:"). The data keeps plain text (bold removed, as today). `SHORT_TEXT_SECONDARY_LABELS` becomes exactly the set of non-first bold clauses of the V1.6.2 file:
+
+- English: `Ongoing:`, `Orders:`, `Once per round, before or after one of your worker actions:`, `Once per round, after Quality is assigned:`, `When you choose Bank or Stoke:`;
+- Chinese: `持续：`, `完成委托时：`, `每轮一次，你的一次工人行动之前或之后：`, `每轮一次，定品后：`, `选控火时：`.
+
+A contract test checks that `shortTextSegments(shortText)` reproduces the owner's bold spans for all 23 lines, in both languages. The header format of the component text also changed (`### Name / 中文名`, no IDs, no "- EN:" prefix), so the contract test's parser changes with it.
+
+The Chinese T10 line is 79 characters, over the glossary's former 72-character cap; owner ruling R18 keeps it and sets the cap to 96 (§13).
+
+### 3.4 Clarifications (owner decision D10)
+
+A new `docs/KILN_OPENING_v1.6.2_CLARIFICATIONS.md` replaces the V1.6.1 file as the data source. Every `L` tag is renumbered (§1.1). `CLARIFICATION_TAG` accepts `R1`–`R18` and `P1`–`P3`. Content changes:
+
+| Component | Change |
+| --- | --- |
+| `materials_yard` | R12 item: Senior Apprentice resolves the whole Shifu effect here, 6 resources (the 1-Coin option is gone) |
+| `commission_market` | Delete `ED L714` (obsolete). Rewrite B1 (no blind reservation; looks see as many cards as remain, never completed from a reshuffle), B3 (top-2 and top-3 looks are private) and R12 · L652 (look at the top 3, reserve up to 2). INT Deferred refill: after any after-action Imperial Priority or Colour Samples swap. Add INT Commission Market looks (the look always happens) |
+| `guild_hall` | B2 kept (bottom first, then the refill, which now comes at the end of the turn). Add L209 (a taken position stays empty until your turn ends; the Shifu's second Tech comes from what shows now), L212 (the same placement rule for both workers, at printed cost), L144 ("up to 2" is 1 or 2) and L213 (a when-acquired effect resolves before the second take) |
+| `canal_wharf` | Add B1 (with both piles empty the Shifu takes no card but still gains 4 Coins) and B3 (the card goes to the hand, secret) |
+| T10 | Delete `ED L391`. Add R14, R17 (discard first, then look), INT Colour Samples swap (a Tech effect, L649), B1 and R16 for the swap look |
+| T23 | Delete R6, INT Before/after-action window and INT Deferred refill. Add INT Canal Barge (automatic on your first completion each round) and L296 (Orders are completed only in the Order Phase) |
+| T11 | L653 item rewritten (V1.6.2 Ge interplay); L280 item: your ceramics from this firing are never Flawed, so never salvaged; add INT Protective Saggars floor |
+| T12 | No content change (renumber only) |
+| T13 | L648 item: the reshuffle above a buried card now happens (R15) |
+| T14 | R7 rewritten (Jun after the chosen card); L639: both extra cards are discarded |
+| T18 | R12 and L198 · R12 items rewritten (V1.6.2 Shifu effects) |
+| T25, RU, GU | Delete R6 references; completion is in the Order Phase only |
+| GE | L653 item rewritten |
+
+The clarification count test (`toHaveLength(156)`) is re-baselined to the new file.
+
+### 3.5 Other data files
+
+- `game_config.json`, `firing.json`, `kilns.json`, `orders.json`, `imperial_progress.json`: only `rulesVersion` changes. The Fire deck, the Quality table and every Order value are unchanged.
+- `components.json`, `round_structure.json`: `rulesVersion` only. The prose still matches V1.6.2 L71–96 and L118–124.
+- `asset_specs.json`: `rulesVersion` only. Tech art briefs need no change (T23's barge still fits).
+
+### 3.6 Fingerprint
+
+`RULES_BEHAVIOUR_REVISION = 30`, with the history line: "30 -- V1.6.2: Commission Market looks (top 2 / top 3) with no resource and no blind reservation; Materials Yard Shifu 6; Guild Hall Shifu takes up to 2 Techs from different disciplines at printed cost, and Tech displays refill when the taker's turn ends (owner revision 2026-10-17); Canal Wharf Shifu draws the top Main Order; Colour Samples once-per-round swap (R14); Canal Barge 2 Coins on completion; Protective Saggars floor and Standard → Fine; Fuel Ledger free Bank/Stoke; Second Firing best of 2; Fire reshuffle above buried cards (R15). V1.6.1 (r29) rooms are rejected." The content digest moves with the data. Rooms store `r30-<digest>`. V1.6.2 is unreleased, so the owner revision keeps revision 30; its data change (`guild_hall.effects`) moves the digest.
+
+---
+
+## 4. Module behaviour
+
+### 4.1 `market.ts`
+
+- `reservable(game)` returns `{ faceUpSlots: number[]; supply: boolean }`. `supply` is true when deck + discard > 0. The `blind` and `look` flags are deleted.
+- New `lookCount(game: PublicGameState, size: number, extraDiscard = 0): number`: `counts.mainDeck > 0 ? min(size, mainDeck) : min(size, mainDiscard + extraDiscard)`. It mirrors `takeTopMainOrders` (B1, R16: reshuffle only when the deck is empty at the start of a look).
+- New `discardHeldOrder(draft, playerId, orderId): "main_discard" | "box"`: removes the Order from the hand; a Main Order goes face down on the Main discard, a Starting Order goes to `startingBox` (L649, L303).
+- `takeTopMainOrders`, `drawMainOrder`, `refillMainDisplay`, `rotateMainDisplay`, `takeFaceUpOrder`: unchanged.
+
+### 4.2 `work/commissionMarket.ts` (L191–200, L652, R12, B1, B3)
+
+`PLACE_COMMISSION_MARKET { workerId, seniorApprentice? }`
+
+- **Validate:** `validatePlacement` (capacity, worker, Senior Apprentice only for an Apprentice with T18 ready). Then the main action (L144): `faceUpSlots.length > 0 || supply`, else `NO_MAIN_ACTION_POSSIBLE`.
+- **Resolve:**
+  1. `placeWorker`; `effect` from the placement.
+  2. `orderIds = takeTopMainOrders(draft, EFFECTS[effect].lookSize, ctx)`: may reshuffle (`MAIN_DECK_RESHUFFLED`) when the deck is empty; may return fewer cards, or none (B1).
+  3. `hidden.pendingLook = { kind: "commission_market", playerId, orderIds }`. Emit `PRIVATE_LOOK_OPENED { kind, count, secret: { orderIds, techIds: [] } }`, even for 0 cards.
+  4. `step = { kind: "commission_market", workerId, effect, lookSize, maxReservations, lookedCount }`.
+
+`COMMISSION_CHOOSE { reservations }`
+
+- **Validate**, in this order:
+  - the step and the active player;
+  - 0 picks → `RESERVATION_REQUIRED`; more than `maxReservations` → `RESERVATION_LIMIT`;
+  - two picks naming the same slot or the same looked card → `INVALID_CHOICE`;
+  - a `face_up` pick: `display[slotIndex] === orderId`, else `ORDER_NOT_AVAILABLE`;
+  - a `looked` pick: in `own.pendingLook.orderIds`, else `INVALID_CHOICE`.
+- **Resolve**, picks in array order:
+  - `face_up`: `takeFaceUpOrder` (position `null`, `refillPendingFor` set), `addToHand`, public `ORDER_RESERVED`;
+  - `looked`: `addToHand`, secret `ORDER_RESERVED`.
+  - Then the rest of the look goes face down to the Main discard in look order (`discardMainOrders`), with `LOOKED_ORDERS_DISCARDED` if any. `pendingLook = null`, then `ctx.flow.workerActionDone`.
+- The deferred refill still runs in `endTurn` (DESIGN §3.2). Several face-up picks mean one refill (L390).
+- No resource is gained.
+
+### 4.3 `work/materialsYard.ts`, `work/centralSimple.ts`, `work/guildHall.ts`
+
+- **Materials Yard:** the split must total `resources` (3 or 6). The quote order is split → Prepared Clay (L617 "after gaining resources"). `buyShifuBonus` and its cost line are deleted. Senior Apprentice gives 6.
+- **Canal Wharf Shifu:**
+  1. Gain 4 Coins (`canal_wharf`).
+  2. `drawMainOrder` takes the top card, shuffling the discard first when the deck is empty (L510).
+  3. If a card was drawn: `addToHand` and `ORDER_RESERVED { via: "canal_wharf", source: "deck_top", slotIndex: null, orderId: null, secret }`.
+  4. With the deck and the discard both empty, no card is drawn and no event is emitted (B1).
+
+  The placement stays always legal (L145). The Apprentice effect is unchanged.
+- **Guild Hall** (owner revision 2026-10-17; L206–213, L714, B2):
+  - **Price.** `techPrice(techId)` is the printed cost, for both workers. There is no discount in the data or the code.
+  - **Legality** (`PLACE_GUILD_HALL`, L212). For the Apprentice and the Shifu alike, an affordable face-up Tech must show from a discipline the player does not own, within the 3-total limit; otherwise `NO_MAIN_ACTION_POSSIBLE`. A cheaper Tech the Shifu might find by inspecting does not count. The Apprentice names a face-up Tech (`buy_face_up`). The Shifu names any discipline to inspect, an owned or empty one included (B2).
+  - **Apprentice:** pay, take the face-up Tech, grant it (VP, A1; Cover token, L211). Then Colour Samples' look if it was T10 and a card can be looked at, else `workerActionDone`. No refill here.
+  - **Shifu inspection:** `drawTechsForInspection` takes the top 2, or as many as remain, into `hidden.pendingLook`. The step is `guild_inspection` with `takes: []`.
+  - **`GUILD_TAKE { take }`** checks, in this order:
+    - the step;
+    - fewer than 2 takes so far, else `TECH_TAKE_LIMIT`;
+    - availability (a face-up Tech showing now, or an untaken inspected one), else `TECH_NOT_AVAILABLE`;
+    - `acquisitionError`: the 3-total limit `TECH_LIMIT`, then 1 per discipline `TECH_DISCIPLINE_OWNED`, which enforces "different disciplines";
+    - the printed cost, else `INSUFFICIENT_RESOURCES`.
+
+    It resolves: pay; take (a face-up position stays empty, L209); grant (VP, Cover token); append to `step.takes`. Then the when-acquired effect. For Colour Samples with a card to look at, the look opens: the untaken inspected Techs move into the look's `inspection` and the step becomes `colour_samples` with `resume` = the inspection step. `COLOUR_SAMPLES_CHOOSE` reserves 1, discards the rest, then restores the `guild_inspection` look and step. Otherwise the inspection continues.
+  - **Closing by itself** (`decisionLeft`, public facts only, DESIGN §3.7, §4.5). After each take and after a resumed Colour Samples reservation, the action ends automatically when nothing is left to decide:
+    - at least 1 Tech is taken;
+    - at most 1 inspected Tech is untaken, so its bottom order is forced;
+    - no second take can be legal on public facts: 2 takes made; or no affordable face-up Tech of an unowned discipline, and either no untaken inspected Tech or its discipline is owned (or 3 Techs are owned).
+
+    When an untaken inspected Tech of an unowned discipline remains, the step stays open even if that Tech is too dear: its cost is private, so closing would reveal it. The player then sends `GUILD_FINISH`.
+  - **`GUILD_FINISH { bottomOrder }`:** at least 1 take (`TECH_TAKE_REQUIRED`), and `bottomOrder` must list every untaken inspected Tech exactly once (`INVALID_BOTTOM_ORDER`). It puts them on the bottom in that order (`TECHS_RETURNED_TO_BOTTOM`, secret, B2), clears the look and ends the worker action.
+  - **Deferred Tech refill** (`work/turn.endTurn`, L209). After the deferred Main display refill, every discipline is refilled to 2 as its deck allows, in `DISCIPLINES` order. Only a take this turn leaves a display short with cards in its deck, so this refills exactly the taker's disciplines. It runs after the after-action window and after the bottom order, which keeps B2's "return first, then refill". The Start of Round re-run stays, silent.
+  - **Colour Samples when acquired** is unchanged otherwise (L625, R4, B1): mandatory when a card can be looked at, no resource, no Main display refill.
+
+### 4.4 Colour Samples swap: `work/windowAbilities.ts` and `work/turn.ts`
+
+`USE_COLOUR_SAMPLES_SWAP { discardOrderId }`, legal in `before_action` and `after_action` of your own Work turn.
+
+- **Validate:**
+  - `windowError` (the before/after window of your own turn);
+  - T10 owned (`TECH_NOT_OWNED`) and unused this round (`TECH_ALREADY_USED`);
+  - `discardOrderId` in `own.orderHand` (`ORDER_NOT_HELD`);
+  - `lookCount(game, swapLookSize, isMain(discardOrderId) ? 1 : 0) ≥ 1`, else `ORDER_SUPPLY_EMPTY` (B1: the swap's reservation must take an available Order).
+- **Resolve:**
+  1. `markTechUsed(T10)`.
+  2. `discardHeldOrder`; emit `HELD_ORDER_DISCARDED`.
+  3. `takeTopMainOrders(swapLookSize)`, which may reshuffle a discard that now holds the Order just discarded (R17, INT Colour Samples swap).
+  4. `pendingLook = { kind: "colour_samples_swap", … }`; emit `PRIVATE_LOOK_OPENED`.
+  5. `step = { kind: "colour_samples_swap", returnTo: <the step it was used in>, lookedCount }`.
+
+`COLOUR_SAMPLES_SWAP_CHOOSE { orderId }`
+
+- **Validate:** the step; `orderId` is in the look (`INVALID_CHOICE`).
+- **Resolve:**
+  1. `addToHand`; emit `ORDER_RESERVED { via: "colour_samples_swap", source: "looked", secret }`.
+  2. The other card goes face down to the Main discard (R14); emit `LOOKED_ORDERS_DISCARDED`.
+  3. `pendingLook = null`; `step = { kind: returnTo }`.
+  4. If `returnTo === "after_action"`, call `afterWindowAbilityUsed`, which rechecks the window and ends the turn when nothing is left.
+
+The swap is a Tech effect, not a Commission Market action (L649). It never touches the display, the worker or Senior Apprentice.
+
+`work/turn.ts`:
+
+- `afterActionWindowOpen(game, pid) = imperialPriorityUsable(game, pid) || colourSamplesSwapUsable(game, pid)`.
+- `colourSamplesSwapUsable = ownsTech(T10) && techReady(T10) && handCount(pid) ≥ 1`. Both facts are public; the hand's content and the supply are deliberately ignored, so opening the window reveals nothing (DESIGN §4.5). The validator decides whether a particular discard works.
+- `CANAL_BARGE` is removed from `turn.ts`.
+- `endTurn` still runs the deferred refill after the window. A swap after a Commission Market action may discard an Order that action reserved, and its look takes deck cards before the refill does (INT Deferred refill).
+
+Window order: the swap and Imperial Priority may be used in either order, before or after the worker action. The swap is once per round across all of a player's windows.
+
+### 4.5 `firing/fireDeck.ts`: the reshuffle with buried cards (L511, L648, L657, R15)
+
+```ts
+/** Before a card is needed (peek, round reveal, Second Firing reveal): if every card left is
+ * buried (fireDeck.length === fireBuried, an empty deck included) and the discard is not
+ * empty, shuffle the open discard and put it on top, above the buried cards. */
+function prepareTop(draft, ctx): void {
+  const hidden = draft.hidden;
+  if (hidden.fireDeck.length > hidden.fireBuried || draft.fireDiscard.length === 0) return;
+  const shuffled = shuffle(draft.fireDiscard, ctx.rng);
+  hidden.fireDeck = [...shuffled, ...hidden.fireDeck];
+  draft.fireDiscard = [];
+  emit(ctx, { type: "FIRE_DECK_RESHUFFLED", cardCount: shuffled.length, buriedBelow: hidden.fireBuried });
+}
+```
+
+- **`drawFire`:** `prepareTop`, then `shift`. If the drawn card was buried (only buried cards were left and the discard was empty), `fireBuried -= 1`. That case is unreachable in play: it needs 7 or more cards out of the deck and discard at once.
+- **`peekFire`:** `prepareTop`, then read index 0.
+- **`buryTopFire`:**
+  - if the top card is not buried (`length > fireBuried` before the move), move it to the bottom and `fireBuried += 1`;
+  - otherwise (every card is buried) move it to the bottom and leave the count unchanged.
+- The invariant "deck and discard both empty" stays an engine bug. At most 3 cards are ever out (the round's card and two Second Firing cards), so 9 or more remain.
+- The reshuffle is the only RNG use, as before.
+
+Reachability: 1 card per firing plus 2 for Second Firing gives 3 a round. Rounds 1–3 can use 9 cards and round 4 the last 3, so round 5's reveal reshuffles. A bury in round 4 forces the reshuffle in round 4, when the buried card would otherwise be the only card left. The V1.6.1 editorial note "the bury clause can never apply" (1.6.1:L649) is retired.
+
+### 4.6 Canal Barge: `orders/completion.ts` (L630, INT Canal Barge)
+
+- `resolveOrderCompletion(draft, pid, spec, ctx)` loses `via`.
+- `useBarge = techReady(owner, T23)`, computed before the record. `record.canalBargeCoins = useBarge ? 2 : 0`.
+- After Ru/Guan: `markTechUsed(T23)`, then `gain(coins: T23.params.coins, reason: "canal_barge")`.
+- It is automatic, never declined (INT Canal Barge: deferring it could only move the same 2 Coins to a later completion of the same Order-Phase turn).
+- `completionTriggers` gains `canalBarge`. `orders/phase.ts` calls without `via`.
+- `work/windowAbilities.ts` loses `USE_CANAL_BARGE`.
+
+### 4.7 Quality with Protective Saggars: `firing/heat.ts`, `firing/pipeline.ts`
+
+- New pure `qualityFor(heatDifference: number, neverFlawed: boolean): Quality`. It returns `qualityForDifference(d)`, except Standard when `neverFlawed` and the raw result is Flawed (L636). `content.ts` keeps `qualityForDifference` (the printed table).
+- `saggarsProtects(game, ownerId) = ownsTech(player(game, ownerId), "T11")`. Owning the Tech is enough; the floor has no allowance.
+- **Step 9:** each ceramic's Quality is `qualityFor(first.heatDifference, saggarsProtects(owner))`. It covers the Shared and Imperial Kilns (L650), after Jun. `record.saggarsFloor` and `QUALITY_ASSIGNED.saggarsFloor` record when the floor applied. `heatDifference` stays the real difference.
+- The Second Firing recalculation uses the same function (unreachable for the Saggars owner, §1).
+- Ceramics fired in earlier rounds keep their Quality (L650).
+- `heatPreviews` (computer only, D3) applies the floor to the owner's ceramics.
+
+### 4.8 `firing/afterQuality.ts`
+
+- **Protective Saggars** (`USE_PROTECTIVE_SAGGARS`):
+  - Validate: owned, unused (`TECH_ALREADY_USED`), your ceramic from this firing whose Quality is exactly Standard. Otherwise `INVALID_TARGET` with the message "Choose one of your Standard ceramics from this firing." No Wood.
+  - Resolve: `markTechUsed`, Standard → Fine (`QUALITY_IMPROVED{cause: "protective_saggars"}`).
+  - After-Quality queue eligibility: T11 ready and ≥ 1 own Standard ceramic.
+  - The Wood check and `SAGGARS_STEP.flawed` are deleted. A floored Standard is a legal target.
+- **Ge:** unchanged code. Tests prove both directions of L653.
+- **Salvage:** a Saggars owner's ceramics from this firing are never Flawed, so they never enter `firing_salvage`.
+
+### 4.9 `firing/contributions.ts`, `firing/heat.ts`: Fuel Ledger (L637)
+
+- `contributionWood(submission, ownsFuelLedger)`: the card's cost is `T12.params.cardWood` (0) for BANK and STOKE when the submitter owns T12, else the printed cost (L256–258). Add `extraWood` (1) when `fuelLedger` is true.
+- `validateContribution` and `revealAndDetermineBaseHeat` pass `ownsTech(p, T12)`. `contributionHeat` is unchanged: ±1, or ±2 with the commitment.
+- `legalContributions` keeps its order. For an owner, Bank and Stoke are always affordable, and the commitment needs 1 Wood.
+- `RevealedContribution.woodPaid` is the actual Wood paid.
+- The store shapes (`fuelLedger` flag) are unchanged.
+
+### 4.10 Second Firing: `firing/afterQuality.ts` (L639, R7)
+
+`USE_SECOND_FIRING { ceramicId }`
+
+- **Validate:** unchanged: owned, unused, your Flawed or Standard ceramic from this firing.
+- **Resolve:**
+  1. `markTechUsed(T14)`.
+  2. `a = drawFire()`, `b = drawFire()`, each through `prepareTop` (§4.5).
+  3. `firing.pendingExtraFire = { playerId, ceramicId, modifiers: [a, b] }`; emit `SECOND_FIRING_REVEALED`.
+  4. `phase = { type: "firing_second_firing_choice", actorId, ceramicId }`.
+
+`SECOND_FIRING_CHOOSE { cardIndex, jun }` (phase `firing_second_firing_choice`, the actor only)
+
+- **Validate:** when `jun` is non-null: Jun Kiln (`KILN_ABILITY_NOT_OWNED`), unused (`ABILITY_ALREADY_USED`), 1 Wood (`INSUFFICIENT_RESOURCES`).
+- **Resolve:**
+  1. `chosen = modifiers[cardIndex]`.
+  2. `record.second = heatCalculation({ fireModifier: chosen, heatSource: (imperial ? kilnDie : baseHeat) + chosen, positionModifier: first.positionModifier, heatMarker: first.heatMarker, junAdjustment: 0 })`; `record.secondFiringCards = [a, b]`; emit `SECOND_FIRING_CHOSEN`.
+  3. If `jun`: spend 1 Wood, `markKilnAbilityUsed`, `withJunAdjustment`, emit `JUN_ADJUSTED{during: "second_firing"}`.
+  4. The new Quality is `qualityFor(second.heatDifference, saggarsProtects(owner))`. It replaces the old one even if worse (`QUALITY_ASSIGNED{cause: "second_firing"}`).
+  5. Discard both cards face up, in reveal order (`a`, then `b`); `pendingExtraFire = null`.
+  6. Return to `firing_after_quality` with `[actorId, ...later eligible players]`, as `resolveSecondFiringJun` does today, then `afterAbilityUsed`.
+
+The choice step always opens: a card must be chosen even when Jun is not available. The rule order is reveal 2 → choose 1 → recalculate → R7 Jun → Quality → discard both. One command carries the card and Jun because the player knows everything at that point (DESIGN §1 principle 4). `firing_second_firing_jun` and `resolveSecondFiringJun` are deleted, and `RESOLVE_JUN` is legal only in `firing_heat_adjustment`.
+
+### 4.11 Other engine modules
+
+- **`setup.ts`:** `schemaVersion: 7`; `hidden.fireBuried: 0`.
+- **`round.ts`:** `readyAllAbilities` now readies T10's swap, through its `oncePerRound` flag.
+- **`techs.ts`:** `handLimit` is unchanged. `techPrice(techId)` is the printed cost; its `WorkerEffect` parameter is deleted (owner revision 2026-10-17).
+- **`work/turn.ts`:** `endTurn` refills the Tech displays after the Main display (§4.3, L209).
+- **`market.ts`:** `takeFaceUpTech` no longer implies a refill; `refillTechDisplay` is called at setup, at each turn end and at the Start of Round.
+- **`firing/pipeline.ts`:** `TEST_PIECES_BURY` uses the counting `buryTopFire`. The Fire reveal uses `prepareTop`.
+- **`view.ts`:** `publicCounts` adds `fireBuried` and counts `orderIds` for every order-look kind.
+- **`state.ts`:** `decisionPrompt` gets the new phase type. New `lookOrderIds(look)` and `lookTechIds(look)` give the cards a pending look holds, including the Guild inspection that waits in a Colour Samples look; conservation checks and test fixtures use them.
+- **`engine.ts`:** the handler table follows §2.3.
+- **`index.ts`:** the barrel exports `colourSamplesSwapOptions` and `secondFiringChoiceOptions` and drops `canalBargeOptions`.
+- **`kilnLoading.ts`, `recognition.ts`, `scoring.ts`:** unchanged. Coins count at the end as before.
+
+### 4.12 `invariants.ts` (DESIGN §8.3)
+
+Changed or new checks:
+
+- **Fire conservation:** deck + discard + `firing.fireModifier` + both `pendingExtraFire.modifiers` = the 12-card distribution. `0 ≤ hidden.fireBuried ≤ fireDeck.length`.
+- `pendingExtraFire !== null` iff the phase is `firing_second_firing_choice`, with matching actor and ceramic. The Fire card is revealed in `firing_heat_adjustment`, `firing_after_quality`, `firing_second_firing_choice` and `firing_salvage`.
+- **Order conservation:** Order zones include `pendingLook` of the kinds `commission_market`, `colour_samples` and `colour_samples_swap`.
+- **Step and look agree:** `commission_market` ⇔ look kind `commission_market` with `lookedCount` cards; `colour_samples_swap` ⇔ look kind `colour_samples_swap`; `colour_samples` ⇔ look kind `colour_samples`.
+- **Guild Hall inspection** (owner revision 2026-10-17):
+  - the look's discipline is the step's, and it holds `inspectedCount` less the inspected takes;
+  - at most `maxTechs` (2) takes, of pairwise different disciplines, each owned by the active player, and an inspected take is of the inspected discipline;
+  - the step's worker is the Shifu at the Guild Hall;
+  - `colour_samples.resume !== null` ⇔ the look's `inspection !== null`; a resumed step's takes include Colour Samples, and its waiting Techs pass the same checks.
+- **Tech conservation** counts the untaken inspected Techs wherever they wait (`lookTechIds`).
+- **Deferred Tech refill** (L209): outside a Work turn's `guild_inspection`, `colour_samples` and `after_action` steps, every discipline shows min(2, display + deck) Techs.
+- **Saggars floor:**
+  - no firing record of a T11 owner has Quality Flawed;
+  - no Finished ceramic has Quality Flawed when its owner acquired T11 in or before its `firedInRound`;
+  - `saggarsFloor ⇒ owner owns T11 ∧ quality ∈ {standard, fine}`.
+- **Canal Barge:** per player and round, at most one completed record with `canalBargeCoins: 2`, and only for a T23 owner.
+- Removed: the `via` check and the `firing_second_firing_jun` checks.
+
+### 4.13 Selectors and legal actions (DESIGN §5)
+
+Selectors:
+
+- `commissionOptions(view, effect)` follows §2.7.
+- `lookedOrderOptions(view)` covers the three order looks.
+- New `colourSamplesSwapOptions(view)` and `secondFiringChoiceOptions(view)`.
+- `canalBargeOptions` is deleted.
+- `materialsYardOptions` has no bonus. `afterQualityOptions` uses the Saggars rules (§4.8). `contributionOptions` gives Fuel Ledger's free cards.
+- `firingStageView` and `firingRecapView` follow §2.7.
+- `placementOptions` probes `PLACE_COMMISSION_MARKET{workerId}`.
+- `guildOptions(view, effect)` prices every Tech at its printed cost for both effects; `guildInspectionOptions(view)` follows §2.7 (owner revision 2026-10-17).
+- `heatPreviews` applies the floor.
+
+No selector shows a Quality preview for the Second Firing choice or the Commission cards (D3). The UI shows the cards; the computer evaluates them.
+
+`legalActions` families (canonical = exhaustive unless noted):
+
+| Family | Candidates |
+| --- | --- |
+| `PLACE_MATERIALS_YARD` | splits 0..3 or 0..6 × Senior Apprentice × Prepared Clay (no bonus toggle) |
+| `PLACE_COMMISSION_MARKET` | one per worker option (Shifu, Apprentice, Apprentice via Senior Apprentice) |
+| `COMMISSION_CHOOSE` | every single pick (face-up slots ascending, then looked cards in look order) and, for `maxReservations` 2, every unordered pair in that order (≤ 9 + 36) |
+| `GUILD_TAKE` | while fewer than 2 takes: each untaken inspected Tech, then each face-up Tech in `DISCIPLINES` order (≤ 2 + 6) |
+| `GUILD_FINISH` | after at least 1 take: every permutation of the untaken inspected Techs (≤ 2) |
+| `USE_COLOUR_SAMPLES_SWAP` | one per held Order, in hand order |
+| `COLOUR_SAMPLES_SWAP_CHOOSE` | one per looked card |
+| `SECOND_FIRING_CHOOSE` | `cardIndex` 0, 1 × `jun` {null, +1, −1 when ready} |
+| `COMPLETE_ORDER` | unchanged; `triggers.canalBarge` is informational |
+| removed | `USE_CANAL_BARGE`, `COMMISSION_RESERVE`, `COMMISSION_CHOOSE_LOOKED`, `COMMISSION_GAIN`, `COMMISSION_STOP` |
+
+`sampleLegalAction` builds Commission picks from `lookedOrderOptions`, Guild Hall takes and finishes from `guildInspectionOptions`, and Second Firing choices from `secondFiringChoiceOptions`. `legalActionFamilies` lists the new families. The agreement property (DESIGN §5.4) covers every new selector.
+
+---
+
+## 5. Legality: "at least 1 instance of the main action" (L144)
+
+| Location | V1.6.2 placement is legal when |
+| --- | --- |
+| Materials Yard | always (3 or 6 resources) |
+| Form & Decorate | unchanged (L174, R4) |
+| Glaze & Load | unchanged (L185, R5) |
+| Commission Market (either effect) | a display position holds an Order, or the Main deck plus discard is non-empty. Either way at least 1 reservation exists: a non-empty supply means the look shows at least 1 card (B1) |
+| Guild Hall | Apprentice and Shifu alike: an affordable face-up Tech of a discipline you do not own, at printed cost, within the 3-total limit (L212; owner revision 2026-10-17). It also guarantees the Shifu's first take |
+| Canal Wharf | always (L145); the Shifu's card is drawn only if one is available (B1) |
+| Magistrate's Hall | unchanged |
+
+Tech effects in the window (the swap, Imperial Priority) are not placements. Their validators are in §4.4 and DESIGN §3.2.
+
+## 6. Progress guarantee and automatic steps (DESIGN §3.6, §3.7)
+
+| Step | Always-legal exit |
+| --- | --- |
+| `commission_market` | `COMMISSION_CHOOSE` with one pick: placement legality guarantees a display Order or a looked card |
+| `guild_inspection` | before a take: `GUILD_TAKE` of the face-up Tech placement legality guaranteed (the display does not change during the inspection); after a take: `GUILD_FINISH` with the untaken inspected Techs in any order |
+| `colour_samples` | `COLOUR_SAMPLES_CHOOSE`: opened only when ≥ 1 card was looked at; then the worker action ends, or the Shifu's inspection resumes |
+| `colour_samples_swap` | `COLOUR_SAMPLES_SWAP_CHOOSE`: the validator guaranteed ≥ 1 looked card |
+| `after_action` | `END_TURN` (the window can open for the swap with no workable discard; the player ends the turn) |
+| `firing_second_firing_choice` | `SECOND_FIRING_CHOOSE{cardIndex: 0, jun: null}` |
+
+Automatic, never declined:
+
+- Canal Barge's 2 Coins (INT Canal Barge);
+- Saggars' floor (INT Protective Saggars floor);
+- Fuel Ledger's free cards (a cost);
+- the end of a Guild Hall Shifu's action when no decision is left on public facts (§4.3), with its forced bottom order of 0 or 1 Tech;
+- the deferred Tech refill at the end of the taker's turn (L209).
+
+The Commission look is mandatory (INT Commission Market looks). A Shifu's second Guild Hall take is optional (L207 "up to 2").
+
+## 7. Hidden information (DESIGN §4)
+
+Secret inventory, rows changed or added:
+
+| Secret | Lives in | Visible to | Public projection |
+| --- | --- | --- | --- |
+| Commission Market look, top 2 or 3 (L195–196, B3) | `hidden.pendingLook` (`commission_market`); `PRIVATE_LOOK_OPENED.secret` | Actor | `counts.pendingLook {playerId, kind, count}` |
+| Colour Samples swap look, top 2 (L625, B3) | same (`colour_samples_swap`) | Actor | same |
+| The held Order discarded for the swap | Main discard (face down) or the box; `HELD_ORDER_DISCARDED.secret` | Owner | `to`, counts |
+| Looked reservations (Commission, Colour Samples, swap) | hand; `ORDER_RESERVED.secret` | Owner | `via`, `source: "looked"` |
+| Guild Hall inspection, untaken Techs (L207, B2), also while they wait behind the Shifu's Colour Samples look | `hidden.pendingLook` (`guild_inspection`, or `colour_samples.inspection`) | Actor | the step's discipline, `inspectedCount` and `takes`; `counts.pendingLook` |
+| The Guild Hall bottom order (B2) | `TECHS_RETURNED_TO_BOTTOM.secret`; the `GUILD_FINISH` command | Actor | `count` |
+| The Canal Wharf Shifu's card (L220) | hand; `ORDER_RESERVED{source: "deck_top"}.secret` | Owner | count |
+| Unreserved looked cards (L195–196, R14) | Main discard; `LOOKED_ORDERS_DISCARDED.secret` | Actor | count |
+| Commands carrying secrets | `private.game_commands` | Server | never published: `COMMISSION_CHOOSE`, `USE_COLOUR_SAMPLES_SWAP` (names a held Order), `COLOUR_SAMPLES_SWAP_CHOOSE`, `GUILD_FINISH` (the bottom order) |
+
+Rows that no longer exist: the blind reservation and the Commission Shifu's "top-3 selection".
+
+Public: the number of Orders each look shows, the face-up picks, `fireBuried`, both Second Firing cards (they are revealed, L639), `saggarsFloor`, and `canalBargeCoins`.
+
+Inference channels (DESIGN §4.5):
+
+- **The after-action window** opens for the swap on public facts only (T10 ready, hand count ≥ 1). It reveals nothing about the hand or its Starting/Main mix.
+- **The Commission look** always happens and always opens a step, whatever the cards, so neither its timing nor the step leaks.
+- **The Guild Hall inspection closing by itself** (owner revision 2026-10-17) uses public facts only: the takes, Coins, owned Techs and the face-up display, never the cost of an untaken inspected Tech. Two tables that differ only in that cost close or stay open alike (`privacy_guild.test.ts`).
+- **`HELD_ORDER_DISCARDED.to`** shows whether a Starting or a Main Order was discarded. This is public at the table too: the card goes to the box or the discard pile.
+
+## 8. Determinism and randomness (DESIGN §7)
+
+- The setup draw order is unchanged.
+- New mid-game randomness:
+  - Fire reshuffles (R15);
+  - Main deck reshuffles at the start of more looks;
+  - the Canal Wharf Shifu's draw.
+- Each happens only when a card is needed, through `RandomSource`.
+- Recorded command logs from V1.6.1 do not replay under V1.6.2. Determinism tests record their logs at run time, so they are unaffected.
+
+## 9. Platform and versioning
+
+- **`src/multiplayer/types.ts`:** `StoredRulesVersion` gains `"1.6.2"`; `CurrentRulesVersion = "1.6.2"`; `ComputerPolicyVersion = \`rules-v1.6.2-${string}\``; the legacy list keeps `rules-v1.6.1-…` labels as history.
+- **`service.ts`:** `CURRENT_RULES_VERSION = "1.6.2"`, schema 7. The messages say V1.6.2. A V1.6.1 room is refused by version (`UNSUPPORTED_RULES_VERSION`) and by its `r29` fingerprint (`RULES_FINGERPRINT_MISMATCH`); nothing is migrated.
+- **`projection.ts`, `inMemoryStore.ts`, `client.ts`, `store.ts`:** the pins become `1.6.2`, schema 7, `^r30-[0-9a-f]{16}$` and `^rules-v1\.6\.2-…$`.
+- **`computerPolicy.ts`:** `rules-v1.6.2-strategic-001` and `rules-v1.6.2-canonical-001`, labelled "V1.6.2 Strategic" and "V1.6.2 Canonical".
+- **`src/playtest/*`:** Form V3 with `rulesVersion: "1.6.2"`. The form structure is unchanged: Fuel Ledger's −2/+2 is still recorded as `bank_2`/`stoke_2`.
+- **Supabase, nothing deployed.** The pins are edited in place in the undeployed migrations, keeping their file names:
+  - `202610150001_v161_rules.sql`: `'1.6.1'` → `'1.6.2'`, `^r29-` → `^r30-`, the policy regex → `rules-v1\.6\.2-`, comments;
+  - `202610150002_playtest_v161.sql`: `'1.6.1'` → `'1.6.2'` in the version list and the Form V3 check;
+  - `supabase/tests/rls.test.sql`, `supabase/README.md` and `supabase/functions/_shared/supabaseStore.ts` comments follow.
+
+  The private-submission card checks are unchanged.
+- **`tools/`** (platform config; must keep compiling):
+  - `uiFixtures.ts`: fixture m1 drops `buyShifuBonus`; m2 places and then sends `COMMISSION_CHOOSE`; the second-reservation steering is replaced; m12's description names the Shifu's 2 takes at printed cost and `GUILD_FINISH`; m17 steers to Colour Samples (T10) and the swap instead of Canal Barge; m18 becomes the Second Firing choice. `npm run fixtures` regenerates the outputs in the UI stage.
+  - `fixturePrivacy.ts`: works for the new look kinds (it reads `orderIds`), and for a Guild inspection waiting in a Colour Samples look (`inspection.techIds`); add the swap's discarded Order to a seat's secret IDs.
+  - `localBackendV161.ts`: comments.
+- **`src/app`:** not part of this track. `npm run typecheck` (app config) may fail until the UI stage.
+
+## 10. Computer policy (`src/multiplayer/computerPlayer.ts`, `computerFallback.ts`)
+
+The policy reads only its `ActorView` (unchanged). Changes:
+
+1. **Materials Yard:** the Shifu or Senior Apprentice total is 6. Delete the bonus branch in `absApply` and `buildMaterialsYard`.
+2. **Commission Market:**
+   - `buildCommission` yields one `PLACE_COMMISSION_MARKET` per worker option.
+   - The planner's `cmValue[effect]` = expected value of the best (Apprentice) or best two (Shifu) Orders among the display and `lookCount` unknown cards. Use `reservationValue` and `expectedBestOf`, counting the second only when it clears the overflow threshold (`reservationOverflows`: 2.2 / 1.2).
+   - Delete `cmSecond`, `next.coins += 1` and `neededResource`'s Commission use.
+   - A new `decideCommissionChoice` ranks display slots and looked cards by `reservationValue(k, orderId, pending)`: 1 pick, or for the Shifu a second pick that clears the threshold.
+3. **Canal Wharf Shifu:** value = 4 Coins plus the expected value of a random unseen Main Order (`expectedBestOf(k, 1)`), less the overflow cost.
+4. **Guild Hall** (owner revision 2026-10-17):
+   - every price is the printed cost (`GuildTechOption.cost`); `shifuTechPrice` is deleted;
+   - `guildShifuValue` values the visit as the better of 1 take and 2 takes from different disciplines that the Coins cover (at most one of them an estimate of the inspected deck), counting a second only above `SECOND_TECH_THRESHOLD` (0.5), and names the deck to inspect;
+   - `decideGuildTake` ranks the first take with the best affordable second take of another discipline, takes a second Tech only above the threshold, and otherwise sends `GUILD_FINISH` with the untaken Techs in look order.
+5. **Colour Samples swap:**
+   - In both windows: if T10 is ready and the hand is non-empty, take the held Order with the lowest `reservationValue` under the current plan. Gain = `expectedBestOf(k, lookCount)` − its value − 0.1; swap when the gain > 0.3.
+   - `decideColourSamplesSwap` reserves the best looked card.
+   - `techValue(T10)` adds the per-round swap value.
+6. **Canal Barge:**
+   - delete the `windowAbility` branch and `bestCompletion(…, "USE_CANAL_BARGE")`;
+   - `completionReward` adds `2 × coinValue` (or exact Coin VP after the last Work Phase) to the first completion of the round while T23 is ready;
+   - `techValue(T23)` = 2 Coins × P(≥ 1 completion a round).
+7. **Protective Saggars:**
+   - `qualityAt` takes a `neverFlawed` flag for the seat's own ceramics (and rivals' when modelling them), floored at Standard;
+   - `aimedQualityP` and `loadedQualityP` use it;
+   - `decideAfterQuality` offers Saggars on Standard ceramics only, with no Wood term, and prefers a ceramic Ge will not crackle;
+   - `techValue(T11)` is re-weighted for the floor.
+8. **Fuel Ledger:** `contributionOptions` already carries the 0-Wood cost, so `decideContribution` follows. `techValue(T12)` is re-weighted.
+9. **Second Firing:**
+   - `decideAfterQuality` values T14 as the expectation over the next two cards, drawn without replacement, of the better card (with Jun ±1 when ready and affordable);
+   - the distribution of the next card is the unseen deck (`unseenFire`, both pending modifiers removed). When no unburied card is left (`counts.fireDeck − counts.fireBuried < needed`), the remaining draws come from the discard multiset (R15);
+   - a new `decideSecondFiringChoice` evaluates both cards × Jun options exactly and picks the best (Jun's Wood at `woodValue`).
+10. **Test Pieces:** `nextFireDist` and `extraFireDist` apply the same R15 model.
+11. **Fallback (`computerFallback.ts`):**
+    - `commission_market` → the first `lookedOrderOptions` pick (the first face-up slot, else the first looked card);
+    - `guild_inspection` → before a take, every legal `GUILD_TAKE` (placement legality guarantees one); after a take, `GUILD_FINISH` with the untaken inspected Techs in look order (always legal);
+    - `colour_samples_swap` → the first looked card;
+    - `firing_second_firing_choice` → `{cardIndex: 0, jun: null}`;
+    - the `COMMISSION_GAIN`/`STOP`/`RESERVE` branches and `firing_second_firing_jun` are deleted.
+
+AI weights are heuristics, not game data; changing them changes no rule. `computer_strength.test.ts` thresholds are re-baselined if needed, with the reason recorded.
+
+---
+
+## 11. Test plan
+
+### 11.1 Engine (`test/v161/engine`)
+
+| File | New or changed cases |
+| --- | --- |
+| `commission_market.test.ts` (rewrite) | Apprentice: a private top-2 look at placement; 1 face-up pick (position empty until the turn ends, one refill) or 1 looked pick (no refill); the rest of the 2 face down; no resource; 0 picks `RESERVATION_REQUIRED`, 2 picks `RESERVATION_LIMIT`. Shifu: top-3 look; 1–2 picks in any mix (2 face-up → one refill, L390; 2 looked; 1 + 1); the rest of the 3 discarded. Senior Apprentice = Shifu effect, once per round, Apprentice only. Stale face-up pick `ORDER_NOT_AVAILABLE`; a pick outside the look or a duplicate `INVALID_CHOICE`. Privacy: the look and looked picks reach only the actor; the public sees counts and face-up IDs |
+| `placement_legality_commission.test.ts` | legal with only display Orders, with only a supply, illegal with neither (`NO_MAIN_ACTION_POSSIBLE`); both effects and Senior Apprentice |
+| `market.test.ts` | `reservable`, `lookCount` (deck > 0, deck 0 with discard, both empty, `extraDiscard`), `discardHeldOrder` (Main → discard face down, Starting → box) |
+| B1 cases (in `commission_market`) | deck empty with a discard → reshuffle at the start of the look; deck 1 + discard 5 → 1 card, no reshuffle; both empty → a 0-card look and a display pick |
+| `materials_yard.test.ts`, `placement_legality_materials.test.ts` | Shifu 6 in every split 0–6; no bonus; Senior Apprentice 6; Prepared Clay after the 6 |
+| `simple_locations.test.ts` | Canal Wharf Apprentice 2 Coins; Shifu 4 Coins + the top Main Order into the hand (hand +1, secret `deck_top` event); a reshuffle when the deck is empty; both empty → 4 Coins and no card; always legal |
+| `guild_hall.test.ts`, `placement_legality_guild.test.ts` | Owner revision 2026-10-17. Apprentice: printed cost, Cover token at once, the position empty through the after-action window and refilled at `END_TURN`. Shifu: 1 take at printed cost (no discount); a face-up and an inspected take of different disciplines, the second from what shows now (the deck top is `TECH_NOT_AVAILABLE`, the first take's discipline `TECH_DISCIPLINE_OWNED`); two face-up takes then `GUILD_FINISH`; a third take `TECH_TAKE_LIMIT`; `GUILD_FINISH` first `TECH_TAKE_REQUIRED`; declining the second take; closing by itself; the 3-total limit across both takes; B2 bottom first, refill at the turn end; owned and exhausted decks; `INVALID_BOTTOM_ORDER`. Colour Samples as the Shifu's first take (look before the second take, inspection waiting) and second take (bottom order after the reservation). Placement: the same rule for both workers at printed cost (1 Coin and 0 Coins illegal, 2 legal; only 3-Coin face-up Techs; owned disciplines; inspection never counts) |
+| `colour_samples_swap.test.ts` (new) | Before and after a worker action. Main discard face down (count +1) or Starting to the box. Private top-2 look; reserve 1; R14 discard of the other. Once per round (`TECH_ALREADY_USED`); declining keeps it (R4). A Tech effect (no worker, no Senior Apprentice, display untouched). Usable after the Guild Hall action that acquired it, together with the when-acquired look. Either order with Imperial Priority. The window opens only on T10 ready and a held Order, whatever the hand holds. B1: deck 1 → 1 card; deck 0 → reshuffle (which may return the discarded Order); both empty with a Starting Order → `ORDER_SUPPLY_EMPTY`. Hand size unchanged. A swap after a Commission action runs before the deferred refill. Privacy |
+| `canal_barge.test.ts` (rewrite) | Order Phase: the first completion each round +2 Coins (`canalBargeCoins: 2`), later ones +0; Starting Orders count; works the round T23 is acquired; with Guan (2 + 2 Coins) and Tribute Ware; never in the Work Phase (`USE_CANAL_BARGE` → `MALFORMED_ACTION`); the window never opens for T23 |
+| `work_turn.test.ts`, `imperial_priority.test.ts` | the after-action window opens for Imperial Priority or the swap only; the deferred refill comes after the window |
+| `after_quality.test.ts` | **Saggars:** the owner's Shared and Imperial ceramics with difference 3, 4, 5 are Standard (`saggarsFloor`), others' are not. Once per round, Standard → Fine without Wood, a floored ceramic included; never a Fine or Masterpiece target; optional (R4); no salvage for the owner. **Ge:** a floored Standard may be crackled; after Saggars' upgrade Ge cannot take that ceramic, and after Crackle Saggars cannot. **Second Firing:** 2 cards revealed publicly; choose 1; same Base Heat (Kiln Die for Imperial), position and marker; the new Quality replaces even if worse; both discarded in reveal order; earlier Jun not carried. **R7:** Jun on the chosen card's recalculation before Quality, 1 Wood; `jun` non-null when Jun is spent or unaffordable → errors; back to after-Quality for later players |
+| `heat_adjustment.test.ts` | `RESOLVE_JUN` only in `firing_heat_adjustment` |
+| `heat_quality.test.ts` | `qualityFor(d, neverFlawed)` for d = 0..6; `heatPreviews` floor |
+| `contributions.test.ts`, `privacy_contributions.test.ts` | a Fuel Ledger owner with 0 Wood may Bank or Stoke (pays 0); the commitment needs and pays 1 Wood → ±2; a non-owner pays 1; `legalContributions` order; Tend + commitment invalid |
+| `fire_deck.test.ts` | R15: `fireBuried` counting; the reshuffle goes above buried cards when only buried cards remain; a buried card is drawn last; the plain reshuffle when the deck is empty; peek triggers `prepareTop`; burying a buried card; several buried cards; conservation; RNG used only by a reshuffle; `FIRE_DECK_RESHUFFLED.buriedBelow` |
+| `test_pieces.test.ts`, `firing_flow.test.ts` | a seeded game where Second Firing runs every round and Test Pieces buries in round 4: the reshuffle happens in round 4 and the buried card comes last; without a bury, round 5 reshuffles |
+| `tech_matrix.test.ts`, `ability_cases.ts` | new scenarios for T10 (swap), T11, T12, T14, T23; every `TechId` still covered |
+| `optional_abilities.test.ts` | T10 swap, T11 upgrade and T14 are optional rows; T23 and Saggars' floor are listed as automatic |
+| `techs_kilns.test.ts` | the new costs; `techPrice` is the printed cost for every Tech; T10 `oncePerRound` and readying; the hand limit |
+| `kilns_orders.test.ts` | Ru, Guan and Tribute Ware only in the Order Phase; Canal Barge with Guan |
+| `cleanup.test.ts` | the swap keeps the hand size; the Canal Wharf card counts toward the trim |
+| `content_contract.test.ts` | V1.6.2 source and audit. Costs (L612–641), location cells (L164–229), quick reference (L710–715). Printed numbers: T10 [3,1,5,1,2,1], T11 [3,1], T12 [1,2,2], T14 [1,2,1], T23 [2], MY Shifu [6], CM Apprentice [2,1,2,2], CM Shifu [3,2,3,3], GH Apprentice [1], GH Shifu [1,2,2], GH summary Shifu [2,1,2], CW Shifu [4]. The Guild Hall's L207, L209 and L212 text and no "discount" in its section (owner revision 2026-10-17). Short text and bold spans (§3.3); clarifications (§3.4) |
+| `localization_content.test.ts` | Chinese sources V1.6.2; the new error codes in EN/ZH; the 96-character cap per R18 (§13) |
+| `rules_fingerprint.test.ts` | revision 30; data changes move the digest |
+| `source_of_truth.test.ts` | documents: done in stage 1; the checksums of the revised English and Chinese rulebooks (owner revision 2026-10-17). Data `rulesVersion` 1.6.2 and the retired-ID scan (add `buyShifuBonus`, `blind`, `look_top_three`, `commission_top_three`, `USE_CANAL_BARGE`, and the Guild Hall Shifu discount) in the engine stage |
+| `action_guard.test.ts`, `errors.test.ts` | the new commands parse (`GUILD_FINISH` included); the deleted ones, and a `GUILD_TAKE` carrying a `bottomOrder`, are `MALFORMED_ACTION`; `RESERVATION_REQUIRED`, `TECH_TAKE_LIMIT` and `TECH_TAKE_REQUIRED` text and `detailKeys` |
+| `invariants.test.ts` | each new or changed check of §4.12 fails on a hand-built broken state |
+| `projection_privacy.test.ts`, `privacy_guild.test.ts` | the new looks, the swap's discard and the Canal Wharf card never reach the public projection or another seat's view; a Guild inspection waiting behind Colour Samples stays private; the inspection's closing uses public facts only |
+| `legal_actions.test.ts`, `selector_agreement.test.ts`, `legal_actions_perf.test.ts`, `ui_selectors.test.ts` | the new families and selectors agree with `validateAction`; the perf fixture keeps < 50 ms; the `firingStageView` allow-list |
+| `fuzz.test.ts`, `determinism.test.ts` | full 2/3/4-player games reach `finished`; seeds that exhaust the Fire deck are part of the CI set |
+| `setup.test.ts`, `support/fixtures.ts` | schema 7; `fireBuried: 0`; `buildState` accepts `fireBuried`; `giveTech` with T10's flag |
+| `tech_vp_on_gain.test.ts`, `scoring.test.ts`, `personal_spaces.test.ts` | Canal Barge flows replaced; Tech VP on gain unchanged (A1) |
+
+### 11.2 Platform (`test/v161/platform`)
+
+| File | Cases |
+| --- | --- |
+| `rules_fingerprint_gate.test.ts`, `client_compatibility.test.ts`, `supabase_contract.test.ts`, `local_backend_v161.test.ts`, `tsconfig_includes.test.ts` | `1.6.2`, schema 7, `r30`; V1.6.1 rooms (`r29`) and schema-6 saves are refused; the migration pins |
+| `multiplayer_privacy.test.ts`, `reconnect.test.ts` | Commission look, swap look, a Guild Hall inspection between two takes and Second Firing choice survive reconnect for the actor only; other seats never get the looked cards, the inspected Techs or their bottom order, the swap's discarded Order or the Canal Wharf card; seat and state unchanged |
+| `computer_decisions.test.ts`, `computer_legality.test.ts`, `computer_fallback.test.ts` | the policy and the fallback act legally in `commission_market`, `colour_samples_swap`, `firing_second_firing_choice` and the after-action window |
+| `computer_hidden_independence.test.ts` | re-randomised hidden state (deck orders, other hands) with the same own view gives the same choice, a pending look included |
+| `computer_full_games.test.ts`, `online_computer_player.test.ts`, `multiplayer_computer_turns.test.ts` | full all-computer games for 2/3/4 players |
+| `fuel_ledger_store.test.ts`, `contribution_cas.test.ts` | the commitment round trip is unchanged; an owner's Bank pays 0 Wood |
+| `playtest_form.test.ts` | Form V3 with `rulesVersion: "1.6.2"` |
+
+---
+
+## 12. Documents to update in later stages
+
+- `docs/IMPLEMENTATION_DECISIONS.md`, `docs/ONLINE_GAME_SPEC.md`: the V1.6.2 commands, the window, privacy and versions (§2–§9).
+- `docs/KILN_OPENING_v1.6.2_CLARIFICATIONS.md` (new, §3.4).
+- `docs/GLOSSARY_ZH_V1.6.1.md`:
+  - add 换单 (the Colour Samples swap, as in Chinese change 22 and L720);
+  - update the Tech reminder table (lines 489–534) to the V1.6.2 component text.
+  - Done in stage 2: the Commission wording 查看牌堆顶2张／3张 and 不看牌面拿取 (Canal Wharf); 盲接 and 看三取一 marked obsolete; §4.5 陶工行 per the owner revision (至多2项不同门类的技艺, 各按牌面价付费; the deferred refill); the error sentences of `RESERVATION_REQUIRED`, `TECH_TAKE_LIMIT` and `TECH_TAKE_REQUIRED`.
+- `src/app` (the UI stage): the Guild Hall inspection chooser takes 1 Tech per `GUILD_TAKE` and ends with `GUILD_FINISH`; the Colour Samples window may resume an inspection; `GuildTechOption.cost` replaces `price`/`printedCost` (no "printed → price" display); a taken Tech's empty position shows until the turn ends.
+- `AGENTS.md` (project instructions; the owner changes them): its "Tests that must exist" still name the first-draft Guild Hall Shifu discount ("the Shifu's 2-Coin discount (minimum 0) in prices and placement legality", "the Guild Hall Shifu discount"), its "Removed by V1.6.2" list says the discount "is 2", and its Fire-deck bullet still calls R15 "provisional default P4".
+- `supabase/README.md`, `docs/DESIGN_SPEC.md` (note), the `ENGINE_V1.6.1_DESIGN.md` header (point at this delta).
+
+---
+
+## 13. Rule questions and the owner's rulings (2026-10-17)
+
+Stage 1 recorded four cases the V1.6.2 text left open, each with a provisional default. On 2026-10-17 the owner confirmed all four defaults. They are now owner rulings R15–R18 in the audit; none changes a contract.
+
+1. **R15 (was provisional default P4) — When a Fire deck holding only buried cards "runs out".** L511 and L657 reshuffle only when the deck "is empty". L648 says the discard is shuffled "and placed above" the buried card, "so the buried card is drawn last". The two only agree if the deck counts as run out once every card left in it is buried. **Ruling:** when a card is needed and every remaining card is buried, shuffle the discard and put it on top; a Test Pieces peek triggers it too. Without it, a card buried from a short deck would be revealed at once, and the bury would do nothing.
+2. **R16 — B1 applies to every look.** B1 says a look sees "as many cards as remain" and is never completed from a reshuffled discard. V1.6.2 makes looks routine: every Commission Market visit and every swap. With 1 card in the deck and a large discard, an Apprentice sees only 1 card. **Ruling:** B1 as ruled, for every look; a look never reshuffles to complete itself. The discard is reshuffled only when the deck is empty as a look starts.
+3. **R17 — The Colour Samples swap discards before it looks.** L625 reads "discard 1 held Order to look". If the deck is empty, the look's reshuffle includes the Order just discarded, which may come straight back. **Ruling:** the literal order (INT Colour Samples swap): the held Order is discarded, then the top 2 are looked at.
+4. **R18 — The Chinese Colour Samples reminder is kept in full.** The owner's Chinese Colour Samples line is 79 characters; the glossary capped reminders at 72 (three printed lines of 24). **Ruling:** keep the owner's text verbatim; the test cap becomes 96 characters (four printed lines of 24).
+5. **Recorded as interpretations, not open:** the Commission look always happens (the text is imperative and 1.6.1:L197's "may instead" is gone); Canal Barge is automatic (the Kiln Tending precedent); Saggars' floor is always on (the owner's component text says "Always:"); the Canal Wharf Shifu gains the Coins and then draws (L220's order).
+6. **The Guild Hall revision (owner, 2026-10-17)** is rulebook text, not a ruling: L31, L207, L209, L212 and L714 of both editions. The engine's reading of what it leaves implicit is recorded in the audit as interpretations: each take is its own command and resolves fully before the next; "different disciplines" is the 1-per-discipline limit; the inspection closes by itself only on public facts; the refill at the turn end covers every discipline.

@@ -38,10 +38,10 @@ import type {
 
 const SEAT_COLOURS = ["cinnabar", "celadon", "ink", "moon-white"] as const;
 
-/** The SQL gates: `rules_version = '1.6.1'`, `content_version = '1.6.1'`, `^r29-…`. */
-export const CURRENT_ROOM_FINGERPRINT_PATTERN = /^r29-[0-9a-f]{16}$/;
-/** `room_ai_seats_policy_version_check` for V1.6.1 seats. */
-export const COMPUTER_POLICY_VERSION_PATTERN = /^rules-v1\.6\.1-[a-z0-9]+(?:-[a-z0-9]+)*$/;
+/** The SQL gates: `rules_version = '1.6.2'`, `content_version = '1.6.2'`, `^r30-…`. */
+export const CURRENT_ROOM_FINGERPRINT_PATTERN = /^r30-[0-9a-f]{16}$/;
+/** `room_ai_seats_policy_version_check` for V1.6.2 seats. */
+export const COMPUTER_POLICY_VERSION_PATTERN = /^rules-v1\.6\.2-[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const CONTRIBUTION_CARDS: ReadonlySet<string> = new Set(["BANK", "TEND", "STOKE"]);
 
 /** Keys sorted by length, then bytes: the order Postgres `jsonb` stores object keys in. */
@@ -67,15 +67,15 @@ function plainClone<T>(value: T): T {
 
 function currentRoom(room: StoredRoom): boolean {
   return (
-    room.rulesVersion === "1.6.1" &&
-    room.contentVersion === "1.6.1" &&
+    room.rulesVersion === "1.6.2" &&
+    room.contentVersion === "1.6.2" &&
     room.contentDigest !== null &&
     CURRENT_ROOM_FINGERPRINT_PATTERN.test(room.contentDigest)
   );
 }
 
 function currentStateVersion(value: { schemaVersion?: unknown; rulesVersion?: unknown }): boolean {
-  return value.schemaVersion === 6 && value.rulesVersion === "1.6.1";
+  return value.schemaVersion === 7 && value.rulesVersion === "1.6.2";
 }
 
 interface FullEventRecord {
@@ -137,8 +137,8 @@ export class InMemoryMultiplayerStore implements MultiplayerStore {
 
   async createRoom(input: CreateRoomRecord): Promise<StoreResult<AuthenticatedSeat>> {
     if (
-      input.room.rulesVersion !== "1.6.1" ||
-      input.room.contentVersion !== "1.6.1" ||
+      input.room.rulesVersion !== "1.6.2" ||
+      input.room.contentVersion !== "1.6.2" ||
       input.room.contentDigest === null ||
       !CURRENT_ROOM_FINGERPRINT_PATTERN.test(input.room.contentDigest)
     ) {

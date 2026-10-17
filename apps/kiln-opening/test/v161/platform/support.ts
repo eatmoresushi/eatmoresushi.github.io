@@ -336,7 +336,7 @@ export function exitCommand(view: ActorView): AuthoritativeCommand | null {
 /** A computer policy that always takes `exitCommand`, unless a phase is overridden. */
 export function scriptedPolicy(overrides: Partial<Record<string, (view: ActorView) => AuthoritativeCommand | null>> = {}): ComputerPolicy {
   return {
-    version: "rules-v1.6.1-scripted-001",
+    version: "rules-v1.6.2-scripted-001",
     label: "Scripted",
     chooseCommand(view) {
       const override = overrides[view.game.phase.type];

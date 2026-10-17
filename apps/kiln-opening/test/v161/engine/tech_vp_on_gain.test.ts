@@ -6,7 +6,8 @@
  *
  * Covered here: the ledger, `TECH_ACQUIRED.vp`, `playerSummary.recordedVp` and `scorePreview`
  * right after every acquisition path (Apprentice buy, Shifu inspected take, Shifu face-up
- * take, Colour Samples while its when-acquired look is still open); the final breakdown's
+ * take, a Shifu's second take (v1.6.2 L207), Colour Samples while its when-acquired look is
+ * still open); the final breakdown's
  * single Tech line; and seeded full games whose totals equal the old end-game method.
  */
 
@@ -20,8 +21,8 @@ import { playFuzzGame } from "./p7_support.ts";
 import { buildState, stageCeramic } from "./support/fixtures.ts";
 import { LocalTable } from "./support/localTable.ts";
 
-function table(): LocalTable {
-  return new LocalTable(buildState({}), { flow: "halt", pass: ["worker_action_done"] });
+function table(spec: Parameters<typeof buildState>[0] = {}): LocalTable {
+  return new LocalTable(buildState(spec), { flow: "halt", pass: ["worker_action_done"] });
 }
 
 function buy(techId: TechId): GameAction {
@@ -69,17 +70,27 @@ describe("A1: a Tech's 1 VP is recorded the moment it is gained", () => {
     const t = table();
     t.act("p1", inspect("firing"));
     expectTechVpEverywhere(t.state, "p1", 0);
-    const events = t.act("p1", { type: "GUILD_TAKE", take: { kind: "inspected", techId: "T13" }, bottomOrder: ["T14"] });
-    expect(acquired(events)).toEqual([{ type: "TECH_ACQUIRED", playerId: "p1", techId: "T13", source: "inspected", cost: 2, vp: 1 }]);
+    const events = t.act("p1", { type: "GUILD_TAKE", take: { kind: "inspected", techId: "T13" } });
+    expect(acquired(events)).toEqual([{ type: "TECH_ACQUIRED", playerId: "p1", techId: "T13", source: "inspected", cost: 3, vp: 1 }]);
     expectTechVpEverywhere(t.state, "p1", 1);
   });
 
   it("Shifu face-up take", () => {
     const t = table();
     t.act("p1", inspect("firing"));
-    const events = t.act("p1", { type: "GUILD_TAKE", take: { kind: "face_up", techId: "T20" }, bottomOrder: ["T14", "T13"] });
-    expect(acquired(events)).toEqual([{ type: "TECH_ACQUIRED", playerId: "p1", techId: "T20", source: "face_up", cost: 1, vp: 1 }]);
+    const events = t.act("p1", { type: "GUILD_TAKE", take: { kind: "face_up", techId: "T20" } });
+    expect(acquired(events)).toEqual([{ type: "TECH_ACQUIRED", playerId: "p1", techId: "T20", source: "face_up", cost: 3, vp: 1 }]);
     expectTechVpEverywhere(t.state, "p1", 1);
+  });
+
+  it("Shifu's second take (v1.6.2 L207): 1 VP more, scored at once", () => {
+    const t = table({ players: [{ resources: { coins: 5 } }, {}] });
+    t.act("p1", inspect("firing"));
+    expect(acquired(t.act("p1", { type: "GUILD_TAKE", take: { kind: "face_up", techId: "T20" } }))).toHaveLength(1);
+    expectTechVpEverywhere(t.state, "p1", 1);
+    const events = t.act("p1", { type: "GUILD_TAKE", take: { kind: "inspected", techId: "T14" } });
+    expect(acquired(events)).toEqual([{ type: "TECH_ACQUIRED", playerId: "p1", techId: "T14", source: "inspected", cost: 2, vp: 1 }]);
+    expectTechVpEverywhere(t.state, "p1", 2);
   });
 
   it("Colour Samples scores its own VP before its when-acquired reservation resolves", () => {

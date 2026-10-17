@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.6.1",
+  "rulesVersion": "1.6.2",
   "policy": {
     "approvedReferenceDirectory": "assets/current_v04",
     "rulesTextInRasters": false,

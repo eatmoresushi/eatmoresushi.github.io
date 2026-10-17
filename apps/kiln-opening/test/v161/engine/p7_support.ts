@@ -63,10 +63,12 @@ import { actorViewOf, eventForViewer, projectEvent, projectPublicState } from ".
 import type {
   ActorView,
   AuthoritativeCommand,
+  CommissionPick,
   GameAction,
   GameEvent,
   GameRuleErrorCode,
   GameState,
+  KilnId,
   KilnSpaceId,
   LoadSpec,
   OrderId,
@@ -241,6 +243,14 @@ export function richStartState(seed: number, playerCount: PlayerCount): GameStat
     const window = Array.from({ length: playerCount }, (_, seat) => all[(start + seat) % all.length] as TechId);
     return shuffledWith(window, rng);
   });
+  // Jun may follow Second Firing (R7) only on one board: when Jun is dealt, its board goes to
+  // the Second Firing owner, so random play reaches that window (fuzz coverage asserts every
+  // phase). The Kilns stay a permutation, and every Kiln is still dealt across the seeds.
+  const secondFiringSeat = techsByDiscipline[DISCIPLINES.indexOf("firing")]?.indexOf("T14") ?? -1;
+  const junSeat = kilns.slice(0, playerCount).indexOf("JU");
+  if (secondFiringSeat >= 0 && junSeat >= 0 && junSeat !== secondFiringSeat) {
+    [kilns[junSeat], kilns[secondFiringSeat]] = [kilns[secondFiringSeat] as KilnId, kilns[junSeat] as KilnId];
+  }
   const starting = shuffledWith(STARTING_ORDER_IDS, rng);
   const main = shuffledWith(MAIN_ORDER_IDS, rng);
   const ceramics: CeramicSpec[] = [];
@@ -276,18 +286,21 @@ export function richStartState(seed: number, playerCount: PlayerCount): GameStat
       ceramics.push({ owner: id, stage: "finished", shape, decoration, glaze, quality, ...(crackle ? { crackle: true } : {}) });
     }
     const hand = [starting[seat * 2] as OrderId, starting[seat * 2 + 1] as OrderId, main[seat * 2] as OrderId, main[seat * 2 + 1] as OrderId];
-    // Guan and Tribute Ware trigger on an Order showing a Crown: their owners hold an undealt
-    // one-ceramic Crown Order and a Finished ceramic that completes it, so random play reaches
-    // them (fuzz coverage asserts every Tech and Kiln ability fires).
+    // Guan and Tribute Ware trigger on an Order showing a Crown: their owners hold two undealt
+    // one-ceramic Crown Orders and a Finished ceramic that completes each, so random play
+    // reaches them (fuzz coverage asserts every Tech and Kiln ability fires). Two, because
+    // random play declines an optional ability (R4) about half the time and both are once per
+    // round: a second completion gives the ability a second chance.
     if (kilns[seat] === "GU" || seatTechs.includes("T25")) {
-      const crown = main.slice(playerCount * 2).find((orderId) => {
-        const order = ORDERS[orderId];
-        return order.crowns >= 1 && order.ceramics.length === 1 && order.relations === undefined && !crownOrders.has(orderId);
-      });
-      const slot = crown === undefined ? undefined : ORDERS[crown].ceramics[0];
-      if (crown !== undefined && slot !== undefined) {
+      for (const handIndex of [2, 3]) {
+        const crown = main.slice(playerCount * 2).find((orderId) => {
+          const order = ORDERS[orderId];
+          return order.crowns >= 1 && order.ceramics.length === 1 && order.relations === undefined && !crownOrders.has(orderId);
+        });
+        const slot = crown === undefined ? undefined : ORDERS[crown].ceramics[0];
+        if (crown === undefined || slot === undefined) continue;
         crownOrders.add(crown);
-        hand[2] = crown;
+        hand[handIndex] = crown;
         ceramics.push({
           owner: id,
           stage: "finished",
@@ -702,21 +715,19 @@ export function selectorAgreementViolations(state: GameState, privateState: Priv
     const legalWorker = (locationId: string, effect: string, senior = false) =>
       options.find((o) => o.locationId === locationId)?.workers.find((w) => w.legal && w.effect === effect && w.seniorApprentice === senior);
     if (step.kind === "before_action") {
-      // Commission Market at placement, per legal worker.
-      for (const worker of options.find((o) => o.locationId === "commission_market")?.workers.filter((w) => w.legal) ?? []) {
+      // Commission Market at placement, per worker: `reservable` is the main-action test.
+      for (const worker of options.find((o) => o.locationId === "commission_market")?.workers ?? []) {
         const listed = commissionOptions(view, worker.effect);
         const senior = worker.seniorApprentice ? { seniorApprentice: true as const } : {};
-        game.market.display.forEach((orderId, slotIndex) => {
-          if (orderId === null) {
-            return;
-          }
-          const ok = codeOf(view, { type: "PLACE_COMMISSION_MARKET", workerId: worker.workerId, first: { kind: "face_up", slotIndex, orderId, gain: "wood" }, ...senior }) === null;
-          expect(ok === listed.faceUpSlots.includes(slotIndex), `commissionOptions slot ${slotIndex} disagrees (ok=${ok})`);
-        });
-        const blind = codeOf(view, { type: "PLACE_COMMISSION_MARKET", workerId: worker.workerId, first: { kind: "blind" }, ...senior }) === null;
-        expect(blind === listed.blind, `commissionOptions blind=${listed.blind} but ok=${blind}`);
-        const look = codeOf(view, { type: "PLACE_COMMISSION_MARKET", workerId: worker.workerId, first: { kind: "look_top_three" }, ...senior }) === null;
-        expect(look === listed.lookTopThree, `commissionOptions look=${listed.lookTopThree} but ok=${look}`);
+        const code = codeOf(view, { type: "PLACE_COMMISSION_MARKET", workerId: worker.workerId, ...senior });
+        if (code === null) {
+          expect(listed.reservable, `commissionOptions(${worker.effect}) is not reservable but the placement validates`);
+        } else if (code === "NO_MAIN_ACTION_POSSIBLE") {
+          expect(!listed.reservable, `commissionOptions(${worker.effect}) is reservable but the validator says ${code}`);
+        }
+        const showing = game.market.display.flatMap((orderId, slotIndex) => (orderId === null ? [] : [slotIndex]));
+        expect(JSON.stringify(listed.faceUpSlots) === JSON.stringify(showing), `commissionOptions face-up slots ${JSON.stringify(listed.faceUpSlots)}`);
+        expect(listed.lookCount >= 0 && listed.lookCount <= listed.lookSize, `commissionOptions lookCount ${listed.lookCount} outside the look`);
       }
       // Guild Hall at placement.
       const apprentice = legalWorker("guild_hall", "apprentice");
@@ -780,26 +791,38 @@ export function selectorAgreementViolations(state: GameState, privateState: Priv
         }
       }
     }
+    const looked = lookedOrderOptions(view);
     if (step.kind === "commission_market") {
-      const listed = commissionOptions(view, step.effect);
+      // Every display position and looked card: a single pick validates iff it is listed.
+      expect(looked?.kind === "commission_market", "lookedOrderOptions is not the Commission look during its step");
+      expect(looked?.maxReservations === step.maxReservations, "lookedOrderOptions reservation limit disagrees with the step");
+      const picks: CommissionPick[] = [];
       game.market.display.forEach((orderId, slotIndex) => {
         if (orderId === null) {
           return;
         }
-        const ok = codeOf(view, { type: "COMMISSION_RESERVE", choice: { kind: "face_up", slotIndex, orderId, gain: "clay" } }) === null;
-        expect(ok === listed.faceUpSlots.includes(slotIndex), `commissionOptions (step) slot ${slotIndex} disagrees (ok=${ok})`);
+        const pick: CommissionPick = { kind: "face_up", slotIndex, orderId };
+        const ok = codeOf(view, { type: "COMMISSION_CHOOSE", reservations: [pick] }) === null;
+        expect(ok === (looked?.faceUpSlots ?? []).includes(slotIndex), `lookedOrderOptions slot ${slotIndex} disagrees (ok=${ok})`);
+        if (ok) picks.push(pick);
       });
-      expect((codeOf(view, { type: "COMMISSION_RESERVE", choice: { kind: "blind" } }) === null) === listed.blind, "commissionOptions (step) blind disagrees");
-      expect((codeOf(view, { type: "COMMISSION_RESERVE", choice: { kind: "look_top_three" } }) === null) === listed.lookTopThree, "commissionOptions (step) look disagrees");
-      expect((codeOf(view, { type: "COMMISSION_GAIN", resource: "clay" }) === null) === listed.gainNow, "commissionOptions gainNow disagrees");
-      expect((codeOf(view, { type: "COMMISSION_STOP" }) === null) === listed.canStop, "commissionOptions canStop disagrees");
-    }
-    const looked = lookedOrderOptions(view);
-    if (step.kind === "commission_market" || step.kind === "colour_samples") {
-      const type = step.kind === "colour_samples" ? "COLOUR_SAMPLES_CHOOSE" : "COMMISSION_CHOOSE_LOOKED";
       for (const orderId of looked?.orderIds ?? []) {
-        const ok = codeOf(view, { type, orderId }) === null;
-        expect(ok === (step.kind === "colour_samples" || step.awaiting === "look_choice"), `lookedOrderOptions ${orderId} ok=${ok}`);
+        const pick: CommissionPick = { kind: "looked", orderId };
+        const ok = codeOf(view, { type: "COMMISSION_CHOOSE", reservations: [pick] }) === null;
+        expect(ok, `lookedOrderOptions lists ${orderId} but it is rejected`);
+        picks.push(pick);
+      }
+      expect(picks.length > 0, "the Commission step offers no reservation");
+      const [first, second] = picks;
+      if (first !== undefined && second !== undefined) {
+        const pair = codeOf(view, { type: "COMMISSION_CHOOSE", reservations: [first, second] });
+        expect(pair === (step.maxReservations === 2 ? null : "RESERVATION_LIMIT"), `a pair of listed picks gave ${String(pair)}`);
+      }
+    }
+    if (step.kind === "colour_samples") {
+      for (const orderId of looked?.orderIds ?? []) {
+        const ok = codeOf(view, { type: "COLOUR_SAMPLES_CHOOSE", orderId }) === null;
+        expect(ok, `lookedOrderOptions ${orderId} ok=${ok}`);
       }
     }
     if (step.kind === "guild_inspection") {
@@ -808,14 +831,20 @@ export function selectorAgreementViolations(state: GameState, privateState: Priv
       if (inspection !== null) {
         const inspected = inspection.inspected.map((o) => o.techId);
         for (const option of inspection.inspected) {
-          const ok = codeOf(view, { type: "GUILD_TAKE", take: { kind: "inspected", techId: option.techId }, bottomOrder: inspected.filter((id) => id !== option.techId) }) === null;
-          expect(ok === option.legal, `guildInspectionOptions inspected ${option.techId} legal=${option.legal} ok=${ok}`);
+          const code = codeOf(view, { type: "GUILD_TAKE", take: { kind: "inspected", techId: option.techId } });
+          expect((code === null) === option.legal && (code === null || code === option.reason), `guildInspectionOptions inspected ${option.techId} legal=${option.legal} (${String(option.reason)}) code=${String(code)}`);
         }
         for (const option of inspection.faceUp) {
-          const ok = codeOf(view, { type: "GUILD_TAKE", take: { kind: "face_up", techId: option.techId }, bottomOrder: inspected }) === null;
-          expect(ok === option.legal, `guildInspectionOptions faceUp ${option.techId} legal=${option.legal} ok=${ok}`);
+          const code = codeOf(view, { type: "GUILD_TAKE", take: { kind: "face_up", techId: option.techId } });
+          expect((code === null) === option.legal && (code === null || code === option.reason), `guildInspectionOptions faceUp ${option.techId} legal=${option.legal} (${String(option.reason)}) code=${String(code)}`);
         }
-        expect(inspection.bottomOrderLengthIfFaceUpTaken === inspected.length, "guildInspectionOptions bottom-order length disagrees");
+        // GUILD_FINISH: legal with every untaken inspected Tech exactly once, after at least 1 take (v1.6.2 L207, L142, B2).
+        expect(inspection.bottomOrderLength === inspected.length, "guildInspectionOptions bottom-order length disagrees");
+        const finish = codeOf(view, { type: "GUILD_FINISH", bottomOrder: [...inspected].reverse() });
+        expect(finish === (inspection.canFinish ? null : "TECH_TAKE_REQUIRED"), `GUILD_FINISH gave ${String(finish)} with canFinish=${inspection.canFinish}`);
+        expect(inspection.canFinish === inspection.takes.length > 0, "guildInspectionOptions canFinish disagrees with its takes");
+        // Placement legality (v1.6.2 L212) guarantees a first take; the step never waits with nothing to decide.
+        expect(inspection.canFinish || [...inspection.inspected, ...inspection.faceUp].some((o) => o.legal), "the Guild inspection offers no first take");
       }
     }
   }

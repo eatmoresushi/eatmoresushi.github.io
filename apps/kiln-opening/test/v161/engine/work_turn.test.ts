@@ -32,9 +32,11 @@ function types(events: readonly GameEvent[]): string[] {
   return events.map((event) => event.type);
 }
 
-/** Canal Wharf with the player's first available worker (always legal, L143). */
+/** The Canal Wharf, always legal (L143), with an available Apprentice (2 Coins and nothing else,
+ * v1.6.2 L219), else the Shifu. */
 function wharf(state: GameState, playerId: PlayerId): GameAction {
-  const worker = availableWorkers(state, playerId)[0];
+  const available = availableWorkers(state, playerId);
+  const worker = available.find((candidate) => candidate.kind === "apprentice") ?? available[0];
   if (worker === undefined) throw new Error(`${playerId} has no worker`);
   return { type: "PLACE_CANAL_WHARF", workerId: worker.id };
 }
@@ -250,14 +252,13 @@ function keySorted<T>(value: T): T {
 describe("determinism and storage key order (DESIGN §7)", () => {
   it("a scripted sequence gives identical events, states and RNG whether or not keys are re-sorted", () => {
     const script: Array<[PlayerId, GameAction]> = [
-      ["p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu", first: { kind: "look_top_three" } }],
-      ["p1", { type: "COMMISSION_CHOOSE_LOOKED", orderId: "O08" }],
-      ["p1", { type: "COMMISSION_GAIN", resource: "wood" }],
-      ["p1", { type: "COMMISSION_RESERVE", choice: { kind: "face_up", slotIndex: 1, orderId: "O02", gain: "clay" } }],
+      ["p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu" }],
+      ["p1", { type: "COMMISSION_CHOOSE", reservations: [{ kind: "looked", orderId: "O08" }, { kind: "face_up", slotIndex: 1, orderId: "O02" }] }],
       ["p1", { type: "END_TURN" }],
       ["p2", { type: "PLACE_GUILD_HALL", workerId: "p2:shifu", choice: { kind: "inspect", discipline: "glazing_loading" } }],
-      ["p2", { type: "GUILD_TAKE", take: { kind: "face_up", techId: "T10" }, bottomOrder: ["T21", "T15"] }],
+      ["p2", { type: "GUILD_TAKE", take: { kind: "face_up", techId: "T10" } }],
       ["p2", { type: "COLOUR_SAMPLES_CHOOSE", orderId: "O11" }],
+      ["p2", { type: "GUILD_FINISH", bottomOrder: ["T21", "T15"] }],
       ["p1", { type: "PLACE_GUILD_HALL", workerId: "p1:apprentice:1", choice: { kind: "buy_face_up", techId: "T01" } }],
       ["p1", { type: "USE_CANAL_BARGE", orderId: "S01", ceramicIds: ["c1"] }],
       ["p2", { type: "PLACE_CANAL_WHARF", workerId: "p2:apprentice:1" }],

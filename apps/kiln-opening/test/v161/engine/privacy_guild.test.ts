@@ -1,6 +1,7 @@
 /**
- * Guild Hall privacy (L208, B2, DESIGN §4.2): the Shifu's inspection and the bottom order of
- * the untaken Techs are private to the acting player. The public projection and the public
+ * Guild Hall privacy (v1.6.2 L207, B2, DESIGN §4.2): the Shifu's inspection and the bottom
+ * order of the untaken Techs are private to the acting player, also while they wait behind a
+ * Colour Samples look, and the step never closes itself on private facts. The public projection and the public
  * event log carry the discipline and counts only; the actor's own view and the `secret` of
  * their events carry the identities. Legality never depends on the hidden deck order.
  */
@@ -52,7 +53,7 @@ describe("the Shifu inspection is private (L208, B2)", () => {
     expect(projected.phase).toEqual({
       type: "work_turn",
       activePlayerId: "p1",
-      step: { kind: "guild_inspection", workerId: "p1:shifu", discipline: "firing", inspectedCount: 2 },
+      step: { kind: "guild_inspection", workerId: "p1:shifu", discipline: "firing", inspectedCount: 2, takes: [] },
     });
     expectNoHiddenTechs(JSON.stringify(projected), t.state, TECH_IDS);
 
@@ -70,7 +71,8 @@ describe("the Shifu inspection is private (L208, B2)", () => {
   it("the chosen bottom order stays private; only the count is public", () => {
     const t = table();
     t.act("p1", INSPECT);
-    const events = t.act("p1", { type: "GUILD_TAKE", take: { kind: "face_up", techId: "T20" }, bottomOrder: ["T14", "T13"] });
+    t.act("p1", { type: "GUILD_TAKE", take: { kind: "face_up", techId: "T20" } });
+    const events = t.act("p1", { type: "GUILD_FINISH", bottomOrder: ["T14", "T13"] });
     const returned = events.find((event) => event.type === "TECHS_RETURNED_TO_BOTTOM") as GameEvent;
     expect(projectEvent(returned)).toEqual({ type: "TECHS_RETURNED_TO_BOTTOM", playerId: "p1", discipline: "firing", count: 2 });
     expect(eventForViewer(returned, "p1")).toMatchObject({ secret: { visibleTo: "p1", techIds: ["T14", "T13"] } });
@@ -88,8 +90,46 @@ describe("the Shifu inspection is private (L208, B2)", () => {
   it("a rejected choice reveals nothing to another player", () => {
     const t = table();
     t.act("p1", INSPECT);
-    const error = t.expectRuleError("p2", { type: "GUILD_TAKE", take: { kind: "inspected", techId: "T13" }, bottomOrder: ["T14"] }, "NOT_YOUR_DECISION");
+    const error = t.expectRuleError("p2", { type: "GUILD_TAKE", take: { kind: "inspected", techId: "T13" } }, "NOT_YOUR_DECISION");
     expect(JSON.stringify(error)).not.toContain("T14");
+    const finish = t.expectRuleError("p2", { type: "GUILD_FINISH", bottomOrder: ["T14", "T13"] }, "NOT_YOUR_DECISION");
+    expect(JSON.stringify(finish)).not.toContain("T13");
+  });
+
+  it("the Techs that wait behind a Colour Samples look stay the Shifu's alone (v1.6.2 L207, L214)", () => {
+    const t = table();
+    t.act("p1", INSPECT);
+    const events = t.act("p1", { type: "GUILD_TAKE", take: { kind: "face_up", techId: "T10" } });
+    expect(t.state.phase).toMatchObject({ step: { kind: "colour_samples", resume: { kind: "guild_inspection", discipline: "firing", inspectedCount: 2 } } });
+    const projected = projectPublicState(t.state);
+    expect(projected.counts.pendingLook).toEqual({ playerId: "p1", kind: "colour_samples", count: 3 });
+    expectNoHiddenTechs(JSON.stringify(projected), t.state, TECH_IDS);
+    expectNoHiddenTechs(JSON.stringify(events.map(projectEvent)), t.state, TECH_IDS);
+    expect(t.view("p1").own?.pendingLook).toMatchObject({ kind: "colour_samples", inspection: { discipline: "firing", techIds: ["T13", "T14"] } });
+    expect(t.view("p2").own?.pendingLook).toBeNull();
+    expect(JSON.stringify(t.view("p2"))).not.toContain('"T13"');
+  });
+
+  it("the inspection closes by itself on public facts only, whatever the inspected Tech costs", () => {
+    // 4 players; one Firing Tech is left in the deck: Second Firing (2) on one table, Tribute
+    // Ware (4) on the other. After a face-up Kiln Tending (3) p1 has 2 Coins and no affordable
+    // face-up Tech, so only the private cost of the inspected Tech decides whether a second take
+    // exists. Neither step closes by itself: closing would reveal that cost (DESIGN §4.5).
+    const display = { workshop: ["T17", "T18"], firing: ["T11", "T13"] } as const;
+    const cheap = table(buildState({ players: [{ resources: { coins: 5 } }, { techs: ["T12"] }, { techs: ["T24"] }, { techs: ["T25"] }], techDisplay: { ...display, workshop: [...display.workshop], firing: [...display.firing] } }));
+    const dear = table(buildState({ players: [{ resources: { coins: 5 } }, { techs: ["T12"] }, { techs: ["T24"] }, { techs: ["T14"] }], techDisplay: { ...display, workshop: [...display.workshop], firing: [...display.firing] } }));
+    for (const [t, left] of [[cheap, "T14"], [dear, "T25"]] as const) {
+      t.act("p1", INSPECT);
+      expect(t.state.hidden.pendingLook).toMatchObject({ techIds: [left] });
+      t.act("p1", { type: "GUILD_TAKE", take: { kind: "face_up", techId: "T20" } });
+      expect(t.player("p1").resources.coins).toBe(2);
+      expect(t.state.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "guild_inspection", takes: [{ kind: "face_up", techId: "T20" }] } });
+    }
+    expect(validateAction(cheap.actorView("p1"), { type: "GUILD_TAKE", take: { kind: "inspected", techId: "T14" } })).toBeNull();
+    expect(validateAction(dear.actorView("p1"), { type: "GUILD_TAKE", take: { kind: "inspected", techId: "T25" } })?.code).toBe("INSUFFICIENT_RESOURCES");
+    for (const [t, left] of [[cheap, "T14"], [dear, "T25"]] as const) {
+      expect(validateAction(t.actorView("p1"), { type: "GUILD_FINISH", bottomOrder: [left] })).toBeNull();
+    }
   });
 });
 

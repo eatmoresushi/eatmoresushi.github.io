@@ -1,11 +1,15 @@
 /**
- * Kiln Opening / 开窑 — V1.6.1 rules-engine contract.
+ * Kiln Opening / 开窑 — V1.6.2 rules-engine contract.
  *
- * Authority: `docs/KILN_OPENING_v1.6.1_EN_SOURCE.md` (the only rules source) and the owner
- * rulings recorded in `docs/RULEBOOK_AUDIT_V1.6.1.md`. In JSDoc below, `L124` cites a line
- * of the V1.6.1 source, `R1`–`R13` / `B1`–`B3` cite owner rulings, `INT:` cites a recorded
- * interpretation and `DIG:` a digital decision from the audit. `DESIGN §x` refers to
- * `docs/ENGINE_V1.6.1_DESIGN.md`.
+ * Authority: `docs/KILN_OPENING_v1.6.2_EN_SOURCE.md` (the only rules source), the owner
+ * rulings recorded in `docs/RULEBOOK_AUDIT_V1.6.2.md` and the engine delta
+ * `docs/ENGINE_V1.6.2_DELTA.md`. In JSDoc below, `R1`–`R14` / `B1`–`B3` cite owner rulings,
+ * `INT:` cites a recorded interpretation and `DIG:` a digital decision from the audit.
+ * `DESIGN §x` refers to `docs/ENGINE_V1.6.1_DESIGN.md`, which the delta amends.
+ *
+ * Line citations: a plain `L124` is a line of the V1.6.1 source, kept until the V1.6.2
+ * renumbering (DELTA §1.1); a rule V1.6.2 changed is cited `v1.6.2 L195`, a line of the
+ * V1.6.2 source.
  *
  * This file is types only: no imports and no runtime code. Every engine module, the
  * multiplayer layer and the UI import their shared vocabulary from here. Changing it is a
@@ -22,10 +26,10 @@
 // 1. Versioning and identifiers
 // ═══════════════════════════════════════════════════════════════════════════════════════
 
-/** DIG: the rulebook is "v1.6.1" (its title read "v1.61" until the owner's 2026-10-16 edits); the engine uses `1.6.1`. */
-export type RulesVersion = "1.6.1";
-/** DIG: state schema 6. V1.4 (schema 5) rooms are rejected, never migrated. */
-export type SchemaVersion = 6;
+/** DIG: the rulebook is "v1.6.2"; the engine uses `1.6.2` (audit, "Authority and provenance"). */
+export type RulesVersion = "1.6.2";
+/** DIG: state schema 7. V1.6.1 (schema 6) and older saves are rejected, never migrated. */
+export type SchemaVersion = 7;
 
 export type PlayerId = string;
 /** `${playerId}:shifu` or `${playerId}:apprentice:${1|2|3}`. */
@@ -71,30 +75,30 @@ export type KilnId = "RU" | "GU" | "GE" | "DI" | "JU";
 export type TechDiscipline = "workshop" | "glazing_loading" | "firing";
 
 /**
- * The 18 Advanced Techs (Appendix B, L609–654). DIG: keep T01, T05, T10–T15 where the
+ * The 18 Advanced Techs (Appendix B, v1.6.2 L608–653). DIG: keep T01, T05, T10–T15 where the
  * tile carries the same idea; new tiles take T16–T25; retired IDs (T02–T04, T06–T09,
  * ST01–ST04) are never reused.
  *
- * | ID  | Discipline        | Tile                  | Cost | Source line | ID history                 |
+ * | ID  | Discipline        | Tile                  | Cost | v1.6.2 line | ID history                 |
  * |-----|-------------------|-----------------------|------|-------------|----------------------------|
- * | T01 | workshop          | Large Throwing Wheel  | 2    | L615        | kept                       |
- * | T16 | workshop          | Decorator's Kit       | 2    | L616        | new                        |
- * | T05 | workshop          | Reworking Table       | 2    | L617        | kept (was Forming)         |
- * | T17 | workshop          | Prepared Clay         | 3    | L618        | new (idea of retired ST01) |
- * | T18 | workshop          | Senior Apprentice     | 2    | L619        | new                        |
- * | T19 | workshop          | Connoisseur's Cabinet | 3    | L620        | new                        |
- * | T10 | glazing_loading   | Colour Samples        | 2    | L626        | kept                       |
- * | T20 | glazing_loading   | Kiln Tending          | 2    | L627        | new (idea of retired ST04) |
- * | T15 | glazing_loading   | Kiln Furniture        | 2    | L628        | kept (was Firing)          |
- * | T21 | glazing_loading   | Inverted Firing 覆烧   | 2    | L629        | new                        |
- * | T22 | glazing_loading   | Setter's Mark         | 2    | L630        | new                        |
- * | T23 | glazing_loading   | Canal Barge 漕船       | 2    | L631        | new                        |
- * | T11 | firing            | Protective Saggars    | 2    | L637        | kept                       |
- * | T12 | firing            | Fuel Ledger           | 3    | L638        | kept                       |
- * | T13 | firing            | Test Pieces 火照       | 3    | L639        | kept                       |
- * | T14 | firing            | Second Firing         | 2    | L640        | kept                       |
- * | T24 | firing            | Kiln Master 窑工       | 2    | L641        | new                        |
- * | T25 | firing            | Tribute Ware 贡瓷      | 4    | L642        | new                        |
+ * | T01 | workshop          | Large Throwing Wheel  | 2    | L614        | kept                       |
+ * | T16 | workshop          | Decorator's Kit       | 2    | L615        | new                        |
+ * | T05 | workshop          | Reworking Table       | 2    | L616        | kept (was Forming)         |
+ * | T17 | workshop          | Prepared Clay         | 3    | L617        | new (idea of retired ST01) |
+ * | T18 | workshop          | Senior Apprentice     | 3    | L618        | new                        |
+ * | T19 | workshop          | Connoisseur's Cabinet | 3    | L619        | new                        |
+ * | T10 | glazing_loading   | Colour Samples        | 2    | L625        | kept                       |
+ * | T20 | glazing_loading   | Kiln Tending          | 3    | L626        | new (idea of retired ST04) |
+ * | T15 | glazing_loading   | Kiln Furniture        | 2    | L627        | kept (was Firing)          |
+ * | T21 | glazing_loading   | Inverted Firing 覆烧   | 2    | L628        | new                        |
+ * | T22 | glazing_loading   | Setter's Mark         | 2    | L629        | new                        |
+ * | T23 | glazing_loading   | Canal Barge 漕船       | 2    | L630        | new                        |
+ * | T11 | firing            | Protective Saggars    | 3    | L636        | kept                       |
+ * | T12 | firing            | Fuel Ledger           | 2    | L637        | kept                       |
+ * | T13 | firing            | Test Pieces 火照       | 3    | L638        | kept                       |
+ * | T14 | firing            | Second Firing         | 2    | L639        | kept                       |
+ * | T24 | firing            | Kiln Master 窑工       | 2    | L640        | new                        |
+ * | T25 | firing            | Tribute Ware 贡瓷      | 4    | L641        | new                        |
  *
  * Costs and disciplines live in `data/techniques.json`; this table is documentation only.
  */
@@ -149,8 +153,6 @@ export type Glaze = "white" | "celadon" | "grey_green" | "moon_white";
 export type Decoration = "plain" | "carved" | "impressed" | "painted";
 export type Quality = "flawed" | "standard" | "fine" | "masterpiece";
 export type ResourceKind = "clay" | "wood" | "coins";
-/** Commission Market "gain 1 Clay, 1 Wood or 1 Coin" (L196–197). */
-export type GainResource = ResourceKind;
 
 /** Fire deck 1/3/4/3/1 (Appendix C, L660–666). */
 export type FireModifier = -2 | -1 | 0 | 1 | 2;
@@ -483,10 +485,14 @@ export interface KilnDieRoll {
  * because every look happens inside the active player's own Work turn. */
 export type PendingLook =
   | {
-      /** Commission Shifu top-3 selection (L197, B1, B3). */
-      kind: "commission_top_three";
+      /**
+       * Commission Market look (v1.6.2 L195–196, B1, B3): the top 2 Main Orders for the
+       * Apprentice effect, the top 3 for the Shifu effect (incl. Senior Apprentice, R12).
+       * The look always happens (INT: Commission Market looks).
+       */
+      kind: "commission_market";
       playerId: PlayerId;
-      /** Removed from the deck; as many as remained (B1). */
+      /** Removed from the deck; as many as remained, possibly none (B1). */
       orderIds: OrderId[];
     }
   | {
@@ -494,13 +500,21 @@ export type PendingLook =
       kind: "colour_samples";
       playerId: PlayerId;
       orderIds: OrderId[];
+      /**
+       * A Guild Hall Shifu took Colour Samples while its inspection is open (v1.6.2 L207,
+       * L214: a when-acquired effect resolves at once, before a second take). The inspected
+       * Techs not taken wait here, still private, and become the `guild_inspection` look again
+       * after the reservation. null for an Apprentice buy, or a Shifu with no inspection left.
+       */
+      inspection: { discipline: TechDiscipline; techIds: TechId[] } | null;
     }
   | {
-      /** Guild Hall Shifu inspection (L208, B2). */
+      /** Guild Hall Shifu inspection (v1.6.2 L207, B2). */
       kind: "guild_inspection";
       playerId: PlayerId;
       discipline: TechDiscipline;
-      /** Drawn off the deck top; "or as many as remain" (L208) — may be empty. */
+      /** Drawn off the deck top, "or as many as remain" (L208), possibly none; an inspected
+       * Tech the Shifu takes leaves this list. */
       techIds: TechId[];
     };
 
@@ -658,6 +672,27 @@ export interface DecisionQueue {
   index: number;
 }
 
+/** One Tech a Guild Hall Shifu takes (v1.6.2 L207): a face-up Tech or one it inspected. */
+export type GuildTake = { kind: "face_up"; techId: TechId } | { kind: "inspected"; techId: TechId };
+
+/**
+ * Guild Hall Shifu after its private inspection (v1.6.2 L207–212, B2). The inspected Techs not
+ * yet taken are in `hidden.pendingLook` (kind `guild_inspection`). The Shifu takes up to 2
+ * Techs from different disciplines, one `GUILD_TAKE` each, at printed cost; each gain resolves
+ * its VP, Cover token and when-acquired effect before the next take (L214). `GUILD_FINISH`
+ * (after at least 1 take, L142) returns the untaken Techs to the bottom. When no decision is
+ * left on public facts, the step closes by itself (DESIGN §3.7; ENGINE_V1.6.2_DELTA.md §4.3).
+ */
+export interface GuildInspectionStep {
+  kind: "guild_inspection";
+  workerId: WorkerId;
+  discipline: TechDiscipline;
+  /** Techs the inspection drew: 2, or as many as remained (L208), possibly 0. */
+  inspectedCount: number;
+  /** The Techs taken so far, in order (public: owned Techs are public). At most 2. */
+  takes: GuildTake[];
+}
+
 /**
  * Steps of one Work turn. A worker action is a single command when everything it decides
  * is known at decision time; it opens a sub-step only where hidden information is revealed
@@ -670,32 +705,31 @@ export type WorkTurnStep =
       kind: "before_action";
     }
   | {
+      /**
+       * Commission Market (v1.6.2 L191–198): the placement opened the private look, whose
+       * cards are in `hidden.pendingLook` (kind `commission_market`). Next: COMMISSION_CHOOSE.
+       */
       kind: "commission_market";
       workerId: WorkerId;
       effect: WorkerEffect;
-      /** 1 (Apprentice effect) or 2 (Shifu effect, incl. Senior Apprentice R12). */
+      /** 2 (Apprentice effect) or 3 (Shifu effect, incl. Senior Apprentice R12). */
+      lookSize: 2 | 3;
+      /** 1 (Apprentice effect) or 2 (Shifu effect); at least 1 is always required. */
       maxReservations: 1 | 2;
-      reservationsMade: 0 | 1 | 2;
-      /** The Shifu top-3 selection may replace 1 reservation (L197); false once used. */
-      topThreeAvailable: boolean;
-      /**
-       * `reservation`: COMMISSION_RESERVE, or COMMISSION_STOP once ≥1 reservation is made.
-       * `look_choice`: COMMISSION_CHOOSE_LOOKED (cards in `hidden.pendingLook`).
-       * `resource`: COMMISSION_GAIN after each reservation (L197).
-       */
-      awaiting: "reservation" | "look_choice" | "resource";
+      /** Cards the look shows: up to `lookSize`, possibly 0 (B1). */
+      lookedCount: number;
     }
-  | {
-      /** Guild Hall Shifu: inspected Techs are in `hidden.pendingLook` (B2). Next: GUILD_TAKE. */
-      kind: "guild_inspection";
-      workerId: WorkerId;
-      discipline: TechDiscipline;
-      inspectedCount: number;
-    }
+  | GuildInspectionStep
   | {
       /** Colour Samples when acquired (L626, R4): COLOUR_SAMPLES_CHOOSE. */
       kind: "colour_samples";
       lookedCount: number;
+      /**
+       * The Guild Hall Shifu's inspection step to return to after the reservation, when
+       * Colour Samples was one of its takes (v1.6.2 L207, L214); its Techs wait in the look's
+       * `inspection`. null after an Apprentice buy: the worker action then ends.
+       */
+      resume: GuildInspectionStep | null;
     }
   | {
       /**
@@ -834,7 +868,11 @@ export interface GameState {
   vesselSupply: Record<Shape, VesselInstanceId[]>;
   sharedKiln: SharedKilnState;
   market: MainOrderMarketState;
-  /** Face-up Techs per discipline, 0–2 (L103, L210, L513). Iterate `DISCIPLINES`. */
+  /**
+   * Face-up Techs per discipline, 0–2 (L103, L513). Iterate `DISCIPLINES`. A taken Tech's
+   * position stays empty until the taker's turn ends; `work/turn.endTurn` then refills every
+   * discipline to 2 as its deck allows (v1.6.2 L209).
+   */
   techDisplay: Record<TechDiscipline, TechId[]>;
   /** Open information (L512, change 12), oldest first. */
   fireDiscard: FireModifier[];
@@ -953,24 +991,19 @@ export interface LoadSpec {
   reworkShape?: Shape;
 }
 
-export type CommissionReservationChoice =
+/** One Commission Market reservation (v1.6.2 L191, L195–196). */
+export type CommissionPick =
   | {
-      /** Reserve a face-up Order; its position stays empty until your turn ends (L191).
-       * `orderId` must match `market.display[slotIndex]`. The resource is known at decision
-       * time, so it is part of this command (L196–197). */
+      /** A face-up Order; its position stays empty until your turn ends (v1.6.2 L191).
+       * `orderId` must match `market.display[slotIndex]`. */
       kind: "face_up";
       slotIndex: number;
       orderId: OrderId;
-      gain: GainResource;
     }
   | {
-      /** Top card of the deck without looking first (L192); needs a card after any
-       * reshuffle (B1). The resource is chosen after the card is seen (COMMISSION_GAIN). */
-      kind: "blind";
-    }
-  | {
-      /** Shifu effect only, once (L197): look at the top 3 (as many as remain, B1). */
-      kind: "look_top_three";
+      /** One of the cards of your own pending Commission look (`own.pendingLook`). */
+      kind: "looked";
+      orderId: OrderId;
     };
 
 export interface OrderCompletionSpec {
@@ -1006,11 +1039,10 @@ export type GameAction =
   // ── Work: worker actions (one per turn; L136) ──────────────────────────────────────
   | {
       /**
-       * Materials Yard (L160–163). clay + wood = 3 (Apprentice) or 4 (Shifu effect).
-       * Resolution order, each step validated against the running totals
-       * (`quoteMaterialsYard`, DESIGN §3.5): (1) gain the split; (2) `buyShifuBonus`: pay 1 Coin,
-       * gain +1 Clay +1 Wood (L163 "Then"); (3) `preparedClay` (L618 "after gaining
-       * resources"), so it may spend the bonus Clay.
+       * Materials Yard (v1.6.2 L164–165). clay + wood = 3 (Apprentice) or 6 (Shifu effect,
+       * incl. Senior Apprentice, R12). Resolution order, each step validated against the
+       * running totals (`quoteMaterialsYard`, DESIGN §3.5): (1) gain the split; (2)
+       * `preparedClay` (L618 "after gaining resources"), so it may spend the Clay just gained.
        */
       type: "PLACE_MATERIALS_YARD";
       workerId: WorkerId;
@@ -1019,8 +1051,6 @@ export type GameAction =
       /** Senior Apprentice (T18): this Apprentice resolves the Shifu effect (R12). Never
        * together with `preparedClay` in reachable play (both Workshop, L211). */
       seniorApprentice?: boolean;
-      /** Shifu effect: pay 1 Coin for +1 Clay +1 Wood, after the 4 resources (L163). */
-      buyShifuBonus?: boolean;
       /**
        * Prepared Clay (T17, L618), after gaining resources: Clay cost +1 and a Decoration.
        * `useDecoratorsKit` implements the audit INT (Kit may reduce that Decoration), but the
@@ -1062,33 +1092,61 @@ export type GameAction =
       heatMarkerCeramicId?: CeramicId;
     }
   | {
-      /** Commission Market (L187–201). The first reservation is mandatory and part of the
-       * placement; later steps follow in `WorkTurnStep.commission_market`. */
+      /**
+       * Commission Market (v1.6.2 L189–200). Placing the worker always opens the private look
+       * at the top 2 (Apprentice effect) or 3 (Shifu effect) Main Orders, as many as remain
+       * (B1); the reservations follow in `COMMISSION_CHOOSE` (INT: Commission Market looks).
+       * Senior Apprentice is declared here, before the look (L618 "1 Apprentice you place").
+       */
       type: "PLACE_COMMISSION_MARKET";
       workerId: WorkerId;
       seniorApprentice?: boolean;
-      first: CommissionReservationChoice;
     }
   | {
-      /** Guild Hall (L203–214). Apprentice: `buy_face_up` at printed cost. Shifu: `inspect`
-       * a discipline (even one already owned, B2), then GUILD_TAKE. */
+      /** Guild Hall (v1.6.2 L202–214). Apprentice: `buy_face_up` at printed cost. Shifu:
+       * `inspect` a discipline (even one already owned, B2), then GUILD_TAKE (1 or 2) and
+       * GUILD_FINISH. Legal for either worker only if an affordable face-up Tech of a discipline
+       * the player does not own shows (v1.6.2 L212). */
       type: "PLACE_GUILD_HALL";
       workerId: WorkerId;
       choice: { kind: "buy_face_up"; techId: TechId } | { kind: "inspect"; discipline: TechDiscipline };
     }
-  | { /** Canal Wharf (L216–221): 2 / 4 Coins; uncapped, always legal (L143). */ type: "PLACE_CANAL_WHARF"; workerId: WorkerId }
+  | {
+      /** Canal Wharf (v1.6.2 L216–221): 2 Coins (Apprentice); 4 Coins, then the top Main Order
+       * unseen into the hand, none when the deck and discard are both empty (Shifu, B1).
+       * Uncapped and always legal (L143). */
+      type: "PLACE_CANAL_WHARF";
+      workerId: WorkerId;
+    }
   | { /** Magistrate's Hall (L223–233): 4 / 3 Coins, +1 Recognition, only at 0–2. */ type: "PLACE_MAGISTRATES_HALL"; workerId: WorkerId }
   // ── Work: sub-steps that follow a private reveal ───────────────────────────────────
-  | { type: "COMMISSION_RESERVE"; choice: CommissionReservationChoice }
-  | { /** Reserve 1 looked-at Order; the rest go face down to the discard (L197). */ type: "COMMISSION_CHOOSE_LOOKED"; orderId: OrderId }
-  | { type: "COMMISSION_GAIN"; resource: GainResource }
-  | { /** Shifu effect: stop after the first reservation (L199). */ type: "COMMISSION_STOP" }
   | {
-      /** Guild Shifu: take 1 face-up Tech (any discipline) or 1 inspected Tech at −1 Coin
-       * (min 0) (L208). `bottomOrder` lists every untaken inspected Tech exactly once, top to
-       * bottom as they will sit at the deck bottom (B2: private). Returned before refilling. */
+      /**
+       * Commission Market reservations after the look (v1.6.2 L191, L195–198): exactly 1
+       * (Apprentice effect) or 1–2 (Shifu effect), each a face-up Order or a looked card, in
+       * any mix. Resolved in array order; the looked cards not reserved then go face down to
+       * the Main discard. No resource is gained.
+       */
+      type: "COMMISSION_CHOOSE";
+      reservations: CommissionPick[];
+    }
+  | {
+      /**
+       * Guild Hall Shifu: take 1 Tech, face-up (showing now: a taken position stays empty
+       * until the turn ends, v1.6.2 L209) or inspected, paying its printed cost (v1.6.2 L207;
+       * no discount). Up to 2 per action, from different disciplines (the 1-per-discipline
+       * limit, L211). Its when-acquired effect resolves before the next take (L214).
+       */
       type: "GUILD_TAKE";
-      take: { kind: "face_up"; techId: TechId } | { kind: "inspected"; techId: TechId };
+      take: GuildTake;
+    }
+  | {
+      /**
+       * Guild Hall Shifu, after at least 1 take ("up to 2" is never 0, L142): stop taking and
+       * put every untaken inspected Tech on the bottom of its deck. `bottomOrder` lists each
+       * exactly once, top to bottom as they will sit at the deck bottom (B2: private).
+       */
+      type: "GUILD_FINISH";
       bottomOrder: TechId[];
     }
   | { /** Colour Samples when acquired: reserve 1 looked-at Order, discard the rest (L626). */ type: "COLOUR_SAMPLES_CHOOSE"; orderId: OrderId }
@@ -1164,15 +1222,18 @@ export type AuthoritativeCommand = GameAction | SubmitContributionCommand;
  */
 export type Secret<P> = { visibleTo: PlayerId } & P;
 
-export type OrderReservationSource = "face_up" | "blind" | "top_three" | "colour_samples";
+/**
+ * Where a reserved Order came from: a face-up display position (public), a private look
+ * (Commission Market, Colour Samples) or the deck top unseen (the Canal Wharf Shifu,
+ * v1.6.2 L220).
+ */
+export type OrderReservationSource = "face_up" | "looked" | "deck_top";
 
 export type ResourceChangeReason =
   | "materials_yard"
-  | "materials_yard_bonus"
   | "form_decorate"
   | "prepared_clay"
   | "ding_extra"
-  | "commission_market"
   | "guild_hall"
   | "canal_wharf"
   | "magistrates_hall"
@@ -1265,13 +1326,13 @@ export type GameEvent =
   | {
       type: "ORDER_RESERVED";
       playerId: PlayerId;
-      via: "commission_market" | "colour_samples";
+      via: "commission_market" | "colour_samples" | "canal_wharf";
       source: OrderReservationSource;
       /** Display position for `face_up`, else null. */
       slotIndex: number | null;
       /** Public only for `face_up` (the card was already showing). */
       orderId: OrderId | null;
-      /** Present for `blind`, `top_three` and `colour_samples` (B3). */
+      /** Present for `looked` and `deck_top` (B3). */
       secret?: Secret<{ orderId: OrderId }>;
     }
   | {
@@ -1283,7 +1344,7 @@ export type GameEvent =
       secret: Secret<{ orderIds: OrderId[]; techIds: TechId[] }>;
     }
   | {
-      /** Unchosen looked-at Orders go face down to the Main discard (L197, L626, B3). */
+      /** Unchosen looked-at Orders go face down to the Main discard (v1.6.2 L195–196, L625, B3). */
       type: "LOOKED_ORDERS_DISCARDED";
       playerId: PlayerId;
       count: number;
@@ -1306,7 +1367,13 @@ export type GameEvent =
       count: number;
       secret: Secret<{ techIds: TechId[] }>;
     }
-  | { type: "TECH_DISPLAY_REFILLED"; discipline: TechDiscipline; revealedTechIds: TechId[]; display: TechId[] }
+  | {
+      /** At setup, and when a Work turn in which Techs were taken ends (v1.6.2 L209). */
+      type: "TECH_DISPLAY_REFILLED";
+      discipline: TechDiscipline;
+      revealedTechIds: TechId[];
+      display: TechId[];
+    }
   | { type: "PERSONAL_SPACE_UNLOCKED"; playerId: PlayerId; locationId: PersonalLocationId }
   | { type: "TECH_USED"; playerId: PlayerId; techId: TechId }
   | { type: "KILN_ABILITY_USED"; playerId: PlayerId; kilnId: KilnId }
@@ -1400,7 +1467,7 @@ export type GameRuleErrorCode =
   | "GAME_FINISHED"
   | "STALE_CHOICE"
   /** A well-formed choice that this worker effect or window does not offer (e.g. a Shifu
-   * `buy_face_up` at the Guild Hall, an Apprentice `look_top_three`). */
+   * `buy_face_up` at the Guild Hall, a Commission pick outside the own look or named twice). */
   | "INVALID_CHOICE"
   // Setup
   | "KILN_UNAVAILABLE"
@@ -1433,6 +1500,8 @@ export type GameRuleErrorCode =
   | "ORDER_NOT_AVAILABLE"
   | "ORDER_NOT_HELD"
   | "ORDER_SUPPLY_EMPTY"
+  /** A reservation step chose no Order (v1.6.2 L198: at least 1). */
+  | "RESERVATION_REQUIRED"
   | "RESERVATION_LIMIT"
   | "ORDER_REQUIREMENTS_NOT_MET"
   | "INVALID_CRACKLE_DECLARATION"
@@ -1441,6 +1510,10 @@ export type GameRuleErrorCode =
   | "TECH_NOT_AVAILABLE"
   | "TECH_LIMIT"
   | "TECH_DISCIPLINE_OWNED"
+  /** A Guild Hall Shifu's third take (v1.6.2 L207: up to 2). */
+  | "TECH_TAKE_LIMIT"
+  /** GUILD_FINISH before any take (v1.6.2 L207, L142: "up to 2" is never 0). */
+  | "TECH_TAKE_REQUIRED"
   | "TECH_NOT_OWNED"
   | "TECH_ALREADY_USED"
   | "INVALID_BOTTOM_ORDER"
@@ -1712,14 +1785,10 @@ export interface KilnDefinition<Id extends KilnId = KilnId> {
 
 /** Printed location effects, mechanical half (DESIGN §6.3). */
 export interface LocationEffectsById {
+  /** v1.6.2 L164–165: 3 / 6 resources in any Clay/Wood split; no Coin option. */
   materials_yard: {
     apprentice: { resources: number };
-    shifu: {
-      resources: number;
-      /** Optional purchase (L163): pay `coins` Coins to gain `clay` Clay and `wood` Wood.
-       * `coins` is a cost, never a gain. */
-      bonus: { coins: number; clay: number; wood: number };
-    };
+    shifu: { resources: number };
   };
   form_decorate: {
     apprentice: { maxVessels: number };
@@ -1729,17 +1798,21 @@ export interface LocationEffectsById {
     apprentice: { maxLoads: number; maxImperialLoads: number };
     shifu: { maxLoads: number; maxImperialLoads: number; placesHeatMarker: boolean };
   };
+  /** v1.6.2 L195–196: look at the top `lookSize`, reserve up to `maxReservations` (≥ 1). */
   commission_market: {
-    apprentice: { maxReservations: number; gainAfterEach: number };
-    shifu: { maxReservations: number; gainAfterEach: number; topThreeLooks: number; lookSize: number };
+    apprentice: { lookSize: number; maxReservations: number };
+    shifu: { lookSize: number; maxReservations: number };
   };
+  /** v1.6.2 L206–207: the Apprentice takes 1 face-up Tech; the Shifu inspects `inspectCount`
+   * and takes up to `maxTechs` from different disciplines. Both pay the printed cost. */
   guild_hall: {
-    apprentice: { discount: number };
-    shifu: { inspectCount: number; discount: number };
+    apprentice: { maxTechs: number };
+    shifu: { inspectCount: number; maxTechs: number };
   };
+  /** v1.6.2 L219–220: the Shifu also takes `topMainOrders` cards off the Main deck, unseen. */
   canal_wharf: {
     apprentice: { coins: number };
-    shifu: { coins: number };
+    shifu: { coins: number; topMainOrders: number };
   };
   magistrates_hall: {
     apprentice: { coins: number; recognitionSteps: number };
@@ -1962,7 +2035,6 @@ export type CostLineKind =
   | "ding_extra"
   | "prepared_clay_surcharge"
   | "tech_price"
-  | "guild_shifu_discount"
   | "magistrates_hall"
   | "wood";
 
@@ -1984,8 +2056,8 @@ export interface CostQuote {
 }
 
 /**
- * One way to place a worker at a location. Legality can differ by effect (e.g. the Guild
- * Hall Shifu price after its discount, L213), so the UI never recomputes it.
+ * One way to place a worker at a location. Legality can differ by effect (e.g. the Commission
+ * Market look size, or Senior Apprentice), so the UI never recomputes it.
  */
 export interface PlacementWorkerOption {
   /** The worker the command would name: the Shifu, or the lowest-ID available Apprentice. */
@@ -2077,39 +2149,42 @@ export interface KilnSelectionOption {
   chosenBy: PlayerId | null;
 }
 
-/** Commission Market choices for a given worker effect, at placement or in the sub-step. */
+/** Commission Market at placement time for one worker effect (public information only). */
 export interface CommissionOptions {
   effect: WorkerEffect;
-  /** Display positions holding an Order that may be reserved now (L191, L199). */
-  faceUpSlots: number[];
-  /** A blind reservation needs a card in the deck after any reshuffle (B1). */
-  blind: boolean;
-  /** Shifu effect only, once per action (L197). */
-  lookTopThree: boolean;
-  /** In the sub-step: `COMMISSION_GAIN` is due now. */
-  gainNow: boolean;
-  /** In the sub-step: `COMMISSION_STOP` is allowed (≥1 reservation made, L199). */
-  canStop: boolean;
+  /** 2 (Apprentice effect) or 3 (Shifu effect) (v1.6.2 L195–196). */
+  lookSize: 2 | 3;
+  /**
+   * Cards the look would show now: the deck's top `lookSize`, or after the reshuffle an empty
+   * deck forces, up to the discard's count (B1); 0 when the deck and discard are both empty.
+   */
+  lookCount: number;
   maxReservations: 1 | 2;
-  reservationsMade: 0 | 1 | 2;
+  /** Display positions holding an Order. */
+  faceUpSlots: number[];
+  /** At least 1 reservation is possible (the placement's main action, L142). */
+  reservable: boolean;
 }
 
-/** A private top-3 look awaiting its choice (Commission Shifu or Colour Samples). */
+/** An Order look awaiting its choice (the viewer's own private look). */
 export interface LookedOrderOptions {
-  kind: "commission_top_three" | "colour_samples";
-  /** From `own.pendingLook`: reserve 1; the rest go face down to the discard (L197, L626). */
+  kind: "commission_market" | "colour_samples";
+  /** From `own.pendingLook`; the cards not reserved go face down to the discard. */
   orderIds: OrderId[];
+  /** Commission Market only: display positions also reservable now (v1.6.2 L191); else []. */
+  faceUpSlots: number[];
+  /** 1, or 2 for the Commission Market Shifu effect. At least 1 is always required. */
+  maxReservations: 1 | 2;
 }
 
 export interface GuildTechOption {
   techId: TechId;
   discipline: TechDiscipline;
   source: "face_up" | "inspected";
-  printedCost: number;
-  /** Price after the Shifu discount (−1, minimum 0) when the effect is `shifu` (L208). */
-  price: number;
+  /** The printed cost, which every Guild Hall take pays (v1.6.2 L206–207: no Shifu discount). */
+  cost: number;
   legal: boolean;
-  /** e.g. `TECH_DISCIPLINE_OWNED`, `TECH_LIMIT`, `INSUFFICIENT_RESOURCES`. */
+  /** e.g. `TECH_DISCIPLINE_OWNED`, `TECH_LIMIT`, `INSUFFICIENT_RESOURCES`, `TECH_TAKE_LIMIT`. */
   reason: GameRuleErrorCode | null;
 }
 
@@ -2125,11 +2200,19 @@ export interface GuildOptions {
 /** Guild Hall Shifu after inspecting (`guild_inspection` step; private to the actor). */
 export interface GuildInspectionOptions {
   discipline: TechDiscipline;
+  /** The inspected Techs not taken yet, with the legality of taking each next. */
   inspected: GuildTechOption[];
+  /** The face-up Techs showing now (a taken position stays empty, v1.6.2 L209), likewise. */
   faceUp: GuildTechOption[];
-  /** Required `GUILD_TAKE.bottomOrder` length: every inspected Tech not taken (B2). */
-  bottomOrderLengthIfInspectedTaken: number;
-  bottomOrderLengthIfFaceUpTaken: number;
+  /** The Techs this action has taken so far, in order. */
+  takes: GuildTake[];
+  /** Takes left: 2 minus `takes.length` (v1.6.2 L207). Each option's `legal` already says
+   * whether it may be the next take. */
+  takesLeft: number;
+  /** GUILD_FINISH is allowed: at least 1 Tech has been taken (L142). */
+  canFinish: boolean;
+  /** Required `GUILD_FINISH.bottomOrder` length: every inspected Tech not taken (B2). */
+  bottomOrderLength: number;
 }
 
 export interface TestPiecesOptions {
@@ -2415,24 +2498,20 @@ export interface TieBreakStep {
 /** `placementLimits` (§5 gap 10): the printed effect record of one location and worker effect. */
 export type PlacementLimits<L extends LocationId = LocationId, E extends WorkerEffect = WorkerEffect> = LocationEffectsById[L][E];
 
-/** Materials Yard choices for one worker option (L160–163, L618, L350; §5 gap 14). */
+/** Materials Yard choices for one worker option (v1.6.2 L164–165, L618, L350; §5 gap 14). */
 export interface MaterialsYardOptions {
-  /** Resources split freely between Clay and Wood: 3 (Apprentice effect) or 4 (Shifu effect). */
+  /** Resources split freely between Clay and Wood: 3 (Apprentice effect) or 6 (Shifu effect). */
   resources: number;
-  /** The Shifu effect's optional purchase (L163), quoted (`ok` = affordable); null for the
-   * Apprentice effect. */
-  shifuBonus: CostQuote | null;
   /**
    * Prepared Clay (T17, L618) for this worker option. null for a Senior Apprentice placement
    * (both Form & Decorate Techs, L211, L350) or when T17 is not owned and ready.
    * - `pairs`: every Shape + Decoration combination some legal command names (some Clay/Wood
-   *   split, with or without the Shifu bonus; see `withShifuBonus`), in Shape then Decoration
-   *   order. Legality belongs
-   *   to the pair: the Shape's Clay (which the split and bonus supply) and the Decoration's
-   *   Coins (which the bonus also spends) compete, so a form offers a Decoration per chosen
-   *   Shape from `pairs`, never the cross product of `shapes` and `decorations`.
+   *   split), in Shape then Decoration order. Legality belongs to the pair: the Shape's Clay
+   *   (which the split supplies) and the Decoration's Coins compete with the split, so a form
+   *   offers a Decoration per chosen Shape from `pairs`, never the cross product of `shapes`
+   *   and `decorations`.
    * - `shapes` / `decorations`: the projections of `pairs` (each value in some legal pair).
-   * The full draft (split, bonus and pair together) is still gated by `quoteMaterialsYard`.
+   * The full draft (split and pair together) is still gated by `quoteMaterialsYard`.
    */
   preparedClay: { shapes: Shape[]; decorations: Decoration[]; pairs: PreparedClayPair[] } | null;
 }
@@ -2441,12 +2520,6 @@ export interface MaterialsYardOptions {
 export interface PreparedClayPair {
   shape: Shape;
   decoration: Decoration;
-  /**
-   * Whether this pair is also legal together with the Shifu effect's 1-Coin bonus (L163) for
-   * some split. false for the Apprentice effect, and when the bonus Coin would leave too few
-   * Coins for the Decoration: a form then offers the pair or the bonus, not both.
-   */
-  withShifuBonus: boolean;
 }
 
 /** One Shaped vessel a Glaze & Load load may name after `earlierLoads` (L177–185; §5 gap 15). */

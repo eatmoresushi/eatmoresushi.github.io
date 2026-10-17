@@ -1,16 +1,19 @@
--- V1.6.1 (state schema 6, rules behaviour revision 29): new rooms only.
+-- V1.6.2 (state schema 7, rules behaviour revision 30): new rooms only.
+--
+-- Written for V1.6.1 (schema 6, r29) and edited in place for V1.6.2 before any deployment
+-- (ENGINE_V1.6.2_DELTA.md §9); the file keeps its name. No V1.6.1 room was ever stored.
 --
 -- Older rooms, saves, private submissions and events stay as readable history; they are
 -- never rewritten or relabelled. Every write path refuses them by rules version, schema
 -- and fingerprint (DIG: "V1.4 rooms are rejected, never migrated").
 --
 -- Every gate that hard-coded V1.4 in an earlier migration is rewritten here. Missing any
--- one would make every V1.6.1 commit fail with "unsupported rules or schema version":
+-- one would make every V1.6.2 commit fail with "unsupported rules or schema version":
 --   constraints  rooms_rules_version_check, rooms_content_version_check,
 --                room_ai_seats_policy_version_check,
 --                private_submissions_contribution_card_check,
 --                private_submissions_fuel_ledger_card_check
---                (rooms_v14_fingerprint_check is kept for V1.4 rows; V1.6.1 adds its own)
+--                (rooms_v14_fingerprint_check is kept for V1.4 rows; V1.6.2 adds its own)
 --   functions    server_create_room, server_join_room, server_add_computer_seat,
 --                server_commit_start, server_commit_transition (the five r23–r28 gates of
 --                202609260001 … 202610020001), server_load_private_submissions,
@@ -26,29 +29,29 @@ alter table public.rooms add constraint rooms_rules_version_check
   check (rules_version in (
     '0.4', '0.5', '0.6.1', '0.6.3', '0.6.5', '1.0.0', '1.0.1', '1.0.2',
     '1.0.4', '1.0.9', '1.1.1', '1.1.4', '1.1.5', '1.1.6', '1.2.2', '1.2.4', '1.2.5', '1.2.6', '1.2.7', '1.4',
-    '1.6.1'
+    '1.6.2'
   ));
 alter table public.rooms add constraint rooms_content_version_check
   check (content_version in (
     '0.4', '0.5', '0.6.1', '0.6.3', '0.6.5', '1.0.0', '1.0.1', '1.0.2',
     '1.0.4', '1.0.9', '1.1.1', '1.1.4', '1.1.5', '1.1.6', '1.2.2', '1.2.4', '1.2.5', '1.2.6', '1.2.7', '1.4',
-    '1.6.1'
+    '1.6.2'
   ));
 
--- The V1.4 fingerprint check stays for V1.4 rows; V1.6.1 rooms carry an r29 fingerprint.
-alter table public.rooms drop constraint if exists rooms_v161_fingerprint_check;
-alter table public.rooms add constraint rooms_v161_fingerprint_check
+-- The V1.4 fingerprint check stays for V1.4 rows; V1.6.2 rooms carry an r30 fingerprint.
+alter table public.rooms drop constraint if exists rooms_v162_fingerprint_check;
+alter table public.rooms add constraint rooms_v162_fingerprint_check
   check (
-    rules_version <> '1.6.1'
+    rules_version <> '1.6.2'
     or (
-      content_version = '1.6.1'
-      and coalesce(content_digest, '') ~ '^r29-[0-9a-f]{16}$'
+      content_version = '1.6.2'
+      and coalesce(content_digest, '') ~ '^r30-[0-9a-f]{16}$'
     )
   );
 
 -- ── Computer seats ───────────────────────────────────────────────────────────────────
 
--- V1.6.1 policies are labelled `rules-v1.6.1-<name>-<nnn>` and passed in by the service,
+-- V1.6.2 policies are labelled `rules-v1.6.2-<name>-<nnn>` and passed in by the service,
 -- so a new policy needs no migration. Historical labels stay valid for old rows.
 alter table private.room_ai_seats drop constraint if exists room_ai_seats_policy_version_check;
 alter table private.room_ai_seats add constraint room_ai_seats_policy_version_check
@@ -58,13 +61,13 @@ alter table private.room_ai_seats add constraint room_ai_seats_policy_version_ch
       'rules-v1.1.5-order-001', 'rules-v1.2.2-heuristic-001', 'rules-v1.2.4-heuristic-001', 'rules-v1.2.5-heuristic-001',
       'rules-v1.2.6-heuristic-001', 'rules-v1.2.6-strategic-002', 'rules-v1.2.7-strategic-002', 'rules-v1.4-strategic-001'
     )
-    or policy_version ~ '^rules-v1\.6\.1-[a-z0-9]+(-[a-z0-9]+)*$'
+    or policy_version ~ '^rules-v1\.6\.2-[a-z0-9]+(-[a-z0-9]+)*$'
   );
 
--- ── Private submissions: the V1.6.1 card set and the Fuel Ledger commitment ──────────
+-- ── Private submissions: the V1.6.2 card set and the Fuel Ledger commitment ──────────
 
--- V1.6.1 has exactly three Contribution cards; Fuel Ledger is a separate secret commitment
--- (T12, L638) stored in the reused `use_fuel_ledger` column. NOT VALID: enforced on every
+-- V1.6.2 has exactly three Contribution cards; Fuel Ledger is a separate secret commitment
+-- (T12, v1.6.2 L637) stored in the reused `use_fuel_ledger` column. NOT VALID: enforced on every
 -- new or changed row, while historical V1.4 BANK_2/STOKE_2 rows remain as audit history.
 -- A null card is a pre-card numeric row (`private_submissions_contribution_present_check`).
 alter table private.private_submissions drop constraint if exists private_submissions_contribution_card_check;
@@ -84,7 +87,7 @@ alter table private.private_submissions add constraint private_submissions_fuel_
   );
 
 comment on column private.private_submissions.use_fuel_ledger is
-  'V1.6.1: Fuel Ledger''s sealed commitment (T12) for this BANK or STOKE card, making it -2/+2 at the reveal. Pre-V1.4 rows: the V1.2.2 commitment. V1.4 rows recorded BANK_2/STOKE_2 cards instead.';
+  'V1.6.2: Fuel Ledger''s sealed commitment (T12) for this BANK or STOKE card, making it -2/+2 at the reveal. Pre-V1.4 rows: the V1.2.2 commitment. V1.4 rows recorded BANK_2/STOKE_2 cards instead.';
 
 create or replace function public.server_load_private_submissions(p_room_id uuid, p_window_id text)
 returns jsonb language sql stable security definer set search_path = private, pg_temp
@@ -124,11 +127,11 @@ set search_path = public, private, extensions, pg_temp
 as $$
 declare v_room jsonb; v_seat jsonb;
 begin
-  if coalesce(p_content_digest, '') !~ '^r29-[0-9a-f]{16}$' then
+  if coalesce(p_content_digest, '') !~ '^r30-[0-9a-f]{16}$' then
     return jsonb_build_object('status', 'error', 'code', 'session_not_active');
   end if;
   insert into public.rooms (id, code, status, host_seat_id, rules_version, content_version, latest_revision, content_digest)
-  values (p_room_id, upper(p_code), 'lobby', p_seat_id, '1.6.1', '1.6.1', 0, p_content_digest);
+  values (p_room_id, upper(p_code), 'lobby', p_seat_id, '1.6.2', '1.6.2', 0, p_content_digest);
   insert into public.room_players (seat_id, room_id, player_id, seat_index, display_name, colour, is_host)
   values (p_seat_id, p_room_id, p_player_id, 0, btrim(p_display_name), p_colour, true);
   if p_auth_user_id is not null then
@@ -181,9 +184,9 @@ begin
   if v_room.status <> 'lobby' then
     return jsonb_build_object('status', 'error', 'code', 'game_already_started');
   end if;
-  if v_room.rules_version <> '1.6.1'
-     or v_room.content_version <> '1.6.1'
-     or coalesce(v_room.content_digest, '') !~ '^r29-[0-9a-f]{16}$' then
+  if v_room.rules_version <> '1.6.2'
+     or v_room.content_version <> '1.6.2'
+     or coalesce(v_room.content_digest, '') !~ '^r30-[0-9a-f]{16}$' then
     return jsonb_build_object('status', 'error', 'code', 'session_not_active');
   end if;
   select candidate into v_seat_index
@@ -270,10 +273,10 @@ begin
   if v_room.status <> 'lobby' then
     return jsonb_build_object('status', 'error', 'code', 'game_already_started');
   end if;
-  if v_room.rules_version <> '1.6.1'
-     or v_room.content_version <> '1.6.1'
-     or coalesce(v_room.content_digest, '') !~ '^r29-[0-9a-f]{16}$'
-     or coalesce(p_policy_version, '') !~ '^rules-v1\.6\.1-[a-z0-9]+(-[a-z0-9]+)*$' then
+  if v_room.rules_version <> '1.6.2'
+     or v_room.content_version <> '1.6.2'
+     or coalesce(v_room.content_digest, '') !~ '^r30-[0-9a-f]{16}$'
+     or coalesce(p_policy_version, '') !~ '^rules-v1\.6\.2-[a-z0-9]+(-[a-z0-9]+)*$' then
     return jsonb_build_object('status', 'error', 'code', 'session_not_active');
   end if;
 
@@ -374,13 +377,13 @@ begin
   if v_room.status <> 'lobby' or exists (select 1 from private.game_heads where room_id = p_room_id) then
     return jsonb_build_object('status', 'error', 'code', 'game_already_started');
   end if;
-  if coalesce(v_room.rules_version, '') <> '1.6.1'
-     or coalesce(v_room.content_version, '') <> '1.6.1'
-     or coalesce(v_room.content_digest, '') !~ '^r29-[0-9a-f]{16}$'
-     or coalesce(p_state->>'rulesVersion', '') <> '1.6.1'
-     or coalesce(p_public_state->>'rulesVersion', '') <> '1.6.1'
-     or coalesce((p_state->>'schemaVersion')::integer, -1) <> 6
-     or coalesce((p_public_state->>'schemaVersion')::integer, -1) <> 6 then
+  if coalesce(v_room.rules_version, '') <> '1.6.2'
+     or coalesce(v_room.content_version, '') <> '1.6.2'
+     or coalesce(v_room.content_digest, '') !~ '^r30-[0-9a-f]{16}$'
+     or coalesce(p_state->>'rulesVersion', '') <> '1.6.2'
+     or coalesce(p_public_state->>'rulesVersion', '') <> '1.6.2'
+     or coalesce((p_state->>'schemaVersion')::integer, -1) <> 7
+     or coalesce((p_public_state->>'schemaVersion')::integer, -1) <> 7 then
     return jsonb_build_object('status', 'error', 'code', 'session_not_active');
   end if;
   select count(*) into v_count from public.room_players where room_id = p_room_id;
@@ -475,16 +478,16 @@ begin
   if not exists (
        select 1 from public.rooms room
        where room.id = p_room_id
-         and room.rules_version = '1.6.1'
-         and room.content_version = '1.6.1'
-         and coalesce(room.content_digest, '') ~ '^r29-[0-9a-f]{16}$'
+         and room.rules_version = '1.6.2'
+         and room.content_version = '1.6.2'
+         and coalesce(room.content_digest, '') ~ '^r30-[0-9a-f]{16}$'
      )
-     or coalesce(v_head.state_json->>'rulesVersion', '') <> '1.6.1'
-     or coalesce((v_head.state_json->>'schemaVersion')::integer, -1) <> 6
-     or coalesce(p_next_state->>'rulesVersion', '') <> '1.6.1'
-     or coalesce(p_public_state->>'rulesVersion', '') <> '1.6.1'
-     or coalesce((p_next_state->>'schemaVersion')::integer, -1) <> 6
-     or coalesce((p_public_state->>'schemaVersion')::integer, -1) <> 6 then
+     or coalesce(v_head.state_json->>'rulesVersion', '') <> '1.6.2'
+     or coalesce((v_head.state_json->>'schemaVersion')::integer, -1) <> 7
+     or coalesce(p_next_state->>'rulesVersion', '') <> '1.6.2'
+     or coalesce(p_public_state->>'rulesVersion', '') <> '1.6.2'
+     or coalesce((p_next_state->>'schemaVersion')::integer, -1) <> 7
+     or coalesce((p_public_state->>'schemaVersion')::integer, -1) <> 7 then
     raise exception 'unsupported rules or schema version';
   end if;
   -- Hidden information never reaches a public row (DESIGN §4).

@@ -228,7 +228,7 @@ export function createInitialState(input: CreateGameInput, rng: RandomSource): C
   const firstSeat = playerOrder[0];
   invariant(firstSeat !== undefined, "A game has players");
   const draft: GameState = {
-    schemaVersion: 6,
+    schemaVersion: 7,
     rulesVersion: GAME_CONFIG.rulesVersion,
     gameId: input.gameId,
     revision: 0,

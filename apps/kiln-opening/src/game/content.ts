@@ -1,9 +1,10 @@
 /**
- * V1.6.1 content layer (DESIGN §6, package P1). Layer 1: imports only types.
+ * V1.6.2 content layer (DESIGN §6, package P1; ENGINE_V1.6.2_DELTA.md §3). Layer 1: imports
+ * only types.
  *
  * Every rule value the engine reads comes from `data/*.json` through this module. The JSON is
  * validated when the module loads (DESIGN §6.9) and the module throws on any mismatch, so an
- * engine never runs on content that disagrees with the V1.6.1 rulebook's counts and tables.
+ * engine never runs on content that disagrees with the V1.6.2 rulebook's counts and tables.
  * The exported definitions are deep-frozen: content is never mutated at runtime.
  *
  * Iteration order: the exported ID lists (`TECH_IDS`, `KILN_SPACE_IDS`, `DISCIPLINES`, …) are
@@ -45,6 +46,7 @@ import type {
   TechDefinition,
   TechDiscipline,
   TechId,
+  WorkerEffect,
   ZoneModifier,
 } from "./types.ts";
 
@@ -91,7 +93,7 @@ export interface ContentFiles {
 
 // ── Canonical vocabulary and ID orders ──────────────────────────────────────────────────────
 
-export const RULES_VERSION: RulesVersion = "1.6.1";
+export const RULES_VERSION: RulesVersion = "1.6.2";
 
 /** Shapes in Clay-cost order (L321–327). */
 export const SHAPES: readonly Shape[] = Object.freeze(["bowl", "plate", "washer", "vase", "censer"] as const);
@@ -466,6 +468,41 @@ export function validateContentFiles(files: ContentFiles): string[] {
       problems.push(`action_locations: only the Magistrate's Hall has a Recognition gate`);
     }
   }
+  // Effect shapes the engine reads (DELTA §3.2): whole numbers, and a Commission look at least
+  // as large as its reservations, which are at least 1 (v1.6.2 L195–198).
+  const effectsOf = (id: LocationId): Record<WorkerEffect, Record<string, unknown>> | null => {
+    const found = actionLocations.locations.find((location) => location.id === id);
+    return found === undefined ? null : (found.effects as unknown as Record<WorkerEffect, Record<string, unknown>>);
+  };
+  const EFFECT_KEYS: ReadonlyArray<readonly [LocationId, readonly string[], readonly string[]]> = [
+    ["materials_yard", ["resources"], ["resources"]],
+    ["commission_market", ["lookSize", "maxReservations"], ["lookSize", "maxReservations"]],
+    ["guild_hall", ["maxTechs"], ["inspectCount", "maxTechs"]],
+    ["canal_wharf", ["coins"], ["coins", "topMainOrders"]],
+  ];
+  for (const [id, apprenticeKeys, shifuKeys] of EFFECT_KEYS) {
+    const effects = effectsOf(id);
+    for (const [effect, keys] of [["apprentice", apprenticeKeys], ["shifu", shifuKeys]] as const) {
+      const record = effects?.[effect];
+      if (record === undefined || !sameMembers(Object.keys(record), keys) || !keys.every((key) => isNonNegativeInteger(record[key]))) {
+        problems.push(`action_locations: ${id} ${effect} effect must be {${keys.join(", ")}} of whole numbers`);
+      }
+    }
+  }
+  // Guild Hall (v1.6.2 L206–207): the Apprentice takes 1 Tech, the Shifu at least 1.
+  const guild = effectsOf("guild_hall");
+  if (guild?.apprentice?.["maxTechs"] !== 1 || typeof guild.shifu?.["maxTechs"] !== "number" || guild.shifu["maxTechs"] < 1) {
+    problems.push("action_locations: guild_hall takes exactly 1 Tech with an Apprentice and at least 1 with the Shifu");
+  }
+  const commission = effectsOf("commission_market");
+  for (const effect of ["apprentice", "shifu"] as const) {
+    const record = commission?.[effect];
+    const lookSize = record?.["lookSize"];
+    const maxReservations = record?.["maxReservations"];
+    if (typeof lookSize !== "number" || typeof maxReservations !== "number" || maxReservations < 1 || lookSize < maxReservations) {
+      problems.push(`action_locations: commission_market ${effect} must look at least as many cards as it reserves, and reserve at least 1`);
+    }
+  }
 
   // Kilns.
   if (!sameSequence(kilns.kilns.map((kiln) => kiln.id), KILN_IDS)) problems.push("kilns: must list RU, GU, GE, DI, JU");
@@ -566,7 +603,7 @@ const FILES: ContentFiles = {
 
 const LOAD_PROBLEMS = validateContentFiles(FILES);
 if (LOAD_PROBLEMS.length > 0) {
-  throw new Error(`Invalid V1.6.1 content (data/*.json):\n- ${LOAD_PROBLEMS.join("\n- ")}`);
+  throw new Error(`Invalid V1.6.2 content (data/*.json):\n- ${LOAD_PROBLEMS.join("\n- ")}`);
 }
 deepFreeze(FILES);
 

@@ -95,7 +95,8 @@ export function foreignSecretIds(state: GameState, viewerId: PlayerId, events: r
   }
   const look = hidden.pendingLook;
   if (look !== null) {
-    const ids = look.kind === "guild_inspection" ? look.techIds : look.orderIds;
+    // A Guild inspection that waits behind Colour Samples stays private too (v1.6.2 L207).
+    const ids = look.kind === "guild_inspection" ? look.techIds : [...look.orderIds, ...(look.kind === "colour_samples" ? (look.inspection?.techIds ?? []) : [])];
     for (const id of ids) {
       if (look.playerId === viewerId) forbidden.delete(id);
       else forbidden.set(id, `${look.playerId}'s private look`);

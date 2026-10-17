@@ -394,8 +394,8 @@ describe("ROUND_STRUCTURE and roundPhaseOf (§5 gap 17)", () => {
 
   it("is display text only: not a rules-fingerprint input, and the fingerprint is unchanged", () => {
     expect(CONTENT_SOURCES.map(([name]) => name)).not.toContain("round_structure");
-    expect(RULES_BEHAVIOUR_REVISION).toBe(29);
-    expect(rulesFingerprint()).toMatch(/^r29-[0-9a-f]{16}$/);
+    expect(RULES_BEHAVIOUR_REVISION).toBe(30);
+    expect(rulesFingerprint()).toMatch(/^r30-[0-9a-f]{16}$/);
   });
 
   it("is exported from the barrel", () => {
@@ -562,18 +562,18 @@ describe("materialsYardOptions (§5 gap 14)", () => {
       ?.workers.map((w) => ({ worker: w, options: materialsYardOptions(view, w), legal: legalMaterialsYardCommands(view, w) })) ?? [];
   };
 
-  it("offers Prepared Clay only with T17 ready and never with Senior Apprentice (L350)", () => {
+  it("offers Prepared Clay only with T17 ready and never with Senior Apprentice (L350); the Shifu effect gains 6 (v1.6.2 L165)", () => {
     const senior = optionsFor("Materials Yard: Senior Apprentice, Prepared Clay used");
     expect(senior.map((x) => [x.worker.kind, x.worker.seniorApprentice, x.options.resources, x.options.preparedClay])).toEqual([
-      ["shifu", false, 4, null],
+      ["shifu", false, 6, null],
       ["apprentice", false, 3, null],
-      ["apprentice", true, 4, null],
+      ["apprentice", true, 6, null],
     ]);
-    expect(senior[2]?.options.shifuBonus?.ok).toBe(true);
-    expect(senior[1]?.options.shifuBonus).toBeNull();
+    // V1.6.2 removed the Shifu's 1-Coin option: the options carry no bonus.
+    for (const { options } of senior) expect(Object.keys(options).sort()).toEqual(["preparedClay", "resources"]);
   });
 
-  it("lists the Shapes and Decorations of some legal command, after the split and bonus", () => {
+  it("lists the Shapes and Decorations of some legal command, after the split", () => {
     const rich = optionsFor("Materials Yard: Prepared Clay with 2 Coins and no Clay");
     for (const { options, legal } of rich) {
       expect(options.preparedClay?.shapes).toEqual([...new Set(legal.flatMap((a) => (a.preparedClay ? [a.preparedClay.shape] : [])))].sort((a, b) => SHAPES.indexOf(a) - SHAPES.indexOf(b)));
@@ -583,30 +583,20 @@ describe("materialsYardOptions (§5 gap 14)", () => {
     for (const { options } of broke) {
       expect(options.preparedClay).toEqual({ shapes: [], decorations: [], pairs: [] });
     }
-    expect(broke[0]?.options.shifuBonus?.ok).toBe(false);
   });
 
-  it("gates each Prepared Clay pair, and the pair with the Shifu bonus, not the cross product", () => {
-    // 2 Coins: the bonus Coin and the 2-Coin Decoration compete for the same Coins, so the
-    // bonus alone and every pair alone are legal, but no pair is legal with the bonus.
-    const tight = optionsFor("Materials Yard: Prepared Clay with 2 Coins and no Clay");
-    const shifu = tight.find((x) => x.worker.effect === "shifu");
-    expect(shifu?.options.shifuBonus?.ok).toBe(true);
-    expect(shifu?.options.preparedClay?.pairs.length).toBe(SHAPES.length * DECORATIONS.length);
-    expect(shifu?.options.preparedClay?.pairs.every((p) => !p.withShifuBonus)).toBe(true);
-    expect(shifu?.legal.some((a) => a.buyShifuBonus === true && a.preparedClay !== undefined)).toBe(false);
-    // 3 Coins: both fit.
-    const roomy = optionsFor("Materials Yard: Prepared Clay with 3 Coins and no Clay");
-    expect(roomy.find((x) => x.worker.effect === "shifu")?.options.preparedClay?.pairs.every((p) => p.withShifuBonus)).toBe(true);
-    // The Apprentice effect has no bonus.
-    for (const { worker, options } of [...tight, ...roomy]) {
-      if (worker.effect === "apprentice") expect(options.preparedClay?.pairs.some((p) => p.withShifuBonus)).toBe(false);
-    }
-    // The projections are exactly the pairs' Shapes and Decorations.
-    for (const { options } of [...tight, ...roomy]) {
-      const pairs = options.preparedClay?.pairs ?? [];
-      expect(options.preparedClay?.shapes).toEqual(SHAPES.filter((s) => pairs.some((p) => p.shape === s)));
-      expect(options.preparedClay?.decorations).toEqual(DECORATIONS.filter((d) => pairs.some((p) => p.decoration === d)));
+  it("gates each Prepared Clay pair: the split covers its Clay, the Coins its Decoration", () => {
+    // From 0 Clay even the Apprentice effect's 3 resources cover any Shape's Clay + 1 (L618),
+    // and 2 Coins pay any Decoration: every pair is legal for every worker option.
+    for (const name of ["Materials Yard: Prepared Clay with 2 Coins and no Clay", "Materials Yard: Prepared Clay with 3 Coins and no Clay"]) {
+      for (const { options, legal } of optionsFor(name)) {
+        expect(options.preparedClay?.pairs).toEqual(SHAPES.flatMap((shape) => DECORATIONS.map((decoration) => ({ shape, decoration }))));
+        expect(legal.some((a) => a.preparedClay !== undefined)).toBe(true);
+        // The projections are exactly the pairs' Shapes and Decorations.
+        const pairs = options.preparedClay?.pairs ?? [];
+        expect(options.preparedClay?.shapes).toEqual(SHAPES.filter((s) => pairs.some((p) => p.shape === s)));
+        expect(options.preparedClay?.decorations).toEqual(DECORATIONS.filter((d) => pairs.some((p) => p.decoration === d)));
+      }
     }
   });
 

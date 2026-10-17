@@ -11,6 +11,7 @@ import {
   discardMainOrders,
   drawMainOrder,
   drawTechsForInspection,
+  lookCount,
   refillMainDisplay,
   refillTechDisplay,
   removeFromHand,
@@ -288,24 +289,58 @@ describe("rotateMainDisplay (L128–130, B1)", () => {
 });
 
 describe("reservable (B1, public information only)", () => {
-  it("lists showing positions and allows blind / look while the deck or discard has a card", () => {
+  it("lists showing positions and reports a supply while the deck has a card", () => {
     const state = buildState({ display: ["O01", null, "O03", "O04", "O05", "O06"], mainDeck: ["O20"] });
-    expect(reservable(viewOf(state, null).game)).toEqual({ faceUpSlots: [0, 2, 3, 4, 5], blind: true, look: true });
+    expect(reservable(viewOf(state, null).game)).toEqual({ faceUpSlots: [0, 2, 3, 4, 5], supply: true });
   });
 
-  it("counts the discard: a blind reservation reshuffles it first", () => {
+  it("counts the discard: a look or a draw reshuffles it first (L511)", () => {
     const state = exactSupply(SIX, [], ["O20"]);
-    expect(reservable(viewOf(state, "p1").game)).toEqual({ faceUpSlots: [0, 1, 2, 3, 4, 5], blind: true, look: true });
+    expect(reservable(viewOf(state, "p1").game)).toEqual({ faceUpSlots: [0, 1, 2, 3, 4, 5], supply: true });
   });
 
-  it("offers neither blind nor look when the deck and discard are both empty", () => {
+  it("reports no supply when the deck and discard are both empty", () => {
     const state = exactSupply(["O01", null, null, null, null, null], [], []);
-    expect(reservable(viewOf(state, "p2").game)).toEqual({ faceUpSlots: [0], blind: false, look: false });
+    expect(reservable(viewOf(state, "p2").game)).toEqual({ faceUpSlots: [0], supply: false });
   });
 
   it("offers nothing at all when the whole supply is exhausted", () => {
     const state = buildState({ players: [{}, { hand: [...MAIN_ORDER_IDS] }], display: [null, null, null, null, null, null], mainDeck: [], mainDiscard: [] });
-    expect(reservable(viewOf(state, "p1").game)).toEqual({ faceUpSlots: [], blind: false, look: false });
+    expect(reservable(viewOf(state, "p1").game)).toEqual({ faceUpSlots: [], supply: false });
+  });
+});
+
+describe("lookCount (B1: mirrors takeTopMainOrders, public counts only)", () => {
+  it("shows up to the look's size from a non-empty deck, never completing it from the discard", () => {
+    expect(lookCount(viewOf(exactSupply(SIX, ["O20", "O21", "O22", "O23"], []), null).game, 3)).toBe(3);
+    expect(lookCount(viewOf(exactSupply(SIX, ["O20", "O21"], ["O30", "O31"]), null).game, 3)).toBe(2);
+    expect(lookCount(viewOf(exactSupply(SIX, ["O20"], ["O30", "O31", "O32"]), null).game, 2)).toBe(1);
+  });
+
+  it("an empty deck counts the discard the look would reshuffle; both empty gives 0", () => {
+    expect(lookCount(viewOf(exactSupply(SIX, [], ["O30", "O31", "O32", "O33"]), null).game, 3)).toBe(3);
+    expect(lookCount(viewOf(exactSupply(SIX, [], ["O30"]), null).game, 3)).toBe(1);
+    expect(lookCount(viewOf(exactSupply(SIX, [], []), null).game, 2)).toBe(0);
+  });
+
+  it("counts cards about to be discarded before the look (extraDiscard)", () => {
+    expect(lookCount(viewOf(exactSupply(SIX, [], []), null).game, 2, 1)).toBe(1);
+    expect(lookCount(viewOf(exactSupply(SIX, [], ["O30"]), null).game, 2, 1)).toBe(2);
+    // A non-empty deck ignores the discard altogether.
+    expect(lookCount(viewOf(exactSupply(SIX, ["O20"], []), null).game, 2, 1)).toBe(1);
+  });
+
+  it("agrees with takeTopMainOrders on the authoritative state", () => {
+    for (const [deck, discard, size] of [
+      [["O20", "O21", "O22"], ["O30"], 2],
+      [["O20"], ["O30", "O31"], 3],
+      [[], ["O30", "O31"], 3],
+      [[], [], 3],
+    ] as Array<[OrderId[], OrderId[], number]>) {
+      const state = exactSupply(SIX, deck, discard);
+      const expected = lookCount(viewOf(state, null).game, size);
+      expect(takeTopMainOrders(state, size, testContext(1))).toHaveLength(expected);
+    }
   });
 });
 

@@ -12,9 +12,10 @@ import {
 } from "../../../src/game/rulesFingerprint.ts";
 
 /**
- * The V1.6.1 rules fingerprint (DESIGN §6.9): behaviour revision 29, a content digest of the
- * seven mechanical data files that ignores display prose, and the `r29-<16 hex>` shape the
- * V1.6.1 Supabase gate accepts (DESIGN §4.6).
+ * The V1.6.2 rules fingerprint (DESIGN §6.9, ENGINE_V1.6.2_DELTA.md §3.6): behaviour revision
+ * 30, a content digest of the seven mechanical data files that ignores display prose, and the
+ * `r30-<16 hex>` shape the V1.6.2 Supabase gate accepts (DESIGN §4.6). V1.6.1 rooms (`r29`)
+ * are refused.
  */
 
 const ROOT = join(import.meta.dirname, "../../..");
@@ -36,14 +37,33 @@ function entries(sources: Sources, name: string, key: string): Array<Record<stri
   return file(sources, name)[key] as Array<Record<string, unknown>>;
 }
 
-describe("V1.6.1 rules fingerprint", () => {
-  it("is behaviour revision 29", () => {
-    expect(RULES_BEHAVIOUR_REVISION).toBe(29);
+describe("V1.6.2 rules fingerprint", () => {
+  it("is behaviour revision 30", () => {
+    expect(RULES_BEHAVIOUR_REVISION).toBe(30);
   });
 
-  it("has the r29-<16 hex> shape the V1.6.1 room gate requires", () => {
-    expect(rulesFingerprint()).toMatch(/^r29-[0-9a-f]{16}$/);
-    expect(rulesFingerprint()).toBe(`r29-${contentDigest()}`);
+  it("has the r30-<16 hex> shape the V1.6.2 room gate requires, never a V1.6.1 r29 one", () => {
+    expect(rulesFingerprint()).toMatch(/^r30-[0-9a-f]{16}$/);
+    expect(rulesFingerprint()).toBe(`r30-${contentDigest()}`);
+    expect(rulesFingerprint()).not.toMatch(/^r29-/);
+  });
+
+  it("moves with the V1.6.2 location and cost changes (DELTA §3.6)", () => {
+    const v161 = copySources();
+    const locations = entries(v161, "action_locations", "locations");
+    const commission = locations.find((location) => location["id"] === "commission_market")!;
+    commission["effects"] = { apprentice: { maxReservations: 1, gainAfterEach: 1 }, shifu: { maxReservations: 2, gainAfterEach: 1, topThreeLooks: 1, lookSize: 3 } };
+    expect(contentDigestOf(v161)).not.toBe(contentDigest());
+    const costs = copySources();
+    entries(costs, "techniques", "advanced").find((tech) => tech["id"] === "T12")!["cost"] = 3;
+    expect(contentDigestOf(costs)).not.toBe(contentDigest());
+    // The owner's Guild Hall revision (2026-10-17): the first-draft V1.6.2 Shifu discount of 2.
+    const discount = copySources();
+    entries(discount, "action_locations", "locations").find((location) => location["id"] === "guild_hall")!["effects"] = {
+      apprentice: { discount: 0 },
+      shifu: { inspectCount: 2, discount: 2 },
+    };
+    expect(contentDigestOf(discount)).not.toBe(contentDigest());
   });
 
   it("hashes exactly the seven mechanical data files, in a fixed order", () => {
@@ -79,7 +99,7 @@ describe("V1.6.1 rules fingerprint", () => {
     expect(contentDigestOf(reordered)).toBe(contentDigest());
   });
 
-  it("lists the V1.6.1 prose keys", () => {
+  it("lists the V1.6.1 prose keys, unchanged in V1.6.2", () => {
     for (const key of [
       "name", "nameZh", "ability", "abilityZh", "abilityName", "abilityNameZh",
       "shortText", "shortTextZh", "apprenticeText", "apprenticeTextZh", "shifuText", "shifuTextZh",

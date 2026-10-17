@@ -1,6 +1,7 @@
 /**
- * Work Phase: turns, the before/after-action window, END_TURN and the deferred Main display
- * refill (L134–144, L191, L293, L391, L631; DESIGN §3.2).
+ * Work Phase: turns, the before/after-action window, END_TURN and the deferred refills of the
+ * Main display and the Tech displays (L134–144, L191, L293, L391, L631, v1.6.2 L209;
+ * DESIGN §3.2).
  *
  * - Turns run First Player clockwise, one worker per turn, until nobody has an available
  *   worker (L136). Passing is impossible: END_TURN before the worker action is
@@ -12,13 +13,16 @@
  *   is usable; otherwise the turn ends automatically (DESIGN §3.7).
  * - `endTurn` runs the deferred refill (L191, L391) after the after-action window, so a Canal
  *   Barge there may complete an Order reserved by the same action (INT: deferred refill).
+ *   It then refills each Tech discipline to 2 as its deck allows: a taken Tech's position
+ *   stays empty until the taker's turn ends (v1.6.2 L209).
  *
  * Layer 4 (P4). Imports layers 0–3 only; `work/windowAbilities` imports this module.
  */
 
+import { DISCIPLINES } from "../content.ts";
 import { invariant, ruleError } from "../errors.ts";
 import { imperialKilnEmpty } from "../kilnLoading.ts";
-import { refillMainDisplay } from "../market.ts";
+import { refillMainDisplay, refillTechDisplay } from "../market.ts";
 import { availableWorkers } from "../placement.ts";
 import { ceramicsOf, emit, nextClockwise, phaseAs, player } from "../state.ts";
 import { techReady } from "../techs.ts";
@@ -130,8 +134,12 @@ export function afterWindowAbilityUsed(draft: GameState, playerId: PlayerId, ctx
 /**
  * Ends the active player's Work turn (DESIGN §3.2 step 4):
  * 1. the deferred Main display refill if this player reserved a face-up Order (L191, L391);
- * 2. `WORK_TURN_ENDED`;
- * 3. the next clockwise player with an available worker starts a turn, or, when nobody has
+ * 2. the deferred Tech refill: every discipline back to 2 as its deck allows, in
+ *    `DISCIPLINES` order (v1.6.2 L209). Only a Guild Hall take this turn leaves a display
+ *    short with cards in its deck, so this refills exactly the taker's disciplines;
+ *    `TECH_DISPLAY_REFILLED` is emitted only where a Tech is revealed;
+ * 3. `WORK_TURN_ENDED`;
+ * 4. the next clockwise player with an available worker starts a turn, or, when nobody has
  *    one, `WORK_PHASE_ENDED` and the hand-over to the Firing Phase (L136).
  */
 export function endTurn(draft: GameState, playerId: PlayerId, automatic: boolean, ctx: ResolveContext): void {
@@ -139,6 +147,9 @@ export function endTurn(draft: GameState, playerId: PlayerId, automatic: boolean
   invariant(phase.activePlayerId === playerId, `${playerId} cannot end another player's turn`);
   if (draft.market.refillPendingFor === playerId) {
     refillMainDisplay(draft, "end_of_turn", ctx); // clears refillPendingFor
+  }
+  for (const discipline of DISCIPLINES) {
+    refillTechDisplay(draft, discipline, ctx);
   }
   emit(ctx, { type: "WORK_TURN_ENDED", playerId, automatic });
   const next = firstWithWorker(draft, nextClockwise(draft, playerId));

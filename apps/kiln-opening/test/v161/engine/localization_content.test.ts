@@ -286,10 +286,10 @@ describe("Chinese text uses the glossary terms", () => {
     }
   });
 
-  it("keeps Tech and Kiln reminders to one line of at most 72 characters (glossary §3, three printed lines of 24)", () => {
+  it("keeps Tech and Kiln reminders to one line of at most 96 characters (glossary §3, owner ruling R18: four printed lines of 24)", () => {
     for (const definition of [...TECH_IDS.map((id) => TECHS[id]), ...KILN_IDS.map((id) => KILNS[id])]) {
       expect(definition.shortTextZh, definition.id).not.toContain("\n");
-      expect([...definition.shortTextZh].length, `${definition.id}: ${definition.shortTextZh}`).toBeLessThanOrEqual(72);
+      expect([...definition.shortTextZh].length, `${definition.id}: ${definition.shortTextZh}`).toBeLessThanOrEqual(96);
     }
   });
 });
@@ -426,8 +426,8 @@ function sampleState(): GameState {
     kilnFurniture: null,
   });
   return {
-    schemaVersion: 6,
-    rulesVersion: "1.6.1",
+    schemaVersion: 7,
+    rulesVersion: "1.6.2",
     gameId: "localization",
     revision: 12,
     eventSequence: 40,

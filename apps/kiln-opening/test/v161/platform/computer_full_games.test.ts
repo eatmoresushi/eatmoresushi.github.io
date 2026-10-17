@@ -117,6 +117,6 @@ describe("all-computer tables through the service", () => {
     const seats = await harness.store.getSeats(harness.roomId);
     expect(seats.find((seat) => seat.isComputer)?.aiPolicyVersion).toBe(STRATEGIC_COMPUTER_POLICY_VERSION);
     expect(computerPolicyLabel(STRATEGIC_COMPUTER_POLICY_VERSION, COMPUTER_POLICIES)).toBe(STRATEGIC_COMPUTER_POLICY_LABEL);
-    expect(STRATEGIC_COMPUTER_POLICY_VERSION).toMatch(/^rules-v1\.6\.1-[a-z0-9]+(-[a-z0-9]+)*$/);
+    expect(STRATEGIC_COMPUTER_POLICY_VERSION).toMatch(/^rules-v1\.6\.2-[a-z0-9]+(-[a-z0-9]+)*$/);
   });
 });

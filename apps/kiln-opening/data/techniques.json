@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.6.1",
+  "rulesVersion": "1.6.2",
   "advanced": [
     {
       "id": "T01",
@@ -152,7 +152,7 @@
     {
       "id": "T18",
       "discipline": "workshop",
-      "cost": 2,
+      "cost": 3,
       "oncePerRound": true,
       "timing": "worker_placement",
       "unlocks": "form_decorate",
@@ -288,7 +288,7 @@
     {
       "id": "T20",
       "discipline": "glazing_loading",
-      "cost": 2,
+      "cost": 3,
       "oncePerRound": true,
       "timing": "glaze_load_action_after",
       "unlocks": "glaze_load",
@@ -473,7 +473,7 @@
     {
       "id": "T11",
       "discipline": "firing",
-      "cost": 2,
+      "cost": 3,
       "oncePerRound": true,
       "timing": "after_quality",
       "unlocks": null,
@@ -512,7 +512,7 @@
     {
       "id": "T12",
       "discipline": "firing",
-      "cost": 3,
+      "cost": 2,
       "oncePerRound": false,
       "timing": "contributions",
       "unlocks": null,

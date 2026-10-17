@@ -19,13 +19,14 @@
  * | --- | --- | --- |
  * | `SELECT_KILN` | every available Kiln | same |
  * | `PLACE_SETTERS_MARK` | one open space per zone, then `null` | every open space, then `null` |
- * | `PLACE_MATERIALS_YARD` | per worker choice: Prepared Clay {none, each Shape × Decoration if ready} × bonus {no, yes for the Shifu effect} × every split | same |
+ * | `PLACE_MATERIALS_YARD` | per worker choice: Prepared Clay {none, each Shape × Decoration if ready} × every split (0..3 or 0..6) | same |
  * | `PLACE_FORM_DECORATE` | 20 singles, then (Shifu effect) 210 unordered pairs; × {no discount, Large Throwing Wheel, Decorator's Kit on the first eligible vessel}; × Ding {none, each Decoration on the first Bowl/Plate/Brush Washer} | singles and 400 ordered pairs; the Kit on every eligible vessel; Ding on every eligible vessel |
  * | `PLACE_GLAZE_LOAD` | singles, then (Shifu effect) pairs, each built from `loadDestinationOptions` after the earlier load (R8): vessel class × Glaze × destination (one plain space per zone, the own Setter's Mark space, every Inverted Firing target, Kiln Furniture × 3 on one space per zone, Imperial × 3); Reworking Table: each class × other Shape × destination with the first Glaze; Heat marker {none, each `heatMarkerTargets`}. Each worker's candidates are disjoint streams interleaved round-robin (`glazeLoadStreams`), each ability variant and the first pair before the Glaze cross-product, so the default `perFamilyLimit` still offers every optional ability used and declined | every vessel, destination and rework (Glaze × destination product) |
- * | `PLACE_COMMISSION_MARKET` | per worker choice: face-up slots × 3 gains, blind, look (Shifu effect) | same |
+ * | `PLACE_COMMISSION_MARKET` | one per worker choice (Shifu, Apprentice, Apprentice via Senior Apprentice) | same |
  * | `PLACE_GUILD_HALL` | Apprentice: each face-up Tech; Shifu: each discipline with a non-empty deck (the first discipline if every deck is empty, so the Shifu's face-up take stays reachable) | Shifu: every discipline |
  * | `PLACE_CANAL_WHARF`, `PLACE_MAGISTRATES_HALL` | each worker choice | same |
- * | Commission / Guild / Colour Samples sub-steps | all (`GUILD_TAKE` × every bottom order, ≤ 2) | same |
+ * | `COMMISSION_CHOOSE` | every single pick (face-up slots ascending, then looked cards in look order), then, for the Shifu effect, every unordered pair in that order (≤ 9 + 36) | same |
+ * | Guild / Colour Samples sub-steps | all: each next `GUILD_TAKE` (inspected Techs, then face-up), then `GUILD_FINISH` × every bottom order (≤ 2), each Colour Samples pick | same |
  * | `USE_CANAL_BARGE`, `COMPLETE_ORDER` | per held Order: the first match, plus the first Ru-triggering match; each triggered Ru/Guan and Tribute Ware used and declined | every match × decline flags |
  * | `USE_IMPERIAL_PRIORITY` | vessel class × Glaze × modifier; with Reworking Table ready, one variant per class and other Shape | every vessel × Glaze × modifier × rework |
  * | firing windows, salvage, `END_*` | all, incl. the `null` / decline choice | same |
@@ -87,8 +88,8 @@ import type {
   AuthoritativeCommand,
   Decoration,
   FinishedCeramic,
+  CommissionPick,
   FormVesselSpec,
-  GainResource,
   GameAction,
   GameActionType,
   Glaze,
@@ -126,7 +127,6 @@ const LARGE_THROWING_WHEEL: TechId = "T01";
 const DECORATORS_KIT: TechId = "T16";
 const CANAL_BARGE: TechId = "T23";
 const KILN_MASTER_VALUES = TECHS.T24.params.values;
-const GAINS: readonly GainResource[] = ["clay", "wood", "coins"];
 const DEFAULT_CANONICAL_FAMILY_LIMIT = 64;
 /** DESIGN §5.3: sampling attempts before the canonical fallback. */
 const SAMPLE_ATTEMPTS = 20;
@@ -353,20 +353,16 @@ function* materialsYardCandidates(ctx: EnumContext, choice: WorkerChoice): Gener
       }
     }
   }
-  const bonuses = choice.effect === "shifu" ? [false, true] : [false];
   for (const preparedClay of prepared) {
-    for (const bonus of bonuses) {
-      for (let clay = 0; clay <= total; clay += 1) {
-        yield {
-          type: "PLACE_MATERIALS_YARD",
-          workerId: choice.workerId,
-          clay,
-          wood: total - clay,
-          ...seniorFlag(choice),
-          ...(bonus ? { buyShifuBonus: true } : {}),
-          ...(preparedClay === null ? {} : { preparedClay }),
-        };
-      }
+    for (let clay = 0; clay <= total; clay += 1) {
+      yield {
+        type: "PLACE_MATERIALS_YARD",
+        workerId: choice.workerId,
+        clay,
+        wood: total - clay,
+        ...seniorFlag(choice),
+        ...(preparedClay === null ? {} : { preparedClay }),
+      };
     }
   }
 }
@@ -610,27 +606,29 @@ function glazeLoadStreams(ctx: EnumContext, choice: WorkerChoice): Array<Iterabl
   return streams;
 }
 
-function* reservationChoices(ctx: EnumContext, look: boolean): Generator<ActionOf<"COMMISSION_RESERVE">["choice"]> {
+/** Every single Commission pick the viewer's own look allows: the face-up slots ascending,
+ * then the looked cards in look order (v1.6.2 L195–196). */
+function commissionPicks(ctx: EnumContext): CommissionPick[] {
+  const options = lookedOrderOptions(ctx.view);
+  if (options === null || options.kind !== "commission_market") {
+    return [];
+  }
   const display = ctx.game.market.display;
-  for (let slotIndex = 0; slotIndex < display.length; slotIndex += 1) {
+  const picks: CommissionPick[] = [];
+  for (const slotIndex of options.faceUpSlots) {
     const orderId = display[slotIndex];
-    if (orderId === null || orderId === undefined) {
-      continue;
-    }
-    for (const gain of GAINS) {
-      yield { kind: "face_up", slotIndex, orderId, gain };
+    if (orderId !== null && orderId !== undefined) {
+      picks.push({ kind: "face_up", slotIndex, orderId });
     }
   }
-  yield { kind: "blind" };
-  if (look) {
-    yield { kind: "look_top_three" };
+  for (const orderId of options.orderIds) {
+    picks.push({ kind: "looked", orderId });
   }
+  return picks;
 }
 
-function* commissionCandidates(ctx: EnumContext, choice: WorkerChoice): Generator<GameAction> {
-  for (const first of reservationChoices(ctx, choice.effect === "shifu")) {
-    yield { type: "PLACE_COMMISSION_MARKET", workerId: choice.workerId, first, ...seniorFlag(choice) };
-  }
+function* commissionCandidates(_ctx: EnumContext, choice: WorkerChoice): Generator<GameAction> {
+  yield { type: "PLACE_COMMISSION_MARKET", workerId: choice.workerId, ...seniorFlag(choice) };
 }
 
 function* guildHallCandidates(ctx: EnumContext, choice: WorkerChoice): Generator<GameAction> {
@@ -785,43 +783,42 @@ const USE_IMPERIAL_PRIORITY = family("USE_IMPERIAL_PRIORITY", function* (ctx) {
 
 const END_TURN = family("END_TURN", () => [{ type: "END_TURN" }]);
 
-const COMMISSION_RESERVE = family("COMMISSION_RESERVE", function* (ctx) {
+const COMMISSION_CHOOSE = family("COMMISSION_CHOOSE", function* (ctx) {
   const step = workStep(ctx.game, "commission_market");
-  if (step !== null) {
-    for (const choice of reservationChoices(ctx, step.topThreeAvailable)) {
-      yield { type: "COMMISSION_RESERVE", choice };
+  if (step === null) {
+    return;
+  }
+  const picks = commissionPicks(ctx);
+  for (const pick of picks) {
+    yield { type: "COMMISSION_CHOOSE", reservations: [pick] };
+  }
+  if (step.maxReservations >= 2) {
+    for (const pair of combinations(picks, 2)) {
+      yield { type: "COMMISSION_CHOOSE", reservations: pair };
     }
   }
 });
-
-const COMMISSION_CHOOSE_LOOKED = family("COMMISSION_CHOOSE_LOOKED", function* (ctx) {
-  const look = lookedOrderOptions(ctx.view);
-  if (look?.kind === "commission_top_three") {
-    for (const orderId of look.orderIds) {
-      yield { type: "COMMISSION_CHOOSE_LOOKED", orderId };
-    }
-  }
-});
-
-const COMMISSION_GAIN = family("COMMISSION_GAIN", () => GAINS.map((resource): GameAction => ({ type: "COMMISSION_GAIN", resource })));
-
-const COMMISSION_STOP = family("COMMISSION_STOP", () => [{ type: "COMMISSION_STOP" }]);
 
 const GUILD_TAKE = family("GUILD_TAKE", function* (ctx) {
   const options = guildInspectionOptions(ctx.view);
-  if (options === null) {
+  if (options === null || options.takesLeft <= 0) {
     return;
   }
-  const inspected = options.inspected.map((option) => option.techId);
-  for (const techId of inspected) {
-    for (const bottomOrder of permutations(inspected.filter((id) => id !== techId))) {
-      yield { type: "GUILD_TAKE", take: { kind: "inspected", techId }, bottomOrder };
-    }
+  for (const option of options.inspected) {
+    yield { type: "GUILD_TAKE", take: { kind: "inspected", techId: option.techId } };
   }
   for (const option of options.faceUp) {
-    for (const bottomOrder of permutations(inspected)) {
-      yield { type: "GUILD_TAKE", take: { kind: "face_up", techId: option.techId }, bottomOrder };
-    }
+    yield { type: "GUILD_TAKE", take: { kind: "face_up", techId: option.techId } };
+  }
+});
+
+const GUILD_FINISH = family("GUILD_FINISH", function* (ctx) {
+  const options = guildInspectionOptions(ctx.view);
+  if (options === null || !options.canFinish) {
+    return;
+  }
+  for (const bottomOrder of permutations(options.inspected.map((option) => option.techId))) {
+    yield { type: "GUILD_FINISH", bottomOrder };
   }
 });
 
@@ -926,9 +923,9 @@ function familiesFor(ctx: EnumContext): readonly Family[] {
         case "before_action":
           return [USE_CANAL_BARGE, USE_IMPERIAL_PRIORITY, ...PLACEMENT_FAMILIES];
         case "commission_market":
-          return [COMMISSION_RESERVE, COMMISSION_CHOOSE_LOOKED, COMMISSION_GAIN, COMMISSION_STOP];
+          return [COMMISSION_CHOOSE];
         case "guild_inspection":
-          return [GUILD_TAKE];
+          return [GUILD_TAKE, GUILD_FINISH];
         case "colour_samples":
           return [COLOUR_SAMPLES_CHOOSE];
         case "after_action":
@@ -1210,7 +1207,6 @@ function randomPlacement(ctx: EnumContext, type: GameActionType, rng: RandomSour
     case "materials_yard": {
       const total = LOCATIONS.materials_yard.effects[choice.effect].resources;
       const clay = rng.nextInt(total + 1);
-      const bonus = choice.effect === "shifu" && coin(rng);
       const prepared =
         !choice.seniorApprentice && techReady(ctx.me, PREPARED_CLAY) && coin(rng)
           ? { shape: pick(SHAPES, rng) ?? "bowl", decoration: pick(DECORATIONS, rng) ?? "plain" }
@@ -1221,7 +1217,6 @@ function randomPlacement(ctx: EnumContext, type: GameActionType, rng: RandomSour
         clay,
         wood: total - clay,
         ...seniorFlag(choice),
-        ...(bonus ? { buyShifuBonus: true } : {}),
         ...(prepared === null ? {} : { preparedClay: prepared }),
       };
     }
@@ -1229,10 +1224,8 @@ function randomPlacement(ctx: EnumContext, type: GameActionType, rng: RandomSour
       return randomFormDecorate(ctx, choice, rng);
     case "glaze_load":
       return randomGlazeLoad(ctx, choice, rng);
-    case "commission_market": {
-      const first = pick([...reservationChoices(ctx, choice.effect === "shifu")], rng);
-      return first === undefined ? null : { type: "PLACE_COMMISSION_MARKET", workerId, first, ...seniorFlag(choice) };
-    }
+    case "commission_market":
+      return { type: "PLACE_COMMISSION_MARKET", workerId, ...seniorFlag(choice) };
     case "guild_hall": {
       if (choice.effect === "apprentice") {
         const techId = pick(guildOptions(ctx.view, "apprentice").faceUp.filter((o) => o.legal), rng)?.techId;
@@ -1300,22 +1293,23 @@ function randomCandidate(ctx: EnumContext, type: GameActionType, rng: RandomSour
       };
     }
     case "END_TURN":
-    case "COMMISSION_STOP":
     case "END_AFTER_QUALITY":
     case "END_ORDER_TURN":
       return { type };
-    case "COMMISSION_RESERVE": {
+    case "COMMISSION_CHOOSE": {
+      // 1 pick, or (Shifu effect) 2 distinct picks half the time (v1.6.2 L196, L198).
       const step = workStep(ctx.game, "commission_market");
-      const choice = step === null ? undefined : pick([...reservationChoices(ctx, step.topThreeAvailable)], rng);
-      return choice === undefined ? null : { type, choice };
+      const picks = shuffled(commissionPicks(ctx), rng);
+      if (step === null || picks.length === 0) {
+        return null;
+      }
+      const count = step.maxReservations >= 2 && picks.length >= 2 && coin(rng) ? 2 : 1;
+      return { type, reservations: picks.slice(0, count) };
     }
-    case "COMMISSION_CHOOSE_LOOKED":
     case "COLOUR_SAMPLES_CHOOSE": {
       const orderId = pick(lookedOrderOptions(view)?.orderIds ?? [], rng);
       return orderId === undefined ? null : { type, orderId };
     }
-    case "COMMISSION_GAIN":
-      return { type, resource: pick(GAINS, rng) ?? "coins" };
     case "GUILD_TAKE": {
       const options = guildInspectionOptions(view);
       if (options === null) {
@@ -1326,11 +1320,11 @@ function randomCandidate(ctx: EnumContext, type: GameActionType, rng: RandomSour
         ...options.faceUp.filter((o) => o.legal).map((o) => ({ kind: "face_up" as const, techId: o.techId })),
       ];
       const take = pick(takes, rng);
-      if (take === undefined) {
-        return null;
-      }
-      const untaken = options.inspected.map((o) => o.techId).filter((id) => !(take.kind === "inspected" && id === take.techId));
-      return { type, take, bottomOrder: shuffled(untaken, rng) };
+      return take === undefined ? null : { type, take };
+    }
+    case "GUILD_FINISH": {
+      const options = guildInspectionOptions(view);
+      return options === null || !options.canFinish ? null : { type, bottomOrder: shuffled(options.inspected.map((o) => o.techId), rng) };
     }
     case "TEST_PIECES_DECIDE":
       return { type, peek: coin(rng) };

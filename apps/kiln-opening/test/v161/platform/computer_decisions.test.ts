@@ -270,10 +270,29 @@ describe("strategic computer choices", () => {
       round: 5,
       players: [{ kilnId: "GE", resources: RICH, hand: ["S16"] }, { kilnId: "DI" }],
       ceramics: [{ owner: "p1", stage: "finished", shape: "plate", glaze: "celadon", quality: "fine" }],
+      // The display offers only Orders that need several new vessels (v1.6.2 L196: the Shifu
+      // chooses from the display and the 3 looked cards).
+      display: ["O41", "O42", "O43", "O44", "O45", "O46"],
       mainDeck: ["O47", "O02", "O48"],
     });
-    table.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu", first: { kind: "look_top_three" } });
-    expect(decide(table)).toEqual({ type: "COMMISSION_CHOOSE_LOOKED", orderId: "O02" });
+    table.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu" });
+    const choice = decide(table);
+    expect(choice.type).toBe("COMMISSION_CHOOSE");
+    if (choice.type !== "COMMISSION_CHOOSE") return;
+    expect(choice.reservations[0]).toEqual({ kind: "looked", orderId: "O02" });
+    expect(choice.reservations.length).toBeLessThanOrEqual(2);
+  });
+
+  it("reserves the face-up Order its finished ceramics complete when the look holds nothing better (Apprentice top 2)", () => {
+    const table = work({
+      round: 5,
+      players: [{ kilnId: "GE", resources: RICH, hand: ["S16"] }, { kilnId: "DI" }],
+      ceramics: [{ owner: "p1", stage: "finished", shape: "plate", glaze: "celadon", quality: "fine" }],
+      display: ["O41", "O42", "O02", "O44", "O45", "O46"],
+      mainDeck: ["O47", "O48"],
+    });
+    table.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:apprentice:1" });
+    expect(decide(table)).toEqual({ type: "COMMISSION_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 2, orderId: "O02" }] });
   });
 
   it("discards its least achievable Order at the hand limit", () => {

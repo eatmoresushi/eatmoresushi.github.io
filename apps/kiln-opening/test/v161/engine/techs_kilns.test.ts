@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TECHS } from "../../../src/game/content.ts";
+import { TECHS, TECH_IDS } from "../../../src/game/content.ts";
 import { InvariantError } from "../../../src/game/errors.ts";
 import { availableKilns, hasKiln, kilnAbilityReady, markKilnAbilityUsed } from "../../../src/game/kilns.ts";
 import {
@@ -74,11 +74,18 @@ describe("acquisition (L208–214, L375)", () => {
     expectDocumentedDetails(acquisitionError(p1, "T16"));
   });
 
-  it("prices at the printed cost, 1 Coin less for the Guild Hall Shifu (L207–208)", () => {
-    expect(techPrice("T25", "apprentice")).toBe(TECHS.T25.cost);
-    expect(techPrice("T25", "shifu")).toBe(TECHS.T25.cost - 1);
-    expect(techPrice("T01", "shifu")).toBe(1);
-    expect(techPrice("T17", "apprentice")).toBe(3);
+  it("prices every Guild Hall take at the printed cost: V1.6.2 has no Shifu discount (v1.6.2 L206–207, owner revision 2026-10-17)", () => {
+    for (const techId of TECH_IDS) expect(techPrice(techId), techId).toBe(TECHS[techId].cost);
+    expect([techPrice("T01"), techPrice("T17"), techPrice("T25")]).toEqual([2, 3, 4]);
+  });
+
+  it("charges the V1.6.2 costs (v1.6.2 L32, L618, L626, L636–637)", () => {
+    expect(TECHS.T18.cost).toBe(3);
+    expect(TECHS.T20.cost).toBe(3);
+    expect(TECHS.T11.cost).toBe(3);
+    expect(TECHS.T12.cost).toBe(2);
+    expect(TECHS.T13.cost).toBe(3);
+    expect([techPrice("T18"), techPrice("T20"), techPrice("T11"), techPrice("T12")]).toEqual([3, 3, 3, 2]);
   });
 
   it("grantTech adds the Tech and unlocks the matching personal space (L212)", () => {

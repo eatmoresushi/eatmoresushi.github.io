@@ -31,7 +31,7 @@ function expectAbsent(payload: unknown, ids: readonly string[]): void {
   for (const id of quoted(ids)) expect(json).not.toContain(id);
 }
 
-describe("V1.6.1 multiplayer privacy", () => {
+describe("V1.6.2 multiplayer privacy", () => {
   it("deals each seat's Orders secretly and restores only the authenticated seat's hand and deal", async () => {
     const { harness, start } = await started();
     const head = await headState(harness);
@@ -105,7 +105,47 @@ describe("V1.6.1 multiplayer privacy", () => {
     }
   });
 
-  it("keeps a blind Commission reservation private to its owner", async () => {
+  it("keeps the Commission Market look, a looked reservation and the discarded card private (v1.6.2 L195, B3)", async () => {
+    const { harness } = await started();
+    let top: OrderId[] = [];
+    await seedState(harness, (gameId) => {
+      const state = seatState(2, { gameId });
+      top = state.hidden.mainDeck.slice(0, 2);
+      return state;
+    });
+    expect(top).toHaveLength(2);
+    const [kept, discarded] = top as [OrderId, OrderId];
+    const opened = await command(harness, "P1", { type: "PLACE_COMMISSION_MARKET", workerId: "P1:apprentice:1" });
+    const look = opened.events.find((event) => event.type === "PRIVATE_LOOK_OPENED");
+    expect(look).toMatchObject({ type: "PRIVATE_LOOK_OPENED", playerId: "P1", kind: "commission_market", count: 2 });
+    expect(look).not.toHaveProperty("secret");
+    expect(opened.ownPrivateView?.pendingLook).toEqual({ kind: "commission_market", playerId: "P1", orderIds: top });
+    expect(opened.game.counts.pendingLook).toEqual({ playerId: "P1", kind: "commission_market", count: 2 });
+    expectAbsent(opened.game, top);
+    expectAbsent(opened.events, top);
+
+    const result = await command(harness, "P1", { type: "COMMISSION_CHOOSE", reservations: [{ kind: "looked", orderId: kept }] });
+    const reserved = result.events.find((event) => event.type === "ORDER_RESERVED");
+    expect(reserved).toMatchObject({ type: "ORDER_RESERVED", playerId: "P1", via: "commission_market", source: "looked", orderId: null });
+    expect(reserved).not.toHaveProperty("secret");
+    expect(result.events.find((event) => event.type === "LOOKED_ORDERS_DISCARDED")).toMatchObject({ playerId: "P1", count: 1 });
+    expect(result.ownSecrets.map((record) => record.event)).toContainEqual(
+      expect.objectContaining({ type: "ORDER_RESERVED", secret: { visibleTo: "P1", orderId: kept } }),
+    );
+    expect(result.ownSecrets.map((record) => record.event)).toContainEqual(
+      expect.objectContaining({ type: "LOOKED_ORDERS_DISCARDED", secret: { visibleTo: "P1", orderIds: [discarded] } }),
+    );
+    expect(result.ownPrivateView?.orderHand).toContain(kept);
+    expect(result.ownPrivateView?.pendingLook).toBeNull();
+    expectAbsent(result.game, top);
+    expectAbsent(result.events, top);
+    const other = valueOf(await harness.service.reconnect({ roomCode: harness.roomCode, seatToken: connectionFor(harness, "P2").seatToken }));
+    expectAbsent(other, top);
+    expect(other.game?.counts.orderHands["P1"]).toBe(1);
+    expect(other.game?.counts.mainDiscard).toBe(1);
+  });
+
+  it("keeps the Canal Wharf Shifu's unseen Main Order private to its owner (v1.6.2 L220, B3)", async () => {
     const { harness } = await started();
     let deckTop: OrderId | undefined;
     await seedState(harness, (gameId) => {
@@ -114,13 +154,9 @@ describe("V1.6.1 multiplayer privacy", () => {
       return state;
     });
     expect(deckTop).toBeDefined();
-    const result = await command(harness, "P1", {
-      type: "PLACE_COMMISSION_MARKET",
-      workerId: "P1:apprentice:1",
-      first: { kind: "blind" },
-    });
+    const result = await command(harness, "P1", { type: "PLACE_CANAL_WHARF", workerId: "P1:shifu" });
     const reserved = result.events.find((event) => event.type === "ORDER_RESERVED");
-    expect(reserved).toMatchObject({ type: "ORDER_RESERVED", playerId: "P1", source: "blind", orderId: null });
+    expect(reserved).toMatchObject({ type: "ORDER_RESERVED", playerId: "P1", via: "canal_wharf", source: "deck_top", orderId: null });
     expect(reserved).not.toHaveProperty("secret");
     expect(result.ownSecrets.map((record) => record.event)).toContainEqual(
       expect.objectContaining({ type: "ORDER_RESERVED", secret: { visibleTo: "P1", orderId: deckTop } }),
@@ -156,7 +192,15 @@ describe("V1.6.1 multiplayer privacy", () => {
     expectAbsent(otherDuring, inspected);
 
     const [taken, returned] = inspected as [TechId, TechId];
-    const take = await command(harness, "P1", { type: "GUILD_TAKE", take: { kind: "inspected", techId: taken }, bottomOrder: [returned] });
+    await command(harness, "P1", { type: "GUILD_TAKE", take: { kind: "inspected", techId: taken } });
+    // 10 Coins leave a second take possible (v1.6.2 L207), so the inspection stays open: a
+    // reconnect gives the untaken Tech back to P1 only.
+    const otherMid = valueOf(await harness.service.reconnect({ roomCode: harness.roomCode, seatToken: connectionFor(harness, "P2").seatToken }));
+    expect(otherMid.ownPrivateView?.pendingLook).toBeNull();
+    expectAbsent(otherMid, [returned]);
+    const ownMid = valueOf(await harness.service.reconnect({ roomCode: harness.roomCode, seatToken: connectionFor(harness, "P1").seatToken }));
+    expect(ownMid.ownPrivateView?.pendingLook).toMatchObject({ kind: "guild_inspection", playerId: "P1", techIds: [returned] });
+    const take = await command(harness, "P1", { type: "GUILD_FINISH", bottomOrder: [returned] });
     const head = await headState(harness);
     expect(head.hidden.techDecks.firing.at(-1)).toBe(returned);
     expectAbsent(take.game, [returned]);
@@ -190,8 +234,10 @@ describe("V1.6.1 multiplayer privacy", () => {
     expect(await headState(harness)).toEqual(before);
   });
 
-  it("refuses to project any save that is not schema 6 under V1.6.1", () => {
+  it("refuses to project any save that is not schema 7 under V1.6.2", () => {
     const legacy = { schemaVersion: 5, rulesVersion: "1.4" } as unknown as GameState;
-    expect(() => projectPublicGameState(legacy)).toThrow("Only schema-6 V1.6.1 games");
+    expect(() => projectPublicGameState(legacy)).toThrow("Only schema-7 V1.6.2 games");
+    const v161 = { schemaVersion: 6, rulesVersion: "1.6.1" } as unknown as GameState;
+    expect(() => projectPublicGameState(v161)).toThrow("Only schema-7 V1.6.2 games");
   });
 });

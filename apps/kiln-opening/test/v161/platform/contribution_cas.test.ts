@@ -41,7 +41,7 @@ function revealedOf(events: readonly { type: string }[]): Extract<GameEvent, { t
   return events.find((event) => event.type === "CONTRIBUTIONS_REVEALED") as Extract<GameEvent, { type: "CONTRIBUTIONS_REVEALED" }> | undefined;
 }
 
-describe("V1.6.1 Contribution window over the service", () => {
+describe("V1.6.2 Contribution window over the service", () => {
   it("seals a Fuel Ledger −2 per seat until every participant submits, then reveals and pays atomically", async () => {
     const { harness } = await started();
     const { windowId } = await contributionWindow(harness);

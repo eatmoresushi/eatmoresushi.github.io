@@ -95,22 +95,18 @@ export function phaseScenarios(): PhaseScenario[] {
 
   {
     const table = work({ players: [{ resources: RICH }, {}] });
-    const orderId = table.state.market.display[0];
-    if (orderId === null || orderId === undefined) {
-      throw new Error("no display");
-    }
-    table.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu", first: { kind: "face_up", slotIndex: 0, orderId, gain: "clay" } });
-    add("Commission Market: second reservation or stop", table, "p1", (c) => c.type === "COMMISSION_STOP");
+    table.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu" });
+    add(
+      "Commission Market: Shifu top-3 look, 2 reservations",
+      table,
+      "p1",
+      (c) => c.type === "COMMISSION_CHOOSE" && c.reservations.length === 2 && c.reservations.some((pick) => pick.kind === "looked"),
+    );
   }
   {
     const table = work({ players: [{ resources: RICH }, {}] });
-    table.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu", first: { kind: "look_top_three" } });
-    add("Commission Market: top-3 choice", table, "p1", (c) => c.type === "COMMISSION_CHOOSE_LOOKED");
-  }
-  {
-    const table = work({ players: [{ resources: RICH }, {}] });
-    table.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:apprentice:1", first: { kind: "blind" } });
-    add("Commission Market: resource after a blind reservation", table, "p1", (c) => c.type === "COMMISSION_GAIN");
+    table.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:apprentice:1" });
+    add("Commission Market: Apprentice top-2 look, 1 reservation", table, "p1", (c) => c.type === "COMMISSION_CHOOSE" && c.reservations[0]?.kind === "looked");
   }
   {
     const table = work({ players: [{ resources: RICH, techs: ["T01"] }, {}] });

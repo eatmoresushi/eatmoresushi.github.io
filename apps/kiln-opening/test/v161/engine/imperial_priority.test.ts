@@ -25,10 +25,14 @@ function priority(ceramicId: string, extra: Partial<Extract<GameAction, { type: 
   return { type: "USE_IMPERIAL_PRIORITY", ceramicId, glaze: "celadon", imperialModifier: 1, ...extra };
 }
 
-function reserveFaceUp(t: LocalTable, workerId: string): GameAction {
+/** A whole Commission Market action reserving the face-up Order at position 0 (v1.6.2 L195):
+ * the placement opens the look, then `COMMISSION_CHOOSE`. Returns the reservation's events. */
+function reserveFaceUp(t: LocalTable, workerId: string): GameEvent[] {
   const orderId = t.state.market.display[0];
   if (orderId === null || orderId === undefined) throw new Error("no Order at 0");
-  return { type: "PLACE_COMMISSION_MARKET", workerId, first: { kind: "face_up", slotIndex: 0, orderId, gain: "coins" } };
+  const playerId = workerId.split(":")[0] as string;
+  t.act(playerId, { type: "PLACE_COMMISSION_MARKET", workerId });
+  return t.act(playerId, { type: "COMMISSION_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 0, orderId }] });
 }
 
 /** p1 at Recognition 3: Imperial Kiln gained, token held (L285, L293). */
@@ -70,13 +74,13 @@ describe("using the token", () => {
     expect(t.state.phase).toEqual({ type: "work_turn", activePlayerId: "p1", step: { kind: "before_action" } });
     t.expectRuleError("p1", { type: "END_TURN" }, "WORKER_ACTION_REQUIRED");
 
-    const placed = t.act("p1", reserveFaceUp(t, "p1:apprentice:1"));
+    const placed = reserveFaceUp(t, "p1:apprentice:1");
     expect(placed.find((event) => event.type === "WORK_TURN_ENDED")).toMatchObject({ automatic: true });
   });
 
   it("after the worker action: the window opens because the token is usable, and closes once it is spent", () => {
     const t = table(holder());
-    t.act("p1", reserveFaceUp(t, "p1:apprentice:1"));
+    reserveFaceUp(t, "p1:apprentice:1");
     expect(t.state.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "after_action" } });
     const events = t.act("p1", priority("c1", { imperialModifier: -1 }));
     expect(types(events)).toEqual(["IMPERIAL_PRIORITY_USED", "CERAMIC_LOADED", "DISPLAY_REFILLED", "WORK_TURN_ENDED", "WORK_TURN_STARTED"]);
@@ -85,7 +89,7 @@ describe("using the token", () => {
 
   it("with Canal Barge also ready the window stays open until both are used or the turn is ended", () => {
     const t = table(holder({ players: [{ recognition: 3, techs: ["T23"] }, {}] }));
-    t.act("p1", reserveFaceUp(t, "p1:apprentice:1"));
+    reserveFaceUp(t, "p1:apprentice:1");
     t.act("p1", priority("c1"));
     expect(t.state.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "after_action" } });
     const ended = t.act("p1", { type: "END_TURN" });
@@ -178,7 +182,7 @@ describe("when the token cannot be used", () => {
 
   it("is not usable in the middle of a worker action or on another player's turn", () => {
     const t = table(holder());
-    t.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu", first: { kind: "blind" } });
+    t.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu" });
     const error = t.expectRuleError("p1", priority("c1"), "WRONG_PHASE");
     expectDocumentedDetails(error);
     const other = table(holder({ firstPlayerId: "p2" }));
@@ -193,7 +197,7 @@ describe("when the token cannot be used", () => {
     ]) {
       const t = table(spec);
       expect(imperialPriorityUsable(t.state, "p1")).toBe(false);
-      t.act("p1", reserveFaceUp(t, "p1:apprentice:1"));
+      reserveFaceUp(t, "p1:apprentice:1");
       expect(t.state.phase).toMatchObject({ activePlayerId: "p2", step: { kind: "before_action" } });
     }
   });

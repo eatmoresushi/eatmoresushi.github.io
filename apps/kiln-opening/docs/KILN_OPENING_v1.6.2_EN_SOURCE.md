@@ -28,7 +28,7 @@ Version v1.6.2 (the working name v1.3 was already used by an earlier draft). Thi
 18. **Track stays optional.** No worker on the Imperial track. The Magistrate's Hall (formerly Court Patronage) is open from Recognition 0 (the Recognition-1 gate is removed) and the Grant is 1 Clay + 1 Wood + 1 Coin, which together fix the step-1 refund with fewer words and let a Coin-rich player buy into the track as a sink. Imperial Priority stays as drafted; O17–O20 stay as printed.
 19. **Painted replaces Crackle** as the fourth Decoration (2 Coins). Crackle is now something only the Ge Kiln produces, in the kiln, with a marker. Cards renamed: S13, O13, O17, O23, O39, O40, O46; Decorator's Kit reads Carved, Impressed or Painted.
 20. **Tech VP scored on purchase.** The 1 VP per Advanced Tech is recorded the moment the tile is taken, not at game end. Bookkeeping only; Techs cannot be lost.
-21. **v1.6.2 — Commission Market and public Shifu effects.** The Market gives no resource. An Apprentice looks at the top 2 cards of the deck and reserves 1 Order from the display or those 2; the Shifu looks at the top 3 and reserves up to 2 from the display and those 3; revealed cards not reserved are discarded (the blind top-card option is gone). Materials Yard Shifu gains 6 resources (the 1-Coin option is gone). Guild Hall Shifu pays 2 Coins less. Canal Wharf Shifu gains 4 Coins and takes the top Main Order card unseen.
+21. **v1.6.2 — Commission Market and public Shifu effects.** The Market gives no resource. An Apprentice looks at the top 2 cards of the deck and reserves 1 Order from the display or those 2; the Shifu looks at the top 3 and reserves up to 2 from the display and those 3; revealed cards not reserved are discarded (the blind top-card option is gone). Materials Yard Shifu gains 6 resources (the 1-Coin option is gone). Guild Hall Shifu takes up to 2 Techs from different disciplines at printed cost (no discount), and Tech displays refill after the taking player's turn, like the Order display. Canal Wharf Shifu gains 4 Coins and takes the top Main Order card unseen.
 22. **v1.6.2 — Tech re-pass.** Colour Samples adds a once-per-round swap (discard 1 held Order, look at the top 2, reserve 1). Canal Barge now gives 2 Coins once per round when you complete an Order; its Work-Phase completion gained nothing over the Order Phase. Protective Saggars: your ceramics are never Flawed and once a round 1 Standard becomes Fine; cost 3. Fuel Ledger: Bank and Stoke cost no Wood; cost 2. Second Firing reveals 2 cards and uses 1. Senior Apprentice and Kiln Tending cost 3; Test Pieces stays at 3, since a buried card changes the firing for every player, not only its owner.
 
 **Yours, from the doc comments:** 1–4, the first two sentences of 6, the first sentence of 7, the marker turn order in 3, 12, and 15. **The review's recommendations, applied at your request so the draft plays as one piece:** 5, the Shifu selection and Colour Samples in 6, the court-fired Imperial Kiln in 7, 8, 9, 11, 13 and 14. Each is a sentence to revert.
@@ -204,12 +204,12 @@ Reserving takes a Main Order into your hand. A reserved **face-up** Order leaves
 | Worker | Effect |
 | --- | --- |
 | Apprentice | Pay the printed Coin cost and take **1 face-up Advanced Tech**. |
-| **Shifu** | Choose 1 discipline and look at the top 2 Techs of that deck, **or as many as remain**. Then take either 1 face-up Advanced Tech from any discipline or 1 of the revealed Techs, paying 2 Coins less, minimum 0. Put any revealed Tech not taken on the bottom of its deck. |
+| **Shifu** | Choose 1 discipline and look at the top 2 Techs of that deck, **or as many as remain**. Then take **up to 2 Advanced Techs from different disciplines**, face-up or revealed, paying the printed cost of each. Put any revealed Tech not taken on the bottom of its deck. |
 
-- After a tile is taken, refill its discipline to 2 if possible.
+- A taken tile's position stays **empty until the end of your turn**; then refill each discipline to 2 if possible. A Shifu's second Tech is chosen from what is showing now.
 - A player may own at most **3 Advanced Techs and at most 1 from each discipline**.
 - **Cover tokens.** When you gain a Form & Decorate Tech, remove the Cover token from your second Form & Decorate space; when you gain a Glazing & Loading Tech, remove the Cover token from your second Glaze & Load space. Firing Techs remove nothing. A space whose token has been removed may be used later this round.
-- An Apprentice placement is legal only if you can afford at least 1 face-up Tech from a discipline you do not yet own. A Shifu placement is legal only if you can afford such a Tech after the Shifu discount.
+- A placement here is legal only if you can afford at least 1 face-up Tech from a discipline you do not yet own.
 - A newly acquired Advanced Tech may be used in the same round if its timing permits. Resolve any **when acquired** effect immediately.
 
 ### Canal Wharf
@@ -711,7 +711,7 @@ If no ceramics are loaded in the Shared Kiln or any Imperial Kiln, **skip this p
 | Form & Decorate | Form and decorate 1 | Form and decorate up to 2; if 2, one Decoration −1 Coin |
 | Glaze & Load | Glaze and load 1 | Glaze and load up to 2; Heat marker face-down on 1 of your ceramics |
 | Commission Market | Look at the top 2 of the deck; reserve 1 from the display or those 2 | Look at the top 3; reserve up to 2 from the display and those 3 |
-| Guild Hall | Buy 1 Advanced Tech at cost | Look at top 2 Techs of 1 discipline (or as many as remain); take 1 revealed Tech or any face-up Tech at −2 Coins |
+| Guild Hall | Buy 1 Advanced Tech at cost | Look at top 2 Techs of 1 discipline (or as many as remain); buy up to 2 Techs from different disciplines at cost |
 | Canal Wharf | 2 Coins | 4 Coins + the top Order card, unseen, to hand |
 | Magistrate's Hall | Pay 4 Coins → +1 Recognition (0 → 1, 1 → 2 or 2 → 3) | Pay 3 Coins → same |
 

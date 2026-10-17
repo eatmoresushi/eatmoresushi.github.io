@@ -251,7 +251,7 @@ describe("computer fallback through the service", () => {
 
   it("falls back when an asynchronous policy does not answer in time", async () => {
     const never: ComputerPolicy = {
-      version: "rules-v1.6.1-never-001",
+      version: "rules-v1.6.2-never-001",
       label: "Never",
       chooseCommand: () => new Promise<AuthoritativeCommand | null>(() => undefined),
     };

@@ -2,7 +2,7 @@
  * The online computer player through the service (DESIGN §4.5, §4.6): a policy sees only
  * its seat's `ActorView`, is asked only when `decisionPrompt` names it, and with the
  * default policy computer seats play complete legal games against a human. Successor of
- * the V1.4 `online_computer_player` suite's service-level intent; the strategic V1.6.1
+ * the V1.4 `online_computer_player` suite's service-level intent; the strategic V1.6.2
  * policy (P9) plugs into the same `ComputerPolicy` interface.
  */
 
@@ -108,7 +108,7 @@ describe("online computer player", () => {
   }, 120_000);
 
   it("labels policies for players", () => {
-    expect(computerPolicyLabel(CANONICAL_COMPUTER_POLICY_VERSION)).toBe("V1.6.1 Canonical");
+    expect(computerPolicyLabel(CANONICAL_COMPUTER_POLICY_VERSION)).toBe("V1.6.2 Canonical");
     expect(computerPolicyLabel(null)).toBe("Computer");
     expect(computerPolicyLabel("rules-v1.4-strategic-001")).toBe("Computer (rules-v1.4-strategic-001)");
   });

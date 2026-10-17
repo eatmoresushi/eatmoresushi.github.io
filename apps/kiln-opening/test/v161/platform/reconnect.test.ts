@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 import { decisionPrompt } from "../../../src/game/index.ts";
 import { command, connectionFor, lobby, openedFiringState, seatState, seedState, started, tryCommand, valueOf } from "./support.ts";
 
-describe("V1.6.1 reconnect", () => {
+describe("V1.6.2 reconnect", () => {
   it("returns the seat's own sealed {card, fuelLedger} during an open window; seat and state unchanged", async () => {
     const { harness } = await started();
     const seeded = await seedState(harness, (gameId) =>
@@ -57,7 +57,7 @@ describe("V1.6.1 reconnect", () => {
     expect(denied.ok ? null : denied.error.code).toBe("AUTHENTICATION_FAILED");
   });
 
-  it("restores a pending Commission top-3 look only to its owner", async () => {
+  it("restores a pending Commission Market top-3 look only to its owner, seat and step unchanged (v1.6.2 L196)", async () => {
     const { harness } = await started();
     let topThree: string[] = [];
     await seedState(harness, (gameId) => {
@@ -65,13 +65,20 @@ describe("V1.6.1 reconnect", () => {
       topThree = state.hidden.mainDeck.slice(0, 3);
       return state;
     });
-    await command(harness, "P1", { type: "PLACE_COMMISSION_MARKET", workerId: "P1:shifu", first: { kind: "look_top_three" } });
+    const opened = await command(harness, "P1", { type: "PLACE_COMMISSION_MARKET", workerId: "P1:shifu" });
     const own = valueOf(await harness.service.reconnect({ roomCode: harness.roomCode, seatToken: connectionFor(harness, "P1").seatToken }));
-    expect(own.ownPrivateView?.pendingLook).toEqual({ kind: "commission_top_three", playerId: "P1", orderIds: topThree });
+    expect(own.ownPrivateView?.pendingLook).toEqual({ kind: "commission_market", playerId: "P1", orderIds: topThree });
     expect(own.ownSecrets.map((record) => record.event.type)).toContain("PRIVATE_LOOK_OPENED");
+    expect(own.seat.playerId).toBe("P1");
+    expect(own.game?.revision).toBe(opened.revision);
+    expect(own.game?.phase).toEqual({
+      type: "work_turn",
+      activePlayerId: "P1",
+      step: { kind: "commission_market", workerId: "P1:shifu", effect: "shifu", lookSize: 3, maxReservations: 2, lookedCount: 3 },
+    });
     const other = valueOf(await harness.service.reconnect({ roomCode: harness.roomCode, seatToken: connectionFor(harness, "P2").seatToken }));
     expect(other.ownPrivateView?.pendingLook).toBeNull();
-    expect(other.game?.counts.pendingLook).toEqual({ playerId: "P1", kind: "commission_top_three", count: 3 });
+    expect(other.game?.counts.pendingLook).toEqual({ playerId: "P1", kind: "commission_market", count: 3 });
     for (const orderId of topThree) {
       expect(JSON.stringify(other)).not.toContain(`"${orderId}"`);
       expect(JSON.stringify(own.game)).not.toContain(`"${orderId}"`);

@@ -63,8 +63,8 @@ export function drawMainOrder(draft: GameState, ctx: ResolveContext): OrderId | 
 }
 
 /**
- * Takes up to `max` cards off the top of the Main deck for a private look (Commission Shifu
- * top-3, Colour Samples). B1: the discard is reshuffled only if the deck is empty when the
+ * Takes up to `max` cards off the top of the Main deck for a private look (the Commission
+ * Market top 2 or 3, v1.6.2 L195–196; Colour Samples). B1: the discard is reshuffled only if the deck is empty when the
  * look starts, never to complete the look, so a look may see fewer than `max` cards (or
  * none when both piles are empty). The cards leave the deck; the caller holds them in
  * `hidden.pendingLook`.
@@ -79,7 +79,7 @@ export function takeTopMainOrders(draft: GameState, max: number, ctx: ResolveCon
 }
 
 /**
- * Puts Main Orders face down on the Main discard (L197, L304, L626, B3), in the given order,
+ * Puts Main Orders face down on the Main discard (v1.6.2 L191, L195–196; L304, L626, B3), in the given order,
  * each on top of the last (so the last ID ends on top). Starting Orders never go here: they
  * return to the box (L304).
  */
@@ -167,19 +167,29 @@ export function rotateMainDisplay(draft: GameState, ctx: ResolveContext): void {
 /**
  * What a reservation could take right now, from public information only (B1):
  * - `faceUpSlots`: positions still showing an Order (a position taken this turn stays empty
- *   until the turn ends, L199);
- * - `blind`: a card will be in the deck after any reshuffle (deck or discard non-empty);
- * - `look`: at least 1 card can be looked at (same test; a look never needs 3).
+ *   until the turn ends, v1.6.2 L191, L198);
+ * - `supply`: the deck or the discard holds a card, so a look or a draw would find one
+ *   (after the reshuffle an empty deck forces, L511).
  */
-export function reservable(game: PublicGameState): { faceUpSlots: number[]; blind: boolean; look: boolean } {
+export function reservable(game: PublicGameState): { faceUpSlots: number[]; supply: boolean } {
   const faceUpSlots: number[] = [];
   game.market.display.forEach((orderId, index) => {
     if (orderId !== null) {
       faceUpSlots.push(index);
     }
   });
-  const supply = game.counts.mainDeck + game.counts.mainDiscard > 0;
-  return { faceUpSlots, blind: supply, look: supply };
+  return { faceUpSlots, supply: game.counts.mainDeck + game.counts.mainDiscard > 0 };
+}
+
+/**
+ * How many cards a private look of up to `size` cards would show now, from public counts
+ * only. It mirrors `takeTopMainOrders` (B1): the discard is reshuffled only when the deck is
+ * empty as the look starts, so a deck of 1 shows 1 card however large the discard. 0 when
+ * both piles are empty. `extraDiscard` counts cards about to be discarded before the look.
+ */
+export function lookCount(game: PublicGameState, size: number, extraDiscard = 0): number {
+  const deck = game.counts.mainDeck;
+  return Math.max(0, deck > 0 ? Math.min(size, deck) : Math.min(size, game.counts.mainDiscard + extraDiscard));
 }
 
 // ── Order hands (secret, L201, L507) ─────────────────────────────────────────────────
@@ -218,7 +228,7 @@ function assertDiscipline(techId: TechId, discipline: TechDiscipline): void {
 }
 
 /**
- * Guild Hall Shifu inspection (L208, B2): takes the top `count` Techs of a discipline's
+ * Guild Hall Shifu inspection (v1.6.2 L207, B2): takes the top `count` Techs of a discipline's
  * deck, "or as many as remain" (possibly none). The caller holds them in
  * `hidden.pendingLook`.
  */
@@ -244,8 +254,9 @@ export function returnTechsToBottom(draft: GameState, discipline: TechDiscipline
 }
 
 /**
- * Removes a face-up Tech from its discipline's display (L207–208). The display keeps the
- * order of the Techs that remain; refill it with `refillTechDisplay`.
+ * Removes a face-up Tech from its discipline's display (v1.6.2 L206–207). The display keeps
+ * the order of the Techs that remain. Its position stays empty until the taker's turn ends,
+ * when `work/turn.endTurn` calls `refillTechDisplay` (v1.6.2 L209).
  */
 export function takeFaceUpTech(draft: GameState, techId: TechId): void {
   const discipline = TECHS[techId].discipline;
@@ -256,9 +267,10 @@ export function takeFaceUpTech(draft: GameState, techId: TechId): void {
 }
 
 /**
- * Refills a discipline's display to `faceUpPerDiscipline` (2) from the top of its deck (L210);
- * when the deck runs short the display stays partial (L513). Emits `TECH_DISPLAY_REFILLED`
- * only when a Tech was revealed, so the idempotent re-run at Start of Round is silent.
+ * Refills a discipline's display to `faceUpPerDiscipline` (2) from the top of its deck, at
+ * setup and when a taker's turn ends (v1.6.2 L209); when the deck runs short the display stays
+ * partial (L513). Emits `TECH_DISPLAY_REFILLED` only when a Tech was revealed, so the
+ * idempotent re-runs at every turn end and Start of Round are silent.
  */
 export function refillTechDisplay(draft: GameState, discipline: TechDiscipline, ctx: ResolveContext): void {
   const display = draft.techDisplay[discipline];

@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.6.1",
+  "rulesVersion": "1.6.2",
   "locations": [
     {
       "id": "materials_yard",
@@ -16,20 +16,15 @@
           "resources": 3
         },
         "shifu": {
-          "resources": 4,
-          "bonus": {
-            "coins": 1,
-            "clay": 1,
-            "wood": 1
-          }
+          "resources": 6
         }
       },
       "name": "Materials Yard",
       "nameZh": "泥柴场",
       "apprenticeText": "Gain 3 resources in any combination of Clay and Wood.",
       "apprenticeTextZh": "获得3份资源，泥和柴任意搭配。",
-      "shifuText": "Gain 4 resources in any combination of Clay and Wood. Then you may pay 1 Coin to gain +1 Clay and +1 Wood.",
-      "shifuTextZh": "获得4份资源，泥和柴任意搭配。然后可以支付1铜钱，再获得1泥和1柴。",
+      "shifuText": "Gain 6 resources in any combination of Clay and Wood.",
+      "shifuTextZh": "获得6份资源，泥和柴任意搭配。",
       "clarifications": [
         {
           "en": "Capacity is 2, 3 or 4 spaces in 2-, 3- or 4-player games.",
@@ -211,22 +206,20 @@
       "usableAtRecognition": null,
       "effects": {
         "apprentice": {
-          "maxReservations": 1,
-          "gainAfterEach": 1
+          "lookSize": 2,
+          "maxReservations": 1
         },
         "shifu": {
-          "maxReservations": 2,
-          "gainAfterEach": 1,
-          "topThreeLooks": 1,
-          "lookSize": 3
+          "lookSize": 3,
+          "maxReservations": 2
         }
       },
       "name": "Commission Market",
       "nameZh": "瓷牙行",
-      "apprenticeText": "Reserve 1 Main Order. Then gain 1 Clay, 1 Wood or 1 Coin.",
-      "apprenticeTextZh": "承接1张主委托，然后获得1泥、1柴或1铜钱。",
-      "shifuText": "Reserve up to 2 Main Orders, resolving each reservation separately. For 1 of them you may instead look at the top 3 Main Orders, reserve 1 of them and discard the rest. After each Order you reserve, gain 1 Clay, 1 Wood or 1 Coin.",
-      "shifuTextZh": "承接至多2张主委托，逐张结算。其中1张可以改为：私下查看主委托牌堆顶3张，承接其中1张，其余弃置。每承接1张，就获得1泥、1柴或1铜钱。",
+      "apprenticeText": "Look at the top 2 cards of the Main Order deck. Reserve 1 Main Order from the display or from those 2; discard the rest of the 2.",
+      "apprenticeTextZh": "查看主委托牌堆顶的2张。从委托榜或这2张中承接1张主委托；这2张中没有承接的弃置。",
+      "shifuText": "Look at the top 3 cards of the Main Order deck. Reserve up to 2 Main Orders from the display and those 3; discard the rest of the 3.",
+      "shifuTextZh": "查看主委托牌堆顶的3张。从委托榜和这3张中承接至多2张主委托；这3张中没有承接的弃置。",
       "clarifications": [
         {
           "en": "Capacity is 2, 3 or 4 spaces in 2-, 3- or 4-player games.",
@@ -287,19 +280,19 @@
       "usableAtRecognition": null,
       "effects": {
         "apprentice": {
-          "discount": 0
+          "maxTechs": 1
         },
         "shifu": {
           "inspectCount": 2,
-          "discount": 1
+          "maxTechs": 2
         }
       },
       "name": "Guild Hall",
       "nameZh": "陶工行",
       "apprenticeText": "Pay the printed Coin cost and take 1 face-up Advanced Tech.",
       "apprenticeTextZh": "支付牌面的铜钱费用，习得1张公开的技艺。",
-      "shifuText": "Choose 1 discipline and look at the top 2 Techs of that deck, or as many as remain. Then take either 1 face-up Advanced Tech from any discipline or 1 of the revealed Techs, paying 1 Coin less, minimum 0. Put any revealed Tech not taken on the bottom of its deck.",
-      "shifuTextZh": "选择1个门类，私下查看该门类牌堆顶的2张（不足2张则看余下的）。然后习得任一门类的1张公开技艺，或所看的1张，少付1铜钱，最低为0。没有拿的所看技艺按你决定的顺序（保密）放回该牌堆底。",
+      "shifuText": "Choose 1 discipline and look at the top 2 Techs of that deck, or as many as remain. Then take up to 2 Advanced Techs from different disciplines, face-up or revealed, paying the printed cost of each. Put any revealed Tech not taken on the bottom of its deck.",
+      "shifuTextZh": "选择1个门类，查看该门类牌堆顶的2张（不足2张则看余下的）。然后从公开技艺与所看技艺中习得至多2项不同门类的技艺，各按牌面价付费。没有拿的所看技艺放回该牌堆底。",
       "clarifications": [
         {
           "en": "Capacity is 2, 3 or 4 spaces in 2-, 3- or 4-player games.",
@@ -333,15 +326,16 @@
           "coins": 2
         },
         "shifu": {
-          "coins": 4
+          "coins": 4,
+          "topMainOrders": 1
         }
       },
       "name": "Canal Wharf",
       "nameZh": "漕运码头",
       "apprenticeText": "Gain 2 Coins.",
       "apprenticeTextZh": "获得2铜钱。",
-      "shifuText": "Gain 4 Coins.",
-      "shifuTextZh": "获得4铜钱。",
+      "shifuText": "Gain 4 Coins and take the top card of the Main Order deck into your hand without looking at it.",
+      "shifuTextZh": "获得4铜钱，并不看牌面拿取主委托牌堆顶的1张收入手中。",
       "clarifications": [
         {
           "en": "You may not pass during the Work Phase. The Canal Wharf has no capacity limit or resource cost, so it is always a legal placement for an available worker.",

@@ -1,42 +1,111 @@
 /**
- * Canal Wharf (L216–221) and Magistrate's Hall (L223–233): Apprentice and Shifu effects,
- * Recognition 0–2 only, never to 4, the reached milestone resolved (fixed Grant 1/1/1, L432,
- * change 8), both spaces usable by one player at 4 players (L225).
+ * Canal Wharf (v1.6.2 L216–220) and Magistrate's Hall (L223–233): Apprentice and Shifu effects
+ * — the Canal Wharf Shifu's unseen top Main Order (v1.6.2 L220, B1, B3) included — Recognition
+ * 0–2 only, never to 4, the reached milestone resolved (fixed Grant 1/1/1, L432, change 8),
+ * both spaces usable by one player at 4 players (L225).
  */
 
 import { describe, expect, it } from "vitest";
-import type { GameAction, Recognition } from "../../../src/game/types.ts";
+import { MAIN_ORDER_IDS } from "../../../src/game/content.ts";
+import { projectEvent, projectPublicState } from "../../../src/game/view.ts";
+import type { GameAction, OrderId, Recognition } from "../../../src/game/types.ts";
 import { expectPublicEvents, keySorted, reject, scrambleHidden, table, types, verdict, withHands, buildState } from "./workshop_support.ts";
 
 const wharf = (workerId: string): GameAction => ({ type: "PLACE_CANAL_WHARF", workerId });
 const hall = (workerId: string): GameAction => ({ type: "PLACE_MAGISTRATES_HALL", workerId });
 
-describe("Canal Wharf: 2 Coins (Apprentice) / 4 Coins (Shifu) (L220–221)", () => {
-  it.each([
-    ["p1:apprentice:2", "apprentice", 2],
-    ["p1:shifu", "shifu", 4],
-  ] as const)("%s gains its Coins and hands over", (workerId, effect, coins) => {
+/** Pins the Main deck and discard; every other Main Order is in p2's hand. */
+function supply(mainDeck: OrderId[], mainDiscard: OrderId[]) {
+  const display: OrderId[] = ["O01", "O02", "O03", "O04", "O05", "O06"];
+  const placed = [...display, ...mainDeck, ...mainDiscard];
+  return { players: [{}, { hand: MAIN_ORDER_IDS.filter((id) => !placed.includes(id)) }], display, mainDeck, mainDiscard };
+}
+
+describe("Canal Wharf: 2 Coins (Apprentice) / 4 Coins and the top Main Order unseen (Shifu) (v1.6.2 L219–220)", () => {
+  it("the Apprentice gains 2 Coins and hands over", () => {
     const t = table();
-    const events = t.act("p1", wharf(workerId));
+    const events = t.act("p1", wharf("p1:apprentice:2"));
     expect(events).toEqual([
       {
         type: "WORKER_PLACED",
         playerId: "p1",
-        workerId,
-        kind: effect,
+        workerId: "p1:apprentice:2",
+        kind: "apprentice",
         locationId: "canal_wharf",
         spaceIndex: 0,
-        effect,
+        effect: "apprentice",
         viaSeniorApprentice: false,
       },
-      { type: "RESOURCES_CHANGED", playerId: "p1", clay: 0, wood: 0, coins, reason: "canal_wharf" },
+      { type: "RESOURCES_CHANGED", playerId: "p1", clay: 0, wood: 0, coins: 2, reason: "canal_wharf" },
     ]);
-    expect(t.player("p1").resources.coins).toBe(3 + coins);
+    expect(t.player("p1").resources.coins).toBe(5);
+    expect(t.state.hidden.orderHands["p1"]).toEqual([]);
     expect(t.halts).toEqual([{ kind: "worker_action_done", playerId: "p1" }]);
     expectPublicEvents(events);
   });
 
-  it("is uncapped and costs nothing, so it is always legal (L143)", () => {
+  it("the Shifu gains 4 Coins, then takes the top Main Order into the hand without looking (secret)", () => {
+    const t = table({ players: [{ hand: ["S01"] }, {}] });
+    const top = t.state.hidden.mainDeck[0] as OrderId;
+    const deckBefore = t.state.hidden.mainDeck.length;
+    const events = t.act("p1", wharf("p1:shifu"));
+    expect(types(events)).toEqual(["WORKER_PLACED", "RESOURCES_CHANGED", "ORDER_RESERVED"]);
+    expect(events[1]).toEqual({ type: "RESOURCES_CHANGED", playerId: "p1", clay: 0, wood: 0, coins: 4, reason: "canal_wharf" });
+    const reserved = events[2];
+    expect(reserved).toEqual({
+      type: "ORDER_RESERVED",
+      playerId: "p1",
+      via: "canal_wharf",
+      source: "deck_top",
+      slotIndex: null,
+      orderId: null,
+      secret: { visibleTo: "p1", orderId: top },
+    });
+    expect(t.player("p1").resources.coins).toBe(7);
+    expect(t.state.hidden.orderHands["p1"]).toEqual(["S01", top]);
+    expect(t.state.hidden.mainDeck).toHaveLength(deckBefore - 1);
+    // The display does not move and no look is opened.
+    expect(t.state.market.display).toEqual(["O01", "O02", "O03", "O04", "O05", "O06"]);
+    expect(t.state.market.refillPendingFor).toBeNull();
+    expect(t.state.hidden.pendingLook).toBeNull();
+    expect(t.halts).toEqual([{ kind: "worker_action_done", playerId: "p1" }]);
+    // B3: the card is secret like every held Order; only the hand count is public.
+    if (reserved === undefined) throw new Error("no ORDER_RESERVED");
+    expect(projectEvent(reserved)).not.toHaveProperty("secret");
+    expect(JSON.stringify(projectEvent(reserved))).not.toContain(`"${top}"`);
+    expect(JSON.stringify(projectPublicState(t.state))).not.toContain(`"${top}"`);
+    expect(t.view(null).game.counts.orderHands["p1"]).toBe(2);
+    expect(t.view("p2").own?.orderHand).not.toContain(top);
+    expect(t.view("p1").own?.orderHand).toEqual(["S01", top]);
+  });
+
+  it("with an empty deck the Shifu's card comes from the shuffled discard (L511)", () => {
+    const t = table(supply([], ["O07", "O08"]));
+    const events = t.act("p1", wharf("p1:shifu"));
+    expect(types(events)).toEqual(["WORKER_PLACED", "RESOURCES_CHANGED", "MAIN_DECK_RESHUFFLED", "ORDER_RESERVED"]);
+    const held = t.state.hidden.orderHands["p1"] ?? [];
+    expect(held).toHaveLength(1);
+    expect(["O07", "O08"]).toContain(held[0]);
+    expect(t.state.hidden.mainDiscard).toEqual([]);
+    expect(t.state.hidden.mainDeck).toHaveLength(1);
+  });
+
+  it("with the deck and discard both empty the Shifu still gains 4 Coins and takes no card (B1)", () => {
+    const t = table(supply([], []));
+    const events = t.act("p1", wharf("p1:shifu"));
+    expect(types(events)).toEqual(["WORKER_PLACED", "RESOURCES_CHANGED"]);
+    expect(t.player("p1").resources.coins).toBe(7);
+    expect(t.state.hidden.orderHands["p1"]).toEqual([]);
+    expect(t.halts).toEqual([{ kind: "worker_action_done", playerId: "p1" }]);
+  });
+
+  it("the drawn card counts toward the Cleanup hand limit like any held Order", () => {
+    const t = table({ players: [{ hand: ["S01", "S02", "O40", "O41"] }, {}] });
+    t.act("p1", wharf("p1:shifu"));
+    expect(t.view(null).game.counts.orderHands["p1"]).toBe(5);
+  });
+
+  it("is uncapped and costs nothing, so it is always legal (L143), even with no supply (B1)", () => {
     const t = table({
       players: [{ resources: { clay: 0, wood: 0, coins: 0 } }, {}, {}, {}],
       placements: [
@@ -52,6 +121,8 @@ describe("Canal Wharf: 2 Coins (Apprentice) / 4 Coins (Shifu) (L220–221)", () 
     const events = t.act("p1", wharf("p1:shifu"));
     expect(events[0]).toMatchObject({ spaceIndex: 7 });
     expect(t.player("p1").resources).toEqual({ clay: 0, wood: 0, coins: 4 });
+    expect(verdict(buildState(supply([], [])), "p1", wharf("p1:shifu"))).toBeNull();
+    expect(verdict(buildState(supply([], [])), "p1", wharf("p1:apprentice:1"))).toBeNull();
   });
 });
 

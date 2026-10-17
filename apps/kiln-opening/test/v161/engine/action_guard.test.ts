@@ -16,9 +16,8 @@ const VALID: { [K in AuthoritativeCommand["type"]]: Array<Extract<AuthoritativeC
     {
       type: "PLACE_MATERIALS_YARD",
       workerId: "p1:shifu",
-      clay: 4,
+      clay: 6,
       wood: 0,
-      buyShifuBonus: true,
       seniorApprentice: false,
       preparedClay: { shape: "vase", decoration: "painted", useDecoratorsKit: false },
     },
@@ -54,13 +53,8 @@ const VALID: { [K in AuthoritativeCommand["type"]]: Array<Extract<AuthoritativeC
     },
   ],
   PLACE_COMMISSION_MARKET: [
-    {
-      type: "PLACE_COMMISSION_MARKET",
-      workerId: "p1:apprentice:2",
-      seniorApprentice: true,
-      first: { kind: "face_up", slotIndex: 5, orderId: "O48", gain: "coins" },
-    },
-    { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu", first: { kind: "look_top_three" } },
+    { type: "PLACE_COMMISSION_MARKET", workerId: "p1:apprentice:2", seniorApprentice: true },
+    { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu" },
   ],
   PLACE_GUILD_HALL: [
     { type: "PLACE_GUILD_HALL", workerId: "p1:apprentice:3", choice: { kind: "buy_face_up", techId: "T25" } },
@@ -68,13 +62,20 @@ const VALID: { [K in AuthoritativeCommand["type"]]: Array<Extract<AuthoritativeC
   ],
   PLACE_CANAL_WHARF: [{ type: "PLACE_CANAL_WHARF", workerId: "player-a:apprentice:1" }],
   PLACE_MAGISTRATES_HALL: [{ type: "PLACE_MAGISTRATES_HALL", workerId: "p2:shifu" }],
-  COMMISSION_RESERVE: [{ type: "COMMISSION_RESERVE", choice: { kind: "blind" } }],
-  COMMISSION_CHOOSE_LOOKED: [{ type: "COMMISSION_CHOOSE_LOOKED", orderId: "O07" }],
-  COMMISSION_GAIN: [{ type: "COMMISSION_GAIN", resource: "wood" }],
-  COMMISSION_STOP: [{ type: "COMMISSION_STOP" }],
+  COMMISSION_CHOOSE: [
+    { type: "COMMISSION_CHOOSE", reservations: [{ kind: "looked", orderId: "O07" }] },
+    { type: "COMMISSION_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 5, orderId: "O48" }, { kind: "looked", orderId: "O07" }] },
+    // The count is the validator's business (RESERVATION_REQUIRED / RESERVATION_LIMIT).
+    { type: "COMMISSION_CHOOSE", reservations: [] },
+  ],
   GUILD_TAKE: [
-    { type: "GUILD_TAKE", take: { kind: "inspected", techId: "T13" }, bottomOrder: ["T14"] },
-    { type: "GUILD_TAKE", take: { kind: "face_up", techId: "T01" }, bottomOrder: [] },
+    { type: "GUILD_TAKE", take: { kind: "inspected", techId: "T13" } },
+    { type: "GUILD_TAKE", take: { kind: "face_up", techId: "T01" } },
+  ],
+  GUILD_FINISH: [
+    { type: "GUILD_FINISH", bottomOrder: ["T14"] },
+    // The permutation is the validator's business (INVALID_BOTTOM_ORDER).
+    { type: "GUILD_FINISH", bottomOrder: [] },
   ],
   COLOUR_SAMPLES_CHOOSE: [{ type: "COLOUR_SAMPLES_CHOOSE", orderId: "O31" }],
   USE_CANAL_BARGE: [
@@ -134,7 +135,7 @@ describe("parseCommand: well-formed commands", () => {
   it("has an example for every command type, SUBMIT_CONTRIBUTION included", () => {
     expect(Object.keys(VALID).sort()).toEqual([...COMMAND_TYPES].sort());
     expect(COMMAND_TYPES).toContain("SUBMIT_CONTRIBUTION");
-    expect(COMMAND_TYPES).toHaveLength(31);
+    expect(COMMAND_TYPES).toHaveLength(29);
   });
 
   it.each(Object.values(VALID).flat().map((command) => [command.type, command] as const))(
@@ -173,13 +174,13 @@ describe("parseCommand: well-formed commands", () => {
     const parsed = parseCommand({
       type: "PLACE_MATERIALS_YARD",
       workerId: "p1:shifu",
-      clay: 4,
+      clay: 6,
       wood: 0,
-      buyShifuBonus: undefined,
+      seniorApprentice: undefined,
       preparedClay: undefined,
     });
-    expect(parsed).toEqual({ type: "PLACE_MATERIALS_YARD", workerId: "p1:shifu", clay: 4, wood: 0 });
-    expect(Object.keys(parsed)).not.toContain("buyShifuBonus");
+    expect(parsed).toEqual({ type: "PLACE_MATERIALS_YARD", workerId: "p1:shifu", clay: 6, wood: 0 });
+    expect(Object.keys(parsed)).not.toContain("seniorApprentice");
   });
 });
 
@@ -206,9 +207,11 @@ const MALFORMED: Array<[label: string, input: unknown, field: string]> = [
   ["a string resource split", { type: "PLACE_MATERIALS_YARD", workerId: "p1:shifu", clay: "3", wood: 0 }, "clay"],
   [
     "a non-boolean option",
-    { type: "PLACE_MATERIALS_YARD", workerId: "p1:shifu", clay: 4, wood: 0, buyShifuBonus: "yes" },
-    "buyShifuBonus",
+    { type: "PLACE_MATERIALS_YARD", workerId: "p1:apprentice:1", clay: 6, wood: 0, seniorApprentice: "yes" },
+    "seniorApprentice",
   ],
+  // V1.6.2 removed the Shifu's 1-Coin +1 Clay +1 Wood option (v1.6.2 L165).
+  ["the retired Materials Yard bonus", { type: "PLACE_MATERIALS_YARD", workerId: "p1:shifu", clay: 6, wood: 0, buyShifuBonus: true }, "buyShifuBonus"],
   [
     "an unknown Prepared Clay key",
     { type: "PLACE_MATERIALS_YARD", workerId: "p1:shifu", clay: 4, wood: 0, preparedClay: { shape: "bowl", decoration: "plain", glaze: "white" } },
@@ -246,21 +249,31 @@ const MALFORMED: Array<[label: string, input: unknown, field: string]> = [
     "loads[0].destination.kilnFurniture",
   ],
   ["an unknown Glaze", { type: "USE_IMPERIAL_PRIORITY", ceramicId: "c1", glaze: "black", imperialModifier: 0 }, "glaze"],
+  // V1.6.2: the look always comes first, so the placement names no reservation (v1.6.2 L195–196).
+  ["a reservation in the placement", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu", first: { kind: "blind" } }, "first"],
+  // The blind reservation and the resource after each reservation are gone (v1.6.2 L31).
+  ["a blind reservation", { type: "COMMISSION_CHOOSE", reservations: [{ kind: "blind" }] }, "reservations[0].kind"],
+  ["a top-3 selection", { type: "COMMISSION_CHOOSE", reservations: [{ kind: "look_top_three" }] }, "reservations[0].kind"],
   [
-    "a face-up reservation without a gain",
-    { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu", first: { kind: "face_up", slotIndex: 0, orderId: "O01" } },
-    "first.gain",
+    "a face-up pick with a resource",
+    { type: "COMMISSION_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 0, orderId: "O01", gain: "clay" }] },
+    "reservations[0].gain",
   ],
-  [
-    "a blind reservation with a slot",
-    { type: "COMMISSION_RESERVE", choice: { kind: "blind", slotIndex: 0 } },
-    "choice.slotIndex",
-  ],
-  ["an unknown Order", { type: "COMMISSION_CHOOSE_LOOKED", orderId: "O49" }, "orderId"],
-  ["an unknown resource", { type: "COMMISSION_GAIN", resource: "vp" }, "resource"],
+  ["a looked pick without an Order", { type: "COMMISSION_CHOOSE", reservations: [{ kind: "looked" }] }, "reservations[0].orderId"],
+  ["a looked pick with a slot", { type: "COMMISSION_CHOOSE", reservations: [{ kind: "looked", orderId: "O07", slotIndex: 0 }] }, "reservations[0].slotIndex"],
+  ["an unknown Order", { type: "COMMISSION_CHOOSE", reservations: [{ kind: "looked", orderId: "O49" }] }, "reservations[0].orderId"],
+  ["a reservation list that is not an array", { type: "COMMISSION_CHOOSE", reservations: { kind: "looked", orderId: "O07" } }, "reservations"],
+  ["a retired Commission sub-command", { type: "COMMISSION_RESERVE", choice: { kind: "blind" } }, "type"],
+  ["the retired Commission resource", { type: "COMMISSION_GAIN", resource: "wood" }, "type"],
+  ["the retired Commission stop", { type: "COMMISSION_STOP" }, "type"],
+  ["the retired top-3 choice", { type: "COMMISSION_CHOOSE_LOOKED", orderId: "O07" }, "type"],
   ["a retired Tech", { type: "PLACE_GUILD_HALL", workerId: "p1:shifu", choice: { kind: "buy_face_up", techId: "T02" } }, "choice.techId"],
   ["a V1.4 discipline", { type: "PLACE_GUILD_HALL", workerId: "p1:shifu", choice: { kind: "inspect", discipline: "forming" } }, "choice.discipline"],
-  ["a bottom order that is not an array", { type: "GUILD_TAKE", take: { kind: "face_up", techId: "T01" }, bottomOrder: "T05" }, "bottomOrder"],
+  ["a bottom order that is not an array", { type: "GUILD_FINISH", bottomOrder: "T05" }, "bottomOrder"],
+  ["a retired Tech in a bottom order", { type: "GUILD_FINISH", bottomOrder: ["T02"] }, "bottomOrder[0]"],
+  // V1.6.2 (owner revision 2026-10-17): each take is its own command; the bottom order comes with GUILD_FINISH.
+  ["a take carrying the V1.6.1 bottom order", { type: "GUILD_TAKE", take: { kind: "face_up", techId: "T01" }, bottomOrder: [] }, "bottomOrder"],
+  ["a take of an unknown kind", { type: "GUILD_TAKE", take: { kind: "revealed", techId: "T01" } }, "take.kind"],
   [
     "a malformed Crackle declaration",
     { type: "COMPLETE_ORDER", orderId: "O01", ceramicIds: ["c1"], crackleDeclarations: [{ ceramicId: "c1" }] },

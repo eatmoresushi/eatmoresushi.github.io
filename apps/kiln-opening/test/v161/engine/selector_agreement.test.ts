@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { KILN_SPACE_IDS, LOCATION_IDS } from "../../../src/game/content.ts";
+import { KILN_SPACE_IDS, LOCATION_IDS, TECHS } from "../../../src/game/content.ts";
 import { validateAction } from "../../../src/game/engine.ts";
 import { legalActions } from "../../../src/game/legalActions.ts";
 import { SeededRandom } from "../../../src/game/rng.ts";
@@ -206,13 +206,22 @@ describe("view models", () => {
     expect(magistratesHallQuote(view, "apprentice")).toMatchObject({ ok: true, pay: { clay: 0, wood: 0, coins: 4 }, reachable: 3 });
     expect(magistratesHallQuote(view, "shifu")).toMatchObject({ ok: true, pay: { coins: 3 }, reachable: 3 });
     const shifuGuild = guildOptions(view, "shifu");
+    // Every Guild Hall take pays the printed cost; V1.6.2 has no Shifu discount (v1.6.2 L207).
     for (const option of shifuGuild.faceUp) {
-      expect(option.price).toBe(Math.max(0, option.printedCost - 1));
+      expect(option.cost).toBe(TECHS[option.techId].cost);
     }
+    expect(shifuGuild.faceUp.map((option) => option.cost)).toEqual(guildOptions(view, "apprentice").faceUp.map((option) => option.cost));
     expect(shifuGuild.inspect.map((i) => i.discipline)).toEqual(["workshop", "glazing_loading", "firing"]);
     expect(guildOptions(view, "apprentice").inspect).toEqual([]);
-    expect(commissionOptions(view, "apprentice")).toMatchObject({ maxReservations: 1, lookTopThree: false, blind: true, faceUpSlots: [0, 1, 2, 3, 4, 5] });
-    expect(commissionOptions(view, "shifu")).toMatchObject({ maxReservations: 2, lookTopThree: true });
+    expect(commissionOptions(view, "apprentice")).toEqual({
+      effect: "apprentice",
+      lookSize: 2,
+      lookCount: 2,
+      maxReservations: 1,
+      faceUpSlots: [0, 1, 2, 3, 4, 5],
+      reservable: true,
+    });
+    expect(commissionOptions(view, "shifu")).toMatchObject({ lookSize: 3, lookCount: 3, maxReservations: 2, reservable: true });
     expect(shapedVessels(view, "p1").map((c) => c.id)).toEqual(["c1"]);
     expect(lookedOrderOptions(view)).toBeNull();
     expect(settersMarkOptions(view)).toEqual([]);
@@ -290,16 +299,22 @@ describe("view models", () => {
     expect(contributionOptions(viewOf(table.state, null))).toEqual([]);
   });
 
-  it("a completed scripted turn keeps the UI's own pickers in step (Commission sub-step)", () => {
+  it("a scripted turn keeps the UI's own pickers in step (Commission step, v1.6.2 L195–198)", () => {
     const table = new LocalTable(buildState({ players: [{ resources: { coins: 9 } }, {}] }));
-    const orderId = table.state.market.display[2];
-    if (orderId === null || orderId === undefined) {
-      throw new Error("no display");
-    }
-    table.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu", first: { kind: "face_up", slotIndex: 2, orderId, gain: "coins" } });
-    const options = commissionOptions(table.view("p1"), "apprentice");
-    expect(options).toMatchObject({ effect: "shifu", reservationsMade: 1, canStop: true, gainNow: false, lookTopThree: true });
-    expect(options.faceUpSlots).not.toContain(2);
+    expect(commissionOptions(table.view("p1"), "shifu")).toMatchObject({ lookSize: 3, lookCount: 3, maxReservations: 2, reservable: true });
+    table.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu" });
+    const looked = lookedOrderOptions(table.view("p1"));
+    const look = table.state.hidden.pendingLook;
+    expect(look?.kind).toBe("commission_market");
+    expect(looked).toEqual({
+      kind: "commission_market",
+      orderIds: look?.kind === "commission_market" ? look.orderIds : [],
+      faceUpSlots: [0, 1, 2, 3, 4, 5],
+      maxReservations: 2,
+    });
+    // Other seats see no look.
+    expect(lookedOrderOptions(table.view("p2"))).toBeNull();
+    expect(lookedOrderOptions(table.view(null))).toBeNull();
   });
 });
 

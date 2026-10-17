@@ -114,7 +114,7 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
   INVALID_CHOICE: {
     en: "That choice is not available.",
     zh: "此选项不可用",
-    detailKeys: keys("value", "choice", "effect", "workerId", "locationId", "techId", "orderId", "ceramicId"),
+    detailKeys: keys("value", "choice", "effect", "workerId", "locationId", "techId", "orderId", "ceramicId", "slotIndex"),
   },
   // ── Setup ──────────────────────────────────────────────────────────────────────────────
   KILN_UNAVAILABLE: {
@@ -262,10 +262,15 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
     zh: "主委托牌堆和弃牌堆都空了，没有可承接的委托",
     detailKeys: keys(),
   },
+  RESERVATION_REQUIRED: {
+    en: "Reserve at least 1 Order.",
+    zh: "至少要承接1张委托",
+    detailKeys: keys(),
+  },
   RESERVATION_LIMIT: {
-    en: "This action has already reserved {limit} Orders.",
-    zh: "此行动已承接{limit}张",
-    detailKeys: keys("limit", "reservationsMade"),
+    en: "This action reserves at most {limit} Orders.",
+    zh: "此行动至多承接{limit}张",
+    detailKeys: keys("limit", "requested"),
     fallbacks: [{ en: "This action cannot reserve another Order.", zh: "此行动的承接次数已满" }],
   },
   ORDER_REQUIREMENTS_NOT_MET: {
@@ -305,6 +310,17 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
     en: "You already own a {discipline} Tech.",
     zh: "你已拥有一项{discipline}技艺",
     detailKeys: keys("techId", "discipline"),
+  },
+  TECH_TAKE_LIMIT: {
+    en: "This action takes at most {limit} Techs.",
+    zh: "此行动至多习得{limit}项技艺",
+    detailKeys: keys("limit", "techId"),
+    fallbacks: [{ en: "This action cannot take another Tech.", zh: "此行动不能再习得技艺" }],
+  },
+  TECH_TAKE_REQUIRED: {
+    en: "Take at least 1 Tech.",
+    zh: "至少要习得1项技艺",
+    detailKeys: keys(),
   },
   TECH_NOT_OWNED: {
     en: "You do not own {techId}.",

@@ -30,11 +30,13 @@ function barge(orderId: OrderId, ceramicIds: string[], extra: Partial<Extract<Ga
   return { type: "USE_CANAL_BARGE", orderId, ceramicIds, ...extra };
 }
 
-/** A worker action that resolves in one command: a face-up reservation with its resource. */
-function reserveFaceUp(t: LocalTable, playerId: string, workerId: string, slotIndex = 0): GameAction {
+/** A Commission Market action reserving a face-up Order (v1.6.2 L195): the placement opens the
+ * look, then `COMMISSION_CHOOSE` takes the Order. Returns the events of the reservation. */
+function reserveFaceUp(t: LocalTable, playerId: string, workerId: string, slotIndex = 0): GameEvent[] {
   const orderId = t.state.market.display[slotIndex];
   if (orderId === null || orderId === undefined) throw new Error(`no Order at ${slotIndex}`);
-  return { type: "PLACE_COMMISSION_MARKET", workerId: `${playerId}:${workerId}`, first: { kind: "face_up", slotIndex, orderId, gain: "coins" } };
+  t.act(playerId, { type: "PLACE_COMMISSION_MARKET", workerId: `${playerId}:${workerId}` });
+  return t.act(playerId, { type: "COMMISSION_CHOOSE", reservations: [{ kind: "face_up", slotIndex, orderId }] });
 }
 
 const WHITE_BOWL: CeramicSpec = { owner: "p1", shape: "bowl", stage: "finished", glaze: "white", quality: "standard" };
@@ -58,7 +60,7 @@ describe("before the worker action", () => {
     expectDocumentedDetails(t.expectRuleError("p1", barge("O02", ["c2"]), "TECH_ALREADY_USED"));
 
     // With the barge spent and no Imperial Priority, the turn ends right after the action.
-    const placed = t.act("p1", reserveFaceUp(t, "p1", "apprentice:1"));
+    const placed = reserveFaceUp(t, "p1", "apprentice:1");
     expect(only(placed, "WORK_TURN_ENDED").automatic).toBe(true);
     expect(t.state.phase).toMatchObject({ activePlayerId: "p2" });
   });
@@ -67,7 +69,7 @@ describe("before the worker action", () => {
 describe("after the worker action", () => {
   it("the window opens whenever the barge is unused — even with nothing completable (DESIGN §4.5) — and declining keeps it (R4)", () => {
     const t = table({ players: [{ techs: ["T23"] }, {}] });
-    t.act("p1", reserveFaceUp(t, "p1", "apprentice:1"));
+    reserveFaceUp(t, "p1", "apprentice:1");
     expect(t.state.phase).toEqual({ type: "work_turn", activePlayerId: "p1", step: { kind: "after_action" } });
     // The deferred refill waits for the end of the turn.
     expect(t.state.market.display[0]).toBeNull();
@@ -81,7 +83,7 @@ describe("after the worker action", () => {
   it("completes an Order reserved by the same action, before the deferred refill (INT)", () => {
     const t = table({ players: [{ techs: ["T23"] }, {}], ceramics: [WHITE_BOWL] });
     expect(t.state.market.display[0]).toBe("O01");
-    t.act("p1", reserveFaceUp(t, "p1", "apprentice:1"));
+    reserveFaceUp(t, "p1", "apprentice:1");
     expect(t.state.hidden.orderHands["p1"]).toEqual(["O01"]);
     expect(t.state.phase).toMatchObject({ step: { kind: "after_action" } });
 
@@ -96,7 +98,8 @@ describe("after the worker action", () => {
     ]);
     expect(only(events, "WORK_TURN_ENDED").automatic).toBe(true);
     expect(t.player("p1").completedOrders.map((record) => [record.orderId, record.via])).toEqual([["O01", "canal_barge"]]);
-    expect(t.state.market.display).toEqual(["O02", "O03", "O04", "O05", "O06", "O07"]);
+    // The Commission look took the deck's top 2 (O07, O08) to the discard; the refill reveals O09.
+    expect(t.state.market.display).toEqual(["O02", "O03", "O04", "O05", "O06", "O09"]);
   });
 
   it("a Crown completed in the window that reaches Recognition 3 makes Imperial Priority usable within it (INT)", () => {
@@ -107,7 +110,7 @@ describe("after the worker action", () => {
         { owner: "p1", shape: "bowl", stage: "shaped" },
       ],
     });
-    t.act("p1", reserveFaceUp(t, "p1", "apprentice:1"));
+    reserveFaceUp(t, "p1", "apprentice:1");
     const events = t.act("p1", barge("O18", ["c1"]));
     expect(types(events)).toContain("IMPERIAL_PRIORITY_GAINED");
     expect(t.player("p1").imperial).toMatchObject({ recognition: 3, priority: "held" });
@@ -132,7 +135,9 @@ describe("a Canal Barge acquired this round (L214)", () => {
   it("is usable after the Shifu's inspection step resolves", () => {
     const t = table({ players: [{ hand: ["S01"] }, {}], ceramics: [WHITE_BOWL], techDecks: { glazing_loading: ["T23", "T15", "T21", "T22"] } });
     t.act("p1", { type: "PLACE_GUILD_HALL", workerId: "p1:shifu", choice: { kind: "inspect", discipline: "glazing_loading" } });
-    t.act("p1", { type: "GUILD_TAKE", take: { kind: "inspected", techId: "T23" }, bottomOrder: ["T15"] });
+    // Canal Barge costs 2, leaving 1 Coin: no second take is possible, so the inspection
+    // closes by itself and T15 goes to the bottom (v1.6.2 L207, B2).
+    t.act("p1", { type: "GUILD_TAKE", take: { kind: "inspected", techId: "T23" } });
     expect(t.state.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "after_action" } });
     t.act("p1", barge("S01", ["c1"]));
     expect(t.player("p1").completedOrders).toHaveLength(1);
@@ -212,11 +217,11 @@ describe("refusals", () => {
 
   it("is not usable in the middle of a worker action", () => {
     const t = table({ players: [{ techs: ["T23"], hand: ["O01"] }, {}], ceramics: [WHITE_BOWL] });
-    t.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:apprentice:1", first: { kind: "blind" } });
+    t.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:apprentice:1" });
     const error = t.expectRuleError("p1", barge("O01", ["c1"]), "WRONG_PHASE");
     expect(error.details).toMatchObject({ step: "commission_market" });
     expectDocumentedDetails(error);
-    t.act("p1", { type: "COMMISSION_GAIN", resource: "wood" });
+    t.act("p1", { type: "COMMISSION_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 1, orderId: t.state.market.display[1] as OrderId }] });
     t.act("p1", barge("O01", ["c1"]));
     expect(t.state.phase).toMatchObject({ activePlayerId: "p2" });
   });

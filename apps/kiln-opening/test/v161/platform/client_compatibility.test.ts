@@ -31,7 +31,7 @@ beforeEach(() => {
 
 afterEach(() => vi.unstubAllEnvs());
 
-function snapshot(rulesVersion = "1.6.1", schemaVersion = 6) {
+function snapshot(rulesVersion = "1.6.2", schemaVersion = 7) {
   return {
     ok: true,
     value: {
@@ -58,7 +58,7 @@ function seat(playerId: string, isComputer: boolean): PublicSeat {
     colour: "ink",
     isHost: playerId === "P1",
     isComputer,
-    aiPolicyVersion: isComputer ? "rules-v1.6.1-canonical-001" : null,
+    aiPolicyVersion: isComputer ? "rules-v1.6.2-canonical-001" : null,
   };
 }
 
@@ -67,6 +67,10 @@ describe("client rules compatibility", () => {
     ["1.4", 5],
     ["1.4", 6],
     ["1.6.1", 5],
+    // V1.6.1 rooms and saves (schema 6) no longer continue (ENGINE_V1.6.2_DELTA.md §9).
+    ["1.6.1", 6],
+    ["1.6.2", 6],
+    ["1.6.1", 7],
   ] as const)("refuses a %s / schema %i snapshot and drops its private payload", async (rulesVersion, schemaVersion) => {
     const response = snapshot(rulesVersion, schemaVersion);
     const result = await respondsWith(response).reconnect("ROOM01", "private-seat-token");
@@ -74,8 +78,8 @@ describe("client rules compatibility", () => {
     expect(JSON.stringify(result)).not.toMatch(/PRIVATE_ORDER|private-seat-token/);
   });
 
-  it.each([null, { rulesVersion: "1.6.1", schemaVersion: 6, revision: 18 }])("keeps compatible responses (%j)", async (game) => {
-    const response = { ok: true, value: { room: { rulesVersion: "1.6.1", latestRevision: 18 }, game } };
+  it.each([null, { rulesVersion: "1.6.2", schemaVersion: 7, revision: 18 }])("keeps compatible responses (%j)", async (game) => {
+    const response = { ok: true, value: { room: { rulesVersion: "1.6.2", latestRevision: 18 }, game } };
     expect(await respondsWith(response).reconnect("ROOM01", "seat-token")).toBe(response);
     expect(snapshotCompatibilityError(response)).toBeNull();
   });

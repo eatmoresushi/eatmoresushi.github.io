@@ -46,7 +46,7 @@ function secretRichState(): GameState {
     ],
     round: 2,
     mainDiscard: ["O20", "O21"],
-    pendingLook: { kind: "commission_top_three", playerId: "p2", orderIds: ["O30", "O31", "O32"] },
+    pendingLook: { kind: "commission_market", playerId: "p2", orderIds: ["O30", "O31", "O32"] },
     firePeeks: { p1: { playerId: "p1", round: 2, modifier: 2, buried: null } },
     fireDiscard: [-1],
     phase: { type: "firing_test_pieces", queue: { actorIds: ["p1"], index: 0 }, awaiting: "bury" },
@@ -93,7 +93,7 @@ describe("projectPublicState", () => {
       mainDiscard: 2,
       techDecks: { workshop: 3, glazing_loading: 3, firing: 3 },
       fireDeck: 11,
-      pendingLook: { playerId: "p2", kind: "commission_top_three", count: 3 },
+      pendingLook: { playerId: "p2", kind: "commission_market", count: 3 },
     });
     expect(publicCounts(state)).toEqual(projected.counts);
   });
@@ -192,7 +192,7 @@ describe("private views", () => {
     expect(projectPrivateView(state, "p2", null)).toEqual({
       playerId: "p2",
       orderHand: ["S05", "O11", "O12", "O13"],
-      pendingLook: { kind: "commission_top_three", playerId: "p2", orderIds: ["O30", "O31", "O32"] },
+      pendingLook: { kind: "commission_market", playerId: "p2", orderIds: ["O30", "O31", "O32"] },
       firePeek: null,
       pendingContribution: null,
     });
@@ -249,8 +249,9 @@ describe("private views", () => {
 describe("events (DESIGN §4.4)", () => {
   const secretEvents: GameEvent[] = [
     { type: "ORDERS_DEALT", playerId: "p1", startingCount: 2, mainCount: 1, secret: { visibleTo: "p1", startingOrderIds: ["S01", "S02"], mainOrderIds: ["O10"] } },
-    { type: "ORDER_RESERVED", playerId: "p2", via: "commission_market", source: "blind", slotIndex: null, orderId: null, secret: { visibleTo: "p2", orderId: "O33" } },
-    { type: "PRIVATE_LOOK_OPENED", playerId: "p2", kind: "commission_top_three", discipline: null, count: 3, secret: { visibleTo: "p2", orderIds: ["O30", "O31", "O32"], techIds: [] } },
+    { type: "ORDER_RESERVED", playerId: "p2", via: "commission_market", source: "looked", slotIndex: null, orderId: null, secret: { visibleTo: "p2", orderId: "O31" } },
+    { type: "ORDER_RESERVED", playerId: "p2", via: "canal_wharf", source: "deck_top", slotIndex: null, orderId: null, secret: { visibleTo: "p2", orderId: "O33" } },
+    { type: "PRIVATE_LOOK_OPENED", playerId: "p2", kind: "commission_market", discipline: null, count: 3, secret: { visibleTo: "p2", orderIds: ["O30", "O31", "O32"], techIds: [] } },
     { type: "LOOKED_ORDERS_DISCARDED", playerId: "p2", count: 2, secret: { visibleTo: "p2", orderIds: ["O30", "O32"] } },
     { type: "TECHS_RETURNED_TO_BOTTOM", playerId: "p1", discipline: "firing", count: 2, secret: { visibleTo: "p1", techIds: ["T25", "T24"] } },
     { type: "TEST_PIECES_PEEKED", playerId: "p1", secret: { visibleTo: "p1", modifier: 2 } },

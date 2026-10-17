@@ -41,7 +41,7 @@ import {
   locationCapacity,
 } from "./content.ts";
 import { InvariantError } from "./errors.ts";
-import { ceramicSequence, decisionPrompt, lookup } from "./state.ts";
+import { ceramicSequence, decisionPrompt, lookOrderIds, lookTechIds, lookup } from "./state.ts";
 import { ownsTech } from "./techs.ts";
 import { projectPublicState } from "./view.ts";
 import type {
@@ -50,6 +50,7 @@ import type {
   FiringContext,
   GamePhaseType,
   GameState,
+  GuildInspectionStep,
   LoadedCeramic,
   OrderId,
   PlayerId,
@@ -72,6 +73,7 @@ const KILN_FURNITURE: TechId = "T15";
 const INVERTED_FIRING: TechId = "T21";
 const KILN_MASTER: TechId = "T24";
 const SENIOR_APPRENTICE: TechId = "T18";
+const COLOUR_SAMPLES: TechId = "T10";
 
 /** Phases with every Setter's Mark returned or not yet placeable (L303, L630). */
 const MARKLESS_PHASES: readonly GamePhaseType[] = ["setup_kiln_selection", "cleanup_hand_limit", "finished"];
@@ -215,7 +217,7 @@ function checkOrders(state: GameState, players: readonly PlayerState[], v: Viola
     ["starting box", hidden.startingBox],
     ["display", state.market.display.filter((id): id is OrderId => id !== null)],
     ...players.map((p): [string, OrderId[]] => [`completed ${p.id}`, p.completedOrders.map((record) => record.orderId)]),
-    ["pending look", look !== null && look.kind !== "guild_inspection" ? look.orderIds : []],
+    ["pending look", lookOrderIds(look)],
   ];
   for (const handOwner of Object.keys(hidden.orderHands)) {
     v.check(state.playerOrder.includes(handOwner), () => `an Order hand belongs to unseated ${handOwner}`);
@@ -268,11 +270,25 @@ function checkTechs(state: GameState, players: readonly PlayerState[], v: Violat
     }
     zoned.push(...display, ...deck);
   }
-  if (look?.kind === "guild_inspection") {
-    for (const techId of look.techIds) {
-      v.check(lookup(TECHS, techId)?.discipline === look.discipline, () => `${techId} is in a ${look.discipline} inspection`);
+  // A Guild Hall inspection's untaken Techs, also while they wait in a Colour Samples look
+  // (v1.6.2 L207, L214).
+  const inspection = look?.kind === "guild_inspection" ? look : look?.kind === "colour_samples" ? look.inspection : null;
+  if (inspection !== null && inspection !== undefined) {
+    for (const techId of inspection.techIds) {
+      v.check(lookup(TECHS, techId)?.discipline === inspection.discipline, () => `${techId} is in a ${inspection.discipline} inspection`);
     }
-    zoned.push(...look.techIds);
+  }
+  zoned.push(...lookTechIds(look));
+  // v1.6.2 L209: a taken Tech's position stays empty only until the taker's turn ends, so a
+  // display short of 2 with cards in its deck exists only after a worker action has begun.
+  const phase = state.phase;
+  const midAction = phase.type === "work_turn" && phase.step.kind !== "before_action" && phase.step.kind !== "commission_market";
+  if (!midAction) {
+    for (const discipline of DISCIPLINES) {
+      const shown = state.techDisplay[discipline].length;
+      const full = Math.min(GAME_CONFIG.techs.faceUpPerDiscipline, shown + hidden.techDecks[discipline].length);
+      v.check(shown === full, () => `the ${discipline} display shows ${shown} Techs with ${hidden.techDecks[discipline].length} in its deck`);
+    }
   }
   const counts = tally(zoned);
   for (const techId of TECH_IDS) {
@@ -639,6 +655,33 @@ function checkPlayers(state: GameState, players: readonly PlayerState[], v: Viol
 
 // ── Phase and actors ─────────────────────────────────────────────────────────────────
 
+/**
+ * A Guild Hall Shifu inspection agrees with its step (v1.6.2 L207–211, B2): the look holds the
+ * inspected Techs not yet taken, the takes are at most the printed limit, each from its own
+ * discipline and owned by the Shifu, and the Shifu is at the Guild Hall.
+ */
+function checkGuildInspection(
+  state: GameState,
+  activePlayerId: PlayerId,
+  step: GuildInspectionStep,
+  look: { kind: "guild_inspection"; playerId: PlayerId; discipline: TechDiscipline; techIds: TechId[] },
+  v: Violations,
+): void {
+  const inspectedTakes = step.takes.filter((take) => take.kind === "inspected");
+  v.check(look.discipline === step.discipline, () => "the Guild inspection disagrees with its step's discipline");
+  v.check(look.techIds.length === step.inspectedCount - inspectedTakes.length, () => "the Guild inspection disagrees with its step's count");
+  v.check(step.takes.length <= LOCATIONS.guild_hall.effects.shifu.maxTechs, () => `a Guild Hall Shifu took ${step.takes.length} Techs`);
+  const disciplines = step.takes.map((take) => lookup(TECHS, take.techId)?.discipline);
+  v.check(new Set(disciplines).size === disciplines.length, () => "a Guild Hall Shifu took two Techs of one discipline");
+  for (const take of inspectedTakes) {
+    v.check(lookup(TECHS, take.techId)?.discipline === step.discipline, () => `${take.techId} was not inspected from ${step.discipline}`);
+  }
+  const active = lookup(state.players, activePlayerId);
+  v.check(step.takes.every((take) => active?.techs.some((tech) => tech.id === take.techId) === true), () => "a Guild Hall take is not owned by the Shifu");
+  const placed = active?.workers[step.workerId]?.placement;
+  v.check(placed?.locationId === "guild_hall" && placed.effect === "shifu", () => "the Guild inspection's worker is not the Shifu at the Guild Hall");
+}
+
 function checkPhaseShape(state: GameState, v: Violations): void {
   const seated = (id: PlayerId) => state.playerOrder.includes(id);
   const unique = (ids: readonly PlayerId[]) => new Set(ids).size === ids.length;
@@ -829,8 +872,8 @@ function checkLive(state: GameState, players: readonly PlayerState[], ceramics: 
   // Work-turn sub-steps and the private look agree (B2, B3).
   const step = phase.type === "work_turn" ? phase.step : null;
   const expectedLook =
-    step?.kind === "commission_market" && step.awaiting === "look_choice"
-      ? "commission_top_three"
+    step?.kind === "commission_market"
+      ? "commission_market"
       : step?.kind === "guild_inspection"
         ? "guild_inspection"
         : step?.kind === "colour_samples"
@@ -840,10 +883,19 @@ function checkLive(state: GameState, players: readonly PlayerState[], ceramics: 
   if (look !== null && phase.type === "work_turn") {
     v.check(look.playerId === phase.activePlayerId, () => "the pending look is not the active player's");
     if (step?.kind === "guild_inspection" && look.kind === "guild_inspection") {
-      v.check(look.discipline === step.discipline && look.techIds.length === step.inspectedCount, () => "the Guild inspection disagrees with its step");
+      checkGuildInspection(state, phase.activePlayerId, step, look, v);
     }
     if (step?.kind === "colour_samples" && look.kind === "colour_samples") {
       v.check(look.orderIds.length === step.lookedCount && look.orderIds.length > 0, () => "the Colour Samples look disagrees with its step");
+      v.check((step.resume === null) === (look.inspection === null), () => "a Colour Samples look and its step disagree on a resumed Guild inspection");
+      if (step.resume !== null && look.inspection !== null) {
+        v.check(step.resume.takes.some((take) => take.techId === COLOUR_SAMPLES), () => "a Guild inspection waits behind Colour Samples it did not take");
+        checkGuildInspection(state, phase.activePlayerId, step.resume, { ...look.inspection, kind: "guild_inspection", playerId: look.playerId }, v);
+      }
+    }
+    if (step?.kind === "commission_market" && look.kind === "commission_market") {
+      // The look shows at most its printed size, possibly none (B1); the step records how many.
+      v.check(look.orderIds.length === step.lookedCount && look.orderIds.length <= step.lookSize, () => "the Commission look disagrees with its step");
     }
   }
   if (phase.type === "work_turn" && step?.kind === "before_action") {
@@ -851,7 +903,13 @@ function checkLive(state: GameState, players: readonly PlayerState[], ceramics: 
     v.check(active !== undefined && Object.values(active.workers).some((w) => w.placement === null), () => `${phase.activePlayerId} has no worker to place`);
   }
   if (step?.kind === "commission_market") {
-    v.check(step.reservationsMade <= step.maxReservations, () => "the Commission step exceeds its reservations");
+    // The printed limits of the step's effect (v1.6.2 L195–196), and a reservation is always
+    // possible from the display or the look (L142, B1).
+    const limits = LOCATIONS.commission_market.effects[step.effect];
+    v.check(step.lookSize === limits.lookSize && step.maxReservations === limits.maxReservations, () => "the Commission step disagrees with its effect's printed limits");
+    v.check(step.lookedCount > 0 || state.market.display.some((orderId) => orderId !== null), () => "the Commission step has nothing to reserve");
+    const placed = lookup(state.players, phase.type === "work_turn" ? phase.activePlayerId : "")?.workers[step.workerId]?.placement;
+    v.check(placed?.locationId === "commission_market" && placed.effect === step.effect, () => "the Commission step's worker is not at the Commission Market with that effect");
   }
   const refill = state.market.refillPendingFor;
   v.check(refill === null || (phase.type === "work_turn" && phase.activePlayerId === refill), () => `a deferred refill is owed by ${String(refill)} outside their turn`);
