@@ -36,13 +36,15 @@ export const kiln = defineNamespace({
     "baseHeatValue": "Base Heat <b>{n}</b>",
     "globalHeatValue": "Global Heat <b>{n}</b>",
     "secondFireTag": "{tech}",
-    "secondFireLabel": "{tech}: extra Fire card {value}",
+    "secondFireChosen": "{tech}: fired again with Fire card {value}",
+    "secondFireCards": "{tech}: extra Fire cards {values}, one to be chosen",
 
     // Ceramic details (PieceDetail panel).
     "detail.place": "Place: {place}",
     "detail.quality": "Quality this firing: {quality}",
     "detail.marker": "Marker: {marker}",
     "detail.crackle": "Crackle marker (Ge)",
+    "detail.saggarsFloor": "{tech}: counts as {standard}, not {flawed}",
     "detail.noQuality": "No Quality recorded yet",
 
     // Imperial Kilns (wireframe `imperialTiles`).
@@ -119,7 +121,7 @@ export const kiln = defineNamespace({
     "eq.unknownLabel": "not known yet",
     "eq.plus": "+",
     "eq.equals": "=",
-    "eq.extraFire": "{tech}, extra Fire card: {ceramic}",
+    "eq.extraFire": "{tech}, extra Fire cards: {ceramic}",
     "discard.label": "Fire discard (open)",
     "discard.none": "none yet",
     "discard.list": "Fire discard, oldest first",
@@ -129,7 +131,7 @@ export const kiln = defineNamespace({
     "record.testPiecesBuried": "{name} paid for {tech} and put the top Fire card on the bottom of the deck.",
     "record.testPiecesDeclined": "{name} did not use {tech}.",
     "record.salvaged": "{name} salvaged a Flawed ceramic.",
-    "record.secondFired": "{ceramic}: {tech} with Fire card {value}.",
+    "record.secondFired": "{ceramic}: fired again with Fire card {value} ({tech}).",
 
     // The Kiln section's strip between firings (owner review, 2026-10-17; D4).
     "strip.die": "Kiln Die this round",
@@ -167,12 +169,14 @@ export const kiln = defineNamespace({
     "baseHeatValue": "基础火候<b>{n}</b>",
     "globalHeatValue": "全窑火候<b>{n}</b>",
     "secondFireTag": "{tech}",
-    "secondFireLabel": "「{tech}」：额外窑火牌{value}",
+    "secondFireChosen": "「{tech}」：用窑火牌{value}复烧",
+    "secondFireCards": "「{tech}」：额外窑火牌{values}，从中选一张",
 
     "detail.place": "位置：{place}",
     "detail.quality": "本窑品质：{quality}",
     "detail.marker": "标记：{marker}",
     "detail.crackle": "开片标（哥窑）",
+    "detail.saggarsFloor": "「{tech}」：算作{standard}，不为{flawed}",
     "detail.noQuality": "尚未定品",
 
     "imperialKilns": "御窑",
@@ -246,7 +250,7 @@ export const kiln = defineNamespace({
     "eq.unknownLabel": "尚未揭晓",
     "eq.plus": "+",
     "eq.equals": "=",
-    "eq.extraFire": "「{tech}」额外窑火牌：{ceramic}",
+    "eq.extraFire": "「{tech}」额外翻开的窑火牌：{ceramic}",
     "discard.label": "窑火弃牌堆（公开）",
     "discard.none": "暂无",
     "discard.list": "窑火弃牌堆，最早在前",
@@ -255,7 +259,7 @@ export const kiln = defineNamespace({
     "record.testPiecesBuried": "{name}付柴用「{tech}」，把窑火牌堆顶的牌放到牌堆底。",
     "record.testPiecesDeclined": "{name}没有使用「{tech}」。",
     "record.salvaged": "{name}折卖了一件瑕品。",
-    "record.secondFired": "{ceramic}：「{tech}」，窑火牌{value}。",
+    "record.secondFired": "{ceramic}：用窑火牌{value}复烧（「{tech}」）。",
 
     "strip.die": "本轮窑骰",
     "strip.dieValue": "本轮窑骰：{n}",
@@ -277,5 +281,6 @@ export const KILN_TECHS = Object.freeze({
   settersMark: "T22",
   testPieces: "T13",
   secondFiring: "T14",
+  protectiveSaggars: "T11",
   connoisseur: "T19",
 } as const satisfies Record<string, TechId>);

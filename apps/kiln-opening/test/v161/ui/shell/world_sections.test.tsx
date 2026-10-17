@@ -16,6 +16,7 @@ import { FixtureGameSource } from "../../../../src/app/session/fixtureSource.ts"
 import { WorldSections } from "../../../../src/app/shell/WorldSections.tsx";
 import { fixture, fixtureSource, secretIds } from "../support/fixtures.ts";
 import { renderComponent, renderScreen, renderWindow } from "../support/render.tsx";
+import { withoutRulesPanels } from "../kiln/support.ts";
 import { attr, perceivable, seatChips } from "./support.tsx";
 
 const en = createTranslator("en", { strict: true });
@@ -44,7 +45,8 @@ describe("the Orders section", () => {
         const html = renderComponent(fixtureSource(id), <WorldSections />, { locale });
         const orders = section(html, "orders");
         expect(orders).not.toMatch(/hands-public|hands-title|hands-looking/);
-        const text = perceivable(orders);
+        // Outside the rules-details panels: an Order clarification may say the deck count is public.
+        const text = perceivable(withoutRulesPanels(orders));
         expect(text).not.toContain("counts are public");
         expect(text).not.toContain("张数公开");
         expect(text).not.toMatch(locale === "en" ? /is looking at/ : /正在(?:私看|查看)/);
@@ -75,7 +77,7 @@ describe("someone else's private look", () => {
   it("is said by the waiting pane, never which cards (m2)", () => {
     const id = "m2_commission_market_look_r3_4p";
     const look = fixture(id).playerView.game.counts.pendingLook!;
-    expect(look.kind).toBe("commission_top_three");
+    expect(look.kind).toBe("commission_market");
     const name = fixture(id).playerView.game.players[look.playerId]!.displayName;
     const pane = renderWindow(watching(id));
     expect(pane).toContain('data-window="waiting"');

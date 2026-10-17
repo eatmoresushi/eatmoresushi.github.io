@@ -141,6 +141,50 @@ describe("advanceTurns", () => {
     expect(keysOf(advanceTurns(startTurnTracker([], BASE), log, viewer).turns)).toEqual([[other, ["ORDER_COMPLETED"]]]);
   });
 
+  it("folds Canal Barge's Coins into its line, as the log does (v1.6.2 L622)", () => {
+    const used: PublicGameEvent = { type: "TECH_USED", playerId: other, techId: "T23" };
+    const barge: PublicGameEvent = { type: "RESOURCES_CHANGED", playerId: other, clay: 0, wood: 0, coins: 2, reason: "canal_barge" };
+    const log = entries(45, BASE + 1, other, [orderTurnStarted(other), used, barge, orderTurnEnded(other)]);
+    expect(isToastLine(log[2]!, log[1])).toBe(false);
+    const { turns } = advanceTurns(startTurnTracker([], BASE), log, viewer);
+    expect(keysOf(turns)).toEqual([[other, ["TECH_USED", "ORDER_TURN_ENDED"]]]);
+    expect(publicEventText(used, { t: en, view: logCeramicView(model, []), viewerId: viewer })).toBe(`${nameOf(other)} used Canal Barge: +2 Coins`);
+  });
+
+  it("folds a Guild Hall payment into the acquisition line after it, as the log does", () => {
+    const paid: PublicGameEvent = { type: "RESOURCES_CHANGED", playerId: other, clay: 0, wood: 0, coins: -2, reason: "guild_hall" };
+    const acquired: PublicGameEvent = { type: "TECH_ACQUIRED", playerId: other, techId: "T10", source: "face_up", cost: 2, vp: 1 };
+    const log = entries(150, BASE + 1, other, [placed(other, "guild_hall"), paid, acquired]);
+    expect(isToastLine(log[1]!, log[0], log[2])).toBe(false);
+    expect(keysOf(advanceTurns(startTurnTracker([], BASE), log, viewer).turns)).toEqual([[other, ["WORKER_PLACED", "TECH_ACQUIRED"]]]);
+  });
+
+  it("states another player's Colour Samples swap in public words only (v1.6.2 L617)", () => {
+    const swap: GameEvent[] = [
+      { type: "TECH_USED", playerId: other, techId: "T10" },
+      { type: "HELD_ORDER_DISCARDED", playerId: other, cause: "colour_samples_swap", to: "main_discard", secret: { visibleTo: other, orderId: "O41" } },
+      { type: "PRIVATE_LOOK_OPENED", playerId: other, kind: "colour_samples_swap", discipline: null, count: 2, secret: { visibleTo: other, orderIds: ["O12", "O33"], techIds: [] } },
+      { type: "ORDER_RESERVED", playerId: other, via: "colour_samples_swap", source: "looked", slotIndex: null, orderId: null, secret: { visibleTo: other, orderId: "O33" } },
+      { type: "LOOKED_ORDERS_TO_BOTTOM", playerId: other, count: 1, secret: { visibleTo: other, orderIds: ["O12"] } },
+    ];
+    const log: LogEntry[] = swap.map((own, index) => {
+      const { secret: _drop, ...event } = own as GameEvent & { secret?: unknown };
+      return { sequence: 46 + index, revision: BASE + 1, actorId: other, event: event as PublicGameEvent, own };
+    });
+    const { turns } = advanceTurns(startTurnTracker([], BASE), log, viewer);
+    expect(keysOf(turns)).toEqual([[other, swap.map((event) => event.type)]]);
+    const context = { t: en, view: logCeramicView(model, []), viewerId: viewer };
+    const lines = turns[0]!.entries.map((entry) => publicEventText(entry.event, context));
+    expect(lines).toEqual([
+      `${nameOf(other)} used Colour Samples to swap a held Order`,
+      `${nameOf(other)} discarded a held Order face down`,
+      `${nameOf(other)} is looking at the top 2 Main Orders`,
+      `${nameOf(other)} reserved one of the Orders they looked at (Colour Samples swap)`,
+      `${nameOf(other)} put 1 looked-at Order face down on the bottom of the Main Order deck`,
+    ]);
+    for (const line of [...lines, ...turns[0]!.entries.map((entry) => publicEventText(entry.event, { ...context, t: zh }))]) expect(line).not.toMatch(/O41|O12|O33/);
+  });
+
   it("keeps one turn open across updates until it ends, under the same key", () => {
     const first = entries(50, BASE + 1, other, [placed(other)]);
     const step1 = advanceTurns(startTurnTracker([], BASE), first, viewer);
@@ -279,7 +323,7 @@ describe("toast lines", () => {
 
   it("never carry the looker's secret, even when the entry holds one", () => {
     const secret = { visibleTo: other, orderIds: ["O33", "O12", "O07"], techIds: [] };
-    const own: GameEvent = { type: "PRIVATE_LOOK_OPENED", playerId: other, kind: "commission_top_three", discipline: null, count: 3, secret } as GameEvent;
+    const own: GameEvent = { type: "PRIVATE_LOOK_OPENED", playerId: other, kind: "commission_market", discipline: null, count: 3, secret } as GameEvent;
     const { secret: _drop, ...event } = own as GameEvent & { secret: unknown };
     const entry: LogEntry = { sequence: 81, revision: BASE + 1, actorId: other, event: event as PublicGameEvent, own };
     const context = { t: en, view, viewerId: other };

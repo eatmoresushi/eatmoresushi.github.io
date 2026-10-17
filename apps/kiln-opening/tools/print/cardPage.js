@@ -2,7 +2,8 @@
  * In-page script of the printable Order card sheets (tools/print/printOrderCards.ts).
  * Plain browser JavaScript, injected as-is into the generated HTML.
  *
- * 1. Paints a seeded parchment texture (deterministic) into a PNG data URL.
+ * 1. Paints the card parchment (paper colour, darkened edge, highlight and a seeded texture) as
+ *    one opaque, non-repeating PNG data URL that every card shows once (see `cardPaper`).
  * 2. Pre-composites every ceramic the cards need: the neutral cutout with its Glaze colour
  *    multiplied through the cutout's alpha (src/app/pieces/CeramicArt: `--glz-*`, mask +
  *    multiply), trimmed to its silhouette, as PNG data URLs, so the PDF needs no CSS blend modes.
@@ -15,7 +16,8 @@
  *    the box breaks between its items and takes lines of its own. A line-final full-width
  *    "；"/"，"/"、" loses its blank right half, so centred Chinese lines centre on their ink.
  * 5. Checks every card (printed text equals the rulebook string, numbers and icon counts, no
- *    overflow, all text ≥ 2.5 mm inside the cut) and publishes `window.__PRINT_REPORT`.
+ *    overflow, all text ≥ 2.5 mm inside the cut) and every sheet (nothing printed below its
+ *    used rows), and publishes `window.__PRINT_REPORT`.
  */
 (async () => {
   "use strict";
@@ -38,53 +40,103 @@
     };
   }
 
-  /** A seamless 25 mm parchment tile: soft mottling and a few fibres, as alpha over the paper. */
-  function paperTexture() {
-    const size = 320;
+  /** Resolution of the card parchment image, px per mm (330 dpi). */
+  const PAPER_PX_PER_MM = 13;
+
+  /** Any CSS colour → [r, g, b, a], through the canvas's own normalisation. */
+  function cssColour(value) {
+    const probe = document.createElement("canvas").getContext("2d");
+    probe.fillStyle = "#010203";
+    probe.fillStyle = value;
+    const normal = probe.fillStyle;
+    if (normal === "#010203" && value.replace(/\s/g, "").toLowerCase() !== "#010203") throw new Error(`not a colour: ${value}`);
+    if (normal.startsWith("#")) return [1, 3, 5].map((i) => parseInt(normal.slice(i, i + 2), 16)).concat(1);
+    const [r, g, b, a = 1] = normal.match(/[\d.]+/g).map(Number);
+    return [r, g, b, a];
+  }
+
+  /**
+   * The whole parchment of a card, as one opaque PNG painted once over the card. Bottom to top:
+   * the paper colour, the darkened edge, the warm highlight behind the picture (both as the CSS
+   * radial gradients they replace), and a seeded texture of soft mottling, fibres and specks, the
+   * same on every build and every card. No part of it repeats and nothing in it is transparent:
+   * Apple's PDF renderer (Preview, and printing from it) draws faint hairline seams where the
+   * cells of a semi-transparent repeating tile meet, which the earlier 25 mm tile showed.
+   */
+  function cardPaper(widthMm, heightMm) {
+    const style = getComputedStyle(document.documentElement);
+    const colour = (name) => cssColour(style.getPropertyValue(name).trim() || "invalid");
+    const paper = colour("--paper");
+    const hi = colour("--paper-hi");
+    const edge = colour("--paper-edge");
+    const W = widthMm;
+    const H = heightMm;
     const canvas = document.createElement("canvas");
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext("2d");
-    const random = rng(0x4b494c4e);
-    const wrap = (draw) => {
-      for (const dx of [-size, 0, size]) for (const dy of [-size, 0, size]) draw(dx, dy);
+    canvas.width = Math.round(W * PAPER_PX_PER_MM);
+    canvas.height = Math.round(H * PAPER_PX_PER_MM);
+    const ctx = canvas.getContext("2d", { alpha: false });
+    ctx.scale(canvas.width / W, canvas.height / H); // millimetres from here on
+    const rgba = ([r, g, b], a) => `rgba(${r},${g},${b},${a})`;
+    ctx.fillStyle = rgba(paper, 1);
+    ctx.fillRect(0, 0, W, H);
+
+    // CSS `radial-gradient(ellipse rx ry at cx cy, …)`. A stop's transparent end keeps the
+    // colour of its opaque end, which is what CSS's premultiplied interpolation shows.
+    const ellipse = (cx, cy, rx, ry, stops) => {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.scale(rx, ry);
+      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+      for (const [at, c, a] of stops) g.addColorStop(at, rgba(c, a));
+      ctx.fillStyle = g;
+      ctx.fillRect(-cx / rx, -cy / ry, W / rx, H / ry);
+      ctx.restore();
     };
-    for (let i = 0; i < 60; i += 1) {
-      const x = random() * size;
-      const y = random() * size;
-      const r = 24 + random() * 80;
+    // ellipse 85% 80% at 50% 50%: transparent 62%, --paper-edge 100%.
+    ellipse(W / 2, H / 2, 0.85 * W, 0.8 * H, [[0.62, edge, 0], [1, edge, edge[3]]]);
+    // ellipse 70% 55% at 50% 38%: --paper-hi 0%, transparent 72%.
+    ellipse(W / 2, 0.38 * H, 0.7 * W, 0.55 * H, [[0, hi, hi[3]], [0.72, hi, 0]]);
+
+    // Texture, at the scale and density of the earlier tile (25 mm = 320 of its pixels; 60
+    // mottles, 46 fibres and 500 specks per 25 mm square). Mottles and fibres are also seeded
+    // just beyond the cut, so the edge is as textured as the middle.
+    const PX = 25 / 320;
+    const random = rng(0x4b494c4e);
+    const count = (perSquare, margin) => Math.round((perSquare * (W + 2 * margin) * (H + 2 * margin)) / 625);
+    const spot = (margin) => [-margin + random() * (W + 2 * margin), -margin + random() * (H + 2 * margin)];
+    const mottleMargin = 104 * PX;
+    for (let i = 0, n = count(60, mottleMargin); i < n; i += 1) {
+      const [x, y] = spot(mottleMargin);
+      const r = (24 + random() * 80) * PX;
       const dark = random() < 0.5;
       const alpha = 0.012 + random() * 0.02;
-      wrap((dx, dy) => {
-        const g = ctx.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, r);
-        g.addColorStop(0, dark ? `rgba(150,110,58,${alpha})` : `rgba(255,252,240,${alpha * 1.6})`);
-        g.addColorStop(1, "rgba(150,110,58,0)");
-        ctx.fillStyle = g;
-        ctx.fillRect(x + dx - r, y + dy - r, r * 2, r * 2);
-      });
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, dark ? `rgba(150,110,58,${alpha})` : `rgba(255,252,240,${alpha * 1.6})`);
+      g.addColorStop(1, "rgba(150,110,58,0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(x - r, y - r, r * 2, r * 2);
     }
     ctx.lineCap = "round";
-    for (let i = 0; i < 46; i += 1) {
-      const x = random() * size;
-      const y = random() * size;
-      const len = 6 + random() * 22;
+    const fibreMargin = 28 * PX;
+    for (let i = 0, n = count(46, fibreMargin); i < n; i += 1) {
+      const [x, y] = spot(fibreMargin);
+      const len = (6 + random() * 22) * PX;
       const angle = random() * Math.PI;
-      const bend = (random() - 0.5) * 8;
+      const bend = (random() - 0.5) * 8 * PX;
       ctx.strokeStyle = `rgba(140,102,52,${0.03 + random() * 0.04})`;
-      ctx.lineWidth = 0.6 + random() * 0.7;
-      wrap((dx, dy) => {
-        const x2 = x + dx + Math.cos(angle) * len;
-        const y2 = y + dy + Math.sin(angle) * len;
-        ctx.beginPath();
-        ctx.moveTo(x + dx, y + dy);
-        ctx.quadraticCurveTo((x + x2 + dx) / 2 + bend, (y + y2 + dy) / 2 - bend, x2, y2);
-        ctx.stroke();
-      });
+      ctx.lineWidth = (0.6 + random() * 0.7) * PX;
+      const x2 = x + Math.cos(angle) * len;
+      const y2 = y + Math.sin(angle) * len;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.quadraticCurveTo((x + x2) / 2 + bend, (y + y2) / 2 - bend, x2, y2);
+      ctx.stroke();
     }
-    for (let i = 0; i < 500; i += 1) {
+    for (let i = 0, n = count(500, 0); i < n; i += 1) {
       ctx.fillStyle = `rgba(120,86,44,${0.03 + random() * 0.05})`;
-      const s = 0.6 + random() * 1.1;
-      ctx.fillRect(random() * size, random() * size, s, s);
+      const s = (0.6 + random() * 1.1) * PX;
+      const [x, y] = spot(0);
+      ctx.fillRect(x, y, s, s);
     }
     return canvas.toDataURL("image/png");
   }
@@ -657,11 +709,35 @@
     if (left < freeLeft - 0.5 || right > 50 * MM - freeLeft + 0.5) say("reward row reaches the bottom fret corners");
   }
 
+  /**
+   * A sheet prints nothing below its lowest printed point (`data-ink-bottom`, mm): on a sheet
+   * that is not full, the parchment, the cards and every cut line stop above the blank paper.
+   */
+  function checkSheet(sheet) {
+    const say = (message) => fail(`page ${sheet.dataset.sheet}: ${message}`);
+    const inkBottom = Number(sheet.dataset.inkBottom);
+    const rows = Number(sheet.dataset.rows);
+    const cards = sheet.querySelectorAll(".card").length;
+    if (!(rows >= 1 && rows <= 4) || !Number.isFinite(inkBottom)) return say("has no row count or ink limit");
+    if (cards > rows * 4 || cards <= (rows - 1) * 4) say(`${cards} cards on ${rows} rows`);
+    const limit = sheet.getBoundingClientRect().top + inkBottom * MM + 0.05 * MM;
+    for (const element of sheet.querySelectorAll(".bleed, .grid, .card, .cuts line")) {
+      const rect = element.getBoundingClientRect();
+      if (rect.bottom > limit) say(`${element.getAttribute("class") ?? element.tagName} reaches ${((rect.bottom - sheet.getBoundingClientRect().top) / MM).toFixed(2)} mm, below the ${inkBottom} mm ink limit`);
+    }
+  }
+
   // ---- Run --------------------------------------------------------------------------------
 
   try {
     await document.fonts.ready;
-    document.documentElement.style.setProperty("--paper-tex", `url("${paperTexture()}")`);
+    const firstCard = document.querySelector(".card");
+    if (firstCard !== null) {
+      const box = firstCard.getBoundingClientRect();
+      const paperMm = [box.width / MM, box.height / MM].map((mm) => Math.round(mm * 100) / 100);
+      document.documentElement.style.setProperty("--card-paper", `url("${cardPaper(...paperMm)}")`);
+      report.info.push(`card parchment: one opaque ${paperMm.join(" × ")} mm image at ${PAPER_PX_PER_MM} px/mm, painted once per card (no repeating tile)`);
+    }
     const cards = [...document.querySelectorAll(".card")];
     await Promise.all(cards.map((card) => drawArt(card.querySelector(".art"))));
 
@@ -739,6 +815,7 @@
     if (closest.de < input.minGlazeDeltaE) fail(`glazes ${closest.pair} differ by only ΔE ${closest.de.toFixed(1)} (minimum ${input.minGlazeDeltaE})`);
 
     for (const card of cards) checkCard(card);
+    for (const sheet of document.querySelectorAll(".sheet")) checkSheet(sheet);
     report.info.push(`ceramic images composited: ${tints.size}`);
   } catch (error) {
     fail(`page script: ${error && error.stack ? error.stack : String(error)}`);

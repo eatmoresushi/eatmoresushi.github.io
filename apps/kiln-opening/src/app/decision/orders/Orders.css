@@ -46,6 +46,14 @@
     gap: var(--sp-6);
   }
 
+  /* The auto mode's recorded Decorations ("Counts as Carved."), on a line of its own. */
+  .ord-decl-record {
+    display: block;
+    margin-block-start: var(--sp-1);
+    color: var(--ink);
+    font-weight: 600;
+  }
+
   .ord-verdict {
     display: inline-flex;
     flex-wrap: wrap;
@@ -64,25 +72,6 @@
 
   .ord-verdict-why {
     font-weight: 400;
-  }
-
-  .ord-barge {
-    display: grid;
-    gap: var(--sp-6);
-    padding: var(--sp-5);
-    border: 1px solid var(--line);
-    border-radius: var(--r-lg);
-    background: var(--surface-2);
-  }
-
-  .ord-barge-actions {
-    display: grid;
-    gap: var(--sp-3);
-  }
-
-  .ord-barge-error {
-    color: var(--bad-ink);
-    font-size: var(--fs-meta);
   }
 
   .ord-final-list {

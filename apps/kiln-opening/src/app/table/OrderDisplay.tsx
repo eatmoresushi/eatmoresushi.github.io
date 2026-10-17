@@ -3,7 +3,8 @@
  * Source: wireframe `displayRow`: `board.mainDisplay` (pending empty slots), deck and discard counts.
  *
  * The six face-up Main Orders, oldest (#1) to newest. A position emptied by a reservation stays
- * empty until the reserving player's turn ends ("Refills when Zhao’s turn ends", L191, L391);
+ * empty until the reserving player's turn ends ("Refills when Zhao’s turn ends", or "when your
+ * turn ends" for the viewer's own reservation; L191, L391);
  * a position left empty because both piles ran out says so (B1). The Main deck and its face-down
  * discard show their counts, as on the table (§5 "Deck counts"); the Fire deck never does (D4).
  * Display slots are table targets keyed `slot:<i>` (the Commission Market adapter).
@@ -39,7 +40,13 @@ export function OrderDisplay() {
           {orderId === null ? (
             <div className="ord-empty" data-motion="order-slot" data-motion-key={displaySlotKey(index)}>
               <span className="ord-slot" aria-hidden="true">{t("table.display.slot", { n: index + 1 })}</span>
-              <span>{pending === null ? t("table.display.emptyNone") : t.rich("table.display.emptyRefill", { name: playerName(pending) })}</span>
+              <span>
+                {pending === null
+                  ? t("table.display.emptyNone")
+                  : pending === model.viewerId
+                    ? t("table.display.emptyRefillYou")
+                    : t.rich("table.display.emptyRefill", { name: playerName(pending) })}
+              </span>
             </div>
           ) : (
             <OrderCard orderId={orderId} targetKey={displaySlotKey(index)} slot={index + 1} />

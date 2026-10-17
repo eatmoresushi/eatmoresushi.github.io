@@ -10,9 +10,11 @@
  * `kind` or `openKey` changes, and keeps (and revalidates) it otherwise:
  * - Kiln selection: the selection index;
  * - Setter's Mark and the queued firing steps (Test Pieces, Heat markers, Jun, after-Quality):
- *   the round and the queue index (plus the Test Pieces sub-step);
+ *   the round and the queue index (plus the Test Pieces sub-step); Second Firing's choice: the
+ *   round and the ceramic;
  * - the work turn and its sub-steps: the round, the active player and how many of their workers
- *   are placed (one per turn), plus the step;
+ *   are placed (one per turn), plus the step (and, at the Guild Hall, how many Techs the Shifu
+ *   has taken, so each take starts from a fresh draft);
  * - Contributions: the engine's `windowId`;
  * - Salvage and the hand trim: `openedAtRevision`;
  * - the Order Phase: the round and the turn index.
@@ -30,7 +32,6 @@ import type {
   PlayerView,
   PublicGameState,
   TechDiscipline,
-  WorkTurnStep,
   WorkerEffect,
 } from "../../game/index.ts";
 
@@ -42,11 +43,13 @@ export const DECISION_WINDOW_KINDS = [
   "commission",
   "guild_inspection",
   "colour_samples",
+  "colour_samples_swap",
   "contributions",
   "test_pieces",
   "heat_markers",
   "jun",
   "after_quality",
+  "second_firing",
   "salvage",
   "orders",
   "hand_limit",
@@ -75,23 +78,34 @@ export type DecisionWindow =
   | (WindowBase<"setters_mark"> & { queueIndex: number })
   | (WindowBase<"work"> & { step: "before_action" | "after_action" })
   | (WindowBase<"commission"> & {
-      awaiting: Extract<WorkTurnStep, { kind: "commission_market" }>["awaiting"];
+      /** The placement's effect (Senior Apprentice gives an Apprentice the Shifu effect, R12). */
       effect: WorkerEffect;
-      reservationsMade: number;
-      maxReservations: number;
+      /** 2 or 3 (v1.6.2 L195–196). */
+      lookSize: 2 | 3;
+      /** 1 or 2; at least 1 is always required. */
+      maxReservations: 1 | 2;
+      /** Cards the private look shows (up to `lookSize`, possibly 0, B1). */
+      lookedCount: number;
     })
-  | (WindowBase<"guild_inspection"> & { discipline: TechDiscipline })
+  | (WindowBase<"guild_inspection"> & {
+      discipline: TechDiscipline;
+      /** Techs the Shifu has taken in this action so far (0 or 1; v1.6.2 L207). */
+      takes: number;
+    })
   | WindowBase<"colour_samples">
+  | (WindowBase<"colour_samples_swap"> & {
+      /** The work step the swap was used in, and returns to (v1.6.2 L617). */
+      returnTo: "before_action" | "after_action";
+    })
   | (WindowBase<"contributions"> & { windowId: string })
   | (WindowBase<"test_pieces"> & { awaiting: "decision" | "bury"; queueIndex: number })
   | WindowBase<"heat_markers"> & { queueIndex: number }
-  | (WindowBase<"jun"> & {
-      /** Step 8, or the R7 window after Second Firing's extra Fire card. */
-      during: "heat_adjustment" | "second_firing";
-      /** The Second Firing ceramic (R7); null in step 8. */
-      ceramicId: CeramicId | null;
-    })
+  | (WindowBase<"jun"> & { queueIndex: number })
   | (WindowBase<"after_quality"> & { queueIndex: number })
+  | (WindowBase<"second_firing"> & {
+      /** The ceramic Second Firing recalculates with the chosen card (v1.6.2 L639, R7). */
+      ceramicId: CeramicId;
+    })
   | (WindowBase<"salvage"> & { openedAtRevision: number })
   | (WindowBase<"orders"> & { index: number })
   | (WindowBase<"hand_limit"> & { openedAtRevision: number })
@@ -138,16 +152,24 @@ function actingWindow(game: PublicGameState, phase: Exclude<GamePhase, { type: "
           return {
             ...base,
             kind: "commission",
-            awaiting: step.awaiting,
             effect: step.effect,
-            reservationsMade: step.reservationsMade,
+            lookSize: step.lookSize,
             maxReservations: step.maxReservations,
-            openKey: `${turn}:commission:${step.reservationsMade}:${step.awaiting}`,
+            lookedCount: step.lookedCount,
+            openKey: `${turn}:commission`,
           };
         case "guild_inspection":
-          return { ...base, kind: "guild_inspection", discipline: step.discipline, openKey: `${turn}:guild:${step.discipline}` };
+          return {
+            ...base,
+            kind: "guild_inspection",
+            discipline: step.discipline,
+            takes: step.takes.length,
+            openKey: `${turn}:guild:${step.discipline}:t${step.takes.length}`,
+          };
         case "colour_samples":
           return { ...base, kind: "colour_samples", openKey: `${turn}:colour_samples` };
+        case "colour_samples_swap":
+          return { ...base, kind: "colour_samples_swap", returnTo: step.returnTo, openKey: `${turn}:swap:${step.returnTo}` };
         default:
           return assertNever(step);
       }
@@ -159,11 +181,11 @@ function actingWindow(game: PublicGameState, phase: Exclude<GamePhase, { type: "
     case "firing_heat_markers":
       return { ...base, kind: "heat_markers", queueIndex: phase.queue.index, openKey: `r${round}:q${phase.queue.index}` };
     case "firing_heat_adjustment":
-      return { ...base, kind: "jun", during: "heat_adjustment", ceramicId: null, openKey: `r${round}:q${phase.queue.index}` };
-    case "firing_second_firing_jun":
-      return { ...base, kind: "jun", during: "second_firing", ceramicId: phase.ceramicId, openKey: `r${round}:second:${phase.ceramicId}` };
+      return { ...base, kind: "jun", queueIndex: phase.queue.index, openKey: `r${round}:q${phase.queue.index}` };
     case "firing_after_quality":
       return { ...base, kind: "after_quality", queueIndex: phase.queue.index, openKey: `r${round}:q${phase.queue.index}` };
+    case "firing_second_firing_choice":
+      return { ...base, kind: "second_firing", ceramicId: phase.ceramicId, openKey: `r${round}:second:${phase.ceramicId}` };
     case "firing_salvage":
       return { ...base, kind: "salvage", openedAtRevision: phase.openedAtRevision, openKey: `rev${phase.openedAtRevision}` };
     case "orders":

@@ -24,7 +24,9 @@
  *   it ends the turn being collected. A line is shown only when its event names the player whose
  *   command produced it (`playerId === actorId`), or is a Quality change their own ability made
  *   (`QUALITY_IMPROVED`, a Second Firing `QUALITY_ASSIGNED`). Table events (refills, the Kiln Die,
- *   Fire, Contribution reveals) and turn markers are left out.
+ *   Fire, Contribution reveals, the Fire deck reshuffle) and turn markers are left out, and so is
+ *   a Coins line the game log folds into its neighbour (an Order reward, Canal Barge's 2 Coins,
+ *   a salvage, the Imperial Grant, a Guild Hall payment), so the 4 lines carry the moves.
  * - **Grouped per turn.** Consecutive entries of one actor form one turn. A Work or Order turn
  *   ends at its `*_TURN_ENDED`, and a turn start always opens a new one. A turn may span several
  *   commands (and so several updates): the tracker keeps the open turn, and the next update adds
@@ -53,7 +55,7 @@
  * turn waits; the turn that then arrives gets its full `TOAST_MS` from the resume.
  */
 import type { GameEventType, PlayerId } from "../../game/index.ts";
-import { repeatsPreviousEntry } from "../i18n/events.ts";
+import { repeatsNextEntry, repeatsPreviousEntry } from "../i18n/events.ts";
 import type { LogEntry } from "../session/gameSource.ts";
 
 /** A toast shows this long after it appears (or after its turn last grew). */
@@ -81,7 +83,8 @@ export const TOAST_EVENTS: ReadonlySet<GameEventType> = new Set<GameEventType>([
   "HEAT_MARKER_PLACED",
   "ORDER_RESERVED",
   "PRIVATE_LOOK_OPENED",
-  "LOOKED_ORDERS_DISCARDED",
+  "LOOKED_ORDERS_TO_BOTTOM",
+  "HELD_ORDER_DISCARDED",
   "TECH_ACQUIRED",
   "TECHS_RETURNED_TO_BOTTOM",
   "PERSONAL_SPACE_UNLOCKED",
@@ -102,6 +105,7 @@ export const TOAST_EVENTS: ReadonlySet<GameEventType> = new Set<GameEventType>([
   "KILN_MASTER_PLACED",
   "JUN_ADJUSTED",
   "SECOND_FIRING_REVEALED",
+  "SECOND_FIRING_CHOSEN",
   "CRACKLE_APPLIED",
   "CERAMIC_SALVAGED",
   "ORDER_COMPLETED",
@@ -136,10 +140,13 @@ function playerOf(entry: LogEntry): PlayerId | null {
   return typeof value === "string" ? value : null;
 }
 
-/** Whether an entry of `entry.actorId`'s command is a line of their toast. */
-export function isToastLine(entry: LogEntry, previous: LogEntry | undefined): boolean {
+/**
+ * Whether an entry of `entry.actorId`'s command is a line of their toast. A line the game log
+ * folds into its neighbour (`repeatsPreviousEntry`, `repeatsNextEntry`) is none either.
+ */
+export function isToastLine(entry: LogEntry, previous: LogEntry | undefined, next?: LogEntry): boolean {
   const event = entry.event;
-  if (repeatsPreviousEntry(entry, previous)) return false;
+  if (repeatsPreviousEntry(entry, previous) || repeatsNextEntry(entry, next)) return false;
   if (event.type === "QUALITY_IMPROVED") return true;
   if (event.type === "QUALITY_ASSIGNED") return event.cause === "second_firing";
   return TOAST_EVENTS.has(event.type) && playerOf(entry) === entry.actorId;
@@ -199,7 +206,7 @@ export function advanceTurns(tracker: TurnTracker, log: readonly LogEntry[], vie
       continue;
     }
     if (open !== null && open.playerId !== actor) open = null;
-    if (isToastLine(entry, log[index - 1])) {
+    if (isToastLine(entry, log[index - 1], log[index + 1])) {
       const turn: Turn = open === null ? { key: entry.sequence, playerId: actor, entries: [entry] } : { ...open, entries: [...open.entries, entry] };
       open = turn;
       changed.set(turn.key, turn);

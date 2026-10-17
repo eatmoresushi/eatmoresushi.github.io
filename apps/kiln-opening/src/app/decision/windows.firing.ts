@@ -10,7 +10,8 @@
  *   chosen group's ceramics (`highlightedCeramicIds`); clicking a completable Order chooses it;
  * - hand trim: the hand's Order cards marked for discard (`discard` / `choosable`); clicking one
  *   toggles it;
- * - firing windows: the target ceramic of the draft (`highlightedCeramicIds`).
+ * - firing windows: the target ceramic of the draft (`highlightedCeramicIds`); Second Firing's
+ *   choice highlights its ceramic.
  * `final` and `waiting` never send a command (`noDraft()`).
  */
 import { heatMarkerStepOptions } from "../../game/index.ts";
@@ -36,6 +37,8 @@ import { heatMarkersDraft } from "./firing/HeatMarkers.draft.ts";
 import { Jun } from "./firing/Jun.tsx";
 import { junDraft } from "./firing/Jun.draft.ts";
 import { Salvage } from "./firing/Salvage.tsx";
+import { SecondFiring } from "./firing/SecondFiring.tsx";
+import { secondFiringDraft } from "./firing/SecondFiring.draft.ts";
 import { salvageDraft } from "./firing/Salvage.draft.ts";
 import { TestPieces } from "./firing/TestPieces.tsx";
 import { testPiecesDraft } from "./firing/TestPieces.draft.ts";
@@ -51,6 +54,7 @@ export type FiringWindowKind =
   | "heat_markers"
   | "jun"
   | "after_quality"
+  | "second_firing"
   | "salvage"
   | "orders"
   | "hand_limit"
@@ -120,6 +124,13 @@ export const FIRING_WINDOWS: { readonly [K in FiringWindowKind]: WindowSpecFor<K
       select: (draft) => highlight([draft.choice === null || draft.choice === "end" ? null : draft.choice.ceramicId]),
       act: () => null,
     },
+  }),
+  second_firing: defineWindow({
+    kind: "second_firing",
+    Component: SecondFiring,
+    draft: secondFiringDraft,
+    title: () => msg("firing.title.secondFiring", { tech: (t) => techName(B5_TECHS.secondFiring, t.locale) }),
+    table: { select: (_draft, model) => highlight([model.window.kind === "second_firing" ? model.window.ceramicId : null]), act: () => null },
   }),
   salvage: defineWindow({
     kind: "salvage",

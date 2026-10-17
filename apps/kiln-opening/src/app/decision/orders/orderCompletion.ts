@@ -1,12 +1,12 @@
 /**
  * The shared model of completing one held Order (UI_V1.6.1_ARCHITECTURE §3.4, §3.5; wireframe
- * `decOrders`). Owner: B5. Used by the Order Phase (`orderDraft`, `COMPLETE_ORDER`) and by
- * Canal Barge (`canalBargeDraft`, `USE_CANAL_BARGE`), which complete an Order for every effect
- * (R6).
+ * `decOrders`). Owner: B5. Used by the Order Phase (`orderDraft`, `COMPLETE_ORDER`): Orders are
+ * completed only there (v1.6.2 L296; Canal Barge no longer completes one, it pays 2 Coins on
+ * your first completion each round, an automatic trigger shown with the others).
  *
  * The draft is: an Order, one ceramic group, the Crackle declaration mode, and the optional
  * Ru/Guan and Tribute Ware decline flags (R4). Nothing here re-implements an Order rule:
- * - which held Orders are completable: `completableOrders` / `canalBargeOptions`;
+ * - which held Orders are completable: `completableOrders`;
  * - the ceramic groups: `orderMatchOptions` (the validator's matcher);
  * - Crackle verdicts: `crackleDeclarationChecks`, with an explicit "auto" mode in which the
  *   command omits `crackleDeclarations` and the engine searches (L470, L485, §9.4);
@@ -26,7 +26,7 @@ import type {
 import type { EngineView } from "../../state/model.ts";
 import { sameMembers } from "../firing/firingSupport.ts";
 
-export type CompletionCommandType = "COMPLETE_ORDER" | "USE_CANAL_BARGE";
+export type CompletionCommandType = "COMPLETE_ORDER";
 
 export interface CompletionDraft {
   readonly orderId: OrderId | null;
@@ -77,7 +77,7 @@ export function groupKey(ceramicIds: readonly CeramicId[]): string {
   return ceramicIds.join("+");
 }
 
-/** Which held Orders a form may complete now (`completableOrders` or `canalBargeOptions`). */
+/** Which held Orders a form may complete now (`completableOrders`). */
 export type CompletableSource = (engine: EngineView) => readonly OrderMatchOption[];
 
 function heldOrders(engine: EngineView): readonly OrderId[] {
@@ -185,8 +185,7 @@ export function buildCompletion(type: CompletionCommandType, draft: CompletionDr
 
 /** The draft that builds this command (§9.4), or null for another command type. */
 export function completionFromCommand(type: CompletionCommandType, command: AuthoritativeCommand): CompletionDraft | null {
-  if (command.type !== "COMPLETE_ORDER" && command.type !== "USE_CANAL_BARGE") return null;
-  if (command.type !== type) return null;
+  if (command.type !== "COMPLETE_ORDER" || command.type !== type) return null;
   return {
     orderId: command.orderId,
     ceramicIds: [...command.ceramicIds],
@@ -194,6 +193,21 @@ export function completionFromCommand(type: CompletionCommandType, command: Auth
     declineKilnAbility: command.declineKilnAbility === true,
     declineTributeWare: command.declineTributeWare === true,
   };
+}
+
+/**
+ * The Decoration each Crackle ceramic of the chosen group counts as for this Order, where it is
+ * not its own (L470): the declarations as given, or in the auto mode the ones the engine's search
+ * would record (`match.crackleDeclarations`; S07 "Carved, Impressed or Painted" takes one of the
+ * three). For words only: the auto command still omits them, and the engine records its own.
+ */
+export function countedDecorations(draft: CompletionDraft, options: CompletionOptions, engine: EngineView): ReadonlyMap<CeramicId, Decoration> {
+  const recorded = draft.declarations === "auto" ? (options.match?.crackleDeclarations ?? []) : draft.declarations;
+  const counted = new Map<CeramicId, Decoration>();
+  for (const entry of recorded) {
+    if (engine.view.game.ceramics[entry.ceramicId]?.decoration !== entry.decoration) counted.set(entry.ceramicId, entry.decoration);
+  }
+  return counted;
 }
 
 /** The decoration a draft declares for one Crackle ceramic (null: undeclared, its printed one). */

@@ -9,7 +9,10 @@
  * - "any Glaze" is the untinted neutral cutout, "any Decoration" the Plain cutout, "any Shape"
  *   a Bowl;
  * - Shape alternatives ("Bowl, Plate or Brush Washer") show every alternative, smaller, side by
- *   side (`layout: "alternatives"`);
+ *   side (`layout: "alternatives"`); Decoration alternatives ("any Shape · any Glaze · Carved,
+ *   Impressed or Painted") likewise show one ceramic per alternative Decoration, grouped the
+ *   same way (a Bowl each, for "any Shape"). A slot never has both kinds of alternative;
+ *   the run fails if one does;
  * - multi-ceramic Orders show each ceramic, grouped and slightly overlapping (`layout: "group"`):
  *   per-ceramic Glazes and Decorations as listed; "same Glaze" the same neutral; "different
  *   Glazes" distinct tints; "different Decorations" distinct Decorations; "same Decoration" one
@@ -50,17 +53,25 @@ export function illustrationFor(order: OrderData): Illustration {
   const relations: Relation[] = order.relations ?? [];
   const only = slots[0];
   if (slots.length === 1 && only !== undefined) {
+    if (only.shapes !== undefined && only.decorations !== undefined) {
+      throw new Error(`${order.id}: illustration: a ceramic with both Shape and Decoration alternatives`);
+    }
     const glaze = only.glaze ?? null;
     const decoration = only.decoration ?? "plain";
     if (only.shapes !== undefined) {
       return { layout: "alternatives", figures: only.shapes.map((shape) => ({ shape, glaze, decoration })) };
     }
-    return { layout: "single", figures: [{ shape: only.shape ?? "bowl", glaze, decoration }] };
+    const shape = only.shape ?? "bowl";
+    if (only.decorations !== undefined) {
+      return { layout: "alternatives", figures: only.decorations.map((alternative) => ({ shape, glaze, decoration: alternative })) };
+    }
+    return { layout: "single", figures: [{ shape, glaze, decoration }] };
   }
 
   const shapes: Array<Shape | undefined> = slots.map((slot) => slot.shape);
   const glazes: Array<Glaze | null | undefined> = slots.map((slot) => slot.glaze);
-  const decorations: Array<Decoration | undefined> = slots.map((slot) => slot.decoration);
+  // A ceramic of a multi-ceramic Order that may take any of several Decorations shows the first.
+  const decorations: Array<Decoration | undefined> = slots.map((slot) => slot.decoration ?? slot.decorations?.[0]);
   for (const relation of relations) {
     switch (relation.type) {
       case "required_glazes":
@@ -123,13 +134,21 @@ export function checkIllustration(order: OrderData, art: Illustration): string[]
     problems.push(`${order.id}: illustration ${message}`);
   };
   if (order.ceramics.length === 1) {
+    // One figure per alternative (Shape or Decoration), each otherwise as required.
     const slot = order.ceramics[0] ?? {};
-    const expected = slot.shapes ?? [slot.shape ?? "bowl"];
-    if (art.figures.map((figure) => figure.shape).join() !== expected.join()) say("shows the wrong Shape(s)");
-    for (const figure of art.figures) {
-      if (figure.glaze !== (slot.glaze ?? null)) say("shows the wrong Glaze");
-      if (figure.decoration !== (slot.decoration ?? "plain")) say("shows the wrong Decoration");
-    }
+    const shapes = slot.shapes ?? [slot.shape ?? "bowl"];
+    const decorations = slot.decorations ?? [slot.decoration ?? "plain"];
+    const count = Math.max(shapes.length, decorations.length);
+    const expectedLayout = count > 1 ? "alternatives" : "single";
+    if (shapes.length > 1 && decorations.length > 1) say("cannot show both Shape and Decoration alternatives");
+    if (art.layout !== expectedLayout) say(`layout "${art.layout}", expected "${expectedLayout}"`);
+    if (art.figures.length !== count) say(`has ${art.figures.length} ceramics for ${count} alternative(s)`);
+    const at = <T>(list: T[], index: number): T | undefined => (list.length === 1 ? list[0] : list[index]);
+    art.figures.forEach((figure, index) => {
+      if (figure.shape !== at(shapes, index)) say(`ceramic ${index + 1} shows the wrong Shape`);
+      if (figure.glaze !== (slot.glaze ?? null)) say(`ceramic ${index + 1} shows the wrong Glaze`);
+      if (figure.decoration !== at(decorations, index)) say(`ceramic ${index + 1} shows the wrong Decoration`);
+    });
     return problems;
   }
   const figures = art.figures;
@@ -138,6 +157,10 @@ export function checkIllustration(order: OrderData, art: Illustration): string[]
     const figure = figures[index];
     if (figure === undefined) return;
     if (slot.shape !== undefined && figure.shape !== slot.shape) say(`ceramic ${index + 1} is not a ${slot.shape}`);
+    if (slot.shapes !== undefined && !slot.shapes.includes(figure.shape)) say(`ceramic ${index + 1} is not one of ${slot.shapes.join("/")}`);
+    if (slot.glaze !== undefined && figure.glaze !== slot.glaze) say(`ceramic ${index + 1} is not ${slot.glaze}`);
+    if (slot.decoration !== undefined && figure.decoration !== slot.decoration) say(`ceramic ${index + 1} is not ${slot.decoration}`);
+    if (slot.decorations !== undefined && !slot.decorations.includes(figure.decoration)) say(`ceramic ${index + 1} is not one of ${slot.decorations.join("/")}`);
   });
   const distinct = (values: unknown[]): boolean => new Set(values).size === values.length;
   for (const relation of order.relations ?? []) {

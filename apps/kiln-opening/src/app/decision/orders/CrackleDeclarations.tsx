@@ -6,10 +6,12 @@
  * mode — the command omits `crackleDeclarations` and the engine searches — or a declaration per
  * Crackle ceramic (its own Decoration, or any one Decoration for this Order only). Every verdict
  * ("satisfies O39" / "does not satisfy O39") is `crackleDeclarationChecks`, the validator's own
- * matcher; the picker never re-implements an Order rule.
+ * matcher; the picker never re-implements an Order rule. The auto mode says what its search
+ * would record ("Counts as Carved": S07 "Carved, Impressed or Painted" takes one of the three).
  */
-import type { CeramicId, Decoration, OrderSelectionCheck } from "../../../game/index.ts";
+import type { CeramicId, CrackleDeclarationChecks, Decoration, OrderSelectionCheck } from "../../../game/index.ts";
 import { decorationName } from "../../i18n/content.ts";
+import { list } from "../../i18n/format.ts";
 import { errorTextOptions, ruleErrorText } from "../../i18n/errors.ts";
 import { useT } from "../../i18n/I18nProvider.tsx";
 import type { Translator } from "../../i18n/translator.ts";
@@ -56,6 +58,24 @@ function Verdict({ check, orderId, engine, t, withReason = false }: { check: Ord
   );
 }
 
+/**
+ * What the auto mode's search would record: "Counts as Carved." for one Crackle ceramic, or each
+ * ceramic with its Decoration for several; null when the auto mode completes nothing.
+ */
+function autoRecord(crackle: CrackleDeclarationChecks, model: GameModel, engine: EngineView, t: Translator): string | null {
+  if (!crackle.auto.ok) return null;
+  const recorded = crackle.auto.match.crackleDeclarations;
+  const printed = new Map(crackle.ceramics.map((entry) => [entry.ceramicId, entry.printedDecoration] as const));
+  const as = (ceramicId: CeramicId, decoration: Decoration) =>
+    decoration === printed.get(ceramicId) ? t("orders.decl.printed", { decoration: decorationName(decoration, t.locale) }) : decorationName(decoration, t.locale);
+  const [only] = recorded;
+  if (only === undefined) return null;
+  if (recorded.length === 1) return t("orders.decl.autoAs", { decoration: as(only.ceramicId, only.decoration) });
+  const mine = model.me?.finishedCeramicIds ?? [];
+  const items = recorded.map((entry) => t("orders.ceramicAs", { ceramic: ceramicWords(model, engine, entry.ceramicId, t, mine), decoration: as(entry.ceramicId, entry.decoration) }));
+  return t("orders.decl.autoAsList", { list: list(items, t.locale) });
+}
+
 export function CrackleDeclarations({ model, engine, draft, options, dispatch, namePrefix = "", step }: CrackleDeclarationsProps) {
   const t = useT();
   const crackle = options.crackle;
@@ -63,6 +83,7 @@ export function CrackleDeclarations({ model, engine, draft, options, dispatch, n
   if (crackle === null || orderId === null) return null;
   const mine = model.me?.finishedCeramicIds ?? [];
   const mode = draft.declarations === "auto" ? "auto" : "explicit";
+  const recorded = autoRecord(crackle, model, engine, t);
   return (
     <div className="ord-decl">
       <OptionGroup
@@ -72,7 +93,20 @@ export function CrackleDeclarations({ model, engine, draft, options, dispatch, n
         value={mode}
         onChange={(value) => dispatch({ type: "declarationMode", mode: value === "explicit" ? "explicit" : "auto" })}
       >
-        <OptionCard value="auto" title={t("orders.decl.auto")} description={t("orders.decl.autoDesc")} meta={<Verdict check={crackle.auto} orderId={orderId} engine={engine} t={t} withReason />} />
+        <OptionCard
+          value="auto"
+          title={t("orders.decl.auto")}
+          description={
+            recorded === null ? (
+              t("orders.decl.autoDesc")
+            ) : (
+              <>
+                {t("orders.decl.autoDesc")} <span className="ord-decl-record">{recorded}</span>
+              </>
+            )
+          }
+          meta={<Verdict check={crackle.auto} orderId={orderId} engine={engine} t={t} withReason />}
+        />
         <OptionCard value="explicit" title={t("orders.decl.explicit")} description={t("orders.decl.explicitDesc")} />
       </OptionGroup>
       {mode === "auto"

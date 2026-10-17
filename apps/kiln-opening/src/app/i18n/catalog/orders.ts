@@ -1,7 +1,7 @@
 import { defineNamespace } from "../defineNamespace.ts";
 
 /**
- * `orders` namespace: Order Phase, Canal Barge, Cleanup, final and rules-detail text. Owned by B5
+ * `orders` namespace: Order Phase, Cleanup, final and rules-detail text. Owned by B5
  * (UI_V1.6.1_ARCHITECTURE §4.2).
  *
  * Wireframe sources: `decOrders`, `decTrim`, `decFinal`, and owner decision D10 (rules details).
@@ -22,6 +22,7 @@ export const orders = defineNamespace({
     "turn.optional": "Optional abilities",
     "turn.optionalNote": "Declining keeps the once-per-round use.",
     "turn.use": "Use {name}",
+    "turn.canalBarge": "{tech}: +{n} Coins",
     "turn.sum": "Complete <b>{order}</b> with {ceramics}",
     "turn.sumEnd": "End your Order turn",
     "turn.pick": "Choose an Order to complete, or end your turn.",
@@ -30,25 +31,19 @@ export const orders = defineNamespace({
     "turn.crownNote": "Crowns advance Imperial Recognition one at a time, resolving every milestone crossed; beyond Recognition {max}, each Crown scores {vp} VP immediately.",
     "ceramicAs": "{ceramic} (as {decoration})",
     "requirementLine": "{requirements} · {quality}",
-    "barge.pick": "Choose a held Order to complete.",
 
     // Crackle declarations (L470, L485; `crackleDeclarationChecks`).
     "decl.legend": "Crackle declaration",
     "decl.auto": "Find a declaration for me",
     "decl.autoDesc": "The game picks Decorations for your Crackle ceramics that complete the Order, and records them.",
+    "decl.autoAs": "Counts as {decoration}.",
+    "decl.autoAsList": "Counts as: {list}.",
     "decl.explicit": "Declare each Crackle ceramic myself",
     "decl.explicitDesc": "Each Crackle ceramic may count as any one Decoration for this Order only.",
     "decl.countsAs": "{ceramic} counts as",
     "decl.printed": "Its own Decoration ({decoration})",
     "decl.ok": "satisfies {order}",
     "decl.no": "does not satisfy {order}",
-
-    // Canal Barge (before or after your worker action).
-    "barge.legend": "{tech}: complete a held Order now",
-    "barge.none": "None of your held Orders can be completed now.",
-    "barge.used": "Used this round.",
-    "barge.button": "Complete by {tech}",
-    "barge.sum": "Complete <b>{order}</b> by {tech} with {ceramics}",
 
     // Cleanup hand trim (parallel).
     "title.handLimit": "Discard down to your hand limit",
@@ -86,6 +81,7 @@ export const orders = defineNamespace({
     "turn.optional": "可选能力",
     "turn.optionalNote": "不使用则不消耗“每轮一次”。",
     "turn.use": "使用「{name}」",
+    "turn.canalBarge": "「{tech}」：得{n}铜钱",
     "turn.sum": "用{ceramics}完成<b>{order}</b>",
     "turn.sumEnd": "结束你的交货阶段回合",
     "turn.pick": "请选择要完成的委托，或结束回合。",
@@ -94,23 +90,18 @@ export const orders = defineNamespace({
     "turn.crownNote": "御令逐个推进御府声望，逐格结算途经的每项声望奖励；声望满{max}后，每个御令立即得{vp}分。",
     "ceramicAs": "{ceramic}（视为{decoration}）",
     "requirementLine": "{requirements} · {quality}",
-    "barge.pick": "请选择要完成的在手委托。",
 
     "decl.legend": "开片声明",
     "decl.auto": "自动寻找可行声明",
     "decl.autoDesc": "由系统为你的开片器选定能完成这张委托的纹饰，并记录在案。",
+    "decl.autoAs": "视为{decoration}。",
+    "decl.autoAsList": "视为：{list}。",
     "decl.explicit": "逐件自行声明",
     "decl.explicitDesc": "每件开片器都可以视为任意一种纹饰，只对这张委托有效。",
     "decl.countsAs": "{ceramic}视为",
     "decl.printed": "本身纹饰（{decoration}）",
     "decl.ok": "满足{order}",
     "decl.no": "不满足{order}",
-
-    "barge.legend": "「{tech}」：现在可以完成在手委托",
-    "barge.none": "你的在手委托现在都无法完成。",
-    "barge.used": "本轮已用。",
-    "barge.button": "用「{tech}」完成",
-    "barge.sum": "通过「{tech}」用{ceramics}完成<b>{order}</b>",
 
     "title.handLimit": "弃到委托上限",
     "trim.lead": "你持有{held}张委托，上限{limit}张：必须恰好弃置{n}张。起始委托放回盒中；主委托面朝下弃置。",

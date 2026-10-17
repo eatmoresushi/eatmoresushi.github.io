@@ -14,13 +14,13 @@ const EXPECTED: Record<string, DecisionWindowKind> = {
   "w-kiln-selection": "kiln_selection",
   "w-setters-mark-window": "setters_mark",
   "w-before-the-worker-action-rich-4-player-start": "work",
-  "w-before-the-worker-action-canal-barge-imperial-priority-with-reworking-table-ding": "work",
+  "w-before-the-worker-action-colour-samples-swap-imperial-priority-with-reworking-table-ding": "work",
   "w-before-the-worker-action-kiln-furniture-inverted-firing-targets-setters-marks-senior-apprentice": "work",
-  "w-commission-market-second-reservation-or-stop": "commission",
-  "w-commission-market-top-3-choice": "commission",
-  "w-commission-market-resource-after-a-blind-reservation": "commission",
+  "w-commission-market-shifu-top-3-look-2-reservations": "commission",
+  "w-commission-market-apprentice-top-2-look-1-reservation": "commission",
   "w-guild-hall-shifu-inspection": "guild_inspection",
   "w-colour-samples-choice": "colour_samples",
+  "w-colour-samples-swap-look": "colour_samples_swap",
   "w-after-the-worker-action": "work",
   "w-secret-contributions-with-fuel-ledger": "contributions",
   "w-test-pieces-decision": "test_pieces",
@@ -28,7 +28,7 @@ const EXPECTED: Record<string, DecisionWindowKind> = {
   "w-heat-marker-step-with-a-face-down-marker-and-kiln-master": "heat_markers",
   "w-jun-heat-adjustment": "jun",
   "w-after-quality-saggars-and-ge": "after_quality",
-  "w-jun-during-second-firing-r7": "jun",
+  "w-second-firing-choice-with-jun-r7": "second_firing",
   "w-salvage": "salvage",
   "w-order-phase-with-ru-tribute-ware-and-a-crackle-wildcard": "orders",
   "w-cleanup-hand-limit": "hand_limit",
@@ -49,7 +49,7 @@ const EXPECTED: Record<string, DecisionWindowKind> = {
   m5_two_player_board_2p: "work",
   m6_order_phase_crackle_3p: "orders",
   m7_cleanup_hand_limit_3p: "hand_limit",
-  m8_final_results_3p: "final",
+  m8_final_results_4p: "final",
   m9_contributions_step1_3p: "contributions",
   m10a_setters_mark_window: "setters_mark",
   m10b_setters_mark_on_space: "waiting",
@@ -61,7 +61,12 @@ const EXPECTED: Record<string, DecisionWindowKind> = {
   m15_kiln_selection: "kiln_selection",
   m16_colour_samples: "colour_samples",
   m17_after_action: "work",
-  m18_jun_second_firing: "jun",
+  m18_jun_second_firing: "second_firing",
+  m19_commission_apprentice_look: "commission",
+  m20_colour_samples_swap_look: "colour_samples_swap",
+  m21_guild_shifu_second_take: "guild_inspection",
+  m22_saggars_upgrade: "after_quality",
+  m23_order_phase_s07: "orders",
 };
 
 /** A view of another seat at the same table (`own` cleared: what a spectator would see). */
@@ -93,12 +98,39 @@ describe("decisionWindow", () => {
     expect(after.kind === "work" && after.step).toBe("after_action");
   });
 
-  it("names the R7 Jun window and its ceramic", () => {
-    const window = decisionWindow(fixture("w-jun-during-second-firing-r7").playerView);
-    expect(window.kind === "jun" && window.during).toBe("second_firing");
-    expect(window.kind === "jun" && window.ceramicId).toMatch(/^c\d+$/);
+  it("names Second Firing's choice and its ceramic; Jun is step 8 only (v1.6.2 L631, R7)", () => {
+    const view = fixture("w-second-firing-choice-with-jun-r7").playerView;
+    const window = decisionWindow(view);
+    expect(window.kind).toBe("second_firing");
+    const phase = view.game.phase as { ceramicId: string };
+    expect(window.kind === "second_firing" && window.ceramicId).toBe(phase.ceramicId);
+    expect(window.openKey).toContain(phase.ceramicId);
     const step8 = decisionWindow(fixture("w-jun-heat-adjustment").playerView);
-    expect(step8.kind === "jun" && step8.during).toBe("heat_adjustment");
+    expect(step8.kind).toBe("jun");
+  });
+
+  it("carries the Commission Market step's look size and reservation limit (v1.6.2 L195–196)", () => {
+    const shifu = decisionWindow(fixture("w-commission-market-shifu-top-3-look-2-reservations").playerView);
+    expect(shifu.kind === "commission" && [shifu.effect, shifu.lookSize, shifu.maxReservations]).toEqual(["shifu", 3, 2]);
+    const apprentice = decisionWindow(fixture("w-commission-market-apprentice-top-2-look-1-reservation").playerView);
+    expect(apprentice.kind === "commission" && [apprentice.effect, apprentice.lookSize, apprentice.maxReservations]).toEqual(["apprentice", 2, 1]);
+  });
+
+  it("carries the played V1.6.2 moments' steps: the Apprentice's look of 2, a second Guild Hall take (v1.6.2 L195, L207)", () => {
+    const look = decisionWindow(fixture("m19_commission_apprentice_look").playerView);
+    expect(look.kind === "commission" && [look.effect, look.lookSize, look.maxReservations, look.lookedCount]).toEqual(["apprentice", 2, 1, 2]);
+    const second = decisionWindow(fixture("m21_guild_shifu_second_take").playerView);
+    expect(second.kind === "guild_inspection" && second.takes).toBe(1);
+    expect(second.openKey).toMatch(/:t1$/);
+    const swap = decisionWindow(fixture("m20_colour_samples_swap_look").playerView);
+    expect(swap.kind === "colour_samples_swap" && swap.returnTo).toBe("before_action");
+  });
+
+  it("names the step the Colour Samples swap returns to", () => {
+    const view = fixture("w-colour-samples-swap-look").playerView;
+    const window = decisionWindow(view);
+    const step = (view.game.phase as { step: { returnTo: string } }).step;
+    expect(window.kind === "colour_samples_swap" && window.returnTo).toBe(step.returnTo);
   });
 
   it("shows a spectator the waiting window, and a finished game the final window", () => {
@@ -160,6 +192,14 @@ describe("open keys (§3.5)", () => {
     const phase = view.game.phase as { index: number };
     const next: PlayerView = { ...view, game: { ...view.game, phase: { ...view.game.phase, index: phase.index + 1 } as typeof view.game.phase } };
     expect(key(next)).not.toBe(key(view));
+  });
+
+  it("change with each Guild Hall take, so the second take starts from a fresh draft", () => {
+    const view = fixture("w-guild-hall-shifu-inspection").playerView;
+    const phase = view.game.phase as Extract<PlayerView["game"]["phase"], { type: "work_turn" }>;
+    const step = phase.step as Extract<typeof phase.step, { kind: "guild_inspection" }>;
+    const taken: PlayerView = { ...view, game: { ...view.game, phase: { ...phase, step: { ...step, takes: [...step.takes, { kind: "face_up", techId: "T01" }] } } } };
+    expect(key(taken)).not.toBe(key(view));
   });
 
   it("change between work turns and between the steps of one turn", () => {

@@ -8,11 +8,15 @@
  * returns the selector's own command, so the window ID is always the open window's.
  *
  * - The Fuel Ledger toggle applies only to cards that have a Fuel Ledger variant (Bank and
- *   Stoke); while it is on, a card without one is unavailable (wireframe `ctFuelNA`).
+ *   Stoke); while it is on, a card without one is unavailable (wireframe `ctFuelNA`). It cannot
+ *   be turned on when no card with the commitment is affordable.
+ * - A card that costs less than its printed Wood (Fuel Ledger's free Bank and Stoke, v1.6.2
+ *   L637) is marked, so the form can say why it costs no Wood. The costs themselves are the
+ *   selector's.
  * - An unaffordable choice is shown with its reason and never selected.
  */
 import type { ContributionCardId, ContributionOption } from "../../../game/index.ts";
-import { contributionOptions } from "../../../game/index.ts";
+import { contributionCard, contributionOptions } from "../../../game/index.ts";
 import { contributionCardName, techName } from "../../i18n/content.ts";
 import { signed } from "../../i18n/format.ts";
 import { msg } from "../../i18n/translator.ts";
@@ -31,6 +35,8 @@ export type ContributionsAction = { readonly type: "card"; readonly card: Contri
 export interface ContributionCardChoice {
   card: ContributionCardId;
   option: ContributionOption;
+  /** The card costs less Wood than its printed cost (Fuel Ledger's free Bank and Stoke, v1.6.2 L637). */
+  belowPrintedCost: boolean;
   /** Unavailable: unaffordable, or the toggle is on and this card has no Fuel Ledger variant. */
   available: boolean;
   /** Why it is unavailable. */
@@ -40,8 +46,18 @@ export interface ContributionCardChoice {
 export interface ContributionsOptions {
   /** The cards in the selector's order (Tend, Bank, Stoke). */
   cards: ContributionCardChoice[];
-  /** Fuel Ledger is owned: the toggle is offered, with the cards it applies to. */
-  fuelLedger: { appliesTo: ContributionCardId[]; bank: ContributionOption | null; stoke: ContributionOption | null } | null;
+  /**
+   * Fuel Ledger is owned: the toggle is offered, with the cards it applies to, the Wood the
+   * commitment adds (the Fuel Ledger variant's cost less the card's own) and whether any card
+   * with the commitment is affordable now.
+   */
+  fuelLedger: {
+    appliesTo: ContributionCardId[];
+    bank: ContributionOption | null;
+    stoke: ContributionOption | null;
+    commitWood: number;
+    canCommit: boolean;
+  } | null;
   /** The option the draft would submit, or null. */
   chosen: ContributionOption | null;
 }
@@ -62,21 +78,31 @@ function optionsFor(draft: ContributionsDraft, engine: EngineView): Contribution
   const cards = base.map((plain): ContributionCardChoice => {
     const card = plain.command.card;
     const withFuel = find(fuel, card, true);
-    if (fuelOn && withFuel === null) return { card, option: plain, available: false, reason: "fuel_ledger_bank_stoke" };
+    const belowPrintedCost = plain.woodCost < contributionCard(card).woodCost;
+    if (fuelOn && withFuel === null) return { card, option: plain, belowPrintedCost, available: false, reason: "fuel_ledger_bank_stoke" };
     const option = fuelOn && withFuel !== null ? withFuel : plain;
-    return { card, option, available: option.affordable, reason: option.affordable ? null : "cant_afford" };
+    return { card, option, belowPrintedCost, available: option.affordable, reason: option.affordable ? null : "cant_afford" };
   });
   const chosen = draft.card === null ? null : cards.find((choice) => choice.card === draft.card && choice.available)?.option ?? null;
+  return { cards, fuelLedger: fuelLedgerOf(base, fuel), chosen };
+}
+
+function fuelLedgerOf(base: readonly ContributionOption[], fuel: readonly ContributionOption[]): ContributionsOptions["fuelLedger"] {
+  if (fuel.length === 0) return null;
+  const first = fuel[0]!;
+  const plain = find(base, first.command.card, false);
   return {
-    cards,
-    fuelLedger: fuel.length === 0 ? null : { appliesTo: fuel.map((option) => option.command.card), bank: find(fuel, "BANK", true), stoke: find(fuel, "STOKE", true) },
-    chosen,
+    appliesTo: fuel.map((option) => option.command.card),
+    bank: find(fuel, "BANK", true),
+    stoke: find(fuel, "STOKE", true),
+    commitWood: plain === null ? first.woodCost : first.woodCost - plain.woodCost,
+    canCommit: fuel.some((option) => option.affordable),
   };
 }
 
 function revalidate(draft: ContributionsDraft, engine: EngineView): ContributionsDraft {
   const options = optionsFor(draft, engine);
-  const fuelLedger = draft.fuelLedger && options.fuelLedger !== null;
+  const fuelLedger = draft.fuelLedger && options.fuelLedger !== null && options.fuelLedger.canCommit;
   const settled = fuelLedger === draft.fuelLedger ? options : optionsFor({ ...draft, fuelLedger }, engine);
   const card = draft.card !== null && settled.cards.some((choice) => choice.card === draft.card && choice.available) ? draft.card : null;
   return card === draft.card && fuelLedger === draft.fuelLedger ? draft : { card, fuelLedger };
@@ -98,7 +124,8 @@ export const contributionsDraft: DraftModel<ContributionsDraft, ContributionsAct
         return choice === undefined || !choice.available ? draft : { ...draft, card: action.card };
       }
       case "fuelLedger": {
-        if (optionsFor(draft, engine).fuelLedger === null) return draft;
+        const fuelLedger = optionsFor(draft, engine).fuelLedger;
+        if (fuelLedger === null || (action.on && !fuelLedger.canCommit)) return draft;
         const next = { ...draft, fuelLedger: action.on };
         return revalidate(next, engine);
       }

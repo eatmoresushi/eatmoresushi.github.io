@@ -3,8 +3,13 @@
  * Source: wireframe `fireDiscardHtml`: the open Fire discard, the only Fire-deck information (D4).
  *
  * The face-up discard pile, oldest first, as a list of turned Fire cards. Owner decision D4: this
- * is all the Fire-deck information on screen; never a count of cards left or an odds line. After
- * a reshuffle the discard is empty and reads "none yet".
+ * is all the Fire-deck information on screen; never a count of cards left or an odds line.
+ *
+ * The Fire deck can run out (Second Firing turns 2 extra cards, v1.6.2 L631): the open discard is
+ * then shuffled and put on top of the deck, above any card Test Pieces put on the bottom (L511,
+ * L640, R15). The list is the engine's `fireDiscard` as it is now, so after a reshuffle it holds
+ * only the cards discarded since, and reads "none yet" until the next one (as before the first
+ * Fire card; the table's small kiln uses the same words). The game log records the reshuffle.
  */
 import type { FireModifier } from "../../game/index.ts";
 import { useT } from "../i18n/I18nProvider.tsx";

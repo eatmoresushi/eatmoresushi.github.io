@@ -1,8 +1,9 @@
 /**
  * The expressibility helper itself (UI_V1.6.1_ARCHITECTURE §9.4): stub windows report `todo`
  * (CR B4-3, B5-3: checked on a registry of `stubDraft()` windows, since the real ones are real);
- * a real draft model passes; each of the four checks fails a model that breaks it; Canal Barge
- * routes to its own form; exhaustive mode samples above its cap.
+ * a real draft model passes; each of the four checks fails a model that breaks it; the Colour
+ * Samples swap belongs to the work window (V1.6.2 has no Canal Barge form); exhaustive mode samples
+ * above its cap.
  */
 import { describe, expect, it } from "vitest";
 import type { AuthoritativeCommand } from "../../../../src/game/index.ts";
@@ -30,12 +31,11 @@ describe("expressibility helper", () => {
   it("reports a stub window (stubDraft) as todo, never as a failure", () => {
     // The real windows are no longer stubs (B4, B5); a registry of stubs keeps the helper honest.
     const registry = stubbed();
-    const canalBarge = stubDraft() as unknown as NonNullable<Parameters<typeof checkView>[1]>["canalBarge"];
     const acting = allFixtures().filter((entry) => entry.viewerActs === true);
     expect(acting.length).toBeGreaterThan(30);
     let rows = 0;
     for (const entry of acting) {
-      const report = checkView(entry.playerView, canalBarge === undefined ? { registry } : { registry, canalBarge });
+      const report = checkView(entry.playerView, { registry });
       expect(report.rows.length, entry.id).toBeGreaterThan(0);
       for (const row of report.rows) expect(row.status, `${entry.id} ${row.command.type}`).toBe("todo");
       rows += report.rows.length;
@@ -69,18 +69,21 @@ describe("expressibility helper", () => {
     expect(incomplete.rows.every((row) => row.problem === "build returned null")).toBe(true);
   });
 
-  it("routes Canal Barge to its own form", () => {
-    const view = fixture("w-after-the-worker-action").playerView;
+  it("routes the Colour Samples swap to the work window, and offers no Canal Barge command", () => {
+    const view = fixture("m17_after_action").playerView;
     const commands = commandsFor(view).commands;
-    const barge = commands.find((command) => command.type === "USE_CANAL_BARGE");
-    expect(barge).toBeDefined();
+    const swap = commands.find((command) => command.type === "USE_COLOUR_SAMPLES_SWAP");
+    expect(swap).toBeDefined();
+    expect(commands.map((command) => command.type as string)).not.toContain("USE_CANAL_BARGE");
     const report = checkView(view);
-    expect(report.rows.find((row) => row.command.type === "USE_CANAL_BARGE")?.form).toBe("canal_barge");
+    const row = report.rows.find((candidate) => candidate.command.type === "USE_COLOUR_SAMPLES_SWAP");
+    expect(row?.form).toBe("work");
+    expect(row?.status).toBe("ok");
     expect(formFor({ type: "END_TURN" }, report.window).form).toBe("work");
   });
 
   it("normalises absent and false optional flags", () => {
-    const a = { type: "PLACE_MATERIALS_YARD", workerId: "w", clay: 2, wood: 1, buyShifuBonus: false } as AuthoritativeCommand;
+    const a = { type: "PLACE_MATERIALS_YARD", workerId: "w", clay: 2, wood: 1, seniorApprentice: false } as AuthoritativeCommand;
     const b = { type: "PLACE_MATERIALS_YARD", workerId: "w", clay: 2, wood: 1 } as AuthoritativeCommand;
     expect(normalizeCommand(a)).toEqual(normalizeCommand(b));
     expect(normalizeCommand({ loads: [{ x: false, y: 1 }] })).toEqual({ loads: [{ y: 1 }] });

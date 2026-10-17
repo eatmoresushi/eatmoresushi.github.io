@@ -21,7 +21,7 @@ import {
   shortTextSegments,
 } from "../../../../src/game/index.ts";
 import type { CentralLocationId, LocationId } from "../../../../src/game/index.ts";
-import { guildOptions } from "../../../../src/game/index.ts";
+import { guildInspectionOptions, guildOptions } from "../../../../src/game/index.ts";
 import { WINDOWS } from "../../../../src/app/decision/windows.ts";
 import { workDraft } from "../../../../src/app/decision/work/workDraft.ts";
 import { disciplineName, locationName, recognitionMilestones, techText } from "../../../../src/app/i18n/content.ts";
@@ -235,12 +235,23 @@ describe("KilnMini", () => {
 // ── Orders ────────────────────────────────────────────────────────────────────────────────
 
 describe("OrderDisplay", () => {
-  it("leaves a reserved position empty until the reserver's turn ends (m2)", () => {
-    const en = render("m2_commission_market_look_r3_4p", <OrderDisplay />);
-    expect(en).toContain("Empty. Refills when <strong>Zhao</strong>’s turn ends.");
-    const zh = render("m2_commission_market_look_r3_4p", <OrderDisplay />, { locale: "zh-CN" });
-    expect(zh).toContain("空位：<strong>Zhao</strong>的回合结束时补榜。");
-    const counts = viewOf("m2_commission_market_look_r3_4p").game.counts;
+  it("leaves a reserved position empty until the reserver's turn ends (m2 after its reservation)", () => {
+    const id = "d-commission-after-face-up-reservation";
+    // The viewer's own reservation says "your turn"; another player's names them.
+    const en = render(id, <OrderDisplay />);
+    expect(en).toContain("Empty. Refills when your turn ends.");
+    expect(render(id, <OrderDisplay />, { locale: "zh-CN" })).toContain("空位：你的回合结束时补榜。");
+    const entry = structuredClone(fixture(id));
+    const other = Object.keys(entry.playerView.game.players).find((playerId) => playerId !== entry.viewerId)!;
+    entry.playerView.game.market.refillPendingFor = other;
+    const name = entry.playerView.game.players[other]!.displayName;
+    const others = renderComponent(new FixtureGameSource(entry), <OrderDisplay />, { registry: TABLE_WINDOWS });
+    expect(others).toContain(`Empty. Refills when <strong>${name}</strong>’s turn ends.`);
+    const zh = renderComponent(new FixtureGameSource(entry), <OrderDisplay />, { registry: TABLE_WINDOWS, locale: "zh-CN" });
+    expect(zh).toContain(`空位：<strong>${name}</strong>的回合结束时补榜。`);
+    // During the look nothing is reserved yet, so the display is full (v1.6.2 L195–196).
+    expect(render("m2_commission_market_look_r3_4p", <OrderDisplay />)).not.toContain("Refills when");
+    const counts = viewOf(id).game.counts;
     expect(textOf(en)).toContain(`Main deck ${counts.mainDeck} · discard ${counts.mainDiscard} (face down)`);
     expect(textOf(en)).toContain("#1 oldest → #6 newest");
   });
@@ -254,19 +265,21 @@ describe("OrderDisplay", () => {
 
   it("prints each face-up Order: number, kind, VP, requirement, quality line, Coins and Crowns", () => {
     const html = render("m1_work_phase_r2_3p", <OrderDisplay />);
-    const face = visibleText(orderCard(html, "O21"));
-    expect(face).toContain("O21");
+    const face = visibleText(orderCard(html, "O18"));
+    expect(face).toContain("O18");
     expect(face).toContain("Crown");
-    expect(face).toContain("9 VP");
-    expect(face).toContain("Plate · White · Plain");
-    expect(face).toContain("Masterpiece");
-    expect(face).toContain("1 Coin");
+    expect(face).toContain("6 VP");
+    expect(face).toContain("Vase · Celadon · any Decoration");
+    expect(face).toContain("Fine+");
+    expect(face).toContain("2 Coins");
     expect(face).toContain("1 Crown");
-    expect(orderCard(html, "O21")).toContain('class="ord ord--crown"');
+    expect(orderCard(html, "O18")).toContain('class="ord ord--crown"');
+    // A re-valued Main Order prints its V1.6.2 value (change 24): O26 11 VP.
+    expect(visibleText(orderCard(html, "O26"))).toContain("11 VP");
   });
 
   it("marks display slots the Commission adapter offers, keyed slot:<i>", () => {
-    const id = "w-commission-market-second-reservation-or-stop";
+    const id = "w-commission-market-shifu-top-3-look-2-reservations";
     const html = render(id, <OrderDisplay />, { draft: { slot: 1 } });
     expect(html).toMatch(/data-motion-key="slot:1"[^>]*>/);
     expect(html).toMatch(/data-target="chosen"[^>]*data-motion-key="slot:1"/);
@@ -294,9 +307,11 @@ describe("LookedOrders", () => {
 });
 
 describe("HandRow", () => {
-  it("shows the viewer's hand with its limit, and warns when Cleanup will trim (m2)", () => {
-    const html = render("m2_commission_market_look_r3_4p", <HandRow />);
-    const hand = viewOf("m2_commission_market_look_r3_4p").own?.orderHand ?? [];
+  it("shows the viewer's hand with its limit, and warns when Cleanup will trim (m2 after its reservation)", () => {
+    const id = "d-commission-after-face-up-reservation";
+    const html = render(id, <HandRow />);
+    const hand = viewOf(id).own?.orderHand ?? [];
+    expect(hand).toHaveLength(5);
     for (const orderId of hand) expect(html).toContain(`data-order-id="${orderId}"`);
     expect(textOf(html)).toContain(`${hand.length}/4 held`);
     expect(textOf(html)).toContain("Over the limit: trimmed at Cleanup");
@@ -439,8 +454,8 @@ describe("TechDisplay: the Guild Hall chooser (owner review, 2026-10-17)", () =>
     expect(real("m5_two_player_board_2p", placed("m5_two_player_board_2p", "canal_wharf", "apprentice"))).not.toContain("data-tech-chooser");
   });
 
-  it("buy (Apprentice): every face-up Tech is a toggle; one it cannot buy is greyed out with the engine's reason", () => {
-    const id = "m5_two_player_board_2p";
+  it("buy (Apprentice): every face-up Tech is a toggle at its printed cost; one it cannot buy is greyed out with the engine's reason", () => {
+    const id = "w-before-the-worker-action-kiln-furniture-inverted-firing-targets-setters-marks-senior-apprentice";
     const html = real(id, placed(id, "guild_hall", "apprentice"));
     expect(html).toMatch(/<p id="[^"]+" class="techs-choose" tabindex="-1" data-tech-chooser="">Apprentice at the Guild Hall: choose a face-up Tech to buy<\/p>/);
     expect(html).toMatch(/<div class="techs" role="group" aria-labelledby="[^"]+">/);
@@ -448,6 +463,8 @@ describe("TechDisplay: the Guild Hall chooser (owner review, 2026-10-17)", () =>
       const button = new RegExp(`<button type="button" class="tech-pick" data-act="tech" data-tech-id="${option.techId}" aria-pressed="false"${option.legal ? "" : ' aria-disabled="true"'} aria-labelledby="[^"]+" aria-describedby="[^"]+"`);
       expect(html, option.techId).toMatch(button);
       const tile = html.slice(html.lastIndexOf("<div", html.indexOf(`data-act="tech" data-tech-id="${option.techId}"`)));
+      // The printed cost alone (no Shifu discount, owner revision 2026-10-17).
+      expect(/class="tech-cost">([^<]*)</.exec(tile)?.[1], option.techId).toBe(`${String(option.cost)} ${option.cost === 1 ? "Coin" : "Coins"}`);
       if (!option.legal) {
         expect(tile.slice(0, 80)).toContain("tech--unavailable");
         expect(visibleText(tile.slice(0, tile.indexOf("</li>")))).toMatch(/You already own|Not enough|at most/);
@@ -456,6 +473,22 @@ describe("TechDisplay: the Guild Hall chooser (owner review, 2026-10-17)", () =>
     // The chooser tiles open no rules details.
     expect(html).not.toContain("kit-detail-trigger");
     expect(textOf(real(id, placed(id, "guild_hall", "apprentice"), "zh-CN"))).toContain("派学徒到陶工行：选择要习得的公开技艺");
+  });
+
+  it("a taken Tech's position stays empty until the taker's turn ends (v1.6.2 L209), shown as an empty tile, with no count", () => {
+    // m17: Lin took Colour Samples (Glazing & Loading) this turn and is in the after-action window.
+    const id = "m17_after_action";
+    const view = viewOf(id);
+    expect(view.game.techDisplay.glazing_loading).toHaveLength(1);
+    const html = renderComponent(fixtureSource(id), <TechDisplay />, { registry: WINDOWS });
+    const column = html.slice(html.indexOf('data-discipline="glazing_loading"'), html.indexOf('data-discipline="firing"'));
+    expect((column.match(/data-empty-position=""/g) ?? []).length).toBe(1);
+    expect(textOf(column)).toContain("Empty until this turn ends");
+    expect(textOf(renderComponent(fixtureSource(id), <TechDisplay />, { registry: WINDOWS, locale: "zh-CN" }))).toContain("空着，本回合结束时补上");
+    // Full columns, and a column whose deck ran out, show no empty position.
+    expect((html.match(/data-empty-position=""/g) ?? []).length).toBe(1);
+    const rich = renderComponent(fixtureSource("w-before-the-worker-action-rich-4-player-start"), <TechDisplay />, { registry: WINDOWS });
+    expect(rich).not.toContain("data-empty-position");
   });
 
   it("inspect (Shifu): each discipline offers its deck; the Techs keep their rules details", () => {
@@ -478,16 +511,57 @@ function decodeEntities(text: string): string {
 }
 
 describe("TechDisplay: Guild Hall Shifu inspection", () => {
+  /** The table as a seat that is not the looker sees it: no inspection window, so no chooser. */
+  const { table: _chooser, ...inspection } = TABLE_WINDOWS.guild_inspection;
+  const ONLOOKER_WINDOWS: typeof TABLE_WINDOWS = { ...TABLE_WINDOWS, guild_inspection: inspection };
+
   it("says who is looking at how many Techs, never which (m12)", () => {
     const id = "m12_guild_shifu_inspection";
     const look = viewOf(id).game.counts.pendingLook!;
     expect(look.kind).toBe("guild_inspection");
-    const en = render(id, <TechDisplay />);
+    const en = render(id, <TechDisplay />, { registry: ONLOOKER_WINDOWS });
     expect(en).toContain(`class="techs-looking" data-player-id="${look.playerId}"`);
     expect(textOf(en)).toMatch(new RegExp(`is looking at ${look.count} Techs?`));
     expect(textOf(en)).not.toMatch(/looking at \d+ Orders?/);
     for (const secret of secretIds(id)) expect(en).not.toMatch(new RegExp(`\\b${secret}\\b`));
-    expect(textOf(render(id, <TechDisplay />, { locale: "zh-CN" }))).toContain(`正在查看${look.count}张技艺`);
+    expect(textOf(render(id, <TechDisplay />, { locale: "zh-CN", registry: ONLOOKER_WINDOWS }))).toContain(`正在查看${look.count}张技艺`);
+  });
+
+  it("the looker's own display is the take chooser: its prompt, every face-up Tech at its printed cost, no inspected Tech and no \"is looking\" line (D14, v1.6.2 L207)", () => {
+    const id = "m12_guild_shifu_inspection";
+    const view = viewOf(id);
+    const options = guildInspectionOptions(view)!;
+    const html = render(id, <TechDisplay />);
+    expect(html).toContain('data-chooser="take"');
+    expect(html).not.toContain("techs-looking");
+    expect(html).toMatch(/<p id="[^"]+" class="techs-choose" tabindex="-1" data-tech-chooser="">Shifu at the Guild Hall: take a face-up Tech here, or one of the Techs you inspected<\/p>/);
+    const buttons = [...html.matchAll(/data-act="tech" data-tech-id="(T\d+)"/g)].map((match) => match[1]);
+    expect(buttons).toEqual(options.faceUp.map((option) => option.techId));
+    // The inspected Techs are private and stay in the pane (B2): never on the display.
+    for (const option of options.inspected) expect(html).not.toContain(`data-tech-id="${option.techId}"`);
+    for (const secret of secretIds(id)) expect(html).not.toMatch(new RegExp(`\\b${secret}\\b`));
+    for (const option of options.faceUp) {
+      const tile = html.slice(html.lastIndexOf("<div", html.indexOf(`data-act="tech" data-tech-id="${option.techId}"`)));
+      expect(/class="tech-cost">([^<]*)</.exec(tile)?.[1], option.techId).toBe(`${String(option.cost)} ${option.cost === 1 ? "Coin" : "Coins"}`);
+      expect(tile.slice(0, 80).includes("tech--unavailable"), option.techId).toBe(!option.legal);
+    }
+    expect(textOf(render(id, <TechDisplay />, { locale: "zh-CN" }))).toContain("师傅在陶工行：在这里习得一张公开技艺，或习得你所看的技艺");
+  });
+
+  it("after the first take: the second-take prompt, the taken discipline greyed out with its reason, the taken position empty (v1.6.2 L207, L209)", () => {
+    const id = "d-guild-hall-after-a-take";
+    const options = guildInspectionOptions(fixture(id).playerView)!;
+    expect(options.takes).toHaveLength(1);
+    const html = render(id, <TechDisplay />);
+    expect(textOf(html)).toContain("Shifu at the Guild Hall: take a second Tech from another discipline, or stop");
+    const column = html.slice(html.indexOf('data-discipline="glazing_loading"'), html.indexOf('data-discipline="firing"'));
+    expect((column.match(/data-empty-position=""/g) ?? []).length).toBe(1);
+    for (const option of options.faceUp.filter((candidate) => candidate.discipline === "glazing_loading")) {
+      const tile = html.slice(html.lastIndexOf("<div", html.indexOf(`data-act="tech" data-tech-id="${option.techId}"`)));
+      expect(tile.slice(0, 80)).toContain("tech--unavailable");
+      expect(visibleText(tile.slice(0, tile.indexOf("</li>")))).toContain("You already own a Glazing & Loading Tech.");
+    }
+    expect(textOf(render(id, <TechDisplay />, { locale: "zh-CN" }))).toContain("师傅在陶工行：再习得一项其他门类的技艺，或不再习得");
   });
 
   it("shows no inspection line for a look at Orders (m2) or without a look (m1)", () => {

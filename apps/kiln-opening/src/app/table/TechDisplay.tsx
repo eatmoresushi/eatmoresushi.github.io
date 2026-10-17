@@ -14,11 +14,20 @@
  *   (`data-tech-chooser`), and it labels the display as a group;
  * - **buy** (the Apprentice effect): every face-up Tech is a toggle button (`data-act="tech"`);
  *   one this worker cannot buy is greyed out, not selectable, with the engine's reason;
- * - **inspect** (the Shifu effect, also an Apprentice as Shifu): each discipline offers its
- *   "Inspect the deck" toggle (`data-act="inspect"`); the tiles stay ordinary display tiles
- *   with their rules details, and the private inspection itself is its own window.
+ * - **inspect** (the Shifu effect): each discipline offers its "Inspect the deck" toggle
+ *   (`data-act="inspect"`); the tiles stay ordinary display tiles with their rules details, and
+ *   the private inspection itself is its own window;
+ * - **take** (that window, `guild_inspection`): the face-up Techs are toggles again, as in buy
+ *   mode, for the Shifu's first take and for the second (v1.6.2 L207: another discipline, at its
+ *   printed cost, or stop in the pane). The inspected Techs are private and only in the pane
+ *   (B2), and the "is looking at" line is not shown to the looker, whom the prompt addresses.
  * A choice goes back to the pane's draft (`act`); on phones the decision sheet then opens with
  * the chosen placement and Confirm.
+ *
+ * **A taken Tech's position stays empty** until the taker's turn ends (v1.6.2 L209): a column
+ * showing fewer than its face-up count while its deck still holds Techs draws the empty
+ * positions as dashed placeholders. It is the table's own fact (an empty spot on the board); the
+ * engine refills it at the end of the turn.
  */
 import { useId } from "react";
 import type { CSSProperties } from "react";
@@ -31,6 +40,14 @@ import { placementWorkerName } from "./LocationCard.tsx";
 import { tableCeramics } from "./tableData.ts";
 import { DISCIPLINE_COLOUR, TechCard } from "./TechCard.tsx";
 import "./TechDisplay.css";
+
+/** The chooser's prompt per mode (the second take has its own). */
+const PROMPT = {
+  buy: "table.techs.chooseBuy",
+  inspect: "table.techs.chooseInspect",
+  take: "table.techs.chooseTake",
+  takeSecond: "table.techs.chooseTakeSecond",
+} as const;
 
 export function TechDisplay() {
   const t = useT();
@@ -47,10 +64,12 @@ export function TechDisplay() {
   const prompt =
     chooser === null
       ? null
-      : t(chooser.mode === "buy" ? "table.techs.chooseBuy" : "table.techs.chooseInspect", {
+      : t(PROMPT[chooser.mode === "take" && chooser.taken > 0 ? "takeSecond" : chooser.mode], {
           location: locationName("guild_hall", t.locale),
           worker: placementWorkerName(chooser.worker, t),
         });
+  // The viewer's own inspection: the prompt says it all (the line is for the other players).
+  const showLook = look !== null && looker !== null && chooser?.mode !== "take";
   return (
     <div className={chooser === null ? "techs-block" : "techs-block techs-block--choosing"} data-chooser={chooser?.mode}>
       <div className="techs-h">
@@ -59,7 +78,7 @@ export function TechDisplay() {
           {t("table.techs.sub", { n: RULE_NUMBERS.techsFaceUp, guild: locationName("guild_hall", t.locale), vp: RULE_NUMBERS.techVp })}
         </span>
       </div>
-      {look === null || looker === null ? null : (
+      {!showLook || look === null || looker === null ? null : (
         <p className="techs-looking" data-player-id={look.playerId}>
           {t("table.techs.looking", { name: looker.displayName, n: look.count })}
         </p>
@@ -95,7 +114,7 @@ export function TechDisplay() {
                   {t("table.techs.inspect")}
                 </button>
               )}
-              {column.techIds.length === 0 ? (
+              {column.techIds.length === 0 && column.deckCount === 0 ? (
                 <p className="disc-none">{t("table.techs.none")}</p>
               ) : (
                 <ul className="disc-list">
@@ -121,6 +140,13 @@ export function TechDisplay() {
                       </li>
                     );
                   })}
+                  {column.deckCount === 0
+                    ? null
+                    : Array.from({ length: Math.max(0, RULE_NUMBERS.techsFaceUp - column.techIds.length) }, (_, index) => (
+                        <li key={`empty-${index}`} className="disc-empty" data-empty-position="">
+                          {t("table.techs.emptySlot")}
+                        </li>
+                      ))}
                 </ul>
               )}
             </div>

@@ -10,16 +10,19 @@
  * Lines come from the event templates (`i18n/events.ts`): public history, plus this seat's own
  * secret version of an event (its deal, its looks, its trimmed Orders), marked "only you". A
  * secret is used only when it belongs to the viewer (`ownSecretOf`). Ceramics are described in
- * words (D9) through the log's ceramic view (`logCeramics.ts`). An Order reward's Coins line is
- * folded into the completion line that already states them (`repeatsPreviousEntry`).
+ * words (D9), each as it was when its line happened (`ceramicViewsAsOf`): a Crackle marker or a
+ * twin that came later never changes an earlier line. A Coins line that only repeats the line
+ * beside it is folded away (`foldedEntry`): an Order reward's Coins after the completion, Canal
+ * Barge's after "used Canal Barge: +2 Coins", a salvage's, and a Guild Hall payment before
+ * "acquired …: pay 3 Coins".
  */
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { useT } from "../i18n/I18nProvider.tsx";
-import { eventText, ownSecretOf, repeatsPreviousEntry } from "../i18n/events.ts";
+import { eventText, foldedEntry, ownSecretOf } from "../i18n/events.ts";
 import { Chip } from "../kit/Chip.tsx";
 import { useGame, useLog, useUi } from "../state/hooks.ts";
-import { logCeramicView } from "./logCeramics.ts";
+import { ceramicViewsAsOf, logCeramicView } from "./logCeramics.ts";
 import "./GameLog.css";
 
 /** Entries rendered at once; "Show earlier" adds this many more. */
@@ -49,14 +52,18 @@ export function GameLog() {
   const shownCount = Math.min(log.length, pages * LOG_PAGE);
   const entries = useMemo(() => {
     if (!open) return [];
-    const context = { t, view, viewerId: model.viewerId };
     const start = log.length - shownCount;
-    return log
-      .slice(start)
-      .filter((entry, index) => !repeatsPreviousEntry(entry, log[start + index - 1]))
+    const shown = log.slice(start).filter((_entry, index) => !foldedEntry(log, start + index));
+    // Each line names its ceramics as they were when it happened (`ceramicViewsAsOf`).
+    const views = ceramicViewsAsOf(model, log, new Set(shown.map((entry) => entry.sequence)));
+    return shown
       .reverse()
-      .map((entry) => ({ sequence: entry.sequence, text: eventText(entry, context), own: ownSecretOf(entry, model.viewerId) !== null }));
-  }, [open, log, shownCount, t, view, model.viewerId]);
+      .map((entry) => ({
+        sequence: entry.sequence,
+        text: eventText(entry, { t, view: views.get(entry.sequence) ?? view, viewerId: model.viewerId }),
+        own: ownSecretOf(entry, model.viewerId) !== null,
+      }));
+  }, [open, log, shownCount, t, view, model]);
   const hasEarlier = shownCount < log.length;
 
   useEffect(() => {

@@ -5,8 +5,9 @@
  *
  * For a view and its window it takes the legal commands (`canonical`, the engine's default
  * per-family cap of 64; or `exhaustive`, capped with a seeded reservoir sample) and routes each
- * to the draft model of the form that must express it: the open window's, except
- * `USE_CANAL_BARGE`, which goes to B5's `canalBargeDraft`. For each command it checks that
+ * to the draft model of the form that must express it: the open window's (V1.6.2 has no Canal
+ * Barge completion form: Canal Barge pays Coins on an Order-Phase completion, v1.6.2 L622; the
+ * Colour Samples swap is part of the work window's draft). For each command it checks that
  * 1. `fromCommand(cmd)` gives a draft;
  * 2. every value in that draft appears in `options(draft)` — checked through the contract of
  *    `reduce(draft, { type: "revalidate" })`, which drops any choice `options()` does not offer,
@@ -28,7 +29,6 @@
 import { isDeepStrictEqual } from "node:util";
 import { enumerateLegalActions, legalCommands } from "../../../../src/game/index.ts";
 import type { AuthoritativeCommand, PlayerView } from "../../../../src/game/index.ts";
-import { canalBargeDraft } from "../../../../src/app/decision/orders/canalBargeDraft.ts";
 import { WINDOWS } from "../../../../src/app/decision/windows.ts";
 import type { WorkDraft } from "../../../../src/app/decision/work/workDraft.ts";
 import { placementWorkerKey } from "../../../../src/app/state/tableSelection.ts";
@@ -43,8 +43,8 @@ import type { EngineView, GameModel } from "../../../../src/app/state/model.ts";
 
 export type ExpressibilityStatus = "ok" | "todo" | "fail";
 
-/** The form a command belongs to: a window kind, or the Canal Barge sub-form. */
-export type ExpressibilityForm = DecisionWindowKind | "canal_barge";
+/** The form a command belongs to: a window kind. */
+export type ExpressibilityForm = DecisionWindowKind;
 
 export interface ExpressibilityRow {
   window: DecisionWindowKind;
@@ -62,8 +62,6 @@ export interface ExpressibilityOptions {
   /** Exhaustive mode: the reservoir sample's seed. */
   seed?: number;
   registry?: WindowRegistry;
-  /** Draft models for the sub-forms (default: B5's `canalBargeDraft`). */
-  canalBarge?: DraftModel<unknown, DraftActionBase, unknown>;
 }
 
 export interface ExpressibilityReport {
@@ -87,15 +85,12 @@ export function normalizeCommand(value: unknown): unknown {
   return out;
 }
 
-/** The draft model that must express `command` in `window`. */
+/** The draft model that must express `command` in `window`: the open window's, for every command. */
 export function formFor(
-  command: AuthoritativeCommand,
+  _command: AuthoritativeCommand,
   window: DecisionWindow,
   options: ExpressibilityOptions = {},
 ): { form: ExpressibilityForm; draft: AnyDraftModel } {
-  if (command.type === "USE_CANAL_BARGE") {
-    return { form: "canal_barge", draft: options.canalBarge ?? (canalBargeDraft as unknown as AnyDraftModel) };
-  }
   const registry = options.registry ?? WINDOWS;
   return { form: window.kind, draft: registry[window.kind].draft };
 }

@@ -105,7 +105,8 @@ describe("Tech tiles (TechCard, Tech slots)", () => {
   });
 
   it("an owned Tech on a Kiln Player Board opens no rules details: its tile prints the short text (owner review, 2026-10-17)", () => {
-    expect(render(M1, <TechSlots playerId="p3" />)).toContain('data-tech-id="T17"');
+    // m1's viewer owns Senior Apprentice (T18).
+    expect(render(M1, <TechSlots playerId="p3" />)).toContain('data-tech-id="T18"');
     for (const locale of ["en", "zh-CN"] as const) {
       const t = locale === "en" ? EN : ZH;
       const slots = render(M1, <TechSlots playerId="p3" />, locale);
@@ -113,21 +114,25 @@ describe("Tech tiles (TechCard, Tech slots)", () => {
       expect(slots).not.toContain("kit-detail-trigger");
       // On the whole board too: no panel for the owned Tech (the face-up display keeps its own, D10).
       const board = render(M1, <PlayerBoard playerId="p3" />, locale);
-      expect(panels(board).some((entry) => entry.label === t("rules.label", { name: techText("T17", locale).name }))).toBe(false);
+      expect(panels(board).some((entry) => entry.label === t("rules.label", { name: techText("T18", locale).name }))).toBe(false);
     }
   });
 });
 
 describe("Kiln Player Board, locations, Orders and milestones", () => {
   it("the Kiln Tradition opens the Kiln's rules details", () => {
+    // m1's viewer (p3) took the Jun Kiln.
     const html = render(M1, <KilnTradition playerId="p3" />);
-    const text = kilnText("GE", "en");
+    const text = kilnText("JU", "en");
     const body = panel(html, `Full rules: ${text.name} · ${text.abilityName}`);
     expect(textOf(body)).toContain(decode(text.ability));
-    expectClarifications(body, KILNS.GE.clarifications, "en");
+    expectClarifications(body, KILNS.JU.clarifications, "en");
     expectOnlyRuleAndClarifications(body);
     const zh = render(M1, <KilnTradition playerId="p3" />, "zh-CN");
-    expectClarifications(panel(zh, `完整规则：${kilnText("GE", "zh-CN").name} · ${kilnText("GE", "zh-CN").abilityName}`), KILNS.GE.clarifications, "zh-CN");
+    expectClarifications(panel(zh, `完整规则：${kilnText("JU", "zh-CN").name} · ${kilnText("JU", "zh-CN").abilityName}`), KILNS.JU.clarifications, "zh-CN");
+    // Another Kiln (p2's Ge) opens its own rules.
+    const ge = render(M1, <KilnTradition playerId="p2" />);
+    expectClarifications(panel(ge, `Full rules: ${kilnText("GE", "en").name} · ${kilnText("GE", "en").abilityName}`), KILNS.GE.clarifications, "en");
   });
 
   it("no action space opens rules details, on the table or on the board (owner review, 2026-10-17)", () => {

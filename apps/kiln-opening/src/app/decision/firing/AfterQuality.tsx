@@ -1,13 +1,16 @@
 /**
  * AfterQuality (UI_V1.6.1_ARCHITECTURE §3.4 `after_quality`; wireframe `decAfterQuality`). Owner: B5.
  *
- * Firing step 10: Protective Saggars, Second Firing and Ge, in the order the player chooses, one
- * use per Confirm; the options are re-read after each use. "Done — decline the rest" is the
- * window's alternative button. Each ability shows its card text (its rule effect) and its
- * eligible targets with their recorded Quality; nothing predicts a result (D3).
+ * Firing step 10: Protective Saggars (Standard → Fine), Second Firing (which then opens its own
+ * choice of 2 Fire cards) and Ge, in the order the player chooses, one use per Confirm; the
+ * options are re-read after each use. "Done — decline the rest" is the window's alternative
+ * button. Each ability shows its card text (its rule effect) and its eligible targets with their
+ * recorded Quality; nothing predicts a result (D3). None of them costs anything in V1.6.2. A
+ * ceramic Protective Saggars kept Standard (v1.6.2 L636) says so, as the game log does; its
+ * Quality is the engine's.
  */
 import type { AfterQualityAbility, CeramicId } from "../../../game/index.ts";
-import { kilnText, techText } from "../../i18n/content.ts";
+import { kilnText, qualityName, techName, techText } from "../../i18n/content.ts";
 import { useT } from "../../i18n/I18nProvider.tsx";
 import { OptionCard } from "../../kit/OptionCard.tsx";
 import { OptionGroup } from "../../kit/OptionGroup.tsx";
@@ -16,7 +19,7 @@ import { RulesDetail } from "../../rules/RulesDetail.tsx";
 import type { RulesSubject } from "../../rules/RulesDetail.tsx";
 import { afterQualityDraft, afterQualityValue } from "./AfterQuality.draft.ts";
 import type { AfterQualityAction, AfterQualityDraft } from "./AfterQuality.draft.ts";
-import { B5_KILNS, B5_TECHS, costText, ownFiringCeramicIds } from "./firingSupport.ts";
+import { B5_KILNS, B5_TECHS, costText, ownFiringCeramicIds, saggarsFloored } from "./firingSupport.ts";
 import { CeramicLine, Lead, Section, ShortText, StepQueue, stepLabel } from "./WindowParts.tsx";
 
 const SUBJECTS: { readonly [A in AfterQualityAbility]: Extract<RulesSubject, { kind: "tech" | "kiln" }> } = {
@@ -41,6 +44,10 @@ export function AfterQuality() {
   const options = afterQualityDraft.options(draft, model, engine);
   const mine = ownFiringCeramicIds(model);
   const selected = draft.choice === null || draft.choice === "end" ? null : afterQualityValue(draft.choice.ability, draft.choice.ceramicId);
+  const floorNote = (ceramicId: CeramicId) =>
+    saggarsFloored(model, ceramicId)
+      ? t("firing.aq.saggarsFloor", { tech: techName(B5_TECHS.protectiveSaggars, t.locale), standard: qualityName("standard", t.locale), flawed: qualityName("flawed", t.locale) })
+      : undefined;
   const onChange = (value: string) => {
     const parsed = parseValue(value);
     if (parsed !== null) dispatch({ type: "use", ability: parsed.ability, ceramicId: parsed.ceramicId });
@@ -54,7 +61,7 @@ export function AfterQuality() {
       <Section heading={t("firing.yourCeramics")}>
         <span className="dw-cerrow">
           {mine.map((ceramicId) => (
-            <CeramicLine key={ceramicId} model={model} engine={engine} ceramicId={ceramicId} among={mine} size={36} />
+            <CeramicLine key={ceramicId} model={model} engine={engine} ceramicId={ceramicId} among={mine} size={36} extra={floorNote(ceramicId)} />
           ))}
         </span>
       </Section>
@@ -66,7 +73,7 @@ export function AfterQuality() {
           <OptionGroup
             key={option.ability}
             legend={<RulesDetail subject={subject} look="name" />}
-            aside={t("firing.cost", { cost: costText(option.cost, t) })}
+            aside={option.cost.clay + option.cost.wood + option.cost.coins === 0 ? undefined : t("firing.cost", { cost: costText(option.cost, t) })}
             description={<ShortText text={short} />}
             name="afterQuality"
             value={selected}
@@ -76,7 +83,7 @@ export function AfterQuality() {
               <OptionCard
                 key={ceramicId}
                 value={afterQualityValue(option.ability, ceramicId)}
-                title={<CeramicLine model={model} engine={engine} ceramicId={ceramicId} among={mine} size={32} />}
+                title={<CeramicLine model={model} engine={engine} ceramicId={ceramicId} among={mine} size={32} extra={floorNote(ceramicId)} />}
               />
             ))}
           </OptionGroup>

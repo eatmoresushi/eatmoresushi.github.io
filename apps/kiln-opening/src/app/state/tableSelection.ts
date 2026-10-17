@@ -28,25 +28,32 @@ export interface TechTarget {
   legal: boolean;
   /** The engine's reason when it is not legal, with the details its message needs. */
   reason: (Pick<GameRuleError, "code"> & { details: Readonly<Record<string, string | number>> }) | null;
-  printedCost: number;
-  /** The price this worker pays. */
-  price: number;
+  /** The printed cost, which every Guild Hall take pays (v1.6.2 L206–207: no discount). */
+  cost: number;
 }
 
 /**
  * The Guild Hall chooser on the Tech display (owner review, 2026-10-17): with a worker chosen at
  * the Guild Hall, the face-up Techs (Apprentice: buy one) or the disciplines (Shifu: inspect one)
- * become table targets. Everything comes from `guildOptions` through the work draft.
+ * become table targets; during the Shifu's inspection (the `guild_inspection` window) the face-up
+ * Techs are targets again, for the first take and the second (v1.6.2 L207). Everything comes from
+ * `guildOptions` / `guildInspectionOptions` through the drafts.
  */
 export interface TechChooser {
-  /** `buy`: the Apprentice effect buys a face-up Tech; `inspect`: the Shifu effect inspects a deck. */
-  mode: "buy" | "inspect";
+  /**
+   * `buy`: the Apprentice effect buys a face-up Tech; `inspect`: the Shifu effect inspects a deck;
+   * `take`: the Shifu takes a Tech after inspecting, a face-up one here (the inspected ones are
+   * private and only in the pane, B2).
+   */
+  mode: "buy" | "inspect" | "take";
   /** The worker placed there, for the prompt's words (never a worker ID, D9). */
   worker: Pick<PlacementWorkerOption, "kind" | "seniorApprentice">;
-  /** Buy mode: every face-up Tech, legal or not. Empty in inspect mode. */
+  /** Buy and take modes: every face-up Tech, legal or not. Empty in inspect mode. */
   techs: ReadonlyMap<TechId, TechTarget>;
-  /** Inspect mode: every discipline the Shifu may inspect. Empty in buy mode. */
+  /** Inspect mode: every discipline the Shifu may inspect. Empty in the other modes. */
   disciplines: ReadonlyMap<TechDiscipline, { pressed: boolean }>;
+  /** Take mode: the Techs this action has taken so far (0 or 1), for the prompt; 0 otherwise. */
+  taken: number;
 }
 
 export interface TableSelectionData {
@@ -67,7 +74,8 @@ export interface TableSelectionData {
   orderTargets: ReadonlyMap<string, { state: OrderTargetState; disabled: boolean }>;
   /** An Order's matching group, an ability's target. */
   highlightedCeramicIds: ReadonlySet<CeramicId>;
-  /** The Guild Hall chooser on the Tech display, while the pane's draft has a Guild Hall placement. */
+  /** The Guild Hall chooser on the Tech display, while the pane's draft has a Guild Hall placement
+   * or the viewer's Shifu takes a Tech after inspecting. */
   techChooser: TechChooser | null;
 }
 
@@ -76,7 +84,7 @@ export type TableAction =
   | { type: "place"; locationId: LocationId; workerKey: string }
   | { type: "kilnSpace"; spaceId: KilnSpaceId }
   | { type: "order"; key: string }
-  /** A face-up Tech on the Tech display (the Guild Hall chooser, buy mode). */
+  /** A face-up Tech on the Tech display (the Guild Hall chooser, buy and take modes). */
   | { type: "tech"; techId: TechId }
   /** A discipline's deck on the Tech display (the Guild Hall chooser, inspect mode). */
   | { type: "inspect"; discipline: TechDiscipline };

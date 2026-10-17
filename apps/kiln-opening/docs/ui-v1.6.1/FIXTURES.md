@@ -47,7 +47,7 @@ Selectors are not stored: the UI computes them from `playerView` (DESIGN §5.4).
 
 ## Scenarios (`scenarios.json`)
 
-**Decision windows** (kind `window`, viewer = the actor) come from `phaseScenarios()` in `test/v161/engine/phase_scenarios.ts`: Kiln selection; Setter's Mark; before the worker action (rich 4-player start; Canal Barge, Imperial Priority with Reworking Table, Ding; Inverted Firing, Setter's Marks, Senior Apprentice); the three Commission Market steps; the Guild Hall Shifu inspection; Colour Samples; the after-action window; secret Contributions with Fuel Ledger; the Test Pieces decision and bury; Heat markers with Kiln Master; Jun; after-Quality (Saggars and Ge); Jun during Second Firing (R7); Salvage; the Order Phase with Ru, Tribute Ware and a Crackle wildcard; the hand limit.
+**Decision windows** (kind `window`, viewer = the actor) come from `phaseScenarios()` in `test/v161/engine/phase_scenarios.ts`: Kiln selection; Setter's Mark; before the worker action (rich 4-player start; the Colour Samples swap, Imperial Priority with Reworking Table, Ding; Kiln Furniture, Inverted Firing, Setter's Marks, Senior Apprentice); the Commission Market Shifu and Apprentice looks; the Guild Hall Shifu inspection; Colour Samples and its swap; the after-action window; secret Contributions with Fuel Ledger; the Test Pieces decision and bury; Heat markers with Kiln Master; Jun; after-Quality (Saggars and Ge); Second Firing's choice with Jun (R7); Salvage; the Order Phase with Ru, Tribute Ware and a Crackle wildcard; the hand limit.
 
 **Table states** (kind `table`) come from `test/v161/ui/fixtures/tableScenarios.ts`. Each passes `assertInvariants`.
 
@@ -63,34 +63,39 @@ Selectors are not stored: the UI computes them from `playerView` (DESIGN §5.4).
 | `t-final-2p`, `t-final-4p` | p1, p3 | Final results after a last Order Phase (Ru bonus, Guan, Tech VP, Exhibition, Connoisseur, Coins) |
 | `t-glaze-load-imperial-furniture` | p1 (acts) | Glaze & Load with an Imperial Kiln (−1/0/+1) and Kiln Furniture (−1/0/+1) to choose |
 
-Together the scenarios and moments reach every engine phase, every Work step (`before_action`, the three Commission steps, Guild inspection, Colour Samples, `after_action`), both Test Pieces steps, a waiting viewer, and 2-, 3- and 4-player finals; `fixtures_current.test.ts` checks this.
+Together the scenarios and moments reach every engine phase, every Work step (`before_action`, the Commission look of either effect, Guild inspection, Colour Samples and its swap, `after_action`), both Test Pieces steps, a waiting viewer, and 2-, 3- and 4-player finals; `fixtures_current.test.ts` checks this.
 
 ## Moments (`moments.json`)
 
-Seeded games played by the strategic computer policy (`rules-v1.6.1-strategic-001`, which falls back to the canonical commands when it has no choice). m1–m9 are the wireframe set, recaptured in the entry format (same seeds and states). A moment whose seed search exceeds its budget would fall back to the matching scripted scenario (`source.kind: "scripted"`); in the current set every moment was reached by play.
+Seeded games played by the strategic computer policy (`rules-v1.6.2-strategic-001`, which falls back to the canonical commands when it has no choice). m1–m9 are the wireframe set, recaptured in the entry format; m10–m18 reach the windows the wireframe could not; m19–m23 are the V1.6.2 windows the owner reviews in the gallery. A moment whose seed search exceeds its budget would fall back to the matching scripted scenario (`source.kind: "scripted"`); in the current set every moment was reached by play.
 
 | id | Seed · players | Viewer | What it shows |
 | --- | --- | --- | --- |
-| `m1_work_phase_r2_3p` | 27 · 3P | p3 | Round 2, before the action. The viewer owns Prepared Clay (T17), which added the second Form & Decorate space; the second Glaze & Load space is not yet added |
-| `m2_commission_market_look_r3_4p` | 1 · 4P | p2 | Commission Shifu mid-action: a face-up slot stays empty until the turn ends; the private top-3 look (**steered**) |
-| `m3_heat_marker_step_3p` | 17 · 3P | p2 | Firing step 5: face-down markers, an Imperial ceramic, Kiln Furniture |
-| `m4_after_quality_3p` | 17 · 3P | p2 | Firing step 10: Second Firing or Ge Crackle |
-| `m5_two_player_board_2p` | 35 · 2P | p1 | The 2-1-1 Shared Kiln cover; Magistrate's Hall capacity 1 |
-| `m6_order_phase_crackle_3p` | 5 · 3P | p2 | Order Phase with multi-ceramic Orders and a Crackle ceramic that must be declared Painted (O39) |
-| `m7_cleanup_hand_limit_3p` | 2 · 3P | p3 | Cleanup trim: 6 held, limit 4 |
-| `m8_final_results_3p` | 10 · 3P | p1 | Final results, shared victory |
-| `m9_contributions_step1_3p` | 118 · 3P | p2 | Step 1, secret Contributions; another seat has submitted (never what) (**steered** Guild purchases) |
-| `m10a_setters_mark_window` | 1 · 3P | p3 | The Setter's Mark window at the start of the Work Phase (**steered** T22 purchase) |
-| `m10b_setters_mark_on_space` | 1 · 3P | p3 | The tile on its Shared Kiln space (**steered** placement) |
-| `m11a_test_pieces_decision` | 10 · 3P | p3 | Step 4: pay 1 Wood to peek? (**steered** T13 purchase) |
-| `m11b_test_pieces_bury` | 10 · 3P | p3 | The private peek (`own.firePeek`, own `TEST_PIECES_PEEKED`) before the public bury decision |
-| `m12_guild_shifu_inspection` | 1 · 3P | p1 | The private Guild Hall inspection (the policy's own, Round 1; a Shifu-inspect steer from Round 2 is the fallback) |
-| `m13_jun_heat_adjustment` | 1 · 3P | p1 | Step 8: Jun ±1 for 1 Wood (**steered** Kiln choice JU) |
-| `m14_salvage` | 7 · 3P | p3 | Step 11: salvage a still-Flawed ceramic |
-| `m15_kiln_selection` | 1 · 4P | p3 | Revision 0: reverse-order Kiln selection |
-| `m16_colour_samples` | 3 · 3P | p2 | Colour Samples' private top 3 (**steered** T10 purchase) |
-| `m17_after_action` | 1 · 3P | p2 | The after-action window with Canal Barge (**steered** T23 purchase) |
-| `m18_jun_second_firing` | 13 · 3P | p1 | Round 4, R7: Second Firing's extra Fire card is turned and Jun may still adjust (`firingStageView.extraFire`) (**steered** JU, T14, Jun kept unused in step 8, Second Firing) |
+| `m1_work_phase_r2_3p` | 1 · 3P | p3 | Round 2, before the action. A Form & Decorate Tech (Senior Apprentice) added the second Form & Decorate space; the second Glaze & Load space is not yet added |
+| `m2_commission_market_look_r3_4p` | 1 · 4P | p3 | The Commission Market Shifu's private look at the top 3; 1 or 2 reservations from the display and those 3 (**steered** placement) |
+| `m3_heat_marker_step_3p` | 5 · 3P | p2 | Firing step 5: face-down markers |
+| `m4_after_quality_3p` | 7 · 3P | p2 | Firing step 10: after-Quality abilities |
+| `m5_two_player_board_2p` | 57 · 2P | p1 | The 2-1-1 Shared Kiln cover; Magistrate's Hall capacity 1 |
+| `m6_order_phase_crackle_3p` | 7 · 3P | p2 | Order Phase with multi-ceramic Orders and a Crackle ceramic |
+| `m7_cleanup_hand_limit_3p` | 1 · 3P | p1 | Cleanup trim down to the hand limit |
+| `m8_final_results_4p` | 2 · 4P | p1 | Final results |
+| `m9_contributions_step1_3p` | 46 · 3P | p2 | Step 1, secret Contributions; another seat has submitted (never what) (**steered** Guild purchases) |
+| `m10a_setters_mark_window` | 1 · 3P | p1 | The Setter's Mark window at the start of the Work Phase (**steered** T22 purchase) |
+| `m10b_setters_mark_on_space` | 1 · 3P | p1 | The tile on its Shared Kiln space (**steered** placement) |
+| `m11a_test_pieces_decision` | 10 · 3P | p1 | Step 4: pay 1 Wood to peek? (**steered** T13 purchase) |
+| `m11b_test_pieces_bury` | 10 · 3P | p1 | The private peek (`own.firePeek`, own `TEST_PIECES_PEEKED`) before the public bury decision |
+| `m12_guild_shifu_inspection` | 1 · 3P | p1 | The private Guild Hall inspection before the first take (**steered** inspection) |
+| `m13_jun_heat_adjustment` | 2 · 3P | p1 | Step 8: Jun ±1 for 1 Wood (**steered** Kiln choice JU) |
+| `m14_salvage` | 7 · 3P | p1 | Step 11: salvage a still-Flawed ceramic |
+| `m15_kiln_selection` | 1 · 4P | p4 | Revision 0: reverse-order Kiln selection |
+| `m16_colour_samples` | 1 · 3P | p1 | Colour Samples' private top 3 when acquired (**steered** T10 purchase) |
+| `m17_after_action` | 1 · 3P | p1 | The after-action window with the Colour Samples swap (**steered** T10 purchase) |
+| `m18_jun_second_firing` | 1 · 3P | p1 | R7: Second Firing's 2 turned cards, choose 1, Jun may still adjust (`firingStageView.extraFire`) (**steered** JU, T14, Jun kept unused in step 8, Second Firing) |
+| `m19_commission_apprentice_look` | 1 · 3P | p1 | The Commission Market Apprentice's private look at the top 2; exactly 1 reservation |
+| `m20_colour_samples_swap_look` | 1 · 3P | p1 | The Colour Samples swap's private look at the top 2, before the worker action (**steered** T10 purchase and swap) |
+| `m21_guild_shifu_second_take` | 2 · 3P | p1 | The Guild Hall Shifu after a first take: a second take of another discipline, or stop (**steered** inspection and first take) |
+| `m22_saggars_upgrade` | 5 · 3P | p1 | Firing step 10: Protective Saggars' Standard → Fine (**steered** T11 purchase) |
+| `m23_order_phase_s07` | 1 · 4P | p2 | Order Phase: S07 "Carved, Impressed or Painted" completable, with Canal Barge's 2 Coins on the first completion (**steered** T23 purchase) |
 
 Every steered command is recorded in `source.steered` and went through `validateAction` like any other. Searches try a hinted seed first (the one a previous run found), so a regeneration is quick; the result is the same either way.
 

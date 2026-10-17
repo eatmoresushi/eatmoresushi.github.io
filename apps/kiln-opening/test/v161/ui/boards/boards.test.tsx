@@ -4,7 +4,8 @@
  */
 import type { ReactElement } from "react";
 import { describe, expect, it } from "vitest";
-import { KILNS, shortTextSegments } from "../../../../src/game/index.ts";
+import { KILNS, TECHS, shortTextSegments } from "../../../../src/game/index.ts";
+import type { TechId } from "../../../../src/game/index.ts";
 import { BoardArea } from "../../../../src/app/boards/BoardArea.tsx";
 import { CeramicsRow } from "../../../../src/app/boards/CeramicsRow.tsx";
 import { KilnTradition, MarkerLine } from "../../../../src/app/boards/KilnTradition.tsx";
@@ -28,6 +29,21 @@ function render(id: string, element: ReactElement, options: RenderOptions = {}):
 
 const M1 = "m1_work_phase_r2_3p";
 
+/** The Form & Decorate Tech the m1 viewer owns: it added their second Form & Decorate space. */
+function m1WorkshopTech(): TechId {
+  const entry = fixture(M1);
+  const owned = entry.playerView.game.players[entry.viewerId]!.techs.find((tech) => TECHS[tech.id].discipline === "workshop");
+  if (owned === undefined) throw new Error("m1's viewer owns no Form & Decorate Tech");
+  return owned.id;
+}
+
+/** Each other player's board tab ("Lin · Ding"), in the board area's player order. */
+function otherTabs(locale: "en" | "zh-CN"): string[] {
+  const entry = fixture(M1);
+  const model = gameModelOf(entry.playerView, []);
+  return model.players.filter((summary) => summary.playerId !== entry.viewerId).map((summary) => `${summary.displayName} · ${kilnShortName(entry.playerView.game.players[summary.playerId]!.kilnId!, locale)}`);
+}
+
 /** React's text escaping, for comparing markup with content strings. */
 function escapeHtml(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#x27;");
@@ -37,15 +53,16 @@ describe("D7: personal spaces are added by learning a Tech (m1)", () => {
   it("says which Tech added the second Form & Decorate space, and how to add the Glaze & Load one", () => {
     const viewer = fixture(M1).viewerId;
     const en = render(M1, <PersonalSpaces playerId={viewer} />);
-    expect(en).toContain(`Added by <strong>${techName("T17", "en")}</strong>`);
-    expect(textOf(en)).toContain("Added by Prepared Clay");
+    const added = m1WorkshopTech();
+    expect(en).toContain(`Added by <strong>${techName(added, "en")}</strong>`);
+    expect(textOf(en)).toContain(`Added by ${techName(added, "en")}`);
     const hint = ruleErrorText({ code: "PERSONAL_SPACE_LOCKED", details: { locationId: "glaze_load" } }, "en");
     expect(hint).toBe("Learn a Glazing & Loading Tech to add this space.");
     expect(textOf(en)).toContain(hint);
     expect(textOf(en)).not.toMatch(/\b(un)?lock/i);
 
     const zh = render(M1, <PersonalSpaces playerId={viewer} />, { locale: "zh-CN" });
-    expect(zh).toContain("由「<strong>练泥</strong>」添设");
+    expect(zh).toContain(`由「<strong>${techName(added, "zh-CN")}</strong>」添设`);
     expect(textOf(zh)).toContain("习得釉作技艺即添此工位");
     expect(textOf(zh)).not.toMatch(/锁|封条|启封|封存|上锁|解锁/);
   });
@@ -71,10 +88,7 @@ describe("D1 board tabs", () => {
     const tabs = [...html.matchAll(/role="tab"[^>]*aria-selected="(true|false)"[^>]*>(.*?)<\/button>/g)].map((match) => ({ selected: match[1] === "true", text: textOf(match[2] ?? "") }));
     expect(tabs).toHaveLength(3);
     expect(tabs[0]).toEqual({ selected: true, text: "Your workshop" });
-    const game = fixture(M1).playerView.game;
-    expect(tabs.slice(1).map((tab) => tab.text)).toEqual(
-      ["p1", "p2"].map((id) => `${game.players[id]!.displayName} · ${kilnShortName(game.players[id]!.kilnId!, "en")}`),
-    );
+    expect(tabs.slice(1).map((tab) => tab.text)).toEqual(otherTabs("en"));
     expect(html).toContain('role="tabpanel"');
     expect(html).toMatch(/role="tabpanel"[^>]*>[\s\S]*data-player-id="p3"/);
     expect(textOf(html)).toContain("Wen (you)");
@@ -93,7 +107,7 @@ describe("D1 board tabs", () => {
     const html = render(M1, <BoardArea />, { locale: "zh-CN" });
     expect(html).toContain('aria-label="窑口板"');
     expect(textOf(html)).toContain("你的作坊");
-    expect(textOf(html)).toContain("Lin · 钧窑");
+    for (const tab of otherTabs("zh-CN")) expect(textOf(html)).toContain(tab);
   });
 });
 
@@ -113,7 +127,7 @@ describe("PlayerBoard", () => {
   });
 
   it("shows the recorded score, Recognition, First Player and completed Orders (m8)", () => {
-    const id = "m8_final_results_3p";
+    const id = "m8_final_results_4p";
     const game = fixture(id).playerView.game;
     const playerId = game.playerOrder.find((candidate) => game.players[candidate]!.completedOrders.length > 0)!;
     const html = render(id, <PlayerBoard playerId={playerId} />);
@@ -129,13 +143,14 @@ describe("PlayerBoard", () => {
 
 describe("KilnTradition and the marker line", () => {
   it("shows the Kiln, its ability, Ready and the short text with its timing in bold (m1)", () => {
-    const html = render(M1, <KilnTradition playerId="p3" />);
+    const geOwner = Object.values(fixture(M1).playerView.game.players).find((player) => player.kilnId === "GE")!.id;
+    const html = render(M1, <KilnTradition playerId={geOwner} />);
     expect(textOf(html)).toContain("Ge Kiln · Crackle Mastery");
     expect(textOf(html)).toContain("Ready");
     expect(html).toContain("<strong>Once per round, after Quality is assigned:</strong>");
     expect(html).toContain("<strong>Orders:</strong>");
     expect(KILNS.GE.shortText).toContain("Orders:");
-    const zh = render(M1, <KilnTradition playerId="p3" />, { locale: "zh-CN" });
+    const zh = render(M1, <KilnTradition playerId={geOwner} />, { locale: "zh-CN" });
     expect(zh).toContain("<strong>每轮一次，定品后：</strong>");
     expect(zh).toContain("<strong>完成委托时：</strong>");
   });
@@ -157,15 +172,16 @@ describe("KilnTradition and the marker line", () => {
 describe("TechSlots, WorkersRow and CeramicsRow", () => {
   it("shows the owned Tech per discipline with its state, and empty slots (m1)", () => {
     const html = render(M1, <TechSlots playerId="p3" />);
-    expect(textOf(html)).toContain("Form & Decorate Prepared Clay Ready");
+    expect(textOf(html)).toContain(`Form & Decorate ${techName(m1WorkshopTech(), "en")} Ready`);
     expect(textOf(html)).toContain("Glazing & Loading: empty");
     expect(textOf(html)).toContain("Firing: empty");
   });
 
   it("prints each owned Tech's short text, timing clause in bold, and opens no rules details (owner review, 2026-10-17)", () => {
     const html = render(M1, <TechSlots playerId="p3" />);
-    expect(textOf(html)).toContain(`Prepared Clay Ready ${textOf(techText("T17", "en").short)}`);
-    const bold = shortTextSegments(techText("T17", "en").short).filter((segment) => segment.emphasis);
+    const owned = m1WorkshopTech();
+    expect(textOf(html)).toContain(`${techName(owned, "en")} Ready ${textOf(techText(owned, "en").short)}`);
+    const bold = shortTextSegments(techText(owned, "en").short).filter((segment) => segment.emphasis);
     expect(bold.length).toBeGreaterThan(0);
     for (const segment of bold) expect(html).toContain(`<strong>${escapeHtml(segment.text)}</strong>`);
     expect(html).toContain('class="tech-short"');
@@ -173,7 +189,7 @@ describe("TechSlots, WorkersRow and CeramicsRow", () => {
     expect(html).not.toContain("<button");
     expect(html).not.toContain("kit-detail");
     const zh = render(M1, <TechSlots playerId="p3" />, { locale: "zh-CN" });
-    for (const segment of shortTextSegments(techText("T17", "zh-CN").short).filter((part) => part.emphasis)) expect(zh).toContain(`<strong>${escapeHtml(segment.text)}</strong>`);
+    for (const segment of shortTextSegments(techText(owned, "zh-CN").short).filter((part) => part.emphasis)) expect(zh).toContain(`<strong>${escapeHtml(segment.text)}</strong>`);
     expect(textOf(zh)).toContain("可用");
   });
 
@@ -202,13 +218,13 @@ describe("TechSlots, WorkersRow and CeramicsRow", () => {
 
   it("names placed workers with where they stand (m5)", () => {
     const html = render("m5_two_player_board_2p", <WorkersRow playerId="p1" />);
-    expect(html).toContain('aria-label="Your Shifu at Canal Wharf"');
-    expect(html).toContain('aria-label="Your Apprentice at Materials Yard"');
-    expect(html).toContain('aria-label="Your Apprentice at Glaze &amp; Load"');
+    expect(html).toContain('aria-label="Your Shifu at Glaze &amp; Load"');
+    expect((html.match(/aria-label="Your Apprentice at Materials Yard"/g) ?? []).length).toBe(2);
     expect(html).toContain('aria-label="Your Apprentice"');
     expect((html.match(/wk--dim/g) ?? []).length).toBe(3);
     const other = render("m5_two_player_board_2p", <WorkersRow playerId="p2" />);
     expect(other).toContain('aria-label="Zhao’s Apprentice at Magistrate&#x27;s Hall"');
+    expect(other).toContain('aria-label="Zhao’s Shifu at Canal Wharf"');
     expect(other).not.toMatch(/\bp\d:(shifu|apprentice)/);
   });
 

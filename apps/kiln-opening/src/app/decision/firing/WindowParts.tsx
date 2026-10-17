@@ -111,8 +111,9 @@ export function CeramicLine({ model, engine, ceramicId, withPlace = "auto", amon
   return (
     <span className="dw-ceramic" data-ceramic-id={ceramicId}>
       <CeramicChip ceramic={facts} seat={seatOf(model, facts.ownerId)} label={label} marker={marker} size={size} highlighted={highlighted} showQuality motionKey={null} />
-      <span className="dw-ceramic-text" aria-hidden="true">
-        <span className="dw-ceramic-name">{label}</span>
+      <span className="dw-ceramic-text">
+        {/* The chip already names the ceramic for assistive technology; the extra words are read. */}
+        <span className="dw-ceramic-name" aria-hidden="true">{label}</span>
         {extra === undefined ? null : <span className="dw-ceramic-extra">{extra}</span>}
       </span>
     </span>

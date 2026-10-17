@@ -19,6 +19,7 @@ import type { ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { TECHS } from "../../../../src/game/index.ts";
 import type { LocationId, PlayerView } from "../../../../src/game/index.ts";
 import { WINDOWS } from "../../../../src/app/decision/windows.ts";
 import { workPane } from "../../../../src/app/decision/work/windows.work.ts";
@@ -43,9 +44,10 @@ import { renderScreen } from "../support/render.tsx";
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const M1 = "m1_work_phase_r2_3p";
-const DING = "w-before-the-worker-action-canal-barge-imperial-priority-with-reworking-table-ding";
-/** Canal Barge is the only ability that may come before the worker action here. */
-const RICH = "w-before-the-worker-action-rich-4-player-start";
+const DING = "w-before-the-worker-action-colour-samples-swap-imperial-priority-with-reworking-table-ding";
+/** The Colour Samples swap is the only ability that may come before the worker action here
+ * (DING after its Imperial Priority token was spent; a derived test fixture). */
+const SWAP_ONLY = "d-colour-samples-swap-only";
 const EN = createTranslator("en", { strict: true });
 const ZH = createTranslator("zh-CN", { strict: true });
 
@@ -97,12 +99,12 @@ describe("which drafts hide the pane (workPane)", () => {
     if (!presence.hidden) throw new Error("shown");
     const modes = workDraft.options(ding.initial, ding.model, ding.engine).modes.map((option) => option.mode);
     expect(presence.openers.map((opener) => opener.key)).toEqual(modes.filter((mode) => mode !== "place"));
-    expect(presence.openers.map((opener) => opener.key)).toEqual(["imperial_priority", "canal_barge"]);
+    expect(presence.openers.map((opener) => opener.key)).toEqual(["imperial_priority", "colour_samples_swap"]);
     expect(presence.openers.map((opener) => opener.action)).toEqual([
       { type: "mode", mode: "imperial_priority" },
-      { type: "mode", mode: "canal_barge" },
+      { type: "mode", mode: "colour_samples_swap" },
     ]);
-    expect(presence.openers.map((opener) => EN.richMessage(opener.label as RichMessage))).toEqual(["Imperial Priority", "Canal Barge"]);
+    expect(presence.openers.map((opener) => EN.richMessage(opener.label as RichMessage))).toEqual(["Imperial Priority", "Colour Samples swap"]);
     // The cue says whose turn it is, what to do and how many workers are left; the label names the openers.
     const left = workDraft.options(ding.initial, ding.model, ding.engine).workersLeft;
     expect(left).toBeGreaterThan(0);
@@ -119,6 +121,20 @@ describe("which drafts hide the pane (workPane)", () => {
     const m1Left = workDraft.options(m1.initial, m1.model, m1.engine).workersLeft;
     expect(EN.message(plain.lead as RichMessage)).toBe(`Your turn: place a worker · ${String(m1Left)} left`);
     expect(ZH.message(plain.lead as RichMessage)).toBe(`轮到你了：派工 · 还剩${String(m1Left)}名工人`);
+  });
+
+  it("Canal Barge, owned and ready, has no opener: since V1.6.2 it pays its Coins on an Order-Phase completion (v1.6.2 L622)", () => {
+    const view = structuredClone(fixture(DING).playerView);
+    const me = view.game.players[view.viewerId!]!;
+    if (me.techs.some((tech) => tech.id === "T23")) throw new Error("fixture changed");
+    me.techs = [...me.techs.filter((tech) => TECHS[tech.id].discipline !== "glazing_loading"), { id: "T23", acquiredInRound: 1, usedThisRound: false }];
+    const model = buildGameModel(view, []);
+    const engine = engineViewOf(view);
+    const initial = workDraft.initial(model, engine);
+    const presence = workPane(initial, model, engine);
+    if (!presence.hidden) throw new Error("shown");
+    expect(presence.openers.map((opener) => opener.key)).toEqual(["imperial_priority"]);
+    expect(workDraft.options(initial, model, engine).modes.map((option) => option.mode)).toEqual(["place", "imperial_priority"]);
   });
 });
 
@@ -138,42 +154,42 @@ describe("the step choice before the worker action (stepChoices, heading, backTo
   it("offers Place a worker only while a placement is chosen, so moving through the radios never hides the pane", () => {
     const { model, engine, initial } = workOf(DING);
     // Nothing chosen (the pane is hidden): placing a worker.
-    expect(steps(initial, DING)).toEqual({ choices: ["imperial_priority", "canal_barge"], heading: "place", back: false });
+    expect(steps(initial, DING)).toEqual({ choices: ["imperial_priority", "colour_samples_swap"], heading: "place", back: false });
     expect(titles(initial, DING)).toEqual(["Place a worker", "派工"]);
     // An ability opened from the bar, nothing placed: the abilities only, and a separate way back.
     // The heading says what the pane shows, not "Place a worker" (verifier, 2026-10-17).
     const ability = workDraft.reduce(initial, { type: "mode", mode: "imperial_priority" }, model, engine);
-    expect(steps(ability, DING)).toEqual({ choices: ["imperial_priority", "canal_barge"], heading: "before_action", back: true });
+    expect(steps(ability, DING)).toEqual({ choices: ["imperial_priority", "colour_samples_swap"], heading: "before_action", back: true });
     expect(titles(ability, DING)).toEqual(["Before your worker action", "工人行动之前"]);
-    for (const mode of ["imperial_priority", "canal_barge"] as const) {
+    for (const mode of ["imperial_priority", "colour_samples_swap"] as const) {
       expect(workPane(workDraft.reduce(ability, { type: "mode", mode }, model, engine), model, engine).hidden, mode).toBe(false);
     }
     // A placement chosen: Place a worker is a choice too, and the placement stays while an ability is open.
     const chosen = placed(DING, "canal_wharf", "shifu");
-    expect(steps(chosen, DING)).toEqual({ choices: ["place", "imperial_priority", "canal_barge"], heading: "place", back: false });
+    expect(steps(chosen, DING)).toEqual({ choices: ["place", "imperial_priority", "colour_samples_swap"], heading: "place", back: false });
     expect(titles(chosen, DING)).toEqual(["Place a worker", "派工"]);
-    const both = workDraft.reduce(chosen, { type: "mode", mode: "canal_barge" }, model, engine);
-    expect(steps(both, DING)).toEqual({ choices: ["place", "imperial_priority", "canal_barge"], heading: "before_action", back: false });
+    const both = workDraft.reduce(chosen, { type: "mode", mode: "colour_samples_swap" }, model, engine);
+    expect(steps(both, DING)).toEqual({ choices: ["place", "imperial_priority", "colour_samples_swap"], heading: "before_action", back: false });
     expect(titles(both, DING)).toEqual(["Before your worker action", "工人行动之前"]);
-    for (const mode of ["place", "imperial_priority", "canal_barge"] as const) {
+    for (const mode of ["place", "imperial_priority", "colour_samples_swap"] as const) {
       expect(workPane(workDraft.reduce(both, { type: "mode", mode }, model, engine), model, engine).hidden, mode).toBe(false);
     }
     expect(workDraft.options(workDraft.reduce(both, { type: "mode", mode: "place" }, model, engine), model, engine).active?.locationId).toBe("canal_wharf");
   });
 
   it("offers no lone radio: one ability opened with nothing placed is named by the heading", () => {
-    const { model, engine, initial } = workOf(RICH);
-    expect(workDraft.options(initial, model, engine).modes.map((option) => option.mode)).toEqual(["place", "canal_barge"]);
-    expect(steps(initial, RICH)).toEqual({ choices: [], heading: "place", back: false });
-    const barge = workDraft.reduce(initial, { type: "mode", mode: "canal_barge" }, model, engine);
-    expect(steps(barge, RICH)).toEqual({ choices: [], heading: "canal_barge", back: true });
-    expect(titles(barge, RICH)).toEqual(["Canal Barge", "漕船"]);
-    expect(workPane(barge, model, engine).hidden).toBe(false);
-    // With a placement chosen there is a choice again: Place a worker or Canal Barge first.
-    const chosen = placed(RICH, "canal_wharf", "shifu");
-    expect(steps(chosen, RICH)).toEqual({ choices: ["place", "canal_barge"], heading: "place", back: false });
-    const both = workDraft.reduce(chosen, { type: "mode", mode: "canal_barge" }, model, engine);
-    expect(steps(both, RICH)).toEqual({ choices: ["place", "canal_barge"], heading: "before_action", back: false });
+    const { model, engine, initial } = workOf(SWAP_ONLY);
+    expect(workDraft.options(initial, model, engine).modes.map((option) => option.mode)).toEqual(["place", "colour_samples_swap"]);
+    expect(steps(initial, SWAP_ONLY)).toEqual({ choices: [], heading: "place", back: false });
+    const swap = workDraft.reduce(initial, { type: "mode", mode: "colour_samples_swap" }, model, engine);
+    expect(steps(swap, SWAP_ONLY)).toEqual({ choices: [], heading: "colour_samples_swap", back: true });
+    expect(titles(swap, SWAP_ONLY)).toEqual(["Colour Samples swap", "色样簿换单"]);
+    expect(workPane(swap, model, engine).hidden).toBe(false);
+    // With a placement chosen there is a choice again: Place a worker or the swap first.
+    const chosen = placed(SWAP_ONLY, "canal_wharf", "shifu");
+    expect(steps(chosen, SWAP_ONLY)).toEqual({ choices: ["place", "colour_samples_swap"], heading: "place", back: false });
+    const both = workDraft.reduce(chosen, { type: "mode", mode: "colour_samples_swap" }, model, engine);
+    expect(steps(both, SWAP_ONLY)).toEqual({ choices: ["place", "colour_samples_swap"], heading: "before_action", back: false });
   });
 
   it("is empty when nothing may come first, and after the worker action (ActionWindow lists the modes there)", () => {
@@ -181,7 +197,7 @@ describe("the step choice before the worker action (stepChoices, heading, backTo
     const after = workOf("w-after-the-worker-action");
     expect(workDraft.options(after.initial, after.model, after.engine)).toMatchObject({ stepChoices: [], heading: "after_action", backToPlacing: false });
     expect(titles(after.initial, "w-after-the-worker-action")).toEqual(["After your worker action", "工人行动之后"]);
-    for (const mode of ["imperial_priority", "canal_barge", "end_turn"] as const) {
+    for (const mode of ["imperial_priority", "colour_samples_swap", "end_turn"] as const) {
       const draft = workDraft.reduce(after.initial, { type: "mode", mode }, after.model, after.engine);
       expect(workDraft.options(draft, after.model, after.engine).heading, mode).toBe("after_action");
     }
@@ -224,7 +240,7 @@ describe("the hidden pane in the markup", () => {
     );
     expect([...bar.matchAll(/data-pane-opener="([^"]+)"[^>]*>([^<]+)</g)].map((match) => [match[1], match[2]])).toEqual([
       ["imperial_priority", "Imperial Priority"],
-      ["canal_barge", "Canal Barge"],
+      ["colour_samples_swap", "Colour Samples swap"],
     ]);
     expect(html.indexOf("pane-openers")).toBeLessThan(html.indexOf("<main"));
     const zh = renderScreen(fixtureSource(DING), { locale: "zh-CN" });
@@ -235,7 +251,7 @@ describe("the hidden pane in the markup", () => {
   });
 
   it("keeps the pane in every other window, and once a placement is chosen", () => {
-    for (const id of ["w-kiln-selection", "w-after-the-worker-action", "m17_after_action", "m10b_setters_mark_on_space", "m9_contributions_step1_3p", "m8_final_results_3p"]) {
+    for (const id of ["w-kiln-selection", "w-after-the-worker-action", "m17_after_action", "m10b_setters_mark_on_space", "m9_contributions_step1_3p", "m8_final_results_4p"]) {
       const html = renderScreen(fixtureSource(id));
       expect(html, id).not.toContain('data-pane="hidden"');
       expect(html, id).not.toMatch(/<aside class="pane"[^>]*hidden=""/);
@@ -492,7 +508,7 @@ describe("the pane appears with a placement and hides again", () => {
   });
 
   it("the Guild Hall keeps taking the player to the Tech display, with the pane shown for Confirm; Clear returns to its Place, not the chooser", async () => {
-    mount(new ControlledSource("m5_two_player_board_2p"));
+    mount(new ControlledSource("w-before-the-worker-action-kiln-furniture-inverted-firing-targets-setters-marks-senior-apprentice"));
     press(placeButton("guild_hall", "apprentice"));
     expect(pane().hidden).toBe(false);
     await act(async () => {
@@ -527,10 +543,10 @@ describe("an ability that may come first opens the hidden pane", () => {
     expect(container.querySelector('[data-b4="action-window"][data-source="before_action"]')).not.toBeNull();
     // Nothing placed: the step's radios are the abilities only (arrow keys select as they move,
     // and none of them empties the pane).
-    expect([...pane().querySelectorAll<HTMLInputElement>('input[name="mode"]')].map((input) => input.value)).toEqual(["imperial_priority", "canal_barge"]);
-    press($('input[name="mode"][value="canal_barge"]'));
+    expect([...pane().querySelectorAll<HTMLInputElement>('input[name="mode"]')].map((input) => input.value)).toEqual(["imperial_priority", "colour_samples_swap"]);
+    press($('input[name="mode"][value="colour_samples_swap"]'));
     expect(pane().hidden).toBe(false);
-    expect(document.activeElement).toBe($('input[name="mode"][value="canal_barge"]'));
+    expect(document.activeElement).toBe($('input[name="mode"][value="colour_samples_swap"]'));
     press($('input[name="mode"][value="imperial_priority"]'));
     expect(pane().hidden).toBe(false);
     // The way back to placing is a separate button: it hides the pane, and focus returns to the opener used.
@@ -543,40 +559,40 @@ describe("an ability that may come first opens the hidden pane", () => {
   });
 
   it("the only ability that may come first opens with no lone radio: the heading names it", () => {
-    mount(new ControlledSource(RICH));
-    expect([...container.querySelectorAll("[data-pane-opener]")].map((opener) => opener.getAttribute("data-pane-opener"))).toEqual(["canal_barge"]);
-    press($('[data-pane-opener="canal_barge"]'));
+    mount(new ControlledSource(SWAP_ONLY));
+    expect([...container.querySelectorAll("[data-pane-opener]")].map((opener) => opener.getAttribute("data-pane-opener"))).toEqual(["colour_samples_swap"]);
+    press($('[data-pane-opener="colour_samples_swap"]'));
     expect(pane().hidden).toBe(false);
     expect(document.activeElement).toBe(paneHeading());
-    expect(paneHeading().textContent).toBe("Canal Barge");
-    expect($(".pane-strip-title").textContent).toBe("Canal Barge");
+    expect(paneHeading().textContent).toBe("Colour Samples swap");
+    expect($(".pane-strip-title").textContent).toBe("Colour Samples swap");
     // No "This step" group with a single checked radio; the form and the way back are there.
     expect(pane().querySelector('input[name="mode"]')).toBeNull();
     expect(pane().textContent).not.toContain("This step");
-    expect(container.querySelector('[data-b4="action-window"][data-source="before_action"] [data-form="canal-barge"]')).not.toBeNull();
+    expect(container.querySelector('[data-b4="action-window"][data-source="before_action"] [data-b4="colour-samples-swap"]')).not.toBeNull();
     press($('[data-b4="back-to-placing"]'));
     expect(pane().hidden).toBe(true);
-    expect(document.activeElement).toBe($('[data-pane-opener="canal_barge"]'));
+    expect(document.activeElement).toBe($('[data-pane-opener="colour_samples_swap"]'));
     // With a placement chosen there is a real choice again, under the placing heading.
     press(placeButton("canal_wharf", "shifu"));
     expect(paneHeading().textContent).toBe("Place a worker");
-    expect([...pane().querySelectorAll<HTMLInputElement>('input[name="mode"]')].map((input) => input.value)).toEqual(["place", "canal_barge"]);
-    press($('input[name="mode"][value="canal_barge"]'));
+    expect([...pane().querySelectorAll<HTMLInputElement>('input[name="mode"]')].map((input) => input.value)).toEqual(["place", "colour_samples_swap"]);
+    press($('input[name="mode"][value="colour_samples_swap"]'));
     expect(paneHeading().textContent).toBe("Before your worker action");
     press($('input[name="mode"][value="place"]'));
     expect(paneHeading().textContent).toBe("Place a worker");
   });
 
   it("names the open ability in Chinese too, in the heading and the phone sheet strip", () => {
-    const { model, engine, initial } = workOf(RICH);
-    const barge = workDraft.reduce(initial, { type: "mode", mode: "canal_barge" }, model, engine);
-    const html = renderScreen(fixtureSource(RICH), { locale: "zh-CN", draft: barge, layoutMode: "phone" });
-    expect(html).toMatch(/<h2[^>]*class="pane-heading"[^>]*>漕船<\/h2>/);
-    expect(html).toMatch(/<span class="pane-strip-title">漕船<\/span>/);
+    const { model, engine, initial } = workOf(SWAP_ONLY);
+    const swap = workDraft.reduce(initial, { type: "mode", mode: "colour_samples_swap" }, model, engine);
+    const html = renderScreen(fixtureSource(SWAP_ONLY), { locale: "zh-CN", draft: swap, layoutMode: "phone" });
+    expect(html).toMatch(/<h2[^>]*class="pane-heading"[^>]*>色样簿换单<\/h2>/);
+    expect(html).toMatch(/<span class="pane-strip-title">色样簿换单<\/span>/);
     expect(html).not.toContain('name="mode"');
     expect(html).toMatch(/data-b4="back-to-placing"[^>]*>返回派工</);
     const ding = workOf(DING);
-    const ability = workDraft.reduce(ding.initial, { type: "mode", mode: "canal_barge" }, ding.model, ding.engine);
+    const ability = workDraft.reduce(ding.initial, { type: "mode", mode: "colour_samples_swap" }, ding.model, ding.engine);
     const zh = renderScreen(fixtureSource(DING), { locale: "zh-CN", draft: ability, layoutMode: "phone" });
     expect(zh).toMatch(/<h2[^>]*class="pane-heading"[^>]*>工人行动之前<\/h2>/);
     expect(zh).toMatch(/<span class="pane-strip-title">工人行动之前<\/span>/);
@@ -585,7 +601,7 @@ describe("an ability that may come first opens the hidden pane", () => {
   it("with a placement chosen, Place a worker is one of the step's radios and an ability keeps the placement", () => {
     mount(new ControlledSource(DING));
     press(placeButton("canal_wharf", "shifu"));
-    expect([...pane().querySelectorAll<HTMLInputElement>('input[name="mode"]')].map((input) => input.value)).toEqual(["place", "imperial_priority", "canal_barge"]);
+    expect([...pane().querySelectorAll<HTMLInputElement>('input[name="mode"]')].map((input) => input.value)).toEqual(["place", "imperial_priority", "colour_samples_swap"]);
     press($('input[name="mode"][value="imperial_priority"]'));
     expect(pane().hidden).toBe(false);
     expect(container.querySelector('[data-b4="back-to-placing"]')).toBeNull();
@@ -596,10 +612,10 @@ describe("an ability that may come first opens the hidden pane", () => {
 
   it("on phones the opener opens the sheet", () => {
     const ui = mount(new ControlledSource(DING), <GameScreen />, "phone");
-    press($('[data-pane-opener="canal_barge"]'));
+    press($('[data-pane-opener="colour_samples_swap"]'));
     expect(sheetOf(ui, DING)).toBe("open");
     expect(pane().hidden).toBe(false);
-    expect($<HTMLInputElement>('input[name="mode"][value="canal_barge"]').checked).toBe(true);
+    expect($<HTMLInputElement>('input[name="mode"][value="colour_samples_swap"]').checked).toBe(true);
     expect(document.activeElement).toBe(paneHeading());
   });
 });

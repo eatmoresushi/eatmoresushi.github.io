@@ -13,7 +13,7 @@ import { IMPERIAL_KILN_RECOGNITION, IMPERIAL_MODIFIER_OPTIONS } from "../i18n/co
 import { list, signed } from "../i18n/format.ts";
 import { useGame, useTableSelection } from "../state/hooks.ts";
 import { KilnCeramic } from "./KilnCeramic.tsx";
-import { PendingChip, extraFireFor } from "./KilnSpace.tsx";
+import { PendingChip, extraFireFor, saggarsFloorFor } from "./KilnSpace.tsx";
 import { RulesDetail } from "../rules/RulesDetail.tsx";
 import { playerLabel } from "./names.ts";
 import { useTableCeramics } from "./tableCeramics.ts";
@@ -58,7 +58,7 @@ export function ImperialKilns() {
             </span>
             <span className="imp-body">
               {ceramic === null ? null : (
-                <KilnCeramic id={ceramic.id} ownerId={ceramic.ownerId} marker={ceramic.heatMarker} extraFire={extraFireFor(model, ceramic.id)} size={34} />
+                <KilnCeramic id={ceramic.id} ownerId={ceramic.ownerId} marker={ceramic.heatMarker} extraFire={extraFireFor(model, ceramic.id)} saggarsFloor={saggarsFloorFor(model, ceramic.id)} size={34} />
               )}
               {pendingHere.map((entry) => (
                 <PendingChip key={entry.ceramicId} ceramicId={entry.ceramicId} glaze={entry.glaze} ceramics={ceramics} t={t} />

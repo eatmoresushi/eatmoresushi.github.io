@@ -9,12 +9,14 @@
  *   spaces (`placeTargets`, every entry legal or not, CR B2-3; `activePlacement`) — since the owner
  *   review of 2026-10-17 the only place a worker is placed from; the Guild Hall chooser on the
  *   Tech display (`techChooser`: a face-up Tech to buy, or a discipline to inspect); Glaze &
- *   Load destinations on the kiln (`kilnTargets`) with pending chips; display slots for the
- *   Commission Market's first reservation (`orderTargets`, `slot:<i>`); the chosen vessels
- *   highlighted;
+ *   Load destinations on the kiln (`kilnTargets`) with pending chips; the held Orders the Colour
+ *   Samples swap may give up (`orderTargets` keyed by OrderId); the chosen vessels highlighted;
  * - **setters_mark:** the open kiln spaces;
- * - **commission:** display slots (reservation) or the privately looked-at Orders (look);
- * - **colour_samples:** the privately looked-at Orders.
+ * - **commission:** the display slots reservable now (`slot:<i>`) and the privately looked-at
+ *   Orders (keyed by OrderId), toggled into the reservation;
+ * - **guild_inspection:** the face-up Techs on the Tech display (`techChooser` in take mode), for
+ *   the Shifu's first take and the second; the inspected Techs are private and only in the pane;
+ * - **colour_samples** and **colour_samples_swap:** the privately looked-at Orders.
  *
  * The `work` window covers both the before-action step and the after-action window
  * (`window.step`); `WorkTurn` composes `ActionWindow` for the latter.
@@ -35,31 +37,32 @@ import type { PaneOpener, PanePresence, WindowSpecFor } from "../../state/draftS
 import type { EngineView, GameModel } from "../../state/model.ts";
 import { displaySlotKey, placementWorkerKey, tableSelection } from "../../state/tableSelection.ts";
 import type { OrderTargetState, TableSelectionData } from "../../state/tableSelection.ts";
+import type { OrderId } from "../../../game/index.ts";
 import { KilnSelection } from "../setup/KilnSelection.tsx";
 import { kilnSelectionDraft } from "../setup/KilnSelection.draft.ts";
 import { SettersMark } from "../setup/SettersMark.tsx";
 import { settersMarkDraft } from "../setup/SettersMark.draft.ts";
 import type { SettersMarkAction } from "../setup/SettersMark.draft.ts";
 import { ColourSamples } from "./ColourSamples.tsx";
-import { colourSamplesDraft } from "./ColourSamples.draft.ts";
-import type { ColourSamplesAction } from "./ColourSamples.draft.ts";
+import { colourSamplesDraft, colourSamplesSwapLookDraft } from "./ColourSamples.draft.ts";
+import type { ColourSamplesAction, ColourSamplesDraft } from "./ColourSamples.draft.ts";
+import { colourSamplesSwapDraft } from "./ColourSamplesSwap.draft.ts";
 import { CommissionStep } from "./CommissionStep.tsx";
-import { commissionDraft } from "./CommissionStep.draft.ts";
-import type { CommissionAction } from "./CommissionStep.draft.ts";
+import { commissionDraft, lookPickKey } from "./CommissionStep.draft.ts";
+import type { CommissionAction, CommissionDraft } from "./CommissionStep.draft.ts";
 import { placements } from "./context.ts";
 import { GuildInspection } from "./GuildInspection.tsx";
-import { guildInspectionDraft } from "./GuildInspection.draft.ts";
+import { guildInspectionDraft, inspectionTechChooser } from "./GuildInspection.draft.ts";
+import type { GuildInspectionAction } from "./GuildInspection.draft.ts";
 import { kilnTargetsOf, pendingLoads } from "./locations/GlazeLoad.draft.ts";
 import { techChooserOf } from "./locations/GuildHall.draft.ts";
 import type { GlazeLoadDraft } from "./locations/GlazeLoad.draft.ts";
-import type { CommissionMarketDraft } from "./locations/CommissionMarket.draft.ts";
-import { commissionMarketDraft } from "./locations/CommissionMarket.draft.ts";
 import { WorkTurn } from "./WorkTurn.tsx";
 import { activePlacement, workDraft } from "./workDraft.ts";
 import type { WorkAction, WorkDraft, WorkHeading, WorkMode } from "./workDraft.ts";
 
 /** The window kinds this slice covers. */
-export type WorkWindowKind = "kiln_selection" | "setters_mark" | "work" | "commission" | "guild_inspection" | "colour_samples";
+export type WorkWindowKind = "kiln_selection" | "setters_mark" | "work" | "commission" | "guild_inspection" | "colour_samples" | "colour_samples_swap";
 
 function workStep(model: GameModel): "before_action" | "after_action" {
   return model.window.kind === "work" ? model.window.step : "before_action";
@@ -76,13 +79,13 @@ const HEADING_TITLE = {
   before_action: "work.title.beforeAction",
   after_action: "work.title.afterAction",
   imperial_priority: "work.work.mode.imperialPriority",
-  canal_barge: "work.work.mode.canalBarge",
+  colour_samples_swap: "work.work.mode.colourSamplesSwap",
 } as const satisfies Readonly<Record<WorkHeading, MessageKey>>;
 
 /** Each ability that may come before the worker action, as the hidden pane's opener names it. */
 const OPENER_TITLE = {
   imperial_priority: "work.work.mode.imperialPriority",
-  canal_barge: "work.work.mode.canalBarge",
+  colour_samples_swap: "work.work.mode.colourSamplesSwap",
 } as const satisfies Readonly<Record<Exclude<WorkMode, "place" | "end_turn">, MessageKey>>;
 
 /**
@@ -106,8 +109,19 @@ export function workPane(draft: WorkDraft, model: GameModel, engine: EngineView)
   };
 }
 
-function slotTargets(slots: ReadonlyArray<{ slotIndex: number }>, chosen: string | null): Map<string, { state: OrderTargetState; disabled: boolean }> {
-  return new Map(slots.map((slot) => [displaySlotKey(slot.slotIndex), { state: displaySlotKey(slot.slotIndex) === chosen ? "chosen" : "choosable", disabled: false }]));
+/** The Commission step's targets: each display slot (`slot:<i>`) and looked card (OrderId), chosen or not. */
+function commissionTargets(draft: CommissionDraft, model: GameModel, engine: EngineView): Map<string, { state: OrderTargetState; disabled: boolean }> {
+  const options = commissionDraft.options(draft, model, engine);
+  const targets = new Map<string, { state: OrderTargetState; disabled: boolean }>();
+  const target = (key: string, chosen: boolean) => ({ state: (chosen ? "chosen" : "choosable") as OrderTargetState, disabled: !chosen && options.full && options.maxReservations > 1 });
+  for (const slot of options.slots) targets.set(displaySlotKey(slot.slotIndex ?? 0), target(slot.key, draft.picks.includes(slot.key)));
+  for (const looked of options.looked) targets.set(looked.orderId, target(looked.key, draft.picks.includes(looked.key)));
+  return targets;
+}
+
+/** A Colour Samples look's targets: each looked card (OrderId). */
+function lookTargets(draft: ColourSamplesDraft, orderIds: readonly OrderId[]): Map<string, { state: OrderTargetState; disabled: boolean }> {
+  return new Map(orderIds.map((orderId) => [orderId, { state: orderId === draft.orderId ? "chosen" : "choosable", disabled: false }]));
 }
 
 export const WORK_WINDOWS: { readonly [K in WorkWindowKind]: WindowSpecFor<K> } = {
@@ -161,9 +175,15 @@ export const WORK_WINDOWS: { readonly [K in WorkWindowKind]: WindowSpecFor<K> } 
         if (context !== null && draft.locationId === "guild_hall") {
           selection = { ...selection, techChooser: techChooserOf(draft.perLocation.guild_hall, context) };
         }
-        if (context !== null && draft.locationId === "commission_market") {
-          const sub: CommissionMarketDraft = draft.perLocation.commission_market;
-          selection = { ...selection, orderTargets: slotTargets(commissionMarketDraft.options(sub, context).slots, sub.first) };
+        if (draft.mode === "colour_samples_swap") {
+          // The held Orders the swap may give up, on the table's hand row (marked for discard once chosen).
+          const swap = colourSamplesSwapDraft.options(draft.swap, model, engine);
+          selection = {
+            ...selection,
+            orderTargets: new Map(
+              swap.discards.map((discard) => [discard.orderId, { state: draft.swap.discardOrderId === discard.orderId ? "discard" : "choosable", disabled: !discard.legal }]),
+            ),
+          };
         }
         if (draft.mode === "imperial_priority") {
           const ip = draft.imperialPriority;
@@ -172,16 +192,17 @@ export const WORK_WINDOWS: { readonly [K in WorkWindowKind]: WindowSpecFor<K> } 
         }
         return tableSelection({ ...selection, highlightedCeramicIds: highlighted });
       },
-      act(draft, action, model): WorkAction | null {
+      act(draft, action, model, engine): WorkAction | null {
         switch (action.type) {
           case "place":
             return workStep(model) === "before_action" ? { type: "place", locationId: action.locationId, workerKey: action.workerKey } : null;
           case "kilnSpace":
             return draft.mode === "place" && draft.locationId === "glaze_load" ? { type: "sub", locationId: "glaze_load", action: { type: "kilnSpace", spaceId: action.spaceId } } : null;
-          case "order":
-            return draft.mode === "place" && draft.locationId === "commission_market" && action.key.startsWith("slot:")
-              ? { type: "sub", locationId: "commission_market", action: { type: "first", first: action.key as `slot:${number}` } }
-              : null;
+          case "order": {
+            if (draft.mode !== "colour_samples_swap") return null;
+            const discard = colourSamplesSwapDraft.options(draft.swap, model, engine).discards.find((candidate) => candidate.orderId === action.key && candidate.legal);
+            return discard === undefined ? null : { type: "swap", action: { type: "discard", orderId: discard.orderId } };
+          }
           case "tech":
             return draft.mode === "place" && draft.locationId === "guild_hall" ? { type: "sub", locationId: "guild_hall", action: { type: "tech", techId: action.techId } } : null;
           case "inspect":
@@ -197,33 +218,18 @@ export const WORK_WINDOWS: { readonly [K in WorkWindowKind]: WindowSpecFor<K> } 
     kind: "commission",
     Component: CommissionStep,
     draft: commissionDraft,
-    title: (model) => {
-      const window = model.window;
-      const awaiting = window.kind === "commission" ? window.awaiting : "reservation";
-      if (awaiting === "look_choice") return msg("work.title.commission.look");
-      if (awaiting === "resource") return msg("work.title.commission.resource");
-      return msg("work.title.commission.reservation");
-    },
-    alternative: (draft, model, engine) =>
-      commissionDraft.options(draft, model, engine).canStop ? { label: msg("work.cm.stop"), command: { type: "COMMISSION_STOP" } } : null,
+    title: (model) => (model.window.kind === "commission" && model.window.maxReservations > 1 ? msg("work.title.commission.two", { n: model.window.maxReservations }) : msg("work.title.commission.one")),
     table: {
-      select(draft, model, engine) {
-        const options = commissionDraft.options(draft, model, engine);
-        if (options.awaiting === "look_choice") {
-          return tableSelection({ orderTargets: new Map(options.looked.map((orderId) => [orderId, { state: orderId === draft.looked ? "chosen" : "choosable", disabled: false }])) });
-        }
-        if (options.awaiting === "reservation") return tableSelection({ orderTargets: slotTargets(options.slots, draft.reserve) });
-        return tableSelection({});
-      },
+      select: (draft, model, engine) => tableSelection({ orderTargets: commissionTargets(draft, model, engine) }),
       act(draft, action, model, engine): CommissionAction | null {
         if (action.type !== "order") return null;
         const options = commissionDraft.options(draft, model, engine);
-        if (options.awaiting === "look_choice") {
-          const orderId = options.looked.find((candidate) => candidate === action.key);
-          return orderId === undefined ? null : { type: "looked", orderId };
-        }
-        if (options.awaiting === "reservation" && action.key.startsWith("slot:")) return { type: "reserve", reserve: action.key as `slot:${number}` };
-        return null;
+        const choice = action.key.startsWith("slot:")
+          ? options.slots.find((slot) => slot.slotIndex !== null && displaySlotKey(slot.slotIndex) === action.key)
+          : options.looked.find((looked) => looked.key === lookPickKey(action.key as OrderId));
+        if (choice === undefined) return null;
+        if (options.maxReservations === 1) return { type: "pick", key: choice.key };
+        return { type: "toggle", key: choice.key, on: !draft.picks.includes(choice.key) };
       },
     },
   }),
@@ -232,7 +238,16 @@ export const WORK_WINDOWS: { readonly [K in WorkWindowKind]: WindowSpecFor<K> } 
     kind: "guild_inspection",
     Component: GuildInspection,
     draft: guildInspectionDraft,
-    title: () => msg("work.title.guild"),
+    title: (model) => (model.window.kind === "guild_inspection" && model.window.takes > 0 ? msg("work.title.guildSecond") : msg("work.title.guild")),
+    table: {
+      // The face-up Techs on the Tech display, for the first take and the second (D14).
+      select: (draft, model, engine) => tableSelection({ techChooser: inspectionTechChooser(draft, model, engine) }),
+      act(_draft, action, model, engine): GuildInspectionAction | null {
+        if (action.type !== "tech") return null;
+        const target = inspectionTechChooser({ choice: null, bottomOrder: [] }, model, engine)?.techs.get(action.techId);
+        return target?.legal === true ? { type: "take", take: { kind: "face_up", techId: action.techId } } : null;
+      },
+    },
   }),
 
   colour_samples: defineWindow({
@@ -241,13 +256,25 @@ export const WORK_WINDOWS: { readonly [K in WorkWindowKind]: WindowSpecFor<K> } 
     draft: colourSamplesDraft,
     title: () => msg("work.title.colourSamples"),
     table: {
-      select: (draft, model, engine) =>
-        tableSelection({
-          orderTargets: new Map(colourSamplesDraft.options(draft, model, engine).orderIds.map((orderId) => [orderId, { state: orderId === draft.orderId ? "chosen" : "choosable", disabled: false }])),
-        }),
+      select: (draft, model, engine) => tableSelection({ orderTargets: lookTargets(draft, colourSamplesDraft.options(draft, model, engine).orderIds) }),
       act(_draft, action, model, engine): ColourSamplesAction | null {
         if (action.type !== "order") return null;
         const orderId = colourSamplesDraft.options({ orderId: null }, model, engine).orderIds.find((candidate) => candidate === action.key);
+        return orderId === undefined ? null : { type: "order", orderId };
+      },
+    },
+  }),
+
+  colour_samples_swap: defineWindow({
+    kind: "colour_samples_swap",
+    Component: ColourSamples,
+    draft: colourSamplesSwapLookDraft,
+    title: () => msg("work.title.colourSamplesSwap"),
+    table: {
+      select: (draft, model, engine) => tableSelection({ orderTargets: lookTargets(draft, colourSamplesSwapLookDraft.options(draft, model, engine).orderIds) }),
+      act(_draft, action, model, engine): ColourSamplesAction | null {
+        if (action.type !== "order") return null;
+        const orderId = colourSamplesSwapLookDraft.options({ orderId: null }, model, engine).orderIds.find((candidate) => candidate === action.key);
         return orderId === undefined ? null : { type: "order", orderId };
       },
     },

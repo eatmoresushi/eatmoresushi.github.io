@@ -76,7 +76,7 @@ describe("the open Fire discard (D4)", () => {
     expect(perceivable(renderScreen(fixtureSource("t-fire-deck-reshuffle")))).toMatch(/Fire discard \(open\)\s+none yet/);
   });
 
-  it.each(["m1_work_phase_r2_3p", "m2_commission_market_look_r3_4p", "m3_heat_marker_step_3p", "m4_after_quality_3p", "m7_cleanup_hand_limit_3p", "m14_salvage"])(
+  it.each(["m1_work_phase_r2_3p", "m2_commission_market_look_r3_4p", "m3_heat_marker_step_3p", "m4_after_quality_3p", "m7_cleanup_hand_limit_3p", "m18_jun_second_firing"])(
     "%s: every discard list on the game screen is the public discard, in both languages",
     (id) => {
       const discard = fixture(id).playerView.game.fireDiscard;

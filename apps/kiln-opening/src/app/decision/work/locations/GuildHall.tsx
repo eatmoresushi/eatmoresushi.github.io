@@ -6,8 +6,8 @@
  * there sets this sub-draft. The pane lists no Techs; it shows what is chosen, or asks for a
  * choice on the table, with a button that goes there (`revealTechChooser`):
  * - Apprentice effect: the face-up Tech to buy, its discipline and its price;
- * - Shifu effect: the discipline whose deck is inspected (privately; the take and the bottom
- *   order follow in the `guild_inspection` window).
+ * - Shifu effect: the discipline whose deck is inspected (privately; up to 2 takes from
+ *   different disciplines and the bottom order follow in the `guild_inspection` window).
  */
 import type { GuildTechOption, TechDiscipline } from "../../../../game/index.ts";
 import { disciplineName, techName } from "../../../i18n/content.ts";
@@ -22,8 +22,6 @@ import type { GuildHallAction, GuildHallDraft, GuildHallOptions } from "./GuildH
 import type { LocationEditorProps } from "./editor.ts";
 import { amountText } from "./shared.ts";
 
-export { techReasonDetails } from "./GuildHall.draft.ts";
-
 export type GuildHallProps = LocationEditorProps<GuildHallDraft, GuildHallAction, GuildHallOptions>;
 
 /** The discipline swatch of a Tech (colour plus the discipline's name in text, never colour alone). */
@@ -31,10 +29,9 @@ export function DisciplineSwatch({ discipline }: { discipline: TechDiscipline })
   return <span className="b4-disc" data-discipline={discipline} aria-hidden="true" />;
 }
 
-/** "3 Coins", or "3 Coins → 2 Coins" after the Shifu's discount. */
-export function techPriceText(option: Pick<GuildTechOption, "printedCost" | "price">, t: Translator): string {
-  const price = amountText(t, "coins", option.price);
-  return option.price === option.printedCost ? price : t("work.gh.printedAndPrice", { printed: amountText(t, "coins", option.printedCost), price });
+/** "3 Coins": the printed cost, which every Guild Hall take pays (v1.6.2 L206–207). */
+export function techPriceText(option: Pick<GuildTechOption, "cost">, t: Translator): string {
+  return amountText(t, "coins", option.cost);
 }
 
 export function GuildHall({ draft, options }: GuildHallProps) {
@@ -64,7 +61,7 @@ export function GuildHall({ draft, options }: GuildHallProps) {
         </p>
       ) : null}
       {nothing ? <FormNote>{buy ? t("work.gh.chooseOnTable") : t("work.gh.chooseDeckOnTable")}</FormNote> : null}
-      {buy ? null : <FormNote tone="private">{t("work.gh.inspectNote")}</FormNote>}
+      {buy ? null : <FormNote tone="private">{t("work.gh.inspectNote", { n: options.maxTechs })}</FormNote>}
       <div className="b4-row">
         <Button size="sm" data-goto="techs" onClick={() => revealTechChooser(ui, isPhone(layout))}>
           {nothing ? t("work.gh.showTechs") : t("work.gh.changeOnTable")}

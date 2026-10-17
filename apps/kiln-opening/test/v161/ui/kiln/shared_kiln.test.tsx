@@ -18,6 +18,7 @@ import { defineWindow } from "../../../../src/app/state/draftStore.ts";
 import type { WindowRegistry } from "../../../../src/app/state/draftStore.ts";
 import { tableSelection } from "../../../../src/app/state/tableSelection.ts";
 import { createTranslator, msg } from "../../../../src/app/i18n/translator.ts";
+import { FixtureGameSource } from "../../../../src/app/session/fixtureSource.ts";
 import { fixture, fixtureSource } from "../support/fixtures.ts";
 import { renderComponent } from "../support/render.tsx";
 import { TOY_WINDOWS } from "../support/toyWindows.tsx";
@@ -26,6 +27,13 @@ import { activeKilnSpaces, elementAt, kilnLayout, perceivable, settersMarkOption
 
 const render = (id: string, locale: "en" | "zh-CN" = "en", options: Parameters<typeof renderComponent>[2] = {}) =>
   renderComponent(fixtureSource(id), <KilnBlock />, { locale, ...options });
+
+/** A fixture with an edit (a state no fixture captured), rendered like `render`. */
+function renderEdited(id: string, edit: (entry: ReturnType<typeof fixture>) => void, locale: "en" | "zh-CN" = "en"): string {
+  const entry = structuredClone(fixture(id));
+  edit(entry);
+  return renderComponent(new FixtureGameSource(entry), <KilnBlock />, { locale });
+}
 
 /** The Shared Kiln fixtures for 2, 3 and 4 players. */
 const BY_PLAYERS: ReadonlyArray<readonly [string, PlayerCount]> = [
@@ -116,9 +124,21 @@ describe("ceramics, markers and tiles", () => {
   it("shows face-down and turned Heat markers in words, never a heat value", () => {
     const step5 = perceivable(render("m3_heat_marker_step_3p"));
     expect(step5).toContain("Heat marker, face down");
-    const step10 = perceivable(render("m4_after_quality_3p"));
-    expect(step10).toContain("Heat marker −1");
-    expect(step10).toContain("Kiln Master marker −1");
+    const step10 = perceivable(render("m18_jun_second_firing"));
+    expect(step10).toContain("Heat marker +1");
+    // A turned −1 and the Kiln Master marker: m18 with one marker changed to Kiln Master's −1.
+    const master = perceivable(
+      renderEdited("m18_jun_second_firing", (entry) => {
+        const ceramic = entry.playerView.game.ceramics["c11"];
+        if (ceramic?.stage !== "loaded") throw new Error("fixture changed");
+        ceramic.heatMarker = { source: "kiln_master", faceDown: false, value: -1 } as typeof ceramic.heatMarker;
+        const other = entry.playerView.game.ceramics["c15"];
+        if (other?.stage !== "loaded") throw new Error("fixture changed");
+        other.heatMarker = { source: "own", faceDown: false, value: -1 } as typeof other.heatMarker;
+      }),
+    );
+    expect(master).toContain("Heat marker −1");
+    expect(master).toContain("Kiln Master marker −1");
     // Outside the rules-details panels (rulebook text may name Actual Heat), no heat word or value.
     for (const id of ["m3_heat_marker_step_3p", "m4_after_quality_3p", "m18_jun_second_firing"]) {
       const text = perceivable(withoutRulesPanels(render(id)));
@@ -127,33 +147,46 @@ describe("ceramics, markers and tiles", () => {
   });
 
   it("shows the Quality each ceramic recorded in this firing, as a word", () => {
-    const html = render("m4_after_quality_3p");
+    const html = render("m18_jun_second_firing");
     const text = perceivable(html);
     expect(text).toContain("Masterpiece");
     expect(text).toContain("Fine");
     expect(text).toContain("Standard");
-    expect(perceivable(render("m4_after_quality_3p", "zh-CN"))).toMatch(/臻品|上品|良品/);
+    expect(perceivable(render("m18_jun_second_firing", "zh-CN"))).toMatch(/臻品|上品|良品/);
+    expect(perceivable(render("m4_after_quality_3p"))).toContain("Flawed");
     // Before Quality there is none.
     expect(render("m3_heat_marker_step_3p")).not.toMatch(/data-quality=/);
   });
 
   it("stacks two ceramics in one space with the Inverted Firing tile", () => {
     const html = render("m9_contributions_step1_3p");
-    const cell = spaceCell(html, "middle_1");
+    const cell = spaceCell(html, "high_2");
     expect(cell).toContain("2 stacked");
     expect(cell).toContain('class="kstack"');
     expect(cell).toContain("Inverted Firing");
-    expect(spaceCell(render("m9_contributions_step1_3p", "zh-CN"), "middle_1")).toContain("2件叠烧");
+    expect(spaceCell(render("m9_contributions_step1_3p", "zh-CN"), "high_2")).toContain("2件叠烧");
   });
 
   it("shows Kiln Furniture under its ceramic, with its owner, and the space's modifier becomes the tile's", () => {
     const html = render("m3_heat_marker_step_3p");
-    const cell = spaceCell(html, "low_2");
-    expect(cell).toContain("Kiln Furniture −1 · Lin");
-    expect(cell).toContain('aria-label="Low 2, Kiln Furniture modifier −1"');
-    const m9 = spaceCell(render("m9_contributions_step1_3p"), "low_1");
-    expect(m9).toContain('aria-label="Low 1, Kiln Furniture modifier +1"');
-    expect(m9).toMatch(/class="ksp-mod num">\+1</);
+    const cell = spaceCell(html, "middle_1");
+    expect(cell).toContain("Kiln Furniture +1 · Wen");
+    expect(cell).toContain('aria-label="Middle 1, Kiln Furniture modifier +1"');
+    expect(cell).toMatch(/class="ksp-mod num">\+1</);
+    const m9 = spaceCell(render("m9_contributions_step1_3p"), "low_2");
+    expect(m9).toContain('aria-label="Low 2, Kiln Furniture modifier +1"');
+    // A −1 tile (m3 with its tile turned to −1): the space reads the tile's −1, not the zone's.
+    const minus = spaceCell(
+      renderEdited("m3_heat_marker_step_3p", (entry) => {
+        const furniture = entry.playerView.game.sharedKiln.spaces.middle_1.kilnFurniture;
+        if (furniture === null) throw new Error("fixture changed");
+        furniture.modifier = -1;
+      }),
+      "middle_1",
+    );
+    expect(minus).toContain("Kiln Furniture −1 · Wen");
+    expect(minus).toContain('aria-label="Middle 1, Kiln Furniture modifier −1"');
+    expect(minus).toMatch(/class="ksp-mod num">−1</);
   });
 
   it("shows the Setter's Mark tile on its space in its owner's colour", () => {
@@ -165,16 +198,16 @@ describe("ceramics, markers and tiles", () => {
   });
 
   it("opens each tile's rules details: only the full rule and clarifications, with no card text, card facts or source labels (D10)", () => {
-    const furniture = spaceCell(render("m3_heat_marker_step_3p"), "low_2");
+    const furniture = spaceCell(render("m3_heat_marker_step_3p"), "middle_1");
     tagged(furniture, techRulesCheck("T15", "en"));
     const setter = spaceCell(render("m10b_setters_mark_on_space"), "high_1");
     tagged(setter, techRulesCheck("T22", "en"));
-    const zh = spaceCell(render("m3_heat_marker_step_3p", "zh-CN"), "low_2");
+    const zh = spaceCell(render("m3_heat_marker_step_3p", "zh-CN"), "middle_1");
     tagged(zh, techRulesCheck("T15", "zh-CN"));
     // The panel is a PieceDetail disclosure: a button with aria-expanded and a hidden panel.
     expect(furniture).toMatch(/<button type="button" class="kit-detail-trigger" aria-expanded="false" aria-controls="[^"]+"/);
     // The tile names its owner; the panel adds no card facts, owner or this-round rows (owner review, 2026-10-17).
-    expect(perceivable(furniture)).toContain("Kiln Furniture −1 · Lin");
+    expect(perceivable(furniture)).toContain("Kiln Furniture +1 · Wen");
     for (const [html, techId, locale] of [[furniture, "T15", "en"], [setter, "T22", "en"], [zh, "T15", "zh-CN"]] as const) {
       const t = createTranslator(locale, { strict: true });
       const body = panel(html, t("rules.label", { name: techText(techId, locale).name }));
@@ -184,7 +217,7 @@ describe("ceramics, markers and tiles", () => {
       expect(body).not.toContain("rd-short");
     }
     const panelText = textOf(panel(furniture, "Full rules: Kiln Furniture"));
-    expect(panelText).not.toMatch(/\bLin\b|Ready|Used this round|1 VP when gained|Your second Glaze & Load space/);
+    expect(panelText).not.toMatch(/\bWen\b|Ready|Used this round|1 VP when gained|Your second Glaze & Load space/);
     expect(perceivable(furniture)).not.toMatch(/\b(un)?lock/i);
   });
 

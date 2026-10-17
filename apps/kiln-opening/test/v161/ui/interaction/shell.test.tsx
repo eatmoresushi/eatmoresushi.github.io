@@ -273,12 +273,12 @@ describe("skip link", () => {
   });
 
   it("while the pane is hidden, lands on the openers when an ability may come first", () => {
-    mount(new StaticSource(fixtureSnapshot(structuredClone(fixture("w-before-the-worker-action-canal-barge-imperial-priority-with-reworking-table-ding")))), <GameScreen />);
+    mount(new StaticSource(fixtureSnapshot(structuredClone(fixture("w-before-the-worker-action-colour-samples-swap-imperial-priority-with-reworking-table-ding")))), <GameScreen />);
     act(() => $<HTMLAnchorElement>(".skip-link").click());
     expect(document.activeElement).toBe($("[data-pane-openers] [data-focus-heading]"));
     expect(document.activeElement?.textContent).toMatch(/^Your turn: place a worker · \d left$/);
     // Its openers follow it in the Tab order, after the words that name them.
-    expect($("[data-pane-openers] [role='group']").textContent).toBe("Or first:Imperial PriorityCanal Barge");
+    expect($("[data-pane-openers] [role='group']").textContent).toBe("Or first:Imperial PriorityColour Samples swap");
   });
 });
 
@@ -392,14 +392,14 @@ describe("seat chips in a scrolling row", () => {
       return model.players.findIndex((player) => player.playerId === target);
     };
     const far = allFixtures().find((entry) => inViewIndex(entry.id) >= 2)!.id;
-    expect(inViewIndex("m1_work_phase_r2_3p")).toBe(0);
+    const near = allFixtures().find((entry) => inViewIndex(entry.id) === 0)!.id;
     const scrollTo = vi.spyOn(window, "scrollTo");
     const source = new StaticSource(fixtureSnapshot(structuredClone(fixture(far))));
     mount(source, <div className="top-bar-seats"><SeatChips /></div>, { layout: "phone" });
     const row = $(".top-bar-seats");
     // The far chip's right edge (index × 150 + 140) sits 4px inside the 200px row.
     expect(row.scrollLeft).toBe(inViewIndex(far) * 150 + 140 - 200 + 4);
-    act(() => source.set(m1()));
+    act(() => source.set(fixtureSnapshot(structuredClone(fixture(near)))));
     expect(row.scrollLeft).toBeLessThanOrEqual(0);
     expect(scrollTo).not.toHaveBeenCalled();
   });

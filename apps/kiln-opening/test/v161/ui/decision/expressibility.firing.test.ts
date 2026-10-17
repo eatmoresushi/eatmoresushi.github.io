@@ -1,9 +1,9 @@
 /**
- * The forms can express every legal firing, Order, Cleanup and Canal Barge command
- * (UI_V1.6.1_ARCHITECTURE §9.4). Owner: B5.
+ * The forms can express every legal firing, Order and Cleanup command (UI_V1.6.1_ARCHITECTURE
+ * §9.4). Owner: B5.
  *
- * For each command of B5's forms — Contributions, Test Pieces, Heat markers, Jun (both windows),
- * after-Quality, Salvage, the Order Phase, the hand trim and Canal Barge — the expressibility
+ * For each command of B5's forms — Contributions, Test Pieces, Heat markers, Jun, after-Quality,
+ * Second Firing's choice, Salvage, the Order Phase and the hand trim — the expressibility
  * helper checks `fromCommand` → every value offered by `options()` → `build` equals the command
  * (after `normalizeCommand`) → `build` validates. Inputs:
  * - canonical mode over every scripted scenario and played moment;
@@ -27,10 +27,10 @@ const B5_FORMS: ReadonlySet<ExpressibilityForm> = new Set<ExpressibilityForm>([
   "heat_markers",
   "jun",
   "after_quality",
+  "second_firing",
   "salvage",
   "orders",
   "hand_limit",
-  "canal_barge",
 ]);
 
 /** B5's rows for a view and a list of its commands. */

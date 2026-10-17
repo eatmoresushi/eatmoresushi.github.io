@@ -16,6 +16,8 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   actorViewOf,
+  afterQualityOptions,
+  completableOrders,
   contributionOptions,
   decisionPrompt,
   firingStageView,
@@ -92,23 +94,50 @@ describe("moments.json is current", () => {
     }
   });
 
-  it("m1: the viewer's second Form & Decorate space was added by Prepared Clay (D7, §5 gap 11)", () => {
+  it("m1: the viewer's second Form & Decorate space was added by a Form & Decorate Tech (D7, §5 gap 11)", () => {
     const m1 = moments.entries.find((e) => e.id === "m1_work_phase_r2_3p");
     expect(m1).toBeDefined();
     if (m1 === undefined) return;
     const spaces = playerSummary(m1.playerView, m1.viewerId).personalSpaces;
-    expect(spaces.find((s) => s.locationId === "form_decorate" && s.spaceIndex === 1)?.addedByTechId).toBe("T17");
+    // V1.6.2's seed-1 game: Senior Apprentice (T18), a Form & Decorate Tech, added it.
+    expect(spaces.find((s) => s.locationId === "form_decorate" && s.spaceIndex === 1)?.addedByTechId).toBe("T18");
     expect(spaces.find((s) => s.locationId === "glaze_load" && s.spaceIndex === 1)).toMatchObject({ unlocked: false, addedByTechId: null });
   });
 
-  it("the R7 scenario and moment m18 show the extra Fire card (§5 gap 7)", () => {
-    for (const id of ["w-jun-during-second-firing-r7", "m18_jun_second_firing"]) {
+  it("m19–m23 are played moments of the V1.6.2 windows the owner reviews in the gallery", () => {
+    const moment = (id: string) => {
+      const entry = moments.entries.find((e) => e.id === id);
+      if (entry === undefined) throw new Error(`no moment ${id}`);
+      expect(entry.source.kind, id).toBe("played");
+      expect(entry.viewerActs, id).toBe(true);
+      return entry;
+    };
+    const step = (id: string) => {
+      const phase = moment(id).playerView.game.phase;
+      return phase.type === "work_turn" ? phase.step : null;
+    };
+    expect(step("m19_commission_apprentice_look")).toMatchObject({ kind: "commission_market", effect: "apprentice", lookSize: 2, lookedCount: 2 });
+    const look = moment("m19_commission_apprentice_look").playerView.own?.pendingLook;
+    expect(look?.kind === "commission_market" && look.orderIds).toHaveLength(2);
+    expect(step("m20_colour_samples_swap_look")).toMatchObject({ kind: "colour_samples_swap", lookedCount: 2 });
+    expect(step("m21_guild_shifu_second_take")).toMatchObject({ kind: "guild_inspection", takes: [expect.anything()] });
+    const saggars = moment("m22_saggars_upgrade");
+    expect(afterQualityOptions(saggars.playerView).find((o) => o.ability === "protective_saggars")?.ceramicIds.length).toBeGreaterThan(0);
+    // S07 completable, and the viewer's Canal Barge pays on this first completion of the round.
+    const s07 = completableOrders(moment("m23_order_phase_s07").playerView).find((m) => m.orderId === "S07");
+    expect(s07?.triggers.canalBarge).toBe(true);
+  });
+
+  it("the R7 scenario and moment m18 show Second Firing's 2 revealed cards while the choice is open (§5 gap 7, v1.6.2 L631)", () => {
+    for (const id of ["w-second-firing-choice-with-jun-r7", "m18_jun_second_firing"]) {
       const entry = all.find((e) => e.id === id);
       expect(entry, id).toBeDefined();
       if (entry === undefined) continue;
+      expect(entry.playerView.game.phase.type, id).toBe("firing_second_firing_choice");
       const stage = firingStageView(entry.playerView);
-      expect(stage?.extraFire, id).not.toBeNull();
-      expect(stage?.ceramics.find((c) => c.id === stage.extraFire?.ceramicId)?.secondFireModifier, id).toBe(stage?.extraFire?.modifier);
+      expect(stage?.extraFire?.modifiers, id).toHaveLength(2);
+      // Not chosen yet: the ceramic records no second card.
+      expect(stage?.ceramics.find((c) => c.id === stage.extraFire?.ceramicId)?.secondFireModifier, id).toBeNull();
     }
   });
 });
@@ -121,7 +150,7 @@ describe("coverage", () => {
     expect(scenarios.entries.every((e) => e.kind === "window" || e.kind === "table")).toBe(true);
     expect(moments.entries.every((e) => e.kind === "moment")).toBe(true);
     expect(scenarios.entries.filter((e) => e.kind === "window").every((e) => e.viewerActs)).toBe(true);
-    for (const n of [1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17, 18]) {
+    for (const n of [1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]) {
       expect(moments.entries.some((e) => e.id.startsWith(`m${n}_`)), `m${n}`).toBe(true);
     }
     for (const id of ["m10a", "m10b", "m11a", "m11b"]) expect(moments.entries.some((e) => e.id.startsWith(`${id}_`)), id).toBe(true);
@@ -138,7 +167,7 @@ describe("coverage", () => {
       "firing_heat_markers",
       "firing_heat_adjustment",
       "firing_after_quality",
-      "firing_second_firing_jun",
+      "firing_second_firing_choice",
       "firing_salvage",
       "orders",
       "cleanup_hand_limit",
@@ -148,7 +177,7 @@ describe("coverage", () => {
     const steps = new Set<string>();
     for (const e of all) {
       const phase = e.playerView.game.phase;
-      if (phase.type === "work_turn") steps.add(phase.step.kind === "commission_market" ? `commission_market:${phase.step.awaiting}` : phase.step.kind);
+      if (phase.type === "work_turn") steps.add(phase.step.kind === "commission_market" ? `commission_market:${phase.step.effect}` : phase.step.kind);
       if (phase.type === "firing_test_pieces") steps.add(`test_pieces:${phase.awaiting}`);
     }
     expect([...steps].sort()).toEqual(
@@ -156,17 +185,18 @@ describe("coverage", () => {
         "after_action",
         "before_action",
         "colour_samples",
-        "commission_market:look_choice",
-        "commission_market:reservation",
-        "commission_market:resource",
+        "colour_samples_swap",
+        "commission_market:apprentice",
+        "commission_market:shifu",
         "guild_inspection",
         "test_pieces:bury",
         "test_pieces:decision",
       ].sort(),
     );
     expect(all.some((e) => !e.viewerActs && e.playerView.game.phase.type !== "finished")).toBe(true);
+    // V1.6.2's regenerated moments end a 4-player game (m8, seed 2); the finals cover 2 and 4.
     const finals = all.filter((e) => e.playerView.game.phase.type === "finished").map((e) => e.playerView.game.playerCount);
-    expect(finals).toEqual(expect.arrayContaining([2, 3, 4]));
+    expect(finals).toEqual(expect.arrayContaining([2, 4]));
     expect(all.some((e) => e.playerView.game.finalResult !== null && e.playerView.game.finalResult.resolvedBy !== "total_vp")).toBe(true);
   });
 });
@@ -183,7 +213,7 @@ describe("privacy (§9.1)", () => {
       }
     }
     const types = (id: string) => all.find((e) => e.id === id)?.ownSecrets.map((r) => r.event.type) ?? [];
-    expect(types("w-commission-market-top-3-choice")).toContain("PRIVATE_LOOK_OPENED");
+    expect(types("w-commission-market-shifu-top-3-look-2-reservations")).toContain("PRIVATE_LOOK_OPENED");
     expect(types("w-test-pieces-bury")).toContain("TEST_PIECES_PEEKED");
     expect(types("m11b_test_pieces_bury")).toContain("TEST_PIECES_PEEKED");
     expect(types("m12_guild_shifu_inspection")).toContain("PRIVATE_LOOK_OPENED");
@@ -223,7 +253,7 @@ describe("privacy (§9.1)", () => {
   });
 
   it("rejects another seat's private look or a tampered own secret, against the authoritative state", () => {
-    const scenario = phaseScenarios().find((s) => s.name === "Commission Market: top-3 choice");
+    const scenario = phaseScenarios().find((s) => s.name === "Commission Market: Shifu top-3 look, 2 reservations");
     if (scenario === undefined) throw new Error("scenario missing");
     const table = scenario.table;
     const events: GameEvent[] = table.events;

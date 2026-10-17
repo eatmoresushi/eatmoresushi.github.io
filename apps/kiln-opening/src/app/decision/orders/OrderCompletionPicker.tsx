@@ -1,14 +1,15 @@
 /**
  * OrderCompletionPicker (UI_V1.6.1_ARCHITECTURE §3.4; wireframe `decOrders`). Owner: B5.
  *
- * The steps of completing one held Order, shared by the Order Phase and Canal Barge:
+ * The steps of completing one held Order in the Order Phase (v1.6.2 L296):
  * 1. the held Orders (completable ones choosable, the rest with the engine's reason), each with
  *    its rules details (D10);
  * 2. the ceramic groups that complete it (`orderMatchOptions`), described in words (D9);
  * 3. Crackle declarations, when the group holds a Crackle ceramic;
- * 4. the printed rewards (a Crown reward with the Imperial Recognition rules details, D10) and
- *    the optional abilities this completion would trigger (Ru/Guan, Tribute Ware; declining
- *    keeps their once-per-round use, R4).
+ * 4. the printed rewards (a Crown reward with the Imperial Recognition rules details, D10),
+ *    Canal Barge's automatic 2 Coins on your first completion this round (v1.6.2 L622, never
+ *    declined), and the optional abilities this completion would trigger (Ru/Guan, Tribute Ware;
+ *    declining keeps their once-per-round use, R4).
  *
  * Renders only from the completion options; never filters or checks a choice itself.
  */
@@ -57,7 +58,7 @@ export interface OrderCompletionPickerProps {
   draft: CompletionDraft;
   options: CompletionOptions;
   dispatch: (action: CompletionAction) => void;
-  /** Input-name prefix (Canal Barge inside the work form). */
+  /** Input-name prefix (none in the Order Phase window). */
   namePrefix?: string;
 }
 
@@ -131,6 +132,9 @@ export function OrderCompletionPicker({ model, engine, draft, options, dispatch,
               <Chip>
                 <CrownIcon count={match.printedCrowns} />
               </Chip>
+            ) : null}
+            {match.triggers.canalBarge ? (
+              <Chip>{t("orders.turn.canalBarge", { tech: techName(B5_TECHS.canalBarge, t.locale), n: RULE_NUMBERS.canalBargeCoins })}</Chip>
             ) : null}
           </span>
           {match.printedCrowns > 0 ? (

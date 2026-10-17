@@ -40,7 +40,7 @@ describe("phone nav", () => {
     ["m4_after_quality_3p", "kiln"],
     ["m6_order_phase_crackle_3p", "orders"],
     ["m7_cleanup_hand_limit_3p", "orders"],
-    ["m8_final_results_3p", "table"],
+    ["m8_final_results_4p", "table"],
   ] as const)("%s opens on the %s section", (id, section) => {
     const html = renderComponent(fixtureSource(id), <PhoneNav />);
     expect(html).toMatch(new RegExp(`data-tab="${section}" aria-current="page"`));

@@ -116,13 +116,25 @@
     }
   }
 
-  .disc-none {
+  .disc-none,
+  .disc-empty {
     margin: 0;
     padding: var(--sp-3) var(--sp-4);
     border: 1px dashed var(--line);
     border-radius: var(--r-md);
     color: var(--ink-3);
     font-size: var(--fs-meta);
+  }
+
+  /* A taken Tech's position, empty until the taker's turn ends (v1.6.2 L209): drawn as an empty
+     spot the size of a short tile, so the column reads as one position short, not as a note. */
+  .disc-empty {
+    display: grid;
+    place-items: center;
+    min-height: 4.75rem;
+    border-width: 1.5px;
+    color: var(--ink-2);
+    text-align: center;
   }
 }
 

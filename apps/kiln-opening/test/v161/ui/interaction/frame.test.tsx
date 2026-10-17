@@ -235,7 +235,7 @@ describe("heading block (wireframe promptBlock, ownSummary)", () => {
   });
 
   it("shows only the phase when the viewer does not act, and Final scoring once the game is over", () => {
-    const source = new ControlledSource("m8_final_results_3p");
+    const source = new ControlledSource("m8_final_results_4p");
     mount(source, <DecisionPane />);
     expect($(".pane-eyebrow").textContent).toBe("Final scoring");
   });

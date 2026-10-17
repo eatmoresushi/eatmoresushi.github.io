@@ -4,8 +4,9 @@
  *
  * One draft serves the `work` window's two steps:
  * - **before the worker action:** place a worker (worker entry × location × that location's
- *   sub-draft), or first use Imperial Priority or Canal Barge (§3.4, R6, R10);
- * - **after the worker action:** Imperial Priority, Canal Barge, or End turn.
+ *   sub-draft), or first use Imperial Priority or the Colour Samples swap (§3.4, R10, v1.6.2
+ *   L617);
+ * - **after the worker action:** Imperial Priority, the Colour Samples swap, or End turn.
  *
  * The worker and the location are chosen on the table (owner review, 2026-10-17): the work
  * window's table adapter turns a Place shortcut into the `place` action, and a Guild Hall Tech or
@@ -13,14 +14,13 @@
  * actions remain for tests and tools. The work turn keeps **one sub-draft per location**
  * (`perLocation`, §3.5), so moving between locations never discards a sub-editor's choices; only
  * the active location's sub-draft is revalidated and built. Worker entries and legality come from `placementOptions` (memoised
- * per view), Imperial Priority from `imperialPriorityOptions`, Canal Barge from B5's
- * `canalBargeDraft` (composed here as the `canalBarge` sub-draft; its form reads it through
- * `useComposedCanalBarge`, `composedForms.tsx`).
+ * per view), Imperial Priority from `imperialPriorityOptions`, the Colour Samples swap from
+ * `colourSamplesSwapOptions` (both composed here as sub-drafts, `imperialPriority` and `swap`).
  *
  * `initial` pre-selects nothing unless only one choice exists. `reduce(revalidate)` drops any
  * choice the new options no longer offer and keeps the very same draft when nothing changed.
  */
-import { canalBargeOptions, imperialPriorityOptions } from "../../../game/index.ts";
+import { imperialPriorityOptions } from "../../../game/index.ts";
 import type {
   AuthoritativeCommand,
   GameRuleError,
@@ -33,12 +33,13 @@ import { locationName, workerKindName } from "../../i18n/content.ts";
 import { msg } from "../../i18n/translator.ts";
 import type { MessageParam, RichMessage, Translator } from "../../i18n/translator.ts";
 import { REVALIDATE } from "../../state/draftStore.ts";
-import type { DraftModel, RevalidateAction } from "../../state/draftStore.ts";
+import type { DraftModel } from "../../state/draftStore.ts";
 import type { EngineView, GameModel } from "../../state/model.ts";
 import { placementWorkerKey } from "../../state/tableSelection.ts";
-import { canalBargeDraft } from "../orders/canalBargeDraft.ts";
 import { imperialPriorityDraft } from "./ImperialPriority.draft.ts";
 import type { ImperialPriorityAction, ImperialPriorityDraft, ImperialPriorityOptions } from "./ImperialPriority.draft.ts";
+import { colourSamplesSwapDraft, swapUsable } from "./ColourSamplesSwap.draft.ts";
+import type { ColourSamplesSwapAction, ColourSamplesSwapDraft, ColourSamplesSwapOptions } from "./ColourSamplesSwap.draft.ts";
 import { keepIfSame, placementOf, placements, viewMemo, workContext, workerEntry } from "./context.ts";
 import type { WorkContext } from "./context.ts";
 import { canalWharfDraft } from "./locations/CanalWharf.draft.ts";
@@ -93,16 +94,9 @@ export type ActiveLocation = {
 /** A sub-editor's action, addressed to its location. */
 export type SubAction = { [L in LocationId]: { readonly type: "sub"; readonly locationId: L; readonly action: LocationTypes[L]["action"] } }[LocationId];
 
-// ── Canal Barge (B5) composition types ───────────────────────────────────────────────────
-
-type CanalBargeModel = typeof canalBargeDraft;
-export type CanalBargeSubDraft = ReturnType<CanalBargeModel["initial"]>;
-export type CanalBargeSubAction = Exclude<Parameters<CanalBargeModel["reduce"]>[1], RevalidateAction>;
-export type CanalBargeSubOptions = ReturnType<CanalBargeModel["options"]>;
-
 // ── The work draft ────────────────────────────────────────────────────────────────────────
 
-export type WorkMode = "place" | "imperial_priority" | "canal_barge" | "end_turn";
+export type WorkMode = "place" | "imperial_priority" | "colour_samples_swap" | "end_turn";
 export type WorkStep = "before_action" | "after_action";
 
 export interface WorkDraft {
@@ -113,7 +107,8 @@ export interface WorkDraft {
   readonly locationId: LocationId | null;
   readonly perLocation: PerLocation;
   readonly imperialPriority: ImperialPriorityDraft;
-  readonly canalBarge: CanalBargeSubDraft;
+  /** The Colour Samples swap's held Order to discard (v1.6.2 L617). */
+  readonly swap: ColourSamplesSwapDraft;
 }
 
 export type WorkAction =
@@ -123,7 +118,7 @@ export type WorkAction =
   | { readonly type: "place"; readonly locationId: LocationId; readonly workerKey: string }
   | SubAction
   | { readonly type: "imperialPriority"; readonly action: ImperialPriorityAction }
-  | { readonly type: "canalBarge"; readonly action: CanalBargeSubAction };
+  | { readonly type: "swap"; readonly action: ColourSamplesSwapAction };
 
 export interface WorkModeOption {
   mode: WorkMode;
@@ -181,7 +176,8 @@ export interface WorkOptions {
   locations: readonly LocationChoice[];
   active: ActiveLocation | null;
   imperialPriority: ImperialPriorityOptions | null;
-  canalBarge: { available: boolean; options: CanalBargeSubOptions | null };
+  /** The Colour Samples swap's discard choices while it may be used, else null. */
+  swap: ColourSamplesSwapOptions | null;
   workersLeft: number;
 }
 
@@ -205,15 +201,12 @@ function imperialUsable(engine: EngineView): boolean {
   return viewMemo(engine.view, "imperialPriorityOptions", () => imperialPriorityOptions(engine.view)).usable;
 }
 
-function bargeAvailable(engine: EngineView): boolean {
-  return viewMemo(engine.view, "canalBargeOptions", () => canalBargeOptions(engine.view)).length > 0;
-}
 
 function modesOf(model: GameModel, engine: EngineView): WorkMode[] {
   const step = stepOf(model);
   const modes: WorkMode[] = step === "before_action" ? ["place"] : [];
   if (imperialUsable(engine)) modes.push("imperial_priority");
-  if (bargeAvailable(engine)) modes.push("canal_barge");
+  if (swapUsable(engine)) modes.push("colour_samples_swap");
   if (step === "after_action") modes.push("end_turn");
   return modes;
 }
@@ -307,7 +300,7 @@ function revalidate(draft: WorkDraft, model: GameModel, engine: EngineView): Wor
   let next: WorkDraft = { ...draft, mode, workerKey, locationId };
   if (mode === "place") next = settleActive(next, context, "revalidate");
   if (mode === "imperial_priority") next = { ...next, imperialPriority: imperialPriorityDraft.reduce(next.imperialPriority, REVALIDATE, model, engine) };
-  if (mode === "canal_barge") next = { ...next, canalBarge: canalBargeDraft.reduce(next.canalBarge as never, REVALIDATE, model, engine) as CanalBargeSubDraft };
+  if (mode === "colour_samples_swap") next = { ...next, swap: colourSamplesSwapDraft.reduce(next.swap, REVALIDATE, model, engine) };
   return keepIfSame(draft, next);
 }
 
@@ -331,7 +324,7 @@ function blankDraft(model: GameModel, engine: EngineView): WorkDraft {
     locationId: null,
     perLocation: blankPerLocation(),
     imperialPriority: imperialPriorityDraft.initial(model, engine),
-    canalBarge: canalBargeDraft.initial(model, engine),
+    swap: colourSamplesSwapDraft.initial(model, engine),
   };
 }
 
@@ -393,12 +386,9 @@ export const workDraft: DraftModel<WorkDraft, WorkAction, WorkOptions> = {
       }
       case "imperialPriority":
         return { ...draft, mode: "imperial_priority", imperialPriority: imperialPriorityDraft.reduce(draft.imperialPriority, action.action, model, engine) };
-      case "canalBarge":
-        return {
-          ...draft,
-          mode: "canal_barge",
-          canalBarge: canalBargeDraft.reduce(draft.canalBarge as never, action.action as never, model, engine) as CanalBargeSubDraft,
-        };
+      case "swap":
+        if (!modesOf(model, engine).includes("colour_samples_swap")) return draft;
+        return { ...draft, mode: "colour_samples_swap", swap: colourSamplesSwapDraft.reduce(draft.swap, action.action, model, engine) };
     }
   },
 
@@ -408,7 +398,7 @@ export const workDraft: DraftModel<WorkDraft, WorkAction, WorkOptions> = {
     const modes = modesOf(model, engine).map((mode) => ({ mode }));
     if (context === null) {
       const heading: WorkHeading = step === "after_action" ? "after_action" : "place";
-      return { step, modes, stepChoices: [], heading, backToPlacing: false, workers: [], locations: [], active: null, imperialPriority: null, canalBarge: { available: false, options: null }, workersLeft: 0 };
+      return { step, modes, stepChoices: [], heading, backToPlacing: false, workers: [], locations: [], active: null, imperialPriority: null, swap: null, workersLeft: 0 };
     }
     const placement = draft.mode === "place" ? placementContext(context, draft.locationId, draft.workerKey) : null;
     // A placement kept while an ability is open (the draft keeps the worker and the location).
@@ -417,7 +407,7 @@ export const workDraft: DraftModel<WorkDraft, WorkAction, WorkOptions> = {
     const candidates = abilities ? modes.filter(({ mode }) => mode !== "place" || placementChosen) : [];
     // One ability opened with nothing placed: a lone radio is no choice (the heading names it).
     const stepChoices = candidates.length > 1 ? candidates : [];
-    const ability = step === "before_action" && (draft.mode === "imperial_priority" || draft.mode === "canal_barge") ? draft.mode : null;
+    const ability = step === "before_action" && (draft.mode === "imperial_priority" || draft.mode === "colour_samples_swap") ? draft.mode : null;
     const heading: WorkHeading = step === "after_action" ? "after_action" : ability === null ? "place" : stepChoices.length === 0 ? ability : "before_action";
     const backToPlacing = step === "before_action" && draft.mode !== null && draft.mode !== "place" && !placementChosen;
     const active: ActiveLocation | null =
@@ -425,7 +415,7 @@ export const workDraft: DraftModel<WorkDraft, WorkAction, WorkOptions> = {
         ? null
         : withModel(draft.locationId, (sub, id) => ({ locationId: id, draft: subDraft(draft, id), options: sub.options(subDraft(draft, id), placement), context: placement }) as ActiveLocation);
     const usable = imperialUsable(engine);
-    const barge = bargeAvailable(engine);
+    const swap = swapUsable(engine);
     return {
       step,
       modes,
@@ -436,7 +426,7 @@ export const workDraft: DraftModel<WorkDraft, WorkAction, WorkOptions> = {
       locations: step === "before_action" ? locationChoices(context, draft.workerKey) : [],
       active,
       imperialPriority: usable ? imperialPriorityDraft.options(draft.imperialPriority, model, engine) : null,
-      canalBarge: { available: barge, options: barge && draft.mode === "canal_barge" ? (canalBargeDraft.options(draft.canalBarge as never, model, engine) as CanalBargeSubOptions) : null },
+      swap: swap ? colourSamplesSwapDraft.options(draft.swap, model, engine) : null,
       workersLeft: context.me.availableWorkerIds.length,
     };
   },
@@ -449,8 +439,8 @@ export const workDraft: DraftModel<WorkDraft, WorkAction, WorkOptions> = {
         return stepOf(model) === "before_action" ? placementCommand(draft, context) : null;
       case "imperial_priority":
         return imperialPriorityDraft.build(draft.imperialPriority, model, engine);
-      case "canal_barge":
-        return canalBargeDraft.build(draft.canalBarge as never, model, engine);
+      case "colour_samples_swap":
+        return colourSamplesSwapDraft.build(draft.swap, model, engine);
       case "end_turn":
         return stepOf(model) === "after_action" ? { type: "END_TURN" } : null;
       case null:
@@ -467,9 +457,9 @@ export const workDraft: DraftModel<WorkDraft, WorkAction, WorkOptions> = {
       const sub = imperialPriorityDraft.fromCommand(command, model, engine);
       return sub === null ? null : { ...blank, mode: "imperial_priority", imperialPriority: sub };
     }
-    if (command.type === "USE_CANAL_BARGE") {
-      const sub = canalBargeDraft.fromCommand(command, model, engine);
-      return sub === null ? null : { ...blank, mode: "canal_barge", canalBarge: sub as CanalBargeSubDraft };
+    if (command.type === "USE_COLOUR_SAMPLES_SWAP") {
+      const sub = colourSamplesSwapDraft.fromCommand(command, model, engine);
+      return sub === null ? null : { ...blank, mode: "colour_samples_swap", swap: sub };
     }
     const locationId = placementLocationOf(command);
     if (locationId === null || stepOf(model) !== "before_action" || !("workerId" in command)) return null;
@@ -495,8 +485,8 @@ export const workDraft: DraftModel<WorkDraft, WorkAction, WorkOptions> = {
         return msg("work.summary.endTurn");
       case "imperial_priority":
         return imperialPriorityDraft.summary(draft.imperialPriority, model, engine);
-      case "canal_barge":
-        return canalBargeDraft.summary(draft.canalBarge as never, model, engine);
+      case "colour_samples_swap":
+        return colourSamplesSwapDraft.summary(draft.swap, model, engine);
       case "place": {
         if (draft.workerKey === null && draft.locationId === null) return msg("work.summary.incomplete");
         if (draft.workerKey === null) return msg("work.summary.chooseWorker");

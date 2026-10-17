@@ -156,13 +156,14 @@ describe("D1 board tabs", () => {
     expect(tabs().map((tab) => tab.getAttribute("aria-selected"))).toEqual(["true", "false", "false"]);
     expect($('[role="tabpanel"] article').getAttribute("data-player-id")).toBe("p3");
     focus(tabs()[0]!);
+    // The other boards follow the players' order from the First Player (Zhao, then Lin).
     key(tabs()[0]!, "ArrowRight");
     expect(tabs()[1]!.getAttribute("aria-selected")).toBe("true");
     expect(document.activeElement).toBe(tabs()[1]);
-    expect($('[role="tabpanel"] article').getAttribute("data-player-id")).toBe("p1");
-    expect(ui.stateFor({ window: null, phase: null }).boardShown).toBe("p1");
-    key(tabs()[1]!, "End");
     expect($('[role="tabpanel"] article').getAttribute("data-player-id")).toBe("p2");
+    expect(ui.stateFor({ window: null, phase: null }).boardShown).toBe("p2");
+    key(tabs()[1]!, "End");
+    expect($('[role="tabpanel"] article').getAttribute("data-player-id")).toBe("p1");
     click(tabs()[0]!);
     expect($('[role="tabpanel"] article').getAttribute("data-player-id")).toBe("p3");
     expect(ui.stateFor({ window: null, phase: null }).boardShown).toBeNull();

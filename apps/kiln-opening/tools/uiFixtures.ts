@@ -6,7 +6,7 @@
  *   - `scenarios.json`: every scripted decision window (`phaseScenarios`, kind `window`) and
  *     table state (`tableScenarios`, kind `table`), projected for one viewer. Fast and
  *     deterministic; `fixtures_current.test.ts` regenerates it in memory on every `npm test`;
- *   - `moments.json`: played moments m1–m18 (realistic text lengths, for layout, the gallery and
+ *   - `moments.json`: played moments m1–m23 (realistic text lengths, for layout, the gallery and
  *     screenshots). A moment whose seed search exceeds its budget falls back to the matching
  *     scripted scenario (`source.kind: "scripted"`);
  *   - `secrets.json`: per entry, the Order and Tech IDs that viewer must never see (the oracle
@@ -81,6 +81,7 @@ import {
   createGame,
   decisionPrompt,
   firingSummary,
+  guildInspectionOptions,
   guildOptions,
   handLimitStatus,
   heatMarkerStepOptions,
@@ -1543,6 +1544,196 @@ function findJunSecondFiring(): Captured {
   });
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// Moment searches (m19–m23: the V1.6.2 windows, for the owner's gallery review)
+// ═══════════════════════════════════════════════════════════════════════════════════════
+
+type WorkStep = Extract<GameState["phase"], { type: "work_turn" }>["step"];
+
+/** The actor's Work-turn step, or null outside their Work turn. */
+function workStep(table: Table, actor: PlayerId): WorkStep | null {
+  const phase = table.state.phase;
+  return phase.type === "work_turn" && phase.activePlayerId === actor ? phase.step : null;
+}
+
+/** m19: an Apprentice at the Commission Market, looking at the top 2 (v1.6.2 L195). */
+function findCommissionApprenticeLook(): Captured {
+  return search({
+    meta: {
+      id: "m19_commission_apprentice_look",
+      title: "3P · Work Phase · Commission Market: Apprentice looks at the top 2 (private)",
+      description:
+        "The viewer's Apprentice was placed at the Commission Market, which opened a private look at the top 2 Main Orders (v1.6.2 L195; lookedOrderOptions). They reserve exactly 1, from the display or those 2 (COMMISSION_CHOOSE); a face-up position stays empty until their turn ends, and the looked card not reserved goes face down to the bottom of the Main Order deck (change 24). No resource is gained.",
+    },
+    playerCounts: [3],
+    seeds: 30,
+    steer: () => (t, actor) => {
+      if (t.state.round < 2 || !beforeAction(t, actor)) return null;
+      const options = commissionOptions(t.view(actor), "apprentice");
+      if (options.lookCount < options.lookSize || options.faceUpSlots.length === 0) return null;
+      const worker = placementOptions(t.playerView(actor))
+        .find((o) => o.locationId === "commission_market")
+        ?.workers.find((w) => w.kind === "apprentice" && !w.seniorApprentice && w.legal);
+      return worker === undefined
+        ? null
+        : { command: { type: "PLACE_COMMISSION_MARKET", workerId: worker.workerId }, why: "An Apprentice to the Commission Market: the placement opens the private top-2 look." };
+    },
+    at: (t, actor) => {
+      const step = workStep(t, actor);
+      return step?.kind === "commission_market" && step.effect === "apprentice" && step.lookedCount === 2 ? actor : null;
+    },
+    giveUp: (t) => t.state.round > 3,
+    fallback: "Commission Market: Apprentice top-2 look, 1 reservation",
+    hint: 1,
+  });
+}
+
+/** m20: the Colour Samples swap's private look of 2 (v1.6.2 L617, change 24). */
+function findColourSamplesSwap(): Captured {
+  const swap: Steer = (t, actor) => {
+    if (techOwner(t, "T10") !== actor || !beforeAction(t, actor)) return null;
+    const discard = colourSamplesSwapOptions(t.playerView(actor)).discards.find((d) => d.legal && d.lookCount === 2);
+    return discard === undefined
+      ? null
+      : { command: { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: discard.orderId }, why: "The Colour Samples owner swaps a held Order before their worker action." };
+  };
+  return search({
+    meta: {
+      id: "m20_colour_samples_swap_look",
+      title: "3P · Work Phase · Colour Samples swap: reserve 1 of 2 (private)",
+      description:
+        "Before their worker action the viewer used the Colour Samples swap (T10, once per round): they discarded 1 held Order (a Main Order face down to the discard, a Starting Order to the box) and now look privately at the top 2 Main Orders. They reserve 1 (COLOUR_SAMPLES_SWAP_CHOOSE); the other goes face down to the bottom of the Main Order deck (v1.6.2 L617, change 24). Then they place a worker as usual.",
+    },
+    playerCounts: [3],
+    seeds: 30,
+    steer: () => combine(buyTechSteer("T10"), swap),
+    at: (t, actor) => (workStep(t, actor)?.kind === "colour_samples_swap" ? actor : null),
+    giveUp: (t) => t.state.round > 4,
+    fallback: "Colour Samples swap look",
+    hint: 1,
+  });
+}
+
+/** m21: the Guild Hall Shifu after a first take, before a second (v1.6.2 L207, L209). */
+function findGuildSecondTake(): Captured {
+  const steer: Steer = (t, actor) => {
+    const step = workStep(t, actor);
+    if (step?.kind === "before_action") {
+      if (t.state.round < 2 || (t.state.players[actor]?.resources.coins ?? 0) < 5) return null;
+      const shifu = placementOptions(t.playerView(actor)).find((o) => o.locationId === "guild_hall")?.workers.find((w) => w.kind === "shifu" && w.legal);
+      const target = guildOptions(t.playerView(actor), "shifu").inspect.filter((d) => d.deckCount >= 2).sort((a, b) => b.deckCount - a.deckCount)[0];
+      if (shifu === undefined || target === undefined) return null;
+      return { command: { type: "PLACE_GUILD_HALL", workerId: shifu.workerId, choice: { kind: "inspect", discipline: target.discipline } }, why: "The Shifu inspects a Tech deck at the Guild Hall." };
+    }
+    if (step?.kind === "guild_inspection" && step.takes.length === 0) {
+      const options = guildInspectionOptions(t.playerView(actor));
+      const first = [...(options?.faceUp ?? []), ...(options?.inspected ?? [])].filter((o) => o.legal && o.techId !== "T10").sort((a, b) => a.cost - b.cost)[0];
+      return first === undefined
+        ? null
+        : { command: { type: "GUILD_TAKE", take: { kind: first.source, techId: first.techId } }, why: "The Shifu takes the cheapest legal Tech first, keeping Coins for a second take." };
+    }
+    return null;
+  };
+  return search({
+    meta: {
+      id: "m21_guild_shifu_second_take",
+      title: "3P · Work Phase · Guild Hall Shifu: a second take (private inspection)",
+      description:
+        "The viewer's Shifu inspected a Tech deck and has taken 1 Tech at its printed cost. Its position on the display stays empty until the turn ends (v1.6.2 L209). They may take a second Tech of another discipline, inspected or face up, at its printed cost (GUILD_TAKE), or stop and put the untaken inspected Techs on the bottom in an order they choose (GUILD_FINISH; guildInspectionOptions).",
+    },
+    playerCounts: [3],
+    seeds: 30,
+    steer: () => steer,
+    at: (t, actor) => {
+      const step = workStep(t, actor);
+      if (step?.kind !== "guild_inspection" || step.takes.length !== 1) return null;
+      const options = guildInspectionOptions(t.playerView(actor));
+      return options !== null && [...options.faceUp, ...options.inspected].some((o) => o.legal) ? actor : null;
+    },
+    giveUp: (t) => t.state.round > 4,
+    fallback: "Guild Hall: Shifu inspection",
+    hint: 2,
+  });
+}
+
+/**
+ * m22: Protective Saggars' once-per-round Standard → Fine after Quality (v1.6.2 L628). Prefers a
+ * firing where the floor made one of the viewer's ceramics Standard (a Heat Difference of 3+).
+ */
+function findSaggarsUpgrade(): Captured {
+  const seat = "p1";
+  const meta: MomentMeta = {
+    id: "m22_saggars_upgrade",
+    title: "3P · Firing step 10 · Protective Saggars: Standard → Fine",
+    description:
+      "The viewer owns Protective Saggars (T11): their ceramics are never Flawed (a Heat Difference of 3 or more counts as Standard: QUALITY_ASSIGNED.saggarsFloor), and once this round, after Quality, 1 of their Standard ceramics from this firing becomes Fine (USE_PROTECTIVE_SAGGARS; afterQualityOptions). Declining keeps the use (R4).",
+  };
+  let best: { score: number; moment: Captured } | null = null;
+  for (const seed of seedOrder(30, 15)) {
+    if (best !== null && best.score >= 2) break;
+    const table = new Table(seed, 3);
+    let found: { score: number; moment: Captured } | null = null;
+    table.runUntil((t, actor) => {
+      if (t.state.round > 5 || (found !== null && found.score >= 2)) return true;
+      if (actor !== seat || t.state.phase.type !== "firing_after_quality") return false;
+      if (!afterQualityOptions(t.playerView(actor)).some((o) => o.ability === "protective_saggars" && o.ceramicIds.length > 0)) return false;
+      const floored = Object.values(t.state.firing?.ceramics ?? {}).some((r) => r?.ownerId === seat && r.saggarsFloor);
+      const score = floored ? 2 : 1;
+      if (found === null || score > found.score) found = { score, moment: capture(t, actor, meta, () => ({})) };
+      return score >= 2;
+    }, buyTechSteer("T11", seat));
+    const local = found as { score: number; moment: Captured } | null;
+    if (local !== null && (best === null || local.score > best.score)) best = local;
+  }
+  return best?.moment ?? scriptedMoment(meta, "after Quality: Saggars and Ge");
+}
+
+/**
+ * m23: the Order Phase with S07 ("Carved, Impressed or Painted", change 23) completable, and,
+ * when a seed allows, Canal Barge ready (2 Coins on the first completion this round, v1.6.2
+ * L622). 4 players, so all 8 Starting Orders are dealt. Prefers Canal Barge, then a Crackle
+ * ceramic that must declare one of the three listed Decorations.
+ */
+function findStartingS07(): Captured {
+  const meta: MomentMeta = {
+    id: "m23_order_phase_s07",
+    title: "4P · Order Phase · S07 “Carved, Impressed or Painted” with Canal Barge",
+    description:
+      "The viewer holds S07, the Starting Order any one of Carved, Impressed or Painted fills (change 23), and can complete it now (completableOrders, orderMatchOptions); a Crackle ceramic may count as one of the three. Their Canal Barge (T23) gives 2 Coins on the first Order they complete this round, automatically (v1.6.2 L622; OrderMatchOption.triggers.canalBarge).",
+  };
+  let best: { score: number; moment: Captured } | null = null;
+  for (const seed of seedOrder(30, 1)) {
+    if (best !== null && best.score >= 3) break;
+    const table = new Table(seed, 4);
+    const holder = table.state.playerOrder.find((pid) => table.state.hidden.orderHands[pid]?.includes("S07")) ?? null;
+    if (holder === null) continue;
+    let localBest = -1;
+    let local: Captured | null = null;
+    table.runUntil((t, actor) => {
+      if (local !== null && localBest >= 3) return true;
+      if (t.state.phase.type !== "orders" || actor !== holder) return false;
+      const view = t.playerView(actor);
+      const s07 = completableOrders(view).find((m) => m.orderId === "S07");
+      if (s07 === undefined) return false;
+      const barge = s07.triggers.canalBarge;
+      const crackle = orderMatchOptions(view, "S07", 8).some((m) => m.crackleDeclarations.length > 0);
+      const score = 1 + (barge ? 2 : 0) + (crackle ? 1 : 0);
+      if (score > localBest) {
+        localBest = score;
+        local = capture(t, actor, meta, () => ({}));
+      }
+      return score >= 3;
+    }, buyTechSteer("T23", holder));
+    if (local !== null && (best === null || localBest > best.score)) best = { score: localBest, moment: local };
+  }
+  return best?.moment ?? scriptedMoment(meta, "Order Phase with Ru, Tribute Ware and a Crackle wildcard");
+}
+
+/** The V1.6.2 windows the owner reviews in the gallery (m19–m23). */
+function v162Moments(): Captured[] {
+  return [findCommissionApprenticeLook(), findColourSamplesSwap(), findGuildSecondTake(), findSaggarsUpgrade(), findStartingS07()];
+}
+
 function newMoments(): Captured[] {
   const firingGiveUp = (t: Table) => t.state.round > 5;
   return [
@@ -1644,6 +1835,7 @@ function newMoments(): Captured[] {
       fallback: "after the worker action",
     }),
     findJunSecondFiring(),
+    ...v162Moments(),
   ];
 }
 
@@ -1720,7 +1912,7 @@ export function buildScenarioFixtures(): { entries: UiFixtureEntry[]; secrets: R
   return { entries, secrets };
 }
 
-/** m1–m9 (the wireframe set, recaptured in the entry format) and m10–m18. */
+/** m1–m9 (the wireframe set, recaptured in the entry format), m10–m18 and the V1.6.2 windows m19–m23. */
 export function buildMomentFixtures(): { entries: UiFixtureEntry[]; secrets: Record<string, string[]>; missing: string[] } {
   const previous = TARGET;
   TARGET = "tests";

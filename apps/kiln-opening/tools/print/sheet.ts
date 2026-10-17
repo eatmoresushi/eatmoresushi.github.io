@@ -1,6 +1,10 @@
 /**
- * HTML for the printable Order card sheets: A4 portrait, 4 × 4 cards of 50 × 71 mm with
- * dashed cut lines; page 1 holds Starting S01–S16, pages 2–4 Main O01–O48.
+ * HTML for the printable Order card sheets: A4 portrait, up to 4 × 4 cards of 50 × 71 mm with
+ * dashed cut lines. Each deck starts on a new sheet and fills sheets of 16 in ID order (V1.6.2:
+ * page 1 the 8 Starting Orders S01–S08, pages 2–4 the Main Orders O01–O48). A sheet that is not
+ * full prints only the rows it uses, from the top: below them the paper stays blank, with no
+ * parchment and no cut line (the vertical cuts stop at the parchment's edge). A last row with
+ * fewer than 4 cards would keep its empty cells as plain parchment (no V1.6.2 deck needs it).
  *
  * Each card: parchment with a thin gold double border and fret corners, the printed ID top
  * right (Starting Orders carry their kind word beside it), the ceramic illustration, the
@@ -47,16 +51,29 @@ export interface SheetCard {
   art: Illustration;
 }
 
-export const CARDS_PER_SHEET = 16;
+export const COLUMNS = 4;
+export const ROWS = 4;
+export const CARDS_PER_SHEET = COLUMNS * ROWS;
 
-const CARD_W = 50;
-const CARD_H = 71;
-const GRID_LEFT = 5;
-const GRID_TOP = 6.5;
-/** Parchment printed beyond the outer cuts (cards.css `.bleed`). */
-const BLEED = 1;
-const PAGE_W = 210;
-const PAGE_H = 297;
+export const CARD_W = 50;
+export const CARD_H = 71;
+export const GRID_LEFT = 5;
+export const GRID_TOP = 6.5;
+/** Parchment printed beyond the outer cuts (the sheet's `.bleed`). */
+export const BLEED = 1;
+export const PAGE_W = 210;
+export const PAGE_H = 297;
+/** The cut lines run out to this distance from the paper edge. */
+const RUN_OUT_EDGE = 0.6;
+
+/** One printed sheet: its cards (one deck only) and the grid rows they take. */
+export interface SheetPlan {
+  kind: CardModel["kind"];
+  ids: string[];
+  rows: number;
+  /** Lowest printed point, mm from the paper's top edge (everything below is blank paper). */
+  inkBottom: number;
+}
 
 function escapeHtml(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -220,29 +237,57 @@ function cardHtml({ card, art }: SheetCard, labels: SheetLabels): string {
 }
 
 /**
- * The cut lines: every card edge, run out to 0.6 mm from the paper edge. Over the parchment
- * (the cards and their 1 mm bleed) they are toned (`.on-card`); in the white margin grey.
+ * The cut lines of a sheet whose cards take `rows` rows: every card edge, run out to 0.6 mm
+ * from the paper edge. Over the parchment (the cards and their 1 mm bleed) they are toned
+ * (`.on-card`); in the white margin grey. On a sheet with fewer than 4 rows the vertical cuts
+ * end at the parchment's lower edge: the blank paper below carries no line.
  */
-function cutLines(): string {
-  const gridRight = GRID_LEFT + 4 * CARD_W;
-  const gridBottom = GRID_TOP + 4 * CARD_H;
+function cutLines(rows: number): string {
+  const gridRight = GRID_LEFT + COLUMNS * CARD_W;
+  const gridBottom = GRID_TOP + rows * CARD_H;
   const lines: string[] = [];
   const line = (x1: number, y1: number, x2: number, y2: number, onCard: boolean): void => {
     lines.push(`<line${onCard ? ' class="on-card"' : ""} x1="${+x1.toFixed(3)}" y1="${+y1.toFixed(3)}" x2="${+x2.toFixed(3)}" y2="${+y2.toFixed(3)}"/>`);
   };
-  for (let column = 0; column <= 4; column += 1) {
+  for (let column = 0; column <= COLUMNS; column += 1) {
     const x = GRID_LEFT + column * CARD_W;
-    line(x, 0.6, x, GRID_TOP - BLEED, false);
+    line(x, RUN_OUT_EDGE, x, GRID_TOP - BLEED, false);
     line(x, GRID_TOP - BLEED, x, gridBottom + BLEED, true);
-    line(x, gridBottom + BLEED, x, PAGE_H - 0.6, false);
+    if (rows === ROWS) line(x, gridBottom + BLEED, x, PAGE_H - RUN_OUT_EDGE, false);
   }
-  for (let row = 0; row <= 4; row += 1) {
+  for (let row = 0; row <= rows; row += 1) {
     const y = GRID_TOP + row * CARD_H;
-    line(0.6, y, GRID_LEFT - BLEED, y, false);
+    line(RUN_OUT_EDGE, y, GRID_LEFT - BLEED, y, false);
     line(GRID_LEFT - BLEED, y, gridRight + BLEED, y, true);
-    line(gridRight + BLEED, y, PAGE_W - 0.6, y, false);
+    line(gridRight + BLEED, y, PAGE_W - RUN_OUT_EDGE, y, false);
   }
   return `<svg class="cuts" viewBox="0 0 ${PAGE_W} ${PAGE_H}" aria-hidden="true">${lines.join("")}</svg>`;
+}
+
+/**
+ * The sheets in print order: each deck (Starting, then Main, in the order the cards come)
+ * starts a new sheet and fills sheets of 16. Throws if the cards are not grouped by deck.
+ */
+export function planSheets(cards: SheetCard[]): Array<{ plan: SheetPlan; cards: SheetCard[] }> {
+  const decks: SheetCard[][] = [];
+  for (const card of cards) {
+    const deck = decks.at(-1);
+    if (deck !== undefined && deck[0]?.card.kind === card.card.kind) deck.push(card);
+    else {
+      if (decks.some((earlier) => earlier[0]?.card.kind === card.card.kind)) throw new Error(`sheet: the ${card.card.kind} cards are not together (${card.card.id})`);
+      decks.push([card]);
+    }
+  }
+  const sheets: Array<{ plan: SheetPlan; cards: SheetCard[] }> = [];
+  for (const deck of decks) {
+    for (let index = 0; index < deck.length; index += CARDS_PER_SHEET) {
+      const sheetCards = deck.slice(index, index + CARDS_PER_SHEET);
+      const rows = Math.ceil(sheetCards.length / COLUMNS);
+      const inkBottom = rows === ROWS ? PAGE_H - RUN_OUT_EDGE : GRID_TOP + rows * CARD_H + BLEED;
+      sheets.push({ plan: { kind: sheetCards[0]?.card.kind ?? "main", ids: sheetCards.map(({ card }) => card.id), rows, inkBottom }, cards: sheetCards });
+    }
+  }
+  return sheets;
 }
 
 export function buildSheetHtml(options: {
@@ -252,17 +297,16 @@ export function buildSheetHtml(options: {
   css: string;
   script: string;
   input: PageInput;
-}): { html: string; sheets: number } {
+}): { html: string; sheets: SheetPlan[] } {
   const { lang, labels, cards } = options;
-  const sheets: SheetCard[][] = [];
-  for (let index = 0; index < cards.length; index += CARDS_PER_SHEET) sheets.push(cards.slice(index, index + CARDS_PER_SHEET));
+  const sheets = planSheets(cards);
   const body = sheets
     .map(
-      (sheetCards, index) =>
-        `<section class="sheet" data-sheet="${index + 1}">` +
-        '<div class="bleed"></div>' +
-        `<div class="grid">${sheetCards.map((card) => cardHtml(card, labels)).join("")}</div>` +
-        cutLines() +
+      ({ plan, cards: sheetCards }, index) =>
+        `<section class="sheet" data-sheet="${index + 1}" data-rows="${plan.rows}" data-ink-bottom="${plan.inkBottom}">` +
+        `<div class="bleed" style="height:${plan.rows * CARD_H + 2 * BLEED}mm"></div>` +
+        `<div class="grid" style="height:${plan.rows * CARD_H}mm;grid-template-rows:repeat(${plan.rows},${CARD_H}mm)">${sheetCards.map((card) => cardHtml(card, labels)).join("")}</div>` +
+        cutLines(plan.rows) +
         "</section>",
     )
     .join("");
@@ -278,5 +322,5 @@ export function buildSheetHtml(options: {
     `<script>window.__PRINT_INPUT = ${inputJson};</script>` +
     `<script>${options.script.replace(/<\/script/gi, "<\\/script")}</script>` +
     "</body></html>";
-  return { html, sheets: sheets.length };
+  return { html, sheets: sheets.map(({ plan }) => plan) };
 }

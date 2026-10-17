@@ -1,11 +1,16 @@
 /* A ceramic in a kiln, the recap or the results: chip, details panel, Second Firing card. */
 @layer components {
+  /* The chip and its Second Firing cards; in a narrow kiln space the cards wrap under the chip
+     instead of running past the space's edge. */
   .kcer {
     position: relative;
     display: inline-flex;
+    flex-wrap: wrap;
+    justify-content: center;
     align-items: flex-end;
     gap: var(--sp-2);
     min-width: 0;
+    max-width: 100%;
   }
 
   .kcer-detail .kit-detail-trigger {
@@ -22,15 +27,24 @@
     display: inline-grid;
     justify-items: center;
     gap: var(--sp-1);
+    min-width: 0;
+    max-width: 100%;
   }
 
   .kcer-extra-tag {
-    max-width: 4.5rem;
+    max-width: min(4.5rem, 100%);
     font-size: var(--fs-12);
     line-height: var(--lh-tight);
     text-align: center;
     color: inherit;
     overflow-wrap: break-word;
+  }
+
+  .kcer-extra-cards {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--sp-1);
   }
 
   .kcer-lines {

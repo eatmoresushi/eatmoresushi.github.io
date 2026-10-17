@@ -6,14 +6,14 @@ import { locationSummary } from "../../../../src/app/i18n/catalog/locationSummar
 import { GLOSSARY_LINES, ROOT, cellsOf } from "../../support/glossary.ts";
 
 /**
- * §5 gap 1: the location summaries match their sources cell by cell — English from the V1.6.1
+ * §5 gap 1: the location summaries match their sources cell by cell — English from the V1.6.2
  * rulebook Appendix E "Action Summary", Chinese from the same table of the Chinese rulebook
  * (行动一览), which the short column (短) of glossary §4.1–4.7 repeats. The Magistrate's Hall Shifu
  * cell ("Pay 3 Coins → same" / 付3铜钱，同上) is spelled out with the Apprentice cell's result; that
  * is the only editorial change.
  */
-const RULEBOOK = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.1_EN_SOURCE.md"), "utf8").split("\n");
-const RULEBOOK_ZH = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.1_ZH.md"), "utf8").split("\n");
+const RULEBOOK = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.2_EN_SOURCE.md"), "utf8").split("\n");
+const RULEBOOK_ZH = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.2_ZH.md"), "utf8").split("\n");
 
 function tableAfter(lines: readonly string[], heading: string): Array<Record<string, string>> {
   const start = lines.findIndex((line) => line.startsWith(heading));

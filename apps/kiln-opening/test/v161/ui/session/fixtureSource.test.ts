@@ -1,8 +1,9 @@
 /**
  * `FixtureGameSource` (UI plan §3.1, §9.1): a read-only source over one JSON fixture. It
  * checks a submitted command the way ConfirmBar does and records it, and never changes the
- * view. Exercised over the signed-off wireframe moments (`docs/ui-v1.6.1/fixtures.json`);
- * A1's `scenarios.json` / `moments.json` share the entry shape.
+ * view. Exercised over the played moments of the test fixtures (`test/v161/ui/fixtures/
+ * moments.json`, V1.6.2). The signed-off wireframe file (`docs/ui-v1.6.1/fixtures.json`) is frozen
+ * V1.6.1 history: its states no longer replay under the V1.6.2 engine, so it is not used here.
  */
 
 import { readFileSync } from "node:fs";
@@ -13,8 +14,8 @@ import type { AuthoritativeCommand } from "../../../../src/game/index.ts";
 import { FixtureGameSource, checkCommand, fixtureSnapshot } from "../../../../src/app/session/fixtureSource.ts";
 import type { FixtureEntry } from "../../../../src/app/session/fixtureSource.ts";
 
-const file = fileURLToPath(new URL("../../../../docs/ui-v1.6.1/fixtures.json", import.meta.url));
-const moments = (JSON.parse(readFileSync(file, "utf8")) as { moments: FixtureEntry[] }).moments;
+const file = fileURLToPath(new URL("../fixtures/moments.json", import.meta.url));
+const moments = (JSON.parse(readFileSync(file, "utf8")) as { entries: FixtureEntry[] }).entries;
 
 describe("FixtureGameSource", () => {
   it("has moments to read", () => {

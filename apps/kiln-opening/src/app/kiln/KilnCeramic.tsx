@@ -4,7 +4,8 @@
  *
  * The chip is the picture (art, owner ring, Quality, Crackle and Heat-marker badges); its name is
  * the ceramic in words (`ceramicLabel`, D9). Wrapped in `PieceDetail` (§7.4, §8.1), it opens a
- * panel with the full description, its place, marker, Quality and Second Firing card. Inside a
+ * panel with the full description, its place, marker, Quality (and, when Protective Saggars kept
+ * it Standard, that fact, as the game log records it) and Second Firing card. Inside a
  * kiln target button it renders as a plain chip (no nested controls).
  *
  * A ceramic the model holds no attributes for (see `tableCeramics.ts`) is shown in words only:
@@ -15,7 +16,7 @@ import { useT } from "../i18n/I18nProvider.tsx";
 import { techName, qualityName } from "../i18n/content.ts";
 import { KILN_TECHS } from "../i18n/catalog/kiln.ts";
 import { ceramicLabel, ceramicPlace, placeName } from "../i18n/ceramicLabel.ts";
-import { signed } from "../i18n/format.ts";
+import { list, signed } from "../i18n/format.ts";
 import type { Translator } from "../i18n/translator.ts";
 import { PieceDetail } from "../kit/PieceDetail.tsx";
 import { CeramicChip } from "../pieces/CeramicChip.tsx";
@@ -37,8 +38,10 @@ export interface KilnCeramicProps {
   /** A Quality to show when the model holds none (a recap or results record). */
   quality?: Quality | null;
   crackle?: boolean;
-  /** Second Firing's extra Fire card for this ceramic, if any. */
-  extraFire?: FireModifier | null;
+  /** Second Firing's Fire cards for this ceramic: both while its owner chooses, then the chosen one. */
+  extraFire?: readonly FireModifier[] | null;
+  /** Protective Saggars kept it Standard this firing instead of Flawed (v1.6.2 L636). */
+  saggarsFloor?: boolean;
   size?: number;
   /** Letters instead of Quality words (narrow kiln spaces). */
   compactQuality?: boolean;
@@ -64,6 +67,7 @@ export function KilnCeramic({
   quality,
   crackle,
   extraFire = null,
+  saggarsFloor = false,
   size = 30,
   compactQuality = false,
   interactive = true,
@@ -100,11 +104,21 @@ export function KilnCeramic({
     />
   );
 
-  const fire = extraFire === null ? null : (
-    <span className="kcer-extra" title={t("kiln.secondFireLabel", { tech: techName(KILN_TECHS.secondFiring, t.locale), value: signed(extraFire) })}>
-      <span className="sr-only">{t("kiln.secondFireLabel", { tech: techName(KILN_TECHS.secondFiring, t.locale), value: signed(extraFire) })}</span>
+  const fireLabel =
+    extraFire === null || extraFire.length === 0
+      ? null
+      : extraFire.length === 1
+        ? t("kiln.secondFireChosen", { tech: techName(KILN_TECHS.secondFiring, t.locale), value: signed(extraFire[0] ?? 0) })
+        : t("kiln.secondFireCards", { tech: techName(KILN_TECHS.secondFiring, t.locale), values: list(extraFire.map((value) => signed(value)), t.locale) });
+  const fire = extraFire === null || fireLabel === null ? null : (
+    <span className="kcer-extra" title={fireLabel}>
+      <span className="sr-only">{fireLabel}</span>
       <span aria-hidden="true" className="kcer-extra-tag">{t("kiln.secondFireTag", { tech: techName(KILN_TECHS.secondFiring, t.locale) })}</span>
-      <span aria-hidden="true"><FireCard value={extraFire} /></span>
+      <span className="kcer-extra-cards" aria-hidden="true">
+        {extraFire.map((value, index) => (
+          <FireCard key={index} value={value} />
+        ))}
+      </span>
     </span>
   );
 
@@ -123,8 +137,11 @@ export function KilnCeramic({
   const shownQuality = facts?.quality ?? quality ?? null;
   lines.push(shownQuality === null ? t("kiln.detail.noQuality") : t("kiln.detail.quality", { quality: qualityName(shownQuality, t.locale) }));
   if (marker !== null) lines.push(t("kiln.detail.marker", { marker: heatMarkerWords(marker, t) }));
+  if (saggarsFloor) {
+    lines.push(t("kiln.detail.saggarsFloor", { tech: techName(KILN_TECHS.protectiveSaggars, t.locale), standard: qualityName("standard", t.locale), flawed: qualityName("flawed", t.locale) }));
+  }
   if (facts?.crackle === true || crackle === true) lines.push(t("kiln.detail.crackle"));
-  if (extraFire !== null) lines.push(t("kiln.secondFireLabel", { tech: techName(KILN_TECHS.secondFiring, t.locale), value: signed(extraFire) }));
+  if (fireLabel !== null) lines.push(fireLabel);
 
   return (
     <span className={["kcer", className ?? ""].filter((part) => part !== "").join(" ")}>

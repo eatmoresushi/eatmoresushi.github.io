@@ -3,10 +3,10 @@
  * Owner: B4.
  *
  * For every view whose window belongs to B4 (Kiln selection, Setter's Mark, the work turn before
- * and after the worker action, the Commission Market steps, the Guild Hall inspection, Colour
- * Samples), each legal command must be expressible by its form: `fromCommand` gives a draft,
- * revalidating it changes nothing (every value is offered by `options()`), `build` gives the
- * command back and it validates. `USE_CANAL_BARGE` is routed to B5's form by the helper.
+ * and after the worker action with the Colour Samples swap, the Commission Market reservation, the
+ * Guild Hall inspection's takes and finish, Colour Samples and the swap's look), each legal command
+ * must be expressible by its form: `fromCommand` gives a draft, revalidating it changes nothing
+ * (every value is offered by `options()`), `build` gives the command back and it validates.
  *
  * Inputs:
  * - canonical mode over every scripted scenario and played moment;
@@ -38,7 +38,7 @@ import { checkView, tableRoute } from "../support/expressibility.ts";
 import type { ExpressibilityReport } from "../support/expressibility.ts";
 import { allFixtures, scenarios } from "../support/fixtures.ts";
 
-const B4_WINDOWS: ReadonlySet<DecisionWindowKind> = new Set(["kiln_selection", "setters_mark", "work", "commission", "guild_inspection", "colour_samples"]);
+const B4_WINDOWS: ReadonlySet<DecisionWindowKind> = new Set(["kiln_selection", "setters_mark", "work", "commission", "guild_inspection", "colour_samples", "colour_samples_swap"]);
 
 function failures(report: ExpressibilityReport): string[] {
   return report.rows.filter((row) => row.status !== "ok").map((row) => `${row.status} ${row.form}: ${row.problem ?? ""} ${JSON.stringify(row.command)}`);
@@ -74,14 +74,12 @@ describe("B4 forms express every canonical command", () => {
       "PLACE_GUILD_HALL",
       "PLACE_CANAL_WHARF",
       "PLACE_MAGISTRATES_HALL",
-      "COMMISSION_RESERVE",
-      "COMMISSION_STOP",
-      "COMMISSION_CHOOSE_LOOKED",
-      "COMMISSION_GAIN",
+      "COMMISSION_CHOOSE",
       "GUILD_TAKE",
       "COLOUR_SAMPLES_CHOOSE",
+      "USE_COLOUR_SAMPLES_SWAP",
+      "COLOUR_SAMPLES_SWAP_CHOOSE",
       "USE_IMPERIAL_PRIORITY",
-      "USE_CANAL_BARGE",
       "END_TURN",
     ]) {
       expect(families.has(type as AuthoritativeCommand["type"]), type).toBe(true);

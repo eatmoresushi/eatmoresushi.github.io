@@ -11,7 +11,8 @@ import { glossaryTableAfter } from "../../support/glossary.ts";
 describe("Order quality line", () => {
   it("matches the glossary §5.2 examples exactly", () => {
     const examples = glossaryTableAfter("### 5.2 示例");
-    expect(examples.map(([id]) => id)).toEqual(["S01", "S13", "O14", "O31", "O39", "O47"]);
+    // V1.6.2 owner revision 2 (change 23): the 8-card Starting deck; S13 was retired.
+    expect(examples.map(([id]) => id)).toEqual(["S05", "S07", "O14", "O31", "O39", "O47"]);
     for (const [id = "", , quality] of examples) {
       expect(orderQualityLine(id as keyof typeof ORDERS, "zh-CN"), id).toBe(quality);
     }

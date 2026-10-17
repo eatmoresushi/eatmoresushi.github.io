@@ -8,10 +8,12 @@
  * - **On display** the whole tile is the trigger of its rules details: the full ability and the
  *   Tech's clarifications.
  * - **As the Guild Hall chooser** (`choice`, owner review 2026-10-17) the tile is a toggle button
- *   (`data-act="tech"`, `aria-pressed`) that chooses it for the pane's Guild Hall placement, and
- *   opens no rules details. A Tech this worker cannot buy (`legal: false`: its cost, a discipline
- *   already owned, the Tech limit — whatever the engine says) is greyed out, stays focusable with
- *   `aria-disabled`, ignores activation and shows the engine's reason (`aria-describedby`).
+ *   (`data-act="tech"`, `aria-pressed`) that chooses it for the pane's Guild Hall placement (an
+ *   Apprentice's purchase) or for the Shifu's next take after inspecting, and opens no rules
+ *   details. Its price is the printed cost (v1.6.2 L206–207: no discount). A Tech this worker
+ *   cannot take (`legal: false`: its cost, a discipline already owned, the Tech limit — whatever
+ *   the engine says) is greyed out, stays focusable with `aria-disabled`, ignores activation and
+ *   shows the engine's reason (`aria-describedby`).
  *
  * Also exported, so every Tech tile reads the same (owner review, 2026-10-17):
  * - `TechOption`: the same tile as one native radio of a kit `OptionGroup` (the Shifu's Guild Hall
@@ -43,7 +45,7 @@ export interface TechChoice {
 export interface TechCardProps {
   /** The Tech shown. */
   techId: TechId;
-  /** Present while the Tech display is the Guild Hall chooser (buy mode). */
+  /** Present while the Tech display is the Guild Hall chooser (buy and take modes). */
   choice?: TechChoice;
 }
 
@@ -78,7 +80,7 @@ function faceIds(base: string): Required<FaceIds> {
 
 interface TechFaceProps {
   techId: TechId;
-  /** The cost line: the printed cost, or the price after a discount. */
+  /** The cost line: the printed cost. */
   cost: ReactNode;
   /** Element ids, for a control that names itself from parts of the face. */
   ids?: FaceIds;
@@ -115,8 +117,7 @@ export function TechCard({ techId, choice }: TechCardProps) {
   const colour = DISCIPLINE_COLOUR[facts.discipline];
   if (choice !== undefined) {
     const { target, reason } = choice;
-    const cost = t("common.amount.coins", { n: target.price });
-    const price = target.price === target.printedCost ? cost : t("table.techs.price", { printed: t("common.amount.coins", { n: target.printedCost }), price: cost });
+    const price = t("common.amount.coins", { n: target.cost });
     const face = faceIds(ids);
     const reasonId = `${ids}-why`;
     const classes = ["tech", "tech--choice", target.pressed ? "tech--chosen" : "", target.legal ? "" : "tech--unavailable"].filter((part) => part !== "").join(" ");
@@ -153,7 +154,7 @@ export function TechCard({ techId, choice }: TechCardProps) {
 export interface TechOptionProps {
   /** The Tech offered; also the radio's `value` (test-driver contract, §9.6). */
   techId: TechId;
-  /** The price in words: the printed cost, or "3 Coins → 2 Coins" after a discount. */
+  /** The price in words: the printed cost ("3 Coins"). */
   price: string;
   /** Unavailable: `aria-disabled`, still focusable, change ignored. */
   disabled?: boolean;

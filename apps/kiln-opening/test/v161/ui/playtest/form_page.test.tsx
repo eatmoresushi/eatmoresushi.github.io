@@ -210,7 +210,7 @@ describe("validation issues in the reader's language", () => {
     const source = readFileSync(join(ROOT, "src/playtest/schema.ts"), "utf8");
     const literals = [...source.matchAll(/(["`])((?:(?!\1)[^\\]|\\.)*?)\1/g)]
       .map((match) => match[2] ?? "")
-      .filter((text) => /^[A-Z].*\.$/.test(text) && !text.includes("V1.6.1 has no Starting Techs"));
+      .filter((text) => /^[A-Z].*\.$/.test(text) && !text.includes("V1.6.2 has no Starting Techs"));
     expect(literals.length).toBeGreaterThan(25);
     const samples = literals.map((text) => text.replace(/\$\{[^}]+\}/g, "4"));
     for (const sample of samples) {

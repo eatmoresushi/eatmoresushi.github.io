@@ -64,6 +64,14 @@ export function ownFiringCeramicIds(model: GameModel): CeramicId[] {
   return stage.ceramics.filter((ceramic) => ceramic.ownerId === model.viewerId && !ceramic.salvaged).map((ceramic) => ceramic.id);
 }
 
+/**
+ * Protective Saggars kept this ceramic Standard this firing instead of Flawed (v1.6.2 L636;
+ * `FiringStageCeramic.saggarsFloor`, a public fact the game log also records).
+ */
+export function saggarsFloored(model: GameModel, ceramicId: CeramicId): boolean {
+  return model.firingStage?.ceramics.find((ceramic) => ceramic.id === ceramicId)?.saggarsFloor === true;
+}
+
 /** A player's seat index (ring colour), 0 when unknown. */
 export function seatOf(model: GameModel, playerId: PlayerId): number {
   return model.players.find((summary) => summary.playerId === playerId)?.seatIndex ?? 0;

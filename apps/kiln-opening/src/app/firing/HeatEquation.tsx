@@ -151,7 +151,9 @@ export function HeatEquation({ stage }: HeatEquationProps) {
             subject={{ kind: "tech", id: KILN_TECHS.secondFiring }}
             trigger={<span className="eq-extra-text">{t("kiln.eq.extraFire", { tech: secondFiring, ceramic: kilnCeramicLabel(ceramics, extra.ceramicId, extra.playerId, t) })}</span>}
           />
-          <FireCard value={extra.modifier} size="lg" motionKey="fire:second" />
+          {extra.modifiers.map((modifier, index) => (
+            <FireCard key={index} value={modifier} size="lg" motionKey={`fire:second:${index}`} />
+          ))}
         </div>
       )}
     </div>

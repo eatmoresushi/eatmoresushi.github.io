@@ -2,13 +2,13 @@
  * The Materials Yard sub-draft (UI_V1.6.1_ARCHITECTURE §3.4; wireframe `subEditor`
  * materials_yard). Owner: B4.
  *
- * Choices: the Clay/Wood split, the Shifu effect's 1-Coin bonus, and Prepared Clay (T17: a
- * Shape and a Decoration). Every list comes from `materialsYardOptions(view, worker)` (§5 gap 14)
- * and `placementLimits`; the complete draft is quoted with `quoteMaterialsYard`. A Prepared Clay
- * Decoration is offered per chosen Shape from the selector's legal `pairs` (never the cross
- * product), and with the bonus only the pairs that stay legal with it.
+ * Choices: the Clay/Wood split (3, or 6 for the Shifu effect, v1.6.2 L164–165; there is no Coin
+ * option) and Prepared Clay (T17: a Shape and a Decoration). Every list comes from
+ * `materialsYardOptions(view, worker)` (§5 gap 14); the complete draft is quoted with
+ * `quoteMaterialsYard`. A Prepared Clay Decoration is offered per chosen Shape from the
+ * selector's legal `pairs` (never the cross product).
  */
-import { materialsYardOptions, placementLimits, quoteMaterialsYard } from "../../../../game/index.ts";
+import { materialsYardOptions, quoteMaterialsYard } from "../../../../game/index.ts";
 import type { CostQuote, Decoration, ResourceState, Shape } from "../../../../game/index.ts";
 import { techName } from "../../../i18n/content.ts";
 import { ceramicLabel } from "../../../i18n/ceramicLabel.ts";
@@ -24,14 +24,12 @@ const PREPARED_CLAY = "T17" as const;
 export interface MaterialsYardDraft {
   /** Clay of the split (Wood is the rest); null until chosen. */
   readonly clay: number | null;
-  readonly bonus: boolean;
   /** Prepared Clay, when used. */
   readonly preparedClay: { readonly shape: Shape | null; readonly decoration: Decoration | null } | null;
 }
 
 export type MaterialsYardAction =
   | { readonly type: "clay"; readonly clay: number }
-  | { readonly type: "bonus"; readonly on: boolean }
   | { readonly type: "preparedClay"; readonly on: boolean }
   | { readonly type: "pcShape"; readonly shape: Shape }
   | { readonly type: "pcDecoration"; readonly decoration: Decoration };
@@ -39,38 +37,23 @@ export type MaterialsYardAction =
 export interface MaterialsYardOptions {
   resources: number;
   splits: ReadonlyArray<{ clay: number; wood: number }>;
-  /** The Shifu effect's bonus (printed amounts), with the engine's reason when it cannot be bought. */
-  bonus: { pay: ResourceState; gain: ResourceState; available: boolean; quote: CostQuote } | null;
-  /** Prepared Clay: Shapes legal now (with the bonus if chosen) and the Decorations for the chosen Shape. */
+  /** Prepared Clay: Shapes legal now and the Decorations for the chosen Shape. */
   preparedClay: { techId: typeof PREPARED_CLAY; shapes: readonly Shape[]; decorations: readonly Decoration[] } | null;
   /** The quote of the complete draft, or null while incomplete. */
   quote: CostQuote | null;
   after: ResourceState | null;
 }
 
-const BLANK: MaterialsYardDraft = Object.freeze({ clay: null, bonus: false, preparedClay: null });
+const BLANK: MaterialsYardDraft = Object.freeze({ clay: null, preparedClay: null });
 
 function selectorOptions(context: PlacementContext) {
   return viewMemo(context.view, `materialsYardOptions:${placementWorkerKey(context.worker)}`, () => materialsYardOptions(context.view, context.worker));
 }
 
-function bonusOptions(context: PlacementContext): MaterialsYardOptions["bonus"] {
-  const options = selectorOptions(context);
-  const quote = options.shifuBonus;
-  if (quote === null) return null;
-  const limits = placementLimits(context.view, "materials_yard", "shifu");
-  return {
-    pay: { clay: 0, wood: 0, coins: limits.bonus.coins },
-    gain: { clay: limits.bonus.clay, wood: limits.bonus.wood, coins: 0 },
-    available: quote.ok,
-    quote,
-  };
-}
-
 function preparedOptions(draft: MaterialsYardDraft, context: PlacementContext): MaterialsYardOptions["preparedClay"] {
   const prepared = selectorOptions(context).preparedClay;
   if (prepared === null) return null;
-  const pairs = prepared.pairs.filter((pair) => !draft.bonus || pair.withShifuBonus);
+  const pairs = prepared.pairs;
   const shapes = prepared.shapes.filter((shape) => pairs.some((pair) => pair.shape === shape));
   const chosen = draft.preparedClay?.shape ?? null;
   const decorations = chosen === null ? [] : prepared.decorations.filter((decoration) => pairs.some((pair) => pair.shape === chosen && pair.decoration === decoration));
@@ -88,7 +71,6 @@ function command(draft: MaterialsYardDraft, context: PlacementContext): Placemen
     clay: draft.clay,
     wood: resources - draft.clay,
     ...(context.worker.seniorApprentice ? { seniorApprentice: true } : {}),
-    ...(draft.bonus ? { buyShifuBonus: true } : {}),
     ...(prepared === null || prepared.shape === null || prepared.decoration === null ? {} : { preparedClay: { shape: prepared.shape, decoration: prepared.decoration } }),
   };
 }
@@ -102,20 +84,18 @@ function quoteOf(draft: MaterialsYardDraft, context: PlacementContext): CostQuot
 function revalidate(draft: MaterialsYardDraft, context: PlacementContext): MaterialsYardDraft {
   const resources = selectorOptions(context).resources;
   const clay = draft.clay !== null && draft.clay >= 0 && draft.clay <= resources ? draft.clay : null;
-  const bonusInfo = bonusOptions(context);
-  const bonus = draft.bonus && bonusInfo !== null && bonusInfo.available;
   let preparedClay = draft.preparedClay;
-  const prepared = preparedOptions({ ...draft, bonus }, context);
+  const prepared = preparedOptions(draft, context);
   if (preparedClay !== null) {
     if (prepared === null) preparedClay = null;
     else {
       const shape = preparedClay.shape !== null && prepared.shapes.includes(preparedClay.shape) ? preparedClay.shape : null;
-      const decorations = preparedOptions({ ...draft, bonus, preparedClay: { shape, decoration: null } }, context)?.decorations ?? [];
+      const decorations = preparedOptions({ ...draft, preparedClay: { shape, decoration: null } }, context)?.decorations ?? [];
       const decoration = shape !== null && preparedClay.decoration !== null && decorations.includes(preparedClay.decoration) ? preparedClay.decoration : null;
       preparedClay = { shape, decoration };
     }
   }
-  return keepIfSame(draft, { clay, bonus, preparedClay });
+  return keepIfSame(draft, { clay, preparedClay });
 }
 
 export const materialsYardDraft: LocationDraftModel<"materials_yard", MaterialsYardDraft, MaterialsYardAction, MaterialsYardOptions> = {
@@ -128,8 +108,6 @@ export const materialsYardDraft: LocationDraftModel<"materials_yard", MaterialsY
         return revalidate(draft, context);
       case "clay":
         return revalidate({ ...draft, clay: action.clay }, context);
-      case "bonus":
-        return revalidate({ ...draft, bonus: action.on }, context);
       case "preparedClay":
         return revalidate({ ...draft, preparedClay: action.on ? { shape: null, decoration: null } : null }, context);
       case "pcShape":
@@ -145,7 +123,6 @@ export const materialsYardDraft: LocationDraftModel<"materials_yard", MaterialsY
     return {
       resources,
       splits,
-      bonus: bonusOptions(context),
       preparedClay: preparedOptions(draft, context),
       quote,
       after: resourcesAfter(context.me.resources, quote),
@@ -157,7 +134,6 @@ export const materialsYardDraft: LocationDraftModel<"materials_yard", MaterialsY
     if (cmd.clay + cmd.wood !== resources || cmd.preparedClay?.useDecoratorsKit === true) return null;
     return {
       clay: cmd.clay,
-      bonus: cmd.buyShifuBonus === true,
       preparedClay: cmd.preparedClay === undefined ? null : { shape: cmd.preparedClay.shape, decoration: cmd.preparedClay.decoration },
     };
   },
@@ -165,9 +141,7 @@ export const materialsYardDraft: LocationDraftModel<"materials_yard", MaterialsY
     if (draft.clay === null) return null;
     const wood = selectorOptions(context).resources - draft.clay;
     const clay = draft.clay;
-    let split: RichMessage;
-    if (draft.bonus) split = bonusDetail(clay, wood);
-    else split = plainDetail(clay, wood);
+    const split: RichMessage = plainDetail(clay, wood);
     const prepared = draft.preparedClay;
     if (prepared === null || prepared.shape === null || prepared.decoration === null) return split;
     const vessel = { ownerId: context.playerId, shape: prepared.shape, decoration: prepared.decoration };
@@ -178,10 +152,6 @@ export const materialsYardDraft: LocationDraftModel<"materials_yard", MaterialsY
     });
   },
 };
-
-function bonusDetail(clay: number, wood: number): RichMessage {
-  return msg("work.my.detailBonus", { clay, wood });
-}
 
 function plainDetail(clay: number, wood: number): RichMessage {
   return msg("work.my.detail", { clay, wood });

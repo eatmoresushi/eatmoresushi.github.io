@@ -31,7 +31,8 @@ const VERB_KEYS: ReadonlyArray<readonly [keyof typeof CATALOG.common.zh, string]
   ["verb.loadImperial", "Load into Imperial Kiln"],
   ["verb.useImperialPriority", "Use Imperial Priority"],
   ["verb.reserve", "Reserve"],
-  ["verb.blindReserve", "Blind reserve"],
+  // "Blind reserve" (盲接牌堆顶) is still a §2.16 row, but V1.6.2 change 21 removed the blind
+  // reservation (glossary §2.12 retires 盲接), so the catalogue no longer has the verb.
   ["verb.completeOrder", "Complete Order"],
   ["verb.buy", "Buy (Tech)"],
   ["verb.gain", "Gain"],

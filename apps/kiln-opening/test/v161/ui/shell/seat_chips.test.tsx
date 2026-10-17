@@ -57,14 +57,20 @@ describe("seat chips", () => {
   it("names the whole strip in the chip's accessible name", () => {
     const model = modelOf("m1_work_phase_r2_3p");
     const html = renderComponent(fixtureSource("m1_work_phase_r2_3p"), <SeatChips />);
-    const [mine, next] = seatChips(html);
-    const me = model.players[0]!;
-    expect(me.playerId).toBe(model.viewerId);
+    const chips = seatChips(html);
+    const me = model.players.find((player) => player.playerId === model.viewerId)!;
+    const mine = chips.find((chip) => attr(chip, "data-player-id") === me.playerId);
+    const tail = [...(me.isFirstPlayer ? ["First Player"] : []), ...(model.prompt.actorIds.includes(me.playerId) ? ["deciding now"] : [])];
+    expect(tail).toContain("deciding now");
     expect(attr(mine ?? "", "aria-label")).toBe(
-      `Your workshop · ${kilnShortName(me.kilnId!, "en")} · ${me.recordedVp} VP · ${resourcesEn(me.resources)} · ${me.orderHandCount} ${me.orderHandCount === 1 ? "Order" : "Orders"} in hand · First Player · deciding now`,
+      [`Your workshop · ${kilnShortName(me.kilnId!, "en")} · ${me.recordedVp} VP · ${resourcesEn(me.resources)} · ${me.orderHandCount} ${me.orderHandCount === 1 ? "Order" : "Orders"} in hand`, ...tail].join(" · "),
     );
-    const other = model.players[1]!;
+    const other = model.players.find((player) => player.playerId !== me.playerId)!;
+    const next = chips.find((chip) => attr(chip, "data-player-id") === other.playerId);
     expect(attr(next ?? "", "aria-label")).toMatch(new RegExp(`^Open ${other.displayName}’s board · ${kilnShortName(other.kilnId!, "en")} · `));
+    // The First Player's chip says so.
+    const first = chips.find((chip) => attr(chip, "data-player-id") === model.board.firstPlayerId);
+    expect(attr(first ?? "", "aria-label")).toContain("First Player");
   });
 
   it("marks the board shown (D1): your own by default, else the chosen one", () => {
@@ -98,8 +104,8 @@ describe("seat chips", () => {
   });
 
   it("shows several acting players in a simultaneous window", () => {
-    const model = modelOf("m9_contributions_step1_3p");
-    const html = renderComponent(fixtureSource("m9_contributions_step1_3p"), <SeatChips />);
+    const model = modelOf("w-secret-contributions-with-fuel-ledger");
+    const html = renderComponent(fixtureSource("w-secret-contributions-with-fuel-ledger"), <SeatChips />);
     const acting = seatChips(html).filter((chip) => chip.includes("data-acting")).map((chip) => attr(chip, "data-player-id"));
     expect(acting.sort()).toEqual([...model.prompt.actorIds].sort());
     expect(acting.length).toBeGreaterThan(1);
@@ -131,12 +137,16 @@ describe("seat chips", () => {
   it("renders in Chinese with the glossary words", () => {
     const model = modelOf("m1_work_phase_r2_3p");
     const html = renderComponent(fixtureSource("m1_work_phase_r2_3p"), <SeatChips />, { locale: "zh-CN" });
-    const [mine, next] = seatChips(html);
-    const me = model.players[0]!;
+    const chips = seatChips(html);
+    const me = model.players.find((player) => player.playerId === model.viewerId)!;
+    const mine = chips.find((chip) => attr(chip, "data-player-id") === me.playerId);
+    const tail = [...(me.isFirstPlayer ? ["起始玩家"] : []), "正在决断"];
     expect(attr(mine ?? "", "aria-label")).toBe(
-      `你的作坊 · ${kilnShortName(me.kilnId!, "zh-CN")} · ${me.recordedVp}分 · ${me.resources.clay}泥 · ${me.resources.wood}柴 · ${me.resources.coins}铜钱 · 手中${me.orderHandCount}张委托 · 起始玩家 · 正在决断`,
+      [`你的作坊 · ${kilnShortName(me.kilnId!, "zh-CN")} · ${me.recordedVp}分 · ${me.resources.clay}泥 · ${me.resources.wood}柴 · ${me.resources.coins}铜钱 · 手中${me.orderHandCount}张委托`, ...tail].join(" · "),
     );
-    expect(attr(next ?? "", "aria-label")).toMatch(new RegExp(`^查看${model.players[1]!.displayName}的窑口板`));
+    const other = model.players.find((player) => player.playerId !== me.playerId)!;
+    const next = chips.find((chip) => attr(chip, "data-player-id") === other.playerId);
+    expect(attr(next ?? "", "aria-label")).toMatch(new RegExp(`^查看${other.displayName}的窑口板`));
     expect(html).toContain(`<strong>${me.recordedVp}</strong>分`);
     expect(html).not.toMatch(/VP/);
   });

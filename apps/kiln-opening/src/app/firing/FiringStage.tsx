@@ -8,17 +8,21 @@
  *   and the queue or the Contribution submissions (`QueueRow`);
  * - the step rail (`StepRail`) with First-Player marks;
  * - the heat equation (`HeatEquation`), the R7 extra Fire card included;
- * - public firing records: Test Pieces (who paid, whether the card was buried; never the card)
- *   and salvaged ceramics;
+ * - public firing records: Test Pieces (who paid, whether the card was buried; never the card),
+ *   the card Second Firing fired a ceramic again with (both cards then lie in the discard), and
+ *   salvaged ceramics;
  * - the kiln (`KilnBlock`) with markers, modifiers and each recorded Quality;
  * - the open Fire discard (in the equation; D4).
  * It reads `firingStage` (`firingStageView`) only: no heat ledger, no previews, no odds.
  */
-import type { FiringStageView } from "../../game/index.ts";
+import type { FiringStageView, TechId } from "../../game/index.ts";
 import { useT } from "../i18n/I18nProvider.tsx";
 import { KILN_TECHS } from "../i18n/catalog/kiln.ts";
 import { firingStepCount, techName } from "../i18n/content.ts";
+import { signed } from "../i18n/format.ts";
 import { KilnBlock } from "../kiln/KilnBlock.tsx";
+import { kilnCeramicLabel } from "../kiln/KilnCeramic.tsx";
+import { useTableCeramics } from "../kiln/tableCeramics.ts";
 import { RulesDetail } from "../rules/RulesDetail.tsx";
 import { playerLabel } from "../kiln/names.ts";
 import { useGame } from "../state/hooks.ts";
@@ -30,32 +34,40 @@ import { StepRail } from "./StepRail.tsx";
 import "./FiringStage.css";
 
 function Records({ stage, model, t }: { stage: FiringStageView; model: GameModel; t: Translator }) {
+  const ceramics = useTableCeramics();
   const testPieces = techName(KILN_TECHS.testPieces, t.locale);
-  const lines = [
+  const secondFiring = techName(KILN_TECHS.secondFiring, t.locale);
+  const lines: { key: string; text: string; tech: TechId | null }[] = [
     ...stage.testPieces.map((record) => ({
       key: `tp:${record.playerId}`,
-      ownerId: record.playerId,
       text: !record.peeked
         ? t("kiln.record.testPiecesDeclined", { name: playerLabel(model, t, record.playerId), tech: testPieces })
         : record.buried
           ? t("kiln.record.testPiecesBuried", { name: playerLabel(model, t, record.playerId), tech: testPieces })
           : t("kiln.record.testPiecesPeeked", { name: playerLabel(model, t, record.playerId), tech: testPieces }),
-      tech: true,
+      tech: KILN_TECHS.testPieces,
     })),
+    // Second Firing's chosen card (v1.6.2 L631): both cards are in the discard now, so the
+    // record says which one fired the ceramic again, as the game log does.
+    ...stage.ceramics.flatMap((record) =>
+      record.secondFireModifier === null || record.salvaged
+        ? []
+        : [{
+            key: `second:${record.id}`,
+            text: t("kiln.record.secondFired", { ceramic: kilnCeramicLabel(ceramics, record.id, record.ownerId, t, record.quality), value: signed(record.secondFireModifier), tech: secondFiring }),
+            tech: KILN_TECHS.secondFiring,
+          }],
+    ),
     ...stage.ceramics
       .filter((record) => record.salvaged)
-      .map((record) => ({ key: `salvage:${record.id}`, ownerId: record.ownerId, text: t("kiln.record.salvaged", { name: playerLabel(model, t, record.ownerId) }), tech: false })),
+      .map((record) => ({ key: `salvage:${record.id}`, text: t("kiln.record.salvaged", { name: playerLabel(model, t, record.ownerId) }), tech: null })),
   ];
   if (lines.length === 0) return null;
   return (
     <ul className="stage-records">
       {lines.map((line) => (
         <li key={line.key}>
-          {line.tech ? (
-            <RulesDetail subject={{ kind: "tech", id: KILN_TECHS.testPieces }} trigger={<span>{line.text}</span>} />
-          ) : (
-            line.text
-          )}
+          {line.tech === null ? line.text : <RulesDetail subject={{ kind: "tech", id: line.tech }} trigger={<span>{line.text}</span>} />}
         </li>
       ))}
     </ul>

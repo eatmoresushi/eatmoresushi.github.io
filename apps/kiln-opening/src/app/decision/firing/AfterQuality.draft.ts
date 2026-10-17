@@ -9,7 +9,7 @@
  */
 import { afterQualityOptions } from "../../../game/index.ts";
 import type { AfterQualityAbility, AfterQualityOption, AuthoritativeCommand, CeramicId } from "../../../game/index.ts";
-import { kilnText, techName } from "../../i18n/content.ts";
+import { RULE_NUMBERS, kilnText, qualityName, techName } from "../../i18n/content.ts";
 import { msg } from "../../i18n/translator.ts";
 import type { Translator } from "../../i18n/translator.ts";
 import type { DraftModel } from "../../state/draftStore.ts";
@@ -105,9 +105,16 @@ export const afterQualityDraft: DraftModel<AfterQualityDraft, AfterQualityAction
     if (choice === null) return msg("firing.aq.pick");
     if (choice === "end") return msg("firing.aq.sumEnd");
     const mine = ownFiringCeramicIds(model);
-    return msg("firing.aq.sum", {
-      ability: (t) => afterQualityAbilityName(choice.ability, t),
-      ceramic: (t) => ceramicWords(model, engine, choice.ceramicId, t, mine),
-    });
+    const ability = (t: Translator) => afterQualityAbilityName(choice.ability, t);
+    const ceramic = (t: Translator) => ceramicWords(model, engine, choice.ceramicId, t, mine);
+    // Each ability's effect as its card states it (a fixed result, never a Fire-card preview, D3).
+    switch (choice.ability) {
+      case "protective_saggars":
+        return msg("firing.aq.sumSaggars", { ability, ceramic, quality: (t) => qualityName("fine", t.locale) });
+      case "second_firing":
+        return msg("firing.aq.sumSecond", { ability, ceramic, n: RULE_NUMBERS.secondFiringCards });
+      case "ge_crackle":
+        return msg("firing.aq.sumGe", { ability, ceramic, quality: (t) => qualityName("fine", t.locale) });
+    }
   },
 };

@@ -1,7 +1,8 @@
 /*
- * Printable Order card sheets (tools/print/printOrderCards.ts): A4 portrait, 4 × 4 cards of
- * 50 × 71 mm with dashed cut lines; the outer cuts sit 6.5 mm from the top and bottom paper
- * edges, inside what most printers can print. All text stays at least 2.5 mm inside each cut
+ * Printable Order card sheets (tools/print/printOrderCards.ts): A4 portrait, up to 4 × 4 cards
+ * of 50 × 71 mm with dashed cut lines; the outer cuts sit 6.5 mm from the top and bottom paper
+ * edges, inside what most printers can print. A sheet that is not full (the 8 Starting Orders)
+ * sets the height of its `.bleed` and `.grid` to the rows it uses (sheet.ts, inline style). All text stays at least 2.5 mm inside each cut
  * (cardPage.js checks it). Fonts are local system faces so the build is offline; Chromium
  * embeds the used subsets in the PDF.
  *
@@ -91,7 +92,7 @@ html[lang="zh-CN"] body {
   break-after: auto;
 }
 
-/* 1 mm of parchment beyond the outer cut lines, so a slightly wide cut shows no white. */
+/* 1 mm of parchment beyond the outer cut lines, so a slightly wide cut shows no white (height: sheet.ts). */
 .bleed {
   position: absolute;
   left: 4mm;
@@ -138,13 +139,20 @@ html[lang="zh-CN"] body {
   width: 50mm;
   height: 71mm;
   overflow: hidden;
+  /*
+   * The parchment is one opaque image the size of the card, drawn once (cardPage.js
+   * `cardPaper`: --paper, the --paper-edge vignette, the --paper-hi highlight and the texture).
+   * A repeating or semi-transparent background tile would show hairline seams in Apple's PDF
+   * renderer; the PDF check refuses any repeating tiling pattern. The image overhangs the card
+   * by 2 px (0.53 mm) on every side, clipped at the card's edge: Chromium paints the background
+   * area pixel-snapped but sizes the image from the unsnapped box, which otherwise leaves a
+   * 0.2 mm strip of flat paper colour along some cut lines.
+   */
   background-color: var(--paper);
-  background-image:
-    var(--paper-tex, none),
-    radial-gradient(ellipse 70% 55% at 50% 38%, var(--paper-hi), rgba(255, 251, 238, 0) 72%),
-    radial-gradient(ellipse 85% 80% at 50% 50%, rgba(0, 0, 0, 0) 62%, var(--paper-edge) 100%);
-  background-size: 25mm 25mm, 100% 100%, 100% 100%;
-  background-repeat: repeat, no-repeat, no-repeat;
+  background-image: var(--card-paper, none);
+  background-size: calc(100% + 4px) calc(100% + 4px);
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .frame,

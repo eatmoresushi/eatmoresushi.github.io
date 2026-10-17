@@ -5,8 +5,8 @@
  * - `EVENT_TEXT`: one template per `GameEventType`, exhaustive by type (a new engine event fails
  *   `typecheck` here). A template reads only `PublicGameEvent` fields.
  * - `OWN_EVENT_TEXT`: the own-secret variants (`ORDERS_DEALT`, `ORDER_RESERVED`,
- *   `PRIVATE_LOOK_OPENED`, `LOOKED_ORDERS_DISCARDED`, `TECHS_RETURNED_TO_BOTTOM`,
- *   `TEST_PIECES_PEEKED`, `HAND_TRIMMED`), which read `LogEntry.own`. `eventText` uses one only
+ *   `PRIVATE_LOOK_OPENED`, `LOOKED_ORDERS_TO_BOTTOM`, `HELD_ORDER_DISCARDED`,
+ *   `TECHS_RETURNED_TO_BOTTOM`, `TEST_PIECES_PEEKED`, `HAND_TRIMMED`), which read `LogEntry.own`. `eventText` uses one only
  *   when the secret's `visibleTo` is the viewer, so no seat ever reads another seat's secret.
  * - `eventText(entry, context)`: the log line for one entry, in the translator's language.
  *
@@ -71,7 +71,8 @@ export const OWN_SECRET_TYPES = [
   "ORDERS_DEALT",
   "ORDER_RESERVED",
   "PRIVATE_LOOK_OPENED",
-  "LOOKED_ORDERS_DISCARDED",
+  "LOOKED_ORDERS_TO_BOTTOM",
+  "HELD_ORDER_DISCARDED",
   "TECHS_RETURNED_TO_BOTTOM",
   "TEST_PIECES_PEEKED",
   "HAND_TRIMMED",
@@ -83,6 +84,8 @@ export type OwnSecretType = (typeof OWN_SECRET_TYPES)[number];
 
 /** Content IDs the log names (lookups only; never rendered). */
 const TECH = {
+  colourSamples: "T10",
+  canalBarge: "T23",
   preparedClay: "T17",
   reworkingTable: "T05",
   kilnTending: "T20",
@@ -101,8 +104,18 @@ function name(playerId: PlayerId, context: EventTextContext): string {
  * A ceramic in words. The line's subject owns most ceramics it names, so the owner is added
  * only for someone else's ceramic; the place only when two would read the same (D9). Quality is
  * left out: a line that changes Quality states it.
+ * - `place: false` for a line about a ceramic of a firing that may since have left the kiln
+ *   (Second Firing, salvage): a view of a later moment knows only where it is then ("finished",
+ *   gone), which is not where the line happened.
+ * - `crackle: false` for the line that gives the Crackle marker: it is not on the ceramic before.
  */
-function ceramic(id: string, context: EventTextContext, subject: PlayerId | null, hint?: Partial<CeramicFacts>): string {
+function ceramic(
+  id: string,
+  context: EventTextContext,
+  subject: PlayerId | null,
+  hint?: Partial<CeramicFacts>,
+  options: { place?: boolean; crackle?: boolean } = {},
+): string {
   const known = ceramicFacts(id, context.view);
   const facts: CeramicFacts | null =
     known ?? (hint?.ownerId !== undefined && hint.shape !== undefined && hint.decoration !== undefined
@@ -113,7 +126,8 @@ function ceramic(id: string, context: EventTextContext, subject: PlayerId | null
     locale: context.t,
     withOwner: subject === null || facts.ownerId !== subject,
     withQuality: false,
-    withPlace: known === null ? false : "auto",
+    withPlace: known === null || options.place === false ? false : "auto",
+    withCrackle: options.crackle !== false,
   });
 }
 
@@ -146,10 +160,8 @@ function reasonText(reason: ResourceChangeReason, context: EventTextContext): st
   const locale = t.locale;
   switch (reason) {
     case "materials_yard":
-    case "materials_yard_bonus":
       return locationName("materials_yard", locale);
     case "form_decorate":
-    case "commission_market":
     case "guild_hall":
     case "canal_wharf":
     case "magistrates_hall":
@@ -160,8 +172,8 @@ function reasonText(reason: ResourceChangeReason, context: EventTextContext): st
       return techName(TECH.kilnTending, locale);
     case "test_pieces":
       return techName(TECH.testPieces, locale);
-    case "protective_saggars":
-      return techName(TECH.protectiveSaggars, locale);
+    case "canal_barge":
+      return techName(TECH.canalBarge, locale);
     case "ding_extra":
       return kilnAbility("DI", context);
     case "jun":
@@ -261,25 +273,33 @@ export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
     switch (event.source) {
       case "face_up":
         return event.orderId === null
-          ? c.t("shell.ev.ORDER_RESERVED.blind", { name: who })
+          ? c.t("shell.ev.ORDER_RESERVED.looked", { name: who })
           : c.t("shell.ev.ORDER_RESERVED.face_up", { name: who, order: event.orderId });
-      case "blind":
-        return c.t("shell.ev.ORDER_RESERVED.blind", { name: who });
-      case "top_three":
-        return c.t("shell.ev.ORDER_RESERVED.top_three", { name: who });
-      case "colour_samples":
-        return c.t("shell.ev.ORDER_RESERVED.colour_samples", { name: who });
+      case "looked": {
+        const tech = techName(TECH.colourSamples, c.t.locale);
+        if (event.via === "colour_samples") return c.t("shell.ev.ORDER_RESERVED.colour_samples", { name: who, tech });
+        if (event.via === "colour_samples_swap") return c.t("shell.ev.ORDER_RESERVED.swap", { name: who, tech });
+        return c.t("shell.ev.ORDER_RESERVED.looked", { name: who });
+      }
+      case "deck_top":
+        return c.t("shell.ev.ORDER_RESERVED.deck_top", { name: who });
     }
   },
-  PRIVATE_LOOK_OPENED: (event, c) =>
-    event.kind === "guild_inspection"
-      ? c.t("shell.ev.PRIVATE_LOOK_OPENED.techs", {
-          name: name(event.playerId, c),
-          n: event.count,
-          discipline: event.discipline === null ? "" : disciplineName(event.discipline, c.t.locale),
-        })
-      : c.t("shell.ev.PRIVATE_LOOK_OPENED.orders", { name: name(event.playerId, c), n: event.count }),
-  LOOKED_ORDERS_DISCARDED: (event, c) => c.t("shell.ev.LOOKED_ORDERS_DISCARDED", { name: name(event.playerId, c), n: event.count }),
+  PRIVATE_LOOK_OPENED: (event, c) => {
+    const who = name(event.playerId, c);
+    if (event.kind !== "guild_inspection") {
+      // B1: with the Main deck and discard both empty, a Commission look shows no card.
+      return event.count === 0 ? c.t("shell.ev.PRIVATE_LOOK_OPENED.ordersNone", { name: who }) : c.t("shell.ev.PRIVATE_LOOK_OPENED.orders", { name: who, n: event.count });
+    }
+    const discipline = event.discipline === null ? "" : disciplineName(event.discipline, c.t.locale);
+    return event.count === 0
+      ? c.t("shell.ev.PRIVATE_LOOK_OPENED.techsNone", { name: who, discipline })
+      : c.t("shell.ev.PRIVATE_LOOK_OPENED.techs", { name: who, n: event.count, discipline });
+  },
+  LOOKED_ORDERS_TO_BOTTOM: (event, c) => c.t("shell.ev.LOOKED_ORDERS_TO_BOTTOM", { name: name(event.playerId, c), n: event.count }),
+  // The swap's discard (v1.6.2 L617): the line before it says "used Colour Samples to swap".
+  HELD_ORDER_DISCARDED: (event, c) =>
+    event.to === "box" ? c.t("shell.ev.HELD_ORDER_DISCARDED.box", { name: name(event.playerId, c) }) : c.t("shell.ev.HELD_ORDER_DISCARDED", { name: name(event.playerId, c) }),
   TECH_ACQUIRED: (event, c) =>
     c.t("shell.ev.TECH_ACQUIRED", {
       name: name(event.playerId, c),
@@ -297,7 +317,14 @@ export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
   },
   PERSONAL_SPACE_UNLOCKED: (event, c) =>
     c.t("shell.ev.PERSONAL_SPACE_UNLOCKED", { name: name(event.playerId, c), location: locationName(event.locationId, c.t.locale) }),
-  TECH_USED: (event, c) => c.t("shell.ev.TECH_USED", { name: name(event.playerId, c), tech: techName(event.techId, c.t.locale) }),
+  TECH_USED: (event, c) => {
+    const values = { name: name(event.playerId, c), tech: techName(event.techId, c.t.locale) };
+    // Colour Samples is used only by its swap (v1.6.2 L617); Canal Barge always pays its Coins
+    // in the next event, which the log folds into this line (`repeatsPreviousEntry`).
+    if (event.techId === TECH.colourSamples) return c.t("shell.ev.TECH_USED.swap", values);
+    if (event.techId === TECH.canalBarge) return c.t("shell.ev.TECH_USED.coins", { ...values, coins: coins(RULE_NUMBERS.canalBargeCoins, c) });
+    return c.t("shell.ev.TECH_USED", values);
+  },
   KILN_ABILITY_USED: (event, c) => c.t("shell.ev.KILN_ABILITY_USED", { name: name(event.playerId, c), ability: kilnAbility(event.kilnId, c) }),
   IMPERIAL_PRIORITY_USED: (event, c) =>
     c.t("shell.ev.IMPERIAL_PRIORITY_USED", { name: name(event.playerId, c), ceramic: ceramic(event.ceramicId, c, event.playerId) }),
@@ -367,7 +394,10 @@ export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
   KILN_MASTER_PLACED: (event, c) =>
     c.t("shell.ev.KILN_MASTER_PLACED", { name: name(event.playerId, c), value: signed(event.value), ceramic: ceramic(event.ceramicId, c, event.playerId) }),
   FIRE_REVEALED: (event, c) => c.t("shell.ev.FIRE_REVEALED", { modifier: signed(event.modifier), heat: event.globalHeat }),
-  FIRE_DECK_RESHUFFLED: (_event, c) => c.t("shell.ev.FIRE_DECK_RESHUFFLED"),
+  FIRE_DECK_RESHUFFLED: (event, c) =>
+    event.buriedBelow > 0
+      ? c.t("shell.ev.FIRE_DECK_RESHUFFLED.buried", { tech: techName(TECH.testPieces, c.t.locale) })
+      : c.t("shell.ev.FIRE_DECK_RESHUFFLED"),
   ACTUAL_HEAT_CALCULATED: (event, c) => c.t("shell.ev.ACTUAL_HEAT_CALCULATED", { n: event.results.length }),
   JUN_ADJUSTED: (event, c) =>
     c.t("shell.ev.JUN_ADJUSTED", {
@@ -379,7 +409,10 @@ export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
     }),
   QUALITY_ASSIGNED: (event, c) => {
     const values = { ceramic: ceramic(event.ceramicId, c, null), quality: qualityName(event.quality, c.t.locale), difference: event.heatDifference };
-    return event.cause === "second_firing" ? c.t("shell.ev.QUALITY_ASSIGNED.second", values) : c.t("shell.ev.QUALITY_ASSIGNED", values);
+    if (event.cause === "second_firing") return c.t("shell.ev.QUALITY_ASSIGNED.second", values);
+    return event.saggarsFloor
+      ? c.t("shell.ev.QUALITY_ASSIGNED.saggars", { ...values, tech: techName(TECH.protectiveSaggars, c.t.locale) })
+      : c.t("shell.ev.QUALITY_ASSIGNED", values);
   },
   QUALITY_IMPROVED: (event, c) =>
     c.t("shell.ev.QUALITY_IMPROVED", {
@@ -388,18 +421,29 @@ export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
       to: qualityName(event.to, c.t.locale),
       why: event.cause === "protective_saggars" ? techName(TECH.protectiveSaggars, c.t.locale) : kilnAbility("GE", c),
     }),
+  // Self-contained (live announcements leave out "used Second Firing"): it names the Tech.
   SECOND_FIRING_REVEALED: (event, c) =>
     c.t("shell.ev.via", {
-      line: c.t("shell.ev.SECOND_FIRING_REVEALED", { name: name(event.playerId, c), ceramic: ceramic(event.ceramicId, c, event.playerId), modifier: signed(event.modifier) }),
+      line: c.t("shell.ev.SECOND_FIRING_REVEALED", {
+        name: name(event.playerId, c),
+        ceramic: ceramic(event.ceramicId, c, event.playerId, undefined, { place: false }),
+        n: event.modifiers.length,
+        cards: list(event.modifiers.map((modifier) => signed(modifier)), c.t.locale),
+      }),
+      via: techName(TECH.secondFiring, c.t.locale),
+    }),
+  SECOND_FIRING_CHOSEN: (event, c) =>
+    c.t("shell.ev.via", {
+      line: c.t("shell.ev.SECOND_FIRING_CHOSEN", { name: name(event.playerId, c), ceramic: ceramic(event.ceramicId, c, event.playerId, undefined, { place: false }), modifier: signed(event.modifier) }),
       via: techName(TECH.secondFiring, c.t.locale),
     }),
   CRACKLE_APPLIED: (event, c) =>
     c.t("shell.ev.via", {
-      line: c.t("shell.ev.CRACKLE_APPLIED", { name: name(event.playerId, c), ceramic: ceramic(event.ceramicId, c, event.playerId) }),
+      line: c.t("shell.ev.CRACKLE_APPLIED", { name: name(event.playerId, c), ceramic: ceramic(event.ceramicId, c, event.playerId, undefined, { crackle: false }) }),
       via: kilnAbility("GE", c),
     }),
   CERAMIC_SALVAGED: (event, c) =>
-    c.t("shell.ev.CERAMIC_SALVAGED", { name: name(event.playerId, c), ceramic: ceramic(event.ceramicId, c, event.playerId), coins: coins(event.coins, c) }),
+    c.t("shell.ev.CERAMIC_SALVAGED", { name: name(event.playerId, c), ceramic: ceramic(event.ceramicId, c, event.playerId, undefined, { place: false }), coins: coins(event.coins, c) }),
   FIRING_FINISHED: (event, c) => c.t("shell.ev.FIRING_FINISHED", { n: event.finishedCeramicIds.length }),
 
   // Orders.
@@ -407,10 +451,9 @@ export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
   ORDER_COMPLETED: (event, c) => {
     const record = event.record;
     const values = { name: name(event.playerId, c), order: record.orderId, vp: record.vp };
-    const line = record.coins > 0
+    return record.coins > 0
       ? c.t("shell.ev.ORDER_COMPLETED.coins", { ...values, coins: coins(record.coins, c) })
       : c.t("shell.ev.ORDER_COMPLETED", values);
-    return record.via === "canal_barge" ? c.t("shell.ev.via", { line, via: techName("T23", c.t.locale) }) : line;
   },
   ORDER_TURN_ENDED: (event, c) =>
     event.automatic
@@ -440,24 +483,36 @@ export const OWN_EVENT_TEXT: { readonly [T in OwnSecretType]: OwnEventTemplate<T
       name: name(event.playerId, c),
       orders: orders([...event.secret.startingOrderIds, ...event.secret.mainOrderIds], c),
     }),
-  ORDER_RESERVED: (event, c) =>
-    event.secret === undefined
-      ? EVENT_TEXT.ORDER_RESERVED(event, c)
-      : c.t("shell.ev.ORDER_RESERVED.own", { name: name(event.playerId, c), order: event.secret.orderId }),
+  ORDER_RESERVED: (event, c) => {
+    if (event.secret === undefined) return EVENT_TEXT.ORDER_RESERVED(event, c);
+    const values = { name: name(event.playerId, c), order: event.secret.orderId };
+    if (event.source === "deck_top") return c.t("shell.ev.ORDER_RESERVED.ownDeckTop", values);
+    if (event.via === "colour_samples" || event.via === "colour_samples_swap") {
+      return c.t("shell.ev.via", { line: c.t("shell.ev.ORDER_RESERVED.own", values), via: techName(TECH.colourSamples, c.t.locale) });
+    }
+    return c.t("shell.ev.ORDER_RESERVED.own", values);
+  },
   PRIVATE_LOOK_OPENED: (event, c) => {
     const cards = event.kind === "guild_inspection" ? techs(event.secret.techIds, c) : orders(event.secret.orderIds, c);
     return cards === ""
       ? c.t("shell.ev.PRIVATE_LOOK_OPENED.ownNone", { name: name(event.playerId, c) })
       : c.t("shell.ev.PRIVATE_LOOK_OPENED.own", { name: name(event.playerId, c), cards });
   },
-  LOOKED_ORDERS_DISCARDED: (event, c) =>
+  LOOKED_ORDERS_TO_BOTTOM: (event, c) =>
     event.secret.orderIds.length === 0
-      ? EVENT_TEXT.LOOKED_ORDERS_DISCARDED(event, c)
-      : c.t("shell.ev.LOOKED_ORDERS_DISCARDED.own", { name: name(event.playerId, c), orders: orders(event.secret.orderIds, c) }),
+      ? EVENT_TEXT.LOOKED_ORDERS_TO_BOTTOM(event, c)
+      : c.t("shell.ev.LOOKED_ORDERS_TO_BOTTOM.own", { name: name(event.playerId, c), orders: orders(event.secret.orderIds, c) }),
+  HELD_ORDER_DISCARDED: (event, c) =>
+    event.to === "box"
+      ? c.t("shell.ev.HELD_ORDER_DISCARDED.ownBox", { name: name(event.playerId, c), order: event.secret.orderId })
+      : c.t("shell.ev.HELD_ORDER_DISCARDED.own", { name: name(event.playerId, c), order: event.secret.orderId }),
   TECHS_RETURNED_TO_BOTTOM: (event, c) =>
     event.secret.techIds.length === 0
       ? EVENT_TEXT.TECHS_RETURNED_TO_BOTTOM(event, c)
-      : c.t("shell.ev.TECHS_RETURNED_TO_BOTTOM.own", { name: name(event.playerId, c), techs: techs(event.secret.techIds, c) }),
+      : c.t(event.secret.techIds.length === 1 ? "shell.ev.TECHS_RETURNED_TO_BOTTOM.ownOne" : "shell.ev.TECHS_RETURNED_TO_BOTTOM.own", {
+          name: name(event.playerId, c),
+          techs: techs(event.secret.techIds, c),
+        }),
   TEST_PIECES_PEEKED: (event, c) => c.t("shell.ev.TEST_PIECES_PEEKED.own", { name: name(event.playerId, c), modifier: signed(event.secret.modifier) }),
   HAND_TRIMMED: (event, c) =>
     event.secret.orderIds.length === 0
@@ -492,22 +547,55 @@ function ownText(event: Extract<GameEvent, { type: OwnSecretType }>, context: Ev
 }
 
 /**
- * True when a log entry only repeats the line before it, so the log folds it away: the Coins
- * of an Order reward (`RESOURCES_CHANGED`, `order_reward`) directly after the same player's
- * `ORDER_COMPLETED`, whose line already states those Coins. Only the log folds; the event
- * stays in the history.
+ * True when a log entry only repeats the line before it, so the log folds it away. Only the log
+ * (and the turn toasts) fold; the event stays in the history.
+ * - The Coins of an Order reward (`RESOURCES_CHANGED`, `order_reward`) directly after the same
+ *   player's `ORDER_COMPLETED`, whose line already states those Coins.
+ * - Canal Barge's Coins (`RESOURCES_CHANGED`, `canal_barge`, v1.6.2 L622) directly after the
+ *   same player's `TECH_USED` of Canal Barge, whose line already states them ("used Canal
+ *   Barge: +2 Coins").
+ * - A salvage's Coins (`salvage`) directly after the same player's `CERAMIC_SALVAGED`, whose line
+ *   states them ("salvaged … for 2 Coins").
+ * - The Imperial Grant's resources (`imperial_grant`) directly after the same player's
+ *   `IMPERIAL_GRANT_RECEIVED`, whose line states them.
  */
 export function repeatsPreviousEntry(entry: LogEntry, previous: LogEntry | undefined): boolean {
   const event = entry.event;
-  if (event.type !== "RESOURCES_CHANGED" || event.reason !== "order_reward" || previous === undefined) return false;
+  if (event.type !== "RESOURCES_CHANGED" || previous === undefined) return false;
   const before = previous.event;
-  return (
-    before.type === "ORDER_COMPLETED" &&
-    before.playerId === event.playerId &&
-    event.clay === 0 &&
-    event.wood === 0 &&
-    event.coins === before.record.coins
-  );
+  if (event.reason === "imperial_grant") {
+    return before.type === "IMPERIAL_GRANT_RECEIVED" && before.playerId === event.playerId && before.clay === event.clay && before.wood === event.wood && before.coins === event.coins;
+  }
+  if (event.clay !== 0 || event.wood !== 0) return false;
+  if (event.reason === "order_reward") {
+    return before.type === "ORDER_COMPLETED" && before.playerId === event.playerId && event.coins === before.record.coins;
+  }
+  if (event.reason === "canal_barge") {
+    return before.type === "TECH_USED" && before.techId === TECH.canalBarge && before.playerId === event.playerId && event.coins === RULE_NUMBERS.canalBargeCoins;
+  }
+  if (event.reason === "salvage") {
+    return before.type === "CERAMIC_SALVAGED" && before.playerId === event.playerId && event.coins === before.coins;
+  }
+  return false;
+}
+
+/**
+ * True when a log entry only says what the line after it says, so the log folds it away: a
+ * Guild Hall payment (`RESOURCES_CHANGED`, `guild_hall`) directly before the same player's
+ * `TECH_ACQUIRED`, whose line states the cost ("acquired Test Pieces: pay 3 Coins"). Both come
+ * from one move, so they always arrive together.
+ */
+export function repeatsNextEntry(entry: LogEntry, next: LogEntry | undefined): boolean {
+  const event = entry.event;
+  if (event.type !== "RESOURCES_CHANGED" || event.reason !== "guild_hall" || next === undefined || event.clay !== 0 || event.wood !== 0) return false;
+  const after = next.event;
+  return after.type === "TECH_ACQUIRED" && after.playerId === event.playerId && after.cost === -event.coins;
+}
+
+/** True when the log folds the entry at `index` away (`repeatsPreviousEntry`, `repeatsNextEntry`). */
+export function foldedEntry(log: readonly LogEntry[], index: number): boolean {
+  const entry = log[index];
+  return entry !== undefined && (repeatsPreviousEntry(entry, log[index - 1]) || repeatsNextEntry(entry, log[index + 1]));
 }
 
 /** The text of one public event. */

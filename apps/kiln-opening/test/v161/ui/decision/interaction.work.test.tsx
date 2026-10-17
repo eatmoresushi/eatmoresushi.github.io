@@ -14,7 +14,12 @@
  *   (Apprentice) or a discipline's deck (Shifu) is chosen; a Tech the worker cannot buy is
  *   focusable but cannot be chosen, with its reason.
  * - A language switch keeps the draft and re-renders the ConfirmBar sentence.
- * - The Guild Hall inspection's bottom order: Move up / Move down, then Confirm (§8.1).
+ * - The Guild Hall inspection (v1.6.2 L207): one take per Confirm; after a take, stopping with the
+ *   bottom order set by Move up / Move down, then Confirm (§8.1); a single untaken Tech is named,
+ *   not ordered. The face-up Techs may be chosen on the Tech display for either take (D14), and a
+ *   refused take shows the engine's reason in words.
+ * - The Colour Samples swap (v1.6.2 L617): after the action, the held Order to give up, chosen
+ *   in the pane or on the hand row; Confirm sends the swap.
  * - Kiln selection: no Full rules button; a Kiln another player took is focusable but cannot be
  *   chosen.
  */
@@ -28,7 +33,7 @@ import { PersonalSpaces } from "../../../../src/app/boards/PersonalSpaces.tsx";
 import { DecisionPane } from "../../../../src/app/decision/DecisionPane.tsx";
 import { WINDOWS } from "../../../../src/app/decision/windows.ts";
 import { I18nProvider } from "../../../../src/app/i18n/I18nProvider.tsx";
-import { techText } from "../../../../src/app/i18n/content.ts";
+import { disciplineName, techText } from "../../../../src/app/i18n/content.ts";
 import { LanguageToggle } from "../../../../src/app/kit/LanguageToggle.tsx";
 import { DraftStore } from "../../../../src/app/state/draftStore.ts";
 import { GameProvider, useGame } from "../../../../src/app/state/hooks.ts";
@@ -188,7 +193,7 @@ describe("the work turn: workers are placed on the table", () => {
     expect(region?.getAttribute("role")).toBe("group");
     expect(region?.querySelector('[data-location="canal_wharf"]')).not.toBeNull();
     expect(chosen()?.querySelector("h3")?.textContent).toBe("Shifu at Canal Wharf");
-    expect(summary()).toBe("Place Shifu at Canal Wharf — +4 Coins");
+    expect(summary()).toBe("Place Shifu at Canal Wharf — +4 Coins and the top Main Order card, unseen");
     click($('[data-action="confirm"]'));
     expect(source.submitted).toEqual([{ type: "PLACE_CANAL_WHARF", workerId: shifuId(id) }]);
   });
@@ -220,7 +225,8 @@ describe("the work turn: workers are placed on the table", () => {
     expect(container.querySelector('input[name="clay"]')).toBeNull();
     click(placeButton("materials_yard", "shifu"));
     expect(radio("clay", "1").checked).toBe(true);
-    expect(summary()).toMatch(/Materials Yard — 1 Clay \+ 3 Wood/);
+    // The Shifu effect gains 6 in any split (v1.6.2 L165).
+    expect(summary()).toMatch(/Materials Yard — 1 Clay \+ 5 Wood/);
   });
 
   it("a language switch keeps the draft and re-renders the sentence", () => {
@@ -232,18 +238,18 @@ describe("the work turn: workers are placed on the table", () => {
       </>,
     );
     click(placeButton("canal_wharf", "shifu"));
-    expect(summary()).toBe("Place Shifu at Canal Wharf — +4 Coins");
+    expect(summary()).toBe("Place Shifu at Canal Wharf — +4 Coins and the top Main Order card, unseen");
     const toggle = [...container.querySelectorAll("button")].find((button) => button.textContent === "中文");
     if (toggle === undefined) throw new Error("no language toggle");
     click(toggle);
-    expect(summary()).toBe("派师傅到漕运码头：得4铜钱");
+    expect(summary()).toBe("派师傅到漕运码头：得4铜钱，并不看牌面拿取主委托牌堆顶的牌");
     expect(placeButton("canal_wharf", "shifu").getAttribute("aria-pressed")).toBe("true");
   });
 });
 
 describe("the Guild Hall choice is made on the Tech display", () => {
   it("an Apprentice there: the display becomes the chooser, focus moves to its prompt, a Tech it cannot buy cannot be chosen", async () => {
-    const id = "m5_two_player_board_2p";
+    const id = "w-before-the-worker-action-kiln-furniture-inverted-firing-targets-setters-marks-senior-apprentice";
     const offered = guildOptions(fixture(id).playerView, "apprentice").faceUp;
     const legal = offered.find((option) => option.legal)!;
     const illegal = offered.find((option) => !option.legal)!;
@@ -278,7 +284,7 @@ describe("the Guild Hall choice is made on the Tech display", () => {
     click(pick);
     expect($<HTMLButtonElement>(`[data-act="tech"][data-tech-id="${legal.techId}"]`).getAttribute("aria-pressed")).toBe("true");
     expect(chosen()?.querySelector(`[data-guild-choice="${legal.techId}"]`)?.textContent).toContain(techText(legal.techId, "en").name);
-    expect(summary()).toBe(`Place Apprentice at Guild Hall — ${techText(legal.techId, "en").name}`);
+    expect(summary()).toBe(`Place Apprentice at Guild Hall — buy ${techText(legal.techId, "en").name} for ${legal.cost} ${legal.cost === 1 ? "Coin" : "Coins"}`);
     click($('[data-action="confirm"]'));
     expect(source.submitted).toEqual([{ type: "PLACE_GUILD_HALL", workerId: expect.any(String), choice: { kind: "buy_face_up", techId: legal.techId } }]);
   });
@@ -304,7 +310,7 @@ describe("the Guild Hall choice is made on the Tech display", () => {
   });
 
   it("on phones the Guild Hall shortcut lowers the sheet onto the Table section, and a Tech choice opens it for Confirm", async () => {
-    const id = "m5_two_player_board_2p";
+    const id = "w-before-the-worker-action-kiln-furniture-inverted-firing-targets-setters-marks-senior-apprentice";
     const legal = guildOptions(fixture(id).playerView, "apprentice").faceUp.find((option) => option.legal)!;
     const { ui, scrolled } = mount(new ControlledSource(id), <Table />, "phone");
     const context = fixtureWindow(id);
@@ -324,8 +330,8 @@ describe("the Guild Hall choice is made on the Tech display", () => {
   });
 });
 
-describe("the Guild Hall inspection", () => {
-  it("orders the untaken Techs with Move up / Move down and sends that bottom order", () => {
+describe("the Guild Hall inspection (v1.6.2 L207)", () => {
+  it("the first take: one Tech, sent alone, with no bottom order yet", () => {
     const id = "m12_guild_shifu_inspection";
     const options = guildInspectionOptions(fixture(id).playerView);
     if (options === null) throw new Error("no inspection");
@@ -333,18 +339,135 @@ describe("the Guild Hall inspection", () => {
     if (take === undefined) throw new Error("nothing to take");
     const source = new ControlledSource(id);
     mount(source, <DecisionPane />);
+    expect(container.querySelector('input[name="take"][value="finish"]')).toBeNull();
     click(radio("take", take.techId));
-    const before = [...container.querySelectorAll(".kit-reorder-list > li")].length;
-    expect(before).toBe(options.faceUp.some((option) => option.techId === take.techId) ? options.inspected.length : options.inspected.length - 1);
-    const expected = options.inspected.map((option) => option.techId).filter((techId) => techId !== take.techId);
-    if (expected.length > 1) {
-      const down = container.querySelector<HTMLButtonElement>(".kit-reorder-list > li button[aria-label^='Move'][aria-label$='down']");
-      if (down === null) throw new Error("no Move down");
-      click(down);
-      [expected[0], expected[1]] = [expected[1]!, expected[0]!];
+    expect(container.querySelector(".kit-reorder-list")).toBeNull();
+    click($('[data-action="confirm"]'));
+    expect(source.submitted).toEqual([{ type: "GUILD_TAKE", take: { kind: take.source, techId: take.techId } }]);
+  });
+
+  it("after a take: stop, order the untaken Techs with Move up / Move down, and send that bottom order", () => {
+    const source = new ControlledSource("w-guild-hall-shifu-inspection");
+    const view = structuredClone(source.getSnapshot().view!);
+    const phase = view.game.phase;
+    if (phase.type !== "work_turn" || phase.step.kind !== "guild_inspection") throw new Error("fixture changed");
+    const techId = view.game.techDisplay.glazing_loading[0]!;
+    view.game.techDisplay.glazing_loading = view.game.techDisplay.glazing_loading.slice(1);
+    phase.step = { ...phase.step, takes: [{ kind: "face_up", techId }] };
+    const me = view.game.players[view.viewerId!]!;
+    me.techs = [...me.techs, { id: techId, acquiredInRound: 1, usedThisRound: false }];
+    source.setView(view);
+    mount(source, <DecisionPane />);
+    const options = guildInspectionOptions(view);
+    if (options === null) throw new Error("no inspection");
+    expect($("[data-b4='guild-taken']").textContent).toContain(techText(techId, "en").name);
+    click(radio("take", "finish"));
+    const expected = options.inspected.map((option) => option.techId);
+    expect([...container.querySelectorAll(".kit-reorder-list > li")].length).toBe(expected.length);
+    expect(expected.length).toBeGreaterThan(1);
+    const down = container.querySelector<HTMLButtonElement>(".kit-reorder-list > li button[aria-label^='Move'][aria-label$='down']");
+    if (down === null) throw new Error("no Move down");
+    click(down);
+    [expected[0], expected[1]] = [expected[1]!, expected[0]!];
+    click($('[data-action="confirm"]'));
+    expect(source.submitted).toEqual([{ type: "GUILD_FINISH", bottomOrder: expected }]);
+  });
+});
+
+describe("the Guild Hall inspection on the Tech display (D14, v1.6.2 L207)", () => {
+  it("a face-up Tech chosen on the display is the pane's take; one the Shifu cannot take cannot be chosen", () => {
+    const id = "m12_guild_shifu_inspection";
+    const options = guildInspectionOptions(fixture(id).playerView);
+    const legal = options?.faceUp.find((option) => option.legal);
+    if (options === null || legal === undefined) throw new Error("fixture changed");
+    const source = new ControlledSource(id);
+    mount(source, <Table />);
+    expect($("[data-tech-chooser]").textContent).toBe("Shifu at the Guild Hall: take a face-up Tech here, or one of the Techs you inspected");
+    // The inspected Techs are only in the pane.
+    for (const option of options.inspected) expect(container.querySelector(`[data-act="tech"][data-tech-id="${option.techId}"]`)).toBeNull();
+    click($(`[data-act="tech"][data-tech-id="${legal.techId}"]`));
+    expect(radio("take", legal.techId).checked).toBe(true);
+    expect($(`[data-act="tech"][data-tech-id="${legal.techId}"]`).getAttribute("aria-pressed")).toBe("true");
+    // And back: a radio in the pane presses the display's tile.
+    const other = options.faceUp.find((option) => option.legal && option.techId !== legal.techId);
+    if (other !== undefined) {
+      click(radio("take", other.techId));
+      expect($(`[data-act="tech"][data-tech-id="${other.techId}"]`).getAttribute("aria-pressed")).toBe("true");
+      expect($(`[data-act="tech"][data-tech-id="${legal.techId}"]`).getAttribute("aria-pressed")).toBe("false");
+      click($(`[data-act="tech"][data-tech-id="${legal.techId}"]`));
     }
     click($('[data-action="confirm"]'));
-    expect(source.submitted).toEqual([{ type: "GUILD_TAKE", take: { kind: options.faceUp.some((option) => option.techId === take.techId) ? "face_up" : "inspected", techId: take.techId }, bottomOrder: expected }]);
+    expect(source.submitted).toEqual([{ type: "GUILD_TAKE", take: { kind: "face_up", techId: legal.techId } }]);
+  });
+
+  it("the second take: the taken discipline's Techs are refused on the display with the reason; another discipline's is sent", () => {
+    const id = "d-guild-hall-after-a-take";
+    const options = guildInspectionOptions(fixture(id).playerView);
+    const refused = options?.faceUp.find((option) => option.discipline === "glazing_loading");
+    const second = options?.faceUp.find((option) => option.legal);
+    if (options === null || refused === undefined || second === undefined) throw new Error("fixture changed");
+    const source = new ControlledSource(id);
+    mount(source, <Table />);
+    expect($("[data-tech-chooser]").textContent).toBe("Shifu at the Guild Hall: take a second Tech from another discipline, or stop");
+    const button = $<HTMLButtonElement>(`[data-act="tech"][data-tech-id="${refused.techId}"]`);
+    expect(button.getAttribute("aria-disabled")).toBe("true");
+    const why = button.getAttribute("aria-describedby")?.split(" ")[0] ?? "";
+    expect(document.getElementById(why)?.textContent).toBe("You already own a Glazing & Loading Tech.");
+    click(button);
+    expect(container.querySelector('input[name="take"]:checked')).toBeNull();
+    click($(`[data-act="tech"][data-tech-id="${second.techId}"]`));
+    click($('[data-action="confirm"]'));
+    expect(source.submitted).toEqual([{ type: "GUILD_TAKE", take: { kind: "face_up", techId: second.techId } }]);
+  });
+
+  it("stopping with a single untaken inspected Tech names it in a sentence (no order to set) and sends it", () => {
+    const source = new ControlledSource("w-guild-hall-shifu-inspection");
+    const view = structuredClone(source.getSnapshot().view!);
+    const phase = view.game.phase;
+    const look = view.own?.pendingLook;
+    if (phase.type !== "work_turn" || phase.step.kind !== "guild_inspection" || look?.kind !== "guild_inspection") throw new Error("fixture changed");
+    const [taken, left] = look.techIds;
+    if (taken === undefined || left === undefined) throw new Error("fixture changed");
+    look.techIds = [left];
+    phase.step = { ...phase.step, takes: [{ kind: "inspected", techId: taken }] };
+    const me = view.game.players[view.viewerId!]!;
+    me.techs = [...me.techs, { id: taken, acquiredInRound: 1, usedThisRound: false }];
+    source.setView(view);
+    mount(source, <DecisionPane />);
+    click(radio("take", "finish"));
+    expect(container.querySelector(".kit-reorder-list")).toBeNull();
+    expect($("[data-b4='guild-return-one']").textContent).toBe(`${techText(left, "en").name} goes back to the bottom of the Firing deck.`);
+    click($('[data-action="confirm"]'));
+    expect(source.submitted).toEqual([{ type: "GUILD_FINISH", bottomOrder: [left] }]);
+  });
+
+  it("a take the server refuses shows the engine's reason in the player's words", async () => {
+    const id = "m12_guild_shifu_inspection";
+    const legal = guildInspectionOptions(fixture(id).playerView)?.faceUp.find((option) => option.legal);
+    if (legal === undefined) throw new Error("fixture changed");
+    const source = new ControlledSource(id);
+    mount(source, <DecisionPane />);
+    click(radio("take", legal.techId));
+    click($('[data-action="confirm"]'));
+    await act(async () => source.answer({ reject: { kind: "rule", error: { code: "TECH_DISCIPLINE_OWNED", message: "", details: { techId: legal.techId, discipline: legal.discipline } } } }));
+    expect(container.textContent).toContain(`You already own a ${disciplineName(legal.discipline, "en")} Tech.`);
+    expect(container.textContent).not.toContain(legal.techId);
+  });
+});
+
+describe("the Colour Samples swap (v1.6.2 L617)", () => {
+  it("after the action: the held Order to give up, chosen in the pane; Confirm sends the swap", () => {
+    const id = "m17_after_action";
+    const source = new ControlledSource(id);
+    mount(source, <DecisionPane />);
+    click(radio("mode", "colour_samples_swap"));
+    const hand = fixture(id).playerView.own?.orderHand ?? [];
+    expect([...container.querySelectorAll<HTMLInputElement>('input[name="discardOrderId"]')].map((input) => input.value)).toEqual(hand);
+    expect($('[data-action="confirm"]').getAttribute("aria-disabled")).toBe("true");
+    click(radio("discardOrderId", hand[0]!));
+    expect(summary()).toBe(`Colour Samples: give up ${hand[0]!} and look at the top of the Main Order deck`);
+    click($('[data-action="confirm"]'));
+    expect(source.submitted).toEqual([{ type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: hand[0] }]);
   });
 });
 

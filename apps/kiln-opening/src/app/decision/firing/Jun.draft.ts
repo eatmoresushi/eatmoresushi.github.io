@@ -1,10 +1,9 @@
 /**
  * The draft model of Jun (UI_V1.6.1_ARCHITECTURE §3.4 `jun`, §3.5). Owner: B5.
  *
- * Two windows share it (`window.during`):
- * - step 8 (`firing_heat_adjustment`): pay Wood, +1 or −1 to one of your ceramics' Actual Heat;
- * - R7 (`firing_second_firing_jun`): after Second Firing's extra Fire card, on that ceramic only
- *   (`firingStage.extraFire` shows the card).
+ * Step 8 (`firing_heat_adjustment`): pay Wood, +1 or −1 to one of your ceramics' Actual Heat.
+ * R7's Jun after Second Firing is part of Second Firing's own choice (`SecondFiring.draft.ts`,
+ * `SECOND_FIRING_CHOOSE`), since V1.6.2 reveals 2 cards and the owner chooses one.
  *
  * The ceramics come from `junOptions` (empty when Jun is used or unaffordable); each side is
  * probed through `validateAction`. Declining (`adjustment: null`, R4) is always possible and is
@@ -51,7 +50,7 @@ function optionsFor(model: GameModel, engine: EngineView): JunOptionsView {
   if (options === null) return { during: null, ready: false, woodCost: 0, ceramicIds: [], unusable: null, sides: HEAT_MARKER_SIDES, canDecline: true };
   let unusable: GameRuleError | null = null;
   if (options.ceramicIds.length === 0) {
-    const anyOwn = model.window.kind === "jun" && model.window.ceramicId !== null ? model.window.ceramicId : ownFiringCeramicIds(model)[0];
+    const anyOwn = ownFiringCeramicIds(model)[0];
     unusable = anyOwn === undefined ? null : probe(engine, { type: "RESOLVE_JUN", adjustment: { ceramicId: anyOwn, delta: HEAT_MARKER_SIDES[0] } });
   }
   return { during: options.during, ready: options.ready, woodCost: options.woodCost, ceramicIds: options.ceramicIds, unusable, sides: HEAT_MARKER_SIDES, canDecline: true };
@@ -70,7 +69,7 @@ const abilityName = (t: Translator) => kilnText(B5_KILNS.jun, t.locale).abilityN
 export const junDraft: DraftModel<JunDraft, JunAction, JunOptionsView> = {
   initial(model, engine) {
     const options = optionsFor(model, engine);
-    // R7: the Second Firing ceramic is the only one (§3.5: preselect the only choice).
+    // §3.5: preselect the only choice.
     return { ceramicId: options.ceramicIds.length === 1 ? options.ceramicIds[0]! : null, delta: null, decline: false };
   },
   reduce(draft, action, model, engine) {

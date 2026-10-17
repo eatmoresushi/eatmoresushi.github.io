@@ -2,9 +2,17 @@
  * Order card content for the printable sheets (tools/print/printOrderCards.ts).
  *
  * The printed text comes from the V1.6.2 rulebooks, the only mechanical source of truth:
- * - English: `docs/KILN_OPENING_v1.6.2_EN_SOURCE.md`, Appendix A (A0 Starting S01–S16,
- *   A1–A3 Main O01–O48);
+ * - English: `docs/KILN_OPENING_v1.6.2_EN_SOURCE.md`, Appendix A (A0 Starting Orders,
+ *   A1–A3 Main Orders);
  * - Chinese: `docs/KILN_OPENING_v1.6.2_ZH.md`, 附录A (same IDs).
+ *
+ * The expected IDs are read from the rulebooks themselves, not fixed here: the appendix heading
+ * gives the two deck sizes ("8 Starting + 48 Main" / "8张起始委托 + 48张主委托") and each table's
+ * heading its own count ("A0. Starting Order Deck — 8", "A2. Main Two-Ceramic Orders — 18"). The
+ * tables must then list S01, S02, … and O01, O02, … in order, each table exactly as many rows
+ * as its heading says, the table counts must add up to the deck sizes, both rulebooks must agree
+ * and `data/orders.json` must hold exactly those IDs in that order. A Main table's heading also
+ * names how many ceramics its Orders ask for (Single/Two/Three, 单件/两件/三件); every row must.
  *
  * Every row is cross-checked against `data/orders.json` (vp, coins, crowns, requirements,
  * requirementsZh, ceramics, relations, minQuality). Both requirement columns are also parsed
@@ -24,9 +32,12 @@ export type Lang = "en" | "zh";
 
 export interface CeramicSlot {
   shape?: Shape;
+  /** Any one of these Shapes ("Bowl, Plate or Brush Washer"). */
   shapes?: Shape[];
   glaze?: Glaze;
   decoration?: Decoration;
+  /** Any one of these Decorations ("Carved, Impressed or Painted", S07). */
+  decorations?: Decoration[];
 }
 
 export type Relation =
@@ -74,7 +85,10 @@ export interface SheetLabels {
 
 export interface OrderSource {
   labels: Record<Lang, SheetLabels>;
+  /** Print order: the Starting Orders, then the Main Orders, each in ID order. */
   cards: Record<Lang, CardModel[]>;
+  /** Deck sizes as the rulebooks' Appendix A headings give them. */
+  deckSizes: { starting: number; main: number };
   rulesVersionInData: string;
 }
 
@@ -136,36 +150,117 @@ function parseCount(text: string, what: string, where: string, problems: Problem
   return Number(text);
 }
 
+/** One Appendix A table: its heading and the Order rows under it. */
+interface Section {
+  heading: string;
+  line: number;
+  kind: "starting" | "main";
+  /** The number of Orders the heading gives. */
+  count: number;
+  /** The number of ceramics each Order asks for, when the heading names it (Main tables). */
+  ceramics: number | null;
+  rows: TableRow[];
+}
+
+/** One rulebook's Appendix A: the deck sizes in its heading and its tables. */
+interface Appendix {
+  file: string;
+  sizes: { starting: number; main: number } | null;
+  sections: Section[];
+}
+
+/** How each rulebook titles Appendix A and its tables. */
+interface AppendixGrammar {
+  start: RegExp;
+  end: RegExp;
+  /** The appendix heading; groups: Starting count, Main count. */
+  sizes: RegExp;
+  /** A table heading; groups: table number, title, count. */
+  section: RegExp;
+  starting: RegExp;
+  main: RegExp;
+  /** Words in a Main table's title naming its ceramics per Order. */
+  ceramics: Record<string, number>;
+}
+
+const EN_GRAMMAR: AppendixGrammar = {
+  start: /^## Appendix A\b/,
+  end: /^## Appendix B\b/,
+  sizes: /^## Appendix A — Order Decks: (\d+) Starting \+ (\d+) Main$/,
+  section: /^### A(\d+)\. (.+?) — (\d+)$/,
+  starting: /^Starting Order Deck$/,
+  main: /^Main (\w+)-Ceramic Orders$/,
+  ceramics: { Single: 1, Two: 2, Three: 3 },
+};
+
+const ZH_GRAMMAR: AppendixGrammar = {
+  start: /^## 附录A/,
+  end: /^## 附录B/,
+  sizes: /^## 附录A——委托牌堆：(\d+)张起始委托 \+ (\d+)张主委托$/,
+  section: /^### A(\d+)\. (.+?)——(\d+)张$/,
+  starting: /^起始委托牌堆$/,
+  main: /^主委托：(.)件委托$/,
+  ceramics: { 单: 1, 两: 2, 三: 3 },
+};
+
 /**
- * The Order rows of one rulebook's Appendix A, between its heading and the next appendix.
+ * One rulebook's Appendix A, between its heading and the next appendix: the deck sizes from the
+ * appendix heading and every table (an `### A<n>.` heading with its count) with its rows.
  * Starting tables have 5 columns (no Crowns); Main tables 6.
  */
-function appendixRows(file: string, text: string, startHeading: RegExp, endHeading: RegExp, problems: Problems): TableRow[] {
+function readAppendix(file: string, text: string, grammar: AppendixGrammar, problems: Problems): Appendix {
   const lines = text.split("\n");
-  const start = lines.findIndex((line) => startHeading.test(line));
+  const start = lines.findIndex((line) => grammar.start.test(line));
   if (start < 0) {
     problems.add(`${file}: Appendix A heading not found`);
-    return [];
+    return { file, sizes: null, sections: [] };
   }
-  const endOffset = lines.slice(start + 1).findIndex((line) => endHeading.test(line));
+  const endOffset = lines.slice(start + 1).findIndex((line) => grammar.end.test(line));
   const end = endOffset < 0 ? lines.length : start + 1 + endOffset;
-  const rows: TableRow[] = [];
+  const sizesMatch = grammar.sizes.exec(lines[start] ?? "");
+  if (sizesMatch === null) problems.add(`${file}:${start + 1}: Appendix A heading "${lines[start]}" does not give the two deck sizes`);
+  const sizes = sizesMatch === null ? null : { starting: Number(sizesMatch[1]), main: Number(sizesMatch[2]) };
+
+  const sections: Section[] = [];
+  let section: Section | null = null;
   let header: string[] = [];
-  for (let index = start; index < end; index += 1) {
-    const row = cells(lines[index] ?? "");
+  for (let index = start + 1; index < end; index += 1) {
+    const line = lines[index] ?? "";
+    if (line.startsWith("### ")) {
+      const match = grammar.section.exec(line);
+      const title = match?.[2] ?? "";
+      const main = grammar.main.exec(title);
+      const kind = grammar.starting.test(title) ? "starting" : main !== null ? "main" : null;
+      if (match === null || kind === null) {
+        problems.add(`${file}:${index + 1}: Appendix A table heading "${line}" is not a Starting or Main Order table with a count`);
+        section = null;
+        continue;
+      }
+      const ceramics = main === null ? null : (grammar.ceramics[main[1] ?? ""] ?? null);
+      if (main !== null && ceramics === null) problems.add(`${file}:${index + 1}: "${line}" names an unknown number of ceramics`);
+      section = { heading: line.slice(4), line: index + 1, kind, count: Number(match[3]), ceramics, rows: [] };
+      sections.push(section);
+      header = [];
+      continue;
+    }
+    const row = cells(line);
     if (row.length === 0) continue;
     if (row[0] === "ID") {
       header = row;
       continue;
     }
-    if (!/^[SO]\d{2}$/.test(row[0] ?? "")) continue;
+    if (!/^[A-Z]\d+$/.test(row[0] ?? "")) continue;
     const where = `${file}:${index + 1} (${row[0]})`;
+    if (section === null) {
+      problems.add(`${where}: an Order row outside any Appendix A table`);
+      continue;
+    }
     if (row.length !== header.length || (row.length !== 5 && row.length !== 6)) {
       problems.add(`${where}: ${row.length} cells, header has ${header.length}`);
       continue;
     }
     const [id, requirement, quality, vp, coins, crowns] = row as [string, string, string, string, string, string?];
-    rows.push({
+    section.rows.push({
       id,
       requirement,
       quality,
@@ -176,7 +271,69 @@ function appendixRows(file: string, text: string, startHeading: RegExp, endHeadi
       line: index + 1,
     });
   }
-  return rows;
+  return { file, sizes, sections };
+}
+
+/** "S01", "O17": the deck letter and a two-digit number. */
+function orderId(kind: "starting" | "main", number: number): string {
+  return `${kind === "starting" ? "S" : "O"}${String(number).padStart(2, "0")}`;
+}
+
+function idRange(kind: "starting" | "main", from: number, to: number): string {
+  return to < from ? "none" : from === to ? orderId(kind, from) : `${orderId(kind, from)}–${orderId(kind, to)}`;
+}
+
+/**
+ * The IDs the appendix's own headings call for, checked against its tables: the Starting
+ * tables come first, then the Main tables; each table lists, in order, as many Orders as its
+ * heading gives, numbered on from the table before it; the tables of each deck add up to the
+ * deck size in the appendix heading. Returns the expected IDs (from the headings) and the rows.
+ */
+function expectedIds(appendix: Appendix, problems: Problems): { ids: string[]; rows: Array<{ row: TableRow; section: Section }> } {
+  const ids: string[] = [];
+  const rows: Array<{ row: TableRow; section: Section }> = [];
+  const next = { starting: 1, main: 1 };
+  let seenMain = false;
+  for (const section of appendix.sections) {
+    const where = `${appendix.file}:${section.line} ("${section.heading}")`;
+    if (section.kind === "main") seenMain = true;
+    else if (seenMain) problems.add(`${where}: a Starting Order table after a Main Order table`);
+    const first = next[section.kind];
+    const want = Array.from({ length: section.count }, (_, index) => orderId(section.kind, first + index));
+    next[section.kind] += section.count;
+    const got = section.rows.map((row) => row.id);
+    if (canonical(got) !== canonical(want)) {
+      problems.add(`${where}: the table lists [${got.join(", ")}], its heading calls for ${section.count} Orders, ${idRange(section.kind, first, first + section.count - 1)}`);
+    }
+    ids.push(...want);
+    rows.push(...section.rows.map((row) => ({ row, section })));
+  }
+  const totals = { starting: next.starting - 1, main: next.main - 1 };
+  if (appendix.sizes !== null) {
+    for (const kind of ["starting", "main"] as const) {
+      if (totals[kind] !== appendix.sizes[kind]) {
+        problems.add(`${appendix.file}: the ${kind === "starting" ? "Starting" : "Main"} tables count ${totals[kind]} Orders, the Appendix A heading ${appendix.sizes[kind]}`);
+      }
+    }
+  }
+  if (totals.starting === 0) problems.add(`${appendix.file}: Appendix A has no Starting Order table`);
+  if (totals.main === 0) problems.add(`${appendix.file}: Appendix A has no Main Order table`);
+  return { ids, rows };
+}
+
+/** The IDs as runs in their order: "S01–S08 then O01–O48". */
+function describeIds(ids: string[]): string {
+  const runs: Array<{ first: string; last: string; letter: string; number: number }> = [];
+  for (const id of ids) {
+    const letter = id.slice(0, 1);
+    const number = Number(id.slice(1));
+    const run = runs.at(-1);
+    if (run !== undefined && run.letter === letter && run.number + 1 === number) {
+      run.last = id;
+      run.number = number;
+    } else runs.push({ first: id, last: id, letter, number });
+  }
+  return runs.length === 0 ? "no Orders" : runs.map((run) => (run.first === run.last ? run.first : `${run.first}–${run.last}`)).join(" then ");
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -210,12 +367,16 @@ function parseEnglish(row: TableRow, where: string, problems: Problems): Parsed 
     }
     const [shapePart, glazePart, decorationPart] = parts as [string, string, string];
     const slot: CeramicSlot = {};
-    const alternatives = /^(?:(.+?), )?(.+?) or (.+)$/.exec(shapePart);
+    // "Bowl, Plate or Brush Washer", "Carved, Impressed or Painted": any one of these.
+    const alternatives = <T>(part: string, table: Record<string, T>, what: string): T[] =>
+      part
+        .split(/, | or /)
+        .map((name) => lookup(table, name, what, where, problems))
+        .filter((value): value is T => value !== undefined);
     if (shapePart === "any Shape") {
       // no Shape requirement
-    } else if (alternatives !== null) {
-      const names = [alternatives[1], alternatives[2], alternatives[3]].filter((name): name is string => name !== undefined);
-      slot.shapes = names.map((name) => lookup(SHAPES_EN, name, "Shape", where, problems)).filter((shape): shape is Shape => shape !== undefined);
+    } else if (/ or /.test(shapePart)) {
+      slot.shapes = alternatives(shapePart, SHAPES_EN, "Shape");
     } else {
       const shape = lookup(SHAPES_EN, shapePart, "Shape", where, problems);
       if (shape !== undefined) slot.shape = shape;
@@ -224,7 +385,11 @@ function parseEnglish(row: TableRow, where: string, problems: Problems): Parsed 
       const glaze = lookup(GLAZES_EN, glazePart, "Glaze", where, problems);
       if (glaze !== undefined) slot.glaze = glaze;
     }
-    if (decorationPart !== "any Decoration") {
+    if (decorationPart === "any Decoration") {
+      // no Decoration requirement
+    } else if (/ or /.test(decorationPart)) {
+      slot.decorations = alternatives(decorationPart, DECORATIONS_EN, "Decoration");
+    } else {
       const decoration = lookup(DECORATIONS_EN, decorationPart, "Decoration", where, problems);
       if (decoration !== undefined) slot.decoration = decoration;
     }
@@ -346,7 +511,15 @@ function parseChinese(row: TableRow, where: string, problems: Problems): Parsed 
       const glaze = lookup(GLAZES_ZH, glazePart, "釉", where, problems);
       if (glaze !== undefined) slot.glaze = glaze;
     }
-    if (decorationPart !== "任意纹饰") {
+    if (decorationPart === "任意纹饰") {
+      // no Decoration requirement
+    } else if (decorationPart.includes("或")) {
+      // "刻花、印花或画花": any one of these.
+      slot.decorations = decorationPart
+        .split(/、|或/)
+        .map((name) => lookup(DECORATIONS_ZH, name, "纹饰", where, problems))
+        .filter((decoration): decoration is Decoration => decoration !== undefined);
+    } else {
       const decoration = lookup(DECORATIONS_ZH, decorationPart, "纹饰", where, problems);
       if (decoration !== undefined) slot.decoration = decoration;
     }
@@ -453,22 +626,20 @@ function sameRelations(a: Relation[], b: Relation[]): boolean {
   return canonical(sort(a)) === canonical(sort(b));
 }
 
-function loadOrders(text: string, problems: Problems): { orders: OrderData[]; rulesVersion: string } {
+/** The data file's two decks, Starting then Main, checked against the rulebooks' deck sizes. */
+function loadOrders(text: string, sizes: { starting: number; main: number } | null, problems: Problems): { orders: OrderData[]; rulesVersion: string } {
   const raw = JSON.parse(text) as { rulesVersion?: unknown; starting?: unknown; main?: unknown };
   const starting = Array.isArray(raw.starting) ? (raw.starting as OrderData[]) : [];
   const main = Array.isArray(raw.main) ? (raw.main as OrderData[]) : [];
-  if (starting.length !== 16) problems.add(`${ORDERS_JSON}: ${starting.length} Starting Orders, expected 16`);
-  if (main.length !== 48) problems.add(`${ORDERS_JSON}: ${main.length} Main Orders, expected 48`);
+  if (sizes !== null) {
+    if (starting.length !== sizes.starting) problems.add(`${ORDERS_JSON}: ${starting.length} Starting Orders, the rulebooks ${sizes.starting}`);
+    if (main.length !== sizes.main) problems.add(`${ORDERS_JSON}: ${main.length} Main Orders, the rulebooks ${sizes.main}`);
+  }
   return { orders: [...starting, ...main], rulesVersion: typeof raw.rulesVersion === "string" ? raw.rulesVersion : "?" };
 }
 
-const EXPECTED_IDS = [
-  ...Array.from({ length: 16 }, (_, index) => `S${String(index + 1).padStart(2, "0")}`),
-  ...Array.from({ length: 48 }, (_, index) => `O${String(index + 1).padStart(2, "0")}`),
-];
-
-function checkHeader(file: string, row: TableRow, expected: string[], problems: Problems): void {
-  const want = row.id.startsWith("S") ? expected.slice(0, 5) : expected;
+function checkHeader(file: string, row: TableRow, kind: "starting" | "main", expected: string[], problems: Problems): void {
+  const want = kind === "starting" ? expected.slice(0, 5) : expected;
   if (canonical(row.header) !== canonical(want)) {
     problems.add(`${file}:${row.line} (${row.id}): table header [${row.header.join(" | ")}], expected [${want.join(" | ")}]`);
   }
@@ -483,7 +654,8 @@ export interface SourceTexts {
 
 /**
  * Reads both rulebooks and the data file, checks them against each other and returns the
- * cards in print order (S01–S16, O01–O48) for each language. Throws `OrderSourceError`.
+ * cards in print order (the Starting Orders, then the Main Orders, as the rulebooks list them)
+ * for each language. Throws `OrderSourceError`.
  */
 export function loadOrderSource(): OrderSource {
   return buildOrderSource({ en: readText(EN_RULEBOOK), zh: readText(ZH_RULEBOOK), orders: readText(ORDERS_JSON) });
@@ -492,32 +664,46 @@ export function loadOrderSource(): OrderSource {
 /** `loadOrderSource` on given file contents (used to prove the checks fail loudly). */
 export function buildOrderSource(texts: SourceTexts): OrderSource {
   const problems = new Problems();
-  const { orders, rulesVersion } = loadOrders(texts.orders, problems);
-  const enRows = appendixRows(EN_RULEBOOK, texts.en, /^## Appendix A\b/, /^## Appendix B\b/, problems);
-  const zhRows = appendixRows(ZH_RULEBOOK, texts.zh, /^## 附录A/, /^## 附录B/, problems);
+  const enAppendix = readAppendix(EN_RULEBOOK, texts.en, EN_GRAMMAR, problems);
+  const zhAppendix = readAppendix(ZH_RULEBOOK, texts.zh, ZH_GRAMMAR, problems);
+  const enExpected = expectedIds(enAppendix, problems);
+  const zhExpected = expectedIds(zhAppendix, problems);
   const enHeader = ["ID", "Requirements", "Quality", "VP", "Coins", "Crowns"];
   const zhHeader = ["ID", "要求", "品质", "分", "铜钱", "御令"];
 
-  for (const [file, rows] of [[EN_RULEBOOK, enRows], [ZH_RULEBOOK, zhRows]] as const) {
-    const ids = rows.map((row) => row.id);
-    if (canonical(ids) !== canonical(EXPECTED_IDS)) problems.add(`${file}: Appendix A IDs are [${ids.join(", ")}], expected S01–S16 then O01–O48`);
-    for (const row of rows) checkHeader(file, row, file === EN_RULEBOOK ? enHeader : zhHeader, problems);
+  // The two rulebooks must call for the same decks, table by table.
+  if (canonical(enAppendix.sizes) !== canonical(zhAppendix.sizes)) {
+    problems.add(`Appendix A deck sizes differ: ${EN_RULEBOOK} ${canonical(enAppendix.sizes)}, ${ZH_RULEBOOK} ${canonical(zhAppendix.sizes)}`);
   }
+  const tables = (appendix: Appendix): string => canonical(appendix.sections.map((section) => [section.kind, section.count, section.ceramics]));
+  if (tables(enAppendix) !== tables(zhAppendix)) {
+    problems.add(`Appendix A tables differ: ${EN_RULEBOOK} ${tables(enAppendix)}, ${ZH_RULEBOOK} ${tables(zhAppendix)} ([deck, count, ceramics per Order])`);
+  }
+  const expected = enExpected.ids;
+  if (canonical(zhExpected.ids) !== canonical(expected)) problems.add(`${ZH_RULEBOOK}: its headings call for ${describeIds(zhExpected.ids)}, ${EN_RULEBOOK} for ${describeIds(expected)}`);
+  for (const [file, rows, header] of [[EN_RULEBOOK, enExpected.rows, enHeader], [ZH_RULEBOOK, zhExpected.rows, zhHeader]] as const) {
+    for (const { row, section } of rows) checkHeader(file, row, section.kind, header, problems);
+  }
+
+  const { orders, rulesVersion } = loadOrders(texts.orders, enAppendix.sizes, problems);
   const dataIds = orders.map((order) => order.id);
-  if (canonical(dataIds) !== canonical(EXPECTED_IDS)) problems.add(`${ORDERS_JSON}: IDs are [${dataIds.join(", ")}], expected S01–S16 then O01–O48`);
+  if (canonical(dataIds) !== canonical(expected)) problems.add(`${ORDERS_JSON}: IDs are [${dataIds.join(", ")}], the rulebooks call for ${describeIds(expected)}`);
 
   const byId = new Map(orders.map((order) => [order.id, order]));
-  const zhById = new Map(zhRows.map((row) => [row.id, row]));
+  const zhById = new Map(zhExpected.rows.map(({ row }) => [row.id, row]));
   const cards: Record<Lang, CardModel[]> = { en: [], zh: [] };
-  for (const en of enRows) {
+  for (const { row: en, section } of enExpected.rows) {
     const data = byId.get(en.id);
     const zh = zhById.get(en.id);
     if (data === undefined || zh === undefined) {
       problems.add(`${en.id}: missing from ${data === undefined ? ORDERS_JSON : ZH_RULEBOOK}`);
       continue;
     }
-    const kind = en.id.startsWith("S") ? "starting" : "main";
+    const kind = section.kind;
     if (data.deck !== kind) problems.add(`${en.id}: ${ORDERS_JSON} deck "${data.deck}", expected "${kind}"`);
+    if (section.ceramics !== null && data.ceramics.length !== section.ceramics) {
+      problems.add(`${en.id}: ${ORDERS_JSON} asks for ${data.ceramics.length} ceramics, its table "${section.heading}" ${section.ceramics}`);
+    }
     for (const [label, row] of [["EN", en], ["ZH", zh]] as const) {
       for (const field of ["vp", "coins", "crowns"] as const) {
         if (row[field] !== data[field]) problems.add(`${en.id}: ${label} rulebook ${field} ${row[field]} ≠ ${ORDERS_JSON} ${field} ${data[field]}`);
@@ -546,13 +732,14 @@ export function buildOrderSource(texts: SourceTexts): OrderSource {
   }
 
   const zhKind = zhStartingTerm(texts.zh, problems);
-  if (problems.list.length > 0) throw new OrderSourceError(problems.list);
+  if (problems.list.length > 0 || enAppendix.sizes === null) throw new OrderSourceError(problems.list);
   return {
     labels: {
       en: { lang: "en", requirement: "Requirement", quality: "Quality", vp: "VP", startingKind: "Starting" },
       zh: { lang: "zh", requirement: zhHeader[1] ?? "", quality: zhHeader[2] ?? "", vp: zhHeader[3] ?? "", startingKind: zhKind },
     },
     cards,
+    deckSizes: enAppendix.sizes,
     rulesVersionInData: rulesVersion,
   };
 }

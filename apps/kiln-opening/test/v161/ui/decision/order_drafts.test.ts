@@ -1,11 +1,11 @@
 /**
- * B5's Order, Canal Barge and hand-trim draft models (UI_V1.6.1_ARCHITECTURE §3.5, §9.2), and the
- * table adapters of the Order Phase and the trim (§3.5 `TableSelection`). Owner: B5.
+ * B5's Order and hand-trim draft models (UI_V1.6.1_ARCHITECTURE §3.5, §9.2), and the table
+ * adapters of the Order Phase and the trim (§3.5 `TableSelection`). Owner: B5. V1.6.2 completes
+ * Orders only in the Order Phase (L296): Canal Barge pays Coins on a completion and has no form.
  */
 import { describe, expect, it } from "vitest";
 import type { AuthoritativeCommand, PlayerView } from "../../../../src/game/index.ts";
 import { handTrimDraft } from "../../../../src/app/decision/cleanup/HandTrim.draft.ts";
-import { canalBargeDraft } from "../../../../src/app/decision/orders/canalBargeDraft.ts";
 import { EMPTY_COMPLETION } from "../../../../src/app/decision/orders/orderCompletion.ts";
 import { orderDraft } from "../../../../src/app/decision/orders/orderDraft.ts";
 import type { OrderAction, OrderDraft } from "../../../../src/app/decision/orders/orderDraft.ts";
@@ -46,7 +46,7 @@ describe("Order Phase", () => {
       { orderId: "O22", completable: true },
       { orderId: "O18", completable: true },
       { orderId: "S01", completable: true },
-      { orderId: "S13", completable: true },
+      { orderId: "S07", completable: true },
     ]);
     expect(orderDraft.build(draft, ru.model, ru.engine)).toBeNull();
     expect(orderDraft.summary(draft, ru.model, ru.engine)?.key).toBe("orders.turn.pick");
@@ -58,7 +58,7 @@ describe("Order Phase", () => {
     const options = orderDraft.options(chosen, ru.model, ru.engine);
     expect(options.groups.map((group) => group.key)).toEqual(["c1", "c2"]);
     const grouped = orderDraft.reduce(chosen, { type: "group", key: "c2" }, ru.model, ru.engine);
-    expect(orderDraft.options(grouped, ru.model, ru.engine).match?.triggers).toEqual({ ru: true, guan: false, tributeWare: true });
+    expect(orderDraft.options(grouped, ru.model, ru.engine).match?.triggers).toEqual({ ru: true, guan: false, tributeWare: true, canalBarge: false });
     const command = orderDraft.build(grouped, ru.model, ru.engine);
     expect(command).toEqual({ type: "COMPLETE_ORDER", orderId: "O22", ceramicIds: ["c2"] });
     expect(valid(ru, command)).toBe(true);
@@ -77,77 +77,75 @@ describe("Order Phase", () => {
     expect(orderDraft.build(orders(ru, { type: "end" }), ru.model, ru.engine)).toEqual({ type: "END_ORDER_TURN" });
   });
 
-  it("Crackle: auto mode omits declarations; explicit verdicts come from the validator", () => {
-    const m6 = ctx("m6_order_phase_crackle_3p");
-    const auto = orders(m6, { type: "order", orderId: "O39" });
-    expect(auto.ceramicIds).toEqual(["c18", "c21"]);
-    const autoOptions = orderDraft.options(auto, m6.model, m6.engine);
-    expect(autoOptions.crackle?.ceramics.map((entry) => entry.ceramicId)).toEqual(["c18"]);
+  it("Crackle: auto mode omits declarations; explicit verdicts come from the validator (S07, \"Carved, Impressed or Painted\", change 23)", () => {
+    const auto = orders(ru, { type: "order", orderId: "S07" });
+    expect(auto.ceramicIds).toEqual(["c3"]);
+    const autoOptions = orderDraft.options(auto, ru.model, ru.engine);
+    expect(autoOptions.crackle?.ceramics.map((entry) => entry.ceramicId)).toEqual(["c3"]);
     expect(autoOptions.check?.ok).toBe(true);
-    expect(orderDraft.build(auto, m6.model, m6.engine)).toEqual({ type: "COMPLETE_ORDER", orderId: "O39", ceramicIds: ["c18", "c21"] });
+    expect(orderDraft.build(auto, ru.model, ru.engine)).toEqual({ type: "COMPLETE_ORDER", orderId: "S07", ceramicIds: ["c3"] });
 
-    const explicit = orderDraft.reduce(auto, { type: "declarationMode", mode: "explicit" }, m6.model, m6.engine);
+    const explicit = orderDraft.reduce(auto, { type: "declarationMode", mode: "explicit" }, ru.model, ru.engine);
     expect(explicit.declarations).toEqual([]);
-    const verdicts = orderDraft.options(explicit, m6.model, m6.engine).crackle?.ceramics[0]?.options.map((option) => [option.decoration, option.check.ok]);
+    const verdicts = orderDraft.options(explicit, ru.model, ru.engine).crackle?.ceramics[0]?.options.map((option) => [option.decoration, option.check.ok]);
+    // Its printed Plain does not fill S07; any one of the three listed Decorations does.
     expect(verdicts).toEqual([
       [null, false],
       ["plain", false],
-      ["carved", false],
-      ["impressed", false],
+      ["carved", true],
+      ["impressed", true],
       ["painted", true],
     ]);
-    const wrong = orderDraft.reduce(explicit, { type: "declare", ceramicId: "c18", decoration: "carved" }, m6.model, m6.engine);
-    const wrongCommand = orderDraft.build(wrong, m6.model, m6.engine);
-    expect(wrongCommand).toEqual({ type: "COMPLETE_ORDER", orderId: "O39", ceramicIds: ["c18", "c21"], crackleDeclarations: [{ ceramicId: "c18", decoration: "carved" }] });
-    expect(valid(m6, wrongCommand)).toBe(false);
-    const painted = orderDraft.reduce(wrong, { type: "declare", ceramicId: "c18", decoration: "painted" }, m6.model, m6.engine);
-    expect(valid(m6, orderDraft.build(painted, m6.model, m6.engine))).toBe(true);
-    expect(orderDraft.summary(painted, m6.model, m6.engine)?.key).toBe("orders.turn.sum");
+    const wrong = orderDraft.reduce(explicit, { type: "declare", ceramicId: "c3", decoration: "plain" }, ru.model, ru.engine);
+    const wrongCommand = orderDraft.build(wrong, ru.model, ru.engine);
+    expect(wrongCommand).toEqual({ type: "COMPLETE_ORDER", orderId: "S07", ceramicIds: ["c3"], crackleDeclarations: [{ ceramicId: "c3", decoration: "plain" }] });
+    expect(valid(ru, wrongCommand)).toBe(false);
+    const impressed = orderDraft.reduce(wrong, { type: "declare", ceramicId: "c3", decoration: "impressed" }, ru.model, ru.engine);
+    expect(valid(ru, orderDraft.build(impressed, ru.model, ru.engine))).toBe(true);
+    expect(orderDraft.summary(impressed, ru.model, ru.engine)?.key).toBe("orders.turn.sum");
   });
 
   it("a blocked Order cannot be chosen, and revalidation drops an Order no longer completable", () => {
     const m6 = ctx("m6_order_phase_crackle_3p");
-    expect(orders(m6, { type: "order", orderId: "O37" }).orderId).toBeNull();
-    const stale: OrderDraft = { ...EMPTY_COMPLETION, orderId: "O37", ceramicIds: ["c3"], end: false };
+    expect(orders(m6, { type: "order", orderId: "O48" }).orderId).toBeNull();
+    const stale: OrderDraft = { ...EMPTY_COMPLETION, orderId: "O48", ceramicIds: ["c6"], end: false };
     expect(orderDraft.reduce(stale, REVALIDATE, m6.model, m6.engine)).toEqual({ ...EMPTY_COMPLETION, end: false });
   });
 
   it("table adapter: hand Order states and the chosen group's ceramics; clicking a completable Order chooses it", () => {
     const m6 = ctx("m6_order_phase_crackle_3p");
     const table = FIRING_WINDOWS.orders.table!;
-    const draft = orders(m6, { type: "order", orderId: "O39" });
+    const draft = orders(m6, { type: "order", orderId: "O30" });
     const selection = table.select(draft, m6.model, m6.engine);
     expect(Object.fromEntries([...selection.orderTargets].map(([key, target]) => [key, target.state]))).toEqual({
-      O48: "completable",
-      O39: "chosen",
-      O05: "completable",
-      O37: "blocked",
-      O08: "completable",
+      S02: "blocked",
+      O30: "chosen",
+      O19: "completable",
+      O15: "completable",
+      O48: "blocked",
     });
-    expect([...selection.highlightedCeramicIds]).toEqual(["c18", "c21"]);
-    expect(table.act(draft, { type: "order", key: "O05" }, m6.model, m6.engine)).toEqual({ type: "order", orderId: "O05" });
-    expect(table.act(draft, { type: "order", key: "O37" }, m6.model, m6.engine)).toBeNull();
+    expect([...selection.highlightedCeramicIds]).toEqual(["c6", "c16"]);
+    expect(table.act(draft, { type: "order", key: "O19" }, m6.model, m6.engine)).toEqual({ type: "order", orderId: "O19" });
+    expect(table.act(draft, { type: "order", key: "O48" }, m6.model, m6.engine)).toBeNull();
   });
 });
 
-describe("Canal Barge", () => {
-  const c = ctx("w-after-the-worker-action");
-
-  it("completes a held Order through USE_CANAL_BARGE", () => {
-    const options = canalBargeDraft.options(canalBargeDraft.initial(c.model, c.engine), c.model, c.engine);
-    expect(options.orders.filter((order) => order.completable).map((order) => order.orderId)).toEqual(["O01"]);
-    let draft = canalBargeDraft.initial(c.model, c.engine);
-    draft = canalBargeDraft.reduce(draft, { type: "order", orderId: "O01" }, c.model, c.engine);
-    const command = canalBargeDraft.build(draft, c.model, c.engine);
-    expect(command).toEqual({ type: "USE_CANAL_BARGE", orderId: "O01", ceramicIds: ["c1"] });
+describe("Canal Barge (v1.6.2 L622): 2 Coins on the first completion each round, automatic", () => {
+  it("is a trigger of the completion, never a command or a choice to decline", () => {
+    const view = structuredClone(fixture("w-order-phase-with-ru-tribute-ware-and-a-crackle-wildcard").playerView);
+    const me = view.game.players[view.viewerId!]!;
+    me.techs = [...me.techs.filter((tech) => tech.id !== "T25"), { id: "T23", acquiredInRound: 1, usedThisRound: false }];
+    const c = { view, model: buildGameModel(view, []), engine: engineViewOf(view) };
+    const grouped = orders(c, { type: "order", orderId: "S01" });
+    expect(orderDraft.options(grouped, c.model, c.engine).match?.triggers.canalBarge).toBe(true);
+    // Declining applies to Ru/Guan and Tribute Ware only: the command never carries a Canal Barge flag.
+    const command = orderDraft.build(orderDraft.reduce(grouped, { type: "decline", ability: "kiln", decline: true }, c.model, c.engine), c.model, c.engine);
+    expect(command).toEqual({ type: "COMPLETE_ORDER", orderId: "S01", ceramicIds: ["c4"] });
     expect(valid(c, command)).toBe(true);
-    expect(canalBargeDraft.summary(draft, c.model, c.engine)?.key).toBe("orders.barge.sum");
-  });
-
-  it("offers nothing outside the viewer's before/after-action window", () => {
-    const orderPhase = ctx("w-order-phase-with-ru-tribute-ware-and-a-crackle-wildcard");
-    const options = canalBargeDraft.options(canalBargeDraft.initial(orderPhase.model, orderPhase.engine), orderPhase.model, orderPhase.engine);
-    expect(options.orders.some((order) => order.completable)).toBe(false);
+    // Used this round: no Coins on a later completion.
+    me.techs = me.techs.map((tech) => (tech.id === "T23" ? { ...tech, usedThisRound: true } : tech));
+    const used = { view, model: buildGameModel(structuredClone(view), []), engine: engineViewOf(structuredClone(view)) };
+    expect(orderDraft.options(orders(used, { type: "order", orderId: "S01" }), used.model, used.engine).match?.triggers.canalBarge).toBe(false);
   });
 });
 

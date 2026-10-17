@@ -19,14 +19,13 @@ import type { GameModel } from "../state/model.ts";
 
 type MutableFacts = { -readonly [K in keyof CeramicFacts]: CeramicFacts[K] };
 
-/** Facts from the public events of the log, oldest first. */
-function factsFromLog(log: readonly LogEntry[]): Map<CeramicId, MutableFacts> {
-  const facts = new Map<CeramicId, MutableFacts>();
+/** Lays one public event of the log over the facts (in log order). */
+function applyEvent(facts: Map<CeramicId, MutableFacts>, event: LogEntry["event"]): void {
   const update = (id: CeramicId, patch: Partial<MutableFacts>): void => {
     const current = facts.get(id);
     if (current !== undefined) Object.assign(current, patch);
   };
-  for (const { event } of log) {
+  {
     switch (event.type) {
       case "CERAMIC_FORMED":
         facts.set(event.ceramicId, { id: event.ceramicId, ownerId: event.playerId, shape: event.shape, decoration: event.decoration, glaze: null, stage: "shaped" });
@@ -60,6 +59,12 @@ function factsFromLog(log: readonly LogEntry[]): Map<CeramicId, MutableFacts> {
         break;
     }
   }
+}
+
+/** Facts from the public events of the log, oldest first. */
+function factsFromLog(log: readonly LogEntry[]): Map<CeramicId, MutableFacts> {
+  const facts = new Map<CeramicId, MutableFacts>();
+  for (const { event } of log) applyEvent(facts, event);
   return facts;
 }
 
@@ -102,6 +107,34 @@ export function logCeramicView(model: GameModel, log: readonly LogEntry[]): Cera
   const view: CeramicLabelModelView = { viewerId: model.viewerId, players, ceramics };
   CACHE.set(model, { log, view });
   return view;
+}
+
+/**
+ * The game log's views: for each entry in `sequences`, the `CeramicLabelView` as of that entry
+ * (as `ceramicViewAsOf` gives it), built in one pass over the log. A line then names a ceramic as
+ * the table showed it when the line happened, never with what a later move gave it (a Crackle
+ * marker, a Glaze, the place a later twin calls for).
+ */
+export function ceramicViewsAsOf(model: GameModel, log: readonly LogEntry[], sequences: ReadonlySet<number>): ReadonlyMap<number, CeramicLabelModelView> {
+  const views = new Map<number, CeramicLabelModelView>();
+  if (sequences.size === 0) return views;
+  const formed = new Set<CeramicId>();
+  for (const { event } of log) if (event.type === "CERAMIC_FORMED") formed.add(event.ceramicId);
+  const before: Record<CeramicId, CeramicFacts> = {};
+  for (const [key, ceramic] of Object.entries(model.ceramics)) {
+    const id = key as CeramicId;
+    if (!formed.has(id)) before[id] = factsOf(id, ceramic);
+  }
+  const players: readonly { playerId: PlayerId; displayName: string }[] = model.players;
+  const facts = new Map<CeramicId, MutableFacts>();
+  for (const entry of log) {
+    applyEvent(facts, entry.event);
+    if (!sequences.has(entry.sequence)) continue;
+    const ceramics: Record<CeramicId, CeramicFacts> = { ...before };
+    for (const [id, known] of facts) ceramics[id] = { ...known };
+    views.set(entry.sequence, { viewerId: model.viewerId, players, ceramics });
+  }
+  return views;
 }
 
 /**

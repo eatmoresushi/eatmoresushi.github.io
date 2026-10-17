@@ -37,7 +37,7 @@ export interface NavBadge {
   soft: boolean;
 }
 
-const KILN_WINDOWS = new Set(["setters_mark", "contributions", "test_pieces", "heat_markers", "jun", "after_quality", "salvage"]);
+const KILN_WINDOWS = new Set(["setters_mark", "contributions", "test_pieces", "heat_markers", "jun", "after_quality", "second_firing", "salvage"]);
 
 /** The badges for the current window (wireframe `badges`). Pure; exported for tests. */
 export function navBadges(model: GameModel, table: Pick<TableSelection, "placeTargets" | "orderTargets">): Partial<Record<PhoneSection, NavBadge>> {
@@ -54,7 +54,7 @@ export function navBadges(model: GameModel, table: Pick<TableSelection, "placeTa
   }
   if (acting && KILN_WINDOWS.has(window.kind)) badges.kiln = { shown: msg("shell.nav.badge.mark"), meaning: msg("shell.nav.badge.decide"), soft: false };
   const status = model.viewerId === null ? undefined : model.handLimits[model.viewerId];
-  if (acting && (window.kind === "commission" || window.kind === "colour_samples") && model.look !== null) {
+  if (acting && (window.kind === "commission" || window.kind === "colour_samples" || window.kind === "colour_samples_swap") && model.look !== null) {
     const n = model.look.orderIds.length;
     badges.orders = { shown: count(n), meaning: msg("shell.nav.badge.look", { n }), soft: false };
   } else if (acting && window.kind === "orders") {

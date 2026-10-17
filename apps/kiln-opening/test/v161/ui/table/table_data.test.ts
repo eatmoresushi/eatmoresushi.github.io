@@ -20,8 +20,14 @@ describe("tableCeramics (model.ceramics, CR B2-1)", () => {
     expect(model.ceramics).toBe(view.game.ceramics);
     const ceramics = tableCeramics(model);
     expect(ceramics.byId.size).toBe(Object.keys(view.game.ceramics).length);
-    expect(ceramics.byId.get("c4")).toMatchObject({ shape: "washer", decoration: "plain", stage: "shaped", ownerId: "p3" });
-    expect(ceramics.labelView.ceramics?.["c1"]).toMatchObject({ quality: "masterpiece", glaze: "celadon" });
+    // Every ceramic as the model holds it, its Vessel-card facts unchanged.
+    for (const ceramic of Object.values(view.game.ceramics)) {
+      expect(ceramics.byId.get(ceramic.id), ceramic.id).toMatchObject({ shape: ceramic.shape, decoration: ceramic.decoration, stage: ceramic.stage, ownerId: ceramic.ownerId });
+    }
+    const finished = Object.values(view.game.ceramics).find((ceramic) => ceramic.stage === "finished");
+    expect(finished).toBeDefined();
+    if (finished?.stage === "finished") expect(ceramics.labelView.ceramics?.[finished.id]).toMatchObject({ quality: finished.quality, glaze: finished.glaze });
+    expect(Object.values(view.game.ceramics).some((ceramic) => ceramic.stage === "shaped")).toBe(true);
   });
 
   it("keeps only Vessel-card facts and the Heat markers of loaded ceramics", () => {
@@ -54,9 +60,12 @@ describe("tableCeramics (model.ceramics, CR B2-1)", () => {
 });
 
 describe("board.refillPendingFor (CR B2-2)", () => {
-  it("names the reserving player while a reserved position is empty (m2)", () => {
-    expect(fixture("m2_commission_market_look_r3_4p").playerView.game.market.refillPendingFor).toBe("p2");
-    expect(modelOf("m2_commission_market_look_r3_4p").board.refillPendingFor).toBe("p2");
+  it("names the reserving player while a reserved position is empty (m2 after its reservation)", () => {
+    const id = "d-commission-after-face-up-reservation";
+    expect(fixture(id).playerView.game.market.refillPendingFor).toBe("p3");
+    expect(modelOf(id).board.refillPendingFor).toBe("p3");
+    // During the look nothing is reserved yet.
+    expect(modelOf("m2_commission_market_look_r3_4p").board.refillPendingFor).toBeNull();
   });
 
   it("is null with a full display, and when the piles ran out (no reservation pending)", () => {
@@ -72,9 +81,9 @@ describe("boardWorkers", () => {
     const model = modelOf("m5_two_player_board_2p");
     const lin = boardWorkers(model, summaryOf(model, "p1")!);
     expect(lin).toHaveLength(4);
-    expect(lin[0]).toEqual({ kind: "shifu", placedAt: "canal_wharf", senior: false });
+    expect(lin[0]).toEqual({ kind: "shifu", placedAt: "glaze_load", senior: false });
     expect(lin.filter((worker) => worker.placedAt === null)).toEqual([{ kind: "apprentice", placedAt: null, senior: false }]);
-    expect(lin.map((worker) => worker.placedAt).sort()).toEqual(["canal_wharf", "glaze_load", "materials_yard", null].sort());
+    expect(lin.map((worker) => worker.placedAt).sort()).toEqual(["glaze_load", "materials_yard", "materials_yard", null].sort());
     expect(JSON.stringify(lin)).not.toMatch(/p\d:/);
   });
 

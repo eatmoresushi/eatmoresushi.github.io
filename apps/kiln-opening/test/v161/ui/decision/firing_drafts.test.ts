@@ -13,6 +13,7 @@ import { contributionsDraft } from "../../../../src/app/decision/firing/Contribu
 import { heatMarkersDraft } from "../../../../src/app/decision/firing/HeatMarkers.draft.ts";
 import { junDraft } from "../../../../src/app/decision/firing/Jun.draft.ts";
 import { salvageDraft } from "../../../../src/app/decision/firing/Salvage.draft.ts";
+import { secondFiringDraft } from "../../../../src/app/decision/firing/SecondFiring.draft.ts";
 import { testPiecesDraft } from "../../../../src/app/decision/firing/TestPieces.draft.ts";
 import { checkCommand } from "../../../../src/app/session/fixtureSource.ts";
 import { REVALIDATE } from "../../../../src/app/state/draftStore.ts";
@@ -81,13 +82,51 @@ describe("Contributions", () => {
     expect(withTend).toEqual({ card: null, fuelLedger: true });
     const options = contributionsDraft.options(withTend, c.model, c.engine);
     expect(options.cards.find((choice) => choice.card === "TEND")).toMatchObject({ available: false, reason: "fuel_ledger_bank_stoke" });
-    expect(options.cards.find((choice) => choice.card === "STOKE")?.option).toMatchObject({ woodCost: 2, heat: 2 });
+    // v1.6.2 L629: a Fuel Ledger owner's Bank and Stoke cost no Wood; the commitment still costs 1.
+    expect(options.cards.find((choice) => choice.card === "STOKE")?.option).toMatchObject({ woodCost: 1, heat: 2 });
+    const plain = contributionsDraft.options(contributionsDraft.initial(c.model, c.engine), c.model, c.engine);
+    expect(plain.cards.find((choice) => choice.card === "BANK")?.option).toMatchObject({ woodCost: 0, heat: -1 });
+    expect(plain.cards.find((choice) => choice.card === "STOKE")?.option).toMatchObject({ woodCost: 0, heat: 1 });
     expect(contributionsDraft.reduce(withTend, { type: "card", card: "TEND" }, c.model, c.engine)).toBe(withTend);
     const stoke = contributionsDraft.reduce(withTend, { type: "card", card: "STOKE" }, c.model, c.engine);
     const command = contributionsDraft.build(stoke, c.model, c.engine);
     expect(command).toMatchObject({ card: "STOKE", fuelLedger: true });
     expect(valid(c, command)).toBe(true);
     expect(contributionsDraft.summary(stoke, c.model, c.engine)?.key).toBe("firing.contrib.summaryFuel");
+  });
+
+  it("Fuel Ledger: the free Bank and Stoke are marked below their printed cost; the commitment adds 1 Wood (v1.6.2 L637)", () => {
+    const options = contributionsDraft.options(contributionsDraft.initial(c.model, c.engine), c.model, c.engine);
+    expect(options.cards.map((choice) => [choice.card, choice.option.woodCost, choice.belowPrintedCost])).toEqual([
+      ["TEND", 0, false],
+      ["BANK", 0, true],
+      ["STOKE", 0, true],
+    ]);
+    expect(options.fuelLedger).toMatchObject({ commitWood: 1, canCommit: true });
+    // Without the Tech, Bank and Stoke cost their printed Wood and nothing is marked.
+    const m9 = withoutTech("m9_contributions_step1_3p", "T12");
+    const plain = contributionsDraft.options(contributionsDraft.initial(m9.model, m9.engine), m9.model, m9.engine);
+    expect(plain.cards.map((choice) => [choice.card, choice.option.woodCost, choice.belowPrintedCost])).toEqual([
+      ["TEND", 0, false],
+      ["BANK", 1, false],
+      ["STOKE", 1, false],
+    ]);
+  });
+
+  it("Fuel Ledger with no Wood: Bank and Stoke stay free, but the commitment cannot be turned on", () => {
+    const view = structuredClone(fixture("w-secret-contributions-with-fuel-ledger").playerView);
+    view.game.players[view.viewerId!]!.resources.wood = 0;
+    const poor = ctxOf(view);
+    const options = contributionsDraft.options(contributionsDraft.initial(poor.model, poor.engine), poor.model, poor.engine);
+    expect(options.cards.every((choice) => choice.available)).toBe(true);
+    expect(options.fuelLedger).toMatchObject({ commitWood: 1, canCommit: false });
+    expect(run(contributionsDraft, poor, { type: "fuelLedger", on: true })).toEqual({ card: null, fuelLedger: false });
+    // A committed draft from before is dropped on revalidation, the card kept.
+    expect(contributionsDraft.reduce({ card: "BANK", fuelLedger: true }, REVALIDATE, poor.model, poor.engine)).toEqual({ card: "BANK", fuelLedger: false });
+    const bank = run(contributionsDraft, poor, { type: "card", card: "BANK" });
+    const command = contributionsDraft.build(bank, poor.model, poor.engine);
+    expect(command).toMatchObject({ card: "BANK", fuelLedger: false });
+    expect(valid(poor, command)).toBe(true);
   });
 
   it("without Fuel Ledger the toggle is not offered and cannot be set", () => {
@@ -162,7 +201,7 @@ describe("Heat markers", () => {
   });
 
   it("without Kiln Master only the own marker is offered", () => {
-    const m3 = ctx("m3_heat_marker_step_3p");
+    const m3 = withoutTech("m3_heat_marker_step_3p", "T24");
     expect(heatMarkersDraft.options(heatMarkersDraft.initial(m3.model, m3.engine), m3.model, m3.engine).kilnMaster).toBeNull();
   });
 });
@@ -180,12 +219,75 @@ describe("Jun", () => {
     expect(run(junDraft, c, { type: "ceramic", ceramicId: "c99" }).ceramicId).toBeNull();
   });
 
-  it("R7: the Second Firing ceramic is the only, preselected choice", () => {
-    const c = ctx("w-jun-during-second-firing-r7");
-    const draft = junDraft.initial(c.model, c.engine);
-    expect(draft).toEqual({ ceramicId: "c1", delta: null, decline: false });
-    expect(junDraft.options(draft, c.model, c.engine).during).toBe("second_firing");
-    expect(c.model.firingStage?.extraFire).toMatchObject({ playerId: "p1", ceramicId: "c1" });
+  it("is step 8 only: Second Firing's choice carries R7's Jun itself (v1.6.2 L631)", () => {
+    const c = ctx("w-second-firing-choice-with-jun-r7");
+    expect(junDraft.options(junDraft.initial(c.model, c.engine), c.model, c.engine).during).toBeNull();
+  });
+});
+
+describe("Second Firing's choice (v1.6.2 L631, R7)", () => {
+  it("chooses 1 of the 2 revealed cards, with R7's Jun when ready; nothing preselected", () => {
+    const c = ctx("w-second-firing-choice-with-jun-r7");
+    const draft = secondFiringDraft.initial(c.model, c.engine);
+    expect(draft).toEqual({ cardIndex: null, jun: null });
+    const options = secondFiringDraft.options(draft, c.model, c.engine);
+    const stage = c.model.firingStage?.extraFire;
+    expect(stage).toMatchObject({ playerId: "p1", ceramicId: "c1" });
+    expect(options.ceramicId).toBe("c1");
+    expect(options.cards.map((card) => card.modifier)).toEqual(stage?.modifiers);
+    expect(options.jun).toEqual({ offered: true, ready: true, woodCost: 1, sides: [1, -1], reason: null });
+    expect(secondFiringDraft.build(draft, c.model, c.engine)).toBeNull();
+    expect(secondFiringDraft.summary(draft, c.model, c.engine)?.key).toBe("firing.sf.pick");
+    const second = run(secondFiringDraft, c, { type: "card", cardIndex: 1 });
+    expect(secondFiringDraft.build(second, c.model, c.engine)).toEqual({ type: "SECOND_FIRING_CHOOSE", cardIndex: 1, jun: null });
+    expect(secondFiringDraft.summary(second, c.model, c.engine)?.key).toBe("firing.sf.sum");
+    const withJun = run(secondFiringDraft, c, { type: "card", cardIndex: 0 }, { type: "jun", delta: -1 });
+    const command = secondFiringDraft.build(withJun, c.model, c.engine);
+    expect(command).toEqual({ type: "SECOND_FIRING_CHOOSE", cardIndex: 0, jun: { delta: -1 } });
+    expect(valid(c, command)).toBe(true);
+    expect(secondFiringDraft.summary(withJun, c.model, c.engine)?.key).toBe("firing.sf.sumJun");
+    expect(secondFiringDraft.fromCommand(command!, c.model, c.engine)).toEqual(withJun);
+    // Back to not using Jun.
+    expect(run(secondFiringDraft, c, { type: "card", cardIndex: 0 }, { type: "jun", delta: -1 }, { type: "jun", delta: null }).jun).toBeNull();
+  });
+
+  it("offers no Jun without the Jun Kiln, and drops a Jun choice on revalidation", () => {
+    const c = ctx("m18_jun_second_firing");
+    const options = secondFiringDraft.options(secondFiringDraft.initial(c.model, c.engine), c.model, c.engine);
+    expect(options.jun).toMatchObject({ offered: false, ready: false, sides: [], reason: null });
+    expect(run(secondFiringDraft, c, { type: "jun", delta: 1 }).jun).toBeNull();
+    expect(secondFiringDraft.reduce({ cardIndex: 1, jun: 1 }, REVALIDATE, c.model, c.engine)).toEqual({ cardIndex: 1, jun: null });
+    expect(secondFiringDraft.build(run(secondFiringDraft, c, { type: "card", cardIndex: 1 }), c.model, c.engine)).toEqual({ type: "SECOND_FIRING_CHOOSE", cardIndex: 1, jun: null });
+  });
+});
+
+type ViewPlayer = NonNullable<PlayerView["game"]["players"][string]>;
+
+describe("Second Firing's choice: a Jun owner whose Jun is not ready sees the engine's reason (R7)", () => {
+  function junCtx(edit: (player: ViewPlayer) => void): Ctx {
+    const view = structuredClone(fixture("w-second-firing-choice-with-jun-r7").playerView);
+    edit(view.game.players[view.viewerId!]!);
+    return ctxOf(view);
+  }
+  const usedJun = (player: ViewPlayer): void => {
+    player.kilnAbilityUsedThisRound = true;
+  };
+  const noWood = (player: ViewPlayer): void => {
+    player.resources.wood = 0;
+  };
+
+  it.each([
+    ["used in step 8", usedJun, "ABILITY_ALREADY_USED"],
+    ["no Wood", noWood, "INSUFFICIENT_RESOURCES"],
+  ] as const)("%s", (_, edit, code) => {
+    const c = junCtx(edit);
+    const options = secondFiringDraft.options(secondFiringDraft.initial(c.model, c.engine), c.model, c.engine);
+    expect(options.jun).toMatchObject({ offered: true, ready: false, sides: [], woodCost: 1 });
+    expect(options.jun.reason?.code).toBe(code);
+    expect(run(secondFiringDraft, c, { type: "card", cardIndex: 0 }, { type: "jun", delta: 1 })).toEqual({ cardIndex: 0, jun: null });
+    const command = secondFiringDraft.build(run(secondFiringDraft, c, { type: "card", cardIndex: 0 }), c.model, c.engine);
+    expect(command).toEqual({ type: "SECOND_FIRING_CHOOSE", cardIndex: 0, jun: null });
+    expect(valid(c, command)).toBe(true);
   });
 });
 
@@ -194,16 +296,40 @@ describe("after-Quality", () => {
 
   it("offers each ability with its eligible ceramics; one use per command", () => {
     const options = afterQualityDraft.options(afterQualityDraft.initial(c.model, c.engine), c.model, c.engine);
+    // v1.6.2 L628: Saggars upgrades a Standard ceramic (its floored one included) for nothing.
     expect(options.abilities.map((option) => [option.ability, option.ceramicIds])).toEqual([
       ["protective_saggars", ["c1", "c2"]],
-      ["ge_crackle", ["c1"]],
+      ["ge_crackle", ["c1", "c2"]],
     ]);
+    expect(options.abilities.every((option) => option.cost.clay + option.cost.wood + option.cost.coins === 0)).toBe(true);
+    expect(c.model.firingStage?.ceramics.find((ceramic) => ceramic.id === "c2")).toMatchObject({ quality: "standard", saggarsFloor: true });
     const ge = run(afterQualityDraft, c, { type: "use", ability: "ge_crackle", ceramicId: "c1" });
     expect(afterQualityDraft.build(ge, c.model, c.engine)).toEqual({ type: "USE_GE_CRACKLE", ceramicId: "c1" });
-    expect(run(afterQualityDraft, c, { type: "use", ability: "ge_crackle", ceramicId: "c2" }).choice).toBeNull();
+    // The Fine ceramic is no target for either.
+    expect(run(afterQualityDraft, c, { type: "use", ability: "ge_crackle", ceramicId: "c3" }).choice).toBeNull();
+    expect(run(afterQualityDraft, c, { type: "use", ability: "protective_saggars", ceramicId: "c3" }).choice).toBeNull();
     expect(afterQualityDraft.build(run(afterQualityDraft, c, { type: "end" }), c.model, c.engine)).toEqual({ type: "END_AFTER_QUALITY" });
   });
+
+  it("each ability's summary states its card effect (Saggars: Standard → Fine, no Wood; R4: declining is the alternative)", () => {
+    const saggars = run(afterQualityDraft, c, { type: "use", ability: "protective_saggars", ceramicId: "c2" });
+    expect(afterQualityDraft.build(saggars, c.model, c.engine)).toEqual({ type: "USE_PROTECTIVE_SAGGARS", ceramicId: "c2" });
+    expect(afterQualityDraft.summary(saggars, c.model, c.engine)?.key).toBe("firing.aq.sumSaggars");
+    expect(afterQualityDraft.summary(run(afterQualityDraft, c, { type: "use", ability: "ge_crackle", ceramicId: "c1" }), c.model, c.engine)?.key).toBe("firing.aq.sumGe");
+    const m4 = ctx("m4_after_quality_3p");
+    const second = afterQualityOptionsFirst(m4, "second_firing");
+    expect(second).not.toBeNull();
+    const draft = run(afterQualityDraft, m4, { type: "use", ability: "second_firing", ceramicId: second! });
+    expect(afterQualityDraft.summary(draft, m4.model, m4.engine)?.key).toBe("firing.aq.sumSecond");
+    expect(afterQualityDraft.summary(run(afterQualityDraft, c, { type: "end" }), c.model, c.engine)?.key).toBe("firing.aq.sumEnd");
+  });
 });
+
+/** The first ceramic the after-Quality window offers for an ability, or null. */
+function afterQualityOptionsFirst(c: Ctx, ability: "protective_saggars" | "second_firing" | "ge_crackle"): string | null {
+  const options = afterQualityDraft.options(afterQualityDraft.initial(c.model, c.engine), c.model, c.engine);
+  return options.abilities.find((option) => option.ability === ability)?.ceramicIds[0] ?? null;
+}
 
 describe("Salvage", () => {
   it("a still-Flawed ceramic for Coins, or keep it", () => {
@@ -219,7 +345,7 @@ describe("Salvage", () => {
 describe("every built command validates", () => {
   it.each([
     ["w-test-pieces-decision", testPiecesDraft, { type: "choose", choice: "peek" }],
-    ["w-jun-during-second-firing-r7", junDraft, { type: "delta", delta: 1 }],
+    ["w-second-firing-choice-with-jun-r7", secondFiringDraft, { type: "card", cardIndex: 1 }],
     ["w-after-quality-saggars-and-ge", afterQualityDraft, { type: "use", ability: "protective_saggars", ceramicId: "c2" }],
     ["m14_salvage", salvageDraft, { type: "keep" }],
   ] as const)("%s", (id, model, action) => {

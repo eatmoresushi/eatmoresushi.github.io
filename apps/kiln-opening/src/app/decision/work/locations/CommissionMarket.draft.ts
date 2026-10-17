@@ -1,130 +1,66 @@
 /**
- * The Commission Market sub-draft (UI_V1.6.1_ARCHITECTURE §3.4; wireframe `subEditor`
- * commission_market). Owner: B4.
+ * The Commission Market sub-draft (UI_V1.6.1_ARCHITECTURE §3.4; v1.6.2 L189–200). Owner: B4.
  *
- * The first reservation is part of the placement: a face-up Order (its display position and the
- * resource gained after it), a blind reservation, or — Shifu effect — a private look at the top
- * of the deck. Every choice comes from `commissionOptions(view, effect)`; the gain is one of the
- * three resources (L197). Later reservations, the look's choice and a blind reservation's gain
- * are the `commission` window (`CommissionStep`).
+ * Nothing to choose at placement: the worker always looks first (INT Commission Market looks).
+ * The Apprentice effect looks privately at the top 2 Main Orders and reserves 1 from the display
+ * or those 2; the Shifu effect (Senior Apprentice included, R12) looks at the top 3 and reserves
+ * up to 2 (at least 1) from the display and those 3. There is no resource and no blind
+ * reservation. The reservations are the `commission` window's (`CommissionStep`), once the look
+ * is open. What the look will show comes from `commissionOptions(view, effect)`: the look size,
+ * how many cards it will actually show (fewer when the deck runs short, B1, R16) and the
+ * reservation limit, all public facts.
  */
-import { commissionOptions, placementLimits } from "../../../../game/index.ts";
-import type { CommissionOptions, OrderId, ResourceKind } from "../../../../game/index.ts";
+import { commissionOptions } from "../../../../game/index.ts";
+import type { CommissionOptions } from "../../../../game/index.ts";
 import { msg } from "../../../i18n/translator.ts";
 import type { MessageParam } from "../../../i18n/translator.ts";
-import { keepIfSame, viewMemo } from "../context.ts";
+import { viewMemo } from "../context.ts";
 import type { LocationDraftModel, PlacementCommandOf, PlacementContext } from "./editor.ts";
-import { RESOURCE_ORDER, amountText } from "./shared.ts";
-
-/** `slot:<i>`, `blind` or `look`. */
-export type CommissionFirstKey = `slot:${number}` | "blind" | "look";
 
 export interface CommissionMarketDraft {
-  readonly first: CommissionFirstKey | null;
-  readonly gain: ResourceKind | null;
+  readonly placed: true;
 }
 
-export type CommissionMarketAction =
-  | { readonly type: "first"; readonly first: CommissionFirstKey }
-  | { readonly type: "gain"; readonly gain: ResourceKind };
+export type CommissionMarketAction = never;
 
 export interface CommissionMarketOptions {
-  /** Face-up display positions that may be reserved, with their Orders. */
-  slots: ReadonlyArray<{ key: CommissionFirstKey; slotIndex: number; orderId: OrderId }>;
-  blind: boolean;
-  look: boolean;
-  /** Resources to gain after a face-up reservation, and how many. */
-  gains: readonly ResourceKind[];
-  gainAmount: number;
+  /** 2 (Apprentice effect) or 3 (Shifu effect). */
+  lookSize: number;
+  /** How many cards the look will show: the deck's top `lookSize`, or fewer (B1); 0 with both piles empty. */
+  lookCount: number;
+  /** 1, or 2 for the Shifu effect. */
   maxReservations: number;
-  /** Is the chosen first reservation a face-up one (which needs a gain now)? */
-  needsGain: boolean;
+  /** Display positions holding an Order now. */
+  faceUpCount: number;
 }
 
-const BLANK: CommissionMarketDraft = Object.freeze({ first: null, gain: null });
+const BLANK: CommissionMarketDraft = Object.freeze({ placed: true });
 
 function selectorOptions(context: PlacementContext): CommissionOptions {
   return viewMemo(context.view, `commissionOptions:${context.worker.effect}`, () => commissionOptions(context.view, context.worker.effect));
 }
 
-export function slotKey(slotIndex: number): CommissionFirstKey {
-  return `slot:${slotIndex}`;
-}
-
-function options(draft: CommissionMarketDraft, context: PlacementContext): CommissionMarketOptions {
-  const selector = selectorOptions(context);
-  const display = context.view.game.market.display;
-  const slots = selector.faceUpSlots.flatMap((slotIndex) => {
-    const orderId = display[slotIndex];
-    return orderId === null || orderId === undefined ? [] : [{ key: slotKey(slotIndex), slotIndex, orderId }];
-  });
+function command(context: PlacementContext): PlacementCommandOf<"commission_market"> {
   return {
-    slots,
-    blind: selector.blind,
-    look: selector.lookTopThree,
-    gains: RESOURCE_ORDER,
-    gainAmount: placementLimits(context.view, "commission_market", context.worker.effect).gainAfterEach,
-    maxReservations: selector.maxReservations,
-    needsGain: draft.first !== null && draft.first.startsWith("slot:"),
+    type: "PLACE_COMMISSION_MARKET",
+    workerId: context.worker.workerId,
+    ...(context.worker.seniorApprentice ? { seniorApprentice: true } : {}),
   };
-}
-
-function offered(first: CommissionFirstKey, available: CommissionMarketOptions): boolean {
-  if (first === "blind") return available.blind;
-  if (first === "look") return available.look;
-  return available.slots.some((slot) => slot.key === first);
-}
-
-function revalidate(draft: CommissionMarketDraft, context: PlacementContext): CommissionMarketDraft {
-  const available = options(draft, context);
-  const first = draft.first !== null && offered(draft.first, available) ? draft.first : null;
-  const gain = draft.gain !== null && available.gains.includes(draft.gain) ? draft.gain : null;
-  return keepIfSame(draft, { first, gain });
-}
-
-function command(draft: CommissionMarketDraft, context: PlacementContext): PlacementCommandOf<"commission_market"> | null {
-  const senior = context.worker.seniorApprentice ? { seniorApprentice: true } : {};
-  const base = { type: "PLACE_COMMISSION_MARKET" as const, workerId: context.worker.workerId, ...senior };
-  if (draft.first === "blind") return { ...base, first: { kind: "blind" } };
-  if (draft.first === "look") return { ...base, first: { kind: "look_top_three" } };
-  if (draft.first === null || draft.gain === null) return null;
-  const slot = options(draft, context).slots.find((candidate) => candidate.key === draft.first);
-  if (slot === undefined) return null;
-  return { ...base, first: { kind: "face_up", slotIndex: slot.slotIndex, orderId: slot.orderId, gain: draft.gain } };
 }
 
 export const commissionMarketDraft: LocationDraftModel<"commission_market", CommissionMarketDraft, CommissionMarketAction, CommissionMarketOptions> = {
   locationId: "commission_market",
   blank: () => BLANK,
-  prepare: (draft, context) => revalidate(draft, context),
-  reduce(draft, action, context) {
-    switch (action.type) {
-      case "revalidate":
-        return revalidate(draft, context);
-      case "first":
-        // A choice the options do not offer is ignored; the current one stays.
-        return offered(action.first, options(draft, context)) ? revalidate({ ...draft, first: action.first }, context) : draft;
-      case "gain":
-        return options(draft, context).gains.includes(action.gain) ? revalidate({ ...draft, gain: action.gain }, context) : draft;
-    }
+  prepare: (draft) => draft,
+  reduce: (draft) => draft,
+  options(_draft, context) {
+    const selector = selectorOptions(context);
+    return { lookSize: selector.lookSize, lookCount: selector.lookCount, maxReservations: selector.maxReservations, faceUpCount: selector.faceUpSlots.length };
   },
-  options,
-  build: (draft, context) => command(draft, context),
-  fromCommand(cmd, context) {
-    const first = cmd.first;
-    if (first.kind === "blind") return { first: "blind", gain: null };
-    if (first.kind === "look_top_three") return { first: "look", gain: null };
-    if (context.view.game.market.display[first.slotIndex] !== first.orderId) return null;
-    return { first: slotKey(first.slotIndex), gain: first.gain };
-  },
-  detail(draft, context): MessageParam | null {
-    if (draft.first === "blind") return msg("work.cm.detailBlind");
-    if (draft.first === "look") return msg("work.cm.detailLook");
-    if (draft.first === null || draft.gain === null) return null;
-    const slot = options(draft, context).slots.find((candidate) => candidate.key === draft.first);
-    if (slot === undefined) return null;
-    const gain = draft.gain;
-    const amount = placementLimits(context.view, "commission_market", context.worker.effect).gainAfterEach;
-    return msg("work.cm.detailSlot", { order: slot.orderId, amount: (t) => amountText(t, gain, amount) });
+  build: (_draft, context) => command(context),
+  fromCommand: () => BLANK,
+  detail(_draft, context): MessageParam | null {
+    const lookCount = selectorOptions(context).lookCount;
+    return lookCount === 0 ? null : msg("work.cm.detailLook", { n: lookCount });
   },
 };

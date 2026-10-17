@@ -19,11 +19,12 @@
  * Every game must reach `finalResult`, and every command a form sends must be accepted by the
  * engine. `KILN_UI_FUZZ_GAMES` plays more games per player count (like `test:fuzz:long`).
  *
- * A steered game also reaches the optional abilities a random autopilot rarely meets — Canal
- * Barge, Protective Saggars, Ge's Crackle and Kiln Master — through their real form controls: a
- * short preference list (Ge at Kiln selection, the Guild Hall and those Techs when offered, then
- * the ability's own option) is tried once per decision before the autopilot's own pick. The forms
- * still build every command, and the engine still accepts each one.
+ * A steered game also reaches the optional abilities a random autopilot rarely meets — the
+ * Colour Samples swap, Protective Saggars, Second Firing's choice, Ge's Crackle and Kiln Master —
+ * through their real form controls: a short preference list (Ge at Kiln selection, the Guild Hall
+ * and those Techs when offered, then the ability's own option) is tried once per decision before
+ * the autopilot's own pick. The forms still build every command, and the engine still accepts
+ * each one.
  */
 import { act } from "react";
 import { createRoot } from "react-dom/client";
@@ -143,7 +144,7 @@ interface GameReport {
 function abilitiesUsed(report: GameReport): Set<string> {
   const used = new Set<string>();
   for (const { command } of report.sent) {
-    if (command.type === "USE_CANAL_BARGE" || command.type === "USE_PROTECTIVE_SAGGARS" || command.type === "USE_GE_CRACKLE") used.add(command.type);
+    if (command.type === "USE_COLOUR_SAMPLES_SWAP" || command.type === "USE_PROTECTIVE_SAGGARS" || command.type === "USE_GE_CRACKLE" || command.type === "SECOND_FIRING_CHOOSE") used.add(command.type);
     if (command.type === "RESOLVE_HEAT_MARKERS" && command.kilnMaster !== undefined) used.add("RESOLVE_HEAT_MARKERS.kilnMaster");
   }
   return used;
@@ -156,18 +157,21 @@ function abilitiesUsed(report: GameReport): Set<string> {
  */
 const ABILITY_PREFERENCES: readonly string[] = [
   'input[name="kilnId"][value="GE"]',
-  // Before the worker action the pane is hidden: Canal Barge is opened from above the world.
-  '[data-pane-opener="canal_barge"]',
-  'input[name="mode"][value="canal_barge"]',
+  // Before the worker action the pane is hidden: the Colour Samples swap is opened from above the world.
+  '[data-pane-opener="colour_samples_swap"]',
+  'input[name="mode"][value="colour_samples_swap"]',
   'input[name="afterQuality"][value^="protective_saggars:"]',
+  'input[name="afterQuality"][value^="second_firing:"]',
   'input[name="afterQuality"][value^="ge_crackle:"]',
   'input[name="kilnMasterCeramicId"]:not([value="none"])',
-  'input[name="take"][value="T23"]',
+  'input[name="take"][value="T10"]',
   'input[name="take"][value="T11"]',
+  'input[name="take"][value="T14"]',
   'input[name="take"][value="T24"]',
   // The Guild Hall's Tech is chosen on the Tech display, the placement on the table (2026-10-17).
-  '[data-act="tech"][data-tech-id="T23"]',
+  '[data-act="tech"][data-tech-id="T10"]',
   '[data-act="tech"][data-tech-id="T11"]',
+  '[data-act="tech"][data-tech-id="T14"]',
   '[data-act="tech"][data-tech-id="T24"]',
   '[data-act="place"][data-location-id="guild_hall"][data-worker="apprentice"]',
 ];
@@ -304,6 +308,9 @@ describe("full games played only through the decision forms (§9.4)", () => {
       "PLACE_GUILD_HALL",
       "PLACE_CANAL_WHARF",
       "PLACE_MAGISTRATES_HALL",
+      // V1.6.2: the Commission Market's reservation after its look, and the Guild Hall Shifu's takes.
+      "COMMISSION_CHOOSE",
+      "GUILD_TAKE",
       "SUBMIT_CONTRIBUTION",
       "COMPLETE_ORDER",
       "DISCARD_TO_HAND_LIMIT",
@@ -314,13 +321,21 @@ describe("full games played only through the decision forms (§9.4)", () => {
 });
 
 describe("steered games reach the optional abilities through their forms", () => {
-  // Seeds found by playing steered games (3 and 4 players, seeds 5000–5059, after the work turn's
-  // pane was hidden until a placement is chosen, 2026-10-17): together they use all four.
-  const steered = [
-    [4, 5_022],
-    [4, 5_049],
-    [3, 5_039],
-  ] as const;
+  // Seeds found by playing steered games under V1.6.2 (3 and 4 players, seeds 5000–5009 and the
+  // V1.6.1 set): together they use all five.
+  // `KILN_UI_STEER_SEEDS="4:5000,3:5001"` plays other steered games (to search for seeds).
+  const override = process.env["KILN_UI_STEER_SEEDS"];
+  const steered: ReadonlyArray<readonly [2 | 3 | 4, number]> =
+    override === undefined
+      ? [
+          [4, 5_022],
+          [3, 5_005],
+          [3, 5_001],
+        ]
+      : override.split(",").map((pair) => {
+          const [players, seed] = pair.split(":").map(Number);
+          return [players as 2 | 3 | 4, seed as number] as const;
+        });
   const used = new Set<string>();
 
   it.each(steered)("%i players (seed %i)", async (players, seed) => {
@@ -335,7 +350,8 @@ describe("steered games reach the optional abilities through their forms", () =>
     }
   }, 600_000);
 
-  it("together, Canal Barge, Protective Saggars, Ge's Crackle and Kiln Master were sent from their forms", () => {
-    expect([...used].sort()).toEqual(["RESOLVE_HEAT_MARKERS.kilnMaster", "USE_CANAL_BARGE", "USE_GE_CRACKLE", "USE_PROTECTIVE_SAGGARS"]);
+  it("together, the Colour Samples swap, Protective Saggars, Second Firing's choice, Ge's Crackle and Kiln Master were sent from their forms", () => {
+    if (override !== undefined) return;
+    expect([...used].sort()).toEqual(["RESOLVE_HEAT_MARKERS.kilnMaster", "SECOND_FIRING_CHOOSE", "USE_COLOUR_SAMPLES_SWAP", "USE_GE_CRACKLE", "USE_PROTECTIVE_SAGGARS"]);
   });
 });

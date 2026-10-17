@@ -21,10 +21,11 @@ const resultOf = (id: string): FinalResult => {
 const nameOf = (id: string, playerId: string) => fixture(id).playerView.game.players[playerId]?.displayName ?? "";
 
 describe("podium", () => {
-  it("m8: a shared victory names both winners and ranks the rest", () => {
-    const result = resultOf("m8_final_results_3p");
+  it("a shared victory names both winners and ranks the rest", () => {
+    const id = "d-final-shared-victory";
+    const result = resultOf(id);
     expect(result.resolvedBy).toBe("shared_victory");
-    const html = render("m8_final_results_3p");
+    const html = render(id);
     const podium = elementAt(html, /<ol class="podium"/);
     expect(podium.match(/class="stand stand--win"/g)).toHaveLength(result.winnerIds.length);
     expect(perceivable(podium).match(/Shared victory/g)).toHaveLength(2);
@@ -32,9 +33,11 @@ describe("podium", () => {
     expect(perceivable(podium)).toContain("Rank 3");
     expect(perceivable(podium)).toMatch(new RegExp(`${String(third.total)}\\s+VP`));
     expect(perceivable(html)).toContain("Tied on total VP and every tie-breaker: the victory is shared.");
-    const zh = render("m8_final_results_3p", "zh-CN");
+    const zh = render(id, "zh-CN");
     expect(perceivable(zh)).toContain("共享胜利");
     expect(perceivable(zh)).toContain("第3名");
+    // m8 (V1.6.2's seed-2 game) is a single winner decided by Imperial Recognition.
+    expect(resultOf("m8_final_results_4p").resolvedBy).toBe("imperial_recognition");
   });
 
   it("the tie-break winner: one Winner, decided by Imperial Recognition", () => {
@@ -47,9 +50,9 @@ describe("podium", () => {
   });
 
   it("opens each player's Kiln rules details from the podium (D10)", () => {
-    const view = fixture("m8_final_results_3p").playerView;
-    const html = render("m8_final_results_3p");
-    for (const standing of resultOf("m8_final_results_3p").standings) {
+    const view = fixture("m8_final_results_4p").playerView;
+    const html = render("m8_final_results_4p");
+    for (const standing of resultOf("m8_final_results_4p").standings) {
       const kilnId = view.game.players[standing.playerId]?.kilnId;
       if (kilnId === null || kilnId === undefined) continue;
       const card = elementAt(html, new RegExp(`<li class="stand[^"]*"[^>]*data-player-id="${standing.playerId}"`));
@@ -59,7 +62,7 @@ describe("podium", () => {
 });
 
 describe("score table", () => {
-  it.each(["m8_final_results_3p", "t-tie-break-winner", "t-final-2p", "t-final-4p"])("%s: rows in SCORE_BREAKDOWN_ROWS order, columns by standing, totals from finalResult", (id) => {
+  it.each(["m8_final_results_4p", "t-tie-break-winner", "t-final-2p", "t-final-4p"])("%s: rows in SCORE_BREAKDOWN_ROWS order, columns by standing, totals from finalResult", (id) => {
     const result = resultOf(id);
     const html = render(id);
     const table = elementAt(html, /<table class="calc score">/);
@@ -79,15 +82,15 @@ describe("score table", () => {
   });
 
   it("lists the Tech row (amendment A1) once with its note, and never adds it again", () => {
-    const result = resultOf("m8_final_results_3p");
-    const html = render("m8_final_results_3p");
+    const result = resultOf("m8_final_results_4p");
+    const html = render("m8_final_results_4p");
     const row = elementAt(html, /<tr data-row="techs">/);
     expect(perceivable(row)).toContain("Techs · 1 VP each when gained");
     for (const standing of result.standings) {
       expect(row).toContain(`<td class="score-a1 num">${String(result.scores[standing.playerId]!.techs)}</td>`);
     }
     expect(perceivable(html)).toContain("Each Tech scored 1 VP when it was gained. It is listed here once and never added again at game end.");
-    const zh = render("m8_final_results_3p", "zh-CN");
+    const zh = render("m8_final_results_4p", "zh-CN");
     expect(perceivable(zh)).toContain("技艺分 · 习得时得1分");
     expect(perceivable(zh)).toContain("每项技艺在习得时已得1分；这里只列出一次，终局不再另计。");
     expect(perceivable(zh)).toContain("余钱折分 · 每3铜钱1分，至多5分");
@@ -101,8 +104,8 @@ describe("score table", () => {
   });
 
   it("splits the Exhibition into its Quality, Shapes and Glazes parts", () => {
-    const result = resultOf("m8_final_results_3p");
-    const html = render("m8_final_results_3p");
+    const result = resultOf("m8_final_results_4p");
+    const html = render("m8_final_results_4p");
     const row = elementAt(html, /<tr data-row="exhibition">/);
     for (const standing of result.standings) {
       const exhibition = result.scores[standing.playerId]!.exhibition;
@@ -112,7 +115,7 @@ describe("score table", () => {
   });
 
   it("opens the Imperial Audience, Crown overflow and Connoisseur's Cabinet rules details under the table (D10)", () => {
-    const html = render("m8_final_results_3p");
+    const html = render("m8_final_results_4p");
     // The table scrolls inside itself, so no rules panel (or other disclosure) sits in it.
     expect(elementAt(html, /<div class="calc-wrap"/)).not.toContain("kit-detail");
     // The tables scroll inside their box on phones, so the box takes keyboard focus.
@@ -125,7 +128,7 @@ describe("score table", () => {
     expect(perceivable(overflow)).toContain("Tribute Ware's bonus Crown scores past Recognition 4");
     tagged(elementAt(html, /<li data-rules-row="connoisseur">/), techRulesCheck("T19", "en"));
     expect(perceivable(html)).toContain("Rules for these rows:");
-    const zh = render("m8_final_results_3p", "zh-CN");
+    const zh = render("m8_final_results_4p", "zh-CN");
     expect(perceivable(zh)).toContain("相关规则：");
     tagged(elementAt(zh, /<li data-rules-row="connoisseur">/), techRulesCheck("T19", "zh-CN"));
   });
@@ -139,7 +142,7 @@ describe("tie-breakers", () => {
     expect(rows).toEqual([...TIE_BREAK_ORDER.map((step) => step.key), "shared_victory"]);
     expect(table).toMatch(/<tr class="tie-decisive" data-tie="recognition">/);
     expect(perceivable(table)).toContain("(decided the winner)");
-    const shared = render("m8_final_results_3p");
+    const shared = render("d-final-shared-victory");
     const sharedTable = shared.slice(shared.indexOf('id="results-tie-title"'));
     expect(sharedTable).toMatch(/<tr class="tie-decisive" data-tie="shared_victory">/);
     expect(perceivable(sharedTable)).toMatch(/Tied: \w+/);
@@ -148,7 +151,7 @@ describe("tie-breakers", () => {
 
 describe("in the game screen", () => {
   it("is the first section once the game is finished, and absent before", () => {
-    const html = renderScreen(fixtureSource("m8_final_results_3p"));
+    const html = renderScreen(fixtureSource("m8_final_results_4p"));
     expect(/<section id="sec-(\w+)"/.exec(html)?.[1]).toBe("results");
     expect(renderScreen(fixtureSource("m1_work_phase_r2_3p"))).not.toContain('class="podium"');
   });

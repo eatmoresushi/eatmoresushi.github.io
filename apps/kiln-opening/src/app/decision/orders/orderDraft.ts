@@ -8,7 +8,7 @@
  * The completion itself is the shared model of `orderCompletion.ts`.
  */
 import { completableOrders } from "../../../game/index.ts";
-import type { CeramicId } from "../../../game/index.ts";
+import type { CeramicId, Decoration } from "../../../game/index.ts";
 import type { Translator } from "../../i18n/translator.ts";
 import { msg } from "../../i18n/translator.ts";
 import { list } from "../../i18n/format.ts";
@@ -21,7 +21,7 @@ import {
   buildCompletion,
   completionFromCommand,
   completionOptions,
-  declaredDecoration,
+  countedDecorations,
   reduceCompletion,
   settleCompletion,
 } from "./orderCompletion.ts";
@@ -43,14 +43,17 @@ function withEnd(completion: CompletionDraft, end: boolean, previous: OrderDraft
   return { ...completion, end };
 }
 
-/** "Lin's Celadon Bowl, Plain · Fine (as Painted); …": the group in words, with declarations. */
-export function groupWords(model: GameModel, engine: EngineView, draft: CompletionDraft, ceramicIds: readonly CeramicId[], t: Translator): string {
+/**
+ * "Celadon Vase, Plain · Fine · Crackle (as Carved), …": the group in words, with the Decoration
+ * each Crackle ceramic counts as when it is not its own (`countedDecorations`).
+ */
+export function groupWords(model: GameModel, engine: EngineView, ceramicIds: readonly CeramicId[], counted: ReadonlyMap<CeramicId, Decoration>, t: Translator): string {
   const mine = model.me?.finishedCeramicIds ?? [];
   return list(
     ceramicIds.map((ceramicId) => {
       const words = ceramicWords(model, engine, ceramicId, t, mine);
-      const declared = declaredDecoration(draft, ceramicId);
-      return declared === null ? words : t("orders.ceramicAs", { ceramic: words, decoration: decorationName(declared, t.locale) });
+      const as = counted.get(ceramicId);
+      return as === undefined ? words : t("orders.ceramicAs", { ceramic: words, decoration: decorationName(as, t.locale) });
     }),
     t.locale,
   );
@@ -85,6 +88,7 @@ export const orderDraft: DraftModel<OrderDraft, OrderAction, CompletionOptions> 
     const { orderId, ceramicIds } = draft;
     if (orderId === null) return msg("orders.turn.pick");
     if (ceramicIds === null) return msg("orders.turn.pickGroup");
-    return msg("orders.turn.sum", { order: orderId, ceramics: (t) => groupWords(model, engine, draft, ceramicIds, t) });
+    const counted = countedDecorations(draft, completionOptions(draft, engine, COMPLETABLE), engine);
+    return msg("orders.turn.sum", { order: orderId, ceramics: (t) => groupWords(model, engine, ceramicIds, counted, t) });
   },
 };

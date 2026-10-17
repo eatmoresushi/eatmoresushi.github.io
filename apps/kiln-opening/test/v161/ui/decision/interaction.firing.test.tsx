@@ -5,29 +5,27 @@
  *   clipping edge the panel takes the roomier side and is capped to the room there.
  * - The Order Phase form: choosing an Order with one group preselects it; Confirm sends
  *   `COMPLETE_ORDER`; the alternative sends `END_ORDER_TURN`.
- * - The Canal Barge form: composed by the work window (B4's `CanalBargeFormProvider`), it edits
- *   the work draft's sub-draft and the window's Confirm sends `USE_CANAL_BARGE`; standalone, its
- *   own button sends it once an Order is chosen, and never before.
+ * - Second Firing's choice (v1.6.2 L631): a revealed card and R7's Jun side; Confirm sends
+ *   `SECOND_FIRING_CHOOSE`; Clear forgets both; a rejection reads in the engine's words.
+ * - Contributions with Fuel Ledger (v1.6.2 L637): the commitment for Bank and Stoke only, and
+ *   the free Bank without it.
+ * - After-Quality: Protective Saggars' Standard → Fine with Confirm; "Done" declines (R4).
  * - The hand trim: a table click on an Order card toggles it in the pane synchronously.
  * - A language switch keeps the draft and re-renders the ConfirmBar summary.
  */
-import { act, useState } from "react";
+import { act } from "react";
 import type { ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { KILNS } from "../../../../src/game/index.ts";
 import { DecisionPane } from "../../../../src/app/decision/DecisionPane.tsx";
-import { CanalBarge } from "../../../../src/app/decision/orders/CanalBarge.tsx";
-import { canalBargeDraft } from "../../../../src/app/decision/orders/canalBargeDraft.ts";
-import type { CanalBargeAction, CanalBargeDraft } from "../../../../src/app/decision/orders/canalBargeDraft.ts";
-import { CanalBargeFormProvider } from "../../../../src/app/decision/work/composedForms.tsx";
 import { WINDOWS } from "../../../../src/app/decision/windows.ts";
 import { I18nProvider } from "../../../../src/app/i18n/I18nProvider.tsx";
 import { kilnText } from "../../../../src/app/i18n/content.ts";
 import { LanguageToggle } from "../../../../src/app/kit/LanguageToggle.tsx";
 import { DraftStore } from "../../../../src/app/state/draftStore.ts";
-import { GameProvider, useEngineView, useGame, useTableSelection } from "../../../../src/app/state/hooks.ts";
+import { GameProvider, useTableSelection } from "../../../../src/app/state/hooks.ts";
 import { fixedLayoutSource } from "../../../../src/app/state/layoutMode.ts";
 import { UiStore } from "../../../../src/app/state/uiStore.ts";
 import { ControlledSource } from "../support/controlledSource.ts";
@@ -133,11 +131,11 @@ describe("the Order Phase form", () => {
     const source = new ControlledSource("m6_order_phase_crackle_3p");
     mount(source, <DecisionPane />);
     expect($('[data-action="confirm"]').getAttribute("aria-disabled")).toBe("true");
-    click($('input[name="orderId"][value="O05"]'));
-    expect($<HTMLInputElement>('input[name="ceramicIds"][value="c20"]').checked).toBe(true);
-    expect($(".confirm-summary").textContent).toBe("Complete O05 with Moon White Censer, Carved · Fine");
+    click($('input[name="orderId"][value="O30"]'));
+    expect($<HTMLInputElement>('input[name="ceramicIds"][value="c6+c16"]').checked).toBe(true);
+    expect($(".confirm-summary").textContent).toBe("Complete O30 with White Bowl, Plain · Masterpiece, Moon White Brush Washer, Plain · Masterpiece");
     click($('[data-action="confirm"]'));
-    expect(source.submitted.at(-1)).toEqual({ type: "COMPLETE_ORDER", orderId: "O05", ceramicIds: ["c20"] });
+    expect(source.submitted.at(-1)).toEqual({ type: "COMPLETE_ORDER", orderId: "O30", ceramicIds: ["c6", "c16"] });
     await act(async () => source.answer({ reject: null }));
     click($('[data-action="alt"]'));
     expect(source.submitted.at(-1)).toEqual({ type: "END_ORDER_TURN" });
@@ -145,7 +143,7 @@ describe("the Order Phase form", () => {
 
   it("a blocked Order cannot be chosen", () => {
     mount(new ControlledSource("m6_order_phase_crackle_3p"), <DecisionPane />);
-    const blocked = $<HTMLInputElement>('input[name="orderId"][value="O37"]');
+    const blocked = $<HTMLInputElement>('input[name="orderId"][value="O48"]');
     expect(blocked.getAttribute("aria-disabled")).toBe("true");
     click(blocked);
     expect(blocked.checked).toBe(false);
@@ -153,74 +151,100 @@ describe("the Order Phase form", () => {
   });
 });
 
-/** A stand-in for B4's work draft: holds the Canal Barge sub-draft and records each action. */
-function ComposedHarness({ actions }: { actions: CanalBargeAction[] }) {
-  const model = useGame();
-  const engine = useEngineView();
-  const [draft, setDraft] = useState<CanalBargeDraft>(() => canalBargeDraft.initial(model, engine));
-  return (
-    <CanalBargeFormProvider
-      value={{
-        source: "after_action",
-        draft,
-        options: canalBargeDraft.options(draft, model, engine),
-        dispatch: (action) => {
-          actions.push(action);
-          setDraft((current) => canalBargeDraft.reduce(current, action, model, engine));
-        },
-      }}
-    >
-      <CanalBarge source="after_action" />
-    </CanalBargeFormProvider>
-  );
-}
-
-describe("the Canal Barge form composed by the work window", () => {
-  it("edits the composed sub-draft, with the command's field names and no button of its own", () => {
-    const actions: CanalBargeAction[] = [];
-    const source = new ControlledSource("w-after-the-worker-action");
-    mount(source, <ComposedHarness actions={actions} />);
-    expect(container.querySelector('[data-form-action="canal-barge"]')).toBeNull();
-    expect(container.querySelector('input[name^="canalBarge."]')).toBeNull();
-    expect($(".ord-barge .rd-name").textContent).toBe("Canal Barge");
-    click($('input[name="orderId"][value="O01"]'));
-    expect(actions).toEqual([{ type: "order", orderId: "O01" }]);
-    expect($<HTMLInputElement>('input[name="orderId"][value="O01"]').checked).toBe(true);
-    expect($<HTMLInputElement>('input[name="ceramicIds"][value="c1"]').checked).toBe(true);
-    expect(source.submitted).toEqual([]);
+describe("Second Firing's choice (v1.6.2 L631, R7)", () => {
+  it("chooses a revealed card and Jun's side, and Confirm sends SECOND_FIRING_CHOOSE", () => {
+    const source = new ControlledSource("w-second-firing-choice-with-jun-r7");
+    mount(source, <DecisionPane />);
+    expect($('[data-action="confirm"]').getAttribute("aria-disabled")).toBe("true");
+    expect(container.querySelector('[data-action="alt"]')).toBeNull();
+    // Jun starts unused (R4): "Do not use" is the checked side.
+    expect($<HTMLInputElement>('input[name="jun"][value="none"]').checked).toBe(true);
+    click($('input[name="cardIndex"][value="1"]'));
+    expect($<HTMLInputElement>('input[name="cardIndex"][value="1"]').checked).toBe(true);
+    expect($(".confirm-summary").textContent).toMatch(/^Fire .+ again with Fire card −1$/);
+    click($('input[name="jun"][value="1"]'));
+    expect($(".confirm-summary").textContent).toMatch(/then Kiln Transformation \+1 for 1 Wood$/);
+    click($('[data-action="confirm"]'));
+    expect(source.submitted).toEqual([{ type: "SECOND_FIRING_CHOOSE", cardIndex: 1, jun: { delta: 1 } }]);
   });
 
-  it("in the after-action window, Confirm sends the composed USE_CANAL_BARGE", () => {
-    const source = new ControlledSource("w-after-the-worker-action");
+  it("without Jun ready, only the card is chosen", () => {
+    const source = new ControlledSource("m18_jun_second_firing");
     mount(source, <DecisionPane />);
-    const mode = container.querySelector<HTMLInputElement>('input[name="mode"][value="canal_barge"]');
-    expect(mode, "B4 offers Canal Barge after the action").not.toBeNull();
-    click(mode!);
-    expect(container.querySelector('[data-form-action="canal-barge"]')).toBeNull();
-    click($('input[name="orderId"][value="O01"]'));
-    expect($(".confirm-summary").textContent).toContain("O01");
+    expect(container.querySelector('input[name="jun"]')).toBeNull();
+    click($('input[name="cardIndex"][value="0"]'));
     click($('[data-action="confirm"]'));
-    expect(source.submitted).toEqual([{ type: "USE_CANAL_BARGE", orderId: "O01", ceramicIds: ["c1"] }]);
+    expect(source.submitted).toEqual([{ type: "SECOND_FIRING_CHOOSE", cardIndex: 0, jun: null }]);
   });
 });
 
-describe("the standalone Canal Barge form", () => {
-  it("sends USE_CANAL_BARGE from its own button once an Order is chosen", () => {
-    const source = new ControlledSource("w-after-the-worker-action");
-    mount(source, <CanalBarge source="after_action" />);
-    const button = $<HTMLButtonElement>('[data-form-action="canal-barge"]');
-    expect(button.getAttribute("aria-disabled")).toBe("true");
-    click(button);
-    expect(source.submitted).toEqual([]);
-    click($('input[name="canalBarge.orderId"][value="O01"]'));
-    expect($<HTMLButtonElement>('[data-form-action="canal-barge"]').getAttribute("aria-disabled")).toBeNull();
-    click($('[data-form-action="canal-barge"]'));
-    expect(source.submitted).toEqual([{ type: "USE_CANAL_BARGE", orderId: "O01", ceramicIds: ["c1"] }]);
+describe("Second Firing: Clear and a server rejection in the player's words", () => {
+  it("Clear forgets the card and Jun; a rejection shows the engine's text in English and Chinese", () => {
+    const source = new ControlledSource("w-second-firing-choice-with-jun-r7");
+    mount(source, <DecisionPane />);
+    click($('input[name="cardIndex"][value="0"]'));
+    click($('input[name="jun"][value="-1"]'));
+    const clear = [...container.querySelectorAll("button")].find((button) => button.textContent === "Clear");
+    expect(clear).toBeDefined();
+    click(clear!);
+    expect($<HTMLInputElement>('input[name="cardIndex"][value="0"]').checked).toBe(false);
+    expect($<HTMLInputElement>('input[name="jun"][value="none"]').checked).toBe(true);
+    expect($(".confirm-summary").textContent).toBe("Choose one of the Fire cards.");
+    click($('input[name="cardIndex"][value="1"]'));
+    click($('input[name="jun"][value="1"]'));
+    click($('[data-action="confirm"]'));
+    expect(source.submitted).toEqual([{ type: "SECOND_FIRING_CHOOSE", cardIndex: 1, jun: { delta: 1 } }]);
+    act(() => source.answer({ reject: { kind: "rule", error: { code: "INSUFFICIENT_RESOURCES", message: "", details: { resource: "wood", needed: 1, have: 0 } } } }));
+    expect($(".confirm-error").textContent).toBe("Not enough Wood: you need 1 and have 0.");
+  });
+});
+
+describe("Contributions with Fuel Ledger (v1.6.2 L637)", () => {
+  it("the commitment applies to Bank and Stoke only; Confirm sends the secret card with it", () => {
+    const source = new ControlledSource("w-secret-contributions-with-fuel-ledger");
+    mount(source, <DecisionPane />);
+    const tend = () => $<HTMLInputElement>('input[name="card"][value="TEND"]');
+    click(tend());
+    expect(tend().checked).toBe(true);
+    click($('input[name="fuelLedger"]'));
+    expect($<HTMLInputElement>('input[name="fuelLedger"]').checked).toBe(true);
+    // Tend cannot take the commitment: it is greyed out with the reason and dropped.
+    expect(tend().getAttribute("aria-disabled")).toBe("true");
+    expect(tend().checked).toBe(false);
+    expect(document.getElementById(tend().getAttribute("aria-describedby")!.split(" ")[0]!)?.textContent).toBe("Only with Bank the Fire or Stoke the Fire.");
+    click(tend());
+    expect(tend().checked).toBe(false);
+    click($('input[name="card"][value="STOKE"]'));
+    expect($(".confirm-summary").textContent).toBe("Submit Stoke the Fire with Fuel Ledger in secret: Heat +2, 1 Wood at reveal");
+    click($('[data-action="confirm"]'));
+    expect(source.submitted).toEqual([{ type: "SUBMIT_CONTRIBUTION", windowId: "test-game:r1:contributions", card: "STOKE", fuelLedger: true }]);
   });
 
-  it("renders nothing for a player without Canal Barge", () => {
-    mount(new ControlledSource("m1_work_phase_r2_3p"), <CanalBarge source="before_action" />);
-    expect(container.innerHTML).toBe("");
+  it("without the commitment, Bank costs no Wood", () => {
+    const source = new ControlledSource("w-secret-contributions-with-fuel-ledger");
+    mount(source, <DecisionPane />);
+    click($('input[name="card"][value="BANK"]'));
+    expect($(".confirm-summary").textContent).toBe("Submit Bank the Fire in secret: Heat −1, no Wood");
+    click($('[data-action="confirm"]'));
+    expect(source.submitted).toEqual([{ type: "SUBMIT_CONTRIBUTION", windowId: "test-game:r1:contributions", card: "BANK", fuelLedger: false }]);
+  });
+});
+
+describe("after-Quality: Protective Saggars (v1.6.2 L628, R4)", () => {
+  it("turns a Standard ceramic Fine with Confirm, or declines with the alternative", () => {
+    const source = new ControlledSource("w-after-quality-saggars-and-ge");
+    mount(source, <DecisionPane />);
+    click($('input[name="afterQuality"][value="protective_saggars:c2"]'));
+    expect($(".confirm-summary").textContent).toBe("Use Protective Saggars: Moon White Plate, Plain · Standard becomes Fine");
+    click($('[data-action="confirm"]'));
+    expect(source.submitted).toEqual([{ type: "USE_PROTECTIVE_SAGGARS", ceramicId: "c2" }]);
+    const other = new ControlledSource("w-after-quality-saggars-and-ge");
+    act(() => root.unmount());
+    root = createRoot(container);
+    mount(other, <DecisionPane />);
+    expect($('[data-action="alt"]').textContent).toBe("Done — decline the rest");
+    click($('[data-action="alt"]'));
+    expect(other.submitted).toEqual([{ type: "END_AFTER_QUALITY" }]);
   });
 });
 

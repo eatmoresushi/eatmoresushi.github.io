@@ -1,11 +1,11 @@
 /**
  * MaterialsYard (UI_V1.6.1_ARCHITECTURE §3.4; wireframe `subEditor` materials_yard). Owner: B4.
  *
- * The Clay/Wood split as radio pills (no split is pre-selected), the Shifu effect's bonus, and
- * Prepared Clay (T17) with its Shape and Decoration from the selector's legal pairs. Renders only
+ * The Clay/Wood split as radio pills (no split is pre-selected) and Prepared Clay (T17) with its
+ * Shape and Decoration from the selector's legal pairs. Renders only
  * from `options`; the delta row shows the engine quote's outcome.
  */
-import { decorationName, shapeName, techName, workerKindName } from "../../../i18n/content.ts";
+import { decorationName, shapeName, techName } from "../../../i18n/content.ts";
 import { useT } from "../../../i18n/I18nProvider.tsx";
 import { OptionCard } from "../../../kit/OptionCard.tsx";
 import { OptionGroup } from "../../../kit/OptionGroup.tsx";
@@ -13,14 +13,12 @@ import { FormNote, ResourceDelta, useRuleErrorText } from "../pieces.tsx";
 import { RulesDetail } from "../../../rules/RulesDetail.tsx";
 import type { MaterialsYardAction, MaterialsYardDraft, MaterialsYardOptions } from "./MaterialsYard.draft.ts";
 import type { LocationEditorProps } from "./editor.ts";
-import { amountsText } from "./shared.ts";
 
 export type MaterialsYardProps = LocationEditorProps<MaterialsYardDraft, MaterialsYardAction, MaterialsYardOptions>;
 
 export function MaterialsYard({ draft, options, dispatch, context }: MaterialsYardProps) {
   const t = useT();
   const errorText = useRuleErrorText();
-  const bonus = options.bonus;
   const prepared = options.preparedClay;
   const quote = options.quote;
   return (
@@ -36,18 +34,6 @@ export function MaterialsYard({ draft, options, dispatch, context }: MaterialsYa
           <OptionCard key={split.clay} variant="pill" value={String(split.clay)} title={t("work.my.splitOption", { clay: split.clay, wood: split.wood })} />
         ))}
       </OptionGroup>
-      {bonus === null ? null : (
-        <OptionCard
-          type="checkbox"
-          name="buyShifuBonus"
-          value="true"
-          checked={draft.bonus}
-          onChange={(_, checked) => dispatch({ type: "bonus", on: checked })}
-          disabled={!bonus.available}
-          reason={bonus.available || bonus.quote.error === null ? undefined : errorText(bonus.quote.error)}
-          title={t("work.my.bonus", { shifu: workerKindName("shifu", t.locale), pay: amountsText(t, bonus.pay), gain: amountsText(t, bonus.gain) })}
-        />
-      )}
       {prepared === null ? null : (
         <div className="b4-sub-block">
           <OptionCard

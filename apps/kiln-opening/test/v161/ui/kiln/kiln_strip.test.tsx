@@ -76,12 +76,14 @@ describe("the Kiln section strip: the Fire discard button (D4)", () => {
   });
 
   it("reads 'none yet' when nothing has been discarded", () => {
-    expect(fixture("m12_guild_shifu_inspection").playerView.game.fireDiscard).toEqual([]);
-    const { panel } = parts(render("m12_guild_shifu_inspection"));
+    // Round 1, before the first firing.
+    const id = "w-guild-hall-shifu-inspection";
+    expect(fixture(id).playerView.game.fireDiscard).toEqual([]);
+    const { panel } = parts(render(id));
     expect(perceivable(panel)).toContain("none yet");
     expect(panel).not.toContain("fdiscard-list");
     expect(panel).not.toContain("Oldest first");
-    expect(perceivable(parts(render("m12_guild_shifu_inspection", "zh-CN")).panel)).toContain("暂无");
+    expect(perceivable(parts(render(id, "zh-CN")).panel)).toContain("暂无");
   });
 
   it("shows no count of cards, on the button or anywhere in the strip", () => {

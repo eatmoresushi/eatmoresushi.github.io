@@ -248,6 +248,12 @@ export const RULE_NUMBERS = Object.freeze({
   salvageCoins: FIRING.salvageCoins,
   recognitionMax,
   overflowVpPerCrown: IMPERIAL_TRACK.overflowVpPerCrown,
+  /** Canal Barge's Coins on your first completed Order each round (T23, v1.6.2 L622). */
+  canalBargeCoins: TECHS.T23.params.coins,
+  /** The Colour Samples swap looks at this many Main Orders (T10, v1.6.2 L617). */
+  swapLookSize: TECHS.T10.params.swapLookSize,
+  /** Second Firing turns this many extra Fire cards face up (T14, v1.6.2 L631). */
+  secondFiringCards: TECHS.T14.params.extraCards,
 });
 
 export type RuleNumbers = typeof RULE_NUMBERS;

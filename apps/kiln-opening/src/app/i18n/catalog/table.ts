@@ -34,6 +34,7 @@ export const table = defineNamespace({
     "display.decks": "Main deck {deck} · discard {discard} (face down)",
     "display.slot": "#{n}",
     "display.emptyRefill": "Empty. Refills when <b>{name}</b>’s turn ends.",
+    "display.emptyRefillYou": "Empty. Refills when your turn ends.",
     "display.emptyNone": "Empty: no card to refill.",
 
     // Order cards (wireframe `orderCard`).
@@ -72,9 +73,12 @@ export const table = defineNamespace({
     // The Guild Hall chooser on the Tech display (owner review, 2026-10-17).
     "techs.chooseBuy": "{worker} at the {location}: choose a face-up Tech to buy",
     "techs.chooseInspect": "{worker} at the {location}: choose a discipline and inspect the top of its deck",
+    // The Shifu's inspection (the guild_inspection window): face-up Techs here, inspected ones in the pane.
+    "techs.chooseTake": "{worker} at the {location}: take a face-up Tech here, or one of the Techs you inspected",
+    "techs.chooseTakeSecond": "{worker} at the {location}: take a second Tech from another discipline, or stop",
     "techs.inspect": "Inspect the deck",
     "techs.inspectLabel": "Inspect the deck: {discipline} (only you see the cards)",
-    "techs.price": "{printed} → {price}",
+    "techs.emptySlot": "Empty until this turn ends",
 
     // Imperial Recognition track (wireframe `recognitionTrack`).
     "recognition.title": "Imperial Recognition",
@@ -110,6 +114,7 @@ export const table = defineNamespace({
     "display.decks": "主委托牌堆{deck}张 · 弃牌堆{discard}张（面朝下）",
     "display.slot": "#{n}",
     "display.emptyRefill": "空位：<b>{name}</b>的回合结束时补榜。",
+    "display.emptyRefillYou": "空位：你的回合结束时补榜。",
     "display.emptyNone": "空位：没有牌可补。",
 
     "order.kind.starting": "起始",
@@ -142,9 +147,11 @@ export const table = defineNamespace({
     "techs.looking": "{name}正在查看{n}张技艺",
     "techs.chooseBuy": "派{worker}到{location}：选择要习得的公开技艺",
     "techs.chooseInspect": "派{worker}到{location}：选择一个门类，查看其牌堆顶",
+    "techs.chooseTake": "{worker}在{location}：在这里习得一张公开技艺，或习得你所看的技艺",
+    "techs.chooseTakeSecond": "{worker}在{location}：再习得一项其他门类的技艺，或不再习得",
     "techs.inspect": "查看牌堆顶",
     "techs.inspectLabel": "查看牌堆顶：{discipline}（仅你可见）",
-    "techs.price": "{printed} → {price}",
+    "techs.emptySlot": "空着，本回合结束时补上",
 
     "recognition.title": "御府声望",
     "recognition.range": "{from}–{to}",

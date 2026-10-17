@@ -41,12 +41,22 @@ export interface KilnSpaceProps {
   spaceId: KilnSpaceId;
 }
 
-/** Second Firing's extra Fire card for a ceramic: the open R7 card, else the recorded one. */
-export function extraFireFor(model: GameModel, ceramicId: CeramicId): FireModifier | null {
+/**
+ * Second Firing's Fire cards for a ceramic (v1.6.2 L631): both revealed cards while the owner
+ * chooses, then the chosen one; null for a ceramic not fired again. All of them are face up on
+ * the table (public).
+ */
+export function extraFireFor(model: GameModel, ceramicId: CeramicId): readonly FireModifier[] | null {
   const stage = model.firingStage;
   if (stage === null) return null;
-  if (stage.extraFire !== null && stage.extraFire.ceramicId === ceramicId) return stage.extraFire.modifier;
-  return stage.ceramics.find((record) => record.id === ceramicId)?.secondFireModifier ?? null;
+  if (stage.extraFire !== null && stage.extraFire.ceramicId === ceramicId) return stage.extraFire.modifiers;
+  const chosen = stage.ceramics.find((record) => record.id === ceramicId)?.secondFireModifier ?? null;
+  return chosen === null ? null : [chosen];
+}
+
+/** Protective Saggars kept this ceramic Standard this firing instead of Flawed (v1.6.2 L636). */
+export function saggarsFloorFor(model: GameModel, ceramicId: CeramicId): boolean {
+  return model.firingStage?.ceramics.find((record) => record.id === ceramicId)?.saggarsFloor === true;
 }
 
 /** A ceramic the open decision would load (dashed): its picture when the model has it, else its Glaze. */
@@ -150,6 +160,7 @@ export function KilnSpace({ spaceId }: KilnSpaceProps) {
       ownerId={ceramic.ownerId}
       marker={ceramic.heatMarker}
       extraFire={extraFireFor(model, ceramic.id)}
+      saggarsFloor={saggarsFloorFor(model, ceramic.id)}
       compactQuality
       interactive={interactive}
     />

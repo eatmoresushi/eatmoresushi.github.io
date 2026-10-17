@@ -66,6 +66,7 @@ export const ANNOUNCED_EVENTS: ReadonlySet<GameEventType> = new Set<GameEventTyp
   "QUALITY_ASSIGNED",
   "QUALITY_IMPROVED",
   "SECOND_FIRING_REVEALED",
+  "SECOND_FIRING_CHOSEN",
   "CRACKLE_APPLIED",
   "CERAMIC_SALVAGED",
   "ORDER_COMPLETED",
@@ -99,6 +100,8 @@ export function yourTurnMessage(model: GameModel): RichMessage | null {
       return msg("shell.announce.turn.guild_inspection");
     case "colour_samples":
       return msg("shell.announce.turn.colour_samples");
+    case "colour_samples_swap":
+      return msg("shell.announce.turn.colour_samples_swap");
     case "contributions":
       return msg("shell.announce.turn.contributions");
     case "test_pieces":
@@ -109,6 +112,8 @@ export function yourTurnMessage(model: GameModel): RichMessage | null {
       return msg("shell.announce.turn.jun");
     case "after_quality":
       return msg("shell.announce.turn.after_quality");
+    case "second_firing":
+      return msg("shell.announce.turn.second_firing");
     case "salvage":
       return msg("shell.announce.turn.salvage");
     case "orders":

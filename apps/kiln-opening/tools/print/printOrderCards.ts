@@ -1,17 +1,22 @@
 /**
- * Printable A4 sheets of the Kiln Opening Order cards (V1.6.2): 16 Starting + 48 Main Orders,
- * 4 × 4 cards of 50 × 71 mm per A4 portrait page with dashed cut lines.
+ * Printable A4 sheets of the Kiln Opening Order cards (V1.6.2): 8 Starting + 48 Main Orders,
+ * up to 4 × 4 cards of 50 × 71 mm per A4 portrait page with dashed cut lines.
  *
  *   npm run print:orders                                         # English and Chinese
  *   npx vite-node tools/print/printOrderCards.ts --lang en       # one language (en | zh)
  *
  * Output (gitignored), per language:
- *   output/print/kiln-opening-orders-v1.6.2-A4-<lang>.pdf        # 4 pages: S01–S16, O01–O16, O17–O32, O33–O48
+ *   output/print/kiln-opening-orders-v1.6.2-A4-<lang>.pdf        # 4 pages: S01–S08, O01–O16, O17–O32, O33–O48
  *   output/print/preview-<lang>-p<N>.png                         # each page at 150 dpi
  *   output/print/kiln-opening-orders-v1.6.2-A4-<lang>.html       # the rendered page, for inspection
  *
+ * Each deck starts a new page (sheet.ts). Page 1 holds the 8 Starting Orders in its top two
+ * rows; its lower half is blank paper (no parchment, no cut line), which the run checks on the
+ * rendered page and on the 150 dpi preview pixels.
+ *
  * Content: the V1.6.2 rulebooks' Appendix A tables (English and Chinese), cross-checked against
- * data/orders.json by `orderSource.ts`; the run fails loudly on any mismatch. Art: the game's
+ * data/orders.json by `orderSource.ts`, which also takes the expected Order IDs from the
+ * rulebooks' own table headings; the run fails loudly on any mismatch. Art: the game's
  * 20 neutral ceramic cutouts (assets/current_v04/ceramics) tinted with the light-theme
  * `--glz-*` colours from src/app/styles/tokens.css (White and Grey-Green at a higher print
  * density, see `PRINT_DENSITY`), and the game's coin and crown icons.
@@ -22,6 +27,8 @@
  * rounds the page to 594.96 × 841.92 pt), and an incremental update sets the viewer preference
  * PrintScaling /None (Chrome and Acrobat then default to actual size) and a Subject saying to
  * print at 100 %. Nothing is printed in the page margins, which most printers cannot reach.
+ * The run refuses a PDF holding a repeating tiling pattern: Apple's PDF renderer (Preview, and
+ * printing from it) seams such tiles, so each card's parchment is one opaque image (cardPage.js).
  *
  * Rendering uses Playwright's Chromium (`@playwright/test`); no network access is needed.
  */
@@ -32,8 +39,8 @@ import type { Browser, Page } from "@playwright/test";
 import { checkIllustration, illustrationFor } from "./illustration.ts";
 import { APP_ROOT, loadOrderSource } from "./orderSource.ts";
 import type { Lang, OrderSource } from "./orderSource.ts";
-import { buildSheetHtml } from "./sheet.ts";
-import type { FitSettings, PageInput, SheetCard } from "./sheet.ts";
+import { buildSheetHtml, CARDS_PER_SHEET, PAGE_H, PAGE_W } from "./sheet.ts";
+import type { FitSettings, PageInput, SheetCard, SheetPlan } from "./sheet.ts";
 
 const OUT_DIR = resolve(APP_ROOT, "output/print");
 const CERAMICS_DIR = resolve(APP_ROOT, "assets/current_v04/ceramics");
@@ -180,14 +187,38 @@ async function usedFonts(page: Page): Promise<Map<string, number>> {
   return fonts;
 }
 
-/** Page count, page sizes, embedded font programs and print preference of a Chromium PDF. */
-function inspectPdf(path: string): { pages: number; embedded: number; baseFonts: string[]; mediaBoxes: string[]; printScalingNone: boolean } {
+/**
+ * Tiling patterns whose cells abut or overlap, i.e. a tile meant to repeat across the page
+ * (Chromium writes a repeated CSS background that way). Apple's PDF renderer (Preview, and
+ * printing from it) shows faint hairline seams where such cells meet, so the sheets use none;
+ * Chromium's one-off patterns, whose step leaves a gap after the cell, are fine.
+ */
+function repeatingPatterns(bytes: string): string[] {
+  const found: string[] = [];
+  for (const match of bytes.matchAll(/\/PatternType\s+1\b([\s\S]*?)\bstream\b/g)) {
+    const dict = match[1] ?? "";
+    const box = /\/BBox\s*\[([^\]]*)\]/.exec(dict)?.[1]?.trim().split(/\s+/).map(Number);
+    const xStep = Number(/\/XStep\s+([-\d.]+)/.exec(dict)?.[1]);
+    const yStep = Number(/\/YStep\s+([-\d.]+)/.exec(dict)?.[1]);
+    if (box === undefined || box.length !== 4 || box.some((n) => !Number.isFinite(n)) || !Number.isFinite(xStep) || !Number.isFinite(yStep)) {
+      found.push(`unreadable tiling pattern at byte ${match.index}`);
+      continue;
+    }
+    const [x0 = 0, y0 = 0, x1 = 0, y1 = 0] = box;
+    if (Math.abs(xStep) <= x1 - x0 + 0.01 || Math.abs(yStep) <= y1 - y0 + 0.01) found.push(`cell ${(x1 - x0).toFixed(2)} × ${(y1 - y0).toFixed(2)}, step ${xStep} × ${yStep} (byte ${match.index})`);
+  }
+  return found;
+}
+
+/** Page count, page sizes, embedded font programs, print preference and repeating tiles of a Chromium PDF. */
+function inspectPdf(path: string): { pages: number; embedded: number; baseFonts: string[]; mediaBoxes: string[]; printScalingNone: boolean; repeating: string[]; tilingPatterns: number } {
   const bytes = readFileSync(path).toString("latin1");
   const pages = (bytes.match(/\/Type\s*\/Page(?![s\w])/g) ?? []).length;
   const embedded = (bytes.match(/\/FontFile[23]?\b/g) ?? []).length;
   const baseFonts = [...new Set([...bytes.matchAll(/\/BaseFont\s*\/([^\s/<>\[\]]+)/g)].map((match) => match[1] ?? ""))].sort();
   const mediaBoxes = [...bytes.matchAll(/\/MediaBox\s*\[([^\]]*)\]/g)].map((match) => (match[1] ?? "").trim().split(/\s+/).join(" "));
-  return { pages, embedded, baseFonts, mediaBoxes, printScalingNone: /\/PrintScaling\s*\/None/.test(bytes) };
+  const tilingPatterns = (bytes.match(/\/PatternType\s+1\b/g) ?? []).length;
+  return { pages, embedded, baseFonts, mediaBoxes, printScalingNone: /\/PrintScaling\s*\/None/.test(bytes), repeating: repeatingPatterns(bytes), tilingPatterns };
 }
 
 /** A UTF-16BE PDF text string (hex, with byte-order mark). */
@@ -261,13 +292,80 @@ function finishPdf(path: string, subject: string): void {
   writeFileSync(path, Buffer.from(bytes, "latin1"));
 }
 
+/**
+ * The sheets print every card once, in the rulebook's order; each deck starts a new sheet and
+ * fills sheets of 16, the Starting deck first (V1.6.2: page 1 is S01–S08 alone).
+ */
+function checkSheets(source: OrderSource, lang: Lang, sheets: SheetPlan[]): string[] {
+  const problems: string[] = [];
+  const kindOf = new Map(source.cards[lang].map((card) => [card.id, card.kind]));
+  const order = source.cards[lang].map((card) => card.id);
+  const printed = sheets.flatMap((sheet) => sheet.ids);
+  if (printed.join() !== order.join()) problems.push(`the sheets print [${printed.join(", ")}], the rulebook lists [${order.join(", ")}]`);
+  const want = { starting: Math.ceil(source.deckSizes.starting / CARDS_PER_SHEET), main: Math.ceil(source.deckSizes.main / CARDS_PER_SHEET) };
+  const kinds = sheets.map((sheet) => sheet.kind);
+  const expectedKinds = [...Array<string>(want.starting).fill("starting"), ...Array<string>(want.main).fill("main")];
+  if (kinds.join() !== expectedKinds.join()) problems.push(`sheet decks [${kinds.join(", ")}], expected [${expectedKinds.join(", ")}]`);
+  sheets.forEach((sheet, index) => {
+    if (sheet.ids.some((id) => kindOf.get(id) !== sheet.kind)) problems.push(`page ${index + 1} mixes decks: ${sheet.ids.join(", ")}`);
+    if (sheet.rows !== Math.ceil(sheet.ids.length / 4)) problems.push(`page ${index + 1}: ${sheet.rows} rows for ${sheet.ids.length} cards`);
+  });
+  return problems;
+}
+
+/** "page 1: S01–S08 (rows 1–2; rows 3–4 blank)". */
+function describeSheet(sheet: SheetPlan, index: number): string {
+  const range = sheet.ids.length === 1 ? sheet.ids[0] : `${sheet.ids[0]}–${sheet.ids.at(-1)}`;
+  return `page ${index + 1}: ${range}${sheet.rows < 4 ? ` (rows 1–${sheet.rows}; rows ${sheet.rows + 1}–4 blank below ${sheet.inkBottom} mm)` : ""}`;
+}
+
+/**
+ * On a sheet that is not full, the 150 dpi preview must be pure white from just below its
+ * lowest printed point (`inkBottom`, plus 0.3 mm for antialiasing) to the paper's bottom edge.
+ */
+async function checkBlankBelow(page: Page, sheet: SheetPlan, png: Buffer): Promise<string | null> {
+  if (sheet.rows === 4) return null;
+  const from = (sheet.inkBottom + 0.3) / PAGE_H;
+  const result = await page.evaluate(
+    async ({ url, from }) => {
+      const img = new Image();
+      img.src = url;
+      await img.decode();
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext("2d");
+      if (ctx === null) return { error: "no 2D canvas" };
+      ctx.drawImage(img, 0, 0);
+      const top = Math.ceil(from * img.naturalHeight);
+      const data = ctx.getImageData(0, top, img.naturalWidth, img.naturalHeight - top).data;
+      let marked = 0;
+      let firstRow = -1;
+      for (let index = 0; index < data.length; index += 4) {
+        if (data[index] !== 255 || data[index + 1] !== 255 || data[index + 2] !== 255) {
+          marked += 1;
+          if (firstRow < 0) firstRow = top + Math.floor(index / 4 / img.naturalWidth);
+        }
+      }
+      return { width: img.naturalWidth, height: img.naturalHeight, top, marked, firstRow };
+    },
+    { url: `data:image/png;base64,${png.toString("base64")}`, from },
+  );
+  if ("error" in result) return `blank-area check: ${result.error}`;
+  if (Math.abs(result.width / result.height - PAGE_W / PAGE_H) > 0.002) return `blank-area check: preview is ${result.width} × ${result.height} px, not A4`;
+  if (result.marked > 0) {
+    return `${result.marked} non-white pixels in the blank area below ${sheet.inkBottom} mm (first at ${((result.firstRow / result.height) * PAGE_H).toFixed(1)} mm)`;
+  }
+  return null;
+}
+
 async function printLanguage(browser: Browser, source: OrderSource, lang: Lang, art: Map<string, SheetCard["art"]>, input: Omit<PageInput, "lang" | "fit">): Promise<void> {
   const cards: SheetCard[] = source.cards[lang].map((card) => {
     const illustration = art.get(card.id);
     if (illustration === undefined) throw new PrintError(`${card.id}: no illustration`);
     return { card, art: illustration };
   });
-  const { html, sheets } = buildSheetHtml({
+  const { html, sheets: plans } = buildSheetHtml({
     lang,
     labels: source.labels[lang],
     cards,
@@ -275,6 +373,9 @@ async function printLanguage(browser: Browser, source: OrderSource, lang: Lang, 
     script: readFileSync(resolve(HERE, "cardPage.js"), "utf8"),
     input: { ...input, lang, fit: FIT[lang] },
   });
+  const sheetProblems = checkSheets(source, lang, plans);
+  if (sheetProblems.length > 0) throw new PrintError(`${lang}: sheet plan check failed:\n  - ${sheetProblems.join("\n  - ")}`);
+  const sheets = plans.length;
   const base = `kiln-opening-orders-v1.6.2-A4-${lang}`;
   writeFileSync(resolve(OUT_DIR, `${base}.html`), html);
 
@@ -298,6 +399,9 @@ async function printLanguage(browser: Browser, source: OrderSource, lang: Lang, 
   if (pdf.embedded === 0) throw new PrintError(`${lang}: the PDF embeds no font program`);
   const unexpected = pdf.baseFonts.filter((name) => !ALLOWED_FONTS[lang].test(name.replace(/^[A-Z]{6}\+/, "")));
   if (unexpected.length > 0) throw new PrintError(`${lang}: the PDF names unexpected fonts: ${unexpected.join(", ")}`);
+  if (pdf.repeating.length > 0) {
+    throw new PrintError(`${lang}: the PDF has ${pdf.repeating.length} repeating tiling pattern(s), which Apple's PDF renderer draws with hairline seams: ${pdf.repeating.slice(0, 5).join("; ")}`);
+  }
 
   // Previews: the same page at 150 dpi.
   const previewRun = await renderPage(browser, html, PREVIEW_DPI / 96);
@@ -307,16 +411,25 @@ async function printLanguage(browser: Browser, source: OrderSource, lang: Lang, 
     if (new RegExp(`^preview-${lang}-p\\d+\\.png$`).test(file)) rmSync(resolve(OUT_DIR, file));
   }
   const previews: string[] = [];
+  const blankProblems: string[] = [];
   const sheetLocators = await previewRun.page.locator(".sheet").all();
+  if (sheetLocators.length !== sheets) throw new PrintError(`${lang}: the page has ${sheetLocators.length} sheets, expected ${sheets}`);
   for (const [index, sheet] of sheetLocators.entries()) {
     const path = resolve(OUT_DIR, `preview-${lang}-p${index + 1}.png`);
-    await sheet.screenshot({ path, animations: "disabled" });
+    const png = await sheet.screenshot({ path, animations: "disabled" });
+    const plan = plans[index];
+    const blank = plan === undefined ? "no sheet plan" : await checkBlankBelow(previewRun.page, plan, png);
+    if (blank !== null) blankProblems.push(`page ${index + 1}: ${blank}`);
     previews.push(path);
   }
   await previewRun.page.context().close();
+  if (blankProblems.length > 0) throw new PrintError(`${lang}: blank-area check failed:\n  - ${blankProblems.join("\n  - ")}`);
 
   console.log(`\n[${lang}] ${pdfPath}`);
-  console.log(`  ${pdf.pages} A4 pages (${A4_PT.width.toFixed(2)} × ${A4_PT.height.toFixed(2)} pt, print scaling: none), ${cards.length} cards; fonts used: ${[...fonts.keys()].sort().join(", ")}; PDF fonts: ${pdf.baseFonts.join(", ")} (${pdf.embedded} embedded font programs)`);
+  console.log(`  ${pdf.pages} A4 pages (${A4_PT.width.toFixed(2)} × ${A4_PT.height.toFixed(2)} pt, print scaling: none), ${cards.length} cards; fonts used: ${[...fonts.keys()].sort().join(", ")}; PDF fonts: ${pdf.baseFonts.join(", ")} (${pdf.embedded} embedded font programs); no repeating tile (${pdf.tilingPatterns} one-off tiling patterns)`);
+  console.log(`  ${plans.map(describeSheet).join("; ")}`);
+  const partial = plans.filter((plan) => plan.rows < 4).length;
+  if (partial > 0) console.log(`  blank area: pure white on the 150 dpi preview of ${partial} part-filled page${partial === 1 ? "" : "s"}`);
   for (const line of pdfRun.report.info) console.log(`  ${line}`);
   if (drift.length > 0) console.log(`  note: preview fitted ${drift.length} card(s) differently from the PDF run: ${drift.map(([id]) => id).join(", ")}`);
   for (const path of previews) console.log(`  preview ${path}`);
@@ -333,7 +446,9 @@ async function main(): Promise<void> {
     art.set(card.id, illustration);
   }
   if (problems.length > 0) throw new PrintError(`illustration check failed:\n  - ${problems.join("\n  - ")}`);
-  console.log(`Order source OK: 16 Starting + 48 Main Orders; EN and ZH Appendix A agree with ${"data/orders.json"} (its rulesVersion field reads "${source.rulesVersionInData}").`);
+  console.log(
+    `Order source OK: ${source.deckSizes.starting} Starting + ${source.deckSizes.main} Main Orders (from the Appendix A headings); EN and ZH Appendix A agree with ${"data/orders.json"} (its rulesVersion field reads "${source.rulesVersionInData}").`,
+  );
 
   mkdirSync(OUT_DIR, { recursive: true });
   const glazes = glazeColours();

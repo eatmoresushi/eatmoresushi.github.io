@@ -72,7 +72,7 @@ describe("game log", () => {
       {
         type: "ORDER_COMPLETED",
         playerId: player,
-        record: { orderId: "S04", ceramicIds: [], round: 2, via: "order_phase", vp: 3, coins: 5, printedCrowns: 0, bonusCrowns: 0, crackleDeclarations: [], kilnAbility: null },
+        record: { orderId: "S04", ceramicIds: [], round: 2, canalBargeCoins: 0, vp: 3, coins: 5, printedCrowns: 0, bonusCrowns: 0, crackleDeclarations: [], kilnAbility: null },
       },
       { type: "RESOURCES_CHANGED", playerId: player, clay: 0, wood: 0, coins: 5, reason: "order_reward" },
       { type: "ORDER_TURN_ENDED", playerId: player, automatic: true },
@@ -87,6 +87,49 @@ describe("game log", () => {
     expect(lines.join(" ")).not.toContain("Order reward");
   });
 
+  it("states Canal Barge's 2 Coins once, on the first completion of the round (v1.6.2 L622), in both languages", () => {
+    const snapshot = fixtureSnapshot(structuredClone(fixture("m1_work_phase_r2_3p")));
+    const player = snapshot.view!.game.playerOrder[0]!;
+    const name = snapshot.view!.game.players[player]!.displayName;
+    // The engine's order: the completion, its printed Coins, then Canal Barge's use and Coins.
+    const events: PublicGameEvent[] = [
+      {
+        type: "ORDER_COMPLETED",
+        playerId: player,
+        record: { orderId: "S07", ceramicIds: [], round: 2, canalBargeCoins: 2, vp: 3, coins: 3, printedCrowns: 0, bonusCrowns: 0, crackleDeclarations: [], kilnAbility: null },
+      },
+      { type: "RESOURCES_CHANGED", playerId: player, clay: 0, wood: 0, coins: 3, reason: "order_reward" },
+      { type: "TECH_USED", playerId: player, techId: "T23" },
+      { type: "RESOURCES_CHANGED", playerId: player, clay: 0, wood: 0, coins: 2, reason: "canal_barge" },
+    ];
+    const log: LogEntry[] = events.map((event, index) => ({ sequence: index + 1, revision: index + 1, actorId: player, event }));
+    const source = () => new StaticSource({ ...snapshot, log });
+    expect(entries(renderComponent(source(), <GameLog />, { ui: { logOpen: true } }))).toEqual([`${name} used Canal Barge: +2 Coins`, `${name} completed S07: +3 VP, +3 Coins`]);
+    expect(entries(renderComponent(source(), <GameLog />, { ui: { logOpen: true }, locale: "zh-CN" }))).toEqual([`${name}使用漕船：得2铜钱`, `${name}完成委托S07：+3分，得3铜钱`]);
+  });
+
+  it("names each ceramic as it was when the line happened: no Crackle marker before Ge gives it (D9)", () => {
+    const snapshot = fixtureSnapshot(structuredClone(fixture("m1_work_phase_r2_3p")));
+    const player = snapshot.view!.game.playerOrder[0]!;
+    const name = snapshot.view!.game.players[player]!.displayName;
+    const id = "c900";
+    const events: PublicGameEvent[] = [
+      { type: "CERAMIC_FORMED", playerId: player, ceramicId: id, shape: "vase", decoration: "plain", formedBy: "form_decorate" },
+      { type: "CERAMIC_LOADED", playerId: player, ceramicId: id, glaze: "celadon", placement: { kiln: "shared", spaceId: "high_1", stacked: false }, loadedBy: "glaze_load" },
+      { type: "QUALITY_ASSIGNED", ceramicId: id, quality: "standard", heatDifference: 2, cause: "fired", saggarsFloor: false },
+      { type: "QUALITY_IMPROVED", ceramicId: id, from: "standard", to: "fine", cause: "ge_crackle" },
+      { type: "CRACKLE_APPLIED", playerId: player, ceramicId: id },
+      { type: "FIRING_FINISHED", round: 2, finishedCeramicIds: [id] },
+    ];
+    const log: LogEntry[] = events.map((event, index) => ({ sequence: index + 1, revision: index + 1, actorId: player, event }));
+    const lines = entries(renderComponent(new StaticSource({ ...snapshot, log }), <GameLog />, { ui: { logOpen: true } })).reverse();
+    const owner = player === snapshot.view!.viewerId ? "Your" : `${name}’s`;
+    expect(lines[2]).toBe(`${owner} Celadon Vase, Plain: Standard (Heat Difference 2)`);
+    expect(lines[3]).toBe(`${owner} Celadon Vase, Plain: Standard → Fine (Crackle Mastery)`);
+    expect(lines[4]).toBe(`${name} crackled Celadon Vase, Plain: it gains a Crackle marker (Crackle Mastery)`);
+    expect(lines.slice(0, 5).join(" ")).not.toContain("· Crackle");
+  });
+
   it("says when nothing has happened", () => {
     const snapshot = fixtureSnapshot(structuredClone(fixture("w-kiln-selection")));
     const html = renderComponent(new StaticSource({ ...snapshot, log: [] }), <GameLog />, { ui: { logOpen: true } });
@@ -97,7 +140,8 @@ describe("game log", () => {
   it("marks the viewer's own secret lines and shows only theirs", () => {
     const html = renderComponent(fixtureSource("m2_commission_market_look_r3_4p"), <GameLog />, { ui: { logOpen: true } });
     expect(html).toMatch(/<li class="game-log-entry" data-own="">[^]*?only you/);
-    expect(html).toContain("Zhao looked at O39, O20, O14");
+    // m2's viewer (Wen) sees the cards of their own open look; nobody else would.
+    expect(html).toContain("Wen looked at O45, O20, O28");
   });
 
   it.each(allFixtures().map((entry) => [entry.id] as const))("%s: the open log shows no foreign secret or internal ID", (id) => {

@@ -2,7 +2,9 @@
  * Contributions (UI_V1.6.1_ARCHITECTURE §3.4, §3.7; wireframe `decContrib`, `submitRow`). Owner: B5.
  *
  * Firing step 1: the viewer chooses a Contribution card in secret (and, with Fuel Ledger, whether
- * to add Wood). Renders only from `contributionsDraft.options()`. Others see only who has chosen
+ * to commit Wood with it: Bank and Stoke then cost no Wood of their own, and the commitment makes
+ * them −2/+2 for its Wood, v1.6.2 L637). Each card shows the Heat and the Wood it would cost, from
+ * the selector. Renders only from `contributionsDraft.options()`. Others see only who has chosen
  * (`phase.submittedPlayerIds`), never what; after submitting, the window becomes `waiting`, where
  * the viewer's own sealed card is shown from `own.pendingContribution`.
  */
@@ -63,7 +65,13 @@ export function Contributions() {
                 ? t("firing.contrib.cardWithTech", { card: contributionCardName(choice.card, t.locale), tech: techName(B5_TECHS.fuelLedger, t.locale) })
                 : contributionCardName(choice.card, t.locale)
             }
-            meta={choice.option.woodCost === 0 ? t("firing.contrib.noWood") : t("firing.contrib.woodAtReveal", { wood: woodText(choice.option.woodCost, t) })}
+            meta={
+              choice.option.woodCost > 0
+                ? t("firing.contrib.woodAtReveal", { wood: woodText(choice.option.woodCost, t) })
+                : choice.belowPrintedCost
+                  ? t("firing.contrib.noWoodTech", { tech: techName(B5_TECHS.fuelLedger, t.locale) })
+                  : t("firing.contrib.noWood")
+            }
             description={t("firing.contrib.heat", { heat: signed(choice.option.heat) })}
             disabled={!choice.available}
             reason={
@@ -85,7 +93,9 @@ export function Contributions() {
             value="fuelLedger"
             checked={draft.fuelLedger}
             onChange={(_, checked) => dispatch({ type: "fuelLedger", on: checked })}
-            title={t("firing.contrib.fuelToggle")}
+            disabled={!fuel.canCommit && !draft.fuelLedger}
+            reason={!fuel.canCommit && !draft.fuelLedger ? t("firing.contrib.fuelCantAfford") : undefined}
+            title={t("firing.contrib.fuelToggle", { wood: woodText(fuel.commitWood, t) })}
             description={t("firing.contrib.fuelEffect", {
               bank: contributionCardName("BANK", t.locale),
               bankHeat: fuel.bank === null ? "" : signed(fuel.bank.heat),

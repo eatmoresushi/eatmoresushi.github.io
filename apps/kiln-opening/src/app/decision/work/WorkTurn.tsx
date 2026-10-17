@@ -9,7 +9,7 @@
  * `windows.work.ts`; an ability that may come first opens it from above the world,
  * `PaneOpeners`). Before the worker action it shows:
  * 1. how many workers are left (the Work Phase cannot be passed);
- * 2. what this step does, when Imperial Priority or Canal Barge may come first
+ * 2. what this step does, when Imperial Priority or the Colour Samples swap may come first
  *    (`options.stepChoices`): the abilities, and Place a worker only while a placement is chosen,
  *    so moving through the radios (arrow keys select as they move) never hides the pane; no
  *    choice at all when it would be a lone radio (one ability opened with nothing placed: the
@@ -25,7 +25,8 @@
  * (the bar above the world says what to do; a pending server error keeps the pane up, and its
  * ConfirmBar summary then says to place a worker on the table).
  * The ConfirmBar follows (DecisionPane): Clear goes back to placing, which hides the pane again.
- * After the worker action it shows `ActionWindow` (Imperial Priority, Canal Barge, End turn).
+ * After the worker action it shows `ActionWindow` (Imperial Priority, the Colour Samples swap,
+ * End turn).
  *
  * Everything renders from `workDraft.options()`; the component filters, sums and checks nothing.
  * The location opens no rules details here (owner review, 2026-10-17).
@@ -50,10 +51,10 @@ import { workDraft } from "./workDraft.ts";
 import type { ActiveLocation, WorkAction, WorkDraft, WorkMode } from "./workDraft.ts";
 import "./pieces.css";
 
-const MODE_TITLE: Readonly<Record<WorkMode, "work.work.mode.place" | "work.work.mode.imperialPriority" | "work.work.mode.canalBarge" | "work.work.mode.endTurn">> = {
+const MODE_TITLE: Readonly<Record<WorkMode, "work.work.mode.place" | "work.work.mode.imperialPriority" | "work.work.mode.colourSamplesSwap" | "work.work.mode.endTurn">> = {
   place: "work.work.mode.place",
   imperial_priority: "work.work.mode.imperialPriority",
-  canal_barge: "work.work.mode.canalBarge",
+  colour_samples_swap: "work.work.mode.colourSamplesSwap",
   end_turn: "work.work.mode.endTurn",
 };
 
@@ -138,7 +139,13 @@ export function WorkTurn() {
               key={mode}
               value={mode}
               title={t(MODE_TITLE[mode])}
-              description={mode === "place" ? t("work.work.mode.placeHint") : t("work.work.mode.before")}
+              description={
+                mode === "place"
+                  ? t("work.work.mode.placeHint")
+                  : mode === "colour_samples_swap"
+                    ? t("work.work.mode.swapHint", { n: RULE_NUMBERS.swapLookSize })
+                    : t("work.work.mode.before")
+              }
             />
           ))}
         </OptionGroup>

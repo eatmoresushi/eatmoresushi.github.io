@@ -1,231 +1,189 @@
 /**
- * The draft model of the Commission Market steps (UI_V1.6.1_ARCHITECTURE §3.4 `commission`;
- * wireframe `decLook`). Owner: B4.
+ * The draft model of the Commission Market reservation step (UI_V1.6.1_ARCHITECTURE §3.4
+ * `commission`; v1.6.2 L189–200, B1, B3). Owner: B4.
  *
- * The `commission` window follows the placement's first reservation (L187–201, B1):
- * - `reservation`: reserve again (a face-up Order and its gain, blind, or the Shifu's look) or
- *   stop (`COMMISSION_STOP`, once one reservation is made);
- * - `look_choice`: reserve one of the privately looked-at Orders (`COMMISSION_CHOOSE_LOOKED`);
- * - `resource`: the resource after a blind reservation or a look (`COMMISSION_GAIN`).
- * Lists come from `commissionOptions(view, step.effect)` and `lookedOrderOptions(view)`; the
- * window's `awaiting` is part of its open key, so each step starts from a fresh draft.
+ * The placement opened a private look (top 2 for the Apprentice effect, top 3 for the Shifu
+ * effect, possibly fewer, B1). Now the player reserves, in one command (`COMMISSION_CHOOSE`):
+ * - Apprentice effect: exactly 1 Order, from the display or the looked cards;
+ * - Shifu effect (Senior Apprentice included, R12): 1 or 2, from the display and the looked
+ *   cards in any mix. Both choose from the Orders showing now (a reserved position stays empty
+ *   until the turn ends).
+ * The looked cards not reserved go face down to the bottom of the Main deck (change 24). There is
+ * no resource.
+ *
+ * Every list comes from `lookedOrderOptions(view)` (the viewer's own look: its cards, the
+ * display positions reservable now and the limit); the draft only holds which of them are
+ * chosen. Its keys are `slot:<i>` for a display position and `look:<OrderId>` for a looked
+ * card. `build` lists the picks in the engine's canonical order (display positions ascending,
+ * then looked cards in look order), so the same choice always builds the same command.
  */
-import { commissionOptions, lookedOrderOptions, placementLimits } from "../../../game/index.ts";
-import type { CommissionOptions, OrderId, OrderReservationSource, PlayerId, ResourceKind, WorkerEffect } from "../../../game/index.ts";
+import { lookedOrderOptions } from "../../../game/index.ts";
+import type { CommissionPick, LookedOrderOptions, OrderId, WorkerEffect } from "../../../game/index.ts";
+import { list } from "../../i18n/format.ts";
 import { msg } from "../../i18n/translator.ts";
-import type { RichMessage } from "../../i18n/translator.ts";
+import type { RichMessage, Translator } from "../../i18n/translator.ts";
 import type { DraftModel } from "../../state/draftStore.ts";
-import type { LogApi } from "../../state/hooks.ts";
 import type { EngineView, GameModel } from "../../state/model.ts";
 import { keepIfSame, viewMemo } from "./context.ts";
-import { slotKey } from "./locations/CommissionMarket.draft.ts";
-import type { CommissionFirstKey } from "./locations/CommissionMarket.draft.ts";
-import { RESOURCE_ORDER, amountText } from "./locations/shared.ts";
 
-export type CommissionAwaiting = "reservation" | "look_choice" | "resource";
+/** `slot:<i>` (a display position) or `look:<OrderId>` (a looked card). */
+export type CommissionPickKey = `slot:${number}` | `look:${string}`;
 
 export interface CommissionDraft {
-  /** `reservation`: a face-up slot, `blind`, `look`, or `stop`. */
-  readonly reserve: CommissionFirstKey | "stop" | null;
-  /** The gain of a face-up reservation. */
-  readonly gain: ResourceKind | null;
-  /** `look_choice`: the Order to reserve. */
-  readonly looked: OrderId | null;
-  /** `resource`: the resource gained now. */
-  readonly resource: ResourceKind | null;
+  /** The chosen reservations, in the order they were chosen. */
+  readonly picks: readonly CommissionPickKey[];
 }
 
 export type CommissionAction =
-  | { readonly type: "reserve"; readonly reserve: CommissionFirstKey | "stop" }
-  | { readonly type: "gain"; readonly gain: ResourceKind }
-  | { readonly type: "looked"; readonly orderId: OrderId }
-  | { readonly type: "resource"; readonly resource: ResourceKind };
+  /** Radio (a limit of 1): this pick replaces any other. */
+  | { readonly type: "pick"; readonly key: CommissionPickKey }
+  /** Checkbox (a limit of 2): add or remove one pick. */
+  | { readonly type: "toggle"; readonly key: CommissionPickKey; readonly on: boolean };
+
+export interface CommissionChoice {
+  key: CommissionPickKey;
+  orderId: OrderId;
+  /** The display position, for a face-up Order; null for a looked card. */
+  slotIndex: number | null;
+}
 
 export interface CommissionStepOptions {
-  awaiting: CommissionAwaiting;
   effect: WorkerEffect;
-  reservationsMade: number;
+  /** 2 or 3 (v1.6.2 L195–196). */
+  lookSize: number;
+  /** 1, or 2 for the Shifu effect. */
   maxReservations: number;
-  slots: ReadonlyArray<{ key: CommissionFirstKey; slotIndex: number; orderId: OrderId }>;
-  blind: boolean;
-  look: boolean;
-  canStop: boolean;
-  /** The privately looked-at Orders (`look_choice`); only this seat receives them. */
-  looked: readonly OrderId[];
-  gains: readonly ResourceKind[];
-  gainAmount: number;
-  needsGain: boolean;
+  /** The privately looked-at Orders, in look order (only this seat receives them, B3). */
+  looked: readonly CommissionChoice[];
+  /** The display positions reservable now, ascending. */
+  slots: readonly CommissionChoice[];
+  /**
+   * The look showed some cards, but fewer than `lookSize`: the Main Order deck ran short (B1, R16:
+   * a look never completes itself from a reshuffle). A public fact (the step's `lookedCount`).
+   */
+  short: boolean;
+  /** The limit is reached: no other pick can be added. */
+  full: boolean;
 }
 
-/** An Order this player reserved earlier in this Commission Market action. */
-export interface ReservedThisTurn {
-  /** The Order, when this seat may know it (face up, or its own secret record); else null. */
-  orderId: OrderId | null;
-  /** The display position of a face-up reservation, else null. */
-  slotIndex: number | null;
-  source: OrderReservationSource;
+const BLANK: CommissionDraft = Object.freeze({ picks: Object.freeze([]) as readonly CommissionPickKey[] });
+
+export function slotPickKey(slotIndex: number): CommissionPickKey {
+  return `slot:${slotIndex}`;
 }
 
-/**
- * The Orders `playerId` has reserved since placing a worker at the Commission Market, oldest
- * first, from the log (public records merged with this seat's own secret ones): a face-up Order
- * is public; a blind or looked-at Order is named only by the seat's own record. This is the
- * player's own information (wireframe `decLook`, "Already reserved this turn").
- */
-export function reservedThisTurn(log: LogApi["log"], playerId: PlayerId): ReservedThisTurn[] {
-  const found: ReservedThisTurn[] = [];
-  for (let index = log.length - 1; index >= 0; index -= 1) {
-    const entry = log[index];
-    if (entry === undefined) continue;
-    const event = entry.event;
-    if (event.type === "WORK_TURN_STARTED") break;
-    if (event.type === "WORKER_PLACED" && event.playerId === playerId) break;
-    if (event.type !== "ORDER_RESERVED" || event.playerId !== playerId || event.via !== "commission_market") continue;
-    const own = entry.own?.type === "ORDER_RESERVED" && entry.own.playerId === playerId ? (entry.own.secret?.orderId ?? null) : null;
-    found.unshift({ orderId: own ?? event.orderId, slotIndex: event.slotIndex, source: event.source });
-  }
-  return found;
+export function lookPickKey(orderId: OrderId): CommissionPickKey {
+  return `look:${orderId}`;
 }
 
-const BLANK: CommissionDraft = Object.freeze({ reserve: null, gain: null, looked: null, resource: null });
-
-function windowOf(model: GameModel): { awaiting: CommissionAwaiting; effect: WorkerEffect } {
+function windowOf(model: GameModel): { effect: WorkerEffect; lookSize: number; maxReservations: number } {
   const window = model.window;
-  return window.kind === "commission" ? { awaiting: window.awaiting, effect: window.effect } : { awaiting: "reservation", effect: "apprentice" };
+  return window.kind === "commission"
+    ? { effect: window.effect, lookSize: window.lookSize, maxReservations: window.maxReservations }
+    : { effect: "apprentice", lookSize: 0, maxReservations: 1 };
 }
 
-function selectorOptions(engine: EngineView, effect: WorkerEffect): CommissionOptions {
-  return viewMemo(engine.view, `commissionOptions:${effect}`, () => commissionOptions(engine.view, effect));
+function lookOf(engine: EngineView): LookedOrderOptions | null {
+  return viewMemo(engine.view, "lookedOrderOptions", () => lookedOrderOptions(engine.view));
+}
+
+function choicesOf(model: GameModel, engine: EngineView): { looked: CommissionChoice[]; slots: CommissionChoice[]; max: number } {
+  const look = lookOf(engine);
+  if (model.window.kind !== "commission" || look === null || look.kind !== "commission_market") return { looked: [], slots: [], max: 1 };
+  const display = engine.view.game.market.display;
+  const slots = [...look.faceUpSlots]
+    .sort((a, b) => a - b)
+    .flatMap((slotIndex): CommissionChoice[] => {
+      const orderId = display[slotIndex];
+      return orderId === null || orderId === undefined ? [] : [{ key: slotPickKey(slotIndex), orderId, slotIndex }];
+    });
+  const looked = look.orderIds.map((orderId): CommissionChoice => ({ key: lookPickKey(orderId), orderId, slotIndex: null }));
+  return { looked, slots, max: look.maxReservations };
 }
 
 function optionsOf(draft: CommissionDraft, model: GameModel, engine: EngineView): CommissionStepOptions {
-  const { awaiting, effect } = windowOf(model);
-  const selector = selectorOptions(engine, effect);
-  const display = engine.view.game.market.display;
-  const look = lookedOrderOptions(engine.view);
-  return {
-    awaiting,
-    effect,
-    reservationsMade: selector.reservationsMade,
-    maxReservations: selector.maxReservations,
-    slots: selector.faceUpSlots.flatMap((slotIndex) => {
-      const orderId = display[slotIndex];
-      return orderId === null || orderId === undefined ? [] : [{ key: slotKey(slotIndex), slotIndex, orderId }];
-    }),
-    blind: selector.blind,
-    look: selector.lookTopThree,
-    canStop: selector.canStop,
-    looked: look !== null && look.kind === "commission_top_three" ? look.orderIds : [],
-    gains: RESOURCE_ORDER,
-    gainAmount: placementLimits(engine.view, "commission_market", effect).gainAfterEach,
-    needsGain: draft.reserve !== null && draft.reserve.startsWith("slot:"),
-  };
+  const { effect, lookSize } = windowOf(model);
+  const { looked, slots, max } = choicesOf(model, engine);
+  const short = looked.length > 0 && looked.length < lookSize;
+  return { effect, lookSize, maxReservations: max, looked, slots, short, full: draft.picks.length >= max };
 }
 
-function offered(reserve: CommissionFirstKey | "stop", options: CommissionStepOptions): boolean {
-  switch (reserve) {
-    case "stop":
-      return options.canStop;
-    case "blind":
-      return options.blind;
-    case "look":
-      return options.look;
-    default:
-      return options.slots.some((slot) => slot.key === reserve);
-  }
+function allChoices(options: Pick<CommissionStepOptions, "looked" | "slots">): CommissionChoice[] {
+  return [...options.slots, ...options.looked];
 }
 
-function revalidate(draft: CommissionDraft, model: GameModel, engine: EngineView): CommissionDraft {
-  const options = optionsOf(draft, model, engine);
-  return keepIfSame(draft, {
-    reserve: draft.reserve !== null && options.awaiting === "reservation" && offered(draft.reserve, options) ? draft.reserve : null,
-    gain: draft.gain !== null && options.gains.includes(draft.gain) ? draft.gain : null,
-    looked: draft.looked !== null && options.looked.includes(draft.looked) ? draft.looked : null,
-    resource: draft.resource !== null && options.awaiting === "resource" && options.gains.includes(draft.resource) ? draft.resource : null,
-  });
+/** Keeps the offered picks, without duplicates, at most the limit. */
+function settle(draft: CommissionDraft, model: GameModel, engine: EngineView): CommissionDraft {
+  const { looked, slots, max } = choicesOf(model, engine);
+  const offered = new Set(allChoices({ looked, slots }).map((choice) => choice.key));
+  const picks: CommissionPickKey[] = [];
+  for (const key of draft.picks) if (offered.has(key) && !picks.includes(key) && picks.length < max) picks.push(key);
+  return keepIfSame(draft, { picks });
+}
+
+/** The picks in the engine's canonical order: display positions ascending, then looked cards in look order. */
+function canonical(draft: CommissionDraft, options: Pick<CommissionStepOptions, "looked" | "slots">): CommissionChoice[] {
+  return allChoices(options).filter((choice) => draft.picks.includes(choice.key));
+}
+
+function pickOf(choice: CommissionChoice): CommissionPick {
+  return choice.slotIndex === null ? { kind: "looked", orderId: choice.orderId } : { kind: "face_up", slotIndex: choice.slotIndex, orderId: choice.orderId };
 }
 
 export const commissionDraft: DraftModel<CommissionDraft, CommissionAction, CommissionStepOptions> = {
   initial(model, engine) {
     const options = optionsOf(BLANK, model, engine);
-    const only = options.awaiting === "look_choice" && options.looked.length === 1 ? options.looked[0] : undefined;
-    return only === undefined ? BLANK : { ...BLANK, looked: only };
+    const only = allChoices(options);
+    // §3.5: the only choice is pre-selected (a single looked card and an empty display).
+    return only.length === 1 && only[0] !== undefined ? { picks: [only[0].key] } : BLANK;
   },
   reduce(draft, action, model, engine) {
     switch (action.type) {
       case "revalidate":
-        return revalidate(draft, model, engine);
-      case "reserve": {
-        // A choice the options do not offer is ignored; the current one stays.
-        const options = optionsOf(draft, model, engine);
-        return options.awaiting === "reservation" && offered(action.reserve, options) ? revalidate({ ...draft, reserve: action.reserve }, model, engine) : draft;
+        return settle(draft, model, engine);
+      case "pick": {
+        const offered = allChoices(optionsOf(draft, model, engine)).some((choice) => choice.key === action.key);
+        return offered ? settle({ picks: [action.key] }, model, engine) : draft;
       }
-      case "gain":
-        return revalidate({ ...draft, gain: action.gain }, model, engine);
-      case "looked":
-        return revalidate({ ...draft, looked: action.orderId }, model, engine);
-      case "resource":
-        return revalidate({ ...draft, resource: action.resource }, model, engine);
+      case "toggle": {
+        const options = optionsOf(draft, model, engine);
+        if (!allChoices(options).some((choice) => choice.key === action.key)) return draft;
+        if (!action.on) return settle({ picks: draft.picks.filter((key) => key !== action.key) }, model, engine);
+        if (draft.picks.includes(action.key)) return draft;
+        // A pick beyond the limit is ignored; with a limit of 1 it replaces the other.
+        if (options.full) return options.maxReservations === 1 ? settle({ picks: [action.key] }, model, engine) : draft;
+        return settle({ picks: [...draft.picks, action.key] }, model, engine);
+      }
     }
   },
   options: optionsOf,
   build(draft, model, engine) {
-    const options = optionsOf(draft, model, engine);
-    switch (options.awaiting) {
-      case "reservation": {
-        if (draft.reserve === null) return null;
-        if (draft.reserve === "stop") return { type: "COMMISSION_STOP" };
-        if (draft.reserve === "blind") return { type: "COMMISSION_RESERVE", choice: { kind: "blind" } };
-        if (draft.reserve === "look") return { type: "COMMISSION_RESERVE", choice: { kind: "look_top_three" } };
-        const slot = options.slots.find((candidate) => candidate.key === draft.reserve);
-        if (slot === undefined || draft.gain === null) return null;
-        return { type: "COMMISSION_RESERVE", choice: { kind: "face_up", slotIndex: slot.slotIndex, orderId: slot.orderId, gain: draft.gain } };
-      }
-      case "look_choice":
-        return draft.looked === null ? null : { type: "COMMISSION_CHOOSE_LOOKED", orderId: draft.looked };
-      case "resource":
-        return draft.resource === null ? null : { type: "COMMISSION_GAIN", resource: draft.resource };
-    }
+    const settled = settle(draft, model, engine);
+    if (settled.picks.length === 0) return null;
+    const options = optionsOf(settled, model, engine);
+    return { type: "COMMISSION_CHOOSE", reservations: canonical(settled, options).map(pickOf) };
   },
-  fromCommand(command, _model, engine) {
-    switch (command.type) {
-      case "COMMISSION_STOP":
-        return { ...BLANK, reserve: "stop" };
-      case "COMMISSION_RESERVE": {
-        const choice = command.choice;
-        if (choice.kind === "blind") return { ...BLANK, reserve: "blind" };
-        if (choice.kind === "look_top_three") return { ...BLANK, reserve: "look" };
-        if (engine.view.game.market.display[choice.slotIndex] !== choice.orderId) return null;
-        return { ...BLANK, reserve: slotKey(choice.slotIndex), gain: choice.gain };
-      }
-      case "COMMISSION_CHOOSE_LOOKED":
-        return { ...BLANK, looked: command.orderId };
-      case "COMMISSION_GAIN":
-        return { ...BLANK, resource: command.resource };
-      default:
-        return null;
+  fromCommand(command, model, engine) {
+    if (command.type !== "COMMISSION_CHOOSE") return null;
+    const display = engine.view.game.market.display;
+    const picks: CommissionPickKey[] = [];
+    for (const pick of command.reservations) {
+      if (pick.kind === "face_up") {
+        if (display[pick.slotIndex] !== pick.orderId) return null;
+        picks.push(slotPickKey(pick.slotIndex));
+      } else picks.push(lookPickKey(pick.orderId));
     }
+    const options = optionsOf({ picks }, model, engine);
+    const offered = new Set(allChoices(options).map((choice) => choice.key));
+    if (picks.length === 0 || picks.length > options.maxReservations || picks.some((key) => !offered.has(key)) || new Set(picks).size !== picks.length) return null;
+    return { picks };
   },
-  summary(draft, model, engine): RichMessage | null {
+  summary(draft, model, engine): RichMessage {
     const options = optionsOf(draft, model, engine);
-    const amountOf = (kind: ResourceKind) => (t: Parameters<typeof amountText>[0]) => amountText(t, kind, options.gainAmount);
-    switch (options.awaiting) {
-      case "reservation": {
-        if (draft.reserve === null) return msg("work.cm.summary.choose");
-        if (draft.reserve === "stop") return msg("work.cm.summary.stop");
-        if (draft.reserve === "blind") return msg("work.cm.summary.reserveBlind");
-        if (draft.reserve === "look") return msg("work.cm.summary.look");
-        const slot = options.slots.find((candidate) => candidate.key === draft.reserve);
-        if (slot === undefined) return msg("work.cm.summary.choose");
-        if (draft.gain === null) return msg("work.cm.summary.chooseGain");
-        return msg("work.cm.summary.reserveSlot", { order: slot.orderId, amount: amountOf(draft.gain) });
-      }
-      case "look_choice":
-        if (draft.looked === null) return msg("work.cm.summary.choose");
-        return msg("work.cm.summary.chooseLooked", { order: draft.looked });
-      case "resource":
-        if (draft.resource === null) return msg("work.cm.summary.chooseGain");
-        return msg("work.cm.summary.gain", { amount: amountOf(draft.resource) });
-    }
+    const chosen = canonical(draft, options);
+    if (chosen.length === 0) return options.maxReservations > 1 ? msg("work.cm.summary.chooseTwo", { n: options.maxReservations }) : msg("work.cm.summary.choose");
+    const orders = (t: Translator) => list(chosen.map((choice) => choice.orderId), t.locale);
+    const rest = options.looked.length - chosen.filter((choice) => choice.slotIndex === null).length;
+    return rest > 0 ? msg("work.cm.summary.reserveRest", { orders, n: rest }) : msg("work.cm.summary.reserve", { orders });
   },
 };
