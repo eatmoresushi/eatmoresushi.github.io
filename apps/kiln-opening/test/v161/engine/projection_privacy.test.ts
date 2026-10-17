@@ -67,7 +67,7 @@ function secretRichState(): GameState {
     orderId: "O40",
     ceramicIds: [],
     round: 1,
-    via: "order_phase",
+    canalBargeCoins: 0,
     vp: 15,
     coins: 0,
     printedCrowns: 2,

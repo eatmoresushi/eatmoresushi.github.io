@@ -74,6 +74,8 @@ const INVERTED_FIRING: TechId = "T21";
 const KILN_MASTER: TechId = "T24";
 const SENIOR_APPRENTICE: TechId = "T18";
 const COLOUR_SAMPLES: TechId = "T10";
+const PROTECTIVE_SAGGARS: TechId = "T11";
+const CANAL_BARGE: TechId = "T23";
 
 /** Phases with every Setter's Mark returned or not yet placeable (L303, L630). */
 const MARKLESS_PHASES: readonly GamePhaseType[] = ["setup_kiln_selection", "cleanup_hand_limit", "finished"];
@@ -84,7 +86,7 @@ const FIRING_PHASES: readonly GamePhaseType[] = [
   "firing_heat_markers",
   "firing_heat_adjustment",
   "firing_after_quality",
-  "firing_second_firing_jun",
+  "firing_second_firing_choice",
   "firing_salvage",
 ];
 /** Phases with nothing in any kiln: the firing has finished or been skipped. */
@@ -307,8 +309,14 @@ function checkFireCards(state: GameState, v: Violations): void {
     cards.push(firing.fireModifier);
   }
   if (firing !== null && firing.pendingExtraFire !== null) {
-    cards.push(firing.pendingExtraFire.modifier);
+    cards.push(...firing.pendingExtraFire.modifiers);
   }
+  // R15: the buried cards are the deck's last `fireBuried` cards.
+  const buried = state.hidden.fireBuried;
+  v.check(
+    Number.isSafeInteger(buried) && buried >= 0 && buried <= state.hidden.fireDeck.length,
+    () => `fireBuried is ${buried} with ${state.hidden.fireDeck.length} cards in the Fire deck`,
+  );
   const expected = [...FIRING.fireDeck].sort((a, b) => a - b);
   const actual = [...cards].sort((a, b) => a - b);
   v.check(
@@ -538,6 +546,46 @@ function checkFiringRecords(firing: FiringContext | null, label: string, v: Viol
     v.check(record.ceramicId === ceramicId, () => `${label} record ${ceramicId} names ${record.ceramicId}`);
     // DESIGN §8.3: Crackle ⇒ exactly Fine, also in the firing record.
     v.check(!record.crackle || record.quality === "fine", () => `${label}: Crackle ${ceramicId} is ${String(record.quality)}`);
+    // Second Firing (v1.6.2 L639): the chosen card is one of the two revealed.
+    v.check(
+      (record.second === null) === (record.secondFiringCards === null) &&
+        (record.second === null || record.secondFiringCards?.includes(record.second.fireModifier) === true),
+      () => `${label}: Second Firing record of ${ceramicId} disagrees with its revealed cards`,
+    );
+    // Protective Saggars' floor gives Standard; a later step may only raise it (v1.6.2 L636).
+    v.check(!record.saggarsFloor || record.quality === "standard" || record.quality === "fine", () => `${label}: floored ${ceramicId} is ${String(record.quality)}`);
+  }
+}
+
+/**
+ * Protective Saggars (T11, v1.6.2 L636, L650): its owner's ceramics fired while the owner had it
+ * are never Flawed, in the firing record or as Finished ceramics, and only its owner's ceramics
+ * carry the floor.
+ */
+function checkSaggars(state: GameState, ceramics: readonly CeramicState[], v: Violations): void {
+  const ownerOf = (playerId: PlayerId) => lookup(state.players, playerId);
+  const acquired = (playerId: PlayerId): number | null =>
+    ownerOf(playerId)?.techs.find((tech) => tech.id === PROTECTIVE_SAGGARS)?.acquiredInRound ?? null;
+  for (const firing of [state.firing, state.lastFiring]) {
+    if (firing === null) {
+      continue;
+    }
+    for (const record of Object.values(firing.ceramics)) {
+      if (record === undefined) {
+        continue;
+      }
+      const since = acquired(record.ownerId);
+      const protectedNow = since !== null && since <= firing.round;
+      v.check(!protectedNow || record.quality !== "flawed", () => `${record.ceramicId} of Protective Saggars owner ${record.ownerId} is Flawed`);
+      v.check(!record.saggarsFloor || protectedNow, () => `${record.ceramicId} carries the Saggars floor without Protective Saggars`);
+    }
+  }
+  for (const c of ceramics) {
+    if (c.stage !== "finished") {
+      continue;
+    }
+    const since = acquired(c.ownerId);
+    v.check(since === null || since > c.firedInRound || c.quality !== "flawed", () => `Finished ${c.id} of Protective Saggars owner ${c.ownerId} is Flawed`);
   }
 }
 
@@ -720,8 +768,8 @@ function checkPhaseShape(state: GameState, v: Violations): void {
       }
       break;
     }
-    case "firing_second_firing_jun":
-      v.check(seated(phase.actorId), () => `Second Firing Jun actor ${phase.actorId} is not seated`);
+    case "firing_second_firing_choice":
+      v.check(seated(phase.actorId), () => `Second Firing actor ${phase.actorId} is not seated`);
       break;
     case "firing_salvage":
     case "cleanup_hand_limit":
@@ -849,17 +897,20 @@ function checkLive(state: GameState, players: readonly PlayerState[], ceramics: 
       v.check(record?.salvaged === true ? c === undefined : c?.stage === "loaded", () => `firing record ${ceramicId} has no loaded ceramic`);
     }
     v.check(
-      phase.type === "firing_second_firing_jun"
-        ? firing.pendingExtraFire !== null && firing.pendingExtraFire.playerId === phase.actorId && firing.pendingExtraFire.ceramicId === phase.ceramicId
+      phase.type === "firing_second_firing_choice"
+        ? firing.pendingExtraFire !== null &&
+            firing.pendingExtraFire.playerId === phase.actorId &&
+            firing.pendingExtraFire.ceramicId === phase.ceramicId &&
+            firing.pendingExtraFire.modifiers.length === TECHS.T14.params.extraCards
         : firing.pendingExtraFire === null,
-      () => "Second Firing's extra card is pending outside the R7 Jun window",
+      () => "Second Firing's revealed cards are pending outside its choice",
     );
     const revealed = firing.contributions !== null;
     v.check(revealed === (firing.baseHeat !== null), () => "Base Heat and the Contribution reveal disagree");
     v.check(phase.type === "firing_contributions" ? !revealed : revealed, () => `Contributions revealed=${String(revealed)} in ${phase.type}`);
     const fired = firing.fireModifier !== null;
     v.check(
-      fired === ["firing_heat_adjustment", "firing_after_quality", "firing_second_firing_jun", "firing_salvage"].includes(phase.type),
+      fired === ["firing_heat_adjustment", "firing_after_quality", "firing_second_firing_choice", "firing_salvage"].includes(phase.type),
       () => `the Fire card is ${fired ? "revealed" : "hidden"} in ${phase.type}`,
     );
   } else {
@@ -878,7 +929,9 @@ function checkLive(state: GameState, players: readonly PlayerState[], ceramics: 
         ? "guild_inspection"
         : step?.kind === "colour_samples"
           ? "colour_samples"
-          : null;
+          : step?.kind === "colour_samples_swap"
+            ? "colour_samples_swap"
+            : null;
   v.check((look?.kind ?? null) === expectedLook, () => `pending look ${String(look?.kind)} during ${phase.type}/${String(step?.kind)}`);
   if (look !== null && phase.type === "work_turn") {
     v.check(look.playerId === phase.activePlayerId, () => "the pending look is not the active player's");
@@ -892,6 +945,15 @@ function checkLive(state: GameState, players: readonly PlayerState[], ceramics: 
         v.check(step.resume.takes.some((take) => take.techId === COLOUR_SAMPLES), () => "a Guild inspection waits behind Colour Samples it did not take");
         checkGuildInspection(state, phase.activePlayerId, step.resume, { ...look.inspection, kind: "guild_inspection", playerId: look.playerId }, v);
       }
+    }
+    if (step?.kind === "colour_samples_swap" && look.kind === "colour_samples_swap") {
+      // The swap's look shows 1 or 2 cards (v1.6.2 L625, B1); T10 is spent this round.
+      v.check(
+        look.orderIds.length === step.lookedCount && look.orderIds.length >= 1 && look.orderIds.length <= TECHS.T10.params.swapLookSize,
+        () => "the Colour Samples swap look disagrees with its step",
+      );
+      const active = lookup(state.players, phase.activePlayerId);
+      v.check(active?.techs.some((tech) => tech.id === COLOUR_SAMPLES && tech.usedThisRound) === true, () => "a Colour Samples swap is open but T10 is ready");
     }
     if (step?.kind === "commission_market" && look.kind === "commission_market") {
       // The look shows at most its printed size, possibly none (B1); the step records how many.
@@ -948,6 +1010,17 @@ function checkLive(state: GameState, players: readonly PlayerState[], ceramics: 
         v.check(used(SENIOR_APPRENTICE), () => `${worker.id} used Senior Apprentice but ${SENIOR_APPRENTICE} is ready`);
       }
     }
+    // Canal Barge (v1.6.2 L630): at most one 2-Coin completion per round, only for its owner.
+    const bargeRounds = p.completedOrders.filter((record) => record.canalBargeCoins !== 0).map((record) => record.round);
+    v.check(new Set(bargeRounds).size === bargeRounds.length, () => `${p.id} gained Canal Barge's Coins twice in one round`);
+    v.check(bargeRounds.length === 0 || ownsTech(p, CANAL_BARGE), () => `${p.id} gained Canal Barge's Coins without ${CANAL_BARGE}`);
+    v.check(
+      p.completedOrders.every((record) => record.canalBargeCoins === 0 || record.canalBargeCoins === TECHS.T23.params.coins),
+      () => `${p.id} recorded a Canal Barge amount other than ${TECHS.T23.params.coins} Coins`,
+    );
+    if (phase.type === "orders" && bargeRounds.includes(state.round)) {
+      v.check(used(CANAL_BARGE), () => `${p.id} gained Canal Barge's Coins this round but ${CANAL_BARGE} is ready`);
+    }
     // The ledger matches the completed Orders (DESIGN §8.3).
     const orderVp = p.completedOrders.reduce((sum, record) => sum + record.vp, 0);
     v.check(p.score.orders === orderVp, () => `${p.id} recorded ${p.score.orders} Order VP, completed Orders sum to ${orderVp}`);
@@ -991,6 +1064,7 @@ export function invariantViolations(state: GameState, options: InvariantOptions 
   checkMarkers(state, ceramics, v);
   checkFiringRecords(state.firing, "firing", v);
   checkFiringRecords(state.lastFiring, "lastFiring", v);
+  checkSaggars(state, ceramics, v);
   checkPhaseShape(state, v);
   checkProjection(state, v);
   if (options.live === true && v.messages.length === 0) {

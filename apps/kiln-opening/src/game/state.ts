@@ -114,7 +114,7 @@ export function decisionPrompt(game: PublicCore): DecisionPrompt {
         actorIds: phase.eligiblePlayerIds.filter((id) => !phase.submittedPlayerIds.includes(id)),
         mode: "simultaneous_secret",
       };
-    case "firing_second_firing_jun":
+    case "firing_second_firing_choice":
       return { phaseType: phase.type, actorIds: [phase.actorId], mode: "single" };
     case "firing_salvage":
     case "cleanup_hand_limit":
@@ -150,7 +150,7 @@ export function workStep<K extends WorkTurnStep["kind"]>(
   return phase.step as Extract<WorkTurnStep, { kind: K }>;
 }
 
-/** The Main Orders a pending look holds (Commission Market and Colour Samples looks). */
+/** The Main Orders a pending look holds (Commission Market, Colour Samples and its swap). */
 export function lookOrderIds(look: PendingLook | null): OrderId[] {
   return look === null || look.kind === "guild_inspection" ? [] : look.orderIds;
 }

@@ -10,7 +10,6 @@ import { validateContribution } from "../../../src/game/firing/contributions.ts"
 import { legalCommands, sampleLegalAction } from "../../../src/game/legalActions.ts";
 import { SeededRandom } from "../../../src/game/rng.ts";
 import {
-  canalBargeOptions,
   crackleDeclarationChecks,
   glazeLoadVesselOptions,
   imperialPriorityOptions,
@@ -119,8 +118,11 @@ export const FIRING_STAGE_KEYS = {
   contribution: ["playerId", "revealed"],
   revealed: ["card", "heat", "woodPaid"],
   testPieces: ["playerId", "peeked", "buried"],
-  extraFire: ["playerId", "ceramicId", "modifier"],
-  ceramic: ["id", "ownerId", "kiln", "spaceId", "marker", "quality", "crackle", "salvaged", "secondFireModifier"],
+  /** Second Firing's 2 revealed cards (v1.6.2 L639): face up on the table. */
+  extraFire: ["playerId", "ceramicId", "modifiers"],
+  /** `secondFireRevealed` (both revealed cards) and `saggarsFloor` (v1.6.2 L636) are recorded
+   * facts of the table, not analysis (DELTA §2.7, D3, D4). */
+  ceramic: ["id", "ownerId", "kiln", "spaceId", "marker", "quality", "crackle", "salvaged", "secondFireModifier", "secondFireRevealed", "saggarsFloor"],
   /** `CeramicHeatMarker`: `value` only once turned. */
   marker: ["source", "faceDown", "value"],
 } as const;
@@ -366,13 +368,9 @@ export function uiOptionAgreementViolations(state: GameState, privateState: Priv
     }
   }
 
-  // Gap 8: Crackle declaration verdicts against COMPLETE_ORDER / USE_CANAL_BARGE in their windows.
-  const type =
-    phase.type === "orders" && decisionPrompt(game).actorIds.includes(actorId)
-      ? ("COMPLETE_ORDER" as const)
-      : canalBargeOptions(view).length > 0
-        ? ("USE_CANAL_BARGE" as const)
-        : null;
+  // Gap 8: Crackle declaration verdicts against COMPLETE_ORDER in the Order Phase (the only place
+  // Orders are completed, v1.6.2 L296).
+  const type = phase.type === "orders" && decisionPrompt(game).actorIds.includes(actorId) ? ("COMPLETE_ORDER" as const) : null;
   if (type !== null) {
     for (const orderId of view.own.orderHand) {
       for (const match of orderMatchOptions(view, orderId, 4)) {
@@ -449,13 +447,24 @@ export function uiOptionScenarios(): Array<{ name: string; table: LocalTable; ac
         { owner: "p1", stage: "shaped", shape: "bowl" },
       ],
     }),
-    work("Canal Barge with a Crackle wildcard", {
-      players: [{ kilnId: "GE", techs: ["T23"], hand: ["O39", "S11", "S13"] }, {}],
-      ceramics: [
-        { owner: "p1", stage: "finished", shape: "vase", glaze: "celadon", decoration: "plain", quality: "fine", crackle: true },
-        { owner: "p1", stage: "finished", shape: "censer", glaze: "moon_white", decoration: "painted", quality: "fine" },
-        { owner: "p1", stage: "finished", shape: "bowl", glaze: "white", decoration: "impressed", quality: "fine", crackle: true },
-      ],
+    {
+      name: "Order Phase with Canal Barge and a Crackle wildcard",
+      table: new LocalTable(
+        buildState({
+          players: [{ kilnId: "GE", techs: ["T23"], hand: ["O39", "S11", "S13"] }, {}],
+          phase: { type: "orders", turnOrder: ["p1", "p2"], index: 0 },
+          ceramics: [
+            { owner: "p1", stage: "finished", shape: "vase", glaze: "celadon", decoration: "plain", quality: "fine", crackle: true },
+            { owner: "p1", stage: "finished", shape: "censer", glaze: "moon_white", decoration: "painted", quality: "fine" },
+            { owner: "p1", stage: "finished", shape: "bowl", glaze: "white", decoration: "impressed", quality: "fine", crackle: true },
+          ],
+        }),
+        { flow: "halt", pass: ["worker_action_done"] },
+      ),
+      actor: "p1",
+    },
+    work("Colour Samples swap with a Starting and a Main Order held", {
+      players: [{ techs: ["T10"], hand: ["S11", "O39"] }, {}],
     }),
     {
       name: "Order Phase with two Crackle ceramics in one Order",

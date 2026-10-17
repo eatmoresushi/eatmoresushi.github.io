@@ -81,8 +81,18 @@ export function safeExitCommands(view: PlayerView): AuthoritativeCommand[] {
             .filter((option) => option.legal)
             .map((option): AuthoritativeCommand => ({ type: "GUILD_TAKE", take: { kind: option.source, techId: option.techId } }));
         }
-        case "colour_samples":
-          return (lookedOrderOptions(view)?.orderIds ?? []).map((orderId): AuthoritativeCommand => ({ type: "COLOUR_SAMPLES_CHOOSE", orderId }));
+        case "colour_samples": {
+          const look = lookedOrderOptions(view);
+          return look?.kind === "colour_samples" ? look.orderIds.map((orderId): AuthoritativeCommand => ({ type: "COLOUR_SAMPLES_CHOOSE", orderId })) : [];
+        }
+        case "colour_samples_swap": {
+          // The swap's look always shows at least 1 card (v1.6.2 L625, B1); reserving any of
+          // them is legal.
+          const look = lookedOrderOptions(view);
+          return look?.kind === "colour_samples_swap"
+            ? look.orderIds.map((orderId): AuthoritativeCommand => ({ type: "COLOUR_SAMPLES_SWAP_CHOOSE", orderId }))
+            : [];
+        }
       }
       return [];
     }
@@ -103,8 +113,10 @@ export function safeExitCommands(view: PlayerView): AuthoritativeCommand[] {
         : [{ type: "RESOLVE_HEAT_MARKERS", ownMarker: "return" }];
     }
     case "firing_heat_adjustment":
-    case "firing_second_firing_jun":
       return [{ type: "RESOLVE_JUN", adjustment: null }];
+    case "firing_second_firing_choice":
+      // A card must be chosen (v1.6.2 L639); the first one without Jun is always legal.
+      return [{ type: "SECOND_FIRING_CHOOSE", cardIndex: 0, jun: null }];
     case "firing_after_quality":
       return [{ type: "END_AFTER_QUALITY" }];
     case "firing_salvage":

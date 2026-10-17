@@ -1,17 +1,18 @@
 /**
- * Completing one Order, in the Order Phase or through Canal Barge (L406–419, L460–464,
- * L642, R4, R6, R13).
+ * Completing one Order, in the Order Phase, the only place Orders are completed (L406–419,
+ * L460–464, v1.6.2 L296, L402, L484, L630, L641, R4, R13).
  *
  * Steps (L410–417): reveal a held Order; deliver the selected Finished ceramics beneath it;
  * record the printed VP; gain the printed Coins; resolve the printed Crowns one at a time
- * (`recognition.gainCrown`). Then the optional completion abilities, each once per round
- * and declinable without using it (R4):
+ * (`recognition.gainCrown`). Then the completion abilities, each once per round:
  * - Tribute Ware (T25, L642): an Order showing ≥ 1 printed Crown gains 1 bonus Crown,
- *   resolved like any Crown; it is not a printed Crown (R13).
- * - Ru (L460): delivering an actual Celadon, Plain (printed) Masterpiece scores 4 VP.
+ *   resolved like any Crown; it is not a printed Crown (R13). Optional (R4).
+ * - Ru (L460): delivering an actual Celadon, Plain (printed) Masterpiece scores 4 VP. Optional.
  * - Guan (L464): an Order showing ≥ 1 printed Crown gains 2 Coins and 1 VP (Tribute
- *   Ware's Crown never counts, R13).
- * Canal Barge runs exactly this code (R6), so every completion effect applies there too.
+ *   Ware's Crown never counts, R13). Optional.
+ * - Canal Barge (T23, v1.6.2 L630): 2 Coins on the first Order its owner completes each round,
+ *   Starting Orders included (L520). Automatic (INT: Canal Barge): declining could only move
+ *   the same 2 Coins to a later completion of the same Order-Phase turn.
  *
  * Validation sees only the actor's view (DESIGN §1.3); errors name only what the actor chose.
  *
@@ -43,22 +44,25 @@ import type {
 import { explainOrderMismatch, findOrderMatches, matchOrder, ruTriggers } from "./matching.ts";
 
 const TRIBUTE_WARE = "T25";
+const CANAL_BARGE = "T23";
 
 function orderDefinition(orderId: OrderId): OrderDefinition | undefined {
   return lookup(ORDERS, orderId);
 }
 
-/** The completion abilities this completion would trigger if not declined (R4, R6, R13). */
+/** The completion abilities this completion would trigger (R4, R13): Ru, Guan and Tribute
+ * Ware unless declined; Canal Barge always (it is never declined). */
 export interface CompletionTriggers {
   ru: boolean;
   guan: boolean;
   tributeWare: boolean;
+  canalBarge: boolean;
 }
 
 /**
- * Which optional completion abilities apply to completing `order` with `ceramics`, before
- * any decline: Ru (actual Celadon Plain Masterpiece delivered), Guan and Tribute Ware (an
- * Order showing ≥ 1 printed Crown), each only while its once-per-round use is unspent.
+ * Which completion abilities apply to completing `order` with `ceramics`, before any decline:
+ * Ru (actual Celadon Plain Masterpiece delivered), Guan and Tribute Ware (an Order showing ≥ 1
+ * printed Crown) and Canal Barge (any Order), each only while its once-per-round use is unspent.
  */
 export function completionTriggers(
   p: PlayerState,
@@ -69,6 +73,7 @@ export function completionTriggers(
     ru: kilnAbilityReady(p, "RU") && ruTriggers(ceramics),
     guan: kilnAbilityReady(p, "GU") && order.crowns >= KILNS.GU.params.minPrintedCrowns,
     tributeWare: techReady(p, TRIBUTE_WARE) && order.crowns >= 1,
+    canalBarge: techReady(p, CANAL_BARGE),
   };
 }
 
@@ -164,19 +169,18 @@ function deliver(draft: GameState, finished: FinishedCeramic, orderId: OrderId):
 
 /**
  * Resolves a completion that `validateOrderCompletion` accepted (L410–417), then Tribute
- * Ware, Ru and Guan unless declined (R4), and returns the record. `via` is `canal_barge`
- * for T23 (R6); Canal Barge's own `TECH_USED` is its caller's.
+ * Ware, Ru and Guan unless declined (R4), then Canal Barge's 2 Coins, and returns the record.
  *
  * Event order: `ORDER_COMPLETED` (the reveal, with the full record); `RESOURCES_CHANGED`
  * (printed Coins); each printed Crown (`RECOGNITION_ADVANCED` + milestone events, or
  * `CROWN_OVERFLOW_VP`); Tribute Ware (`TECH_USED`, then its Crown); Ru or Guan
- * (`KILN_ABILITY_USED`, then Guan's Coins).
+ * (`KILN_ABILITY_USED`, then Guan's Coins); Canal Barge (`TECH_USED`, then
+ * `RESOURCES_CHANGED{reason: "canal_barge"}`).
  */
 export function resolveOrderCompletion(
   draft: GameState,
   playerId: PlayerId,
   spec: OrderCompletionSpec,
-  via: CompletedOrderRecord["via"],
   ctx: ResolveContext,
 ): CompletedOrderRecord {
   const owner = player(draft, playerId);
@@ -199,6 +203,9 @@ export function resolveOrderCompletion(
   const useRu = triggers.ru && spec.declineKilnAbility !== true;
   const useGuan = triggers.guan && spec.declineKilnAbility !== true;
   invariant(!(useRu && useGuan), "A player has one Kiln");
+  const useBarge = triggers.canalBarge;
+  const bargeCoins = useBarge ? TECHS.T23.params.coins : 0;
+  invariant(bargeCoins === 0 || bargeCoins === 2, "Canal Barge gives 2 Coins (v1.6.2 L630)");
 
   const bonusCrowns = useTribute ? TECHS.T25.params.bonusCrowns : 0;
   invariant(bonusCrowns === 0 || bonusCrowns === 1, "Tribute Ware grants 1 bonus Crown (L642)");
@@ -218,7 +225,7 @@ export function resolveOrderCompletion(
     orderId: spec.orderId,
     ceramicIds: match.ceramicIds,
     round: draft.round,
-    via,
+    canalBargeCoins: bargeCoins as 0 | 2,
     vp: order.vp,
     coins: order.coins,
     printedCrowns: order.crowns,
@@ -252,6 +259,12 @@ export function resolveOrderCompletion(
     markKilnAbilityUsed(draft, playerId, ctx);
     owner.score.kilnAbilities += kilnAbility.vp;
     gain(draft, playerId, { coins: kilnAbility.coins }, "guan", ctx);
+  }
+
+  // Canal Barge (v1.6.2 L630): automatic on the first completion of the round.
+  if (useBarge) {
+    markTechUsed(draft, playerId, CANAL_BARGE, ctx);
+    gain(draft, playerId, { coins: bargeCoins }, "canal_barge", ctx);
   }
   return record;
 }

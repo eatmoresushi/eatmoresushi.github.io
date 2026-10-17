@@ -1,19 +1,27 @@
 /**
  * Protective Saggars, Second Firing (+R7 Jun), Ge, salvage and finishing the firing
- * (Appendix D steps 10–12, L281, L637, L640, L468, L681–683).
+ * (Appendix D steps 10–12, L281, v1.6.2 L636, L639, L653, L468, L681–683).
  *
  * Step 10 (`firing_after_quality`): players act in First Player order (L681). The head of the
  * queue uses its after-Quality abilities in any order; eligibility is rechecked after each
  * use, and a player with nothing eligible left is advanced automatically (DESIGN §3.3, §3.7).
  * One player's turn holds at most one of Protective Saggars / Second Firing (both Firing
- * Techs, L211) plus Ge if they own the Ge Kiln, so the order matters only between Ge and that
- * Tech (Ge may follow Saggars on the same ceramic, L654).
+ * Techs, L210) plus Ge if they own the Ge Kiln, so the order matters only between Ge and that
+ * Tech.
  *
- * Second Firing (T14, L640, R7): an extra Fire card, the same Base Heat (Kiln Die for the
- * Imperial Kiln), position modifier and Heat marker, no carried-over Jun. If the actor's Jun
- * is unused and affordable, the R7 window (`firing_second_firing_jun`) opens with the card in
- * `firing.pendingExtraFire`; otherwise the new Quality is assigned (replacing the old one even
- * if worse) and the card discarded inside `USE_SECOND_FIRING`.
+ * Protective Saggars (T11, v1.6.2 L636): its floor (never Flawed) is applied when Quality is
+ * assigned (`pipeline.assignQuality`) and on any recalculation. Its optional once-per-round step
+ * here turns 1 of the owner's Standard ceramics from this firing Fine, without Wood, never into
+ * a Masterpiece (R4: declining keeps the use). Ge also targets a Standard ceramic, so the
+ * Standard → Fine step and Crackle never both apply to one ceramic, and a floored Standard may
+ * be crackled (v1.6.2 L653).
+ *
+ * Second Firing (T14, v1.6.2 L639, R7): `USE_SECOND_FIRING` reveals 2 extra Fire cards
+ * (reshuffling the discard when the deck runs out, R15) and opens `firing_second_firing_choice`
+ * with them in `firing.pendingExtraFire`. `SECOND_FIRING_CHOOSE` picks 1 and recalculates with
+ * the same Base Heat (the Kiln Die for the Imperial Kiln), position modifier and Heat marker,
+ * no carried-over Jun; then R7's Jun, if chosen; then the new Quality, which replaces the old
+ * even if worse; then both cards go face up to the discard in reveal order.
  *
  * Step 11 (`firing_salvage`, parallel): each player with a still-Flawed ceramic from this
  * firing may discard 1 for 2 Coins and return its Vessel card (L281, L682).
@@ -48,7 +56,6 @@ import type {
   AfterQualityOption,
   CeramicId,
   FinishedCeramic,
-  FireModifier,
   FiringCeramicRecord,
   GameAction,
   GameRuleError,
@@ -59,18 +66,26 @@ import type {
   Quality,
   ResolveContext,
   SalvageOptions,
+  SecondFiringChoiceOptions,
   TechId,
 } from "../types.ts";
 import { discardFire, drawFire } from "./fireDeck.ts";
-import { firingRecord, firingRecordsInOrder, heatCalculation, qualityOf, requireFiring, withJunAdjustment } from "./heat.ts";
+import {
+  firingRecord,
+  firingRecordsInOrder,
+  heatCalculation,
+  qualityFor,
+  requireFiring,
+  saggarsFloored,
+  saggarsProtects,
+  withJunAdjustment,
+} from "./heat.ts";
 
 const PROTECTIVE_SAGGARS: TechId = "T11";
 const SECOND_FIRING: TechId = "T14";
 
-/** Protective Saggars: Flawed → Standard, Standard → Fine; never to Masterpiece (L637). */
-const SAGGARS_STEP: Readonly<Partial<Record<Quality, Quality>>> = { flawed: "standard", standard: "fine" };
-/** Saggars and Second Firing target only Flawed or Standard ceramics (L637, L640). */
-const IMPROVABLE: readonly Quality[] = ["flawed", "standard"];
+/** Second Firing targets only Flawed or Standard ceramics (v1.6.2 L639). */
+const SECOND_FIRING_TARGETS: readonly Quality[] = ["flawed", "standard"];
 
 // ── Shared firing helpers (also used by `firing/pipeline.ts`) ─────────────────────────
 
@@ -105,6 +120,8 @@ function insufficientWood(needed: number, have: number): GameRuleError {
   return ruleError("INSUFFICIENT_RESOURCES", `You need ${needed} Wood.`, { resource: "wood", needed, have });
 }
 
+const ZERO_COST = Object.freeze({ clay: 0, wood: 0, coins: 0 });
+
 function techUseError(game: PublicCore, playerId: PlayerId, techId: TechId): GameRuleError | null {
   const p = player(game, playerId);
   if (!ownsTech(p, techId)) {
@@ -137,23 +154,23 @@ function optionsFor(game: PublicCore, playerId: PlayerId): AfterQualityOption[] 
   const p = player(game, playerId);
   const records = ownRecords(game, playerId);
   const options: AfterQualityOption[] = [];
-  const saggarsWood = TECHS.T11.params.wood;
-  if (techReady(p, PROTECTIVE_SAGGARS) && canAfford(p.resources, { wood: saggarsWood })) {
-    const ceramicIds = records.filter((r) => r.quality !== null && IMPROVABLE.includes(r.quality)).map((r) => r.ceramicId);
+  if (techReady(p, PROTECTIVE_SAGGARS)) {
+    // v1.6.2 L636: 1 of your Standard ceramics from this firing becomes Fine; no Wood.
+    const ceramicIds = records.filter((r) => r.quality === TECHS.T11.params.upgradeFrom).map((r) => r.ceramicId);
     if (ceramicIds.length > 0) {
-      options.push({ ability: "protective_saggars", ceramicIds, cost: { clay: 0, wood: saggarsWood, coins: 0 } });
+      options.push({ ability: "protective_saggars", ceramicIds, cost: { ...ZERO_COST } });
     }
   }
   if (techReady(p, SECOND_FIRING)) {
-    const ceramicIds = records.filter((r) => r.quality !== null && IMPROVABLE.includes(r.quality)).map((r) => r.ceramicId);
+    const ceramicIds = records.filter((r) => r.quality !== null && SECOND_FIRING_TARGETS.includes(r.quality)).map((r) => r.ceramicId);
     if (ceramicIds.length > 0) {
-      options.push({ ability: "second_firing", ceramicIds, cost: { clay: 0, wood: 0, coins: 0 } });
+      options.push({ ability: "second_firing", ceramicIds, cost: { ...ZERO_COST } });
     }
   }
   if (kilnAbilityReady(p, "GE")) {
     const ceramicIds = records.filter((r) => r.quality === KILNS.GE.params.fromQuality).map((r) => r.ceramicId);
     if (ceramicIds.length > 0) {
-      options.push({ ability: "ge_crackle", ceramicIds, cost: { clay: 0, wood: 0, coins: 0 } });
+      options.push({ ability: "ge_crackle", ceramicIds, cost: { ...ZERO_COST } });
     }
   }
   return options;
@@ -227,61 +244,112 @@ function draftRecord(draft: GameState, ceramicId: CeramicId): FiringCeramicRecor
   return record;
 }
 
-/** Assigns Second Firing's new Quality (replacing the old one even if worse, L640) and
- * discards the extra card (L640 "Discard the extra Fire card after resolving it"). */
-function completeSecondFiring(draft: GameState, record: FiringCeramicRecord, extra: FireModifier, ctx: ResolveContext): void {
-  const second = record.second;
-  invariant(second !== null, `${record.ceramicId} has no Second Firing calculation`);
-  const quality = qualityOf(second);
-  setQuality(record, quality, "second_firing");
-  emit(ctx, { type: "QUALITY_ASSIGNED", ceramicId: record.ceramicId, quality, heatDifference: second.heatDifference, cause: "second_firing" });
-  discardFire(draft, extra);
-}
-
 /** R7: Jun is usable on the Second Firing ceramic if unused this round and affordable. */
 function secondFiringJunAvailable(game: PublicCore, playerId: PlayerId): boolean {
   const p = player(game, playerId);
   return kilnAbilityReady(p, "JU") && canAfford(p.resources, { wood: KILNS.JU.params.wood });
 }
 
+/** The viewer's Second Firing choice while `firing_second_firing_choice` is theirs; else null. */
+export function secondFiringChoiceOptions(view: PlayerView): SecondFiringChoiceOptions | null {
+  const game = view.game;
+  const viewerId = view.viewerId;
+  const phase = game.phase;
+  const pending = game.firing?.pendingExtraFire ?? null;
+  if (viewerId === null || phase.type !== "firing_second_firing_choice" || phase.actorId !== viewerId || pending === null) {
+    return null;
+  }
+  return {
+    ceramicId: phase.ceramicId,
+    modifiers: [pending.modifiers[0], pending.modifiers[1]],
+    jun: { ready: secondFiringJunAvailable(game, viewerId), woodCost: KILNS.JU.params.wood },
+  };
+}
+
+/** Second Firing reveals 2 extra cards and uses 1 (v1.6.2 L639; T14 params). */
+function secondFiringCardCounts(): { extra: 2; chosen: 1 } {
+  const { extraCards, chosenCards } = TECHS.T14.params;
+  invariant(extraCards === 2 && chosenCards === 1, `Second Firing reveals 2 cards and uses 1, not ${extraCards}/${chosenCards}`);
+  return { extra: 2, chosen: 1 };
+}
+
 /**
- * Resolves the R7 Jun window: optional Jun on the Second Firing ceramic (1 Wood, ±1), then
- * the new Quality, the extra card to the discard, and back to the actor's step-10 turn.
- * Called by `RESOLVE_JUN` in `firing_second_firing_jun` (validated there).
+ * `SECOND_FIRING_CHOOSE` (v1.6.2 L639, R7): the chosen card recalculates the ceramic; then Jun
+ * if given; then the new Quality (Protective Saggars' floor applies to its owner, L650), which
+ * replaces the old one even if worse; both cards go face up to the discard in reveal order;
+ * and the actor's step-10 turn continues.
  */
-export function resolveSecondFiringJun(
+function resolveSecondFiringChoice(
   draft: GameState,
   actorId: PlayerId,
-  adjustment: Extract<GameAction, { type: "RESOLVE_JUN" }>["adjustment"],
+  action: Extract<GameAction, { type: "SECOND_FIRING_CHOOSE" }>,
   ctx: ResolveContext,
 ): void {
-  const phase = phaseAs(draft, "firing_second_firing_jun");
-  invariant(phase.actorId === actorId, `${actorId} is not the Second Firing Jun actor`);
+  const phase = phaseAs(draft, "firing_second_firing_choice");
+  invariant(phase.actorId === actorId, `${actorId} is not the Second Firing actor`);
   const firing = requireFiring(draft);
   const pending = firing.pendingExtraFire;
   invariant(
     pending !== null && pending.playerId === actorId && pending.ceramicId === phase.ceramicId,
-    "No Second Firing card is waiting for Jun",
+    "No Second Firing cards are waiting for a choice",
   );
   const record = draftRecord(draft, phase.ceramicId);
-  const second = record.second;
-  invariant(second !== null, `${record.ceramicId} has no Second Firing calculation`);
-  if (adjustment !== null) {
-    invariant(adjustment.ceramicId === phase.ceramicId, "Jun in Second Firing targets the Second Firing ceramic");
+  const first = record.first;
+  invariant(first !== null && firing.baseHeat !== null, `${record.ceramicId} has no first calculation`);
+  const [revealedA, revealedB] = pending.modifiers;
+  const chosen = action.cardIndex === 0 ? revealedA : revealedB;
+  // Same Base Heat (the Kiln Die for the Imperial Kiln), position modifier and Heat marker; Jun
+  // from the first calculation does not carry over (v1.6.2 L639, L289).
+  const source = record.kiln === "imperial" ? firing.kilnDie : firing.baseHeat;
+  let second = heatCalculation({
+    fireModifier: chosen,
+    heatSource: source + chosen,
+    positionModifier: first.positionModifier,
+    heatMarker: first.heatMarker,
+    junAdjustment: 0,
+    preferredHeat: record.preferredHeat,
+  });
+  record.secondFiringCards = [revealedA, revealedB];
+  emit(ctx, {
+    type: "SECOND_FIRING_CHOSEN",
+    playerId: actorId,
+    ceramicId: record.ceramicId,
+    cardIndex: action.cardIndex,
+    modifier: chosen,
+    calculation: { ...second },
+  });
+  if (action.jun !== null) {
+    // R7: Jun on the recalculated ceramic, before the new Quality.
     spend(draft, actorId, { wood: KILNS.JU.params.wood }, "jun", ctx);
     markKilnAbilityUsed(draft, actorId, ctx);
-    record.second = withJunAdjustment(second, adjustment.delta, record.preferredHeat);
+    second = withJunAdjustment(second, action.jun.delta, record.preferredHeat);
     emit(ctx, {
       type: "JUN_ADJUSTED",
       playerId: actorId,
       ceramicId: record.ceramicId,
-      delta: adjustment.delta,
-      finalActualHeat: record.second.finalActualHeat,
+      delta: action.jun.delta,
+      finalActualHeat: second.finalActualHeat,
       during: "second_firing",
     });
   }
+  record.second = second;
+  const neverFlawed = saggarsProtects(player(draft, record.ownerId));
+  const quality = qualityFor(second.heatDifference, neverFlawed);
+  const saggarsFloor = saggarsFloored(second.heatDifference, neverFlawed);
+  setQuality(record, quality, "second_firing");
+  record.saggarsFloor = saggarsFloor;
+  emit(ctx, {
+    type: "QUALITY_ASSIGNED",
+    ceramicId: record.ceramicId,
+    quality,
+    heatDifference: second.heatDifference,
+    cause: "second_firing",
+    saggarsFloor,
+  });
+  // "Discard both extra Fire cards after resolving" (v1.6.2 L639), in reveal order.
   firing.pendingExtraFire = null;
-  completeSecondFiring(draft, record, pending.modifier, ctx);
+  discardFire(draft, revealedA);
+  discardFire(draft, revealedB);
   // Back to step 10: the actor's turn continues; players after them in First Player order
   // have not acted yet, so their eligibility is unchanged since step 10 opened.
   const order = turnOrder(draft);
@@ -290,14 +358,25 @@ export function resolveSecondFiringJun(
   afterAbilityUsed(draft, actorId, ctx);
 }
 
-function validateImprovableTarget(view: ActorView, ceramicId: CeramicId): GameRuleError | null {
+function validateSecondFiringTarget(view: ActorView, ceramicId: CeramicId): GameRuleError | null {
   const target = ownFiringCeramic(view.game, view.viewerId, ceramicId);
   if (target.error !== null) {
     return target.error;
   }
   const quality = target.record.quality;
-  if (quality === null || !IMPROVABLE.includes(quality)) {
+  if (quality === null || !SECOND_FIRING_TARGETS.includes(quality)) {
     return ruleError("INVALID_TARGET", "Choose one of your Flawed or Standard ceramics from this firing.", { ceramicId });
+  }
+  return null;
+}
+
+function validateSaggarsTarget(view: ActorView, ceramicId: CeramicId): GameRuleError | null {
+  const target = ownFiringCeramic(view.game, view.viewerId, ceramicId);
+  if (target.error !== null) {
+    return target.error;
+  }
+  if (target.record.quality !== TECHS.T11.params.upgradeFrom) {
+    return ruleError("INVALID_TARGET", "Choose one of your Standard ceramics from this firing.", { ceramicId });
   }
   return null;
 }
@@ -409,10 +488,10 @@ function useAbilityAndContinue(draft: GameState, actorId: PlayerId, ability: Aft
   const record = draftRecord(draft, ceramicId);
   switch (ability) {
     case "protective_saggars": {
-      spend(draft, actorId, { wood: TECHS.T11.params.wood }, "protective_saggars", ctx);
+      // v1.6.2 L636: Standard → Fine, no Wood; never a Masterpiece.
+      invariant(record.quality === TECHS.T11.params.upgradeFrom, `${ceramicId} is not Standard`);
       markTechUsed(draft, actorId, PROTECTIVE_SAGGARS, ctx);
-      const to = record.quality === null ? undefined : SAGGARS_STEP[record.quality];
-      invariant(to !== undefined, `${ceramicId} cannot be improved by Protective Saggars`);
+      const to = TECHS.T11.params.upgradeTo;
       const from = setQuality(record, to, "protective_saggars");
       emit(ctx, { type: "QUALITY_IMPROVED", ceramicId, from, to, cause: "protective_saggars" });
       break;
@@ -427,30 +506,18 @@ function useAbilityAndContinue(draft: GameState, actorId: PlayerId, ability: Aft
       break;
     }
     case "second_firing": {
+      // v1.6.2 L639: reveal 2 extra Fire cards face up (each draw reshuffles the discard when the
+      // deck runs out, R15), then the owner chooses 1 in `firing_second_firing_choice`.
       markTechUsed(draft, actorId, SECOND_FIRING, ctx);
       const firing = requireFiring(draft);
-      const first = record.first;
-      invariant(first !== null && firing.baseHeat !== null, `${ceramicId} has no first calculation`);
-      const extra = drawFire(draft, ctx);
-      // Same Base Heat (Kiln Die for the Imperial Kiln), position modifier and Heat marker;
-      // Jun from the first calculation does not carry over (L640, L289).
-      const source = record.kiln === "imperial" ? firing.kilnDie : firing.baseHeat;
-      record.second = heatCalculation({
-        fireModifier: extra,
-        heatSource: source + extra,
-        positionModifier: first.positionModifier,
-        heatMarker: first.heatMarker,
-        junAdjustment: 0,
-        preferredHeat: record.preferredHeat,
-      });
-      emit(ctx, { type: "SECOND_FIRING_REVEALED", playerId: actorId, ceramicId, modifier: extra, calculation: { ...record.second } });
-      if (secondFiringJunAvailable(draft, actorId)) {
-        firing.pendingExtraFire = { playerId: actorId, ceramicId, modifier: extra };
-        draft.phase = { type: "firing_second_firing_jun", actorId, ceramicId };
-        return;
-      }
-      completeSecondFiring(draft, record, extra, ctx);
-      break;
+      invariant(record.first !== null && firing.baseHeat !== null, `${ceramicId} has no first calculation`);
+      secondFiringCardCounts();
+      const revealedA = drawFire(draft, ctx);
+      const revealedB = drawFire(draft, ctx);
+      firing.pendingExtraFire = { playerId: actorId, ceramicId, modifiers: [revealedA, revealedB] };
+      emit(ctx, { type: "SECOND_FIRING_REVEALED", playerId: actorId, ceramicId, modifiers: [revealedA, revealedB] });
+      draft.phase = { type: "firing_second_firing_choice", actorId, ceramicId };
+      return;
     }
     default: {
       const unreachable: never = ability;
@@ -460,21 +527,14 @@ function useAbilityAndContinue(draft: GameState, actorId: PlayerId, ability: Aft
   afterAbilityUsed(draft, actorId, ctx);
 }
 
-export const handlers: Pick<ActionHandlerTable, "USE_PROTECTIVE_SAGGARS" | "USE_SECOND_FIRING" | "USE_GE_CRACKLE" | "END_AFTER_QUALITY" | "SALVAGE_FLAWED"> = {
+export const handlers: Pick<
+  ActionHandlerTable,
+  "USE_PROTECTIVE_SAGGARS" | "USE_SECOND_FIRING" | "SECOND_FIRING_CHOOSE" | "USE_GE_CRACKLE" | "END_AFTER_QUALITY" | "SALVAGE_FLAWED"
+> = {
   USE_PROTECTIVE_SAGGARS: {
     phases: ["firing_after_quality"],
     validate(view, action) {
-      const techError = techUseError(view.game, view.viewerId, PROTECTIVE_SAGGARS);
-      if (techError !== null) {
-        return techError;
-      }
-      const targetError = validateImprovableTarget(view, action.ceramicId);
-      if (targetError !== null) {
-        return targetError;
-      }
-      const needed = TECHS.T11.params.wood;
-      const have = player(view.game, view.viewerId).resources.wood;
-      return have < needed ? insufficientWood(needed, have) : null;
+      return techUseError(view.game, view.viewerId, PROTECTIVE_SAGGARS) ?? validateSaggarsTarget(view, action.ceramicId);
     },
     resolve(draft, actorId, action, ctx) {
       useAbilityAndContinue(draft, actorId, "protective_saggars", action.ceramicId, ctx);
@@ -483,10 +543,38 @@ export const handlers: Pick<ActionHandlerTable, "USE_PROTECTIVE_SAGGARS" | "USE_
   USE_SECOND_FIRING: {
     phases: ["firing_after_quality"],
     validate(view, action) {
-      return techUseError(view.game, view.viewerId, SECOND_FIRING) ?? validateImprovableTarget(view, action.ceramicId);
+      return techUseError(view.game, view.viewerId, SECOND_FIRING) ?? validateSecondFiringTarget(view, action.ceramicId);
     },
     resolve(draft, actorId, action, ctx) {
       useAbilityAndContinue(draft, actorId, "second_firing", action.ceramicId, ctx);
+    },
+  },
+  SECOND_FIRING_CHOOSE: {
+    phases: ["firing_second_firing_choice"],
+    validate(view, action) {
+      const game = view.game;
+      const pending = game.firing?.pendingExtraFire ?? null;
+      if (pending === null || pending.playerId !== view.viewerId) {
+        return ruleError("INVALID_CHOICE", "No Second Firing cards are waiting for your choice.", { choice: "second_firing" });
+      }
+      if (action.cardIndex !== 0 && action.cardIndex !== 1) {
+        return ruleError("INVALID_CHOICE", "Choose one of the 2 revealed Fire cards.", { cardIndex: String(action.cardIndex) });
+      }
+      if (action.jun === null) {
+        return null;
+      }
+      const p = player(game, view.viewerId);
+      if (!hasKiln(p, "JU")) {
+        return ruleError("KILN_ABILITY_NOT_OWNED", "Only the Jun Kiln adjusts Actual Heat.", { kilnId: "JU" });
+      }
+      if (!kilnAbilityReady(p, "JU")) {
+        return ruleError("ABILITY_ALREADY_USED", "Jun has already been used this round.", { kilnId: "JU" });
+      }
+      const needed = KILNS.JU.params.wood;
+      return p.resources.wood < needed ? insufficientWood(needed, p.resources.wood) : null;
+    },
+    resolve(draft, actorId, action, ctx) {
+      resolveSecondFiringChoice(draft, actorId, action, ctx);
     },
   },
   USE_GE_CRACKLE: {

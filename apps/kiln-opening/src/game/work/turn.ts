@@ -1,6 +1,6 @@
 /**
  * Work Phase: turns, the before/after-action window, END_TURN and the deferred refills of the
- * Main display and the Tech displays (L134–144, L191, L293, L391, L631, v1.6.2 L209;
+ * Main display and the Tech displays (L134–144, L191, L293, L391, v1.6.2 L209, L625;
  * DESIGN §3.2).
  *
  * - Turns run First Player clockwise, one worker per turn, until nobody has an available
@@ -8,13 +8,14 @@
  *   `WORKER_ACTION_REQUIRED` (L143).
  * - Every location module ends its worker action through `ctx.flow.workerActionDone`, which
  *   production wires to `completeWorkerAction` (DESIGN §2.2, §2.5).
- * - `completeWorkerAction` opens the after-action window only when Canal Barge is owned and
- *   unused this round (deliberately regardless of the hand, DESIGN §4.5) or Imperial Priority
- *   is usable; otherwise the turn ends automatically (DESIGN §3.7).
- * - `endTurn` runs the deferred refill (L191, L391) after the after-action window, so a Canal
- *   Barge there may complete an Order reserved by the same action (INT: deferred refill).
- *   It then refills each Tech discipline to 2 as its deck allows: a taken Tech's position
- *   stays empty until the taker's turn ends (v1.6.2 L209).
+ * - `completeWorkerAction` opens the after-action window only when the Colour Samples swap is
+ *   ready with at least 1 held Order, or Imperial Priority is usable: public facts only,
+ *   deliberately regardless of what the hand holds (DESIGN §4.5). Otherwise the turn ends
+ *   automatically (DESIGN §3.7).
+ * - `endTurn` runs the deferred refill (L191, L391) after the after-action window, so a swap
+ *   there may discard an Order the same action reserved, and its look takes deck cards before
+ *   the refill does (INT: deferred refill). It then refills each Tech discipline to 2 as its
+ *   deck allows: a taken Tech's position stays empty until the taker's turn ends (v1.6.2 L209).
  *
  * Layer 4 (P4). Imports layers 0–3 only; `work/windowAbilities` imports this module.
  */
@@ -24,7 +25,7 @@ import { invariant, ruleError } from "../errors.ts";
 import { imperialKilnEmpty } from "../kilnLoading.ts";
 import { refillMainDisplay, refillTechDisplay } from "../market.ts";
 import { availableWorkers } from "../placement.ts";
-import { ceramicsOf, emit, nextClockwise, phaseAs, player } from "../state.ts";
+import { ceramicsOf, emit, lookup, nextClockwise, phaseAs, player } from "../state.ts";
 import { techReady } from "../techs.ts";
 import type {
   ActionHandlerTable,
@@ -33,12 +34,14 @@ import type {
   GameState,
   PlayerId,
   PublicCore,
+  PublicGameState,
   ResolveContext,
   TechId,
 } from "../types.ts";
+import { publicCounts } from "../view.ts";
 
-/** Canal Barge (T23, L631): once per round, before or after one of your worker actions. */
-const CANAL_BARGE: TechId = "T23";
+/** Colour Samples (T10, v1.6.2 L625): its swap is once per round, before or after a worker action. */
+const COLOUR_SAMPLES: TechId = "T10";
 
 /** The first player, from `start` clockwise (inclusive), who still has an available worker. */
 function firstWithWorker(game: PublicCore, start: PlayerId): PlayerId | null {
@@ -91,12 +94,27 @@ export function imperialPriorityUsable(game: PublicCore, playerId: PlayerId): bo
 }
 
 /**
- * The after-action window has something to offer: Canal Barge owned and unused this round
- * (regardless of the hand, so the window leaks nothing, DESIGN §4.5), or Imperial Priority
- * usable.
+ * The Colour Samples swap may be offered now (v1.6.2 L625): T10 owned and unused this round,
+ * and at least 1 held Order. Both facts are public (the hand count is public, L506); the hand's
+ * content, its Starting/Main mix and the Main supply are deliberately ignored, so offering the
+ * window reveals nothing (DESIGN §4.5). Whether a particular discard works is the validator's.
  */
-export function afterActionWindowOpen(game: PublicCore, playerId: PlayerId): boolean {
-  return techReady(player(game, playerId), CANAL_BARGE) || imperialPriorityUsable(game, playerId);
+export function colourSamplesSwapUsable(game: PublicGameState, playerId: PlayerId): boolean {
+  return techReady(player(game, playerId), COLOUR_SAMPLES) && (lookup(game.counts.orderHands, playerId) ?? 0) > 0;
+}
+
+/**
+ * The after-action window has something to offer: the Colour Samples swap (public facts only,
+ * see `colourSamplesSwapUsable`) or Imperial Priority usable.
+ */
+export function afterActionWindowOpen(game: PublicGameState, playerId: PlayerId): boolean {
+  return colourSamplesSwapUsable(game, playerId) || imperialPriorityUsable(game, playerId);
+}
+
+/** The public view of an authoritative state, for the public-facts tests above. */
+function publicOf(draft: GameState): PublicGameState {
+  const { hidden: _hidden, ...core } = draft;
+  return { ...core, counts: publicCounts(draft) };
 }
 
 /**
@@ -107,7 +125,7 @@ export function afterActionWindowOpen(game: PublicCore, playerId: PlayerId): boo
 export function completeWorkerAction(draft: GameState, playerId: PlayerId, ctx: ResolveContext): void {
   const phase = phaseAs(draft, "work_turn");
   invariant(phase.activePlayerId === playerId, `${playerId} finished a worker action outside their turn`);
-  if (afterActionWindowOpen(draft, playerId)) {
+  if (afterActionWindowOpen(publicOf(draft), playerId)) {
     phase.step = { kind: "after_action" };
     return;
   }
@@ -115,10 +133,9 @@ export function completeWorkerAction(draft: GameState, playerId: PlayerId, ctx: 
 }
 
 /**
- * Called by `work/windowAbilities` after each Canal Barge or Imperial Priority use. Before the
- * worker action nothing changes (the action is still due). After it, the window is rechecked
- * and the turn ends automatically once nothing is left (DESIGN §3.2). A token or Imperial
- * Kiln gained in the window keeps it open (INT: before/after-action window).
+ * Called by `work/windowAbilities` after each Imperial Priority use and each completed Colour
+ * Samples swap. Before the worker action nothing changes (the action is still due). After it,
+ * the window is rechecked and the turn ends automatically once nothing is left (DESIGN §3.2).
  */
 export function afterWindowAbilityUsed(draft: GameState, playerId: PlayerId, ctx: ResolveContext): void {
   const phase = phaseAs(draft, "work_turn");
@@ -126,7 +143,7 @@ export function afterWindowAbilityUsed(draft: GameState, playerId: PlayerId, ctx
   if (phase.step.kind !== "after_action") {
     return;
   }
-  if (!afterActionWindowOpen(draft, playerId)) {
+  if (!afterActionWindowOpen(publicOf(draft), playerId)) {
     endTurn(draft, playerId, true, ctx);
   }
 }

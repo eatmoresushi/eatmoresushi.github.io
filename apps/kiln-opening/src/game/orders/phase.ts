@@ -1,5 +1,7 @@
 /**
- * Order Phase: a single pass in First Player order (L295–299, INT: Order Phase).
+ * Order Phase: a single pass in First Player order (L295–299, INT: Order Phase). It is the only
+ * place Orders are completed (v1.6.2 L296, L402): Ru, Guan, Tribute Ware, Crackle wildcards and
+ * Canal Barge's 2 Coins all trigger here.
  *
  * - Beginning with the First Player and going clockwise, each player may complete any number
  *   of held Orders, one at a time (`COMPLETE_ORDER`), then ends their turn (`END_ORDER_TURN`).
@@ -58,7 +60,7 @@ export const handlers: Pick<ActionHandlerTable, "COMPLETE_ORDER" | "END_ORDER_TU
     phases: ["orders"],
     validate: (view, action) => validateOrderCompletion(view, action),
     resolve: (draft, actorId, action, ctx) => {
-      resolveOrderCompletion(draft, actorId, action, "order_phase", ctx);
+      resolveOrderCompletion(draft, actorId, action, ctx);
       if (!hasCompletableOrder(draft, actorId)) {
         endTurn(draft, actorId, true, ctx);
       }

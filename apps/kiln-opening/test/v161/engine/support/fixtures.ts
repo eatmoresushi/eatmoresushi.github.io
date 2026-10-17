@@ -191,6 +191,8 @@ export interface StateSpec {
   fireDeck?: FireModifier[];
   /** Default: empty, or every leftover card when `fireDeck` is given. */
   fireDiscard?: FireModifier[];
+  /** Buried Test Pieces cards at the bottom of `fireDeck` (R15). Default 0. */
+  fireBuried?: number;
   pendingLook?: PendingLook | null;
   firePeeks?: Partial<Record<PlayerId, FirePeek>>;
   firing?: FiringContext | null;
@@ -369,7 +371,7 @@ function assignFireZones(state: GameState, spec: StateSpec): void {
     inPlay.push(state.firing.fireModifier);
   }
   if (state.firing?.pendingExtraFire) {
-    inPlay.push(state.firing.pendingExtraFire.modifier);
+    inPlay.push(...state.firing.pendingExtraFire.modifiers);
   }
   const remaining = multisetMinus(FIRING.fireDeck, inPlay, "firing");
   if (spec.fireDeck !== undefined && spec.fireDiscard !== undefined) {
@@ -387,6 +389,11 @@ function assignFireZones(state: GameState, spec: StateSpec): void {
     state.hidden.fireDeck = multisetMinus(remaining, discard, "fireDiscard");
     state.fireDiscard = [...discard];
   }
+  const buried = spec.fireBuried ?? 0;
+  if (!Number.isSafeInteger(buried) || buried < 0 || buried > state.hidden.fireDeck.length) {
+    throw fixtureError(`fireBuried ${buried} does not fit a Fire deck of ${state.hidden.fireDeck.length}`);
+  }
+  state.hidden.fireBuried = buried;
 }
 
 /** A complete, invariant-clean `GameState` from a compact spec (DESIGN §8.1). */
@@ -455,6 +462,7 @@ export function buildState(spec: StateSpec = {}): GameState {
       startingBox: [],
       techDecks,
       fireDeck: [],
+      fireBuried: 0,
       pendingLook: spec.pendingLook === undefined ? null : structuredClone(spec.pendingLook),
       firePeeks: spec.firePeeks === undefined ? {} : structuredClone(spec.firePeeks),
     },
@@ -840,7 +848,7 @@ export function cardZones(state: GameState): {
     fire.push(state.firing.fireModifier);
   }
   if (state.firing?.pendingExtraFire) {
-    fire.push(state.firing.pendingExtraFire.modifier);
+    fire.push(...state.firing.pendingExtraFire.modifiers);
   }
   return { orders, techs, fire };
 }

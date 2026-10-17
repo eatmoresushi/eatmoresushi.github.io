@@ -70,7 +70,7 @@ export function roundPhaseOf(phaseType: GamePhaseType): RoundPhaseId | "final" {
     case "firing_heat_markers":
     case "firing_heat_adjustment":
     case "firing_after_quality":
-    case "firing_second_firing_jun":
+    case "firing_second_firing_choice":
     case "firing_salvage":
       return "firing";
     case "orders":

@@ -64,10 +64,10 @@ export function drawMainOrder(draft: GameState, ctx: ResolveContext): OrderId | 
 
 /**
  * Takes up to `max` cards off the top of the Main deck for a private look (the Commission
- * Market top 2 or 3, v1.6.2 L195–196; Colour Samples). B1: the discard is reshuffled only if the deck is empty when the
- * look starts, never to complete the look, so a look may see fewer than `max` cards (or
- * none when both piles are empty). The cards leave the deck; the caller holds them in
- * `hidden.pendingLook`.
+ * Market top 2 or 3, v1.6.2 L195–196; Colour Samples' top 3 and its swap's top 2, L625).
+ * B1, R16: the discard is reshuffled only if the deck is empty when the look starts, never to
+ * complete the look, so a look may see fewer than `max` cards (or none when both piles are
+ * empty). The cards leave the deck; the caller holds them in `hidden.pendingLook`.
  */
 export function takeTopMainOrders(draft: GameState, max: number, ctx: ResolveContext): OrderId[] {
   invariant(Number.isSafeInteger(max) && max >= 0, `A look takes a non-negative whole number of cards, not ${max}`);
@@ -219,6 +219,23 @@ export function removeFromHand(draft: GameState, playerId: PlayerId, orderId: Or
   const index = hand.indexOf(orderId);
   invariant(index >= 0, `${playerId} does not hold ${orderId}`);
   hand.splice(index, 1);
+}
+
+/**
+ * Discards a held Order (the Colour Samples swap, v1.6.2 L649): a Main Order goes face down on
+ * top of the Main discard (B3), a Starting Order returns to the box (L303, L520). Returns where
+ * it went; the caller emits `HELD_ORDER_DISCARDED`.
+ */
+export function discardHeldOrder(draft: GameState, playerId: PlayerId, orderId: OrderId): "main_discard" | "box" {
+  removeFromHand(draft, playerId, orderId);
+  if (isStartingOrderId(orderId)) {
+    const box = draft.hidden.startingBox;
+    invariant(!box.includes(orderId), `${orderId} is already in the box`);
+    box.push(orderId);
+    return "box";
+  }
+  discardMainOrders(draft, [orderId]);
+  return "main_discard";
 }
 
 // ── Tech decks and displays (L103, L207–210, L513, B2) ───────────────────────────────

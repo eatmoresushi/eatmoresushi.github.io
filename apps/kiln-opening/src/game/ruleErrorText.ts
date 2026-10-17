@@ -473,7 +473,7 @@ export const PHASE_TEXT: Labels<GamePhaseType> = {
   firing_heat_markers: { en: "the Heat marker step", zh: "翻火标" },
   firing_heat_adjustment: { en: "Heat adjustment", zh: "调火" },
   firing_after_quality: { en: "after-Quality abilities", zh: "定品后结算" },
-  firing_second_firing_jun: { en: "Jun during Second Firing", zh: "复烧中的钧窑调火" },
+  firing_second_firing_choice: { en: "the Second Firing choice", zh: "复烧选牌" },
   firing_salvage: { en: "Salvage a Flawed ceramic", zh: "折卖瑕品" },
   orders: { en: "the Order Phase", zh: "交货阶段" },
   cleanup_hand_limit: { en: "Cleanup", zh: "收工" },

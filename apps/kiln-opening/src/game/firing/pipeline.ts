@@ -6,7 +6,8 @@
  *   (T13) is ready, the owner has a ceramic in this firing (Imperial included) and 1 Wood.
  *   `TEST_PIECES_DECIDE{peek}` pays and peeks privately (`hidden.firePeeks`,
  *   `TEST_PIECES_PEEKED.secret`), then `TEST_PIECES_BURY{bury}` publicly leaves the card or
- *   moves it to the bottom.
+ *   moves it to the bottom. The peek reshuffles the discard on top when only buried cards
+ *   are left (R15), so the buried card is drawn last (v1.6.2 L648).
  * - Step 5 `firing_heat_markers` (L268, L676, INT): First Player order; players with a
  *   face-down own marker (who must turn or return it) or a ready Kiln Master (T24) with an
  *   eligible ceramic. One `RESOLVE_HEAT_MARKERS` per player; the own marker resolves first,
@@ -14,7 +15,9 @@
  * - Steps 6–7 are automatic (L677–678): the command that ends step 5 (or the one that ends
  *   step 4 / 3 when step 5 has no actor) reveals the Fire card and calculates Actual Heat.
  * - Step 8 `firing_heat_adjustment` (L478, L679): Jun in First Player order (ready, a ceramic
- *   in this firing, 1 Wood). Step 9 assigns Quality automatically (L274–279).
+ *   in this firing, 1 Wood). Step 9 assigns Quality automatically (L274–279); a Protective
+ *   Saggars owner's ceramics are never Flawed (T11, v1.6.2 L636), in the Shared and Imperial
+ *   Kilns alike (L650).
  *
  * Layer 4: imports layers 0–3 and, inside P5, `firing/afterQuality` (DESIGN §2.4).
  */
@@ -40,7 +43,7 @@ import type {
   TechId,
   TestPiecesOptions,
 } from "../types.ts";
-import { openAfterQuality, ownFiringCeramic, resolveSecondFiringJun } from "./afterQuality.ts";
+import { openAfterQuality, ownFiringCeramic } from "./afterQuality.ts";
 import { buryTopFire, drawFire, peekFire } from "./fireDeck.ts";
 import {
   firingRecord,
@@ -48,8 +51,10 @@ import {
   heatCalculation,
   markerValue,
   positionFor,
-  qualityOf,
+  qualityFor,
   requireFiring,
+  saggarsFloored,
+  saggarsProtects,
   withJunAdjustment,
 } from "./heat.ts";
 
@@ -287,21 +292,36 @@ function advanceHeatAdjustment(draft: GameState, ctx: ResolveContext): void {
   phase.queue.index = index;
 }
 
-/** Step 9 (L274–279, L680): Quality from each ceramic's final Heat Difference, then step 10. */
+/**
+ * Step 9 (L274–279, L680): Quality from each ceramic's final Heat Difference, then step 10.
+ * Protective Saggars' owner never gets Flawed: a difference of 3+ is Standard (v1.6.2 L636),
+ * recorded as `saggarsFloor`; the Heat Difference stays the real one.
+ */
 function assignQuality(draft: GameState, ctx: ResolveContext): void {
   const firing = requireFiring(draft);
   for (const record of firingRecordsInOrder(firing)) {
     const first = record.first;
     invariant(first !== null, `${record.ceramicId} has no Actual Heat`);
-    const quality = qualityOf(first);
+    const neverFlawed = saggarsProtects(player(draft, record.ownerId));
+    const quality = qualityFor(first.heatDifference, neverFlawed);
+    const saggarsFloor = saggarsFloored(first.heatDifference, neverFlawed);
     record.quality = quality;
+    record.saggarsFloor = saggarsFloor;
     record.history.push({ cause: "fired", from: null, to: quality });
-    emit(ctx, { type: "QUALITY_ASSIGNED", ceramicId: record.ceramicId, quality, heatDifference: first.heatDifference, cause: "fired" });
+    emit(ctx, {
+      type: "QUALITY_ASSIGNED",
+      ceramicId: record.ceramicId,
+      quality,
+      heatDifference: first.heatDifference,
+      cause: "fired",
+      saggarsFloor,
+    });
   }
   openAfterQuality(draft, ctx);
 }
 
-/** The viewer's Jun choice in step 8 or the R7 Second Firing window; otherwise null. */
+/** The viewer's Jun choice in step 8; otherwise null. Jun during Second Firing (R7) is part
+ * of `secondFiringChoiceOptions`. */
 export function junOptions(view: PlayerView): JunOptions | null {
   const game = view.game;
   const viewerId = view.viewerId;
@@ -324,14 +344,6 @@ export function junOptions(view: PlayerView): JunOptions | null {
             .map((record) => record.ceramicId)
         : [];
     return { during: "first_firing", ready, woodCost, ceramicIds };
-  }
-  if (phase.type === "firing_second_firing_jun") {
-    if (phase.actorId !== viewerId) {
-      return null;
-    }
-    const ready = kilnAbilityReady(player(game, viewerId), "JU");
-    const usable = ready && woodError(game, viewerId, woodCost) === null;
-    return { during: "second_firing", ready, woodCost, ceramicIds: usable ? [phase.ceramicId] : [] };
   }
   return null;
 }
@@ -462,7 +474,7 @@ export const handlers: Pick<ActionHandlerTable, "TEST_PIECES_DECIDE" | "TEST_PIE
     },
   },
   RESOLVE_JUN: {
-    phases: ["firing_heat_adjustment", "firing_second_firing_jun"],
+    phases: ["firing_heat_adjustment"],
     validate(view, action) {
       const adjustment = action.adjustment;
       if (adjustment === null) {
@@ -480,18 +492,9 @@ export const handlers: Pick<ActionHandlerTable, "TEST_PIECES_DECIDE" | "TEST_PIE
       if (target.error !== null) {
         return target.error;
       }
-      if (game.phase.type === "firing_second_firing_jun" && adjustment.ceramicId !== game.phase.ceramicId) {
-        return ruleError("INVALID_TARGET", "During Second Firing, Jun may adjust only the Second Firing ceramic.", {
-          ceramicId: adjustment.ceramicId,
-        });
-      }
       return woodError(game, view.viewerId, KILNS.JU.params.wood);
     },
     resolve(draft, actorId, action, ctx) {
-      if (draft.phase.type === "firing_second_firing_jun") {
-        resolveSecondFiringJun(draft, actorId, action.adjustment, ctx);
-        return;
-      }
       const adjustment = action.adjustment;
       if (adjustment !== null) {
         const record = firingRecord(requireFiring(draft), adjustment.ceramicId);

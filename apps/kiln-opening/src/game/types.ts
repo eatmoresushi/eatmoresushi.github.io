@@ -3,7 +3,7 @@
  *
  * Authority: `docs/KILN_OPENING_v1.6.2_EN_SOURCE.md` (the only rules source), the owner
  * rulings recorded in `docs/RULEBOOK_AUDIT_V1.6.2.md` and the engine delta
- * `docs/ENGINE_V1.6.2_DELTA.md`. In JSDoc below, `R1`–`R14` / `B1`–`B3` cite owner rulings,
+ * `docs/ENGINE_V1.6.2_DELTA.md`. In JSDoc below, `R1`–`R18` / `B1`–`B3` cite owner rulings,
  * `INT:` cites a recorded interpretation and `DIG:` a digital decision from the audit.
  * `DESIGN §x` refers to `docs/ENGINE_V1.6.1_DESIGN.md`, which the delta amends.
  *
@@ -222,8 +222,9 @@ export interface OwnedTechState {
   acquiredInRound: RoundNumber;
   /**
    * The once-per-round allowance has been consumed (L378). Readied at the Start of Round
-   * (L132). Declining an optional use never sets this (R4). Unused for Techs without a
-   * per-round limit (Fuel Ledger T12, Connoisseur's Cabinet T19, Colour Samples T10).
+   * (L132). Declining an optional use never sets this (R4). Colour Samples (T10) has one now:
+   * its swap (v1.6.2 L625). Unused for Techs without a per-round limit (Fuel Ledger T12,
+   * Connoisseur's Cabinet T19).
    */
   usedThisRound: boolean;
 }
@@ -277,8 +278,12 @@ export interface CompletedOrderRecord {
   /** Delivered ceramics, placed beneath the Order (L413). */
   ceramicIds: CeramicId[];
   round: RoundNumber;
-  /** Canal Barge completes an Order for every completion effect (R6, L631). */
-  via: "order_phase" | "canal_barge";
+  /**
+   * Canal Barge (T23, v1.6.2 L630): 2 Coins on the first Order its owner completes each round,
+   * automatically (INT: Canal Barge); 0 otherwise. Orders are completed only in the Order
+   * Phase (v1.6.2 L296, L402), so there is no `via`.
+   */
+  canalBargeCoins: 0 | 2;
   vp: number;
   coins: number;
   /** Printed Crowns — tie-breaker 2 (L498) counts only these (R13). */
@@ -466,7 +471,8 @@ export interface MainOrderMarketState {
   display: Array<OrderId | null>;
   /**
    * A face-up Order was reserved this turn: compact and refill when the reserving player's
-   * turn ends, after any after-action Canal Barge / Imperial Priority (L391, INT).
+   * turn ends, after any after-action Imperial Priority or Colour Samples swap (L391, INT:
+   * deferred refill).
    */
   refillPendingFor: PlayerId | null;
 }
@@ -509,6 +515,15 @@ export type PendingLook =
       inspection: { discipline: TechDiscipline; techIds: TechId[] } | null;
     }
   | {
+      /**
+       * Colour Samples' once-per-round swap (v1.6.2 L625, L649, R14, R16, R17, B1, B3): the
+       * top 2 Main Orders, looked at after the held Order was discarded; as many as remained.
+       */
+      kind: "colour_samples_swap";
+      playerId: PlayerId;
+      orderIds: OrderId[];
+    }
+  | {
       /** Guild Hall Shifu inspection (v1.6.2 L207, B2). */
       kind: "guild_inspection";
       playerId: PlayerId;
@@ -538,8 +553,14 @@ export interface HiddenState {
   startingBox: StartingOrderId[];
   /** Tech decks per discipline, top first (L103). */
   techDecks: Record<TechDiscipline, TechId[]>;
-  /** Fire deck, top first. A buried card is moved to the end (editorial note on L649). */
+  /**
+   * Fire deck, top first. Its last `fireBuried` cards were buried by Test Pieces (v1.6.2
+   * L638, L648, R15): when only buried cards are left and a card is needed, the open discard
+   * is shuffled and placed above them, so they are drawn last (`firing/fireDeck.ts`).
+   */
   fireDeck: FireModifier[];
+  /** Buried Fire cards at the bottom of `fireDeck`; 0 ≤ fireBuried ≤ fireDeck.length. */
+  fireBuried: number;
   pendingLook: PendingLook | null;
   /** Kept for the rest of the firing so the owner can reconnect and still see it. */
   firePeeks: Partial<Record<PlayerId, FirePeek>>;
@@ -606,11 +627,18 @@ export interface FiringCeramicRecord {
   /** Set in step 7. */
   first: HeatCalculation | null;
   /**
-   * Set when Second Firing recalculates this ceramic (T14). `second.fireModifier` is the
-   * permanent record of the extra Fire card; the card itself is in `fireDiscard` once
-   * resolved (or in `FiringContext.pendingExtraFire` during the R7 Jun window).
+   * Set when Second Firing recalculates this ceramic with the chosen card (T14, v1.6.2 L639).
+   * `second.fireModifier` is the chosen card; both cards are in `fireDiscard` once resolved.
    */
   second: HeatCalculation | null;
+  /** Second Firing's two revealed cards in reveal order (T14, v1.6.2 L639); null if not
+   * second-fired. Public: the cards were revealed. */
+  secondFiringCards: [FireModifier, FireModifier] | null;
+  /**
+   * Protective Saggars (T11, v1.6.2 L636) made the latest Quality assignment Standard from a
+   * Heat Difference of 3 or more. The Heat Difference stays the real one.
+   */
+  saggarsFloor: boolean;
   /** Current Quality from step 9 on; replaced by after-Quality effects (L640). */
   quality: Quality | null;
   history: QualityChange[];
@@ -653,13 +681,12 @@ export interface FiringContext {
    */
   ceramics: Partial<Record<CeramicId, FiringCeramicRecord>>;
   /**
-   * Second Firing's extra Fire card while it is being resolved (T14, L640). Non-null only
-   * while `firing_second_firing_jun` is open (R7); otherwise the card is drawn, resolved and
-   * moved to `fireDiscard` inside one command. The card is in exactly one place at a time
-   * (deck → here → discard), so card conservation counts it once (DESIGN §8.3). The history
-   * of extra cards is `FiringCeramicRecord.second.fireModifier`.
+   * Second Firing's two revealed cards while the owner chooses one (T14, v1.6.2 L639), in
+   * reveal order. Non-null only while `firing_second_firing_choice` is open; then both go to
+   * `fireDiscard`. Each card is in exactly one place at a time (deck → here → discard), so card
+   * conservation counts them once (DESIGN §8.3). Public: the cards are revealed.
    */
-  pendingExtraFire: { playerId: PlayerId; ceramicId: CeramicId; modifier: FireModifier } | null;
+  pendingExtraFire: { playerId: PlayerId; ceramicId: CeramicId; modifiers: [FireModifier, FireModifier] } | null;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════════════
@@ -700,8 +727,8 @@ export interface GuildInspectionStep {
  */
 export type WorkTurnStep =
   | {
-      /** Before-action window (L58, L631): USE_CANAL_BARGE, USE_IMPERIAL_PRIORITY, or a
-       * PLACE_* worker action. END_TURN is illegal until the worker action resolves. */
+      /** Before-action window (L58, v1.6.2 L625): USE_COLOUR_SAMPLES_SWAP, USE_IMPERIAL_PRIORITY,
+       * or a PLACE_* worker action. END_TURN is illegal until the worker action resolves. */
       kind: "before_action";
     }
   | {
@@ -733,10 +760,21 @@ export type WorkTurnStep =
     }
   | {
       /**
-       * After-action window: USE_CANAL_BARGE, USE_IMPERIAL_PRIORITY, END_TURN. Opened only
-       * if Canal Barge is owned and unused this round (regardless of the hand, so the
-       * window itself leaks nothing — DESIGN §4.5) or Imperial Priority is usable;
-       * otherwise the turn ends automatically.
+       * Colour Samples swap (v1.6.2 L625, R14, R17): the held Order is discarded and the private
+       * look at the top 2 is in `hidden.pendingLook` (kind `colour_samples_swap`). Next:
+       * COLOUR_SAMPLES_SWAP_CHOOSE, then back to the window it was used in.
+       */
+      kind: "colour_samples_swap";
+      returnTo: "before_action" | "after_action";
+      /** Cards the look shows: up to 2, at least 1 (the validator guaranteed one, B1). */
+      lookedCount: number;
+    }
+  | {
+      /**
+       * After-action window: USE_COLOUR_SAMPLES_SWAP, USE_IMPERIAL_PRIORITY, END_TURN. Opened
+       * only if the Colour Samples swap is ready with at least 1 held Order (public facts only,
+       * whatever the hand holds, so the window leaks nothing — DESIGN §4.5) or Imperial
+       * Priority is usable; otherwise the turn ends automatically.
        */
       kind: "after_action";
     };
@@ -792,11 +830,13 @@ export type GamePhase =
       queue: DecisionQueue;
     }
   | {
-      /** R7: unused Jun on the Second Firing ceramic after the extra card is revealed and
-       * Actual Heat recalculated, before the new Quality. The extra card waits in
-       * `FiringContext.pendingExtraFire`. RESOLVE_JUN assigns the new Quality, discards the
-       * card and returns to `firing_after_quality`. */
-      type: "firing_second_firing_jun";
+      /**
+       * Second Firing (T14, v1.6.2 L639, R7): the actor chooses 1 of the 2 revealed cards and,
+       * if Jun is unused and affordable, Jun's ±1 on this ceramic after the recalculation and
+       * before the new Quality. The cards wait in `FiringContext.pendingExtraFire`.
+       * SECOND_FIRING_CHOOSE resolves it and returns to `firing_after_quality`.
+       */
+      type: "firing_second_firing_choice";
       actorId: PlayerId;
       ceramicId: CeramicId;
     }
@@ -895,6 +935,11 @@ export interface PublicCounts {
   mainDiscard: number;
   techDecks: Record<TechDiscipline, number>;
   fireDeck: number;
+  /**
+   * Buried Fire cards still in the deck (`hidden.fireBuried`). Public: every bury is public
+   * (TEST_PIECES_USED). Never shown by the UI (owner decision D4); the computer player reads it.
+   */
+  fireBuried: number;
   /** Whose private look is pending and how many cards it shows — never which cards. */
   pendingLook: { playerId: PlayerId; kind: PendingLook["kind"]; count: number } | null;
 }
@@ -1150,8 +1195,24 @@ export type GameAction =
       bottomOrder: TechId[];
     }
   | { /** Colour Samples when acquired: reserve 1 looked-at Order, discard the rest (L626). */ type: "COLOUR_SAMPLES_CHOOSE"; orderId: OrderId }
+  | {
+      /** Colour Samples swap, after the look: reserve 1 of the looked cards; the other goes face
+       * down to the Main discard (v1.6.2 L625, R14, B3). */
+      type: "COLOUR_SAMPLES_SWAP_CHOOSE";
+      orderId: OrderId;
+    }
   // ── Work: before/after-action window ───────────────────────────────────────────────
-  | ({ /** Canal Barge (T23, L631, R6). */ type: "USE_CANAL_BARGE" } & OrderCompletionSpec)
+  | {
+      /**
+       * Colour Samples swap (T10, v1.6.2 L625, L649, R17): once per round, before or after one of
+       * your worker actions, discard 1 held Order (a Main Order face down to the Main discard, a
+       * Starting Order to the box), then privately look at the top 2 Main Orders (as many as
+       * remain, B1, R16) and reserve 1 (COLOUR_SAMPLES_SWAP_CHOOSE). A Tech effect, not a
+       * Commission Market action. Optional (R4).
+       */
+      type: "USE_COLOUR_SAMPLES_SWAP";
+      discardOrderId: OrderId;
+    }
   | {
       /** Imperial Priority (L293, R10): free; Shaped vessel → your empty Imperial Kiln. */
       type: "USE_IMPERIAL_PRIORITY";
@@ -1177,17 +1238,33 @@ export type GameAction =
       kilnMaster?: { ceramicId: CeramicId; value: HeatMarkerValue };
     }
   | {
-      /** Jun (L478, R7): pay 1 Wood, ±1 on one of your ceramics; null declines (R4). In
-       * `firing_second_firing_jun` the ceramic must be the Second Firing ceramic. */
+      /** Jun (L478) in step 8: pay 1 Wood, ±1 on one of your ceramics; null declines (R4).
+       * Jun during Second Firing (R7) is part of SECOND_FIRING_CHOOSE. */
       type: "RESOLVE_JUN";
       adjustment: { ceramicId: CeramicId; delta: HeatMarkerValue } | null;
     }
-  | { /** T11 (L637): 1 Wood; Flawed→Standard or Standard→Fine; never Masterpiece. */ type: "USE_PROTECTIVE_SAGGARS"; ceramicId: CeramicId }
   | {
-      /** T14 (L640): extra Fire card; recalculate; may open the R7 Jun window. Otherwise the
-       * new Quality is assigned and the card discarded in this command. */
+      /** T11 (v1.6.2 L636): once per round, 1 of your Standard ceramics from this firing becomes
+       * Fine; no Wood; never a Masterpiece. Optional (R4). */
+      type: "USE_PROTECTIVE_SAGGARS";
+      ceramicId: CeramicId;
+    }
+  | {
+      /** T14 (v1.6.2 L639): reveal 2 extra Fire cards for 1 of your Flawed or Standard ceramics
+       * from this firing; the choice follows in SECOND_FIRING_CHOOSE. Optional (R4). */
       type: "USE_SECOND_FIRING";
       ceramicId: CeramicId;
+    }
+  | {
+      /**
+       * Second Firing's choice (v1.6.2 L639, R7): the revealed card at `cardIndex` recalculates
+       * the ceramic with the same Base Heat (the Kiln Die for the Imperial Kiln), position
+       * modifier and Heat marker; then `jun`, if given, applies Jun's ±1 for 1 Wood before the
+       * new Quality, which replaces the old even if worse. Both cards are then discarded.
+       */
+      type: "SECOND_FIRING_CHOOSE";
+      cardIndex: 0 | 1;
+      jun: { delta: HeatMarkerValue } | null;
     }
   | { /** Ge (L468): one of your Standard ceramics from this firing → Fine + Crackle. */ type: "USE_GE_CRACKLE"; ceramicId: CeramicId }
   | { /** Finish your after-Quality turn; remaining abilities are declined (R4). */ type: "END_AFTER_QUALITY" }
@@ -1241,10 +1318,10 @@ export type ResourceChangeReason =
   | "contribution"
   | "test_pieces"
   | "jun"
-  | "protective_saggars"
   | "salvage"
   | "order_reward"
   | "guan"
+  | "canal_barge"
   | "imperial_grant";
 
 export interface CeramicHeatResult {
@@ -1326,7 +1403,7 @@ export type GameEvent =
   | {
       type: "ORDER_RESERVED";
       playerId: PlayerId;
-      via: "commission_market" | "colour_samples" | "canal_wharf";
+      via: "commission_market" | "colour_samples" | "colour_samples_swap" | "canal_wharf";
       source: OrderReservationSource;
       /** Display position for `face_up`, else null. */
       slotIndex: number | null;
@@ -1344,11 +1421,23 @@ export type GameEvent =
       secret: Secret<{ orderIds: OrderId[]; techIds: TechId[] }>;
     }
   | {
-      /** Unchosen looked-at Orders go face down to the Main discard (v1.6.2 L195–196, L625, B3). */
+      /** Unchosen looked-at Orders go face down to the Main discard (v1.6.2 L195–196, L625, R14, B3). */
       type: "LOOKED_ORDERS_DISCARDED";
       playerId: PlayerId;
       count: number;
       secret: Secret<{ orderIds: OrderId[] }>;
+    }
+  | {
+      /**
+       * The held Order a Colour Samples swap discards (v1.6.2 L625, L649): a Main Order face down
+       * to the Main discard, a Starting Order to the box. Where it went is public (it changes
+       * `counts.mainDiscard`, as at the table); which Order is private (B3).
+       */
+      type: "HELD_ORDER_DISCARDED";
+      playerId: PlayerId;
+      cause: "colour_samples_swap";
+      to: "main_discard" | "box";
+      secret: Secret<{ orderId: OrderId }>;
     }
   | {
       type: "TECH_ACQUIRED";
@@ -1417,12 +1506,41 @@ export type GameEvent =
   | { type: "HEAT_MARKER_RETURNED"; playerId: PlayerId; ceramicId: CeramicId }
   | { type: "KILN_MASTER_PLACED"; playerId: PlayerId; ceramicId: CeramicId; value: HeatMarkerValue }
   | { type: "FIRE_REVEALED"; modifier: FireModifier; baseHeat: BaseHeat; globalHeat: number }
-  | { type: "FIRE_DECK_RESHUFFLED"; cardCount: number }
+  | {
+      /** The open discard was shuffled and placed on top of the Fire deck, above `buriedBelow`
+       * buried cards (L511, v1.6.2 L648, R15). */
+      type: "FIRE_DECK_RESHUFFLED";
+      cardCount: number;
+      buriedBelow: number;
+    }
   | { type: "ACTUAL_HEAT_CALCULATED"; results: CeramicHeatResult[] }
   | { type: "JUN_ADJUSTED"; playerId: PlayerId; ceramicId: CeramicId; delta: HeatMarkerValue; finalActualHeat: number; during: "first_firing" | "second_firing" }
-  | { type: "QUALITY_ASSIGNED"; ceramicId: CeramicId; quality: Quality; heatDifference: number; cause: "fired" | "second_firing" }
+  | {
+      type: "QUALITY_ASSIGNED";
+      ceramicId: CeramicId;
+      quality: Quality;
+      heatDifference: number;
+      cause: "fired" | "second_firing";
+      /** Protective Saggars made a Heat Difference of 3+ Standard (T11, v1.6.2 L636). */
+      saggarsFloor: boolean;
+    }
   | { type: "QUALITY_IMPROVED"; ceramicId: CeramicId; from: Quality; to: Quality; cause: "protective_saggars" | "ge_crackle" }
-  | { type: "SECOND_FIRING_REVEALED"; playerId: PlayerId; ceramicId: CeramicId; modifier: FireModifier; calculation: HeatCalculation }
+  | {
+      /** Second Firing's 2 extra cards, revealed face up (T14, v1.6.2 L639). Public. */
+      type: "SECOND_FIRING_REVEALED";
+      playerId: PlayerId;
+      ceramicId: CeramicId;
+      modifiers: [FireModifier, FireModifier];
+    }
+  | {
+      /** The chosen card and the recalculation with it, before any R7 Jun (v1.6.2 L639). */
+      type: "SECOND_FIRING_CHOSEN";
+      playerId: PlayerId;
+      ceramicId: CeramicId;
+      cardIndex: 0 | 1;
+      modifier: FireModifier;
+      calculation: HeatCalculation;
+    }
   | { type: "CRACKLE_APPLIED"; playerId: PlayerId; ceramicId: CeramicId }
   | { type: "CERAMIC_SALVAGED"; playerId: PlayerId; ceramicId: CeramicId; coins: number }
   | { type: "FIRING_FINISHED"; round: RoundNumber; finishedCeramicIds: CeramicId[] }
@@ -1694,16 +1812,23 @@ export interface TechParamsById {
   T17: { claySurcharge: number };
   T18: { locations: CentralLocationId[] };
   T19: { vpPerCeramic: number; qualities: Quality[]; maxVp: number };
-  T10: { lookSize: number; handLimit: number };
+  /** v1.6.2 L625: when acquired, look at `lookSize` and reserve 1; hand limit `handLimit`;
+   * the swap discards `swapDiscard` held Order and looks at `swapLookSize`. */
+  T10: { lookSize: number; handLimit: number; swapDiscard: number; swapLookSize: number };
   T20: { clay: number; wood: number };
   T15: { modifiers: KilnFurnitureModifier[] };
   T21: { shapes: Shape[] };
   T22: Record<string, never>;
-  T23: Record<string, never>;
-  T11: { wood: number };
-  T12: { extraWood: number; heat: number };
+  /** v1.6.2 L630: `coins` on the first Order you complete each round. */
+  T23: { coins: number };
+  /** v1.6.2 L636: your ceramics are never worse than `floorQuality`; once per round one
+   * `upgradeFrom` ceramic becomes `upgradeTo`. */
+  T11: { floorQuality: "standard"; upgradeFrom: "standard"; upgradeTo: "fine" };
+  /** v1.6.2 L637: your Bank and Stoke cost `cardWood`; committing `extraWood` adds `heat`. */
+  T12: { cardWood: number; extraWood: number; heat: number };
   T13: { wood: number };
-  T14: Record<string, never>;
+  /** v1.6.2 L639: reveal `extraCards`, use `chosenCards` of them. */
+  T14: { extraCards: number; chosenCards: number };
   T24: { values: HeatMarkerValue[] };
   T25: { bonusCrowns: number };
 }
@@ -2100,7 +2225,7 @@ export interface LoadDestinationOption {
   returnsSettersMark: boolean;
 }
 
-/** One complete, legal way to complete a held Order (Order Phase or Canal Barge). */
+/** One complete, legal way to complete a held Order (in the Order Phase, v1.6.2 L296). */
 export interface OrderMatchOption {
   orderId: OrderId;
   ceramicIds: CeramicId[];
@@ -2109,8 +2234,11 @@ export interface OrderMatchOption {
   vp: number;
   coins: number;
   printedCrowns: number;
-  /** Optional effects this completion would trigger if not declined (R4, R6, R13). */
-  triggers: { ru: boolean; guan: boolean; tributeWare: boolean };
+  /**
+   * Effects this completion would trigger (R4, R13): Ru, Guan and Tribute Ware unless declined;
+   * Canal Barge's 2 Coins (T23, v1.6.2 L630) is informational, since it is never declined.
+   */
+  triggers: { ru: boolean; guan: boolean; tributeWare: boolean; canalBarge: boolean };
 }
 
 /**
@@ -2168,7 +2296,7 @@ export interface CommissionOptions {
 
 /** An Order look awaiting its choice (the viewer's own private look). */
 export interface LookedOrderOptions {
-  kind: "commission_market" | "colour_samples";
+  kind: "commission_market" | "colour_samples" | "colour_samples_swap";
   /** From `own.pendingLook`; the cards not reserved go face down to the discard. */
   orderIds: OrderId[];
   /** Commission Market only: display positions also reservable now (v1.6.2 L191); else []. */
@@ -2215,6 +2343,25 @@ export interface GuildInspectionOptions {
   bottomOrderLength: number;
 }
 
+/** The Colour Samples swap now (T10, v1.6.2 L625; public facts plus the viewer's own hand). */
+export interface ColourSamplesSwapOptions {
+  /** T10 owned and unused this round, in your own before/after-action window, with a held
+   * Order (the same public facts that open the after-action window). */
+  usable: boolean;
+  /** Per held Order, in hand order: the cards the look would show after discarding it (B1,
+   * R16, R17) and whether that discard is legal (a look of at least 1 card). */
+  discards: Array<{ orderId: OrderId; lookCount: number; legal: boolean }>;
+}
+
+/** Second Firing's choice (`firing_second_firing_choice`, T14, v1.6.2 L639, R7). */
+export interface SecondFiringChoiceOptions {
+  ceramicId: CeramicId;
+  /** The 2 revealed cards in reveal order; `cardIndex` picks one. */
+  modifiers: [FireModifier, FireModifier];
+  /** R7: Jun is usable on this ceramic now (the Jun Kiln, unused this round, 1 Wood). */
+  jun: { ready: boolean; woodCost: number };
+}
+
 export interface TestPiecesOptions {
   awaiting: "decision" | "bury";
   woodCost: number;
@@ -2225,7 +2372,8 @@ export interface TestPiecesOptions {
 
 export interface ContributionOption {
   command: SubmitContributionCommand;
-  /** Card Wood plus Fuel Ledger's extra Wood (L638). */
+  /** Card Wood (none for a Fuel Ledger owner's Bank and Stoke, v1.6.2 L637) plus the
+   * commitment's 1 Wood. */
   woodCost: number;
   heat: ContributionHeat;
   affordable: boolean;
@@ -2239,6 +2387,8 @@ export interface HeatMarkerStepOptions {
   kilnMaster: { ready: boolean; targets: CeramicId[]; targetsIfOwnReturned: CeramicId[] } | null;
 }
 
+/** Jun in step 8 (`firing_heat_adjustment`). Jun during Second Firing (R7) is part of
+ * `SecondFiringChoiceOptions`, so `during` is always "first_firing" here. */
 export interface JunOptions {
   during: "first_firing" | "second_firing";
   ready: boolean;
@@ -2250,8 +2400,10 @@ export type AfterQualityAbility = "protective_saggars" | "second_firing" | "ge_c
 
 export interface AfterQualityOption {
   ability: AfterQualityAbility;
-  /** Your eligible ceramics from this firing at this moment (rechecked after each use). */
+  /** Your eligible ceramics from this firing at this moment (rechecked after each use):
+   * Standard for Protective Saggars and Ge, Flawed or Standard for Second Firing. */
   ceramicIds: CeramicId[];
+  /** Always zero in V1.6.2 (Saggars no longer costs Wood, v1.6.2 L636). */
   cost: ResourceState;
 }
 
@@ -2420,8 +2572,12 @@ export interface FiringStageCeramic {
   crackle: boolean;
   /** Discarded in step 11 (L281). */
   salvaged: boolean;
-  /** Second Firing's extra Fire card (T14, L640); null when not second-fired. */
+  /** Second Firing's chosen Fire card (T14, v1.6.2 L639); null when not second-fired. */
   secondFireModifier: FireModifier | null;
+  /** Second Firing's 2 revealed cards in reveal order; null when not second-fired. */
+  secondFireRevealed: FireModifier[] | null;
+  /** Protective Saggars made this ceramic Standard instead of Flawed (v1.6.2 L636). */
+  saggarsFloor: boolean;
 }
 
 /**
@@ -2458,8 +2614,8 @@ export interface FiringStageView {
   fireDiscard: FireModifier[];
   /** Public Test Pieces records: who paid and peeked, and whether they buried (never the card). */
   testPieces: TestPiecesRecord[];
-  /** Second Firing's extra Fire card while the R7 Jun window is open; else null. */
-  extraFire: { playerId: PlayerId; ceramicId: CeramicId; modifier: FireModifier } | null;
+  /** Second Firing's 2 revealed cards while the owner chooses one; else null. */
+  extraFire: { playerId: PlayerId; ceramicId: CeramicId; modifiers: FireModifier[] } | null;
   /** In ceramic sequence order. */
   ceramics: FiringStageCeramic[];
 }

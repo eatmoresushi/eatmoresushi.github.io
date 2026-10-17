@@ -78,15 +78,11 @@ const VALID: { [K in AuthoritativeCommand["type"]]: Array<Extract<AuthoritativeC
     { type: "GUILD_FINISH", bottomOrder: [] },
   ],
   COLOUR_SAMPLES_CHOOSE: [{ type: "COLOUR_SAMPLES_CHOOSE", orderId: "O31" }],
-  USE_CANAL_BARGE: [
-    {
-      type: "USE_CANAL_BARGE",
-      orderId: "S16",
-      ceramicIds: ["c4", "c5"],
-      crackleDeclarations: [{ ceramicId: "c4", decoration: "painted" }],
-      declineKilnAbility: true,
-      declineTributeWare: false,
-    },
+  COLOUR_SAMPLES_SWAP_CHOOSE: [{ type: "COLOUR_SAMPLES_SWAP_CHOOSE", orderId: "O12" }],
+  USE_COLOUR_SAMPLES_SWAP: [
+    { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: "O40" },
+    // A Starting Order may be discarded too (to the box, v1.6.2 L649).
+    { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: "S03" },
   ],
   USE_IMPERIAL_PRIORITY: [
     { type: "USE_IMPERIAL_PRIORITY", ceramicId: "c9", glaze: "grey_green", imperialModifier: -1, reworkShape: "washer" },
@@ -105,6 +101,10 @@ const VALID: { [K in AuthoritativeCommand["type"]]: Array<Extract<AuthoritativeC
   ],
   USE_PROTECTIVE_SAGGARS: [{ type: "USE_PROTECTIVE_SAGGARS", ceramicId: "c1" }],
   USE_SECOND_FIRING: [{ type: "USE_SECOND_FIRING", ceramicId: "c1" }],
+  SECOND_FIRING_CHOOSE: [
+    { type: "SECOND_FIRING_CHOOSE", cardIndex: 0, jun: null },
+    { type: "SECOND_FIRING_CHOOSE", cardIndex: 1, jun: { delta: -1 } },
+  ],
   USE_GE_CRACKLE: [{ type: "USE_GE_CRACKLE", ceramicId: "c1" }],
   END_AFTER_QUALITY: [{ type: "END_AFTER_QUALITY" }],
   SALVAGE_FLAWED: [
@@ -135,7 +135,7 @@ describe("parseCommand: well-formed commands", () => {
   it("has an example for every command type, SUBMIT_CONTRIBUTION included", () => {
     expect(Object.keys(VALID).sort()).toEqual([...COMMAND_TYPES].sort());
     expect(COMMAND_TYPES).toContain("SUBMIT_CONTRIBUTION");
-    expect(COMMAND_TYPES).toHaveLength(29);
+    expect(COMMAND_TYPES).toHaveLength(31);
   });
 
   it.each(Object.values(VALID).flat().map((command) => [command.type, command] as const))(
@@ -267,6 +267,17 @@ const MALFORMED: Array<[label: string, input: unknown, field: string]> = [
   ["the retired Commission resource", { type: "COMMISSION_GAIN", resource: "wood" }, "type"],
   ["the retired Commission stop", { type: "COMMISSION_STOP" }, "type"],
   ["the retired top-3 choice", { type: "COMMISSION_CHOOSE_LOOKED", orderId: "O07" }, "type"],
+  // V1.6.2: Canal Barge no longer completes Orders (v1.6.2 L630); it has no command.
+  ["the retired Canal Barge completion", { type: "USE_CANAL_BARGE", orderId: "O01", ceramicIds: ["c1"] }, "type"],
+  // V1.6.2: Jun during Second Firing is part of SECOND_FIRING_CHOOSE (R7).
+  ["a Second Firing card outside the 2 revealed", { type: "SECOND_FIRING_CHOOSE", cardIndex: 2, jun: null }, "cardIndex"],
+  ["a Second Firing choice without the Jun field", { type: "SECOND_FIRING_CHOOSE", cardIndex: 0 }, "jun"],
+  ["a Second Firing Jun of 2", { type: "SECOND_FIRING_CHOOSE", cardIndex: 0, jun: { delta: 2 } }, "jun.delta"],
+  ["a Second Firing Jun naming a ceramic", { type: "SECOND_FIRING_CHOOSE", cardIndex: 0, jun: { ceramicId: "c1", delta: 1 } }, "jun.ceramicId"],
+  ["a swap without the Order", { type: "USE_COLOUR_SAMPLES_SWAP" }, "discardOrderId"],
+  ["a swap of an unknown Order", { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: "O49" }, "discardOrderId"],
+  ["a swap naming the look in advance", { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: "O40", orderId: "O12" }, "orderId"],
+  ["a swap choice of an unknown Order", { type: "COLOUR_SAMPLES_SWAP_CHOOSE", orderId: "S17" }, "orderId"],
   ["a retired Tech", { type: "PLACE_GUILD_HALL", workerId: "p1:shifu", choice: { kind: "buy_face_up", techId: "T02" } }, "choice.techId"],
   ["a V1.4 discipline", { type: "PLACE_GUILD_HALL", workerId: "p1:shifu", choice: { kind: "inspect", discipline: "forming" } }, "choice.discipline"],
   ["a bottom order that is not an array", { type: "GUILD_FINISH", bottomOrder: "T05" }, "bottomOrder"],

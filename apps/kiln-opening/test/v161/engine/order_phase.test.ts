@@ -128,9 +128,9 @@ describe("the single pass (L297)", () => {
       { type: "ORDER_TURN_STARTED", playerId: "p1" },
     ]);
     expect(table.prompt().actorIds).toEqual(["p1"]);
-    expect(table.player("p2").completedOrders.map((r) => [r.orderId, r.via])).toEqual([
-      ["S01", "order_phase"],
-      ["S02", "order_phase"],
+    expect(table.player("p2").completedOrders.map((r) => [r.orderId, r.canalBargeCoins])).toEqual([
+      ["S01", 0],
+      ["S02", 0],
     ]);
     expect(table.state.hidden.orderHands["p2"]).toEqual(["O11"]);
 

@@ -57,11 +57,13 @@ import { scorePreview as scorePreviewOf } from "./scoring.ts";
 import { ceramicSequence, ceramicsOf, decisionPrompt, heatMarkerOf, imperialKilnCeramic, lookup, player, turnOrder, workStep } from "./state.ts";
 import { acquisitionError, handLimit, ownsTech, techPrice, techReady } from "./techs.ts";
 import { commissionLimits } from "./work/commissionMarket.ts";
-import { imperialPriorityUsable } from "./work/turn.ts";
+import { colourSamplesSwapUsable, imperialPriorityUsable } from "./work/turn.ts";
+import { swapLookCount, validateColourSamplesSwap } from "./work/windowAbilities.ts";
 import type {
   ActorView,
   BoardView,
   CeramicId,
+  ColourSamplesSwapOptions,
   CommissionOptions,
   ContributionOption,
   CostQuote,
@@ -129,7 +131,7 @@ export { quoteMaterialsYard } from "./work/materialsYard.ts";
 export { quoteFormDecorate } from "./work/formDecorate.ts";
 export { loadDestinationOptions } from "./kilnLoading.ts";
 export { heatMarkerStepOptions, junOptions, testPiecesOptions } from "./firing/pipeline.ts";
-export { afterQualityOptions, salvageOptions } from "./firing/afterQuality.ts";
+export { afterQualityOptions, salvageOptions, secondFiringChoiceOptions } from "./firing/afterQuality.ts";
 export { legalContributions } from "./firing/contributions.ts";
 export { findOrderMatches } from "./orders/matching.ts";
 export { SCORE_BREAKDOWN_ROWS, TIE_BREAK_ORDER } from "./scoring.ts";
@@ -139,7 +141,6 @@ type FormDecorateAction = Extract<GameAction, { type: "PLACE_FORM_DECORATE" }>;
 const SENIOR_APPRENTICE: TechId = "T18";
 const LARGE_THROWING_WHEEL: TechId = "T01";
 const DECORATORS_KIT: TechId = "T16";
-const CANAL_BARGE: TechId = "T23";
 const FUEL_LEDGER: TechId = "T12";
 const PREPARED_CLAY: TechId = "T17";
 
@@ -363,7 +364,7 @@ function firingStepOf(phase: PublicGameState["phase"]): FiringStep | null {
     case "firing_heat_adjustment":
       return 8;
     case "firing_after_quality":
-    case "firing_second_firing_jun":
+    case "firing_second_firing_choice":
       return 10;
     case "firing_salvage":
       return 11;
@@ -406,6 +407,8 @@ function stageOf(game: PublicGameState, firing: FiringContext, step: FiringStep,
         crackle: record.crackle,
         salvaged: record.salvaged,
         secondFireModifier: record.second?.fireModifier ?? null,
+        secondFireRevealed: record.secondFiringCards === null ? null : [...record.secondFiringCards],
+        saggarsFloor: record.saggarsFloor,
       };
     });
   return {
@@ -427,7 +430,10 @@ function stageOf(game: PublicGameState, firing: FiringContext, step: FiringStep,
     globalHeat: firing.globalHeat,
     fireDiscard: [...game.fireDiscard],
     testPieces: firing.testPieces.map((record) => ({ playerId: record.playerId, peeked: record.peeked, buried: record.buried })),
-    extraFire: live && firing.pendingExtraFire !== null ? { ...firing.pendingExtraFire } : null,
+    extraFire:
+      live && firing.pendingExtraFire !== null
+        ? { playerId: firing.pendingExtraFire.playerId, ceramicId: firing.pendingExtraFire.ceramicId, modifiers: [...firing.pendingExtraFire.modifiers] }
+        : null,
     ceramics,
   };
 }
@@ -856,9 +862,9 @@ export function commissionOptions(view: PlayerView, effect: WorkerEffect): Commi
 }
 
 /**
- * The viewer's own pending Order look (Commission Market or Colour Samples when acquired), if
- * any. For the Commission Market, while `COMMISSION_CHOOSE` is due, it also lists the display
- * positions reservable now and the effect's reservation limit (v1.6.2 L195–198).
+ * The viewer's own pending Order look (Commission Market, Colour Samples when acquired or its
+ * swap), if any. For the Commission Market, while `COMMISSION_CHOOSE` is due, it also lists the
+ * display positions reservable now and the effect's reservation limit (v1.6.2 L195–198).
  */
 export function lookedOrderOptions(view: PlayerView): LookedOrderOptions | null {
   const look = view.own?.pendingLook ?? null;
@@ -962,16 +968,24 @@ export function magistratesHallQuote(view: PlayerView, effect: WorkerEffect): Co
 }
 
 /**
- * Held Orders Canal Barge could complete now (T23 ready; own view only, R6): empty outside the
- * viewer's own before- or after-action window of a Work turn, where the validator rejects it.
+ * The Colour Samples swap now (T10, v1.6.2 L625): `usable` on the public facts that open the
+ * window (T10 ready, a held Order, the viewer's own before/after-action window); per held Order,
+ * in hand order, how many cards the look would show after discarding it (B1, R16, R17) and the
+ * validator's verdict on that discard.
  */
-export function canalBargeOptions(view: PlayerView): OrderMatchOption[] {
-  const viewerId = view.viewerId;
-  const p = viewerId === null ? null : seatedPlayer(view.game, viewerId);
-  if (viewerId === null || p === null || !techReady(p, CANAL_BARGE) || !ownActionWindow(view.game, viewerId)) {
-    return [];
+export function colourSamplesSwapOptions(view: PlayerView): ColourSamplesSwapOptions {
+  const actor = asActorView(view);
+  if (actor === null || !ownActionWindow(view.game, actor.viewerId) || !colourSamplesSwapUsable(view.game, actor.viewerId)) {
+    return { usable: false, discards: [] };
   }
-  return completableOrders(view);
+  return {
+    usable: true,
+    discards: actor.own.orderHand.map((orderId) => ({
+      orderId,
+      lookCount: swapLookCount(view.game, orderId),
+      legal: validateColourSamplesSwap(actor, orderId) === null,
+    })),
+  };
 }
 
 /** The player's own before- or after-action window of a Work turn. */
@@ -1014,13 +1028,14 @@ export function imperialPriorityOptions(view: PlayerView): ImperialPriorityOptio
   return { usable: true, ceramicIds: vessels.map((c) => c.id), ceramics };
 }
 
-// ── Orders (Order Phase and Canal Barge pickers) ─────────────────────────────────────
+// ── Orders (Order Phase pickers) ─────────────────────────────────────────────────────
 
 function finishedPool(game: PublicGameState, playerId: PlayerId): FinishedCeramic[] {
   return ceramicsOf(game, playerId, "finished");
 }
 
-/** An `OrderMatchOption` for a matcher result (Ru/Guan/Tribute Ware triggers before any decline). */
+/** An `OrderMatchOption` for a matcher result (Ru/Guan/Tribute Ware triggers before any decline,
+ * and Canal Barge's automatic 2 Coins). */
 export function orderMatchOption(game: PublicGameState, playerId: PlayerId, order: OrderDefinition, match: OrderMatch): OrderMatchOption {
   const p = player(game, playerId);
   const ceramics = match.ceramicIds
@@ -1114,7 +1129,7 @@ export function orderSelectionCheck(
  * - per selected Crackle ceramic, the verdict of declaring each Decoration, and of leaving it
  *   undeclared (its printed Decoration), with the other ceramics' declarations as given.
  * Every verdict is `orderSelectionCheck`, the validator's own matcher, so it agrees with
- * `COMPLETE_ORDER` and `USE_CANAL_BARGE` in their windows.
+ * `COMPLETE_ORDER` in the Order Phase.
  */
 export function crackleDeclarationChecks(
   view: PlayerView,
@@ -1160,9 +1175,10 @@ export function crackleDeclarationChecks(
 // ── Firing ───────────────────────────────────────────────────────────────────────────
 
 /**
- * The viewer's Contribution choices while they may submit (L253–263, L638): Tend, Bank, Stoke,
- * then Bank and Stoke with Fuel Ledger when owned, each with its Wood, Heat and whether it is
- * legal now (`legalContributions`, i.e. `validateContribution`).
+ * The viewer's Contribution choices while they may submit (L253–263, v1.6.2 L637): Tend, Bank,
+ * Stoke, then Bank and Stoke with Fuel Ledger's commitment when owned, each with its Wood (a
+ * Fuel Ledger owner's Bank and Stoke cost none), Heat and whether it is legal now
+ * (`legalContributions`, i.e. `validateContribution`).
  */
 export function contributionOptions(view: PlayerView): ContributionOption[] {
   const phase = view.game.phase;
@@ -1185,7 +1201,7 @@ export function contributionOptions(view: PlayerView): ContributionOption[] {
     const submission = { card, fuelLedger };
     return {
       command,
-      woodCost: contributionWood(submission),
+      woodCost: contributionWood(submission, ownsTech(p, FUEL_LEDGER)),
       heat: contributionHeat(submission),
       affordable: legal.some((c) => c.card === card && c.fuelLedger === fuelLedger),
     };

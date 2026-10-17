@@ -1,19 +1,31 @@
 /**
- * Canal Barge (T23, L631, L646, R4, R6; INT: before/after window, deferred refill): once per
- * round, before or after one of your worker actions, complete 1 held Order following every
- * rule for completing Orders — including Ru, Guan, Tribute Ware and Crackle wildcards. It is
- * not a worker action; the worker action is still due when it is used before it.
+ * Canal Barge (T23, v1.6.2 L630; change 22, L32; INT: Canal Barge): once per round, when you
+ * complete an Order, gain 2 Coins. It no longer completes Orders: Orders are completed only in
+ * the Order Phase (v1.6.2 L296, L402, L484), so Ru, Guan, Tribute Ware and Crackle wildcards
+ * trigger only there (ruling R6 is obsolete). The 2 Coins are automatic on the owner's first
+ * completion each round, Starting Orders included (L520).
  */
 
 import { describe, expect, it } from "vitest";
-import { projectEvent } from "../../../src/game/view.ts";
-import type { GameAction, GameEvent, OrderId } from "../../../src/game/types.ts";
+import { parseCommand } from "../../../src/game/actionGuard.ts";
+import { validateAction } from "../../../src/game/engine.ts";
+import { completableOrders } from "../../../src/game/selectors.ts";
+import type { GameAction, GameEvent, GameState } from "../../../src/game/types.ts";
+import { actorViewOf, projectEvent, viewOf } from "../../../src/game/view.ts";
 import { type CeramicSpec, type StateSpec, buildState } from "./support/fixtures.ts";
 import { LocalTable } from "./support/localTable.ts";
-import { expectDocumentedDetails } from "./support/ruleErrors.ts";
 
-function table(spec: StateSpec = {}): LocalTable {
-  return new LocalTable(buildState(spec), { flow: "halt", pass: ["worker_action_done"] });
+function ordersPhase(turnOrder: string[]): GameState["phase"] {
+  return { type: "orders", turnOrder, index: 0 };
+}
+
+function orderTable(spec: StateSpec): LocalTable {
+  const players = typeof spec.players === "number" ? spec.players : (spec.players?.length ?? 2);
+  const order = Array.from({ length: players }, (_, index) => `p${index + 1}`);
+  const first = spec.firstPlayerId ?? "p1";
+  const start = order.indexOf(first);
+  const turnOrder = order.map((_, offset) => order[(start + offset) % order.length] as string);
+  return new LocalTable(buildState({ round: 2, ...spec, phase: ordersPhase(turnOrder) }), { flow: "halt" });
 }
 
 function types(events: readonly GameEvent[]): string[] {
@@ -26,211 +38,129 @@ function only<T extends GameEvent["type"]>(events: readonly GameEvent[], type: T
   return found[0] as Extract<GameEvent, { type: T }>;
 }
 
-function barge(orderId: OrderId, ceramicIds: string[], extra: Partial<Extract<GameAction, { type: "USE_CANAL_BARGE" }>> = {}): GameAction {
-  return { type: "USE_CANAL_BARGE", orderId, ceramicIds, ...extra };
-}
-
-/** A Commission Market action reserving a face-up Order (v1.6.2 L195): the placement opens the
- * look, then `COMMISSION_CHOOSE` takes the Order. Returns the events of the reservation. */
-function reserveFaceUp(t: LocalTable, playerId: string, workerId: string, slotIndex = 0): GameEvent[] {
-  const orderId = t.state.market.display[slotIndex];
-  if (orderId === null || orderId === undefined) throw new Error(`no Order at ${slotIndex}`);
-  t.act(playerId, { type: "PLACE_COMMISSION_MARKET", workerId: `${playerId}:${workerId}` });
-  return t.act(playerId, { type: "COMMISSION_CHOOSE", reservations: [{ kind: "face_up", slotIndex, orderId }] });
+function complete(orderId: string, ceramicIds: string[], extra: Partial<Extract<GameAction, { type: "COMPLETE_ORDER" }>> = {}): GameAction {
+  return { type: "COMPLETE_ORDER", orderId: orderId as never, ceramicIds, ...extra };
 }
 
 const WHITE_BOWL: CeramicSpec = { owner: "p1", shape: "bowl", stage: "finished", glaze: "white", quality: "standard" };
 const WHITE_PLATE: CeramicSpec = { owner: "p1", shape: "plate", stage: "finished", glaze: "white", quality: "standard" };
 
-describe("before the worker action", () => {
-  it("completes a held Order; the worker action is still due and the barge is spent for the round", () => {
-    const t = table({ players: [{ techs: ["T23"], hand: ["O01", "O02"] }, {}], ceramics: [WHITE_BOWL, WHITE_PLATE] });
-    const events = t.act("p1", barge("O01", ["c1"]));
-    expect(types(events)).toEqual(["TECH_USED", "ORDER_COMPLETED", "RESOURCES_CHANGED"]);
-    expect(only(events, "TECH_USED")).toEqual({ type: "TECH_USED", playerId: "p1", techId: "T23" });
-    expect(only(events, "ORDER_COMPLETED").record).toMatchObject({ orderId: "O01", via: "canal_barge", vp: 3, coins: 3, ceramicIds: ["c1"] });
-    expect(t.player("p1").score.orders).toBe(3);
-    expect(t.player("p1").resources.coins).toBe(6);
-    expect(t.state.ceramics["c1"]).toMatchObject({ stage: "delivered", orderId: "O01" });
-    expect(t.state.hidden.orderHands["p1"]).toEqual(["O02"]);
-    expect(t.state.phase).toEqual({ type: "work_turn", activePlayerId: "p1", step: { kind: "before_action" } });
-
-    // Not a worker action: the turn cannot end yet (L143, L646).
-    t.expectRuleError("p1", { type: "END_TURN" }, "WORKER_ACTION_REQUIRED");
-    expectDocumentedDetails(t.expectRuleError("p1", barge("O02", ["c2"]), "TECH_ALREADY_USED"));
-
-    // With the barge spent and no Imperial Priority, the turn ends right after the action.
-    const placed = reserveFaceUp(t, "p1", "apprentice:1");
-    expect(only(placed, "WORK_TURN_ENDED").automatic).toBe(true);
-    expect(t.state.phase).toMatchObject({ activePlayerId: "p2" });
-  });
-});
-
-describe("after the worker action", () => {
-  it("the window opens whenever the barge is unused — even with nothing completable (DESIGN §4.5) — and declining keeps it (R4)", () => {
-    const t = table({ players: [{ techs: ["T23"] }, {}] });
-    reserveFaceUp(t, "p1", "apprentice:1");
-    expect(t.state.phase).toEqual({ type: "work_turn", activePlayerId: "p1", step: { kind: "after_action" } });
-    // The deferred refill waits for the end of the turn.
-    expect(t.state.market.display[0]).toBeNull();
-
-    const ended = t.act("p1", { type: "END_TURN" });
-    expect(types(ended)).toEqual(["DISPLAY_REFILLED", "WORK_TURN_ENDED", "WORK_TURN_STARTED"]);
-    expect(only(ended, "WORK_TURN_ENDED").automatic).toBe(false);
-    expect(t.player("p1").techs).toEqual([{ id: "T23", acquiredInRound: 1, usedThisRound: false }]);
-  });
-
-  it("completes an Order reserved by the same action, before the deferred refill (INT)", () => {
-    const t = table({ players: [{ techs: ["T23"] }, {}], ceramics: [WHITE_BOWL] });
-    expect(t.state.market.display[0]).toBe("O01");
-    reserveFaceUp(t, "p1", "apprentice:1");
-    expect(t.state.hidden.orderHands["p1"]).toEqual(["O01"]);
-    expect(t.state.phase).toMatchObject({ step: { kind: "after_action" } });
-
-    const events = t.act("p1", barge("O01", ["c1"]));
-    expect(types(events)).toEqual([
-      "TECH_USED",
-      "ORDER_COMPLETED",
-      "RESOURCES_CHANGED",
-      "DISPLAY_REFILLED",
-      "WORK_TURN_ENDED",
-      "WORK_TURN_STARTED",
+describe("2 Coins on the first Order completed each round (v1.6.2 L630)", () => {
+  it("adds 2 Coins to the first completion, after its own rewards, and nothing to the next", () => {
+    const t = orderTable({ players: [{ techs: ["T23"], hand: ["O01", "O02"] }, {}], ceramics: [WHITE_BOWL, WHITE_PLATE] });
+    const coins = t.player("p1").resources.coins;
+    const first = t.act("p1", complete("O01", ["c1"]));
+    expect(types(first)).toEqual(["ORDER_COMPLETED", "RESOURCES_CHANGED", "TECH_USED", "RESOURCES_CHANGED"]);
+    expect(only(first, "ORDER_COMPLETED").record).toMatchObject({ orderId: "O01", canalBargeCoins: 2, vp: 3, coins: 3 });
+    expect(first.filter((event) => event.type === "RESOURCES_CHANGED")).toEqual([
+      { type: "RESOURCES_CHANGED", playerId: "p1", clay: 0, wood: 0, coins: 3, reason: "order_reward" },
+      { type: "RESOURCES_CHANGED", playerId: "p1", clay: 0, wood: 0, coins: 2, reason: "canal_barge" },
     ]);
-    expect(only(events, "WORK_TURN_ENDED").automatic).toBe(true);
-    expect(t.player("p1").completedOrders.map((record) => [record.orderId, record.via])).toEqual([["O01", "canal_barge"]]);
-    // The Commission look took the deck's top 2 (O07, O08) to the discard; the refill reveals O09.
-    expect(t.state.market.display).toEqual(["O02", "O03", "O04", "O05", "O06", "O09"]);
+    expect(only(first, "TECH_USED")).toEqual({ type: "TECH_USED", playerId: "p1", techId: "T23" });
+    expect(t.player("p1").resources.coins).toBe(coins + 3 + 2);
+    expect(t.player("p1").techs).toEqual([{ id: "T23", acquiredInRound: 2, usedThisRound: true }]);
+
+    const second = t.act("p1", complete("O02", ["c2"]));
+    expect(types(second)).not.toContain("TECH_USED");
+    expect(only(second, "ORDER_COMPLETED").record.canalBargeCoins).toBe(0);
+    expect(t.player("p1").resources.coins).toBe(coins + 3 + 2 + 3);
+    expect(t.player("p1").completedOrders.map((record) => record.canalBargeCoins)).toEqual([2, 0]);
   });
 
-  it("a Crown completed in the window that reaches Recognition 3 makes Imperial Priority usable within it (INT)", () => {
-    const t = table({
-      players: [{ techs: ["T23"], recognition: 2, hand: ["O18"] }, {}],
-      ceramics: [
-        { owner: "p1", shape: "vase", stage: "finished", glaze: "celadon", quality: "fine" },
-        { owner: "p1", shape: "bowl", stage: "shaped" },
-      ],
-    });
-    reserveFaceUp(t, "p1", "apprentice:1");
-    const events = t.act("p1", barge("O18", ["c1"]));
-    expect(types(events)).toContain("IMPERIAL_PRIORITY_GAINED");
-    expect(t.player("p1").imperial).toMatchObject({ recognition: 3, priority: "held" });
-    expect(t.state.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "after_action" } });
-
-    const used = t.act("p1", { type: "USE_IMPERIAL_PRIORITY", ceramicId: "c2", glaze: "white", imperialModifier: 0 });
-    expect(only(used, "WORK_TURN_ENDED").automatic).toBe(true);
-    expect(t.state.ceramics["c2"]).toMatchObject({ stage: "loaded", loadedBy: "imperial_priority" });
-  });
-});
-
-describe("a Canal Barge acquired this round (L214)", () => {
-  it("is usable right after the Guild Hall action that acquired it", () => {
-    const t = table({ players: [{ hand: ["S01"] }, {}], ceramics: [WHITE_BOWL], techDisplay: { glazing_loading: ["T23", "T10"] } });
-    t.act("p1", { type: "PLACE_GUILD_HALL", workerId: "p1:apprentice:1", choice: { kind: "buy_face_up", techId: "T23" } });
-    expect(t.state.phase).toEqual({ type: "work_turn", activePlayerId: "p1", step: { kind: "after_action" } });
-    const events = t.act("p1", barge("S01", ["c1"]));
-    expect(only(events, "ORDER_COMPLETED").record).toMatchObject({ orderId: "S01", via: "canal_barge" });
-    expect(t.state.phase).toMatchObject({ activePlayerId: "p2" });
+  it("counts a Starting Order (L520) and works the round Canal Barge is acquired (L213)", () => {
+    const t = orderTable({ players: [{ techs: [{ id: "T23", acquiredInRound: 2 }], hand: ["S01"] }, {}], ceramics: [WHITE_BOWL] });
+    const events = t.act("p1", complete("S01", ["c1"]));
+    expect(only(events, "ORDER_COMPLETED").record).toMatchObject({ orderId: "S01", canalBargeCoins: 2 });
   });
 
-  it("is usable after the Shifu's inspection step resolves", () => {
-    const t = table({ players: [{ hand: ["S01"] }, {}], ceramics: [WHITE_BOWL], techDecks: { glazing_loading: ["T23", "T15", "T21", "T22"] } });
-    t.act("p1", { type: "PLACE_GUILD_HALL", workerId: "p1:shifu", choice: { kind: "inspect", discipline: "glazing_loading" } });
-    // Canal Barge costs 2, leaving 1 Coin: no second take is possible, so the inspection
-    // closes by itself and T15 goes to the bottom (v1.6.2 L207, B2).
-    t.act("p1", { type: "GUILD_TAKE", take: { kind: "inspected", techId: "T23" } });
-    expect(t.state.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "after_action" } });
-    t.act("p1", barge("S01", ["c1"]));
-    expect(t.player("p1").completedOrders).toHaveLength(1);
+  it("is automatic: nobody without Canal Barge gains it, and it cannot be declined", () => {
+    const t = orderTable({ players: [{ hand: ["O01"] }, {}], ceramics: [WHITE_BOWL] });
+    const events = t.act("p1", complete("O01", ["c1"]));
+    expect(only(events, "ORDER_COMPLETED").record.canalBargeCoins).toBe(0);
+    expect(events.some((event) => event.type === "RESOURCES_CHANGED" && event.reason === "canal_barge")).toBe(false);
+    // There is no flag to decline it: an unknown key is a malformed command.
+    expect(parseCommand({ type: "COMPLETE_ORDER", orderId: "O01", ceramicIds: ["c1"], declineCanalBarge: true })).toMatchObject({ code: "MALFORMED_ACTION" });
+  });
+
+  it("gives nothing once used this round (it is readied at the Start of Round, L132)", () => {
+    const t = orderTable({ players: [{ techs: [{ id: "T23", usedThisRound: true, acquiredInRound: 1 }], hand: ["O01"] }, {}], ceramics: [WHITE_BOWL] });
+    const spent = t.act("p1", complete("O01", ["c1"]));
+    expect(only(spent, "ORDER_COMPLETED").record.canalBargeCoins).toBe(0);
+  });
+
+  it("shows on the completion options as an automatic trigger", () => {
+    const t = orderTable({ players: [{ techs: ["T23"], hand: ["O01"] }, {}], ceramics: [WHITE_BOWL] });
+    expect(completableOrders(viewOf(t.state, "p1")).map((option) => option.triggers)).toEqual([
+      { ru: false, guan: false, tributeWare: false, canalBarge: true },
+    ]);
   });
 });
 
-describe("every completion effect applies (R6)", () => {
-  it("Ru: an actual Celadon Plain Masterpiece scores 4 VP; declining keeps the Ru use", () => {
-    const spec: StateSpec = {
-      players: [{ techs: ["T23"], hand: ["O22"] }, {}],
-      ceramics: [{ owner: "p1", shape: "bowl", stage: "finished", glaze: "celadon", decoration: "plain", quality: "masterpiece" }],
-    };
-    const t = table(spec);
-    expect(t.player("p1").kilnId).toBe("RU");
-    const events = t.act("p1", barge("O22", ["c1"]));
-    expect(only(events, "ORDER_COMPLETED").record).toMatchObject({ via: "canal_barge", kilnAbility: { kilnId: "RU", vp: 4, coins: 0 } });
-    expect(types(events)).toContain("KILN_ABILITY_USED");
-    expect(t.player("p1").score.kilnAbilities).toBe(4);
-    expect(t.player("p1").kilnAbilityUsedThisRound).toBe(true);
-
-    const declined = table(spec);
-    const declinedEvents = declined.act("p1", barge("O22", ["c1"], { declineKilnAbility: true }));
-    expect(only(declinedEvents, "ORDER_COMPLETED").record.kilnAbility).toBeNull();
-    expect(declined.player("p1").kilnAbilityUsedThisRound).toBe(false);
-  });
-
-  it("Guan and Tribute Ware: an Order showing a Crown gains 2 Coins + 1 VP and a bonus Crown", () => {
-    const t = table({
+describe("with the other completion effects, in the Order Phase only (v1.6.2 L484)", () => {
+  it("Guan: an Order showing a Crown gains Guan's 2 Coins + 1 VP and Canal Barge's 2 Coins; Tribute Ware's Crown too", () => {
+    const t = orderTable({
       firstPlayerId: "p2",
       players: [{}, { techs: ["T23", "T25"], hand: ["O18"] }],
       ceramics: [{ owner: "p2", shape: "vase", stage: "finished", glaze: "celadon", quality: "fine" }],
     });
     expect(t.player("p2").kilnId).toBe("GU");
-    const events = t.act("p2", barge("O18", ["c1"]));
+    const coins = t.player("p2").resources.coins;
+    const events = t.act("p2", complete("O18", ["c1"]));
     const record = only(events, "ORDER_COMPLETED").record;
-    expect(record).toMatchObject({ via: "canal_barge", printedCrowns: 1, bonusCrowns: 1, kilnAbility: { kilnId: "GU", vp: 1, coins: 2 } });
-    expect(t.player("p2").imperial).toMatchObject({ recognition: 2, kilnGained: true });
-    expect(t.player("p2").score).toMatchObject({ orders: 6, kilnAbilities: 1 });
-    expect(t.player("p2").techs.map((tech) => [tech.id, tech.usedThisRound])).toEqual([
-      ["T23", true],
-      ["T25", true],
-    ]);
+    expect(record).toMatchObject({ printedCrowns: 1, bonusCrowns: 1, kilnAbility: { kilnId: "GU", vp: 1, coins: 2 }, canalBargeCoins: 2 });
+    // Canal Barge comes after Ru/Guan (DELTA §2.4).
+    const order = types(events);
+    expect(order.lastIndexOf("KILN_ABILITY_USED")).toBeLessThan(order.lastIndexOf("TECH_USED"));
+    expect(events.filter((event) => event.type === "TECH_USED").map((event) => (event as { techId: string }).techId)).toEqual(["T25", "T23"]);
+    expect(t.player("p2").resources.coins - coins).toBe(record.coins + 2 + 2 + (t.player("p2").imperial.grantReceived ? 1 : 0));
   });
 
-  it("Crackle: a Crackle ceramic counts as a declared Decoration (searched when omitted)", () => {
-    const spec: StateSpec = {
+  it("Ru and Crackle wildcards trigger in the Order Phase with Canal Barge too", () => {
+    const ru = orderTable({
+      players: [{ techs: ["T23"], hand: ["O22"] }, {}],
+      ceramics: [{ owner: "p1", shape: "bowl", stage: "finished", glaze: "celadon", decoration: "plain", quality: "masterpiece" }],
+    });
+    const ruEvents = ru.act("p1", complete("O22", ["c1"]));
+    expect(only(ruEvents, "ORDER_COMPLETED").record).toMatchObject({ kilnAbility: { kilnId: "RU", vp: 4, coins: 0 }, canalBargeCoins: 2 });
+
+    const crackle = orderTable({
       firstPlayerId: "p3",
       players: [{}, {}, { techs: ["T23"], hand: ["O17"] }],
       ceramics: [{ owner: "p3", shape: "washer", stage: "finished", glaze: "white", decoration: "carved", quality: "fine", crackle: true }],
-    };
-    const searched = table(spec);
-    const events = searched.act("p3", barge("O17", ["c1"]));
-    expect(only(events, "ORDER_COMPLETED").record.crackleDeclarations).toEqual([{ ceramicId: "c1", decoration: "painted" }]);
-    expect(searched.state.ceramics["c1"]).toMatchObject({ stage: "delivered", decoration: "carved", crackle: true });
-
-    const declared = table(spec);
-    declared.act("p3", barge("O17", ["c1"], { crackleDeclarations: [{ ceramicId: "c1", decoration: "painted" }] }));
-    expect(declared.player("p3").completedOrders).toHaveLength(1);
-    const wrong = table(spec);
-    expectDocumentedDetails(
-      wrong.expectRuleError("p3", barge("O17", ["c1"], { crackleDeclarations: [{ ceramicId: "c1", decoration: "impressed" }] }), "INVALID_CRACKLE_DECLARATION"),
-    );
+    });
+    const crackleEvents = crackle.act("p3", complete("O17", ["c1"]));
+    expect(only(crackleEvents, "ORDER_COMPLETED").record).toMatchObject({
+      crackleDeclarations: [{ ceramicId: "c1", decoration: "painted" }],
+      canalBargeCoins: 2,
+    });
   });
 });
 
-describe("refusals", () => {
-  it("needs the Tech, a held Order and matching Finished ceramics", () => {
-    const unowned = table({ players: [{ hand: ["O01"] }, {}], ceramics: [WHITE_BOWL] });
-    expectDocumentedDetails(unowned.expectRuleError("p1", barge("O01", ["c1"]), "TECH_NOT_OWNED"));
-
-    const t = table({ players: [{ techs: ["T23"], hand: ["O02"] }, {}], ceramics: [WHITE_BOWL] });
-    // Face-up Orders cannot be completed (L297): only held Orders.
-    expectDocumentedDetails(t.expectRuleError("p1", barge("O01", ["c1"]), "ORDER_NOT_HELD"));
-    expectDocumentedDetails(t.expectRuleError("p1", barge("O02", ["c1"]), "ORDER_REQUIREMENTS_NOT_MET"));
-    t.expectRuleError("p2", barge("O02", ["c1"]), "NOT_YOUR_DECISION");
+describe("never in the Work Phase (v1.6.2 L32, L296)", () => {
+  it("has no command: USE_CANAL_BARGE is malformed and unknown to the dispatcher", () => {
+    expect(parseCommand({ type: "USE_CANAL_BARGE", orderId: "O01", ceramicIds: ["c1"] })).toMatchObject({ code: "MALFORMED_ACTION", details: { field: "type" } });
+    const state = buildState({ players: [{ techs: ["T23"], hand: ["O01"] }, {}], ceramics: [WHITE_BOWL] });
+    expect(validateAction(actorViewOf(state, "p1"), { type: "USE_CANAL_BARGE" } as unknown as GameAction)).toMatchObject({ code: "MALFORMED_ACTION" });
+    expect(validateAction(actorViewOf(state, "p1"), complete("O01", ["c1"]))).toMatchObject({ code: "WRONG_PHASE" });
   });
 
-  it("is not usable in the middle of a worker action", () => {
-    const t = table({ players: [{ techs: ["T23"], hand: ["O01"] }, {}], ceramics: [WHITE_BOWL] });
-    t.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:apprentice:1" });
-    const error = t.expectRuleError("p1", barge("O01", ["c1"]), "WRONG_PHASE");
-    expect(error.details).toMatchObject({ step: "commission_market" });
-    expectDocumentedDetails(error);
-    t.act("p1", { type: "COMMISSION_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 1, orderId: t.state.market.display[1] as OrderId }] });
-    t.act("p1", barge("O01", ["c1"]));
+  it("does not open the after-action window: with Canal Barge alone the turn ends after the action", () => {
+    const t = new LocalTable(buildState({ players: [{ techs: ["T23"], hand: ["O01"] }, {}], ceramics: [WHITE_BOWL] }), {
+      flow: "halt",
+      pass: ["worker_action_done"],
+    });
+    const events = t.act("p1", { type: "PLACE_CANAL_WHARF", workerId: "p1:apprentice:1" });
+    expect(only(events, "WORK_TURN_ENDED").automatic).toBe(true);
     expect(t.state.phase).toMatchObject({ activePlayerId: "p2" });
+    expect(t.player("p1").completedOrders).toEqual([]);
   });
 
-  it("the public log reveals the completed Order (L410) but no other held Order", () => {
-    const t = table({ players: [{ techs: ["T23"], hand: ["O01", "O30"] }, {}], ceramics: [WHITE_BOWL] });
-    t.act("p1", barge("O01", ["c1"]));
+  it("the public log shows the 2 Coins with the completed Order but no other held Order", () => {
+    const t = orderTable({ players: [{ techs: ["T23"], hand: ["O01", "O30"] }, {}], ceramics: [WHITE_BOWL] });
+    t.act("p1", complete("O01", ["c1"]));
     const publicLog = JSON.stringify(t.events.map(projectEvent));
-    expect(publicLog).toContain('"O01"');
+    expect(publicLog).toContain('"canalBargeCoins":2');
+    expect(publicLog).toContain('"canal_barge"');
     expect(publicLog).not.toContain('"O30"');
   });
 });

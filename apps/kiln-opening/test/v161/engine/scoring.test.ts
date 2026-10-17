@@ -96,7 +96,7 @@ describe("End-game Exhibition (L444–452, INT: automatic)", () => {
     const state = game([{ hand: ["S16"] }, {}]);
     const vase = fin(state, "p1", "vase white plain mp");
     const kept = fin(state, "p1", "bowl white plain std");
-    resolveOrderCompletion(state, "p1", { orderId: "S16", ceramicIds: [vase] }, "order_phase", testContext());
+    resolveOrderCompletion(state, "p1", { orderId: "S16", ceramicIds: [vase] }, testContext());
     expect(breakdown(state, "p1").exhibition.ceramicIds).toEqual([kept]);
   });
 
@@ -201,11 +201,11 @@ describe("winner and tie-breakers (L496, L498, R13)", () => {
     ]);
     // p1: O18 (6 VP, 2 Coins, 1 printed Crown) + Tribute Ware's bonus Crown → Recognition 2.
     const vase = fin(state, "p1", "vase celadon carved fine");
-    resolveOrderCompletion(state, "p1", { orderId: "O18", ceramicIds: [vase] }, "order_phase", testContext());
+    resolveOrderCompletion(state, "p1", { orderId: "O18", ceramicIds: [vase] }, testContext());
     // p2: O39 (14 VP, 1 Coin, 2 printed Crowns) → Recognition 2.
     const p2Vase = fin(state, "p2", "vase celadon plain fine");
     const censer = fin(state, "p2", "censer moon_white painted fine");
-    resolveOrderCompletion(state, "p2", { orderId: "O39", ceramicIds: [p2Vase, censer] }, "order_phase", testContext());
+    resolveOrderCompletion(state, "p2", { orderId: "O39", ceramicIds: [p2Vase, censer] }, testContext());
     // p1: 6 VP + 1 Coin VP + 1 Tech VP; the Exhibition (3 + 3) levels the totals at 14.
     fin(state, "p1", "bowl white plain fine");
     fin(state, "p1", "plate white plain fine");
@@ -227,7 +227,7 @@ describe("winner and tie-breakers (L496, L498, R13)", () => {
     const state = game([{ hand: ["S16"] }, {}]);
     // p1: 1 delivered Masterpiece (S16: 2 VP, Coins spent); p2: 1 exhibited Standard (2 VP).
     const delivered = fin(state, "p1", "vase white plain mp");
-    resolveOrderCompletion(state, "p1", { orderId: "S16", ceramicIds: [delivered] }, "order_phase", testContext());
+    resolveOrderCompletion(state, "p1", { orderId: "S16", ceramicIds: [delivered] }, testContext());
     player(state, "p1").resources.coins = 0;
     fin(state, "p2", "bowl white plain std");
     player(state, "p2").score.orders = 0;

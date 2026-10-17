@@ -56,7 +56,8 @@ const totals: Totals = { games: 0, commands: 0, families: new Map(), techs: new 
 const COMMAND_TYPES = Object.keys({
   SELECT_KILN: true,
   PLACE_SETTERS_MARK: true,
-  USE_CANAL_BARGE: true,
+  USE_COLOUR_SAMPLES_SWAP: true,
+  COLOUR_SAMPLES_SWAP_CHOOSE: true,
   USE_IMPERIAL_PRIORITY: true,
   PLACE_MATERIALS_YARD: true,
   PLACE_FORM_DECORATE: true,
@@ -77,6 +78,7 @@ const COMMAND_TYPES = Object.keys({
   RESOLVE_JUN: true,
   USE_PROTECTIVE_SAGGARS: true,
   USE_SECOND_FIRING: true,
+  SECOND_FIRING_CHOOSE: true,
   USE_GE_CRACKLE: true,
   END_AFTER_QUALITY: true,
   SALVAGE_FLAWED: true,
@@ -96,7 +98,7 @@ const PHASES = [
     firing_heat_markers: true,
     firing_heat_adjustment: true,
     firing_after_quality: true,
-    firing_second_firing_jun: true,
+    firing_second_firing_choice: true,
     firing_salvage: true,
     orders: true,
     cleanup_hand_limit: true,
@@ -106,6 +108,7 @@ const PHASES = [
     commission_market: true,
     guild_inspection: true,
     colour_samples: true,
+    colour_samples_swap: true,
     after_action: true,
   } satisfies Record<WorkTurnStep["kind"], true>).map((kind) => `work_turn:${kind}`),
 ];
@@ -183,7 +186,7 @@ describe("fuzz coverage", () => {
     expect(totals.games).toBe(GAMES * 6);
     // Coverage is asserted for the default seed base with at least the default game count,
     // and for any long run (≥ 50 games per player count and start); a short run from a
-    // custom seed base only reports it, since rare windows (Ru, Guan, Jun in Second Firing)
+    // custom seed base only reports it, since rare windows (Ru, Guan, a Second Firing choice)
     // may then legitimately not occur.
     if (!((GAMES >= 4 && SEED_BASE === 7100) || GAMES >= 50)) {
       return;

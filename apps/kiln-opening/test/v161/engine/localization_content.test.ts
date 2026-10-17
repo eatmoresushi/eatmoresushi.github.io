@@ -397,7 +397,7 @@ function player(id: string, seatIndex: number, kilnId: PlayerState["kilnId"], te
     kilnAbilityUsedThisRound: false,
     imperial: { recognition: 2, grantReceived: true, kilnGained: true, priority: "on_track", audienceReceived: false },
     completedOrders: [{
-      orderId: "S07", ceramicIds: ["c1"], round: 1, via: "order_phase", vp: 3, coins: 4,
+      orderId: "S07", ceramicIds: ["c1"], round: 1, canalBargeCoins: 0, vp: 3, coins: 4,
       printedCrowns: 0, bonusCrowns: 0, crackleDeclarations: [], kilnAbility: null,
     }],
     score: { orders: 3, kilnAbilities: 0, recognitionOverflow: 0, imperialAudience: 0, techs: techs.length },
@@ -457,6 +457,7 @@ function sampleState(): GameState {
       startingBox: ["S01"],
       techDecks: { workshop: ["T05", "T18"], glazing_loading: ["T10", "T20", "T15", "T22"], firing: ["T11", "T12", "T14"] },
       fireDeck: [0, 1, -2, 0],
+      fireBuried: 0,
       pendingLook: null,
       firePeeks: {},
     },

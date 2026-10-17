@@ -340,8 +340,8 @@ describe("Inverted Firing stacks and salvage (found by the fuzz test)", () => {
       round: 1, kilnDie: 2, participantIds: ["p1"], firingPlayerIds: ["p1"], contributionWindowId: null, contributions: {}, unclampedBaseHeat: 2,
       baseHeat: 2, testPieces: [], fireModifier: state.hidden.fireDeck.shift() ?? 0, globalHeat: 2, pendingExtraFire: null,
       ceramics: {
-        c1: { ceramicId: "c1", ownerId: "p1", kiln: "shared", spaceId: "low_1", glaze: "moon_white", preferredHeat: 4, positionSource: "zone", first: null, second: null, quality: "flawed", history: [], crackle: false, salvaged: true },
-        c2: { ceramicId: "c2", ownerId: "p1", kiln: "shared", spaceId: "low_1", glaze: "white", preferredHeat: 1, positionSource: "zone", first: null, second: null, quality: "fine", history: [], crackle: false, salvaged: false },
+        c1: { ceramicId: "c1", ownerId: "p1", kiln: "shared", spaceId: "low_1", glaze: "moon_white", preferredHeat: 4, positionSource: "zone", first: null, second: null, secondFiringCards: null, saggarsFloor: false, quality: "flawed", history: [], crackle: false, salvaged: true },
+        c2: { ceramicId: "c2", ownerId: "p1", kiln: "shared", spaceId: "low_1", glaze: "white", preferredHeat: 1, positionSource: "zone", first: null, second: null, secondFiringCards: null, saggarsFloor: false, quality: "fine", history: [], crackle: false, salvaged: false },
       },
     };
     expect(invariantViolations(state)).toEqual([]);

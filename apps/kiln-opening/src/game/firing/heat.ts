@@ -6,7 +6,10 @@
  * - Actual Heat (L245, L678): Shared = Global Heat + (Kiln Furniture modifier ?? zone
  *   modifier) + Heat marker; Imperial = Kiln Die + Fire + Imperial modifier + Heat marker.
  * - Heat Difference is the absolute difference from Preferred Heat (L64); Quality follows
- *   the table (L274–279).
+ *   the table (L274–279). Protective Saggars (T11, v1.6.2 L636): its owner's ceramics are never
+ *   Flawed, a Heat Difference of 3 or more counts as Standard (`qualityFor`).
+ * - Fuel Ledger (T12, v1.6.2 L637): its owner's Bank and Stoke cost no Wood; the commitment
+ *   costs 1 Wood and makes them −2 / +2 (`contributionWood`, `contributionHeat`).
  *
  * Layer 2: imports only types, `content.ts` and `errors.ts` (DESIGN §2.2). Nothing here
  * mutates its input or reads hidden information.
@@ -16,6 +19,7 @@ import { FIRING, TECHS, contributionCard, preferredHeat, qualityForDifference, z
 import { InvariantError, invariant } from "../errors.ts";
 import type {
   BaseHeat,
+  PlayerState,
   CeramicHeatMarker,
   CeramicId,
   ContributionHeat,
@@ -75,16 +79,41 @@ export function contributionHeat(submission: ContributionSubmission): Contributi
   return (printed + Math.sign(printed) * TECHS.T12.params.heat) as ContributionHeat;
 }
 
-/** Wood paid at the reveal: the card's cost plus Fuel Ledger's extra Wood (L253–259, L638). */
-export function contributionWood(submission: ContributionSubmission): number {
-  const printed = contributionCard(submission.card).woodCost;
+/**
+ * Wood paid at the reveal (L253–259, v1.6.2 L637): the card's printed cost, except that a Fuel
+ * Ledger owner's Bank and Stoke cost `T12.params.cardWood` (no Wood); plus the commitment's
+ * `extraWood`. `ownsFuelLedger` is the submitter's ownership of T12 (public).
+ */
+export function contributionWood(submission: ContributionSubmission, ownsFuelLedger: boolean): number {
+  const card = contributionCard(submission.card);
+  const cardWood = ownsFuelLedger && card.heat !== 0 ? TECHS.T12.params.cardWood : card.woodCost;
   if (!submission.fuelLedger) {
-    return printed;
+    return cardWood;
   }
-  if (contributionCard(submission.card).heat === 0) {
+  if (card.heat === 0) {
     throw new InvariantError("Fuel Ledger only applies to Bank or Stoke");
   }
-  return printed + TECHS.T12.params.extraWood;
+  return cardWood + TECHS.T12.params.extraWood;
+}
+
+/** Protective Saggars protects this player's ceramics from Flawed (T11, v1.6.2 L636): owning
+ * the tile is enough, the floor has no allowance (INT: Protective Saggars floor). */
+export function saggarsProtects(p: PlayerState): boolean {
+  return p.techs.some((tech) => tech.id === "T11");
+}
+
+/**
+ * The Quality a Heat Difference gives (L274–279), floored at Standard when `neverFlawed`
+ * (Protective Saggars, v1.6.2 L636: "a Heat Difference of 3 or more counts as Standard").
+ */
+export function qualityFor(heatDifference: number, neverFlawed: boolean): Quality {
+  const printed = qualityForDifference(heatDifference);
+  return neverFlawed && printed === "flawed" ? TECHS.T11.params.floorQuality : printed;
+}
+
+/** Whether `qualityFor` floored this difference (the raw table says Flawed). */
+export function saggarsFloored(heatDifference: number, neverFlawed: boolean): boolean {
+  return neverFlawed && qualityForDifference(heatDifference) === "flawed";
 }
 
 /**
@@ -140,9 +169,9 @@ export function withJunAdjustment(calculation: HeatCalculation, junAdjustment: -
   });
 }
 
-/** Quality of a calculation (L274–279). */
-export function qualityOf(calculation: HeatCalculation): Quality {
-  return qualityForDifference(calculation.heatDifference);
+/** Quality of a calculation (L274–279), with Protective Saggars' floor when `neverFlawed`. */
+export function qualityOf(calculation: HeatCalculation, neverFlawed = false): Quality {
+  return qualityFor(calculation.heatDifference, neverFlawed);
 }
 
 // ── Firing records ──────────────────────────────────────────────────────────────────
@@ -183,6 +212,7 @@ export function firingRecord(firing: FiringContext, ceramicId: CeramicId): Firin
  * give. A Shared ceramic needs Base Heat (from the reveal on); an Imperial ceramic needs only
  * the public Kiln Die (L289). A face-down Heat marker has no value yet (INT), so its
  * ceramic's preview stays unknown until the marker is turned or returned. Jun is not included.
+ * The owner's Protective Saggars floor applies (v1.6.2 L636). Computer use only (D3).
  */
 export function heatPreviews(view: PlayerView): HeatPreview[] {
   const game = view.game;
@@ -200,9 +230,11 @@ export function heatPreviews(view: PlayerView): HeatPreview[] {
       return { ceramicId: ceramic.id, preferredHeat: preferred, heatBeforeFire: null, qualityByFire: null };
     }
     const heatBeforeFire = source + positionFor(game, ceramic).modifier + markerValue(marker);
+    const owner = Object.hasOwn(game.players, ceramic.ownerId) ? game.players[ceramic.ownerId] : undefined;
+    const neverFlawed = owner !== undefined && saggarsProtects(owner);
     const qualityByFire = {} as Record<"-2" | "-1" | "0" | "1" | "2", Quality>;
     for (const fire of FIRE_VALUES) {
-      qualityByFire[String(fire) as "-2" | "-1" | "0" | "1" | "2"] = qualityForDifference(heatBeforeFire + fire - preferred);
+      qualityByFire[String(fire) as "-2" | "-1" | "0" | "1" | "2"] = qualityFor(heatBeforeFire + fire - preferred, neverFlawed);
     }
     return { ceramicId: ceramic.id, preferredHeat: preferred, heatBeforeFire, qualityByFire };
   });

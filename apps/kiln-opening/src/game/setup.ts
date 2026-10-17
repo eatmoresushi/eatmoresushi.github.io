@@ -260,6 +260,7 @@ export function createInitialState(input: CreateGameInput, rng: RandomSource): C
       startingBox,
       techDecks: emptyTechRecord(),
       fireDeck: [],
+      fireBuried: 0,
       pendingLook: null,
       firePeeks: {},
     },

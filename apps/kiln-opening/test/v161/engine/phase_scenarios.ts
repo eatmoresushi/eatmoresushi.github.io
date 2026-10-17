@@ -64,9 +64,9 @@ export function phaseScenarios(): PhaseScenario[] {
   }
 
   add(
-    "before the worker action: Canal Barge, Imperial Priority with Reworking Table, Ding",
+    "before the worker action: Colour Samples swap, Imperial Priority with Reworking Table, Ding",
     work({
-      players: [{ kilnId: "DI", techs: ["T05", "T23", "T14"], recognition: 3, resources: RICH, hand: ["O01", "S01"] }, { kilnId: "RU" }],
+      players: [{ kilnId: "DI", techs: ["T05", "T10", "T14"], recognition: 3, resources: RICH, hand: ["O01", "S01"] }, { kilnId: "RU" }],
       ceramics: [
         { owner: "p1", stage: "shaped", shape: "vase", decoration: "carved" },
         { owner: "p1", stage: "shaped", shape: "bowl" },
@@ -119,8 +119,13 @@ export function phaseScenarios(): PhaseScenario[] {
     add("Colour Samples choice", table, "p1", (c) => c.type === "COLOUR_SAMPLES_CHOOSE");
   }
   {
+    const table = work({ players: [{ techs: ["T10"], hand: ["O40", "S01"] }, {}] });
+    table.act("p1", { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: "S01" });
+    add("Colour Samples swap look", table, "p1", (c) => c.type === "COLOUR_SAMPLES_SWAP_CHOOSE");
+  }
+  {
     const table = work({
-      players: [{ techs: ["T23"], recognition: 3, hand: ["O01"] }, {}],
+      players: [{ techs: ["T10"], recognition: 3, hand: ["O01"] }, {}],
       ceramics: [
         { owner: "p1", stage: "finished", shape: "bowl", glaze: "white", quality: "standard" },
         { owner: "p1", stage: "shaped", shape: "plate" },
@@ -205,7 +210,7 @@ export function phaseScenarios(): PhaseScenario[] {
     });
     table.act("p1", { type: "RESOLVE_JUN", adjustment: null });
     table.act("p1", { type: "USE_SECOND_FIRING", ceramicId: "c1" });
-    add("Jun during Second Firing (R7)", table, "p1", (c) => c.type === "RESOLVE_JUN" && c.adjustment === null);
+    add("Second Firing choice with Jun (R7)", table, "p1", (c) => c.type === "SECOND_FIRING_CHOOSE" && c.cardIndex === 0 && c.jun === null);
   }
   add(
     "salvage",

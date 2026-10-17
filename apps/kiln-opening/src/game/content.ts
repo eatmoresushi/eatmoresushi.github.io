@@ -285,11 +285,24 @@ function validateClarifications(items: unknown, where: string, problems: string[
 }
 
 /**
- * Secondary labels of the short component text (`docs/KILN_OPENING_v1.6.1_COMPONENT_TEXT_SOURCE.md`,
- * "Format rules"). The timing clause runs to the first colon; after it, these labels open a
- * second clause (Colour Samples' "Ongoing:", Ge's "Orders:"). The UI bolds both.
+ * Secondary labels of the short component text (`docs/KILN_OPENING_v1.6.2_COMPONENT_TEXT.md`):
+ * exactly the owner's bold timing clauses after the first one of a line (ENGINE_V1.6.2_DELTA.md
+ * §3.3). The timing clause runs to the first colon; after it, these labels open a further
+ * clause (Colour Samples' "Ongoing:" and swap, Ge's "Orders:", Protective Saggars' after-Quality
+ * step, Fuel Ledger's commitment). The UI bolds them all.
  */
-export const SHORT_TEXT_SECONDARY_LABELS: readonly string[] = Object.freeze(["Ongoing:", "Orders:", "持续：", "完成委托时："]);
+export const SHORT_TEXT_SECONDARY_LABELS: readonly string[] = Object.freeze([
+  "Ongoing:",
+  "Orders:",
+  "Once per round, before or after one of your worker actions:",
+  "Once per round, after Quality is assigned:",
+  "When you choose Bank or Stoke:",
+  "持续：",
+  "完成委托时：",
+  "每轮一次，你的一次工人行动之前或之后：",
+  "每轮一次，定品后：",
+  "选控火时：",
+]);
 
 /**
  * Splits a plain-text `shortText` / `shortTextZh` into runs for display: the timing clause up to

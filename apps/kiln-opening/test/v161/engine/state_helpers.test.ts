@@ -89,7 +89,7 @@ describe("decisionPrompt (DESIGN §3.4)", () => {
     ["firing_heat_markers", { type: "firing_heat_markers", queue: { actorIds: ["p2"], index: 0 } }, ["p2"], "single"],
     ["firing_heat_adjustment", { type: "firing_heat_adjustment", queue: { actorIds: ["p1"], index: 0 } }, ["p1"], "single"],
     ["firing_after_quality", { type: "firing_after_quality", queue: { actorIds: ["p1", "p2"], index: 1 } }, ["p2"], "single"],
-    ["firing_second_firing_jun", { type: "firing_second_firing_jun", actorId: "p1", ceramicId: "c1" }, ["p1"], "single"],
+    ["firing_second_firing_choice", { type: "firing_second_firing_choice", actorId: "p1", ceramicId: "c1" }, ["p1"], "single"],
     ["firing_salvage", { type: "firing_salvage", pendingPlayerIds: ["p3", "p1"], openedAtRevision: 4 }, ["p3", "p1"], "parallel"],
     ["orders", { type: "orders", turnOrder: ["p2", "p3", "p1"], index: 2 }, ["p1"], "single"],
     ["cleanup_hand_limit", { type: "cleanup_hand_limit", pendingPlayerIds: ["p2"], openedAtRevision: 9 }, ["p2"], "parallel"],

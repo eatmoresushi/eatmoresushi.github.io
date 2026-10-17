@@ -74,7 +74,7 @@ import {
   afterQualityOptions,
   applyAction,
   boardView,
-  canalBargeOptions,
+  colourSamplesSwapOptions,
   commissionOptions,
   completableOrders,
   contributionOptions,
@@ -652,7 +652,7 @@ function workSelectors(view: PlayerView, actor: ActorView): Record<string, unkno
     commissionOptions: { apprentice: commissionOptions(view, "apprentice"), shifu: commissionOptions(view, "shifu") },
     guildOptions: { apprentice: guildOptions(view, "apprentice"), shifu: guildOptions(view, "shifu") },
     magistratesHallQuote: { apprentice: magistratesHallQuote(view, "apprentice"), shifu: magistratesHallQuote(view, "shifu") },
-    canalBargeOptions: canalBargeOptions(view),
+    colourSamplesSwapOptions: colourSamplesSwapOptions(view),
     imperialPriorityOptions: imperialPriorityOptions(view),
   };
 }
@@ -1508,13 +1508,13 @@ function findTestPieces(): Captured[] {
   return [scriptedMoment(decision, "Test Pieces decision"), scriptedMoment(bury, "Test Pieces bury")];
 }
 
-/** m18: Jun during Second Firing (R7): the extra Fire card is turned, Jun may still adjust. */
+/** m18: the Second Firing choice with Jun (v1.6.2 L639, R7): 2 extra Fire cards are turned. */
 function findJunSecondFiring(): Captured {
   const meta: MomentMeta = {
     id: "m18_jun_second_firing",
-    title: "3P · Firing step 10 · Jun during Second Firing (R7)",
+    title: "3P · Firing step 10 · Second Firing choice with Jun (R7)",
     description:
-      "The viewer (Jun Kiln, Second Firing) kept Jun unused in step 8, then used Second Firing: the extra Fire card is turned (firingStageView.extraFire) and Actual Heat recalculated; before the new Quality, Jun may adjust that ceramic by ±1 for 1 Wood.",
+      "The viewer (Jun Kiln, Second Firing) kept Jun unused in step 8, then used Second Firing: 2 extra Fire cards are turned (firingStageView.extraFire, secondFiringChoiceOptions). The viewer chooses 1 to recalculate with and, before the new Quality, may use Jun's ±1 for 1 Wood (SECOND_FIRING_CHOOSE).",
   };
   const seat = "p1";
   const steer = combine(
@@ -1536,7 +1536,7 @@ function findJunSecondFiring(): Captured {
     playerCounts: [3],
     seeds: 40,
     steer: () => steer,
-    at: (t) => (t.state.phase.type === "firing_second_firing_jun" ? t.state.phase.actorId : null),
+    at: (t) => (t.state.phase.type === "firing_second_firing_choice" ? t.state.phase.actorId : null),
     giveUp: (t) => t.state.round > 5,
     fallback: "Jun during Second Firing (R7)",
     hint: 13,
@@ -1630,12 +1630,12 @@ function newMoments(): Captured[] {
     search({
       meta: {
         id: "m17_after_action",
-        title: "3P · Work Phase · after-action window (Canal Barge)",
-        description: "The viewer owns Canal Barge (T23): after their worker action they may complete a held Order now, use Imperial Priority if they have it, or end the turn (canalBargeOptions, imperialPriorityOptions).",
+        title: "3P · Work Phase · after-action window (Colour Samples swap)",
+        description: "The viewer owns Colour Samples (T10): after their worker action they may swap 1 held Order once this round (discard it, privately look at the top 2 Main Orders, reserve 1), use Imperial Priority if they have it, or end the turn (colourSamplesSwapOptions, imperialPriorityOptions).",
       },
       playerCounts: [3],
       seeds: 30,
-      steer: () => buyTechSteer("T23"),
+      steer: () => buyTechSteer("T10"),
       at: (t, actor) => {
         const phase = t.state.phase;
         return phase.type === "work_turn" && phase.activePlayerId === actor && phase.step.kind === "after_action" && t.state.round >= 2 ? actor : null;

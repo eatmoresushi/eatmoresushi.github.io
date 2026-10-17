@@ -47,6 +47,8 @@ import type {
 const IMPERIAL_MODIFIERS = [-1, 0, 1] as const satisfies readonly ImperialModifier[];
 const KILN_FURNITURE_MODIFIERS = [-1, 0, 1] as const satisfies readonly KilnFurnitureModifier[];
 const HEAT_MARKER_VALUES = [1, -1] as const satisfies readonly HeatMarkerValue[];
+/** Second Firing's 2 revealed cards (v1.6.2 L639). */
+const SECOND_FIRING_CARD_INDEXES = [0, 1] as const;
 
 /** Compile-time proof that each literal list names every member of its union. */
 type Covers<Union, List extends readonly unknown[]> = [Exclude<Union, List[number]>] extends [never] ? true : never;
@@ -95,7 +97,7 @@ function objectAt(value: unknown, field: string): Fields {
 }
 
 /** Rejects unknown keys and missing required keys (`undefined` counts as missing; `null` is
- * present, for the nullable fields `spaceId`, `adjustment` and `ceramicId`). */
+ * present, for the nullable fields `spaceId`, `adjustment`, `ceramicId` and `jun`). */
 function shape(o: Fields, field: string, required: readonly string[], optional: readonly string[] = []): void {
   for (const key of Object.keys(o)) {
     if (!required.includes(key) && !optional.includes(key)) {
@@ -395,7 +397,14 @@ const PARSERS: Parsers = {
     shape(o, "", ["type", "orderId"]);
     return { type: "COLOUR_SAMPLES_CHOOSE", orderId: orderId(get(o, "orderId"), "orderId") };
   },
-  USE_CANAL_BARGE: (o) => ({ type: "USE_CANAL_BARGE", ...completionSpec(o) }),
+  COLOUR_SAMPLES_SWAP_CHOOSE: (o) => {
+    shape(o, "", ["type", "orderId"]);
+    return { type: "COLOUR_SAMPLES_SWAP_CHOOSE", orderId: orderId(get(o, "orderId"), "orderId") };
+  },
+  USE_COLOUR_SAMPLES_SWAP: (o) => {
+    shape(o, "", ["type", "discardOrderId"]);
+    return { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: orderId(get(o, "discardOrderId"), "discardOrderId") };
+  },
   USE_IMPERIAL_PRIORITY: (o) => {
     shape(o, "", ["type", "ceramicId", "glaze", "imperialModifier"], ["reworkShape"]);
     return {
@@ -457,6 +466,17 @@ const PARSERS: Parsers = {
   },
   USE_PROTECTIVE_SAGGARS: (o) => ({ type: "USE_PROTECTIVE_SAGGARS", ceramicId: ceramicOnly(o) }),
   USE_SECOND_FIRING: (o) => ({ type: "USE_SECOND_FIRING", ceramicId: ceramicOnly(o) }),
+  SECOND_FIRING_CHOOSE: (o) => {
+    shape(o, "", ["type", "cardIndex", "jun"]);
+    const value = get(o, "jun");
+    let jun: { delta: HeatMarkerValue } | null = null;
+    if (value !== null) {
+      const j = objectAt(value, "jun");
+      shape(j, "jun", ["delta"]);
+      jun = { delta: heatMarkerValue(get(j, "delta"), "jun.delta") };
+    }
+    return { type: "SECOND_FIRING_CHOOSE", cardIndex: oneOf(get(o, "cardIndex"), SECOND_FIRING_CARD_INDEXES, "cardIndex"), jun };
+  },
   USE_GE_CRACKLE: (o) => ({ type: "USE_GE_CRACKLE", ceramicId: ceramicOnly(o) }),
   END_AFTER_QUALITY: (o) => {
     onlyType(o);

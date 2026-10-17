@@ -153,13 +153,15 @@ export const ABILITY_CASES: readonly AbilityCase[] = [
   },
   // ── Glazing & Loading ────────────────────────────────────────────────────────────
   {
+    // The once-per-round swap (v1.6.2 L625) is optional; the when-acquired reservation is
+    // mandatory whenever a card can be looked at (R4, `guild_hall.test.ts`).
     ability: "T10",
-    notOptional: "Colour Samples' reservation is mandatory when a Main Order can be looked at (R4)",
     actor: P1,
-    table: () => workTable({ players: [{ resources: RICH }, {}], techDisplay: { glazing_loading: ["T10", "T20"] } }),
-    uses: isType("PLACE_GUILD_HALL", (a) => a.choice.kind === "buy_face_up" && a.choice.techId === "T10"),
-    used: (events) => hasEvent(events, (e) => e.type === "PRIVATE_LOOK_OPENED" && e.kind === "colour_samples"),
-    ready: () => true,
+    table: () => workTable({ players: [{ techs: ["T10"], hand: ["O40"] }, {}] }),
+    uses: isType("USE_COLOUR_SAMPLES_SWAP", (a) => a.discardOrderId === "O40"),
+    declines: isType("PLACE_CANAL_WHARF"),
+    used: (events) => techUsed(events, "T10") && hasEvent(events, (e) => e.type === "PRIVATE_LOOK_OPENED" && e.kind === "colour_samples_swap"),
+    ready: techIsReady("T10"),
   },
   {
     ability: "T20",
@@ -206,19 +208,24 @@ export const ABILITY_CASES: readonly AbilityCase[] = [
   },
   {
     ability: "T23",
+    notOptional: "Canal Barge's 2 Coins come automatically with the first Order completed each round (v1.6.2 L630, INT: Canal Barge)",
     actor: P1,
     table: () =>
-      workTable({
+      ordersTable({
         players: [{ techs: ["T23"], hand: ["O01"] }, {}],
         ceramics: [{ owner: P1, stage: "finished", shape: "bowl", glaze: "white", quality: "standard" }],
       }),
-    uses: isType("USE_CANAL_BARGE"),
-    declines: isType("PLACE_CANAL_WHARF"),
-    used: (events) => techUsed(events, "T23") && hasEvent(events, (e) => e.type === "ORDER_COMPLETED" && e.record.via === "canal_barge"),
+    uses: isType("COMPLETE_ORDER", (a) => a.orderId === "O01"),
+    used: (events) =>
+      techUsed(events, "T23") &&
+      hasEvent(events, (e) => e.type === "ORDER_COMPLETED" && e.record.canalBargeCoins === 2) &&
+      hasEvent(events, (e) => e.type === "RESOURCES_CHANGED" && e.reason === "canal_barge" && e.coins === 2),
     ready: techIsReady("T23"),
   },
   // ── Firing ───────────────────────────────────────────────────────────────────────
   {
+    // The once-per-round Standard → Fine step (v1.6.2 L636) is optional; the floor is
+    // automatic (`after_quality.test.ts`).
     ability: "T11",
     actor: P1,
     table: () =>

@@ -27,9 +27,10 @@
  * | `PLACE_CANAL_WHARF`, `PLACE_MAGISTRATES_HALL` | each worker choice | same |
  * | `COMMISSION_CHOOSE` | every single pick (face-up slots ascending, then looked cards in look order), then, for the Shifu effect, every unordered pair in that order (≤ 9 + 36) | same |
  * | Guild / Colour Samples sub-steps | all: each next `GUILD_TAKE` (inspected Techs, then face-up), then `GUILD_FINISH` × every bottom order (≤ 2), each Colour Samples pick | same |
- * | `USE_CANAL_BARGE`, `COMPLETE_ORDER` | per held Order: the first match, plus the first Ru-triggering match; each triggered Ru/Guan and Tribute Ware used and declined | every match × decline flags |
+ * | `USE_COLOUR_SAMPLES_SWAP`, `COLOUR_SAMPLES_SWAP_CHOOSE` | one swap per held Order, in hand order; one choice per looked card | same |
+ * | `COMPLETE_ORDER` | per held Order: the first match, plus the first Ru-triggering match; each triggered Ru/Guan and Tribute Ware used and declined | every match × decline flags |
  * | `USE_IMPERIAL_PRIORITY` | vessel class × Glaze × modifier; with Reworking Table ready, one variant per class and other Shape | every vessel × Glaze × modifier × rework |
- * | firing windows, salvage, `END_*` | all, incl. the `null` / decline choice | same |
+ * | firing windows, salvage, `END_*` | all, incl. the `null` / decline choice; `SECOND_FIRING_CHOOSE` both cards × Jun {none, +1, −1 when ready} | same |
  * | `DISCARD_TO_HAND_LIMIT` | every C(hand, excess) | same |
  *
  * **Bounds.** `perFamilyLimit` (default 64 in canonical, unlimited in exhaustive) stops each
@@ -67,7 +68,7 @@ import { settersMarkSpaces } from "./round.ts";
 import {
   PLACEMENT_GATE_CODES,
   asActorView,
-  canalBargeOptions,
+  colourSamplesSwapOptions,
   completableOrders,
   dingCopyableVesselIndexes,
   formDiscountVariants,
@@ -79,6 +80,7 @@ import {
   orderMatchOptions,
   placementOptions,
   placementWorkerChoices,
+  secondFiringChoiceOptions,
   settersMarkOptions,
 } from "./selectors.ts";
 import { ceramicsOf, decisionPrompt, lookup, player, workStep } from "./state.ts";
@@ -116,7 +118,6 @@ type ActionOf<T extends GameActionType> = Extract<GameAction, { type: T }>;
 type FormDecorateAction = ActionOf<"PLACE_FORM_DECORATE">;
 type GlazeLoadAction = ActionOf<"PLACE_GLAZE_LOAD">;
 type Destination = LoadSpec["destination"];
-type CompletionType = "USE_CANAL_BARGE" | "COMPLETE_ORDER";
 type DiscountVariant = Pick<FormDecorateAction, "useLargeThrowingWheel" | "decoratorsKitVesselIndex">;
 
 const PREPARED_CLAY: TechId = "T17";
@@ -125,7 +126,6 @@ const INVERTED_FIRING: TechId = "T21";
 const STACKABLE_SHAPES: readonly Shape[] = TECHS.T21.params.shapes;
 const LARGE_THROWING_WHEEL: TechId = "T01";
 const DECORATORS_KIT: TechId = "T16";
-const CANAL_BARGE: TechId = "T23";
 const KILN_MASTER_VALUES = TECHS.T24.params.values;
 const DEFAULT_CANONICAL_FAMILY_LIMIT = 64;
 /** DESIGN §5.3: sampling attempts before the canonical fallback. */
@@ -667,7 +667,7 @@ const PLACEMENT_FAMILIES: readonly Family[] = [
   placementFamily("PLACE_MAGISTRATES_HALL", "magistrates_hall", (_ctx, choice) => [{ type: "PLACE_MAGISTRATES_HALL", workerId: choice.workerId }]),
 ];
 
-// ── Order completion (Order Phase and Canal Barge) ───────────────────────────────────
+// ── Order completion (Order Phase) ───────────────────────────────────────────────────
 
 function finishedOf(ctx: EnumContext, match: OrderMatch): FinishedCeramic[] {
   return match.ceramicIds
@@ -689,7 +689,7 @@ function matchesFor(ctx: EnumContext, order: OrderDefinition, pool: readonly Fin
   return ru === undefined ? first : [head, ru];
 }
 
-function* completionCandidates(ctx: EnumContext, type: CompletionType): Generator<GameAction> {
+function* completionCandidates(ctx: EnumContext): Generator<GameAction> {
   const pool = ceramicsOf(ctx.game, ctx.pid, "finished");
   if (pool.length === 0) {
     return;
@@ -706,7 +706,7 @@ function* completionCandidates(ctx: EnumContext, type: CompletionType): Generato
       for (const declineKilnAbility of kilnFlags) {
         for (const declineTributeWare of tributeFlags) {
           yield {
-            type,
+            type: "COMPLETE_ORDER",
             orderId,
             ceramicIds: [...match.ceramicIds],
             ...(declineKilnAbility ? { declineKilnAbility: true } : {}),
@@ -741,9 +741,37 @@ const PLACE_SETTERS_MARK = family("PLACE_SETTERS_MARK", function* (ctx) {
   yield { type: "PLACE_SETTERS_MARK", spaceId: null };
 });
 
-const USE_CANAL_BARGE = family("USE_CANAL_BARGE", function* (ctx) {
-  if (techReady(ctx.me, CANAL_BARGE)) {
-    yield* completionCandidates(ctx, "USE_CANAL_BARGE");
+const USE_COLOUR_SAMPLES_SWAP = family("USE_COLOUR_SAMPLES_SWAP", function* (ctx) {
+  const options = colourSamplesSwapOptions(ctx.view);
+  if (!options.usable) {
+    return;
+  }
+  for (const discard of options.discards) {
+    yield { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: discard.orderId };
+  }
+});
+
+const COLOUR_SAMPLES_SWAP_CHOOSE = family("COLOUR_SAMPLES_SWAP_CHOOSE", function* (ctx) {
+  const look = lookedOrderOptions(ctx.view);
+  if (look?.kind === "colour_samples_swap") {
+    for (const orderId of look.orderIds) {
+      yield { type: "COLOUR_SAMPLES_SWAP_CHOOSE", orderId };
+    }
+  }
+});
+
+const SECOND_FIRING_CHOOSE = family("SECOND_FIRING_CHOOSE", function* (ctx) {
+  const options = secondFiringChoiceOptions(ctx.view);
+  if (options === null) {
+    return;
+  }
+  for (const cardIndex of [0, 1] as const) {
+    yield { type: "SECOND_FIRING_CHOOSE", cardIndex, jun: null };
+    if (options.jun.ready) {
+      for (const delta of KILNS.JU.params.deltas) {
+        yield { type: "SECOND_FIRING_CHOOSE", cardIndex, jun: { delta } };
+      }
+    }
   }
 });
 
@@ -896,7 +924,7 @@ const SALVAGE_FLAWED = family("SALVAGE_FLAWED", function* (ctx) {
   yield { type: "SALVAGE_FLAWED", ceramicId: null };
 });
 
-const COMPLETE_ORDER = family("COMPLETE_ORDER", (ctx) => completionCandidates(ctx, "COMPLETE_ORDER"));
+const COMPLETE_ORDER = family("COMPLETE_ORDER", (ctx) => completionCandidates(ctx));
 
 const END_ORDER_TURN = family("END_ORDER_TURN", () => [{ type: "END_ORDER_TURN" }]);
 
@@ -921,15 +949,17 @@ function familiesFor(ctx: EnumContext): readonly Family[] {
     case "work_turn":
       switch (phase.step.kind) {
         case "before_action":
-          return [USE_CANAL_BARGE, USE_IMPERIAL_PRIORITY, ...PLACEMENT_FAMILIES];
+          return [USE_COLOUR_SAMPLES_SWAP, USE_IMPERIAL_PRIORITY, ...PLACEMENT_FAMILIES];
         case "commission_market":
           return [COMMISSION_CHOOSE];
         case "guild_inspection":
           return [GUILD_TAKE, GUILD_FINISH];
         case "colour_samples":
           return [COLOUR_SAMPLES_CHOOSE];
+        case "colour_samples_swap":
+          return [COLOUR_SAMPLES_SWAP_CHOOSE];
         case "after_action":
-          return [USE_CANAL_BARGE, USE_IMPERIAL_PRIORITY, END_TURN];
+          return [USE_COLOUR_SAMPLES_SWAP, USE_IMPERIAL_PRIORITY, END_TURN];
       }
       return [];
     case "firing_contributions":
@@ -940,8 +970,9 @@ function familiesFor(ctx: EnumContext): readonly Family[] {
     case "firing_heat_markers":
       return [RESOLVE_HEAT_MARKERS];
     case "firing_heat_adjustment":
-    case "firing_second_firing_jun":
       return [RESOLVE_JUN];
+    case "firing_second_firing_choice":
+      return [SECOND_FIRING_CHOOSE];
     case "firing_after_quality":
       return [USE_PROTECTIVE_SAGGARS, USE_SECOND_FIRING, USE_GE_CRACKLE, END_AFTER_QUALITY];
     case "firing_salvage":
@@ -1240,8 +1271,8 @@ function randomPlacement(ctx: EnumContext, type: GameActionType, rng: RandomSour
   }
 }
 
-function randomCompletion(ctx: EnumContext, type: CompletionType, rng: RandomSource): GameAction | null {
-  const option = pick(type === "USE_CANAL_BARGE" ? canalBargeOptions(ctx.view) : completableOrders(ctx.view), rng);
+function randomCompletion(ctx: EnumContext, rng: RandomSource): GameAction | null {
+  const option = pick(completableOrders(ctx.view), rng);
   if (option === undefined) {
     return null;
   }
@@ -1254,7 +1285,7 @@ function randomCompletion(ctx: EnumContext, type: CompletionType, rng: RandomSou
     ...((match.triggers.ru || match.triggers.guan) && coin(rng) ? { declineKilnAbility: true } : {}),
     ...(match.triggers.tributeWare && coin(rng) ? { declineTributeWare: true } : {}),
   };
-  return { type, ...spec };
+  return { type: "COMPLETE_ORDER", ...spec };
 }
 
 /** One random, well-formed candidate of `type` built from the selectors (DESIGN §5.3). */
@@ -1275,9 +1306,26 @@ function randomCandidate(ctx: EnumContext, type: GameActionType, rng: RandomSour
     case "PLACE_CANAL_WHARF":
     case "PLACE_MAGISTRATES_HALL":
       return randomPlacement(ctx, type, rng);
-    case "USE_CANAL_BARGE":
     case "COMPLETE_ORDER":
-      return randomCompletion(ctx, type, rng);
+      return randomCompletion(ctx, rng);
+    case "USE_COLOUR_SAMPLES_SWAP": {
+      const discard = pick(colourSamplesSwapOptions(view).discards.filter((d) => d.legal), rng);
+      return discard === undefined ? null : { type, discardOrderId: discard.orderId };
+    }
+    case "COLOUR_SAMPLES_SWAP_CHOOSE": {
+      const look = lookedOrderOptions(view);
+      const orderId = look?.kind === "colour_samples_swap" ? pick(look.orderIds, rng) : undefined;
+      return orderId === undefined ? null : { type, orderId };
+    }
+    case "SECOND_FIRING_CHOOSE": {
+      const options = secondFiringChoiceOptions(view);
+      if (options === null) {
+        return null;
+      }
+      const cardIndex = rng.nextInt(2) === 1 ? 1 : 0;
+      const delta = options.jun.ready && coin(rng) ? pick(KILNS.JU.params.deltas, rng) : undefined;
+      return { type, cardIndex, jun: delta === undefined ? null : { delta } };
+    }
     case "USE_IMPERIAL_PRIORITY": {
       const vessel = lookup(ctx.game.ceramics, pick(imperialPriorityOptions(view).ceramicIds, rng) ?? "");
       if (vessel === undefined) {
@@ -1307,7 +1355,8 @@ function randomCandidate(ctx: EnumContext, type: GameActionType, rng: RandomSour
       return { type, reservations: picks.slice(0, count) };
     }
     case "COLOUR_SAMPLES_CHOOSE": {
-      const orderId = pick(lookedOrderOptions(view)?.orderIds ?? [], rng);
+      const look = lookedOrderOptions(view);
+      const orderId = look?.kind === "colour_samples" ? pick(look.orderIds, rng) : undefined;
       return orderId === undefined ? null : { type, orderId };
     }
     case "GUILD_TAKE": {

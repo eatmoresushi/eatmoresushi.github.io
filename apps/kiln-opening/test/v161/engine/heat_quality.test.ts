@@ -1,7 +1,8 @@
 /**
- * Heat and Quality (L245–279, L289, L674–680): Base Heat clamp, Contribution values, Actual
- * Heat for the Shared Kiln (zone or Kiln Furniture + marker) and the Imperial Kiln, the
- * Quality table, Quality assignment, and the public heat previews.
+ * Heat and Quality (L245–279, L289, L674–680, v1.6.2 L636–637): Base Heat clamp, Contribution
+ * values (Fuel Ledger's free Bank and Stoke), Actual Heat for the Shared Kiln (zone or Kiln
+ * Furniture + marker) and the Imperial Kiln, the Quality table with Protective Saggars' floor,
+ * Quality assignment, and the public heat previews.
  */
 
 import { describe, expect, it } from "vitest";
@@ -16,6 +17,8 @@ import {
   heatPreviews,
   markerValue,
   positionFor,
+  qualityFor,
+  saggarsFloored,
 } from "../../../src/game/firing/heat.ts";
 import { loadedCeramics } from "../../../src/game/state.ts";
 import type { CeramicHeatResult, KilnDieFace, LoadedCeramic, Quality } from "../../../src/game/types.ts";
@@ -44,18 +47,42 @@ describe("baseHeat (L249, L263, L674)", () => {
   });
 });
 
-describe("Contribution values (L253–259, L638)", () => {
+describe("Contribution values (L253–259, v1.6.2 L637)", () => {
   it("Bank −1 / 1 Wood, Tend 0 / 0, Stoke +1 / 1 Wood", () => {
-    expect([contributionHeat({ card: "BANK", fuelLedger: false }), contributionWood({ card: "BANK", fuelLedger: false })]).toEqual([-1, 1]);
-    expect([contributionHeat({ card: "TEND", fuelLedger: false }), contributionWood({ card: "TEND", fuelLedger: false })]).toEqual([0, 0]);
-    expect([contributionHeat({ card: "STOKE", fuelLedger: false }), contributionWood({ card: "STOKE", fuelLedger: false })]).toEqual([1, 1]);
+    expect([contributionHeat({ card: "BANK", fuelLedger: false }), contributionWood({ card: "BANK", fuelLedger: false }, false)]).toEqual([-1, 1]);
+    expect([contributionHeat({ card: "TEND", fuelLedger: false }), contributionWood({ card: "TEND", fuelLedger: false }, false)]).toEqual([0, 0]);
+    expect([contributionHeat({ card: "STOKE", fuelLedger: false }), contributionWood({ card: "STOKE", fuelLedger: false }, false)]).toEqual([1, 1]);
   });
 
-  it("Fuel Ledger turns Bank/Stoke into −2/+2 for 1 extra Wood; never with Tend", () => {
-    expect([contributionHeat({ card: "BANK", fuelLedger: true }), contributionWood({ card: "BANK", fuelLedger: true })]).toEqual([-2, 2]);
-    expect([contributionHeat({ card: "STOKE", fuelLedger: true }), contributionWood({ card: "STOKE", fuelLedger: true })]).toEqual([2, 2]);
+  it("a Fuel Ledger owner's Bank and Stoke cost no Wood; Tend is unchanged", () => {
+    expect([contributionHeat({ card: "BANK", fuelLedger: false }), contributionWood({ card: "BANK", fuelLedger: false }, true)]).toEqual([-1, 0]);
+    expect([contributionHeat({ card: "STOKE", fuelLedger: false }), contributionWood({ card: "STOKE", fuelLedger: false }, true)]).toEqual([1, 0]);
+    expect([contributionHeat({ card: "TEND", fuelLedger: false }), contributionWood({ card: "TEND", fuelLedger: false }, true)]).toEqual([0, 0]);
+  });
+
+  it("the Fuel Ledger commitment turns Bank/Stoke into −2/+2 for its 1 Wood; never with Tend", () => {
+    expect([contributionHeat({ card: "BANK", fuelLedger: true }), contributionWood({ card: "BANK", fuelLedger: true }, true)]).toEqual([-2, 1]);
+    expect([contributionHeat({ card: "STOKE", fuelLedger: true }), contributionWood({ card: "STOKE", fuelLedger: true }, true)]).toEqual([2, 1]);
     expect(() => contributionHeat({ card: "TEND", fuelLedger: true })).toThrow(InvariantError);
-    expect(() => contributionWood({ card: "TEND", fuelLedger: true })).toThrow(InvariantError);
+    expect(() => contributionWood({ card: "TEND", fuelLedger: true }, true)).toThrow(InvariantError);
+  });
+});
+
+describe("Protective Saggars' floor (v1.6.2 L636)", () => {
+  it.each([
+    [0, "masterpiece", "masterpiece", false],
+    [1, "fine", "fine", false],
+    [2, "standard", "standard", false],
+    [3, "flawed", "standard", true],
+    [4, "flawed", "standard", true],
+    [5, "flawed", "standard", true],
+    [6, "flawed", "standard", true],
+  ] as const)("difference %i: %s without Saggars, %s with it", (difference, plain, floored, applied) => {
+    expect(qualityFor(difference, false)).toBe(plain);
+    expect(qualityFor(-difference, false)).toBe(plain);
+    expect(qualityFor(difference, true)).toBe(floored);
+    expect(saggarsFloored(difference, true)).toBe(applied);
+    expect(saggarsFloored(difference, false)).toBe(false);
   });
 });
 
@@ -297,5 +324,20 @@ describe("heatPreviews (public information only)", () => {
     // The same answer for every viewer: previews use public information only.
     expect(heatPreviews(table.view("p1"))).toEqual(previews);
     expect(heatPreviews(table.view(null))).toEqual(previews);
+  });
+
+  it("applies Protective Saggars' floor to its owner's ceramics only (v1.6.2 L636)", () => {
+    const state = buildState({
+      players: [{ recognition: 2, techs: ["T11"] }, { recognition: 2 }],
+      kilnDie: 1,
+      ceramics: [
+        { owner: "p1", stage: "loaded", shape: "vase", glaze: "moon_white", at: "imperial", imperialModifier: -1 },
+        { owner: "p2", stage: "loaded", shape: "vase", glaze: "moon_white", at: "imperial", imperialModifier: -1 },
+      ],
+    });
+    const [own, other] = heatPreviews(viewOf(state, null));
+    // Die 1 − 1 = 0 before the Fire card, Moon White 4: differences 6, 5, 4, 3, 2.
+    expect(own?.qualityByFire).toEqual({ "-2": "standard", "-1": "standard", "0": "standard", "1": "standard", "2": "standard" });
+    expect(other?.qualityByFire).toEqual({ "-2": "flawed", "-1": "flawed", "0": "flawed", "1": "flawed", "2": "standard" });
   });
 });

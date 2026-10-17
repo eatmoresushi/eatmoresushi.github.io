@@ -13,7 +13,7 @@ import { legalActions } from "../../../src/game/legalActions.ts";
 import { SeededRandom } from "../../../src/game/rng.ts";
 import {
   boardView,
-  canalBargeOptions,
+  colourSamplesSwapOptions,
   commissionOptions,
   contributionOptions,
   dingCopyableVesselIndexes,
@@ -69,24 +69,38 @@ describe("selector agreement on scripted states", () => {
   });
 });
 
-// Verifier finding (minor): canalBargeOptions listed Orders outside the Canal Barge window.
-describe("Canal Barge options only in the owner's before- and after-action windows", () => {
-  const base = {
-    players: [{ techs: ["T23" as const], hand: ["O01" as const] }, {}],
-    ceramics: [{ owner: "p1" as const, stage: "finished" as const, shape: "bowl" as const, glaze: "white" as const, quality: "standard" as const }],
-  };
+// The Colour Samples swap options agree with the validator in and out of the owner's windows
+// (v1.6.2 L625); Canal Barge has no window any more (v1.6.2 L630).
+describe("Colour Samples swap options only in the owner's before- and after-action windows", () => {
+  const base = { players: [{ techs: ["T10" as const], hand: ["O40" as const, "S01" as const] }, {}] };
   it.each([
-    ["the Order Phase", buildState({ ...base, phase: { type: "orders", turnOrder: ["p1", "p2"], index: 0 } }), []],
-    ["another player's Work turn", buildState({ ...base, phase: { type: "work_turn", activePlayerId: "p2", step: { kind: "before_action" } } }), []],
-    ["the owner's before-action window", buildState(base), ["O01"]],
-  ] as const)("%s", (_name, state, expected) => {
+    ["the Order Phase", buildState({ ...base, phase: { type: "orders", turnOrder: ["p1", "p2"], index: 0 } }), false, []],
+    ["another player's Work turn", buildState({ ...base, phase: { type: "work_turn", activePlayerId: "p2", step: { kind: "before_action" } } }), false, []],
+    ["the owner's before-action window", buildState(base), true, ["O40", "S01"]],
+    ["the owner's window with the swap spent", buildState({ ...base, players: [{ techs: [{ id: "T10", usedThisRound: true }], hand: ["O40"] }, {}] }), false, []],
+    ["the owner's window with an empty hand", buildState({ players: [{ techs: ["T10"] }, {}] }), false, []],
+  ] as const)("%s", (_name, state, usable, discards) => {
     const view = actorViewOf(state, "p1");
-    const options = canalBargeOptions(view);
-    expect(options.map((o) => o.orderId)).toEqual(expected);
-    for (const option of options) {
-      expect(validateAction(view, { type: "USE_CANAL_BARGE", orderId: option.orderId, ceramicIds: option.ceramicIds })).toBeNull();
+    const options = colourSamplesSwapOptions(view);
+    expect(options.usable).toBe(usable);
+    expect(options.discards.map((d) => d.orderId)).toEqual(discards);
+    for (const discard of options.discards) {
+      expect(validateAction(view, { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: discard.orderId }) === null).toBe(discard.legal);
     }
     expect(selectorAgreementViolations(state, null, "p1")).toEqual([]);
+  });
+
+  it("a Main Order's discard can feed its own look; a Starting Order's cannot (B1, R16, R17)", () => {
+    // Both Main piles empty: every other Main Order is in p2's hand.
+    const state = buildState(base);
+    state.hidden.orderHands["p2"] = [...state.hidden.mainDeck];
+    state.hidden.mainDeck = [];
+    const view = actorViewOf(state, "p1");
+    expect(colourSamplesSwapOptions(view).discards).toEqual([
+      { orderId: "O40", lookCount: 1, legal: true },
+      { orderId: "S01", lookCount: 0, legal: false },
+    ]);
+    expect(validateAction(view, { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: "S01" })).toMatchObject({ code: "ORDER_SUPPLY_EMPTY" });
   });
 });
 

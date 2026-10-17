@@ -1,8 +1,9 @@
 /**
  * P6 `orders/completion.ts`: the completion procedure (L410–419) and the completion
  * abilities Ru (L460), Guan (L464) and Tribute Ware (T25, L642), each optional and once per
- * round (R4), the same through Canal Barge (R6), with Tribute Ware's Crown never printed
- * (R13). DESIGN §8.2 "Ru, Guan", "Tribute Ware bonus Crown (R13)".
+ * round (R4), with Tribute Ware's Crown never printed (R13), and Canal Barge's automatic 2
+ * Coins (T23, v1.6.2 L630). Orders are completed only in the Order Phase (v1.6.2 L296, L484),
+ * so these trigger only there. DESIGN §8.2 "Ru, Guan", "Tribute Ware bonus Crown (R13)".
  */
 
 import { describe, expect, it } from "vitest";
@@ -47,11 +48,11 @@ function table(p1: PlayerSpec, p2: PlayerSpec = {}): GameState {
   return buildState({ round: 3, players: [{ resources: { clay: 0, wood: 0, coins: 0 }, ...p1 }, p2] });
 }
 
-function complete(state: GameState, playerId: PlayerId, spec: OrderCompletionSpec, via: CompletedOrderRecord["via"] = "order_phase") {
+function complete(state: GameState, playerId: PlayerId, spec: OrderCompletionSpec) {
   // Every completion here is first accepted by the shared validator.
   expect(validateOrderCompletion(actorViewOf(state, playerId), spec)).toBeNull();
   const ctx = testContext();
-  const record = resolveOrderCompletion(state, playerId, spec, via, ctx);
+  const record = resolveOrderCompletion(state, playerId, spec, ctx);
   return { record, events: ctx.events };
 }
 
@@ -64,7 +65,7 @@ describe("the completion procedure (L410–419)", () => {
       orderId: "O04",
       ceramicIds: [vase],
       round: 3,
-      via: "order_phase",
+      canalBargeCoins: 0,
       vp: 7,
       coins: 4,
       printedCrowns: 0,
@@ -193,12 +194,13 @@ describe("Ru Kiln (L460)", () => {
     expect(complete(state, "p1", { orderId: "S16", ceramicIds: [vase] }).record.kilnAbility).toBeNull();
   });
 
-  it("triggers through Canal Barge exactly as in the Order Phase (R6)", () => {
-    const state = table({ kilnId: "RU", hand: ["S16"] });
+  it("triggers with Canal Barge's 2 Coins on the same completion (v1.6.2 L630)", () => {
+    const state = table({ kilnId: "RU", techs: ["T23"], hand: ["S16"] });
     const vase = fin(state, "p1", "vase celadon plain mp");
-    const { record } = complete(state, "p1", { orderId: "S16", ceramicIds: [vase] }, "canal_barge");
-    expect(record).toMatchObject({ via: "canal_barge", kilnAbility: { kilnId: "RU", vp: 4, coins: 0 } });
+    const { record } = complete(state, "p1", { orderId: "S16", ceramicIds: [vase] });
+    expect(record).toMatchObject({ canalBargeCoins: 2, kilnAbility: { kilnId: "RU", vp: 4, coins: 0 } });
     expect(player(state, "p1").score.kilnAbilities).toBe(4);
+    expect(player(state, "p1").resources.coins).toBe(ORDERS.S16.coins + 2);
   });
 });
 
@@ -243,13 +245,18 @@ describe("Guan Kiln (L464)", () => {
     expect(player(state, "p1").score.kilnAbilities).toBe(1);
   });
 
-  it("triggers through Canal Barge (R6)", () => {
-    const state = table({ kilnId: "GU", hand: ["O18"] });
+  it("with Canal Barge: Guan's 2 Coins, then Canal Barge's 2 Coins (v1.6.2 L630)", () => {
+    const state = table({ kilnId: "GU", techs: ["T23"], hand: ["O18"] });
     const vase = fin(state, "p1", "vase celadon carved fine");
-    expect(complete(state, "p1", { orderId: "O18", ceramicIds: [vase] }, "canal_barge").record).toMatchObject({
-      via: "canal_barge",
-      kilnAbility: { kilnId: "GU" },
-    });
+    const { record, events } = complete(state, "p1", { orderId: "O18", ceramicIds: [vase] });
+    expect(record).toMatchObject({ canalBargeCoins: 2, kilnAbility: { kilnId: "GU", coins: 2 } });
+    expect(events.slice(-4)).toEqual([
+      { type: "KILN_ABILITY_USED", playerId: "p1", kilnId: "GU" },
+      { type: "RESOURCES_CHANGED", playerId: "p1", clay: 0, wood: 0, coins: 2, reason: "guan" },
+      { type: "TECH_USED", playerId: "p1", techId: "T23" },
+      { type: "RESOURCES_CHANGED", playerId: "p1", clay: 0, wood: 0, coins: 2, reason: "canal_barge" },
+    ]);
+    expect(player(state, "p1").resources.coins).toBe(ORDERS.O18.coins + 2 + 2 + 1); // + the Imperial Grant's Coin
   });
 });
 
@@ -336,13 +343,10 @@ describe("Tribute Ware (T25, L642, R13)", () => {
     });
   });
 
-  it("triggers through Canal Barge (R6)", () => {
+  it("only in the Order Phase now: there is no completion through Canal Barge (v1.6.2 L32, R6 obsolete)", () => {
     const state = table({ kilnId: "GE", techs: ["T25"], hand: ["O18"] });
     const vase = fin(state, "p1", "vase celadon carved fine");
-    expect(complete(state, "p1", { orderId: "O18", ceramicIds: [vase] }, "canal_barge").record).toMatchObject({
-      via: "canal_barge",
-      bonusCrowns: 1,
-    });
+    expect(complete(state, "p1", { orderId: "O18", ceramicIds: [vase] }).record).toMatchObject({ bonusCrowns: 1, canalBargeCoins: 0 });
   });
 });
 
@@ -351,11 +355,16 @@ describe("completionTriggers", () => {
     const state = table({ kilnId: "GU", techs: ["T25"] });
     const fine = ceramic(state, fin(state, "p1", "vase celadon plain fine")) as FinishedCeramic;
     const p1 = player(state, "p1");
-    expect(completionTriggers(p1, ORDERS.O18, [fine])).toEqual({ ru: false, guan: true, tributeWare: true });
-    expect(completionTriggers(p1, ORDERS.S16, [fine])).toEqual({ ru: false, guan: false, tributeWare: false });
+    expect(completionTriggers(p1, ORDERS.O18, [fine])).toEqual({ ru: false, guan: true, tributeWare: true, canalBarge: false });
+    expect(completionTriggers(p1, ORDERS.S16, [fine])).toEqual({ ru: false, guan: false, tributeWare: false, canalBarge: false });
     const ru = table({ kilnId: "RU" });
     const mp = ceramic(ru, fin(ru, "p1", "vase celadon plain mp")) as FinishedCeramic;
-    expect(completionTriggers(player(ru, "p1"), ORDERS.S16, [mp])).toEqual({ ru: true, guan: false, tributeWare: false });
+    expect(completionTriggers(player(ru, "p1"), ORDERS.S16, [mp])).toEqual({ ru: true, guan: false, tributeWare: false, canalBarge: false });
+    // Canal Barge, ready, triggers on any Order (v1.6.2 L630); once used, no longer.
+    const barge = table({ kilnId: "DI", techs: ["T23"] });
+    expect(completionTriggers(player(barge, "p1"), ORDERS.S16, [mp]).canalBarge).toBe(true);
+    player(barge, "p1").techs[0]!.usedThisRound = true;
+    expect(completionTriggers(player(barge, "p1"), ORDERS.S16, [mp]).canalBarge).toBe(false);
   });
 });
 

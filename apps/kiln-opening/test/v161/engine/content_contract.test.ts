@@ -70,10 +70,11 @@ import type {
  * in `types.ts`, and Tech, Kiln and location parameters against the DESIGN §6.3–6.5 tables as
  * amended by ENGINE_V1.6.2_DELTA.md §3.
  *
- * The V1.6.2 engine track lands in stages (DELTA §3). Until the Tech stage, the ability text,
- * reminder text and parameters of the five Techs whose V1.6.2 mechanics change (`STAGED_TECHS`)
- * still equal their V1.6.1 rows, and the clarifications still cite the V1.6.1 source and audit
- * (DELTA §3.4). Both are checked against those V1.6.1 files explicitly, so nothing drifts.
+ * The V1.6.2 engine track lands in stages (DELTA §3). The Tech stage moved the five Techs whose
+ * V1.6.2 mechanics change (`V162_TECHS`: Colour Samples, Canal Barge, Protective Saggars, Fuel
+ * Ledger, Second Firing) to their V1.6.2 ability text, reminder text and parameters (DELTA
+ * §3.1, §3.3). The clarifications still cite the V1.6.1 source and audit until DELTA §3.4 moves
+ * them; they are checked against that V1.6.1 file explicitly, so nothing drifts.
  */
 
 const ROOT = join(import.meta.dirname, "../../..");
@@ -84,13 +85,14 @@ const AUDIT = readFileSync(join(ROOT, "docs/RULEBOOK_AUDIT_V1.6.2.md"), "utf8");
 const TYPES = readFileSync(join(ROOT, "src/game/types.ts"), "utf8");
 /** The Chinese rulebook edition, translated to match the English rulebook sentence for sentence. */
 const SOURCE_ZH = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.2_ZH.md"), "utf8");
-/** History the staged content still derives from (see the header). */
+/** History: the V1.6.1 rows the V1.6.2 text is compared with (DELTA §3.1). */
 const SOURCE_V161 = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.1_EN_SOURCE.md"), "utf8");
 const SOURCE_ZH_V161 = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.1_ZH.md"), "utf8");
 const AUDIT_V161 = readFileSync(join(ROOT, "docs/RULEBOOK_AUDIT_V1.6.1.md"), "utf8");
-const COMPONENT_TEXT = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.1_COMPONENT_TEXT_SOURCE.md"), "utf8");
-/** Techs whose V1.6.2 ability changes with its mechanics; their text moves in the Tech stage. */
-const STAGED_TECHS: ReadonlySet<TechId> = new Set<TechId>(["T10", "T11", "T12", "T14", "T23"]);
+/** The owner's V1.6.2 short component text (DELTA §3.3). */
+const COMPONENT_TEXT = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.2_COMPONENT_TEXT.md"), "utf8");
+/** The Techs whose ability text V1.6.2 rewrote with their mechanics (changes 22, v1.6.2 L32). */
+const V162_TECHS: ReadonlySet<TechId> = new Set<TechId>(["T10", "T11", "T12", "T14", "T23"]);
 const CLARIFICATIONS_DOC = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.1_CLARIFICATIONS.md"), "utf8");
 const OWNER_DECISIONS = readFileSync(join(ROOT, "docs/ui-v1.6.1/OWNER_DECISIONS.md"), "utf8");
 
@@ -319,10 +321,10 @@ describe("Appendix B: all 18 Advanced Techs", () => {
     const tech = TECHS[id];
     expect(tech.discipline).toBe(entry.discipline);
     expect(tech.cost).toBe(Number(entry.cells[1]));
-    // A staged Tech keeps its V1.6.1 text until its V1.6.2 mechanics land (see the header).
-    const printed = STAGED_TECHS.has(id) ? techRowsV161.find((row) => techByPrintedName(row.cells[0] ?? "").id === id) : entry;
-    expect(tech.ability).toBe(printed?.cells[2]);
-    expect(tech.oncePerRound).toBe(tech.ability.startsWith("Once per round"));
+    expect(tech.ability).toBe(entry.cells[2]);
+    // A once-per-round allowance wherever the text prints one: Colour Samples' swap and
+    // Protective Saggars' Standard → Fine step sit after an ongoing clause (v1.6.2 L625, L636).
+    expect(tech.oncePerRound).toBe(/once per round/i.test(tech.ability));
     expect(tech.unlocks).toBe(entry.discipline === "workshop" ? "form_decorate" : entry.discipline === "glazing_loading" ? "glaze_load" : null);
     if (nameZh !== null) expect(tech.nameZh).toBe(nameZh);
   });
@@ -341,13 +343,28 @@ describe("Appendix B: all 18 Advanced Techs", () => {
     }
   });
 
-  it("matches the DESIGN §6.5 timing and parameter table", () => {
+  it("matches the DESIGN §6.5 timing and parameter table as amended by DELTA §3.1", () => {
     expect(designTechRows).toHaveLength(18);
-    for (const [id = "", once, timing, params = ""] of designTechRows) {
-      const tech = TECHS[id as TechId];
-      expect(tech.oncePerRound, id).toBe(once === "yes");
-      expect(tech.timing, id).toBe(timing);
-      expect(tech.params, id).toEqual(designLiteral(params.replaceAll("`", "")));
+    const expected = new Map<string, { oncePerRound: boolean; timing: string; params: unknown }>();
+    for (const [id = "", once, timing = "", params = ""] of designTechRows) {
+      expected.set(id, { oncePerRound: once === "yes", timing, params: designLiteral(params.replaceAll("`", "")) });
+    }
+    // DELTA §3.1: `| T11 Protective Saggars | `cost`, `params` | 3; `{…}` (L636) |`.
+    const amended = tableRows(section("### 3.1 `techniques.json`", DELTA)).filter((cells) => /^T\d{2} /.test(cells[0] ?? ""));
+    expect(amended.map((cells) => cells[0]?.slice(0, 3))).toEqual(["T18", "T20", "T11", "T12", "T10", "T14", "T23"]);
+    for (const [label = "", fields = "", values = ""] of amended) {
+      const entry = expected.get(label.slice(0, 3));
+      if (entry === undefined) throw new Error(`DELTA §3.1 names unknown Tech ${label}`);
+      const literals = [...values.matchAll(/`([^`]+)`/g)].map((match) => match[1] ?? "");
+      if (fields.includes("`params`")) entry.params = designLiteral(literals.find((literal) => literal.startsWith("{")) ?? "");
+      if (fields.includes("`oncePerRound`")) entry.oncePerRound = literals[0] === "true";
+      if (fields.includes("`timing`")) entry.timing = JSON.parse(literals[0] ?? "") as string;
+    }
+    for (const id of TECH_IDS) {
+      const tech = TECHS[id];
+      expect(tech.oncePerRound, id).toBe(expected.get(id)?.oncePerRound);
+      expect(tech.timing, id).toBe(expected.get(id)?.timing);
+      expect(tech.params, id).toEqual(expected.get(id)?.params);
     }
   });
 
@@ -358,14 +375,20 @@ describe("Appendix B: all 18 Advanced Techs", () => {
     expect(SOURCE.split("\n")[31]).toContain("Senior Apprentice and Kiln Tending cost 3; Test Pieces stays at 3");
   });
 
-  it("keeps the staged Techs' V1.6.1 text until their V1.6.2 mechanics land (DELTA §3.1)", () => {
-    // Exactly the Techs whose ability text V1.6.2 rewrote; every other ability is unchanged.
+  it("V1.6.2 rewrote exactly the five Tech abilities whose mechanics changed (changes 22, DELTA §3.1)", () => {
     const changed = TECH_IDS.filter((id) => {
       const now = techRows.find((row) => techByPrintedName(row.cells[0] ?? "").id === id)?.cells[2];
       const then = techRowsV161.find((row) => techByPrintedName(row.cells[0] ?? "").id === id)?.cells[2];
       return now !== then;
     });
-    expect(new Set(changed)).toEqual(STAGED_TECHS);
+    expect(new Set(changed)).toEqual(V162_TECHS);
+    // The mechanics follow the V1.6.2 text (v1.6.2 L625, L630, L636–637, L639).
+    expect(TECHS.T10.ability).toContain("once per round, before or after one of your worker actions, you may discard 1 held Order");
+    expect(TECHS.T23.ability).toBe("Once per round, when you complete an Order, gain 2 Coins.");
+    expect(TECHS.T11.ability).toContain("a Heat Difference of 3 or more counts as Standard");
+    expect(TECHS.T12.ability).toContain("Your Bank the Fire and Stoke the Fire cost no Wood");
+    expect(TECHS.T14.ability).toContain("Reveal 2 extra Fire cards, choose 1 of them");
+    expect(TECHS.T23.timing).toBe("order_completion");
   });
 
   it("names exactly the printed Shapes, Decorations, locations and Qualities in Tech parameters", () => {
@@ -394,6 +417,8 @@ const my = LOCATIONS.materials_yard.effects;
 const mh = LOCATIONS.magistrates_hall.effects;
 const cw = LOCATIONS.canal_wharf.effects;
 const stoke = contributionCard("STOKE").heat;
+/** The smallest Heat Difference the Quality table calls Flawed (L274–279). */
+const flawedFrom = (FIRING.qualityByHeatDifference.find((row) => row.quality === "standard")?.maxDifference ?? -1) + 1;
 
 /** [label, printed English text, the exact number sequence the data implies]. */
 const PRINTED_NUMBERS: Array<[string, string, number[]]> = [
@@ -403,16 +428,17 @@ const PRINTED_NUMBERS: Array<[string, string, number[]]> = [
   ["T17", TECHS.T17.ability, [1, TECHS.T17.params.claySurcharge]],
   ["T18", TECHS.T18.ability, [1]],
   ["T19", TECHS.T19.ability, [TECHS.T19.params.vpPerCeramic, TECHS.T19.params.maxVp]],
-  ["T10", TECHS.T10.ability, [TECHS.T10.params.lookSize, 1, TECHS.T10.params.handLimit]],
+  ["T10", TECHS.T10.ability, [TECHS.T10.params.lookSize, 1, TECHS.T10.params.handLimit, TECHS.T10.params.swapDiscard, TECHS.T10.params.swapLookSize, 1]],
   ["T20", TECHS.T20.ability, [1, TECHS.T20.params.clay, TECHS.T20.params.wood]],
   ["T15", TECHS.T15.ability, [1, ...abs(TECHS.T15.params.modifiers)]],
   ["T21", TECHS.T21.ability, [1]],
   ["T22", TECHS.T22.ability, []],
-  ["T23", TECHS.T23.ability, [1]],
-  ["T11", TECHS.T11.ability, [TECHS.T11.params.wood, 1]],
+  ["T23", TECHS.T23.ability, [TECHS.T23.params.coins]],
+  // "a Heat Difference of 3 or more" is the first difference the Quality table calls Flawed.
+  ["T11", TECHS.T11.ability, [flawedFrom, 1]],
   ["T12", TECHS.T12.ability, [TECHS.T12.params.extraWood, stoke + TECHS.T12.params.heat, stoke + TECHS.T12.params.heat]],
   ["T13", TECHS.T13.ability, [1, TECHS.T13.params.wood]],
-  ["T14", TECHS.T14.ability, [1, 1]],
+  ["T14", TECHS.T14.ability, [1, TECHS.T14.params.extraCards, TECHS.T14.params.chosenCards]],
   ["T24", TECHS.T24.ability, [...abs(TECHS.T24.params.values), 1]],
   ["T25", TECHS.T25.ability, [KILNS.GU.params.minPrintedCrowns, TECHS.T25.params.bonusCrowns]],
   ["RU", KILNS.RU.ability, [KILNS.RU.params.vp]],
@@ -975,10 +1001,8 @@ describe("full Tech and Kiln abilities are the rulebook text in both languages",
 
   it.each(TECH_IDS)("Tech %s: ability is the English Appendix B cell, abilityZh the Chinese one", (id) => {
     const tech = TECHS[id];
-    // A staged Tech keeps its V1.6.1 cells until its V1.6.2 mechanics land (see the header).
-    const staged = STAGED_TECHS.has(id);
-    const en = (staged ? techRowsV161 : techRows).find((entry) => techByPrintedName(entry.cells[0] ?? "").id === id);
-    const zh = (staged ? zhTechRowsV161 : zhTechRows).find((entry) => entry.cells[0] === tech.nameZh);
+    const en = techRows.find((entry) => techByPrintedName(entry.cells[0] ?? "").id === id);
+    const zh = zhTechRows.find((entry) => entry.cells[0] === tech.nameZh);
     expect(tech.ability).toBe(en?.cells[2]);
     expect(tech.abilityZh).toBe(zh?.cells[2]);
   });
@@ -996,42 +1020,74 @@ describe("full Tech and Kiln abilities are the rulebook text in both languages",
   });
 });
 
-// ── Short component text (docs/KILN_OPENING_v1.6.1_COMPONENT_TEXT_SOURCE.md) ──────────────
+// ── Short component text (docs/KILN_OPENING_v1.6.2_COMPONENT_TEXT.md, DELTA §3.3) ──────────
 
-/** `### Name / 名 (T01)` sections with `- EN:` and `- ZH:` lines; the Review notes have none. */
-function componentTexts(): Map<string, { heading: string; en?: string; zh?: string }> {
-  const found = new Map<string, { heading: string; en?: string; zh?: string }>();
-  let current: { heading: string; en?: string; zh?: string } | null = null;
+/** One component of the owner's V1.6.2 component text: the heading line `### Name / 中文名`
+ * (Kilns: `### Ru Kiln / 汝窑 — Quiet Perfection / 天青无瑕`), then the English line and the
+ * Chinese line, each with its timing clauses in bold. */
+interface ComponentText {
+  heading: string;
+  en: string;
+  zh: string;
+}
+
+function componentTexts(): ComponentText[] {
+  const found: ComponentText[] = [];
+  let heading: string | null = null;
+  let lines: string[] = [];
+  const flush = () => {
+    if (heading !== null) found.push({ heading, en: lines[0] ?? "", zh: lines[1] ?? "" });
+  };
   for (const line of COMPONENT_TEXT.split("\n")) {
-    if (line.startsWith("## ")) current = null;
-    const heading = /^### (.+) \(([A-Z0-9]{2,3})\)$/.exec(line);
-    if (heading !== null) {
-      current = { heading: heading[1] ?? "" };
-      found.set(heading[2] ?? "", current);
+    if (line.startsWith("#")) {
+      flush();
+      heading = line.startsWith("### ") ? line.slice(4) : null;
+      lines = [];
       continue;
     }
-    const text = /^- (EN|ZH): (.+)$/.exec(line);
-    if (current !== null && text !== null) current[text[1] === "EN" ? "en" : "zh"] = text[2] ?? "";
+    if (heading !== null && line.trim() !== "") lines.push(line.trim());
   }
+  flush();
   return found;
 }
 
-describe("short component text (component text source)", () => {
+/** The component of a Tech or Kiln, found by its heading. */
+function componentHeading(id: string): string {
+  if ((TECH_IDS as readonly string[]).includes(id)) {
+    const tech = TECHS[id as TechId];
+    return `${tech.name} / ${tech.nameZh}`;
+  }
+  const kiln = KILNS[id as keyof typeof KILNS];
+  return `${kiln.name} / ${kiln.nameZh} — ${kiln.abilityName} / ${kiln.abilityNameZh}`;
+}
+
+/** The owner's bold runs of one line, in order. */
+function boldSpans(line: string): string[] {
+  return [...line.matchAll(/\*\*(.+?)\*\*/g)].map((match) => match[1] ?? "");
+}
+
+describe("short component text (the owner's V1.6.2 component text)", () => {
   const texts = componentTexts();
 
   it("covers exactly the 18 Techs and 5 Kilns", () => {
-    expect([...texts.keys()].sort()).toEqual([...TECH_IDS, ...KILN_IDS].sort());
+    expect(texts).toHaveLength(TECH_IDS.length + KILN_IDS.length);
+    expect(texts.map((text) => text.heading).sort()).toEqual([...TECH_IDS, ...KILN_IDS].map(componentHeading).sort());
   });
 
-  it.each([...TECH_IDS, ...KILN_IDS])("%s: shortText and shortTextZh equal the doc lines", (id) => {
+  it.each([...TECH_IDS, ...KILN_IDS])("%s: shortText and shortTextZh equal the owner's lines, bold removed", (id) => {
     const definition = (TECH_IDS as readonly string[]).includes(id) ? TECHS[id as TechId] : KILNS[id as keyof typeof KILNS];
-    const entry = texts.get(id);
-    expect(definition.shortText).toBe(entry?.en);
-    expect(definition.shortTextZh).toBe(entry?.zh);
-    const heading = "abilityName" in definition
-      ? `${definition.name} / ${definition.nameZh} — ${definition.abilityName} / ${definition.abilityNameZh}`
-      : `${definition.name} / ${definition.nameZh}`;
-    expect(entry?.heading).toBe(heading);
+    const entry = texts.find((text) => text.heading === componentHeading(id));
+    expect(definition.shortText).toBe(entry?.en.replaceAll("**", ""));
+    expect(definition.shortTextZh).toBe(entry?.zh.replaceAll("**", ""));
+  });
+
+  it.each([...TECH_IDS, ...KILN_IDS])("%s: the UI emphasis reproduces the owner's bold timing clauses", (id) => {
+    const definition = (TECH_IDS as readonly string[]).includes(id) ? TECHS[id as TechId] : KILNS[id as keyof typeof KILNS];
+    const entry = texts.find((text) => text.heading === componentHeading(id));
+    for (const [text, line] of [[definition.shortText, entry?.en ?? ""], [definition.shortTextZh, entry?.zh ?? ""]] as const) {
+      const emphasised = shortTextSegments(text).filter((segment) => segment.emphasis).map((segment) => segment.text);
+      expect(emphasised, `${id}: ${text}`).toEqual(boldSpans(line));
+    }
   });
 
   it("is plain text whose timing clause and secondary labels the UI emphasises", () => {
@@ -1047,12 +1103,18 @@ describe("short component text (component text source)", () => {
       }
     }
     expect(Object.fromEntries(emphasised)).toEqual({
-      "T10:en": ["Ongoing:"],
-      "T10:zh": ["持续："],
+      "T10:en": ["Ongoing:", "Once per round, before or after one of your worker actions:"],
+      "T10:zh": ["持续：", "每轮一次，你的一次工人行动之前或之后："],
+      "T11:en": ["Once per round, after Quality is assigned:"],
+      "T11:zh": ["每轮一次，定品后："],
+      "T12:en": ["When you choose Bank or Stoke:"],
+      "T12:zh": ["选控火时："],
       "GE:en": ["Orders:"],
       "GE:zh": ["完成委托时："],
     });
-    expect(SHORT_TEXT_SECONDARY_LABELS).toEqual(["Ongoing:", "Orders:", "持续：", "完成委托时："]);
+    // Exactly the owner's bold clauses after the first one of a line (DELTA §3.3).
+    const secondary = new Set(texts.flatMap((text) => [...boldSpans(text.en).slice(1), ...boldSpans(text.zh).slice(1)]));
+    expect(new Set(SHORT_TEXT_SECONDARY_LABELS)).toEqual(secondary);
     expect(shortTextSegments("Game end: score.")).toEqual([{ text: "Game end:", emphasis: true }, { text: " score.", emphasis: false }]);
   });
 });

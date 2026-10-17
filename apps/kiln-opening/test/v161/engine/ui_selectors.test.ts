@@ -145,7 +145,7 @@ const STEP_OF: Partial<Record<GamePhaseType, number>> = {
   firing_heat_markers: 5,
   firing_heat_adjustment: 8,
   firing_after_quality: 10,
-  firing_second_firing_jun: 10,
+  firing_second_firing_choice: 10,
   firing_salvage: 11,
 };
 
@@ -173,12 +173,14 @@ function agreement(state: GameState, firing: FiringContext, stage: FiringStageVi
     if (record === undefined) continue;
     expect(c).toMatchObject({ ownerId: record.ownerId, kiln: record.kiln, spaceId: record.spaceId, quality: record.quality, crackle: record.crackle, salvaged: record.salvaged });
     expect(c.secondFireModifier).toBe(record.second?.fireModifier ?? null);
+    expect(c.secondFireRevealed).toEqual(record.secondFiringCards);
+    expect(c.saggarsFloor).toBe(record.saggarsFloor);
     const current = lookup(state.ceramics, c.id);
     const marker = live && current !== undefined && current.stage === "loaded" ? current.heatMarker : null;
     expect(c.marker).toEqual(marker);
   }
   if (live) {
-    expect(stage.extraFire).toEqual(firing.pendingExtraFire);
+    expect(stage.extraFire).toEqual(firing.pendingExtraFire === null ? null : { ...firing.pendingExtraFire, modifiers: [...firing.pendingExtraFire.modifiers] });
     const phase = state.phase;
     expect(stage.step).toBe(STEP_OF[phase.type]);
     if ("queue" in phase) {
@@ -226,19 +228,23 @@ describe("firingStageView and firingRecapView (§5 gaps 7, 18; D3, D4)", () => {
     },
   );
 
-  it("shows the R7 extra Fire card beside its ceramic while Jun may adjust it", () => {
-    const scenario = phaseScenarios().find((s) => s.phase === "firing_second_firing_jun");
+  it("shows Second Firing's 2 revealed cards beside their ceramic until one is chosen (v1.6.2 L639)", () => {
+    const scenario = phaseScenarios().find((s) => s.phase === "firing_second_firing_choice");
     expect(scenario).toBeDefined();
     if (scenario === undefined) return;
     const state = scenario.table.state;
     const stage = firingStageView(viewOf(state, scenario.actor));
     const pending = state.firing?.pendingExtraFire ?? null;
     expect(pending).not.toBeNull();
-    expect(stage?.extraFire).toEqual(pending);
-    expect(stage?.ceramics.find((c) => c.id === pending?.ceramicId)?.secondFireModifier).toBe(pending?.modifier);
-    // Resolving Jun discards the card and closes the window.
-    scenario.table.act(scenario.actor, { type: "RESOLVE_JUN", adjustment: null });
-    expect(firingStageView(scenario.table.view(scenario.actor))?.extraFire ?? null).toBeNull();
+    expect(stage?.extraFire).toEqual({ playerId: pending?.playerId, ceramicId: pending?.ceramicId, modifiers: pending?.modifiers });
+    expect(stage?.ceramics.find((c) => c.id === pending?.ceramicId)?.secondFireModifier).toBeNull();
+    // Choosing discards both cards; the ceramic records the chosen card and both revealed.
+    scenario.table.act(scenario.actor, { type: "SECOND_FIRING_CHOOSE", cardIndex: 1, jun: null });
+    const after = firingStageView(scenario.table.view(scenario.actor)) ?? firingRecapView(scenario.table.view(scenario.actor));
+    expect(after?.extraFire ?? null).toBeNull();
+    const ceramic = after?.ceramics.find((c) => c.id === pending?.ceramicId);
+    expect(ceramic?.secondFireModifier).toBe(pending?.modifiers[1]);
+    expect(ceramic?.secondFireRevealed).toEqual(pending?.modifiers);
   });
 
   it("keeps Contributions sealed until all are revealed, then shows card, heat and Wood paid", () => {
@@ -370,7 +376,7 @@ const EXPECTED_ROUND_PHASE: Record<GamePhaseType, RoundPhaseId | "final"> = {
   firing_heat_markers: "firing",
   firing_heat_adjustment: "firing",
   firing_after_quality: "firing",
-  firing_second_firing_jun: "firing",
+  firing_second_firing_choice: "firing",
   firing_salvage: "firing",
   orders: "orders",
   cleanup_hand_limit: "cleanup",
@@ -467,12 +473,12 @@ describe("crackleDeclarationChecks (§5 gap 8)", () => {
   });
 
   it("lists only selected Crackle ceramics", () => {
-    const scenario = uiOptionScenarios().find((s) => s.name.startsWith("Canal Barge"));
+    const scenario = uiOptionScenarios().find((s) => s.name.startsWith("Order Phase with Canal Barge"));
     if (scenario === undefined) throw new Error("scenario missing");
     const view = scenario.table.actorView("p1");
     const checks = crackleDeclarationChecks(view, "O39", ["c1", "c2"], []);
     expect(checks.ceramics.map((c) => c.ceramicId)).toEqual(["c1"]);
-    expect(validateAction(view, { type: "USE_CANAL_BARGE", orderId: "O39", ceramicIds: ["c1", "c2"], crackleDeclarations: [] }) === null).toBe(checks.declared.ok);
+    expect(validateAction(view, { type: "COMPLETE_ORDER", orderId: "O39", ceramicIds: ["c1", "c2"], crackleDeclarations: [] }) === null).toBe(checks.declared.ok);
   });
 });
 

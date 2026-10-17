@@ -34,7 +34,7 @@ import { SeededRandom } from "../../../src/game/rng.ts";
 import { computeFinalResult } from "../../../src/game/scoring.ts";
 import {
   afterQualityOptions,
-  canalBargeOptions,
+  colourSamplesSwapOptions,
   commissionOptions,
   completableOrders,
   contributionOptions,
@@ -365,7 +365,7 @@ export interface FuzzOptions {
  */
 export const DIRECTED_WEIGHTS: NonNullable<SampleOptions["weights"]> = {
   COMPLETE_ORDER: 60,
-  USE_CANAL_BARGE: 40,
+  USE_COLOUR_SAMPLES_SWAP: 10,
   USE_IMPERIAL_PRIORITY: 40,
   PLACE_GLAZE_LOAD: 14,
   PLACE_FORM_DECORATE: 12,
@@ -849,15 +849,22 @@ export function selectorAgreementViolations(state: GameState, privateState: Priv
     }
   }
 
-  // Canal Barge and Imperial Priority, in every phase and for every viewer: a listed option
-  // must validate, and the options must cover what the enumerator offers.
-  for (const option of canalBargeOptions(view)) {
-    const ok = codeOf(view, { type: "USE_CANAL_BARGE", orderId: option.orderId, ceramicIds: option.ceramicIds }) === null;
-    expect(ok, `canalBargeOptions lists ${option.orderId} but it is rejected (${phase.type})`);
+  // The Colour Samples swap and Imperial Priority, in every phase and for every viewer: each
+  // option's verdict must be the validator's, and the options must cover what the enumerator
+  // offers (v1.6.2 L625).
+  const swap = colourSamplesSwapOptions(view);
+  for (const discard of swap.discards) {
+    const ok = codeOf(view, { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: discard.orderId }) === null;
+    expect(ok === discard.legal, `colourSamplesSwapOptions ${discard.orderId} legal=${discard.legal} ok=${ok} (${phase.type})`);
   }
-  const barge = canonical.filter((a) => a.type === "USE_CANAL_BARGE").map((a) => (a as { orderId: string }).orderId);
-  const listedBarge = canalBargeOptions(view).map((o) => o.orderId);
-  expect(barge.every((orderId) => listedBarge.includes(orderId as never)), `canalBargeOptions omits ${barge.join(",")}`);
+  if (!swap.usable) {
+    for (const orderId of view.own.orderHand) {
+      expect(codeOf(view, { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: orderId }) !== null, `the swap with ${orderId} validates while colourSamplesSwapOptions is not usable`);
+    }
+  }
+  const swaps = canonical.filter((a) => a.type === "USE_COLOUR_SAMPLES_SWAP").map((a) => (a as { discardOrderId: string }).discardOrderId);
+  const listedSwaps = swap.discards.filter((d) => d.legal).map((d) => d.orderId);
+  expect(swaps.every((orderId) => listedSwaps.includes(orderId as never)), `colourSamplesSwapOptions omits ${swaps.join(",")}`);
   const priority = imperialPriorityOptions(view);
   const anyPriority = ceramicsOf(game, actorId, "shaped").some(
     (c) => codeOf(view, { type: "USE_IMPERIAL_PRIORITY", ceramicId: c.id, glaze: "white", imperialModifier: 0 }) === null,
@@ -914,7 +921,7 @@ export function selectorAgreementViolations(state: GameState, privateState: Priv
       }
     }
   }
-  if ((phase.type === "firing_heat_adjustment" || phase.type === "firing_second_firing_jun") && acts) {
+  if (phase.type === "firing_heat_adjustment" && acts) {
     const options = junOptions(view);
     const firingIds = Object.keys(game.firing?.ceramics ?? {}).filter((id) => lookup(game.ceramics, id)?.ownerId === actorId);
     for (const ceramicId of firingIds) {
