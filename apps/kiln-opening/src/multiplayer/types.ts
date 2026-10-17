@@ -1,5 +1,5 @@
 /**
- * Transport contract of the V1.6.1 multiplayer layer (DESIGN §4.6).
+ * Transport contract of the V1.6.2 multiplayer layer (DESIGN §4.6; ENGINE_V1.6.2_DELTA.md §9).
  *
  * The game vocabulary (`PublicGameState`, `PlayerView`, `PrivatePlayerView`,
  * `PublicGameEvent`, `DecisionPrompt`, commands) is re-exported from the engine contract;
@@ -44,24 +44,24 @@ export type RoomStatus = "lobby" | "playing" | "finished" | "abandoned";
 export type StoredRulesVersion =
   | "0.4" | "0.5" | "0.6.1" | "0.6.3" | "0.6.5" | "1.0.0" | "1.0.1" | "1.0.2" | "1.0.4" | "1.0.9"
   | "1.1.1" | "1.1.4" | "1.1.5" | "1.1.6" | "1.2.2" | "1.2.4" | "1.2.5" | "1.2.6" | "1.2.7" | "1.4"
-  | "1.6.1";
+  | "1.6.1" | "1.6.2";
 
 /** The rules version new rooms are created under and the only one the service accepts. */
-export type CurrentRulesVersion = "1.6.1";
+export type CurrentRulesVersion = "1.6.2";
 
 /** Historical computer policy labels, kept so old seat rows stay readable. */
 export type LegacyComputerPolicyVersion =
   | "selfplay-003" | "rules-v1.1.1-wood-001" | "rules-v1.1.4-contribution-001" | "rules-v1.1.5-order-001"
   | "rules-v1.2.2-heuristic-001" | "rules-v1.2.4-heuristic-001" | "rules-v1.2.5-heuristic-001"
   | "rules-v1.2.6-heuristic-001" | "rules-v1.2.6-strategic-002" | "rules-v1.2.7-strategic-002"
-  | "rules-v1.4-strategic-001";
+  | "rules-v1.4-strategic-001" | "rules-v1.6.1-strategic-001" | "rules-v1.6.1-canonical-001";
 
 /**
- * A V1.6.1 computer policy label, `rules-v1.6.1-<name>-<nnn>`. The database accepts any
+ * A V1.6.2 computer policy label, `rules-v1.6.2-<name>-<nnn>`. The database accepts any
  * label of this shape (`room_ai_seats_policy_version_check`), so a new policy needs no
  * migration.
  */
-export type ComputerPolicyVersion = `rules-v1.6.1-${string}`;
+export type ComputerPolicyVersion = `rules-v1.6.2-${string}`;
 
 export interface PublicRoom {
   id: string;
@@ -295,8 +295,9 @@ export interface ProcessedCommandRecord {
 export interface StoredRoom extends PublicRoom {
   contentVersion: StoredRulesVersion;
   /**
-   * Rules fingerprint at room creation, `r<revision>-<digest>`. V1.6.1 rooms always carry
-   * an `r29-` fingerprint; a missing or different one is rejected, never reinterpreted.
+   * Rules fingerprint at room creation, `r<revision>-<digest>`. V1.6.2 rooms always carry
+   * an `r30-` fingerprint; a missing or different one (a V1.6.1 `r29-` room included) is
+   * rejected, never reinterpreted.
    */
   contentDigest: string | null;
 }

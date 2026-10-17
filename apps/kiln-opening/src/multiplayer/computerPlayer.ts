@@ -1,5 +1,5 @@
 /**
- * The strategic V1.6.1 computer player (DESIGN §3.4, §4.5, §4.6, §5.2, §9.2 P9).
+ * The strategic V1.6.2 computer player (DESIGN §3.4, §4.5, §4.6, §5.2, §9.2 P9; ENGINE_V1.6.2_DELTA.md §10).
  *
  * **What it may know.** `chooseCommand(view, seat)` receives only the seat's `ActorView`: the
  * public projection plus its own hand, private look, Test Pieces peek and sealed Contribution
@@ -25,7 +25,8 @@
  *   remaining Fire deck computed from the public discard (and the seat's own peek). The same
  *   expectation chooses Contributions (with a model of the other participants' pushes from
  *   their public loads), Heat markers, Kiln Master, Test Pieces, Jun, Protective Saggars,
- *   Second Firing and Ge.
+ *   Second Firing (the better of 2 cards) and Ge. The Fire deck model follows R15: once only
+ *   buried cards are left, the next card comes from the reshuffled discard.
  * - **Work.** A small dynamic programme plans the seat's remaining placements this round over
  *   an abstract economy (resources, Shaped and Loaded counts, free personal spaces, kiln
  *   contention, Order and Tech offers); the best first step is then built concretely.
@@ -51,7 +52,7 @@ import {
   SHAPES,
   TECHS,
   afterQualityOptions,
-  canalBargeOptions,
+  colourSamplesSwapOptions,
   commissionOptions,
   decisionPrompt,
   guildInspectionOptions,
@@ -70,6 +71,7 @@ import {
   preferredHeat,
   qualityForDifference,
   salvageOptions,
+  secondFiringChoiceOptions,
   settersMarkOptions,
   shapeClay,
   techsOfDiscipline,
@@ -82,13 +84,13 @@ import type {
   AuthoritativeCommand,
   CeramicId,
   CeramicState,
-  CommissionReservationChoice,
+  CommissionPick,
   Decoration,
   FinishedCeramic,
   FormVesselSpec,
-  GainResource,
   GameAction,
   Glaze,
+  GuildTechOption,
   KilnId,
   KilnSpaceId,
   LoadSpec,
@@ -116,8 +118,8 @@ import type { ComputerPolicyVersion } from "./types.ts";
 // 1. Policy objects and the decision deadline
 // ═══════════════════════════════════════════════════════════════════════════════════════
 
-export const STRATEGIC_COMPUTER_POLICY_VERSION = "rules-v1.6.1-strategic-001" satisfies ComputerPolicyVersion;
-export const STRATEGIC_COMPUTER_POLICY_LABEL = "V1.6.1 Strategic";
+export const STRATEGIC_COMPUTER_POLICY_VERSION = "rules-v1.6.2-strategic-001" satisfies ComputerPolicyVersion;
+export const STRATEGIC_COMPUTER_POLICY_LABEL = "V1.6.2 Strategic";
 /**
  * The cooperative per-decision budget of the service's policy. Typical decisions take a few
  * milliseconds (the `computer_strength` suite measures them); the budget only bounds a
@@ -201,7 +203,7 @@ export function createStrategicComputerPolicy(options: StrategicPolicyOptions = 
 export const STRATEGIC_COMPUTER_POLICY: ComputerPolicy = createStrategicComputerPolicy();
 
 /**
- * Every V1.6.1 policy a server knows, the default first: new computer seats are stamped with
+ * Every V1.6.2 policy a server knows, the default first: new computer seats are stamped with
  * the strategic policy; seats stamped earlier with the canonical one keep it.
  */
 export const COMPUTER_POLICIES: readonly ComputerPolicy[] = [STRATEGIC_COMPUTER_POLICY, CANONICAL_COMPUTER_POLICY];
@@ -255,10 +257,11 @@ const FINE_RANK = QUALITY_RANK.fine;
 const SHAPE_COUNT = SHAPES.length;
 const GLAZE_COUNT = GLAZES.length;
 const DECORATION_COUNT = DECORATIONS.length;
-/** Generic vessels (no Order asks for one): cheap Shapes, Plain (Ru, S10, O10, O22). */
+/** Generic vessels (no Order asks for one): cheap Shapes, Plain (Ru, O10, O22). */
 const GENERIC_DECORATION: Decoration = "plain";
-const CANAL_BARGE: TechId = "T23";
+const COLOUR_SAMPLES: TechId = "T10";
 const PROTECTIVE_SAGGARS: TechId = "T11";
+const FUEL_LEDGER: TechId = "T12";
 const KILN_MASTER: TechId = "T24";
 const REWORKING_TABLE: TechId = "T05";
 const SENIOR_APPRENTICE: TechId = "T18";
@@ -307,8 +310,15 @@ function tieHash(seed: number, key: string): number {
   return hash;
 }
 
-function qualityAt(heat: number, preferred: number): Quality {
-  return qualityForDifference(heat - preferred);
+/** The Quality a heat gives; `neverFlawed` for a Protective Saggars owner (v1.6.2 L628). */
+function qualityAt(heat: number, preferred: number, neverFlawed = false): Quality {
+  const quality = qualityForDifference(heat - preferred);
+  return neverFlawed && quality === "flawed" ? "standard" : quality;
+}
+
+/** A utility over the seat's own ceramics, floored at Standard under Protective Saggars. */
+function floored(k: Know, utility: (q: Quality) => number): (q: Quality) => number {
+  return ownsTech(k.me, PROTECTIVE_SAGGARS) ? (quality) => utility(quality === "flawed" ? "standard" : quality) : utility;
 }
 
 function stepQuality(quality: Quality, steps: number, cap: Quality): Quality {
@@ -434,9 +444,9 @@ function toDist(counts: ReadonlyMap<number, number>): Dist {
     .map(([value, n]) => [value, n / total] as const);
 }
 
-/** The Fire cards not yet seen: the full deck minus the open discard (L512) and the cards of
- * the current firing. If that disagrees with the public deck count (a reshuffle), the next
- * draw comes from the reshuffled discard or, failing that, the full deck. */
+/** The Fire deck's cards: the full deck minus the open discard (L511) and the cards of the
+ * current firing (the round's card and any revealed Second Firing cards). Buried cards are in
+ * it too; their values are unknown to the table except a seat's own peek. */
 function unseenFire(game: PublicGameState): Map<number, number> {
   const counts = deckCounts(FIRING.fireDeck);
   for (const value of game.fireDiscard) {
@@ -447,34 +457,47 @@ function unseenFire(game: PublicGameState): Map<number, number> {
     if (firing.fireModifier !== null) {
       removeOne(counts, firing.fireModifier);
     }
-    if (firing.pendingExtraFire !== null) {
-      removeOne(counts, firing.pendingExtraFire.modifier);
+    for (const value of firing.pendingExtraFire?.modifiers ?? []) {
+      removeOne(counts, value);
     }
-  }
-  const total = [...counts.values()].reduce((sum, n) => sum + n, 0);
-  if (total !== game.counts.fireDeck) {
-    return game.counts.fireDeck === 0 && game.fireDiscard.length > 0 ? deckCounts(game.fireDiscard) : deckCounts(FIRING.fireDeck);
   }
   return counts;
 }
 
-/** The next Fire card: the seat's own unburied peek is the top card (L639); a buried peeked
- * card sits at the bottom, so it is excluded. */
-function nextFireDist(k: Know): Dist {
-  const counts = unseenFire(k.game);
-  const peek = k.view.own.firePeek;
-  const firing = k.game.firing;
-  if (peek !== null && peek.round === k.game.round && firing !== null) {
-    if (firing.fireModifier === null && peek.buried !== true) {
-      return [[peek.modifier, 1]];
-    }
-    if (peek.buried === true) {
-      removeOne(counts, peek.modifier);
-    }
-  }
-  return toDist(counts);
+/** Unburied cards left in the Fire deck (public: every bury is public, R15). */
+function unburiedFire(game: PublicGameState): number {
+  return Math.max(0, game.counts.fireDeck - game.counts.fireBuried);
 }
 
+/**
+ * The deck cards a draw may take before any reshuffle: the deck's cards less the seat's own
+ * buried peek of this round (it sits at the bottom, L638).
+ */
+function drawableFire(k: Know): Map<number, number> {
+  const counts = unseenFire(k.game);
+  const peek = k.view.own.firePeek;
+  if (peek !== null && peek.round === k.game.round && peek.buried === true) removeOne(counts, peek.modifier);
+  return counts;
+}
+
+/**
+ * The next Fire card (R15): the seat's own unburied peek is the top card (L638); with only
+ * buried cards left, the next card comes from the reshuffled open discard; otherwise from the
+ * deck's unburied cards.
+ */
+function nextFireDist(k: Know): Dist {
+  const peek = k.view.own.firePeek;
+  const firing = k.game.firing;
+  if (peek !== null && peek.round === k.game.round && firing !== null && firing.fireModifier === null && peek.buried !== true) {
+    return [[peek.modifier, 1]];
+  }
+  if (unburiedFire(k.game) === 0 && k.game.fireDiscard.length > 0) {
+    return toDist(deckCounts(k.game.fireDiscard));
+  }
+  return toDist(drawableFire(k));
+}
+
+/** Expected utility over the next Fire card; own utilities come `floored` (Protective Saggars). */
 function expectQuality(heatBeforeFire: number, preferred: number, fire: Dist, utility: (q: Quality) => number): number {
   let total = 0;
   for (const [value, p] of fire) {
@@ -623,7 +646,10 @@ function dimValid(def: OrderDefinition, dim: Dim, values: readonly string[]): bo
       if (dim === "glaze") {
         return slot.glaze === undefined || slot.glaze === value;
       }
-      return slot.decoration === undefined || slot.decoration === value;
+      return (
+        (slot.decoration === undefined || slot.decoration === value) &&
+        (slot.decorations === undefined || (slot.decorations as readonly string[]).includes(value ?? ""))
+      );
     });
     return slotsFit && relations.every((relation) => relationHolds(relation, assigned));
   });
@@ -705,10 +731,13 @@ interface HandPlan {
 /** Base probability that a fired ceramic reaches a Quality rank when its Glaze is aimed well. */
 function aimedQualityP(k: Know, rank: number): number {
   const jun = k.me.kilnId === "JU";
-  const saggars = ownsTech(k.me, PROTECTIVE_SAGGARS) || k.me.kilnId === "GE";
+  // Protective Saggars: never Flawed, and once a round a Standard becomes Fine (v1.6.2 L628);
+  // Ge crackles a Standard to Fine (L467).
+  const saggars = ownsTech(k.me, PROTECTIVE_SAGGARS);
+  const lift = saggars || k.me.kilnId === "GE";
   if (rank <= 0) return 1;
-  if (rank === 1) return jun || saggars ? 0.98 : 0.95;
-  if (rank === 2) return jun ? 0.9 : saggars ? 0.88 : 0.8;
+  if (rank === 1) return saggars ? 1 : jun || lift ? 0.98 : 0.95;
+  if (rank === 2) return jun ? 0.9 : lift ? 0.88 : 0.8;
   return jun ? 0.45 : 0.33;
 }
 
@@ -764,7 +793,7 @@ function loadedQualityP(k: Know, c: LoadedCeramic): { pAtLeast: number[]; pMp: n
     for (const marker of markers) {
       const probs = [0, 0, 0, 0];
       for (const [fire1, pf] of fire) {
-        const rank = QUALITY_RANK[qualityAt(base + pos + marker + fire1, preferred)];
+        const rank = QUALITY_RANK[qualityAt(base + pos + marker + fire1, preferred, ownsTech(k.me, PROTECTIVE_SAGGARS))];
         for (let r = 0; r <= rank; r += 1) {
           probs[r] = (probs[r] ?? 0) + pf;
         }
@@ -1129,7 +1158,7 @@ function ceramicUtility(k: Know, ceramicId: CeramicId, glaze: Glaze, decoration:
 }
 
 function loadedUtility(k: Know, c: LoadedCeramic): (q: Quality) => number {
-  return ceramicUtility(k, c.id, c.glaze, c.decoration);
+  return floored(k, ceramicUtility(k, c.id, c.glaze, c.decoration));
 }
 
 /**
@@ -1284,18 +1313,23 @@ function techValue(k: Know, techId: TechId): number {
     T15: 0.35,
     T21: 0.4,
     T22: 0.25,
-    T23: 0.2,
-    T11: 0.6,
-    T12: 0.2,
+    // Protective Saggars: never Flawed and a free Standard → Fine each round (v1.6.2 L628).
+    T11: 0.75,
+    // Fuel Ledger: Bank and Stoke cost no Wood (v1.6.2 L629).
+    T12: 0.35,
     T13: 0.25,
-    T14: 0.4,
+    // Second Firing: the better of 2 extra cards (v1.6.2 L631).
+    T14: 0.5,
     T24: 0.4,
   };
   let ability = (perRound[techId] ?? 0) * left * kilnSynergy(k.me.kilnId, techId) * planFit(k, techId);
   // Connoisseur's Cabinet: +1 per exhibited Fine or Masterpiece, up to 5 (L620); most
   // ceramics go to Orders, so expect a few.
   if (techId === "T19") ability = Math.min(5, 0.4 + 0.45 * left);
-  if (techId === "T10") ability = (k.hand.length <= 3 ? 2 : 1.2) + 0.15 * left;
+  // Colour Samples: the when-acquired reservation, hand limit 5 and a swap each round (v1.6.2 L617).
+  if (techId === "T10") ability = (k.hand.length <= 3 ? 2 : 1.2) + 0.15 * left + 0.25 * left;
+  // Canal Barge: 2 Coins on the round's first completion (v1.6.2 L622), most rounds.
+  if (techId === "T23") ability = TECHS.T23.params.coins * coinValue(k) * 0.6 * left * kilnSynergy(k.me.kilnId, techId);
   if (techId === "T25") ability = 0.2 * left * kilnSynergy(k.me.kilnId, techId) * Math.min(2, handPlan(k).plans.filter((p) => p.model.def.crowns > 0).length + 0.5);
   return GAME_CONFIG.techs.vpEach + unlock + ability;
 }
@@ -1310,7 +1344,8 @@ function kilnSynergy(kilnId: KilnId | null, techId: TechId): number {
       // More Crown Orders completed, sooner.
       return techId === "T25" ? 1.6 : techId === "T23" ? 1.3 : 1;
     case "GE":
-      // Saggars lifts a Flawed ceramic to Standard, which Ge then crackles to Fine (L654).
+      // Under Protective Saggars a would-be Flawed ceramic is Standard, which Ge may crackle
+      // (v1.6.2 L645); Second Firing makes Standards to crackle.
       return techId === "T11" ? 1.3 : techId === "T14" ? 1.2 : 1;
     case "DI":
       // Cheap Bowls, Plates and Brush Washers: Clay and stacking.
@@ -1340,44 +1375,70 @@ function planFit(k: Know, techId: TechId): number {
   }
 }
 
-/** The best Tech this worker effect could take now at the Guild Hall, net of its price. */
+/** The best Tech this worker effect could take now at the Guild Hall, net of its printed cost. */
 function bestTechOffer(k: Know, effect: WorkerEffect): { techId: TechId; net: number; price: number } | null {
   return memo(k, `tech:${effect}`, () => {
     let best: { techId: TechId; net: number; price: number } | null = null;
     for (const option of guildOptions(k.view, effect).faceUp) {
       if (!option.legal) continue;
-      const net = techValue(k, option.techId) - option.price * coinValue(k);
-      if (best === null || net > best.net) best = { techId: option.techId, net, price: option.price };
+      const net = techValue(k, option.techId) - option.cost * coinValue(k);
+      if (best === null || net > best.net) best = { techId: option.techId, net, price: option.cost };
     }
     return best;
   });
 }
 
-/** The Shifu's inspection: the better of the face-up offer and a look at an unowned deck. */
+/** A second Guild Hall take is worth its Coins only above this net value. */
+const SECOND_TECH_THRESHOLD = 0.5;
+
+/**
+ * The Shifu's visit (v1.6.2 L207): up to 2 Techs from different disciplines, face-up or from
+ * the inspected deck, each at its printed cost. Candidates are the legal face-up Techs and,
+ * per unowned discipline with cards left, an estimate of its unseen Techs (the mean of the
+ * two best). The value is the better of 1 take and 2 the Coins cover (at most one estimate,
+ * since only one deck is inspected); `discipline` is the deck to inspect.
+ */
 function guildShifuValue(k: Know): { value: number; price: number; discipline: TechDiscipline | null } {
-  const faceUp = bestTechOffer(k, "shifu");
-  let bestDiscipline: TechDiscipline | null = null;
-  let bestUnknown = -Infinity;
-  const owned = new Set(k.me.techs.map((tech) => TECHS[tech.id].discipline));
-  const visible = new Set<TechId>();
-  for (const pid of k.game.playerOrder) for (const tech of k.game.players[pid]?.techs ?? []) visible.add(tech.id);
-  for (const discipline of DISCIPLINES) for (const techId of k.game.techDisplay[discipline]) visible.add(techId);
-  for (const discipline of DISCIPLINES) {
-    if (owned.has(discipline) || k.game.counts.techDecks[discipline] === 0) continue;
-    const unknown = techsOfDiscipline(discipline).filter((techId) => !visible.has(techId));
-    if (unknown.length === 0) continue;
-    const values = unknown.map((techId) => techValue(k, techId) - Math.max(0, TECHS[techId].cost - 1) * coinValue(k)).sort((a, b) => b - a);
-    const affordable = unknown.some((techId) => Math.max(0, TECHS[techId].cost - 1) <= k.me.resources.coins);
-    if (!affordable) continue;
-    const estimate = ((values[0] ?? 0) + (values[1] ?? values[0] ?? 0)) / 2;
-    if (estimate > bestUnknown) {
-      bestUnknown = estimate;
-      bestDiscipline = discipline;
+  return memo(k, "guild:shifu", () => {
+    type Candidate = { discipline: TechDiscipline; net: number; price: number; unseen: boolean };
+    const coins = k.me.resources.coins;
+    const candidates: Candidate[] = [];
+    for (const option of guildOptions(k.view, "shifu").faceUp) {
+      if (option.legal) candidates.push({ discipline: option.discipline, net: techValue(k, option.techId) - option.cost * coinValue(k), price: option.cost, unseen: false });
     }
-  }
-  const faceNet = faceUp?.net ?? -Infinity;
-  const value = Math.max(faceNet, bestUnknown);
-  return { value: Number.isFinite(value) ? value : -Infinity, price: faceUp?.price ?? 2, discipline: bestDiscipline ?? (faceUp === null ? null : TECHS[faceUp.techId].discipline) };
+    const owned = new Set(k.me.techs.map((tech) => TECHS[tech.id].discipline));
+    const visible = new Set<TechId>();
+    for (const pid of k.game.playerOrder) for (const tech of k.game.players[pid]?.techs ?? []) visible.add(tech.id);
+    for (const discipline of DISCIPLINES) for (const techId of k.game.techDisplay[discipline]) visible.add(techId);
+    let bestUnseen: Candidate | null = null;
+    for (const discipline of DISCIPLINES) {
+      if (owned.has(discipline) || k.game.counts.techDecks[discipline] === 0 || k.me.techs.length >= GAME_CONFIG.techs.maxOwned) continue;
+      const unknown = techsOfDiscipline(discipline).filter((techId) => !visible.has(techId) && TECHS[techId].cost <= coins);
+      if (unknown.length === 0) continue;
+      const ranked = unknown.map((techId) => ({ net: techValue(k, techId) - TECHS[techId].cost * coinValue(k), price: TECHS[techId].cost })).sort((a, b) => b.net - a.net);
+      const first = ranked[0];
+      const second = ranked[1] ?? first;
+      if (first === undefined || second === undefined) continue;
+      const candidate: Candidate = { discipline, net: (first.net + second.net) / 2, price: Math.max(first.price, second.price), unseen: true };
+      candidates.push(candidate);
+      if (bestUnseen === null || candidate.net > bestUnseen.net) bestUnseen = candidate;
+    }
+    let best: { value: number; price: number; discipline: TechDiscipline | null } = { value: -Infinity, price: 2, discipline: bestUnseen?.discipline ?? null };
+    const pairs = k.me.techs.length + 2 <= GAME_CONFIG.techs.maxOwned && LOCATIONS.guild_hall.effects.shifu.maxTechs >= 2;
+    for (const a of candidates) {
+      if (a.net > best.value) best = { value: a.net, price: a.price, discipline: a.unseen ? a.discipline : (bestUnseen?.discipline ?? a.discipline) };
+      if (!pairs) continue;
+      for (const b of candidates) {
+        if (b === a || b.discipline === a.discipline || (a.unseen && b.unseen) || a.price + b.price > coins || b.net <= SECOND_TECH_THRESHOLD) continue;
+        const value = a.net + b.net;
+        if (value > best.value) {
+          const inspected = a.unseen ? a.discipline : b.unseen ? b.discipline : (bestUnseen?.discipline ?? a.discipline);
+          best = { value, price: a.price + b.price, discipline: inspected };
+        }
+      }
+    }
+    return best;
+  });
 }
 
 /** Exhibition score of a set of Finished ceramics (L444–452, T19). */
@@ -1507,23 +1568,32 @@ function firingValueAtBase(k: Know, base: number, fire: Dist, woodLeft: number):
   return total;
 }
 
-/** A rival participant's likely push: the Contribution that best suits their public loads. */
+/**
+ * A rival participant's likely push: the Contribution that best suits their public loads. A
+ * Fuel Ledger owner's Bank and Stoke cost no Wood (v1.6.2 L629), so it may push with none;
+ * a Protective Saggars owner's ceramics are never Flawed (v1.6.2 L628).
+ */
 function rivalPushDist(k: Know, playerId: PlayerId): Dist {
   const rival = k.game.players[playerId];
   if (rival === undefined) return [[0, 1]];
   const loads = ceramicsOf(k.game, playerId, "loaded").filter((c) => c.placement.kiln === "shared");
-  if (loads.length === 0 || rival.resources.wood < 1) return [[0, 1]];
-  const fire = toDist(unseenFire(k.game));
+  const fuelLedger = ownsTech(rival, FUEL_LEDGER);
+  if (loads.length === 0 || (rival.resources.wood < 1 && !fuelLedger)) return [[0, 1]];
+  const fire = nextFireDist(k);
+  const saggars = ownsTech(rival, PROTECTIVE_SAGGARS);
+  const value = (q: Quality): number => QUALITY_VALUE[saggars && q === "flawed" ? "standard" : q];
   const scoreAt = (delta: number): number =>
     loads.reduce((sum, c) => {
       const flexible = c.heatMarker !== null && c.heatMarker.faceDown;
       const before = clampBase(k.die + delta) + positionModifierOf(k.game, c) + markerValueOf(c);
       const markers = flexible ? [-1, 0, 1] : [0];
-      return sum + Math.max(...markers.map((m) => expectQuality(before + m, preferredHeat(c.glaze), fire, (q) => QUALITY_VALUE[q])));
+      return sum + Math.max(...markers.map((m) => expectQuality(before + m, preferredHeat(c.glaze), fire, value)));
     }, 0);
+  // The reluctance to spend a Wood card's Wood; almost none when Fuel Ledger makes it free.
+  const woodCard = fuelLedger ? 0.05 : 0.35;
   const tend = scoreAt(0);
-  const bank = scoreAt(-1) - 0.35;
-  const stoke = scoreAt(1) - 0.35;
+  const bank = scoreAt(-1) - woodCard;
+  const stoke = scoreAt(1) - woodCard;
   if (tend >= bank && tend >= stoke) return [[-1, 0.1], [0, 0.8], [1, 0.1]];
   const best = bank > stoke ? -1 : 1;
   return [[best, 0.6], [0, 0.35], [-best, 0.05]];
@@ -1545,7 +1615,8 @@ function decideContribution(k: Know): AuthoritativeCommand | null {
   for (const playerId of phase.eligiblePlayerIds) {
     if (playerId !== k.pid) others = convolve(others, rivalPushDist(k, playerId));
   }
-  const fire = toDist(unseenFire(k.game));
+  // The round's card (R15: from the reshuffled discard once only buried cards are left).
+  const fire = nextFireDist(k);
   let best: { command: SubmitContributionCommand; score: number } | null = null;
   for (const { command, heat: delta, woodCost: wood } of options) {
     let value = 0;
@@ -1564,6 +1635,20 @@ function knownBase(k: Know): number {
   return k.game.firing?.baseHeat ?? k.die;
 }
 
+/**
+ * The round's card after burying `peeked` (L638, R15): the next unburied card, or, when the
+ * peeked card was the last one (the peek's own reshuffle already counted), the reshuffled
+ * discard.
+ */
+function afterBuryDist(k: Know, peeked: number): Dist {
+  const reshuffledByPeek = unburiedFire(k.game) === 0 && k.game.fireDiscard.length > 0;
+  const rest = reshuffledByPeek ? deckCounts(k.game.fireDiscard) : unseenFire(k.game);
+  removeOne(rest, peeked);
+  const left = reshuffledByPeek ? k.game.fireDiscard.length - 1 : unburiedFire(k.game) - 1;
+  if (left <= 0 && !reshuffledByPeek && k.game.fireDiscard.length > 0) return toDist(deckCounts(k.game.fireDiscard));
+  return toDist(rest);
+}
+
 function decideTestPieces(k: Know): GameAction | null {
   const options = testPiecesOptions(k.view);
   if (options === null) return null;
@@ -1573,19 +1658,15 @@ function decideTestPieces(k: Know): GameAction | null {
     const peeked = options.peekedModifier;
     if (peeked === null) return firstValid(k, [{ type: "TEST_PIECES_BURY", bury: false }]);
     const keep = firingValueAtBase(k, base, [[peeked, 1]], wood);
-    const rest = unseenFire(k.game);
-    removeOne(rest, peeked);
-    const bury = firingValueAtBase(k, base, toDist(rest), wood);
+    const bury = firingValueAtBase(k, base, afterBuryDist(k, peeked), wood);
     return firstValid(k, [{ type: "TEST_PIECES_BURY", bury: bury > keep + 0.05 }, { type: "TEST_PIECES_BURY", bury: false }]);
   }
   if (!options.canPeek) return firstValid(k, [{ type: "TEST_PIECES_DECIDE", peek: false }]);
-  const fire = toDist(unseenFire(k.game));
+  const fire = nextFireDist(k);
   const blind = firingValueAtBase(k, base, fire, wood);
   let informed = 0;
   for (const [value, p] of fire) {
-    const rest = unseenFire(k.game);
-    removeOne(rest, value);
-    informed += p * Math.max(firingValueAtBase(k, base, [[value, 1]], wood - options.woodCost), firingValueAtBase(k, base, toDist(rest), wood - options.woodCost));
+    informed += p * Math.max(firingValueAtBase(k, base, [[value, 1]], wood - options.woodCost), firingValueAtBase(k, base, afterBuryDist(k, value), wood - options.woodCost));
   }
   const peek = informed - blind > options.woodCost * woodValue(k) + 0.1;
   return firstValid(k, [{ type: "TEST_PIECES_DECIDE", peek }, { type: "TEST_PIECES_DECIDE", peek: false }]);
@@ -1639,7 +1720,7 @@ function decideJun(k: Know): GameAction | null {
     const c = k.game.ceramics[ceramicId];
     const record = firing.ceramics[ceramicId];
     if (c === undefined || c.stage !== "loaded" || record === undefined) continue;
-    const calculation = options.during === "second_firing" ? record.second : record.first;
+    const calculation = record.first;
     if (calculation === null) continue;
     const utility = loadedUtility(k, c);
     const current = utility(qualityAt(calculation.actualHeat, record.preferredHeat));
@@ -1654,11 +1735,45 @@ function decideJun(k: Know): GameAction | null {
 
 // ── After Quality, salvage ────────────────────────────────────────────────────────────
 
-function extraFireDist(k: Know): Dist {
-  const counts = unseenFire(k.game);
-  const peek = k.view.own.firePeek;
-  if (peek !== null && peek.round === k.game.round && peek.buried === true) removeOne(counts, peek.modifier);
-  return toDist(counts);
+/**
+ * Second Firing's 2 cards (v1.6.2 L631), drawn one after the other without replacement, as
+ * pairs with probabilities (R15): from the deck's unburied cards while any are left, then from
+ * the reshuffled open discard.
+ */
+function secondFiringPairs(k: Know): Array<readonly [number, number, number]> {
+  const pairs: Array<readonly [number, number, number]> = [];
+  const draw = (pool: Map<number, number>): Dist => toDist(pool);
+  const unburied = unburiedFire(k.game);
+  const discard = deckCounts(k.game.fireDiscard);
+  const firstPool = unburied > 0 || k.game.fireDiscard.length === 0 ? drawableFire(k) : discard;
+  for (const [a, pa] of draw(firstPool)) {
+    let secondPool: Map<number, number>;
+    if (unburied >= 2 || (unburied === 1 && k.game.fireDiscard.length === 0)) {
+      secondPool = new Map(drawableFire(k));
+      removeOne(secondPool, a);
+    } else if (unburied === 1) {
+      secondPool = new Map(discard);
+    } else {
+      secondPool = new Map(discard);
+      removeOne(secondPool, a);
+      if ([...secondPool.values()].every((n) => n === 0)) secondPool = new Map(drawableFire(k));
+    }
+    for (const [b, pb] of draw(secondPool)) pairs.push([a, b, pa * pb] as const);
+  }
+  return pairs;
+}
+
+/** The best value of one recalculation with card `fire1`, with R7's Jun when `jun`. */
+function secondFiringValue(k: Know, record: NonNullable<NonNullable<PublicGameState["firing"]>["ceramics"][string]>, utility: (q: Quality) => number, fire1: number, jun: boolean): number {
+  const calculation = record.first;
+  if (calculation === null) return 0;
+  const source = calculation.heatSource - calculation.fireModifier;
+  const heat = source + fire1 + calculation.positionModifier + calculation.heatMarker;
+  let value = utility(qualityAt(heat, record.preferredHeat));
+  if (jun) {
+    for (const delta of [-1, 1]) value = Math.max(value, utility(qualityAt(heat + delta, record.preferredHeat)) - woodValue(k));
+  }
+  return value;
 }
 
 function decideAfterQuality(k: Know): GameAction | null {
@@ -1677,23 +1792,16 @@ function decideAfterQuality(k: Know): GameAction | null {
       if (option.ability === "ge_crackle") {
         candidates.push({ action: { type: "USE_GE_CRACKLE", ceramicId }, gain: utility("fine") - now + 0.15 });
       } else if (option.ability === "protective_saggars") {
+        // v1.6.2 L628: Standard → Fine, no Wood. Ge also takes only Standard ceramics, so the
+        // two never share one; spending Saggars where Ge could not follow costs nothing extra.
         const improved = stepQuality(record.quality, 1, "fine");
-        const followGe = record.quality === "flawed" && kilnReady(k.me, "GE") ? utility("fine") - utility("standard") : 0;
-        candidates.push({ action: { type: "USE_PROTECTIVE_SAGGARS", ceramicId }, gain: utility(improved) - now + followGe * 0.5 - TECHS.T11.params.wood * woodValue(k) });
+        candidates.push({ action: { type: "USE_PROTECTIVE_SAGGARS", ceramicId }, gain: utility(improved) - now });
       } else {
-        const calculation = record.first;
-        if (calculation === null) continue;
-        const source = calculation.heatSource - calculation.fireModifier;
-        const fixed = calculation.positionModifier + calculation.heatMarker;
+        if (record.first === null) continue;
         const jun = kilnReady(k.me, "JU") && k.me.resources.wood >= KILNS.JU.params.wood;
         let expected = 0;
-        for (const [fire1, p] of extraFireDist(k)) {
-          const heat = source + fire1 + fixed;
-          let value = utility(qualityAt(heat, record.preferredHeat));
-          if (jun) {
-            for (const delta of [-1, 1]) value = Math.max(value, utility(qualityAt(heat + delta, record.preferredHeat)) - woodValue(k));
-          }
-          expected += p * value;
+        for (const [a, b, p] of secondFiringPairs(k)) {
+          expected += p * Math.max(secondFiringValue(k, record, utility, a, jun), secondFiringValue(k, record, utility, b, jun));
         }
         candidates.push({ action: { type: "USE_SECOND_FIRING", ceramicId }, gain: expected - now - 0.05 });
       }
@@ -1703,6 +1811,36 @@ function decideAfterQuality(k: Know): GameAction | null {
   return firstValid(k, [...candidates.filter((candidate) => candidate.gain > 0.02).map((candidate) => candidate.action), end]);
 }
 
+/**
+ * Second Firing's choice (v1.6.2 L631, R7): both revealed cards are known, so each card with
+ * and without Jun's ±1 is evaluated exactly (Jun's Wood at `woodValue`).
+ */
+function decideSecondFiringChoice(k: Know): GameAction | null {
+  const options = secondFiringChoiceOptions(k.view);
+  const firing = k.game.firing;
+  if (options === null || firing === null) return null;
+  const c = k.game.ceramics[options.ceramicId];
+  const record = firing.ceramics[options.ceramicId];
+  const fallback: GameAction = { type: "SECOND_FIRING_CHOOSE", cardIndex: 0, jun: null };
+  if (c === undefined || c.stage !== "loaded" || record === undefined || record.first === null) return firstValid(k, [fallback]);
+  const utility = loadedUtility(k, c);
+  const source = record.first.heatSource - record.first.fireModifier;
+  const fixed = record.first.positionModifier + record.first.heatMarker;
+  const candidates: Array<{ action: GameAction; value: number }> = [];
+  for (const cardIndex of [0, 1] as const) {
+    const heat = source + options.modifiers[cardIndex] + fixed;
+    candidates.push({ action: { type: "SECOND_FIRING_CHOOSE", cardIndex, jun: null }, value: utility(qualityAt(heat, record.preferredHeat)) });
+    if (options.jun.ready) {
+      for (const delta of [1, -1] as const) {
+        const value = utility(qualityAt(heat + delta, record.preferredHeat)) - options.jun.woodCost * woodValue(k) - 0.05;
+        candidates.push({ action: { type: "SECOND_FIRING_CHOOSE", cardIndex, jun: { delta } }, value });
+      }
+    }
+  }
+  candidates.sort((a, b) => b.value - a.value);
+  return firstValid(k, [...candidates.map((candidate) => candidate.action), fallback]);
+}
+
 function decideSalvage(k: Know): GameAction | null {
   const options = salvageOptions(k.view);
   const candidates: GameAction[] = (options?.ceramicIds ?? []).map((ceramicId) => ({ type: "SALVAGE_FLAWED", ceramicId }));
@@ -1710,14 +1848,14 @@ function decideSalvage(k: Know): GameAction | null {
   return firstValid(k, candidates);
 }
 
-// ── Orders (Order Phase and Canal Barge) ──────────────────────────────────────────────
+// ── Orders (Order Phase) ──────────────────────────────────────────────────────────────
 
 /**
  * The reward side of completing `options` one after another: printed VP and Coins, each Crown
- * from the Recognition it reaches, and each once-per-round trigger (Ru, Guan, Tribute Ware;
- * L458, L464, L642) at most once. After the last Work Phase every term is exact end-game VP:
- * Coins through the capped 1-per-3 rule (L494), and a Crown only for its Grant Coin, the
- * Audience or overflow VP.
+ * from the Recognition it reaches, and each once-per-round trigger (Ru, Guan, Tribute Ware,
+ * Canal Barge's 2 Coins; L458, L464, v1.6.2 L622, L641) at most once. After the last Work
+ * Phase every term is exact end-game VP: Coins through the capped 1-per-3 rule (L494), and a
+ * Crown only for its Grant Coin, the Audience or overflow VP.
  */
 function completionReward(k: Know, options: readonly OrderMatchOption[]): number {
   const exact = afterFinalWork(k);
@@ -1727,7 +1865,12 @@ function completionReward(k: Know, options: readonly OrderMatchOption[]): number
   let ru = false;
   let guan = false;
   let tribute = false;
+  let barge = false;
   for (const option of options) {
+    if (option.triggers.canalBarge && !barge) {
+      barge = true;
+      coins += TECHS.T23.params.coins;
+    }
     value += option.vp;
     coins += option.coins;
     let crowns = option.printedCrowns;
@@ -1807,9 +1950,9 @@ const COMPLETION_SET_LEAVES = 3_000;
  * ceramic that fits a second Order on one that had an equally good alternative; searching the
  * whole set (a hand holds a few Orders, each with a few options) cannot. Returns the member
  * to complete first (the best on its own) with the set's total gain, or null when no set
- * gains. Canal Barge completes only that member now; the rest stay for the Order Phase.
+ * gains.
  */
-function bestCompletion(k: Know, type: "COMPLETE_ORDER" | "USE_CANAL_BARGE"): { action: GameAction; gain: number; single: number } | null {
+function bestCompletion(k: Know): { action: GameAction; gain: number; single: number } | null {
   const perOrder: Array<Array<{ option: OrderMatchOption; gain: number }>> = [];
   for (const orderId of k.hand) {
     const ranked = orderMatchOptions(k.view, orderId, 24).map((option) => {
@@ -1852,11 +1995,11 @@ function bestCompletion(k: Know, type: "COMPLETE_ORDER" | "USE_CANAL_BARGE"): { 
     if (first === null || member.gain > first.gain) first = member;
   }
   if (first === null) return null;
-  return { action: { type, orderId: first.option.orderId, ceramicIds: [...first.option.ceramicIds] }, gain: best.gain, single: first.gain };
+  return { action: { type: "COMPLETE_ORDER", orderId: first.option.orderId, ceramicIds: [...first.option.ceramicIds] }, gain: best.gain, single: first.gain };
 }
 
 function decideOrders(k: Know): GameAction | null {
-  const best = bestCompletion(k, "COMPLETE_ORDER");
+  const best = bestCompletion(k);
   const end: GameAction = { type: "END_ORDER_TURN" };
   return firstValid(k, best !== null && best.gain > 0 ? [best.action, end] : [end]);
 }
@@ -1878,78 +2021,138 @@ function decideHandLimit(k: Know): GameAction | null {
 
 // ── Commission Market and Guild Hall sub-steps ────────────────────────────────────────
 
-/** The resource the seat most needs now (Commission Market gains). */
-function neededResource(k: Know): GainResource {
-  const r = k.me.resources;
-  const scores: Array<[GainResource, number]> = (["clay", "wood", "coins"] as const).map((resource) => {
-    const before = resourceValue(k, r.clay, r.wood, r.coins);
-    const after = resourceValue(k, r.clay + (resource === "clay" ? 1 : 0), r.wood + (resource === "wood" ? 1 : 0), r.coins + (resource === "coins" ? 1 : 0));
-    return [resource, after - before];
+/** The second Commission reservation is kept only above this value (overflow-dependent). */
+function secondReservationThreshold(k: Know): number {
+  return reservationOverflows(k, 1) ? 2.2 : 1.2;
+}
+
+/** A reservable Order valued as a first (`p0`) and as a second (`p1`) reservation. */
+interface ReservationCandidate {
+  readonly p0: number;
+  readonly p1: number;
+}
+
+/**
+ * Expected value of a Commission Market visit for a worker effect, from public information
+ * only (v1.6.2 L195–198): the look shows `commissionOptions(…).lookCount` unknown Main
+ * Orders (B1); the seat then reserves the best Order among the display and the look and, for
+ * the Shifu effect, a second one when it clears `secondReservationThreshold`. Exact over the
+ * order statistics of the look, drawn without replacement from the Main Orders the seat
+ * cannot see. `pending` counts reservations made earlier this round in the plan, before
+ * this visit (a repeated visit).
+ */
+function commissionVisitValue(k: Know, effect: WorkerEffect, pending = 0): number {
+  return memo(k, `cmVisit:${effect}:${pending}`, () => {
+    const options = commissionOptions(k.view, effect);
+    if (!options.reservable) return 0;
+    const shifu = options.maxReservations >= 2;
+    const value = (orderId: OrderId): ReservationCandidate => ({
+      p0: reservationValue(k, orderId, pending),
+      p1: shifu ? reservationValue(k, orderId, pending + 1) : 0,
+    });
+    const display = options.faceUpSlots
+      .map((slotIndex) => k.game.market.display[slotIndex])
+      .filter((orderId): orderId is OrderId => orderId !== null && orderId !== undefined)
+      .map(value)
+      .sort((a, b) => b.p0 - a.p0);
+    // Overflow only subtracts a constant from every value, so p0 and p1 rank Orders alike.
+    const unknown = unknownMainOrders(k).map(value).sort((a, b) => a.p0 - b.p0);
+    const total = unknown.length;
+    const draws = Math.min(options.lookCount, total);
+    const threshold = secondReservationThreshold(k);
+    const outcome = (drawn: readonly ReservationCandidate[]): number => {
+      const ranked = [...drawn, ...display.slice(0, 2)].sort((a, b) => b.p0 - a.p0);
+      const first = ranked[0]?.p0 ?? 0;
+      const second = shifu ? (ranked[1]?.p1 ?? 0) : 0;
+      return first + (second > threshold ? second : 0);
+    };
+    if (draws === 0) return outcome([]);
+    const choose = (n: number, r: number): number => {
+      if (r < 0 || r > n) return 0;
+      let result = 1;
+      for (let index = 1; index <= r; index += 1) result = (result * (n - r + index)) / index;
+      return result;
+    };
+    const all = choose(total, draws);
+    let expected = 0;
+    for (let top = 0; top < total; top += 1) {
+      const best = unknown[top] as ReservationCandidate;
+      if (draws === 1 || !shifu) {
+        // Only the look's best card can matter.
+        expected += outcome([best]) * (choose(top, draws - 1) / all);
+        continue;
+      }
+      for (let next = 0; next < top; next += 1) {
+        k.deadline.check();
+        expected += outcome([best, unknown[next] as ReservationCandidate]) * (choose(next, draws - 2) / all);
+      }
+    }
+    return expected;
   });
-  scores.sort((a, b) => b[1] - a[1]);
-  return scores[0]?.[0] ?? "coins";
 }
 
-/** Best first (or next) reservation and its value, among the choices the step allows. */
-function bestReservation(k: Know, faceUpSlots: readonly number[], blind: boolean, look: boolean): { choice: CommissionReservationChoice; value: number } | null {
-  const gain = neededResource(k);
-  let best: { choice: CommissionReservationChoice; value: number } | null = null;
-  for (const slotIndex of faceUpSlots) {
-    const orderId = k.game.market.display[slotIndex];
-    if (orderId === null || orderId === undefined) continue;
-    const value = reservationValue(k, orderId);
-    if (best === null || value > best.value) best = { choice: { kind: "face_up", slotIndex, orderId, gain }, value };
-  }
-  if (look) {
-    const value = expectedBestOf(k, 3) - 0.05;
-    if (best === null || value > best.value) best = { choice: { kind: "look_top_three" }, value };
-  }
-  if (blind) {
-    const value = expectedBestOf(k, 1) - 0.05;
-    if (best === null || value > best.value) best = { choice: { kind: "blind" }, value };
-  }
-  return best;
-}
-
-function decideCommissionStep(k: Know): GameAction | null {
+/**
+ * `COMMISSION_CHOOSE` (v1.6.2 L195–198): the best Order among the display and the seat's own
+ * look; for the Shifu effect also the next best, valued as a second reservation, when it
+ * clears `secondReservationThreshold`. Single picks follow as fallbacks.
+ */
+function decideCommissionChoice(k: Know): GameAction | null {
   const phase = k.game.phase;
   if (phase.type !== "work_turn" || phase.step.kind !== "commission_market") return null;
-  const step = phase.step;
-  if (step.awaiting === "resource") {
-    const first = neededResource(k);
-    return firstValid(k, [first, "coins", "clay", "wood"].map((resource): GameAction => ({ type: "COMMISSION_GAIN", resource: resource as GainResource })));
+  const options = lookedOrderOptions(k.view);
+  if (options?.kind !== "commission_market") return null;
+  const picks: Array<{ pick: CommissionPick; orderId: OrderId; value: number }> = [];
+  for (const slotIndex of options.faceUpSlots) {
+    const orderId = k.game.market.display[slotIndex];
+    if (orderId === null || orderId === undefined) continue;
+    picks.push({ pick: { kind: "face_up", slotIndex, orderId }, orderId, value: reservationValue(k, orderId) });
   }
-  if (step.awaiting === "look_choice") {
-    const look = lookedOrderOptions(k.view);
-    const ranked = (look?.orderIds ?? []).map((orderId) => ({ orderId, value: reservationValue(k, orderId) })).sort((a, b) => b.value - a.value);
-    return firstValid(k, ranked.map((entry): GameAction => ({ type: "COMMISSION_CHOOSE_LOOKED", orderId: entry.orderId })));
+  for (const orderId of options.orderIds) picks.push({ pick: { kind: "looked", orderId }, orderId, value: reservationValue(k, orderId) });
+  picks.sort((a, b) => b.value - a.value || tieHash(k.seed, a.orderId) - tieHash(k.seed, b.orderId));
+  const [best, ...rest] = picks;
+  if (best === undefined) return null;
+  const candidates: GameAction[] = [];
+  if (options.maxReservations >= 2) {
+    const second = rest
+      .map((entry) => ({ ...entry, value: reservationValue(k, entry.orderId, 1) }))
+      .sort((a, b) => b.value - a.value || tieHash(k.seed, a.orderId) - tieHash(k.seed, b.orderId))[0];
+    if (second !== undefined && second.value > secondReservationThreshold(k)) {
+      candidates.push({ type: "COMMISSION_CHOOSE", reservations: [best.pick, second.pick] });
+    }
   }
-  const options = commissionOptions(k.view, step.effect);
-  const best = bestReservation(k, options.faceUpSlots, options.blind, options.lookTopThree);
-  const stop: GameAction = { type: "COMMISSION_STOP" };
-  const threshold = reservationOverflows(k, 0) ? 2.2 : 1.2;
-  if (best !== null && (best.value > threshold || !options.canStop)) {
-    return firstValid(k, [{ type: "COMMISSION_RESERVE", choice: best.choice }, stop]);
-  }
-  return firstValid(k, [stop]);
+  candidates.push(...picks.map((entry): GameAction => ({ type: "COMMISSION_CHOOSE", reservations: [entry.pick] })));
+  return firstValid(k, candidates);
 }
 
+/**
+ * The Guild Hall Shifu after its inspection (v1.6.2 L207): the first take is mandatory and
+ * is ranked with the best second take the Coins left would still cover (another discipline);
+ * a second take is made only when it clears `SECOND_TECH_THRESHOLD`; then `GUILD_FINISH`
+ * returns the untaken inspected Techs in look order (B2).
+ */
 function decideGuildTake(k: Know): GameAction | null {
   const options = guildInspectionOptions(k.view);
   if (options === null) return null;
-  const inspected = options.inspected.map((option) => option.techId);
-  const ranked = [...options.inspected, ...options.faceUp]
-    .filter((option) => option.legal)
-    .map((option) => ({ option, net: techValue(k, option.techId) - option.price * coinValue(k) }))
-    .sort((a, b) => b.net - a.net);
-  return firstValid(
-    k,
-    ranked.map(({ option }): GameAction => ({
-      type: "GUILD_TAKE",
-      take: { kind: option.source, techId: option.techId },
-      bottomOrder: inspected.filter((techId) => !(option.source === "inspected" && techId === option.techId)),
-    })),
-  );
+  const net = (option: GuildTechOption): number => techValue(k, option.techId) - option.cost * coinValue(k);
+  const legal = [...options.inspected, ...options.faceUp].filter((option) => option.legal);
+  const coins = k.me.resources.coins;
+  const lookahead = !options.canFinish && options.takesLeft >= 2 && k.me.techs.length + 2 <= GAME_CONFIG.techs.maxOwned;
+  const ranked = legal
+    .map((option) => {
+      let follow = 0;
+      if (lookahead) {
+        for (const other of legal) {
+          if (other.discipline !== option.discipline && option.cost + other.cost <= coins) follow = Math.max(follow, net(other) > SECOND_TECH_THRESHOLD ? net(other) : 0);
+        }
+      }
+      return { option, net: net(option), score: net(option) + follow };
+    })
+    .sort((a, b) => b.score - a.score);
+  const takes = ranked.map(({ option }): GameAction => ({ type: "GUILD_TAKE", take: { kind: option.source, techId: option.techId } }));
+  if (!options.canFinish) return firstValid(k, takes);
+  const finish: GameAction = { type: "GUILD_FINISH", bottomOrder: options.inspected.map((option) => option.techId) };
+  const worth = ranked.filter((entry) => entry.net > SECOND_TECH_THRESHOLD).map(({ option }): GameAction => ({ type: "GUILD_TAKE", take: { kind: option.source, techId: option.techId } }));
+  return firstValid(k, [...worth, finish]);
 }
 
 function decideColourSamples(k: Know): GameAction | null {
@@ -1958,7 +2161,38 @@ function decideColourSamples(k: Know): GameAction | null {
   return firstValid(k, ranked.map((entry): GameAction => ({ type: "COLOUR_SAMPLES_CHOOSE", orderId: entry.orderId })));
 }
 
-// ── Before/after-action window: Canal Barge, Imperial Priority ────────────────────────
+/** Colour Samples swap's look (v1.6.2 L617, change 24): reserve the best looked card; the other goes to the deck bottom. */
+function decideColourSamplesSwapChoice(k: Know): GameAction | null {
+  const look = lookedOrderOptions(k.view);
+  if (look?.kind !== "colour_samples_swap") return null;
+  const ranked = look.orderIds.map((orderId) => ({ orderId, value: reservationValue(k, orderId) })).sort((a, b) => b.value - a.value);
+  return firstValid(k, ranked.map((entry): GameAction => ({ type: "COLOUR_SAMPLES_SWAP_CHOOSE", orderId: entry.orderId })));
+}
+
+// ── Before/after-action window: Colour Samples swap, Imperial Priority ────────────────
+
+/**
+ * The Colour Samples swap (v1.6.2 L617): discard the held Order the plan values least when the
+ * best of the cards the look would show is expected to be worth clearly more. Held Orders are
+ * valued like the Cleanup trim (`decideHandLimit`). The swap leaves the hand size unchanged, so
+ * the look is valued without the overflow cost of an extra Order (`pending` −1).
+ */
+function colourSamplesSwap(k: Know): GameAction | null {
+  if (!techReady(k.me, COLOUR_SAMPLES)) return null;
+  const options = colourSamplesSwapOptions(k.view);
+  if (!options.usable) return null;
+  const items = poolItems(k);
+  const plan = handPlan(k);
+  let best: { action: GameAction; gain: number } | null = null;
+  for (const discard of options.discards) {
+    if (!discard.legal) continue;
+    const planned = plan.plans.find((p) => p.orderId === discard.orderId) ?? planOrder(k, discard.orderId, items);
+    const held = planned === null ? 0 : planned.p * planned.gross;
+    const gain = expectedBestOf(k, discard.lookCount, -1) - held - 0.1;
+    if (best === null || gain > best.gain + 1e-9) best = { action: { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: discard.orderId }, gain };
+  }
+  return best !== null && best.gain > 0.3 ? firstValid(k, [best.action]) : null;
+}
 
 function imperialPriorityCandidates(k: Know): Array<{ action: GameAction; value: number }> {
   const options = imperialPriorityOptions(k.view);
@@ -1980,13 +2214,8 @@ function imperialPriorityCandidates(k: Know): Array<{ action: GameAction; value:
 }
 
 function windowAbility(k: Know): GameAction | null {
-  if (techReady(k.me, CANAL_BARGE) && canalBargeOptions(k.view).length > 0) {
-    const barge = bestCompletion(k, "USE_CANAL_BARGE");
-    if (barge !== null && barge.single > 0.5) {
-      const valid = firstValid(k, [barge.action]);
-      if (valid !== null) return valid;
-    }
-  }
+  const swap = colourSamplesSwap(k);
+  if (swap !== null) return swap;
   const priority = imperialPriorityCandidates(k);
   if (priority.length > 0 && (priority[0]?.value ?? 0) > 1.5) {
     const valid = firstValid(k, priority.slice(0, 6).map((candidate) => candidate.action));
@@ -2030,7 +2259,7 @@ function vesselUtility(k: Know, vessel: ShapedCeramic, glaze: Glaze, shape: Shap
   }
   const ru = k.me.kilnId === "RU" && glaze === KILNS.RU.params.glaze && vessel.decoration === KILNS.RU.params.decoration;
   const diversity = glazeDiversityBonus(k, glaze);
-  return (quality: Quality): number => {
+  return floored(k, (quality: Quality): number => {
     if (quality === "flawed") return QUALITY_VALUE.flawed;
     let value = QUALITY_VALUE[quality] + diversity;
     if (QUALITY_RANK[quality] >= minRank) value += bonus;
@@ -2039,7 +2268,7 @@ function vesselUtility(k: Know, vessel: ShapedCeramic, glaze: Glaze, shape: Shap
       if (ru) value += 2.5;
     }
     return value;
-  };
+  });
 }
 
 function bestUnplannedUse(k: Know, shape: Shape, decoration: Decoration, glaze: Glaze): { bonus: number; minRank: number } {
@@ -2070,7 +2299,7 @@ function targetBase(k: Know): number {
   return memo(k, "targetBase", () => {
     const mine = ceramicsOf(k.game, k.pid, "loaded").filter((c) => c.placement.kiln === "shared");
     if (mine.length === 0) return k.die;
-    const fire = toDist(unseenFire(k.game));
+    const fire = nextFireDist(k);
     let best = k.die;
     let bestScore = -Infinity;
     for (const base of [k.die - 1, k.die, k.die + 1]) {
@@ -2256,47 +2485,35 @@ function materialsSplit(k: Know, total: number, clayHave: number, woodHave: numb
 }
 
 function buildMaterialsYard(k: Know, workerId: string, effect: WorkerEffect, senior: boolean): GameAction[] {
+  // 3 resources, or 6 for the Shifu effect (Senior Apprentice included), with no Coin option (v1.6.2 L164–165).
   const total = LOCATIONS.materials_yard.effects[effect].resources;
   const r = k.me.resources;
   const split = materialsSplit(k, total, r.clay, r.wood);
-  const bonusOk = effect === "shifu" && r.coins >= 1 && !k.lastRound;
   const base: ActionOf<"PLACE_MATERIALS_YARD"> = { type: "PLACE_MATERIALS_YARD", workerId, clay: split.clay, wood: split.wood, ...(senior ? { seniorApprentice: true } : {}) };
   const actions: GameAction[] = [];
-  const bonuses = bonusOk ? [true, false] : [false];
   if (!senior && techReady(k.me, PREPARED_CLAY) && (k.roundsAfter >= 1 || freePersonalSpaces(k.me, "glaze_load") > 0)) {
     const wish = formingWishes(k, 1)[0];
     if (wish !== undefined) {
-      for (const bonus of bonuses) {
-        // Shift the split toward Clay so Prepared Clay can pay its Shape + 1.
-        const needClay = shapeClay(wish.shape) + TECHS.T17.params.claySurcharge;
-        const clay = clamp(Math.max(split.clay, needClay - r.clay - (bonus ? 1 : 0)), 0, total);
-        actions.push({ ...base, clay, wood: total - clay, ...(bonus ? { buyShifuBonus: true } : {}), preparedClay: { shape: wish.shape, decoration: wish.decoration } });
-      }
+      // Shift the split toward Clay so Prepared Clay can pay its Shape + 1.
+      const needClay = shapeClay(wish.shape) + TECHS.T17.params.claySurcharge;
+      const clay = clamp(Math.max(split.clay, needClay - r.clay), 0, total);
+      actions.push({ ...base, clay, wood: total - clay, preparedClay: { shape: wish.shape, decoration: wish.decoration } });
     }
   }
-  for (const bonus of bonuses) actions.push({ ...base, ...(bonus ? { buyShifuBonus: true } : {}) });
+  actions.push(base);
   return actions;
 }
 
-function buildCommission(k: Know, workerId: string, effect: WorkerEffect, senior: boolean): GameAction[] {
-  const options = commissionOptions(k.view, effect);
-  const best = bestReservation(k, options.faceUpSlots, options.blind, options.lookTopThree);
-  const actions: GameAction[] = [];
-  const flag = senior ? { seniorApprentice: true } : {};
-  if (best !== null) actions.push({ type: "PLACE_COMMISSION_MARKET", workerId, first: best.choice, ...flag });
-  for (const slotIndex of options.faceUpSlots) {
-    const orderId = k.game.market.display[slotIndex];
-    if (orderId !== null && orderId !== undefined) actions.push({ type: "PLACE_COMMISSION_MARKET", workerId, first: { kind: "face_up", slotIndex, orderId, gain: neededResource(k) }, ...flag });
-  }
-  if (options.blind) actions.push({ type: "PLACE_COMMISSION_MARKET", workerId, first: { kind: "blind" }, ...flag });
-  return actions;
+/** The placement only opens the look (v1.6.2 L195–196); the reservations follow in COMMISSION_CHOOSE. */
+function buildCommission(workerId: string, senior: boolean): GameAction[] {
+  return [{ type: "PLACE_COMMISSION_MARKET", workerId, ...(senior ? { seniorApprentice: true } : {}) }];
 }
 
 function buildGuildHall(k: Know, workerId: string, effect: WorkerEffect): GameAction[] {
   if (effect === "apprentice") {
     return guildOptions(k.view, "apprentice")
       .faceUp.filter((option) => option.legal)
-      .map((option) => ({ option, net: techValue(k, option.techId) - option.price * coinValue(k) }))
+      .map((option) => ({ option, net: techValue(k, option.techId) - option.cost * coinValue(k) }))
       .sort((a, b) => b.net - a.net)
       .map(({ option }): GameAction => ({ type: "PLACE_GUILD_HALL", workerId, choice: { kind: "buy_face_up", techId: option.techId } }));
   }
@@ -2352,8 +2569,12 @@ interface PlanParams {
   readonly imperialOpen: boolean;
   readonly oppRate: number;
   readonly demandClay: readonly number[];
+  /** A first Commission Market visit this round, per worker effect (v1.6.2 L195–198). */
   readonly cmValue: Readonly<Record<WorkerEffect, number>>;
-  readonly cmSecond: number;
+  /** A later visit in the same round: its reservations come after the first visit's. */
+  readonly cmRepeat: Readonly<Record<WorkerEffect, number>>;
+  /** The Canal Wharf Shifu's unseen top Main Order (v1.6.2 L220); 0 with no supply (B1). */
+  readonly cwDraw: number;
   readonly gh: Readonly<Record<WorkerEffect, { value: number; price: number; unlocks: "form_decorate" | "glaze_load" | null } | null>>;
   readonly mhStep: (recognition: number) => number;
 }
@@ -2372,10 +2593,6 @@ function planParams(k: Know): PlanParams {
     oppRate += ceramicsOf(k.game, pid, "shaped").length > 0 ? 0.45 : 0.2;
   }
   const demandClay = plan.demands.map((d) => shapeClay(d.shape));
-  const cmFirst = (effect: WorkerEffect): number => {
-    const options = commissionOptions(k.view, effect);
-    return bestReservation(k, options.faceUpSlots, options.blind, options.lookTopThree)?.value ?? 0;
-  };
   const ghFor = (effect: WorkerEffect): PlanParams["gh"][WorkerEffect] => {
     if (effect === "shifu") {
       const shifu = guildShifuValue(k);
@@ -2394,8 +2611,9 @@ function planParams(k: Know): PlanParams {
     imperialOpen: imperialOpen(k.game, k.pid),
     oppRate,
     demandClay,
-    cmValue: { apprentice: cmFirst("apprentice"), shifu: cmFirst("shifu") },
-    cmSecond: Math.max(0, expectedBestOf(k, 1, 1) * 0.8),
+    cmValue: { apprentice: commissionVisitValue(k, "apprentice"), shifu: commissionVisitValue(k, "shifu") },
+    cmRepeat: { apprentice: 0.8 * commissionVisitValue(k, "apprentice", 1), shifu: 0.8 * commissionVisitValue(k, "shifu", 1) },
+    cwDraw: k.game.counts.mainDeck + k.game.counts.mainDiscard > 0 ? Math.max(0, expectedBestOf(k, 1)) : 0,
     gh: { apprentice: ghFor("apprentice"), shifu: ghFor("shifu") },
     mhStep: (recognition: number) => (recognition <= 2 ? crownStepValue(k, recognition) : 0),
   };
@@ -2464,11 +2682,6 @@ function absApply(k: Know, params: PlanParams, s: AbsState, worker: PlanWorker, 
       const split = materialsSplit(k, total, s.clay, s.wood);
       next.clay += split.clay;
       next.wood += split.wood;
-      if (effect === "shifu" && next.coins >= 1 && !k.lastRound) {
-        next.coins -= 1;
-        next.clay += 1;
-        next.wood += 1;
-      }
       if (next.prepared && !worker.senior && (k.roundsAfter >= 1 || next.gl > 0)) {
         const clay = (params.demandClay[0] ?? 1) + TECHS.T17.params.claySurcharge;
         if (next.clay >= clay && next.coins >= 2) {
@@ -2482,6 +2695,8 @@ function absApply(k: Know, params: PlanParams, s: AbsState, worker: PlanWorker, 
     }
     case "CW":
       next.coins += LOCATIONS.canal_wharf.effects[effect].coins;
+      // The Shifu also takes the top Main Order unseen into the hand (v1.6.2 L220).
+      if (effect === "shifu") gain += params.cwDraw;
       break;
     case "FD": {
       if (s.fd <= 0) return null;
@@ -2536,10 +2751,8 @@ function absApply(k: Know, params: PlanParams, s: AbsState, worker: PlanWorker, 
       if (s.cm <= 0) return null;
       next.cm -= 1;
       next.cmUsed += 1;
-      const reservations = effect === "shifu" ? 2 : 1;
-      gain += s.cmUsed === 0 ? params.cmValue[effect] : params.cmSecond;
-      if (reservations === 2 && params.cmSecond > 1.2) gain += params.cmSecond * 0.6;
-      next.coins += 1;
+      // No resource at the Commission Market (v1.6.2 L31).
+      gain += s.cmUsed === 0 ? params.cmValue[effect] : params.cmRepeat[effect];
       break;
     }
     case "GH": {
@@ -2618,7 +2831,7 @@ function buildPlacement(k: Know, action: PlanAction, workerId: string, effect: W
     case "GL":
       return buildGlazeLoad(k, workerId, effect);
     case "CM":
-      return buildCommission(k, workerId, effect, senior);
+      return buildCommission(workerId, senior);
     case "GH":
       return buildGuildHall(k, workerId, effect);
     case "MH":
@@ -2697,11 +2910,13 @@ function decide(k: Know): AuthoritativeCommand | null {
         case "before_action":
           return decideBeforeAction(k);
         case "commission_market":
-          return decideCommissionStep(k);
+          return decideCommissionChoice(k);
         case "guild_inspection":
           return decideGuildTake(k);
         case "colour_samples":
           return decideColourSamples(k);
+        case "colour_samples_swap":
+          return decideColourSamplesSwapChoice(k);
         case "after_action":
           return decideAfterAction(k);
       }
@@ -2713,8 +2928,9 @@ function decide(k: Know): AuthoritativeCommand | null {
     case "firing_heat_markers":
       return decideHeatMarkers(k);
     case "firing_heat_adjustment":
-    case "firing_second_firing_jun":
       return decideJun(k);
+    case "firing_second_firing_choice":
+      return decideSecondFiringChoice(k);
     case "firing_after_quality":
       return decideAfterQuality(k);
     case "firing_salvage":

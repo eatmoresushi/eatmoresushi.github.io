@@ -11,7 +11,7 @@
  * - privacy: a policy exception is logged server-side only and never forwarded, because
  *   its message may name the seat's hand or private look (DESIGN §4.5).
  *
- * The service's default policy is the strategic V1.6.1 policy (`STRATEGIC_COMPUTER_POLICY`
+ * The service's default policy is the strategic V1.6.2 policy (`STRATEGIC_COMPUTER_POLICY`
  * in `computerPlayer.ts`, package P9); `AuthoritativeGameServiceOptions.computerPolicy`
  * replaces it. `CANONICAL_COMPUTER_POLICY` below — a seeded choice among the canonical legal
  * commands — is no longer the default: the service keeps it registered as an additional
@@ -33,9 +33,9 @@ export interface ComputerSeatContext {
 }
 
 export interface ComputerPolicy {
-  /** Stamped on new computer seats; must match `rules-v1.6.1-<name>-<nnn>`. */
+  /** Stamped on new computer seats; must match `rules-v1.6.2-<name>-<nnn>`. */
   readonly version: ComputerPolicyVersion;
-  /** A short player-facing name, e.g. "V1.6.1 Strategic". */
+  /** A short player-facing name, e.g. "V1.6.2 Strategic". */
   readonly label: string;
   /**
    * Proposes one command for `view.viewerId`, which is always one of
@@ -48,7 +48,7 @@ export interface ComputerPolicy {
   ): AuthoritativeCommand | null | Promise<AuthoritativeCommand | null>;
 }
 
-export const CANONICAL_COMPUTER_POLICY_VERSION = "rules-v1.6.1-canonical-001" satisfies ComputerPolicyVersion;
+export const CANONICAL_COMPUTER_POLICY_VERSION = "rules-v1.6.2-canonical-001" satisfies ComputerPolicyVersion;
 
 /** A deterministic per-decision seed: the same seat, seed and revision choose the same. */
 function decisionSeed(view: ActorView, seat: ComputerSeatContext): number {
@@ -67,7 +67,7 @@ function decisionSeed(view: ActorView, seat: ComputerSeatContext): number {
  */
 export const CANONICAL_COMPUTER_POLICY: ComputerPolicy = {
   version: CANONICAL_COMPUTER_POLICY_VERSION,
-  label: "V1.6.1 Canonical",
+  label: "V1.6.2 Canonical",
   chooseCommand(view, seat) {
     const candidates = fallbackComputerCommands(view);
     if (candidates.length === 0) return null;

@@ -21,6 +21,7 @@ import {
   ORDERS,
   PERSONAL_LOCATION_IDS,
   QUALITY_RANK,
+  RULES_VERSION,
   SHAPES,
   STARTING_ORDER_IDS,
   TECH_IDS,
@@ -64,20 +65,36 @@ import type {
 
 /**
  * P1 content contract (DESIGN §6, §8.2): every value in `data/*.json` is checked against the
- * V1.6.1 rulebook itself. The tables are parsed from the checked-in source, so a transcription
+ * V1.6.2 rulebook itself. The tables are parsed from the checked-in source, so a transcription
  * error on either side fails here. The Tech ID mapping is checked against the `TechId` JSDoc
- * in `types.ts`, and Tech, Kiln and location parameters against the DESIGN §6.3–6.5 tables.
+ * in `types.ts`, and Tech, Kiln and location parameters against the DESIGN §6.3–6.5 tables as
+ * amended by ENGINE_V1.6.2_DELTA.md §3.
+ *
+ * All display text derives from V1.6.2 (engine track stage 4, DELTA §3): the English and
+ * Chinese Appendix A–B cells, Kiln Tradition sections, location rows, component and round
+ * tables and Imperial milestones of both rulebook editions; the short text of the owner's
+ * component text and its repository-format copy; and the clarifications of
+ * `docs/KILN_OPENING_v1.6.2_CLARIFICATIONS.md`, whose tags resolve against the V1.6.2 source and
+ * audit. The V1.6.1 rulebook is read only to show which five Tech abilities V1.6.2 rewrote.
  */
 
 const ROOT = join(import.meta.dirname, "../../..");
-const SOURCE = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.1_EN_SOURCE.md"), "utf8");
+const SOURCE = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.2_EN_SOURCE.md"), "utf8");
 const DESIGN = readFileSync(join(ROOT, "docs/ENGINE_V1.6.1_DESIGN.md"), "utf8");
-const AUDIT = readFileSync(join(ROOT, "docs/RULEBOOK_AUDIT_V1.6.1.md"), "utf8");
+const DELTA = readFileSync(join(ROOT, "docs/ENGINE_V1.6.2_DELTA.md"), "utf8");
+const AUDIT = readFileSync(join(ROOT, "docs/RULEBOOK_AUDIT_V1.6.2.md"), "utf8");
 const TYPES = readFileSync(join(ROOT, "src/game/types.ts"), "utf8");
 /** The Chinese rulebook edition, translated to match the English rulebook sentence for sentence. */
-const SOURCE_ZH = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.1_ZH.md"), "utf8");
-const COMPONENT_TEXT = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.1_COMPONENT_TEXT_SOURCE.md"), "utf8");
-const CLARIFICATIONS_DOC = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.1_CLARIFICATIONS.md"), "utf8");
+const SOURCE_ZH = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.2_ZH.md"), "utf8");
+/** History: the V1.6.1 rows the V1.6.2 text is compared with (DELTA §3.1). */
+const SOURCE_V161 = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.1_EN_SOURCE.md"), "utf8");
+const SOURCE_ZH_V161 = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.1_ZH.md"), "utf8");
+/** The owner's V1.6.2 short component text (DELTA §3.3), and its repository-format copy. */
+const COMPONENT_TEXT = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.2_COMPONENT_TEXT.md"), "utf8");
+const COMPONENT_TEXT_SOURCE = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.2_COMPONENT_TEXT_SOURCE.md"), "utf8");
+/** The Techs whose ability text V1.6.2 rewrote with their mechanics (changes 22, v1.6.2 L32). */
+const V162_TECHS: ReadonlySet<TechId> = new Set<TechId>(["T10", "T11", "T12", "T14", "T23"]);
+const CLARIFICATIONS_DOC = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.2_CLARIFICATIONS.md"), "utf8");
 const OWNER_DECISIONS = readFileSync(join(ROOT, "docs/ui-v1.6.1/OWNER_DECISIONS.md"), "utf8");
 
 const clean = (text: string): string => text.replaceAll("**", "").replace(/\s+/g, " ").trim();
@@ -150,7 +167,15 @@ function parseRequirements(text: string): ParsedOrder {
       slot.shape = lookup(SHAPE_NAMES, shapeText);
     }
     if (glazeText !== "any Glaze") slot.glaze = lookup(GLAZE_NAMES, glazeText);
-    if (decorationText !== "any Decoration") slot.decoration = lookup(DECORATION_NAMES, decorationText);
+    // "Carved, Impressed or Painted" (S07, v1.6.2 change 23) is a Decoration alternative.
+    const decorationPick = /^(.+), (.+) or (.+)$/.exec(decorationText) ?? /^(.+) or (.+)$/.exec(decorationText);
+    if (decorationText === "any Decoration") {
+      // no Decoration requirement
+    } else if (decorationPick !== null) {
+      slot.decorations = decorationPick.slice(1).map((name) => lookup(DECORATION_NAMES, name));
+    } else {
+      slot.decoration = lookup(DECORATION_NAMES, decorationText);
+    }
     return { ceramics: [slot], relations: [] };
   }
 
@@ -199,13 +224,13 @@ function parseQuality(text: string): { minQuality: Exclude<Quality, "flawed">; m
   return { minQuality, masterpieces: Number(match[2] ?? 0) };
 }
 
-const appendixA = section("## Appendix A — Order Decks: 16 Starting + 48 Main");
+const appendixA = section("## Appendix A — Order Decks: 8 Starting + 48 Main");
 const orderRows = tableRows(appendixA).filter((cells) => /^[SO]\d{2}$/.test(cells[0] ?? ""));
 
-describe("Appendix A: all 16 Starting and 48 Main Orders", () => {
+describe("Appendix A: all 8 Starting and 48 Main Orders", () => {
   it("prints exactly the Order IDs the data defines", () => {
     expect(orderRows.map((cells) => cells[0])).toEqual([...ORDER_IDS]);
-    expect(STARTING_ORDER_IDS).toHaveLength(16);
+    expect(STARTING_ORDER_IDS).toHaveLength(8);
     expect(MAIN_ORDER_IDS).toHaveLength(48);
   });
 
@@ -231,16 +256,56 @@ describe("Appendix A: all 16 Starting and 48 Main Orders", () => {
     expect(order.relations ?? []).toEqual([...parsed.relations, ...masterpieceRelations]);
   });
 
-  it("applies the seven V1.6.1 value changes and the R3 rulings as printed", () => {
-    expect(ORDERS.S10.vp).toBe(4);
-    expect([ORDERS.S14.vp, ORDERS.S14.coins]).toEqual([3, 3]);
-    expect([ORDERS.S16.vp, ORDERS.S16.coins]).toEqual([2, 3]);
-    expect([ORDERS.S01.coins, ORDERS.S02.coins, ORDERS.S03.coins]).toEqual([4, 4, 4]);
-    expect([ORDERS.O16.vp, ORDERS.O21.vp, ORDERS.O31.vp, ORDERS.O32.vp, ORDERS.O33.vp, ORDERS.O40.vp]).toEqual([9, 9, 12, 15, 14, 15]);
+  it("rebuilds the Starting deck as 8 cards (v1.6.2 change 23, L33)", () => {
+    const starting = STARTING_ORDER_IDS.map((id) => [id, ORDERS[id].vp, ORDERS[id].coins]);
+    expect(starting).toEqual([
+      ["S01", 3, 4],
+      ["S02", 3, 4],
+      ["S03", 3, 4],
+      ["S04", 4, 4],
+      ["S05", 3, 4],
+      ["S06", 3, 5],
+      ["S07", 3, 3],
+      ["S08", 2, 4],
+    ]);
+    // "Carved, Impressed or Painted": a Decoration alternative, like S05's Shape alternative.
+    expect(ORDERS.S07.ceramics).toEqual([{ decorations: ["carved", "impressed", "painted"] }]);
+    expect(ORDERS.S05.ceramics).toEqual([{ shapes: ["bowl", "plate", "washer"] }]);
+    // 2 per player: a 4-player game deals the whole deck (L520).
+    expect(GAME_CONFIG.setupDeal.startingOrders * GAME_CONFIG.players.max).toBe(STARTING_ORDER_IDS.length);
+  });
+
+  it("applies the Main Order re-pass as printed (v1.6.2 change 24, L34) and keeps the earlier changes", () => {
+    const values = (ids: string[]) => ids.map((id) => [id, ORDERS[id as keyof typeof ORDERS].vp, ORDERS[id as keyof typeof ORDERS].coins]);
+    expect(values(["O01", "O02", "O03", "O04", "O05", "O14", "O15", "O19", "O20", "O22"])).toEqual([
+      ["O01", 4, 3],
+      ["O02", 4, 3],
+      ["O03", 4, 3],
+      ["O04", 7, 3],
+      ["O05", 6, 3],
+      ["O14", 5, 3],
+      ["O15", 5, 4],
+      ["O19", 6, 2],
+      ["O20", 6, 2],
+      ["O22", 9, 1],
+    ]);
+    expect(values(["O26", "O27", "O28", "O30", "O32", "O33", "O34", "O38", "O39"])).toEqual([
+      ["O26", 11, 5],
+      ["O27", 12, 5],
+      ["O28", 11, 5],
+      ["O30", 13, 5],
+      ["O32", 16, 5],
+      ["O33", 15, 5],
+      ["O34", 15, 5],
+      ["O38", 12, 1],
+      ["O39", 13, 1],
+    ]);
+    // Change 13's values that change 24 left alone.
+    expect([ORDERS.O16.vp, ORDERS.O21.vp, ORDERS.O31.vp, ORDERS.O40.vp]).toEqual([9, 9, 12, 15]);
   });
 
   it("uses Painted where Crackle used to be a Decoration (change 19)", () => {
-    expect(ORDERS.S13.ceramics).toEqual([{ decoration: "painted" }]);
+    expect(ORDERS.S07.ceramics).toEqual([{ decorations: ["carved", "impressed", "painted"] }]);
     expect(ORDERS.O13.ceramics).toEqual([{ decoration: "painted" }]);
     expect(ORDERS.O17.ceramics).toEqual([{ shape: "washer", glaze: "white", decoration: "painted" }]);
     expect(ORDERS.O23.ceramics).toEqual([{ shape: "vase", glaze: "grey_green", decoration: "painted" }]);
@@ -259,6 +324,42 @@ describe("Appendix A: all 16 Starting and 48 Main Orders", () => {
   });
 });
 
+// The Chinese edition's Appendix A (owner revision 2): `requirementsZh` is its requirement cell
+// verbatim, and its Quality, VP, Coin and Crown cells agree with the data and the English row.
+const appendixAZh = section("## 附录A——委托牌堆：8张起始委托 + 48张主委托", SOURCE_ZH);
+const orderRowsZh = tableRows(appendixAZh).filter((cells) => /^[SO]\d{2}$/.test(cells[0] ?? ""));
+const QUALITY_ZH: Record<string, { minQuality: Exclude<Quality, "flawed">; masterpieces: number }> = {
+  良品以上: { minQuality: "standard", masterpieces: 0 },
+  均良品以上: { minQuality: "standard", masterpieces: 0 },
+  上品以上: { minQuality: "fine", masterpieces: 0 },
+  均上品以上: { minQuality: "fine", masterpieces: 0 },
+  "均上品以上，至少1件臻品": { minQuality: "fine", masterpieces: 1 },
+  "均上品以上，至少2件臻品": { minQuality: "fine", masterpieces: 2 },
+  臻品: { minQuality: "masterpiece", masterpieces: 0 },
+};
+
+describe("Chinese Appendix A: all 8 Starting and 48 Main Orders (owner revision 2)", () => {
+  it("prints exactly the Order IDs the data defines, in the same order as the English edition", () => {
+    expect(orderRowsZh.map((cells) => cells[0])).toEqual([...ORDER_IDS]);
+  });
+
+  it.each(orderRowsZh.map((cells) => [cells[0] ?? "", cells] as const))("%s matches its Chinese row", (id, cells) => {
+    const order = ORDERS[id as keyof typeof ORDERS];
+    const [, requirementsZh = "", qualityZh = "", vp = "", coins = "", crowns = "—"] = cells;
+    const quality = QUALITY_ZH[qualityZh];
+    expect(quality, `${id} quality "${qualityZh}"`).toBeDefined();
+    expect(order.requirementsZh).toBe(requirementsZh);
+    expect(order.minQuality).toBe(quality?.minQuality);
+    const masterpieces = (order.relations ?? []).find(
+      (relation): relation is Extract<OrderRelationDefinition, { type: "at_least_n_quality" }> => relation.type === "at_least_n_quality",
+    );
+    expect(masterpieces === undefined ? 0 : masterpieces.count).toBe(quality?.masterpieces);
+    expect(order.vp).toBe(Number(vp));
+    expect(order.coins).toBe(Number(coins));
+    expect(order.crowns).toBe(id.startsWith("S") || crowns === "—" ? 0 : Number(crowns));
+  });
+});
+
 // ── Appendix B: all 18 Advanced Techs ────────────────────────────────────────────────────
 
 const B_SECTIONS: ReadonlyArray<readonly [TechDiscipline, string]> = [
@@ -267,8 +368,10 @@ const B_SECTIONS: ReadonlyArray<readonly [TechDiscipline, string]> = [
   ["firing", "### B3. Firing — 6"],
 ];
 
-const techRows = B_SECTIONS.flatMap(([discipline, heading]) =>
-  tableRows(section(heading)).filter((cells) => /^\d+$/.test(cells[1] ?? "")).map((cells) => ({ discipline, cells })));
+const techRowsOf = (source: string) => B_SECTIONS.flatMap(([discipline, heading]) =>
+  tableRows(section(heading, source)).filter((cells) => /^\d+$/.test(cells[1] ?? "")).map((cells) => ({ discipline, cells })));
+const techRows = techRowsOf(SOURCE);
+const techRowsV161 = techRowsOf(SOURCE_V161);
 
 function techByPrintedName(printed: string): { id: TechId; nameZh: string | null } {
   const zh = /\s([\u4e00-\u9fff]+)$/.exec(printed);
@@ -304,7 +407,9 @@ describe("Appendix B: all 18 Advanced Techs", () => {
     expect(tech.discipline).toBe(entry.discipline);
     expect(tech.cost).toBe(Number(entry.cells[1]));
     expect(tech.ability).toBe(entry.cells[2]);
-    expect(tech.oncePerRound).toBe(tech.ability.startsWith("Once per round"));
+    // A once-per-round allowance wherever the text prints one: Colour Samples' swap and
+    // Protective Saggars' Standard → Fine step sit after an ongoing clause (v1.6.2 L625, L636).
+    expect(tech.oncePerRound).toBe(/once per round/i.test(tech.ability));
     expect(tech.unlocks).toBe(entry.discipline === "workshop" ? "form_decorate" : entry.discipline === "glazing_loading" ? "glaze_load" : null);
     if (nameZh !== null) expect(tech.nameZh).toBe(nameZh);
   });
@@ -323,14 +428,52 @@ describe("Appendix B: all 18 Advanced Techs", () => {
     }
   });
 
-  it("matches the DESIGN §6.5 timing and parameter table", () => {
+  it("matches the DESIGN §6.5 timing and parameter table as amended by DELTA §3.1", () => {
     expect(designTechRows).toHaveLength(18);
-    for (const [id = "", once, timing, params = ""] of designTechRows) {
-      const tech = TECHS[id as TechId];
-      expect(tech.oncePerRound, id).toBe(once === "yes");
-      expect(tech.timing, id).toBe(timing);
-      expect(tech.params, id).toEqual(designLiteral(params.replaceAll("`", "")));
+    const expected = new Map<string, { oncePerRound: boolean; timing: string; params: unknown }>();
+    for (const [id = "", once, timing = "", params = ""] of designTechRows) {
+      expected.set(id, { oncePerRound: once === "yes", timing, params: designLiteral(params.replaceAll("`", "")) });
     }
+    // DELTA §3.1: `| T11 Protective Saggars | `cost`, `params` | 3; `{…}` (L636) |`.
+    const amended = tableRows(section("### 3.1 `techniques.json`", DELTA)).filter((cells) => /^T\d{2} /.test(cells[0] ?? ""));
+    expect(amended.map((cells) => cells[0]?.slice(0, 3))).toEqual(["T18", "T20", "T11", "T12", "T10", "T14", "T23"]);
+    for (const [label = "", fields = "", values = ""] of amended) {
+      const entry = expected.get(label.slice(0, 3));
+      if (entry === undefined) throw new Error(`DELTA §3.1 names unknown Tech ${label}`);
+      const literals = [...values.matchAll(/`([^`]+)`/g)].map((match) => match[1] ?? "");
+      if (fields.includes("`params`")) entry.params = designLiteral(literals.find((literal) => literal.startsWith("{")) ?? "");
+      if (fields.includes("`oncePerRound`")) entry.oncePerRound = literals[0] === "true";
+      if (fields.includes("`timing`")) entry.timing = JSON.parse(literals[0] ?? "") as string;
+    }
+    for (const id of TECH_IDS) {
+      const tech = TECHS[id];
+      expect(tech.oncePerRound, id).toBe(expected.get(id)?.oncePerRound);
+      expect(tech.timing, id).toBe(expected.get(id)?.timing);
+      expect(tech.params, id).toEqual(expected.get(id)?.params);
+    }
+  });
+
+  it("charges the V1.6.2 costs (changes 22, v1.6.2 L32; L618, L626, L636–637)", () => {
+    expect([TECHS.T18.cost, TECHS.T20.cost, TECHS.T11.cost, TECHS.T12.cost]).toEqual([3, 3, 3, 2]);
+    // Test Pieces stays 3 (v1.6.2 L32).
+    expect(TECHS.T13.cost).toBe(3);
+    expect(SOURCE.split("\n")[31]).toContain("Senior Apprentice and Kiln Tending cost 3; Test Pieces stays at 3");
+  });
+
+  it("V1.6.2 rewrote exactly the five Tech abilities whose mechanics changed (changes 22, DELTA §3.1)", () => {
+    const changed = TECH_IDS.filter((id) => {
+      const now = techRows.find((row) => techByPrintedName(row.cells[0] ?? "").id === id)?.cells[2];
+      const then = techRowsV161.find((row) => techByPrintedName(row.cells[0] ?? "").id === id)?.cells[2];
+      return now !== then;
+    });
+    expect(new Set(changed)).toEqual(V162_TECHS);
+    // The mechanics follow the V1.6.2 text (v1.6.2 L625, L630, L636–637, L639).
+    expect(TECHS.T10.ability).toContain("once per round, before or after one of your worker actions, you may discard 1 held Order");
+    expect(TECHS.T23.ability).toBe("Once per round, when you complete an Order, gain 2 Coins.");
+    expect(TECHS.T11.ability).toContain("a Heat Difference of 3 or more counts as Standard");
+    expect(TECHS.T12.ability).toContain("Your Bank the Fire and Stoke the Fire cost no Wood");
+    expect(TECHS.T14.ability).toContain("Reveal 2 extra Fire cards, choose 1 of them");
+    expect(TECHS.T23.timing).toBe("order_completion");
   });
 
   it("names exactly the printed Shapes, Decorations, locations and Qualities in Tech parameters", () => {
@@ -358,8 +501,9 @@ const gh = LOCATIONS.guild_hall.effects;
 const my = LOCATIONS.materials_yard.effects;
 const mh = LOCATIONS.magistrates_hall.effects;
 const cw = LOCATIONS.canal_wharf.effects;
-const anyGain = [cm.apprentice.gainAfterEach, cm.apprentice.gainAfterEach, cm.apprentice.gainAfterEach];
 const stoke = contributionCard("STOKE").heat;
+/** The smallest Heat Difference the Quality table calls Flawed (L274–279). */
+const flawedFrom = (FIRING.qualityByHeatDifference.find((row) => row.quality === "standard")?.maxDifference ?? -1) + 1;
 
 /** [label, printed English text, the exact number sequence the data implies]. */
 const PRINTED_NUMBERS: Array<[string, string, number[]]> = [
@@ -369,16 +513,17 @@ const PRINTED_NUMBERS: Array<[string, string, number[]]> = [
   ["T17", TECHS.T17.ability, [1, TECHS.T17.params.claySurcharge]],
   ["T18", TECHS.T18.ability, [1]],
   ["T19", TECHS.T19.ability, [TECHS.T19.params.vpPerCeramic, TECHS.T19.params.maxVp]],
-  ["T10", TECHS.T10.ability, [TECHS.T10.params.lookSize, 1, TECHS.T10.params.handLimit]],
+  ["T10", TECHS.T10.ability, [TECHS.T10.params.lookSize, 1, TECHS.T10.params.handLimit, TECHS.T10.params.swapDiscard, TECHS.T10.params.swapLookSize, 1]],
   ["T20", TECHS.T20.ability, [1, TECHS.T20.params.clay, TECHS.T20.params.wood]],
   ["T15", TECHS.T15.ability, [1, ...abs(TECHS.T15.params.modifiers)]],
   ["T21", TECHS.T21.ability, [1]],
   ["T22", TECHS.T22.ability, []],
-  ["T23", TECHS.T23.ability, [1]],
-  ["T11", TECHS.T11.ability, [TECHS.T11.params.wood, 1]],
+  ["T23", TECHS.T23.ability, [TECHS.T23.params.coins]],
+  // "a Heat Difference of 3 or more" is the first difference the Quality table calls Flawed.
+  ["T11", TECHS.T11.ability, [flawedFrom, 1]],
   ["T12", TECHS.T12.ability, [TECHS.T12.params.extraWood, stoke + TECHS.T12.params.heat, stoke + TECHS.T12.params.heat]],
   ["T13", TECHS.T13.ability, [1, TECHS.T13.params.wood]],
-  ["T14", TECHS.T14.ability, [1, 1]],
+  ["T14", TECHS.T14.ability, [1, TECHS.T14.params.extraCards, TECHS.T14.params.chosenCards]],
   ["T24", TECHS.T24.ability, [...abs(TECHS.T24.params.values), 1]],
   ["T25", TECHS.T25.ability, [KILNS.GU.params.minPrintedCrowns, TECHS.T25.params.bonusCrowns]],
   ["RU", KILNS.RU.ability, [KILNS.RU.params.vp]],
@@ -387,17 +532,20 @@ const PRINTED_NUMBERS: Array<[string, string, number[]]> = [
   ["DI", KILNS.DI.ability, [KILNS.DI.params.clay, KILNS.DI.params.coins, KILNS.DI.params.coins, fd.shifu.maxVessels]],
   ["JU", KILNS.JU.ability, [KILNS.JU.params.wood, ...abs(KILNS.JU.params.deltas)]],
   ["materials_yard.apprentice", LOCATIONS.materials_yard.apprenticeText, [my.apprentice.resources]],
-  ["materials_yard.shifu", LOCATIONS.materials_yard.shifuText, [my.shifu.resources, my.shifu.bonus.coins, my.shifu.bonus.clay, my.shifu.bonus.wood]],
+  ["materials_yard.shifu", LOCATIONS.materials_yard.shifuText, [my.shifu.resources]],
   ["form_decorate.apprentice", LOCATIONS.form_decorate.apprenticeText, [fd.apprentice.maxVessels]],
   ["form_decorate.shifu", LOCATIONS.form_decorate.shifuText, [fd.shifu.maxVessels, fd.shifu.maxVessels, fd.shifu.twoVesselDecorationDiscount]],
   ["glaze_load.apprentice", LOCATIONS.glaze_load.apprenticeText, [gl.apprentice.maxLoads]],
   ["glaze_load.shifu", LOCATIONS.glaze_load.shifuText, [gl.shifu.maxLoads, 1]],
-  ["commission_market.apprentice", LOCATIONS.commission_market.apprenticeText, [cm.apprentice.maxReservations, ...anyGain]],
+  ["commission_market.apprentice", LOCATIONS.commission_market.apprenticeText,
+    [cm.apprentice.lookSize, cm.apprentice.maxReservations, cm.apprentice.lookSize, cm.apprentice.lookSize]],
   ["commission_market.shifu", LOCATIONS.commission_market.shifuText,
-    [cm.shifu.maxReservations, cm.shifu.topThreeLooks, cm.shifu.lookSize, 1, ...anyGain]],
-  ["guild_hall.apprentice", LOCATIONS.guild_hall.apprenticeText, [1]],
-  ["guild_hall.shifu", LOCATIONS.guild_hall.shifuText, [1, gh.shifu.inspectCount, 1, 1, gh.shifu.discount, 0]],
+    [cm.shifu.lookSize, cm.shifu.maxReservations, cm.shifu.lookSize, cm.shifu.lookSize]],
+  ["guild_hall.apprentice", LOCATIONS.guild_hall.apprenticeText, [gh.apprentice.maxTechs]],
+  // v1.6.2 L207 (owner revision 2026-10-17): "Choose 1 discipline … top 2 … take up to 2".
+  ["guild_hall.shifu", LOCATIONS.guild_hall.shifuText, [1, gh.shifu.inspectCount, gh.shifu.maxTechs]],
   ["canal_wharf.apprentice", LOCATIONS.canal_wharf.apprenticeText, [cw.apprentice.coins]],
+  // "the top card of the Main Order deck" is `topMainOrders: 1`, which prints no numeral.
   ["canal_wharf.shifu", LOCATIONS.canal_wharf.shifuText, [cw.shifu.coins]],
   ["magistrates_hall.apprentice", LOCATIONS.magistrates_hall.apprenticeText, [mh.apprentice.coins, mh.apprentice.recognitionSteps]],
   ["magistrates_hall.shifu", LOCATIONS.magistrates_hall.shifuText, [mh.shifu.coins, mh.shifu.recognitionSteps]],
@@ -500,6 +648,16 @@ const LOCATION_HEADINGS: Readonly<Record<LocationId, string>> = {
   magistrates_hall: "### Magistrate's Hall",
 };
 
+const LOCATION_HEADINGS_ZH: Readonly<Record<LocationId, string>> = {
+  materials_yard: "### 泥柴场",
+  form_decorate: "### 制坯饰纹（坊内）",
+  glaze_load: "### 施釉装窑（坊内）",
+  commission_market: "### 瓷牙行",
+  guild_hall: "### 陶工行",
+  canal_wharf: "### 漕运码头",
+  magistrates_hall: "### 州衙",
+};
+
 describe("locations and capacity (L146–233)", () => {
   it("defines the five central and two personal locations", () => {
     expect([...CENTRAL_LOCATION_IDS, ...PERSONAL_LOCATION_IDS].sort()).toEqual([...LOCATION_IDS].sort());
@@ -535,15 +693,39 @@ describe("locations and capacity (L146–233)", () => {
     expect(LOCATIONS[id].shifuText).toBe(row(block, "Shifu")[1]);
   });
 
-  it("matches the DESIGN §6.3 effect table", () => {
+  it.each(LOCATION_IDS)("%s prints its Apprentice and Shifu effects in the Chinese edition", (id) => {
+    const heading = LOCATION_HEADINGS_ZH[id];
+    const block = section(heading, SOURCE_ZH);
+    expect(heading.replace("### ", "").replace("（坊内）", "")).toBe(LOCATIONS[id].nameZh);
+    expect(LOCATIONS[id].apprenticeTextZh).toBe(row(block, "学徒")[1]);
+    expect(LOCATIONS[id].shifuTextZh).toBe(row(block, "师傅")[1]);
+  });
+
+  it("matches the DESIGN §6.3 effect table as amended by DELTA §3.2", () => {
     const rows = tableRows(section("### 6.3 `action_locations.json` → `{rulesVersion, locations: LocationDefinition[7]}`", DESIGN))
       .filter((cells) => /^`[a-z_]+`$/.test(cells[0] ?? ""));
     expect(rows).toHaveLength(7);
+    const expected = new Map<LocationId, { apprentice: unknown; shifu: unknown }>();
     for (const cells of rows) {
       const id = (cells[0] ?? "").replaceAll("`", "") as LocationId;
       const literals = [...(cells[3] ?? "").matchAll(/`([^`]+)`/g)].map((match) => match[1] ?? "");
-      expect(LOCATIONS[id].effects.apprentice, id).toEqual(designLiteral(literals[0] ?? ""));
-      expect(LOCATIONS[id].effects.shifu, id).toEqual(designLiteral(literals[1] ?? ""));
+      expected.set(id, { apprentice: designLiteral(literals[0] ?? ""), shifu: designLiteral(literals[1] ?? "") });
+    }
+    // DELTA §3.2: `| `id` | apprentice `{…}`; shifu `{…}` | … |`, either effect optional.
+    const amended = tableRows(section("### 3.2 `action_locations.json`", DELTA)).filter((cells) => /^`[a-z_]+`$/.test(cells[0] ?? ""));
+    expect(amended.map((cells) => cells[0])).toEqual(["`materials_yard`", "`commission_market`", "`guild_hall`", "`canal_wharf`"]);
+    for (const cells of amended) {
+      const id = (cells[0] ?? "").replaceAll("`", "") as LocationId;
+      const entry = expected.get(id);
+      if (entry === undefined) throw new Error(`DELTA §3.2 names unknown location ${id}`);
+      for (const effect of ["apprentice", "shifu"] as const) {
+        const literal = new RegExp(`${effect} \`([^\`]+)\``).exec(cells[1] ?? "")?.[1];
+        if (literal !== undefined) entry[effect] = designLiteral(literal);
+      }
+    }
+    for (const id of LOCATION_IDS) {
+      expect(LOCATIONS[id].effects.apprentice, id).toEqual(expected.get(id)?.apprentice);
+      expect(LOCATIONS[id].effects.shifu, id).toEqual(expected.get(id)?.shifu);
     }
     expect(LOCATIONS.magistrates_hall.usableAtRecognition).toEqual([0, 1, 2]);
     expect(SOURCE).toContain("may be used while at Recognition 0, **1 or 2**");
@@ -555,12 +737,12 @@ describe("locations and capacity (L146–233)", () => {
   it("matches the Appendix E action summary numbers", () => {
     const summary = section("### Action Summary");
     const expectations: Record<LocationId, [number[], number[]]> = {
-      materials_yard: [[my.apprentice.resources], [my.shifu.resources, my.shifu.bonus.coins, my.shifu.bonus.clay, my.shifu.bonus.wood]],
+      materials_yard: [[my.apprentice.resources], [my.shifu.resources]],
       form_decorate: [[fd.apprentice.maxVessels], [fd.shifu.maxVessels, fd.shifu.maxVessels, fd.shifu.twoVesselDecorationDiscount]],
       glaze_load: [[gl.apprentice.maxLoads], [gl.shifu.maxLoads, 1]],
-      commission_market: [[cm.apprentice.maxReservations, cm.apprentice.gainAfterEach],
-        [cm.shifu.maxReservations, cm.shifu.topThreeLooks, cm.shifu.lookSize, cm.shifu.gainAfterEach]],
-      guild_hall: [[1], [gh.shifu.inspectCount, 1, 1, gh.shifu.discount]],
+      commission_market: [[cm.apprentice.lookSize, cm.apprentice.maxReservations, cm.apprentice.lookSize],
+        [cm.shifu.lookSize, cm.shifu.maxReservations, cm.shifu.lookSize]],
+      guild_hall: [[gh.apprentice.maxTechs], [gh.shifu.inspectCount, 1, gh.shifu.maxTechs]],
       canal_wharf: [[cw.apprentice.coins], [cw.shifu.coins]],
       magistrates_hall: [
         [mh.apprentice.coins, mh.apprentice.recognitionSteps,
@@ -575,6 +757,18 @@ describe("locations and capacity (L146–233)", () => {
     }
     expect(summary).toContain("Materials Yard, Commission Market and Guild Hall use 2 / 3 / 4 spaces in 2 / 3 / 4-player games");
     expect(summary).toContain("The Magistrate's Hall has 1 / 1 / 2 spaces, usable at Recognition 0–2");
+  });
+
+  it("prints the V1.6.2 Guild Hall takes, deferred refill and placement rule (owner revision 2026-10-17)", () => {
+    const block = section(LOCATION_HEADINGS.guild_hall);
+    expect(block).toContain("Then take **up to 2 Advanced Techs from different disciplines**, face-up or revealed, paying the printed cost of each.");
+    expect(block).toContain("A taken tile's position stays **empty until the end of your turn**; then refill each discipline to 2 if possible. A Shifu's second Tech is chosen from what is showing now.");
+    expect(block).toContain("A placement here is legal only if you can afford at least 1 face-up Tech from a discipline you do not yet own.");
+    // The Shifu discount is gone from the location, the summary and the change list (v1.6.2 L31).
+    expect(block).not.toMatch(/Coins? less|discount/);
+    expect(row(section("### Action Summary"), LOCATIONS.guild_hall.name)[2]).toContain("buy up to 2 Techs from different disciplines at cost");
+    expect(SOURCE.split("\n")[30]).toContain("Guild Hall Shifu takes up to 2 Techs from different disciplines at printed cost (no discount)");
+    expect(LOCATIONS.guild_hall.effects).toEqual({ apprentice: { maxTechs: 1 }, shifu: { inspectCount: 2, maxTechs: 2 } });
   });
 });
 
@@ -598,20 +792,21 @@ describe("setup, production, firing and scoring values", () => {
     expect(SOURCE).toContain(`Exactly ${GAME_CONFIG.techs.perDiscipline} Form & Decorate, ${GAME_CONFIG.techs.perDiscipline} Glazing & Loading and ${GAME_CONFIG.techs.perDiscipline} Firing`);
   });
 
-  it("scores each Tech's printed 1 VP when it is gained, per owner amendment A1 (L30, L379, L492, L609, L755)", () => {
+  it("scores each Tech's printed 1 VP when it is gained, per owner amendment A1 (v1.6.2 L30, L378, L491, L600, L746)", () => {
     const vp = GAME_CONFIG.techs.vpEach;
     expect(vp).toBe(1);
-    // A1 is applied in the source itself (change 20 at line 30; lines 379, 492, 609, 755): scored on gain, never again at game end.
+    // A1 is applied in the source itself (change 20 at line 30; lines 378, 491, 600, 746 after owner
+    // revision 2): scored on gain, never again at game end.
     const lines = SOURCE.split("\n");
     expect(lines[29]).toBe(`20. **Tech VP scored on purchase.** The ${vp} VP per Advanced Tech is recorded the moment the tile is taken, not at game end. Bookkeeping only; Techs cannot be lost.`);
-    expect(lines[378]).toBe(`- Each Advanced Tech scores **${vp} VP immediately when you gain it**; it is not scored again at game end.`);
-    // Final scoring (L492–494, owner wording 2026-10-16): recorded VP (Tech VP included), Exhibition, Coins; no Tech step.
-    expect(lines[491]).toContain(`**${vp} VP for each Advanced Tech** (scored when gained)`);
-    expect(lines[492]).toBe("2. the end-game Exhibition;");
-    expect(lines[493]).toBe(`3. **1 VP per 3 Coins remaining**, maximum **5 VP**.`);
-    expect(lines[494]).toBe("");
-    expect(lines[608]).toContain(`Each Advanced Tech scores **${vp} VP immediately when you gain it**.`);
-    expect(lines[754]).toBe(`- Advanced Techs: **${vp} VP each**, scored when you gain them.`);
+    expect(lines[377]).toBe(`- Each Advanced Tech scores **${vp} VP immediately when you gain it**; it is not scored again at game end.`);
+    // Final scoring (L491–493, owner wording 2026-10-16): recorded VP (Tech VP included), Exhibition, Coins; no Tech step.
+    expect(lines[490]).toContain(`**${vp} VP for each Advanced Tech** (scored when gained)`);
+    expect(lines[491]).toBe("2. the end-game Exhibition;");
+    expect(lines[492]).toBe(`3. **1 VP per 3 Coins remaining**, maximum **5 VP**.`);
+    expect(lines[493]).toBe("");
+    expect(lines[599]).toContain(`Each Advanced Tech scores **${vp} VP immediately when you gain it**.`);
+    expect(lines[745]).toBe(`- Advanced Techs: **${vp} VP each**, scored when you gain them.`);
     expect(SOURCE).not.toMatch(/Advanced Tech[^\n]*\*\*1 VP at game end\*\*/);
     // The audit records the amendment.
     const a1 = AUDIT.split("\n").find((line) => line.startsWith("| A1 |"));
@@ -620,7 +815,7 @@ describe("setup, production, firing and scoring values", () => {
     expect([id, date]).toEqual(["A1", "2026-10-15"]);
     expect(amendment).toContain(`Each Advanced Tech scores its ${vp} VP immediately when the player gains it`);
     expect(amendment).toContain("It is no longer added at game end.");
-    expect(overrides).toContain("Lines 379, 492, 609, 755");
+    expect(overrides).toContain("Lines 378, 491, 600, 746");
   });
 
   it("prices Shapes, Decorations and Glazes as L319–353 print", () => {
@@ -725,6 +920,93 @@ describe("setup, production, firing and scoring values", () => {
   });
 });
 
+// ── Components, round structure and Imperial milestones (both editions) ──────────────────
+
+const readData = <T,>(file: string): T => JSON.parse(readFileSync(join(ROOT, "data", file), "utf8")) as T;
+
+interface ComponentRow {
+  id: string;
+  name: string;
+  nameZh: string;
+  qty: number | string;
+  notes: string;
+  notesZh: string;
+}
+
+/**
+ * English component notes that deliberately differ from the English row, with the reason. The
+ * Chinese edition prints these notes in their digital wording already, so the Chinese never differs.
+ */
+const COMPONENT_NOTE_ADAPTATIONS: Readonly<Record<string, string>> = {
+  kiln_player_boards: "D7: the second space is added by learning a Tech, never under a token",
+  lock_tokens: "D7: physical prototype only; the digital game has no Cover token",
+};
+
+describe("components, round phases and Imperial milestones are the rulebook tables in both editions", () => {
+  const components = readData<{ components: ComponentRow[] }>("components.json").components;
+  const componentsEn = tableRows(section("## Components")).slice(1);
+  const componentsZh = tableRows(section("## 配件", SOURCE_ZH)).slice(1);
+
+  it("lists every component of the Components table, in order, with its printed quantity (L71–96)", () => {
+    expect(components.map((component) => [component.name, String(component.qty)])).toEqual(componentsEn.map((cells) => [cells[0], cells[1]]));
+    // The one quantity that is not a number, "4 or 1" (VP Markers / Score Pad), prints as 4或1.
+    expect(components.map((component) => [component.nameZh, String(component.qty).replace(" or ", "或")]))
+      .toEqual(componentsZh.map((cells) => [cells[0], cells[1]]));
+    // Change 23 (L33, L84): the Starting Order deck has 8 cards.
+    expect(components.find((component) => component.id === "starting_order_cards")?.qty).toBe(STARTING_ORDER_IDS.length);
+    expect(components.find((component) => component.id === "main_order_cards")?.qty).toBe(MAIN_ORDER_IDS.length);
+  });
+
+  it("prints each component's notes as the rows do, with the recorded D7 adaptations", () => {
+    components.forEach((component, index) => {
+      expect(component.notesZh, component.id).toBe(componentsZh[index]?.[2]);
+      const printed = componentsEn[index]?.[2];
+      if (component.id in COMPONENT_NOTE_ADAPTATIONS) expect(component.notes, component.id).not.toBe(printed);
+      else expect(component.notes, component.id).toBe(printed);
+    });
+    for (const id of Object.keys(COMPONENT_NOTE_ADAPTATIONS)) expect(components.map((component) => component.id)).toContain(id);
+  });
+
+  it("names and summarises the five round phases as the Round Structure tables print them (L116–124)", () => {
+    const phases = readData<{ phases: Array<{ order: number; name: string; nameZh: string; summary: string; summaryZh: string }> }>("round_structure.json").phases;
+    const en = tableRows(section("## Round Structure")).slice(1);
+    const zh = tableRows(section("## 每轮流程", SOURCE_ZH)).slice(1);
+    expect(phases.map((phase) => [String(phase.order), phase.name, phase.summary])).toEqual(en);
+    expect(phases.map((phase) => [String(phase.order), phase.nameZh, phase.summaryZh])).toEqual(zh);
+  });
+
+  it("prints the Imperial milestones as both track tables do (L428–437)", () => {
+    const en = tableRows(section("### Imperial Recognition Track")).slice(1);
+    const zh = tableRows(section("### 御府声望轨", SOURCE_ZH)).slice(1);
+    for (const space of IMPERIAL_TRACK.track) {
+      const [, title, reward] = en[space.space] ?? [];
+      const [, titleZh, rewardZh] = zh[space.space] ?? [];
+      expect([space.title, space.titleZh], space.id).toEqual([title, titleZh]);
+      if (space.rewardText === null) {
+        expect([reward, rewardZh, space.rewardTextZh], space.id).toEqual(["—", "—", null]);
+      } else if (space.id === "imperial_audience") {
+        // The milestone text adds the next row, "Each further Crown | +1 VP" (L435, L437).
+        expect(space.rewardText).toBe(`${reward} After this, each further Crown scores ${IMPERIAL_TRACK.overflowVpPerCrown} VP immediately.`);
+        expect(space.rewardTextZh).toBe(`${rewardZh}此后每获得1个御令，立即得${IMPERIAL_TRACK.overflowVpPerCrown}分。`);
+      } else {
+        expect([space.rewardText, space.rewardTextZh], space.id).toEqual([reward, rewardZh]);
+      }
+    }
+    expect(en[5]).toEqual(["Each further Crown", "", `+${IMPERIAL_TRACK.overflowVpPerCrown} VP`]);
+    expect(zh[5]).toEqual(["此后每个御令", "", `+${IMPERIAL_TRACK.overflowVpPerCrown}分`]);
+  });
+
+  it("names the Contribution cards as the Chinese Contribution table prints them", () => {
+    const block = section("### 控火牌", SOURCE_ZH);
+    for (const id of CONTRIBUTION_CARD_IDS) {
+      const card = contributionCard(id);
+      const [, wood, heat] = row(block, card.nameZh);
+      expect(card.woodCost, id).toBe(Number(wood));
+      expect(card.heat, id).toBe(Number((heat ?? "").replace("−", "-").replace("+", "")));
+    }
+  });
+});
+
 // ── Rule-error text table (DESIGN §6.10) ─────────────────────────────────────────────────
 
 const ERROR_CODES = [...(TYPES.split("export type GameRuleErrorCode =")[1]?.split(";")[0] ?? "").matchAll(/"([A-Z_]+)"/g)]
@@ -763,11 +1045,11 @@ function currentFiles(): ContentFiles {
   return structuredClone({
     gameConfig: GAME_CONFIG,
     firing: FIRING,
-    actionLocations: { rulesVersion: "1.6.1", locations: LOCATION_IDS.map((id) => LOCATIONS[id]) },
-    kilns: { rulesVersion: "1.6.1", kilns: KILN_IDS.map((id) => KILNS[id]) },
-    techniques: { rulesVersion: "1.6.1", advanced: TECH_IDS.map((id) => TECHS[id]) },
+    actionLocations: { rulesVersion: RULES_VERSION, locations: LOCATION_IDS.map((id) => LOCATIONS[id]) },
+    kilns: { rulesVersion: RULES_VERSION, kilns: KILN_IDS.map((id) => KILNS[id]) },
+    techniques: { rulesVersion: RULES_VERSION, advanced: TECH_IDS.map((id) => TECHS[id]) },
     orders: {
-      rulesVersion: "1.6.1",
+      rulesVersion: RULES_VERSION,
       clarifications: ORDER_CLARIFICATIONS,
       starting: STARTING_ORDER_IDS.map((id) => ORDERS[id]),
       main: MAIN_ORDER_IDS.map((id) => ORDERS[id]),
@@ -787,6 +1069,23 @@ describe("content validation", () => {
 
   const mutations: Array<[string, (files: ContentFiles) => void]> = [
     ["a wrong rules version", (files) => { (files.orders as { rulesVersion: string }).rulesVersion = "1.4"; }],
+    ["the V1.6.1 rules version", (files) => { (files.techniques as { rulesVersion: string }).rulesVersion = "1.6.1"; }],
+    ["a Commission look smaller than its reservations", (files) => {
+      const market = files.actionLocations.locations.find((location) => location.id === "commission_market");
+      (market?.effects as { shifu: { lookSize: number } }).shifu.lookSize = 1;
+    }],
+    ["a Commission effect that reserves nothing", (files) => {
+      const market = files.actionLocations.locations.find((location) => location.id === "commission_market");
+      (market?.effects as { apprentice: { maxReservations: number } }).apprentice.maxReservations = 0;
+    }],
+    ["the retired Materials Yard bonus", (files) => {
+      const yard = files.actionLocations.locations.find((location) => location.id === "materials_yard");
+      (yard?.effects.shifu as Record<string, unknown>)["bonus"] = { coins: 1, clay: 1, wood: 1 };
+    }],
+    ["a Canal Wharf Shifu without its Main Order draw", (files) => {
+      const wharf = files.actionLocations.locations.find((location) => location.id === "canal_wharf");
+      delete (wharf?.effects.shifu as Record<string, unknown>)["topMainOrders"];
+    }],
     ["a missing Starting Order", (files) => { files.orders.starting.pop(); }],
     ["a Crown on a Starting Order", (files) => { (files.orders.starting[0] as { crowns: number }).crowns = 1; }],
     ["a relation that skips a slot", (files) => {
@@ -875,8 +1174,10 @@ describe("full Tech and Kiln abilities are the rulebook text in both languages",
     ["glazing_loading", "### B2. 釉作——6张"],
     ["firing", "### B3. 火作——6张"],
   ];
-  const zhTechRows = ZH_B_SECTIONS.flatMap(([discipline, heading]) =>
-    tableRows(section(heading, SOURCE_ZH)).filter((cells) => /^\d+$/.test(cells[1] ?? "")).map((cells) => ({ discipline, cells })));
+  const zhTechRowsOf = (source: string) => ZH_B_SECTIONS.flatMap(([discipline, heading]) =>
+    tableRows(section(heading, source)).filter((cells) => /^\d+$/.test(cells[1] ?? "")).map((cells) => ({ discipline, cells })));
+  const zhTechRows = zhTechRowsOf(SOURCE_ZH);
+  const zhTechRowsV161 = zhTechRowsOf(SOURCE_ZH_V161);
 
   it("the Chinese Appendix B prints the same 18 tiles, disciplines and costs", () => {
     expect(zhTechRows).toHaveLength(18);
@@ -904,48 +1205,131 @@ describe("full Tech and Kiln abilities are the rulebook text in both languages",
     expect(kiln.abilityZh).toBe(paragraphs(`### ${kiln.nameZh} · ${kiln.abilityNameZh}`, SOURCE_ZH).join(""));
   });
 
+  it("the Chinese edition rewrote the same five Tech abilities as the English (changes 22)", () => {
+    const changed = TECH_IDS.filter((id) => {
+      const now = zhTechRows.find((entry) => entry.cells[0] === TECHS[id].nameZh)?.cells[2];
+      const then = zhTechRowsV161.find((entry) => entry.cells[0] === TECHS[id].nameZh)?.cells[2];
+      return now !== then;
+    });
+    expect(new Set(changed)).toEqual(V162_TECHS);
+  });
+
   it("the Chinese edition defers to the English rulebook", () => {
-    expect(SOURCE_ZH.split("\n")[0]).toContain("v1.6.1");
+    expect(SOURCE_ZH.split("\n")[0]).toContain("v1.6.2");
     expect(SOURCE_ZH).toContain("规则如有出入，以英文版规则书为准");
   });
 });
 
-// ── Short component text (docs/KILN_OPENING_v1.6.1_COMPONENT_TEXT_SOURCE.md) ──────────────
+// ── Short component text (docs/KILN_OPENING_v1.6.2_COMPONENT_TEXT.md, DELTA §3.3) ──────────
 
-/** `### Name / 名 (T01)` sections with `- EN:` and `- ZH:` lines; the Review notes have none. */
-function componentTexts(): Map<string, { heading: string; en?: string; zh?: string }> {
+/** One component of the owner's V1.6.2 component text: the heading line `### Name / 中文名`
+ * (Kilns: `### Ru Kiln / 汝窑 — Quiet Perfection / 天青无瑕`), then the English line and the
+ * Chinese line, each with its timing clauses in bold. */
+interface ComponentText {
+  heading: string;
+  en: string;
+  zh: string;
+}
+
+function componentTexts(): ComponentText[] {
+  const found: ComponentText[] = [];
+  let heading: string | null = null;
+  let lines: string[] = [];
+  const flush = () => {
+    if (heading !== null) found.push({ heading, en: lines[0] ?? "", zh: lines[1] ?? "" });
+  };
+  for (const line of COMPONENT_TEXT.split("\n")) {
+    if (line.startsWith("#")) {
+      flush();
+      heading = line.startsWith("### ") ? line.slice(4) : null;
+      lines = [];
+      continue;
+    }
+    if (heading !== null && line.trim() !== "") lines.push(line.trim());
+  }
+  flush();
+  return found;
+}
+
+/** The component of a Tech or Kiln, found by its heading. */
+function componentHeading(id: string): string {
+  if ((TECH_IDS as readonly string[]).includes(id)) {
+    const tech = TECHS[id as TechId];
+    return `${tech.name} / ${tech.nameZh}`;
+  }
+  const kiln = KILNS[id as keyof typeof KILNS];
+  return `${kiln.name} / ${kiln.nameZh} — ${kiln.abilityName} / ${kiln.abilityNameZh}`;
+}
+
+/** The owner's bold runs of one line, in order. */
+function boldSpans(line: string): string[] {
+  return [...line.matchAll(/\*\*(.+?)\*\*/g)].map((match) => match[1] ?? "");
+}
+
+/** `### Name / 名 (T01)` sections of the repository-format copy, with `- EN:` and `- ZH:` lines;
+ * its Review notes have none. */
+function componentTextSource(): Map<string, { heading: string; en?: string; zh?: string }> {
   const found = new Map<string, { heading: string; en?: string; zh?: string }>();
   let current: { heading: string; en?: string; zh?: string } | null = null;
-  for (const line of COMPONENT_TEXT.split("\n")) {
+  for (const line of COMPONENT_TEXT_SOURCE.split("\n")) {
     if (line.startsWith("## ")) current = null;
-    const heading = /^### (.+) \(([A-Z0-9]{2,3})\)$/.exec(line);
+    const heading = /^### (.+) \(([A-Z]{2}|T\d{2})\)$/.exec(line);
     if (heading !== null) {
       current = { heading: heading[1] ?? "" };
       found.set(heading[2] ?? "", current);
       continue;
     }
-    const text = /^- (EN|ZH): (.+)$/.exec(line);
-    if (current !== null && text !== null) current[text[1] === "EN" ? "en" : "zh"] = text[2] ?? "";
+    if (current === null) continue;
+    if (line.startsWith("- EN: ")) current.en = line.slice(6);
+    if (line.startsWith("- ZH: ")) current.zh = line.slice(6);
   }
   return found;
 }
 
-describe("short component text (component text source)", () => {
+describe("short component text (the owner's V1.6.2 component text)", () => {
   const texts = componentTexts();
+  const source = componentTextSource();
 
   it("covers exactly the 18 Techs and 5 Kilns", () => {
-    expect([...texts.keys()].sort()).toEqual([...TECH_IDS, ...KILN_IDS].sort());
+    expect(texts).toHaveLength(TECH_IDS.length + KILN_IDS.length);
+    expect(texts.map((text) => text.heading).sort()).toEqual([...TECH_IDS, ...KILN_IDS].map(componentHeading).sort());
   });
 
-  it.each([...TECH_IDS, ...KILN_IDS])("%s: shortText and shortTextZh equal the doc lines", (id) => {
+  it("has a repository-format copy keyed by ID, line for line the owner's text with the bold removed", () => {
+    expect([...source.keys()].sort()).toEqual([...TECH_IDS, ...KILN_IDS].sort());
+    for (const [id, entry] of source) {
+      expect(entry.heading, id).toBe(componentHeading(id));
+      const owner = texts.find((text) => text.heading === entry.heading);
+      expect(entry.en, id).toBe(owner?.en.replaceAll("**", ""));
+      expect(entry.zh, id).toBe(owner?.zh.replaceAll("**", ""));
+    }
+    // The same order as the owner's file, and the same discipline groups.
+    expect([...source.values()].map((entry) => entry.heading)).toEqual(texts.map((text) => text.heading));
+    expect(COMPONENT_TEXT_SOURCE).toContain("(./KILN_OPENING_v1.6.2_COMPONENT_TEXT.md)");
+    for (const label of SHORT_TEXT_SECONDARY_LABELS) expect(COMPONENT_TEXT_SOURCE, label).toContain(label);
+  });
+
+  it("changed from V1.6.1 only on the five Techs V1.6.2 rewrote (changes 22–24)", () => {
+    const previous = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.1_COMPONENT_TEXT_SOURCE.md"), "utf8");
+    const changed = [...source.entries()].filter(([id, entry]) =>
+      !previous.includes(`(${id})\n- EN: ${entry.en ?? ""}\n- ZH: ${entry.zh ?? ""}\n`)).map(([id]) => id);
+    expect(new Set(changed)).toEqual(V162_TECHS);
+  });
+
+  it.each([...TECH_IDS, ...KILN_IDS])("%s: shortText and shortTextZh equal the owner's lines, bold removed", (id) => {
     const definition = (TECH_IDS as readonly string[]).includes(id) ? TECHS[id as TechId] : KILNS[id as keyof typeof KILNS];
-    const entry = texts.get(id);
-    expect(definition.shortText).toBe(entry?.en);
-    expect(definition.shortTextZh).toBe(entry?.zh);
-    const heading = "abilityName" in definition
-      ? `${definition.name} / ${definition.nameZh} — ${definition.abilityName} / ${definition.abilityNameZh}`
-      : `${definition.name} / ${definition.nameZh}`;
-    expect(entry?.heading).toBe(heading);
+    const entry = texts.find((text) => text.heading === componentHeading(id));
+    expect(definition.shortText).toBe(entry?.en.replaceAll("**", ""));
+    expect(definition.shortTextZh).toBe(entry?.zh.replaceAll("**", ""));
+  });
+
+  it.each([...TECH_IDS, ...KILN_IDS])("%s: the UI emphasis reproduces the owner's bold timing clauses", (id) => {
+    const definition = (TECH_IDS as readonly string[]).includes(id) ? TECHS[id as TechId] : KILNS[id as keyof typeof KILNS];
+    const entry = texts.find((text) => text.heading === componentHeading(id));
+    for (const [text, line] of [[definition.shortText, entry?.en ?? ""], [definition.shortTextZh, entry?.zh ?? ""]] as const) {
+      const emphasised = shortTextSegments(text).filter((segment) => segment.emphasis).map((segment) => segment.text);
+      expect(emphasised, `${id}: ${text}`).toEqual(boldSpans(line));
+    }
   });
 
   it("is plain text whose timing clause and secondary labels the UI emphasises", () => {
@@ -961,23 +1345,29 @@ describe("short component text (component text source)", () => {
       }
     }
     expect(Object.fromEntries(emphasised)).toEqual({
-      "T10:en": ["Ongoing:"],
-      "T10:zh": ["持续："],
+      "T10:en": ["Ongoing:", "Once per round, before or after one of your worker actions:"],
+      "T10:zh": ["持续：", "每轮一次，你的一次工人行动之前或之后："],
+      "T11:en": ["Once per round, after Quality is assigned:"],
+      "T11:zh": ["每轮一次，定品后："],
+      "T12:en": ["When you choose Bank or Stoke:"],
+      "T12:zh": ["选控火时："],
       "GE:en": ["Orders:"],
       "GE:zh": ["完成委托时："],
     });
-    expect(SHORT_TEXT_SECONDARY_LABELS).toEqual(["Ongoing:", "Orders:", "持续：", "完成委托时："]);
+    // Exactly the owner's bold clauses after the first one of a line (DELTA §3.3).
+    const secondary = new Set(texts.flatMap((text) => [...boldSpans(text.en).slice(1), ...boldSpans(text.zh).slice(1)]));
+    expect(new Set(SHORT_TEXT_SECONDARY_LABELS)).toEqual(secondary);
     expect(shortTextSegments("Game end: score.")).toEqual([{ text: "Game end:", emphasis: true }, { text: " score.", emphasis: false }]);
   });
 });
 
 // ── Clarifications (owner decision D10, UI architecture K15) ─────────────────────────────
 
-/** `### <key> — <name>` sections of `- [source] English / 中文` items; header and Review notes skipped. */
-function clarificationsDoc(): Map<string, { heading: string; items: ClarificationDefinition[] }> {
+/** `### <key> — <name>` sections of `- [source] English / 中文` items; header and notes skipped. */
+function clarificationsDoc(text = CLARIFICATIONS_DOC): Map<string, { heading: string; items: ClarificationDefinition[] }> {
   const found = new Map<string, { heading: string; items: ClarificationDefinition[] }>();
   let current: { heading: string; items: ClarificationDefinition[] } | null = null;
-  for (const line of CLARIFICATIONS_DOC.split("\n")) {
+  for (const line of text.split("\n")) {
     if (line.startsWith("## ")) current = null;
     const heading = /^### (\S+) — (.+)$/.exec(line);
     if (heading !== null) {
@@ -1012,7 +1402,15 @@ function dataClarifications(): Map<string, { heading: string; items: readonly Cl
   return found;
 }
 
+/** The V1.6.2 audit section with this heading. */
 const AUDIT_SECTION = (heading: string): string => section(heading, AUDIT);
+
+/** Owner rulings the V1.6.2 audit marks obsolete or superseded: a clarification never cites them. */
+const RETIRED_RULINGS: ReadonlySet<string> = new Set(
+  tableRows(AUDIT_SECTION("## Owner rulings (re-checked against V1.6.2)"))
+    .filter((cells) => /^(?:Obsolete|Superseded)\b/.test(cells[2] ?? ""))
+    .map((cells) => cells[0] ?? ""),
+);
 
 /** Where a source tag points, or null when it points nowhere. */
 function resolveTag(tag: string): string | null {
@@ -1026,9 +1424,9 @@ function resolveTag(tag: string): string | null {
     const editorial = AUDIT_SECTION("### Editorial corrections (no rule change)");
     return editorial.split("\n").find((entry) => entry.startsWith(`- Line ${line[1]}:`)) ?? null;
   }
-  if (/^A\d+$/.test(tag)) return tableRows(AUDIT_SECTION("## Owner amendments")).find((cells) => cells[0] === tag)?.join(" | ") ?? null;
+  if (/^A\d+$/.test(tag)) return tableRows(AUDIT_SECTION("## Owner amendments (carried over)")).find((cells) => cells[0] === tag)?.join(" | ") ?? null;
   if (/^[RB]\d+$/.test(tag)) {
-    return tableRows(AUDIT_SECTION("## Owner rulings (approved 2026-10-14)")).find((cells) => cells[0] === tag)?.join(" | ") ?? null;
+    return tableRows(AUDIT_SECTION("## Owner rulings (re-checked against V1.6.2)")).find((cells) => cells[0] === tag)?.join(" | ") ?? null;
   }
   if (/^P\d$/.test(tag)) {
     return AUDIT_SECTION("### Provisional defaults (edge cases the text leaves open; owner may overrule)").split("\n")
@@ -1036,9 +1434,9 @@ function resolveTag(tag: string): string | null {
   }
   if (/^D\d+$/.test(tag)) return tableRows(OWNER_DECISIONS).find((cells) => cells[0] === tag)?.join(" | ") ?? null;
   if (tag.startsWith("INT ")) {
-    // The bold label of an "Interpretations of V1.6.1 text" bullet containing every word of the name.
+    // The bold label of an "Interpretations of V1.6.2 text" bullet containing every word of the name.
     const words = tag.slice(4).toLowerCase().split(" ");
-    return AUDIT_SECTION("### Interpretations of V1.6.1 text, recorded for implementers").split("\n")
+    return AUDIT_SECTION("### Interpretations of V1.6.2 text, recorded for implementers").split("\n")
       .filter((entry) => entry.startsWith("- **"))
       .find((entry) => {
         const label = (/^- \*\*([^*]+)\*\*/.exec(entry)?.[1] ?? "").toLowerCase();
@@ -1054,13 +1452,30 @@ function resolveTag(tag: string): string | null {
  * line exactly.
  */
 const QUOTE_ADAPTATIONS: ReadonlyArray<readonly [string, string, string]> = [
-  ["T18", "Because the display is not refilled until your turn ends, a second face-up reservation", "L199 says \"a Shifu's\"; here an Apprentice resolves the Shifu effect"],
-  ["T12", "A ceramic in an Imperial Kiln gives no say over the shared fire", "L261 abridged"],
-  ["JU", "Jun's adjustment applies on top of either a Heat marker or the Kiln Master marker", "L648's \"either\" named"],
-  ["magistrates_hall", "You may place a worker only if you can perform at least 1 instance of the main action", "L142 \"that location's\" made specific"],
-  ["orders.starting", "Starting Orders and reserved Main Orders both count toward your hand limit of 4", "L200 and L304 combined"],
-  ["orders.main", "Starting Orders and reserved Main Orders both count toward your hand limit of 4", "L200 and L304 combined"],
+  ["T12", "A ceramic in an Imperial Kiln gives no say over the shared fire", "L260 abridged"],
+  ["JU", "Jun's adjustment applies on top of either a Heat marker or the Kiln Master marker", "L639's \"either\" named"],
+  ["magistrates_hall", "You may place a worker only if you can perform at least 1 instance of the main action", "L144 \"that location's\" made specific"],
+  ["orders.starting", "Starting Orders and reserved Main Orders both count toward your hand limit of 4", "L199 and L303 combined"],
+  ["orders.main", "Starting Orders and reserved Main Orders both count toward your hand limit of 4", "L199 and L303 combined"],
 ];
+
+/**
+ * Wording of V1.6.1 mechanics that V1.6.2 removed (changes 21–24; AGENTS.md "Removed by
+ * V1.6.2"): a clarification that still says one of these describes the old rules.
+ */
+const RETIRED_CLARIFICATION_WORDING: ReadonlyArray<readonly [RegExp, string]> = [
+  [/blind|盲接/i, "blind reservation"],
+  [/top-3 selection|看三取一/, "the Commission Market top-3 selection"],
+  [/resource after each|每次承接后/, "a Commission Market resource"],
+  [/1 Coin for \+1 Clay|1铜钱再得1泥1柴/, "the Materials Yard Shifu's 1-Coin option"],
+  [/through Canal Barge|Canal Barge (?:completes|used)|通过漕船|漕船完成/, "Canal Barge completing Orders (R6)"],
+  [/Flawed → Standard|瑕品→良品|瑕品升为良品/, "Protective Saggars' Flawed → Standard upgrade"],
+  [/extra Fire card is revealed|另翻1张/, "a single extra Fire card for Second Firing"],
+  [/discard the rest|其余弃置|the other is discarded/i, "looked cards discarded instead of put on the deck bottom"],
+  [/Coins? less, minimum 0|少付2铜钱/, "the Guild Hall Shifu discount"],
+];
+
+const CLARIFICATIONS_DOC_V161 = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.1_CLARIFICATIONS.md"), "utf8");
 
 describe("clarifications (owner decision D10, K15)", () => {
   const doc = clarificationsDoc();
@@ -1072,8 +1487,9 @@ describe("clarifications (owner decision D10, K15)", () => {
     const fromData = Object.fromEntries([...data.entries()].map(([key, entry]) => [key, entry.items]));
     expect(fromData).toEqual(fromDoc);
     // Pruned to the component-specific items (owner review, 2026-10-17): no general rules, no
-    // interactions the component's owner can never meet. A component may have none.
-    expect(all).toHaveLength(156);
+    // interactions the component's owner can never meet. A component may have none. V1.6.2
+    // (stage 4) carried 120 items over, rewrote 29 and added 21; 7 were retired.
+    expect(all).toHaveLength(170);
     expect(IMPERIAL_TRACK.track.filter((space) => space.clarifications.length === 0).map((space) => space.id)).toEqual(["local_workshop", "imperial_grant"]);
   });
 
@@ -1095,16 +1511,62 @@ describe("clarifications (owner decision D10, K15)", () => {
       }
     }
     expect(unresolved).toEqual([]);
-    expect(clarificationSourceKind("L376")).toBe("rulebook");
-    expect(clarificationSourceKind("ED L649")).toBe("editorial");
+    expect(clarificationSourceKind("L375")).toBe("rulebook");
+    expect(clarificationSourceKind("ED L16")).toBe("editorial");
     expect(clarificationSourceKind("INT Ge Crackle")).toBe("interpretation");
     expect(clarificationSourceKind("P1")).toBe("provisional");
     expect(clarificationSourceKind("D7")).toBe("wording");
     expect(clarificationSourceKind("A1")).toBe("amendment");
     expect(clarificationSourceKind("B3")).toBe("ruling");
-    for (const bad of ["L0", "R14", "B4", "P4", "INT", "ED 649", "l375"]) expect(CLARIFICATION_TAG.test(bad), bad).toBe(false);
+    expect(clarificationSourceKind("R18")).toBe("ruling");
+    expect(clarificationSourceKind("R19")).toBe("ruling");
+    for (const bad of ["L0", "R20", "B4", "P4", "P5", "INT", "ED 649", "l375"]) expect(CLARIFICATION_TAG.test(bad), bad).toBe(false);
     expect(resolveTag("L9999")).toBeNull();
     expect(resolveTag("INT Imaginary ruling")).toBeNull();
+    expect(resolveTag("ED L16")).toContain("It is superseded by change 21 (L31, L196) and change 22 (L32, L617).");
+  });
+
+  it("cites no owner ruling V1.6.2 made obsolete or superseded (R3, R6, R14)", () => {
+    expect([...RETIRED_RULINGS].sort()).toEqual(["R14", "R3", "R6"]);
+    const cited = all.flatMap(({ key, item }) => clarificationTags(item.source).filter((tag) => RETIRED_RULINGS.has(tag)).map((tag) => `${key}: ${tag}`));
+    expect(cited).toEqual([]);
+  });
+
+  it("names none of the V1.6.1 mechanics V1.6.2 removed (changes 21–24)", () => {
+    const offences = all.flatMap(({ key, item }) => RETIRED_CLARIFICATION_WORDING
+      .filter(([pattern]) => pattern.test(item.en) || pattern.test(item.zh)).map(([, label]) => `${key}: ${label}`));
+    expect(offences).toEqual([]);
+  });
+
+  it("re-cites every item carried over from V1.6.1 to the same rulebook text, or to the line V1.6.2 rewrote", () => {
+    const previous = clarificationsDoc(CLARIFICATIONS_DOC_V161);
+    const linesBefore = SOURCE_V161.split("\n").map(clean);
+    const linesNow = SOURCE.split("\n").map(clean);
+    const lineTags = (source: string): number[] => clarificationTags(source).filter((tag) => /^L\d+$/.test(tag)).map((tag) => Number(tag.slice(1)));
+    const words = (text: string): Set<string> => new Set(text.toLowerCase().match(/[a-z']+/g) ?? []);
+    let carried = 0;
+    const problems: string[] = [];
+    for (const [key, entry] of doc) {
+      for (const item of entry.items) {
+        const before = previous.get(key)?.items.find((candidate) => candidate.en === item.en);
+        if (before === undefined) continue;
+        carried += 1;
+        // An unchanged English item keeps its Chinese and cites the same number of lines.
+        if (before.zh !== item.zh) problems.push(`${key}: Chinese changed for "${item.en}"`);
+        const [then, now] = [lineTags(before.source), lineTags(item.source)];
+        if (then.length !== now.length) problems.push(`${key}: ${before.source} → ${item.source}`);
+        then.forEach((line, index) => {
+          const old = linesBefore[line - 1] ?? "";
+          const cited = linesNow[(now[index] ?? 0) - 1] ?? "";
+          if (old === cited) return;
+          // A line V1.6.2 rewrote: the old text is gone, and the new line is its rewrite.
+          const shared = [...words(old)].filter((word) => words(cited).has(word)).length / words(old).size;
+          if (linesNow.includes(old) || shared < 0.5) problems.push(`${key}: L${line} → L${now[index]}`);
+        });
+      }
+    }
+    expect(problems).toEqual([]);
+    expect(carried).toBe(120);
   });
 
   it("quotes cited rulebook sentences exactly", () => {

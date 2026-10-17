@@ -49,8 +49,8 @@ interface TableIds {
 
 function threePlayerTable(): { state: GameState; events: GameEvent[]; ids: TableIds } {
   const players: PlayerSpec[] = [
-    { kilnId: "GE", hand: ["S16"] },
-    { kilnId: "JU", hand: ["S01", "S02", "O11"] },
+    { kilnId: "GE", hand: ["S08"] },
+    { kilnId: "JU", hand: ["S01", "S05", "O11"] },
     { kilnId: "DI", hand: ["O01"] },
   ];
   const state = buildState({ players, firstPlayerId: "p2", round: 2 });
@@ -75,7 +75,8 @@ describe("openOrderPhase", () => {
   });
 
   it("skips every player with nothing completable and hands over when nobody can complete", () => {
-    const state = buildState({ players: [{ hand: ["O11"] }, { hand: [] }, { hand: ["S01"] }], firstPlayerId: "p3" });
+    // p3's White Plate cannot complete S02 (Celadon).
+    const state = buildState({ players: [{ hand: ["O11"] }, { hand: [] }, { hand: ["S02"] }], firstPlayerId: "p3" });
     finished(state, "p1", "bowl", "fine");
     finished(state, "p3", "plate");
     const ctx = testContext();
@@ -94,7 +95,7 @@ describe("openOrderPhase", () => {
 
   it("does not depend on the key order of state Records (jsonb round trip)", () => {
     const build = (): GameState => {
-      const state = buildState({ players: [{ hand: ["S16"] }, { hand: ["S01"] }, { hand: ["O01"] }], firstPlayerId: "p2" });
+      const state = buildState({ players: [{ hand: ["S08"] }, { hand: ["S01"] }, { hand: ["O01"] }], firstPlayerId: "p2" });
       finished(state, "p1", "vase");
       finished(state, "p3", "bowl");
       return state;
@@ -119,8 +120,8 @@ describe("the single pass (L297)", () => {
     expect(first.map((e) => e.type)).toEqual(["ORDER_COMPLETED", "RESOURCES_CHANGED"]);
     expect(table.prompt().actorIds).toEqual(["p2"]);
 
-    // S02 is the last completable Order (O11 needs a Masterpiece): the turn ends automatically.
-    const second = table.act("p2", { type: "COMPLETE_ORDER", orderId: "S02", ceramicIds: [ids.p2Plate] });
+    // S05 is the last completable Order (O11 needs a Masterpiece): the turn ends automatically.
+    const second = table.act("p2", { type: "COMPLETE_ORDER", orderId: "S05", ceramicIds: [ids.p2Plate] });
     expect(second.slice(2)).toEqual([
       { type: "ORDER_TURN_ENDED", playerId: "p2", automatic: true },
       { type: "ORDER_TURN_STARTED", playerId: "p3" },
@@ -128,17 +129,17 @@ describe("the single pass (L297)", () => {
       { type: "ORDER_TURN_STARTED", playerId: "p1" },
     ]);
     expect(table.prompt().actorIds).toEqual(["p1"]);
-    expect(table.player("p2").completedOrders.map((r) => [r.orderId, r.via])).toEqual([
-      ["S01", "order_phase"],
-      ["S02", "order_phase"],
+    expect(table.player("p2").completedOrders.map((r) => [r.orderId, r.canalBargeCoins])).toEqual([
+      ["S01", 0],
+      ["S05", 0],
     ]);
     expect(table.state.hidden.orderHands["p2"]).toEqual(["O11"]);
 
-    // Completing is never required: p1 ends with S16 still completable.
+    // Completing is never required: p1 ends with S08 still completable.
     expect(table.act("p1", { type: "END_ORDER_TURN" })).toEqual([{ type: "ORDER_TURN_ENDED", playerId: "p1", automatic: false }]);
     expect(table.halts).toEqual([{ kind: "continue_after", milestone: "order_phase_done" }]);
     expect(table.state.phase).toEqual({ type: "orders", turnOrder: ["p2", "p3", "p1"], index: 3 });
-    expect(table.state.hidden.orderHands["p1"]).toEqual(["S16"]);
+    expect(table.state.hidden.orderHands["p1"]).toEqual(["S08"]);
     expect(table.prompt().actorIds).toEqual([]);
   });
 
@@ -156,12 +157,12 @@ describe("the single pass (L297)", () => {
   it("only the active player may act, and only during the Order Phase", () => {
     const { state, ids } = threePlayerTable();
     const table = new LocalTable(state, { flow: "halt" });
-    table.expectRuleError("p1", { type: "COMPLETE_ORDER", orderId: "S16", ceramicIds: [ids.p1Vase] }, "NOT_YOUR_DECISION");
+    table.expectRuleError("p1", { type: "COMPLETE_ORDER", orderId: "S08", ceramicIds: [ids.p1Vase] }, "NOT_YOUR_DECISION");
     table.expectRuleError("p3", { type: "END_ORDER_TURN" }, "NOT_YOUR_DECISION");
 
-    const work = buildState({ players: [{ hand: ["S16"] }, {}] });
+    const work = buildState({ players: [{ hand: ["S08"] }, {}] });
     const vase = finished(work, "p1", "vase");
-    const actions: GameAction[] = [{ type: "COMPLETE_ORDER", orderId: "S16", ceramicIds: [vase] }, { type: "END_ORDER_TURN" }];
+    const actions: GameAction[] = [{ type: "COMPLETE_ORDER", orderId: "S08", ceramicIds: [vase] }, { type: "END_ORDER_TURN" }];
     for (const action of actions) {
       const result = applyAction(work, "p1", action, new SeededRandom(1));
       expect(result.ok).toBe(false);
@@ -205,7 +206,7 @@ describe("the single pass (L297)", () => {
       expect(event).not.toHaveProperty("secret");
       expect(projectEvent(event)).toEqual(event);
     }
-    const stillHeld: OrderId[] = ["S02", "O11", "O01", "S16"];
+    const stillHeld: OrderId[] = ["S05", "O11", "O01", "S08"];
     const publicJson = JSON.stringify([projectPublicState(table.state), all]);
     for (const orderId of stillHeld) {
       expect(publicJson).not.toContain(`"${orderId}"`);

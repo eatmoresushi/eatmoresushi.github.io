@@ -42,13 +42,13 @@ const DECISION_PHASES: readonly GamePhaseType[] = [
   "firing_heat_markers",
   "firing_heat_adjustment",
   "firing_after_quality",
-  "firing_second_firing_jun",
+  "firing_second_firing_choice",
   "firing_salvage",
   "orders",
   "cleanup_hand_limit",
 ];
 
-const WORK_STEPS = ["before_action", "commission_market", "guild_inspection", "colour_samples", "after_action"] as const;
+const WORK_STEPS = ["before_action", "commission_market", "guild_inspection", "colour_samples", "colour_samples_swap", "after_action"] as const;
 
 /** Whether the engine accepts the candidate, exactly as the service checks it: shape first
  * (`parseCommand`), then `submitContribution` or `applyAction` on the current state. */
@@ -251,7 +251,7 @@ describe("computer fallback through the service", () => {
 
   it("falls back when an asynchronous policy does not answer in time", async () => {
     const never: ComputerPolicy = {
-      version: "rules-v1.6.1-never-001",
+      version: "rules-v1.6.2-never-001",
       label: "Never",
       chooseCommand: () => new Promise<AuthoritativeCommand | null>(() => undefined),
     };

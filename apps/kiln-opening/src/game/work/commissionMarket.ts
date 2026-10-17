@@ -1,121 +1,59 @@
 /**
- * Commission Market incl. Senior Apprentice and the Shifu top-3 (L187–201, L397, L619, L653,
- * R12, B1, B3; DESIGN §3.2 "Commission Market sub-step").
+ * Commission Market incl. Senior Apprentice (v1.6.2 L189–200, L390, L396, L618, L652; R12,
+ * B1, B3; DESIGN §3.2 as amended by ENGINE_V1.6.2_DELTA.md §4.2).
  *
- * - `PLACE_COMMISSION_MARKET` carries the mandatory first reservation (L199). A face-up
- *   reservation names its resource in the same command (everything is known); a blind
- *   reservation reveals a card to the actor, so `COMMISSION_GAIN` follows (L196–197); the
- *   Shifu top-3 look opens `look_choice`, then `COMMISSION_CHOOSE_LOOKED`.
- * - After each reservation the player gains 1 Clay, Wood or Coin (L197). With the Shifu effect
- *   (incl. Senior Apprentice, R12) a second reservation may follow (`COMMISSION_RESERVE`), or
- *   `COMMISSION_STOP` ends the action (L199).
- * - A face-up position stays empty until the turn ends (L191, L391): the second reservation
- *   chooses among the Orders still showing, and `work/turn.endTurn` refills once.
- * - Every reservation must take an available card (B1). Legality reads public counts only
- *   (`market.reservable`), so it never depends on hidden information.
- * - Blind and top-3 identities are private (B3): `ORDER_RESERVED.secret`, `PRIVATE_LOOK_OPENED`
- *   and `LOOKED_ORDERS_DISCARDED.secret`; the public payloads carry counts and sources only.
+ * - `PLACE_COMMISSION_MARKET` places the worker and always opens the private look: the top 2
+ *   Main Orders for the Apprentice effect, the top 3 for the Shifu effect (incl. Senior
+ *   Apprentice, R12), as many as remain (B1). The look happens before any reservation is
+ *   chosen (INT: Commission Market looks), so the step opens whatever the cards are.
+ * - `COMMISSION_CHOOSE` then makes the reservations: exactly 1 (Apprentice effect) or 1–2
+ *   (Shifu effect), each a face-up Order or a looked card, in any mix (v1.6.2 L195–196,
+ *   L198). The looked cards not reserved go face down to the bottom of the Main deck, in random
+ *   order (change 24, L34, L191; owner ruling R19). No resource is gained.
+ * - A face-up position stays empty until the turn ends (v1.6.2 L191, L390): both of a Shifu's
+ *   reservations choose from the Orders showing now, and `work/turn.endTurn` refills once.
+ * - Placement legality reads public counts only (`market.reservable`): a display Order or a
+ *   non-empty deck plus discard, so at least 1 reservation always exists (L142, B1).
+ * - Looked identities are private (B3): `PRIVATE_LOOK_OPENED.secret`, `ORDER_RESERVED.secret`
+ *   and `LOOKED_ORDERS_TO_BOTTOM.secret`; public payloads carry counts and face-up IDs only.
  *
  * Layer 4 (P4). Imports layers 0–3 only; hands over through `ctx.flow.workerActionDone`.
  */
 
 import { LOCATIONS } from "../content.ts";
 import { invariant, ruleError } from "../errors.ts";
-import {
-  addToHand,
-  discardMainOrders,
-  drawMainOrder,
-  reservable,
-  takeFaceUpOrder,
-  takeTopMainOrders,
-} from "../market.ts";
+import { addToHand, putMainOrdersOnBottom, reservable, takeFaceUpOrder, takeTopMainOrders } from "../market.ts";
 import { placeWorker, validatePlacement, workerEffectFor } from "../placement.ts";
-import { emit, gain, phaseAs } from "../state.ts";
+import { emit, phaseAs } from "../state.ts";
 import type {
   ActionHandlerTable,
   ActorView,
-  CommissionReservationChoice,
-  GainResource,
+  CommissionPick,
   GameRuleError,
   GameState,
+  OrderId,
   PlayerId,
-  PublicGameState,
-  ResolveContext,
   WorkTurnStep,
   WorkerEffect,
 } from "../types.ts";
-import { publicCounts } from "../view.ts";
 
 type CommissionStep = Extract<WorkTurnStep, { kind: "commission_market" }>;
-type Awaiting = CommissionStep["awaiting"];
-type Supply = ReturnType<typeof reservable>;
 
 const LOCATION = "commission_market";
 const EFFECTS = LOCATIONS.commission_market.effects;
 
-// ── Shared checks (validators see only the actor's view) ─────────────────────────────
-
-/** The public projection of a draft, for `market.reservable` (public counts only). */
-function publicGame(draft: GameState): PublicGameState {
-  const { hidden: _hidden, ...core } = draft;
-  return { ...core, counts: publicCounts(draft) };
+/** The printed look and reservation limit of a worker effect (v1.6.2 L195–196). */
+export function commissionLimits(effect: WorkerEffect): { lookSize: 2 | 3; maxReservations: 1 | 2 } {
+  const { lookSize, maxReservations } = EFFECTS[effect];
+  invariant(lookSize === 2 || lookSize === 3, `Unexpected Commission look size ${lookSize}`);
+  invariant(maxReservations === 1 || maxReservations === 2, `Unexpected reservation limit ${maxReservations}`);
+  return { lookSize, maxReservations };
 }
 
-/** Top-3 looks this effect allows (L197: the Shifu, once per action). */
-function topThreeLooks(effect: WorkerEffect): number {
-  return effect === "shifu" ? EFFECTS.shifu.topThreeLooks : 0;
-}
+// ── Validation (validators see only the actor's view) ────────────────────────────────
 
-/** At least one reservation can be made (L142, B1). A look needs a card, so it never adds
- * an option that a blind reservation lacks; it is listed for clarity. */
-function anyReservation(supply: Supply, lookAvailable: boolean): boolean {
-  return supply.faceUpSlots.length > 0 || supply.blind || (lookAvailable && supply.look);
-}
-
-function reservationError(
-  supply: Supply,
-  display: PublicGameState["market"]["display"],
-  effect: WorkerEffect,
-  lookAvailable: boolean,
-  choice: CommissionReservationChoice,
-): GameRuleError | null {
-  switch (choice.kind) {
-    case "face_up": {
-      const shown = display[choice.slotIndex] ?? null;
-      if (shown === null || shown !== choice.orderId || !supply.faceUpSlots.includes(choice.slotIndex)) {
-        return ruleError("ORDER_NOT_AVAILABLE", "That Order is no longer on the display.", {
-          orderId: choice.orderId,
-          slotIndex: choice.slotIndex,
-        });
-      }
-      return null;
-    }
-    case "blind":
-      return supply.blind
-        ? null
-        : ruleError("ORDER_SUPPLY_EMPTY", "The Main Order deck and discard pile are both empty.", {});
-    case "look_top_three":
-      if (!lookAvailable) {
-        return ruleError(
-          "INVALID_CHOICE",
-          effect === "shifu"
-            ? "This action has already used its top-3 selection."
-            : "Only the Shifu effect may look at the top 3 Main Orders.",
-          { choice: choice.kind, effect },
-        );
-      }
-      return supply.look
-        ? null
-        : ruleError("ORDER_SUPPLY_EMPTY", "The Main Order deck and discard pile are both empty.", {});
-    default: {
-      const unknown: never = choice;
-      return ruleError("MALFORMED_ACTION", "Unknown reservation choice.", { field: "choice", value: String(unknown) });
-    }
-  }
-}
-
-/** The active player's Commission sub-step awaiting `awaiting`, or the rule error. */
-function stepFor(view: ActorView, awaiting: Awaiting): CommissionStep | GameRuleError {
+/** The active player's Commission step, or the rule error. */
+function stepFor(view: ActorView): CommissionStep | GameRuleError {
   const phase = view.game.phase;
   if (phase.type !== "work_turn") {
     return ruleError("WRONG_PHASE", "The Commission Market is resolved during the Work Phase.", { phase: phase.type });
@@ -123,18 +61,63 @@ function stepFor(view: ActorView, awaiting: Awaiting): CommissionStep | GameRule
   if (phase.activePlayerId !== view.viewerId) {
     return ruleError("NOT_YOUR_DECISION", "It is not your Work turn.", { playerId: view.viewerId });
   }
-  const step = phase.step;
-  if (step.kind !== "commission_market" || step.awaiting !== awaiting) {
-    return ruleError("WRONG_PHASE", "That Commission Market choice is not due now.", {
-      phase: phase.type,
-      step: step.kind === "commission_market" ? `${step.kind}.${step.awaiting}` : step.kind,
-    });
+  if (phase.step.kind !== "commission_market") {
+    return ruleError("WRONG_PHASE", "No Commission Market reservation is due now.", { phase: phase.type, step: phase.step.kind });
   }
-  return step;
+  return phase.step;
 }
 
 function isError(value: CommissionStep | GameRuleError): value is GameRuleError {
   return "code" in value;
+}
+
+/**
+ * The reservations of a `COMMISSION_CHOOSE`, in this order: the count (at least 1, at most
+ * the effect's limit), duplicates, then each pick against the display and the own look.
+ */
+function picksError(view: ActorView, step: CommissionStep, picks: readonly CommissionPick[]): GameRuleError | null {
+  if (picks.length === 0) {
+    return ruleError("RESERVATION_REQUIRED", "Reserve at least 1 Order.", {});
+  }
+  if (picks.length > step.maxReservations) {
+    return ruleError("RESERVATION_LIMIT", `This action reserves at most ${step.maxReservations} Orders.`, {
+      limit: step.maxReservations,
+      requested: picks.length,
+    });
+  }
+  const slots = new Set<number>();
+  const looked = new Set<OrderId>();
+  for (const pick of picks) {
+    const duplicate = pick.kind === "face_up" ? slots.has(pick.slotIndex) : looked.has(pick.orderId);
+    if (duplicate) {
+      return ruleError("INVALID_CHOICE", "Each Order can be reserved only once.", {
+        choice: pick.kind,
+        orderId: pick.orderId,
+        ...(pick.kind === "face_up" ? { slotIndex: pick.slotIndex } : {}),
+      });
+    }
+    if (pick.kind === "face_up") {
+      slots.add(pick.slotIndex);
+    } else {
+      looked.add(pick.orderId);
+    }
+  }
+  const display = view.game.market.display;
+  const look = view.own.pendingLook;
+  for (const pick of picks) {
+    if (pick.kind === "face_up") {
+      const shown = display[pick.slotIndex] ?? null;
+      if (shown === null || shown !== pick.orderId) {
+        return ruleError("ORDER_NOT_AVAILABLE", "That Order is no longer on the display.", {
+          orderId: pick.orderId,
+          slotIndex: pick.slotIndex,
+        });
+      }
+    } else if (look === null || look.kind !== "commission_market" || !look.orderIds.includes(pick.orderId)) {
+      return ruleError("INVALID_CHOICE", "Choose one of the Orders you looked at.", { choice: pick.kind, orderId: pick.orderId });
+    }
+  }
+  return null;
 }
 
 // ── Resolution ───────────────────────────────────────────────────────────────────────
@@ -146,92 +129,9 @@ function commissionStep(draft: GameState, playerId: PlayerId): CommissionStep {
   return phase.step;
 }
 
-function countReservation(step: CommissionStep): void {
-  invariant(step.reservationsMade < step.maxReservations, "Commission Market reservation limit exceeded");
-  step.reservationsMade = step.reservationsMade === 0 ? 1 : 2;
-}
-
-/** Resolves one reservation (L191–192, L197). */
-function reserve(draft: GameState, playerId: PlayerId, choice: CommissionReservationChoice, ctx: ResolveContext): void {
-  const step = commissionStep(draft, playerId);
-  switch (choice.kind) {
-    case "face_up": {
-      const orderId = takeFaceUpOrder(draft, playerId, choice.slotIndex);
-      invariant(orderId === choice.orderId, `Display position ${choice.slotIndex} held ${orderId}, not ${choice.orderId}`);
-      addToHand(draft, playerId, orderId);
-      emit(ctx, {
-        type: "ORDER_RESERVED",
-        playerId,
-        via: "commission_market",
-        source: "face_up",
-        slotIndex: choice.slotIndex,
-        orderId,
-      });
-      countReservation(step);
-      gainAfterReservation(draft, playerId, choice.gain, ctx);
-      return;
-    }
-    case "blind": {
-      const orderId = drawMainOrder(draft, ctx);
-      invariant(orderId !== null, "A validated blind reservation found no card");
-      addToHand(draft, playerId, orderId);
-      emit(ctx, {
-        type: "ORDER_RESERVED",
-        playerId,
-        via: "commission_market",
-        source: "blind",
-        slotIndex: null,
-        orderId: null,
-        secret: { visibleTo: playerId, orderId },
-      });
-      countReservation(step);
-      step.awaiting = "resource";
-      return;
-    }
-    case "look_top_three": {
-      const orderIds = takeTopMainOrders(draft, EFFECTS.shifu.lookSize, ctx);
-      invariant(orderIds.length > 0, "A validated top-3 look found no card");
-      draft.hidden.pendingLook = { kind: "commission_top_three", playerId, orderIds: [...orderIds] };
-      emit(ctx, {
-        type: "PRIVATE_LOOK_OPENED",
-        playerId,
-        kind: "commission_top_three",
-        discipline: null,
-        count: orderIds.length,
-        secret: { visibleTo: playerId, orderIds: [...orderIds], techIds: [] },
-      });
-      step.topThreeAvailable = false;
-      step.awaiting = "look_choice";
-      return;
-    }
-    default: {
-      const unknown: never = choice;
-      invariant(false, `Unknown reservation choice ${JSON.stringify(unknown)}`);
-    }
-  }
-}
-
-/** Gains the resource after a reservation (L196–197), then offers another reservation or
- * completes the worker action. */
-function gainAfterReservation(draft: GameState, playerId: PlayerId, resource: GainResource, ctx: ResolveContext): void {
-  const step = commissionStep(draft, playerId);
-  gain(draft, playerId, { [resource]: EFFECTS[step.effect].gainAfterEach }, "commission_market", ctx);
-  if (
-    step.reservationsMade < step.maxReservations &&
-    anyReservation(reservable(publicGame(draft)), step.topThreeAvailable)
-  ) {
-    step.awaiting = "reservation";
-    return;
-  }
-  ctx.flow.workerActionDone(draft, playerId, ctx);
-}
-
 // ── Handlers ─────────────────────────────────────────────────────────────────────────
 
-export const handlers: Pick<
-  ActionHandlerTable,
-  "PLACE_COMMISSION_MARKET" | "COMMISSION_RESERVE" | "COMMISSION_CHOOSE_LOOKED" | "COMMISSION_GAIN" | "COMMISSION_STOP"
-> = {
+export const handlers: Pick<ActionHandlerTable, "PLACE_COMMISSION_MARKET" | "COMMISSION_CHOOSE"> = {
   PLACE_COMMISSION_MARKET: {
     phases: ["work_turn"],
     validate: (view, action) => {
@@ -240,119 +140,92 @@ export const handlers: Pick<
       if (placementError !== null) {
         return placementError;
       }
-      const effect = workerEffectFor(view, action.workerId, seniorApprentice);
-      const lookAvailable = topThreeLooks(effect) > 0;
       const supply = reservable(view.game);
-      if (!anyReservation(supply, lookAvailable)) {
+      if (supply.faceUpSlots.length === 0 && !supply.supply) {
         return ruleError("NO_MAIN_ACTION_POSSIBLE", "There is no Main Order to reserve.", {
           locationId: LOCATION,
           workerId: action.workerId,
-          effect,
+          effect: workerEffectFor(view, action.workerId, seniorApprentice),
         });
-      }
-      return reservationError(supply, view.game.market.display, effect, lookAvailable, action.first);
-    },
-    resolve: (draft, actorId, action, ctx) => {
-      const placement = placeWorker(draft, actorId, action.workerId, LOCATION, action.seniorApprentice === true, ctx);
-      const effect = placement.effect;
-      const maxReservations = EFFECTS[effect].maxReservations;
-      invariant(maxReservations === 1 || maxReservations === 2, `Unexpected reservation limit ${maxReservations}`);
-      phaseAs(draft, "work_turn").step = {
-        kind: "commission_market",
-        workerId: action.workerId,
-        effect,
-        maxReservations,
-        reservationsMade: 0,
-        topThreeAvailable: topThreeLooks(effect) > 0,
-        awaiting: "reservation",
-      };
-      reserve(draft, actorId, action.first, ctx);
-    },
-  },
-  COMMISSION_RESERVE: {
-    phases: ["work_turn"],
-    validate: (view, action) => {
-      const step = stepFor(view, "reservation");
-      if (isError(step)) {
-        return step;
-      }
-      if (step.reservationsMade >= step.maxReservations) {
-        return ruleError("RESERVATION_LIMIT", "This action cannot reserve another Order.", {
-          limit: step.maxReservations,
-          reservationsMade: step.reservationsMade,
-        });
-      }
-      return reservationError(reservable(view.game), view.game.market.display, step.effect, step.topThreeAvailable, action.choice);
-    },
-    resolve: (draft, actorId, action, ctx) => reserve(draft, actorId, action.choice, ctx),
-  },
-  COMMISSION_CHOOSE_LOOKED: {
-    phases: ["work_turn"],
-    validate: (view, action) => {
-      const step = stepFor(view, "look_choice");
-      if (isError(step)) {
-        return step;
-      }
-      const look = view.own.pendingLook;
-      if (look === null || look.kind !== "commission_top_three" || !look.orderIds.includes(action.orderId)) {
-        return ruleError("INVALID_CHOICE", "Choose one of the Orders you looked at.", { orderId: action.orderId });
       }
       return null;
     },
     resolve: (draft, actorId, action, ctx) => {
-      const step = commissionStep(draft, actorId);
-      const look = draft.hidden.pendingLook;
-      invariant(
-        look !== null && look.kind === "commission_top_three" && look.playerId === actorId,
-        "No Commission top-3 look is pending for the actor",
-      );
-      const rest = look.orderIds.filter((orderId) => orderId !== action.orderId);
-      draft.hidden.pendingLook = null;
-      addToHand(draft, actorId, action.orderId);
+      const placement = placeWorker(draft, actorId, action.workerId, LOCATION, action.seniorApprentice === true, ctx);
+      const effect = placement.effect;
+      const { lookSize, maxReservations } = commissionLimits(effect);
+      const orderIds = takeTopMainOrders(draft, lookSize, ctx);
+      draft.hidden.pendingLook = { kind: "commission_market", playerId: actorId, orderIds: [...orderIds] };
       emit(ctx, {
-        type: "ORDER_RESERVED",
+        type: "PRIVATE_LOOK_OPENED",
         playerId: actorId,
-        via: "commission_market",
-        source: "top_three",
-        slotIndex: null,
-        orderId: null,
-        secret: { visibleTo: actorId, orderId: action.orderId },
+        kind: "commission_market",
+        discipline: null,
+        count: orderIds.length,
+        secret: { visibleTo: actorId, orderIds: [...orderIds], techIds: [] },
       });
+      phaseAs(draft, "work_turn").step = {
+        kind: "commission_market",
+        workerId: action.workerId,
+        effect,
+        lookSize,
+        maxReservations,
+        lookedCount: orderIds.length,
+      };
+    },
+  },
+  COMMISSION_CHOOSE: {
+    phases: ["work_turn"],
+    validate: (view, action) => {
+      const step = stepFor(view);
+      return isError(step) ? step : picksError(view, step, action.reservations);
+    },
+    resolve: (draft, actorId, action, ctx) => {
+      commissionStep(draft, actorId);
+      const look = draft.hidden.pendingLook;
+      invariant(look !== null && look.kind === "commission_market" && look.playerId === actorId, "No Commission look is pending for the actor");
+      const reservedLooked = new Set<OrderId>();
+      for (const pick of action.reservations) {
+        if (pick.kind === "face_up") {
+          const orderId = takeFaceUpOrder(draft, actorId, pick.slotIndex);
+          invariant(orderId === pick.orderId, `Display position ${pick.slotIndex} held ${orderId}, not ${pick.orderId}`);
+          addToHand(draft, actorId, orderId);
+          emit(ctx, {
+            type: "ORDER_RESERVED",
+            playerId: actorId,
+            via: "commission_market",
+            source: "face_up",
+            slotIndex: pick.slotIndex,
+            orderId,
+          });
+        } else {
+          invariant(look.orderIds.includes(pick.orderId), `${pick.orderId} is not in the actor's Commission look`);
+          reservedLooked.add(pick.orderId);
+          addToHand(draft, actorId, pick.orderId);
+          emit(ctx, {
+            type: "ORDER_RESERVED",
+            playerId: actorId,
+            via: "commission_market",
+            source: "looked",
+            slotIndex: null,
+            orderId: null,
+            secret: { visibleTo: actorId, orderId: pick.orderId },
+          });
+        }
+      }
+      // The rest of the look goes face down to the bottom of the Main deck, in random order
+      // (v1.6.2 change 24, L191, L195–196; R19). The secret names them in look order.
+      const rest = look.orderIds.filter((orderId) => !reservedLooked.has(orderId));
+      draft.hidden.pendingLook = null;
       if (rest.length > 0) {
-        discardMainOrders(draft, rest);
+        putMainOrdersOnBottom(draft, rest, ctx);
         emit(ctx, {
-          type: "LOOKED_ORDERS_DISCARDED",
+          type: "LOOKED_ORDERS_TO_BOTTOM",
           playerId: actorId,
           count: rest.length,
           secret: { visibleTo: actorId, orderIds: rest },
         });
       }
-      countReservation(step);
-      step.awaiting = "resource";
-    },
-  },
-  COMMISSION_GAIN: {
-    phases: ["work_turn"],
-    validate: (view) => {
-      const step = stepFor(view, "resource");
-      return isError(step) ? step : null;
-    },
-    resolve: (draft, actorId, action, ctx) => gainAfterReservation(draft, actorId, action.resource, ctx),
-  },
-  COMMISSION_STOP: {
-    phases: ["work_turn"],
-    validate: (view) => {
-      const step = stepFor(view, "reservation");
-      if (isError(step)) {
-        return step;
-      }
-      if (step.reservationsMade < 1) {
-        return ruleError("INVALID_CHOICE", "You must reserve at least 1 Order.", { choice: "stop" });
-      }
-      return null;
-    },
-    resolve: (draft, actorId, _action, ctx) => {
-      commissionStep(draft, actorId);
       ctx.flow.workerActionDone(draft, actorId, ctx);
     },
   },

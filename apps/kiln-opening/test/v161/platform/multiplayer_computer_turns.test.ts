@@ -48,7 +48,7 @@ async function kilnSelectionComputersFirst(harness: Harness, playerCount: number
   });
 }
 
-describe("V1.6.1 authoritative computer turns", () => {
+describe("V1.6.2 authoritative computer turns", () => {
   it("advances consecutive computer decisions and stops cleanly at the human", async () => {
     const harness = await startedWith({ humans: 1, computers: 2, service: SCRIPTED });
     await kilnSelectionComputersFirst(harness, 3);
@@ -134,7 +134,7 @@ describe("V1.6.1 authoritative computer turns", () => {
   });
 
   it("leaves the state untouched when no candidate is legal, and recovers with a working policy", async () => {
-    const broken: ComputerPolicy = { version: "rules-v1.6.1-broken-001", label: "Broken", chooseCommand: () => null };
+    const broken: ComputerPolicy = { version: "rules-v1.6.2-broken-001", label: "Broken", chooseCommand: () => null };
     const harness = await startedWith({ humans: 1, computers: 1, service: { computerPolicy: broken, fallbackCommands: () => [] } });
     await kilnSelectionComputersFirst(harness, 2);
     const before = await harness.store.loadHead(harness.roomId);
@@ -158,7 +158,7 @@ describe("V1.6.1 authoritative computer turns", () => {
     const harness = await lobby({ humans: 1, computers: 1, service: SCRIPTED });
     const seats = await harness.store.getSeats(harness.roomId);
     const computer = seats.find((seat) => seat.isComputer);
-    expect(computer?.aiPolicyVersion).toBe("rules-v1.6.1-scripted-001");
+    expect(computer?.aiPolicyVersion).toBe("rules-v1.6.2-scripted-001");
     expect(computer?.aiPolicyVersion).toMatch(COMPUTER_POLICY_VERSION_PATTERN);
     expect(computer?.aiSeed).not.toBeNull();
   });

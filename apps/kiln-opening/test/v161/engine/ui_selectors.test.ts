@@ -90,7 +90,8 @@ describe("handLimitStatus.trimDue (§5 gap 3)", () => {
         }
         if (state.phase.type === "cleanup_hand_limit") {
           cleanups += 1;
-          expect(due).toEqual(state.phase.pendingPlayerIds);
+          // The same players; Cleanup lists them in First Player order, `due` in seat order.
+          expect([...due].sort()).toEqual([...state.phase.pendingPlayerIds].sort());
         }
       });
     }
@@ -145,7 +146,7 @@ const STEP_OF: Partial<Record<GamePhaseType, number>> = {
   firing_heat_markers: 5,
   firing_heat_adjustment: 8,
   firing_after_quality: 10,
-  firing_second_firing_jun: 10,
+  firing_second_firing_choice: 10,
   firing_salvage: 11,
 };
 
@@ -173,12 +174,14 @@ function agreement(state: GameState, firing: FiringContext, stage: FiringStageVi
     if (record === undefined) continue;
     expect(c).toMatchObject({ ownerId: record.ownerId, kiln: record.kiln, spaceId: record.spaceId, quality: record.quality, crackle: record.crackle, salvaged: record.salvaged });
     expect(c.secondFireModifier).toBe(record.second?.fireModifier ?? null);
+    expect(c.secondFireRevealed).toEqual(record.secondFiringCards);
+    expect(c.saggarsFloor).toBe(record.saggarsFloor);
     const current = lookup(state.ceramics, c.id);
     const marker = live && current !== undefined && current.stage === "loaded" ? current.heatMarker : null;
     expect(c.marker).toEqual(marker);
   }
   if (live) {
-    expect(stage.extraFire).toEqual(firing.pendingExtraFire);
+    expect(stage.extraFire).toEqual(firing.pendingExtraFire === null ? null : { ...firing.pendingExtraFire, modifiers: [...firing.pendingExtraFire.modifiers] });
     const phase = state.phase;
     expect(stage.step).toBe(STEP_OF[phase.type]);
     if ("queue" in phase) {
@@ -226,19 +229,23 @@ describe("firingStageView and firingRecapView (§5 gaps 7, 18; D3, D4)", () => {
     },
   );
 
-  it("shows the R7 extra Fire card beside its ceramic while Jun may adjust it", () => {
-    const scenario = phaseScenarios().find((s) => s.phase === "firing_second_firing_jun");
+  it("shows Second Firing's 2 revealed cards beside their ceramic until one is chosen (v1.6.2 L639)", () => {
+    const scenario = phaseScenarios().find((s) => s.phase === "firing_second_firing_choice");
     expect(scenario).toBeDefined();
     if (scenario === undefined) return;
     const state = scenario.table.state;
     const stage = firingStageView(viewOf(state, scenario.actor));
     const pending = state.firing?.pendingExtraFire ?? null;
     expect(pending).not.toBeNull();
-    expect(stage?.extraFire).toEqual(pending);
-    expect(stage?.ceramics.find((c) => c.id === pending?.ceramicId)?.secondFireModifier).toBe(pending?.modifier);
-    // Resolving Jun discards the card and closes the window.
-    scenario.table.act(scenario.actor, { type: "RESOLVE_JUN", adjustment: null });
-    expect(firingStageView(scenario.table.view(scenario.actor))?.extraFire ?? null).toBeNull();
+    expect(stage?.extraFire).toEqual({ playerId: pending?.playerId, ceramicId: pending?.ceramicId, modifiers: pending?.modifiers });
+    expect(stage?.ceramics.find((c) => c.id === pending?.ceramicId)?.secondFireModifier).toBeNull();
+    // Choosing discards both cards; the ceramic records the chosen card and both revealed.
+    scenario.table.act(scenario.actor, { type: "SECOND_FIRING_CHOOSE", cardIndex: 1, jun: null });
+    const after = firingStageView(scenario.table.view(scenario.actor)) ?? firingRecapView(scenario.table.view(scenario.actor));
+    expect(after?.extraFire ?? null).toBeNull();
+    const ceramic = after?.ceramics.find((c) => c.id === pending?.ceramicId);
+    expect(ceramic?.secondFireModifier).toBe(pending?.modifiers[1]);
+    expect(ceramic?.secondFireRevealed).toEqual(pending?.modifiers);
   });
 
   it("keeps Contributions sealed until all are revealed, then shows card, heat and Wood paid", () => {
@@ -262,7 +269,8 @@ describe("firingStageView and firingRecapView (§5 gaps 7, 18; D3, D4)", () => {
     table.contribute("p2", "BANK");
     const stage = firingStageView(table.view("p2"));
     expect(stage?.contributions).toEqual([
-      { playerId: "p1", revealed: { card: "STOKE", heat: 2, woodPaid: 2 } },
+      // Fuel Ledger (v1.6.2 L637): Stoke costs its owner nothing; the commitment 1 Wood.
+      { playerId: "p1", revealed: { card: "STOKE", heat: 2, woodPaid: 1 } },
       { playerId: "p2", revealed: { card: "BANK", heat: -1, woodPaid: 1 } },
     ]);
     expect(stage?.submittedPlayerIds).toEqual(["p1", "p2"]);
@@ -370,7 +378,7 @@ const EXPECTED_ROUND_PHASE: Record<GamePhaseType, RoundPhaseId | "final"> = {
   firing_heat_markers: "firing",
   firing_heat_adjustment: "firing",
   firing_after_quality: "firing",
-  firing_second_firing_jun: "firing",
+  firing_second_firing_choice: "firing",
   firing_salvage: "firing",
   orders: "orders",
   cleanup_hand_limit: "cleanup",
@@ -394,8 +402,8 @@ describe("ROUND_STRUCTURE and roundPhaseOf (§5 gap 17)", () => {
 
   it("is display text only: not a rules-fingerprint input, and the fingerprint is unchanged", () => {
     expect(CONTENT_SOURCES.map(([name]) => name)).not.toContain("round_structure");
-    expect(RULES_BEHAVIOUR_REVISION).toBe(29);
-    expect(rulesFingerprint()).toMatch(/^r29-[0-9a-f]{16}$/);
+    expect(RULES_BEHAVIOUR_REVISION).toBe(30);
+    expect(rulesFingerprint()).toMatch(/^r30-[0-9a-f]{16}$/);
   });
 
   it("is exported from the barrel", () => {
@@ -467,12 +475,12 @@ describe("crackleDeclarationChecks (§5 gap 8)", () => {
   });
 
   it("lists only selected Crackle ceramics", () => {
-    const scenario = uiOptionScenarios().find((s) => s.name.startsWith("Canal Barge"));
+    const scenario = uiOptionScenarios().find((s) => s.name.startsWith("Order Phase with Canal Barge"));
     if (scenario === undefined) throw new Error("scenario missing");
     const view = scenario.table.actorView("p1");
     const checks = crackleDeclarationChecks(view, "O39", ["c1", "c2"], []);
     expect(checks.ceramics.map((c) => c.ceramicId)).toEqual(["c1"]);
-    expect(validateAction(view, { type: "USE_CANAL_BARGE", orderId: "O39", ceramicIds: ["c1", "c2"], crackleDeclarations: [] }) === null).toBe(checks.declared.ok);
+    expect(validateAction(view, { type: "COMPLETE_ORDER", orderId: "O39", ceramicIds: ["c1", "c2"], crackleDeclarations: [] }) === null).toBe(checks.declared.ok);
   });
 });
 
@@ -562,18 +570,18 @@ describe("materialsYardOptions (§5 gap 14)", () => {
       ?.workers.map((w) => ({ worker: w, options: materialsYardOptions(view, w), legal: legalMaterialsYardCommands(view, w) })) ?? [];
   };
 
-  it("offers Prepared Clay only with T17 ready and never with Senior Apprentice (L350)", () => {
+  it("offers Prepared Clay only with T17 ready and never with Senior Apprentice (L350); the Shifu effect gains 6 (v1.6.2 L165)", () => {
     const senior = optionsFor("Materials Yard: Senior Apprentice, Prepared Clay used");
     expect(senior.map((x) => [x.worker.kind, x.worker.seniorApprentice, x.options.resources, x.options.preparedClay])).toEqual([
-      ["shifu", false, 4, null],
+      ["shifu", false, 6, null],
       ["apprentice", false, 3, null],
-      ["apprentice", true, 4, null],
+      ["apprentice", true, 6, null],
     ]);
-    expect(senior[2]?.options.shifuBonus?.ok).toBe(true);
-    expect(senior[1]?.options.shifuBonus).toBeNull();
+    // V1.6.2 removed the Shifu's 1-Coin option: the options carry no bonus.
+    for (const { options } of senior) expect(Object.keys(options).sort()).toEqual(["preparedClay", "resources"]);
   });
 
-  it("lists the Shapes and Decorations of some legal command, after the split and bonus", () => {
+  it("lists the Shapes and Decorations of some legal command, after the split", () => {
     const rich = optionsFor("Materials Yard: Prepared Clay with 2 Coins and no Clay");
     for (const { options, legal } of rich) {
       expect(options.preparedClay?.shapes).toEqual([...new Set(legal.flatMap((a) => (a.preparedClay ? [a.preparedClay.shape] : [])))].sort((a, b) => SHAPES.indexOf(a) - SHAPES.indexOf(b)));
@@ -583,30 +591,20 @@ describe("materialsYardOptions (§5 gap 14)", () => {
     for (const { options } of broke) {
       expect(options.preparedClay).toEqual({ shapes: [], decorations: [], pairs: [] });
     }
-    expect(broke[0]?.options.shifuBonus?.ok).toBe(false);
   });
 
-  it("gates each Prepared Clay pair, and the pair with the Shifu bonus, not the cross product", () => {
-    // 2 Coins: the bonus Coin and the 2-Coin Decoration compete for the same Coins, so the
-    // bonus alone and every pair alone are legal, but no pair is legal with the bonus.
-    const tight = optionsFor("Materials Yard: Prepared Clay with 2 Coins and no Clay");
-    const shifu = tight.find((x) => x.worker.effect === "shifu");
-    expect(shifu?.options.shifuBonus?.ok).toBe(true);
-    expect(shifu?.options.preparedClay?.pairs.length).toBe(SHAPES.length * DECORATIONS.length);
-    expect(shifu?.options.preparedClay?.pairs.every((p) => !p.withShifuBonus)).toBe(true);
-    expect(shifu?.legal.some((a) => a.buyShifuBonus === true && a.preparedClay !== undefined)).toBe(false);
-    // 3 Coins: both fit.
-    const roomy = optionsFor("Materials Yard: Prepared Clay with 3 Coins and no Clay");
-    expect(roomy.find((x) => x.worker.effect === "shifu")?.options.preparedClay?.pairs.every((p) => p.withShifuBonus)).toBe(true);
-    // The Apprentice effect has no bonus.
-    for (const { worker, options } of [...tight, ...roomy]) {
-      if (worker.effect === "apprentice") expect(options.preparedClay?.pairs.some((p) => p.withShifuBonus)).toBe(false);
-    }
-    // The projections are exactly the pairs' Shapes and Decorations.
-    for (const { options } of [...tight, ...roomy]) {
-      const pairs = options.preparedClay?.pairs ?? [];
-      expect(options.preparedClay?.shapes).toEqual(SHAPES.filter((s) => pairs.some((p) => p.shape === s)));
-      expect(options.preparedClay?.decorations).toEqual(DECORATIONS.filter((d) => pairs.some((p) => p.decoration === d)));
+  it("gates each Prepared Clay pair: the split covers its Clay, the Coins its Decoration", () => {
+    // From 0 Clay even the Apprentice effect's 3 resources cover any Shape's Clay + 1 (L618),
+    // and 2 Coins pay any Decoration: every pair is legal for every worker option.
+    for (const name of ["Materials Yard: Prepared Clay with 2 Coins and no Clay", "Materials Yard: Prepared Clay with 3 Coins and no Clay"]) {
+      for (const { options, legal } of optionsFor(name)) {
+        expect(options.preparedClay?.pairs).toEqual(SHAPES.flatMap((shape) => DECORATIONS.map((decoration) => ({ shape, decoration }))));
+        expect(legal.some((a) => a.preparedClay !== undefined)).toBe(true);
+        // The projections are exactly the pairs' Shapes and Decorations.
+        const pairs = options.preparedClay?.pairs ?? [];
+        expect(options.preparedClay?.shapes).toEqual(SHAPES.filter((s) => pairs.some((p) => p.shape === s)));
+        expect(options.preparedClay?.decorations).toEqual(DECORATIONS.filter((d) => pairs.some((p) => p.decoration === d)));
+      }
     }
   });
 

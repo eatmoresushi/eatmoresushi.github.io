@@ -1,7 +1,8 @@
 /**
- * Materials Yard placement legality (L140–142, L619, R12). Gaining resources is always
- * possible, so the only limits are the shared placement checks; optional bonuses never make a
- * placement illegal (L142 "Optional bonuses may still be declined").
+ * Materials Yard placement legality (L140–142, v1.6.2 L164–165, L618, R12). Gaining resources
+ * is always possible, so the only limits are the shared placement checks; an optional Tech
+ * (Prepared Clay) never makes a placement illegal (L142 "Optional bonuses may still be
+ * declined"). The V1.6.1 1-Coin Shifu option is gone (v1.6.2 L165).
  */
 
 import { describe, expect, it } from "vitest";
@@ -22,14 +23,13 @@ describe("at least 1 instance of the main action (L142)", () => {
   it("is always possible: legal with no resources at all, for either worker", () => {
     const state = buildState({ players: [{ resources: { clay: 0, wood: 0, coins: 0 } }, {}] });
     expect(verdict(state, "p1", my("p1:apprentice:1", 3))).toBeNull();
-    expect(verdict(state, "p1", my("p1:shifu", 4))).toBeNull();
+    expect(verdict(state, "p1", my("p1:shifu", 6))).toBeNull();
   });
 
-  it("an unaffordable optional bonus is declined, not a reason to refuse the placement", () => {
+  it("an unaffordable optional Tech is declined, not a reason to refuse the placement", () => {
     const state = buildState({ players: [{ techs: ["T17"], resources: { clay: 0, wood: 0, coins: 0 } }, {}] });
-    expect(verdict(state, "p1", my("p1:shifu", 4))).toBeNull();
-    expect(verdict(state, "p1", my("p1:shifu", 4, { buyShifuBonus: true }))).toBe("INSUFFICIENT_RESOURCES");
-    expect(verdict(state, "p1", my("p1:shifu", 4, { preparedClay: { shape: "bowl", decoration: "plain" } }))).toBe("INSUFFICIENT_RESOURCES");
+    expect(verdict(state, "p1", my("p1:shifu", 6))).toBeNull();
+    expect(verdict(state, "p1", my("p1:shifu", 6, { preparedClay: { shape: "bowl", decoration: "plain" } }))).toBe("INSUFFICIENT_RESOURCES");
   });
 });
 
@@ -41,7 +41,7 @@ describe("shared placement checks through the Materials Yard validator", () => {
         { player: "p2", worker: 2, locationId: "materials_yard" },
       ],
     });
-    expect(verdict(full, "p1", my("p1:shifu", 4))).toBe("LOCATION_FULL");
+    expect(verdict(full, "p1", my("p1:shifu", 6))).toBe("LOCATION_FULL");
     const placed = buildState({ placements: [{ player: "p1", worker: 1, locationId: "canal_wharf" }] });
     expect(verdict(placed, "p1", my("p1:apprentice:1", 3))).toBe("WORKER_UNAVAILABLE");
     expect(verdict(buildState(), "p2", my("p2:apprentice:1", 3))).toBe("NOT_YOUR_DECISION");
@@ -52,14 +52,14 @@ describe("shared placement checks through the Materials Yard validator", () => {
   });
 });
 
-describe("Senior Apprentice placement (L619, R12)", () => {
+describe("Senior Apprentice placement (v1.6.2 L618, R12)", () => {
   it("needs an Apprentice, a ready T18, and the Materials Yard or Commission Market", () => {
     const ready = buildState({ players: [{ techs: ["T18"] }, {}] });
-    expect(verdict(ready, "p1", my("p1:apprentice:1", 4, { seniorApprentice: true }))).toBeNull();
-    expect(verdict(ready, "p1", my("p1:shifu", 4, { seniorApprentice: true }))).toBe("SENIOR_APPRENTICE_NOT_APPLICABLE");
+    expect(verdict(ready, "p1", my("p1:apprentice:1", 6, { seniorApprentice: true }))).toBeNull();
+    expect(verdict(ready, "p1", my("p1:shifu", 6, { seniorApprentice: true }))).toBe("SENIOR_APPRENTICE_NOT_APPLICABLE");
     const used = buildState({ players: [{ techs: [{ id: "T18", usedThisRound: true }] }, {}] });
-    expect(verdict(used, "p1", my("p1:apprentice:1", 4, { seniorApprentice: true }))).toBe("TECH_ALREADY_USED");
-    expect(verdict(buildState(), "p1", my("p1:apprentice:1", 4, { seniorApprentice: true }))).toBe("TECH_NOT_OWNED");
+    expect(verdict(used, "p1", my("p1:apprentice:1", 6, { seniorApprentice: true }))).toBe("TECH_ALREADY_USED");
+    expect(verdict(buildState(), "p1", my("p1:apprentice:1", 6, { seniorApprentice: true }))).toBe("TECH_NOT_OWNED");
     // Never at the Magistrate's Hall (R12) or anywhere else.
     for (const location of ["magistrates_hall", "canal_wharf", "guild_hall", "form_decorate", "glaze_load"] as const) {
       expect(validatePlacement(actorViewOf(ready, "p1"), "p1:apprentice:1", location, true)?.code).toBe("SENIOR_APPRENTICE_NOT_APPLICABLE");

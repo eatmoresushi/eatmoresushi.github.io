@@ -11,11 +11,19 @@
  *   `ownSecrets[i].event.secret`, and only when its `visibleTo` is the viewer; at capture time
  *   each own secret must equal the authoritative event with the same sequence.
  *
- * The secret IDs of a viewer are the Order and Tech IDs it must never see: other seats' hands,
- * other seats' private looks, the Main deck and its face-down discard, the Starting box and the
- * Tech decks — minus IDs a public event revealed (a face-up Order later reserved, the Orders
- * rotated off the display) and minus IDs the viewer was shown privately (its own looks, its own
- * trimmed or discarded Orders, its own returned Techs).
+ * The secret IDs of a viewer are the Order and Tech IDs in places it cannot see: other seats'
+ * hands, other seats' private looks, the Main deck and its face-down discard, the Starting box
+ * and the Tech decks. The full event log, replayed in order, says which of them the viewer
+ * still knows the whereabouts of (`knowledge`): an ID a public event named (a face-up Order
+ * reserved, the Orders rotated off the display) or one of its own secrets named (its own looks,
+ * its own trimmed or discarded Orders, its own returned Techs) is known, until another seat's
+ * secret names it, which means it moved where only that seat saw it go. That splits them in two:
+ * - `unseen`: never shown to the viewer, so they may appear nowhere in its payloads;
+ * - `rehidden`: shown once and moved unseen since, such as a face-up Order reserved in public
+ *   and then given up face down for a Colour Samples swap (B3, v1.6.2 L641), or a card the
+ *   viewer looked at and put under the Main deck (change 24) that another seat then drew. They
+ *   may appear only in event records (`HISTORY_KEYS`), which are exact copies of authoritative
+ *   events and show what the viewer saw when the event happened.
  *
  * Node-only tool code: never imported by `src/app`.
  */
@@ -38,7 +46,16 @@ export interface PrivacyCheckedEntry {
   playerView: PlayerView;
   recentPublicEvents: ReadonlyArray<FixtureEventRecord<PublicGameEvent>>;
   ownSecrets: ReadonlyArray<FixtureEventRecord<GameEvent>>;
+  /** A command response's public events, when the entry is a response (`CommandResponse.events`). */
+  events?: readonly PublicGameEvent[];
 }
+
+/**
+ * The entry keys that hold event records: `recentPublicEvents` and `events` (projections of
+ * authoritative events) and `ownSecrets` (the viewer's own authoritative events). Each is
+ * checked to be an exact copy, so it shows only what the viewer saw when the event happened.
+ */
+const HISTORY_KEYS: ReadonlySet<PathKey> = new Set(["recentPublicEvents", "ownSecrets", "events"]);
 
 export type PathKey = string | number;
 
@@ -59,56 +76,99 @@ function stringsIn(value: unknown, into: Set<string>): Set<string> {
   return into;
 }
 
-/** Every string any public event has carried: public knowledge for every seat. */
-export function publiclyRevealed(events: readonly GameEvent[]): Set<string> {
-  const seen = new Set<string>();
-  for (const event of events) stringsIn(projectEvent(event), seen);
-  return seen;
-}
-
-/** Every string in the viewer's own secret payloads: what it was shown privately. */
-export function privatelyKnown(events: readonly GameEvent[], viewerId: PlayerId): Set<string> {
-  const seen = new Set<string>();
+/**
+ * What `viewerId` knows after `events`, replayed in order:
+ * - `everKnown`: every string a public event or one of its own secrets has shown it;
+ * - `known`: those whose whereabouts it still knows. Another seat's secret payload (a deal, a
+ *   looked or unseen draw, a look, cards put under a deck, a discarded or trimmed Order) names
+ *   IDs that moved where only that seat saw them go, so the viewer forgets where they are,
+ *   until a public event or its own secret shows them again.
+ */
+export function knowledge(events: readonly GameEvent[], viewerId: PlayerId): { known: Set<string>; everKnown: Set<string> } {
+  const known = new Set<string>();
+  const everKnown = new Set<string>();
+  const learn = (ids: ReadonlySet<string>): void => {
+    for (const id of ids) {
+      known.add(id);
+      everKnown.add(id);
+    }
+  };
   for (const event of events) {
     const secret = (event as { secret?: { visibleTo: PlayerId } }).secret;
-    if (secret !== undefined && secret.visibleTo === viewerId) stringsIn(secret, seen);
+    if (secret !== undefined) {
+      const ids = stringsIn(secret, new Set());
+      if (secret.visibleTo === viewerId) learn(ids);
+      else for (const id of ids) known.delete(id);
+    }
+    learn(stringsIn(projectEvent(event), new Set()));
   }
-  return seen;
+  return { known, everKnown };
 }
 
-/**
- * The Order and Tech IDs `viewerId` must never see in this state, each with where it sits.
- * `events` is the full authoritative log of the game (or scenario) so far.
- */
-export function foreignSecretIds(state: GameState, viewerId: PlayerId, events: readonly GameEvent[]): Map<string, string> {
-  const forbidden = new Map<string, string>();
+/** The Order and Tech IDs in places `viewerId` cannot see in this state, each with where it is. */
+function hiddenPlaces(state: GameState, viewerId: PlayerId): Map<string, string> {
+  const places = new Map<string, string>();
   const hidden = state.hidden;
   for (const pid of state.playerOrder) {
     if (pid === viewerId) continue;
-    for (const id of hidden.orderHands[pid] ?? []) forbidden.set(id, `${pid}'s hand`);
+    for (const id of hidden.orderHands[pid] ?? []) places.set(id, `${pid}'s hand`);
   }
-  for (const id of hidden.mainDeck) forbidden.set(id, "Main deck");
-  for (const id of hidden.mainDiscard) forbidden.set(id, "Main discard");
-  for (const id of hidden.startingBox) forbidden.set(id, "Starting box");
+  for (const id of hidden.mainDeck) places.set(id, "Main deck");
+  for (const id of hidden.mainDiscard) places.set(id, "Main discard");
+  for (const id of hidden.startingBox) places.set(id, "Starting box");
   for (const discipline of DISCIPLINES) {
-    for (const id of hidden.techDecks[discipline]) forbidden.set(id, `${discipline} Tech deck`);
+    for (const id of hidden.techDecks[discipline]) places.set(id, `${discipline} Tech deck`);
   }
   const look = hidden.pendingLook;
   if (look !== null) {
-    const ids = look.kind === "guild_inspection" ? look.techIds : look.orderIds;
+    // A Guild inspection that waits behind Colour Samples stays private too (v1.6.2 L207).
+    const ids = look.kind === "guild_inspection" ? look.techIds : [...look.orderIds, ...(look.kind === "colour_samples" ? (look.inspection?.techIds ?? []) : [])];
     for (const id of ids) {
-      if (look.playerId === viewerId) forbidden.delete(id);
-      else forbidden.set(id, `${look.playerId}'s private look`);
+      if (look.playerId === viewerId) places.delete(id);
+      else places.set(id, `${look.playerId}'s private look`);
     }
   }
-  for (const id of publiclyRevealed(events)) forbidden.delete(id);
-  for (const id of privatelyKnown(events, viewerId)) forbidden.delete(id);
-  return forbidden;
+  return places;
 }
 
-/** The secrets oracle entry: sorted IDs (`secrets.json`). */
+/** The secret IDs of one viewer, split by where they may appear (see the header). */
+export interface ForeignSecrets {
+  /** Never shown to the viewer: they may appear nowhere in its payloads. */
+  unseen: Map<string, string>;
+  /** Shown once, moved unseen since: they may appear only in event records (`HISTORY_KEYS`). */
+  rehidden: Map<string, string>;
+}
+
+/**
+ * The Order and Tech IDs `viewerId` must not see in this state, each with where it sits.
+ * `events` is the full authoritative log of the game (or scenario) so far.
+ */
+export function foreignSecrets(state: GameState, viewerId: PlayerId, events: readonly GameEvent[]): ForeignSecrets {
+  const { known, everKnown } = knowledge(events, viewerId);
+  const unseen = new Map<string, string>();
+  const rehidden = new Map<string, string>();
+  for (const [id, where] of hiddenPlaces(state, viewerId)) {
+    if (known.has(id)) continue;
+    if (everKnown.has(id)) rehidden.set(id, `${where}, moved there unseen by ${viewerId}`);
+    else unseen.set(id, where);
+  }
+  return { unseen, rehidden };
+}
+
+/** Every secret ID of `foreignSecrets`, unseen and rehidden alike. */
+export function foreignSecretIds(state: GameState, viewerId: PlayerId, events: readonly GameEvent[]): Map<string, string> {
+  const { unseen, rehidden } = foreignSecrets(state, viewerId, events);
+  return new Map([...unseen, ...rehidden]);
+}
+
+/**
+ * The secrets oracle entry (`secrets.json`, the local backend's `e2e_secret_ids`): the sorted
+ * `unseen` IDs, which may appear nowhere. A page or a fixture file also shows past events, so
+ * the `rehidden` IDs, which an old event may legitimately name, are checked only against the
+ * authoritative state (`entryPrivacyProblems`).
+ */
 export function secretIdsFor(state: GameState, viewerId: PlayerId, events: readonly GameEvent[]): string[] {
-  return [...foreignSecretIds(state, viewerId, events).keys()].sort();
+  return [...foreignSecrets(state, viewerId, events).unseen.keys()].sort();
 }
 
 /** True for the one place a `secret` key may appear: `ownSecrets[i].event.secret`. */
@@ -161,8 +221,10 @@ export function entryStructureProblems(entry: PrivacyCheckedEntry): string[] {
  * (`events[sequence - 1]` is the event with that sequence):
  * - the structural checks above;
  * - each own secret equals the authoritative event, which is the viewer's own;
- * - each public record equals the projection of the authoritative event;
- * - no secret ID of this viewer appears anywhere in the entry;
+ * - each public record, and each of a response's `events`, equals the projection of an
+ *   authoritative event;
+ * - no `unseen` secret ID of this viewer appears anywhere in the entry, and no `rehidden` one
+ *   outside its event records;
  * - while the Contribution window is open, no sealed card outside the viewer's own view, and
  *   no card or Fuel Ledger flag on another seat's `CONTRIBUTION_SUBMITTED`;
  * - no other seat's fire peek.
@@ -191,9 +253,17 @@ export function entryPrivacyProblems(
       problems.push(`recentPublicEvents #${record.sequence} is not the projection of the authoritative event`);
     }
   }
-  const forbidden = foreignSecretIds(state, viewer, events);
+  if (entry.events !== undefined) {
+    const projected = new Set(events.map((event) => JSON.stringify(projectEvent(event))));
+    entry.events.forEach((event, index) => {
+      if (!projected.has(JSON.stringify(event))) problems.push(`events[${index}] is not the projection of an authoritative event`);
+    });
+  }
+  const { unseen, rehidden } = foreignSecrets(state, viewer, events);
   walk(entry, (path, value) => {
-    if (typeof value === "string" && forbidden.has(value)) problems.push(`${value} from ${forbidden.get(value)} at ${path.join(".")}`);
+    if (typeof value !== "string") return;
+    if (unseen.has(value)) problems.push(`${value} from ${unseen.get(value)} at ${path.join(".")}`);
+    else if (rehidden.has(value) && !HISTORY_KEYS.has(path[0] ?? "")) problems.push(`${value} from ${rehidden.get(value)} at ${path.join(".")}`);
   });
   if (state.phase.type === "firing_contributions") {
     let sealed = 0;

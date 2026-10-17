@@ -286,10 +286,31 @@ describe("Chinese text uses the glossary terms", () => {
     }
   });
 
-  it("keeps Tech and Kiln reminders to one line of at most 72 characters (glossary §3, three printed lines of 24)", () => {
+  it("carries the Chinese Tech clarifications word for word (glossary §8, Chinese Appendix B 技艺通则)", () => {
+    const rulebookZh = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.2_ZH.md"), "utf8").split("\n");
+    const bulletsAfter = (lines: readonly string[], heading: string): string[] => {
+      const start = lines.findIndex((line) => line.startsWith(heading));
+      const end = lines.findIndex((line, index) => index > start && (line.startsWith("#") || line === "---"));
+      return lines.slice(start + 1, end).filter((line) => line.startsWith("- "));
+    };
+    const glossary = bulletsAfter(GLOSSARY_LINES, "## 8. 技艺通则");
+    expect(glossary).toHaveLength(9);
+    expect(glossary).toEqual(bulletsAfter(rulebookZh, "### 技艺通则"));
+  });
+
+  it("names the Colour Samples swap 换单, as the Chinese rulebook does (change 22, Chinese lines 34 and 645)", () => {
+    expect(glossaryTerm("Colour Samples swap (once per round)")).toBe("换单");
+    const rulebookZh = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.2_ZH.md"), "utf8");
+    expect(rulebookZh).toContain("色样簿增加每轮一次的换单");
+    expect(rulebookZh).toContain("每轮一次的换单是技艺效果，不算瓷牙行行动");
+    // The clarifications name it the same way.
+    expect(TECHS.T10.clarifications.filter((item) => item.zh.includes("换单")).length).toBeGreaterThan(3);
+  });
+
+  it("keeps Tech and Kiln reminders to one line of at most 96 characters (glossary §3, owner ruling R18: four printed lines of 24)", () => {
     for (const definition of [...TECH_IDS.map((id) => TECHS[id]), ...KILN_IDS.map((id) => KILNS[id])]) {
       expect(definition.shortTextZh, definition.id).not.toContain("\n");
-      expect([...definition.shortTextZh].length, `${definition.id}: ${definition.shortTextZh}`).toBeLessThanOrEqual(72);
+      expect([...definition.shortTextZh].length, `${definition.id}: ${definition.shortTextZh}`).toBeLessThanOrEqual(96);
     }
   });
 });
@@ -326,8 +347,8 @@ describe("Chinese strings avoid retired terms and follow the glossary's punctuat
 
   it("collects the Chinese text of every data file", () => {
     expect(strings.length).toBeGreaterThan(300);
-    // Every D10 clarification's Chinese half is checked too (156 items in the clarifications doc).
-    expect(strings.filter(([path]) => path.includes(".clarifications")).length).toBe(156);
+    // Every D10 clarification's Chinese half is checked too (170 items in the V1.6.2 clarifications doc).
+    expect(strings.filter(([path]) => path.includes(".clarifications")).length).toBe(170);
   });
 
   it("uses none of the retired or banned terms (glossary §1.5, §6)", () => {
@@ -397,7 +418,7 @@ function player(id: string, seatIndex: number, kilnId: PlayerState["kilnId"], te
     kilnAbilityUsedThisRound: false,
     imperial: { recognition: 2, grantReceived: true, kilnGained: true, priority: "on_track", audienceReceived: false },
     completedOrders: [{
-      orderId: "S07", ceramicIds: ["c1"], round: 1, via: "order_phase", vp: 3, coins: 4,
+      orderId: "S02", ceramicIds: ["c1"], round: 1, canalBargeCoins: 0, vp: 3, coins: 4,
       printedCrowns: 0, bonusCrowns: 0, crackleDeclarations: [], kilnAbility: null,
     }],
     score: { orders: 3, kilnAbilities: 0, recognitionOverflow: 0, imperialAudience: 0, techs: techs.length },
@@ -407,7 +428,7 @@ function player(id: string, seatIndex: number, kilnId: PlayerState["kilnId"], te
 function sampleState(): GameState {
   const ceramics: Record<string, CeramicState> = {
     c1: { id: "c1", ownerId: "p1", vesselInstanceId: "bowl-01", shape: "bowl", decoration: "plain", formedInRound: 1, formedBy: "form_decorate",
-      stage: "delivered", glaze: "celadon", firedInRound: 1, orderId: "S07", deliveredInRound: 1, crackle: false, quality: "masterpiece" },
+      stage: "delivered", glaze: "celadon", firedInRound: 1, orderId: "S02", deliveredInRound: 1, crackle: false, quality: "masterpiece" },
     c2: { id: "c2", ownerId: "p2", vesselInstanceId: "vase-01", shape: "vase", decoration: "painted", formedInRound: 1, formedBy: "form_decorate",
       stage: "finished", glaze: "moon_white", firedInRound: 1, crackle: true, quality: "fine" },
     c3: { id: "c3", ownerId: "p1", vesselInstanceId: "plate-01", shape: "plate", decoration: "impressed", formedInRound: 2, formedBy: "ding_extra",
@@ -426,8 +447,8 @@ function sampleState(): GameState {
     kilnFurniture: null,
   });
   return {
-    schemaVersion: 6,
-    rulesVersion: "1.6.1",
+    schemaVersion: 7,
+    rulesVersion: "1.6.2",
     gameId: "localization",
     revision: 12,
     eventSequence: 40,
@@ -451,12 +472,13 @@ function sampleState(): GameState {
     lastFiring: null,
     finalResult: null,
     hidden: {
-      orderHands: { p1: ["S13", "O40"], p2: ["S02", "S16", "O48"] },
+      orderHands: { p1: ["S07", "O40"], p2: ["S04", "S08", "O48"] },
       mainDeck: ["O01", "O02"],
       mainDiscard: ["O31"],
       startingBox: ["S01"],
       techDecks: { workshop: ["T05", "T18"], glazing_loading: ["T10", "T20", "T15", "T22"], firing: ["T11", "T12", "T14"] },
       fireDeck: [0, 1, -2, 0],
+      fireBuried: 0,
       pendingLook: null,
       firePeeks: {},
     },

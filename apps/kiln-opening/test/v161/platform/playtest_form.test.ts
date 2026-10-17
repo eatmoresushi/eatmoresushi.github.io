@@ -1,7 +1,7 @@
 /**
- * Playtest Form V3 for rules V1.6.1 (`src/playtest`): the version gate, the V1.6.1 option
+ * Playtest Form V3 for rules V1.6.2 (`src/playtest`): the version gate, the V1.6.2 option
  * lists from the content API, per-discipline Techs, the Kiln Die and Base Heat, and the
- * Fuel Ledger and ownership cross-checks. The V1.6.1 form page is the UI phase's job.
+ * Fuel Ledger and ownership cross-checks. The form page is the UI phase's job.
  */
 
 import { describe, expect, it } from "vitest";
@@ -22,6 +22,7 @@ import {
   submissionCandidate,
 } from "../../../src/playtest/model.ts";
 import { FIRING_TECH_IDS, KILN_DIE_FACES, MAX_RECOGNITION, validatePlaytestSubmission } from "../../../src/playtest/schema.ts";
+import type { OrderId } from "../../../src/game/index.ts";
 import type { PlaytestDraft } from "../../../src/playtest/types.ts";
 
 function validDraft(): PlaytestDraft {
@@ -63,17 +64,17 @@ function issuesOf(candidate: unknown): string[] {
   return result.ok ? [] : result.issues.map((issue) => `${issue.path}: ${issue.message}`);
 }
 
-describe("Playtest Form V3 (rules V1.6.1)", () => {
-  it("accepts a complete V1.6.1 record", () => {
+describe("Playtest Form V3 (rules V1.6.2)", () => {
+  it("accepts a complete V1.6.2 record", () => {
     const result = validatePlaytestSubmission(submissionCandidate(validDraft()));
     expect(result.ok, JSON.stringify(result.ok ? null : result.issues)).toBe(true);
     if (!result.ok) return;
-    expect(result.value).toMatchObject({ formVersion: 3, rulesVersion: "1.6.1", playerCount: 2 });
+    expect(result.value).toMatchObject({ formVersion: 3, rulesVersion: "1.6.2", playerCount: 2 });
     expect(result.value.players[0]).toMatchObject({ kilnId: "DI", workshopTechId: "T16", glazingLoadingTechId: null, firingTechId: "T12", kilnAbilityUses: 1 });
     expect(result.value.rounds[0]).toMatchObject({ kilnDie: 2, firingTechIds: ["T12"] });
   });
 
-  it("uses the V1.6.1 content for every option list", () => {
+  it("uses the V1.6.2 content for every option list", () => {
     expect(KILN_IDS).toContain("DI");
     expect(FIRING_TECH_IDS).toEqual(techsOfDiscipline("firing"));
     expect(KILN_DIE_FACES).toEqual([...new Set(FIRING.kilnDie.faces)].sort());
@@ -87,11 +88,26 @@ describe("Playtest Form V3 (rules V1.6.1)", () => {
   it("refuses older form or rules versions and V1.4-only fields", () => {
     const candidate = submissionCandidate(validDraft()) as Record<string, unknown>;
     expect(issuesOf({ ...candidate, formVersion: 2 })).toContain("formVersion: Unsupported form version.");
-    expect(issuesOf({ ...candidate, rulesVersion: "1.4" })).toContain("rulesVersion: This form records rules V1.6.1.");
+    expect(issuesOf({ ...candidate, rulesVersion: "1.4" })).toContain("rulesVersion: This form records rules V1.6.2.");
+    expect(issuesOf({ ...candidate, rulesVersion: "1.6.1" })).toContain("rulesVersion: This form records rules V1.6.2.");
     const players = (candidate["players"] as Array<Record<string, unknown>>).map((player, index) =>
       index === 0 ? { ...player, startingTechniqueId: "ST01" } : player,
     );
-    expect(issuesOf({ ...candidate, players })).toContain("players.0.startingTechniqueId: V1.6.1 has no Starting Techs.");
+    expect(issuesOf({ ...candidate, players })).toContain("players.0.startingTechniqueId: V1.6.2 has no Starting Techs.");
+  });
+
+  it("records only V1.6.2 Orders: Starting Orders S01–S08 and Main Orders O01–O48 (change 23)", () => {
+    const current = validDraft();
+    current.players[0]!.completedOrderIds = ["S08", "O48"];
+    const accepted = validatePlaytestSubmission(submissionCandidate(current));
+    expect(accepted.ok, JSON.stringify(accepted.ok ? null : accepted.issues)).toBe(true);
+    // S09–S16 left the game with V1.6.2's 8-card Starting deck.
+    for (const retired of ["S09", "S12", "S16"]) {
+      const draft = validDraft();
+      // The form's own type has no retired ID; the candidate is what a client might send.
+      draft.players[0]!.completedOrderIds = [retired as OrderId, "O01"];
+      expect(issuesOf(submissionCandidate(draft)), retired).toContain("players.0.completedOrderIds.0: Choose a valid Order.");
+    }
   });
 
   it("keeps each Tech in its own discipline and each tile with one player", () => {

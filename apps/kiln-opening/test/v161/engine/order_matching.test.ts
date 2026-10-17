@@ -2,8 +2,9 @@
  * P6 `orders/matching.ts` and the matching half of `orders/completion.validateOrderCompletion`
  * (L406–423, L470, L485, L654, R6; DESIGN §6.6, §8.2).
  *
- * - Table-driven: every one of the 16 Starting and 48 Main Orders has a passing selection and
- *   a near miss with the expected mismatch reason.
+ * - Table-driven: every one of the 8 Starting (v1.6.2 change 23) and 48 Main Orders has a
+ *   passing selection and a near miss with the expected mismatch reason, including S07's
+ *   Decoration alternative (Carved, Impressed or Painted).
  * - Independent multi-ceramic requirements (L423), every relation in `data/orders.json`.
  * - Crackle wildcards: search mode (fixed order, first hit recorded) and declared mode (used
  *   exactly), both error codes, never a Masterpiece.
@@ -82,22 +83,14 @@ type Row = [OrderId, string[], string[], OrderMismatchReason];
 
 const TABLE: Row[] = [
   // A0 Starting Orders (Standard+)
-  ["S01", ["bowl white carved std"], ["plate white carved fine"], "shape_mismatch"],
-  ["S02", ["plate celadon painted std"], ["bowl celadon painted std"], "shape_mismatch"],
-  ["S03", ["washer grey_green impressed std"], ["vase grey_green impressed std"], "shape_mismatch"],
-  ["S04", ["vase moon_white plain std"], ["censer moon_white plain std"], "shape_mismatch"],
-  ["S05", ["censer white carved std"], ["vase white carved mp"], "shape_mismatch"],
-  ["S06", ["vase white painted std"], ["vase celadon painted fine"], "glaze_mismatch"],
-  ["S07", ["bowl celadon plain std"], ["bowl grey_green plain std"], "glaze_mismatch"],
-  ["S08", ["plate grey_green carved std"], ["plate moon_white carved std"], "glaze_mismatch"],
-  ["S09", ["censer moon_white impressed std"], ["censer white impressed std"], "glaze_mismatch"],
-  ["S10", ["bowl white plain std"], ["bowl white carved std"], "decoration_mismatch"],
-  ["S11", ["plate celadon carved std"], ["plate celadon impressed std"], "decoration_mismatch"],
-  ["S12", ["washer white impressed std"], ["washer white painted std"], "decoration_mismatch"],
-  ["S13", ["vase moon_white painted std"], ["vase moon_white plain std"], "decoration_mismatch"],
-  ["S14", ["washer white plain std"], ["vase white plain std"], "shape_mismatch"],
-  ["S15", ["censer white plain std"], ["bowl white plain std"], "shape_mismatch"],
-  ["S16", ["vase white plain std"], ["vase white plain flawed"], "flawed"],
+  ["S01", ["vase white painted std"], ["vase celadon painted fine"], "glaze_mismatch"],
+  ["S02", ["bowl celadon plain std"], ["bowl grey_green plain std"], "glaze_mismatch"],
+  ["S03", ["plate grey_green carved std"], ["plate moon_white carved std"], "glaze_mismatch"],
+  ["S04", ["censer moon_white impressed std"], ["censer white impressed std"], "glaze_mismatch"],
+  ["S05", ["washer white plain std"], ["vase white plain std"], "shape_mismatch"],
+  ["S06", ["censer white plain std"], ["bowl white plain std"], "shape_mismatch"],
+  ["S07", ["plate celadon impressed std"], ["plate celadon plain std"], "decoration_mismatch"],
+  ["S08", ["vase white plain std"], ["vase white plain flawed"], "flawed"],
   // A1 Main single-ceramic Orders
   ["O01", ["bowl white plain std"], ["plate white plain std"], "shape_mismatch"],
   ["O02", ["plate white plain std"], ["plate white plain flawed"], "flawed"],
@@ -182,7 +175,7 @@ const TABLE: Row[] = [
 ];
 
 describe("every Order: a passing set and a near miss (Appendix A)", () => {
-  it("covers all 16 Starting and 48 Main Orders exactly once", () => {
+  it("covers all 8 Starting and 48 Main Orders exactly once", () => {
     const ids = TABLE.map(([id]) => id);
     expect(new Set(ids).size).toBe(ids.length);
     expect([...ids].sort()).toEqual([...STARTING_ORDER_IDS, ...MAIN_ORDER_IDS].sort());
@@ -210,6 +203,54 @@ describe("every Order: a passing set and a near miss (Appendix A)", () => {
     expect(matchOrder(order, [...passing, fc("c9", "bowl white plain mp")])).toBeNull();
     expect(matchOrder(order, passing.slice(1))).toBeNull();
     expect(explainOrderMismatch(order, passing.slice(1))?.reason).toBe("wrong_count");
+  });
+});
+
+// ── S07: a Decoration alternative (v1.6.2 change 23, L530) ───────────────────────────
+
+describe("S07 'any Shape · any Glaze · Carved, Impressed or Painted' (v1.6.2 change 23, L530)", () => {
+  const OFFERED: readonly Decoration[] = ["carved", "impressed", "painted"];
+
+  it("is filled by each listed Decoration, with any Shape and Glaze, at Standard or better", () => {
+    expect(ORDERS.S07.ceramics).toEqual([{ decorations: [...OFFERED] }]);
+    const shapes = ["bowl", "plate", "washer", "vase", "censer"];
+    const glazes = ["white", "celadon", "grey_green", "moon_white"];
+    OFFERED.forEach((decoration, index) => {
+      for (const quality of ["std", "fine", "mp"]) {
+        const ceramic = set(`${shapes[index]} ${glazes[index]} ${decoration} ${quality}`);
+        expect(matchOrder(ORDERS.S07, ceramic), `${decoration} ${quality}`).toEqual({ ceramicIds: ["c1"], crackleDeclarations: [] });
+      }
+      const ceramic = set(`${shapes[index + 2]} ${glazes[3 - index]} ${decoration} std`);
+      expect(matchOrder(ORDERS.S07, ceramic), decoration).not.toBeNull();
+    });
+  });
+
+  it("refuses Plain, the one Decoration it does not list, whatever the Shape, Glaze or Quality", () => {
+    for (const spec of ["bowl white plain std", "vase moon_white plain fine", "censer celadon plain mp"]) {
+      const plain = set(spec);
+      expect(matchOrder(ORDERS.S07, plain), spec).toBeNull();
+      expect(explainOrderMismatch(ORDERS.S07, plain), spec).toEqual({ reason: "decoration_mismatch", ceramicId: "c1", slotIndex: 0 });
+      expect(findOrderMatches(ORDERS.S07, plain), spec).toEqual([]);
+    }
+  });
+
+  it("a printed-Plain Crackle ceramic fills it with its wildcard: searched, or declared as any listed Decoration", () => {
+    const crackle = set("censer grey_green plain fine crackle");
+    // Search mode records the first listed Decoration in DECORATIONS order (Carved).
+    expect(matchOrder(ORDERS.S07, crackle)).toEqual({ ceramicIds: ["c1"], crackleDeclarations: [{ ceramicId: "c1", decoration: "carved" }] });
+    for (const decoration of OFFERED) {
+      const declared: CrackleDeclaration[] = [{ ceramicId: "c1", decoration }];
+      expect(matchOrder(ORDERS.S07, crackle, declared), decoration).toEqual({ ceramicIds: ["c1"], crackleDeclarations: declared });
+    }
+    // Declared as Plain, or left undeclared ([] keeps its printed Plain), it does not.
+    expect(matchOrder(ORDERS.S07, crackle, [{ ceramicId: "c1", decoration: "plain" }])).toBeNull();
+    expect(matchOrder(ORDERS.S07, crackle, [])).toBeNull();
+    // A Crackle ceramic printed with a listed Decoration needs no wildcard: any declaration that
+    // names a listed Decoration, or none, matches.
+    const carvedCrackle = set("bowl white carved fine crackle");
+    expect(matchOrder(ORDERS.S07, carvedCrackle, [])).toEqual({ ceramicIds: ["c1"], crackleDeclarations: [] });
+    expect(matchOrder(ORDERS.S07, carvedCrackle, [{ ceramicId: "c1", decoration: "painted" }])).not.toBeNull();
+    expect(matchOrder(ORDERS.S07, carvedCrackle, [{ ceramicId: "c1", decoration: "plain" }])).toBeNull();
   });
 });
 
@@ -289,11 +330,12 @@ describe("independent requirements unless paired (L423)", () => {
 
 describe("Crackle wildcard: search mode", () => {
   it("a Crackle ceramic counts as any one Decoration and records the first hit", () => {
-    // S13 needs Painted; the Crackle ceramic is printed Plain.
+    // S07 needs Carved, Impressed or Painted (change 23); the Crackle ceramic is printed Plain.
+    // The first Decoration that works, in DECORATIONS order, is Carved.
     const crackle = set("bowl white plain fine crackle");
-    expect(matchOrder(ORDERS.S13, crackle)).toEqual({
+    expect(matchOrder(ORDERS.S07, crackle)).toEqual({
       ceramicIds: ["c1"],
-      crackleDeclarations: [{ ceramicId: "c1", decoration: "painted" }],
+      crackleDeclarations: [{ ceramicId: "c1", decoration: "carved" }],
     });
     // O17: Brush Washer · White · Painted, Fine+.
     expect(matchOrder(ORDERS.O17, set("washer white carved fine crackle"))?.crackleDeclarations).toEqual([
@@ -314,7 +356,7 @@ describe("Crackle wildcard: search mode", () => {
   });
 
   it("declares each selected Crackle ceramic even when the Order has no Decoration requirement", () => {
-    expect(matchOrder(ORDERS.S16, set("vase white carved fine crackle"))?.crackleDeclarations).toEqual([
+    expect(matchOrder(ORDERS.S08, set("vase white carved fine crackle"))?.crackleDeclarations).toEqual([
       { ceramicId: "c1", decoration: "plain" },
     ]);
     // A non-Crackle partner gets no declaration.
@@ -324,8 +366,8 @@ describe("Crackle wildcard: search mode", () => {
   });
 
   it("never changes Glaze, Shape or Quality", () => {
-    expect(matchOrder(ORDERS.S06, set("bowl celadon plain fine crackle"))).toBeNull();
-    expect(matchOrder(ORDERS.S01, set("plate white plain fine crackle"))).toBeNull();
+    expect(matchOrder(ORDERS.S01, set("bowl celadon plain fine crackle"))).toBeNull();
+    expect(matchOrder(ORDERS.S06, set("plate white plain fine crackle"))).toBeNull();
     expect(explainOrderMismatch(ORDERS.O20, set("bowl white carved fine crackle"))?.reason).toBe("glaze_mismatch");
   });
 
@@ -355,14 +397,16 @@ describe("Crackle wildcard: declared mode (used exactly)", () => {
 
   it("uses a valid declaration exactly and records it as given", () => {
     const declared: CrackleDeclaration[] = [{ ceramicId: "c1", decoration: "painted" }];
-    expect(matchOrder(ORDERS.S13, crackleBowl(), declared)).toEqual({ ceramicIds: ["c1"], crackleDeclarations: declared });
+    expect(matchOrder(ORDERS.S07, crackleBowl(), declared)).toEqual({ ceramicIds: ["c1"], crackleDeclarations: declared });
   });
 
   it("never searches: a wrong or missing declaration fails even though another would match", () => {
-    expect(matchOrder(ORDERS.S13, crackleBowl(), [{ ceramicId: "c1", decoration: "carved" }])).toBeNull();
+    // S07 takes Carved, Impressed or Painted; a Plain declaration fails though another would match.
+    expect(matchOrder(ORDERS.S07, crackleBowl(), [{ ceramicId: "c1", decoration: "plain" }])).toBeNull();
+    expect(matchOrder(ORDERS.O17, set("washer white plain fine crackle"), [{ ceramicId: "c1", decoration: "carved" }])).toBeNull();
     // [] → the undeclared Crackle ceramic counts with its printed Plain.
-    expect(matchOrder(ORDERS.S13, crackleBowl(), [])).toBeNull();
-    expect(matchOrder(ORDERS.S10, crackleBowl(), [])).toEqual({ ceramicIds: ["c1"], crackleDeclarations: [] });
+    expect(matchOrder(ORDERS.S07, crackleBowl(), [])).toBeNull();
+    expect(matchOrder(ORDERS.O10, crackleBowl(), [])).toEqual({ ceramicIds: ["c1"], crackleDeclarations: [] });
   });
 
   it("an undeclared Crackle ceramic counts with its printed Decoration beside a declared one", () => {
@@ -374,10 +418,10 @@ describe("Crackle wildcard: declared mode (used exactly)", () => {
 
   it("a malformed declaration never matches", () => {
     const plain = set("bowl white plain fine");
-    expect(matchOrder(ORDERS.S10, plain, [{ ceramicId: "c1", decoration: "plain" }])).toBeNull();
-    expect(matchOrder(ORDERS.S13, crackleBowl(), [{ ceramicId: "c9", decoration: "painted" }])).toBeNull();
+    expect(matchOrder(ORDERS.O10, plain, [{ ceramicId: "c1", decoration: "plain" }])).toBeNull();
+    expect(matchOrder(ORDERS.S07, crackleBowl(), [{ ceramicId: "c9", decoration: "painted" }])).toBeNull();
     expect(
-      matchOrder(ORDERS.S13, crackleBowl(), [
+      matchOrder(ORDERS.S07, crackleBowl(), [
         { ceramicId: "c1", decoration: "painted" },
         { ceramicId: "c1", decoration: "painted" },
       ]),
@@ -407,8 +451,8 @@ describe("findOrderMatches", () => {
 
   it("includes Crackle ceramics with their searched declarations", () => {
     const pool = [fc("c1", "bowl white plain fine crackle"), fc("c2", "plate celadon painted fine")];
-    expect(findOrderMatches(ORDERS.S13, pool)).toEqual([
-      { ceramicIds: ["c1"], crackleDeclarations: [{ ceramicId: "c1", decoration: "painted" }] },
+    expect(findOrderMatches(ORDERS.S07, pool)).toEqual([
+      { ceramicIds: ["c1"], crackleDeclarations: [{ ceramicId: "c1", decoration: "carved" }] },
       { ceramicIds: ["c2"], crackleDeclarations: [] },
     ]);
   });
@@ -429,7 +473,7 @@ describe("ruTriggers (L460)", () => {
 
 describe("validateOrderCompletion", () => {
   function scenario() {
-    const state = buildState({ players: [{ kilnId: "GE", hand: ["S13", "O26", "S16"] }, { kilnId: "RU", hand: ["S01"] }] });
+    const state = buildState({ players: [{ kilnId: "GE", hand: ["S07", "O26", "S08"] }, { kilnId: "RU", hand: ["S01"] }] });
     const crackle = stageCeramic(state, { owner: "p1", stage: "finished", shape: "bowl", glaze: "white", quality: "fine", crackle: true });
     const plate = stageCeramic(state, { owner: "p1", stage: "finished", shape: "plate", glaze: "celadon", quality: "fine" });
     const shaped = stageCeramic(state, { owner: "p1", stage: "shaped", shape: "vase" });
@@ -440,8 +484,8 @@ describe("validateOrderCompletion", () => {
 
   it("accepts a held Order in both declaration modes", () => {
     const { view, crackle } = scenario();
-    expect(validateOrderCompletion(view, { orderId: "S13", ceramicIds: [crackle] })).toBeNull();
-    expect(validateOrderCompletion(view, { orderId: "S13", ceramicIds: [crackle], crackleDeclarations: [{ ceramicId: crackle, decoration: "painted" }] })).toBeNull();
+    expect(validateOrderCompletion(view, { orderId: "S07", ceramicIds: [crackle] })).toBeNull();
+    expect(validateOrderCompletion(view, { orderId: "S07", ceramicIds: [crackle], crackleDeclarations: [{ ceramicId: crackle, decoration: "painted" }] })).toBeNull();
   });
 
   it("rejects Orders not in the hand, incl. face-up and another player's", () => {
@@ -457,10 +501,10 @@ describe("validateOrderCompletion", () => {
   it("rejects duplicated, unknown, foreign, unfinished ceramics with typed errors", () => {
     const { view, crackle, theirs, shaped } = scenario();
     const cases: Array<[OrderCompletionSpec, GameRuleErrorCode, GameRuleError["details"]]> = [
-      [{ orderId: "S16", ceramicIds: [crackle, crackle] }, "DUPLICATE_CERAMIC", { ceramicId: crackle }],
-      [{ orderId: "S16", ceramicIds: ["c99"] }, "CERAMIC_NOT_FOUND", { ceramicId: "c99" }],
-      [{ orderId: "S16", ceramicIds: [theirs] }, "CERAMIC_NOT_OWNED", { ceramicId: theirs, ownerId: "p2" }],
-      [{ orderId: "S16", ceramicIds: [shaped] }, "ILLEGAL_CERAMIC_STAGE", { ceramicId: shaped, stage: "shaped", expectedStage: "finished" }],
+      [{ orderId: "S08", ceramicIds: [crackle, crackle] }, "DUPLICATE_CERAMIC", { ceramicId: crackle }],
+      [{ orderId: "S08", ceramicIds: ["c99"] }, "CERAMIC_NOT_FOUND", { ceramicId: "c99" }],
+      [{ orderId: "S08", ceramicIds: [theirs] }, "CERAMIC_NOT_OWNED", { ceramicId: theirs, ownerId: "p2" }],
+      [{ orderId: "S08", ceramicIds: [shaped] }, "ILLEGAL_CERAMIC_STAGE", { ceramicId: shaped, stage: "shaped", expectedStage: "finished" }],
     ];
     for (const [spec, code, details] of cases) {
       const error = validateOrderCompletion(view, spec);
@@ -471,8 +515,8 @@ describe("validateOrderCompletion", () => {
 
   it("rejects a Flawed ceramic and a wrong count with ORDER_REQUIREMENTS_NOT_MET", () => {
     const { view, flawed, plate } = scenario();
-    const flawedError = validateOrderCompletion(view, { orderId: "S16", ceramicIds: [flawed] });
-    expect(flawedError).toMatchObject({ code: "ORDER_REQUIREMENTS_NOT_MET", details: { orderId: "S16", reason: "flawed", ceramicId: flawed } });
+    const flawedError = validateOrderCompletion(view, { orderId: "S08", ceramicIds: [flawed] });
+    expect(flawedError).toMatchObject({ code: "ORDER_REQUIREMENTS_NOT_MET", details: { orderId: "S08", reason: "flawed", ceramicId: flawed } });
     expectDocumentedDetails(flawedError);
     const countError = validateOrderCompletion(view, { orderId: "O26", ceramicIds: [plate] });
     expect(countError).toMatchObject({ code: "ORDER_REQUIREMENTS_NOT_MET", details: { orderId: "O26", reason: "wrong_count" } });
@@ -482,24 +526,24 @@ describe("validateOrderCompletion", () => {
   it("INVALID_CRACKLE_DECLARATION for a malformed declaration", () => {
     const { view, crackle, plate } = scenario();
     const notCrackle = validateOrderCompletion(view, {
-      orderId: "S16",
+      orderId: "S08",
       ceramicIds: [plate],
       crackleDeclarations: [{ ceramicId: plate, decoration: "painted" }],
     });
     expect(notCrackle).toMatchObject({
       code: "INVALID_CRACKLE_DECLARATION",
-      details: { ceramicId: plate, decoration: "painted", orderId: "S16", reason: "not_crackle" },
+      details: { ceramicId: plate, decoration: "painted", orderId: "S08", reason: "not_crackle" },
     });
     expectDocumentedDetails(notCrackle);
     const notSelected = validateOrderCompletion(view, {
-      orderId: "S16",
+      orderId: "S08",
       ceramicIds: [plate],
       crackleDeclarations: [{ ceramicId: crackle, decoration: "painted" }],
     });
     expect(notSelected).toMatchObject({ code: "INVALID_CRACKLE_DECLARATION", details: { ceramicId: crackle, reason: "crackle_not_selected" } });
     expectDocumentedDetails(notSelected);
     const twice = validateOrderCompletion(view, {
-      orderId: "S13",
+      orderId: "S07",
       ceramicIds: [crackle],
       crackleDeclarations: [
         { ceramicId: crackle, decoration: "painted" },
@@ -513,14 +557,14 @@ describe("validateOrderCompletion", () => {
   it("a well-formed declaration that fails: INVALID_CRACKLE_DECLARATION if another would satisfy, else ORDER_REQUIREMENTS_NOT_MET", () => {
     const { view, crackle, plate } = scenario();
     const fixable = validateOrderCompletion(view, {
-      orderId: "S13",
+      orderId: "S07",
       ceramicIds: [crackle],
-      crackleDeclarations: [{ ceramicId: crackle, decoration: "carved" }],
+      crackleDeclarations: [{ ceramicId: crackle, decoration: "plain" }],
     });
     // The reason separates this RR8 case from a malformed declaration (same code).
-    expect(fixable).toMatchObject({ code: "INVALID_CRACKLE_DECLARATION", details: { orderId: "S13", reason: "declaration_does_not_satisfy" } });
+    expect(fixable).toMatchObject({ code: "INVALID_CRACKLE_DECLARATION", details: { orderId: "S07", reason: "declaration_does_not_satisfy" } });
     expectDocumentedDetails(fixable);
-    const empty = validateOrderCompletion(view, { orderId: "S13", ceramicIds: [crackle], crackleDeclarations: [] });
+    const empty = validateOrderCompletion(view, { orderId: "S07", ceramicIds: [crackle], crackleDeclarations: [] });
     expect(empty).toMatchObject({ code: "INVALID_CRACKLE_DECLARATION", details: { reason: "declaration_does_not_satisfy" } });
     // O26: Bowl + Plate, same Glaze. White Crackle bowl + Celadon plate fails on Glaze,
     // which no Decoration declaration can fix.
@@ -538,7 +582,7 @@ describe("validateOrderCompletion", () => {
   it("never mutates the view", () => {
     const { view, crackle } = scenario();
     const before = structuredClone(view);
-    validateOrderCompletion(view, { orderId: "S13", ceramicIds: [crackle] });
+    validateOrderCompletion(view, { orderId: "S07", ceramicIds: [crackle] });
     validateOrderCompletion(view, { orderId: "O26", ceramicIds: [crackle, "c2"], crackleDeclarations: [] });
     expect(view).toEqual(before);
   });

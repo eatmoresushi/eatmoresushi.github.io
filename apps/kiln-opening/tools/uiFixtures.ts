@@ -1,5 +1,5 @@
 /**
- * UI fixtures from the real V1.6.1 engine (UI_V1.6.1_ARCHITECTURE.md §9.1).
+ * UI fixtures from the real engine, now V1.6.2 (UI_V1.6.1_ARCHITECTURE.md §9.1; ENGINE_V1.6.2_DELTA.md §9).
  *
  * Two targets:
  * - `--target tests` (default): `test/v161/ui/fixtures/`
@@ -74,7 +74,7 @@ import {
   afterQualityOptions,
   applyAction,
   boardView,
-  canalBargeOptions,
+  colourSamplesSwapOptions,
   commissionOptions,
   completableOrders,
   contributionOptions,
@@ -113,6 +113,7 @@ import {
 import type {
   ActorView,
   AuthoritativeCommand,
+  CommissionPick,
   DecisionPrompt,
   GameEvent,
   GameState,
@@ -622,12 +623,12 @@ function workSelectors(view: PlayerView, actor: ActorView): Record<string, unkno
     });
   }
   if (shifu !== undefined) {
-    quotes["materialsYardShifu_2clay_2wood_withBonus"] = quoteMaterialsYard(actor, {
+    // V1.6.2: the Shifu gains 6 Clay/Wood, with no Coin option (v1.6.2 L165).
+    quotes["materialsYardShifu_4clay_2wood"] = quoteMaterialsYard(actor, {
       type: "PLACE_MATERIALS_YARD",
       workerId: shifu.id,
-      clay: 2,
+      clay: 4,
       wood: 2,
-      buyShifuBonus: true,
     });
     quotes["formDecorateShifu_bowl_plain_plus_vase_carved"] = quoteFormDecorate(actor, {
       type: "PLACE_FORM_DECORATE",
@@ -651,7 +652,7 @@ function workSelectors(view: PlayerView, actor: ActorView): Record<string, unkno
     commissionOptions: { apprentice: commissionOptions(view, "apprentice"), shifu: commissionOptions(view, "shifu") },
     guildOptions: { apprentice: guildOptions(view, "apprentice"), shifu: guildOptions(view, "shifu") },
     magistratesHallQuote: { apprentice: magistratesHallQuote(view, "apprentice"), shifu: magistratesHallQuote(view, "shifu") },
-    canalBargeOptions: canalBargeOptions(view),
+    colourSamplesSwapOptions: colourSamplesSwapOptions(view),
     imperialPriorityOptions: imperialPriorityOptions(view),
   };
 }
@@ -696,8 +697,9 @@ function findWorkPhaseR2(): Found {
   return best;
 }
 
-/** 2. 4-player Round 3, Commission Market: viewer's Shifu reserved face up (slot empty until
- * the turn ends) and is now looking at the top 3 (private). */
+/** 2. 4-player Round 3, Commission Market: the viewer's Shifu has just been placed and is
+ * looking at the top 3 (private, v1.6.2 L196); the reservations from the display and the look
+ * follow in COMMISSION_CHOOSE. */
 function findCommissionLook(): Found {
   for (let seed = 1; seed <= 60; seed += 1) {
     const table = new Table(seed, 4);
@@ -713,17 +715,12 @@ function findCommissionLook(): Found {
         const shifu = Object.values(p.workers).find((w) => w.kind === "shifu" && w.placement === null);
         if (shifu === undefined || view.game.counts.mainDeck + view.game.counts.mainDiscard < 4) return null;
         const options = commissionOptions(view, "shifu");
-        const slot = options.faceUpSlots[0];
-        const orderId = slot === undefined ? null : t.state.market.display[slot];
-        if (slot === undefined || orderId === null || orderId === undefined || !options.lookTopThree) return null;
+        if (options.lookCount < options.lookSize || options.faceUpSlots.length === 0) return null;
         steeredSeat = actor;
         return {
-          command: { type: "PLACE_COMMISSION_MARKET", workerId: shifu.id, first: { kind: "face_up", slotIndex: slot, orderId, gain: "coins" } },
-          why: "Shifu to the Commission Market: first reservation face up (its slot stays empty until the turn ends).",
+          command: { type: "PLACE_COMMISSION_MARKET", workerId: shifu.id },
+          why: "Shifu to the Commission Market: the placement opens the private top-3 look.",
         };
-      }
-      if (phase.step.kind === "commission_market" && phase.step.awaiting === "reservation" && phase.step.topThreeAvailable) {
-        return { command: { type: "COMMISSION_RESERVE", choice: { kind: "look_top_three" } }, why: "Second reservation: look at the top 3 (private)." };
       }
       return null;
     };
@@ -734,9 +731,8 @@ function findCommissionLook(): Found {
         phase.type === "work_turn" &&
         phase.activePlayerId === actor &&
         phase.step.kind === "commission_market" &&
-        phase.step.awaiting === "look_choice" &&
-        t.state.market.refillPendingFor === actor &&
-        t.state.market.display.includes(null)
+        phase.step.effect === "shifu" &&
+        phase.step.lookedCount === 3
       );
     };
     const actor = table.runUntil((t, a) => t.state.round > 3 || stop(t, a), steer);
@@ -750,7 +746,7 @@ function findCommissionLook(): Found {
           id: "m2_commission_market_look_r3_4p",
           title: "4P · Round 3 · Commission Market · Shifu mid-action with private top-3 look",
           description:
-            "The viewer's Shifu reserved a face-up Order (its display position is null until the viewer's turn ends — market.refillPendingFor is the viewer), gained a resource, then chose 'look at the top 3'. own.pendingLook holds the 3 Orders; other players only see counts.pendingLook (kind + count).",
+            "The viewer's Shifu was placed at the Commission Market, which opened the private look at the top 3 Main Orders (v1.6.2 L196). own.pendingLook holds the 3 Orders; other players only see counts.pendingLook (kind + count). The viewer now reserves 1 or 2 from the display and those 3 (COMMISSION_CHOOSE); a face-up position stays empty until the turn ends, and the looked cards not reserved go face down to the bottom of the Main Order deck (change 24). No resource is gained.",
         },
         (view) => ({
           commissionOptions: commissionOptions(view, "shifu"),
@@ -1036,17 +1032,24 @@ function findHandLimitSteered(): Found {
         const worker = shifu ?? free[0];
         if (worker === undefined) return null;
         const options = commissionOptions(view, worker.kind === "shifu" ? "shifu" : "apprentice");
-        const slot = options.faceUpSlots[0];
-        const orderId = slot === undefined ? null : t.state.market.display[slot];
-        if (slot === undefined || orderId === null || orderId === undefined) return null;
+        if (!options.reservable) return null;
         return {
-          command: { type: "PLACE_COMMISSION_MARKET", workerId: worker.id, first: { kind: "face_up", slotIndex: slot, orderId, gain: "clay" } },
+          command: { type: "PLACE_COMMISSION_MARKET", workerId: worker.id },
           why: "Reserve Orders at the Commission Market so the hand exceeds the limit at Cleanup.",
         };
       }
-      if (phase.step.kind === "commission_market" && phase.step.awaiting === "reservation") {
-        const options = commissionOptions(view, phase.step.effect);
-        if (options.blind) return { command: { type: "COMMISSION_RESERVE", choice: { kind: "blind" } }, why: "Second reservation: blind." };
+      if (phase.step.kind === "commission_market") {
+        // As many reservations as the effect allows: looked cards first, then face-up Orders.
+        const looked = lookedOrderOptions(view);
+        if (looked?.kind !== "commission_market") return null;
+        const picks: CommissionPick[] = [
+          ...looked.orderIds.map((orderId): CommissionPick => ({ kind: "looked", orderId })),
+          ...looked.faceUpSlots.flatMap((slotIndex): CommissionPick[] => {
+            const orderId = t.state.market.display[slotIndex];
+            return orderId === null || orderId === undefined ? [] : [{ kind: "face_up", slotIndex, orderId }];
+          }),
+        ].slice(0, phase.step.maxReservations);
+        return { command: { type: "COMMISSION_CHOOSE", reservations: picks }, why: `Reserve ${picks.length} Order(s) from the look and the display.` };
       }
       return null;
     };
@@ -1505,13 +1508,13 @@ function findTestPieces(): Captured[] {
   return [scriptedMoment(decision, "Test Pieces decision"), scriptedMoment(bury, "Test Pieces bury")];
 }
 
-/** m18: Jun during Second Firing (R7): the extra Fire card is turned, Jun may still adjust. */
+/** m18: the Second Firing choice with Jun (v1.6.2 L631, R7): 2 extra Fire cards are turned. */
 function findJunSecondFiring(): Captured {
   const meta: MomentMeta = {
     id: "m18_jun_second_firing",
-    title: "3P · Firing step 10 · Jun during Second Firing (R7)",
+    title: "3P · Firing step 10 · Second Firing choice with Jun (R7)",
     description:
-      "The viewer (Jun Kiln, Second Firing) kept Jun unused in step 8, then used Second Firing: the extra Fire card is turned (firingStageView.extraFire) and Actual Heat recalculated; before the new Quality, Jun may adjust that ceramic by ±1 for 1 Wood.",
+      "The viewer (Jun Kiln, Second Firing) kept Jun unused in step 8, then used Second Firing: 2 extra Fire cards are turned (firingStageView.extraFire, secondFiringChoiceOptions). The viewer chooses 1 to recalculate with and, before the new Quality, may use Jun's ±1 for 1 Wood (SECOND_FIRING_CHOOSE).",
   };
   const seat = "p1";
   const steer = combine(
@@ -1533,7 +1536,7 @@ function findJunSecondFiring(): Captured {
     playerCounts: [3],
     seeds: 40,
     steer: () => steer,
-    at: (t) => (t.state.phase.type === "firing_second_firing_jun" ? t.state.phase.actorId : null),
+    at: (t) => (t.state.phase.type === "firing_second_firing_choice" ? t.state.phase.actorId : null),
     giveUp: (t) => t.state.round > 5,
     fallback: "Jun during Second Firing (R7)",
     hint: 13,
@@ -1549,7 +1552,7 @@ function newMoments(): Captured[] {
       meta: {
         id: "m12_guild_shifu_inspection",
         title: "3P · Work Phase · Guild Hall Shifu inspection (private)",
-        description: "The viewer's Shifu inspected the top Techs of one discipline: only they see them (guildInspectionOptions). They take one inspected Tech (−1 Coin) or a face-up one, and choose the bottom order of the rest.",
+        description: "The viewer's Shifu inspected the top Techs of one discipline: only they see them (guildInspectionOptions). They take up to 2 Techs from different disciplines, inspected or face-up, each at its printed cost (v1.6.2 L207), then choose the bottom order of the rest (GUILD_FINISH).",
       },
       playerCounts: [3],
       seeds: 30,
@@ -1611,7 +1614,7 @@ function newMoments(): Captured[] {
       meta: {
         id: "m16_colour_samples",
         title: "3P · Work Phase · Colour Samples: reserve 1 of 3 (private)",
-        description: "The viewer just gained Colour Samples (T10): they look at the top 3 Main Orders privately and must reserve one; the rest go face down to the discard (lookedOrderOptions).",
+        description: "The viewer just gained Colour Samples (T10): they look at the top 3 Main Orders privately and must reserve one; the other 2 go face down to the bottom of the Main Order deck (v1.6.2 L617, change 24; lookedOrderOptions).",
       },
       playerCounts: [3],
       seeds: 30,
@@ -1627,12 +1630,12 @@ function newMoments(): Captured[] {
     search({
       meta: {
         id: "m17_after_action",
-        title: "3P · Work Phase · after-action window (Canal Barge)",
-        description: "The viewer owns Canal Barge (T23): after their worker action they may complete a held Order now, use Imperial Priority if they have it, or end the turn (canalBargeOptions, imperialPriorityOptions).",
+        title: "3P · Work Phase · after-action window (Colour Samples swap)",
+        description: "The viewer owns Colour Samples (T10): after their worker action they may swap 1 held Order once this round (discard it, privately look at the top 2 Main Orders, reserve 1; the other goes to the bottom of the Main Order deck, change 24), use Imperial Priority if they have it, or end the turn (colourSamplesSwapOptions, imperialPriorityOptions).",
       },
       playerCounts: [3],
       seeds: 30,
-      steer: () => buyTechSteer("T23"),
+      steer: () => buyTechSteer("T10"),
       at: (t, actor) => {
         const phase = t.state.phase;
         return phase.type === "work_turn" && phase.activePlayerId === actor && phase.step.kind === "after_action" && t.state.round >= 2 ? actor : null;

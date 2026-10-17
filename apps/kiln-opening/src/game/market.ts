@@ -10,9 +10,15 @@
  *   discard are both exhausted (B1).
  * - The Main discard is face down (B3): only its count is public. Nothing here emits an
  *   Order identity that was not already public; the callers emit the private events
- *   (`ORDER_RESERVED.secret`, `LOOKED_ORDERS_DISCARDED.secret`, `HAND_TRIMMED.secret`).
+ *   (`ORDER_RESERVED.secret`, `LOOKED_ORDERS_TO_BOTTOM.secret`, `HELD_ORDER_DISCARDED.secret`,
+ *   `HAND_TRIMMED.secret`).
+ * - Looked-at Orders not reserved go to the bottom of the Main deck, not the discard (v1.6.2
+ *   change 24, L34, L191, L195–196, L396; Colour Samples' looks, Appendix B); several go there
+ *   in random order (owner ruling R19). Their identities stay private to the looker (B3); their
+ *   order under the deck is known to nobody.
  * - Randomness: the Main discard is shuffled into a new deck only when the deck is empty
- *   and a card is needed (L511). Tech decks are never reshuffled.
+ *   and a card is needed (L511), and several looked cards are shuffled before they go under
+ *   the deck (R19). Tech decks are never reshuffled.
  * - Helpers that take a `draft` mutate only that draft and are called after validation;
  *   a broken precondition is an `InvariantError`, never a rule error.
  */
@@ -63,11 +69,12 @@ export function drawMainOrder(draft: GameState, ctx: ResolveContext): OrderId | 
 }
 
 /**
- * Takes up to `max` cards off the top of the Main deck for a private look (Commission Shifu
- * top-3, Colour Samples). B1: the discard is reshuffled only if the deck is empty when the
- * look starts, never to complete the look, so a look may see fewer than `max` cards (or
- * none when both piles are empty). The cards leave the deck; the caller holds them in
- * `hidden.pendingLook`.
+ * Takes up to `max` cards off the top of the Main deck for a private look (the Commission
+ * Market top 2 or 3, v1.6.2 L195–196; Colour Samples' top 3 and its swap's top 2, L625).
+ * B1, R16: the discard is reshuffled only if the deck is empty when the look starts, never to
+ * complete the look, so a look may see fewer than `max` cards (or none when both piles are
+ * empty). The cards leave the deck; the caller holds them in `hidden.pendingLook` and puts
+ * the ones not reserved back on the bottom (`putMainOrdersOnBottom`, change 24).
  */
 export function takeTopMainOrders(draft: GameState, max: number, ctx: ResolveContext): OrderId[] {
   invariant(Number.isSafeInteger(max) && max >= 0, `A look takes a non-negative whole number of cards, not ${max}`);
@@ -79,9 +86,11 @@ export function takeTopMainOrders(draft: GameState, max: number, ctx: ResolveCon
 }
 
 /**
- * Puts Main Orders face down on the Main discard (L197, L304, L626, B3), in the given order,
- * each on top of the last (so the last ID ends on top). Starting Orders never go here: they
- * return to the box (L304).
+ * Puts Main Orders face down on the Main discard (the round-start rotation L130, the Cleanup
+ * trim L304, the held Order a Colour Samples swap discards; B3), in the given order, each on
+ * top of the last (so the last ID ends on top). Starting Orders never go here: they return to
+ * the box (L304). Looked-at Orders not reserved go to the deck bottom instead
+ * (`putMainOrdersOnBottom`, change 24).
  */
 export function discardMainOrders(draft: GameState, ids: readonly OrderId[]): void {
   const discard = draft.hidden.mainDiscard;
@@ -90,6 +99,27 @@ export function discardMainOrders(draft: GameState, ids: readonly OrderId[]): vo
     invariant(!discard.includes(orderId), `${orderId} is already in the Main discard`);
     discard.unshift(orderId);
   }
+}
+
+/**
+ * Puts the looked-at Main Orders a look did not reserve on the bottom of the Main deck (v1.6.2
+ * change 24, L34; L191, L195–196, L396; Colour Samples when acquired and its swap, Appendix B),
+ * face down. Several go there in random order (owner ruling R19, 2026-10-18, which replaced the
+ * provisional "order drawn" default P5): they are shuffled with `ctx.rng` and then placed under
+ * the deck, so the player makes no extra decision and nobody, the looker included, knows their
+ * order. A single card consumes no random draw. Which cards they are stays private to the
+ * looker (B3); only `counts.mainDeck` changes publicly. The caller's
+ * `LOOKED_ORDERS_TO_BOTTOM.secret` names them in look order, never in deck order.
+ */
+export function putMainOrdersOnBottom(draft: GameState, ids: readonly OrderId[], ctx: ResolveContext): void {
+  const deck = draft.hidden.mainDeck;
+  invariant(new Set(ids).size === ids.length, "A looked-at Order goes to the bottom at most once");
+  for (const orderId of ids) {
+    invariant(!isStartingOrderId(orderId), `Starting Order ${orderId} never enters the Main deck`);
+    invariant(!deck.includes(orderId), `${orderId} is already in the Main deck`);
+    invariant(!draft.hidden.mainDiscard.includes(orderId), `${orderId} is in the Main discard`);
+  }
+  deck.push(...shuffle(ids, ctx.rng));
 }
 
 // ── Main display ─────────────────────────────────────────────────────────────────────
@@ -167,19 +197,29 @@ export function rotateMainDisplay(draft: GameState, ctx: ResolveContext): void {
 /**
  * What a reservation could take right now, from public information only (B1):
  * - `faceUpSlots`: positions still showing an Order (a position taken this turn stays empty
- *   until the turn ends, L199);
- * - `blind`: a card will be in the deck after any reshuffle (deck or discard non-empty);
- * - `look`: at least 1 card can be looked at (same test; a look never needs 3).
+ *   until the turn ends, v1.6.2 L191, L198);
+ * - `supply`: the deck or the discard holds a card, so a look or a draw would find one
+ *   (after the reshuffle an empty deck forces, L511).
  */
-export function reservable(game: PublicGameState): { faceUpSlots: number[]; blind: boolean; look: boolean } {
+export function reservable(game: PublicGameState): { faceUpSlots: number[]; supply: boolean } {
   const faceUpSlots: number[] = [];
   game.market.display.forEach((orderId, index) => {
     if (orderId !== null) {
       faceUpSlots.push(index);
     }
   });
-  const supply = game.counts.mainDeck + game.counts.mainDiscard > 0;
-  return { faceUpSlots, blind: supply, look: supply };
+  return { faceUpSlots, supply: game.counts.mainDeck + game.counts.mainDiscard > 0 };
+}
+
+/**
+ * How many cards a private look of up to `size` cards would show now, from public counts
+ * only. It mirrors `takeTopMainOrders` (B1): the discard is reshuffled only when the deck is
+ * empty as the look starts, so a deck of 1 shows 1 card however large the discard. 0 when
+ * both piles are empty. `extraDiscard` counts cards about to be discarded before the look.
+ */
+export function lookCount(game: PublicGameState, size: number, extraDiscard = 0): number {
+  const deck = game.counts.mainDeck;
+  return Math.max(0, deck > 0 ? Math.min(size, deck) : Math.min(size, game.counts.mainDiscard + extraDiscard));
 }
 
 // ── Order hands (secret, L201, L507) ─────────────────────────────────────────────────
@@ -211,6 +251,23 @@ export function removeFromHand(draft: GameState, playerId: PlayerId, orderId: Or
   hand.splice(index, 1);
 }
 
+/**
+ * Discards a held Order (the Colour Samples swap, v1.6.2 L649): a Main Order goes face down on
+ * top of the Main discard (B3), a Starting Order returns to the box (L303, L520). Returns where
+ * it went; the caller emits `HELD_ORDER_DISCARDED`.
+ */
+export function discardHeldOrder(draft: GameState, playerId: PlayerId, orderId: OrderId): "main_discard" | "box" {
+  removeFromHand(draft, playerId, orderId);
+  if (isStartingOrderId(orderId)) {
+    const box = draft.hidden.startingBox;
+    invariant(!box.includes(orderId), `${orderId} is already in the box`);
+    box.push(orderId);
+    return "box";
+  }
+  discardMainOrders(draft, [orderId]);
+  return "main_discard";
+}
+
 // ── Tech decks and displays (L103, L207–210, L513, B2) ───────────────────────────────
 
 function assertDiscipline(techId: TechId, discipline: TechDiscipline): void {
@@ -218,7 +275,7 @@ function assertDiscipline(techId: TechId, discipline: TechDiscipline): void {
 }
 
 /**
- * Guild Hall Shifu inspection (L208, B2): takes the top `count` Techs of a discipline's
+ * Guild Hall Shifu inspection (v1.6.2 L207, B2): takes the top `count` Techs of a discipline's
  * deck, "or as many as remain" (possibly none). The caller holds them in
  * `hidden.pendingLook`.
  */
@@ -244,8 +301,9 @@ export function returnTechsToBottom(draft: GameState, discipline: TechDiscipline
 }
 
 /**
- * Removes a face-up Tech from its discipline's display (L207–208). The display keeps the
- * order of the Techs that remain; refill it with `refillTechDisplay`.
+ * Removes a face-up Tech from its discipline's display (v1.6.2 L206–207). The display keeps
+ * the order of the Techs that remain. Its position stays empty until the taker's turn ends,
+ * when `work/turn.endTurn` calls `refillTechDisplay` (v1.6.2 L209).
  */
 export function takeFaceUpTech(draft: GameState, techId: TechId): void {
   const discipline = TECHS[techId].discipline;
@@ -256,9 +314,10 @@ export function takeFaceUpTech(draft: GameState, techId: TechId): void {
 }
 
 /**
- * Refills a discipline's display to `faceUpPerDiscipline` (2) from the top of its deck (L210);
- * when the deck runs short the display stays partial (L513). Emits `TECH_DISPLAY_REFILLED`
- * only when a Tech was revealed, so the idempotent re-run at Start of Round is silent.
+ * Refills a discipline's display to `faceUpPerDiscipline` (2) from the top of its deck, at
+ * setup and when a taker's turn ends (v1.6.2 L209); when the deck runs short the display stays
+ * partial (L513). Emits `TECH_DISPLAY_REFILLED` only when a Tech was revealed, so the
+ * idempotent re-runs at every turn end and Start of Round are silent.
  */
 export function refillTechDisplay(draft: GameState, discipline: TechDiscipline, ctx: ResolveContext): void {
   const display = draft.techDisplay[discipline];

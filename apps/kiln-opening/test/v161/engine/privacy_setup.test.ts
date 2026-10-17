@@ -61,6 +61,7 @@ describe("public projection after setup", () => {
       mainDiscard: 0,
       techDecks: { workshop: 4, glazing_loading: 4, firing: 4 },
       fireDeck: 12,
+      fireBuried: 0,
       pendingLook: null,
     });
   });

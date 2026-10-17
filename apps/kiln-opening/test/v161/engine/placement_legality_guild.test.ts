@@ -1,8 +1,9 @@
 /**
- * Guild Hall placement legality (L140, L142, L208, L211, L213, B2): an Apprentice placement is
- * legal only if you can afford at least 1 face-up Tech from a discipline you do not yet own;
- * a Shifu placement only if you can afford such a Tech after the Shifu discount. The Shifu
- * inspects (any discipline, B2) and the Apprentice buys; each choice belongs to one effect.
+ * Guild Hall placement legality (L140, L142, v1.6.2 L206–212, B2; owner revision 2026-10-17):
+ * a placement here, Apprentice or Shifu alike, is legal only if you can afford at least 1
+ * face-up Tech from a discipline you do not yet own, at its printed cost. V1.6.2 has no Shifu
+ * discount. The Shifu inspects (any discipline, B2) and the Apprentice buys; each choice
+ * belongs to one effect.
  */
 
 import { describe, expect, it } from "vitest";
@@ -34,25 +35,45 @@ function noMainAction(spec: StateSpec, action: GameAction): void {
   new LocalTable(buildState(spec)).expectRuleError("p1", action, "NO_MAIN_ACTION_POSSIBLE");
 }
 
-describe("affordability after the Shifu discount (L213)", () => {
-  it("1 Coin: illegal for the Apprentice (cheapest face-up Tech costs 2), legal for the Shifu (2 − 1)", () => {
+describe("affordability at the printed cost, the same for both workers (v1.6.2 L206–207, L212)", () => {
+  it("1 Coin: illegal for the Apprentice and the Shifu (the cheapest face-up Tech costs 2)", () => {
     const spec: StateSpec = { players: [{ resources: { coins: 1 } }, {}] };
     noMainAction(spec, buy("p1:apprentice:1", "T01"));
-    expect(check(spec, inspect("firing"))).toBeNull();
+    for (const discipline of ["workshop", "glazing_loading", "firing"] as const) {
+      noMainAction(spec, inspect(discipline));
+    }
   });
 
-  it("0 Coins: illegal for both workers", () => {
+  it("0 Coins: illegal for both; a cost-2 Tech is no longer free for the Shifu", () => {
     const spec: StateSpec = { players: [{ resources: { coins: 0 } }, {}] };
     noMainAction(spec, buy("p1:apprentice:1", "T01"));
     noMainAction(spec, inspect("workshop"));
   });
 
-  it("2 Coins: legal for the Apprentice", () => {
-    expect(check({ players: [{ resources: { coins: 2 } }, {}] }, buy("p1:apprentice:1", "T01"))).toBeNull();
+  it("2 Coins: legal for both while a cost-2 Tech of an unowned discipline shows", () => {
+    const spec: StateSpec = { players: [{ resources: { coins: 2 } }, {}] };
+    expect(check(spec, buy("p1:apprentice:1", "T01"))).toBeNull();
+    expect(check(spec, inspect("firing"))).toBeNull();
+  });
+
+  it("only 3-Coin Techs of unowned disciplines showing: 2 Coins is illegal for both, 3 legal for both", () => {
+    // Owns Glazing & Loading; the Workshop and Firing displays show only 3-Coin Techs. A
+    // cheaper Tech the Shifu might find by inspecting does not count (v1.6.2 L212: face-up).
+    const spec: StateSpec = {
+      players: [{ techs: ["T10"], resources: { coins: 2 } }, {}],
+      techDisplay: { workshop: ["T17", "T18"], firing: ["T11", "T13"] },
+      techDecks: { workshop: ["T01", "T16", "T05", "T19"], firing: ["T12", "T14", "T24", "T25"] },
+    };
+    noMainAction(spec, buy("p1:apprentice:1", "T17"));
+    noMainAction(spec, inspect("workshop"));
+    noMainAction(spec, inspect("firing"));
+    const richer: StateSpec = { ...spec, players: [{ techs: ["T10"], resources: { coins: 3 } }, {}] };
+    expect(check(richer, buy("p1:apprentice:1", "T17"))).toBeNull();
+    expect(check(richer, inspect("workshop"))).toBeNull();
   });
 });
 
-describe("only Techs from a discipline you do not own count (L211, L213)", () => {
+describe("only Techs from a discipline you do not own count (L211, v1.6.2 L212)", () => {
   it("owning a Tech in every discipline (3 Techs, L211) makes the Guild Hall illegal however rich you are", () => {
     const spec: StateSpec = { players: [{ techs: ["T01", "T20", "T11"], resources: { coins: 20 } }, {}] };
     noMainAction(spec, buy("p1:apprentice:1", "T16"));
@@ -63,21 +84,25 @@ describe("only Techs from a discipline you do not own count (L211, L213)", () =>
     // Owns Workshop and Glazing & Loading; their 2-Coin Techs are affordable, the Firing ones cost 3.
     const spec: StateSpec = {
       players: [{ techs: ["T01", "T20"], resources: { coins: 2 } }, {}],
-      techDisplay: { firing: ["T12", "T13"] },
-      techDecks: { firing: ["T11", "T14", "T24", "T25"] },
+      techDisplay: { firing: ["T11", "T13"] },
+      techDecks: { firing: ["T12", "T14", "T24", "T25"] },
     };
     noMainAction(spec, buy("p1:apprentice:1", "T16"));
-    noMainAction(spec, buy("p1:apprentice:1", "T12"));
-    // The Shifu pays 2 for a Firing Tech, so it may place and inspect any discipline, even an owned one (B2).
-    expect(check(spec, inspect("workshop"))).toBeNull();
-    expect(check(spec, inspect("firing"))).toBeNull();
+    noMainAction(spec, buy("p1:apprentice:1", "T11"));
+    // The Shifu pays the printed 3 for a Firing Tech too, so it may not place either.
+    noMainAction(spec, inspect("firing"));
+    // With 3 Coins both may place, and the Shifu may inspect any discipline, even an owned one (B2).
+    const richer: StateSpec = { ...spec, players: [{ techs: ["T01", "T20"], resources: { coins: 3 } }, {}] };
+    expect(check(richer, buy("p1:apprentice:1", "T11"))).toBeNull();
+    expect(check(richer, inspect("workshop"))).toBeNull();
+    expect(check(richer, inspect("firing"))).toBeNull();
   });
 
   it("names the specific reason once the location itself is legal", () => {
     const spec: StateSpec = { players: [{ techs: ["T11"], resources: { coins: 2 } }, {}] };
     expect(check(spec, buy("p1:apprentice:1", "T12"))?.code).toBe("TECH_DISCIPLINE_OWNED");
     expect(check(spec, buy("p1:apprentice:1", "T05"))?.code).toBe("TECH_NOT_AVAILABLE");
-    expect(check({ players: [{ resources: { coins: 2 } }, {}] }, buy("p1:apprentice:1", "T12"))?.code).toBe(
+    expect(check({ players: [{ resources: { coins: 2 } }, {}] }, buy("p1:apprentice:1", "T11"))?.code).toBe(
       "INSUFFICIENT_RESOURCES",
     );
   });
@@ -117,9 +142,11 @@ describe("shared placement checks at the Guild Hall (L140)", () => {
     }
   });
 
-  it("Senior Apprentice never applies at the Guild Hall (L619)", () => {
+  it("Senior Apprentice never applies at the Guild Hall (v1.6.2 L618)", () => {
     // PLACE_GUILD_HALL carries no Senior Apprentice flag; an Apprentice always resolves the Apprentice effect.
     const spec: StateSpec = { players: [{ techs: ["T18"], resources: { coins: 1 } }, {}] };
     noMainAction(spec, buy("p1:apprentice:1", "T20"));
+    // With Senior Apprentice owned, an Apprentice still cannot inspect: it resolves the Apprentice effect.
+    expect(check({ players: [{ techs: ["T18"], resources: { coins: 3 } }, {}] }, inspect("firing", "p1:apprentice:1"))?.code).toBe("INVALID_CHOICE");
   });
 });

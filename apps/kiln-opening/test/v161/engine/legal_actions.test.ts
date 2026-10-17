@@ -29,7 +29,7 @@ const ALL_PHASES: readonly GamePhaseType[] = [
   "firing_heat_markers",
   "firing_heat_adjustment",
   "firing_after_quality",
-  "firing_second_firing_jun",
+  "firing_second_firing_choice",
   "firing_salvage",
   "orders",
   "cleanup_hand_limit",

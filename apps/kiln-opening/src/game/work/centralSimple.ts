@@ -1,9 +1,13 @@
 /**
  * Canal Wharf (L216–221) and Magistrate's Hall (L223–233).
  *
- * - **Canal Wharf:** gain 2 Coins (Apprentice) or 4 Coins (Shifu). Uncapped and costless, so
- *   it is always a legal placement for an available worker (L143, the Work Phase's progress
- *   guarantee, DESIGN §3.6).
+ * - **Canal Wharf:** gain 2 Coins (Apprentice), or 4 Coins and then the top Main Order card
+ *   into the hand without looking at it (Shifu, v1.6.2 L219–220), in that order (INT: Canal
+ *   Wharf Shifu draw). An empty deck is first replaced by the shuffled discard (L511); with
+ *   both piles empty no card is taken and the Shifu still gains the Coins (B1). The card is
+ *   secret like every held Order (B3). Uncapped and costless, so it is always a legal
+ *   placement for an available worker (L143, the Work Phase's progress guarantee, DESIGN
+ *   §3.6).
  * - **Magistrate's Hall:** 1 space at 2–3 players, 2 at 4 (L225; capacity is the shared
  *   placement check). Pay 4 Coins (Apprentice) or 3 Coins (Shifu) to advance Imperial
  *   Recognition by 1 step, only from Recognition 0, 1 or 2, so never to 4 (L232–233). No Crown
@@ -15,9 +19,10 @@
 
 import { IMPERIAL_TRACK, LOCATIONS } from "../content.ts";
 import { invariant, ruleError } from "../errors.ts";
+import { addToHand, drawMainOrder } from "../market.ts";
 import { placeWorker, validatePlacement, workerEffectFor } from "../placement.ts";
 import { advanceRecognitionStep, magistratesHallOpen } from "../recognition.ts";
-import { gain, player, spend } from "../state.ts";
+import { emit, gain, player, spend } from "../state.ts";
 import type {
   ActionHandlerTable,
   ActorView,
@@ -42,6 +47,24 @@ function validateCanalWharf(view: ActorView, action: CanalWharfAction): GameRule
 function resolveCanalWharf(draft: GameState, playerId: PlayerId, action: CanalWharfAction, ctx: ResolveContext): void {
   const placement = placeWorker(draft, playerId, action.workerId, "canal_wharf", false, ctx);
   gain(draft, playerId, { coins: LOCATIONS.canal_wharf.effects[placement.effect].coins }, "canal_wharf", ctx);
+  if (placement.effect === "shifu") {
+    for (let drawn = 0; drawn < LOCATIONS.canal_wharf.effects.shifu.topMainOrders; drawn += 1) {
+      const orderId = drawMainOrder(draft, ctx);
+      if (orderId === null) {
+        break; // B1: the deck and the discard are both empty.
+      }
+      addToHand(draft, playerId, orderId);
+      emit(ctx, {
+        type: "ORDER_RESERVED",
+        playerId,
+        via: "canal_wharf",
+        source: "deck_top",
+        slotIndex: null,
+        orderId: null,
+        secret: { visibleTo: playerId, orderId },
+      });
+    }
+  }
   ctx.flow.workerActionDone(draft, playerId, ctx);
 }
 

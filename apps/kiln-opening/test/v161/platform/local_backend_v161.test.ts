@@ -56,7 +56,7 @@ describe("LocalBackendV161", () => {
     const backend = new LocalBackendV161({ policy: "canonical", ...silent });
     const { host, lobby, start } = await startedRoom(backend);
     expect(host.room.code).toBe("T00001");
-    expect(host.room.rulesVersion).toBe("1.6.1");
+    expect(host.room.rulesVersion).toBe("1.6.2");
     expect(lobby.seats.find((seat) => seat.isComputer)?.aiPolicyVersion).toBe(CANONICAL_COMPUTER_POLICY_VERSION);
     expect(start.game.eventSequence).toBeGreaterThan(0);
 

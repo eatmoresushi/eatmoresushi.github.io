@@ -1,5 +1,5 @@
 /**
- * The server-authoritative V1.6.1 game service (DESIGN §4.6).
+ * The server-authoritative V1.6.2 game service (DESIGN §4.6; ENGINE_V1.6.2_DELTA.md §9).
  *
  * - Every command is shape-checked by `parseCommand` before the service branches on it.
  *   Contributions go through `submitContribution` with a `PrivateFiringState` rebuilt from
@@ -81,8 +81,8 @@ import type {
   StoredSeat,
 } from "./types.ts";
 
-export const CURRENT_RULES_VERSION = "1.6.1" as const;
-export const CURRENT_SCHEMA_VERSION = 6 as const;
+export const CURRENT_RULES_VERSION = "1.6.2" as const;
+export const CURRENT_SCHEMA_VERSION = 7 as const;
 
 const MAX_DISPLAY_NAME_LENGTH = 40;
 const ROOM_CODE_ATTEMPTS = 8;
@@ -106,7 +106,7 @@ const CONSOLE_LOGGER: ServiceLogger = {
 
 export interface AuthoritativeGameServiceOptions {
   /** The policy stamped on new computer seats and used for any seat without a known one
-   * (default: the strategic V1.6.1 policy, `computerPlayer.ts`). */
+   * (default: the strategic V1.6.2 policy, `computerPlayer.ts`). */
   computerPolicy?: ComputerPolicy;
   /** Further policies, matched by a seat's stored `aiPolicyVersion` (default: the canonical
    * policy, so seats stamped with it keep it). */
@@ -177,12 +177,12 @@ function gameFailure(ruleError: GameRuleError, revision: number | null): Multipl
   return error(ruleError.code, ruleError.message, revision, ruleError.details);
 }
 
-/** Only schema-6 V1.6.1 saves continue; anything older is refused, never migrated (DIG). */
+/** Only schema-7 V1.6.2 saves continue; anything older (V1.6.1 schema 6 included) is refused, never migrated (DIG). */
 function gameCompatibilityError(state: GameState, revision: number): MultiplayerError | null {
   if (state.schemaVersion === CURRENT_SCHEMA_VERSION && state.rulesVersion === CURRENT_RULES_VERSION) return null;
   return error(
     "UNSUPPORTED_RULES_VERSION",
-    "This saved game uses an older rules or save format and cannot continue under V1.6.1. Please create a new room.",
+    "This saved game uses an older rules or save format and cannot continue under V1.6.2. Please create a new room.",
     revision,
     { schemaVersion: String((state as { schemaVersion?: unknown }).schemaVersion), rulesVersion: String((state as { rulesVersion?: unknown }).rulesVersion) },
   );
@@ -1018,13 +1018,13 @@ export class AuthoritativeGameService {
       return failed(
         error(
           "UNSUPPORTED_RULES_VERSION",
-          "This room uses an older rules version and cannot continue under V1.6.1. Please create a new room.",
+          "This room uses an older rules version and cannot continue under V1.6.2. Please create a new room.",
         ),
       );
     }
     // A room can carry the current rules version and still have been created under other
     // rules, because a change can land inside an unchanged version string. Refuse rather
-    // than reinterpret: continuing would change the rules mid-game. Every V1.6.1 room is
+    // than reinterpret: continuing would change the rules mid-game. Every V1.6.2 room is
     // created with a fingerprint, so a missing one fails closed too.
     const fingerprint = rulesFingerprint();
     const roomFingerprint = authenticated.room.contentDigest ?? null;

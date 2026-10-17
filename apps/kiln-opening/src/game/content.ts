@@ -1,9 +1,10 @@
 /**
- * V1.6.1 content layer (DESIGN §6, package P1). Layer 1: imports only types.
+ * V1.6.2 content layer (DESIGN §6, package P1; ENGINE_V1.6.2_DELTA.md §3). Layer 1: imports
+ * only types.
  *
  * Every rule value the engine reads comes from `data/*.json` through this module. The JSON is
  * validated when the module loads (DESIGN §6.9) and the module throws on any mismatch, so an
- * engine never runs on content that disagrees with the V1.6.1 rulebook's counts and tables.
+ * engine never runs on content that disagrees with the V1.6.2 rulebook's counts and tables.
  * The exported definitions are deep-frozen: content is never mutated at runtime.
  *
  * Iteration order: the exported ID lists (`TECH_IDS`, `KILN_SPACE_IDS`, `DISCIPLINES`, …) are
@@ -45,6 +46,7 @@ import type {
   TechDefinition,
   TechDiscipline,
   TechId,
+  WorkerEffect,
   ZoneModifier,
 } from "./types.ts";
 
@@ -67,7 +69,7 @@ export interface TechniquesFile {
 
 export interface OrdersFile {
   rulesVersion: RulesVersion;
-  /** D10 clarifications for Orders in general: `starting` (S01–S16) and `main` (O01–O48). */
+  /** D10 clarifications for Orders in general: `starting` (S01–S08) and `main` (O01–O48). */
   clarifications: OrderClarifications;
   starting: OrderDefinition[];
   main: OrderDefinition[];
@@ -91,7 +93,7 @@ export interface ContentFiles {
 
 // ── Canonical vocabulary and ID orders ──────────────────────────────────────────────────────
 
-export const RULES_VERSION: RulesVersion = "1.6.1";
+export const RULES_VERSION: RulesVersion = "1.6.2";
 
 /** Shapes in Clay-cost order (L321–327). */
 export const SHAPES: readonly Shape[] = Object.freeze(["bowl", "plate", "washer", "vase", "censer"] as const);
@@ -151,9 +153,9 @@ export const KILN_SPACE_IDS: readonly KilnSpaceId[] = Object.freeze([
   "low_1", "low_2",
 ] as const);
 
-/** The 16 Starting Orders (A0, L519–540). */
+/** The 8 Starting Orders (A0, v1.6.2 L518–531, change 23). */
 export const STARTING_ORDER_IDS: readonly StartingOrderId[] = Object.freeze(
-  Array.from({ length: 16 }, (_, index) => `S${String(index + 1).padStart(2, "0")}` as StartingOrderId),
+  Array.from({ length: 8 }, (_, index) => `S${String(index + 1).padStart(2, "0")}` as StartingOrderId),
 );
 
 /** The 48 Main Orders (A1–A3, L542–605). */
@@ -226,12 +228,14 @@ function collectTextProblems(value: unknown, path: string, problems: string[]): 
 // ── Clarifications and short text (owner decision D10, UI architecture K15) ──────────────────
 
 /**
- * One source tag of a clarification (`docs/KILN_OPENING_v1.6.1_CLARIFICATIONS.md`, "Source
- * tags"): `L124` rulebook line, `A1` amendment, `R1`–`R13` and `B1`–`B3` owner rulings,
- * `ED L124` editorial correction, `INT <name>` recorded interpretation, `P1`–`P3` provisional
- * ruling, `D7` owner UI decision. A `source` joins one or more tags with " · ".
+ * One source tag of a clarification (`docs/KILN_OPENING_v1.6.2_CLARIFICATIONS.md`, "Source
+ * tags"): `L124` line of the V1.6.2 rulebook, `A1` amendment, `R1`–`R19` and `B1`–`B3` owner
+ * rulings (`docs/RULEBOOK_AUDIT_V1.6.2.md`), `ED L124` editorial correction, `INT <name>`
+ * recorded interpretation, `P1`–`P3` provisional ruling, `D7` owner UI decision. A `source`
+ * joins one or more tags with " · ". Which rulings are still in force is the content
+ * contract's check, not this pattern's.
  */
-export const CLARIFICATION_TAG = /^(?:L[1-9]\d{0,3}|A[1-9]\d?|R(?:[1-9]|1[0-3])|B[1-3]|ED L[1-9]\d{0,3}|INT [A-Z][^·]*[^\s·]|P[1-3]|D(?:[1-9]|1[01]))$/;
+export const CLARIFICATION_TAG = /^(?:L[1-9]\d{0,3}|A[1-9]\d?|R(?:[1-9]|1[0-9])|B[1-3]|ED L[1-9]\d{0,3}|INT [A-Z][^·]*[^\s·]|P[1-3]|D(?:[1-9]|1[01]))$/;
 
 /** The kind of a source tag, which the UI labels (Rulebook, Owner amendment, Owner ruling, …). */
 export type ClarificationSourceKind = "rulebook" | "amendment" | "ruling" | "editorial" | "interpretation" | "provisional" | "wording";
@@ -283,11 +287,24 @@ function validateClarifications(items: unknown, where: string, problems: string[
 }
 
 /**
- * Secondary labels of the short component text (`docs/KILN_OPENING_v1.6.1_COMPONENT_TEXT_SOURCE.md`,
- * "Format rules"). The timing clause runs to the first colon; after it, these labels open a
- * second clause (Colour Samples' "Ongoing:", Ge's "Orders:"). The UI bolds both.
+ * Secondary labels of the short component text (`docs/KILN_OPENING_v1.6.2_COMPONENT_TEXT.md`):
+ * exactly the owner's bold timing clauses after the first one of a line (ENGINE_V1.6.2_DELTA.md
+ * §3.3). The timing clause runs to the first colon; after it, these labels open a further
+ * clause (Colour Samples' "Ongoing:" and swap, Ge's "Orders:", Protective Saggars' after-Quality
+ * step, Fuel Ledger's commitment). The UI bolds them all.
  */
-export const SHORT_TEXT_SECONDARY_LABELS: readonly string[] = Object.freeze(["Ongoing:", "Orders:", "持续：", "完成委托时："]);
+export const SHORT_TEXT_SECONDARY_LABELS: readonly string[] = Object.freeze([
+  "Ongoing:",
+  "Orders:",
+  "Once per round, before or after one of your worker actions:",
+  "Once per round, after Quality is assigned:",
+  "When you choose Bank or Stoke:",
+  "持续：",
+  "完成委托时：",
+  "每轮一次，你的一次工人行动之前或之后：",
+  "每轮一次，定品后：",
+  "选控火时：",
+]);
 
 /**
  * Splits a plain-text `shortText` / `shortTextZh` into runs for display: the timing clause up to
@@ -331,6 +348,10 @@ function validateOrder(order: OrderDefinition, deck: "starting" | "main", proble
     if (slot.shape !== undefined && slot.shapes !== undefined) problems.push(`${where} slot ${index}: shape and shapes are exclusive`);
     if (slot.glaze !== undefined && !GLAZES.includes(slot.glaze)) problems.push(`${where} slot ${index}: unknown glaze`);
     if (slot.decoration !== undefined && !DECORATIONS.includes(slot.decoration)) problems.push(`${where} slot ${index}: unknown decoration`);
+    if (slot.decorations !== undefined && (slot.decorations.length < 2 || slot.decorations.some((decoration) => !DECORATIONS.includes(decoration)))) {
+      problems.push(`${where} slot ${index}: decorations must list 2+ known Decorations`);
+    }
+    if (slot.decoration !== undefined && slot.decorations !== undefined) problems.push(`${where} slot ${index}: decoration and decorations are exclusive`);
   }
   const slotIndices = order.ceramics.map((_, index) => index);
   for (const relation of order.relations ?? []) {
@@ -466,6 +487,41 @@ export function validateContentFiles(files: ContentFiles): string[] {
       problems.push(`action_locations: only the Magistrate's Hall has a Recognition gate`);
     }
   }
+  // Effect shapes the engine reads (DELTA §3.2): whole numbers, and a Commission look at least
+  // as large as its reservations, which are at least 1 (v1.6.2 L195–198).
+  const effectsOf = (id: LocationId): Record<WorkerEffect, Record<string, unknown>> | null => {
+    const found = actionLocations.locations.find((location) => location.id === id);
+    return found === undefined ? null : (found.effects as unknown as Record<WorkerEffect, Record<string, unknown>>);
+  };
+  const EFFECT_KEYS: ReadonlyArray<readonly [LocationId, readonly string[], readonly string[]]> = [
+    ["materials_yard", ["resources"], ["resources"]],
+    ["commission_market", ["lookSize", "maxReservations"], ["lookSize", "maxReservations"]],
+    ["guild_hall", ["maxTechs"], ["inspectCount", "maxTechs"]],
+    ["canal_wharf", ["coins"], ["coins", "topMainOrders"]],
+  ];
+  for (const [id, apprenticeKeys, shifuKeys] of EFFECT_KEYS) {
+    const effects = effectsOf(id);
+    for (const [effect, keys] of [["apprentice", apprenticeKeys], ["shifu", shifuKeys]] as const) {
+      const record = effects?.[effect];
+      if (record === undefined || !sameMembers(Object.keys(record), keys) || !keys.every((key) => isNonNegativeInteger(record[key]))) {
+        problems.push(`action_locations: ${id} ${effect} effect must be {${keys.join(", ")}} of whole numbers`);
+      }
+    }
+  }
+  // Guild Hall (v1.6.2 L206–207): the Apprentice takes 1 Tech, the Shifu at least 1.
+  const guild = effectsOf("guild_hall");
+  if (guild?.apprentice?.["maxTechs"] !== 1 || typeof guild.shifu?.["maxTechs"] !== "number" || guild.shifu["maxTechs"] < 1) {
+    problems.push("action_locations: guild_hall takes exactly 1 Tech with an Apprentice and at least 1 with the Shifu");
+  }
+  const commission = effectsOf("commission_market");
+  for (const effect of ["apprentice", "shifu"] as const) {
+    const record = commission?.[effect];
+    const lookSize = record?.["lookSize"];
+    const maxReservations = record?.["maxReservations"];
+    if (typeof lookSize !== "number" || typeof maxReservations !== "number" || maxReservations < 1 || lookSize < maxReservations) {
+      problems.push(`action_locations: commission_market ${effect} must look at least as many cards as it reserves, and reserve at least 1`);
+    }
+  }
 
   // Kilns.
   if (!sameSequence(kilns.kilns.map((kiln) => kiln.id), KILN_IDS)) problems.push("kilns: must list RU, GU, GE, DI, JU");
@@ -489,7 +545,7 @@ export function validateContentFiles(files: ContentFiles): string[] {
   }
 
   // Orders.
-  if (!sameSequence(orders.starting.map((order) => order.id), STARTING_ORDER_IDS)) problems.push("orders: starting must be S01–S16 in order");
+  if (!sameSequence(orders.starting.map((order) => order.id), STARTING_ORDER_IDS)) problems.push("orders: starting must be S01–S08 in order");
   if (!sameSequence(orders.main.map((order) => order.id), MAIN_ORDER_IDS)) problems.push("orders: main must be O01–O48 in order");
   for (const order of orders.starting) validateOrder(order, "starting", problems);
   for (const order of orders.main) validateOrder(order, "main", problems);
@@ -566,7 +622,7 @@ const FILES: ContentFiles = {
 
 const LOAD_PROBLEMS = validateContentFiles(FILES);
 if (LOAD_PROBLEMS.length > 0) {
-  throw new Error(`Invalid V1.6.1 content (data/*.json):\n- ${LOAD_PROBLEMS.join("\n- ")}`);
+  throw new Error(`Invalid V1.6.2 content (data/*.json):\n- ${LOAD_PROBLEMS.join("\n- ")}`);
 }
 deepFreeze(FILES);
 
@@ -680,7 +736,7 @@ export function techsOfDiscipline(discipline: TechDiscipline): readonly TechId[]
   return TECHS_BY_DISCIPLINE[discipline];
 }
 
-/** True for S01–S16. Discarded Starting Orders return to the box, never the Main discard (L304). */
+/** True for S01–S08. Discarded Starting Orders return to the box, never the Main discard (L304). */
 export function isStartingOrderId(orderId: OrderId): orderId is StartingOrderId {
   return ORDERS[orderId].deck === "starting";
 }

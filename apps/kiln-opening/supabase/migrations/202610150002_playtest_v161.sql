@@ -1,12 +1,15 @@
--- Accept V1.6.1 Form V3 playtests without rewriting any historical submission.
+-- Accept V1.6.2 Form V3 playtests without rewriting any historical submission.
+--
+-- Written for V1.6.1 and edited in place for V1.6.2 before any deployment
+-- (ENGINE_V1.6.2_DELTA.md §9); the file keeps its name. No V1.6.1 submission was ever stored.
 --
 -- Form V3 differs from Form V2 (V1.4) where the rules differ:
 --   - no Starting Tech: `starting_technique_id` becomes nullable (old rows keep theirs);
---   - up to three Techs, at most one per discipline (L211), stored per discipline in new
+--   - up to three Techs, at most one per discipline (v1.6.2 L210), stored per discipline in new
 --     columns; the V1.4 advanced-Tech columns stay for old rows;
 --   - all five Kilns (unchanged kiln_id check);
---   - the round's Kiln Die, because V1.6.1 Base Heat = Kiln Die + Contributions (L263);
---   - the V1.6.1 Firing Techs Kiln Master (T24) and Tribute Ware (T25).
+--   - the round's Kiln Die, because V1.6.2 Base Heat = Kiln Die + Contributions (v1.6.2 L262);
+--   - the V1.6.2 Firing Techs Kiln Master (T24) and Tribute Ware (T25).
 -- The RPC is the only browser-facing write path and accepts only the current rules/form
 -- pair; the wider table checks keep every older submission queryable.
 
@@ -14,7 +17,7 @@ alter table private.playtest_submissions
   drop constraint if exists playtest_submissions_rules_version_check;
 alter table private.playtest_submissions
   add constraint playtest_submissions_rules_version_check
-  check (rules_version in ('1.2.4', '1.2.5', '1.2.6', '1.2.7', '1.4', '1.6.1'));
+  check (rules_version in ('1.2.4', '1.2.5', '1.2.6', '1.2.7', '1.4', '1.6.2'));
 
 alter table private.playtest_submissions
   drop constraint if exists playtest_submissions_form_version_check;
@@ -23,10 +26,10 @@ alter table private.playtest_submissions
   check (form_version in (1, 2, 3));
 
 alter table private.playtest_submissions
-  drop constraint if exists playtest_submissions_v161_form_check;
+  drop constraint if exists playtest_submissions_v162_form_check;
 alter table private.playtest_submissions
-  add constraint playtest_submissions_v161_form_check
-  check (rules_version <> '1.6.1' or form_version = 3);
+  add constraint playtest_submissions_v162_form_check
+  check (rules_version <> '1.6.2' or form_version = 3);
 
 -- The analysis views depend on the player and round columns; they are recreated below.
 drop view if exists private.playtest_player_summary;
@@ -41,7 +44,7 @@ alter table private.playtest_players
   add column if not exists glazing_loading_tech_id text,
   add column if not exists firing_tech_id text;
 
--- One Tech per discipline (V1.6.1 Appendix B): Workshop T01 T05 T16 T17 T18 T19;
+-- One Tech per discipline (V1.6.2 Appendix B): Workshop T01 T05 T16 T17 T18 T19;
 -- Glazing & Loading T10 T15 T20 T21 T22 T23; Firing T11 T12 T13 T14 T24 T25.
 alter table private.playtest_players
   drop constraint if exists playtest_players_workshop_tech_check,
@@ -66,9 +69,9 @@ alter table private.playtest_rounds
   add constraint playtest_rounds_kiln_die_check check (kiln_die is null or kiln_die between 1 and 3);
 
 comment on column private.playtest_rounds.kiln_die is
-  'V1.6.1: the round''s public Kiln Die (1-3). Base Heat = clamp(Kiln Die + revealed Contributions, 0, 5). Null for older forms.';
+  'V1.6.2: the round''s public Kiln Die (1-3). Base Heat = clamp(Kiln Die + revealed Contributions, 0, 5). Null for older forms.';
 comment on column private.playtest_players.starting_technique_id is
-  'Forms V1-V2 only. V1.6.1 has no Starting Techs; V1.6.1 rows leave it null.';
+  'Forms V1-V2 only. V1.6.2 has no Starting Techs; V1.6.2 rows leave it null.';
 
 create or replace function public.server_submit_playtest(
   p_payload jsonb,
@@ -108,7 +111,7 @@ begin
 
   v_form_version := coalesce((p_payload->>'formVersion')::smallint, -1);
   if jsonb_typeof(p_payload) <> 'object'
-    or coalesce(p_payload->>'rulesVersion', '') <> '1.6.1'
+    or coalesce(p_payload->>'rulesVersion', '') <> '1.6.2'
     or v_form_version <> 3 then
     raise exception 'PLAYTEST_INVALID_PAYLOAD' using errcode = 'P0001';
   end if;
@@ -122,7 +125,7 @@ begin
     raise exception 'PLAYTEST_INVALID_PAYLOAD' using errcode = 'P0001';
   end if;
 
-  -- Active Shared Kiln spaces by player count: 2-1-1, 2-2-2, 3-3-2 (L100).
+  -- Active Shared Kiln spaces by player count: 2-1-1, 2-2-2, 3-3-2 (v1.6.2 L102).
   v_shared_capacity := case v_player_count when 2 then 4 when 3 then 6 else 8 end;
 
   if (
@@ -147,7 +150,7 @@ begin
     heat_hedging, tend_meaningful, recognition_worthwhile, tradition_concern,
     tech_concern, rules_ambiguity, minor_tuning, submitted_by_auth_user_id
   ) values (
-    v_submission_id, v_game_number, v_game_id, v_form_version, '1.6.1',
+    v_submission_id, v_game_number, v_game_id, v_form_version, '1.6.2',
     (p_payload->>'playedOn')::date, v_player_count,
     (p_payload->>'firstPlayerIndex')::smallint, (p_payload->>'winnerIndex')::smallint,
     coalesce(p_payload#>>'{feedback,strongest}', ''),
@@ -235,7 +238,7 @@ begin
       raise exception 'PLAYTEST_INVALID_PAYLOAD' using errcode = 'P0001';
     end if;
     v_kiln_die := (v_round->>'kilnDie')::smallint;
-    -- V1.6.1 Base Heat: Kiln Die + revealed Contributions, clamped 0-5 (L263).
+    -- V1.6.2 Base Heat: Kiln Die + revealed Contributions, clamped 0-5 (v1.6.2 L262).
     v_base_heat := case when v_kiln_die is null then null
       else greatest(0, least(5, v_kiln_die + v_contribution_heat))::smallint end;
     v_firing_techs := coalesce(v_round->'firingTechIds', '[]'::jsonb);
@@ -253,7 +256,7 @@ begin
         v_firing_techs ? 'T11',
         v_firing_techs ? 'T13',
         v_firing_techs ? 'T14',
-        -- Kiln Furniture (T15) is a Glazing & Loading Tech in V1.6.1, not a Firing Tech.
+        -- Kiln Furniture (T15) is a Glazing & Loading Tech in V1.6.2, not a Firing Tech.
         null,
         v_firing_techs ? 'T24',
         v_firing_techs ? 'T25',
@@ -317,7 +320,7 @@ select
   player.exhibition_vp,
   player.coin_vp,
   case
-    when submission.rules_version in ('1.2.5', '1.2.6', '1.2.7', '1.4', '1.6.1') and player.recognition = 4 then 6::smallint
+    when submission.rules_version in ('1.2.5', '1.2.6', '1.2.7', '1.4', '1.6.2') and player.recognition = 4 then 6::smallint
     when submission.rules_version = '1.2.4' and player.recognition = 5 then 6::smallint
     else 0::smallint
   end as recognition_vp,
@@ -325,7 +328,7 @@ select
   player.clay_remaining,
   player.wood_remaining,
   case
-    when submission.rules_version = '1.6.1' then
+    when submission.rules_version = '1.6.2' then
       num_nonnulls(player.workshop_tech_id, player.glazing_loading_tech_id, player.firing_tech_id)::smallint
     when submission.rules_version in ('1.2.5', '1.2.6', '1.2.7', '1.4') then
       num_nonnulls(player.advanced_technique_1_id, player.advanced_technique_2_id)::smallint
@@ -381,7 +384,7 @@ select
 from private.playtest_rounds round
 join private.playtest_submissions submission using (submission_id)
 cross join lateral (
-  select case when submission.rules_version in ('1.4', '1.6.1')
+  select case when submission.rules_version in ('1.4', '1.6.2')
     then case submission.player_count when 2 then 4 when 3 then 6 else 8 end
     else case submission.player_count when 2 then 5 when 3 then 6 else 7 end
   end as shared_capacity

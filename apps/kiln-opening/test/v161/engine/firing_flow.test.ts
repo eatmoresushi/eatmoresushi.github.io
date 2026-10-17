@@ -6,7 +6,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { afterQualityOptions, salvageOptions } from "../../../src/game/firing/afterQuality.ts";
+import { afterQualityOptions, salvageOptions, secondFiringChoiceOptions } from "../../../src/game/firing/afterQuality.ts";
 import { validateAction } from "../../../src/game/engine.ts";
 import { legalContributions, openFiringPhase, validateContribution } from "../../../src/game/firing/contributions.ts";
 import { heatMarkerStepOptions, junOptions, testPiecesOptions } from "../../../src/game/firing/pipeline.ts";
@@ -34,9 +34,9 @@ import type { LocalTable } from "./support/localTable.ts";
  * - p1 Jun Kiln + Test Pieces; c1 Celadon in Middle with a face-down marker;
  * - p2 Ge Kiln + Kiln Master; c2 White in High (Standard), c3 Grey-Green in its Imperial Kiln;
  * - p3 Second Firing; c4 Moon White in Low (Flawed), c5 White in Low (Masterpiece).
- * Fire deck: the round's 0, then −1 for Second Firing.
+ * Fire deck: the round's 0, then −1 and −2 for Second Firing (v1.6.2 L639).
  */
-function everyWindow(fire: FireModifier[] = [0, -1]): StateSpec {
+function everyWindow(fire: FireModifier[] = [0, -1, -2]): StateSpec {
   return {
     players: [
       { kilnId: "JU", techs: ["T13"], resources: { wood: 4 } },
@@ -70,6 +70,7 @@ const FULL_SCRIPT: Step[] = [
   { actor: "p1", action: { type: "RESOLVE_JUN", adjustment: { ceramicId: "c1", delta: -1 } } },
   { actor: "p2", action: { type: "USE_GE_CRACKLE", ceramicId: "c2" } },
   { actor: "p3", action: { type: "USE_SECOND_FIRING", ceramicId: "c4" } },
+  { actor: "p3", action: { type: "SECOND_FIRING_CHOOSE", cardIndex: 0, jun: null } },
   { actor: "p3", action: { type: "SALVAGE_FLAWED", ceramicId: "c4" } },
 ];
 
@@ -157,8 +158,17 @@ function expectSelectorsAgree(table: LocalTable): void {
         }
         break;
       }
-      case "firing_heat_adjustment":
-      case "firing_second_firing_jun": {
+      case "firing_second_firing_choice": {
+        const options = secondFiringChoiceOptions(view);
+        if (options === null) throw new Error(`${where}: no Second Firing options`);
+        for (const cardIndex of [0, 1] as const) {
+          expect(ok({ type: "SECOND_FIRING_CHOOSE", cardIndex, jun: null }), `${where} card ${cardIndex}`).toBe(true);
+          expect(ok({ type: "SECOND_FIRING_CHOOSE", cardIndex, jun: { delta: 1 } }), `${where} card ${cardIndex} + Jun`).toBe(options.jun.ready);
+        }
+        expect(ok({ type: "RESOLVE_JUN", adjustment: null }), where).toBe(false);
+        break;
+      }
+      case "firing_heat_adjustment": {
         const options = junOptions(view);
         expect(ok({ type: "RESOLVE_JUN", adjustment: null }), where).toBe(true);
         for (const ceramicId of ceramicIds) {
@@ -246,6 +256,7 @@ describe("Appendix D in order, with every window (DESIGN §3.3)", () => {
       { phaseType: "firing_heat_adjustment", actorIds: ["p1"], mode: "single" },
       { phaseType: "firing_after_quality", actorIds: ["p2"], mode: "single" },
       { phaseType: "firing_after_quality", actorIds: ["p3"], mode: "single" },
+      { phaseType: "firing_second_firing_choice", actorIds: ["p3"], mode: "single" },
       { phaseType: "firing_salvage", actorIds: ["p3"], mode: "parallel" },
     ]);
     expect(phases).toHaveLength(prompts.length);
@@ -274,6 +285,7 @@ describe("Appendix D in order, with every window (DESIGN §3.3)", () => {
       "QUALITY_IMPROVED",
       "CRACKLE_APPLIED",
       "SECOND_FIRING_REVEALED",
+      "SECOND_FIRING_CHOSEN",
       "QUALITY_ASSIGNED",
       "CERAMIC_SALVAGED",
       "FIRING_FINISHED",
@@ -304,7 +316,8 @@ describe("Appendix D in order, with every window (DESIGN §3.3)", () => {
       ["c1", "c3", "c5"].map((id) => expect.objectContaining({ id, stage: "finished", quality: "masterpiece", crackle: false })),
     );
     expect(final.players["p3"]?.resources.coins).toBe(5);
-    expect(final.fireDiscard.slice(-2)).toEqual([-1, 0]);
+    // Both Second Firing cards in reveal order, then the round's card at step 12 (L683).
+    expect(final.fireDiscard.slice(-3)).toEqual([-1, -2, 0]);
     // No projected event carries a secret.
     for (const event of all) {
       expect("secret" in projectEvent(event)).toBe(false);
@@ -390,11 +403,14 @@ function nextStep(table: LocalTable): Step {
         },
       };
     }
-    case "firing_heat_adjustment":
-    case "firing_second_firing_jun": {
+    case "firing_heat_adjustment": {
       const options = junOptions(view);
       const ceramicId = options?.ceramicIds[0];
       return { actor, action: { type: "RESOLVE_JUN", adjustment: ceramicId === undefined ? null : { ceramicId, delta: 1 } } };
+    }
+    case "firing_second_firing_choice": {
+      const options = secondFiringChoiceOptions(view);
+      return { actor, action: { type: "SECOND_FIRING_CHOOSE", cardIndex: 1, jun: options?.jun.ready === true ? { delta: 1 } : null } };
     }
     case "firing_after_quality": {
       const [option] = afterQualityOptions(view);
@@ -433,7 +449,7 @@ describe("determinism (DESIGN §7)", () => {
   it.each([21, 22, 23, 24])("seed %i replays identically through a key-sorted (jsonb) round trip before every command", (seed) => {
     const plain = play(false, seed);
     const sorted = play(true, seed);
-    expect(eventsOfType(plain.events, "FIRE_DECK_RESHUFFLED")).toEqual([{ type: "FIRE_DECK_RESHUFFLED", cardCount: 12 }]);
+    expect(eventsOfType(plain.events, "FIRE_DECK_RESHUFFLED")).toEqual([{ type: "FIRE_DECK_RESHUFFLED", cardCount: 12, buriedBelow: 0 }]);
     expect(sorted.steps).toBe(plain.steps);
     expect(sorted.events).toEqual(plain.events);
     expect(sorted.table.state).toEqual(plain.table.state);

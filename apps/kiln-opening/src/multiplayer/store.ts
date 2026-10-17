@@ -60,7 +60,7 @@ export interface AddComputerSeatRecord {
   seatId: string;
   displayName: string;
   aiSeed: number;
-  /** Stamped on the seat (`room_ai_seats.policy_version`); `rules-v1.6.1-…`. */
+  /** Stamped on the seat (`room_ai_seats.policy_version`); `rules-v1.6.2-…`. */
   policyVersion: string;
   commandId: string;
 }

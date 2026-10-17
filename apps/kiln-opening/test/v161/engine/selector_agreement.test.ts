@@ -7,13 +7,13 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { KILN_SPACE_IDS, LOCATION_IDS } from "../../../src/game/content.ts";
+import { KILN_SPACE_IDS, LOCATION_IDS, TECHS } from "../../../src/game/content.ts";
 import { validateAction } from "../../../src/game/engine.ts";
 import { legalActions } from "../../../src/game/legalActions.ts";
 import { SeededRandom } from "../../../src/game/rng.ts";
 import {
   boardView,
-  canalBargeOptions,
+  colourSamplesSwapOptions,
   commissionOptions,
   contributionOptions,
   dingCopyableVesselIndexes,
@@ -69,24 +69,38 @@ describe("selector agreement on scripted states", () => {
   });
 });
 
-// Verifier finding (minor): canalBargeOptions listed Orders outside the Canal Barge window.
-describe("Canal Barge options only in the owner's before- and after-action windows", () => {
-  const base = {
-    players: [{ techs: ["T23" as const], hand: ["O01" as const] }, {}],
-    ceramics: [{ owner: "p1" as const, stage: "finished" as const, shape: "bowl" as const, glaze: "white" as const, quality: "standard" as const }],
-  };
+// The Colour Samples swap options agree with the validator in and out of the owner's windows
+// (v1.6.2 L625); Canal Barge has no window any more (v1.6.2 L630).
+describe("Colour Samples swap options only in the owner's before- and after-action windows", () => {
+  const base = { players: [{ techs: ["T10" as const], hand: ["O40" as const, "S01" as const] }, {}] };
   it.each([
-    ["the Order Phase", buildState({ ...base, phase: { type: "orders", turnOrder: ["p1", "p2"], index: 0 } }), []],
-    ["another player's Work turn", buildState({ ...base, phase: { type: "work_turn", activePlayerId: "p2", step: { kind: "before_action" } } }), []],
-    ["the owner's before-action window", buildState(base), ["O01"]],
-  ] as const)("%s", (_name, state, expected) => {
+    ["the Order Phase", buildState({ ...base, phase: { type: "orders", turnOrder: ["p1", "p2"], index: 0 } }), false, []],
+    ["another player's Work turn", buildState({ ...base, phase: { type: "work_turn", activePlayerId: "p2", step: { kind: "before_action" } } }), false, []],
+    ["the owner's before-action window", buildState(base), true, ["O40", "S01"]],
+    ["the owner's window with the swap spent", buildState({ ...base, players: [{ techs: [{ id: "T10", usedThisRound: true }], hand: ["O40"] }, {}] }), false, []],
+    ["the owner's window with an empty hand", buildState({ players: [{ techs: ["T10"] }, {}] }), false, []],
+  ] as const)("%s", (_name, state, usable, discards) => {
     const view = actorViewOf(state, "p1");
-    const options = canalBargeOptions(view);
-    expect(options.map((o) => o.orderId)).toEqual(expected);
-    for (const option of options) {
-      expect(validateAction(view, { type: "USE_CANAL_BARGE", orderId: option.orderId, ceramicIds: option.ceramicIds })).toBeNull();
+    const options = colourSamplesSwapOptions(view);
+    expect(options.usable).toBe(usable);
+    expect(options.discards.map((d) => d.orderId)).toEqual(discards);
+    for (const discard of options.discards) {
+      expect(validateAction(view, { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: discard.orderId }) === null).toBe(discard.legal);
     }
     expect(selectorAgreementViolations(state, null, "p1")).toEqual([]);
+  });
+
+  it("a Main Order's discard can feed its own look; a Starting Order's cannot (B1, R16, R17)", () => {
+    // Both Main piles empty: every other Main Order is in p2's hand.
+    const state = buildState(base);
+    state.hidden.orderHands["p2"] = [...state.hidden.mainDeck];
+    state.hidden.mainDeck = [];
+    const view = actorViewOf(state, "p1");
+    expect(colourSamplesSwapOptions(view).discards).toEqual([
+      { orderId: "O40", lookCount: 1, legal: true },
+      { orderId: "S01", lookCount: 0, legal: false },
+    ]);
+    expect(validateAction(view, { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: "S01" })).toMatchObject({ code: "ORDER_SUPPLY_EMPTY" });
   });
 });
 
@@ -168,7 +182,8 @@ describe("view models", () => {
     });
     expect(summary.imperial.kilnCeramic?.id).toBe("c3");
     expect(summary.techs.map((t) => [t.techId, t.oncePerRound, t.ready])).toEqual([
-      ["T10", false, true],
+      // Colour Samples has a once-per-round swap (v1.6.2 L625).
+      ["T10", true, true],
       ["T14", true, true],
     ]);
     expect(summary.personalSpaces.filter((s) => s.locationId === "glaze_load").map((s) => s.unlocked)).toEqual([true, true]);
@@ -206,13 +221,22 @@ describe("view models", () => {
     expect(magistratesHallQuote(view, "apprentice")).toMatchObject({ ok: true, pay: { clay: 0, wood: 0, coins: 4 }, reachable: 3 });
     expect(magistratesHallQuote(view, "shifu")).toMatchObject({ ok: true, pay: { coins: 3 }, reachable: 3 });
     const shifuGuild = guildOptions(view, "shifu");
+    // Every Guild Hall take pays the printed cost; V1.6.2 has no Shifu discount (v1.6.2 L207).
     for (const option of shifuGuild.faceUp) {
-      expect(option.price).toBe(Math.max(0, option.printedCost - 1));
+      expect(option.cost).toBe(TECHS[option.techId].cost);
     }
+    expect(shifuGuild.faceUp.map((option) => option.cost)).toEqual(guildOptions(view, "apprentice").faceUp.map((option) => option.cost));
     expect(shifuGuild.inspect.map((i) => i.discipline)).toEqual(["workshop", "glazing_loading", "firing"]);
     expect(guildOptions(view, "apprentice").inspect).toEqual([]);
-    expect(commissionOptions(view, "apprentice")).toMatchObject({ maxReservations: 1, lookTopThree: false, blind: true, faceUpSlots: [0, 1, 2, 3, 4, 5] });
-    expect(commissionOptions(view, "shifu")).toMatchObject({ maxReservations: 2, lookTopThree: true });
+    expect(commissionOptions(view, "apprentice")).toEqual({
+      effect: "apprentice",
+      lookSize: 2,
+      lookCount: 2,
+      maxReservations: 1,
+      faceUpSlots: [0, 1, 2, 3, 4, 5],
+      reservable: true,
+    });
+    expect(commissionOptions(view, "shifu")).toMatchObject({ lookSize: 3, lookCount: 3, maxReservations: 2, reservable: true });
     expect(shapedVessels(view, "p1").map((c) => c.id)).toEqual(["c1"]);
     expect(lookedOrderOptions(view)).toBeNull();
     expect(settersMarkOptions(view)).toEqual([]);
@@ -251,7 +275,7 @@ describe("view models", () => {
 
   it("orderSelectionCheck runs the validator's matcher and says whether the selection can still grow", () => {
     const view = viewOf(state, "p1");
-    expect(orderSelectionCheck(view, "S01", ["c4"])).toMatchObject({ ok: true, match: { orderId: "S01", ceramicIds: ["c4"], vp: 2 } });
+    expect(orderSelectionCheck(view, "S01", ["c4"])).toMatchObject({ ok: true, match: { orderId: "S01", ceramicIds: ["c4"], vp: 3 } });
     const wrong = orderSelectionCheck(view, "O02", ["c4"]);
     expect(wrong).toMatchObject({ ok: false, error: { code: "ORDER_REQUIREMENTS_NOT_MET" } });
     const notHeld = orderSelectionCheck(view, "O40", ["c4"]);
@@ -259,10 +283,10 @@ describe("view models", () => {
     expect(orderSelectionCheck(view, "S01", [])).toMatchObject({ ok: false, extendable: true });
   });
 
-  it("contributionOptions shows Wood, Heat and affordability, with Fuel Ledger only when owned", () => {
+  it("contributionOptions shows Wood, Heat and affordability, with Fuel Ledger only when owned (v1.6.2 L637)", () => {
     const table = new FuzzTable(
       buildState({
-        players: [{ techs: ["T12"], resources: { wood: 1 } }, {}],
+        players: [{ techs: ["T12"], resources: { wood: 0 } }, {}],
         ceramics: [
           { owner: "p1", stage: "loaded", shape: "bowl", glaze: "white", at: "middle_1" },
           { owner: "p2", stage: "loaded", shape: "bowl", glaze: "white", at: "high_1" },
@@ -280,26 +304,37 @@ describe("view models", () => {
     expect(table.state.phase.type).toBe("firing_contributions");
     const options = contributionOptions(table.view("p1"));
     expect(options.map((o) => [o.command.card, o.command.fuelLedger, o.woodCost, o.heat, o.affordable])).toEqual([
+      // A Fuel Ledger owner's Bank and Stoke cost no Wood; the commitment needs 1.
       ["TEND", false, 0, 0, true],
-      ["BANK", false, 1, -1, true],
-      ["STOKE", false, 1, 1, true],
-      ["BANK", true, 2, -2, false],
-      ["STOKE", true, 2, 2, false],
+      ["BANK", false, 0, -1, true],
+      ["STOKE", false, 0, 1, true],
+      ["BANK", true, 1, -2, false],
+      ["STOKE", true, 1, 2, false],
     ]);
-    expect(contributionOptions(table.view("p2")).length).toBe(3);
+    expect(contributionOptions(table.view("p2")).map((o) => [o.command.card, o.woodCost, o.affordable])).toEqual([
+      ["TEND", 0, true],
+      ["BANK", 1, true],
+      ["STOKE", 1, true],
+    ]);
     expect(contributionOptions(viewOf(table.state, null))).toEqual([]);
   });
 
-  it("a completed scripted turn keeps the UI's own pickers in step (Commission sub-step)", () => {
+  it("a scripted turn keeps the UI's own pickers in step (Commission step, v1.6.2 L195–198)", () => {
     const table = new LocalTable(buildState({ players: [{ resources: { coins: 9 } }, {}] }));
-    const orderId = table.state.market.display[2];
-    if (orderId === null || orderId === undefined) {
-      throw new Error("no display");
-    }
-    table.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu", first: { kind: "face_up", slotIndex: 2, orderId, gain: "coins" } });
-    const options = commissionOptions(table.view("p1"), "apprentice");
-    expect(options).toMatchObject({ effect: "shifu", reservationsMade: 1, canStop: true, gainNow: false, lookTopThree: true });
-    expect(options.faceUpSlots).not.toContain(2);
+    expect(commissionOptions(table.view("p1"), "shifu")).toMatchObject({ lookSize: 3, lookCount: 3, maxReservations: 2, reservable: true });
+    table.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu" });
+    const looked = lookedOrderOptions(table.view("p1"));
+    const look = table.state.hidden.pendingLook;
+    expect(look?.kind).toBe("commission_market");
+    expect(looked).toEqual({
+      kind: "commission_market",
+      orderIds: look?.kind === "commission_market" ? look.orderIds : [],
+      faceUpSlots: [0, 1, 2, 3, 4, 5],
+      maxReservations: 2,
+    });
+    // Other seats see no look.
+    expect(lookedOrderOptions(table.view("p2"))).toBeNull();
+    expect(lookedOrderOptions(table.view(null))).toBeNull();
   });
 });
 

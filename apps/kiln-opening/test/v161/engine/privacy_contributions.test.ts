@@ -138,7 +138,8 @@ describe("the reveal (L673)", () => {
       type: "CONTRIBUTIONS_REVEALED",
       windowId: WINDOW,
       contributions: {
-        p1: { card: "STOKE", fuelLedger: true, heat: 2, woodPaid: 2 },
+        // Fuel Ledger (v1.6.2 L637): the owner's Stoke costs no Wood; the commitment 1.
+        p1: { card: "STOKE", fuelLedger: true, heat: 2, woodPaid: 1 },
         p2: { card: "BANK", fuelLedger: false, heat: -1, woodPaid: 1 },
         p3: { card: "TEND", fuelLedger: false, heat: 0, woodPaid: 0 },
       },

@@ -1,6 +1,6 @@
 /**
- * Draft model of Playtest Form V3 (rules V1.6.1): empty drafts, resizing, derived values
- * and restoring a saved draft. Option lists and capacities come from the V1.6.1 content
+ * Draft model of Playtest Form V3 (rules V1.6.2): empty drafts, resizing, derived values
+ * and restoring a saved draft. Option lists and capacities come from the V1.6.2 content
  * API through `schema.ts`.
  */
 

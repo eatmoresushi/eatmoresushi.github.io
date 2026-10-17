@@ -1,5 +1,5 @@
 /**
- * Opening the Firing Phase and the secret Contribution window (L237–263, L504, L638,
+ * Opening the Firing Phase and the secret Contribution window (L237–263, L504, v1.6.2 L637,
  * L670–674, change 16).
  *
  * - Skip check (L237, L670): with nothing loaded in the Shared Kiln or any Imperial Kiln, the
@@ -7,7 +7,8 @@
  * - Participants (L261, change 16): players with at least 1 ceramic in the Shared Kiln. An
  *   Imperial Kiln ceramic is in this firing (`firingPlayerIds`, L290) but gives no say.
  * - Steps 1–2 (L672–673): each participant secretly submits Bank / Tend / Stoke, optionally
- *   with Fuel Ledger's extra Wood (T12, L638), through `submitContribution`. Sealed choices
+ *   with Fuel Ledger's commitment (T12, v1.6.2 L637), through `submitContribution`. A Fuel
+ *   Ledger owner's Bank and Stoke cost no Wood; the commitment costs 1 Wood. Sealed choices
  *   live only in `PrivateFiringState` (DESIGN §4); the public state records who submitted.
  *   On the last submission every sealed choice is revalidated, then all are revealed together
  *   and paid.
@@ -80,6 +81,8 @@ export function openFiringPhase(draft: GameState, ctx: ResolveContext): void {
       positionSource: positionFor(draft, ceramic).source,
       first: null,
       second: null,
+      secondFiringCards: null,
+      saggarsFloor: false,
       quality: null,
       history: [],
       crackle: false,
@@ -123,10 +126,11 @@ export function createPrivateFiringState(state: GameState): PrivateFiringState {
 }
 
 /**
- * Whether the actor may submit this Contribution (L672, L638): the window is open and
+ * Whether the actor may submit this Contribution (L672, v1.6.2 L637): the window is open and
  * matches, the actor participates and has not submitted, Fuel Ledger is owned and used only
- * with Bank or Stoke, and the Wood (card + Fuel Ledger) is affordable. Tend is always
- * affordable (L261). Sees only the actor's view and their own sealed state.
+ * with Bank or Stoke, and the Wood is affordable: the card's (none for a Fuel Ledger owner's
+ * Bank or Stoke) plus the commitment's. Tend is always affordable (L261). Sees only the
+ * actor's view and their own sealed state.
  */
 export function validateContribution(
   view: ActorView,
@@ -169,7 +173,7 @@ export function validateContribution(
       });
     }
   }
-  const needed = contributionWood(command);
+  const needed = contributionWood(command, ownsTech(p, FUEL_LEDGER));
   const have = p.resources.wood;
   if (have < needed) {
     return ruleError("INVALID_CONTRIBUTION", `That Contribution needs ${needed} Wood.`, {
@@ -235,7 +239,7 @@ function revealAndDetermineBaseHeat(
     const p = player(draft, pid);
     invariant(!submission.fuelLedger || (ownsTech(p, FUEL_LEDGER) && contributionCard(submission.card).heat !== 0), `Invalid Fuel Ledger commitment for ${pid}`);
     const heat = contributionHeat(submission);
-    const woodPaid = contributionWood(submission);
+    const woodPaid = contributionWood(submission, ownsTech(p, FUEL_LEDGER));
     invariant(p.resources.wood >= woodPaid, `${pid} can no longer pay the sealed Contribution`);
     contributions[pid] = { card: submission.card, fuelLedger: submission.fuelLedger, heat, woodPaid };
     payments.push([pid, woodPaid]);

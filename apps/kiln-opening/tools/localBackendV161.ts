@@ -1,7 +1,9 @@
 /**
  * The V1.6.1 local in-memory backend for `npm run dev:local` and the Playwright specs
  * (UI plan §3.9, K11). A port of `tools/localBackend.ts`, which serves the V1.4 app at
- * `/test-api`; this one serves the V1.6.1 app at `/test-api-v161` until cutover.
+ * `/test-api`; this one serves the V1.6.1 app at `/test-api-v161` until cutover. The file and
+ * path names stay; the service it runs is the current engine (rules 1.6.2, schema 7, `r30-`;
+ * ENGINE_V1.6.2_DELTA.md §9).
  *
  * It runs the real `AuthoritativeGameService` over `InMemoryMultiplayerStore`, with:
  * - every operation of `TestHttpGameApi` in `src/multiplayer/client.ts`, including
@@ -11,8 +13,10 @@
  * - `e2e_secret_ids { roomCode, viewerSeat }` (UI plan §3.9, phase B): the Order and Tech IDs
  *   the seat at `viewerSeat` must not see right now — other seats' hands and private looks, the
  *   Main deck and its face-down discard, the Starting box and the Tech decks — minus the IDs a
- *   public event revealed or this seat was shown privately (`tools/fixturePrivacy.ts`, the same
- *   definition as the fixtures' secrets oracle). A leak-test oracle for `e2e/full_game.spec.ts`
+ *   public event revealed or this seat was shown privately (`tools/fixturePrivacy.ts`'s
+ *   `secretIdsFor`, the same definition as the fixtures' secrets oracle; an ID this seat saw
+ *   once and that moved unseen since may still show in a past event on the page, so only the
+ *   authoritative payload check flags it). A leak-test oracle for `e2e/full_game.spec.ts`
  *   and `e2e/two_humans.spec.ts`: it reads the authoritative state, so it exists only in this
  *   dev backend;
  * - `checkInvariants: true` on the service;

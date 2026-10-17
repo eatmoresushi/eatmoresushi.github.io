@@ -46,6 +46,7 @@ export function publicCounts(state: GameState): PublicCounts {
       firing: hidden.techDecks.firing.length,
     },
     fireDeck: hidden.fireDeck.length,
+    fireBuried: hidden.fireBuried,
     pendingLook:
       look === null
         ? null

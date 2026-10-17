@@ -47,7 +47,7 @@ import { legalContributions } from "./firing/contributions.ts";
 import { contributionHeat, contributionWood } from "./firing/heat.ts";
 import { availableKilns, kilnAbilityReady } from "./kilns.ts";
 import { loadDestinationOptions } from "./kilnLoading.ts";
-import { reservable } from "./market.ts";
+import { lookCount, reservable } from "./market.ts";
 import { completionTriggers, validateOrderCompletion } from "./orders/completion.ts";
 import { findOrderMatches, matchOrder, type OrderMatch } from "./orders/matching.ts";
 import { availableWorkers, centralCapacity, nextPersonalSpace, workersAt } from "./placement.ts";
@@ -56,12 +56,14 @@ import { isFinalRound, settersMarkSpaces } from "./round.ts";
 import { scorePreview as scorePreviewOf } from "./scoring.ts";
 import { ceramicSequence, ceramicsOf, decisionPrompt, heatMarkerOf, imperialKilnCeramic, lookup, player, turnOrder, workStep } from "./state.ts";
 import { acquisitionError, handLimit, ownsTech, techPrice, techReady } from "./techs.ts";
-import { quoteMaterialsYard } from "./work/materialsYard.ts";
-import { imperialPriorityUsable } from "./work/turn.ts";
+import { commissionLimits } from "./work/commissionMarket.ts";
+import { colourSamplesSwapUsable, imperialPriorityUsable } from "./work/turn.ts";
+import { swapLookCount, validateColourSamplesSwap } from "./work/windowAbilities.ts";
 import type {
   ActorView,
   BoardView,
   CeramicId,
+  ColourSamplesSwapOptions,
   CommissionOptions,
   ContributionOption,
   CostQuote,
@@ -129,7 +131,7 @@ export { quoteMaterialsYard } from "./work/materialsYard.ts";
 export { quoteFormDecorate } from "./work/formDecorate.ts";
 export { loadDestinationOptions } from "./kilnLoading.ts";
 export { heatMarkerStepOptions, junOptions, testPiecesOptions } from "./firing/pipeline.ts";
-export { afterQualityOptions, salvageOptions } from "./firing/afterQuality.ts";
+export { afterQualityOptions, salvageOptions, secondFiringChoiceOptions } from "./firing/afterQuality.ts";
 export { legalContributions } from "./firing/contributions.ts";
 export { findOrderMatches } from "./orders/matching.ts";
 export { SCORE_BREAKDOWN_ROWS, TIE_BREAK_ORDER } from "./scoring.ts";
@@ -139,7 +141,6 @@ type FormDecorateAction = Extract<GameAction, { type: "PLACE_FORM_DECORATE" }>;
 const SENIOR_APPRENTICE: TechId = "T18";
 const LARGE_THROWING_WHEEL: TechId = "T01";
 const DECORATORS_KIT: TechId = "T16";
-const CANAL_BARGE: TechId = "T23";
 const FUEL_LEDGER: TechId = "T12";
 const PREPARED_CLAY: TechId = "T17";
 
@@ -363,7 +364,7 @@ function firingStepOf(phase: PublicGameState["phase"]): FiringStep | null {
     case "firing_heat_adjustment":
       return 8;
     case "firing_after_quality":
-    case "firing_second_firing_jun":
+    case "firing_second_firing_choice":
       return 10;
     case "firing_salvage":
       return 11;
@@ -406,6 +407,8 @@ function stageOf(game: PublicGameState, firing: FiringContext, step: FiringStep,
         crackle: record.crackle,
         salvaged: record.salvaged,
         secondFireModifier: record.second?.fireModifier ?? null,
+        secondFireRevealed: record.secondFiringCards === null ? null : [...record.secondFiringCards],
+        saggarsFloor: record.saggarsFloor,
       };
     });
   return {
@@ -427,7 +430,10 @@ function stageOf(game: PublicGameState, firing: FiringContext, step: FiringStep,
     globalHeat: firing.globalHeat,
     fireDiscard: [...game.fireDiscard],
     testPieces: firing.testPieces.map((record) => ({ playerId: record.playerId, peeked: record.peeked, buried: record.buried })),
-    extraFire: live && firing.pendingExtraFire !== null ? { ...firing.pendingExtraFire } : null,
+    extraFire:
+      live && firing.pendingExtraFire !== null
+        ? { playerId: firing.pendingExtraFire.playerId, ceramicId: firing.pendingExtraFire.ceramicId, modifiers: [...firing.pendingExtraFire.modifiers] }
+        : null,
     ceramics,
   };
 }
@@ -536,7 +542,8 @@ function gateProbe(view: ActorView, locationId: LocationId, option: WorkerOption
       };
     }
     case "commission_market":
-      return { type: "PLACE_COMMISSION_MARKET", workerId, first: { kind: "blind" }, ...seniorFlag(option) };
+      // The whole command: the look and the reservations follow in COMMISSION_CHOOSE.
+      return { type: "PLACE_COMMISSION_MARKET", workerId, ...seniorFlag(option) };
     case "guild_hall":
       return option.effect === "shifu"
         ? { type: "PLACE_GUILD_HALL", workerId, choice: { kind: "inspect", discipline: "workshop" } }
@@ -599,19 +606,6 @@ function* placementProbes(view: ActorView, locationId: LocationId, option: Worke
         }
       }
       return;
-    case "commission_market": {
-      const supply = reservable(game);
-      for (const slotIndex of supply.faceUpSlots) {
-        const orderId = game.market.display[slotIndex];
-        if (orderId !== null && orderId !== undefined) {
-          yield { type: "PLACE_COMMISSION_MARKET", workerId, first: { kind: "face_up", slotIndex, orderId, gain: "clay" }, ...seniorFlag(option) };
-        }
-      }
-      if (option.effect === "shifu") {
-        yield { type: "PLACE_COMMISSION_MARKET", workerId, first: { kind: "look_top_three" }, ...seniorFlag(option) };
-      }
-      return;
-    }
     case "guild_hall":
       if (option.effect === "apprentice") {
         for (const techId of DISCIPLINES.flatMap((d) => game.techDisplay[d])) {
@@ -699,7 +693,8 @@ export function placementOptions(view: PlayerView): PlacementOption[] {
 /**
  * The printed effect record of a location for a worker effect (Appendix E; §5 gap 10): Form &
  * Decorate `maxVessels`, Glaze & Load `maxLoads` / `maxImperialLoads` / `placesHeatMarker`,
- * Materials Yard `resources` / `bonus`, Canal Wharf `coins`, … so a form never reads rule
+ * Materials Yard `resources`, Commission Market `lookSize` / `maxReservations`, Canal Wharf
+ * `coins` / `topMainOrders`, … so a form never reads rule
  * constants. A copy; `view` keeps the selector shape (and the UI's import rule).
  */
 export function placementLimits<L extends LocationId, E extends WorkerEffect>(
@@ -713,56 +708,45 @@ export function placementLimits<L extends LocationId, E extends WorkerEffect>(
 }
 
 /**
- * Materials Yard choices for one `placementOptions` worker entry (L160–163, L618; §5 gap 14),
- * probed through `validateAction`:
- * - `resources`: the Clay/Wood split total for the worker's effect;
- * - `shifuBonus`: the Shifu effect's 1-Coin purchase, quoted (`ok` = affordable), else null;
- * - `preparedClay`: every Shape + Decoration pair some legal command names (any split, with
- *   or without the bonus), and the Shapes and Decorations of those pairs; null for a Senior
- *   Apprentice placement (L350: both Form & Decorate Techs, L211) or when Prepared Clay (T17)
- *   is not owned and ready. Legality is per pair: Shape Clay and Decoration Coins compete with
- *   the 1-Coin bonus, so `shapes` × `decorations` may contain illegal combinations, and each
- *   pair says whether it stays legal together with the Shifu bonus.
+ * Materials Yard choices for one `placementOptions` worker entry (v1.6.2 L164–165, L618; §5
+ * gap 14), probed through `validateAction`:
+ * - `resources`: the Clay/Wood split total for the worker's effect (3, or 6 for the Shifu
+ *   effect, Senior Apprentice included);
+ * - `preparedClay`: every Shape + Decoration pair some legal command names (any split), and
+ *   the Shapes and Decorations of those pairs; null for a Senior Apprentice placement (L350:
+ *   both Form & Decorate Techs, L211) or when Prepared Clay (T17) is not owned and ready.
+ *   Legality is per pair: Shape Clay comes from the split, so `shapes` × `decorations` may
+ *   contain illegal combinations.
  */
 export function materialsYardOptions(view: PlayerView, worker: PlacementWorkerOption): MaterialsYardOptions {
   const resources = LOCATIONS.materials_yard.effects[worker.effect].resources;
   const actor = asActorView(view);
-  const command = (clay: number, bonus: boolean, preparedClay?: { shape: Shape; decoration: (typeof DECORATIONS)[number] }): GameAction => ({
+  const command = (clay: number, preparedClay?: { shape: Shape; decoration: (typeof DECORATIONS)[number] }): GameAction => ({
     type: "PLACE_MATERIALS_YARD",
     workerId: worker.workerId,
     clay,
     wood: resources - clay,
     ...(worker.seniorApprentice ? { seniorApprentice: true } : {}),
-    ...(bonus ? { buyShifuBonus: true } : {}),
     ...(preparedClay === undefined ? {} : { preparedClay }),
   });
-  const shifuBonus =
-    actor === null || worker.effect !== "shifu"
-      ? null
-      : quoteMaterialsYard(actor, command(resources, true) as Extract<GameAction, { type: "PLACE_MATERIALS_YARD" }>);
   if (actor === null || worker.seniorApprentice || !techReady(player(view.game, actor.viewerId), PREPARED_CLAY)) {
-    return { resources, shifuBonus, preparedClay: null };
+    return { resources, preparedClay: null };
   }
   const pairs: PreparedClayPair[] = [];
   for (const shape of SHAPES) {
     for (const decoration of DECORATIONS) {
-      // Prepared Clay is paid after gaining the split and the bonus (L618), so a pair is legal
-      // with a given bonus choice when some split validates.
-      const legalWith = (bonus: boolean): boolean => {
-        for (let clay = resources; clay >= 0; clay -= 1) {
-          if (validates(actor, command(clay, bonus, { shape, decoration }))) return true;
+      // Prepared Clay is paid after gaining the split (L618), so a pair is legal when some
+      // split validates.
+      for (let clay = resources; clay >= 0; clay -= 1) {
+        if (validates(actor, command(clay, { shape, decoration }))) {
+          pairs.push({ shape, decoration });
+          break;
         }
-        return false;
-      };
-      const withShifuBonus = worker.effect === "shifu" && legalWith(true);
-      if (withShifuBonus || legalWith(false)) {
-        pairs.push({ shape, decoration, withShifuBonus });
       }
     }
   }
   return {
     resources,
-    shifuBonus,
     preparedClay: {
       shapes: SHAPES.filter((x) => pairs.some((pair) => pair.shape === x)),
       decorations: DECORATIONS.filter((x) => pairs.some((pair) => pair.decoration === x)),
@@ -858,71 +842,83 @@ export function heatMarkerTargets(view: PlayerView, playerId: PlayerId, pendingL
 }
 
 /**
- * Commission Market choices (L187–201, B1): at placement for a worker effect, or — during the
- * viewer's own sub-step — what that step allows now (the step's effect wins).
+ * The Commission Market at placement time for a worker effect (v1.6.2 L189–200, B1), from
+ * public information only: how many cards the look would show, the reservation limit and the
+ * display positions holding an Order. `reservable` is the placement's main-action test (L142):
+ * a display Order or a non-empty deck plus discard (then the look shows at least 1 card).
  */
 export function commissionOptions(view: PlayerView, effect: WorkerEffect): CommissionOptions {
   const game = view.game;
   const supply = reservable(game);
-  const phase = game.phase;
-  const step = phase.type === "work_turn" && phase.activePlayerId === view.viewerId ? workStep(game, "commission_market") : null;
-  if (step !== null) {
-    const canReserve = step.awaiting === "reservation" && step.reservationsMade < step.maxReservations;
-    return {
-      effect: step.effect,
-      faceUpSlots: canReserve ? [...supply.faceUpSlots] : [],
-      blind: canReserve && supply.blind,
-      lookTopThree: canReserve && step.topThreeAvailable && supply.look,
-      gainNow: step.awaiting === "resource",
-      canStop: step.awaiting === "reservation" && step.reservationsMade >= 1,
-      maxReservations: step.maxReservations,
-      reservationsMade: step.reservationsMade,
-    };
-  }
-  const maxReservations = LOCATIONS.commission_market.effects[effect].maxReservations === 2 ? 2 : 1;
+  const { lookSize, maxReservations } = commissionLimits(effect);
   return {
     effect,
-    faceUpSlots: [...supply.faceUpSlots],
-    blind: supply.blind,
-    lookTopThree: effect === "shifu" && supply.look,
-    gainNow: false,
-    canStop: false,
+    lookSize,
+    lookCount: lookCount(game, lookSize),
     maxReservations,
-    reservationsMade: 0,
+    faceUpSlots: [...supply.faceUpSlots],
+    reservable: supply.faceUpSlots.length > 0 || supply.supply,
   };
 }
 
-/** The viewer's own pending top-3 look (Commission Shifu or Colour Samples), if any. */
+/**
+ * The viewer's own pending Order look (Commission Market, Colour Samples when acquired or its
+ * swap), if any. For the Commission Market, while `COMMISSION_CHOOSE` is due, it also lists the
+ * display positions reservable now and the effect's reservation limit (v1.6.2 L195–198).
+ */
 export function lookedOrderOptions(view: PlayerView): LookedOrderOptions | null {
   const look = view.own?.pendingLook ?? null;
   if (look === null || look.kind === "guild_inspection") {
     return null;
   }
-  return { kind: look.kind, orderIds: [...look.orderIds] };
+  if (look.kind === "commission_market") {
+    const step = workStep(view.game, "commission_market");
+    return {
+      kind: look.kind,
+      orderIds: [...look.orderIds],
+      faceUpSlots: step === null ? [] : [...reservable(view.game).faceUpSlots],
+      maxReservations: step?.maxReservations ?? 1,
+    };
+  }
+  return { kind: look.kind, orderIds: [...look.orderIds], faceUpSlots: [], maxReservations: 1 };
 }
 
-function techOption(p: PlayerState | null, techId: TechId, source: "face_up" | "inspected", effect: WorkerEffect): GuildTechOption {
-  const price = techPrice(techId, effect);
-  // The Guild Hall validator's own checks: the 3 / 1-per-discipline limit, then the price.
+/**
+ * One Tech a Guild Hall worker could take, with the validator's own checks in its order:
+ * the Shifu's take limit (`takesLeft`), the 3-total / 1-per-discipline limit (L211), then
+ * the printed cost (v1.6.2 L206–207).
+ */
+function techOption(p: PlayerState | null, techId: TechId, source: "face_up" | "inspected", takesLeft: number): GuildTechOption {
+  const cost = techPrice(techId);
   const limit = p === null ? ruleError("UNKNOWN_PLAYER", "Not seated.", {}) : acquisitionError(p, techId);
   const reason: GameRuleErrorCode | null =
-    limit !== null ? limit.code : p !== null && price > p.resources.coins ? "INSUFFICIENT_RESOURCES" : null;
-  return { techId, discipline: TECHS[techId].discipline, source, printedCost: TECHS[techId].cost, price, legal: reason === null, reason };
+    takesLeft <= 0
+      ? "TECH_TAKE_LIMIT"
+      : limit !== null
+        ? limit.code
+        : p !== null && cost > p.resources.coins
+          ? "INSUFFICIENT_RESOURCES"
+          : null;
+  return { techId, discipline: TECHS[techId].discipline, source, cost, legal: reason === null, reason };
 }
 
-/** Guild Hall choices for a worker effect (L203–214): Techs to buy (Apprentice) or take after
- * inspecting (Shifu), with prices; the Shifu may inspect any discipline (B2). */
+/** Guild Hall choices for a worker effect (v1.6.2 L202–214): Techs to buy (Apprentice) or
+ * take after inspecting (Shifu), at printed cost; the Shifu may inspect any discipline (B2). */
 export function guildOptions(view: PlayerView, effect: WorkerEffect): GuildOptions {
   const game = view.game;
   const p = view.viewerId === null ? null : seatedPlayer(game, view.viewerId);
   return {
     effect,
-    faceUp: DISCIPLINES.flatMap((d) => game.techDisplay[d]).map((techId) => techOption(p, techId, "face_up", effect)),
+    faceUp: DISCIPLINES.flatMap((d) => game.techDisplay[d]).map((techId) => techOption(p, techId, "face_up", 1)),
     inspect: effect === "shifu" ? DISCIPLINES.map((discipline) => ({ discipline, deckCount: game.counts.techDecks[discipline] })) : [],
   };
 }
 
-/** The viewer's Guild Hall Shifu inspection (B2), while `GUILD_TAKE` is due; else null. */
+/**
+ * The viewer's Guild Hall Shifu inspection (v1.6.2 L207, B2) while it is open: the inspected
+ * Techs not taken yet and the face-up Techs showing now, each with the legality of taking it
+ * next (`GUILD_TAKE`), and what `GUILD_FINISH` needs. Null otherwise.
+ */
 export function guildInspectionOptions(view: PlayerView): GuildInspectionOptions | null {
   const look = view.own?.pendingLook ?? null;
   const step = workStep(view.game, "guild_inspection");
@@ -930,12 +926,15 @@ export function guildInspectionOptions(view: PlayerView): GuildInspectionOptions
     return null;
   }
   const p = seatedPlayer(view.game, view.viewerId);
+  const takesLeft = Math.max(0, LOCATIONS.guild_hall.effects.shifu.maxTechs - step.takes.length);
   return {
     discipline: look.discipline,
-    inspected: look.techIds.map((techId) => techOption(p, techId, "inspected", "shifu")),
-    faceUp: guildOptions(view, "shifu").faceUp,
-    bottomOrderLengthIfInspectedTaken: Math.max(0, look.techIds.length - 1),
-    bottomOrderLengthIfFaceUpTaken: look.techIds.length,
+    inspected: look.techIds.map((techId) => techOption(p, techId, "inspected", takesLeft)),
+    faceUp: DISCIPLINES.flatMap((d) => view.game.techDisplay[d]).map((techId) => techOption(p, techId, "face_up", takesLeft)),
+    takes: step.takes.map((take) => ({ ...take })),
+    takesLeft,
+    canFinish: step.takes.length > 0,
+    bottomOrderLength: look.techIds.length,
   };
 }
 
@@ -969,16 +968,24 @@ export function magistratesHallQuote(view: PlayerView, effect: WorkerEffect): Co
 }
 
 /**
- * Held Orders Canal Barge could complete now (T23 ready; own view only, R6): empty outside the
- * viewer's own before- or after-action window of a Work turn, where the validator rejects it.
+ * The Colour Samples swap now (T10, v1.6.2 L625): `usable` on the public facts that open the
+ * window (T10 ready, a held Order, the viewer's own before/after-action window); per held Order,
+ * in hand order, how many cards the look would show after discarding it (B1, R16, R17) and the
+ * validator's verdict on that discard.
  */
-export function canalBargeOptions(view: PlayerView): OrderMatchOption[] {
-  const viewerId = view.viewerId;
-  const p = viewerId === null ? null : seatedPlayer(view.game, viewerId);
-  if (viewerId === null || p === null || !techReady(p, CANAL_BARGE) || !ownActionWindow(view.game, viewerId)) {
-    return [];
+export function colourSamplesSwapOptions(view: PlayerView): ColourSamplesSwapOptions {
+  const actor = asActorView(view);
+  if (actor === null || !ownActionWindow(view.game, actor.viewerId) || !colourSamplesSwapUsable(view.game, actor.viewerId)) {
+    return { usable: false, discards: [] };
   }
-  return completableOrders(view);
+  return {
+    usable: true,
+    discards: actor.own.orderHand.map((orderId) => ({
+      orderId,
+      lookCount: swapLookCount(view.game, orderId),
+      legal: validateColourSamplesSwap(actor, orderId) === null,
+    })),
+  };
 }
 
 /** The player's own before- or after-action window of a Work turn. */
@@ -1021,13 +1028,14 @@ export function imperialPriorityOptions(view: PlayerView): ImperialPriorityOptio
   return { usable: true, ceramicIds: vessels.map((c) => c.id), ceramics };
 }
 
-// ── Orders (Order Phase and Canal Barge pickers) ─────────────────────────────────────
+// ── Orders (Order Phase pickers) ─────────────────────────────────────────────────────
 
 function finishedPool(game: PublicGameState, playerId: PlayerId): FinishedCeramic[] {
   return ceramicsOf(game, playerId, "finished");
 }
 
-/** An `OrderMatchOption` for a matcher result (Ru/Guan/Tribute Ware triggers before any decline). */
+/** An `OrderMatchOption` for a matcher result (Ru/Guan/Tribute Ware triggers before any decline,
+ * and Canal Barge's automatic 2 Coins). */
 export function orderMatchOption(game: PublicGameState, playerId: PlayerId, order: OrderDefinition, match: OrderMatch): OrderMatchOption {
   const p = player(game, playerId);
   const ceramics = match.ceramicIds
@@ -1121,7 +1129,7 @@ export function orderSelectionCheck(
  * - per selected Crackle ceramic, the verdict of declaring each Decoration, and of leaving it
  *   undeclared (its printed Decoration), with the other ceramics' declarations as given.
  * Every verdict is `orderSelectionCheck`, the validator's own matcher, so it agrees with
- * `COMPLETE_ORDER` and `USE_CANAL_BARGE` in their windows.
+ * `COMPLETE_ORDER` in the Order Phase.
  */
 export function crackleDeclarationChecks(
   view: PlayerView,
@@ -1167,9 +1175,10 @@ export function crackleDeclarationChecks(
 // ── Firing ───────────────────────────────────────────────────────────────────────────
 
 /**
- * The viewer's Contribution choices while they may submit (L253–263, L638): Tend, Bank, Stoke,
- * then Bank and Stoke with Fuel Ledger when owned, each with its Wood, Heat and whether it is
- * legal now (`legalContributions`, i.e. `validateContribution`).
+ * The viewer's Contribution choices while they may submit (L253–263, v1.6.2 L637): Tend, Bank,
+ * Stoke, then Bank and Stoke with Fuel Ledger's commitment when owned, each with its Wood (a
+ * Fuel Ledger owner's Bank and Stoke cost none), Heat and whether it is legal now
+ * (`legalContributions`, i.e. `validateContribution`).
  */
 export function contributionOptions(view: PlayerView): ContributionOption[] {
   const phase = view.game.phase;
@@ -1192,7 +1201,7 @@ export function contributionOptions(view: PlayerView): ContributionOption[] {
     const submission = { card, fuelLedger };
     return {
       command,
-      woodCost: contributionWood(submission),
+      woodCost: contributionWood(submission, ownsTech(p, FUEL_LEDGER)),
       heat: contributionHeat(submission),
       affordable: legal.some((c) => c.card === card && c.fuelLedger === fuelLedger),
     };

@@ -1,7 +1,8 @@
 /**
- * Materials Yard (L158–163): Apprentice and Shifu effects, the Shifu's 1-Coin bonus, Senior
- * Apprentice (T18, L619, R12) and Prepared Clay (T17, L618), resolved split → bonus →
- * Prepared Clay against the running totals (DESIGN §3.5).
+ * Materials Yard (v1.6.2 L160–165): the Apprentice effect's 3 and the Shifu effect's 6 Clay/
+ * Wood, Senior Apprentice (T18, v1.6.2 L618, R12) and Prepared Clay (T17, L618), resolved
+ * split → Prepared Clay against the running totals (DESIGN §3.5). V1.6.2 removed the Shifu's
+ * 1-Coin +1 Clay +1 Wood option (v1.6.2 L31, L165).
  */
 
 import { describe, expect, it } from "vitest";
@@ -29,7 +30,7 @@ function my(workerId: string, clay: number, wood: number, extra: Partial<Omit<MY
   return { type: "PLACE_MATERIALS_YARD", workerId, clay, wood, ...extra };
 }
 
-describe("Apprentice effect: 3 Clay/Wood in any mix (L162)", () => {
+describe("Apprentice effect: 3 Clay/Wood in any mix (v1.6.2 L164)", () => {
   it.each([
     [3, 0],
     [0, 3],
@@ -65,44 +66,40 @@ describe("Apprentice effect: 3 Clay/Wood in any mix (L162)", () => {
     const error = reject(table(), "p1", my("p1:apprentice:1", clay, wood), "INVALID_RESOURCE_SPLIT");
     expect(error.details).toMatchObject({ total: 3, clay, wood });
   });
+});
 
-  it("cannot buy the Shifu bonus", () => {
-    reject(table(), "p1", my("p1:apprentice:1", 3, 0, { buyShifuBonus: true }), "NOT_SHIFU_EFFECT");
+describe("Shifu effect: 6 Clay/Wood in any mix, no Coin option (v1.6.2 L165)", () => {
+  it.each([0, 1, 2, 3, 4, 5, 6])("gains %i Clay and the rest as Wood, in one event, with no Coin spent", (clay) => {
+    const t = table();
+    const events = t.act("p1", my("p1:shifu", clay, 6 - clay));
+    expect(t.player("p1").resources).toEqual({ clay: 2 + clay, wood: 2 + 6 - clay, coins: 3 });
+    expect(events.slice(1)).toEqual([{ type: "RESOURCES_CHANGED", playerId: "p1", clay, wood: 6 - clay, coins: 0, reason: "materials_yard" }]);
+  });
+
+  it.each([
+    [4, 0],
+    [3, 2],
+    [6, 1],
+    [7, 0],
+  ])("rejects %i Clay + %i Wood (must total exactly 6)", (clay, wood) => {
+    const error = reject(table(), "p1", my("p1:shifu", clay, wood), "INVALID_RESOURCE_SPLIT");
+    expect(error.details).toMatchObject({ total: 6, clay, wood });
+    expectDocumentedDetails(error);
+  });
+
+  it("gains 6 even with no Coins at all: nothing is paid", () => {
+    const t = table({ players: [{ resources: { clay: 0, wood: 0, coins: 0 } }, {}] });
+    t.act("p1", my("p1:shifu", 3, 3));
+    expect(t.player("p1").resources).toEqual({ clay: 3, wood: 3, coins: 0 });
   });
 });
 
-describe("Shifu effect: 4 Clay/Wood, then may pay 1 Coin for +1 Clay +1 Wood (L163)", () => {
-  it("gains 4 in any mix and may decline the bonus (R4)", () => {
-    const t = table();
-    t.act("p1", my("p1:shifu", 1, 3, { buyShifuBonus: false }));
-    expect(t.player("p1").resources).toEqual({ clay: 3, wood: 5, coins: 3 });
-    reject(table(), "p1", my("p1:shifu", 3, 0), "INVALID_RESOURCE_SPLIT");
-    reject(table(), "p1", my("p1:shifu", 3, 2), "INVALID_RESOURCE_SPLIT");
-  });
-
-  it("buys +1 Clay +1 Wood for 1 Coin after the split", () => {
-    const t = table();
-    const events = t.act("p1", my("p1:shifu", 4, 0, { buyShifuBonus: true }));
-    expect(t.player("p1").resources).toEqual({ clay: 7, wood: 3, coins: 2 });
-    expect(events.slice(1)).toEqual([
-      { type: "RESOURCES_CHANGED", playerId: "p1", clay: 4, wood: 0, coins: 0, reason: "materials_yard" },
-      { type: "RESOURCES_CHANGED", playerId: "p1", clay: 0, wood: 0, coins: -1, reason: "materials_yard_bonus" },
-      { type: "RESOURCES_CHANGED", playerId: "p1", clay: 1, wood: 1, coins: 0, reason: "materials_yard_bonus" },
-    ]);
-  });
-
-  it("needs the Coin to buy the bonus", () => {
-    const error = reject(table({ players: [{ resources: { coins: 0 } }, {}] }), "p1", my("p1:shifu", 4, 0, { buyShifuBonus: true }), "INSUFFICIENT_RESOURCES");
-    expect(error.details).toMatchObject({ resource: "coins", needed: 1, have: 0 });
-  });
-});
-
-describe("Senior Apprentice (T18, L619, R12): an Apprentice resolves the whole Shifu effect", () => {
-  it("gains 4, may buy the bonus, and uses T18 once", () => {
+describe("Senior Apprentice (T18, v1.6.2 L618, R12): an Apprentice resolves the whole Shifu effect", () => {
+  it("gains 6 and uses T18 once", () => {
     const t = table({ players: [{ techs: ["T18"] }, {}] });
-    const events = t.act("p1", my("p1:apprentice:1", 2, 2, { seniorApprentice: true, buyShifuBonus: true }));
-    expect(t.player("p1").resources).toEqual({ clay: 5, wood: 5, coins: 2 });
-    expect(types(events)).toEqual(["WORKER_PLACED", "TECH_USED", "RESOURCES_CHANGED", "RESOURCES_CHANGED", "RESOURCES_CHANGED"]);
+    const events = t.act("p1", my("p1:apprentice:1", 2, 4, { seniorApprentice: true }));
+    expect(t.player("p1").resources).toEqual({ clay: 4, wood: 6, coins: 3 });
+    expect(types(events)).toEqual(["WORKER_PLACED", "TECH_USED", "RESOURCES_CHANGED"]);
     expect(events[0]).toMatchObject({ effect: "shifu", viaSeniorApprentice: true, kind: "apprentice" });
     expect(events[1]).toEqual({ type: "TECH_USED", playerId: "p1", techId: "T18" });
     expect(t.player("p1").techs[0]).toMatchObject({ id: "T18", usedThisRound: true });
@@ -119,8 +116,11 @@ describe("Senior Apprentice (T18, L619, R12): an Apprentice resolves the whole S
   });
 
   it("applies only to an Apprentice and only with the Tech", () => {
-    reject(table({ players: [{ techs: ["T18"] }, {}] }), "p1", my("p1:shifu", 4, 0, { seniorApprentice: true }), "SENIOR_APPRENTICE_NOT_APPLICABLE");
-    reject(table(), "p1", my("p1:apprentice:1", 4, 0, { seniorApprentice: true }), "TECH_NOT_OWNED");
+    reject(table({ players: [{ techs: ["T18"] }, {}] }), "p1", my("p1:shifu", 6, 0, { seniorApprentice: true }), "SENIOR_APPRENTICE_NOT_APPLICABLE");
+    reject(table(), "p1", my("p1:apprentice:1", 6, 0, { seniorApprentice: true }), "TECH_NOT_OWNED");
+    // With Senior Apprentice the total is the Shifu effect's 6.
+    const short = reject(table({ players: [{ techs: ["T18"] }, {}] }), "p1", my("p1:apprentice:1", 3, 0, { seniorApprentice: true }), "INVALID_RESOURCE_SPLIT");
+    expect(short.details).toMatchObject({ total: 6 });
   });
 });
 
@@ -145,28 +145,22 @@ describe("Prepared Clay (T17, L618): after gaining, form 1 vessel for Clay cost 
     expectPublicEvents(events);
   });
 
-  it("resolves after the Shifu bonus, so it may spend the bonus Clay (DESIGN §3.5)", () => {
-    const spec = { players: [{ techs: ["T17" as const], resources: { clay: 1, coins: 3 } }, {}] };
-    const command = my("p1:shifu", 0, 4, { buyShifuBonus: true, preparedClay: { shape: "bowl", decoration: "plain" } });
+  it("resolves after the Shifu's 6, so it may spend the Clay just gained (DESIGN §3.5)", () => {
+    const spec = { players: [{ techs: ["T17" as const], resources: { clay: 0, wood: 0, coins: 2 } }, {}] };
     const t = table(spec);
-    t.act("p1", command);
-    expect(t.player("p1").resources).toEqual({ clay: 0, wood: 7, coins: 0 });
-    // Without the bonus the Clay is 1 short.
-    const error = reject(table(spec), "p1", { ...command, buyShifuBonus: false }, "INSUFFICIENT_RESOURCES");
-    expect(error.details).toMatchObject({ resource: "clay", needed: 2, have: 1 });
+    t.act("p1", my("p1:shifu", 3, 3, { preparedClay: { shape: "vase", decoration: "plain" } }));
+    expect(t.player("p1").resources).toEqual({ clay: 0, wood: 3, coins: 0 });
+    // A split with too little Clay is short.
+    const error = reject(table(spec), "p1", my("p1:shifu", 2, 4, { preparedClay: { shape: "vase", decoration: "plain" } }), "INSUFFICIENT_RESOURCES");
+    expect(error.details).toMatchObject({ resource: "clay", needed: 3, have: 2 });
   });
 
-  it("is checked against the Coins left after the bonus, and takes no Shifu discount", () => {
-    const spec = { players: [{ techs: ["T17" as const], resources: { coins: 2 } }, {}] };
-    const error = reject(
-      table(spec),
-      "p1",
-      my("p1:shifu", 4, 0, { buyShifuBonus: true, preparedClay: { shape: "bowl", decoration: "carved" } }),
-      "INSUFFICIENT_RESOURCES",
-    );
+  it("is checked against the Coins held, and takes no Shifu discount", () => {
+    const spec = { players: [{ techs: ["T17" as const], resources: { coins: 1 } }, {}] };
+    const error = reject(table(spec), "p1", my("p1:shifu", 6, 0, { preparedClay: { shape: "bowl", decoration: "carved" } }), "INSUFFICIENT_RESOURCES");
     expect(error.details).toMatchObject({ resource: "coins", needed: 2, have: 1 });
-    const t = table(spec);
-    t.act("p1", my("p1:shifu", 4, 0, { preparedClay: { shape: "bowl", decoration: "carved" } }));
+    const t = table({ players: [{ techs: ["T17"], resources: { coins: 2 } }, {}] });
+    t.act("p1", my("p1:shifu", 6, 0, { preparedClay: { shape: "bowl", decoration: "carved" } }));
     expect(t.player("p1").resources.coins).toBe(0);
   });
 
@@ -218,11 +212,8 @@ describe("Prepared Clay (T17, L618): after gaining, form 1 vessel for Clay cost 
 describe("quoteMaterialsYard (DESIGN §5.4)", () => {
   it("reports gains and costs in resolution order", () => {
     const state = buildState({ players: [{ techs: ["T17"] }, {}] });
-    const quote = quoteMaterialsYard(
-      actorViewOf(state, "p1"),
-      my("p1:shifu", 2, 2, { buyShifuBonus: true, preparedClay: { shape: "bowl", decoration: "plain" } }),
-    );
-    expect(quote).toMatchObject({ ok: true, error: null, pay: { clay: 2, wood: 0, coins: 3 }, gain: { clay: 3, wood: 3, coins: 0 } });
+    const quote = quoteMaterialsYard(actorViewOf(state, "p1"), my("p1:shifu", 2, 4, { preparedClay: { shape: "bowl", decoration: "plain" } }));
+    expect(quote).toMatchObject({ ok: true, error: null, pay: { clay: 2, wood: 0, coins: 2 }, gain: { clay: 2, wood: 4, coins: 0 } });
   });
 
   it("reports an unavailable worker instead of throwing", () => {
@@ -237,7 +228,8 @@ describe("privacy and determinism", () => {
     const commands = [
       my("p1:apprentice:1", 3, 0),
       my("p1:apprentice:1", 2, 0),
-      my("p1:shifu", 4, 0, { buyShifuBonus: true, preparedClay: { shape: "vase", decoration: "carved" } }),
+      my("p1:shifu", 6, 0, { preparedClay: { shape: "vase", decoration: "carved" } }),
+      my("p1:shifu", 4, 0),
     ];
     for (const command of commands) {
       expect(verdict(scrambleHidden(state), "p1", command)).toBe(verdict(state, "p1", command));
@@ -246,7 +238,7 @@ describe("privacy and determinism", () => {
 
   it("a key-sorted (jsonb) state resolves to the same events and state", () => {
     const spec = withHands({ players: [{ techs: ["T17"] }, {}] });
-    const command = my("p1:shifu", 1, 3, { buyShifuBonus: true, preparedClay: { shape: "censer", decoration: "impressed" } });
+    const command = my("p1:shifu", 3, 3, { preparedClay: { shape: "censer", decoration: "impressed" } });
     const plain = table(spec);
     const sorted = table(spec);
     sorted.state = keySorted(sorted.state);

@@ -64,9 +64,9 @@ export function phaseScenarios(): PhaseScenario[] {
   }
 
   add(
-    "before the worker action: Canal Barge, Imperial Priority with Reworking Table, Ding",
+    "before the worker action: Colour Samples swap, Imperial Priority with Reworking Table, Ding",
     work({
-      players: [{ kilnId: "DI", techs: ["T05", "T23", "T14"], recognition: 3, resources: RICH, hand: ["O01", "S01"] }, { kilnId: "RU" }],
+      players: [{ kilnId: "DI", techs: ["T05", "T10", "T14"], recognition: 3, resources: RICH, hand: ["O01", "S01"] }, { kilnId: "RU" }],
       ceramics: [
         { owner: "p1", stage: "shaped", shape: "vase", decoration: "carved" },
         { owner: "p1", stage: "shaped", shape: "bowl" },
@@ -95,22 +95,18 @@ export function phaseScenarios(): PhaseScenario[] {
 
   {
     const table = work({ players: [{ resources: RICH }, {}] });
-    const orderId = table.state.market.display[0];
-    if (orderId === null || orderId === undefined) {
-      throw new Error("no display");
-    }
-    table.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu", first: { kind: "face_up", slotIndex: 0, orderId, gain: "clay" } });
-    add("Commission Market: second reservation or stop", table, "p1", (c) => c.type === "COMMISSION_STOP");
+    table.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu" });
+    add(
+      "Commission Market: Shifu top-3 look, 2 reservations",
+      table,
+      "p1",
+      (c) => c.type === "COMMISSION_CHOOSE" && c.reservations.length === 2 && c.reservations.some((pick) => pick.kind === "looked"),
+    );
   }
   {
     const table = work({ players: [{ resources: RICH }, {}] });
-    table.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu", first: { kind: "look_top_three" } });
-    add("Commission Market: top-3 choice", table, "p1", (c) => c.type === "COMMISSION_CHOOSE_LOOKED");
-  }
-  {
-    const table = work({ players: [{ resources: RICH }, {}] });
-    table.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:apprentice:1", first: { kind: "blind" } });
-    add("Commission Market: resource after a blind reservation", table, "p1", (c) => c.type === "COMMISSION_GAIN");
+    table.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:apprentice:1" });
+    add("Commission Market: Apprentice top-2 look, 1 reservation", table, "p1", (c) => c.type === "COMMISSION_CHOOSE" && c.reservations[0]?.kind === "looked");
   }
   {
     const table = work({ players: [{ resources: RICH, techs: ["T01"] }, {}] });
@@ -123,8 +119,13 @@ export function phaseScenarios(): PhaseScenario[] {
     add("Colour Samples choice", table, "p1", (c) => c.type === "COLOUR_SAMPLES_CHOOSE");
   }
   {
+    const table = work({ players: [{ techs: ["T10"], hand: ["O40", "S01"] }, {}] });
+    table.act("p1", { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: "S01" });
+    add("Colour Samples swap look", table, "p1", (c) => c.type === "COLOUR_SAMPLES_SWAP_CHOOSE");
+  }
+  {
     const table = work({
-      players: [{ techs: ["T23"], recognition: 3, hand: ["O01"] }, {}],
+      players: [{ techs: ["T10"], recognition: 3, hand: ["O01"] }, {}],
       ceramics: [
         { owner: "p1", stage: "finished", shape: "bowl", glaze: "white", quality: "standard" },
         { owner: "p1", stage: "shaped", shape: "plate" },
@@ -209,7 +210,7 @@ export function phaseScenarios(): PhaseScenario[] {
     });
     table.act("p1", { type: "RESOLVE_JUN", adjustment: null });
     table.act("p1", { type: "USE_SECOND_FIRING", ceramicId: "c1" });
-    add("Jun during Second Firing (R7)", table, "p1", (c) => c.type === "RESOLVE_JUN" && c.adjustment === null);
+    add("Second Firing choice with Jun (R7)", table, "p1", (c) => c.type === "SECOND_FIRING_CHOOSE" && c.cardIndex === 0 && c.jun === null);
   }
   add(
     "salvage",
@@ -227,7 +228,7 @@ export function phaseScenarios(): PhaseScenario[] {
     "Order Phase with Ru, Tribute Ware and a Crackle wildcard",
     new LocalTable(
       buildState({
-        players: [{ kilnId: "RU", techs: ["T25"], hand: ["O22", "O18", "S01", "S13"] }, { kilnId: "GE" }],
+        players: [{ kilnId: "RU", techs: ["T25"], hand: ["O22", "O18", "S01", "S07"] }, { kilnId: "GE" }],
         phase: { type: "orders", turnOrder: ["p1", "p2"], index: 0 },
         ceramics: [
           { owner: "p1", stage: "finished", shape: "bowl", glaze: "celadon", decoration: "plain", quality: "masterpiece" },

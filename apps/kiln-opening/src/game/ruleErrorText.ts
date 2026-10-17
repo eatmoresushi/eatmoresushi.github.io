@@ -114,7 +114,7 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
   INVALID_CHOICE: {
     en: "That choice is not available.",
     zh: "此选项不可用",
-    detailKeys: keys("value", "choice", "effect", "workerId", "locationId", "techId", "orderId", "ceramicId"),
+    detailKeys: keys("value", "choice", "effect", "workerId", "locationId", "techId", "orderId", "ceramicId", "slotIndex", "cardIndex"),
   },
   // ── Setup ──────────────────────────────────────────────────────────────────────────────
   KILN_UNAVAILABLE: {
@@ -253,8 +253,9 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
     detailKeys: keys("orderId", "slotIndex"),
   },
   ORDER_NOT_HELD: {
-    en: "You can complete only Orders in your hand.",
-    zh: "只能完成在手委托",
+    // Completion, the Cleanup trim and the Colour Samples swap (ENGINE_V1.6.2_DELTA.md §2.5).
+    en: "That Order is not in your hand.",
+    zh: "这张委托不在你手中",
     detailKeys: keys("orderId"),
   },
   ORDER_SUPPLY_EMPTY: {
@@ -262,10 +263,15 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
     zh: "主委托牌堆和弃牌堆都空了，没有可承接的委托",
     detailKeys: keys(),
   },
+  RESERVATION_REQUIRED: {
+    en: "Reserve at least 1 Order.",
+    zh: "至少要承接1张委托",
+    detailKeys: keys(),
+  },
   RESERVATION_LIMIT: {
-    en: "This action has already reserved {limit} Orders.",
-    zh: "此行动已承接{limit}张",
-    detailKeys: keys("limit", "reservationsMade"),
+    en: "This action reserves at most {limit} Orders.",
+    zh: "此行动至多承接{limit}张",
+    detailKeys: keys("limit", "requested"),
     fallbacks: [{ en: "This action cannot reserve another Order.", zh: "此行动的承接次数已满" }],
   },
   ORDER_REQUIREMENTS_NOT_MET: {
@@ -305,6 +311,17 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
     en: "You already own a {discipline} Tech.",
     zh: "你已拥有一项{discipline}技艺",
     detailKeys: keys("techId", "discipline"),
+  },
+  TECH_TAKE_LIMIT: {
+    en: "This action takes at most {limit} Techs.",
+    zh: "此行动至多习得{limit}项技艺",
+    detailKeys: keys("limit", "techId"),
+    fallbacks: [{ en: "This action cannot take another Tech.", zh: "此行动不能再习得技艺" }],
+  },
+  TECH_TAKE_REQUIRED: {
+    en: "Take at least 1 Tech.",
+    zh: "至少要习得1项技艺",
+    detailKeys: keys(),
   },
   TECH_NOT_OWNED: {
     en: "You do not own {techId}.",
@@ -457,7 +474,7 @@ export const PHASE_TEXT: Labels<GamePhaseType> = {
   firing_heat_markers: { en: "the Heat marker step", zh: "翻火标" },
   firing_heat_adjustment: { en: "Heat adjustment", zh: "调火" },
   firing_after_quality: { en: "after-Quality abilities", zh: "定品后结算" },
-  firing_second_firing_jun: { en: "Jun during Second Firing", zh: "复烧中的钧窑调火" },
+  firing_second_firing_choice: { en: "the Second Firing choice", zh: "复烧选牌" },
   firing_salvage: { en: "Salvage a Flawed ceramic", zh: "折卖瑕品" },
   orders: { en: "the Order Phase", zh: "交货阶段" },
   cleanup_hand_limit: { en: "Cleanup", zh: "收工" },
@@ -475,6 +492,11 @@ export const REASON_TEXT: Readonly<Record<string, RuleErrorTemplate>> = {
   flawed: { en: "a Flawed ceramic cannot complete an Order", zh: "瑕品不能完成委托" },
   crackle_not_masterpiece: { en: "a Crackle ceramic is never a Masterpiece", zh: "开片器永远不是臻品" },
   not_this_firing: { en: "the ceramic is not in this firing", zh: "器物不在本次烧成中" },
+  // After-Quality targets (v1.6.2 L628, L631, L280, L467): Protective Saggars and Ge take a
+  // Standard ceramic, Second Firing a Flawed or Standard one, salvage a Flawed one.
+  not_standard: { en: "the ceramic is not Standard", zh: "器物不是良品" },
+  not_flawed_or_standard: { en: "the ceramic is not Flawed or Standard", zh: "器物不是瑕品或良品" },
+  not_flawed: { en: "the ceramic is not Flawed", zh: "器物不是瑕品" },
   wrong_count: { en: "the number of ceramics does not match", zh: "器物件数不符" },
   relation_mismatch: { en: "the combined requirements are not met", zh: "组合要求不符" },
   crackle_not_selected: { en: "the declared ceramic is not one of those chosen", zh: "声明的器物不在所选器物中" },

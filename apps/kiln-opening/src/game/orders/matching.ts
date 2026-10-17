@@ -1,9 +1,11 @@
 /**
- * Pure Order matcher incl. Crackle wildcards (L406–423, L470, L654, R6; DESIGN §6.6).
+ * Pure Order matcher incl. Crackle wildcards (L406–423, L470, L654; DESIGN §6.6). It runs only in
+ * the Order Phase, the one place Orders are completed (v1.6.2 L296, L484; R6 is obsolete).
  *
  * - A selection must hold exactly one ceramic per Order slot (L423 "exactly one Bowl and one
  *   Brush Washer"). Slots are filled by permutation; each slot's `shape`/`shapes`/`glaze`/
- *   `decoration` must match the ceramic assigned to it.
+ *   `decoration`/`decorations` must match the ceramic assigned to it (`shapes` and
+ *   `decorations` are "any one of", S05, S06, S07, O14, O15).
  * - Every ceramic must be Finished, never Flawed (L279), and at least `minQuality`.
  * - Relations are evaluated over the whole selection and are independent unless a pairing
  *   is printed (L423). `different_*` is pairwise (O45/O47 "3 different" = all different);
@@ -11,9 +13,10 @@
  *   multiset inclusion (O31 "at least one Plain"); `at_least_n_quality` counts ceramics of at
  *   least that Quality (≥N Masterpiece).
  * - **Crackle wildcard** (L470, INT: Ge Crackle). A Crackle ceramic may count as any one
- *   Decoration for this Order's Decoration requirements (slot `decoration` and every
- *   Decoration relation). It never changes Glaze, Shape or Quality, and a Crackle ceramic is
- *   never a Masterpiece (L470, L654). Its printed Decoration is unchanged (Ru, Exhibition).
+ *   Decoration for this Order's Decoration requirements (slot `decoration`, slot
+ *   `decorations` such as S07's "Carved, Impressed or Painted", and every Decoration
+ *   relation). It never changes Glaze, Shape or Quality, and a Crackle ceramic is never a
+ *   Masterpiece (L470, L654). Its printed Decoration is unchanged (Ru, Exhibition).
  *   - `declared` absent: deterministic search. Crackle ceramics in ceramic-sequence order,
  *     Decorations in `DECORATIONS` order (the first Crackle ceramic varies slowest); the first
  *     combination that satisfies the Order is recorded, one declaration per selected Crackle
@@ -127,7 +130,7 @@ function relationDimension(relation: OrderRelationDefinition): Dimension {
 /** The Order has a Decoration requirement, so a Crackle declaration can matter (L470). */
 function hasDecorationRequirement(order: OrderDefinition): boolean {
   return (
-    order.ceramics.some((slot) => slot.decoration !== undefined) ||
+    order.ceramics.some((slot) => slot.decoration !== undefined || slot.decorations !== undefined) ||
     (order.relations ?? []).some((relation) => relationDimension(relation) === "decoration")
   );
 }
@@ -148,7 +151,10 @@ function slotFits(slot: OrderSlotDefinition, c: Candidate, dims: ReadonlySet<Dim
     if (slot.shapes !== undefined && !slot.shapes.includes(c.shape)) return false;
   }
   if (dims.has("glaze") && slot.glaze !== undefined && slot.glaze !== c.glaze) return false;
-  if (dims.has("decoration") && slot.decoration !== undefined && slot.decoration !== c.decoration) return false;
+  if (dims.has("decoration")) {
+    if (slot.decoration !== undefined && slot.decoration !== c.decoration) return false;
+    if (slot.decorations !== undefined && !slot.decorations.includes(c.decoration)) return false;
+  }
   return true;
 }
 
@@ -338,7 +344,8 @@ function couldFillASlot(order: OrderDefinition, c: FinishedCeramic): boolean {
       (slot.shape === undefined || slot.shape === c.shape) &&
       (slot.shapes === undefined || slot.shapes.includes(c.shape)) &&
       (slot.glaze === undefined || slot.glaze === c.glaze) &&
-      (slot.decoration === undefined || c.crackle || slot.decoration === c.decoration),
+      (slot.decoration === undefined || c.crackle || slot.decoration === c.decoration) &&
+      (slot.decorations === undefined || c.crackle || slot.decorations.includes(c.decoration)),
   );
 }
 

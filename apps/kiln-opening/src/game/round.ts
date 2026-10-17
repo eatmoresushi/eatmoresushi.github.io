@@ -91,8 +91,8 @@ export function startRound(draft: GameState, ctx: ResolveContext): void {
   if (round > 1) {
     rotateMainDisplay(draft, ctx);
   }
-  // L118 "refill displays": Tech displays refill right after each take (L210); re-running
-  // the refill here only matters if a display was left short.
+  // L118 "refill displays": Tech displays refill when the taker's turn ends (v1.6.2 L209);
+  // re-running the refill here only matters if a display was left short.
   for (const discipline of DISCIPLINES) {
     refillTechDisplay(draft, discipline, ctx);
   }

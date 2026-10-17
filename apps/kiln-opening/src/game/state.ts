@@ -25,6 +25,8 @@ import type {
   GamePhaseType,
   GameState,
   LoadedCeramic,
+  OrderId,
+  PendingLook,
   PlayerId,
   PlayerState,
   PublicCore,
@@ -34,6 +36,7 @@ import type {
   ResourceState,
   Shape,
   ShapedCeramic,
+  TechId,
   VesselInstanceId,
   WorkTurnStep,
 } from "./types.ts";
@@ -111,7 +114,7 @@ export function decisionPrompt(game: PublicCore): DecisionPrompt {
         actorIds: phase.eligiblePlayerIds.filter((id) => !phase.submittedPlayerIds.includes(id)),
         mode: "simultaneous_secret",
       };
-    case "firing_second_firing_jun":
+    case "firing_second_firing_choice":
       return { phaseType: phase.type, actorIds: [phase.actorId], mode: "single" };
     case "firing_salvage":
     case "cleanup_hand_limit":
@@ -145,6 +148,26 @@ export function workStep<K extends WorkTurnStep["kind"]>(
     return null;
   }
   return phase.step as Extract<WorkTurnStep, { kind: K }>;
+}
+
+/** The Main Orders a pending look holds (Commission Market, Colour Samples and its swap). */
+export function lookOrderIds(look: PendingLook | null): OrderId[] {
+  return look === null || look.kind === "guild_inspection" ? [] : look.orderIds;
+}
+
+/**
+ * The Techs a pending look holds: a Guild Hall Shifu's inspected Techs not yet taken, also
+ * while they wait in a Colour Samples look the Shifu opened by taking Colour Samples
+ * (v1.6.2 L207, L214).
+ */
+export function lookTechIds(look: PendingLook | null): TechId[] {
+  if (look === null) {
+    return [];
+  }
+  if (look.kind === "guild_inspection") {
+    return look.techIds;
+  }
+  return look.kind === "colour_samples" ? (look.inspection?.techIds ?? []) : [];
 }
 
 // ── Events and resources ─────────────────────────────────────────────────────────────

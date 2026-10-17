@@ -1,20 +1,28 @@
 /**
- * Guild Hall incl. the private Shifu inspection and Colour Samples when acquired (L203–214,
- * L397, L626, L650, R4, B1, B2, B3; DESIGN §3.2 "Guild Hall").
+ * Guild Hall incl. the private Shifu inspection and Colour Samples when acquired (v1.6.2
+ * L202–214, L374–378, L625, L649; R4, B1, B2, B3; DESIGN §3.2 as amended by
+ * ENGINE_V1.6.2_DELTA.md §4.3).
  *
- * - Apprentice: `PLACE_GUILD_HALL{buy_face_up}` pays the printed cost, takes the face-up
- *   Tech, grants it (unlocking a personal space, L212) and refills its discipline (L210).
+ * - Apprentice: `PLACE_GUILD_HALL{buy_face_up}` pays the printed cost and takes the face-up
+ *   Tech, granting it (VP at once, A1; Cover-token removal, L212).
  * - Shifu: `PLACE_GUILD_HALL{inspect}` privately draws the top 2 Techs of any discipline, even
- *   one already owned, or as many as remain (L208, B2). `GUILD_TAKE` then takes 1 face-up
- *   Tech of any discipline or 1 inspected Tech at 1 Coin less (minimum 0), returns every
- *   untaken inspected Tech to the bottom in a private chosen order, and only then refills
- *   (B2).
- * - Legality (L213): an affordable face-up Tech from a discipline the player does not own,
- *   after the Shifu discount for the Shifu; 3 total / 1 per discipline (L211).
- * - Colour Samples (T10, L626): when acquired, look at the top 3 Main Orders (deck only, as
- *   many as remain, B1) and reserve 1 — mandatory whenever at least 1 card can be looked at
- *   (R4). No resource and no display refill (L626, L650). Its hand limit of 5 lives in
- *   `techs.handLimit`.
+ *   one already owned, or as many as remain (v1.6.2 L207, B2). Then up to 2 `GUILD_TAKE`s, each 1 Tech
+ *   face-up or inspected at its printed cost (no discount), from different disciplines (the
+ *   1-per-discipline limit, L211). "Up to 2" is 1 or 2, never 0 (L142). `GUILD_FINISH` puts
+ *   the untaken inspected Techs on the bottom in a private chosen order (B2). The step closes
+ *   by itself when no decision is left on public facts (`decisionLeft`).
+ * - Each gain resolves at once, before the next take (L214): the VP, the Cover token and any
+ *   when-acquired effect. Colour Samples (T10, v1.6.2 L625) looks at the top 3 Main Orders (deck
+ *   only, as many as remain, B1) and reserves 1, mandatory whenever a card can be looked at
+ *   (R4); the other looked cards go to the bottom of the Main deck in random order (change 24,
+ *   R19); no resource and no Main display refill. When the Shifu takes it, the inspection
+ *   waits in the Colour Samples look (`inspection`) and resumes after the reservation.
+ * - A taken face-up Tech's position stays empty until the taker's turn ends; `work/turn`
+ *   then refills each discipline to 2 (v1.6.2 L209), so a Shifu's second Tech is chosen from
+ *   the Techs showing now, and the untaken inspected Techs are at the bottom before the
+ *   refill (B2).
+ * - Legality (v1.6.2 L212), for the Apprentice and the Shifu alike: an affordable face-up Tech
+ *   from a discipline the player does not own, within the 3-total limit (L211).
  *
  * Layer 4 (P4). Imports layers 0–3 only; hands over through `ctx.flow.workerActionDone`.
  */
@@ -23,9 +31,8 @@ import { DISCIPLINES, GAME_CONFIG, LOCATIONS, TECHS } from "../content.ts";
 import { invariant, ruleError } from "../errors.ts";
 import {
   addToHand,
-  discardMainOrders,
   drawTechsForInspection,
-  refillTechDisplay,
+  putMainOrdersOnBottom,
   reservable,
   returnTechsToBottom,
   takeFaceUpTech,
@@ -39,6 +46,8 @@ import type {
   ActorView,
   GameRuleError,
   GameState,
+  GuildInspectionStep,
+  GuildTake,
   PlayerId,
   PlayerState,
   PublicCore,
@@ -46,12 +55,15 @@ import type {
   ResolveContext,
   TechDiscipline,
   TechId,
-  WorkerEffect,
 } from "../types.ts";
 import { publicCounts } from "../view.ts";
 
 const LOCATION = "guild_hall";
 const COLOUR_SAMPLES: TechId = "T10";
+const EFFECTS = LOCATIONS.guild_hall.effects;
+
+type WorkTurnPhase = Extract<GameState["phase"], { type: "work_turn" }>;
+type InspectionLook = Extract<NonNullable<GameState["hidden"]["pendingLook"]>, { kind: "guild_inspection" }>;
 
 function publicGame(draft: GameState): PublicGameState {
   const { hidden: _hidden, ...core } = draft;
@@ -67,21 +79,13 @@ function isFaceUp(game: PublicCore, techId: TechId): boolean {
   return game.techDisplay[TECHS[techId].discipline].includes(techId);
 }
 
-/** L213: an affordable face-up Tech from a discipline you do not own (after the Shifu discount
- * for the Shifu), within the 3-total limit (L211). */
-function mainActionPossible(p: PlayerState, game: PublicCore, effect: WorkerEffect): boolean {
-  return faceUpTechs(game).some(
-    (techId) => acquisitionError(p, techId) === null && techPrice(techId, effect) <= p.resources.coins,
-  );
-}
-
-/** Ownership limits and price for taking `techId` with `effect` (availability checked by the caller). */
-function acquireError(p: PlayerState, techId: TechId, effect: WorkerEffect): GameRuleError | null {
+/** Ownership limits (L211) and the printed price (v1.6.2 L206–207) for taking `techId`. */
+function acquireError(p: PlayerState, techId: TechId): GameRuleError | null {
   const limitError = acquisitionError(p, techId);
   if (limitError !== null) {
     return limitError;
   }
-  const price = techPrice(techId, effect);
+  const price = techPrice(techId);
   if (price > p.resources.coins) {
     return ruleError("INSUFFICIENT_RESOURCES", "Not enough Coins for that Tech.", {
       resource: "coins",
@@ -92,6 +96,38 @@ function acquireError(p: PlayerState, techId: TechId, effect: WorkerEffect): Gam
   return null;
 }
 
+/** v1.6.2 L212: an affordable face-up Tech from a discipline you do not own, within the
+ * 3-total limit (L211). The same test for the Apprentice and the Shifu. */
+function faceUpTakePossible(p: PlayerState, game: PublicCore): boolean {
+  return faceUpTechs(game).some((techId) => acquireError(p, techId) === null);
+}
+
+/** Inspected Techs not yet taken, from public facts: the step's count less its inspected takes. */
+function untakenCount(step: GuildInspectionStep): number {
+  return step.inspectedCount - step.takes.filter((take) => take.kind === "inspected").length;
+}
+
+/**
+ * Whether the Shifu still has a decision, judged on public facts only so that closing the
+ * step by itself reveals nothing (DESIGN §4.5): a first take is always due; 2 untaken
+ * inspected Techs leave a bottom order to choose; otherwise another take might be legal (a
+ * face-up one the player can afford, or an inspected Tech of a discipline it may still own,
+ * whose price is private and so is never used here).
+ */
+export function decisionLeft(game: PublicCore, p: PlayerState, step: GuildInspectionStep): boolean {
+  if (step.takes.length === 0 || untakenCount(step) >= 2) {
+    return true;
+  }
+  if (step.takes.length >= EFFECTS.shifu.maxTechs) {
+    return false;
+  }
+  if (faceUpTakePossible(p, game)) {
+    return true;
+  }
+  const ownsDiscipline = p.techs.some((tech) => TECHS[tech.id].discipline === step.discipline);
+  return untakenCount(step) > 0 && !ownsDiscipline && p.techs.length < GAME_CONFIG.techs.maxOwned;
+}
+
 function techNotAvailable(techId: TechId): GameRuleError {
   return ruleError("TECH_NOT_AVAILABLE", "That Tech is not available to take.", {
     techId,
@@ -99,6 +135,7 @@ function techNotAvailable(techId: TechId): GameRuleError {
   });
 }
 
+/** The active player's step of `kind`, or the rule error. */
 function stepError(view: ActorView, kind: "guild_inspection" | "colour_samples"): GameRuleError | null {
   const phase = view.game.phase;
   if (phase.type !== "work_turn") {
@@ -113,68 +150,120 @@ function stepError(view: ActorView, kind: "guild_inspection" | "colour_samples")
   return null;
 }
 
+/** The viewer's own inspection while its step is due (validated by `stepError` first). */
+function ownInspection(view: ActorView): { step: GuildInspectionStep; look: InspectionLook } | GameRuleError {
+  const phase = view.game.phase;
+  const look = view.own.pendingLook;
+  if (phase.type !== "work_turn" || phase.step.kind !== "guild_inspection" || look === null || look.kind !== "guild_inspection") {
+    return ruleError("INVALID_CHOICE", "No Guild Hall inspection is pending.", { choice: "guild_inspection" });
+  }
+  return { step: phase.step, look };
+}
+
+function isError<T extends object>(value: T | GameRuleError): value is GameRuleError {
+  return "code" in value;
+}
+
 // ── Resolution ───────────────────────────────────────────────────────────────────────
 
-/**
- * Pays, takes and grants a Tech: `TECH_ACQUIRED` (with the VP `grantTech` records at once,
- * owner amendment A1), then any `PERSONAL_SPACE_UNLOCKED` (L212).
- */
-function acquire(
-  draft: GameState,
-  playerId: PlayerId,
-  techId: TechId,
-  source: "face_up" | "inspected",
-  effect: WorkerEffect,
-  ctx: ResolveContext,
-): void {
-  const price = techPrice(techId, effect);
-  spend(draft, playerId, { coins: price }, "guild_hall", ctx);
-  if (source === "face_up") {
-    takeFaceUpTech(draft, techId);
-  }
-  emit(ctx, { type: "TECH_ACQUIRED", playerId, techId, source, cost: price, vp: techVp() });
-  grantTech(draft, playerId, techId, ctx);
-}
-
-/** Refills each listed discipline whose display is short, in `DISCIPLINES` order (L210, L513). */
-function refillShort(draft: GameState, disciplines: readonly TechDiscipline[], ctx: ResolveContext): void {
-  for (const discipline of DISCIPLINES) {
-    if (disciplines.includes(discipline) && draft.techDisplay[discipline].length < GAME_CONFIG.techs.faceUpPerDiscipline) {
-      refillTechDisplay(draft, discipline, ctx);
-    }
-  }
-}
-
-/** When-acquired effects (L214), then the end of the worker action. */
-function afterAcquired(draft: GameState, playerId: PlayerId, techId: TechId, ctx: ResolveContext): void {
-  if (techId === COLOUR_SAMPLES && reservable(publicGame(draft)).look) {
-    const orderIds = takeTopMainOrders(draft, TECHS.T10.params.lookSize, ctx);
-    if (orderIds.length > 0) {
-      draft.hidden.pendingLook = { kind: "colour_samples", playerId, orderIds: [...orderIds] };
-      emit(ctx, {
-        type: "PRIVATE_LOOK_OPENED",
-        playerId,
-        kind: "colour_samples",
-        discipline: null,
-        count: orderIds.length,
-        secret: { visibleTo: playerId, orderIds: [...orderIds], techIds: [] },
-      });
-      phaseAs(draft, "work_turn").step = { kind: "colour_samples", lookedCount: orderIds.length };
-      return;
-    }
-  }
-  ctx.flow.workerActionDone(draft, playerId, ctx);
-}
-
-function activePhase(draft: GameState, playerId: PlayerId): Extract<GameState["phase"], { type: "work_turn" }> {
+function activePhase(draft: GameState, playerId: PlayerId): WorkTurnPhase {
   const phase = phaseAs(draft, "work_turn");
   invariant(phase.activePlayerId === playerId, `${playerId} is not the active player`);
   return phase;
 }
 
+function inspectionOf(draft: GameState, playerId: PlayerId): { phase: WorkTurnPhase; step: GuildInspectionStep; look: InspectionLook } {
+  const phase = activePhase(draft, playerId);
+  const step = phase.step;
+  const look = draft.hidden.pendingLook;
+  invariant(step.kind === "guild_inspection", `Expected the Guild Hall inspection step, found ${step.kind}`);
+  invariant(look !== null && look.kind === "guild_inspection" && look.playerId === playerId, "No Guild Hall inspection is pending for the actor");
+  return { phase, step, look };
+}
+
+/**
+ * Pays the printed cost and takes the Tech: `RESOURCES_CHANGED`, `TECH_ACQUIRED` (with the VP
+ * `grantTech` records at once, owner amendment A1), then any `PERSONAL_SPACE_UNLOCKED`
+ * (L212). A face-up Tech's position stays empty until the turn ends (v1.6.2 L209).
+ */
+function acquire(draft: GameState, playerId: PlayerId, take: GuildTake, ctx: ResolveContext): void {
+  const price = techPrice(take.techId);
+  spend(draft, playerId, { coins: price }, "guild_hall", ctx);
+  if (take.kind === "face_up") {
+    takeFaceUpTech(draft, take.techId);
+  }
+  emit(ctx, { type: "TECH_ACQUIRED", playerId, techId: take.techId, source: take.kind, cost: price, vp: techVp() });
+  grantTech(draft, playerId, take.techId, ctx);
+}
+
+/**
+ * Colour Samples when acquired (L625, R4, B1, R16): looks at the top 3 Main Orders and opens the
+ * reservation step (`COLOUR_SAMPLES_CHOOSE`; the rest go to the deck bottom, change 24).
+ * `resume` is the Shifu's inspection to return to afterwards (its untaken Techs wait in the
+ * look). Returns false when no card can be looked at (deck and discard both empty): there is
+ * then nothing to reserve.
+ */
+function openColourSamples(draft: GameState, playerId: PlayerId, resume: { step: GuildInspectionStep; look: InspectionLook } | null, ctx: ResolveContext): boolean {
+  if (!reservable(publicGame(draft)).supply) {
+    return false;
+  }
+  const orderIds = takeTopMainOrders(draft, TECHS.T10.params.lookSize, ctx);
+  if (orderIds.length === 0) {
+    return false;
+  }
+  draft.hidden.pendingLook = {
+    kind: "colour_samples",
+    playerId,
+    orderIds: [...orderIds],
+    inspection: resume === null ? null : { discipline: resume.look.discipline, techIds: [...resume.look.techIds] },
+  };
+  emit(ctx, {
+    type: "PRIVATE_LOOK_OPENED",
+    playerId,
+    kind: "colour_samples",
+    discipline: null,
+    count: orderIds.length,
+    secret: { visibleTo: playerId, orderIds: [...orderIds], techIds: [] },
+  });
+  activePhase(draft, playerId).step = {
+    kind: "colour_samples",
+    lookedCount: orderIds.length,
+    resume: resume === null ? null : structuredClone(resume.step),
+  };
+  return true;
+}
+
+/** B2: the untaken inspected Techs go to the bottom in the chosen private order, then the
+ * worker action ends (the display refills when the turn ends, v1.6.2 L209). */
+function finishInspection(draft: GameState, playerId: PlayerId, bottomOrder: readonly TechId[], ctx: ResolveContext): void {
+  const { look } = inspectionOf(draft, playerId);
+  draft.hidden.pendingLook = null;
+  if (bottomOrder.length > 0) {
+    returnTechsToBottom(draft, look.discipline, bottomOrder);
+    emit(ctx, {
+      type: "TECHS_RETURNED_TO_BOTTOM",
+      playerId,
+      discipline: look.discipline,
+      count: bottomOrder.length,
+      secret: { visibleTo: playerId, techIds: [...bottomOrder] },
+    });
+  }
+  ctx.flow.workerActionDone(draft, playerId, ctx);
+}
+
+/** After a take and its effects: wait for the Shifu, or close the step when no decision is
+ * left (at most 1 untaken inspected Tech, so its bottom order is forced). */
+function continueInspection(draft: GameState, playerId: PlayerId, ctx: ResolveContext): void {
+  const { step, look } = inspectionOf(draft, playerId);
+  if (decisionLeft(draft, player(draft, playerId), step)) {
+    return;
+  }
+  finishInspection(draft, playerId, [...look.techIds], ctx);
+}
+
 // ── Handlers ─────────────────────────────────────────────────────────────────────────
 
-export const handlers: Pick<ActionHandlerTable, "PLACE_GUILD_HALL" | "GUILD_TAKE" | "COLOUR_SAMPLES_CHOOSE"> = {
+export const handlers: Pick<ActionHandlerTable, "PLACE_GUILD_HALL" | "GUILD_TAKE" | "GUILD_FINISH" | "COLOUR_SAMPLES_CHOOSE"> = {
   PLACE_GUILD_HALL: {
     phases: ["work_turn"],
     validate: (view, action) => {
@@ -184,7 +273,7 @@ export const handlers: Pick<ActionHandlerTable, "PLACE_GUILD_HALL" | "GUILD_TAKE
       }
       const effect = workerEffectFor(view, action.workerId, false);
       const p = player(view.game, view.viewerId);
-      if (!mainActionPossible(p, view.game, effect)) {
+      if (!faceUpTakePossible(p, view.game)) {
         return ruleError("NO_MAIN_ACTION_POSSIBLE", "You cannot afford a face-up Tech from a discipline you do not own.", {
           locationId: LOCATION,
           workerId: action.workerId,
@@ -203,7 +292,7 @@ export const handlers: Pick<ActionHandlerTable, "PLACE_GUILD_HALL" | "GUILD_TAKE
           if (!isFaceUp(view.game, choice.techId)) {
             return techNotAvailable(choice.techId);
           }
-          return acquireError(p, choice.techId, effect);
+          return acquireError(p, choice.techId);
         case "inspect":
           // Any discipline, including one already owned (B2), even with fewer than 2 cards left.
           return effect === "shifu"
@@ -216,15 +305,17 @@ export const handlers: Pick<ActionHandlerTable, "PLACE_GUILD_HALL" | "GUILD_TAKE
       }
     },
     resolve: (draft, actorId, action, ctx) => {
-      const placement = placeWorker(draft, actorId, action.workerId, LOCATION, false, ctx);
+      placeWorker(draft, actorId, action.workerId, LOCATION, false, ctx);
       const choice = action.choice;
       if (choice.kind === "buy_face_up") {
-        acquire(draft, actorId, choice.techId, "face_up", placement.effect, ctx);
-        refillShort(draft, [TECHS[choice.techId].discipline], ctx);
-        afterAcquired(draft, actorId, choice.techId, ctx);
+        acquire(draft, actorId, { kind: "face_up", techId: choice.techId }, ctx);
+        if (choice.techId === COLOUR_SAMPLES && openColourSamples(draft, actorId, null, ctx)) {
+          return;
+        }
+        ctx.flow.workerActionDone(draft, actorId, ctx);
         return;
       }
-      const techIds = drawTechsForInspection(draft, choice.discipline, LOCATIONS.guild_hall.effects.shifu.inspectCount);
+      const techIds = drawTechsForInspection(draft, choice.discipline, EFFECTS.shifu.inspectCount);
       draft.hidden.pendingLook = { kind: "guild_inspection", playerId: actorId, discipline: choice.discipline, techIds: [...techIds] };
       emit(ctx, {
         type: "PRIVATE_LOOK_OPENED",
@@ -239,6 +330,7 @@ export const handlers: Pick<ActionHandlerTable, "PLACE_GUILD_HALL" | "GUILD_TAKE
         workerId: action.workerId,
         discipline: choice.discipline,
         inspectedCount: techIds.length,
+        takes: [],
       };
     },
   },
@@ -249,25 +341,56 @@ export const handlers: Pick<ActionHandlerTable, "PLACE_GUILD_HALL" | "GUILD_TAKE
       if (error !== null) {
         return error;
       }
-      const look = view.own.pendingLook;
-      if (look === null || look.kind !== "guild_inspection") {
-        return ruleError("INVALID_CHOICE", "No Guild Hall inspection is pending.", { choice: "guild_take" });
+      const inspection = ownInspection(view);
+      if (isError(inspection)) {
+        return inspection;
+      }
+      const max = EFFECTS.shifu.maxTechs;
+      if (inspection.step.takes.length >= max) {
+        return ruleError("TECH_TAKE_LIMIT", `This action takes at most ${max} Techs.`, { limit: max, techId: action.take.techId });
       }
       const take = action.take;
-      const available = take.kind === "inspected" ? look.techIds.includes(take.techId) : isFaceUp(view.game, take.techId);
+      const available = take.kind === "inspected" ? inspection.look.techIds.includes(take.techId) : isFaceUp(view.game, take.techId);
       if (!available) {
         return techNotAvailable(take.techId);
       }
-      const takeError = acquireError(player(view.game, view.viewerId), take.techId, "shifu");
-      if (takeError !== null) {
-        return takeError;
+      // A second Tech of the first take's discipline fails the 1-per-discipline limit (L211),
+      // which is how "from different disciplines" (v1.6.2 L207) is enforced.
+      return acquireError(player(view.game, view.viewerId), take.techId);
+    },
+    resolve: (draft, actorId, action, ctx) => {
+      const inspection = inspectionOf(draft, actorId);
+      const take: GuildTake = { kind: action.take.kind, techId: action.take.techId };
+      if (take.kind === "inspected") {
+        inspection.look.techIds = inspection.look.techIds.filter((techId) => techId !== take.techId);
       }
-      const untaken = look.techIds.filter((techId) => !(take.kind === "inspected" && techId === take.techId));
+      acquire(draft, actorId, take, ctx);
+      inspection.step.takes.push(take);
+      // L214: a when-acquired effect resolves now, before any second take.
+      if (take.techId === COLOUR_SAMPLES && openColourSamples(draft, actorId, inspection, ctx)) {
+        return;
+      }
+      continueInspection(draft, actorId, ctx);
+    },
+  },
+  GUILD_FINISH: {
+    phases: ["work_turn"],
+    validate: (view, action) => {
+      const error = stepError(view, "guild_inspection");
+      if (error !== null) {
+        return error;
+      }
+      const inspection = ownInspection(view);
+      if (isError(inspection)) {
+        return inspection;
+      }
+      if (inspection.step.takes.length === 0) {
+        return ruleError("TECH_TAKE_REQUIRED", "Take at least 1 Tech.", {});
+      }
+      const untaken = inspection.look.techIds;
       const given = action.bottomOrder;
       const permutation =
-        given.length === untaken.length &&
-        new Set(given).size === given.length &&
-        given.every((techId) => untaken.includes(techId));
+        given.length === untaken.length && new Set(given).size === given.length && given.every((techId) => untaken.includes(techId));
       if (!permutation) {
         return ruleError(
           "INVALID_BOTTOM_ORDER",
@@ -278,29 +401,7 @@ export const handlers: Pick<ActionHandlerTable, "PLACE_GUILD_HALL" | "GUILD_TAKE
       return null;
     },
     resolve: (draft, actorId, action, ctx) => {
-      activePhase(draft, actorId);
-      const look = draft.hidden.pendingLook;
-      invariant(
-        look !== null && look.kind === "guild_inspection" && look.playerId === actorId,
-        "No Guild Hall inspection is pending for the actor",
-      );
-      const take = action.take;
-      draft.hidden.pendingLook = null;
-      acquire(draft, actorId, take.techId, take.kind, "shifu", ctx);
-      // B2: the untaken inspected Techs go to the bottom first, in the chosen private order …
-      if (action.bottomOrder.length > 0) {
-        returnTechsToBottom(draft, look.discipline, action.bottomOrder);
-        emit(ctx, {
-          type: "TECHS_RETURNED_TO_BOTTOM",
-          playerId: actorId,
-          discipline: look.discipline,
-          count: action.bottomOrder.length,
-          secret: { visibleTo: actorId, techIds: [...action.bottomOrder] },
-        });
-      }
-      // … then the display refills (L210).
-      refillShort(draft, [TECHS[take.techId].discipline, look.discipline], ctx);
-      afterAcquired(draft, actorId, take.techId, ctx);
+      finishInspection(draft, actorId, action.bottomOrder, ctx);
     },
   },
   COLOUR_SAMPLES_CHOOSE: {
@@ -317,8 +418,10 @@ export const handlers: Pick<ActionHandlerTable, "PLACE_GUILD_HALL" | "GUILD_TAKE
       return null;
     },
     resolve: (draft, actorId, action, ctx) => {
-      activePhase(draft, actorId);
+      const phase = activePhase(draft, actorId);
+      const step = phase.step;
       const look = draft.hidden.pendingLook;
+      invariant(step.kind === "colour_samples", `Expected the Colour Samples step, found ${step.kind}`);
       invariant(
         look !== null && look.kind === "colour_samples" && look.playerId === actorId,
         "No Colour Samples look is pending for the actor",
@@ -330,21 +433,37 @@ export const handlers: Pick<ActionHandlerTable, "PLACE_GUILD_HALL" | "GUILD_TAKE
         type: "ORDER_RESERVED",
         playerId: actorId,
         via: "colour_samples",
-        source: "colour_samples",
+        source: "looked",
         slotIndex: null,
         orderId: null,
         secret: { visibleTo: actorId, orderId: action.orderId },
       });
       if (rest.length > 0) {
-        discardMainOrders(draft, rest);
+        // The rest go to the bottom of the Main deck in random order (v1.6.2 Appendix B, change
+        // 24, R19); the secret names them in look order.
+        putMainOrdersOnBottom(draft, rest, ctx);
         emit(ctx, {
-          type: "LOOKED_ORDERS_DISCARDED",
+          type: "LOOKED_ORDERS_TO_BOTTOM",
           playerId: actorId,
           count: rest.length,
           secret: { visibleTo: actorId, orderIds: rest },
         });
       }
-      // No resource and no display refill (L626, L650).
+      // No resource and no Main display refill (L625, L649).
+      const resume = step.resume;
+      if (resume !== null) {
+        // The Shifu's inspection resumes, still private, with its untaken Techs (v1.6.2 L207).
+        invariant(look.inspection !== null, "A resumed Guild Hall inspection lost its Techs");
+        draft.hidden.pendingLook = {
+          kind: "guild_inspection",
+          playerId: actorId,
+          discipline: look.inspection.discipline,
+          techIds: [...look.inspection.techIds],
+        };
+        phase.step = structuredClone(resume);
+        continueInspection(draft, actorId, ctx);
+        return;
+      }
       ctx.flow.workerActionDone(draft, actorId, ctx);
     },
   },

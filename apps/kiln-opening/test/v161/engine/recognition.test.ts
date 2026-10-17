@@ -215,7 +215,7 @@ describe("via Order completion (L410–417)", () => {
       stageCeramic(state, { owner: "p1", stage: "finished", shape: "vase", glaze: "grey_green", decoration: "impressed", quality: "fine" }).id,
     ];
     const ctx = testContext();
-    const record = resolveOrderCompletion(state, "p1", { orderId: "O47", ceramicIds: ids }, "order_phase", ctx);
+    const record = resolveOrderCompletion(state, "p1", { orderId: "O47", ceramicIds: ids }, ctx);
     expect(record).toMatchObject({ printedCrowns: 3, bonusCrowns: 1 });
     const p1 = player(state, "p1");
     expect(p1.imperial).toEqual({ recognition: 4, grantReceived: true, kilnGained: true, priority: "held", audienceReceived: true });

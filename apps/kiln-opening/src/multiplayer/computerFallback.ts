@@ -51,26 +51,48 @@ export function safeExitCommands(view: PlayerView): AuthoritativeCommand[] {
             .map((workerId): AuthoritativeCommand => ({ type: "PLACE_CANAL_WHARF", workerId }));
         case "after_action":
           return [{ type: "END_TURN" }];
-        case "commission_market":
-          if (step.awaiting === "resource") return [{ type: "COMMISSION_GAIN", resource: "coins" }];
-          if (step.awaiting === "look_choice") {
-            return (lookedOrderOptions(view)?.orderIds ?? []).map((orderId): AuthoritativeCommand => ({ type: "COMMISSION_CHOOSE_LOOKED", orderId }));
-          }
-          return [{ type: "COMMISSION_STOP" }, { type: "COMMISSION_RESERVE", choice: { kind: "blind" } }];
+        case "commission_market": {
+          // One reservation is always possible and always enough (v1.6.2 L195–198): every
+          // single pick, the face-up positions first, then the looked cards in look order.
+          const options = lookedOrderOptions(view);
+          if (options?.kind !== "commission_market") return [];
+          const faceUp = options.faceUpSlots.flatMap((slotIndex): AuthoritativeCommand[] => {
+            const orderId = game.market.display[slotIndex];
+            return orderId === null || orderId === undefined
+              ? []
+              : [{ type: "COMMISSION_CHOOSE", reservations: [{ kind: "face_up", slotIndex, orderId }] }];
+          });
+          const looked = options.orderIds.map((orderId): AuthoritativeCommand => ({
+            type: "COMMISSION_CHOOSE",
+            reservations: [{ kind: "looked", orderId }],
+          }));
+          return [...faceUp, ...looked];
+        }
         case "guild_inspection": {
+          // Placement legality guaranteed an affordable face-up Tech for the first take (v1.6.2
+          // L212); after a take, stopping is always legal, with the untaken inspected Techs in
+          // look order (v1.6.2 L207, B2).
           const options = guildInspectionOptions(view);
           if (options === null) return [];
-          const inspected = options.inspected.map((option) => option.techId);
+          if (options.canFinish) {
+            return [{ type: "GUILD_FINISH", bottomOrder: options.inspected.map((option) => option.techId) }];
+          }
           return [...options.inspected, ...options.faceUp]
             .filter((option) => option.legal)
-            .map((option): AuthoritativeCommand => ({
-              type: "GUILD_TAKE",
-              take: { kind: option.source, techId: option.techId },
-              bottomOrder: inspected.filter((techId) => !(option.source === "inspected" && techId === option.techId)),
-            }));
+            .map((option): AuthoritativeCommand => ({ type: "GUILD_TAKE", take: { kind: option.source, techId: option.techId } }));
         }
-        case "colour_samples":
-          return (lookedOrderOptions(view)?.orderIds ?? []).map((orderId): AuthoritativeCommand => ({ type: "COLOUR_SAMPLES_CHOOSE", orderId }));
+        case "colour_samples": {
+          const look = lookedOrderOptions(view);
+          return look?.kind === "colour_samples" ? look.orderIds.map((orderId): AuthoritativeCommand => ({ type: "COLOUR_SAMPLES_CHOOSE", orderId })) : [];
+        }
+        case "colour_samples_swap": {
+          // The swap's look always shows at least 1 card (v1.6.2 L617, B1); reserving any of
+          // them is legal.
+          const look = lookedOrderOptions(view);
+          return look?.kind === "colour_samples_swap"
+            ? look.orderIds.map((orderId): AuthoritativeCommand => ({ type: "COLOUR_SAMPLES_SWAP_CHOOSE", orderId }))
+            : [];
+        }
       }
       return [];
     }
@@ -91,8 +113,10 @@ export function safeExitCommands(view: PlayerView): AuthoritativeCommand[] {
         : [{ type: "RESOLVE_HEAT_MARKERS", ownMarker: "return" }];
     }
     case "firing_heat_adjustment":
-    case "firing_second_firing_jun":
       return [{ type: "RESOLVE_JUN", adjustment: null }];
+    case "firing_second_firing_choice":
+      // A card must be chosen (v1.6.2 L631); the first one without Jun is always legal.
+      return [{ type: "SECOND_FIRING_CHOOSE", cardIndex: 0, jun: null }];
     case "firing_after_quality":
       return [{ type: "END_AFTER_QUALITY" }];
     case "firing_salvage":

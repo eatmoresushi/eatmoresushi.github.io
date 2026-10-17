@@ -14,7 +14,7 @@
  *
  * Every failure is `MALFORMED_ACTION` with `details.field` naming the offending path.
  *
- * Layer 2 (imports `state.ts` within P0).
+ * Layer 2 (imports only `content.ts` and `errors.ts`).
  */
 
 import {
@@ -29,10 +29,9 @@ import {
   TECH_IDS,
 } from "./content.ts";
 import { ruleError } from "./errors.ts";
-import { RESOURCE_KINDS } from "./state.ts";
 import type {
   AuthoritativeCommand,
-  CommissionReservationChoice,
+  CommissionPick,
   CrackleDeclaration,
   FormVesselSpec,
   GameRuleError,
@@ -48,6 +47,8 @@ import type {
 const IMPERIAL_MODIFIERS = [-1, 0, 1] as const satisfies readonly ImperialModifier[];
 const KILN_FURNITURE_MODIFIERS = [-1, 0, 1] as const satisfies readonly KilnFurnitureModifier[];
 const HEAT_MARKER_VALUES = [1, -1] as const satisfies readonly HeatMarkerValue[];
+/** Second Firing's 2 revealed cards (v1.6.2 L639). */
+const SECOND_FIRING_CARD_INDEXES = [0, 1] as const;
 
 /** Compile-time proof that each literal list names every member of its union. */
 type Covers<Union, List extends readonly unknown[]> = [Exclude<Union, List[number]>] extends [never] ? true : never;
@@ -96,7 +97,7 @@ function objectAt(value: unknown, field: string): Fields {
 }
 
 /** Rejects unknown keys and missing required keys (`undefined` counts as missing; `null` is
- * present, for the nullable fields `spaceId`, `adjustment` and `ceramicId`). */
+ * present, for the nullable fields `spaceId`, `adjustment`, `ceramicId` and `jun`). */
 function shape(o: Fields, field: string, required: readonly string[], optional: readonly string[] = []): void {
   for (const key of Object.keys(o)) {
     if (!required.includes(key) && !optional.includes(key)) {
@@ -228,20 +229,21 @@ function loadSpec(value: unknown, field: string): LoadSpec {
   };
 }
 
-function reservationChoice(value: unknown, field: string): CommissionReservationChoice {
+/** One Commission Market reservation. The count (0, or more than the effect allows) is a rule
+ * error of the validator (`RESERVATION_REQUIRED`, `RESERVATION_LIMIT`), not a shape error. */
+function commissionPick(value: unknown, field: string): CommissionPick {
   const o = objectAt(value, field);
-  const kind = oneOf(get(o, "kind"), ["face_up", "blind", "look_top_three"] as const, path(field, "kind"));
+  const kind = oneOf(get(o, "kind"), ["face_up", "looked"] as const, path(field, "kind"));
   if (kind === "face_up") {
-    shape(o, field, ["kind", "slotIndex", "orderId", "gain"]);
+    shape(o, field, ["kind", "slotIndex", "orderId"]);
     return {
       kind,
       slotIndex: count(get(o, "slotIndex"), path(field, "slotIndex")),
       orderId: orderId(get(o, "orderId"), path(field, "orderId")),
-      gain: oneOf(get(o, "gain"), RESOURCE_KINDS, path(field, "gain")),
     };
   }
-  shape(o, field, ["kind"]);
-  return { kind };
+  shape(o, field, ["kind", "orderId"]);
+  return { kind, orderId: orderId(get(o, "orderId"), path(field, "orderId")) };
 }
 
 function crackleDeclaration(value: unknown, field: string): CrackleDeclaration {
@@ -296,14 +298,13 @@ const PARSERS: Parsers = {
     return { type: "PLACE_SETTERS_MARK", spaceId: spaceId === null ? null : oneOf(spaceId, KILN_SPACE_IDS, "spaceId") };
   },
   PLACE_MATERIALS_YARD: (o) => {
-    shape(o, "", ["type", "workerId", "clay", "wood"], ["seniorApprentice", "buyShifuBonus", "preparedClay"]);
+    shape(o, "", ["type", "workerId", "clay", "wood"], ["seniorApprentice", "preparedClay"]);
     return {
       type: "PLACE_MATERIALS_YARD",
       workerId: workerId(get(o, "workerId"), "workerId"),
       clay: count(get(o, "clay"), "clay"),
       wood: count(get(o, "wood"), "wood"),
       ...maybe("seniorApprentice", optional(o, "seniorApprentice", "", bool)),
-      ...maybe("buyShifuBonus", optional(o, "buyShifuBonus", "", bool)),
       ...maybe(
         "preparedClay",
         optional(o, "preparedClay", "", (value, field) => {
@@ -349,12 +350,11 @@ const PARSERS: Parsers = {
     };
   },
   PLACE_COMMISSION_MARKET: (o) => {
-    shape(o, "", ["type", "workerId", "first"], ["seniorApprentice"]);
+    shape(o, "", ["type", "workerId"], ["seniorApprentice"]);
     return {
       type: "PLACE_COMMISSION_MARKET",
       workerId: workerId(get(o, "workerId"), "workerId"),
       ...maybe("seniorApprentice", optional(o, "seniorApprentice", "", bool)),
-      first: reservationChoice(get(o, "first"), "first"),
     };
   },
   PLACE_GUILD_HALL: (o) => {
@@ -373,24 +373,12 @@ const PARSERS: Parsers = {
   },
   PLACE_CANAL_WHARF: (o) => ({ type: "PLACE_CANAL_WHARF", workerId: workerOnly(o) }),
   PLACE_MAGISTRATES_HALL: (o) => ({ type: "PLACE_MAGISTRATES_HALL", workerId: workerOnly(o) }),
-  COMMISSION_RESERVE: (o) => {
-    shape(o, "", ["type", "choice"]);
-    return { type: "COMMISSION_RESERVE", choice: reservationChoice(get(o, "choice"), "choice") };
-  },
-  COMMISSION_CHOOSE_LOOKED: (o) => {
-    shape(o, "", ["type", "orderId"]);
-    return { type: "COMMISSION_CHOOSE_LOOKED", orderId: orderId(get(o, "orderId"), "orderId") };
-  },
-  COMMISSION_GAIN: (o) => {
-    shape(o, "", ["type", "resource"]);
-    return { type: "COMMISSION_GAIN", resource: oneOf(get(o, "resource"), RESOURCE_KINDS, "resource") };
-  },
-  COMMISSION_STOP: (o) => {
-    onlyType(o);
-    return { type: "COMMISSION_STOP" };
+  COMMISSION_CHOOSE: (o) => {
+    shape(o, "", ["type", "reservations"]);
+    return { type: "COMMISSION_CHOOSE", reservations: list(get(o, "reservations"), "reservations", commissionPick) };
   },
   GUILD_TAKE: (o) => {
-    shape(o, "", ["type", "take", "bottomOrder"]);
+    shape(o, "", ["type", "take"]);
     const t = objectAt(get(o, "take"), "take");
     shape(t, "take", ["kind", "techId"]);
     return {
@@ -399,14 +387,24 @@ const PARSERS: Parsers = {
         kind: oneOf(get(t, "kind"), ["face_up", "inspected"] as const, "take.kind"),
         techId: techId(get(t, "techId"), "take.techId"),
       },
-      bottomOrder: list(get(o, "bottomOrder"), "bottomOrder", techId),
     };
+  },
+  GUILD_FINISH: (o) => {
+    shape(o, "", ["type", "bottomOrder"]);
+    return { type: "GUILD_FINISH", bottomOrder: list(get(o, "bottomOrder"), "bottomOrder", techId) };
   },
   COLOUR_SAMPLES_CHOOSE: (o) => {
     shape(o, "", ["type", "orderId"]);
     return { type: "COLOUR_SAMPLES_CHOOSE", orderId: orderId(get(o, "orderId"), "orderId") };
   },
-  USE_CANAL_BARGE: (o) => ({ type: "USE_CANAL_BARGE", ...completionSpec(o) }),
+  COLOUR_SAMPLES_SWAP_CHOOSE: (o) => {
+    shape(o, "", ["type", "orderId"]);
+    return { type: "COLOUR_SAMPLES_SWAP_CHOOSE", orderId: orderId(get(o, "orderId"), "orderId") };
+  },
+  USE_COLOUR_SAMPLES_SWAP: (o) => {
+    shape(o, "", ["type", "discardOrderId"]);
+    return { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: orderId(get(o, "discardOrderId"), "discardOrderId") };
+  },
   USE_IMPERIAL_PRIORITY: (o) => {
     shape(o, "", ["type", "ceramicId", "glaze", "imperialModifier"], ["reworkShape"]);
     return {
@@ -468,6 +466,17 @@ const PARSERS: Parsers = {
   },
   USE_PROTECTIVE_SAGGARS: (o) => ({ type: "USE_PROTECTIVE_SAGGARS", ceramicId: ceramicOnly(o) }),
   USE_SECOND_FIRING: (o) => ({ type: "USE_SECOND_FIRING", ceramicId: ceramicOnly(o) }),
+  SECOND_FIRING_CHOOSE: (o) => {
+    shape(o, "", ["type", "cardIndex", "jun"]);
+    const value = get(o, "jun");
+    let jun: { delta: HeatMarkerValue } | null = null;
+    if (value !== null) {
+      const j = objectAt(value, "jun");
+      shape(j, "jun", ["delta"]);
+      jun = { delta: heatMarkerValue(get(j, "delta"), "jun.delta") };
+    }
+    return { type: "SECOND_FIRING_CHOOSE", cardIndex: oneOf(get(o, "cardIndex"), SECOND_FIRING_CARD_INDEXES, "cardIndex"), jun };
+  },
   USE_GE_CRACKLE: (o) => ({ type: "USE_GE_CRACKLE", ceramicId: ceramicOnly(o) }),
   END_AFTER_QUALITY: (o) => {
     onlyType(o);

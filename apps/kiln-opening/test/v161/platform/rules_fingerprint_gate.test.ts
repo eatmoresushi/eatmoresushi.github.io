@@ -1,8 +1,9 @@
 /**
- * Version and fingerprint gate (DIG; DESIGN §4.6): only V1.6.1 rooms with the server's own
- * r29 fingerprint and schema-6 saves continue. Anything else — a V1.4 room, an older
- * fingerprint inside the same version string, a missing fingerprint, a schema-5 save — is
- * refused, never reinterpreted or relabelled.
+ * Version and fingerprint gate (DIG; DESIGN §4.6; ENGINE_V1.6.2_DELTA.md §9): only V1.6.2
+ * rooms with the server's own r30 fingerprint and schema-7 saves continue. Anything else — a
+ * V1.6.1 or V1.4 room, an older fingerprint inside the same version string (r29 included), a
+ * missing fingerprint, a schema-6 or schema-5 save — is refused, never reinterpreted or
+ * relabelled.
  */
 
 import { describe, expect, it } from "vitest";
@@ -20,16 +21,17 @@ function relabel(harness: Harness, change: (room: StoredRoom) => void): void {
 }
 
 describe("rules fingerprint gate", () => {
-  it("stamps a new room with V1.6.1 and the r29 fingerprint the server runs", async () => {
+  it("stamps a new room with V1.6.2 and the r30 fingerprint the server runs", async () => {
     const harness = await lobby();
-    expect(RULES_BEHAVIOUR_REVISION).toBe(29);
+    expect(RULES_BEHAVIOUR_REVISION).toBe(30);
     const room = [...storedRooms(harness).values()][0]!;
-    expect(room).toMatchObject({ rulesVersion: "1.6.1", contentVersion: "1.6.1", contentDigest: rulesFingerprint() });
+    expect(room).toMatchObject({ rulesVersion: "1.6.2", contentVersion: "1.6.2", contentDigest: rulesFingerprint() });
     expect(room.contentDigest).toMatch(CURRENT_ROOM_FINGERPRINT_PATTERN);
-    expect(harness.host.room.rulesVersion).toBe("1.6.1");
+    expect(room.contentDigest).toMatch(/^r30-/);
+    expect(harness.host.room.rulesVersion).toBe("1.6.2");
   });
 
-  it.each([23, 24, 25, 26, 27, 28])("refuses an r%s fingerprint on reconnect, commands and computer turns", async (revision) => {
+  it.each([23, 24, 25, 26, 27, 28, 29])("refuses an r%s fingerprint on reconnect, commands and computer turns", async (revision) => {
     const { harness } = await started();
     const previous = rulesFingerprint().replace(/^r\d+-/, `r${revision}-`);
     relabel(harness, (room) => {
@@ -55,7 +57,7 @@ describe("rules fingerprint gate", () => {
       room.contentDigest = null;
     }],
     ["foreign digest", (room) => {
-      room.contentDigest = "r29-0000000000000000";
+      room.contentDigest = "r30-0000000000000000";
     }],
   ];
 
@@ -64,6 +66,23 @@ describe("rules fingerprint gate", () => {
     relabel(harness, change);
     const reconnect = await harness.service.reconnect({ roomCode: harness.roomCode, seatToken: harness.host.seatToken });
     expect(reconnect.ok ? null : reconnect.error.code).toBe("RULES_FINGERPRINT_MISMATCH");
+  });
+
+  it("refuses a V1.6.1 room with its r29 fingerprint by version (never migrated)", async () => {
+    const { harness } = await started();
+    relabel(harness, (room) => {
+      room.rulesVersion = "1.6.1";
+      room.contentVersion = "1.6.1";
+      room.contentDigest = rulesFingerprint().replace(/^r\d+-/, "r29-");
+    });
+    for (const result of [
+      await harness.service.reconnect({ roomCode: harness.roomCode, seatToken: harness.host.seatToken }),
+      await tryCommand(harness, "P1", { type: "SELECT_KILN", kilnId: "RU" }),
+      await advance(harness),
+    ]) {
+      expect(result.ok ? null : result.error.code).toBe("UNSUPPORTED_RULES_VERSION");
+    }
+    expect([...storedRooms(harness).values()].every((room) => room.rulesVersion === "1.6.1")).toBe(true);
   });
 
   it("refuses a V1.4 room by version before looking at its fingerprint", async () => {
@@ -80,6 +99,23 @@ describe("rules fingerprint gate", () => {
     ]) {
       expect(result.ok ? null : result.error.code).toBe("UNSUPPORTED_RULES_VERSION");
     }
+  });
+
+  it.each([
+    [6, "1.6.1"],
+    [6, "1.6.2"],
+    [7, "1.6.1"],
+  ] as const)("refuses a schema-%i %s save even inside a current room", async (schemaVersion, rulesVersion) => {
+    const { harness } = await started();
+    const heads = (harness.store as unknown as { heads: Map<string, { state: { schemaVersion: number; rulesVersion: string } }> }).heads;
+    for (const head of heads.values()) {
+      head.state.schemaVersion = schemaVersion;
+      head.state.rulesVersion = rulesVersion;
+    }
+    const reconnect = await harness.service.reconnect({ roomCode: harness.roomCode, seatToken: harness.host.seatToken });
+    expect(reconnect.ok ? null : reconnect.error.code).toBe("UNSUPPORTED_RULES_VERSION");
+    const commandResult = await tryCommand(harness, "P1", { type: "SELECT_KILN", kilnId: "RU" });
+    expect(commandResult.ok ? null : commandResult.error.code).toBe("UNSUPPORTED_RULES_VERSION");
   });
 
   it("refuses a schema-5 save even inside a current room", async () => {
@@ -106,12 +142,12 @@ describe("rules fingerprint gate", () => {
     expect(await harness.store.getSeats(harness.roomId)).toHaveLength(1);
   });
 
-  it("starts a game only with schema 6 and V1.6.1 and never relabels the room", async () => {
+  it("starts a game only with schema 7 and V1.6.2 and never relabels the room", async () => {
     const { harness } = await started();
     const state = await headState(harness);
-    expect(state).toMatchObject({ schemaVersion: 6, rulesVersion: "1.6.1" });
+    expect(state).toMatchObject({ schemaVersion: 7, rulesVersion: "1.6.2" });
     const reconnect = valueOf(await harness.service.reconnect({ roomCode: harness.roomCode, seatToken: harness.host.seatToken }));
-    expect(reconnect.room.rulesVersion).toBe("1.6.1");
-    expect(reconnect.game).toMatchObject({ schemaVersion: 6, rulesVersion: "1.6.1" });
+    expect(reconnect.room.rulesVersion).toBe("1.6.2");
+    expect(reconnect.game).toMatchObject({ schemaVersion: 7, rulesVersion: "1.6.2" });
   });
 });

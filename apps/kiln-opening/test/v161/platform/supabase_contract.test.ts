@@ -1,6 +1,7 @@
 /**
- * The Supabase contract for V1.6.1 (DESIGN §4.6): every gate that hard-coded V1.4 is
- * rewritten, Fuel Ledger is stored and returned, the private event log is seat-checked and
+ * The Supabase contract for V1.6.2 (DESIGN §4.6; ENGINE_V1.6.2_DELTA.md §9): the undeployed
+ * V1.6.1 migrations are edited in place (rules `1.6.2`, schema 7, `r30-`), every gate that
+ * hard-coded V1.4 is rewritten, Fuel Ledger is stored and returned, the private event log is seat-checked and
  * service-only, public rows can never carry hidden data, the Edge adapter calls every RPC
  * with exactly its SQL parameters, and the playtest migration accepts only Form V3.
  */
@@ -30,7 +31,7 @@ import playtestMigration from "../../../supabase/migrations/202610150002_playtes
 const MIGRATIONS_DIR = join(process.cwd(), "supabase", "migrations");
 const MIGRATION_FILES = readdirSync(MIGRATIONS_DIR).filter((name) => name.endsWith(".sql")).sort();
 const V161_FILES = new Set(["202610150001_v161_rules.sql", "202610150002_playtest_v161.sql"]);
-const R29 = `^r${RULES_BEHAVIOUR_REVISION}-[0-9a-f]{16}$`;
+const R30 = `^r${RULES_BEHAVIOUR_REVISION}-[0-9a-f]{16}$`;
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -71,15 +72,19 @@ function v14GatedFunctions(): string[] {
   return [...gated].sort();
 }
 
-describe("V1.6.1 rules migration", () => {
-  it("allows V1.6.1 rooms with an r29 fingerprint and keeps every historical label", () => {
+describe("V1.6.2 rules migration (edited in place, file name kept)", () => {
+  it("allows V1.6.2 rooms with an r30 fingerprint, keeps every deployed historical label and drops V1.6.1", () => {
+    expect(RULES_BEHAVIOUR_REVISION).toBe(30);
     for (const check of ["rooms_rules_version_check", "rooms_content_version_check"]) {
       const definition = migration.split(`add constraint ${check}`)[1]!.split(";")[0]!;
-      expect(definition).toContain("'1.6.1'");
+      expect(definition).toContain("'1.6.2'");
+      // V1.6.1 was never deployed, so no stored row carries it.
+      expect(definition).not.toContain("'1.6.1'");
       for (const old of ["0.4", "1.2.7", "1.4"]) expect(definition).toContain(`'${old}'`);
     }
-    expect(migration).toContain("add constraint rooms_v161_fingerprint_check");
-    expect(migration).toContain(`content_digest, '') ~ '${R29}'`);
+    expect(migration).toContain("add constraint rooms_v162_fingerprint_check");
+    expect(migration).toContain(`content_digest, '') ~ '${R30}'`);
+    expect(migration).not.toMatch(/'1\.6\.1'|\^r29-|rules-v1\\\.6\\\.1-/);
     expect(migration).not.toContain("drop constraint if exists rooms_v14_fingerprint_check");
     expect(topLevel(migration)).not.toMatch(/\b(?:update|delete from|truncate)\s+(?:public\.|private\.)/i);
   });
@@ -97,14 +102,15 @@ describe("V1.6.1 rules migration", () => {
     for (const name of gated) {
       const body = functionBody(name === "server_submit_playtest" ? playtestMigration : migration, name);
       expect(body, name).not.toMatch(/'1\.4'|\^r2[3-8]-/);
-      expect(body, name).toContain("'1.6.1'");
-      if (name !== "server_submit_playtest") expect(body, name).toContain(R29);
+      expect(body, name).toContain("'1.6.2'");
+      expect(body, name).not.toContain("'1.6.1'");
+      if (name !== "server_submit_playtest") expect(body, name).toContain(R30);
     }
-    expect(functionBody(migration, "server_create_room")).toContain("'1.6.1', '1.6.1', 0, p_content_digest");
+    expect(functionBody(migration, "server_create_room")).toContain("'1.6.2', '1.6.2', 0, p_content_digest");
     for (const name of ["server_commit_start", "server_commit_transition"]) {
       const body = functionBody(migration, name);
-      expect(body).toContain("<> 6");
-      expect(body).not.toContain("<> 5");
+      expect(body).toContain("<> 7");
+      expect(body).not.toMatch(/<> [56]\b/);
     }
   });
 
@@ -131,7 +137,7 @@ describe("V1.6.1 rules migration", () => {
     }
   });
 
-  it("stores the three V1.6.1 cards and the Fuel Ledger commitment, and returns it", () => {
+  it("stores the three V1.6.2 cards and the Fuel Ledger commitment, and returns it", () => {
     const check = migration.split("add constraint private_submissions_contribution_card_check")[1]!.split(";")[0]!;
     const ids = [...check.matchAll(/'([A-Z_]+)'/g)].map((match) => match[1]!);
     expect(ids.sort()).toEqual([...CONTRIBUTION_CARD_IDS].sort());
@@ -162,11 +168,11 @@ describe("V1.6.1 rules migration", () => {
   it("accepts exactly the policy labels the service stamps", () => {
     const sqlPattern = migration.match(/policy_version ~ '([^']+)'/)![1]!;
     const pattern = new RegExp(sqlPattern);
-    for (const label of [CANONICAL_COMPUTER_POLICY_VERSION, "rules-v1.6.1-strategic-001"]) {
+    for (const label of [CANONICAL_COMPUTER_POLICY_VERSION, "rules-v1.6.2-strategic-001"]) {
       expect(pattern.test(label), label).toBe(true);
       expect(COMPUTER_POLICY_VERSION_PATTERN.test(label), label).toBe(true);
     }
-    for (const label of ["rules-v1.4-strategic-001", "rules-v1.6.1-", "rules-v1.6.1-Bad"]) {
+    for (const label of ["rules-v1.4-strategic-001", "rules-v1.6.1-strategic-001", "rules-v1.6.2-", "rules-v1.6.2-Bad"]) {
       expect(pattern.test(label), label).toBe(false);
       expect(COMPUTER_POLICY_VERSION_PATTERN.test(label), label).toBe(false);
     }
@@ -233,12 +239,13 @@ describe("Edge adapter and SQL signatures", () => {
   });
 });
 
-describe("V1.6.1 playtest migration", () => {
-  it("accepts only Form V3 for rules V1.6.1 and keeps every historical submission", () => {
-    expect(playtestMigration).toContain("check (rules_version in ('1.2.4', '1.2.5', '1.2.6', '1.2.7', '1.4', '1.6.1'))");
-    expect(playtestMigration).toContain("check (rules_version <> '1.6.1' or form_version = 3)");
+describe("V1.6.2 playtest migration (edited in place, file name kept)", () => {
+  it("accepts only Form V3 for rules V1.6.2 and keeps every historical submission", () => {
+    expect(playtestMigration).toContain("check (rules_version in ('1.2.4', '1.2.5', '1.2.6', '1.2.7', '1.4', '1.6.2'))");
+    expect(playtestMigration).toContain("check (rules_version <> '1.6.2' or form_version = 3)");
+    expect(playtestMigration).not.toContain("'1.6.1'");
     const rpc = functionBody(playtestMigration, "server_submit_playtest");
-    expect(rpc).toContain("coalesce(p_payload->>'rulesVersion', '') <> '1.6.1'");
+    expect(rpc).toContain("coalesce(p_payload->>'rulesVersion', '') <> '1.6.2'");
     expect(rpc).toContain("v_form_version <> 3");
     expect(topLevel(playtestMigration)).not.toMatch(/\b(?:truncate|delete from)\s/i);
     expect(playtestMigration).not.toMatch(/set rules_version\s*=/i);
@@ -246,7 +253,7 @@ describe("V1.6.1 playtest migration", () => {
     expect(playtestMigration).toContain("alter column starting_technique_id drop not null");
   });
 
-  it("derives its Tech, capacity and Base Heat rules from the V1.6.1 content", () => {
+  it("derives its Tech, capacity and Base Heat rules from the V1.6.2 content", () => {
     const columns: Record<string, string> = { workshop: "workshop_tech_id", glazing_loading: "glazing_loading_tech_id", firing: "firing_tech_id" };
     for (const discipline of DISCIPLINES) {
       const column = columns[discipline]!;

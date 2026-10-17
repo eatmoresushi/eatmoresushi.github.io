@@ -1,8 +1,8 @@
 /**
- * Server-side validation of Playtest Form V3 (rules V1.6.1). The Edge Function runs this
+ * Server-side validation of Playtest Form V3 (rules V1.6.2). The Edge Function runs this
  * before the service-role RPC, which re-checks the version gate and capacities in SQL.
  *
- * Every option list comes from the V1.6.1 content API (`src/game/content.ts`): Kilns,
+ * Every option list comes from the V1.6.2 content API (`src/game/content.ts`): Kilns,
  * Techs and their disciplines, Order IDs, Kiln Die faces, Shared Kiln capacity by player
  * count, the round count and the Recognition track.
  */
@@ -30,9 +30,9 @@ import type {
   RoundPlayerMetrics,
 } from "./types.ts";
 
-/** The Firing-discipline Techs a round may record as used (V1.6.1 Appendix B). */
+/** The Firing-discipline Techs a round may record as used (V1.6.2 Appendix B). */
 export const FIRING_TECH_IDS: readonly TechId[] = techsOfDiscipline("firing");
-/** Fuel Ledger (T12): the only Tech that turns Bank/Stoke into −2/+2 (L638). */
+/** Fuel Ledger (T12): the only Tech that turns Bank/Stoke into −2/+2 (v1.6.2 L637). */
 export const FUEL_LEDGER_TECH_ID: TechId = "T12";
 export const FIRE_CONTRIBUTIONS: readonly FireContribution[] = ["bank_2", "bank", "tend", "stoke", "stoke_2"];
 export const KILN_DIE_FACES: readonly number[] = [...new Set(FIRING.kilnDie.faces)].sort((left, right) => left - right);
@@ -196,7 +196,7 @@ function parsePlayer(value: unknown, index: number, issues: PlaytestValidationIs
     return enumValue(record, field, `${path}.${field}`, issues, techsOfDiscipline(discipline), true);
   };
   if (Object.hasOwn(record, "startingTechniqueId")) {
-    issue(issues, `${path}.startingTechniqueId`, "V1.6.1 has no Starting Techs.", "starting_tech");
+    issue(issues, `${path}.startingTechniqueId`, "V1.6.2 has no Starting Techs.", "starting_tech");
   }
   return {
     name: text(record, "name", `${path}.name`, issues, 40),

@@ -1,10 +1,10 @@
 /**
- * Playtest Form V3 for rules V1.6.1.
+ * Playtest Form V3 for rules V1.6.2 (the form structure is unchanged from V1.6.1; ENGINE_V1.6.2_DELTA.md §9).
  *
- * Changes from Form V2 (V1.4): no Starting Tech (V1.6.1 has none); up to three Techs, at
+ * Changes from Form V2 (V1.4): no Starting Tech (V1.6.1 and V1.6.2 have none); up to three Techs, at
  * most one per discipline (L211), recorded per discipline; all five Kilns; the round's
  * Kiln Die, because Base Heat is the Kiln Die plus the revealed Contributions (L263); and
- * the V1.6.1 Firing Techs. Every option list comes from the V1.6.1 content API, never
+ * the Firing Techs. Every option list comes from the V1.6.2 content API, never
  * from literals here.
  */
 
@@ -73,7 +73,7 @@ export const PLAYTEST_FORM_VERSION = 3;
 
 export interface PlaytestSubmission {
   formVersion: typeof PLAYTEST_FORM_VERSION;
-  rulesVersion: "1.6.1";
+  rulesVersion: "1.6.2";
   playedOn: string;
   playerCount: 2 | 3 | 4;
   firstPlayerIndex: number;
@@ -97,7 +97,7 @@ type DraftPlayerMetrics = Omit<
 
 export interface PlaytestDraft {
   formVersion: typeof PLAYTEST_FORM_VERSION;
-  rulesVersion: "1.6.1";
+  rulesVersion: "1.6.2";
   playedOn: string;
   playerCount: 2 | 3 | 4;
   firstPlayerIndex: number;

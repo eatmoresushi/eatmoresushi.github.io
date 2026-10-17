@@ -93,10 +93,10 @@ describe("End-game Exhibition (L444–452, INT: automatic)", () => {
   });
 
   it("delivered ceramics are not exhibited", () => {
-    const state = game([{ hand: ["S16"] }, {}]);
+    const state = game([{ hand: ["S08"] }, {}]);
     const vase = fin(state, "p1", "vase white plain mp");
     const kept = fin(state, "p1", "bowl white plain std");
-    resolveOrderCompletion(state, "p1", { orderId: "S16", ceramicIds: [vase] }, "order_phase", testContext());
+    resolveOrderCompletion(state, "p1", { orderId: "S08", ceramicIds: [vase] }, testContext());
     expect(breakdown(state, "p1").exhibition.ceramicIds).toEqual([kept]);
   });
 
@@ -163,7 +163,7 @@ describe("the total (L490–494)", () => {
   });
 
   it("the preview uses public information only: identical on the projection, blind to hands", () => {
-    const state = game([{ hand: ["S16", "O01"], resources: { coins: 7 } }, {}]);
+    const state = game([{ hand: ["S08", "O01"], resources: { coins: 7 } }, {}]);
     fin(state, "p1", "bowl white plain fine");
     const other = structuredClone(state);
     other.hidden.orderHands["p1"] = ["O02", "O03"];
@@ -201,18 +201,18 @@ describe("winner and tie-breakers (L496, L498, R13)", () => {
     ]);
     // p1: O18 (6 VP, 2 Coins, 1 printed Crown) + Tribute Ware's bonus Crown → Recognition 2.
     const vase = fin(state, "p1", "vase celadon carved fine");
-    resolveOrderCompletion(state, "p1", { orderId: "O18", ceramicIds: [vase] }, "order_phase", testContext());
-    // p2: O39 (14 VP, 1 Coin, 2 printed Crowns) → Recognition 2.
+    resolveOrderCompletion(state, "p1", { orderId: "O18", ceramicIds: [vase] }, testContext());
+    // p2: O39 (13 VP after v1.6.2 change 24, 1 Coin, 2 printed Crowns) → Recognition 2.
     const p2Vase = fin(state, "p2", "vase celadon plain fine");
     const censer = fin(state, "p2", "censer moon_white painted fine");
-    resolveOrderCompletion(state, "p2", { orderId: "O39", ceramicIds: [p2Vase, censer] }, "order_phase", testContext());
-    // p1: 6 VP + 1 Coin VP + 1 Tech VP; the Exhibition (3 + 3) levels the totals at 14.
+    resolveOrderCompletion(state, "p2", { orderId: "O39", ceramicIds: [p2Vase, censer] }, testContext());
+    // p1: 6 VP + 1 Coin VP + 1 Tech VP; the Exhibition (3 + 2) levels the totals at 13.
     fin(state, "p1", "bowl white plain fine");
-    fin(state, "p1", "plate white plain fine");
+    fin(state, "p1", "plate white plain std");
     const result = computeFinalResult(state);
     expect(result.standings.map((s) => [s.playerId, s.total, s.tieBreak.recognition, s.tieBreak.printedCrowns])).toEqual([
-      ["p2", 14, 2, 2],
-      ["p1", 14, 2, 1],
+      ["p2", 13, 2, 2],
+      ["p1", 13, 2, 1],
     ]);
     expect(player(state, "p1").completedOrders[0]).toMatchObject({ printedCrowns: 1, bonusCrowns: 1 });
     expect(result.winnerIds).toEqual(["p2"]);
@@ -224,10 +224,10 @@ describe("winner and tie-breakers (L496, L498, R13)", () => {
   });
 
   it("3. more Masterpieces delivered or exhibited", () => {
-    const state = game([{ hand: ["S16"] }, {}]);
-    // p1: 1 delivered Masterpiece (S16: 2 VP, Coins spent); p2: 1 exhibited Standard (2 VP).
+    const state = game([{ hand: ["S08"] }, {}]);
+    // p1: 1 delivered Masterpiece (S08: 2 VP, Coins spent); p2: 1 exhibited Standard (2 VP).
     const delivered = fin(state, "p1", "vase white plain mp");
-    resolveOrderCompletion(state, "p1", { orderId: "S16", ceramicIds: [delivered] }, "order_phase", testContext());
+    resolveOrderCompletion(state, "p1", { orderId: "S08", ceramicIds: [delivered] }, testContext());
     player(state, "p1").resources.coins = 0;
     fin(state, "p2", "bowl white plain std");
     player(state, "p2").score.orders = 0;

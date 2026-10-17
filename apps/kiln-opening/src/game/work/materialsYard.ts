@@ -1,13 +1,14 @@
 /**
- * Materials Yard (L158–163), incl. Senior Apprentice (T18, L619, R12) and Prepared Clay (T17,
- * L618).
+ * Materials Yard (v1.6.2 L160–165), incl. Senior Apprentice (T18, v1.6.2 L618, R12) and
+ * Prepared Clay (T17, L618).
  *
  * One atomic command resolved in this order (DESIGN §3.5), each step validated against the
  * running totals:
- * 1. gain the split: 3 (Apprentice effect) or 4 (Shifu effect) Clay/Wood in any mix (L162–163);
- * 2. `buyShifuBonus` (Shifu effect, optional): pay 1 Coin, gain +1 Clay +1 Wood (L163 "Then");
- * 3. `preparedClay` (optional, L618 "after gaining resources"): form 1 vessel paying its Clay
- *    cost +1 and a Decoration cost, so it may spend Clay gained in steps 1–2. A Tech effect,
+ * 1. gain the split: 3 (Apprentice effect) or 6 (Shifu effect, incl. Senior Apprentice) Clay/
+ *    Wood in any mix (v1.6.2 L164–165). V1.6.2 removed the Shifu's 1-Coin +1 Clay +1 Wood
+ *    option;
+ * 2. `preparedClay` (optional, L618 "after gaining resources"): form 1 vessel paying its Clay
+ *    cost +1 and a Decoration cost, so it may spend Clay gained in step 1. A Tech effect,
  *    not a Form & Decorate action (L646): Ding, Large Throwing Wheel and the Shifu discount
  *    never apply. Decorator's Kit may reduce its Decoration (audit INT; unreachable under
  *    L211 because T16 and T17 are both Workshop Techs, but the branch is implemented).
@@ -101,7 +102,7 @@ function quoteFor(game: PublicCore, playerId: PlayerId, action: MaterialsYardAct
   const gained = zero();
   const lines: CostLine[] = [];
 
-  // 1. The split (L162–163).
+  // 1. The split (v1.6.2 L164–165).
   const total = LOCATIONS.materials_yard.effects[effect].resources;
   const validCount = (n: number) => Number.isSafeInteger(n) && n >= 0;
   if (!validCount(action.clay) || !validCount(action.wood) || action.clay + action.wood !== total) {
@@ -121,34 +122,7 @@ function quoteFor(game: PublicCore, playerId: PlayerId, action: MaterialsYardAct
   gained.clay += action.clay;
   gained.wood += action.wood;
 
-  // 2. The Shifu's optional 1-Coin bonus (L163, R12 incl. Senior Apprentice).
-  if (action.buyShifuBonus === true) {
-    if (effect !== "shifu") {
-      return failed(
-        ruleError("NOT_SHIFU_EFFECT", "Only the Shifu effect may buy +1 Clay +1 Wood.", {
-          workerId: action.workerId,
-          effect,
-          locationId: "materials_yard",
-          field: "buyShifuBonus",
-        }),
-        pay,
-        gained,
-        lines,
-      );
-    }
-    const bonus = LOCATIONS.materials_yard.effects.shifu.bonus;
-    if (running.coins < bonus.coins) {
-      return failed(shortfall("coins", bonus.coins, running.coins), { ...pay, coins: pay.coins + bonus.coins }, gained, lines);
-    }
-    running.coins -= bonus.coins;
-    pay.coins += bonus.coins;
-    running.clay += bonus.clay;
-    running.wood += bonus.wood;
-    gained.clay += bonus.clay;
-    gained.wood += bonus.wood;
-  }
-
-  // 3. Prepared Clay (L618), after gaining resources.
+  // 2. Prepared Clay (L618), after gaining resources.
   const prepared = action.preparedClay;
   if (prepared !== undefined) {
     const tech = techError(p, PREPARED_CLAY, "preparedClay");
@@ -187,10 +161,9 @@ function quoteFor(game: PublicCore, playerId: PlayerId, action: MaterialsYardAct
 }
 
 /**
- * The engine's cost and gain for a Materials Yard command (DESIGN §3.5, §5.4): split → Shifu
- * bonus → Prepared Clay, each validated against the running totals. `pay` holds the bonus
- * Coin and Prepared Clay's cost; `gain` holds the split and the bonus. `lines` itemise
- * Prepared Clay's cost (the bonus has no cost-line kind and shows in `pay`/`gain` only).
+ * The engine's cost and gain for a Materials Yard command (DESIGN §3.5, §5.4): split →
+ * Prepared Clay, validated against the running totals. `pay` holds Prepared Clay's cost;
+ * `gain` holds the split. `lines` itemise Prepared Clay's cost.
  */
 export function quoteMaterialsYard(view: ActorView, action: MaterialsYardAction): CostQuote {
   const p = player(view.game, view.viewerId);
@@ -214,11 +187,6 @@ function resolve(draft: GameState, playerId: PlayerId, action: MaterialsYardActi
   invariant(quoteFor(draft, playerId, action, placement.effect).ok, "Materials Yard command must be validated first");
 
   gain(draft, playerId, { clay: action.clay, wood: action.wood }, "materials_yard", ctx);
-  if (action.buyShifuBonus === true) {
-    const bonus = LOCATIONS.materials_yard.effects.shifu.bonus;
-    spend(draft, playerId, { coins: bonus.coins }, "materials_yard_bonus", ctx);
-    gain(draft, playerId, { clay: bonus.clay, wood: bonus.wood }, "materials_yard_bonus", ctx);
-  }
   const prepared = action.preparedClay;
   if (prepared !== undefined) {
     markTechUsed(draft, playerId, PREPARED_CLAY, ctx);

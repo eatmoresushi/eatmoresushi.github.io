@@ -1,5 +1,5 @@
 {
-  "rulesVersion": "1.6.1",
+  "rulesVersion": "1.6.2",
   "policy": {
     "approvedReferenceDirectory": "assets/current_v04",
     "rulesTextInRasters": false,
@@ -73,8 +73,8 @@
   "orderCards": {
     "status": "REGENERATE_FROM_DATA",
     "source": "data/orders.json",
-    "total": 64,
-    "starting": 16,
+    "total": 56,
+    "starting": 8,
     "main": 48,
     "mustShowCrowns": true,
     "decorations": ["plain", "carved", "impressed", "painted"],

@@ -24,8 +24,8 @@ import type {
 } from "../../../src/multiplayer/types.ts";
 
 /**
- * One stored private submission row as the V1.6.1 RPCs return it. `use_fuel_ledger` is
- * returned as `fuelLedger`; a row without it (never written by V1.6.1) reads as false.
+ * One stored private submission row as the V1.6.2 RPCs return it. `use_fuel_ledger` is
+ * returned as `fuelLedger`; a row without it (never written by V1.6.2) reads as false.
  */
 interface PrivateSubmissionRow {
   roomId: string;

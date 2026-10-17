@@ -4,7 +4,7 @@
  * `buildState(spec)` builds a complete `GameState` from a compact spec without `setup.ts`,
  * so every Phase 2 package can build scenarios before P2 lands. It keeps the §8.3
  * invariants that a spec can affect, and throws a `fixtures:` error otherwise:
- * - card conservation: all 16 Starting, 48 Main, 18 Tech and 12 Fire cards sit in exactly
+ * - card conservation: all 8 Starting, 48 Main, 18 Tech and 12 Fire cards sit in exactly
  *   one zone (unplaced cards go to the default zone; a spec that pins every zone and still
  *   leaves a card out throws);
  * - Tech sets obey 3 total / 1 per discipline (`giveTech` calls `acquisitionError`);
@@ -50,6 +50,8 @@ import {
   heatMarkerOf,
   imperialKilnCeramic,
   loadedCeramics,
+  lookOrderIds,
+  lookTechIds,
   lookup,
   player,
   takeVesselCard,
@@ -189,6 +191,8 @@ export interface StateSpec {
   fireDeck?: FireModifier[];
   /** Default: empty, or every leftover card when `fireDeck` is given. */
   fireDiscard?: FireModifier[];
+  /** Buried Test Pieces cards at the bottom of `fireDeck` (R15). Default 0. */
+  fireBuried?: number;
   pendingLook?: PendingLook | null;
   firePeeks?: Partial<Record<PlayerId, FirePeek>>;
   firing?: FiringContext | null;
@@ -308,7 +312,7 @@ function multisetMinus(items: readonly FireModifier[], remove: readonly FireModi
 }
 
 function assignTechZones(state: GameState, spec: StateSpec): void {
-  const lookTechs = state.hidden.pendingLook?.kind === "guild_inspection" ? state.hidden.pendingLook.techIds : [];
+  const lookTechs = lookTechIds(state.hidden.pendingLook);
   for (const discipline of DISCIPLINES) {
     const owned = state.playerOrder.flatMap((pid) => player(state, pid).techs.map((tech) => tech.id));
     const pool = withoutAll(techsOfDiscipline(discipline), [...owned, ...lookTechs]);
@@ -327,7 +331,7 @@ function assignTechZones(state: GameState, spec: StateSpec): void {
 function assignOrderZones(state: GameState, spec: StateSpec): void {
   const hands = state.playerOrder.flatMap((pid) => state.hidden.orderHands[pid] ?? []);
   const look = state.hidden.pendingLook;
-  const looked = look !== null && look.kind !== "guild_inspection" ? look.orderIds : [];
+  const looked = lookOrderIds(look);
   const fixed = [...hands, ...looked, ...(spec.display ?? []).filter((id): id is OrderId => id !== null)];
   const pinned = [...fixed, ...(spec.mainDeck ?? []), ...(spec.mainDiscard ?? [])];
   if (new Set(pinned).size !== pinned.length) {
@@ -367,7 +371,7 @@ function assignFireZones(state: GameState, spec: StateSpec): void {
     inPlay.push(state.firing.fireModifier);
   }
   if (state.firing?.pendingExtraFire) {
-    inPlay.push(state.firing.pendingExtraFire.modifier);
+    inPlay.push(...state.firing.pendingExtraFire.modifiers);
   }
   const remaining = multisetMinus(FIRING.fireDeck, inPlay, "firing");
   if (spec.fireDeck !== undefined && spec.fireDiscard !== undefined) {
@@ -385,6 +389,11 @@ function assignFireZones(state: GameState, spec: StateSpec): void {
     state.hidden.fireDeck = multisetMinus(remaining, discard, "fireDiscard");
     state.fireDiscard = [...discard];
   }
+  const buried = spec.fireBuried ?? 0;
+  if (!Number.isSafeInteger(buried) || buried < 0 || buried > state.hidden.fireDeck.length) {
+    throw fixtureError(`fireBuried ${buried} does not fit a Fire deck of ${state.hidden.fireDeck.length}`);
+  }
+  state.hidden.fireBuried = buried;
 }
 
 /** A complete, invariant-clean `GameState` from a compact spec (DESIGN §8.1). */
@@ -422,8 +431,8 @@ export function buildState(spec: StateSpec = {}): GameState {
   }
 
   const state: GameState = {
-    schemaVersion: 6,
-    rulesVersion: "1.6.1",
+    schemaVersion: 7,
+    rulesVersion: "1.6.2",
     gameId: spec.gameId ?? "test-game",
     revision: 0,
     eventSequence: 0,
@@ -453,6 +462,7 @@ export function buildState(spec: StateSpec = {}): GameState {
       startingBox: [],
       techDecks,
       fireDeck: [],
+      fireBuried: 0,
       pendingLook: spec.pendingLook === undefined ? null : structuredClone(spec.pendingLook),
       firePeeks: spec.firePeeks === undefined ? {} : structuredClone(spec.firePeeks),
     },
@@ -536,6 +546,9 @@ export function giveTech(
   const look = state.hidden.pendingLook;
   if (look?.kind === "guild_inspection") {
     look.techIds = look.techIds.filter((id) => id !== techId);
+  }
+  if (look?.kind === "colour_samples" && look.inspection !== null) {
+    look.inspection.techIds = look.inspection.techIds.filter((id) => id !== techId);
   }
   if (wasDisplayed) {
     const refill = state.hidden.techDecks[discipline].shift();
@@ -823,19 +836,19 @@ export function cardZones(state: GameState): {
     ...hidden.startingBox,
     ...state.market.display.filter((id): id is OrderId => id !== null),
     ...state.playerOrder.flatMap((pid) => player(state, pid).completedOrders.map((record) => record.orderId)),
-    ...(look !== null && look.kind !== "guild_inspection" ? look.orderIds : []),
+    ...lookOrderIds(look),
   ];
   const techs: TechId[] = [
     ...state.playerOrder.flatMap((pid) => player(state, pid).techs.map((tech) => tech.id)),
     ...DISCIPLINES.flatMap((d) => [...state.techDisplay[d], ...hidden.techDecks[d]]),
-    ...(look?.kind === "guild_inspection" ? look.techIds : []),
+    ...lookTechIds(look),
   ];
   const fire: FireModifier[] = [...hidden.fireDeck, ...state.fireDiscard];
   if (state.firing?.fireModifier !== null && state.firing?.fireModifier !== undefined) {
     fire.push(state.firing.fireModifier);
   }
   if (state.firing?.pendingExtraFire) {
-    fire.push(state.firing.pendingExtraFire.modifier);
+    fire.push(...state.firing.pendingExtraFire.modifiers);
   }
   return { orders, techs, fire };
 }

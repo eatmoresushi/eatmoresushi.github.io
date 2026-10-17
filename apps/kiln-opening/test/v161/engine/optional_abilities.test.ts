@@ -22,8 +22,10 @@ describe("optional abilities (R4)", () => {
       expect(c, id).toBeDefined();
       expect(c?.declines !== undefined || (c?.notOptional ?? "").length > 0, id).toBe(true);
     }
-    // The automatic or mandatory ones are exactly Colour Samples, Kiln Tending, Connoisseur's Cabinet.
-    expect(ABILITY_CASES.filter((c) => c.declines === undefined).map((c) => c.ability).sort()).toEqual(["T10", "T19", "T20"]);
+    // The automatic ones are exactly Connoisseur's Cabinet, Kiln Tending and Canal Barge (v1.6.2
+    // L630). Colour Samples' swap, Protective Saggars' Standard → Fine step and Second Firing are
+    // optional (R4); the Saggars floor and Fuel Ledger's free Bank and Stoke are not choices.
+    expect(ABILITY_CASES.filter((c) => c.declines === undefined).map((c) => c.ability).sort()).toEqual(["T19", "T20", "T23"]);
   });
 
   it.each(OPTIONAL.map((c) => [c.ability, c] as const))("%s: offered used and declined; declining keeps the use", (id, c) => {
@@ -47,20 +49,15 @@ describe("optional abilities (R4)", () => {
     }
   });
 
-  it("a Canal Barge declined before the worker action is still usable after it, the same round", () => {
-    const table = new LocalTable(
-      buildState({
-        players: [{ techs: ["T23"], hand: ["O01"] }, {}],
-        ceramics: [{ owner: "p1", stage: "finished", shape: "bowl", glaze: "white", quality: "standard" }],
-      }),
-    );
+  it("a Colour Samples swap declined before the worker action is still usable after it, the same round", () => {
+    const table = new LocalTable(buildState({ players: [{ techs: ["T10"], hand: ["O40"] }, {}] }));
     table.act("p1", { type: "PLACE_CANAL_WHARF", workerId: "p1:apprentice:1" });
     expect(table.state.phase).toMatchObject({ type: "work_turn", activePlayerId: "p1", step: { kind: "after_action" } });
-    const barge = legalCommands(table.view("p1"), { mode: "canonical" }).find((command) => command.type === "USE_CANAL_BARGE");
-    expect(barge).toBeDefined();
-    if (barge !== undefined) {
-      const events = applyCommand(table, "p1", barge);
-      expect(events.some((e) => e.type === "ORDER_COMPLETED" && e.record.via === "canal_barge")).toBe(true);
+    const swap = legalCommands(table.view("p1"), { mode: "canonical" }).find((command) => command.type === "USE_COLOUR_SAMPLES_SWAP");
+    expect(swap).toBeDefined();
+    if (swap !== undefined) {
+      const events = applyCommand(table, "p1", swap);
+      expect(events.some((e) => e.type === "PRIVATE_LOOK_OPENED" && e.kind === "colour_samples_swap")).toBe(true);
     }
   });
 });

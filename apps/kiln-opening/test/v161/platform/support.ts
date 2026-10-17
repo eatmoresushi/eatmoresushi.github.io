@@ -315,8 +315,9 @@ export function exitCommand(view: ActorView): AuthoritativeCommand | null {
       return faceDown ? { type: "RESOLVE_HEAT_MARKERS", ownMarker: "return" } : { type: "RESOLVE_HEAT_MARKERS" };
     }
     case "firing_heat_adjustment":
-    case "firing_second_firing_jun":
       return { type: "RESOLVE_JUN", adjustment: null };
+    case "firing_second_firing_choice":
+      return { type: "SECOND_FIRING_CHOOSE", cardIndex: 0, jun: null };
     case "firing_after_quality":
       return { type: "END_AFTER_QUALITY" };
     case "firing_salvage":
@@ -336,7 +337,7 @@ export function exitCommand(view: ActorView): AuthoritativeCommand | null {
 /** A computer policy that always takes `exitCommand`, unless a phase is overridden. */
 export function scriptedPolicy(overrides: Partial<Record<string, (view: ActorView) => AuthoritativeCommand | null>> = {}): ComputerPolicy {
   return {
-    version: "rules-v1.6.1-scripted-001",
+    version: "rules-v1.6.2-scripted-001",
     label: "Scripted",
     chooseCommand(view) {
       const override = overrides[view.game.phase.type];

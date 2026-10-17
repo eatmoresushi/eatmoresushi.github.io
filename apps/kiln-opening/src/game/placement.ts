@@ -136,6 +136,11 @@ export function validatePlacement(
   if (phase.activePlayerId !== actorId) {
     return ruleError("NOT_YOUR_DECISION", "It is not your Work turn.", { playerId: actorId });
   }
+  if (phase.step.kind === "colour_samples_swap" && phase.step.returnTo === "before_action") {
+    // A swap used before the worker action must be resolved first (v1.6.2 L617); no worker has
+    // been placed yet, so this is not WORKER_ACTION_ALREADY_TAKEN.
+    return ruleError("WRONG_PHASE", "Finish the Colour Samples swap before your worker action.", { phase: phase.type, step: phase.step.kind });
+  }
   if (phase.step.kind !== "before_action") {
     return ruleError("WORKER_ACTION_ALREADY_TAKEN", "You have already taken this turn's worker action.", {
       step: phase.step.kind,

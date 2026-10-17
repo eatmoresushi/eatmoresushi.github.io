@@ -10,7 +10,6 @@ import { validateContribution } from "../../../src/game/firing/contributions.ts"
 import { legalCommands, sampleLegalAction } from "../../../src/game/legalActions.ts";
 import { SeededRandom } from "../../../src/game/rng.ts";
 import {
-  canalBargeOptions,
   crackleDeclarationChecks,
   glazeLoadVesselOptions,
   imperialPriorityOptions,
@@ -119,8 +118,11 @@ export const FIRING_STAGE_KEYS = {
   contribution: ["playerId", "revealed"],
   revealed: ["card", "heat", "woodPaid"],
   testPieces: ["playerId", "peeked", "buried"],
-  extraFire: ["playerId", "ceramicId", "modifier"],
-  ceramic: ["id", "ownerId", "kiln", "spaceId", "marker", "quality", "crackle", "salvaged", "secondFireModifier"],
+  /** Second Firing's 2 revealed cards (v1.6.2 L639): face up on the table. */
+  extraFire: ["playerId", "ceramicId", "modifiers"],
+  /** `secondFireRevealed` (both revealed cards) and `saggarsFloor` (v1.6.2 L636) are recorded
+   * facts of the table, not analysis (DELTA §2.7, D3, D4). */
+  ceramic: ["id", "ownerId", "kiln", "spaceId", "marker", "quality", "crackle", "salvaged", "secondFireModifier", "secondFireRevealed", "saggarsFloor"],
   /** `CeramicHeatMarker`: `value` only once turned. */
   marker: ["source", "faceDown", "value"],
 } as const;
@@ -217,27 +219,24 @@ export function everyDestination(): Array<LoadSpec["destination"]> {
 
 type MaterialsYardAction = Extract<GameAction, { type: "PLACE_MATERIALS_YARD" }>;
 
-/** Every Materials Yard command for a worker option (any split, bonus, Prepared Clay), validated:
- * the exhaustive oracle of `materialsYardOptions`. */
+/** Every Materials Yard command for a worker option (any split, Prepared Clay), validated:
+ * the exhaustive oracle of `materialsYardOptions` (v1.6.2 L164–165: no Shifu Coin option). */
 export function legalMaterialsYardCommands(view: ActorView, worker: PlacementWorkerOption): MaterialsYardAction[] {
   const total = LOCATIONS.materials_yard.effects[worker.effect].resources;
   const prepared: Array<MaterialsYardAction["preparedClay"]> = [undefined];
   for (const shape of SHAPES) for (const decoration of DECORATIONS) prepared.push({ shape, decoration });
   const legal: MaterialsYardAction[] = [];
   for (const preparedClay of prepared) {
-    for (const bonus of [false, true]) {
-      for (let clay = 0; clay <= total; clay += 1) {
-        const action: MaterialsYardAction = {
-          type: "PLACE_MATERIALS_YARD",
-          workerId: worker.workerId,
-          clay,
-          wood: total - clay,
-          ...(worker.seniorApprentice ? { seniorApprentice: true } : {}),
-          ...(bonus ? { buyShifuBonus: true } : {}),
-          ...(preparedClay === undefined ? {} : { preparedClay }),
-        };
-        if (validateAction(view, action) === null) legal.push(action);
-      }
+    for (let clay = 0; clay <= total; clay += 1) {
+      const action: MaterialsYardAction = {
+        type: "PLACE_MATERIALS_YARD",
+        workerId: worker.workerId,
+        clay,
+        wood: total - clay,
+        ...(worker.seniorApprentice ? { seniorApprentice: true } : {}),
+        ...(preparedClay === undefined ? {} : { preparedClay }),
+      };
+      if (validateAction(view, action) === null) legal.push(action);
     }
   }
   return legal;
@@ -304,17 +303,13 @@ export function uiOptionAgreementViolations(state: GameState, privateState: Priv
       const tag = `materialsYardOptions ${worker.workerId}${worker.seniorApprentice ? "+senior" : ""}`;
       check(legal.length > 0, `${tag}: a legal worker with no legal command`);
       check(legal.every((a) => a.clay + a.wood === listed.resources), `${tag}: resources ${listed.resources}`);
-      const bonus = legal.some((a) => a.buyShifuBonus === true);
-      check(worker.effect === "shifu" ? listed.shifuBonus?.ok === bonus : listed.shifuBonus === null && !bonus, `${tag}: shifuBonus ok=${listed.shifuBonus?.ok} but legal=${bonus}`);
       const prepared = legal.flatMap((a) => (a.preparedClay === undefined ? [] : [a.preparedClay]));
       check(sameSet(listed.preparedClay?.shapes ?? [], prepared.map((p) => p.shape)), `${tag}: Prepared Clay Shapes ${listed.preparedClay?.shapes.join(",")} vs ${[...new Set(prepared.map((p) => p.shape))].join(",")}`);
       check(sameSet(listed.preparedClay?.decorations ?? [], prepared.map((p) => p.decoration)), `${tag}: Prepared Clay Decorations disagree`);
-      // Legality is per pair (Shape Clay and Decoration Coins compete with the bonus Coin), and
-      // per pair with the bonus: compare the exact pairs, not only the two projections.
+      // Legality is per pair (Shape Clay comes from the split): compare the exact pairs, not
+      // only the two projections.
       const key = (p: { shape: Shape; decoration: Decoration }): string => `${p.shape}/${p.decoration}`;
       check(sameSet((listed.preparedClay?.pairs ?? []).map(key), prepared.map(key)), `${tag}: Prepared Clay pairs disagree`);
-      const withBonus = legal.flatMap((a) => (a.preparedClay !== undefined && a.buyShifuBonus === true ? [key(a.preparedClay)] : []));
-      check(sameSet((listed.preparedClay?.pairs ?? []).filter((p) => p.withShifuBonus).map(key), withBonus), `${tag}: Prepared Clay pairs with the Shifu bonus disagree`);
       const t17 = techReady(player(game, actorId), "T17");
       check((listed.preparedClay === null) === (worker.seniorApprentice || !t17), `${tag}: preparedClay null=${listed.preparedClay === null}`);
     }
@@ -373,13 +368,9 @@ export function uiOptionAgreementViolations(state: GameState, privateState: Priv
     }
   }
 
-  // Gap 8: Crackle declaration verdicts against COMPLETE_ORDER / USE_CANAL_BARGE in their windows.
-  const type =
-    phase.type === "orders" && decisionPrompt(game).actorIds.includes(actorId)
-      ? ("COMPLETE_ORDER" as const)
-      : canalBargeOptions(view).length > 0
-        ? ("USE_CANAL_BARGE" as const)
-        : null;
+  // Gap 8: Crackle declaration verdicts against COMPLETE_ORDER in the Order Phase (the only place
+  // Orders are completed, v1.6.2 L296).
+  const type = phase.type === "orders" && decisionPrompt(game).actorIds.includes(actorId) ? ("COMPLETE_ORDER" as const) : null;
   if (type !== null) {
     for (const orderId of view.own.orderHand) {
       for (const match of orderMatchOptions(view, orderId, 4)) {
@@ -456,19 +447,30 @@ export function uiOptionScenarios(): Array<{ name: string; table: LocalTable; ac
         { owner: "p1", stage: "shaped", shape: "bowl" },
       ],
     }),
-    work("Canal Barge with a Crackle wildcard", {
-      players: [{ kilnId: "GE", techs: ["T23"], hand: ["O39", "S11", "S13"] }, {}],
-      ceramics: [
-        { owner: "p1", stage: "finished", shape: "vase", glaze: "celadon", decoration: "plain", quality: "fine", crackle: true },
-        { owner: "p1", stage: "finished", shape: "censer", glaze: "moon_white", decoration: "painted", quality: "fine" },
-        { owner: "p1", stage: "finished", shape: "bowl", glaze: "white", decoration: "impressed", quality: "fine", crackle: true },
-      ],
+    {
+      name: "Order Phase with Canal Barge and a Crackle wildcard",
+      table: new LocalTable(
+        buildState({
+          players: [{ kilnId: "GE", techs: ["T23"], hand: ["O39", "S07", "S08"] }, {}],
+          phase: { type: "orders", turnOrder: ["p1", "p2"], index: 0 },
+          ceramics: [
+            { owner: "p1", stage: "finished", shape: "vase", glaze: "celadon", decoration: "plain", quality: "fine", crackle: true },
+            { owner: "p1", stage: "finished", shape: "censer", glaze: "moon_white", decoration: "painted", quality: "fine" },
+            { owner: "p1", stage: "finished", shape: "bowl", glaze: "white", decoration: "impressed", quality: "fine", crackle: true },
+          ],
+        }),
+        { flow: "halt", pass: ["worker_action_done"] },
+      ),
+      actor: "p1",
+    },
+    work("Colour Samples swap with a Starting and a Main Order held", {
+      players: [{ techs: ["T10"], hand: ["S07", "O39"] }, {}],
     }),
     {
       name: "Order Phase with two Crackle ceramics in one Order",
       table: new LocalTable(
         buildState({
-          players: [{ kilnId: "GE", hand: ["O29", "S12", "O36"] }, {}],
+          players: [{ kilnId: "GE", hand: ["O29", "S07", "O36"] }, {}],
           phase: { type: "orders", turnOrder: ["p1", "p2"], index: 0 },
           ceramics: [
             { owner: "p1", stage: "finished", shape: "vase", glaze: "moon_white", decoration: "plain", quality: "fine", crackle: true },

@@ -1,5 +1,5 @@
 /**
- * Public barrel of the V1.6.1 engine. Consumers (multiplayer service, computer player, UI)
+ * Public barrel of the V1.6.2 engine. Consumers (multiplayer service, computer player, UI)
  * import from here; engine modules import each other directly.
  *
  * Exported: the contract types, content, the rules fingerprint, the round-phase display
