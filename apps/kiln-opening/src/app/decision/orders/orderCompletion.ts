@@ -197,17 +197,34 @@ export function completionFromCommand(type: CompletionCommandType, command: Auth
 
 /**
  * The Decoration each Crackle ceramic of the chosen group counts as for this Order, where it is
- * not its own (L470): the declarations as given, or in the auto mode the ones the engine's search
- * would record (`match.crackleDeclarations`; S07 "Carved, Impressed or Painted" takes one of the
- * three). For words only: the auto command still omits them, and the engine records its own.
+ * not its own (L470). For words only: the auto command still omits declarations.
+ * - Explicit mode: the declarations as given, except one naming the ceramic's own Decoration.
+ * - Auto mode: only the ceramics that need their wildcard. The engine's search records a
+ *   Decoration for every Crackle ceramic, trying Plain first (Plain on an Order without a
+ *   Decoration requirement, Carved for a Painted ceramic on S07), so a recorded Decoration is
+ *   named only when the ceramic's own one does not complete the Order with the others as
+ *   recorded (`crackleDeclarationChecks`, the validator's verdicts); the rest say nothing.
  */
 export function countedDecorations(draft: CompletionDraft, options: CompletionOptions, engine: EngineView): ReadonlyMap<CeramicId, Decoration> {
-  const recorded = draft.declarations === "auto" ? (options.match?.crackleDeclarations ?? []) : draft.declarations;
-  const counted = new Map<CeramicId, Decoration>();
-  for (const entry of recorded) {
-    if (engine.view.game.ceramics[entry.ceramicId]?.decoration !== entry.decoration) counted.set(entry.ceramicId, entry.decoration);
+  const differs = (entry: CrackleDeclaration) => engine.view.game.ceramics[entry.ceramicId]?.decoration !== entry.decoration;
+  let recorded: readonly CrackleDeclaration[];
+  if (draft.declarations !== "auto") recorded = draft.declarations.filter(differs);
+  else if (options.match === null || options.crackle === null) recorded = [];
+  else {
+    const { orderId, ceramicIds } = options.crackle;
+    recorded = options.match.crackleDeclarations.filter(differs);
+    // Drop one unneeded wildcard at a time, so the rest keep a completing assignment.
+    for (;;) {
+      if (recorded.length === 0) break;
+      const checks = crackleDeclarationChecks(engine.view, orderId, ceramicIds, recorded);
+      const spare = recorded.find((entry) =>
+        checks.ceramics.find((ceramic) => ceramic.ceramicId === entry.ceramicId)?.options.some((option) => option.decoration === null && option.check.ok),
+      );
+      if (spare === undefined) break;
+      recorded = recorded.filter((entry) => entry !== spare);
+    }
   }
-  return counted;
+  return new Map(recorded.map((entry) => [entry.ceramicId, entry.decoration] as const));
 }
 
 /** The decoration a draft declares for one Crackle ceramic (null: undeclared, its printed one). */

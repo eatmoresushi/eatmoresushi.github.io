@@ -16,6 +16,7 @@
  * speak through the same polite region, so there is only one (§8.3).
  */
 import type { GameEventType, PlayerId, PublicGameEvent } from "../../game/index.ts";
+import { RULE_NUMBERS } from "../i18n/content.ts";
 import { publicEventText } from "../i18n/events.ts";
 import { list } from "../i18n/format.ts";
 import { msg } from "../i18n/translator.ts";
@@ -113,7 +114,7 @@ export function yourTurnMessage(model: GameModel): RichMessage | null {
     case "after_quality":
       return msg("shell.announce.turn.after_quality");
     case "second_firing":
-      return msg("shell.announce.turn.second_firing");
+      return msg("shell.announce.turn.second_firing", { n: RULE_NUMBERS.secondFiringCards });
     case "salvage":
       return msg("shell.announce.turn.salvage");
     case "orders":

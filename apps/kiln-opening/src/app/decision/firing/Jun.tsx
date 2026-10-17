@@ -1,5 +1,5 @@
 /**
- * Jun (UI_V1.6.1_ARCHITECTURE §3.4 `jun`: step 8 and R7). Owner: B5.
+ * Jun (UI_V1.6.1_ARCHITECTURE §3.4 `jun`: step 8). Owner: B5.
  *
  * Firing step 8: pay Wood to adjust one of your ceramics' Actual Heat by +1 or −1 (step 1 the
  * ceramic, step 2 the side, with its cost), or decline (the window's alternative button; Jun stays

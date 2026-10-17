@@ -19,9 +19,11 @@
  * the table announces them; it never states a Fire-deck size or a preview. This is the only file
  * of `src/app` that may read the heat-calculation fields of past events (§2).
  */
+import { KILNS } from "../../game/index.ts";
 import type {
   GameEvent,
   GameEventType,
+  KilnId,
   KilnSpaceId,
   OrderId,
   PlayerId,
@@ -151,9 +153,15 @@ function milestone(space: number, context: EventTextContext): string {
   return recognitionMilestones(context.t.locale).find((entry) => entry.space === space)?.title ?? "";
 }
 
-function kilnAbility(kilnId: "RU" | "GU" | "GE" | "DI" | "JU", context: EventTextContext): string {
+function kilnAbility(kilnId: KilnId, context: EventTextContext): string {
   return kilnText(kilnId, context.t.locale).abilityName;
 }
+
+/** Ding's extra vessel costs exactly this (v1.6.2 L473): its line states it, and the cost line folds. */
+const DING_COST = Object.freeze({ clay: -KILNS.DI.params.clay, wood: 0, coins: -KILNS.DI.params.coins });
+
+/** Jun's adjustment costs exactly this Wood (v1.6.2 L477): its line states it, and the cost line folds. */
+const JUN_WOOD = KILNS.JU.params.wood;
 
 function reasonText(reason: ResourceChangeReason, context: EventTextContext): string {
   const { t } = context;
@@ -246,7 +254,10 @@ export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
     );
     const line = c.t("shell.ev.CERAMIC_FORMED", { name: name(event.playerId, c), ceramic: described });
     if (event.formedBy === "prepared_clay") return c.t("shell.ev.via", { line, via: techName(TECH.preparedClay, c.t.locale) });
-    if (event.formedBy === "ding_extra") return c.t("shell.ev.via", { line, via: kilnAbility("DI", c) });
+    // Ding's line states the extra vessel's cost; its Resources line folds away (`repeatsNextEntry`).
+    if (event.formedBy === "ding_extra") {
+      return c.t("shell.ev.CERAMIC_FORMED.ding", { name: name(event.playerId, c), ceramic: described, ability: kilnAbility("DI", c), cost: resourceChanges(DING_COST, c) });
+    }
     return line;
   },
   CERAMIC_RESHAPED: (event, c) => {
@@ -325,7 +336,15 @@ export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
     if (event.techId === TECH.canalBarge) return c.t("shell.ev.TECH_USED.coins", { ...values, coins: coins(RULE_NUMBERS.canalBargeCoins, c) });
     return c.t("shell.ev.TECH_USED", values);
   },
-  KILN_ABILITY_USED: (event, c) => c.t("shell.ev.KILN_ABILITY_USED", { name: name(event.playerId, c), ability: kilnAbility(event.kilnId, c) }),
+  // Ru and Guan score as the Order is completed (v1.6.2 L459, L463): the line states what they give, and
+  // Guan's Coins line folds into it. Ding, Jun and Ge's lines fold into the line beside them,
+  // which names the ability (`repeatsPreviousEntry`, `repeatsNextEntry`).
+  KILN_ABILITY_USED: (event, c) => {
+    const values = { name: name(event.playerId, c), ability: kilnAbility(event.kilnId, c) };
+    if (event.kilnId === "RU") return c.t("shell.ev.KILN_ABILITY_USED.vp", { ...values, vp: KILNS.RU.params.vp });
+    if (event.kilnId === "GU") return c.t("shell.ev.KILN_ABILITY_USED.vpCoins", { ...values, vp: KILNS.GU.params.vp, coins: coins(KILNS.GU.params.coins, c) });
+    return c.t("shell.ev.KILN_ABILITY_USED", values);
+  },
   IMPERIAL_PRIORITY_USED: (event, c) =>
     c.t("shell.ev.IMPERIAL_PRIORITY_USED", { name: name(event.playerId, c), ceramic: ceramic(event.ceramicId, c, event.playerId) }),
   WORK_TURN_ENDED: (event, c) => c.t("shell.ev.WORK_TURN_ENDED", { name: name(event.playerId, c) }),
@@ -382,7 +401,7 @@ export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
       ? c.t("shell.ev.BASE_HEAT_DETERMINED", values)
       : c.t("shell.ev.BASE_HEAT_DETERMINED.clamped", { ...values, min: RULE_NUMBERS.baseHeatMin, max: RULE_NUMBERS.baseHeatMax });
   },
-  TEST_PIECES_PEEKED: (event, c) => c.t("shell.ev.TEST_PIECES_PEEKED", { name: name(event.playerId, c) }),
+  TEST_PIECES_PEEKED: (event, c) => c.t("shell.ev.TEST_PIECES_PEEKED", { name: name(event.playerId, c), tech: techName(TECH.testPieces, c.t.locale) }),
   TEST_PIECES_USED: (event, c) =>
     event.buried
       ? c.t("shell.ev.TEST_PIECES_USED.buried", { name: name(event.playerId, c) })
@@ -399,11 +418,13 @@ export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
       ? c.t("shell.ev.FIRE_DECK_RESHUFFLED.buried", { tech: techName(TECH.testPieces, c.t.locale) })
       : c.t("shell.ev.FIRE_DECK_RESHUFFLED"),
   ACTUAL_HEAT_CALCULATED: (event, c) => c.t("shell.ev.ACTUAL_HEAT_CALCULATED", { n: event.results.length }),
+  // States Jun's Wood; the Resources line and "used Jun" fold away (`repeatsNextEntry`).
   JUN_ADJUSTED: (event, c) =>
     c.t("shell.ev.JUN_ADJUSTED", {
       name: name(event.playerId, c),
       ability: kilnAbility("JU", c),
       ceramic: ceramic(event.ceramicId, c, event.playerId),
+      cost: c.t("common.amount.wood", { n: JUN_WOOD }),
       delta: signed(event.delta),
       heat: event.finalActualHeat,
     }),
@@ -546,6 +567,38 @@ function ownText(event: Extract<GameEvent, { type: OwnSecretType }>, context: Ev
   return template(event, context);
 }
 
+/** The player an event names, or null. */
+function eventPlayer(event: PublicGameEvent): PlayerId | null {
+  const value = (event as { playerId?: unknown }).playerId;
+  return typeof value === "string" ? value : null;
+}
+
+/** The Kiln ability a line names in its own words (Ding's formed vessel, Jun's adjustment, Ge's Quality and Crackle lines, a cost line's "(ability)"), or null. */
+function abilityNamedBy(event: PublicGameEvent): KilnId | null {
+  switch (event.type) {
+    case "RESOURCES_CHANGED":
+      return event.reason === "ding_extra" ? "DI" : event.reason === "jun" ? "JU" : null;
+    case "CERAMIC_FORMED":
+      return event.formedBy === "ding_extra" ? "DI" : null;
+    case "JUN_ADJUSTED":
+      return "JU";
+    case "QUALITY_IMPROVED":
+      return event.cause === "ge_crackle" ? "GE" : null;
+    case "CRACKLE_APPLIED":
+      return "GE";
+    default:
+      return null;
+  }
+}
+
+/** A Ding, Jun or Ge "used ⟨ability⟩" line beside a line of the same player that names that ability. */
+function namedBeside(entry: LogEntry, beside: LogEntry | undefined): boolean {
+  const event = entry.event;
+  if (event.type !== "KILN_ABILITY_USED" || beside === undefined || abilityNamedBy(beside.event) !== event.kilnId) return false;
+  const owner = eventPlayer(beside.event);
+  return owner === null || owner === event.playerId;
+}
+
 /**
  * True when a log entry only repeats the line before it, so the log folds it away. Only the log
  * (and the turn toasts) fold; the event stays in the history.
@@ -554,13 +607,18 @@ function ownText(event: Extract<GameEvent, { type: OwnSecretType }>, context: Ev
  * - Canal Barge's Coins (`RESOURCES_CHANGED`, `canal_barge`, v1.6.2 L622) directly after the
  *   same player's `TECH_USED` of Canal Barge, whose line already states them ("used Canal
  *   Barge: +2 Coins").
+ * - Guan's Coins (`guan`) directly after the same player's `KILN_ABILITY_USED` of Guan, whose
+ *   line states them ("used Imperial Patronage: +1 VP, +2 Coins").
  * - A salvage's Coins (`salvage`) directly after the same player's `CERAMIC_SALVAGED`, whose line
  *   states them ("salvaged … for 2 Coins").
  * - The Imperial Grant's resources (`imperial_grant`) directly after the same player's
  *   `IMPERIAL_GRANT_RECEIVED`, whose line states them.
+ * - Jun's "used Kiln Transformation" (`KILN_ABILITY_USED`) directly after the same player's Jun
+ *   Wood, which the `JUN_ADJUSTED` line right after it states.
  */
 export function repeatsPreviousEntry(entry: LogEntry, previous: LogEntry | undefined): boolean {
   const event = entry.event;
+  if (event.type === "KILN_ABILITY_USED") return namedBeside(entry, previous);
   if (event.type !== "RESOURCES_CHANGED" || previous === undefined) return false;
   const before = previous.event;
   if (event.reason === "imperial_grant") {
@@ -573,6 +631,9 @@ export function repeatsPreviousEntry(entry: LogEntry, previous: LogEntry | undef
   if (event.reason === "canal_barge") {
     return before.type === "TECH_USED" && before.techId === TECH.canalBarge && before.playerId === event.playerId && event.coins === RULE_NUMBERS.canalBargeCoins;
   }
+  if (event.reason === "guan") {
+    return before.type === "KILN_ABILITY_USED" && before.kilnId === "GU" && before.playerId === event.playerId && event.coins === KILNS.GU.params.coins;
+  }
   if (event.reason === "salvage") {
     return before.type === "CERAMIC_SALVAGED" && before.playerId === event.playerId && event.coins === before.coins;
   }
@@ -580,15 +641,37 @@ export function repeatsPreviousEntry(entry: LogEntry, previous: LogEntry | undef
 }
 
 /**
- * True when a log entry only says what the line after it says, so the log folds it away: a
- * Guild Hall payment (`RESOURCES_CHANGED`, `guild_hall`) directly before the same player's
- * `TECH_ACQUIRED`, whose line states the cost ("acquired Test Pieces: pay 3 Coins"). Both come
- * from one move, so they always arrive together.
+ * True when a log entry only says what the line after it says, so the log folds it away. Each
+ * pair comes from one move, so they always arrive together:
+ * - a Guild Hall payment (`RESOURCES_CHANGED`, `guild_hall`) directly before the same player's
+ *   `TECH_ACQUIRED`, whose line states the cost ("acquired Test Pieces: pay 3 Coins");
+ * - Ding's cost (`ding_extra`) directly before the same player's Ding vessel (`CERAMIC_FORMED`,
+ *   `ding_extra`), whose line states it ("formed a vessel: Plate · Plain (Moulded Production:
+ *   −1 Clay · −1 Coin)");
+ * - Jun's Wood (`jun`) directly before the same player's "used Kiln Transformation", which
+ *   `JUN_ADJUSTED` follows at once and which states the Wood;
+ * - a Ding, Jun or Ge "used ⟨ability⟩" (`KILN_ABILITY_USED`) directly before the same player's
+ *   line naming that ability (Ding's cost or vessel, Jun's adjustment, Ge's Quality change).
  */
 export function repeatsNextEntry(entry: LogEntry, next: LogEntry | undefined): boolean {
   const event = entry.event;
-  if (event.type !== "RESOURCES_CHANGED" || event.reason !== "guild_hall" || next === undefined || event.clay !== 0 || event.wood !== 0) return false;
+  if (event.type === "KILN_ABILITY_USED") return namedBeside(entry, next);
+  if (event.type !== "RESOURCES_CHANGED" || next === undefined) return false;
   const after = next.event;
+  if (event.reason === "ding_extra") {
+    return (
+      after.type === "CERAMIC_FORMED" &&
+      after.formedBy === "ding_extra" &&
+      after.playerId === event.playerId &&
+      event.clay === DING_COST.clay &&
+      event.wood === DING_COST.wood &&
+      event.coins === DING_COST.coins
+    );
+  }
+  if (event.reason === "jun") {
+    return after.type === "KILN_ABILITY_USED" && after.kilnId === "JU" && after.playerId === event.playerId && event.clay === 0 && event.coins === 0 && event.wood === -JUN_WOOD;
+  }
+  if (event.reason !== "guild_hall" || event.clay !== 0 || event.wood !== 0) return false;
   return after.type === "TECH_ACQUIRED" && after.playerId === event.playerId && after.cost === -event.coins;
 }
 

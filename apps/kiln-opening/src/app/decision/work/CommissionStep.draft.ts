@@ -183,7 +183,10 @@ export const commissionDraft: DraftModel<CommissionDraft, CommissionAction, Comm
     const chosen = canonical(draft, options);
     if (chosen.length === 0) return options.maxReservations > 1 ? msg("work.cm.summary.chooseTwo", { n: options.maxReservations }) : msg("work.cm.summary.choose");
     const orders = (t: Translator) => list(chosen.map((choice) => choice.orderId), t.locale);
-    const rest = options.looked.length - chosen.filter((choice) => choice.slotIndex === null).length;
-    return rest > 0 ? msg("work.cm.summary.reserveRest", { orders, n: rest }) : msg("work.cm.summary.reserve", { orders });
+    const lookedChosen = chosen.filter((choice) => choice.slotIndex === null).length;
+    const rest = options.looked.length - lookedChosen;
+    if (rest === 0) return msg("work.cm.summary.reserve", { orders });
+    // "The other 2 cards" only when a looked card is reserved; otherwise all of them go.
+    return lookedChosen > 0 ? msg("work.cm.summary.reserveRest", { orders, n: rest }) : msg("work.cm.summary.reserveLookedAll", { orders, n: rest });
   },
 };

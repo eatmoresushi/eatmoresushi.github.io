@@ -37,7 +37,7 @@ import { WINDOWS } from "../../../../src/app/decision/windows.ts";
 import { colourSamplesDraft, colourSamplesSwapLookDraft } from "../../../../src/app/decision/work/ColourSamples.draft.ts";
 import { colourSamplesSwapDraft } from "../../../../src/app/decision/work/ColourSamplesSwap.draft.ts";
 import { commissionDraft, lookPickKey, slotPickKey } from "../../../../src/app/decision/work/CommissionStep.draft.ts";
-import { GUILD_FINISH_VALUE, guildInspectionDraft } from "../../../../src/app/decision/work/GuildInspection.draft.ts";
+import { GUILD_FINISH_VALUE, guildInspectionDraft, inspectionReturnOnly, inspectionTechChooser } from "../../../../src/app/decision/work/GuildInspection.draft.ts";
 import { imperialPriorityDraft } from "../../../../src/app/decision/work/ImperialPriority.draft.ts";
 import { destinationKey } from "../../../../src/app/decision/work/locations/GlazeLoad.draft.ts";
 import { workDraft } from "../../../../src/app/decision/work/workDraft.ts";
@@ -699,7 +699,7 @@ describe("Commission Market reservation step (v1.6.2 L195–198)", () => {
     });
     expect(validateAction(c.actor, command as GameAction)).toBeNull();
     const [en, zh] = sentences(WINDOWS.commission, draft, c);
-    expect(en).toBe(`Reserve ${c.view.game.market.display[1]}, ${looked}; 2 cards you looked at go to the bottom of the deck`);
+    expect(en).toBe(`Reserve ${c.view.game.market.display[1]}, ${looked}; the other 2 cards you looked at go to the bottom of the deck`);
     expect(zh).toBe(`承接${c.view.game.market.display[1]}、${looked}，所看的另2张放到牌堆底`);
     expect(commissionDraft.fromCommand(command!, c.model, c.engine)).toEqual({ picks: [slotPickKey(1), lookPickKey(looked)] });
     // Unticking one leaves a single, still legal reservation.
@@ -723,10 +723,13 @@ describe("Commission Market reservation step (v1.6.2 L195–198)", () => {
     const command = commissionDraft.build(draft, c.model, c.engine);
     expect(command).toEqual({ type: "COMMISSION_CHOOSE", reservations: [{ kind: "looked", orderId: look.orderIds[1] }] });
     expect(validateAction(c.actor, command as GameAction)).toBeNull();
-    expect(sentences(WINDOWS.commission, draft, c)).toEqual([`Reserve ${look.orderIds[1]}; 1 card you looked at goes to the bottom of the deck`, `承接${look.orderIds[1]}，所看的另1张放到牌堆底`]);
-    // A display Order leaves every looked card for the deck bottom.
+    expect(sentences(WINDOWS.commission, draft, c)).toEqual([`Reserve ${look.orderIds[1]}; 1 other card you looked at goes to the bottom of the deck`, `承接${look.orderIds[1]}，所看的另1张放到牌堆底`]);
+    // A display Order leaves every looked card for the deck bottom: no "other" (另) card then.
     const faceUp = commissionDraft.reduce(draft, { type: "pick", key: slotPickKey(0) }, c.model, c.engine);
-    expect(sentences(WINDOWS.commission, faceUp, c)[0]).toBe(`Reserve ${c.view.game.market.display[0]}; 2 cards you looked at go to the bottom of the deck`);
+    expect(sentences(WINDOWS.commission, faceUp, c)).toEqual([
+      `Reserve ${c.view.game.market.display[0]}; the 2 cards you looked at go to the bottom of the deck`,
+      `承接${c.view.game.market.display[0]}，所看的2张放到牌堆底`,
+    ]);
     // Two picks are not expressible for the Apprentice effect.
     expect(
       commissionDraft.fromCommand({ type: "COMMISSION_CHOOSE", reservations: [{ kind: "looked", orderId: at(look.orderIds, 0) }, { kind: "looked", orderId: at(look.orderIds, 1) }] }, c.model, c.engine),
@@ -833,6 +836,11 @@ describe("Guild Hall inspection (v1.6.2 L206–213, owner revision 2026-10-17)",
     const draft = guildInspectionDraft.initial(c.model, c.engine);
     expect(draft.choice).toEqual({ kind: "finish" });
     expect(guildInspectionDraft.build(draft, c.model, c.engine)).toEqual({ type: "GUILD_FINISH", bottomOrder: options?.inspected.map((option) => option.techId) });
+    // Both takes made: only the bottom order is left, so the window says so and the table offers nothing.
+    expect(inspectionReturnOnly(options!)).toBe(true);
+    expect(WINDOWS.guild_inspection.title(c.model, c.engine, draft)).toEqual({ key: "work.title.guildReturn" });
+    expect(guildInspectionDraft.summary(draft, c.model, c.engine)?.key).toBe("work.gi.summaryReturn");
+    expect(inspectionTechChooser(draft, c.model, c.engine)).toBeNull();
   });
 
   it("ignores a Tech the engine says cannot be taken", () => {
@@ -919,8 +927,32 @@ describe("table adapters", () => {
     const action = adapter.act(swap, { type: "order", key: at(hand, 2) }, c.model, c.engine);
     expect(action).toEqual({ type: "swap", action: { type: "discard", orderId: hand[2] } });
     const chosen = workDraft.reduce(swap, action as WorkAction, c.model, c.engine);
-    expect(adapter.select(chosen, c.model, c.engine).orderTargets.get(at(hand, 2))).toEqual({ state: "discard", disabled: false });
+    expect(adapter.select(chosen, c.model, c.engine).orderTargets.get(at(hand, 2))).toEqual({ state: "discard", disabled: false, reason: null });
     expect(adapter.act(swap, { type: "order", key: "O01" }, c.model, c.engine)).toBeNull();
+  });
+
+  it("work: a held Order the swap cannot give up is greyed out on the table with the engine's reason", () => {
+    // Both Main Order piles empty: giving up a Starting Order (to the box) would leave nothing to
+    // look at (B1); giving up a Main Order puts a card in the discard to look at.
+    const c = ctxWith("m17_after_action", (view) => {
+      view.game.counts.mainDeck = 0;
+      view.game.counts.mainDiscard = 0;
+      const own = view.own;
+      if (own === null || own === undefined) throw new Error("no own state");
+      if (!own.orderHand.some((orderId) => orderId.startsWith("S"))) own.orderHand = ["S01", ...own.orderHand.filter((orderId) => orderId !== "S01")];
+    });
+    const adapter = WINDOWS.work.table;
+    if (adapter === undefined) throw new Error("no adapter");
+    const swap = workDraft.reduce(workDraft.initial(c.model, c.engine), { type: "mode", mode: "colour_samples_swap" }, c.model, c.engine);
+    const targets = adapter.select(swap, c.model, c.engine).orderTargets;
+    const starting = (c.view.own?.orderHand ?? []).find((orderId) => orderId.startsWith("S"));
+    const main = (c.view.own?.orderHand ?? []).find((orderId) => orderId.startsWith("O"));
+    if (starting === undefined || main === undefined) throw new Error("hand needs a Starting and a Main Order");
+    const blocked = targets.get(starting);
+    expect(blocked).toMatchObject({ state: "choosable", disabled: true, reason: { kind: "rule", error: { code: "ORDER_SUPPLY_EMPTY" } } });
+    expect(targets.get(main)).toEqual({ state: "choosable", disabled: false, reason: null });
+    // A click on it is ignored.
+    expect(adapter.act(swap, { type: "order", key: starting }, c.model, c.engine)).toBeNull();
   });
 
   it("work: Glaze & Load kiln targets fill the first load, then the second, with pending chips", () => {
@@ -976,10 +1008,14 @@ describe("table adapters", () => {
     draft = commissionDraft.reduce(draft, adapter.act(draft, { type: "order", key: at(look.orderIds, 0) }, c.model, c.engine) as never, c.model, c.engine);
     draft = commissionDraft.reduce(draft, adapter.act(draft, { type: "order", key: "slot:2" }, c.model, c.engine) as never, c.model, c.engine);
     const targets = adapter.select(draft, c.model, c.engine).orderTargets;
-    expect(targets.get(at(look.orderIds, 0))).toEqual({ state: "chosen", disabled: false });
-    expect(targets.get("slot:2")).toEqual({ state: "chosen", disabled: false });
-    // The limit of 2 is reached: the other targets are unavailable; clicking a chosen one unticks it.
-    expect(targets.get(at(look.orderIds, 1))).toEqual({ state: "choosable", disabled: true });
+    expect(targets.get(at(look.orderIds, 0))).toEqual({ state: "chosen", disabled: false, reason: null });
+    expect(targets.get("slot:2")).toEqual({ state: "chosen", disabled: false, reason: null });
+    // The limit of 2 is reached: the other targets are unavailable, each with the pane's reason
+    // (never a silent grey toggle); clicking a chosen one unticks it.
+    const other = targets.get(at(look.orderIds, 1));
+    expect(other).toMatchObject({ state: "choosable", disabled: true, reason: { kind: "message" } });
+    expect(other?.reason?.kind === "message" ? [EN.message(other.reason.message), ZH.message(other.reason.message)] : null).toEqual(["You have chosen 2 already.", "你已经选了2张。"]);
+    expect(targets.get("slot:0")?.disabled).toBe(true);
     const untick = adapter.act(draft, { type: "order", key: "slot:2" }, c.model, c.engine);
     expect(untick).toEqual({ type: "toggle", key: "slot:2", on: false });
     expect(adapter.act(draft, { type: "order", key: "O01" }, c.model, c.engine)).toBeNull();

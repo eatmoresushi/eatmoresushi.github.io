@@ -1,6 +1,6 @@
 /**
  * HeatEquation (UI_V1.6.1_ARCHITECTURE §4.2). Owner: B3 (kiln, firing stage, results, playtest).
- * Source: wireframe `equation`: Kiln Die + Contributions = Base Heat; Base Heat + Fire = Global Heat; the R7 extra Fire card.
+ * Source: wireframe `equation`: Kiln Die + Contributions = Base Heat; Base Heat + Fire = Global Heat; Second Firing's 2 revealed Fire cards.
  *
  * Owner decision D3: the equation shows exactly what the table shows, as it becomes known:
  * - the Kiln Die (public every round);
@@ -8,7 +8,8 @@
  *   modifier and the Wood paid (Fuel Ledger's extra Wood included); none when nobody has a
  *   ceramic in the Shared Kiln;
  * - Base Heat (0–5) once revealed, the Fire card once turned, Global Heat;
- * - while the R7 window is open, Second Firing's extra Fire card with its ceramic;
+ * - while the Second Firing choice is open (v1.6.2 L631), its 2 revealed Fire cards with their
+ *   ceramic (public; once one is chosen both go to the discard);
  * - the open Fire discard (D4).
  * No Actual Heat, previews, ladders or odds. Values not yet known read "?" with words for
  * assistive technology. One line in a wide stage; two lines in a narrow one (Base Heat repeated,

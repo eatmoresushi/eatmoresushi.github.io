@@ -280,7 +280,9 @@ describe("V1.6.2 lines", () => {
     // Colour Samples is used (TECH_USED) only by its swap (v1.6.2 L617); that line names the swap.
     const used: PublicGameEvent = { type: "TECH_USED", playerId: "p2", techId: "T10" };
     expect(publicEventText(used, en)).toBe("Zhao used Colour Samples to swap a held Order");
-    expect(publicEventText(used, zh)).toBe("Zhao使用色样簿换单");
+    // A Tech's name in running Chinese text stands in 「」, as in the reservation line after it.
+    expect(publicEventText(used, zh)).toBe("Zhao使用「色样簿」换单");
+    expect(publicEventText({ type: "ORDER_RESERVED", playerId: "p2", via: "colour_samples_swap", source: "looked", slotIndex: null, orderId: null }, zh)).toBe("Zhao用「色样簿」换单，承接所看的一张委托");
     expect(publicEventText(SAMPLES.HELD_ORDER_DISCARDED, en)).toBe("Zhao discarded a held Order face down");
     expect(publicEventText(SAMPLES.HELD_ORDER_DISCARDED, zh)).toBe("Zhao把一张在手委托面朝下放入主委托弃牌堆");
     expect(publicEventText({ ...SAMPLES.HELD_ORDER_DISCARDED, to: "box" }, zh)).toBe("Zhao把一张在手起始委托放回盒中");
@@ -300,8 +302,13 @@ describe("V1.6.2 lines", () => {
     const inspected: PublicGameEvent = { ...none, kind: "guild_inspection", discipline: "firing" };
     expect(publicEventText(inspected, en)).toBe("Zhao found no Firing Tech to inspect");
     expect(publicEventText(inspected, zh)).toBe("Zhao没有火作技艺可看");
-    expect(publicEventText({ ...inspected, count: 2 }, en)).toBe("Zhao is inspecting the top 2 Firing Techs");
-    expect(publicEventText(SAMPLES.PRIVATE_LOOK_OPENED, en)).toBe("Zhao is looking at the top 3 Main Orders");
+    // A look is history once logged: past tense, like the zero-card lines beside it.
+    expect(publicEventText({ ...inspected, count: 2 }, en)).toBe("Zhao inspected the top 2 Firing Techs");
+    expect(publicEventText({ ...inspected, count: 2 }, zh)).toBe("Zhao私下查看了火作技艺牌堆顶2张");
+    expect(publicEventText(SAMPLES.PRIVATE_LOOK_OPENED, en)).toBe("Zhao looked at the top 3 Main Orders");
+    expect(publicEventText({ ...SAMPLES.PRIVATE_LOOK_OPENED, count: 1 }, en)).toBe("Zhao looked at the top 1 Main Order");
+    expect(publicEventText(SAMPLES.PRIVATE_LOOK_OPENED, zh)).toBe("Zhao私下查看了主委托牌堆顶3张");
+    for (const c of [en, zh]) expect(publicEventText(SAMPLES.PRIVATE_LOOK_OPENED, c)).not.toMatch(/is looking|is inspecting|正在/);
   });
 
   it("names the Guild Hall Shifu's returned Techs to their owner, with an order only when there are several", () => {
@@ -339,7 +346,7 @@ describe("V1.6.2 lines", () => {
   it("says Canal Barge's use with its Coins, and folds the Coins line that follows it (v1.6.2 L622)", () => {
     const used: PublicGameEvent = { type: "TECH_USED", playerId: "p2", techId: "T23" };
     expect(publicEventText(used, en)).toBe("Zhao used Canal Barge: +2 Coins");
-    expect(publicEventText(used, zh)).toBe("Zhao使用漕船：得2铜钱");
+    expect(publicEventText(used, zh)).toBe("Zhao使用「漕船」：得2铜钱");
     const coins = SAMPLES.RESOURCES_CHANGED;
     expect(repeatsPreviousEntry(entry(coins, 2), entry(used, 1))).toBe(true);
     // Anything else stays: another player, another Tech, other amounts or reasons.
@@ -372,6 +379,68 @@ describe("V1.6.2 lines", () => {
     expect(log.map((_line, index) => foldedEntry(log, index))).toEqual([false, true, false, false, true]);
     // Other Techs keep the plain line.
     expect(publicEventText({ ...used, techId: "T13" }, en)).toBe("Zhao used Test Pieces");
+    expect(publicEventText({ ...used, techId: "T13" }, zh)).toBe("Zhao使用「火照」");
+  });
+});
+
+describe("Kiln ability lines (D17: a toast's 4 lines carry the moves)", () => {
+  const en = context("en");
+  const zh = context("zh-CN");
+  const used = (kilnId: "RU" | "GU" | "GE" | "DI" | "JU", playerId: PlayerId = "p2"): PublicGameEvent => ({ type: "KILN_ABILITY_USED", playerId, kilnId });
+  /** The lines the log keeps, in order. */
+  const kept = (events: readonly PublicGameEvent[], c: EventTextContext) => {
+    const log = events.map((event, index) => entry(event, index + 1));
+    return log.filter((_line, index) => !foldedEntry(log, index)).map((line) => publicEventText(line.event, c));
+  };
+
+  it("Ding: one line states the extra vessel with its cost (v1.6.2 L473)", () => {
+    const formed: PublicGameEvent = { type: "CERAMIC_FORMED", playerId: "p2", ceramicId: "c2", shape: "plate", decoration: "plain", formedBy: "form_decorate" };
+    const ding: PublicGameEvent[] = [
+      used("DI"),
+      { type: "RESOURCES_CHANGED", playerId: "p2", clay: -1, wood: 0, coins: -1, reason: "ding_extra" },
+      { ...formed, ceramicId: "c9", formedBy: "ding_extra" },
+    ];
+    expect(kept([formed, ...ding], en)).toEqual(["Zhao formed a vessel: Plate, Plain", "Zhao formed a vessel: Plate, Plain (Moulded Production: −1 Clay · −1 Coin)"]);
+    expect(kept(ding, zh)).toEqual(["Zhao制坯：盘 · 素面（「范制成器」：−1泥 · −1铜钱）"]);
+    // Another amount, or another player's vessel, keeps the cost line.
+    expect(kept([ding[0]!, { ...(ding[1] as Extract<PublicGameEvent, { type: "RESOURCES_CHANGED" }>), coins: -2 }, ding[2]!], en)).toHaveLength(2);
+    expect(kept([ding[0]!, ding[1]!, { ...(ding[2] as Extract<PublicGameEvent, { type: "CERAMIC_FORMED" }>), playerId: "p1" }], en)).toHaveLength(2);
+  });
+
+  it("Jun: one line states the Wood, the adjustment and the Actual Heat (v1.6.2 L477)", () => {
+    const jun: PublicGameEvent[] = [
+      { type: "RESOURCES_CHANGED", playerId: "p1", clay: 0, wood: -1, coins: 0, reason: "jun" },
+      used("JU", "p1"),
+      SAMPLES.JUN_ADJUSTED,
+    ];
+    expect(kept(jun, en)).toEqual(["Lin paid 1 Wood to use Kiln Transformation on Celadon Bowl, Carved: +1, Actual Heat 3"]);
+    expect(kept(jun, zh)).toEqual(["Lin付1柴对青釉碗 · 刻花使用「窑变天成」：+1，实际火候3"]);
+    // During a Second Firing the same three lines come between the chosen card and the new Quality.
+    const second: PublicGameEvent[] = [SAMPLES.SECOND_FIRING_CHOSEN, ...jun.slice(0, 2), { ...SAMPLES.JUN_ADJUSTED, during: "second_firing" }, { ...SAMPLES.QUALITY_ASSIGNED, cause: "second_firing" }];
+    expect(kept(second, en)).toHaveLength(3);
+  });
+
+  it("Ge: the Quality change and the Crackle marker, without \"used Crackle Mastery\"", () => {
+    const ge: PublicGameEvent[] = [used("GE", "p1"), SAMPLES.QUALITY_IMPROVED, SAMPLES.CRACKLE_APPLIED];
+    const lines = kept(ge, en);
+    expect(lines).toHaveLength(2);
+    expect(lines.join(" | ")).not.toContain("used Crackle Mastery");
+    expect(kept(ge, zh).join(" | ")).not.toContain("使用「金丝铁线」");
+  });
+
+  it("Ru and Guan: the use states what it scores; Guan's Coins fold into it (v1.6.2 L459, L463)", () => {
+    expect(publicEventText(used("RU"), en)).toBe("Zhao used Quiet Perfection: +4 VP");
+    expect(publicEventText(used("RU"), zh)).toBe("Zhao使用「天青无瑕」：+4分");
+    const guan: PublicGameEvent[] = [used("GU"), { type: "RESOURCES_CHANGED", playerId: "p2", clay: 0, wood: 0, coins: 2, reason: "guan" }];
+    expect(kept(guan, en)).toEqual(["Zhao used Imperial Patronage: +1 VP, +2 Coins"]);
+    expect(kept(guan, zh)).toEqual(["Zhao使用「内府恩眷」：+1分，得2铜钱"]);
+  });
+
+  it("a \"used\" line with nothing beside it naming the ability stays", () => {
+    expect(kept([used("DI")], en)).toEqual(["Zhao used Moulded Production"]);
+    expect(kept([used("JU"), SAMPLES.WORK_TURN_ENDED], en)).toHaveLength(2);
+    // Another player's line beside it does not fold it.
+    expect(kept([used("GE", "p2"), SAMPLES.CRACKLE_APPLIED], en)).toHaveLength(2);
   });
 });
 

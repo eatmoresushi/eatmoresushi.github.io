@@ -83,8 +83,24 @@ export interface SheetLabels {
   startingKind: string;
 }
 
+/**
+ * Words printed on the card backs, read from the rulebooks where they print them: the game's
+ * name from each rulebook's title ("KILN OPENING 开窑", "《开窑》"), the deck names from the
+ * component table ("Starting Order Cards | 8", "起始委托卡 | 8").
+ */
+export interface BackLabels {
+  lang: Lang;
+  /** The game's Chinese name, set as the seal on both editions (the English title prints it too). */
+  seal: string;
+  /** The game's name under the seal: English only (on the Chinese back the seal is the name). */
+  game: string | null;
+  starting: string;
+  main: string;
+}
+
 export interface OrderSource {
   labels: Record<Lang, SheetLabels>;
+  backLabels: Record<Lang, BackLabels>;
   /** Print order: the Starting Orders, then the Main Orders, each in ID order. */
   cards: Record<Lang, CardModel[]>;
   /** Deck sizes as the rulebooks' Appendix A headings give them. */
@@ -732,15 +748,45 @@ export function buildOrderSource(texts: SourceTexts): OrderSource {
   }
 
   const zhKind = zhStartingTerm(texts.zh, problems);
+  const backLabels = readBackLabels(texts, enAppendix.sizes, problems);
   if (problems.list.length > 0 || enAppendix.sizes === null) throw new OrderSourceError(problems.list);
   return {
     labels: {
       en: { lang: "en", requirement: "Requirement", quality: "Quality", vp: "VP", startingKind: "Starting" },
       zh: { lang: "zh", requirement: zhHeader[1] ?? "", quality: zhHeader[2] ?? "", vp: zhHeader[3] ?? "", startingKind: zhKind },
     },
+    backLabels,
     cards,
     deckSizes: enAppendix.sizes,
     rulesVersionInData: rulesVersion,
+  };
+}
+
+/**
+ * The card-back words: the game's name from each rulebook's title line, the two deck names from
+ * each rulebook's component table, whose card counts must be the Appendix A deck sizes.
+ */
+function readBackLabels(texts: SourceTexts, sizes: { starting: number; main: number } | null, problems: Problems): Record<Lang, BackLabels> {
+  const enTitle = /^# (KILN OPENING) (开窑) v1\.6\.2\b/.exec(texts.en.split("\n", 1)[0] ?? "");
+  if (enTitle === null) problems.add(`${EN_RULEBOOK}: the title line does not read "# KILN OPENING 开窑 v1.6.2"`);
+  const zhTitle = /^# 《(开窑)》KILN OPENING v1\.6\.2/.exec(texts.zh.split("\n", 1)[0] ?? "");
+  if (zhTitle === null) problems.add(`${ZH_RULEBOOK}: the title line does not read "# 《开窑》KILN OPENING v1.6.2"`);
+  const component = (file: string, text: string, name: string, count: number | undefined): string => {
+    const row = new RegExp(`^\\| ${name} \\| (\\d+) \\|`, "m").exec(text);
+    if (row === null) problems.add(`${file}: no component row "| ${name} | … |"`);
+    else if (count !== undefined && Number(row[1]) !== count) problems.add(`${file}: component row "${name}" counts ${row[1]}, Appendix A ${count}`);
+    return name;
+  };
+  const deck = (file: string, text: string, starting: string, main: string, suffix: string): { starting: string; main: string } => ({
+    starting: component(file, text, `${starting}${suffix}`, sizes?.starting).slice(0, -suffix.length),
+    main: component(file, text, `${main}${suffix}`, sizes?.main).slice(0, -suffix.length),
+  });
+  const en = deck(EN_RULEBOOK, texts.en, "Starting Order", "Main Order", " Cards");
+  const zh = deck(ZH_RULEBOOK, texts.zh, "起始委托", "主委托", "卡");
+  // The English back sets every word in capitals (cards.css), as the title does.
+  return {
+    en: { lang: "en", seal: enTitle?.[2] ?? "开窑", game: enTitle?.[1] ?? "KILN OPENING", ...en },
+    zh: { lang: "zh", seal: zhTitle?.[1] ?? "开窑", game: null, ...zh },
   };
 }
 

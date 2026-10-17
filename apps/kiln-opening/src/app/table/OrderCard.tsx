@@ -9,18 +9,27 @@
  *   (`act({ type: "order", key })`, `aria-pressed`): Choose / Chosen / Can complete / Discard, or
  *   "No matching ceramics" when the Order cannot be completed now. The table never decides the
  *   state; the adapter does.
+ * - A target the adapter greys out (`disabled`) keeps its toggle focusable with `aria-disabled`,
+ *   and says why under it when the adapter gives a reason (the Commission Market's limit is
+ *   reached, the engine's reason a held Order cannot be given up): the toggle's description, so a
+ *   tap, a hover and a screen reader all meet the reason, never a silent grey button.
  * - Printed Order numbers (S01, O33) are on the physical cards, so they are shown (D9).
  */
+import { useId } from "react";
 import type { OrderId } from "../../game/index.ts";
+import { errorTextOptions, ruleErrorText } from "../i18n/errors.ts";
 import { useT } from "../i18n/I18nProvider.tsx";
+import type { Translator } from "../i18n/translator.ts";
 import { orderRequirements } from "../i18n/content.ts";
 import { orderQualityLine } from "../i18n/orderText.ts";
 import { Chip } from "../kit/Chip.tsx";
 import { CrownIcon } from "../pieces/CrownIcon.tsx";
-import { useTableSelection } from "../state/hooks.ts";
-import type { OrderTargetState } from "../state/tableSelection.ts";
+import { useOptionalGame, useTableSelection } from "../state/hooks.ts";
+import type { GameModel } from "../state/model.ts";
+import type { OrderTargetReason, OrderTargetState } from "../state/tableSelection.ts";
 import { orderFacts } from "../i18n/content.ts";
 import { RulesDetail, orderName } from "../rules/RulesDetail.tsx";
+import { tableCeramics } from "./tableData.ts";
 import "./OrderCard.css";
 
 export interface OrderCardProps {
@@ -42,8 +51,16 @@ const STATE_KEYS = {
   discard: "table.order.state.discard",
 } as const satisfies Record<OrderTargetState, string>;
 
+/** A disabled target's reason in the current language (player and ceramic names in words, D9). */
+function reasonText(reason: OrderTargetReason, t: Translator, model: GameModel | null): string {
+  if (reason.kind === "message") return t.message(reason.message);
+  return ruleErrorText(reason.error, t, model === null ? {} : errorTextOptions(tableCeramics(model).labelView, t));
+}
+
 export function OrderCard({ orderId, targetKey, slot, own = false }: OrderCardProps) {
   const t = useT();
+  const model = useOptionalGame();
+  const reasonId = useId();
   const selection = useTableSelection();
   const key = targetKey ?? orderId;
   const target = selection.orderTargets.get(key) ?? null;
@@ -73,6 +90,7 @@ export function OrderCard({ orderId, targetKey, slot, own = false }: OrderCardPr
   const pressed = target !== null && (target.state === "chosen" || target.state === "discard");
   const blocked = target !== null && (target.state === "blocked" || target.disabled);
   const stateText = target === null ? "" : t(STATE_KEYS[target.state]);
+  const why = target !== null && target.disabled && target.state !== "blocked" && target.reason != null ? reasonText(target.reason, t, model) : null;
   return (
     <article
       className={classes}
@@ -93,6 +111,7 @@ export function OrderCard({ orderId, targetKey, slot, own = false }: OrderCardPr
           aria-pressed={pressed}
           aria-disabled={blocked ? true : undefined}
           aria-label={t("table.order.pick", { state: stateText, order: orderName(orderId, t) })}
+          aria-describedby={why === null ? undefined : reasonId}
           onClick={() => {
             if (!blocked) selection.act({ type: "order", key });
           }}
@@ -100,6 +119,11 @@ export function OrderCard({ orderId, targetKey, slot, own = false }: OrderCardPr
           {target.state === "completable" ? <span aria-hidden="true">✓ </span> : null}
           {stateText}
         </button>
+      )}
+      {why === null ? null : (
+        <p id={reasonId} className="ord-why">
+          {why}
+        </p>
       )}
     </article>
   );

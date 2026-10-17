@@ -15,7 +15,8 @@
  * - **commission:** the display slots reservable now (`slot:<i>`) and the privately looked-at
  *   Orders (keyed by OrderId), toggled into the reservation;
  * - **guild_inspection:** the face-up Techs on the Tech display (`techChooser` in take mode), for
- *   the Shifu's first take and the second; the inspected Techs are private and only in the pane;
+ *   the Shifu's first take and the second (none once both are made); the inspected Techs are
+ *   private and only in the pane;
  * - **colour_samples** and **colour_samples_swap:** the privately looked-at Orders.
  *
  * The `work` window covers both the before-action step and the after-action window
@@ -36,7 +37,7 @@ import { PANE_SHOWN, defineWindow } from "../../state/draftStore.ts";
 import type { PaneOpener, PanePresence, WindowSpecFor } from "../../state/draftStore.ts";
 import type { EngineView, GameModel } from "../../state/model.ts";
 import { displaySlotKey, placementWorkerKey, tableSelection } from "../../state/tableSelection.ts";
-import type { OrderTargetState, TableSelectionData } from "../../state/tableSelection.ts";
+import type { OrderTarget, OrderTargetReason, TableSelectionData } from "../../state/tableSelection.ts";
 import type { OrderId } from "../../../game/index.ts";
 import { KilnSelection } from "../setup/KilnSelection.tsx";
 import { kilnSelectionDraft } from "../setup/KilnSelection.draft.ts";
@@ -52,7 +53,7 @@ import { commissionDraft, lookPickKey } from "./CommissionStep.draft.ts";
 import type { CommissionAction, CommissionDraft } from "./CommissionStep.draft.ts";
 import { placements } from "./context.ts";
 import { GuildInspection } from "./GuildInspection.tsx";
-import { guildInspectionDraft, inspectionTechChooser } from "./GuildInspection.draft.ts";
+import { guildInspectionDraft, inspectionReturnOnly, inspectionTechChooser } from "./GuildInspection.draft.ts";
 import type { GuildInspectionAction } from "./GuildInspection.draft.ts";
 import { kilnTargetsOf, pendingLoads } from "./locations/GlazeLoad.draft.ts";
 import { techChooserOf } from "./locations/GuildHall.draft.ts";
@@ -109,18 +110,26 @@ export function workPane(draft: WorkDraft, model: GameModel, engine: EngineView)
   };
 }
 
-/** The Commission step's targets: each display slot (`slot:<i>`) and looked card (OrderId), chosen or not. */
-function commissionTargets(draft: CommissionDraft, model: GameModel, engine: EngineView): Map<string, { state: OrderTargetState; disabled: boolean }> {
+/**
+ * The Commission step's targets: each display slot (`slot:<i>`) and looked card (OrderId), chosen
+ * or not. With the Shifu effect's 2 chosen, the others are greyed out with the pane's own reason
+ * ("You have chosen 2 already."), so the table never refuses a tap in silence.
+ */
+function commissionTargets(draft: CommissionDraft, model: GameModel, engine: EngineView): Map<string, OrderTarget> {
   const options = commissionDraft.options(draft, model, engine);
-  const targets = new Map<string, { state: OrderTargetState; disabled: boolean }>();
-  const target = (key: string, chosen: boolean) => ({ state: (chosen ? "chosen" : "choosable") as OrderTargetState, disabled: !chosen && options.full && options.maxReservations > 1 });
-  for (const slot of options.slots) targets.set(displaySlotKey(slot.slotIndex ?? 0), target(slot.key, draft.picks.includes(slot.key)));
-  for (const looked of options.looked) targets.set(looked.orderId, target(looked.key, draft.picks.includes(looked.key)));
+  const targets = new Map<string, OrderTarget>();
+  const limit: OrderTargetReason = { kind: "message", message: msg("work.cm.limitReached", { n: options.maxReservations }) };
+  const target = (chosen: boolean): OrderTarget => {
+    const disabled = !chosen && options.full && options.maxReservations > 1;
+    return { state: chosen ? "chosen" : "choosable", disabled, reason: disabled ? limit : null };
+  };
+  for (const slot of options.slots) targets.set(displaySlotKey(slot.slotIndex ?? 0), target(draft.picks.includes(slot.key)));
+  for (const looked of options.looked) targets.set(looked.orderId, target(draft.picks.includes(looked.key)));
   return targets;
 }
 
 /** A Colour Samples look's targets: each looked card (OrderId). */
-function lookTargets(draft: ColourSamplesDraft, orderIds: readonly OrderId[]): Map<string, { state: OrderTargetState; disabled: boolean }> {
+function lookTargets(draft: ColourSamplesDraft, orderIds: readonly OrderId[]): Map<string, OrderTarget> {
   return new Map(orderIds.map((orderId) => [orderId, { state: orderId === draft.orderId ? "chosen" : "choosable", disabled: false }]));
 }
 
@@ -181,7 +190,15 @@ export const WORK_WINDOWS: { readonly [K in WorkWindowKind]: WindowSpecFor<K> } 
           selection = {
             ...selection,
             orderTargets: new Map(
-              swap.discards.map((discard) => [discard.orderId, { state: draft.swap.discardOrderId === discard.orderId ? "discard" : "choosable", disabled: !discard.legal }]),
+              swap.discards.map((discard): [string, OrderTarget] => [
+                discard.orderId,
+                {
+                  state: draft.swap.discardOrderId === discard.orderId ? "discard" : "choosable",
+                  disabled: !discard.legal,
+                  // The engine's reason, as the pane's option says it (never a silent grey toggle).
+                  reason: discard.reason === null ? null : { kind: "rule", error: discard.reason },
+                },
+              ]),
             ),
           };
         }
@@ -238,7 +255,12 @@ export const WORK_WINDOWS: { readonly [K in WorkWindowKind]: WindowSpecFor<K> } 
     kind: "guild_inspection",
     Component: GuildInspection,
     draft: guildInspectionDraft,
-    title: (model) => (model.window.kind === "guild_inspection" && model.window.takes > 0 ? msg("work.title.guildSecond") : msg("work.title.guild")),
+    // After the second take only the bottom order is left (`inspectionReturnOnly`).
+    title(model, engine, draft) {
+      const options = guildInspectionDraft.options(draft, model, engine);
+      if (options !== null && inspectionReturnOnly(options)) return msg("work.title.guildReturn");
+      return model.window.kind === "guild_inspection" && model.window.takes > 0 ? msg("work.title.guildSecond") : msg("work.title.guild");
+    },
     table: {
       // The face-up Techs on the Tech display, for the first take and the second (D14).
       select: (draft, model, engine) => tableSelection({ techChooser: inspectionTechChooser(draft, model, engine) }),

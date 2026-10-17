@@ -105,7 +105,7 @@ describe("game log", () => {
     const log: LogEntry[] = events.map((event, index) => ({ sequence: index + 1, revision: index + 1, actorId: player, event }));
     const source = () => new StaticSource({ ...snapshot, log });
     expect(entries(renderComponent(source(), <GameLog />, { ui: { logOpen: true } }))).toEqual([`${name} used Canal Barge: +2 Coins`, `${name} completed S07: +3 VP, +3 Coins`]);
-    expect(entries(renderComponent(source(), <GameLog />, { ui: { logOpen: true }, locale: "zh-CN" }))).toEqual([`${name}使用漕船：得2铜钱`, `${name}完成委托S07：+3分，得3铜钱`]);
+    expect(entries(renderComponent(source(), <GameLog />, { ui: { logOpen: true }, locale: "zh-CN" }))).toEqual([`${name}使用「漕船」：得2铜钱`, `${name}完成委托S07：+3分，得3铜钱`]);
   });
 
   it("names each ceramic as it was when the line happened: no Crackle marker before Ge gives it (D9)", () => {

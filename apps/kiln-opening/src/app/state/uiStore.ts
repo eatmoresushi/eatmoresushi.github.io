@@ -12,7 +12,10 @@
  * **Defaults follow the window, synchronously.** The section and sheet a player chose are kept
  * only for the window they chose them in (its draft key). When a new window opens, its defaults
  * apply again — the wireframe's automatic section switch — without an effect, so SSR markup
- * shows them. The board shown and the theme are sticky.
+ * shows them. The board shown and the theme are sticky. One window keeps the section instead of
+ * switching it (`keepSection`): the work turn's after-action step, which follows the worker
+ * action the player has just watched (a Commission reservation on the Orders tab, a load on the
+ * Kiln tab), so the view does not jump away from what changed.
  */
 
 import type { PlayerId, RoundPhaseId } from "../../game/index.ts";
@@ -62,6 +65,11 @@ export function sectionOrder(phase: RoundPhaseId | "final"): readonly WorldSecti
 export interface WindowUiDefaults {
   section: PhoneSection;
   sheet: SheetState;
+  /**
+   * Keep the section the previous window showed (the player's choice there, or its default);
+   * `section` applies only when no window showed before (a first render, SSR, a reload).
+   */
+  keepSection?: true;
 }
 
 /** Per window kind (wireframe `resetApp`; the windows it did not design follow the same idea). */
@@ -85,9 +93,17 @@ export const WINDOW_UI_DEFAULTS: Readonly<Record<Exclude<DecisionWindowKind, "wa
   final: { section: "table", sheet: "peek" },
 });
 
+/**
+ * The work turn's after-action step: the sheet collapses to show the table, on the section the
+ * worker action was shown on (the Orders tab after a Commission reservation, with the hand and
+ * the emptied display position), never a jump to the Workshop.
+ */
+export const AFTER_ACTION_UI_DEFAULTS: WindowUiDefaults = Object.freeze({ ...WINDOW_UI_DEFAULTS.work, keepSection: true });
+
 /** The defaults for a window. A waiting viewer watches the part of the table that is moving. */
 export function windowUiDefaults(window: DecisionWindow | null, phase: RoundPhaseId | "final" | null): WindowUiDefaults {
   if (window === null) return { section: "table", sheet: "peek" };
+  if (window.kind === "work" && window.step === "after_action") return AFTER_ACTION_UI_DEFAULTS;
   if (window.kind !== "waiting") return WINDOW_UI_DEFAULTS[window.kind];
   const section: PhoneSection = phase === "firing" ? "kiln" : phase === "orders" || phase === "cleanup" ? "orders" : "table";
   return { section, sheet: "peek" };
@@ -188,6 +204,10 @@ export class UiStore {
   private readonly effects: UiEffects;
   private context: UiContext = { window: null, phase: null };
   private cache: { stored: StoredUi; key: string; state: UiState } | null = null;
+  /** The section the last computed state showed (any window). */
+  private lastSection: PhoneSection | null = null;
+  /** A `keepSection` window's kept section, fixed when it opened (its draft key). */
+  private kept: { key: string; section: PhoneSection } | null = null;
   private readonly listeners = new Set<() => void>();
 
   constructor(options: UiStoreOptions = {}) {
@@ -222,14 +242,20 @@ export class UiStore {
     const defaults = windowUiDefaults(context.window, context.phase);
     const pick = <T>(choice: { key: string; value: T } | null, fallback: T): T =>
       choice !== null && (choice.key === key || choice.key === ANY_WINDOW) ? choice.value : fallback;
+    let section = defaults.section;
+    if (defaults.keepSection === true) {
+      if (this.kept === null || this.kept.key !== key) this.kept = { key, section: this.lastSection ?? defaults.section };
+      section = this.kept.section;
+    }
     const state: UiState = {
       boardShown: this.stored.boardShown,
-      section: pick(this.stored.section, defaults.section),
+      section: pick(this.stored.section, section),
       sheet: pick(this.stored.sheet, defaults.sheet),
       logOpen: this.stored.logOpen,
       theme: this.stored.theme,
     };
     this.cache = { stored: this.stored, key, state };
+    this.lastSection = state.section;
     return state;
   }
 

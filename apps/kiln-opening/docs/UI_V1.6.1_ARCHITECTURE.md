@@ -303,16 +303,18 @@ interface EngineView { view: PlayerView; actor: ActorView | null }
 | --- | --- | --- | --- | --- | --- |
 | `kiln_selection` | `setup_kiln_selection` | `selectionOrder[index]` | `kilnSelectionOptions` | `SELECT_KILN` | `decision/setup/KilnSelection.tsx` (B4) |
 | `setters_mark` | `round_start_setters_mark` | queue head | `settersMarkOptions`; kiln targets via §3.5 | `PLACE_SETTERS_MARK {spaceId \| null}` | `decision/setup/SettersMark.tsx` (B4) |
-| `work` (`before_action`) | `work_turn` / `before_action` | active player | `placementOptions`, the location sub-editors (below), `canalBargeOptions`, `imperialPriorityOptions` | `PLACE_*`, `USE_CANAL_BARGE`, `USE_IMPERIAL_PRIORITY` | `decision/work/WorkTurn.tsx` (B4) |
-| `commission` | `work_turn` / `commission_market` (`awaiting`: `reservation` \| `look_choice` \| `resource`) | active | `commissionOptions(view, step.effect)`, `lookedOrderOptions`, `counts.pendingLook` | `COMMISSION_RESERVE`, `COMMISSION_STOP`, `COMMISSION_CHOOSE_LOOKED`, `COMMISSION_GAIN` | `decision/work/CommissionStep.tsx` (B4) |
-| `guild_inspection` | `work_turn` / `guild_inspection` | active | `guildInspectionOptions` (private) | `GUILD_TAKE {take, bottomOrder}` | `decision/work/GuildInspection.tsx` (B4) |
-| `colour_samples` | `work_turn` / `colour_samples` | active | `lookedOrderOptions` (kind `colour_samples`) | `COLOUR_SAMPLES_CHOOSE` | `decision/work/ColourSamples.tsx` (B4) |
-| `work` (`after_action`) | `work_turn` / `after_action` | active | `canalBargeOptions`, `imperialPriorityOptions` | `USE_CANAL_BARGE`, `USE_IMPERIAL_PRIORITY`, `END_TURN` | `decision/work/ActionWindow.tsx` (B4) |
+| `work` (`before_action`) | `work_turn` / `before_action` | active player | `placementOptions`, the location sub-editors (below), `imperialPriorityOptions`, `colourSamplesSwapOptions` | `PLACE_*`, `USE_IMPERIAL_PRIORITY`, `USE_COLOUR_SAMPLES_SWAP` | `decision/work/WorkTurn.tsx` (B4) |
+| `commission` | `work_turn` / `commission_market` (`effect`, `lookSize` 2 \| 3, `maxReservations` 1 \| 2, `lookedCount`; v1.6.2 L195–196) | active | `lookedOrderOptions` (the viewer's own look, the display positions reservable now, the limit), `counts.pendingLook`; the display and the look row are table targets (`orderTargets`) | `COMMISSION_CHOOSE {reservations}`: 1 (Apprentice effect) or 1–2 (Shifu effect), face up or looked | `decision/work/CommissionStep.tsx` (B4) |
+| `guild_inspection` | `work_turn` / `guild_inspection` (`takes` 0 or 1) | active | `guildInspectionOptions` (private: the inspected Techs, every face-up Tech at its printed cost, the takes so far, whether stopping is allowed); the face-up Techs are table targets (`techChooser`, take mode) | `GUILD_TAKE {take}`, one Tech per command and up to 2 per action (owner revision 2026-10-17); `GUILD_FINISH {bottomOrder}` after a take. After the second take only the bottom order is asked (`inspectionReturnOnly`) | `decision/work/GuildInspection.tsx` (B4) |
+| `colour_samples` | `work_turn` / `colour_samples` (when Colour Samples is gained, possibly between two Guild Hall takes) | active | `lookedOrderOptions` (kind `colour_samples`: the top 3) | `COLOUR_SAMPLES_CHOOSE` | `decision/work/ColourSamples.tsx` (B4) |
+| `colour_samples_swap` | `work_turn` / `colour_samples_swap` (`returnTo`: the work step it came from) | active | `lookedOrderOptions` (kind `colour_samples_swap`: the top 2) | `COLOUR_SAMPLES_SWAP_CHOOSE` | `decision/work/ColourSamples.tsx` (B4, `colourSamplesSwapLookDraft`) |
+| `work` (`after_action`) | `work_turn` / `after_action` | active | `imperialPriorityOptions`, `colourSamplesSwapOptions` | `USE_IMPERIAL_PRIORITY`, `USE_COLOUR_SAMPLES_SWAP`, `END_TURN` | `decision/work/ActionWindow.tsx` (B4) |
 | `contributions` | `firing_contributions` (`simultaneous_secret`) | eligible minus submitted | `contributionOptions` (with Fuel Ledger), `own.pendingContribution`, `phase.submittedPlayerIds` | `SUBMIT_CONTRIBUTION` | `decision/firing/Contributions.tsx` (B5) |
 | `test_pieces` | `firing_test_pieces` (`awaiting`: `decision` \| `bury`) | queue head | `testPiecesOptions` (`peekedModifier` from `own.firePeek`, private) | `TEST_PIECES_DECIDE`, `TEST_PIECES_BURY` | `decision/firing/TestPieces.tsx` (B5) |
 | `heat_markers` | `firing_heat_markers` | queue head | `heatMarkerStepOptions` (own marker, Kiln Master `targets` / `targetsIfOwnReturned`) | `RESOLVE_HEAT_MARKERS` | `decision/firing/HeatMarkers.tsx` (B5) |
-| `jun` | `firing_heat_adjustment`, and `firing_second_firing_jun` (R7) | queue head / `actorId` | `junOptions` (`during`); in R7, `firingStage.extraFire` shows the extra Fire card just turned (gap 7) | `RESOLVE_JUN` | `decision/firing/Jun.tsx` (B5) |
-| `after_quality` | `firing_after_quality` | queue head | `afterQualityOptions`, re-read every revision (eligibility rechecked after each use) | `USE_PROTECTIVE_SAGGARS`, `USE_SECOND_FIRING`, `USE_GE_CRACKLE`, `END_AFTER_QUALITY` | `decision/firing/AfterQuality.tsx` (B5) |
+| `jun` | `firing_heat_adjustment` | queue head | `junOptions` | `RESOLVE_JUN` | `decision/firing/Jun.tsx` (B5) |
+| `after_quality` | `firing_after_quality` | queue head | `afterQualityOptions`, re-read every revision (eligibility rechecked after each use) | `USE_PROTECTIVE_SAGGARS` (a Standard ceramic becomes Fine), `USE_SECOND_FIRING` (reveals 2 Fire cards), `USE_GE_CRACKLE`, `END_AFTER_QUALITY` | `decision/firing/AfterQuality.tsx` (B5) |
+| `second_firing` | `firing_second_firing_choice` (`ceramicId`; v1.6.2 L631) | the Second Firing owner | `secondFiringChoiceOptions` (the 2 revealed cards; Jun on this ceramic, R7); `firingStage` shows both cards beside their ceramic, publicly | `SECOND_FIRING_CHOOSE {cardIndex, jun}` | `decision/firing/SecondFiring.tsx` (B5) |
 | `salvage` | `firing_salvage` (`parallel`) | `pendingPlayerIds` | `salvageOptions` | `SALVAGE_FLAWED` | `decision/firing/Salvage.tsx` (B5) |
 | `orders` | `orders` | `turnOrder[index]` | `completableOrders`, `orderMatchOptions`, `orderSelectionCheck`, `crackleDeclarationChecks` (§5) | `COMPLETE_ORDER` (with Ru/Guan/Tribute Ware decline flags from `triggers`), `END_ORDER_TURN` | `decision/orders/OrderTurn.tsx` (B5) |
 | `hand_limit` | `cleanup_hand_limit` (`parallel`) | `pendingPlayerIds` | `handLimitStatus`, `own.orderHand` | `DISCARD_TO_HAND_LIMIT` | `decision/cleanup/HandTrim.tsx` (B5) |
@@ -323,15 +325,17 @@ interface EngineView { view: PlayerView; actor: ActorView | null }
 
 | Location / ability | Draft | Selectors | Command |
 | --- | --- | --- | --- |
-| Materials Yard | Clay/Wood split, Shifu bonus, Prepared Clay (Shape, Decoration) | `materialsYardOptions(view, worker)` (gap 14: resources, bonus, Prepared Clay offer or `null`), `quoteMaterialsYard(actor, draft)` | `PLACE_MATERIALS_YARD` |
+| Materials Yard | Clay/Wood split (3, or 6 for the Shifu effect; no Coin option in V1.6.2), Prepared Clay (Shape, Decoration) | `materialsYardOptions(view, worker)` (gap 14: resources, Prepared Clay offer or `null`), `quoteMaterialsYard(actor, draft)` | `PLACE_MATERIALS_YARD` |
 | Form & Decorate | 1–2 vessels (Shape × Decoration), Large Throwing Wheel or Decorator's Kit toggle, Ding extra | `placementLimits` (gap 10), `quoteFormDecorate(actor, draft)` live per draft (gap 6), `formDiscountVariants`, `dingCopyableVesselIndexes` | `PLACE_FORM_DECORATE` |
 | Glaze & Load | 1–2 ordered loads, each: vessel, Glaze, Reworking Table Shape, destination (Shared space with `invertedFiring` / `kilnFurniture`, or Imperial with modifier); Heat-marker target | `glazeLoadVesselOptions(view, pid, earlierLoads)` (gap 15: Glazes and rework Shapes per vessel), `loadDestinationOptions(view, pid, ceramicId, earlierLoads, reworkShape)` (each option carries `modifier`, `requiresInvertedFiring` and `returnsSettersMark`), `heatMarkerTargets(view, pid, pendingLoads)` | `PLACE_GLAZE_LOAD` |
-| Commission Market | first reservation: face-up slot + gain, blind, or look at the top 3; Senior Apprentice | `commissionOptions(view, effect)` | `PLACE_COMMISSION_MARKET` |
-| Guild Hall | Apprentice: a face-up Tech; Shifu: a discipline to inspect | `guildOptions(view, effect)` (prices and reasons) | `PLACE_GUILD_HALL` |
-| Canal Wharf | — | `placementLimits` (Coins shown from it) | `PLACE_CANAL_WHARF` |
+| Commission Market | nothing to choose: the placement opens the private look (top 2, or top 3 for the Shifu effect, Senior Apprentice included), and the `commission` window reserves | `commissionOptions(view, effect)` (look size, limit, how many cards the deck can show, B1) | `PLACE_COMMISSION_MARKET` |
+| Guild Hall | Apprentice: a face-up Tech at its printed cost; Shifu: a discipline to inspect (the takes follow in `guild_inspection`); both chosen on the Tech display (`techChooser`) | `guildOptions(view, effect)` (costs and reasons) | `PLACE_GUILD_HALL` |
+| Canal Wharf | — (the Shifu effect also takes the top Main Order unseen, v1.6.2 L219–220) | `placementLimits` (Coins), `commissionOptions(...).lookCount` (whether a card is there to take, B1) | `PLACE_CANAL_WHARF` |
 | Magistrate's Hall | — | `magistratesHallQuote(view, effect)` (`reachable`, error details) | `PLACE_MAGISTRATES_HALL` |
 | Imperial Priority (before or after the action) | vessel, Glaze, Imperial modifier, Reworking Table Shape | `imperialPriorityOptions(view).ceramics` (gap 16) | `USE_IMPERIAL_PRIORITY` |
-| Canal Barge (before or after the action) | Order, ceramics, Crackle declarations | `canalBargeOptions`, `crackleDeclarationChecks`; draft and picker owned by B5 (§4.3) | `USE_CANAL_BARGE` |
+| Colour Samples swap (before or after the action; V1.6.2) | the held Order to give up (also on the table's hand row, `orderTargets`), then the `colour_samples_swap` window | `colourSamplesSwapOptions(view)` (each held Order, with the engine's reason when it cannot be given up) | `USE_COLOUR_SAMPLES_SWAP` |
+
+Canal Barge has no command in V1.6.2 (L630): its 2 Coins on the first Order completed in a round are automatic, shown with the Order's triggers in the Order Phase.
 
 ### 3.5 Drafts, the draft store and table selection
 
@@ -379,11 +383,20 @@ interface TableSelectionData {
   activePlacement: { locationId: LocationId; workerKey: string } | null;
   kilnTargets: ReadonlyMap<KilnSpaceId, { pressed: boolean }>;                // G&L destination, Setter's Mark space
   pendingCeramics: readonly { ceramicId: CeramicId; glaze: Glaze; at: KilnSpaceId | "imperial" }[];
-  orderTargets: ReadonlyMap<string, { state: "choosable" | "chosen" | "completable" | "blocked" | "discard"; disabled: boolean }>;  // OrderId or `slot:<i>`
+  orderTargets: ReadonlyMap<string, { state: "choosable" | "chosen" | "completable" | "blocked" | "discard"; disabled: boolean; reason?: OrderTargetReason | null }>;  // OrderId or `slot:<i>`
   highlightedCeramicIds: ReadonlySet<CeramicId>;                              // Order group, ability target
+  techChooser: TechChooser | null;                                            // the Guild Hall on the Tech display: buy, inspect, or the Shifu's take
 }
-type TableAction = { type: "place"; locationId: LocationId; workerKey: string } | { type: "kilnSpace"; spaceId: KilnSpaceId } | { type: "order"; key: string };
+type OrderTargetReason = { kind: "message"; message: RichMessage } | { kind: "rule"; error: Pick<GameRuleError, "code"> & { details?: … } };
+type TableAction =
+  | { type: "place"; locationId: LocationId; workerKey: string }
+  | { type: "kilnSpace"; spaceId: KilnSpaceId }
+  | { type: "order"; key: string }
+  | { type: "tech"; techId: TechId }               // a face-up Tech (Guild Hall buy or take)
+  | { type: "inspect"; discipline: TechDiscipline }; // a discipline's deck (Guild Hall Shifu)
 ```
+
+A disabled Order target says why (`reason`), under its toggle and as the toggle's description: the Commission Market's limit once the Shifu effect has chosen 2 (the window's own message), or the engine's reason a held Order cannot be given up to the Colour Samples swap. V1.6.2 Order targets: the Commission Market's display positions and look row (`commission`), the Colour Samples looks (`colour_samples`, `colour_samples_swap`) and the held Orders the swap may give up (`work`, swap mode); the Guild Hall Shifu's face-up takes are Tech targets in take mode (`guild_inspection`).
 
 `useTableSelection()` returns `spec.table.select(currentDraft, model, engine)`, or the inert value (empty maps) when there is no adapter. Its handlers dispatch `spec.table.act(...)` into the draft store. Location Place buttons, kiln-space targets and clickable Order cards therefore change the pane's draft without either side importing the other (wireframe `draftTargets`, `data-act="place"`, `data-act="dest"`). Because the selection is a pure function of the draft, an SSR test seeds a draft and sees the targets.
 
@@ -501,7 +514,7 @@ App                                   app/App.tsx: home | lobby | ended | game (
       │  ├─ FiringSection             firing/FiringStage (D3, takes over the column during the Firing Phase)
       │  │  ├─ StepRail · QueueRow / SubmittedRow
       │  │  ├─ HeatEquation           Kiln Die + Contributions = Base Heat; Base Heat + Fire = Global Heat;
-      │  │  │                         the R7 extra Fire card beside its ceramic
+      │  │  │                         Second Firing's 2 revealed Fire cards beside their ceramic (V1.6.2)
       │  │  ├─ KilnBlock              SharedKiln + ImperialKilns (static)
       │  │  └─ FireDiscard            the only Fire-deck information (D4)
       │  ├─ ResultsSection            results/ResultsSection: podium, score table, tie-breaks
@@ -603,7 +616,7 @@ Every path is under `src/app/` unless stated. A component's CSS sits beside it (
 **Work and setup decisions (B4):**
 
 - `decision/setup/*`;
-- `decision/work/WorkTurn.tsx`, `workDraft.ts` (`WorkerPicker.tsx` was removed by D14: workers are placed on the table), `ActionWindow.tsx` (composes Imperial Priority and B5's Canal Barge form, before and after the action), `ImperialPriority.{tsx,draft.ts}`, `CommissionStep.tsx`, `GuildInspection.tsx` (take plus a `ReorderList` bottom order), `ColourSamples.tsx`;
+- `decision/work/WorkTurn.tsx`, `workDraft.ts` (`WorkerPicker.tsx` was removed by D14: workers are placed on the table), `ActionWindow.tsx` (composes Imperial Priority and the Colour Samples swap, before and after the action), `ImperialPriority.{tsx,draft.ts}`, `ColourSamplesSwap.{tsx,draft.ts}` (V1.6.2: the held Order the swap gives up, the work draft's `swap` sub-draft), `CommissionStep.{tsx,draft.ts}` (the look and the reservations, `COMMISSION_CHOOSE`), `GuildInspection.{tsx,draft.ts}` (one take per command, then a second take or stop, and a `ReorderList` bottom order), `ColourSamples.{tsx,draft.ts}` (the look when gained and the swap's look);
 - `decision/work/locations/{MaterialsYard,FormDecorate,GlazeLoad,CommissionMarket,GuildHall,CanalWharf,MagistratesHall}.{tsx,draft.ts}`;
 - `decision/work/windows.work.ts` (its slice of the registry);
 - `i18n/catalog/work.ts`.
@@ -613,7 +626,8 @@ Wireframe sources: `decWork`, `subEditor`, `deltaRow`, `workSummary`, `decLook`.
 **Firing, Order, Cleanup and Results decisions (B5):**
 
 - `decision/firing/*`;
-- `decision/orders/OrderTurn.tsx`, `orderDraft.ts`, `OrderCompletionPicker.tsx`, `CrackleDeclarations.tsx`, `CanalBarge.tsx`, `canalBargeDraft.ts` (composed by B4's `ActionWindow`, §4.3);
+- `decision/orders/OrderTurn.tsx`, `orderDraft.ts`, `orderCompletion.ts`, `OrderCompletionPicker.tsx`, `CrackleDeclarations.tsx` (`CanalBarge.tsx` and `canalBargeDraft.ts` were removed with V1.6.2's `USE_CANAL_BARGE`);
+- `decision/firing/SecondFiring.{tsx,draft.ts}` (V1.6.2: Second Firing's card, and R7's Jun, in one command);
 - `decision/cleanup/HandTrim.tsx`;
 - `decision/results/FinalSummary.tsx`;
 - `decision/Waiting.tsx`;
@@ -626,7 +640,7 @@ Wireframe sources: `decContrib`, `decHeatMarker`, `decAfterQuality`, `decOrders`
 
 - `rules/RulesDetail.{tsx,css}` and `i18n/catalog/rules.ts`: the one rules-details panel of D10/K15 (`RulesDetail`, `ShortText`, `OrderReward`, `LocationSummaries`) over the content accessors in `i18n/content.ts` (`rulesClarifications`, `techFacts`, `kilnFacts`, `orderFacts`, `locationFacts`, `overflowClarifications`). It replaced four package copies (B2–B5);
 - `rules/rulebookSections.ts`: the V1.6.1 rulebook's section headings by line (EN source and the line-aligned Chinese rulebook), so a clarification's rulebook source (`L140`, `ED L652`) is shown as the section a player can find ("Rulebook “Materials Yard”" / "规则书「泥柴场」"), never as a line number; `test/v161/ui/rules/rulebook_sections.test.ts` derives it again from both files;
-- `decision/composition.tsx`: the Canal Barge composition seam (§4.3 rule 3);
+- `decision/composition.tsx`: the Canal Barge composition seam (§4.3 rule 3); removed with V1.6.2's `USE_CANAL_BARGE`;
 - `state/pane.ts` (`usePane`, the focus moves `focusTable` and `focusHiddenDecision`) and `decision/PaneOpeners.{tsx,css}`: the hidden pane of D14 (owner review 2026-10-17, item 2), with `WindowSpec.pane` in `state/draftStore.ts` and `workPane` in `decision/work/windows.work.ts` (§3.5).
 
 **Tests** live under `test/v161/ui/<area>/` and are owned by the area's owner. `test/v161/ui/support/*` (render harness, fixture loader, expressibility helper) is created by A2 and owned by B6 after phase A.
@@ -639,7 +653,7 @@ Wireframe sources: `decContrib`, `decHeatMarker`, `decAfterQuality`, `decOrders`
 
    `GameScreen`, the `WorldSections` imports and `decision/windows.ts` therefore never change in phase B.
 2. **Frozen contracts:**
-   - `state/*`, `session/gameSource.ts`, `decision/DecisionPane.tsx`, `decision/windows.ts`, `decision/composition.tsx`, `screens/*`, `rules/*`;
+   - `state/*`, `session/gameSource.ts`, `decision/DecisionPane.tsx`, `decision/windows.ts`, `screens/*`, `rules/*` (`decision/composition.tsx` until V1.6.2 removed it);
    - `kit/*`, `styles/tokens.css`, `i18n/index.ts`, `i18n/translator.ts`, `i18n/richText.tsx`;
    - `src/game/**`, `package.json`, `vite.config.ts`, `tsconfig*.json`, `tools/*`, `test/v161/ui/fixtures/*`, `test/v161/ui/support/*`.
 
@@ -647,6 +661,7 @@ Wireframe sources: `decContrib`, `decHeatMarker`, `decAfterQuality`, `decOrders`
 3. **Cross-package use goes through a stub created in phase A.**
    - B5 owns the Canal Barge form (`CanalBarge.tsx`, `canalBargeDraft.ts`), its picker and its expressibility rows. B4's `ActionWindow` only composes it, with the props `{ source: "before_action" | "after_action" }`, and works against the stub until B5 lands.
    - As built (CR B4-2, B5-2): the work window keeps one draft, so B4's `workDraft` holds the Canal Barge draft as its `canalBarge` sub-draft (reduced, revalidated, built and `fromCommand`-ed through `canalBargeDraft`), and the window's ConfirmBar sends `USE_CANAL_BARGE`. `ActionWindow` renders `<CanalBarge>` inside `CanalBargeFormProvider` from the frozen `decision/composition.tsx`, whose types come from B5's draft only; inside it the form edits the sub-draft and has no button of its own, outside it (the gallery) it keeps a local draft and its own button.
+   - **V1.6.2:** Canal Barge has no command (its 2 Coins are automatic), so the form, its draft and `decision/composition.tsx` are gone, and with them the only cross-package seam. The work window's second ability is B4's own Colour Samples swap: `workDraft` holds it as its `swap` sub-draft (`ColourSamplesSwap.draft.ts`), `ActionWindow` renders `ColourSamplesSwap`, and the window's ConfirmBar sends `USE_COLOUR_SAMPLES_SWAP`.
    - Table and kiln components (B2, B3) talk to decision windows (B4, B5) only through `TableSelection`.
 4. **One namespace file per package** in `i18n/catalog/`. `index.ts` imports them all; A3 creates it in phase A with an empty namespace object per file.
 5. **No new runtime dependencies:** no router, no state library, no CSS-in-JS. React 19 provides `useSyncExternalStore`, `useId` and `inert`. The new devDependencies (exact pins, added by A2) are `@playwright/test`, `@axe-core/playwright` and `happy-dom`.
@@ -929,7 +944,7 @@ CSS checks run in vitest over `src/app/**/*.css` and `src/app/**/*.tsx` (`test/v
 - **Window change.** When the window `kind` or `openKey` changes, and focus was inside the pane or on `<body>`, focus moves to the pane's `<h2 tabIndex={-1}>` if it is visible. On a phone with the sheet in `peek`, it goes to the sheet strip button instead, whose label names the window. Otherwise focus stays where it is.
 - **Hidden pane (owner review, 2026-10-17; D14).** A window spec may hide the pane for a draft (`WindowSpec.pane`, `state/pane.ts`): the work turn does until a placement is chosen, and the shell then gives the world the pane's room (`data-pane="hidden"`). It stays up while a server error is pending, so the error is never hidden with it.
   - While it is hidden, a slim bar above the world (`decision/PaneOpeners`) always gives the turn cue ("Your turn: place a worker · 3 left") and, when an ability may come before the worker action, its openers after "Or first:". On phones the cue takes one short line and the openers one row under it.
-  - When the pane appears in the same window (a Place shortcut, an opener), focus moves to its heading (or the sheet strip). An ability opened with nothing placed offers only the abilities as the step's radios (arrow keys select as they move, and none of them hides the pane) and a separate "Back to placing a worker" button. A lone radio is no choice: with only one ability that may come first, the step has no radios. The heading and the phone sheet strip follow what the pane shows (`WindowSpec.title` receives the draft; `workDraft.options().heading`): "Place a worker" with a placement's choices, "Before your worker action" while an ability's form is open and the step's radios name it, the ability's own name ("Canal Barge") when it is open alone.
+  - When the pane appears in the same window (a Place shortcut, an opener), focus moves to its heading (or the sheet strip). An ability opened with nothing placed offers only the abilities as the step's radios (arrow keys select as they move, and none of them hides the pane) and a separate "Back to placing a worker" button. A lone radio is no choice: with only one ability that may come first, the step has no radios. The heading and the phone sheet strip follow what the pane shows (`WindowSpec.title` receives the draft; `workDraft.options().heading`): "Place a worker" with a placement's choices, "Before your worker action" while an ability's form is open and the step's radios name it, the ability's own name ("Colour Samples swap", "Imperial Priority") when it is open alone.
   - When it hides with focus inside it or on `<body>` (Clear, back to placing, a new turn after Confirm), focus goes back to the placement control the player last used: a Place shortcut or an opener (`PANE_RETURN_CONTROL`), never a prompt the code focused on the way such as the Guild Hall's Tech chooser. A control drawn anew is found again by its data attributes (`data-location-id`, `data-worker`, `data-pane-opener`), else another worker's Place at the same location, else the Table section's heading.
   - The world scrolls, the least it can, to show that target: always after the player's own Clear or back to placing (the world has just widened, and the Guild Hall's jump may have moved the view); at a new turn only when the focus ring shows, so the other players' turns never move a pointer player's view. The other players' turn toasts, whose band opens at the world's top right after that reveal, never scroll a control with the focus ring out of view again: the world scrolls only as far as keeps it in view, and the table moves down for the rest (`shell/toastRoom.ts`, `keepFocusInView`; checked in a real browser by `keyboard_focus.spec`).
   - The skip link then lands on the bar's cue when it has openers, else on the table.
@@ -979,11 +994,11 @@ All fixtures are JSON in `test/v161/ui/fixtures/`, generated by `tools/uiFixture
 
 - **Window scenarios** come from `phaseScenarios()` in `test/v161/engine/phase_scenarios.ts`:
   - Kiln selection, Setter's Mark;
-  - before-action with Canal Barge, Imperial Priority + Reworking Table, Ding;
+  - before-action with the Colour Samples swap, Imperial Priority + Reworking Table, Ding;
   - Kiln Furniture, Inverted Firing, Setter's Marks, Senior Apprentice;
-  - the three Commission steps, the Guild Shifu inspection, Colour Samples, after-action;
+  - the Commission Market Shifu (top 3, up to 2 reservations) and Apprentice (top 2, 1 reservation) looks, the Guild Shifu inspection, Colour Samples and its swap's look, after-action;
   - Contributions with Fuel Ledger, the Test Pieces decision and bury;
-  - Heat markers + Kiln Master, Jun, after-Quality (Saggars and Ge), Jun during Second Firing (R7), Salvage;
+  - Heat markers + Kiln Master, Jun, after-Quality (Saggars and Ge), Second Firing's choice with Jun (R7), Salvage;
   - the Order Phase with Ru, Tribute Ware and a Crackle wildcard;
   - the hand limit.
 - **Table-state scenarios** come from the new `test/v161/ui/fixtures/tableScenarios.ts` (A1). They need no open window:
@@ -999,7 +1014,7 @@ All fixtures are JSON in `test/v161/ui/fixtures/`, generated by `tools/uiFixture
 - Each entry is stored as `{ id, name, kind: "window" | "table", viewerId, playerView, recentPublicEvents, ownSecrets }`, projected with `actorViewOf(state, viewer, priv)`.
 - Together these cover **every** `DecisionWindow` kind, including the moments the wireframe could not reach.
 
-**2. Played moments → `moments.json`.** Realistic text lengths, for layout, the gallery and screenshots: m1–m9 from the wireframe set plus m10–m18. `docs/ui-v1.6.1/fixtures.json` stays frozen with the signed-off wireframe. Each new moment uses the generator's existing steering, and every step goes through `validateAction`.
+**2. Played moments → `moments.json`.** Realistic text lengths, for layout, the gallery and screenshots: m1–m9 from the wireframe set plus m10–m18, and m19–m23 for the V1.6.2 windows (the full list: `docs/ui-v1.6.1/FIXTURES.md`). `docs/ui-v1.6.1/fixtures.json` stays frozen with the signed-off wireframe. Each new moment uses the generator's existing steering, and every step goes through `validateAction`.
 
 | Moment | How it is reached |
 | --- | --- |
@@ -1010,8 +1025,13 @@ All fixtures are JSON in `test/v161/ui/fixtures/`, generated by `tools/uiFixture
 | m14 Salvage | Seed search for a Flawed ceramic |
 | m15 Kiln selection | Revision 0 |
 | m16 Colour Samples | Steer T10 |
-| m17 after-action window | Steer T23 Canal Barge and/or Imperial Priority |
-| m18 Jun during Second Firing | Steer T14 + JU |
+| m17 after-action window | Steer T10: the Colour Samples swap after the action |
+| m18 Second Firing's choice with Jun (R7) | Steer T14 + JU |
+| m19 Commission Market Apprentice look | The top 2, exactly 1 reservation |
+| m20 Colour Samples swap look | Steer T10 and the swap before the action |
+| m21 Guild Hall Shifu, second take | Steer an inspection and a first take |
+| m22 Protective Saggars' upgrade | Steer T11 |
+| m23 Order Phase with S07 | Steer T23: S07 "Carved, Impressed or Painted" completable, Canal Barge's 2 Coins |
 
 A moment whose seed search exceeds a fixed budget falls back to the matching scripted scenario, marked `source.kind: "scripted"`.
 
@@ -1073,22 +1093,23 @@ There are a few files under `test/v161/ui/interaction/`, each marked `// @vitest
 
 ### 9.4 Property tests: the forms can play the whole game
 
-- **Helper** `test/v161/ui/support/expressibility.ts` (A2). For a view and its window, it takes `legalCommands(view, { mode: "canonical" })`, whose default per-family cap is 64, and routes each command to its window's draft model (`USE_CANAL_BARGE` goes to B5's `canalBargeDraft`). For each command it checks that:
+- **Helper** `test/v161/ui/support/expressibility.ts` (A2). For a view and its window, it takes `legalCommands(view, { mode: "canonical" })`, whose default per-family cap is 64, and routes each command to its window's draft model (`USE_IMPERIAL_PRIORITY` and `USE_COLOUR_SAMPLES_SWAP` to the work window's draft; a `PLACE_*` command through the table's Place shortcut and, at the Guild Hall, the Tech display). For each command it checks that:
   1. `fromCommand(cmd)` gives a draft;
   2. every value in that draft appears in `options(draft)`;
   3. `build(draft)` equals `cmd` after `normalizeCommand`, which drops optional flags that are absent or `false` and treats an omitted `crackleDeclarations` as the draft's explicit `declarations: "auto"` mode (the engine searches);
   4. `build(draft)` validates.
 
   A stub draft (`fromCommand` returns `null`) is reported as `it.todo`, not as a failure.
-- **`expressibility.work.test.ts` (B4):** Kiln selection, Setter's Mark, every placement family, Commission, Guild inspection, Colour Samples, Imperial Priority, `END_TURN`.
-- **`expressibility.firing.test.ts` (B5):** Contributions, Test Pieces, Heat markers, Jun, after-Quality, Salvage, Orders, Canal Barge, hand trim.
+- **`expressibility.work.test.ts` (B4):** Kiln selection, Setter's Mark, every placement family, Commission (`COMMISSION_CHOOSE`), Guild inspection (`GUILD_TAKE`, `GUILD_FINISH`), Colour Samples and its swap (`COLOUR_SAMPLES_CHOOSE`, `USE_COLOUR_SAMPLES_SWAP`, `COLOUR_SAMPLES_SWAP_CHOOSE`), Imperial Priority, `END_TURN`.
+- **`expressibility.firing.test.ts` (B5):** Contributions, Test Pieces, Heat markers, Jun, after-Quality, Second Firing's choice (`SECOND_FIRING_CHOOSE`), Salvage, Orders, hand trim.
 - **Inputs for both:**
   - canonical mode over every scripted scenario and every decision of 3 seeded games (2/3/4 players);
   - **exhaustive** mode over the scripted scenarios, capped at 5,000 commands per scenario, with a seeded stride sample above that (the count is logged), because the canonical cap does not prove every legal move.
 - **`expressibility_complete.test.ts` (B6, merged after B4 and B5).** No `todo` remains, and every `DecisionWindow` kind is covered.
-- **`form_driver_games.test.ts` (B6, merged after B4 and B5).**
-  - Full 2/3/4-player games are played only through the draft models: `options` → a seeded choice → `build` → `validateAction` → engine `applyAction` in the test harness (tests may call the engine).
-  - Every game must finish with `finalResult` and no validation failure.
+- **`form_driver_games.test.tsx` (B6, merged after B4 and B5).**
+  - Full 2/3/4-player games are played only through the decision forms and the table targets that drive them (the real `DecisionPane` beside the location cards, the viewer's personal spaces and the Tech display), hot-seat: the shared autopilot (`e2e/support/autopilot.ts`) makes seeded choices among the enabled native inputs and table targets, ConfirmBar builds the command and runs `validateAction`, and the harness applies it to the engine (tests may call the engine).
+  - Every game must finish with `finalResult` and no validation failure; together the games send every placement, `COMMISSION_CHOOSE`, `GUILD_TAKE`, Contributions, Orders and the trim.
+  - Steered games (the autopilot's `prefer` list, shared with `full_game.spec`'s steered case) reach the optional abilities a random game rarely meets: the Colour Samples swap, Protective Saggars, Second Firing's choice, Ge's Crackle and Kiln Master.
   - `KILN_UI_FUZZ_GAMES` raises the count, like `test:fuzz:long`.
 
 ### 9.5 Scenario gallery (dev-only, tracked)
@@ -1130,8 +1151,8 @@ None of them is part of `npm test`.
 | Spec | Checks |
 | --- | --- |
 | `gallery.spec.ts` | For every gallery entry × project:<br>• axe: no serious or critical violation;<br>• computed `font-size` ≥ 12px for every text node (≥ 13px for Chinese body text);<br>• `document.scrollingElement.scrollWidth ≤ innerWidth`;<br>• no clipped text (`scrollWidth > clientWidth` on text containers);<br>• focus is visible after Tab;<br>• on phone projects, every interactive element is ≥ 44×44 or has 44px spacing;<br>• no game text is hidden at one size and shown at another, except inactive phone sections and the collapsed sheet body;<br>• an ARIA snapshot of the decision pane.<br>Screenshots go to `output/ui-v1.6.1/screens/` (gitignored) for review. No pixel baselines are committed in phase 4: the art is not final, and baselines would churn |
-| `full_game.spec.ts` | **The phase 4 exit.** Create a room, add computers, start, and play to final results through the UI only:<br>• 1440 EN with 4 players (1 human + 3 computers);<br>• 390 ZH with 2 players;<br>• 844×390 EN with 3 players;<br>• 1024 ZH with 2 players;<br>• `@ci`: 1440 EN, 1 human + 1 computer, `e2e_reset { policy: "canonical" }`.<br>A per-window autopilot reads `data-window` and chooses through native inputs, varying its choices so that the Materials Yard, Form & Decorate and Glaze & Load forms, Commission steps, Contributions, Heat markers, after-Quality, Orders and the trim are all exercised. Then it presses Confirm.<br>After **every** Confirm it asserts:<br>• none of the IDs from `e2e_secret_ids` appear in the DOM (text or attributes);<br>• none of the D3/D4 vocabulary appears;<br>• `document.activeElement` is not `<body>`;<br>• Confirm held focus while sending.<br>The language is switched mid-game once. A reload mid-game checks reconnect: same seat, same revision |
-| `two_humans.spec.ts` | Two browser contexts (distinct `x-e2e-user`):<br>• the secret Contribution: neither sees the other's card before the reveal;<br>• the private Commission top 3 is visible only to its owner.<br>Parallel Salvage and hand-trim races are **not** steered through the browser. They are covered by platform `parallel_windows.test.ts` and the session tests (§9.2) |
+| `full_game.spec.ts` | **The phase 4 exit.** Create a room, add computers, start, and play to final results through the UI only:<br>• 1440 EN with 4 players (1 human + 3 computers);<br>• 390 ZH with 2 players;<br>• 844×390 EN with 3 players;<br>• 1024 ZH with 2 players;<br>• `@ci`: 1440 EN, 1 human + 1 computer, `e2e_reset { policy: "canonical" }`;<br>• V1.6.2: 1440 EN with 2 players, **steered** (the autopilot's `prefer` list) to the Guild Hall Shifu's takes and bottom order, the Workshop, Glaze & Load, the Commission Market's look and reservations, and the Colour Samples swap, Protective Saggars, Second Firing and the Fuel Ledger whenever they are offered; it must confirm the `commission` and `guild_inspection` windows, and lists the V1.6.2 commands it sent.<br>A per-window autopilot reads `data-window` and chooses through native inputs and the table targets (Place shortcuts, the Tech display, Order toggles, kiln spaces, the hidden pane's openers), varying its choices so that the Materials Yard, Form & Decorate and Glaze & Load forms, Commission steps, Contributions, Heat markers, after-Quality, Orders and the trim are all exercised. Then it presses Confirm.<br>After **every** Confirm it asserts:<br>• none of the IDs from `e2e_secret_ids` appear in the DOM (text or attributes);<br>• none of the D3/D4 vocabulary appears;<br>• `document.activeElement` is not `<body>`;<br>• Confirm held focus while sending.<br>The language is switched mid-game once. A reload mid-game checks reconnect: same seat, same revision |
+| `two_humans.spec.ts` | Two browser contexts (distinct `x-e2e-user`):<br>• the secret Contribution: neither sees the other's card before the reveal;<br>• the private Commission top 3 is visible only to its owner, and the 2 cards not reserved stay secret under the deck;<br>• a second game (seed 1): the Guild Hall Shifu's inspection, its two takes (Colour Samples, then Test Pieces) and the bottom order; Colour Samples' look when gained; the Test Pieces peek: none reaches the other player.<br>Parallel Salvage and hand-trim races are **not** steered through the browser. They are covered by platform `parallel_windows.test.ts` and the session tests (§9.2) |
 | `keyboard_focus.spec.ts` | 1440 only (owner review 2026-10-17, items 2 and 3). One human on the keyboard and two computers: three work turns, each placing an Apprentice at Canal Wharf with Enter and confirming with Enter with the world scrolled to its bottom. When the turn comes back, focus is on Canal Wharf's Place shortcut, and a frame sampler finds no frame in which a control with the focus ring in the world lies above the world's top while the other players' turn toasts open, grow and close |
 
 **CI.** B6 adds `.github/workflows/kiln-opening-ui.yml` at the repository root, subject to the owner's approval (§11), because it sits outside the app directory and uses CI minutes. It runs on `pull_request` (paths `apps/kiln-opening/**`) and on `workflow_dispatch`, with these steps:

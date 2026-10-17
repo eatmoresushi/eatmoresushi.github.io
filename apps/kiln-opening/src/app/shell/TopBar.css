@@ -324,9 +324,10 @@
       margin-inline-start: auto;
     }
 
+    /* 44px targets on phones (owner rule): the log, language and session-menu buttons. */
     .top-bar-tools .kit-menu-button,
     .language-switch {
-      min-width: 2.5rem;
+      min-width: var(--target-min);
       padding-inline: var(--sp-2);
     }
 
@@ -345,11 +346,13 @@
     }
   }
 
-  /* The narrowest phones: when the tools have to leave row one, the chips scroll beside them on row two. */
-  @container shell (max-width: 389px) {
+  /* Narrow phones: when the tools have to leave row one (a long phase label, or below 390px), the
+     chips scroll beside them on row two, so the bar keeps to two rows (at 320px: three 44px tools
+     and at least 8rem of chips). Where the tools stay on row one, the chips fill row two. */
+  @container shell (max-width: 429px) {
     .top-bar-seats {
-      flex: 1 1 9rem;
-      min-width: min(100%, 9rem);
+      flex: 1 1 8rem;
+      min-width: min(100%, 8rem);
     }
   }
 

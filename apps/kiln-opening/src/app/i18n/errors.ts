@@ -13,12 +13,15 @@
  *   `kilnSpaceName` ("High 2" / 高温区2) before formatting, so a choice and its error name the
  *   same space identically. The engine prints a non-ID string as it is.
  * - An unknown code throws in development and tests; in production it shows the raw code.
+ * - `NO_MAIN_ACTION_POSSIBLE` names the location's own placement condition where the catalogue
+ *   has one (`NO_MAIN_ACTION_KEYS`: the Guild Hall's, v1.6.2 L212), instead of the engine's
+ *   generic "at least 1 instance of the main action" sentence (L144).
  */
-import { KILN_SPACE_IDS, RULE_ERROR_TEXT, formatRuleError } from "../../game/index.ts";
-import type { CeramicId, GameRuleError, GameRuleErrorCode, KilnSpaceId, PlayerId } from "../../game/index.ts";
+import { KILN_SPACE_IDS, LOCATION_IDS, RULE_ERROR_TEXT, formatRuleError } from "../../game/index.ts";
+import type { CeramicId, GameRuleError, GameRuleErrorCode, KilnSpaceId, LocationId, PlayerId } from "../../game/index.ts";
 import type { MultiplayerErrorCode } from "../../multiplayer/types.ts";
 import { ceramicLabel, kilnSpaceName, playerDisplayName } from "./ceramicLabel.ts";
-import { RULE_NUMBERS } from "./content.ts";
+import { RULE_NUMBERS, locationName } from "./content.ts";
 import type { CeramicLabelView } from "./ceramicLabel.ts";
 import { MissingTranslationError, defaultStrict, ruleLocale, translatorFor } from "./translator.ts";
 import type { Locale, MessageKey, Translator } from "./translator.ts";
@@ -94,6 +97,19 @@ function withSpaceNames(details: Details, t: Translator): Details {
   return out ?? details;
 }
 
+/**
+ * A location's own placement condition for `NO_MAIN_ACTION_POSSIBLE` (the "at least 1 instance
+ * of the main action" test, L144), where the rulebook states one the engine's generic sentence
+ * leaves out.
+ */
+const NO_MAIN_ACTION_KEYS: Partial<Readonly<Record<LocationId, MessageKey & `work.noMain.${string}`>>> = {
+  guild_hall: "work.noMain.guildHall",
+};
+
+function isLocationId(value: unknown): value is LocationId {
+  return typeof value === "string" && (LOCATION_IDS as readonly string[]).includes(value);
+}
+
 /** A rule error in the current language. */
 export function ruleErrorText(
   error: Pick<GameRuleError, "code"> & { details?: Readonly<Record<string, unknown>> },
@@ -101,6 +117,11 @@ export function ruleErrorText(
   options: ErrorTextOptions = {},
 ): string {
   const t = translatorFor(locale);
+  const locationId = error.details?.["locationId"];
+  if (error.code === "NO_MAIN_ACTION_POSSIBLE" && isLocationId(locationId)) {
+    const key = NO_MAIN_ACTION_KEYS[locationId];
+    if (key !== undefined) return t(key, { location: locationName(locationId, t.locale) });
+  }
   return formatRuleError({ code: error.code, details: withSpaceNames(primitiveDetails(error.details), t) }, ruleLocale(t.locale), {
     ...(options.playerName === undefined ? {} : { playerName: options.playerName }),
     // D9: a ceramic ID in `details` is always described in words, never printed.

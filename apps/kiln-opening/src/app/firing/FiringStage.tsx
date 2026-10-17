@@ -7,7 +7,8 @@
  * - a banner with the open Appendix D step, whose turn it is ("Your turn" when the viewer acts)
  *   and the queue or the Contribution submissions (`QueueRow`);
  * - the step rail (`StepRail`) with First-Player marks;
- * - the heat equation (`HeatEquation`), the R7 extra Fire card included;
+ * - the heat equation (`HeatEquation`), Second Firing's 2 revealed Fire cards included while
+ *   their owner chooses one (v1.6.2 L631);
  * - public firing records: Test Pieces (who paid, whether the card was buried; never the card),
  *   the card Second Firing fired a ceramic again with (both cards then lie in the discard), and
  *   salvaged ceramics;

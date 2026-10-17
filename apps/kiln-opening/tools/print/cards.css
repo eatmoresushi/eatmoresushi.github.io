@@ -1,6 +1,7 @@
 /*
  * Printable Order card sheets (tools/print/printOrderCards.ts): A4 portrait, up to 4 × 4 cards
- * of 50 × 71 mm with dashed cut lines; the outer cuts sit 6.5 mm from the top and bottom paper
+ * of 50 × 71 mm with dashed cut lines, each front sheet followed by its back sheet (styles at
+ * the end of this file); the outer cuts sit 6.5 mm from the top and bottom paper
  * edges, inside what most printers can print. A sheet that is not full (the 8 Starting Orders)
  * sets the height of its `.bleed` and `.grid` to the rows it uses (sheet.ts, inline style). All text stays at least 2.5 mm inside each cut
  * (cardPage.js checks it). Fonts are local system faces so the build is offline; Chromium
@@ -515,4 +516,87 @@ html[lang="zh-CN"] .vp-num {
   stroke: var(--crown-ink);
   stroke-width: 0.55;
   stroke-linejoin: round;
+}
+
+/* ---- Card backs ----------------------------------------------------------------------------- */
+/*
+ * A back sheet (sheet.ts `backSheetHtml`): one continuous striped field (`.back-field`, page
+ * coordinates in mm) and a `.back-card` behind every front card. Colours come from the app's
+ * light-theme tokens (printOrderCards.ts `backPalette`), written into the markup; the disc is the
+ * fronts' parchment. Back layout, mm from the card's top edge (BACK_LAYOUT): gold frame 4.2 / 4.85
+ * from each cut, frets 5.55; medallion centred at 29.5 (EN) / 30.5 (ZH), rings 13.5 and 12.85,
+ * parchment disc 12.1 with the faint kiln drawing (cardPage.js) and the 开窑 seal; divider, then
+ * KILN OPENING and the deck name (EN) or the deck name alone (ZH). Nothing comes within 4 mm of a
+ * cut (cardPage.js checks it).
+ */
+.back-field {
+  position: absolute;
+  inset: 0;
+  width: 210mm;
+  height: 297mm;
+}
+
+.back-card {
+  position: absolute;
+  width: 50mm;
+  height: 71mm;
+}
+
+.back-under,
+.back-over {
+  position: absolute;
+  inset: 0;
+  width: 50mm;
+  height: 71mm;
+}
+
+.back-under .disc {
+  fill: var(--paper);
+}
+
+.medal-art {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+}
+
+.seal-ch {
+  font-family: var(--song);
+  font-weight: 700;
+  fill: var(--paper);
+}
+
+.bt {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  white-space: nowrap;
+  line-height: 1;
+  color: var(--back-ivory);
+}
+
+/* Letter-spaced lines: the negative right margin centres the ink, not the trailing space. */
+.bt.game {
+  font-family: var(--titling);
+  font-size: 6.3pt;
+  letter-spacing: 0.28em;
+  margin-right: -0.28em;
+  text-transform: uppercase;
+}
+
+.bt.deck {
+  font-family: var(--titling);
+  font-size: 9.2pt;
+  letter-spacing: 0.14em;
+  margin-right: -0.14em;
+  text-transform: uppercase;
+}
+
+html[lang="zh-CN"] .bt.deck {
+  font-family: var(--song);
+  font-weight: 700;
+  font-size: 12pt;
+  letter-spacing: 0.4em;
+  margin-right: -0.4em;
 }

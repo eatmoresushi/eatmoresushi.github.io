@@ -54,9 +54,15 @@ export function extraFireFor(model: GameModel, ceramicId: CeramicId): readonly F
   return chosen === null ? null : [chosen];
 }
 
-/** Protective Saggars kept this ceramic Standard this firing instead of Flawed (v1.6.2 L636). */
+/**
+ * Protective Saggars keeps this ceramic Standard this firing instead of Flawed (v1.6.2 L636),
+ * shown only while its recorded Quality is still Standard: after Saggars' own upgrade or Ge's
+ * Crackle it is Fine, and "counts as Standard" would contradict its Quality chip (the engine
+ * keeps the flag set).
+ */
 export function saggarsFloorFor(model: GameModel, ceramicId: CeramicId): boolean {
-  return model.firingStage?.ceramics.find((record) => record.id === ceramicId)?.saggarsFloor === true;
+  const record = model.firingStage?.ceramics.find((entry) => entry.id === ceramicId);
+  return record?.saggarsFloor === true && record.quality === "standard";
 }
 
 /** A ceramic the open decision would load (dashed): its picture when the model has it, else its Glaze. */

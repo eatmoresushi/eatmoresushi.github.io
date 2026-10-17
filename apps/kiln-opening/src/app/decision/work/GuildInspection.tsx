@@ -18,6 +18,11 @@
  * The steps read in order: the prompt (before the first take) or what was taken (after it), the
  * inspected Techs, the face-up Techs, then stopping and the bottom order. A single untaken
  * inspected Tech needs no order: it is named in a sentence instead of a one-item list.
+ *
+ * After the second take (`inspectionReturnOnly`) no Tech can be taken: the window shows what was
+ * taken, says the action's takes are used, and asks only for the bottom order of the 2 untaken
+ * inspected Techs (stopping is pre-selected by the draft). No Tech tiles, no "take another"
+ * note, no stop radio.
  */
 import type { GuildTechOption } from "../../../game/index.ts";
 import { disciplineName, techName } from "../../i18n/content.ts";
@@ -29,7 +34,7 @@ import { ReorderList } from "../../kit/ReorderList.tsx";
 import { announcePolite } from "../../shell/announce.ts";
 import { useDraft, useEngineView, useGame } from "../../state/hooks.ts";
 import { TechOption } from "../../table/TechCard.tsx";
-import { GUILD_FINISH_VALUE, guildInspectionDraft, inspectionReason, takeKey } from "./GuildInspection.draft.ts";
+import { GUILD_FINISH_VALUE, guildInspectionDraft, inspectionReason, inspectionReturnOnly, takeKey } from "./GuildInspection.draft.ts";
 import type { GuildInspectionAction, GuildInspectionDraft, GuildTake } from "./GuildInspection.draft.ts";
 import { techPriceText } from "./locations/GuildHall.tsx";
 import { FormNote, useRuleErrorText } from "./pieces.tsx";
@@ -72,15 +77,49 @@ export function GuildInspection() {
   };
   const finishing = draft.choice?.kind === "finish";
   const aside = options.takesLeft > 0 ? t("work.gi.takeN", { a: options.takes.length + 1, b: max }) : undefined;
+  const taken =
+    options.takes.length === 0 ? null : (
+      <p className="b4-prompt" data-b4="guild-taken">
+        {t("work.gi.taken", { techs: list(options.takes.map((take) => techName(take.techId, t.locale)), t.locale) })}
+      </p>
+    );
+  const bottom =
+    draft.bottomOrder.length === 0 ? null : draft.bottomOrder.length === 1 ? (
+      <p className="b4-note" data-b4="guild-return-one">
+        {t("work.gi.returnOne", { tech: techName(draft.bottomOrder[0]!, t.locale), discipline })}
+      </p>
+    ) : (
+      <div className="b4-sub-block" data-b4="guild-bottom">
+        <p className="b4-sub-title">{t("work.gi.bottom", { discipline })}</p>
+        <ReorderList
+          label={t("work.gi.bottom", { discipline })}
+          announce={announcePolite}
+          items={draft.bottomOrder.map((techId) => ({ id: techId, label: techName(techId, t.locale) }))}
+          onReorder={(ids) => {
+            const order = ids.flatMap((id) => draft.bottomOrder.filter((techId) => techId === id));
+            dispatch({ type: "reorder", bottomOrder: order });
+          }}
+        />
+        <FormNote tone="private">{t("work.gi.bottomNote")}</FormNote>
+      </div>
+    );
+  if (inspectionReturnOnly(options)) {
+    // Both takes are made: the bottom order is the only decision left (B2).
+    return (
+      <div className="b4-form" data-b4="guild-inspection" data-takes={options.takes.length} data-return-only="">
+        {taken}
+        <p className="b4-note" data-b4="guild-return-prompt">
+          {t("work.gi.returnPrompt", { n: max, discipline })}
+        </p>
+        {bottom}
+      </div>
+    );
+  }
   return (
     <div className="b4-form" data-b4="guild-inspection" data-takes={options.takes.length}>
-      {options.takes.length === 0 ? (
+      {taken ?? (
         <p className="b4-prompt" data-b4="guild-prompt">
           {t("work.gi.prompt", { n: max })}
-        </p>
-      ) : (
-        <p className="b4-prompt" data-b4="guild-taken">
-          {t("work.gi.taken", { techs: list(options.takes.map((take) => techName(take.techId, t.locale)), t.locale) })}
         </p>
       )}
       {options.inspected.length === 0 ? (
@@ -101,25 +140,7 @@ export function GuildInspection() {
           <OptionCard value={GUILD_FINISH_VALUE} title={t("work.gi.finish")} description={draft.bottomOrder.length === 0 ? undefined : t(draft.bottomOrder.length === 1 ? "work.gi.finishHintOne" : "work.gi.finishHint")} />
         </OptionGroup>
       )}
-      {!finishing || draft.bottomOrder.length === 0 ? null : draft.bottomOrder.length === 1 ? (
-        <p className="b4-note" data-b4="guild-return-one">
-          {t("work.gi.returnOne", { tech: techName(draft.bottomOrder[0]!, t.locale), discipline })}
-        </p>
-      ) : (
-        <div className="b4-sub-block" data-b4="guild-bottom">
-          <p className="b4-sub-title">{t("work.gi.bottom", { discipline })}</p>
-          <ReorderList
-            label={t("work.gi.bottom", { discipline })}
-            announce={announcePolite}
-            items={draft.bottomOrder.map((techId) => ({ id: techId, label: techName(techId, t.locale) }))}
-            onReorder={(ids) => {
-              const order = ids.flatMap((id) => draft.bottomOrder.filter((techId) => techId === id));
-              dispatch({ type: "reorder", bottomOrder: order });
-            }}
-          />
-          <FormNote tone="private">{t("work.gi.bottomNote")}</FormNote>
-        </div>
-      )}
+      {finishing ? bottom : null}
     </div>
   );
 }

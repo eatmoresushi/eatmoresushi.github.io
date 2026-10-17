@@ -161,7 +161,7 @@ describe("titles, alternatives and window content", () => {
       ["2", "Kiln Transformation (optional)"],
     ]);
     expect(seen).toContain("The new Quality replaces the old one, even if it is worse.");
-    expect(seen).toContain("Both cards then go to the Fire discard, face up.");
+    expect(seen).toContain("The 2 cards then go to the Fire discard, face up.");
     expect(seen).toMatch(/Card 1: \+1 .*Card 2: −1/);
     expect(html).toContain('data-fire="1"');
     expect(html).toContain('data-fire="-1"');
@@ -179,10 +179,19 @@ describe("titles, alternatives and window content", () => {
     const chinese = perceivable(zh(id));
     expect(chinese).toContain("「复烧」额外翻开了2张窑火牌，大家都能看到。选一张，用它为你的器物复烧。");
     expect(chinese).toContain("新品质取代原来的品质，即使更差也一样。");
-    expect(chinese).toContain("两张牌随后都正面朝上放入窑火弃牌堆。");
+    expect(chinese).toContain("这2张牌随后都正面朝上放入窑火弃牌堆。");
     expect(chinese).toContain("「窑变天成」（可选） 费用：1柴 用在这件器物上：重算之后、定新品质之前。");
-    // No Jun Kiln: no Jun at all, and no step numbers (m18).
-    const noJun = en("m18_jun_second_firing");
+    // A played Jun owner (m18) gets the same two steps.
+    const played = en("m18_jun_second_firing");
+    expect(inputs(played).filter((input) => input["name"] === "jun").map((input) => input["value"])).toEqual(["none", "1", "-1"]);
+    expect(perceivable(played)).toContain("Kiln Transformation (optional)");
+    // No Jun Kiln (the same choice on the Ding Kiln): no Jun at all, and no step numbers.
+    const noJun = renderWindow(
+      editedFixtureSource(id, (entry) => {
+        entry.playerView.game.players[entry.viewerId]!.kilnId = "DI";
+      }),
+      { locale: "en" },
+    );
     expect(inputs(noJun).filter((input) => input["name"] === "jun")).toEqual([]);
     expect(inputs(noJun).filter((input) => input["name"] === "cardIndex")).toHaveLength(2);
     expect(noJun).not.toContain("kit-optgroup-step");
@@ -259,6 +268,22 @@ describe("titles, alternatives and window content", () => {
     expect(summary({ choice: { ability: "protective_saggars", ceramicId: "c2" } })).toBe("Use Protective Saggars: Moon White Plate, Plain · Standard becomes Fine");
     expect(summary({ choice: { ability: "ge_crackle", ceramicId: "c1" } })).toBe("Use Ge Kiln · Crackle Mastery: Moon White Bowl, Plain · Standard becomes Fine with a Crackle marker");
     expect(summary({ choice: "end" })).toBe("Finish your after-Quality turn; decline the rest");
+  });
+
+  it("after-Quality: once Saggars made the floored ceramic Fine, the window no longer says it counts as Standard", () => {
+    // The engine keeps `saggarsFloor` after the upgrade (its invariant allows Standard or Fine);
+    // the window stays open because Ge can still Crackle the Bowl.
+    const source = editedFixtureSource("w-after-quality-saggars-and-ge", (entry) => {
+      const game = entry.playerView.game;
+      const record = game.firing!.ceramics["c2"]!;
+      record.history = [...record.history, { cause: "protective_saggars", from: "standard", to: "fine" }];
+      record.quality = "fine";
+      for (const tech of game.players[entry.viewerId]!.techs) if (tech.id === "T11") tech.usedThisRound = true;
+    });
+    const seen = perceivable(renderWindow(source, { locale: "en" }));
+    expect(seen).toContain("Moon White Plate, Plain · Fine");
+    expect(seen).not.toContain("counts as Standard");
+    expect(perceivable(renderWindow(source, { locale: "zh-CN" }))).not.toContain("「匣钵护烧」：算作良品");
   });
 
   it("after-Quality and Salvage: their alternatives", () => {

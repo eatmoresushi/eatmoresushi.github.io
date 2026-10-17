@@ -12,12 +12,18 @@
  * engine's reason in the player's words. The look and its reservation follow in the
  * `colour_samples_swap` window. Composed by `ActionWindow`; the draft lives in the work draft
  * (`swap`).
+ *
+ * On phones the form brings the Orders tab up behind the sheet when it opens (the opener above
+ * the table, or the after-action window's choice), so collapsing the sheet shows the hand and its
+ * Choose toggles, the other way to choose, rather than the Workshop.
  */
+import { useEffect } from "react";
 import { RULE_NUMBERS } from "../../i18n/content.ts";
 import { useT } from "../../i18n/I18nProvider.tsx";
 import { OptionCard } from "../../kit/OptionCard.tsx";
 import { OptionGroup } from "../../kit/OptionGroup.tsx";
-import { useDraft, useEngineView, useGame } from "../../state/hooks.ts";
+import { useDraft, useEngineView, useGame, useLayoutMode, useUi } from "../../state/hooks.ts";
+import { isPhone } from "../../state/layoutMode.ts";
 import { RulesDetail } from "../../rules/RulesDetail.tsx";
 import { ORDER_OPTION_CLASS, OrderDetails } from "../orders/OrderCompletionPicker.tsx";
 import { colourSamplesSwapDraft } from "./ColourSamplesSwap.draft.ts";
@@ -40,6 +46,12 @@ export function ColourSamplesSwap({ brief = false }: ColourSamplesSwapProps) {
   const engine = useEngineView();
   const errorText = useRuleErrorText();
   const [work, dispatchWork] = useDraft<WorkDraft, WorkAction>();
+  const { setSection } = useUi();
+  const phone = isPhone(useLayoutMode());
+  useEffect(() => {
+    // The hand (the table's Choose toggles) is on the Orders tab.
+    if (phone) setSection("orders");
+  }, [phone, setSection]);
   const draft = work.swap;
   const options = colourSamplesSwapDraft.options(draft, model, engine);
   const dispatch = (action: ColourSamplesSwapAction) => dispatchWork({ type: "swap", action });

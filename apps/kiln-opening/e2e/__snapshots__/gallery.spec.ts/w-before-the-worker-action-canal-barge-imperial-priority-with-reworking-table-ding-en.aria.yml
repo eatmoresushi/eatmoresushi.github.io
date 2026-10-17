@@ -1,6 +1,0 @@
-- region "Your decision":
-  - paragraph: "Your turn: place a worker · 4 left"
-  - group "Or first:":
-    - text: "Or first:"
-    - button "Imperial Priority"
-    - button "Canal Barge"

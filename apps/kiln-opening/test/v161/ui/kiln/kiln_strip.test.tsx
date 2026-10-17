@@ -5,7 +5,7 @@
  * - only this round's Kiln Die (the die piece and its number; "not rolled yet" before the roll),
  *   in English and Chinese, one sentence for assistive technology;
  * - a "Fire discard" disclosure button (`aria-expanded`, `aria-controls`) whose panel lists every
- *   discarded Fire card in discard order, oldest first, or "none yet"; no count anywhere (D4);
+ *   discarded Fire card in discard order, oldest first, or "empty"; no count anywhere (D4);
  * - Escape closes the panel and keeps focus on the button; a second click closes it too;
  * - no recap: no "Last firing", equation, Quality, skipped-round note or "No firing yet";
  * - it sits in the Kiln section, above the kiln, outside the Firing Phase.
@@ -75,12 +75,13 @@ describe("the Kiln section strip: the Fire discard button (D4)", () => {
     }
   });
 
-  it("reads 'none yet' when nothing has been discarded", () => {
+  it("reads 'empty' when nothing has been discarded", () => {
     // Round 1, before the first firing.
     const id = "w-guild-hall-shifu-inspection";
     expect(fixture(id).playerView.game.fireDiscard).toEqual([]);
     const { panel } = parts(render(id));
-    expect(perceivable(panel)).toContain("none yet");
+    expect(perceivable(panel)).toContain("empty");
+    expect(perceivable(panel)).not.toContain("none yet");
     expect(panel).not.toContain("fdiscard-list");
     expect(panel).not.toContain("Oldest first");
     expect(perceivable(parts(render(id, "zh-CN")).panel)).toContain("暂无");

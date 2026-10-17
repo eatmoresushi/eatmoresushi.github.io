@@ -34,9 +34,13 @@
   .game-log-panel {
     position: absolute;
     top: calc(100% + 4px);
-    left: 0;
+    /* Hung from the button's end, opening towards the start: the tools sit at the end of the top
+       bar (TopBar.css), which reaches the viewport's edge while the decision pane is hidden (D14),
+       so a panel opening from the button's start would run off the screen. The bar's start is
+       always more than 24rem before the button's end at 900px and wider. */
+    right: 0;
+    left: auto;
     z-index: var(--z-popover);
-    /* The tools sit at least 23rem from the bar's end (TopBar.css), so 24rem never overflows. */
     width: min(24rem, calc(100vw - 2 * var(--sp-6)));
     max-height: min(27.5rem, 70dvh);
     overflow-y: auto;
@@ -130,7 +134,7 @@
     /* Icon only: the button's accessible name stays "Game log". */
     .game-log-button {
       justify-content: center;
-      min-width: 2.5rem;
+      min-width: var(--target-min);
       padding: var(--sp-1) var(--sp-2);
     }
 

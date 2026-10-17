@@ -126,13 +126,13 @@ describe("ceramics, markers and tiles", () => {
     expect(step5).toContain("Heat marker, face down");
     const step10 = perceivable(render("m18_jun_second_firing"));
     expect(step10).toContain("Heat marker +1");
-    // A turned −1 and the Kiln Master marker: m18 with one marker changed to Kiln Master's −1.
+    // A turned −1 and the Kiln Master marker: m18 with markers added on two other ceramics.
     const master = perceivable(
       renderEdited("m18_jun_second_firing", (entry) => {
-        const ceramic = entry.playerView.game.ceramics["c11"];
+        const ceramic = entry.playerView.game.ceramics["c5"];
         if (ceramic?.stage !== "loaded") throw new Error("fixture changed");
         ceramic.heatMarker = { source: "kiln_master", faceDown: false, value: -1 } as typeof ceramic.heatMarker;
-        const other = entry.playerView.game.ceramics["c15"];
+        const other = entry.playerView.game.ceramics["c7"];
         if (other?.stage !== "loaded") throw new Error("fixture changed");
         other.heatMarker = { source: "own", faceDown: false, value: -1 } as typeof other.heatMarker;
       }),
@@ -147,13 +147,21 @@ describe("ceramics, markers and tiles", () => {
   });
 
   it("shows the Quality each ceramic recorded in this firing, as a word", () => {
-    const html = render("m18_jun_second_firing");
-    const text = perceivable(html);
-    expect(text).toContain("Masterpiece");
+    const text = perceivable(render("m22_saggars_upgrade"));
     expect(text).toContain("Fine");
     expect(text).toContain("Standard");
-    expect(perceivable(render("m18_jun_second_firing", "zh-CN"))).toMatch(/臻品|上品|良品/);
+    expect(perceivable(render("m22_saggars_upgrade", "zh-CN"))).toMatch(/上品[\s\S]*良品|良品[\s\S]*上品/);
     expect(perceivable(render("m4_after_quality_3p"))).toContain("Flawed");
+    expect(perceivable(render("m18_jun_second_firing"))).toContain("Flawed");
+    // No played firing captured a Masterpiece: m22 with one Fine record made a Masterpiece.
+    const masterpiece = perceivable(
+      renderEdited("m22_saggars_upgrade", (entry) => {
+        const record = entry.playerView.game.firing?.ceramics["c15"];
+        if (record?.quality !== "fine") throw new Error("fixture changed");
+        record.quality = "masterpiece";
+      }),
+    );
+    expect(masterpiece).toContain("Masterpiece");
     // Before Quality there is none.
     expect(render("m3_heat_marker_step_3p")).not.toMatch(/data-quality=/);
   });

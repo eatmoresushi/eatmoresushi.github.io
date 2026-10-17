@@ -123,7 +123,7 @@ export const kiln = defineNamespace({
     "eq.equals": "=",
     "eq.extraFire": "{tech}, extra Fire cards: {ceramic}",
     "discard.label": "Fire discard (open)",
-    "discard.none": "none yet",
+    "discard.none": "empty",
     "discard.list": "Fire discard, oldest first",
 
     // Public firing records.

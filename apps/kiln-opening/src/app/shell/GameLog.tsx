@@ -11,10 +11,12 @@
  * secret version of an event (its deal, its looks, its trimmed Orders), marked "only you". A
  * secret is used only when it belongs to the viewer (`ownSecretOf`). Ceramics are described in
  * words (D9), each as it was when its line happened (`ceramicViewsAsOf`): a Crackle marker or a
- * twin that came later never changes an earlier line. A Coins line that only repeats the line
- * beside it is folded away (`foldedEntry`): an Order reward's Coins after the completion, Canal
- * Barge's after "used Canal Barge: +2 Coins", a salvage's, and a Guild Hall payment before
- * "acquired …: pay 3 Coins".
+ * twin that came later never changes an earlier line. A line that only repeats the line beside
+ * it is folded away (`foldedEntry`): an Order reward's Coins after the completion, Canal Barge's
+ * after "used Canal Barge: +2 Coins", Guan's after "used Imperial Patronage: +1 VP, +2 Coins", a
+ * salvage's, a Guild Hall payment before "acquired …: pay 3 Coins", Ding's cost before its
+ * vessel's line (which states it), Jun's Wood, and a Ding, Jun or Ge "used ⟨ability⟩" beside the
+ * line that names that ability.
  */
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";

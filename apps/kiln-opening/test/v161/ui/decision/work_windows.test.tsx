@@ -23,7 +23,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { ROOT } from "../../support/glossary.ts";
-import { KILNS, ORDERS, ORDER_CLARIFICATIONS, SHAPES, TECHS, guildInspectionOptions, guildOptions, legalCommands, placementOptions, settersMarkOptions, shortTextSegments } from "../../../../src/game/index.ts";
+import { KILNS, ORDERS, ORDER_CLARIFICATIONS, SHAPES, TECHS, guildInspectionOptions, guildOptions, legalCommands, lookedOrderOptions, placementOptions, settersMarkOptions, shortTextSegments } from "../../../../src/game/index.ts";
 import type { AuthoritativeCommand, ClarificationDefinition, KilnId, KilnSpaceId, LocationId, OrderId, TechDiscipline, TechId } from "../../../../src/game/index.ts";
 import { WINDOWS } from "../../../../src/app/decision/windows.ts";
 import { workDraft } from "../../../../src/app/decision/work/workDraft.ts";
@@ -432,7 +432,7 @@ describe("titles, alternatives and the test-driver contract", () => {
     const disabled = inputs(both).filter((input) => input["name"] === "reservations" && input["aria-disabled"] === "true").map((input) => input["value"]);
     expect(disabled).toHaveLength(reservations.length - 2);
     expect(perceivable(both)).toContain("You have chosen 2 already.");
-    expect(summary(both)).toBe(`Reserve ${view.game.market.display[0]}, ${look.orderIds[0]}; 2 cards you looked at go to the bottom of the deck`);
+    expect(summary(both)).toBe(`Reserve ${view.game.market.display[0]}, ${look.orderIds[0]}; the other 2 cards you looked at go to the bottom of the deck`);
     // The look's legend counts its cards; the display says a reserved position stays empty; the count follows the picks.
     expect(seen).toContain("Top 3 of the Main Order deck");
     expect(perceivable(zh(id))).toContain("主委托牌堆顶3张");
@@ -542,6 +542,48 @@ describe("titles, alternatives and the test-driver contract", () => {
     expect(stopping).toMatch(/aria-label="Move [^"]+ (up|down)"/);
     expect(summary(stopping)).toBe("Take no more Techs; put the rest on the bottom of the Firing deck");
     expect(heading(renderWindow(source, { locale: "zh-CN" }))).toBe("再习得一项技艺，或不再习得");
+  });
+
+  it("Guild inspection after the second take: only the bottom order of the 2 untaken inspected Techs is left; no Tech, no take note, no table chooser (v1.6.2 L207, B2)", () => {
+    const source = editedSource("w-guild-hall-shifu-inspection", (entry) => {
+      const game = entry.playerView.game;
+      const phase = game.phase;
+      if (phase.type !== "work_turn" || phase.step.kind !== "guild_inspection") throw new Error("fixture changed");
+      phase.step = { ...phase.step, takes: [{ kind: "face_up", techId: "T10" }, { kind: "face_up", techId: "T16" }] };
+      game.techDisplay.glazing_loading = game.techDisplay.glazing_loading.filter((id) => id !== "T10");
+      game.techDisplay.workshop = game.techDisplay.workshop.filter((id) => id !== "T16");
+      const p = game.players[entry.viewerId]!;
+      p.techs = [...p.techs.filter((tech) => tech.id !== "T01"), { id: "T10", acquiredInRound: game.round, usedThisRound: false }, { id: "T16", acquiredInRound: game.round, usedThisRound: false }];
+    });
+    const view = source.getSnapshot().view!;
+    expect(guildInspectionOptions(view)?.takesLeft).toBe(0);
+    const html = renderWindow(source, { locale: "en" });
+    expect(heading(html)).toBe("Return the inspected Techs");
+    expect(html).toContain('data-return-only=""');
+    expect(perceivable(html)).toMatch(/Taken this action: \S/);
+    expect(perceivable(html)).toContain("You have taken 2 Techs, the most this action allows. Put the inspected Techs you did not take back on the bottom of the Firing deck, in an order you choose.");
+    // Nothing to take: no Tech tile, no stop radio, no "another Tech" note, no take counter.
+    expect(valuesOf(html, "take")).toEqual([]);
+    expect(perceivable(html)).not.toContain("Another Tech must come from a different discipline");
+    expect(perceivable(html)).not.toContain("This action takes at most");
+    expect(perceivable(html)).not.toMatch(/Tech \d of up to/);
+    // The bottom order, with stopping pre-selected by the draft.
+    expect(html).toContain('data-b4="guild-bottom"');
+    expect(html).toMatch(/aria-label="Move [^"]+ (up|down)"/);
+    expect(perceivable(html)).toContain("Only you know this order.");
+    expect(summary(html)).toBe("Put the inspected Techs back on the bottom of the Firing deck");
+    const chinese = renderWindow(source, { locale: "zh-CN" });
+    expect(heading(chinese)).toBe("放回所看的技艺");
+    expect(perceivable(chinese)).toContain("你已习得2项技艺，这是此行动的上限。把没有习得的所看技艺放回火作牌堆底，顺序由你决定。");
+    expect(summary(chinese)).toBe("把所看的技艺放回火作牌堆底");
+    // The Tech display offers nothing to take.
+    const model = buildGameModel(view, []);
+    const engine = engineViewOf(view);
+    const spec = WINDOWS.guild_inspection;
+    const draft = spec.draft.initial(model, engine);
+    expect(draft).toMatchObject({ choice: { kind: "finish" } });
+    expect(spec.table!.select(draft as never, model, engine).techChooser).toBeNull();
+    expect(spec.draft.build(draft as never, model, engine)).toEqual({ type: "GUILD_FINISH", bottomOrder: guildInspectionOptions(view)?.inspected.map((option) => option.techId) });
   });
 
   it("Colour Samples: one of the looked-at Orders, only you; the rest go to the bottom of the Main Order deck", () => {
@@ -1031,9 +1073,58 @@ describe("table targets from seeded drafts (§3.5)", () => {
     if (look?.kind !== "commission_market") throw new Error("no look");
     const selection = probe(id, { picks: ["slot:2", `look:${look.orderIds[1]}`] });
     const targets = Object.fromEntries(selection.orders);
-    expect(targets["slot:2"]).toEqual({ state: "chosen", disabled: false });
-    expect(targets[look.orderIds[1]!]).toEqual({ state: "chosen", disabled: false });
-    expect(targets[look.orderIds[0]!]).toEqual({ state: "choosable", disabled: true });
+    expect(targets["slot:2"]).toEqual({ state: "chosen", disabled: false, reason: null });
+    expect(targets[look.orderIds[1]!]).toEqual({ state: "chosen", disabled: false, reason: null });
+    expect(targets[look.orderIds[0]!]).toMatchObject({ state: "choosable", disabled: true, reason: { kind: "message", message: { key: "work.cm.limitReached", params: { n: 2 } } } });
+  });
+
+  it("the Commission step: with 2 chosen, every other Choose toggle on the table says why it is unavailable", () => {
+    const id = "w-commission-market-shifu-top-3-look-2-reservations";
+    const look = fixture(id).playerView.own?.pendingLook;
+    if (look?.kind !== "commission_market") throw new Error("no look");
+    const draft = { picks: ["slot:2", `look:${look.orderIds[1]}`] };
+    for (const [locale, reason] of [["en", "You have chosen 2 already."], ["zh-CN", "你已经选了2张。"]] as const) {
+      const html = renderComponent(fixtureSource(id), <GameScreen />, { draft, locale });
+      const toggles = [...html.matchAll(/<button[^>]*class="ord-pick"[^>]*>/g)].map((match) => match[0]);
+      const greyed = toggles.filter((tag) => tag.includes('aria-disabled="true"'));
+      // 6 display Orders + 3 looked cards, 2 of them chosen.
+      expect(greyed, locale).toHaveLength((lookedOrderOptions(fixture(id).playerView)?.faceUpSlots.length ?? 0) + look.orderIds.length - 2);
+      for (const tag of greyed) {
+        const describedBy = /aria-describedby="([^"]+)"/.exec(tag)?.[1];
+        expect(describedBy, `${locale}: ${tag}`).toBeDefined();
+        const note = new RegExp(`<p id="${describedBy!.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}" class="ord-why">([^<]*)</p>`).exec(html)?.[1];
+        expect(decode(note ?? ""), locale).toBe(reason);
+      }
+      // The chosen ones carry no reason.
+      expect(toggles.filter((tag) => tag.includes('aria-pressed="true"')).every((tag) => !tag.includes("aria-describedby")), locale).toBe(true);
+    }
+  });
+
+  it("work: a held Order the swap cannot give up says the engine's reason on its greyed table toggle", () => {
+    // Both Main Order piles empty: a Starting Order given up (to the box) leaves nothing to look at (B1).
+    const edit = (entry: ReturnType<typeof fixture>) => {
+      entry.playerView.game.counts.mainDeck = 0;
+      entry.playerView.game.counts.mainDiscard = 0;
+    };
+    const entry = structuredClone(fixture("m17_after_action"));
+    edit(entry);
+    const view = entry.playerView;
+    const starting = (view.own?.orderHand ?? []).find((orderId) => orderId.startsWith("S"));
+    if (starting === undefined) throw new Error("m17_after_action: no Starting Order held");
+    const model = buildGameModel(view, []);
+    const draft = workDraft.reduce(workDraft.initial(model, engineViewOf(view)), { type: "mode", mode: "colour_samples_swap" }, model, engineViewOf(view));
+    for (const [locale, reason] of [
+      ["en", "The Main Order deck and discard pile are both empty; there is nothing to reserve."],
+      ["zh-CN", "主委托牌堆和弃牌堆都空了，没有可承接的委托"],
+    ] as const) {
+      const html = renderComponent(editedSource("m17_after_action", edit), <GameScreen />, { draft, locale });
+      const card = new RegExp(`<article[^>]*data-order-id="${starting}"[^>]*>([\\s\\S]*?)</article>`).exec(html)?.[1] ?? "";
+      const toggle = /<button[^>]*class="ord-pick"[^>]*>/.exec(card)?.[0] ?? "";
+      expect(toggle, locale).toContain('aria-disabled="true"');
+      const describedBy = /aria-describedby="([^"]+)"/.exec(toggle)?.[1] ?? "";
+      expect(card, locale).toContain(`id="${describedBy}" class="ord-why"`);
+      expect(decode(/class="ord-why">([^<]*)</.exec(card)?.[1] ?? ""), locale).toBe(reason);
+    }
   });
 
   it("work: the Colour Samples swap makes the held Orders targets, the chosen one marked for discard", () => {
@@ -1045,7 +1136,7 @@ describe("table targets from seeded drafts (§3.5)", () => {
     const swap = workDraft.reduce(workDraft.reduce(workDraft.initial(model, engine), { type: "mode", mode: "colour_samples_swap" }, model, engine), { type: "swap", action: { type: "discard", orderId: hand[0]! } }, model, engine);
     const selection = probe(id, swap);
     expect(selection.orders.map(([key]) => key)).toEqual(hand);
-    expect(Object.fromEntries(selection.orders)[hand[0]!]).toEqual({ state: "discard", disabled: false });
+    expect(Object.fromEntries(selection.orders)[hand[0]!]).toEqual({ state: "discard", disabled: false, reason: null });
   });
 
   it("Setter's Mark: the open spaces are kiln targets; the chosen one is pressed", () => {

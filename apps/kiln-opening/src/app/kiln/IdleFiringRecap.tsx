@@ -9,7 +9,7 @@
  *   One sentence for assistive technology ("Kiln Die this round: 2"); the visible label and the
  *   die are the same words, so they are hidden from it;
  * - a "Fire discard" button (a disclosure: `aria-expanded`, `aria-controls`) that shows, right
- *   below, every discarded Fire card's value in discard order (oldest first), or "none yet".
+ *   below, every discarded Fire card's value in discard order (oldest first), or "empty".
  *   Escape closes it and puts focus back on the button. The panel stays in the markup while
  *   closed (`hidden`), so static markup carries the discard as `PieceDetail` panels do.
  *

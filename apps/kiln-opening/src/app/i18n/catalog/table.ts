@@ -25,7 +25,7 @@ export const table = defineNamespace({
     "kilnMini.title": "Shared Kiln",
     "kilnMini.layout": "{active} spaces ({zones}) · {empty} empty",
     "kilnMini.discard": "Fire discard (open)",
-    "kilnMini.discardNone": "none yet",
+    "kilnMini.discardNone": "empty",
     "kilnMini.open": "Open Kiln",
 
     // Main Order display (wireframe `displayRow`).

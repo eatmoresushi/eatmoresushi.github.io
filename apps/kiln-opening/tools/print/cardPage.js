@@ -18,6 +18,11 @@
  * 5. Checks every card (printed text equals the rulebook string, numbers and icon counts, no
  *    overflow, all text ≥ 2.5 mm inside the cut) and every sheet (nothing printed below its
  *    used rows), and publishes `window.__PRINT_REPORT`.
+ * 6. Card backs: paints the medallion's faint kiln drawing once (see `medalArt`) and checks
+ *    every back sheet: it follows its front, has no cut lines and one continuous field reaching
+ *    at least `minBleed` mm beyond its outer cuts; every back sits behind its own front card after
+ *    a long-edge flip (x → 210 − x) and in the same deck; every mark on it, strokes included,
+ *    stays at least `safe` mm inside each cut.
  */
 (async () => {
   "use strict";
@@ -715,6 +720,7 @@
    */
   function checkSheet(sheet) {
     const say = (message) => fail(`page ${sheet.dataset.sheet}: ${message}`);
+    if (sheet.querySelector(".back-card, .back-field") !== null) say("front sheet holds back parts");
     const inkBottom = Number(sheet.dataset.inkBottom);
     const rows = Number(sheet.dataset.rows);
     const cards = sheet.querySelectorAll(".card").length;
@@ -725,6 +731,185 @@
       const rect = element.getBoundingClientRect();
       if (rect.bottom > limit) say(`${element.getAttribute("class") ?? element.tagName} reaches ${((rect.bottom - sheet.getBoundingClientRect().top) / MM).toFixed(2)} mm, below the ${inkBottom} mm ink limit`);
     }
+  }
+
+  // ---- Card backs ---------------------------------------------------------------------------
+
+  /** Resolution of the medallion drawing, px per mm (610 dpi). */
+  const ART_PX_PER_MM = 24;
+  /** The drawing fades out over this width at the edges of its crop. */
+  const ART_EDGE_MM = 2;
+
+  /**
+   * The medallion's drawing: the kiln from the approved board illustration, as faint sepia ink
+   * (cards.css --ink-2) on the fronts' parchment (--paper), fading out towards the disc's rim.
+   * The ink follows the picture's darkness against its own paper (the 92nd-percentile
+   * luminance), so the illustration's ground prints as plain parchment. One opaque JPEG the size
+   * of the disc, painted once; every back shows it, clipped round by its border radius.
+   */
+  async function medalArt() {
+    const { art, discR } = input.back;
+    const style = getComputedStyle(document.documentElement);
+    const paper = cssColour(style.getPropertyValue("--paper").trim() || "invalid");
+    const ink = cssColour(style.getPropertyValue("--ink-2").trim() || "invalid");
+    const img = new Image();
+    img.src = art.url;
+    await img.decode();
+    const n = Math.round(2 * discR * ART_PX_PER_MM);
+    const source = document.createElement("canvas");
+    source.width = n;
+    source.height = n;
+    const sctx = source.getContext("2d", { alpha: false });
+    sctx.fillStyle = "#ffffff";
+    sctx.fillRect(0, 0, n, n);
+    const k = (art.place.width * ART_PX_PER_MM) / art.crop.w;
+    const drawn = { x: art.place.left * ART_PX_PER_MM, y: art.place.top * ART_PX_PER_MM, w: art.crop.w * k, h: art.crop.h * k };
+    sctx.drawImage(img, art.crop.x, art.crop.y, art.crop.w, art.crop.h, drawn.x, drawn.y, drawn.w, drawn.h);
+    const pixels = sctx.getImageData(0, 0, n, n).data;
+    const luminance = new Float32Array(n * n);
+    const sample = [];
+    const c = n / 2;
+    for (let y = 0; y < n; y += 1) {
+      for (let x = 0; x < n; x += 1) {
+        const i = y * n + x;
+        luminance[i] = (0.2126 * pixels[i * 4] + 0.7152 * pixels[i * 4 + 1] + 0.0722 * pixels[i * 4 + 2]) / 255;
+        const inside = Math.hypot(x + 0.5 - c, y + 0.5 - c) <= c && x >= drawn.x && x < drawn.x + drawn.w && y >= drawn.y && y < drawn.y + drawn.h;
+        if (inside && (x + y) % 7 === 0) sample.push(luminance[i]);
+      }
+    }
+    if (sample.length === 0) throw new Error("medallion drawing: the crop misses the disc");
+    sample.sort((a, b) => a - b);
+    const ground = sample[Math.floor(sample.length * 0.92)];
+    const out = document.createElement("canvas");
+    out.width = n;
+    out.height = n;
+    const octx = out.getContext("2d", { alpha: false });
+    const result = octx.createImageData(n, n);
+    let darkest = 0;
+    for (let y = 0; y < n; y += 1) {
+      for (let x = 0; x < n; x += 1) {
+        const i = y * n + x;
+        const r = Math.hypot(x + 0.5 - c, y + 0.5 - c) / c;
+        // Full strength to 62 % of the radius, smoothly gone by 98 % of it; and gone towards the
+        // crop's own edges (over `ART_EDGE_MM`), so the cut-off drawing leaves no straight line.
+        const t = Math.min(1, Math.max(0, (r - 0.62) / 0.36));
+        const edge = Math.min(x + 0.5 - drawn.x, drawn.x + drawn.w - x - 0.5, y + 0.5 - drawn.y, drawn.y + drawn.h - y - 0.5) / (ART_EDGE_MM * ART_PX_PER_MM);
+        const fade = (1 - t * t * (3 - 2 * t)) * Math.min(1, Math.max(0, edge));
+        const a = art.strength * Math.min(1, Math.max(0, (ground - luminance[i]) / ground)) * fade;
+        if (a > darkest) darkest = a;
+        for (let ch = 0; ch < 3; ch += 1) result.data[i * 4 + ch] = Math.round(paper[ch] * (1 - a) + ink[ch] * a);
+        result.data[i * 4 + 3] = 255;
+      }
+    }
+    octx.putImageData(result, 0, 0);
+    const url = out.toDataURL("image/jpeg", 0.92);
+    const images = [...document.querySelectorAll(".back-card .medal-art")];
+    for (const image of images) image.src = url;
+    await Promise.all(images.map((image) => image.decode()));
+    return `medallion drawing: one opaque ${n} × ${n} px JPEG (${ART_PX_PER_MM} px/mm), sepia ink up to ${Math.round(darkest * 100)} % on parchment, painted once and shown by ${images.length} backs`;
+  }
+
+  /**
+   * Chromium lays boxes out in 1/64 px (0.004 mm) and snaps the front's grid tracks and the
+   * backs' absolute positions separately, so a back may land a few such units off its front.
+   */
+  const FLIP_TOLERANCE_MM = 0.02;
+
+  /** An element's inked box in CSS px: its geometry, grown by half its stroke (a square cap by √2 · half). */
+  function inkedRect(element) {
+    if (element instanceof HTMLElement && element.classList.contains("bt")) return textRect(element);
+    const rect = element.getBoundingClientRect();
+    if (!(element instanceof SVGGraphicsElement) || element instanceof SVGTextElement) return rect;
+    const style = getComputedStyle(element);
+    if (style.stroke === "none" || style.stroke === "") return rect;
+    const ctm = element.getScreenCTM();
+    const scale = ctm === null ? 1 : Math.hypot(ctm.a, ctm.b);
+    const grow = (parseFloat(style.strokeWidth) * scale * (style.strokeLinecap === "square" ? Math.SQRT2 : 1)) / 2;
+    return { left: rect.left - grow, right: rect.right + grow, top: rect.top - grow, bottom: rect.bottom + grow };
+  }
+
+  /**
+   * Every back sheet: it follows its front; no cut line or front part; one continuous field at
+   * least `minBleed` mm beyond the outer cuts; every back on its own front card after a long-edge
+   * flip; every mark at least `safe` mm inside each cut. Returns the summary line.
+   */
+  function checkBacks() {
+    const { safe, minBleed, pageW } = input.back;
+    const fronts = [...document.querySelectorAll(".sheet.front")];
+    const backs = [...document.querySelectorAll(".sheet.back")];
+    if (backs.length !== fronts.length) fail(`${backs.length} back sheets for ${fronts.length} front sheets`);
+    const inMm = (rect, origin) => ({
+      left: (rect.left - origin.left) / MM,
+      right: (rect.right - origin.left) / MM,
+      top: (rect.top - origin.top) / MM,
+      bottom: (rect.bottom - origin.top) / MM,
+    });
+    let worstFlip = 0;
+    let nearestMark = Infinity;
+    let leastBleed = Infinity;
+    let cells = 0;
+    let marks = 0;
+    for (const back of backs) {
+      const say = (message) => fail(`back of page ${back.dataset.sheet}: ${message}`);
+      const front = document.querySelector(`.sheet.front[data-sheet="${back.dataset.sheet}"]`);
+      if (front === null) {
+        say("has no front sheet");
+        continue;
+      }
+      if (front.nextElementSibling !== back) say("does not follow its front sheet");
+      if (back.querySelector(".cuts, .bleed, .grid, .card") !== null) say("carries cut lines or front parts");
+      const sheetBox = back.getBoundingClientRect();
+      const frontBox = front.getBoundingClientRect();
+      const fields = back.querySelectorAll(".back-field .field");
+      if (fields.length !== 1) say(`has ${fields.length} fields, not one continuous field`);
+      const field = inMm(fields[0].getBoundingClientRect(), sheetBox);
+      const backCards = [...back.querySelectorAll(".back-card")];
+      const frontCards = [...front.querySelectorAll(".card")];
+      if (backCards.length !== frontCards.length) say(`${backCards.length} backs for ${frontCards.length} cards`);
+      const outer = { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity };
+      for (const card of frontCards) {
+        const matches = backCards.filter((cell) => cell.dataset.backs === card.dataset.id);
+        if (matches.length !== 1) {
+          say(`${card.dataset.id} has ${matches.length} backs`);
+          continue;
+        }
+        const cell = matches[0];
+        if (cell.dataset.kind !== card.dataset.kind) say(`${card.dataset.id}: a ${cell.dataset.kind} back on a ${card.dataset.kind} card`);
+        const f = inMm(card.getBoundingClientRect(), frontBox);
+        const b = inMm(cell.getBoundingClientRect(), sheetBox);
+        // Long-edge flip: the back's [left, right] lands on [210 − right, 210 − left].
+        const flip = Math.max(Math.abs(pageW - b.right - f.left), Math.abs(pageW - b.left - f.right), Math.abs(b.top - f.top), Math.abs(b.bottom - f.bottom));
+        worstFlip = Math.max(worstFlip, flip);
+        if (flip > FLIP_TOLERANCE_MM) say(`${card.dataset.id}: after a long-edge flip its back is ${flip.toFixed(3)} mm off its front`);
+        outer.left = Math.min(outer.left, b.left);
+        outer.right = Math.max(outer.right, b.right);
+        outer.top = Math.min(outer.top, b.top);
+        outer.bottom = Math.max(outer.bottom, b.bottom);
+        cells += 1;
+        const box = cell.getBoundingClientRect();
+        const parts = cell.querySelectorAll(".back-under *, .back-over *, .medal-art, .bt");
+        for (const part of parts) {
+          if (part.tagName === "g" || part.tagName === "defs") continue;
+          const ink = inkedRect(part);
+          if (ink.right - ink.left <= 0 && ink.bottom - ink.top <= 0) continue;
+          const inset = Math.min(ink.left - box.left, box.right - ink.right, ink.top - box.top, box.bottom - ink.bottom) / MM;
+          nearestMark = Math.min(nearestMark, inset);
+          marks += 1;
+          if (inset < safe - 0.001) say(`${card.dataset.id}: a ${part.getAttribute("class") ?? part.tagName} comes ${inset.toFixed(2)} mm from the cut (at least ${safe})`);
+        }
+        const art = cell.querySelector(".medal-art");
+        if (art === null || !art.complete || art.naturalWidth === 0) say(`${card.dataset.id}: the medallion drawing did not load`);
+      }
+      const bleed = Math.min(outer.left - field.left, field.right - outer.right, outer.top - field.top, field.bottom - outer.bottom);
+      leastBleed = Math.min(leastBleed, bleed);
+      if (!(bleed >= minBleed - 0.01)) say(`the field runs only ${bleed.toFixed(2)} mm beyond the outer cuts (at least ${minBleed})`);
+      const inkBottom = Number(back.dataset.inkBottom);
+      if (!(field.bottom <= inkBottom + 0.05)) say(`the field reaches ${field.bottom.toFixed(2)} mm, below its ${inkBottom} mm ink limit`);
+    }
+    return (
+      `card backs: ${cells} backs on ${backs.length} sheets, each behind its own front after a long-edge flip (largest deviation ${worstFlip.toFixed(4)} mm); ` +
+      `nearest of ${marks} marks ${nearestMark.toFixed(2)} mm inside the cut (at least ${safe}); continuous field ${leastBleed.toFixed(2)} mm beyond the outer cuts (at least ${minBleed}); no cut lines`
+    );
   }
 
   // ---- Run --------------------------------------------------------------------------------
@@ -815,8 +1000,11 @@
     if (closest.de < input.minGlazeDeltaE) fail(`glazes ${closest.pair} differ by only ΔE ${closest.de.toFixed(1)} (minimum ${input.minGlazeDeltaE})`);
 
     for (const card of cards) checkCard(card);
-    for (const sheet of document.querySelectorAll(".sheet")) checkSheet(sheet);
+    for (const sheet of document.querySelectorAll(".sheet.front")) checkSheet(sheet);
     report.info.push(`ceramic images composited: ${tints.size}`);
+
+    report.info.push(await medalArt());
+    report.info.push(checkBacks());
   } catch (error) {
     fail(`page script: ${error && error.stack ? error.stack : String(error)}`);
   }

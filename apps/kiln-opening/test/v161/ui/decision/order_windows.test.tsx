@@ -2,10 +2,13 @@
  * The Order Phase window with V1.6.2's Starting deck and Canal Barge (owner revision 2, change
  * 23; v1.6.2 L622), rendered in English and Chinese. Owner: the Orders area.
  *
- * - S07 "Carved, Impressed or Painted": a Crackle ceramic's auto declaration says what it counts
- *   as ("Counts as Carved."), from the engine's own search (`crackleDeclarationChecks`), and the
- *   ConfirmBar summary names it; an explicit declaration of the printed Decoration is not
+ * - S07 "Carved, Impressed or Painted": a Plain Crackle ceramic's auto declaration says what it
+ *   counts as ("Counts as Carved."), from the engine's own search (`crackleDeclarationChecks`),
+ *   and the ConfirmBar summary names it; an explicit declaration of the printed Decoration is not
  *   repeated as "(as Plain)".
+ * - The auto mode names a Decoration only where the ceramic's own one fails: nothing for a
+ *   Painted Crackle ceramic on S07, nor for any Crackle ceramic on an Order without a Decoration
+ *   requirement (the engine's search records Plain there, which the player never needs to read).
  * - Canal Barge's 2 Coins show with the rewards of the played moment m23, automatic: never an
  *   optional ability, never a field of the command.
  * - The window keeps to the table's information (D3/D4), names no ceramic by ID (D9) and offers
@@ -16,6 +19,7 @@ import { crackleDeclarationChecks } from "../../../../src/game/index.ts";
 import type { CeramicId, OrderId } from "../../../../src/game/index.ts";
 import { orderDraft } from "../../../../src/app/decision/orders/orderDraft.ts";
 import { decorationName } from "../../../../src/app/i18n/content.ts";
+import { FixtureGameSource } from "../../../../src/app/session/fixtureSource.ts";
 import { buildGameModel, engineViewOf } from "../../../../src/app/state/model.ts";
 import { fixture, fixtureSource } from "../support/fixtures.ts";
 import { renderWindow } from "../support/render.tsx";
@@ -87,6 +91,60 @@ describe("S07 \"Carved, Impressed or Painted\" (change 23)", () => {
     const html = renderWindow(fixtureSource(RU), { locale: "en", draft: draftOf("S01", ["c4"]) });
     expect(inputs(html).some((input) => input["name"] === "crackleDeclarations")).toBe(false);
     expect(perceivable(html)).not.toContain("Counts as");
+  });
+});
+
+describe("the auto mode names a wildcard only where the ceramic's own Decoration fails (L470)", () => {
+  /** The RU scenario with its Crackle Vase (c3) printed as another Decoration. */
+  function withDecoration(decoration: "painted" | "carved") {
+    const entry = structuredClone(fixture(RU));
+    const c3 = entry.playerView.game.ceramics["c3"];
+    if (c3 === undefined || c3.stage !== "finished" || !c3.crackle) throw new Error("fixture changed");
+    c3.decoration = decoration;
+    return new FixtureGameSource(entry);
+  }
+
+  it("a Painted Crackle ceramic on S07 already meets it: no \"Counts as\", no \"(as Carved)\"", () => {
+    const en = perceivable(renderWindow(withDecoration("painted"), { locale: "en", draft: draftOf("S07", ["c3"]) }));
+    expect(en).toContain("Find a declaration for me ✓ satisfies S07");
+    expect(en).toContain("Complete S07 with Celadon Vase, Painted · Fine · Crackle");
+    expect(en).not.toContain("Counts as");
+    expect(en).not.toMatch(/\(as \w+\)/);
+    const zh = perceivable(renderWindow(withDecoration("painted"), { locale: "zh-CN", draft: draftOf("S07", ["c3"]) }));
+    expect(zh).toContain("满足S07");
+    expect(zh).not.toMatch(/视为(素面|刻花|印花|画花)/);
+  });
+
+  it("a Plain Crackle ceramic on an Order without a Decoration requirement (O18) says nothing", () => {
+    for (const locale of ["en", "zh-CN"] as const) {
+      const seen = perceivable(renderWindow(fixtureSource(RU), { locale, draft: draftOf("O18", ["c3"]) }));
+      expect(seen).toMatch(/satisfies O18|满足O18/);
+      expect(seen).not.toMatch(/Counts as|Its own Decoration \(Plain\)\.|视为素面|本身纹饰（素面）。/);
+    }
+  });
+
+  it("a Carved Crackle ceramic on O18 is not said to count as Plain", () => {
+    const en = perceivable(renderWindow(withDecoration("carved"), { locale: "en", draft: draftOf("O18", ["c3"]) }));
+    expect(en).toContain("Complete O18 with Celadon Vase, Carved · Fine · Crackle");
+    expect(en).not.toContain("Counts as");
+    expect(en).not.toContain("(as Plain)");
+  });
+
+  it("m6: an Impressed Crackle Censer on O15 (any Decoration) is not said to count as Plain, in both languages", () => {
+    const id = "m6_order_phase_crackle_3p";
+    const view = fixture(id).playerView;
+    const model = buildGameModel(structuredClone(view), []);
+    const engine = engineViewOf(structuredClone(view));
+    const chosen = orderDraft.reduce(orderDraft.initial(model, engine), { type: "order", orderId: "O15" }, model, engine);
+    const draft = chosen.ceramicIds === null ? { ...chosen, ceramicIds: ["c19"] as CeramicId[] } : chosen;
+    expect(draft.ceramicIds).toContain("c19");
+    const en = perceivable(renderWindow(fixtureSource(id), { locale: "en", draft }));
+    expect(en).toContain("Find a declaration for me ✓ satisfies O15");
+    expect(en).not.toContain("Counts as");
+    expect(en).not.toContain("(as Plain)");
+    const zh = perceivable(renderWindow(fixtureSource(id), { locale: "zh-CN", draft }));
+    expect(zh).toContain("满足O15");
+    expect(zh).not.toContain("视为素面");
   });
 });
 

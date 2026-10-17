@@ -515,16 +515,54 @@ describe("TechDisplay: Guild Hall Shifu inspection", () => {
   const { table: _chooser, ...inspection } = TABLE_WINDOWS.guild_inspection;
   const ONLOOKER_WINDOWS: typeof TABLE_WINDOWS = { ...TABLE_WINDOWS, guild_inspection: inspection };
 
+  /** m12 as someone else at the table sees it (a spectator view: no hand, no look of their own). */
+  const onlooker = (entry: ReturnType<typeof fixture>) => new FixtureGameSource({ ...entry, playerView: { ...entry.playerView, viewerId: null, own: null } });
+
   it("says who is looking at how many Techs, never which (m12)", () => {
     const id = "m12_guild_shifu_inspection";
     const look = viewOf(id).game.counts.pendingLook!;
     expect(look.kind).toBe("guild_inspection");
-    const en = render(id, <TechDisplay />, { registry: ONLOOKER_WINDOWS });
+    const en = renderComponent(onlooker(fixture(id)), <TechDisplay />, { registry: ONLOOKER_WINDOWS });
     expect(en).toContain(`class="techs-looking" data-player-id="${look.playerId}"`);
     expect(textOf(en)).toMatch(new RegExp(`is looking at ${look.count} Techs?`));
     expect(textOf(en)).not.toMatch(/looking at \d+ Orders?/);
     for (const secret of secretIds(id)) expect(en).not.toMatch(new RegExp(`\\b${secret}\\b`));
-    expect(textOf(render(id, <TechDisplay />, { locale: "zh-CN", registry: ONLOOKER_WINDOWS }))).toContain(`正在查看${look.count}张技艺`);
+    expect(textOf(renderComponent(onlooker(fixture(id)), <TechDisplay />, { locale: "zh-CN", registry: ONLOOKER_WINDOWS }))).toContain(`正在查看${look.count}张技艺`);
+    // The looker's own display never names them as "looking", chooser or not (the pane addresses them).
+    expect(render(id, <TechDisplay />, { registry: ONLOOKER_WINDOWS })).not.toContain("techs-looking");
+  });
+
+  it("a taken Tech's position shows as refilling while the inspection holds that deck's last cards (v1.6.2 L209, B2)", () => {
+    // w-guild-hall-shifu-inspection inspects Firing; here its deck held only the 2 inspected
+    // Techs, and the Shifu then took a face-up Firing Tech. The 2 untaken go back under the deck
+    // before the refill, so the taken position refills at the end of the turn.
+    const entry = structuredClone(fixture("w-guild-hall-shifu-inspection"));
+    const game = entry.playerView.game;
+    const phase = game.phase;
+    if (phase.type !== "work_turn" || phase.step.kind !== "guild_inspection" || phase.step.discipline !== "firing") throw new Error("fixture changed");
+    const taken = game.techDisplay.firing[0]!;
+    game.techDisplay.firing = game.techDisplay.firing.slice(1);
+    game.counts.techDecks.firing = 0;
+    phase.step = { ...phase.step, takes: [{ kind: "face_up", techId: taken }] };
+    const viewer = game.players[entry.viewerId]!;
+    viewer.techs = [...viewer.techs, { id: taken, acquiredInRound: game.round, usedThisRound: false }];
+    const firing = (html: string) => html.slice(html.indexOf('data-discipline="firing"'));
+    for (const html of [
+      renderComponent(new FixtureGameSource(entry), <TechDisplay />, { registry: WINDOWS }),
+      renderComponent(onlooker(entry), <TechDisplay />, { registry: ONLOOKER_WINDOWS }),
+    ]) {
+      expect(firing(html)).toContain("deck 0");
+      expect((firing(html).match(/data-empty-position=""/g) ?? []).length).toBe(1);
+      expect(textOf(firing(html))).toContain("Empty until this turn ends");
+    }
+    // Without an open inspection, a position whose deck ran out never refills: no placeholder.
+    const done = structuredClone(entry);
+    const donePhase = done.playerView.game.phase;
+    if (donePhase.type !== "work_turn") throw new Error("fixture changed");
+    donePhase.step = { kind: "after_action" };
+    if (done.playerView.own !== null) done.playerView.own.pendingLook = null;
+    done.playerView.game.counts.pendingLook = null;
+    expect(firing(renderComponent(new FixtureGameSource(done), <TechDisplay />, { registry: WINDOWS }))).not.toContain("data-empty-position");
   });
 
   it("the looker's own display is the take chooser: its prompt, every face-up Tech at its printed cost, no inspected Tech and no \"is looking\" line (D14, v1.6.2 L207)", () => {

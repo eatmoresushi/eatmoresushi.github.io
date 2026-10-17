@@ -5,7 +5,7 @@
  * - Step 1 (secret Contributions): each participant and whether they have chosen, never what
  *   (`stage.submittedPlayerIds`; §3.7). With no participant, a line says nobody contributes.
  * - A queued step (4, 5, 8, 10): the queue in First Player order, with who is deciding now.
- * - Any other step with actors (Salvage, Jun during Second Firing): who is deciding.
+ * - Any other step with actors (Salvage, the Second Firing choice): who is deciding.
  */
 import type { FiringStageView, PlayerId } from "../../game/index.ts";
 import { useT } from "../i18n/I18nProvider.tsx";

@@ -152,7 +152,7 @@ describe("heat equation", () => {
   });
 
   it("after a reshuffle the open discard is empty and says so", () => {
-    expect(perceivable(render("t-fire-deck-reshuffle"))).toMatch(/Fire discard \(open\)\s+none yet/);
+    expect(perceivable(render("t-fire-deck-reshuffle"))).toMatch(/Fire discard \(open\)\s+empty/);
   });
 });
 
@@ -232,6 +232,19 @@ describe("Protective Saggars' floor on the table (v1.6.2 L636)", () => {
     expect(perceivable(spaceCell(render(id, "zh-CN"), "low_1"))).toContain("「匣钵护烧」：算作良品，不为瑕品");
     // A Standard ceramic the floor did not touch says nothing of it.
     expect(perceivable(spaceCell(html, "middle_1"))).not.toContain("Protective Saggars");
+  });
+
+  it("once Saggars' own upgrade makes it Fine, its details no longer say it counts as Standard", () => {
+    // The engine keeps `saggarsFloor` set after the upgrade (Standard or Fine).
+    const entry = structuredClone(fixture("w-after-quality-saggars-and-ge"));
+    const record = entry.playerView.game.firing!.ceramics["c2"]!;
+    record.history = [...record.history, { cause: "protective_saggars", from: "standard", to: "fine" }];
+    record.quality = "fine";
+    const cell = spaceCell(renderComponent(new FixtureGameSource(entry), <FiringStage />), "low_1");
+    expect(cell).toContain('data-quality="fine"');
+    expect(perceivable(cell)).toContain("Quality this firing: Fine");
+    expect(perceivable(cell)).not.toContain("counts as Standard");
+    expect(perceivable(spaceCell(renderComponent(new FixtureGameSource(entry), <FiringStage />, { locale: "zh-CN" }), "low_1"))).not.toContain("「匣钵护烧」：算作良品");
   });
 });
 

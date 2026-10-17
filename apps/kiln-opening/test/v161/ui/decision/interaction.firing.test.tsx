@@ -169,7 +169,12 @@ describe("Second Firing's choice (v1.6.2 L631, R7)", () => {
   });
 
   it("without Jun ready, only the card is chosen", () => {
-    const source = new ControlledSource("m18_jun_second_firing");
+    // The R7 scenario with the viewer on the Ding Kiln instead: Jun is not their ability.
+    const source = new ControlledSource("w-second-firing-choice-with-jun-r7");
+    const view = structuredClone(source.getSnapshot().view);
+    if (view === null) throw new Error("fixture has no view");
+    view.game.players[view.viewerId!]!.kilnId = "DI";
+    source.setView(view);
     mount(source, <DecisionPane />);
     expect(container.querySelector('input[name="jun"]')).toBeNull();
     click($('input[name="cardIndex"][value="0"]'));

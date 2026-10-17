@@ -25,8 +25,10 @@
  *   command produced it (`playerId === actorId`), or is a Quality change their own ability made
  *   (`QUALITY_IMPROVED`, a Second Firing `QUALITY_ASSIGNED`). Table events (refills, the Kiln Die,
  *   Fire, Contribution reveals, the Fire deck reshuffle) and turn markers are left out, and so is
- *   a Coins line the game log folds into its neighbour (an Order reward, Canal Barge's 2 Coins,
- *   a salvage, the Imperial Grant, a Guild Hall payment), so the 4 lines carry the moves.
+ *   a line the game log folds into its neighbour (an Order reward, Canal Barge's 2 Coins, Guan's
+ *   Coins, a salvage, the Imperial Grant, a Guild Hall payment, Ding's cost and Jun's Wood, and a
+ *   Ding, Jun or Ge "used ⟨ability⟩" beside the line naming it), so the 4 lines carry the moves:
+ *   a Form & Decorate turn with Ding's extra vessel is 4 lines, a Jun adjustment 1.
  * - **Grouped per turn.** Consecutive entries of one actor form one turn. A Work or Order turn
  *   ends at its `*_TURN_ENDED`, and a turn start always opens a new one. A turn may span several
  *   commands (and so several updates): the tracker keeps the open turn, and the next update adds

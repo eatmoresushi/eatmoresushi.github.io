@@ -23,6 +23,7 @@ export const work = defineNamespace({
     "title.commission.two": "Reserve up to {n} Orders",
     "title.guild": "Take a Tech",
     "title.guildSecond": "Take another Tech, or stop",
+    "title.guildReturn": "Return the inspected Techs",
     "title.colourSamples": "Colour Samples: reserve an Order",
     "title.colourSamplesSwap": "Colour Samples swap: reserve an Order",
     "title.kilnSelection": "Choose your Kiln",
@@ -153,9 +154,14 @@ export const work = defineNamespace({
     "cm.summary.choose": "Choose an Order to reserve.",
     "cm.summary.chooseTwo": "Choose up to {n} Orders to reserve.",
     "cm.summary.reserve": "Reserve <b>{orders}</b>",
+    // Some looked card reserved: the others go to the bottom; none reserved: all of them do.
     "cm.summary.reserveRest": {
-      one: "Reserve <b>{orders}</b>; {n} card you looked at goes to the bottom of the deck",
-      other: "Reserve <b>{orders}</b>; {n} cards you looked at go to the bottom of the deck",
+      one: "Reserve <b>{orders}</b>; {n} other card you looked at goes to the bottom of the deck",
+      other: "Reserve <b>{orders}</b>; the other {n} cards you looked at go to the bottom of the deck",
+    },
+    "cm.summary.reserveLookedAll": {
+      one: "Reserve <b>{orders}</b>; the {n} card you looked at goes to the bottom of the deck",
+      other: "Reserve <b>{orders}</b>; the {n} cards you looked at go to the bottom of the deck",
     },
 
     // Guild Hall and the Shifu inspection.
@@ -178,6 +184,7 @@ export const work = defineNamespace({
     "gi.summaryChooseOrFinish": "Choose another Tech to take, or take no more.",
     "gi.summaryFinish": "Take no more Techs; put the rest on the bottom of the {discipline} deck",
     "gi.summaryFinishNone": "Take no more Techs",
+    "gi.summaryReturn": "Put the inspected Techs back on the bottom of the {discipline} deck",
     "gi.takeN": "Tech {a} of up to {b}",
     "gi.taken": "Taken this action: {techs}",
     "gi.finish": "Take no more Techs",
@@ -188,6 +195,10 @@ export const work = defineNamespace({
     "gi.returnOne": "{tech} goes back to the bottom of the {discipline} deck.",
     "gi.prompt": "Take up to {n} Techs from different disciplines, inspected or face up, each at its printed cost.",
     "gi.secondNote": "Another Tech must come from a different discipline, at its printed cost. A taken Tech’s place on the display stays empty until your turn ends.",
+    // After the second take: the bottom order is the only decision left (B2).
+    "gi.returnPrompt": "You have taken {n} Techs, the most this action allows. Put the inspected Techs you did not take back on the bottom of the {discipline} deck, in an order you choose.",
+    // The Guild Hall's placement condition (v1.6.2 L212), in place of the generic NO_MAIN_ACTION_POSSIBLE sentence.
+    "noMain.guildHall": "You can place a worker at the {location} only if you can afford a face-up Tech from a discipline you do not own yet.",
 
     // Colour Samples.
     "cs.prompt": "You looked at the top {n} Main Orders. You must reserve one of them.",
@@ -252,6 +263,7 @@ export const work = defineNamespace({
     "title.commission.two": "承接委托（至多{n}张）",
     "title.guild": "习得技艺",
     "title.guildSecond": "再习得一项技艺，或不再习得",
+    "title.guildReturn": "放回所看的技艺",
     "title.colourSamples": "色样簿：承接委托",
     "title.colourSamplesSwap": "换单：承接委托",
     "title.kilnSelection": "选择窑口",
@@ -371,6 +383,7 @@ export const work = defineNamespace({
     "cm.summary.chooseTwo": "请选择要承接的委托（至多{n}张）。",
     "cm.summary.reserve": "承接<b>{orders}</b>",
     "cm.summary.reserveRest": "承接<b>{orders}</b>，所看的另{n}张放到牌堆底",
+    "cm.summary.reserveLookedAll": "承接<b>{orders}</b>，所看的{n}张放到牌堆底",
 
     "gh.buy": "习得公开技艺",
     "gh.inspect": "查看一个门类的牌堆顶",
@@ -391,6 +404,7 @@ export const work = defineNamespace({
     "gi.summaryChooseOrFinish": "请再选一项要习得的技艺，或不再习得。",
     "gi.summaryFinish": "不再习得；其余放回{discipline}牌堆底",
     "gi.summaryFinishNone": "不再习得",
+    "gi.summaryReturn": "把所看的技艺放回{discipline}牌堆底",
     "gi.takeN": "第{a}项（至多{b}项）",
     "gi.taken": "本次已习得：{techs}",
     "gi.finish": "不再习得",
@@ -401,6 +415,8 @@ export const work = defineNamespace({
     "gi.returnOne": "「{tech}」放回{discipline}牌堆底。",
     "gi.prompt": "从不同门类中习得至多{n}项技艺，所看的或公开的都可以，各按牌面价付费。",
     "gi.secondNote": "再习得的技艺必须是另一门类，按牌面价付费。被取走的技艺位空着，直到你的回合结束。",
+    "gi.returnPrompt": "你已习得{n}项技艺，这是此行动的上限。把没有习得的所看技艺放回{discipline}牌堆底，顺序由你决定。",
+    "noMain.guildHall": "只有当你付得起一张公开技艺，且还没有该门类的技艺时，才可以派工到{location}",
 
     "cs.prompt": "你查看了主委托牌堆顶{n}张，必须承接其中一张。",
     "cs.promptOne": "牌堆里只剩一张主委托可看，你必须承接这一张。",

@@ -114,7 +114,7 @@ export const firing = defineNamespace({
 
     // Step 10: Second Firing's choice (v1.6.2 L631, R7).
     "sf.lead": "{tech} turned {n} extra Fire cards face up, for everyone to see. Choose the one your ceramic is fired with again.",
-    "sf.rule": "Both cards then go to the Fire discard, face up.",
+    "sf.rule": "The {n} cards then go to the Fire discard, face up.",
     "sf.cards": "Choose a Fire card",
     "sf.cardsRule": "The new Quality replaces the old one, even if it is worse.",
     "sf.card": "Card {n}: {value}",
@@ -233,7 +233,7 @@ export const firing = defineNamespace({
     "aq.pick": "选择一项能力，或直接完成。",
 
     "sf.lead": "「{tech}」额外翻开了{n}张窑火牌，大家都能看到。选一张，用它为你的器物复烧。",
-    "sf.rule": "两张牌随后都正面朝上放入窑火弃牌堆。",
+    "sf.rule": "这{n}张牌随后都正面朝上放入窑火弃牌堆。",
     "sf.cards": "选一张窑火牌",
     "sf.cardsRule": "新品质取代原来的品质，即使更差也一样。",
     "sf.card": "第{n}张：{value}",

@@ -97,7 +97,7 @@ export function SecondFiring() {
       )}
       <Section heading={t("firing.ability")} aside={<RulesDetail subject={{ kind: "tech", id: B5_TECHS.secondFiring }} look="name" />}>
         <ShortText text={techText(B5_TECHS.secondFiring, t.locale).short} />
-        <Note>{t("firing.sf.rule")}</Note>
+        <Note>{t("firing.sf.rule", { n: options.cards.length })}</Note>
       </Section>
     </div>
   );

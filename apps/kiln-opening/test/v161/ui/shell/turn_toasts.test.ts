@@ -159,6 +159,40 @@ describe("advanceTurns", () => {
     expect(keysOf(advanceTurns(startTurnTracker([], BASE), log, viewer).turns)).toEqual([[other, ["WORKER_PLACED", "TECH_ACQUIRED"]]]);
   });
 
+  it("fits a Form & Decorate turn with Ding's extra vessel in the toast's 4 lines: no \"used Moulded Production\", no separate Ding cost line", () => {
+    const formed = (ceramicId: string, formedBy: "form_decorate" | "ding_extra"): PublicGameEvent => ({ type: "CERAMIC_FORMED", playerId: other, ceramicId, shape: "plate", decoration: "plain", formedBy });
+    const log = entries(200, BASE + 1, other, [
+      { ...placed(other), locationId: "form_decorate", kind: "apprentice", workerId: `${other}:apprentice:1`, effect: "apprentice" } as PublicGameEvent,
+      { type: "RESOURCES_CHANGED", playerId: other, clay: -1, wood: 0, coins: -2, reason: "form_decorate" },
+      formed("c901", "form_decorate"),
+      { type: "KILN_ABILITY_USED", playerId: other, kilnId: "DI" },
+      { type: "RESOURCES_CHANGED", playerId: other, clay: -1, wood: 0, coins: -1, reason: "ding_extra" },
+      formed("c902", "ding_extra"),
+      turnEnded(other),
+    ]);
+    const { turns } = advanceTurns(startTurnTracker([], BASE), log, viewer);
+    expect(keysOf(turns)).toEqual([[other, ["WORKER_PLACED", "RESOURCES_CHANGED", "CERAMIC_FORMED", "CERAMIC_FORMED"]]]);
+    const context = { t: zh, view: logCeramicView(model, []), viewerId: viewer };
+    const lines = turns[0]!.entries.map((entry) => publicEventText(entry.event, context));
+    expect(toastLines(lines).more).toBe(0);
+    expect(lines.at(-1)).toBe(`${nameOf(other)}制坯：盘 · 素面（「范制成器」：−1泥 · −1铜钱）`);
+  });
+
+  it("states a Jun adjustment in one line, and Ge's use in its Quality and Crackle lines only", () => {
+    const jun = entries(220, BASE + 1, other, [
+      { type: "RESOURCES_CHANGED", playerId: other, clay: 0, wood: -1, coins: 0, reason: "jun" },
+      { type: "KILN_ABILITY_USED", playerId: other, kilnId: "JU" },
+      { type: "JUN_ADJUSTED", playerId: other, ceramicId: "c903", delta: 1, finalActualHeat: 2, during: "first_firing" },
+    ]);
+    expect(keysOf(advanceTurns(startTurnTracker([], BASE), jun, viewer).turns)).toEqual([[other, ["JUN_ADJUSTED"]]]);
+    const ge = entries(230, BASE + 1, other, [
+      { type: "KILN_ABILITY_USED", playerId: other, kilnId: "GE" },
+      { type: "QUALITY_IMPROVED", ceramicId: "c904", from: "standard", to: "fine", cause: "ge_crackle" },
+      { type: "CRACKLE_APPLIED", playerId: other, ceramicId: "c904" },
+    ]);
+    expect(keysOf(advanceTurns(startTurnTracker([], BASE), ge, viewer).turns)).toEqual([[other, ["QUALITY_IMPROVED", "CRACKLE_APPLIED"]]]);
+  });
+
   it("states another player's Colour Samples swap in public words only (v1.6.2 L617)", () => {
     const swap: GameEvent[] = [
       { type: "TECH_USED", playerId: other, techId: "T10" },
@@ -178,7 +212,7 @@ describe("advanceTurns", () => {
     expect(lines).toEqual([
       `${nameOf(other)} used Colour Samples to swap a held Order`,
       `${nameOf(other)} discarded a held Order face down`,
-      `${nameOf(other)} is looking at the top 2 Main Orders`,
+      `${nameOf(other)} looked at the top 2 Main Orders`,
       `${nameOf(other)} reserved one of the Orders they looked at (Colour Samples swap)`,
       `${nameOf(other)} put 1 looked-at Order face down on the bottom of the Main Order deck`,
     ]);
@@ -330,7 +364,7 @@ describe("toast lines", () => {
     // The log shows its owner the cards; a toast formats the public event only.
     expect(eventText(entry, context)).toContain("O33");
     const line = publicEventText(entry.event, context);
-    expect(line).toBe(`${nameOf(other)} is looking at the top 3 Main Orders`);
+    expect(line).toBe(`${nameOf(other)} looked at the top 3 Main Orders`);
     expect(line).not.toMatch(/O33|O12|O07/);
   });
 

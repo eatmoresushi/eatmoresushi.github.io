@@ -24116,7 +24116,7 @@
     {
       "decisionPrompt": {
         "actorIds": [
-          "p1"
+          "p3"
         ],
         "mode": "single",
         "phaseType": "firing_second_firing_choice"
@@ -24131,198 +24131,76 @@
           "actorId": "p1",
           "event": {
             "mainCount": 1,
-            "playerId": "p1",
+            "playerId": "p3",
             "secret": {
               "mainOrderIds": [
-                "O48"
+                "O38"
               ],
               "startingOrderIds": [
-                "S03",
-                "S02"
+                "S04",
+                "S06"
               ],
-              "visibleTo": "p1"
+              "visibleTo": "p3"
             },
             "startingCount": 2,
             "type": "ORDERS_DEALT"
           },
           "revision": 0,
-          "sequence": 2
+          "sequence": 4
         },
         {
-          "actorId": "p1",
-          "event": {
-            "count": 2,
-            "discipline": null,
-            "kind": "commission_market",
-            "playerId": "p1",
-            "secret": {
-              "orderIds": [
-                "O03",
-                "O05"
-              ],
-              "techIds": [],
-              "visibleTo": "p1"
-            },
-            "type": "PRIVATE_LOOK_OPENED"
-          },
-          "revision": 10,
-          "sequence": 49
-        },
-        {
-          "actorId": "p1",
-          "event": {
-            "count": 2,
-            "playerId": "p1",
-            "secret": {
-              "orderIds": [
-                "O03",
-                "O05"
-              ],
-              "visibleTo": "p1"
-            },
-            "type": "LOOKED_ORDERS_TO_BOTTOM"
-          },
-          "revision": 11,
-          "sequence": 51
-        },
-        {
-          "actorId": "p1",
+          "actorId": "p3",
           "event": {
             "orderId": null,
-            "playerId": "p1",
+            "playerId": "p3",
             "secret": {
-              "orderId": "O30",
-              "visibleTo": "p1"
+              "orderId": "O09",
+              "visibleTo": "p3"
             },
             "slotIndex": null,
             "source": "deck_top",
             "type": "ORDER_RESERVED",
             "via": "canal_wharf"
           },
-          "revision": 14,
-          "sequence": 71
+          "revision": 10,
+          "sequence": 46
         },
         {
-          "actorId": "p1",
-          "event": {
-            "count": 1,
-            "playerId": "p1",
-            "secret": {
-              "orderIds": [
-                "S03"
-              ],
-              "visibleTo": "p1"
-            },
-            "type": "HAND_TRIMMED"
-          },
-          "revision": 19,
-          "sequence": 101
-        },
-        {
-          "actorId": "p1",
+          "actorId": "p3",
           "event": {
             "count": 2,
             "discipline": null,
             "kind": "commission_market",
-            "playerId": "p1",
+            "playerId": "p3",
             "secret": {
               "orderIds": [
-                "O10",
-                "O06"
+                "O28",
+                "O07"
               ],
               "techIds": [],
-              "visibleTo": "p1"
+              "visibleTo": "p3"
             },
             "type": "PRIVATE_LOOK_OPENED"
           },
-          "revision": 71,
-          "sequence": 330
+          "revision": 38,
+          "sequence": 171
         },
         {
-          "actorId": "p1",
-          "event": {
-            "orderId": null,
-            "playerId": "p1",
-            "secret": {
-              "orderId": "O06",
-              "visibleTo": "p1"
-            },
-            "slotIndex": null,
-            "source": "looked",
-            "type": "ORDER_RESERVED",
-            "via": "commission_market"
-          },
-          "revision": 72,
-          "sequence": 331
-        },
-        {
-          "actorId": "p1",
-          "event": {
-            "count": 1,
-            "playerId": "p1",
-            "secret": {
-              "orderIds": [
-                "O10"
-              ],
-              "visibleTo": "p1"
-            },
-            "type": "LOOKED_ORDERS_TO_BOTTOM"
-          },
-          "revision": 72,
-          "sequence": 332
-        },
-        {
-          "actorId": "p1",
+          "actorId": "p3",
           "event": {
             "count": 2,
-            "discipline": null,
-            "kind": "commission_market",
-            "playerId": "p1",
+            "playerId": "p3",
             "secret": {
               "orderIds": [
-                "O01",
-                "O20"
+                "O28",
+                "O07"
               ],
-              "techIds": [],
-              "visibleTo": "p1"
-            },
-            "type": "PRIVATE_LOOK_OPENED"
-          },
-          "revision": 105,
-          "sequence": 462
-        },
-        {
-          "actorId": "p1",
-          "event": {
-            "orderId": null,
-            "playerId": "p1",
-            "secret": {
-              "orderId": "O01",
-              "visibleTo": "p1"
-            },
-            "slotIndex": null,
-            "source": "looked",
-            "type": "ORDER_RESERVED",
-            "via": "commission_market"
-          },
-          "revision": 106,
-          "sequence": 463
-        },
-        {
-          "actorId": "p1",
-          "event": {
-            "count": 1,
-            "playerId": "p1",
-            "secret": {
-              "orderIds": [
-                "O20"
-              ],
-              "visibleTo": "p1"
+              "visibleTo": "p3"
             },
             "type": "LOOKED_ORDERS_TO_BOTTOM"
           },
-          "revision": 106,
-          "sequence": 464
+          "revision": 39,
+          "sequence": 173
         }
       ],
       "playerView": {
@@ -24331,378 +24209,162 @@
             "c1": {
               "crackle": false,
               "decoration": "plain",
-              "deliveredInRound": 4,
+              "deliveredInRound": 1,
               "firedInRound": 1,
               "formedBy": "form_decorate",
               "formedInRound": 1,
-              "glaze": "grey_green",
+              "glaze": "moon_white",
               "id": "c1",
-              "orderId": "O48",
-              "ownerId": "p1",
-              "quality": "masterpiece",
-              "shape": "washer",
-              "stage": "delivered",
-              "vesselInstanceId": "washer-01"
-            },
-            "c10": {
-              "decoration": "carved",
-              "formedBy": "form_decorate",
-              "formedInRound": 3,
-              "glaze": "moon_white",
-              "heatMarker": null,
-              "id": "c10",
-              "loadedBy": "glaze_load",
-              "loadedInRound": 5,
-              "ownerId": "p3",
-              "placement": {
-                "kiln": "shared",
-                "spaceId": "high_1",
-                "stacked": false
-              },
-              "shape": "vase",
-              "stage": "loaded",
-              "vesselInstanceId": "vase-03"
-            },
-            "c11": {
-              "decoration": "plain",
-              "formedBy": "form_decorate",
-              "formedInRound": 3,
-              "glaze": "moon_white",
-              "heatMarker": {
-                "faceDown": false,
-                "source": "own",
-                "value": 1
-              },
-              "id": "c11",
-              "loadedBy": "glaze_load",
-              "loadedInRound": 5,
-              "ownerId": "p3",
-              "placement": {
-                "kiln": "shared",
-                "spaceId": "middle_2",
-                "stacked": false
-              },
-              "shape": "washer",
-              "stage": "loaded",
-              "vesselInstanceId": "washer-06"
-            },
-            "c12": {
-              "crackle": false,
-              "decoration": "carved",
-              "deliveredInRound": 4,
-              "firedInRound": 4,
-              "formedBy": "form_decorate",
-              "formedInRound": 3,
-              "glaze": "moon_white",
-              "id": "c12",
-              "orderId": "O48",
-              "ownerId": "p1",
-              "quality": "masterpiece",
-              "shape": "censer",
-              "stage": "delivered",
-              "vesselInstanceId": "censer-02"
-            },
-            "c13": {
-              "crackle": false,
-              "decoration": "carved",
-              "deliveredInRound": 4,
-              "firedInRound": 4,
-              "formedBy": "form_decorate",
-              "formedInRound": 3,
-              "glaze": "moon_white",
-              "id": "c13",
-              "orderId": "O30",
-              "ownerId": "p1",
-              "quality": "masterpiece",
-              "shape": "bowl",
-              "stage": "delivered",
-              "vesselInstanceId": "bowl-01"
-            },
-            "c14": {
-              "crackle": false,
-              "decoration": "plain",
-              "deliveredInRound": 4,
-              "firedInRound": 4,
-              "formedBy": "ding_extra",
-              "formedInRound": 3,
-              "glaze": "celadon",
-              "id": "c14",
-              "orderId": "S02",
-              "ownerId": "p1",
-              "quality": "masterpiece",
-              "shape": "bowl",
-              "stage": "delivered",
-              "vesselInstanceId": "bowl-02"
-            },
-            "c15": {
-              "decoration": "painted",
-              "formedBy": "form_decorate",
-              "formedInRound": 4,
-              "glaze": "moon_white",
-              "heatMarker": {
-                "faceDown": false,
-                "source": "own",
-                "value": 1
-              },
-              "id": "c15",
-              "loadedBy": "glaze_load",
-              "loadedInRound": 5,
-              "ownerId": "p2",
-              "placement": {
-                "kiln": "shared",
-                "spaceId": "high_2",
-                "stacked": false
-              },
-              "shape": "censer",
-              "stage": "loaded",
-              "vesselInstanceId": "censer-03"
-            },
-            "c16": {
-              "decoration": "plain",
-              "formedBy": "form_decorate",
-              "formedInRound": 4,
-              "glaze": "moon_white",
-              "heatMarker": null,
-              "id": "c16",
-              "loadedBy": "glaze_load",
-              "loadedInRound": 5,
-              "ownerId": "p2",
-              "placement": {
-                "kiln": "shared",
-                "spaceId": "low_2",
-                "stacked": false
-              },
-              "shape": "washer",
-              "stage": "loaded",
-              "vesselInstanceId": "washer-07"
-            },
-            "c17": {
-              "decoration": "plain",
-              "formedBy": "form_decorate",
-              "formedInRound": 5,
-              "glaze": "white",
-              "heatMarker": null,
-              "id": "c17",
-              "loadedBy": "imperial_priority",
-              "loadedInRound": 5,
-              "ownerId": "p1",
-              "placement": {
-                "imperialModifier": -1,
-                "kiln": "imperial"
-              },
-              "shape": "washer",
-              "stage": "loaded",
-              "vesselInstanceId": "washer-08"
-            },
-            "c18": {
-              "decoration": "plain",
-              "formedBy": "form_decorate",
-              "formedInRound": 5,
-              "glaze": "white",
-              "heatMarker": null,
-              "id": "c18",
-              "loadedBy": "glaze_load",
-              "loadedInRound": 5,
-              "ownerId": "p1",
-              "placement": {
-                "kiln": "shared",
-                "spaceId": "low_1",
-                "stacked": false
-              },
-              "shape": "bowl",
-              "stage": "loaded",
-              "vesselInstanceId": "bowl-03"
-            },
-            "c19": {
-              "decoration": "plain",
-              "formedBy": "form_decorate",
-              "formedInRound": 5,
-              "glaze": "grey_green",
-              "heatMarker": null,
-              "id": "c19",
-              "loadedBy": "glaze_load",
-              "loadedInRound": 5,
-              "ownerId": "p2",
-              "placement": {
-                "kiln": "shared",
-                "spaceId": "middle_1",
-                "stacked": false
-              },
-              "shape": "vase",
-              "stage": "loaded",
-              "vesselInstanceId": "vase-04"
-            },
-            "c2": {
-              "crackle": false,
-              "decoration": "plain",
-              "deliveredInRound": 4,
-              "firedInRound": 2,
-              "formedBy": "ding_extra",
-              "formedInRound": 1,
-              "glaze": "white",
-              "id": "c2",
-              "orderId": "O30",
-              "ownerId": "p1",
-              "quality": "fine",
-              "shape": "washer",
-              "stage": "delivered",
-              "vesselInstanceId": "washer-02"
-            },
-            "c20": {
-              "decoration": "plain",
-              "formedBy": "form_decorate",
-              "formedInRound": 5,
-              "id": "c20",
-              "ownerId": "p3",
-              "shape": "bowl",
-              "stage": "shaped",
-              "vesselInstanceId": "bowl-04"
-            },
-            "c3": {
-              "crackle": false,
-              "decoration": "plain",
-              "deliveredInRound": 4,
-              "firedInRound": 4,
-              "formedBy": "form_decorate",
-              "formedInRound": 1,
-              "glaze": "moon_white",
-              "id": "c3",
-              "orderId": "S04",
-              "ownerId": "p3",
-              "quality": "fine",
-              "shape": "washer",
-              "stage": "delivered",
-              "vesselInstanceId": "washer-03"
-            },
-            "c4": {
-              "crackle": true,
-              "decoration": "plain",
-              "deliveredInRound": 2,
-              "firedInRound": 2,
-              "formedBy": "form_decorate",
-              "formedInRound": 1,
-              "glaze": "grey_green",
-              "id": "c4",
-              "orderId": "O08",
-              "ownerId": "p2",
-              "quality": "fine",
-              "shape": "washer",
-              "stage": "delivered",
-              "vesselInstanceId": "washer-04"
-            },
-            "c5": {
-              "crackle": false,
-              "decoration": "impressed",
-              "firedInRound": 4,
-              "formedBy": "form_decorate",
-              "formedInRound": 1,
-              "glaze": "white",
-              "id": "c5",
-              "ownerId": "p3",
-              "quality": "masterpiece",
-              "shape": "washer",
-              "stage": "finished",
-              "vesselInstanceId": "washer-05"
-            },
-            "c6": {
-              "crackle": false,
-              "decoration": "carved",
-              "firedInRound": 2,
-              "formedBy": "form_decorate",
-              "formedInRound": 2,
-              "glaze": "celadon",
-              "id": "c6",
-              "ownerId": "p2",
-              "quality": "fine",
-              "shape": "plate",
-              "stage": "finished",
-              "vesselInstanceId": "plate-01"
-            },
-            "c7": {
-              "crackle": false,
-              "decoration": "plain",
-              "deliveredInRound": 4,
-              "firedInRound": 2,
-              "formedBy": "form_decorate",
-              "formedInRound": 2,
-              "glaze": "white",
-              "id": "c7",
-              "orderId": "O48",
+              "orderId": "O04",
               "ownerId": "p1",
               "quality": "fine",
               "shape": "vase",
               "stage": "delivered",
               "vesselInstanceId": "vase-01"
             },
-            "c8": {
+            "c2": {
               "crackle": false,
-              "decoration": "impressed",
-              "deliveredInRound": 4,
-              "firedInRound": 4,
+              "decoration": "painted",
+              "deliveredInRound": 1,
+              "firedInRound": 1,
+              "formedBy": "form_decorate",
+              "formedInRound": 1,
+              "glaze": "white",
+              "id": "c2",
+              "orderId": "O17",
+              "ownerId": "p2",
+              "quality": "masterpiece",
+              "shape": "washer",
+              "stage": "delivered",
+              "vesselInstanceId": "washer-01"
+            },
+            "c3": {
+              "decoration": "plain",
+              "formedBy": "form_decorate",
+              "formedInRound": 1,
+              "id": "c3",
+              "ownerId": "p2",
+              "shape": "washer",
+              "stage": "shaped",
+              "vesselInstanceId": "washer-02"
+            },
+            "c4": {
+              "decoration": "plain",
+              "formedBy": "form_decorate",
+              "formedInRound": 1,
+              "glaze": "moon_white",
+              "heatMarker": {
+                "faceDown": false,
+                "source": "own",
+                "value": 1
+              },
+              "id": "c4",
+              "loadedBy": "glaze_load",
+              "loadedInRound": 2,
+              "ownerId": "p3",
+              "placement": {
+                "kiln": "shared",
+                "spaceId": "high_2",
+                "stacked": false
+              },
+              "shape": "bowl",
+              "stage": "loaded",
+              "vesselInstanceId": "bowl-01"
+            },
+            "c5": {
+              "decoration": "carved",
               "formedBy": "form_decorate",
               "formedInRound": 2,
-              "glaze": "grey_green",
-              "id": "c8",
-              "orderId": "O19",
-              "ownerId": "p3",
-              "quality": "masterpiece",
-              "shape": "censer",
-              "stage": "delivered",
-              "vesselInstanceId": "censer-01"
-            },
-            "c9": {
-              "crackle": false,
-              "decoration": "impressed",
-              "firedInRound": 3,
-              "formedBy": "form_decorate",
-              "formedInRound": 3,
-              "glaze": "grey_green",
-              "id": "c9",
+              "glaze": "white",
+              "heatMarker": null,
+              "id": "c5",
+              "loadedBy": "glaze_load",
+              "loadedInRound": 2,
               "ownerId": "p2",
-              "quality": "fine",
+              "placement": {
+                "kiln": "shared",
+                "spaceId": "low_1",
+                "stacked": false
+              },
               "shape": "vase",
-              "stage": "finished",
+              "stage": "loaded",
               "vesselInstanceId": "vase-02"
+            },
+            "c6": {
+              "decoration": "plain",
+              "formedBy": "form_decorate",
+              "formedInRound": 2,
+              "id": "c6",
+              "ownerId": "p2",
+              "shape": "bowl",
+              "stage": "shaped",
+              "vesselInstanceId": "bowl-02"
+            },
+            "c7": {
+              "decoration": "plain",
+              "formedBy": "form_decorate",
+              "formedInRound": 2,
+              "glaze": "moon_white",
+              "heatMarker": null,
+              "id": "c7",
+              "loadedBy": "glaze_load",
+              "loadedInRound": 2,
+              "ownerId": "p3",
+              "placement": {
+                "kiln": "shared",
+                "spaceId": "high_1",
+                "stacked": false
+              },
+              "shape": "bowl",
+              "stage": "loaded",
+              "vesselInstanceId": "bowl-03"
+            },
+            "c8": {
+              "decoration": "plain",
+              "formedBy": "form_decorate",
+              "formedInRound": 2,
+              "id": "c8",
+              "ownerId": "p1",
+              "shape": "censer",
+              "stage": "shaped",
+              "vesselInstanceId": "censer-01"
             }
           },
           "counts": {
             "fireBuried": 0,
-            "fireDeck": 5,
-            "mainDeck": 17,
-            "mainDiscard": 10,
+            "fireDeck": 8,
+            "mainDeck": 29,
+            "mainDiscard": 2,
             "orderHands": {
-              "p1": 3,
-              "p2": 4,
+              "p1": 5,
+              "p2": 5,
               "p3": 5
             },
             "pendingLook": null,
             "techDecks": {
-              "firing": 2,
-              "glazing_loading": 1,
-              "workshop": 2
+              "firing": 3,
+              "glazing_loading": 2,
+              "workshop": 3
             }
           },
-          "eventSequence": 505,
+          "eventSequence": 197,
           "finalResult": null,
           "fireDiscard": [
-            0,
-            -1,
-            1,
-            0
+            -1
           ],
           "firing": {
-            "baseHeat": 2,
+            "baseHeat": 1,
             "ceramics": {
-              "c10": {
-                "ceramicId": "c10",
+              "c4": {
+                "ceramicId": "c4",
                 "crackle": false,
                 "first": {
-                  "actualHeat": 4,
-                  "finalActualHeat": 4,
-                  "fireModifier": 1,
-                  "heatDifference": 0,
-                  "heatMarker": 0,
-                  "heatSource": 3,
+                  "actualHeat": 1,
+                  "finalActualHeat": 1,
+                  "fireModifier": -2,
+                  "heatDifference": 3,
+                  "heatMarker": 1,
+                  "heatSource": -1,
                   "junAdjustment": 0,
                   "positionModifier": 1
                 },
@@ -24711,94 +24373,62 @@
                   {
                     "cause": "fired",
                     "from": null,
-                    "to": "masterpiece"
+                    "to": "flawed"
                   }
                 ],
                 "kiln": "shared",
                 "ownerId": "p3",
                 "positionSource": "zone",
                 "preferredHeat": 4,
-                "quality": "masterpiece",
-                "saggarsFloor": false,
-                "salvaged": false,
-                "second": null,
-                "secondFiringCards": null,
-                "spaceId": "high_1"
-              },
-              "c11": {
-                "ceramicId": "c11",
-                "crackle": false,
-                "first": {
-                  "actualHeat": 4,
-                  "finalActualHeat": 4,
-                  "fireModifier": 1,
-                  "heatDifference": 0,
-                  "heatMarker": 1,
-                  "heatSource": 3,
-                  "junAdjustment": 0,
-                  "positionModifier": 0
-                },
-                "glaze": "moon_white",
-                "history": [
-                  {
-                    "cause": "fired",
-                    "from": null,
-                    "to": "masterpiece"
-                  }
-                ],
-                "kiln": "shared",
-                "ownerId": "p3",
-                "positionSource": "zone",
-                "preferredHeat": 4,
-                "quality": "masterpiece",
-                "saggarsFloor": false,
-                "salvaged": false,
-                "second": null,
-                "secondFiringCards": null,
-                "spaceId": "middle_2"
-              },
-              "c15": {
-                "ceramicId": "c15",
-                "crackle": false,
-                "first": {
-                  "actualHeat": 5,
-                  "finalActualHeat": 5,
-                  "fireModifier": 1,
-                  "heatDifference": 1,
-                  "heatMarker": 1,
-                  "heatSource": 3,
-                  "junAdjustment": 0,
-                  "positionModifier": 1
-                },
-                "glaze": "moon_white",
-                "history": [
-                  {
-                    "cause": "fired",
-                    "from": null,
-                    "to": "fine"
-                  }
-                ],
-                "kiln": "shared",
-                "ownerId": "p2",
-                "positionSource": "zone",
-                "preferredHeat": 4,
-                "quality": "fine",
+                "quality": "flawed",
                 "saggarsFloor": false,
                 "salvaged": false,
                 "second": null,
                 "secondFiringCards": null,
                 "spaceId": "high_2"
               },
-              "c16": {
-                "ceramicId": "c16",
+              "c5": {
+                "ceramicId": "c5",
                 "crackle": false,
                 "first": {
-                  "actualHeat": 4,
-                  "finalActualHeat": 4,
-                  "fireModifier": 1,
-                  "heatDifference": 0,
+                  "actualHeat": -2,
+                  "finalActualHeat": -2,
+                  "fireModifier": -2,
+                  "heatDifference": 3,
                   "heatMarker": 0,
-                  "heatSource": 3,
+                  "heatSource": -1,
+                  "junAdjustment": 0,
+                  "positionModifier": -1
+                },
+                "glaze": "white",
+                "history": [
+                  {
+                    "cause": "fired",
+                    "from": null,
+                    "to": "flawed"
+                  }
+                ],
+                "kiln": "shared",
+                "ownerId": "p2",
+                "positionSource": "zone",
+                "preferredHeat": 1,
+                "quality": "flawed",
+                "saggarsFloor": false,
+                "salvaged": false,
+                "second": null,
+                "secondFiringCards": null,
+                "spaceId": "low_1"
+              },
+              "c7": {
+                "ceramicId": "c7",
+                "crackle": false,
+                "first": {
+                  "actualHeat": 0,
+                  "finalActualHeat": 0,
+                  "fireModifier": -2,
+                  "heatDifference": 4,
+                  "heatMarker": 0,
+                  "heatSource": -1,
                   "junAdjustment": 0,
                   "positionModifier": 1
                 },
@@ -24807,130 +24437,28 @@
                   {
                     "cause": "fired",
                     "from": null,
-                    "to": "masterpiece"
+                    "to": "flawed"
                   }
                 ],
                 "kiln": "shared",
-                "ownerId": "p2",
-                "positionSource": "kiln_furniture",
+                "ownerId": "p3",
+                "positionSource": "zone",
                 "preferredHeat": 4,
-                "quality": "masterpiece",
+                "quality": "flawed",
                 "saggarsFloor": false,
                 "salvaged": false,
                 "second": null,
                 "secondFiringCards": null,
-                "spaceId": "low_2"
-              },
-              "c17": {
-                "ceramicId": "c17",
-                "crackle": false,
-                "first": {
-                  "actualHeat": 3,
-                  "finalActualHeat": 3,
-                  "fireModifier": 1,
-                  "heatDifference": 2,
-                  "heatMarker": 0,
-                  "heatSource": 4,
-                  "junAdjustment": 0,
-                  "positionModifier": -1
-                },
-                "glaze": "white",
-                "history": [
-                  {
-                    "cause": "fired",
-                    "from": null,
-                    "to": "standard"
-                  }
-                ],
-                "kiln": "imperial",
-                "ownerId": "p1",
-                "positionSource": "imperial",
-                "preferredHeat": 1,
-                "quality": "standard",
-                "saggarsFloor": false,
-                "salvaged": false,
-                "second": null,
-                "secondFiringCards": null,
-                "spaceId": null
-              },
-              "c18": {
-                "ceramicId": "c18",
-                "crackle": false,
-                "first": {
-                  "actualHeat": 2,
-                  "finalActualHeat": 2,
-                  "fireModifier": 1,
-                  "heatDifference": 1,
-                  "heatMarker": 0,
-                  "heatSource": 3,
-                  "junAdjustment": 0,
-                  "positionModifier": -1
-                },
-                "glaze": "white",
-                "history": [
-                  {
-                    "cause": "fired",
-                    "from": null,
-                    "to": "fine"
-                  }
-                ],
-                "kiln": "shared",
-                "ownerId": "p1",
-                "positionSource": "zone",
-                "preferredHeat": 1,
-                "quality": "fine",
-                "saggarsFloor": false,
-                "salvaged": false,
-                "second": null,
-                "secondFiringCards": null,
-                "spaceId": "low_1"
-              },
-              "c19": {
-                "ceramicId": "c19",
-                "crackle": false,
-                "first": {
-                  "actualHeat": 3,
-                  "finalActualHeat": 3,
-                  "fireModifier": 1,
-                  "heatDifference": 0,
-                  "heatMarker": 0,
-                  "heatSource": 3,
-                  "junAdjustment": 0,
-                  "positionModifier": 0
-                },
-                "glaze": "grey_green",
-                "history": [
-                  {
-                    "cause": "fired",
-                    "from": null,
-                    "to": "masterpiece"
-                  }
-                ],
-                "kiln": "shared",
-                "ownerId": "p2",
-                "positionSource": "zone",
-                "preferredHeat": 3,
-                "quality": "masterpiece",
-                "saggarsFloor": false,
-                "salvaged": false,
-                "second": null,
-                "secondFiringCards": null,
-                "spaceId": "middle_1"
+                "spaceId": "high_1"
               }
             },
-            "contributionWindowId": "ui-fixture-3p-1:r5:contributions",
+            "contributionWindowId": "ui-fixture-3p-7:r2:contributions",
             "contributions": {
-              "p1": {
+              "p2": {
                 "card": "BANK",
                 "fuelLedger": false,
                 "heat": -1,
                 "woodPaid": 1
-              },
-              "p2": {
-                "card": "TEND",
-                "fuelLedger": false,
-                "heat": 0,
-                "woodPaid": 0
               },
               "p3": {
                 "card": "TEND",
@@ -24939,54 +24467,52 @@
                 "woodPaid": 0
               }
             },
-            "fireModifier": 1,
+            "fireModifier": -2,
             "firingPlayerIds": [
               "p2",
-              "p3",
-              "p1"
+              "p3"
             ],
-            "globalHeat": 3,
-            "kilnDie": 3,
+            "globalHeat": -1,
+            "kilnDie": 2,
             "participantIds": [
               "p2",
-              "p3",
-              "p1"
+              "p3"
             ],
             "pendingExtraFire": {
-              "ceramicId": "c17",
+              "ceramicId": "c4",
               "modifiers": [
                 0,
-                -1
+                1
               ],
-              "playerId": "p1"
+              "playerId": "p3"
             },
-            "round": 5,
+            "round": 2,
             "testPieces": [],
-            "unclampedBaseHeat": 2
+            "unclampedBaseHeat": 1
           },
           "firstPlayerId": "p2",
-          "gameId": "ui-fixture-3p-1",
+          "gameId": "ui-fixture-3p-7",
           "kilnDie": {
-            "round": 5,
-            "value": 3
+            "round": 2,
+            "value": 2
           },
           "lastFiring": null,
           "market": {
             "display": [
-              "O16",
-              "O29",
-              "O25",
-              "O09",
-              "O21",
-              "O04"
+              "O08",
+              "O26",
+              "O06",
+              "O02",
+              "O05",
+              "O42"
             ],
             "refillPendingFor": null
           },
-          "nextCeramicSequence": 21,
+          "nextCeramicSequence": 9,
           "nextProxySequence": 1,
           "phase": {
-            "actorId": "p1",
-            "ceramicId": "c17",
+            "actorId": "p3",
+            "ceramicId": "c4",
             "type": "firing_second_firing_choice"
           },
           "placementSequence": 12,
@@ -25001,61 +24527,240 @@
               "completedOrders": [
                 {
                   "bonusCrowns": 0,
-                  "canalBargeCoins": 2,
-                  "ceramicIds": [
-                    "c1",
-                    "c7",
-                    "c12"
-                  ],
-                  "coins": 0,
-                  "crackleDeclarations": [],
-                  "kilnAbility": null,
-                  "orderId": "O48",
-                  "printedCrowns": 3,
-                  "round": 4,
-                  "vp": 21
-                },
-                {
-                  "bonusCrowns": 0,
                   "canalBargeCoins": 0,
                   "ceramicIds": [
-                    "c2",
-                    "c13"
+                    "c1"
                   ],
-                  "coins": 5,
+                  "coins": 3,
                   "crackleDeclarations": [],
                   "kilnAbility": null,
-                  "orderId": "O30",
+                  "orderId": "O04",
                   "printedCrowns": 0,
-                  "round": 4,
-                  "vp": 13
-                },
-                {
-                  "bonusCrowns": 0,
-                  "canalBargeCoins": 0,
-                  "ceramicIds": [
-                    "c14"
-                  ],
-                  "coins": 4,
-                  "crackleDeclarations": [],
-                  "kilnAbility": null,
-                  "orderId": "S02",
-                  "printedCrowns": 0,
-                  "round": 4,
-                  "vp": 3
+                  "round": 1,
+                  "vp": 7
                 }
               ],
               "displayName": "Lin",
               "id": "p1",
               "imperial": {
                 "audienceReceived": false,
-                "grantReceived": true,
-                "kilnGained": true,
-                "priority": "spent",
-                "recognition": 3
+                "grantReceived": false,
+                "kilnGained": false,
+                "priority": "on_track",
+                "recognition": 0
               },
               "kilnAbilityUsedThisRound": false,
               "kilnId": "DI",
+              "personalSpaces": {
+                "form_decorate": [
+                  {
+                    "unlocked": true
+                  },
+                  {
+                    "unlocked": true
+                  }
+                ],
+                "glaze_load": [
+                  {
+                    "unlocked": true
+                  },
+                  {
+                    "unlocked": true
+                  }
+                ]
+              },
+              "resources": {
+                "clay": 1,
+                "coins": 6,
+                "wood": 1
+              },
+              "score": {
+                "imperialAudience": 0,
+                "kilnAbilities": 0,
+                "orders": 7,
+                "recognitionOverflow": 0,
+                "techs": 2
+              },
+              "seatIndex": 0,
+              "techs": [
+                {
+                  "acquiredInRound": 1,
+                  "id": "T10",
+                  "usedThisRound": false
+                },
+                {
+                  "acquiredInRound": 2,
+                  "id": "T16",
+                  "usedThisRound": false
+                }
+              ],
+              "workers": {
+                "p1:apprentice:1": {
+                  "id": "p1:apprentice:1",
+                  "kind": "apprentice",
+                  "placement": {
+                    "effect": "apprentice",
+                    "locationId": "materials_yard",
+                    "sequence": 2,
+                    "spaceIndex": 1,
+                    "viaSeniorApprentice": false
+                  }
+                },
+                "p1:apprentice:2": {
+                  "id": "p1:apprentice:2",
+                  "kind": "apprentice",
+                  "placement": {
+                    "effect": "apprentice",
+                    "locationId": "form_decorate",
+                    "sequence": 8,
+                    "spaceIndex": 0,
+                    "viaSeniorApprentice": false
+                  }
+                },
+                "p1:apprentice:3": {
+                  "id": "p1:apprentice:3",
+                  "kind": "apprentice",
+                  "placement": {
+                    "effect": "apprentice",
+                    "locationId": "guild_hall",
+                    "sequence": 11,
+                    "spaceIndex": 0,
+                    "viaSeniorApprentice": false
+                  }
+                },
+                "p1:shifu": {
+                  "id": "p1:shifu",
+                  "kind": "shifu",
+                  "placement": {
+                    "effect": "shifu",
+                    "locationId": "canal_wharf",
+                    "sequence": 5,
+                    "spaceIndex": 1,
+                    "viaSeniorApprentice": false
+                  }
+                }
+              }
+            },
+            "p2": {
+              "completedOrders": [
+                {
+                  "bonusCrowns": 0,
+                  "canalBargeCoins": 0,
+                  "ceramicIds": [
+                    "c2"
+                  ],
+                  "coins": 2,
+                  "crackleDeclarations": [],
+                  "kilnAbility": null,
+                  "orderId": "O17",
+                  "printedCrowns": 1,
+                  "round": 1,
+                  "vp": 6
+                }
+              ],
+              "displayName": "Zhao",
+              "id": "p2",
+              "imperial": {
+                "audienceReceived": false,
+                "grantReceived": true,
+                "kilnGained": false,
+                "priority": "on_track",
+                "recognition": 1
+              },
+              "kilnAbilityUsedThisRound": false,
+              "kilnId": "GE",
+              "personalSpaces": {
+                "form_decorate": [
+                  {
+                    "unlocked": true
+                  },
+                  {
+                    "unlocked": false
+                  }
+                ],
+                "glaze_load": [
+                  {
+                    "unlocked": true
+                  },
+                  {
+                    "unlocked": false
+                  }
+                ]
+              },
+              "resources": {
+                "clay": 1,
+                "coins": 0,
+                "wood": 2
+              },
+              "score": {
+                "imperialAudience": 0,
+                "kilnAbilities": 0,
+                "orders": 6,
+                "recognitionOverflow": 0,
+                "techs": 0
+              },
+              "seatIndex": 1,
+              "techs": [],
+              "workers": {
+                "p2:apprentice:1": {
+                  "id": "p2:apprentice:1",
+                  "kind": "apprentice",
+                  "placement": {
+                    "effect": "apprentice",
+                    "locationId": "materials_yard",
+                    "sequence": 0,
+                    "spaceIndex": 0,
+                    "viaSeniorApprentice": false
+                  }
+                },
+                "p2:apprentice:2": {
+                  "id": "p2:apprentice:2",
+                  "kind": "apprentice",
+                  "placement": {
+                    "effect": "apprentice",
+                    "locationId": "glaze_load",
+                    "sequence": 6,
+                    "spaceIndex": 0,
+                    "viaSeniorApprentice": false
+                  }
+                },
+                "p2:apprentice:3": {
+                  "id": "p2:apprentice:3",
+                  "kind": "apprentice",
+                  "placement": {
+                    "effect": "apprentice",
+                    "locationId": "commission_market",
+                    "sequence": 9,
+                    "spaceIndex": 0,
+                    "viaSeniorApprentice": false
+                  }
+                },
+                "p2:shifu": {
+                  "id": "p2:shifu",
+                  "kind": "shifu",
+                  "placement": {
+                    "effect": "shifu",
+                    "locationId": "form_decorate",
+                    "sequence": 3,
+                    "spaceIndex": 0,
+                    "viaSeniorApprentice": false
+                  }
+                }
+              }
+            },
+            "p3": {
+              "completedOrders": [],
+              "displayName": "Wen",
+              "id": "p3",
+              "imperial": {
+                "audienceReceived": false,
+                "grantReceived": false,
+                "kilnGained": false,
+                "priority": "on_track",
+                "recognition": 0
+              },
+              "kilnAbilityUsedThisRound": false,
+              "kilnId": "JU",
               "personalSpaces": {
                 "form_decorate": [
                   {
@@ -25075,274 +24780,14 @@
                 ]
               },
               "resources": {
-                "clay": 2,
-                "coins": 7,
-                "wood": 2
-              },
-              "score": {
-                "imperialAudience": 0,
-                "kilnAbilities": 0,
-                "orders": 37,
-                "recognitionOverflow": 0,
-                "techs": 2
-              },
-              "seatIndex": 0,
-              "techs": [
-                {
-                  "acquiredInRound": 2,
-                  "id": "T23",
-                  "usedThisRound": false
-                },
-                {
-                  "acquiredInRound": 5,
-                  "id": "T14",
-                  "usedThisRound": true
-                }
-              ],
-              "workers": {
-                "p1:apprentice:1": {
-                  "id": "p1:apprentice:1",
-                  "kind": "apprentice",
-                  "placement": {
-                    "effect": "apprentice",
-                    "locationId": "glaze_load",
-                    "sequence": 5,
-                    "spaceIndex": 0,
-                    "viaSeniorApprentice": false
-                  }
-                },
-                "p1:apprentice:2": {
-                  "id": "p1:apprentice:2",
-                  "kind": "apprentice",
-                  "placement": {
-                    "effect": "apprentice",
-                    "locationId": "commission_market",
-                    "sequence": 8,
-                    "spaceIndex": 0,
-                    "viaSeniorApprentice": false
-                  }
-                },
-                "p1:apprentice:3": {
-                  "id": "p1:apprentice:3",
-                  "kind": "apprentice",
-                  "placement": {
-                    "effect": "apprentice",
-                    "locationId": "guild_hall",
-                    "sequence": 11,
-                    "spaceIndex": 1,
-                    "viaSeniorApprentice": false
-                  }
-                },
-                "p1:shifu": {
-                  "id": "p1:shifu",
-                  "kind": "shifu",
-                  "placement": {
-                    "effect": "shifu",
-                    "locationId": "form_decorate",
-                    "sequence": 2,
-                    "spaceIndex": 0,
-                    "viaSeniorApprentice": false
-                  }
-                }
-              }
-            },
-            "p2": {
-              "completedOrders": [
-                {
-                  "bonusCrowns": 0,
-                  "canalBargeCoins": 0,
-                  "ceramicIds": [
-                    "c4"
-                  ],
-                  "coins": 3,
-                  "crackleDeclarations": [
-                    {
-                      "ceramicId": "c4",
-                      "decoration": "plain"
-                    }
-                  ],
-                  "kilnAbility": null,
-                  "orderId": "O08",
-                  "printedCrowns": 0,
-                  "round": 2,
-                  "vp": 5
-                }
-              ],
-              "displayName": "Zhao",
-              "id": "p2",
-              "imperial": {
-                "audienceReceived": false,
-                "grantReceived": false,
-                "kilnGained": false,
-                "priority": "on_track",
-                "recognition": 0
-              },
-              "kilnAbilityUsedThisRound": false,
-              "kilnId": "GE",
-              "personalSpaces": {
-                "form_decorate": [
-                  {
-                    "unlocked": true
-                  },
-                  {
-                    "unlocked": true
-                  }
-                ],
-                "glaze_load": [
-                  {
-                    "unlocked": true
-                  },
-                  {
-                    "unlocked": true
-                  }
-                ]
-              },
-              "resources": {
-                "clay": 2,
+                "clay": 1,
                 "coins": 0,
-                "wood": 2
-              },
-              "score": {
-                "imperialAudience": 0,
-                "kilnAbilities": 0,
-                "orders": 5,
-                "recognitionOverflow": 0,
-                "techs": 3
-              },
-              "seatIndex": 1,
-              "techs": [
-                {
-                  "acquiredInRound": 1,
-                  "id": "T19",
-                  "usedThisRound": false
-                },
-                {
-                  "acquiredInRound": 1,
-                  "id": "T15",
-                  "usedThisRound": true
-                },
-                {
-                  "acquiredInRound": 5,
-                  "id": "T12",
-                  "usedThisRound": false
-                }
-              ],
-              "workers": {
-                "p2:apprentice:1": {
-                  "id": "p2:apprentice:1",
-                  "kind": "apprentice",
-                  "placement": {
-                    "effect": "apprentice",
-                    "locationId": "form_decorate",
-                    "sequence": 3,
-                    "spaceIndex": 0,
-                    "viaSeniorApprentice": false
-                  }
-                },
-                "p2:apprentice:2": {
-                  "id": "p2:apprentice:2",
-                  "kind": "apprentice",
-                  "placement": {
-                    "effect": "apprentice",
-                    "locationId": "glaze_load",
-                    "sequence": 6,
-                    "spaceIndex": 1,
-                    "viaSeniorApprentice": false
-                  }
-                },
-                "p2:apprentice:3": {
-                  "id": "p2:apprentice:3",
-                  "kind": "apprentice",
-                  "placement": {
-                    "effect": "apprentice",
-                    "locationId": "guild_hall",
-                    "sequence": 9,
-                    "spaceIndex": 0,
-                    "viaSeniorApprentice": false
-                  }
-                },
-                "p2:shifu": {
-                  "id": "p2:shifu",
-                  "kind": "shifu",
-                  "placement": {
-                    "effect": "shifu",
-                    "locationId": "glaze_load",
-                    "sequence": 0,
-                    "spaceIndex": 0,
-                    "viaSeniorApprentice": false
-                  }
-                }
-              }
-            },
-            "p3": {
-              "completedOrders": [
-                {
-                  "bonusCrowns": 0,
-                  "canalBargeCoins": 0,
-                  "ceramicIds": [
-                    "c8"
-                  ],
-                  "coins": 2,
-                  "crackleDeclarations": [],
-                  "kilnAbility": null,
-                  "orderId": "O19",
-                  "printedCrowns": 1,
-                  "round": 4,
-                  "vp": 6
-                },
-                {
-                  "bonusCrowns": 0,
-                  "canalBargeCoins": 0,
-                  "ceramicIds": [
-                    "c3"
-                  ],
-                  "coins": 4,
-                  "crackleDeclarations": [],
-                  "kilnAbility": null,
-                  "orderId": "S04",
-                  "printedCrowns": 0,
-                  "round": 4,
-                  "vp": 4
-                }
-              ],
-              "displayName": "Wen",
-              "id": "p3",
-              "imperial": {
-                "audienceReceived": false,
-                "grantReceived": true,
-                "kilnGained": false,
-                "priority": "on_track",
-                "recognition": 1
-              },
-              "kilnAbilityUsedThisRound": false,
-              "kilnId": "JU",
-              "personalSpaces": {
-                "form_decorate": [
-                  {
-                    "unlocked": true
-                  },
-                  {
-                    "unlocked": true
-                  }
-                ],
-                "glaze_load": [
-                  {
-                    "unlocked": true
-                  },
-                  {
-                    "unlocked": true
-                  }
-                ]
-              },
-              "resources": {
-                "clay": 6,
-                "coins": 9,
                 "wood": 3
               },
               "score": {
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
-                "orders": 10,
+                "orders": 0,
                 "recognitionOverflow": 0,
                 "techs": 2
               },
@@ -25350,12 +24795,12 @@
               "techs": [
                 {
                   "acquiredInRound": 1,
-                  "id": "T18",
+                  "id": "T14",
                   "usedThisRound": true
                 },
                 {
-                  "acquiredInRound": 2,
-                  "id": "T10",
+                  "acquiredInRound": 1,
+                  "id": "T20",
                   "usedThisRound": true
                 }
               ],
@@ -25365,8 +24810,8 @@
                   "kind": "apprentice",
                   "placement": {
                     "effect": "apprentice",
-                    "locationId": "form_decorate",
-                    "sequence": 4,
+                    "locationId": "canal_wharf",
+                    "sequence": 1,
                     "spaceIndex": 0,
                     "viaSeniorApprentice": false
                   }
@@ -25376,8 +24821,8 @@
                   "kind": "apprentice",
                   "placement": {
                     "effect": "apprentice",
-                    "locationId": "canal_wharf",
-                    "sequence": 7,
+                    "locationId": "form_decorate",
+                    "sequence": 4,
                     "spaceIndex": 0,
                     "viaSeniorApprentice": false
                   }
@@ -25386,11 +24831,11 @@
                   "id": "p3:apprentice:3",
                   "kind": "apprentice",
                   "placement": {
-                    "effect": "shifu",
+                    "effect": "apprentice",
                     "locationId": "commission_market",
                     "sequence": 10,
                     "spaceIndex": 1,
-                    "viaSeniorApprentice": true
+                    "viaSeniorApprentice": false
                   }
                 },
                 "p3:shifu": {
@@ -25399,7 +24844,7 @@
                   "placement": {
                     "effect": "shifu",
                     "locationId": "glaze_load",
-                    "sequence": 1,
+                    "sequence": 7,
                     "spaceIndex": 0,
                     "viaSeniorApprentice": false
                   }
@@ -25407,8 +24852,8 @@
               }
             }
           },
-          "revision": 117,
-          "round": 5,
+          "revision": 46,
+          "round": 2,
           "rulesVersion": "1.6.2",
           "schemaVersion": 7,
           "sharedKiln": {
@@ -25416,7 +24861,7 @@
               "high_1": {
                 "active": true,
                 "ceramicIds": [
-                  "c10"
+                  "c7"
                 ],
                 "kilnFurniture": null,
                 "setterMarkOwnerId": null
@@ -25424,7 +24869,7 @@
               "high_2": {
                 "active": true,
                 "ceramicIds": [
-                  "c15"
+                  "c4"
                 ],
                 "kilnFurniture": null,
                 "setterMarkOwnerId": null
@@ -25438,36 +24883,26 @@
               "low_1": {
                 "active": true,
                 "ceramicIds": [
-                  "c18"
+                  "c5"
                 ],
                 "kilnFurniture": null,
                 "setterMarkOwnerId": null
               },
               "low_2": {
                 "active": true,
-                "ceramicIds": [
-                  "c16"
-                ],
-                "kilnFurniture": {
-                  "modifier": 1,
-                  "ownerId": "p2",
-                  "underCeramicId": "c16"
-                },
+                "ceramicIds": [],
+                "kilnFurniture": null,
                 "setterMarkOwnerId": null
               },
               "middle_1": {
                 "active": true,
-                "ceramicIds": [
-                  "c19"
-                ],
+                "ceramicIds": [],
                 "kilnFurniture": null,
                 "setterMarkOwnerId": null
               },
               "middle_2": {
                 "active": true,
-                "ceramicIds": [
-                  "c11"
-                ],
+                "ceramicIds": [],
                 "kilnFurniture": null,
                 "setterMarkOwnerId": null
               },
@@ -25481,20 +24916,21 @@
           },
           "techDisplay": {
             "firing": [
-              "T13",
-              "T11"
+              "T25",
+              "T12"
             ],
             "glazing_loading": [
-              "T22",
-              "T20"
+              "T15",
+              "T22"
             ],
             "workshop": [
               "T01",
-              "T05"
+              "T19"
             ]
           },
           "vesselSupply": {
             "bowl": [
+              "bowl-04",
               "bowl-05",
               "bowl-06",
               "bowl-07",
@@ -25503,6 +24939,8 @@
               "bowl-10"
             ],
             "censer": [
+              "censer-02",
+              "censer-03",
               "censer-04",
               "censer-05",
               "censer-06",
@@ -25512,6 +24950,7 @@
               "censer-10"
             ],
             "plate": [
+              "plate-01",
               "plate-02",
               "plate-03",
               "plate-04",
@@ -25523,6 +24962,8 @@
               "plate-10"
             ],
             "vase": [
+              "vase-03",
+              "vase-04",
               "vase-05",
               "vase-06",
               "vase-07",
@@ -25531,6 +24972,12 @@
               "vase-10"
             ],
             "washer": [
+              "washer-03",
+              "washer-04",
+              "washer-05",
+              "washer-06",
+              "washer-07",
+              "washer-08",
               "washer-09",
               "washer-10"
             ]
@@ -25539,129 +24986,190 @@
         "own": {
           "firePeek": null,
           "orderHand": [
-            "O45",
-            "O06",
-            "O01"
+            "S04",
+            "S06",
+            "O38",
+            "O09",
+            "O29"
           ],
           "pendingContribution": null,
           "pendingLook": null,
-          "playerId": "p1"
+          "playerId": "p3"
         },
-        "viewerId": "p1"
+        "viewerId": "p3"
       },
       "recentPublicEvents": [
+        {
+          "actorId": "p3",
+          "event": {
+            "cause": "end_of_turn",
+            "display": [
+              "O08",
+              "O26",
+              "O06",
+              "O02",
+              "O05",
+              "O42"
+            ],
+            "revealedOrderIds": [
+              "O42"
+            ],
+            "type": "DISPLAY_REFILLED"
+          },
+          "revision": 39,
+          "sequence": 174
+        },
+        {
+          "actorId": "p3",
+          "event": {
+            "automatic": true,
+            "playerId": "p3",
+            "type": "WORK_TURN_ENDED"
+          },
+          "revision": 39,
+          "sequence": 175
+        },
+        {
+          "actorId": "p3",
+          "event": {
+            "playerId": "p1",
+            "type": "WORK_TURN_STARTED"
+          },
+          "revision": 39,
+          "sequence": 176
+        },
+        {
+          "actorId": "p1",
+          "event": {
+            "effect": "apprentice",
+            "kind": "apprentice",
+            "locationId": "guild_hall",
+            "playerId": "p1",
+            "spaceIndex": 0,
+            "type": "WORKER_PLACED",
+            "viaSeniorApprentice": false,
+            "workerId": "p1:apprentice:3"
+          },
+          "revision": 40,
+          "sequence": 177
+        },
+        {
+          "actorId": "p1",
+          "event": {
+            "clay": 0,
+            "coins": -2,
+            "playerId": "p1",
+            "reason": "guild_hall",
+            "type": "RESOURCES_CHANGED",
+            "wood": 0
+          },
+          "revision": 40,
+          "sequence": 178
+        },
         {
           "actorId": "p1",
           "event": {
             "cost": 2,
             "playerId": "p1",
             "source": "face_up",
-            "techId": "T14",
+            "techId": "T16",
             "type": "TECH_ACQUIRED",
             "vp": 1
           },
-          "revision": 110,
-          "sequence": 482
+          "revision": 40,
+          "sequence": 179
         },
         {
           "actorId": "p1",
           "event": {
-            "discipline": "firing",
+            "locationId": "form_decorate",
+            "playerId": "p1",
+            "type": "PERSONAL_SPACE_UNLOCKED"
+          },
+          "revision": 40,
+          "sequence": 180
+        },
+        {
+          "actorId": "p1",
+          "event": {
+            "discipline": "workshop",
             "display": [
-              "T13",
-              "T11"
+              "T01",
+              "T19"
             ],
             "revealedTechIds": [
-              "T11"
+              "T19"
             ],
             "type": "TECH_DISPLAY_REFILLED"
           },
-          "revision": 110,
-          "sequence": 483
+          "revision": 41,
+          "sequence": 181
         },
         {
           "actorId": "p1",
           "event": {
-            "automatic": true,
+            "automatic": false,
             "playerId": "p1",
             "type": "WORK_TURN_ENDED"
           },
-          "revision": 110,
-          "sequence": 484
+          "revision": 41,
+          "sequence": 182
         },
         {
           "actorId": "p1",
           "event": {
-            "round": 5,
+            "round": 2,
             "type": "WORK_PHASE_ENDED"
           },
-          "revision": 110,
-          "sequence": 485
+          "revision": 41,
+          "sequence": 183
         },
         {
           "actorId": "p1",
           "event": {
             "firingPlayerIds": [
               "p2",
-              "p3",
-              "p1"
+              "p3"
             ],
             "participantIds": [
               "p2",
-              "p3",
-              "p1"
+              "p3"
             ],
-            "round": 5,
+            "round": 2,
             "type": "FIRING_STARTED"
           },
-          "revision": 110,
-          "sequence": 486
+          "revision": 41,
+          "sequence": 184
         },
         {
           "actorId": "p2",
           "event": {
             "playerId": "p2",
             "type": "CONTRIBUTION_SUBMITTED",
-            "windowId": "ui-fixture-3p-1:r5:contributions"
+            "windowId": "ui-fixture-3p-7:r2:contributions"
           },
-          "revision": 111,
-          "sequence": 487
+          "revision": 42,
+          "sequence": 185
         },
         {
           "actorId": "p3",
           "event": {
             "playerId": "p3",
             "type": "CONTRIBUTION_SUBMITTED",
-            "windowId": "ui-fixture-3p-1:r5:contributions"
+            "windowId": "ui-fixture-3p-7:r2:contributions"
           },
-          "revision": 112,
-          "sequence": 488
+          "revision": 43,
+          "sequence": 186
         },
         {
-          "actorId": "p1",
-          "event": {
-            "playerId": "p1",
-            "type": "CONTRIBUTION_SUBMITTED",
-            "windowId": "ui-fixture-3p-1:r5:contributions"
-          },
-          "revision": 113,
-          "sequence": 489
-        },
-        {
-          "actorId": "p1",
+          "actorId": "p3",
           "event": {
             "contributions": {
-              "p1": {
+              "p2": {
                 "card": "BANK",
                 "fuelLedger": false,
                 "heat": -1,
                 "woodPaid": 1
-              },
-              "p2": {
-                "card": "TEND",
-                "fuelLedger": false,
-                "heat": 0,
-                "woodPaid": 0
               },
               "p3": {
                 "card": "TEND",
@@ -25671,68 +25179,57 @@
               }
             },
             "type": "CONTRIBUTIONS_REVEALED",
-            "windowId": "ui-fixture-3p-1:r5:contributions"
+            "windowId": "ui-fixture-3p-7:r2:contributions"
           },
-          "revision": 113,
-          "sequence": 490
+          "revision": 43,
+          "sequence": 187
         },
         {
-          "actorId": "p1",
+          "actorId": "p3",
           "event": {
             "clay": 0,
             "coins": 0,
-            "playerId": "p1",
+            "playerId": "p2",
             "reason": "contribution",
             "type": "RESOURCES_CHANGED",
             "wood": -1
           },
-          "revision": 113,
-          "sequence": 491
-        },
-        {
-          "actorId": "p1",
-          "event": {
-            "baseHeat": 2,
-            "contributionSum": -1,
-            "kilnDie": 3,
-            "type": "BASE_HEAT_DETERMINED",
-            "unclamped": 2
-          },
-          "revision": 113,
-          "sequence": 492
-        },
-        {
-          "actorId": "p2",
-          "event": {
-            "ceramicId": "c15",
-            "playerId": "p2",
-            "type": "HEAT_MARKER_TURNED",
-            "value": 1
-          },
-          "revision": 114,
-          "sequence": 493
+          "revision": 43,
+          "sequence": 188
         },
         {
           "actorId": "p3",
           "event": {
-            "ceramicId": "c11",
+            "baseHeat": 1,
+            "contributionSum": -1,
+            "kilnDie": 2,
+            "type": "BASE_HEAT_DETERMINED",
+            "unclamped": 1
+          },
+          "revision": 43,
+          "sequence": 189
+        },
+        {
+          "actorId": "p3",
+          "event": {
+            "ceramicId": "c4",
             "playerId": "p3",
             "type": "HEAT_MARKER_TURNED",
             "value": 1
           },
-          "revision": 115,
-          "sequence": 494
+          "revision": 44,
+          "sequence": 190
         },
         {
           "actorId": "p3",
           "event": {
-            "baseHeat": 2,
-            "globalHeat": 3,
-            "modifier": 1,
+            "baseHeat": 1,
+            "globalHeat": -1,
+            "modifier": -2,
             "type": "FIRE_REVEALED"
           },
-          "revision": 115,
-          "sequence": 495
+          "revision": 44,
+          "sequence": 191
         },
         {
           "actorId": "p3",
@@ -25740,228 +25237,133 @@
             "results": [
               {
                 "calculation": {
-                  "actualHeat": 4,
-                  "finalActualHeat": 4,
-                  "fireModifier": 1,
-                  "heatDifference": 0,
-                  "heatMarker": 0,
-                  "heatSource": 3,
-                  "junAdjustment": 0,
-                  "positionModifier": 1
-                },
-                "ceramicId": "c10"
-              },
-              {
-                "calculation": {
-                  "actualHeat": 4,
-                  "finalActualHeat": 4,
-                  "fireModifier": 1,
-                  "heatDifference": 0,
+                  "actualHeat": 1,
+                  "finalActualHeat": 1,
+                  "fireModifier": -2,
+                  "heatDifference": 3,
                   "heatMarker": 1,
-                  "heatSource": 3,
-                  "junAdjustment": 0,
-                  "positionModifier": 0
-                },
-                "ceramicId": "c11"
-              },
-              {
-                "calculation": {
-                  "actualHeat": 5,
-                  "finalActualHeat": 5,
-                  "fireModifier": 1,
-                  "heatDifference": 1,
-                  "heatMarker": 1,
-                  "heatSource": 3,
+                  "heatSource": -1,
                   "junAdjustment": 0,
                   "positionModifier": 1
                 },
-                "ceramicId": "c15"
+                "ceramicId": "c4"
               },
               {
                 "calculation": {
-                  "actualHeat": 4,
-                  "finalActualHeat": 4,
-                  "fireModifier": 1,
-                  "heatDifference": 0,
+                  "actualHeat": -2,
+                  "finalActualHeat": -2,
+                  "fireModifier": -2,
+                  "heatDifference": 3,
                   "heatMarker": 0,
-                  "heatSource": 3,
-                  "junAdjustment": 0,
-                  "positionModifier": 1
-                },
-                "ceramicId": "c16"
-              },
-              {
-                "calculation": {
-                  "actualHeat": 3,
-                  "finalActualHeat": 3,
-                  "fireModifier": 1,
-                  "heatDifference": 2,
-                  "heatMarker": 0,
-                  "heatSource": 4,
+                  "heatSource": -1,
                   "junAdjustment": 0,
                   "positionModifier": -1
                 },
-                "ceramicId": "c17"
+                "ceramicId": "c5"
               },
               {
                 "calculation": {
-                  "actualHeat": 2,
-                  "finalActualHeat": 2,
-                  "fireModifier": 1,
-                  "heatDifference": 1,
+                  "actualHeat": 0,
+                  "finalActualHeat": 0,
+                  "fireModifier": -2,
+                  "heatDifference": 4,
                   "heatMarker": 0,
-                  "heatSource": 3,
+                  "heatSource": -1,
                   "junAdjustment": 0,
-                  "positionModifier": -1
+                  "positionModifier": 1
                 },
-                "ceramicId": "c18"
-              },
-              {
-                "calculation": {
-                  "actualHeat": 3,
-                  "finalActualHeat": 3,
-                  "fireModifier": 1,
-                  "heatDifference": 0,
-                  "heatMarker": 0,
-                  "heatSource": 3,
-                  "junAdjustment": 0,
-                  "positionModifier": 0
-                },
-                "ceramicId": "c19"
+                "ceramicId": "c7"
               }
             ],
             "type": "ACTUAL_HEAT_CALCULATED"
           },
-          "revision": 115,
-          "sequence": 496
+          "revision": 44,
+          "sequence": 192
         },
         {
           "actorId": "p3",
           "event": {
             "cause": "fired",
-            "ceramicId": "c10",
-            "heatDifference": 0,
-            "quality": "masterpiece",
+            "ceramicId": "c4",
+            "heatDifference": 3,
+            "quality": "flawed",
             "saggarsFloor": false,
             "type": "QUALITY_ASSIGNED"
           },
-          "revision": 116,
-          "sequence": 497
+          "revision": 45,
+          "sequence": 193
         },
         {
           "actorId": "p3",
           "event": {
             "cause": "fired",
-            "ceramicId": "c11",
-            "heatDifference": 0,
-            "quality": "masterpiece",
+            "ceramicId": "c5",
+            "heatDifference": 3,
+            "quality": "flawed",
             "saggarsFloor": false,
             "type": "QUALITY_ASSIGNED"
           },
-          "revision": 116,
-          "sequence": 498
+          "revision": 45,
+          "sequence": 194
         },
         {
           "actorId": "p3",
           "event": {
             "cause": "fired",
-            "ceramicId": "c15",
-            "heatDifference": 1,
-            "quality": "fine",
+            "ceramicId": "c7",
+            "heatDifference": 4,
+            "quality": "flawed",
             "saggarsFloor": false,
             "type": "QUALITY_ASSIGNED"
           },
-          "revision": 116,
-          "sequence": 499
+          "revision": 45,
+          "sequence": 195
         },
         {
           "actorId": "p3",
           "event": {
-            "cause": "fired",
-            "ceramicId": "c16",
-            "heatDifference": 0,
-            "quality": "masterpiece",
-            "saggarsFloor": false,
-            "type": "QUALITY_ASSIGNED"
-          },
-          "revision": 116,
-          "sequence": 500
-        },
-        {
-          "actorId": "p3",
-          "event": {
-            "cause": "fired",
-            "ceramicId": "c17",
-            "heatDifference": 2,
-            "quality": "standard",
-            "saggarsFloor": false,
-            "type": "QUALITY_ASSIGNED"
-          },
-          "revision": 116,
-          "sequence": 501
-        },
-        {
-          "actorId": "p3",
-          "event": {
-            "cause": "fired",
-            "ceramicId": "c18",
-            "heatDifference": 1,
-            "quality": "fine",
-            "saggarsFloor": false,
-            "type": "QUALITY_ASSIGNED"
-          },
-          "revision": 116,
-          "sequence": 502
-        },
-        {
-          "actorId": "p3",
-          "event": {
-            "cause": "fired",
-            "ceramicId": "c19",
-            "heatDifference": 0,
-            "quality": "masterpiece",
-            "saggarsFloor": false,
-            "type": "QUALITY_ASSIGNED"
-          },
-          "revision": 116,
-          "sequence": 503
-        },
-        {
-          "actorId": "p1",
-          "event": {
-            "playerId": "p1",
+            "playerId": "p3",
             "techId": "T14",
             "type": "TECH_USED"
           },
-          "revision": 117,
-          "sequence": 504
+          "revision": 46,
+          "sequence": 196
         },
         {
-          "actorId": "p1",
+          "actorId": "p3",
           "event": {
-            "ceramicId": "c17",
+            "ceramicId": "c4",
             "modifiers": [
               0,
-              -1
+              1
             ],
-            "playerId": "p1",
+            "playerId": "p3",
             "type": "SECOND_FIRING_REVEALED"
           },
-          "revision": 117,
-          "sequence": 505
+          "revision": 46,
+          "sequence": 197
         }
       ],
       "source": {
-        "commandsPlayed": 117,
-        "gameId": "ui-fixture-3p-1",
+        "commandsPlayed": 46,
+        "gameId": "ui-fixture-3p-7",
         "kind": "played",
         "phase": "firing_second_firing_choice",
         "playerCount": 3,
         "policy": "rules-v1.6.2-strategic-001",
-        "revision": 117,
-        "round": 5,
-        "seed": 1,
+        "revision": 46,
+        "round": 2,
+        "seed": 7,
         "steered": [
+          {
+            "command": {
+              "kilnId": "JU",
+              "type": "SELECT_KILN"
+            },
+            "playerId": "p3",
+            "revision": 0,
+            "why": "Seat p3 takes the Jun Kiln so the fixture shows Jun in Second Firing (R7)."
+          },
           {
             "command": {
               "choice": {
@@ -25969,25 +25371,34 @@
                 "techId": "T14"
               },
               "type": "PLACE_GUILD_HALL",
-              "workerId": "p1:apprentice:3"
+              "workerId": "p3:apprentice:1"
             },
-            "playerId": "p1",
-            "revision": 109,
+            "playerId": "p3",
+            "revision": 6,
             "why": "An Apprentice buys Second Firing (T14) at the Guild Hall so the fixture can show it."
           },
           {
             "command": {
-              "ceramicId": "c17",
+              "adjustment": null,
+              "type": "RESOLVE_JUN"
+            },
+            "playerId": "p3",
+            "revision": 44,
+            "why": "Keep Jun unused in step 8 so it can act in Second Firing (R7)."
+          },
+          {
+            "command": {
+              "ceramicId": "c4",
               "type": "USE_SECOND_FIRING"
             },
-            "playerId": "p1",
-            "revision": 116,
+            "playerId": "p3",
+            "revision": 45,
             "why": "Second Firing on an eligible ceramic."
           }
         ]
       },
       "viewerActs": true,
-      "viewerId": "p1"
+      "viewerId": "p3"
     },
     {
       "decisionPrompt": {

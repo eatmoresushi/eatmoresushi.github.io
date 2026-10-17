@@ -6,8 +6,9 @@
  * mode — the command omits `crackleDeclarations` and the engine searches — or a declaration per
  * Crackle ceramic (its own Decoration, or any one Decoration for this Order only). Every verdict
  * ("satisfies O39" / "does not satisfy O39") is `crackleDeclarationChecks`, the validator's own
- * matcher; the picker never re-implements an Order rule. The auto mode says what its search
- * would record ("Counts as Carved": S07 "Carved, Impressed or Painted" takes one of the three).
+ * matcher; the picker never re-implements an Order rule. The auto mode names a Decoration only for
+ * a Crackle ceramic whose own one does not complete the Order ("Counts as Carved" for a Plain
+ * Crackle ceramic on S07 "Carved, Impressed or Painted"; nothing for a Painted one).
  */
 import type { CeramicId, CrackleDeclarationChecks, Decoration, OrderSelectionCheck } from "../../../game/index.ts";
 import { decorationName } from "../../i18n/content.ts";
@@ -19,7 +20,7 @@ import { OptionCard } from "../../kit/OptionCard.tsx";
 import { OptionGroup } from "../../kit/OptionGroup.tsx";
 import type { EngineView, GameModel } from "../../state/model.ts";
 import { ceramicWords } from "../firing/firingSupport.ts";
-import { declaredDecoration } from "./orderCompletion.ts";
+import { countedDecorations, declaredDecoration } from "./orderCompletion.ts";
 import type { CompletionAction, CompletionDraft, CompletionOptions } from "./orderCompletion.ts";
 
 export interface CrackleDeclarationsProps {
@@ -59,20 +60,18 @@ function Verdict({ check, orderId, engine, t, withReason = false }: { check: Ord
 }
 
 /**
- * What the auto mode's search would record: "Counts as Carved." for one Crackle ceramic, or each
- * ceramic with its Decoration for several; null when the auto mode completes nothing.
+ * What the auto mode needs a wildcard for (`countedDecorations`): "Counts as Carved." when the
+ * group holds one Crackle ceramic, or each ceramic that needs its wildcard with the Decoration
+ * it counts as; null when every Crackle ceramic completes the Order with its own Decoration, or
+ * the auto mode completes nothing.
  */
-function autoRecord(crackle: CrackleDeclarationChecks, model: GameModel, engine: EngineView, t: Translator): string | null {
-  if (!crackle.auto.ok) return null;
-  const recorded = crackle.auto.match.crackleDeclarations;
-  const printed = new Map(crackle.ceramics.map((entry) => [entry.ceramicId, entry.printedDecoration] as const));
-  const as = (ceramicId: CeramicId, decoration: Decoration) =>
-    decoration === printed.get(ceramicId) ? t("orders.decl.printed", { decoration: decorationName(decoration, t.locale) }) : decorationName(decoration, t.locale);
-  const [only] = recorded;
-  if (only === undefined) return null;
-  if (recorded.length === 1) return t("orders.decl.autoAs", { decoration: as(only.ceramicId, only.decoration) });
+function autoRecord(crackle: CrackleDeclarationChecks, counted: ReadonlyMap<CeramicId, Decoration>, model: GameModel, engine: EngineView, t: Translator): string | null {
+  if (!crackle.auto.ok || counted.size === 0) return null;
+  const entries = [...counted];
+  const [only] = entries;
+  if (crackle.ceramics.length === 1 && only !== undefined) return t("orders.decl.autoAs", { decoration: decorationName(only[1], t.locale) });
   const mine = model.me?.finishedCeramicIds ?? [];
-  const items = recorded.map((entry) => t("orders.ceramicAs", { ceramic: ceramicWords(model, engine, entry.ceramicId, t, mine), decoration: as(entry.ceramicId, entry.decoration) }));
+  const items = entries.map(([ceramicId, decoration]) => t("orders.ceramicAs", { ceramic: ceramicWords(model, engine, ceramicId, t, mine), decoration: decorationName(decoration, t.locale) }));
   return t("orders.decl.autoAsList", { list: list(items, t.locale) });
 }
 
@@ -83,7 +82,9 @@ export function CrackleDeclarations({ model, engine, draft, options, dispatch, n
   if (crackle === null || orderId === null) return null;
   const mine = model.me?.finishedCeramicIds ?? [];
   const mode = draft.declarations === "auto" ? "auto" : "explicit";
-  const recorded = autoRecord(crackle, model, engine, t);
+  // The auto choice says what it needs a wildcard for, also while the explicit mode is chosen.
+  const autoCounted = countedDecorations({ ...draft, declarations: "auto" }, { ...options, match: crackle.auto.ok ? crackle.auto.match : null }, engine);
+  const recorded = autoRecord(crackle, autoCounted, model, engine, t);
   return (
     <div className="ord-decl">
       <OptionGroup

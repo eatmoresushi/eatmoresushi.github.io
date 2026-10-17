@@ -251,8 +251,21 @@ describe("Second Firing's choice (v1.6.2 L631, R7)", () => {
     expect(run(secondFiringDraft, c, { type: "card", cardIndex: 0 }, { type: "jun", delta: -1 }, { type: "jun", delta: null }).jun).toBeNull();
   });
 
-  it("offers no Jun without the Jun Kiln, and drops a Jun choice on revalidation", () => {
+  it("a played Jun owner (m18) is offered Jun's +1 or −1 with the card", () => {
     const c = ctx("m18_jun_second_firing");
+    const options = secondFiringDraft.options(secondFiringDraft.initial(c.model, c.engine), c.model, c.engine);
+    expect(options.cards).toHaveLength(2);
+    expect(options.jun).toMatchObject({ offered: true, ready: true, woodCost: 1, sides: [1, -1], reason: null });
+    const command = secondFiringDraft.build(run(secondFiringDraft, c, { type: "card", cardIndex: 1 }, { type: "jun", delta: -1 }), c.model, c.engine);
+    expect(command).toEqual({ type: "SECOND_FIRING_CHOOSE", cardIndex: 1, jun: { delta: -1 } });
+    expect(valid(c, command)).toBe(true);
+  });
+
+  it("offers no Jun without the Jun Kiln, and drops a Jun choice on revalidation", () => {
+    // The R7 scenario with the viewer on the Ding Kiln instead: Jun is not their ability.
+    const view = structuredClone(fixture("w-second-firing-choice-with-jun-r7").playerView);
+    view.game.players[view.viewerId!]!.kilnId = "DI";
+    const c = ctxOf(view);
     const options = secondFiringDraft.options(secondFiringDraft.initial(c.model, c.engine), c.model, c.engine);
     expect(options.jun).toMatchObject({ offered: false, ready: false, sides: [], reason: null });
     expect(run(secondFiringDraft, c, { type: "jun", delta: 1 }).jun).toBeNull();

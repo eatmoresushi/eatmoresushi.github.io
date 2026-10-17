@@ -4,14 +4,17 @@
  * Two browser contexts, so two distinct `x-e2e-user`s and two seats, play Round 1 through the
  * real lobby, store, client and local backend (`/test-api-v161`). A steered driver gives both
  * players a Shared Kiln ceramic (Form & Decorate, then Glaze & Load) so both are eligible to
- * contribute, and sends Lin's Shifu to the Commission Market to look at the top 3 Main Orders.
- * Everything else is chosen by the shared autopilot (`e2e/support/autopilot.ts`).
+ * contribute, and sends Lin's Shifu to the Commission Market, whose placement always looks at the
+ * top 3 Main Orders first (v1.6.2 L195–196). Everything else is chosen by the shared autopilot
+ * (`e2e/support/autopilot.ts`).
  *
  * Checked:
  * - **the private Commission top 3** is visible only to its owner: Lin sees the 3 Orders
  *   ("only you"); Zhao's waiting pane says only that Lin is looking at 3 cards, and none of those
  *   Order IDs reaches Zhao's page or any payload Zhao's client receives (also checked against
- *   the local backend's `e2e_secret_ids` oracle);
+ *   the local backend's `e2e_secret_ids` oracle). Lin reserves one of them (the Shifu's
+ *   `reservations` checkboxes); the other two go face down under the Main deck (change 24) and
+ *   stay secret;
  * - **the turn toasts** (owner review, 2026-10-17): Zhao's page shows Lin's moves (Lin's Shifu
  *   at the Commission Market), never Zhao's own and never a looked-at Order. They show one turn
  *   at a time (item 3), so the check waits for Lin's Commission Market turn to have its turn; the
@@ -21,22 +24,26 @@
  *   sees only that Lin has chosen, and no payload Zhao's client receives carries a Contribution
  *   card until both have submitted; then both cards are revealed on both pages.
  *
- * A second game (seed 11) checks the other private looks of AGENTS.md "Hidden information",
- * over two rounds. Lin's Shifu inspects the Glazing & Loading Tech deck at the Guild Hall, takes
- * the face-up Colour Samples, reorders the two inspected Techs for the bottom of the deck, then
- * looks at the top 3 Main Orders through Colour Samples; Lin's Apprentice buys Test Pieces. In
- * Round 2 Lin loads a ceramic, contributes, and peeks at the top Fire card with Test Pieces.
+ * A second game (seed 1) checks the other private looks of AGENTS.md "Hidden information",
+ * over two rounds, and the Guild Hall Shifu's two takes (v1.6.2 L207, owner revision
+ * 2026-10-17). Lin's Shifu inspects the Glazing & Loading Tech deck at the Guild Hall and takes
+ * the face-up Colour Samples (one `GUILD_TAKE`); Colour Samples, when gained, looks at the top 3
+ * Main Orders; back in the inspection, Lin's second take is the face-up Test Pieces (another
+ * discipline), and with both takes made only the bottom order of the two inspected Techs is left
+ * (`GUILD_FINISH`), which Lin changes. In Round 2 Lin loads a ceramic, contributes, and peeks at
+ * the top Fire card with Test Pieces.
  * - **the Guild Hall inspection and its bottom order**: neither inspected Tech reaches Zhao's
  *   page or client;
- * - **the Colour Samples look and the Main discard**: none of the 3 looked-at Orders (one goes to
- *   Lin's hand, two face down to the Main discard) reaches Zhao;
+ * - **the Colour Samples look and the deck bottom**: none of the 3 looked-at Orders (one goes to
+ *   Lin's hand, two face down under the Main deck, change 24) reaches Zhao;
  * - **the Test Pieces peek**: Lin sees the card ("only you"); Zhao's client receives no
  *   `TEST_PIECES_PEEKED` secret, and Zhao's page shows no peeked card;
  * - in both games, no payload Zhao's client receives carries a secret addressed to Lin
  *   (`"visibleTo":"<Lin>"`), while Lin's own client does receive them.
  *
- * Canal Barge, Protective Saggars, Ge's Crackle and Kiln Master are sent from their real forms in
- * the steered `form_driver_games` games (happy-dom, the real `DecisionPane` over the engine).
+ * The Colour Samples swap, Protective Saggars, Second Firing's choice, Ge's Crackle and Kiln Master
+ * are sent from their real forms in the steered `form_driver_games` games (happy-dom, the real
+ * `DecisionPane` over the engine), and in `full_game.spec`'s steered case in a real browser.
  *
  * Parallel Salvage and hand-trim races are not steered through the browser: platform
  * `parallel_windows.test.ts` and the session tests cover them (§9.6, E15).
@@ -56,7 +63,6 @@ const ENABLED_CARD = 'form.pane-form input[name="card"]:not([aria-disabled="true
 type Placement = {
   worker: "apprentice" | "shifu";
   location: string;
-  first?: "look";
   /** Sub-editor radios to choose before the autopilot completes the rest (name, value). */
   picks?: ReadonlyArray<readonly [string, string]>;
 };
@@ -67,7 +73,7 @@ const PLANS: Plans = {
   host: [
     { worker: "apprentice", location: "form_decorate" },
     { worker: "apprentice", location: "glaze_load" },
-    { worker: "shifu", location: "commission_market", first: "look" },
+    { worker: "shifu", location: "commission_market" },
     { worker: "apprentice", location: "canal_wharf" },
   ],
   guest: [
@@ -177,7 +183,7 @@ async function autopilot(player: Player, options: { within?: string; confirmChan
   return true;
 }
 
-/** Checks a radio of the form if it is not checked yet. */
+/** Checks a radio (or checkbox) of the form if it is not checked yet. */
 async function choose(page: Page, name: string, value: string): Promise<void> {
   const input = page.locator(`form.pane-form input[name="${name}"][value="${value}"]`).first();
   await expect(input, `${name}=${value} is offered`).toBeAttached();
@@ -211,7 +217,6 @@ async function place(player: Player, plans: Plans = PLANS): Promise<void> {
   const plan = plans[player.who][player.placements];
   if (plan === undefined) throw new Error(`${player.name} has no placement planned`);
   await press(player.page, `[data-act="place"][data-location-id="${plan.location}"][data-worker="${plan.worker}"]`, `Place ${plan.worker} at ${plan.location}`);
-  if (plan.first !== undefined) await choose(player.page, "first", plan.first);
   for (const [name, value] of plan.picks ?? []) await pick(player.page, name, value);
   // The rest of the sub-editor (Shape, Decoration, vessel, Glaze, kiln space…) by the autopilot.
   for (let attempt = 0; attempt < 200; attempt += 1) {
@@ -318,8 +323,9 @@ test("the secret Contribution and the private Commission look stay with their ow
           expect(guestHtml, `${id} on Zhao's page`).not.toMatch(new RegExp(`\\b${id}\\b`));
         }
         for (const id of guestSecrets) expect(guestHtml, `secret ${id} on Zhao's page`).not.toMatch(new RegExp(`\\b${id}\\b`));
-        // Lin keeps one; the other two go to the bottom of the deck, still secret.
-        await choose(host.page, "orderId", ids[0]!);
+        // Lin reserves one of them (the Shifu effect may reserve up to 2, from the display and the
+        // look); the other two go face down under the Main deck, still secret.
+        await choose(host.page, "reservations", `look:${ids[0]!}`);
         await send(host, "confirm");
         lookChecked = true;
         await guest.page.waitForTimeout(1_500);
@@ -384,16 +390,18 @@ test("the secret Contribution and the private Commission look stay with their ow
 });
 
 /**
- * Seed 11 (two players): the Glazing & Loading display shows Colour Samples, the Firing display
- * Test Pieces, and the Glazing & Loading deck has two other Techs on top for the inspection.
+ * Seed 1 (two players): the Glazing & Loading display shows Colour Samples (T10, 2 Coins), the
+ * Firing display Test Pieces (T13, 3 Coins), and the Glazing & Loading deck has two other Techs on
+ * top for the inspection. Lin's first Apprentice earns the 2 Coins that make both takes
+ * affordable (3 + 2 = 2 + 3).
  */
-const LOOKS_SEED = 11;
+const LOOKS_SEED = 1;
 const LOOKS_PLANS: Plans = {
   host: [
-    // Round 1: Coins first, then the Guild Hall twice (Colour Samples, then Test Pieces).
+    // Round 1: Coins first, then the Shifu's two takes at the Guild Hall (Colour Samples, then Test Pieces).
     { worker: "apprentice", location: "canal_wharf" },
     { worker: "shifu", location: "guild_hall", picks: [["discipline", "glazing_loading"]] },
-    { worker: "apprentice", location: "guild_hall", picks: [["techId", "T13"]] },
+    { worker: "apprentice", location: "canal_wharf" },
     { worker: "apprentice", location: "canal_wharf" },
     // Round 2: a Shared Kiln ceramic, so Lin contributes and may use Test Pieces.
     { worker: "apprentice", location: "form_decorate" },
@@ -413,7 +421,7 @@ const LOOKS_PLANS: Plans = {
   ],
 };
 
-test("the Guild Hall inspection, the Colour Samples look and the Test Pieces peek stay with their owner", async ({ browser, request }, testInfo) => {
+test("the Guild Hall inspection and its two takes, the Colour Samples look and the Test Pieces peek stay with their owner", async ({ browser, request }, testInfo) => {
   test.setTimeout(600_000);
   await resetBackend(request, { seed: LOOKS_SEED, policy: "canonical" });
   const host = await newPlayer(browser, testInfo, "host", "Lin");
@@ -423,6 +431,8 @@ test("the Guild Hall inspection, the Colour Samples look and the Test Pieces pee
 
   let inspected: string[] = [];
   let inspectedFrom = 0;
+  let secondTake = false;
+  let returned = false;
   let looked: string[] = [];
   let lookedFrom = 0;
   let peeked = false;
@@ -439,19 +449,33 @@ test("the Guild Hall inspection, the Colour Samples look and the Test Pieces pee
       }
 
       if (window === "guild_inspection" && player === host) {
-        // Lin's private inspection: the two Techs from the top of the deck, only Lin sees them.
         const form = host.page.locator('[data-b4="guild-inspection"]');
-        inspected = await form.locator("fieldset").first().locator('input[name="take"]').evaluateAll((inputs) => inputs.map((input) => (input as HTMLInputElement).value));
-        expect(inspected, "two inspected Techs").toHaveLength(2);
-        expect(inspected).not.toContain("T10");
-        inspectedFrom = guest.received.length;
-        await expect(guest.page.locator('[data-b4="guild-inspection"]')).toHaveCount(0);
-        await expectHiddenFrom(guest, inspected, 0, await secretIdsOf(request, code, 1), "inspection");
-        // Lin takes the face-up Colour Samples and puts the two inspected Techs back in a chosen order.
-        await choose(host.page, "take", "T10");
-        const reorder = host.page.locator(".kit-reorder-list li").first().locator('.kit-reorder-buttons button:not([aria-disabled="true"])').first();
-        await reorder.click();
-        await send(host, "confirm");
+        if ((await form.getAttribute("data-return-only")) !== null) {
+          // Both takes made: only the bottom order of the two inspected Techs is left (B2), and Lin changes it.
+          await expect(form.locator('input[name="take"]')).toHaveCount(0);
+          const reorder = host.page.locator(".kit-reorder-list li").first().locator('.kit-reorder-buttons button:not([aria-disabled="true"])').first();
+          await reorder.click();
+          await send(host, "confirm");
+          returned = true;
+        } else if ((await form.getAttribute("data-takes")) === "0") {
+          // Lin's private inspection: the two Techs from the top of the deck, only Lin sees them.
+          inspected = await form.locator("fieldset").first().locator('input[name="take"]').evaluateAll((inputs) => inputs.map((input) => (input as HTMLInputElement).value));
+          expect(inspected, "two inspected Techs").toHaveLength(2);
+          expect(inspected).not.toContain("T10");
+          inspectedFrom = guest.received.length;
+          await expect(guest.page.locator('[data-b4="guild-inspection"]')).toHaveCount(0);
+          await expectHiddenFrom(guest, inspected, 0, await secretIdsOf(request, code, 1), "inspection");
+          // The first take: the face-up Colour Samples, at its printed cost.
+          await choose(host.page, "take", "T10");
+          await send(host, "confirm");
+        } else {
+          // The second take, of another discipline: the face-up Test Pieces. The inspected Techs
+          // (Glazing & Loading, like Colour Samples) are still shown, unavailable, and still private.
+          await expectHiddenFrom(guest, inspected, inspectedFrom, null, "inspection, second take");
+          await choose(host.page, "take", "T13");
+          await send(host, "confirm");
+          secondTake = true;
+        }
         acted = true;
         continue;
       }
@@ -464,7 +488,7 @@ test("the Guild Hall inspection, the Colour Samples look and the Test Pieces pee
         lookedFrom = guest.received.length;
         await expect(guest.page.locator('[data-b4="colour-samples"]')).toHaveCount(0);
         await expectHiddenFrom(guest, looked, 0, await secretIdsOf(request, code, 1), "Colour Samples look");
-        // One into Lin's hand, two face down to the Main discard: all three stay secret for Zhao.
+        // One into Lin's hand, two face down under the Main deck (change 24): all three stay secret for Zhao.
         await choose(host.page, "orderId", looked[0]!);
         await send(host, "confirm");
         await guest.page.waitForTimeout(1_500);
@@ -510,6 +534,8 @@ test("the Guild Hall inspection, the Colour Samples look and the Test Pieces pee
     if (!acted) await host.page.waitForTimeout(200);
   }
   expect(inspected, "Lin inspected the Glazing & Loading deck").toHaveLength(2);
+  expect(secondTake, "Lin's Shifu took a second Tech of another discipline").toBe(true);
+  expect(returned, "Lin chose the bottom order of the two inspected Techs").toBe(true);
   expect(looked, "Lin looked at the top 3 Main Orders").toHaveLength(3);
   expect(peeked, "Lin peeked with Test Pieces").toBe(true);
   // The inspected Techs (still in the deck) and the looked-at Orders never reached Zhao.

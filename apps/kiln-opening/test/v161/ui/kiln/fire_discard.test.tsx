@@ -67,13 +67,16 @@ describe("the open Fire discard (D4)", () => {
     }
   });
 
-  it("reads 'none yet' when the discard is empty (before the first Fire card, after a reshuffle)", () => {
+  it("reads 'empty' when the discard is empty (before the first Fire card, after a reshuffle), never 'none yet'", () => {
     const empty = renderComponent(fixtureSource("t-fire-deck-reshuffle"), <FireDiscard discard={[]} />);
-    expect(perceivable(empty)).toMatch(/Fire discard \(open\)\s+none yet/);
+    expect(perceivable(empty)).toMatch(/Fire discard \(open\)\s+empty/);
+    expect(perceivable(empty)).not.toContain("none yet");
     expect(empty).not.toContain("fdiscard-list");
     expect(perceivable(renderComponent(fixtureSource("t-fire-deck-reshuffle"), <FireDiscard discard={[]} />, { locale: "zh-CN" }))).toContain("暂无");
     expect(fixture("t-fire-deck-reshuffle").playerView.game.fireDiscard).toEqual([]);
-    expect(perceivable(renderScreen(fixtureSource("t-fire-deck-reshuffle")))).toMatch(/Fire discard \(open\)\s+none yet/);
+    const screen = perceivable(renderScreen(fixtureSource("t-fire-deck-reshuffle")));
+    expect(screen).toMatch(/Fire discard \(open\)\s+empty/);
+    expect(screen).not.toMatch(/Fire discard \(open\)\s+none yet/);
   });
 
   it.each(["m1_work_phase_r2_3p", "m2_commission_market_look_r3_4p", "m3_heat_marker_step_3p", "m4_after_quality_3p", "m7_cleanup_hand_limit_3p", "m18_jun_second_firing"])(

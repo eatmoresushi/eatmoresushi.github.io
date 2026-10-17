@@ -151,9 +151,10 @@ function abilitiesUsed(report: GameReport): Set<string> {
 }
 
 /**
- * Steering for the optional-ability game: selectors of form controls, tried in order before each
- * autopilot pick; each is clicked at most once per decision, and only when it is enabled, shown
- * and not already chosen, so the autopilot still completes (or changes) every form.
+ * Steering for the optional-ability game: the autopilot's `prefer` list (`e2e/support/autopilot.ts`),
+ * selectors of form controls and table targets tried in order before each seeded pick; each is
+ * pressed at most once per decision (the driver keeps the `tried` set), and only when it is
+ * enabled, shown and not already chosen, so the autopilot still completes (or changes) every form.
  */
 const ABILITY_PREFERENCES: readonly string[] = [
   'input[name="kilnId"][value="GE"]',
@@ -175,29 +176,6 @@ const ABILITY_PREFERENCES: readonly string[] = [
   '[data-act="tech"][data-tech-id="T24"]',
   '[data-act="place"][data-location-id="guild_hall"][data-worker="apprentice"]',
 ];
-
-function preferredMove(preferences: readonly string[], tried: Set<string>): HTMLElement | null {
-  const form = document.querySelector("form.pane-form[data-window]");
-  if (form === null) return null;
-  for (const selector of preferences) {
-    if (tried.has(selector)) continue;
-    // Form inputs inside the pane; table targets (`data-act`) and the hidden pane's openers
-    // (`data-pane-opener`) wherever they are shown.
-    const scope: ParentNode = selector.startsWith("[data-act") || selector.startsWith("[data-pane-opener") ? container : form;
-    const element = Array.from(scope.querySelectorAll<HTMLInputElement | HTMLButtonElement>(selector)).find(
-      (input) =>
-        input.getAttribute("aria-disabled") !== "true" &&
-        !input.disabled &&
-        !(input instanceof HTMLInputElement && input.checked) &&
-        input.getAttribute("aria-pressed") !== "true" &&
-        input.closest("[hidden], [inert], details:not([open])") === null,
-    );
-    if (element === undefined) continue;
-    tried.add(selector);
-    return element;
-  }
-  return null;
-}
 
 async function playThroughForms(players: 2 | 3 | 4, seed: number, preferences: readonly string[] = []): Promise<GameReport> {
   // A fresh game at Kiln selection (the engine-test `newGame` would pick the Kilns itself).
@@ -238,16 +216,19 @@ async function playThroughForms(players: 2 | 3 | 4, seed: number, preferences: r
         throw new Error(`stuck in ${trail.at(-1) ?? "?"} after ${MAX_MOVES_PER_DECISION} moves (revision ${revisionBefore}):\n${trail.slice(-12).join("\n")}`);
       }
       tick += 1;
-      const preferred = preferredMove(preferences, tried);
-      if (preferred !== null) {
-        trail.push(`preferred ${preferred.getAttribute("name") ?? preferred.getAttribute("data-act") ?? ""}=${preferred.getAttribute("value") ?? preferred.getAttribute("data-tech-id") ?? preferred.getAttribute("data-location-id") ?? ""}`);
+      // The steering (`prefer`) is the autopilot's own, shared with the steered e2e game.
+      const pick = autopilotPick({ seed, tick, confirmChance: 0.55, altChance: 0.25, prefer: preferences, tried: [...tried] });
+      if (pick.kind === "none" || pick.kind === "busy") throw new Error(`no move in ${pick.window ?? "no window"}: ${pick.kind === "none" ? pick.reason : "busy"}`);
+      if (pick.kind === "choice" && pick.preferred !== undefined) {
+        tried.add(pick.preferred);
+        trail.push(`${pick.window}: preferred ${pick.describe}`);
+        const target = document.querySelector<HTMLElement>(pick.selector);
+        expect(target, pick.selector).not.toBeNull();
         await act(async () => {
-          preferred.click();
+          target!.click();
         });
         continue;
       }
-      const pick = autopilotPick({ seed, tick, confirmChance: 0.55, altChance: 0.25 });
-      if (pick.kind === "none" || pick.kind === "busy") throw new Error(`no move in ${pick.window ?? "no window"}: ${pick.kind === "none" ? pick.reason : "busy"}`);
       trail.push(`${pick.window}: ${pick.describe}`);
       const tableAct = /^table (\w+)/.exec(pick.describe)?.[1];
       if (tableAct !== undefined) report.table.set(tableAct, (report.table.get(tableAct) ?? 0) + 1);

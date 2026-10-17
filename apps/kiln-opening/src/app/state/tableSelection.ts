@@ -14,11 +14,30 @@
  */
 
 import type { CeramicId, GameRuleError, Glaze, KilnSpaceId, LocationId, PlacementWorkerOption, TechDiscipline, TechId } from "../../game/index.ts";
+import type { RichMessage } from "../i18n/translator.ts";
 import type { DraftAction, DraftActionBase } from "./draftStore.ts";
 import type { EngineView, GameModel } from "./model.ts";
 import type { UiActions } from "./uiStore.ts";
 
 export type OrderTargetState = "choosable" | "chosen" | "completable" | "blocked" | "discard";
+
+/**
+ * Why an Order target cannot be chosen now: a message of the window's own (the Commission
+ * Market's limit is reached) or the engine's reason (a held Order the Colour Samples swap cannot
+ * give up). The card says it under its toggle and names it as the toggle's description.
+ */
+export type OrderTargetReason =
+  | { readonly kind: "message"; readonly message: RichMessage }
+  | { readonly kind: "rule"; readonly error: Pick<GameRuleError, "code"> & { readonly details?: Readonly<Record<string, unknown>> } };
+
+/** One Order card as a table target (`orderTargets`). */
+export interface OrderTarget {
+  state: OrderTargetState;
+  /** Greyed out and not selectable (`aria-disabled`); the toggle stays focusable. */
+  disabled: boolean;
+  /** Why it is disabled, when the adapter can say (every disabled choice should). */
+  reason?: OrderTargetReason | null;
+}
 
 /** One face-up Tech the Guild Hall chooser offers (buy mode). */
 export interface TechTarget {
@@ -71,7 +90,7 @@ export interface TableSelectionData {
   /** Ceramics the draft would load, shown as pending chips where they would go. */
   pendingCeramics: readonly { ceramicId: CeramicId; glaze: Glaze; at: KilnSpaceId | "imperial" }[];
   /** Keyed by OrderId, or `slot:<i>` for a display slot. */
-  orderTargets: ReadonlyMap<string, { state: OrderTargetState; disabled: boolean }>;
+  orderTargets: ReadonlyMap<string, OrderTarget>;
   /** An Order's matching group, an ability's target. */
   highlightedCeramicIds: ReadonlySet<CeramicId>;
   /** The Guild Hall chooser on the Tech display, while the pane's draft has a Guild Hall placement

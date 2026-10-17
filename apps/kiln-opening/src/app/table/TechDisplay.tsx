@@ -20,14 +20,17 @@
  * - **take** (that window, `guild_inspection`): the face-up Techs are toggles again, as in buy
  *   mode, for the Shifu's first take and for the second (v1.6.2 L207: another discipline, at its
  *   printed cost, or stop in the pane). The inspected Techs are private and only in the pane
- *   (B2), and the "is looking at" line is not shown to the looker, whom the prompt addresses.
+ *   (B2), and the "is looking at" line is not shown to the looker (the pane addresses them).
+ *   Once both takes are made no Tech can be taken: the window offers no chooser and the display
+ *   is an ordinary display again while the looker orders the returning Techs in the pane.
  * A choice goes back to the pane's draft (`act`); on phones the decision sheet then opens with
  * the chosen placement and Confirm.
  *
  * **A taken Tech's position stays empty** until the taker's turn ends (v1.6.2 L209): a column
- * showing fewer than its face-up count while its deck still holds Techs draws the empty
- * positions as dashed placeholders. It is the table's own fact (an empty spot on the board); the
- * engine refills it at the end of the turn.
+ * showing fewer than its face-up count draws as many empty positions as the refill will fill —
+ * as many as its deck holds, counting the inspected Techs an open Guild Hall inspection will put
+ * back under it first (`returning`, B2) — as dashed placeholders. It is the table's own fact (an
+ * empty spot on the board); the engine refills it at the end of the turn.
  */
 import { useId } from "react";
 import type { CSSProperties } from "react";
@@ -68,8 +71,8 @@ export function TechDisplay() {
           location: locationName("guild_hall", t.locale),
           worker: placementWorkerName(chooser.worker, t),
         });
-  // The viewer's own inspection: the prompt says it all (the line is for the other players).
-  const showLook = look !== null && looker !== null && chooser?.mode !== "take";
+  // The viewer's own inspection: the pane and the prompt say it all (the line is for the other players).
+  const showLook = look !== null && looker !== null && look.playerId !== model.viewerId && chooser?.mode !== "take";
   return (
     <div className={chooser === null ? "techs-block" : "techs-block techs-block--choosing"} data-chooser={chooser?.mode}>
       <div className="techs-h">
@@ -92,6 +95,8 @@ export function TechDisplay() {
         {display.map((column) => {
           const inspect = chooser?.disciplines.get(column.discipline);
           const name = disciplineName(column.discipline, t.locale);
+          // The empty positions the end-of-turn refill will fill (v1.6.2 L209, B2).
+          const refilling = Math.min(Math.max(0, RULE_NUMBERS.techsFaceUp - column.techIds.length), column.deckCount + column.returning);
           return (
             <div key={column.discipline} className="disc" data-discipline={column.discipline} style={{ "--dc": DISCIPLINE_COLOUR[column.discipline] } as CSSProperties}>
               <div className="disc-h">
@@ -114,7 +119,7 @@ export function TechDisplay() {
                   {t("table.techs.inspect")}
                 </button>
               )}
-              {column.techIds.length === 0 && column.deckCount === 0 ? (
+              {column.techIds.length === 0 && refilling === 0 ? (
                 <p className="disc-none">{t("table.techs.none")}</p>
               ) : (
                 <ul className="disc-list">
@@ -140,13 +145,11 @@ export function TechDisplay() {
                       </li>
                     );
                   })}
-                  {column.deckCount === 0
-                    ? null
-                    : Array.from({ length: Math.max(0, RULE_NUMBERS.techsFaceUp - column.techIds.length) }, (_, index) => (
-                        <li key={`empty-${index}`} className="disc-empty" data-empty-position="">
-                          {t("table.techs.emptySlot")}
-                        </li>
-                      ))}
+                  {Array.from({ length: refilling }, (_, index) => (
+                    <li key={`empty-${index}`} className="disc-empty" data-empty-position="">
+                      {t("table.techs.emptySlot")}
+                    </li>
+                  ))}
                 </ul>
               )}
             </div>

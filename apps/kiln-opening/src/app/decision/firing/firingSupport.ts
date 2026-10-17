@@ -65,11 +65,14 @@ export function ownFiringCeramicIds(model: GameModel): CeramicId[] {
 }
 
 /**
- * Protective Saggars kept this ceramic Standard this firing instead of Flawed (v1.6.2 L636;
- * `FiringStageCeramic.saggarsFloor`, a public fact the game log also records).
+ * Protective Saggars keeps this ceramic Standard this firing instead of Flawed (v1.6.2 L636;
+ * `FiringStageCeramic.saggarsFloor`, a public fact the game log also records). Only while its
+ * recorded Quality is still Standard: once Saggars' own upgrade or Ge's Crackle makes it Fine,
+ * "counts as Standard" no longer describes it (the engine keeps the flag set).
  */
 export function saggarsFloored(model: GameModel, ceramicId: CeramicId): boolean {
-  return model.firingStage?.ceramics.find((ceramic) => ceramic.id === ceramicId)?.saggarsFloor === true;
+  const record = model.firingStage?.ceramics.find((ceramic) => ceramic.id === ceramicId);
+  return record?.saggarsFloor === true && record.quality === "standard";
 }
 
 /** A player's seat index (ring colour), 0 when unknown. */

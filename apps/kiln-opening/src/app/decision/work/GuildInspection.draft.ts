@@ -18,12 +18,17 @@
  * take and the second; the inspected Techs never leave the pane (B2). A when-acquired effect of
  * the first take (Colour Samples' look) is its own window between the two takes; the engine then
  * reopens this one with the take counted.
+ *
+ * After the second take (`takesLeft === 0`, `inspectionReturnOnly`) the engine keeps the step open
+ * only while 2 inspected Techs are untaken: their bottom order is the one decision left. Stopping
+ * is then pre-selected, the table offers no Tech (`inspectionTechChooser` is null) and the window
+ * asks only for that order.
  */
 import { guildInspectionOptions } from "../../../game/index.ts";
 import type { GuildInspectionOptions, GuildTechOption, TechId } from "../../../game/index.ts";
 import { disciplineName, techName } from "../../i18n/content.ts";
 import { msg } from "../../i18n/translator.ts";
-import type { RichMessage } from "../../i18n/translator.ts";
+import type { RichMessage, Translator } from "../../i18n/translator.ts";
 import type { DraftModel } from "../../state/draftStore.ts";
 import type { EngineView, GameModel } from "../../state/model.ts";
 import type { TechChooser, TechTarget } from "../../state/tableSelection.ts";
@@ -75,6 +80,14 @@ function bottomFor(options: GuildInspectionOptions, current: readonly TechId[]):
   return [...kept, ...required.filter((techId) => !kept.includes(techId))];
 }
 
+/**
+ * Both takes are made (v1.6.2 L207: up to 2): only the untaken inspected Techs' bottom order is
+ * left to decide (B2).
+ */
+export function inspectionReturnOnly(options: GuildInspectionOptions): boolean {
+  return options.takesLeft === 0;
+}
+
 /** No Tech can be taken next: stopping is the only choice. */
 function onlyFinish(options: GuildInspectionOptions): boolean {
   return options.canFinish && ![...options.inspected, ...options.faceUp].some((option) => option.legal);
@@ -101,11 +114,12 @@ export function inspectionReason(option: GuildTechOption, options: GuildInspecti
 /**
  * The Tech display's chooser during the inspection (owner review, 2026-10-17; v1.6.2 L207): every
  * face-up Tech showing now, legal or not, pressed when the draft takes it. The inspected Techs are
- * private and stay in the pane (B2). Null when the viewer has no open inspection.
+ * private and stay in the pane (B2). Null when the viewer has no open inspection, and after the
+ * second take, when no Tech can be taken any more (`inspectionReturnOnly`).
  */
 export function inspectionTechChooser(draft: GuildInspectionDraft, model: GameModel, engine: EngineView): TechChooser | null {
   const options = optionsOf(engine);
-  if (options === null) return null;
+  if (options === null || inspectionReturnOnly(options)) return null;
   const chosen = draft.choice?.kind === "take" && draft.choice.take.kind === "face_up" ? draft.choice.take.techId : null;
   const techs = new Map<TechId, TechTarget>(
     options.faceUp.map((option) => [option.techId, { pressed: chosen === option.techId, legal: option.legal, reason: inspectionReason(option, options, model), cost: option.cost }]),
@@ -159,7 +173,9 @@ export const guildInspectionDraft: DraftModel<GuildInspectionDraft, GuildInspect
     if (options === null || choice === null) return options?.canFinish === true ? msg("work.gi.summaryChooseOrFinish") : msg("work.gi.summaryChoose");
     if (choice.kind === "finish") {
       const discipline = options.discipline;
-      return draft.bottomOrder.length === 0 ? msg("work.gi.summaryFinishNone") : msg("work.gi.summaryFinish", { discipline: (t) => disciplineName(discipline, t.locale) });
+      if (draft.bottomOrder.length === 0) return msg("work.gi.summaryFinishNone");
+      const values = { discipline: (t: Translator) => disciplineName(discipline, t.locale) };
+      return inspectionReturnOnly(options) ? msg("work.gi.summaryReturn", values) : msg("work.gi.summaryFinish", values);
     }
     const take = choice.take;
     const option = findOption(options, take);

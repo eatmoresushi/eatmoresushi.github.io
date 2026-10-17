@@ -105,6 +105,7 @@ import {
   rulesFingerprint,
   salvageOptions,
   scorePreview,
+  secondFiringChoiceOptions,
   settersMarkOptions,
   shapedVessels,
   submitContribution,
@@ -1517,16 +1518,21 @@ function findJunSecondFiring(): Captured {
     description:
       "The viewer (Jun Kiln, Second Firing) kept Jun unused in step 8, then used Second Firing: 2 extra Fire cards are turned (firingStageView.extraFire, secondFiringChoiceOptions). The viewer chooses 1 to recalculate with and, before the new Quality, may use Jun's ±1 for 1 Wood (SECOND_FIRING_CHOOSE).",
   };
-  const seat = "p1";
+  // Kilns are chosen in reverse turn order, so a fixed seat may find Jun taken: the first seat
+  // to choose while Jun is open takes it, and every later steer follows the Jun owner.
+  const junOwner = (t: Table): PlayerId | null => t.state.playerOrder.find((pid) => t.state.players[pid]?.kilnId === "JU") ?? null;
   const steer = combine(
-    kilnSteer(seat, "JU"),
-    buyTechSteer("T14", seat),
     (t, actor) =>
-      actor === seat && t.state.phase.type === "firing_heat_adjustment"
+      phaseIs(t, "setup_kiln_selection") && junOwner(t) === null
+        ? { command: { type: "SELECT_KILN", kilnId: "JU" }, why: `Seat ${actor} takes the Jun Kiln so the fixture shows Jun in Second Firing (R7).` }
+        : null,
+    (t, actor) => (actor === junOwner(t) ? buyTechSteer("T14", actor)(t, actor) : null),
+    (t, actor) =>
+      actor === junOwner(t) && t.state.phase.type === "firing_heat_adjustment"
         ? { command: { type: "RESOLVE_JUN", adjustment: null }, why: "Keep Jun unused in step 8 so it can act in Second Firing (R7)." }
         : null,
     (t, actor) => {
-      if (actor !== seat || t.state.phase.type !== "firing_after_quality") return null;
+      if (actor !== junOwner(t) || t.state.phase.type !== "firing_after_quality") return null;
       const second = afterQualityOptions(t.playerView(actor)).find((o) => o.ability === "second_firing");
       const ceramicId = second?.ceramicIds[0];
       return ceramicId === undefined ? null : { command: { type: "USE_SECOND_FIRING", ceramicId }, why: "Second Firing on an eligible ceramic." };
@@ -1537,10 +1543,15 @@ function findJunSecondFiring(): Captured {
     playerCounts: [3],
     seeds: 40,
     steer: () => steer,
-    at: (t) => (t.state.phase.type === "firing_second_firing_choice" ? t.state.phase.actorId : null),
+    // Only the Jun owner's choice with Jun ready (unused this round, Wood to pay) is this moment.
+    at: (t) => {
+      const phase = t.state.phase;
+      if (phase.type !== "firing_second_firing_choice" || phase.actorId !== junOwner(t)) return null;
+      return secondFiringChoiceOptions(t.playerView(phase.actorId))?.jun.ready === true ? phase.actorId : null;
+    },
     giveUp: (t) => t.state.round > 5,
-    fallback: "Jun during Second Firing (R7)",
-    hint: 13,
+    fallback: "Second Firing choice with Jun (R7)",
+    hint: 7,
   });
 }
 

@@ -56,6 +56,12 @@ describe("announcementFor", () => {
     expect(en.message(yourTurnMessage(model)!)).toBe(`Cleanup: discard ${status.mustDiscard} ${status.mustDiscard === 1 ? "Order" : "Orders"} to reach your limit of ${status.limit}.`);
   });
 
+  it("says the Second Firing choice with its number of cards from content (v1.6.2 L631)", () => {
+    const model = modelOf("w-second-firing-choice-with-jun-r7");
+    expect(en.message(yourTurnMessage(model)!)).toBe("Your turn: choose one of the 2 Second Firing cards.");
+    expect(zh.message(yourTurnMessage(model)!)).toBe("轮到你了：从复烧翻开的2张窑火牌中选一张。");
+  });
+
   it("summarises a batch through the event templates, your turn last", () => {
     const model = modelOf("m1_work_phase_r2_3p");
     const previous = modelOf("m10b_setters_mark_on_space");

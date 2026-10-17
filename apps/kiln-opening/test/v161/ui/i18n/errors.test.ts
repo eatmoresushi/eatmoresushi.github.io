@@ -50,6 +50,18 @@ describe("error text", () => {
     expect(ruleErrorText({ code: "LOCATION_FULL", details: { locationId: "guild_hall" } }, "zh-CN")).toBe("陶工行已满");
   });
 
+  it("names the Guild Hall's own placement condition for NO_MAIN_ACTION_POSSIBLE (v1.6.2 L212), and the generic sentence elsewhere", () => {
+    const guild = { code: "NO_MAIN_ACTION_POSSIBLE", details: { locationId: "guild_hall", workerId: "p1:shifu", effect: "shifu" } } as const;
+    expect(ruleErrorText(guild, "en")).toBe("You can place a worker at the Guild Hall only if you can afford a face-up Tech from a discipline you do not own yet.");
+    expect(ruleErrorText(guild, "zh-CN")).toBe("只有当你付得起一张公开技艺，且还没有该门类的技艺时，才可以派工到陶工行");
+    expect(mpErrorText(guild.code, guild.details, "en")).toBe(ruleErrorText(guild, "en"));
+    // Another location, or no location detail: the engine's sentence.
+    const other = { code: "NO_MAIN_ACTION_POSSIBLE", details: { locationId: "commission_market" } } as const;
+    expect(ruleErrorText(other, "en")).toBe(ruleErrorText({ code: other.code, details: other.details }, "en"));
+    expect(ruleErrorText(other, "en")).toContain("at least 1 instance of the main action");
+    expect(ruleErrorText({ code: "NO_MAIN_ACTION_POSSIBLE", details: {} }, "en")).toContain("at least 1 instance of the main action");
+  });
+
   it("fills NOT_ENOUGH_PLAYERS from content, not from the catalogue", () => {
     expect(mpErrorText("NOT_ENOUGH_PLAYERS", undefined, "en")).toBe("At least 2 players are needed to start.");
     expect(mpErrorText("NOT_ENOUGH_PLAYERS", undefined, "zh-CN")).toBe("开局至少需要2名玩家");
