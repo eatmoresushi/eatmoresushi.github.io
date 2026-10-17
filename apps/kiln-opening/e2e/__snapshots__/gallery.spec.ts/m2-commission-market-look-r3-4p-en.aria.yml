@@ -20,19 +20,19 @@
       - paragraph: Already reserved this turn
       - strong: "#1 O32"
       - text: /\d+ VP 5 Coins Vase \+ Bowl; both White; different Decorations Fine\+ each; ≥1 Masterpiece/
-      - 'button "Rules: Order O32"'
+      - 'button "Full rules: Order O32"'
     - group "Top of the Main Order deck Only you can see":
       - text: ""
       - paragraph: You reserve one; the others go face down to the discard.
       - radio /O39 \d+ VP 1 Coin 2 Crowns Vase \+ Censer; one Celadon, one Moon White; one Plain, one Painted Fine\+ each/
       - text: /O39 \d+ VP 1 Coin 2 Crowns Vase \+ Censer; one Celadon, one Moon White; one Plain, one Painted Fine\+ each/
-      - 'button "Rules: Order O39"'
+      - 'button "Full rules: Order O39"'
       - radio "O20 7 VP 2 Coins 1 Crown Bowl · Moon White · Carved Fine+"
       - text: O20 7 VP 2 Coins 1 Crown Bowl · Moon White · Carved Fine+
-      - 'button "Rules: Order O20"'
+      - 'button "Full rules: Order O20"'
       - radio "O14 5 VP 4 Coins Bowl, Plate or Brush Washer · any Glaze · any Decoration Fine+"
       - text: O14 5 VP 4 Coins Bowl, Plate or Brush Washer · any Glaze · any Decoration Fine+
-      - 'button "Rules: Order O14"'
+      - 'button "Full rules: Order O14"'
     - paragraph: "Next: gain 1 Clay, 1 Wood or 1 Coin"
     - strong: Others see
     - text: Zhao is looking at 3 Orders

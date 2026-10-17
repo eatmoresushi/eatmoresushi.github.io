@@ -17,30 +17,30 @@
       - text: ""
       - radio "Reworking Table 2 Coins → 1 Coin Form & Decorate"
       - text: Reworking Table 2 Coins → 1 Coin Form & Decorate
-      - 'button "Rules: Reworking Table"'
+      - 'button "Full rules: Reworking Table"'
       - radio "Prepared Clay 3 Coins → 2 Coins Form & Decorate Not enough Coins." [disabled]
       - text: Prepared Clay 3 Coins → 2 Coins Form & Decorate Not enough Coins.
-      - 'button "Rules: Prepared Clay"'
+      - 'button "Full rules: Prepared Clay"'
     - group "Or a face-up Tech":
       - text: ""
       - radio "Connoisseur's Cabinet 3 Coins → 2 Coins Form & Decorate Not enough Coins." [disabled]
       - text: Connoisseur's Cabinet 3 Coins → 2 Coins Form & Decorate Not enough Coins.
-      - 'button "Rules: Connoisseur''s Cabinet"'
+      - 'button "Full rules: Connoisseur''s Cabinet"'
       - radio "Large Throwing Wheel 2 Coins → 1 Coin Form & Decorate"
       - text: Large Throwing Wheel 2 Coins → 1 Coin Form & Decorate
-      - 'button "Rules: Large Throwing Wheel"'
+      - 'button "Full rules: Large Throwing Wheel"'
       - radio "Kiln Furniture 2 Coins → 1 Coin Glazing & Loading"
       - text: Kiln Furniture 2 Coins → 1 Coin Glazing & Loading
-      - 'button "Rules: Kiln Furniture"'
+      - 'button "Full rules: Kiln Furniture"'
       - radio "Canal Barge 2 Coins → 1 Coin Glazing & Loading"
       - text: Canal Barge 2 Coins → 1 Coin Glazing & Loading
-      - 'button "Rules: Canal Barge"'
+      - 'button "Full rules: Canal Barge"'
       - radio "Kiln Master 2 Coins → 1 Coin Firing"
       - text: Kiln Master 2 Coins → 1 Coin Firing
-      - 'button "Rules: Kiln Master"'
+      - 'button "Full rules: Kiln Master"'
       - radio "Second Firing 2 Coins → 1 Coin Firing"
       - text: Second Firing 2 Coins → 1 Coin Firing
-      - 'button "Rules: Second Firing"'
+      - 'button "Full rules: Second Firing"'
     - paragraph: Return to the bottom of the Form & Decorate deck, top to bottom
     - list "Return to the bottom of the Form & Decorate deck, top to bottom":
       - listitem:

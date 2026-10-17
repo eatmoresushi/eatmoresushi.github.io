@@ -22,22 +22,22 @@
       - paragraph: 0 of 2 chosen
       - checkbox "S02 2 VP 4 Coins Plate · any Glaze · any Decoration · Standard+"
       - text: S02 2 VP 4 Coins Plate · any Glaze · any Decoration · Standard+
-      - 'button "Rules: Order S02"'
+      - 'button "Full rules: Order S02"'
       - checkbox "S10 4 VP 4 Coins any Shape · any Glaze · Plain · Standard+"
       - text: S10 4 VP 4 Coins any Shape · any Glaze · Plain · Standard+
-      - 'button "Rules: Order S10"'
+      - 'button "Full rules: Order S10"'
       - checkbox /O38 \d+ VP 1 Coin 1 Crown Plate \+ Brush Washer; different Glazes; both Carved · Fine\+ each/
       - text: /O38 \d+ VP 1 Coin 1 Crown Plate \+ Brush Washer; different Glazes; both Carved · Fine\+ each/
-      - 'button "Rules: Order O38"'
+      - 'button "Full rules: Order O38"'
       - checkbox "O05 7 VP 4 Coins Censer · any Glaze · Carved · Fine+"
       - text: O05 7 VP 4 Coins Censer · any Glaze · Carved · Fine+
-      - 'button "Rules: Order O05"'
+      - 'button "Full rules: Order O05"'
       - checkbox /O43 \d+ VP 6 Coins 3 different Shapes; any Glazes; any Decorations · Standard\+ all/
       - text: /O43 \d+ VP 6 Coins 3 different Shapes; any Glazes; any Decorations · Standard\+ all/
-      - 'button "Rules: Order O43"'
+      - 'button "Full rules: Order O43"'
       - checkbox "O08 5 VP 3 Coins any Shape · Grey-Green · any Decoration · Fine+"
       - text: O08 5 VP 3 Coins any Shape · Grey-Green · any Decoration · Fine+
-      - 'button "Rules: Order O08"'
+      - 'button "Full rules: Order O08"'
     - paragraph: Everyone trims at the same time; others see only how many Orders you hold.
     - paragraph: 0 of 2 chosen
     - button "Clear"

@@ -96,6 +96,14 @@
     min-height: 6rem;
   }
 
+  /* The demo sheet is narrower than a phone's: let its strip text wrap instead of ending in "…". */
+  .kg-sheet .kit-sheet-text {
+    overflow: visible;
+    overflow-wrap: anywhere;
+    white-space: normal;
+    text-overflow: clip;
+  }
+
   .kg-sheet-h {
     font-size: var(--fs-18);
   }

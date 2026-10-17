@@ -20,7 +20,7 @@
       - paragraph: Already reserved this turn
       - strong: O07
       - text: 5 VP 3 Coins Blind, from the top of the deck any Shape · Celadon · any Decoration Fine+
-      - 'button "Rules: Order O07"'
+      - 'button "Full rules: Order O07"'
     - group "Gain after this reservation:":
       - text: ""
       - radio "1 Clay"

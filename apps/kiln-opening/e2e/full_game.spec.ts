@@ -226,10 +226,13 @@ for (const game of CASES) {
           await toggle.click();
           await expect(page.locator("html")).toHaveAttribute("lang", other);
         }
-        if (!reloaded && confirms === 24) reloadDue = true;
+        // Reload at the 18th confirm: every game gives the human at least 21 (Kiln selection and 20
+        // placements in a 2-player game), so a later decision always follows.
+        if (!reloaded && confirms === 18) reloadDue = true;
       }
       await expect(page.locator('form.pane-form[data-window="final"]')).toBeAttached();
-      expect(switched && reloaded, "the language switch and the reload happened mid-game").toBe(true);
+      const tally = [...windows.entries()].map(([window, n]) => `${window}×${n}`).join(", ");
+      expect(switched && reloaded, `the language switch and the reload happened mid-game (switched ${switched}, reloaded ${reloaded}, ${confirms} confirms: ${tally})`).toBe(true);
       for (const window of ["kiln_selection", "work"]) expect(windows.get(window) ?? 0, window).toBeGreaterThan(0);
       // Every worker was placed from the table (owner review, 2026-10-17).
       expect(placeShortcuts, "Place shortcuts pressed on the table").toBeGreaterThan(0);

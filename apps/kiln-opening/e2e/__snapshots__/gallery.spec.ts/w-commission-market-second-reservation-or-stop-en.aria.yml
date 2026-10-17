@@ -20,24 +20,24 @@
       - paragraph: Already reserved this turn
       - strong: "#1 O01"
       - text: 3 VP 3 Coins Bowl · any Glaze · any Decoration Standard+
-      - 'button "Rules: Order O01"'
+      - 'button "Full rules: Order O01"'
     - group "Next reservation":
       - text: ""
       - radio "#2 O02 3 VP 3 Coins Plate · any Glaze · any Decoration Standard+"
       - text: "#2 O02 3 VP 3 Coins Plate · any Glaze · any Decoration Standard+"
-      - 'button "Rules: Order O02"'
+      - 'button "Full rules: Order O02"'
       - radio "#3 O03 3 VP 3 Coins Brush Washer · any Glaze · any Decoration Standard+"
       - text: "#3 O03 3 VP 3 Coins Brush Washer · any Glaze · any Decoration Standard+"
-      - 'button "Rules: Order O03"'
+      - 'button "Full rules: Order O03"'
       - radio "#4 O04 7 VP 4 Coins Vase · Moon White · any Decoration Fine+"
       - text: "#4 O04 7 VP 4 Coins Vase · Moon White · any Decoration Fine+"
-      - 'button "Rules: Order O04"'
+      - 'button "Full rules: Order O04"'
       - radio "#5 O05 7 VP 4 Coins Censer · any Glaze · Carved Fine+"
       - text: "#5 O05 7 VP 4 Coins Censer · any Glaze · Carved Fine+"
-      - 'button "Rules: Order O05"'
+      - 'button "Full rules: Order O05"'
       - radio "#6 O06 5 VP 3 Coins any Shape · White · any Decoration Fine+"
       - text: "#6 O06 5 VP 3 Coins any Shape · White · any Decoration Fine+"
-      - 'button "Rules: Order O06"'
+      - 'button "Full rules: Order O06"'
       - radio "Blind reserve (top of the deck)"
       - text: Blind reserve (top of the deck)
       - radio "Look at the top of the deck and reserve one (only you see the cards)"

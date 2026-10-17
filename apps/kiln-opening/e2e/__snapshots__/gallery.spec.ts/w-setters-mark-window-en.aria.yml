@@ -17,7 +17,7 @@
     - text: 0 Orders in hand Recognition 0/4 1 VP
   - form "Place your Setter’s Mark":
     - paragraph: "Put it on an empty active space of the Shared Kiln: only you may load there this round."
-    - 'button "Rules: Setter''s Mark"'
+    - 'button "Full rules: Setter''s Mark"'
     - group "Shared Kiln space or choose a highlighted kiln space":
       - text: ""
       - radio "High 1 (+1)"

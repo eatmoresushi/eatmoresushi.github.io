@@ -21,16 +21,16 @@
       - text: ""
       - radio "O22 8 VP 1 Coin 1 Crown any Shape · Celadon · Plain · Masterpiece"
       - text: O22 8 VP 1 Coin 1 Crown any Shape · Celadon · Plain · Masterpiece
-      - 'button "Rules: Order O22"'
+      - 'button "Full rules: Order O22"'
       - radio "O18 6 VP 2 Coins 1 Crown Vase · Celadon · any Decoration · Fine+"
       - text: O18 6 VP 2 Coins 1 Crown Vase · Celadon · any Decoration · Fine+
-      - 'button "Rules: Order O18"'
+      - 'button "Full rules: Order O18"'
       - radio "S01 2 VP 4 Coins Bowl · any Glaze · any Decoration · Standard+"
       - text: S01 2 VP 4 Coins Bowl · any Glaze · any Decoration · Standard+
-      - 'button "Rules: Order S01"'
+      - 'button "Full rules: Order S01"'
       - radio "S13 4 VP 4 Coins any Shape · any Glaze · Painted · Standard+"
       - text: S13 4 VP 4 Coins any Shape · any Glaze · Painted · Standard+
-      - 'button "Rules: Order S13"'
+      - 'button "Full rules: Order S13"'
     - paragraph: Only held Orders can be completed; Orders on the display cannot.
     - paragraph: Choose an Order to complete, or end your turn.
     - button "End turn"

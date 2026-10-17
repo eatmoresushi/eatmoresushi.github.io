@@ -19,30 +19,30 @@
       - text: ""
       - radio "Test Pieces 3 Coins → 2 Coins Firing"
       - text: Test Pieces 3 Coins → 2 Coins Firing
-      - 'button "Rules: Test Pieces"'
+      - 'button "Full rules: Test Pieces"'
       - radio "Second Firing 2 Coins → 1 Coin Firing"
       - text: Second Firing 2 Coins → 1 Coin Firing
-      - 'button "Rules: Second Firing"'
+      - 'button "Full rules: Second Firing"'
     - group "Or a face-up Tech":
       - text: ""
       - radio "Decorator's Kit 2 Coins → 1 Coin Form & Decorate You already own a Form & Decorate Tech." [disabled]
       - text: Decorator's Kit 2 Coins → 1 Coin Form & Decorate You already own a Form & Decorate Tech.
-      - 'button "Rules: Decorator''s Kit"'
+      - 'button "Full rules: Decorator''s Kit"'
       - radio "Reworking Table 2 Coins → 1 Coin Form & Decorate You already own a Form & Decorate Tech." [disabled]
       - text: Reworking Table 2 Coins → 1 Coin Form & Decorate You already own a Form & Decorate Tech.
-      - 'button "Rules: Reworking Table"'
+      - 'button "Full rules: Reworking Table"'
       - radio "Colour Samples 2 Coins → 1 Coin Glazing & Loading"
       - text: Colour Samples 2 Coins → 1 Coin Glazing & Loading
-      - 'button "Rules: Colour Samples"'
+      - 'button "Full rules: Colour Samples"'
       - radio "Kiln Tending 2 Coins → 1 Coin Glazing & Loading"
       - text: Kiln Tending 2 Coins → 1 Coin Glazing & Loading
-      - 'button "Rules: Kiln Tending"'
+      - 'button "Full rules: Kiln Tending"'
       - radio "Protective Saggars 2 Coins → 1 Coin Firing"
       - text: Protective Saggars 2 Coins → 1 Coin Firing
-      - 'button "Rules: Protective Saggars"'
+      - 'button "Full rules: Protective Saggars"'
       - radio "Fuel Ledger 3 Coins → 2 Coins Firing"
       - text: Fuel Ledger 3 Coins → 2 Coins Firing
-      - 'button "Rules: Fuel Ledger"'
+      - 'button "Full rules: Fuel Ledger"'
     - paragraph: Return to the bottom of the Firing deck, top to bottom
     - list "Return to the bottom of the Firing deck, top to bottom":
       - listitem:

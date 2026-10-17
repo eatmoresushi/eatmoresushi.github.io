@@ -16,18 +16,18 @@
     - text: 0 Orders in hand Recognition 0/4 1 VP
   - 'form "Colour Samples: reserve an Order"':
     - paragraph: You must reserve one; the rest go face down to the discard.
-    - 'button "Rules: Colour Samples"'
+    - 'button "Full rules: Colour Samples"'
     - group "Top of the Main Order deck Only you can see":
       - text: ""
       - radio "O07 5 VP 3 Coins any Shape · Celadon · any Decoration Fine+"
       - text: O07 5 VP 3 Coins any Shape · Celadon · any Decoration Fine+
-      - 'button "Rules: Order O07"'
+      - 'button "Full rules: Order O07"'
       - radio "O08 5 VP 3 Coins any Shape · Grey-Green · any Decoration Fine+"
       - text: O08 5 VP 3 Coins any Shape · Grey-Green · any Decoration Fine+
-      - 'button "Rules: Order O08"'
+      - 'button "Full rules: Order O08"'
       - radio "O09 6 VP 3 Coins any Shape · Moon White · any Decoration Fine+"
       - text: O09 6 VP 3 Coins any Shape · Moon White · any Decoration Fine+
-      - 'button "Rules: Order O09"'
+      - 'button "Full rules: Order O09"'
     - strong: Others see
     - text: Player 1 is looking at 3 Orders
     - paragraph: Choose an Order to reserve.

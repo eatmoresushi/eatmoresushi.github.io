@@ -17,28 +17,9 @@
     - text: 手中4张委托 声望0／4 1分
   - form "派工":
     - paragraph: 你还有4名工人未派（共4名）。派工阶段不能跳过。
-    - group "工人":
-      - text: ""
-      - radio "师傅 可派1名"
-      - text: 师傅 可派1名
-      - radio "学徒 可派3名"
-      - text: 学徒 可派3名
-    - group "地点 可派4处（共7处）":
-      - text: ""
-      - paragraph: 先选工人，再看各地点效果。
-      - radio "泥柴场 已占0／3"
-      - text: 泥柴场 已占0／3
-      - button "规则：泥柴场"
-      - radio "施釉装窑 你的第1工位 · 第2工位尚未添设"
-      - text: 施釉装窑 你的第1工位 · 第2工位尚未添设
-      - button "规则：施釉装窑"
-      - radio "瓷牙行 已占0／3"
-      - text: 瓷牙行 已占0／3
-      - button "规则：瓷牙行"
-      - radio "漕运码头 不限"
-      - text: 漕运码头 不限
-      - button "规则：漕运码头"
-      - group: 不可派（3）
-    - paragraph: 请选择工人与可派地点。
+    - paragraph: 请在桌面上派工：点选中央行动板上某个地点的派工按钮，或你窑口板上制坯饰纹、施釉装窑的派工按钮。
+    - button "前往中央行动板"
+    - button "前往你的作坊"
+    - paragraph: 请在桌面上选一个可派的地点派工。
     - button "取消"
     - button "确认" [disabled]

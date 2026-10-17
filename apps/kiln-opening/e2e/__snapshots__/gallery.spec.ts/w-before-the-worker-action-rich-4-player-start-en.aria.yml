@@ -23,37 +23,9 @@
       - text: Place a worker Your worker action this turn
       - radio "Canal Barge Before your worker action"
       - text: Canal Barge Before your worker action
-    - group "Worker":
-      - text: ""
-      - radio "Shifu 1 available"
-      - text: Shifu 1 available
-      - radio "Apprentice 3 available"
-      - text: Apprentice 3 available
-      - radio "Apprentice as Shifu 3 available Senior Apprentice"
-      - text: Apprentice as Shifu 3 available Senior Apprentice
-      - 'button "Rules: Senior Apprentice"'
-    - group "Location 6 of 7 open":
-      - text: ""
-      - paragraph: Choose a worker to see what each location does.
-      - radio "Materials Yard 0/4 taken"
-      - text: Materials Yard 0/4 taken
-      - 'button "Rules: Materials Yard"'
-      - radio "Form & Decorate your space 1"
-      - text: Form & Decorate your space 1
-      - 'button "Rules: Form & Decorate"'
-      - radio "Glaze & Load your space 1"
-      - text: Glaze & Load your space 1
-      - 'button "Rules: Glaze & Load"'
-      - radio "Commission Market 0/4 taken"
-      - text: Commission Market 0/4 taken
-      - 'button "Rules: Commission Market"'
-      - radio "Canal Wharf No limit"
-      - text: Canal Wharf No limit
-      - 'button "Rules: Canal Wharf"'
-      - radio "Magistrate's Hall 0/2 taken"
-      - text: Magistrate's Hall 0/2 taken
-      - 'button "Rules: Magistrate''s Hall"'
-      - group: Unavailable (1)
-    - paragraph: Choose a worker and an open location.
+    - paragraph: "Place a worker on an action space: choose Place at a location on the Central Action Board, or at Form & Decorate or Glaze & Load on your Kiln Player Board."
+    - button "Go to the Central Action Board"
+    - button "Go to your workshop"
+    - paragraph: Place a worker on an open action space.
     - button "Clear"
     - button "Confirm" [disabled]

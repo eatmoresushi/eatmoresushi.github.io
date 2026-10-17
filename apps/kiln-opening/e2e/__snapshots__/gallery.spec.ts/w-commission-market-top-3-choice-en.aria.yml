@@ -21,13 +21,13 @@
       - paragraph: You reserve one; the others go face down to the discard.
       - radio "O07 5 VP 3 Coins any Shape · Celadon · any Decoration Fine+"
       - text: O07 5 VP 3 Coins any Shape · Celadon · any Decoration Fine+
-      - 'button "Rules: Order O07"'
+      - 'button "Full rules: Order O07"'
       - radio "O08 5 VP 3 Coins any Shape · Grey-Green · any Decoration Fine+"
       - text: O08 5 VP 3 Coins any Shape · Grey-Green · any Decoration Fine+
-      - 'button "Rules: Order O08"'
+      - 'button "Full rules: Order O08"'
       - radio "O09 6 VP 3 Coins any Shape · Moon White · any Decoration Fine+"
       - text: O09 6 VP 3 Coins any Shape · Moon White · any Decoration Fine+
-      - 'button "Rules: Order O09"'
+      - 'button "Full rules: Order O09"'
     - paragraph: "Next: gain 1 Clay, 1 Wood or 1 Coin"
     - strong: Others see
     - text: Player 1 is looking at 3 Orders

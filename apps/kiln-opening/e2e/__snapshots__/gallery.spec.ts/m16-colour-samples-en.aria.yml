@@ -16,18 +16,18 @@
     - text: 4 Orders in hand Recognition 0/4 5 VP
   - 'form "Colour Samples: reserve an Order"':
     - paragraph: You must reserve one; the rest go face down to the discard.
-    - 'button "Rules: Colour Samples"'
+    - 'button "Full rules: Colour Samples"'
     - group "Top of the Main Order deck Only you can see":
       - text: ""
       - radio "O17 6 VP 2 Coins 1 Crown Brush Washer · White · Painted Fine+"
       - text: O17 6 VP 2 Coins 1 Crown Brush Washer · White · Painted Fine+
-      - 'button "Rules: Order O17"'
+      - 'button "Full rules: Order O17"'
       - radio /O24 \d+ VP 1 Coin 1 Crown any Shape · Moon White · any Decoration Masterpiece/
       - text: /O24 \d+ VP 1 Coin 1 Crown any Shape · Moon White · any Decoration Masterpiece/
-      - 'button "Rules: Order O24"'
+      - 'button "Full rules: Order O24"'
       - radio "O11 9 VP 3 Coins any Shape · any Glaze · Carved Masterpiece"
       - text: O11 9 VP 3 Coins any Shape · any Glaze · Carved Masterpiece
-      - 'button "Rules: Order O11"'
+      - 'button "Full rules: Order O11"'
     - strong: Others see
     - text: Zhao is looking at 3 Orders
     - paragraph: Choose an Order to reserve.

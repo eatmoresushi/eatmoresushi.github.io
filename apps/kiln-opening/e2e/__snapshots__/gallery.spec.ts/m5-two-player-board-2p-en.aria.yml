@@ -14,25 +14,9 @@
     - text: 4 Orders in hand Recognition 0/4 1 VP
   - form "Place a worker":
     - paragraph: 1 of your 4 workers left. The Work Phase cannot be passed.
-    - group "Worker":
-      - text: ""
-      - radio "Apprentice 1 available" [checked]
-      - text: Apprentice 1 available
-    - group "Location 4 of 7 open":
-      - text: ""
-      - radio "Materials Yard 1/2 taken Gain 3 Clay/Wood"
-      - text: Materials Yard 1/2 taken Gain 3 Clay/Wood
-      - 'button "Rules: Materials Yard"'
-      - radio "Form & Decorate your space 1 Form and decorate 1"
-      - text: Form & Decorate your space 1 Form and decorate 1
-      - 'button "Rules: Form & Decorate"'
-      - radio "Guild Hall 1/2 taken Buy 1 Advanced Tech at cost"
-      - text: Guild Hall 1/2 taken Buy 1 Advanced Tech at cost
-      - 'button "Rules: Guild Hall"'
-      - radio "Canal Wharf No limit 2 Coins"
-      - text: Canal Wharf No limit 2 Coins
-      - 'button "Rules: Canal Wharf"'
-      - group: Unavailable (3)
-    - paragraph: Choose an open location.
+    - paragraph: "Place a worker on an action space: choose Place at a location on the Central Action Board, or at Form & Decorate or Glaze & Load on your Kiln Player Board."
+    - button "Go to the Central Action Board"
+    - button "Go to your workshop"
+    - paragraph: Choose an open action space.
     - button "Clear"
     - button "Confirm" [disabled]

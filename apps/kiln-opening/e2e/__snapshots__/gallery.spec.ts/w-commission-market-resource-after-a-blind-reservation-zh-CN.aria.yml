@@ -20,7 +20,7 @@
       - paragraph: 本回合已承接
       - strong: O07
       - text: 5分 3铜钱 盲接牌堆顶 任意器型 · 青釉 · 任意纹饰 上品以上
-      - button "规则：委托O07"
+      - button "完整规则：委托O07"
     - group "承接后获得：":
       - text: ""
       - radio "1泥"
