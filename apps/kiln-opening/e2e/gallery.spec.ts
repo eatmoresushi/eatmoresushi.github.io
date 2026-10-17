@@ -11,6 +11,7 @@
  * - every visible text is at least 12px, and Chinese text at least 13px;
  * - no horizontal page scroll (`scrollWidth ≤ innerWidth`), also at 200% text (reflow);
  * - no clipped text: no text container with `overflow: hidden | clip` cuts its text off;
+ * - no English Tech name broken inside a word, also at 200% text (the price moves under it);
  * - no ConfirmBar button label broken across lines (the alternative never squeezes to one
  *   character's width beside Confirm);
  * - focus is visible after Tab;
@@ -19,7 +20,9 @@
  *   of each neighbour, so a chip scrolled out of its row does not count);
  * - at 1440 (one desktop page resized through all eight sizes): no game text is hidden at one size
  *   and shown at another, except inactive phone sections and the collapsed sheet body;
- * - an ARIA snapshot of the decision pane (1440; `npm run test:e2e:update` refreshes them).
+ * - an ARIA snapshot of the decision pane (1440; `npm run test:e2e:update` refreshes them); while
+ *   the work turn hides the pane (owner review, 2026-10-17), of the hidden pane's bar above the
+ *   world instead (its turn cue, then the openers, if any).
  * A viewport screenshot of each view goes to `output/ui-v1.6.1/screens/` (gitignored) for review;
  * `KILN_E2E_SCREENS=full` takes full-page ones. No pixel baselines are kept.
  */
@@ -124,6 +127,36 @@ async function clippedText(page: Page): Promise<string[]> {
       const clips = style.overflowX === "hidden" || style.overflowX === "clip" || style.textOverflow === "ellipsis";
       if (!clips) continue;
       if (element.scrollWidth > element.clientWidth + 1) found.push(`${element.tagName.toLowerCase()}.${element.className}: ${(element.textContent ?? "").trim().slice(0, 40)}`);
+    }
+    return found.slice(0, 20);
+  });
+}
+
+/**
+ * Tech names broken inside a word (review of owner items 4–5, 2026-10-17): a word of an English
+ * Tech name on two lines ("Con/nois/seu/r's" beside a long price at 200% text). The tile's title
+ * row moves the price under the name instead. Chinese names may break between characters.
+ */
+async function brokenTechNames(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const found: string[] = [];
+    for (const name of Array.from(document.querySelectorAll<HTMLElement>(".tech-name"))) {
+      if (name.closest("[hidden], [inert]") !== null || name.getClientRects().length === 0) continue;
+      const walker = document.createTreeWalker(name, NodeFilter.SHOW_TEXT);
+      for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
+        const text = node.textContent ?? "";
+        for (const word of text.matchAll(/[A-Za-z'’]+/g)) {
+          const range = document.createRange();
+          range.setStart(node, word.index ?? 0);
+          range.setEnd(node, (word.index ?? 0) + word[0].length);
+          const tops = new Set(
+            Array.from(range.getClientRects())
+              .filter((rect) => rect.width > 0 && rect.height > 0)
+              .map((rect) => Math.round(rect.top)),
+          );
+          if (tops.size > 1) found.push(`${Math.round(name.getBoundingClientRect().width)}px "${text}": "${word[0]}" on ${tops.size} lines`);
+        }
+      }
     }
     return found.slice(0, 20);
   });
@@ -241,6 +274,7 @@ for (const id of ENTRIES) {
         const where = `${id} ${view.lang}-${view.theme} ${String(viewport?.width)}×${String(viewport?.height)}`;
         expect(await horizontalScroll(page), `${where}: horizontal page scroll`).toBeLessThanOrEqual(0);
         expect(await clippedText(page), `${where}: clipped text`).toEqual([]);
+        expect(await brokenTechNames(page), `${where}: a Tech name broken inside a word`).toEqual([]);
         if (view.text === 200) return;
         // @axe-core/playwright types its own copy of `Page` (playwright-core); the object is the same.
         const axe = await new AxeBuilder({ page: page as unknown as ConstructorParameters<typeof AxeBuilder>[0]["page"] }).analyze();
@@ -253,7 +287,9 @@ for (const id of ENTRIES) {
         expect(await focusVisibleAfterTab(page), `${where}: focus after Tab`).toBeNull();
         if (viewport?.width === 1440 && view.theme === BASE.find((base) => base.lang === view.lang)?.theme) {
           const pane = page.locator("aside.pane");
-          if ((await pane.count()) > 0) await expect(pane).toMatchAriaSnapshot({ name: `${id}-${view.lang}.aria.yml` });
+          const openers = page.locator("[data-pane-openers]");
+          if ((await pane.count()) > 0 && (await pane.isVisible())) await expect(pane).toMatchAriaSnapshot({ name: `${id}-${view.lang}.aria.yml` });
+          else if ((await openers.count()) > 0) await expect(openers).toMatchAriaSnapshot({ name: `${id}-${view.lang}.aria.yml` });
         }
       });
     }

@@ -7,19 +7,23 @@
  *   Samples) renders its real component, never a phase A placeholder, with its title, its
  *   ConfirmBar alternative and the test-driver contract (input `name`/`value` = engine IDs).
  * - Owner decisions: no odds, previews or ladders (D3/D4); no lock wording (D7); no ceramic or
- *   worker ID in anything a player perceives (D9); every Tech tile, Order card and Recognition
- *   milestone shown in a form opens its rules details (D10) with only the full rule and that
- *   component's clarifications, as plain text: no card text, card facts or source labels (owner
- *   review, 2026-10-17). The Kiln options and the work turn's locations carry no "Full rules"
- *   button any more (owner review, 2026-10-17).
+ *   worker ID in anything a player perceives (D9); every Order card and Recognition milestone
+ *   shown in a form opens its rules details (D10) with only the full rule and that component's
+ *   clarifications, as plain text: no card text, card facts or source labels (owner review,
+ *   2026-10-17). The Kiln options and the work turn's locations carry no "Full rules" button any
+ *   more, and the Guild Hall inspection shows each Tech as its printed tile (short text, timing in
+ *   bold) with no rules details and no "Only you can see" pill (owner review, 2026-10-17).
  * - Workers are placed on the table (owner review, 2026-10-17): the pane lists no workers and no
  *   locations, and every legal placement has its Place shortcut on the table; the Guild Hall
  *   choice is made on the Tech display.
  * - Seeded drafts drive the table targets through `useTableSelection` (§3.5), so SSR sees the
  *   Place shortcuts, the Guild Hall chooser, kiln targets, pending chips and Order targets.
  */
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { KILNS, ORDERS, ORDER_CLARIFICATIONS, SHAPES, TECHS, guildInspectionOptions, guildOptions, legalCommands, placementOptions, settersMarkOptions } from "../../../../src/game/index.ts";
+import { ROOT } from "../../support/glossary.ts";
+import { KILNS, ORDERS, ORDER_CLARIFICATIONS, SHAPES, TECHS, guildInspectionOptions, guildOptions, legalCommands, placementOptions, settersMarkOptions, shortTextSegments } from "../../../../src/game/index.ts";
 import type { AuthoritativeCommand, ClarificationDefinition, KilnId, KilnSpaceId, LocationId, OrderId, TechDiscipline, TechId } from "../../../../src/game/index.ts";
 import { WINDOWS } from "../../../../src/app/decision/windows.ts";
 import { workDraft } from "../../../../src/app/decision/work/workDraft.ts";
@@ -33,6 +37,7 @@ import { FixtureGameSource } from "../../../../src/app/session/fixtureSource.ts"
 import { allFixtures, fixture, fixtureSource } from "../support/fixtures.ts";
 import { disciplineName, kilnText, locationName, techText } from "../../../../src/app/i18n/content.ts";
 import { createTranslator } from "../../../../src/app/i18n/translator.ts";
+import { RulesDetail } from "../../../../src/app/rules/RulesDetail.tsx";
 import { renderComponent, renderWindow } from "../support/render.tsx";
 import { decode, panel, panels, textOf } from "../table/markup.ts";
 
@@ -125,6 +130,35 @@ function optionCard(html: string, name: string, value: string): string {
 /** "3 Coins", "1 Coin". */
 const coinsEn = (n: number) => `${n} ${n === 1 ? "Coin" : "Coins"}`;
 
+/** React's text escaping, for comparing markup with content strings. */
+const escapeHtml = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#x27;");
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** One Tech tile of the Guild inspection (`TechOption`: its label and its reason), by Tech. */
+function techTile(html: string, techId: string): string {
+  const tile = html.split(/(?=<div class="tech tech--option)/).find((part) => part.startsWith('<div class="tech tech--option') && part.includes(`name="take" value="${techId}"`));
+  if (tile === undefined) throw new Error(`no Tech tile ${techId}`);
+  return tile.split("</fieldset>")[0] ?? tile;
+}
+
+/** The markup of the element with this id (a `<span>` or `<p>` without nested elements of its kind). */
+function elementById(html: string, id: string): string {
+  const match = new RegExp(`<(span|p) id="${escapeRegExp(id)}"[^>]*>([\\s\\S]*?)</\\1>`).exec(html);
+  if (match === null) throw new Error(`no element #${id}`);
+  return match[2]!;
+}
+
+const textById = (html: string, id: string) => textOf(elementById(html, id));
+
+/** A stylesheet's style rules (innermost blocks, comments removed): selector list and declarations. */
+function cssRules(css: string): Array<{ selectors: string[]; declarations: Record<string, string> }> {
+  const bare = css.replace(/\/\*[\s\S]*?\*\//g, "");
+  return [...bare.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((match) => ({
+    selectors: match[1]!.split(",").map((selector) => selector.trim().replace(/\s+/g, " ")),
+    declarations: Object.fromEntries([...match[2]!.matchAll(/([-\w]+)\s*:\s*([^;]+);/g)].map((declaration) => [declaration[1]!, declaration[2]!.trim()])),
+  }));
+}
+
 /** The first canonical legal command of a type for a fixture's view. */
 function commandOf(id: string, type: AuthoritativeCommand["type"], nth = 0): AuthoritativeCommand {
   const command = legalCommands(fixture(id).playerView, { mode: "canonical" }).filter((candidate) => candidate.type === type)[nth];
@@ -203,7 +237,7 @@ describe("titles, alternatives and the test-driver contract", () => {
     expect(alt(zh(id))).not.toBeNull();
   });
 
-  it("work before the action: the pane lists no worker or location, only the hint to place on the table (owner review, 2026-10-17)", () => {
+  it("work before the action: the pane lists no worker or location, and is hidden until the table chooses a placement (owner review, 2026-10-17)", () => {
     const html = en("m1_work_phase_r2_3p");
     expect(heading(html)).toBe("Place a worker");
     expect(heading(zh("m1_work_phase_r2_3p"))).toBe("派工");
@@ -212,12 +246,9 @@ describe("titles, alternatives and the test-driver contract", () => {
     expect(valuesOf(html, "locationId")).toEqual([]);
     expect(html).not.toContain("b4-unavailable");
     expect(perceivable(html)).not.toMatch(/Unavailable \(\d\)|Full rules/);
-    expect(html).toContain('data-b4="place-hint"');
-    expect(perceivable(html)).toContain("Place a worker on an action space");
-    // The way to the table on phones (and to the viewer's own personal spaces).
-    expect(html).toMatch(/data-goto="table"[^>]*>Go to the Central Action Board</);
-    expect(html).toMatch(/data-goto="workshop"[^>]*>Go to your workshop</);
-    expect(perceivable(zh("m1_work_phase_r2_3p"))).toContain("前往中央行动板");
+    // Hidden (hidden_pane.test.tsx): no "Go to…" hint any more.
+    expect(html).toMatch(/<aside class="pane"[^>]*hidden=""/);
+    expect(html).not.toMatch(/data-b4="place-hint"|data-goto="table"|data-goto="workshop"/);
     expect(alt(html)).toBeNull();
     expect(summary(html)).toBe("Place a worker on an open action space.");
   });
@@ -253,8 +284,37 @@ describe("titles, alternatives and the test-driver contract", () => {
   });
 
   it("work before the action: Imperial Priority and Canal Barge may come first", () => {
-    const html = en(DING);
-    expect(valuesOf(html, "mode")).toEqual(["place", "imperial_priority", "canal_barge"]);
+    // Placing a worker is one of the step's choices only while a placement is chosen (owner
+    // review, 2026-10-17): nothing chosen hides the pane, and choosing it from an open ability
+    // would hide the pane under the player's arrow keys.
+    expect(valuesOf(en(DING), "mode")).toEqual(["imperial_priority", "canal_barge"]);
+    expect(valuesOf(en(DING, placedDraft(DING, "canal_wharf", "shifu")), "mode")).toEqual(["place", "imperial_priority", "canal_barge"]);
+    expect(en(DING)).not.toContain('data-b4="back-to-placing"');
+    const view = fixture(DING).playerView;
+    const model = buildGameModel(view, []);
+    const engine = engineViewOf(view);
+    const ability = workDraft.reduce(workDraft.initial(model, engine), { type: "mode", mode: "imperial_priority" }, model, engine);
+    expect(en(DING, ability)).toMatch(/<button[^>]*data-b4="back-to-placing"[^>]*>Back to placing a worker<\/button>/);
+    expect(zh(DING, ability)).toMatch(/data-b4="back-to-placing"[^>]*>返回派工</);
+    // The heading follows what the pane shows: never "Place a worker" beside "Back to placing".
+    expect(heading(en(DING, ability))).toBe("Before your worker action");
+    expect(heading(zh(DING, ability))).toBe("工人行动之前");
+    expect(heading(en(DING, placedDraft(DING, "canal_wharf", "shifu")))).toBe("Place a worker");
+  });
+
+  it("work before the action: the only ability that may come first, opened with nothing placed, has no lone radio and names the heading", () => {
+    const view = fixture(RICH).playerView;
+    const model = buildGameModel(view, []);
+    const engine = engineViewOf(view);
+    const barge = workDraft.reduce(workDraft.initial(model, engine), { type: "mode", mode: "canal_barge" }, model, engine);
+    expect(valuesOf(en(RICH), "mode")).toEqual([]);
+    expect(valuesOf(en(RICH, barge), "mode")).toEqual([]);
+    expect(perceivable(en(RICH, barge))).not.toContain("This step");
+    expect(perceivable(zh(RICH, barge))).not.toContain("此步");
+    expect(heading(en(RICH, barge))).toBe("Canal Barge");
+    expect(heading(zh(RICH, barge))).toBe("漕船");
+    expect(en(RICH, barge)).toContain('data-b4="back-to-placing"');
+    expect(valuesOf(en(RICH, placedDraft(RICH, "canal_wharf", "shifu")), "mode")).toEqual(["place", "canal_barge"]);
   });
 
   it("work after the action: End turn is the alternative and a mode choice", () => {
@@ -328,10 +388,12 @@ describe("titles, alternatives and the test-driver contract", () => {
     expect(valuesOf(html, "dingExtra")).toEqual([]);
   });
 
-  it("Guild inspection: take one Tech, then a Move up / Move down bottom order, only you", () => {
+  it("Guild inspection: take one Tech, then a Move up / Move down bottom order; no Only you can see pill (owner review, 2026-10-17)", () => {
     const html = en("m12_guild_shifu_inspection");
     expect(heading(html)).toBe("Take a Tech");
-    expect(perceivable(html)).toContain("Only you can see");
+    expect(perceivable(html)).not.toContain("Only you can see");
+    expect(html).not.toContain("kit-chip--private");
+    expect(perceivable(zh("m12_guild_shifu_inspection"))).not.toContain("仅你可见");
     expect(perceivable(html)).toContain("Only you know this order.");
     expect(html).toMatch(/aria-label="Move [^"]+ (up|down)"/);
   });
@@ -465,41 +527,97 @@ describe("rules details (D10)", () => {
     }
   });
 
-  it("every Tech tile in the Guild inspection: discipline and the Shifu price on the option, only the full ability and clarifications in the panel", () => {
-    const id = "m12_guild_shifu_inspection";
-    const html = en(id);
-    const options = guildInspectionOptions(fixture(id).playerView);
-    expect(options).not.toBeNull();
-    const all = [...options!.inspected, ...options!.faceUp];
-    expect(all.length).toBeGreaterThan(1);
-    expect(rulesPanels(html, "tech")).toHaveLength(all.length);
-    for (const option of all) {
-      const label = optionCard(html, "take", option.techId).split("</label>")[0] ?? "";
-      expect(text(/class="kit-opt-desc"[^>]*>(.*?)<\/span>/.exec(label)?.[1] ?? "")).toBe(disciplineName(option.discipline, "en"));
-      // The Shifu's −1 Coin (minimum 0), printed cost first when it differs.
-      expect(option.price).toBe(Math.max(0, option.printedCost - 1));
-      const price = option.price === option.printedCost ? coinsEn(option.price) : `${coinsEn(option.printedCost)} → ${coinsEn(option.price)}`;
-      expect(text(/<span class="kit-opt-meta">(.*?)<\/span>/.exec(label)?.[1] ?? "")).toBe(price);
-      const body = panel(html, `Full rules: ${techText(option.techId, "en").name}`);
-      expect(textOf(body)).toContain(decode(techText(option.techId, "en").ability));
-      expect(textOf(body)).not.toMatch(/You pay|1 VP when gained/);
-      expectRuleAndClarifications(body, TECHS[option.techId].clarifications, "en");
+  it("every Tech in the Guild inspection is a tile as printed: a radio named by its name and Shifu price, described by its discipline and short text, opening no rules details (owner review, 2026-10-17)", () => {
+    for (const id of ["m12_guild_shifu_inspection", "w-guild-hall-shifu-inspection"]) {
+      const options = guildInspectionOptions(fixture(id).playerView);
+      expect(options, id).not.toBeNull();
+      const all = [...options!.inspected, ...options!.faceUp];
+      expect(all.length, id).toBeGreaterThan(1);
+      for (const locale of ["en", "zh-CN"] as const) {
+        const pane = locale === "en" ? en(id) : zh(id);
+        // The inspection form itself (the pane's header and ConfirmBar aside).
+        const html = pane.slice(pane.indexOf('data-b4="guild-inspection"'));
+        expect(html.length, id).toBeLessThan(pane.length);
+        // No rules details and no "Full rules" button anywhere in the inspection.
+        expect(rulesPanels(html), `${id} ${locale}`).toEqual([]);
+        expect(html).not.toContain("kit-detail");
+        expect(perceivable(html)).not.toContain(locale === "en" ? "Full rules" : "完整规则");
+        // The inspected Techs first, then the face-up ones, each one radio of the take group.
+        expect(valuesOf(html, "take")).toEqual(all.map((option) => option.techId));
+        for (const option of all) {
+          const what = `${id} ${locale} ${option.techId}`;
+          const tile = techTile(html, option.techId);
+          const input = inputs(tile)[0]!;
+          expect(input, what).toMatchObject({ class: "tech-radio", type: "radio", name: "take", value: option.techId });
+          expect(input["aria-disabled"], what).toBe(option.legal ? undefined : "true");
+          // The radio mark sits beside the face, outside its title row, so that row can wrap the
+          // price under the name (CSS checked below) without leaving the mark alone on a line.
+          expect(tile, what).toMatch(/^<div [^>]*><label class="tech-pick"><input [^>]*><span class="tech-mark" aria-hidden="true"><\/span><span class="tech-face"><span class="tech-t1"><span id="[^"]+" class="tech-name">/);
+          expect(/^<div class="([^"]*)"/.exec(tile)?.[1], what).toBe(option.legal ? "tech tech--option" : "tech tech--option tech--unavailable");
+          // Named by the Tech's name and its price: the Shifu's −1 Coin (minimum 0), printed cost first.
+          const [nameId, priceId, ...restNamed] = (input["aria-labelledby"] ?? "").split(" ");
+          expect(restNamed, what).toEqual([]);
+          expect(textById(tile, nameId!), what).toBe(techText(option.techId, locale).name);
+          expect(option.price).toBe(Math.max(0, option.printedCost - 1));
+          if (locale === "en") {
+            expect(textById(tile, priceId!), what).toBe(option.price === option.printedCost ? coinsEn(option.price) : `${coinsEn(option.printedCost)} → ${coinsEn(option.price)}`);
+          } else {
+            expect(textById(tile, priceId!), what).toBe(option.price === option.printedCost ? `${option.price}铜钱` : `${option.printedCost}铜钱 → ${option.price}铜钱`);
+          }
+          // Described by the engine's reason (when it cannot be taken), the discipline and the short text.
+          const described = (input["aria-describedby"] ?? "").split(" ");
+          const [discId, shortId] = option.legal ? described : described.slice(1);
+          expect(described, what).toHaveLength(option.legal ? 2 : 3);
+          if (!option.legal) {
+            expect(tile, what).toMatch(new RegExp(`<p id="${escapeRegExp(described[0]!)}" class="tech-why">`));
+            if (locale === "en") expect(textById(tile, described[0]!), what).toMatch(/You already own|Not enough|at most/);
+          } else {
+            expect(tile, what).not.toContain("tech-why");
+          }
+          expect(textById(tile, discId!), what).toBe(disciplineName(option.discipline, locale));
+          const short = techText(option.techId, locale).short;
+          expect(textOf(elementById(tile, shortId!)), what).toBe(textOf(short));
+          const bold = shortTextSegments(short).filter((segment) => segment.emphasis);
+          expect(bold.length, what).toBeGreaterThan(0);
+          for (const segment of bold) expect(elementById(tile, shortId!), what).toContain(`<strong>${escapeHtml(segment.text)}</strong>`);
+        }
+      }
     }
   });
 
-  it("a Form & Decorate or Glazing & Loading Tech's rules details keep D7 wording and carry no \"Adds\" fact", () => {
-    const html = en("w-guild-hall-shifu-inspection");
-    const zhHtml = zh("w-guild-hall-shifu-inspection");
+  it("a Tech tile keeps its name readable and its timing clause bold: the title row wraps the price under the name, and a greyed tile keeps the short text's weights (review, 2026-10-17)", () => {
+    const css = cssRules(readFileSync(join(ROOT, "src/app/table/TechCard.css"), "utf8"));
+    const declared = (selector: string, property: string) => css.filter((rule) => rule.selectors.includes(selector) && rule.declarations[property] !== undefined).map((rule) => rule.declarations[property]);
+    // 200% text on a phone: the price no longer squeezes the name to a few letters per line.
+    expect(declared(".tech-t1", "flex-wrap")).toEqual(["wrap"]);
+    expect(declared(".tech-name", "flex")).toEqual([expect.stringMatching(/^1 1 \d+(\.\d+)?em$/)]);
+    expect(declared(".tech-name", "min-width")).toEqual(["0"]);
+    expect(declared(".tech-cost", "white-space")).toEqual(["nowrap"]);
+    // The timing clause is bold on every tile, greyed (unavailable) ones included.
+    expect(declared(".tech-short strong", "font-weight")).toEqual(["700"]);
+    for (const selector of [".tech--unavailable .tech-short", ".tech--unavailable .tech-short strong"]) {
+      expect(declared(selector, "font-weight"), selector).toEqual([]);
+      expect(declared(selector, "color"), selector).toEqual(["var(--ink-2)"]);
+    }
+  });
+
+  it("a Form & Decorate or Glazing & Loading Tech keeps D7 wording on its inspection tile and in its rules details, with no \"Adds\" fact", () => {
+    const id = "w-guild-hall-shifu-inspection";
+    const html = en(id);
+    const zhHtml = zh(id);
     expect(TECHS.T16.unlocks).toBe("form_decorate");
     expect(TECHS.T10.unlocks).toBe("glaze_load");
     expect(TECHS.T13.unlocks).toBeNull();
+    const details = (techId: TechId, locale: "en" | "zh-CN") => renderComponent(fixtureSource(id), <RulesDetail subject={{ kind: "tech", id: techId }} />, { locale });
     for (const techId of ["T16", "T10", "T13"] as TechId[]) {
-      const body = panel(html, `Full rules: ${techText(techId, "en").name}`);
+      expect(textOf(techTile(html, techId))).not.toMatch(LOCK_EN);
+      expect(textOf(techTile(zhHtml, techId))).not.toMatch(LOCK_ZH);
+      const body = panel(details(techId, "en"), `Full rules: ${techText(techId, "en").name}`);
       expect(textOf(body)).toContain(decode(techText(techId, "en").ability));
       expect(body).not.toContain("<dt>Adds</dt>");
       expect(textOf(body)).not.toMatch(LOCK_EN);
       expectRuleAndClarifications(body, TECHS[techId].clarifications, "en");
-      const zhBody = panel(zhHtml, `完整规则：${techText(techId, "zh-CN").name}`);
+      const zhBody = panel(details(techId, "zh-CN"), `完整规则：${techText(techId, "zh-CN").name}`);
       expect(zhBody).not.toContain("<dt>添设</dt>");
       expect(textOf(zhBody)).not.toMatch(LOCK_ZH);
       expectRuleAndClarifications(zhBody, TECHS[techId].clarifications, "zh-CN");
@@ -523,12 +641,13 @@ describe("rules details (D10)", () => {
   });
 
   it("the Full rules button is named for its component and sits outside every option label (§8.1)", () => {
-    const id = "m12_guild_shifu_inspection";
+    const id = "m16_colour_samples";
     const html = en(id);
-    const first = guildInspectionOptions(fixture(id).playerView)!.inspected[0]!;
-    expect(html).toContain(`aria-label="Full rules: ${techText(first.techId, "en").name.replace(/&/g, "&amp;").replace(/'/g, "&#x27;")}"`);
+    const first = valuesOf(html, "orderId")[0];
+    expect(first).toBeDefined();
+    expect(html).toContain(`aria-label="Full rules: Order ${first}"`);
     expect(html).not.toMatch(/aria-label="Rules: /);
-    expect(zh(id)).toContain(`aria-label="完整规则：${techText(first.techId, "zh-CN").name}"`);
+    expect(zh(id)).toContain(`aria-label="完整规则：委托${first}"`);
     for (const label of html.split("<label").slice(1).map((part) => part.split("</label>")[0] ?? "")) expect(label).not.toContain("kit-detail-trigger");
   });
 });

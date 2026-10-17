@@ -4,20 +4,28 @@
  * The `work` window. Workers are placed **on the table** (owner review, 2026-10-17): the Place
  * shortcuts of the location cards and of the viewer's own Form & Decorate and Glaze & Load
  * spaces (`useTableSelection().placeTargets`, the work window's table adapter) set the worker and
- * the location of this window's draft. The pane itself lists no workers and no locations. Before
- * the worker action it shows:
+ * the location of this window's draft. The pane itself lists no workers and no locations, and it
+ * is **hidden** until a placement is chosen (owner review item 2, 2026-10-17: `workPane` in
+ * `windows.work.ts`; an ability that may come first opens it from above the world,
+ * `PaneOpeners`). Before the worker action it shows:
  * 1. how many workers are left (the Work Phase cannot be passed);
- * 2. what this step does, when Imperial Priority or Canal Barge may come first;
- * 3. with nothing chosen yet, a short hint to place a worker on an action space, with buttons that
- *    go to the Central Action Board and to the viewer's own workshop (phones switch section) and
- *    move focus to that section's heading;
- * 4. once a placement is chosen, its summary (worker, location, its one-line effect, the space it
- *    takes) and the location's sub-editor, a labelled region (`.b4-sub-region`) holding the
- *    choices that location needs (the Materials Yard split, Form & Decorate, Glaze & Load, the
- *    Commission Market, the Guild Hall — whose Tech is chosen on the Tech display —, the
- *    Magistrate's Hall…).
- * The ConfirmBar follows (DecisionPane). After the worker action it shows `ActionWindow`
- * (Imperial Priority, Canal Barge, End turn).
+ * 2. what this step does, when Imperial Priority or Canal Barge may come first
+ *    (`options.stepChoices`): the abilities, and Place a worker only while a placement is chosen,
+ *    so moving through the radios (arrow keys select as they move) never hides the pane; no
+ *    choice at all when it would be a lone radio (one ability opened with nothing placed: the
+ *    pane's heading names it, `options.heading`). With an ability open and nothing placed, "Back
+ *    to placing" (`data-b4="back-to-placing"`) is a separate button: it hides the pane, and focus
+ *    goes back to the opener the player used;
+ * 3. the chosen placement's summary (worker, location, its one-line effect, the space it takes)
+ *    and the location's sub-editor, a labelled region (`.b4-sub-region`) holding the choices that
+ *    location needs (the Materials Yard split, Form & Decorate, Glaze & Load, the Commission
+ *    Market, the Guild Hall — whose Tech is chosen on the Tech display —, the Magistrate's
+ *    Hall…), or the chosen ability's form.
+ * With nothing chosen the pane is hidden, so this form renders no hint and no way to the table
+ * (the bar above the world says what to do; a pending server error keeps the pane up, and its
+ * ConfirmBar summary then says to place a worker on the table).
+ * The ConfirmBar follows (DecisionPane): Clear goes back to placing, which hides the pane again.
+ * After the worker action it shows `ActionWindow` (Imperial Priority, Canal Barge, End turn).
  *
  * Everything renders from `workDraft.options()`; the component filters, sums and checks nothing.
  * The location opens no rules details here (owner review, 2026-10-17).
@@ -29,11 +37,7 @@ import type { Translator } from "../../i18n/translator.ts";
 import { Button } from "../../kit/Button.tsx";
 import { OptionCard } from "../../kit/OptionCard.tsx";
 import { OptionGroup } from "../../kit/OptionGroup.tsx";
-import { useDraft, useEngineView, useGame, useLayoutMode, useUi } from "../../state/hooks.ts";
-import { isPhone } from "../../state/layoutMode.ts";
-import { focusAfterFrame } from "../../state/tableSelection.ts";
-import type { WorldSectionId } from "../../state/uiStore.ts";
-import { sectionHeadingId } from "../../shell/sections.ts";
+import { useDraft, useEngineView, useGame } from "../../state/hooks.ts";
 import { ActionWindow } from "./ActionWindow.tsx";
 import { CanalWharf } from "./locations/CanalWharf.tsx";
 import { CommissionMarket } from "./locations/CommissionMarket.tsx";
@@ -86,52 +90,6 @@ function SubEditor({ active, dispatch }: { active: ActiveLocation; dispatch: (ac
   }
 }
 
-/**
- * After the view has gone to a world section, focuses that section's heading (`tabIndex={-1}`), so
- * keyboard and screen-reader users land there too and Tab reaches its Place shortcuts next: the
- * pane comes after the world in the page, so focus left in the pane would leave them behind.
- * Phones scroll the heading into view; wider screens let `jumpTo`'s smooth scroll run.
- */
-function focusSection(section: WorldSectionId, phone: boolean): void {
-  focusAfterFrame(() => document.getElementById(sectionHeadingId(section)), { scroll: phone });
-}
-
-/** Nothing chosen yet: place a worker on the table; the way there (scroll, or the phone section). */
-function PlaceHint() {
-  const t = useT();
-  const ui = useUi();
-  const phone = isPhone(useLayoutMode());
-  return (
-    <div className="b4-place-hint" data-b4="place-hint">
-      <p className="b4-place-hint-text">{t("work.work.placeHint")}</p>
-      <div className="b4-row">
-        <Button
-          size="sm"
-          data-goto="table"
-          onClick={() => {
-            // On phones the sheet steps aside so the table is not covered.
-            if (phone) ui.setSheet("peek");
-            ui.jumpTo("table");
-            focusSection("table", phone);
-          }}
-        >
-          {t("work.work.goTable")}
-        </Button>
-        <Button
-          size="sm"
-          data-goto="workshop"
-          onClick={() => {
-            ui.showBoard(null);
-            focusSection("workshops", phone);
-          }}
-        >
-          {t("work.work.goWorkshop")}
-        </Button>
-      </div>
-    </div>
-  );
-}
-
 /** The chosen placement: worker, location, effect and space, then the location's choices. */
 function ChosenPlacement({ active, dispatch }: { active: ActiveLocation; dispatch: (action: WorkAction) => void }) {
   const t = useT();
@@ -161,21 +119,21 @@ export function WorkTurn() {
   const [draft, dispatch] = useDraft<WorkDraft, WorkAction>();
   const options = workDraft.options(draft, model, engine);
   if (options.step === "after_action") return <ActionWindow source="after_action" />;
-  const modes = options.modes;
+  const choices = options.stepChoices;
   return (
     <div className="b4-form" data-b4="work">
       <p className="b4-prompt">{t("work.work.prompt", { n: options.workersLeft, total: RULE_NUMBERS.workers })}</p>
-      {modes.length > 1 ? (
+      {choices.length > 0 ? (
         <OptionGroup
           legend={t("work.work.step.mode")}
           name="mode"
           value={draft.mode}
           onChange={(value) => {
-            const mode = modes.find((candidate) => candidate.mode === value)?.mode;
+            const mode = choices.find((candidate) => candidate.mode === value)?.mode;
             if (mode !== undefined) dispatch({ type: "mode", mode });
           }}
         >
-          {modes.map(({ mode }) => (
+          {choices.map(({ mode }) => (
             <OptionCard
               key={mode}
               value={mode}
@@ -185,8 +143,15 @@ export function WorkTurn() {
           ))}
         </OptionGroup>
       ) : null}
+      {options.backToPlacing ? (
+        <div className="b4-row">
+          <Button size="sm" data-b4="back-to-placing" onClick={() => dispatch({ type: "mode", mode: "place" })}>
+            {t("work.work.backToPlacing")}
+          </Button>
+        </div>
+      ) : null}
       {draft.mode === "place" ? (
-        options.active === null ? <PlaceHint /> : <ChosenPlacement active={options.active} dispatch={dispatch} />
+        options.active === null ? null : <ChosenPlacement active={options.active} dispatch={dispatch} />
       ) : (
         <ActionWindow source="before_action" />
       )}

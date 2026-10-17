@@ -6,7 +6,9 @@
  * - Someone else's private look at Orders, which that block used to say, is still said where it
  *   already was: the decision pane's waiting note ("Zhao is looking at 3 cards in private"); the
  *   Orders section says nothing of it and shows no card of it.
- * - The full screen renders the turn-toast host between the world and the pane, empty at mount.
+ * - The full screen renders the turn-toast host after the top bar and banner and before the world
+ *   (where the toast is drawn: the world's top right; owner review 2026-10-17, item 3), empty at
+ *   mount.
  */
 import { describe, expect, it } from "vitest";
 import { createTranslator } from "../../../../src/app/i18n/translator.ts";
@@ -87,15 +89,15 @@ describe("someone else's private look", () => {
 });
 
 describe("the turn-toast host", () => {
-  it("sits between the world and the pane, empty when the screen opens", () => {
+  it("sits after the top bar and banner and before the world, empty when the screen opens", () => {
     const html = renderScreen(fixtureSource("m1_work_phase_r2_3p"));
-    const world = html.indexOf('<main class="shell-world"');
+    const banner = html.indexOf('<div class="shell-banner"');
     const toasts = html.indexOf('<div class="shell-toasts"></div>');
-    const pane = html.indexOf('<div class="shell-pane"');
-    expect(world).toBeGreaterThan(0);
-    expect(toasts).toBeGreaterThan(world);
-    expect(pane).toBeGreaterThan(toasts);
-    expect(html.slice(world, toasts)).toContain("</main>");
+    const world = html.indexOf('<main class="shell-world"');
+    expect(banner).toBeGreaterThan(html.indexOf("</header>"));
+    expect(toasts).toBeGreaterThan(banner);
+    expect(world).toBeGreaterThan(toasts);
+    expect(html.slice(toasts, world)).toBe('<div class="shell-toasts"></div>');
     expect(html).not.toContain("turn-toast\"");
   });
 });

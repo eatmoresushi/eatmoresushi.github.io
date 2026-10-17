@@ -2,8 +2,9 @@
  * HandRow (UI_V1.6.1_ARCHITECTURE §4.2). Owner: B2 (table and boards).
  * Source: wireframe `handRow`: `model.hand` with completable, chosen and discard states.
  *
- * The viewer's own Orders (private: only the authenticated owner's view carries them), marked
- * "Only you can see", with the held count against the hand limit (`handLimits`). Over the limit,
+ * The viewer's own Orders (private: only the authenticated owner's view carries them), with the
+ * held count against the hand limit (`handLimits`). It carries no "Only you can see" pill (owner
+ * review, 2026-10-17). Over the limit,
  * it says whether Cleanup will trim (`trimDue`) or not (the final round skips the trim); the
  * warning is left out while the trim window itself is open. Each card's target state (Order
  * Phase completable / chosen, hand-trim discard) comes from `orderTargets`, keyed by OrderId.
@@ -30,7 +31,6 @@ export function HandRow() {
       title={t("table.hand.title")}
       meta={
         <>
-          <Chip tone="private">{t("common.status.onlyYou")}</Chip>
           <span className="num">{t("table.hand.held", { n: held, limit })}</span>
           {over === "trim" ? <Chip tone="warn">{t("table.hand.overLimit")}</Chip> : null}
           {over === "final" ? <Chip>{t("table.hand.noFinalTrim")}</Chip> : null}

@@ -7,7 +7,9 @@
  * from its draft model's `options()`, beside the real table components a work turn is played on
  * (the location cards, the viewer's own Form & Decorate and Glaze & Load spaces and the Tech
  * display: since the owner review of 2026-10-17 workers are placed only from their Place
- * shortcuts, and the Guild Hall's Tech or deck is chosen on the Tech display); the autopilot
+ * shortcuts, and the Guild Hall's Tech or deck is chosen on the Tech display; the pane is hidden
+ * until a placement is chosen, and an ability that may come first is opened from the hidden
+ * pane's openers, `PaneOpeners`); the autopilot
  * (`e2e/support/autopilot.ts`, shared with `e2e/full_game.spec.ts`) makes seeded choices among
  * the enabled native inputs and buttons the form shows and those table targets; ConfirmBar
  * builds the command and runs the local check (`validateAction`); the harness then applies it to
@@ -31,6 +33,7 @@ import { SeededRandom, createGame } from "../../../src/game/index.ts";
 import type { AuthoritativeCommand, PlayerId, PlayerView } from "../../../src/game/index.ts";
 import { PersonalSpaces } from "../../../src/app/boards/PersonalSpaces.tsx";
 import { DecisionPane } from "../../../src/app/decision/DecisionPane.tsx";
+import { PaneOpeners } from "../../../src/app/decision/PaneOpeners.tsx";
 import { WINDOWS } from "../../../src/app/decision/windows.ts";
 import { I18nProvider } from "../../../src/app/i18n/I18nProvider.tsx";
 import { fixtureSnapshot } from "../../../src/app/session/fixtureSource.ts";
@@ -153,6 +156,8 @@ function abilitiesUsed(report: GameReport): Set<string> {
  */
 const ABILITY_PREFERENCES: readonly string[] = [
   'input[name="kilnId"][value="GE"]',
+  // Before the worker action the pane is hidden: Canal Barge is opened from above the world.
+  '[data-pane-opener="canal_barge"]',
   'input[name="mode"][value="canal_barge"]',
   'input[name="afterQuality"][value^="protective_saggars:"]',
   'input[name="afterQuality"][value^="ge_crackle:"]',
@@ -172,8 +177,9 @@ function preferredMove(preferences: readonly string[], tried: Set<string>): HTML
   if (form === null) return null;
   for (const selector of preferences) {
     if (tried.has(selector)) continue;
-    // Form inputs inside the pane; table targets (`data-act`) wherever the table shows them.
-    const scope: ParentNode = selector.startsWith("[data-act") ? container : form;
+    // Form inputs inside the pane; table targets (`data-act`) and the hidden pane's openers
+    // (`data-pane-opener`) wherever they are shown.
+    const scope: ParentNode = selector.startsWith("[data-act") || selector.startsWith("[data-pane-opener") ? container : form;
     const element = Array.from(scope.querySelectorAll<HTMLInputElement | HTMLButtonElement>(selector)).find(
       (input) =>
         input.getAttribute("aria-disabled") !== "true" &&
@@ -203,6 +209,7 @@ async function playThroughForms(players: 2 | 3 | 4, seed: number, preferences: r
     root.render(
       <I18nProvider defaultLocale={seed % 2 === 0 ? "en" : "zh-CN"} strict>
         <GameProvider source={source} registry={WINDOWS} drafts={new DraftStore()} ui={new UiStore({ layout })} layout={layout} devTools={false}>
+          <PaneOpeners />
           <CentralBoard />
           <OwnSpaces />
           <TechDisplay />
@@ -307,10 +314,11 @@ describe("full games played only through the decision forms (§9.4)", () => {
 });
 
 describe("steered games reach the optional abilities through their forms", () => {
-  // Seeds found by playing steered games (3 and 4 players, seeds 5000–5059, after workers moved to
-  // the table on 2026-10-17): together they use all four.
+  // Seeds found by playing steered games (3 and 4 players, seeds 5000–5059, after the work turn's
+  // pane was hidden until a placement is chosen, 2026-10-17): together they use all four.
   const steered = [
-    [4, 5_044],
+    [4, 5_022],
+    [4, 5_049],
     [3, 5_039],
   ] as const;
   const used = new Set<string>();

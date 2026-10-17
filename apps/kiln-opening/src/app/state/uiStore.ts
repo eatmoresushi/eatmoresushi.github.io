@@ -121,8 +121,9 @@ export interface UiEffects {
 }
 
 /**
- * The browser effects: scroll `#sec-<id>` to the top of the world's scroll area (below the sticky
- * jump bar, via the section's `scroll-margin-top`); apply and store the theme. Only the world
+ * The browser effects: scroll `#sec-<id>` to the top of the world's scroll area (with the room of
+ * the section's `scroll-margin-top`; the jump bar is a row of its own above the world, `GameShell`);
+ * apply and store the theme. Only the world
  * scrolls: `scrollIntoView` would also scroll every other ancestor, the page included.
  */
 export const BROWSER_UI_EFFECTS: UiEffects = {

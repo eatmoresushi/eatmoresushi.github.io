@@ -1,39 +1,52 @@
 /**
- * Turn toasts, the pure part (owner review 2026-10-17, item 7; B1): `shell/turnToasts.ts`.
+ * Turn toasts, the pure part (owner review 2026-10-17, item 7, and item 3: top right, one at a
+ * time; B1): `shell/turnToasts.ts`.
  *
- * - the log present at mount is history; only newer entries make turns;
+ * - the log present at mount is history; only newer entries make turns; so is what is played
+ *   while the viewer is away (the page hidden, offline) and what the update bringing them back
+ *   holds (`skipTurns`); in live play, entries that come after a view already showing them are
+ *   news, and a gap in the log (later entries first) is waited for, so its turns play in order
+ *   (passed after `GAP_WAIT_MS`; a gap of history is not waited for);
  * - one turn per other player's turn: the viewer's own commands and turn markers end it, table
  *   events and other players' events are no lines, an Order reward's Coins fold into the
  *   completion; a turn spans several updates under one key;
  * - lines are the game log's public words, never an own secret;
- * - the stack keeps one toast per player holding every turn of theirs that one update brought
- *   (a computer batch's Order turn and next Work turn alike), replaces it when a later update
- *   brings them a new turn, keeps it when the update only continues its last turn, closes each
- *   `TOAST_MS` after it changed, pauses and resumes with the time left, and dismisses one;
- * - a toast shows its newest `MAX_TOAST_TURNS` turns and counts the earlier ones;
- * - the stylesheet places the stack in the world's cell, makes the list the toasts' offset parent,
- *   and animates only without reduced motion, never with a slide that would overflow the list.
+ * - the queue shows one turn at a time in the order they were played (the owner's 3-player
+ *   example: Computer 1's turn, then Computer 2's), each for `TOAST_MS`; turns that arrive while
+ *   one shows wait behind it, however many (no turn is ever dropped: a 4-player round's end
+ *   brings ten turns and more in one batch); a turn that grows is updated in its place (the one
+ *   showing gets its time again), one that grows after its toast closed joins the queue again;
+ *   a hold (hover, focus, no room, the page hidden) pauses it with the time left, and may begin
+ *   before any turn waits; dismissing shows the next;
+ * - the stylesheet draws the jump bar as a row of its own above the world (no sticky overlay),
+ *   and the toast at the top of the world's cell, in a band the world gives up (at its right end
+ *   on desktop and tablet, across it on phones and in short landscape), so it is drawn over
+ *   nothing, with the room that keeps the table still added to the world's own top and bottom
+ *   room, and animates only without reduced motion.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { GameEvent, PlayerId, PublicGameEvent } from "../../../../src/game/index.ts";
+import { shell as shellCatalog } from "../../../../src/app/i18n/catalog/shell.ts";
 import { eventText, publicEventText } from "../../../../src/app/i18n/events.ts";
 import { createTranslator } from "../../../../src/app/i18n/translator.ts";
 import type { LogEntry } from "../../../../src/app/session/gameSource.ts";
-import { logCeramicView } from "../../../../src/app/shell/logCeramics.ts";
+import { ceramicLabel } from "../../../../src/app/i18n/ceramicLabel.ts";
+import { ceramicViewAsOf, logCeramicView } from "../../../../src/app/shell/logCeramics.ts";
 import {
+  GAP_WAIT_MS,
   MAX_TOAST_LINES,
-  MAX_TOAST_TURNS,
   NO_TOASTS,
   TOAST_MS,
   advanceTurns,
   isToastLine,
   nextDeadline,
+  showingToast,
+  skipTurns,
   startTurnTracker,
   toastLines,
   toastReducer,
-  toastTurns,
 } from "../../../../src/app/shell/turnToasts.ts";
 import type { ToastState, Turn } from "../../../../src/app/shell/turnToasts.ts";
 import { ROOT } from "../../support/glossary.ts";
@@ -160,6 +173,98 @@ describe("advanceTurns", () => {
     const log = entries(70, BASE + 1, viewer, [placed(viewer)]);
     expect(keysOf(advanceTurns(startTurnTracker([], BASE), log, null).turns)).toEqual([[viewer, ["WORKER_PLACED"]]]);
   });
+
+  it("skips what was played while the viewer was away, as a reload does, and ends the open turn", () => {
+    // Computer 1's turn starts while the viewer watches…
+    const watched = entries(80, BASE + 1, other, [turnStarted(other), placed(other)]);
+    const first = advanceTurns(startTurnTracker([], BASE), watched, viewer);
+    expect(keysOf(first.turns)).toEqual([[other, ["WORKER_PLACED"]]]);
+    expect(first.tracker.open?.key).toBe(81);
+    // …then the page is hidden: the rest of it and Computer 2's turn make no turn.
+    const away = [...watched, ...entries(82, BASE + 2, other, [coins(other, 2), turnEnded(other), turnStarted(third)]), ...entries(85, BASE + 3, third, [placed(third), turnEnded(third)])];
+    const skipped = skipTurns(first.tracker, away, BASE + 3);
+    expect(skipped).toEqual({ lastSequence: 86, sinceRevision: BASE + 3, open: null, gap: null });
+    expect(advanceTurns(skipped, away, viewer).turns).toEqual([]);
+    // What the update that brings the viewer back holds, up to its revision, is history too,
+    // even when it is read later; the turns after it are news again, each its own.
+    const back = [...away, ...entries(87, BASE + 4, other, [placed(other, "guild_hall")])];
+    const returned = skipTurns(skipped, away, BASE + 4);
+    expect(advanceTurns(returned, back, viewer).turns).toEqual([]);
+    const later = [...back, ...entries(88, BASE + 5, third, [turnStarted(third), placed(third, "guild_hall")])];
+    expect(keysOf(advanceTurns(returned, later, viewer).turns)).toEqual([[third, ["WORKER_PLACED"]]]);
+    // Never backwards: an empty log or an older revision keeps the tracker's place.
+    expect(skipTurns(skipped, [], BASE)).toEqual(skipped);
+  });
+
+  it("plays the entries that come after a view already showing them: in live play they are news", () => {
+    // A poll reads the records, then a newer head: the view is ahead of the log for a while.
+    const tracker = startTurnTracker([], BASE);
+    const watched = entries(90, BASE + 1, other, [turnStarted(other), placed(other)]);
+    const first = advanceTurns(tracker, watched, viewer, 0);
+    expect(keysOf(first.turns)).toEqual([[other, ["WORKER_PLACED"]]]);
+    // The rest of the batch arrives with the next poll: every turn in it plays, the open one grown.
+    const filled = [
+      ...watched,
+      ...entries(92, BASE + 2, other, [coins(other, 2), turnEnded(other), turnStarted(third)]),
+      ...entries(95, BASE + 3, third, [placed(third), turnEnded(third)]),
+    ];
+    const after = advanceTurns(first.tracker, filled, viewer, 0);
+    expect(keysOf(after.turns)).toEqual([
+      [other, ["WORKER_PLACED", "RESOURCES_CHANGED"]],
+      [third, ["WORKER_PLACED"]],
+    ]);
+    expect(after.turns[0]!.key).toBe(91);
+    expect(after.tracker.sinceRevision).toBe(BASE);
+  });
+
+  it("waits at a gap in the log, so the turns in it play in their place once they arrive", () => {
+    // Computer 1's turn begins; the view moves on to the viewer's turn before the rest arrives,
+    // and the viewer's own command comes first: a gap at 92–96.
+    const watched = entries(90, BASE + 1, other, [turnStarted(other), placed(other)]);
+    const first = advanceTurns(startTurnTracker([], BASE), watched, viewer, 1_000);
+    const own = entries(97, BASE + 4, viewer, [placed(viewer), turnEnded(viewer)]);
+    const waiting = advanceTurns(first.tracker, [...watched, ...own], viewer, 2_000);
+    expect(waiting.turns).toEqual([]);
+    expect(waiting.tracker.lastSequence).toBe(91);
+    expect(waiting.tracker.gap).toEqual({ sequence: 92, since: 2_000 });
+    // Still open a little later: it keeps waiting, from when it was first met.
+    expect(advanceTurns(waiting.tracker, [...watched, ...own], viewer, 5_000).tracker.gap).toEqual({ sequence: 92, since: 2_000 });
+    // The next read fills it: Computer 1's turn grows and Computer 2's plays, in turn order; the
+    // viewer's own move after them makes none, and Computer 1's next move is news again.
+    const filled = [
+      ...watched,
+      ...entries(92, BASE + 2, other, [coins(other, 2), turnEnded(other), turnStarted(third)]),
+      ...entries(95, BASE + 3, third, [placed(third), turnEnded(third)]),
+      ...own,
+      ...entries(99, BASE + 5, other, [contribution(other)]),
+    ];
+    const after = advanceTurns(waiting.tracker, filled, viewer, 6_000);
+    expect(keysOf(after.turns)).toEqual([
+      [other, ["WORKER_PLACED", "RESOURCES_CHANGED"]],
+      [third, ["WORKER_PLACED"]],
+      [other, ["CONTRIBUTION_SUBMITTED"]],
+    ]);
+    expect(after.tracker).toEqual({ lastSequence: 99, sinceRevision: BASE, open: { key: 99, playerId: other, entries: [filled[filled.length - 1]] }, gap: null });
+  });
+
+  it("passes a gap still open after GAP_WAIT_MS, ending the turn being collected; a gap of history is not waited for", () => {
+    const watched = entries(90, BASE + 1, other, [turnStarted(other), placed(other)]);
+    const first = advanceTurns(startTurnTracker([], BASE), watched, viewer, 0);
+    const later = [...watched, ...entries(95, BASE + 3, other, [coins(other, 2), turnEnded(other)])];
+    const waiting = advanceTurns(first.tracker, later, viewer, 0);
+    expect(waiting.turns).toEqual([]);
+    expect(advanceTurns(waiting.tracker, later, viewer, GAP_WAIT_MS - 1).turns).toEqual([]);
+    const passed = advanceTurns(waiting.tracker, later, viewer, GAP_WAIT_MS);
+    // A turn of its own: what the gap held is unknown.
+    expect(passed.turns.map((turn) => [turn.key, turn.entries.map((entry) => entry.event.type)])).toEqual([[95, ["RESOURCES_CHANGED"]]]);
+    expect(passed.tracker).toEqual({ lastSequence: 96, sinceRevision: BASE, open: null, gap: null });
+    // History (up to the mount or the return) has no turn to wait for: the gap is passed at once.
+    const history = startTurnTracker(entries(1, BASE - 2, other, [placed(other)]), BASE);
+    const afterHistory = [...entries(1, BASE - 2, other, [placed(other)]), ...entries(4, BASE, third, [placed(third)]), ...entries(5, BASE + 1, third, [contribution(third)])];
+    const quick = advanceTurns(history, afterHistory, viewer, 0);
+    expect(keysOf(quick.turns)).toEqual([[third, ["CONTRIBUTION_SUBMITTED"]]]);
+    expect(quick.tracker.gap).toBeNull();
+  });
 });
 
 describe("toast lines", () => {
@@ -195,45 +300,91 @@ describe("toast lines", () => {
     expect(zh("shell.toast.more", { n: 3 })).toBe("另有3条，见对局记录");
   });
 
-  it("keep the newest turns and count the earlier ones", () => {
-    expect(toastTurns(["a", "b"])).toEqual({ shown: ["a", "b"], earlier: 0 });
-    const many = Array.from({ length: MAX_TOAST_TURNS + 2 }, (_, index) => String(index));
-    const { shown, earlier } = toastTurns(many);
-    expect(shown).toEqual(many.slice(-MAX_TOAST_TURNS));
-    expect(earlier).toBe(2);
-    expect(en("shell.toast.earlier", { n: 1 })).toBe("1 earlier turn is in the game log");
-    expect(en("shell.toast.earlier", { n: 2 })).toBe("2 earlier turns are in the game log");
-    expect(zh("shell.toast.earlier", { n: 2 })).toBe("此前另有2个回合，见对局记录");
+  it("name a ceramic as it was when the turn ended, never as a later move left it", () => {
+    // Two like vases of Computer 1's, both loaded; the first is delivered on a later turn.
+    const formed = (id: string): PublicGameEvent => ({ type: "CERAMIC_FORMED", playerId: other, ceramicId: id, shape: "vase", decoration: "painted", formedBy: "form_decorate" }) as PublicGameEvent;
+    const loaded = (id: string, spaceId: string): PublicGameEvent =>
+      ({ type: "CERAMIC_LOADED", playerId: other, ceramicId: id, glaze: "grey_green", placement: { kiln: "shared", spaceId, inverted: false }, loadedBy: "glaze_load" }) as unknown as PublicGameEvent;
+    const delivered: PublicGameEvent = { type: "ORDER_COMPLETED", playerId: other, record: { orderId: "S01", vp: 3, coins: 0, crowns: 0, ceramicIds: ["x1"], via: "order_phase" } } as unknown as PublicGameEvent;
+    const log = [
+      ...entries(200, BASE + 1, other, [formed("x1"), formed("x2")]),
+      ...entries(202, BASE + 2, other, [loaded("x1", "high_2"), loaded("x2", "middle_1")]),
+      ...entries(204, BASE + 3, other, [delivered]),
+      ...entries(205, BASE + 4, other, [formed("x3")]),
+    ];
+    const label = (view: Parameters<typeof ceramicLabel>[1]) => ceramicLabel("x1" as never, view, { locale: en });
+    // The game log names it as it is now: delivered.
+    expect(label(logCeramicView(model, log))).toMatch(/\(delivered\)/);
+    // The toast of the loading turn names it as it was then: in High 2, beside its twin.
+    const asOfLoad = ceramicViewAsOf(model, log, 203);
+    expect(label(asOfLoad)).toMatch(/High 2/);
+    expect(label(asOfLoad)).not.toMatch(/delivered/);
+    expect(asOfLoad.ceramics?.["x1" as never]?.stage).toBe("loaded");
+    // A ceramic formed after the turn is not there yet; one older than the log comes from the model.
+    expect(asOfLoad.ceramics?.["x3" as never]).toBeUndefined();
+    for (const id of Object.keys(model.ceramics)) expect(asOfLoad.ceramics?.[id as never]?.ownerId).toBe(model.ceramics[id as never]!.ownerId);
+    // As of the delivery, it is delivered.
+    expect(ceramicViewAsOf(model, log, 204).ceramics?.["x1" as never]?.stage).toBe("delivered");
+  });
+
+  it("have no count of dropped turns: none is ever dropped", () => {
+    expect(Object.keys(shellCatalog.en).filter((key) => key.startsWith("toast."))).toEqual(["toast.label", "toast.close", "toast.more"]);
+    expect(Object.keys(shellCatalog.zh).filter((key) => key.startsWith("toast."))).toEqual(["toast.label", "toast.close", "toast.more"]);
   });
 });
 
 describe("toastReducer", () => {
-  const turn = (playerId: PlayerId, key: number): Turn => ({ key, playerId, entries: entries(key, BASE + 1, playerId, [placed(playerId)]) });
-  const players = (state: ToastState) => state.items.map((item) => [item.playerId, item.turns.map((shown) => shown.key)]);
-  const types = (state: ToastState) => state.items.map((item) => [item.playerId, item.turns.map((shown) => shown.entries.map((entry) => entry.event.type))]);
+  const turn = (playerId: PlayerId, key: number, count = 1): Turn => ({
+    key,
+    playerId,
+    entries: entries(key, BASE + 1, playerId, Array.from({ length: count }, (_, index) => (index === 0 ? placed(playerId) : coins(playerId, index)))),
+  });
+  /** The queue as [player, turn key] pairs, the toast showing first. */
+  const queue = (state: ToastState) => state.items.map((item) => [item.turn.playerId, item.turn.key]);
+  const at = (now: number) => ({ now });
 
-  it("shows each update for TOAST_MS, one toast per player, the newest last", () => {
-    let state = toastReducer(NO_TOASTS, { type: "turns", turns: [turn(other, 1), turn(third, 2)], now: 1_000 });
-    expect(players(state)).toEqual([
-      [other, [1]],
-      [third, [2]],
+  it("shows one turn at a time, in the order they were played, each for TOAST_MS", () => {
+    // The owner's example: in a 3-player game, after the viewer's turn ends, Computer 1's turn
+    // shows for 3 seconds, then Computer 2's, then it is the viewer's turn again.
+    const log = [
+      ...entries(10, BASE + 1, viewer, [placed(viewer), turnEnded(viewer), turnStarted(other)]),
+      ...entries(13, BASE + 2, other, [placed(other), coins(other, 2), turnEnded(other), turnStarted(third)]),
+      ...entries(17, BASE + 3, third, [placed(third, "guild_hall"), turnEnded(third), turnStarted(viewer)]),
+    ];
+    const { turns } = advanceTurns(startTurnTracker([], BASE), log, viewer);
+    let state = toastReducer(NO_TOASTS, { type: "turns", turns, ...at(1_000) });
+    expect(queue(state)).toEqual([
+      [other, 13],
+      [third, 17],
     ]);
+    expect(showingToast(state)!.turn.playerId).toBe(other);
     expect(nextDeadline(state)).toBe(1_000 + TOAST_MS);
-    // A later update with the same player's next turn replaces their toast and moves it last.
-    state = toastReducer(state, { type: "turns", turns: [turn(other, 5)], now: 2_000 });
-    expect(players(state)).toEqual([
-      [third, [2]],
-      [other, [5]],
-    ]);
-    expect(toastReducer(state, { type: "expire", now: 1_000 + TOAST_MS - 1 })).toBe(state);
-    state = toastReducer(state, { type: "expire", now: 1_000 + TOAST_MS });
-    expect(players(state)).toEqual([[other, [5]]]);
-    state = toastReducer(state, { type: "expire", now: 2_000 + TOAST_MS });
-    expect(state).toEqual({ items: [], pausedAt: null, updates: 2 });
+    expect(toastReducer(state, { type: "expire", ...at(1_000 + TOAST_MS - 1) })).toBe(state);
+    // Computer 2's turn shows next, for its own 3 seconds from when it appears.
+    state = toastReducer(state, { type: "expire", ...at(1_000 + TOAST_MS + 40) });
+    expect(queue(state)).toEqual([[third, 17]]);
+    expect(nextDeadline(state)).toBe(1_000 + TOAST_MS + 40 + TOAST_MS);
+    state = toastReducer(state, { type: "expire", ...at(1_000 + 2 * TOAST_MS + 40) });
+    expect(state).toEqual(NO_TOASTS);
+    expect(showingToast(state)).toBeNull();
     expect(nextDeadline(state)).toBeNull();
   });
 
-  it("keeps every turn of one player that one update brings: an Order turn and the next Work turn", () => {
+  it("queues turns that arrive while one shows, behind the ones already waiting", () => {
+    let state = toastReducer(NO_TOASTS, { type: "turns", turns: [turn(other, 1)], ...at(0) });
+    state = toastReducer(state, { type: "turns", turns: [turn(third, 2)], ...at(1_000) });
+    state = toastReducer(state, { type: "turns", turns: [turn(other, 3), turn(third, 4)], ...at(2_000) });
+    expect(queue(state)).toEqual([
+      [other, 1],
+      [third, 2],
+      [other, 3],
+      [third, 4],
+    ]);
+    // The toast showing keeps its time: nothing waiting moves it.
+    expect(nextDeadline(state)).toBe(TOAST_MS);
+  });
+
+  it("keeps every turn of one player that one batch brings, each its own toast: an Order turn and the next Work turn", () => {
     // The reviewer's case: Computer 2 completes an Order, the round turns over and Computer 2,
     // first player, places a worker, all in one computer batch.
     const log = entries(100, BASE + 1, other, [
@@ -250,13 +401,14 @@ describe("toastReducer", () => {
       [other, ["ORDER_COMPLETED", "ORDER_TURN_ENDED"]],
       [other, ["WORKER_PLACED"]],
     ]);
-    const state = toastReducer(NO_TOASTS, { type: "turns", turns, now: 0 });
-    expect(types(state)).toEqual([[other, [["ORDER_COMPLETED", "ORDER_TURN_ENDED"], ["WORKER_PLACED"]]]]);
-    expect(state.items[0]!.update).toBe(1);
+    const state = toastReducer(NO_TOASTS, { type: "turns", turns, ...at(0) });
+    expect(queue(state)).toEqual([
+      [other, 101],
+      [other, 105],
+    ]);
   });
 
-  it("keeps each player's turns of one update in their own toast, in the order the players first moved", () => {
-    // Both computers' last placements, then both Contributions, in one batch.
+  it("plays both players' last placements and both Contributions of one batch in the order they were played", () => {
     const log = [
       ...entries(110, BASE + 1, other, [placed(other), turnEnded(other)]),
       ...entries(112, BASE + 1, third, [placed(third, "guild_hall"), turnEnded(third)]),
@@ -264,70 +416,207 @@ describe("toastReducer", () => {
       ...entries(115, BASE + 1, third, [contribution(third)]),
     ];
     const { turns } = advanceTurns(startTurnTracker([], BASE), log, viewer);
-    expect(turns).toHaveLength(4);
-    const state = toastReducer(NO_TOASTS, { type: "turns", turns, now: 0 });
-    expect(players(state)).toEqual([
-      [other, [110, 114]],
-      [third, [112, 115]],
+    const state = toastReducer(NO_TOASTS, { type: "turns", turns, ...at(0) });
+    expect(queue(state)).toEqual([
+      [other, 110],
+      [third, 112],
+      [other, 114],
+      [third, 115],
     ]);
   });
 
-  it("keeps a toast's earlier turns when the update only continues its last turn", () => {
-    const grown = (key: number): Turn => ({ key, playerId: other, entries: [...entries(key, BASE + 1, other, [placed(other)]), ...entries(key + 1, BASE + 2, other, [coins(other, 2)])] });
-    let state = toastReducer(NO_TOASTS, { type: "turns", turns: [turn(other, 1), turn(other, 3)], now: 0 });
-    state = toastReducer(state, { type: "turns", turns: [grown(3)], now: 1_000 });
-    expect(players(state)).toEqual([[other, [1, 3]]]);
-    expect(state.items[0]!.turns[1]!.entries).toHaveLength(2);
-    expect(state.items[0]!.deadline).toBe(1_000 + TOAST_MS);
-    expect(state.items[0]!.update).toBe(2);
-    // The continuation and a new turn in one update: still the same toast, one more turn.
-    state = toastReducer(state, { type: "turns", turns: [grown(3), turn(other, 9)], now: 1_500 });
-    expect(players(state)).toEqual([[other, [1, 3, 9]]]);
-    // A new turn of theirs in a later update replaces the toast.
-    state = toastReducer(state, { type: "turns", turns: [turn(other, 12)], now: 2_000 });
-    expect(players(state)).toEqual([[other, [12]]]);
+  it("updates a turn that grows in its place; the one showing gets its full time again", () => {
+    let state = toastReducer(NO_TOASTS, { type: "turns", turns: [turn(other, 1), turn(third, 2)], ...at(0) });
+    // The toast showing grows (a turn of several commands): same place, TOAST_MS from now.
+    state = toastReducer(state, { type: "turns", turns: [turn(other, 1, 2)], ...at(1_000) });
+    expect(queue(state)).toEqual([
+      [other, 1],
+      [third, 2],
+    ]);
+    expect(showingToast(state)!.turn.entries).toHaveLength(2);
+    expect(nextDeadline(state)).toBe(1_000 + TOAST_MS);
+    // A waiting turn grows: updated where it waits; the toast showing keeps its time.
+    state = toastReducer(state, { type: "turns", turns: [turn(third, 2, 3), turn(other, 7)], ...at(2_000) });
+    expect(queue(state)).toEqual([
+      [other, 1],
+      [third, 2],
+      [other, 7],
+    ]);
+    expect(state.items[1]!.turn.entries).toHaveLength(3);
+    expect(nextDeadline(state)).toBe(1_000 + TOAST_MS);
+  });
+
+  it("queues a turn again when it grows after its toast closed", () => {
+    let state = toastReducer(NO_TOASTS, { type: "turns", turns: [turn(other, 1)], ...at(0) });
+    state = toastReducer(state, { type: "expire", ...at(TOAST_MS) });
+    expect(state).toEqual(NO_TOASTS);
+    state = toastReducer(state, { type: "turns", turns: [turn(other, 1, 2)], ...at(5_000) });
+    expect(queue(state)).toEqual([[other, 1]]);
+    expect(showingToast(state)!.turn.entries).toHaveLength(2);
+    expect(nextDeadline(state)).toBe(5_000 + TOAST_MS);
   });
 
   it("pauses while hovered or focused and resumes with the time left", () => {
-    let state = toastReducer(NO_TOASTS, { type: "turns", turns: [turn(other, 1)], now: 0 });
-    state = toastReducer(state, { type: "pause", now: 1_000 });
+    let state = toastReducer(NO_TOASTS, { type: "turns", turns: [turn(other, 1)], ...at(0) });
+    state = toastReducer(state, { type: "pause", ...at(1_000) });
     expect(nextDeadline(state)).toBeNull();
-    expect(toastReducer(state, { type: "expire", now: 10_000 })).toBe(state);
-    // A turn arriving while paused is updated in place and gets its full time after the pause.
-    state = toastReducer(state, { type: "turns", turns: [turn(third, 2)], now: 5_000 });
-    state = toastReducer(state, { type: "turns", turns: [turn(other, 3)], now: 6_000 });
-    expect(players(state)).toEqual([
-      [other, [3]],
-      [third, [2]],
+    expect(toastReducer(state, { type: "expire", ...at(10_000) })).toBe(state);
+    // Turns arriving while paused wait their turn.
+    state = toastReducer(state, { type: "turns", turns: [turn(third, 2)], ...at(5_000) });
+    expect(queue(state)).toEqual([
+      [other, 1],
+      [third, 2],
     ]);
-    expect(state.items.map((item) => item.update)).toEqual([3, 2]);
-    state = toastReducer(state, { type: "resume", now: 9_000 });
+    state = toastReducer(state, { type: "resume", ...at(9_000) });
     expect(state.pausedAt).toBeNull();
-    expect(state.items.map((item) => item.deadline)).toEqual([9_000 + TOAST_MS, 9_000 + TOAST_MS]);
+    // 2s were left when it paused.
+    expect(nextDeadline(state)).toBe(9_000 + TOAST_MS - 1_000);
+    expect(toastReducer(state, { type: "resume", ...at(9_500) })).toBe(state);
   });
 
-  it("dismisses one toast, and an empty stack is never paused", () => {
-    let state = toastReducer(NO_TOASTS, { type: "turns", turns: [turn(other, 1), turn(third, 2)], now: 0 });
-    state = toastReducer(state, { type: "pause", now: 100 });
-    state = toastReducer(state, { type: "dismiss", playerId: other });
-    expect(players(state)).toEqual([[third, [2]]]);
-    expect(state.pausedAt).toBe(100);
-    state = toastReducer(state, { type: "dismiss", playerId: third });
-    expect(state).toEqual({ items: [], pausedAt: null, updates: 1 });
-    expect(toastReducer(state, { type: "pause", now: 200 })).toBe(state);
+  it("dismisses the toast showing and shows the next for its full time, even while paused", () => {
+    let state = toastReducer(NO_TOASTS, { type: "turns", turns: [turn(other, 1), turn(third, 2), turn(other, 3)], ...at(0) });
+    state = toastReducer(state, { type: "dismiss", key: 1, ...at(500) });
+    expect(queue(state)).toEqual([
+      [third, 2],
+      [other, 3],
+    ]);
+    expect(nextDeadline(state)).toBe(500 + TOAST_MS);
+    // A key no longer in the queue (the toast changed as it was pressed) changes nothing.
+    expect(toastReducer(state, { type: "dismiss", key: 1, ...at(600) })).toBe(state);
+    // Paused (the close button is focused): the next one waits, then gets its full time.
+    state = toastReducer(state, { type: "pause", ...at(1_000) });
+    state = toastReducer(state, { type: "dismiss", key: 2, ...at(1_500) });
+    expect(queue(state)).toEqual([[other, 3]]);
+    expect(state.pausedAt).toBe(1_000);
+    state = toastReducer(state, { type: "resume", ...at(4_000) });
+    expect(nextDeadline(state)).toBe(4_000 + TOAST_MS);
+    // The last one, while held: the queue is empty, the hold stays until the screen releases it.
+    state = toastReducer(state, { type: "pause", ...at(4_100) });
+    state = toastReducer(state, { type: "dismiss", key: 3, ...at(4_200) });
+    expect(state.items).toEqual([]);
+    expect(nextDeadline(state)).toBeNull();
+    expect(state.pausedAt).toBe(4_100);
+    expect(toastReducer(state, { type: "resume", ...at(4_300) })).toEqual(NO_TOASTS);
+  });
+
+  it("holds before any turn waits: a turn arriving while held gets its full time from the release", () => {
+    // The page is hidden, or the phone's sheet leaves no room, before the turn arrives.
+    let state = toastReducer(NO_TOASTS, { type: "pause", ...at(1_000) });
+    expect(state.pausedAt).toBe(1_000);
+    expect(toastReducer(state, { type: "pause", ...at(1_500) })).toBe(state);
+    state = toastReducer(state, { type: "turns", turns: [turn(other, 1), turn(third, 2)], ...at(5_000) });
+    expect(nextDeadline(state)).toBeNull();
+    expect(toastReducer(state, { type: "expire", ...at(60_000) })).toBe(state);
+    state = toastReducer(state, { type: "resume", ...at(60_000) });
+    expect(queue(state)).toEqual([
+      [other, 1],
+      [third, 2],
+    ]);
+    expect(nextDeadline(state)).toBe(60_000 + TOAST_MS);
+    // Held again mid-toast (no room): it keeps the time it had left.
+    state = toastReducer(state, { type: "pause", ...at(61_000) });
+    state = toastReducer(state, { type: "resume", ...at(70_000) });
+    expect(nextDeadline(state)).toBe(70_000 + TOAST_MS - 1_000);
+    // Released with nothing waiting: back to the empty queue.
+    expect(toastReducer(toastReducer(NO_TOASTS, { type: "pause", ...at(0) }), { type: "resume", ...at(10) })).toEqual(NO_TOASTS);
+  });
+
+  it("removes a waiting turn dismissed by its key without touching the toast showing", () => {
+    let state = toastReducer(NO_TOASTS, { type: "turns", turns: [turn(other, 1), turn(third, 2), turn(other, 3)], ...at(0) });
+    state = toastReducer(state, { type: "dismiss", key: 2, ...at(100) });
+    expect(queue(state)).toEqual([
+      [other, 1],
+      [other, 3],
+    ]);
+    expect(nextDeadline(state)).toBe(TOAST_MS);
+  });
+
+  it("keeps every turn, however many wait: one 4-player end-of-round batch plays in full, in order", () => {
+    // The reviewer's case: one computer batch with no decision of the viewer's in it brings the
+    // last placements, the Contributions, the Heat markers, the after-Quality abilities, the
+    // Order turns and the next round's placements of three computers: more than ten turns.
+    const players = [other, third];
+    const batch: Turn[] = Array.from({ length: 24 }, (_, index) => turn(players[index % 2]!, 200 + index));
+    let state = toastReducer(NO_TOASTS, { type: "turns", turns: batch.slice(0, 14), ...at(0) });
+    // The viewer decides quickly: the next batch arrives while the first still plays.
+    state = toastReducer(state, { type: "expire", ...at(TOAST_MS) });
+    state = toastReducer(state, { type: "turns", turns: batch.slice(14), ...at(TOAST_MS + 500) });
+    expect(state.items).toHaveLength(23);
+    const shown: number[] = [];
+    let now = TOAST_MS;
+    while (showingToast(state) !== null) {
+      shown.push(showingToast(state)!.turn.key);
+      now = nextDeadline(state)!;
+      state = toastReducer(state, { type: "expire", now });
+    }
+    expect(shown).toEqual(batch.slice(1).map((item) => item.key));
+    // Each for its own TOAST_MS, one after the other.
+    expect(now).toBe(24 * TOAST_MS);
+    expect(state).toEqual(NO_TOASTS);
   });
 });
 
 describe("toast stylesheet", () => {
   const css = (file: string) => readFileSync(join(ROOT, "src/app", file), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
 
-  it("sits in the world's grid cell, at its bottom, letting the pointer through", () => {
+  it("draws the jump bar as a row of its own above the world, so nothing of the world lies under it or under the toast below it", () => {
+    const shell = css("shell/GameShell.css");
+    // Desktop and tablet: the jump bar's row between the banner and the world, beside the pane.
+    const grid = /\.shell\s*\{([^}]*)\}/.exec(shell)?.[1] ?? "";
+    expect(grid).toMatch(/grid-template-rows:\s*auto auto auto minmax\(0, 1fr\);/);
+    expect(grid).toMatch(/"top top"\s*"banner banner"\s*"jump pane"\s*"world pane"/);
+    const hidden = /\.shell\[data-pane="hidden"\]\s*\{([^}]*)\}/.exec(shell)?.[1] ?? "";
+    expect(hidden).toMatch(/"top"\s*"banner"\s*"bar"\s*"jump"\s*"world"/);
+    expect(/\.shell-jump\s*\{([^}]*)\}/.exec(shell)?.[1] ?? "").toMatch(/grid-area:\s*jump;/);
+    // Phones and short landscape: no jump bar (their grids have no "jump" area).
+    for (const query of ["@container shell (max-width: 899px)", "@media (orientation: landscape) and (max-height: 500px)"]) {
+      expect(/\.shell-jump\s*\{([^}]*)\}/.exec(shell.slice(shell.indexOf(query)))?.[1] ?? "", query).toMatch(/display:\s*none;/);
+    }
+    // The world starts below the bar with its own top room; the bar is no sticky overlay.
+    const world = /\.shell-world\s*\{([^}]*)\}/.exec(shell)?.[1] ?? "";
+    expect(world).toMatch(/--world-pad-start:\s*var\(--sp-7\);/);
+    expect(world).toMatch(/--world-pad-end:\s*var\(--sp-8\);/);
+    const sections = css("shell/WorldSections.css");
+    expect(sections).not.toMatch(/sticky/);
+    expect(sections).not.toMatch(/turn-toast/);
+    expect(/\.world-section\s*\{([^}]*)\}/.exec(sections)?.[1] ?? "").toMatch(/scroll-margin-top:\s*var\(--sp-7\);/);
+    // The toast at the band's right end on desktop and tablet; it takes the pointer, its holder does not.
+    const holder = /\.shell-toasts\s*\{([^}]*)\}/.exec(shell)?.[1] ?? "";
+    expect(holder).toMatch(/align-items:\s*flex-end;/);
+    const toasts = css("shell/TurnToasts.css");
+    expect(toasts).not.toMatch(/jump-bar/);
+    const group = /\.turn-toasts\s*\{([^}]*)\}/.exec(toasts)?.[1] ?? "";
+    expect(group).toMatch(/pointer-events:\s*auto;/);
+    expect(group).toMatch(/width:\s*min\(24rem,\s*100%\);/);
+    // Too little room for the toast: hidden, but keeping its layout so it can be measured again.
+    expect(toasts).toMatch(/\.turn-toasts\[data-cramped\]\s*\{\s*visibility:\s*hidden;\s*\}/);
+  });
+
+  it("lies at the top of the world's cell, in the band the world gives up; across it on phones and in short landscape", () => {
     const shell = css("shell/GameShell.css");
     const rule = /\.shell-toasts\s*\{([^}]*)\}/.exec(shell)?.[1] ?? "";
     expect(rule).toMatch(/grid-area:\s*world;/);
-    expect(rule).toMatch(/align-self:\s*end;/);
+    expect(rule).toMatch(/align-self:\s*start;/);
+    expect(rule).toMatch(/max-height:\s*100%;/);
     expect(rule).toMatch(/pointer-events:\s*none;/);
-    expect(css("shell/TurnToasts.css")).toMatch(/\.turn-toasts\s*\{[^}]*pointer-events:\s*auto;/);
+    // The world moves down by the band TurnToasts.tsx measures (0 when no toast shows there); the
+    // room that keeps the table still (toastRoom.ts) adds to its own top and bottom room, at
+    // every width (the breakpoints set only the world's own room and its sides).
+    const world = /\.shell-world\s*\{([^}]*)\}/.exec(shell)?.[1] ?? "";
+    expect(world).toMatch(/margin-block-start:\s*var\(--turn-toast-band,\s*0px\);/);
+    expect(world).toMatch(/padding:\s*calc\(var\(--world-pad-start\) \+ var\(--turn-toast-lead, 0px\)\) var\(--sp-7\) calc\(var\(--world-pad-end\) \+ var\(--turn-toast-tail, 0px\)\);/);
+    const worldRules = [...shell.matchAll(/\.shell-world\s*\{([^}]*)\}/g)].map((match) => match[1] ?? "");
+    expect(worldRules.length).toBeGreaterThan(1);
+    for (const later of worldRules.slice(1)) expect(later).not.toMatch(/(^|[\s;])padding(-block|-top|-bottom)?\s*:/);
+    const phone = shell.slice(shell.indexOf("@container shell (max-width: 899px)"));
+    expect(/\.shell-toasts\s*\{([^}]*)\}/.exec(phone)?.[1] ?? "").toMatch(/align-items:\s*stretch;/);
+    const landscape = shell.slice(shell.indexOf("@media (orientation: landscape) and (max-height: 500px)"));
+    expect(/\.shell-toasts\s*\{([^}]*)\}/.exec(landscape)?.[1] ?? "").toMatch(/align-items:\s*stretch;/);
+    const toasts = css("shell/TurnToasts.css");
+    for (const query of ["@container shell (max-width: 899px)", "@media (orientation: landscape) and (max-height: 500px)"]) {
+      expect(/\.turn-toasts\s*\{([^}]*)\}/.exec(toasts.slice(toasts.indexOf(query)))?.[1] ?? "", query).toMatch(/width:\s*100%;/);
+    }
   });
 
   it("animates only when motion is welcome", () => {
@@ -335,19 +624,8 @@ describe("toast stylesheet", () => {
     const motion = toasts.indexOf("@media (prefers-reduced-motion: no-preference)");
     expect(motion).toBeGreaterThan(0);
     expect(toasts.indexOf("animation")).toBeGreaterThan(motion);
+    expect(toasts.indexOf("@keyframes")).toBeGreaterThan(motion);
+    expect(toasts.indexOf("transform")).toBeGreaterThan(motion);
     expect(toasts.indexOf("transition")).toBe(-1);
-  });
-
-  it("never slides a toast past the scrolling list's end, and is the toasts' offset parent", () => {
-    const toasts = css("shell/TurnToasts.css");
-    const keyframes = /@keyframes turn-toast-in\s*\{([\s\S]*?)\}\s*\}/.exec(toasts)?.[1] ?? "";
-    expect(keyframes).toMatch(/opacity:\s*0;/);
-    // A transform or a moved box grows the list's scrollable overflow while it runs.
-    expect(keyframes).not.toMatch(/transform|translate|inset|margin|top:|bottom:|height|padding/);
-    const list = /\.turn-toasts\s*\{([^}]*)\}/.exec(toasts)?.[1] ?? "";
-    expect(list).toMatch(/position:\s*relative;/);
-    expect(list).toMatch(/overflow-y:\s*auto;/);
-    // Too little room for one toast: hidden, but keeping its layout so it can be measured again.
-    expect(toasts).toMatch(/\.turn-toasts\[data-cramped\]\s*\{\s*visibility:\s*hidden;\s*\}/);
   });
 });

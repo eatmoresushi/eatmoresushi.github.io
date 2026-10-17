@@ -1,33 +1,6 @@
-- complementary "Your decision":
-  - paragraph: Work Phase · Your turn
-  - heading "Place a worker" [level=2]
-  - region "Player 1 (you)":
-    - heading "Player 1 (you)" [level=3]
-    - group "Resources":
-      - strong: "9"
-      - text: Clay
-      - strong: "9"
-      - text: Wood
-      - strong: "9"
-      - text: Coins
-    - img "Your Shifu"
-    - img "Your Apprentice"
-    - img "Your Apprentice"
-    - img "Your Apprentice"
-    - text: 2 Orders in hand Recognition 3/4 3 VP
-  - form "Place a worker":
-    - paragraph: 4 of your 4 workers left. The Work Phase cannot be passed.
-    - group "This step":
-      - text: ""
-      - radio "Place a worker Your worker action this turn" [checked]
-      - text: Place a worker Your worker action this turn
-      - radio "Imperial Priority Before your worker action"
-      - text: Imperial Priority Before your worker action
-      - radio "Canal Barge Before your worker action"
-      - text: Canal Barge Before your worker action
-    - paragraph: "Place a worker on an action space: choose Place at a location on the Central Action Board, or at Form & Decorate or Glaze & Load on your Kiln Player Board."
-    - button "Go to the Central Action Board"
-    - button "Go to your workshop"
-    - paragraph: Place a worker on an open action space.
-    - button "Clear"
-    - button "Confirm" [disabled]
+- region "Your decision":
+  - paragraph: "Your turn: place a worker · 4 left"
+  - group "Or first:":
+    - text: "Or first:"
+    - button "Imperial Priority"
+    - button "Canal Barge"

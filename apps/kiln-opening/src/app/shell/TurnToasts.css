@@ -1,26 +1,21 @@
 /*
- * TurnToasts (B1; owner review 2026-10-17): the other players' last turns, bottom of the world
- * column. GameShell's `.shell-toasts` places the stack; this file draws it. The host lets the
- * pointer through; only the toasts take it (hover pauses them).
+ * TurnToasts (B1; owner review 2026-10-17, item 3): one other player's turn at a time, drawn
+ * over nothing. GameShell's `.shell-toasts` holds it at the top of the world's cell, under the
+ * top bar and the jump bar: at its right end on desktop and tablet, across the world column on
+ * phones and in short landscape, in a band the world gives up (TurnToasts.tsx measures the band
+ * and scrolls the table by it, so the table stays where it was on screen).
  */
 @layer components {
-  /* The toasts' offset parent, so TurnToasts.tsx can scroll one to the top by its offset. */
   .turn-toasts {
-    position: relative;
     display: flex;
     flex-direction: column;
-    gap: var(--sp-3);
-    width: min(26rem, 100%);
+    width: min(24rem, 100%);
     min-height: 0;
-    margin: 0;
-    padding: var(--sp-2);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    list-style: none;
     pointer-events: auto;
   }
 
-  /* No room for even one toast (TurnToasts.tsx): hidden, keeping its layout so it can measure. */
+  /* No room for the toast (TurnToasts.tsx): hidden, keeping its layout so it can measure; its
+     turn waits until the room comes back. */
   .turn-toasts[data-cramped] {
     visibility: hidden;
   }
@@ -41,11 +36,11 @@
     font-size: var(--fs-meta);
   }
 
-  /* The player's turns, oldest first; each turn is its own group of lines, ruled off. */
-  .turn-toast-turns {
+  /* The turn's lines. */
+  .turn-toast-body {
     display: grid;
     flex: 1;
-    gap: var(--sp-2);
+    gap: var(--sp-1);
     min-width: 0;
     padding: var(--sp-1) 0;
     overflow-wrap: anywhere;
@@ -58,15 +53,6 @@
     margin: 0;
     padding: 0;
     list-style: none;
-  }
-
-  .turn-toast-lines + .turn-toast-lines {
-    padding-top: var(--sp-2);
-    border-top: 1px solid var(--line);
-  }
-
-  .turn-toast-earlier {
-    margin: 0;
   }
 
   .turn-toast-more {
@@ -98,7 +84,8 @@
     height: 0.875rem;
   }
 
-  /* Phones: the stack spans the world column; the close button is a full touch target. */
+  /* Phones (the shell's holder): the toast spans the world column; the close button is a full
+     touch target. */
   @container shell (max-width: 899px) {
     .turn-toasts {
       width: 100%;
@@ -111,6 +98,13 @@
     }
   }
 
+  /* Short landscape (the shell's holder): across the world column too. */
+  @media (orientation: landscape) and (max-height: 500px) {
+    .turn-toasts {
+      width: 100%;
+    }
+  }
+
   @media (pointer: coarse) {
     .turn-toast-close {
       width: var(--target-min);
@@ -118,15 +112,25 @@
     }
   }
 
-  /* A short entrance, only when motion is welcome; it closes without one. A fade only, never a
-     slide: a translated toast reaches past the scrolling list's end while it runs, and the list
-     flashes a scrollbar (classic scrollbars), rewraps the toast and jumps its scroll. */
+  /* A short entrance, only when motion is welcome; it closes without one. The toast fades in
+     with a short drop from the top bar's side; the next turn's lines fade in its place. */
   @media (prefers-reduced-motion: no-preference) {
     .turn-toast {
       animation: turn-toast-in var(--dur-fast) ease-out;
     }
 
+    .turn-toast-body {
+      animation: turn-toast-next var(--dur-fast) ease-out;
+    }
+
     @keyframes turn-toast-in {
+      from {
+        opacity: 0;
+        transform: translateY(-0.375rem);
+      }
+    }
+
+    @keyframes turn-toast-next {
       from {
         opacity: 0;
       }

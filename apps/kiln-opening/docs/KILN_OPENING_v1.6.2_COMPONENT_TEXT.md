@@ -39,9 +39,9 @@ Short text for the Kiln Player Boards and the 18 Advanced Tech tiles, in English
 # Glazing & Loading Techs / 釉作技艺
 
 ### Colour Samples / 色样簿
-**When acquired:** privately look at the top 3 cards of the Main Order deck → you must reserve 1; discard the rest. **Ongoing:** your Order hand limit is 5. **Once per round, before or after one of your worker actions:** discard 1 held Order → look at the top 2 cards, reserve 1.
+**When acquired:** privately look at the top 3 cards of the Main Order deck → you must reserve 1; the rest go to the bottom of the deck. **Ongoing:** your Order hand limit is 5. **Once per round, before or after one of your worker actions:** discard 1 held Order → look at the top 2 cards, reserve 1.
 
-**习得时：**私看主委托牌堆顶3张→须承接1张，其余弃置。**持续：**你的委托上限为5张。**每轮一次，你的一次工人行动之前或之后：**可弃1张在手委托→看牌堆顶2张，承接1张。
+**习得时：**私看主委托牌堆顶3张→须承接1张，其余放到牌堆底。**持续：**你的委托上限为5张。**每轮一次，你的一次工人行动之前或之后：**可弃1张在手委托→看牌堆顶2张，承接1张。
 
 ### Kiln Tending / 看火
 **Once per round, after a Glaze & Load action that loaded at least 1 ceramic:** gain 1 Clay + 1 Wood.

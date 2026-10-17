@@ -13,34 +13,20 @@
     - img "Your Apprentice"
     - text: 3 Orders in hand Recognition 0/4 0 VP
   - form "Take a Tech":
-    - group "Inspected Form & Decorate Techs Only you can see":
+    - group "Inspected Form & Decorate Techs":
       - text: ""
-      - radio "Reworking Table 2 Coins → 1 Coin Form & Decorate"
-      - text: Reworking Table 2 Coins → 1 Coin Form & Decorate
-      - 'button "Full rules: Reworking Table"'
-      - radio "Prepared Clay 3 Coins → 2 Coins Form & Decorate Not enough Coins." [disabled]
-      - text: Prepared Clay 3 Coins → 2 Coins Form & Decorate Not enough Coins.
-      - 'button "Full rules: Prepared Clay"'
+      - radio "Reworking Table 2 Coins → 1 Coin"
+      - radio "Prepared Clay 3 Coins → 2 Coins" [disabled]
+      - paragraph: Not enough Coins.
     - group "Or a face-up Tech":
       - text: ""
-      - radio "Connoisseur's Cabinet 3 Coins → 2 Coins Form & Decorate Not enough Coins." [disabled]
-      - text: Connoisseur's Cabinet 3 Coins → 2 Coins Form & Decorate Not enough Coins.
-      - 'button "Full rules: Connoisseur''s Cabinet"'
-      - radio "Large Throwing Wheel 2 Coins → 1 Coin Form & Decorate"
-      - text: Large Throwing Wheel 2 Coins → 1 Coin Form & Decorate
-      - 'button "Full rules: Large Throwing Wheel"'
-      - radio "Kiln Furniture 2 Coins → 1 Coin Glazing & Loading"
-      - text: Kiln Furniture 2 Coins → 1 Coin Glazing & Loading
-      - 'button "Full rules: Kiln Furniture"'
-      - radio "Canal Barge 2 Coins → 1 Coin Glazing & Loading"
-      - text: Canal Barge 2 Coins → 1 Coin Glazing & Loading
-      - 'button "Full rules: Canal Barge"'
-      - radio "Kiln Master 2 Coins → 1 Coin Firing"
-      - text: Kiln Master 2 Coins → 1 Coin Firing
-      - 'button "Full rules: Kiln Master"'
-      - radio "Second Firing 2 Coins → 1 Coin Firing"
-      - text: Second Firing 2 Coins → 1 Coin Firing
-      - 'button "Full rules: Second Firing"'
+      - radio "Connoisseur's Cabinet 3 Coins → 2 Coins" [disabled]
+      - paragraph: Not enough Coins.
+      - radio "Large Throwing Wheel 2 Coins → 1 Coin"
+      - radio "Kiln Furniture 2 Coins → 1 Coin"
+      - radio "Canal Barge 2 Coins → 1 Coin"
+      - radio "Kiln Master 2 Coins → 1 Coin"
+      - radio "Second Firing 2 Coins → 1 Coin"
     - paragraph: Return to the bottom of the Form & Decorate deck, top to bottom
     - list "Return to the bottom of the Form & Decorate deck, top to bottom":
       - listitem:

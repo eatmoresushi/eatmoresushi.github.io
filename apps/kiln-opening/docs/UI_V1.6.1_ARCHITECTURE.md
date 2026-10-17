@@ -33,13 +33,13 @@ Phase 5 (motion) and phase 6 (WebGL) are out of scope. This plan leaves only the
 | K6 | **D3/D4 are enforced by types first.** Table, kiln, board and shell components receive a `TableBoardView` with no Fire-deck count and no `FiringContext`. All firing display goes through `firingStageView` and `firingRecapView`, which carry no heat ledger. An import-and-identifier scan and a rendered-markup scan of the full `GameScreen` are the second and third lines of defence. |
 | K7 | **The i18n catalogue is ID-keyed and typed**, one namespace file per work package:<br>• rich text through `t.rich` tag placeholders; HTML is never injected;<br>• plurals through `Intl.PluralRules`;<br>• content names and rules text come from `data/*.json` through the engine content exports;<br>• rule errors come from `formatRuleError` and are stored as codes, so a language switch re-renders them;<br>• location summaries come from rulebook Appendix E and glossary §4, checked by a parity test, with no data or fingerprint change. |
 | K8 | **One token file** with a light block and a dark block. `data-theme` is always set at boot, from the stored choice or `prefers-color-scheme`. `light-dark()` is not used, so iOS 16.4 works. The cascade is `@layer reset, tokens, base, layout, components, states, utilities`. The type scale is in `rem` with a 12px floor, raised to 13px for Chinese body text. Container queries apply only to block wrappers. Short landscape is a height media query. There is no transform scaling. Ceramic art is tinted by CSS mask and multiply. |
-| K9 | **Native, named controls.**<br>• Single choices are native radios.<br>• D1 board tabs use the ARIA tabs pattern.<br>• The phone section bar is a `nav` of buttons with `aria-current`.<br>• Toggles use `aria-pressed`.<br>• Every piece (ceramic, marker, Tech slot) has an accessible name and a `PieceDetail` disclosure for tap, focus and hover.<br>• There is one coalesced polite live region and one alert region.<br>• `data-motion` and `data-webgl-mount` hooks are placed now. |
+| K9 | **Native, named controls.**<br>• Single choices are native radios.<br>• D1 board tabs use the ARIA tabs pattern.<br>• The phone section bar is a `nav` of buttons with `aria-current`.<br>• Toggles use `aria-pressed`.<br>• Every piece (ceramic, marker) has an accessible name and a `PieceDetail` disclosure for tap, focus and hover. An owned Tech slot on a Kiln Player Board is not a control: it shows the Tech's name, its state this round and its printed short text (owner decision D19).<br>• There is one coalesced polite live region and one alert region.<br>• `data-motion` and `data-webgl-mount` hooks are placed now. |
 | K10 | **Playwright becomes an explicit, exact-pinned devDependency** (`@playwright/test` 1.62.1, the version already in `node_modules` but in neither `package.json` nor the lockfile), with `@axe-core/playwright`. Specs live in `e2e/`, outside `npm test`. They run locally at each phase exit over 8 viewport projects. A CI job, if the owner approves it (§11), also runs a Chromium smoke test and a short full game against the **built** bundle. |
 | K11 | **The local backend is ported to V1.6.1 as `tools/localBackendV161.ts`.** It runs at `/test-api-v161`, beside the V1.4 one at `/test-api`, until cutover, on both the dev and the preview server. It gains `list_private_events`, a seeded reset, invariant checks and a dev-only secret-ID oracle for leak tests. |
 | K12 | **Work runs in three phases.**<br>• A: foundations. 3 agents, with the A1 and A3 contract commits first.<br>• B: features. 6 agents, merged in a fixed train; the cross-package tests land after B4 and B5.<br>• C: hardening and cutover, 1–2 agents.<br>Every commit keeps the engine, platform and root gates green, root build included. |
 | K13 | **Shared Kiln layout follows owner decision D8:** Low (−1) at the top with its two spaces centred under the dome, Middle (0) in the middle, High (+1) at the bottom beside the firebox. The kiln mini-glyph on the Table uses the same order. Layout only; data order (`KILN_SPACE_IDS`) and rules are unchanged. |
 | K14 | **No internal IDs on screen (owner decision D9).** Ceramic, worker and other engine IDs never reach rendered text, accessible names, the game log or error messages. One i18n helper, `ceramicLabel(ceramic, view, { withOwner, withPlace })`, describes a ceramic in words ("Lin's Celadon Vase, Carved · Fine"), adding owner and location only when needed to tell two apart; every component, event template and `formatRuleError` call uses it. `formatRuleError` gains a `ceramicName` resolver, like `playerName`, so `ceramicId` details render as descriptions. A rendered-markup test fails on any `/\bc\d+\b/` ceramic ID or worker ID in `GameScreen` output. Printed Order numbers (S01, O33) stay. |
-| K15 | **Rules details on demand (owner decision D10).** Every Tech tile, Kiln Player Board, location card, Order card and Recognition milestone opens a `RulesDetail` panel (the `PieceDetail` disclosure pattern: click, tap or keyboard): short component text (`shortText`), the full rule (`ability` / location and Order text), the clarifications that apply to that component (new prose field `clarifications: [{ en, zh, source }]` in `data/*.json`, sourced from `docs/KILN_OPENING_v1.6.1_CLARIFICATIONS.md`, outside the rules digest) and card facts (discipline, cost, once per round, used this round). A test checks every quoted rulebook sentence against the checked-in source and every `source` tag against the audit. No advice, odds or previews. |
+| K15 | **Rules details on demand (owner decision D10).** Every Tech tile on the Tech display, Kiln Player Board, Order card and Recognition milestone opens a `RulesDetail` panel (the `PieceDetail` disclosure pattern: click, tap or keyboard). Owner decisions D15 and D19 (2026-10-17) list where there is none: action spaces, the Kiln selection window, the Guild Hall choices (the Tech display's chooser and the Shifu's inspection) and the owned Tech slots on a Kiln Player Board, which show the printed short text instead. The panel was planned with short component text (`shortText`), the full rule (`ability` / location and Order text), the clarifications that apply to that component (new prose field `clarifications: [{ en, zh, source }]` in `data/*.json`, sourced from `docs/KILN_OPENING_v1.6.1_CLARIFICATIONS.md`, outside the rules digest) and card facts (discipline, cost, once per round, used this round); since the owner review of 2026-10-17 it shows only the full rule and the clarifications (D10). A test checks every quoted rulebook sentence against the checked-in source and every `source` tag against the audit. No advice, odds or previews. |
 
 ---
 
@@ -319,7 +319,7 @@ interface EngineView { view: PlayerView; actor: ActorView | null }
 | `final` | `finished` | — | `game.finalResult`, `SCORE_BREAKDOWN_ROWS`, `TIE_BREAK_ORDER` (§5) | — | `decision/results/FinalSummary.tsx` (B5) |
 | `waiting` | any phase whose prompt does not include the viewer | — | `decisionPrompt`, phase, own sealed Contribution | — | `decision/Waiting.tsx` (B5) |
 
-**Work sub-editors** (B4, `decision/work/locations/*`). Each is a `.tsx` + `.draft.ts` pair and ports the matching branch of the wireframe's `subEditor`. The worker picker lists the entries of `placementOptions()[i].workers`: Shifu, Apprentice, and Apprentice-as-Shifu when `seniorApprentice`. Illegal locations go into a disclosure with the engine's reason (`decWork` "unavailable"). Every Shape, Glaze, modifier and Prepared Clay choice comes from a selector; the vocabulary arrays only order them.
+**Work sub-editors** (B4, `decision/work/locations/*`). Each is a `.tsx` + `.draft.ts` pair and ports the matching branch of the wireframe's `subEditor`. The pane has no worker or location picker (owner decision D14): the worker and the location are chosen with the Place shortcuts on the table (`placeTargets`, §3.5), one per entry of `placementOptions()[i].workers` (Shifu, Apprentice, and Apprentice-as-Shifu when `seniorApprentice`), and a location card shows the engine's reason where a worker cannot go. Until a placement is chosen the work turn hides the pane (`WindowSpec.pane`, §3.5 and §8.2). Every Shape, Glaze, modifier and Prepared Clay choice comes from a selector; the vocabulary arrays only order them.
 
 | Location / ability | Draft | Selectors | Command |
 | --- | --- | --- | --- |
@@ -355,7 +355,7 @@ The component renders only from `options()`. It never filters, sums or checks a 
 - **Reset to `initial`:** when the window's `kind` or actor changes, when its `openKey` changes, or when this client's own command succeeds.
   - `openKey` is the Contribution `windowId`; `openedAtRevision` for Salvage and the hand trim; the queue index for queued firing steps; the selection index for Kiln selection; and, for the work turn, the turn's start revision.
 - **Kept and revalidated:** after other players' commits, reconnects and `STALE_REVISION` recovery, the draft is kept and passed through `reduce(draft, { type: "revalidate" })`. A half-made Contribution or trim therefore survives another player's submission.
-- **The work turn keeps one sub-draft per location** (`perLocation`). Arrowing through the location radios never discards a sub-editor's choices.
+- **The work turn keeps one sub-draft per location** (`perLocation`). Pressing another location's Place shortcut never discards a sub-editor's choices.
 
 **Table selection** (`src/app/state/tableSelection.ts`, A2; frozen) is derived synchronously, without an effect. Each registry entry in `decision/windows.ts` may declare a `table` adapter:
 
@@ -364,11 +364,16 @@ interface WindowSpec<D> {
   kind: DecisionWindowKind;
   Component: ComponentType;                 // reads useDraft / useEngineView
   draft: DraftModel<D>;
+  title(model: GameModel, engine: EngineView, draft: D): WindowText;                    // pane heading, sheet strip
   table?: {
     select(draft: D, model: GameModel, engine: EngineView): TableSelectionData;          // pure
     act(draft: D, action: TableAction, model: GameModel, engine: EngineView): DraftAction<D> | null;
   };
+  pane?(draft: D, model: GameModel, engine: EngineView): PanePresence<DraftAction<D>>;  // without it, always shown
 }
+type PanePresence<A> =
+  | { hidden: false }
+  | { hidden: true; lead: WindowText; openersLabel: WindowText | null; openers: { key: string; label: WindowText; action: A }[] };
 interface TableSelectionData {
   placeTargets: ReadonlyMap<LocationId, readonly PlacementWorkerOption[]>;   // every entry, legal or not; Place shortcuts for legal ones, the engine's reason otherwise (B6, CR B2-3)
   activePlacement: { locationId: LocationId; workerKey: string } | null;
@@ -381,6 +386,8 @@ type TableAction = { type: "place"; locationId: LocationId; workerKey: string } 
 ```
 
 `useTableSelection()` returns `spec.table.select(currentDraft, model, engine)`, or the inert value (empty maps) when there is no adapter. Its handlers dispatch `spec.table.act(...)` into the draft store. Location Place buttons, kiln-space targets and clickable Order cards therefore change the pane's draft without either side importing the other (wireframe `draftTargets`, `data-act="place"`, `data-act="dest"`). Because the selection is a pure function of the draft, an SSR test seeds a draft and sees the targets.
+
+**Pane presence** (owner decision D14, owner review 2026-10-17). `usePane()` (`state/pane.ts`) reads `spec.pane(currentDraft, model, engine)` the way `useTableSelection()` reads the adapter, so the shell, the pane and the bar above the world agree in one render. Only the work window has a `pane` member (`workPane` in `windows.work.ts`): it hides the pane during the viewer's own before-action step while the draft has no placement and no ability open. The hidden presence carries the bar's turn cue (`lead`: "Your turn: place a worker · 3 left") and one opener per ability that may come before the worker action (`openers`, after `openersLabel`: "Or first:"), each a draft action that brings the pane back. A pending server error keeps the pane shown. Focus and layout rules: §8.2 and §7.3.
 
 ### 3.6 Sending a command
 
@@ -461,20 +468,36 @@ There is **no optimistic state**. The only client-held state is drafts, UI prefe
 App                                   app/App.tsx: home | lobby | ended | game (from useSession)
 ├─ HomeScreen / LobbyScreen / EndedScreen / EndSessionDialog / RoomBar       lobby/*
 └─ GameScreen                         screens/GameScreen.tsx (composition, frozen)
-   └─ GameShell                       shell/GameShell.tsx: grid "top top" / "banner banner" / "world pane" (+ "nav" on phones)
-      ├─ SkipLink                     "Skip to your decision": opens the phone sheet first, then focuses the pane heading
+   └─ GameShell                       shell/GameShell.tsx: grid "top top" / "banner banner" / "jump pane" / "world pane"
+      │                               (+ "nav" on phones); data-pane="hidden" drops the pane's cell and adds the "bar" row
+      ├─ SkipLink                     "Skip to your decision": opens the phone sheet first, then focuses the pane heading;
+      │                               while the pane is hidden, the bar's turn cue (with openers) or the table
       ├─ TopBar <header>              brand · round · PhaseStrip · KilnDieChip · SeatChips · GameLog · LanguageToggle · SessionMenu
       │  ├─ PhaseStrip                5 round phases + firing step suffix (topBar `phases`), from roundPhaseOf
       │  ├─ KilnDieChip               game.kilnDie.value (topBar `die-chip`)
       │  ├─ SeatChips                 D2 opponent strips: swatch, first-player, name, kiln short name, VP (recordedVp, the
-      │  │                            final total once finished), hand-count card back, acting and computer badges;
-      │  │                            click → board (D1)
+      │  │                            final total once finished), Clay/Wood/Coins, hand-count card back, acting badge
+      │  │                            (a computer seat in the name only, D12); click → board (D1); in the jump bar on
+      │  │                            desktop and tablet
       │  ├─ GameLog (dropdown)        D5 at every width; newest first; the newest 50, then "Show earlier" (logList, evText)
       │  ├─ LanguageToggle            always visible
       │  └─ SessionMenu               menu button: Theme · room code (copy) · Leave view · End session (host only)
       ├─ ConnectionBanner             role="status": reconnecting / offline; role="alert": computer failure + Retry,
       │                               unsent command + Send again
-      ├─ World <main>                 WorldSections: sectionOrder per phase; desktop JumpNav
+      ├─ PaneOpeners                  decision/PaneOpeners.tsx, only while the pane is hidden (D14): a region named "Your
+      │                               decision" with the turn cue ("Your turn: place a worker · 3 left") and "Or first:"
+      │                               openers for the abilities that may come before the worker action
+      ├─ JumpNav <nav>                desktop and tablet: section buttons + seat chips, a row of its own above the world
+      │                               (not part of its scroll area; owner review 2026-10-17, item 3)
+      ├─ TurnToasts                   the other players' turns, one at a time (D17), at the right end under the jump bar
+      │                               (across the world column on phones and in short landscape): at the top of the
+      │                               world's cell, in a band the world gives up and scrolls by, so it lies over nothing
+      │                               (shell/toastRoom.ts: what a closing toast gives back at the world's top stays empty
+      │                               until scrolled past, a short section gets room below to scroll, a scroll under way
+      │                               is never stopped, a control with the keyboard focus ring is never scrolled out of
+      │                               view); every turn the viewer was there for, in turn order, even when its entries
+      │                               come late
+      ├─ World <main>                 WorldSections: sectionOrder per phase
       │  ├─ FiringSection             firing/FiringStage (D3, takes over the column during the Firing Phase)
       │  │  ├─ StepRail · QueueRow / SubmittedRow
       │  │  ├─ HeatEquation           Kiln Die + Contributions = Base Heat; Base Heat + Fire = Global Heat;
@@ -484,14 +507,17 @@ App                                   app/App.tsx: home | lobby | ended | game (
       │  ├─ ResultsSection            results/ResultsSection: podium, score table, tie-breaks
       │  ├─ TableSection              KilnMini (outside firing) + CentralBoard (5 LocationCards + Place)
       │  ├─ OrdersSection             LookedOrders ("only you") · OrderDisplay (pending empty slots) · HandRow
-      │  │                            (completable / discard states) · FinishedCeramicsStrip (Order Phase) · PublicHands
+      │  │                            (completable / discard states; no "Only you can see" pill, D19) · FinishedCeramicsStrip
+      │  │                            (Order Phase); the seat chips give every hand count (D18)
       │  ├─ ProgressSection           RecognitionTrack · TechDisplay
       │  ├─ KilnSection               IdleFiringRecap (firingRecapView) + KilnBlock (SharedKiln, ImperialKilns)
       │  └─ WorkshopsSection          BoardArea (D1): tabs + PlayerBoard
       │     └─ PlayerBoard            kiln tradition · resources · workers · hand · PersonalSpaces (D7)
-      │                               · TechSlots · CeramicsRow · marker line · completed Orders
+      │                               · TechSlots (name, state this round, short text; no rules details, D19)
+      │                               · CeramicsRow · marker line · completed Orders
       ├─ DecisionPane <aside>         decision/DecisionPane.tsx (frame, frozen):
-      │  │                            <h2> · OwnSummary · <form> [ .pane-scroll: <Window> fields ] · ConfirmBar </form>
+      │  │                            <h2> · OwnSummary · <form> [ .pane-scroll: <Window> fields ] · ConfirmBar </form>;
+      │  │                            hidden (markup kept) during the work turn until a placement is chosen (D14)
       │  └─ <Window>                  per §3.4 registry
       ├─ PhoneNav <nav>               Table / Kiln / Workshop / Orders (D5) buttons with aria-current, badges
       └─ LiveAnnouncer                one polite region (coalesced) + one alert region
@@ -538,10 +564,11 @@ Every path is under `src/app/` unless stated. A component's CSS sits beside it (
 | --- | --- |
 | `shell/GameShell.tsx`, `SkipLink.tsx`, `TopBar.tsx`, `PhaseStrip.tsx`, `KilnDieChip.tsx`, `SeatChips.tsx` | `topBar` (`phases`, `die-chip`, `chain`) |
 | `shell/SessionMenu.tsx`, `shell/ConnectionBanner.tsx` | V1.4 `App.tsx` session controls; §3.6, §3.8 |
-| `shell/GameLog.tsx` | `logbtn` / `logpanel`, `logList` |
+| `shell/GameLog.tsx`, `shell/logCeramics.ts` (the ceramics the log, the announcements and the turn toasts put into words, D9) | `logbtn` / `logpanel`, `logList` |
 | `shell/WorldSections.tsx`, `shell/JumpNav.tsx` | `sectionOrder`, `SEC_TAB`, `jump`, `jumpTo` |
 | `shell/PhoneNav.tsx` | `tabBar`, `badges`, `ICONS` |
 | `shell/LiveAnnouncer.tsx`, `shell/announce.ts`, `shell/focusRescue.ts` | `announcement`; §8.2–8.3 |
+| `shell/TurnToasts.tsx`, `shell/turnToasts.ts` (the turn queue), `shell/toastRoom.ts` (the band the world gives up) | none: owner decision D17 (owner reviews of 2026-10-17) |
 | `i18n/catalog/shell.ts`, `i18n/events.ts` | `UI` keys for the top bar and log; `evText` |
 | `lobby/HomeScreen.tsx`, `LobbyScreen.tsx`, `EndedScreen.tsx`, `EndSessionDialog.tsx` (native `<dialog>`), `RoomBar.tsx`, `i18n/catalog/lobby.ts` | V1.4 `App.tsx` screens |
 
@@ -553,7 +580,7 @@ Every path is under `src/app/` unless stated. A component's CSS sits beside it (
 | `table/KilnMini.tsx` | `kilnMini` | `kilnLayout`, `board.kilnDie`, `board.fireDiscard` |
 | `table/OrderDisplay.tsx`, `table/OrderCard.tsx` | `displayRow`, `orderCard` | `board.mainDisplay`, `game.market.refillPendingFor`, `board.counts.mainDeck` / `mainDiscard` |
 | `table/LookedOrders.tsx` | `secOrders` look branch | `model.look` (own look only), `orderTargets` |
-| `table/HandRow.tsx`, `table/PublicHands.tsx` | `handRow`, `handsPublic`, `secOrders` orders/trim branches | `model.hand`, `handLimits` (`trimDue`), `orderTargets` (completable, chosen, discard), `counts.orderHands`, `counts.pendingLook` |
+| `table/HandRow.tsx` (`table/PublicHands.tsx` was removed by D18) | `handRow`, `handsPublic`, `secOrders` orders/trim branches | `model.hand`, `handLimits` (`trimDue`), `orderTargets` (completable, chosen, discard), `counts.orderHands`, `counts.pendingLook` |
 | `table/FinishedCeramicsStrip.tsx` | `secOrders` orders branch | `me.finishedCeramicIds`, `highlightedCeramicIds`; the note that face-up Orders cannot be completed |
 | `table/TechDisplay.tsx`, `table/TechCard.tsx` | `techDisplay`, `techCard` | `board.techDisplay` |
 | `table/RecognitionTrack.tsx` | `recognitionTrack` | `players[].recognition`, `i18n/content` milestones |
@@ -576,7 +603,7 @@ Every path is under `src/app/` unless stated. A component's CSS sits beside it (
 **Work and setup decisions (B4):**
 
 - `decision/setup/*`;
-- `decision/work/WorkTurn.tsx`, `workDraft.ts`, `WorkerPicker.tsx`, `ActionWindow.tsx` (composes Imperial Priority and B5's Canal Barge form, before and after the action), `ImperialPriority.{tsx,draft.ts}`, `CommissionStep.tsx`, `GuildInspection.tsx` (take plus a `ReorderList` bottom order), `ColourSamples.tsx`;
+- `decision/work/WorkTurn.tsx`, `workDraft.ts` (`WorkerPicker.tsx` was removed by D14: workers are placed on the table), `ActionWindow.tsx` (composes Imperial Priority and B5's Canal Barge form, before and after the action), `ImperialPriority.{tsx,draft.ts}`, `CommissionStep.tsx`, `GuildInspection.tsx` (take plus a `ReorderList` bottom order), `ColourSamples.tsx`;
 - `decision/work/locations/{MaterialsYard,FormDecorate,GlazeLoad,CommissionMarket,GuildHall,CanalWharf,MagistratesHall}.{tsx,draft.ts}`;
 - `decision/work/windows.work.ts` (its slice of the registry);
 - `i18n/catalog/work.ts`.
@@ -595,11 +622,12 @@ Wireframe sources: `decWork`, `subEditor`, `deltaRow`, `workSummary`, `decLook`.
 
 Wireframe sources: `decContrib`, `decHeatMarker`, `decAfterQuality`, `decOrders`, `decTrim`, `decFinal`, `decWait`.
 
-**Contracts and integration (B6):** every frozen file of §4.3 after phase A; `tools/localBackendV161.ts`; the gallery; `test/v161/ui/{rendered_text,expressibility_complete,form_driver_games}.test.ts`; `e2e/{gallery,full_game,two_humans}.spec.ts` and `e2e/support/*`; the CI workflow (§9.6) and its local equivalent `tools/ci-ui-local.sh` (`npm run ci:ui`). Added in phase B through change requests:
+**Contracts and integration (B6):** every frozen file of §4.3 after phase A; `tools/localBackendV161.ts`; the gallery; `test/v161/ui/{rendered_text,expressibility_complete,form_driver_games}.test.ts`; `e2e/{gallery,full_game,two_humans,keyboard_focus}.spec.ts` and `e2e/support/*`; the CI workflow (§9.6) and its local equivalent `tools/ci-ui-local.sh` (`npm run ci:ui`). Added in phase B through change requests:
 
 - `rules/RulesDetail.{tsx,css}` and `i18n/catalog/rules.ts`: the one rules-details panel of D10/K15 (`RulesDetail`, `ShortText`, `OrderReward`, `LocationSummaries`) over the content accessors in `i18n/content.ts` (`rulesClarifications`, `techFacts`, `kilnFacts`, `orderFacts`, `locationFacts`, `overflowClarifications`). It replaced four package copies (B2–B5);
 - `rules/rulebookSections.ts`: the V1.6.1 rulebook's section headings by line (EN source and the line-aligned Chinese rulebook), so a clarification's rulebook source (`L140`, `ED L652`) is shown as the section a player can find ("Rulebook “Materials Yard”" / "规则书「泥柴场」"), never as a line number; `test/v161/ui/rules/rulebook_sections.test.ts` derives it again from both files;
-- `decision/composition.tsx`: the Canal Barge composition seam (§4.3 rule 3).
+- `decision/composition.tsx`: the Canal Barge composition seam (§4.3 rule 3);
+- `state/pane.ts` (`usePane`, the focus moves `focusTable` and `focusHiddenDecision`) and `decision/PaneOpeners.{tsx,css}`: the hidden pane of D14 (owner review 2026-10-17, item 2), with `WindowSpec.pane` in `state/draftStore.ts` and `workPane` in `decision/work/windows.work.ts` (§3.5).
 
 **Tests** live under `test/v161/ui/<area>/` and are owned by the area's owner. `test/v161/ui/support/*` (render harness, fixture loader, expressibility helper) is created by A2 and owned by B6 after phase A.
 
@@ -821,6 +849,8 @@ Wireframe CSS sections map to owners:
 - **Containers.**
   - `#root` is the `shell` container (`container: shell / inline-size`). Its width is the viewport width, so `useLayoutMode()`'s media queries agree with it.
   - The `shell` breakpoints: ≥1500 full phase labels; ≤1499 numbered phases; ≤1199 `--pane-w: 340px`; ≤899 the phone grid "top / banner / world / pane / nav", with the bottom sheet and its peek strip.
+  - While the pane is hidden (D14, `data-pane="hidden"` on the shell) every grid drops the pane's cell and adds a `bar` row above the world for `PaneOpeners`: on desktop and tablet "top / banner / bar / jump / world", the world taking the pane's column; on phones "top / banner / bar / world / nav", with no bottom sheet; in short landscape the rail and "top / banner / bar / world", with no side column.
+  - The turn toast's holder (D17) sits in the world's cell, at its top, not in a row of its own: the world gives up a band as tall as the holder (`--turn-toast-band`, set by `shell/toastRoom.ts`) and scrolls by as much, so the toast lies over nothing.
   - Other named containers (`world`, `section`, `central-board` (5 → 3 → 2 → 1 columns), `location`, `kiln`, `kiln-space`, `orders`, `order-card`, `stage`, `board`, `pane`) sit only on **block-level wrappers with a definite width**, such as grid cells, section bodies and cards in grid tracks. They never sit on shrink-to-fit flex items such as chips and pills, whose width `container-type: inline-size` would collapse.
 - **Short landscape** is decided by height, not by the 899px container: `@media (orientation: landscape) and (max-height: 500px)`. It covers 844×390, 915×412 and 932×430. It gives a left section rail and a side pane (the wireframe's `data-short` rules).
 - **Viewport height:** the phone grid uses `100dvh`, and the sheet's open height is `72dvh` (the wireframe used `--h`). `env(safe-area-inset-*)` pads the top bar, the nav and the sheet.
@@ -851,7 +881,7 @@ CSS checks run in vitest over `src/app/**/*.css` and `src/app/**/*.tsx` (`test/v
 - **`CeramicChip`** adds the seat-colour ring, the ID and the Quality word or letter (`QL`: M/F/S/× and 臻/上/良/瑕, never colour alone) plus the marker badges (`cchip`).
   - Its accessible name is visually hidden text from `ceramicLabel`, which replaces the wireframe's `title`-only `cerTitle`. Example: "Lin's c12: Celadon bowl, carved, Fine, Crackle, Heat marker face down".
   - `HeatMarkerBadge` likewise carries sr-only text ("Heat marker, face down" / "Heat marker +1").
-- **`PieceDetail`** (kit) is a button plus a positioned panel, opened by click, tap or keyboard. Escape and an outside click close it, and the panel stays inside the viewport. The open panel is rendered into one body-level layer (`#kit-detail-layer`, a portal) and fixed beside its button, so no scrolling column or container query wrapper clips it or paints over it (B6, CR B2-6 and B3-5). It shows the full details of a ceramic, a Tech slot (rule text) or a Kiln tradition. The `title` attribute is never the only carrier of game information.
+- **`PieceDetail`** (kit) is a button plus a positioned panel, opened by click, tap or keyboard. Escape and an outside click close it, and the panel stays inside the viewport. The open panel is rendered into one body-level layer (`#kit-detail-layer`, a portal) and fixed beside its button, so no scrolling column or container query wrapper clips it or paints over it (B6, CR B2-6 and B3-5). It shows the full details of a ceramic or a Kiln tradition. (An owned Tech slot has no `PieceDetail`: its tile shows the printed short text, owner decision D19.) The `title` attribute is never the only carrier of game information.
 - **`ArtResolver` context** (default: the static cutouts) is phase 6's hook for baked WebGL glaze images.
 - **Seat colours** are `--seat-<seatIndex>`, wireframe-approved hues that are not Glaze colours. The store's `PublicSeat.colour` names (`cinnabar`, `celadon`, `ink`, `moon-white`) would be confused with Glaze tints, so the UI does not use them.
 - **Missing art** (8 Tech illustrations, the 5 boards, central scenery) renders as text-only cards. The existing `tech-*-v2.webp` files are used where `asset_specs.json` says `REUSE`.
@@ -866,17 +896,18 @@ CSS checks run in vitest over `src/app/**/*.css` and `src/app/**/*.tsx` (`test/v
   - `header` (the top bar);
   - the ConnectionBanner region;
   - `main` (the world);
-  - `aside aria-label="Your decision"` (the pane);
+  - `aside aria-label="Your decision"` (the pane), or, while the pane is hidden (D14), the bar above the world, a `section` with the same name (the two never show together);
   - `nav aria-label="Sections"` (the phone nav) and the desktop jump nav.
 
-  The **skip link** to the decision opens the phone sheet if it is in `peek`, then focuses the pane's heading.
+  The **skip link** to the decision opens the phone sheet if it is in `peek`, then focuses the pane's heading. While the pane is hidden it focuses the bar's turn cue when the bar has openers, else the table (§8.2).
 - **Decision forms are `<form>`s:**
   - single choices: native radios in `OptionGroup` / `OptionCard`, with arrow-key navigation for free;
   - multi-choices (hand trim, the Glaze & Load vessels): checkboxes;
   - steppers: buttons with labels ("One more Clay");
   - Confirm is `type="submit"`.
 - **Unavailable options** stay focusable with `aria-disabled` and their reason in `aria-describedby`. Arrow keys can still check an `aria-disabled` radio, so the change handler ignores it and `reduce` would reject it anyway.
-- **The location sub-editor** is rendered **after** the radio's `<label>`, never inside it, as a sibling region that the radio names in `aria-controls`. Controls nested inside a label are invalid. Because drafts are kept per location (§3.5), arrowing through the locations never loses choices.
+- **The location sub-editor** is a labelled group (`.b4-sub-region`, `role="group"`) after the chosen placement's summary; the pane has no location radios (D14). No other control is ever nested inside a radio's `<label>`, where it would be invalid. Because drafts are kept per location (§3.5), choosing another location's Place never loses choices.
+- **The Shifu's Guild Hall inspection** (D19) offers each Tech as a native radio drawn as the Tech display's tile (`TechOption`): named by the Tech's name and price, described by its discipline and short text; an unavailable one keeps `aria-disabled` and its reason.
 - **The Guild Hall Shifu bottom order** uses `ReorderList`: an ordered list with **Move up** and **Move down** buttons per item. Each move is announced politely ("Celadon Glazes moved to position 1"). There is no drag-only interaction.
 - **Board tabs (D1)** use the WAI-ARIA tabs pattern (`Tabs` kit: roving `tabindex`, arrow keys, one `tabpanel` holding the `PlayerBoard`).
 - **The phone section bar is not a tablist.** One phone tab maps to several sections (wireframe `SEC_TAB`: Table → table, progress and results). It is a `nav` of plain buttons with `aria-current="page"` on the current one. The sections are ordinary regions with headings, so on desktop, where the bar is hidden, nothing points at hidden tabs.
@@ -888,7 +919,7 @@ CSS checks run in vitest over `src/app/**/*.css` and `src/app/**/*.tsx` (`test/v
 - **Quality never relies on colour.**
 - **Touch targets:** every interactive element is at least 44×44 CSS px on phones, or has 44px spacing (WCAG 2.5.8, with its inline-text exception). The wireframe's 30px `logbtn`, 20px `.pbtn`, pills, `.decl` and seat chips grow to meet this at ≤899px.
 - **Viewport-dependent behaviour** (from the wireframe click handler) lives in `uiStore` actions that read `useLayoutMode()`:
-  - on phones, tapping a Place shortcut or a location opens the sheet;
+  - on phones, tapping a Place shortcut, a location or a hidden pane's opener (D14) opens the sheet;
   - on phones, a seat chip switches to the Workshop section and collapses an open sheet to `peek`, except in short landscape;
   - on desktop, KilnMini and seat chips scroll to their section (`jumpTo`).
 
@@ -896,6 +927,12 @@ CSS checks run in vitest over `src/app/**/*.css` and `src/app/**/*.tsx` (`test/v
 
 - **Stable keys.** Lists are keyed by stable engine IDs (location, ceramic, Order, player, space), so React keeps focused nodes across revisions. The wireframe's `focusKey` re-render hack is not needed.
 - **Window change.** When the window `kind` or `openKey` changes, and focus was inside the pane or on `<body>`, focus moves to the pane's `<h2 tabIndex={-1}>` if it is visible. On a phone with the sheet in `peek`, it goes to the sheet strip button instead, whose label names the window. Otherwise focus stays where it is.
+- **Hidden pane (owner review, 2026-10-17; D14).** A window spec may hide the pane for a draft (`WindowSpec.pane`, `state/pane.ts`): the work turn does until a placement is chosen, and the shell then gives the world the pane's room (`data-pane="hidden"`). It stays up while a server error is pending, so the error is never hidden with it.
+  - While it is hidden, a slim bar above the world (`decision/PaneOpeners`) always gives the turn cue ("Your turn: place a worker · 3 left") and, when an ability may come before the worker action, its openers after "Or first:". On phones the cue takes one short line and the openers one row under it.
+  - When the pane appears in the same window (a Place shortcut, an opener), focus moves to its heading (or the sheet strip). An ability opened with nothing placed offers only the abilities as the step's radios (arrow keys select as they move, and none of them hides the pane) and a separate "Back to placing a worker" button. A lone radio is no choice: with only one ability that may come first, the step has no radios. The heading and the phone sheet strip follow what the pane shows (`WindowSpec.title` receives the draft; `workDraft.options().heading`): "Place a worker" with a placement's choices, "Before your worker action" while an ability's form is open and the step's radios name it, the ability's own name ("Canal Barge") when it is open alone.
+  - When it hides with focus inside it or on `<body>` (Clear, back to placing, a new turn after Confirm), focus goes back to the placement control the player last used: a Place shortcut or an opener (`PANE_RETURN_CONTROL`), never a prompt the code focused on the way such as the Guild Hall's Tech chooser. A control drawn anew is found again by its data attributes (`data-location-id`, `data-worker`, `data-pane-opener`), else another worker's Place at the same location, else the Table section's heading.
+  - The world scrolls, the least it can, to show that target: always after the player's own Clear or back to placing (the world has just widened, and the Guild Hall's jump may have moved the view); at a new turn only when the focus ring shows, so the other players' turns never move a pointer player's view. The other players' turn toasts, whose band opens at the world's top right after that reveal, never scroll a control with the focus ring out of view again: the world scrolls only as far as keeps it in view, and the table moves down for the rest (`shell/toastRoom.ts`, `keepFocusInView`; checked in a real browser by `keyboard_focus.spec`).
+  - The skip link then lands on the bar's cue when it has openers, else on the table.
 - **Automatic section switch (phones).** If the focused element is still visible, focus stays. If the switch hid it, focus moves to the new section's heading.
 - **Focus rescue** (`shell/focusRescue.ts`, B1). Its job is to catch a focused table control that a revision removed or hid, such as a Place button after placing or an Order card after completion.
   - On `focusin`, it records the nearest `[data-focus-fallback]` container.
@@ -909,6 +946,8 @@ CSS checks run in vitest over `src/app/**/*.css` and `src/app/**/*.tsx` (`test/v
 - **each `lastBatch`** of any origin (`self`, `computers`, `remote`), summarised through the event templates: moves, reveals, Fire, each Quality, completions;
 - **becoming an actor**, with the wireframe's `announcement` text per window ("Your turn: place a worker. 3 workers left.");
 - **someone else's private look**: "Zhao is looking at 3 Orders".
+
+The other players' turn toasts (D17, `shell/TurnToasts.tsx`) are not a live region (no `aria-live`, no `role="status"`): this region already says every batch of moves in the same event templates, so nothing is said twice. A toast is a labelled group in the Tab order where it is drawn: after the top bar, the hidden pane's bar and the jump bar, and before the world.
 
 Announcements are coalesced into one summary per revision gap, at least 1.5s apart. "Your turn" is always announced last. Batches are deduplicated by sequence (§3.2), so nothing is announced twice. The log dropdown renders the newest 50 entries and a **Show earlier** button, not the whole history.
 
@@ -1028,8 +1067,9 @@ There are a few files under `test/v161/ui/interaction/`, each marked `// @vitest
   - the sending state: `.pane-scroll` inert, Confirm keeps focus with `aria-busy`;
   - a window change moves focus to the heading, or to the strip in `peek`;
   - a Place shortcut click changes the pane draft synchronously;
-  - a language toggle keeps the draft and re-renders the stored error in the new language.
-- **Shell (B1):** focus rescue after a revision removes the focused control; skip link opens the sheet; the log dropdown's Escape.
+  - a language toggle keeps the draft and re-renders the stored error in the new language;
+  - the hidden pane of D14 (`decision/hidden_pane.test.tsx`): which drafts hide it, the bar's cue and openers in EN and ZH, focus into the pane when it appears and back to the Place shortcut or opener when it hides, the world's scroll, a pending error keeping it up, the phone sheet.
+- **Shell (B1):** focus rescue after a revision removes the focused control; skip link opens the sheet (and, with the pane hidden, goes to the bar or the table); the log dropdown's Escape; the turn toasts of D17 (`interaction/turn_toasts.test.tsx` in the DOM, `shell/turn_toasts.test.ts` for the queue, `shell/toast_room.test.ts` for the band the world gives up and the focus it keeps in view).
 
 ### 9.4 Property tests: the forms can play the whole game
 
@@ -1092,6 +1132,7 @@ None of them is part of `npm test`.
 | `gallery.spec.ts` | For every gallery entry × project:<br>• axe: no serious or critical violation;<br>• computed `font-size` ≥ 12px for every text node (≥ 13px for Chinese body text);<br>• `document.scrollingElement.scrollWidth ≤ innerWidth`;<br>• no clipped text (`scrollWidth > clientWidth` on text containers);<br>• focus is visible after Tab;<br>• on phone projects, every interactive element is ≥ 44×44 or has 44px spacing;<br>• no game text is hidden at one size and shown at another, except inactive phone sections and the collapsed sheet body;<br>• an ARIA snapshot of the decision pane.<br>Screenshots go to `output/ui-v1.6.1/screens/` (gitignored) for review. No pixel baselines are committed in phase 4: the art is not final, and baselines would churn |
 | `full_game.spec.ts` | **The phase 4 exit.** Create a room, add computers, start, and play to final results through the UI only:<br>• 1440 EN with 4 players (1 human + 3 computers);<br>• 390 ZH with 2 players;<br>• 844×390 EN with 3 players;<br>• 1024 ZH with 2 players;<br>• `@ci`: 1440 EN, 1 human + 1 computer, `e2e_reset { policy: "canonical" }`.<br>A per-window autopilot reads `data-window` and chooses through native inputs, varying its choices so that the Materials Yard, Form & Decorate and Glaze & Load forms, Commission steps, Contributions, Heat markers, after-Quality, Orders and the trim are all exercised. Then it presses Confirm.<br>After **every** Confirm it asserts:<br>• none of the IDs from `e2e_secret_ids` appear in the DOM (text or attributes);<br>• none of the D3/D4 vocabulary appears;<br>• `document.activeElement` is not `<body>`;<br>• Confirm held focus while sending.<br>The language is switched mid-game once. A reload mid-game checks reconnect: same seat, same revision |
 | `two_humans.spec.ts` | Two browser contexts (distinct `x-e2e-user`):<br>• the secret Contribution: neither sees the other's card before the reveal;<br>• the private Commission top 3 is visible only to its owner.<br>Parallel Salvage and hand-trim races are **not** steered through the browser. They are covered by platform `parallel_windows.test.ts` and the session tests (§9.2) |
+| `keyboard_focus.spec.ts` | 1440 only (owner review 2026-10-17, items 2 and 3). One human on the keyboard and two computers: three work turns, each placing an Apprentice at Canal Wharf with Enter and confirming with Enter with the world scrolled to its bottom. When the turn comes back, focus is on Canal Wharf's Place shortcut, and a frame sampler finds no frame in which a control with the focus ring in the world lies above the world's top while the other players' turn toasts open, grow and close |
 
 **CI.** B6 adds `.github/workflows/kiln-opening-ui.yml` at the repository root, subject to the owner's approval (§11), because it sits outside the app directory and uses CI minutes. It runs on `pull_request` (paths `apps/kiln-opening/**`) and on `workflow_dispatch`, with these steps:
 

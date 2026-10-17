@@ -24,9 +24,19 @@
  * location cards and the viewer's own personal spaces) and the Guild Hall's targets on the Tech
  * display (`[data-act="tech"]`, `[data-act="inspect"]`) are candidates too, wherever they are on
  * the page; a target already pressed, unavailable (`aria-disabled`) or a dev tool (`data-dev`) is
- * not. The pane's own navigation buttons (`data-goto`: "Go to the Central Action Board") move
- * nothing in the game and are never picked. On a phone a table target may sit in another
- * section: the caller brings it into view (`e2e/full_game.spec.ts`).
+ * not. The pane's own navigation buttons (`data-goto`: the Guild Hall's "Go to the Advanced
+ * Techs") move nothing in the game and are never picked. On a phone a table target may sit in
+ * another section: the caller brings it into view (`e2e/full_game.spec.ts`).
+ *
+ * **The hidden pane.** During the work turn the pane is hidden until a placement is chosen (owner
+ * review, 2026-10-17): its form stays in the page (`data-window`, `data-step`), but inside a
+ * `hidden` `<aside>`, so none of its fields is a candidate; the Place shortcuts are, and so are the
+ * hidden pane's openers above the world (`[data-pane-opener]`: an ability that may come before the
+ * worker action, which brings the pane back with its form). After a Place the pane shows, and its
+ * fields are candidates again. With an ability open and nothing placed, the step's radios are the
+ * abilities only (none at all when only one may come first: the pane's heading names it), and
+ * "Back to placing a worker" (`data-b4="back-to-placing"`) is a pane button like any other: it
+ * hides the pane again, leaving the Place shortcuts and the openers.
  */
 
 export interface AutopilotArgs {
@@ -97,8 +107,9 @@ export function autopilotPick(args: AutopilotArgs): AutopilotPick {
     if (button.type === "submit") continue;
     candidates.push(button);
   }
-  // The table targets of the open window: Place shortcuts, the Guild Hall's Techs and decks.
-  const tableTargets = args.within === undefined ? '[data-act="place"], [data-act="tech"], [data-act="inspect"]' : '[data-act="tech"], [data-act="inspect"]';
+  // The table targets of the open window: Place shortcuts, the Guild Hall's Techs and decks, and
+  // the hidden pane's openers.
+  const tableTargets = args.within === undefined ? '[data-act="place"], [data-act="tech"], [data-act="inspect"], [data-pane-opener]' : '[data-act="tech"], [data-act="inspect"]';
   for (const button of Array.from(document.querySelectorAll<HTMLButtonElement>(tableTargets))) {
     if (form.contains(button) || !enabled(button) || !shown(button)) continue;
     if (button.hasAttribute("data-dev") || button.getAttribute("aria-pressed") === "true") continue;
@@ -106,6 +117,8 @@ export function autopilotPick(args: AutopilotArgs): AutopilotPick {
   }
   const describeOf = (element: HTMLElement): string => {
     if (element instanceof HTMLInputElement) return `${element.type} ${element.name}=${element.value}${element.checked ? " (on)" : ""}`;
+    const opener = element.getAttribute("data-pane-opener");
+    if (opener !== null) return `opener ${opener}`;
     const act = element.getAttribute("data-act");
     if (act !== null) {
       const what = element.getAttribute("data-location-id") ?? element.getAttribute("data-tech-id") ?? element.getAttribute("data-discipline") ?? "";

@@ -6,7 +6,8 @@
  *   card or on the viewer's own personal space chooses worker and location at once and opens the
  *   chosen placement's sub-editor in the pane; Confirm sends the placement. Illegal entries have
  *   no shortcut.
- * - The hint's "Go to" buttons take the view and the focus to the section's heading.
+ * - The pane is hidden until a placement is chosen (owner review, 2026-10-17); its focus moves
+ *   and openers are tested in `hidden_pane.test.tsx`.
  * - Moving between locations keeps each location's sub-draft (§3.5 `perLocation`).
  * - The Guild Hall: placing there takes the player to the Tech display (scroll on desktop, the
  *   section and a collapsed sheet on phones; focus on the chooser's prompt), where a face-up Tech
@@ -37,7 +38,6 @@ import { UiStore } from "../../../../src/app/state/uiStore.ts";
 import type { UiContext, UiEffects, WorldSectionId } from "../../../../src/app/state/uiStore.ts";
 import { decisionWindow } from "../../../../src/app/state/decisionWindow.ts";
 import { buildGameModel } from "../../../../src/app/state/model.ts";
-import { sectionHeadingId } from "../../../../src/app/shell/sections.ts";
 import { CentralBoard } from "../../../../src/app/table/CentralBoard.tsx";
 import { TechDisplay } from "../../../../src/app/table/TechDisplay.tsx";
 import { ControlledSource } from "../support/controlledSource.ts";
@@ -109,39 +109,6 @@ function Table() {
   );
 }
 
-/**
- * The table laid out as the world's sections are: each part under its section heading (the
- * focusable `<h2 tabIndex={-1}>` that `WorldSections` renders), the pane after the world.
- */
-function SectionHeadings() {
-  return (
-    <>
-      <h2 id={sectionHeadingId("table")} tabIndex={-1}>Table</h2>
-      <CentralBoard />
-      <h2 id={sectionHeadingId("progress")} tabIndex={-1}>Recognition &amp; Techs</h2>
-      <TechDisplay />
-      <h2 id={sectionHeadingId("workshops")} tabIndex={-1}>Workshops</h2>
-      <OwnSpaces />
-      <DecisionPane />
-    </>
-  );
-}
-
-/**
- * The Tab stops after `from` up to and including the first Place shortcut (document order; no
- * positive tabindex is used). Fails when the pane comes first.
- */
-function tabPathToPlace(from: HTMLElement): HTMLElement[] {
-  const stops = [...container.querySelectorAll<HTMLElement>("button, input, select, textarea, a[href], [tabindex]")].filter(
-    (element) => element.tabIndex >= 0 && !(element as HTMLButtonElement).disabled && from.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING,
-  );
-  const end = stops.findIndex((element) => element.getAttribute("data-act") === "place");
-  if (end < 0) throw new Error("no Place shortcut after the heading");
-  const path = stops.slice(0, end + 1);
-  expect(path.some((element) => element.closest(".pane") !== null || element.closest("form") !== null)).toBe(false);
-  return path;
-}
-
 /** The UI store's window context for a fixture (its open window and round phase). */
 function fixtureWindow(id: string): UiContext {
   const view = fixture(id).playerView;
@@ -206,15 +173,17 @@ describe("the work turn: workers are placed on the table", () => {
     const source = new ControlledSource(id);
     mount(source, <Table />);
     expect($('[data-action="confirm"]').getAttribute("aria-disabled")).toBe("true");
-    // The pane offers no worker or location of its own: only the hint, and the way to the table.
+    // The pane offers no worker or location of its own, and it is hidden until a placement is
+    // chosen (owner review, 2026-10-17): no hint, no way to the table, nothing to read.
     expect(container.querySelector('form input[name="worker"], form input[name="locationId"]')).toBeNull();
-    expect($('[data-b4="place-hint"]').textContent).toContain("Place a worker on an action space");
+    expect($<HTMLElement>("aside.pane").hidden).toBe(true);
+    expect(container.querySelector('[data-b4="place-hint"], [data-goto="table"], [data-goto="workshop"]')).toBeNull();
     const shortcut = placeButton("canal_wharf", "shifu");
     expect(shortcut.getAttribute("aria-label")).toBe("Place Shifu at Canal Wharf");
     click(shortcut);
     expect(placeButton("canal_wharf", "shifu").getAttribute("aria-pressed")).toBe("true");
     expect($('article[data-location-id="canal_wharf"]').className).toContain("loc--chosen");
-    expect(container.querySelector('[data-b4="place-hint"]')).toBeNull();
+    expect($<HTMLElement>("aside.pane").hidden).toBe(false);
     const region = chosen()?.querySelector<HTMLElement>(".b4-sub-region");
     expect(region?.getAttribute("role")).toBe("group");
     expect(region?.querySelector('[data-location="canal_wharf"]')).not.toBeNull();
@@ -269,39 +238,6 @@ describe("the work turn: workers are placed on the table", () => {
     click(toggle);
     expect(summary()).toBe("派师傅到漕运码头：得4铜钱");
     expect(placeButton("canal_wharf", "shifu").getAttribute("aria-pressed")).toBe("true");
-  });
-
-  it("the hint's buttons go to the table and to the viewer's workshop and move focus there (phones switch section and lower the sheet)", async () => {
-    const desktop = mount(new ControlledSource("m1_work_phase_r2_3p"), <SectionHeadings />);
-    click($('[data-goto="table"]'));
-    expect(desktop.scrolled).toEqual(["table"]);
-    // Focus follows the view to the section's heading; the next Tab reaches its Place shortcuts.
-    await nextFrame();
-    expect(document.activeElement).toBe($(`#${sectionHeadingId("table")}`));
-    expect(tabPathToPlace(document.activeElement as HTMLElement).at(-1)?.closest(".cb")).not.toBeNull();
-    click($('[data-goto="workshop"]'));
-    expect(desktop.scrolled).toEqual(["table", "workshops"]);
-    await nextFrame();
-    expect(document.activeElement).toBe($(`#${sectionHeadingId("workshops")}`));
-    // Past the locations' rules details, Tab reaches a personal space's Place shortcut, not the pane.
-    expect(tabPathToPlace(document.activeElement as HTMLElement).at(-1)?.closest(".pspaces")).not.toBeNull();
-    act(() => root.unmount());
-    root = createRoot(container);
-    const phone = mount(new ControlledSource("m1_work_phase_r2_3p"), <SectionHeadings />, "phone");
-    const context = fixtureWindow("m1_work_phase_r2_3p");
-    // The work window opens on the Workshop section (the viewer's personal spaces).
-    expect(phone.ui.stateFor(context).section).toBe("workshop");
-    act(() => phone.ui.actions.setSheet("open"));
-    click($('[data-goto="table"]'));
-    expect(phone.ui.stateFor(context).section).toBe("table");
-    expect(phone.ui.stateFor(context).sheet).toBe("peek");
-    await nextFrame();
-    expect(document.activeElement).toBe($(`#${sectionHeadingId("table")}`));
-    click($('[data-goto="workshop"]'));
-    expect(phone.ui.stateFor(context).section).toBe("workshop");
-    await nextFrame();
-    expect(document.activeElement).toBe($(`#${sectionHeadingId("workshops")}`));
-    expect(phone.scrolled).toEqual([]);
   });
 });
 

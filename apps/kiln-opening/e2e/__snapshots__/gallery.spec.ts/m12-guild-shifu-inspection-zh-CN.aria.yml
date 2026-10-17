@@ -13,34 +13,20 @@
     - img "你的学徒"
     - text: 手中3张委托 声望0／4 0分
   - form "习得技艺":
-    - group "所看坯作技艺 仅你可见":
+    - group "所看坯作技艺":
       - text: ""
-      - radio "改坯案 2铜钱 → 1铜钱 坯作"
-      - text: 改坯案 2铜钱 → 1铜钱 坯作
-      - button "完整规则：改坯案"
-      - radio "练泥 3铜钱 → 2铜钱 坯作 铜钱不足" [disabled]
-      - text: 练泥 3铜钱 → 2铜钱 坯作 铜钱不足
-      - button "完整规则：练泥"
+      - radio "改坯案 2铜钱 → 1铜钱"
+      - radio "练泥 3铜钱 → 2铜钱" [disabled]
+      - paragraph: 铜钱不足
     - group "或取公开技艺":
       - text: ""
-      - radio "清玩斋 3铜钱 → 2铜钱 坯作 铜钱不足" [disabled]
-      - text: 清玩斋 3铜钱 → 2铜钱 坯作 铜钱不足
-      - button "完整规则：清玩斋"
-      - radio "大陶车 2铜钱 → 1铜钱 坯作"
-      - text: 大陶车 2铜钱 → 1铜钱 坯作
-      - button "完整规则：大陶车"
-      - radio "支烧窑具 2铜钱 → 1铜钱 釉作"
-      - text: 支烧窑具 2铜钱 → 1铜钱 釉作
-      - button "完整规则：支烧窑具"
-      - radio "漕船 2铜钱 → 1铜钱 釉作"
-      - text: 漕船 2铜钱 → 1铜钱 釉作
-      - button "完整规则：漕船"
-      - radio "窑工 2铜钱 → 1铜钱 火作"
-      - text: 窑工 2铜钱 → 1铜钱 火作
-      - button "完整规则：窑工"
-      - radio "复烧 2铜钱 → 1铜钱 火作"
-      - text: 复烧 2铜钱 → 1铜钱 火作
-      - button "完整规则：复烧"
+      - radio "清玩斋 3铜钱 → 2铜钱" [disabled]
+      - paragraph: 铜钱不足
+      - radio "大陶车 2铜钱 → 1铜钱"
+      - radio "支烧窑具 2铜钱 → 1铜钱"
+      - radio "漕船 2铜钱 → 1铜钱"
+      - radio "窑工 2铜钱 → 1铜钱"
+      - radio "复烧 2铜钱 → 1铜钱"
     - paragraph: 放回坯作牌堆底（自上而下）
     - list "放回坯作牌堆底（自上而下）":
       - listitem:

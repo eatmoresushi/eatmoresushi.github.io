@@ -1,25 +1,2 @@
-- complementary "你的决断":
-  - paragraph: 派工阶段·轮到你了
-  - heading "派工" [level=2]
-  - region "Lin（你）":
-    - heading "Lin（你）" [level=3]
-    - group "资源":
-      - strong: "2"
-      - text: 泥
-      - strong: "2"
-      - text: 柴
-      - strong: "4"
-      - text: 铜钱
-    - img "你的师傅"
-    - img "你的学徒"
-    - img "你的学徒"
-    - img "你的学徒"
-    - text: 手中0张委托 声望2／4 2分
-  - form "派工":
-    - paragraph: 你还有4名工人未派（共4名）。派工阶段不能跳过。
-    - paragraph: 请在桌面上派工：点选中央行动板上某个地点的派工按钮，或你窑口板上制坯饰纹、施釉装窑的派工按钮。
-    - button "前往中央行动板"
-    - button "前往你的作坊"
-    - paragraph: 请在桌面上选一个可派的地点派工。
-    - button "取消"
-    - button "确认" [disabled]
+- region "你的决断":
+  - paragraph: 轮到你了：派工 · 还剩4名工人

@@ -18,12 +18,21 @@
  *
  * The `work` window covers both the before-action step and the after-action window
  * (`window.step`); `WorkTurn` composes `ActionWindow` for the latter.
+ *
+ * **The pane hides** (owner review, 2026-10-17; `pane`, `state/pane.ts`) during the viewer's
+ * before-action step while no placement is chosen: the worker is placed on the table, and the pane
+ * appears with the chosen placement. The abilities that may come before the worker action
+ * (`workDraft.options().modes` other than `place`) are the hidden pane's openers: each chooses its
+ * mode, which brings the pane back with that ability's form. The heading then follows the pane's
+ * content (`HEADING_TITLE`): "Before your worker action" while the step's choice names the
+ * ability, the ability's own name when it is open alone.
  */
 import type { CeramicId, LocationId, PlacementWorkerOption } from "../../../game/index.ts";
 import { msg } from "../../i18n/translator.ts";
-import { defineWindow } from "../../state/draftStore.ts";
-import type { WindowSpecFor } from "../../state/draftStore.ts";
-import type { GameModel } from "../../state/model.ts";
+import type { MessageKey } from "../../i18n/translator.ts";
+import { PANE_SHOWN, defineWindow } from "../../state/draftStore.ts";
+import type { PaneOpener, PanePresence, WindowSpecFor } from "../../state/draftStore.ts";
+import type { EngineView, GameModel } from "../../state/model.ts";
 import { displaySlotKey, placementWorkerKey, tableSelection } from "../../state/tableSelection.ts";
 import type { OrderTargetState, TableSelectionData } from "../../state/tableSelection.ts";
 import { KilnSelection } from "../setup/KilnSelection.tsx";
@@ -47,13 +56,54 @@ import type { CommissionMarketDraft } from "./locations/CommissionMarket.draft.t
 import { commissionMarketDraft } from "./locations/CommissionMarket.draft.ts";
 import { WorkTurn } from "./WorkTurn.tsx";
 import { activePlacement, workDraft } from "./workDraft.ts";
-import type { WorkAction } from "./workDraft.ts";
+import type { WorkAction, WorkDraft, WorkHeading, WorkMode } from "./workDraft.ts";
 
 /** The window kinds this slice covers. */
 export type WorkWindowKind = "kiln_selection" | "setters_mark" | "work" | "commission" | "guild_inspection" | "colour_samples";
 
 function workStep(model: GameModel): "before_action" | "after_action" {
   return model.window.kind === "work" ? model.window.step : "before_action";
+}
+
+/**
+ * The work window's heading (and phone sheet strip), after what the pane shows (owner review,
+ * 2026-10-17; `workDraft.options().heading`): placing a worker; before the worker action, while an
+ * ability's form is open (the step's choice names the ability), or the ability itself when it is
+ * open alone (nothing placed, no other ability: no step choice); after the worker action.
+ */
+const HEADING_TITLE = {
+  place: "work.title.work",
+  before_action: "work.title.beforeAction",
+  after_action: "work.title.afterAction",
+  imperial_priority: "work.work.mode.imperialPriority",
+  canal_barge: "work.work.mode.canalBarge",
+} as const satisfies Readonly<Record<WorkHeading, MessageKey>>;
+
+/** Each ability that may come before the worker action, as the hidden pane's opener names it. */
+const OPENER_TITLE = {
+  imperial_priority: "work.work.mode.imperialPriority",
+  canal_barge: "work.work.mode.canalBarge",
+} as const satisfies Readonly<Record<Exclude<WorkMode, "place" | "end_turn">, MessageKey>>;
+
+/**
+ * The work window's pane (owner review, 2026-10-17): hidden during the viewer's before-action step
+ * while no placement is chosen, with the bar's cue ("Your turn: place a worker · 3 left", always)
+ * and an opener per ability that may come first ("Or first: [Imperial Priority]"); shown
+ * otherwise (a chosen placement, an ability's form, the after-action window).
+ */
+export function workPane(draft: WorkDraft, model: GameModel, engine: EngineView): PanePresence<WorkAction> {
+  if (!model.viewerActs || model.window.kind !== "work" || model.window.step !== "before_action") return PANE_SHOWN;
+  if (draft.mode !== "place" || activePlacement(draft, model, engine) !== null) return PANE_SHOWN;
+  const options = workDraft.options(draft, model, engine);
+  const openers = options.modes.flatMap(({ mode }): PaneOpener<WorkAction>[] =>
+    mode === "place" || mode === "end_turn" ? [] : [{ key: mode, label: msg(OPENER_TITLE[mode]), action: { type: "mode", mode } }],
+  );
+  return {
+    hidden: true,
+    lead: msg("work.work.hidden.place", { n: options.workersLeft }),
+    openersLabel: openers.length === 0 ? null : msg("work.work.hidden.orFirst"),
+    openers,
+  };
 }
 
 function slotTargets(slots: ReadonlyArray<{ slotIndex: number }>, chosen: string | null): Map<string, { state: OrderTargetState; disabled: boolean }> {
@@ -87,11 +137,9 @@ export const WORK_WINDOWS: { readonly [K in WorkWindowKind]: WindowSpecFor<K> } 
     kind: "work",
     Component: WorkTurn,
     draft: workDraft,
-    title(model) {
-      if (workStep(model) === "after_action") return msg("work.title.afterAction");
-      return msg("work.title.work");
-    },
+    title: (model, engine, draft) => msg(HEADING_TITLE[workDraft.options(draft, model, engine).heading]),
     alternative: (_draft, model) => (workStep(model) === "after_action" ? { label: msg("common.verb.endTurn"), command: { type: "END_TURN" } } : null),
+    pane: workPane,
     table: {
       select(draft, model, engine): TableSelectionData {
         if (!model.viewerActs) return tableSelection({});

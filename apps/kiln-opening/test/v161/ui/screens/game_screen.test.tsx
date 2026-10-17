@@ -70,9 +70,15 @@ describe("GameScreen renders every fixture", () => {
     expect(acting).not.toContain('data-dev="canonical-move"');
     const waiting = renderWindow(fixtureSource("m10b_setters_mark_on_space"));
     expect(waiting).not.toContain('data-action="confirm"');
-    const dev = renderWindow(fixtureSource("m1_work_phase_r2_3p"), { devTools: true });
+    const dev = renderWindow(fixtureSource("w-kiln-selection"), { devTools: true });
     expect(dev).toContain('data-dev="canonical-move"');
     expect(renderWindow(fixtureSource("m10b_setters_mark_on_space"), { devTools: true })).not.toContain('data-dev="canonical-move"');
+    // The work turn hides the pane until a placement is chosen (owner review, 2026-10-17): the
+    // dev button stays in it, once, and adds nothing to the bar above the world.
+    const hidden = renderScreen(fixtureSource("m1_work_phase_r2_3p"), { devTools: true });
+    expect(hidden.match(/data-dev="canonical-move"/g)).toHaveLength(1);
+    expect(hidden).toMatch(/<aside class="pane"[^>]*hidden="">(?:(?!<\/aside>).)*data-dev="canonical-move"/s);
+    expect(hidden).toMatch(/<section class="pane-openers"[^>]*><p [^>]*>Your turn: place a worker · \d left<\/p><\/section>/);
   });
 
   it("names the waiting window after who acts", () => {

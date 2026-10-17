@@ -9,12 +9,14 @@
  * - the phase strip follows `roundPhaseOf`, marks the current phase `aria-current="step"` and adds
  *   the Appendix D step during the Firing Phase; a finished game adds Final scoring;
  * - the sections follow `sectionOrder`, each with a focusable heading and its phone tab, the
- *   current tab's sections marked `data-current`; the jump bar lists them in the same order.
+ *   current tab's sections marked `data-current`; the jump bar lists them in the same order, in
+ *   the shell's row above the world (not inside it).
  */
 import { describe, expect, it } from "vitest";
 import { roundPhaseOf } from "../../../../src/game/index.ts";
 import { roundPhases } from "../../../../src/app/i18n/content.ts";
 import { GameShell } from "../../../../src/app/shell/GameShell.tsx";
+import { JumpNav } from "../../../../src/app/shell/JumpNav.tsx";
 import { PhaseStrip } from "../../../../src/app/shell/PhaseStrip.tsx";
 import { TopBar } from "../../../../src/app/shell/TopBar.tsx";
 import { WorldSections } from "../../../../src/app/shell/WorldSections.tsx";
@@ -39,16 +41,16 @@ describe("top bar", () => {
     expect([...positions].sort((a, b) => a - b)).toEqual(positions);
     // Desktop and tablet: the chips sit in the jump bar after the section buttons (owner review, 2026-10-17).
     expect(html).not.toContain('class="seat-chips"');
-    const world = renderComponent(fixtureSource("m1_work_phase_r2_3p"), <WorldSections />);
-    const jumpList = world.indexOf('class="jump-nav-list"');
-    const jumpSeats = world.indexOf('class="jump-nav-seats"><ol class="seat-chips"');
+    const jumpBar = renderComponent(fixtureSource("m1_work_phase_r2_3p"), <JumpNav />);
+    const jumpList = jumpBar.indexOf('class="jump-nav-list"');
+    const jumpSeats = jumpBar.indexOf('class="jump-nav-seats"><ol class="seat-chips"');
     expect(jumpList).toBeGreaterThanOrEqual(0);
     expect(jumpSeats).toBeGreaterThan(jumpList);
     // Phones (and short landscape): no jump bar chips; the chips end the top bar, after the tools.
     for (const layoutMode of ["phone", "phone-landscape"] as const) {
       const phone = renderComponent(fixtureSource("m1_work_phase_r2_3p"), <TopBar />, { layoutMode });
       expect(phone.indexOf('class="top-bar-seats"')).toBeGreaterThan(phone.indexOf('class="top-bar-tools"'));
-      expect(renderComponent(fixtureSource("m1_work_phase_r2_3p"), <WorldSections />, { layoutMode })).not.toContain("jump-nav-seats");
+      expect(renderComponent(fixtureSource("m1_work_phase_r2_3p"), <JumpNav />, { layoutMode })).not.toContain("jump-nav-seats");
     }
     expect(html).toContain("Round <strong>2</strong>/5");
     expect(renderComponent(fixtureSource("m1_work_phase_r2_3p"), <TopBar />, { locale: "zh-CN" })).toContain("第<strong>2</strong>轮／共5轮");
@@ -109,7 +111,8 @@ describe("world sections", () => {
     const order = sectionOrder(model.roundPhase);
     const sections = [...html.matchAll(/<section id="sec-([a-z]+)"/g)].map((match) => match[1]);
     expect(sections).toEqual(order);
-    const jump = [...html.matchAll(/data-jump="([a-z]+)"/g)].map((match) => match[1]);
+    const jumpBar = renderComponent(fixtureSource(id), <JumpNav />);
+    const jump = [...jumpBar.matchAll(/data-jump="([a-z]+)"/g)].map((match) => match[1]);
     expect(jump).toEqual(order);
     const tab = windowUiDefaults(model.window, model.roundPhase).section;
     for (const id of order) {
@@ -136,16 +139,36 @@ describe("world sections", () => {
     expect(zh).toContain(`中央行动板 · ${players}人容量`);
     expect(en).toContain(">Recognition &amp; Techs</h2>");
     expect(zh).toContain(">声望与技艺</h2>");
-    expect(en).toContain('<nav class="jump-nav" aria-label="Jump to">');
+    // The jump bar is the shell's row above the world, not part of the world (owner review
+    // 2026-10-17, item 3).
+    expect(en).not.toContain("jump-nav");
+    expect(renderComponent(fixtureSource("m1_work_phase_r2_3p"), <JumpNav />)).toContain('<nav class="jump-nav" aria-label="Jump to">');
+    expect(renderComponent(fixtureSource("m1_work_phase_r2_3p"), <JumpNav />, { locale: "zh-CN" })).toMatch(/<nav class="jump-nav" aria-label="[^"]+">/);
   });
 });
 
 describe("game shell", () => {
   it("lays out the slots with landmarks and the skip target", () => {
-    const html = renderComponent(fixtureSource("m1_work_phase_r2_3p"), <GameShell skipLink="S" top="T" banner="B" world="W" pane="P" nav="N" live="L" />);
+    const html = renderComponent(fixtureSource("w-kiln-selection"), <GameShell skipLink="S" top="T" banner="B" world="W" pane="P" nav="N" live="L" />);
     expect(html).toMatch(/^<div class="shell" data-shell="">/);
     expect(html).toContain('<main class="shell-world" id="world" data-focus-fallback="">W</main>');
     expect(html).toContain('<div class="shell-pane" id="decision">P</div>');
+    // The openers' row is empty (no row) while the pane shows.
+    expect(html).toContain('<div class="shell-bar"></div>');
+    // The jump bar's row (JumpNav by default) comes before the toast's holder and the world, where
+    // it is drawn: above the world, not part of its scroll area.
+    const jump = renderComponent(fixtureSource("w-kiln-selection"), <GameShell skipLink="S" top="T" banner="B" world="W" pane="P" nav="N" live="L" jump="J" />);
+    expect(jump).toContain('<div class="shell-jump">J</div>');
+    expect(jump.indexOf('<div class="shell-jump">J</div>')).toBeLessThan(jump.indexOf('<div class="shell-toasts">'));
+    expect(jump.indexOf('<div class="shell-toasts">')).toBeLessThan(jump.indexOf("<main"));
+    expect(html).toMatch(/<div class="shell-jump"><nav class="jump-nav" aria-label="Jump to">/);
+  });
+
+  it("marks a hidden pane for the layout and puts its openers' row before the world (owner review, 2026-10-17)", () => {
+    const html = renderComponent(fixtureSource("m1_work_phase_r2_3p"), <GameShell skipLink="S" top="T" banner="B" world="W" pane="P" nav="N" live="L" paneBar="O" />);
+    expect(html).toMatch(/^<div class="shell" data-shell="" data-pane="hidden">/);
+    expect(html.indexOf('<div class="shell-bar">O</div>')).toBeGreaterThan(-1);
+    expect(html.indexOf('<div class="shell-bar">O</div>')).toBeLessThan(html.indexOf("<main"));
   });
 
   it("puts the skip link first in the full screen, pointing at the decision", () => {

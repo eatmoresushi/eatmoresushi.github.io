@@ -103,3 +103,21 @@ export function logCeramicView(model: GameModel, log: readonly LogEntry[]): Cera
   CACHE.set(model, { log, view });
   return view;
 }
+
+/**
+ * The `CeramicLabelView` as of one moment of the log, for a turn toast (which may show some turns
+ * after its turn): the log's facts up to `upTo`, so a later move (a delivery, a twin formed
+ * later) never changes how the turn's lines read. A ceramic formed before the log's first entry
+ * (a log still waiting for its history) has no facts there: the model's record describes it.
+ */
+export function ceramicViewAsOf(model: GameModel, log: readonly LogEntry[], upTo: number): CeramicLabelModelView {
+  const facts = factsFromLog(log.filter((entry) => entry.sequence <= upTo));
+  const formed = new Set<CeramicId>();
+  for (const { event } of log) if (event.type === "CERAMIC_FORMED") formed.add(event.ceramicId);
+  for (const [key, ceramic] of Object.entries(model.ceramics)) {
+    const id = key as CeramicId;
+    if (!formed.has(id)) facts.set(id, factsOf(id, ceramic));
+  }
+  const players: readonly { playerId: PlayerId; displayName: string }[] = model.players;
+  return { viewerId: model.viewerId, players, ceramics: Object.fromEntries(facts) };
+}

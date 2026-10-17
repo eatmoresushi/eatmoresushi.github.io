@@ -1,14 +1,25 @@
 /**
- * Turn toasts: what the other players did on their last turn (owner review, 2026-10-17).
- * Owner: B1 (shell, log, lobby).
+ * Turn toasts: what the other players did on their turns (owner review, 2026-10-17; one at a
+ * time in turn order, owner review item 3). Owner: B1 (shell, log, lobby).
  *
  * Pure: it reads the game log (`useLog().log`) and groups the entries that arrived since the
- * screen mounted into turns, one per other player's turn. `TurnToasts.tsx` shows each player's
- * turns in their toast, each turn a group of lines in the event templates' words
- * (`publicEventText`, the game log's own lines).
+ * screen mounted into turns, one per other player's turn. `TurnToasts.tsx` shows those turns one
+ * at a time, each a group of lines in the event templates' words (`publicEventText`, the game
+ * log's own lines).
  *
  * - **History is not news.** The log present when the screen mounts (a reload, a reconnect that
  *   fills the log later) is skipped: only entries newer than the mount's revision count.
+ * - **Only turns the viewer was there for.** Turns played while the viewer was away (the page
+ *   hidden: another tab, a locked phone; or the connection offline) are history too, exactly as
+ *   after a reload (`skipTurns`): the screen moves the tracker past them, and past whatever the
+ *   update that brings the viewer back holds (and the reconnect the store makes on that return),
+ *   without queuing them. The game log keeps them.
+ * - **Every turn the viewer was there for.** In live play a view may come before its entries (a
+ *   poll reads the records, then a newer head; a room check or a stale command's refresh brings
+ *   the head alone): those entries are news when they come, whatever the view showed meanwhile.
+ *   And an update may bring later entries before earlier ones (the viewer's own command, or a
+ *   computer batch, right after such a view): the tracker waits at the gap, so the turns in it
+ *   play when they come, in turn order (`GAP_WAIT_MS` at most; a gap of history is not waited for).
  * - **Only other players' moves.** An entry the viewer's own command produced is never shown, and
  *   it ends the turn being collected. A line is shown only when its event names the player whose
  *   command produced it (`playerId === actorId`), or is a Quality change their own ability made
@@ -21,29 +32,41 @@
  * - **Public only.** A turn holds log entries; the toast formats their public event, never the
  *   entry's own-secret variant, so a private look or a hand never shows.
  *
- * `toastReducer` is the stack itself: one toast per other player, each closing `TOAST_MS` after it
- * last changed, all paused while hovered or focused. A toast holds every turn of that player that
- * one update brought, oldest first, each turn its own group of lines: a computer batch (or a
- * reconnect) can bring a player's Order turn and their next Work turn at once, and neither is
- * dropped (newest `MAX_TOAST_TURNS`, the rest counted). A later update that brings that player a
- * new turn replaces their toast.
+ * `toastReducer` is the queue itself: the turns in the order they were played, one showing at a
+ * time. The toast showing closes `TOAST_MS` after it appeared (or after its turn last grew), or
+ * when dismissed, and the next turn in the queue shows in its place for its own `TOAST_MS`. A
+ * turn that grows while it waits is updated in its place in the queue; one that grows after its
+ * toast closed (a turn of several commands) joins the queue again.
+ *
+ * **Every turn plays** (owner review item 3: "queue … and play them in order"). The queue has no
+ * cap, so no turn the viewer was there for is ever dropped: one computer batch can bring ten
+ * turns and more (a 4-player round's end: the last placements, the Contributions, the Heat
+ * markers, the after-Quality abilities, the Order turns and the next round's first placements),
+ * and a viewer who decides faster than the others' turns play builds a backlog, which plays on
+ * in order (× or Escape moves on to the next turn). An absence piles up nothing: what is played
+ * while the page is hidden or offline is not queued (above).
+ *
+ * **Held, not lost.** The clock runs only while the toast can be seen and is not in use: the
+ * screen pauses the queue (`pause` / `resume`) while the pointer or focus is on the toast, while
+ * there is no room to draw it (the phone's open decision sheet), and while the page is hidden
+ * (the turns already waiting then keep their place and their time). A pause may start before any
+ * turn waits; the turn that then arrives gets its full `TOAST_MS` from the resume.
  */
 import type { GameEventType, PlayerId } from "../../game/index.ts";
 import { repeatsPreviousEntry } from "../i18n/events.ts";
 import type { LogEntry } from "../session/gameSource.ts";
 
-/** A toast closes this long after it appears (or after it last changed). */
+/** A toast shows this long after it appears (or after its turn last grew). */
 export const TOAST_MS = 3_000;
 
 /** At most this many lines per turn; the rest are counted ("and 2 more lines in the game log"). */
 export const MAX_TOAST_LINES = 4;
 
 /**
- * At most this many turns per toast, the newest; the earlier ones are counted ("and 2 earlier
- * turns in the game log"). A computer batch holds no more than this for one player; a reconnect
- * after a long absence may.
+ * A gap in the log (an update that brought later entries before earlier ones) is waited for this
+ * long; the store's next read fills it long before. Then the tracker moves past it.
  */
-export const MAX_TOAST_TURNS = 3;
+export const GAP_WAIT_MS = 10_000;
 
 /** Player actions a toast states, when their event names the acting player. */
 export const TOAST_EVENTS: ReadonlySet<GameEventType> = new Set<GameEventType>([
@@ -98,12 +121,14 @@ export interface Turn {
 }
 
 export interface TurnTracker {
-  /** The last log sequence looked at. */
+  /** The last log sequence looked at; −1 before any (an empty log at mount). */
   lastSequence: number;
-  /** Entries at or below this revision are history (the log when the screen mounted). */
+  /** Entries at or below this revision are history (the log when the screen mounted, or when the viewer came back). */
   sinceRevision: number;
   /** The turn still being collected, or null once it ended. */
   open: Turn | null;
+  /** The sequence missing right after `lastSequence` while later ones are in, and since when; null without a gap. */
+  gap: { sequence: number; since: number } | null;
 }
 
 function playerOf(entry: LogEntry): PlayerId | null {
@@ -123,21 +148,49 @@ export function isToastLine(entry: LogEntry, previous: LogEntry | undefined): bo
 /** A tracker that treats everything in `log` (and anything up to `revision`) as history. */
 export function startTurnTracker(log: readonly LogEntry[], revision: number): TurnTracker {
   const last = log.length === 0 ? -1 : (log[log.length - 1]?.sequence ?? -1);
-  return { lastSequence: last, sinceRevision: revision, open: null };
+  return { lastSequence: last, sinceRevision: revision, open: null, gap: null };
+}
+
+/**
+ * The tracker moved past everything in `log` (and anything up to `revision`) without making a
+ * turn of it: the viewer was away (the page hidden, the connection offline) or is just back, so
+ * those turns are history, as after a reload. The turn being collected ends: a later part of it
+ * starts a turn of its own.
+ */
+export function skipTurns(tracker: TurnTracker, log: readonly LogEntry[], revision: number): TurnTracker {
+  const last = log.length === 0 ? tracker.lastSequence : Math.max(tracker.lastSequence, log[log.length - 1]?.sequence ?? -1);
+  return { lastSequence: last, sinceRevision: Math.max(tracker.sinceRevision, revision), open: null, gap: null };
 }
 
 /**
  * The turns that changed since the tracker last looked, oldest first: each new turn, and the
  * open turn again (same key, more entries) when it grew. Entries of the viewer's own commands
  * (and every entry for a spectator, `viewerId` null, is someone else's) are never in a turn.
+ *
+ * The entries are taken in sequence order, and none is passed over: at a sequence that has not
+ * arrived while later ones have (a gap), the tracker stops and waits (`gap`), so the turns in it
+ * play in their place once the store's next read brings them. A gap still open `GAP_WAIT_MS`
+ * after it was met (`now`) is passed, and the turn being collected ends; a gap of history (the
+ * entries after it are history) is never waited for.
  */
-export function advanceTurns(tracker: TurnTracker, log: readonly LogEntry[], viewerId: PlayerId | null): { tracker: TurnTracker; turns: readonly Turn[] } {
+export function advanceTurns(tracker: TurnTracker, log: readonly LogEntry[], viewerId: PlayerId | null, now: number = 0): { tracker: TurnTracker; turns: readonly Turn[] } {
   let open: Turn | null = tracker.open;
   let lastSequence = tracker.lastSequence;
+  let gap: TurnTracker["gap"] = null;
   const changed = new Map<number, Turn>();
   for (let index = 0; index < log.length; index += 1) {
     const entry = log[index]!;
     if (entry.sequence <= lastSequence) continue;
+    if (lastSequence >= 0 && entry.sequence > lastSequence + 1 && entry.revision > tracker.sinceRevision) {
+      const missing = lastSequence + 1;
+      const since = tracker.gap?.sequence === missing ? tracker.gap.since : now;
+      if (now - since < GAP_WAIT_MS) {
+        gap = { sequence: missing, since };
+        break;
+      }
+      // Waited long enough: what the gap held is unknown, so the turn being collected ends.
+      open = null;
+    }
     lastSequence = entry.sequence;
     if (entry.revision <= tracker.sinceRevision) continue;
     const actor = entry.actorId;
@@ -153,7 +206,7 @@ export function advanceTurns(tracker: TurnTracker, log: readonly LogEntry[], vie
     }
     if (TURN_ENDS.has(entry.event.type) && playerOf(entry) === actor) open = null;
   }
-  return { tracker: { lastSequence, sinceRevision: tracker.sinceRevision, open }, turns: [...changed.values()] };
+  return { tracker: { lastSequence, sinceRevision: tracker.sinceRevision, open, gap }, turns: [...changed.values()] };
 }
 
 /**
@@ -166,117 +219,99 @@ export function toastLines<T>(lines: readonly T[], max: number = MAX_TOAST_LINES
   return { shown, more: lines.length - shown.length };
 }
 
-/**
- * The turns a toast shows: every turn when they fit, else the newest `max` and the count of the
- * earlier ones (`earlier`), which the game log holds.
- */
-export function toastTurns<T>(turns: readonly T[], max: number = MAX_TOAST_TURNS): { shown: readonly T[]; earlier: number } {
-  if (turns.length <= max) return { shown: turns, earlier: 0 };
-  const shown = turns.slice(-Math.max(1, max));
-  return { shown, earlier: turns.length - shown.length };
-}
+// ── The queue ─────────────────────────────────────────────────────────────────────────────
 
-// ── The toast stack ───────────────────────────────────────────────────────────────────────
-
-/**
- * One toast: one other player's turns from the update that last brought them a new turn (and
- * that turn's growth since), oldest first, closing at `deadline` unless paused.
- */
+/** One turn in the queue. */
 export interface ToastItem {
-  playerId: PlayerId;
-  turns: readonly Turn[];
-  deadline: number;
-  /** The update (`ToastState.updates`) that last changed this toast. */
-  update: number;
+  turn: Turn;
 }
 
 /**
- * The stack: at most one toast per other player, oldest first. While the pointer or focus is on
- * it (`pausedAt`), no toast closes; resuming moves every deadline on by the paused time, so each
- * keeps the time it had left.
+ * The queue: the toast showing first (`items[0]`), then the turns waiting, oldest first. The
+ * toast showing closes at `deadline` unless paused; while paused (`pausedAt`: the pointer or
+ * focus on it, no room for it, the page hidden) it never closes, and resuming moves the deadline
+ * on by the paused time, so it keeps the time it had left.
  */
 export interface ToastState {
   items: readonly ToastItem[];
+  /** When the toast showing closes; null when the queue is empty. */
+  deadline: number | null;
+  /** When the pause began; it may outlast the queue (no room, the page hidden). */
   pausedAt: number | null;
-  /** How many updates brought turns: the toasts the latest one changed carry this number. */
-  updates: number;
 }
 
-export const NO_TOASTS: ToastState = Object.freeze({ items: Object.freeze([]) as readonly ToastItem[], pausedAt: null, updates: 0 });
+export const NO_TOASTS: ToastState = Object.freeze({ items: Object.freeze([]) as readonly ToastItem[], deadline: null, pausedAt: null });
 
 export type ToastAction =
   | { type: "turns"; turns: readonly Turn[]; now: number }
   | { type: "expire"; now: number }
-  | { type: "dismiss"; playerId: PlayerId }
+  | { type: "dismiss"; key: number; now: number }
   | { type: "pause"; now: number }
   | { type: "resume"; now: number };
 
-/** The update's turns per player, in the order each player first appears, each oldest first. */
-function turnsByPlayer(turns: readonly Turn[]): Map<PlayerId, Turn[]> {
-  const byPlayer = new Map<PlayerId, Turn[]>();
-  for (const turn of turns) {
-    const own = byPlayer.get(turn.playerId);
-    if (own === undefined) byPlayer.set(turn.playerId, [turn]);
-    else own.push(turn);
-  }
-  return byPlayer;
+/** The toast showing, or null. */
+export function showingToast(state: ToastState): ToastItem | null {
+  return state.items[0] ?? null;
+}
+
+/** The queue without its first toast: the next one shows from `start` for `TOAST_MS`. */
+function next(state: ToastState, items: readonly ToastItem[], start: number): ToastState {
+  if (items.length === 0) return state.pausedAt === null ? NO_TOASTS : { items: [], deadline: null, pausedAt: state.pausedAt };
+  return { items, deadline: start + TOAST_MS, pausedAt: state.pausedAt };
 }
 
 /**
- * - `turns` (one update's turns, oldest first): each player's toast shows every turn of theirs in
- *   the update, for `TOAST_MS` from now (from the pause, while paused). When the update only
- *   continues the toast's last turn (a turn of several commands), the toast keeps its earlier
- *   turns; when it brings the player a new turn, it replaces their older toast. A changed toast
- *   moves to the end (newest) unless the stack is paused, where it is updated in place so nothing
- *   jumps under the reader.
- * - `expire`: closes every toast whose time is up (never while paused).
- * - `dismiss`: closes one toast (the close button, Escape).
- * - `pause` / `resume`: hover or focus on the stack. An empty stack is never paused.
+ * - `turns` (one update's turns, oldest first): a turn already in the queue is updated in its
+ *   place (the toast showing gets its full `TOAST_MS` again, from now, or from the pause while
+ *   paused); any other turn joins the end of the queue, however long it is. An empty queue shows
+ *   its first turn at once.
+ * - `expire`: closes the toast showing when its time is up (never while paused); the next turn
+ *   shows for its own `TOAST_MS` from now.
+ * - `dismiss` (the close button, Escape): closes that turn's toast, and the next turn shows; a
+ *   waiting turn (dismissed as it was replaced) just leaves the queue.
+ * - `pause` / `resume`: the screen's hold (hover or focus on the toast, no room for it, the page
+ *   hidden). A pause may begin while the queue is empty and outlasts it until resumed.
  */
 export function toastReducer(state: ToastState, action: ToastAction): ToastState {
   switch (action.type) {
     case "turns": {
       if (action.turns.length === 0) return state;
-      const update = state.updates + 1;
+      const start = state.pausedAt ?? action.now;
       const items = [...state.items];
-      const deadline = (state.pausedAt ?? action.now) + TOAST_MS;
-      for (const [playerId, turns] of turnsByPlayer(action.turns)) {
-        const index = items.findIndex((candidate) => candidate.playerId === playerId);
-        const previous = index < 0 ? undefined : items[index]!;
-        const continues = previous !== undefined && previous.turns[previous.turns.length - 1]?.key === turns[0]!.key;
-        const item: ToastItem = { playerId, turns: continues ? [...previous.turns.slice(0, -1), ...turns] : turns, deadline, update };
-        if (index < 0) items.push(item);
-        else if (state.pausedAt !== null) items[index] = item;
-        else {
-          items.splice(index, 1);
-          items.push(item);
-        }
+      let deadline = state.deadline;
+      for (const turn of action.turns) {
+        const index = items.findIndex((item) => item.turn.key === turn.key);
+        if (index >= 0) items[index] = { ...items[index]!, turn };
+        else items.push({ turn });
+        if (index === 0 || items.length === 1) deadline = start + TOAST_MS;
       }
-      return { ...state, items, updates: update };
+      return { ...state, items, deadline };
     }
     case "expire": {
-      if (state.pausedAt !== null) return state;
-      const items = state.items.filter((item) => item.deadline > action.now);
-      return items.length === state.items.length ? state : { ...state, items, pausedAt: null };
+      if (state.pausedAt !== null || state.deadline === null || state.deadline > action.now) return state;
+      return next(state, state.items.slice(1), action.now);
     }
     case "dismiss": {
-      const items = state.items.filter((item) => item.playerId !== action.playerId);
-      if (items.length === state.items.length) return state;
-      return { ...state, items, pausedAt: items.length === 0 ? null : state.pausedAt };
+      const index = state.items.findIndex((item) => item.turn.key === action.key);
+      if (index < 0) return state;
+      const items = state.items.filter((_, at) => at !== index);
+      if (index > 0) return { ...state, items };
+      return next(state, items, state.pausedAt ?? action.now);
     }
     case "pause":
-      return state.pausedAt !== null || state.items.length === 0 ? state : { ...state, pausedAt: action.now };
+      return state.pausedAt !== null ? state : { ...state, pausedAt: action.now };
     case "resume": {
       const pausedAt = state.pausedAt;
       if (pausedAt === null) return state;
+      if (state.items.length === 0) return NO_TOASTS;
       const shift = Math.max(0, action.now - pausedAt);
-      return { ...state, items: state.items.map((item) => ({ ...item, deadline: item.deadline + shift })), pausedAt: null };
+      return { ...state, deadline: state.deadline === null ? null : state.deadline + shift, pausedAt: null };
     }
   }
 }
 
-/** When the next toast closes, or null when none will (an empty or paused stack). */
+/** When the toast showing closes, or null when it will not (an empty or paused queue). */
 export function nextDeadline(state: ToastState): number | null {
   if (state.pausedAt !== null || state.items.length === 0) return null;
-  return Math.min(...state.items.map((item) => item.deadline));
+  return state.deadline;
 }

@@ -1,0 +1,59 @@
+/* PaneOpeners (owner review, 2026-10-17): the hidden pane's bar, one slim band above the world
+   (GameShell's `.shell-bar` cell places it and gives it the world's side padding). Two flex
+   items: the lead (the turn cue, one short line) and the openers' group (its label, then the
+   buttons). They share a line when they fit (desktop and tablet); otherwise the group moves,
+   whole, onto its own line under the lead, label and buttons in one row (phones down to 320px,
+   in both languages). Only when even that row is too wide (large text sizes) do its items wrap
+   among themselves, so the page never scrolls sideways. */
+@layer components {
+  .pane-openers {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-3) var(--sp-6);
+    min-width: 0;
+    padding-block: var(--sp-3);
+    border-bottom: 1px solid var(--line-2);
+  }
+
+  .pane-openers-lead {
+    flex: 0 1 auto;
+    min-width: 0;
+    color: var(--cinnabar-ink);
+    font-size: var(--fs-label);
+    font-weight: 800;
+    line-height: var(--lh-snug);
+    overflow-wrap: anywhere;
+  }
+
+  .pane-openers-lead:focus {
+    outline: none;
+  }
+
+  .pane-openers-lead:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  .pane-openers-row {
+    display: flex;
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-3);
+    min-width: 0;
+  }
+
+  .pane-openers-label {
+    flex: none;
+    color: var(--ink-2);
+    font-size: var(--fs-label);
+    font-weight: 700;
+    line-height: var(--lh-snug);
+  }
+
+  .pane-opener {
+    flex: none;
+    max-width: 100%;
+  }
+}

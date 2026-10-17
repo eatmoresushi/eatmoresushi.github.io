@@ -9,7 +9,10 @@
  * display: owner review, 2026-10-17), varies its choices seeded per game, and presses Confirm or
  * the alternative. Every press is a real pointer click; on phones the decision sheet is opened
  * first when it is collapsed, and a table target in another section is reached through the
- * section bar.
+ * section bar. The other players' turn toast (one queued turn at a time: owner review
+ * 2026-10-17, item 3) is drawn over nothing, in a band the world gives up under the jump bar (a
+ * row of its own above the world); a table target that is not in sight is scrolled into it
+ * first, as a player would (`e2e/support/turnToasts.ts`).
  *
  * After **every** Confirm:
  * - none of the IDs the local backend's `e2e_secret_ids` oracle names for this seat appear in the
@@ -32,6 +35,7 @@ import type { APIRequestContext, Page } from "@playwright/test";
 import { autopilotPick } from "./support/autopilot.ts";
 import type { AutopilotPick } from "./support/autopilot.ts";
 import { backendCall, resetBackend } from "./support/localBackend.ts";
+import { revealPastTurnToast } from "./support/turnToasts.ts";
 
 interface GameCase {
   title: string;
@@ -200,6 +204,7 @@ for (const game of CASES) {
         }
         const before = await revisionOf(page);
         if (pick.kind === "choice") {
+          await revealPastTurnToast(target);
           await target.click();
           if (pick.describe.startsWith("table place")) placeShortcuts += 1;
           continue;

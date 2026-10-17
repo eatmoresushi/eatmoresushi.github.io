@@ -8,24 +8,43 @@
  * `<form data-window>` [ `.pane-scroll`: the window's fields ] · ConfirmBar `</form>`.
  *
  * - The window and its component come from the registry (`decision/windows.ts`) through
- *   `useDecision()`; the frame decides no rule.
+ *   `useDecision()`; the frame decides no rule. The heading is the spec's `title` for the open
+ *   draft (the work turn names an ability's form while it is open).
  * - **Sending (§3.6, U3):** only `.pane-scroll` is `inert`; ConfirmBar stays outside it, keeps
  *   focus and shows `aria-busy`.
  * - **Window change (§8.2):** when the window's kind or open key changes and focus was in the pane
  *   or on `<body>`, focus moves to the heading if it is visible, else (a phone sheet in `peek`)
  *   to the sheet strip, whose text names the window. Otherwise focus stays where it is.
+ * - **Hidden pane (owner review, 2026-10-17; `state/pane.ts`):** while the open window's draft has
+ *   nothing for it (the work turn before a placement is chosen) the `<aside>` is `hidden`, its
+ *   markup kept (the test-driver contract below still holds), and `GameShell` gives its room to
+ *   the world. When it appears in the same window (a Place shortcut, an opener), focus moves to
+ *   its heading (or the sheet strip); when it hides with focus inside or on `<body>` (Clear, back
+ *   to placing, a new turn after Confirm), focus goes back to the table (`focusTable`): to the
+ *   placement control the player last used (a Place shortcut or an opener, `PANE_RETURN_CONTROL`;
+ *   never a prompt focused on the way, like the Guild Hall's Tech chooser), found again by its
+ *   data attributes when it was drawn anew, else to the Table section's heading. The world then
+ *   scrolls, the least it can, to show that target: always after the player's own Clear or back
+ *   to placing (the world has just widened, and the Guild Hall's jump to the Tech display may
+ *   have taken the view away); at a new turn only when the focus ring shows (a keyboard player),
+ *   so a pointer player's view is never moved by the other players' turns. The other players'
+ *   turn toasts, which open a band at the world's top right after (a later commit), never scroll
+ *   that target out of view again (`shell/toastRoom.ts`: the world scrolls only as far as keeps
+ *   a control with the focus ring in view).
  * - **Test-driver contract (§9.6):** the form has `data-window="<kind>"` (and `data-step` for the
  *   work window); Confirm is `data-action="confirm"`, the alternative `data-action="alt"`.
- * - Dev tools (`npm run dev:local`, e2e builds): the canonical-move button under the form.
+ * - Dev tools (`npm run dev:local`, e2e builds): the canonical-move button under the form (hidden
+ *   with the pane: the smoke spec presses it there with a dispatched click).
  */
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useLayoutEffect, useRef } from "react";
 import type { FormEvent } from "react";
 import { CanonicalMoveButton } from "../dev/CanonicalMoveButton.tsx";
 import { useT } from "../i18n/I18nProvider.tsx";
 import { roundPhases } from "../i18n/content.ts";
 import { Sheet } from "../kit/Sheet.tsx";
 import { isActingWindow, windowDraftKey } from "../state/decisionWindow.ts";
-import { DEV_TOOLS_BUILD, useDecision, useDevTools, useEngineView, useGame, useUi } from "../state/hooks.ts";
+import { DEV_TOOLS_BUILD, useDecision, useDevTools, useDraft, useEngineView, useGame, useUi } from "../state/hooks.ts";
+import { PANE_RETURN_CONTROL, focusTable, usePane } from "../state/pane.ts";
 import { ConfirmBar, renderWindowText, useConfirmState } from "./ConfirmBar.tsx";
 import { OwnSummary } from "./OwnSummary.tsx";
 import "./DecisionPane.css";
@@ -42,6 +61,7 @@ export function DecisionPane() {
   const ui = useUi();
   const devTools = useDevTools();
   const confirm = useConfirmState();
+  const [draft] = useDraft<unknown>();
   const headingId = useId();
   const paneRef = useRef<HTMLElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -49,23 +69,54 @@ export function DecisionPane() {
   const { window, spec, sending } = decision;
   const acting = isActingWindow(window);
   const key = windowDraftKey(window);
-  const title = renderWindowText(t, spec.title(model, engine));
+  const title = renderWindowText(t, spec.title(model, engine, draft));
   const phaseName = model.roundPhase === "final" ? t("shell.phase.final") : (roundPhases(t.locale).find((phase) => phase.id === model.roundPhase)?.name ?? null);
   const eyebrow = phaseName === null ? null : acting ? t("common.status.phaseYourTurn", { phase: phaseName }) : phaseName;
 
-  const previousKey = useRef(key);
+  const { hidden } = usePane();
+
+  // The placement control the player last used (a Place shortcut, an opener above the world):
+  // focus goes back there when the pane hides. Focus and clicks both count (WebKit does not
+  // focus a clicked button); focus the code moves elsewhere on the way (the Guild Hall's Tech
+  // chooser) does not.
+  const lastPlace = useRef<Element | null>(null);
   useEffect(() => {
-    if (previousKey.current === key) return;
-    previousKey.current = key;
+    if (typeof document === "undefined") return undefined;
+    const record = (event: Event) => {
+      const target = event.target instanceof Element ? event.target.closest(PANE_RETURN_CONTROL) : null;
+      if (target !== null && !(paneRef.current?.contains(target) ?? false)) lastPlace.current = target;
+    };
+    document.addEventListener("focusin", record);
+    document.addEventListener("click", record, true);
+    return () => {
+      document.removeEventListener("focusin", record);
+      document.removeEventListener("click", record, true);
+    };
+  }, []);
+
+  // Layout effect: it runs in the commit that shows or hides the pane, before focus rescue's
+  // mutation observer, so the move below is the one that counts.
+  const previous = useRef({ key, hidden });
+  useLayoutEffect(() => {
+    const before = previous.current;
+    if (before.key === key && before.hidden === hidden) return;
+    previous.current = { key, hidden };
     if (typeof document === "undefined") return;
     const active = document.activeElement;
     const pane = paneRef.current;
     const focusWasHere = active === null || active === document.body || (pane !== null && pane.contains(active));
-    if (!focusWasHere) return;
+    if (hidden) {
+      // Same window: the player's own Clear or back to placing. A new key: a new turn.
+      if (focusWasHere) focusTable(document, { preferred: lastPlace.current, scroll: before.key === key ? true : "focus-visible" });
+      return;
+    }
+    // Shown again in the same window: the player placed a worker or opened an ability.
+    const appeared = before.hidden && before.key === key;
+    if (!appeared && !focusWasHere) return;
     const heading = headingRef.current;
     if (isVisible(heading)) heading.focus({ preventScroll: true });
     else stripRef.current?.focus({ preventScroll: true });
-  }, [key]);
+  }, [key, hidden]);
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -82,7 +133,7 @@ export function DecisionPane() {
   const Fields = spec.Component;
 
   return (
-    <aside ref={paneRef} className="pane" aria-label={t("common.landmark.decision")} data-window={window.kind} data-revision={model.revision}>
+    <aside ref={paneRef} className="pane" aria-label={t("common.landmark.decision")} data-window={window.kind} data-revision={model.revision} hidden={hidden}>
       <Sheet state={ui.sheet} onStateChange={ui.setSheet} strip={strip} stripAction={stripAction} stripRef={stripRef}>
         {eyebrow === null ? null : (
           <p className="pane-eyebrow" data-phase={model.roundPhase}>

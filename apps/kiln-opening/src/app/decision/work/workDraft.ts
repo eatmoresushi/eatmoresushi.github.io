@@ -129,6 +129,13 @@ export interface WorkModeOption {
   mode: WorkMode;
 }
 
+/**
+ * What the pane's heading names (owner review, 2026-10-17), after what the pane shows: placing a
+ * worker; an ability's form before the worker action (`before_action` when the step's choice
+ * names the ability, the ability itself when it is open alone); the after-action window.
+ */
+export type WorkHeading = "place" | "before_action" | "after_action" | Exclude<WorkMode, "place" | "end_turn">;
+
 export interface WorkerChoice {
   /** `placementWorkerKey`: the input value (never a worker ID, D9). */
   key: string;
@@ -154,6 +161,22 @@ export interface LocationChoice {
 export interface WorkOptions {
   step: WorkStep;
   modes: readonly WorkModeOption[];
+  /**
+   * Before the worker action, the "This step" choice (owner review, 2026-10-17): the abilities that
+   * may come first, and Place a worker only while a placement is chosen, so moving through the
+   * choice never empties (and so hides) the pane. Empty when it would offer fewer than two (no
+   * ability may come first, or one ability opened with nothing placed: a lone radio is no choice,
+   * and the heading names that ability); always empty after the action, where `ActionWindow`
+   * lists `modes`.
+   */
+  stepChoices: readonly WorkModeOption[];
+  /** What the pane's heading and the phone sheet strip name now (the window spec's `title`). */
+  heading: WorkHeading;
+  /**
+   * An ability that may come first is open with no placement chosen: the way back to placing on
+   * the table is a separate control (which hides the pane), not a choice of the step.
+   */
+  backToPlacing: boolean;
   workers: readonly WorkerChoice[];
   locations: readonly LocationChoice[];
   active: ActiveLocation | null;
@@ -384,9 +407,19 @@ export const workDraft: DraftModel<WorkDraft, WorkAction, WorkOptions> = {
     const context = workContext(model, engine);
     const modes = modesOf(model, engine).map((mode) => ({ mode }));
     if (context === null) {
-      return { step, modes, workers: [], locations: [], active: null, imperialPriority: null, canalBarge: { available: false, options: null }, workersLeft: 0 };
+      const heading: WorkHeading = step === "after_action" ? "after_action" : "place";
+      return { step, modes, stepChoices: [], heading, backToPlacing: false, workers: [], locations: [], active: null, imperialPriority: null, canalBarge: { available: false, options: null }, workersLeft: 0 };
     }
     const placement = draft.mode === "place" ? placementContext(context, draft.locationId, draft.workerKey) : null;
+    // A placement kept while an ability is open (the draft keeps the worker and the location).
+    const placementChosen = placementContext(context, draft.locationId, draft.workerKey) !== null;
+    const abilities = step === "before_action" && modes.some(({ mode }) => mode !== "place");
+    const candidates = abilities ? modes.filter(({ mode }) => mode !== "place" || placementChosen) : [];
+    // One ability opened with nothing placed: a lone radio is no choice (the heading names it).
+    const stepChoices = candidates.length > 1 ? candidates : [];
+    const ability = step === "before_action" && (draft.mode === "imperial_priority" || draft.mode === "canal_barge") ? draft.mode : null;
+    const heading: WorkHeading = step === "after_action" ? "after_action" : ability === null ? "place" : stepChoices.length === 0 ? ability : "before_action";
+    const backToPlacing = step === "before_action" && draft.mode !== null && draft.mode !== "place" && !placementChosen;
     const active: ActiveLocation | null =
       placement === null || draft.locationId === null
         ? null
@@ -396,6 +429,9 @@ export const workDraft: DraftModel<WorkDraft, WorkAction, WorkOptions> = {
     return {
       step,
       modes,
+      stepChoices,
+      heading,
+      backToPlacing,
       workers: step === "before_action" ? workerChoices(context) : [],
       locations: step === "before_action" ? locationChoices(context, draft.workerKey) : [],
       active,

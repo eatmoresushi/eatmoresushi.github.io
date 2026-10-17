@@ -294,13 +294,22 @@ describe("LookedOrders", () => {
 });
 
 describe("HandRow", () => {
-  it("shows the viewer's hand with its limit, privately, and warns when Cleanup will trim (m2)", () => {
+  it("shows the viewer's hand with its limit, and warns when Cleanup will trim (m2)", () => {
     const html = render("m2_commission_market_look_r3_4p", <HandRow />);
     const hand = viewOf("m2_commission_market_look_r3_4p").own?.orderHand ?? [];
     for (const orderId of hand) expect(html).toContain(`data-order-id="${orderId}"`);
-    expect(textOf(html)).toContain("Only you can see");
     expect(textOf(html)).toContain(`${hand.length}/4 held`);
     expect(textOf(html)).toContain("Over the limit: trimmed at Cleanup");
+  });
+
+  it("carries no Only you can see pill beside Your hand (owner review, 2026-10-17)", () => {
+    for (const id of ["m1_work_phase_r2_3p", "m2_commission_market_look_r3_4p", "m6_order_phase_crackle_3p", "m7_cleanup_hand_limit_3p", "t-round5-over-limit"]) {
+      const html = render(id, <HandRow />);
+      expect(textOf(html), id).toContain("Your hand");
+      expect(textOf(html), id).not.toContain("Only you can see");
+      expect(html, id).not.toContain("kit-chip--private");
+      expect(textOf(render(id, <HandRow />, { locale: "zh-CN" })), id).not.toContain("仅你可见");
+    }
   });
 
   it("says the final round skips the trim, and drops the warning inside the trim window", () => {

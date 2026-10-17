@@ -4,7 +4,9 @@
  * cannot show.
  * - Focus rescue: a revision that removes the focused table control moves focus to its section's
  *   heading, then the current section's, then the pane's; deliberate focus elsewhere is kept.
- * - The skip link opens the phone sheet from `peek` and lands on the pane heading.
+ * - The skip link opens the phone sheet from `peek` and lands on the pane heading; while the pane
+ *   is hidden (the work turn before a placement is chosen, owner review 2026-10-17) it lands on
+ *   the openers above the world, else on the table.
  * - The log dropdown: Escape closes it and returns focus to its button; Show earlier adds a page
  *   and keeps focus in the panel.
  * - A seat chip opens that player's board (D1) and, on a phone, the Workshop section; a row that
@@ -97,10 +99,12 @@ async function flushMutations(): Promise<void> {
 }
 
 const m1 = (): GameSnapshot => fixtureSnapshot(structuredClone(fixture("m1_work_phase_r2_3p")));
+/** A window whose pane always shows (Kiln selection, the viewer choosing). */
+const kilns = (): GameSnapshot => fixtureSnapshot(structuredClone(fixture("w-kiln-selection")));
 
-/** The UI state for m1's open window (choices are kept per window, §3.3). */
-function uiState(ui: UiStore): UiState {
-  const model = modelOf("m1_work_phase_r2_3p");
+/** The UI state for a fixture's open window (choices are kept per window, §3.3). */
+function uiState(ui: UiStore, id = "m1_work_phase_r2_3p"): UiState {
+  const model = modelOf(id);
   return ui.stateFor({ window: model.window, phase: model.roundPhase });
 }
 
@@ -240,11 +244,11 @@ describe("automatic section switch (phones)", () => {
 
 describe("skip link", () => {
   it("opens the phone sheet from peek and lands on the pane heading", async () => {
-    const view = mount(new StaticSource(m1()), <GameScreen />, { layout: "phone", ui: { sheet: "peek" } });
+    const view = mount(new StaticSource(kilns()), <GameScreen />, { layout: "phone", ui: { sheet: "peek" } });
     const link = $<HTMLAnchorElement>(".skip-link");
     act(() => link.focus());
     act(() => link.click());
-    expect(uiState(view.ui).sheet).toBe("open");
+    expect(uiState(view.ui, "w-kiln-selection").sheet).toBe("open");
     await act(async () => {
       await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
     });
@@ -252,9 +256,29 @@ describe("skip link", () => {
   });
 
   it("focuses the pane heading directly on a wide screen", () => {
-    mount(new StaticSource(m1()), <GameScreen />);
+    mount(new StaticSource(kilns()), <GameScreen />);
     act(() => $<HTMLAnchorElement>(".skip-link").click());
     expect(document.activeElement?.classList.contains("pane-heading")).toBe(true);
+  });
+
+  it("while the work turn hides the pane, lands on the table, where the worker is placed (owner review, 2026-10-17)", () => {
+    const view = mount(new StaticSource(m1()), <GameScreen />, { layout: "phone", ui: { sheet: "peek" } });
+    expect($("aside.pane").hidden).toBe(true);
+    act(() => $<HTMLAnchorElement>(".skip-link").click());
+    // No sheet to open, and nothing to open in the bar above the world: the decision starts on
+    // the table (the bar's cue "Your turn: place a worker · 4 left" is shown but skipped).
+    expect(uiState(view.ui).sheet).toBe("peek");
+    expect($("[data-pane-openers]").textContent).toMatch(/^Your turn: place a worker · \d left$/);
+    expect(document.activeElement?.id).toBe("sec-table-h");
+  });
+
+  it("while the pane is hidden, lands on the openers when an ability may come first", () => {
+    mount(new StaticSource(fixtureSnapshot(structuredClone(fixture("w-before-the-worker-action-canal-barge-imperial-priority-with-reworking-table-ding")))), <GameScreen />);
+    act(() => $<HTMLAnchorElement>(".skip-link").click());
+    expect(document.activeElement).toBe($("[data-pane-openers] [data-focus-heading]"));
+    expect(document.activeElement?.textContent).toMatch(/^Your turn: place a worker · \d left$/);
+    // Its openers follow it in the Tab order, after the words that name them.
+    expect($("[data-pane-openers] [role='group']").textContent).toBe("Or first:Imperial PriorityCanal Barge");
   });
 });
 

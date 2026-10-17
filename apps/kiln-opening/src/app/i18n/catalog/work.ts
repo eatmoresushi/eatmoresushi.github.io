@@ -17,6 +17,7 @@ export const work = defineNamespace({
   en: {
     // Window titles (pane heading and phone sheet strip).
     "title.work": "Place a worker",
+    "title.beforeAction": "Before your worker action",
     "title.afterAction": "After your worker action",
     "title.commission.reservation": "Reserve another Order",
     "title.commission.look": "Choose an Order to reserve",
@@ -29,10 +30,6 @@ export const work = defineNamespace({
     // Work turn (wireframe decWork).
     "work.prompt": "{n} of your {total} workers left. The Work Phase cannot be passed.",
     "work.step.mode": "This step",
-    // Workers are placed on the table (owner review, 2026-10-17); the pane shows the chosen placement.
-    "work.placeHint": "Place a worker on an action space: choose Place at a location on the Central Action Board, or at Form & Decorate or Glaze & Load on your Kiln Player Board.",
-    "work.goTable": "Go to the Central Action Board",
-    "work.goWorkshop": "Go to your workshop",
     "work.chosen": "{worker} at {location}",
     "work.changeHint": "To place elsewhere, choose another Place on the table.",
     "work.workerSenior": "{worker} as {shifu}",
@@ -45,6 +42,12 @@ export const work = defineNamespace({
     "work.mode.canalBarge": "Canal Barge",
     "work.mode.endTurn": "End your turn",
     "work.mode.before": "Before your worker action",
+    // The hidden pane's bar (owner review, 2026-10-17): workers are placed on the table, and the
+    // pane appears only with a chosen placement or an ability that comes first. `hidden.place` is
+    // the bar's cue, always shown; `hidden.orFirst` names the abilities' buttons, which follow it.
+    "work.hidden.place": "Your turn: place a worker · {n} left",
+    "work.hidden.orFirst": "Or first:",
+    "work.backToPlacing": "Back to placing a worker",
     "work.mode.after": "After your worker action",
     "work.mode.endTurnHint": "Nothing more this turn",
     "work.after": "After this action",
@@ -216,6 +219,7 @@ export const work = defineNamespace({
   },
   zh: {
     "title.work": "派工",
+    "title.beforeAction": "工人行动之前",
     "title.afterAction": "工人行动之后",
     "title.commission.reservation": "再承接委托",
     "title.commission.look": "选择承接的委托",
@@ -227,9 +231,6 @@ export const work = defineNamespace({
 
     "work.prompt": "你还有{n}名工人未派（共{total}名）。派工阶段不能跳过。",
     "work.step.mode": "此步",
-    "work.placeHint": "请在桌面上派工：点选中央行动板上某个地点的派工按钮，或你窑口板上制坯饰纹、施釉装窑的派工按钮。",
-    "work.goTable": "前往中央行动板",
-    "work.goWorkshop": "前往你的作坊",
     "work.chosen": "派{worker}到{location}",
     "work.changeHint": "要改派别处，在桌面上另点一个派工按钮。",
     "work.workerSenior": "{worker}按{shifu}结算",
@@ -242,6 +243,9 @@ export const work = defineNamespace({
     "work.mode.canalBarge": "漕船",
     "work.mode.endTurn": "结束回合",
     "work.mode.before": "你的工人行动之前",
+    "work.hidden.place": "轮到你了：派工 · 还剩{n}名工人",
+    "work.hidden.orFirst": "也可以先用：",
+    "work.backToPlacing": "返回派工",
     "work.mode.after": "你的工人行动之后",
     "work.mode.endTurnHint": "本回合不再行动",
     "work.after": "行动后",

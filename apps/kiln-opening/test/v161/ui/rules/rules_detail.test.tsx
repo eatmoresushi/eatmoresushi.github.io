@@ -2,7 +2,9 @@
  * Rules details (owner decision D10, UI architecture K15): every Tech tile, Kiln Player Board,
  * location, Order card and Recognition milestone opens a panel with its short text (timing clause
  * in bold), its full rule word for word, the clarifications for that component only with their
- * source labels, and its card facts. No advice, odds or previews.
+ * source labels, and its card facts. No advice, odds or previews. Owner review, 2026-10-17: an
+ * owned Tech in a board's Tech slot and the Techs of the Guild Hall inspection print their short
+ * text on the tile and open no rules details.
  *
  * One shared panel (`src/app/rules/RulesDetail.tsx`, B6) serves the table, the boards, the kiln,
  * the firing stage, the results and every decision form; its content accessors live in
@@ -102,9 +104,17 @@ describe("Tech tiles (TechCard, Tech slots)", () => {
     }
   });
 
-  it("shows no owner or this-round row, even for the viewer's own Tech", () => {
-    const html = render(M1, <TechSlots playerId="p3" />);
-    expectOnlyRuleAndClarifications(panel(html, "Full rules: Prepared Clay"));
+  it("an owned Tech on a Kiln Player Board opens no rules details: its tile prints the short text (owner review, 2026-10-17)", () => {
+    expect(render(M1, <TechSlots playerId="p3" />)).toContain('data-tech-id="T17"');
+    for (const locale of ["en", "zh-CN"] as const) {
+      const t = locale === "en" ? EN : ZH;
+      const slots = render(M1, <TechSlots playerId="p3" />, locale);
+      expect(panels(slots)).toEqual([]);
+      expect(slots).not.toContain("kit-detail-trigger");
+      // On the whole board too: no panel for the owned Tech (the face-up display keeps its own, D10).
+      const board = render(M1, <PlayerBoard playerId="p3" />, locale);
+      expect(panels(board).some((entry) => entry.label === t("rules.label", { name: techText("T17", locale).name }))).toBe(false);
+    }
   });
 });
 

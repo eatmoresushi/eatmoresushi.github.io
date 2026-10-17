@@ -28,10 +28,10 @@ Version v1.6.2 (the working name v1.3 was already used by an earlier draft). Thi
 18. **Track stays optional.** No worker on the Imperial track. The Magistrate's Hall (formerly Court Patronage) is open from Recognition 0 (the Recognition-1 gate is removed) and the Grant is 1 Clay + 1 Wood + 1 Coin, which together fix the step-1 refund with fewer words and let a Coin-rich player buy into the track as a sink. Imperial Priority stays as drafted; O17–O20 stay as printed.
 19. **Painted replaces Crackle** as the fourth Decoration (2 Coins). Crackle is now something only the Ge Kiln produces, in the kiln, with a marker. Cards renamed: S13, O13, O17, O23, O39, O40, O46; Decorator's Kit reads Carved, Impressed or Painted.
 20. **Tech VP scored on purchase.** The 1 VP per Advanced Tech is recorded the moment the tile is taken, not at game end. Bookkeeping only; Techs cannot be lost.
-21. **v1.6.2 — Commission Market and public Shifu effects.** The Market gives no resource. An Apprentice looks at the top 2 cards of the deck and reserves 1 Order from the display or those 2; the Shifu looks at the top 3 and reserves up to 2 from the display and those 3; revealed cards not reserved are discarded (the blind top-card option is gone). Materials Yard Shifu gains 6 resources (the 1-Coin option is gone). Guild Hall Shifu pays 2 Coins less. Canal Wharf Shifu gains 4 Coins and takes the top Main Order card unseen.
+21. **v1.6.2 — Commission Market and public Shifu effects.** The Market gives no resource. An Apprentice looks at the top 2 cards of the deck and reserves 1 Order from the display or those 2; the Shifu looks at the top 3 and reserves up to 2 from the display and those 3; revealed cards not reserved are discarded (the blind top-card option is gone). Materials Yard Shifu gains 6 resources (the 1-Coin option is gone). Guild Hall Shifu takes up to 2 Techs from different disciplines at printed cost (no discount), and Tech displays refill after the taking player's turn, like the Order display. Canal Wharf Shifu gains 4 Coins and takes the top Main Order card unseen.
 22. **v1.6.2 — Tech re-pass.** Colour Samples adds a once-per-round swap (discard 1 held Order, look at the top 2, reserve 1). Canal Barge now gives 2 Coins once per round when you complete an Order; its Work-Phase completion gained nothing over the Order Phase. Protective Saggars: your ceramics are never Flawed and once a round 1 Standard becomes Fine; cost 3. Fuel Ledger: Bank and Stoke cost no Wood; cost 2. Second Firing reveals 2 cards and uses 1. Senior Apprentice and Kiln Tending cost 3; Test Pieces stays at 3, since a buried card changes the firing for every player, not only its owner.
-
-**Yours, from the doc comments:** 1–4, the first two sentences of 6, the first sentence of 7, the marker turn order in 3, 12, and 15. **The review's recommendations, applied at your request so the draft plays as one piece:** 5, the Shifu selection and Colour Samples in 6, the court-fired Imperial Kiln in 7, 8, 9, 11, 13 and 14. Each is a sentence to revert.
+23. **v1.6.2 — Starting Orders: 16 → 8, values equalised.** Four Glaze cards (White, Celadon, Grey-Green 3 VP + 4 Coins; Moon White 4 + 4), small-shape choice 3 + 4, Vase or Censer 3 + 5, Carved/Impressed/Painted 3 + 3, any 2 + 4. The old deck paid 2 VP for a Shape and 4 VP for a Decoration although both are free choices once every Decoration costs 2, so the deal could swing the start by 4–5 VP. Setup is unchanged: 2 Starting Orders + 1 Main Order each.
+24. **v1.6.2 — Main Order re-pass and deck flow.** Decoration requirements no longer earn a premium (every Decoration costs 2): O05 6 + 3, O19 and O20 6 VP, O38 12, O39 13. Shape-only singles rise to 4 VP (O01–O03); the choice singles ease to O14 5 + 3 and O15 5 + 4; O04 7 + 3; O22 9. Fine doubles gain the coordination premium they lacked: O26 11, O27 12, O28 11, O30 13; the Masterpiece doubles O32 16, O33 and O34 15 + 5. Cards looked at and not reserved (Market, Colour Samples) go to the bottom of the Main Order deck instead of the discard pile, so the deck lasts a 4-player game without a reshuffle.
 
 ## Game Overview
 
@@ -81,7 +81,7 @@ The game lasts exactly **5 rounds**.
 | Coins | 50 | Decoration, Advanced Tech and Magistrate's Hall currency. |
 | Vessel Cards | 50 | Ten each: Bowl, Plate, Brush Washer, Vase and Censer. |
 | Main Order Cards | 48 | One unified public/reservable deck; see Appendix A. |
-| Starting Order Cards | 16 | Separate easy opening deck; never shuffled into the Main Order deck. |
+| Starting Order Cards | 8 | Separate easy opening deck; never shuffled into the Main Order deck. |
 | Advanced Tech tiles | 18 | Six Form & Decorate, six Glazing & Loading, six Firing. The Kiln Master tile comes with its own marker. |
 | Fire Cards | 12 | −2 ×1, −1 ×3, 0 ×4, +1 ×3, +2 ×1. |
 | Kiln Contribution Cards | 12 | Three per player: Bank, Tend, Stoke. |
@@ -100,8 +100,8 @@ The game lasts exactly **5 rounds**.
 ## Setup
 
 1. Place the Central Action Board and Shared Kiln in the centre. For the Shared Kiln: **4 players** use all 8 spaces (3 High, 3 Middle, 2 Low); **3 players** use 6 spaces, covering 1 High and 1 Middle space (2-2-2); **2 players** use 4 spaces, covering 1 High, 2 Middle and 1 Low space (2-1-1). In 2- and 3-player games also cover the second Magistrate's Hall space.
-2. Shuffle the **16-card Starting Order deck** and the **48-card Main Order deck** separately. Deal each player **2 Starting Orders and 1 Main Order**. These 3 Orders form that player's starting hand and are **kept secret**.
-3. Return all undealt Starting Orders to the box. Reshuffle the remaining Main Order deck, then reveal **6 face-up Main Orders** from left to right.
+2. Shuffle the **8-card Starting Order deck** and the **48-card Main Order deck** separately. Deal each player **2 Starting Orders and 1 Main Order**. These 3 Orders form that player's starting hand and are **kept secret**.
+3. Return any undealt Starting Orders to the box. Reshuffle the remaining Main Order deck, then reveal **6 face-up Main Orders** from left to right.
 4. Separate the 18 Advanced Techs into Form & Decorate, Glazing & Loading and Firing decks of 6. Shuffle each discipline and reveal **2 face-up tiles from each**.
 5. Shuffle the 12-card Fire deck and place it face down beside a face-up discard pile. Place the Kiln Die beside the Base Heat track.
 6. Place Clay, Wood, Coins and Vessel cards within reach. Sort Vessel cards by Shape.
@@ -188,12 +188,12 @@ Each player has **1 Shifu and 3 Apprentices** available each round. Each worker 
 
 ### Commission Market
 
-Reserving takes a Main Order into your hand. A reserved **face-up** Order leaves its position **empty until the end of your turn**; then slide every Order to its right one position left and reveal Main Orders into the rightmost empty positions, restoring the display to 6. Cards revealed from the deck that you do not reserve go to the Main Order discard pile.
+Reserving takes a Main Order into your hand. A reserved **face-up** Order leaves its position **empty until the end of your turn**; then slide every Order to its right one position left and reveal Main Orders into the rightmost empty positions, restoring the display to 6. Cards revealed from the deck that you do not reserve go to the bottom of the Main Order deck.
 
 | Worker | Effect |
 | --- | --- |
-| Apprentice | Look at the top **2** cards of the Main Order deck. Reserve **1 Main Order** from the display or from those 2; discard the rest of the 2. |
-| **Shifu** | Look at the top **3** cards of the Main Order deck. Reserve **up to 2 Main Orders** from the display and those 3; discard the rest of the 3. |
+| Apprentice | Look at the top **2** cards of the Main Order deck. Reserve **1 Main Order** from the display or from those 2; put the rest of the 2 on the bottom of the deck. |
+| **Shifu** | Look at the top **3** cards of the Main Order deck. Reserve **up to 2 Main Orders** from the display and those 3; put the rest of the 3 on the bottom of the deck. |
 
 - A Shifu must reserve at least 1 Order. The display is not refilled until your turn ends, so both of a Shifu's reservations choose from the Orders showing now.
 - There is no Order hand limit during a round. During Cleanup, discard Orders of your choice until you hold no more than your hand limit of **4** (5 with Colour Samples). Starting Orders and reserved Main Orders both count.
@@ -204,12 +204,12 @@ Reserving takes a Main Order into your hand. A reserved **face-up** Order leaves
 | Worker | Effect |
 | --- | --- |
 | Apprentice | Pay the printed Coin cost and take **1 face-up Advanced Tech**. |
-| **Shifu** | Choose 1 discipline and look at the top 2 Techs of that deck, **or as many as remain**. Then take either 1 face-up Advanced Tech from any discipline or 1 of the revealed Techs, paying 2 Coins less, minimum 0. Put any revealed Tech not taken on the bottom of its deck. |
+| **Shifu** | Choose 1 discipline and look at the top 2 Techs of that deck, **or as many as remain**. Then take **up to 2 Advanced Techs from different disciplines**, face-up or revealed, paying the printed cost of each. Put any revealed Tech not taken on the bottom of its deck. |
 
-- After a tile is taken, refill its discipline to 2 if possible.
+- A taken tile's position stays **empty until the end of your turn**; then refill each discipline to 2 if possible. A Shifu's second Tech is chosen from what is showing now.
 - A player may own at most **3 Advanced Techs and at most 1 from each discipline**.
 - **Cover tokens.** When you gain a Form & Decorate Tech, remove the Cover token from your second Form & Decorate space; when you gain a Glazing & Loading Tech, remove the Cover token from your second Glaze & Load space. Firing Techs remove nothing. A space whose token has been removed may be used later this round.
-- An Apprentice placement is legal only if you can afford at least 1 face-up Tech from a discipline you do not yet own. A Shifu placement is legal only if you can afford such a Tech after the Shifu discount.
+- A placement here is legal only if you can afford at least 1 face-up Tech from a discipline you do not yet own.
 - A newly acquired Advanced Tech may be used in the same round if its timing permits. Resolve any **when acquired** effect immediately.
 
 ### Canal Wharf
@@ -383,7 +383,7 @@ See Appendix B for all 18 tiles.
 
 ### Main Order Market
 
-There is one **48-card Main Order deck** and one **6-card public display**. The separate 16-card Starting Order deck is used only during Setup.
+There is one **48-card Main Order deck** and one **6-card public display**. The separate 8-card Starting Order deck is used only during Setup.
 
 The display is ordered from oldest to newest: the **leftmost Order is the oldest** and the **rightmost Order is the newest**.
 
@@ -393,7 +393,7 @@ Orders may award **VP, Coins and 0–3 Crowns**. Commercial Orders tend to be mo
 
 ### Reserving Orders
 
-Use the Commission Market during the Work Phase to reserve Main Orders: an Apprentice looks at the top 2 cards of the deck and reserves 1 Order from the display or those 2; the Shifu looks at the top 3 and reserves up to 2 from the display and those 3. Revealed cards you do not reserve are discarded. The Canal Wharf Shifu takes the top card of the deck unseen. Acquiring **Colour Samples** grants 1 immediate reservation from the top 3 without a Commission Market action, raises your hand limit to 5 and lets you swap 1 held Order once a round; see Appendix B.
+Use the Commission Market during the Work Phase to reserve Main Orders: an Apprentice looks at the top 2 cards of the deck and reserves 1 Order from the display or those 2; the Shifu looks at the top 3 and reserves up to 2 from the display and those 3. Revealed cards you do not reserve go to the bottom of the deck. The Canal Wharf Shifu takes the top card of the deck unseen. Acquiring **Colour Samples** grants 1 immediate reservation from the top 3 without a Commission Market action, raises your hand limit to 5 and lets you swap 1 held Order once a round; see Appendix B.
 
 A held Order:
 
@@ -511,42 +511,34 @@ The player with the most VP wins.
 - **The Fire discard pile is open information.** The Fire deck is not reshuffled during the game; only if it is empty when a card is needed, shuffle its discard pile to form a new deck.
 - If an Advanced Tech discipline cannot refill its display to 2, leave the display partially empty.
 
-## Appendix A — Order Decks: 16 Starting + 48 Main
+## Appendix A — Order Decks: 8 Starting + 48 Main
 
-**Standard+** means Standard, Fine or Masterpiece. **Fine+** means Fine or Masterpiece. Seven values changed from v1.2.7 (S10, O16, O21, O31, O32, O33, O40), per the balance review.
+**Standard+** means Standard, Fine or Masterpiece. **Fine+** means Fine or Masterpiece. Values follow the v1.6.2 re-pass (change-log items 13 and 24); the Starting deck was rebuilt in v1.6.2.
 
-### A0. Starting Order Deck — 16
+### A0. Starting Order Deck — 8
 
-Starting Orders are easy **commercial Orders** that give each workshop achievable opening targets. Shuffle this deck separately during Setup and deal each player 2 Starting Orders and 1 Main Order; return the undealt Starting Orders to the box. The second Starting Order is the insurance for a firing that misses: every Starting Order accepts Standard quality. Starting Orders never enter the Main Order deck and have **no Crowns**; if discarded from your hand during Cleanup, return them to the box. They are Orders for all rules and Kiln Tradition abilities. A player is never required to complete a Starting Order.
+Starting Orders are easy **commercial Orders** that give each workshop achievable opening targets. Shuffle this deck separately during Setup and deal each player 2 Starting Orders and 1 Main Order; a 4-player game uses the whole deck, otherwise return the undealt Starting Orders to the box. Every card asks for one thing and pays about the same, so the deal cannot swing the game. The second Starting Order is the insurance for a firing that misses: every Starting Order accepts Standard quality. Starting Orders never enter the Main Order deck and have **no Crowns**; if discarded from your hand during Cleanup, return them to the box. They are Orders for all rules and Kiln Tradition abilities. A player is never required to complete a Starting Order.
 
 | ID | Requirements | Quality | VP | Coins |
 | --- | --- | --- | --- | --- |
-| S01 | Bowl · any Glaze · any Decoration | Standard+ | 2 | 4 |
-| S02 | Plate · any Glaze · any Decoration | Standard+ | 2 | 4 |
-| S03 | Brush Washer · any Glaze · any Decoration | Standard+ | 2 | 4 |
-| S04 | Vase · any Glaze · any Decoration | Standard+ | 3 | 5 |
-| S05 | Censer · any Glaze · any Decoration | Standard+ | 3 | 5 |
-| S06 | any Shape · White · any Decoration | Standard+ | 3 | 4 |
-| S07 | any Shape · Celadon · any Decoration | Standard+ | 3 | 4 |
-| S08 | any Shape · Grey-Green · any Decoration | Standard+ | 3 | 4 |
-| S09 | any Shape · Moon White · any Decoration | Standard+ | 4 | 4 |
-| S10 | any Shape · any Glaze · Plain | Standard+ | 4 | 4 |
-| S11 | any Shape · any Glaze · Carved | Standard+ | 4 | 4 |
-| S12 | any Shape · any Glaze · Impressed | Standard+ | 4 | 4 |
-| S13 | any Shape · any Glaze · Painted | Standard+ | 4 | 4 |
-| S14 | Bowl, Plate or Brush Washer · any Glaze · any Decoration | Standard+ | 3 | 3 |
-| S15 | Vase or Censer · any Glaze · any Decoration | Standard+ | 3 | 4 |
-| S16 | any Shape · any Glaze · any Decoration | Standard+ | 2 | 3 |
+| S01 | any Shape · White · any Decoration | Standard+ | 3 | 4 |
+| S02 | any Shape · Celadon · any Decoration | Standard+ | 3 | 4 |
+| S03 | any Shape · Grey-Green · any Decoration | Standard+ | 3 | 4 |
+| S04 | any Shape · Moon White · any Decoration | Standard+ | 4 | 4 |
+| S05 | Bowl, Plate or Brush Washer · any Glaze · any Decoration | Standard+ | 3 | 4 |
+| S06 | Vase or Censer · any Glaze · any Decoration | Standard+ | 3 | 5 |
+| S07 | any Shape · any Glaze · Carved, Impressed or Painted | Standard+ | 3 | 3 |
+| S08 | any Shape · any Glaze · any Decoration | Standard+ | 2 | 4 |
 
 ### A1. Main Single-Ceramic Orders — 24
 
 | ID | Requirements | Quality | VP | Coins | Crowns |
 | --- | --- | --- | --- | --- | --- |
-| O01 | Bowl · any Glaze · any Decoration | Standard+ | 3 | 3 | — |
-| O02 | Plate · any Glaze · any Decoration | Standard+ | 3 | 3 | — |
-| O03 | Brush Washer · any Glaze · any Decoration | Standard+ | 3 | 3 | — |
-| O04 | Vase · Moon White · any Decoration | Fine+ | 7 | 4 | — |
-| O05 | Censer · any Glaze · Carved | Fine+ | 7 | 4 | — |
+| O01 | Bowl · any Glaze · any Decoration | Standard+ | 4 | 3 | — |
+| O02 | Plate · any Glaze · any Decoration | Standard+ | 4 | 3 | — |
+| O03 | Brush Washer · any Glaze · any Decoration | Standard+ | 4 | 3 | — |
+| O04 | Vase · Moon White · any Decoration | Fine+ | 7 | 3 | — |
+| O05 | Censer · any Glaze · Carved | Fine+ | 6 | 3 | — |
 | O06 | any Shape · White · any Decoration | Fine+ | 5 | 3 | — |
 | O07 | any Shape · Celadon · any Decoration | Fine+ | 5 | 3 | — |
 | O08 | any Shape · Grey-Green · any Decoration | Fine+ | 5 | 3 | — |
@@ -555,15 +547,15 @@ Starting Orders are easy **commercial Orders** that give each workshop achievabl
 | O11 | any Shape · any Glaze · Carved | Masterpiece | 9 | 3 | — |
 | O12 | any Shape · any Glaze · Impressed | Masterpiece | 9 | 3 | — |
 | O13 | any Shape · any Glaze · Painted | Masterpiece | 9 | 3 | — |
-| O14 | Bowl, Plate or Brush Washer · any Glaze · any Decoration | Fine+ | 5 | 4 | — |
-| O15 | Vase or Censer · any Glaze · any Decoration | Fine+ | 6 | 4 | — |
+| O14 | Bowl, Plate or Brush Washer · any Glaze · any Decoration | Fine+ | 5 | 3 | — |
+| O15 | Vase or Censer · any Glaze · any Decoration | Fine+ | 5 | 4 | — |
 | O16 | any Shape · any Glaze · any Decoration | Masterpiece | 9 | 2 | — |
 | O17 | Brush Washer · White · Painted | Fine+ | 6 | 2 | 1 |
 | O18 | Vase · Celadon · any Decoration | Fine+ | 6 | 2 | 1 |
-| O19 | Censer · Grey-Green · Impressed | Fine+ | 7 | 2 | 1 |
-| O20 | Bowl · Moon White · Carved | Fine+ | 7 | 2 | 1 |
+| O19 | Censer · Grey-Green · Impressed | Fine+ | 6 | 2 | 1 |
+| O20 | Bowl · Moon White · Carved | Fine+ | 6 | 2 | 1 |
 | O21 | Plate · White · Plain | Masterpiece | 9 | 1 | 1 |
-| O22 | any Shape · Celadon · Plain | Masterpiece | 8 | 1 | 1 |
+| O22 | any Shape · Celadon · Plain | Masterpiece | 9 | 1 | 1 |
 | O23 | Vase · Grey-Green · Painted | Masterpiece | 10 | 1 | 1 |
 | O24 | any Shape · Moon White · any Decoration | Masterpiece | 10 | 1 | 1 |
 
@@ -574,20 +566,20 @@ Unless a card explicitly pairs attributes, Shape, Glaze and Decoration requireme
 | ID | Requirements | Quality | VP | Coins | Crowns |
 | --- | --- | --- | --- | --- | --- |
 | O25 | 2 different Shapes; any Glazes; any Decorations | Standard+ each | 9 | 5 | — |
-| O26 | Bowl + Plate; same Glaze; any Decorations | Fine+ each | 10 | 5 | — |
-| O27 | Brush Washer + Vase; different Glazes; any Decorations | Fine+ each | 11 | 5 | — |
-| O28 | 2 ceramics of the same Shape; different Glazes; any Decorations | Fine+ each | 10 | 5 | — |
+| O26 | Bowl + Plate; same Glaze; any Decorations | Fine+ each | 11 | 5 | — |
+| O27 | Brush Washer + Vase; different Glazes; any Decorations | Fine+ each | 12 | 5 | — |
+| O28 | 2 ceramics of the same Shape; different Glazes; any Decorations | Fine+ each | 11 | 5 | — |
 | O29 | Vase + Censer; any Glazes; different Decorations | Fine+ each | 12 | 5 | — |
-| O30 | Bowl + Brush Washer; one White, one Moon White; any Decorations | Fine+ each | 12 | 5 | — |
+| O30 | Bowl + Brush Washer; one White, one Moon White; any Decorations | Fine+ each | 13 | 5 | — |
 | O31 | Plate + Vase; both Celadon; at least one Plain, other Decoration any | Fine+ each | 12 | 5 | — |
-| O32 | Vase + Bowl; both White; different Decorations | Fine+ each; ≥1 Masterpiece | 15 | 5 | — |
-| O33 | 2 different Shapes; same Glaze; different Decorations | Fine+ each; ≥1 Masterpiece | 14 | 4 | — |
-| O34 | 2 different Shapes; different Glazes; same Decoration | Fine+ each; ≥1 Masterpiece | 14 | 4 | — |
+| O32 | Vase + Bowl; both White; different Decorations | Fine+ each; ≥1 Masterpiece | 16 | 5 | — |
+| O33 | 2 different Shapes; same Glaze; different Decorations | Fine+ each; ≥1 Masterpiece | 15 | 5 | — |
+| O34 | 2 different Shapes; different Glazes; same Decoration | Fine+ each; ≥1 Masterpiece | 15 | 5 | — |
 | O35 | Bowl + Plate; both Celadon; any Decorations | Fine+ each | 11 | 2 | 1 |
 | O36 | Brush Washer + Vase; one White, one Moon White; different Decorations | Fine+ each | 14 | 2 | 1 |
 | O37 | Censer + Bowl; one Grey-Green, one Celadon; same Decoration | Fine+ each | 12 | 2 | 1 |
-| O38 | Plate + Brush Washer; different Glazes; both Carved | Fine+ each | 14 | 1 | 1 |
-| O39 | Vase + Censer; one Celadon, one Moon White; one Plain, one Painted | Fine+ each | 14 | 1 | 2 |
+| O38 | Plate + Brush Washer; different Glazes; both Carved | Fine+ each | 12 | 1 | 1 |
+| O39 | Vase + Censer; one Celadon, one Moon White; one Plain, one Painted | Fine+ each | 13 | 1 | 2 |
 | O40 | Bowl + Brush Washer; one White, one Grey-Green; one Impressed, one Painted | Fine+ each; ≥1 Masterpiece | 15 | 0 | 2 |
 | O41 | Plate + Vase; same Glaze; different Decorations | Fine+ each; ≥1 Masterpiece | 15 | 1 | 2 |
 | O42 | Brush Washer + Censer; different Glazes; same Decoration | Fine+ each; ≥1 Masterpiece | 16 | 0 | 2 |
@@ -622,7 +614,7 @@ Tech tiles use abbreviated reminder text; this appendix gives the full effects. 
 
 | Advanced Tech | Cost | Ability |
 | --- | --- | --- |
-| **Colour Samples** | 2 | **When acquired:** look at the top **3 Main Orders**, reserve 1 of them and discard the rest. This is not a Commission Market action. **Ongoing:** your Order hand limit is **5**, and once per round, before or after one of your worker actions, you may **discard 1 held Order to look at the top 2 cards of the Main Order deck and reserve 1 of them**. |
+| **Colour Samples** | 2 | **When acquired:** look at the top **3 Main Orders**, reserve 1 of them and put the rest on the bottom of the deck. This is not a Commission Market action. **Ongoing:** your Order hand limit is **5**, and once per round, before or after one of your worker actions, you may **discard 1 held Order to look at the top 2 cards of the Main Order deck, reserve 1 of them and put the other on the bottom**. |
 | **Kiln Tending** | 3 | Once per round, after a Glaze & Load action in which you loaded at least 1 ceramic, gain **1 Clay and 1 Wood**. |
 | **Kiln Furniture** | 2 | Once per round, when you load 1 ceramic into the Shared Kiln, you may place this tile beneath it and **choose its zone modifier** for this firing: **−1, 0 or +1**. Return the tile after firing. |
 | **Inverted Firing 覆烧** | 2 | Once per round, when you load a **Bowl, Plate or Brush Washer** into the Shared Kiln, you may place it in an active space that **already holds exactly 1 of your ceramics**. Both use that space's modifier (or its Kiln Furniture modifier). |
@@ -711,7 +703,7 @@ If no ceramics are loaded in the Shared Kiln or any Imperial Kiln, **skip this p
 | Form & Decorate | Form and decorate 1 | Form and decorate up to 2; if 2, one Decoration −1 Coin |
 | Glaze & Load | Glaze and load 1 | Glaze and load up to 2; Heat marker face-down on 1 of your ceramics |
 | Commission Market | Look at the top 2 of the deck; reserve 1 from the display or those 2 | Look at the top 3; reserve up to 2 from the display and those 3 |
-| Guild Hall | Buy 1 Advanced Tech at cost | Look at top 2 Techs of 1 discipline (or as many as remain); take 1 revealed Tech or any face-up Tech at −2 Coins |
+| Guild Hall | Buy 1 Advanced Tech at cost | Look at top 2 Techs of 1 discipline (or as many as remain); buy up to 2 Techs from different disciplines at cost |
 | Canal Wharf | 2 Coins | 4 Coins + the top Order card, unseen, to hand |
 | Magistrate's Hall | Pay 4 Coins → +1 Recognition (0 → 1, 1 → 2 or 2 → 3) | Pay 3 Coins → same |
 

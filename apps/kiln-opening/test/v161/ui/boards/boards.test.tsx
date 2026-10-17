@@ -4,7 +4,7 @@
  */
 import type { ReactElement } from "react";
 import { describe, expect, it } from "vitest";
-import { KILNS } from "../../../../src/game/index.ts";
+import { KILNS, shortTextSegments } from "../../../../src/game/index.ts";
 import { BoardArea } from "../../../../src/app/boards/BoardArea.tsx";
 import { CeramicsRow } from "../../../../src/app/boards/CeramicsRow.tsx";
 import { KilnTradition, MarkerLine } from "../../../../src/app/boards/KilnTradition.tsx";
@@ -12,9 +12,11 @@ import { PersonalSpaces } from "../../../../src/app/boards/PersonalSpaces.tsx";
 import { PlayerBoard } from "../../../../src/app/boards/PlayerBoard.tsx";
 import { TechSlots } from "../../../../src/app/boards/TechSlots.tsx";
 import { WorkersRow } from "../../../../src/app/boards/WorkersRow.tsx";
-import { kilnShortName, techName } from "../../../../src/app/i18n/content.ts";
+import { kilnShortName, techName, techText } from "../../../../src/app/i18n/content.ts";
 import { ruleErrorText } from "../../../../src/app/i18n/errors.ts";
-import { fixture, fixtureSource, secretIds } from "../support/fixtures.ts";
+import { FixtureGameSource } from "../../../../src/app/session/fixtureSource.ts";
+import { gameModelOf } from "../../../../src/app/state/model.ts";
+import { allFixtures, fixture, fixtureSource, secretIds } from "../support/fixtures.ts";
 import { renderComponent } from "../support/render.tsx";
 import type { RenderOptions } from "../support/render.tsx";
 import { textOf, visibleText } from "../table/markup.ts";
@@ -25,6 +27,11 @@ function render(id: string, element: ReactElement, options: RenderOptions = {}):
 }
 
 const M1 = "m1_work_phase_r2_3p";
+
+/** React's text escaping, for comparing markup with content strings. */
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#x27;");
+}
 
 describe("D7: personal spaces are added by learning a Tech (m1)", () => {
   it("says which Tech added the second Form & Decorate space, and how to add the Glaze & Load one", () => {
@@ -153,6 +160,44 @@ describe("TechSlots, WorkersRow and CeramicsRow", () => {
     expect(textOf(html)).toContain("Form & Decorate Prepared Clay Ready");
     expect(textOf(html)).toContain("Glazing & Loading: empty");
     expect(textOf(html)).toContain("Firing: empty");
+  });
+
+  it("prints each owned Tech's short text, timing clause in bold, and opens no rules details (owner review, 2026-10-17)", () => {
+    const html = render(M1, <TechSlots playerId="p3" />);
+    expect(textOf(html)).toContain(`Prepared Clay Ready ${textOf(techText("T17", "en").short)}`);
+    const bold = shortTextSegments(techText("T17", "en").short).filter((segment) => segment.emphasis);
+    expect(bold.length).toBeGreaterThan(0);
+    for (const segment of bold) expect(html).toContain(`<strong>${escapeHtml(segment.text)}</strong>`);
+    expect(html).toContain('class="tech-short"');
+    // Not a control: no rules-details trigger or panel, no button at all.
+    expect(html).not.toContain("<button");
+    expect(html).not.toContain("kit-detail");
+    const zh = render(M1, <TechSlots playerId="p3" />, { locale: "zh-CN" });
+    for (const segment of shortTextSegments(techText("T17", "zh-CN").short).filter((part) => part.emphasis)) expect(zh).toContain(`<strong>${escapeHtml(segment.text)}</strong>`);
+    expect(textOf(zh)).toContain("可用");
+  });
+
+  it("keeps every owned Tech's state visible on its tile: Ready, Used this round or Ongoing", () => {
+    const seen = new Set<string>();
+    for (const entry of allFixtures()) {
+      const model = gameModelOf(entry.playerView, []);
+      for (const summary of model.players) {
+        if (summary.techs.length === 0) continue;
+        const html = renderComponent(new FixtureGameSource(entry), <TechSlots playerId={summary.playerId} />, { registry: TABLE_WINDOWS });
+        for (const tech of summary.techs) {
+          const start = html.indexOf(`data-tech-id="${tech.techId}"`);
+          expect(start, `${entry.id} ${tech.techId}`).toBeGreaterThan(0);
+          const tile = html.slice(start, html.indexOf("</li>", start));
+          const state = !tech.oncePerRound ? "Ongoing" : tech.ready ? "Ready" : "Used this round";
+          const tone = !tech.oncePerRound ? "kit-chip--neutral" : tech.ready ? "kit-chip--ok" : "kit-chip--used";
+          expect(tile, `${entry.id} ${tech.techId}`).toContain(`<span class="kit-chip ${tone}">${state}</span>`);
+          expect(textOf(tile)).toContain(textOf(techText(tech.techId, "en").short));
+          expect(tile).not.toContain("kit-detail");
+          seen.add(state);
+        }
+      }
+    }
+    expect([...seen].sort()).toEqual(["Ongoing", "Ready", "Used this round"]);
   });
 
   it("names placed workers with where they stand (m5)", () => {

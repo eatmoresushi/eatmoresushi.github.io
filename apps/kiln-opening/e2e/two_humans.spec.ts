@@ -13,7 +13,10 @@
  *   Order IDs reaches Zhao's page or any payload Zhao's client receives (also checked against
  *   the local backend's `e2e_secret_ids` oracle);
  * - **the turn toasts** (owner review, 2026-10-17): Zhao's page shows Lin's moves (Lin's Shifu
- *   at the Commission Market), never Zhao's own and never a looked-at Order;
+ *   at the Commission Market), never Zhao's own and never a looked-at Order. They show one turn
+ *   at a time (item 3), so the check waits for Lin's Commission Market turn to have its turn; the
+ *   toast is drawn over nothing (in a band the world gives up), and a table target that is not in
+ *   sight is scrolled into it first (`support/turnToasts.ts`);
  * - **the secret Contribution**: after Lin submits, Lin sees the sealed card ("only you"); Zhao
  *   sees only that Lin has chosen, and no payload Zhao's client receives carries a Contribution
  *   card until both have submitted; then both cards are revealed on both pages.
@@ -42,6 +45,7 @@ import { expect, test } from "@playwright/test";
 import type { Browser, Page, TestInfo } from "@playwright/test";
 import { autopilotPick } from "./support/autopilot.ts";
 import { backendCall, resetBackend } from "./support/localBackend.ts";
+import { revealPastTurnToast } from "./support/turnToasts.ts";
 
 const WIDTH = 1440;
 const HEIGHT = 900;
@@ -86,9 +90,9 @@ interface Player {
 }
 
 /**
- * Records every turn toast the page shows, with its player, as it appears or grows: they close by
- * themselves after 3s, so the test reads the record instead of racing them. Serialized into the
- * page by `addInitScript`, so it stays self-contained.
+ * Records every turn toast the page shows, with its player, as it appears, grows or gives way to
+ * the next queued turn: they close by themselves after 3s, so the test reads the record instead
+ * of racing them. Serialized into the page by `addInitScript`, so it stays self-contained.
  */
 function recordTurnToasts(): void {
   const seen: Array<{ player: string; text: string }> = [];
@@ -162,7 +166,9 @@ async function autopilot(player: Player, options: { within?: string; confirmChan
   });
   if (pick.kind === "none" || pick.kind === "busy") return false;
   if (pick.kind === "choice") {
-    await player.page.locator(pick.selector).click();
+    const target = player.page.locator(pick.selector);
+    await revealPastTurnToast(target);
+    await target.click();
     return true;
   }
   const before = await revisionOf(player.page);
@@ -183,7 +189,10 @@ async function choose(page: Page, name: string, value: string): Promise<void> {
 async function press(page: Page, selector: string, what: string): Promise<void> {
   const target = page.locator(selector).first();
   await expect(target, `${what} is offered on the table`).toBeVisible();
-  if ((await target.getAttribute("aria-pressed")) !== "true") await target.click();
+  if ((await target.getAttribute("aria-pressed")) !== "true") {
+    await revealPastTurnToast(target);
+    await target.click();
+  }
   await expect(target).toHaveAttribute("aria-pressed", "true");
 }
 
@@ -363,8 +372,10 @@ test("the secret Contribution and the private Commission look stay with their ow
 
   // The turn toasts on Zhao's page: Lin's moves only, in public words.
   const hostId = await playerIdOf(host);
+  // One turn at a time, 3s each: Lin's Commission Market turn may still wait behind the earlier ones.
+  const sawCommission = async () => (await turnToastsSeen(guest)).some((toast) => toast.player === hostId && toast.text.includes(`${host.name} placed their Shifu at Commission Market`));
+  await expect.poll(sawCommission, { timeout: 60_000, message: "Zhao saw a toast of Lin's Commission Market turn" }).toBe(true);
   const toasts = await turnToastsSeen(guest);
-  expect(toasts.some((toast) => toast.player === hostId && toast.text.includes(`${host.name} placed their Shifu at Commission Market`)), "Zhao saw a toast of Lin's Commission Market turn").toBe(true);
   for (const toast of toasts) {
     expect(toast.player, `a toast of Zhao's own move: ${toast.text}`).toBe(hostId);
     for (const id of lookedIds) expect(toast.text, `the looked-at ${id} in a toast`).not.toMatch(new RegExp(`\\b${id}\\b`));

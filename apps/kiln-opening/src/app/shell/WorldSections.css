@@ -1,9 +1,12 @@
 /* World sections and the jump bar (B1; wireframe `.sec`, `.sec-h`, `.jump`). */
 @layer components {
+  /* Jumping to a section puts its heading at the world's top, with the world's own top room
+     (GameShell.css), so the first section's jump is the world's very top. The jump bar is a row
+     above the world, so nothing needs clearing. */
   .world-section {
     container: section / inline-size;
     min-width: 0;
-    scroll-margin-top: 3.25rem;
+    scroll-margin-top: var(--sp-7);
   }
 
   .world-section-head {
@@ -41,10 +44,9 @@
     min-width: 0;
   }
 
+  /* The jump bar: a row of the shell right above the world (GameShell's `.shell-jump`), so the
+     world never scrolls under it (and neither does anything under the turn toast below it). */
   .jump-nav {
-    position: sticky;
-    top: 0;
-    z-index: var(--z-sticky);
     display: flex;
     flex-wrap: wrap;
     align-items: center;

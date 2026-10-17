@@ -164,22 +164,6 @@
     font-weight: 700;
   }
 
-  /* Nothing placed yet: place a worker on the table (owner review, 2026-10-17). */
-  .b4-place-hint {
-    display: grid;
-    gap: var(--sp-4);
-    min-width: 0;
-    padding: var(--sp-4) var(--sp-5);
-    border: 1px dashed var(--teal);
-    border-radius: var(--r-md);
-    background: var(--panel);
-  }
-
-  .b4-place-hint-text {
-    margin: 0;
-    color: var(--ink);
-  }
-
   /* The chosen placement and its sub-editor. */
   .b4-chosen {
     display: grid;

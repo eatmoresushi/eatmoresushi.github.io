@@ -3,7 +3,9 @@
  * Source: wireframe `sectionOrder`, `SEC_TAB`, `sectionHtml`, `jump`.
  *
  * Its **imports were fixed in phase A** (they name every B2 and B3 section component by its
- * final path). B1 adds the section headings, the phone-section visibility and the jump bar.
+ * final path). B1 adds the section headings and the phone-section visibility. The jump bar
+ * (`JumpNav`) is a row of the shell above the world, not part of it (`GameShell`; owner review
+ * 2026-10-17, item 3).
  *
  * Sections, in `sectionOrder(model.roundPhase)` order (`state/uiStore.ts`):
  * - `firing`: FiringStage (D3: takes over the column during the Firing Phase);
@@ -42,7 +44,6 @@ import { LookedOrders } from "../table/LookedOrders.tsx";
 import { OrderDisplay } from "../table/OrderDisplay.tsx";
 import { RecognitionTrack } from "../table/RecognitionTrack.tsx";
 import { TechDisplay } from "../table/TechDisplay.tsx";
-import { JumpNav } from "./JumpNav.tsx";
 import { SECTION_TITLE, sectionHeadingId, sectionId } from "./sections.ts";
 import "./WorldSections.css";
 
@@ -119,7 +120,6 @@ export function WorldSections() {
   const { section: currentTab } = useUi();
   return (
     <>
-      <JumpNav />
       {sectionOrder(phase).map((id) => (
         <section
           key={id}

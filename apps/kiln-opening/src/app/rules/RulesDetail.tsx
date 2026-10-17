@@ -1,14 +1,22 @@
 /**
  * RulesDetail: the one rules-details panel of owner decision D10 (UI_V1.6.1_ARCHITECTURE K15).
  * Owner: B6. It replaces the four package copies (B2 `table/`, B3 `kiln/`, B4 `decision/work/`,
- * B5 `decision/orders/`), so every Tech tile, Kiln Player Board, location, Order card and
- * Imperial Recognition milestone shows the same details wherever it appears.
+ * B5 `decision/orders/`), so a component shows the same details wherever it opens them: a Tech
+ * tile on the Tech display, a Kiln Player Board's Kiln tradition, an Order card, an Imperial
+ * Recognition milestone, and the Techs, Kilns, Orders and milestones named on the kiln, in the
+ * forms, on the firing stage and in the results.
+ *
+ * Not every piece opens it (owner decisions D15 and D19, 2026-10-17): no action space (the table's
+ * location cards, the personal spaces), no Tech that is a Guild Hall choice (the Tech display's
+ * chooser, the Shifu's inspection), no owned Tech slot on a Kiln Player Board (its tile shows the
+ * printed short text instead, `TechShort`) and nothing in the Kiln selection window. The
+ * `location` subject stays for the rules reference itself; no screen opens it now.
  *
  * The kit's `PieceDetail` disclosure: click, tap or keyboard focus on the trigger opens it;
  * Escape or an outside click closes it; the open panel lives in the kit's body-level layer, so no
  * column or table clips it. The trigger is either the visible piece itself (a Tech tile, an Order
- * card, a location heading) or, beside a form option, a small "Full rules" button or the
- * component's name (always outside the option's `<label>`, §8.1).
+ * card, a milestone, a Kiln tradition) or, beside a form option, a small "Full rules" button or
+ * the component's name (always outside the option's `<label>`, §8.1).
  *
  * Also shared: `ShortText` (a data short text with its timing clause in bold), `OrderReward`
  * (an Order's printed reward) and `LocationSummaries` (a location's one-line summaries).

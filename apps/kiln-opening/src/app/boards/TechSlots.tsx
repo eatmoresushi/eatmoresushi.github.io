@@ -2,18 +2,20 @@
  * TechSlots (UI_V1.6.1_ARCHITECTURE §4.2). Owner: B2 (table and boards).
  * Source: wireframe `techSlots`.
  *
- * The three Tech slots of a Kiln Player Board, one per discipline (D11 names): the owned Tech
- * with its state this round (Ready / Used this round for a once-per-round Tech, else Ongoing), or
- * an empty slot. An owned Tech opens its rules details (D10), with "This round" among its facts.
+ * The three Tech slots of a Kiln Player Board, one per discipline (D11 names): the owned Tech as
+ * printed — its name, its state this round (Ready / Used this round for a once-per-round Tech,
+ * else Ongoing) and its short text with the timing clause in bold, like the Tech display
+ * (`TechShort`) — or an empty slot. The tile is not a control: it opens no rules details (owner
+ * review, 2026-10-17); the card text is on it.
  */
 import type { CSSProperties } from "react";
 import type { PlayerId } from "../../game/index.ts";
 import { DISCIPLINES } from "../../game/index.ts";
 import { useT } from "../i18n/I18nProvider.tsx";
 import { disciplineName, techName } from "../i18n/content.ts";
+import { Chip } from "../kit/Chip.tsx";
 import { useGame } from "../state/hooks.ts";
-import { DISCIPLINE_COLOUR } from "../table/TechCard.tsx";
-import { RulesDetail } from "../rules/RulesDetail.tsx";
+import { DISCIPLINE_COLOUR, TechShort } from "../table/TechCard.tsx";
 import { summaryOf } from "../table/tableData.ts";
 import "./TechSlots.css";
 
@@ -44,18 +46,13 @@ export function TechSlots({ playerId }: TechSlotsProps) {
         }
         const state = owned.oncePerRound ? (owned.ready ? t("common.status.ready") : t("common.status.usedThisRound")) : t("common.status.ongoing");
         return (
-          <li key={discipline} className={owned.oncePerRound && !owned.ready ? "tslot tslot--used" : "tslot"} style={style} data-discipline={discipline} data-tech-id={owned.techId}>
-            <RulesDetail
-              subject={{ kind: "tech", id: owned.techId }}
-              className="tslot-detail"
-              trigger={
-                <span className="tslot-face">
-                  <span className="tslot-disc">{disc}</span>
-                  <span className="tslot-name">{techName(owned.techId, t.locale)}</span>
-                  <span className="tslot-state">{state}</span>
-                </span>
-              }
-            />
+          <li key={discipline} className="tslot" style={style} data-discipline={discipline} data-tech-id={owned.techId}>
+            <span className="tslot-disc">{disc}</span>
+            <span className="tslot-t1">
+              <strong className="tslot-name">{techName(owned.techId, t.locale)}</strong>
+              <Chip tone={!owned.oncePerRound ? "neutral" : owned.ready ? "ok" : "used"}>{state}</Chip>
+            </span>
+            <TechShort techId={owned.techId} />
           </li>
         );
       })}

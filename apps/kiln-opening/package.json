@@ -24,7 +24,8 @@
     "test:e2e:ci": "KILN_E2E_SERVER=preview playwright test --project=ci-smoke --project=ci-full-game",
     "ci:ui": "bash tools/ci-ui-local.sh",
     "fixtures": "vite-node tools/uiFixtures.ts --target tests",
-    "fixtures:check": "vite-node tools/uiFixtures.ts --target tests --check"
+    "fixtures:check": "vite-node tools/uiFixtures.ts --target tests --check",
+    "print:orders": "vite-node tools/print/printOrderCards.ts --lang en --lang zh"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",

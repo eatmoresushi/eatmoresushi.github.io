@@ -77,6 +77,32 @@ export interface WindowAlternative {
 }
 
 /**
+ * A way to bring a hidden pane back (owner review, 2026-10-17): one draft action that gives the
+ * pane something to show, such as using Imperial Priority before the worker action.
+ */
+export interface PaneOpener<A> {
+  /** Unique among the window's openers (React key, `data-pane-opener`); never an engine ID (D9). */
+  key: string;
+  label: WindowText;
+  action: A;
+}
+
+/**
+ * Whether the decision pane shows for a draft (owner review, 2026-10-17). A window whose choice
+ * starts on the table (the work turn's Place shortcuts) hides the pane until the table has made
+ * one. While it is hidden, a slim bar above the world says whose turn it is and what to do
+ * (`lead`: "Your turn: place a worker · 3 left", the visible cue the hidden pane's eyebrow and
+ * heading gave; always shown) and names the draft actions that bring the pane back (`openers`),
+ * after the words that name their group (`openersLabel`: "Or first:"; null with no openers).
+ */
+export type PanePresence<A> =
+  | { readonly hidden: false }
+  | { readonly hidden: true; readonly lead: WindowText; readonly openersLabel: WindowText | null; readonly openers: readonly PaneOpener<A>[] };
+
+/** The pane shows (every window without a `pane` member, always). */
+export const PANE_SHOWN: PanePresence<never> = Object.freeze({ hidden: false });
+
+/**
  * One registry entry of `decision/windows.ts` (§3.5). The slices `decision/work/windows.work.ts`
  * (B4) and `decision/windows.firing.ts` (B5) provide them; `windows.ts` only merges the slices.
  */
@@ -85,12 +111,18 @@ export interface WindowSpec<D = unknown, A extends DraftActionBase = never, O = 
   /** The form fields; reads `useDraft()` / `useEngineView()`. Rendered inside `.pane-scroll`. */
   Component: ComponentType;
   draft: DraftModel<D, A, O>;
-  /** The pane heading and the phone sheet strip ("Place a worker"). */
-  title(model: GameModel, engine: EngineView): WindowText;
+  /**
+   * The pane heading and the phone sheet strip ("Place a worker"). `draft` is the open window's
+   * draft, for a heading that follows the pane's content (the work turn's "Before your worker
+   * action" while an ability's form is open, owner review 2026-10-17); most windows ignore it.
+   */
+  title(model: GameModel, engine: EngineView, draft: D): WindowText;
   /** The alternative to Confirm, if this window has one now; else ConfirmBar offers Clear. */
   alternative?(draft: D, model: GameModel, engine: EngineView): WindowAlternative | null;
   /** Table targets driven by the draft (Place shortcuts, kiln spaces, Order cards). */
   table?: TableAdapter<D, A>;
+  /** Whether the pane shows for this draft (`state/pane.ts`); without it, always. */
+  pane?(draft: D, model: GameModel, engine: EngineView): PanePresence<A>;
 }
 
 /** A spec with its draft type erased, as the registry holds it. */

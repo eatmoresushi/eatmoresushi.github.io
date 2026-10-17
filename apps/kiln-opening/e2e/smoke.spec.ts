@@ -7,7 +7,9 @@
  * adds two computers, starts, sees live revisions in the (stub) panes, and finishes a full game
  * by pressing the dev canonical-move button whenever it is their decision. It drives only the
  * test-driver hooks (`name`, `data-action`, `data-window`, `data-dev`), which the phase B
- * screens keep.
+ * screens keep. The work turn hides the decision pane until a placement is chosen on the table
+ * (owner review, 2026-10-17), and the dev button with it: there it is pressed with a dispatched
+ * click (it is a dev tool, not a player's control; the forms are played in `full_game.spec`).
  */
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
@@ -62,13 +64,15 @@ test("one human and two computers play a full game with the canonical-move butto
   let moves = 0;
   let lastRevision = firstRevision;
   while (moves < MAX_MOVES) {
-    await expect(ready.first()).toBeVisible({ timeout: 60_000 });
+    // Attached, not visible: during the work turn the button sits in the hidden pane.
+    await expect(ready.first()).toBeAttached({ timeout: 60_000 });
     if (await final.isVisible()) break;
     const revision = Number(await pane.getAttribute("data-revision"));
     expect(revision).toBeGreaterThanOrEqual(lastRevision);
     lastRevision = revision;
     windowsSeen.add((await page.locator("form.pane-form").getAttribute("data-window")) ?? "");
-    await canonical.click();
+    if (await canonical.isVisible()) await canonical.click();
+    else await canonical.dispatchEvent("click");
     moves += 1;
     // Wait for the answer: the button is busy while sending, then the view moves on.
     await expect(page.locator('[data-dev="canonical-move"][aria-busy]')).toHaveCount(0, { timeout: 60_000 });

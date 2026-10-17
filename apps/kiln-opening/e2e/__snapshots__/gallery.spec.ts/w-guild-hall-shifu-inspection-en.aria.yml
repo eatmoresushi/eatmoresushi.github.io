@@ -15,34 +15,20 @@
     - img "Your Apprentice"
     - text: 0 Orders in hand Recognition 0/4 1 VP
   - form "Take a Tech":
-    - group "Inspected Firing Techs Only you can see":
+    - group "Inspected Firing Techs":
       - text: ""
-      - radio "Test Pieces 3 Coins → 2 Coins Firing"
-      - text: Test Pieces 3 Coins → 2 Coins Firing
-      - 'button "Full rules: Test Pieces"'
-      - radio "Second Firing 2 Coins → 1 Coin Firing"
-      - text: Second Firing 2 Coins → 1 Coin Firing
-      - 'button "Full rules: Second Firing"'
+      - radio "Test Pieces 3 Coins → 2 Coins"
+      - radio "Second Firing 2 Coins → 1 Coin"
     - group "Or a face-up Tech":
       - text: ""
-      - radio "Decorator's Kit 2 Coins → 1 Coin Form & Decorate You already own a Form & Decorate Tech." [disabled]
-      - text: Decorator's Kit 2 Coins → 1 Coin Form & Decorate You already own a Form & Decorate Tech.
-      - 'button "Full rules: Decorator''s Kit"'
-      - radio "Reworking Table 2 Coins → 1 Coin Form & Decorate You already own a Form & Decorate Tech." [disabled]
-      - text: Reworking Table 2 Coins → 1 Coin Form & Decorate You already own a Form & Decorate Tech.
-      - 'button "Full rules: Reworking Table"'
-      - radio "Colour Samples 2 Coins → 1 Coin Glazing & Loading"
-      - text: Colour Samples 2 Coins → 1 Coin Glazing & Loading
-      - 'button "Full rules: Colour Samples"'
-      - radio "Kiln Tending 2 Coins → 1 Coin Glazing & Loading"
-      - text: Kiln Tending 2 Coins → 1 Coin Glazing & Loading
-      - 'button "Full rules: Kiln Tending"'
-      - radio "Protective Saggars 2 Coins → 1 Coin Firing"
-      - text: Protective Saggars 2 Coins → 1 Coin Firing
-      - 'button "Full rules: Protective Saggars"'
-      - radio "Fuel Ledger 3 Coins → 2 Coins Firing"
-      - text: Fuel Ledger 3 Coins → 2 Coins Firing
-      - 'button "Full rules: Fuel Ledger"'
+      - radio "Decorator's Kit 2 Coins → 1 Coin" [disabled]
+      - paragraph: You already own a Form & Decorate Tech.
+      - radio "Reworking Table 2 Coins → 1 Coin" [disabled]
+      - paragraph: You already own a Form & Decorate Tech.
+      - radio "Colour Samples 2 Coins → 1 Coin"
+      - radio "Kiln Tending 2 Coins → 1 Coin"
+      - radio "Protective Saggars 2 Coins → 1 Coin"
+      - radio "Fuel Ledger 3 Coins → 2 Coins"
     - paragraph: Return to the bottom of the Firing deck, top to bottom
     - list "Return to the bottom of the Firing deck, top to bottom":
       - listitem:
