@@ -79,10 +79,22 @@
     color: var(--ink);
   }
 
-  .jump-nav-hint {
+  /* The seat chips after the section buttons, right-aligned. They stay on the buttons' line when
+     they all fit there (flex-basis max-content); otherwise they take their own line, and only
+     scroll inside it when even a full line is too narrow. The auto margin (not justify-content)
+     keeps an overflowing row scrollable from its start. */
+  .jump-nav-seats {
+    display: flex;
+    flex: 1 1 max-content;
+    min-width: 0;
+    /* Room for the focus ring and the acting outline inside the scroll area. */
+    padding: 3px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .jump-nav-seats > .seat-chips {
     margin-inline-start: auto;
-    color: var(--ink-3);
-    font-size: var(--fs-meta);
   }
 
   @container shell (max-width: 899px) {

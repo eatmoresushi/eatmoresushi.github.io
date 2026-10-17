@@ -29,13 +29,11 @@ export const shell = defineNamespace({
     "seat.first": "First",
     "seat.firstPlayer": "First Player",
     "seat.acting": "deciding now",
-    "seat.computer": "computer",
     "seat.computerPlayer": "computer player",
     "seat.final": "final",
     "seat.finalTotal": "final total {n} VP",
     "seat.openBoard": "Open {name}’s board",
     "seat.yourWorkshop": "Your workshop",
-    "seat.noKiln": "no Kiln yet",
     "seat.vp": "<b>{n}</b> VP",
 
     // ── Game log (D5) ──────────────────────────────────────────────────────────────────
@@ -245,13 +243,11 @@ export const shell = defineNamespace({
     "seat.first": "起",
     "seat.firstPlayer": "起始玩家",
     "seat.acting": "正在决断",
-    "seat.computer": "电脑",
     "seat.computerPlayer": "电脑玩家",
     "seat.final": "终",
     "seat.finalTotal": "终局总分{n}分",
     "seat.openBoard": "查看{name}的窑口板",
     "seat.yourWorkshop": "你的作坊",
-    "seat.noKiln": "尚未选窑",
     "seat.vp": "<b>{n}</b>分",
 
     "log.button": "记录",

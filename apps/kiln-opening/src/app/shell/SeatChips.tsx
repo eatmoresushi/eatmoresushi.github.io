@@ -3,8 +3,10 @@
  * Source: wireframe `topBar` `chain`.
  *
  * The public opponent strips (D2), in work order (`model.players`, First Player then clockwise):
- * seat colour, First Player badge, name, Kiln short name, VP, hand count as card backs, and the
- * acting and computer badges. VP is the score-track value `recordedVp` (Tech VP included from
+ * seat colour, First Player badge, name, Kiln short name (none before Kiln selection), VP, Clay,
+ * Wood and Coins (`ResourceIcon` marks), hand count as card backs, and the acting badge. A computer
+ * seat is said in the chip's name only; the visible "computer" pill was removed (owner review,
+ * 2026-10-17). VP is the score-track value `recordedVp` (Tech VP included from
  * the purchase, amendment A1), and the final total once the game is finished.
  *
  * Each chip is a button (`aria-pressed` = its board is the one shown) that opens that player's
@@ -24,6 +26,7 @@ import { useT } from "../i18n/I18nProvider.tsx";
 import { kilnShortName } from "../i18n/content.ts";
 import { num } from "../i18n/format.ts";
 import { CardBack } from "../pieces/CardBack.tsx";
+import { ResourceIcon } from "../pieces/ResourceIcon.tsx";
 import { useGame, useLayoutMode, useUi } from "../state/hooks.ts";
 
 /** The chip the row keeps in view: the viewer when acting, else the first actor, else the viewer. */
@@ -78,11 +81,14 @@ export function SeatChips() {
         const computer = model.computerSeatIds.has(player.playerId);
         const finalTotal = finalScores?.[player.playerId]?.total ?? null;
         const vp = finalTotal ?? player.recordedVp;
-        const kiln = player.kilnId === null ? t("shell.seat.noKiln") : kilnShortName(player.kilnId, t.locale);
+        const kiln = player.kilnId === null ? null : kilnShortName(player.kilnId, t.locale);
         const label = [
           me ? t("shell.seat.yourWorkshop") : t("shell.seat.openBoard", { name: player.displayName }),
-          kiln,
+          ...(kiln === null ? [] : [kiln]),
           finalTotal === null ? t("common.vpN", { n: vp }) : t("shell.seat.finalTotal", { n: vp }),
+          t("common.amount.clay", { n: player.resources.clay }),
+          t("common.amount.wood", { n: player.resources.wood }),
+          t("common.amount.coins", { n: player.resources.coins }),
           t("common.piece.ordersInHand", { n: player.orderHandCount }),
           ...(player.isFirstPlayer ? [t("shell.seat.firstPlayer")] : []),
           ...(acting ? [t("shell.seat.acting")] : []),
@@ -116,22 +122,27 @@ export function SeatChips() {
               <span className="seat-chip-name" aria-hidden="true">
                 {player.displayName}
               </span>
-              <span className="seat-chip-kiln" aria-hidden="true">
-                {kiln}
-              </span>
+              {kiln === null ? null : (
+                <span className="seat-chip-kiln" aria-hidden="true">
+                  {kiln}
+                </span>
+              )}
               <span className="seat-chip-vp num" aria-hidden="true">
                 {t.rich("shell.seat.vp", { n: vp })}
                 {finalTotal === null ? null : <span className="seat-chip-final">{t("shell.seat.final")}</span>}
+              </span>
+              <span className="seat-chip-res" aria-hidden="true">
+                {(["clay", "wood", "coins"] as const).map((kind) => (
+                  <span key={kind} className="seat-chip-res-item" data-resource={kind}>
+                    <ResourceIcon kind={kind} />
+                    <span className="num">{num(player.resources[kind])}</span>
+                  </span>
+                ))}
               </span>
               <span className="seat-chip-hand" aria-hidden="true">
                 <CardBack count={player.orderHandCount} maxDrawn={1} />
                 <span className="num">{num(player.orderHandCount)}</span>
               </span>
-              {computer ? (
-                <span className="seat-chip-computer" aria-hidden="true">
-                  {t("shell.seat.computer")}
-                </span>
-              ) : null}
               {acting ? <span className="seat-chip-acting" aria-hidden="true" /> : null}
             </button>
           </li>

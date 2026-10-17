@@ -16,10 +16,11 @@ import type { ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { guildInspectionOptions } from "../../../../src/game/index.ts";
+import { LOCATIONS, guildInspectionOptions } from "../../../../src/game/index.ts";
 import { DecisionPane } from "../../../../src/app/decision/DecisionPane.tsx";
 import { WINDOWS } from "../../../../src/app/decision/windows.ts";
 import { I18nProvider } from "../../../../src/app/i18n/I18nProvider.tsx";
+import { kilnText } from "../../../../src/app/i18n/content.ts";
 import { LanguageToggle } from "../../../../src/app/kit/LanguageToggle.tsx";
 import { DraftStore } from "../../../../src/app/state/draftStore.ts";
 import { GameProvider, useTableSelection } from "../../../../src/app/state/hooks.ts";
@@ -94,7 +95,7 @@ function shifuId(id: string): string {
 describe("rules details (D10)", () => {
   it("a location's rules open on keyboard focus and close on Escape, returning focus", () => {
     mount(new ControlledSource("m1_work_phase_r2_3p"), <DecisionPane />);
-    const trigger = $<HTMLButtonElement>('.rd-piece--button .kit-detail-trigger[aria-label="Rules: Materials Yard"]');
+    const trigger = $<HTMLButtonElement>('.rd-piece--button .kit-detail-trigger[aria-label="Full rules: Materials Yard"]');
     // The panel lives in the kit's body-level layer (CR B2-6, B3-5), named by aria-controls.
     const panel = document.getElementById(trigger.getAttribute("aria-controls") ?? "")!;
     expect(panel.querySelector('[data-rules="location"]')).not.toBeNull();
@@ -102,7 +103,12 @@ describe("rules details (D10)", () => {
     act(() => trigger.focus());
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
     expect(panel.hidden).toBe(false);
-    expect(panel.textContent).toContain("Owner ruling R12");
+    // Both worker effects as the full rule, then the clarifications as plain text (owner review, 2026-10-17).
+    expect([...panel.querySelectorAll(".rd-h")].map((heading) => heading.textContent)).toEqual(["Full rule", ...(LOCATIONS.materials_yard.clarifications.length > 0 ? ["Clarifications"] : [])]);
+    expect(panel.querySelectorAll(".rd-rule")).toHaveLength(2);
+    for (const item of LOCATIONS.materials_yard.clarifications) expect(panel.textContent).toContain(item.en);
+    expect(panel.querySelector("dl")).toBeNull();
+    expect(panel.textContent).not.toMatch(/Source:|Owner ruling/);
     act(() => {
       trigger.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     });
@@ -110,13 +116,15 @@ describe("rules details (D10)", () => {
     expect(document.activeElement).toBe(trigger);
   });
 
-  it("a Kiln board's rules open on click and show its short text with the timing in bold", () => {
+  it("a Kiln board's rules open on click and show its full rule, not the short text the option already shows", () => {
     mount(new ControlledSource("m15_kiln_selection"), <DecisionPane />);
-    const trigger = $<HTMLButtonElement>('.rd-piece--button .kit-detail-trigger[aria-label^="Rules: Ru Kiln"]');
+    const trigger = $<HTMLButtonElement>('.rd-piece--button .kit-detail-trigger[aria-label^="Full rules: Ru Kiln"]');
     click(trigger);
     const panel = document.getElementById(trigger.getAttribute("aria-controls") ?? "")!;
     expect(panel.hidden).toBe(false);
-    expect(panel.querySelector('[data-rules="kiln"] .rd-short strong')?.textContent).toMatch(/:$/);
+    expect(panel.querySelector('[data-rules="kiln"] .rd-rule')?.textContent).toBe(kilnText("RU", "en").ability);
+    expect(panel.querySelector('[data-rules="kiln"] .rd-short')).toBeNull();
+    expect(panel.querySelector('[data-rules="kiln"] strong')).toBeNull();
     // Opening the rules never chooses the Kiln.
     expect(radio("kilnId", "RU").checked).toBe(false);
   });

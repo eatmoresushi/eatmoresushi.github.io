@@ -49,7 +49,7 @@ export function GuildInspection() {
         disabled={!option.legal}
         reason={reason === null ? undefined : errorText(reason)}
       >
-        <RulesDetail subject={{ kind: "tech", id: option.techId }} extraFacts={[{ label: t("rules.fact.price"), value: techPriceText(option, t) }]} />
+        <RulesDetail subject={{ kind: "tech", id: option.techId }} />
       </OptionCard>
     );
   };

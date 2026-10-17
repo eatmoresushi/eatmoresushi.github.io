@@ -24,28 +24,7 @@
       "titleZh": "御赐",
       "rewardText": "Gain 1 Clay, 1 Wood and 1 Coin.",
       "rewardTextZh": "获得1泥、1柴和1铜钱。",
-      "clarifications": [
-        {
-          "en": "Recognition is advanced by Crown icons on completed Orders or by paying at the Magistrate's Hall.",
-          "zh": "声望通过已完成委托上的御令或在州衙付费推进。",
-          "source": "L427"
-        },
-        {
-          "en": "Advancing at the Magistrate's Hall resolves the reward of the space you reach normally.",
-          "zh": "在州衙推进声望时，所到格的奖励照常结算。",
-          "source": "L232"
-        },
-        {
-          "en": "Resolve 1 Crown at a time. Resolve every milestone crossed.",
-          "zh": "御令逐个结算，途经的每一格奖励都要结算。",
-          "source": "L416"
-        },
-        {
-          "en": "Each milestone reward is gained only once.",
-          "zh": "每项声望奖励只能获得一次。",
-          "source": "L440"
-        }
-      ]
+      "clarifications": []
     },
     {
       "space": 2,
@@ -102,11 +81,6 @@
           "en": "An Imperial Kiln gained during the before-or-after-action window is usable within it.",
           "zh": "在“工人行动之前或之后”的时机中刚获得的御窑，在同一时机内就可以使用。",
           "source": "INT Before/after-action window"
-        },
-        {
-          "en": "The Imperial Kiln is gained only once.",
-          "zh": "御窑只能获得一次。",
-          "source": "L440"
         }
       ]
     },
@@ -142,19 +116,9 @@
           "source": "INT Before/after-action window"
         },
         {
-          "en": "After a Commission Market action, the display refills after any after-action Imperial Priority.",
-          "zh": "瓷牙行行动后如果还使用御烧优先，委托榜要等它结算完才补牌。",
-          "source": "INT Deferred refill"
-        },
-        {
           "en": "Provisional ruling: Reworking Table may be used when Imperial Priority glazes and loads a vessel, using its once-per-round allowance.",
           "zh": "暂定裁定：御烧优先为1件坯施釉装窑时，也可以使用改坯案，并消耗改坯案的“每轮一次”。",
           "source": "P1"
-        },
-        {
-          "en": "The Imperial Priority token is gained only once.",
-          "zh": "御烧优先标只能获得一次。",
-          "source": "L440"
         }
       ]
     },
@@ -176,19 +140,9 @@
           "source": "L427"
         },
         {
-          "en": "Resolve Crowns one at a time. A multi-Crown Order may cross several milestones, reach Recognition 4 and then score VP from any remaining Crowns on that same Order.",
-          "zh": "御令逐个结算。一张多御令的委托可以连跨数格、到达声望4，再用同一张委托上余下的御令得分。",
-          "source": "L439"
-        },
-        {
           "en": "Tribute Ware's bonus Crown also advances Recognition.",
           "zh": "贡瓷的额外御令同样推进御府声望。",
           "source": "R13"
-        },
-        {
-          "en": "Imperial Audience is gained only once.",
-          "zh": "御前召见只能获得一次。",
-          "source": "L440"
         }
       ]
     }
@@ -196,11 +150,6 @@
   "overflowVpPerCrown": 1,
   "clarifications": {
     "imperial_overflow": [
-      {
-        "en": "After you are at Recognition 4, each additional Crown you gain scores 1 VP immediately.",
-        "zh": "到达声望4后，你每再获得1个御令，立即得1分。",
-        "source": "L438"
-      },
       {
         "en": "A multi-Crown Order may reach Recognition 4 and then score VP from any remaining Crowns on that same Order.",
         "zh": "一张多御令的委托可以先到达声望4，再用同一张委托上余下的御令得分。",

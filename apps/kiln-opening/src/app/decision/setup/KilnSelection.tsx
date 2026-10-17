@@ -3,7 +3,8 @@
  *
  * The five Kiln Player Boards as radio cards: name, ability name and short text (timing in
  * bold), each opening its rules details (D10); a Kiln another player took is unavailable, with
- * who took it. The choosing order (reverse turn order) is listed with each player's pick.
+ * who took it. The prompt says Kilns are chosen in reverse turn order; the window does not list
+ * the order (owner review, 2026-10-17): the seat chips already show who is choosing.
  */
 import { shortTextSegments } from "../../../game/index.ts";
 import { kilnText } from "../../i18n/content.ts";
@@ -59,20 +60,6 @@ export function KilnSelection() {
           );
         })}
       </OptionGroup>
-      <div className="b4-sub-block">
-        <p className="b4-sub-title">{t("work.ks.order")}</p>
-        <ol className="b4-kiln-order">
-          {options.selectionOrder.map((playerId, index) => {
-            const chosen = options.kilns.find((kiln) => kiln.chosenBy === playerId);
-            return (
-              <li key={playerId} data-current={index === options.index ? "true" : undefined}>
-                <span>{playerId === viewer ? t("common.nameYou", { name: playerName(playerId) }) : playerName(playerId)}</span>
-                {chosen === undefined ? null : <span className="b4-kiln-order-pick">{kilnText(chosen.kilnId, t.locale).name}</span>}
-              </li>
-            );
-          })}
-        </ol>
-      </div>
     </div>
   );
 }

@@ -36,7 +36,7 @@ import { DraftStore } from "../../../../src/app/state/draftStore.ts";
 import { GameProvider } from "../../../../src/app/state/hooks.ts";
 import { fixedLayoutSource } from "../../../../src/app/state/layoutMode.ts";
 import type { LayoutMode } from "../../../../src/app/state/layoutMode.ts";
-import { UiStore } from "../../../../src/app/state/uiStore.ts";
+import { BROWSER_UI_EFFECTS, UiStore } from "../../../../src/app/state/uiStore.ts";
 import type { UiState } from "../../../../src/app/state/uiStore.ts";
 import { allFixtures, fixture } from "../support/fixtures.ts";
 import { StaticSource, modelOf, recordingSession } from "../shell/support.tsx";
@@ -158,6 +158,24 @@ describe("focus rescue", () => {
     expect(document.activeElement?.id).toBe("orders-h");
   });
 
+  it("moves focus without scrolling the view (preventScroll)", async () => {
+    // Regression (owner review, 2026-10-17): a rescue after another player's move scrolled the
+    // screen, which looked like the page flashing.
+    const view = mount(new StaticSource(m1()), world(true));
+    act(() => $("#place").focus());
+    const heading = $("#table-h");
+    const calls: Array<FocusOptions | undefined> = [];
+    const original = heading.focus.bind(heading);
+    heading.focus = (options?: FocusOptions) => {
+      calls.push(options);
+      original(options);
+    };
+    view.rerender(world(false));
+    await flushMutations();
+    expect(document.activeElement?.id).toBe("table-h");
+    expect(calls).toEqual([{ preventScroll: true }]);
+  });
+
   it("leaves deliberate focus alone", async () => {
     const view = mount(new StaticSource(m1()), world(true));
     act(() => $("#other").focus());
@@ -166,6 +184,32 @@ describe("focus rescue", () => {
     view.rerender(world(false));
     await flushMutations();
     expect(document.activeElement).toBe(document.body);
+  });
+});
+
+describe("jump bar (desktop and tablet)", () => {
+  it("scrolls the world only, never the page or the shell", () => {
+    // Regression (owner review, 2026-10-17): scrollIntoView also scrolled the clipped shell, and
+    // the player could not scroll back to the top.
+    const world = document.createElement("div");
+    world.className = "shell-world";
+    const section = document.createElement("section");
+    section.id = "sec-orders";
+    world.appendChild(section);
+    document.body.appendChild(world);
+    const scrolls: ScrollToOptions[] = [];
+    world.scrollTo = ((options: ScrollToOptions) => {
+      scrolls.push(options);
+    }) as typeof world.scrollTo;
+    let intoView = 0;
+    section.scrollIntoView = () => {
+      intoView += 1;
+    };
+    BROWSER_UI_EFFECTS.scrollToSection("orders");
+    world.remove();
+    expect(intoView).toBe(0);
+    expect(scrolls).toHaveLength(1);
+    expect(scrolls[0]?.top).toBeGreaterThanOrEqual(0);
   });
 });
 

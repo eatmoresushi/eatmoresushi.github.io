@@ -25,7 +25,8 @@
       background: var(--panel);
       box-shadow: 0 -8px 24px var(--shadow-c);
       max-height: 72dvh;
-      overflow: hidden;
+      /* clip: focus() inside must never scroll the sheet itself (only .pane-scroll scrolls). */
+      overflow: clip;
       padding-bottom: env(safe-area-inset-bottom, 0);
     }
 

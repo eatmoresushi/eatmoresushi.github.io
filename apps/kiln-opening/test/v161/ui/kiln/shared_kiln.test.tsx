@@ -9,16 +9,18 @@
  * - no heat value on a ceramic or a space (D3), no internal ID in perceivable text (D9).
  */
 import { describe, expect, it } from "vitest";
+import { TECHS } from "../../../../src/game/index.ts";
 import type { CeramicId, KilnSpaceId } from "../../../../src/game/index.ts";
-import { techFacts } from "../../../../src/app/i18n/content.ts";
+import { techText } from "../../../../src/app/i18n/content.ts";
 import { KilnBlock } from "../../../../src/app/kiln/KilnBlock.tsx";
 import { defineWindow } from "../../../../src/app/state/draftStore.ts";
 import type { WindowRegistry } from "../../../../src/app/state/draftStore.ts";
 import { tableSelection } from "../../../../src/app/state/tableSelection.ts";
-import { msg } from "../../../../src/app/i18n/translator.ts";
+import { createTranslator, msg } from "../../../../src/app/i18n/translator.ts";
 import { fixture, fixtureSource } from "../support/fixtures.ts";
 import { renderComponent } from "../support/render.tsx";
 import { TOY_WINDOWS } from "../support/toyWindows.tsx";
+import { panel, textOf } from "../table/markup.ts";
 import { activeKilnSpaces, kilnLayout, perceivable, settersMarkOptions, spaceCell, tagged, techRulesCheck, withoutRulesPanels } from "./support.ts";
 
 const render = (id: string, locale: "en" | "zh-CN" = "en", options: Parameters<typeof renderComponent>[2] = {}) =>
@@ -126,7 +128,7 @@ describe("ceramics, markers and tiles", () => {
     expect(perceivable(cell)).toContain(`Setter's Mark · ${owner}`);
   });
 
-  it("opens each tile's rules details: short text, full rule, clarifications with sources, card facts (D10)", () => {
+  it("opens each tile's rules details: only the full rule and clarifications, with no card text, card facts or source labels (D10)", () => {
     const furniture = spaceCell(render("m3_heat_marker_step_3p"), "low_2");
     tagged(furniture, techRulesCheck("T15", "en"));
     const setter = spaceCell(render("m10b_setters_mark_on_space"), "high_1");
@@ -135,14 +137,18 @@ describe("ceramics, markers and tiles", () => {
     tagged(zh, techRulesCheck("T15", "zh-CN"));
     // The panel is a PieceDetail disclosure: a button with aria-expanded and a hidden panel.
     expect(furniture).toMatch(/<button type="button" class="kit-detail-trigger" aria-expanded="false" aria-controls="[^"]+"/);
-    expect(furniture).toContain("<dt>Discipline</dt><dd>Glazing &amp; Loading</dd>");
-    expect(furniture).toContain(`<dt>Cost</dt><dd>${String(techFacts("T15").cost)} Coins</dd>`);
-    expect(furniture).toContain("<dt>Use</dt><dd>Once per round</dd>");
-    expect(furniture).toContain("<dt>Adds</dt><dd>Your second Glaze &amp; Load space</dd>");
-    expect(furniture).toContain("<dt>Score</dt><dd>1 VP when gained</dd>");
-    expect(furniture).toMatch(/<dt>Owner<\/dt><dd>Lin<\/dd><\/div><div class="rd-fact"><dt>This round<\/dt><dd>(Ready|Used this round)<\/dd>/);
-    expect(zh).toContain("<dt>添设</dt><dd>施釉装窑第二工位</dd>");
-    expect(zh).toContain("习得时得1分");
+    // The tile names its owner; the panel adds no card facts, owner or this-round rows (owner review, 2026-10-17).
+    expect(perceivable(furniture)).toContain("Kiln Furniture −1 · Lin");
+    for (const [html, techId, locale] of [[furniture, "T15", "en"], [setter, "T22", "en"], [zh, "T15", "zh-CN"]] as const) {
+      const t = createTranslator(locale, { strict: true });
+      const body = panel(html, t("rules.label", { name: techText(techId, locale).name }));
+      const headings = [...body.matchAll(/<p class="rd-h">([^<]*)<\/p>/g)].map((match) => match[1]);
+      expect(headings).toEqual([t("rules.fullRule"), ...(TECHS[techId].clarifications.length > 0 ? [t("rules.clarifications")] : [])]);
+      expect(body).not.toMatch(/<dl\b|<dt>/);
+      expect(body).not.toContain("rd-short");
+    }
+    const panelText = textOf(panel(furniture, "Full rules: Kiln Furniture"));
+    expect(panelText).not.toMatch(/\bLin\b|Ready|Used this round|1 VP when gained|Your second Glaze & Load space/);
     expect(perceivable(furniture)).not.toMatch(/\b(un)?lock/i);
   });
 

@@ -82,7 +82,7 @@ function tiles(space: KilnSpaceView, model: GameModel, t: Translator, interactiv
     );
     out.push(
       interactive ? (
-        <RulesDetail key={key} subject={{ kind: "tech", id: techId }} ownerId={ownerId} trigger={body} className="ktile-detail" />
+        <RulesDetail key={key} subject={{ kind: "tech", id: techId }} trigger={body} className="ktile-detail" />
       ) : (
         <span key={key}>{body}</span>
       ),

@@ -6,10 +6,9 @@
  * (GameLog · LanguageSwitch · SessionMenu) and the SeatChips, in this order in the markup at every
  * width (§7.3: layout is CSS). The drawn order follows the markup at every width, so the Tab
  * order matches what is seen (WCAG 2.4.3):
- * - 900px and wider: one row. The tools follow the Kiln Die and the seat chips fill the rest of
- *   the row up to its end; when they do not all fit, the chips scroll inside their row before
- *   anything wraps. Only when not even one chip fits beside the tools does the group take a
- *   second row.
+ * - Desktop and tablet (900px and wider, not short landscape): one row ending with the tools. The
+ *   seat chips sit in the world's jump bar instead, after the section buttons (`JumpNav`; owner
+ *   review, 2026-10-17), so the bar is never crammed.
  * - Below 900px, two rows: round ("2/5") · current phase (number and label) · Kiln Die (the die
  *   face) · Log (icon) · language · menu, then the seat chips, which scroll inside their own row
  *   and keep the acting (else the viewer's) chip in view. The words "Round 2/5" and "Kiln Die",
@@ -20,7 +19,8 @@
  */
 import { useT } from "../i18n/I18nProvider.tsx";
 import { RULE_NUMBERS } from "../i18n/content.ts";
-import { useModel } from "../state/hooks.ts";
+import { useLayoutMode, useModel } from "../state/hooks.ts";
+import { isPhone } from "../state/layoutMode.ts";
 import { GameLog } from "./GameLog.tsx";
 import { KilnDieChip } from "./KilnDieChip.tsx";
 import { LanguageSwitch } from "./LanguageSwitch.tsx";
@@ -32,6 +32,7 @@ import "./TopBar.css";
 export function TopBar() {
   const t = useT();
   const round = useModel((model) => model.round);
+  const phone = isPhone(useLayoutMode());
   return (
     <header className="top-bar">
       <h1 className="top-bar-brand">{t("shell.brand")}</h1>
@@ -49,9 +50,11 @@ export function TopBar() {
           <LanguageSwitch />
           <SessionMenu />
         </div>
-        <div className="top-bar-seats">
-          <SeatChips />
-        </div>
+        {phone ? (
+          <div className="top-bar-seats">
+            <SeatChips />
+          </div>
+        ) : null}
       </div>
     </header>
   );

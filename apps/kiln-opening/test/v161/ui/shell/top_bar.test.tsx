@@ -28,15 +28,28 @@ function phaseItems(html: string): string[] {
 }
 
 describe("top bar", () => {
-  it("holds every control in one header, tools before the seat chips", () => {
+  it("holds every control in one header; the seat chips join it on phones only", () => {
     const html = renderComponent(fixtureSource("m1_work_phase_r2_3p"), <TopBar />);
     expect(html.startsWith('<header class="top-bar"><h1 class="top-bar-brand">Kiln Opening</h1>')).toBe(true);
     expect(html.match(/<h1/g)).toHaveLength(1);
     expect(renderComponent(fixtureSource("m1_work_phase_r2_3p"), <TopBar />, { locale: "zh-CN" })).toContain('<h1 class="top-bar-brand">开窑</h1>');
-    const order = ["top-bar-brand", "top-bar-round", "phase-strip", "die-chip", "top-bar-tools", "game-log", "language-switch", "kit-menu", "top-bar-seats", "seat-chips"];
+    const order = ["top-bar-brand", "top-bar-round", "phase-strip", "die-chip", "top-bar-tools", "game-log", "language-switch", "kit-menu"];
     const positions = order.map((name) => html.indexOf(`class="${name}`));
     expect(positions.every((position) => position >= 0)).toBe(true);
     expect([...positions].sort((a, b) => a - b)).toEqual(positions);
+    // Desktop and tablet: the chips sit in the jump bar after the section buttons (owner review, 2026-10-17).
+    expect(html).not.toContain('class="seat-chips"');
+    const world = renderComponent(fixtureSource("m1_work_phase_r2_3p"), <WorldSections />);
+    const jumpList = world.indexOf('class="jump-nav-list"');
+    const jumpSeats = world.indexOf('class="jump-nav-seats"><ol class="seat-chips"');
+    expect(jumpList).toBeGreaterThanOrEqual(0);
+    expect(jumpSeats).toBeGreaterThan(jumpList);
+    // Phones (and short landscape): no jump bar chips; the chips end the top bar, after the tools.
+    for (const layoutMode of ["phone", "phone-landscape"] as const) {
+      const phone = renderComponent(fixtureSource("m1_work_phase_r2_3p"), <TopBar />, { layoutMode });
+      expect(phone.indexOf('class="top-bar-seats"')).toBeGreaterThan(phone.indexOf('class="top-bar-tools"'));
+      expect(renderComponent(fixtureSource("m1_work_phase_r2_3p"), <WorldSections />, { layoutMode })).not.toContain("jump-nav-seats");
+    }
     expect(html).toContain("Round <strong>2</strong>/5");
     expect(renderComponent(fixtureSource("m1_work_phase_r2_3p"), <TopBar />, { locale: "zh-CN" })).toContain("第<strong>2</strong>轮／共5轮");
   });

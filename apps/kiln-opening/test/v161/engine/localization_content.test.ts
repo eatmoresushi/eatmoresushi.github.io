@@ -326,8 +326,8 @@ describe("Chinese strings avoid retired terms and follow the glossary's punctuat
 
   it("collects the Chinese text of every data file", () => {
     expect(strings.length).toBeGreaterThan(300);
-    // Every D10 clarification's Chinese half is checked too (292 items in the clarifications doc).
-    expect(strings.filter(([path]) => path.includes(".clarifications")).length).toBe(292);
+    // Every D10 clarification's Chinese half is checked too (156 items in the clarifications doc).
+    expect(strings.filter(([path]) => path.includes(".clarifications")).length).toBe(156);
   });
 
   it("uses none of the retired or banned terms (glossary §1.5, §6)", () => {

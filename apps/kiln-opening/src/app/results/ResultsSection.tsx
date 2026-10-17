@@ -72,7 +72,6 @@ function rowHeader(row: ScoreBreakdownRow, t: Translator): string {
  * their panels are never clipped; each names its row.
  */
 function RowRules({ model, t }: { model: GameModel; t: Translator }) {
-  const owner = model.players.find((player) => player.techs.some((tech) => tech.techId === KILN_TECHS.connoisseur));
   const overflow = rowHeader("recognitionOverflow", t);
   const items: Array<{ row: ScoreBreakdownRow; node: ReactNode }> = [
     {
@@ -85,7 +84,6 @@ function RowRules({ model, t }: { model: GameModel; t: Translator }) {
       node: (
         <RulesDetail
           subject={{ kind: "tech", id: KILN_TECHS.connoisseur }}
-          ownerId={owner?.playerId ?? null}
           trigger={<span className="score-rule">{rowHeader("connoisseur", t)}</span>}
         />
       ),
@@ -179,7 +177,7 @@ export function ResultsSection() {
               <span className="stand-name">{playerLabel(model, t, standing.playerId)}</span>
               <span className="stand-total">{t.rich("results.totalVp", { n: standing.total })}</span>
               {player === undefined || player.kilnId === null ? null : (
-                <RulesDetail subject={{ kind: "kiln", id: player.kilnId }} ownerId={player.playerId} trigger={<span className="stand-kiln">{kilnName(player.kilnId, t.locale)}</span>} />
+                <RulesDetail subject={{ kind: "kiln", id: player.kilnId }} trigger={<span className="stand-kiln">{kilnName(player.kilnId, t.locale)}</span>} />
               )}
             </li>
           );

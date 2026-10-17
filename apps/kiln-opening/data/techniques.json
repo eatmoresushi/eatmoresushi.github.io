@@ -23,39 +23,14 @@
       "shortTextZh": "每轮一次，制坯饰纹行动中制有至少1件瓶或香炉时：该行动的泥总费−2，最低为0。",
       "clarifications": [
         {
-          "en": "A player may own at most 3, and at most 1 from each discipline.",
-          "zh": "每人至多3项技艺，每门类至多1项。",
-          "source": "L375"
-        },
-        {
           "en": "A Form & Decorate Tech adds your second Form & Decorate space. A space added this way may be used later the same round.",
           "zh": "习得坯作技艺即添设你的制坯饰纹第二工位；新添设的工位本轮稍后就可以使用。",
           "source": "L376 · L212 · D7"
         },
         {
-          "en": "This Tech scores 1 VP immediately when you gain it. It is not scored again at game end.",
-          "zh": "习得时立即得1分；终局不再另计。",
-          "source": "A1"
-        },
-        {
-          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
-          "source": "L214"
-        },
-        {
-          "en": "Tech abilities are optional. Declining does not use the once-per-round allowance. Valid discounts apply before payment.",
-          "zh": "技艺效果可以选用；放弃不消耗“每轮一次”。减免在支付前计算。",
-          "source": "R4"
-        },
-        {
           "en": "Large Throwing Wheel reduces Clay only; Ding's vessel is not a Vase or Censer.",
           "zh": "大陶车只减泥；定窑的额外坯不是瓶或香炉。",
           "source": "L652"
-        },
-        {
-          "en": "Prepared Clay is a Tech effect, not a worker action, and never counts as a Form & Decorate action, so a vessel formed through Prepared Clay is not formed in a Form & Decorate action.",
-          "zh": "练泥是技艺效果，不是工人行动，也不算制坯饰纹行动，所以通过练泥制成的坯不是在制坯饰纹行动中制成的。",
-          "source": "L646"
         }
       ]
     },
@@ -82,29 +57,9 @@
       "shortTextZh": "每轮一次：你施加的1项刻花、印花或画花少付1铜钱。可与师傅的纹饰减免叠加。",
       "clarifications": [
         {
-          "en": "A player may own at most 3, and at most 1 from each discipline.",
-          "zh": "每人至多3项技艺，每门类至多1项。",
-          "source": "L375"
-        },
-        {
           "en": "A Form & Decorate Tech adds your second Form & Decorate space. A space added this way may be used later the same round.",
           "zh": "习得坯作技艺即添设你的制坯饰纹第二工位；新添设的工位本轮稍后就可以使用。",
           "source": "L376 · L212 · D7"
-        },
-        {
-          "en": "This Tech scores 1 VP immediately when you gain it. It is not scored again at game end.",
-          "zh": "习得时立即得1分；终局不再另计。",
-          "source": "A1"
-        },
-        {
-          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
-          "source": "L214"
-        },
-        {
-          "en": "Tech abilities are optional. Declining does not use the once-per-round allowance. Valid discounts apply before payment.",
-          "zh": "技艺效果可以选用；放弃不消耗“每轮一次”。减免在支付前计算。",
-          "source": "R4"
         },
         {
           "en": "Every Decoration costs 2 Coins; the Shifu's Form & Decorate action and Decorator's Kit each reduce one Decoration by 1 Coin.",
@@ -115,11 +70,6 @@
           "en": "The Shifu's Decoration discount, Decorator's Kit and Ding's 1-Coin vessel are three separate reductions. The first two may apply to the same Decoration (a Carved for 0). Ding's vessel takes neither.",
           "zh": "师傅的纹饰减免、饰坯匣、定窑的1铜钱额外坯是三项各自独立的减免。前两项可以作用于同一项纹饰（刻花可降到0铜钱）；定窑的额外坯两项都不适用。",
           "source": "L652"
-        },
-        {
-          "en": "Decorator's Kit may reduce the Decoration paid through Prepared Clay.",
-          "zh": "饰坯匣可以用于通过练泥支付的纹饰。",
-          "source": "INT Decorator's Kit"
         }
       ]
     },
@@ -139,29 +89,9 @@
       "shortTextZh": "每轮一次，为1件坯施釉装窑时：可先将其器型改为任意其他器型。不付泥，纹饰不变。",
       "clarifications": [
         {
-          "en": "A player may own at most 3, and at most 1 from each discipline.",
-          "zh": "每人至多3项技艺，每门类至多1项。",
-          "source": "L375"
-        },
-        {
           "en": "A Form & Decorate Tech adds your second Form & Decorate space. A space added this way may be used later the same round.",
           "zh": "习得坯作技艺即添设你的制坯饰纹第二工位；新添设的工位本轮稍后就可以使用。",
           "source": "L376 · L212 · D7"
-        },
-        {
-          "en": "This Tech scores 1 VP immediately when you gain it. It is not scored again at game end.",
-          "zh": "习得时立即得1分；终局不再另计。",
-          "source": "A1"
-        },
-        {
-          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
-          "source": "L214"
-        },
-        {
-          "en": "Tech abilities are optional. Declining does not use the once-per-round allowance.",
-          "zh": "技艺效果可以选用；放弃不消耗“每轮一次”。",
-          "source": "R4"
         },
         {
           "en": "Vessel cards are not a hard gameplay limit. If all 10 cards of a Shape are in use, use a suitable proxy until a matching Vessel card becomes available.",
@@ -198,29 +128,9 @@
       "shortTextZh": "每轮一次，泥柴场行动得到资源后：可付器型泥费+1泥及纹饰费→制1件坯并饰纹。",
       "clarifications": [
         {
-          "en": "A player may own at most 3, and at most 1 from each discipline.",
-          "zh": "每人至多3项技艺，每门类至多1项。",
-          "source": "L375"
-        },
-        {
           "en": "A Form & Decorate Tech adds your second Form & Decorate space. A space added this way may be used later the same round.",
           "zh": "习得坯作技艺即添设你的制坯饰纹第二工位；新添设的工位本轮稍后就可以使用。",
           "source": "L376 · L212 · D7"
-        },
-        {
-          "en": "This Tech scores 1 VP immediately when you gain it. It is not scored again at game end.",
-          "zh": "习得时立即得1分；终局不再另计。",
-          "source": "A1"
-        },
-        {
-          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
-          "source": "L214"
-        },
-        {
-          "en": "Tech abilities are optional. Declining does not use the once-per-round allowance. Pay all costs in full and apply valid discounts before payment.",
-          "zh": "技艺效果可以选用；放弃不消耗“每轮一次”。必须足额支付费用，减免在支付前计算。",
-          "source": "R4"
         },
         {
           "en": "Prepared Clay is a Tech effect, not a worker action. It never counts as a Form & Decorate action and does not trigger effects that require that action.",
@@ -228,24 +138,14 @@
           "source": "L646"
         },
         {
-          "en": "Ding triggers during its Form & Decorate action, so forming through Prepared Clay does not trigger Ding; Large Throwing Wheel likewise needs a Form & Decorate action.",
-          "zh": "定窑在其制坯饰纹行动中触发，所以通过练泥制坯不会触发定窑；大陶车同样需要制坯饰纹行动。",
-          "source": "L486 · L646 · L615"
+          "en": "Ding triggers during its Form & Decorate action, so forming through Prepared Clay does not trigger Ding.",
+          "zh": "定窑在其制坯饰纹行动中触发，所以通过练泥制坯不会触发定窑。",
+          "source": "L486 · L646"
         },
         {
           "en": "The Shifu's one-Decoration discount belongs to the Shifu's Form & Decorate action, so it does not apply to a vessel formed through Prepared Clay.",
           "zh": "师傅的纹饰减免属于师傅的制坯饰纹行动，所以不适用于通过练泥制成的坯。",
           "source": "L170 · L646"
-        },
-        {
-          "en": "Every Decoration costs 2 Coins.",
-          "zh": "每种纹饰都是2铜钱。",
-          "source": "L333"
-        },
-        {
-          "en": "Decorator's Kit may reduce the Decoration paid through Prepared Clay.",
-          "zh": "饰坯匣可以用于通过练泥支付的纹饰。",
-          "source": "INT Decorator's Kit"
         }
       ]
     },
@@ -270,24 +170,9 @@
       "shortTextZh": "每轮一次：你派往泥柴场或瓷牙行的1名学徒可改按师傅效果结算。",
       "clarifications": [
         {
-          "en": "A player may own at most 3, and at most 1 from each discipline.",
-          "zh": "每人至多3项技艺，每门类至多1项。",
-          "source": "L375"
-        },
-        {
           "en": "A Form & Decorate Tech adds your second Form & Decorate space. A space added this way may be used later the same round.",
           "zh": "习得坯作技艺即添设你的制坯饰纹第二工位；新添设的工位本轮稍后就可以使用。",
           "source": "L376 · L212 · D7"
-        },
-        {
-          "en": "This Tech scores 1 VP immediately when you gain it. It is not scored again at game end.",
-          "zh": "习得时立即得1分；终局不再另计。",
-          "source": "A1"
-        },
-        {
-          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
-          "source": "L214"
         },
         {
           "en": "Tech abilities are optional. Declining does not use the once-per-round allowance: an Apprentice that does not use it resolves the Apprentice effect, and the tile stays available for another Apprentice this round.",
@@ -308,16 +193,6 @@
           "en": "A Shifu effect must reserve at least 1 Order, but may stop after the first reservation. Because the display is not refilled until your turn ends, a second face-up reservation chooses from the Orders still showing.",
           "zh": "师傅效果至少要承接1张，承接第1张后可以停止。由于你的回合结束前委托榜不会补牌，第2次承接如果拿榜上的委托，只能从榜上剩下的委托中选。",
           "source": "L199 · R12"
-        },
-        {
-          "en": "The top-3 look is private to the acting player.",
-          "zh": "看三取一时看到的内容仅你可见。",
-          "source": "B3"
-        },
-        {
-          "en": "Capacities are absolute; the Apprentice still needs an unoccupied space.",
-          "zh": "容量是绝对上限；该学徒仍然要派往空着的工位。",
-          "source": "L140"
         }
       ]
     },
@@ -343,11 +218,6 @@
       "shortText": "Game end: each Fine or Masterpiece ceramic in your Exhibition scores +1 VP, maximum +5 VP.",
       "shortTextZh": "终局时：你陈列中的每件上品或臻品+1分，至多+5分。",
       "clarifications": [
-        {
-          "en": "A player may own at most 3, and at most 1 from each discipline.",
-          "zh": "每人至多3项技艺，每门类至多1项。",
-          "source": "L375"
-        },
         {
           "en": "A Form & Decorate Tech adds your second Form & Decorate space. A space added this way may be used later the same round.",
           "zh": "习得坯作技艺即添设你的制坯饰纹第二工位；新添设的工位本轮稍后就可以使用。",
@@ -389,21 +259,6 @@
       "shortTextZh": "习得时：私看主委托牌堆顶3张→须承接1张，其余弃置。持续：你的委托上限为5张。",
       "clarifications": [
         {
-          "en": "A player may own at most 3, and at most 1 from each discipline.",
-          "zh": "每人至多3项技艺，每门类至多1项。",
-          "source": "L375"
-        },
-        {
-          "en": "A Glazing & Loading Tech adds your second Glaze & Load space. A space added this way may be used later the same round.",
-          "zh": "习得釉作技艺即添设施釉装窑第二工位；新添设的工位本轮稍后就可以使用。",
-          "source": "L376 · L212 · D7"
-        },
-        {
-          "en": "This Tech scores 1 VP immediately when you gain it. It is not scored again at game end.",
-          "zh": "习得时立即得1分；终局不再另计。",
-          "source": "A1"
-        },
-        {
           "en": "Resolve any when acquired effect immediately.",
           "zh": "“习得时”的效果立即结算。",
           "source": "L214"
@@ -427,11 +282,6 @@
           "en": "The top-3 look is private to the acting player. The Main Order discard pile is face down; only its count is public.",
           "zh": "看三取一时看到的内容仅你可见；主委托弃牌堆面朝下，只公开张数。",
           "source": "B3"
-        },
-        {
-          "en": "There is no Order hand limit during a round. Starting Orders and reserved Main Orders both count toward the limit at Cleanup.",
-          "zh": "一轮之中没有委托上限；收工时起始委托与承接的主委托都计入上限。",
-          "source": "L200"
         }
       ]
     },
@@ -453,26 +303,6 @@
       "shortText": "Once per round, after a Glaze & Load action that loaded at least 1 ceramic: gain 1 Clay + 1 Wood.",
       "shortTextZh": "每轮一次，至少装窑1件的施釉装窑行动之后：得1泥1柴。",
       "clarifications": [
-        {
-          "en": "A player may own at most 3, and at most 1 from each discipline.",
-          "zh": "每人至多3项技艺，每门类至多1项。",
-          "source": "L375"
-        },
-        {
-          "en": "A Glazing & Loading Tech adds your second Glaze & Load space. A space added this way may be used later the same round.",
-          "zh": "习得釉作技艺即添设施釉装窑第二工位；新添设的工位本轮稍后就可以使用。",
-          "source": "L376 · L212 · D7"
-        },
-        {
-          "en": "This Tech scores 1 VP immediately when you gain it. It is not scored again at game end.",
-          "zh": "习得时立即得1分；终局不再另计。",
-          "source": "A1"
-        },
-        {
-          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
-          "source": "L214"
-        },
         {
           "en": "Kiln Tending resolves automatically on the first qualifying Glaze & Load action each round; saving it gains nothing.",
           "zh": "数字版在每轮第一次符合条件的施釉装窑行动后自动结算看火；留到以后没有任何好处。",
@@ -512,31 +342,6 @@
       "shortTextZh": "每轮一次，将1件器物装入共窑时：可将本牌垫于其下→本次烧成中，该器物的温区修正由你定为−1、0或+1。",
       "clarifications": [
         {
-          "en": "A player may own at most 3, and at most 1 from each discipline.",
-          "zh": "每人至多3项技艺，每门类至多1项。",
-          "source": "L375"
-        },
-        {
-          "en": "A Glazing & Loading Tech adds your second Glaze & Load space. A space added this way may be used later the same round.",
-          "zh": "习得釉作技艺即添设施釉装窑第二工位；新添设的工位本轮稍后就可以使用。",
-          "source": "L376 · L212 · D7"
-        },
-        {
-          "en": "This Tech scores 1 VP immediately when you gain it. It is not scored again at game end.",
-          "zh": "习得时立即得1分；终局不再另计。",
-          "source": "A1"
-        },
-        {
-          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
-          "source": "L214"
-        },
-        {
-          "en": "Tech abilities are optional. Declining does not use the once-per-round allowance.",
-          "zh": "技艺效果可以选用；放弃不消耗“每轮一次”。",
-          "source": "R4"
-        },
-        {
           "en": "Kiln Furniture, Inverted Firing and Setter's Mark affect the Shared Kiln only. The Imperial Kiln holds 1 ceramic and uses its own modifier.",
           "zh": "支烧窑具、覆烧、窑位签只作用于共窑。御窑只容纳1件，用它自己的御窑修正。",
           "source": "L647"
@@ -545,11 +350,6 @@
           "en": "A Heat marker is not a zone modifier: it stacks with Kiln Furniture.",
           "zh": "火标不是温区修正：可以与支烧窑具叠加。",
           "source": "L269"
-        },
-        {
-          "en": "With Inverted Firing, both ceramics in the space use the Kiln Furniture modifier if Kiln Furniture is in that space.",
-          "zh": "覆烧时，如果该窑位垫有支烧窑具，两件器物都用窑具修正。",
-          "source": "R8"
         },
         {
           "en": "A Second Firing recalculation keeps the same Kiln Furniture modifier.",
@@ -579,31 +379,6 @@
       "shortText": "Once per round, when you load a Bowl, Plate or Brush Washer into the Shared Kiln: you may place it in a space holding exactly 1 of your ceramics. Both use that space's modifier.",
       "shortTextZh": "每轮一次，将1件碗、盘或笔洗装入共窑时：可放入恰有1件己方器物的启用窑位；两件同用该窑位的修正。",
       "clarifications": [
-        {
-          "en": "A player may own at most 3, and at most 1 from each discipline.",
-          "zh": "每人至多3项技艺，每门类至多1项。",
-          "source": "L375"
-        },
-        {
-          "en": "A Glazing & Loading Tech adds your second Glaze & Load space. A space added this way may be used later the same round.",
-          "zh": "习得釉作技艺即添设施釉装窑第二工位；新添设的工位本轮稍后就可以使用。",
-          "source": "L376 · L212 · D7"
-        },
-        {
-          "en": "This Tech scores 1 VP immediately when you gain it. It is not scored again at game end.",
-          "zh": "习得时立即得1分；终局不再另计。",
-          "source": "A1"
-        },
-        {
-          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
-          "source": "L214"
-        },
-        {
-          "en": "Tech abilities are optional. Declining does not use the once-per-round allowance.",
-          "zh": "技艺效果可以选用；放弃不消耗“每轮一次”。",
-          "source": "R4"
-        },
         {
           "en": "The newly loaded ceramic must be a Bowl, Plate or Brush Washer. It may join any active space holding exactly 1 of your ceramics, including one loaded earlier by the same action. Both ceramics use the space's printed modifier, or the Kiln Furniture modifier if Kiln Furniture is in that space.",
           "zh": "新装进的器物必须是碗、盘或笔洗；它可以放进任意一个恰好已有1件你的器物的启用窑位，包括本次行动先装进的那件。两件器物都用该窑位的温区修正；如果该窑位垫有支烧窑具，就用窑具修正。",
@@ -642,21 +417,6 @@
       "shortTextZh": "每轮一次，派工阶段开始时：可将本牌置于共窑1个空的启用窑位→本轮只有你能在此装窑。",
       "clarifications": [
         {
-          "en": "A player may own at most 3, and at most 1 from each discipline.",
-          "zh": "每人至多3项技艺，每门类至多1项。",
-          "source": "L375"
-        },
-        {
-          "en": "A Glazing & Loading Tech adds your second Glaze & Load space. A space added this way may be used later the same round.",
-          "zh": "习得釉作技艺即添设施釉装窑第二工位；新添设的工位本轮稍后就可以使用。",
-          "source": "L376 · L212 · D7"
-        },
-        {
-          "en": "This Tech scores 1 VP immediately when you gain it. It is not scored again at game end.",
-          "zh": "习得时立即得1分；终局不再另计。",
-          "source": "A1"
-        },
-        {
           "en": "Placement is optional. A Setter's Mark bought mid-round is first placed at the next Work Phase start.",
           "zh": "放置是可选的；本轮中途习得的窑位签，要到下一次派工阶段开始时才可以放置。",
           "source": "INT Setter's Mark"
@@ -688,31 +448,6 @@
       "shortText": "Once per round, before or after one of your worker actions: complete 1 held Order.",
       "shortTextZh": "每轮一次，你的一次工人行动之前或之后：可完成1张在手委托。",
       "clarifications": [
-        {
-          "en": "A player may own at most 3, and at most 1 from each discipline.",
-          "zh": "每人至多3项技艺，每门类至多1项。",
-          "source": "L375"
-        },
-        {
-          "en": "A Glazing & Loading Tech adds your second Glaze & Load space. A space added this way may be used later the same round.",
-          "zh": "习得釉作技艺即添设施釉装窑第二工位；新添设的工位本轮稍后就可以使用。",
-          "source": "L376 · L212 · D7"
-        },
-        {
-          "en": "This Tech scores 1 VP immediately when you gain it. It is not scored again at game end.",
-          "zh": "习得时立即得1分；终局不再另计。",
-          "source": "A1"
-        },
-        {
-          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
-          "source": "L214"
-        },
-        {
-          "en": "Tech abilities are optional. Declining does not use the once-per-round allowance.",
-          "zh": "技艺效果可以选用；放弃不消耗“每轮一次”。",
-          "source": "R4"
-        },
         {
           "en": "Canal Barge is a Tech effect, not a worker action, and never counts as an Order-Phase action; Canal Barge triggers Ru and Guan.",
           "zh": "漕船是技艺效果，不是工人行动，不算交货阶段的完成委托；漕船触发汝窑与官窑。",
@@ -752,31 +487,6 @@
       "shortText": "Once per round, after Quality is assigned: pay 1 Wood → improve 1 of your ceramics from this firing: Flawed → Standard or Standard → Fine.",
       "shortTextZh": "每轮一次，定品后：可付1柴→己方本窑1件瑕品升为良品，或良品升为上品。",
       "clarifications": [
-        {
-          "en": "A player may own at most 3, and at most 1 from each discipline.",
-          "zh": "每人至多3项技艺，每门类至多1项。",
-          "source": "L375"
-        },
-        {
-          "en": "Firing Techs add no personal space.",
-          "zh": "火作技艺不添设工位。",
-          "source": "L376 · D7"
-        },
-        {
-          "en": "This Tech scores 1 VP immediately when you gain it. It is not scored again at game end.",
-          "zh": "习得时立即得1分；终局不再另计。",
-          "source": "A1"
-        },
-        {
-          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
-          "source": "L214"
-        },
-        {
-          "en": "Tech abilities are optional. Declining does not use the once-per-round allowance.",
-          "zh": "技艺效果可以选用；放弃不消耗“每轮一次”。",
-          "source": "R4"
-        },
         {
           "en": "Protective Saggars and Second Firing affect only your own eligible ceramics in the current firing, in the Shared Kiln or your Imperial Kiln; never ceramics fired in earlier rounds.",
           "zh": "匣钵护烧与复烧只作用于你本次烧成中（共窑或御窑）符合条件的器物，不作用于先前各轮烧成的器物。",
@@ -818,31 +528,6 @@
       "shortTextZh": "选控火时：若选压火或添柴，可随控火牌暗附1柴→控火修正改为压火−2或添柴+2。",
       "clarifications": [
         {
-          "en": "A player may own at most 3, and at most 1 from each discipline.",
-          "zh": "每人至多3项技艺，每门类至多1项。",
-          "source": "L375"
-        },
-        {
-          "en": "Firing Techs add no personal space.",
-          "zh": "火作技艺不添设工位。",
-          "source": "L376 · D7"
-        },
-        {
-          "en": "This Tech scores 1 VP immediately when you gain it. It is not scored again at game end.",
-          "zh": "习得时立即得1分；终局不再另计。",
-          "source": "A1"
-        },
-        {
-          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
-          "source": "L214"
-        },
-        {
-          "en": "Tech abilities are optional. Pay all costs in full.",
-          "zh": "技艺效果可以选用；必须足额支付费用。",
-          "source": "R4"
-        },
-        {
           "en": "A player participates in Contributions only if they have at least 1 ceramic in the Shared Kiln. A ceramic in an Imperial Kiln gives no say over the shared fire.",
           "zh": "只有在共窑中至少有1件器物的玩家才参与控火；玩家不能凭御窑中的器物对共窑的火发表意见。",
           "source": "L261"
@@ -882,31 +567,6 @@
       "shortTextZh": "每轮一次，基础火候定后、翻火标前，本窑有己方器物时：可付1柴→私看窑火牌堆顶1张，可将其置于牌堆底。",
       "clarifications": [
         {
-          "en": "A player may own at most 3, and at most 1 from each discipline.",
-          "zh": "每人至多3项技艺，每门类至多1项。",
-          "source": "L375"
-        },
-        {
-          "en": "Firing Techs add no personal space.",
-          "zh": "火作技艺不添设工位。",
-          "source": "L376 · D7"
-        },
-        {
-          "en": "This Tech scores 1 VP immediately when you gain it. It is not scored again at game end.",
-          "zh": "习得时立即得1分；终局不再另计。",
-          "source": "A1"
-        },
-        {
-          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
-          "source": "L214"
-        },
-        {
-          "en": "Tech abilities are optional. Declining does not use the once-per-round allowance.",
-          "zh": "技艺效果可以选用；放弃不消耗“每轮一次”。",
-          "source": "R4"
-        },
-        {
           "en": "Test Pieces resolves in First Player order, before any Heat marker is turned. A buried card stays on the bottom. You may discuss what you saw but may not show the card.",
           "zh": "火照按起始玩家顺序结算，在任何火标翻定之前。置底的牌留在牌堆底。你可以谈论看到的内容，但不能把牌给别人看。",
           "source": "L649"
@@ -915,11 +575,6 @@
           "en": "Eligibility counts any of your ceramics in this firing, Imperial Kiln included. The Wood payment and the bury are public; the value you looked at is private to you.",
           "zh": "判断资格时，你本次烧成中的任何器物都算，包括御窑中的器物。付柴与置底是公开信息，你看到的内容只有你自己知道。",
           "source": "INT Test Pieces"
-        },
-        {
-          "en": "The Fire deck is never reshuffled mid-game, so a buried card simply stays at the bottom of the deck.",
-          "zh": "窑火牌堆在一局中不会重洗，所以置底的牌一直留在牌堆底。",
-          "source": "ED L649"
         }
       ]
     },
@@ -939,31 +594,6 @@
       "shortTextZh": "每轮一次，定品后：可选己方本窑1件瑕品或良品→另翻1张窑火牌代替原牌，重算其实际火候与品质（钧窑的调整不保留）；新品质即使更差也算。",
       "clarifications": [
         {
-          "en": "A player may own at most 3, and at most 1 from each discipline.",
-          "zh": "每人至多3项技艺，每门类至多1项。",
-          "source": "L375"
-        },
-        {
-          "en": "Firing Techs add no personal space.",
-          "zh": "火作技艺不添设工位。",
-          "source": "L376 · D7"
-        },
-        {
-          "en": "This Tech scores 1 VP immediately when you gain it. It is not scored again at game end.",
-          "zh": "习得时立即得1分；终局不再另计。",
-          "source": "A1"
-        },
-        {
-          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
-          "source": "L214"
-        },
-        {
-          "en": "Tech abilities are optional. Declining does not use the once-per-round allowance.",
-          "zh": "技艺效果可以选用；放弃不消耗“每轮一次”。",
-          "source": "R4"
-        },
-        {
           "en": "Second Firing affects only your own eligible ceramics in the current firing, in the Shared Kiln or your Imperial Kiln; never ceramics fired in earlier rounds. Second Firing's extra Fire card changes nothing for any other ceramic.",
           "zh": "复烧只作用于你本次烧成中（共窑或御窑）符合条件的器物，不作用于先前各轮烧成的器物；复烧额外翻出的窑火牌不影响任何其他器物。",
           "source": "L651"
@@ -977,11 +607,6 @@
           "en": "Jun is once per round. If already used it cannot be used again. If unused, it may be used on the Second Firing ceramic after the extra Fire card is revealed and Actual Heat recalculated, before the new Quality is assigned.",
           "zh": "钧窑每轮一次，已经用过就不能再用。如果本轮还没有使用，可以在复烧翻开额外窑火牌、重算实际火候后、定新品质前，用于复烧的那件器物。",
           "source": "R7"
-        },
-        {
-          "en": "Markers stay in place through a Second Firing recalculation.",
-          "zh": "复烧重算时，火标留在原处。",
-          "source": "L648"
         },
         {
           "en": "After-Quality abilities resolve in First Player order. If you control several in this window, you choose their order.",
@@ -1016,33 +641,8 @@
       "shortTextZh": "每轮一次，翻火标步骤中：可将窑工标（+1或−1）放在己方本窑1件未带火标的器物上。",
       "clarifications": [
         {
-          "en": "A player may own at most 3, and at most 1 from each discipline.",
-          "zh": "每人至多3项技艺，每门类至多1项。",
-          "source": "L375"
-        },
-        {
-          "en": "Firing Techs add no personal space.",
-          "zh": "火作技艺不添设工位。",
-          "source": "L376 · D7"
-        },
-        {
-          "en": "This Tech scores 1 VP immediately when you gain it. It is not scored again at game end.",
-          "zh": "习得时立即得1分；终局不再另计。",
-          "source": "A1"
-        },
-        {
-          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
-          "source": "L214"
-        },
-        {
-          "en": "Tech abilities are optional. Declining does not use the once-per-round allowance.",
-          "zh": "技艺效果可以选用；放弃不消耗“每轮一次”。",
-          "source": "R4"
-        },
-        {
-          "en": "A ceramic carries at most 1 marker. Kiln Master's marker and your own Heat marker may not sit on the same ceramic. Jun's adjustment applies on top of either. Markers stay in place through a Second Firing recalculation.",
-          "zh": "每件器物至多带1个火标；窑工标与你自己的火标不能放在同一件器物上。钧窑的调整叠加在二者之上。复烧重算时，火标留在原处。",
+          "en": "A ceramic carries at most 1 marker. Kiln Master's marker and your own Heat marker may not sit on the same ceramic. Jun's adjustment applies on top of either.",
+          "zh": "每件器物至多带1个火标；窑工标与你自己的火标不能放在同一件器物上。钧窑的调整叠加在二者之上。",
           "source": "L648"
         },
         {
@@ -1080,31 +680,6 @@
       "shortTextZh": "每轮一次，完成御令委托时：额外得1个御令。",
       "clarifications": [
         {
-          "en": "A player may own at most 3, and at most 1 from each discipline.",
-          "zh": "每人至多3项技艺，每门类至多1项。",
-          "source": "L375"
-        },
-        {
-          "en": "Firing Techs add no personal space.",
-          "zh": "火作技艺不添设工位。",
-          "source": "L376 · D7"
-        },
-        {
-          "en": "This Tech scores 1 VP immediately when you gain it. It is not scored again at game end.",
-          "zh": "习得时立即得1分；终局不再另计。",
-          "source": "A1"
-        },
-        {
-          "en": "A newly acquired Advanced Tech may be used in the same round if its timing permits.",
-          "zh": "新习得的技艺只要时机允许，本轮就可以使用。",
-          "source": "L214"
-        },
-        {
-          "en": "Tech abilities are optional. Declining does not use the once-per-round allowance.",
-          "zh": "技艺效果可以选用；放弃不消耗“每轮一次”。",
-          "source": "R4"
-        },
-        {
           "en": "Tribute Ware's bonus Crown advances Recognition, or scores 1 VP past Recognition 4. It is not a printed Crown: it does not trigger Guan's \"showing a Crown\" and does not count for tie-breaker 2.",
           "zh": "贡瓷的额外御令会推进御府声望，到达声望4之后改为得1分；但它不是委托上印有的御令，不触发官窑，也不计入平局判定②。",
           "source": "R13"
@@ -1113,11 +688,6 @@
           "en": "An Order completed with Canal Barge triggers Tribute Ware.",
           "zh": "通过漕船完成的委托也会触发贡瓷。",
           "source": "R6"
-        },
-        {
-          "en": "Resolve 1 Crown at a time. Resolve every milestone crossed.",
-          "zh": "御令逐个结算，途经的每一格奖励都要结算。",
-          "source": "L416"
         },
         {
           "en": "Starting Orders have no Crowns.",

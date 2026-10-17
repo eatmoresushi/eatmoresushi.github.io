@@ -204,6 +204,19 @@ describe("CSS rules", () => {
     expect(offences).toEqual([]);
   });
 
+  it("clips the full-screen shell and the phone sheet (overflow: clip), so focus() or scrollIntoView() can never shift them", () => {
+    // Regression (owner review, 2026-10-17): with overflow: hidden, focusing a control scrolled
+    // .shell by hundreds of pixels and nothing let the player scroll it back.
+    const rule = (file: string, selector: string): string => {
+      const css = withoutComments(readFileSync(join(APP, file), "utf8"));
+      const at = css.indexOf(`${selector} {`);
+      expect(at, `${file} ${selector}`).toBeGreaterThanOrEqual(0);
+      return css.slice(at, css.indexOf("}", at));
+    };
+    expect(rule("shell/GameShell.css", ".shell")).toMatch(/overflow:\s*clip;/);
+    expect(rule("kit/Sheet.css", "    .kit-sheet")).toMatch(/overflow:\s*clip;/);
+  });
+
   const ENTRIES = ["src/app/main.tsx", "src/app/playtest/main.tsx", "src/app/dev/gallery-main.tsx"];
   it.each(ENTRIES)("%s imports styles/index.css first", (entry) => {
     const path = join(ROOT, entry);

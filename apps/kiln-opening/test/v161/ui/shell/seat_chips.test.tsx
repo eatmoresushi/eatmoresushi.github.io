@@ -3,8 +3,10 @@
  * of test/v127 `tabletop_turn_order`: turn order is shown correctly.
  *
  * - chips in `turnOrder` (First Player, then clockwise) with the First Player badge;
- * - name, Kiln short name, VP (`recordedVp`, then the final total once finished), hand count;
- * - acting and computer badges, said in the chip's accessible name;
+ * - name, Kiln short name, VP (`recordedVp`, then the final total once finished), Clay, Wood
+ *   and Coins with their icons, hand count;
+ * - the acting badge, said in the chip's accessible name; a computer seat is said in the name
+ *   only, with no visible pill (owner review, 2026-10-17);
  * - `aria-pressed` on the board shown (D1), the viewer's own by default.
  */
 import { describe, expect, it } from "vitest";
@@ -13,6 +15,22 @@ import { SeatChips } from "../../../../src/app/shell/SeatChips.tsx";
 import { fixtureSource } from "../support/fixtures.ts";
 import { renderComponent } from "../support/render.tsx";
 import { attr, modelOf, seatChips } from "./support.tsx";
+
+const RESOURCES = ["clay", "wood", "coins"] as const;
+
+/** "0 Clay · 2 Wood · 3 Coins": a player's resources as the chip's accessible name says them. */
+function resourcesEn(resources: Readonly<Record<(typeof RESOURCES)[number], number>>): string {
+  return `${resources.clay} Clay · ${resources.wood} Wood · ${resources.coins} ${resources.coins === 1 ? "Coin" : "Coins"}`;
+}
+
+/** The chip's visible resource counts, in order: each an icon (svg.ri) and a number. */
+function resourceItems(chip: string): Array<{ kind: string; icon: boolean; count: string }> {
+  return [...chip.matchAll(/<span class="seat-chip-res-item" data-resource="(\w+)">(.*?)<span class="num">([^<]*)<\/span><\/span>/g)].map((match) => ({
+    kind: match[1]!,
+    icon: new RegExp(`<svg class="ri" data-resource="${match[1]}"[^>]*aria-hidden="true"`).test(match[2]!),
+    count: match[3]!,
+  }));
+}
 
 describe("seat chips", () => {
   it("follow the work order, First Player first, with every D2 element", () => {
@@ -43,7 +61,7 @@ describe("seat chips", () => {
     const me = model.players[0]!;
     expect(me.playerId).toBe(model.viewerId);
     expect(attr(mine ?? "", "aria-label")).toBe(
-      `Your workshop · ${kilnShortName(me.kilnId!, "en")} · ${me.recordedVp} VP · ${me.orderHandCount} ${me.orderHandCount === 1 ? "Order" : "Orders"} in hand · First Player · deciding now`,
+      `Your workshop · ${kilnShortName(me.kilnId!, "en")} · ${me.recordedVp} VP · ${resourcesEn(me.resources)} · ${me.orderHandCount} ${me.orderHandCount === 1 ? "Order" : "Orders"} in hand · First Player · deciding now`,
     );
     const other = model.players[1]!;
     expect(attr(next ?? "", "aria-label")).toMatch(new RegExp(`^Open ${other.displayName}’s board · ${kilnShortName(other.kilnId!, "en")} · `));
@@ -59,14 +77,24 @@ describe("seat chips", () => {
     );
   });
 
-  it("shows a computer badge and says it", () => {
+  it("says a computer seat in its name only, with no visible pill, and shows each seat's resources with icons", () => {
     const model = modelOf("m1_work_phase_r2_3p");
     const computer = model.players[1]!;
     const html = renderComponent(fixtureSource("m1_work_phase_r2_3p", { computerPlayerIds: [computer.playerId] }), <SeatChips />);
-    const chip = seatChips(html)[1] ?? "";
-    expect(chip).toContain('class="seat-chip-computer"');
+    const chips = seatChips(html);
+    const chip = chips[1] ?? "";
+    // The visible "computer" pill was removed (owner review, 2026-10-17); the name still says it.
+    for (const each of chips) expect(each).not.toContain("seat-chip-computer");
     expect(attr(chip, "aria-label")).toMatch(/ · computer player$/);
-    expect(seatChips(html)[0]).not.toContain("seat-chip-computer");
+    expect(attr(chips[0] ?? "", "aria-label")).not.toContain("computer player");
+    // Clay, Wood and Coins, each an icon and its count, right after the VP.
+    model.players.forEach((player, index) => {
+      const each = chips[index] ?? "";
+      expect(each.indexOf("seat-chip-vp")).toBeLessThan(each.indexOf("seat-chip-res"));
+      expect(each).toContain('<span class="seat-chip-res" aria-hidden="true">');
+      expect(resourceItems(each)).toEqual(RESOURCES.map((kind) => ({ kind, icon: true, count: String(player.resources[kind]) })));
+      expect(attr(each, "aria-label")).toContain(` VP · ${resourcesEn(player.resources)} · `);
+    });
   });
 
   it("shows several acting players in a simultaneous window", () => {
@@ -90,9 +118,14 @@ describe("seat chips", () => {
     }
   });
 
-  it("says when no Kiln is chosen yet", () => {
+  it("shows no Kiln before Kiln selection, in the chip or its name (owner review, 2026-10-17)", () => {
     const html = renderComponent(fixtureSource("m15_kiln_selection"), <SeatChips />);
-    for (const chip of seatChips(html)) expect(chip).toContain(">no Kiln yet</span>");
+    const chips = seatChips(html);
+    expect(chips.length).toBeGreaterThan(0);
+    for (const chip of chips) {
+      expect(chip).not.toContain("seat-chip-kiln");
+      expect(attr(chip, "aria-label")).not.toMatch(/Kiln yet/);
+    }
   });
 
   it("renders in Chinese with the glossary words", () => {
@@ -100,7 +133,9 @@ describe("seat chips", () => {
     const html = renderComponent(fixtureSource("m1_work_phase_r2_3p"), <SeatChips />, { locale: "zh-CN" });
     const [mine, next] = seatChips(html);
     const me = model.players[0]!;
-    expect(attr(mine ?? "", "aria-label")).toBe(`你的作坊 · ${kilnShortName(me.kilnId!, "zh-CN")} · ${me.recordedVp}分 · 手中${me.orderHandCount}张委托 · 起始玩家 · 正在决断`);
+    expect(attr(mine ?? "", "aria-label")).toBe(
+      `你的作坊 · ${kilnShortName(me.kilnId!, "zh-CN")} · ${me.recordedVp}分 · ${me.resources.clay}泥 · ${me.resources.wood}柴 · ${me.resources.coins}铜钱 · 手中${me.orderHandCount}张委托 · 起始玩家 · 正在决断`,
+    );
     expect(attr(next ?? "", "aria-label")).toMatch(new RegExp(`^查看${model.players[1]!.displayName}的窑口板`));
     expect(html).toContain(`<strong>${me.recordedVp}</strong>分`);
     expect(html).not.toMatch(/VP/);

@@ -197,7 +197,6 @@ export const work = defineNamespace({
     // Kiln selection.
     "ks.prompt": "Kilns are chosen in reverse turn order. Each Kiln Player Board gives a once-per-round ability.",
     "ks.chosenBy": "Chosen by {name}",
-    "ks.order": "Choosing order",
     "ks.you": "you",
     "ks.summary": "Take the <b>{kiln}</b>",
     "ks.summaryChoose": "Choose a Kiln.",
@@ -385,7 +384,6 @@ export const work = defineNamespace({
 
     "ks.prompt": "按回合顺序的逆序选择窑口。每块窑口板都有每轮一次的能力。",
     "ks.chosenBy": "{name}已选",
-    "ks.order": "选择顺序",
     "ks.you": "你",
     "ks.summary": "选择<b>{kiln}</b>",
     "ks.summaryChoose": "请选择窑口。",

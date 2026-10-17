@@ -20,24 +20,9 @@
       "shortTextZh": "每轮一次，以素面青釉臻品完成委托时：得4分。",
       "clarifications": [
         {
-          "en": "Kiln Tradition abilities are optional. Declining does not use the once-per-round allowance.",
-          "zh": "窑口能力可以选用；放弃不消耗“每轮一次”。",
-          "source": "R4"
-        },
-        {
           "en": "Ru triggers while completing an Order, in the Order Phase or through Canal Barge.",
           "zh": "汝窑在完成委托时触发，无论是在交货阶段还是通过漕船完成。",
           "source": "L485 · R6"
-        },
-        {
-          "en": "Starting Orders are Orders for all rules and Kiln Tradition abilities.",
-          "zh": "对所有规则与窑口传承能力而言，起始委托都算作委托。",
-          "source": "L521"
-        },
-        {
-          "en": "Ru uses a ceramic's printed Decoration, not a Crackle wildcard. A Crackle ceramic is never a Masterpiece.",
-          "zh": "汝窑按器物原本的纹饰计算，不按开片声明；开片器永远不是臻品。",
-          "source": "INT Ge Crackle · L470"
         }
       ]
     },
@@ -58,11 +43,6 @@
       "shortText": "Once per round, when you complete a Crown Order: gain 2 Coins + 1 VP.",
       "shortTextZh": "每轮一次，完成御令委托时：得2铜钱和1分。",
       "clarifications": [
-        {
-          "en": "Kiln Tradition abilities are optional. Declining does not use the once-per-round allowance.",
-          "zh": "窑口能力可以选用；放弃不消耗“每轮一次”。",
-          "source": "R4"
-        },
         {
           "en": "Guan triggers while completing an Order, in the Order Phase or through Canal Barge.",
           "zh": "官窑在完成委托时触发，无论是在交货阶段还是通过漕船完成。",
@@ -97,11 +77,6 @@
       "shortTextZh": "每轮一次，定品后：可令己方本窑1件良品开片→升为上品。完成委托时：每件开片器可作任意1种纹饰；永远不算臻品。",
       "clarifications": [
         {
-          "en": "Kiln Tradition abilities are optional. Declining does not use the once-per-round allowance.",
-          "zh": "窑口能力可以选用；放弃不消耗“每轮一次”。",
-          "source": "R4"
-        },
-        {
           "en": "Ge targets 1 of your ceramics from this firing that is Standard at that moment. It becomes Fine and permanently carries a Crackle marker.",
           "zh": "每轮一次，定品后，哥窑可以选择你本次烧成中1件此时为良品的器物：它变为上品，并一直带着开片标。",
           "source": "INT Ge Crackle"
@@ -110,11 +85,6 @@
           "en": "Ge's Crackle is an after-Quality effect; Ge chooses its order among their own after-Quality effects. It may be resolved after Protective Saggars on the same ceramic (Flawed → Standard → Fine, once a round).",
           "zh": "哥窑开片是定品后效果；哥窑玩家自行决定它在己方各项定品后效果中的先后。它可以在匣钵护烧之后作用于同一件器物（瑕品→良品→上品，每轮一次）。",
           "source": "L484 · L654"
-        },
-        {
-          "en": "Players resolve after-Quality abilities in First Player order.",
-          "zh": "定品后能力按起始玩家顺序结算。",
-          "source": "L681"
         },
         {
           "en": "An Imperial Kiln ceramic counts as a ceramic in this firing for your abilities.",
@@ -130,11 +100,6 @@
           "en": "A Crackle ceramic's wildcard Decoration is declared while completing an Order, including through Canal Barge.",
           "zh": "开片器的任意纹饰在完成委托时声明，包括通过漕船完成委托时。",
           "source": "L485 · R6"
-        },
-        {
-          "en": "Its printed Decoration is unchanged; the Exhibition and Ru use the printed Decoration.",
-          "zh": "它原本的纹饰不变；终局陈列与汝窑仍按原纹饰。",
-          "source": "INT Ge Crackle"
         },
         {
           "en": "It never creates a Masterpiece, so a Crackle ceramic cannot fill a Masterpiece requirement, including Painted Masterpiece Orders.",
@@ -165,14 +130,9 @@
       "shortTextZh": "每轮一次，制坯饰纹行动中制成碗、盘或笔洗后：可付1泥1铜钱→多制1件同器型的坯，纹饰任选，不享减免。算作该行动所制。",
       "clarifications": [
         {
-          "en": "Ding is selectable as a Kiln at setup. Ding's ability works with either worker type.",
-          "zh": "开局选窑口时，定窑可供选择；学徒或师傅的行动都能触发它的能力。",
+          "en": "Ding's ability works with either worker type.",
+          "zh": "学徒或师傅的行动都能触发定窑的能力。",
           "source": "R1"
-        },
-        {
-          "en": "Kiln Tradition abilities are optional. Declining does not use the once-per-round allowance. Pay all costs in full.",
-          "zh": "窑口能力可以选用；放弃不消耗“每轮一次”。必须足额支付费用。",
-          "source": "R4"
         },
         {
           "en": "Ding triggers during its Form & Decorate action.",
@@ -211,19 +171,9 @@
       "shortTextZh": "每轮一次，实际火候算出后、定品前：可付1柴→己方1件器物的实际火候+1或−1。",
       "clarifications": [
         {
-          "en": "Kiln Tradition abilities are optional. Declining does not use the once-per-round allowance. Pay all costs in full.",
-          "zh": "窑口能力可以选用；放弃不消耗“每轮一次”。必须足额支付费用。",
-          "source": "R4"
-        },
-        {
           "en": "Jun acts after Actual Heat is calculated (Heat markers included) and before Quality is assigned.",
           "zh": "钧窑在实际火候算出后（已计入火标）、定品前结算。",
           "source": "L483"
-        },
-        {
-          "en": "Resolve Jun and other heat-adjustment abilities in First Player order.",
-          "zh": "钧窑等调火能力按起始玩家顺序结算。",
-          "source": "L679"
         },
         {
           "en": "Jun's adjustment applies on top of either a Heat marker or the Kiln Master marker.",

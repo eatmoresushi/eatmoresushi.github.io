@@ -256,12 +256,15 @@ export function clarificationSourceKind(tag: string): ClarificationSourceKind {
   }
 }
 
-function validateClarifications(items: unknown, where: string, problems: string[], allowEmpty = false): void {
+/**
+ * A component's D10 clarifications: an array, possibly empty. Only clarifications specific to the
+ * component are kept (owner review, 2026-10-17), so a component whose full rule says it all has none.
+ */
+function validateClarifications(items: unknown, where: string, problems: string[]): void {
   if (!Array.isArray(items)) {
     problems.push(`${where}: clarifications must be an array`);
     return;
   }
-  if (items.length === 0 && !allowEmpty) problems.push(`${where}: needs at least 1 clarification (D10)`);
   for (const [index, item] of items.entries()) {
     const record = item as Partial<ClarificationDefinition> | null;
     const at = `${where}.clarifications[${index}]`;
@@ -508,7 +511,7 @@ export function validateContentFiles(files: ContentFiles): string[] {
   for (const kiln of kilns.kilns) validateClarifications(kiln.clarifications, `kilns: ${kiln.id}`, problems);
   for (const tech of techniques.advanced) validateClarifications(tech.clarifications, `techniques: ${tech.id}`, problems);
   for (const space of track) {
-    validateClarifications(space.clarifications, `imperial_progress: ${space.id}`, problems, space.reward === null);
+    validateClarifications(space.clarifications, `imperial_progress: ${space.id}`, problems);
   }
   validateClarifications(imperialProgress.clarifications?.imperial_overflow, "imperial_progress: imperial_overflow", problems);
   validateClarifications(orders.clarifications?.starting, "orders: starting", problems);

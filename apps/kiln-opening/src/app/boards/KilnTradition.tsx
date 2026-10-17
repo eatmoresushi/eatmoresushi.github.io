@@ -45,7 +45,7 @@ export function KilnTradition({ playerId }: KilnTraditionProps) {
   );
   return (
     <div className="trad" data-kiln-id={summary.kilnId}>
-      <RulesDetail subject={{ kind: "kiln", id: summary.kilnId }} ownerId={summary.playerId} trigger={face} className="trad-detail" />
+      <RulesDetail subject={{ kind: "kiln", id: summary.kilnId }} trigger={face} className="trad-detail" />
     </div>
   );
 }

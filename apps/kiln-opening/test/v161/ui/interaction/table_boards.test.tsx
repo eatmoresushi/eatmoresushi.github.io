@@ -13,9 +13,11 @@ import type { ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { completableOrders } from "../../../../src/game/index.ts";
+import { TECHS, completableOrders } from "../../../../src/game/index.ts";
+import type { TechId } from "../../../../src/game/index.ts";
 import { BoardArea } from "../../../../src/app/boards/BoardArea.tsx";
 import { I18nProvider } from "../../../../src/app/i18n/I18nProvider.tsx";
+import { recognitionMilestones, rulesClarifications, techText } from "../../../../src/app/i18n/content.ts";
 import { decisionWindow } from "../../../../src/app/state/decisionWindow.ts";
 import { DraftStore } from "../../../../src/app/state/draftStore.ts";
 import { GameProvider } from "../../../../src/app/state/hooks.ts";
@@ -112,8 +114,11 @@ describe("D10: rules details open on keyboard focus, click or tap", () => {
     focus(trigger);
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
     expect(panel.hidden).toBe(false);
-    expect(panel.getAttribute("aria-label")).toMatch(/^Rules: /);
-    expect(panel.textContent).toContain("Clarifications");
+    const techId = trigger.closest(".tech")?.getAttribute("data-tech-id") as TechId;
+    expect(panel.getAttribute("aria-label")).toBe(`Full rules: ${techText(techId, "en").name}`);
+    // The full rule, then the clarifications, as plain text (owner review, 2026-10-17).
+    expect([...panel.querySelectorAll(".rd-h")].map((heading) => heading.textContent)).toEqual(["Full rule", ...(TECHS[techId].clarifications.length > 0 ? ["Clarifications"] : [])]);
+    expect(panel.querySelector(".rd-rule")?.textContent).toBe(techText(techId, "en").ability);
     focus($<HTMLButtonElement>("#after"));
     expect(panel.hidden).toBe(true);
     click(trigger);
@@ -130,12 +135,15 @@ describe("D10: rules details open on keyboard focus, click or tap", () => {
     const location = $<HTMLButtonElement>('[data-location-id="guild_hall"] .kit-detail-trigger');
     focus(location);
     expect(panelOf(location).hidden).toBe(false);
-    expect(panelOf(location).getAttribute("aria-label")).toBe("Rules: Guild Hall");
+    expect(panelOf(location).getAttribute("aria-label")).toBe("Full rules: Guild Hall");
     const milestone = $<HTMLButtonElement>('[data-recognition="4"] .kit-detail-trigger');
     focus(milestone);
     expect(panelOf(location).hidden).toBe(true);
     expect(panelOf(milestone).hidden).toBe(false);
-    expect(panelOf(milestone).textContent).toContain("Owner ruling R13");
+    // Recognition 4's reward, then its clarifications with the Crowns beyond it, without source labels.
+    expect(panelOf(milestone).querySelector(".rd-rule")?.textContent).toBe(recognitionMilestones("en").find((entry) => entry.space === 4)?.reward);
+    for (const item of rulesClarifications({ kind: "recognition", space: 4 }, "en")) expect(panelOf(milestone).textContent).toContain(item.text);
+    expect(panelOf(milestone).textContent).not.toMatch(/Source:|Owner ruling/);
   });
 });
 
@@ -183,7 +191,7 @@ describe("table targets change the pane's draft synchronously", () => {
     const face = $<HTMLButtonElement>(`article[data-order-id="${chosen}"] .kit-detail-trigger`);
     click(face);
     expect(panelOf(face).hidden).toBe(false);
-    expect(panelOf(face).getAttribute("aria-label")).toBe(`Rules: Order ${chosen}`);
+    expect(panelOf(face).getAttribute("aria-label")).toBe(`Full rules: Order ${chosen}`);
   });
 });
 

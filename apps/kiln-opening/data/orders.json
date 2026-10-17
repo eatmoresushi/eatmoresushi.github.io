@@ -8,31 +8,6 @@
         "source": "L521"
       },
       {
-        "en": "Only Orders in your hand can be completed.",
-        "zh": "只能完成在手委托。",
-        "source": "L297"
-      },
-      {
-        "en": "The Order Phase is a single pass in First Player order. A player with nothing completable is skipped automatically.",
-        "zh": "交货阶段按起始玩家顺序依次进行一遍，不再循环；没有可完成委托的玩家自动跳过。",
-        "source": "INT Order Phase"
-      },
-      {
-        "en": "An Order may also be completed through Canal Barge, which counts for every completion effect.",
-        "zh": "委托也可以通过漕船完成，对所有完成委托时的效果都算作完成委托。",
-        "source": "R6"
-      },
-      {
-        "en": "A ceramic may satisfy only one completed Order.",
-        "zh": "一件器物只能用于一张委托。",
-        "source": "L419"
-      },
-      {
-        "en": "Flawed ceramics cannot complete Orders.",
-        "zh": "瑕品不能用于完成委托。",
-        "source": "L279"
-      },
-      {
         "en": "When completing an Order, each of your Crackle ceramics may count as having any one Decoration for that Order's Decoration requirements. Its printed Decoration is unchanged.",
         "zh": "完成委托时，你的每件开片器都可以视为具有任意一种纹饰，以满足该委托的纹饰要求；它原本的纹饰不变。",
         "source": "L470"
@@ -41,21 +16,6 @@
         "en": "Starting Orders and reserved Main Orders both count toward your hand limit of 4 (5 with Colour Samples), checked only at Cleanup.",
         "zh": "起始委托与承接的主委托都计入委托上限4张（有色样簿则为5张），只在收工时检查。",
         "source": "L200 · L304"
-      },
-      {
-        "en": "In Round 5 the hand trim has no scoring effect and is skipped.",
-        "zh": "第5轮收工时不削减委托（对计分没有影响）。",
-        "source": "INT Cleanup in Round 5"
-      },
-      {
-        "en": "Orders in hand are secret information. The number of Orders in each player's hand is public.",
-        "zh": "手中的委托是秘密信息。每位玩家手中的委托张数公开。",
-        "source": "L507"
-      },
-      {
-        "en": "Uncompleted Orders have no end-game penalty.",
-        "zh": "未完成的委托在终局不扣分。",
-        "source": "L510"
       }
     ],
     "main": [
@@ -65,34 +25,9 @@
         "source": "L297"
       },
       {
-        "en": "A held Order can be completed during any later Order Phase, or with Canal Barge.",
-        "zh": "在手委托可以在之后任何一个交货阶段完成，或通过漕船完成。",
-        "source": "L403"
-      },
-      {
-        "en": "Canal Barge completes an Order for every completion effect, including Ru, Guan, Tribute Ware and Crackle wildcards.",
-        "zh": "对所有完成委托时的效果而言，漕船都算作完成委托：会触发汝窑、官窑与贡瓷，开片器也可以作任意一种纹饰。",
-        "source": "R6"
-      },
-      {
-        "en": "The Order Phase is a single pass in First Player order. A player with nothing completable is skipped automatically.",
-        "zh": "交货阶段按起始玩家顺序依次进行一遍，不再循环；没有可完成委托的玩家自动跳过。",
-        "source": "INT Order Phase"
-      },
-      {
         "en": "Requirements are independent unless a specific pairing is explicitly printed.",
         "zh": "各项要求彼此独立，除非卡面直接写明配对。",
         "source": "L423"
-      },
-      {
-        "en": "A ceramic may satisfy only one completed Order.",
-        "zh": "一件器物只能用于一张委托。",
-        "source": "L419"
-      },
-      {
-        "en": "Flawed ceramics cannot complete Orders.",
-        "zh": "瑕品不能用于完成委托。",
-        "source": "L279"
       },
       {
         "en": "Each Crackle ceramic may count as having any one Decoration for that Order's Decoration requirements; its printed Decoration is unchanged.",
@@ -138,21 +73,6 @@
         "en": "Starting Orders and reserved Main Orders both count toward your hand limit of 4 (5 with Colour Samples), checked only at Cleanup. Discarded Main Orders go to the Main Order discard pile.",
         "zh": "起始委托与承接的主委托都计入委托上限4张（有色样簿则为5张），只在收工时检查；弃置的主委托进入主委托弃牌堆。",
         "source": "L200 · L304"
-      },
-      {
-        "en": "In Round 5 the hand trim has no scoring effect and is skipped.",
-        "zh": "第5轮收工时不削减委托（对计分没有影响）。",
-        "source": "INT Cleanup in Round 5"
-      },
-      {
-        "en": "Orders in hand are secret information. The number of Orders in each player's hand is public.",
-        "zh": "手中的委托是秘密信息。每位玩家手中的委托张数公开。",
-        "source": "L507"
-      },
-      {
-        "en": "Uncompleted Orders have no end-game penalty.",
-        "zh": "未完成的委托在终局不扣分。",
-        "source": "L510"
       }
     ]
   },

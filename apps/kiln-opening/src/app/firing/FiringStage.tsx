@@ -52,7 +52,7 @@ function Records({ stage, model, t }: { stage: FiringStageView; model: GameModel
       {lines.map((line) => (
         <li key={line.key}>
           {line.tech ? (
-            <RulesDetail subject={{ kind: "tech", id: KILN_TECHS.testPieces }} ownerId={line.ownerId} trigger={<span>{line.text}</span>} />
+            <RulesDetail subject={{ kind: "tech", id: KILN_TECHS.testPieces }} trigger={<span>{line.text}</span>} />
           ) : (
             line.text
           )}

@@ -20,7 +20,9 @@
       "world pane";
     height: 100dvh;
     min-height: 0;
-    overflow: hidden;
+    /* clip, not hidden: a hidden box can still be scrolled by focus() or scrollIntoView(), which
+       shifted the whole screen out of reach (nothing lets the player scroll it back). */
+    overflow: clip;
     background: var(--paper);
     color: var(--ink);
   }

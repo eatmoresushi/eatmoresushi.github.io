@@ -3,13 +3,10 @@
  * rules-details text of a component (D10).
  */
 import { expect } from "vitest";
-import { shortTextSegments } from "../../../../src/game/index.ts";
 import type { KilnId, Recognition, TechId } from "../../../../src/game/index.ts";
 import { kilnText, recognitionMilestones, rulesClarifications, techText } from "../../../../src/app/i18n/content.ts";
 import type { ClarificationText, RulesRef } from "../../../../src/app/i18n/content.ts";
-import { createTranslator } from "../../../../src/app/i18n/translator.ts";
 import type { Locale } from "../../../../src/app/i18n/translator.ts";
-import { clarificationSourceLabel } from "../../../../src/app/rules/RulesDetail.tsx";
 
 export { activeKilnSpaces, firingRecapView, firingStageView, kilnLayout, settersMarkOptions } from "../../../../src/game/index.ts";
 
@@ -57,20 +54,14 @@ export function spaceCell(html: string, spaceId: string): string {
 }
 
 /** What a component's rules-details panel must contain (D10). */
+/** What a component's rules details must show: its full rule and its clarifications, as text. */
 export interface RulesCheck {
   texts: string[];
-  sources: string[];
 }
 
-function checkOf(short: string | null, full: string | null, clarifications: readonly ClarificationText[], locale: Locale): RulesCheck {
-  const t = createTranslator(locale, { strict: true });
-  const texts = [
-    ...(short === null ? [] : shortTextSegments(short).map((run) => run.text)),
-    ...(full === null ? [] : [full]),
-    ...clarifications.map((item) => item.text),
-  ];
-  const sources = clarifications.map((item) => t("rules.source", { source: clarificationSourceLabel(item.tags, t) }));
-  return { texts, sources };
+/** The panel shows the full rule and the clarifications only (owner review, 2026-10-17): no card text, no source labels. */
+function checkOf(_short: string | null, full: string | null, clarifications: readonly ClarificationText[], _locale: Locale): RulesCheck {
+  return { texts: [...(full === null ? [] : [full]), ...clarifications.map((item) => item.text)] };
 }
 
 const clarificationsOf = (ref: RulesRef, locale: Locale) => rulesClarifications(ref, locale);
@@ -91,5 +82,5 @@ export const milestoneRulesCheck = (space: Recognition, locale: Locale): RulesCh
 /** Asserts the markup contains every text and source label of a rules check. */
 export function tagged(html: string, check: RulesCheck): void {
   for (const text of check.texts) expect(html, text).toContain(escapeHtml(text.trim()).split("\n")[0]);
-  for (const source of check.sources) expect(html, source).toContain(escapeHtml(source));
+  expect(html).not.toMatch(/Source:|出处：/);
 }

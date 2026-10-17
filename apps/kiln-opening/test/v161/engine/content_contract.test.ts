@@ -813,7 +813,7 @@ describe("content validation", () => {
     }],
     ["an empty Chinese name", (files) => { (files.techniques.advanced[0] as { nameZh: string }).nameZh = " "; }],
     ["an empty Chinese requirement", (files) => { (files.orders.main[0] as { requirementsZh: string }).requirementsZh = ""; }],
-    ["a Tech without clarifications", (files) => { (files.techniques.advanced[4] as { clarifications: unknown }).clarifications = []; }],
+    ["a Tech whose clarifications are not an array", (files) => { (files.techniques.advanced[4] as { clarifications: unknown }).clarifications = "none"; }],
     ["a malformed clarification source tag", (files) => {
       (files.kilns.kilns[1]?.clarifications[0] as { source: string }).source = "Rule 4";
     }],
@@ -1055,7 +1055,6 @@ function resolveTag(tag: string): string | null {
  */
 const QUOTE_ADAPTATIONS: ReadonlyArray<readonly [string, string, string]> = [
   ["T18", "Because the display is not refilled until your turn ends, a second face-up reservation", "L199 says \"a Shifu's\"; here an Apprentice resolves the Shifu effect"],
-  ["T10", "Starting Orders and reserved Main Orders both count toward the limit at Cleanup", "joins L200's last sentence to its Cleanup timing"],
   ["T12", "A ceramic in an Imperial Kiln gives no say over the shared fire", "L261 abridged"],
   ["JU", "Jun's adjustment applies on top of either a Heat marker or the Kiln Master marker", "L648's \"either\" named"],
   ["magistrates_hall", "You may place a worker only if you can perform at least 1 instance of the main action", "L142 \"that location's\" made specific"],
@@ -1072,8 +1071,10 @@ describe("clarifications (owner decision D10, K15)", () => {
     const fromDoc = Object.fromEntries([...doc.entries()].map(([key, entry]) => [key, entry.items]));
     const fromData = Object.fromEntries([...data.entries()].map(([key, entry]) => [key, entry.items]));
     expect(fromData).toEqual(fromDoc);
-    expect(all).toHaveLength(292);
-    expect(IMPERIAL_TRACK.track.filter((space) => space.clarifications.length === 0).map((space) => space.id)).toEqual(["local_workshop"]);
+    // Pruned to the component-specific items (owner review, 2026-10-17): no general rules, no
+    // interactions the component's owner can never meet. A component may have none.
+    expect(all).toHaveLength(156);
+    expect(IMPERIAL_TRACK.track.filter((space) => space.clarifications.length === 0).map((space) => space.id)).toEqual(["local_workshop", "imperial_grant"]);
   });
 
   it("keys every doc section to the component it names", () => {

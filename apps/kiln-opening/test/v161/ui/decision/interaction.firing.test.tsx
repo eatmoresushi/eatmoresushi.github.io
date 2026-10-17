@@ -16,6 +16,7 @@ import type { ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { KILNS } from "../../../../src/game/index.ts";
 import { DecisionPane } from "../../../../src/app/decision/DecisionPane.tsx";
 import { CanalBarge } from "../../../../src/app/decision/orders/CanalBarge.tsx";
 import { canalBargeDraft } from "../../../../src/app/decision/orders/canalBargeDraft.ts";
@@ -23,6 +24,7 @@ import type { CanalBargeAction, CanalBargeDraft } from "../../../../src/app/deci
 import { CanalBargeFormProvider } from "../../../../src/app/decision/work/composedForms.tsx";
 import { WINDOWS } from "../../../../src/app/decision/windows.ts";
 import { I18nProvider } from "../../../../src/app/i18n/I18nProvider.tsx";
+import { kilnText } from "../../../../src/app/i18n/content.ts";
 import { LanguageToggle } from "../../../../src/app/kit/LanguageToggle.tsx";
 import { DraftStore } from "../../../../src/app/state/draftStore.ts";
 import { GameProvider, useEngineView, useGame, useTableSelection } from "../../../../src/app/state/hooks.ts";
@@ -92,8 +94,12 @@ describe("rules details (D10)", () => {
     act(() => trigger.focus());
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
     expect(panel.hidden).toBe(false);
-    expect(panel.textContent).toContain("Kiln Tradition");
-    expect(panel.textContent).toContain("Owner ruling R7");
+    // Only the full rule and the clarifications, as plain text (owner review, 2026-10-17).
+    expect(panel.getAttribute("aria-label")).toBe(`Full rules: ${kilnText("JU", "en").name} · ${kilnText("JU", "en").abilityName}`);
+    expect([...panel.querySelectorAll(".rd-h")].map((heading) => heading.textContent)).toEqual(["Full rule", ...(KILNS.JU.clarifications.length > 0 ? ["Clarifications"] : [])]);
+    expect(panel.querySelector(".rd-rule")?.textContent).toBe(kilnText("JU", "en").ability);
+    for (const item of KILNS.JU.clarifications) expect(panel.textContent).toContain(item.en);
+    expect(panel.textContent).not.toMatch(/Source:|Owner ruling/);
     act(() => {
       trigger.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     });

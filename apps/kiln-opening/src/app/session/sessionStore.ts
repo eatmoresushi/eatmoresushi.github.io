@@ -269,7 +269,7 @@ export class SessionStore implements GameSource, SessionActions {
   }
 
   reconnect(): Promise<void> {
-    return this.reconnectOnce(false);
+    return this.reconnectOnce(false, true);
   }
 
   retryComputers(): void {
@@ -394,7 +394,7 @@ export class SessionStore implements GameSource, SessionActions {
   /** Reconnects when the page becomes visible or the network returns (§3.9). */
   attachToWindow(target: SessionWindow): () => void {
     const onVisibility = (): void => {
-      if (target.document.visibilityState === "visible" && this.current.room !== null) void this.reconnect();
+      if (target.document.visibilityState === "visible" && this.current.room !== null) void this.reconnectOnce(false);
     };
     const onOnline = (): void => {
       this.setStatus({ connection: "live" });
@@ -476,7 +476,7 @@ export class SessionStore implements GameSource, SessionActions {
     }
     const error = toStoredError(result.error);
     this.setStatus({ sending: false, error });
-    if (code === "PERSISTENCE_CONFLICT") void this.reconnect();
+    if (code === "PERSISTENCE_CONFLICT") void this.reconnectOnce(false);
     return { kind: "rejected", error };
   }
 
@@ -605,10 +605,16 @@ export class SessionStore implements GameSource, SessionActions {
   /**
    * Single-flight. Concurrent callers share the request in flight; `fresh` callers (who know
    * the head has moved since it started) get one more round after it.
+   *
+   * Only `announce` (the player's Reconnect, or a lost transport) shows the "Reconnecting…"
+   * banner. The routine room check, the refresh after a stale command and the refresh after a
+   * computer race run quietly: they are not a reconnection, and a banner that blinks for one
+   * request shifts the whole screen.
    */
-  private reconnectOnce(fresh: boolean): Promise<void> {
+  private reconnectOnce(fresh: boolean, announce = false): Promise<void> {
     if (this.reconnectFlight !== null) {
       if (fresh) this.reconnectAgain = true;
+      if (announce) this.setStatus({ reconnecting: true });
       return this.reconnectFlight;
     }
     const credentials = this.credentials();
@@ -617,7 +623,7 @@ export class SessionStore implements GameSource, SessionActions {
       try {
         do {
           this.reconnectAgain = false;
-          await this.runReconnect(credentials);
+          await this.runReconnect(credentials, announce);
         } while (this.reconnectAgain && this.credentials()?.seatToken === credentials.seatToken);
       } finally {
         this.reconnectFlight = null;
@@ -627,9 +633,9 @@ export class SessionStore implements GameSource, SessionActions {
     return flight;
   }
 
-  private async runReconnect(credentials: SavedSeat): Promise<void> {
+  private async runReconnect(credentials: SavedSeat, announce: boolean): Promise<void> {
     const generation = this.generation;
-    this.setStatus({ reconnecting: true });
+    if (announce) this.setStatus({ reconnecting: true });
     this.lastRoomCheckAt = this.clock.now();
     const result = await this.call(() => this.api.reconnect(credentials.roomCode, credentials.seatToken));
     if (generation !== this.generation) return;

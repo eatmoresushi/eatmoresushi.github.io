@@ -230,11 +230,17 @@
     gap: var(--sp-1);
   }
 
-  .seat-chip-computer {
-    padding: 0 var(--sp-3);
-    border: 1px solid var(--line);
-    border-radius: var(--r-pill);
-    color: var(--ink-2);
+  /* Clay, Wood and Coins: a mark and a count each, like the hand's card back. */
+  .seat-chip-res {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-3);
+  }
+
+  .seat-chip-res-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
   }
 
   .seat-chip-acting {

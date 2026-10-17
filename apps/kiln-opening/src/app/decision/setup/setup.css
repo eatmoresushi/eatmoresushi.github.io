@@ -7,20 +7,4 @@
   .b4-kiln-short strong {
     font-weight: 700;
   }
-
-  .b4-kiln-order {
-    display: grid;
-    gap: var(--sp-1);
-    padding-inline-start: var(--sp-6);
-    font-size: var(--fs-meta);
-  }
-
-  .b4-kiln-order li[data-current="true"] {
-    font-weight: 700;
-  }
-
-  .b4-kiln-order-pick {
-    margin-inline-start: var(--sp-3);
-    color: var(--ink-3);
-  }
 }

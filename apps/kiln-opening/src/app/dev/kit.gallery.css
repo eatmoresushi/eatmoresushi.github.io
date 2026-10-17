@@ -91,6 +91,8 @@
   }
 
   .kg-sheet {
+    min-width: 0;
+    max-width: 100%;
     min-height: 6rem;
   }
 

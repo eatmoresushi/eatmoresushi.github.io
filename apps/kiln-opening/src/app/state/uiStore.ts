@@ -120,14 +120,26 @@ export interface UiEffects {
   storeTheme(choice: ThemeChoice): void;
 }
 
-/** The browser effects: scroll `#sec-<id>` into view; apply and store the theme. */
+/**
+ * The browser effects: scroll `#sec-<id>` to the top of the world's scroll area (below the sticky
+ * jump bar, via the section's `scroll-margin-top`); apply and store the theme. Only the world
+ * scrolls: `scrollIntoView` would also scroll every other ancestor, the page included.
+ */
 export const BROWSER_UI_EFFECTS: UiEffects = {
   scrollToSection(section) {
     if (typeof document === "undefined") return;
     const target = document.getElementById(`sec-${section}`);
     if (target === null) return;
     const reduce = typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    target.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    const behavior: ScrollBehavior = reduce ? "auto" : "smooth";
+    const world = target.closest<HTMLElement>(".shell-world");
+    if (world === null) {
+      target.scrollIntoView({ behavior, block: "start" });
+      return;
+    }
+    const margin = Number.parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
+    const top = target.getBoundingClientRect().top - world.getBoundingClientRect().top + world.scrollTop - margin;
+    world.scrollTo({ top: Math.max(0, top), behavior });
   },
   applyTheme(choice) {
     applyTheme(choice);

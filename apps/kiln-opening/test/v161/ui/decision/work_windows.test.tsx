@@ -8,14 +8,15 @@
  *   ConfirmBar alternative and the test-driver contract (input `name`/`value` = engine IDs).
  * - Owner decisions: no odds, previews or ladders (D3/D4); no lock wording (D7); no ceramic or
  *   worker ID in anything a player perceives (D9); every Kiln board, location, Tech tile, Order
- *   card and Recognition milestone shown opens its rules details (D10) with the card text, the
- *   full rule, that component's clarifications with their source labels and the card facts.
+ *   card and Recognition milestone shown opens its rules details (D10) with only the full rule
+ *   and that component's clarifications, as plain text: no card text, card facts or source labels
+ *   (owner review, 2026-10-17).
  * - Seeded drafts drive the table targets through `useTableSelection` (§3.5), so SSR sees the
  *   Place shortcuts, kiln targets, pending chips and Order targets.
  */
 import { describe, expect, it } from "vitest";
-import { KILNS, LOCATIONS, SHAPES, TECHS, legalCommands, placementOptions, settersMarkOptions } from "../../../../src/game/index.ts";
-import type { AuthoritativeCommand, KilnSpaceId, LocationId } from "../../../../src/game/index.ts";
+import { KILNS, LOCATIONS, ORDERS, ORDER_CLARIFICATIONS, SHAPES, TECHS, guildInspectionOptions, legalCommands, placementOptions, settersMarkOptions } from "../../../../src/game/index.ts";
+import type { AuthoritativeCommand, ClarificationDefinition, KilnId, KilnSpaceId, LocationId, OrderId, TechId } from "../../../../src/game/index.ts";
 import { WINDOWS } from "../../../../src/app/decision/windows.ts";
 import { workDraft } from "../../../../src/app/decision/work/workDraft.ts";
 import { GameScreen } from "../../../../src/app/screens/GameScreen.tsx";
@@ -26,8 +27,10 @@ import { buildGameModel, engineViewOf } from "../../../../src/app/state/model.ts
 import { placementWorkerKey } from "../../../../src/app/state/tableSelection.ts";
 import { FixtureGameSource } from "../../../../src/app/session/fixtureSource.ts";
 import { allFixtures, fixture, fixtureSource } from "../support/fixtures.ts";
+import { disciplineName, kilnText, locationName, techText } from "../../../../src/app/i18n/content.ts";
+import { createTranslator } from "../../../../src/app/i18n/translator.ts";
 import { renderComponent, renderWindow } from "../support/render.tsx";
-import { panels } from "../table/markup.ts";
+import { decode, panel, panels, textOf } from "../table/markup.ts";
 
 const B4_KINDS: ReadonlySet<DecisionWindowKind> = new Set<DecisionWindowKind>(["kiln_selection", "setters_mark", "work", "commission", "guild_inspection", "colour_samples"]);
 
@@ -90,6 +93,35 @@ function rulesPanels(html: string, kind?: string): string[] {
     .map((entry) => entry.html);
 }
 
+const EN = createTranslator("en", { strict: true });
+const ZH = createTranslator("zh-CN", { strict: true });
+
+/**
+ * A rules-details panel shows only the full rule, then the component's clarifications as plain
+ * text (owner review, 2026-10-17): no card text, card facts or source labels. The clarifications
+ * come from the data, so the check holds however many a component keeps.
+ */
+function expectRuleAndClarifications(body: string, items: readonly ClarificationDefinition[], locale: "en" | "zh-CN") {
+  const t = locale === "en" ? EN : ZH;
+  const headings = [...body.matchAll(/<p class="rd-h">([^<]*)<\/p>/g)].map((match) => decode(match[1]!));
+  expect(headings).toEqual([t("rules.fullRule"), ...(items.length > 0 ? [t("rules.clarifications")] : [])]);
+  const plain = textOf(body);
+  for (const item of items) expect(plain).toContain(decode(locale === "en" ? item.en : item.zh));
+  expect(body, "card text").not.toContain("rd-short");
+  expect(body, "card facts").not.toMatch(/<dl\b|<dt>/);
+  expect(plain, "source label").not.toMatch(/Source:|出处：|Owner (ruling|amendment)|业主(裁定|修订)|Provisional ruling P\d|Wording D\d|Rulebook “|规则书「/);
+}
+
+/** One option card of a choice (its label and its rules trigger), by input name and value. */
+function optionCard(html: string, name: string, value: string): string {
+  const card = html.split('<div class="kit-opt ').find((part) => part.includes(`name="${name}" value="${value}"`));
+  if (card === undefined) throw new Error(`no option ${name}=${value}`);
+  return card;
+}
+
+/** "3 Coins", "1 Coin". */
+const coinsEn = (n: number) => `${n} ${n === 1 ? "Coin" : "Coins"}`;
+
 /** The first canonical legal command of a type for a fixture's view. */
 function commandOf(id: string, type: AuthoritativeCommand["type"], nth = 0): AuthoritativeCommand {
   const command = legalCommands(fixture(id).playerView, { mode: "canonical" }).filter((candidate) => candidate.type === type)[nth];
@@ -135,13 +167,15 @@ describe("B4 windows render from every fixture", () => {
 });
 
 describe("titles, alternatives and the test-driver contract", () => {
-  it("Kiln selection: every Kiln from kilnSelectionOptions, valued by Kiln ID, with the choosing order", () => {
+  it("Kiln selection: every Kiln from kilnSelectionOptions, valued by Kiln ID, without a choosing-order list", () => {
     const html = en("m15_kiln_selection");
     expect(heading(html)).toBe("Choose your Kiln");
     expect(heading(zh("m15_kiln_selection"))).toBe("选择窑口");
     expect(valuesOf(html, "kilnId")).toEqual(Object.keys(KILNS));
     expect(alt(html)).toBeNull();
-    expect(perceivable(html)).toContain("Choosing order");
+    // The owner removed the choosing-order list (review, 2026-10-17); the prompt still says reverse turn order.
+    expect(perceivable(html)).not.toContain("Choosing order");
+    expect(perceivable(html)).toContain("reverse turn order");
     expect(summary(html)).toBe("Choose a Kiln.");
   });
 
@@ -335,77 +369,106 @@ describe("sub-editors from seeded drafts", () => {
 });
 
 describe("rules details (D10)", () => {
-  it("every Kiln board in Kiln selection: short text with its timing in bold, full rule, clarifications with sources, card facts", () => {
+  it("every Kiln board in Kiln selection: the short text in bold on the option, only the full rule and clarifications in the panel", () => {
     const html = en("m15_kiln_selection");
-    const panels = rulesPanels(html, "kiln");
-    expect(panels).toHaveLength(Object.keys(KILNS).length);
-    for (const panel of panels) {
-      expect(panel).toMatch(/<strong>[^<]+:<\/strong>/);
-      expect(panel).toContain("Full rule");
-      expect(panel).toContain("Clarifications");
-      expect(panel).toMatch(/Rulebook “[^”]+”|Owner ruling [RB]\d+/);
-      expect(panel).not.toMatch(/Rulebook L\d+/);
-      expect(panel).toContain("Once per round");
+    const zhHtml = zh("m15_kiln_selection");
+    expect(rulesPanels(html, "kiln")).toHaveLength(Object.keys(KILNS).length);
+    for (const kilnId of Object.keys(KILNS) as KilnId[]) {
+      // The option itself carries the card text with its timing in bold.
+      const card = optionCard(html, "kilnId", kilnId);
+      expect(card.split("</label>")[0]).toMatch(/<span class="b4-kiln-short"><strong>[^<]+:<\/strong>/);
+      // The panel: the full rule, then the clarifications, nothing else.
+      const kiln = kilnText(kilnId, "en");
+      const body = panel(html, `Full rules: ${kiln.name} · ${kiln.abilityName}`);
+      expect(textOf(body)).toContain(decode(kiln.ability));
+      expect(body).not.toContain("<strong>");
+      expectRuleAndClarifications(body, KILNS[kilnId].clarifications, "en");
+      const zhKiln = kilnText(kilnId, "zh-CN");
+      expectRuleAndClarifications(panel(zhHtml, `完整规则：${zhKiln.name} · ${zhKiln.abilityName}`), KILNS[kilnId].clarifications, "zh-CN");
     }
-    const ru = panels[0] ?? "";
-    expect(text(ru)).toContain(KILNS.RU.clarifications[0]?.en.slice(0, 20) ?? "");
-    expect(rulesPanels(zh("m15_kiln_selection"), "kiln")[0]).toContain("完整规则");
   });
 
-  it("every location of the work turn: both worker effects, capacity, full rule and its own clarifications", () => {
+  it("every location of the work turn: both worker effects as the full rule and its own clarifications, with no capacity or location-kind facts", () => {
     const view = fixture("m1_work_phase_r2_3p").playerView;
     const html = en("m1_work_phase_r2_3p");
-    const panels = rulesPanels(html, "location");
-    expect(panels).toHaveLength(placementOptions(view).length);
-    const panelOf = (name: string) => panels.find((panel) => panel.includes(`aria-label="Rules: ${name}"`)) ?? "";
-    const yard = panelOf("Materials Yard");
-    expect(yard).toContain(`<dt>Capacity (3 players)</dt><dd>${LOCATIONS.materials_yard.capacity?.["3"]} spaces</dd>`);
-    expect(yard).toContain("Owner ruling R12");
-    const personal = panelOf("Glaze &amp; Load");
-    expect(personal).toContain("Personal location");
-    expect(personal).toContain("Wording D7");
-    expect(personal).toContain("Provisional ruling P3 (owner may change)");
+    const options = placementOptions(view);
+    expect(rulesPanels(html, "location")).toHaveLength(options.length);
+    for (const option of options) {
+      const location = LOCATIONS[option.locationId];
+      const body = panel(html, `Full rules: ${locationName(option.locationId, "en")}`);
+      expect(body).toContain('data-rules="location"');
+      expect(body.match(/<p class="rd-rule">/g) ?? []).toHaveLength(2);
+      expect(textOf(body)).toContain(decode(location.apprenticeText));
+      expect(textOf(body)).toContain(decode(location.shifuText));
+      expectRuleAndClarifications(body, location.clarifications, "en");
+    }
+    // The removed card facts: capacity, location kind, who is here now.
+    expect(textOf(panel(html, "Full rules: Materials Yard"))).not.toMatch(/Capacity \(3 players\)|Here now/);
+    expect(textOf(panel(html, "Full rules: Glaze & Load"))).not.toMatch(/Location Personal location|Each space once per round|Here now/);
   });
 
-  it("every Tech tile in the Guild inspection: discipline, printed cost, once per round, VP when gained, the Shifu price", () => {
-    const html = en("m12_guild_shifu_inspection");
-    const panels = rulesPanels(html, "tech");
-    expect(panels.length).toBeGreaterThan(1);
-    for (const panel of panels) {
-      expect(panel).toMatch(/<dt>Discipline<\/dt><dd>(Form &amp; Decorate|Glazing &amp; Loading|Firing)<\/dd>/);
-      expect(panel).toMatch(/<dt>Cost<\/dt><dd>\d Coins?<\/dd>/);
-      expect(panel).toContain("1 VP when gained");
-      expect(panel).toContain("You pay");
-      expect(panel).toContain("Owner amendment A1");
+  it("every Tech tile in the Guild inspection: discipline and the Shifu price on the option, only the full ability and clarifications in the panel", () => {
+    const id = "m12_guild_shifu_inspection";
+    const html = en(id);
+    const options = guildInspectionOptions(fixture(id).playerView);
+    expect(options).not.toBeNull();
+    const all = [...options!.inspected, ...options!.faceUp];
+    expect(all.length).toBeGreaterThan(1);
+    expect(rulesPanels(html, "tech")).toHaveLength(all.length);
+    for (const option of all) {
+      const label = optionCard(html, "take", option.techId).split("</label>")[0] ?? "";
+      expect(text(/class="kit-opt-desc"[^>]*>(.*?)<\/span>/.exec(label)?.[1] ?? "")).toBe(disciplineName(option.discipline, "en"));
+      // The Shifu's −1 Coin (minimum 0), printed cost first when it differs.
+      expect(option.price).toBe(Math.max(0, option.printedCost - 1));
+      const price = option.price === option.printedCost ? coinsEn(option.price) : `${coinsEn(option.printedCost)} → ${coinsEn(option.price)}`;
+      expect(text(/<span class="kit-opt-meta">(.*?)<\/span>/.exec(label)?.[1] ?? "")).toBe(price);
+      const body = panel(html, `Full rules: ${techText(option.techId, "en").name}`);
+      expect(textOf(body)).toContain(decode(techText(option.techId, "en").ability));
+      expect(textOf(body)).not.toMatch(/You pay|1 VP when gained/);
+      expectRuleAndClarifications(body, TECHS[option.techId].clarifications, "en");
     }
   });
 
-  it("a Form & Decorate or Glazing & Loading Tech says which second space it adds (D7 wording)", () => {
-    const panels = rulesPanels(en("w-guild-hall-shifu-inspection"), "tech");
-    const panelOf = (name: string) => panels.find((panel) => panel.includes(`aria-label="Rules: ${name.replace(/'/g, "&#x27;")}"`)) ?? "";
+  it("a Form & Decorate or Glazing & Loading Tech's rules details keep D7 wording and carry no \"Adds\" fact", () => {
+    const html = en("w-guild-hall-shifu-inspection");
+    const zhHtml = zh("w-guild-hall-shifu-inspection");
     expect(TECHS.T16.unlocks).toBe("form_decorate");
-    expect(panelOf(TECHS.T16.name)).toContain("<dt>Adds</dt><dd>Your second Form &amp; Decorate space</dd>");
     expect(TECHS.T10.unlocks).toBe("glaze_load");
-    expect(panelOf(TECHS.T10.name)).toContain("<dt>Adds</dt><dd>Your second Glaze &amp; Load space</dd>");
-    expect(panelOf(TECHS.T13.name)).not.toContain("<dt>Adds</dt>");
-    expect(rulesPanels(zh("w-guild-hall-shifu-inspection"), "tech").join("")).toContain("<dt>添设</dt><dd>制坯饰纹第二工位</dd>");
+    expect(TECHS.T13.unlocks).toBeNull();
+    for (const techId of ["T16", "T10", "T13"] as TechId[]) {
+      const body = panel(html, `Full rules: ${techText(techId, "en").name}`);
+      expect(textOf(body)).toContain(decode(techText(techId, "en").ability));
+      expect(body).not.toContain("<dt>Adds</dt>");
+      expect(textOf(body)).not.toMatch(LOCK_EN);
+      expectRuleAndClarifications(body, TECHS[techId].clarifications, "en");
+      const zhBody = panel(zhHtml, `完整规则：${techText(techId, "zh-CN").name}`);
+      expect(zhBody).not.toContain("<dt>添设</dt>");
+      expect(textOf(zhBody)).not.toMatch(LOCK_ZH);
+      expectRuleAndClarifications(zhBody, TECHS[techId].clarifications, "zh-CN");
+    }
   });
 
-  it("every Order card in a choice: requirements, quality line, reward and the deck's clarifications", () => {
+  it("every Order card in a choice: requirements and quality line, then the deck's clarifications, with no reward or Order kind", () => {
     for (const id of ["m2_commission_market_look_r3_4p", "m16_colour_samples", "w-commission-market-second-reservation-or-stop"]) {
-      const panels = rulesPanels(en(id), "order");
-      expect(panels.length, id).toBeGreaterThan(0);
-      for (const panel of panels) {
-        expect(panel).toMatch(/\d VP/);
-        expect(panel).toMatch(/Commercial Order|Crown Order/);
-        expect(panel).toContain("Clarifications");
+      const html = en(id);
+      const found = panels(html).filter((entry) => entry.html.includes('data-rules="order"'));
+      expect(found.length, id).toBeGreaterThan(0);
+      for (const entry of found) {
+        const orderId = /^Full rules: Order ([OS]\d{2})$/.exec(entry.label)?.[1] as OrderId | undefined;
+        expect(orderId, entry.label).toBeDefined();
+        const order = ORDERS[orderId!];
+        expect(textOf(entry.html)).toContain(decode(order.requirements));
+        expect(textOf(entry.html)).not.toMatch(/Reward \d+ VP|\d+ VP · \d+ Coins?/);
+        expectRuleAndClarifications(entry.html, order.deck === "starting" ? ORDER_CLARIFICATIONS.starting : ORDER_CLARIFICATIONS.main, "en");
       }
     }
   });
 
-  it("the rules button is named for its component and sits outside every option label (§8.1)", () => {
+  it("the Full rules button is named for its component and sits outside every option label (§8.1)", () => {
     const html = en("m15_kiln_selection");
-    expect(html).toContain('aria-label="Rules: Ru Kiln · ');
+    expect(html).toContain('aria-label="Full rules: Ru Kiln · ');
+    expect(html).not.toMatch(/aria-label="Rules: /);
+    expect(zh("m15_kiln_selection")).toContain(`aria-label="完整规则：${kilnText("RU", "zh-CN").name} · `);
     for (const label of html.split("<label").slice(1).map((part) => part.split("</label>")[0] ?? "")) expect(label).not.toContain("kit-detail-trigger");
   });
 });

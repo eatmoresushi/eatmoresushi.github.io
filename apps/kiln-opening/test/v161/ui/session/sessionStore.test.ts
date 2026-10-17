@@ -168,6 +168,24 @@ describe("SessionStore: merging and the event log", () => {
     expect(a.store.getSnapshot().status.reconnecting).toBe(false);
   });
 
+  it("runs the throttled room check quietly: only the player's Reconnect says Reconnecting", async () => {
+    // Regression (owner review, 2026-10-17): the 5s room check showed the banner for one request,
+    // which shifted the whole screen every few seconds.
+    const { harness } = await started({ humans: 2 });
+    const a = await clientFor(harness, harness.host);
+    const before = a.api.callsOf("reconnect").length;
+    const gate = deferred();
+    a.api.fault("reconnect", { kind: "hold_response", gate: gate.promise });
+    await a.clock.advance(5_000);
+    a.api.ping();
+    await settle();
+    expect(a.api.callsOf("reconnect").length).toBe(before + 1);
+    expect(a.store.getSnapshot().status.reconnecting).toBe(false);
+    gate.release();
+    await settle();
+    expect(a.store.getSnapshot().status.reconnecting).toBe(false);
+  });
+
   it("merges monotonically: an older response never replaces a newer view", async () => {
     const { harness } = await started({ humans: 2 });
     const a = await clientFor(harness, harness.host);

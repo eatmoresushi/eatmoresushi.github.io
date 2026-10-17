@@ -155,7 +155,10 @@ async function wrappedConfirmLabels(page: Page): Promise<string[]> {
 
 async function focusVisibleAfterTab(page: Page): Promise<string | null> {
   await page.locator("body").click({ position: { x: 1, y: 1 } }).catch(() => undefined);
-  await page.keyboard.press("Tab");
+  // Safari (WebKit) moves Tab only between form fields unless "Press Tab to highlight each item"
+  // is on; its keyboard users reach links and buttons with Option-Tab.
+  const webkit = page.context().browser()?.browserType().name() === "webkit";
+  await page.keyboard.press(webkit ? "Alt+Tab" : "Tab");
   return page.evaluate(() => {
     const active = document.activeElement as HTMLElement | null;
     if (active === null || active === document.body) return "Tab did not move focus";

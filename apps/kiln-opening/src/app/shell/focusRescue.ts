@@ -24,9 +24,10 @@ function isRendered(element: Element | null): element is HTMLElement {
   return element instanceof HTMLElement && element.isConnected && element.getClientRects().length > 0;
 }
 
+/** Moves focus without scrolling: a rescue runs after other players' moves too, and must never move the view. */
 function focusQuietly(element: HTMLElement): void {
   if (!element.hasAttribute("tabindex") && element.tabIndex < 0) element.setAttribute("tabindex", "-1");
-  element.focus({ preventScroll: false });
+  element.focus({ preventScroll: true });
 }
 
 function headingOf(container: Element | null): HTMLElement | null {

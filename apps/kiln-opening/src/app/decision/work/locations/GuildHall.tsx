@@ -68,7 +68,7 @@ export function GuildHall({ draft, options, dispatch }: GuildHallProps) {
               disabled={!tech.legal}
               reason={reasonOf(tech)}
             >
-              <RulesDetail subject={{ kind: "tech", id: tech.techId }} extraFacts={[{ label: t("rules.fact.price"), value: techPriceText(tech, t) }]} />
+              <RulesDetail subject={{ kind: "tech", id: tech.techId }} />
             </OptionCard>
           ))}
         </OptionGroup>
@@ -108,7 +108,7 @@ export function GuildHall({ draft, options, dispatch }: GuildHallProps) {
                   <span className="num">{techPriceText(tech, t)}</span>
                 </span>
                 {tech.legal ? null : <span className="b4-tech-reason">{reasonOf(tech)}</span>}
-                <RulesDetail subject={{ kind: "tech", id: tech.techId }} extraFacts={[{ label: t("rules.fact.price"), value: techPriceText(tech, t) }]} />
+                <RulesDetail subject={{ kind: "tech", id: tech.techId }} />
               </li>
             ))}
           </ul>

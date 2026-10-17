@@ -37,16 +37,6 @@
           "source": "L150"
         },
         {
-          "en": "A worker may go on any unoccupied space. Workers already on other spaces, yours or anyone's, do not matter. Capacities are absolute: no worker, including the Shifu, may be placed at a location whose spaces are all occupied.",
-          "zh": "工人可以派往任意一个空着的工位；其他工位上已有的工人，无论是你的还是别人的，都不影响。容量是绝对上限：工位全部被占满后，任何工人（包括师傅）都不能再派往这里。",
-          "source": "L140"
-        },
-        {
-          "en": "Optional bonuses may still be declined.",
-          "zh": "可选的额外收益仍然可以放弃。",
-          "source": "L142"
-        },
-        {
           "en": "Senior Apprentice lets 1 Apprentice resolve the whole Shifu effect here, including the option to pay 1 Coin for +1 Clay and +1 Wood.",
           "zh": "高徒可以让1名学徒在这里结算完整的师傅效果，包括“可付1铜钱再得1泥1柴”。",
           "source": "R12"
@@ -55,11 +45,6 @@
           "en": "Prepared Clay may form 1 vessel during a Materials Yard action, after gaining resources; it is a Tech effect, not a Form & Decorate action.",
           "zh": "练泥可以在泥柴场行动中获得资源后制1件坯；这是技艺效果，不算制坯饰纹行动。",
           "source": "L618 · L646"
-        },
-        {
-          "en": "The supply of Clay, Wood and Coins is unlimited.",
-          "zh": "泥、柴与铜钱的公共供应没有上限。",
-          "source": "L502"
         }
       ]
     },
@@ -117,11 +102,6 @@
           "en": "Prepared Clay is a Tech effect and never counts as a Form & Decorate action.",
           "zh": "练泥是技艺效果，不算制坯饰纹行动。",
           "source": "L646"
-        },
-        {
-          "en": "Vessel cards are not a hard gameplay limit.",
-          "zh": "器型卡不是硬性的游戏上限。",
-          "source": "L329"
         },
         {
           "en": "Shaped ceramics remain between rounds and keep all recorded attributes.",
@@ -254,11 +234,6 @@
           "source": "L151"
         },
         {
-          "en": "Capacities are absolute: no worker, including the Shifu, may be placed at a location whose spaces are all occupied.",
-          "zh": "容量是绝对上限：工位全部被占满后，任何工人（包括师傅）都不能再派往这里。",
-          "source": "L140"
-        },
-        {
           "en": "The Shifu's top-3 selection is optional.",
           "zh": "师傅的看三取一是可选的。",
           "source": "ED L714"
@@ -267,11 +242,6 @@
           "en": "Every reservation must take an available Order; a blind reservation needs a card in the deck after any reshuffle. If the Main Order deck and discard are both empty, leave display positions empty. A top-3 look sees as many cards as remain; the discard is reshuffled only when the deck is empty, never to complete a look.",
           "zh": "每次承接必须拿1张现有的委托；盲接时，牌堆中（必要时洗混后）必须有牌。主委托牌堆与弃牌堆都空时，榜位空着。看三取一时，牌堆不足3张就看余下的；弃牌堆只在牌堆用尽时洗混，不会为了凑足查看的张数而洗混。",
           "source": "B1"
-        },
-        {
-          "en": "If the Main Order deck is empty when a card is needed, shuffle its discard pile to form a new deck.",
-          "zh": "需要抽牌时若主委托牌堆已空，把它的弃牌堆洗混，组成新的牌堆。",
-          "source": "L511"
         },
         {
           "en": "Top-3 looks are private to the acting player. The Main Order discard pile is face down; only its count is public.",
@@ -337,29 +307,14 @@
           "source": "L152"
         },
         {
-          "en": "Capacities are absolute: no worker, including the Shifu, may be placed at a location whose spaces are all occupied.",
-          "zh": "容量是绝对上限：工位全部被占满后，任何工人（包括师傅）都不能再派往这里。",
-          "source": "L140"
-        },
-        {
           "en": "The Shifu's inspection is private. The Shifu may inspect any discipline, including one already owned. You choose the order in which untaken inspected Techs go to the bottom, and that order stays private. Return them to the bottom first, then refill the display.",
           "zh": "师傅的查看是私下进行的；可以查看任何门类，包括你已拥有技艺的门类。查看后没有拿的技艺按你决定的顺序（保密）放回该门类的牌堆底；先放回牌堆底，再补牌。",
           "source": "B2"
         },
         {
-          "en": "If an Advanced Tech discipline cannot refill its display to 2, leave the display partially empty.",
-          "zh": "若某个门类的公开技艺补不到2张，就留空。",
-          "source": "L513"
-        },
-        {
           "en": "Each Advanced Tech scores 1 VP immediately when you gain it.",
           "zh": "每习得1项技艺，立即得1分。",
           "source": "A1"
-        },
-        {
-          "en": "Pay all costs in full and apply valid discounts before payment. Colour Samples' when-acquired reservation is mandatory whenever at least 1 Main Order can be looked at.",
-          "zh": "必须足额支付费用，减免在支付前计算。色样簿习得时，只要至少能看1张主委托，就必须承接。",
-          "source": "R4"
         }
       ]
     },
@@ -389,19 +344,9 @@
       "shifuTextZh": "获得4铜钱。",
       "clarifications": [
         {
-          "en": "The Canal Wharf is uncapped at every player count.",
-          "zh": "漕运码头在任何人数下都不限工位。",
-          "source": "L153"
-        },
-        {
           "en": "You may not pass during the Work Phase. The Canal Wharf has no capacity limit or resource cost, so it is always a legal placement for an available worker.",
           "zh": "派工阶段不能跳过。漕运码头没有容量限制，也不需要资源，所以可派工人总是可以派往那里。",
           "source": "L143"
-        },
-        {
-          "en": "The supply of Coins is unlimited.",
-          "zh": "铜钱的公共供应没有上限。",
-          "source": "L502"
         }
       ]
     },
@@ -442,11 +387,6 @@
           "source": "L154 · L100"
         },
         {
-          "en": "Capacities are absolute: no worker, including the Shifu, may be placed at a location whose spaces are all occupied.",
-          "zh": "容量是绝对上限：工位全部被占满后，任何工人（包括师傅）都不能再派往这里。",
-          "source": "L140"
-        },
-        {
           "en": "You may place a worker only if you can perform at least 1 instance of the main action: pay the Coin cost while at Recognition 0, 1 or 2.",
           "zh": "只有当你至少能执行1次主行动时，才可以派工到这里：声望为0、1或2，且付得起铜钱。",
           "source": "L142"
@@ -455,16 +395,6 @@
           "en": "Senior Apprentice never applies at the Magistrate's Hall.",
           "zh": "高徒不适用于州衙。",
           "source": "R12"
-        },
-        {
-          "en": "Imperial Recognition may be advanced by Crown icons on completed Orders or by paying at the Magistrate's Hall. The Magistrate's Hall cannot advance you to Recognition 4.",
-          "zh": "御府声望可以通过已完成委托上的御令推进，也可以通过在州衙付费推进。州衙不能把你推进到声望4。",
-          "source": "L427"
-        },
-        {
-          "en": "Imperial Grant, Imperial Kiln, Imperial Priority token and Imperial Audience are each gained only once.",
-          "zh": "御赐、御窑、御烧优先标与御前召见各只能获得一次。",
-          "source": "L440"
         }
       ]
     }

@@ -47,7 +47,6 @@ export function TechSlots({ playerId }: TechSlotsProps) {
           <li key={discipline} className={owned.oncePerRound && !owned.ready ? "tslot tslot--used" : "tslot"} style={style} data-discipline={discipline} data-tech-id={owned.techId}>
             <RulesDetail
               subject={{ kind: "tech", id: owned.techId }}
-              ownerId={playerId}
               className="tslot-detail"
               trigger={
                 <span className="tslot-face">
