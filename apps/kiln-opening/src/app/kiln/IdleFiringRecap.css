@@ -1,85 +1,65 @@
-/* Idle firing stage between firings (wireframe `idleStage`, `.idle`): the last firing's recap. */
+/* The Kiln section's strip between firings: this round's Kiln Die and the Fire discard button,
+   with the discard shown right below when opened (owner review, 2026-10-17; D4). */
 @layer components {
-  .recap {
+  .kstrip {
     min-width: 0;
+    max-width: 56rem;
     border: 1px solid var(--line);
-    border-radius: var(--r-xl);
+    border-radius: var(--r-lg);
     background: var(--surface);
   }
 
-  /* No overflow clipping (ceramic details open from the recap); the banner keeps the radius. */
-  .recap-banner {
-    border-radius: calc(var(--r-xl) - 1px) calc(var(--r-xl) - 1px) 0 0;
+  .kstrip-bar {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
+    justify-content: space-between;
     gap: var(--sp-3) var(--sp-6);
-    padding: var(--sp-4) var(--sp-6);
-    border-bottom: 1px solid var(--line-2);
-    background: var(--d-firing-pale);
+    min-width: 0;
+    padding: var(--sp-3) var(--sp-5);
   }
 
-  .recap-heading {
-    margin: 0;
-    font-size: var(--fs-16);
-  }
-
-  .recap-die {
+  .kstrip-die {
     display: inline-flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: var(--sp-3);
+    gap: var(--sp-3) var(--sp-4);
+    min-width: 0;
+    margin: 0;
+    font-size: var(--fs-13);
+    color: var(--ink-2);
+  }
+
+  .kstrip-die-piece {
+    display: inline-flex;
+  }
+
+  .kstrip-die-none {
     font-size: var(--fs-12);
-    color: var(--ink-2);
   }
 
-  .recap-discard {
-    margin-inline-start: auto;
-  }
-
-  .recap-body {
-    display: grid;
-    gap: var(--sp-4);
-    padding: var(--sp-5) var(--sp-6);
-  }
-
-  .recap-last {
-    display: grid;
+  .kstrip-discard {
     gap: var(--sp-3);
+    max-width: 100%;
   }
 
-  .recap-title {
-    margin: 0;
-    font-size: var(--fs-14);
+  .kstrip-caret {
+    font-size: var(--fs-12);
+    line-height: 1;
   }
 
-  .recap-line {
+  .kstrip-panel {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--sp-2);
-    margin: 0;
-    font-size: var(--fs-13);
-    color: var(--ink-2);
+    gap: var(--sp-3) var(--sp-4);
+    min-width: 0;
+    padding: var(--sp-4) var(--sp-5);
+    border-top: 1px solid var(--line-2);
   }
 
-  .recap-line strong {
-    color: var(--ink);
-  }
-
-  .recap-cers {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    gap: var(--sp-4) var(--sp-5);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .recap-none,
-  .recap-skipped {
-    margin: 0;
-    font-size: var(--fs-13);
+  .kstrip-order {
+    font-size: var(--fs-12);
     color: var(--ink-2);
   }
 }

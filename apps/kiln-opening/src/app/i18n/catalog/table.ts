@@ -1,8 +1,8 @@
 import { defineNamespace } from "../defineNamespace.ts";
 
 /**
- * `table` namespace: central board, Shared Kiln strip, Order display, hands, Techs, Recognition
- * track and the D10 rules details. Owned by B2 (UI_V1.6.1_ARCHITECTURE §4.2).
+ * `table` namespace: central board, Shared Kiln strip, Order display, the viewer's hand, Techs,
+ * Recognition track and the D10 rules details. Owned by B2 (UI_V1.6.1_ARCHITECTURE §4.2).
  *
  * Numbers are placeholders (§5 gap 19). Chinese follows the glossary (D6): 委托榜, 主委托牌堆,
  * 启用／停用窑位, 御府声望, 技艺, 门类, 牌面费用, 业主裁定, 规则修订; full-width punctuation and
@@ -16,7 +16,6 @@ export const table = defineNamespace({
     "location.noLimit": "No limit",
     "location.here": "{n} here",
     "location.recognitionOnly": "Recognition {from}–{to} only",
-    "location.fullRules": "Full rules",
     "location.placeHeading": "Place:",
     "location.placeAt": "Place {worker} at {location}",
     "location.cantPlace": "Can’t place here",
@@ -24,7 +23,7 @@ export const table = defineNamespace({
 
     // Shared Kiln strip (wireframe `kilnMini`).
     "kilnMini.title": "Shared Kiln",
-    "kilnMini.layout": "{active} active ({zones}) · {covered} covered · {empty} empty",
+    "kilnMini.layout": "{active} spaces ({zones}) · {empty} empty",
     "kilnMini.discard": "Fire discard (open)",
     "kilnMini.discardNone": "none yet",
     "kilnMini.open": "Open Kiln",
@@ -48,7 +47,8 @@ export const table = defineNamespace({
     "order.state.discard": "Discard",
     "order.pick": "{state}: {order}",
 
-    // The viewer's hand, private looks and public hands (wireframe `handRow`, `handsPublic`).
+    // The viewer's hand and private looks (wireframe `handRow`). The public-hands block was
+    // removed in the owner review of 2026-10-17: the seat chips show every hand count.
     "hand.title": "Your hand",
     "hand.held": "{n}/{limit} held",
     "hand.overLimit": "Over the limit: trimmed at Cleanup",
@@ -56,10 +56,6 @@ export const table = defineNamespace({
     "hand.empty": "No Orders in hand",
     "look.commission": "Top {n} of the Main deck",
     "look.colourSamples": "{tech}: top {n} of the Main deck",
-    "hands.title": "Hands: counts are public, cards are not",
-    "hands.count": "{n}/{limit}",
-    "hands.player": "{name}: {n} of {limit} Orders",
-    "hands.looking": { one: "{name} is looking at {n} Order", other: "{name} is looking at {n} Orders" },
 
     // Finished ceramics in the Order Phase (wireframe `secOrders` orders branch).
     "finished.title": "Your Finished ceramics",
@@ -73,6 +69,12 @@ export const table = defineNamespace({
     "techs.deck": "deck {n}",
     "techs.none": "No face-up Tech",
     "techs.looking": { one: "{name} is looking at {n} Tech", other: "{name} is looking at {n} Techs" },
+    // The Guild Hall chooser on the Tech display (owner review, 2026-10-17).
+    "techs.chooseBuy": "{worker} at the {location}: choose a face-up Tech to buy",
+    "techs.chooseInspect": "{worker} at the {location}: choose a discipline and inspect the top of its deck",
+    "techs.inspect": "Inspect the deck",
+    "techs.inspectLabel": "Inspect the deck: {discipline} (only you see the cards)",
+    "techs.price": "{printed} → {price}",
 
     // Imperial Recognition track (wireframe `recognitionTrack`).
     "recognition.title": "Imperial Recognition",
@@ -92,14 +94,13 @@ export const table = defineNamespace({
     "location.noLimit": "不限",
     "location.here": "已派{n}名",
     "location.recognitionOnly": "仅限御府声望{from}–{to}",
-    "location.fullRules": "完整规则",
     "location.placeHeading": "派工：",
     "location.placeAt": "派{worker}到{location}",
     "location.cantPlace": "不能派",
     "location.occupants": "{location}的工人",
 
     "kilnMini.title": "共窑",
-    "kilnMini.layout": "启用{active}格（{zones}）· 停用{covered}格 · 空{empty}格",
+    "kilnMini.layout": "{active}个窑位（{zones}）· 空{empty}个",
     "kilnMini.discard": "窑火弃牌堆（公开）",
     "kilnMini.discardNone": "暂无",
     "kilnMini.open": "查看窑",
@@ -128,10 +129,6 @@ export const table = defineNamespace({
     "hand.empty": "手中暂无委托",
     "look.commission": "主委托牌堆顶{n}张",
     "look.colourSamples": "{tech}：主委托牌堆顶{n}张",
-    "hands.title": "委托手牌：张数公开，牌面保密",
-    "hands.count": "{n}/{limit}",
-    "hands.player": "{name}：持有{n}／{limit}张委托",
-    "hands.looking": "{name}正在查看{n}张委托",
 
     "finished.title": "你的成器",
     "finished.none": "暂无成器",
@@ -143,6 +140,11 @@ export const table = defineNamespace({
     "techs.deck": "牌堆{n}张",
     "techs.none": "暂无公开技艺",
     "techs.looking": "{name}正在查看{n}张技艺",
+    "techs.chooseBuy": "派{worker}到{location}：选择要习得的公开技艺",
+    "techs.chooseInspect": "派{worker}到{location}：选择一个门类，查看其牌堆顶",
+    "techs.inspect": "查看牌堆顶",
+    "techs.inspectLabel": "查看牌堆顶：{discipline}（仅你可见）",
+    "techs.price": "{printed} → {price}",
 
     "recognition.title": "御府声望",
     "recognition.range": "{from}–{to}",

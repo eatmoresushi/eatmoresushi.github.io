@@ -107,7 +107,7 @@ describe("work draft: worker, location and per-location sub-drafts", () => {
     expect(draft.workerKey).toBeNull();
     expect(draft.locationId).toBeNull();
     expect(workDraft.build(draft, c.model, c.engine)).toBeNull();
-    expect(sentences(WINDOWS.work, draft, c)[0]).toBe("Choose a worker and an open location.");
+    expect(sentences(WINDOWS.work, draft, c)[0]).toBe("Place a worker on an open action space.");
   });
 
   it("pre-selects the only worker kind left, but not a location among several", () => {

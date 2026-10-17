@@ -1,7 +1,8 @@
 /**
  * Table components (B2; UI_V1.6.1_ARCHITECTURE §9.2 `table/`): central board and location cards,
- * the Shared Kiln strip, the Main Order display, the viewer's private look and hand, the public
- * hands, the Finished ceramics strip, the Tech display and the Recognition track.
+ * the Shared Kiln strip, the Main Order display, the viewer's private look and hand, the Finished
+ * ceramics strip, the Tech display and the Recognition track. (The public-hands block was removed
+ * in the owner review of 2026-10-17; `shell/world_sections.test.tsx` checks it stays gone.)
  *
  * Fixtures render through the real hooks (`renderComponent`) in English and Chinese. Table
  * targets come from test-only window adapters (`tableWindows.tsx`) built on engine selectors,
@@ -14,23 +15,26 @@ import { describe, expect, it } from "vitest";
 import {
   IMPERIAL_TRACK,
   completableOrders,
+  kilnLayout,
   orderMatchOptions,
   placementOptions,
   shortTextSegments,
 } from "../../../../src/game/index.ts";
-import type { CentralLocationId } from "../../../../src/game/index.ts";
+import type { CentralLocationId, LocationId } from "../../../../src/game/index.ts";
+import { guildOptions } from "../../../../src/game/index.ts";
+import { WINDOWS } from "../../../../src/app/decision/windows.ts";
+import { workDraft } from "../../../../src/app/decision/work/workDraft.ts";
 import { disciplineName, locationName, recognitionMilestones, techText } from "../../../../src/app/i18n/content.ts";
 import { errorTextOptions, ruleErrorText } from "../../../../src/app/i18n/errors.ts";
 import { createTranslator } from "../../../../src/app/i18n/translator.ts";
 import { FixtureGameSource } from "../../../../src/app/session/fixtureSource.ts";
-import { gameModelOf } from "../../../../src/app/state/model.ts";
+import { buildGameModel, engineViewOf, gameModelOf } from "../../../../src/app/state/model.ts";
 import { CentralBoard } from "../../../../src/app/table/CentralBoard.tsx";
 import { FinishedCeramicsStrip } from "../../../../src/app/table/FinishedCeramicsStrip.tsx";
 import { HandRow } from "../../../../src/app/table/HandRow.tsx";
 import { KilnMini } from "../../../../src/app/table/KilnMini.tsx";
 import { LookedOrders } from "../../../../src/app/table/LookedOrders.tsx";
 import { OrderDisplay } from "../../../../src/app/table/OrderDisplay.tsx";
-import { PublicHands } from "../../../../src/app/table/PublicHands.tsx";
 import { RecognitionTrack } from "../../../../src/app/table/RecognitionTrack.tsx";
 import { TechDisplay } from "../../../../src/app/table/TechDisplay.tsx";
 import { tableCeramics } from "../../../../src/app/table/tableData.ts";
@@ -91,6 +95,17 @@ describe("CentralBoard and LocationCard", () => {
     // The Canal Wharf has no limit.
     expect(visibleText(card(html, "canal_wharf"))).toContain("No limit");
     expect(view.game.playerCount).toBe(2);
+  });
+
+  it("opens no rules details from an action space card: no Full rules link (owner review, 2026-10-17)", () => {
+    for (const locale of ["en", "zh-CN"] as const) {
+      const html = render("m1_work_phase_r2_3p", <CentralBoard />, { locale });
+      expect(html).not.toContain("kit-detail-trigger");
+      expect(html).not.toContain("data-rules-detail");
+      expect(textOf(html)).not.toContain(locale === "en" ? "Full rules" : "完整规则");
+      // The one-line effects stay, as plain text.
+      expect(card(html, "canal_wharf")).toMatch(/<p class="loc-fx">/);
+    }
   });
 
   it("renders the one-line effects in English and Chinese from the location summaries", () => {
@@ -166,29 +181,54 @@ describe("CentralBoard and LocationCard", () => {
 // ── Shared Kiln strip ─────────────────────────────────────────────────────────────────────
 
 describe("KilnMini", () => {
-  it("summarises the 2-player cover (2-1-1), the Kiln Die and the open Fire discard (m5)", () => {
+  /** The glyph's cells by D8 row, top to bottom: the space IDs each row draws. */
+  function glyphRows(html: string): Array<{ zone: string; spaceIds: string[] }> {
+    return [...html.matchAll(/kglyph-row--(low|middle|high)">(.*?)<\/span>/g)].map((match) => ({
+      zone: match[1] ?? "",
+      spaceIds: [...(match[2] ?? "").matchAll(/data-space-id="([^"]+)"/g)].map((cell) => cell[1] ?? ""),
+    }));
+  }
+
+  it("summarises the 2-player kiln (2-1-1), the Kiln Die and the open Fire discard, naming no covered space (m5)", () => {
     const html = render("m5_two_player_board_2p", <KilnMini />);
     const view = viewOf("m5_two_player_board_2p");
     const text = textOf(html);
-    expect(text).toContain("4 active (2-1-1) · 4 covered ·");
+    expect(text).toContain("4 spaces (2-1-1) ·");
+    expect(text).not.toMatch(/covered/i);
     expect(text).toContain(`Kiln Die: ${view.game.kilnDie?.value ?? ""}`);
     expect(text).toContain("Fire discard (open)");
     for (const value of view.game.fireDiscard) expect(html).toContain(`data-fire="${value}"`);
     expect(html).not.toMatch(/cards? (left|remaining)|left in the deck/i);
     expect(html).toContain("Open Kiln");
+    expect(textOf(render("m5_two_player_board_2p", <KilnMini />, { locale: "zh-CN" }))).not.toMatch(/停用|盖/);
   });
 
-  it("draws the glyph Low at the top (2 spaces), then Middle, then High (D8)", () => {
-    const html = render("m1_work_phase_r2_3p", <KilnMini />);
-    const rows = [...html.matchAll(/kglyph-row--(low|middle|high)/g)].map((match) => match[1]);
-    expect(rows).toEqual(["low", "middle", "high"]);
-    const low = /kglyph-row--low">(.*?)<\/span>/.exec(html)?.[1] ?? "";
-    expect(low.match(/<i /g)).toHaveLength(2);
-    expect(textOf(render("m1_work_phase_r2_3p", <KilnMini />, { locale: "zh-CN" }))).toContain("启用6格（2-2-2）· 停用2格");
+  // Owner review 2026-10-17: covered spaces are not drawn at all; the glyph shows exactly the
+  // engine's active spaces (`kilnLayout`), each D8 row centred: 2p 1/1/2, 3p 2/2/2, 4p 2/3/3.
+  it.each([
+    ["m5_two_player_board_2p", [1, 1, 2], "4 spaces (2-1-1)", "4个窑位（2-1-1）"],
+    ["m1_work_phase_r2_3p", [2, 2, 2], "6 spaces (2-2-2)", "6个窑位（2-2-2）"],
+    ["m2_commission_market_look_r3_4p", [2, 3, 3], "8 spaces (3-3-2)", "8个窑位（3-3-2）"],
+  ] as const)("draws only the active spaces, Low at the top, then Middle, then High (D8): %s", (id, counts, en, zh) => {
+    const html = render(id, <KilnMini />);
+    const rows = glyphRows(html);
+    expect(rows.map((row) => row.zone)).toEqual(["low", "middle", "high"]);
+    expect(rows.map((row) => row.spaceIds.length)).toEqual(counts);
+    const layout = kilnLayout(viewOf(id));
+    expect(rows.flatMap((row) => row.spaceIds).sort()).toEqual([...layout.activeSpaceIds].sort());
+    for (const covered of layout.coveredSpaceIds) expect(html).not.toContain(`data-space-id="${covered}"`);
+    expect(html).not.toContain("kglyph-cell--covered");
+    expect(textOf(html)).toContain(en);
+    expect(textOf(render(id, <KilnMini />, { locale: "zh-CN" }))).toContain(zh);
   });
 
   it("gives way to the firing stage during the Firing Phase (D3)", () => {
     expect(render("m3_heat_marker_step_3p", <KilnMini />)).toBe("");
+  });
+
+  it("keeps no hatched covered-cell style in its stylesheet", () => {
+    const css = readFileSync(join(ROOT, "src/app/table/KilnMini.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(css).not.toMatch(/covered/);
   });
 });
 
@@ -253,7 +293,7 @@ describe("LookedOrders", () => {
   });
 });
 
-describe("HandRow and PublicHands", () => {
+describe("HandRow", () => {
   it("shows the viewer's hand with its limit, privately, and warns when Cleanup will trim (m2)", () => {
     const html = render("m2_commission_market_look_r3_4p", <HandRow />);
     const hand = viewOf("m2_commission_market_look_r3_4p").own?.orderHand ?? [];
@@ -268,31 +308,6 @@ describe("HandRow and PublicHands", () => {
     const trim = textOf(render("m7_cleanup_hand_limit_3p", <HandRow />));
     expect(trim).not.toContain("Over the limit");
     expect(trim).not.toContain("No trim in the final round");
-  });
-
-  it("shows others' hands as counts only, with who is looking (m2)", () => {
-    const id = "m2_commission_market_look_r3_4p";
-    const html = render(id, <PublicHands />);
-    const game = viewOf(id).game;
-    for (const playerId of game.playerOrder) {
-      expect(html).toContain(`data-player-id="${playerId}"`);
-      expect(textOf(html)).toContain(`${game.counts.orderHands[playerId] ?? 0}/`);
-    }
-    expect(textOf(html)).toContain("Zhao is looking at 3 Orders");
-    expect(html).not.toMatch(/data-order-id/);
-    for (const secret of secretIds(id)) expect(html).not.toMatch(new RegExp(`\\b${secret}\\b`));
-    expect(textOf(render(id, <PublicHands />, { locale: "zh-CN" }))).toContain("Zhao正在查看3张委托");
-  });
-
-  it("does not call a Guild Hall Shifu inspection a look at Orders (m12; TechDisplay announces it)", () => {
-    const id = "m12_guild_shifu_inspection";
-    const look = viewOf(id).game.counts.pendingLook;
-    expect(look?.kind).toBe("guild_inspection");
-    for (const locale of ["en", "zh-CN"] as const) {
-      const html = render(id, <PublicHands />, { locale });
-      expect(html).not.toContain("hands-looking");
-      expect(textOf(html)).not.toMatch(locale === "en" ? /looking at/ : /正在查看/);
-    }
   });
 
   it("renders nothing of a hand for a spectator", () => {
@@ -392,6 +407,67 @@ describe("TechDisplay", () => {
   });
 });
 
+/** The real work draft after a table Place shortcut, as the pane's draft holds it. */
+function placed(id: string, locationId: LocationId, workerKey: string): unknown {
+  const view = viewOf(id);
+  const model = buildGameModel(view, []);
+  const engine = engineViewOf(view);
+  const initial = workDraft.initial(model, engine);
+  const action = WINDOWS.work.table?.act(initial as never, { type: "place", locationId, workerKey }, model, engine);
+  if (action === null || action === undefined) throw new Error(`${id}: cannot place ${workerKey} at ${locationId}`);
+  return workDraft.reduce(initial, action as never, model, engine);
+}
+
+describe("TechDisplay: the Guild Hall chooser (owner review, 2026-10-17)", () => {
+  const real = (id: string, draft: unknown, locale: "en" | "zh-CN" = "en") => renderComponent(fixtureSource(id), <TechDisplay />, { registry: WINDOWS, draft, locale });
+
+  it("is an ordinary display until a worker is placed at the Guild Hall", () => {
+    const html = renderComponent(fixtureSource("m5_two_player_board_2p"), <TechDisplay />, { registry: WINDOWS });
+    expect(html).not.toContain("data-tech-chooser");
+    expect(html).not.toMatch(/data-act="(tech|inspect)"/);
+    // Every tile opens its rules details (D10).
+    expect((html.match(/kit-detail-trigger/g) ?? []).length).toBe(Object.values(viewOf("m5_two_player_board_2p").game.techDisplay).flat().length);
+    expect(real("m5_two_player_board_2p", placed("m5_two_player_board_2p", "canal_wharf", "apprentice"))).not.toContain("data-tech-chooser");
+  });
+
+  it("buy (Apprentice): every face-up Tech is a toggle; one it cannot buy is greyed out with the engine's reason", () => {
+    const id = "m5_two_player_board_2p";
+    const html = real(id, placed(id, "guild_hall", "apprentice"));
+    expect(html).toMatch(/<p id="[^"]+" class="techs-choose" tabindex="-1" data-tech-chooser="">Apprentice at the Guild Hall: choose a face-up Tech to buy<\/p>/);
+    expect(html).toMatch(/<div class="techs" role="group" aria-labelledby="[^"]+">/);
+    for (const option of guildOptions(viewOf(id), "apprentice").faceUp) {
+      const button = new RegExp(`<button type="button" class="tech-pick" data-act="tech" data-tech-id="${option.techId}" aria-pressed="false"${option.legal ? "" : ' aria-disabled="true"'} aria-labelledby="[^"]+" aria-describedby="[^"]+"`);
+      expect(html, option.techId).toMatch(button);
+      const tile = html.slice(html.lastIndexOf("<div", html.indexOf(`data-act="tech" data-tech-id="${option.techId}"`)));
+      if (!option.legal) {
+        expect(tile.slice(0, 80)).toContain("tech--unavailable");
+        expect(visibleText(tile.slice(0, tile.indexOf("</li>")))).toMatch(/You already own|Not enough|at most/);
+      }
+    }
+    // The chooser tiles open no rules details.
+    expect(html).not.toContain("kit-detail-trigger");
+    expect(textOf(real(id, placed(id, "guild_hall", "apprentice"), "zh-CN"))).toContain("派学徒到陶工行：选择要习得的公开技艺");
+  });
+
+  it("inspect (Shifu): each discipline offers its deck; the Techs keep their rules details", () => {
+    const id = "w-before-the-worker-action-kiln-furniture-inverted-firing-targets-setters-marks-senior-apprentice";
+    const html = real(id, placed(id, "guild_hall", "shifu"));
+    expect(textOf(html)).toContain("Shifu at the Guild Hall: choose a discipline and inspect the top of its deck");
+    const inspect = [...html.matchAll(/<button type="button" class="disc-inspect" data-act="inspect" data-discipline="([a-z_]+)" aria-pressed="false" aria-label="([^"]+)">([^<]+)<\/button>/g)];
+    expect(inspect.map((match) => match[1])).toEqual(["workshop", "glazing_loading", "firing"]);
+    expect(inspect.map((match) => decodeEntities(match[2]!))).toEqual(["workshop", "glazing_loading", "firing"].map((discipline) => `Inspect the deck: ${disciplineName(discipline as never, "en")} (only you see the cards)`));
+    expect(inspect.every((match) => match[3] === "Inspect the deck")).toBe(true);
+    expect(html).not.toContain('data-act="tech"');
+    expect(html).toContain("kit-detail-trigger");
+    expect(textOf(real(id, placed(id, "guild_hall", "shifu"), "zh-CN"))).toContain("查看牌堆顶");
+  });
+});
+
+/** `&amp;` and friends back to text. */
+function decodeEntities(text: string): string {
+  return text.replace(/&amp;/g, "&").replace(/&#x27;/g, "'").replace(/&quot;/g, '"');
+}
+
 describe("TechDisplay: Guild Hall Shifu inspection", () => {
   it("says who is looking at how many Techs, never which (m12)", () => {
     const id = "m12_guild_shifu_inspection";
@@ -447,7 +523,6 @@ describe("no internal IDs and no lock wording in table text", () => {
           <OrderDisplay />
           <HandRow />
           <FinishedCeramicsStrip />
-          <PublicHands />
           <RecognitionTrack />
           <TechDisplay />
         </>

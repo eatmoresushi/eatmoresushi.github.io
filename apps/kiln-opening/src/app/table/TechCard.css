@@ -59,4 +59,64 @@
   .tech:hover {
     border-color: var(--celadon);
   }
+
+  /* The Guild Hall chooser (owner review, 2026-10-17): the whole tile is a toggle button. */
+  .tech-pick {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    min-height: var(--target-min);
+    padding: 0;
+    border: 0;
+    border-radius: inherit;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .tech--choice {
+    border-color: var(--teal);
+  }
+
+  .tech-why {
+    margin: 0;
+    padding: 0 var(--sp-4) var(--sp-3);
+    color: var(--bad-ink);
+    font-size: var(--fs-meta);
+  }
+}
+
+@layer states {
+  .tech--chosen {
+    border-color: var(--teal);
+    box-shadow: inset 0 0 0 2px var(--teal);
+    background: var(--teal-pale);
+  }
+
+  /* Not buyable with this worker: greyed out (dashed, paper, no discipline colour), still
+     focusable, with its reason below. --ink-2 keeps the text readable on --paper-2. */
+  .tech--unavailable {
+    border-style: dashed;
+    border-color: var(--line-2);
+    border-top-color: var(--line-2);
+    background: var(--paper-2);
+  }
+
+  .tech--unavailable .tech-pick {
+    cursor: not-allowed;
+  }
+
+  .tech--unavailable .tech-name,
+  .tech--unavailable .tech-cost,
+  .tech--unavailable .tech-short,
+  .tech--unavailable .tech-short strong {
+    color: var(--ink-2);
+    font-weight: 600;
+  }
+
+  .tech--unavailable:hover {
+    border-color: var(--line-2);
+  }
 }

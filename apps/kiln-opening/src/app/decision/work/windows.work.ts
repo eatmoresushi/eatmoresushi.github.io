@@ -5,8 +5,10 @@
  * Each spec names its component, its draft model, its title (pane heading and phone sheet strip),
  * the ConfirmBar alternative where the window has one (Decline, End turn, Stop reserving), and a
  * table adapter (§3.5) where the table drives the draft:
- * - **work:** Place shortcuts and unavailable reasons on the location cards (`placeTargets`, every
- *   entry legal or not, CR B2-3; `activePlacement`); Glaze &
+ * - **work:** Place shortcuts and unavailable reasons on the location cards and the personal
+ *   spaces (`placeTargets`, every entry legal or not, CR B2-3; `activePlacement`) — since the owner
+ *   review of 2026-10-17 the only place a worker is placed from; the Guild Hall chooser on the
+ *   Tech display (`techChooser`: a face-up Tech to buy, or a discipline to inspect); Glaze &
  *   Load destinations on the kiln (`kilnTargets`) with pending chips; display slots for the
  *   Commission Market's first reservation (`orderTargets`, `slot:<i>`); the chosen vessels
  *   highlighted;
@@ -39,6 +41,7 @@ import { placements } from "./context.ts";
 import { GuildInspection } from "./GuildInspection.tsx";
 import { guildInspectionDraft } from "./GuildInspection.draft.ts";
 import { kilnTargetsOf, pendingLoads } from "./locations/GlazeLoad.draft.ts";
+import { techChooserOf } from "./locations/GuildHall.draft.ts";
 import type { GlazeLoadDraft } from "./locations/GlazeLoad.draft.ts";
 import type { CommissionMarketDraft } from "./locations/CommissionMarket.draft.ts";
 import { commissionMarketDraft } from "./locations/CommissionMarket.draft.ts";
@@ -107,6 +110,9 @@ export const WORK_WINDOWS: { readonly [K in WorkWindowKind]: WindowSpecFor<K> } 
           for (const load of sub.loads) if (load.ceramicId !== null) highlighted.add(load.ceramicId);
           selection = { ...selection, kilnTargets: kilnTargetsOf(sub, context), pendingCeramics: pendingLoads(sub) };
         }
+        if (context !== null && draft.locationId === "guild_hall") {
+          selection = { ...selection, techChooser: techChooserOf(draft.perLocation.guild_hall, context) };
+        }
         if (context !== null && draft.locationId === "commission_market") {
           const sub: CommissionMarketDraft = draft.perLocation.commission_market;
           selection = { ...selection, orderTargets: slotTargets(commissionMarketDraft.options(sub, context).slots, sub.first) };
@@ -127,6 +133,12 @@ export const WORK_WINDOWS: { readonly [K in WorkWindowKind]: WindowSpecFor<K> } 
           case "order":
             return draft.mode === "place" && draft.locationId === "commission_market" && action.key.startsWith("slot:")
               ? { type: "sub", locationId: "commission_market", action: { type: "first", first: action.key as `slot:${number}` } }
+              : null;
+          case "tech":
+            return draft.mode === "place" && draft.locationId === "guild_hall" ? { type: "sub", locationId: "guild_hall", action: { type: "tech", techId: action.techId } } : null;
+          case "inspect":
+            return draft.mode === "place" && draft.locationId === "guild_hall"
+              ? { type: "sub", locationId: "guild_hall", action: { type: "discipline", discipline: action.discipline } }
               : null;
         }
       },

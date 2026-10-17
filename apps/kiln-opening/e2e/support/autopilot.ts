@@ -18,6 +18,15 @@
  * `(seed, tick)`, so a run is reproducible; they vary the forms: any enabled radio, checkbox,
  * stepper or reorder button of the form's fields may be chosen, Confirm is pressed once enabled
  * with probability `confirmChance`, and the alternative with probability `altChance`.
+ *
+ * **Table targets.** Workers are placed from the table (owner review, 2026-10-17): the pane lists
+ * no workers or locations. So the work turn's Place shortcuts (`[data-act="place"]`, on the
+ * location cards and the viewer's own personal spaces) and the Guild Hall's targets on the Tech
+ * display (`[data-act="tech"]`, `[data-act="inspect"]`) are candidates too, wherever they are on
+ * the page; a target already pressed, unavailable (`aria-disabled`) or a dev tool (`data-dev`) is
+ * not. The pane's own navigation buttons (`data-goto`: "Go to the Central Action Board") move
+ * nothing in the game and are never picked. On a phone a table target may sit in another
+ * section: the caller brings it into view (`e2e/full_game.spec.ts`).
  */
 
 export interface AutopilotArgs {
@@ -31,7 +40,8 @@ export interface AutopilotArgs {
   /**
    * Only choices inside this element of the form's fields (a CSS selector), for a steered driver
    * that has already made the choices outside it (e.g. `.b4-sub-region`: the chosen location's
-   * sub-editor). Confirm and the alternative are still the form's own.
+   * sub-editor). Confirm and the alternative are still the form's own; of the table targets only
+   * the Tech display's (the Guild Hall's sub-editor choice) are offered, never a Place shortcut.
    */
   within?: string;
 }
@@ -82,11 +92,26 @@ export function autopilotPick(args: AutopilotArgs): AutopilotPick {
     if (button.hasAttribute("data-action") || button.closest(".kit-detail") !== null || button.classList.contains("kit-detail-close")) continue;
     // Dev tools (the canonical-move button sits at the end of the scroll area) are never a player's choice.
     if (button.hasAttribute("data-dev")) continue;
+    // The pane's way to the table ("Go to the Central Action Board") changes nothing in the game.
+    if (button.hasAttribute("data-goto")) continue;
     if (button.type === "submit") continue;
+    candidates.push(button);
+  }
+  // The table targets of the open window: Place shortcuts, the Guild Hall's Techs and decks.
+  const tableTargets = args.within === undefined ? '[data-act="place"], [data-act="tech"], [data-act="inspect"]' : '[data-act="tech"], [data-act="inspect"]';
+  for (const button of Array.from(document.querySelectorAll<HTMLButtonElement>(tableTargets))) {
+    if (form.contains(button) || !enabled(button) || !shown(button)) continue;
+    if (button.hasAttribute("data-dev") || button.getAttribute("aria-pressed") === "true") continue;
     candidates.push(button);
   }
   const describeOf = (element: HTMLElement): string => {
     if (element instanceof HTMLInputElement) return `${element.type} ${element.name}=${element.value}${element.checked ? " (on)" : ""}`;
+    const act = element.getAttribute("data-act");
+    if (act !== null) {
+      const what = element.getAttribute("data-location-id") ?? element.getAttribute("data-tech-id") ?? element.getAttribute("data-discipline") ?? "";
+      const worker = element.getAttribute("data-worker");
+      return `table ${act} ${what}${worker === null ? "" : ` ${worker}`}`;
+    }
     return `button ${element.getAttribute("aria-label") ?? element.textContent?.trim() ?? ""}`;
   };
   if (enabled(confirm) && random() < args.confirmChance) return mark(confirm, "confirm", "Confirm");

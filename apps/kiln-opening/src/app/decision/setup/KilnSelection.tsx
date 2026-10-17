@@ -2,9 +2,10 @@
  * KilnSelection (UI_V1.6.1_ARCHITECTURE §3.4 `kiln_selection`). Owner: B4.
  *
  * The five Kiln Player Boards as radio cards: name, ability name and short text (timing in
- * bold), each opening its rules details (D10); a Kiln another player took is unavailable, with
- * who took it. The prompt says Kilns are chosen in reverse turn order; the window does not list
- * the order (owner review, 2026-10-17): the seat chips already show who is choosing.
+ * bold); a Kiln another player took is unavailable, with who took it. The options carry no
+ * "Full rules" button (owner review, 2026-10-17): the card text is the choice. The prompt says
+ * Kilns are chosen in reverse turn order; the window does not list the order (owner review,
+ * 2026-10-17): the seat chips already show who is choosing.
  */
 import { shortTextSegments } from "../../../game/index.ts";
 import { kilnText } from "../../i18n/content.ts";
@@ -12,7 +13,6 @@ import { useT } from "../../i18n/I18nProvider.tsx";
 import { OptionCard } from "../../kit/OptionCard.tsx";
 import { OptionGroup } from "../../kit/OptionGroup.tsx";
 import { usePlayerName, useDraft, useEngineView, useGame } from "../../state/hooks.ts";
-import { RulesDetail } from "../../rules/RulesDetail.tsx";
 import { kilnSelectionDraft } from "./KilnSelection.draft.ts";
 import type { KilnSelectionAction, KilnSelectionDraft } from "./KilnSelection.draft.ts";
 import "../work/pieces.css";
@@ -54,9 +54,7 @@ export function KilnSelection() {
               }
               disabled={!kiln.available}
               reason={kiln.chosenBy === null ? undefined : t("work.ks.chosenBy", { name: kiln.chosenBy === viewer ? t("work.ks.you") : playerName(kiln.chosenBy) })}
-            >
-              <RulesDetail subject={{ kind: "kiln", id: kiln.kilnId }} />
-            </OptionCard>
+            />
           );
         })}
       </OptionGroup>

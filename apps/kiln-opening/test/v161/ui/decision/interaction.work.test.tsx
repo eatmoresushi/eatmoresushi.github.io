@@ -2,30 +2,44 @@
 /**
  * B4's interaction tier (UI_V1.6.1_ARCHITECTURE §8.1, §9.3): what static markup cannot show.
  * Owner: B4.
- * - Rules details (D10) open on keyboard focus; Escape closes them and returns focus.
- * - The work turn: choosing a worker and a location opens that location's sub-editor as the
- *   sibling region its radio names in `aria-controls`; Confirm sends the placement.
+ * - Workers are placed on the table (owner review, 2026-10-17): a Place shortcut on a location
+ *   card or on the viewer's own personal space chooses worker and location at once and opens the
+ *   chosen placement's sub-editor in the pane; Confirm sends the placement. Illegal entries have
+ *   no shortcut.
+ * - The hint's "Go to" buttons take the view and the focus to the section's heading.
  * - Moving between locations keeps each location's sub-draft (§3.5 `perLocation`).
- * - A Place shortcut on the table changes the pane's draft synchronously (§3.5).
+ * - The Guild Hall: placing there takes the player to the Tech display (scroll on desktop, the
+ *   section and a collapsed sheet on phones; focus on the chooser's prompt), where a face-up Tech
+ *   (Apprentice) or a discipline's deck (Shifu) is chosen; a Tech the worker cannot buy is
+ *   focusable but cannot be chosen, with its reason.
  * - A language switch keeps the draft and re-renders the ConfirmBar sentence.
  * - The Guild Hall inspection's bottom order: Move up / Move down, then Confirm (§8.1).
- * - Kiln selection: a Kiln another player took is focusable but cannot be chosen.
+ * - Kiln selection: no Full rules button; a Kiln another player took is focusable but cannot be
+ *   chosen.
  */
 import { act } from "react";
 import type { ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { LOCATIONS, guildInspectionOptions } from "../../../../src/game/index.ts";
+import { guildInspectionOptions, guildOptions } from "../../../../src/game/index.ts";
+import { PersonalSpaces } from "../../../../src/app/boards/PersonalSpaces.tsx";
 import { DecisionPane } from "../../../../src/app/decision/DecisionPane.tsx";
 import { WINDOWS } from "../../../../src/app/decision/windows.ts";
 import { I18nProvider } from "../../../../src/app/i18n/I18nProvider.tsx";
-import { kilnText } from "../../../../src/app/i18n/content.ts";
+import { techText } from "../../../../src/app/i18n/content.ts";
 import { LanguageToggle } from "../../../../src/app/kit/LanguageToggle.tsx";
 import { DraftStore } from "../../../../src/app/state/draftStore.ts";
-import { GameProvider, useTableSelection } from "../../../../src/app/state/hooks.ts";
+import { GameProvider, useGame } from "../../../../src/app/state/hooks.ts";
 import { fixedLayoutSource } from "../../../../src/app/state/layoutMode.ts";
+import type { LayoutMode } from "../../../../src/app/state/layoutMode.ts";
 import { UiStore } from "../../../../src/app/state/uiStore.ts";
+import type { UiContext, UiEffects, WorldSectionId } from "../../../../src/app/state/uiStore.ts";
+import { decisionWindow } from "../../../../src/app/state/decisionWindow.ts";
+import { buildGameModel } from "../../../../src/app/state/model.ts";
+import { sectionHeadingId } from "../../../../src/app/shell/sections.ts";
+import { CentralBoard } from "../../../../src/app/table/CentralBoard.tsx";
+import { TechDisplay } from "../../../../src/app/table/TechDisplay.tsx";
 import { ControlledSource } from "../support/controlledSource.ts";
 import { fixture } from "../support/fixtures.ts";
 
@@ -55,17 +69,90 @@ afterEach(() => {
   expect(consoleErrors).toEqual([]);
 });
 
-function mount(source: ControlledSource, element: ReactElement): void {
-  const layout = fixedLayoutSource("desktop");
+interface Mounted {
+  ui: UiStore;
+  scrolled: WorldSectionId[];
+}
+
+function mount(source: ControlledSource, element: ReactElement, layoutMode: LayoutMode = "desktop"): Mounted {
+  const layout = fixedLayoutSource(layoutMode);
+  const scrolled: WorldSectionId[] = [];
+  const effects: UiEffects = { scrollToSection: (section) => scrolled.push(section), applyTheme: () => undefined, storeTheme: () => undefined };
+  const ui = new UiStore({ layout, effects });
   act(() =>
     root.render(
       <I18nProvider defaultLocale="en" strict>
-        <GameProvider source={source} registry={WINDOWS} drafts={new DraftStore()} ui={new UiStore({ layout })} layout={layout} devTools={false}>
+        <GameProvider source={source} registry={WINDOWS} drafts={new DraftStore()} ui={ui} layout={layout} devTools={false}>
           {element}
         </GameProvider>
       </I18nProvider>,
     ),
   );
+  return { ui, scrolled };
+}
+
+/** The viewer's own Form & Decorate and Glaze & Load spaces (their board's personal locations). */
+function OwnSpaces() {
+  const model = useGame();
+  return model.viewerId === null ? null : <PersonalSpaces playerId={model.viewerId} />;
+}
+
+/** The table a work turn is played on: the central locations, the Tech display and the viewer's spaces, beside the pane. */
+function Table() {
+  return (
+    <>
+      <CentralBoard />
+      <OwnSpaces />
+      <TechDisplay />
+      <DecisionPane />
+    </>
+  );
+}
+
+/**
+ * The table laid out as the world's sections are: each part under its section heading (the
+ * focusable `<h2 tabIndex={-1}>` that `WorldSections` renders), the pane after the world.
+ */
+function SectionHeadings() {
+  return (
+    <>
+      <h2 id={sectionHeadingId("table")} tabIndex={-1}>Table</h2>
+      <CentralBoard />
+      <h2 id={sectionHeadingId("progress")} tabIndex={-1}>Recognition &amp; Techs</h2>
+      <TechDisplay />
+      <h2 id={sectionHeadingId("workshops")} tabIndex={-1}>Workshops</h2>
+      <OwnSpaces />
+      <DecisionPane />
+    </>
+  );
+}
+
+/**
+ * The Tab stops after `from` up to and including the first Place shortcut (document order; no
+ * positive tabindex is used). Fails when the pane comes first.
+ */
+function tabPathToPlace(from: HTMLElement): HTMLElement[] {
+  const stops = [...container.querySelectorAll<HTMLElement>("button, input, select, textarea, a[href], [tabindex]")].filter(
+    (element) => element.tabIndex >= 0 && !(element as HTMLButtonElement).disabled && from.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING,
+  );
+  const end = stops.findIndex((element) => element.getAttribute("data-act") === "place");
+  if (end < 0) throw new Error("no Place shortcut after the heading");
+  const path = stops.slice(0, end + 1);
+  expect(path.some((element) => element.closest(".pane") !== null || element.closest("form") !== null)).toBe(false);
+  return path;
+}
+
+/** The UI store's window context for a fixture (its open window and round phase). */
+function fixtureWindow(id: string): UiContext {
+  const view = fixture(id).playerView;
+  return { window: decisionWindow(view), phase: buildGameModel(view, []).roundPhase };
+}
+
+/** Waits for the next animation frame (the Guild Hall's focus move). */
+async function nextFrame(): Promise<void> {
+  await act(async () => {
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+  });
 }
 
 const $ = <E extends Element = HTMLElement>(selector: string): E => {
@@ -82,6 +169,8 @@ function click(target: Element): void {
 
 const radio = (name: string, value: string) => $<HTMLInputElement>(`input[name="${name}"][value="${value}"]`);
 const summary = () => $(".confirm-summary").textContent;
+const placeButton = (locationId: string, worker: string) => $<HTMLButtonElement>(`button[data-act="place"][data-location-id="${locationId}"][data-worker="${worker}"]`);
+const chosen = () => container.querySelector<HTMLElement>('[data-b4="chosen"]');
 
 /** The worker entry ID the engine names for a fixture's Shifu. */
 function shifuId(id: string): string {
@@ -92,107 +181,77 @@ function shifuId(id: string): string {
   return worker.id;
 }
 
-describe("rules details (D10)", () => {
-  it("a location's rules open on keyboard focus and close on Escape, returning focus", () => {
-    mount(new ControlledSource("m1_work_phase_r2_3p"), <DecisionPane />);
-    const trigger = $<HTMLButtonElement>('.rd-piece--button .kit-detail-trigger[aria-label="Full rules: Materials Yard"]');
-    // The panel lives in the kit's body-level layer (CR B2-6, B3-5), named by aria-controls.
-    const panel = document.getElementById(trigger.getAttribute("aria-controls") ?? "")!;
-    expect(panel.querySelector('[data-rules="location"]')).not.toBeNull();
-    expect(panel.hidden).toBe(true);
-    act(() => trigger.focus());
-    expect(trigger.getAttribute("aria-expanded")).toBe("true");
-    expect(panel.hidden).toBe(false);
-    // Both worker effects as the full rule, then the clarifications as plain text (owner review, 2026-10-17).
-    expect([...panel.querySelectorAll(".rd-h")].map((heading) => heading.textContent)).toEqual(["Full rule", ...(LOCATIONS.materials_yard.clarifications.length > 0 ? ["Clarifications"] : [])]);
-    expect(panel.querySelectorAll(".rd-rule")).toHaveLength(2);
-    for (const item of LOCATIONS.materials_yard.clarifications) expect(panel.textContent).toContain(item.en);
-    expect(panel.querySelector("dl")).toBeNull();
-    expect(panel.textContent).not.toMatch(/Source:|Owner ruling/);
-    act(() => {
-      trigger.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
-    });
-    expect(panel.hidden).toBe(true);
-    expect(document.activeElement).toBe(trigger);
+describe("rules details (owner review, 2026-10-17)", () => {
+  it("the work pane and the location cards open no location rules", () => {
+    mount(new ControlledSource("m1_work_phase_r2_3p"), <Table />);
+    expect(container.querySelector('[aria-label="Full rules: Materials Yard"]')).toBeNull();
+    expect(container.querySelector('article[data-location-id] .kit-detail-trigger')).toBeNull();
+    click(placeButton("materials_yard", "shifu"));
+    expect(chosen()?.querySelector(".kit-detail-trigger[aria-label^='Full rules: Materials Yard']")).toBeNull();
   });
 
-  it("a Kiln board's rules open on click and show its full rule, not the short text the option already shows", () => {
+  it("the Kiln options carry no Full rules button; clicking an option chooses it", () => {
     mount(new ControlledSource("m15_kiln_selection"), <DecisionPane />);
-    const trigger = $<HTMLButtonElement>('.rd-piece--button .kit-detail-trigger[aria-label^="Full rules: Ru Kiln"]');
-    click(trigger);
-    const panel = document.getElementById(trigger.getAttribute("aria-controls") ?? "")!;
-    expect(panel.hidden).toBe(false);
-    expect(panel.querySelector('[data-rules="kiln"] .rd-rule')?.textContent).toBe(kilnText("RU", "en").ability);
-    expect(panel.querySelector('[data-rules="kiln"] .rd-short')).toBeNull();
-    expect(panel.querySelector('[data-rules="kiln"] strong')).toBeNull();
-    // Opening the rules never chooses the Kiln.
-    expect(radio("kilnId", "RU").checked).toBe(false);
+    expect(container.querySelector(".kit-detail-trigger")).toBeNull();
+    const free = [...container.querySelectorAll<HTMLInputElement>('input[name="kilnId"]')].find((input) => input.getAttribute("aria-disabled") !== "true");
+    if (free === undefined) throw new Error("no free Kiln");
+    click(free);
+    expect(free.checked).toBe(true);
   });
 });
 
-describe("the work turn", () => {
-  it("worker, then location: the sub-editor opens beside the radio, and Confirm sends the placement", () => {
+describe("the work turn: workers are placed on the table", () => {
+  it("a Place shortcut chooses worker and location; the pane shows the placement and its sub-editor, and Confirm sends it", () => {
     const id = "m1_work_phase_r2_3p";
     const source = new ControlledSource(id);
-    mount(source, <DecisionPane />);
+    mount(source, <Table />);
     expect($('[data-action="confirm"]').getAttribute("aria-disabled")).toBe("true");
-    click(radio("worker", "shifu"));
-    click(radio("locationId", "canal_wharf"));
-    const input = radio("locationId", "canal_wharf");
-    const region = $(`#${CSS.escape(input.getAttribute("aria-controls") ?? "")}`);
-    expect(region.querySelector('[data-location="canal_wharf"]')).not.toBeNull();
-    expect(input.closest("label")?.contains(region)).toBe(false);
+    // The pane offers no worker or location of its own: only the hint, and the way to the table.
+    expect(container.querySelector('form input[name="worker"], form input[name="locationId"]')).toBeNull();
+    expect($('[data-b4="place-hint"]').textContent).toContain("Place a worker on an action space");
+    const shortcut = placeButton("canal_wharf", "shifu");
+    expect(shortcut.getAttribute("aria-label")).toBe("Place Shifu at Canal Wharf");
+    click(shortcut);
+    expect(placeButton("canal_wharf", "shifu").getAttribute("aria-pressed")).toBe("true");
+    expect($('article[data-location-id="canal_wharf"]').className).toContain("loc--chosen");
+    expect(container.querySelector('[data-b4="place-hint"]')).toBeNull();
+    const region = chosen()?.querySelector<HTMLElement>(".b4-sub-region");
+    expect(region?.getAttribute("role")).toBe("group");
+    expect(region?.querySelector('[data-location="canal_wharf"]')).not.toBeNull();
+    expect(chosen()?.querySelector("h3")?.textContent).toBe("Shifu at Canal Wharf");
     expect(summary()).toBe("Place Shifu at Canal Wharf — +4 Coins");
     click($('[data-action="confirm"]'));
     expect(source.submitted).toEqual([{ type: "PLACE_CANAL_WHARF", workerId: shifuId(id) }]);
   });
 
-  it("an unavailable location stays focusable but cannot be chosen", () => {
-    mount(new ControlledSource("m1_work_phase_r2_3p"), <DecisionPane />);
-    click(radio("worker", "shifu"));
-    const guild = radio("locationId", "guild_hall");
-    expect(guild.getAttribute("aria-disabled")).toBe("true");
-    expect(guild.getAttribute("aria-describedby")).not.toBeNull();
-    click(guild);
-    expect(guild.checked).toBe(false);
-    expect(container.querySelector('[data-location="guild_hall"]')).toBeNull();
+  it("a personal space's Place shortcut on the viewer's own board chooses that space", () => {
+    const id = "w-before-the-worker-action-rich-4-player-start";
+    mount(new ControlledSource(id), <Table />);
+    const shortcut = $<HTMLButtonElement>('.pspaces button[data-act="place"][data-location-id="form_decorate"]');
+    click(shortcut);
+    expect(chosen()?.getAttribute("data-location-id")).toBe("form_decorate");
+    expect(chosen()?.querySelector('[data-location="form_decorate"]')).not.toBeNull();
+    expect(chosen()?.textContent).toMatch(/your space \d/);
+  });
+
+  it("an entry the engine refuses has no shortcut; the card gives the reason", () => {
+    mount(new ControlledSource("m1_work_phase_r2_3p"), <Table />);
+    const guild = $('article[data-location-id="guild_hall"]');
+    expect(guild.querySelector('[data-act="place"]')).toBeNull();
+    expect(guild.textContent).toContain("Can’t place here");
+    expect(chosen()).toBeNull();
   });
 
   it("keeps each location's choices while the player looks at another", () => {
-    mount(new ControlledSource("w-before-the-worker-action-rich-4-player-start"), <DecisionPane />);
-    click(radio("worker", "shifu"));
-    click(radio("locationId", "materials_yard"));
+    mount(new ControlledSource("w-before-the-worker-action-rich-4-player-start"), <Table />);
+    click(placeButton("materials_yard", "shifu"));
     click(radio("clay", "1"));
     expect(radio("clay", "1").checked).toBe(true);
-    click(radio("locationId", "canal_wharf"));
+    click(placeButton("canal_wharf", "shifu"));
     expect(container.querySelector('input[name="clay"]')).toBeNull();
-    click(radio("locationId", "materials_yard"));
+    click(placeButton("materials_yard", "shifu"));
     expect(radio("clay", "1").checked).toBe(true);
     expect(summary()).toMatch(/Materials Yard — 1 Clay \+ 3 Wood/);
-  });
-
-  it("a Place shortcut on the table sets worker and location in the pane at once", () => {
-    function PlaceShortcut() {
-      const table = useTableSelection();
-      const entries = table.placeTargets.get("canal_wharf") ?? [];
-      return (
-        <button type="button" data-test-place="" data-active={table.activePlacement?.locationId ?? ""} onClick={() => table.act({ type: "place", locationId: "canal_wharf", workerKey: "shifu" })}>
-          {entries.length}
-        </button>
-      );
-    }
-    mount(
-      new ControlledSource("m1_work_phase_r2_3p"),
-      <>
-        <PlaceShortcut />
-        <DecisionPane />
-      </>,
-    );
-    expect($("[data-test-place]").textContent).not.toBe("0");
-    click($("[data-test-place]"));
-    expect(radio("worker", "shifu").checked).toBe(true);
-    expect(radio("locationId", "canal_wharf").checked).toBe(true);
-    expect($("[data-test-place]").getAttribute("data-active")).toBe("canal_wharf");
   });
 
   it("a language switch keeps the draft and re-renders the sentence", () => {
@@ -200,17 +259,132 @@ describe("the work turn", () => {
       new ControlledSource("m1_work_phase_r2_3p"),
       <>
         <LanguageToggle />
-        <DecisionPane />
+        <Table />
       </>,
     );
-    click(radio("worker", "shifu"));
-    click(radio("locationId", "canal_wharf"));
+    click(placeButton("canal_wharf", "shifu"));
     expect(summary()).toBe("Place Shifu at Canal Wharf — +4 Coins");
     const toggle = [...container.querySelectorAll("button")].find((button) => button.textContent === "中文");
     if (toggle === undefined) throw new Error("no language toggle");
     click(toggle);
     expect(summary()).toBe("派师傅到漕运码头：得4铜钱");
-    expect(radio("locationId", "canal_wharf").checked).toBe(true);
+    expect(placeButton("canal_wharf", "shifu").getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("the hint's buttons go to the table and to the viewer's workshop and move focus there (phones switch section and lower the sheet)", async () => {
+    const desktop = mount(new ControlledSource("m1_work_phase_r2_3p"), <SectionHeadings />);
+    click($('[data-goto="table"]'));
+    expect(desktop.scrolled).toEqual(["table"]);
+    // Focus follows the view to the section's heading; the next Tab reaches its Place shortcuts.
+    await nextFrame();
+    expect(document.activeElement).toBe($(`#${sectionHeadingId("table")}`));
+    expect(tabPathToPlace(document.activeElement as HTMLElement).at(-1)?.closest(".cb")).not.toBeNull();
+    click($('[data-goto="workshop"]'));
+    expect(desktop.scrolled).toEqual(["table", "workshops"]);
+    await nextFrame();
+    expect(document.activeElement).toBe($(`#${sectionHeadingId("workshops")}`));
+    // Past the locations' rules details, Tab reaches a personal space's Place shortcut, not the pane.
+    expect(tabPathToPlace(document.activeElement as HTMLElement).at(-1)?.closest(".pspaces")).not.toBeNull();
+    act(() => root.unmount());
+    root = createRoot(container);
+    const phone = mount(new ControlledSource("m1_work_phase_r2_3p"), <SectionHeadings />, "phone");
+    const context = fixtureWindow("m1_work_phase_r2_3p");
+    // The work window opens on the Workshop section (the viewer's personal spaces).
+    expect(phone.ui.stateFor(context).section).toBe("workshop");
+    act(() => phone.ui.actions.setSheet("open"));
+    click($('[data-goto="table"]'));
+    expect(phone.ui.stateFor(context).section).toBe("table");
+    expect(phone.ui.stateFor(context).sheet).toBe("peek");
+    await nextFrame();
+    expect(document.activeElement).toBe($(`#${sectionHeadingId("table")}`));
+    click($('[data-goto="workshop"]'));
+    expect(phone.ui.stateFor(context).section).toBe("workshop");
+    await nextFrame();
+    expect(document.activeElement).toBe($(`#${sectionHeadingId("workshops")}`));
+    expect(phone.scrolled).toEqual([]);
+  });
+});
+
+describe("the Guild Hall choice is made on the Tech display", () => {
+  it("an Apprentice there: the display becomes the chooser, focus moves to its prompt, a Tech it cannot buy cannot be chosen", async () => {
+    const id = "m5_two_player_board_2p";
+    const offered = guildOptions(fixture(id).playerView, "apprentice").faceUp;
+    const legal = offered.find((option) => option.legal)!;
+    const illegal = offered.find((option) => !option.legal)!;
+    const source = new ControlledSource(id);
+    const { scrolled } = mount(source, <Table />);
+    expect(container.querySelector('[data-act="tech"]')).toBeNull();
+    click(placeButton("guild_hall", "apprentice"));
+    // Desktop: the world scrolls to Recognition & Techs, and focus lands on the chooser's prompt.
+    expect(scrolled).toEqual(["progress"]);
+    await nextFrame();
+    const prompt = $("[data-tech-chooser]");
+    expect(document.activeElement).toBe(prompt);
+    expect(prompt.textContent).toBe("Apprentice at the Guild Hall: choose a face-up Tech to buy");
+    expect($(".techs").getAttribute("role")).toBe("group");
+    expect($(".techs").getAttribute("aria-labelledby")).toBe(prompt.id);
+    // The pane asks for the choice on the table and lists no Tech.
+    expect(chosen()?.textContent).toContain("Choose a face-up Tech on the Advanced Techs display.");
+    expect(chosen()?.querySelector('input[name="techId"]')).toBeNull();
+    // Every face-up Tech is a target; one the Apprentice cannot buy is greyed out with its reason.
+    expect([...container.querySelectorAll<HTMLButtonElement>('[data-act="tech"]')].map((button) => button.getAttribute("data-tech-id"))).toEqual(offered.map((option) => option.techId));
+    const refused = $<HTMLButtonElement>(`[data-act="tech"][data-tech-id="${illegal.techId}"]`);
+    expect(refused.getAttribute("aria-disabled")).toBe("true");
+    expect(refused.closest(".tech")?.className).toContain("tech--unavailable");
+    const reasonIds = (refused.getAttribute("aria-describedby") ?? "").split(" ");
+    expect(document.getElementById(reasonIds[0]!)?.textContent).toMatch(/already own|Not enough|at most/i);
+    click(refused);
+    expect(refused.getAttribute("aria-pressed")).toBe("false");
+    // A chooser tile opens no rules details.
+    expect(refused.closest(".tech")?.querySelector(".kit-detail-trigger")).toBeNull();
+    const pick = $<HTMLButtonElement>(`[data-act="tech"][data-tech-id="${legal.techId}"]`);
+    expect(pick.getAttribute("aria-labelledby")?.split(" ").map((part) => document.getElementById(part)?.textContent).join(" ")).toContain(techText(legal.techId, "en").name);
+    click(pick);
+    expect($<HTMLButtonElement>(`[data-act="tech"][data-tech-id="${legal.techId}"]`).getAttribute("aria-pressed")).toBe("true");
+    expect(chosen()?.querySelector(`[data-guild-choice="${legal.techId}"]`)?.textContent).toContain(techText(legal.techId, "en").name);
+    expect(summary()).toBe(`Place Apprentice at Guild Hall — ${techText(legal.techId, "en").name}`);
+    click($('[data-action="confirm"]'));
+    expect(source.submitted).toEqual([{ type: "PLACE_GUILD_HALL", workerId: expect.any(String), choice: { kind: "buy_face_up", techId: legal.techId } }]);
+  });
+
+  it("a Shifu there: each discipline offers its deck to inspect; the Techs stay display tiles with their rules details", async () => {
+    const id = "w-before-the-worker-action-kiln-furniture-inverted-firing-targets-setters-marks-senior-apprentice";
+    const source = new ControlledSource(id);
+    mount(source, <Table />);
+    click(placeButton("guild_hall", "shifu"));
+    await nextFrame();
+    expect($("[data-tech-chooser]").textContent).toBe("Shifu at the Guild Hall: choose a discipline and inspect the top of its deck");
+    expect(container.querySelector('[data-act="tech"]')).toBeNull();
+    expect(container.querySelector(".techs .tech .kit-detail-trigger")).not.toBeNull();
+    const inspect = [...container.querySelectorAll<HTMLButtonElement>('[data-act="inspect"]')];
+    expect(inspect.map((button) => button.getAttribute("data-discipline"))).toEqual(["workshop", "glazing_loading", "firing"]);
+    const firing = $<HTMLButtonElement>('[data-act="inspect"][data-discipline="firing"]');
+    expect(firing.getAttribute("aria-label")).toBe("Inspect the deck: Firing (only you see the cards)");
+    click(firing);
+    expect($('[data-act="inspect"][data-discipline="firing"]').getAttribute("aria-pressed")).toBe("true");
+    expect(chosen()?.textContent).toContain("Inspect the Firing deck");
+    click($('[data-action="confirm"]'));
+    expect(source.submitted).toEqual([{ type: "PLACE_GUILD_HALL", workerId: expect.any(String), choice: { kind: "inspect", discipline: "firing" } }]);
+  });
+
+  it("on phones the Guild Hall shortcut lowers the sheet onto the Table section, and a Tech choice opens it for Confirm", async () => {
+    const id = "m5_two_player_board_2p";
+    const legal = guildOptions(fixture(id).playerView, "apprentice").faceUp.find((option) => option.legal)!;
+    const { ui, scrolled } = mount(new ControlledSource(id), <Table />, "phone");
+    const context = fixtureWindow(id);
+    click(placeButton("guild_hall", "apprentice"));
+    expect(ui.stateFor(context).section).toBe("table");
+    expect(ui.stateFor(context).sheet).toBe("peek");
+    expect(scrolled).toEqual([]);
+    await nextFrame();
+    expect(document.activeElement).toBe($("[data-tech-chooser]"));
+    click($(`[data-act="tech"][data-tech-id="${legal.techId}"]`));
+    expect(ui.stateFor(context).sheet).toBe("open");
+    // The pane's button goes back to the chooser.
+    act(() => ui.actions.setSection("workshop"));
+    click($('[data-goto="techs"]'));
+    expect(ui.stateFor(context).section).toBe("table");
+    expect(ui.stateFor(context).sheet).toBe("peek");
   });
 });
 

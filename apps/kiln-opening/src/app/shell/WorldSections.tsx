@@ -9,8 +9,10 @@
  * - `firing`: FiringStage (D3: takes over the column during the Firing Phase);
  * - `results`: ResultsSection;
  * - `table`: KilnMini and CentralBoard;
- * - `orders`: OrderDisplay, LookedOrders, HandRow, FinishedCeramicsStrip and PublicHands; the hand
- *   before the display outside the Work Phase (wireframe `secOrders`);
+ * - `orders`: OrderDisplay, LookedOrders, HandRow and FinishedCeramicsStrip; the hand before the
+ *   display outside the Work Phase (wireframe `secOrders`). There is no public-hands block (owner
+ *   review, 2026-10-17): the seat chips show every hand count, and someone else's private look is
+ *   said by the waiting pane, the live region, the log and the turn toasts;
  * - `progress`: RecognitionTrack and TechDisplay;
  * - `kiln`: IdleFiringRecap and KilnBlock;
  * - `workshops`: BoardArea (D1).
@@ -38,7 +40,6 @@ import { HandRow } from "../table/HandRow.tsx";
 import { KilnMini } from "../table/KilnMini.tsx";
 import { LookedOrders } from "../table/LookedOrders.tsx";
 import { OrderDisplay } from "../table/OrderDisplay.tsx";
-import { PublicHands } from "../table/PublicHands.tsx";
 import { RecognitionTrack } from "../table/RecognitionTrack.tsx";
 import { TechDisplay } from "../table/TechDisplay.tsx";
 import { JumpNav } from "./JumpNav.tsx";
@@ -60,7 +61,6 @@ function OrdersContent() {
         <LookedOrders />
         <HandRow />
         <FinishedCeramicsStrip />
-        <PublicHands />
       </>
     );
   }
@@ -70,7 +70,6 @@ function OrdersContent() {
       <HandRow />
       <FinishedCeramicsStrip />
       <OrderDisplay />
-      <PublicHands />
     </>
   );
 }

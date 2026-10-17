@@ -3,7 +3,8 @@
  * §9.2; owner decision D4): players can see which Fire cards have been discarded, at any time,
  * and that is all the Fire-deck information on screen.
  * - every discard list on the full game screen shows `game.fireDiscard`, oldest first, in both
- *   languages, during a firing (the heat equation) and between firings (the Kiln section);
+ *   languages, during a firing (the heat equation) and between firings (the Kiln section, behind
+ *   its "Fire discard" button: owner review, 2026-10-17);
  * - after a reshuffle the discard is empty and says so;
  * - no Fire-deck size anywhere: not as text, not as an attribute, in no wording (§9.2's list).
  */
@@ -19,8 +20,8 @@ import { renderComponent, renderScreen } from "../support/render.tsx";
 import { elementAt, perceivable, withoutRulesPanels } from "./support.ts";
 
 /**
- * B3's part of the game screen for a fixture: the firing stage during a firing, else the idle
- * recap and the kiln; the results once finished. (The full screen, with every package's
+ * B3's part of the game screen for a fixture: the firing stage during a firing, else the Kiln
+ * section's strip and the kiln; the results once finished. (The full screen, with every package's
  * sections, is B6's `rendered_text`; this keeps B3's checks independent of the decision forms.)
  */
 function b3Sections(id: string, locale: "en" | "zh-CN" = "en"): string {
@@ -88,11 +89,16 @@ describe("the open Fire discard (D4)", () => {
     },
   );
 
-  it("is shown during a firing (the heat equation) and between firings (the Kiln section)", () => {
+  it("is shown during a firing (the heat equation) and between firings (behind the Kiln section's button)", () => {
     const firing = renderScreen(fixtureSource("m3_heat_marker_step_3p"));
     expect(elementAt(firing, /<section id="sec-firing"/)).toContain('class="fdiscard-list"');
-    const idle = renderScreen(fixtureSource("m7_cleanup_hand_limit_3p"));
-    expect(elementAt(idle, /<section id="sec-kiln"/)).toContain('class="fdiscard-list"');
+    const idle = elementAt(renderScreen(fixtureSource("m7_cleanup_hand_limit_3p")), /<section id="sec-kiln"/);
+    const button = elementAt(idle, /<button[^>]*class="kit-btn[^"]*kstrip-discard"/);
+    const controls = /aria-controls="([^"]+)"/.exec(button)?.[1];
+    expect(controls).toBeDefined();
+    expect(button).toContain('aria-expanded="false"');
+    const panel = elementAt(idle, new RegExp(`<div id="${String(controls)}"`));
+    expect(panel).toContain('class="fdiscard-list"');
   });
 
   it("never shows the Fire-deck size, in any fixture or language", () => {

@@ -1,27 +1,39 @@
 /**
  * WorkTurn (UI_V1.6.1_ARCHITECTURE §3.4, §8.1; wireframe `decWork`, `subEditor`). Owner: B4.
  *
- * The `work` window. Before the worker action:
- * 1. what this step does, when Imperial Priority or Canal Barge may come first;
- * 2. the worker (`WorkerPicker`);
- * 3. the location: open locations as radios, each with its one-line effect for the chosen
- *    worker, its capacity, its rules details (D10) and — once chosen — its sub-editor, rendered
- *    after the radio's label as the region the radio names in `aria-controls` (§8.1). Locations
- *    that cannot be chosen sit in an "Unavailable" disclosure with the engine's reason.
- * After the worker action it shows `ActionWindow` (Imperial Priority, Canal Barge, End turn).
+ * The `work` window. Workers are placed **on the table** (owner review, 2026-10-17): the Place
+ * shortcuts of the location cards and of the viewer's own Form & Decorate and Glaze & Load
+ * spaces (`useTableSelection().placeTargets`, the work window's table adapter) set the worker and
+ * the location of this window's draft. The pane itself lists no workers and no locations. Before
+ * the worker action it shows:
+ * 1. how many workers are left (the Work Phase cannot be passed);
+ * 2. what this step does, when Imperial Priority or Canal Barge may come first;
+ * 3. with nothing chosen yet, a short hint to place a worker on an action space, with buttons that
+ *    go to the Central Action Board and to the viewer's own workshop (phones switch section) and
+ *    move focus to that section's heading;
+ * 4. once a placement is chosen, its summary (worker, location, its one-line effect, the space it
+ *    takes) and the location's sub-editor, a labelled region (`.b4-sub-region`) holding the
+ *    choices that location needs (the Materials Yard split, Form & Decorate, Glaze & Load, the
+ *    Commission Market, the Guild Hall — whose Tech is chosen on the Tech display —, the
+ *    Magistrate's Hall…).
+ * The ConfirmBar follows (DecisionPane). After the worker action it shows `ActionWindow`
+ * (Imperial Priority, Canal Barge, End turn).
  *
  * Everything renders from `workDraft.options()`; the component filters, sums and checks nothing.
+ * The location opens no rules details here (owner review, 2026-10-17).
  */
 import { useId } from "react";
-import type { LocationId } from "../../../game/index.ts";
-import { RULE_NUMBERS, locationName, locationSummaryKey } from "../../i18n/content.ts";
+import { RULE_NUMBERS, locationName, locationSummaryKey, workerKindName } from "../../i18n/content.ts";
 import { useT } from "../../i18n/I18nProvider.tsx";
 import type { Translator } from "../../i18n/translator.ts";
-import { Disclosure } from "../../kit/Disclosure.tsx";
+import { Button } from "../../kit/Button.tsx";
 import { OptionCard } from "../../kit/OptionCard.tsx";
 import { OptionGroup } from "../../kit/OptionGroup.tsx";
-import { useDraft, useEngineView, useGame } from "../../state/hooks.ts";
-import type { GameModel } from "../../state/model.ts";
+import { useDraft, useEngineView, useGame, useLayoutMode, useUi } from "../../state/hooks.ts";
+import { isPhone } from "../../state/layoutMode.ts";
+import { focusAfterFrame } from "../../state/tableSelection.ts";
+import type { WorldSectionId } from "../../state/uiStore.ts";
+import { sectionHeadingId } from "../../shell/sections.ts";
 import { ActionWindow } from "./ActionWindow.tsx";
 import { CanalWharf } from "./locations/CanalWharf.tsx";
 import { CommissionMarket } from "./locations/CommissionMarket.tsx";
@@ -30,11 +42,8 @@ import { GlazeLoad } from "./locations/GlazeLoad.tsx";
 import { GuildHall } from "./locations/GuildHall.tsx";
 import { MagistratesHall } from "./locations/MagistratesHall.tsx";
 import { MaterialsYard } from "./locations/MaterialsYard.tsx";
-import { useRuleErrorText } from "./pieces.tsx";
-import { RulesDetail } from "../../rules/RulesDetail.tsx";
 import { workDraft } from "./workDraft.ts";
-import type { ActiveLocation, LocationChoice, WorkAction, WorkDraft, WorkMode } from "./workDraft.ts";
-import { WorkerPicker } from "./WorkerPicker.tsx";
+import type { ActiveLocation, WorkAction, WorkDraft, WorkMode } from "./workDraft.ts";
 import "./pieces.css";
 
 const MODE_TITLE: Readonly<Record<WorkMode, "work.work.mode.place" | "work.work.mode.imperialPriority" | "work.work.mode.canalBarge" | "work.work.mode.endTurn">> = {
@@ -44,16 +53,17 @@ const MODE_TITLE: Readonly<Record<WorkMode, "work.work.mode.place" | "work.work.
   end_turn: "work.work.mode.endTurn",
 };
 
-/** The capacity line of a location card: spaces for a personal location, occupancy for a central one. */
-function capacityText(choice: LocationChoice, model: GameModel, t: Translator): string {
-  const placement = choice.placement;
-  const personal = model.me?.personalSpaces.filter((space) => space.locationId === choice.locationId) ?? [];
-  if (personal.length > 0) {
-    const parts: string[] = [];
-    if (placement.nextSpaceIndex !== null) parts.push(t("work.work.personalSpace", { i: placement.nextSpaceIndex + 1 }));
-    for (const space of personal) if (!space.unlocked) parts.push(t("work.work.spaceNotAdded", { i: space.spaceIndex + 1 }));
-    return parts.join(" · ");
-  }
+/** The worker of the chosen placement in words: "Shifu", "Apprentice as Shifu" (never an ID, D9). */
+function workerText(active: ActiveLocation, t: Translator): string {
+  const worker = active.context.worker;
+  const name = workerKindName(worker.kind, t.locale);
+  return worker.seniorApprentice ? t("work.work.workerSenior", { worker: name, shifu: workerKindName("shifu", t.locale) }) : name;
+}
+
+/** The space the placement takes: "your space 2" for a personal location, the occupancy for a central one. */
+function spaceText(active: ActiveLocation, t: Translator): string {
+  const placement = active.context.placement;
+  if (placement.nextSpaceIndex !== null) return t("work.work.personalSpace", { i: placement.nextSpaceIndex + 1 });
   return placement.capacity === null ? t("work.work.noLimit") : t("work.work.taken", { n: placement.occupancy, c: placement.capacity });
 }
 
@@ -76,49 +86,82 @@ function SubEditor({ active, dispatch }: { active: ActiveLocation; dispatch: (ac
   }
 }
 
+/**
+ * After the view has gone to a world section, focuses that section's heading (`tabIndex={-1}`), so
+ * keyboard and screen-reader users land there too and Tab reaches its Place shortcuts next: the
+ * pane comes after the world in the page, so focus left in the pane would leave them behind.
+ * Phones scroll the heading into view; wider screens let `jumpTo`'s smooth scroll run.
+ */
+function focusSection(section: WorldSectionId, phone: boolean): void {
+  focusAfterFrame(() => document.getElementById(sectionHeadingId(section)), { scroll: phone });
+}
+
+/** Nothing chosen yet: place a worker on the table; the way there (scroll, or the phone section). */
+function PlaceHint() {
+  const t = useT();
+  const ui = useUi();
+  const phone = isPhone(useLayoutMode());
+  return (
+    <div className="b4-place-hint" data-b4="place-hint">
+      <p className="b4-place-hint-text">{t("work.work.placeHint")}</p>
+      <div className="b4-row">
+        <Button
+          size="sm"
+          data-goto="table"
+          onClick={() => {
+            // On phones the sheet steps aside so the table is not covered.
+            if (phone) ui.setSheet("peek");
+            ui.jumpTo("table");
+            focusSection("table", phone);
+          }}
+        >
+          {t("work.work.goTable")}
+        </Button>
+        <Button
+          size="sm"
+          data-goto="workshop"
+          onClick={() => {
+            ui.showBoard(null);
+            focusSection("workshops", phone);
+          }}
+        >
+          {t("work.work.goWorkshop")}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/** The chosen placement: worker, location, effect and space, then the location's choices. */
+function ChosenPlacement({ active, dispatch }: { active: ActiveLocation; dispatch: (action: WorkAction) => void }) {
+  const t = useT();
+  const titleId = useId();
+  const location = locationName(active.locationId, t.locale);
+  return (
+    <section className="b4-chosen" data-b4="chosen" data-location-id={active.locationId} aria-labelledby={titleId}>
+      <div className="b4-chosen-head">
+        <h3 id={titleId} className="b4-chosen-title">
+          {t("work.work.chosen", { worker: workerText(active, t), location })}
+        </h3>
+        <span className="b4-chosen-meta num">{spaceText(active, t)}</span>
+      </div>
+      <p className="b4-chosen-effect">{t.dynamic(locationSummaryKey(active.locationId, active.context.worker.effect))}</p>
+      <div className="b4-sub-region" role="group" aria-label={location}>
+        <SubEditor active={active} dispatch={dispatch} />
+      </div>
+      <p className="b4-note b4-note--muted">{t("work.work.changeHint")}</p>
+    </section>
+  );
+}
+
 export function WorkTurn() {
   const t = useT();
   const model = useGame();
   const engine = useEngineView();
   const [draft, dispatch] = useDraft<WorkDraft, WorkAction>();
-  const errorText = useRuleErrorText();
-  const subId = useId();
   const options = workDraft.options(draft, model, engine);
   if (options.step === "after_action") return <ActionWindow source="after_action" />;
-
-  const me = model.me;
   const modes = options.modes;
-  const legal = options.locations.filter((choice) => choice.legal);
-  const unavailable = options.locations.filter((choice) => !choice.legal);
-  const selected: LocationId | null = draft.mode === "place" ? draft.locationId : null;
-  const workerChosen = draft.workerKey !== null;
-
-  const row = (choice: LocationChoice) => {
-    const entry = choice.entry;
-    const reason = choice.legal ? undefined : choice.error !== null ? errorText(choice.error) : workerChosen ? t("work.work.notForWorker") : undefined;
-    const isSelected = selected === choice.locationId && choice.legal;
-    const description = choice.legal && entry !== null ? t.dynamic(locationSummaryKey(choice.locationId, entry.effect)) : undefined;
-    return (
-      <OptionCard
-        key={choice.locationId}
-        value={choice.locationId}
-        title={locationName(choice.locationId, t.locale)}
-        meta={capacityText(choice, model, t)}
-        description={description}
-        disabled={!choice.legal}
-        reason={reason}
-        {...(isSelected && options.active !== null ? { controls: subId } : {})}
-      >
-        <RulesDetail subject={{ kind: "location", id: choice.locationId }} />
-        {isSelected && options.active !== null ? (
-          <div id={subId} className="b4-sub-region" role="group" aria-label={locationName(choice.locationId, t.locale)}>
-            <SubEditor active={options.active} dispatch={dispatch} />
-          </div>
-        ) : null}
-      </OptionCard>
-    );
-  };
-
   return (
     <div className="b4-form" data-b4="work">
       <p className="b4-prompt">{t("work.work.prompt", { n: options.workersLeft, total: RULE_NUMBERS.workers })}</p>
@@ -143,32 +186,10 @@ export function WorkTurn() {
         </OptionGroup>
       ) : null}
       {draft.mode === "place" ? (
-        <>
-          <WorkerPicker workers={options.workers} value={draft.workerKey} onChange={(workerKey) => dispatch({ type: "worker", workerKey })} seat={me?.seatIndex ?? 0} />
-          <OptionGroup
-            legend={t("work.work.step.location")}
-            step={2}
-            aside={t("work.work.legalN", { a: legal.length, b: options.locations.length })}
-            description={workerChosen ? undefined : t("work.work.chooseWorkerFirst")}
-            name="locationId"
-            value={selected}
-            onChange={(value) => {
-              const choice = legal.find((candidate) => candidate.locationId === value);
-              if (choice !== undefined) dispatch({ type: "location", locationId: choice.locationId });
-            }}
-          >
-            {legal.map(row)}
-            {unavailable.length === 0 ? null : (
-              <Disclosure className="b4-unavailable" summary={t("work.work.unavailableN", { n: unavailable.length })}>
-                <div className="b4-unavailable-items">{unavailable.map(row)}</div>
-              </Disclosure>
-            )}
-          </OptionGroup>
-        </>
+        options.active === null ? <PlaceHint /> : <ChosenPlacement active={options.active} dispatch={dispatch} />
       ) : (
         <ActionWindow source="before_action" />
       )}
     </div>
   );
 }
-

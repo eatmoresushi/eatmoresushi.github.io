@@ -7,16 +7,20 @@
  *   Samples) renders its real component, never a phase A placeholder, with its title, its
  *   ConfirmBar alternative and the test-driver contract (input `name`/`value` = engine IDs).
  * - Owner decisions: no odds, previews or ladders (D3/D4); no lock wording (D7); no ceramic or
- *   worker ID in anything a player perceives (D9); every Kiln board, location, Tech tile, Order
- *   card and Recognition milestone shown opens its rules details (D10) with only the full rule
- *   and that component's clarifications, as plain text: no card text, card facts or source labels
- *   (owner review, 2026-10-17).
+ *   worker ID in anything a player perceives (D9); every Tech tile, Order card and Recognition
+ *   milestone shown in a form opens its rules details (D10) with only the full rule and that
+ *   component's clarifications, as plain text: no card text, card facts or source labels (owner
+ *   review, 2026-10-17). The Kiln options and the work turn's locations carry no "Full rules"
+ *   button any more (owner review, 2026-10-17).
+ * - Workers are placed on the table (owner review, 2026-10-17): the pane lists no workers and no
+ *   locations, and every legal placement has its Place shortcut on the table; the Guild Hall
+ *   choice is made on the Tech display.
  * - Seeded drafts drive the table targets through `useTableSelection` (§3.5), so SSR sees the
- *   Place shortcuts, kiln targets, pending chips and Order targets.
+ *   Place shortcuts, the Guild Hall chooser, kiln targets, pending chips and Order targets.
  */
 import { describe, expect, it } from "vitest";
-import { KILNS, LOCATIONS, ORDERS, ORDER_CLARIFICATIONS, SHAPES, TECHS, guildInspectionOptions, legalCommands, placementOptions, settersMarkOptions } from "../../../../src/game/index.ts";
-import type { AuthoritativeCommand, ClarificationDefinition, KilnId, KilnSpaceId, LocationId, OrderId, TechId } from "../../../../src/game/index.ts";
+import { KILNS, ORDERS, ORDER_CLARIFICATIONS, SHAPES, TECHS, guildInspectionOptions, guildOptions, legalCommands, placementOptions, settersMarkOptions } from "../../../../src/game/index.ts";
+import type { AuthoritativeCommand, ClarificationDefinition, KilnId, KilnSpaceId, LocationId, OrderId, TechDiscipline, TechId } from "../../../../src/game/index.ts";
 import { WINDOWS } from "../../../../src/app/decision/windows.ts";
 import { workDraft } from "../../../../src/app/decision/work/workDraft.ts";
 import { GameScreen } from "../../../../src/app/screens/GameScreen.tsx";
@@ -39,7 +43,6 @@ const B4_STUBS = [
   "KilnSelection",
   "SettersMark",
   "WorkTurn",
-  "WorkerPicker",
   "ActionWindow",
   "ImperialPriority",
   "CommissionStep",
@@ -138,6 +141,18 @@ function draftFor(id: string, command: AuthoritativeCommand): unknown {
   return draft;
 }
 
+/** The work draft after a table Place shortcut (`act` → the draft action), as a player makes it. */
+function placedDraft(id: string, locationId: LocationId, workerKey: string): unknown {
+  const view = fixture(id).playerView;
+  const model = buildGameModel(view, []);
+  const engine = engineViewOf(view);
+  const spec = WINDOWS.work;
+  const initial = workDraft.initial(model, engine);
+  const action = spec.table?.act(initial as never, { type: "place", locationId, workerKey }, model, engine);
+  if (action === null || action === undefined) throw new Error(`${id}: the table does not place ${workerKey} at ${locationId}`);
+  return workDraft.reduce(initial, action as never, model, engine);
+}
+
 const RICH = "w-before-the-worker-action-rich-4-player-start";
 const DING = "w-before-the-worker-action-canal-barge-imperial-priority-with-reworking-table-ding";
 const INVERTED = "w-before-the-worker-action-kiln-furniture-inverted-firing-targets-setters-marks-senior-apprentice";
@@ -188,25 +203,53 @@ describe("titles, alternatives and the test-driver contract", () => {
     expect(alt(zh(id))).not.toBeNull();
   });
 
-  it("work before the action: workers, then locations, each valued by its stable key", () => {
+  it("work before the action: the pane lists no worker or location, only the hint to place on the table (owner review, 2026-10-17)", () => {
     const html = en("m1_work_phase_r2_3p");
     expect(heading(html)).toBe("Place a worker");
     expect(heading(zh("m1_work_phase_r2_3p"))).toBe("派工");
     expect(html).toContain('data-step="before_action"');
-    expect(valuesOf(html, "worker")).toEqual(["shifu", "apprentice"]);
-    expect(valuesOf(html, "locationId").sort()).toEqual(placementOptions(fixture("m1_work_phase_r2_3p").playerView).map((option) => option.locationId).sort());
+    expect(valuesOf(html, "worker")).toEqual([]);
+    expect(valuesOf(html, "locationId")).toEqual([]);
+    expect(html).not.toContain("b4-unavailable");
+    expect(perceivable(html)).not.toMatch(/Unavailable \(\d\)|Full rules/);
+    expect(html).toContain('data-b4="place-hint"');
+    expect(perceivable(html)).toContain("Place a worker on an action space");
+    // The way to the table on phones (and to the viewer's own personal spaces).
+    expect(html).toMatch(/data-goto="table"[^>]*>Go to the Central Action Board</);
+    expect(html).toMatch(/data-goto="workshop"[^>]*>Go to your workshop</);
+    expect(perceivable(zh("m1_work_phase_r2_3p"))).toContain("前往中央行动板");
     expect(alt(html)).toBeNull();
-    expect(summary(html)).toBe("Choose a worker and an open location.");
+    expect(summary(html)).toBe("Place a worker on an open action space.");
   });
 
-  it("work before the action: Senior Apprentice is its own worker entry; unavailable locations give the engine's reason", () => {
-    const html = en(RICH);
-    expect(valuesOf(html, "worker")).toEqual(["shifu", "apprentice", "apprentice-senior"]);
-    expect(perceivable(html)).toContain("Apprentice as Shifu");
-    const two = en("m5_two_player_board_2p");
-    expect(perceivable(two)).toMatch(/Unavailable \(\d\)/);
-    // D7: the second Glaze & Load space reads as one a Tech adds.
+  it("work before the action: every legal placement has its Place shortcut on the table, Senior Apprentice and personal spaces included", () => {
+    for (const id of [RICH, "m1_work_phase_r2_3p", "m5_two_player_board_2p", INVERTED, DING]) {
+      const html = renderComponent(fixtureSource(id), <GameScreen />);
+      const shortcuts = [...html.matchAll(/<button[^>]*data-act="place"[^>]*>/g)].map((match) => {
+        const tag = match[0];
+        return `${/data-location-id="([^"]+)"/.exec(tag)?.[1] ?? ""}:${/data-worker="([^"]+)"/.exec(tag)?.[1] ?? ""}`;
+      });
+      const legal = placementOptions(fixture(id).playerView).flatMap((option) => option.workers.filter((worker) => worker.legal).map((worker) => `${option.locationId}:${placementWorkerKey(worker)}`));
+      expect(legal.length, id).toBeGreaterThan(0);
+      expect(shortcuts.sort(), id).toEqual(legal.sort());
+    }
+    const rich = renderComponent(fixtureSource(RICH), <GameScreen />);
+    expect(rich).toMatch(/data-worker="apprentice-senior"[^>]*aria-label="Place Apprentice, as Shifu \(Senior Apprentice\) at Materials Yard"/);
+    // An unavailable location gives the engine's reason on the table (CR B2-3); D7 on the board.
+    const two = renderComponent(fixtureSource("m5_two_player_board_2p"), <GameScreen />);
+    expect(perceivable(two)).toContain("Can’t place here");
     expect(perceivable(two)).toContain("Learn a Glazing & Loading Tech to add this space");
+  });
+
+  it("work before the action: a chosen placement shows its summary and sub-editor, with no location rules details", () => {
+    const id = "m1_work_phase_r2_3p";
+    const html = en(id, draftFor(id, commandOf(id, "PLACE_CANAL_WHARF")));
+    expect(html).toContain('data-b4="chosen"');
+    expect(html).not.toContain('data-b4="place-hint"');
+    expect(perceivable(html)).toMatch(/(Shifu|Apprentice) at Canal Wharf/);
+    expect(html).toMatch(/<div class="b4-sub-region" role="group" aria-label="Canal Wharf">/);
+    expect(rulesPanels(html, "location")).toEqual([]);
+    expect(perceivable(zh(id, draftFor(id, commandOf(id, "PLACE_CANAL_WHARF"))))).toMatch(/派(师傅|学徒)到漕运码头/);
   });
 
   it("work before the action: Imperial Priority and Canal Barge may come first", () => {
@@ -346,6 +389,32 @@ describe("sub-editors from seeded drafts", () => {
     expect(summary(html)).toContain("Heat marker face down on");
   });
 
+  it("Guild Hall: the pane lists no Techs; it shows the choice made on the Tech display, or asks for one", () => {
+    const id = "m5_two_player_board_2p";
+    const command = commandOf(id, "PLACE_GUILD_HALL");
+    if (command.type !== "PLACE_GUILD_HALL" || command.choice.kind !== "buy_face_up") throw new Error("expected an Apprentice purchase");
+    const chosen = en(id, draftFor(id, command));
+    expect(chosen).toContain(`data-guild-choice="${command.choice.techId}"`);
+    expect(perceivable(chosen)).toContain(techText(command.choice.techId, "en").name);
+    expect(perceivable(chosen)).toMatch(/\d Coins?/);
+    expect(chosen).toMatch(/data-goto="techs"[^>]*>Change it on the Advanced Techs display</);
+    // No Tech list, no Tech radios and no Tech rules details in the pane.
+    expect(valuesOf(chosen, "techId")).toEqual([]);
+    expect(rulesPanels(chosen, "tech")).toEqual([]);
+    // Placed but not chosen yet: a prompt to choose on the table, and the way there.
+    const asked = en(id, placedDraft(id, "guild_hall", "apprentice"));
+    expect(perceivable(asked)).toContain("Choose a face-up Tech on the Advanced Techs display.");
+    expect(asked).toMatch(/data-goto="techs"[^>]*>Go to the Advanced Techs</);
+    expect(summary(asked)).toBe("Place Apprentice at Guild Hall");
+    // The Shifu inspects a discipline: named in the pane, privately.
+    const shifu = legalCommands(fixture(INVERTED).playerView, { mode: "canonical" }).find((candidate) => candidate.type === "PLACE_GUILD_HALL" && candidate.choice.kind === "inspect");
+    if (shifu === undefined || shifu.type !== "PLACE_GUILD_HALL" || shifu.choice.kind !== "inspect") throw new Error("no inspection");
+    const inspect = en(INVERTED, draftFor(INVERTED, shifu));
+    expect(perceivable(inspect)).toContain(`Inspect the ${disciplineName(shifu.choice.discipline, "en")} deck`);
+    expect(perceivable(inspect)).toContain("Only you will see the inspected Techs.");
+    expect(perceivable(zh(INVERTED, draftFor(INVERTED, shifu)))).toContain(`查看${disciplineName(shifu.choice.discipline, "zh-CN")}牌堆顶`);
+  });
+
   it("Commission Market, Guild Hall, Canal Wharf and Magistrate's Hall", () => {
     const cm = en(RICH, draftFor(RICH, commandOf(RICH, "PLACE_COMMISSION_MARKET")));
     expect(cm).toContain('data-location="commission_market"');
@@ -369,42 +438,31 @@ describe("sub-editors from seeded drafts", () => {
 });
 
 describe("rules details (D10)", () => {
-  it("every Kiln board in Kiln selection: the short text in bold on the option, only the full rule and clarifications in the panel", () => {
-    const html = en("m15_kiln_selection");
-    const zhHtml = zh("m15_kiln_selection");
-    expect(rulesPanels(html, "kiln")).toHaveLength(Object.keys(KILNS).length);
-    for (const kilnId of Object.keys(KILNS) as KilnId[]) {
-      // The option itself carries the card text with its timing in bold.
-      const card = optionCard(html, "kilnId", kilnId);
-      expect(card.split("</label>")[0]).toMatch(/<span class="b4-kiln-short"><strong>[^<]+:<\/strong>/);
-      // The panel: the full rule, then the clarifications, nothing else.
-      const kiln = kilnText(kilnId, "en");
-      const body = panel(html, `Full rules: ${kiln.name} · ${kiln.abilityName}`);
-      expect(textOf(body)).toContain(decode(kiln.ability));
-      expect(body).not.toContain("<strong>");
-      expectRuleAndClarifications(body, KILNS[kilnId].clarifications, "en");
-      const zhKiln = kilnText(kilnId, "zh-CN");
-      expectRuleAndClarifications(panel(zhHtml, `完整规则：${zhKiln.name} · ${zhKiln.abilityName}`), KILNS[kilnId].clarifications, "zh-CN");
+  it("every Kiln board in Kiln selection: name, ability name and the short text in bold, with no Full rules button (owner review, 2026-10-17)", () => {
+    for (const locale of ["en", "zh-CN"] as const) {
+      const html = locale === "en" ? en("m15_kiln_selection") : zh("m15_kiln_selection");
+      expect(rulesPanels(html, "kiln")).toEqual([]);
+      expect(html).not.toContain("kit-detail-trigger");
+      expect(perceivable(html)).not.toContain(locale === "en" ? "Full rules" : "完整规则");
+      for (const kilnId of Object.keys(KILNS) as KilnId[]) {
+        const kiln = kilnText(kilnId, locale);
+        const card = optionCard(html, "kilnId", kilnId);
+        const label = card.split("</label>")[0] ?? "";
+        expect(textOf(label)).toContain(decode(kiln.name));
+        expect(textOf(label)).toContain(decode(kiln.abilityName));
+        // The option itself carries the card text with its timing in bold.
+        expect(label).toMatch(/<span class="b4-kiln-short"><strong>[^<]+[:：]<\/strong>/);
+      }
     }
   });
 
-  it("every location of the work turn: both worker effects as the full rule and its own clarifications, with no capacity or location-kind facts", () => {
-    const view = fixture("m1_work_phase_r2_3p").playerView;
-    const html = en("m1_work_phase_r2_3p");
-    const options = placementOptions(view);
-    expect(rulesPanels(html, "location")).toHaveLength(options.length);
-    for (const option of options) {
-      const location = LOCATIONS[option.locationId];
-      const body = panel(html, `Full rules: ${locationName(option.locationId, "en")}`);
-      expect(body).toContain('data-rules="location"');
-      expect(body.match(/<p class="rd-rule">/g) ?? []).toHaveLength(2);
-      expect(textOf(body)).toContain(decode(location.apprenticeText));
-      expect(textOf(body)).toContain(decode(location.shifuText));
-      expectRuleAndClarifications(body, location.clarifications, "en");
+  it("the work turn opens no location rules details: neither the pane nor a chosen placement (owner review, 2026-10-17)", () => {
+    expect(rulesPanels(en("m1_work_phase_r2_3p"), "location")).toEqual([]);
+    for (const type of ["PLACE_MATERIALS_YARD", "PLACE_CANAL_WHARF", "PLACE_FORM_DECORATE", "PLACE_GLAZE_LOAD", "PLACE_MAGISTRATES_HALL"] as const) {
+      const html = en(RICH, draftFor(RICH, commandOf(RICH, type)));
+      expect(rulesPanels(html, "location"), type).toEqual([]);
+      expect(html, type).not.toMatch(/aria-label="Full rules: (Materials Yard|Canal Wharf|Form &amp; Decorate|Glaze &amp; Load|Magistrate)/);
     }
-    // The removed card facts: capacity, location kind, who is here now.
-    expect(textOf(panel(html, "Full rules: Materials Yard"))).not.toMatch(/Capacity \(3 players\)|Here now/);
-    expect(textOf(panel(html, "Full rules: Glaze & Load"))).not.toMatch(/Location Personal location|Each space once per round|Here now/);
   });
 
   it("every Tech tile in the Guild inspection: discipline and the Shifu price on the option, only the full ability and clarifications in the panel", () => {
@@ -465,10 +523,12 @@ describe("rules details (D10)", () => {
   });
 
   it("the Full rules button is named for its component and sits outside every option label (§8.1)", () => {
-    const html = en("m15_kiln_selection");
-    expect(html).toContain('aria-label="Full rules: Ru Kiln · ');
+    const id = "m12_guild_shifu_inspection";
+    const html = en(id);
+    const first = guildInspectionOptions(fixture(id).playerView)!.inspected[0]!;
+    expect(html).toContain(`aria-label="Full rules: ${techText(first.techId, "en").name.replace(/&/g, "&amp;").replace(/'/g, "&#x27;")}"`);
     expect(html).not.toMatch(/aria-label="Rules: /);
-    expect(zh("m15_kiln_selection")).toContain(`aria-label="完整规则：${kilnText("RU", "zh-CN").name} · `);
+    expect(zh(id)).toContain(`aria-label="完整规则：${techText(first.techId, "zh-CN").name}"`);
     for (const label of html.split("<label").slice(1).map((part) => part.split("</label>")[0] ?? "")) expect(label).not.toContain("kit-detail-trigger");
   });
 });
@@ -484,6 +544,10 @@ function SelectionProbe() {
     pending: selection.pendingCeramics,
     orders: [...selection.orderTargets.entries()],
     highlighted: [...selection.highlightedCeramicIds].sort(),
+    chooser:
+      selection.techChooser === null
+        ? null
+        : { mode: selection.techChooser.mode, worker: selection.techChooser.worker, techs: [...selection.techChooser.techs.entries()], disciplines: [...selection.techChooser.disciplines.entries()] },
   };
   return <pre data-probe="">{JSON.stringify(data)}</pre>;
 }
@@ -496,6 +560,12 @@ interface Probed {
   pending: Array<{ ceramicId: string; glaze: string; at: string }>;
   orders: Array<[string, { state: string; disabled: boolean }]>;
   highlighted: string[];
+  chooser: {
+    mode: "buy" | "inspect";
+    worker: { kind: string; seniorApprentice: boolean };
+    techs: Array<[TechId, { pressed: boolean; legal: boolean; reason: { code: string } | null; printedCost: number; price: number }]>;
+    disciplines: Array<[TechDiscipline, { pressed: boolean }]>;
+  } | null;
 }
 
 function probe(id: string, draft?: unknown): Probed {
@@ -515,6 +585,49 @@ describe("table targets from seeded drafts (§3.5)", () => {
     const draft = draftFor(RICH, commandOf(RICH, "PLACE_CANAL_WHARF"));
     const placed = probe(RICH, draft);
     expect(placed.active?.locationId).toBe("canal_wharf");
+  });
+
+  it("work: a Guild Hall Apprentice makes every face-up Tech a target, legal or not, with the engine's reason", () => {
+    const id = "m5_two_player_board_2p";
+    const view = fixture(id).playerView;
+    expect(probe(id).chooser).toBeNull();
+    const placed = probe(id, placedDraft(id, "guild_hall", "apprentice"));
+    expect(placed.active).toEqual({ locationId: "guild_hall", workerKey: "apprentice" });
+    expect(placed.chooser?.mode).toBe("buy");
+    expect(placed.chooser?.disciplines).toEqual([]);
+    const offered = guildOptions(view, "apprentice").faceUp;
+    expect(placed.chooser?.techs.map(([techId, target]) => [techId, target.legal, target.reason?.code ?? null, target.price])).toEqual(
+      offered.map((option) => [option.techId, option.legal, option.reason, option.price]),
+    );
+    expect(offered.some((option) => !option.legal) && offered.some((option) => option.legal)).toBe(true);
+    // A click on a legal Tech chooses it; the chosen one is pressed.
+    const legal = offered.find((option) => option.legal)!;
+    const model = buildGameModel(view, []);
+    const engine = engineViewOf(view);
+    const draft = placedDraft(id, "guild_hall", "apprentice");
+    const action = WINDOWS.work.table!.act(draft as never, { type: "tech", techId: legal.techId }, model, engine);
+    const chosen = workDraft.reduce(draft as never, action as never, model, engine);
+    expect(Object.fromEntries(probe(id, chosen).chooser!.techs)[legal.techId]?.pressed).toBe(true);
+    expect(workDraft.build(chosen, model, engine)).toEqual({ type: "PLACE_GUILD_HALL", workerId: expect.any(String), choice: { kind: "buy_face_up", techId: legal.techId } });
+    // An illegal Tech is never chosen, even if a click reached the draft.
+    const illegal = offered.find((option) => !option.legal)!;
+    const refused = workDraft.reduce(draft as never, WINDOWS.work.table!.act(draft as never, { type: "tech", techId: illegal.techId }, model, engine) as never, model, engine);
+    expect(workDraft.build(refused, model, engine)).toBeNull();
+  });
+
+  it("work: a Guild Hall Shifu makes each discipline's deck a target to inspect; other placements have no chooser", () => {
+    const view = fixture(INVERTED).playerView;
+    const placed = probe(INVERTED, placedDraft(INVERTED, "guild_hall", "shifu"));
+    expect(placed.chooser?.mode).toBe("inspect");
+    expect(placed.chooser?.techs).toEqual([]);
+    expect(placed.chooser?.disciplines.map(([discipline]) => discipline)).toEqual(guildOptions(view, "shifu").inspect.map((entry) => entry.discipline));
+    const model = buildGameModel(view, []);
+    const engine = engineViewOf(view);
+    const draft = placedDraft(INVERTED, "guild_hall", "shifu");
+    const chosen = workDraft.reduce(draft as never, WINDOWS.work.table!.act(draft as never, { type: "inspect", discipline: "firing" }, model, engine) as never, model, engine);
+    expect(Object.fromEntries(probe(INVERTED, chosen).chooser!.disciplines)["firing"]).toEqual({ pressed: true });
+    expect(workDraft.build(chosen, model, engine)).toMatchObject({ type: "PLACE_GUILD_HALL", choice: { kind: "inspect", discipline: "firing" } });
+    expect(probe(INVERTED, placedDraft(INVERTED, "canal_wharf", "shifu")).chooser).toBeNull();
   });
 
   it("work: a Glaze & Load draft gives kiln targets, pending chips and highlighted vessels", () => {

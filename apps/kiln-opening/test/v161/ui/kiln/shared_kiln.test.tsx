@@ -1,7 +1,8 @@
 /**
  * Shared Kiln and Imperial Kilns (B3; UI_V1.6.1_ARCHITECTURE §4.2, §9.2, §10.3):
- * - owner decision D8: rows Low (two spaces, centred) / Middle / High by the firebox;
- * - covered spaces by player count, from `kilnLayout` (2-1-1 / 2-2-2 / 3-3-2), never 封 (D7);
+ * - owner decision D8: rows Low (centred under the dome) / Middle / High by the firebox;
+ * - only the engine's active spaces by player count (`activeKilnSpaces`, `kilnLayout`): a covered
+ *   space is not drawn at all, and the rows reflow evenly (owner review, 2026-10-17);
  * - stacks (Inverted Firing), the Setter's Mark tile, Kiln Furniture and its modifier;
  * - markers face down and turned, this firing's Quality on each chip, Crackle;
  * - kiln targets and pending chips through `TableSelection` (seeded drafts, SSR);
@@ -9,8 +10,8 @@
  * - no heat value on a ceramic or a space (D3), no internal ID in perceivable text (D9).
  */
 import { describe, expect, it } from "vitest";
-import { TECHS } from "../../../../src/game/index.ts";
-import type { CeramicId, KilnSpaceId } from "../../../../src/game/index.ts";
+import { TECHS, zoneOf } from "../../../../src/game/index.ts";
+import type { CeramicId, KilnSpaceId, KilnZone, PlayerCount } from "../../../../src/game/index.ts";
 import { techText } from "../../../../src/app/i18n/content.ts";
 import { KilnBlock } from "../../../../src/app/kiln/KilnBlock.tsx";
 import { defineWindow } from "../../../../src/app/state/draftStore.ts";
@@ -21,14 +22,29 @@ import { fixture, fixtureSource } from "../support/fixtures.ts";
 import { renderComponent } from "../support/render.tsx";
 import { TOY_WINDOWS } from "../support/toyWindows.tsx";
 import { panel, textOf } from "../table/markup.ts";
-import { activeKilnSpaces, kilnLayout, perceivable, settersMarkOptions, spaceCell, tagged, techRulesCheck, withoutRulesPanels } from "./support.ts";
+import { activeKilnSpaces, elementAt, kilnLayout, perceivable, settersMarkOptions, spaceCell, tagged, techRulesCheck, withoutRulesPanels } from "./support.ts";
 
 const render = (id: string, locale: "en" | "zh-CN" = "en", options: Parameters<typeof renderComponent>[2] = {}) =>
   renderComponent(fixtureSource(id), <KilnBlock />, { locale, ...options });
 
+/** The Shared Kiln fixtures for 2, 3 and 4 players. */
+const BY_PLAYERS: ReadonlyArray<readonly [string, PlayerCount]> = [
+  ["m5_two_player_board_2p", 2],
+  ["m3_heat_marker_step_3p", 3],
+  ["m2_commission_market_look_r3_4p", 4],
+];
+
+/** The `data-space` values inside one row (`data-zone`) of the rendered kiln, in order. */
+function rowSpaces(html: string, zone: KilnZone): string[] {
+  const at = html.indexOf(`data-zone="${zone}"`);
+  if (at < 0) return [];
+  const row = elementAt(html.slice(html.lastIndexOf("<div", at)), /<div/);
+  return [...row.matchAll(/data-space="(\w+)"/g)].map((match) => match[1] ?? "");
+}
+
 describe("Shared Kiln layout (D8)", () => {
-  it("puts Low at the top with its two spaces centred, Middle in the middle and High by the firebox", () => {
-    for (const id of ["m3_heat_marker_step_3p", "m5_two_player_board_2p", "m2_commission_market_look_r3_4p"]) {
+  it("puts Low at the top, Middle in the middle and High by the firebox, for 2, 3 and 4 players", () => {
+    for (const [id] of BY_PLAYERS) {
       const html = render(id);
       const low = html.indexOf('data-zone="low"');
       const middle = html.indexOf('data-zone="middle"');
@@ -38,29 +54,49 @@ describe("Shared Kiln layout (D8)", () => {
       expect(low).toBeLessThan(middle);
       expect(middle).toBeLessThan(high);
       expect(high).toBeLessThan(firebox);
-      // Two spacers centre the two Low spaces under the dome.
-      const lowRow = html.slice(low, middle);
-      expect(lowRow.match(/class="kiln-spacer"/g)).toHaveLength(2);
-      expect(lowRow.match(/data-space="low_\d"/g)).toEqual(['data-space="low_1"', 'data-space="low_2"']);
+      // Centring is CSS (one column width, rows centred): no spacer elements.
+      expect(html).not.toContain("kiln-spacer");
     }
   });
 
-  it("covers exactly the engine's covered spaces for 2, 3 and 4 players", () => {
-    const cases: Array<[string, number]> = [["m5_two_player_board_2p", 4], ["m3_heat_marker_step_3p", 2], ["m2_commission_market_look_r3_4p", 0]];
-    for (const [id, covered] of cases) {
+  it("draws only the engine's active spaces for 2, 3 and 4 players; a covered space is not shown at all", () => {
+    for (const [id, players] of BY_PLAYERS) {
       const view = fixture(id).playerView;
+      expect(view.game.playerCount).toBe(players);
       const layout = kilnLayout(view);
-      expect(layout.coveredSpaceIds).toHaveLength(covered);
-      expect(layout.activeSpaceIds).toEqual(activeKilnSpaces(view.game.playerCount));
-      const html = render(id);
-      const shown = [...html.matchAll(/data-space="(\w+)" data-covered=""/g)].map((match) => match[1]);
-      expect(shown.sort()).toEqual([...layout.coveredSpaceIds].sort());
-      if (covered > 0) {
-        expect(html).toContain(`Covered (${String(view.game.playerCount)}P)`);
-        const zh = render(id, "zh-CN");
-        expect(zh).toContain(`停用（${String(view.game.playerCount)}人）`);
-        expect(zh).not.toMatch(/封|锁/);
+      expect(layout.activeSpaceIds).toEqual(activeKilnSpaces(players));
+      for (const locale of ["en", "zh-CN"] as const) {
+        const html = render(id, locale);
+        const shown = [...html.matchAll(/data-space="(\w+)"/g)].map((match) => match[1]);
+        // D8 order on screen (Low first); the same set as the engine's active spaces.
+        expect([...shown].sort(), `${id} ${locale}`).toEqual([...layout.activeSpaceIds].sort());
+        for (const spaceId of layout.coveredSpaceIds) expect(html).not.toContain(`data-space="${spaceId}"`);
+        expect(html).not.toContain("data-covered");
+        // Rulebook text in a rules-details panel may name covered spaces; the kiln itself does not.
+        expect(perceivable(withoutRulesPanels(html))).not.toMatch(/covered|停用|封|锁/i);
       }
+    }
+  });
+
+  it("reflows each row to its active spaces, every space one column of the widest row", () => {
+    // The owner's review (2026-10-17): 4 players 2 Low / 3 Middle / 3 High, 3 players 2 / 2 / 2,
+    // 2 players (2-1-1 cover) Low 1 / Middle 1 / High 2 — the engine's `activeKilnSpaces`.
+    const expected: Readonly<Record<PlayerCount, Readonly<Record<KilnZone, number>>>> = {
+      2: { low: 1, middle: 1, high: 2 },
+      3: { low: 2, middle: 2, high: 2 },
+      4: { low: 2, middle: 3, high: 3 },
+    };
+    for (const [id, players] of BY_PLAYERS) {
+      const html = render(id);
+      const active = activeKilnSpaces(players);
+      const counts = { low: 0, middle: 0, high: 0 } as Record<KilnZone, number>;
+      for (const zone of ["low", "middle", "high"] as const) {
+        const inRow = active.filter((spaceId) => zoneOf(spaceId) === zone);
+        expect(rowSpaces(html, zone), `${id} ${zone}`).toEqual(inRow);
+        counts[zone] = inRow.length;
+      }
+      expect(counts, id).toEqual(expected[players]);
+      expect(html).toContain(`--kiln-cols:${String(Math.max(...Object.values(counts)))}`);
     }
   });
 

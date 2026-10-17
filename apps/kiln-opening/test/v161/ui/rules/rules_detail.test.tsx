@@ -120,15 +120,19 @@ describe("Kiln Player Board, locations, Orders and milestones", () => {
     expectClarifications(panel(zh, `完整规则：${kilnText("GE", "zh-CN").name} · ${kilnText("GE", "zh-CN").abilityName}`), KILNS.GE.clarifications, "zh-CN");
   });
 
-  it("every central and personal location opens its rules details", () => {
+  it("no action space opens rules details, on the table or on the board (owner review, 2026-10-17)", () => {
     const html = render(M1, <><CentralBoard /><PlayerBoard playerId="p3" /></>);
     for (const location of Object.values(LOCATIONS)) {
-      const body = panel(html, `Full rules: ${decode(location.name)}`);
-      expect(textOf(body)).toContain(decode(location.apprenticeText));
+      const label = `Full rules: ${decode(location.name)}`;
+      expect(panels(html).some((entry) => entry.label === label), location.name).toBe(false);
+    }
+    // A location's panel, wherever one is shown: both effects word for word and its clarifications only.
+    for (const location of Object.values(LOCATIONS)) {
+      const body = panel(render(M1, <RulesDetail subject={{ kind: "location", id: location.id }} />), `Full rules: ${decode(location.name)}`);
       expect(textOf(body)).toContain(decode(location.shifuText));
       expectClarifications(body, location.clarifications, "en");
     }
-    expectOnlyRuleAndClarifications(panel(html, "Full rules: Magistrate's Hall"));
+    expectOnlyRuleAndClarifications(panel(render(M1, <RulesDetail subject={{ kind: "location", id: "magistrates_hall" }} />), "Full rules: Magistrate's Hall"));
   });
 
   it("an Order card opens its rules details with the Main or Starting Order clarifications", () => {

@@ -4,8 +4,9 @@
  *
  * The viewer's own private look at the top of the Main deck (Commission Market Shifu, or Colour
  * Samples), marked "Only you can see". `model.look` is the viewer's own look only; another
- * player's look shows only as a count in `PublicHands` (`counts.pendingLook`). Each card is a
- * table target keyed by its OrderId when the open window's adapter offers it.
+ * player's look shows only as a count (`counts.pendingLook`), in the waiting pane and the live
+ * region, never here. Each card is a table target keyed by its OrderId when the open window's
+ * adapter offers it.
  */
 import { useT } from "../i18n/I18nProvider.tsx";
 import { techName } from "../i18n/content.ts";

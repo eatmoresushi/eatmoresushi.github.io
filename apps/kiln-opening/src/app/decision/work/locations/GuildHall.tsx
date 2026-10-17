@@ -1,21 +1,28 @@
 /**
  * GuildHall (UI_V1.6.1_ARCHITECTURE §3.4; wireframe `subEditor` guild_hall). Owner: B4.
  *
- * Apprentice effect: buy one face-up Tech (price, legality and reason from `guildOptions`).
- * Shifu effect: choose a discipline to inspect, and see the face-up Techs it could take instead
- * at their discounted prices. Every Tech opens its rules details (D10).
+ * The Guild Hall choice is made on the Tech display (owner review, 2026-10-17): the work window's
+ * table adapter turns `guildOptions` into the display's targets (`techChooserOf`), and a click
+ * there sets this sub-draft. The pane lists no Techs; it shows what is chosen, or asks for a
+ * choice on the table, with a button that goes there (`revealTechChooser`):
+ * - Apprentice effect: the face-up Tech to buy, its discipline and its price;
+ * - Shifu effect: the discipline whose deck is inspected (privately; the take and the bottom
+ *   order follow in the `guild_inspection` window).
  */
-import type { GuildTechOption, TechDiscipline, TechId } from "../../../../game/index.ts";
+import type { GuildTechOption, TechDiscipline } from "../../../../game/index.ts";
 import { disciplineName, techName } from "../../../i18n/content.ts";
 import { useT } from "../../../i18n/I18nProvider.tsx";
 import type { Translator } from "../../../i18n/translator.ts";
-import { OptionCard } from "../../../kit/OptionCard.tsx";
-import { OptionGroup } from "../../../kit/OptionGroup.tsx";
-import { FormNote, useRuleErrorText } from "../pieces.tsx";
-import { RulesDetail } from "../../../rules/RulesDetail.tsx";
+import { Button } from "../../../kit/Button.tsx";
+import { useLayoutMode, useUi } from "../../../state/hooks.ts";
+import { isPhone } from "../../../state/layoutMode.ts";
+import { revealTechChooser } from "../../../state/tableSelection.ts";
+import { FormNote } from "../pieces.tsx";
 import type { GuildHallAction, GuildHallDraft, GuildHallOptions } from "./GuildHall.draft.ts";
 import type { LocationEditorProps } from "./editor.ts";
 import { amountText } from "./shared.ts";
+
+export { techReasonDetails } from "./GuildHall.draft.ts";
 
 export type GuildHallProps = LocationEditorProps<GuildHallDraft, GuildHallAction, GuildHallOptions>;
 
@@ -30,90 +37,39 @@ export function techPriceText(option: Pick<GuildTechOption, "printedCost" | "pri
   return option.price === option.printedCost ? price : t("work.gh.printedAndPrice", { printed: amountText(t, "coins", option.printedCost), price });
 }
 
-/** A Tech's reason in the current language, with its discipline and Coins for the template. */
-export function techReasonDetails(option: GuildTechOption): { code: NonNullable<GuildTechOption["reason"]>; details: Record<string, string | number> } | null {
-  if (option.reason === null) return null;
-  return { code: option.reason, details: { techId: option.techId, discipline: option.discipline, resource: "coins" } };
-}
-
-export function GuildHall({ draft, options, dispatch }: GuildHallProps) {
+export function GuildHall({ draft, options }: GuildHallProps) {
   const t = useT();
-  const errorText = useRuleErrorText();
+  const ui = useUi();
+  const layout = useLayoutMode();
   const guild = options.guild;
-  const techOf = (value: string): TechId | undefined => guild.faceUp.find((tech) => tech.techId === value)?.techId;
-  const reasonOf = (tech: GuildTechOption): string | undefined => {
-    const reason = techReasonDetails(tech);
-    return reason === null ? undefined : errorText(reason);
-  };
-  if (options.mode === "buy") {
-    return (
-      <div className="b4-sub" data-location="guild_hall">
-        <OptionGroup
-          legend={t("work.gh.buy")}
-          name="techId"
-          value={draft.techId}
-          onChange={(value) => {
-            const techId = techOf(value);
-            if (techId !== undefined) dispatch({ type: "tech", techId });
-          }}
-        >
-          {guild.faceUp.map((tech) => (
-            <OptionCard
-              key={tech.techId}
-              value={tech.techId}
-              title={techName(tech.techId, t.locale)}
-              leading={<DisciplineSwatch discipline={tech.discipline} />}
-              meta={techPriceText(tech, t)}
-              description={disciplineName(tech.discipline, t.locale)}
-              disabled={!tech.legal}
-              reason={reasonOf(tech)}
-            >
-              <RulesDetail subject={{ kind: "tech", id: tech.techId }} />
-            </OptionCard>
-          ))}
-        </OptionGroup>
-      </div>
-    );
-  }
+  const buy = options.mode === "buy";
+  const chosen = buy ? guild.faceUp.find((tech) => tech.techId === draft.techId) ?? null : null;
+  const discipline = buy ? null : draft.discipline;
+  const nothing = buy ? chosen === null : discipline === null;
   return (
-    <div className="b4-sub" data-location="guild_hall">
-      <OptionGroup
-        legend={t("work.gh.inspect")}
-        name="discipline"
-        value={draft.discipline}
-        onChange={(value) => {
-          const discipline = guild.inspect.find((entry) => entry.discipline === value)?.discipline;
-          if (discipline !== undefined) dispatch({ type: "discipline", discipline });
-        }}
-      >
-        {guild.inspect.map((entry) => (
-          <OptionCard
-            key={entry.discipline}
-            value={entry.discipline}
-            title={disciplineName(entry.discipline, t.locale)}
-            leading={<DisciplineSwatch discipline={entry.discipline} />}
-            meta={t("work.gh.deckN", { n: entry.deckCount })}
-          />
-        ))}
-      </OptionGroup>
-      {guild.faceUp.length === 0 ? null : (
-        <div className="b4-sub-block">
-          <FormNote>{t("work.gh.faceUpLater")}</FormNote>
-          <ul className="b4-techs">
-            {guild.faceUp.map((tech) => (
-              <li key={tech.techId} className="b4-tech" data-legal={tech.legal ? "true" : "false"}>
-                <span className="b4-row">
-                  <DisciplineSwatch discipline={tech.discipline} />
-                  <strong>{techName(tech.techId, t.locale)}</strong>
-                  <span className="num">{techPriceText(tech, t)}</span>
-                </span>
-                {tech.legal ? null : <span className="b4-tech-reason">{reasonOf(tech)}</span>}
-                <RulesDetail subject={{ kind: "tech", id: tech.techId }} />
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+    <div className="b4-sub" data-location="guild_hall" data-mode={options.mode}>
+      <p className="b4-sub-title">{buy ? t("work.gh.buy") : t("work.gh.inspect")}</p>
+      {chosen !== null ? (
+        <p className="b4-guild-choice" data-guild-choice={chosen.techId}>
+          <DisciplineSwatch discipline={chosen.discipline} />
+          <strong>{techName(chosen.techId, t.locale)}</strong>
+          <span className="b4-guild-disc">{disciplineName(chosen.discipline, t.locale)}</span>
+          <span className="b4-guild-price num">{techPriceText(chosen, t)}</span>
+        </p>
+      ) : null}
+      {discipline !== null ? (
+        <p className="b4-guild-choice" data-guild-choice={discipline}>
+          <DisciplineSwatch discipline={discipline} />
+          <strong>{t("work.gh.inspectChosen", { discipline: disciplineName(discipline, t.locale) })}</strong>
+        </p>
+      ) : null}
+      {nothing ? <FormNote>{buy ? t("work.gh.chooseOnTable") : t("work.gh.chooseDeckOnTable")}</FormNote> : null}
+      {buy ? null : <FormNote tone="private">{t("work.gh.inspectNote")}</FormNote>}
+      <div className="b4-row">
+        <Button size="sm" data-goto="techs" onClick={() => revealTechChooser(ui, isPhone(layout))}>
+          {nothing ? t("work.gh.showTechs") : t("work.gh.changeOnTable")}
+        </Button>
+      </div>
     </div>
   );
 }

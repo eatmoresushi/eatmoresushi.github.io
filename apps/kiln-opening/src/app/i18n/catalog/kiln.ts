@@ -2,8 +2,9 @@ import type { TechId } from "../../../game/index.ts";
 import { defineNamespace } from "../defineNamespace.ts";
 
 /**
- * `kiln` namespace: Shared Kiln, Imperial Kilns, firing stage, step names, idle recap and the
- * rules-details panel (owner decision D10). Owned by B3 (UI_V1.6.1_ARCHITECTURE §4.2).
+ * `kiln` namespace: Shared Kiln, Imperial Kilns, firing stage, step names, the Kiln section's
+ * strip (this round's Kiln Die and the Fire discard button) and the rules-details panel (owner
+ * decision D10). Owned by B3 (UI_V1.6.1_ARCHITECTURE §4.2).
  *
  * - `step.<n>.full` are the twelve Appendix D step names of glossary §2.11 (English after
  *   "step <n>", Chinese after the numeral and 、); `step.<n>.short` are the wireframe's rail
@@ -13,13 +14,11 @@ import { defineNamespace } from "../defineNamespace.ts";
  */
 export const kiln = defineNamespace({
   en: {
-    // Shared Kiln (wireframe `sharedKiln`; D8 rows Low / Middle / High).
+    // Shared Kiln (wireframe `sharedKiln`; D8 rows Low / Middle / High; active spaces only).
     "sharedKiln": "Shared Kiln",
     "sharedKilnPlayers": "Shared Kiln · {n}P",
-    "sharedKilnLabel": "Shared Kiln, {n}-player cover",
+    "sharedKilnLabel": "Shared Kiln, {n}-player game",
     "zoneLabel": "{zone} zone, modifier {modifier}",
-    "covered": "Covered ({n}P)",
-    "coveredLabel": "{space}: covered in a {n}-player game",
     "spaceLabel": "{space}, modifier {modifier}",
     "spaceFurnitureLabel": "{space}, {tech} modifier {modifier}",
     "emptySpace": "empty",
@@ -132,17 +131,15 @@ export const kiln = defineNamespace({
     "record.salvaged": "{name} salvaged a Flawed ceramic.",
     "record.secondFired": "{ceramic}: {tech} with Fire card {value}.",
 
-    // Idle stage and recap (wireframe `idleStage`; `firingRecapView`).
-    "recap.label": "Last firing",
-    "recap.title": "Last firing · Round {r}",
-    "recap.none": "No firing yet",
-    "recap.skipped": "Round {r}: nothing was loaded, so there was no firing.",
-    "recap.dieThisRound": "Kiln Die this round",
-    "recap.lineBase": "Kiln Die <b>{die}</b> + {contributions} = Base Heat <b>{base}</b>",
-    "recap.lineGlobal": "Fire {fire} → Global Heat <b>{global}</b>",
-    "recap.noContributions": "no Contributions",
-    "recap.contribution": "{name} {card}",
-    "recap.results": "Qualities recorded",
+    // The Kiln section's strip between firings (owner review, 2026-10-17; D4).
+    "strip.die": "Kiln Die this round",
+    "strip.dieValue": "Kiln Die this round: {n}",
+    "strip.dieNotRolled": "not rolled yet",
+    "strip.dieNotRolledLabel": "Kiln Die this round: not rolled yet",
+    "strip.discardButton": "Fire discard",
+    "strip.discardOrder": "Oldest first",
+
+    // A ceramic the table does not describe (KilnCeramic fallback).
     "recap.ceramicFallback": "{owner}’s ceramic",
     "recap.ceramicFallbackYours": "Your ceramic",
 
@@ -151,10 +148,8 @@ export const kiln = defineNamespace({
   zh: {
     "sharedKiln": "共窑",
     "sharedKilnPlayers": "共窑 · {n}人",
-    "sharedKilnLabel": "共窑（{n}人局启用格）",
+    "sharedKilnLabel": "共窑（{n}人局）",
     "zoneLabel": "{zone}，温区修正{modifier}",
-    "covered": "停用（{n}人）",
-    "coveredLabel": "{space}：{n}人局停用",
     "spaceLabel": "{space}，修正{modifier}",
     "spaceFurnitureLabel": "{space}，「{tech}」修正{modifier}",
     "emptySpace": "空",
@@ -262,16 +257,13 @@ export const kiln = defineNamespace({
     "record.salvaged": "{name}折卖了一件瑕品。",
     "record.secondFired": "{ceramic}：「{tech}」，窑火牌{value}。",
 
-    "recap.label": "上次烧窑",
-    "recap.title": "上次烧窑 · 第{r}轮",
-    "recap.none": "尚未烧窑",
-    "recap.skipped": "第{r}轮：没有器物装窑，所以这一轮不烧窑。",
-    "recap.dieThisRound": "本轮窑骰",
-    "recap.lineBase": "窑骰<b>{die}</b> + {contributions} = 基础火候<b>{base}</b>",
-    "recap.lineGlobal": "窑火{fire} → 全窑火候<b>{global}</b>",
-    "recap.noContributions": "无控火",
-    "recap.contribution": "{name} {card}",
-    "recap.results": "所定品质",
+    "strip.die": "本轮窑骰",
+    "strip.dieValue": "本轮窑骰：{n}",
+    "strip.dieNotRolled": "尚未掷出",
+    "strip.dieNotRolledLabel": "本轮窑骰：尚未掷出",
+    "strip.discardButton": "窑火弃牌堆",
+    "strip.discardOrder": "最早在前",
+
     "recap.ceramicFallback": "{owner}的器物",
     "recap.ceramicFallbackYours": "你的器物",
 

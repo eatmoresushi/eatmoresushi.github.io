@@ -8,7 +8,8 @@
  *   from `formatRuleError(PERSONAL_SPACE_LOCKED)`: "Learn a Form & Decorate Tech to add this
  *   space" / 习得坯作技艺即添此工位 — never "locked";
  * - once added, "Added by ⟨Tech⟩" / 由「⟨技艺⟩」添设 (`addedByTechId`, §5 gap 11);
- * - the location name opens its rules details (D10);
+ * - the location name, as plain text: like the table's action spaces, a personal action space has
+ *   no rules-details link (owner review, 2026-10-17);
  * - on the viewer's own board during their work turn, Place shortcuts from `placeTargets`
  *   (the next free space is marked when the pane's draft has chosen this location), and the
  *   engine's reason when the location cannot be used (CR B2-3).
@@ -22,7 +23,6 @@ import { Disclosure } from "../kit/Disclosure.tsx";
 import { WorkerPiece } from "../pieces/WorkerPiece.tsx";
 import { useGame, useTableSelection } from "../state/hooks.ts";
 import { PlaceButtons, unavailableReasons } from "../table/LocationCard.tsx";
-import { RulesDetail } from "../rules/RulesDetail.tsx";
 import { nextFreePersonalSpace, summaryOf } from "../table/tableData.ts";
 import "./PersonalSpaces.css";
 
@@ -52,11 +52,7 @@ export function PersonalSpaces({ playerId }: PersonalSpacesProps) {
         const name = locationName(locationId, t.locale);
         return (
           <div key={locationId} className={`psp ${TONE[locationId]}`} data-location-id={locationId}>
-            <RulesDetail
-              subject={{ kind: "location", id: locationId }}
-              className="psp-detail"
-              trigger={<span className="psp-name">{name}</span>}
-            />
+            <span className="psp-name">{name}</span>
             <ul className="psp-slots">
               {spaces.map((space) => {
                 if (!space.unlocked) {

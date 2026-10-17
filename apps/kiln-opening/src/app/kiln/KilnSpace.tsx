@@ -3,7 +3,8 @@
  * Source: wireframe `sharedKiln` cell: zone and modifier, stacks, Setter's Mark, Kiln Furniture,
  * markers, pending chips, target button.
  *
- * - A covered space (by player count) shows "Covered (2P)" and is never a target (D7: never 封).
+ * - A covered space (by player count) is not drawn at all (owner review, 2026-10-17): the Shared
+ *   Kiln shows only the engine's active spaces, so this renders nothing for a covered one.
  * - An active space shows its name and the modifier its ceramics use (Kiln Furniture's, else
  *   the zone's, from `effectiveModifier`), its ceramics with their markers and this firing's
  *   Quality, an Inverted Firing stack, and the Setter's Mark and Kiln Furniture tiles. Each tile
@@ -135,20 +136,8 @@ export function KilnSpace({ spaceId }: KilnSpaceProps) {
   const selection: TableSelection = useTableSelection();
   const ceramics = useTableCeramics();
   const space = model.board.kilnSpaces.find((candidate) => candidate.spaceId === spaceId);
-  if (space === undefined) return null;
+  if (space === undefined || !space.active) return null;
   const name = kilnSpaceName(spaceId, t);
-  const playerCount = model.players.length;
-
-  if (!space.active) {
-    return (
-      <div className="ksp ksp--covered" role="group" aria-label={t("kiln.coveredLabel", { space: name, n: playerCount })} data-space={spaceId} data-covered="">
-        <div className="ksp-head" aria-hidden="true">
-          <span className="ksp-name">{name}</span>
-        </div>
-        <div className="ksp-body ksp-covered" aria-hidden="true">{t("kiln.covered", { n: playerCount })}</div>
-      </div>
-    );
-  }
 
   const target = selection.kilnTargets.get(spaceId);
   const interactive = target === undefined;

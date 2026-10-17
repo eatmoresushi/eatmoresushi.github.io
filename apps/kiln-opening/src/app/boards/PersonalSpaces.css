@@ -31,11 +31,6 @@
     background: var(--d-glazing-pale);
   }
 
-  .psp-detail {
-    justify-self: start;
-    min-width: 0;
-  }
-
   .psp-name {
     color: var(--ink);
     font-weight: 700;

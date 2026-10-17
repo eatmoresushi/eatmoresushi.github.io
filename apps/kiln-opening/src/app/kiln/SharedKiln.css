@@ -1,4 +1,5 @@
-/* Shared Kiln (wireframe `.kiln`, `.krow`, `.zlab`, `.firebox`): a kiln-shaped body, D8 rows. */
+/* Shared Kiln (wireframe `.kiln`, `.krow`, `.zlab`, `.firebox`): a kiln-shaped body, D8 rows of
+   active spaces only (owner review, 2026-10-17). */
 @layer components {
   .kiln {
     position: relative;
@@ -40,17 +41,29 @@
     min-width: 0;
   }
 
+  /* A zone label column, then the row's active spaces (covered spaces are not drawn). */
   .kiln-row {
     display: grid;
-    grid-template-columns: 3rem repeat(3, minmax(0, 1fr));
+    grid-template-columns: 3rem minmax(0, 1fr);
     gap: var(--sp-3);
     align-items: stretch;
     min-width: 0;
   }
 
-  /* D8: the two Low spaces sit centred at the top of the dome. */
-  .kiln-row--low {
-    grid-template-columns: 3rem minmax(0, 1fr) minmax(0, 2fr) minmax(0, 2fr) minmax(0, 1fr);
+  /* Every space is one column of the widest row (`--kiln-cols`, from the engine's active
+     spaces); a row with fewer spaces is centred, so Low sits centred under the dome (D8). */
+  .kiln-row-spaces {
+    --kiln-gap: var(--sp-3);
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    gap: var(--kiln-gap);
+    min-width: 0;
+  }
+
+  .kiln-row-spaces > * {
+    flex: 0 1 calc((100% - (var(--kiln-cols, 3) - 1) * var(--kiln-gap)) / var(--kiln-cols, 3));
+    min-width: 0;
   }
 
   .kiln-zone {

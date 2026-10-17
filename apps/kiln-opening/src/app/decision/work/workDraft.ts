@@ -7,9 +7,12 @@
  *   sub-draft), or first use Imperial Priority or Canal Barge (§3.4, R6, R10);
  * - **after the worker action:** Imperial Priority, Canal Barge, or End turn.
  *
- * The work turn keeps **one sub-draft per location** (`perLocation`, §3.5), so arrowing through
- * the location radios never discards a sub-editor's choices; only the active location's sub-draft
- * is revalidated and built. Worker entries and legality come from `placementOptions` (memoised
+ * The worker and the location are chosen on the table (owner review, 2026-10-17): the work
+ * window's table adapter turns a Place shortcut into the `place` action, and a Guild Hall Tech or
+ * deck on the Tech display into the Guild Hall sub-draft's action. The `worker` and `location`
+ * actions remain for tests and tools. The work turn keeps **one sub-draft per location**
+ * (`perLocation`, §3.5), so moving between locations never discards a sub-editor's choices; only
+ * the active location's sub-draft is revalidated and built. Worker entries and legality come from `placementOptions` (memoised
  * per view), Imperial Priority from `imperialPriorityOptions`, Canal Barge from B5's
  * `canalBargeDraft` (composed here as the `canalBarge` sub-draft; its form reads it through
  * `useComposedCanalBarge`, `composedForms.tsx`).

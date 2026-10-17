@@ -6,23 +6,53 @@
  * from content), with the public size of each Tech deck. An empty column says so. Every tile
  * opens its rules details (D10). A pending Guild Hall Shifu inspection (`counts.pendingLook`,
  * public) says who is looking at how many Techs, never which.
+ *
+ * **The Guild Hall chooser** (owner review, 2026-10-17). While the pane's draft places a worker at
+ * the Guild Hall, the display is where that choice is made (`useTableSelection().techChooser`,
+ * from `guildOptions` through the work draft):
+ * - a prompt names the placement; it is the focus target the Place shortcut moves to
+ *   (`data-tech-chooser`), and it labels the display as a group;
+ * - **buy** (the Apprentice effect): every face-up Tech is a toggle button (`data-act="tech"`);
+ *   one this worker cannot buy is greyed out, not selectable, with the engine's reason;
+ * - **inspect** (the Shifu effect, also an Apprentice as Shifu): each discipline offers its
+ *   "Inspect the deck" toggle (`data-act="inspect"`); the tiles stay ordinary display tiles
+ *   with their rules details, and the private inspection itself is its own window.
+ * A choice goes back to the pane's draft (`act`); on phones the decision sheet then opens with
+ * the chosen placement and Confirm.
  */
+import { useId } from "react";
 import type { CSSProperties } from "react";
 import { useT } from "../i18n/I18nProvider.tsx";
 import { RULE_NUMBERS, disciplineName, locationName } from "../i18n/content.ts";
-import { useGame } from "../state/hooks.ts";
+import { errorTextOptions, ruleErrorText } from "../i18n/errors.ts";
+import { useGame, useTableSelection, useUi } from "../state/hooks.ts";
+import { TECH_CHOOSER_ATTRIBUTE } from "../state/tableSelection.ts";
+import { placementWorkerName } from "./LocationCard.tsx";
+import { tableCeramics } from "./tableData.ts";
 import { DISCIPLINE_COLOUR, TechCard } from "./TechCard.tsx";
 import "./TechDisplay.css";
 
 export function TechDisplay() {
   const t = useT();
   const model = useGame();
+  const selection = useTableSelection();
+  const ui = useUi();
+  const promptId = useId();
   const display = model.board.techDisplay;
   const pending = model.board.counts.pendingLook;
   const look = pending !== null && pending.kind === "guild_inspection" ? pending : null;
   const looker = look === null ? null : model.players.find((summary) => summary.playerId === look.playerId) ?? null;
+  const chooser = selection.techChooser;
+  const errorOptions = chooser === null ? null : errorTextOptions(tableCeramics(model).labelView, t);
+  const prompt =
+    chooser === null
+      ? null
+      : t(chooser.mode === "buy" ? "table.techs.chooseBuy" : "table.techs.chooseInspect", {
+          location: locationName("guild_hall", t.locale),
+          worker: placementWorkerName(chooser.worker, t),
+        });
   return (
-    <div className="techs-block">
+    <div className={chooser === null ? "techs-block" : "techs-block techs-block--choosing"} data-chooser={chooser?.mode}>
       <div className="techs-h">
         <h3>{t("table.techs.title")}</h3>
         <span className="techs-meta">
@@ -34,26 +64,68 @@ export function TechDisplay() {
           {t("table.techs.looking", { name: looker.displayName, n: look.count })}
         </p>
       )}
-      <div className="techs">
-        {display.map((column) => (
-          <div key={column.discipline} className="disc" data-discipline={column.discipline} style={{ "--dc": DISCIPLINE_COLOUR[column.discipline] } as CSSProperties}>
-            <div className="disc-h">
-              <h4 className="disc-name">{disciplineName(column.discipline, t.locale)}</h4>
-              <span className="num">{t("table.techs.deck", { n: column.deckCount })}</span>
+      {prompt === null ? null : (
+        <p id={promptId} className="techs-choose" tabIndex={-1} {...{ [TECH_CHOOSER_ATTRIBUTE]: "" }}>
+          {prompt}
+        </p>
+      )}
+      <div className="techs" {...(prompt === null ? {} : { role: "group", "aria-labelledby": promptId })}>
+        {display.map((column) => {
+          const inspect = chooser?.disciplines.get(column.discipline);
+          const name = disciplineName(column.discipline, t.locale);
+          return (
+            <div key={column.discipline} className="disc" data-discipline={column.discipline} style={{ "--dc": DISCIPLINE_COLOUR[column.discipline] } as CSSProperties}>
+              <div className="disc-h">
+                <h4 className="disc-name">{name}</h4>
+                <span className="num">{t("table.techs.deck", { n: column.deckCount })}</span>
+              </div>
+              {inspect === undefined ? null : (
+                <button
+                  type="button"
+                  className="disc-inspect"
+                  data-act="inspect"
+                  data-discipline={column.discipline}
+                  aria-pressed={inspect.pressed}
+                  aria-label={t("table.techs.inspectLabel", { discipline: name })}
+                  onClick={() => {
+                    selection.act({ type: "inspect", discipline: column.discipline });
+                    ui.placeShortcut();
+                  }}
+                >
+                  {t("table.techs.inspect")}
+                </button>
+              )}
+              {column.techIds.length === 0 ? (
+                <p className="disc-none">{t("table.techs.none")}</p>
+              ) : (
+                <ul className="disc-list">
+                  {column.techIds.map((techId) => {
+                    const target = chooser?.techs.get(techId);
+                    return (
+                      <li key={techId}>
+                        {target === undefined || errorOptions === null ? (
+                          <TechCard techId={techId} />
+                        ) : (
+                          <TechCard
+                            techId={techId}
+                            choice={{
+                              target,
+                              reason: target.legal || target.reason === null ? null : ruleErrorText(target.reason, t, errorOptions),
+                              onChoose: () => {
+                                selection.act({ type: "tech", techId });
+                                ui.placeShortcut();
+                              },
+                            }}
+                          />
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
             </div>
-            {column.techIds.length === 0 ? (
-              <p className="disc-none">{t("table.techs.none")}</p>
-            ) : (
-              <ul className="disc-list">
-                {column.techIds.map((techId) => (
-                  <li key={techId}>
-                    <TechCard techId={techId} />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

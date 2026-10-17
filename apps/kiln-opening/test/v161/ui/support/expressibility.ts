@@ -15,6 +15,14 @@
  * 4. `build(draft)` passes the ConfirmBar check (`validateAction`, or Contribution
  *    affordability).
  *
+ * Work placements are made **on the table** (owner review, 2026-10-17): the pane lists no workers
+ * or locations. So a `PLACE_*` command of the work window is also routed through the window's
+ * table adapter (`tableRoute`): its location and worker must be a legal Place shortcut of the
+ * fresh draft (`placeTargets`), the shortcut's `act` must choose exactly them, and at the Guild
+ * Hall the Tech or discipline must be a selectable target of the Tech display (`techChooser`)
+ * whose `act` sets the sub-draft. The rest of the sub-draft is the pane's sub-editor's (checked by
+ * steps 1–3), and the routed draft must build the command.
+ *
  * A stub draft model (`stubDraft()`, phase A) is reported as `todo`, never as a failure.
  */
 import { isDeepStrictEqual } from "node:util";
@@ -22,6 +30,9 @@ import { enumerateLegalActions, legalCommands } from "../../../../src/game/index
 import type { AuthoritativeCommand, PlayerView } from "../../../../src/game/index.ts";
 import { canalBargeDraft } from "../../../../src/app/decision/orders/canalBargeDraft.ts";
 import { WINDOWS } from "../../../../src/app/decision/windows.ts";
+import type { WorkDraft } from "../../../../src/app/decision/work/workDraft.ts";
+import { placementWorkerKey } from "../../../../src/app/state/tableSelection.ts";
+import type { TableAdapter } from "../../../../src/app/state/tableSelection.ts";
 import { checkCommand } from "../../../../src/app/session/fixtureSource.ts";
 import { decisionWindow } from "../../../../src/app/state/decisionWindow.ts";
 import type { DecisionWindow, DecisionWindowKind } from "../../../../src/app/state/decisionWindow.ts";
@@ -89,6 +100,47 @@ export function formFor(
   return { form: window.kind, draft: registry[window.kind].draft };
 }
 
+/**
+ * A work placement through the table (owner review, 2026-10-17): the Place shortcut, then the
+ * Guild Hall's Tech display target, then the sub-editor's values. Returns why it cannot be
+ * reached, or null.
+ */
+export function tableRoute(
+  command: AuthoritativeCommand,
+  expressed: WorkDraft,
+  draft: AnyDraftModel,
+  adapter: TableAdapter<unknown, DraftActionBase> | undefined,
+  model: GameModel,
+  engine: EngineView,
+): string | null {
+  if (adapter === undefined) return "the work window has no table adapter";
+  const { locationId, workerKey } = expressed;
+  if (expressed.mode !== "place" || locationId === null || workerKey === null) return "the placement draft names no location or worker";
+  const initial = draft.initial(model, engine);
+  const entries = adapter.select(initial, model, engine).placeTargets.get(locationId) ?? [];
+  if (!entries.some((entry) => entry.legal && placementWorkerKey(entry) === workerKey)) return `no legal Place shortcut for ${workerKey} at ${locationId}`;
+  const placeAction = adapter.act(initial, { type: "place", locationId, workerKey }, model, engine);
+  if (placeAction === null) return `the Place shortcut for ${workerKey} at ${locationId} does nothing`;
+  let routed = draft.reduce(initial, placeAction, model, engine) as WorkDraft;
+  if (routed.mode !== "place" || routed.locationId !== locationId || routed.workerKey !== workerKey) return `the Place shortcut chose ${routed.workerKey ?? "nothing"} at ${routed.locationId ?? "nowhere"}`;
+  if (locationId === "guild_hall") {
+    const chooser = adapter.select(routed, model, engine).techChooser;
+    if (chooser === null) return "the Guild Hall placement leaves the Tech display without its chooser";
+    const sub = expressed.perLocation.guild_hall;
+    if (sub.techId !== null && chooser.techs.get(sub.techId)?.legal !== true) return `${sub.techId} is not a selectable Tech on the Tech display`;
+    if (sub.discipline !== null && !chooser.disciplines.has(sub.discipline)) return `${sub.discipline} is not a deck to inspect on the Tech display`;
+    const choice = sub.techId !== null ? adapter.act(routed, { type: "tech", techId: sub.techId }, model, engine) : sub.discipline !== null ? adapter.act(routed, { type: "inspect", discipline: sub.discipline }, model, engine) : null;
+    if (choice === null) return "the Tech display's choice does nothing";
+    routed = draft.reduce(routed, choice, model, engine) as WorkDraft;
+    if (!isDeepStrictEqual(routed.perLocation.guild_hall, sub)) return `the Tech display chose ${JSON.stringify(routed.perLocation.guild_hall)}`;
+  }
+  // The sub-editor's values (Materials Yard split, vessels, loads, reservation…) are the pane's.
+  const final = draft.reduce({ ...routed, perLocation: { ...routed.perLocation, [locationId]: expressed.perLocation[locationId] } }, REVALIDATE, model, engine);
+  const built = draft.build(final, model, engine);
+  if (built === null || !isDeepStrictEqual(normalizeCommand(built), normalizeCommand(command))) return `the table route builds ${JSON.stringify(built)}`;
+  return null;
+}
+
 /** Checks one command against its form (§9.4 steps 1–4). */
 export function checkExpressible(
   view: PlayerView,
@@ -108,6 +160,11 @@ export function checkExpressible(
   if (!isDeepStrictEqual(revalidated, expressed)) return row("fail", "the draft holds a value options() does not offer (revalidate changed it)");
   const built = draft.build(expressed, model, engine);
   if (built === null) return row("fail", "build returned null");
+  if (form === "work" && command.type.startsWith("PLACE_")) {
+    const registry = options.registry ?? WINDOWS;
+    const problem = tableRoute(command, expressed as WorkDraft, draft, registry.work.table as TableAdapter<unknown, DraftActionBase> | undefined, model, engine);
+    if (problem !== null) return row("fail", `not reachable from the table: ${problem}`);
+  }
   if (!isDeepStrictEqual(normalizeCommand(built), normalizeCommand(command))) {
     return row("fail", `build gave ${JSON.stringify(built)}`);
   }

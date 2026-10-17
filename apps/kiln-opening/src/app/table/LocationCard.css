@@ -70,15 +70,13 @@
     font-weight: 600;
   }
 
-  .loc-detail {
-    min-width: 0;
-  }
-
+  /* Both one-line effects, plain text (the action spaces open no rules details, owner review
+     2026-10-17). */
   .loc-fx {
     display: grid;
-    flex: 1 1 auto;
     gap: var(--sp-1);
     min-width: 0;
+    margin: 0;
     color: var(--ink-2);
     font-size: var(--fs-rule);
     line-height: var(--lh-snug);
@@ -91,13 +89,6 @@
 
   .loc-effect {
     display: block;
-  }
-
-  .loc-more {
-    margin-top: var(--sp-1);
-    color: var(--teal-ink);
-    font-size: var(--fs-meta);
-    font-weight: 600;
   }
 
   .loc-place {

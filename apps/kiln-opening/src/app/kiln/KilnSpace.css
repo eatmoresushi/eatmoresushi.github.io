@@ -1,4 +1,4 @@
-/* Shared Kiln space (wireframe `.ksp`): covered, active, target, stack, tiles, pending chips. */
+/* Shared Kiln space (wireframe `.ksp`): active, target, stack, tiles, pending chips. */
 @layer components {
   .ksp {
     container: kiln-space / inline-size;
@@ -55,20 +55,6 @@
   .ksp-empty {
     font-size: var(--fs-12);
     color: var(--kiln-cell-ink-2);
-  }
-
-  .ksp--covered {
-    border: 1.5px dashed var(--kiln-rim);
-    background: repeating-linear-gradient(45deg, var(--kiln-covered-a) 0 6px, var(--kiln-covered-b) 6px 12px);
-    color: var(--kiln-ink-2);
-  }
-
-  .ksp--covered .ksp-head {
-    color: var(--kiln-ink-2);
-  }
-
-  .ksp-covered {
-    font-size: var(--fs-12);
   }
 
   .ksp-tiles {

@@ -1,89 +1,73 @@
 /**
  * IdleFiringRecap (UI_V1.6.1_ARCHITECTURE §4.2). Owner: B3 (kiln, firing stage, results, playtest).
- * Source: wireframe `idleStage`: the last firing from `firingRecap` (gap 18).
+ * The strip at the top of the Kiln section between firings: this round's Kiln Die and the open
+ * Fire discard (D4). The path and name stay as phase A fixed them (`shell/WorldSections.tsx`).
  *
- * Between firings (the Kiln section), the idle stage keeps the last firing visible, as
- * `UI_UX_SPEC` asks: "Kiln Die + Contributions = Base Heat; Fire → Global Heat" and the Quality
- * each ceramic recorded, plus this round's Kiln Die and the open Fire discard (D4). It reads
- * `firingRecapView` only (no heat ledger, D3). A round in which nothing was loaded (the public
- * `FIRING_SKIPPED` event in the log) is noted; before the first firing it says so.
+ * Owner review 2026-10-17: the "Last firing" recap is gone (its equation, Qualities, "No firing
+ * yet" and the skipped-round note). The strip shows only what lies on the table now:
+ * - this round's Kiln Die: the die piece with its number, or "not rolled yet" before the roll.
+ *   One sentence for assistive technology ("Kiln Die this round: 2"); the visible label and the
+ *   die are the same words, so they are hidden from it;
+ * - a "Fire discard" button (a disclosure: `aria-expanded`, `aria-controls`) that shows, right
+ *   below, every discarded Fire card's value in discard order (oldest first), or "none yet".
+ *   Escape closes it and puts focus back on the button. The panel stays in the markup while
+ *   closed (`hidden`), so static markup carries the discard as `PieceDetail` panels do.
+ *
+ * D4: the discard is public at any time; nothing else about the Fire deck is shown: no count of
+ * cards left, no odds, and the button carries no count. During the Firing Phase the firing stage
+ * takes this section's place and shows the discard in its heat equation (`firing/HeatEquation`).
  */
-import type { FiringStageView } from "../../game/index.ts";
+import { useId, useRef, useState } from "react";
+import type { KeyboardEvent } from "react";
 import { useT } from "../i18n/I18nProvider.tsx";
-import { contributionCardName } from "../i18n/content.ts";
-import { list } from "../i18n/format.ts";
-import type { Translator } from "../i18n/translator.ts";
 import { FireDiscard } from "../firing/FireDiscard.tsx";
-import { FireCard } from "../pieces/FireCard.tsx";
+import { Button } from "../kit/Button.tsx";
 import { KilnDie } from "../pieces/KilnDie.tsx";
-import { useGame, useLog } from "../state/hooks.ts";
-import type { GameModel } from "../state/model.ts";
-import { KilnCeramic } from "./KilnCeramic.tsx";
-import { playerLabel } from "./names.ts";
+import { useGame } from "../state/hooks.ts";
 import "./IdleFiringRecap.css";
-
-function contributionsText(recap: FiringStageView, model: GameModel, t: Translator): string {
-  const revealed = recap.contributions.flatMap((entry) =>
-    entry.revealed === null ? [] : [t("kiln.recap.contribution", { name: playerLabel(model, t, entry.playerId), card: contributionCardName(entry.revealed.card, t.locale) })],
-  );
-  return revealed.length === 0 ? t("kiln.recap.noContributions") : list(revealed, t.locale);
-}
-
-function Recap({ recap }: { recap: FiringStageView }) {
-  const t = useT();
-  const model = useGame();
-  const fired = recap.ceramics.filter((record) => !record.salvaged);
-  return (
-    <div className="recap-last">
-      <h4 className="recap-title">{t("kiln.recap.title", { r: recap.round })}</h4>
-      {recap.baseHeat === null ? null : (
-        <p className="recap-line">
-          {t.rich("kiln.recap.lineBase", { die: recap.kilnDie, contributions: contributionsText(recap, model, t), base: recap.baseHeat })}
-        </p>
-      )}
-      {recap.fireModifier === null || recap.globalHeat === null ? null : (
-        <p className="recap-line">
-          {t.rich("kiln.recap.lineGlobal", { fire: <FireCard value={recap.fireModifier} />, global: recap.globalHeat })}
-        </p>
-      )}
-      {fired.length === 0 ? null : (
-        <ul className="recap-cers" aria-label={t("kiln.recap.results")}>
-          {fired.map((record) => (
-            <li key={record.id}>
-              <KilnCeramic id={record.id} ownerId={record.ownerId} quality={record.quality} crackle={record.crackle} extraFire={record.secondFireModifier} />
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
 
 export function IdleFiringRecap() {
   const t = useT();
   const model = useGame();
-  const { log } = useLog();
-  const recap = model.firingRecap;
-  const skipped = log
-    .filter((entry) => entry.event.type === "FIRING_SKIPPED")
-    .map((entry) => (entry.event.type === "FIRING_SKIPPED" ? entry.event.round : 0))
-    .filter((round) => recap === null || round > recap.round);
-  const lastSkipped = skipped.length === 0 ? null : Math.max(...skipped);
+  const [open, setOpen] = useState(false);
+  const panelId = useId();
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const die = model.board.kilnDie?.value ?? null;
+  const discard = model.board.fireDiscard;
+
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "Escape" || !open) return;
+    event.stopPropagation();
+    setOpen(false);
+    buttonRef.current?.focus();
+  };
+
   return (
-    <div className="recap">
-      <div className="recap-banner">
-        <h3 className="recap-heading">{t("kiln.recap.label")}</h3>
-        <span className="recap-die">
-          <span>{t("kiln.recap.dieThisRound")}</span>
-          <KilnDie value={model.board.kilnDie?.value ?? null} />
-        </span>
-        <span className="recap-discard">
-          <FireDiscard discard={model.board.fireDiscard} />
-        </span>
+    <div className="kstrip" onKeyDown={onKeyDown}>
+      <div className="kstrip-bar">
+        <p className="kstrip-die">
+          <span className="kstrip-die-label" aria-hidden="true">{t("kiln.strip.die")}</span>
+          <span className="kstrip-die-piece" aria-hidden="true">
+            <KilnDie value={die} />
+          </span>
+          {die === null ? <span className="kstrip-die-none" aria-hidden="true">{t("kiln.strip.dieNotRolled")}</span> : null}
+          <span className="sr-only">{die === null ? t("kiln.strip.dieNotRolledLabel") : t("kiln.strip.dieValue", { n: die })}</span>
+        </p>
+        <Button
+          ref={buttonRef}
+          size="sm"
+          className="kstrip-discard"
+          aria-expanded={open}
+          aria-controls={panelId}
+          onClick={() => setOpen((value) => !value)}
+        >
+          {t("kiln.strip.discardButton")}
+          <span className="kstrip-caret" aria-hidden="true">{open ? "▴" : "▾"}</span>
+        </Button>
       </div>
-      <div className="recap-body">
-        {lastSkipped === null ? null : <p className="recap-skipped">{t("kiln.recap.skipped", { r: lastSkipped })}</p>}
-        {recap === null ? <p className="recap-none">{t("kiln.recap.none")}</p> : <Recap recap={recap} />}
+      <div id={panelId} className="kstrip-panel" hidden={!open}>
+        {discard.length === 0 ? null : <span className="kstrip-order" aria-hidden="true">{t("kiln.strip.discardOrder")}</span>}
+        <FireDiscard discard={discard} showLabel={false} />
       </div>
     </div>
   );

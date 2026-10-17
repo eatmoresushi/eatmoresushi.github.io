@@ -4,7 +4,7 @@
  *
  * Each location of the work window is a sub-draft model plus a thin component, ported from the
  * matching branch of the wireframe's `subEditor`. The work draft (`workDraft.ts`) keeps one
- * sub-draft per location (`perLocation`), so arrowing through the location radios never loses a
+ * sub-draft per location (`perLocation`), so moving between locations on the table never loses a
  * sub-editor's choices, and calls the active location's model with a `PlacementContext`: the
  * actor, the location's `placementOptions` entry and the chosen worker entry.
  *

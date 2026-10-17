@@ -5,12 +5,16 @@
  * - Occupants in placement order, then an empty pip per free space; "1/1 taken", or "No limit"
  *   for the Canal Wharf. Capacities are absolute (no Shifu overfill).
  * - The Magistrate's Hall says which Recognition values may use it.
- * - Both one-line effects (rulebook Appendix E / glossary §4); they are the trigger of the
- *   location's rules details (D10): both full effects, its clarifications, scope and capacity.
+ * - Both one-line effects (rulebook Appendix E / glossary §4), as plain text: the action spaces
+ *   open no rules details (owner review, 2026-10-17, removed the "Full rules ›" link).
  * - **Place shortcuts** from `useTableSelection().placeTargets` (the open work turn's adapter):
- *   one button per legal worker entry, `aria-pressed` when the pane's draft has chosen it; a
- *   click changes the pane's draft (`act`). When the adapter lists only illegal entries, the
- *   engine's reasons are shown through `ruleErrorText` (§5 gap 12; see CR B2-3).
+ *   one button per legal worker entry (Shifu, Apprentice, and Apprentice as Shifu where Senior
+ *   Apprentice applies), `aria-pressed` when the pane's draft has chosen it; a click changes the
+ *   pane's draft (`act`). They are the only way to place a worker (owner review, 2026-10-17):
+ *   the pane shows the chosen placement and its choices. A Guild Hall placement takes the player
+ *   to the Tech display, where the Guild Hall choice is made (`revealTechChooser`). When the
+ *   adapter lists only illegal entries, the engine's reasons are shown through `ruleErrorText`
+ *   (§5 gap 12; see CR B2-3).
  */
 import { useId } from "react";
 import type { CentralLocationId, PlacementWorkerOption } from "../../game/index.ts";
@@ -21,10 +25,11 @@ import type { Translator } from "../i18n/translator.ts";
 import { Disclosure } from "../kit/Disclosure.tsx";
 import { WorkerPiece } from "../pieces/WorkerPiece.tsx";
 import type { GameModel } from "../state/model.ts";
-import { useGame, useTableSelection } from "../state/hooks.ts";
-import { placementWorkerKey } from "../state/tableSelection.ts";
+import { useGame, useLayoutMode, useTableSelection, useUi } from "../state/hooks.ts";
+import { isPhone } from "../state/layoutMode.ts";
+import { placementWorkerKey, revealTechChooser } from "../state/tableSelection.ts";
 import type { TableSelection } from "../state/tableSelection.ts";
-import { LocationSummaries, RulesDetail } from "../rules/RulesDetail.tsx";
+import { LocationSummaries } from "../rules/RulesDetail.tsx";
 import { seatOf, summaryOf, tableCeramics } from "./tableData.ts";
 import "./LocationCard.css";
 
@@ -61,6 +66,8 @@ export function PlaceButtons({ locationId, entries, selection, model }: {
   model: GameModel;
 }) {
   const t = useT();
+  const ui = useUi();
+  const layout = useLayoutMode();
   const legal = entries.filter((entry) => entry.legal);
   if (legal.length === 0) return null;
   const viewer = model.viewerId;
@@ -83,7 +90,11 @@ export function PlaceButtons({ locationId, entries, selection, model }: {
             data-worker={key}
             aria-pressed={pressed}
             aria-label={t("table.location.placeAt", { worker, location })}
-            onClick={() => selection.act({ type: "place", locationId, workerKey: key })}
+            onClick={() => {
+              selection.act({ type: "place", locationId, workerKey: key });
+              // The Guild Hall's choice is made on the Tech display: go there (owner review, 2026-10-17).
+              if (locationId === "guild_hall") revealTechChooser(ui, isPhone(layout));
+            }}
           >
             <WorkerPiece kind={entry.kind} seat={seat} senior={entry.seniorApprentice} decorative size={20} />
             <span className="pbtn-w" aria-hidden="true">{worker}</span>
@@ -138,16 +149,9 @@ export function LocationCard({ locationId }: LocationCardProps) {
       {recognition === null || recognition.length === 0 ? null : (
         <p className="loc-rec">{t("table.location.recognitionOnly", { from: recognition[0] ?? 0, to: recognition[recognition.length - 1] ?? 0 })}</p>
       )}
-      <RulesDetail
-        subject={{ kind: "location", id: locationId }}
-        className="loc-detail"
-        trigger={
-          <span className="loc-fx">
-            <LocationSummaries locationId={locationId} />
-            <span className="loc-more">{t("table.location.fullRules")} <span aria-hidden="true">›</span></span>
-          </span>
-        }
-      />
+      <p className="loc-fx">
+        <LocationSummaries locationId={locationId} />
+      </p>
       <PlaceButtons locationId={locationId} entries={entries} selection={selection} model={model} />
       {reasons.length === 0 ? null : (
         <Disclosure tone="warn" className="loc-why" summary={t("table.location.cantPlace")}>

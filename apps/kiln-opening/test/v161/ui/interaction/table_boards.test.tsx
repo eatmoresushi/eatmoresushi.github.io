@@ -2,8 +2,9 @@
 /**
  * Table and boards interaction tier (B2; UI_V1.6.1_ARCHITECTURE §9.3): what static markup
  * cannot show.
- * - D10: keyboard focus on a Tech tile, Order card, location or milestone opens its rules
- *   details; leaving closes them; a click pins them; Escape returns focus to the piece.
+ * - D10: keyboard focus on a Tech tile, Order card or milestone opens its rules details; leaving
+ *   closes them; a click pins them; Escape returns focus to the piece. The action space cards
+ *   open none (owner review, 2026-10-17).
  * - D1: the board tabs follow the ARIA tabs pattern (arrows move the selection and the board).
  * - Table targets change the open window's draft synchronously: a Place shortcut, an Order card.
  * - "Open Kiln" goes to the Kiln section (scroll on desktop, the Kiln tab on phones).
@@ -130,15 +131,16 @@ describe("D10: rules details open on keyboard focus, click or tap", () => {
     expect(document.activeElement).toBe(trigger);
   });
 
-  it("a location card and a Recognition milestone open their rules details on focus", () => {
+  it("a location card opens no rules details; a Recognition milestone opens its rules details on focus", () => {
     mount("m1_work_phase_r2_3p", <><CentralBoard /><RecognitionTrack /></>);
-    const location = $<HTMLButtonElement>('[data-location-id="guild_hall"] .kit-detail-trigger');
-    focus(location);
-    expect(panelOf(location).hidden).toBe(false);
-    expect(panelOf(location).getAttribute("aria-label")).toBe("Full rules: Guild Hall");
+    expect(container.querySelector('[data-location-id="guild_hall"] .kit-detail-trigger')).toBeNull();
+    expect(container.querySelector('[data-location-id] [aria-label^="Full rules"]')).toBeNull();
+    // Focus on the card's Place shortcut opens nothing either.
+    const place = $<HTMLButtonElement>('[data-location-id="canal_wharf"] [data-act="place"]');
+    focus(place);
+    expect(document.querySelector(".kit-detail-panel:not([hidden])")).toBeNull();
     const milestone = $<HTMLButtonElement>('[data-recognition="4"] .kit-detail-trigger');
     focus(milestone);
-    expect(panelOf(location).hidden).toBe(true);
     expect(panelOf(milestone).hidden).toBe(false);
     // Recognition 4's reward, then its clarifications with the Crowns beyond it, without source labels.
     expect(panelOf(milestone).querySelector(".rd-rule")?.textContent).toBe(recognitionMilestones("en").find((entry) => entry.space === 4)?.reward);

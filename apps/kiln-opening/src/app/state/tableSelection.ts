@@ -7,13 +7,47 @@
  * open window. Selection is a pure function of the draft, derived synchronously (no effect), so
  * an SSR test that seeds a draft sees the targets (wireframe `draftTargets`, `data-act="place"`,
  * `data-act="dest"`).
+ *
+ * Owner review, 2026-10-17: workers are placed from the table only (the pane no longer lists
+ * workers and locations), and the Guild Hall choice is made on the Tech display (`techChooser`;
+ * `data-act="tech"` and `data-act="inspect"` targets).
  */
 
-import type { CeramicId, Glaze, KilnSpaceId, LocationId, PlacementWorkerOption } from "../../game/index.ts";
+import type { CeramicId, GameRuleError, Glaze, KilnSpaceId, LocationId, PlacementWorkerOption, TechDiscipline, TechId } from "../../game/index.ts";
 import type { DraftAction, DraftActionBase } from "./draftStore.ts";
 import type { EngineView, GameModel } from "./model.ts";
+import type { UiActions } from "./uiStore.ts";
 
 export type OrderTargetState = "choosable" | "chosen" | "completable" | "blocked" | "discard";
+
+/** One face-up Tech the Guild Hall chooser offers (buy mode). */
+export interface TechTarget {
+  /** The pane's draft has chosen it. */
+  pressed: boolean;
+  /** This worker may buy it now (`guildOptions`); otherwise it is greyed out and not selectable. */
+  legal: boolean;
+  /** The engine's reason when it is not legal, with the details its message needs. */
+  reason: (Pick<GameRuleError, "code"> & { details: Readonly<Record<string, string | number>> }) | null;
+  printedCost: number;
+  /** The price this worker pays. */
+  price: number;
+}
+
+/**
+ * The Guild Hall chooser on the Tech display (owner review, 2026-10-17): with a worker chosen at
+ * the Guild Hall, the face-up Techs (Apprentice: buy one) or the disciplines (Shifu: inspect one)
+ * become table targets. Everything comes from `guildOptions` through the work draft.
+ */
+export interface TechChooser {
+  /** `buy`: the Apprentice effect buys a face-up Tech; `inspect`: the Shifu effect inspects a deck. */
+  mode: "buy" | "inspect";
+  /** The worker placed there, for the prompt's words (never a worker ID, D9). */
+  worker: Pick<PlacementWorkerOption, "kind" | "seniorApprentice">;
+  /** Buy mode: every face-up Tech, legal or not. Empty in inspect mode. */
+  techs: ReadonlyMap<TechId, TechTarget>;
+  /** Inspect mode: every discipline the Shifu may inspect. Empty in buy mode. */
+  disciplines: ReadonlyMap<TechDiscipline, { pressed: boolean }>;
+}
 
 export interface TableSelectionData {
   /**
@@ -33,13 +67,19 @@ export interface TableSelectionData {
   orderTargets: ReadonlyMap<string, { state: OrderTargetState; disabled: boolean }>;
   /** An Order's matching group, an ability's target. */
   highlightedCeramicIds: ReadonlySet<CeramicId>;
+  /** The Guild Hall chooser on the Tech display, while the pane's draft has a Guild Hall placement. */
+  techChooser: TechChooser | null;
 }
 
 /** A click on a table target. */
 export type TableAction =
   | { type: "place"; locationId: LocationId; workerKey: string }
   | { type: "kilnSpace"; spaceId: KilnSpaceId }
-  | { type: "order"; key: string };
+  | { type: "order"; key: string }
+  /** A face-up Tech on the Tech display (the Guild Hall chooser, buy mode). */
+  | { type: "tech"; techId: TechId }
+  /** A discipline's deck on the Tech display (the Guild Hall chooser, inspect mode). */
+  | { type: "inspect"; discipline: TechDiscipline };
 
 /** A window spec's table adapter. Both members are pure. */
 export interface TableAdapter<D, A extends DraftActionBase = never> {
@@ -66,6 +106,7 @@ export const INERT_SELECTION: TableSelectionData = Object.freeze({
   pendingCeramics: Object.freeze([]),
   orderTargets: EMPTY_MAP,
   highlightedCeramicIds: EMPTY_SET,
+  techChooser: null,
 });
 
 /** A selection with only the fields an adapter sets; the rest stay inert. */
@@ -80,6 +121,45 @@ export function tableSelection(partial: Partial<TableSelectionData>): TableSelec
  */
 export function placementWorkerKey(option: Pick<PlacementWorkerOption, "kind" | "seniorApprentice">): string {
   return option.seniorApprentice ? `${option.kind}-senior` : option.kind;
+}
+
+/**
+ * The Tech display's chooser prompt carries this attribute: the focus target when a worker is
+ * placed at the Guild Hall (owner review, 2026-10-17).
+ */
+export const TECH_CHOOSER_ATTRIBUTE = "data-tech-chooser";
+
+/**
+ * After the next frame (once a phone's section switch or the draft's new targets have rendered),
+ * focuses the element `find` returns, if any, so keyboard and screen-reader users land where the
+ * view went. `scroll` also brings it into view (phones, where `jumpTo` only switches the section);
+ * on wider screens `jumpTo` scrolls smoothly and the focus must not jump ahead of it.
+ */
+export function focusAfterFrame(find: () => HTMLElement | null, options: { scroll: boolean }): void {
+  if (typeof document === "undefined" || typeof window === "undefined") return;
+  const run = (): void => {
+    find()?.focus({ preventScroll: !options.scroll });
+  };
+  if (typeof window.requestAnimationFrame === "function") window.requestAnimationFrame(run);
+  else window.setTimeout(run, 0);
+}
+
+/** After the next frame, focuses the Tech display's chooser prompt (`focusAfterFrame`). */
+export function focusTechChooser(options: { scroll: boolean }): void {
+  focusAfterFrame(() => document.querySelector<HTMLElement>(`[${TECH_CHOOSER_ATTRIBUTE}]`), options);
+}
+
+/**
+ * Takes the viewer to the Guild Hall chooser in the "Recognition & Techs" section: on desktop and
+ * tablet `jumpTo` scrolls there; on phones it switches to that section's tab, the decision sheet
+ * collapses so the Techs are not covered, and the chooser is scrolled into view. Shared by the
+ * Guild Hall's Place shortcut (table) and the pane's Guild Hall editor (decision), which never
+ * import each other.
+ */
+export function revealTechChooser(ui: Pick<UiActions, "jumpTo" | "setSheet">, phone: boolean): void {
+  if (phone) ui.setSheet("peek");
+  ui.jumpTo("progress");
+  focusTechChooser({ scroll: phone });
 }
 
 /** `slot:<i>` for a Main display slot in `orderTargets`. */

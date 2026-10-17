@@ -4,9 +4,12 @@
  * Through the UI only, against `npm run dev:local` (or `vite preview` of `npm run build:e2e` for
  * the `@ci` case): create a room, add computers, start, and play to the final results. The
  * autopilot (`e2e/support/autopilot.ts`, the same one `form_driver_games` uses in happy-dom) reads
- * `data-window` and the form's native inputs, varies its choices seeded per game, and presses
- * Confirm or the alternative. Every press is a real pointer click; on phones the decision sheet is
- * opened first when it is collapsed.
+ * `data-window`, the form's native inputs and the table targets that drive it (workers are placed
+ * from the table's Place shortcuts, and the Guild Hall's Tech or deck is chosen on the Tech
+ * display: owner review, 2026-10-17), varies its choices seeded per game, and presses Confirm or
+ * the alternative. Every press is a real pointer click; on phones the decision sheet is opened
+ * first when it is collapsed, and a table target in another section is reached through the
+ * section bar.
  *
  * After **every** Confirm:
  * - none of the IDs the local backend's `e2e_secret_ids` oracle names for this seat appear in the
@@ -77,6 +80,19 @@ async function revisionOf(page: Page): Promise<number> {
 async function openSheetIfCollapsed(page: Page): Promise<void> {
   const strip = page.locator('.kit-sheet-strip[aria-expanded="false"]');
   if ((await strip.count()) > 0 && (await strip.first().isVisible())) await strip.first().click();
+}
+
+/**
+ * Brings a table target into view on a phone: the section bar's tab of the section it sits in
+ * (the other tabs' sections are hidden below 900px), with an open decision sheet lowered first.
+ */
+async function showTableTarget(page: Page, selector: string): Promise<void> {
+  const tab = await page.locator(selector).evaluate((element) => element.closest("section[data-tab]")?.getAttribute("data-tab") ?? null);
+  if (tab === null) return;
+  const open = page.locator('.kit-sheet-strip[aria-expanded="true"]');
+  if ((await open.count()) > 0 && (await open.first().isVisible())) await open.first().click();
+  const button = page.locator(`.phone-nav-button[data-tab="${tab}"]`);
+  if ((await button.count()) > 0 && (await button.first().isVisible())) await button.first().click();
 }
 
 /** Watches the Confirm button: whether it kept focus while `aria-busy` (sending). */
@@ -151,6 +167,7 @@ for (const game of CASES) {
       await expect(page.locator("aside.pane")).toBeAttached();
 
       const windows = new Map<string, number>();
+      let placeShortcuts = 0;
       let confirms = 0;
       let switched = false;
       let reloaded = false;
@@ -165,7 +182,9 @@ for (const game of CASES) {
         }
         let target = page.locator(pick.selector);
         if (!(await target.isVisible())) {
-          await openSheetIfCollapsed(page);
+          // A table target (Place shortcut, the Guild Hall's Tech display) or a pane control.
+          if (pick.describe.startsWith("table ")) await showTableTarget(page, pick.selector);
+          else await openSheetIfCollapsed(page);
           target = page.locator(pick.selector);
         }
         if (reloadDue) {
@@ -182,6 +201,7 @@ for (const game of CASES) {
         const before = await revisionOf(page);
         if (pick.kind === "choice") {
           await target.click();
+          if (pick.describe.startsWith("table place")) placeShortcuts += 1;
           continue;
         }
         // Confirm and the alternative are pressed as a keyboard user would find them focused, so the
@@ -211,6 +231,8 @@ for (const game of CASES) {
       await expect(page.locator('form.pane-form[data-window="final"]')).toBeAttached();
       expect(switched && reloaded, "the language switch and the reload happened mid-game").toBe(true);
       for (const window of ["kiln_selection", "work"]) expect(windows.get(window) ?? 0, window).toBeGreaterThan(0);
+      // Every worker was placed from the table (owner review, 2026-10-17).
+      expect(placeShortcuts, "Place shortcuts pressed on the table").toBeGreaterThan(0);
       expect(errors).toEqual([]);
       test.info().annotations.push({ type: "windows", description: [...windows.entries()].map(([window, n]) => `${window}×${n}`).join(", ") });
     });

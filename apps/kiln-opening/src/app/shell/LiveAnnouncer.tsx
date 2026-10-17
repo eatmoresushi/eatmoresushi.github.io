@@ -14,6 +14,8 @@
  * - Everything is stored as `RichMessage`s and formatted at render time: a language switch
  *   re-renders the regions in the new language. A control that formats its own sentence (kit
  *   `ReorderList`) may pass plain text through `announcePolite`.
+ * - The other players' turn toasts (`TurnToasts`) show the same moves on screen but are not a
+ *   live region: this polite region is the one that says them, so nothing is said twice.
  */
 import { useEffect, useRef, useState } from "react";
 import { useT } from "../i18n/I18nProvider.tsx";

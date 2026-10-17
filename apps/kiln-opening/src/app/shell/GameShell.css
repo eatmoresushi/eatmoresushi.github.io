@@ -66,6 +66,28 @@
     padding: 0 var(--sp-7) var(--sp-8);
   }
 
+  /* The turn toasts (TurnToasts.css): over the bottom of the world's cell, beside the pane; the
+     host lets the pointer through to the world, the toasts take it. At most 60% of the cell,
+     the list scrolling beyond that, so the jump bar at the cell's top stays clear. Under the
+     top bar (its log dropdown and menu open over the toasts) and under rules details. */
+  .shell-toasts {
+    grid-area: world;
+    position: relative;
+    z-index: var(--z-popover);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    align-self: end;
+    min-width: 0;
+    max-height: 60%;
+    padding: 0 var(--sp-7) var(--sp-5);
+    pointer-events: none;
+  }
+
+  .shell-toasts:empty {
+    display: none;
+  }
+
   .shell-pane {
     grid-area: pane;
     display: flex;
@@ -125,6 +147,11 @@
 
     .shell-nav {
       display: block;
+    }
+
+    .shell-toasts {
+      align-items: stretch;
+      padding: 0 var(--gutter) var(--sp-4);
     }
   }
 

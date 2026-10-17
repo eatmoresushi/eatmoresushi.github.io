@@ -2,7 +2,8 @@ import { defineNamespace } from "../defineNamespace.ts";
 
 /**
  * `shell` namespace: top bar, seat chips, log, phone nav, session menu, connection banner, live
- * announcements and the game-log event templates (`ev.*`, used by `i18n/events.ts`). Owned by B1
+ * announcements, the other players' turn toasts and the game-log event templates (`ev.*`, used
+ * by `i18n/events.ts`, and by the turn toasts with the same words). Owned by B1
  * (UI_V1.6.1_ARCHITECTURE §4.2).
  *
  * - No literal rule numbers (§5 gap 19): every number is a placeholder.
@@ -118,6 +119,14 @@ export const shell = defineNamespace({
     "announce.turn.hand_limit": { one: "Cleanup: discard {n} Order to reach your limit of {limit}.", other: "Cleanup: discard {n} Orders to reach your limit of {limit}." },
     "announce.final.winner": "Game over. Winner: {names}, {vp} VP.",
     "announce.final.shared": "Game over. Shared victory: {names}, {vp} VP.",
+
+    // ── Turn toasts: the other players' last turns (owner review, 2026-10-17) ─────────
+    // `toast.more` closes one turn's lines; `toast.earlier` heads a toast whose oldest turns
+    // did not fit.
+    "toast.label": "Other players’ latest moves",
+    "toast.close": "Dismiss {name}’s moves",
+    "toast.more": { one: "and {n} more line in the game log", other: "and {n} more lines in the game log" },
+    "toast.earlier": { one: "{n} earlier turn is in the game log", other: "{n} earlier turns are in the game log" },
 
     // ── Game-log event templates (§5 gap 4; i18n/events.ts) ──────────────────────────
     "ev.res.plus": "+{n} {res}",
@@ -326,6 +335,11 @@ export const shell = defineNamespace({
     "announce.turn.hand_limit": "收工：要弃置{n}张委托，弃到上限{limit}张。",
     "announce.final.winner": "终局。胜者：{names}，{vp}分。",
     "announce.final.shared": "终局。共享胜利：{names}，{vp}分。",
+
+    "toast.label": "其他玩家的最新行动",
+    "toast.close": "关闭{name}的行动提示",
+    "toast.more": "另有{n}条，见对局记录",
+    "toast.earlier": "此前另有{n}个回合，见对局记录",
 
     "ev.res.plus": "+{n}{res}",
     "ev.res.minus": "−{n}{res}",

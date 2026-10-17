@@ -9,9 +9,11 @@
  *
  * Checked:
  * - **the private Commission top 3** is visible only to its owner: Lin sees the 3 Orders
- *   ("only you"); Zhao sees only that Lin is looking at 3 Orders, and none of those Order IDs
- *   reaches Zhao's page or any payload Zhao's client receives (also checked against the local
- *   backend's `e2e_secret_ids` oracle);
+ *   ("only you"); Zhao's waiting pane says only that Lin is looking at 3 cards, and none of those
+ *   Order IDs reaches Zhao's page or any payload Zhao's client receives (also checked against
+ *   the local backend's `e2e_secret_ids` oracle);
+ * - **the turn toasts** (owner review, 2026-10-17): Zhao's page shows Lin's moves (Lin's Shifu
+ *   at the Commission Market), never Zhao's own and never a looked-at Order;
  * - **the secret Contribution**: after Lin submits, Lin sees the sealed card ("only you"); Zhao
  *   sees only that Lin has chosen, and no payload Zhao's client receives carries a Contribution
  *   card until both have submitted; then both cards are revealed on both pages.
@@ -83,10 +85,38 @@ interface Player {
   errors: string[];
 }
 
+/**
+ * Records every turn toast the page shows, with its player, as it appears or grows: they close by
+ * themselves after 3s, so the test reads the record instead of racing them. Serialized into the
+ * page by `addInitScript`, so it stays self-contained.
+ */
+function recordTurnToasts(): void {
+  const seen: Array<{ player: string; text: string }> = [];
+  const keys = new Set<string>();
+  (window as unknown as { __turnToasts: typeof seen }).__turnToasts = seen;
+  const scan = (): void => {
+    for (const toast of Array.from(document.querySelectorAll<HTMLElement>(".turn-toast"))) {
+      const entry = { player: toast.dataset["playerId"] ?? "", text: toast.textContent ?? "" };
+      const key = `${entry.player}|${entry.text}`;
+      if (keys.has(key)) continue;
+      keys.add(key);
+      seen.push(entry);
+    }
+  };
+  document.addEventListener("DOMContentLoaded", () => {
+    new MutationObserver(scan).observe(document.body, { childList: true, subtree: true, characterData: true });
+  });
+}
+
+async function turnToastsSeen(player: Player): Promise<Array<{ player: string; text: string }>> {
+  return player.page.evaluate(() => (window as unknown as { __turnToasts?: Array<{ player: string; text: string }> }).__turnToasts ?? []);
+}
+
 async function newPlayer(browser: Browser, info: TestInfo, who: Player["who"], name: string): Promise<Player> {
   const baseURL = info.project.use.baseURL;
   const context = await browser.newContext({ ...(baseURL === undefined ? {} : { baseURL }), viewport: { width: WIDTH, height: HEIGHT } });
   const page = await context.newPage();
+  await page.addInitScript(recordTurnToasts);
   const player: Player = { who, name, page, received: [], placements: 0, tick: 0, errors: [] };
   page.on("response", (response) => {
     if (!response.url().includes("/test-api-v161")) return;
@@ -149,14 +179,31 @@ async function choose(page: Page, name: string, value: string): Promise<void> {
   await expect(input).toBeChecked();
 }
 
-/** One steered Work Phase placement, then Confirm. */
+/** Presses a table toggle (Place shortcut, Tech display target) if it is not pressed yet. */
+async function press(page: Page, selector: string, what: string): Promise<void> {
+  const target = page.locator(selector).first();
+  await expect(target, `${what} is offered on the table`).toBeVisible();
+  if ((await target.getAttribute("aria-pressed")) !== "true") await target.click();
+  await expect(target).toHaveAttribute("aria-pressed", "true");
+}
+
+/**
+ * A sub-editor pick: the Guild Hall's discipline or Tech is chosen on the Tech display (owner
+ * review, 2026-10-17); everything else is a radio of the form.
+ */
+async function pick(page: Page, name: string, value: string): Promise<void> {
+  if (name === "discipline") return press(page, `[data-act="inspect"][data-discipline="${value}"]`, `inspect ${value}`);
+  if (name === "techId") return press(page, `[data-act="tech"][data-tech-id="${value}"]`, `Tech ${value}`);
+  return choose(page, name, value);
+}
+
+/** One steered Work Phase placement, then Confirm. Workers are placed from the table's Place shortcuts. */
 async function place(player: Player, plans: Plans = PLANS): Promise<void> {
   const plan = plans[player.who][player.placements];
   if (plan === undefined) throw new Error(`${player.name} has no placement planned`);
-  await choose(player.page, "worker", plan.worker);
-  await choose(player.page, "locationId", plan.location);
+  await press(player.page, `[data-act="place"][data-location-id="${plan.location}"][data-worker="${plan.worker}"]`, `Place ${plan.worker} at ${plan.location}`);
   if (plan.first !== undefined) await choose(player.page, "first", plan.first);
-  for (const [name, value] of plan.picks ?? []) await choose(player.page, name, value);
+  for (const [name, value] of plan.picks ?? []) await pick(player.page, name, value);
   // The rest of the sub-editor (Shape, Decoration, vessel, Glaze, kiln space…) by the autopilot.
   for (let attempt = 0; attempt < 200; attempt += 1) {
     const confirm = player.page.locator('form.pane-form [data-action="confirm"]').first();
@@ -230,6 +277,7 @@ test("the secret Contribution and the private Commission look stay with their ow
   const code = await startRoom(host, guest);
 
   let lookChecked = false;
+  let lookedIds: string[] = [];
   let contributionChecked = false;
   for (let step = 0; step < 400 && !contributionChecked; step += 1) {
     let acted = false;
@@ -238,7 +286,7 @@ test("the secret Contribution and the private Commission look stay with their ow
       if (window === null || window === "waiting" || window === "final") continue;
       const other = player === host ? guest : host;
 
-      if (window === "work" && (await player.page.locator('form.pane-form input[name="worker"]').count()) > 0) {
+      if (window === "work" && (await player.page.locator('[data-act="place"]').count()) > 0) {
         await place(player);
         acted = true;
         continue;
@@ -249,8 +297,10 @@ test("the secret Contribution and the private Commission look stay with their ow
         const looked = host.page.locator(".ordwrap--look [data-order-id]");
         await expect(looked).toHaveCount(3);
         const ids = await looked.evaluateAll((cards) => cards.map((card) => card.getAttribute("data-order-id") ?? ""));
+        lookedIds = ids;
         const receivedFrom = guest.received.length;
-        await expect(guest.page.locator(".hands-looking")).toHaveCount(1, { timeout: 10_000 });
+        // Zhao's waiting pane says who is looking at how many cards, never which.
+        await expect(guest.page.locator("[data-waiting]")).toContainText(`${host.name} is looking at 3 cards in private`, { timeout: 10_000 });
         await expect(guest.page.locator(".ordwrap--look")).toHaveCount(0);
         const guestSecrets = await secretIdsOf(request, code, 1);
         const guestHtml = await guest.page.content();
@@ -310,6 +360,15 @@ test("the secret Contribution and the private Commission look stay with their ow
   expect(lookChecked, "Lin looked at the top 3 Main Orders").toBe(true);
   expect(contributionChecked, "both players contributed").toBe(true);
   expectSecretsAddressed(guest, host, await playerIdOf(host));
+
+  // The turn toasts on Zhao's page: Lin's moves only, in public words.
+  const hostId = await playerIdOf(host);
+  const toasts = await turnToastsSeen(guest);
+  expect(toasts.some((toast) => toast.player === hostId && toast.text.includes(`${host.name} placed their Shifu at Commission Market`)), "Zhao saw a toast of Lin's Commission Market turn").toBe(true);
+  for (const toast of toasts) {
+    expect(toast.player, `a toast of Zhao's own move: ${toast.text}`).toBe(hostId);
+    for (const id of lookedIds) expect(toast.text, `the looked-at ${id} in a toast`).not.toMatch(new RegExp(`\\b${id}\\b`));
+  }
   expect([...host.errors, ...guest.errors]).toEqual([]);
 });
 
@@ -362,7 +421,7 @@ test("the Guild Hall inspection, the Colour Samples look and the Test Pieces pee
       const window = await windowOf(player.page);
       if (window === null || window === "waiting" || window === "final") continue;
 
-      if (window === "work" && (await player.page.locator('form.pane-form input[name="worker"]').count()) > 0) {
+      if (window === "work" && (await player.page.locator('[data-act="place"]').count()) > 0) {
         await place(player, LOOKS_PLANS);
         acted = true;
         continue;

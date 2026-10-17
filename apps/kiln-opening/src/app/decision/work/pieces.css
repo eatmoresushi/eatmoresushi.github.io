@@ -143,43 +143,77 @@
     background: var(--d-firing);
   }
 
-  .b4-techs {
+  /* The Guild Hall choice made on the Tech display (owner review, 2026-10-17). */
+  .b4-guild-choice {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-2) var(--sp-3);
+    min-width: 0;
+    margin: 0;
+  }
+
+  .b4-guild-disc {
+    color: var(--ink-2);
+    font-size: var(--fs-meta);
+  }
+
+  .b4-guild-price {
+    margin-inline-start: auto;
+    color: var(--gold-ink);
+    font-weight: 700;
+  }
+
+  /* Nothing placed yet: place a worker on the table (owner review, 2026-10-17). */
+  .b4-place-hint {
+    display: grid;
+    gap: var(--sp-4);
+    min-width: 0;
+    padding: var(--sp-4) var(--sp-5);
+    border: 1px dashed var(--teal);
+    border-radius: var(--r-md);
+    background: var(--panel);
+  }
+
+  .b4-place-hint-text {
+    margin: 0;
+    color: var(--ink);
+  }
+
+  /* The chosen placement and its sub-editor. */
+  .b4-chosen {
     display: grid;
     gap: var(--sp-3);
-    padding: 0;
-    list-style: none;
+    min-width: 0;
   }
 
-  .b4-tech {
-    display: grid;
-    gap: var(--sp-2);
-    padding: var(--sp-3) var(--sp-4);
-    border: 1px solid var(--line);
-    border-radius: var(--r-md);
+  .b4-chosen-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--sp-1) var(--sp-4);
   }
 
-  .b4-tech[data-legal="false"] {
-    color: var(--ink-3);
+  .b4-chosen-title {
+    font-size: var(--fs-15);
   }
 
-  .b4-tech-reason {
-    color: var(--bad-ink);
+  .b4-chosen-meta {
+    margin-inline-start: auto;
+    color: var(--ink-2);
     font-size: var(--fs-meta);
+    white-space: nowrap;
+  }
+
+  .b4-chosen-effect {
+    margin: 0;
+    color: var(--ink-2);
+    font-size: var(--fs-rule);
+    line-height: var(--lh-snug);
   }
 
   .b4-sub-region {
     min-width: 0;
-  }
-
-  .b4-unavailable {
-    margin-top: var(--sp-3);
-  }
-
-  .b4-unavailable .kit-optgroup-items,
-  .b4-unavailable-items {
-    display: grid;
-    gap: var(--sp-3);
-    padding-top: var(--sp-3);
   }
 
   .b4-privacy {

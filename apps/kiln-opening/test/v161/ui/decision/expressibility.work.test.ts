@@ -16,14 +16,25 @@
  * - canonical mode at every B4 decision of 3 seeded games (2, 3 and 4 players), played to the
  *   end with the engine's sampled legal moves.
  * No row may be `todo`: every B4 window has its real draft model.
+ *
+ * Workers are placed on the table (owner review, 2026-10-17): every `PLACE_*` row is also routed
+ * through the work window's table adapter by the helper (Place shortcut, then the Guild Hall's
+ * Tech display target, then the pane's sub-editor); the last block checks that route directly
+ * and that it fails when the table does not offer the target.
  */
 import { describe, expect, it } from "vitest";
 import { SeededRandom, decisionPrompt, legalCommands, sampleLegalAction } from "../../../../src/game/index.ts";
 import type { AuthoritativeCommand, PlayerCount, SubmitContributionCommand } from "../../../../src/game/index.ts";
+import { WINDOWS } from "../../../../src/app/decision/windows.ts";
+import { workDraft } from "../../../../src/app/decision/work/workDraft.ts";
 import { decisionWindow } from "../../../../src/app/state/decisionWindow.ts";
+import type { DraftActionBase } from "../../../../src/app/state/draftStore.ts";
+import { buildGameModel, engineViewOf } from "../../../../src/app/state/model.ts";
+import { tableSelection } from "../../../../src/app/state/tableSelection.ts";
+import type { TableAdapter } from "../../../../src/app/state/tableSelection.ts";
 import type { DecisionWindowKind } from "../../../../src/app/state/decisionWindow.ts";
 import { FuzzTable } from "../../engine/p7_support.ts";
-import { checkView } from "../support/expressibility.ts";
+import { checkView, tableRoute } from "../support/expressibility.ts";
 import type { ExpressibilityReport } from "../support/expressibility.ts";
 import { allFixtures, scenarios } from "../support/fixtures.ts";
 
@@ -133,4 +144,48 @@ describe("B4 forms express every canonical command at every B4 decision of seede
     expect(seen.get("work") ?? 0).toBeGreaterThan(20);
     expect(rows).toBeGreaterThan(500);
   }, 300_000);
+});
+
+describe("B4 placements are reachable from the table (owner review, 2026-10-17)", () => {
+  const adapter = WINDOWS.work.table as unknown as TableAdapter<unknown, DraftActionBase>;
+  const model = workDraft as never;
+
+  it("every canonical placement of every work fixture: Place shortcut, then the Tech display at the Guild Hall, then the sub-editor", () => {
+    let routed = 0;
+    const kinds = new Set<string>();
+    const guild = new Set<string>();
+    for (const entry of ACTING) {
+      const view = entry.playerView;
+      const window = decisionWindow(view);
+      if (window.kind !== "work" || window.step !== "before_action") continue;
+      const gameModel = buildGameModel(view, []);
+      const engine = engineViewOf(view);
+      for (const command of legalCommands(view, { mode: "canonical" })) {
+        if (!command.type.startsWith("PLACE_")) continue;
+        const expressed = workDraft.fromCommand(command, gameModel, engine);
+        expect(expressed, JSON.stringify(command)).not.toBeNull();
+        expect(tableRoute(command, expressed!, model, adapter, gameModel, engine), `${entry.id} ${JSON.stringify(command)}`).toBeNull();
+        routed += 1;
+        kinds.add(command.type);
+        if (command.type === "PLACE_GUILD_HALL") guild.add(command.choice.kind);
+      }
+    }
+    expect(routed).toBeGreaterThan(100);
+    expect(kinds.size).toBe(7);
+    expect([...guild].sort()).toEqual(["buy_face_up", "inspect"]);
+  });
+
+  it("fails when the table offers no Place shortcut, or no Tech display chooser at the Guild Hall", () => {
+    const id = "w-before-the-worker-action-kiln-furniture-inverted-firing-targets-setters-marks-senior-apprentice";
+    const view = ACTING.find((entry) => entry.id === id)!.playerView;
+    const gameModel = buildGameModel(view, []);
+    const engine = engineViewOf(view);
+    const commands = legalCommands(view, { mode: "canonical" });
+    const wharf = commands.find((command) => command.type === "PLACE_CANAL_WHARF")!;
+    const guild = commands.find((command) => command.type === "PLACE_GUILD_HALL")!;
+    const noShortcuts: TableAdapter<unknown, DraftActionBase> = { select: () => tableSelection({}), act: adapter.act };
+    expect(tableRoute(wharf, workDraft.fromCommand(wharf, gameModel, engine)!, model, noShortcuts, gameModel, engine)).toMatch(/no legal Place shortcut/);
+    const noChooser: TableAdapter<unknown, DraftActionBase> = { select: (draft, m, e) => ({ ...adapter.select(draft, m, e), techChooser: null }), act: adapter.act };
+    expect(tableRoute(guild, workDraft.fromCommand(guild, gameModel, engine)!, model, noChooser, gameModel, engine)).toMatch(/without its chooser/);
+  });
 });

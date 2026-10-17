@@ -2,13 +2,17 @@
 /**
  * The forms can play the whole game (UI_V1.6.1_ARCHITECTURE §9.4, `form_driver_games`). Owner: B6.
  *
- * Full 2-, 3- and 4-player games are played **only through the decision forms**: the real
- * `DecisionPane` with every window of the registry renders from its draft model's `options()`;
- * the autopilot (`e2e/support/autopilot.ts`, shared with `e2e/full_game.spec.ts`) makes seeded
- * choices among the enabled native inputs and buttons the form shows; ConfirmBar builds the
- * command and runs the local check (`validateAction`); the harness then applies it to the engine
- * (tests may call the engine). Every seat is driven this way, hot-seat: the pane always shows the
- * acting seat's own view (its hand, its private looks, its sealed Contribution).
+ * Full 2-, 3- and 4-player games are played **only through the decision forms and the table
+ * targets that drive them**: the real `DecisionPane` with every window of the registry renders
+ * from its draft model's `options()`, beside the real table components a work turn is played on
+ * (the location cards, the viewer's own Form & Decorate and Glaze & Load spaces and the Tech
+ * display: since the owner review of 2026-10-17 workers are placed only from their Place
+ * shortcuts, and the Guild Hall's Tech or deck is chosen on the Tech display); the autopilot
+ * (`e2e/support/autopilot.ts`, shared with `e2e/full_game.spec.ts`) makes seeded choices among
+ * the enabled native inputs and buttons the form shows and those table targets; ConfirmBar
+ * builds the command and runs the local check (`validateAction`); the harness then applies it to
+ * the engine (tests may call the engine). Every seat is driven this way, hot-seat: the pane
+ * always shows the acting seat's own view (its hand, its private looks, its sealed Contribution).
  *
  * Every game must reach `finalResult`, and every command a form sends must be accepted by the
  * engine. `KILN_UI_FUZZ_GAMES` plays more games per player count (like `test:fuzz:long`).
@@ -25,15 +29,18 @@ import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SeededRandom, createGame } from "../../../src/game/index.ts";
 import type { AuthoritativeCommand, PlayerId, PlayerView } from "../../../src/game/index.ts";
+import { PersonalSpaces } from "../../../src/app/boards/PersonalSpaces.tsx";
 import { DecisionPane } from "../../../src/app/decision/DecisionPane.tsx";
 import { WINDOWS } from "../../../src/app/decision/windows.ts";
 import { I18nProvider } from "../../../src/app/i18n/I18nProvider.tsx";
 import { fixtureSnapshot } from "../../../src/app/session/fixtureSource.ts";
 import type { GameSnapshot, GameSource, SubmitOutcome } from "../../../src/app/session/gameSource.ts";
 import { DraftStore } from "../../../src/app/state/draftStore.ts";
-import { GameProvider } from "../../../src/app/state/hooks.ts";
+import { GameProvider, useGame } from "../../../src/app/state/hooks.ts";
 import { fixedLayoutSource } from "../../../src/app/state/layoutMode.ts";
 import { UiStore } from "../../../src/app/state/uiStore.ts";
+import { CentralBoard } from "../../../src/app/table/CentralBoard.tsx";
+import { TechDisplay } from "../../../src/app/table/TechDisplay.tsx";
 import { autopilotPick } from "../../../e2e/support/autopilot.ts";
 import { LocalTable } from "../engine/support/localTable.ts";
 
@@ -94,6 +101,12 @@ class TableSource implements GameSource {
   retryComputers(): void {}
 }
 
+/** The acting seat's own personal spaces (its Kiln Player Board's Place shortcuts). */
+function OwnSpaces() {
+  const model = useGame();
+  return model.viewerId === null ? null : <PersonalSpaces playerId={model.viewerId} />;
+}
+
 let container: HTMLDivElement;
 let root: Root;
 
@@ -119,6 +132,8 @@ interface GameReport {
   commands: Map<string, number>;
   /** Every command the forms sent, in order. */
   sent: ReadonlyArray<{ actorId: PlayerId; command: AuthoritativeCommand }>;
+  /** Presses of table targets, by kind (`place`, `tech`, `inspect`). */
+  table: Map<string, number>;
 }
 
 /** The optional abilities a game's forms used: the command types, and Kiln Master inside RESOLVE_HEAT_MARKERS. */
@@ -145,10 +160,11 @@ const ABILITY_PREFERENCES: readonly string[] = [
   'input[name="take"][value="T23"]',
   'input[name="take"][value="T11"]',
   'input[name="take"][value="T24"]',
-  'input[name="techId"][value="T23"]',
-  'input[name="techId"][value="T11"]',
-  'input[name="techId"][value="T24"]',
-  'input[name="locationId"][value="guild_hall"]',
+  // The Guild Hall's Tech is chosen on the Tech display, the placement on the table (2026-10-17).
+  '[data-act="tech"][data-tech-id="T23"]',
+  '[data-act="tech"][data-tech-id="T11"]',
+  '[data-act="tech"][data-tech-id="T24"]',
+  '[data-act="place"][data-location-id="guild_hall"][data-worker="apprentice"]',
 ];
 
 function preferredMove(preferences: readonly string[], tried: Set<string>): HTMLElement | null {
@@ -156,8 +172,15 @@ function preferredMove(preferences: readonly string[], tried: Set<string>): HTML
   if (form === null) return null;
   for (const selector of preferences) {
     if (tried.has(selector)) continue;
-    const element = Array.from(form.querySelectorAll<HTMLInputElement>(selector)).find(
-      (input) => input.getAttribute("aria-disabled") !== "true" && !input.disabled && !input.checked && input.closest("[hidden], [inert], details:not([open])") === null,
+    // Form inputs inside the pane; table targets (`data-act`) wherever the table shows them.
+    const scope: ParentNode = selector.startsWith("[data-act") ? container : form;
+    const element = Array.from(scope.querySelectorAll<HTMLInputElement | HTMLButtonElement>(selector)).find(
+      (input) =>
+        input.getAttribute("aria-disabled") !== "true" &&
+        !input.disabled &&
+        !(input instanceof HTMLInputElement && input.checked) &&
+        input.getAttribute("aria-pressed") !== "true" &&
+        input.closest("[hidden], [inert], details:not([open])") === null,
     );
     if (element === undefined) continue;
     tried.add(selector);
@@ -180,12 +203,15 @@ async function playThroughForms(players: 2 | 3 | 4, seed: number, preferences: r
     root.render(
       <I18nProvider defaultLocale={seed % 2 === 0 ? "en" : "zh-CN"} strict>
         <GameProvider source={source} registry={WINDOWS} drafts={new DraftStore()} ui={new UiStore({ layout })} layout={layout} devTools={false}>
+          <CentralBoard />
+          <OwnSpaces />
+          <TechDisplay />
           <DecisionPane />
         </GameProvider>
       </I18nProvider>,
     ),
   );
-  const report: GameReport = { decisions: 0, moves: 0, windows: new Map(), commands: new Map(), sent: source.sent };
+  const report: GameReport = { decisions: 0, moves: 0, windows: new Map(), commands: new Map(), sent: source.sent, table: new Map() };
   let tick = 0;
   while (table.state.phase.type !== "finished") {
     report.decisions += 1;
@@ -203,7 +229,7 @@ async function playThroughForms(players: 2 | 3 | 4, seed: number, preferences: r
       tick += 1;
       const preferred = preferredMove(preferences, tried);
       if (preferred !== null) {
-        trail.push(`preferred ${preferred.getAttribute("name") ?? ""}=${preferred.getAttribute("value") ?? ""}`);
+        trail.push(`preferred ${preferred.getAttribute("name") ?? preferred.getAttribute("data-act") ?? ""}=${preferred.getAttribute("value") ?? preferred.getAttribute("data-tech-id") ?? preferred.getAttribute("data-location-id") ?? ""}`);
         await act(async () => {
           preferred.click();
         });
@@ -212,6 +238,8 @@ async function playThroughForms(players: 2 | 3 | 4, seed: number, preferences: r
       const pick = autopilotPick({ seed, tick, confirmChance: 0.55, altChance: 0.25 });
       if (pick.kind === "none" || pick.kind === "busy") throw new Error(`no move in ${pick.window ?? "no window"}: ${pick.kind === "none" ? pick.reason : "busy"}`);
       trail.push(`${pick.window}: ${pick.describe}`);
+      const tableAct = /^table (\w+)/.exec(pick.describe)?.[1];
+      if (tableAct !== undefined) report.table.set(tableAct, (report.table.get(tableAct) ?? 0) + 1);
       if (pick.kind === "confirm" || pick.kind === "alt") report.windows.set(pick.window, (report.windows.get(pick.window) ?? 0) + 1);
       const target = document.querySelector<HTMLElement>(pick.selector);
       expect(target, pick.selector).not.toBeNull();
@@ -232,12 +260,17 @@ async function playThroughForms(players: 2 | 3 | 4, seed: number, preferences: r
 describe("full games played only through the decision forms (§9.4)", () => {
   const cases = ([2, 3, 4] as const).flatMap((players) => Array.from({ length: GAMES }, (_, index) => [players, 1_700 + players * 10 + index] as const));
   const used = new Set<string>();
+  const tableActs = new Set<string>();
 
   it.each(cases)("%i players (seed %i)", async (players, seed) => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
     try {
       const report = await playThroughForms(players, seed);
       for (const type of report.commands.keys()) used.add(type);
+      for (const kind of report.table.keys()) tableActs.add(kind);
+      // Every placement was made from the table: the pane has no worker or location input.
+      const placed = [...report.commands.entries()].filter(([type]) => type.startsWith("PLACE_") && type !== "PLACE_SETTERS_MARK").reduce((sum, [, n]) => sum + n, 0);
+      expect(report.table.get("place") ?? 0, "Place shortcuts pressed on the table").toBeGreaterThanOrEqual(placed);
       expect(report.commands.get("SELECT_KILN"), "every Kiln chosen in the Kiln-selection form").toBe(players);
       const placements = [...report.commands.keys()].filter((type) => type.startsWith("PLACE_") && type !== "PLACE_SETTERS_MARK");
       expect(placements.length, "several kinds of placement").toBeGreaterThanOrEqual(4);
@@ -250,6 +283,10 @@ describe("full games played only through the decision forms (§9.4)", () => {
       consoleError.mockRestore();
     }
   }, 600_000);
+
+  it("together, the games pressed every kind of table target: Place shortcuts, a Tech and a deck on the Tech display", () => {
+    expect([...tableActs].sort()).toEqual(["inspect", "place", "tech"]);
+  });
 
   it("together, the games used every placement form, the Commission and Guild steps, Contributions, Orders and the trim", () => {
     for (const type of [
@@ -270,10 +307,11 @@ describe("full games played only through the decision forms (§9.4)", () => {
 });
 
 describe("steered games reach the optional abilities through their forms", () => {
-  // Seeds found by playing steered games (3 and 4 players): together they use all four.
+  // Seeds found by playing steered games (3 and 4 players, seeds 5000–5059, after workers moved to
+  // the table on 2026-10-17): together they use all four.
   const steered = [
-    [4, 5_002],
-    [3, 5_003],
+    [4, 5_044],
+    [3, 5_039],
   ] as const;
   const used = new Set<string>();
 
