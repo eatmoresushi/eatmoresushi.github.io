@@ -86,7 +86,7 @@ export function safeExitCommands(view: PlayerView): AuthoritativeCommand[] {
           return look?.kind === "colour_samples" ? look.orderIds.map((orderId): AuthoritativeCommand => ({ type: "COLOUR_SAMPLES_CHOOSE", orderId })) : [];
         }
         case "colour_samples_swap": {
-          // The swap's look always shows at least 1 card (v1.6.2 L625, B1); reserving any of
+          // The swap's look always shows at least 1 card (v1.6.2 L617, B1); reserving any of
           // them is legal.
           const look = lookedOrderOptions(view);
           return look?.kind === "colour_samples_swap"
@@ -115,7 +115,7 @@ export function safeExitCommands(view: PlayerView): AuthoritativeCommand[] {
     case "firing_heat_adjustment":
       return [{ type: "RESOLVE_JUN", adjustment: null }];
     case "firing_second_firing_choice":
-      // A card must be chosen (v1.6.2 L639); the first one without Jun is always legal.
+      // A card must be chosen (v1.6.2 L631); the first one without Jun is always legal.
       return [{ type: "SECOND_FIRING_CHOOSE", cardIndex: 0, jun: null }];
     case "firing_after_quality":
       return [{ type: "END_AFTER_QUALITY" }];

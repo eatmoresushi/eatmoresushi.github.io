@@ -47,13 +47,16 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  *        reservation; Materials Yard Shifu 6; Guild Hall Shifu takes up to 2 Techs from
  *        different disciplines at printed cost, and Tech displays refill when the taker's turn
  *        ends (owner revision 2026-10-17); Canal Wharf Shifu draws the top Main Order; Colour
- *        Samples once-per-round swap (R14); Canal Barge 2 Coins on completion; Protective
- *        Saggars floor and Standard → Fine; Fuel Ledger free Bank/Stoke; Second Firing best of
- *        2; Fire reshuffle above buried cards (R15). V1.6.1 (r29) rooms are rejected. The
- *        V1.6.2 track lands in stages (ENGINE_V1.6.2_DELTA.md): the location changes and the
- *        new Tech costs first, the Tech behaviour after; V1.6.2 is unreleased, so the revision
- *        stays 30 across the stages and the owner revision, and the content digest moves with
- *        the data.
+ *        Samples once-per-round swap; Canal Barge 2 Coins on completion; Protective Saggars
+ *        floor and Standard → Fine; Fuel Ledger free Bank/Stoke; Second Firing best of 2; Fire
+ *        reshuffle above buried cards (R15); owner revision 2 (changes 23–24): an 8-card
+ *        Starting deck, nineteen re-valued Main Orders, and looked-at Orders not reserved go to
+ *        the bottom of the Main deck instead of the discard (superseding R14), several in
+ *        random order (owner ruling R19, 2026-10-18). V1.6.1 (r29)
+ *        rooms are rejected. The V1.6.2 track lands in stages (ENGINE_V1.6.2_DELTA.md): the
+ *        location changes and the new Tech costs first, the Tech behaviour after; V1.6.2 is
+ *        unreleased, so the revision stays 30 across the stages, both owner revisions and R19,
+ *        and the content digest moves with the data.
  */
 export const RULES_BEHAVIOUR_REVISION = 30;
 
@@ -99,7 +102,7 @@ export const PROSE_KEYS: ReadonlySet<string> = new Set([
 
 /**
  * Display-only keys whose value is a list of prose records rather than one string: the D10
- * `clarifications` (owner decision D10, `docs/KILN_OPENING_v1.6.1_CLARIFICATIONS.md`, which is
+ * `clarifications` (owner decision D10, `docs/KILN_OPENING_v1.6.2_CLARIFICATIONS.md`, which is
  * itself outside the fingerprint). A key is dropped only when its value is prose: an array of
  * records whose every value is a string, or an object whose every value is such an array (the
  * top-level `clarifications` of `orders.json` and `imperial_progress.json`). Anything else under

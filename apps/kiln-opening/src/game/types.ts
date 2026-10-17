@@ -3,7 +3,7 @@
  *
  * Authority: `docs/KILN_OPENING_v1.6.2_EN_SOURCE.md` (the only rules source), the owner
  * rulings recorded in `docs/RULEBOOK_AUDIT_V1.6.2.md` and the engine delta
- * `docs/ENGINE_V1.6.2_DELTA.md`. In JSDoc below, `R1`–`R18` / `B1`–`B3` cite owner rulings,
+ * `docs/ENGINE_V1.6.2_DELTA.md`. In JSDoc below, `R1`–`R19` / `B1`–`B3` cite owner rulings,
  * `INT:` cites a recorded interpretation and `DIG:` a digital decision from the audit.
  * `DESIGN §x` refers to `docs/ENGINE_V1.6.1_DESIGN.md`, which the delta amends.
  *
@@ -46,10 +46,11 @@ export type VesselInstanceId = string;
 export type PlayerCount = 2 | 3 | 4;
 export type RoundNumber = 1 | 2 | 3 | 4 | 5;
 
-/** Stable IDs of the 16 Starting Orders (A0, L519–540). */
-export type StartingOrderId =
-  | "S01" | "S02" | "S03" | "S04" | "S05" | "S06" | "S07" | "S08"
-  | "S09" | "S10" | "S11" | "S12" | "S13" | "S14" | "S15" | "S16";
+/**
+ * Stable IDs of the 8 Starting Orders (A0, v1.6.2 L518–531, change 23). Revision 2 of the V1.6.2
+ * rulebook rebuilt the deck under the same IDs; S09–S16 are retired.
+ */
+export type StartingOrderId = "S01" | "S02" | "S03" | "S04" | "S05" | "S06" | "S07" | "S08";
 
 /** Stable IDs of the 48 Main Orders (A1–A3, L542–605). */
 export type MainOrderId =
@@ -516,8 +517,8 @@ export type PendingLook =
     }
   | {
       /**
-       * Colour Samples' once-per-round swap (v1.6.2 L625, L649, R14, R16, R17, B1, B3): the
-       * top 2 Main Orders, looked at after the held Order was discarded; as many as remained.
+       * Colour Samples' once-per-round swap (v1.6.2 L625, L649, change 24, R16, R17, B1, B3):
+       * the top 2 Main Orders, looked at after the held Order was discarded; as many as remained.
        */
       kind: "colour_samples_swap";
       playerId: PlayerId;
@@ -545,7 +546,8 @@ export interface FirePeek {
 export interface HiddenState {
   /** Secret Order hands (L201, L401). Counts are public via `PublicCounts`. */
   orderHands: Record<PlayerId, OrderId[]>;
-  /** Main Order deck, top first. */
+  /** Main Order deck, top first. Looked-at Orders not reserved are appended at the bottom,
+   * several in random order (v1.6.2 change 24, owner ruling R19). */
   mainDeck: OrderId[];
   /** Face-down Main Order discard (B3); only its count is public. */
   mainDiscard: OrderId[];
@@ -760,9 +762,10 @@ export type WorkTurnStep =
     }
   | {
       /**
-       * Colour Samples swap (v1.6.2 L625, R14, R17): the held Order is discarded and the private
+       * Colour Samples swap (v1.6.2 L625, R17): the held Order is discarded and the private
        * look at the top 2 is in `hidden.pendingLook` (kind `colour_samples_swap`). Next:
-       * COLOUR_SAMPLES_SWAP_CHOOSE, then back to the window it was used in.
+       * COLOUR_SAMPLES_SWAP_CHOOSE (the other card goes to the deck bottom, change 24), then back
+       * to the window it was used in.
        */
       kind: "colour_samples_swap";
       returnTo: "before_action" | "after_action";
@@ -1170,7 +1173,7 @@ export type GameAction =
        * Commission Market reservations after the look (v1.6.2 L191, L195–198): exactly 1
        * (Apprentice effect) or 1–2 (Shifu effect), each a face-up Order or a looked card, in
        * any mix. Resolved in array order; the looked cards not reserved then go face down to
-       * the Main discard. No resource is gained.
+       * the bottom of the Main deck in random order (change 24, R19). No resource is gained.
        */
       type: "COMMISSION_CHOOSE";
       reservations: CommissionPick[];
@@ -1194,10 +1197,15 @@ export type GameAction =
       type: "GUILD_FINISH";
       bottomOrder: TechId[];
     }
-  | { /** Colour Samples when acquired: reserve 1 looked-at Order, discard the rest (L626). */ type: "COLOUR_SAMPLES_CHOOSE"; orderId: OrderId }
   | {
-      /** Colour Samples swap, after the look: reserve 1 of the looked cards; the other goes face
-       * down to the Main discard (v1.6.2 L625, R14, B3). */
+      /** Colour Samples when acquired: reserve 1 looked-at Order; the rest go to the bottom of the
+       * Main deck (v1.6.2 Appendix B, change 24). */
+      type: "COLOUR_SAMPLES_CHOOSE";
+      orderId: OrderId;
+    }
+  | {
+      /** Colour Samples swap, after the look: reserve 1 of the looked cards; the other goes to the
+       * bottom of the Main deck (v1.6.2 Appendix B, change 24, B3). */
       type: "COLOUR_SAMPLES_SWAP_CHOOSE";
       orderId: OrderId;
     }
@@ -1421,8 +1429,14 @@ export type GameEvent =
       secret: Secret<{ orderIds: OrderId[]; techIds: TechId[] }>;
     }
   | {
-      /** Unchosen looked-at Orders go face down to the Main discard (v1.6.2 L195–196, L625, R14, B3). */
-      type: "LOOKED_ORDERS_DISCARDED";
+      /**
+       * The looked-at Orders a look did not reserve go face down to the bottom of the Main deck
+       * (v1.6.2 change 24, L34, L191, L195–196, L396; Colour Samples' looks, Appendix B), several
+       * in random order (owner ruling R19). Which cards is private to the looker (B3); the count
+       * is public. `secret.orderIds` lists them in the order they were looked at: it says which
+       * cards went under the deck, never their order there, which nobody knows.
+       */
+      type: "LOOKED_ORDERS_TO_BOTTOM";
       playerId: PlayerId;
       count: number;
       secret: Secret<{ orderIds: OrderId[] }>;
@@ -1738,10 +1752,15 @@ export interface LocalizedText {
  * multi-ceramic Orders fix only Shapes here and use independent relations (L423). */
 export interface OrderSlotDefinition {
   shape?: Shape;
-  /** Any one of these Shapes (S14, S15, O14, O15). */
+  /** Any one of these Shapes (S05, S06, O14, O15). */
   shapes?: Shape[];
   glaze?: Glaze;
   decoration?: Decoration;
+  /**
+   * Any one of these Decorations (S07 "Carved, Impressed or Painted", v1.6.2 change 23). A Crackle
+   * ceramic's wildcard Decoration may fill it (L470).
+   */
+  decorations?: Decoration[];
 }
 
 /**
@@ -1835,15 +1854,15 @@ export interface TechParamsById {
 
 /**
  * One rules clarification shown in a component's rules details (owner decision D10, UI
- * architecture K15), parsed from `docs/KILN_OPENING_v1.6.1_CLARIFICATIONS.md`. Display prose:
+ * architecture K15), parsed from `docs/KILN_OPENING_v1.6.2_CLARIFICATIONS.md`. Display prose:
  * outside the rules fingerprint (`PROSE_LIST_KEYS`), never read by a rule.
  */
 export interface ClarificationDefinition {
   en: string;
   zh: string;
   /**
-   * The source label, one or more tags joined by " · ": `L124` (rulebook line), `A1`
-   * (amendment), `R1`–`R13` / `B1`–`B3` (owner rulings), `ED L124` (editorial correction),
+   * The source label, one or more tags joined by " · ": `L124` (V1.6.2 rulebook line), `A1`
+   * (amendment), `R1`–`R19` / `B1`–`B3` (owner rulings), `ED L124` (editorial correction),
    * `INT <name>` (recorded interpretation), `P1`–`P3` (provisional ruling), `D7` (owner UI decision).
    */
   source: string;
@@ -1851,9 +1870,10 @@ export interface ClarificationDefinition {
 
 /**
  * Short component text convention (`shortText` / `shortTextZh`, from
- * `docs/KILN_OPENING_v1.6.1_COMPONENT_TEXT_SOURCE.md`): plain text, no Markdown. The timing
- * clause is everything before the first colon (":" or "："); after it, the secondary labels
- * "Ongoing:" / "持续：" and "Orders:" / "完成委托时：" start a second clause. The UI bolds the
+ * `docs/KILN_OPENING_v1.6.2_COMPONENT_TEXT_SOURCE.md`, the owner's V1.6.2 component text with
+ * the bold removed): plain text, no Markdown. The timing clause is everything before the first
+ * colon (":" or "："); after it, the secondary labels (`SHORT_TEXT_SECONDARY_LABELS`, e.g.
+ * "Ongoing:" / "持续：", "Orders:" / "完成委托时：") start a further clause. The UI bolds the
  * timing clause and the secondary labels (`shortTextSegments` in `content.ts`).
  */
 export interface TechDefinition<Id extends TechId = TechId> {
@@ -1874,7 +1894,7 @@ export interface TechDefinition<Id extends TechId = TechId> {
   nameZh: string;
   /** Appendix B Ability cell of the English rulebook, verbatim (bold markup removed). */
   ability: string;
-  /** The same cell of the Chinese rulebook edition `docs/KILN_OPENING_v1.6.1_ZH.md`. */
+  /** The same cell of the Chinese rulebook edition `docs/KILN_OPENING_v1.6.2_ZH.md`. */
   abilityZh: string;
   shortText: string;
   shortTextZh: string;
@@ -1900,7 +1920,7 @@ export interface KilnDefinition<Id extends KilnId = KilnId> {
   abilityNameZh: string;
   /** The Kiln Tradition Abilities section of the English rulebook, paragraphs joined by a space. */
   ability: string;
-  /** The same section of the Chinese rulebook edition `docs/KILN_OPENING_v1.6.1_ZH.md`, paragraphs joined. */
+  /** The same section of the Chinese rulebook edition `docs/KILN_OPENING_v1.6.2_ZH.md`, paragraphs joined. */
   abilityZh: string;
   shortText: string;
   shortTextZh: string;
@@ -2297,7 +2317,7 @@ export interface CommissionOptions {
 /** An Order look awaiting its choice (the viewer's own private look). */
 export interface LookedOrderOptions {
   kind: "commission_market" | "colour_samples" | "colour_samples_swap";
-  /** From `own.pendingLook`; the cards not reserved go face down to the discard. */
+  /** From `own.pendingLook`; the cards not reserved go to the bottom of the Main deck (change 24). */
   orderIds: OrderId[];
   /** Commission Market only: display positions also reservable now (v1.6.2 L191); else []. */
   faceUpSlots: number[];

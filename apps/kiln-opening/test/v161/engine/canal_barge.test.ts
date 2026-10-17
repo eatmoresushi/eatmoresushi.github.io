@@ -51,7 +51,7 @@ describe("2 Coins on the first Order completed each round (v1.6.2 L630)", () => 
     const coins = t.player("p1").resources.coins;
     const first = t.act("p1", complete("O01", ["c1"]));
     expect(types(first)).toEqual(["ORDER_COMPLETED", "RESOURCES_CHANGED", "TECH_USED", "RESOURCES_CHANGED"]);
-    expect(only(first, "ORDER_COMPLETED").record).toMatchObject({ orderId: "O01", canalBargeCoins: 2, vp: 3, coins: 3 });
+    expect(only(first, "ORDER_COMPLETED").record).toMatchObject({ orderId: "O01", canalBargeCoins: 2, vp: 4, coins: 3 });
     expect(first.filter((event) => event.type === "RESOURCES_CHANGED")).toEqual([
       { type: "RESOURCES_CHANGED", playerId: "p1", clay: 0, wood: 0, coins: 3, reason: "order_reward" },
       { type: "RESOURCES_CHANGED", playerId: "p1", clay: 0, wood: 0, coins: 2, reason: "canal_barge" },

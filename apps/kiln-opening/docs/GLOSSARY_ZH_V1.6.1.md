@@ -1,8 +1,8 @@
-# 《开窑》V1.6.1 简体中文术语与配件文字（定稿用词表）
+# 《开窑》V1.6.2 简体中文术语与配件文字（定稿用词表）
 
-Status: binding Simplified Chinese terminology for V1.6.1 (AGENTS.md source 8).
-Mechanical authority remains [KILN_OPENING_v1.6.1_EN_SOURCE.md](./KILN_OPENING_v1.6.1_EN_SOURCE.md)
-plus the rulings in [RULEBOOK_AUDIT_V1.6.1.md](./RULEBOOK_AUDIT_V1.6.1.md). If this glossary and
+Status: binding Simplified Chinese terminology (AGENTS.md source 8), carried from V1.6.1 to V1.6.2; the file keeps its V1.6.1 name.
+Mechanical authority remains [KILN_OPENING_v1.6.2_EN_SOURCE.md](./KILN_OPENING_v1.6.2_EN_SOURCE.md)
+plus the rulings in [RULEBOOK_AUDIT_V1.6.2.md](./RULEBOOK_AUDIT_V1.6.2.md). If this glossary and
 the English source ever disagree on a number, cost, timing, condition or limit, the English
 source wins and this file must be corrected; the Chinese wording never changes a rule.
 
@@ -23,6 +23,9 @@ and Canal Barge entries follow the V1.6.2 Chinese rulebook and [component text](
 the §2.16 button verbs follow with the UI stage ([ENGINE_V1.6.2_DELTA.md](./ENGINE_V1.6.2_DELTA.md) §12).
 Owner revision 2026-10-17 (Guild Hall): the 陶工行 Shifu texts (§4.5), the deferred Tech refill (§2.15 and §4.5) and two Tech-take error sentences (§7)
 follow the revised Chinese rulebook; the Shifu's 2-Coin discount (少付2铜钱) is gone.
+V1.6.2 content (engine stage 4, 2026-10-18): §3 points at the [V1.6.2 component text](./KILN_OPENING_v1.6.2_COMPONENT_TEXT_SOURCE.md),
+the V1.6.2 Chinese rulebook and the [V1.6.2 clarifications](./KILN_OPENING_v1.6.2_CLARIFICATIONS.md); the 施釉装窑 Shifu text (§4.3) is the Chinese
+rulebook's row, its R9 note a bullet; §9 cites V1.6.2 lines; see §10.
 
 ---
 
@@ -40,8 +43,8 @@ follow the revised Chinese rulebook; the Shifu's 2-Coin discount (少付2铜钱)
 - **机制先于意境。** 每个数字、费用、时机、条件、上限都必须保留；有歧义时宁可多写半句。
 - **可选与强制（R4）：** 技艺与窑口能力除明写“须”者外一律可选；放弃不消耗“每轮一次”。
   - 凡需玩家作选择、付费或可能不利的效果，文字中必写“可”或“你可以”。
-  - 强制效果写“须”。V1.6.1 中唯一强制的技艺效果是色样簿“习得时”的承接（只要至少能看1张）。
-    V1.6.2 的色样簿换单本身可选（“可弃”）；一旦换单，所看2张中须承接1张（R4、R14）。
+  - 强制效果写“须”。V1.6.1 起唯一强制的技艺效果是色样簿“习得时”的承接（只要至少能看1张）。
+    V1.6.2 的色样簿换单本身可选（“可弃”）；一旦换单，所看2张中须承接1张，另1张放到牌堆底（R4；规则书变更24）。
   - 纯收益型效果（放弃毫无所得）以陈述句书写，不写“可”：看火、大陶车与饰坯匣的减免、汝窑、官窑、
     贡瓷、清玩斋、色样簿的持续上限、终局陈列与计分。这只是写法；规则上它们依 R4 仍属可选。
     数字版自动结算看火已由审计记录，其余是否自动结算由 IMPLEMENTATION_DECISIONS 记录（见第9节）。
@@ -338,7 +341,7 @@ follow the revised Chinese rulebook; the Shifu's 2-Coin discount (少付2铜钱)
 | EN | 简体中文 | 说明 |
 | --- | --- | --- |
 | Order | 委托 | 沿用。 |
-| Starting Order (16) | 起始委托 | 无御令；弃置时放回盒中。 |
+| Starting Order (8) | 起始委托 | 无御令；弃置时放回盒中。V1.6.2 规则书变更23：起始委托由16张减为8张（S01–S08）；4人局全部发出。 |
 | Main Order (48) | 主委托 | — |
 | Commercial Order | 商贾委托 | 新名（旧“商业委托”），更有市井气息。不印御令。 |
 | Crown Order | 御令委托 | 沿用。印有至少1个御令。 |
@@ -347,9 +350,10 @@ follow the revised Chinese rulebook; the Shifu's 2-Coin discount (少付2铜钱)
 | display (6 face-up Main Orders) | 委托榜 | 新名（旧“公开展示区”）。最左最旧，最右最新。 |
 | reserve | 承接 | 沿用。 |
 | blind reservation | 盲接 | V1.6.2 已取消（规则书变更21），不再使用。 |
-| top-3 selection | 看三取一 | V1.6.2 取消了瓷牙行师傅的看三取一（规则书变更21），师傅改为“查看牌堆顶3张”；色样簿习得时仍是查看牌堆顶3张，承接1张，其余弃置（私密）。新文字不再用“看三取一”。 |
-| Colour Samples swap (once per round) | 换单 | 色样簿每轮一次：在你的一次工人行动之前或之后，可弃1张在手委托（主委托面朝下放入主委托弃牌堆，起始委托放回盒中），然后私看主委托牌堆顶2张（不足则看余下的），承接其中1张，另1张面朝下弃置（R14、R17）。技艺效果，不算瓷牙行行动。 |
-| look at the top 2 / top 3 (Commission Market) | 查看牌堆顶2张／3张 | 瓷牙行：学徒查看2张，师傅查看3张，私下进行（B3）；从委托榜和所看之牌中承接，没有承接的所看之牌面朝下弃置。 |
+| top-3 selection | 看三取一 | V1.6.2 取消了瓷牙行师傅的看三取一（规则书变更21），师傅改为“查看牌堆顶3张”；色样簿习得时仍是查看牌堆顶3张，承接1张，其余放到牌堆底（私密；规则书变更24）。新文字不再用“看三取一”。 |
+| Colour Samples swap (once per round) | 换单 | 色样簿每轮一次：在你的一次工人行动之前或之后，可弃1张在手委托（主委托面朝下放入主委托弃牌堆，起始委托放回盒中），然后私看主委托牌堆顶2张（不足则看余下的），承接其中1张，另1张面朝下放到主委托牌堆底（规则书变更24，取代R14；R17）。技艺效果，不算瓷牙行行动。 |
+| look at the top 2 / top 3 (Commission Market) | 查看牌堆顶2张／3张 | 瓷牙行：学徒查看2张，师傅查看3张，私下进行（B3）；从委托榜和所看之牌中承接，没有承接的所看之牌面朝下放到主委托牌堆底（规则书变更24）。 |
+| put on the bottom of the deck (looked Orders not reserved) | 放到牌堆底 | 规则书变更24：瓷牙行与色样簿翻看而没有承接的牌，面朝下放到主委托牌堆底，不再放入弃牌堆；几张同时放入时先洗混，顺序随机（裁定R19）。是哪几张只有翻看者知道（B3）。 |
 | take the top card unseen (Canal Wharf Shifu) | 不看牌面拿取 | 漕运码头师傅把主委托牌堆顶1张直接收入手中；委托榜不动。 |
 | hold / held Order | 持有／在手委托 | 秘密；张数公开。 |
 | hand | 委托手牌 | — |
@@ -450,13 +454,13 @@ follow the revised Chinese rulebook; the Shifu's 2-Coin discount (少付2铜钱)
 
 ## 3. 配件文字：技艺牌（18）与窑口传承（5）
 
-短提示为牌面文字，逐字取自[配件文字](./KILN_OPENING_v1.6.1_COMPONENT_TEXT_SOURCE.md)（业主2026-10-16修订；色样簿、漕船、匣钵护烧、柴簿、复烧取自 [V1.6.2 配件文字](./KILN_OPENING_v1.6.2_COMPONENT_TEXT.md)），
-数据字段 `shortTextZh`：一行纯文字，**不超过96字**（牌面至多四行，每行约24字；标点、数字、符号各计1字；业主裁定 R18，2026-10-17：色样簿的业主原文79字，全文保留），
+短提示为牌面文字，逐字取自 [V1.6.2 配件文字](./KILN_OPENING_v1.6.2_COMPONENT_TEXT_SOURCE.md)（即业主的 [V1.6.2 配件文字原件](./KILN_OPENING_v1.6.2_COMPONENT_TEXT.md)去掉加粗；色样簿、漕船、匣钵护烧、柴簿、复烧为 V1.6.2 新写，其余18条与 V1.6.1 相同），
+数据字段 `shortTextZh`：一行纯文字，**不超过96字**（牌面至多四行，每行约24字；标点、数字、符号各计1字；业主裁定 R18，2026-10-17：色样簿的业主原文82字（修订2前为79字），全文保留），
 格式为“时机：费用→效果”。界面加粗第一个“：”之前的时机，以及其后的“持续：”“完成委托时：”“每轮一次，你的一次工人行动之前或之后：”“每轮一次，定品后：”“选控火时：”标签（V1.6.2 配件文字的加粗时机）。
 
-完整文字逐字取自[中文规则书](./KILN_OPENING_v1.6.1_ZH.md)（附录B“效果”栏；“窑口传承能力”各节），与英文规则书
-逐句对应，数据字段 `abilityZh`。原先嵌在完整文字中的裁定与说明（R4、R6、R7、R12、R13、B1、B3 等）
-已移入[配件澄清](./KILN_OPENING_v1.6.1_CLARIFICATIONS.md)（业主决定 D10），在规则详情中逐条标明出处。
+完整文字逐字取自 [V1.6.2 中文规则书](./KILN_OPENING_v1.6.2_ZH.md)（附录B“效果”栏；“窑口传承能力”各节），与英文规则书
+逐句对应，数据字段 `abilityZh`。原先嵌在完整文字中的裁定与说明（R4、R7、R12、R13、B1、B3 等）
+已移入 [V1.6.2 配件澄清](./KILN_OPENING_v1.6.2_CLARIFICATIONS.md)（业主决定 D10），在规则详情中逐条标明出处；R6 已随 V1.6.2 作废。
 
 除色样簿习得时承接（须）外，所有技艺与窑口能力均为可选（R4），放弃不消耗“每轮一次”；
 须足额支付费用，减免在支付前计算。完整文字照规则书原文，未写“可”者依 R4 仍属可选。
@@ -499,7 +503,7 @@ V1.6.2 中，匣钵护烧的“永不为瑕品”与柴簿的“压火与添柴�
 
 | EN | 中文名 | 费用 | 短提示 |
 | --- | --- | --- | --- |
-| Colour Samples | 色样簿 | 2 | 习得时：私看主委托牌堆顶3张→须承接1张，其余弃置。持续：你的委托上限为5张。每轮一次，你的一次工人行动之前或之后：可弃1张在手委托→看牌堆顶2张，承接1张。 |
+| Colour Samples | 色样簿 | 2 | 习得时：私看主委托牌堆顶3张→须承接1张，其余放到牌堆底。持续：你的委托上限为5张。每轮一次，你的一次工人行动之前或之后：可弃1张在手委托→看牌堆顶2张，承接1张。 |
 | Kiln Tending | 看火 | 3 | 每轮一次，至少装窑1件的施釉装窑行动之后：得1泥1柴。 |
 | Kiln Furniture | 支烧窑具 | 2 | 每轮一次，将1件器物装入共窑时：可将本牌垫于其下→本次烧成中，该器物的温区修正由你定为−1、0或+1。 |
 | Inverted Firing | 覆烧 | 2 | 每轮一次，将1件碗、盘或笔洗装入共窑时：可放入恰有1件己方器物的启用窑位；两件同用该窑位的修正。 |
@@ -507,7 +511,7 @@ V1.6.2 中，匣钵护烧的“永不为瑕品”与柴簿的“压火与添柴�
 | Canal Barge | 漕船 | 2 | 每轮一次，完成委托时：得2铜钱。 |
 
 **色样簿**（釉作，2铜钱）
-习得时：查看主委托牌堆顶3张，承接其中1张，其余弃置。这是技艺效果，不算瓷牙行行动。持续：你的委托上限为5张；每轮一次，在你的一次工人行动之前或之后，你可以弃置1张在手委托，然后查看主委托牌堆顶2张并承接其中1张。
+习得时：查看主委托牌堆顶3张，承接其中1张，其余放到牌堆底。这是技艺效果，不算瓷牙行行动。持续：你的委托上限为5张；每轮一次，在你的一次工人行动之前或之后，你可以弃置1张在手委托，然后查看主委托牌堆顶2张，承接其中1张，另1张放到牌堆底。
 
 **看火**（釉作，3铜钱）
 每轮一次，在一次至少装窑了1件器物的施釉装窑行动之后，获得1泥和1柴。
@@ -605,26 +609,27 @@ V1.6.2 中，匣钵护烧的“永不为瑕品”与柴簿的“压火与添柴�
 | 工人 | 短 | 完整 |
 | --- | --- | --- |
 | 学徒 | 1件坯施釉装窑 | 选择你的1件坯，为它选定釉并装窑。 |
-| 师傅 | 至多2件坯施釉装窑；火标暗置于己方1件器物上 | 为你的至多2件坯施釉并装窑。然后可以把你的火标暗置于你在共窑或御窑中的1件没有火标的器物上（R9，包括本轮先前装进的，或通过御烧优先装进的）。师傅留在施釉装窑工位上。 |
+| 师傅 | 至多2件坯施釉装窑；火标暗置于己方1件器物上 | 为你的至多2件坯施釉并装窑。然后把你的**火标暗置**于你在共窑或御窑中的1件器物上。师傅留在施釉装窑工位上。 |
 
-- 装窑：放入一个空的启用窑位；如果你已经获得御窑且御窑空着，本次行动装窑的器物中可以有1件改放进御窑，
+- 装窑：放进一个空的启用窑位；如果你已经获得御窑且御窑空着，本次行动装窑的器物中可以有1件改放进御窑，
   并公开选定御窑修正−1、0或+1。
 - 可派工条件（R5）：你至少有1件坯拥有合法去处——空的启用窑位（非他人窑位签所占）、
-  你空置的御窑，或（覆烧本轮未用时，碗／盘／笔洗）恰有1件你的器物的启用窑位。
+  你空着的御窑，或（覆烧本轮还没有使用时，碗／盘／笔洗）恰有1件你的器物的启用窑位。
 - 被盖住的窑位既不算空位，也不能使用。御窑每次烧成只容纳1件。每件器物上至多只能有1个火标。
+- 师傅暗置火标是可选的；可以放在你在共窑或御窑中任意一件没有火标的器物上，包括本轮先前装进的，或通过御烧优先装进的（R9；见施釉装窑的配件澄清）。
 
 ### 4.4 瓷牙行（中央；容量2／3／4）
 
 承接就是把1张主委托收入手中。承接**榜上的**委托时，它的榜位**空着，直到你的回合结束**；然后把它右边的委托都向左推一位，
-再翻开主委托填入最右边的空位，使委托榜恢复为6张。从牌堆翻看而没有承接的牌，放入主委托弃牌堆。瓷牙行不给资源（V1.6.2）。
+再翻开主委托填入最右边的空位，使委托榜恢复为6张。从牌堆翻看而没有承接的牌，放到主委托牌堆底（规则书变更24）。瓷牙行不给资源（V1.6.2）。
 
 | 工人 | 短 | 完整 |
 | --- | --- | --- |
-| 学徒 | 看牌堆顶2张；从榜上或这2张中承接1张 | 查看主委托牌堆顶的2张。从委托榜或这2张中承接1张主委托；这2张中没有承接的弃置。 |
-| 师傅 | 看牌堆顶3张；从榜上和这3张中承接至多2张 | 查看主委托牌堆顶的3张。从委托榜和这3张中承接至多2张主委托；这3张中没有承接的弃置。 |
+| 学徒 | 看牌堆顶2张；从榜上或这2张中承接1张 | 查看主委托牌堆顶的2张。从委托榜或这2张中承接1张主委托；这2张中没有承接的放到牌堆底。 |
+| 师傅 | 看牌堆顶3张；从榜上和这3张中承接至多2张 | 查看主委托牌堆顶的3张。从委托榜和这3张中承接至多2张主委托；这3张中没有承接的放到牌堆底。 |
 
 - 师傅至少要承接1张。你的回合结束前委托榜不会补牌，所以师傅的两次承接都只能从此刻榜上的委托中选。
-- 查看是私下进行的，所看之牌只有你知道；没有承接的牌面朝下放入主委托弃牌堆，只公开张数（B3）。
+- 查看是私下进行的，所看之牌只有你知道；没有承接的牌面朝下放到主委托牌堆底，是哪几张只有你知道，牌堆张数公开（B3；规则书变更24）。
 - 牌堆不足时只看余下的；弃牌堆只在查看开始时牌堆已空才洗混，不会为了凑足张数而洗混（B1）。
 - 一轮之中没有委托上限；收工时弃至4张（有色样簿则5张）。手中委托保密，张数公开。
 
@@ -701,6 +706,7 @@ V1.6.2 中，匣钵护烧的“永不为瑕品”与柴簿的“压火与添柴�
 | any Glazes / any Decorations（多件） | 任意釉／任意纹饰 |
 | Bowl, Plate or Brush Washer | 碗、盘或笔洗 |
 | Vase or Censer | 瓶或香炉 |
+| Carved, Impressed or Painted | 刻花、印花或画花 |
 | Bowl + Plate | 碗 + 盘 |
 | 2 different Shapes / 3 different Shapes | 2种不同器型／3种不同器型 |
 | 2 ceramics of the same Shape | 2件同器型 |
@@ -733,11 +739,11 @@ V1.6.2 中，匣钵护烧的“永不为瑕品”与柴簿的“压火与添柴�
 
 | ID | 要求 | 品质 | 奖励 |
 | --- | --- | --- | --- |
-| S01 | 碗 · 任意釉 · 任意纹饰 | 良品以上 | 2分 · 4铜钱 |
-| S13 | 任意器型 · 任意釉 · 画花 | 良品以上 | 4分 · 4铜钱 |
-| O14 | 碗、盘或笔洗 · 任意釉 · 任意纹饰 | 上品以上 | 5分 · 4铜钱 |
+| S05 | 碗、盘或笔洗 · 任意釉 · 任意纹饰 | 良品以上 | 3分 · 4铜钱 |
+| S07 | 任意器型 · 任意釉 · 刻花、印花或画花 | 良品以上 | 3分 · 3铜钱 |
+| O14 | 碗、盘或笔洗 · 任意釉 · 任意纹饰 | 上品以上 | 5分 · 3铜钱 |
 | O31 | 盘 + 瓶；均为青釉；至少1件素面，另1件纹饰任意 | 均上品以上 | 12分 · 5铜钱 |
-| O39 | 瓶 + 香炉；青釉、月白釉各1件；素面、画花各1件 | 均上品以上 | 14分 · 1铜钱 · 👑×2 |
+| O39 | 瓶 + 香炉；青釉、月白釉各1件；素面、画花各1件 | 均上品以上 | 13分 · 1铜钱 · 👑×2 |
 | O47 | 3种不同器型；3种不同釉；3种不同纹饰 | 均上品以上，至少2件臻品 | 22分 · 0铜钱 · 👑×3 |
 
 ---
@@ -820,7 +826,7 @@ V1.6.2 中，匣钵护烧的“永不为瑕品”与柴簿的“压火与添柴�
 | `INVERTED_FIRING_INVALID` | 覆烧不合法 | 覆烧只能把碗、盘或笔洗叠放进恰好已有1件你的器物的启用窑位 |
 | `HEAT_MARKER_INVALID` | 火标不合法 | 每件器物至多带1个火标 |
 | `ORDER_NOT_AVAILABLE` | 委托不在榜上 | 这张委托已不在委托榜上 |
-| `ORDER_NOT_HELD` | 非在手委托 | 只能完成在手委托 |
+| `ORDER_NOT_HELD` | 非在手委托（完成、收工弃牌、换单） | 这张委托不在你手中 |
 | `ORDER_SUPPLY_EMPTY` | 主委托用尽 | 主委托牌堆和弃牌堆都空了，没有可承接的委托 |
 | `RESERVATION_REQUIRED` | 未选委托 | 至少要承接1张委托 |
 | `RESERVATION_LIMIT` | 承接张数超限 | 此行动至多承接{limit}张 |
@@ -843,7 +849,8 @@ V1.6.2 中，匣钵护烧的“永不为瑕品”与柴簿的“压火与添柴�
 | `INVALID_CONTRIBUTION` | 控火不合法 | 柴不足，打不出这张控火牌（守火永远可选） |
 
 `{reason}` 常用短语：器型不符、釉不符、纹饰不符、品质不足、需臻品、器物已交付、瑕品不能完成委托、
-开片器不是臻品、本次烧成之外的器物、声明的器物不在所选之列、只有开片器可声明纹饰、同一开片器只能声明一次、所作声明不满足委托，换一种声明可满足。
+开片器不是臻品、本次烧成之外的器物、声明的器物不在所选之列、只有开片器可声明纹饰、同一开片器只能声明一次、所作声明不满足委托，换一种声明可满足、
+器物不是良品（匣钵护烧、哥窑）、器物不是瑕品或良品（复烧）、器物不是瑕品（折卖）。
 
 ---
 
@@ -866,13 +873,13 @@ V1.6.2 中，匣钵护烧的“永不为瑕品”与柴簿的“压火与添柴�
 ## 9. 待裁定问题（不得自行定规则）
 
 以下问题英文源与审计均未裁定。中文文字暂按英文原样保持泛指，不写定答案；待业主裁定并记入
-RULEBOOK_AUDIT_V1.6.1.md 后，再在相应条目补一句。
+RULEBOOK_AUDIT_V1.6.2.md 后，再在相应条目补一句。
 
 1. **（已记录，2026-10-15）复烧作用于御窑器物：**审计“Interpretations”已记录：沿用同一窑骰点数、御窑修正与火标，配合新窑火修正重算；已列入复烧的配件澄清（INT Imperial Second Firing）。原问题：英文写“相同的基础火候、温区修正、窑具修正与火标”，但御窑器物的实际火候
-   由窑骰点数与御窑修正构成，不用基础火候与温区修正（EN L640、L651、L678）。沿用哪些数值未定。
+   由窑骰点数与御窑修正构成，不用基础火候与温区修正（EN L631、L642、L669）。沿用哪些数值未定。
    裁定后可补：“（御窑器物：窑骰点数与御窑修正不变）”之类括注。
 2. **（暂定默认 P1）改坯案与御烧优先：**审计 P1 暂定为可以，并消耗改坯案的每轮一次；业主可推翻。原问题：改坯案写“每当你为1件坯施釉装窑时”（泛指，不限施釉装窑行动）；御烧优先也是
-   为坯施釉装入御窑的令牌效果。改坯案能否用于御烧优先装窑，审计未裁定（EN L617、L293、L646）。
+   为坯施釉装入御窑的令牌效果。改坯案能否用于御烧优先装窑，审计未裁定（EN L608、L292、L637）。
 3. **纯收益型效果的数字化处理：**依 R4，大陶车、饰坯匣、汝窑、官窑、贡瓷仍属可选；审计只记录看火自动结算。
    数字版是否也自动结算其余各项（放弃毫无所得），由 IMPLEMENTATION_DECISIONS 记录；本表文字不受影响。
 
@@ -947,3 +954,14 @@ Terminology review of revision 1, applied in revision 2 (2026-10-14).
 - The §4 short column (the location-card summaries) still uses the earlier wording; it changes together with the UI
   location summaries.
 
+
+**V1.6.2 content (engine stage 4, 2026-10-18)**
+- §3: the short reminders come from the repository copy of the owner's V1.6.2 component text
+  (`docs/KILN_OPENING_v1.6.2_COMPONENT_TEXT_SOURCE.md`, the owner's file with its bold removed); the full texts from the V1.6.2
+  Chinese rulebook; the embedded rulings from the V1.6.2 clarifications (`docs/KILN_OPENING_v1.6.2_CLARIFICATIONS.md`), whose Chinese
+  halves use the terms of this table in plain modern sentences. R6 is obsolete under V1.6.2 and no longer named.
+- §4.3: the 施釉装窑 Shifu's full text is now the Chinese rulebook's row word for word (然后把你的火标暗置于你在共窑或御窑中的1件器物上),
+  as the English data already followed the English row. R9 (optional; any of your ceramics without a marker, including one loaded
+  earlier this round or by Imperial Priority) moves to a bullet under §4.3 and stays in the 施釉装窑 clarifications. The bullets use
+  放进／空着／还没有使用 (plain register).
+- §9: the open questions cite V1.6.2 lines and the V1.6.2 audit.

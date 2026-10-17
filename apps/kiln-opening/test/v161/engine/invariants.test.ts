@@ -9,10 +9,20 @@ import { applyAction } from "../../../src/game/engine.ts";
 import { InvariantError } from "../../../src/game/errors.ts";
 import { assertInvariants, hiddenIdsIn, invariantViolations, publiclyVisibleIds } from "../../../src/game/invariants.ts";
 import { SeededRandom } from "../../../src/game/rng.ts";
-import type { GameAction, GameState, GuildInspectionStep, LoadedCeramic, OrderId } from "../../../src/game/types.ts";
+import type {
+  FiringCeramicRecord,
+  GameAction,
+  GameState,
+  GuildInspectionStep,
+  HeatCalculation,
+  LoadedCeramic,
+  OrderId,
+  TechId,
+} from "../../../src/game/types.ts";
 import { projectPublicState } from "../../../src/game/view.ts";
 import { keySortedJsonRoundTrip, playFuzzGame, richStartState } from "./p7_support.ts";
-import { buildState } from "./support/fixtures.ts";
+import { resolveOrderCompletion } from "../../../src/game/orders/completion.ts";
+import { buildState, stageCeramic, testContext } from "./support/fixtures.ts";
 
 function base(): GameState {
   return buildState({
@@ -361,5 +371,108 @@ describe("the public-ID scan", () => {
     const allowed = publiclyVisibleIds(state);
     expect(hiddenIdsIn(projectPublicState(state), allowed)).toEqual([]);
     expect(hiddenIdsIn({ a: ["S01", state.market.display[0]], T22: 1 }, allowed)).toEqual(["S01"]);
+  });
+});
+
+describe("the V1.6.2 Tech checks (ENGINE_V1.6.2_DELTA.md §4.12)", () => {
+  /** p1 has 1 loaded White Bowl (c1) in this firing, its record merged with `record`. */
+  function firingWith(record: Partial<FiringCeramicRecord>, techs: TechId[] = ["T11"]): GameState {
+    const state = buildState({
+      players: [{ techs }, {}],
+      ceramics: [{ owner: "p1", stage: "loaded", shape: "bowl", glaze: "white", at: "high_1" }],
+    });
+    state.firing = {
+      round: 1, kilnDie: 2, participantIds: ["p1"], firingPlayerIds: ["p1"], contributionWindowId: null, contributions: {}, unclampedBaseHeat: 2,
+      baseHeat: 2, testPieces: [], fireModifier: state.hidden.fireDeck.shift() ?? 0, globalHeat: 2, pendingExtraFire: null,
+      ceramics: {
+        c1: {
+          ceramicId: "c1", ownerId: "p1", kiln: "shared", spaceId: "high_1", glaze: "white", preferredHeat: 1, positionSource: "zone",
+          first: null, second: null, secondFiringCards: null, saggarsFloor: false, quality: "standard", history: [], crackle: false, salvaged: false,
+          ...record,
+        },
+      },
+    };
+    return state;
+  }
+
+  const calculation = (fireModifier: -2 | -1 | 0 | 1 | 2): HeatCalculation => ({
+    fireModifier, heatSource: 2 + fireModifier, positionModifier: 1, heatMarker: 0, actualHeat: 3 + fireModifier, junAdjustment: 0,
+    finalActualHeat: 3 + fireModifier, heatDifference: Math.abs(2 + fireModifier),
+  });
+
+  it("sound records pass: a floored Standard, a floored ceramic made Fine, a Second Firing with its 2 cards", () => {
+    expect(invariantViolations(firingWith({ saggarsFloor: true }))).toEqual([]);
+    expect(invariantViolations(firingWith({ saggarsFloor: true, quality: "fine" }))).toEqual([]);
+    expect(invariantViolations(firingWith({ second: calculation(1), secondFiringCards: [-1, 1] }, []))).toEqual([]);
+  });
+
+  it.each([
+    ["a Protective Saggars owner's Flawed record (v1.6.2 L628)", () => firingWith({ quality: "flawed" }), /c1 of Protective Saggars owner p1 is Flawed/],
+    ["the Saggars floor without the Tech", () => firingWith({ saggarsFloor: true }, []), /c1 carries the Saggars floor without Protective Saggars/],
+    ["a floored ceramic at Masterpiece", () => firingWith({ saggarsFloor: true, quality: "masterpiece" }), /floored c1 is masterpiece/],
+    ["a Second Firing recalculation without its revealed cards", () => firingWith({ second: calculation(1) }, []), /Second Firing record of c1 disagrees/],
+    ["a Second Firing card that was not revealed", () => firingWith({ second: calculation(2), secondFiringCards: [-1, 1] }, []), /Second Firing record of c1 disagrees/],
+    ["revealed cards without a recalculation", () => firingWith({ secondFiringCards: [0, 0] }, []), /Second Firing record of c1 disagrees/],
+  ] as Array<[string, () => GameState, RegExp]>)("%s is reported", (_name, build, pattern) => {
+    expect(invariantViolations(build()).join("\n")).toMatch(pattern);
+  });
+
+  it("a Finished Flawed ceramic of a Saggars owner is reported only if it was fired after the Tech was gained (L642)", () => {
+    const spec = (acquiredInRound: 1 | 2) => buildState({
+      round: 2,
+      players: [{ techs: [{ id: "T11", acquiredInRound }] }, {}],
+      ceramics: [{ owner: "p1", stage: "finished", shape: "bowl", glaze: "white", quality: "flawed", firedInRound: 1 }],
+    });
+    expect(invariantViolations(spec(1)).join("\n")).toMatch(/Finished c1 of Protective Saggars owner p1 is Flawed/);
+    expect(invariantViolations(spec(2))).toEqual([]);
+  });
+
+  it("buried Fire cards must fit the deck (R15)", () => {
+    const state = buildState({});
+    state.hidden.fireBuried = state.hidden.fireDeck.length + 1;
+    expect(invariantViolations(state).join("\n")).toMatch(/fireBuried is \d+ with \d+ cards in the Fire deck/);
+    state.hidden.fireBuried = -1;
+    expect(invariantViolations(state).join("\n")).toMatch(/fireBuried is -1/);
+  });
+
+  it("Second Firing's revealed cards wait only in its choice (live tier)", () => {
+    const state = firingWith({}, ["T14"]);
+    state.phase = { type: "firing_after_quality", queue: { actorIds: ["p1"], index: 0 } };
+    const [a, b] = state.hidden.fireDeck.splice(0, 2) as [-2 | -1 | 0 | 1 | 2, -2 | -1 | 0 | 1 | 2];
+    state.firing!.pendingExtraFire = { playerId: "p1", ceramicId: "c1", modifiers: [a, b] };
+    expect(invariantViolations(state, { live: true }).join("\n")).toMatch(/Second Firing's revealed cards are pending outside its choice/);
+  });
+
+  it("Canal Barge's 2 Coins come at most once a round, only to its owner (live tier, v1.6.2 L622)", () => {
+    /** p1 completes O01 and O02 (a Bowl and a Plate each) for real, then the record is edited. */
+    const completed = (techs: TechId[]) => {
+      const state = buildState({ round: 2, players: [{ techs, hand: ["O01", "O02"] }, {}] });
+      const bowl = stageCeramic(state, { owner: "p1", stage: "finished", shape: "bowl", glaze: "white", quality: "standard" }).id;
+      const plate = stageCeramic(state, { owner: "p1", stage: "finished", shape: "plate", glaze: "white", quality: "standard" }).id;
+      resolveOrderCompletion(state, "p1", { orderId: "O01", ceramicIds: [bowl] }, testContext());
+      resolveOrderCompletion(state, "p1", { orderId: "O02", ceramicIds: [plate] }, testContext());
+      return state;
+    };
+    const sound = completed(["T23"]);
+    expect(sound.players["p1"]!.completedOrders.map((r) => r.canalBargeCoins)).toEqual([2, 0]);
+    expect(invariantViolations(sound, { live: true })).toEqual([]);
+    const twice = completed(["T23"]);
+    twice.players["p1"]!.completedOrders[1]!.canalBargeCoins = 2;
+    expect(invariantViolations(twice, { live: true }).join("\n")).toMatch(/p1 gained Canal Barge's Coins twice in one round/);
+    const unowned = completed([]);
+    unowned.players["p1"]!.completedOrders[0]!.canalBargeCoins = 2;
+    expect(invariantViolations(unowned, { live: true }).join("\n")).toMatch(/p1 gained Canal Barge's Coins without T23/);
+  });
+
+  it("the Colour Samples swap step needs its own look, and T10 spent (live tier)", () => {
+    const state = buildState({ players: [{ techs: ["T10"], hand: ["O40"] }, {}] });
+    const top = state.hidden.mainDeck.splice(0, 2) as OrderId[];
+    state.phase = { type: "work_turn", activePlayerId: "p1", step: { kind: "colour_samples_swap", returnTo: "before_action", lookedCount: 2 } };
+    state.hidden.pendingLook = { kind: "colour_samples", playerId: "p1", orderIds: top, inspection: null };
+    expect(invariantViolations(state, { live: true }).join("\n")).toMatch(/pending look colour_samples during work_turn\/colour_samples_swap/);
+    state.hidden.pendingLook = { kind: "colour_samples_swap", playerId: "p1", orderIds: top };
+    expect(invariantViolations(state, { live: true }).join("\n")).toMatch(/a Colour Samples swap is open but T10 is ready/);
+    state.players["p1"]!.techs[0]!.usedThisRound = true;
+    expect(invariantViolations(state, { live: true })).toEqual([]);
   });
 });

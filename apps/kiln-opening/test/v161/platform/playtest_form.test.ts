@@ -22,6 +22,7 @@ import {
   submissionCandidate,
 } from "../../../src/playtest/model.ts";
 import { FIRING_TECH_IDS, KILN_DIE_FACES, MAX_RECOGNITION, validatePlaytestSubmission } from "../../../src/playtest/schema.ts";
+import type { OrderId } from "../../../src/game/index.ts";
 import type { PlaytestDraft } from "../../../src/playtest/types.ts";
 
 function validDraft(): PlaytestDraft {
@@ -93,6 +94,20 @@ describe("Playtest Form V3 (rules V1.6.2)", () => {
       index === 0 ? { ...player, startingTechniqueId: "ST01" } : player,
     );
     expect(issuesOf({ ...candidate, players })).toContain("players.0.startingTechniqueId: V1.6.2 has no Starting Techs.");
+  });
+
+  it("records only V1.6.2 Orders: Starting Orders S01–S08 and Main Orders O01–O48 (change 23)", () => {
+    const current = validDraft();
+    current.players[0]!.completedOrderIds = ["S08", "O48"];
+    const accepted = validatePlaytestSubmission(submissionCandidate(current));
+    expect(accepted.ok, JSON.stringify(accepted.ok ? null : accepted.issues)).toBe(true);
+    // S09–S16 left the game with V1.6.2's 8-card Starting deck.
+    for (const retired of ["S09", "S12", "S16"]) {
+      const draft = validDraft();
+      // The form's own type has no retired ID; the candidate is what a client might send.
+      draft.players[0]!.completedOrderIds = [retired as OrderId, "O01"];
+      expect(issuesOf(submissionCandidate(draft)), retired).toContain("players.0.completedOrderIds.0: Choose a valid Order.");
+    }
   });
 
   it("keeps each Tech in its own discipline and each tile with one player", () => {

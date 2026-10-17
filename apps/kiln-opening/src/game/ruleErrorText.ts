@@ -114,7 +114,7 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
   INVALID_CHOICE: {
     en: "That choice is not available.",
     zh: "此选项不可用",
-    detailKeys: keys("value", "choice", "effect", "workerId", "locationId", "techId", "orderId", "ceramicId", "slotIndex"),
+    detailKeys: keys("value", "choice", "effect", "workerId", "locationId", "techId", "orderId", "ceramicId", "slotIndex", "cardIndex"),
   },
   // ── Setup ──────────────────────────────────────────────────────────────────────────────
   KILN_UNAVAILABLE: {
@@ -253,8 +253,9 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
     detailKeys: keys("orderId", "slotIndex"),
   },
   ORDER_NOT_HELD: {
-    en: "You can complete only Orders in your hand.",
-    zh: "只能完成在手委托",
+    // Completion, the Cleanup trim and the Colour Samples swap (ENGINE_V1.6.2_DELTA.md §2.5).
+    en: "That Order is not in your hand.",
+    zh: "这张委托不在你手中",
     detailKeys: keys("orderId"),
   },
   ORDER_SUPPLY_EMPTY: {
@@ -491,6 +492,11 @@ export const REASON_TEXT: Readonly<Record<string, RuleErrorTemplate>> = {
   flawed: { en: "a Flawed ceramic cannot complete an Order", zh: "瑕品不能完成委托" },
   crackle_not_masterpiece: { en: "a Crackle ceramic is never a Masterpiece", zh: "开片器永远不是臻品" },
   not_this_firing: { en: "the ceramic is not in this firing", zh: "器物不在本次烧成中" },
+  // After-Quality targets (v1.6.2 L628, L631, L280, L467): Protective Saggars and Ge take a
+  // Standard ceramic, Second Firing a Flawed or Standard one, salvage a Flawed one.
+  not_standard: { en: "the ceramic is not Standard", zh: "器物不是良品" },
+  not_flawed_or_standard: { en: "the ceramic is not Flawed or Standard", zh: "器物不是瑕品或良品" },
+  not_flawed: { en: "the ceramic is not Flawed", zh: "器物不是瑕品" },
   wrong_count: { en: "the number of ceramics does not match", zh: "器物件数不符" },
   relation_mismatch: { en: "the combined requirements are not met", zh: "组合要求不符" },
   crackle_not_selected: { en: "the declared ceramic is not one of those chosen", zh: "声明的器物不在所选器物中" },

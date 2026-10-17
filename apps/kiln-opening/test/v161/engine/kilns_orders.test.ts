@@ -58,7 +58,7 @@ function complete(state: GameState, playerId: PlayerId, spec: OrderCompletionSpe
 
 describe("the completion procedure (L410–419)", () => {
   it("reveals, delivers beneath the Order, records VP, gains Coins and keeps the record", () => {
-    const state = table({ kilnId: "GE", hand: ["O04", "S16"] });
+    const state = table({ kilnId: "GE", hand: ["O04", "S08"] });
     const vase = fin(state, "p1", "vase moon_white carved fine");
     const { record, events } = complete(state, "p1", { orderId: "O04", ceramicIds: [vase] });
     const expected: CompletedOrderRecord = {
@@ -67,7 +67,7 @@ describe("the completion procedure (L410–419)", () => {
       round: 3,
       canalBargeCoins: 0,
       vp: 7,
-      coins: 4,
+      coins: 3,
       printedCrowns: 0,
       bonusCrowns: 0,
       crackleDeclarations: [],
@@ -78,33 +78,35 @@ describe("the completion procedure (L410–419)", () => {
     expect(p1.completedOrders).toEqual([expected]);
     expect(p1.score.orders).toBe(ORDERS.O04.vp);
     expect(p1.resources.coins).toBe(ORDERS.O04.coins);
-    expect(state.hidden.orderHands["p1"]).toEqual(["S16"]);
+    expect(state.hidden.orderHands["p1"]).toEqual(["S08"]);
     expect(ceramic(state, vase)).toMatchObject({ stage: "delivered", orderId: "O04", deliveredInRound: 3, quality: "fine", crackle: false });
     expect(events).toEqual([
       { type: "ORDER_COMPLETED", playerId: "p1", record: expected },
-      { type: "RESOURCES_CHANGED", playerId: "p1", clay: 0, wood: 0, coins: 4, reason: "order_reward" },
+      { type: "RESOURCES_CHANGED", playerId: "p1", clay: 0, wood: 0, coins: 3, reason: "order_reward" },
     ]);
   });
 
   it("a delivered Crackle ceramic keeps its Crackle marker and printed Decoration (L94, L470)", () => {
-    const state = table({ kilnId: "GE", hand: ["S13"] });
+    // S07 asks for Carved, Impressed or Painted (change 23); the wildcard fills it with the first
+    // Decoration that works, in DECORATIONS order.
+    const state = table({ kilnId: "GE", hand: ["S07"] });
     const bowl = fin(state, "p1", "bowl white plain fine crackle");
-    const { record } = complete(state, "p1", { orderId: "S13", ceramicIds: [bowl] });
-    expect(record.crackleDeclarations).toEqual([{ ceramicId: bowl, decoration: "painted" }]);
+    const { record } = complete(state, "p1", { orderId: "S07", ceramicIds: [bowl] });
+    expect(record.crackleDeclarations).toEqual([{ ceramicId: bowl, decoration: "carved" }]);
     expect(ceramic(state, bowl)).toMatchObject({ stage: "delivered", crackle: true, quality: "fine", decoration: "plain" });
   });
 
   it("records declared Crackle declarations exactly as given", () => {
-    const state = table({ kilnId: "GE", hand: ["S13"] });
+    const state = table({ kilnId: "GE", hand: ["S07"] });
     const bowl = fin(state, "p1", "bowl white plain fine crackle");
-    const spec = { orderId: "S13" as OrderId, ceramicIds: [bowl], crackleDeclarations: [{ ceramicId: bowl, decoration: "painted" as Decoration }] };
+    const spec = { orderId: "S07" as OrderId, ceramicIds: [bowl], crackleDeclarations: [{ ceramicId: bowl, decoration: "painted" as Decoration }] };
     expect(complete(state, "p1", spec).record.crackleDeclarations).toEqual(spec.crackleDeclarations);
   });
 
   it("a ceramic satisfies only one Order (L419)", () => {
-    const state = table({ kilnId: "GE", hand: ["S16", "S01"] });
+    const state = table({ kilnId: "GE", hand: ["S08", "S01"] });
     const bowl = fin(state, "p1", "bowl white plain std");
-    complete(state, "p1", { orderId: "S16", ceramicIds: [bowl] });
+    complete(state, "p1", { orderId: "S08", ceramicIds: [bowl] });
     expect(validateOrderCompletion(actorViewOf(state, "p1"), { orderId: "S01", ceramicIds: [bowl] })).toMatchObject({
       code: "ILLEGAL_CERAMIC_STAGE",
       details: { ceramicId: bowl, stage: "delivered", expectedStage: "finished" },
@@ -113,19 +115,19 @@ describe("the completion procedure (L410–419)", () => {
   });
 
   it("completableOrderIds lists held Orders the Finished ceramics can complete, in hand order", () => {
-    const state = table({ kilnId: "GE", hand: ["O11", "S01", "S16", "O25"] });
+    const state = table({ kilnId: "GE", hand: ["O11", "S01", "S08", "O25"] });
     fin(state, "p1", "bowl white plain std");
     fin(state, "p1", "plate white plain flawed");
-    expect(completableOrderIds(state, "p1", ["O11", "S01", "S16", "O25"])).toEqual(["S01", "S16"]);
+    expect(completableOrderIds(state, "p1", ["O11", "S01", "S08", "O25"])).toEqual(["S01", "S08"]);
     expect(completableOrderIds(state, "p2", ["S01"])).toEqual([]);
   });
 
   it("the public projection reveals the completed Order and the hand count only", () => {
-    const state = table({ kilnId: "GE", hand: ["S16", "O25", "O30"] }, { hand: ["O31"] });
+    const state = table({ kilnId: "GE", hand: ["S08", "O25", "O30"] }, { hand: ["O31"] });
     const vase = fin(state, "p1", "vase white plain std");
-    const { events } = complete(state, "p1", { orderId: "S16", ceramicIds: [vase] });
+    const { events } = complete(state, "p1", { orderId: "S08", ceramicIds: [vase] });
     const publicJson = JSON.stringify(projectPublicState(state));
-    expect(publicJson).toContain('"S16"');
+    expect(publicJson).toContain('"S08"');
     for (const held of ["O25", "O30", "O31"]) {
       expect(publicJson).not.toContain(`"${held}"`);
     }
@@ -140,14 +142,14 @@ describe("the completion procedure (L410–419)", () => {
 
 describe("Ru Kiln (L460)", () => {
   it("delivering an actual Celadon Plain Masterpiece scores 4 VP, even for an Order that asks for none of it", () => {
-    const state = table({ kilnId: "RU", hand: ["S16"] });
+    const state = table({ kilnId: "RU", hand: ["S08"] });
     const vase = fin(state, "p1", "vase celadon plain mp");
-    const { record, events } = complete(state, "p1", { orderId: "S16", ceramicIds: [vase] });
+    const { record, events } = complete(state, "p1", { orderId: "S08", ceramicIds: [vase] });
     expect(record.kilnAbility).toEqual({ kilnId: "RU", vp: 4, coins: 0 });
     const p1 = player(state, "p1");
     expect(p1.score).toMatchObject({ orders: 2, kilnAbilities: 4 });
     expect(p1.kilnAbilityUsedThisRound).toBe(true);
-    expect(p1.resources.coins).toBe(ORDERS.S16.coins);
+    expect(p1.resources.coins).toBe(ORDERS.S08.coins);
     expect(events.map((e) => e.type)).toEqual(["ORDER_COMPLETED", "RESOURCES_CHANGED", "KILN_ABILITY_USED"]);
     expect(events.at(-1)).toEqual({ type: "KILN_ABILITY_USED", playerId: "p1", kilnId: "RU" });
   });
@@ -165,9 +167,9 @@ describe("Ru Kiln (L460)", () => {
     ["White", "vase white plain mp"],
     ["Crackle (printed Plain, Fine)", "vase celadon plain fine crackle"],
   ])("does not trigger for a %s ceramic", (_label, spec) => {
-    const state = table({ kilnId: "RU", hand: ["S16"] });
+    const state = table({ kilnId: "RU", hand: ["S08"] });
     const id = fin(state, "p1", spec);
-    const { record, events } = complete(state, "p1", { orderId: "S16", ceramicIds: [id] });
+    const { record, events } = complete(state, "p1", { orderId: "S08", ceramicIds: [id] });
     expect(record.kilnAbility).toBeNull();
     expect(player(state, "p1").score.kilnAbilities).toBe(0);
     expect(player(state, "p1").kilnAbilityUsedThisRound).toBe(false);
@@ -175,32 +177,32 @@ describe("Ru Kiln (L460)", () => {
   });
 
   it("is once per round; declining keeps the use for a later completion (R4)", () => {
-    const state = table({ kilnId: "RU", hand: ["S16", "S15", "S14"] });
+    const state = table({ kilnId: "RU", hand: ["S08", "S06", "S05"] });
     const first = fin(state, "p1", "vase celadon plain mp");
     const second = fin(state, "p1", "censer celadon plain mp");
     const third = fin(state, "p1", "bowl celadon plain mp");
-    const declined = complete(state, "p1", { orderId: "S16", ceramicIds: [first], declineKilnAbility: true });
+    const declined = complete(state, "p1", { orderId: "S08", ceramicIds: [first], declineKilnAbility: true });
     expect(declined.record.kilnAbility).toBeNull();
     expect(declined.events.some((e) => e.type === "KILN_ABILITY_USED")).toBe(false);
     expect(player(state, "p1").kilnAbilityUsedThisRound).toBe(false);
-    expect(complete(state, "p1", { orderId: "S15", ceramicIds: [second] }).record.kilnAbility?.vp).toBe(4);
-    expect(complete(state, "p1", { orderId: "S14", ceramicIds: [third] }).record.kilnAbility).toBeNull();
+    expect(complete(state, "p1", { orderId: "S06", ceramicIds: [second] }).record.kilnAbility?.vp).toBe(4);
+    expect(complete(state, "p1", { orderId: "S05", ceramicIds: [third] }).record.kilnAbility).toBeNull();
     expect(player(state, "p1").score.kilnAbilities).toBe(4);
   });
 
   it("does not trigger once the Kiln ability is used this round", () => {
-    const state = table({ kilnId: "RU", hand: ["S16"], kilnAbilityUsedThisRound: true });
+    const state = table({ kilnId: "RU", hand: ["S08"], kilnAbilityUsedThisRound: true });
     const vase = fin(state, "p1", "vase celadon plain mp");
-    expect(complete(state, "p1", { orderId: "S16", ceramicIds: [vase] }).record.kilnAbility).toBeNull();
+    expect(complete(state, "p1", { orderId: "S08", ceramicIds: [vase] }).record.kilnAbility).toBeNull();
   });
 
   it("triggers with Canal Barge's 2 Coins on the same completion (v1.6.2 L630)", () => {
-    const state = table({ kilnId: "RU", techs: ["T23"], hand: ["S16"] });
+    const state = table({ kilnId: "RU", techs: ["T23"], hand: ["S08"] });
     const vase = fin(state, "p1", "vase celadon plain mp");
-    const { record } = complete(state, "p1", { orderId: "S16", ceramicIds: [vase] });
+    const { record } = complete(state, "p1", { orderId: "S08", ceramicIds: [vase] });
     expect(record).toMatchObject({ canalBargeCoins: 2, kilnAbility: { kilnId: "RU", vp: 4, coins: 0 } });
     expect(player(state, "p1").score.kilnAbilities).toBe(4);
-    expect(player(state, "p1").resources.coins).toBe(ORDERS.S16.coins + 2);
+    expect(player(state, "p1").resources.coins).toBe(ORDERS.S08.coins + 2);
   });
 });
 
@@ -277,9 +279,9 @@ describe("Tribute Ware (T25, L642, R13)", () => {
   });
 
   it("does not trigger for an Order without printed Crowns", () => {
-    const state = table({ kilnId: "GE", techs: ["T25"], hand: ["S16"] });
+    const state = table({ kilnId: "GE", techs: ["T25"], hand: ["S08"] });
     const vase = fin(state, "p1", "vase celadon carved fine");
-    const { record, events } = complete(state, "p1", { orderId: "S16", ceramicIds: [vase] });
+    const { record, events } = complete(state, "p1", { orderId: "S08", ceramicIds: [vase] });
     expect(record.bonusCrowns).toBe(0);
     expect(player(state, "p1").imperial.recognition).toBe(0);
     expect(techReady(player(state, "p1"), "T25")).toBe(true);
@@ -307,10 +309,10 @@ describe("Tribute Ware (T25, L642, R13)", () => {
   });
 
   it("with Guan: both trigger on a printed-Crown Order; the bonus Crown never makes an Order 'show' a Crown", () => {
-    const state = table({ kilnId: "GU", techs: ["T25"], hand: ["O18", "S16"] });
+    const state = table({ kilnId: "GU", techs: ["T25"], hand: ["O18", "S08"] });
     const vase = fin(state, "p1", "vase celadon carved fine");
     const bowl = fin(state, "p1", "bowl white plain std");
-    const crownless = complete(state, "p1", { orderId: "S16", ceramicIds: [bowl] });
+    const crownless = complete(state, "p1", { orderId: "S08", ceramicIds: [bowl] });
     expect(crownless.record).toMatchObject({ printedCrowns: 0, bonusCrowns: 0, kilnAbility: null });
     const crowned = complete(state, "p1", { orderId: "O18", ceramicIds: [vase] });
     expect(crowned.record).toMatchObject({ printedCrowns: 1, bonusCrowns: 1, kilnAbility: { kilnId: "GU" } });
@@ -356,21 +358,21 @@ describe("completionTriggers", () => {
     const fine = ceramic(state, fin(state, "p1", "vase celadon plain fine")) as FinishedCeramic;
     const p1 = player(state, "p1");
     expect(completionTriggers(p1, ORDERS.O18, [fine])).toEqual({ ru: false, guan: true, tributeWare: true, canalBarge: false });
-    expect(completionTriggers(p1, ORDERS.S16, [fine])).toEqual({ ru: false, guan: false, tributeWare: false, canalBarge: false });
+    expect(completionTriggers(p1, ORDERS.S08, [fine])).toEqual({ ru: false, guan: false, tributeWare: false, canalBarge: false });
     const ru = table({ kilnId: "RU" });
     const mp = ceramic(ru, fin(ru, "p1", "vase celadon plain mp")) as FinishedCeramic;
-    expect(completionTriggers(player(ru, "p1"), ORDERS.S16, [mp])).toEqual({ ru: true, guan: false, tributeWare: false, canalBarge: false });
+    expect(completionTriggers(player(ru, "p1"), ORDERS.S08, [mp])).toEqual({ ru: true, guan: false, tributeWare: false, canalBarge: false });
     // Canal Barge, ready, triggers on any Order (v1.6.2 L630); once used, no longer.
     const barge = table({ kilnId: "DI", techs: ["T23"] });
-    expect(completionTriggers(player(barge, "p1"), ORDERS.S16, [mp]).canalBarge).toBe(true);
+    expect(completionTriggers(player(barge, "p1"), ORDERS.S08, [mp]).canalBarge).toBe(true);
     player(barge, "p1").techs[0]!.usedThisRound = true;
-    expect(completionTriggers(player(barge, "p1"), ORDERS.S16, [mp]).canalBarge).toBe(false);
+    expect(completionTriggers(player(barge, "p1"), ORDERS.S08, [mp]).canalBarge).toBe(false);
   });
 });
 
 describe("through COMPLETE_ORDER in the Order Phase", () => {
   it("the decline flags reach the completion; Ru then triggers on the next Order", () => {
-    const state = table({ kilnId: "RU", techs: ["T25"], hand: ["O22", "S16"] });
+    const state = table({ kilnId: "RU", techs: ["T25"], hand: ["O22", "S08"] });
     const first = fin(state, "p1", "vase celadon plain mp");
     const second = fin(state, "p1", "bowl celadon plain mp");
     openOrderPhase(state, testContext());
@@ -385,9 +387,9 @@ describe("through COMPLETE_ORDER in the Order Phase", () => {
     expect(declined.find((e) => e.type === "ORDER_COMPLETED")).toMatchObject({ record: { kilnAbility: null, bonusCrowns: 0, printedCrowns: 1 } });
     expect(orders.player("p1").kilnAbilityUsedThisRound).toBe(false);
     expect(techReady(orders.player("p1"), "T25")).toBe(true);
-    const used = orders.act("p1", { type: "COMPLETE_ORDER", orderId: "S16", ceramicIds: [second] });
+    const used = orders.act("p1", { type: "COMPLETE_ORDER", orderId: "S08", ceramicIds: [second] });
     expect(used.find((e) => e.type === "ORDER_COMPLETED")).toMatchObject({ record: { kilnAbility: { kilnId: "RU", vp: 4 }, bonusCrowns: 0 } });
-    expect(orders.player("p1").score).toMatchObject({ orders: ORDERS.O22.vp + ORDERS.S16.vp, kilnAbilities: 4 });
+    expect(orders.player("p1").score).toMatchObject({ orders: ORDERS.O22.vp + ORDERS.S08.vp, kilnAbilities: 4 });
     // Nothing left to complete: the turn ended automatically and the phase handed over.
     expect(orders.halts).toEqual([{ kind: "continue_after", milestone: "order_phase_done" }]);
   });

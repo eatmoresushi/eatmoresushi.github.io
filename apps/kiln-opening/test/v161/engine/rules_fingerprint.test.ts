@@ -157,7 +157,7 @@ describe("V1.6.2 rules fingerprint", () => {
 
   const mechanicalEdits: Array<[string, (sources: Sources) => void]> = [
     ["an Order's VP", (s) => { entries(s, "orders", "main")[31]!["vp"] = 13; }],
-    ["an Order's requirement text", (s) => { entries(s, "orders", "starting")[12]!["requirementsZh"] = "任意器型 · 任意釉 · 开片"; }],
+    ["an Order's requirement text", (s) => { entries(s, "orders", "starting")[6]!["requirementsZh"] = "任意器型 · 任意釉 · 开片"; }],
     ["an Order relation", (s) => {
       entries(s, "orders", "main")[44]!["relations"] = [{ type: "same_decoration", indices: [0, 1, 2] }];
     }],

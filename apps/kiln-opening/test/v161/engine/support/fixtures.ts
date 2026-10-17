@@ -4,7 +4,7 @@
  * `buildState(spec)` builds a complete `GameState` from a compact spec without `setup.ts`,
  * so every Phase 2 package can build scenarios before P2 lands. It keeps the §8.3
  * invariants that a spec can affect, and throws a `fixtures:` error otherwise:
- * - card conservation: all 16 Starting, 48 Main, 18 Tech and 12 Fire cards sit in exactly
+ * - card conservation: all 8 Starting, 48 Main, 18 Tech and 12 Fire cards sit in exactly
  *   one zone (unplaced cards go to the default zone; a spec that pins every zone and still
  *   leaves a card out throws);
  * - Tech sets obey 3 total / 1 per discipline (`giveTech` calls `acquisitionError`);

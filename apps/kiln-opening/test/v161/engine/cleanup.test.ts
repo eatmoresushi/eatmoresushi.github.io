@@ -95,7 +95,7 @@ describe("Cleanup step 2: hand limit 4, or 5 with Colour Samples (L200, L304, L6
     expect(table.state.firstPlayerId).toBe("p2");
     expect(table.state.round).toBe(3);
     expect(table.halts).toEqual([{ kind: "continue_after", milestone: "cleanup_done" }]);
-    expect(cardZones(table.state).orders).toHaveLength(64);
+    expect(cardZones(table.state).orders).toHaveLength(56);
   });
 
   it("puts a discarded Main Order face down on the Main discard (B3)", () => {

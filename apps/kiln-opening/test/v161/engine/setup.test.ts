@@ -127,7 +127,7 @@ describe("createInitialState for 2, 3 and 4 players (L98–112)", () => {
     expect(GAME_CONFIG.startingResources).toEqual({ clay: 2, wood: 2, coins: 3 });
   });
 
-  it.each(COUNTS)("%i players: a secret hand of 2 Starting + 1 Main each; the rest of the Starting deck in the box (L101–102)", (n) => {
+  it.each(COUNTS)("%i players: a secret hand of 2 Starting + 1 Main each; the rest of the 8-card Starting deck in the box (v1.6.2 L103–104, change 23)", (n) => {
     const { state } = created(9, n);
     const dealt: OrderId[] = [];
     for (const playerId of state.playerOrder) {
@@ -138,7 +138,10 @@ describe("createInitialState for 2, 3 and 4 players (L98–112)", () => {
       dealt.push(...hand);
     }
     expect(new Set(dealt).size).toBe(3 * n);
-    expect(state.hidden.startingBox).toHaveLength(16 - 2 * n);
+    // 8 Starting Orders: a 4-player game deals the whole deck and leaves the box empty (L520).
+    expect(STARTING_ORDER_IDS).toHaveLength(8);
+    expect(state.hidden.startingBox).toHaveLength(8 - 2 * n);
+    if (n === 4) expect(state.hidden.startingBox).toEqual([]);
     expect([...state.hidden.startingBox, ...dealt.filter(isStartingOrderId)].sort()).toEqual([...STARTING_ORDER_IDS]);
   });
 
@@ -149,7 +152,7 @@ describe("createInitialState for 2, 3 and 4 players (L98–112)", () => {
     expect(state.hidden.mainDeck).toHaveLength(48 - n - 6);
     expect(state.hidden.mainDiscard).toEqual([]);
     const zones = cardZones(state).orders;
-    expect(zones).toHaveLength(64);
+    expect(zones).toHaveLength(56);
     expect([...zones].sort()).toEqual([...STARTING_ORDER_IDS, ...MAIN_ORDER_IDS].sort());
   });
 

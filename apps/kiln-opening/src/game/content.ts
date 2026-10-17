@@ -69,7 +69,7 @@ export interface TechniquesFile {
 
 export interface OrdersFile {
   rulesVersion: RulesVersion;
-  /** D10 clarifications for Orders in general: `starting` (S01–S16) and `main` (O01–O48). */
+  /** D10 clarifications for Orders in general: `starting` (S01–S08) and `main` (O01–O48). */
   clarifications: OrderClarifications;
   starting: OrderDefinition[];
   main: OrderDefinition[];
@@ -153,9 +153,9 @@ export const KILN_SPACE_IDS: readonly KilnSpaceId[] = Object.freeze([
   "low_1", "low_2",
 ] as const);
 
-/** The 16 Starting Orders (A0, L519–540). */
+/** The 8 Starting Orders (A0, v1.6.2 L518–531, change 23). */
 export const STARTING_ORDER_IDS: readonly StartingOrderId[] = Object.freeze(
-  Array.from({ length: 16 }, (_, index) => `S${String(index + 1).padStart(2, "0")}` as StartingOrderId),
+  Array.from({ length: 8 }, (_, index) => `S${String(index + 1).padStart(2, "0")}` as StartingOrderId),
 );
 
 /** The 48 Main Orders (A1–A3, L542–605). */
@@ -228,12 +228,14 @@ function collectTextProblems(value: unknown, path: string, problems: string[]): 
 // ── Clarifications and short text (owner decision D10, UI architecture K15) ──────────────────
 
 /**
- * One source tag of a clarification (`docs/KILN_OPENING_v1.6.1_CLARIFICATIONS.md`, "Source
- * tags"): `L124` rulebook line, `A1` amendment, `R1`–`R13` and `B1`–`B3` owner rulings,
- * `ED L124` editorial correction, `INT <name>` recorded interpretation, `P1`–`P3` provisional
- * ruling, `D7` owner UI decision. A `source` joins one or more tags with " · ".
+ * One source tag of a clarification (`docs/KILN_OPENING_v1.6.2_CLARIFICATIONS.md`, "Source
+ * tags"): `L124` line of the V1.6.2 rulebook, `A1` amendment, `R1`–`R19` and `B1`–`B3` owner
+ * rulings (`docs/RULEBOOK_AUDIT_V1.6.2.md`), `ED L124` editorial correction, `INT <name>`
+ * recorded interpretation, `P1`–`P3` provisional ruling, `D7` owner UI decision. A `source`
+ * joins one or more tags with " · ". Which rulings are still in force is the content
+ * contract's check, not this pattern's.
  */
-export const CLARIFICATION_TAG = /^(?:L[1-9]\d{0,3}|A[1-9]\d?|R(?:[1-9]|1[0-3])|B[1-3]|ED L[1-9]\d{0,3}|INT [A-Z][^·]*[^\s·]|P[1-3]|D(?:[1-9]|1[01]))$/;
+export const CLARIFICATION_TAG = /^(?:L[1-9]\d{0,3}|A[1-9]\d?|R(?:[1-9]|1[0-9])|B[1-3]|ED L[1-9]\d{0,3}|INT [A-Z][^·]*[^\s·]|P[1-3]|D(?:[1-9]|1[01]))$/;
 
 /** The kind of a source tag, which the UI labels (Rulebook, Owner amendment, Owner ruling, …). */
 export type ClarificationSourceKind = "rulebook" | "amendment" | "ruling" | "editorial" | "interpretation" | "provisional" | "wording";
@@ -346,6 +348,10 @@ function validateOrder(order: OrderDefinition, deck: "starting" | "main", proble
     if (slot.shape !== undefined && slot.shapes !== undefined) problems.push(`${where} slot ${index}: shape and shapes are exclusive`);
     if (slot.glaze !== undefined && !GLAZES.includes(slot.glaze)) problems.push(`${where} slot ${index}: unknown glaze`);
     if (slot.decoration !== undefined && !DECORATIONS.includes(slot.decoration)) problems.push(`${where} slot ${index}: unknown decoration`);
+    if (slot.decorations !== undefined && (slot.decorations.length < 2 || slot.decorations.some((decoration) => !DECORATIONS.includes(decoration)))) {
+      problems.push(`${where} slot ${index}: decorations must list 2+ known Decorations`);
+    }
+    if (slot.decoration !== undefined && slot.decorations !== undefined) problems.push(`${where} slot ${index}: decoration and decorations are exclusive`);
   }
   const slotIndices = order.ceramics.map((_, index) => index);
   for (const relation of order.relations ?? []) {
@@ -539,7 +545,7 @@ export function validateContentFiles(files: ContentFiles): string[] {
   }
 
   // Orders.
-  if (!sameSequence(orders.starting.map((order) => order.id), STARTING_ORDER_IDS)) problems.push("orders: starting must be S01–S16 in order");
+  if (!sameSequence(orders.starting.map((order) => order.id), STARTING_ORDER_IDS)) problems.push("orders: starting must be S01–S08 in order");
   if (!sameSequence(orders.main.map((order) => order.id), MAIN_ORDER_IDS)) problems.push("orders: main must be O01–O48 in order");
   for (const order of orders.starting) validateOrder(order, "starting", problems);
   for (const order of orders.main) validateOrder(order, "main", problems);
@@ -730,7 +736,7 @@ export function techsOfDiscipline(discipline: TechDiscipline): readonly TechId[]
   return TECHS_BY_DISCIPLINE[discipline];
 }
 
-/** True for S01–S16. Discarded Starting Orders return to the box, never the Main discard (L304). */
+/** True for S01–S08. Discarded Starting Orders return to the box, never the Main discard (L304). */
 export function isStartingOrderId(orderId: OrderId): orderId is StartingOrderId {
   return ORDERS[orderId].deck === "starting";
 }

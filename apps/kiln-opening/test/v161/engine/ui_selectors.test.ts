@@ -90,7 +90,8 @@ describe("handLimitStatus.trimDue (§5 gap 3)", () => {
         }
         if (state.phase.type === "cleanup_hand_limit") {
           cleanups += 1;
-          expect(due).toEqual(state.phase.pendingPlayerIds);
+          // The same players; Cleanup lists them in First Player order, `due` in seat order.
+          expect([...due].sort()).toEqual([...state.phase.pendingPlayerIds].sort());
         }
       });
     }

@@ -309,7 +309,13 @@ describe("determinism and storage key order (DESIGN §7)", () => {
     expect(plain.state.market.display).toEqual(["O01", "O03", "O04", "O05", "O06", "O10"]);
     expect(plain.state.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "before_action" } });
     expect(plain.state.hidden.orderHands["p2"]).toEqual(["O15"]);
-    // The swap's discarded Order and its unreserved card went face down to the discard (R14).
-    expect(plain.state.hidden.mainDiscard.slice(0, 2)).toEqual(["O14", "O11"]);
+    // The swap's discarded Order went face down to the discard (L641); every looked card not
+    // reserved went to the deck bottom (change 24), look by look, each look's cards in random
+    // order (R19): the Commission look's O07 and O09, Colour Samples' O12 and O13, the swap's O14.
+    expect(plain.state.hidden.mainDiscard).toEqual(["O11"]);
+    const bottom = plain.state.hidden.mainDeck.slice(-5);
+    expect([...bottom.slice(0, 2)].sort()).toEqual(["O07", "O09"]);
+    expect([...bottom.slice(2, 4)].sort()).toEqual(["O12", "O13"]);
+    expect(bottom[4]).toBe("O14");
   });
 });

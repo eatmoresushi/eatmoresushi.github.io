@@ -746,7 +746,7 @@ function findCommissionLook(): Found {
           id: "m2_commission_market_look_r3_4p",
           title: "4P · Round 3 · Commission Market · Shifu mid-action with private top-3 look",
           description:
-            "The viewer's Shifu was placed at the Commission Market, which opened the private look at the top 3 Main Orders (v1.6.2 L196). own.pendingLook holds the 3 Orders; other players only see counts.pendingLook (kind + count). The viewer now reserves 1 or 2 from the display and those 3 (COMMISSION_CHOOSE); a face-up position stays empty until the turn ends. No resource is gained.",
+            "The viewer's Shifu was placed at the Commission Market, which opened the private look at the top 3 Main Orders (v1.6.2 L196). own.pendingLook holds the 3 Orders; other players only see counts.pendingLook (kind + count). The viewer now reserves 1 or 2 from the display and those 3 (COMMISSION_CHOOSE); a face-up position stays empty until the turn ends, and the looked cards not reserved go face down to the bottom of the Main Order deck (change 24). No resource is gained.",
         },
         (view) => ({
           commissionOptions: commissionOptions(view, "shifu"),
@@ -1508,7 +1508,7 @@ function findTestPieces(): Captured[] {
   return [scriptedMoment(decision, "Test Pieces decision"), scriptedMoment(bury, "Test Pieces bury")];
 }
 
-/** m18: the Second Firing choice with Jun (v1.6.2 L639, R7): 2 extra Fire cards are turned. */
+/** m18: the Second Firing choice with Jun (v1.6.2 L631, R7): 2 extra Fire cards are turned. */
 function findJunSecondFiring(): Captured {
   const meta: MomentMeta = {
     id: "m18_jun_second_firing",
@@ -1614,7 +1614,7 @@ function newMoments(): Captured[] {
       meta: {
         id: "m16_colour_samples",
         title: "3P · Work Phase · Colour Samples: reserve 1 of 3 (private)",
-        description: "The viewer just gained Colour Samples (T10): they look at the top 3 Main Orders privately and must reserve one; the rest go face down to the discard (lookedOrderOptions).",
+        description: "The viewer just gained Colour Samples (T10): they look at the top 3 Main Orders privately and must reserve one; the other 2 go face down to the bottom of the Main Order deck (v1.6.2 L617, change 24; lookedOrderOptions).",
       },
       playerCounts: [3],
       seeds: 30,
@@ -1631,7 +1631,7 @@ function newMoments(): Captured[] {
       meta: {
         id: "m17_after_action",
         title: "3P · Work Phase · after-action window (Colour Samples swap)",
-        description: "The viewer owns Colour Samples (T10): after their worker action they may swap 1 held Order once this round (discard it, privately look at the top 2 Main Orders, reserve 1), use Imperial Priority if they have it, or end the turn (colourSamplesSwapOptions, imperialPriorityOptions).",
+        description: "The viewer owns Colour Samples (T10): after their worker action they may swap 1 held Order once this round (discard it, privately look at the top 2 Main Orders, reserve 1; the other goes to the bottom of the Main Order deck, change 24), use Imperial Priority if they have it, or end the turn (colourSamplesSwapOptions, imperialPriorityOptions).",
       },
       playerCounts: [3],
       seeds: 30,

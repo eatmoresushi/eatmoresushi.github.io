@@ -408,7 +408,7 @@ describe("Colour Samples when acquired (v1.6.2 L214, L625, L649, R4, B1)", () =>
     expect(t.state.hidden.orderHands["p1"]).toEqual([c]);
     // The swap is usable the round Colour Samples is acquired (v1.6.2 L213, L625): with an Order
     // now held, the after-action window opens, and the Tech display refills only at END_TURN.
-    expect(types(chosen)).toEqual(["ORDER_RESERVED", "LOOKED_ORDERS_DISCARDED"]);
+    expect(types(chosen)).toEqual(["ORDER_RESERVED", "LOOKED_ORDERS_TO_BOTTOM"]);
     expect(t.state.phase).toEqual({ type: "work_turn", activePlayerId: "p1", step: { kind: "after_action" } });
     expect(t.state.techDisplay.glazing_loading).toEqual(["T20"]);
     expect(types(t.act("p1", { type: "END_TURN" }))).toEqual(["TECH_DISPLAY_REFILLED", "WORK_TURN_ENDED", "WORK_TURN_STARTED"]);
@@ -421,8 +421,11 @@ describe("Colour Samples when acquired (v1.6.2 L214, L625, L649, R4, B1)", () =>
       orderId: null,
       secret: { visibleTo: "p1", orderId: c },
     });
-    expect(only(chosen, "LOOKED_ORDERS_DISCARDED")).toMatchObject({ count: 2, secret: { orderIds: [a, b] } });
-    expect([...t.state.hidden.mainDiscard].sort()).toEqual([a, b].sort());
+    // The other 2 go to the bottom of the Main deck (change 24), not the discard, in random
+    // order (R19); the secret names them in look order.
+    expect(only(chosen, "LOOKED_ORDERS_TO_BOTTOM")).toMatchObject({ count: 2, secret: { orderIds: [a, b] } });
+    expect([...t.state.hidden.mainDeck.slice(-2)].sort()).toEqual([a, b].sort());
+    expect(t.state.hidden.mainDiscard).toEqual([]);
     expect(t.player("p1").resources).toEqual(resources);
     expect(t.state.market.display).toEqual(display);
     expect(t.state.market.refillPendingFor).toBeNull();
@@ -442,7 +445,7 @@ describe("Colour Samples when acquired (v1.6.2 L214, L625, L649, R4, B1)", () =>
     oneLeft.act("p1", buy("p1:apprentice:1", "T10"));
     expect(oneLeft.state.phase).toMatchObject({ step: { kind: "colour_samples", lookedCount: 1 } });
     const chosen = oneLeft.act("p1", { type: "COLOUR_SAMPLES_CHOOSE", orderId: "O07" });
-    expect(types(chosen)).not.toContain("LOOKED_ORDERS_DISCARDED");
+    expect(types(chosen)).not.toContain("LOOKED_ORDERS_TO_BOTTOM");
 
     const none = table({
       players: [{}, { hand: MAIN_ORDER_IDS.filter((id) => !keep.slice(0, 6).includes(id)) }],
@@ -492,7 +495,8 @@ describe("Colour Samples when acquired (v1.6.2 L214, L625, L649, R4, B1)", () =>
     t.expectRuleError("p1", finish(["T13", "T14"]), "WRONG_PHASE");
 
     const chosen = t.act("p1", { type: "COLOUR_SAMPLES_CHOOSE", orderId: b });
-    expect(types(chosen)).toEqual(["ORDER_RESERVED", "LOOKED_ORDERS_DISCARDED"]);
+    expect(types(chosen)).toEqual(["ORDER_RESERVED", "LOOKED_ORDERS_TO_BOTTOM"]);
+    expect([...t.state.hidden.mainDeck.slice(-2)].sort()).toEqual([a, c].sort());
     expect(t.state.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "guild_inspection", takes: [{ kind: "face_up", techId: "T10" }] } });
     expect(t.state.hidden.pendingLook).toEqual({ kind: "guild_inspection", playerId: "p1", discipline: "firing", techIds: ["T13", "T14"] });
     expect(t.state.hidden.orderHands["p1"]).toEqual([b]);

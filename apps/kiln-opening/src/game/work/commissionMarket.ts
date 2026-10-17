@@ -8,21 +8,21 @@
  *   chosen (INT: Commission Market looks), so the step opens whatever the cards are.
  * - `COMMISSION_CHOOSE` then makes the reservations: exactly 1 (Apprentice effect) or 1–2
  *   (Shifu effect), each a face-up Order or a looked card, in any mix (v1.6.2 L195–196,
- *   L198). The looked cards not reserved go face down to the Main discard. No resource is
- *   gained.
+ *   L198). The looked cards not reserved go face down to the bottom of the Main deck, in random
+ *   order (change 24, L34, L191; owner ruling R19). No resource is gained.
  * - A face-up position stays empty until the turn ends (v1.6.2 L191, L390): both of a Shifu's
  *   reservations choose from the Orders showing now, and `work/turn.endTurn` refills once.
  * - Placement legality reads public counts only (`market.reservable`): a display Order or a
  *   non-empty deck plus discard, so at least 1 reservation always exists (L142, B1).
  * - Looked identities are private (B3): `PRIVATE_LOOK_OPENED.secret`, `ORDER_RESERVED.secret`
- *   and `LOOKED_ORDERS_DISCARDED.secret`; public payloads carry counts and face-up IDs only.
+ *   and `LOOKED_ORDERS_TO_BOTTOM.secret`; public payloads carry counts and face-up IDs only.
  *
  * Layer 4 (P4). Imports layers 0–3 only; hands over through `ctx.flow.workerActionDone`.
  */
 
 import { LOCATIONS } from "../content.ts";
 import { invariant, ruleError } from "../errors.ts";
-import { addToHand, discardMainOrders, reservable, takeFaceUpOrder, takeTopMainOrders } from "../market.ts";
+import { addToHand, putMainOrdersOnBottom, reservable, takeFaceUpOrder, takeTopMainOrders } from "../market.ts";
 import { placeWorker, validatePlacement, workerEffectFor } from "../placement.ts";
 import { emit, phaseAs } from "../state.ts";
 import type {
@@ -213,13 +213,14 @@ export const handlers: Pick<ActionHandlerTable, "PLACE_COMMISSION_MARKET" | "COM
           });
         }
       }
-      // The rest of the look goes face down to the Main discard, in look order (v1.6.2 L191).
+      // The rest of the look goes face down to the bottom of the Main deck, in random order
+      // (v1.6.2 change 24, L191, L195–196; R19). The secret names them in look order.
       const rest = look.orderIds.filter((orderId) => !reservedLooked.has(orderId));
       draft.hidden.pendingLook = null;
       if (rest.length > 0) {
-        discardMainOrders(draft, rest);
+        putMainOrdersOnBottom(draft, rest, ctx);
         emit(ctx, {
-          type: "LOOKED_ORDERS_DISCARDED",
+          type: "LOOKED_ORDERS_TO_BOTTOM",
           playerId: actorId,
           count: rest.length,
           secret: { visibleTo: actorId, orderIds: rest },

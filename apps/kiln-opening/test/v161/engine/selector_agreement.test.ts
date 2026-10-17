@@ -275,7 +275,7 @@ describe("view models", () => {
 
   it("orderSelectionCheck runs the validator's matcher and says whether the selection can still grow", () => {
     const view = viewOf(state, "p1");
-    expect(orderSelectionCheck(view, "S01", ["c4"])).toMatchObject({ ok: true, match: { orderId: "S01", ceramicIds: ["c4"], vp: 2 } });
+    expect(orderSelectionCheck(view, "S01", ["c4"])).toMatchObject({ ok: true, match: { orderId: "S01", ceramicIds: ["c4"], vp: 3 } });
     const wrong = orderSelectionCheck(view, "O02", ["c4"]);
     expect(wrong).toMatchObject({ ok: false, error: { code: "ORDER_REQUIREMENTS_NOT_MET" } });
     const notHeld = orderSelectionCheck(view, "O40", ["c4"]);

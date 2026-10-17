@@ -257,10 +257,11 @@ const FINE_RANK = QUALITY_RANK.fine;
 const SHAPE_COUNT = SHAPES.length;
 const GLAZE_COUNT = GLAZES.length;
 const DECORATION_COUNT = DECORATIONS.length;
-/** Generic vessels (no Order asks for one): cheap Shapes, Plain (Ru, S10, O10, O22). */
+/** Generic vessels (no Order asks for one): cheap Shapes, Plain (Ru, O10, O22). */
 const GENERIC_DECORATION: Decoration = "plain";
 const COLOUR_SAMPLES: TechId = "T10";
 const PROTECTIVE_SAGGARS: TechId = "T11";
+const FUEL_LEDGER: TechId = "T12";
 const KILN_MASTER: TechId = "T24";
 const REWORKING_TABLE: TechId = "T05";
 const SENIOR_APPRENTICE: TechId = "T18";
@@ -309,7 +310,7 @@ function tieHash(seed: number, key: string): number {
   return hash;
 }
 
-/** The Quality a heat gives; `neverFlawed` for a Protective Saggars owner (v1.6.2 L636). */
+/** The Quality a heat gives; `neverFlawed` for a Protective Saggars owner (v1.6.2 L628). */
 function qualityAt(heat: number, preferred: number, neverFlawed = false): Quality {
   const quality = qualityForDifference(heat - preferred);
   return neverFlawed && quality === "flawed" ? "standard" : quality;
@@ -645,7 +646,10 @@ function dimValid(def: OrderDefinition, dim: Dim, values: readonly string[]): bo
       if (dim === "glaze") {
         return slot.glaze === undefined || slot.glaze === value;
       }
-      return slot.decoration === undefined || slot.decoration === value;
+      return (
+        (slot.decoration === undefined || slot.decoration === value) &&
+        (slot.decorations === undefined || (slot.decorations as readonly string[]).includes(value ?? ""))
+      );
     });
     return slotsFit && relations.every((relation) => relationHolds(relation, assigned));
   });
@@ -727,7 +731,7 @@ interface HandPlan {
 /** Base probability that a fired ceramic reaches a Quality rank when its Glaze is aimed well. */
 function aimedQualityP(k: Know, rank: number): number {
   const jun = k.me.kilnId === "JU";
-  // Protective Saggars: never Flawed, and once a round a Standard becomes Fine (v1.6.2 L636);
+  // Protective Saggars: never Flawed, and once a round a Standard becomes Fine (v1.6.2 L628);
   // Ge crackles a Standard to Fine (L467).
   const saggars = ownsTech(k.me, PROTECTIVE_SAGGARS);
   const lift = saggars || k.me.kilnId === "GE";
@@ -1309,12 +1313,12 @@ function techValue(k: Know, techId: TechId): number {
     T15: 0.35,
     T21: 0.4,
     T22: 0.25,
-    // Protective Saggars: never Flawed and a free Standard → Fine each round (v1.6.2 L636).
+    // Protective Saggars: never Flawed and a free Standard → Fine each round (v1.6.2 L628).
     T11: 0.75,
-    // Fuel Ledger: Bank and Stoke cost no Wood (v1.6.2 L637).
+    // Fuel Ledger: Bank and Stoke cost no Wood (v1.6.2 L629).
     T12: 0.35,
     T13: 0.25,
-    // Second Firing: the better of 2 extra cards (v1.6.2 L639).
+    // Second Firing: the better of 2 extra cards (v1.6.2 L631).
     T14: 0.5,
     T24: 0.4,
   };
@@ -1322,9 +1326,9 @@ function techValue(k: Know, techId: TechId): number {
   // Connoisseur's Cabinet: +1 per exhibited Fine or Masterpiece, up to 5 (L620); most
   // ceramics go to Orders, so expect a few.
   if (techId === "T19") ability = Math.min(5, 0.4 + 0.45 * left);
-  // Colour Samples: the when-acquired reservation, hand limit 5 and a swap each round (v1.6.2 L625).
+  // Colour Samples: the when-acquired reservation, hand limit 5 and a swap each round (v1.6.2 L617).
   if (techId === "T10") ability = (k.hand.length <= 3 ? 2 : 1.2) + 0.15 * left + 0.25 * left;
-  // Canal Barge: 2 Coins on the round's first completion (v1.6.2 L630), most rounds.
+  // Canal Barge: 2 Coins on the round's first completion (v1.6.2 L622), most rounds.
   if (techId === "T23") ability = TECHS.T23.params.coins * coinValue(k) * 0.6 * left * kilnSynergy(k.me.kilnId, techId);
   if (techId === "T25") ability = 0.2 * left * kilnSynergy(k.me.kilnId, techId) * Math.min(2, handPlan(k).plans.filter((p) => p.model.def.crowns > 0).length + 0.5);
   return GAME_CONFIG.techs.vpEach + unlock + ability;
@@ -1341,7 +1345,7 @@ function kilnSynergy(kilnId: KilnId | null, techId: TechId): number {
       return techId === "T25" ? 1.6 : techId === "T23" ? 1.3 : 1;
     case "GE":
       // Under Protective Saggars a would-be Flawed ceramic is Standard, which Ge may crackle
-      // (v1.6.2 L653); Second Firing makes Standards to crackle.
+      // (v1.6.2 L645); Second Firing makes Standards to crackle.
       return techId === "T11" ? 1.3 : techId === "T14" ? 1.2 : 1;
     case "DI":
       // Cheap Bowls, Plates and Brush Washers: Clay and stacking.
@@ -1564,23 +1568,32 @@ function firingValueAtBase(k: Know, base: number, fire: Dist, woodLeft: number):
   return total;
 }
 
-/** A rival participant's likely push: the Contribution that best suits their public loads. */
+/**
+ * A rival participant's likely push: the Contribution that best suits their public loads. A
+ * Fuel Ledger owner's Bank and Stoke cost no Wood (v1.6.2 L629), so it may push with none;
+ * a Protective Saggars owner's ceramics are never Flawed (v1.6.2 L628).
+ */
 function rivalPushDist(k: Know, playerId: PlayerId): Dist {
   const rival = k.game.players[playerId];
   if (rival === undefined) return [[0, 1]];
   const loads = ceramicsOf(k.game, playerId, "loaded").filter((c) => c.placement.kiln === "shared");
-  if (loads.length === 0 || rival.resources.wood < 1) return [[0, 1]];
-  const fire = toDist(unseenFire(k.game));
+  const fuelLedger = ownsTech(rival, FUEL_LEDGER);
+  if (loads.length === 0 || (rival.resources.wood < 1 && !fuelLedger)) return [[0, 1]];
+  const fire = nextFireDist(k);
+  const saggars = ownsTech(rival, PROTECTIVE_SAGGARS);
+  const value = (q: Quality): number => QUALITY_VALUE[saggars && q === "flawed" ? "standard" : q];
   const scoreAt = (delta: number): number =>
     loads.reduce((sum, c) => {
       const flexible = c.heatMarker !== null && c.heatMarker.faceDown;
       const before = clampBase(k.die + delta) + positionModifierOf(k.game, c) + markerValueOf(c);
       const markers = flexible ? [-1, 0, 1] : [0];
-      return sum + Math.max(...markers.map((m) => expectQuality(before + m, preferredHeat(c.glaze), fire, (q) => QUALITY_VALUE[q])));
+      return sum + Math.max(...markers.map((m) => expectQuality(before + m, preferredHeat(c.glaze), fire, value)));
     }, 0);
+  // The reluctance to spend a Wood card's Wood; almost none when Fuel Ledger makes it free.
+  const woodCard = fuelLedger ? 0.05 : 0.35;
   const tend = scoreAt(0);
-  const bank = scoreAt(-1) - 0.35;
-  const stoke = scoreAt(1) - 0.35;
+  const bank = scoreAt(-1) - woodCard;
+  const stoke = scoreAt(1) - woodCard;
   if (tend >= bank && tend >= stoke) return [[-1, 0.1], [0, 0.8], [1, 0.1]];
   const best = bank > stoke ? -1 : 1;
   return [[best, 0.6], [0, 0.35], [-best, 0.05]];
@@ -1602,7 +1615,8 @@ function decideContribution(k: Know): AuthoritativeCommand | null {
   for (const playerId of phase.eligiblePlayerIds) {
     if (playerId !== k.pid) others = convolve(others, rivalPushDist(k, playerId));
   }
-  const fire = toDist(unseenFire(k.game));
+  // The round's card (R15: from the reshuffled discard once only buried cards are left).
+  const fire = nextFireDist(k);
   let best: { command: SubmitContributionCommand; score: number } | null = null;
   for (const { command, heat: delta, woodCost: wood } of options) {
     let value = 0;
@@ -1722,7 +1736,7 @@ function decideJun(k: Know): GameAction | null {
 // ── After Quality, salvage ────────────────────────────────────────────────────────────
 
 /**
- * Second Firing's 2 cards (v1.6.2 L639), drawn one after the other without replacement, as
+ * Second Firing's 2 cards (v1.6.2 L631), drawn one after the other without replacement, as
  * pairs with probabilities (R15): from the deck's unburied cards while any are left, then from
  * the reshuffled open discard.
  */
@@ -1778,7 +1792,7 @@ function decideAfterQuality(k: Know): GameAction | null {
       if (option.ability === "ge_crackle") {
         candidates.push({ action: { type: "USE_GE_CRACKLE", ceramicId }, gain: utility("fine") - now + 0.15 });
       } else if (option.ability === "protective_saggars") {
-        // v1.6.2 L636: Standard → Fine, no Wood. Ge also takes only Standard ceramics, so the
+        // v1.6.2 L628: Standard → Fine, no Wood. Ge also takes only Standard ceramics, so the
         // two never share one; spending Saggars where Ge could not follow costs nothing extra.
         const improved = stepQuality(record.quality, 1, "fine");
         candidates.push({ action: { type: "USE_PROTECTIVE_SAGGARS", ceramicId }, gain: utility(improved) - now });
@@ -1798,7 +1812,7 @@ function decideAfterQuality(k: Know): GameAction | null {
 }
 
 /**
- * Second Firing's choice (v1.6.2 L639, R7): both revealed cards are known, so each card with
+ * Second Firing's choice (v1.6.2 L631, R7): both revealed cards are known, so each card with
  * and without Jun's ±1 is evaluated exactly (Jun's Wood at `woodValue`).
  */
 function decideSecondFiringChoice(k: Know): GameAction | null {
@@ -1839,7 +1853,7 @@ function decideSalvage(k: Know): GameAction | null {
 /**
  * The reward side of completing `options` one after another: printed VP and Coins, each Crown
  * from the Recognition it reaches, and each once-per-round trigger (Ru, Guan, Tribute Ware,
- * Canal Barge's 2 Coins; L458, L464, v1.6.2 L630, L641) at most once. After the last Work
+ * Canal Barge's 2 Coins; L458, L464, v1.6.2 L622, L641) at most once. After the last Work
  * Phase every term is exact end-game VP: Coins through the capped 1-per-3 rule (L494), and a
  * Crown only for its Grant Coin, the Audience or overflow VP.
  */
@@ -2147,7 +2161,7 @@ function decideColourSamples(k: Know): GameAction | null {
   return firstValid(k, ranked.map((entry): GameAction => ({ type: "COLOUR_SAMPLES_CHOOSE", orderId: entry.orderId })));
 }
 
-/** Colour Samples swap's look (v1.6.2 L625, R14): reserve the best looked card. */
+/** Colour Samples swap's look (v1.6.2 L617, change 24): reserve the best looked card; the other goes to the deck bottom. */
 function decideColourSamplesSwapChoice(k: Know): GameAction | null {
   const look = lookedOrderOptions(k.view);
   if (look?.kind !== "colour_samples_swap") return null;
@@ -2158,9 +2172,10 @@ function decideColourSamplesSwapChoice(k: Know): GameAction | null {
 // ── Before/after-action window: Colour Samples swap, Imperial Priority ────────────────
 
 /**
- * The Colour Samples swap (v1.6.2 L625): discard the held Order the plan values least when the
+ * The Colour Samples swap (v1.6.2 L617): discard the held Order the plan values least when the
  * best of the cards the look would show is expected to be worth clearly more. Held Orders are
- * valued like the Cleanup trim (`decideHandLimit`).
+ * valued like the Cleanup trim (`decideHandLimit`). The swap leaves the hand size unchanged, so
+ * the look is valued without the overflow cost of an extra Order (`pending` −1).
  */
 function colourSamplesSwap(k: Know): GameAction | null {
   if (!techReady(k.me, COLOUR_SAMPLES)) return null;
@@ -2173,7 +2188,7 @@ function colourSamplesSwap(k: Know): GameAction | null {
     if (!discard.legal) continue;
     const planned = plan.plans.find((p) => p.orderId === discard.orderId) ?? planOrder(k, discard.orderId, items);
     const held = planned === null ? 0 : planned.p * planned.gross;
-    const gain = expectedBestOf(k, discard.lookCount) - held - 0.1;
+    const gain = expectedBestOf(k, discard.lookCount, -1) - held - 0.1;
     if (best === null || gain > best.gain + 1e-9) best = { action: { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: discard.orderId }, gain };
   }
   return best !== null && best.gain > 0.3 ? firstValid(k, [best.action]) : null;
@@ -2284,7 +2299,7 @@ function targetBase(k: Know): number {
   return memo(k, "targetBase", () => {
     const mine = ceramicsOf(k.game, k.pid, "loaded").filter((c) => c.placement.kiln === "shared");
     if (mine.length === 0) return k.die;
-    const fire = toDist(unseenFire(k.game));
+    const fire = nextFireDist(k);
     let best = k.die;
     let bestScore = -Infinity;
     for (const base of [k.die - 1, k.die, k.die + 1]) {

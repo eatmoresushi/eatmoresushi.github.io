@@ -68,7 +68,7 @@ describe("buildState", () => {
 
   it("keeps every card in exactly one zone for hands, looks, displays and decks", () => {
     const state = buildState({
-      players: [{ hand: ["S03", "S04", "O01"] }, { hand: ["S09", "O20"], techs: ["T13"] }],
+      players: [{ hand: ["S03", "S04", "O01"] }, { hand: ["S08", "O20"], techs: ["T13"] }],
       display: ["O02", null, "O03"],
       mainDeck: ["O04", "O05"],
       pendingLook: { kind: "commission_market", playerId: "p1", orderIds: ["O30", "O31"] },

@@ -213,7 +213,8 @@ export function createInitialState(input: CreateGameInput, rng: RandomSource): C
     dealtMain.set(playerId, takeTop(mainDeck, GAME_CONFIG.setupDeal.mainOrders, "Main Order"));
   }
 
-  // §7 step 4 (L102): the undealt Starting Orders go to the box.
+  // §7 step 4 (v1.6.2 L104): any undealt Starting Orders go to the box; a 4-player game deals
+  // all 8 (A0, v1.6.2 L520, change 23), leaving the box empty.
   const startingBox: StartingOrderId[] = startingDeck.splice(0);
   // §7 step 5 (L102): reshuffle the Main deck (the reveal follows below, drawing no randomness).
   mainDeck = shuffle(mainDeck, rng);

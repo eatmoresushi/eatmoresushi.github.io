@@ -192,7 +192,19 @@ describe("computer proposals over many seeded engine games", () => {
       }
     }
     expect(rejected).toEqual([]);
-    for (const phase of ["setup_kiln_selection", "work_turn/before_action", "firing_contributions", "firing_heat_markers", "orders"]) {
+    for (const phase of [
+      "setup_kiln_selection",
+      "work_turn/before_action",
+      "work_turn/commission_market",
+      "work_turn/guild_inspection",
+      "work_turn/colour_samples",
+      "work_turn/colour_samples_swap",
+      "firing_contributions",
+      "firing_heat_markers",
+      "firing_after_quality",
+      "firing_second_firing_choice",
+      "orders",
+    ]) {
       expect(phases, phase).toContain(phase);
     }
   }, 300_000);
@@ -239,10 +251,20 @@ describe("computer proposals over many seeded engine games", () => {
       "work_turn/before_action",
       "work_turn/after_action",
       "work_turn/commission_market",
+      // V1.6.2 decisions: the Guild Hall Shifu's takes (L207), Colour Samples when acquired and
+      // its swap (L617, change 24), and Second Firing's choice of 1 of 2 cards (L631).
+      "work_turn/guild_inspection",
+      "work_turn/colour_samples",
+      "work_turn/colour_samples_swap",
       "firing_contributions",
+      "firing_test_pieces",
       "firing_heat_markers",
+      "firing_heat_adjustment",
       "firing_after_quality",
+      "firing_second_firing_choice",
+      "firing_salvage",
       "orders",
+      "cleanup_hand_limit",
     ]) {
       expect(phases, phase).toContain(phase);
     }

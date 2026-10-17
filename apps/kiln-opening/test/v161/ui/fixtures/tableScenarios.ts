@@ -282,8 +282,8 @@ export function tableScenarios(): TableScenario[] {
       buildState({
         round: 5,
         players: [
-          { displayName: "Lin", kilnId: "RU", techs: ["T19", "T12"], resources: { coins: 7 }, hand: ["S10", "O22"] },
-          { displayName: "Zhao", kilnId: "GE", techs: ["T21"], resources: { coins: 2 }, hand: ["S04"] },
+          { displayName: "Lin", kilnId: "RU", techs: ["T19", "T12"], resources: { coins: 7 }, hand: ["S01", "O22"] },
+          { displayName: "Zhao", kilnId: "GE", techs: ["T21"], resources: { coins: 2 }, hand: ["S06"] },
         ],
         phase: { type: "orders", turnOrder: ["p1", "p2"], index: 0 },
         ceramics: [
@@ -298,9 +298,9 @@ export function tableScenarios(): TableScenario[] {
       }),
       { seed: 11 },
     );
-    table.act("p1", { type: "COMPLETE_ORDER", orderId: "S10", ceramicIds: ["c1"] });
+    table.act("p1", { type: "COMPLETE_ORDER", orderId: "S01", ceramicIds: ["c1"] });
     table.act("p1", { type: "COMPLETE_ORDER", orderId: "O22", ceramicIds: ["c2"] });
-    if (table.state.phase.type === "orders") table.act("p2", { type: "COMPLETE_ORDER", orderId: "S04", ceramicIds: ["c5"] });
+    if (table.state.phase.type === "orders") table.act("p2", { type: "COMPLETE_ORDER", orderId: "S06", ceramicIds: ["c5"] });
     if (table.state.phase.type !== "finished") throw new Error(`tableScenarios: the 2-player game ended in ${table.state.phase.type}`);
     add("t-final-2p", "2-player final results", table, "p1");
   }
@@ -309,10 +309,10 @@ export function tableScenarios(): TableScenario[] {
       buildState({
         round: 5,
         players: [
-          { displayName: "Lin", kilnId: "DI", techs: ["T05", "T22"], recognition: 3, hand: ["S14"] },
+          { displayName: "Lin", kilnId: "DI", techs: ["T05", "T22"], recognition: 3, hand: ["S05"] },
           { displayName: "Zhao", kilnId: "JU", techs: ["T17", "T10", "T14"], recognition: 1, hand: ["O05"] },
-          { displayName: "Wen", kilnId: "GU", techs: ["T18"], recognition: 2, hand: ["S06", "O17"] },
-          { displayName: "Su", kilnId: "RU", resources: { coins: 11 }, hand: ["S15"] },
+          { displayName: "Wen", kilnId: "GU", techs: ["T18"], recognition: 2, hand: ["S01", "O17"] },
+          { displayName: "Su", kilnId: "RU", resources: { coins: 11 }, hand: ["S06"] },
         ],
         phase: { type: "orders", turnOrder: ["p1", "p2", "p3", "p4"], index: 0 },
         ceramics: [
@@ -332,11 +332,11 @@ export function tableScenarios(): TableScenario[] {
         table.act(pid, { type: "COMPLETE_ORDER", orderId, ceramicIds });
       }
     };
-    complete("p1", "S14", ["c1"]);
+    complete("p1", "S05", ["c1"]);
     complete("p2", "O05", ["c3"]);
-    complete("p3", "S06", ["c5"]);
+    complete("p3", "S01", ["c5"]);
     complete("p3", "O17", ["c6"]);
-    complete("p4", "S15", ["c7"]);
+    complete("p4", "S06", ["c7"]);
     if (table.state.phase.type !== "finished") throw new Error(`tableScenarios: the 4-player game ended in ${table.state.phase.type}`);
     add("t-final-4p", "4-player final results", table, "p3");
   }

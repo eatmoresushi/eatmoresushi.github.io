@@ -14,7 +14,8 @@
  * - Each gain resolves at once, before the next take (L214): the VP, the Cover token and any
  *   when-acquired effect. Colour Samples (T10, v1.6.2 L625) looks at the top 3 Main Orders (deck
  *   only, as many as remain, B1) and reserves 1, mandatory whenever a card can be looked at
- *   (R4); no resource and no Main display refill. When the Shifu takes it, the inspection
+ *   (R4); the other looked cards go to the bottom of the Main deck in random order (change 24,
+ *   R19); no resource and no Main display refill. When the Shifu takes it, the inspection
  *   waits in the Colour Samples look (`inspection`) and resumes after the reservation.
  * - A taken face-up Tech's position stays empty until the taker's turn ends; `work/turn`
  *   then refills each discipline to 2 (v1.6.2 L209), so a Shifu's second Tech is chosen from
@@ -30,8 +31,8 @@ import { DISCIPLINES, GAME_CONFIG, LOCATIONS, TECHS } from "../content.ts";
 import { invariant, ruleError } from "../errors.ts";
 import {
   addToHand,
-  discardMainOrders,
   drawTechsForInspection,
+  putMainOrdersOnBottom,
   reservable,
   returnTechsToBottom,
   takeFaceUpTech,
@@ -196,10 +197,11 @@ function acquire(draft: GameState, playerId: PlayerId, take: GuildTake, ctx: Res
 }
 
 /**
- * Colour Samples when acquired (L625, R4, B1): looks at the top 3 Main Orders and opens the
- * reservation step. `resume` is the Shifu's inspection to return to afterwards (its untaken
- * Techs wait in the look). Returns false when no card can be looked at (deck and discard both
- * empty): there is then nothing to reserve.
+ * Colour Samples when acquired (L625, R4, B1, R16): looks at the top 3 Main Orders and opens the
+ * reservation step (`COLOUR_SAMPLES_CHOOSE`; the rest go to the deck bottom, change 24).
+ * `resume` is the Shifu's inspection to return to afterwards (its untaken Techs wait in the
+ * look). Returns false when no card can be looked at (deck and discard both empty): there is
+ * then nothing to reserve.
  */
 function openColourSamples(draft: GameState, playerId: PlayerId, resume: { step: GuildInspectionStep; look: InspectionLook } | null, ctx: ResolveContext): boolean {
   if (!reservable(publicGame(draft)).supply) {
@@ -437,9 +439,11 @@ export const handlers: Pick<ActionHandlerTable, "PLACE_GUILD_HALL" | "GUILD_TAKE
         secret: { visibleTo: actorId, orderId: action.orderId },
       });
       if (rest.length > 0) {
-        discardMainOrders(draft, rest);
+        // The rest go to the bottom of the Main deck in random order (v1.6.2 Appendix B, change
+        // 24, R19); the secret names them in look order.
+        putMainOrdersOnBottom(draft, rest, ctx);
         emit(ctx, {
-          type: "LOOKED_ORDERS_DISCARDED",
+          type: "LOOKED_ORDERS_TO_BOTTOM",
           playerId: actorId,
           count: rest.length,
           secret: { visibleTo: actorId, orderIds: rest },

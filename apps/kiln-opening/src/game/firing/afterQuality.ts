@@ -365,7 +365,7 @@ function validateSecondFiringTarget(view: ActorView, ceramicId: CeramicId): Game
   }
   const quality = target.record.quality;
   if (quality === null || !SECOND_FIRING_TARGETS.includes(quality)) {
-    return ruleError("INVALID_TARGET", "Choose one of your Flawed or Standard ceramics from this firing.", { ceramicId });
+    return ruleError("INVALID_TARGET", "Choose one of your Flawed or Standard ceramics from this firing.", { ceramicId, reason: "not_flawed_or_standard" });
   }
   return null;
 }
@@ -376,7 +376,7 @@ function validateSaggarsTarget(view: ActorView, ceramicId: CeramicId): GameRuleE
     return target.error;
   }
   if (target.record.quality !== TECHS.T11.params.upgradeFrom) {
-    return ruleError("INVALID_TARGET", "Choose one of your Standard ceramics from this firing.", { ceramicId });
+    return ruleError("INVALID_TARGET", "Choose one of your Standard ceramics from this firing.", { ceramicId, reason: "not_standard" });
   }
   return null;
 }
@@ -592,7 +592,7 @@ export const handlers: Pick<
         return target.error;
       }
       if (target.record.quality !== KILNS.GE.params.fromQuality) {
-        return ruleError("INVALID_TARGET", "Crackle needs one of your Standard ceramics from this firing.", { ceramicId: action.ceramicId });
+        return ruleError("INVALID_TARGET", "Crackle needs one of your Standard ceramics from this firing.", { ceramicId: action.ceramicId, reason: "not_standard" });
       }
       return null;
     },
@@ -622,6 +622,7 @@ export const handlers: Pick<
       if (target.record.quality !== "flawed") {
         return ruleError("INVALID_TARGET", "Only a ceramic still Flawed from this firing can be salvaged.", {
           ceramicId: action.ceramicId,
+          reason: "not_flawed",
         });
       }
       return null;

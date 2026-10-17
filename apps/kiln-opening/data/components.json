@@ -93,7 +93,7 @@
       "id": "starting_order_cards",
       "name": "Starting Order Cards",
       "nameZh": "起始委托卡",
-      "qty": 16,
+      "qty": 8,
       "notes": "Separate easy opening deck; never shuffled into the Main Order deck.",
       "notesZh": "单独的开局委托牌堆，永不洗入主委托牌堆。"
     },

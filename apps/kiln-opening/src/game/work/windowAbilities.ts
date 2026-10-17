@@ -1,6 +1,6 @@
 /**
  * The Colour Samples swap and Imperial Priority in the before/after-action window (L293, L434,
- * v1.6.2 L625, L645, L649, R4, R10, R11, R14, R16, R17; DESIGN §3.2 step 1 and 3, §11 Q1).
+ * v1.6.2 L625, L645, L649, change 24, R4, R10, R11, R16, R17; DESIGN §3.2 step 1 and 3, §11 Q1).
  *
  * - Both are usable in `before_action` and `after_action`, in either order (INT: before/after
  *   window). Neither is a worker action (v1.6.2 L645, L649): the swap never touches a worker, the
@@ -13,7 +13,8 @@
  *   look starts (B1, R16), so the Order just discarded may come straight back. It is legal only
  *   when that look would show at least 1 card (B1: the reservation must take an available
  *   Order). `COLOUR_SAMPLES_SWAP_CHOOSE` reserves 1 of the looked cards; the other goes face down
- *   to the Main discard (owner ruling R14). The hand size is unchanged.
+ *   to the bottom of the Main deck (rulebook change 24, which superseded owner ruling R14). The
+ *   hand size is unchanged.
  * - Imperial Priority: once per game, free, glaze and load 1 Shaped vessel into your empty
  *   Imperial Kiln with a chosen public modifier (L293, R10, R11). Reworking Table may change
  *   the Shape first (DESIGN §11 Q1 default P1: allowed, using its once-per-round allowance).
@@ -28,7 +29,7 @@
 import { TECHS, isStartingOrderId } from "../content.ts";
 import { invariant, ruleError } from "../errors.ts";
 import { imperialKilnEmpty, loadCeramic, validateLoads } from "../kilnLoading.ts";
-import { addToHand, discardHeldOrder, discardMainOrders, lookCount, takeTopMainOrders } from "../market.ts";
+import { addToHand, discardHeldOrder, lookCount, putMainOrdersOnBottom, takeTopMainOrders } from "../market.ts";
 import { emit, phaseAs, player } from "../state.ts";
 import { markTechUsed, ownsTech, techReady } from "../techs.ts";
 import type {
@@ -171,9 +172,10 @@ export const handlers: Pick<ActionHandlerTable, "USE_COLOUR_SAMPLES_SWAP" | "COL
         secret: { visibleTo: actorId, orderId: action.orderId },
       });
       if (rest.length > 0) {
-        // Owner ruling R14: the card not reserved is discarded, face down (B3).
-        discardMainOrders(draft, rest);
-        emit(ctx, { type: "LOOKED_ORDERS_DISCARDED", playerId: actorId, count: rest.length, secret: { visibleTo: actorId, orderIds: rest } });
+        // Change 24 (v1.6.2 L34, Appendix B): the card not reserved goes face down to the bottom
+        // of the Main deck (it superseded owner ruling R14's discard). Private to the actor (B3).
+        putMainOrdersOnBottom(draft, rest, ctx);
+        emit(ctx, { type: "LOOKED_ORDERS_TO_BOTTOM", playerId: actorId, count: rest.length, secret: { visibleTo: actorId, orderIds: rest } });
       }
       phase.step = { kind: step.returnTo };
       afterWindowAbilityUsed(draft, actorId, ctx);

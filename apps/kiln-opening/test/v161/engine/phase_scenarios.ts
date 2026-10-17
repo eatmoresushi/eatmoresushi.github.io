@@ -228,7 +228,7 @@ export function phaseScenarios(): PhaseScenario[] {
     "Order Phase with Ru, Tribute Ware and a Crackle wildcard",
     new LocalTable(
       buildState({
-        players: [{ kilnId: "RU", techs: ["T25"], hand: ["O22", "O18", "S01", "S13"] }, { kilnId: "GE" }],
+        players: [{ kilnId: "RU", techs: ["T25"], hand: ["O22", "O18", "S01", "S07"] }, { kilnId: "GE" }],
         phase: { type: "orders", turnOrder: ["p1", "p2"], index: 0 },
         ceramics: [
           { owner: "p1", stage: "finished", shape: "bowl", glaze: "celadon", decoration: "plain", quality: "masterpiece" },

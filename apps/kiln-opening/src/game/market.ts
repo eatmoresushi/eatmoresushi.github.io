@@ -10,9 +10,15 @@
  *   discard are both exhausted (B1).
  * - The Main discard is face down (B3): only its count is public. Nothing here emits an
  *   Order identity that was not already public; the callers emit the private events
- *   (`ORDER_RESERVED.secret`, `LOOKED_ORDERS_DISCARDED.secret`, `HAND_TRIMMED.secret`).
+ *   (`ORDER_RESERVED.secret`, `LOOKED_ORDERS_TO_BOTTOM.secret`, `HELD_ORDER_DISCARDED.secret`,
+ *   `HAND_TRIMMED.secret`).
+ * - Looked-at Orders not reserved go to the bottom of the Main deck, not the discard (v1.6.2
+ *   change 24, L34, L191, L195–196, L396; Colour Samples' looks, Appendix B); several go there
+ *   in random order (owner ruling R19). Their identities stay private to the looker (B3); their
+ *   order under the deck is known to nobody.
  * - Randomness: the Main discard is shuffled into a new deck only when the deck is empty
- *   and a card is needed (L511). Tech decks are never reshuffled.
+ *   and a card is needed (L511), and several looked cards are shuffled before they go under
+ *   the deck (R19). Tech decks are never reshuffled.
  * - Helpers that take a `draft` mutate only that draft and are called after validation;
  *   a broken precondition is an `InvariantError`, never a rule error.
  */
@@ -67,7 +73,8 @@ export function drawMainOrder(draft: GameState, ctx: ResolveContext): OrderId | 
  * Market top 2 or 3, v1.6.2 L195–196; Colour Samples' top 3 and its swap's top 2, L625).
  * B1, R16: the discard is reshuffled only if the deck is empty when the look starts, never to
  * complete the look, so a look may see fewer than `max` cards (or none when both piles are
- * empty). The cards leave the deck; the caller holds them in `hidden.pendingLook`.
+ * empty). The cards leave the deck; the caller holds them in `hidden.pendingLook` and puts
+ * the ones not reserved back on the bottom (`putMainOrdersOnBottom`, change 24).
  */
 export function takeTopMainOrders(draft: GameState, max: number, ctx: ResolveContext): OrderId[] {
   invariant(Number.isSafeInteger(max) && max >= 0, `A look takes a non-negative whole number of cards, not ${max}`);
@@ -79,9 +86,11 @@ export function takeTopMainOrders(draft: GameState, max: number, ctx: ResolveCon
 }
 
 /**
- * Puts Main Orders face down on the Main discard (v1.6.2 L191, L195–196; L304, L626, B3), in the given order,
- * each on top of the last (so the last ID ends on top). Starting Orders never go here: they
- * return to the box (L304).
+ * Puts Main Orders face down on the Main discard (the round-start rotation L130, the Cleanup
+ * trim L304, the held Order a Colour Samples swap discards; B3), in the given order, each on
+ * top of the last (so the last ID ends on top). Starting Orders never go here: they return to
+ * the box (L304). Looked-at Orders not reserved go to the deck bottom instead
+ * (`putMainOrdersOnBottom`, change 24).
  */
 export function discardMainOrders(draft: GameState, ids: readonly OrderId[]): void {
   const discard = draft.hidden.mainDiscard;
@@ -90,6 +99,27 @@ export function discardMainOrders(draft: GameState, ids: readonly OrderId[]): vo
     invariant(!discard.includes(orderId), `${orderId} is already in the Main discard`);
     discard.unshift(orderId);
   }
+}
+
+/**
+ * Puts the looked-at Main Orders a look did not reserve on the bottom of the Main deck (v1.6.2
+ * change 24, L34; L191, L195–196, L396; Colour Samples when acquired and its swap, Appendix B),
+ * face down. Several go there in random order (owner ruling R19, 2026-10-18, which replaced the
+ * provisional "order drawn" default P5): they are shuffled with `ctx.rng` and then placed under
+ * the deck, so the player makes no extra decision and nobody, the looker included, knows their
+ * order. A single card consumes no random draw. Which cards they are stays private to the
+ * looker (B3); only `counts.mainDeck` changes publicly. The caller's
+ * `LOOKED_ORDERS_TO_BOTTOM.secret` names them in look order, never in deck order.
+ */
+export function putMainOrdersOnBottom(draft: GameState, ids: readonly OrderId[], ctx: ResolveContext): void {
+  const deck = draft.hidden.mainDeck;
+  invariant(new Set(ids).size === ids.length, "A looked-at Order goes to the bottom at most once");
+  for (const orderId of ids) {
+    invariant(!isStartingOrderId(orderId), `Starting Order ${orderId} never enters the Main deck`);
+    invariant(!deck.includes(orderId), `${orderId} is already in the Main deck`);
+    invariant(!draft.hidden.mainDiscard.includes(orderId), `${orderId} is in the Main discard`);
+  }
+  deck.push(...shuffle(ids, ctx.rng));
 }
 
 // ── Main display ─────────────────────────────────────────────────────────────────────

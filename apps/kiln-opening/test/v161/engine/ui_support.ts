@@ -451,7 +451,7 @@ export function uiOptionScenarios(): Array<{ name: string; table: LocalTable; ac
       name: "Order Phase with Canal Barge and a Crackle wildcard",
       table: new LocalTable(
         buildState({
-          players: [{ kilnId: "GE", techs: ["T23"], hand: ["O39", "S11", "S13"] }, {}],
+          players: [{ kilnId: "GE", techs: ["T23"], hand: ["O39", "S07", "S08"] }, {}],
           phase: { type: "orders", turnOrder: ["p1", "p2"], index: 0 },
           ceramics: [
             { owner: "p1", stage: "finished", shape: "vase", glaze: "celadon", decoration: "plain", quality: "fine", crackle: true },
@@ -464,13 +464,13 @@ export function uiOptionScenarios(): Array<{ name: string; table: LocalTable; ac
       actor: "p1",
     },
     work("Colour Samples swap with a Starting and a Main Order held", {
-      players: [{ techs: ["T10"], hand: ["S11", "O39"] }, {}],
+      players: [{ techs: ["T10"], hand: ["S07", "O39"] }, {}],
     }),
     {
       name: "Order Phase with two Crackle ceramics in one Order",
       table: new LocalTable(
         buildState({
-          players: [{ kilnId: "GE", hand: ["O29", "S12", "O36"] }, {}],
+          players: [{ kilnId: "GE", hand: ["O29", "S07", "O36"] }, {}],
           phase: { type: "orders", turnOrder: ["p1", "p2"], index: 0 },
           ceramics: [
             { owner: "p1", stage: "finished", shape: "vase", glaze: "moon_white", decoration: "plain", quality: "fine", crackle: true },

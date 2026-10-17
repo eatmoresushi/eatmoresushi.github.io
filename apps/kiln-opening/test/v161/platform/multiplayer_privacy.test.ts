@@ -105,7 +105,7 @@ describe("V1.6.2 multiplayer privacy", () => {
     }
   });
 
-  it("keeps the Commission Market look, a looked reservation and the discarded card private (v1.6.2 L195, B3)", async () => {
+  it("keeps the Commission Market look, a looked reservation and the card put on the deck bottom private (v1.6.2 L195, change 24, B3)", async () => {
     const { harness } = await started();
     let top: OrderId[] = [];
     await seedState(harness, (gameId) => {
@@ -114,7 +114,7 @@ describe("V1.6.2 multiplayer privacy", () => {
       return state;
     });
     expect(top).toHaveLength(2);
-    const [kept, discarded] = top as [OrderId, OrderId];
+    const [kept, bottomed] = top as [OrderId, OrderId];
     const opened = await command(harness, "P1", { type: "PLACE_COMMISSION_MARKET", workerId: "P1:apprentice:1" });
     const look = opened.events.find((event) => event.type === "PRIVATE_LOOK_OPENED");
     expect(look).toMatchObject({ type: "PRIVATE_LOOK_OPENED", playerId: "P1", kind: "commission_market", count: 2 });
@@ -128,12 +128,12 @@ describe("V1.6.2 multiplayer privacy", () => {
     const reserved = result.events.find((event) => event.type === "ORDER_RESERVED");
     expect(reserved).toMatchObject({ type: "ORDER_RESERVED", playerId: "P1", via: "commission_market", source: "looked", orderId: null });
     expect(reserved).not.toHaveProperty("secret");
-    expect(result.events.find((event) => event.type === "LOOKED_ORDERS_DISCARDED")).toMatchObject({ playerId: "P1", count: 1 });
+    expect(result.events.find((event) => event.type === "LOOKED_ORDERS_TO_BOTTOM")).toMatchObject({ playerId: "P1", count: 1 });
     expect(result.ownSecrets.map((record) => record.event)).toContainEqual(
       expect.objectContaining({ type: "ORDER_RESERVED", secret: { visibleTo: "P1", orderId: kept } }),
     );
     expect(result.ownSecrets.map((record) => record.event)).toContainEqual(
-      expect.objectContaining({ type: "LOOKED_ORDERS_DISCARDED", secret: { visibleTo: "P1", orderIds: [discarded] } }),
+      expect.objectContaining({ type: "LOOKED_ORDERS_TO_BOTTOM", secret: { visibleTo: "P1", orderIds: [bottomed] } }),
     );
     expect(result.ownPrivateView?.orderHand).toContain(kept);
     expect(result.ownPrivateView?.pendingLook).toBeNull();
@@ -142,7 +142,10 @@ describe("V1.6.2 multiplayer privacy", () => {
     const other = valueOf(await harness.service.reconnect({ roomCode: harness.roomCode, seatToken: connectionFor(harness, "P2").seatToken }));
     expectAbsent(other, top);
     expect(other.game?.counts.orderHands["P1"]).toBe(1);
-    expect(other.game?.counts.mainDiscard).toBe(1);
+    // The unreserved card went to the bottom of the deck, not the discard (change 24): only the
+    // deck count shows it.
+    expect(other.game?.counts.mainDiscard).toBe(0);
+    expect(other.game?.counts.mainDeck).toBe(opened.game.counts.mainDeck + 1);
   });
 
   it("keeps the Canal Wharf Shifu's unseen Main Order private to its owner (v1.6.2 L220, B3)", async () => {
