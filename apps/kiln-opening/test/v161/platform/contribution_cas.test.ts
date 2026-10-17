@@ -63,11 +63,12 @@ describe("V1.6.2 Contribution window over the service", () => {
 
     const second = await command(harness, "P2", { type: "SUBMIT_CONTRIBUTION", windowId, card: "STOKE", fuelLedger: false });
     expect(revealedOf(second.events)?.contributions).toEqual({
-      P1: { card: "BANK", fuelLedger: true, heat: -2, woodPaid: 2 },
+      // Fuel Ledger (v1.6.2 L637): the owner's Bank costs no Wood, the commitment 1.
+      P1: { card: "BANK", fuelLedger: true, heat: -2, woodPaid: 1 },
       P2: { card: "STOKE", fuelLedger: false, heat: 1, woodPaid: 1 },
     });
     expect(second.events).toContainEqual(expect.objectContaining({ type: "BASE_HEAT_DETERMINED", kilnDie: 2, contributionSum: -1, baseHeat: 1 }));
-    expect(second.game.players["P1"]?.resources.wood).toBe(1);
+    expect(second.game.players["P1"]?.resources.wood).toBe(2);
     expect(second.game.players["P2"]?.resources.wood).toBe(2);
     expect(second.ownPrivateView?.pendingContribution).toBeNull();
     expect(harness.store.audit().privateSubmissions.map((row) => row.revealedRevision)).toEqual([second.revision, second.revision]);
@@ -86,7 +87,7 @@ describe("V1.6.2 Contribution window over the service", () => {
     expect(successes.filter((success) => revealedOf(success.events) !== undefined)).toHaveLength(1);
     const revealed = successes.map((success) => revealedOf(success.events)).find((event) => event !== undefined);
     expect(revealed?.contributions).toEqual({
-      P1: { card: "STOKE", fuelLedger: true, heat: 2, woodPaid: 2 },
+      P1: { card: "STOKE", fuelLedger: true, heat: 2, woodPaid: 1 },
       P2: { card: "TEND", fuelLedger: false, heat: 0, woodPaid: 0 },
     });
     expect((await headState(harness)).revision).toBe(revision + 2);

@@ -93,6 +93,7 @@ describe("projectPublicState", () => {
       mainDiscard: 2,
       techDecks: { workshop: 3, glazing_loading: 3, firing: 3 },
       fireDeck: 11,
+      fireBuried: 0,
       pendingLook: { playerId: "p2", kind: "commission_market", count: 3 },
     });
     expect(publicCounts(state)).toEqual(projected.counts);

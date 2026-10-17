@@ -1,5 +1,5 @@
 /**
- * Imperial Priority (L293, L288, L434, L646, R10, R11; DESIGN §11 Q1 / audit P1): once per
+ * Imperial Priority (L293, L288, L434, v1.6.2 L645, R10, R11; DESIGN §11 Q1 / audit P1): once per
  * game, before or after your worker action, spend the token — free — to give 1 of your Shaped
  * vessels a Glaze and load it into your empty Imperial Kiln with a chosen public modifier. It
  * is a token effect, not a Glaze & Load action. Reworking Table may change the Shape first.
@@ -87,13 +87,19 @@ describe("using the token", () => {
     expect(t.state.ceramics["c1"]).toMatchObject({ placement: { kiln: "imperial", imperialModifier: -1 } });
   });
 
-  it("with Canal Barge also ready the window stays open until both are used or the turn is ended", () => {
-    const t = table(holder({ players: [{ recognition: 3, techs: ["T23"] }, {}] }));
+  it("with the Colour Samples swap also ready the window stays open until both are used or the turn is ended", () => {
+    const t = table(holder({ players: [{ recognition: 3, techs: ["T10"], hand: ["S01"] }, {}] }));
     reserveFaceUp(t, "p1:apprentice:1");
     t.act("p1", priority("c1"));
     expect(t.state.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "after_action" } });
     const ended = t.act("p1", { type: "END_TURN" });
     expect(ended.find((event) => event.type === "WORK_TURN_ENDED")).toMatchObject({ automatic: false });
+  });
+
+  it("Canal Barge no longer opens the window (v1.6.2 L630): with only it owned the turn ends by itself", () => {
+    const t = table({ players: [{ techs: ["T23"], hand: ["S01"] }, {}] });
+    const placed = reserveFaceUp(t, "p1:apprentice:1");
+    expect(placed.find((event) => event.type === "WORK_TURN_ENDED")).toMatchObject({ playerId: "p1", automatic: true });
   });
 
   it("is not a Glaze & Load action (L646): no personal space is used and Kiln Tending does not trigger", () => {

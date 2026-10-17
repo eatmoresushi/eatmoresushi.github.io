@@ -406,7 +406,12 @@ describe("Colour Samples when acquired (v1.6.2 L214, L625, L649, R4, B1)", () =>
     const resources = { ...t.player("p1").resources };
     const chosen = t.act("p1", { type: "COLOUR_SAMPLES_CHOOSE", orderId: c });
     expect(t.state.hidden.orderHands["p1"]).toEqual([c]);
-    expect(types(chosen)).toEqual(["ORDER_RESERVED", "LOOKED_ORDERS_DISCARDED", "TECH_DISPLAY_REFILLED", "WORK_TURN_ENDED", "WORK_TURN_STARTED"]);
+    // The swap is usable the round Colour Samples is acquired (v1.6.2 L213, L625): with an Order
+    // now held, the after-action window opens, and the Tech display refills only at END_TURN.
+    expect(types(chosen)).toEqual(["ORDER_RESERVED", "LOOKED_ORDERS_DISCARDED"]);
+    expect(t.state.phase).toEqual({ type: "work_turn", activePlayerId: "p1", step: { kind: "after_action" } });
+    expect(t.state.techDisplay.glazing_loading).toEqual(["T20"]);
+    expect(types(t.act("p1", { type: "END_TURN" }))).toEqual(["TECH_DISPLAY_REFILLED", "WORK_TURN_ENDED", "WORK_TURN_STARTED"]);
     expect(only(chosen, "ORDER_RESERVED")).toEqual({
       type: "ORDER_RESERVED",
       playerId: "p1",
@@ -493,7 +498,10 @@ describe("Colour Samples when acquired (v1.6.2 L214, L625, L649, R4, B1)", () =>
     expect(t.state.hidden.orderHands["p1"]).toEqual([b]);
 
     const second = t.act("p1", take("inspected", "T13"));
-    expect(types(second)).toEqual(["RESOURCES_CHANGED", "TECH_ACQUIRED", "TECHS_RETURNED_TO_BOTTOM", "TECH_DISPLAY_REFILLED", "WORK_TURN_ENDED", "WORK_TURN_STARTED"]);
+    expect(types(second)).toEqual(["RESOURCES_CHANGED", "TECH_ACQUIRED", "TECHS_RETURNED_TO_BOTTOM"]);
+    // Colour Samples' swap is ready and an Order is held: the after-action window opens.
+    expect(t.state.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "after_action" } });
+    expect(types(t.act("p1", { type: "END_TURN" }))).toEqual(["TECH_DISPLAY_REFILLED", "WORK_TURN_ENDED", "WORK_TURN_STARTED"]);
     expect(owned(t, "p1")).toEqual(["T10", "T13"]);
     expect(t.player("p1").resources.coins).toBe(0);
     expect(t.state.techDisplay.glazing_loading).toEqual(["T20", "T15"]);
@@ -510,7 +518,9 @@ describe("Colour Samples when acquired (v1.6.2 L214, L625, L649, R4, B1)", () =>
     t.act("p1", { type: "COLOUR_SAMPLES_CHOOSE", orderId });
     expect(t.state.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "guild_inspection", takes: [{ techId: "T12" }, { techId: "T10" }] } });
     t.expectRuleError("p1", take("inspected", "T05"), "TECH_TAKE_LIMIT");
-    const events = t.act("p1", finish(["T05", "T17"]));
+    const finished = t.act("p1", finish(["T05", "T17"]));
+    expect(types(finished)).toEqual(["TECHS_RETURNED_TO_BOTTOM"]);
+    const events = t.act("p1", { type: "END_TURN" });
     expect(all(events, "TECH_DISPLAY_REFILLED").map((event) => event.discipline)).toEqual(["glazing_loading", "firing"]);
     expect(t.state.hidden.techDecks.workshop).toEqual(["T18", "T19", "T05", "T17"]);
   });

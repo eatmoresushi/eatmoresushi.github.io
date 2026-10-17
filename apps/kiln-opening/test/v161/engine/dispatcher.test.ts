@@ -53,7 +53,11 @@ describe("handler table", () => {
     for (const [type, handler] of Object.entries(HANDLERS)) {
       expect(handler.phases.length, type).toBeGreaterThan(0);
     }
-    expect(HANDLERS.RESOLVE_JUN.phases).toEqual(expect.arrayContaining(["firing_heat_adjustment", "firing_second_firing_jun"]));
+    // Jun during Second Firing (R7) is part of SECOND_FIRING_CHOOSE (v1.6.2 L639).
+    expect(HANDLERS.RESOLVE_JUN.phases).toEqual(["firing_heat_adjustment"]);
+    expect(HANDLERS.SECOND_FIRING_CHOOSE.phases).toEqual(["firing_second_firing_choice"]);
+    expect(HANDLERS.USE_COLOUR_SAMPLES_SWAP.phases).toEqual(["work_turn"]);
+    expect(HANDLERS.COLOUR_SAMPLES_SWAP_CHOOSE.phases).toEqual(["work_turn"]);
     expect(HANDLERS.SELECT_KILN.phases).toEqual(["setup_kiln_selection"]);
     expect(HANDLERS.SALVAGE_FLAWED.phases).toEqual(["firing_salvage"]);
   });
@@ -86,6 +90,9 @@ describe("validateAction", () => {
     [WHARF, { type: "orders", turnOrder: ["p1", "p2"], index: 0 }],
     [{ type: "END_ORDER_TURN" }, { type: "work_turn", activePlayerId: "p1", step: { kind: "after_action" } }],
     [{ type: "RESOLVE_JUN", adjustment: null }, { type: "firing_after_quality", queue: { actorIds: ["p1"], index: 0 } }],
+    [{ type: "RESOLVE_JUN", adjustment: null }, { type: "firing_second_firing_choice", actorId: "p1", ceramicId: "c1" }],
+    [{ type: "SECOND_FIRING_CHOOSE", cardIndex: 0, jun: null }, { type: "firing_after_quality", queue: { actorIds: ["p1"], index: 0 } }],
+    [{ type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: "O01" }, { type: "orders", turnOrder: ["p1", "p2"], index: 0 }],
     [{ type: "PLACE_SETTERS_MARK", spaceId: null }, { type: "setup_kiln_selection", selectionOrder: ["p2", "p1"], index: 1 }],
     [{ type: "DISCARD_TO_HAND_LIMIT", orderIds: [] }, { type: "firing_salvage", pendingPlayerIds: ["p1"], openedAtRevision: 0 }],
     [

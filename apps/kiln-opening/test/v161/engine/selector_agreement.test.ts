@@ -182,7 +182,8 @@ describe("view models", () => {
     });
     expect(summary.imperial.kilnCeramic?.id).toBe("c3");
     expect(summary.techs.map((t) => [t.techId, t.oncePerRound, t.ready])).toEqual([
-      ["T10", false, true],
+      // Colour Samples has a once-per-round swap (v1.6.2 L625).
+      ["T10", true, true],
       ["T14", true, true],
     ]);
     expect(summary.personalSpaces.filter((s) => s.locationId === "glaze_load").map((s) => s.unlocked)).toEqual([true, true]);
@@ -282,10 +283,10 @@ describe("view models", () => {
     expect(orderSelectionCheck(view, "S01", [])).toMatchObject({ ok: false, extendable: true });
   });
 
-  it("contributionOptions shows Wood, Heat and affordability, with Fuel Ledger only when owned", () => {
+  it("contributionOptions shows Wood, Heat and affordability, with Fuel Ledger only when owned (v1.6.2 L637)", () => {
     const table = new FuzzTable(
       buildState({
-        players: [{ techs: ["T12"], resources: { wood: 1 } }, {}],
+        players: [{ techs: ["T12"], resources: { wood: 0 } }, {}],
         ceramics: [
           { owner: "p1", stage: "loaded", shape: "bowl", glaze: "white", at: "middle_1" },
           { owner: "p2", stage: "loaded", shape: "bowl", glaze: "white", at: "high_1" },
@@ -303,13 +304,18 @@ describe("view models", () => {
     expect(table.state.phase.type).toBe("firing_contributions");
     const options = contributionOptions(table.view("p1"));
     expect(options.map((o) => [o.command.card, o.command.fuelLedger, o.woodCost, o.heat, o.affordable])).toEqual([
+      // A Fuel Ledger owner's Bank and Stoke cost no Wood; the commitment needs 1.
       ["TEND", false, 0, 0, true],
-      ["BANK", false, 1, -1, true],
-      ["STOKE", false, 1, 1, true],
-      ["BANK", true, 2, -2, false],
-      ["STOKE", true, 2, 2, false],
+      ["BANK", false, 0, -1, true],
+      ["STOKE", false, 0, 1, true],
+      ["BANK", true, 1, -2, false],
+      ["STOKE", true, 1, 2, false],
     ]);
-    expect(contributionOptions(table.view("p2")).length).toBe(3);
+    expect(contributionOptions(table.view("p2")).map((o) => [o.command.card, o.woodCost, o.affordable])).toEqual([
+      ["TEND", 0, true],
+      ["BANK", 1, true],
+      ["STOKE", 1, true],
+    ]);
     expect(contributionOptions(viewOf(table.state, null))).toEqual([]);
   });
 

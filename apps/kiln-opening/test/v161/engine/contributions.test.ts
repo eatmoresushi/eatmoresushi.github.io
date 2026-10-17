@@ -1,5 +1,5 @@
 /**
- * Opening the Firing Phase and the Contribution window (L237, L253–263, L504, L638,
+ * Opening the Firing Phase and the Contribution window (L237, L253–263, L504, v1.6.2 L637,
  * L670–674, change 16; INT "No Contribution participants").
  */
 
@@ -281,7 +281,7 @@ describe("Base Heat (L263, L674)", () => {
   });
 });
 
-describe("Fuel Ledger (T12, L638)", () => {
+describe("Fuel Ledger (T12, v1.6.2 L637)", () => {
   function ledgerTable(wood: number): ReturnType<typeof openFiringTable> {
     return openFiringTable({
       players: [{ techs: ["T12"], resources: { wood } }, {}],
@@ -290,8 +290,32 @@ describe("Fuel Ledger (T12, L638)", () => {
     });
   }
 
-  it("Stoke + Fuel Ledger is +2 for 2 Wood; Bank + Fuel Ledger is −2 for 2 Wood; revealed together", () => {
-    const stoke = ledgerTable(2);
+  it("the owner's Bank and Stoke cost no Wood: ±1 for 0 Wood, even with 0 Wood", () => {
+    const stoke = ledgerTable(0);
+    expect(validateContribution(stoke.actorView("p1"), stoke.privateState, submitCommand("STOKE"))).toBeNull();
+    expect(validateContribution(stoke.actorView("p1"), stoke.privateState, submitCommand("BANK"))).toBeNull();
+    stoke.contribute("p1", "STOKE");
+    const events = stoke.contribute("p2", "TEND");
+    expect(eventsOfType(events, "CONTRIBUTIONS_REVEALED")[0]?.contributions["p1"]).toEqual({
+      card: "STOKE",
+      fuelLedger: false,
+      heat: 1,
+      woodPaid: 0,
+    });
+    // Nothing is paid, so no Wood changes hands for p1.
+    expect(eventsOfType(events, "RESOURCES_CHANGED").filter((event) => event.playerId === "p1" && event.wood !== 0)).toEqual([]);
+    expect(eventsOfType(events, "BASE_HEAT_DETERMINED")[0]?.baseHeat).toBe(3);
+    expect(stoke.player("p1").resources.wood).toBe(0);
+
+    const bank = ledgerTable(0);
+    bank.contribute("p1", "BANK");
+    const bankEvents = bank.contribute("p2", "TEND");
+    expect(eventsOfType(bankEvents, "CONTRIBUTIONS_REVEALED")[0]?.contributions["p1"]).toMatchObject({ heat: -1, woodPaid: 0 });
+    expect(eventsOfType(bankEvents, "BASE_HEAT_DETERMINED")[0]?.baseHeat).toBe(1);
+  });
+
+  it("committing 1 Wood makes Stoke +2 and Bank −2 for that 1 Wood; revealed together", () => {
+    const stoke = ledgerTable(1);
     stoke.contribute("p1", "STOKE", true);
     expect(stoke.privateState.submissions["p1"]).toEqual({ card: "STOKE", fuelLedger: true });
     const events = stoke.contribute("p2", "TEND");
@@ -299,29 +323,38 @@ describe("Fuel Ledger (T12, L638)", () => {
       card: "STOKE",
       fuelLedger: true,
       heat: 2,
-      woodPaid: 2,
+      woodPaid: 1,
     });
-    expect(eventsOfType(events, "RESOURCES_CHANGED")[0]).toMatchObject({ playerId: "p1", wood: -2, reason: "contribution" });
+    expect(eventsOfType(events, "RESOURCES_CHANGED")[0]).toMatchObject({ playerId: "p1", wood: -1, reason: "contribution" });
     expect(eventsOfType(events, "BASE_HEAT_DETERMINED")[0]?.baseHeat).toBe(4);
     expect(stoke.player("p1").resources.wood).toBe(0);
 
-    const bank = ledgerTable(2);
+    const bank = ledgerTable(1);
     bank.contribute("p1", "BANK", true);
     const bankEvents = bank.contribute("p2", "TEND");
-    expect(eventsOfType(bankEvents, "CONTRIBUTIONS_REVEALED")[0]?.contributions["p1"]).toMatchObject({ heat: -2, woodPaid: 2 });
+    expect(eventsOfType(bankEvents, "CONTRIBUTIONS_REVEALED")[0]?.contributions["p1"]).toMatchObject({ heat: -2, woodPaid: 1 });
     expect(eventsOfType(bankEvents, "BASE_HEAT_DETERMINED")[0]?.baseHeat).toBe(0);
   });
 
-  it("needs the Tech, a Bank or Stoke card, and both Wood", () => {
+  it("a non-owner still pays 1 Wood for Bank or Stoke (L256–258)", () => {
+    const table = ledgerTable(0);
+    table.contribute("p1", "TEND");
+    const events = table.contribute("p2", "STOKE");
+    expect(eventsOfType(events, "CONTRIBUTIONS_REVEALED")[0]?.contributions["p2"]).toMatchObject({ heat: 1, woodPaid: 1 });
+    expect(table.player("p2").resources.wood).toBe(1);
+  });
+
+  it("the commitment needs the Tech, a Bank or Stoke card, and 1 Wood", () => {
     const noTech = openFiringTable(threeParticipants());
     expectError(validateContribution(noTech.actorView("p1"), noTech.privateState, submitCommand("STOKE", true)), "TECH_NOT_OWNED");
     const tend = ledgerTable(5);
     expectError(validateContribution(tend.actorView("p1"), tend.privateState, submitCommand("TEND", true)), "INVALID_CHOICE");
-    const poor = ledgerTable(1);
+    const poor = ledgerTable(0);
     const error = validateContribution(poor.actorView("p1"), poor.privateState, submitCommand("STOKE", true));
     expectError(error, "INVALID_CONTRIBUTION");
-    expect(error?.details).toMatchObject({ card: "STOKE", fuelLedger: true, needed: 2, have: 1 });
+    expect(error?.details).toMatchObject({ card: "STOKE", fuelLedger: true, needed: 1, have: 0 });
     expect(validateContribution(poor.actorView("p1"), poor.privateState, submitCommand("STOKE"))).toBeNull();
+    expect(legalContributions(poor.view("p1"))).toEqual([submitCommand("TEND"), submitCommand("BANK"), submitCommand("STOKE")]);
   });
 });
 

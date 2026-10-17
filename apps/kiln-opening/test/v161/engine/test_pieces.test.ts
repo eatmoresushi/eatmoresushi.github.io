@@ -1,7 +1,9 @@
 /**
- * Test Pieces (T13, L639, L649, L675; INT "Test Pieces"): after Base Heat and before the
- * Heat markers, in First Player order; needs a ceramic in this firing (Imperial counts) and
- * 1 Wood; a private peek, then a public, optional bury to the bottom of the Fire deck.
+ * Test Pieces (T13, v1.6.2 L638, L648, L675; INT "Test Pieces"; owner ruling R15): after Base
+ * Heat and before the Heat markers, in First Player order; needs a ceramic in this firing
+ * (Imperial counts) and 1 Wood; a private peek, then a public, optional bury to the bottom of
+ * the Fire deck. A buried card is drawn last: when only buried cards are left, the open discard
+ * is shuffled and placed above them (R15).
  */
 
 import { describe, expect, it } from "vitest";
@@ -65,7 +67,7 @@ describe("eligibility (L639, INT)", () => {
   });
 });
 
-describe("the private peek and the public bury (L639, editorial L649)", () => {
+describe("the private peek and the public bury (v1.6.2 L638, L648, R15)", () => {
   it("pays 1 Wood, uses the Tech and shows the top card to its owner only", () => {
     const table = openFiringTable(spec());
     tendAll(table);
@@ -106,7 +108,43 @@ describe("the private peek and the public bury (L639, editorial L649)", () => {
     // No Heat-marker actor: the Fire card is revealed in the same command (L677).
     expect(eventsOfType(events, "FIRE_REVEALED")[0]?.modifier).toBe(-1);
     expect(table.state.hidden.fireDeck.at(-1)).toBe(2);
+    // The bury is public, so is the number of buried cards (R15).
+    expect(table.state.hidden.fireBuried).toBe(1);
+    expect(projectPublicState(table.state).counts.fireBuried).toBe(1);
     expect(table.state.lastFiring?.testPieces ?? table.state.firing?.testPieces).toEqual([{ playerId: "p1", peeked: true, buried: true }]);
+  });
+
+  it("R15: burying the deck's only card reshuffles the discard above it at the reveal; the buried card is drawn last", () => {
+    const table = openFiringTable(spec({ fireDeck: [2] }), { seed: 13 });
+    tendAll(table);
+    const discard = [...table.state.fireDiscard];
+    expect(discard).toHaveLength(11);
+    table.act("p1", { type: "TEST_PIECES_DECIDE", peek: true });
+    const events = table.act("p1", { type: "TEST_PIECES_BURY", bury: true });
+    const shuffled = shuffle<FireModifier>(discard, new SeededRandom(13));
+    expect(eventsOfType(events, "FIRE_DECK_RESHUFFLED")).toEqual([{ type: "FIRE_DECK_RESHUFFLED", cardCount: 11, buriedBelow: 1 }]);
+    // The reveal draws from the reshuffled discard, not the buried +2 (without R15 the bury
+    // would do nothing).
+    expect(eventsOfType(events, "FIRE_REVEALED")[0]?.modifier).toBe(shuffled[0]);
+    const deck = table.state.hidden.fireDeck;
+    expect(deck.at(-1)).toBe(2);
+    expect(deck).toEqual([...shuffled.slice(1), 2]);
+    expect(table.state.hidden.fireBuried).toBe(1);
+  });
+
+  it("R15: a peek at a deck of only buried cards reshuffles the discard on top first, and sees the reveal's card", () => {
+    const table = openFiringTable(spec({ fireDeck: [-2], fireBuried: 1 }), { seed: 5 });
+    tendAll(table);
+    const discard = [...table.state.fireDiscard];
+    const events = table.act("p1", { type: "TEST_PIECES_DECIDE", peek: true });
+    expect(eventsOfType(events, "FIRE_DECK_RESHUFFLED")).toEqual([{ type: "FIRE_DECK_RESHUFFLED", cardCount: 11, buriedBelow: 1 }]);
+    const peeked = eventsOfType(events, "TEST_PIECES_PEEKED")[0]?.secret.modifier;
+    expect(peeked).toBe(shuffle<FireModifier>(discard, new SeededRandom(5))[0]);
+    const reveal = table.act("p1", { type: "TEST_PIECES_BURY", bury: false });
+    expect(eventsOfType(reveal, "FIRE_REVEALED")[0]?.modifier).toBe(peeked);
+    expect(eventsOfType(reveal, "FIRE_DECK_RESHUFFLED")).toEqual([]);
+    expect(table.state.hidden.fireDeck.at(-1)).toBe(-2);
+    expect(table.state.hidden.fireBuried).toBe(1);
   });
 
   it("leaving the card on top reveals the peeked card", () => {
@@ -131,13 +169,13 @@ describe("the private peek and the public bury (L639, editorial L649)", () => {
     expect(table.state.lastFiring?.testPieces ?? table.state.firing?.testPieces).toEqual([{ playerId: "p1", peeked: false, buried: false }]);
   });
 
-  it("peeking at an empty deck reshuffles the open discard first (L512), and the reveal draws that card", () => {
+  it("peeking at an empty deck reshuffles the open discard first (L511), and the reveal draws that card", () => {
     const table = openFiringTable(spec({ fireDeck: [] }), { seed: 11 });
     tendAll(table);
     const discard = [...table.state.fireDiscard];
     expect(discard).toHaveLength(12);
     const events = table.act("p1", { type: "TEST_PIECES_DECIDE", peek: true });
-    expect(eventsOfType(events, "FIRE_DECK_RESHUFFLED")).toEqual([{ type: "FIRE_DECK_RESHUFFLED", cardCount: 12 }]);
+    expect(eventsOfType(events, "FIRE_DECK_RESHUFFLED")).toEqual([{ type: "FIRE_DECK_RESHUFFLED", cardCount: 12, buriedBelow: 0 }]);
     const peeked = eventsOfType(events, "TEST_PIECES_PEEKED")[0]?.secret.modifier;
     const reveal = table.act("p1", { type: "TEST_PIECES_BURY", bury: false });
     expect(eventsOfType(reveal, "FIRE_REVEALED")[0]?.modifier).toBe(peeked);

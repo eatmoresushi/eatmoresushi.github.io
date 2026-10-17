@@ -268,7 +268,8 @@ describe("firingStageView and firingRecapView (§5 gaps 7, 18; D3, D4)", () => {
     table.contribute("p2", "BANK");
     const stage = firingStageView(table.view("p2"));
     expect(stage?.contributions).toEqual([
-      { playerId: "p1", revealed: { card: "STOKE", heat: 2, woodPaid: 2 } },
+      // Fuel Ledger (v1.6.2 L637): Stoke costs its owner nothing; the commitment 1 Wood.
+      { playerId: "p1", revealed: { card: "STOKE", heat: 2, woodPaid: 1 } },
       { playerId: "p2", revealed: { card: "BANK", heat: -1, woodPaid: 1 } },
     ]);
     expect(stage?.submittedPlayerIds).toEqual(["p1", "p2"]);

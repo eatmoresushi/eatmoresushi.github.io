@@ -97,7 +97,7 @@ function completeEarlier(state: GameState, playerId: PlayerId, orderIds: readonl
       orderId,
       ceramicIds: finished.map((c) => c.id),
       round,
-      via: "order_phase",
+      canalBargeCoins: 0,
       vp: order.vp,
       coins: order.coins,
       printedCrowns: 0,

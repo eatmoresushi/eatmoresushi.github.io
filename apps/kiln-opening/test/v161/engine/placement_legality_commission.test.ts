@@ -157,12 +157,13 @@ describe("shared placement checks at the Commission Market (L140, L136)", () => 
     const placed: StateSpec = { placements: [{ player: "p1", worker: 1, locationId: "canal_wharf" }] };
     expect(legality(placed, "p1:apprentice:1")?.code).toBe("WORKER_UNAVAILABLE");
 
-    const t = new LocalTable(buildState({ players: [{ techs: ["T23"] }, {}] }), { flow: "halt", pass: ["worker_action_done"] });
+    const t = new LocalTable(buildState({ players: [{ techs: ["T10"] }, {}] }), { flow: "halt", pass: ["worker_action_done"] });
     t.act("p1", place("p1:apprentice:1"));
     // During the reservation step no other placement is possible.
     t.expectRuleError("p1", place("p1:shifu"), "WORKER_ACTION_ALREADY_TAKEN");
     t.act("p1", { type: "COMMISSION_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 0, orderId: "O01" }] });
-    // Canal Barge keeps the after-action window open; a second placement is refused.
+    // The Colour Samples swap (ready, with the Order just reserved in hand) keeps the after-action
+    // window open; a second placement is refused.
     expect(t.state.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "after_action" } });
     t.expectRuleError("p1", place("p1:shifu"), "WORKER_ACTION_ALREADY_TAKEN");
     t.expectRuleError("p2", place("p2:shifu"), "NOT_YOUR_DECISION");

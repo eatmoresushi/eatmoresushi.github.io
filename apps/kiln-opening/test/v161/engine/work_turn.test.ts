@@ -185,8 +185,10 @@ describe("the after-action window (DESIGN §3.2 step 3, §4.5)", () => {
   });
 
   it("ignores what the hand holds: a Main or a Starting Order, the public result is the same (DESIGN §4.5)", () => {
-    const main = table({ players: [{ techs: ["T10"], hand: ["O40"] }, {}] });
-    const starting = table({ players: [{ techs: ["T10"], hand: ["S02"] }, {}] });
+    // The same public counts in both tables (hands, Main deck, box): only which seat holds the
+    // Main Order and which the Starting Order differs, and p2 sees neither hand.
+    const main = table({ players: [{ techs: ["T10"], hand: ["O40"] }, {}, { hand: ["S02"] }] });
+    const starting = table({ players: [{ techs: ["T10"], hand: ["S02"] }, {}, { hand: ["O40"] }] });
     main.act("p1", wharf(main.state, "p1"));
     starting.act("p1", wharf(starting.state, "p1"));
     expect(main.state.phase).toMatchObject({ step: { kind: "after_action" } });

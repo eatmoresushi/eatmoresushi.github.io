@@ -272,7 +272,10 @@ export function richStartState(seed: number, playerCount: PlayerCount): GameStat
       ceramics.push({ owner: id, stage: "shaped", shape: pickOf(shapes, rng), decoration: pickOf(DECORATIONS, rng) });
     }
     for (let n = 0; n < 3; n += 1) {
-      const quality = pickOf(["standard", "standard", "fine", "masterpiece", "flawed"] as const, rng);
+      const drawn = pickOf(["standard", "standard", "fine", "masterpiece", "flawed"] as const, rng);
+      // Protective Saggars' owner fires nothing Flawed (v1.6.2 L636): its Finished ceramics of
+      // this round are Standard instead (the same draws, so the seed's other content is kept).
+      const quality = drawn === "flawed" && seatTechs.includes("T11") ? "standard" : drawn;
       const crackle = quality === "fine" && rng.nextInt(3) === 0;
       const shape = pickOf(SHAPES, rng);
       const decoration = pickOf(DECORATIONS, rng);

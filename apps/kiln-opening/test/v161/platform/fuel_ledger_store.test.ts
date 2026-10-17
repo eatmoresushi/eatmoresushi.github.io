@@ -47,7 +47,8 @@ describe("Fuel Ledger through the store layers", () => {
     const revealed = await fuelLedgerReveal(jsonbKeyOrder);
     expect(revealed?.contributions).toEqual({
       P1: { card: "BANK", fuelLedger: false, heat: -1, woodPaid: 1 },
-      P2: { card: "STOKE", fuelLedger: true, heat: 2, woodPaid: 2 },
+      // Fuel Ledger (v1.6.2 L637): the owner's Stoke costs no Wood, the commitment 1.
+      P2: { card: "STOKE", fuelLedger: true, heat: 2, woodPaid: 1 },
     });
   });
 
