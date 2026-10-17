@@ -10,8 +10,8 @@ Target session length for the physical design is approximately 90–120 minutes.
 
 Priority order:
 
-1. `docs/KILN_OPENING_v1.6.1_EN_SOURCE.md` — the V1.6.1 Player Rulebook, designated by the owner on 2026-10-14 as the **only** mechanical source of truth.
-2. `docs/RULEBOOK_AUDIT_V1.6.1.md` — source checksum, owner amendments (A1), owner rulings R1–R13 and B1–B3, editorial corrections and recorded interpretations.
+1. `docs/KILN_OPENING_v1.6.2_EN_SOURCE.md` — the V1.6.2 Player Rulebook, designated by the owner on 2026-10-17 as the **only** mechanical source of truth. It replaces V1.6.1 (`docs/KILN_OPENING_v1.6.1_EN_SOURCE.md`, now history). The Chinese edition `docs/KILN_OPENING_v1.6.2_ZH.md` and the component text `docs/KILN_OPENING_v1.6.2_COMPONENT_TEXT.md` are the owner's matching files.
+2. `docs/RULEBOOK_AUDIT_V1.6.2.md` — source checksums, owner amendments (A1, A2), owner rulings (R1–R14, B1–B3, as still valid under V1.6.2), editorial corrections and recorded interpretations. `docs/RULEBOOK_AUDIT_V1.6.1.md` is history.
 3. `docs/GAME_RULES.md` — source index.
 4. `data/*.json` — derived content.
 5. `docs/IMPLEMENTATION_DECISIONS.md` — digital interpretations.
@@ -20,7 +20,13 @@ Priority order:
 8. `docs/GLOSSARY_ZH_V1.6.1.md` — fixed Simplified Chinese terminology.
 9. `assets/current_v04/` — visual reference only.
 
-V1.6.1 is a rework of V1.2.7 and supersedes V1.4, every V1.4 owner amendment and the earlier V1.6 draft. Older sources and audits are history, not active rules.
+V1.6.2 revises V1.6.1, which reworked V1.2.7 and superseded V1.4, every V1.4 owner amendment and the earlier V1.6 draft. Older sources and audits are history, not active rules.
+
+V1.6.2 changes from V1.6.1 (rulebook changes 21–22):
+
+- **Commission Market** gives no resource and has no blind reservation. An Apprentice privately looks at the top 2 Main Orders and reserves 1 from the display or those 2; the Shifu looks at the top 3 and reserves up to 2 (at least 1) from the display and those 3. Revealed cards not reserved are discarded.
+- **Materials Yard** Shifu gains 6 Clay/Wood (no 1-Coin option). **Guild Hall** Shifu pays 2 Coins less. **Canal Wharf** Shifu gains 4 Coins and takes the top Main Order card unseen into hand.
+- **Techs:** Colour Samples adds a once-per-round swap before or after a worker action (discard 1 held Order, privately look at the top 2 Main Orders, reserve 1; the other is discarded — owner ruling R14, 2026-10-17). Canal Barge: once per round, when you complete an Order, gain 2 Coins (it no longer completes Orders). Protective Saggars (cost 3): your ceramics are never Flawed (Heat Difference 3+ counts as Standard), and once per round 1 of your Standard ceramics from this firing becomes Fine. Fuel Ledger (cost 2): your Bank and Stoke cost no Wood; committing 1 Wood still makes them −2/+2. Second Firing reveals 2 extra Fire cards and uses the one you choose. Senior Apprentice and Kiln Tending cost 3.
 
 Key V1.6.1 facts that differ from V1.4:
 
