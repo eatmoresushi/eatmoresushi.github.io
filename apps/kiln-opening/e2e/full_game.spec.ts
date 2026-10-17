@@ -184,11 +184,13 @@ for (const game of CASES) {
           await target.click();
           continue;
         }
-        // Confirm and the alternative are pressed as a keyboard user would find them focused
-        // (WebKit does not focus a button on click), so the focus checks mean the same everywhere.
+        // Confirm and the alternative are pressed as a keyboard user would find them focused, so the
+        // focus checks mean the same everywhere. Safari (WebKit) does not focus a button on click and
+        // its mousedown clears focus to <body>, so there the focused button is pressed with Enter.
         await target.focus();
         if (pick.kind === "confirm") await watchConfirmFocus(page, pick.selector);
-        await target.click();
+        if (page.context().browser()?.browserType().name() === "webkit") await target.press("Enter");
+        else await target.click();
         // A command was sent: wait for the answer (a new revision, or the form unchanged on a rejection).
         await expect.poll(() => revisionOf(page), { timeout: 60_000, message: `${pick.window}: no answer to ${pick.describe}` }).toBeGreaterThan(before);
         windows.set(pick.window, (windows.get(pick.window) ?? 0) + 1);
