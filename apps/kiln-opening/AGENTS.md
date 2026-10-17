@@ -11,7 +11,7 @@ Target session length for the physical design is approximately 90–120 minutes.
 Priority order:
 
 1. `docs/KILN_OPENING_v1.6.2_EN_SOURCE.md` — the V1.6.2 Player Rulebook, designated by the owner on 2026-10-17 as the **only** mechanical source of truth. It replaces V1.6.1 (`docs/KILN_OPENING_v1.6.1_EN_SOURCE.md`, now history). The Chinese edition `docs/KILN_OPENING_v1.6.2_ZH.md` and the component text `docs/KILN_OPENING_v1.6.2_COMPONENT_TEXT.md` are the owner's matching files.
-2. `docs/RULEBOOK_AUDIT_V1.6.2.md` — source checksums, owner amendments (A1, A2), owner rulings (R1–R14, B1–B3, as still valid under V1.6.2), editorial corrections and recorded interpretations. `docs/RULEBOOK_AUDIT_V1.6.1.md` is history.
+2. `docs/RULEBOOK_AUDIT_V1.6.2.md` — source checksums, owner amendments (A1, A2), owner rulings (R1–R18, B1–B3, as still valid under V1.6.2), editorial corrections and recorded interpretations. `docs/RULEBOOK_AUDIT_V1.6.1.md` is history.
 3. `docs/GAME_RULES.md` — source index.
 4. `data/*.json` — derived content.
 5. `docs/IMPLEMENTATION_DECISIONS.md` — digital interpretations.
@@ -27,7 +27,7 @@ V1.6.2 changes from V1.6.1 (rulebook changes 21–22):
 - **Commission Market** gives no resource and has no blind reservation. An Apprentice privately looks at the top 2 Main Orders and reserves 1 from the display or those 2; the Shifu looks at the top 3 and reserves up to 2 (at least 1) from the display and those 3. Revealed cards not reserved are discarded.
 - **Materials Yard** Shifu gains 6 Clay/Wood (no 1-Coin option). **Guild Hall** Shifu takes up to 2 Techs (1 or 2) from different disciplines, face-up or revealed, each at printed cost (no Shifu discount); a placement there is legal only if you can afford 1 face-up Tech from a discipline you do not own. A taken Tech's display position stays empty until the taking player's turn ends, then each discipline refills to 2 (owner revision, 2026-10-17). **Canal Wharf** Shifu gains 4 Coins and takes the top Main Order card unseen into hand.
 - **Techs:** Colour Samples adds a once-per-round swap before or after a worker action (discard 1 held Order, privately look at the top 2 Main Orders, reserve 1; the other is discarded — owner ruling R14, 2026-10-17). Canal Barge: once per round, when you complete an Order, gain 2 Coins (it no longer completes Orders). Protective Saggars (cost 3): your ceramics are never Flawed (Heat Difference 3+ counts as Standard), and once per round 1 of your Standard ceramics from this firing becomes Fine. Fuel Ledger (cost 2): your Bank and Stoke cost no Wood; committing 1 Wood still makes them −2/+2. Second Firing reveals 2 extra Fire cards and uses the one you choose. Senior Apprentice and Kiln Tending cost 3.
-- **Fire deck:** with Second Firing taking 2 cards, the 12-card deck can now run out mid-game. The discard is then shuffled and placed on top, and a card buried by Test Pieces is drawn last (L648; provisional default P4 says when a deck of buried cards counts as run out).
+- **Fire deck:** with Second Firing taking 2 cards, the 12-card deck can now run out mid-game. The discard is then shuffled and placed on top, and a card buried by Test Pieces is drawn last (L648; owner ruling R15: a deck holding only buried cards counts as run out).
 - **Orders are completed only in the Order Phase.** Ru, Guan, Tribute Ware, Crackle wildcards and Canal Barge's 2 Coins trigger there; ruling R6 is obsolete.
 
 `docs/ENGINE_V1.6.2_DELTA.md` lists what each change means for the engine, data and tests; `docs/RULEBOOK_AUDIT_V1.6.2.md` re-checks every ruling and records the open questions.
@@ -89,7 +89,7 @@ Removed by V1.6.2 (rulebook changes 21–22):
 - a resource (Clay, Wood or Coin) gained at the Commission Market, after each reservation or otherwise
 - blind Commission Market reservations (the top card taken unseen); the Shifu's optional top-3 selection replacing one of two separate reservations; a Commission Market placement that reserves without first looking at the top 2 (Apprentice) or 3 (Shifu)
 - the Materials Yard Shifu's 4 resources and its 1-Coin +1 Clay +1 Wood option (the Shifu gains 6)
-- the Guild Hall Shifu's 1-Coin discount (it is 2) and a Canal Wharf Shifu that gains only Coins (it also takes the top Main Order)
+- any Guild Hall Shifu discount (the Shifu takes 1–2 Techs at printed cost), a Shifu limited to 1 Tech, an immediate Tech display refill after a take (positions refill when the taker's turn ends), and a Canal Wharf Shifu that gains only Coins (it also takes the top Main Order)
 - Canal Barge completing Orders, its before/after-action window, and any Order completion outside the Order Phase (ruling R6)
 - Protective Saggars' Wood cost and its Flawed → Standard upgrade (its ceramics are never Flawed instead); Ge following Saggars' upgrade on the same ceramic
 - Fuel Ledger without free Bank and Stoke (its committed Wood is the only Wood those cards cost)
@@ -181,7 +181,7 @@ At minimum:
     - no resource, no blind reservation;
     - deferred refill after the turn (once for two face-up reservations);
     - B1 looks: as many as remain, a reshuffle only at the start of a look, a 0-card look with a display choice
-  - Guild Hall: private inspection, chosen bottom order, the Shifu's 2-Coin discount (minimum 0) in prices and placement legality
+  - Guild Hall: private inspection, chosen bottom order, the Shifu taking 1 or 2 Techs from different disciplines (face-up or revealed) at printed cost, the end-of-turn display refill, placement legality (an affordable face-up Tech from a discipline you do not own)
   - Canal Wharf: Apprentice 2 Coins; Shifu 4 Coins and the top Main Order into the hand unseen (a reshuffle when the deck is empty, no card when both piles are empty, B1)
   - Magistrate's Hall: 4/3 Coins, Recognition 0–2 only, never to 4
 - **Shapes and Kilns**
@@ -197,7 +197,7 @@ At minimum:
     - the Colour Samples once-per-round swap: before or after a worker action; discard 1 held Order (Main face down to the discard, Starting to the box); private top-2 look and 1 reservation, the other discarded (R14); B1 when the supply is short; either order with Imperial Priority; usable the round it is acquired;
     - Kiln Master, Inverted Firing stacks, Setter's Mark reservation;
     - Canal Barge: 2 Coins on the first Order completed each round, in the Order Phase only
-  - the printed V1.6.2 costs (Senior Apprentice 3, Kiln Tending 3, Protective Saggars 3, Fuel Ledger 2), the 3-total / 1-per-discipline limit, discipline refill and partial display, the Guild Hall Shifu discount
+  - the printed V1.6.2 costs (Senior Apprentice 3, Kiln Tending 3, Protective Saggars 3, Fuel Ledger 2), the 3-total / 1-per-discipline limit, the end-of-turn discipline refill and partial display
   - 1 VP each recorded in the score ledger the moment the Tech is gained (owner amendment A1: Apprentice buy, Shifu inspected or face-up take, Colour Samples itself), shown by the score preview at once, and listed once — not re-added — in final scoring
   - optional abilities (R4): declining keeps the once-per-round use (the Colour Samples swap, Saggars' Standard → Fine step, Second Firing); Canal Barge and Saggars' floor are automatic
 - **Firing**
@@ -207,7 +207,7 @@ At minimum:
   - Base Heat clamp 0–5
   - Test Pieces after Base Heat (private peek, public bury)
   - Heat-marker step in First Player order (+1/−1/return); Kiln Master
-  - Fire deck 1/3/4/3/1 and open discard; when the deck runs out, the shuffled discard goes on top and a buried Test Pieces card is drawn last (L648, P4), including a run-out caused by Second Firing
+  - Fire deck 1/3/4/3/1 and open discard; when the deck runs out, the shuffled discard goes on top and a buried Test Pieces card is drawn last (L648, R15), including a run-out caused by Second Firing
   - Actual Heat for Shared Kiln (zone or Kiln Furniture modifier + marker) and court-fired Imperial Kiln ceramics
   - Quality assignment, including Protective Saggars: the owner's Shared and Imperial ceramics are never Flawed (Heat Difference 3+ counts as Standard)
   - after-Quality abilities in the owner's chosen order: Saggars (1 Standard → Fine once per round, no Wood, never Masterpiece), Second Firing (2 extra cards revealed, 1 chosen, both discarded), Ge
