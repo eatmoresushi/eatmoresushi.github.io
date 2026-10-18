@@ -168,13 +168,36 @@ function recordCommands(page: Page): Map<string, number> {
 /** D3/D4 vocabulary that must never be visible (rules panels are closed unless opened). */
 const BANNED = /\b(?:odds|chance|probability|ladder|preview|expected)\b|cards (?:left|remaining)|left in the deck|概率|几率|余张|预估|预览|剩余火牌|牌堆剩余|Fire deck\W{0,3}\d|窑火牌堆(?:余|剩余?|共|还有|[：:（(]|\s)*\d/i;
 
-function collectErrors(page: Page): string[] {
-  const errors: string[] = [];
-  page.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
+/**
+ * WebKit logs a console error for a fetch that a navigation cancels, even when the page
+ * catches the rejection, and Playwright's WebKit driver reports that console error as a
+ * `pageerror`. The session's poll is caught (sessionStore `runPoll`), so this one message is
+ * expected only while the spec itself reloads the page; anywhere else it still fails.
+ */
+const RELOAD_CANCELLED_FETCH = /^Fetch API cannot load \S+ due to access control checks\.?$/;
+
+interface ErrorLog {
+  errors: string[];
+  /** True while the spec's own `page.reload()` is in progress. */
+  reloading: boolean;
+  /** Cancelled-fetch messages seen during the spec's reload (annotated, not failures). */
+  cancelledByReload: number;
+}
+
+function collectErrors(page: Page): ErrorLog {
+  const log: ErrorLog = { errors: [], reloading: false, cancelledByReload: 0 };
+  const record = (kind: string, text: string): void => {
+    if (log.reloading && RELOAD_CANCELLED_FETCH.test(text)) {
+      log.cancelledByReload += 1;
+      return;
+    }
+    log.errors.push(`${kind}: ${text}`);
+  };
+  page.on("pageerror", (error) => record("pageerror", error.message));
   page.on("console", (message) => {
-    if (message.type() === "error") errors.push(`console: ${message.text()}`);
+    if (message.type() === "error") record("console", message.text());
   });
-  return errors;
+  return log;
 }
 
 async function secretIds(request: APIRequestContext, roomCode: string): Promise<string[]> {
@@ -260,7 +283,7 @@ for (const game of CASES) {
     test("plays to the final results through the UI", async ({ page, request }) => {
       test.setTimeout(1_800_000);
       await resetBackend(request, { seed: game.seed, policy: game.policy });
-      const errors = collectErrors(page);
+      const errorLog = collectErrors(page);
       const sent = recordCommands(page);
 
       // Home: the language through the UI, then a room.
@@ -337,8 +360,10 @@ for (const game of CASES) {
           reloaded = true;
           const revision = await revisionOf(page);
           const own = (await page.locator(".own").first().innerText()).split("\n")[0] ?? "Lin";
+          errorLog.reloading = true;
           await page.reload();
           await expect.poll(() => revisionOf(page), { timeout: 30_000 }).toBe(revision);
+          errorLog.reloading = false;
           await expect(page.locator(".own").first()).toContainText(own);
           continue;
         }
@@ -410,7 +435,8 @@ for (const game of CASES) {
             .join(", "),
         });
       }
-      expect(errors).toEqual([]);
+      if (errorLog.cancelledByReload > 0) test.info().annotations.push({ type: "reload", description: `${errorLog.cancelledByReload} fetch(es) cancelled by the spec's own reload (WebKit console noise)` });
+      expect(errorLog.errors).toEqual([]);
       test.info().annotations.push({ type: "windows", description: [...windows.entries()].map(([window, n]) => `${window}×${n}`).join(", ") });
     });
   });
