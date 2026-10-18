@@ -19,10 +19,12 @@
  *    overflow, all text ≥ 2.5 mm inside the cut) and every sheet (nothing printed below its
  *    used rows), and publishes `window.__PRINT_REPORT`.
  * 6. Card backs: paints the medallion's faint kiln drawing once (see `medalArt`) and checks
- *    every back sheet: it follows its front, has no cut lines and one continuous field reaching
- *    at least `minBleed` mm beyond its outer cuts; every back sits behind its own front card after
- *    a long-edge flip (x → 210 − x) and in the same deck; every mark on it, strokes included,
- *    stays at least `safe` mm inside each cut.
+ *    every back sheet: it follows its front, has no cut lines, and draws everything in one
+ *    page-sized SVG whose user unit is exactly 1 mm on a whole-pixel box (nothing snapped); one
+ *    continuous field reaches at least `minBleed` mm beyond its outer cuts; after a flip on the
+ *    long edge (x → 210 − x) and after one on the short edge (y → 297 − y) every front card,
+ *    placed by its cut lines, has exactly one back of its own deck on it; every mark on a back,
+ *    strokes included, stays at least `safe` mm inside each cut.
  */
 (async () => {
   "use strict";
@@ -720,7 +722,7 @@
    */
   function checkSheet(sheet) {
     const say = (message) => fail(`page ${sheet.dataset.sheet}: ${message}`);
-    if (sheet.querySelector(".back-card, .back-field") !== null) say("front sheet holds back parts");
+    if (sheet.querySelector(".back-page, .back-cell") !== null) say("front sheet holds back parts");
     const inkBottom = Number(sheet.dataset.inkBottom);
     const rows = Number(sheet.dataset.rows);
     const cards = sheet.querySelectorAll(".card").length;
@@ -745,7 +747,8 @@
    * (cards.css --ink-2) on the fronts' parchment (--paper), fading out towards the disc's rim.
    * The ink follows the picture's darkness against its own paper (the 92nd-percentile
    * luminance), so the illustration's ground prints as plain parchment. One opaque JPEG the size
-   * of the disc, painted once; every back shows it, clipped round by its border radius.
+   * of the disc, painted once into the shared `#medal-art` image (clipped round); every back
+   * shows it through a `<use>`.
    */
   async function medalArt() {
     const { art, discR } = input.back;
@@ -803,21 +806,22 @@
     }
     octx.putImageData(result, 0, 0);
     const url = out.toDataURL("image/jpeg", 0.92);
-    const images = [...document.querySelectorAll(".back-card .medal-art")];
-    for (const image of images) image.src = url;
-    await Promise.all(images.map((image) => image.decode()));
-    return `medallion drawing: one opaque ${n} × ${n} px JPEG (${ART_PX_PER_MM} px/mm), sepia ink up to ${Math.round(darkest * 100)} % on parchment, painted once and shown by ${images.length} backs`;
+    const image = document.getElementById("medal-art");
+    if (image === null) throw new Error("medallion drawing: no #medal-art image");
+    await new Promise((resolve, reject) => {
+      image.addEventListener("load", resolve, { once: true });
+      image.addEventListener("error", () => reject(new Error("medallion drawing: the image did not load")), { once: true });
+      image.setAttribute("href", url);
+    });
+    const uses = document.querySelectorAll(".back-cell .medal-art").length;
+    return `medallion drawing: one opaque ${n} × ${n} px JPEG (${ART_PX_PER_MM} px/mm), sepia ink up to ${Math.round(darkest * 100)} % on parchment, painted once and shown by ${uses} backs`;
   }
 
-  /**
-   * Chromium lays boxes out in 1/64 px (0.004 mm) and snaps the front's grid tracks and the
-   * backs' absolute positions separately, so a back may land a few such units off its front.
-   */
+  /** Chromium lays boxes out in 1/64 px (0.004 mm); the back's SVG geometry is exact. */
   const FLIP_TOLERANCE_MM = 0.02;
 
   /** An element's inked box in CSS px: its geometry, grown by half its stroke (a square cap by √2 · half). */
   function inkedRect(element) {
-    if (element instanceof HTMLElement && element.classList.contains("bt")) return textRect(element);
     const rect = element.getBoundingClientRect();
     if (!(element instanceof SVGGraphicsElement) || element instanceof SVGTextElement) return rect;
     const style = getComputedStyle(element);
@@ -829,12 +833,31 @@
   }
 
   /**
-   * Every back sheet: it follows its front; no cut line or front part; one continuous field at
-   * least `minBleed` mm beyond the outer cuts; every back on its own front card after a long-edge
-   * flip; every mark at least `safe` mm inside each cut. Returns the summary line.
+   * The cut lines of a front sheet, mm from its top-left: the x of every vertical cut and the y
+   * of every horizontal cut, read from its cut-line SVG (exact geometry, unlike the snapped boxes).
+   */
+  function frontCuts(front, origin) {
+    const xs = new Set();
+    const ys = new Set();
+    for (const line of front.querySelectorAll(".cuts line")) {
+      const rect = line.getBoundingClientRect();
+      const round = (value) => Math.round(value * 1000) / 1000;
+      if (rect.width < rect.height) xs.add(round((rect.left + rect.right) / 2 / MM - origin.left / MM));
+      else ys.add(round((rect.top + rect.bottom) / 2 / MM - origin.top / MM));
+    }
+    const sorted = (set) => [...set].sort((a, b) => a - b);
+    return { xs: sorted(xs), ys: sorted(ys) };
+  }
+
+  /**
+   * Every back sheet: it follows its front; no cut line or front part; one page SVG, exactly
+   * 1 mm per unit on a whole-pixel box; one continuous field at least `minBleed` mm beyond the
+   * outer cuts on both sides of the sheet; after a long-edge and after a short-edge flip, every
+   * front card (placed by its cut lines) has exactly one back of its deck on it; every mark at
+   * least `safe` mm inside each cut. Returns the summary line.
    */
   function checkBacks() {
-    const { safe, minBleed, pageW } = input.back;
+    const { safe, minBleed, pageW, pageH } = input.back;
     const fronts = [...document.querySelectorAll(".sheet.front")];
     const backs = [...document.querySelectorAll(".sheet.back")];
     if (backs.length !== fronts.length) fail(`${backs.length} back sheets for ${fronts.length} front sheets`);
@@ -844,11 +867,18 @@
       top: (rect.top - origin.top) / MM,
       bottom: (rect.bottom - origin.top) / MM,
     });
+    const flips = {
+      long: (r) => ({ left: pageW - r.right, right: pageW - r.left, top: r.top, bottom: r.bottom }),
+      short: (r) => ({ left: r.left, right: r.right, top: pageH - r.bottom, bottom: pageH - r.top }),
+    };
+    const off = (a, b) => Math.max(Math.abs(a.left - b.left), Math.abs(a.right - b.right), Math.abs(a.top - b.top), Math.abs(a.bottom - b.bottom));
     let worstFlip = 0;
+    let worstUnit = 0;
     let nearestMark = Infinity;
     let leastBleed = Infinity;
     let cells = 0;
     let marks = 0;
+    let placed = 0;
     for (const back of backs) {
       const say = (message) => fail(`back of page ${back.dataset.sheet}: ${message}`);
       const front = document.querySelector(`.sheet.front[data-sheet="${back.dataset.sheet}"]`);
@@ -860,54 +890,92 @@
       if (back.querySelector(".cuts, .bleed, .grid, .card") !== null) say("carries cut lines or front parts");
       const sheetBox = back.getBoundingClientRect();
       const frontBox = front.getBoundingClientRect();
-      const fields = back.querySelectorAll(".back-field .field");
+      const svgs = back.querySelectorAll("svg");
+      if (svgs.length !== 1 || !svgs[0].classList.contains("back-page")) {
+        say(`draws in ${svgs.length} SVGs, not one page SVG`);
+        continue;
+      }
+      // The page SVG: a whole-pixel box at the sheet's corner, 1 user unit = 1 mm exactly.
+      const svg = svgs[0];
+      const svgBox = svg.getBoundingClientRect();
+      const ctm = svg.getScreenCTM();
+      const unit = Math.max(Math.abs(ctm.a / MM - 1), Math.abs(ctm.d / MM - 1), Math.abs(ctm.b), Math.abs(ctm.c));
+      worstUnit = Math.max(worstUnit, unit);
+      if (unit > 1e-6) say(`its SVG unit is not 1 mm (CTM ${ctm.a}, ${ctm.d})`);
+      if (svgBox.left !== sheetBox.left || svgBox.top !== sheetBox.top || !Number.isInteger(svgBox.width) || !Number.isInteger(svgBox.height)) {
+        say(`its SVG box ${svgBox.width} × ${svgBox.height} px at (${svgBox.left - sheetBox.left}, ${svgBox.top - sheetBox.top}) is not whole pixels at the sheet's corner`);
+      }
+      const fields = svg.querySelectorAll(".field");
       if (fields.length !== 1) say(`has ${fields.length} fields, not one continuous field`);
       const field = inMm(fields[0].getBoundingClientRect(), sheetBox);
-      const backCards = [...back.querySelectorAll(".back-card")];
-      const frontCards = [...front.querySelectorAll(".card")];
-      if (backCards.length !== frontCards.length) say(`${backCards.length} backs for ${frontCards.length} cards`);
-      const outer = { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity };
-      for (const card of frontCards) {
-        const matches = backCards.filter((cell) => cell.dataset.backs === card.dataset.id);
-        if (matches.length !== 1) {
-          say(`${card.dataset.id} has ${matches.length} backs`);
-          continue;
+      const cuts = frontCuts(front, frontBox);
+      const nearestCut = (list, value) => list.reduce((best, cut) => (Math.abs(cut - value) < Math.abs(best - value) ? cut : best), Infinity);
+      const backCells = [...svg.querySelectorAll(".back-cell")];
+      const cellRects = backCells.map((cell) => inMm(cell.querySelector(".cell").getBoundingClientRect(), sheetBox));
+      // Every front card, placed by its cut lines; its layout box must agree with them.
+      const frontCards = [...front.querySelectorAll(".card")].map((card) => {
+        const box = inMm(card.getBoundingClientRect(), frontBox);
+        const rect = { left: nearestCut(cuts.xs, box.left), right: nearestCut(cuts.xs, box.right), top: nearestCut(cuts.ys, box.top), bottom: nearestCut(cuts.ys, box.bottom) };
+        if (off(rect, box) > FLIP_TOLERANCE_MM) say(`${card.dataset.id}: its box is ${off(rect, box).toFixed(3)} mm off its cut lines`);
+        return { id: card.dataset.id, kind: card.dataset.kind, rect };
+      });
+      for (const [flip, map] of Object.entries(flips)) {
+        for (const card of frontCards) {
+          const matches = backCells.filter((_, at) => off(map(cellRects[at]), card.rect) <= FLIP_TOLERANCE_MM);
+          if (matches.length !== 1) {
+            say(`${card.id}: ${matches.length} backs on it after a ${flip}-edge flip`);
+            continue;
+          }
+          const at = backCells.indexOf(matches[0]);
+          worstFlip = Math.max(worstFlip, off(map(cellRects[at]), card.rect));
+          if (matches[0].dataset.kind !== card.kind) say(`${card.id}: a ${matches[0].dataset.kind} back on a ${card.kind} card after a ${flip}-edge flip`);
+          if (matches[0].dataset[flip] !== card.id) say(`${card.id}: the back on it after a ${flip}-edge flip records "${matches[0].dataset[flip]}"`);
+          placed += 1;
         }
-        const cell = matches[0];
-        if (cell.dataset.kind !== card.dataset.kind) say(`${card.dataset.id}: a ${cell.dataset.kind} back on a ${card.dataset.kind} card`);
-        const f = inMm(card.getBoundingClientRect(), frontBox);
-        const b = inMm(cell.getBoundingClientRect(), sheetBox);
-        // Long-edge flip: the back's [left, right] lands on [210 − right, 210 − left].
-        const flip = Math.max(Math.abs(pageW - b.right - f.left), Math.abs(pageW - b.left - f.right), Math.abs(b.top - f.top), Math.abs(b.bottom - f.bottom));
-        worstFlip = Math.max(worstFlip, flip);
-        if (flip > FLIP_TOLERANCE_MM) say(`${card.dataset.id}: after a long-edge flip its back is ${flip.toFixed(3)} mm off its front`);
-        outer.left = Math.min(outer.left, b.left);
-        outer.right = Math.max(outer.right, b.right);
-        outer.top = Math.min(outer.top, b.top);
-        outer.bottom = Math.max(outer.bottom, b.bottom);
+        // The field, seen from the front: at least minBleed beyond the front's outer cuts.
+        const seen = map(field);
+        const outer = {
+          left: Math.min(...frontCards.map((card) => card.rect.left)),
+          right: Math.max(...frontCards.map((card) => card.rect.right)),
+          top: Math.min(...frontCards.map((card) => card.rect.top)),
+          bottom: Math.max(...frontCards.map((card) => card.rect.bottom)),
+        };
+        const bleed = Math.min(outer.left - seen.left, seen.right - outer.right, outer.top - seen.top, seen.bottom - outer.bottom);
+        leastBleed = Math.min(leastBleed, bleed);
+        if (!(bleed >= minBleed - 0.01)) say(`after a ${flip}-edge flip the field runs only ${bleed.toFixed(2)} mm beyond the front's outer cuts (at least ${minBleed})`);
+      }
+      // The backs' own grid: the field reaches minBleed beyond it too.
+      const grid = {
+        left: Math.min(...cellRects.map((r) => r.left)),
+        right: Math.max(...cellRects.map((r) => r.right)),
+        top: Math.min(...cellRects.map((r) => r.top)),
+        bottom: Math.max(...cellRects.map((r) => r.bottom)),
+      };
+      const own = Math.min(grid.left - field.left, field.right - grid.right, grid.top - field.top, field.bottom - grid.bottom);
+      leastBleed = Math.min(leastBleed, own);
+      if (!(own >= minBleed - 0.01)) say(`the field runs only ${own.toFixed(2)} mm beyond the backs' outer cuts (at least ${minBleed})`);
+      backCells.forEach((cell, at) => {
         cells += 1;
-        const box = cell.getBoundingClientRect();
-        const parts = cell.querySelectorAll(".back-under *, .back-over *, .medal-art, .bt");
-        for (const part of parts) {
-          if (part.tagName === "g" || part.tagName === "defs") continue;
-          const ink = inkedRect(part);
+        const box = cellRects[at];
+        for (const part of cell.querySelectorAll("*")) {
+          if (part.classList.contains("cell") || part.tagName === "g" || !(part instanceof SVGGraphicsElement)) continue;
+          if (part instanceof SVGTSpanElement) continue;
+          const ink = inMm(inkedRect(part), sheetBox);
           if (ink.right - ink.left <= 0 && ink.bottom - ink.top <= 0) continue;
-          const inset = Math.min(ink.left - box.left, box.right - ink.right, ink.top - box.top, box.bottom - ink.bottom) / MM;
+          const inset = Math.min(ink.left - box.left, box.right - ink.right, ink.top - box.top, box.bottom - ink.bottom);
           nearestMark = Math.min(nearestMark, inset);
           marks += 1;
-          if (inset < safe - 0.001) say(`${card.dataset.id}: a ${part.getAttribute("class") ?? part.tagName} comes ${inset.toFixed(2)} mm from the cut (at least ${safe})`);
+          if (inset < safe - 0.001) say(`the back at row ${cell.dataset.row}, column ${cell.dataset.column}: a ${part.getAttribute("class") ?? part.tagName} comes ${inset.toFixed(2)} mm from the cut (at least ${safe})`);
         }
-        const art = cell.querySelector(".medal-art");
-        if (art === null || !art.complete || art.naturalWidth === 0) say(`${card.dataset.id}: the medallion drawing did not load`);
-      }
-      const bleed = Math.min(outer.left - field.left, field.right - outer.right, outer.top - field.top, field.bottom - outer.bottom);
-      leastBleed = Math.min(leastBleed, bleed);
-      if (!(bleed >= minBleed - 0.01)) say(`the field runs only ${bleed.toFixed(2)} mm beyond the outer cuts (at least ${minBleed})`);
+      });
       const inkBottom = Number(back.dataset.inkBottom);
       if (!(field.bottom <= inkBottom + 0.05)) say(`the field reaches ${field.bottom.toFixed(2)} mm, below its ${inkBottom} mm ink limit`);
     }
+    const art = document.getElementById("medal-art");
+    if (art === null || !(art.getAttribute("href") ?? "").startsWith("data:image/jpeg")) fail("card backs: the medallion drawing is missing");
     return (
-      `card backs: ${cells} backs on ${backs.length} sheets, each behind its own front after a long-edge flip (largest deviation ${worstFlip.toFixed(4)} mm); ` +
+      `card backs: ${cells} backs on ${backs.length} sheets, drawn in page SVGs at exactly 1 mm per unit (largest deviation ${worstUnit.toExponential(1)}); ` +
+      `after a long-edge and after a short-edge flip each of the ${placed / 2} front cards has one back of its deck on its cut lines (largest deviation ${worstFlip.toFixed(4)} mm); ` +
       `nearest of ${marks} marks ${nearestMark.toFixed(2)} mm inside the cut (at least ${safe}); continuous field ${leastBleed.toFixed(2)} mm beyond the outer cuts (at least ${minBleed}); no cut lines`
     );
   }

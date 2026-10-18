@@ -380,12 +380,27 @@ export function planSheets(cards: SheetCard[]): Array<{ plan: SheetPlan; cards: 
 
 // ---- Card backs ---------------------------------------------------------------------------
 
-/** One back: the card it backs, and where that card's front and its back sit (mm from the paper's top-left). */
+/** The two ways a duplex printer turns the sheet over: on its long (vertical) or short edge. */
+export const FLIPS = ["long", "short"] as const;
+export type Flip = (typeof FLIPS)[number];
+
+/** Where a card-sized box at (x, y) on one side of the paper lands on the other side after `flip`. */
+export function flipBox(box: { x: number; y: number }, flip: Flip): { x: number; y: number } {
+  return flip === "long" ? { x: PAGE_W - box.x - CARD_W, y: box.y } : { x: box.x, y: PAGE_H - box.y - CARD_H };
+}
+
+/** The paper position (mm from the top-left) of grid cell (column, row). */
+export function gridCell(column: number, row: number): { x: number; y: number } {
+  return { x: GRID_LEFT + column * CARD_W, y: GRID_TOP + row * CARD_H };
+}
+
+/** One back: its grid cell on the back sheet, and the front card it lands on after each flip (null: blank paper). */
 export interface BackCell {
-  id: string;
+  column: number;
+  row: number;
   kind: CardModel["kind"];
-  front: { x: number; y: number };
   back: { x: number; y: number };
+  behind: Record<Flip, string | null>;
 }
 
 /** The back sheet of one front sheet. */
@@ -393,6 +408,7 @@ export interface BackPlan {
   /** The front sheet it backs (1-based); in the duplex PDF it is page 2 × sheet. */
   sheet: number;
   kind: CardModel["kind"];
+  /** Always the full grid: the backs work whichever edge the sheet is turned over. */
   rows: number;
   cells: BackCell[];
   /** The continuous field, mm from the paper's top-left. */
@@ -401,32 +417,47 @@ export interface BackPlan {
   inkBottom: number;
 }
 
+/** The paper position of each card on a front sheet (its grid cell, filled row by row). */
+export function frontCells(sheet: SheetPlan): Array<{ id: string; x: number; y: number }> {
+  return sheet.ids.map((id, at) => ({ id, ...gridCell(at % COLUMNS, Math.floor(at / COLUMNS)) }));
+}
+
 /**
- * The back sheets: each card's back sits behind its front after a duplex flip on the long edge
- * (the sheet turns over its vertical axis: x → 210 − x, y unchanged). The field covers the
- * mirrored grid rows the front uses, `BACK_BLEED` mm beyond its outer cuts.
+ * The back sheets: a back of the sheet's deck in every cell of the full grid, and one field over
+ * the whole grid, `BACK_BLEED` mm beyond its outer cuts. The grid is symmetric on the paper, so
+ * after a flip on either edge each front card has exactly one back behind it (`behind`).
  */
 export function planBacks(sheets: SheetPlan[]): BackPlan[] {
-  const gridLeft = PAGE_W - (GRID_LEFT + COLUMNS * CARD_W);
   return sheets.map((sheet, index) => {
-    const cells = sheet.ids.map((id, at) => {
-      const front = { x: GRID_LEFT + (at % COLUMNS) * CARD_W, y: GRID_TOP + Math.floor(at / COLUMNS) * CARD_H };
-      return { id, kind: sheet.kind, front, back: { x: PAGE_W - front.x - CARD_W, y: front.y } };
-    });
+    const fronts = frontCells(sheet);
+    const cells: BackCell[] = [];
+    for (let row = 0; row < ROWS; row += 1) {
+      for (let column = 0; column < COLUMNS; column += 1) {
+        const back = gridCell(column, row);
+        const behind = Object.fromEntries(
+          FLIPS.map((flip) => {
+            const landing = flipBox(back, flip);
+            return [flip, fronts.find((front) => front.x === landing.x && front.y === landing.y)?.id ?? null];
+          }),
+        ) as Record<Flip, string | null>;
+        cells.push({ column, row, kind: sheet.kind, back, behind });
+      }
+    }
     const field = {
-      left: gridLeft - BACK_BLEED,
+      left: GRID_LEFT - BACK_BLEED,
       top: GRID_TOP - BACK_BLEED,
-      right: gridLeft + COLUMNS * CARD_W + BACK_BLEED,
-      bottom: GRID_TOP + sheet.rows * CARD_H + BACK_BLEED,
+      right: GRID_LEFT + COLUMNS * CARD_W + BACK_BLEED,
+      bottom: GRID_TOP + ROWS * CARD_H + BACK_BLEED,
     };
-    return { sheet: index + 1, kind: sheet.kind, rows: sheet.rows, cells, field, inkBottom: field.bottom };
+    return { sheet: index + 1, kind: sheet.kind, rows: ROWS, cells, field, inkBottom: field.bottom };
   });
 }
 
 /**
- * Numeric checks of the back plan: one back per front card, in the same deck; turning the
- * sheet over its long edge puts every back exactly on its front; no two backs overlap; the field
- * runs at least `BACK_MIN_BLEED` mm beyond every outer cut and stays on the paper.
+ * Numeric checks of the back plan, by geometry: after a flip on the long edge and after one on
+ * the short edge, every front card has exactly one back of its own deck exactly on it (and the
+ * cell records it); no two backs overlap; every back lands on a grid cell; the field runs at
+ * least `BACK_MIN_BLEED` mm beyond every outer cut on both sides of the sheet and stays on the paper.
  */
 export function checkBackPlans(sheets: SheetPlan[], backs: BackPlan[]): string[] {
   const problems: string[] = [];
@@ -438,17 +469,44 @@ export function checkBackPlans(sheets: SheetPlan[], backs: BackPlan[]): string[]
       problems.push(`back of page ${index + 1}: ${message}`);
     };
     if (sheet === undefined) return;
-    if (back.cells.map((cell) => cell.id).join() !== sheet.ids.join()) say(`backs [${back.cells.map((cell) => cell.id).join(", ")}], front [${sheet.ids.join(", ")}]`);
     if (back.kind !== sheet.kind || back.cells.some((cell) => cell.kind !== sheet.kind)) say("mixes decks");
-    for (const cell of back.cells) {
-      // Turning the sheet over its vertical axis maps the back's [x, x + 50] to [210 − x − 50, 210 − x].
-      if (!near(PAGE_W - cell.back.x - CARD_W, cell.front.x) || !near(cell.back.y, cell.front.y)) {
-        say(`${cell.id}: back at (${cell.back.x}, ${cell.back.y}) lands on (${PAGE_W - cell.back.x - CARD_W}, ${cell.back.y}), front at (${cell.front.x}, ${cell.front.y})`);
+    const fronts = frontCells(sheet);
+    const grid = Array.from({ length: COLUMNS * ROWS }, (_, at) => gridCell(at % COLUMNS, Math.floor(at / COLUMNS)));
+    for (const flip of FLIPS) {
+      for (const front of fronts) {
+        const landing = back.cells.filter((cell) => {
+          const at = flipBox(cell.back, flip);
+          return near(at.x, front.x) && near(at.y, front.y);
+        });
+        if (landing.length !== 1) say(`${front.id}: ${landing.length} backs behind it after a ${flip}-edge flip`);
+        else if (landing[0]?.behind[flip] !== front.id) say(`${front.id}: the back behind it after a ${flip}-edge flip records ${landing[0]?.behind[flip]}`);
       }
+      for (const cell of back.cells) {
+        const at = flipBox(cell.back, flip);
+        if (!grid.some((g) => near(g.x, at.x) && near(g.y, at.y))) say(`the back at (${cell.back.x}, ${cell.back.y}) lands off the grid after a ${flip}-edge flip`);
+        const id = cell.behind[flip];
+        if (id !== null && !fronts.some((front) => front.id === id && near(front.x, at.x) && near(front.y, at.y))) say(`the back at (${cell.back.x}, ${cell.back.y}) records ${id}, which is not where it lands after a ${flip}-edge flip`);
+      }
+      // The field on the front's side of the paper must reach BACK_MIN_BLEED beyond its outer cuts.
+      const corners = [flipBox({ x: back.field.left, y: back.field.top }, flip), flipBox({ x: back.field.right - CARD_W, y: back.field.bottom - CARD_H }, flip)];
+      const mapped = {
+        left: Math.min(...corners.map((c) => c.x)),
+        right: Math.max(...corners.map((c) => c.x)) + CARD_W,
+        top: Math.min(...corners.map((c) => c.y)),
+        bottom: Math.max(...corners.map((c) => c.y)) + CARD_H,
+      };
+      const outer = {
+        left: Math.min(...fronts.map((f) => f.x)),
+        right: Math.max(...fronts.map((f) => f.x)) + CARD_W,
+        top: Math.min(...fronts.map((f) => f.y)),
+        bottom: Math.max(...fronts.map((f) => f.y)) + CARD_H,
+      };
+      const bleed = Math.min(outer.left - mapped.left, mapped.right - outer.right, outer.top - mapped.top, mapped.bottom - outer.bottom);
+      if (bleed < BACK_MIN_BLEED - 1e-9) say(`after a ${flip}-edge flip the field runs only ${bleed} mm beyond the front's outer cuts (at least ${BACK_MIN_BLEED})`);
     }
     back.cells.forEach((a, i) =>
       back.cells.slice(i + 1).forEach((b) => {
-        if (Math.abs(a.back.x - b.back.x) < CARD_W - 1e-9 && Math.abs(a.back.y - b.back.y) < CARD_H - 1e-9) say(`${a.id} and ${b.id} overlap`);
+        if (Math.abs(a.back.x - b.back.x) < CARD_W - 1e-9 && Math.abs(a.back.y - b.back.y) < CARD_H - 1e-9) say(`the backs at (${a.back.x}, ${a.back.y}) and (${b.back.x}, ${b.back.y}) overlap`);
       }),
     );
     const xs = back.cells.map((cell) => cell.back.x);
@@ -461,20 +519,32 @@ export function checkBackPlans(sheets: SheetPlan[], backs: BackPlan[]): string[]
   return problems;
 }
 
-/** The back's layout in card millimetres (a card is 50 × 71; the medallion centre is at x 25). */
+/**
+ * The back's layout in card millimetres (a card is 50 × 71; everything is centred on x 25).
+ * Nothing runs near the card's edges: a misregistered back would show its offset as uneven
+ * margins, so the nearest mark (a word line's end) stays about 8 mm inside the side cuts and the
+ * medallion about 15 mm below the top cut.
+ */
 export const BACK_LAYOUT = {
-  /** Gold double frame (stroke centres, inset from each cut) and the 回-key fret corners. */
-  frame: { outer: 4.2, outerW: 0.3, inner: 4.85, innerW: 0.13, fret: 5.55, fretW: 0.2 },
-  /** Medallion radii: band behind the gold rings, inner gold ring, parchment disc. */
-  medal: { cx: CARD_W / 2, ring: 13.5, ringW: 0.3, ring2: 12.85, ring2W: 0.13, disc: 12.1, discW: 0.15 },
+  /**
+   * Medallion radii: outer gold outline (round on Main backs; on Starting backs lobed like a
+   * Song foliate dish, cusps at `lobes.cusp`, lobes reaching `lobes.apex`), the band inside it,
+   * inner gold ring, parchment disc.
+   */
+  medal: { cx: CARD_W / 2, ring: 13.5, ringW: 0.3, ring2: 12.85, ring2W: 0.13, disc: 12.1, discW: 0.15, lobes: { count: 8, cusp: 13.35, apex: 14.45 } },
   /** The seal: two characters, one above the other, on a cinnabar block. */
   seal: { char: 5, gap: 0.35, padX: 1.2, padY: 1.35, radius: 0.45 },
-  /** Per language, mm from the card's top edge: medallion centre, divider top, word lines' tops. */
+  /** Per language, mm from the card's top edge: medallion centre, divider top, word baselines. */
   lang: {
-    en: { cy: 29.5, divider: 46.6, game: 49.5, deck: 53.6 },
-    zh: { cy: 30.5, divider: 48.3, game: 0 /* no game line: the seal is the name */, deck: 52.1 },
+    en: { cy: 28.7, divider: 45.7, game: 51.1, deck: 55.9 },
+    zh: { cy: 29.2, divider: 47.0, game: 0 /* no game line: the seal is the name */, deck: 55.0 },
   },
   divider: { width: 24, strokeW: 0.22 },
+  /** Word lines: size (pt) and tracking (em). English in the fronts' heading face, Chinese in Songti Bold. */
+  type: {
+    en: { game: { size: 7.6, tracking: 0.2 }, deck: { size: 9.2, tracking: 0.11 } },
+    zh: { game: { size: 0, tracking: 0 }, deck: { size: 12, tracking: 0.4 } },
+  },
 } as const;
 
 /** The stripes of a field: centre lines x + y = n · pitch, clipped to the field. */
@@ -491,72 +561,103 @@ function stripePath(field: BackPlan["field"]): string {
   return parts.join("");
 }
 
-function backCardHtml(cell: BackCell, labels: BackLabels, palette: BackPalette): string {
-  const { frame: F, medal: M, seal: S, divider: D } = BACK_LAYOUT;
-  const at = BACK_LAYOUT.lang[labels.lang];
-  const deck = palette.decks[cell.kind];
-  const gold = palette.gold;
-  const cy = at.cy;
-  const frets = [
-    [F.fret, F.fret, 1, 1],
-    [CARD_W - F.fret, F.fret, -1, 1],
-    [F.fret, CARD_H - F.fret, 1, -1],
-    [CARD_W - F.fret, CARD_H - F.fret, -1, -1],
-  ]
-    .map(([x, y, sx, sy]) => `<g transform="translate(${x} ${y}) scale(${sx} ${sy})">${FRET}</g>`)
-    .join("");
-  const under =
-    `<svg class="back-under" viewBox="0 0 ${CARD_W} ${CARD_H}" aria-hidden="true">` +
-    `<rect x="${F.outer}" y="${F.outer}" width="${CARD_W - 2 * F.outer}" height="${CARD_H - 2 * F.outer}" fill="none" stroke="${gold}" stroke-width="${F.outerW}"/>` +
-    `<rect x="${F.inner}" y="${F.inner}" width="${CARD_W - 2 * F.inner}" height="${CARD_H - 2 * F.inner}" fill="none" stroke="${gold}" stroke-width="${F.innerW}"/>` +
-    `<g fill="none" stroke="${gold}" stroke-width="${F.fretW}" stroke-linecap="square">${frets}</g>` +
-    `<circle cx="${M.cx}" cy="${cy}" r="${M.ring}" fill="${deck.ring}" stroke="${gold}" stroke-width="${M.ringW}"/>` +
-    `<circle cx="${M.cx}" cy="${cy}" r="${M.ring2}" fill="none" stroke="${gold}" stroke-width="${M.ring2W}"/>` +
-    `<circle class="disc" cx="${M.cx}" cy="${cy}" r="${M.disc}"/>` +
-    `<g class="back-divider" transform="translate(${M.cx - D.width / 2} ${at.divider}) scale(${D.width / 33})" fill="none" stroke="${gold}" stroke-width="${(D.strokeW * 33) / D.width}" stroke-linecap="round">${DIVIDER_PATHS.replace(/class="dot"/g, `fill="${gold}" stroke="none"`)}</g>` +
-    "</svg>";
-  const art = `<img class="medal-art" alt="" style="left:${M.cx - M.disc}mm;top:${cy - M.disc}mm;width:${2 * M.disc}mm;height:${2 * M.disc}mm">`;
-  const sealW = S.char + 2 * S.padX;
-  const sealH = 2 * S.char + S.gap + 2 * S.padY;
-  const chars = [...labels.seal];
-  const over =
-    `<svg class="back-over" viewBox="0 0 ${CARD_W} ${CARD_H}" aria-hidden="true">` +
-    `<circle cx="${M.cx}" cy="${cy}" r="${M.disc}" fill="none" stroke="${gold}" stroke-width="${M.discW}"/>` +
-    `<rect class="seal" x="${M.cx - sealW / 2}" y="${cy - sealH / 2}" width="${sealW}" height="${sealH}" rx="${S.radius}" fill="${palette.seal}"/>` +
-    chars
-      .map((char, index) => {
-        const y = cy + (index - (chars.length - 1) / 2) * (S.char + S.gap);
-        return `<text class="seal-ch" x="${M.cx}" y="${+y.toFixed(3)}" font-size="${S.char}" text-anchor="middle" dominant-baseline="central">${escapeHtml(char)}</text>`;
-      })
-      .join("") +
-    "</svg>";
-  const deckName = cell.kind === "starting" ? labels.starting : labels.main;
-  const words =
-    (labels.game === null ? "" : `<div class="bt game" style="top:${at.game}mm">${escapeHtml(labels.game)}</div>`) +
-    `<div class="bt deck" style="top:${at.deck}mm">${escapeHtml(deckName)}</div>`;
+const num = (value: number): string => String(+value.toFixed(4));
+
+/**
+ * The Starting back's foliate outline round (0, 0): `count` circular lobes between cusps at
+ * radius `cusp`, each reaching `apex` at its middle, one lobe at the top.
+ */
+function lobedPath(count: number, cusp: number, apex: number): string {
+  const step = (2 * Math.PI) / count;
+  const half = step / 2;
+  const chord = cusp * Math.sin(half);
+  const sagitta = apex - cusp * Math.cos(half);
+  const radius = (chord * chord + sagitta * sagitta) / (2 * sagitta);
+  const at = (angle: number): string => `${num(cusp * Math.cos(angle))} ${num(cusp * Math.sin(angle))}`;
+  const start = -Math.PI / 2 - half;
+  let d = `M${at(start)}`;
+  for (let k = 1; k <= count; k += 1) d += `A${num(radius)} ${num(radius)} 0 0 1 ${at(start + k * step)}`;
+  return `${d}Z`;
+}
+
+/** Shared definitions of the backs: the medallion drawing (cardPage.js fills it in), clipped round. */
+function backDefs(): string {
+  const r = BACK_LAYOUT.medal.disc;
   return (
-    `<div class="back-card" data-backs="${escapeHtml(cell.id)}" data-kind="${cell.kind}" style="left:${cell.back.x}mm;top:${cell.back.y}mm">` +
-    under +
-    art +
-    over +
-    words +
-    "</div>"
+    '<svg class="back-defs" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>' +
+    `<clipPath id="medal-clip"><circle cx="0" cy="0" r="${r}"/></clipPath>` +
+    `<image id="medal-art" x="${-r}" y="${-r}" width="${2 * r}" height="${2 * r}" preserveAspectRatio="none" clip-path="url(#medal-clip)"/>` +
+    "</defs></svg>"
   );
 }
 
+/** One back, drawn in the back sheet's page SVG (1 unit = 1 mm) at its cell. */
+function backCellSvg(cell: BackCell, labels: BackLabels, palette: BackPalette): string {
+  const { medal: M, seal: S, divider: D } = BACK_LAYOUT;
+  const at = BACK_LAYOUT.lang[labels.lang];
+  const type = BACK_LAYOUT.type[labels.lang];
+  const colours = palette.decks[cell.kind];
+  const cx = M.cx;
+  const cy = at.cy;
+  const outline =
+    cell.kind === "starting"
+      ? `<path class="medal-outline" transform="translate(${cx} ${cy})" d="${lobedPath(M.lobes.count, M.lobes.cusp, M.lobes.apex)}" fill="${colours.band}" stroke="${colours.gold}" stroke-width="${M.ringW}" stroke-linejoin="round"/>`
+      : `<circle class="medal-outline" cx="${cx}" cy="${cy}" r="${M.ring}" fill="${colours.band}" stroke="${colours.gold}" stroke-width="${M.ringW}"/>`;
+  const sealW = S.char + 2 * S.padX;
+  const sealH = 2 * S.char + S.gap + 2 * S.padY;
+  const chars = [...labels.seal];
+  const seal =
+    `<rect class="seal" x="${num(cx - sealW / 2)}" y="${num(cy - sealH / 2)}" width="${num(sealW)}" height="${num(sealH)}" rx="${S.radius}" fill="${palette.seal}"/>` +
+    chars
+      .map((char, index) => {
+        const y = cy + (index - (chars.length - 1) / 2) * (S.char + S.gap);
+        return `<text class="seal-ch" x="${cx}" y="${num(y)}" font-size="${S.char}" text-anchor="middle" dominant-baseline="central">${escapeHtml(char)}</text>`;
+      })
+      .join("");
+  const divider = `<g class="back-divider" transform="translate(${num(cx - D.width / 2)} ${at.divider}) scale(${num(D.width / 33)})" fill="none" stroke="${colours.words}" stroke-width="${num((D.strokeW * 33) / D.width)}" stroke-linecap="round">${DIVIDER_PATHS.replace(/class="dot"/g, `fill="${colours.words}" stroke="none"`)}</g>`;
+  // A tracked line's advance ends with one tracking space after its last letter: the anchor
+  // moves right by half of it, so the ink is centred on the card. English is set in capitals,
+  // as the rulebook's title is.
+  const line = (kind: "game" | "deck", text: string, baseline: number): string => {
+    const { size, tracking } = type[kind];
+    const mm = (size * 25.4) / 72;
+    return `<text class="bt ${kind}" x="${num(cx + (tracking * mm) / 2)}" y="${baseline}" font-size="${num(mm)}" style="letter-spacing:${tracking}em" text-anchor="middle" fill="${colours.words}">${escapeHtml(labels.lang === "en" ? text.toUpperCase() : text)}</text>`;
+  };
+  const deckName = cell.kind === "starting" ? labels.starting : labels.main;
+  return (
+    `<g class="back-cell" data-column="${cell.column}" data-row="${cell.row}" data-kind="${cell.kind}" data-long="${cell.behind.long ?? ""}" data-short="${cell.behind.short ?? ""}" transform="translate(${cell.back.x} ${cell.back.y})">` +
+    `<rect class="cell" width="${CARD_W}" height="${CARD_H}" fill="none" stroke="none"/>` +
+    outline +
+    `<circle class="ring2" cx="${cx}" cy="${cy}" r="${M.ring2}" fill="none" stroke="${colours.gold}" stroke-width="${M.ring2W}"/>` +
+    `<circle class="disc" cx="${cx}" cy="${cy}" r="${M.disc}"/>` +
+    `<use class="medal-art" href="#medal-art" x="${cx}" y="${cy}"/>` +
+    `<circle class="disc-rim" cx="${cx}" cy="${cy}" r="${M.disc}" fill="none" stroke="${colours.gold}" stroke-width="${M.discW}"/>` +
+    seal +
+    divider +
+    (labels.game === null ? "" : line("game", labels.game, at.game)) +
+    line("deck", deckName, at.deck) +
+    "</g>"
+  );
+}
+
+/**
+ * A back sheet: one SVG over the whole page, its box a whole number of CSS pixels (794 × 1123,
+ * just over A4; the sheet clips it) and its user unit exactly 1 mm, so nothing in it is snapped
+ * to the pixel grid: the field with its stripes, then every back.
+ */
 function backSheetHtml(plan: BackPlan, labels: BackLabels, palette: BackPalette): string {
-  const deck = palette.decks[plan.kind];
+  const colours = palette.decks[plan.kind];
   const f = plan.field;
   const clip = `back-field-${plan.sheet}`;
-  const rect = `x="${f.left}" y="${f.top}" width="${+(f.right - f.left).toFixed(3)}" height="${+(f.bottom - f.top).toFixed(3)}"`;
+  const rect = `x="${f.left}" y="${f.top}" width="${num(f.right - f.left)}" height="${num(f.bottom - f.top)}"`;
   return (
-    `<section class="sheet back" data-side="back" data-sheet="${plan.sheet}" data-kind="${plan.kind}" data-rows="${plan.rows}" data-ink-bottom="${plan.inkBottom}" style="--back-ivory:${palette.ivory}">` +
-    `<svg class="back-field" viewBox="0 0 ${PAGE_W} ${PAGE_H}" aria-hidden="true">` +
+    `<section class="sheet back" data-side="back" data-sheet="${plan.sheet}" data-kind="${plan.kind}" data-rows="${plan.rows}" data-ink-bottom="${plan.inkBottom}">` +
+    `<svg class="back-page" style="width:${BACK_SVG_PX.w}px;height:${BACK_SVG_PX.h}px" viewBox="0 0 ${num(BACK_SVG_PX.w / PX_PER_MM)} ${num(BACK_SVG_PX.h / PX_PER_MM)}" aria-hidden="true">` +
     `<defs><clipPath id="${clip}"><rect ${rect}/></clipPath></defs>` +
-    `<rect class="field" ${rect} fill="${deck.field}"/>` +
-    `<path class="stripes" d="${stripePath(f)}" fill="none" stroke="${deck.stripe}" stroke-width="${+(BACK_STRIPE_PITCH / (2 * Math.SQRT2)).toFixed(4)}" clip-path="url(#${clip})"/>` +
+    `<rect class="field" ${rect} fill="${colours.field}"/>` +
+    `<path class="stripes" d="${stripePath(f)}" fill="none" stroke="${colours.stripe}" stroke-width="${num(BACK_STRIPE_PITCH / (2 * Math.SQRT2))}" clip-path="url(#${clip})"/>` +
+    plan.cells.map((cell) => backCellSvg(cell, labels, palette)).join("") +
     "</svg>" +
-    plan.cells.map((cell) => backCardHtml(cell, labels, palette)).join("") +
     "</section>"
   );
 }
@@ -597,6 +698,7 @@ export function buildSheetHtml(options: {
     `<title>${lang === "en" ? "Kiln Opening — Order cards (A4)" : "开窑 · 委托卡（A4）"}</title>` +
     `<style>${options.css}</style></head><body>` +
     DEFS_SVG +
+    backDefs() +
     body +
     `<script>window.__PRINT_INPUT = ${inputJson};</script>` +
     `<script>${options.script.replace(/<\/script/gi, "<\\/script")}</script>` +

@@ -520,44 +520,24 @@ html[lang="zh-CN"] .vp-num {
 
 /* ---- Card backs ----------------------------------------------------------------------------- */
 /*
- * A back sheet (sheet.ts `backSheetHtml`): one continuous striped field (`.back-field`, page
- * coordinates in mm) and a `.back-card` behind every front card. Colours come from the app's
- * light-theme tokens (printOrderCards.ts `backPalette`), written into the markup; the disc is the
- * fronts' parchment. Back layout, mm from the card's top edge (BACK_LAYOUT): gold frame 4.2 / 4.85
- * from each cut, frets 5.55; medallion centred at 29.5 (EN) / 30.5 (ZH), rings 13.5 and 12.85,
- * parchment disc 12.1 with the faint kiln drawing (cardPage.js) and the 开窑 seal; divider, then
- * KILN OPENING and the deck name (EN) or the deck name alone (ZH). Nothing comes within 4 mm of a
- * cut (cardPage.js checks it).
+ * A back sheet (sheet.ts `backSheetHtml`) is one SVG over the whole page, in millimetres: the
+ * continuous striped field and a back in every grid cell. Colours come from the app's light-theme
+ * tokens (printOrderCards.ts `backPalette`), written into the markup; the disc is the fronts'
+ * parchment. Back layout, mm from the card's top edge (BACK_LAYOUT): medallion centred at 28.7
+ * (EN) / 29.2 (ZH), outline 13.5 (Main: round; Starting: eight lobes, 13.35–14.45), inner ring
+ * 12.85, parchment disc 12.1 with the faint kiln drawing (cardPage.js) and the 开窑 seal; divider,
+ * then KILN OPENING and the deck name (EN) or the deck name alone (ZH). No frame and nothing near
+ * the edges; nothing comes within 4 mm of a cut (cardPage.js and the PDF check measure it).
  */
-.back-field {
+.back-page {
   position: absolute;
-  inset: 0;
-  width: 210mm;
-  height: 297mm;
-}
-
-.back-card {
-  position: absolute;
-  width: 50mm;
-  height: 71mm;
-}
-
-.back-under,
-.back-over {
-  position: absolute;
-  inset: 0;
-  width: 50mm;
-  height: 71mm;
-}
-
-.back-under .disc {
-  fill: var(--paper);
-}
-
-.medal-art {
-  position: absolute;
+  left: 0;
+  top: 0;
   display: block;
-  border-radius: 50%;
+}
+
+.back-page .disc {
+  fill: var(--paper);
 }
 
 .seal-ch {
@@ -566,37 +546,14 @@ html[lang="zh-CN"] .vp-num {
   fill: var(--paper);
 }
 
+/* The word lines: English in the fronts' heading face (Iowan Old Style Roman, in capitals). */
 .bt {
-  position: absolute;
-  left: 0;
-  right: 0;
-  text-align: center;
-  white-space: nowrap;
-  line-height: 1;
-  color: var(--back-ivory);
-}
-
-/* Letter-spaced lines: the negative right margin centres the ink, not the trailing space. */
-.bt.game {
-  font-family: var(--titling);
-  font-size: 6.3pt;
-  letter-spacing: 0.28em;
-  margin-right: -0.28em;
-  text-transform: uppercase;
-}
-
-.bt.deck {
-  font-family: var(--titling);
-  font-size: 9.2pt;
-  letter-spacing: 0.14em;
-  margin-right: -0.14em;
-  text-transform: uppercase;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-kerning: normal;
 }
 
 html[lang="zh-CN"] .bt.deck {
   font-family: var(--song);
   font-weight: 700;
-  font-size: 12pt;
-  letter-spacing: 0.4em;
-  margin-right: -0.4em;
 }

@@ -6,7 +6,7 @@
  *   npx vite-node tools/print/printOrderCards.ts --lang en       # one language (en | zh)
  *
  * Output (gitignored), per language:
- *   output/print/kiln-opening-orders-v1.6.2-A4-<lang>.pdf        # fronts, 4 pages: S01–S08, O01–O16, O17–O32, O33–O48
+ *   output/print/kiln-opening-orders-v1.6.2-A4-<lang>.pdf        # fronts, 4 pages: S01–S08, then the Main Orders dealt over 3 pages
  *   output/print/kiln-opening-orders-v1.6.2-A4-<lang>-duplex.pdf # 8 pages: front 1, back 1, front 2, back 2, …
  *   output/print/kiln-opening-order-backs-v1.6.2-A4-<lang>.pdf   # the 4 back pages alone (manual duplex)
  *   output/print/preview-<lang>-p<N>.png                         # each front page at 150 dpi
@@ -15,17 +15,26 @@
  *
  * Each deck starts a new page (sheet.ts). Page 1 holds the 8 Starting Orders in its top two
  * rows; its lower half is blank paper (no parchment, no cut line), which the run checks on the
- * rendered page and on the 150 dpi preview pixels.
+ * rendered page, on the 150 dpi preview pixels and on the PDF. The 48 Main Orders are dealt over
+ * pages 2–4 back and forth (O01 → 2, O02 → 3, O03 → 4, O04 → 4, …), so each page holds a third of
+ * every tier: a back sheet that prints a little off its front marks no tier of Orders.
  *
- * Two-sided printing: print the duplex PDF with "two-sided, flip on long edge" at 100 % (its
- * viewer preferences ask for exactly that), or print the fronts PDF, turn the stack over and
- * print the backs PDF. Each back sits behind its front for a long-edge flip (sheet.ts), which
- * the run checks on the plan and on the rendered page. The backs of one deck are identical
- * (Main: deep celadon, Starting: deep clay, from the app's tokens), on one continuous striped
- * field 3 mm beyond the outer cuts with every mark at least 4 mm inside each cut, so a 1–2 mm
- * misregistration shows neither white nor a neighbour's frame; the run checks the field and the
- * 4 mm band on the back previews' pixels. All three PDFs come from one rendered document:
- * the fronts PDF takes its odd pages, the backs PDF its even pages.
+ * Two-sided printing: print the duplex PDF two-sided at 100 % (its viewer preferences ask for
+ * "flip on long edge", the usual default), or print the fronts PDF, then the backs PDF on the
+ * blank sides. Every back sheet is a full, symmetric grid of identical backs of its deck, so it
+ * fits its front turned over either edge (sheet.ts); the run checks this on the plan, on the
+ * rendered page and on the PDF. Main backs: deep celadon; Starting backs: a lighter clay with a
+ * lobed medallion and dark words, so the decks differ in tone and shape even in greyscale (from
+ * the app's tokens). One continuous striped field runs 3 mm beyond the outer cuts and no mark
+ * comes near a cut (nothing within 4 mm; no frame), so a 1–2 mm misregistration shows neither
+ * white nor a neighbour's mark, and no uneven frame margins. All three PDFs come from one
+ * rendered document: the fronts PDF takes its odd pages, the backs PDF its even pages; each
+ * has its own Title and a print note in its Subject.
+ *
+ * The PDF check (pdfCheck.ts) renders every page of the duplex PDF and of the fronts/backs pair
+ * with Quartz (Apple's PDF renderer) at 400 dpi and measures what the PDF holds: the front cuts,
+ * each back's seal after either flip, the field and its bleed, the 4 mm band, white paper
+ * outside the field and below page 1's cards, and the centring of the back's words.
  *
  * Content: the V1.6.2 rulebooks' Appendix A tables (English and Chinese), cross-checked against
  * data/orders.json by `orderSource.ts`, which also takes the expected Order IDs from the
@@ -52,7 +61,9 @@ import type { Browser, Page } from "@playwright/test";
 import { checkIllustration, illustrationFor } from "./illustration.ts";
 import { APP_ROOT, loadOrderSource } from "./orderSource.ts";
 import type { Lang, OrderSource } from "./orderSource.ts";
-import { BACK_LAYOUT, BACK_MIN_BLEED, BACK_SAFE, buildSheetHtml, CARD_H, CARD_W, CARDS_PER_SHEET, checkBackPlans, PAGE_H, PAGE_W } from "./sheet.ts";
+import { checkBackRaster, checkBlankRaster, fieldLightness, measureFrontCuts, PDF_CHECK_DPI, PdfRenderer } from "./pdfCheck.ts";
+import type { FrontCuts } from "./pdfCheck.ts";
+import { BACK_LAYOUT, BACK_MIN_BLEED, BACK_SAFE, buildSheetHtml, CARD_H, CARD_W, CARDS_PER_SHEET, checkBackPlans, COLUMNS, dealSheet, GRID_LEFT, GRID_TOP, PAGE_H, PAGE_W } from "./sheet.ts";
 import type { BackArt, BackPalette, BackPlan, FitSettings, PageInput, SheetCard, SheetPlan } from "./sheet.ts";
 
 const OUT_DIR = resolve(APP_ROOT, "output/print");
@@ -74,12 +85,12 @@ const BACK_ART: Omit<BackArt, "url"> = {
   strength: 0.42,
 };
 
-/** Fonts the backs may and must use (EN: titling for the words, Songti Bold for the seal). */
+/** Fonts the backs may and must use (EN: the fronts' heading face for the words, Songti Bold for the seal). */
 const BACK_FONTS: Record<Lang, { allowed: RegExp; needed: string[] }> = {
-  en: { allowed: /^(IowanOldStyle-Titling|STSongti-SC-Bold)$/, needed: ["IowanOldStyle-Titling", "STSongti-SC-Bold"] },
+  en: { allowed: /^(IowanOldStyle-Roman|STSongti-SC-Bold)$/, needed: ["IowanOldStyle-Roman", "STSongti-SC-Bold"] },
   zh: { allowed: /^STSongti-SC-Bold$/, needed: ["STSongti-SC-Bold"] },
 };
-/** The back's 4 mm band is checked on the 150 dpi pixels this much short of 4 mm (antialiasing and the preview's sub-pixel offset). */
+/** On the 150 dpi previews the back's 4 mm band is checked this much short of 4 mm (antialiasing and the preview's sub-pixel offset); the PDF check allows one 400 dpi pixel. */
 const BAND_PIXEL_SLACK_MM = 0.3;
 
 const SHAPES = ["bowl", "plate", "washer", "vase", "censer"] as const;
@@ -108,25 +119,40 @@ const FIT: Record<Lang, FitSettings> = {
 const PRINT_DENSITY: Record<(typeof GLAZES)[number], number> = { white: 2, celadon: 1, grey_green: 1.3, moon_white: 1 };
 /** The pictures must keep every two Glazes (and "any Glaze") at least this far apart (ΔE76). */
 const MIN_GLAZE_DELTA_E = 10;
+/** The two backs' mean lightness (CIE L*, field and stripes) must differ by at least this much, so they part in greyscale. */
+const MIN_DECK_LIGHTNESS_GAP = 15;
 
 /** Exact A4 in PDF points. */
 const A4_PT = { width: (210 / 25.4) * 72, height: (297 / 25.4) * 72 };
 
-/** The three PDFs: which pages of the document they hold, their Subject (a print note) and duplex preference. */
+/** The three PDFs: which pages of the document they hold, their Title, their Subject (a print note) and duplex preference. */
 type PdfKind = "fronts" | "duplex" | "backs";
+/** Each file's own Title (the viewers show it in place of the file name: /DisplayDocTitle). */
+const PDF_TITLE: Record<Lang, Record<PdfKind, string>> = {
+  en: {
+    fronts: "Kiln Opening — Order card fronts (A4)",
+    duplex: "Kiln Opening — Order cards, two-sided (A4)",
+    backs: "Kiln Opening — Order card backs (A4)",
+  },
+  zh: {
+    fronts: "开窑 · 委托卡正面（A4）",
+    duplex: "开窑 · 委托卡双面（A4）",
+    backs: "开窑 · 委托卡背面（A4）",
+  },
+};
 const PDF_SUBJECT: Record<Lang, Record<PdfKind, string>> = {
   en: {
     fronts:
-      "Kiln Opening Order cards, V1.6.2 Player Rulebook Appendix A: Starting and Main Orders. A4; print at 100 % (actual size), each card 50 × 71 mm. For card backs use the -duplex PDF, or the order-backs PDF for manual duplex.",
+      "Kiln Opening Order card fronts, V1.6.2 Player Rulebook Appendix A: page 1 the Starting Orders, pages 2–4 the Main Orders. A4; print at 100 % (actual size), each card 50 × 71 mm. For backs, print the -duplex PDF instead, or print the order-backs PDF on the blank sides of these sheets.",
     duplex:
-      "Kiln Opening Order cards with backs, V1.6.2 Appendix A: front 1, back 1, front 2, back 2 … A4; print two-sided (duplex), flip on long edge, at 100 % (actual size); each card 50 × 71 mm.",
+      "Kiln Opening Order cards with backs, V1.6.2 Appendix A: front 1, back 1, front 2, back 2 … A4; print two-sided (duplex) at 100 % (actual size), each card 50 × 71 mm. Flip on long edge is the usual setting; every back page also fits a flip on the short edge.",
     backs:
-      "Kiln Opening Order card backs, V1.6.2: the backs of the 4 front pages, for manual duplex. Print the fronts PDF, turn the stack over (flip on long edge: top stays at the top), then print this at 100 % (actual size).",
+      "Kiln Opening Order card backs, V1.6.2, for manual two-sided printing at 100 % (actual size). Page 1 (clay, Starting Order backs) belongs only on the blank side of the S01–S08 sheet: print it onto that sheet by itself (page 1 only). Pages 2–4 (celadon, Main Order backs) are identical: print them onto the blank sides of the three Main sheets, in any order. Each back page fits its sheet turned over either edge.",
   },
   zh: {
-    fronts: "开窑委托卡，V1.6.2规则书附录A：起始委托与主委托。A4纸，按100%实际尺寸打印，每张卡50 × 71毫米。卡背请用 -duplex 文件，手动双面请用 order-backs 文件。",
-    duplex: "开窑委托卡（含卡背），V1.6.2规则书附录A：正面1、背面1、正面2、背面2……A4纸，双面打印，沿长边翻转，按100%实际尺寸打印；每张卡50 × 71毫米。",
-    backs: "开窑委托卡背面，V1.6.2：4页正面的背面，用于手动双面打印。先打印正面文件，把整叠纸翻面（沿长边翻转，上边仍在上），再按100%实际尺寸打印本文件。",
+    fronts: "开窑委托卡正面，V1.6.2规则书附录A：第1页为起始委托，第2–4页为主委托。A4纸，按100%实际尺寸打印，每张卡50 × 71毫米。要印卡背，请改印 -duplex 文件，或把 order-backs 文件印在这些纸的空白面上。",
+    duplex: "开窑委托卡（含卡背），V1.6.2规则书附录A：正面1、背面1、正面2、背面2……A4纸，双面打印，按100%实际尺寸，每张卡50 × 71毫米。一般选沿长边翻转；每页卡背沿短边翻转也能对上。",
+    backs: "开窑委托卡背面，V1.6.2，用于手动双面打印，按100%实际尺寸。第1页（陶土色，起始委托卡背）只印在S01–S08那张纸的空白面上：单独打印第1页到那张纸上。第2–4页（青瓷色，主委托卡背）完全相同：印在三张主委托纸的空白面上，顺序不限。每页卡背把纸沿哪条边翻过来都能对上。",
   },
 };
 /** Viewer preference /Duplex: the duplex PDF asks for flip on long edge, the one-sided ones for simplex. */
@@ -187,25 +213,30 @@ function mix(a: string, b: string, t: number): string {
 /**
  * The backs' colours, from the app's light-theme tokens. Main Orders: the online card back's
  * pair (CardBack.css: --celadon-ink stripes with --celadon), as a deep --celadon-ink field with
- * stripes a quarter of the way to --celadon. Starting Orders: the unglazed-clay token --glz-clay
- * printed at density 3.5 (as the fronts deepen their Glaze tints), a deep clay, with stripes a
- * fifth of the way back to --glz-clay. The medallion's band is the field a little deeper; frame
- * and rings in --gold-line, words in --gold-pale, the seal in --cinnabar.
+ * stripes a quarter of the way to --celadon, the medallion's band the field a little deeper, gold
+ * (--gold-line) outline and rings, words and divider in --gold-pale. Starting Orders: the
+ * unglazed-clay token --glz-clay printed at density 2.5 (as the fronts deepen their Glaze tints),
+ * a mid clay, with stripes a fifth of the way back to --glz-clay; the band a deeper clay, the
+ * same gold, words and divider in the dark --kiln-body. So the decks differ in hue, in tone
+ * (mean L* about 38 against 58, `MIN_DECK_LIGHTNESS_GAP`), in the colour of their words and in
+ * the medallion's outline: one stray card is told by eye in greyscale too. The seal is --cinnabar.
  */
-function backPalette(): { palette: BackPalette; summary: string } {
-  const t = lightTokens(["celadon-ink", "celadon", "glz-clay", "gold-line", "gold-pale", "cinnabar"] as const);
-  const clay = atDensity(t["glz-clay"], 3.5);
+function backPalette(): { palette: BackPalette; summary: string; lightness: Record<"main" | "starting", number> } {
+  const t = lightTokens(["celadon-ink", "celadon", "glz-clay", "gold-line", "gold-pale", "cinnabar", "kiln-body"] as const);
+  const clay = atDensity(t["glz-clay"], 2.5);
   const palette: BackPalette = {
     decks: {
-      main: { field: t["celadon-ink"], stripe: mix(t["celadon-ink"], t.celadon, 0.24), ring: atDensity(t["celadon-ink"], 1.2) },
-      starting: { field: clay, stripe: mix(clay, t["glz-clay"], 0.2), ring: atDensity(clay, 1.2) },
+      main: { field: t["celadon-ink"], stripe: mix(t["celadon-ink"], t.celadon, 0.24), band: atDensity(t["celadon-ink"], 1.2), gold: t["gold-line"], words: t["gold-pale"] },
+      starting: { field: clay, stripe: mix(clay, t["glz-clay"], 0.2), band: atDensity(clay, 1.5), gold: t["gold-line"], words: t["kiln-body"] },
     },
-    gold: t["gold-line"],
-    ivory: t["gold-pale"],
     seal: t.cinnabar,
   };
-  const deck = (kind: "main" | "starting"): string => `field ${palette.decks[kind].field}, stripes ${palette.decks[kind].stripe}`;
-  return { palette, summary: `Main ${deck("main")}; Starting (--glz-clay ${t["glz-clay"]}^3.5) ${deck("starting")}; gold ${palette.gold}, words ${palette.ivory}, seal ${palette.seal}` };
+  const lightness = { main: fieldLightness(palette.decks.main), starting: fieldLightness(palette.decks.starting) };
+  const deck = (kind: "main" | "starting"): string => {
+    const c = palette.decks[kind];
+    return `field ${c.field}, stripes ${c.stripe} (mean L* ${lightness[kind].toFixed(1)}), band ${c.band}, words ${c.words}`;
+  };
+  return { palette, lightness, summary: `Main ${deck("main")}; Starting (--glz-clay ${t["glz-clay"]}^2.5) ${deck("starting")}; gold ${t["gold-line"]}, seal ${palette.seal}` };
 }
 
 /** The print tints: the game's light-theme Glaze tokens at their print densities. */
@@ -256,7 +287,7 @@ async function renderPage(browser: Browser, html: string, deviceScaleFactor: num
 /** The text elements of the fronts and of the backs, for the font check. */
 const FRONT_TEXT =
   ".card .id, .card .kind, .card .h, .card .req p, .card .req .seg, .card .req .mp, .card .req .pz, .card .qual p, .card .qual .seg, .card .qual .mp, .card .qual .pz, .card .vp-num, .card .vp-badge text";
-const BACK_TEXT = ".back-card .bt, .back-card .seal-ch";
+const BACK_TEXT = ".back-cell .bt, .back-cell .seal-ch";
 
 /** Every font Chromium actually used for the text of `selector`, by PostScript name, via the DevTools protocol. */
 async function usedFonts(page: Page, selector: string): Promise<Map<string, number>> {
@@ -311,6 +342,7 @@ interface PdfFacts {
   /** The last /Duplex viewer preference, or null. */
   duplex: string | null;
   subject: string | null;
+  title: string | null;
   repeating: string[];
   tilingPatterns: number;
 }
@@ -336,6 +368,7 @@ function inspectPdf(path: string): PdfFacts {
   const tilingPatterns = (bytes.match(/\/PatternType\s+1\b/g) ?? []).length;
   const duplex = [...bytes.matchAll(/\/Duplex\s*\/(\w+)/g)].at(-1)?.[1] ?? null;
   const subjectHex = [...bytes.matchAll(/\/Subject\s*<([0-9A-Fa-f]*)>/g)].at(-1)?.[1];
+  const titleHex = [...bytes.matchAll(/\/Title\s*<([0-9A-Fa-f]*)>/g)].at(-1)?.[1];
   return {
     pages,
     embedded,
@@ -345,6 +378,7 @@ function inspectPdf(path: string): PdfFacts {
     printScalingNone: /\/PrintScaling\s*\/None/.test(bytes),
     duplex,
     subject: subjectHex === undefined ? null : readPdfText(subjectHex),
+    title: titleHex === undefined ? null : readPdfText(titleHex),
     repeating: repeatingPatterns(bytes),
     tilingPatterns,
   };
@@ -371,9 +405,10 @@ function objectDict(bytes: string, num: number): string {
  *    in place at the same byte length (padded with spaces), so no object moves;
  * 2. an incremental update (new Catalog and Info objects, an xref section and a trailer with
  *    /Prev) adds the viewer preferences /PrintScaling /None and /Duplex (the print dialog's
- *    default: two-sided flip on long edge, or one-sided) and the Subject.
+ *    default: two-sided flip on long edge, or one-sided), the file's own Title (Chromium writes
+ *    the document's, the same for all three files) and the Subject.
  */
-function finishPdf(path: string, subject: string, duplex: "DuplexFlipLongEdge" | "Simplex"): void {
+function finishPdf(path: string, meta: { title: string; subject: string }, duplex: "DuplexFlipLongEdge" | "Simplex"): void {
   let bytes = readFileSync(path).toString("latin1");
   let boxes = 0;
   bytes = bytes.replace(/\/MediaBox \[0 0 ([\d.]+) ([\d.]+)\]/g, (match) => {
@@ -403,14 +438,20 @@ function finishPdf(path: string, subject: string, duplex: "DuplexFlipLongEdge" |
   if (/\/ViewerPreferences/.test(withoutPrefs)) throw new PrintError("PDF: the Catalog's ViewerPreferences is not an inline dictionary");
   const oldPrefs = /\/ViewerPreferences\s*<<([^<>]*)>>/.exec(catalog)?.[1] ?? "/Type /ViewerPreferences";
   const prefs = `${oldPrefs.replace(/\/PrintScaling\s*\/\w+/, "").replace(/\/Duplex\s*\/\w+/, "").trim()}\n/PrintScaling /None\n/Duplex /${duplex}`;
-  const infoDict = objectDict(bytes, info).replace(/\/Subject\s*(\([^)]*\)|<[^>]*>)/, "").trim();
+  // A PDF string: literal (with escapes and balanced parentheses) or hex.
+  const pdfString = String.raw`(?:\((?:\\.|[^\\()]|\((?:\\.|[^\\()])*\))*\)|<[^>]*>)`;
+  const infoDict = objectDict(bytes, info)
+    .replace(new RegExp(String.raw`/Subject\s*` + pdfString), "")
+    .replace(new RegExp(String.raw`/Title\s*` + pdfString), "")
+    .trim();
+  if (/\/(Title|Subject)\b/.test(infoDict)) throw new PrintError("PDF: could not replace the Info dictionary's Title or Subject");
 
   if (!bytes.endsWith("\n")) bytes += "\n";
   const offsets = new Map<number, number>();
   offsets.set(root, bytes.length);
   bytes += `${root} 0 obj\n<<${withoutPrefs.trim()}\n/ViewerPreferences <<${prefs}>>>>\nendobj\n`;
   offsets.set(info, bytes.length);
-  bytes += `${info} 0 obj\n<<${infoDict}\n/Subject ${pdfText(subject)}>>\nendobj\n`;
+  bytes += `${info} 0 obj\n<<${infoDict}\n/Title ${pdfText(meta.title)}\n/Subject ${pdfText(meta.subject)}>>\nendobj\n`;
   const xref = bytes.length;
   bytes += "xref\n";
   for (const num of [...offsets.keys()].sort((a, b) => a - b)) bytes += `${num} 1\n${String(offsets.get(num)).padStart(10, "0")} 00000 n \n`;
@@ -423,29 +464,61 @@ function finishPdf(path: string, subject: string, duplex: "DuplexFlipLongEdge" |
 }
 
 /**
- * The sheets print every card once, in the rulebook's order; each deck starts a new sheet and
- * fills sheets of 16, the Starting deck first (V1.6.2: page 1 is S01–S08 alone).
+ * The sheets print every card once; each deck starts a new sheet and takes as few sheets of 16
+ * as it needs, the Starting deck first (V1.6.2: page 1 is S01–S08 alone); a deck of several
+ * sheets is dealt across them back and forth in the rulebook's order (`dealSheet`), each sheet
+ * keeping that order. Then no tier of the deck gathers on one sheet: every run of consecutive IDs
+ * as long as the sheet count puts one card on each sheet (checked), and the sheets' cards are
+ * summed (ceramics asked, VP, Coins, Crowns) for the run's report.
  */
-function checkSheets(source: OrderSource, lang: Lang, sheets: SheetPlan[]): string[] {
+function checkSheets(source: OrderSource, lang: Lang, sheets: SheetPlan[]): { problems: string[]; spread: string[] } {
   const problems: string[] = [];
-  const kindOf = new Map(source.cards[lang].map((card) => [card.id, card.kind]));
+  const spread: string[] = [];
+  const byId = new Map(source.cards[lang].map((card) => [card.id, card]));
   const order = source.cards[lang].map((card) => card.id);
   const printed = sheets.flatMap((sheet) => sheet.ids);
-  if (printed.join() !== order.join()) problems.push(`the sheets print [${printed.join(", ")}], the rulebook lists [${order.join(", ")}]`);
+  if ([...printed].sort().join() !== [...order].sort().join() || new Set(printed).size !== printed.length) {
+    problems.push(`the sheets print [${printed.join(", ")}], the rulebook lists [${order.join(", ")}]`);
+  }
   const want = { starting: Math.ceil(source.deckSizes.starting / CARDS_PER_SHEET), main: Math.ceil(source.deckSizes.main / CARDS_PER_SHEET) };
   const kinds = sheets.map((sheet) => sheet.kind);
   const expectedKinds = [...Array<string>(want.starting).fill("starting"), ...Array<string>(want.main).fill("main")];
   if (kinds.join() !== expectedKinds.join()) problems.push(`sheet decks [${kinds.join(", ")}], expected [${expectedKinds.join(", ")}]`);
   sheets.forEach((sheet, index) => {
-    if (sheet.ids.some((id) => kindOf.get(id) !== sheet.kind)) problems.push(`page ${index + 1} mixes decks: ${sheet.ids.join(", ")}`);
+    if (sheet.ids.some((id) => byId.get(id)?.kind !== sheet.kind)) problems.push(`page ${index + 1} mixes decks: ${sheet.ids.join(", ")}`);
     if (sheet.rows !== Math.ceil(sheet.ids.length / 4)) problems.push(`page ${index + 1}: ${sheet.rows} rows for ${sheet.ids.length} cards`);
   });
-  return problems;
+  for (const kind of ["starting", "main"] as const) {
+    const deck = order.filter((id) => byId.get(id)?.kind === kind);
+    const deckSheets = sheets.map((sheet, index) => ({ sheet, page: index + 1 })).filter(({ sheet }) => sheet.kind === kind);
+    const count = deckSheets.length;
+    // The deal: the deck's k-th card on its sheet dealSheet(k), each sheet in deck order.
+    deckSheets.forEach(({ sheet, page }, at) => {
+      const expected = deck.filter((_, position) => dealSheet(position, count) === at);
+      if (sheet.ids.join() !== expected.join()) problems.push(`page ${page} holds [${sheet.ids.join(", ")}], the deal gives it [${expected.join(", ")}]`);
+    });
+    // Every run of `count` consecutive IDs puts one card on each sheet.
+    const pageOf = new Map(deckSheets.flatMap(({ sheet, page }) => sheet.ids.map((id) => [id, page] as const)));
+    for (let start = 0; start + count <= deck.length; start += count) {
+      const pages = new Set(deck.slice(start, start + count).map((id) => pageOf.get(id)));
+      if (pages.size !== count) problems.push(`${deck[start]}–${deck[start + count - 1]} do not fall on ${count} different pages`);
+    }
+    if (count > 1) {
+      for (const { sheet, page } of deckSheets) {
+        const cards = sheet.ids.map((id) => byId.get(id)).filter((card) => card !== undefined);
+        const ceramics = [1, 2, 3].map((n) => cards.filter((card) => card.data.ceramics.length === n).length).join("/");
+        const sum = (key: "vp" | "coins" | "crowns"): number => cards.reduce((total, card) => total + card[key], 0);
+        spread.push(`page ${page}: ${ceramics} one/two/three-ceramic Orders, ${sum("vp")} VP, ${sum("coins")} Coins, ${sum("crowns")} Crowns`);
+      }
+    }
+  }
+  return { problems, spread };
 }
 
-/** "page 1: S01–S08 (rows 1–2; rows 3–4 blank)". */
+/** "page 1: S01–S08 (rows 1–2; rows 3–4 blank)", "page 2: O01, O06, O07, … O48 (16)". */
 function describeSheet(sheet: SheetPlan, index: number): string {
-  const range = sheet.ids.length === 1 ? sheet.ids[0] : `${sheet.ids[0]}–${sheet.ids.at(-1)}`;
+  const consecutive = sheet.ids.every((id, at) => at === 0 || Number(id.slice(1)) === Number(sheet.ids[at - 1]?.slice(1)) + 1);
+  const range = sheet.ids.length === 1 ? sheet.ids[0] : consecutive ? `${sheet.ids[0]}–${sheet.ids.at(-1)}` : `${sheet.ids.slice(0, 4).join(", ")}, … ${sheet.ids.at(-1)} (${sheet.ids.length})`;
   return `page ${index + 1}: ${range}${sheet.rows < 4 ? ` (rows 1–${sheet.rows}; rows ${sheet.rows + 1}–4 blank below ${sheet.inkBottom} mm)` : ""}`;
 }
 
@@ -490,8 +563,9 @@ async function checkBlankBelow(page: Page, sheet: Pick<SheetPlan, "rows" | "inkB
 }
 
 /**
- * A back page's 150 dpi preview, pixel by pixel: outside the field the paper is pure white (no
- * cut line, no stray mark; on page 1 the blank half); inside the field, every pixel outside the
+ * A back page's 150 dpi preview, pixel by pixel (the preview's own check; `checkPdfs` measures
+ * the PDF itself, to a pixel of 0.064 mm): outside the field the paper is pure white (no cut
+ * line, no stray mark); inside the field, every pixel outside the
  * cards' inner areas (the bleed, and the band within `BACK_SAFE` mm of every cut, less
  * `BAND_PIXEL_SLACK_MM` for antialiasing) is the field: its colour, its stripe colour or a blend
  * of the two. So a misregistered back can show neither white nor a seam nor a neighbour's mark at
@@ -604,6 +678,85 @@ async function checkBackPixels(
   return { problems, judged: { field: result.fieldPixels, white: result.white }, shift: found.miss };
 }
 
+/** Where the PDF check finds a sheet's front and back: a PDF file and a page number. */
+interface PdfPair {
+  name: string;
+  front: (sheet: number) => [string, number];
+  back: (sheet: number) => [string, number];
+}
+
+/**
+ * The PDF check (pdfCheck.ts): every front and back page of each pair rendered by Quartz at
+ * `PDF_CHECK_DPI` and measured. The front's cuts must print where the plan puts them, a
+ * part-filled front must be white below its cards, and each back must fit its front after either
+ * flip with its field, its band and its words as `checkBackRaster` requires. Returns the summary.
+ */
+function checkPdfs(lang: Lang, plans: SheetPlan[], backs: BackPlan[], palette: BackPalette, pairs: PdfPair[]): string[] {
+  const renderer = new PdfRenderer();
+  const problems: string[] = [];
+  const worst = { cut: 0, flip: 0, centring: 0, field: 0 };
+  let nearest = Infinity;
+  let bleed = Infinity;
+  const judged = { band: 0, white: 0, pages: 0 };
+  let blank = 0;
+  try {
+    for (const pair of pairs) {
+      plans.forEach((plan, index) => {
+        const sheet = index + 1;
+        const say = (message: string): void => {
+          problems.push(`${pair.name}, sheet ${sheet}: ${message}`);
+        };
+        const [frontPdf, frontPage] = pair.front(sheet);
+        const front = renderer.render(frontPdf, frontPage);
+        const cuts: FrontCuts = measureFrontCuts(front);
+        const want = {
+          xs: Array.from({ length: COLUMNS + 1 }, (_, i) => GRID_LEFT + i * CARD_W),
+          ys: Array.from({ length: plan.rows + 1 }, (_, i) => GRID_TOP + i * CARD_H),
+        };
+        if (cuts.xs.length !== want.xs.length || cuts.ys.length !== want.ys.length) {
+          say(`the front shows ${cuts.xs.length} vertical and ${cuts.ys.length} horizontal cuts (expected ${want.xs.length} and ${want.ys.length})`);
+          return;
+        }
+        const cutOff = Math.max(...cuts.xs.map((x, i) => Math.abs(x - (want.xs[i] ?? 0))), ...cuts.ys.map((y, i) => Math.abs(y - (want.ys[i] ?? 0))));
+        worst.cut = Math.max(worst.cut, cutOff);
+        if (cutOff > 0.05) say(`the front's cuts print up to ${cutOff.toFixed(3)} mm off the plan`);
+        if (plan.rows < 4) {
+          const white = checkBlankRaster(front, plan.inkBottom);
+          if (white !== null) say(`front: ${white}`);
+          blank += 1;
+        }
+        const back = backs[index];
+        if (back === undefined) return say("no back plan");
+        const [backPdf, backPage] = pair.back(sheet);
+        const result = checkBackRaster(renderer.render(backPdf, backPage), back, plan, cuts, palette.decks[back.kind], lang);
+        problems.push(...result.problems.map((problem) => `${pair.name}, back of sheet ${sheet}: ${problem}`));
+        worst.flip = Math.max(worst.flip, result.flip);
+        worst.centring = Math.max(worst.centring, result.centring);
+        worst.field = Math.max(
+          worst.field,
+          Math.abs(result.field.left - back.field.left),
+          Math.abs(result.field.right - back.field.right),
+          Math.abs(result.field.top - back.field.top),
+          Math.abs(result.field.bottom - back.field.bottom),
+        );
+        nearest = Math.min(nearest, result.nearest);
+        bleed = Math.min(bleed, result.bleed);
+        judged.band += result.judged.band;
+        judged.white += result.judged.white;
+        judged.pages += 1;
+      });
+    }
+  } finally {
+    renderer.close();
+  }
+  if (problems.length > 0) throw new PrintError(`${lang}: PDF check failed:\n  - ${problems.join("\n  - ")}`);
+  return [
+    `PDF check (Quartz at ${PDF_CHECK_DPI} dpi, ${pairs.map((pair) => pair.name).join(" and ")}; ${judged.pages} back pages): front cuts print within ${worst.cut.toFixed(3)} mm of the plan${blank > 0 ? `; part-filled front pages pure white below their cards (${blank} checked)` : ""}`,
+    `  after a long-edge and after a short-edge flip every back's seal lands within ${worst.flip.toFixed(3)} mm of its place on its front card; field within ${worst.field.toFixed(3)} mm of the plan and ${bleed.toFixed(2)} mm beyond the outer cuts (at least ${BACK_MIN_BLEED})`,
+    `  nearest back mark ${nearest.toFixed(2)} mm inside a cut (at least ${BACK_SAFE}); ${judged.band} pixels of bleed and ${BACK_SAFE} mm band all field colours, ${judged.white} pixels outside the field all white; words and divider within ${worst.centring.toFixed(3)} mm of the seal's centre line`,
+  ];
+}
+
 async function printLanguage(
   browser: Browser,
   source: OrderSource,
@@ -627,7 +780,8 @@ async function printLanguage(
     script: readFileSync(resolve(HERE, "cardPage.js"), "utf8"),
     input: { ...input, lang, fit: FIT[lang] },
   });
-  const sheetProblems = [...checkSheets(source, lang, plans), ...checkBackPlans(plans, backs)];
+  const sheetCheck = checkSheets(source, lang, plans);
+  const sheetProblems = [...sheetCheck.problems, ...checkBackPlans(plans, backs)];
   if (sheetProblems.length > 0) throw new PrintError(`${lang}: sheet plan check failed:\n  - ${sheetProblems.join("\n  - ")}`);
   const sheets = plans.length;
   const base = `kiln-opening-orders-v1.6.2-A4-${lang}`;
@@ -667,13 +821,14 @@ async function printLanguage(
       margin: { top: "0", right: "0", bottom: "0", left: "0" },
       ...(output.pages.length === allPages.length ? {} : { pageRanges: output.pages.join(",") }),
     });
-    finishPdf(output.path, PDF_SUBJECT[lang][output.kind], PDF_DUPLEX[output.kind]);
+    finishPdf(output.path, { title: PDF_TITLE[lang][output.kind], subject: PDF_SUBJECT[lang][output.kind] }, PDF_DUPLEX[output.kind]);
     const pdf = inspectPdf(output.path);
     if (pdf.pages !== output.pages.length) throw say(`${pdf.pages} pages, expected ${output.pages.length}`);
     if (pdf.mediaBoxes.length !== output.pages.length || pdf.mediaBoxes.some((box) => box !== a4)) throw say(`page sizes [${pdf.mediaBoxes.join("; ")}], expected ${a4} on every page`);
     if (!pdf.printScalingNone) throw say("lacks /PrintScaling /None");
     if (pdf.duplex !== PDF_DUPLEX[output.kind]) throw say(`viewer preference /Duplex /${pdf.duplex}, expected /${PDF_DUPLEX[output.kind]}`);
     if (pdf.subject !== PDF_SUBJECT[lang][output.kind]) throw say(`Subject reads "${pdf.subject}"`);
+    if (pdf.title !== PDF_TITLE[lang][output.kind]) throw say(`Title reads "${pdf.title}"`);
     if (pdf.embedded === 0) throw say("embeds no font program");
     if (pdf.unembedded.length > 0) throw say(`fonts without an embedded program: ${pdf.unembedded.join(", ")}`);
     const names = pdf.baseFonts.map((name) => name.replace(/^[A-Z]{6}\+/, ""));
@@ -686,6 +841,7 @@ async function printLanguage(
     }
     written.push({ kind: output.kind, path: output.path, pdf });
   }
+  if (new Set(written.map((output) => output.pdf.title)).size !== written.length) throw new PrintError(`${lang}: the PDFs share a Title`);
   await pdfRun.page.context().close();
 
   // Previews: the same pages at 150 dpi.
@@ -739,26 +895,41 @@ async function printLanguage(
   await previewRun.page.context().close();
   if (blankProblems.length > 0) throw new PrintError(`${lang}: preview pixel check failed:\n  - ${blankProblems.join("\n  - ")}`);
 
+  const pdfFile = (kind: PdfKind): string => {
+    const output = written.find((item) => item.kind === kind);
+    if (output === undefined) throw new PrintError(`${lang}: no ${kind} PDF`);
+    return output.path;
+  };
+  const pdfCheck = checkPdfs(lang, plans, backs, palette, [
+    { name: "duplex PDF", front: (sheet) => [pdfFile("duplex"), 2 * sheet - 1], back: (sheet) => [pdfFile("duplex"), 2 * sheet] },
+    { name: "fronts + backs PDFs", front: (sheet) => [pdfFile("fronts"), sheet], back: (sheet) => [pdfFile("backs"), sheet] },
+  ]);
+
   const fronts = written.find((output) => output.kind === "fronts");
   if (fronts === undefined) throw new PrintError(`${lang}: no fronts PDF`);
   const pdf = fronts.pdf;
   console.log(`\n[${lang}] ${fronts.path}`);
   console.log(`  ${pdf.pages} A4 pages (${A4_PT.width.toFixed(2)} × ${A4_PT.height.toFixed(2)} pt, print scaling: none), ${cards.length} cards; fonts used: ${[...fonts.keys()].sort().join(", ")}; PDF fonts: ${pdf.baseFonts.join(", ")} (${pdf.embedded} embedded font programs); no repeating tile (${pdf.tilingPatterns} one-off tiling patterns)`);
   console.log(`  ${plans.map(describeSheet).join("; ")}`);
+  if (sheetCheck.spread.length > 0) console.log(`  Main Orders dealt over their pages: ${sheetCheck.spread.join("; ")}`);
   const partial = plans.filter((plan) => plan.rows < 4).length;
-  if (partial > 0) console.log(`  blank area: pure white on the 150 dpi preview of ${partial} part-filled page${partial === 1 ? "" : "s"} (front and back)`);
+  if (partial > 0) console.log(`  blank area: pure white on the 150 dpi preview of ${partial} part-filled front page${partial === 1 ? "" : "s"} (their back pages carry a full grid, see below)`);
   for (const line of pdfRun.report.info) console.log(`  ${line}`);
   if (drift.length > 0) console.log(`  note: preview fitted ${drift.length} card(s) differently from the PDF run: ${drift.map(([id]) => id).join(", ")}`);
+  console.log(`  fronts: Title "${pdf.title}"`);
   for (const output of written.filter((item) => item.kind !== "fronts")) {
     console.log(`  ${output.kind === "duplex" ? "duplex" : "backs "} ${output.path}`);
     console.log(
-      `    ${output.pdf.pages} A4 pages, /Duplex /${output.pdf.duplex}, print scaling: none; PDF fonts: ${output.pdf.baseFonts.join(", ")} (${output.pdf.embedded} embedded font programs, none missing); no repeating tile`,
+      `    ${output.pdf.pages} A4 pages, /Duplex /${output.pdf.duplex}, print scaling: none; Title "${output.pdf.title}"; PDF fonts: ${output.pdf.baseFonts.join(", ")} (${output.pdf.embedded} embedded font programs, none missing); no repeating tile`,
     );
   }
-  console.log(`  back fonts used: ${[...backFonts.keys()].sort().join(", ")}; back plan: every back mirrors its front for a long-edge flip (x → ${PAGE_W} − x − ${CARD_W})`);
   console.log(
-    `  back pixels (150 dpi): ${judged.field} pixels of bleed and ${BACK_SAFE} mm band (less ${BAND_PIXEL_SLACK_MM} mm antialiasing) all field colours; ${judged.white} pixels outside the field all white (field found within ${judged.shift} px of the plan)`,
+    `  back fonts used: ${[...backFonts.keys()].sort().join(", ")}; back plan: a full grid of backs on every back page, one on every front card after a long-edge flip (x → ${PAGE_W} − x − ${CARD_W}) and after a short-edge one (y → ${PAGE_H} − y − ${CARD_H})`,
   );
+  console.log(
+    `  back preview pixels (150 dpi): ${judged.field} pixels of bleed and ${BACK_SAFE} mm band (less ${BAND_PIXEL_SLACK_MM} mm for the preview's antialiasing) all field colours; ${judged.white} pixels outside the field all white (field found within ${judged.shift} px of the plan)`,
+  );
+  for (const line of pdfCheck) console.log(`  ${line}`);
   for (const path of previews) console.log(`  preview ${path}`);
 }
 
@@ -792,8 +963,11 @@ async function main(): Promise<void> {
       safe: BACK_SAFE,
       minBleed: BACK_MIN_BLEED,
       pageW: PAGE_W,
+      pageH: PAGE_H,
     },
   };
+  const gap = Math.abs(backs.lightness.main - backs.lightness.starting);
+  if (gap < MIN_DECK_LIGHTNESS_GAP) throw new PrintError(`the two backs' mean lightness differs by only ${gap.toFixed(1)} L* (at least ${MIN_DECK_LIGHTNESS_GAP})`);
   const browser = await chromium.launch();
   try {
     for (const lang of langs) await printLanguage(browser, source, lang, art, input, backs.palette);
