@@ -53,7 +53,7 @@
       - strong: "Always:"
       - text: your Bank and Stoke cost no Wood.
       - strong: "When acquired:"
-      - text: Gain the Fuel Ledger Bank and Fuel Ledger Stoke Contribution cards(-1 Wood → -2/+2).
+      - text: Gain the Fuel Ledger Bank and Fuel Ledger Stoke Contribution cards (pay 1 Wood → −2/+2).
       - radio "Test Pieces 3 Coins"
       - text: Test Pieces 3 Coins Firing
       - strong: "Once per round, after Base Heat, before Heat markers, if you have a ceramic in this firing:"

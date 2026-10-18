@@ -49,7 +49,7 @@
       - strong: "Always:"
       - text: your Bank and Stoke cost no Wood.
       - strong: "When acquired:"
-      - text: Gain the Fuel Ledger Bank and Fuel Ledger Stoke Contribution cards(-1 Wood → -2/+2).
+      - text: Gain the Fuel Ledger Bank and Fuel Ledger Stoke Contribution cards (pay 1 Wood → −2/+2).
       - radio "Kiln Master 2 Coins"
       - text: Kiln Master 2 Coins Firing
       - strong: "Once per round, in the Heat marker step:"
