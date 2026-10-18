@@ -1,0 +1,33 @@
+- complementary "你的决断":
+  - paragraph: 派工阶段·轮到你了
+  - heading "换单：承接委托" [level=2]
+  - region "Lin（你）":
+    - heading "Lin（你）" [level=3]
+    - group "资源":
+      - strong: "0"
+      - text: 泥
+      - strong: "2"
+      - text: 柴
+      - strong: "2"
+      - text: 铜钱
+    - img "你的师傅"
+    - img "你的学徒"
+    - img "你的学徒"
+    - text: 手中4张委托 声望0／4 1分
+  - form "换单：承接委托":
+    - paragraph: 你弃了一张在手委托，查看了主委托牌堆顶2张，必须承接其中一张。
+    - button "完整规则：色样簿"
+    - group "主委托牌堆顶2张 仅你可见":
+      - text: ""
+      - paragraph: 没有承接的，面朝下放到主委托牌堆底。
+      - radio /O36 \d+分 2铜钱 1个御令 笔洗 \+ 瓶；白釉、月白釉各1件；纹饰不同 均上品以上/
+      - text: /O36 \d+分 2铜钱 1个御令 笔洗 \+ 瓶；白釉、月白釉各1件；纹饰不同 均上品以上/
+      - button "完整规则：委托O36"
+      - radio "O13 9分 3铜钱 任意器型 · 任意釉 · 画花 臻品"
+      - text: O13 9分 3铜钱 任意器型 · 任意釉 · 画花 臻品
+      - button "完整规则：委托O13"
+    - strong: 他人所见
+    - text: Lin正在查看2张委托
+    - paragraph: 请选择要承接的委托。
+    - button "取消"
+    - button "确认" [disabled]

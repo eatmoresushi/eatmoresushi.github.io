@@ -1,5 +1,2 @@
 - region "你的决断":
   - paragraph: 轮到你了：派工 · 还剩4名工人
-  - group "也可以先用：":
-    - text: 也可以先用：
-    - button "漕船"

@@ -1,0 +1,33 @@
+- complementary "Your decision":
+  - paragraph: Firing Phase · Your turn
+  - heading "After-Quality abilities" [level=2]
+  - region "Lin (you)":
+    - heading "Lin (you)" [level=3]
+    - group "Resources":
+      - strong: "0"
+      - text: Clay
+      - strong: "1"
+      - text: Wood
+      - strong: "1"
+      - text: Coin
+    - text: /5 Orders in hand Recognition 1\/4 \d+ VP/
+  - form "After-Quality abilities":
+    - paragraph: /Firing step \d+, in First Player order/
+    - paragraph: Use them in any order you like; the options are checked again after each use.
+    - heading "Queue" [level=3]
+    - list "Queue":
+      - listitem: "Lin (you): deciding"
+    - heading "Your ceramics in this firing" [level=3]
+    - text: "Moon White Bowl, Plain · Standard Protective Saggars: counts as Standard, not Flawed Grey-Green Bowl, Plain · Fine"
+    - group "Protective Saggars":
+      - button "Protective Saggars"
+      - paragraph:
+        - strong: "Always:"
+        - text: your ceramics are never Flawed; a Heat Difference of 3 or more counts as Standard.
+        - strong: "Once per round, after Quality is assigned:"
+        - text: 1 of your Standard ceramics from this firing → Fine.
+      - 'radio "Moon White Bowl, Plain · Standard Protective Saggars: counts as Standard, not Flawed"'
+      - text: "Moon White Bowl, Plain · Standard Protective Saggars: counts as Standard, not Flawed"
+    - paragraph: Pick an ability, or finish.
+    - button "Done — decline the rest"
+    - button "Confirm" [disabled]

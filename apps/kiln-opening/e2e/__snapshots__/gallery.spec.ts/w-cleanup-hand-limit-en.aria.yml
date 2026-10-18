@@ -20,23 +20,23 @@
     - group "Order Only you can see":
       - text: ""
       - paragraph: 0 of 2 chosen
-      - checkbox "S01 2 VP 4 Coins Bowl · any Glaze · any Decoration · Standard+"
-      - text: S01 2 VP 4 Coins Bowl · any Glaze · any Decoration · Standard+
+      - checkbox "S01 3 VP 4 Coins any Shape · White · any Decoration · Standard+"
+      - text: S01 3 VP 4 Coins any Shape · White · any Decoration · Standard+
       - 'button "Full rules: Order S01"'
-      - checkbox "S02 2 VP 4 Coins Plate · any Glaze · any Decoration · Standard+"
-      - text: S02 2 VP 4 Coins Plate · any Glaze · any Decoration · Standard+
+      - checkbox "S02 3 VP 4 Coins any Shape · Celadon · any Decoration · Standard+"
+      - text: S02 3 VP 4 Coins any Shape · Celadon · any Decoration · Standard+
       - 'button "Full rules: Order S02"'
-      - checkbox "O01 3 VP 3 Coins Bowl · any Glaze · any Decoration · Standard+"
-      - text: O01 3 VP 3 Coins Bowl · any Glaze · any Decoration · Standard+
+      - checkbox "O01 4 VP 3 Coins Bowl · any Glaze · any Decoration · Standard+"
+      - text: O01 4 VP 3 Coins Bowl · any Glaze · any Decoration · Standard+
       - 'button "Full rules: Order O01"'
-      - checkbox "O02 3 VP 3 Coins Plate · any Glaze · any Decoration · Standard+"
-      - text: O02 3 VP 3 Coins Plate · any Glaze · any Decoration · Standard+
+      - checkbox "O02 4 VP 3 Coins Plate · any Glaze · any Decoration · Standard+"
+      - text: O02 4 VP 3 Coins Plate · any Glaze · any Decoration · Standard+
       - 'button "Full rules: Order O02"'
-      - checkbox "O03 3 VP 3 Coins Brush Washer · any Glaze · any Decoration · Standard+"
-      - text: O03 3 VP 3 Coins Brush Washer · any Glaze · any Decoration · Standard+
+      - checkbox "O03 4 VP 3 Coins Brush Washer · any Glaze · any Decoration · Standard+"
+      - text: O03 4 VP 3 Coins Brush Washer · any Glaze · any Decoration · Standard+
       - 'button "Full rules: Order O03"'
-      - checkbox "O04 7 VP 4 Coins Vase · Moon White · any Decoration · Fine+"
-      - text: O04 7 VP 4 Coins Vase · Moon White · any Decoration · Fine+
+      - checkbox "O04 7 VP 3 Coins Vase · Moon White · any Decoration · Fine+"
+      - text: O04 7 VP 3 Coins Vase · Moon White · any Decoration · Fine+
       - 'button "Full rules: Order O04"'
     - paragraph: Everyone trims at the same time; others see only how many Orders you hold.
     - paragraph: 0 of 2 chosen

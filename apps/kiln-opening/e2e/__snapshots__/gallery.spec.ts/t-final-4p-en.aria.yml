@@ -18,7 +18,6 @@
   - form "Game over":
     - group "Game over":
       - paragraph: /Wen wins with \d+ VP\./
-      - paragraph: Decided by Imperial Recognition.
       - heading "Standings" [level=3]
       - list:
         - listitem: /#1 Wen \(you\) \d+ VP/

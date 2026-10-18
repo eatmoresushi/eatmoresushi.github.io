@@ -1,8 +1,8 @@
 - complementary "你的决断":
   - paragraph: 开工·轮到你了
   - heading "选择窑口" [level=2]
-  - region "Wen（你）":
-    - heading "Wen（你）" [level=3]
+  - region "Su（你）":
+    - heading "Su（你）" [level=3]
     - group "资源":
       - strong: "2"
       - text: 泥

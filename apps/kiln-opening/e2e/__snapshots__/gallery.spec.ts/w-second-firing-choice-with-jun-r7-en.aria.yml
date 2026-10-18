@@ -1,0 +1,47 @@
+- complementary "Your decision":
+  - paragraph: Firing Phase · Your turn
+  - 'heading "Second Firing: choose a Fire card" [level=2]'
+  - region "Player 1 (you)":
+    - heading "Player 1 (you)" [level=3]
+    - group "Resources":
+      - strong: "2"
+      - text: Clay
+      - strong: "2"
+      - text: Wood
+      - strong: "3"
+      - text: Coins
+    - img "Your Shifu"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - img "Your Apprentice"
+    - text: 0 Orders in hand Recognition 0/4 1 VP
+  - 'form "Second Firing: choose a Fire card"':
+    - paragraph: /Firing step \d+, in First Player order/
+    - paragraph: Second Firing turned 2 extra Fire cards face up, for everyone to see. Choose the one your ceramic is fired with again.
+    - heading "Ceramic" [level=3]
+    - text: Moon White Bowl, Plain · Flawed (in Low 1)
+    - group "Choose a Fire card":
+      - text: ""
+      - paragraph: The new Quality replaces the old one, even if it is worse.
+      - 'radio "Card 1: +1"'
+      - text: "Card 1: +1"
+      - 'radio "Card 2: −1"'
+      - text: "Card 2: −1"
+    - 'group "Kiln Transformation (optional) Cost: 1 Wood"':
+      - text: ""
+      - paragraph: On this ceramic, after the recalculation and before its new Quality.
+      - radio "Do not use" [checked]
+      - text: Do not use
+      - radio "+1"
+      - text: "+1"
+      - radio "−1"
+      - text: −1
+    - heading "Ability Second Firing" [level=3]:
+      - text: ""
+      - button "Second Firing"
+    - strong: "Once per round, after Quality is assigned:"
+    - text: choose 1 of your Flawed or Standard ceramics from this firing → reveal 2 extra Fire cards, choose 1; recalculate its Actual Heat and Quality with that card instead of the first (Jun's earlier adjustment is lost). The new Quality stands, even if worse.
+    - paragraph: The 2 cards then go to the Fire discard, face up.
+    - paragraph: Choose one of the Fire cards.
+    - button "Clear"
+    - button "Confirm" [disabled]

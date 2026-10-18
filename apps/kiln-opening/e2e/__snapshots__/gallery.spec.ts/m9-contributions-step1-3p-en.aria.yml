@@ -4,34 +4,34 @@
   - region "Zhao (you)":
     - heading "Zhao (you)" [level=3]
     - group "Resources":
-      - strong: "1"
+      - strong: "3"
       - text: Clay
-      - strong: "5"
+      - strong: "2"
       - text: Wood
       - strong: "3"
       - text: Coins
-    - text: /5 Orders in hand Recognition 1\/4 \d+ VP/
+    - text: 4 Orders in hand Recognition 1/4 7 VP
   - form "Choose your Contribution":
     - paragraph: Firing step 1
     - paragraph: Everyone with a ceramic in the Shared Kiln chooses in secret at the same time. All cards are revealed together once everyone has chosen; Wood is paid then.
     - heading "Who has chosen" [level=3]
     - list "Who has chosen":
+      - listitem: "Wen: chosen"
       - listitem: "Lin: chosen"
       - listitem: "Zhao (you): choosing…"
-      - listitem: "Wen: choosing…"
-    - group "Contribution card You have 5 Wood.":
+    - group "Contribution card You have 2 Wood.":
       - text: ""
       - paragraph: Base Heat = Kiln Die 1 + all Contributions, kept within 0–5.
       - radio "Tend the Fire no Wood Heat 0"
       - text: Tend the Fire no Wood Heat 0
-      - radio "Bank the Fire 1 Wood at reveal Heat −1"
-      - text: Bank the Fire 1 Wood at reveal Heat −1
-      - radio "Stoke the Fire 1 Wood at reveal Heat +1"
-      - text: Stoke the Fire 1 Wood at reveal Heat +1
+      - 'radio "Bank the Fire no Wood: Fuel Ledger Heat −1"'
+      - text: "Bank the Fire no Wood: Fuel Ledger Heat −1"
+      - 'radio "Stoke the Fire no Wood: Fuel Ledger Heat +1"'
+      - text: "Stoke the Fire no Wood: Fuel Ledger Heat +1"
     - heading "Fuel Ledger" [level=3]:
       - button "Fuel Ledger"
-    - checkbox "Secretly commit extra Wood with your card Bank the Fire becomes −2 and Stoke the Fire becomes +2. Others see only that you have chosen."
-    - text: Secretly commit extra Wood with your card Bank the Fire becomes −2 and Stoke the Fire becomes +2. Others see only that you have chosen.
+    - checkbox "Secretly commit 1 Wood with your card Bank the Fire becomes −2 and Stoke the Fire becomes +2; the Wood is paid at the reveal. Others see only that you have chosen."
+    - text: Secretly commit 1 Wood with your card Bank the Fire becomes −2 and Stoke the Fire becomes +2; the Wood is paid at the reveal. Others see only that you have chosen.
     - paragraph: Others see only that you have chosen; your card stays hidden until everyone has chosen.
     - paragraph: Choose a Contribution card.
     - button "Clear"

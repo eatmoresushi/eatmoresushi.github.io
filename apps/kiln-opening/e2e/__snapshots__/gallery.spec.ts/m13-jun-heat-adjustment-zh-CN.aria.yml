@@ -6,32 +6,34 @@
     - group "资源":
       - strong: "0"
       - text: 泥
-      - strong: "2"
+      - strong: "1"
       - text: 柴
       - strong: "2"
       - text: 铜钱
-    - text: 手中3张委托 声望0／4 1分
+    - text: 手中4张委托 声望0／4 1分
   - form "钧窑·窑变天成":
     - paragraph: 烧窑步骤8，按起始玩家顺序
     - paragraph:
       - strong: 每轮一次，实际火候算出后、定品前：
       - text: 可付1柴→己方1件器物的实际火候+1或−1。
-    - heading "能力 钧窑 · 窑变天成" [level=3]:
-      - text: ""
-      - button "钧窑 · 窑变天成"
+    - heading "顺序" [level=3]
     - list "顺序":
       - listitem: Lin（你）：决断中
-    - paragraph: 费用：1柴
     - group "器物":
       - text: ""
-      - radio "灰青釉香炉 · 素面（中温区2）" [checked]
-      - text: 灰青釉香炉 · 素面（中温区2）
-    - group "调整":
+      - radio "月白釉瓶 · 素面（高温区2）" [checked]
+      - text: 月白釉瓶 · 素面（高温区2）
+    - group "调整 费用：1柴":
       - text: ""
+      - paragraph: 在定品前计入这件器物的实际火候。
       - radio "+1"
       - text: "+1"
       - radio "−1"
       - text: −1
+    - heading "能力 钧窑 · 窑变天成" [level=3]:
+      - text: ""
+      - button "钧窑 · 窑变天成"
+    - paragraph: 不使用时，「窑变天成」本轮仍算未用。
     - paragraph: 请选择器物与调整，或不使用。
     - button "不使用"
     - button "确认" [disabled]

@@ -15,10 +15,11 @@
     - img "Your Apprentice"
     - text: 0 Orders in hand Recognition 0/4 1 VP
   - 'form "Colour Samples: reserve an Order"':
-    - paragraph: You must reserve one; the rest go face down to the discard.
+    - paragraph: You looked at the top 3 Main Orders. You must reserve one of them.
     - 'button "Full rules: Colour Samples"'
-    - group "Top of the Main Order deck Only you can see":
+    - group "Top 3 of the Main Order deck Only you can see":
       - text: ""
+      - paragraph: Those you do not reserve go face down to the bottom of the Main Order deck.
       - radio "O07 5 VP 3 Coins any Shape · Celadon · any Decoration Fine+"
       - text: O07 5 VP 3 Coins any Shape · Celadon · any Decoration Fine+
       - 'button "Full rules: Order O07"'

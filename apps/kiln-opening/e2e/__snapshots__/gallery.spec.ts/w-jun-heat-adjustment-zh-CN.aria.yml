@@ -20,24 +20,26 @@
     - paragraph:
       - strong: 每轮一次，实际火候算出后、定品前：
       - text: 可付1柴→己方1件器物的实际火候+1或−1。
-    - heading "能力 钧窑 · 窑变天成" [level=3]:
-      - text: ""
-      - button "钧窑 · 窑变天成"
+    - heading "顺序" [level=3]
     - list "顺序":
       - listitem: Player 1（你）：决断中
-    - paragraph: 费用：1柴
     - group "器物":
       - text: ""
       - radio "白釉碗 · 素面（中温区1）"
       - text: 白釉碗 · 素面（中温区1）
       - radio "青釉盘 · 素面（高温区1）"
       - text: 青釉盘 · 素面（高温区1）
-    - group "调整":
+    - group "调整 费用：1柴":
       - text: ""
+      - paragraph: 在定品前计入这件器物的实际火候。
       - radio "+1"
       - text: "+1"
       - radio "−1"
       - text: −1
+    - heading "能力 钧窑 · 窑变天成" [level=3]:
+      - text: ""
+      - button "钧窑 · 窑变天成"
+    - paragraph: 不使用时，「窑变天成」本轮仍算未用。
     - paragraph: 请选择器物与调整，或不使用。
     - button "不使用"
     - button "确认" [disabled]

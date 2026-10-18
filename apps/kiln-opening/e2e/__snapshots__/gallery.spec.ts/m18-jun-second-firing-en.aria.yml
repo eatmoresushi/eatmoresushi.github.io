@@ -1,35 +1,43 @@
 - complementary "Your decision":
   - paragraph: Firing Phase · Your turn
-  - heading "Jun Kiln · Kiln Transformation" [level=2]
-  - region "Lin (you)":
-    - heading "Lin (you)" [level=3]
+  - 'heading "Second Firing: choose a Fire card" [level=2]'
+  - region "Wen (you)":
+    - heading "Wen (you)" [level=3]
     - group "Resources":
       - strong: "1"
       - text: Clay
-      - strong: "5"
+      - strong: "3"
       - text: Wood
-      - strong: "1"
-      - text: Coin
-    - text: 4 Orders in hand Recognition 0/4 3 VP
-  - form "Jun Kiln · Kiln Transformation":
+      - strong: "0"
+      - text: Coins
+    - text: 5 Orders in hand Recognition 0/4 2 VP
+  - 'form "Second Firing: choose a Fire card"':
     - paragraph: /Firing step \d+, in First Player order/
-    - paragraph: Second Firing turned an extra Fire card for this ceramic. You may still use Kiln Transformation on it before its new Quality is assigned.
-    - heading "Ability Jun Kiln · Kiln Transformation" [level=3]:
+    - paragraph: Second Firing turned 2 extra Fire cards face up, for everyone to see. Choose the one your ceramic is fired with again.
+    - heading "Ceramic" [level=3]
+    - text: Moon White Bowl, Plain · Flawed (in High 2), Heat marker +1
+    - group "Choose a Fire card":
       - text: ""
-      - button "Jun Kiln · Kiln Transformation"
-    - paragraph: "Cost: 1 Wood"
-    - heading "Extra Fire card" [level=3]
-    - text: Fire card 0 Moon White Censer, Painted · Standard (in High 2)
-    - group "Ceramic":
+      - paragraph: The new Quality replaces the old one, even if it is worse.
+      - 'radio "Card 1: 0"'
+      - text: "Card 1: 0"
+      - 'radio "Card 2: +1"'
+      - text: "Card 2: +1"
+    - 'group "Kiln Transformation (optional) Cost: 1 Wood"':
       - text: ""
-      - radio "Moon White Censer, Painted · Standard (in High 2)" [checked]
-      - text: Moon White Censer, Painted · Standard (in High 2)
-    - group "Adjustment":
-      - text: ""
+      - paragraph: On this ceramic, after the recalculation and before its new Quality.
+      - radio "Do not use" [checked]
+      - text: Do not use
       - radio "+1"
       - text: "+1"
       - radio "−1"
       - text: −1
-    - paragraph: Choose a ceramic and an adjustment, or decline.
-    - button "Decline"
+    - heading "Ability Second Firing" [level=3]:
+      - text: ""
+      - button "Second Firing"
+    - strong: "Once per round, after Quality is assigned:"
+    - text: choose 1 of your Flawed or Standard ceramics from this firing → reveal 2 extra Fire cards, choose 1; recalculate its Actual Heat and Quality with that card instead of the first (Jun's earlier adjustment is lost). The new Quality stands, even if worse.
+    - paragraph: The 2 cards then go to the Fire discard, face up.
+    - paragraph: Choose one of the Fire cards.
+    - button "Clear"
     - button "Confirm" [disabled]

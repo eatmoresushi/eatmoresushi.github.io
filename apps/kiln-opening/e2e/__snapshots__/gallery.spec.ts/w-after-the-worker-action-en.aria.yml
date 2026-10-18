@@ -19,8 +19,8 @@
       - text: ""
       - radio "Imperial Priority After your worker action"
       - text: Imperial Priority After your worker action
-      - radio "Canal Barge After your worker action"
-      - text: Canal Barge After your worker action
+      - radio "Colour Samples swap Give up a held Order, then look at the top 2 Main Orders and reserve one"
+      - text: Colour Samples swap Give up a held Order, then look at the top 2 Main Orders and reserve one
       - radio "End your turn Nothing more this turn"
       - text: End your turn Nothing more this turn
     - paragraph: Choose what to do now.

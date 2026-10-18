@@ -18,7 +18,6 @@
   - form "终局":
     - group "终局":
       - paragraph: /Wen以\d+分获胜。/
-      - paragraph: 以御府声望定胜负。
       - heading "名次" [level=3]
       - list:
         - listitem: /第1名 Wen（你） \d+分/

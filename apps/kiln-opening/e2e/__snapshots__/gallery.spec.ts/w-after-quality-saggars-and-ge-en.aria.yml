@@ -22,20 +22,20 @@
     - list "Queue":
       - listitem: "Player 1 (you): deciding"
     - heading "Your ceramics in this firing" [level=3]
-    - text: Moon White Bowl, Plain · Standard Moon White Plate, Plain · Flawed Celadon Vase, Plain · Fine
-    - 'group "Protective Saggars Cost: 1 Wood"':
+    - text: "Moon White Bowl, Plain · Standard Moon White Plate, Plain · Standard Protective Saggars: counts as Standard, not Flawed Celadon Vase, Plain · Fine"
+    - group "Protective Saggars":
       - button "Protective Saggars"
-      - text: ""
       - paragraph:
+        - strong: "Always:"
+        - text: your ceramics are never Flawed; a Heat Difference of 3 or more counts as Standard.
         - strong: "Once per round, after Quality is assigned:"
-        - text: "pay 1 Wood → improve 1 of your ceramics from this firing: Flawed → Standard or Standard → Fine."
+        - text: 1 of your Standard ceramics from this firing → Fine.
       - radio "Moon White Bowl, Plain · Standard"
       - text: Moon White Bowl, Plain · Standard
-      - radio "Moon White Plate, Plain · Flawed"
-      - text: Moon White Plate, Plain · Flawed
-    - 'group "Ge Kiln · Crackle Mastery Cost: free"':
+      - 'radio "Moon White Plate, Plain · Standard Protective Saggars: counts as Standard, not Flawed"'
+      - text: "Moon White Plate, Plain · Standard Protective Saggars: counts as Standard, not Flawed"
+    - group "Ge Kiln · Crackle Mastery":
       - button "Ge Kiln · Crackle Mastery"
-      - text: ""
       - paragraph:
         - strong: "Once per round, after Quality is assigned:"
         - text: 1 of your Standard ceramics from this firing → Fine + Crackle.
@@ -43,6 +43,8 @@
         - text: each Crackle ceramic may count as any 1 Decoration; it is never a Masterpiece.
       - radio "Moon White Bowl, Plain · Standard"
       - text: Moon White Bowl, Plain · Standard
+      - 'radio "Moon White Plate, Plain · Standard Protective Saggars: counts as Standard, not Flawed"'
+      - text: "Moon White Plate, Plain · Standard Protective Saggars: counts as Standard, not Flawed"
     - paragraph: Pick an ability, or finish.
     - button "Done — decline the rest"
     - button "Confirm" [disabled]

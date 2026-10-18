@@ -1,44 +1,41 @@
 - complementary "Your decision":
   - paragraph: Cleanup · Your turn
   - heading "Discard down to your hand limit" [level=2]
-  - region "Wen (you)":
-    - heading "Wen (you)" [level=3]
+  - region "Lin (you)":
+    - heading "Lin (you)" [level=3]
     - group "Resources":
-      - strong: "1"
-      - text: Clay
-      - strong: "3"
-      - text: Wood
       - strong: "0"
+      - text: Clay
+      - strong: "2"
+      - text: Wood
+      - strong: "4"
       - text: Coins
     - img "Your Shifu"
     - img "Your Apprentice"
     - img "Your Apprentice"
     - img "Your Apprentice"
-    - text: 6 Orders in hand Recognition 0/4 2 VP
+    - text: 5 Orders in hand Recognition 0/4 0 VP
   - form "Discard down to your hand limit":
-    - paragraph: "You hold 6 Orders and your limit is 4: discard exactly 2. Starting Orders return to the box; Main Orders go face down to the discard."
+    - paragraph: "You hold 5 Orders and your limit is 4: discard exactly 1. Starting Orders return to the box; Main Orders go face down to the discard."
     - group "Order Only you can see":
       - text: ""
-      - paragraph: 0 of 2 chosen
-      - checkbox "S02 2 VP 4 Coins Plate · any Glaze · any Decoration · Standard+"
-      - text: S02 2 VP 4 Coins Plate · any Glaze · any Decoration · Standard+
+      - paragraph: 0 of 1 chosen
+      - checkbox "S03 3 VP 4 Coins any Shape · Grey-Green · any Decoration · Standard+"
+      - text: S03 3 VP 4 Coins any Shape · Grey-Green · any Decoration · Standard+
+      - 'button "Full rules: Order S03"'
+      - checkbox "S02 3 VP 4 Coins any Shape · Celadon · any Decoration · Standard+"
+      - text: S02 3 VP 4 Coins any Shape · Celadon · any Decoration · Standard+
       - 'button "Full rules: Order S02"'
-      - checkbox "S10 4 VP 4 Coins any Shape · any Glaze · Plain · Standard+"
-      - text: S10 4 VP 4 Coins any Shape · any Glaze · Plain · Standard+
-      - 'button "Full rules: Order S10"'
-      - checkbox /O38 \d+ VP 1 Coin 1 Crown Plate \+ Brush Washer; different Glazes; both Carved · Fine\+ each/
-      - text: /O38 \d+ VP 1 Coin 1 Crown Plate \+ Brush Washer; different Glazes; both Carved · Fine\+ each/
-      - 'button "Full rules: Order O38"'
-      - checkbox "O05 7 VP 4 Coins Censer · any Glaze · Carved · Fine+"
-      - text: O05 7 VP 4 Coins Censer · any Glaze · Carved · Fine+
-      - 'button "Full rules: Order O05"'
-      - checkbox /O43 \d+ VP 6 Coins 3 different Shapes; any Glazes; any Decorations · Standard\+ all/
-      - text: /O43 \d+ VP 6 Coins 3 different Shapes; any Glazes; any Decorations · Standard\+ all/
-      - 'button "Full rules: Order O43"'
-      - checkbox "O08 5 VP 3 Coins any Shape · Grey-Green · any Decoration · Fine+"
-      - text: O08 5 VP 3 Coins any Shape · Grey-Green · any Decoration · Fine+
-      - 'button "Full rules: Order O08"'
+      - checkbox /O48 \d+ VP 0 Coins 3 Crowns Brush Washer \+ Vase \+ Censer; one White, one Grey-Green, one Moon White; at least 2 different Decorations · Fine\+ all; ≥1 Masterpiece/
+      - text: /O48 \d+ VP 0 Coins 3 Crowns Brush Washer \+ Vase \+ Censer; one White, one Grey-Green, one Moon White; at least 2 different Decorations · Fine\+ all; ≥1 Masterpiece/
+      - 'button "Full rules: Order O48"'
+      - checkbox /O45 \d+ VP 1 Coin 2 Crowns 3 different Shapes; one White, one Celadon, one Grey-Green; 3 different Decorations · Fine\+ all/
+      - text: /O45 \d+ VP 1 Coin 2 Crowns 3 different Shapes; one White, one Celadon, one Grey-Green; 3 different Decorations · Fine\+ all/
+      - 'button "Full rules: Order O45"'
+      - checkbox /O30 \d+ VP 5 Coins Bowl \+ Brush Washer; one White, one Moon White; any Decorations · Fine\+ each/
+      - text: /O30 \d+ VP 5 Coins Bowl \+ Brush Washer; one White, one Moon White; any Decorations · Fine\+ each/
+      - 'button "Full rules: Order O30"'
     - paragraph: Everyone trims at the same time; others see only how many Orders you hold.
-    - paragraph: 0 of 2 chosen
+    - paragraph: 0 of 1 chosen
     - button "Clear"
     - button "Confirm" [disabled]

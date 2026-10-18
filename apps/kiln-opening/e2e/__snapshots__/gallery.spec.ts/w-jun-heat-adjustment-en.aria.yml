@@ -20,24 +20,26 @@
     - paragraph:
       - strong: "Once per round, after Actual Heat is calculated, before Quality:"
       - text: pay 1 Wood → adjust 1 of your ceramics' Actual Heat by +1 or −1.
-    - heading "Ability Jun Kiln · Kiln Transformation" [level=3]:
-      - text: ""
-      - button "Jun Kiln · Kiln Transformation"
+    - heading "Queue" [level=3]
     - list "Queue":
       - listitem: "Player 1 (you): deciding"
-    - paragraph: "Cost: 1 Wood"
     - group "Ceramic":
       - text: ""
       - radio "White Bowl, Plain (in Middle 1)"
       - text: White Bowl, Plain (in Middle 1)
       - radio "Celadon Plate, Plain (in High 1)"
       - text: Celadon Plate, Plain (in High 1)
-    - group "Adjustment":
+    - 'group "Adjustment Cost: 1 Wood"':
       - text: ""
+      - paragraph: Added to that ceramic’s Actual Heat before its Quality is assigned.
       - radio "+1"
       - text: "+1"
       - radio "−1"
       - text: −1
+    - heading "Ability Jun Kiln · Kiln Transformation" [level=3]:
+      - text: ""
+      - button "Jun Kiln · Kiln Transformation"
+    - paragraph: If you decline, Kiln Transformation stays unused this round.
     - paragraph: Choose a ceramic and an adjustment, or decline.
     - button "Decline"
     - button "Confirm" [disabled]

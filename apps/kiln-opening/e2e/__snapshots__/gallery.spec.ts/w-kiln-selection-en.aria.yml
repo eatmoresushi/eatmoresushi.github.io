@@ -1,8 +1,8 @@
 - complementary "Your decision":
   - paragraph: Start of Round · Your turn
   - heading "Choose your Kiln" [level=2]
-  - region "B (you)":
-    - heading "B (you)" [level=3]
+  - region "C (you)":
+    - heading "C (you)" [level=3]
     - group "Resources":
       - strong: "2"
       - text: Clay

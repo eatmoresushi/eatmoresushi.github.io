@@ -1,0 +1,64 @@
+- complementary "你的决断":
+  - paragraph: 派工阶段·轮到你了
+  - heading "再习得一项技艺，或不再习得" [level=2]
+  - region "Lin（你）":
+    - heading "Lin（你）" [level=3]
+    - group "资源":
+      - strong: "0"
+      - text: 泥
+      - strong: "0"
+      - text: 柴
+      - strong: "3"
+      - text: 铜钱
+    - img "你的学徒"
+    - img "你的学徒"
+    - img "你的学徒"
+    - text: 手中3张委托 声望0／4 9分
+  - form "再习得一项技艺，或不再习得":
+    - paragraph: 本次已习得：支烧窑具
+    - group "所看火作技艺 第2项（至多2项）":
+      - text: ""
+      - radio "贡瓷 4铜钱" [disabled]
+      - text: 贡瓷 4铜钱 火作
+      - strong: 每轮一次，完成御令委托时：
+      - text: 额外得1个御令。
+      - paragraph: 铜钱不足：需4，现有3
+      - radio "火照 3铜钱"
+      - text: 火照 3铜钱 火作
+      - strong: 每轮一次，基础火候定后、翻火标前，本窑有己方器物时：
+      - text: 可付1柴→私看窑火牌堆顶1张，可将其置于牌堆底。
+    - group "或取公开技艺":
+      - text: ""
+      - radio "饰坯匣 2铜钱" [disabled]
+      - text: 饰坯匣 2铜钱 坯作
+      - strong: 每轮一次：
+      - text: 你施加的1项刻花、印花或画花少付1铜钱。可与师傅的纹饰减免叠加。
+      - paragraph: 你已拥有一项坯作技艺
+      - radio "大陶车 2铜钱" [disabled]
+      - text: 大陶车 2铜钱 坯作
+      - strong: 每轮一次，制坯饰纹行动中制有至少1件瓶或香炉时：
+      - text: 该行动的泥总费−2，最低为0。
+      - paragraph: 你已拥有一项坯作技艺
+      - radio "看火 3铜钱" [disabled]
+      - text: 看火 3铜钱 釉作
+      - strong: 每轮一次，至少装窑1件的施釉装窑行动之后：
+      - text: 得1泥1柴。
+      - paragraph: 你已拥有一项釉作技艺
+      - radio "柴簿 2铜钱"
+      - text: 柴簿 2铜钱 火作
+      - strong: 持续：
+      - text: 你的压火与添柴不付柴。
+      - strong: 选控火时：
+      - text: 若选压火或添柴，可随控火牌暗附1柴→控火修正改为压火−2或添柴+2。
+      - radio "窑工 2铜钱"
+      - text: 窑工 2铜钱 火作
+      - strong: 每轮一次，翻火标步骤中：
+      - text: 可将窑工标（+1或−1）放在己方本窑1件未带火标的器物上。
+    - paragraph: 再习得的技艺必须是另一门类，按牌面价付费。被取走的技艺位空着，直到你的回合结束。
+    - group "或者就此停下":
+      - text: ""
+      - radio "不再习得 没有习得的所看技艺放回牌堆底，顺序由你决定。"
+      - text: 不再习得 没有习得的所看技艺放回牌堆底，顺序由你决定。
+    - paragraph: 请再选一项要习得的技艺，或不再习得。
+    - button "取消"
+    - button "确认" [disabled]
