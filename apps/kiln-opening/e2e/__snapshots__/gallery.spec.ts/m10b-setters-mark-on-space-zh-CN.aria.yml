@@ -8,13 +8,13 @@
       - text: 泥
       - strong: "2"
       - text: 柴
-      - strong: "5"
+      - strong: "2"
       - text: 铜钱
     - img "你的师傅"
     - img "你的学徒"
     - img "你的学徒"
     - img "你的学徒"
-    - text: 手中3张委托 声望0／4 5分
+    - text: 手中4张委托 声望0／4 0分
   - form "等候Zhao……":
     - group "等候Zhao……":
       - paragraph: 等候时可以浏览桌面。

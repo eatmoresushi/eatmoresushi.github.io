@@ -14,13 +14,13 @@
     - img "Your Apprentice"
     - img "Your Apprentice"
     - img "Your Apprentice"
-    - text: 0 Orders in hand Recognition 1/4 1 VP
+    - text: 0 Orders in hand Recognition 1/4 0 VP
   - form "Game over":
     - group "Game over":
-      - paragraph: Player 1 wins with 2 VP.
+      - paragraph: Player 1 wins with 1 VP.
       - paragraph: Decided by Imperial Recognition.
       - heading "Standings" [level=3]
       - list:
-        - listitem: "#1 Player 1 2 VP"
-        - listitem: "#2 Player 2 (you) 2 VP"
+        - listitem: "#1 Player 1 1 VP"
+        - listitem: "#2 Player 2 (you) 1 VP"
       - paragraph: The full score table is in Results.

@@ -1,35 +1,35 @@
 - complementary "Your decision":
   - paragraph: Order Phase · Your turn
   - heading "Complete held Orders" [level=2]
-  - region "Zhao (you)":
-    - heading "Zhao (you)" [level=3]
+  - region "Lin (you)":
+    - heading "Lin (you)" [level=3]
     - group "Resources":
-      - strong: "2"
-      - text: Clay
       - strong: "1"
-      - text: Wood
+      - text: Clay
       - strong: "2"
+      - text: Wood
+      - strong: "5"
       - text: Coins
-    - text: /5 Orders in hand Recognition 3\/4 \d+ VP/
+    - text: 5 Orders in hand Recognition 0/4 6 VP
   - form "Complete held Orders":
     - paragraph: In First Player order. Complete any number of your held Orders, one at a time; the list is checked again after each one.
-    - group "Order 3 of 5 can be completed":
+    - group "Order 2 of 5 can be completed":
       - text: ""
-      - radio "S02 3 VP 4 Coins any Shape · Celadon · any Decoration · Standard+ No matching ceramics" [disabled]
-      - text: S02 3 VP 4 Coins any Shape · Celadon · any Decoration · Standard+ No matching ceramics
-      - 'button "Full rules: Order S02"'
-      - radio /O30 \d+ VP 5 Coins Bowl \+ Brush Washer; one White, one Moon White; any Decorations · Fine\+ each/
-      - text: /O30 \d+ VP 5 Coins Bowl \+ Brush Washer; one White, one Moon White; any Decorations · Fine\+ each/
-      - 'button "Full rules: Order O30"'
-      - radio "O19 6 VP 2 Coins 1 Crown Censer · Grey-Green · Impressed · Fine+"
-      - text: O19 6 VP 2 Coins 1 Crown Censer · Grey-Green · Impressed · Fine+
-      - 'button "Full rules: Order O19"'
-      - radio "O15 5 VP 4 Coins Vase or Censer · any Glaze · any Decoration · Fine+"
-      - text: O15 5 VP 4 Coins Vase or Censer · any Glaze · any Decoration · Fine+
-      - 'button "Full rules: Order O15"'
-      - radio /O48 \d+ VP 0 Coins 3 Crowns Brush Washer \+ Vase \+ Censer; one White, one Grey-Green, one Moon White; at least 2 different Decorations · Fine\+ all; ≥1 Masterpiece No matching ceramics/ [disabled]
-      - text: /O48 \d+ VP 0 Coins 3 Crowns Brush Washer \+ Vase \+ Censer; one White, one Grey-Green, one Moon White; at least 2 different Decorations · Fine\+ all; ≥1 Masterpiece No matching ceramics/
-      - 'button "Full rules: Order O48"'
+      - radio "S07 3 VP 3 Coins any Shape · any Glaze · Carved, Impressed or Painted · Standard+"
+      - text: S07 3 VP 3 Coins any Shape · any Glaze · Carved, Impressed or Painted · Standard+
+      - 'button "Full rules: Order S07"'
+      - radio /O42 \d+ VP 0 Coins 2 Crowns Brush Washer \+ Censer; different Glazes; same Decoration · Fine\+ each; ≥1 Masterpiece No matching ceramics/ [disabled]
+      - text: /O42 \d+ VP 0 Coins 2 Crowns Brush Washer \+ Censer; different Glazes; same Decoration · Fine\+ each; ≥1 Masterpiece No matching ceramics/
+      - 'button "Full rules: Order O42"'
+      - radio /O46 \d+ VP 0 Coins 2 Crowns Plate \+ Vase \+ Censer; one Celadon, one Grey-Green, one Moon White; one Carved, one Impressed, one Painted · Fine\+ all No matching ceramics/ [disabled]
+      - text: /O46 \d+ VP 0 Coins 2 Crowns Plate \+ Vase \+ Censer; one Celadon, one Grey-Green, one Moon White; one Carved, one Impressed, one Painted · Fine\+ all No matching ceramics/
+      - 'button "Full rules: Order O46"'
+      - radio "O25 9 VP 5 Coins 2 different Shapes; any Glazes; any Decorations · Standard+ each"
+      - text: O25 9 VP 5 Coins 2 different Shapes; any Glazes; any Decorations · Standard+ each
+      - 'button "Full rules: Order O25"'
+      - radio /O40 \d+ VP 0 Coins 2 Crowns Bowl \+ Brush Washer; one White, one Grey-Green; one Impressed, one Painted · Fine\+ each; ≥1 Masterpiece No matching ceramics/ [disabled]
+      - text: /O40 \d+ VP 0 Coins 2 Crowns Bowl \+ Brush Washer; one White, one Grey-Green; one Impressed, one Painted · Fine\+ each; ≥1 Masterpiece No matching ceramics/
+      - 'button "Full rules: Order O40"'
     - paragraph: Only held Orders can be completed; Orders on the display cannot.
     - paragraph: Choose an Order to complete, or end your turn.
     - button "End turn"

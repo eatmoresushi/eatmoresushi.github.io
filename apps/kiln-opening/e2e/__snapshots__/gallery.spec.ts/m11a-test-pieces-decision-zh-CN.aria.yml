@@ -1,16 +1,16 @@
 - complementary "你的决断":
   - paragraph: 烧窑阶段·轮到你了
   - heading "是否使用「火照」？" [level=2]
-  - region "Lin（你）":
-    - heading "Lin（你）" [level=3]
+  - region "Zhao（你）":
+    - heading "Zhao（你）" [level=3]
     - group "资源":
-      - strong: "3"
+      - strong: "4"
       - text: 泥
       - strong: "1"
       - text: 柴
-      - strong: "1"
+      - strong: "0"
       - text: 铜钱
-    - text: 手中5张委托 声望0／4 3分
+    - text: 手中4张委托 声望0／4 0分
   - form "是否使用「火照」？":
     - paragraph: 烧窑步骤4，按起始玩家顺序
     - paragraph:
@@ -18,7 +18,7 @@
       - text: 可付1柴→私看窑火牌堆顶1张，可将其置于牌堆底。
     - heading "顺序" [level=3]
     - list "顺序":
-      - listitem: Lin（你）：决断中
+      - listitem: Zhao（你）：决断中
     - group "火照":
       - button "火照"
       - radio "付1柴，私看窑火牌堆顶的牌 只有你看到此牌。看后再决定是否把它放到窑火牌堆底。"

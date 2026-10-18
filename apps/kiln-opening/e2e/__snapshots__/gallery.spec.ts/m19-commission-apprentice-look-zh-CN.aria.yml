@@ -1,8 +1,8 @@
 - complementary "你的决断":
   - paragraph: 派工阶段·轮到你了
-  - heading "承接委托" [level=2]
-  - region "Lin（你）":
-    - heading "Lin（你）" [level=3]
+  - heading "精选2：承接委托" [level=2]
+  - region "Zhao（你）":
+    - heading "Zhao（你）" [level=3]
     - group "资源":
       - strong: "0"
       - text: 泥
@@ -10,19 +10,20 @@
       - text: 柴
       - strong: "0"
       - text: 铜钱
-    - img "你的师傅"
+    - img "你的学徒"
+    - img "你的学徒"
     - text: 手中3张委托 声望0／4 0分
-  - form "承接委托":
-    - paragraph: 承接一张委托：从委托榜，或从你所看之牌中。
+  - form "精选2：承接委托":
+    - paragraph: 承接一张委托：从委托榜，或从你看过的牌中。
     - group "主委托牌堆顶2张 仅你可见":
       - text: ""
       - paragraph: 没有承接的，面朝下放到主委托牌堆底。
-      - radio "O03 4分 3铜钱 笔洗 · 任意釉 · 任意纹饰 良品以上"
-      - text: O03 4分 3铜钱 笔洗 · 任意釉 · 任意纹饰 良品以上
-      - button "完整规则：委托O03"
-      - radio "O05 6分 3铜钱 香炉 · 任意釉 · 刻花 上品以上"
-      - text: O05 6分 3铜钱 香炉 · 任意釉 · 刻花 上品以上
-      - button "完整规则：委托O05"
+      - radio /O46 \d+分 0铜钱 2个御令 盘 \+ 瓶 \+ 香炉；青釉、灰青釉、月白釉各1件；刻花、印花、画花各1件 均上品以上/
+      - text: /O46 \d+分 0铜钱 2个御令 盘 \+ 瓶 \+ 香炉；青釉、灰青釉、月白釉各1件；刻花、印花、画花各1件 均上品以上/
+      - button "完整规则：委托O46"
+      - radio /O35 \d+分 2铜钱 1个御令 碗 \+ 盘；均为青釉；任意纹饰 均上品以上/
+      - text: /O35 \d+分 2铜钱 1个御令 碗 \+ 盘；均为青釉；任意纹饰 均上品以上/
+      - button "完整规则：委托O35"
     - group "委托榜上的委托":
       - text: ""
       - paragraph: 被承接的榜位空着，直到你的回合结束。
@@ -45,7 +46,7 @@
       - text: "#6 O15 5分 4铜钱 瓶或香炉 · 任意釉 · 任意纹饰 上品以上"
       - button "完整规则：委托O15"
     - strong: 他人所见
-    - text: Lin正在查看2张委托
+    - text: Zhao正在查看2张委托
     - paragraph: 请选择要承接的委托。
     - button "取消"
     - button "确认" [disabled]

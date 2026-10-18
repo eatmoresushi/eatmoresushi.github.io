@@ -4,25 +4,25 @@
   - region "Lin（你）":
     - heading "Lin（你）" [level=3]
     - group "资源":
-      - strong: "2"
+      - strong: "0"
       - text: 泥
       - strong: "2"
       - text: 柴
-      - strong: "7"
+      - strong: /\d+/
       - text: 铜钱
     - img "你的师傅"
     - img "你的学徒"
     - img "你的学徒"
     - img "你的学徒"
-    - text: /手中2张委托 声望3／4 \d+分/
+    - text: /手中2张委托 声望2／4 \d+分/
   - form "终局":
     - group "终局":
       - paragraph: /Lin以\d+分获胜。/
-      - paragraph: 以御府声望定胜负。
+      - paragraph: 以已完成委托上印的御令定胜负。
       - heading "名次" [level=3]
       - list:
         - listitem: /第1名 Lin（你） \d+分/
-        - listitem: /第2名 Su \d+分/
+        - listitem: /第2名 Zhao \d+分/
         - listitem: /第3名 Wen \d+分/
-        - listitem: /第4名 Zhao \d+分/
+        - listitem: /第4名 Su \d+分/
       - paragraph: 完整计分见终局结果。

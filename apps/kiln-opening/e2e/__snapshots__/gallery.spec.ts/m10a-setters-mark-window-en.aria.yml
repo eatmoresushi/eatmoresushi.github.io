@@ -8,13 +8,13 @@
       - text: Clay
       - strong: "2"
       - text: Wood
-      - strong: "5"
+      - strong: "2"
       - text: Coins
     - img "Your Shifu"
     - img "Your Apprentice"
     - img "Your Apprentice"
     - img "Your Apprentice"
-    - text: 3 Orders in hand Recognition 0/4 5 VP
+    - text: 4 Orders in hand Recognition 0/4 0 VP
   - form "Place your Setter’s Mark":
     - paragraph: "Put it on an empty active space of the Shared Kiln: only you may load there this round."
     - 'button "Full rules: Setter''s Mark"'

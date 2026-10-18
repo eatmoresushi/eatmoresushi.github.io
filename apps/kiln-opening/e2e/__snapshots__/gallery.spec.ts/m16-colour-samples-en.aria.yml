@@ -1,34 +1,52 @@
 - complementary "Your decision":
   - paragraph: Work Phase · Your turn
-  - 'heading "Colour Samples: reserve an Order" [level=2]'
+  - 'heading "Colour Samples: Select 3" [level=2]'
   - region "Lin (you)":
     - heading "Lin (you)" [level=3]
     - group "Resources":
-      - strong: "0"
+      - strong: "1"
       - text: Clay
       - strong: "2"
       - text: Wood
-      - strong: "2"
+      - strong: "0"
       - text: Coins
-    - img "Your Shifu"
-    - img "Your Apprentice"
-    - img "Your Apprentice"
-    - text: 4 Orders in hand Recognition 0/4 1 VP
-  - 'form "Colour Samples: reserve an Order"':
-    - paragraph: You looked at the top 3 Main Orders. You must reserve one of them.
+    - text: 4 Orders in hand Recognition 0/4 0 VP
+  - 'form "Colour Samples: Select 3"':
+    - paragraph: "You must reserve one Order: from the display or from the cards you looked at."
     - 'button "Full rules: Colour Samples"'
     - group "Top 3 of the Main Order deck Only you can see":
       - text: ""
       - paragraph: Those you do not reserve go face down to the bottom of the Main Order deck.
-      - radio "O19 6 VP 2 Coins 1 Crown Censer · Grey-Green · Impressed Fine+"
-      - text: O19 6 VP 2 Coins 1 Crown Censer · Grey-Green · Impressed Fine+
-      - 'button "Full rules: Order O19"'
-      - radio "O11 9 VP 3 Coins any Shape · any Glaze · Carved Masterpiece"
-      - text: O11 9 VP 3 Coins any Shape · any Glaze · Carved Masterpiece
+      - radio /O29 \d+ VP 5 Coins Vase \+ Censer; any Glazes; different Decorations Fine\+ each/
+      - text: /O29 \d+ VP 5 Coins Vase \+ Censer; any Glazes; different Decorations Fine\+ each/
+      - 'button "Full rules: Order O29"'
+      - radio /O24 \d+ VP 1 Coin 1 Crown any Shape · Moon White · any Decoration Masterpiece/
+      - text: /O24 \d+ VP 1 Coin 1 Crown any Shape · Moon White · any Decoration Masterpiece/
+      - 'button "Full rules: Order O24"'
+      - radio /O43 \d+ VP 6 Coins 3 different Shapes; any Glazes; any Decorations Standard\+ all/
+      - text: /O43 \d+ VP 6 Coins 3 different Shapes; any Glazes; any Decorations Standard\+ all/
+      - 'button "Full rules: Order O43"'
+    - group "Orders on the display":
+      - text: ""
+      - paragraph: A reserved position stays empty until your turn ends.
+      - radio /#1 O27 \d+ VP 5 Coins Brush Washer \+ Vase; different Glazes; any Decorations Fine\+ each/
+      - text: /#1 O27 \d+ VP 5 Coins Brush Washer \+ Vase; different Glazes; any Decorations Fine\+ each/
+      - 'button "Full rules: Order O27"'
+      - radio /#2 O26 \d+ VP 5 Coins Bowl \+ Plate; same Glaze; any Decorations Fine\+ each/
+      - text: /#2 O26 \d+ VP 5 Coins Bowl \+ Plate; same Glaze; any Decorations Fine\+ each/
+      - 'button "Full rules: Order O26"'
+      - radio "#3 O11 9 VP 3 Coins any Shape · any Glaze · Carved Masterpiece"
+      - text: "#3 O11 9 VP 3 Coins any Shape · any Glaze · Carved Masterpiece"
       - 'button "Full rules: Order O11"'
-      - radio /O23 \d+ VP 1 Coin 1 Crown Vase · Grey-Green · Painted Masterpiece/
-      - text: /O23 \d+ VP 1 Coin 1 Crown Vase · Grey-Green · Painted Masterpiece/
+      - radio /#4 O23 \d+ VP 1 Coin 1 Crown Vase · Grey-Green · Painted Masterpiece/
+      - text: /#4 O23 \d+ VP 1 Coin 1 Crown Vase · Grey-Green · Painted Masterpiece/
       - 'button "Full rules: Order O23"'
+      - radio /#5 O33 \d+ VP 5 Coins 2 different Shapes; same Glaze; different Decorations Fine\+ each; ≥1 Masterpiece/
+      - text: /#5 O33 \d+ VP 5 Coins 2 different Shapes; same Glaze; different Decorations Fine\+ each; ≥1 Masterpiece/
+      - 'button "Full rules: Order O33"'
+      - radio "#6 O16 9 VP 2 Coins any Shape · any Glaze · any Decoration Masterpiece"
+      - text: "#6 O16 9 VP 2 Coins any Shape · any Glaze · any Decoration Masterpiece"
+      - 'button "Full rules: Order O16"'
     - strong: Others see
     - text: Lin is looking at 3 Orders
     - paragraph: Choose an Order to reserve.

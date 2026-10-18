@@ -8,13 +8,13 @@
       - text: Clay
       - strong: "2"
       - text: Wood
-      - strong: "5"
+      - strong: "2"
       - text: Coins
     - img "Your Shifu"
     - img "Your Apprentice"
     - img "Your Apprentice"
     - img "Your Apprentice"
-    - text: 3 Orders in hand Recognition 0/4 5 VP
+    - text: 4 Orders in hand Recognition 0/4 0 VP
   - form "Waiting for Zhao…":
     - group "Waiting for Zhao…":
       - paragraph: You can browse the table while you wait.

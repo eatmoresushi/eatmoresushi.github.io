@@ -4,18 +4,18 @@
   - region "Wen (you)":
     - heading "Wen (you)" [level=3]
     - group "Resources":
-      - strong: "1"
-      - text: Clay
       - strong: "3"
+      - text: Clay
+      - strong: "2"
       - text: Wood
       - strong: "0"
       - text: Coins
-    - text: 5 Orders in hand Recognition 0/4 2 VP
+    - text: 4 Orders in hand Recognition 0/4 0 VP
   - 'form "Second Firing: choose a Fire card"':
     - paragraph: /Firing step \d+, in First Player order/
     - paragraph: Second Firing turned 2 extra Fire cards face up, for everyone to see. Choose the one your ceramic is fired with again.
     - heading "Ceramic" [level=3]
-    - text: Moon White Bowl, Plain · Flawed (in High 2), Heat marker +1
+    - text: Celadon Censer, Plain · Standard (in Middle 2)
     - group "Choose a Fire card":
       - text: ""
       - paragraph: The new Quality replaces the old one, even if it is worse.
@@ -36,7 +36,7 @@
       - text: ""
       - button "Second Firing"
     - strong: "Once per round, after Quality is assigned:"
-    - text: choose 1 of your Flawed or Standard ceramics from this firing → reveal 2 extra Fire cards, choose 1; recalculate its Actual Heat and Quality with that card instead of the first (Jun's earlier adjustment is lost). The new Quality stands, even if worse.
+    - text: 1 of your Flawed or Standard ceramics from this firing → reveal 2 Fire cards and recalculate its Quality with 1 of them, even if worse.
     - paragraph: The 2 cards then go to the Fire discard, face up.
     - paragraph: Choose one of the Fire cards.
     - button "Clear"

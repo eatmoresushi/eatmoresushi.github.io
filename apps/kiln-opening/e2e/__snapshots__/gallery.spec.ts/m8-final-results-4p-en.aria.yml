@@ -4,25 +4,25 @@
   - region "Lin (you)":
     - heading "Lin (you)" [level=3]
     - group "Resources":
-      - strong: "2"
+      - strong: "0"
       - text: Clay
       - strong: "2"
       - text: Wood
-      - strong: "7"
+      - strong: /\d+/
       - text: Coins
     - img "Your Shifu"
     - img "Your Apprentice"
     - img "Your Apprentice"
     - img "Your Apprentice"
-    - text: /2 Orders in hand Recognition 3\/4 \d+ VP/
+    - text: /2 Orders in hand Recognition 2\/4 \d+ VP/
   - form "Game over":
     - group "Game over":
       - paragraph: /Lin wins with \d+ VP\./
-      - paragraph: Decided by Imperial Recognition.
+      - paragraph: Decided by printed Crowns on completed Orders.
       - heading "Standings" [level=3]
       - list:
         - listitem: /#1 Lin \(you\) \d+ VP/
-        - listitem: /#2 Su \d+ VP/
+        - listitem: /#2 Zhao \d+ VP/
         - listitem: /#3 Wen \d+ VP/
-        - listitem: /#4 Zhao \d+ VP/
+        - listitem: /#4 Su \d+ VP/
       - paragraph: The full score table is in Results.

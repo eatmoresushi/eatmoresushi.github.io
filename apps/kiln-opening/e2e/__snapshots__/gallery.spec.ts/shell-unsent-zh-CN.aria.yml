@@ -4,20 +4,17 @@
   - region "Wen（你）":
     - heading "Wen（你）" [level=3]
     - group "资源":
-      - strong: "0"
+      - strong: "2"
       - text: 泥
       - strong: "2"
       - text: 柴
       - strong: "0"
       - text: 铜钱
     - img "你的师傅"
-    - img "你的学徒"
-    - img "你的学徒"
-    - img "你的学徒"
-    - text: 手中4张委托 声望0／4 1分
+    - text: 手中4张委托 声望0／4 0分
   - form "派工":
-    - paragraph: 你还有4名工人未派（共4名）。派工阶段不能跳过。
-    - paragraph: 请在桌面上选一个可派的地点派工。
+    - paragraph: 你还有1名工人未派（共4名）。派工阶段不能跳过。
+    - paragraph: 请选择可派的地点。
     - paragraph: 无法连接联机服务，请稍后重试
     - button "取消"
     - button "确认" [disabled]

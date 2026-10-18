@@ -10,7 +10,7 @@
       - text: Wood
       - strong: "2"
       - text: Coins
-    - text: 4 Orders in hand Recognition 0/4 1 VP
+    - text: 4 Orders in hand Recognition 0/4 0 VP
   - form "Complete held Orders":
     - paragraph: In First Player order. Complete any number of your held Orders, one at a time; the list is checked again after each one.
     - group "Order 2 of 4 can be completed":

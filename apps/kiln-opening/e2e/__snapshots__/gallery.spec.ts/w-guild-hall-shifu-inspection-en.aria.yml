@@ -13,7 +13,7 @@
     - img "Your Apprentice"
     - img "Your Apprentice"
     - img "Your Apprentice"
-    - text: 0 Orders in hand Recognition 0/4 1 VP
+    - text: 0 Orders in hand Recognition 0/4 0 VP
   - form "Take a Tech":
     - paragraph: Take up to 2 Techs from different disciplines, inspected or face up, each at its printed cost.
     - group "Inspected Firing Techs Tech 1 of up to 2":
@@ -25,7 +25,7 @@
       - radio "Second Firing 2 Coins"
       - text: Second Firing 2 Coins Firing
       - strong: "Once per round, after Quality is assigned:"
-      - text: choose 1 of your Flawed or Standard ceramics from this firing → reveal 2 extra Fire cards, choose 1; recalculate its Actual Heat and Quality with that card instead of the first (Jun's earlier adjustment is lost). The new Quality stands, even if worse.
+      - text: 1 of your Flawed or Standard ceramics from this firing → reveal 2 Fire cards and recalculate its Quality with 1 of them, even if worse.
     - group "Or a face-up Tech":
       - text: ""
       - radio "Decorator's Kit 2 Coins" [disabled]
@@ -41,11 +41,11 @@
       - radio "Colour Samples 2 Coins"
       - text: Colour Samples 2 Coins Glazing & Loading
       - strong: "When acquired:"
-      - text: privately look at the top 3 cards of the Main Order deck → you must reserve 1; the rest go to the bottom of the deck.
+      - text: Select 3.
       - strong: "Ongoing:"
       - text: your Order hand limit is 5.
       - strong: "Once per round, before or after one of your worker actions:"
-      - text: discard 1 held Order → look at the top 2 cards, reserve 1.
+      - text: discard 1 held Order → Select 3.
       - radio "Kiln Tending 3 Coins"
       - text: Kiln Tending 3 Coins Glazing & Loading
       - strong: "Once per round, after a Glaze & Load action that loaded at least 1 ceramic:"
@@ -60,8 +60,8 @@
       - text: Fuel Ledger 2 Coins Firing
       - strong: "Always:"
       - text: your Bank and Stoke cost no Wood.
-      - strong: "When you choose Bank or Stoke:"
-      - text: secretly commit 1 Wood with it → Bank becomes −2, Stoke becomes +2.
+      - strong: "When acquired:"
+      - text: Gain the Fuel Ledger Bank and Fuel Ledger Stoke Contribution cards(-1 Wood → -2/+2).
     - paragraph: Choose a Tech to take.
     - button "Clear"
     - button "Confirm" [disabled]

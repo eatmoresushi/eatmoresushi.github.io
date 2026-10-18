@@ -4,21 +4,18 @@
   - region "Lin (you)":
     - heading "Lin (you)" [level=3]
     - group "Resources":
-      - strong: "0"
+      - strong: "1"
       - text: Clay
       - strong: "2"
       - text: Wood
-      - strong: "2"
+      - strong: "0"
       - text: Coins
-    - img "Your Shifu"
-    - img "Your Apprentice"
-    - img "Your Apprentice"
-    - text: 5 Orders in hand Recognition 0/4 1 VP
+    - text: 5 Orders in hand Recognition 0/4 0 VP
   - form "After your worker action":
     - group "This step":
       - text: ""
-      - radio "Colour Samples swap Give up a held Order, then look at the top 2 Main Orders and reserve one"
-      - text: Colour Samples swap Give up a held Order, then look at the top 2 Main Orders and reserve one
+      - 'radio "Colour Samples swap Give up a held Order, then Select 3: look at the top 3 Main Orders and reserve one of them or one from the display"'
+      - text: "Colour Samples swap Give up a held Order, then Select 3: look at the top 3 Main Orders and reserve one of them or one from the display"
       - radio "End your turn Nothing more this turn"
       - text: End your turn Nothing more this turn
     - paragraph: Choose what to do now.

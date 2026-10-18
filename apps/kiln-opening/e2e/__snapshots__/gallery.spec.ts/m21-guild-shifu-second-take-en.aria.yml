@@ -13,7 +13,7 @@
     - img "Your Apprentice"
     - img "Your Apprentice"
     - img "Your Apprentice"
-    - text: 3 Orders in hand Recognition 0/4 9 VP
+    - text: 3 Orders in hand Recognition 0/4 7 VP
   - form "Take another Tech, or stop":
     - paragraph: "Taken this action: Kiln Furniture"
     - group "Inspected Firing Techs Tech 2 of up to 2":
@@ -48,8 +48,8 @@
       - text: Fuel Ledger 2 Coins Firing
       - strong: "Always:"
       - text: your Bank and Stoke cost no Wood.
-      - strong: "When you choose Bank or Stoke:"
-      - text: secretly commit 1 Wood with it → Bank becomes −2, Stoke becomes +2.
+      - strong: "When acquired:"
+      - text: Gain the Fuel Ledger Bank and Fuel Ledger Stoke Contribution cards(-1 Wood → -2/+2).
       - radio "Kiln Master 2 Coins"
       - text: Kiln Master 2 Coins Firing
       - strong: "Once per round, in the Heat marker step:"

@@ -4,13 +4,13 @@
   - region "Lin (you)":
     - heading "Lin (you)" [level=3]
     - group "Resources":
-      - strong: "0"
+      - strong: "2"
       - text: Clay
-      - strong: "1"
+      - strong: "2"
       - text: Wood
-      - strong: "1"
-      - text: Coin
-    - text: /5 Orders in hand Recognition 1\/4 \d+ VP/
+      - strong: "0"
+      - text: Coins
+    - text: 5 Orders in hand Recognition 0/4 0 VP
   - form "After-Quality abilities":
     - paragraph: /Firing step \d+, in First Player order/
     - paragraph: Use them in any order you like; the options are checked again after each use.
@@ -18,7 +18,7 @@
     - list "Queue":
       - listitem: "Lin (you): deciding"
     - heading "Your ceramics in this firing" [level=3]
-    - text: "Moon White Bowl, Plain · Standard Protective Saggars: counts as Standard, not Flawed Grey-Green Bowl, Plain · Fine"
+    - text: "Moon White Bowl, Carved · Standard Protective Saggars: counts as Standard, not Flawed"
     - group "Protective Saggars":
       - button "Protective Saggars"
       - paragraph:
@@ -26,8 +26,17 @@
         - text: your ceramics are never Flawed; a Heat Difference of 3 or more counts as Standard.
         - strong: "Once per round, after Quality is assigned:"
         - text: 1 of your Standard ceramics from this firing → Fine.
-      - 'radio "Moon White Bowl, Plain · Standard Protective Saggars: counts as Standard, not Flawed"'
-      - text: "Moon White Bowl, Plain · Standard Protective Saggars: counts as Standard, not Flawed"
+      - 'radio "Moon White Bowl, Carved · Standard Protective Saggars: counts as Standard, not Flawed"'
+      - text: "Moon White Bowl, Carved · Standard Protective Saggars: counts as Standard, not Flawed"
+    - group "Ge Kiln · Crackle Mastery":
+      - button "Ge Kiln · Crackle Mastery"
+      - paragraph:
+        - strong: "Once per round, after Quality is assigned:"
+        - text: 1 of your Standard ceramics from this firing → Fine + Crackle.
+        - strong: "Orders:"
+        - text: each Crackle ceramic may count as any 1 Decoration; it is never a Masterpiece.
+      - 'radio "Moon White Bowl, Carved · Standard Protective Saggars: counts as Standard, not Flawed"'
+      - text: "Moon White Bowl, Carved · Standard Protective Saggars: counts as Standard, not Flawed"
     - paragraph: Pick an ability, or finish.
     - button "Done — decline the rest"
     - button "Confirm" [disabled]

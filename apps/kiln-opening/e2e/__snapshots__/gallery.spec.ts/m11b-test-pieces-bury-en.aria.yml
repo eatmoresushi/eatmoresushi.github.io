@@ -1,16 +1,16 @@
 - complementary "Your decision":
   - paragraph: Firing Phase · Your turn
   - 'heading "Test Pieces: the card you saw" [level=2]'
-  - region "Lin (you)":
-    - heading "Lin (you)" [level=3]
+  - region "Zhao (you)":
+    - heading "Zhao (you)" [level=3]
     - group "Resources":
-      - strong: "3"
+      - strong: "4"
       - text: Clay
       - strong: "0"
       - text: Wood
-      - strong: "1"
-      - text: Coin
-    - text: 5 Orders in hand Recognition 0/4 3 VP
+      - strong: "0"
+      - text: Coins
+    - text: 4 Orders in hand Recognition 0/4 0 VP
   - 'form "Test Pieces: the card you saw"':
     - paragraph: Firing step 4, in First Player order
     - paragraph:
@@ -18,9 +18,9 @@
       - text: pay 1 Wood → privately look at the top Fire card; you may put it on the bottom of the deck.
     - heading "Queue" [level=3]
     - list "Queue":
-      - listitem: "Lin (you): deciding"
+      - listitem: "Zhao (you): deciding"
     - heading "The card you saw Only you can see" [level=3]
-    - text: Fire card −1
+    - text: Fire card −2
     - group "The card you saw":
       - text: ""
       - radio "Put it on the bottom of the Fire deck"

@@ -21,7 +21,7 @@
       - heading "Standings" [level=3]
       - list:
         - listitem: /#1 Wen \(you\) \d+ VP/
-        - listitem: /#2 Zhao \d+ VP/
-        - listitem: /#3 Lin \d+ VP/
+        - listitem: /#2 Lin \d+ VP/
+        - listitem: /#3 Zhao \d+ VP/
         - listitem: "#4 Su 8 VP"
       - paragraph: The full score table is in Results.

@@ -14,7 +14,7 @@
     - img "Your Apprentice"
     - img "Your Apprentice"
     - img "Your Apprentice"
-    - text: 0 Orders in hand Recognition 0/4 1 VP
+    - text: 0 Orders in hand Recognition 0/4 0 VP
   - 'form "Second Firing: choose a Fire card"':
     - paragraph: /Firing step \d+, in First Player order/
     - paragraph: Second Firing turned 2 extra Fire cards face up, for everyone to see. Choose the one your ceramic is fired with again.
@@ -40,7 +40,7 @@
       - text: ""
       - button "Second Firing"
     - strong: "Once per round, after Quality is assigned:"
-    - text: choose 1 of your Flawed or Standard ceramics from this firing → reveal 2 extra Fire cards, choose 1; recalculate its Actual Heat and Quality with that card instead of the first (Jun's earlier adjustment is lost). The new Quality stands, even if worse.
+    - text: 1 of your Flawed or Standard ceramics from this firing → reveal 2 Fire cards and recalculate its Quality with 1 of them, even if worse.
     - paragraph: The 2 cards then go to the Fire discard, face up.
     - paragraph: Choose one of the Fire cards.
     - button "Clear"

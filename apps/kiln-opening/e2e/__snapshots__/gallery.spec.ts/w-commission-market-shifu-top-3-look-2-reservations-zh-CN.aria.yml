@@ -1,6 +1,6 @@
 - complementary "你的决断":
   - paragraph: 派工阶段·轮到你了
-  - heading "承接委托（至多2张）" [level=2]
+  - heading "精选3：承接委托（至多2张）" [level=2]
   - region "Player 1（你）":
     - heading "Player 1（你）" [level=3]
     - group "资源":
@@ -14,8 +14,8 @@
     - img "你的学徒"
     - img "你的学徒"
     - text: 手中0张委托 声望0／4 0分
-  - form "承接委托（至多2张）":
-    - paragraph: 承接至多2张委托（至少一张），委托榜和所看之牌可以任意搭配。
+  - form "精选3：承接委托（至多2张）":
+    - paragraph: 承接至多2张委托（至少一张），委托榜和你看过的牌可以任意搭配。
     - group "主委托牌堆顶3张 仅你可见":
       - text: ""
       - paragraph: 没有承接的，面朝下放到主委托牌堆底。

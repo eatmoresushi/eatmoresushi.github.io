@@ -1,23 +1,23 @@
 - complementary "Your decision":
   - paragraph: Firing Phase · Your turn
   - heading "Salvage a Flawed ceramic" [level=2]
-  - region "Lin (you)":
-    - heading "Lin (you)" [level=3]
+  - region "Wen (you)":
+    - heading "Wen (you)" [level=3]
     - group "Resources":
-      - strong: "0"
+      - strong: "1"
       - text: Clay
       - strong: "2"
       - text: Wood
       - strong: "3"
       - text: Coins
-    - text: 5 Orders in hand Recognition 0/4 1 VP
+    - text: /4 Orders in hand Recognition 1\/4 \d+ VP/
   - form "Salvage a Flawed ceramic":
     - paragraph: /Firing step \d+/
     - paragraph: You may discard one still-Flawed ceramic from this firing for 2 Coins; its Vessel card returns to the supply. Everyone decides at the same time.
     - group "Ceramic":
       - text: ""
-      - radio "Moon White Vase, Plain · Flawed (in High 2) +2 Coins"
-      - text: Moon White Vase, Plain · Flawed (in High 2) +2 Coins
+      - radio "Celadon Bowl, Plain · Flawed (in Low 2) +2 Coins"
+      - text: Celadon Bowl, Plain · Flawed (in Low 2) +2 Coins
     - paragraph: Choose a ceramic to salvage, or keep it.
     - button "Keep it"
     - button "Confirm" [disabled]

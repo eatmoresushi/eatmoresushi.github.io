@@ -4,13 +4,13 @@
   - region "Zhao (you)":
     - heading "Zhao (you)" [level=3]
     - group "Resources":
-      - strong: "2"
+      - strong: "4"
       - text: Clay
-      - strong: "1"
+      - strong: "2"
       - text: Wood
-      - strong: /\d+/
-      - text: Coins
-    - text: /2 Orders in hand Recognition 3\/4 \d+ VP/
+      - strong: "1"
+      - text: Coin
+    - text: 4 Orders in hand Recognition 0/4 7 VP
   - form "Decide your Heat marker":
     - paragraph: Firing step 5, in First Player order
     - paragraph: Markers are decided in First Player order; the Fire card is still face down.
@@ -18,9 +18,8 @@
     - list "Queue":
       - listitem: "Zhao (you): deciding"
       - listitem: "Wen: next"
-      - listitem: "Lin: next"
     - heading "Your face-down marker" [level=3]
-    - text: Celadon Vase, Plain (in Low 1), Heat marker, face down
+    - text: White Censer, Painted (in Middle 2), Heat marker, face down
     - group "Turn or return your marker":
       - text: ""
       - paragraph: "A Heat marker adds its value to that ceramic’s Actual Heat only. It is not a zone modifier: it stacks with Kiln Furniture and stays in place for a Second Firing."
@@ -30,22 +29,6 @@
       - text: Turn Heat marker to −1 Adds −1 to this ceramic’s Actual Heat.
       - radio "Return Heat marker The marker goes back to your supply; this ceramic has no marker."
       - text: Return Heat marker The marker goes back to your supply; this ceramic has no marker.
-    - heading "Kiln Master (optional)" [level=3]:
-      - button "Kiln Master (optional)"
-    - group "Ceramic":
-      - text: ""
-      - radio "Do not place it" [checked]
-      - text: Do not place it
-      - radio "White Brush Washer, Plain (in the Imperial Kiln)"
-      - text: White Brush Washer, Plain (in the Imperial Kiln)
-      - radio "Celadon Vase, Plain (in Low 1), Heat marker, face down Only once you return your own marker from it" [disabled]
-      - text: Celadon Vase, Plain (in Low 1), Heat marker, face down Only once you return your own marker from it
-    - group "Side":
-      - text: ""
-      - radio "+1"
-      - text: "+1"
-      - radio "−1"
-      - text: −1
     - paragraph: Turn your marker or return it.
     - button "Clear"
     - button "Confirm" [disabled]

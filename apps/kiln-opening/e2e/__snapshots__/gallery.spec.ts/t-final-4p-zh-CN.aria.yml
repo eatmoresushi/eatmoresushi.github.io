@@ -21,7 +21,7 @@
       - heading "名次" [level=3]
       - list:
         - listitem: /第1名 Wen（你） \d+分/
-        - listitem: /第2名 Zhao \d+分/
-        - listitem: /第3名 Lin \d+分/
+        - listitem: /第2名 Lin \d+分/
+        - listitem: /第3名 Zhao \d+分/
         - listitem: 第4名 Su 8分
       - paragraph: 完整计分见终局结果。
