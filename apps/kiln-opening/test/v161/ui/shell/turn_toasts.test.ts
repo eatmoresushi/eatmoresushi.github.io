@@ -22,9 +22,10 @@
  *   and the toast at the top of the world's cell, in a band the world gives up (at its right end
  *   on desktop and tablet, across it on phones and in short landscape), so it is drawn over
  *   nothing, with the room that keeps the table still added to the world's own top and bottom
- *   room, and animates only without reduced motion.
+ *   room (read by no other rule, so the band resizes the world alone), and animates only without
+ *   reduced motion.
  */
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { GameEvent, PlayerId, PublicGameEvent } from "../../../../src/game/index.ts";
@@ -695,6 +696,21 @@ describe("toast stylesheet", () => {
     for (const query of ["@container shell (max-width: 899px)", "@media (orientation: landscape) and (max-height: 500px)"]) {
       expect(/\.turn-toasts\s*\{([^}]*)\}/.exec(toasts.slice(toasts.indexOf(query)))?.[1] ?? "", query).toMatch(/width:\s*100%;/);
     }
+  });
+
+  it("lets the band and its room resize the world alone: no other rule reads them, so the toast's resize observer, which watches the toast and its holder, never resizes what it watches in its own callback", () => {
+    const files = readdirSync(join(ROOT, "src/app"), { recursive: true })
+      .map(String)
+      .filter((file) => file.endsWith(".css"))
+      .sort();
+    expect(files.length).toBeGreaterThan(10);
+    const readers: string[] = [];
+    for (const file of files) {
+      for (const [, selector, body] of css(file).matchAll(/([^{}]*)\{([^{}]*)\}/g)) {
+        if (/var\(--turn-toast-(band|lead|tail)\b/.test(body ?? "")) readers.push(`${file}: ${(selector ?? "").trim()}`);
+      }
+    }
+    expect(readers).toEqual(["shell/GameShell.css: .shell-world"]);
   });
 
   it("animates only when motion is welcome", () => {

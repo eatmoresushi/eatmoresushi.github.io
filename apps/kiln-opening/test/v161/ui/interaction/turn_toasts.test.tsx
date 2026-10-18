@@ -13,6 +13,9 @@
  *   jump bar, seat chips, toast, table); on phones under the top bar; the world scrolls by the
  *   band, so the table keeps its place on screen and nothing lies under the toast, and the band
  *   closes with the queue;
+ * - its resize observer watches only the toast and its holder, never the world whose box the band
+ *   sets, so a band it changes in its callback (the phone sheet opening or closing, a font swapped
+ *   in) resizes nothing it watches: no "ResizeObserver loop" page error;
  * - a room too short for the toast (the phone's open decision sheet) hides it, and its turn waits
  *   (the clock stops) until the room comes back; so does a hidden page, and nothing played while
  *   the page is hidden or the connection offline (nor what the store's reconnect on the return
@@ -194,23 +197,71 @@ function pointer(target: Element, type: "pointerover" | "pointerout", related: E
   });
 }
 
-/** A ResizeObserver whose callbacks the test runs (`resize()`): happy-dom lays nothing out. */
-function fakeResizeObserver(): { resize(): void } {
-  const callbacks: Array<() => void> = [];
+/** What a resize observer watches: an element, in one of its boxes. */
+interface Watched {
+  target: Element;
+  box: ResizeObserverBoxOptions;
+}
+
+/** An element's depth in the document (the resize observer's loop rule compares depths). */
+function depthOf(element: Element): number {
+  let depth = 0;
+  for (let node = element.parentElement; node !== null; node = node.parentElement) depth += 1;
+  return depth;
+}
+
+/**
+ * A ResizeObserver whose callbacks the test runs: happy-dom lays nothing out.
+ * - `resize()` runs every connected observer's callback;
+ * - `watched()` lists what the connected observers watch;
+ * - `frame(sizeOf)` runs them as a browser's rendering update does, every watched box delivered,
+ *   with the sizes `sizeOf` gives (the test's model of the layout), and returns the watched
+ *   elements a callback resized at a depth no deeper than the shallowest it was given: the browser
+ *   cannot deliver those before paint, and reports "ResizeObserver loop completed with undelivered
+ *   notifications" (a page error).
+ */
+function fakeResizeObserver(): { resize(): void; watched(): Watched[]; frame(sizeOf: (target: Element) => number): Element[] } {
+  const connected = new Set<FakeResizeObserver>();
   class FakeResizeObserver {
-    constructor(callback: ResizeObserverCallback) {
-      callbacks.push(() => callback([], this as unknown as ResizeObserver));
+    readonly targets: Watched[] = [];
+    constructor(readonly callback: ResizeObserverCallback) {
+      connected.add(this);
     }
-    observe(): void {}
-    unobserve(): void {}
-    disconnect(): void {}
+    observe(target: Element, options?: ResizeObserverOptions): void {
+      this.targets.push({ target, box: options?.box ?? "content-box" });
+    }
+    unobserve(target: Element): void {
+      const index = this.targets.findIndex((watched) => watched.target === target);
+      if (index >= 0) this.targets.splice(index, 1);
+    }
+    disconnect(): void {
+      this.targets.length = 0;
+      connected.delete(this);
+    }
   }
   vi.stubGlobal("ResizeObserver", FakeResizeObserver);
   return {
     resize() {
       act(() => {
-        for (const callback of callbacks) callback();
+        for (const observer of [...connected]) observer.callback([], observer as unknown as ResizeObserver);
       });
+    },
+    watched: () => [...connected].flatMap((observer) => observer.targets),
+    frame(sizeOf) {
+      const undelivered: Element[] = [];
+      act(() => {
+        for (const observer of [...connected]) {
+          const targets = [...observer.targets];
+          if (targets.length === 0) continue;
+          const before = targets.map(({ target }) => sizeOf(target));
+          const shallowest = Math.min(...targets.map(({ target }) => depthOf(target)));
+          observer.callback([], observer as unknown as ResizeObserver);
+          targets.forEach(({ target }, index) => {
+            if (sizeOf(target) !== before[index] && depthOf(target) <= shallowest) undelivered.push(target);
+          });
+        }
+      });
+      return undelivered;
     },
   };
 }
@@ -526,6 +577,75 @@ describe("turn toasts", () => {
       expect(showing()).toBe(third);
       advance(TOAST_MS);
       expect(toasts()).toHaveLength(0);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("watches only the boxes it measures, never the world whose box the band sets, so a band its resize callback changes resizes nothing it watches (no resize-observer loop)", () => {
+    const observer = fakeResizeObserver();
+    try {
+      const game = table();
+      const world = (
+        <section className="world-section">
+          <button type="button">Table target</button>
+        </section>
+      );
+      mount(game.source, <GameShell skipLink={null} top={<button type="button">Log</button>} banner={null} world={world} pane={null} nav={null} live={null} paneBar={null} />, "phone");
+      const shell = container.querySelector<HTMLElement>(".shell")!;
+      const worldElement = container.querySelector<HTMLElement>(".shell-world")!;
+      const holder = container.querySelector<HTMLElement>(".shell-toasts")!;
+      // The layout (happy-dom has none): the holder as tall as its toast plus its top padding,
+      // capped at the world's cell; the group as tall as the holder lets it be; the world's box
+      // its cell less the band (its top margin) and the room at its top and bottom (its padding).
+      let toastHeight = 80;
+      const padding = 16;
+      let cell = 600;
+      const holderHeight = () => Math.min(cell, toastHeight + padding);
+      const px = (property: string) => Number.parseFloat(shell.style.getPropertyValue(property) || "0");
+      Object.defineProperty(holder, "getBoundingClientRect", { configurable: true, value: () => ({ x: 0, y: 56, top: 56, bottom: 56 + holderHeight(), left: 0, right: 390, width: 390, height: holderHeight(), toJSON: () => ({}) }) });
+      game.play(other, [placed(other), coins(other, 3), turnEnded(other)]);
+      const group = container.querySelector<HTMLElement>(".turn-toasts")!;
+      const toast = toasts()[0]!;
+      Object.defineProperty(group, "clientHeight", { configurable: true, get: () => holderHeight() - padding });
+      Object.defineProperty(toast, "offsetHeight", { configurable: true, get: () => toastHeight });
+      const sizeOf = (target: Element) => {
+        if (target === worldElement) return Math.max(0, cell - px("--turn-toast-band")) - px("--turn-toast-lead") - px("--turn-toast-tail");
+        if (target === holder) return holderHeight();
+        if (target === group) return group.clientHeight;
+        if (target === toast) return toast.offsetHeight;
+        return 0;
+      };
+      expect(shell.style.getPropertyValue("--turn-toast-band")).toBe("96px");
+      // Watched: the group, the toast and the holder, in the boxes the measure reads; nothing of
+      // the world, and nothing that holds it.
+      expect(observer.watched().map(({ target, box }) => [target.className, box])).toEqual([
+        ["turn-toasts", "content-box"],
+        ["turn-toast", "border-box"],
+        ["shell-toasts", "border-box"],
+      ]);
+      for (const { target } of observer.watched()) {
+        expect(holder.contains(target)).toBe(true);
+        expect(target.contains(worldElement)).toBe(false);
+      }
+      // The phone's decision sheet opens: the world's cell is shorter than the toast. The toast is
+      // hidden and the band closes, in the observer's callback; nothing it watches changed size.
+      cell = 40;
+      expect(observer.frame(sizeOf)).toEqual([]);
+      expect(group.hasAttribute("data-cramped")).toBe(true);
+      expect(shell.style.getPropertyValue("--turn-toast-band")).toBe("");
+      // The sheet closes: the band opens again, in the callback, as quietly.
+      cell = 600;
+      expect(observer.frame(sizeOf)).toEqual([]);
+      expect(group.hasAttribute("data-cramped")).toBe(false);
+      expect(shell.style.getPropertyValue("--turn-toast-band")).toBe("96px");
+      // A change the commit did not measure (a font swapped in after a language switch): the same.
+      toastHeight = 74;
+      expect(observer.frame(sizeOf)).toEqual([]);
+      expect(shell.style.getPropertyValue("--turn-toast-band")).toBe("90px");
+      advance(TOAST_MS);
+      expect(toasts()).toHaveLength(0);
+      expect(observer.watched()).toEqual([]);
     } finally {
       vi.unstubAllGlobals();
     }

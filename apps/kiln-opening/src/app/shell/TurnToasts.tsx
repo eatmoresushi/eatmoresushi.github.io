@@ -81,6 +81,18 @@ function isCramped(group: HTMLElement): boolean {
   return height > 0 && group.clientHeight < height;
 }
 
+/**
+ * What the resize observer watches, each in the box the measure reads: the group (its
+ * `clientHeight`; it has no padding or border), the toast (its border box, `offsetHeight`) and the
+ * holder (its border box, the band). Never the world, whose box the band sets.
+ */
+function observedBoxes(group: HTMLElement, holder: HTMLElement | null): Array<readonly [Element, ResizeObserverBoxOptions]> {
+  const boxes: Array<readonly [Element, ResizeObserverBoxOptions]> = [[group, "content-box"]];
+  for (const toast of group.children) boxes.push([toast, "border-box"]);
+  if (holder !== null) boxes.push([holder, "border-box"]);
+  return boxes;
+}
+
 /** Whether the page is hidden (another tab, a locked phone): the queue's clock stops. */
 function subscribeVisibility(listener: () => void): () => void {
   document.addEventListener("visibilitychange", listener);
@@ -170,11 +182,20 @@ export function TurnToasts() {
     dispatch(holdAction(hovered.current || focused.current || cramped || hidden));
   }, [empty, cramped, hidden]);
 
-  // Measured before paint whenever the toast shows, and again whenever the toast, the holder or
-  // the world changes size (a turn's lines, a language switch, a change of layout, the phone sheet
-  // opening): whether it fits (else it is hidden and waits), and the band it takes from the world
+  // Measured before paint whenever the toast shows, and again whenever the toast or its holder
+  // changes size (a turn's lines, a language switch, a change of layout, the phone sheet opening):
+  // whether it fits (else it is hidden and waits), and the band it takes from the world
   // (`toastRoom.ts`, which keeps the table still). The room stays with the shell after the queue
   // ends: what a closed toast leaves at the table's top goes once it is scrolled past.
+  //
+  // The resize observer watches only the boxes the measure reads (`observedBoxes`), never the
+  // world: the band the callback sets is the world's top margin, and its room the world's padding,
+  // so a watched world would change size inside its own callback, at the depth of the holder (both
+  // are the shell's children), and the browser could not deliver that before paint ("ResizeObserver
+  // loop completed with undelivered notifications"). Nothing the callback writes changes a watched
+  // box. The world's cell still reaches the measure: the holder shares that cell (its height is
+  // capped at the cell's, its width is the cell's), so the phone sheet opening or a change of
+  // layout resizes the holder, its group or the toast.
   const room = useRef<ToastRoom | null>(null);
   const measureRef = useRef<(() => void) | null>(null);
   useLayoutEffect(() => {
@@ -199,12 +220,7 @@ export function TurnToasts() {
     measure();
     measureRef.current = measure;
     const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
-    if (observer !== null) {
-      observer.observe(group);
-      for (const toast of group.children) observer.observe(toast);
-      if (holder !== null) observer.observe(holder);
-      if (world !== null) observer.observe(world);
-    }
+    if (observer !== null) for (const [target, box] of observedBoxes(group, holder)) observer.observe(target, { box });
     return () => {
       measureRef.current = null;
       observer?.disconnect();
