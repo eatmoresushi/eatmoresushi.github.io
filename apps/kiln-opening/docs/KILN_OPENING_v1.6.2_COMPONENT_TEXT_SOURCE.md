@@ -73,8 +73,8 @@ This text is a reminder. The [V1.6.2 rulebook](./KILN_OPENING_v1.6.2_EN_SOURCE.m
 - ZH: 持续：你的器物永不为瑕品，火候差3或以上算作良品。每轮一次，定品后：己方本窑1件良品→上品。
 
 ### Fuel Ledger / 柴簿 (T12)
-- EN: Always: your Bank and Stoke cost no Wood. When acquired: Gain the Fuel Ledger Bank and Fuel Ledger Stoke Contribution cards(-1 Wood → -2/+2).
-- ZH: 持续：你的压火与添柴不付柴。习得时：获取柴簿压火与柴簿添柴两张控火牌（—1柴→−2或+2）。
+- EN: Always: your Bank and Stoke cost no Wood. When acquired: Gain the Fuel Ledger Bank and Fuel Ledger Stoke Contribution cards (+1 Wood → −2/+2).
+- ZH: 持续：你的压火与添柴不付柴。习得时：获取柴簿压火与柴簿添柴两张控火牌（+1柴→−2或+2）。
 
 ### Test Pieces / 火照 (T13)
 - EN: Once per round, after Base Heat, before Heat markers, if you have a ceramic in this firing: pay 1 Wood → privately look at the top Fire card; you may put it on the bottom of the deck.

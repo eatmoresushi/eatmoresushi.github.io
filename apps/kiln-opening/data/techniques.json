@@ -561,8 +561,8 @@
       "nameZh": "柴簿",
       "ability": "Your Bank the Fire and Stoke the Fire cost no Wood. When you acquire this tile, take the Fuel Ledger Bank (1 Wood, −2) and Fuel Ledger Stoke (1 Wood, +2) Contribution cards; choose among all 5 of your cards as usual, playing exactly 1.",
       "abilityZh": "你的压火与添柴不需要付柴。习得此牌时，拿取柴簿压火（1柴，−2）与柴簿添柴（1柴，+2）两张控火牌；照常从你的5张控火牌中暗选，只打出1张。",
-      "shortText": "Always: your Bank and Stoke cost no Wood. When acquired: Gain the Fuel Ledger Bank and Fuel Ledger Stoke Contribution cards(-1 Wood → -2/+2).",
-      "shortTextZh": "持续：你的压火与添柴不付柴。习得时：获取柴簿压火与柴簿添柴两张控火牌（—1柴→−2或+2）。",
+      "shortText": "Always: your Bank and Stoke cost no Wood. When acquired: Gain the Fuel Ledger Bank and Fuel Ledger Stoke Contribution cards (+1 Wood → −2/+2).",
+      "shortTextZh": "持续：你的压火与添柴不付柴。习得时：获取柴簿压火与柴簿添柴两张控火牌（+1柴→−2或+2）。",
       "clarifications": [
         {
           "en": "Keep the 2 Fuel Ledger Contribution cards beside the Firing deck; they go to whoever acquires Fuel Ledger.",

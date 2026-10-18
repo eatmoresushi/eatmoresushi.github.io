@@ -542,7 +542,7 @@ V1.6.2 中，匣钵护烧的“永不为瑕品”与柴簿的“压火与添柴�
 | EN | 中文名 | 费用 | 短提示 |
 | --- | --- | --- | --- |
 | Protective Saggars | 匣钵护烧 | 3 | 持续：你的器物永不为瑕品，火候差3或以上算作良品。每轮一次，定品后：己方本窑1件良品→上品。 |
-| Fuel Ledger | 柴簿 | 2 | 持续：你的压火与添柴不付柴。习得时：获取柴簿压火与柴簿添柴两张控火牌（—1柴→−2或+2）。 |
+| Fuel Ledger | 柴簿 | 2 | 持续：你的压火与添柴不付柴。习得时：获取柴簿压火与柴簿添柴两张控火牌（+1柴→−2或+2）。 |
 | Test Pieces | 火照 | 3 | 每轮一次，基础火候定后、翻火标前，本窑有己方器物时：可付1柴→私看窑火牌堆顶1张，可将其置于牌堆底。 |
 | Second Firing | 复烧 | 2 | 每轮一次，定品后：己方本窑1件瑕品或良品→另翻2张窑火牌，以其中1张重算其品质，即使更差也算。 |
 | Kiln Master | 窑工 | 2 | 每轮一次，翻火标步骤中：可将窑工标（+1或−1）放在己方本窑1件未带火标的器物上。 |
@@ -984,7 +984,7 @@ Terminology review of revision 1, applied in revision 2 (2026-10-14).
 - 精选N, 精选2 and 精选3 come from the owner's Chinese rulebook (Chinese lines 37, 66, 199, 203–204, 403, 624, 648, 651, 712, 717–718) and
   replace 查看牌堆顶2张／3张 in the 瓷牙行 texts (§4.4) and the Colour Samples texts (§3, §2.12). The swap (换单) is now a 精选3.
 - 柴簿压火 and 柴簿添柴 (Chinese lines 38, 95, 268, 636, 670, 736; setup at line 113) name Fuel Ledger's 2 Contribution cards (§2.10); 柴簿加柴 is retired
-  (§1.5, §6). The 柴簿 reminder's second label is 习得时： (§3 preamble); the reminder keeps the owner's （—1柴→−2或+2） as printed.
+  (§1.5, §6). The 柴簿 reminder's second label is 习得时： (§3 preamble); the reminder reads （+1柴→−2或+2）, as the owner corrected it on 2026-10-18.
 - Tech VP is removed (Chinese line 39): §2.14 技艺分 and §2.15 习得技艺 say so; the §3 preamble no longer says 立即得1分.
 - §7: `ORDER_SUPPLY_EMPTY` now names the empty display too, since every Select may reserve a face-up Order; the new
   `CONTRIBUTION_CARD_NOT_HELD` uses the card names. §8 follows the Chinese 技艺通则 (Chinese lines 648 and 651).

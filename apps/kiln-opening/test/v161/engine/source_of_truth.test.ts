@@ -71,8 +71,8 @@ describe("the V1.6.2 rulebook is the source of truth", () => {
    * 3 of 2026-10-18 (changes 25–27: Select N, Fuel Ledger as cards, no Tech VP). */
   const V162_FILES: ReadonlyArray<readonly [string, string]> = [
     [SOURCE_PATH, "93cc8173d14ae0320ea197e45ce68de2ebd2cd6165e215e8709622d2f0f7f8e3"],
-    ["docs/KILN_OPENING_v1.6.2_ZH.md", "841b715c11de4024f5e9393398976b14ff43c2125154084f7a06d925f63fb8b6"],
-    ["docs/KILN_OPENING_v1.6.2_COMPONENT_TEXT.md", "a466984ca6c4b8db629314369d8c67184f71cd3131ce15b5f9bdb36b68799677"],
+    ["docs/KILN_OPENING_v1.6.2_ZH.md", "1bd43cdc90045682988e8ed155ff08be1645c44d00ad2ef4adb19c62e488fce2"],
+    ["docs/KILN_OPENING_v1.6.2_COMPONENT_TEXT.md", "7672006db153d9d7595ec3ec3120f41f6f79af5d780f6b7d3676627ade3e9a4f"],
   ];
 
   it.each(V162_FILES)("%s matches the checksum the audit records", (path, expected) => {
