@@ -30,6 +30,7 @@ V1.6.2 changes from V1.6.1 (rulebook changes 21–24; 23–24 are the owner's re
 - **Orders (changes 23–24):** the Starting Order deck has **8** cards (S01–S08; S07 asks for Carved, Impressed or Painted); a 4-player game deals all 8. Nineteen Main Order values changed (O01–O05, O14, O15, O19, O20, O22, O26–O28, O30, O32–O34, O38, O39), per Appendix A.
 - **Fire deck:** with Second Firing taking 2 cards, the 12-card deck can now run out mid-game. The discard is then shuffled and placed on top, and a card buried by Test Pieces is drawn last (L640; owner ruling R15: a deck holding only buried cards counts as run out).
 - **Orders are completed only in the Order Phase.** Ru, Guan, Tribute Ware, Crackle wildcards and Canal Barge's 2 Coins trigger there; ruling R6 is obsolete.
+- **Changes 25–27 (owner revision, 2026-10-18):** (25) keyword **Select N** — look at the top N Main Orders, reserve 1 of them or 1 face-up Main Order from the display, the rest to the bottom of the deck; Commission Market Apprentice Select 2, Shifu Select 3 reserving up to 2; Colour Samples Select 3 when acquired and for its once-a-round swap (so the swap now looks at 3, and both Colour Samples looks may take a face-up Order instead, refilled at the end of the turn). (26) **Fuel Ledger as cards** — the tile brings 2 Contribution cards, Fuel Ledger Bank (1 Wood, −2) and Fuel Ledger Stoke (1 Wood, +2); its owner chooses 1 of 5 cards and plain Bank/Stoke cost no Wood; 14 Contribution cards share one back; no Wood is set aside before the reveal. (27) **No Tech VP** — gaining an Advanced Tech scores nothing (this supersedes owner amendment A1); Connoisseur's Cabinet keeps its end-game VP; printed costs unchanged.
 
 `docs/ENGINE_V1.6.2_DELTA.md` lists what each change means for the engine, data and tests; `docs/RULEBOOK_AUDIT_V1.6.2.md` re-checks every ruling and records the open questions.
 
@@ -41,7 +42,7 @@ Key facts V1.6.1 introduced over V1.4 (V1.6.2 keeps them):
 - **Firing setup:** the Shared Kiln is 3 High / 3 Middle / 2 Low, covered 2-1-1 / 2-2-2 / 3-3-2. Base Heat starts at a public Kiln Die roll (faces 1,1,2,2,3,3) every round.
 - **Decorations** are Plain, Carved, Impressed and Painted, all 2 Coins, chosen at forming. Glaze is chosen at loading.
 - **Ge** crackles 1 Standard ceramic per round after Quality (it becomes Fine and keeps a Crackle marker). Each Crackle ceramic may count as any one Decoration when completing an Order, and is never a Masterpiece.
-- **Advanced Techs:** 18, 6 per discipline; at most 3 owned, 1 per discipline. There are no Starting Techs. Each scores 1 VP immediately when gained (owner amendment A1, 2026-10-15), not at game end.
+- **Advanced Techs:** 18, 6 per discipline; at most 3 owned, 1 per discipline. There are no Starting Techs. Gaining a Tech scores no VP (change 27 supersedes owner amendment A1).
 - **Orders:**
   - Setup deals 2 Starting Orders + 1 Main Order. The hand limit is 4 (5 with Colour Samples).
   - Only held Orders are completed, in a single First-Player-order pass.
@@ -82,8 +83,8 @@ Do not reintroduce any of these unless the user explicitly changes the rules:
 - treating Tech effects as worker actions unless the Tech explicitly says so
 - Guan's extra Order-hand capacity
 - penalties for exhibiting nothing at the End-game Exhibition; exhibiting Flawed ceramics
-- fixed VP printed on Techs (each Tech's 1 VP, scored when gained per owner amendment A1, and Connoisseur's Cabinet are V1.6.2 rules)
-- adding Tech VP at game end (owner amendment A1 records it when the Tech is gained; it must never be counted twice)
+- any VP for owning or gaining an Advanced Tech (owner amendment A1's 1 VP per Tech was removed by change 27; only Connoisseur's Cabinet scores, at game end)
+- a secret Fuel Ledger Wood commitment beside a Contribution card (change 26 replaced it with the Fuel Ledger Bank and Fuel Ledger Stoke cards)
 
 Removed by V1.6.2 (rulebook changes 21–24):
 
@@ -148,7 +149,7 @@ An Imperial Kiln belongs to one player, but its contents are public. The Kiln Di
 The following are secret:
 
 - **Orders in hand.** Hand counts are public. Only the authenticated owner's private response may include their hand. This includes the card the Canal Wharf Shifu takes unseen and every Order reserved from a look.
-- **Contribution cards and Fuel Ledger commitments**, until every eligible contributor has submitted.
+- **Contribution cards** (including Fuel Ledger Bank and Fuel Ledger Stoke), until every eligible contributor has submitted.
 - **Private looks**, visible only to the actor:
   - the Test Pieces peek;
   - the Commission Market top 2 (Apprentice effect) and top 3 (Shifu effect, Senior Apprentice included);

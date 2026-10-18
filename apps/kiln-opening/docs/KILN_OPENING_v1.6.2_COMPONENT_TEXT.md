@@ -1,8 +1,8 @@
 # KILN OPENING 开窑 v1.6.2 — Component Text / 组件简文
 
-Short text for the Kiln Player Boards and the 18 Advanced Tech tiles, in English and Chinese. Format: **timing:** cost → effect. The full rules are in the v1.6.2 Player Rulebook; every ability is optional unless it says otherwise.
+Short text for the Kiln Player Boards, the 18 Advanced Tech tiles and the 2 Fuel Ledger Contribution cards, in English and Chinese. Format: **timing:** cost → effect. The full rules are in the v1.6.2 Player Rulebook; every ability is optional unless it says otherwise. Keyword **Select N:** look at the top N cards of the Main Order deck, reserve 1 of them or 1 face-up Main Order from the display; the rest go to the bottom of the deck.
 
-窑口板与18张技艺牌上的简文，中英对照。格式：**时机：**费用→效果。完整规则见v1.6.2玩家规则书；除注明“须”者外，各项能力均可选用。
+窑口板、18张技艺牌与2张柴簿控火牌上的简文，中英对照。格式：**时机：**费用→效果。完整规则见v1.6.2玩家规则书；除注明“须”者外，各项能力均可选用。关键词**精选N：**查看主委托牌堆顶N张，承接其中1张或委托榜上1张，其余放到牌堆底。
 
 # Form & Decorate Techs / 坯作技艺
 
@@ -39,9 +39,9 @@ Short text for the Kiln Player Boards and the 18 Advanced Tech tiles, in English
 # Glazing & Loading Techs / 釉作技艺
 
 ### Colour Samples / 色样簿
-**When acquired:** privately look at the top 3 cards of the Main Order deck → you must reserve 1; the rest go to the bottom of the deck. **Ongoing:** your Order hand limit is 5. **Once per round, before or after one of your worker actions:** discard 1 held Order → look at the top 2 cards, reserve 1.
+**When acquired:** Select 3. **Ongoing:** your Order hand limit is 5. **Once per round, before or after one of your worker actions:** discard 1 held Order → Select 3.
 
-**习得时：**私看主委托牌堆顶3张→须承接1张，其余放到牌堆底。**持续：**你的委托上限为5张。**每轮一次，你的一次工人行动之前或之后：**可弃1张在手委托→看牌堆顶2张，承接1张。
+**习得时：**精选3。**持续：**你的委托上限为5张。**每轮一次，你的一次工人行动之前或之后：**可弃1张在手委托→精选3。
 
 ### Kiln Tending / 看火
 **Once per round, after a Glaze & Load action that loaded at least 1 ceramic:** gain 1 Clay + 1 Wood.
@@ -76,9 +76,9 @@ Short text for the Kiln Player Boards and the 18 Advanced Tech tiles, in English
 **持续：**你的器物永不为瑕品，火候差3或以上算作良品。**每轮一次，定品后：**己方本窑1件良品→上品。
 
 ### Fuel Ledger / 柴簿
-**Always:** your Bank and Stoke cost no Wood. **When you choose Bank or Stoke:** secretly commit 1 Wood with it → Bank becomes −2, Stoke becomes +2.
+**Always:** your Bank and Stoke cost no Wood. **When acquired:** Gain the Fuel Ledger Bank and Fuel Ledger Stoke Contribution cards(-1 Wood → -2/+2).
 
-**持续：**你的压火与添柴不付柴。**选控火时：**若选压火或添柴，可随控火牌暗附1柴→控火修正改为压火−2或添柴+2。
+**持续：**你的压火与添柴不付柴。**习得时：**获取柴簿压火与柴簿添柴两张控火牌（—1柴→−2或+2）。
 
 ### Test Pieces / 火照
 **Once per round, after Base Heat, before Heat markers, if you have a ceramic in this firing:** pay 1 Wood → privately look at the top Fire card; you may put it on the bottom of the deck.
@@ -86,9 +86,9 @@ Short text for the Kiln Player Boards and the 18 Advanced Tech tiles, in English
 **每轮一次，基础火候定后、翻火标前，本窑有己方器物时：**可付1柴→私看窑火牌堆顶1张，可将其置于牌堆底。
 
 ### Second Firing / 复烧
-**Once per round, after Quality is assigned:** choose 1 of your Flawed or Standard ceramics from this firing → reveal 2 extra Fire cards, choose 1; recalculate its Actual Heat and Quality with that card instead of the first (Jun's earlier adjustment is lost). The new Quality stands, even if worse.
+**Once per round, after Quality is assigned:** 1 of your Flawed or Standard ceramics from this firing → reveal 2 Fire cards and recalculate its Quality with 1 of them, even if worse.
 
-**每轮一次，定品后：**可选己方本窑1件瑕品或良品→另翻2张窑火牌，选1张代替原牌，重算其实际火候与品质（钧窑的调整不保留）；新品质即使更差也算。
+**每轮一次，定品后：**己方本窑1件瑕品或良品→另翻2张窑火牌，以其中1张重算其品质，即使更差也算。
 
 ### Kiln Master / 窑工
 **Once per round, in the Heat marker step:** place the Kiln Master marker (+1 or −1) on 1 of your ceramics in this firing that has no Heat marker.
@@ -99,6 +99,18 @@ Short text for the Kiln Player Boards and the 18 Advanced Tech tiles, in English
 **Once per round, when you complete a Crown Order:** gain 1 additional Crown.
 
 **每轮一次，完成御令委托时：**额外得1个御令。
+
+# Fuel Ledger Contribution Cards / 柴簿控火牌
+
+### Fuel Ledger Bank / 柴簿压火
+**1 Wood:** −2.
+
+**1柴：**−2。
+
+### Fuel Ledger Stoke / 柴簿添柴
+**1 Wood:** +2.
+
+**1柴：**+2。
 
 # Kiln Player Boards / 窑口板
 

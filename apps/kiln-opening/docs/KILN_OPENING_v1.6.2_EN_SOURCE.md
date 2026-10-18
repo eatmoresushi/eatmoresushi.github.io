@@ -29,9 +29,14 @@ Version v1.6.2 (the working name v1.3 was already used by an earlier draft). Thi
 19. **Painted replaces Crackle** as the fourth Decoration (2 Coins). Crackle is now something only the Ge Kiln produces, in the kiln, with a marker. Cards renamed: S13, O13, O17, O23, O39, O40, O46; Decorator's Kit reads Carved, Impressed or Painted.
 20. **Tech VP scored on purchase.** The 1 VP per Advanced Tech is recorded the moment the tile is taken, not at game end. Bookkeeping only; Techs cannot be lost.
 21. **v1.6.2 — Commission Market and public Shifu effects.** The Market gives no resource. An Apprentice looks at the top 2 cards of the deck and reserves 1 Order from the display or those 2; the Shifu looks at the top 3 and reserves up to 2 from the display and those 3; revealed cards not reserved are discarded (the blind top-card option is gone). Materials Yard Shifu gains 6 resources (the 1-Coin option is gone). Guild Hall Shifu takes up to 2 Techs from different disciplines at printed cost (no discount), and Tech displays refill after the taking player's turn, like the Order display. Canal Wharf Shifu gains 4 Coins and takes the top Main Order card unseen.
-22. **v1.6.2 — Tech re-pass.** Colour Samples adds a once-per-round swap (discard 1 held Order, look at the top 2, reserve 1). Canal Barge now gives 2 Coins once per round when you complete an Order; its Work-Phase completion gained nothing over the Order Phase. Protective Saggars: your ceramics are never Flawed and once a round 1 Standard becomes Fine; cost 3. Fuel Ledger: Bank and Stoke cost no Wood; cost 2. Second Firing reveals 2 cards and uses 1. Senior Apprentice and Kiln Tending cost 3; Test Pieces stays at 3, since a buried card changes the firing for every player, not only its owner.
+22. **v1.6.2 — Tech re-pass.** Colour Samples adds a once-per-round swap (discard 1 held Order, look at the top 3, reserve 1). Canal Barge now gives 2 Coins once per round when you complete an Order; its Work-Phase completion gained nothing over the Order Phase. Protective Saggars: your ceramics are never Flawed and once a round 1 Standard becomes Fine; cost 3. Fuel Ledger: Bank and Stoke cost no Wood; cost 2. Second Firing reveals 2 cards and uses 1. Senior Apprentice and Kiln Tending cost 3; Test Pieces stays at 3, since a buried card changes the firing for every player, not only its owner.
 23. **v1.6.2 — Starting Orders: 16 → 8, values equalised.** Four Glaze cards (White, Celadon, Grey-Green 3 VP + 4 Coins; Moon White 4 + 4), small-shape choice 3 + 4, Vase or Censer 3 + 5, Carved/Impressed/Painted 3 + 3, any 2 + 4. The old deck paid 2 VP for a Shape and 4 VP for a Decoration although both are free choices once every Decoration costs 2, so the deal could swing the start by 4–5 VP. Setup is unchanged: 2 Starting Orders + 1 Main Order each.
 24. **v1.6.2 — Main Order re-pass and deck flow.** Decoration requirements no longer earn a premium (every Decoration costs 2): O05 6 + 3, O19 and O20 6 VP, O38 12, O39 13. Shape-only singles rise to 4 VP (O01–O03); the choice singles ease to O14 5 + 3 and O15 5 + 4; O04 7 + 3; O22 9. Fine doubles gain the coordination premium they lacked: O26 11, O27 12, O28 11, O30 13; the Masterpiece doubles O32 16, O33 and O34 15 + 5. Cards looked at and not reserved (Market, Colour Samples) go to the bottom of the Main Order deck instead of the discard pile, so the deck lasts a 4-player game without a reshuffle.
+25. **Keyword: Select N.** Look at the top N cards of the Main Order deck, reserve 1 of them or 1 face-up Order, put the rest on the bottom. Commission Market: Apprentice Select 2, Shifu Select 3 reserving up to 2; Colour Samples: Select 3 when acquired and for its once-a-round swap. Wording only.
+26. **Fuel Ledger as cards.** Wood is open information, so a Wood token tucked under a face-down Contribution card could never be secret. The hidden commitment is replaced by 2 Contribution cards that come with the tile: **Fuel Ledger Bank** (1 Wood, −2) and **Fuel Ledger Stoke** (1 Wood, +2). Its owner chooses among 5 cards and plays 1; plain Bank and Stoke stay free. Same options and prices as before. Contribution cards rise to 14 and all share one back, so a face-down card reveals nothing.
+27. **Tech VP removed.** Advanced Techs no longer score 1 VP when gained. After the re-pass every tile pays for itself on ability alone (first tile: the Cover token; second: a Firing ability ≈ 4.7 VP), so the VP was only subsidising third tiles and round-4 purchases. Techs are workshop growth; Orders and Crowns are the points. Connoisseur's Cabinet keeps its end-game VP. Printed costs unchanged; watch Techs per player and Guild placements in rounds 4–5.
+
+**Yours, from the doc comments:** 1–4, the first two sentences of 6, the first sentence of 7, the marker turn order in 3, 12, and 15. **The review's recommendations, applied at your request so the draft plays as one piece:** 5, the Shifu selection and Colour Samples in 6, the court-fired Imperial Kiln in 7, 8, 9, 11, 13 and 14. Each is a sentence to revert.
 
 ## Game Overview
 
@@ -56,6 +61,7 @@ The game lasts exactly **5 rounds**.
 | Commission Market | The central location used to reserve Main Orders. |
 | Crown Order | Any Order showing at least 1 Crown icon. Each Crown advances Imperial Recognition until Recognition 4; Crowns gained after reaching 4 score 1 VP each. |
 | Held (Reserved) Order | An Order in your hand, protected from other players. |
+| Select N | Look at the top N cards of the Main Order deck. Reserve 1 of them, or 1 face-up Main Order from the display; put the rest of the N on the bottom of the deck. |
 | Imperial Kiln | A private one-ceramic firing tile gained at Imperial Recognition 2. Its ceramic ignores Contributions: Actual Heat = Kiln Die result + Fire modifier + a modifier of −1, 0 or +1 chosen when it is loaded, plus any Heat marker. |
 | Imperial Priority | A once-per-game token gained at Imperial Recognition 3. Before or after your worker action, spend it to give 1 of your Shaped vessels a Glaze and load it into your empty Imperial Kiln. |
 | Heat marker | A player's token with a +1 face and a −1 face. The Glaze & Load Shifu places it face-down on 1 of that player's loaded ceramics; after Base Heat it is turned to +1 or −1 or returned. It adds its value to that ceramic's Actual Heat. |
@@ -84,7 +90,7 @@ The game lasts exactly **5 rounds**.
 | Starting Order Cards | 8 | Separate easy opening deck; never shuffled into the Main Order deck. |
 | Advanced Tech tiles | 18 | Six Form & Decorate, six Glazing & Loading, six Firing. The Kiln Master tile comes with its own marker. |
 | Fire Cards | 12 | −2 ×1, −1 ×3, 0 ×4, +1 ×3, +2 ×1. |
-| Kiln Contribution Cards | 12 | Three per player: Bank, Tend, Stoke. |
+| Kiln Contribution Cards | 14 | Three per player: Bank, Tend, Stoke. Plus 2 Fuel Ledger cards, Fuel Ledger Bank and Fuel Ledger Stoke, kept with that Tech tile. All 14 share one back. |
 | Imperial Recognition Markers | 4 | One per player colour. |
 | Imperial Kiln Tiles | 4 | One-space private kiln tiles; gained at Imperial Recognition 2. |
 | Imperial Priority Tokens | 4 | One per player colour; begin on Recognition space 3 and are taken when that player reaches it. |
@@ -102,7 +108,7 @@ The game lasts exactly **5 rounds**.
 1. Place the Central Action Board and Shared Kiln in the centre. For the Shared Kiln: **4 players** use all 8 spaces (3 High, 3 Middle, 2 Low); **3 players** use 6 spaces, covering 1 High and 1 Middle space (2-2-2); **2 players** use 4 spaces, covering 1 High, 2 Middle and 1 Low space (2-1-1). In 2- and 3-player games also cover the second Magistrate's Hall space.
 2. Shuffle the **8-card Starting Order deck** and the **48-card Main Order deck** separately. Deal each player **2 Starting Orders and 1 Main Order**. These 3 Orders form that player's starting hand and are **kept secret**.
 3. Return any undealt Starting Orders to the box. Reshuffle the remaining Main Order deck, then reveal **6 face-up Main Orders** from left to right.
-4. Separate the 18 Advanced Techs into Form & Decorate, Glazing & Loading and Firing decks of 6. Shuffle each discipline and reveal **2 face-up tiles from each**.
+4. Separate the 18 Advanced Techs into Form & Decorate, Glazing & Loading and Firing decks of 6. Shuffle each discipline and reveal **2 face-up tiles from each**. Keep the 2 Fuel Ledger Contribution cards beside the Firing deck; they go to whoever acquires Fuel Ledger.
 5. Shuffle the 12-card Fire deck and place it face down beside a face-up discard pile. Place the Kiln Die beside the Base Heat track.
 6. Place Clay, Wood, Coins and Vessel cards within reach. Sort Vessel cards by Shape.
 7. Place the **4 Imperial Kiln tiles** beside the Imperial Recognition track.
@@ -188,12 +194,12 @@ Each player has **1 Shifu and 3 Apprentices** available each round. Each worker 
 
 ### Commission Market
 
-Reserving takes a Main Order into your hand. A reserved **face-up** Order leaves its position **empty until the end of your turn**; then slide every Order to its right one position left and reveal Main Orders into the rightmost empty positions, restoring the display to 6. Cards revealed from the deck that you do not reserve go to the bottom of the Main Order deck.
+**Select N:** look at the top N cards of the Main Order deck, then reserve 1 of them or 1 face-up Main Order from the display; put the rest of the N on the bottom of the deck. Reserving takes the Order into your hand. A reserved **face-up** Order leaves its position **empty until the end of your turn**; then slide every Order to its right one position left and reveal Main Orders into the rightmost empty positions, restoring the display to 6.
 
 | Worker | Effect |
 | --- | --- |
-| Apprentice | Look at the top **2** cards of the Main Order deck. Reserve **1 Main Order** from the display or from those 2; put the rest of the 2 on the bottom of the deck. |
-| **Shifu** | Look at the top **3** cards of the Main Order deck. Reserve **up to 2 Main Orders** from the display and those 3; put the rest of the 3 on the bottom of the deck. |
+| Apprentice | **Select 2.** |
+| **Shifu** | **Select 3**, reserving **up to 2** Orders instead of 1, in any mix of the 3 cards and the display. |
 
 - A Shifu must reserve at least 1 Order. The display is not refilled until your turn ends, so both of a Shifu's reservations choose from the Orders showing now.
 - There is no Order hand limit during a round. During Cleanup, discard Orders of your choice until you hold no more than your hand limit of **4** (5 with Colour Samples). Starting Orders and reserved Main Orders both count.
@@ -237,7 +243,7 @@ If no ceramics are loaded in the Shared Kiln or any Imperial Kiln, **skip the Fi
 
 | Step | What happens | Produces |
 | --- | --- | --- |
-| 1. Contributions | Participating players secretly choose Bank, Tend or Stoke and any Fuel Ledger commitment, then reveal and pay Wood. Start at the Kiln Die result and clamp the final result to 0–5. | **Base Heat** |
+| 1. Contributions | Participating players each secretly choose 1 of their Contribution cards, then reveal and pay Wood. Start at the Kiln Die result and clamp the final result to 0–5. | **Base Heat** |
 | 2. Test Pieces | In First Player order, a Test Pieces owner may look at the top Fire card and bury it. | — |
 | 3. Heat markers | In First Player order, each player with a face-down Heat marker on a ceramic turns it to +1 or −1, or returns it. Kiln Master places its marker now. | — |
 | 4. Fire | Reveal the top Fire card and add its modifier. | **Global Heat** |
@@ -257,7 +263,7 @@ Every player has the same 3 cards:
 | Tend the Fire | 0 | 0 |
 | Stoke the Fire | 1 | +1 |
 
-A player participates in Contributions **only if they have at least 1 ceramic in the Shared Kiln. A ceramic in an Imperial Kiln is fired by the court and gives no say over the shared fire**. Tend is always affordable. After the firing, return all Contribution cards to their owners.
+A player participates in Contributions **only if they have at least 1 ceramic in the Shared Kiln. A ceramic in an Imperial Kiln is fired by the court and gives no say over the shared fire**. Tend is always affordable. The owner of **Fuel Ledger** holds 2 more cards, **Fuel Ledger Bank** (1 Wood, −2) and **Fuel Ledger Stoke** (1 Wood, +2), and pays no Wood for plain Bank or Stoke; they still play exactly 1 card. After the firing, return all Contribution cards to their owners.
 
 **Base Heat = the Kiln Die result + the sum of final Contribution modifiers, clamped to 0–5.** Examples with the die showing 2: Tend + Tend + Tend → 2. Stoke + Tend + Tend → 3. Bank + Tend + Tend → 1. Stoke + Bank + Tend → 2; both players still pay their Wood. With the die showing 3: Tend + Tend + Tend → 3; Bank + Tend + Tend → 2; Stoke + Stoke + Tend → 5.
 
@@ -375,7 +381,6 @@ A player's long-term workshop engine consists of:
 - A Form & Decorate Tech removes the Cover token from your second Form & Decorate space; a Glazing & Loading Tech removes the one from your second Glaze & Load space; Firing Techs remove nothing.
 - Follow each tile's printed timing and usage limit.
 - If you control multiple abilities with the same timing, choose the order in which you resolve them. If several players have abilities in the same timing window, resolve players in First Player order; each player chooses the order of their own abilities.
-- Each Advanced Tech scores **1 VP immediately when you gain it**; it is not scored again at game end.
 
 See Appendix B for all 18 tiles.
 
@@ -393,7 +398,7 @@ Orders may award **VP, Coins and 0–3 Crowns**. Commercial Orders tend to be mo
 
 ### Reserving Orders
 
-Use the Commission Market during the Work Phase to reserve Main Orders: an Apprentice looks at the top 2 cards of the deck and reserves 1 Order from the display or those 2; the Shifu looks at the top 3 and reserves up to 2 from the display and those 3. Revealed cards you do not reserve go to the bottom of the deck. The Canal Wharf Shifu takes the top card of the deck unseen. Acquiring **Colour Samples** grants 1 immediate reservation from the top 3 without a Commission Market action, raises your hand limit to 5 and lets you swap 1 held Order once a round; see Appendix B.
+Use the Commission Market during the Work Phase to reserve Main Orders: an Apprentice Selects 2, the Shifu Selects 3 and reserves up to 2. The Canal Wharf Shifu takes the top card of the deck unseen. Acquiring **Colour Samples** lets you Select 3 at once without a Commission Market action, raises your hand limit to 5 and lets you swap 1 held Order for a Select 3 once a round; see Appendix B.
 
 A held Order:
 
@@ -407,7 +412,7 @@ A held Order:
 On your turn in the Order Phase, for each Order you complete:
 
 1. Choose 1 held Order and **reveal it**.
-2. Select the required finished, undelivered ceramics.
+2. Choose the required finished, undelivered ceramics.
 3. Confirm all Shape, Glaze, Decoration, relationship and minimum Quality requirements.
 4. Place the used ceramics beneath the completed Order.
 5. Record the printed VP.
@@ -488,7 +493,7 @@ Once per round, after Actual Heat is calculated but before Quality is assigned, 
 
 The game ends after Round 5 Cleanup. Score:
 
-1. all VP recorded during play: Orders, Kiln Tradition abilities, **1 VP for each Advanced Tech** (scored when gained), **Imperial Audience** and VP from Crowns gained beyond Recognition 4;
+1. all VP recorded during play: Orders, Kiln Tradition abilities, **Imperial Audience** and VP from Crowns gained beyond Recognition 4;
 2. the end-game Exhibition;
 3. **1 VP per 3 Coins remaining**, maximum **5 VP**.
 
@@ -500,7 +505,7 @@ The player with the most VP wins.
 
 - **Unlimited resources:** The supply of Clay, Wood and Coins is unlimited. If the supplied components run out, use suitable substitutes, such as spare tokens or counters, or record the additional amounts on paper. Make each substitute's resource type and value clear to all players.
 - Gain Clay, Wood and Coins from the general supply and return all spent Clay, Wood and Coins to it.
-- **Resources are open information.** Each player's total Clay, Wood and Coins must be clear to all players and accurately stated on request. Contribution choices and Fuel Ledger commitments remain secret until revealed. Wood committed to a Contribution remains in that player's total until it is paid.
+- **Resources are open information.** Each player's total Clay, Wood and Coins must be clear to all players and accurately stated on request. Contribution choices remain secret until revealed; Wood is paid only on reveal, so no Wood is set aside beforehand.
 - **No trading:** Players may not trade Clay, Wood, Coins, Orders, Techs or ceramics.
 - **Negotiation:** Players may discuss and make promises about their intended Contributions and Heat markers. These promises are non-binding. Players must accurately disclose public information and may not transfer resources or other game components between players.
 - **Orders in hand are secret information.** The number of Orders in each player's hand is public.
@@ -597,7 +602,7 @@ Unless a card explicitly pairs attributes, Shape, Glaze and Decoration requireme
 
 ## Appendix B — Advanced Tech: 18 tiles
 
-Tech tiles use abbreviated reminder text; this appendix gives the full effects. Each Advanced Tech scores **1 VP immediately when you gain it**. A player owns at most 3 and at most 1 per discipline. **Form & Decorate** tiles remove the Cover token from your second Form & Decorate space, **Glazing & Loading** tiles the one from your second Glaze & Load space; **Firing** tiles remove nothing.
+Tech tiles use abbreviated reminder text; this appendix gives the full effects. A player owns at most 3 and at most 1 per discipline. **Form & Decorate** tiles remove the Cover token from your second Form & Decorate space, **Glazing & Loading** tiles the one from your second Glaze & Load space; **Firing** tiles remove nothing.
 
 ### B1. Form & Decorate — 6
 
@@ -614,7 +619,7 @@ Tech tiles use abbreviated reminder text; this appendix gives the full effects. 
 
 | Advanced Tech | Cost | Ability |
 | --- | --- | --- |
-| **Colour Samples** | 2 | **When acquired:** look at the top **3 Main Orders**, reserve 1 of them and put the rest on the bottom of the deck. This is not a Commission Market action. **Ongoing:** your Order hand limit is **5**, and once per round, before or after one of your worker actions, you may **discard 1 held Order to look at the top 2 cards of the Main Order deck, reserve 1 of them and put the other on the bottom**. |
+| **Colour Samples** | 2 | **When acquired: Select 3.** This is not a Commission Market action. **Ongoing:** your Order hand limit is **5**, and once per round, before or after one of your worker actions, you may **discard 1 held Order to Select 3**. |
 | **Kiln Tending** | 3 | Once per round, after a Glaze & Load action in which you loaded at least 1 ceramic, gain **1 Clay and 1 Wood**. |
 | **Kiln Furniture** | 2 | Once per round, when you load 1 ceramic into the Shared Kiln, you may place this tile beneath it and **choose its zone modifier** for this firing: **−1, 0 or +1**. Return the tile after firing. |
 | **Inverted Firing 覆烧** | 2 | Once per round, when you load a **Bowl, Plate or Brush Washer** into the Shared Kiln, you may place it in an active space that **already holds exactly 1 of your ceramics**. Both use that space's modifier (or its Kiln Furniture modifier). |
@@ -626,7 +631,7 @@ Tech tiles use abbreviated reminder text; this appendix gives the full effects. 
 | Advanced Tech | Cost | Ability |
 | --- | --- | --- |
 | **Protective Saggars** | 3 | Your ceramics are never Flawed: for them, a Heat Difference of **3 or more counts as Standard**. Once per round, after Quality is assigned, **1 of your Standard ceramics** from this firing becomes **Fine**. This cannot create a Masterpiece. |
-| **Fuel Ledger** | 2 | Your Bank the Fire and Stoke the Fire cost **no Wood**. When choosing Bank or Stoke, you may secretly commit **1 Wood** with your Contribution card. Reveal them together. If you do, your Contribution becomes **−2 or +2**. |
+| **Fuel Ledger** | 2 | Your Bank the Fire and Stoke the Fire cost **no Wood**. When you acquire this tile, take the **Fuel Ledger Bank** (1 Wood, **−2**) and **Fuel Ledger Stoke** (1 Wood, **+2**) Contribution cards; choose among all 5 of your cards as usual, playing exactly 1. |
 | **Test Pieces 火照** | 3 | Once per round, **after Base Heat is determined and before Heat markers are set**, if you have at least 1 ceramic in this firing, pay **1 Wood** to privately look at the top Fire card. You may then put it on the **bottom** of the deck. You may not show it. |
 | **Second Firing** | 2 | Once per round, after Quality is assigned, choose **1 of your Flawed or Standard ceramics** from this firing. Reveal **2 extra Fire cards**, choose 1 of them and recalculate that ceramic's Actual Heat and Quality with the **same Base Heat, zone modifier, Kiln Furniture modifier and Heat marker** and the chosen card's modifier. Jun's adjustment from the first calculation does not carry over. The new Quality replaces the old, even if worse. Discard both extra Fire cards after resolving. |
 | **Kiln Master 窑工** | 2 | Once per round, in the Heat marker step, place the **Kiln Master marker** (+1 or −1 face up) on **1 of your ceramics in this firing that carries no Heat marker**. It is a Heat marker for all rules. |
@@ -638,10 +643,10 @@ Tech tiles use abbreviated reminder text; this appendix gives the full effects. 
 - **Kiln Furniture, Inverted Firing and Setter's Mark** affect the Shared Kiln only. The Imperial Kiln holds 1 ceramic and uses its own modifier.
 - **Heat markers:** a ceramic carries at most 1 marker. Kiln Master's marker and your own Heat marker may not sit on the same ceramic. Jun's adjustment applies on top of either. Markers stay in place through a Second Firing recalculation.
 - **Test Pieces** resolves in First Player order, before any Heat marker is turned. A buried card stays on the bottom; if the Fire deck runs out, the discard pile is shuffled and placed above it, so the buried card is drawn last. You may discuss what you saw but may not show the card.
-- **Colour Samples:** the when-acquired reservation does not refill the display (it takes from the deck). Your hand limit of 5 applies at every Cleanup while you own the tile. The once-per-round swap is a Tech effect, not a Commission Market action; the Order you discard goes to the Main Order discard pile (a Starting Order goes to the box).
+- **Colour Samples:** each Select 3 it grants is a Tech effect, not a Commission Market action; a face-up Order taken by one is replaced at the end of your turn as usual. Your hand limit of 5 applies at every Cleanup while you own the tile. The Order you discard for the swap goes to the Main Order discard pile (a Starting Order goes to the box).
 - **Protective Saggars** and **Second Firing** affect only your own eligible ceramics in the current firing, in the Shared Kiln or your Imperial Kiln; never ceramics fired in earlier rounds. Second Firing's extra Fire cards change nothing for any other ceramic.
 - **Discounts: the Shifu's Decoration discount, Decorator's Kit and Ding's 1-Coin vessel are three separate reductions. The first two may apply to the same Decoration (a Carved for 0). Ding's vessel takes neither. Large Throwing Wheel reduces Clay only; Ding's vessel is not a Vase or Censer**.
-- **Senior Apprentice** at the Commission Market gives that Apprentice the Shifu's effect: look at the top 3 and reserve up to 2.
+- **Senior Apprentice** at the Commission Market gives that Apprentice the Shifu's effect: Select 3, reserving up to 2.
 - **Ge's Crackle** is an after-Quality effect. With Protective Saggars, a ceramic that would have been Flawed is Standard and may be crackled; Saggars' own Standard → Fine step and Crackle cannot both apply to the same ceramic. Crackle never creates a Masterpiece, so a Crackle ceramic cannot fill a Masterpiece requirement, including Painted Masterpiece Orders.
 
 ## Appendix C — Fire Deck
@@ -660,8 +665,8 @@ Tech tiles use abbreviated reminder text; this appendix gives the full effects. 
 
 If no ceramics are loaded in the Shared Kiln or any Imperial Kiln, **skip this phase and do not reveal a Fire card**.
 
-1. **Choose Contributions.** Every player with at least 1 ceramic in the Shared Kiln secretly chooses Bank, Tend or Stoke and must be able to pay its Wood cost. Fuel Ledger may add its hidden Wood commitment.
-2. **Reveal and pay.** Reveal all Contribution cards and committed Wood simultaneously, then pay all costs.
+1. **Choose Contributions.** Every player with at least 1 ceramic in the Shared Kiln secretly chooses 1 of their Contribution cards (Bank, Tend or Stoke; Fuel Ledger's owner also has Fuel Ledger Bank and Fuel Ledger Stoke) and must be able to pay its Wood cost.
+2. **Reveal and pay.** Reveal all Contribution cards simultaneously, then pay all costs.
 3. **Determine Base Heat.** Start at the Kiln Die result, add all final Contribution modifiers, then clamp to 0–5.
 4. **Test Pieces.** In First Player order, each Test Pieces owner with a ceramic in this firing may pay 1 Wood to look at the top Fire card and may bury it.
 5. **Heat markers.** In First Player order, each player with a face-down Heat marker on a ceramic turns it to **+1 or −1**, or returns it to their supply. Kiln Master owners place their marker in this step.
@@ -702,13 +707,14 @@ If no ceramics are loaded in the Shared Kiln or any Imperial Kiln, **skip this p
 | Materials Yard | Gain 3 Clay/Wood | Gain 6 Clay/Wood |
 | Form & Decorate | Form and decorate 1 | Form and decorate up to 2; if 2, one Decoration −1 Coin |
 | Glaze & Load | Glaze and load 1 | Glaze and load up to 2; Heat marker face-down on 1 of your ceramics |
-| Commission Market | Look at the top 2 of the deck; reserve 1 from the display or those 2 | Look at the top 3; reserve up to 2 from the display and those 3 |
+| Commission Market | Select 2 | Select 3, reserving up to 2 |
 | Guild Hall | Buy 1 Advanced Tech at cost | Look at top 2 Techs of 1 discipline (or as many as remain); buy up to 2 Techs from different disciplines at cost |
 | Canal Wharf | 2 Coins | 4 Coins + the top Order card, unseen, to hand |
 | Magistrate's Hall | Pay 4 Coins → +1 Recognition (0 → 1, 1 → 2 or 2 → 3) | Pay 3 Coins → same |
 
-- A reserved face-up Order is replaced only after the reserving player's turn ends. Colour Samples: 1 reservation from the top 3 when acquired; hand limit 5; swap 1 held Order once a round.
-- A Form & Decorate Tech removes the Cover token from the second Form & Decorate space; a Glazing & Loading Tech the one from the second Glaze & Load space; Firing Techs remove nothing. At most 3 Techs, 1 per discipline. Each Tech scores **1 VP** when gained.
+- **Select N:** look at the top N Main Orders, reserve 1 of them or 1 from the display, rest to the bottom of the deck.
+- A reserved face-up Order is replaced only after the reserving player's turn ends. Colour Samples: Select 3 when acquired; hand limit 5; once a round discard 1 held Order to Select 3.
+- A Form & Decorate Tech removes the Cover token from the second Form & Decorate space; a Glazing & Loading Tech the one from the second Glaze & Load space; Firing Techs remove nothing. At most 3 Techs, 1 per discipline.
 - If you have gained your Imperial Kiln and it is empty, 1 ceramic loaded during a Glaze & Load action may enter it instead; choose its modifier (−1 / 0 / +1) as you load it.
 
 ### Imperial Recognition
@@ -725,7 +731,7 @@ A Tech effect is **not a worker action**. It does not count toward location visi
 
 ### Firing
 
-**Base Heat starts at the Kiln Die result, rolled at the start of the round (faces 1, 1, 2, 2, 3, 3).** Bank 1 Wood / −1 · Tend 0 / 0 · Stoke 1 Wood / +1.
+**Base Heat starts at the Kiln Die result, rolled at the start of the round (faces 1, 1, 2, 2, 3, 3).** Bank 1 Wood / −1 · Tend 0 / 0 · Stoke 1 Wood / +1. Fuel Ledger owner: Bank and Stoke free; Fuel Ledger Bank 1 Wood / −2 · Fuel Ledger Stoke 1 Wood / +2.
 
 | Difference | Quality |
 | --- | --- |
@@ -743,6 +749,5 @@ A Tech effect is **not a worker action**. It does not count toward location visi
 - Completed Order VP.
 - Kiln Tradition VP.
 - Imperial Audience: **6 VP when Recognition 4 is reached**; each later Crown scores **1 VP**.
-- Advanced Techs: **1 VP each**, scored when you gain them.
 - Exhibition: any number of ceramics; Standard 2 / Fine 3 / Masterpiece 5; +3 VP for at least 3 different Shapes and +3 VP for at least 3 different Glazes; Connoisseur's Cabinet +1 per Fine or Masterpiece, max +5.
 - Coins: 1 VP per 3, maximum 5.
