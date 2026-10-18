@@ -1591,6 +1591,11 @@ describe("clarifications (owner decision D10, K15)", () => {
     expect(offences).toEqual([]);
   });
 
+  /** The owner's plain-register edits of 2026-10-18 (Chinese line 304: 于 → 到), which the clarification quoting that line follows. */
+  const OWNER_ZH_EDITS: ReadonlyArray<readonly [string, string]> = [["它们要在派工阶段于瓷牙行承接", "它们要在派工阶段到瓷牙行承接"]];
+  const followsOwnerZhEdit = (before: string, now: string): boolean =>
+    OWNER_ZH_EDITS.some(([from, to]) => before.includes(from) && before.replace(from, to) === now);
+
   it("re-cites every item carried over from V1.6.1 to the same rulebook text, or to the line V1.6.2 rewrote", () => {
     const previous = clarificationsDoc(CLARIFICATIONS_DOC_V161);
     const linesBefore = SOURCE_V161.split("\n").map(clean);
@@ -1604,8 +1609,9 @@ describe("clarifications (owner decision D10, K15)", () => {
         const before = previous.get(key)?.items.find((candidate) => candidate.en === item.en);
         if (before === undefined) continue;
         carried += 1;
-        // An unchanged English item keeps its Chinese and cites the same number of lines.
-        if (before.zh !== item.zh) problems.push(`${key}: Chinese changed for "${item.en}"`);
+        // An unchanged English item keeps its Chinese (apart from the owner's own wording edits
+        // of the rulebook line it quotes) and cites the same number of lines.
+        if (before.zh !== item.zh && !followsOwnerZhEdit(before.zh, item.zh)) problems.push(`${key}: Chinese changed for "${item.en}"`);
         const [then, now] = [lineTags(before.source), lineTags(item.source)];
         if (then.length !== now.length) problems.push(`${key}: ${before.source} → ${item.source}`);
         then.forEach((line, index) => {
