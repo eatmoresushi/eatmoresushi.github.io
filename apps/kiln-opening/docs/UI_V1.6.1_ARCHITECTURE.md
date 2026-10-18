@@ -130,7 +130,7 @@ Everything else in `test/v14` and `test/v127` either tests V1.4 rules (Dipping V
 | Log every Tech and Kiln ability activation by name | **Adopted** through the event templates (§5 gap 4). |
 | Keep the last Fire card and "Base Heat + Fire = Global Heat" visible until the next firing | **Adopted:** `IdleFiringRecap` over `firingRecapView` (§5 gap 18). |
 | Main Order display as an ordered shelf, oldest to newest | **Adopted** (`displayRow` label). Its animation belongs to phase 5. |
-| "Scores 1 VP when gained" reminder on every Tech tile | **Open (§11).** It is printed tile text, so it passes the table principle. It is rendered from `GAME_CONFIG.techs.vpEach` unless the owner declines. |
+| "Scores 1 VP when gained" reminder on every Tech tile | **Obsolete** (V1.6.2 change 27, owner revision 3, 2026-10-18): Techs score no VP, so there is nothing to print, and `GAME_CONFIG.techs.vpEach` is gone. Under V1.6.1 it was open (§11) and would have been rendered from that key. |
 | Always show Preferred Heat on a glazed ceramic | **Open (§11).** Preferred Heat is printed reference information, but showing it per ceramic is close to a heat aid (D3). It is not rendered until the owner rules. |
 | Timing banners (`Before Contributions`, …) | **Superseded** by the D3 step rail (Appendix D names). |
 | "Desktop/tablet first"; phone suggestions | **Superseded** by D5 and the wireframes. The phone layout is a first-class layout. |
@@ -698,7 +698,7 @@ These are closed in phase A by A1, except the i18n rows (A3) and the event templ
 
 - `heatPreviews`, `qualityByFire`, `heatBeforeFire`, `qualityForDifference` used as a preview;
 - the Fire-deck count (`counts.fireDeck`), which `TableBoardView` omits by type;
-- `scorePreview` as an in-game projection. Seat chips show the score-track value `recordedVp`, which includes Tech VP from the purchase (amendment A1). Results use `finalResult`.
+- `scorePreview` as an in-game projection. Seat chips show the score-track value `recordedVp` (under V1.6.1 it included Tech VP from the purchase, amendment A1; V1.6.2 change 27 removed Tech VP, so it holds none). Results use `finalResult`.
 
 They stay engine-side for the computer player. The §2 identifier scan and the rendered-markup scan (§9.2) enforce this.
 
@@ -1344,7 +1344,7 @@ None of these blocks phase A.
    - the table states of §9.1 (empty kiln, Imperial-only firing, reshuffle, empty supply).
 2. **Session controls.** The top bar gains `LanguageToggle` and a `SessionMenu` (Theme, room code, Leave view, End session), and a ConnectionBanner sits under it. None of these is in the wireframe. Confirm the placement, and whether a Theme choice is wanted at all; without one, the app follows the system.
 3. **Deck counts.** The Main Order deck and discard counts and the Tech deck counts are shown, as in the wireframe. Only the Fire-deck count is withheld (D4). Confirm.
-4. **Tech "Scores 1 VP when gained" reminder** (`UI_UX_SPEC`). It is printed tile text and will be rendered unless declined.
+4. **Tech "Scores 1 VP when gained" reminder** (`UI_UX_SPEC`). Closed by V1.6.2 change 27 (owner revision 3, 2026-10-18): Techs score no VP, so no reminder is printed.
 5. **Preferred Heat on glazed ceramics** (`UI_UX_SPEC`). It is not rendered until ruled on against D3.
 6. **Browser floor.** Safari/iOS 16.4, Chrome/Edge 111, Firefox 121.
 7. **CI job.** The repository-root workflow `kiln-opening-ui.yml` (§9.6): Chromium smoke and a short full game on PRs touching the app.
@@ -1397,7 +1397,7 @@ Two reviews of revision 1 were applied: an engine review (E) and a UX review (U)
 | U13 | Glossary §1.2–1.3 only partly captured (minor) | **Accepted.** Whole templates replace `resDelta`/`vpN`/`paren`; the full ZH rule list; `zh_punctuation`; the extended D7 list; scans of text nodes and aria/title/alt only | §6.3, §6.4 |
 | U14 | The seed contains literal rule numbers (minor) | **Accepted.** Numbers become placeholders during seeding (gap 19); `locationSummary` is exempt by name | §5 gap 19, §6.1, §6.4 |
 | U15 | Orders-section content and seat-chip details unowned (minor) | **Accepted.** `LookedOrders` and `FinishedCeramicsStrip` in B2; `orderTargets` states; seat chips with hand count, kiln short name and the final total | §4.1, §4.2, §3.5, §9.2 |
-| U16 | Still-valid `UI_UX_SPEC` items not reconciled (minor) | **Accepted.** The §1.5 table; Preferred Heat and the Tech VP reminder go to the owner; no width-based content hiding, checked in `gallery.spec` | §1.5, §7.3, §11 |
+| U16 | Still-valid `UI_UX_SPEC` items not reconciled (minor) | **Accepted.** The §1.5 table; Preferred Heat and the Tech VP reminder go to the owner (the reminder is obsolete since V1.6.2 change 27); no width-based content hiding, checked in `gallery.spec` | §1.5, §7.3, §11 |
 | U17 | Keyboard gaps in decision forms (minor) | **Accepted.** The sub-editor sits outside the label; drafts per location; disabled radios ignored; `ReorderList` for the Guild order; the 44px check | §8.1, §3.5, §9.6 |
 | U18 | Remote events not announced; no coalescing (minor) | **Accepted.** Remote `lastBatch`, coalescing at least 1.5s apart, "your turn" last, and a log cap with Show earlier | §3.2, §8.3 |
 | U19 | `scorePreview` not forbidden; deck-count rule unstated; narrow vocabulary (minor) | **Accepted.** It is now forbidden; the deck-count statement is added with an owner confirmation; the bilingual vocabulary is widened, with the Fuel Ledger allowance | §2, §5, §9.2, §11 |

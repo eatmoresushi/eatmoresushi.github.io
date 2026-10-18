@@ -115,7 +115,7 @@ export function selectPicksError(view: ActorView, kind: SelectLookKind, spec: Se
     return ruleError("RESERVATION_REQUIRED", "Reserve at least 1 Order.", {});
   }
   if (picks.length > spec.maxReservations) {
-    return ruleError("RESERVATION_LIMIT", `This action reserves at most ${spec.maxReservations} Orders.`, {
+    return ruleError("RESERVATION_LIMIT", `This Select reserves at most ${spec.maxReservations}; you chose ${picks.length} Orders.`, {
       limit: spec.maxReservations,
       requested: picks.length,
     });

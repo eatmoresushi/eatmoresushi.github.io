@@ -11,7 +11,7 @@ Target session length for the physical design is approximately 90–120 minutes.
 Priority order:
 
 1. `docs/KILN_OPENING_v1.6.2_EN_SOURCE.md` — the V1.6.2 Player Rulebook, designated by the owner on 2026-10-17 as the **only** mechanical source of truth. It replaces V1.6.1 (`docs/KILN_OPENING_v1.6.1_EN_SOURCE.md`, now history). The Chinese edition `docs/KILN_OPENING_v1.6.2_ZH.md` and the component text `docs/KILN_OPENING_v1.6.2_COMPONENT_TEXT.md` are the owner's matching files.
-2. `docs/RULEBOOK_AUDIT_V1.6.2.md` — source checksums, owner amendments (A1, A2), owner rulings (R1–R19, B1–B3, as still valid under V1.6.2), editorial corrections and recorded interpretations. `docs/RULEBOOK_AUDIT_V1.6.1.md` is history.
+2. `docs/RULEBOOK_AUDIT_V1.6.2.md` — source checksums, owner amendments (A1, superseded by change 27; A2), owner rulings (R1–R19, B1–B3, as still valid under V1.6.2), editorial corrections and recorded interpretations. `docs/RULEBOOK_AUDIT_V1.6.1.md` is history.
 3. `docs/GAME_RULES.md` — source index.
 4. `data/*.json` — derived content.
 5. `docs/IMPLEMENTATION_DECISIONS.md` — digital interpretations.
@@ -22,13 +22,13 @@ Priority order:
 
 V1.6.2 revises V1.6.1, which reworked V1.2.7 and superseded V1.4, every V1.4 owner amendment and the earlier V1.6 draft. Older sources and audits are history, not active rules.
 
-V1.6.2 changes from V1.6.1 (rulebook changes 21–24; 23–24 are the owner's revision 2):
+V1.6.2 changes from V1.6.1 (rulebook changes 21–27; 23–24 are the owner's revision 2, 25–27 revision 3):
 
 - **Commission Market** gives no resource and has no blind reservation. An Apprentice privately looks at the top 2 Main Orders and reserves 1 from the display or those 2; the Shifu looks at the top 3 and reserves up to 2 (at least 1) from the display and those 3. Revealed cards not reserved go to the bottom of the Main Order deck (change 24), as do the cards Colour Samples looks at and does not reserve; when several go there together they go in **random order** (owner ruling R19, 2026-10-18 — it replaces the provisional 'order drawn' default P5; use the seeded RNG).
 - **Materials Yard** Shifu gains 6 Clay/Wood (no 1-Coin option). **Guild Hall** Shifu takes up to 2 Techs (1 or 2) from different disciplines, face-up or revealed, each at printed cost (no Shifu discount); a placement there is legal only if you can afford 1 face-up Tech from a discipline you do not own. A taken Tech's display position stays empty until the taking player's turn ends, then each discipline refills to 2 (owner revision, 2026-10-17). **Canal Wharf** Shifu gains 4 Coins and takes the top Main Order card unseen into hand.
-- **Techs:** Colour Samples adds a once-per-round swap before or after a worker action (discard 1 held Order, then Select 3: reserve 1 of the 3 or 1 face-up Order; the rest go to the bottom of the Main Order deck — changes 24–25, which supersede owner ruling R14). Canal Barge: once per round, when you complete an Order, gain 2 Coins (it no longer completes Orders). Protective Saggars (cost 3): your ceramics are never Flawed (Heat Difference 3+ counts as Standard), and once per round 1 of your Standard ceramics from this firing becomes Fine. Fuel Ledger (cost 2): your Bank and Stoke cost no Wood; committing 1 Wood still makes them −2/+2. Second Firing reveals 2 extra Fire cards and uses the one you choose. Senior Apprentice and Kiln Tending cost 3.
+- **Techs:** Colour Samples adds a once-per-round swap before or after a worker action (discard 1 held Order, then Select 3: reserve 1 of the 3 or 1 face-up Order; the rest go to the bottom of the Main Order deck — changes 24–25, which supersede owner ruling R14). Canal Barge: once per round, when you complete an Order, gain 2 Coins (it no longer completes Orders). Protective Saggars (cost 3): your ceramics are never Flawed (Heat Difference 3+ counts as Standard), and once per round 1 of your Standard ceramics from this firing becomes Fine. Fuel Ledger (cost 2): your Bank and Stoke cost no Wood, and the tile brings the Fuel Ledger Bank (1 Wood, −2) and Fuel Ledger Stoke (1 Wood, +2) Contribution cards (change 26). Second Firing reveals 2 extra Fire cards and uses the one you choose. Senior Apprentice and Kiln Tending cost 3.
 - **Orders (changes 23–24):** the Starting Order deck has **8** cards (S01–S08; S07 asks for Carved, Impressed or Painted); a 4-player game deals all 8. Nineteen Main Order values changed (O01–O05, O14, O15, O19, O20, O22, O26–O28, O30, O32–O34, O38, O39), per Appendix A.
-- **Fire deck:** with Second Firing taking 2 cards, the 12-card deck can now run out mid-game. The discard is then shuffled and placed on top, and a card buried by Test Pieces is drawn last (L640; owner ruling R15: a deck holding only buried cards counts as run out).
+- **Fire deck:** with Second Firing taking 2 cards, the 12-card deck can now run out mid-game. The discard is then shuffled and placed on top, and a card buried by Test Pieces is drawn last (L645; owner ruling R15: a deck holding only buried cards counts as run out).
 - **Orders are completed only in the Order Phase.** Ru, Guan, Tribute Ware, Crackle wildcards and Canal Barge's 2 Coins trigger there; ruling R6 is obsolete.
 - **Changes 25–27 (owner revision, 2026-10-18):** (25) keyword **Select N** — look at the top N Main Orders, reserve 1 of them or 1 face-up Main Order from the display, the rest to the bottom of the deck; Commission Market Apprentice Select 2, Shifu Select 3 reserving up to 2; Colour Samples Select 3 when acquired and for its once-a-round swap (so the swap now looks at 3, and both Colour Samples looks may take a face-up Order instead, refilled at the end of the turn). (26) **Fuel Ledger as cards** — the tile brings 2 Contribution cards, Fuel Ledger Bank (1 Wood, −2) and Fuel Ledger Stoke (1 Wood, +2); its owner chooses 1 of 5 cards and plain Bank/Stoke cost no Wood; 14 Contribution cards share one back; no Wood is set aside before the reveal. (27) **No Tech VP** — gaining an Advanced Tech scores nothing (this supersedes owner amendment A1); Connoisseur's Cabinet keeps its end-game VP; printed costs unchanged.
 
@@ -86,7 +86,7 @@ Do not reintroduce any of these unless the user explicitly changes the rules:
 - any VP for owning or gaining an Advanced Tech (owner amendment A1's 1 VP per Tech was removed by change 27; only Connoisseur's Cabinet scores, at game end)
 - a secret Fuel Ledger Wood commitment beside a Contribution card (change 26 replaced it with the Fuel Ledger Bank and Fuel Ledger Stoke cards)
 
-Removed by V1.6.2 (rulebook changes 21–24):
+Removed by V1.6.2 (rulebook changes 21–25; changes 26–27 are the last two items of the list above):
 
 - a resource (Clay, Wood or Coin) gained at the Commission Market, after each reservation or otherwise
 - blind Commission Market reservations (the top card taken unseen); the Shifu's optional top-3 selection replacing one of two separate reservations; a Commission Market placement that reserves without first looking at the top 2 (Apprentice) or 3 (Shifu)
@@ -101,6 +101,7 @@ Removed by V1.6.2 (rulebook changes 21–24):
 - the 16-card Starting Order deck (S01–S16) and its V1.6.1 values, and ruling R3 on S14 and S16 (change 23: 8 cards, S01–S08; S09–S16 are retired; a 4-player game deals all 8)
 - the V1.6.1 values of the nineteen re-valued Main Orders (change 24, Appendix A)
 - discarding looked-at Orders that are not reserved, at the Commission Market or by Colour Samples (when acquired or in its swap), including ruling R14 (change 24: they go face down to the bottom of the Main Order deck; the held Order a swap gives up still goes to the discard, a Starting Order to the box)
+- a Colour Samples swap that looks at only the top 2, and Colour Samples looks that reserve only from the looked cards (change 25: both are a Select 3, which may reserve a face-up Order instead)
 
 ## Engineering principles
 
@@ -200,7 +201,7 @@ At minimum:
 - **Advanced Techs**
   - all 18, including:
     - when-acquired Colour Samples: Select 3 (1 reservation, a looked card or a face-up Order refilled at the end of the turn; the unreserved looked cards to the bottom of the Main Order deck in random order, R19);
-    - the Colour Samples once-per-round swap: before or after a worker action; discard 1 held Order first (Main face down to the discard, Starting to the box), then Select 3 (a looked card or a face-up Order; the rest to the bottom of the Main Order deck, R19); B1 when the supply is short
+    - the Colour Samples once-per-round swap: before or after a worker action; discard 1 held Order first (Main face down to the discard, Starting to the box), then Select 3 (a looked card or a face-up Order; the rest to the bottom of the Main Order deck, R19); B1 when the supply is short; either order with Imperial Priority; usable the round it is acquired;
     - Kiln Master, Inverted Firing stacks, Setter's Mark reservation;
     - Canal Barge: 2 Coins on the first Order completed each round, in the Order Phase only
   - the printed V1.6.2 costs (Senior Apprentice 3, Kiln Tending 3, Protective Saggars 3, Fuel Ledger 2), the 3-total / 1-per-discipline limit, the end-of-turn discipline refill and partial display
@@ -213,7 +214,7 @@ At minimum:
   - Base Heat clamp 0–5
   - Test Pieces after Base Heat (private peek, public bury)
   - Heat-marker step in First Player order (+1/−1/return); Kiln Master
-  - Fire deck 1/3/4/3/1 and open discard; when the deck runs out, the shuffled discard goes on top and a buried Test Pieces card is drawn last (L640, R15), including a run-out caused by Second Firing
+  - Fire deck 1/3/4/3/1 and open discard; when the deck runs out, the shuffled discard goes on top and a buried Test Pieces card is drawn last (L645, R15), including a run-out caused by Second Firing
   - Actual Heat for Shared Kiln (zone or Kiln Furniture modifier + marker) and court-fired Imperial Kiln ceramics
   - Quality assignment, including Protective Saggars: the owner's Shared and Imperial ceramics are never Flawed (Heat Difference 3+ counts as Standard)
   - after-Quality abilities in the owner's chosen order: Saggars (1 Standard → Fine once per round, no Wood, never Masterpiece), Second Firing (2 extra cards revealed, 1 chosen, both discarded), Ge
@@ -236,7 +237,7 @@ At minimum:
   - English/Simplified Chinese rendering from the same stable IDs without changing game state
   - full random legal games for 2/3/4 players completing without error
   - reconnect without changing player seat/state, including during a Commission Market look, a Colour Samples swap look and a Second Firing choice
-  - V1.6.1 rooms and saves refused by rules version and fingerprint (rules `1.6.2`, schema 7, `r30-`)
+  - V1.6.1 rooms and saves, and V1.6.2 rooms from before owner revision 3 (schema 7, `r30-`), refused by rules version and fingerprint (rules `1.6.2`, schema 8, `r31-`)
 
 ## Change discipline
 

@@ -2,12 +2,13 @@
  * Hidden information across complete V1.6.2 games played through the authoritative service
  * (AGENTS.md "Hidden information", DESIGN §4, ENGINE_V1.6.2_DELTA.md §7). Every seat is a
  * human seat driven by the strategic policy, so the games reach every private V1.6.2 moment
- * in the course of play: the Commission Market's top 2 or 3 (v1.6.2 L195–196), Colour
- * Samples' when-acquired top 3 and its swap's top 2 (L617), the Guild Hall Shifu's inspection
- * (L207, B2), the Canal Wharf Shifu's card taken unseen (L220), and the looked cards not
- * reserved that go face down under the Main Order deck (change 24, B3). They also reach Orders a
- * seat saw and that then moved where only another seat saw them go (`rehidden`: a face-up Order
- * later given up for a swap or a trim, a card put under the deck and later drawn by another seat).
+ * in the course of play: the Commission Market's Select 2 or Select 3 (v1.6.2 L64, L201–202),
+ * Colour Samples' Select 3 when acquired and in its swap (L622, change 25), the Guild Hall
+ * Shifu's inspection (L213, B2), the Canal Wharf Shifu's card taken unseen (L226), and the
+ * looked cards not reserved that go face down under the Main Order deck (changes 24–25, B3;
+ * line citations are revision-3 lines). They also reach Orders a seat saw and that then moved
+ * where only another seat saw them go (`rehidden`: a face-up Order later given up for a swap or
+ * a trim, a card put under the deck and later drawn by another seat).
  *
  * The fixture privacy oracle (`tools/fixturePrivacy.ts`) checks, against the authoritative
  * head and the full event log: the acting seat's response, every seat's reconnect payload, and

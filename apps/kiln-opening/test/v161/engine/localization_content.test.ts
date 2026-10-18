@@ -153,6 +153,13 @@ describe("every stable ID resolves to English and Chinese text", () => {
       .toBe("所选器物不满足委托O13的要求：开片器永远不是臻品");
     expect(formatRuleError({ code: "KILN_SPACE_UNAVAILABLE", details: { spaceId: "low_2" } }, "zh")).toBe("低温区2号窑位不可用：已被盖住或已有器物");
     expect(formatRuleError({ code: "TECH_LIMIT", details: { maxOwned: 3 } }, "zh")).toBe("你已拥有3项技艺");
+    // Only a Select returns RESERVATION_LIMIT, and a Colour Samples Select is a Tech effect, not an
+    // action (v1.6.2 L646): the text names the Select and reads for a limit of 1 as well as 2.
+    expect(formatRuleError({ code: "RESERVATION_LIMIT", details: { limit: 1, requested: 2 } }, "en"))
+      .toBe("This Select reserves at most 1; you chose 2 Orders.");
+    expect(formatRuleError({ code: "RESERVATION_LIMIT", details: { limit: 2, requested: 3 } }, "zh")).toBe("这次精选至多承接2张，你选了3张");
+    expect(formatRuleError({ code: "RESERVATION_LIMIT", details: { limit: 1 } }, "en")).toBe("This Select reserves at most 1.");
+    expect(formatRuleError({ code: "RESERVATION_LIMIT", details: {} }, "zh")).toBe("这次精选不能再承接委托");
   });
 });
 

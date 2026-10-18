@@ -1,5 +1,5 @@
 /**
- * Commission Market (v1.6.2 L64, L195–206, L395, L401, L644, L649; changes 24–25; R4, R12, B1,
+ * Commission Market (v1.6.2 L64, L195–206, L395, L401, L615, L649; changes 24–25; R4, R12, B1,
  * B3; DESIGN §3.2 as amended by ENGINE_V1.6.2_DELTA.md §4.2): the placement always opens the
  * Select (Select 2 for the Apprentice effect, Select 3 reserving up to 2 for the Shifu effect),
  * then `SELECT_CHOOSE` reserves 1 (Apprentice) or 1–2 (Shifu) from the display and the looked

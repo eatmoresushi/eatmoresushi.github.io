@@ -136,7 +136,7 @@ This file replaces the [V1.6.1 clarifications](./KILN_OPENING_v1.6.1_CLARIFICATI
 - [L266] A player participates in Contributions only if they have at least 1 ceramic in the Shared Kiln. A ceramic in an Imperial Kiln gives no say over the shared fire. / 只有在共窑中至少有1件器物的玩家才参与控火；玩家不能凭御窑中的器物对共窑的火发表意见。
 - [L668] Each participant secretly chooses 1 of their Contribution cards and must be able to pay its Wood cost. Your Bank and Stoke cost 0 Wood, so you may choose them with no Wood; each of your 2 Fuel Ledger cards costs 1 Wood. / 每位控火者暗选1张自己的控火牌，而且必须付得起它的柴费。你的压火与添柴不付柴，没有柴也可以选；两张柴簿控火牌各需1柴。
 - [L93 · L508] Contribution choices remain secret until revealed; Wood is paid only on reveal, so no Wood is set aside beforehand. All 14 Contribution cards share one back, so a face-down card reveals nothing. / 控火选择在亮牌前保密；柴在亮牌时才支付，事先不必押下。14张控火牌牌背相同，暗牌不泄露任何信息。
-- [L669 · L670] Reveal all Contribution cards simultaneously, then pay all costs. Start at the Kiln Die result, add all final Contribution modifiers, then clamp to 0–5. / 同时亮出所有控火牌，然后支付全部费用；以窑骰点数为起点，加上所有最终的控火修正（柴簿压火为−2，柴簿添柴为+2），再限定在0–5。
+- [L669 · L670] Reveal all Contribution cards simultaneously, then pay all costs. Start at the Kiln Die result, add all final Contribution modifiers, then clamp to 0–5. / 同时亮出所有控火牌，然后支付全部费用；以窑骰点数为起点，加上所有最终的控火修正，再限定在0–5。
 
 ### T13 — Test Pieces / 火照
 
@@ -355,8 +355,8 @@ Carried over from the V1.6.1 file on 2026-10-18 (engine track, stage 4), under t
 
 ### Owner revision 3 (changes 25–27, 2026-10-18)
 
-- **Renumbered.** Every `L` tag now cites the English source after owner revision 3: lines 1–34 keep their numbers, 35–58 move down 5, 59–377 down 6, 379–709 down 5, 712–745 down 6 and 747–748 down 5 (the audit gives the full map). Revision 3 deleted lines 378 and 746 (Tech VP); no item cited them.
+- **Renumbered.** Every `L` tag now cites the English source after owner revision 3: lines 1–34 keep their numbers, 35–58 move down 5, 59–377 down 6, 379–709 down 5, 710–745 down 6 and 747–748 down 5 (the audit gives the full map). Revision 3 deleted lines 378 and 746 (Tech VP); no item cited them.
 - **Removed:** both Tech VP items (owner amendment A1, superseded by change 27): Connoisseur's Cabinet's "the tile's own 1 VP" and the Guild Hall's "each Advanced Tech scores 1 VP"; Colour Samples' "takes only from the deck and leaves the display unchanged" swap item (change 25: every Select may take a face-up Order; the rest of that item is in the rewritten L646 item).
-- **Rewritten:** Colour Samples' R4, L646, R17 and B1 · R16 items (the swap Selects 3, and both looks may take a face-up Order) and its Guild Hall first-take item (its Select 3); Fuel Ledger's L668, L508 and L669 · L670 items (its 2 Contribution cards replaced the secret commitment, change 26); Senior Apprentice's L649 item and the Commission Market's R12 · L649 item (Select 3, reserving up to 2); the Guild Hall's L219 item (no VP; a Tech's Contribution cards resolve with it).
+- **Rewritten:** Colour Samples' R4, L646, R17 and B1 · R16 items (the swap Selects 3, and both looks may take a face-up Order) and its Guild Hall first-take item (its Select 3); Fuel Ledger's L668, L93 · L508 and L669 · L670 items (its 2 Contribution cards replaced the secret commitment, change 26; the L669 · L670 item's Chinese now says what its English and Chinese lines 671–672 say, without the card values it had added); Senior Apprentice's L649 item and the Commission Market's R12 · L649 item (Select 3, reserving up to 2); the Guild Hall's L219 item (no VP; a Tech's Contribution cards resolve with it).
 - **Added:** the keyword Select N (L64) on Colour Samples and the Commission Market, the two components that use it; Fuel Ledger's cards beside the Firing deck (L111).
 - The count stays 170 (2 + 1 removed, 3 added).

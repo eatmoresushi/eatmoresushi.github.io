@@ -269,10 +269,15 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
     detailKeys: keys(),
   },
   RESERVATION_LIMIT: {
-    en: "This action reserves at most {limit} Orders.",
-    zh: "此行动至多承接{limit}张",
+    // Only a Select returns it (work/select.ts): the Commission Market's, or Colour Samples',
+    // which is a Tech effect, not an action (v1.6.2 L646). `requested` is always 2 or more.
+    en: "This Select reserves at most {limit}; you chose {requested} Orders.",
+    zh: "这次精选至多承接{limit}张，你选了{requested}张",
     detailKeys: keys("limit", "requested"),
-    fallbacks: [{ en: "This action cannot reserve another Order.", zh: "此行动的承接次数已满" }],
+    fallbacks: [
+      { en: "This Select reserves at most {limit}.", zh: "这次精选至多承接{limit}张" },
+      { en: "This Select cannot reserve another Order.", zh: "这次精选不能再承接委托" },
+    ],
   },
   ORDER_REQUIREMENTS_NOT_MET: {
     en: "The chosen ceramics do not meet Order {orderId}: {reason}.",

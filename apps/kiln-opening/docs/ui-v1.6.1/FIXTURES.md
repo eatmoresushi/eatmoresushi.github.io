@@ -88,11 +88,11 @@ Seeded games played by the strategic computer policy (`rules-v1.6.2-strategic-00
 | `m13_jun_heat_adjustment` | 2 · 3P | p1 | Step 8: Jun ±1 for 1 Wood (**steered** Kiln choice JU) |
 | `m14_salvage` | 7 · 3P | p1 | Step 11: salvage a still-Flawed ceramic |
 | `m15_kiln_selection` | 1 · 4P | p4 | Revision 0: reverse-order Kiln selection |
-| `m16_colour_samples` | 1 · 3P | p1 | Colour Samples' private top 3 when acquired (**steered** T10 purchase) |
+| `m16_colour_samples` | 1 · 3P | p1 | Colour Samples' Select 3 when acquired: a private look at the top 3, 1 reservation from those 3 or the display (**steered** T10 purchase) |
 | `m17_after_action` | 1 · 3P | p1 | The after-action window with the Colour Samples swap (**steered** T10 purchase) |
 | `m18_jun_second_firing` | 1 · 3P | p1 | R7: Second Firing's 2 turned cards, choose 1, Jun may still adjust (`firingStageView.extraFire`) (**steered** JU, T14, Jun kept unused in step 8, Second Firing) |
 | `m19_commission_apprentice_look` | 1 · 3P | p1 | The Commission Market Apprentice's private look at the top 2; exactly 1 reservation |
-| `m20_colour_samples_swap_look` | 1 · 3P | p1 | The Colour Samples swap's private look at the top 2, before the worker action (**steered** T10 purchase and swap) |
+| `m20_colour_samples_swap_look` | 1 · 3P | p1 | The Colour Samples swap's Select 3, before the worker action: a private look at the top 3, 1 reservation from those 3 or the display (**steered** T10 purchase and swap) |
 | `m21_guild_shifu_second_take` | 2 · 3P | p1 | The Guild Hall Shifu after a first take: a second take of another discipline, or stop (**steered** inspection and first take) |
 | `m22_saggars_upgrade` | 5 · 3P | p1 | Firing step 10: Protective Saggars' Standard → Fine (**steered** T11 purchase) |
 | `m23_order_phase_s07` | 1 · 4P | p2 | Order Phase: S07 "Carved, Impressed or Painted" completable, with Canal Barge's 2 Coins on the first completion (**steered** T23 purchase) |

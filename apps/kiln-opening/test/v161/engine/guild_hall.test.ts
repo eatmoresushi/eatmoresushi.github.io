@@ -382,7 +382,7 @@ describe("Shifu (v1.6.2 L207, B2): private inspection, then up to 2 Techs from d
   });
 });
 
-describe("Colour Samples when acquired: Select 3 (v1.6.2 L64, L218, L622, L646, change 25, R4, B1)", () => {
+describe("Colour Samples when acquired: Select 3 (v1.6.2 L64, L219, L622, L646, change 25, R4, B1)", () => {
   it("an Apprentice buy looks at the top 3 Main Orders and reserves 1 of them — no resource, no Main display refill; hand limit 5", () => {
     const t = table();
     const [a, b, c] = t.state.hidden.mainDeck as [OrderId, OrderId, OrderId];

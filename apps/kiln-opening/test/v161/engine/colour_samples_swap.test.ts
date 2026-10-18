@@ -13,6 +13,7 @@
 import { describe, expect, it } from "vitest";
 import { MAIN_ORDER_IDS } from "../../../src/game/content.ts";
 import { legalActions } from "../../../src/game/legalActions.ts";
+import { formatRuleError } from "../../../src/game/ruleErrorText.ts";
 import { colourSamplesSwapOptions, lookedOrderOptions } from "../../../src/game/selectors.ts";
 import type { GameAction, GameEvent, OrderId } from "../../../src/game/types.ts";
 import { projectEvent, projectPublicState } from "../../../src/game/view.ts";
@@ -158,7 +159,7 @@ describe("before the worker action (L622): Select 3", () => {
     expect(t.state.market.refillPendingFor).toBeNull();
   });
 
-  it("a Starting Order goes to the box, not the Main discard (L646, L308)", () => {
+  it("a Starting Order goes to the box, not the Main discard (L646, L309)", () => {
     const t = table(OWNER);
     const box = [...t.state.hidden.startingBox];
     const events = t.act("p1", swap("S01"));
@@ -355,6 +356,9 @@ describe("refusals", () => {
     );
     expect(limit.details).toEqual({ limit: 1, requested: 2 });
     expectDocumentedDetails(limit);
+    // The swap's Select is a Tech effect, not an action (L646): the text names the Select.
+    expect(formatRuleError(limit, "en")).toBe("This Select reserves at most 1; you chose 2 Orders.");
+    expect(formatRuleError(limit, "zh")).toBe("这次精选至多承接1张，你选了2张");
     expectDocumentedDetails(t.expectRuleError("p2", choose(outside), "NOT_YOUR_DECISION"));
   });
 });

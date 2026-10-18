@@ -841,7 +841,7 @@ V1.6.2 中，匣钵护烧的“永不为瑕品”与柴簿的“压火与添柴�
 | `ORDER_NOT_HELD` | 非在手委托（完成、收工弃牌、换单） | 这张委托不在你手中 |
 | `ORDER_SUPPLY_EMPTY` | 无可承接的委托（换单） | 委托榜上没有主委托，主委托牌堆和弃牌堆也都空了，没有可承接的委托 |
 | `RESERVATION_REQUIRED` | 未选委托 | 至少要承接1张委托 |
-| `RESERVATION_LIMIT` | 承接张数超限 | 此行动至多承接{limit}张 |
+| `RESERVATION_LIMIT` | 承接张数超限（精选） | 这次精选至多承接{limit}张，你选了{n}张 |
 | `ORDER_REQUIREMENTS_NOT_MET` | 要求未满足 | 所选器物不满足委托{order}的要求：{reason} |
 | `INVALID_CRACKLE_DECLARATION` | 开片声明无效 | 开片声明无效：{reason} |
 | `HAND_LIMIT_DISCARD_COUNT` | 收工弃牌数不符 | 收工时要把委托弃到{limit}张：请再弃{n}张 |
@@ -988,3 +988,5 @@ Terminology review of revision 1, applied in revision 2 (2026-10-14).
 - Tech VP is removed (Chinese line 39): §2.14 技艺分 and §2.15 习得技艺 say so; the §3 preamble no longer says 立即得1分.
 - §7: `ORDER_SUPPLY_EMPTY` now names the empty display too, since every Select may reserve a face-up Order; the new
   `CONTRIBUTION_CARD_NOT_HELD` uses the card names. §8 follows the Chinese 技艺通则 (Chinese lines 648 and 651).
+- §7: `RESERVATION_LIMIT` says 这次精选 instead of 此行动: only a Select returns it, and Colour Samples' Selects are Tech effects,
+  not actions (Chinese line 648). It names the number chosen (你选了{n}张), which is always 2 or more.

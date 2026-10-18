@@ -586,7 +586,7 @@
         },
         {
           "en": "Reveal all Contribution cards simultaneously, then pay all costs. Start at the Kiln Die result, add all final Contribution modifiers, then clamp to 0–5.",
-          "zh": "同时亮出所有控火牌，然后支付全部费用；以窑骰点数为起点，加上所有最终的控火修正（柴簿压火为−2，柴簿添柴为+2），再限定在0–5。",
+          "zh": "同时亮出所有控火牌，然后支付全部费用；以窑骰点数为起点，加上所有最终的控火修正，再限定在0–5。",
           "source": "L669 · L670"
         }
       ]
