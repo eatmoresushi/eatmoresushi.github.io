@@ -54,7 +54,7 @@ import { availableWorkers, centralCapacity, nextPersonalSpace, workersAt } from 
 import { magistratesHallOpen } from "./recognition.ts";
 import { isFinalRound, settersMarkSpaces } from "./round.ts";
 import { scorePreview as scorePreviewOf } from "./scoring.ts";
-import { ceramicSequence, ceramicsOf, decisionPrompt, heatMarkerOf, imperialKilnCeramic, lookup, player, turnOrder, workStep } from "./state.ts";
+import { ceramicSequence, ceramicsOf, decisionPrompt, heatMarkerOf, imperialKilnCeramic, lookup, player, selectStep, turnOrder, workStep } from "./state.ts";
 import { acquisitionError, handLimit, ownsTech, techPrice, techReady } from "./techs.ts";
 import { commissionLimits } from "./work/commissionMarket.ts";
 import { colourSamplesSwapUsable, imperialPriorityUsable } from "./work/turn.ts";
@@ -286,8 +286,9 @@ export function playerSummary(view: PlayerView, playerId: PlayerId): PlayerSumma
     kilnId: p.kilnId,
     kilnAbilityReady: p.kilnId !== null && kilnAbilityReady(p, p.kilnId),
     resources: { ...p.resources },
-    recordedVp: recorded.orders + recorded.kilnAbilities + recorded.recognitionOverflow + recorded.imperialAudience + recorded.techs,
+    recordedVp: recorded.orders + recorded.kilnAbilities + recorded.recognitionOverflow + recorded.imperialAudience,
     recorded,
+    contributionCards: [...p.contributionCards],
     techs: p.techs.map((tech) => ({
       techId: tech.id,
       discipline: TECHS[tech.id].discipline,
@@ -542,7 +543,7 @@ function gateProbe(view: ActorView, locationId: LocationId, option: WorkerOption
       };
     }
     case "commission_market":
-      // The whole command: the look and the reservations follow in COMMISSION_CHOOSE.
+      // The whole command: the Select and its reservations follow in SELECT_CHOOSE.
       return { type: "PLACE_COMMISSION_MARKET", workerId, ...seniorFlag(option) };
     case "guild_hall":
       return option.effect === "shifu"
@@ -693,7 +694,7 @@ export function placementOptions(view: PlayerView): PlacementOption[] {
 /**
  * The printed effect record of a location for a worker effect (Appendix E; §5 gap 10): Form &
  * Decorate `maxVessels`, Glaze & Load `maxLoads` / `maxImperialLoads` / `placesHeatMarker`,
- * Materials Yard `resources`, Commission Market `lookSize` / `maxReservations`, Canal Wharf
+ * Materials Yard `resources`, Commission Market `select` / `maxReservations`, Canal Wharf
  * `coins` / `topMainOrders`, … so a form never reads rule
  * constants. A copy; `view` keeps the selector shape (and the UI's import rule).
  */
@@ -850,11 +851,11 @@ export function heatMarkerTargets(view: PlayerView, playerId: PlayerId, pendingL
 export function commissionOptions(view: PlayerView, effect: WorkerEffect): CommissionOptions {
   const game = view.game;
   const supply = reservable(game);
-  const { lookSize, maxReservations } = commissionLimits(effect);
+  const { n, maxReservations } = commissionLimits(effect);
   return {
     effect,
-    lookSize,
-    lookCount: lookCount(game, lookSize),
+    n,
+    lookCount: lookCount(game, n),
     maxReservations,
     faceUpSlots: [...supply.faceUpSlots],
     reservable: supply.faceUpSlots.length > 0 || supply.supply,
@@ -862,25 +863,24 @@ export function commissionOptions(view: PlayerView, effect: WorkerEffect): Commi
 }
 
 /**
- * The viewer's own pending Order look (Commission Market, Colour Samples when acquired or its
- * swap), if any. For the Commission Market, while `COMMISSION_CHOOSE` is due, it also lists the
- * display positions reservable now and the effect's reservation limit (v1.6.2 L195–198).
+ * The viewer's own open Select (v1.6.2 L64, change 25): the Commission Market, Colour Samples
+ * when acquired or its swap, while `SELECT_CHOOSE` is due. It lists N, the looked cards, the
+ * display positions reservable now (every Select may take a face-up Main Order) and the
+ * reservation limit (1, or 2 for the Commission Market Shifu effect). Null otherwise.
  */
 export function lookedOrderOptions(view: PlayerView): LookedOrderOptions | null {
   const look = view.own?.pendingLook ?? null;
-  if (look === null || look.kind === "guild_inspection") {
+  const step = selectStep(view.game);
+  if (look === null || look.kind === "guild_inspection" || step === null || step.kind !== look.kind) {
     return null;
   }
-  if (look.kind === "commission_market") {
-    const step = workStep(view.game, "commission_market");
-    return {
-      kind: look.kind,
-      orderIds: [...look.orderIds],
-      faceUpSlots: step === null ? [] : [...reservable(view.game).faceUpSlots],
-      maxReservations: step?.maxReservations ?? 1,
-    };
-  }
-  return { kind: look.kind, orderIds: [...look.orderIds], faceUpSlots: [], maxReservations: 1 };
+  return {
+    kind: look.kind,
+    n: step.select.n,
+    orderIds: [...look.orderIds],
+    faceUpSlots: step.select.fromDisplay ? [...reservable(view.game).faceUpSlots] : [],
+    maxReservations: step.select.maxReservations,
+  };
 }
 
 /**
@@ -968,15 +968,16 @@ export function magistratesHallQuote(view: PlayerView, effect: WorkerEffect): Co
 }
 
 /**
- * The Colour Samples swap now (T10, v1.6.2 L625): `usable` on the public facts that open the
- * window (T10 ready, a held Order, the viewer's own before/after-action window); per held Order,
- * in hand order, how many cards the look would show after discarding it (B1, R16, R17) and the
- * validator's verdict on that discard.
+ * The Colour Samples swap now (T10, v1.6.2 L622, change 25): `usable` on the public facts that
+ * open the window (T10 ready, a held Order, the viewer's own before/after-action window); per
+ * held Order, in hand order, how many cards its Select 3 would show after discarding it (B1, R16,
+ * R17) and the validator's verdict on that discard; and the display positions the Select could
+ * take instead.
  */
 export function colourSamplesSwapOptions(view: PlayerView): ColourSamplesSwapOptions {
   const actor = asActorView(view);
   if (actor === null || !ownActionWindow(view.game, actor.viewerId) || !colourSamplesSwapUsable(view.game, actor.viewerId)) {
-    return { usable: false, discards: [] };
+    return { usable: false, discards: [], faceUpSlots: [] };
   }
   return {
     usable: true,
@@ -985,6 +986,7 @@ export function colourSamplesSwapOptions(view: PlayerView): ColourSamplesSwapOpt
       lookCount: swapLookCount(view.game, orderId),
       legal: validateColourSamplesSwap(actor, orderId) === null,
     })),
+    faceUpSlots: [...reservable(view.game).faceUpSlots],
   };
 }
 
@@ -1174,11 +1176,14 @@ export function crackleDeclarationChecks(
 
 // ── Firing ───────────────────────────────────────────────────────────────────────────
 
+/** The order Contribution cards are offered in: Tend, Bank, Stoke, then Fuel Ledger's 2. */
+const CONTRIBUTION_OFFER_ORDER: readonly SubmitContributionCommand["card"][] = ["TEND", "BANK", "STOKE", "FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"];
+
 /**
- * The viewer's Contribution choices while they may submit (L253–263, v1.6.2 L637): Tend, Bank,
- * Stoke, then Bank and Stoke with Fuel Ledger's commitment when owned, each with its Wood (a
- * Fuel Ledger owner's Bank and Stoke cost none), Heat and whether it is legal now
- * (`legalContributions`, i.e. `validateContribution`).
+ * The viewer's Contribution choices while they may submit (v1.6.2 L246, L260–266, L634, change
+ * 26): 1 per card they hold, Tend, Bank, Stoke, then Fuel Ledger Bank and Fuel Ledger Stoke when
+ * Fuel Ledger is owned, each with its Wood (paid on reveal; a Fuel Ledger owner's Bank and Stoke
+ * cost none), Heat and whether it is legal now (`legalContributions`, i.e. `validateContribution`).
  */
 export function contributionOptions(view: PlayerView): ContributionOption[] {
   const phase = view.game.phase;
@@ -1188,22 +1193,13 @@ export function contributionOptions(view: PlayerView): ContributionOption[] {
   }
   const p = player(view.game, viewerId);
   const legal = legalContributions(view);
-  const candidates: Array<[SubmitContributionCommand["card"], boolean]> = [
-    ["TEND", false],
-    ["BANK", false],
-    ["STOKE", false],
-  ];
-  if (ownsTech(p, FUEL_LEDGER)) {
-    candidates.push(["BANK", true], ["STOKE", true]);
-  }
-  return candidates.map(([card, fuelLedger]) => {
-    const command: SubmitContributionCommand = { type: "SUBMIT_CONTRIBUTION", windowId: phase.windowId, card, fuelLedger };
-    const submission = { card, fuelLedger };
+  return CONTRIBUTION_OFFER_ORDER.filter((card) => p.contributionCards.includes(card)).map((card) => {
+    const command: SubmitContributionCommand = { type: "SUBMIT_CONTRIBUTION", windowId: phase.windowId, card };
     return {
       command,
-      woodCost: contributionWood(submission, ownsTech(p, FUEL_LEDGER)),
-      heat: contributionHeat(submission),
-      affordable: legal.some((c) => c.card === card && c.fuelLedger === fuelLedger),
+      woodCost: contributionWood({ card }, ownsTech(p, FUEL_LEDGER)),
+      heat: contributionHeat({ card }),
+      affordable: legal.some((c) => c.card === card),
     };
   });
 }

@@ -1,8 +1,8 @@
 /**
- * P6 `scoring.ts` (L442–452, L488–498, L510, L620, R13, owner amendment A1; DESIGN §8.2
- * "Automatic Exhibition 2/3/5, +3/+3, Connoisseur's Cabinet", "Coin VP; all tie-breakers",
- * "1 VP each"). Tech VP is recorded when gained (A1, `tech_vp_on_gain.test.ts`); the
- * breakdown's `techs` line reads it from the ledger.
+ * P6 `scoring.ts` (L442–452, v1.6.2 L494–503, L515, L616, R13; DESIGN §8.2 "Automatic
+ * Exhibition 2/3/5, +3/+3, Connoisseur's Cabinet", "Coin VP; all tie-breakers"). Advanced Techs
+ * score no VP (v1.6.2 change 27, which superseded owner amendment A1; `tech_no_vp.test.ts`), so
+ * the breakdown has no Tech line.
  */
 
 import { describe, expect, it } from "vitest";
@@ -48,7 +48,7 @@ describe("scoring values are the printed ones", () => {
       distinctGlazes: { threshold: 3, vp: 3 },
     });
     expect(GAME_CONFIG.coinEndGame).toEqual({ coinsPerVp: 3, maxVp: 5 });
-    expect(GAME_CONFIG.techs.vpEach).toBe(1);
+    expect(GAME_CONFIG.techs).not.toHaveProperty("vpEach");
     expect(TECHS.T19.params).toEqual({ vpPerCeramic: 1, qualities: ["fine", "masterpiece"], maxVp: 5 });
   });
 });
@@ -113,7 +113,7 @@ describe("End-game Exhibition (L444–452, INT: automatic)", () => {
 });
 
 describe("the total (L490–494)", () => {
-  it("adds recorded VP (Tech VP recorded on gain, A1), the Exhibition, the Cabinet and capped Coin VP", () => {
+  it("adds recorded VP, the Exhibition, the Cabinet and capped Coin VP; owned Techs add nothing (change 27)", () => {
     const state = game([
       {
         techs: ["T19", "T23", "T25"],
@@ -126,17 +126,16 @@ describe("the total (L490–494)", () => {
     fin(state, "p1", "bowl white plain fine");
     fin(state, "p1", "plate celadon plain mp");
     fin(state, "p1", "vase grey_green plain std");
-    expect(player(state, "p1").score.techs).toBe(3);
+    expect(player(state, "p1").score).toEqual({ orders: 20, kilnAbilities: 5, recognitionOverflow: 2, imperialAudience: 6 });
     expect(breakdown(state, "p1")).toEqual({
       orders: 20,
       kilnAbilities: 5,
       recognitionOverflow: 2,
       imperialAudience: 6,
-      techs: 3,
       exhibition: expect.objectContaining({ qualityVp: 10, shapesBonus: 3, glazesBonus: 3, total: 16 }),
       connoisseur: 2,
       coins: 5,
-      total: 20 + 5 + 2 + 6 + 3 + 16 + 2 + 5,
+      total: 20 + 5 + 2 + 6 + 16 + 2 + 5,
     });
   });
 
@@ -206,7 +205,9 @@ describe("winner and tie-breakers (L496, L498, R13)", () => {
     const p2Vase = fin(state, "p2", "vase celadon plain fine");
     const censer = fin(state, "p2", "censer moon_white painted fine");
     resolveOrderCompletion(state, "p2", { orderId: "O39", ceramicIds: [p2Vase, censer] }, testContext());
-    // p1: 6 VP + 1 Coin VP + 1 Tech VP; the Exhibition (3 + 2) levels the totals at 13.
+    // p1: 6 VP + 2 Coin VP (6 Coins; Tribute Ware scores no Tech VP, change 27); the
+    // Exhibition (3 + 2) levels the totals at 13.
+    player(state, "p1").resources.coins = 6;
     fin(state, "p1", "bowl white plain fine");
     fin(state, "p1", "plate white plain std");
     const result = computeFinalResult(state);
@@ -285,7 +286,7 @@ describe("finishGame (L490)", () => {
     for (const playerId of state.playerOrder) {
       const b = expected.scores[playerId]!;
       expect(b.total).toBe(
-        b.orders + b.kilnAbilities + b.recognitionOverflow + b.imperialAudience + b.techs + b.exhibition.total + b.connoisseur + b.coins,
+        b.orders + b.kilnAbilities + b.recognitionOverflow + b.imperialAudience + b.exhibition.total + b.connoisseur + b.coins,
       );
     }
     expect(expected.winnerIds).toEqual(["p1"]);

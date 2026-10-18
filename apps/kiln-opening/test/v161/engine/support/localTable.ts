@@ -123,13 +123,13 @@ export class LocalTable {
     return result.events;
   }
 
-  tryContribute(actorId: PlayerId, card: ContributionCardId, fuelLedger = false): SubmitContributionResult {
+  tryContribute(actorId: PlayerId, card: ContributionCardId): SubmitContributionResult {
     const windowId = this.state.phase.type === "firing_contributions" ? this.state.phase.windowId : "no-window";
     const result = submitContribution(
       this.state,
       this.privateState,
       actorId,
-      { type: "SUBMIT_CONTRIBUTION", windowId, card, fuelLedger },
+      { type: "SUBMIT_CONTRIBUTION", windowId, card },
       this.rng,
       this.engineOptions(),
     );
@@ -144,8 +144,8 @@ export class LocalTable {
   }
 
   /** Submits a Contribution that must be accepted; returns its events. */
-  contribute(actorId: PlayerId, card: ContributionCardId, fuelLedger = false): GameEvent[] {
-    const result = this.tryContribute(actorId, card, fuelLedger);
+  contribute(actorId: PlayerId, card: ContributionCardId): GameEvent[] {
+    const result = this.tryContribute(actorId, card);
     if (!result.ok) {
       throw new Error(`${actorId} SUBMIT_CONTRIBUTION rejected: ${result.error.code} — ${result.error.message}`);
     }

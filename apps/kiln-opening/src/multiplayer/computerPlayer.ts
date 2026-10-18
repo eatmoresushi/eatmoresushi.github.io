@@ -54,6 +54,7 @@ import {
   afterQualityOptions,
   colourSamplesSwapOptions,
   commissionOptions,
+  contributionCard,
   decisionPrompt,
   guildInspectionOptions,
   guildOptions,
@@ -84,7 +85,7 @@ import type {
   AuthoritativeCommand,
   CeramicId,
   CeramicState,
-  CommissionPick,
+  SelectPick,
   Decoration,
   FinishedCeramic,
   FormVesselSpec,
@@ -1271,6 +1272,38 @@ function expectedBestOf(k: Know, count: number, pending = 0): number {
   });
 }
 
+/**
+ * Expected value of a single-reservation Select (v1.6.2 L64): the best of the face-up Main
+ * Orders showing and `count` cards drawn from the unknown Main Orders. Exact over the order
+ * statistics of the look, like `expectedBestOf`.
+ */
+function expectedBestWithDisplay(k: Know, count: number, pending = 0): number {
+  return memo(k, `bestOfWithDisplay:${count}:${pending}`, () => {
+    let floor = 0;
+    for (const orderId of k.game.market.display) {
+      if (orderId !== null) floor = Math.max(floor, reservationValue(k, orderId, pending));
+    }
+    const values = unknownMainOrders(k)
+      .map((orderId) => reservationValue(k, orderId, pending))
+      .sort((a, b) => a - b);
+    const total = values.length;
+    const draws = Math.min(count, total);
+    if (draws === 0) return floor;
+    const choose = (n: number, r: number): number => {
+      if (r < 0 || r > n) return 0;
+      let result = 1;
+      for (let index = 1; index <= r; index += 1) result = (result * (n - r + index)) / index;
+      return result;
+    };
+    let expected = 0;
+    const all = choose(total, draws);
+    values.forEach((value, index) => {
+      expected += Math.max(floor, value) * (choose(index, draws - 1) / all);
+    });
+    return expected;
+  });
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════════════
 // 6. Valuations
 // ═══════════════════════════════════════════════════════════════════════════════════════
@@ -1296,8 +1329,8 @@ function resourceValue(k: Know, clay: number, wood: number, coins: number): numb
 }
 
 /**
- * A Tech's worth to the seat: its VP (scored the moment it is gained, owner amendment A1, so
- * it counts in full whatever the round) plus its ability over the remaining rounds.
+ * A Tech's worth to the seat: its ability over the remaining rounds and the second personal space
+ * it adds. Gaining a Tech scores no VP (v1.6.2 change 27, which superseded owner amendment A1).
  */
 function techValue(k: Know, techId: TechId): number {
   const left = k.roundsAfter + (workPhaseOpen(k) ? 1 : 0);
@@ -1315,8 +1348,8 @@ function techValue(k: Know, techId: TechId): number {
     T22: 0.25,
     // Protective Saggars: never Flawed and a free Standard → Fine each round (v1.6.2 L628).
     T11: 0.75,
-    // Fuel Ledger: Bank and Stoke cost no Wood (v1.6.2 L629).
-    T12: 0.35,
+    // Fuel Ledger: Bank and Stoke cost no Wood, and its 2 cards push ±2 for 1 Wood (v1.6.2 L634).
+    T12: 0.4,
     T13: 0.25,
     // Second Firing: the better of 2 extra cards (v1.6.2 L631).
     T14: 0.5,
@@ -1326,12 +1359,13 @@ function techValue(k: Know, techId: TechId): number {
   // Connoisseur's Cabinet: +1 per exhibited Fine or Masterpiece, up to 5 (L620); most
   // ceramics go to Orders, so expect a few.
   if (techId === "T19") ability = Math.min(5, 0.4 + 0.45 * left);
-  // Colour Samples: the when-acquired reservation, hand limit 5 and a swap each round (v1.6.2 L617).
-  if (techId === "T10") ability = (k.hand.length <= 3 ? 2 : 1.2) + 0.15 * left + 0.25 * left;
+  // Colour Samples: the when-acquired Select 3 (the display included), hand limit 5 and a
+  // Select 3 swap each round (v1.6.2 L622, change 25).
+  if (techId === "T10") ability = (k.hand.length <= 3 ? 2.2 : 1.4) + 0.15 * left + 0.3 * left;
   // Canal Barge: 2 Coins on the round's first completion (v1.6.2 L622), most rounds.
   if (techId === "T23") ability = TECHS.T23.params.coins * coinValue(k) * 0.6 * left * kilnSynergy(k.me.kilnId, techId);
   if (techId === "T25") ability = 0.2 * left * kilnSynergy(k.me.kilnId, techId) * Math.min(2, handPlan(k).plans.filter((p) => p.model.def.crowns > 0).length + 0.5);
-  return GAME_CONFIG.techs.vpEach + unlock + ability;
+  return unlock + ability;
 }
 
 /** How well a Tech suits the seat's Kiln Tradition (L458–478, Appendix B). */
@@ -1569,9 +1603,10 @@ function firingValueAtBase(k: Know, base: number, fire: Dist, woodLeft: number):
 }
 
 /**
- * A rival participant's likely push: the Contribution that best suits their public loads. A
- * Fuel Ledger owner's Bank and Stoke cost no Wood (v1.6.2 L629), so it may push with none;
- * a Protective Saggars owner's ceramics are never Flawed (v1.6.2 L628).
+ * A rival participant's likely push: the Contribution card that best suits their public loads. A
+ * Fuel Ledger owner holds 5 cards (v1.6.2 L266, L634, change 26): its plain Bank and Stoke cost
+ * no Wood, so it may push with none, and with 1 Wood it may play Fuel Ledger Bank (−2) or Fuel
+ * Ledger Stoke (+2); a Protective Saggars owner's ceramics are never Flawed (v1.6.2 L628).
  */
 function rivalPushDist(k: Know, playerId: PlayerId): Dist {
   const rival = k.game.players[playerId];
@@ -1591,12 +1626,17 @@ function rivalPushDist(k: Know, playerId: PlayerId): Dist {
     }, 0);
   // The reluctance to spend a Wood card's Wood; almost none when Fuel Ledger makes it free.
   const woodCard = fuelLedger ? 0.05 : 0.35;
-  const tend = scoreAt(0);
-  const bank = scoreAt(-1) - woodCard;
-  const stoke = scoreAt(1) - woodCard;
-  if (tend >= bank && tend >= stoke) return [[-1, 0.1], [0, 0.8], [1, 0.1]];
-  const best = bank > stoke ? -1 : 1;
-  return [[best, 0.6], [0, 0.35], [-best, 0.05]];
+  const cards: Array<readonly [number, number]> = [
+    [0, scoreAt(0)],
+    [-1, scoreAt(-1) - woodCard],
+    [1, scoreAt(1) - woodCard],
+  ];
+  // Fuel Ledger Bank and Fuel Ledger Stoke cost their printed 1 Wood.
+  if (fuelLedger && rival.resources.wood >= 1) cards.push([-2, scoreAt(-2) - 0.35], [2, scoreAt(2) - 0.35]);
+  let best = cards[0] as readonly [number, number];
+  for (const card of cards) if (card[1] > best[1] + 1e-9) best = card;
+  if (best[0] === 0) return [[-1, 0.1], [0, 0.8], [1, 0.1]];
+  return [[best[0], 0.6], [0, 0.35], [-Math.sign(best[0]), 0.05]];
 }
 
 function convolve(a: Dist, b: Dist): Dist {
@@ -1623,7 +1663,8 @@ function decideContribution(k: Know): AuthoritativeCommand | null {
     for (const [push, p] of others) {
       value += p * firingValueAtBase(k, clampBase(k.die + delta + push), fire, k.me.resources.wood - wood);
     }
-    const score = value - wood * woodValue(k) - (command.fuelLedger ? 0.05 : 0);
+    // A Fuel Ledger card (±2) only when it is clearly better than the plain card it extends.
+    const score = value - wood * woodValue(k) - (contributionCard(command.card).techId !== null ? 0.05 : 0);
     if (best === null || score > best.score + 1e-9) best = { command, score };
   }
   return best?.command ?? null;
@@ -2092,22 +2133,25 @@ function commissionVisitValue(k: Know, effect: WorkerEffect, pending = 0): numbe
 }
 
 /**
- * `COMMISSION_CHOOSE` (v1.6.2 L195–198): the best Order among the display and the seat's own
- * look; for the Shifu effect also the next best, valued as a second reservation, when it
- * clears `secondReservationThreshold`. Single picks follow as fallbacks.
+ * `SELECT_CHOOSE` for every Select (v1.6.2 L64, change 25): the Commission Market's (L201–204)
+ * and Colour Samples' when acquired and in its swap (L622). The best Order among the display and
+ * the seat's own look; for the Commission Market Shifu effect also the next best, valued as a
+ * second reservation, when it clears `secondReservationThreshold`. Single picks follow as
+ * fallbacks. The swap keeps the hand size, so its pick is valued without an overflow cost.
  */
-function decideCommissionChoice(k: Know): GameAction | null {
+function decideSelect(k: Know): GameAction | null {
   const phase = k.game.phase;
-  if (phase.type !== "work_turn" || phase.step.kind !== "commission_market") return null;
+  if (phase.type !== "work_turn") return null;
   const options = lookedOrderOptions(k.view);
-  if (options?.kind !== "commission_market") return null;
-  const picks: Array<{ pick: CommissionPick; orderId: OrderId; value: number }> = [];
+  if (options === null || options.kind !== phase.step.kind) return null;
+  const pending = options.kind === "colour_samples_swap" ? -1 : 0;
+  const picks: Array<{ pick: SelectPick; orderId: OrderId; value: number }> = [];
   for (const slotIndex of options.faceUpSlots) {
     const orderId = k.game.market.display[slotIndex];
     if (orderId === null || orderId === undefined) continue;
-    picks.push({ pick: { kind: "face_up", slotIndex, orderId }, orderId, value: reservationValue(k, orderId) });
+    picks.push({ pick: { kind: "face_up", slotIndex, orderId }, orderId, value: reservationValue(k, orderId, pending) });
   }
-  for (const orderId of options.orderIds) picks.push({ pick: { kind: "looked", orderId }, orderId, value: reservationValue(k, orderId) });
+  for (const orderId of options.orderIds) picks.push({ pick: { kind: "looked", orderId }, orderId, value: reservationValue(k, orderId, pending) });
   picks.sort((a, b) => b.value - a.value || tieHash(k.seed, a.orderId) - tieHash(k.seed, b.orderId));
   const [best, ...rest] = picks;
   if (best === undefined) return null;
@@ -2117,10 +2161,10 @@ function decideCommissionChoice(k: Know): GameAction | null {
       .map((entry) => ({ ...entry, value: reservationValue(k, entry.orderId, 1) }))
       .sort((a, b) => b.value - a.value || tieHash(k.seed, a.orderId) - tieHash(k.seed, b.orderId))[0];
     if (second !== undefined && second.value > secondReservationThreshold(k)) {
-      candidates.push({ type: "COMMISSION_CHOOSE", reservations: [best.pick, second.pick] });
+      candidates.push({ type: "SELECT_CHOOSE", reservations: [best.pick, second.pick] });
     }
   }
-  candidates.push(...picks.map((entry): GameAction => ({ type: "COMMISSION_CHOOSE", reservations: [entry.pick] })));
+  candidates.push(...picks.map((entry): GameAction => ({ type: "SELECT_CHOOSE", reservations: [entry.pick] })));
   return firstValid(k, candidates);
 }
 
@@ -2155,27 +2199,14 @@ function decideGuildTake(k: Know): GameAction | null {
   return firstValid(k, [...worth, finish]);
 }
 
-function decideColourSamples(k: Know): GameAction | null {
-  const look = lookedOrderOptions(k.view);
-  const ranked = (look?.orderIds ?? []).map((orderId) => ({ orderId, value: reservationValue(k, orderId) })).sort((a, b) => b.value - a.value);
-  return firstValid(k, ranked.map((entry): GameAction => ({ type: "COLOUR_SAMPLES_CHOOSE", orderId: entry.orderId })));
-}
-
-/** Colour Samples swap's look (v1.6.2 L617, change 24): reserve the best looked card; the other goes to the deck bottom. */
-function decideColourSamplesSwapChoice(k: Know): GameAction | null {
-  const look = lookedOrderOptions(k.view);
-  if (look?.kind !== "colour_samples_swap") return null;
-  const ranked = look.orderIds.map((orderId) => ({ orderId, value: reservationValue(k, orderId) })).sort((a, b) => b.value - a.value);
-  return firstValid(k, ranked.map((entry): GameAction => ({ type: "COLOUR_SAMPLES_SWAP_CHOOSE", orderId: entry.orderId })));
-}
-
 // ── Before/after-action window: Colour Samples swap, Imperial Priority ────────────────
 
 /**
- * The Colour Samples swap (v1.6.2 L617): discard the held Order the plan values least when the
- * best of the cards the look would show is expected to be worth clearly more. Held Orders are
- * valued like the Cleanup trim (`decideHandLimit`). The swap leaves the hand size unchanged, so
- * the look is valued without the overflow cost of an extra Order (`pending` −1).
+ * The Colour Samples swap (v1.6.2 L622, change 25): discard the held Order the plan values least
+ * when the best Order its Select 3 could reserve (the looked cards or a face-up Main Order) is
+ * expected to be worth clearly more. Held Orders are valued like the Cleanup trim
+ * (`decideHandLimit`). The swap leaves the hand size unchanged, so the Select is valued without
+ * the overflow cost of an extra Order (`pending` −1).
  */
 function colourSamplesSwap(k: Know): GameAction | null {
   if (!techReady(k.me, COLOUR_SAMPLES)) return null;
@@ -2188,7 +2219,7 @@ function colourSamplesSwap(k: Know): GameAction | null {
     if (!discard.legal) continue;
     const planned = plan.plans.find((p) => p.orderId === discard.orderId) ?? planOrder(k, discard.orderId, items);
     const held = planned === null ? 0 : planned.p * planned.gross;
-    const gain = expectedBestOf(k, discard.lookCount, -1) - held - 0.1;
+    const gain = expectedBestWithDisplay(k, discard.lookCount, -1) - held - 0.1;
     if (best === null || gain > best.gain + 1e-9) best = { action: { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: discard.orderId }, gain };
   }
   return best !== null && best.gain > 0.3 ? firstValid(k, [best.action]) : null;
@@ -2504,7 +2535,7 @@ function buildMaterialsYard(k: Know, workerId: string, effect: WorkerEffect, sen
   return actions;
 }
 
-/** The placement only opens the look (v1.6.2 L195–196); the reservations follow in COMMISSION_CHOOSE. */
+/** The placement only opens the Select (v1.6.2 L201–202); the reservations follow in SELECT_CHOOSE. */
 function buildCommission(workerId: string, senior: boolean): GameAction[] {
   return [{ type: "PLACE_COMMISSION_MARKET", workerId, ...(senior ? { seniorApprentice: true } : {}) }];
 }
@@ -2910,13 +2941,11 @@ function decide(k: Know): AuthoritativeCommand | null {
         case "before_action":
           return decideBeforeAction(k);
         case "commission_market":
-          return decideCommissionChoice(k);
+        case "colour_samples":
+        case "colour_samples_swap":
+          return decideSelect(k);
         case "guild_inspection":
           return decideGuildTake(k);
-        case "colour_samples":
-          return decideColourSamples(k);
-        case "colour_samples_swap":
-          return decideColourSamplesSwapChoice(k);
         case "after_action":
           return decideAfterAction(k);
       }

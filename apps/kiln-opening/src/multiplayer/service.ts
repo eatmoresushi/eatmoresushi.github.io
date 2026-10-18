@@ -3,7 +3,7 @@
  *
  * - Every command is shape-checked by `parseCommand` before the service branches on it.
  *   Contributions go through `submitContribution` with a `PrivateFiringState` rebuilt from
- *   the stored private submissions (card and Fuel Ledger commitment); everything else
+ *   the stored private submissions (the sealed Contribution card); everything else
  *   through `applyAction`. The engine validates on the actor's view only.
  * - Who acts comes from `decisionPrompt(state)` alone (DESIGN §3.4), for humans and for
  *   computer seats, in `single`, `parallel` and `simultaneous_secret` windows.
@@ -82,7 +82,7 @@ import type {
 } from "./types.ts";
 
 export const CURRENT_RULES_VERSION = "1.6.2" as const;
-export const CURRENT_SCHEMA_VERSION = 7 as const;
+export const CURRENT_SCHEMA_VERSION = 8 as const;
 
 const MAX_DISPLAY_NAME_LENGTH = 40;
 const ROOM_CODE_ATTEMPTS = 8;
@@ -177,7 +177,7 @@ function gameFailure(ruleError: GameRuleError, revision: number | null): Multipl
   return error(ruleError.code, ruleError.message, revision, ruleError.details);
 }
 
-/** Only schema-7 V1.6.2 saves continue; anything older (V1.6.1 schema 6 included) is refused, never migrated (DIG). */
+/** Only schema-8 V1.6.2 saves continue; anything older (V1.6.2 schema 7 before owner revision 3, V1.6.1 schema 6) is refused, never migrated (DIG). */
 function gameCompatibilityError(state: GameState, revision: number): MultiplayerError | null {
   if (state.schemaVersion === CURRENT_SCHEMA_VERSION && state.rulesVersion === CURRENT_RULES_VERSION) return null;
   return error(
@@ -391,7 +391,7 @@ export class AuthoritativeGameService {
 
   /**
    * Restores a seat without changing seat or state: the public projection, the seat's own
-   * private view (its sealed Contribution and Fuel Ledger commitment included, rebuilt from
+   * private view (its sealed Contribution card included, rebuilt from
    * the stored submissions) and every secret addressed to it, such as its setup deal.
    */
   async reconnect(request: { roomCode: string; seatToken: string }): Promise<MultiplayerResult<ReconnectResult>> {
@@ -910,7 +910,6 @@ export class AuthoritativeGameService {
           privateSubmission: {
             windowId: command.windowId,
             card: command.card,
-            fuelLedger: command.fuelLedger,
             revealed: applied.privateState.windowId === null,
           },
         },
@@ -996,7 +995,7 @@ export class AuthoritativeGameService {
     const submissions: PrivateFiringState["submissions"] = {};
     for (const row of rows) {
       if (row.windowId === windowId) {
-        submissions[row.playerId] = { card: row.card, fuelLedger: row.fuelLedger === true };
+        submissions[row.playerId] = { card: row.card };
       }
     }
     return { gameId: state.gameId, windowId, submissions };

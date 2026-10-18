@@ -11,7 +11,7 @@ import { applyAction } from "../../../src/game/engine.ts";
 import { SeededRandom } from "../../../src/game/rng.ts";
 import { availableWorkers } from "../../../src/game/placement.ts";
 import { projectPublicState } from "../../../src/game/view.ts";
-import type { GameAction, GameEvent, GameState, PlayerId } from "../../../src/game/types.ts";
+import type { GameAction, GameEvent, GameState, OrderId, PlayerId } from "../../../src/game/types.ts";
 import {
   afterActionWindowOpen,
   afterWindowAbilityUsed,
@@ -162,9 +162,11 @@ describe("the after-action window (DESIGN §3.2 step 3, §4.5)", () => {
   it("opens on public facts only: whatever the held Order is, and even with no card to look at (DESIGN §4.5)", () => {
     const main = buildState({ players: [{ techs: ["T10"], hand: ["O40"] }, {}] });
     const starting = buildState({ players: [{ techs: ["T10"], hand: ["S01"] }, {}] });
-    // Both Main piles empty: a Starting Order's swap would show nothing, but the window opens alike.
-    starting.hidden.orderHands["p2"] = [...starting.hidden.mainDeck];
+    // Both Main piles and the display empty: a Starting Order's Select 3 could reserve nothing,
+    // but the window opens alike.
+    starting.hidden.orderHands["p2"] = [...starting.hidden.mainDeck, ...starting.market.display.filter((id): id is OrderId => id !== null)];
     starting.hidden.mainDeck = [];
+    starting.market.display = starting.market.display.map(() => null);
     expect(afterActionWindowOpen(projectPublicState(main), "p1")).toBe(true);
     expect(afterActionWindowOpen(projectPublicState(starting), "p1")).toBe(true);
     const t = new LocalTable(starting, { flow: "halt", pass: ["worker_action_done"] });
@@ -273,14 +275,14 @@ describe("determinism and storage key order (DESIGN §7)", () => {
   it("a scripted sequence gives identical events, states and RNG whether or not keys are re-sorted", () => {
     const script: Array<[PlayerId, GameAction]> = [
       ["p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu" }],
-      ["p1", { type: "COMMISSION_CHOOSE", reservations: [{ kind: "looked", orderId: "O08" }, { kind: "face_up", slotIndex: 1, orderId: "O02" }] }],
+      ["p1", { type: "SELECT_CHOOSE", reservations: [{ kind: "looked", orderId: "O08" }, { kind: "face_up", slotIndex: 1, orderId: "O02" }] }],
       ["p2", { type: "PLACE_GUILD_HALL", workerId: "p2:shifu", choice: { kind: "inspect", discipline: "glazing_loading" } }],
       ["p2", { type: "GUILD_TAKE", take: { kind: "face_up", techId: "T10" } }],
-      ["p2", { type: "COLOUR_SAMPLES_CHOOSE", orderId: "O11" }],
+      ["p2", { type: "SELECT_CHOOSE", reservations: [{ kind: "looked", orderId: "O11" }] }],
       ["p2", { type: "GUILD_FINISH", bottomOrder: ["T21", "T15"] }],
       // Colour Samples' swap is usable the round it is acquired (v1.6.2 L625, L213).
       ["p2", { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: "O11" }],
-      ["p2", { type: "COLOUR_SAMPLES_SWAP_CHOOSE", orderId: "O15" }],
+      ["p2", { type: "SELECT_CHOOSE", reservations: [{ kind: "looked", orderId: "O15" }] }],
       ["p1", { type: "PLACE_GUILD_HALL", workerId: "p1:apprentice:1", choice: { kind: "buy_face_up", techId: "T01" } }],
       ["p2", { type: "PLACE_CANAL_WHARF", workerId: "p2:apprentice:1" }],
     ];
@@ -309,13 +311,14 @@ describe("determinism and storage key order (DESIGN §7)", () => {
     expect(plain.state.market.display).toEqual(["O01", "O03", "O04", "O05", "O06", "O10"]);
     expect(plain.state.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "before_action" } });
     expect(plain.state.hidden.orderHands["p2"]).toEqual(["O15"]);
-    // The swap's discarded Order went face down to the discard (L641); every looked card not
+    // The swap's discarded Order went face down to the discard (L646); every looked card not
     // reserved went to the deck bottom (change 24), look by look, each look's cards in random
-    // order (R19): the Commission look's O07 and O09, Colour Samples' O12 and O13, the swap's O14.
+    // order (R19): the Commission look's O07 and O09, Colour Samples' O12 and O13, and the swap's
+    // Select 3 (change 25) O14 and O16.
     expect(plain.state.hidden.mainDiscard).toEqual(["O11"]);
-    const bottom = plain.state.hidden.mainDeck.slice(-5);
+    const bottom = plain.state.hidden.mainDeck.slice(-6);
     expect([...bottom.slice(0, 2)].sort()).toEqual(["O07", "O09"]);
     expect([...bottom.slice(2, 4)].sort()).toEqual(["O12", "O13"]);
-    expect(bottom[4]).toBe("O14");
+    expect([...bottom.slice(4, 6)].sort()).toEqual(["O14", "O16"]);
   });
 });

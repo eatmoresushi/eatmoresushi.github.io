@@ -1,11 +1,12 @@
 /**
  * Owned-Tech helpers: readiness, hand limit, acquisition limits, prices, unlocking and the
- * Tech's VP on gain (v1.6.2 L206–214, L374–379, Appendix B, owner amendment A1).
+ * Contribution cards a Tech brings (v1.6.2 L212–220, L379–384, Appendix B). Gaining a Tech
+ * scores no VP (v1.6.2 change 27, which superseded owner amendment A1).
  *
  * Layer 2 (imports `state.ts` within P0).
  */
 
-import { GAME_CONFIG, TECHS } from "./content.ts";
+import { GAME_CONFIG, TECHS, contributionCardsOfTech } from "./content.ts";
 import { invariant, ruleError } from "./errors.ts";
 import { emit, player } from "./state.ts";
 import type {
@@ -93,25 +94,25 @@ export function techPrice(techId: TechId): number {
   return TECHS[techId].cost;
 }
 
-/** The VP a Tech scores the moment it is gained (owner amendment A1; `TECH_ACQUIRED.vp`). */
-export function techVp(): number {
-  return GAME_CONFIG.techs.vpEach;
-}
-
 /**
- * Adds the Tech, records its VP in the score ledger immediately (owner amendment A1: no
- * longer at game end) and unlocks the second space of the matching personal location (L212),
- * emitting `PERSONAL_SPACE_UNLOCKED`. Every path that grants a Tech goes through here. Does
- * not pay, does not emit `TECH_ACQUIRED` and does not resolve when-acquired effects
- * (`work/guildHall.ts` does those). An acquisition that `acquisitionError` rejects is an
- * engine bug.
+ * Adds the Tech, hands over any Contribution cards it brings (Fuel Ledger's 2, v1.6.2 L111,
+ * L634, change 26; `CONTRIBUTION_CARDS_GAINED`) and unlocks the second space of the matching
+ * personal location (L212), emitting `PERSONAL_SPACE_UNLOCKED`. No VP is scored (v1.6.2 change
+ * 27). Every path that grants a Tech goes through here. Does not pay, does not emit
+ * `TECH_ACQUIRED` and does not resolve when-acquired effects (`work/guildHall.ts` does those).
+ * An acquisition that `acquisitionError` rejects is an engine bug.
  */
 export function grantTech(draft: GameState, playerId: PlayerId, techId: TechId, ctx: ResolveContext): void {
   const owner = player(draft, playerId);
   const error = acquisitionError(owner, techId);
   invariant(error === null, `${playerId} cannot acquire ${techId}: ${error?.code}`);
   owner.techs.push({ id: techId, acquiredInRound: draft.round, usedThisRound: false });
-  owner.score.techs += techVp();
+  const cards = contributionCardsOfTech(techId);
+  if (cards.length > 0) {
+    invariant(cards.every((card) => !owner.contributionCards.includes(card)), `${playerId} already holds ${techId}'s Contribution cards`);
+    owner.contributionCards.push(...cards);
+    emit(ctx, { type: "CONTRIBUTION_CARDS_GAINED", playerId, techId, cards: [...cards] });
+  }
   const unlocks = TECHS[techId].unlocks;
   if (unlocks !== null) {
     const space = owner.personalSpaces[unlocks][1];

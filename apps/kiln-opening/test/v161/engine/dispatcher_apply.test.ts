@@ -189,19 +189,19 @@ describe("submitContribution", () => {
     });
   }
 
-  const command: SubmitContributionCommand = { type: "SUBMIT_CONTRIBUTION", windowId: WINDOW, card: "BANK", fuelLedger: true };
+  const command: SubmitContributionCommand = { type: "SUBMIT_CONTRIBUTION", windowId: WINDOW, card: "FUEL_LEDGER_BANK" };
 
   it("validates on the actor's view including its sealed choice, then applies on clones", () => {
     vi.mocked(validateContribution).mockReturnValue(null);
     vi.mocked(applyContribution).mockImplementation((draft, privateDraft, actorId, cmd, ctx) => {
-      privateDraft.submissions[actorId] = { card: cmd.card, fuelLedger: cmd.fuelLedger };
+      privateDraft.submissions[actorId] = { card: cmd.card };
       if (draft.phase.type === "firing_contributions") {
         draft.phase.submittedPlayerIds.push(actorId);
       }
       emit(ctx, { type: "CONTRIBUTION_SUBMITTED", playerId: actorId, windowId: cmd.windowId });
     });
     const state = windowState();
-    const sealed: PrivateFiringState = { gameId: "test-game", windowId: WINDOW, submissions: { p2: { card: "TEND", fuelLedger: false } } };
+    const sealed: PrivateFiringState = { gameId: "test-game", windowId: WINDOW, submissions: { p2: { card: "TEND" } } };
     const before = structuredClone(state);
     const sealedBefore = structuredClone(sealed);
     const result = submitContribution(state, sealed, "p2", { ...command, card: "STOKE" }, new SeededRandom(1));
@@ -209,11 +209,11 @@ describe("submitContribution", () => {
     if (!result.ok) return;
     const [view, privateArg] = vi.mocked(validateContribution).mock.calls[0]!;
     expect(view.viewerId).toBe("p2");
-    expect(view.own.pendingContribution).toEqual({ card: "TEND", fuelLedger: false, windowId: WINDOW });
+    expect(view.own.pendingContribution).toEqual({ card: "TEND", windowId: WINDOW });
     expect(privateArg).toBe(sealed);
     expect(state).toEqual(before);
     expect(sealed).toEqual(sealedBefore);
-    expect(result.privateState.submissions["p2"]).toEqual({ card: "STOKE", fuelLedger: true });
+    expect(result.privateState.submissions["p2"]).toEqual({ card: "STOKE" });
     expect(result.state.revision).toBe(1);
     expect(result.state.eventSequence).toBe(1);
     expect(result.events).toEqual([{ type: "CONTRIBUTION_SUBMITTED", playerId: "p2", windowId: WINDOW }]);

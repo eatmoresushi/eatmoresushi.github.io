@@ -257,7 +257,7 @@ describe("firingStageView and firingRecapView (§5 gaps 7, 18; D3, D4)", () => {
         { owner: "p2", stage: "loaded", shape: "bowl", glaze: "white", at: "high_1" },
       ],
     });
-    table.contribute("p1", "STOKE", true);
+    table.contribute("p1", "FUEL_LEDGER_STOKE");
     for (const viewer of ["p1", "p2", null] as const) {
       const stage = firingStageView(table.view(viewer));
       expect(stage?.submittedPlayerIds).toEqual(["p1"]);
@@ -269,8 +269,8 @@ describe("firingStageView and firingRecapView (§5 gaps 7, 18; D3, D4)", () => {
     table.contribute("p2", "BANK");
     const stage = firingStageView(table.view("p2"));
     expect(stage?.contributions).toEqual([
-      // Fuel Ledger (v1.6.2 L637): Stoke costs its owner nothing; the commitment 1 Wood.
-      { playerId: "p1", revealed: { card: "STOKE", heat: 2, woodPaid: 1 } },
+      // Fuel Ledger Stoke (v1.6.2 L266, L634): +2 for its printed 1 Wood.
+      { playerId: "p1", revealed: { card: "FUEL_LEDGER_STOKE", heat: 2, woodPaid: 1 } },
       { playerId: "p2", revealed: { card: "BANK", heat: -1, woodPaid: 1 } },
     ]);
     expect(stage?.submittedPlayerIds).toEqual(["p1", "p2"]);
@@ -402,8 +402,8 @@ describe("ROUND_STRUCTURE and roundPhaseOf (§5 gap 17)", () => {
 
   it("is display text only: not a rules-fingerprint input, and the fingerprint is unchanged", () => {
     expect(CONTENT_SOURCES.map(([name]) => name)).not.toContain("round_structure");
-    expect(RULES_BEHAVIOUR_REVISION).toBe(30);
-    expect(rulesFingerprint()).toMatch(/^r30-[0-9a-f]{16}$/);
+    expect(RULES_BEHAVIOUR_REVISION).toBe(31);
+    expect(rulesFingerprint()).toMatch(/^r31-[0-9a-f]{16}$/);
   });
 
   it("is exported from the barrel", () => {

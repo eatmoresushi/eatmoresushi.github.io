@@ -305,7 +305,7 @@ export function exitCommand(view: ActorView): AuthoritativeCommand | null {
       return workerId === undefined ? null : { type: "PLACE_CANAL_WHARF", workerId };
     }
     case "firing_contributions":
-      return { type: "SUBMIT_CONTRIBUTION", windowId: phase.windowId, card: "TEND", fuelLedger: false };
+      return { type: "SUBMIT_CONTRIBUTION", windowId: phase.windowId, card: "TEND" };
     case "firing_test_pieces":
       return phase.awaiting === "decision" ? { type: "TEST_PIECES_DECIDE", peek: false } : { type: "TEST_PIECES_BURY", bury: false };
     case "firing_heat_markers": {

@@ -35,6 +35,11 @@ export interface EngineTableOptions {
   /** The chooser for each seat (`p1`…`pN`). */
   chooserFor: (playerId: PlayerId, seatIndex: number) => SeatChooser;
   maxCommands?: number;
+  /**
+   * Start from this state instead of `createGame` (e.g. the engine fuzz's `richStartState`,
+   * whose seats already own a Tech per discipline). Its players must be `p1`…`pN`.
+   */
+  start?: GameState;
   /** Called before each decision with the observation the chooser receives. */
   observe?: (state: GameState, playerId: PlayerId, view: ActorView, privateFiring: PrivateFiringState) => void;
 }
@@ -60,9 +65,14 @@ function emptyPrivate(state: GameState): PrivateFiringState {
 export function playEngineTable(options: EngineTableOptions): EngineTableResult {
   const rng = new SeededRandom(options.seed);
   const players = Array.from({ length: options.playerCount }, (_, seat) => ({ id: `p${seat + 1}`, displayName: `Seat ${seat + 1}` }));
-  const created = createGame({ gameId: `p9-${options.seed}-${options.playerCount}`, players }, rng);
-  if (!created.ok) throw new Error(`createGame failed: ${created.error.code}`);
-  let state = created.state;
+  let state: GameState;
+  if (options.start === undefined) {
+    const created = createGame({ gameId: `p9-${options.seed}-${options.playerCount}`, players }, rng);
+    if (!created.ok) throw new Error(`createGame failed: ${created.error.code}`);
+    state = created.state;
+  } else {
+    state = structuredClone(options.start);
+  }
   let privateFiring = emptyPrivate(state);
   const choosers = new Map(players.map((p, seat) => [p.id, options.chooserFor(p.id, seat)]));
   const fallbacks: EngineTableResult["fallbacks"] = [];

@@ -57,7 +57,8 @@ describe("handler table", () => {
     expect(HANDLERS.RESOLVE_JUN.phases).toEqual(["firing_heat_adjustment"]);
     expect(HANDLERS.SECOND_FIRING_CHOOSE.phases).toEqual(["firing_second_firing_choice"]);
     expect(HANDLERS.USE_COLOUR_SAMPLES_SWAP.phases).toEqual(["work_turn"]);
-    expect(HANDLERS.COLOUR_SAMPLES_SWAP_CHOOSE.phases).toEqual(["work_turn"]);
+    // One SELECT_CHOOSE for every Select (v1.6.2 L64, change 25).
+    expect(HANDLERS.SELECT_CHOOSE.phases).toEqual(["work_turn"]);
     expect(HANDLERS.SELECT_KILN.phases).toEqual(["setup_kiln_selection"]);
     expect(HANDLERS.SALVAGE_FLAWED.phases).toEqual(["firing_salvage"]);
   });
@@ -160,7 +161,7 @@ describe("submitContribution gate", () => {
   }
 
   function command(overrides: Partial<SubmitContributionCommand> = {}): SubmitContributionCommand {
-    return { type: "SUBMIT_CONTRIBUTION", windowId: WINDOW, card: "TEND", fuelLedger: false, ...overrides };
+    return { type: "SUBMIT_CONTRIBUTION", windowId: WINDOW, card: "TEND", ...overrides };
   }
 
   function codeFor(state: GameState, sealed: PrivateFiringState, actorId: string, cmd: SubmitContributionCommand) {

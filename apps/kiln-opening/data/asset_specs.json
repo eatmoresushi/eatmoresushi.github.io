@@ -152,8 +152,10 @@
     "source": "data/firing.json contributionCards",
     "sets": 4,
     "cardsPerSet": ["BANK", "TEND", "STOKE"],
-    "totalCards": 12,
-    "fuelLedgerNote": "Fuel Ledger is a hidden 1-Wood commitment placed with a Bank or Stoke card, not a separate card."
+    "fuelLedgerCards": ["FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"],
+    "totalCards": 14,
+    "sharedBack": true,
+    "fuelLedgerNote": "Fuel Ledger brings 2 more Contribution cards with the tile, Fuel Ledger Bank (1 Wood, -2) and Fuel Ledger Stoke (1 Wood, +2) (v1.6.2 change 26). All 14 cards share one back, so a face-down card reveals nothing."
   },
   "playerReference": {
     "status": "GENERATE_FROM_CURRENT_RULES",

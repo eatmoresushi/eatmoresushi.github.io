@@ -1,16 +1,18 @@
 # KILN OPENING 开窑 v1.6.2 — Component Text
 
-Short text printed on Kiln Player Boards and Advanced Tech tiles, in the repository's format: one section per component, keyed by its stable data ID, with an `- EN:` and a `- ZH:` line. The owner's master copy is [KILN_OPENING_v1.6.2_COMPONENT_TEXT.md](./KILN_OPENING_v1.6.2_COMPONENT_TEXT.md) (byte-identical to the owner's original; the audit records its checksum). This file carries the same 23 lines word for word, with the owner's bold markup removed, as the data stores them. It replaces the [V1.6.1 component text](./KILN_OPENING_v1.6.1_COMPONENT_TEXT_SOURCE.md), which stays as history.
+Short text printed on Kiln Player Boards, Advanced Tech tiles and the 2 Fuel Ledger Contribution cards, in the repository's format: one section per component, keyed by its stable data ID, with an `- EN:` and a `- ZH:` line. The owner's master copy is [KILN_OPENING_v1.6.2_COMPONENT_TEXT.md](./KILN_OPENING_v1.6.2_COMPONENT_TEXT.md) (byte-identical to the owner's original; the audit records its checksum). This file carries the same 25 lines word for word, with the owner's bold markup removed, as the data stores them (`data/techniques.json`, `data/kilns.json`, and `data/firing.json` for the 2 cards). It replaces the [V1.6.1 component text](./KILN_OPENING_v1.6.1_COMPONENT_TEXT_SOURCE.md), which stays as history.
+
+The owner's file also defines the keyword **Select N** in its introduction (look at the top N cards of the Main Order deck, reserve 1 of them or 1 face-up Main Order from the display; the rest go to the bottom of the deck; 精选N). It names no component, so it has no section here; the data carries the rulebook's definition (v1.6.2 L64) as a clarification of Colour Samples and the Commission Market.
 
 This text is a reminder. The [V1.6.2 rulebook](./KILN_OPENING_v1.6.2_EN_SOURCE.md) and its [rulings](./RULEBOOK_AUDIT_V1.6.2.md) give the full effects, and the UI keeps the full text in each card's details. Every ability is optional unless it says otherwise (R4).
 
 **Format rules**
 
 - The timing clause comes first and ends with a colon. The UI bolds it.
-- The owner's file also bolds these later clauses, and the UI bolds them too (`SHORT_TEXT_SECONDARY_LABELS` in `src/game/content.ts`): "Ongoing:" / 持续：, "Orders:" / 完成委托时：, "Once per round, before or after one of your worker actions:" / 每轮一次，你的一次工人行动之前或之后：, "Once per round, after Quality is assigned:" / 每轮一次，定品后：, and "When you choose Bank or Stoke:" / 选控火时：.
+- The owner's file also bolds these later clauses, and the UI bolds them too (`SHORT_TEXT_SECONDARY_LABELS` in `src/game/content.ts`): "Ongoing:" / 持续：, "Orders:" / 完成委托时：, "Once per round, before or after one of your worker actions:" / 每轮一次，你的一次工人行动之前或之后：, "Once per round, after Quality is assigned:" / 每轮一次，定品后：, and "When acquired:" / 习得时： (Fuel Ledger's second clause).
 - "→" separates a cost or condition from its effect.
 - Chinese follows the [glossary](./GLOSSARY_ZH_V1.6.1.md) register and punctuation. A Chinese line is at most 96 characters (owner ruling R18).
-- The data files store this text as `shortText` / `shortTextZh`.
+- The data files store this text as `shortText` / `shortTextZh`; the plain Bank, Tend and Stoke cards have none (their effects are the rulebook table, v1.6.2 L262–264).
 
 ## Form & Decorate Techs (坯作)
 
@@ -41,8 +43,8 @@ This text is a reminder. The [V1.6.2 rulebook](./KILN_OPENING_v1.6.2_EN_SOURCE.m
 ## Glazing & Loading Techs (釉作)
 
 ### Colour Samples / 色样簿 (T10)
-- EN: When acquired: privately look at the top 3 cards of the Main Order deck → you must reserve 1; the rest go to the bottom of the deck. Ongoing: your Order hand limit is 5. Once per round, before or after one of your worker actions: discard 1 held Order → look at the top 2 cards, reserve 1.
-- ZH: 习得时：私看主委托牌堆顶3张→须承接1张，其余放到牌堆底。持续：你的委托上限为5张。每轮一次，你的一次工人行动之前或之后：可弃1张在手委托→看牌堆顶2张，承接1张。
+- EN: When acquired: Select 3. Ongoing: your Order hand limit is 5. Once per round, before or after one of your worker actions: discard 1 held Order → Select 3.
+- ZH: 习得时：精选3。持续：你的委托上限为5张。每轮一次，你的一次工人行动之前或之后：可弃1张在手委托→精选3。
 
 ### Kiln Tending / 看火 (T20)
 - EN: Once per round, after a Glaze & Load action that loaded at least 1 ceramic: gain 1 Clay + 1 Wood.
@@ -71,16 +73,16 @@ This text is a reminder. The [V1.6.2 rulebook](./KILN_OPENING_v1.6.2_EN_SOURCE.m
 - ZH: 持续：你的器物永不为瑕品，火候差3或以上算作良品。每轮一次，定品后：己方本窑1件良品→上品。
 
 ### Fuel Ledger / 柴簿 (T12)
-- EN: Always: your Bank and Stoke cost no Wood. When you choose Bank or Stoke: secretly commit 1 Wood with it → Bank becomes −2, Stoke becomes +2.
-- ZH: 持续：你的压火与添柴不付柴。选控火时：若选压火或添柴，可随控火牌暗附1柴→控火修正改为压火−2或添柴+2。
+- EN: Always: your Bank and Stoke cost no Wood. When acquired: Gain the Fuel Ledger Bank and Fuel Ledger Stoke Contribution cards(-1 Wood → -2/+2).
+- ZH: 持续：你的压火与添柴不付柴。习得时：获取柴簿压火与柴簿添柴两张控火牌（—1柴→−2或+2）。
 
 ### Test Pieces / 火照 (T13)
 - EN: Once per round, after Base Heat, before Heat markers, if you have a ceramic in this firing: pay 1 Wood → privately look at the top Fire card; you may put it on the bottom of the deck.
 - ZH: 每轮一次，基础火候定后、翻火标前，本窑有己方器物时：可付1柴→私看窑火牌堆顶1张，可将其置于牌堆底。
 
 ### Second Firing / 复烧 (T14)
-- EN: Once per round, after Quality is assigned: choose 1 of your Flawed or Standard ceramics from this firing → reveal 2 extra Fire cards, choose 1; recalculate its Actual Heat and Quality with that card instead of the first (Jun's earlier adjustment is lost). The new Quality stands, even if worse.
-- ZH: 每轮一次，定品后：可选己方本窑1件瑕品或良品→另翻2张窑火牌，选1张代替原牌，重算其实际火候与品质（钧窑的调整不保留）；新品质即使更差也算。
+- EN: Once per round, after Quality is assigned: 1 of your Flawed or Standard ceramics from this firing → reveal 2 Fire cards and recalculate its Quality with 1 of them, even if worse.
+- ZH: 每轮一次，定品后：己方本窑1件瑕品或良品→另翻2张窑火牌，以其中1张重算其品质，即使更差也算。
 
 ### Kiln Master / 窑工 (T24)
 - EN: Once per round, in the Heat marker step: place the Kiln Master marker (+1 or −1) on 1 of your ceramics in this firing that has no Heat marker.
@@ -89,6 +91,16 @@ This text is a reminder. The [V1.6.2 rulebook](./KILN_OPENING_v1.6.2_EN_SOURCE.m
 ### Tribute Ware / 贡瓷 (T25)
 - EN: Once per round, when you complete a Crown Order: gain 1 additional Crown.
 - ZH: 每轮一次，完成御令委托时：额外得1个御令。
+
+## Fuel Ledger Contribution Cards (柴簿控火牌)
+
+### Fuel Ledger Bank / 柴簿压火 (FUEL_LEDGER_BANK)
+- EN: 1 Wood: −2.
+- ZH: 1柴：−2。
+
+### Fuel Ledger Stoke / 柴簿添柴 (FUEL_LEDGER_STOKE)
+- EN: 1 Wood: +2.
+- ZH: 1柴：+2。
 
 ## Kiln Player Boards (窑口板)
 
@@ -115,3 +127,5 @@ This text is a reminder. The [V1.6.2 rulebook](./KILN_OPENING_v1.6.2_EN_SOURCE.m
 ## Review notes
 
 V1.6.2 (2026-10-17, with owner revision 2 of the same day). The owner rewrote 5 of the 23 components with their V1.6.2 mechanics: Colour Samples (the rest go to the bottom of the deck; the once-per-round swap), Canal Barge (2 Coins when you complete an Order), Protective Saggars (never Flawed; Standard → Fine), Fuel Ledger (free Bank and Stoke) and Second Firing (2 extra Fire cards, choose 1). The other 18 lines are unchanged from V1.6.1. The owner's file drops the IDs and the "- EN:" / "- ZH:" prefixes and bolds every timing clause; this file restores the repository format and leaves the bold to the UI. The Chinese Colour Samples line is 82 characters, over the earlier cap of 72; the owner keeps it in full and the cap is 96 (R18).
+
+Owner revision 3 (2026-10-18, changes 25–27). The owner rewrote Colour Samples (the keyword Select N: Select 3 when acquired and for the swap), Fuel Ledger (its 2 Contribution cards, "When acquired:" now bold as its second clause) and Second Firing (shorter wording, the same effect), and added the 2 Fuel Ledger Contribution cards, so this file now has 25 components. The English Fuel Ledger line is kept verbatim, including "cards(-1 Wood → -2/+2)" with no space before the parenthesis and hyphen-minus signs; the Chinese line keeps its "—1柴". The rules text (v1.6.2 L266, L634) prints the cards as 1 Wood, −2 and 1 Wood, +2; the audit notes the difference for the owner.

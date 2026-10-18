@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_temp;
-select plan(27);
+select plan(29);
 
 insert into public.rooms (
   id, code, status, host_seat_id, rules_version, content_version, latest_revision
@@ -16,7 +16,7 @@ insert into public.rooms (
   id, code, status, host_seat_id, rules_version, content_version, latest_revision, content_digest
 ) values
   ('10000000-0000-4000-8000-000000000003', 'ROOM03', 'playing',
-   '20000000-0000-4000-8000-000000000003', '1.6.2', '1.6.2', 0, 'r30-0123456789abcdef');
+   '20000000-0000-4000-8000-000000000003', '1.6.2', '1.6.2', 0, 'r31-0123456789abcdef');
 
 insert into public.room_players (
   seat_id, room_id, player_id, seat_index, display_name, colour, is_host
@@ -52,12 +52,12 @@ insert into private.private_submissions (
   ('10000000-0000-4000-8000-000000000001', 'window-1', 'P1',
    '40000000-0000-4000-8000-000000000001', 3);
 
--- A V1.6.2 sealed Fuel Ledger commitment.
+-- A V1.6.2 sealed Fuel Ledger card (change 26).
 insert into private.private_submissions (
-  room_id, window_id, player_id, command_id, contribution_card, use_fuel_ledger
+  room_id, window_id, player_id, command_id, contribution_card
 ) values
   ('10000000-0000-4000-8000-000000000003', 'v161-window', 'P1',
-   '40000000-0000-4000-8000-000000000002', 'STOKE', true);
+   '40000000-0000-4000-8000-000000000002', 'FUEL_LEDGER_STOKE');
 
 -- Two secret setup deals and one public event in the V1.6.2 room.
 insert into private.game_events (
@@ -116,7 +116,15 @@ select throws_ok(
              '20000000-0000-4000-8000-000000000009', '1.6.2', '1.6.2', 0, 'r29-0123456789abcdef') $$,
   '23514',
   null,
-  'a V1.6.2 room requires an r30 fingerprint (a V1.6.1 r29 one is refused)'
+  'a V1.6.2 room requires an r31 fingerprint (a V1.6.1 r29 one is refused)'
+);
+select throws_ok(
+  $$ insert into public.rooms (id, code, status, host_seat_id, rules_version, content_version, latest_revision, content_digest)
+     values ('10000000-0000-4000-8000-000000000007', 'ROOM07', 'lobby',
+             '20000000-0000-4000-8000-000000000007', '1.6.2', '1.6.2', 0, 'r30-0123456789abcdef') $$,
+  '23514',
+  null,
+  'an r30 fingerprint from before owner revision 3 is refused'
 );
 select lives_ok(
   $$ insert into public.rooms (id, code, status, host_seat_id, rules_version, content_version, latest_revision, content_digest)
@@ -130,25 +138,27 @@ select throws_ok(
              '40000000-0000-4000-8000-000000000003', 'BANK_2') $$,
   '23514',
   null,
-  'new private submissions use only the three V1.6.2 Contribution cards'
+  'new private submissions use only the five V1.6.2 Contribution cards'
 );
-select throws_ok(
-  $$ insert into private.private_submissions (room_id, window_id, player_id, command_id, contribution_card, use_fuel_ledger)
-     values ('10000000-0000-4000-8000-000000000003', 'v161-window', 'P2',
-             '40000000-0000-4000-8000-000000000004', 'TEND', true) $$,
-  '23514',
-  null,
-  'a Fuel Ledger commitment is only possible with BANK or STOKE'
+select lives_ok(
+  $$ insert into private.private_submissions (room_id, window_id, player_id, command_id, contribution_card)
+     values ('10000000-0000-4000-8000-000000000003', 'v161-window-2', 'P2',
+             '40000000-0000-4000-8000-000000000004', 'FUEL_LEDGER_BANK') $$,
+  'Fuel Ledger Bank is one of the five V1.6.2 Contribution cards'
 );
 select is(
-  public.server_load_private_submissions('10000000-0000-4000-8000-000000000003', 'v161-window')->0->>'fuelLedger',
-  'true',
-  'loading a sealed submission keeps its Fuel Ledger commitment'
+  public.server_load_private_submissions('10000000-0000-4000-8000-000000000003', 'v161-window')->0->>'card',
+  'FUEL_LEDGER_STOKE',
+  'loading a sealed submission keeps its Fuel Ledger card'
+);
+select ok(
+  not (public.server_load_private_submissions('10000000-0000-4000-8000-000000000003', 'v161-window')->0 ? 'fuelLedger'),
+  'a loaded submission carries no Fuel Ledger flag'
 );
 select is(
-  public.server_find_own_pending('10000000-0000-4000-8000-000000000003', 'P1')->>'fuelLedger',
-  'true',
-  'the own-pending lookup returns the Fuel Ledger commitment'
+  public.server_find_own_pending('10000000-0000-4000-8000-000000000003', 'P1')->>'card',
+  'FUEL_LEDGER_STOKE',
+  'the own-pending lookup returns the sealed Fuel Ledger card'
 );
 select ok(
   exists (select 1 from pg_constraint where conname = 'room_ai_seats_policy_version_check'

@@ -298,11 +298,13 @@ describe("Chinese text uses the glossary terms", () => {
     expect(glossary).toEqual(bulletsAfter(rulebookZh, "### 技艺通则"));
   });
 
-  it("names the Colour Samples swap 换单, as the Chinese rulebook does (change 22, Chinese lines 34 and 645)", () => {
+  it("names the Colour Samples swap 换单, as the Chinese rulebook does (changes 22 and 25, Chinese lines 34, 37 and 648)", () => {
     expect(glossaryTerm("Colour Samples swap (once per round)")).toBe("换单");
     const rulebookZh = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.2_ZH.md"), "utf8");
     expect(rulebookZh).toContain("色样簿增加每轮一次的换单");
-    expect(rulebookZh).toContain("每轮一次的换单是技艺效果，不算瓷牙行行动");
+    // Owner revision 3: the swap is a Select 3 (精选3), and its discarded Order is still 换单时弃置的主委托.
+    expect(rulebookZh).toContain("每轮一次的换单也是精选3");
+    expect(rulebookZh).toContain("换单时弃置的主委托放入主委托弃牌堆");
     // The clarifications name it the same way.
     expect(TECHS.T10.clarifications.filter((item) => item.zh.includes("换单")).length).toBeGreaterThan(3);
   });
@@ -415,13 +417,14 @@ function player(id: string, seatIndex: number, kilnId: PlayerState["kilnId"], te
       glaze_load: [{ unlocked: true }, { unlocked: techs.some((tech) => TECHS[tech].discipline === "glazing_loading") }],
     },
     techs: techs.map((tech) => ({ id: tech, acquiredInRound: 1, usedThisRound: false })),
+    contributionCards: ["BANK", "TEND", "STOKE", ...(techs.includes("T12") ? (["FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"] as const) : [])],
     kilnAbilityUsedThisRound: false,
     imperial: { recognition: 2, grantReceived: true, kilnGained: true, priority: "on_track", audienceReceived: false },
     completedOrders: [{
       orderId: "S02", ceramicIds: ["c1"], round: 1, canalBargeCoins: 0, vp: 3, coins: 4,
       printedCrowns: 0, bonusCrowns: 0, crackleDeclarations: [], kilnAbility: null,
     }],
-    score: { orders: 3, kilnAbilities: 0, recognitionOverflow: 0, imperialAudience: 0, techs: techs.length },
+    score: { orders: 3, kilnAbilities: 0, recognitionOverflow: 0, imperialAudience: 0 },
   };
 }
 
@@ -447,7 +450,7 @@ function sampleState(): GameState {
     kilnFurniture: null,
   });
   return {
-    schemaVersion: 7,
+    schemaVersion: 8,
     rulesVersion: "1.6.2",
     gameId: "localization",
     revision: 12,

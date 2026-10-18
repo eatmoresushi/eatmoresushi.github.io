@@ -226,7 +226,8 @@ export function entryStructureProblems(entry: PrivacyCheckedEntry): string[] {
  * - no `unseen` secret ID of this viewer appears anywhere in the entry, and no `rehidden` one
  *   outside its event records;
  * - while the Contribution window is open, no sealed card outside the viewer's own view, and
- *   no card or Fuel Ledger flag on another seat's `CONTRIBUTION_SUBMITTED`;
+ *   no card (a Fuel Ledger card included) and no Fuel Ledger flag on another seat's
+ *   `CONTRIBUTION_SUBMITTED`;
  * - no other seat's fire peek.
  */
 export function entryPrivacyProblems(

@@ -27,6 +27,7 @@
  */
 
 import {
+  BASE_CONTRIBUTION_CARD_IDS,
   DISCIPLINES,
   FIRING,
   GAME_CONFIG,
@@ -275,6 +276,8 @@ function makePlayer(spec: PlayerSpec & { id: PlayerId }, seatIndex: number, inSe
       glaze_load: [{ unlocked: true }, { unlocked: false }],
     },
     techs: [],
+    // Fuel Ledger's 2 cards are added by `grantTech` when a spec gives T12 (change 26).
+    contributionCards: [...BASE_CONTRIBUTION_CARD_IDS],
     kilnAbilityUsedThisRound: spec.kilnAbilityUsedThisRound ?? false,
     imperial,
     completedOrders: [],
@@ -283,8 +286,6 @@ function makePlayer(spec: PlayerSpec & { id: PlayerId }, seatIndex: number, inSe
       kilnAbilities: 0,
       recognitionOverflow: 0,
       imperialAudience: imperial.audienceReceived ? audienceVp() : 0,
-      // Recorded by `grantTech` as each spec Tech is given (owner amendment A1).
-      techs: 0,
       ...spec.score,
     },
   };
@@ -431,7 +432,7 @@ export function buildState(spec: StateSpec = {}): GameState {
   }
 
   const state: GameState = {
-    schemaVersion: 7,
+    schemaVersion: 8,
     rulesVersion: "1.6.2",
     gameId: spec.gameId ?? "test-game",
     revision: 0,

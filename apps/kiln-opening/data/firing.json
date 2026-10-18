@@ -93,22 +93,51 @@
       "id": "BANK",
       "woodCost": 1,
       "heat": -1,
+      "techId": null,
       "name": "Bank the Fire",
-      "nameZh": "压火"
+      "nameZh": "压火",
+      "shortText": null,
+      "shortTextZh": null
     },
     {
       "id": "TEND",
       "woodCost": 0,
       "heat": 0,
+      "techId": null,
       "name": "Tend the Fire",
-      "nameZh": "守火"
+      "nameZh": "守火",
+      "shortText": null,
+      "shortTextZh": null
     },
     {
       "id": "STOKE",
       "woodCost": 1,
       "heat": 1,
+      "techId": null,
       "name": "Stoke the Fire",
-      "nameZh": "添柴"
+      "nameZh": "添柴",
+      "shortText": null,
+      "shortTextZh": null
+    },
+    {
+      "id": "FUEL_LEDGER_BANK",
+      "woodCost": 1,
+      "heat": -2,
+      "techId": "T12",
+      "name": "Fuel Ledger Bank",
+      "nameZh": "柴簿压火",
+      "shortText": "1 Wood: −2.",
+      "shortTextZh": "1柴：−2。"
+    },
+    {
+      "id": "FUEL_LEDGER_STOKE",
+      "woodCost": 1,
+      "heat": 2,
+      "techId": "T12",
+      "name": "Fuel Ledger Stoke",
+      "nameZh": "柴簿添柴",
+      "shortText": "1 Wood: +2.",
+      "shortTextZh": "1柴：+2。"
     }
   ],
   "imperialModifiers": [

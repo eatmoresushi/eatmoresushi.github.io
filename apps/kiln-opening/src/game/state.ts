@@ -150,6 +150,20 @@ export function workStep<K extends WorkTurnStep["kind"]>(
   return phase.step as Extract<WorkTurnStep, { kind: K }>;
 }
 
+/** The Work-turn steps that hold an open Select (v1.6.2 L64, change 25). */
+export type SelectStep = Extract<WorkTurnStep, { kind: "commission_market" | "colour_samples" | "colour_samples_swap" }>;
+
+/** The current Work-turn step if it holds an open Select (the Commission Market, Colour Samples
+ * when acquired or its swap), else null. */
+export function selectStep(game: PublicCore): SelectStep | null {
+  const phase = game.phase;
+  if (phase.type !== "work_turn") {
+    return null;
+  }
+  const step = phase.step;
+  return step.kind === "commission_market" || step.kind === "colour_samples" || step.kind === "colour_samples_swap" ? step : null;
+}
+
 /** The Main Orders a pending look holds (Commission Market, Colour Samples and its swap). */
 export function lookOrderIds(look: PendingLook | null): OrderId[] {
   return look === null || look.kind === "guild_inspection" ? [] : look.orderIds;

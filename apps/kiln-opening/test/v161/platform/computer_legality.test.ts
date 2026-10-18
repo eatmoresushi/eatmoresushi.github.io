@@ -33,6 +33,7 @@ import {
   safeExitCommands,
 } from "../../../src/multiplayer/index.ts";
 import type { ComputerPolicy } from "../../../src/multiplayer/index.ts";
+import { richStartState } from "../engine/p7_support.ts";
 import { phaseScenarios } from "../engine/phase_scenarios.ts";
 import { openFiringTable, tendAll } from "../engine/support/firing.ts";
 import { playEngineTable, randomChooser } from "./computer_support.ts";
@@ -189,6 +190,21 @@ describe("computer proposals over many seeded engine games", () => {
         });
         expect(result.state.phase.type).toBe("finished");
         rejected.push(...result.fallbacks.map((fallback) => `${playerCount}p ${seed} ${fallback.playerId} ${fallback.phase}: ${fallback.reason}`));
+      }
+      // Rich starts, whose seats already own a Tech per discipline (the engine fuzz's), so the
+      // strategic seats also play the Techs they rarely buy since Techs score no VP (v1.6.2
+      // change 27): Second Firing's choice, Test Pieces, Fuel Ledger's cards.
+      for (let game = 0; game < 6; game += 1) {
+        const seed = 29_000 + playerCount * 100 + game;
+        const result = playEngineTable({
+          seed,
+          playerCount,
+          start: richStartState(seed, playerCount),
+          chooserFor: (playerId) => (view) => chooseStrategicCommand(view, { playerId, displayName: playerId, aiSeed: seed, aiPolicyVersion: null }),
+          observe: (state) => phases.add(phaseKey(state)),
+        });
+        expect(result.state.phase.type).toBe("finished");
+        rejected.push(...result.fallbacks.map((fallback) => `${playerCount}p rich ${seed} ${fallback.playerId} ${fallback.phase}: ${fallback.reason}`));
       }
     }
     expect(rejected).toEqual([]);

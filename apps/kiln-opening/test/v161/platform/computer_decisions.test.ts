@@ -110,7 +110,7 @@ describe("strategic computer choices", () => {
         { owner: "p2", stage: "loaded", shape: "plate", glaze: "white", at: "low_1" },
       ],
     });
-    expect(decide(table)).toMatchObject({ type: "SUBMIT_CONTRIBUTION", card, fuelLedger: false });
+    expect(decide(table)).toEqual({ type: "SUBMIT_CONTRIBUTION", windowId: expect.any(String), card });
   });
 
   it("turns its Heat marker toward the Preferred Heat once Base Heat is known", () => {
@@ -175,7 +175,7 @@ describe("strategic computer choices", () => {
     ["high_1", "celadon", "BANK"],
     ["high_1", "moon_white", "STOKE"],
   ] as Array<[KilnSpaceId, Glaze, "BANK" | "STOKE"]>)(
-    "spends Fuel Ledger's free Wood card with no Wood at all (%s, %s → %s; v1.6.2 L629)",
+    "spends Fuel Ledger's free Wood card with no Wood at all (%s, %s → %s; v1.6.2 L634)",
     (at, glaze, card) => {
       const spec = (techs: TechId[]): StateSpec => ({
         players: [{ kilnId: "GE", techs, resources: { wood: 0 } }, { kilnId: "DI" }],
@@ -185,11 +185,26 @@ describe("strategic computer choices", () => {
         ],
       });
       // Fuel Ledger's Bank and Stoke cost no Wood, so the owner steers without any.
-      expect(decide(openFiringTable(spec(["T12"])))).toMatchObject({ type: "SUBMIT_CONTRIBUTION", card, fuelLedger: false });
-      // Without it, a seat with no Wood can only Tend (L261).
-      expect(decide(openFiringTable(spec([])))).toMatchObject({ type: "SUBMIT_CONTRIBUTION", card: "TEND", fuelLedger: false });
+      expect(decide(openFiringTable(spec(["T12"])))).toMatchObject({ type: "SUBMIT_CONTRIBUTION", card });
+      // Without it, a seat with no Wood can only Tend (v1.6.2 L266).
+      expect(decide(openFiringTable(spec([])))).toMatchObject({ type: "SUBMIT_CONTRIBUTION", card: "TEND" });
     },
   );
+
+  it("plays Fuel Ledger Stoke (+2 for 1 Wood) when its load needs two steps, a plain Stoke without the tile (v1.6.2 L266, change 26)", () => {
+    // Moon White (4) in a Middle space: the die's 2 needs +2 to be exact.
+    const spec = (techs: TechId[]): StateSpec => ({
+      players: [{ kilnId: "GE", techs, resources: { wood: 1 } }, { kilnId: "DI" }],
+      ceramics: [
+        { owner: "p1", stage: "loaded", shape: "bowl", glaze: "moon_white", at: "middle_1" },
+        { owner: "p2", stage: "loaded", shape: "plate", glaze: "white", at: "low_1" },
+      ],
+    });
+    const owner = openFiringTable(spec(["T12"]));
+    expect(owner.state.players["p1"]?.contributionCards).toContain("FUEL_LEDGER_STOKE");
+    expect(decide(owner)).toMatchObject({ type: "SUBMIT_CONTRIBUTION", card: "FUEL_LEDGER_STOKE" });
+    expect(decide(openFiringTable(spec([])))).toMatchObject({ type: "SUBMIT_CONTRIBUTION", card: "STOKE" });
+  });
 
   it("refires a Flawed ceramic with Second Firing when the unseen Fire cards can save it", () => {
     // Moon White (4) in a Low space with Fire 0: heat 1, Flawed. The unseen cards are +2 and
@@ -334,8 +349,8 @@ describe("strategic computer choices", () => {
     });
     table.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu" });
     const choice = decide(table);
-    expect(choice.type).toBe("COMMISSION_CHOOSE");
-    if (choice.type !== "COMMISSION_CHOOSE") return;
+    expect(choice.type).toBe("SELECT_CHOOSE");
+    if (choice.type !== "SELECT_CHOOSE") return;
     expect(choice.reservations[0]).toEqual({ kind: "looked", orderId: "O02" });
     expect(choice.reservations.length).toBeLessThanOrEqual(2);
   });
@@ -349,13 +364,15 @@ describe("strategic computer choices", () => {
       mainDeck: ["O47", "O48"],
     });
     table.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:apprentice:1" });
-    expect(decide(table)).toEqual({ type: "COMMISSION_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 2, orderId: "O02" }] });
+    expect(decide(table)).toEqual({ type: "SELECT_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 2, orderId: "O02" }] });
   });
 
-  it("swaps an Order it cannot complete with Colour Samples, keeps the looked card it can, and sends the other under the deck (v1.6.2 L617, change 24)", () => {
+  it("swaps an Order it cannot complete with Colour Samples, keeps the looked card it can, and sends the other 2 under the deck (v1.6.2 L622, changes 24–25)", () => {
     // O47 needs three new vessels with two Masterpieces; O02 takes the Fine Celadon Plate now.
+    // Round 5: the display's big Orders would need vessels fired this very round, so the looked
+    // O02 beats them (the Select 3 may take a face-up Order too, change 25).
     const table = work({
-      round: 4,
+      round: 5,
       players: [{ kilnId: "GE", techs: ["T10"], resources: RICH, hand: ["O47"] }, { kilnId: "DI" }],
       ceramics: [{ owner: "p1", stage: "finished", shape: "plate", glaze: "celadon", quality: "fine" }],
       display: ["O41", "O42", "O43", "O44", "O45", "O46"],
@@ -366,13 +383,37 @@ describe("strategic computer choices", () => {
     play(table, swap);
     expect(table.state.phase).toMatchObject({ type: "work_turn", step: { kind: "colour_samples_swap", returnTo: "before_action" } });
     const choice = decide(table);
-    expect(choice).toEqual({ type: "COLOUR_SAMPLES_SWAP_CHOOSE", orderId: "O02" });
+    expect(choice).toEqual({ type: "SELECT_CHOOSE", reservations: [{ kind: "looked", orderId: "O02" }] });
     play(table, choice);
     expect(table.state.hidden.orderHands["p1"]).toEqual(["O02"]);
-    expect(table.state.hidden.mainDeck).toEqual(["O40", "O48"]);
+    // The other 2 looked cards went under the deck, in random order (R19).
+    expect([...table.state.hidden.mainDeck].sort()).toEqual(["O40", "O48"]);
     expect(table.state.hidden.mainDiscard).toContain("O47");
     // Once per round: the next decision is a worker placement.
     expect(decide(table).type).toMatch(/^PLACE_/);
+  });
+
+  it("its swap's Select 3 takes a face-up Order when the display holds the best one, refilled at the end of the turn (change 25)", () => {
+    // O47 needs three new vessels; the display's O02 takes the Fine Celadon Plate now, while the
+    // looked cards are all big Orders that would need vessels fired this very round.
+    const table = work({
+      round: 5,
+      players: [{ kilnId: "GE", techs: ["T10"], resources: RICH, hand: ["O47"] }, { kilnId: "DI" }],
+      ceramics: [{ owner: "p1", stage: "finished", shape: "plate", glaze: "celadon", quality: "fine" }],
+      display: ["O41", "O42", "O02", "O44", "O45", "O46"],
+      mainDeck: ["O48", "O43", "O40", "O33"],
+    });
+    const swap = decide(table);
+    expect(swap).toEqual({ type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: "O47" });
+    play(table, swap);
+    const choice = decide(table);
+    expect(choice).toEqual({ type: "SELECT_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 2, orderId: "O02" }] });
+    play(table, choice);
+    expect(table.state.hidden.orderHands["p1"]).toEqual(["O02"]);
+    // The position stays empty until the turn ends; the 3 looked cards went under the deck.
+    expect(table.state.market.display[2]).toBeNull();
+    expect(table.state.market.refillPendingFor).toBe("p1");
+    expect([...table.state.hidden.mainDeck.slice(-3)].sort()).toEqual(["O40", "O43", "O48"]);
   });
 
   it("keeps its Colour Samples swap when its only held Order is already complete", () => {

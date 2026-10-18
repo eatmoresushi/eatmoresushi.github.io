@@ -28,8 +28,13 @@
 
 /** DIG: the rulebook is "v1.6.2"; the engine uses `1.6.2` (audit, "Authority and provenance"). */
 export type RulesVersion = "1.6.2";
-/** DIG: state schema 7. V1.6.1 (schema 6) and older saves are rejected, never migrated. */
-export type SchemaVersion = 7;
+/**
+ * DIG: state schema 8 (owner revision 3 of V1.6.2, changes 25–27: the Select look on every
+ * order-look step, `PlayerState.contributionCards`, no Tech VP in the ledger or the final
+ * breakdown). Schema 7 (V1.6.2 before revision 3), V1.6.1 (schema 6) and older saves are
+ * rejected, never migrated.
+ */
+export type SchemaVersion = 8;
 
 export type PlayerId = string;
 /** `${playerId}:shifu` or `${playerId}:apprentice:${1|2|3}`. */
@@ -172,9 +177,13 @@ export type HeatMarkerValue = 1 | -1;
 /** Imperial Recognition 0–4 (L429–436). */
 export type Recognition = 0 | 1 | 2 | 3 | 4;
 
-/** Contribution cards (L253–259). */
-export type ContributionCardId = "BANK" | "TEND" | "STOKE";
-/** A revealed Contribution's Heat: ±1/0, or ±2 with a Fuel Ledger commitment (L638). */
+/**
+ * Contribution cards (v1.6.2 L260–266, change 26). Every player holds Bank, Tend and Stoke; the
+ * owner of Fuel Ledger (T12) also holds Fuel Ledger Bank (1 Wood, −2) and Fuel Ledger Stoke
+ * (1 Wood, +2), which come with the tile (v1.6.2 L111, L266, L634). All 14 cards share one back.
+ */
+export type ContributionCardId = "BANK" | "TEND" | "STOKE" | "FUEL_LEDGER_BANK" | "FUEL_LEDGER_STOKE";
+/** A revealed Contribution's Heat: the card's printed modifier, ±1/0, or ±2 for a Fuel Ledger card. */
 export type ContributionHeat = -2 | -1 | 0 | 1 | 2;
 
 // ═══════════════════════════════════════════════════════════════════════════════════════
@@ -248,8 +257,9 @@ export interface ImperialState {
 }
 
 /**
- * VP recorded during play (L492). Exhibition, Connoisseur's Cabinet and Coins are computed at
- * game end; Tech VP is recorded when the Tech is gained (owner amendment A1).
+ * VP recorded during play (v1.6.2 L496). Exhibition, Connoisseur's Cabinet and Coins are computed
+ * at game end. Advanced Techs score nothing when gained (v1.6.2 change 27, which superseded owner
+ * amendment A1), so the ledger has no Tech line.
  */
 export interface ScoreLedger {
   /** Printed VP of completed Orders (L414). */
@@ -260,12 +270,6 @@ export interface ScoreLedger {
   recognitionOverflow: number;
   /** 6 VP Imperial Audience (L435). */
   imperialAudience: number;
-  /**
-   * 1 VP per Advanced Tech, recorded when the Tech is gained (owner amendment A1, overriding
-   * L379/L492/L609/L755). Always `techs.length × GAME_CONFIG.techs.vpEach`: no effect
-   * removes a Tech.
-   */
-  techs: number;
 }
 
 export interface CrackleDeclaration {
@@ -313,8 +317,15 @@ export interface PlayerState {
   resources: ResourceState;
   workers: Record<WorkerId, WorkerState>;
   personalSpaces: Record<PersonalLocationId, [PersonalSpaceState, PersonalSpaceState]>;
-  /** At most 3 Techs and at most 1 per discipline (L211, L375). Each scores 1 VP when gained (A1). */
+  /** At most 3 Techs and at most 1 per discipline (L211, L375). No VP for owning one (change 27). */
   techs: OwnedTechState[];
+  /**
+   * The Contribution cards this player holds (v1.6.2 L266, change 26): Bank, Tend and Stoke from
+   * setup, then Fuel Ledger Bank and Fuel Ledger Stoke once the player gains Fuel Ledger (T12,
+   * v1.6.2 L111, L634). Public, like the Tech tile they come with; which one is played stays
+   * secret until the reveal. Order: setup cards first, then each Tech's cards as gained.
+   */
+  contributionCards: ContributionCardId[];
   /** Kiln Tradition once-per-round allowance (Ru, Guan, Ge, Ding, Jun all once per round). */
   kilnAbilityUsedThisRound: boolean;
   imperial: ImperialState;
@@ -493,9 +504,9 @@ export interface KilnDieRoll {
 export type PendingLook =
   | {
       /**
-       * Commission Market look (v1.6.2 L195–196, B1, B3): the top 2 Main Orders for the
-       * Apprentice effect, the top 3 for the Shifu effect (incl. Senior Apprentice, R12).
-       * The look always happens (INT: Commission Market looks).
+       * Commission Market look (v1.6.2 L201–202, change 25, B1, B3): the Apprentice's Select 2,
+       * the Shifu's Select 3 (incl. Senior Apprentice, R12). The look always happens (INT:
+       * Commission Market looks).
        */
       kind: "commission_market";
       playerId: PlayerId;
@@ -503,7 +514,7 @@ export type PendingLook =
       orderIds: OrderId[];
     }
   | {
-      /** Colour Samples' mandatory when-acquired reservation (L626, R4, B1, B3). */
+      /** Colour Samples' mandatory when-acquired Select 3 (v1.6.2 L622, change 25, R4, B1, B3). */
       kind: "colour_samples";
       playerId: PlayerId;
       orderIds: OrderId[];
@@ -517,8 +528,8 @@ export type PendingLook =
     }
   | {
       /**
-       * Colour Samples' once-per-round swap (v1.6.2 L625, L649, change 24, R16, R17, B1, B3):
-       * the top 2 Main Orders, looked at after the held Order was discarded; as many as remained.
+       * Colour Samples' once-per-round swap (v1.6.2 L622, L646, changes 24–25, R16, R17, B1, B3):
+       * its Select 3, looked at after the held Order was discarded; as many as remained.
        */
       kind: "colour_samples_swap";
       playerId: PlayerId;
@@ -572,10 +583,12 @@ export interface HiddenState {
 // 7. Firing (Appendix D, L670–693)
 // ═══════════════════════════════════════════════════════════════════════════════════════
 
+/**
+ * One sealed Contribution: exactly 1 of the player's own Contribution cards (v1.6.2 L246, L266,
+ * L668, change 26). Nothing else is sealed with it: Wood is paid only on reveal (v1.6.2 L508).
+ */
 export interface ContributionSubmission {
   card: ContributionCardId;
-  /** Fuel Ledger's secret extra Wood (T12, L638): only with BANK or STOKE; makes it ±2. */
-  fuelLedger: boolean;
 }
 
 export interface RevealedContribution extends ContributionSubmission {
@@ -701,6 +714,27 @@ export interface DecisionQueue {
   index: number;
 }
 
+/**
+ * Keyword **Select N** (v1.6.2 L64, change 25): look at the top N cards of the Main Order deck,
+ * then reserve 1 of them or 1 face-up Main Order from the display; the rest of the N go to the
+ * bottom of the deck (several in random order, R19). One model for every Select: the
+ * Commission Market Apprentice (Select 2) and Shifu (Select 3, reserving up to 2, v1.6.2 L202),
+ * and Colour Samples when acquired and in its swap (Select 3, v1.6.2 L622). The looked cards are
+ * in `hidden.pendingLook`; `SELECT_CHOOSE` makes the reservations.
+ */
+export interface SelectSpec {
+  /** N, the cards the Select looks at: 2 or 3. */
+  n: 2 | 3;
+  /** Reservations allowed: 1, or up to 2 for the Commission Market Shifu effect. At least 1 is
+   * always required. */
+  maxReservations: 1 | 2;
+  /** A face-up Main Order from the display may be reserved instead of a looked card. True in
+   * every Select (v1.6.2 L64); a face-up position taken stays empty until the turn ends. */
+  fromDisplay: boolean;
+  /** Cards the look shows: up to `n`, possibly 0 (B1, R16); the display may still offer one. */
+  lookedCount: number;
+}
+
 /** One Tech a Guild Hall Shifu takes (v1.6.2 L207): a face-up Tech or one it inspected. */
 export type GuildTake = { kind: "face_up"; techId: TechId } | { kind: "inspected"; techId: TechId };
 
@@ -735,24 +769,21 @@ export type WorkTurnStep =
     }
   | {
       /**
-       * Commission Market (v1.6.2 L191–198): the placement opened the private look, whose
-       * cards are in `hidden.pendingLook` (kind `commission_market`). Next: COMMISSION_CHOOSE.
+       * Commission Market (v1.6.2 L197–205, change 25): the placement opened the Select, whose
+       * looked cards are in `hidden.pendingLook` (kind `commission_market`). Next: SELECT_CHOOSE.
        */
       kind: "commission_market";
       workerId: WorkerId;
       effect: WorkerEffect;
-      /** 2 (Apprentice effect) or 3 (Shifu effect, incl. Senior Apprentice R12). */
-      lookSize: 2 | 3;
-      /** 1 (Apprentice effect) or 2 (Shifu effect); at least 1 is always required. */
-      maxReservations: 1 | 2;
-      /** Cards the look shows: up to `lookSize`, possibly 0 (B1). */
-      lookedCount: number;
+      /** Select 2, 1 reservation (Apprentice effect) or Select 3, up to 2 (Shifu effect, incl.
+       * Senior Apprentice R12). */
+      select: SelectSpec;
     }
   | GuildInspectionStep
   | {
-      /** Colour Samples when acquired (L626, R4): COLOUR_SAMPLES_CHOOSE. */
+      /** Colour Samples when acquired: Select 3 (v1.6.2 L622, R4). Next: SELECT_CHOOSE. */
       kind: "colour_samples";
-      lookedCount: number;
+      select: SelectSpec;
       /**
        * The Guild Hall Shifu's inspection step to return to after the reservation, when
        * Colour Samples was one of its takes (v1.6.2 L207, L214); its Techs wait in the look's
@@ -762,15 +793,15 @@ export type WorkTurnStep =
     }
   | {
       /**
-       * Colour Samples swap (v1.6.2 L625, R17): the held Order is discarded and the private
-       * look at the top 2 is in `hidden.pendingLook` (kind `colour_samples_swap`). Next:
-       * COLOUR_SAMPLES_SWAP_CHOOSE (the other card goes to the deck bottom, change 24), then back
-       * to the window it was used in.
+       * Colour Samples swap (v1.6.2 L622, R17): the held Order is discarded and its Select 3 is
+       * open, the looked cards in `hidden.pendingLook` (kind `colour_samples_swap`). Next:
+       * SELECT_CHOOSE (the looked cards not reserved go to the deck bottom), then back to the
+       * window it was used in.
        */
       kind: "colour_samples_swap";
       returnTo: "before_action" | "after_action";
-      /** Cards the look shows: up to 2, at least 1 (the validator guaranteed one, B1). */
-      lookedCount: number;
+      /** Select 3, 1 reservation. The validator guaranteed a looked card or a display Order (B1). */
+      select: SelectSpec;
     }
   | {
       /**
@@ -960,9 +991,9 @@ export interface PrivatePlayerView {
   pendingLook: PendingLook | null;
   firePeek: FirePeek | null;
   /**
-   * This seat's own sealed Contribution, including the Fuel Ledger commitment, until the
-   * reveal. Rebuilt on reconnect from the stored private submission (DESIGN §4.6); it
-   * replaces the multiplayer layer's `PendingContribution`.
+   * This seat's own sealed Contribution card (a Fuel Ledger card included), until the reveal.
+   * Rebuilt on reconnect from the stored private submission (DESIGN §4.6); it replaces the
+   * multiplayer layer's `PendingContribution`.
    */
   pendingContribution: (ContributionSubmission & { windowId: string }) | null;
 }
@@ -1039,17 +1070,17 @@ export interface LoadSpec {
   reworkShape?: Shape;
 }
 
-/** One Commission Market reservation (v1.6.2 L191, L195–196). */
-export type CommissionPick =
+/** One reservation of a Select (v1.6.2 L64, L197, change 25). */
+export type SelectPick =
   | {
-      /** A face-up Order; its position stays empty until your turn ends (v1.6.2 L191).
-       * `orderId` must match `market.display[slotIndex]`. */
+      /** A face-up Main Order; its position stays empty until your turn ends (v1.6.2 L197).
+       * `orderId` must match `market.display[slotIndex]`. Allowed when `SelectSpec.fromDisplay`. */
       kind: "face_up";
       slotIndex: number;
       orderId: OrderId;
     }
   | {
-      /** One of the cards of your own pending Commission look (`own.pendingLook`). */
+      /** One of the cards of your own pending Select look (`own.pendingLook`). */
       kind: "looked";
       orderId: OrderId;
     };
@@ -1141,10 +1172,10 @@ export type GameAction =
     }
   | {
       /**
-       * Commission Market (v1.6.2 L189–200). Placing the worker always opens the private look
-       * at the top 2 (Apprentice effect) or 3 (Shifu effect) Main Orders, as many as remain
-       * (B1); the reservations follow in `COMMISSION_CHOOSE` (INT: Commission Market looks).
-       * Senior Apprentice is declared here, before the look (L618 "1 Apprentice you place").
+       * Commission Market (v1.6.2 L195–206). Placing the worker always opens the Select: 2 for
+       * the Apprentice effect, 3 for the Shifu effect, as many cards as remain (B1); the
+       * reservations follow in `SELECT_CHOOSE` (INT: Commission Market looks). Senior Apprentice
+       * is declared here, before the look (L618 "1 Apprentice you place").
        */
       type: "PLACE_COMMISSION_MARKET";
       workerId: WorkerId;
@@ -1170,13 +1201,14 @@ export type GameAction =
   // ── Work: sub-steps that follow a private reveal ───────────────────────────────────
   | {
       /**
-       * Commission Market reservations after the look (v1.6.2 L191, L195–198): exactly 1
-       * (Apprentice effect) or 1–2 (Shifu effect), each a face-up Order or a looked card, in
-       * any mix. Resolved in array order; the looked cards not reserved then go face down to
-       * the bottom of the Main deck in random order (change 24, R19). No resource is gained.
+       * The reservations of an open Select (v1.6.2 L64, change 25): the Commission Market's
+       * (L201–204), Colour Samples' when acquired or its swap's (L622). 1 to the step's
+       * `select.maxReservations`, each a face-up Main Order (when `select.fromDisplay`) or a
+       * looked card, in any mix. Resolved in array order; the looked cards not reserved then go
+       * face down to the bottom of the Main deck in random order (R19). No resource is gained.
        */
-      type: "COMMISSION_CHOOSE";
-      reservations: CommissionPick[];
+      type: "SELECT_CHOOSE";
+      reservations: SelectPick[];
     }
   | {
       /**
@@ -1197,26 +1229,14 @@ export type GameAction =
       type: "GUILD_FINISH";
       bottomOrder: TechId[];
     }
-  | {
-      /** Colour Samples when acquired: reserve 1 looked-at Order; the rest go to the bottom of the
-       * Main deck (v1.6.2 Appendix B, change 24). */
-      type: "COLOUR_SAMPLES_CHOOSE";
-      orderId: OrderId;
-    }
-  | {
-      /** Colour Samples swap, after the look: reserve 1 of the looked cards; the other goes to the
-       * bottom of the Main deck (v1.6.2 Appendix B, change 24, B3). */
-      type: "COLOUR_SAMPLES_SWAP_CHOOSE";
-      orderId: OrderId;
-    }
   // ── Work: before/after-action window ───────────────────────────────────────────────
   | {
       /**
-       * Colour Samples swap (T10, v1.6.2 L625, L649, R17): once per round, before or after one of
+       * Colour Samples swap (T10, v1.6.2 L622, L646, R17): once per round, before or after one of
        * your worker actions, discard 1 held Order (a Main Order face down to the Main discard, a
-       * Starting Order to the box), then privately look at the top 2 Main Orders (as many as
-       * remain, B1, R16) and reserve 1 (COLOUR_SAMPLES_SWAP_CHOOSE). A Tech effect, not a
-       * Commission Market action. Optional (R4).
+       * Starting Order to the box), then Select 3: privately look at the top 3 Main Orders (as
+       * many as remain, B1, R16) and reserve 1 of them or 1 face-up Main Order (SELECT_CHOOSE).
+       * A Tech effect, not a Commission Market action. Optional (R4).
        */
       type: "USE_COLOUR_SAMPLES_SWAP";
       discardOrderId: OrderId;
@@ -1291,8 +1311,8 @@ export type GameActionType = GameAction["type"];
 export interface SubmitContributionCommand {
   type: "SUBMIT_CONTRIBUTION";
   windowId: string;
+  /** 1 of your own Contribution cards (`PlayerState.contributionCards`, v1.6.2 change 26). */
   card: ContributionCardId;
-  fuelLedger: boolean;
 }
 
 export type AuthoritativeCommand = GameAction | SubmitContributionCommand;
@@ -1454,13 +1474,20 @@ export type GameEvent =
       secret: Secret<{ orderId: OrderId }>;
     }
   | {
+      /** No VP: gaining a Tech scores nothing (v1.6.2 change 27). */
       type: "TECH_ACQUIRED";
       playerId: PlayerId;
       techId: TechId;
       source: "face_up" | "inspected";
       cost: number;
-      /** The Tech's VP, recorded immediately in `ScoreLedger.techs` (owner amendment A1). */
-      vp: number;
+    }
+  | {
+      /** Fuel Ledger brings its 2 Contribution cards with the tile (v1.6.2 L111, L634, change 26).
+       * Public: the cards come with a public Tech tile. */
+      type: "CONTRIBUTION_CARDS_GAINED";
+      playerId: PlayerId;
+      techId: TechId;
+      cards: ContributionCardId[];
     }
   | {
       /** B2: the identities and order are private to the acting player. */
@@ -1658,6 +1685,8 @@ export type GameRuleErrorCode =
   // Contributions (DESIGN §4.2)
   | "NOT_CONTRIBUTOR"
   | "CONTRIBUTION_ALREADY_SUBMITTED"
+  /** A Contribution card the player does not hold (a Fuel Ledger card without Fuel Ledger). */
+  | "CONTRIBUTION_CARD_NOT_HELD"
   | "INVALID_CONTRIBUTION"
   | "PRIVATE_WINDOW_MISMATCH";
 
@@ -1693,8 +1722,6 @@ export interface FinalScoreBreakdown {
   kilnAbilities: number;
   recognitionOverflow: number;
   imperialAudience: number;
-  /** 1 VP per owned Tech, recorded when gained (A1); the ledger's `techs`. */
-  techs: number;
   exhibition: ExhibitionScore;
   /** Connoisseur's Cabinet (T19, L620): +1 per exhibited Fine/Masterpiece, max +5. */
   connoisseur: number;
@@ -1831,9 +1858,9 @@ export interface TechParamsById {
   T17: { claySurcharge: number };
   T18: { locations: CentralLocationId[] };
   T19: { vpPerCeramic: number; qualities: Quality[]; maxVp: number };
-  /** v1.6.2 L625: when acquired, look at `lookSize` and reserve 1; hand limit `handLimit`;
-   * the swap discards `swapDiscard` held Order and looks at `swapLookSize`. */
-  T10: { lookSize: number; handLimit: number; swapDiscard: number; swapLookSize: number };
+  /** v1.6.2 L622 (change 25): when acquired, Select `select`; hand limit `handLimit`; the swap
+   * discards `swapDiscard` held Order to Select `swapSelect`. */
+  T10: { select: number; handLimit: number; swapDiscard: number; swapSelect: number };
   T20: { clay: number; wood: number };
   T15: { modifiers: KilnFurnitureModifier[] };
   T21: { shapes: Shape[] };
@@ -1843,8 +1870,9 @@ export interface TechParamsById {
   /** v1.6.2 L636: your ceramics are never worse than `floorQuality`; once per round one
    * `upgradeFrom` ceramic becomes `upgradeTo`. */
   T11: { floorQuality: "standard"; upgradeFrom: "standard"; upgradeTo: "fine" };
-  /** v1.6.2 L637: your Bank and Stoke cost `cardWood`; committing `extraWood` adds `heat`. */
-  T12: { cardWood: number; extraWood: number; heat: number };
+  /** v1.6.2 L634 (change 26): your `freeCards` (Bank, Stoke) cost no Wood; the tile brings the
+   * Contribution `cards` (Fuel Ledger Bank, Fuel Ledger Stoke), defined in `firing.json`. */
+  T12: { freeCards: ContributionCardId[]; cards: ContributionCardId[] };
   T13: { wood: number };
   /** v1.6.2 L639: reveal `extraCards`, use `chosenCards` of them. */
   T14: { extraCards: number; chosenCards: number };
@@ -1943,10 +1971,10 @@ export interface LocationEffectsById {
     apprentice: { maxLoads: number; maxImperialLoads: number };
     shifu: { maxLoads: number; maxImperialLoads: number; placesHeatMarker: boolean };
   };
-  /** v1.6.2 L195–196: look at the top `lookSize`, reserve up to `maxReservations` (≥ 1). */
+  /** v1.6.2 L201–202 (change 25): Select `select`, reserving up to `maxReservations` (≥ 1). */
   commission_market: {
-    apprentice: { lookSize: number; maxReservations: number };
-    shifu: { lookSize: number; maxReservations: number };
+    apprentice: { select: number; maxReservations: number };
+    shifu: { select: number; maxReservations: number };
   };
   /** v1.6.2 L206–207: the Apprentice takes 1 face-up Tech; the Shifu inspects `inspectCount`
    * and takes up to `maxTechs` from different disciplines. Both pay the printed cost. */
@@ -2000,8 +2028,6 @@ export interface GameConfigDefinition {
     faceUpPerDiscipline: number;
     maxOwned: number;
     maxPerDiscipline: number;
-    /** VP per Advanced Tech, scored when gained (owner amendment A1). */
-    vpEach: number;
   };
   sharedKiln: { activeSpacesByPlayerCount: Record<"2" | "3" | "4", KilnSpaceId[]> };
   shapes: Record<Shape, number>;
@@ -2013,10 +2039,17 @@ export interface GameConfigDefinition {
 
 export interface ContributionCardDefinition {
   id: ContributionCardId;
+  /** The printed Wood cost; a Fuel Ledger owner pays none for Bank and Stoke (T12 `freeCards`). */
   woodCost: number;
   heat: number;
+  /** null for the 3 cards every player holds; the Tech that brings the card (Fuel Ledger, T12). */
+  techId: TechId | null;
   name: string;
   nameZh: string;
+  /** The owner's component text for a Tech's card (v1.6.2 component text); null for Bank, Tend
+   * and Stoke, whose effects are the rulebook table (v1.6.2 L262–264). */
+  shortText: string | null;
+  shortTextZh: string | null;
 }
 
 export interface FiringDefinition {
@@ -2300,11 +2333,11 @@ export interface KilnSelectionOption {
 /** Commission Market at placement time for one worker effect (public information only). */
 export interface CommissionOptions {
   effect: WorkerEffect;
-  /** 2 (Apprentice effect) or 3 (Shifu effect) (v1.6.2 L195–196). */
-  lookSize: 2 | 3;
+  /** Select 2 (Apprentice effect) or Select 3 (Shifu effect) (v1.6.2 L201–202). */
+  n: 2 | 3;
   /**
-   * Cards the look would show now: the deck's top `lookSize`, or after the reshuffle an empty
-   * deck forces, up to the discard's count (B1); 0 when the deck and discard are both empty.
+   * Cards the look would show now: the deck's top `n`, or after the reshuffle an empty deck
+   * forces, up to the discard's count (B1); 0 when the deck and discard are both empty.
    */
   lookCount: number;
   maxReservations: 1 | 2;
@@ -2314,12 +2347,15 @@ export interface CommissionOptions {
   reservable: boolean;
 }
 
-/** An Order look awaiting its choice (the viewer's own private look). */
+/** An open Select awaiting its `SELECT_CHOOSE` (the viewer's own private look; v1.6.2 L64). */
 export interface LookedOrderOptions {
   kind: "commission_market" | "colour_samples" | "colour_samples_swap";
+  /** N: 2 or 3. */
+  n: 2 | 3;
   /** From `own.pendingLook`; the cards not reserved go to the bottom of the Main deck (change 24). */
   orderIds: OrderId[];
-  /** Commission Market only: display positions also reservable now (v1.6.2 L191); else []. */
+  /** Display positions also reservable now (every Select, v1.6.2 L64; a position taken this
+   * turn stays empty until the turn ends). */
   faceUpSlots: number[];
   /** 1, or 2 for the Commission Market Shifu effect. At least 1 is always required. */
   maxReservations: 1 | 2;
@@ -2368,9 +2404,12 @@ export interface ColourSamplesSwapOptions {
   /** T10 owned and unused this round, in your own before/after-action window, with a held
    * Order (the same public facts that open the after-action window). */
   usable: boolean;
-  /** Per held Order, in hand order: the cards the look would show after discarding it (B1,
-   * R16, R17) and whether that discard is legal (a look of at least 1 card). */
+  /** Per held Order, in hand order: the cards the Select 3 would show after discarding it (B1,
+   * R16, R17) and whether that discard is legal (a looked card or a face-up Main Order to
+   * reserve, v1.6.2 L64). */
   discards: Array<{ orderId: OrderId; lookCount: number; legal: boolean }>;
+  /** Display positions holding an Order now: the Select's face-up alternative (v1.6.2 L64). */
+  faceUpSlots: number[];
 }
 
 /** Second Firing's choice (`firing_second_firing_choice`, T14, v1.6.2 L639, R7). */
@@ -2392,8 +2431,8 @@ export interface TestPiecesOptions {
 
 export interface ContributionOption {
   command: SubmitContributionCommand;
-  /** Card Wood (none for a Fuel Ledger owner's Bank and Stoke, v1.6.2 L637) plus the
-   * commitment's 1 Wood. */
+  /** The card's Wood, paid on reveal: none for Tend, and none for a Fuel Ledger owner's Bank and
+   * Stoke (v1.6.2 L266, L634); 1 for Fuel Ledger Bank and Fuel Ledger Stoke. */
   woodCost: number;
   heat: ContributionHeat;
   affordable: boolean;
@@ -2514,9 +2553,11 @@ export interface PlayerSummary {
   kilnId: KilnId | null;
   kilnAbilityReady: boolean;
   resources: ResourceState;
-  /** Sum of `recorded` (L492), including Tech VP (A1). End-game VP is in `scorePreview`. */
+  /** Sum of `recorded` (v1.6.2 L496). End-game VP is in `scorePreview`. */
   recordedVp: number;
   recorded: ScoreLedger;
+  /** The Contribution cards the player holds (public; v1.6.2 L266, change 26). */
+  contributionCards: ContributionCardId[];
   techs: TechStatus[];
   /** Available workers, Shifu first, then Apprentices by ID. */
   availableWorkerIds: WorkerId[];

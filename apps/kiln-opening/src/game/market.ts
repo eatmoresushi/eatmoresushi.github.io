@@ -69,8 +69,9 @@ export function drawMainOrder(draft: GameState, ctx: ResolveContext): OrderId | 
 }
 
 /**
- * Takes up to `max` cards off the top of the Main deck for a private look (the Commission
- * Market top 2 or 3, v1.6.2 L195–196; Colour Samples' top 3 and its swap's top 2, L625).
+ * Takes up to `max` cards off the top of the Main deck for a private look: a Select's N (the
+ * Commission Market's Select 2 or 3, v1.6.2 L201–202; Colour Samples' Select 3 when acquired and
+ * in its swap, L622; `work/select.ts`).
  * B1, R16: the discard is reshuffled only if the deck is empty when the look starts, never to
  * complete the look, so a look may see fewer than `max` cards (or none when both piles are
  * empty). The cards leave the deck; the caller holds them in `hidden.pendingLook` and puts

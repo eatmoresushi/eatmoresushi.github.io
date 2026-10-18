@@ -1,6 +1,9 @@
 /**
- * Opening the Firing Phase and the Contribution window (L237, L253–263, L504, v1.6.2 L637,
- * L670–674, change 16; INT "No Contribution participants").
+ * Opening the Firing Phase and the Contribution window (L237, v1.6.2 L246, L258–268, L508, L634,
+ * L668–670, changes 16 and 26; INT "No Contribution participants"). Each participant secretly
+ * plays exactly 1 of their own Contribution cards: Bank, Tend or Stoke, and for Fuel Ledger's
+ * owner also Fuel Ledger Bank (1 Wood, −2) and Fuel Ledger Stoke (1 Wood, +2); Wood is paid
+ * only on reveal.
  */
 
 import { describe, expect, it } from "vitest";
@@ -49,8 +52,8 @@ function threeWithFlawed(extra: Partial<StateSpec> = {}): StateSpec {
   });
 }
 
-function submitCommand(card: SubmitContributionCommand["card"], fuelLedger = false, windowId = WINDOW): SubmitContributionCommand {
-  return { type: "SUBMIT_CONTRIBUTION", windowId, card, fuelLedger };
+function submitCommand(card: SubmitContributionCommand["card"], windowId = WINDOW): SubmitContributionCommand {
+  return { type: "SUBMIT_CONTRIBUTION", windowId, card };
 }
 
 function expectError(error: GameRuleError | null, code: GameRuleError["code"]): void {
@@ -159,8 +162,8 @@ describe("secret simultaneous submission (L672–673)", () => {
     expect(events).toEqual([{ type: "CONTRIBUTION_SUBMITTED", playerId: "p3", windowId: WINDOW }]);
     expect(table.state.phase).toMatchObject({ type: "firing_contributions", submittedPlayerIds: ["p3"] });
     expect(table.state.firing?.contributions).toBeNull();
-    expect(table.privateState.submissions).toEqual({ p3: { card: "STOKE", fuelLedger: false } });
-    // Wood committed stays in the player's total until it is paid (L504).
+    expect(table.privateState.submissions).toEqual({ p3: { card: "STOKE" } });
+    // Wood is paid only on reveal, so nothing is set aside (v1.6.2 L508).
     expect(table.player("p3").resources.wood).toBe(2);
     expect(table.prompt().actorIds).toEqual(["p1", "p2"]);
     table.contribute("p1", "BANK");
@@ -177,7 +180,7 @@ describe("secret simultaneous submission (L672–673)", () => {
     const result = table.tryContribute("p1", "STOKE");
     expect(result.ok).toBe(false);
     expect(table.state).toEqual(before);
-    expect(table.privateState.submissions["p1"]).toEqual({ card: "TEND", fuelLedger: false });
+    expect(table.privateState.submissions["p1"]).toEqual({ card: "TEND" });
   });
 
   it("the last submission reveals every card together, then pays (L673)", () => {
@@ -197,9 +200,9 @@ describe("secret simultaneous submission (L672–673)", () => {
         type: "CONTRIBUTIONS_REVEALED",
         windowId: WINDOW,
         contributions: {
-          p1: { card: "TEND", fuelLedger: false, heat: 0, woodPaid: 0 },
-          p2: { card: "STOKE", fuelLedger: false, heat: 1, woodPaid: 1 },
-          p3: { card: "BANK", fuelLedger: false, heat: -1, woodPaid: 1 },
+          p1: { card: "TEND", heat: 0, woodPaid: 0 },
+          p2: { card: "STOKE", heat: 1, woodPaid: 1 },
+          p3: { card: "BANK", heat: -1, woodPaid: 1 },
         },
       },
     ]);
@@ -231,7 +234,7 @@ describe("secret simultaneous submission (L672–673)", () => {
 
   it("a command for another window is PRIVATE_WINDOW_MISMATCH", () => {
     const table = openFiringTable(threeParticipants());
-    const error = validateContribution(table.actorView("p1"), table.privateState, submitCommand("TEND", false, "test-game:r0:contributions"));
+    const error = validateContribution(table.actorView("p1"), table.privateState, submitCommand("TEND", "test-game:r0:contributions"));
     expectError(error, "PRIVATE_WINDOW_MISMATCH");
   });
 
@@ -263,7 +266,7 @@ describe("Base Heat (L263, L674)", () => {
     const high = openFiringTable(
       threeParticipants({ kilnDie: 3, fireDeck: [0], players: [{ techs: ["T12"] }, {}, {}] }),
     );
-    high.contribute("p1", "STOKE", true);
+    high.contribute("p1", "FUEL_LEDGER_STOKE");
     high.contribute("p2", "STOKE");
     const highEvents = high.contribute("p3", "STOKE");
     expect(eventsOfType(highEvents, "BASE_HEAT_DETERMINED")[0]).toEqual({
@@ -274,14 +277,14 @@ describe("Base Heat (L263, L674)", () => {
       baseHeat: 5,
     });
     const low = openFiringTable(threeParticipants({ kilnDie: 1, fireDeck: [0], players: [{ techs: ["T12"] }, {}, {}] }));
-    low.contribute("p1", "BANK", true);
+    low.contribute("p1", "FUEL_LEDGER_BANK");
     low.contribute("p2", "BANK");
     const lowEvents = low.contribute("p3", "TEND");
     expect(eventsOfType(lowEvents, "BASE_HEAT_DETERMINED")[0]).toMatchObject({ contributionSum: -3, unclamped: -2, baseHeat: 0 });
   });
 });
 
-describe("Fuel Ledger (T12, v1.6.2 L637)", () => {
+describe("Fuel Ledger as Contribution cards (T12, v1.6.2 L266, L634, change 26)", () => {
   function ledgerTable(wood: number): ReturnType<typeof openFiringTable> {
     return openFiringTable({
       players: [{ techs: ["T12"], resources: { wood } }, {}],
@@ -290,18 +293,19 @@ describe("Fuel Ledger (T12, v1.6.2 L637)", () => {
     });
   }
 
+  it("the owner holds 5 Contribution cards, everybody else 3 (the cards come with the tile)", () => {
+    const table = ledgerTable(2);
+    expect(table.player("p1").contributionCards).toEqual(["BANK", "TEND", "STOKE", "FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"]);
+    expect(table.player("p2").contributionCards).toEqual(["BANK", "TEND", "STOKE"]);
+  });
+
   it("the owner's Bank and Stoke cost no Wood: ±1 for 0 Wood, even with 0 Wood", () => {
     const stoke = ledgerTable(0);
     expect(validateContribution(stoke.actorView("p1"), stoke.privateState, submitCommand("STOKE"))).toBeNull();
     expect(validateContribution(stoke.actorView("p1"), stoke.privateState, submitCommand("BANK"))).toBeNull();
     stoke.contribute("p1", "STOKE");
     const events = stoke.contribute("p2", "TEND");
-    expect(eventsOfType(events, "CONTRIBUTIONS_REVEALED")[0]?.contributions["p1"]).toEqual({
-      card: "STOKE",
-      fuelLedger: false,
-      heat: 1,
-      woodPaid: 0,
-    });
+    expect(eventsOfType(events, "CONTRIBUTIONS_REVEALED")[0]?.contributions["p1"]).toEqual({ card: "STOKE", heat: 1, woodPaid: 0 });
     // Nothing is paid, so no Wood changes hands for p1.
     expect(eventsOfType(events, "RESOURCES_CHANGED").filter((event) => event.playerId === "p1" && event.wood !== 0)).toEqual([]);
     expect(eventsOfType(events, "BASE_HEAT_DETERMINED")[0]?.baseHeat).toBe(3);
@@ -314,29 +318,26 @@ describe("Fuel Ledger (T12, v1.6.2 L637)", () => {
     expect(eventsOfType(bankEvents, "BASE_HEAT_DETERMINED")[0]?.baseHeat).toBe(1);
   });
 
-  it("committing 1 Wood makes Stoke +2 and Bank −2 for that 1 Wood; revealed together", () => {
+  it("Fuel Ledger Stoke is +2 and Fuel Ledger Bank −2, each for its printed 1 Wood, paid only on reveal", () => {
     const stoke = ledgerTable(1);
-    stoke.contribute("p1", "STOKE", true);
-    expect(stoke.privateState.submissions["p1"]).toEqual({ card: "STOKE", fuelLedger: true });
+    expect(stoke.contribute("p1", "FUEL_LEDGER_STOKE")).toEqual([{ type: "CONTRIBUTION_SUBMITTED", playerId: "p1", windowId: WINDOW }]);
+    expect(stoke.privateState.submissions["p1"]).toEqual({ card: "FUEL_LEDGER_STOKE" });
+    // Nothing is set aside before the reveal (v1.6.2 L508): the Wood is still p1's.
+    expect(stoke.player("p1").resources.wood).toBe(1);
     const events = stoke.contribute("p2", "TEND");
-    expect(eventsOfType(events, "CONTRIBUTIONS_REVEALED")[0]?.contributions["p1"]).toEqual({
-      card: "STOKE",
-      fuelLedger: true,
-      heat: 2,
-      woodPaid: 1,
-    });
+    expect(eventsOfType(events, "CONTRIBUTIONS_REVEALED")[0]?.contributions["p1"]).toEqual({ card: "FUEL_LEDGER_STOKE", heat: 2, woodPaid: 1 });
     expect(eventsOfType(events, "RESOURCES_CHANGED")[0]).toMatchObject({ playerId: "p1", wood: -1, reason: "contribution" });
     expect(eventsOfType(events, "BASE_HEAT_DETERMINED")[0]?.baseHeat).toBe(4);
     expect(stoke.player("p1").resources.wood).toBe(0);
 
     const bank = ledgerTable(1);
-    bank.contribute("p1", "BANK", true);
+    bank.contribute("p1", "FUEL_LEDGER_BANK");
     const bankEvents = bank.contribute("p2", "TEND");
-    expect(eventsOfType(bankEvents, "CONTRIBUTIONS_REVEALED")[0]?.contributions["p1"]).toMatchObject({ heat: -2, woodPaid: 1 });
+    expect(eventsOfType(bankEvents, "CONTRIBUTIONS_REVEALED")[0]?.contributions["p1"]).toEqual({ card: "FUEL_LEDGER_BANK", heat: -2, woodPaid: 1 });
     expect(eventsOfType(bankEvents, "BASE_HEAT_DETERMINED")[0]?.baseHeat).toBe(0);
   });
 
-  it("a non-owner still pays 1 Wood for Bank or Stoke (L256–258)", () => {
+  it("a non-owner still pays 1 Wood for Bank or Stoke (v1.6.2 L262–264)", () => {
     const table = ledgerTable(0);
     table.contribute("p1", "TEND");
     const events = table.contribute("p2", "STOKE");
@@ -344,17 +345,27 @@ describe("Fuel Ledger (T12, v1.6.2 L637)", () => {
     expect(table.player("p2").resources.wood).toBe(1);
   });
 
-  it("the commitment needs the Tech, a Bank or Stoke card, and 1 Wood", () => {
-    const noTech = openFiringTable(threeParticipants());
-    expectError(validateContribution(noTech.actorView("p1"), noTech.privateState, submitCommand("STOKE", true)), "TECH_NOT_OWNED");
-    const tend = ledgerTable(5);
-    expectError(validateContribution(tend.actorView("p1"), tend.privateState, submitCommand("TEND", true)), "INVALID_CHOICE");
+  it("a Fuel Ledger card needs the Tech (CONTRIBUTION_CARD_NOT_HELD) and its 1 Wood (INVALID_CONTRIBUTION)", () => {
+    const noTech = openFiringTable(threeParticipants({ players: [{ resources: { wood: 5 } }, {}, {}] }));
+    for (const card of ["FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"] as const) {
+      const error = validateContribution(noTech.actorView("p1"), noTech.privateState, submitCommand(card));
+      expectError(error, "CONTRIBUTION_CARD_NOT_HELD");
+      expect(error?.details).toEqual({ card });
+      expect(noTech.tryContribute("p1", card).ok).toBe(false);
+    }
     const poor = ledgerTable(0);
-    const error = validateContribution(poor.actorView("p1"), poor.privateState, submitCommand("STOKE", true));
+    const error = validateContribution(poor.actorView("p1"), poor.privateState, submitCommand("FUEL_LEDGER_STOKE"));
     expectError(error, "INVALID_CONTRIBUTION");
-    expect(error?.details).toMatchObject({ card: "STOKE", fuelLedger: true, needed: 1, have: 0 });
+    expect(error?.details).toEqual({ card: "FUEL_LEDGER_STOKE", needed: 1, have: 0 });
     expect(validateContribution(poor.actorView("p1"), poor.privateState, submitCommand("STOKE"))).toBeNull();
     expect(legalContributions(poor.view("p1"))).toEqual([submitCommand("TEND"), submitCommand("BANK"), submitCommand("STOKE")]);
+  });
+
+  it("the owner still plays exactly 1 card: a second card is CONTRIBUTION_ALREADY_SUBMITTED", () => {
+    const table = ledgerTable(3);
+    table.contribute("p1", "FUEL_LEDGER_BANK");
+    expectError(validateContribution(table.actorView("p1"), table.privateState, submitCommand("STOKE")), "CONTRIBUTION_ALREADY_SUBMITTED");
+    expect(table.privateState.submissions["p1"]).toEqual({ card: "FUEL_LEDGER_BANK" });
   });
 });
 
@@ -368,7 +379,7 @@ describe("affordability (L672) and legalContributions", () => {
     expect(legalContributions(view)).toEqual([submitCommand("TEND")]);
   });
 
-  it("lists Tend first, then Bank, Stoke and the Fuel Ledger variants, affordable only", () => {
+  it("lists Tend first, then Bank, Stoke and the Fuel Ledger cards, held and affordable only", () => {
     const table = openFiringTable({
       players: [{ techs: ["T12"], resources: { wood: 2 } }, { resources: { wood: 1 } }, { techs: ["T13"] }],
       ceramics: [shared("p1", "middle_1"), shared("p2", "high_1")],
@@ -377,8 +388,8 @@ describe("affordability (L672) and legalContributions", () => {
       submitCommand("TEND"),
       submitCommand("BANK"),
       submitCommand("STOKE"),
-      submitCommand("BANK", true),
-      submitCommand("STOKE", true),
+      submitCommand("FUEL_LEDGER_BANK"),
+      submitCommand("FUEL_LEDGER_STOKE"),
     ]);
     expect(legalContributions(table.view("p2"))).toEqual([submitCommand("TEND"), submitCommand("BANK"), submitCommand("STOKE")]);
     // Non-participants, spectators and players who already submitted get nothing.
@@ -399,7 +410,7 @@ describe("affordability (L672) and legalContributions", () => {
       const command = legalContributions(table.view("p1"))[index];
       expect(command).toBeDefined();
       if (command === undefined) return;
-      expect(table.tryContribute("p1", command.card, command.fuelLedger).ok).toBe(true);
+      expect(table.tryContribute("p1", command.card).ok).toBe(true);
     }
   });
 });
@@ -417,8 +428,10 @@ describe("createPrivateFiringState and applyContribution", () => {
     const privateDraft = createPrivateFiringState(draft);
     const ctx = testContext();
     applyContribution(draft, privateDraft, "p2", submitCommand("STOKE"), ctx);
-    expect(privateDraft.submissions).toEqual({ p2: { card: "STOKE", fuelLedger: false } });
-    expect(JSON.stringify(draft)).not.toContain("STOKE");
+    expect(privateDraft.submissions).toEqual({ p2: { card: "STOKE" } });
+    // The players' public card lists name every card they hold; the sealed choice is nowhere else.
+    expect(JSON.stringify({ ...draft, players: {} })).not.toContain("STOKE");
+    expect(draft.players).toEqual(table.state.players);
     expect(ctx.events).toEqual([{ type: "CONTRIBUTION_SUBMITTED", playerId: "p2", windowId: WINDOW }]);
   });
 });

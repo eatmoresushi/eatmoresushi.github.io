@@ -1,7 +1,8 @@
--- V1.6.2 (state schema 7, rules behaviour revision 30): new rooms only.
+-- V1.6.2 (state schema 8, rules behaviour revision 31): new rooms only.
 --
 -- Written for V1.6.1 (schema 6, r29) and edited in place for V1.6.2 before any deployment
--- (ENGINE_V1.6.2_DELTA.md §9); the file keeps its name. No V1.6.1 room was ever stored.
+-- (ENGINE_V1.6.2_DELTA.md §9), again for owner revision 3 (changes 25–27: schema 8, r31, the
+-- five Contribution cards); the file keeps its name. No V1.6.1 room was ever stored.
 --
 -- Older rooms, saves, private submissions and events stay as readable history; they are
 -- never rewritten or relabelled. Every write path refuses them by rules version, schema
@@ -12,7 +13,7 @@
 --   constraints  rooms_rules_version_check, rooms_content_version_check,
 --                room_ai_seats_policy_version_check,
 --                private_submissions_contribution_card_check,
---                private_submissions_fuel_ledger_card_check
+--                private_submissions_fuel_ledger_card_check (historical rows only)
 --                (rooms_v14_fingerprint_check is kept for V1.4 rows; V1.6.2 adds its own)
 --   functions    server_create_room, server_join_room, server_add_computer_seat,
 --                server_commit_start, server_commit_transition (the five r23–r28 gates of
@@ -38,14 +39,14 @@ alter table public.rooms add constraint rooms_content_version_check
     '1.6.2'
   ));
 
--- The V1.4 fingerprint check stays for V1.4 rows; V1.6.2 rooms carry an r30 fingerprint.
+-- The V1.4 fingerprint check stays for V1.4 rows; V1.6.2 rooms carry an r31 fingerprint.
 alter table public.rooms drop constraint if exists rooms_v162_fingerprint_check;
 alter table public.rooms add constraint rooms_v162_fingerprint_check
   check (
     rules_version <> '1.6.2'
     or (
       content_version = '1.6.2'
-      and coalesce(content_digest, '') ~ '^r30-[0-9a-f]{16}$'
+      and coalesce(content_digest, '') ~ '^r31-[0-9a-f]{16}$'
     )
   );
 
@@ -64,15 +65,17 @@ alter table private.room_ai_seats add constraint room_ai_seats_policy_version_ch
     or policy_version ~ '^rules-v1\.6\.2-[a-z0-9]+(-[a-z0-9]+)*$'
   );
 
--- ── Private submissions: the V1.6.2 card set and the Fuel Ledger commitment ──────────
+-- ── Private submissions: the V1.6.2 card set ─────────────────────────────────────────
 
--- V1.6.2 has exactly three Contribution cards; Fuel Ledger is a separate secret commitment
--- (T12, v1.6.2 L637) stored in the reused `use_fuel_ledger` column. NOT VALID: enforced on every
--- new or changed row, while historical V1.4 BANK_2/STOKE_2 rows remain as audit history.
--- A null card is a pre-card numeric row (`private_submissions_contribution_present_check`).
+-- V1.6.2 has five Contribution cards (change 26, v1.6.2 L93, L266, L634): Bank, Tend and Stoke,
+-- and Fuel Ledger's own FUEL_LEDGER_BANK and FUEL_LEDGER_STOKE, which replaced the secret Wood
+-- commitment. A V1.6.2 row stores only its card; `use_fuel_ledger` stays false. NOT VALID:
+-- enforced on every new or changed row, while historical V1.4 BANK_2/STOKE_2 rows remain as
+-- audit history. A null card is a pre-card numeric row
+-- (`private_submissions_contribution_present_check`).
 alter table private.private_submissions drop constraint if exists private_submissions_contribution_card_check;
 alter table private.private_submissions add constraint private_submissions_contribution_card_check
-  check (contribution_card is null or contribution_card in ('BANK', 'TEND', 'STOKE')) not valid;
+  check (contribution_card is null or contribution_card in ('BANK', 'TEND', 'STOKE', 'FUEL_LEDGER_BANK', 'FUEL_LEDGER_STOKE')) not valid;
 
 alter table private.private_submissions
   add column if not exists use_fuel_ledger boolean not null default false;
@@ -87,7 +90,7 @@ alter table private.private_submissions add constraint private_submissions_fuel_
   );
 
 comment on column private.private_submissions.use_fuel_ledger is
-  'V1.6.2: Fuel Ledger''s sealed commitment (T12) for this BANK or STOKE card, making it -2/+2 at the reveal. Pre-V1.4 rows: the V1.2.2 commitment. V1.4 rows recorded BANK_2/STOKE_2 cards instead.';
+  'History only. Pre-V1.4 rows: the V1.2.2 Fuel Ledger commitment. V1.4 rows recorded BANK_2/STOKE_2 cards instead. V1.6.2 rows never set it: Fuel Ledger brings its own FUEL_LEDGER_BANK and FUEL_LEDGER_STOKE cards (change 26).';
 
 create or replace function public.server_load_private_submissions(p_room_id uuid, p_window_id text)
 returns jsonb language sql stable security definer set search_path = private, pg_temp
@@ -95,7 +98,6 @@ as $$
   select coalesce(jsonb_agg(jsonb_build_object(
     'roomId', ps.room_id, 'windowId', ps.window_id, 'playerId', ps.player_id,
     'commandId', ps.command_id, 'card', ps.contribution_card,
-    'fuelLedger', ps.use_fuel_ledger,
     'revealedRevision', ps.revealed_revision
   ) order by ps.submitted_at), '[]'::jsonb)
   from private.private_submissions ps
@@ -108,7 +110,6 @@ as $$
   select jsonb_build_object(
     'roomId', ps.room_id, 'windowId', ps.window_id, 'playerId', ps.player_id,
     'commandId', ps.command_id, 'card', ps.contribution_card,
-    'fuelLedger', ps.use_fuel_ledger,
     'revealedRevision', ps.revealed_revision
   ) from private.private_submissions ps
   where ps.room_id = p_room_id and ps.player_id = p_player_id and ps.revealed_revision is null
@@ -127,7 +128,7 @@ set search_path = public, private, extensions, pg_temp
 as $$
 declare v_room jsonb; v_seat jsonb;
 begin
-  if coalesce(p_content_digest, '') !~ '^r30-[0-9a-f]{16}$' then
+  if coalesce(p_content_digest, '') !~ '^r31-[0-9a-f]{16}$' then
     return jsonb_build_object('status', 'error', 'code', 'session_not_active');
   end if;
   insert into public.rooms (id, code, status, host_seat_id, rules_version, content_version, latest_revision, content_digest)
@@ -186,7 +187,7 @@ begin
   end if;
   if v_room.rules_version <> '1.6.2'
      or v_room.content_version <> '1.6.2'
-     or coalesce(v_room.content_digest, '') !~ '^r30-[0-9a-f]{16}$' then
+     or coalesce(v_room.content_digest, '') !~ '^r31-[0-9a-f]{16}$' then
     return jsonb_build_object('status', 'error', 'code', 'session_not_active');
   end if;
   select candidate into v_seat_index
@@ -275,7 +276,7 @@ begin
   end if;
   if v_room.rules_version <> '1.6.2'
      or v_room.content_version <> '1.6.2'
-     or coalesce(v_room.content_digest, '') !~ '^r30-[0-9a-f]{16}$'
+     or coalesce(v_room.content_digest, '') !~ '^r31-[0-9a-f]{16}$'
      or coalesce(p_policy_version, '') !~ '^rules-v1\.6\.2-[a-z0-9]+(-[a-z0-9]+)*$' then
     return jsonb_build_object('status', 'error', 'code', 'session_not_active');
   end if;
@@ -379,11 +380,11 @@ begin
   end if;
   if coalesce(v_room.rules_version, '') <> '1.6.2'
      or coalesce(v_room.content_version, '') <> '1.6.2'
-     or coalesce(v_room.content_digest, '') !~ '^r30-[0-9a-f]{16}$'
+     or coalesce(v_room.content_digest, '') !~ '^r31-[0-9a-f]{16}$'
      or coalesce(p_state->>'rulesVersion', '') <> '1.6.2'
      or coalesce(p_public_state->>'rulesVersion', '') <> '1.6.2'
-     or coalesce((p_state->>'schemaVersion')::integer, -1) <> 7
-     or coalesce((p_public_state->>'schemaVersion')::integer, -1) <> 7 then
+     or coalesce((p_state->>'schemaVersion')::integer, -1) <> 8
+     or coalesce((p_public_state->>'schemaVersion')::integer, -1) <> 8 then
     return jsonb_build_object('status', 'error', 'code', 'session_not_active');
   end if;
   select count(*) into v_count from public.room_players where room_id = p_room_id;
@@ -457,7 +458,7 @@ declare
   v_head private.game_heads%rowtype; v_prior private.processed_commands%rowtype;
   v_sequence bigint; v_previous_hash text; v_event_hash text;
   v_full_event jsonb; v_public_event jsonb; v_index integer; v_window_id text;
-  v_card text; v_fuel_ledger boolean;
+  v_card text;
 begin
   select * into v_head from private.game_heads where room_id = p_room_id for update;
   if not found then return jsonb_build_object('status', 'error', 'code', 'room_not_found'); end if;
@@ -480,14 +481,14 @@ begin
        where room.id = p_room_id
          and room.rules_version = '1.6.2'
          and room.content_version = '1.6.2'
-         and coalesce(room.content_digest, '') ~ '^r30-[0-9a-f]{16}$'
+         and coalesce(room.content_digest, '') ~ '^r31-[0-9a-f]{16}$'
      )
      or coalesce(v_head.state_json->>'rulesVersion', '') <> '1.6.2'
-     or coalesce((v_head.state_json->>'schemaVersion')::integer, -1) <> 7
+     or coalesce((v_head.state_json->>'schemaVersion')::integer, -1) <> 8
      or coalesce(p_next_state->>'rulesVersion', '') <> '1.6.2'
      or coalesce(p_public_state->>'rulesVersion', '') <> '1.6.2'
-     or coalesce((p_next_state->>'schemaVersion')::integer, -1) <> 7
-     or coalesce((p_public_state->>'schemaVersion')::integer, -1) <> 7 then
+     or coalesce((p_next_state->>'schemaVersion')::integer, -1) <> 8
+     or coalesce((p_public_state->>'schemaVersion')::integer, -1) <> 8 then
     raise exception 'unsupported rules or schema version';
   end if;
   -- Hidden information never reaches a public row (DESIGN §4).
@@ -505,13 +506,10 @@ begin
   if p_private_submission is not null then
     v_window_id := p_private_submission->>'windowId';
     v_card := p_private_submission->>'card';
+    -- One of the five V1.6.2 cards, and no Fuel Ledger flag beside it (change 26).
     if coalesce(v_window_id, '') = ''
-       or coalesce(v_card, '') not in ('BANK', 'TEND', 'STOKE')
-       or coalesce(jsonb_typeof(p_private_submission->'fuelLedger'), '') <> 'boolean' then
-      raise exception 'invalid private Contribution payload';
-    end if;
-    v_fuel_ledger := (p_private_submission->>'fuelLedger')::boolean;
-    if v_fuel_ledger and v_card not in ('BANK', 'STOKE') then
+       or coalesce(v_card, '') not in ('BANK', 'TEND', 'STOKE', 'FUEL_LEDGER_BANK', 'FUEL_LEDGER_STOKE')
+       or p_private_submission ? 'fuelLedger' then
       raise exception 'invalid private Contribution payload';
     end if;
     if exists (select 1 from private.private_submissions
@@ -519,9 +517,9 @@ begin
       return jsonb_build_object('status', 'error', 'code', 'private_duplicate');
     end if;
     insert into private.private_submissions (
-      room_id, window_id, player_id, command_id, contribution_card, use_fuel_ledger
+      room_id, window_id, player_id, command_id, contribution_card
     ) values (
-      p_room_id, v_window_id, p_actor_id, p_command_id, v_card, v_fuel_ledger);
+      p_room_id, v_window_id, p_actor_id, p_command_id, v_card);
   end if;
   insert into private.game_commands (room_id, command_id, actor_player_id, revision, command_json, is_private)
   values (p_room_id, p_command_id, p_actor_id, p_next_revision, p_command, p_private_submission is not null);

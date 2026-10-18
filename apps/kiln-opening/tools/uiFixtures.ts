@@ -115,7 +115,6 @@ import {
 import type {
   ActorView,
   AuthoritativeCommand,
-  CommissionPick,
   DecisionPrompt,
   GameEvent,
   GameState,
@@ -126,6 +125,7 @@ import type {
   PrivateFiringState,
   PublicGameEvent,
   RoundNumber,
+  SelectPick,
   TechId,
 } from "../src/game/index.ts";
 import { createStrategicComputerPolicy, fallbackComputerCommands } from "../src/multiplayer/index.ts";
@@ -699,9 +699,9 @@ function findWorkPhaseR2(): Found {
   return best;
 }
 
-/** 2. 4-player Round 3, Commission Market: the viewer's Shifu has just been placed and is
- * looking at the top 3 (private, v1.6.2 L196); the reservations from the display and the look
- * follow in COMMISSION_CHOOSE. */
+/** 2. 4-player Round 3, Commission Market: the viewer's Shifu has just been placed and its
+ * Select 3 is open (private look, v1.6.2 L202); the reservations from the display and the look
+ * follow in SELECT_CHOOSE. */
 function findCommissionLook(): Found {
   for (let seed = 1; seed <= 60; seed += 1) {
     const table = new Table(seed, 4);
@@ -717,7 +717,7 @@ function findCommissionLook(): Found {
         const shifu = Object.values(p.workers).find((w) => w.kind === "shifu" && w.placement === null);
         if (shifu === undefined || view.game.counts.mainDeck + view.game.counts.mainDiscard < 4) return null;
         const options = commissionOptions(view, "shifu");
-        if (options.lookCount < options.lookSize || options.faceUpSlots.length === 0) return null;
+        if (options.lookCount < options.n || options.faceUpSlots.length === 0) return null;
         steeredSeat = actor;
         return {
           command: { type: "PLACE_COMMISSION_MARKET", workerId: shifu.id },
@@ -734,7 +734,7 @@ function findCommissionLook(): Found {
         phase.activePlayerId === actor &&
         phase.step.kind === "commission_market" &&
         phase.step.effect === "shifu" &&
-        phase.step.lookedCount === 3
+        phase.step.select.lookedCount === 3
       );
     };
     const actor = table.runUntil((t, a) => t.state.round > 3 || stop(t, a), steer);
@@ -748,7 +748,7 @@ function findCommissionLook(): Found {
           id: "m2_commission_market_look_r3_4p",
           title: "4P · Round 3 · Commission Market · Shifu mid-action with private top-3 look",
           description:
-            "The viewer's Shifu was placed at the Commission Market, which opened the private look at the top 3 Main Orders (v1.6.2 L196). own.pendingLook holds the 3 Orders; other players only see counts.pendingLook (kind + count). The viewer now reserves 1 or 2 from the display and those 3 (COMMISSION_CHOOSE); a face-up position stays empty until the turn ends, and the looked cards not reserved go face down to the bottom of the Main Order deck (change 24). No resource is gained.",
+            "The viewer's Shifu was placed at the Commission Market, which opened its Select 3: a private look at the top 3 Main Orders (v1.6.2 L64, L202). own.pendingLook holds the 3 Orders; other players only see counts.pendingLook (kind + count). The viewer now reserves 1 or 2, in any mix of those 3 and the display (SELECT_CHOOSE); a face-up position stays empty until the turn ends, and the looked cards not reserved go face down to the bottom of the Main Order deck (change 24). No resource is gained.",
         },
         (view) => ({
           commissionOptions: commissionOptions(view, "shifu"),
@@ -1044,14 +1044,14 @@ function findHandLimitSteered(): Found {
         // As many reservations as the effect allows: looked cards first, then face-up Orders.
         const looked = lookedOrderOptions(view);
         if (looked?.kind !== "commission_market") return null;
-        const picks: CommissionPick[] = [
-          ...looked.orderIds.map((orderId): CommissionPick => ({ kind: "looked", orderId })),
-          ...looked.faceUpSlots.flatMap((slotIndex): CommissionPick[] => {
+        const picks: SelectPick[] = [
+          ...looked.orderIds.map((orderId): SelectPick => ({ kind: "looked", orderId })),
+          ...looked.faceUpSlots.flatMap((slotIndex): SelectPick[] => {
             const orderId = t.state.market.display[slotIndex];
             return orderId === null || orderId === undefined ? [] : [{ kind: "face_up", slotIndex, orderId }];
           }),
-        ].slice(0, phase.step.maxReservations);
-        return { command: { type: "COMMISSION_CHOOSE", reservations: picks }, why: `Reserve ${picks.length} Order(s) from the look and the display.` };
+        ].slice(0, phase.step.select.maxReservations);
+        return { command: { type: "SELECT_CHOOSE", reservations: picks }, why: `Reserve ${picks.length} Order(s) from the look and the display.` };
       }
       return null;
     };
@@ -1102,7 +1102,7 @@ function findFinal(): Found {
             id: `m8_final_results_${playerCount}p`,
             title: `${playerCount}P · Final results`,
             description:
-              "FinalResult with each player's breakdown: orders, kilnAbilities, recognitionOverflow, imperialAudience, techs (recorded when gained, A1 — never added again at game end), exhibition (quality VP + Shape/Glaze diversity bonuses), connoisseur, coins, total; standings with tie-break values (Recognition, printed Crowns, Masterpieces) and resolvedBy.",
+              "FinalResult with each player's breakdown: orders, kilnAbilities, recognitionOverflow, imperialAudience, exhibition (quality VP + Shape/Glaze diversity bonuses), connoisseur, coins, total (Advanced Techs score no VP, v1.6.2 change 27); standings with tie-break values (Recognition, printed Crowns, Masterpieces) and resolvedBy.",
             notes: [`resolvedBy = ${result.resolvedBy}`],
           },
           (v) => ({
@@ -1325,7 +1325,7 @@ function findContributions(): Found {
             id: "m9_contributions_step1_3p",
             title: "3P · Firing · step 1 · secret Contributions",
             description:
-              "Contributions are chosen secretly and simultaneously. phase.submittedPlayerIds shows who has submitted, never what; the viewer's own choice is not yet sealed. contributionOptions lists Tend / Bank / Stoke (and Fuel Ledger variants when owned) with Wood cost and affordability.",
+              "Contributions are chosen secretly and simultaneously. phase.submittedPlayerIds shows who has submitted, never what; the viewer's own choice is not yet sealed. contributionOptions lists 1 option per Contribution card the viewer holds: Tend / Bank / Stoke, and Fuel Ledger Bank / Fuel Ledger Stoke when Fuel Ledger is owned (v1.6.2 change 26), with Wood cost (paid on reveal) and affordability.",
           },
           (view) => ({
             ...firingStageSelectors(view),
@@ -1567,43 +1567,43 @@ function workStep(table: Table, actor: PlayerId): WorkStep | null {
   return phase.type === "work_turn" && phase.activePlayerId === actor ? phase.step : null;
 }
 
-/** m19: an Apprentice at the Commission Market, looking at the top 2 (v1.6.2 L195). */
+/** m19: an Apprentice at the Commission Market, its Select 2 open (v1.6.2 L201). */
 function findCommissionApprenticeLook(): Captured {
   return search({
     meta: {
       id: "m19_commission_apprentice_look",
-      title: "3P · Work Phase · Commission Market: Apprentice looks at the top 2 (private)",
+      title: "3P · Work Phase · Commission Market: Apprentice Selects 2 (private look)",
       description:
-        "The viewer's Apprentice was placed at the Commission Market, which opened a private look at the top 2 Main Orders (v1.6.2 L195; lookedOrderOptions). They reserve exactly 1, from the display or those 2 (COMMISSION_CHOOSE); a face-up position stays empty until their turn ends, and the looked card not reserved goes face down to the bottom of the Main Order deck (change 24). No resource is gained.",
+        "The viewer's Apprentice was placed at the Commission Market, which opened its Select 2: a private look at the top 2 Main Orders (v1.6.2 L64, L201; lookedOrderOptions). They reserve exactly 1, from those 2 or the display (SELECT_CHOOSE); a face-up position stays empty until their turn ends, and the looked cards not reserved go face down to the bottom of the Main Order deck (change 24). No resource is gained.",
     },
     playerCounts: [3],
     seeds: 30,
     steer: () => (t, actor) => {
       if (t.state.round < 2 || !beforeAction(t, actor)) return null;
       const options = commissionOptions(t.view(actor), "apprentice");
-      if (options.lookCount < options.lookSize || options.faceUpSlots.length === 0) return null;
+      if (options.lookCount < options.n || options.faceUpSlots.length === 0) return null;
       const worker = placementOptions(t.playerView(actor))
         .find((o) => o.locationId === "commission_market")
         ?.workers.find((w) => w.kind === "apprentice" && !w.seniorApprentice && w.legal);
       return worker === undefined
         ? null
-        : { command: { type: "PLACE_COMMISSION_MARKET", workerId: worker.workerId }, why: "An Apprentice to the Commission Market: the placement opens the private top-2 look." };
+        : { command: { type: "PLACE_COMMISSION_MARKET", workerId: worker.workerId }, why: "An Apprentice to the Commission Market: the placement opens its Select 2." };
     },
     at: (t, actor) => {
       const step = workStep(t, actor);
-      return step?.kind === "commission_market" && step.effect === "apprentice" && step.lookedCount === 2 ? actor : null;
+      return step?.kind === "commission_market" && step.effect === "apprentice" && step.select.lookedCount === 2 ? actor : null;
     },
     giveUp: (t) => t.state.round > 3,
-    fallback: "Commission Market: Apprentice top-2 look, 1 reservation",
+    fallback: "Commission Market: Apprentice Select 2, 1 reservation",
     hint: 1,
   });
 }
 
-/** m20: the Colour Samples swap's private look of 2 (v1.6.2 L617, change 24). */
+/** m20: the Colour Samples swap's Select 3 (v1.6.2 L622, changes 24–25). */
 function findColourSamplesSwap(): Captured {
   const swap: Steer = (t, actor) => {
     if (techOwner(t, "T10") !== actor || !beforeAction(t, actor)) return null;
-    const discard = colourSamplesSwapOptions(t.playerView(actor)).discards.find((d) => d.legal && d.lookCount === 2);
+    const discard = colourSamplesSwapOptions(t.playerView(actor)).discards.find((d) => d.legal && d.lookCount === 3);
     return discard === undefined
       ? null
       : { command: { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: discard.orderId }, why: "The Colour Samples owner swaps a held Order before their worker action." };
@@ -1613,7 +1613,7 @@ function findColourSamplesSwap(): Captured {
       id: "m20_colour_samples_swap_look",
       title: "3P · Work Phase · Colour Samples swap: reserve 1 of 2 (private)",
       description:
-        "Before their worker action the viewer used the Colour Samples swap (T10, once per round): they discarded 1 held Order (a Main Order face down to the discard, a Starting Order to the box) and now look privately at the top 2 Main Orders. They reserve 1 (COLOUR_SAMPLES_SWAP_CHOOSE); the other goes face down to the bottom of the Main Order deck (v1.6.2 L617, change 24). Then they place a worker as usual.",
+        "Before their worker action the viewer used the Colour Samples swap (T10, once per round): they discarded 1 held Order (a Main Order face down to the discard, a Starting Order to the box) and their Select 3 is open: a private look at the top 3 Main Orders. They reserve 1 of those 3 or 1 face-up Main Order (SELECT_CHOOSE; a face-up position stays empty until their turn ends); the looked cards not reserved go face down to the bottom of the Main Order deck (v1.6.2 L622, changes 24–25). Then they place a worker as usual.",
     },
     playerCounts: [3],
     seeds: 30,
@@ -1833,7 +1833,7 @@ function newMoments(): Captured[] {
       meta: {
         id: "m17_after_action",
         title: "3P · Work Phase · after-action window (Colour Samples swap)",
-        description: "The viewer owns Colour Samples (T10): after their worker action they may swap 1 held Order once this round (discard it, privately look at the top 2 Main Orders, reserve 1; the other goes to the bottom of the Main Order deck, change 24), use Imperial Priority if they have it, or end the turn (colourSamplesSwapOptions, imperialPriorityOptions).",
+        description: "The viewer owns Colour Samples (T10): after their worker action they may swap 1 held Order once this round (discard it, then Select 3: privately look at the top 3 Main Orders and reserve 1 of them or 1 face-up Main Order; the looked cards not reserved go to the bottom of the Main Order deck, changes 24–25), use Imperial Priority if they have it, or end the turn (colourSamplesSwapOptions, imperialPriorityOptions).",
       },
       playerCounts: [3],
       seeds: 30,

@@ -124,7 +124,7 @@ describe("V1.6.2 multiplayer privacy", () => {
     expectAbsent(opened.game, top);
     expectAbsent(opened.events, top);
 
-    const result = await command(harness, "P1", { type: "COMMISSION_CHOOSE", reservations: [{ kind: "looked", orderId: kept }] });
+    const result = await command(harness, "P1", { type: "SELECT_CHOOSE", reservations: [{ kind: "looked", orderId: kept }] });
     const reserved = result.events.find((event) => event.type === "ORDER_RESERVED");
     expect(reserved).toMatchObject({ type: "ORDER_RESERVED", playerId: "P1", via: "commission_market", source: "looked", orderId: null });
     expect(reserved).not.toHaveProperty("secret");
@@ -223,8 +223,9 @@ describe("V1.6.2 multiplayer privacy", () => {
     const { harness } = await started();
     const before = await headState(harness);
     for (const malformed of [
-      { type: "SUBMIT_CONTRIBUTION", windowId: "w", card: "TEND" },
-      { type: "SUBMIT_CONTRIBUTION", windowId: "w", card: "BANK_2", fuelLedger: false },
+      // The retired V1.6.2 Fuel Ledger commitment flag (change 26) and a V1.4 card.
+      { type: "SUBMIT_CONTRIBUTION", windowId: "w", card: "TEND", fuelLedger: false },
+      { type: "SUBMIT_CONTRIBUTION", windowId: "w", card: "BANK_2" },
       { type: "SUBMIT_WOOD_CONTRIBUTION", windowId: "w", card: "TEND" },
       { type: "SELECT_KILN", kilnId: "XX" },
       "SELECT_KILN",
@@ -237,10 +238,13 @@ describe("V1.6.2 multiplayer privacy", () => {
     expect(await headState(harness)).toEqual(before);
   });
 
-  it("refuses to project any save that is not schema 7 under V1.6.2", () => {
+  it("refuses to project any save that is not schema 8 under V1.6.2", () => {
     const legacy = { schemaVersion: 5, rulesVersion: "1.4" } as unknown as GameState;
-    expect(() => projectPublicGameState(legacy)).toThrow("Only schema-7 V1.6.2 games");
+    expect(() => projectPublicGameState(legacy)).toThrow("Only schema-8 V1.6.2 games");
     const v161 = { schemaVersion: 6, rulesVersion: "1.6.1" } as unknown as GameState;
-    expect(() => projectPublicGameState(v161)).toThrow("Only schema-7 V1.6.2 games");
+    expect(() => projectPublicGameState(v161)).toThrow("Only schema-8 V1.6.2 games");
+    // A V1.6.2 save from before owner revision 3 (changes 25–27) is refused too.
+    const revision2 = { schemaVersion: 7, rulesVersion: "1.6.2" } as unknown as GameState;
+    expect(() => projectPublicGameState(revision2)).toThrow("Only schema-8 V1.6.2 games");
   });
 });

@@ -1,7 +1,9 @@
 /**
- * Fuel Ledger through every store layer (DESIGN §4.6): the secret commitment must survive
- * the in-memory store, the Supabase adapter's row mapping and payloads, and reach the
- * engine's reveal as −2/+2. Dropping it anywhere would silently resolve it as −1/+1.
+ * Fuel Ledger's Contribution cards through every store layer (DESIGN §4.6; v1.6.2 change 26): a
+ * sealed Fuel Ledger Bank or Fuel Ledger Stoke card must survive the in-memory store, the
+ * Supabase adapter's row mapping and payloads, and reach the engine's reveal as −2/+2. The
+ * V1.6.2 secret Wood commitment (`fuelLedger`) is gone: a payload that still carries it is
+ * refused, and neither the rows nor the payloads have the flag any more.
  */
 
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -33,22 +35,30 @@ async function fuelLedgerReveal(jsonbKeyOrder: boolean): Promise<Extract<GameEve
     }),
   );
   if (seeded.phase.type !== "firing_contributions") throw new Error("Expected the Contribution window");
+  expect(seeded.players["P2"]?.contributionCards).toEqual(["BANK", "TEND", "STOKE", "FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"]);
   const windowId = seeded.phase.windowId;
-  await command(harness, "P2", { type: "SUBMIT_CONTRIBUTION", windowId, card: "STOKE", fuelLedger: true });
+  await command(harness, "P2", { type: "SUBMIT_CONTRIBUTION", windowId, card: "FUEL_LEDGER_STOKE" });
   const [stored] = await harness.store.loadPrivateSubmissions(harness.roomId, windowId);
-  expect(stored).toMatchObject({ playerId: "P2", card: "STOKE", fuelLedger: true, revealedRevision: null });
-  expect(await harness.store.findOwnPendingSubmission(harness.roomId, "P2")).toMatchObject({ fuelLedger: true });
-  const last = await command(harness, "P1", { type: "SUBMIT_CONTRIBUTION", windowId, card: "BANK", fuelLedger: false });
+  expect(stored).toEqual({
+    roomId: harness.roomId,
+    windowId,
+    playerId: "P2",
+    commandId: expect.any(String),
+    card: "FUEL_LEDGER_STOKE",
+    revealedRevision: null,
+  });
+  expect(await harness.store.findOwnPendingSubmission(harness.roomId, "P2")).toMatchObject({ card: "FUEL_LEDGER_STOKE" });
+  const last = await command(harness, "P1", { type: "SUBMIT_CONTRIBUTION", windowId, card: "BANK" });
   return last.events.find((event) => event.type === "CONTRIBUTIONS_REVEALED") as Extract<GameEvent, { type: "CONTRIBUTIONS_REVEALED" }> | undefined;
 }
 
-describe("Fuel Ledger through the store layers", () => {
-  it.each([false, true])("reveals a stored +2 commitment as +2 (jsonb key order: %s)", async (jsonbKeyOrder) => {
+describe("Fuel Ledger's cards through the store layers", () => {
+  it.each([false, true])("reveals a stored Fuel Ledger Stoke as +2 (jsonb key order: %s)", async (jsonbKeyOrder) => {
     const revealed = await fuelLedgerReveal(jsonbKeyOrder);
     expect(revealed?.contributions).toEqual({
-      P1: { card: "BANK", fuelLedger: false, heat: -1, woodPaid: 1 },
-      // Fuel Ledger (v1.6.2 L629): the owner's Stoke costs no Wood, the commitment 1.
-      P2: { card: "STOKE", fuelLedger: true, heat: 2, woodPaid: 1 },
+      P1: { card: "BANK", heat: -1, woodPaid: 1 },
+      // Fuel Ledger Stoke (v1.6.2 L266, L634): +2 for its printed 1 Wood.
+      P2: { card: "FUEL_LEDGER_STOKE", heat: 2, woodPaid: 1 },
     });
   });
 
@@ -73,8 +83,12 @@ describe("Fuel Ledger through the store layers", () => {
       response: { commandId: "c", room: harness.host.room, actorId: "P1", revision: state.revision, game: publicState, events: [], ownPrivateView: null, ownSecrets: [] },
     } satisfies Omit<CommitTransitionInput, "privateSubmission">;
     for (const privateSubmission of [
-      { windowId: "w", card: "TEND", fuelLedger: true, revealed: false },
-      { windowId: "w", card: "BANK_2", fuelLedger: false, revealed: false },
+      // The V1.6.2 commitment flag is gone (change 26), whatever its value.
+      { windowId: "w", card: "STOKE", fuelLedger: true, revealed: false },
+      { windowId: "w", card: "TEND", fuelLedger: false, revealed: false },
+      // The V1.4 cards are history.
+      { windowId: "w", card: "BANK_2", revealed: false },
+      { windowId: "w", card: "SMOTHER", revealed: false },
     ]) {
       await expect(
         harness.store.commitTransition({ ...input, privateSubmission } as unknown as CommitTransitionInput),
@@ -84,30 +98,24 @@ describe("Fuel Ledger through the store layers", () => {
     expect((await harness.store.loadHead(harness.roomId))?.revision).toBe(head.revision);
   });
 
-  it("maps the Supabase rows' use_fuel_ledger column both ways", () => {
-    const row = { roomId: "r", windowId: "w", playerId: "P1", commandId: "c", card: "BANK" as const, revealedRevision: null };
-    expect(privateSubmissionFromRow({ ...row, fuelLedger: true }).fuelLedger).toBe(true);
-    expect(privateSubmissionFromRow({ ...row, fuelLedger: false }).fuelLedger).toBe(false);
-    expect(privateSubmissionFromRow({ ...row, fuelLedger: null }).fuelLedger).toBe(false);
-    expect(privateSubmissionFromRow(row).fuelLedger).toBe(false);
-    expect(privateSubmissionPayload({ windowId: "w", card: "STOKE", fuelLedger: true, revealed: true })).toEqual({
-      windowId: "w",
-      card: "STOKE",
-      fuelLedger: true,
-      revealed: true,
-    });
+  it("maps the Supabase rows and payloads with the card only", () => {
+    const row = { roomId: "r", windowId: "w", playerId: "P1", commandId: "c", revealedRevision: null };
+    for (const card of ["BANK", "TEND", "STOKE", "FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"] as const) {
+      expect(privateSubmissionFromRow({ ...row, card })).toEqual({ ...row, card });
+      expect(privateSubmissionPayload({ windowId: "w", card, revealed: true })).toEqual({ windowId: "w", card, revealed: true });
+    }
     expect(privateSubmissionPayload(null)).toBeNull();
   });
 
-  it("sends and reads the commitment through the Supabase RPCs", async () => {
+  it("sends and reads Fuel Ledger cards through the Supabase RPCs", async () => {
     const calls: Array<{ name: string; body: Record<string, unknown> }> = [];
     const replies: Record<string, unknown> = {
       server_commit_transition: { status: "ok", value: {} },
       server_load_private_submissions: [
-        { roomId: "r", windowId: "w", playerId: "P1", commandId: "c1", card: "STOKE", fuelLedger: true, revealedRevision: null },
-        { roomId: "r", windowId: "w", playerId: "P2", commandId: "c2", card: "TEND", fuelLedger: false, revealedRevision: null },
+        { roomId: "r", windowId: "w", playerId: "P1", commandId: "c1", card: "FUEL_LEDGER_STOKE", revealedRevision: null },
+        { roomId: "r", windowId: "w", playerId: "P2", commandId: "c2", card: "TEND", revealedRevision: null },
       ],
-      server_find_own_pending: { roomId: "r", windowId: "w", playerId: "P1", commandId: "c1", card: "BANK", fuelLedger: true, revealedRevision: null },
+      server_find_own_pending: { roomId: "r", windowId: "w", playerId: "P1", commandId: "c1", card: "FUEL_LEDGER_BANK", revealedRevision: null },
     };
     vi.stubGlobal("fetch", async (url: string, init: { body: string }) => {
       const name = url.split("/rpc/")[1]!;
@@ -127,16 +135,17 @@ describe("Fuel Ledger through the store layers", () => {
       publicEvents: [],
       publicState: {},
       response: {},
-      privateSubmission: { windowId: "w", card: "STOKE", fuelLedger: true, revealed: false },
+      privateSubmission: { windowId: "w", card: "FUEL_LEDGER_STOKE", revealed: false },
     } as unknown as CommitTransitionInput);
     expect(calls[0]).toMatchObject({
       name: "server_commit_transition",
-      body: { p_private_submission: { windowId: "w", card: "STOKE", fuelLedger: true, revealed: false } },
+      body: { p_private_submission: { windowId: "w", card: "FUEL_LEDGER_STOKE", revealed: false } },
     });
-    expect((await store.loadPrivateSubmissions("r", "w")).map((record) => [record.playerId, record.card, record.fuelLedger])).toEqual([
-      ["P1", "STOKE", true],
-      ["P2", "TEND", false],
+    expect(calls[0]?.body["p_private_submission"]).not.toHaveProperty("fuelLedger");
+    expect((await store.loadPrivateSubmissions("r", "w")).map((record) => [record.playerId, record.card])).toEqual([
+      ["P1", "FUEL_LEDGER_STOKE"],
+      ["P2", "TEND"],
     ]);
-    expect(await store.findOwnPendingSubmission("r", "P1")).toMatchObject({ card: "BANK", fuelLedger: true });
+    expect(await store.findOwnPendingSubmission("r", "P1")).toMatchObject({ card: "FUEL_LEDGER_BANK" });
   });
 });

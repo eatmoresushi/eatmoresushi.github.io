@@ -1,25 +1,26 @@
 /**
  * The Colour Samples swap and Imperial Priority in the before/after-action window (L293, L434,
- * v1.6.2 L625, L645, L649, change 24, R4, R10, R11, R16, R17; DESIGN §3.2 step 1 and 3, §11 Q1).
+ * v1.6.2 L622, L641, L646, changes 24–25, R4, R10, R11, R16, R17; DESIGN §3.2 step 1 and 3, §11 Q1).
  *
  * - Both are usable in `before_action` and `after_action`, in either order (INT: before/after
- *   window). Neither is a worker action (v1.6.2 L645, L649): the swap never touches a worker, the
- *   Main display or Senior Apprentice, and Imperial Priority loads with
- *   `loadedBy: "imperial_priority"`.
- * - Colour Samples swap (T10, v1.6.2 L625): once per round, optional (R4).
+ *   window). Neither is a worker action (v1.6.2 L641, L646): the swap never touches a worker or
+ *   Senior Apprentice, and Imperial Priority loads with `loadedBy: "imperial_priority"`.
+ * - Colour Samples swap (T10, v1.6.2 L622, change 25): once per round, optional (R4).
  *   `USE_COLOUR_SAMPLES_SWAP` discards the named held Order first (a Main Order face down to the
- *   Main discard, a Starting Order to the box, L649; R17), then privately looks at the top 2
- *   Main Orders, as many as remain, reshuffling the discard only when the deck is empty as the
- *   look starts (B1, R16), so the Order just discarded may come straight back. It is legal only
- *   when that look would show at least 1 card (B1: the reservation must take an available
- *   Order). `COLOUR_SAMPLES_SWAP_CHOOSE` reserves 1 of the looked cards; the other goes face down
- *   to the bottom of the Main deck (rulebook change 24, which superseded owner ruling R14). The
- *   hand size is unchanged.
+ *   Main discard, a Starting Order to the box, L646; R17), then Selects 3 (`work/select.ts`): it
+ *   privately looks at the top 3 Main Orders, as many as remain, reshuffling the discard only
+ *   when the deck is empty as the look starts (B1, R16), so the Order just discarded may come
+ *   straight back. It is legal only when a reservation is possible: a looked card or a face-up
+ *   Main Order (B1: the reservation must take an available Order). `SELECT_CHOOSE` reserves 1 of
+ *   the looked cards or 1 face-up Main Order, whose position stays empty until the turn ends
+ *   (v1.6.2 L646); the looked cards not reserved go face down to the bottom of the Main deck in
+ *   random order (change 24, R19). The hand size is unchanged.
  * - Imperial Priority: once per game, free, glaze and load 1 Shaped vessel into your empty
  *   Imperial Kiln with a chosen public modifier (L293, R10, R11). Reworking Table may change
  *   the Shape first (DESIGN §11 Q1 default P1: allowed, using its once-per-round allowance).
- * - After each use (for the swap, after its reservation) `work/turn.afterWindowAbilityUsed`
- *   rechecks the window and ends the turn when nothing is left after the worker action.
+ * - After each use (for the swap, after its reservation in `work/selectChoose.ts`)
+ *   `work/turn.afterWindowAbilityUsed` rechecks the window and ends the turn when nothing is left
+ *   after the worker action.
  * - Canal Barge (T23) is no longer a window ability: it gives 2 Coins when its owner completes
  *   an Order, in the Order Phase (v1.6.2 L630, `orders/completion.ts`).
  *
@@ -29,7 +30,7 @@
 import { TECHS, isStartingOrderId } from "../content.ts";
 import { invariant, ruleError } from "../errors.ts";
 import { imperialKilnEmpty, loadCeramic, validateLoads } from "../kilnLoading.ts";
-import { addToHand, discardHeldOrder, lookCount, putMainOrdersOnBottom, takeTopMainOrders } from "../market.ts";
+import { discardHeldOrder, lookCount } from "../market.ts";
 import { emit, phaseAs, player } from "../state.ts";
 import { markTechUsed, ownsTech, techReady } from "../techs.ts";
 import type {
@@ -42,6 +43,7 @@ import type {
   PublicGameState,
   TechId,
 } from "../types.ts";
+import { openSelect, selectReservable } from "./select.ts";
 import { afterWindowAbilityUsed } from "./turn.ts";
 
 const COLOUR_SAMPLES: TechId = "T10";
@@ -74,16 +76,22 @@ function imperialLoad(action: ImperialPriorityAction): LoadSpec {
   };
 }
 
-/**
- * How many cards the swap's look would show after discarding `orderId` (R16, R17), from public
- * counts and the actor's own hand only: a discarded Main Order is in the discard a reshuffle
- * would use; a Starting Order goes to the box.
- */
-export function swapLookCount(game: PublicGameState, orderId: OrderId): number {
-  return lookCount(game, TECHS.T10.params.swapLookSize, isStartingOrderId(orderId) ? 0 : TECHS.T10.params.swapDiscard);
+/** Cards the swap's discard puts in the Main discard before its look (R17): 1 for a Main Order,
+ * 0 for a Starting Order, which goes to the box. */
+function swapExtraDiscard(orderId: OrderId): number {
+  return isStartingOrderId(orderId) ? 0 : TECHS.T10.params.swapDiscard;
 }
 
-/** The swap's legality for one held Order, on the actor's view (v1.6.2 L625, B1). */
+/**
+ * How many cards the swap's Select 3 would show after discarding `orderId` (R16, R17), from
+ * public counts and the actor's own hand only: a discarded Main Order is in the discard a
+ * reshuffle would use; a Starting Order goes to the box.
+ */
+export function swapLookCount(game: PublicGameState, orderId: OrderId): number {
+  return lookCount(game, TECHS.T10.params.swapSelect, swapExtraDiscard(orderId));
+}
+
+/** The swap's legality for one held Order, on the actor's view (v1.6.2 L622, B1). */
 export function validateColourSamplesSwap(view: ActorView, discardOrderId: OrderId): GameRuleError | null {
   const windowProblem = windowError(view);
   if (windowProblem !== null) {
@@ -99,13 +107,14 @@ export function validateColourSamplesSwap(view: ActorView, discardOrderId: Order
   if (!view.own.orderHand.includes(discardOrderId)) {
     return ruleError("ORDER_NOT_HELD", "That Order is not in your hand.", { orderId: discardOrderId });
   }
-  if (swapLookCount(view.game, discardOrderId) < 1) {
-    return ruleError("ORDER_SUPPLY_EMPTY", "The Main Order deck and discard pile are both empty.", {});
+  // B1: the Select must be able to reserve: a looked card, or a face-up Main Order (v1.6.2 L64).
+  if (!selectReservable(view.game, TECHS.T10.params.swapSelect, swapExtraDiscard(discardOrderId))) {
+    return ruleError("ORDER_SUPPLY_EMPTY", "There is no Main Order to reserve.", {});
   }
   return null;
 }
 
-export const handlers: Pick<ActionHandlerTable, "USE_COLOUR_SAMPLES_SWAP" | "COLOUR_SAMPLES_SWAP_CHOOSE" | "USE_IMPERIAL_PRIORITY"> = {
+export const handlers: Pick<ActionHandlerTable, "USE_COLOUR_SAMPLES_SWAP" | "USE_IMPERIAL_PRIORITY"> = {
   USE_COLOUR_SAMPLES_SWAP: {
     phases: ["work_turn"],
     validate: (view, action) => validateColourSamplesSwap(view, action.discardOrderId),
@@ -123,62 +132,10 @@ export const handlers: Pick<ActionHandlerTable, "USE_COLOUR_SAMPLES_SWAP" | "COL
         to,
         secret: { visibleTo: actorId, orderId: action.discardOrderId },
       });
-      const orderIds = takeTopMainOrders(draft, TECHS.T10.params.swapLookSize, ctx);
-      invariant(orderIds.length > 0, "The swap's look shows no card");
-      draft.hidden.pendingLook = { kind: "colour_samples_swap", playerId: actorId, orderIds: [...orderIds] };
-      emit(ctx, {
-        type: "PRIVATE_LOOK_OPENED",
-        playerId: actorId,
-        kind: "colour_samples_swap",
-        discipline: null,
-        count: orderIds.length,
-        secret: { visibleTo: actorId, orderIds: [...orderIds], techIds: [] },
-      });
-      phase.step = { kind: "colour_samples_swap", returnTo, lookedCount: orderIds.length };
-    },
-  },
-  COLOUR_SAMPLES_SWAP_CHOOSE: {
-    phases: ["work_turn"],
-    validate: (view, action) => {
-      const phase = view.game.phase;
-      if (phase.type !== "work_turn" || phase.activePlayerId !== view.viewerId || phase.step.kind !== "colour_samples_swap") {
-        return ruleError("WRONG_PHASE", "That choice is not due now.", {
-          phase: phase.type,
-          ...(phase.type === "work_turn" ? { step: phase.step.kind } : {}),
-        });
-      }
-      const look = view.own.pendingLook;
-      if (look === null || look.kind !== "colour_samples_swap" || !look.orderIds.includes(action.orderId)) {
-        return ruleError("INVALID_CHOICE", "Choose one of the Orders you looked at.", { orderId: action.orderId });
-      }
-      return null;
-    },
-    resolve: (draft, actorId, action, ctx) => {
-      const phase = phaseAs(draft, "work_turn");
-      const step = phase.step;
-      const look = draft.hidden.pendingLook;
-      invariant(step.kind === "colour_samples_swap", `Expected the Colour Samples swap step, found ${step.kind}`);
-      invariant(look !== null && look.kind === "colour_samples_swap" && look.playerId === actorId, "No swap look is pending for the actor");
-      const rest = look.orderIds.filter((orderId) => orderId !== action.orderId);
-      draft.hidden.pendingLook = null;
-      addToHand(draft, actorId, action.orderId);
-      emit(ctx, {
-        type: "ORDER_RESERVED",
-        playerId: actorId,
-        via: "colour_samples_swap",
-        source: "looked",
-        slotIndex: null,
-        orderId: null,
-        secret: { visibleTo: actorId, orderId: action.orderId },
-      });
-      if (rest.length > 0) {
-        // Change 24 (v1.6.2 L34, Appendix B): the card not reserved goes face down to the bottom
-        // of the Main deck (it superseded owner ruling R14's discard). Private to the actor (B3).
-        putMainOrdersOnBottom(draft, rest, ctx);
-        emit(ctx, { type: "LOOKED_ORDERS_TO_BOTTOM", playerId: actorId, count: rest.length, secret: { visibleTo: actorId, orderIds: rest } });
-      }
-      phase.step = { kind: step.returnTo };
-      afterWindowAbilityUsed(draft, actorId, ctx);
+      // Select 3 (v1.6.2 L622, change 25): 1 reservation, a looked card or a face-up Main Order.
+      const select = openSelect(draft, actorId, "colour_samples_swap", TECHS.T10.params.swapSelect, 1, ctx);
+      invariant(select.lookedCount > 0 || draft.market.display.some((orderId) => orderId !== null), "The swap's Select has nothing to reserve");
+      phase.step = { kind: "colour_samples_swap", returnTo, select };
     },
   },
   USE_IMPERIAL_PRIORITY: {

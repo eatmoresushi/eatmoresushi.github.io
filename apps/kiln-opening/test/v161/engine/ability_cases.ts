@@ -249,8 +249,9 @@ export const ABILITY_CASES: readonly AbilityCase[] = [
           { owner: "p2", stage: "loaded", shape: "bowl", glaze: "white", at: "high_1" },
         ],
       }),
-    uses: isType("SUBMIT_CONTRIBUTION", (c) => c.fuelLedger),
-    declines: isType("SUBMIT_CONTRIBUTION", (c) => !c.fuelLedger && c.card !== "TEND"),
+    // Using Fuel Ledger: playing one of its 2 cards (change 26); declining: a plain Bank or Stoke.
+    uses: isType("SUBMIT_CONTRIBUTION", (c) => c.card === "FUEL_LEDGER_BANK" || c.card === "FUEL_LEDGER_STOKE"),
+    declines: isType("SUBMIT_CONTRIBUTION", (c) => c.card === "BANK" || c.card === "STOKE"),
     after: (table) => tendAll(table),
     used: (events) => hasEvent(events, (e) => e.type === "CONTRIBUTIONS_REVEALED" && Math.abs(e.contributions[P1]?.heat ?? 0) === 2),
     ready: (state) => player(state, P1).techs.some((t) => t.id === "T12" && !t.usedThisRound),
@@ -374,7 +375,7 @@ export const ABILITY_CASES: readonly AbilityCase[] = [
 /** Applies a Contribution or an action on a `LocalTable`. */
 export function applyCommand(table: LocalTable, actorId: PlayerId, command: AuthoritativeCommand): GameEvent[] {
   if (command.type === "SUBMIT_CONTRIBUTION") {
-    return table.contribute(actorId, command.card, command.fuelLedger);
+    return table.contribute(actorId, command.card);
   }
   return table.act(actorId, command);
 }

@@ -72,7 +72,7 @@ describe("V1.6.2 authoritative computer turns", () => {
         computerPolicy: scriptedPolicy({
           firing_contributions: (view) =>
             view.game.phase.type === "firing_contributions"
-              ? { type: "SUBMIT_CONTRIBUTION", windowId: view.game.phase.windowId, card: "STOKE", fuelLedger: false }
+              ? { type: "SUBMIT_CONTRIBUTION", windowId: view.game.phase.windowId, card: "STOKE" }
               : null,
         }),
         fallbackCommands: () => [],
@@ -99,7 +99,8 @@ describe("V1.6.2 authoritative computer turns", () => {
       { type: "CONTRIBUTION_SUBMITTED", playerId: "P3", windowId: seeded.phase.windowId },
     ]);
     expect(result.ownPrivateView?.pendingContribution).toBeNull();
-    expect(JSON.stringify(result)).not.toContain("STOKE");
+    // Every seat's public card list names Stoke; no sealed choice appears anywhere else.
+    expect(JSON.stringify(result, (key, item: unknown) => (key === "contributionCards" ? undefined : item))).not.toContain("STOKE");
     expect(harness.store.audit().privateSubmissions.map((row) => [row.playerId, row.card])).toEqual([
       ["P2", "STOKE"],
       ["P3", "STOKE"],

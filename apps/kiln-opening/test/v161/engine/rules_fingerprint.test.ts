@@ -13,9 +13,9 @@ import {
 
 /**
  * The V1.6.2 rules fingerprint (DESIGN §6.9, ENGINE_V1.6.2_DELTA.md §3.6): behaviour revision
- * 30, a content digest of the seven mechanical data files that ignores display prose, and the
- * `r30-<16 hex>` shape the V1.6.2 Supabase gate accepts (DESIGN §4.6). V1.6.1 rooms (`r29`)
- * are refused.
+ * 31 (owner revision 3, changes 25–27), a content digest of the seven mechanical data files that
+ * ignores display prose, and the `r31-<16 hex>` shape the V1.6.2 Supabase gate accepts (DESIGN
+ * §4.6). V1.6.2 rooms from before revision 3 (`r30`) and V1.6.1 rooms (`r29`) are refused.
  */
 
 const ROOT = join(import.meta.dirname, "../../..");
@@ -38,14 +38,29 @@ function entries(sources: Sources, name: string, key: string): Array<Record<stri
 }
 
 describe("V1.6.2 rules fingerprint", () => {
-  it("is behaviour revision 30", () => {
-    expect(RULES_BEHAVIOUR_REVISION).toBe(30);
+  it("is behaviour revision 31", () => {
+    expect(RULES_BEHAVIOUR_REVISION).toBe(31);
   });
 
-  it("has the r30-<16 hex> shape the V1.6.2 room gate requires, never a V1.6.1 r29 one", () => {
-    expect(rulesFingerprint()).toMatch(/^r30-[0-9a-f]{16}$/);
-    expect(rulesFingerprint()).toBe(`r30-${contentDigest()}`);
-    expect(rulesFingerprint()).not.toMatch(/^r29-/);
+  it("has the r31-<16 hex> shape the V1.6.2 room gate requires, never an r30 or a V1.6.1 r29 one", () => {
+    expect(rulesFingerprint()).toMatch(/^r31-[0-9a-f]{16}$/);
+    expect(rulesFingerprint()).toBe(`r31-${contentDigest()}`);
+    expect(rulesFingerprint()).not.toMatch(/^r(?:29|30)-/);
+  });
+
+  it("moves with owner revision 3's data (changes 25–27)", () => {
+    // Colour Samples' swap looked at 2 before change 25.
+    const swap = copySources();
+    (entries(swap, "techniques", "advanced").find((tech) => tech["id"] === "T10")!["params"] as Record<string, unknown>)["swapSelect"] = 2;
+    expect(contentDigestOf(swap)).not.toBe(contentDigest());
+    // The Fuel Ledger cards (change 26).
+    const cards = copySources();
+    file(cards, "firing")["contributionCards"] = entries(cards, "firing", "contributionCards").filter((card) => card["techId"] === null);
+    expect(contentDigestOf(cards)).not.toBe(contentDigest());
+    // A Tech VP back in the config (change 27 removed it).
+    const vp = copySources();
+    (file(vp, "game_config")["techs"] as Record<string, unknown>)["vpEach"] = 1;
+    expect(contentDigestOf(vp)).not.toBe(contentDigest());
   });
 
   it("moves with the V1.6.2 location and cost changes (DELTA §3.6)", () => {

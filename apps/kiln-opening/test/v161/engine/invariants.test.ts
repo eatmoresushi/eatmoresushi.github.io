@@ -176,8 +176,8 @@ describe("live violations are reported", () => {
   });
 });
 
-describe("the Commission Market step and its look (v1.6.2 L195–196, B1, B3)", () => {
-  /** p1's Shifu has just placed: the top 3 are in the private look, COMMISSION_CHOOSE is due. */
+describe("the Commission Market step and its Select (v1.6.2 L64, L201–202, B1, B3)", () => {
+  /** p1's Shifu has just placed: the top 3 are in the private look, SELECT_CHOOSE is due. */
   function commissionState(): GameState {
     const start = buildState({ players: [{ hand: ["S01"] }, { hand: ["S02"] }] });
     const result = applyAction(start, "p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu" }, new SeededRandom(1));
@@ -199,11 +199,11 @@ describe("the Commission Market step and its look (v1.6.2 L195–196, B1, B3)", 
 
   it("a fresh Commission step, a 0-card look with a display Order included, is sound", () => {
     const state = commissionState();
-    expect(stepOf(state)).toMatchObject({ effect: "shifu", lookSize: 3, maxReservations: 2, lookedCount: 3 });
+    expect(stepOf(state)).toMatchObject({ effect: "shifu", select: { n: 3, maxReservations: 2, fromDisplay: true, lookedCount: 3 } });
     expect(invariantViolations(state, { live: true })).toEqual([]);
     // B1: a look may show no card while the display still offers one.
     state.hidden.mainDeck.unshift(...lookOf(state).splice(0));
-    stepOf(state).lookedCount = 0;
+    stepOf(state).select.lookedCount = 0;
     expect(invariantViolations(state, { live: true })).toEqual([]);
   });
 
@@ -211,26 +211,27 @@ describe("the Commission Market step and its look (v1.6.2 L195–196, B1, B3)", 
     ["a look that disagrees with its step", (s: GameState) => {
       s.hidden.mainDeck.unshift(lookOf(s).pop() as OrderId);
     }, /the Commission look disagrees with its step/],
-    ["a look larger than the printed size", (s: GameState) => {
+    ["a look larger than N", (s: GameState) => {
       lookOf(s).push(s.hidden.mainDeck.shift() as OrderId);
-      stepOf(s).lookedCount = 4;
-    }, /the Commission look disagrees with its step/],
-    ["a reservation limit the effect does not print", (s: GameState) => void (stepOf(s).maxReservations = 1), /disagrees with its effect's printed limits/],
-    ["a look size the effect does not print", (s: GameState) => void (stepOf(s).lookSize = 2), /disagrees with its effect's printed limits/],
+      stepOf(s).select.lookedCount = 4;
+    }, /the commission_market Select shows 4 of 3 cards/],
+    ["a reservation limit the effect does not print", (s: GameState) => void (stepOf(s).select.maxReservations = 1), /disagrees with its effect's printed limits/],
+    ["an N the effect does not print", (s: GameState) => void (stepOf(s).select.n = 2), /disagrees with its effect's printed limits/],
+    ["a Select without the display option", (s: GameState) => void (stepOf(s).select.fromDisplay = false), /the commission_market Select has no display option/],
     ["nothing to reserve", (s: GameState) => {
       s.hidden.mainDeck.unshift(...lookOf(s).splice(0));
-      stepOf(s).lookedCount = 0;
+      stepOf(s).select.lookedCount = 0;
       s.hidden.mainDiscard.push(...s.market.display.filter((id): id is OrderId => id !== null));
       s.market.display = s.market.display.map(() => null);
-    }, /the Commission step has nothing to reserve/],
+    }, /the commission_market Select has nothing to reserve/],
     ["a step whose worker is elsewhere", (s: GameState) => void (stepOf(s).workerId = "p1:apprentice:1"), /worker is not at the Commission Market/],
     ["a step whose effect is not the placement's", (s: GameState) => {
       const step = stepOf(s);
       step.effect = "apprentice";
-      step.lookSize = 2;
-      step.maxReservations = 1;
+      step.select.n = 2;
+      step.select.maxReservations = 1;
       s.hidden.mainDeck.unshift(lookOf(s).pop() as OrderId);
-      step.lookedCount = 2;
+      step.select.lookedCount = 2;
     }, /worker is not at the Commission Market with that effect/],
     ["a Commission look without its step", (s: GameState) => void (s.phase = { type: "work_turn", activePlayerId: "p1", step: { kind: "after_action" } }), /pending look commission_market during work_turn\/after_action/],
   ] as Array<[string, (s: GameState) => void, RegExp]>)("%s is reported", (_name, mutate, pattern) => {
@@ -464,15 +465,45 @@ describe("the V1.6.2 Tech checks (ENGINE_V1.6.2_DELTA.md §4.12)", () => {
     expect(invariantViolations(unowned, { live: true }).join("\n")).toMatch(/p1 gained Canal Barge's Coins without T23/);
   });
 
-  it("the Colour Samples swap step needs its own look, and T10 spent (live tier)", () => {
+  it("the Colour Samples swap step needs its own look of a Select 3, and T10 spent (live tier)", () => {
     const state = buildState({ players: [{ techs: ["T10"], hand: ["O40"] }, {}] });
-    const top = state.hidden.mainDeck.splice(0, 2) as OrderId[];
-    state.phase = { type: "work_turn", activePlayerId: "p1", step: { kind: "colour_samples_swap", returnTo: "before_action", lookedCount: 2 } };
+    const top = state.hidden.mainDeck.splice(0, 3) as OrderId[];
+    state.phase = {
+      type: "work_turn",
+      activePlayerId: "p1",
+      step: { kind: "colour_samples_swap", returnTo: "before_action", select: { n: 3, maxReservations: 1, fromDisplay: true, lookedCount: 3 } },
+    };
     state.hidden.pendingLook = { kind: "colour_samples", playerId: "p1", orderIds: top, inspection: null };
     expect(invariantViolations(state, { live: true }).join("\n")).toMatch(/pending look colour_samples during work_turn\/colour_samples_swap/);
     state.hidden.pendingLook = { kind: "colour_samples_swap", playerId: "p1", orderIds: top };
     expect(invariantViolations(state, { live: true }).join("\n")).toMatch(/a Colour Samples swap is open but T10 is ready/);
     state.players["p1"]!.techs[0]!.usedThisRound = true;
     expect(invariantViolations(state, { live: true })).toEqual([]);
+    // The swap Selects 3 with 1 reservation (v1.6.2 L622, change 25).
+    const step = state.phase.type === "work_turn" && state.phase.step.kind === "colour_samples_swap" ? state.phase.step : null;
+    step!.select.n = 2;
+    expect(invariantViolations(state, { live: true }).join("\n")).toMatch(/the Colour Samples swap look disagrees with its step/);
+    step!.select.n = 3;
+    step!.select.maxReservations = 2;
+    expect(invariantViolations(state, { live: true }).join("\n")).toMatch(/the Colour Samples swap look disagrees with its step/);
+  });
+
+  it("Contribution cards: Bank, Tend and Stoke, plus Fuel Ledger's 2 exactly while Fuel Ledger is owned (change 26)", () => {
+    const sound = buildState({ players: [{ techs: ["T12"] }, {}] });
+    expect(sound.players["p1"]!.contributionCards).toEqual(["BANK", "TEND", "STOKE", "FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"]);
+    expect(invariantViolations(sound)).toEqual([]);
+    const missing = structuredClone(sound);
+    missing.players["p1"]!.contributionCards.pop();
+    expect(invariantViolations(missing).join("\n")).toMatch(/p1 holds Contribution cards BANK, TEND, STOKE, FUEL_LEDGER_BANK, expected/);
+    const stolen = structuredClone(sound);
+    stolen.players["p2"]!.contributionCards.push("FUEL_LEDGER_STOKE");
+    expect(invariantViolations(stolen).join("\n")).toMatch(/p2 holds Contribution cards/);
+  });
+
+  it("no Tech VP line in the score ledger (change 27)", () => {
+    const state = buildState({ players: [{ techs: ["T01", "T10"] }, {}] });
+    expect(invariantViolations(state)).toEqual([]);
+    (state.players["p1"]!.score as unknown as Record<string, number>)["techs"] = 2;
+    expect(invariantViolations(state).join("\n")).toMatch(/p1's score ledger has lines/);
   });
 });

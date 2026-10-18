@@ -51,7 +51,7 @@ function secretRichState(): GameState {
     fireDiscard: [-1],
     phase: { type: "firing_test_pieces", queue: { actorIds: ["p1"], index: 0 }, awaiting: "bury" },
     firing: firingContext({
-      contributions: { p1: { card: "STOKE", fuelLedger: false, heat: 1, woodPaid: 1 }, p2: { card: "TEND", fuelLedger: false, heat: 0, woodPaid: 0 } },
+      contributions: { p1: { card: "STOKE", heat: 1, woodPaid: 1 }, p2: { card: "TEND", heat: 0, woodPaid: 0 } },
       unclampedBaseHeat: 3,
       baseHeat: 3,
       testPieces: [{ playerId: "p1", peeked: true, buried: false }],
@@ -172,7 +172,7 @@ describe("projectPublicState", () => {
   it("throws if revealed Contributions are in public state while the window is open", () => {
     const state = buildState({
       phase: { type: "firing_contributions", windowId: "w", eligiblePlayerIds: ["p1", "p2"], submittedPlayerIds: ["p1"] },
-      firing: firingContext({ contributionWindowId: "w", contributions: { p1: { card: "BANK", fuelLedger: true, heat: -2, woodPaid: 2 } } }),
+      firing: firingContext({ contributionWindowId: "w", contributions: { p1: { card: "FUEL_LEDGER_BANK", heat: -2, woodPaid: 1 } } }),
     });
     expect(() => projectPublicState(state)).toThrow(InvariantError);
     state.firing!.contributions = null;
@@ -209,11 +209,10 @@ describe("private views", () => {
     const sealed: PrivateFiringState = {
       gameId: "test-game",
       windowId: "test-game:r1:contributions",
-      submissions: { p1: { card: "BANK", fuelLedger: true } },
+      submissions: { p1: { card: "FUEL_LEDGER_BANK" } },
     };
     expect(projectPrivateView(state, "p1", sealed).pendingContribution).toEqual({
-      card: "BANK",
-      fuelLedger: true,
+      card: "FUEL_LEDGER_BANK",
       windowId: "test-game:r1:contributions",
     });
     expect(projectPrivateView(state, "p2", sealed).pendingContribution).toBeNull();
@@ -223,9 +222,10 @@ describe("private views", () => {
     expect(projectPrivateView(state, "p1", { ...sealed, windowId: "test-game:r0:contributions" }).pendingContribution).toBeNull();
     expect(projectPrivateView(buildState(), "p1", { ...sealed, windowId: "test-game:r0:contributions" }).pendingContribution).toBeNull();
     expect(projectPrivateView(buildState(), "p1", sealed).pendingContribution).toBeNull();
-    // The sealed card never reaches public state.
+    // The sealed card never reaches public state (nobody holds a Fuel Ledger card here, so the
+    // card's name appears nowhere public, not even in a player's card list).
     const json = JSON.stringify(projectPublicState(state));
-    expect(json).not.toContain("BANK");
+    expect(json).not.toContain("FUEL_LEDGER_BANK");
     expect(json).not.toContain("fuelLedger");
   });
 
@@ -291,7 +291,7 @@ describe("events (DESIGN §4.4)", () => {
     const contributions: GameEvent = {
       type: "CONTRIBUTIONS_REVEALED",
       windowId: "w",
-      contributions: { p1: { card: "STOKE", fuelLedger: true, heat: 2, woodPaid: 2 } },
+      contributions: { p1: { card: "FUEL_LEDGER_STOKE", heat: 2, woodPaid: 1 } },
     };
     expect(projectEvent(event)).toEqual(event);
     const projected = projectEvent(contributions) as Extract<GameEvent, { type: "CONTRIBUTIONS_REVEALED" }>;

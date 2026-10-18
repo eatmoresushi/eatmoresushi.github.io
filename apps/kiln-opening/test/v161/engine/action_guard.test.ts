@@ -62,11 +62,14 @@ const VALID: { [K in AuthoritativeCommand["type"]]: Array<Extract<AuthoritativeC
   ],
   PLACE_CANAL_WHARF: [{ type: "PLACE_CANAL_WHARF", workerId: "player-a:apprentice:1" }],
   PLACE_MAGISTRATES_HALL: [{ type: "PLACE_MAGISTRATES_HALL", workerId: "p2:shifu" }],
-  COMMISSION_CHOOSE: [
-    { type: "COMMISSION_CHOOSE", reservations: [{ kind: "looked", orderId: "O07" }] },
-    { type: "COMMISSION_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 5, orderId: "O48" }, { kind: "looked", orderId: "O07" }] },
+  // One command for every Select: the Commission Market's and both Colour Samples looks
+  // (v1.6.2 L64, change 25).
+  SELECT_CHOOSE: [
+    { type: "SELECT_CHOOSE", reservations: [{ kind: "looked", orderId: "O07" }] },
+    { type: "SELECT_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 5, orderId: "O48" }, { kind: "looked", orderId: "O07" }] },
+    { type: "SELECT_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 0, orderId: "O31" }] },
     // The count is the validator's business (RESERVATION_REQUIRED / RESERVATION_LIMIT).
-    { type: "COMMISSION_CHOOSE", reservations: [] },
+    { type: "SELECT_CHOOSE", reservations: [] },
   ],
   GUILD_TAKE: [
     { type: "GUILD_TAKE", take: { kind: "inspected", techId: "T13" } },
@@ -77,8 +80,6 @@ const VALID: { [K in AuthoritativeCommand["type"]]: Array<Extract<AuthoritativeC
     // The permutation is the validator's business (INVALID_BOTTOM_ORDER).
     { type: "GUILD_FINISH", bottomOrder: [] },
   ],
-  COLOUR_SAMPLES_CHOOSE: [{ type: "COLOUR_SAMPLES_CHOOSE", orderId: "O31" }],
-  COLOUR_SAMPLES_SWAP_CHOOSE: [{ type: "COLOUR_SAMPLES_SWAP_CHOOSE", orderId: "O12" }],
   USE_COLOUR_SAMPLES_SWAP: [
     { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: "O40" },
     // A Starting Order may be discarded too (to the box, v1.6.2 L649).
@@ -117,7 +118,12 @@ const VALID: { [K in AuthoritativeCommand["type"]]: Array<Extract<AuthoritativeC
   ],
   END_ORDER_TURN: [{ type: "END_ORDER_TURN" }],
   DISCARD_TO_HAND_LIMIT: [{ type: "DISCARD_TO_HAND_LIMIT", orderIds: ["S01", "O40"] }],
-  SUBMIT_CONTRIBUTION: [{ type: "SUBMIT_CONTRIBUTION", windowId: "g1:r2:contributions", card: "STOKE", fuelLedger: true }],
+  // The 5 V1.6.2 cards (change 26); whether the player holds one is the validator's business.
+  SUBMIT_CONTRIBUTION: [
+    { type: "SUBMIT_CONTRIBUTION", windowId: "g1:r2:contributions", card: "STOKE" },
+    { type: "SUBMIT_CONTRIBUTION", windowId: "g1:r2:contributions", card: "FUEL_LEDGER_BANK" },
+    { type: "SUBMIT_CONTRIBUTION", windowId: "g1:r2:contributions", card: "FUEL_LEDGER_STOKE" },
+  ],
 };
 
 function expectMalformed(input: unknown, field: string): void {
@@ -135,7 +141,8 @@ describe("parseCommand: well-formed commands", () => {
   it("has an example for every command type, SUBMIT_CONTRIBUTION included", () => {
     expect(Object.keys(VALID).sort()).toEqual([...COMMAND_TYPES].sort());
     expect(COMMAND_TYPES).toContain("SUBMIT_CONTRIBUTION");
-    expect(COMMAND_TYPES).toHaveLength(31);
+    // 31 before owner revision 3; change 25 merged three Select choices into SELECT_CHOOSE.
+    expect(COMMAND_TYPES).toHaveLength(29);
   });
 
   it.each(Object.values(VALID).flat().map((command) => [command.type, command] as const))(
@@ -252,17 +259,17 @@ const MALFORMED: Array<[label: string, input: unknown, field: string]> = [
   // V1.6.2: the look always comes first, so the placement names no reservation (v1.6.2 L195–196).
   ["a reservation in the placement", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu", first: { kind: "blind" } }, "first"],
   // The blind reservation and the resource after each reservation are gone (v1.6.2 L31).
-  ["a blind reservation", { type: "COMMISSION_CHOOSE", reservations: [{ kind: "blind" }] }, "reservations[0].kind"],
-  ["a top-3 selection", { type: "COMMISSION_CHOOSE", reservations: [{ kind: "look_top_three" }] }, "reservations[0].kind"],
+  ["a blind reservation", { type: "SELECT_CHOOSE", reservations: [{ kind: "blind" }] }, "reservations[0].kind"],
+  ["a top-3 selection", { type: "SELECT_CHOOSE", reservations: [{ kind: "look_top_three" }] }, "reservations[0].kind"],
   [
     "a face-up pick with a resource",
-    { type: "COMMISSION_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 0, orderId: "O01", gain: "clay" }] },
+    { type: "SELECT_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 0, orderId: "O01", gain: "clay" }] },
     "reservations[0].gain",
   ],
-  ["a looked pick without an Order", { type: "COMMISSION_CHOOSE", reservations: [{ kind: "looked" }] }, "reservations[0].orderId"],
-  ["a looked pick with a slot", { type: "COMMISSION_CHOOSE", reservations: [{ kind: "looked", orderId: "O07", slotIndex: 0 }] }, "reservations[0].slotIndex"],
-  ["an unknown Order", { type: "COMMISSION_CHOOSE", reservations: [{ kind: "looked", orderId: "O49" }] }, "reservations[0].orderId"],
-  ["a reservation list that is not an array", { type: "COMMISSION_CHOOSE", reservations: { kind: "looked", orderId: "O07" } }, "reservations"],
+  ["a looked pick without an Order", { type: "SELECT_CHOOSE", reservations: [{ kind: "looked" }] }, "reservations[0].orderId"],
+  ["a looked pick with a slot", { type: "SELECT_CHOOSE", reservations: [{ kind: "looked", orderId: "O07", slotIndex: 0 }] }, "reservations[0].slotIndex"],
+  ["an unknown Order", { type: "SELECT_CHOOSE", reservations: [{ kind: "looked", orderId: "O49" }] }, "reservations[0].orderId"],
+  ["a reservation list that is not an array", { type: "SELECT_CHOOSE", reservations: { kind: "looked", orderId: "O07" } }, "reservations"],
   ["a retired Commission sub-command", { type: "COMMISSION_RESERVE", choice: { kind: "blind" } }, "type"],
   ["the retired Commission resource", { type: "COMMISSION_GAIN", resource: "wood" }, "type"],
   ["the retired Commission stop", { type: "COMMISSION_STOP" }, "type"],
@@ -277,7 +284,11 @@ const MALFORMED: Array<[label: string, input: unknown, field: string]> = [
   ["a swap without the Order", { type: "USE_COLOUR_SAMPLES_SWAP" }, "discardOrderId"],
   ["a swap of an unknown Order", { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: "O49" }, "discardOrderId"],
   ["a swap naming the look in advance", { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: "O40", orderId: "O12" }, "orderId"],
-  ["a swap choice of an unknown Order", { type: "COLOUR_SAMPLES_SWAP_CHOOSE", orderId: "S17" }, "orderId"],
+  ["a Select pick of an unknown Order", { type: "SELECT_CHOOSE", reservations: [{ kind: "looked", orderId: "S17" }] }, "reservations[0].orderId"],
+  // V1.6.2 change 25: the three per-look choices became SELECT_CHOOSE.
+  ["the retired Commission choice", { type: "COMMISSION_CHOOSE", reservations: [{ kind: "looked", orderId: "O07" }] }, "type"],
+  ["the retired Colour Samples choice", { type: "COLOUR_SAMPLES_CHOOSE", orderId: "O07" }, "type"],
+  ["the retired swap choice", { type: "COLOUR_SAMPLES_SWAP_CHOOSE", orderId: "O07" }, "type"],
   ["a retired Tech", { type: "PLACE_GUILD_HALL", workerId: "p1:shifu", choice: { kind: "buy_face_up", techId: "T02" } }, "choice.techId"],
   ["a V1.4 discipline", { type: "PLACE_GUILD_HALL", workerId: "p1:shifu", choice: { kind: "inspect", discipline: "forming" } }, "choice.discipline"],
   ["a bottom order that is not an array", { type: "GUILD_FINISH", bottomOrder: "T05" }, "bottomOrder"],
@@ -297,12 +308,14 @@ const MALFORMED: Array<[label: string, input: unknown, field: string]> = [
   ["a missing salvage choice", { type: "SALVAGE_FLAWED" }, "ceramicId"],
   ["a non-boolean peek", { type: "TEST_PIECES_DECIDE", peek: 1 }, "peek"],
   ["an Order list with a bad entry", { type: "DISCARD_TO_HAND_LIMIT", orderIds: ["S01", 3] }, "orderIds[1]"],
-  ["a contribution without a window", { type: "SUBMIT_CONTRIBUTION", card: "BANK", fuelLedger: false }, "windowId"],
-  ["a contribution with an empty window", { type: "SUBMIT_CONTRIBUTION", windowId: "", card: "BANK", fuelLedger: false }, "windowId"],
-  ["an unknown contribution card", { type: "SUBMIT_CONTRIBUTION", windowId: "w", card: "SMOTHER", fuelLedger: false }, "card"],
-  ["a non-boolean Fuel Ledger", { type: "SUBMIT_CONTRIBUTION", windowId: "w", card: "BANK", fuelLedger: "true" }, "fuelLedger"],
-  ["a missing Fuel Ledger", { type: "SUBMIT_CONTRIBUTION", windowId: "w", card: "TEND" }, "fuelLedger"],
-  ["a numeric contribution card", { type: "SUBMIT_CONTRIBUTION", windowId: "w", card: 1, fuelLedger: false }, "card"],
+  ["a contribution without a window", { type: "SUBMIT_CONTRIBUTION", card: "BANK" }, "windowId"],
+  ["a contribution with an empty window", { type: "SUBMIT_CONTRIBUTION", windowId: "", card: "BANK" }, "windowId"],
+  ["an unknown contribution card", { type: "SUBMIT_CONTRIBUTION", windowId: "w", card: "SMOTHER" }, "card"],
+  // V1.6.2 change 26: no Fuel Ledger commitment beside the card, whatever its value.
+  ["a retired Fuel Ledger commitment", { type: "SUBMIT_CONTRIBUTION", windowId: "w", card: "STOKE", fuelLedger: true }, "fuelLedger"],
+  ["a retired Fuel Ledger flag set false", { type: "SUBMIT_CONTRIBUTION", windowId: "w", card: "TEND", fuelLedger: false }, "fuelLedger"],
+  ["a V1.4 Fuel Ledger card", { type: "SUBMIT_CONTRIBUTION", windowId: "w", card: "STOKE_2" }, "card"],
+  ["a numeric contribution card", { type: "SUBMIT_CONTRIBUTION", windowId: "w", card: 1 }, "card"],
 ];
 
 describe("parseCommand: MALFORMED_ACTION", () => {
@@ -314,7 +327,7 @@ describe("parseCommand: MALFORMED_ACTION", () => {
     const result = parseCommand({ type: "SUBMIT_CONTRIBUTION", windowId: "w", card: "BANK", fuelLedger: "no" });
     expect(result).toEqual({
       code: "MALFORMED_ACTION",
-      message: "Malformed command: fuelLedger must be a boolean.",
+      message: "Malformed command: fuelLedger is not allowed.",
       details: { field: "fuelLedger" },
     });
   });

@@ -8,8 +8,9 @@
  * - Heat Difference is the absolute difference from Preferred Heat (L64); Quality follows
  *   the table (L274–279). Protective Saggars (T11, v1.6.2 L636): its owner's ceramics are never
  *   Flawed, a Heat Difference of 3 or more counts as Standard (`qualityFor`).
- * - Fuel Ledger (T12, v1.6.2 L637): its owner's Bank and Stoke cost no Wood; the commitment
- *   costs 1 Wood and makes them −2 / +2 (`contributionWood`, `contributionHeat`).
+ * - Fuel Ledger (T12, v1.6.2 L266, L634, change 26): its owner's Bank and Stoke cost no Wood,
+ *   and its Fuel Ledger Bank and Fuel Ledger Stoke cards cost 1 Wood for −2 / +2
+ *   (`contributionWood`, `contributionHeat`: the card's printed values).
  *
  * Layer 2: imports only types, `content.ts` and `errors.ts` (DESIGN §2.2). Nothing here
  * mutates its input or reads hidden information.
@@ -64,36 +65,23 @@ export function baseHeat(die: KilnDieFace, contributionSum: number): BaseHeat {
 }
 
 /**
- * A revealed Contribution's Heat (L253–259): Bank −1, Tend 0, Stoke +1. A Fuel Ledger
- * commitment adds T12's `heat` in the card's direction, so ±1 becomes ±2 (L638). Fuel Ledger
- * with Tend is rejected by validation; reaching it here is an engine bug.
+ * A revealed Contribution's Heat: the card's printed modifier (v1.6.2 L262–266, change 26):
+ * Bank −1, Tend 0, Stoke +1, Fuel Ledger Bank −2, Fuel Ledger Stoke +2.
  */
 export function contributionHeat(submission: ContributionSubmission): ContributionHeat {
   const printed = contributionCard(submission.card).heat;
-  if (!submission.fuelLedger) {
-    return printed as ContributionHeat;
-  }
-  if (printed === 0) {
-    throw new InvariantError("Fuel Ledger only applies to Bank or Stoke");
-  }
-  return (printed + Math.sign(printed) * TECHS.T12.params.heat) as ContributionHeat;
+  invariant(printed >= -2 && printed <= 2 && Number.isInteger(printed), `Contribution ${submission.card} has Heat ${printed}`);
+  return printed as ContributionHeat;
 }
 
 /**
- * Wood paid at the reveal (L253–259, v1.6.2 L637): the card's printed cost, except that a Fuel
- * Ledger owner's Bank and Stoke cost `T12.params.cardWood` (no Wood); plus the commitment's
- * `extraWood`. `ownsFuelLedger` is the submitter's ownership of T12 (public).
+ * Wood paid at the reveal (v1.6.2 L246, L262–266, L508): the card's printed cost, except that a
+ * Fuel Ledger owner's Bank and Stoke cost no Wood (T12 `freeCards`, v1.6.2 L634). The Fuel Ledger
+ * cards cost their printed 1 Wood. `ownsFuelLedger` is the submitter's ownership of T12 (public).
  */
 export function contributionWood(submission: ContributionSubmission, ownsFuelLedger: boolean): number {
   const card = contributionCard(submission.card);
-  const cardWood = ownsFuelLedger && card.heat !== 0 ? TECHS.T12.params.cardWood : card.woodCost;
-  if (!submission.fuelLedger) {
-    return cardWood;
-  }
-  if (card.heat === 0) {
-    throw new InvariantError("Fuel Ledger only applies to Bank or Stoke");
-  }
-  return cardWood + TECHS.T12.params.extraWood;
+  return ownsFuelLedger && TECHS.T12.params.freeCards.includes(card.id) ? 0 : card.woodCost;
 }
 
 /** Protective Saggars protects this player's ceramics from Flawed (T11, v1.6.2 L636): owning

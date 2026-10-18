@@ -117,9 +117,9 @@
       "id": "kiln_contribution_cards",
       "name": "Kiln Contribution Cards",
       "nameZh": "控火牌",
-      "qty": 12,
-      "notes": "Three per player: Bank, Tend, Stoke.",
-      "notesZh": "每人3张：压火、守火、添柴。"
+      "qty": 14,
+      "notes": "Three per player: Bank, Tend, Stoke. Plus 2 Fuel Ledger cards, Fuel Ledger Bank and Fuel Ledger Stoke, kept with that Tech tile. All 14 share one back.",
+      "notesZh": "每人3张：压火、守火、添柴。另有2张柴簿控火牌：柴簿压火与柴簿添柴，与该技艺牌放在一起。14张牌背相同。"
     },
     {
       "id": "imperial_recognition_markers",

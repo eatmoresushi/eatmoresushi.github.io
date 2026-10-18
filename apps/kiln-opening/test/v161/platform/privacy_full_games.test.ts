@@ -46,7 +46,7 @@ async function privateFiringOf(harness: Harness, state: GameState): Promise<Priv
   const windowId = state.phase.windowId;
   const submissions: PrivateFiringState["submissions"] = {};
   for (const row of await harness.store.loadPrivateSubmissions(harness.roomId, windowId)) {
-    submissions[row.playerId] = { card: row.card, fuelLedger: row.fuelLedger === true };
+    submissions[row.playerId] = { card: row.card };
   }
   return { gameId: state.gameId, windowId, submissions };
 }

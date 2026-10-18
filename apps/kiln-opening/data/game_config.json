@@ -29,8 +29,7 @@
     "perDiscipline": 6,
     "faceUpPerDiscipline": 2,
     "maxOwned": 3,
-    "maxPerDiscipline": 1,
-    "vpEach": 1
+    "maxPerDiscipline": 1
   },
   "sharedKiln": {
     "activeSpacesByPlayerCount": {

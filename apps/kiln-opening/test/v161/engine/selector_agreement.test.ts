@@ -34,7 +34,7 @@ import {
   shapedVessels,
 } from "../../../src/game/selectors.ts";
 import { computeFinalResult } from "../../../src/game/scoring.ts";
-import type { PlayerView } from "../../../src/game/types.ts";
+import type { OrderId, PlayerView } from "../../../src/game/types.ts";
 import { actorViewOf, viewOf } from "../../../src/game/view.ts";
 import { DIRECTED_WEIGHTS, FuzzTable, playFuzzGame, richStartState, selectorAgreementViolations } from "./p7_support.ts";
 import { phaseScenarios } from "./phase_scenarios.ts";
@@ -90,17 +90,30 @@ describe("Colour Samples swap options only in the owner's before- and after-acti
     expect(selectorAgreementViolations(state, null, "p1")).toEqual([]);
   });
 
-  it("a Main Order's discard can feed its own look; a Starting Order's cannot (B1, R16, R17)", () => {
-    // Both Main piles empty: every other Main Order is in p2's hand.
+  it("a Main Order's discard can feed its own look; a Starting Order's needs a face-up Order (B1, R16, R17, change 25)", () => {
+    // Both Main piles empty: every other Main Order is in p2's hand; the display still shows 6.
     const state = buildState(base);
     state.hidden.orderHands["p2"] = [...state.hidden.mainDeck];
     state.hidden.mainDeck = [];
     const view = actorViewOf(state, "p1");
-    expect(colourSamplesSwapOptions(view).discards).toEqual([
+    expect(colourSamplesSwapOptions(view)).toEqual({
+      usable: true,
+      discards: [
+        { orderId: "O40", lookCount: 1, legal: true },
+        // A 0-card Select 3 may still reserve a face-up Main Order.
+        { orderId: "S01", lookCount: 0, legal: true },
+      ],
+      faceUpSlots: [0, 1, 2, 3, 4, 5],
+    });
+    // With the display empty too, the Starting Order's Select could reserve nothing.
+    state.hidden.orderHands["p2"]!.push(...state.market.display.filter((id): id is OrderId => id !== null));
+    state.market.display = state.market.display.map(() => null);
+    const bare = actorViewOf(state, "p1");
+    expect(colourSamplesSwapOptions(bare).discards).toEqual([
       { orderId: "O40", lookCount: 1, legal: true },
       { orderId: "S01", lookCount: 0, legal: false },
     ]);
-    expect(validateAction(view, { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: "S01" })).toMatchObject({ code: "ORDER_SUPPLY_EMPTY" });
+    expect(validateAction(bare, { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: "S01" })).toMatchObject({ code: "ORDER_SUPPLY_EMPTY" });
   });
 });
 
@@ -187,9 +200,10 @@ describe("view models", () => {
       ["T14", true, true],
     ]);
     expect(summary.personalSpaces.filter((s) => s.locationId === "glaze_load").map((s) => s.unlocked)).toEqual([true, true]);
-    // Two Techs, each 1 VP recorded on gain (owner amendment A1).
-    expect(summary.recorded.techs).toBe(2);
-    expect(summary.recordedVp).toBe(2);
+    // Two Techs and no VP for them (v1.6.2 change 27).
+    expect(summary.recorded).toEqual({ orders: 0, kilnAbilities: 0, recognitionOverflow: 0, imperialAudience: 0 });
+    expect(summary.recordedVp).toBe(0);
+    expect(summary.contributionCards).toEqual(["BANK", "TEND", "STOKE"]);
     expect(handLimitStatus(viewOf(state, "p2"), "p1")).toEqual({ held: 6, limit: 5, mustDiscard: 1, trimDue: true });
   });
 
@@ -230,13 +244,13 @@ describe("view models", () => {
     expect(guildOptions(view, "apprentice").inspect).toEqual([]);
     expect(commissionOptions(view, "apprentice")).toEqual({
       effect: "apprentice",
-      lookSize: 2,
+      n: 2,
       lookCount: 2,
       maxReservations: 1,
       faceUpSlots: [0, 1, 2, 3, 4, 5],
       reservable: true,
     });
-    expect(commissionOptions(view, "shifu")).toMatchObject({ lookSize: 3, lookCount: 3, maxReservations: 2, reservable: true });
+    expect(commissionOptions(view, "shifu")).toMatchObject({ n: 3, lookCount: 3, maxReservations: 2, reservable: true });
     expect(shapedVessels(view, "p1").map((c) => c.id)).toEqual(["c1"]);
     expect(lookedOrderOptions(view)).toBeNull();
     expect(settersMarkOptions(view)).toEqual([]);
@@ -283,7 +297,7 @@ describe("view models", () => {
     expect(orderSelectionCheck(view, "S01", [])).toMatchObject({ ok: false, extendable: true });
   });
 
-  it("contributionOptions shows Wood, Heat and affordability, with Fuel Ledger only when owned (v1.6.2 L637)", () => {
+  it("contributionOptions shows 1 option per held card, with Wood, Heat and affordability (v1.6.2 L266, L634, change 26)", () => {
     const table = new FuzzTable(
       buildState({
         players: [{ techs: ["T12"], resources: { wood: 0 } }, {}],
@@ -303,13 +317,13 @@ describe("view models", () => {
     table.apply("p1", { type: "PLACE_CANAL_WHARF", workerId: "p1:shifu" });
     expect(table.state.phase.type).toBe("firing_contributions");
     const options = contributionOptions(table.view("p1"));
-    expect(options.map((o) => [o.command.card, o.command.fuelLedger, o.woodCost, o.heat, o.affordable])).toEqual([
-      // A Fuel Ledger owner's Bank and Stoke cost no Wood; the commitment needs 1.
-      ["TEND", false, 0, 0, true],
-      ["BANK", false, 0, -1, true],
-      ["STOKE", false, 0, 1, true],
-      ["BANK", true, 1, -2, false],
-      ["STOKE", true, 1, 2, false],
+    expect(options.map((o) => [o.command.card, o.woodCost, o.heat, o.affordable])).toEqual([
+      // A Fuel Ledger owner's Bank and Stoke cost no Wood; its own 2 cards cost 1 Wood each.
+      ["TEND", 0, 0, true],
+      ["BANK", 0, -1, true],
+      ["STOKE", 0, 1, true],
+      ["FUEL_LEDGER_BANK", 1, -2, false],
+      ["FUEL_LEDGER_STOKE", 1, 2, false],
     ]);
     expect(contributionOptions(table.view("p2")).map((o) => [o.command.card, o.woodCost, o.affordable])).toEqual([
       ["TEND", 0, true],
@@ -321,13 +335,14 @@ describe("view models", () => {
 
   it("a scripted turn keeps the UI's own pickers in step (Commission step, v1.6.2 L195–198)", () => {
     const table = new LocalTable(buildState({ players: [{ resources: { coins: 9 } }, {}] }));
-    expect(commissionOptions(table.view("p1"), "shifu")).toMatchObject({ lookSize: 3, lookCount: 3, maxReservations: 2, reservable: true });
+    expect(commissionOptions(table.view("p1"), "shifu")).toMatchObject({ n: 3, lookCount: 3, maxReservations: 2, reservable: true });
     table.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:shifu" });
     const looked = lookedOrderOptions(table.view("p1"));
     const look = table.state.hidden.pendingLook;
     expect(look?.kind).toBe("commission_market");
     expect(looked).toEqual({
       kind: "commission_market",
+      n: 3,
       orderIds: look?.kind === "commission_market" ? look.orderIds : [],
       faceUpSlots: [0, 1, 2, 3, 4, 5],
       maxReservations: 2,

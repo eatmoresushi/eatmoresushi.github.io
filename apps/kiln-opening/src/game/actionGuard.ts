@@ -31,7 +31,6 @@ import {
 import { ruleError } from "./errors.ts";
 import type {
   AuthoritativeCommand,
-  CommissionPick,
   CrackleDeclaration,
   FormVesselSpec,
   GameRuleError,
@@ -40,6 +39,7 @@ import type {
   KilnFurnitureModifier,
   LoadSpec,
   OrderCompletionSpec,
+  SelectPick,
 } from "./types.ts";
 
 // ── Numeric unions: type vocabulary rather than content ──────────────────────────────
@@ -229,9 +229,9 @@ function loadSpec(value: unknown, field: string): LoadSpec {
   };
 }
 
-/** One Commission Market reservation. The count (0, or more than the effect allows) is a rule
- * error of the validator (`RESERVATION_REQUIRED`, `RESERVATION_LIMIT`), not a shape error. */
-function commissionPick(value: unknown, field: string): CommissionPick {
+/** One reservation of a Select (v1.6.2 L64). The count (0, or more than the Select allows) is a
+ * rule error of the validator (`RESERVATION_REQUIRED`, `RESERVATION_LIMIT`), not a shape error. */
+function selectPick(value: unknown, field: string): SelectPick {
   const o = objectAt(value, field);
   const kind = oneOf(get(o, "kind"), ["face_up", "looked"] as const, path(field, "kind"));
   if (kind === "face_up") {
@@ -373,9 +373,9 @@ const PARSERS: Parsers = {
   },
   PLACE_CANAL_WHARF: (o) => ({ type: "PLACE_CANAL_WHARF", workerId: workerOnly(o) }),
   PLACE_MAGISTRATES_HALL: (o) => ({ type: "PLACE_MAGISTRATES_HALL", workerId: workerOnly(o) }),
-  COMMISSION_CHOOSE: (o) => {
+  SELECT_CHOOSE: (o) => {
     shape(o, "", ["type", "reservations"]);
-    return { type: "COMMISSION_CHOOSE", reservations: list(get(o, "reservations"), "reservations", commissionPick) };
+    return { type: "SELECT_CHOOSE", reservations: list(get(o, "reservations"), "reservations", selectPick) };
   },
   GUILD_TAKE: (o) => {
     shape(o, "", ["type", "take"]);
@@ -392,14 +392,6 @@ const PARSERS: Parsers = {
   GUILD_FINISH: (o) => {
     shape(o, "", ["type", "bottomOrder"]);
     return { type: "GUILD_FINISH", bottomOrder: list(get(o, "bottomOrder"), "bottomOrder", techId) };
-  },
-  COLOUR_SAMPLES_CHOOSE: (o) => {
-    shape(o, "", ["type", "orderId"]);
-    return { type: "COLOUR_SAMPLES_CHOOSE", orderId: orderId(get(o, "orderId"), "orderId") };
-  },
-  COLOUR_SAMPLES_SWAP_CHOOSE: (o) => {
-    shape(o, "", ["type", "orderId"]);
-    return { type: "COLOUR_SAMPLES_SWAP_CHOOSE", orderId: orderId(get(o, "orderId"), "orderId") };
   },
   USE_COLOUR_SAMPLES_SWAP: (o) => {
     shape(o, "", ["type", "discardOrderId"]);
@@ -497,12 +489,11 @@ const PARSERS: Parsers = {
     return { type: "DISCARD_TO_HAND_LIMIT", orderIds: list(get(o, "orderIds"), "orderIds", orderId) };
   },
   SUBMIT_CONTRIBUTION: (o) => {
-    shape(o, "", ["type", "windowId", "card", "fuelLedger"]);
+    shape(o, "", ["type", "windowId", "card"]);
     return {
       type: "SUBMIT_CONTRIBUTION",
       windowId: str(get(o, "windowId"), "windowId"),
       card: oneOf(get(o, "card"), CONTRIBUTION_CARD_IDS, "card"),
-      fuelLedger: bool(get(o, "fuelLedger"), "fuelLedger"),
     };
   },
 };

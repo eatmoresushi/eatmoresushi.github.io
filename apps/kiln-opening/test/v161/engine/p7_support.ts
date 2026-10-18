@@ -63,7 +63,7 @@ import { actorViewOf, eventForViewer, projectEvent, projectPublicState } from ".
 import type {
   ActorView,
   AuthoritativeCommand,
-  CommissionPick,
+  SelectPick,
   GameAction,
   GameEvent,
   GameRuleErrorCode,
@@ -555,8 +555,9 @@ export function playFuzzGame(options: FuzzOptions): FuzzResult {
       } else if (event.type === "PRIVATE_LOOK_OPENED" && event.kind === "colour_samples") {
         count(techUses, "T10");
       } else if (event.type === "CONTRIBUTIONS_REVEALED") {
+        // Fuel Ledger used: one of its own 2 Contribution cards was played (change 26).
         for (const revealed of Object.values(event.contributions)) {
-          if (revealed?.fuelLedger === true) {
+          if (revealed?.card === "FUEL_LEDGER_BANK" || revealed?.card === "FUEL_LEDGER_STOKE") {
             count(techUses, "T12");
           }
         }
@@ -595,16 +596,13 @@ export function finalScoreViolations(state: GameState): string[] {
       continue;
     }
     const sum =
-      score.orders + score.kilnAbilities + score.recognitionOverflow + score.imperialAudience + score.techs + score.exhibition.total + score.connoisseur + score.coins;
+      score.orders + score.kilnAbilities + score.recognitionOverflow + score.imperialAudience + score.exhibition.total + score.connoisseur + score.coins;
     if (sum !== score.total) {
       violations.push(`${playerId}'s total ${score.total} is not the sum of its parts ${sum}`);
     }
-    // Owner amendment A1: Tech VP is recorded on gain, not added at game end. The ledger line
-    // must equal the old end-game count (1 VP per owned Tech), so totals are unchanged.
-    const owner = lookup(state.players, playerId);
-    const endGameTechVp = (owner?.techs.length ?? 0) * GAME_CONFIG.techs.vpEach;
-    if (score.techs !== endGameTechVp || owner?.score.techs !== endGameTechVp) {
-      violations.push(`${playerId}'s Tech VP ${score.techs} (ledger ${owner?.score.techs}) differs from the end-game count ${endGameTechVp}`);
+    // v1.6.2 change 27: no Tech VP, neither in the ledger nor at game end.
+    if (Object.hasOwn(score, "techs") || Object.hasOwn(lookup(state.players, playerId)?.score ?? {}, "techs")) {
+      violations.push(`${playerId}'s score carries a Tech VP line`);
     }
     const exhibition = score.exhibition;
     if (exhibition.qualityVp + exhibition.shapesBonus + exhibition.glazesBonus !== exhibition.total) {
@@ -730,7 +728,7 @@ export function selectorAgreementViolations(state: GameState, privateState: Priv
         }
         const showing = game.market.display.flatMap((orderId, slotIndex) => (orderId === null ? [] : [slotIndex]));
         expect(JSON.stringify(listed.faceUpSlots) === JSON.stringify(showing), `commissionOptions face-up slots ${JSON.stringify(listed.faceUpSlots)}`);
-        expect(listed.lookCount >= 0 && listed.lookCount <= listed.lookSize, `commissionOptions lookCount ${listed.lookCount} outside the look`);
+        expect(listed.lookCount >= 0 && listed.lookCount <= listed.n, `commissionOptions lookCount ${listed.lookCount} outside the Select`);
       }
       // Guild Hall at placement.
       const apprentice = legalWorker("guild_hall", "apprentice");
@@ -795,37 +793,32 @@ export function selectorAgreementViolations(state: GameState, privateState: Priv
       }
     }
     const looked = lookedOrderOptions(view);
-    if (step.kind === "commission_market") {
-      // Every display position and looked card: a single pick validates iff it is listed.
-      expect(looked?.kind === "commission_market", "lookedOrderOptions is not the Commission look during its step");
-      expect(looked?.maxReservations === step.maxReservations, "lookedOrderOptions reservation limit disagrees with the step");
-      const picks: CommissionPick[] = [];
+    if (step.kind === "commission_market" || step.kind === "colour_samples" || step.kind === "colour_samples_swap") {
+      // Every Select (v1.6.2 L64): every display position and looked card; a single pick
+      // validates iff it is listed.
+      expect(looked?.kind === step.kind, "lookedOrderOptions is not the open Select during its step");
+      expect(looked?.maxReservations === step.select.maxReservations && looked.n === step.select.n, "lookedOrderOptions disagrees with the step's Select");
+      const picks: SelectPick[] = [];
       game.market.display.forEach((orderId, slotIndex) => {
         if (orderId === null) {
           return;
         }
-        const pick: CommissionPick = { kind: "face_up", slotIndex, orderId };
-        const ok = codeOf(view, { type: "COMMISSION_CHOOSE", reservations: [pick] }) === null;
+        const pick: SelectPick = { kind: "face_up", slotIndex, orderId };
+        const ok = codeOf(view, { type: "SELECT_CHOOSE", reservations: [pick] }) === null;
         expect(ok === (looked?.faceUpSlots ?? []).includes(slotIndex), `lookedOrderOptions slot ${slotIndex} disagrees (ok=${ok})`);
         if (ok) picks.push(pick);
       });
       for (const orderId of looked?.orderIds ?? []) {
-        const pick: CommissionPick = { kind: "looked", orderId };
-        const ok = codeOf(view, { type: "COMMISSION_CHOOSE", reservations: [pick] }) === null;
+        const pick: SelectPick = { kind: "looked", orderId };
+        const ok = codeOf(view, { type: "SELECT_CHOOSE", reservations: [pick] }) === null;
         expect(ok, `lookedOrderOptions lists ${orderId} but it is rejected`);
         picks.push(pick);
       }
-      expect(picks.length > 0, "the Commission step offers no reservation");
+      expect(picks.length > 0, `the ${step.kind} Select offers no reservation`);
       const [first, second] = picks;
       if (first !== undefined && second !== undefined) {
-        const pair = codeOf(view, { type: "COMMISSION_CHOOSE", reservations: [first, second] });
-        expect(pair === (step.maxReservations === 2 ? null : "RESERVATION_LIMIT"), `a pair of listed picks gave ${String(pair)}`);
-      }
-    }
-    if (step.kind === "colour_samples") {
-      for (const orderId of looked?.orderIds ?? []) {
-        const ok = codeOf(view, { type: "COLOUR_SAMPLES_CHOOSE", orderId }) === null;
-        expect(ok, `lookedOrderOptions ${orderId} ok=${ok}`);
+        const pair = codeOf(view, { type: "SELECT_CHOOSE", reservations: [first, second] });
+        expect(pair === (step.select.maxReservations === 2 ? null : "RESERVATION_LIMIT"), `a pair of listed picks gave ${String(pair)}`);
       }
     }
     if (step.kind === "guild_inspection") {
@@ -899,9 +892,12 @@ export function selectorAgreementViolations(state: GameState, privateState: Priv
     const legal = legalContributions(view);
     for (const option of options) {
       const ok = privateState !== null && validateContribution(view, privateState, option.command) === null;
-      expect(ok === option.affordable, `contributionOptions ${option.command.card}/${option.command.fuelLedger} affordable=${option.affordable} ok=${ok}`);
+      expect(ok === option.affordable, `contributionOptions ${option.command.card} affordable=${option.affordable} ok=${ok}`);
     }
-    expect(legal.every((c) => options.some((o) => o.command.card === c.card && o.command.fuelLedger === c.fuelLedger)), "contributionOptions omits a legal Contribution");
+    expect(legal.every((c) => options.some((o) => o.command.card === c.card)), "contributionOptions omits a legal Contribution");
+    // One option per card the viewer holds (v1.6.2 change 26), and only those.
+    const held = phase.eligiblePlayerIds.includes(actorId) ? (game.players[actorId]?.contributionCards ?? []) : [];
+    expect(options.length === held.length && options.every((o) => held.includes(o.command.card)), "contributionOptions are not exactly the viewer's cards");
   }
   if (phase.type === "firing_test_pieces" && acts) {
     const options = testPiecesOptions(view);

@@ -21,7 +21,7 @@
  *
  * Layer 2: imports `content.ts` for names.
  */
-import { KILN_SPACE_IDS, KILNS, LOCATIONS, TECHS, contributionCard, zoneOf } from "./content.ts";
+import { CONTRIBUTION_CARD_IDS, KILN_SPACE_IDS, KILNS, LOCATIONS, TECHS, contributionCard, zoneOf } from "./content.ts";
 import type {
   ContributionCardId,
   Decoration,
@@ -259,8 +259,8 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
     detailKeys: keys("orderId"),
   },
   ORDER_SUPPLY_EMPTY: {
-    en: "The Main Order deck and discard pile are both empty; there is nothing to reserve.",
-    zh: "主委托牌堆和弃牌堆都空了，没有可承接的委托",
+    en: "No Main Order shows on the display and the Main Order deck and discard pile are both empty; there is nothing to reserve.",
+    zh: "委托榜上没有主委托，主委托牌堆和弃牌堆也都空了，没有可承接的委托",
     detailKeys: keys(),
   },
   RESERVATION_REQUIRED: {
@@ -376,10 +376,15 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
     zh: "你已提交控火，等候其他作坊",
     detailKeys: keys(),
   },
+  CONTRIBUTION_CARD_NOT_HELD: {
+    en: "You do not hold that Contribution card; Fuel Ledger Bank and Fuel Ledger Stoke come with Fuel Ledger.",
+    zh: "你没有这张控火牌；柴簿压火与柴簿添柴随柴簿一起获得",
+    detailKeys: keys("card"),
+  },
   INVALID_CONTRIBUTION: {
     en: "That Contribution is not allowed: {reason}.",
     zh: "此控火不合法：{reason}",
-    detailKeys: keys("card", "fuelLedger", "needed", "have"),
+    detailKeys: keys("card", "needed", "have"),
     fallbacks: [{
       en: "Not enough Wood for that Contribution (Tend the Fire is always available).",
       zh: "柴不足，打不出这张控火牌（守火永远可选）",
@@ -584,7 +589,7 @@ export function detailLabel(
     case "spaceId":
       return (KILN_SPACE_IDS as readonly string[]).includes(value) ? kilnSpaceLabel(value as KilnSpaceId, locale) : value;
     case "card":
-      return value === "BANK" || value === "TEND" || value === "STOKE"
+      return (CONTRIBUTION_CARD_IDS as readonly string[]).includes(value)
         ? (locale === "zh" ? contributionCard(value as ContributionCardId).nameZh : contributionCard(value as ContributionCardId).name)
         : value;
     case "workerId":

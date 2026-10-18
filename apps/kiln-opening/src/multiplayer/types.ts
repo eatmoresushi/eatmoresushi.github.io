@@ -279,9 +279,8 @@ export interface PrivateSubmissionRecord {
   windowId: string;
   playerId: PlayerId;
   commandId: string;
+  /** The sealed card: Bank, Tend, Stoke, or a Fuel Ledger card (v1.6.2 change 26). */
   card: ContributionCardId;
-  /** Fuel Ledger's secret commitment (`use_fuel_ledger`): ±1 becomes ±2 at the reveal. */
-  fuelLedger: boolean;
   revealedRevision: number | null;
 }
 
@@ -296,8 +295,8 @@ export interface StoredRoom extends PublicRoom {
   contentVersion: StoredRulesVersion;
   /**
    * Rules fingerprint at room creation, `r<revision>-<digest>`. V1.6.2 rooms always carry
-   * an `r30-` fingerprint; a missing or different one (a V1.6.1 `r29-` room included) is
-   * rejected, never reinterpreted.
+   * an `r31-` fingerprint; a missing or different one (an `r30-` room from before owner
+   * revision 3 or a V1.6.1 `r29-` room included) is rejected, never reinterpreted.
    */
   contentDigest: string | null;
 }

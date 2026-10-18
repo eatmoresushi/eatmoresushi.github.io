@@ -103,7 +103,7 @@ export function projectPrivateView(
     pendingContribution:
       submission === null || windowId === null
         ? null
-        : { card: submission.card, fuelLedger: submission.fuelLedger, windowId },
+        : { card: submission.card, windowId },
   };
 }
 

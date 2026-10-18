@@ -29,6 +29,7 @@ import { handlers as formDecorateHandlers } from "./work/formDecorate.ts";
 import { handlers as glazeLoadHandlers } from "./work/glazeLoad.ts";
 import { handlers as guildHallHandlers } from "./work/guildHall.ts";
 import { handlers as materialsYardHandlers } from "./work/materialsYard.ts";
+import { handlers as selectChooseHandlers } from "./work/selectChoose.ts";
 import { completeWorkerAction, handlers as turnHandlers, openWorkPhase } from "./work/turn.ts";
 import { handlers as windowAbilitiesHandlers } from "./work/windowAbilities.ts";
 import type {
@@ -66,6 +67,7 @@ const HANDLER_PARTS = [
   turnHandlers,
   commissionMarketHandlers,
   guildHallHandlers,
+  selectChooseHandlers,
   windowAbilitiesHandlers,
   pipelineHandlers,
   afterQualityHandlers,
@@ -91,6 +93,7 @@ export const HANDLERS: ActionHandlerTable = {
   ...turnHandlers,
   ...commissionMarketHandlers,
   ...guildHallHandlers,
+  ...selectChooseHandlers,
   ...windowAbilitiesHandlers,
   ...pipelineHandlers,
   ...afterQualityHandlers,

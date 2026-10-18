@@ -1,24 +1,26 @@
 /**
- * Opening the Firing Phase and the secret Contribution window (L237–263, L504, v1.6.2 L637,
- * L670–674, change 16).
+ * Opening the Firing Phase and the secret Contribution window (L237–263, v1.6.2 L246, L260–266,
+ * L508, L634, L668–670, changes 16 and 26).
  *
  * - Skip check (L237, L670): with nothing loaded in the Shared Kiln or any Imperial Kiln, the
  *   phase is skipped and no Fire card is revealed.
  * - Participants (L261, change 16): players with at least 1 ceramic in the Shared Kiln. An
  *   Imperial Kiln ceramic is in this firing (`firingPlayerIds`, L290) but gives no say.
- * - Steps 1–2 (L672–673): each participant secretly submits Bank / Tend / Stoke, optionally
- *   with Fuel Ledger's commitment (T12, v1.6.2 L637), through `submitContribution`. A Fuel
- *   Ledger owner's Bank and Stoke cost no Wood; the commitment costs 1 Wood. Sealed choices
- *   live only in `PrivateFiringState` (DESIGN §4); the public state records who submitted.
- *   On the last submission every sealed choice is revalidated, then all are revealed together
- *   and paid.
+ * - Steps 1–2 (v1.6.2 L668–669): each participant secretly submits exactly 1 of their own
+ *   Contribution cards (`PlayerState.contributionCards`) through `submitContribution`: Bank,
+ *   Tend or Stoke, and for Fuel Ledger's owner also Fuel Ledger Bank (1 Wood, −2) and Fuel Ledger
+ *   Stoke (1 Wood, +2) (T12, v1.6.2 L266, L634, change 26). A Fuel Ledger owner's plain Bank and
+ *   Stoke cost no Wood. The card must be affordable when chosen; nothing is set aside, and the
+ *   Wood is paid only on reveal (v1.6.2 L508). Sealed choices live only in `PrivateFiringState`
+ *   (DESIGN §4); the public state records who submitted. On the last submission every sealed
+ *   choice is revalidated, then all are revealed together and paid.
  * - With no participants (INT), Contributions are skipped and Base Heat = the Kiln Die.
  * - Step 3 (L674): Base Heat = clamp(Kiln Die + Σ, 0, 5); then `pipeline.openAfterBaseHeat`.
  *
  * Layer 4: imports layers 0–3 and, inside P5, `firing/pipeline` (DESIGN §2.4).
  */
 
-import { TECHS, contributionCard, preferredHeat } from "../content.ts";
+import { preferredHeat } from "../content.ts";
 import { invariant, ruleError } from "../errors.ts";
 import { emit, loadedCeramics, lookup, phaseAs, player, spend, turnOrder } from "../state.ts";
 import { ownsTech } from "../techs.ts";
@@ -126,11 +128,11 @@ export function createPrivateFiringState(state: GameState): PrivateFiringState {
 }
 
 /**
- * Whether the actor may submit this Contribution (L672, v1.6.2 L637): the window is open and
- * matches, the actor participates and has not submitted, Fuel Ledger is owned and used only
- * with Bank or Stoke, and the Wood is affordable: the card's (none for a Fuel Ledger owner's
- * Bank or Stoke) plus the commitment's. Tend is always affordable (L261). Sees only the
- * actor's view and their own sealed state.
+ * Whether the actor may submit this Contribution (v1.6.2 L668, change 26): the window is open and
+ * matches, the actor participates and has not submitted, holds the card (a Fuel Ledger card only
+ * with Fuel Ledger, `CONTRIBUTION_CARD_NOT_HELD`), and can pay its Wood: the printed cost, none
+ * for a Fuel Ledger owner's Bank or Stoke. Tend is always affordable (L266). Sees only the actor's
+ * view and their own sealed state.
  */
 export function validateContribution(
   view: ActorView,
@@ -162,23 +164,14 @@ export function validateContribution(
     return ruleError("CONTRIBUTION_ALREADY_SUBMITTED", "You have already submitted your Contribution.", {});
   }
   const p = player(game, viewerId);
-  if (command.fuelLedger) {
-    if (!ownsTech(p, FUEL_LEDGER)) {
-      return ruleError("TECH_NOT_OWNED", `You do not own ${TECHS.T12.name}.`, { techId: FUEL_LEDGER });
-    }
-    if (contributionCard(command.card).heat === 0) {
-      return ruleError("INVALID_CHOICE", "Fuel Ledger adds its Wood only to Bank or Stoke.", {
-        field: "fuelLedger",
-        value: command.card,
-      });
-    }
+  if (!p.contributionCards.includes(command.card)) {
+    return ruleError("CONTRIBUTION_CARD_NOT_HELD", "You do not hold that Contribution card.", { card: command.card });
   }
   const needed = contributionWood(command, ownsTech(p, FUEL_LEDGER));
   const have = p.resources.wood;
   if (have < needed) {
     return ruleError("INVALID_CONTRIBUTION", `That Contribution needs ${needed} Wood.`, {
       card: command.card,
-      fuelLedger: command.fuelLedger,
       needed,
       have,
     });
@@ -200,7 +193,7 @@ export function applyContribution(
   ctx: ResolveContext,
 ): void {
   const phase = phaseAs(draft, "firing_contributions");
-  privateDraft.submissions[actorId] = { card: command.card, fuelLedger: command.fuelLedger };
+  privateDraft.submissions[actorId] = { card: command.card };
   const submitted = new Set<PlayerId>([...phase.submittedPlayerIds, actorId]);
   phase.submittedPlayerIds = phase.eligiblePlayerIds.filter((pid) => submitted.has(pid));
   emit(ctx, { type: "CONTRIBUTION_SUBMITTED", playerId: actorId, windowId: phase.windowId });
@@ -210,7 +203,7 @@ export function applyContribution(
   const sealed: Array<[PlayerId, ContributionSubmission]> = phase.eligiblePlayerIds.map((pid) => {
     const submission = lookup(privateDraft.submissions, pid);
     invariant(submission !== undefined, `No sealed Contribution for ${pid}`);
-    return [pid, { card: submission.card, fuelLedger: submission.fuelLedger }];
+    return [pid, { card: submission.card }];
   });
   privateDraft.windowId = null;
   privateDraft.submissions = {};
@@ -237,11 +230,11 @@ function revealAndDetermineBaseHeat(
     const submission = lookup(sealed, pid);
     invariant(submission !== undefined, `No sealed Contribution for ${pid}`);
     const p = player(draft, pid);
-    invariant(!submission.fuelLedger || (ownsTech(p, FUEL_LEDGER) && contributionCard(submission.card).heat !== 0), `Invalid Fuel Ledger commitment for ${pid}`);
+    invariant(p.contributionCards.includes(submission.card), `${pid} sealed ${submission.card}, a card they do not hold`);
     const heat = contributionHeat(submission);
     const woodPaid = contributionWood(submission, ownsTech(p, FUEL_LEDGER));
     invariant(p.resources.wood >= woodPaid, `${pid} can no longer pay the sealed Contribution`);
-    contributions[pid] = { card: submission.card, fuelLedger: submission.fuelLedger, heat, woodPaid };
+    contributions[pid] = { card: submission.card, heat, woodPaid };
     payments.push([pid, woodPaid]);
     sum += heat;
   }
@@ -257,18 +250,16 @@ function revealAndDetermineBaseHeat(
   openAfterBaseHeat(draft, ctx);
 }
 
-/** Candidate order: Tend first (always affordable, L261), Bank, Stoke, then Fuel Ledger. */
-const CANDIDATES: ReadonlyArray<readonly [ContributionCardId, boolean]> = [
-  ["TEND", false],
-  ["BANK", false],
-  ["STOKE", false],
-  ["BANK", true],
-  ["STOKE", true],
-];
+/** Candidate order: Tend first (always affordable, v1.6.2 L266), Bank, Stoke, then Fuel Ledger
+ * Bank and Fuel Ledger Stoke. */
+const CANDIDATES = ["TEND", "BANK", "STOKE", "FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"] as const satisfies readonly ContributionCardId[];
+/** Every card is a candidate: a new `ContributionCardId` fails this until it is listed above. */
+const _everyCard: [Exclude<ContributionCardId, (typeof CANDIDATES)[number]>] extends [never] ? true : never = true;
+void _everyCard;
 
 /**
- * Every Contribution the viewer may submit now, Tend first then Bank, Stoke and the Fuel
- * Ledger variants (DESIGN §2.4, §5.2). Non-empty for an eligible viewer who has not
+ * Every Contribution card the viewer may submit now, Tend first, then Bank, Stoke and Fuel
+ * Ledger's 2 cards when held (DESIGN §2.4, §5.2). Non-empty for an eligible viewer who has not
  * submitted; `[]` otherwise (spectators, non-participants, after submitting, other phases).
  */
 export function legalContributions(view: PlayerView): SubmitContributionCommand[] {
@@ -283,12 +274,11 @@ export function legalContributions(view: PlayerView): SubmitContributionCommand[
   const privateState: PrivateFiringState = {
     gameId: view.game.gameId,
     windowId: phase.windowId,
-    submissions: pending === null ? {} : { [viewerId]: { card: pending.card, fuelLedger: pending.fuelLedger } },
+    submissions: pending === null ? {} : { [viewerId]: { card: pending.card } },
   };
-  return CANDIDATES.map(([card, fuelLedger]): SubmitContributionCommand => ({
+  return CANDIDATES.map((card): SubmitContributionCommand => ({
     type: "SUBMIT_CONTRIBUTION",
     windowId: phase.windowId,
     card,
-    fuelLedger,
   })).filter((command) => validateContribution(actorView, privateState, command) === null);
 }

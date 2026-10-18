@@ -45,7 +45,7 @@ describe("fixture privacy oracle: IDs seen once and moved unseen since", () => {
     const t = new LocalTable(buildState({ players: [{ techs: ["T10"], hand: ["O40"] }, {}] }), { seed: 3 });
     const faceUp = t.state.market.display[0] as OrderId;
     t.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:apprentice:1" });
-    t.act("p1", { type: "COMMISSION_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 0, orderId: faceUp }] });
+    t.act("p1", { type: "SELECT_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 0, orderId: faceUp }] });
     // Everyone saw p1 take it.
     expect(foreignSecrets(t.state, "p2", t.events).rehidden.has(faceUp)).toBe(false);
     expect(foreignSecrets(t.state, "p2", t.events).unseen.has(faceUp)).toBe(false);
@@ -74,7 +74,7 @@ describe("fixture privacy oracle: IDs seen once and moved unseen since", () => {
     const rest = MAIN_ORDER_IDS.filter((id) => ![...DISPLAY, "O07", "O08"].includes(id));
     const t = new LocalTable(buildState({ players: [{}, { hand: rest }], display: DISPLAY, mainDeck: ["O07", "O08"], mainDiscard: [] }), { seed: 5 });
     t.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:apprentice:1" });
-    t.act("p1", { type: "COMMISSION_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 0, orderId: "O01" }] });
+    t.act("p1", { type: "SELECT_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 0, orderId: "O01" }] });
     // Both looked cards went under the deck; the turn-end refill revealed the upper one.
     const revealed = t.state.market.display[5] as OrderId;
     expect(["O07", "O08"]).toContain(revealed);

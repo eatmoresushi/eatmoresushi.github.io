@@ -166,8 +166,16 @@ export const MAIN_ORDER_IDS: readonly MainOrderId[] = Object.freeze(
 /** Every Order: Starting first, then Main. */
 export const ORDER_IDS: readonly OrderId[] = Object.freeze([...STARTING_ORDER_IDS, ...MAIN_ORDER_IDS]);
 
-/** Contribution cards (L253–259). */
-export const CONTRIBUTION_CARD_IDS: readonly ContributionCardId[] = Object.freeze(["BANK", "TEND", "STOKE"] as const);
+/**
+ * Every Contribution card (v1.6.2 L93, L260–266, change 26): the 3 every player holds, then
+ * Fuel Ledger's 2 (T12, v1.6.2 L634), in `firing.json` order.
+ */
+export const CONTRIBUTION_CARD_IDS: readonly ContributionCardId[] = Object.freeze([
+  "BANK", "TEND", "STOKE", "FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE",
+] as const);
+
+/** The Contribution cards every player holds from setup: Bank, Tend, Stoke (v1.6.2 L260). */
+export const BASE_CONTRIBUTION_CARD_IDS: readonly ContributionCardId[] = Object.freeze(["BANK", "TEND", "STOKE"] as const);
 
 const PLAYER_COUNT_KEYS = ["2", "3", "4"] as const;
 type PlayerCountKey = (typeof PLAYER_COUNT_KEYS)[number];
@@ -216,7 +224,9 @@ function collectTextProblems(value: unknown, path: string, problems: string[]): 
   for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
     const itemPath = `${path}.${key}`;
     if (TEXT_KEY.test(key)) {
-      const nullable = key === "rewardText" || key === "rewardTextZh";
+      // An empty reward, and the plain Contribution cards' absent short text (v1.6.2 L262–264).
+      const nullable = key === "rewardText" || key === "rewardTextZh"
+        || (path.startsWith("firing.contributionCards") && (key === "shortText" || key === "shortTextZh"));
       if (item === null && nullable) continue;
       if (typeof item !== "string" || item.trim().length === 0) problems.push(`${itemPath}: display text must be a non-empty string`);
     } else {
@@ -291,19 +301,19 @@ function validateClarifications(items: unknown, where: string, problems: string[
  * exactly the owner's bold timing clauses after the first one of a line (ENGINE_V1.6.2_DELTA.md
  * §3.3). The timing clause runs to the first colon; after it, these labels open a further
  * clause (Colour Samples' "Ongoing:" and swap, Ge's "Orders:", Protective Saggars' after-Quality
- * step, Fuel Ledger's commitment). The UI bolds them all.
+ * step, Fuel Ledger's "When acquired:" cards). The UI bolds them all.
  */
 export const SHORT_TEXT_SECONDARY_LABELS: readonly string[] = Object.freeze([
   "Ongoing:",
   "Orders:",
   "Once per round, before or after one of your worker actions:",
   "Once per round, after Quality is assigned:",
-  "When you choose Bank or Stoke:",
+  "When acquired:",
   "持续：",
   "完成委托时：",
   "每轮一次，你的一次工人行动之前或之后：",
   "每轮一次，定品后：",
-  "选控火时：",
+  "习得时：",
 ]);
 
 /**
@@ -457,7 +467,19 @@ export function validateContentFiles(files: ContentFiles): string[] {
     || !sameSequence(qualities.map((row) => row.maxDifference), [0, 1, 2, null])) {
     problems.push("firing: Quality table must be 0 Masterpiece, 1 Fine, 2 Standard, 3+ Flawed (L274–279)");
   }
-  if (!sameSequence(firing.contributionCards.map((card) => card.id), CONTRIBUTION_CARD_IDS)) problems.push("firing: contribution cards must be BANK, TEND, STOKE");
+  if (!sameSequence(firing.contributionCards.map((card) => card.id), CONTRIBUTION_CARD_IDS)) {
+    problems.push("firing: contribution cards must be BANK, TEND, STOKE, FUEL_LEDGER_BANK, FUEL_LEDGER_STOKE");
+  }
+  // v1.6.2 change 26: Bank, Tend and Stoke belong to every player; Fuel Ledger's 2 cards come
+  // with T12 and carry the owner's component text.
+  for (const card of firing.contributionCards) {
+    const base = BASE_CONTRIBUTION_CARD_IDS.includes(card.id);
+    if (base ? card.techId !== null : card.techId !== "T12") problems.push(`firing: ${card.id} must come ${base ? "with every player" : "with Fuel Ledger (T12)"}`);
+    if (base ? card.shortText !== null || card.shortTextZh !== null : typeof card.shortText !== "string" || typeof card.shortTextZh !== "string") {
+      problems.push(`firing: ${card.id} ${base ? "has no" : "needs a"} short text`);
+    }
+    if (!isNonNegativeInteger(card.woodCost) || !Number.isInteger(card.heat) || Math.abs(card.heat) > 2) problems.push(`firing: ${card.id} needs a Wood cost and a Heat of −2 to +2`);
+  }
   if (!sameSequence(firing.imperialModifiers, [-1, 0, 1])) problems.push("firing: Imperial modifiers must be −1, 0, +1");
   if (!isNonNegativeInteger(firing.salvageCoins)) problems.push("firing: salvageCoins must be a non-negative integer");
 
@@ -495,7 +517,7 @@ export function validateContentFiles(files: ContentFiles): string[] {
   };
   const EFFECT_KEYS: ReadonlyArray<readonly [LocationId, readonly string[], readonly string[]]> = [
     ["materials_yard", ["resources"], ["resources"]],
-    ["commission_market", ["lookSize", "maxReservations"], ["lookSize", "maxReservations"]],
+    ["commission_market", ["select", "maxReservations"], ["select", "maxReservations"]],
     ["guild_hall", ["maxTechs"], ["inspectCount", "maxTechs"]],
     ["canal_wharf", ["coins"], ["coins", "topMainOrders"]],
   ];
@@ -516,10 +538,10 @@ export function validateContentFiles(files: ContentFiles): string[] {
   const commission = effectsOf("commission_market");
   for (const effect of ["apprentice", "shifu"] as const) {
     const record = commission?.[effect];
-    const lookSize = record?.["lookSize"];
+    const select = record?.["select"];
     const maxReservations = record?.["maxReservations"];
-    if (typeof lookSize !== "number" || typeof maxReservations !== "number" || maxReservations < 1 || lookSize < maxReservations) {
-      problems.push(`action_locations: commission_market ${effect} must look at least as many cards as it reserves, and reserve at least 1`);
+    if (typeof select !== "number" || typeof maxReservations !== "number" || maxReservations < 1 || select < maxReservations) {
+      problems.push(`action_locations: commission_market ${effect} must Select at least as many cards as it reserves, and reserve at least 1`);
     }
   }
 
@@ -542,6 +564,19 @@ export function validateContentFiles(files: ContentFiles): string[] {
     if (!isNonNegativeInteger(tech.cost) || tech.cost < 1) problems.push(`techniques: ${tech.id} cost must be a positive integer`);
     if (typeof tech.oncePerRound !== "boolean") problems.push(`techniques: ${tech.id} oncePerRound must be boolean`);
     if (tech.params === null || typeof tech.params !== "object") problems.push(`techniques: ${tech.id} needs params`);
+  }
+  // Fuel Ledger (v1.6.2 L634, change 26): its free cards are Bank and Stoke, and the cards it
+  // brings are exactly the `firing.json` cards that name it.
+  const fuelLedger = techniques.advanced.find((tech) => tech.id === "T12")?.params as { freeCards?: unknown; cards?: unknown } | undefined;
+  const ledgerCards = firing.contributionCards.filter((card) => card.techId === "T12").map((card) => card.id);
+  if (!Array.isArray(fuelLedger?.freeCards) || !sameMembers(fuelLedger.freeCards, ["BANK", "STOKE"])) problems.push("techniques: T12 makes Bank and Stoke free");
+  if (!Array.isArray(fuelLedger?.cards) || !sameSequence(fuelLedger.cards, ledgerCards)) problems.push("techniques: T12 brings exactly the Fuel Ledger Contribution cards of firing.json");
+  // Colour Samples (v1.6.2 L622, change 25): Select N both when acquired and in the swap.
+  const colourSamples = techniques.advanced.find((tech) => tech.id === "T10")?.params as Record<string, unknown> | undefined;
+  if (colourSamples === undefined || !sameMembers(Object.keys(colourSamples), ["select", "handLimit", "swapDiscard", "swapSelect"])
+    || !["select", "handLimit", "swapDiscard", "swapSelect"].every((key) => isNonNegativeInteger(colourSamples[key]))
+    || !(colourSamples["select"] === 2 || colourSamples["select"] === 3) || !(colourSamples["swapSelect"] === 2 || colourSamples["swapSelect"] === 3)) {
+    problems.push("techniques: T10 needs {select, handLimit, swapDiscard, swapSelect} with Select 2 or 3");
   }
 
   // Orders.
@@ -574,7 +609,7 @@ export function validateContentFiles(files: ContentFiles): string[] {
   validateClarifications(orders.clarifications?.main, "orders: main", problems);
 
   // Short component text: plain text with a timing clause ending in a colon (component text source).
-  for (const definition of [...kilns.kilns, ...techniques.advanced]) {
+  for (const definition of [...kilns.kilns, ...techniques.advanced, ...firing.contributionCards.filter((card) => card.techId !== null)]) {
     for (const text of [definition.shortText, definition.shortTextZh]) {
       if (typeof text === "string" && (!/[:：]/.test(text) || /[*_`#]/.test(text) || text.includes("\n"))) {
         problems.push(`${definition.id}: short text must be one plain line with a timing clause ending in a colon`);
@@ -726,9 +761,15 @@ export function qualityForDifference(difference: number): Quality {
   throw new Error("Quality table has no open-ended row");
 }
 
-/** Wood cost and Heat of a Contribution card (L253–259). Fuel Ledger's ±1 lives in T12 params. */
+/** Printed Wood cost and Heat of a Contribution card (v1.6.2 L262–266); Fuel Ledger's free Bank
+ * and Stoke are T12's `freeCards`. */
 export function contributionCard(id: ContributionCardId): ContributionCardDefinition {
   return CONTRIBUTION_CARDS[id];
+}
+
+/** The Contribution cards a Tech brings with it (Fuel Ledger's 2, v1.6.2 L634); [] for others. */
+export function contributionCardsOfTech(techId: TechId): readonly ContributionCardId[] {
+  return CONTRIBUTION_CARD_IDS.filter((id) => CONTRIBUTION_CARDS[id].techId === techId);
 }
 
 /** The six Techs of a discipline, in `TECH_IDS` order (L374). */

@@ -61,7 +61,7 @@ function countBy<T extends string | number>(items: readonly T[]): Map<T, number>
 describe("createInitialState for 2, 3 and 4 players (L98–112)", () => {
   it.each(COUNTS)("%i players: versions, round, phase and empty boards", (n) => {
     const { state } = created(11, n);
-    expect(state.schemaVersion).toBe(7);
+    expect(state.schemaVersion).toBe(8);
     expect(state.rulesVersion).toBe("1.6.2");
     expect(state.gameId).toBe("g-setup");
     expect(state.playerCount).toBe(n);
@@ -118,10 +118,12 @@ describe("createInitialState for 2, 3 and 4 players (L98–112)", () => {
           glaze_load: [{ unlocked: true }, { unlocked: false }],
         },
         techs: [],
+        // Bank, Tend, Stoke (v1.6.2 L260); Fuel Ledger's 2 come only with the tile (change 26).
+        contributionCards: ["BANK", "TEND", "STOKE"],
         kilnAbilityUsedThisRound: false,
         imperial: { recognition: 0, grantReceived: false, kilnGained: false, priority: "on_track", audienceReceived: false },
         completedOrders: [],
-        score: { orders: 0, kilnAbilities: 0, recognitionOverflow: 0, imperialAudience: 0, techs: 0 },
+        score: { orders: 0, kilnAbilities: 0, recognitionOverflow: 0, imperialAudience: 0 },
       });
     });
     expect(GAME_CONFIG.startingResources).toEqual({ clay: 2, wood: 2, coins: 3 });

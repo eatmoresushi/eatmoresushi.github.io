@@ -54,7 +54,7 @@ async function openSalvageWindow(harness: Harness): Promise<{ revision: number; 
   // The computer submits first; the human's submission reveals and opens the salvage window.
   const computer = valueOf(await advance(harness));
   expect(computer.actorIds).toEqual(["P2"]);
-  const opened = await command(harness, "P1", { type: "SUBMIT_CONTRIBUTION", windowId, card: "TEND", fuelLedger: false });
+  const opened = await command(harness, "P1", { type: "SUBMIT_CONTRIBUTION", windowId, card: "TEND" });
   expect(opened.game.phase).toMatchObject({ type: "firing_salvage", pendingPlayerIds: ["P1", "P2"], openedAtRevision: opened.revision });
   const humanCeramicId = Object.values(opened.game.ceramics).find((ceramic) => ceramic.ownerId === "P1")!.id;
   return { revision: opened.revision, humanCeramicId };

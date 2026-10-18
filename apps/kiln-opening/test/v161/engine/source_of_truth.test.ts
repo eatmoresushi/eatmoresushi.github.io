@@ -58,7 +58,7 @@ interface AssetSpecs {
   kilnDie: { faces: number[] };
   markers: Record<string, { qty?: number; faces?: number[] }>;
   fireCards: { distribution: Record<string, number>; totalCards: number };
-  kilnContributionCards: { cardsPerSet: string[]; totalCards: number };
+  kilnContributionCards: { cardsPerSet: string[]; fuelLedgerCards: string[]; totalCards: number; sharedBack: boolean };
 }
 
 const ASSETS = JSON.parse(read("data/asset_specs.json")) as AssetSpecs;
@@ -67,11 +67,12 @@ describe("the V1.6.2 rulebook is the source of truth", () => {
   /** The owner's three V1.6.2 files, byte-identical to the originals (audit, "Authority and
    * provenance"). The English and Chinese rulebooks carry the owner's Guild Hall revision of
    * 2026-10-17; all three carry owner revision 2 of 2026-10-17 (changes 23–24: the 8-card
-   * Starting deck, the Main Order re-pass and looked cards to the deck bottom). */
+   * Starting deck, the Main Order re-pass and looked cards to the deck bottom) and owner revision
+   * 3 of 2026-10-18 (changes 25–27: Select N, Fuel Ledger as cards, no Tech VP). */
   const V162_FILES: ReadonlyArray<readonly [string, string]> = [
-    [SOURCE_PATH, "f30994f8e11f8f8fb22726b1e727a66d247b502665de996ba0e64395299ce829"],
-    ["docs/KILN_OPENING_v1.6.2_ZH.md", "222ea2f76c6a7770f8c2e63013d3eed66109573a4b9e7d54c2e5112f2d1f89de"],
-    ["docs/KILN_OPENING_v1.6.2_COMPONENT_TEXT.md", "cca04930985316a0730637d99f2bfd21cf0cfacfc442168bca00a4883d6fa8d7"],
+    [SOURCE_PATH, "78e8a07bc90eca0c16f2cb62c0337de09d877440f5d5a5a5d37f70b49c3350de"],
+    ["docs/KILN_OPENING_v1.6.2_ZH.md", "abc960e936ca70a8175e81f7a59ef85bf33d42055c554242b8b8f2a07487aeb9"],
+    ["docs/KILN_OPENING_v1.6.2_COMPONENT_TEXT.md", "a466984ca6c4b8db629314369d8c67184f71cd3131ce15b5f9bdb36b68799677"],
   ];
 
   it.each(V162_FILES)("%s matches the checksum the audit records", (path, expected) => {
@@ -180,6 +181,11 @@ describe("every data file is V1.6.2 content with current IDs only", () => {
     [/resource after each|每次承接后/, "a Commission Market resource"],
     [/through Canal Barge|Canal Barge completes|通过漕船/, "Canal Barge completing Orders (R6)"],
     [/Flawed → Standard|瑕品→良品|瑕品升为良品/, "Protective Saggars' Flawed → Standard upgrade"],
+    // Owner revision 3 (v1.6.2 changes 25–27): the Colour Samples swap Selects 3; Fuel Ledger
+    // brings cards instead of a secret commitment; no Tech VP.
+    [/swapLookSize|look at the top 2 cards, reserve 1|看牌堆顶2张，承接1张/, "the Colour Samples swap's look of 2"],
+    [/"fuelLedger"|extraWood|secretly commit 1 Wood|暗附1柴|暗附加柴|柴簿加柴/, "the Fuel Ledger commitment"],
+    [/vpEach|Advanced Tech scores 1 VP|own 1 VP is scored|每习得1项技艺，立即得1分|1分在习得时立即计入/, "Tech VP on gain (owner amendment A1)"],
   ];
 
   it.each(DATA_FILES)("%s names no retired ID or mechanic", (file) => {
@@ -239,8 +245,12 @@ describe("the V1.6.2 asset contract (data/asset_specs.json)", () => {
     const distribution = Object.fromEntries([-2, -1, 0, 1, 2].map((m) => [String(m), FIRING.fireDeck.filter((card) => card === m).length]));
     expect(ASSETS.fireCards.distribution).toEqual(distribution);
     expect(ASSETS.fireCards.totalCards).toBe(FIRING.fireDeck.length);
-    expect(ASSETS.kilnContributionCards.cardsPerSet).toEqual(FIRING.contributionCards.map((card) => card.id));
-    expect(ASSETS.kilnContributionCards.totalCards).toBe(12);
+    // 3 per player and Fuel Ledger's 2, 14 in all with one shared back (v1.6.2 L93, change 26).
+    expect(ASSETS.kilnContributionCards.cardsPerSet).toEqual(FIRING.contributionCards.filter((card) => card.techId === null).map((card) => card.id));
+    expect(ASSETS.kilnContributionCards.fuelLedgerCards).toEqual(FIRING.contributionCards.filter((card) => card.techId === "T12").map((card) => card.id));
+    expect(ASSETS.kilnContributionCards.totalCards).toBe(14);
+    expect(ASSETS.kilnContributionCards.totalCards).toBe(4 * ASSETS.kilnContributionCards.cardsPerSet.length + ASSETS.kilnContributionCards.fuelLedgerCards.length);
+    expect(ASSETS.kilnContributionCards.sharedBack).toBe(true);
   });
 
   it("covers all 56 Orders (8 Starting after v1.6.2 change 23, 48 Main)", () => {

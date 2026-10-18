@@ -38,11 +38,12 @@ import type {
 
 const SEAT_COLOURS = ["cinnabar", "celadon", "ink", "moon-white"] as const;
 
-/** The SQL gates: `rules_version = '1.6.2'`, `content_version = '1.6.2'`, `^r30-…`. */
-export const CURRENT_ROOM_FINGERPRINT_PATTERN = /^r30-[0-9a-f]{16}$/;
+/** The SQL gates: `rules_version = '1.6.2'`, `content_version = '1.6.2'`, `^r31-…`. */
+export const CURRENT_ROOM_FINGERPRINT_PATTERN = /^r31-[0-9a-f]{16}$/;
 /** `room_ai_seats_policy_version_check` for V1.6.2 seats. */
 export const COMPUTER_POLICY_VERSION_PATTERN = /^rules-v1\.6\.2-[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const CONTRIBUTION_CARDS: ReadonlySet<string> = new Set(["BANK", "TEND", "STOKE"]);
+/** The V1.6.2 Contribution cards the SQL card check accepts (v1.6.2 change 26). */
+const CONTRIBUTION_CARDS: ReadonlySet<string> = new Set(["BANK", "TEND", "STOKE", "FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"]);
 
 /** Keys sorted by length, then bytes: the order Postgres `jsonb` stores object keys in. */
 export function jsonbKeyOrder<T>(value: T): T {
@@ -75,7 +76,7 @@ function currentRoom(room: StoredRoom): boolean {
 }
 
 function currentStateVersion(value: { schemaVersion?: unknown; rulesVersion?: unknown }): boolean {
-  return value.schemaVersion === 7 && value.rulesVersion === "1.6.2";
+  return value.schemaVersion === 8 && value.rulesVersion === "1.6.2";
 }
 
 interface FullEventRecord {
@@ -373,11 +374,9 @@ export class InMemoryMultiplayerStore implements MultiplayerStore {
     }
     const submission = input.privateSubmission;
     if (submission !== null) {
-      if (
-        !CONTRIBUTION_CARDS.has(submission.card) ||
-        typeof submission.fuelLedger !== "boolean" ||
-        (submission.fuelLedger && submission.card === "TEND")
-      ) {
+      // The SQL gate: one of the 5 V1.6.2 cards, and no Fuel Ledger flag beside it (change 26
+      // replaced the commitment with the Fuel Ledger cards).
+      if (!CONTRIBUTION_CARDS.has(submission.card) || Object.hasOwn(submission, "fuelLedger")) {
         throw new Error("invalid private Contribution payload");
       }
       if (this.privateSubmissions.has(`${input.roomId}:${submission.windowId}:${input.actorId}`)) {
@@ -404,7 +403,6 @@ export class InMemoryMultiplayerStore implements MultiplayerStore {
         playerId: input.actorId,
         commandId: input.commandId,
         card: submission.card,
-        fuelLedger: submission.fuelLedger,
         revealedRevision: null,
       });
       if (submission.revealed) {

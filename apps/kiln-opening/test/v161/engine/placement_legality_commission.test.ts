@@ -91,13 +91,13 @@ describe("at least 1 reservation is possible (L142, B1)", () => {
     const view = (spec: StateSpec) => actorViewOf(buildState(spec), "p1");
     expect(commissionOptions(view({}), "apprentice")).toEqual({
       effect: "apprentice",
-      lookSize: 2,
+      n: 2,
       lookCount: 2,
       maxReservations: 1,
       faceUpSlots: [0, 1, 2, 3, 4, 5],
       reservable: true,
     });
-    expect(commissionOptions(view({}), "shifu")).toMatchObject({ lookSize: 3, lookCount: 3, maxReservations: 2 });
+    expect(commissionOptions(view({}), "shifu")).toMatchObject({ n: 3, lookCount: 3, maxReservations: 2 });
     // A deck of 1 shows 1 card, whatever the discard holds (B1: no reshuffle mid-look).
     const short = view(supplySpec(["O01", null, null, null, null, null], ["O07"], ["O08", "O09", "O10"]));
     expect(commissionOptions(short, "shifu")).toMatchObject({ lookCount: 1, faceUpSlots: [0] });
@@ -161,7 +161,7 @@ describe("shared placement checks at the Commission Market (L140, L136)", () => 
     t.act("p1", place("p1:apprentice:1"));
     // During the reservation step no other placement is possible.
     t.expectRuleError("p1", place("p1:shifu"), "WORKER_ACTION_ALREADY_TAKEN");
-    t.act("p1", { type: "COMMISSION_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 0, orderId: "O01" }] });
+    t.act("p1", { type: "SELECT_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 0, orderId: "O01" }] });
     // The Colour Samples swap (ready, with the Order just reserved in hand) keeps the after-action
     // window open; a second placement is refused.
     expect(t.state.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "after_action" } });

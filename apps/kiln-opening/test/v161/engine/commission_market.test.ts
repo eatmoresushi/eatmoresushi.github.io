@@ -1,11 +1,12 @@
 /**
- * Commission Market (v1.6.2 L189–200, L390, L396, L618, L652; R4, R12, B1, B3; DESIGN §3.2 as
- * amended by ENGINE_V1.6.2_DELTA.md §4.2): the placement always opens the private look (top 2
- * for the Apprentice effect, top 3 for the Shifu effect), then `COMMISSION_CHOOSE` reserves 1
- * (Apprentice) or 1–2 (Shifu) from the display and the looked cards in any mix; the rest of
- * the look goes face down to the bottom of the Main deck in random order (rulebook change 24,
- * L34; owner ruling R19), never to the discard; no resource; the single deferred refill
- * at the end of the turn; Senior Apprentice; the empty-supply rules (B1); privacy (B3).
+ * Commission Market (v1.6.2 L64, L195–206, L395, L401, L644, L649; changes 24–25; R4, R12, B1,
+ * B3; DESIGN §3.2 as amended by ENGINE_V1.6.2_DELTA.md §4.2): the placement always opens the
+ * Select (Select 2 for the Apprentice effect, Select 3 reserving up to 2 for the Shifu effect),
+ * then `SELECT_CHOOSE` reserves 1 (Apprentice) or 1–2 (Shifu) from the display and the looked
+ * cards in any mix; the rest of the look goes face down to the bottom of the Main deck in random
+ * order (rulebook change 24, L34; owner ruling R19), never to the discard; no resource; the
+ * single deferred refill at the end of the turn; Senior Apprentice; the empty-supply rules (B1);
+ * privacy (B3).
  */
 
 import { describe, expect, it } from "vitest";
@@ -13,7 +14,7 @@ import { MAIN_ORDER_IDS } from "../../../src/game/content.ts";
 import { legalActions } from "../../../src/game/legalActions.ts";
 import { lookedOrderOptions } from "../../../src/game/selectors.ts";
 import { projectEvent, projectPublicState } from "../../../src/game/view.ts";
-import type { CommissionPick, GameAction, GameEvent, OrderId } from "../../../src/game/types.ts";
+import type { SelectPick, GameAction, GameEvent, OrderId } from "../../../src/game/types.ts";
 import { type StateSpec, buildState } from "./support/fixtures.ts";
 import { LocalTable } from "./support/localTable.ts";
 import { expectDocumentedDetails } from "./support/ruleErrors.ts";
@@ -41,12 +42,12 @@ function place(workerId: string, seniorApprentice?: boolean): GameAction {
   return { type: "PLACE_COMMISSION_MARKET", workerId, ...(seniorApprentice === undefined ? {} : { seniorApprentice }) };
 }
 
-function choose(...reservations: CommissionPick[]): GameAction {
-  return { type: "COMMISSION_CHOOSE", reservations };
+function choose(...reservations: SelectPick[]): GameAction {
+  return { type: "SELECT_CHOOSE", reservations };
 }
 
-const faceUp = (slotIndex: number, orderId: OrderId): CommissionPick => ({ kind: "face_up", slotIndex, orderId });
-const looked = (orderId: OrderId): CommissionPick => ({ kind: "looked", orderId });
+const faceUp = (slotIndex: number, orderId: OrderId): SelectPick => ({ kind: "face_up", slotIndex, orderId });
+const looked = (orderId: OrderId): SelectPick => ({ kind: "looked", orderId });
 
 function commissionStep(t: LocalTable) {
   const phase = t.state.phase;
@@ -83,7 +84,7 @@ function supplySpec(display: Array<OrderId | null>, mainDeck: OrderId[], mainDis
 const DISPLAY: OrderId[] = ["O01", "O02", "O03", "O04", "O05", "O06"];
 
 describe("the placement opens the private look (v1.6.2 L195–196; INT: Commission Market looks)", () => {
-  it("Apprentice effect: the top 2 Main Orders, privately; no resource; the step waits for COMMISSION_CHOOSE", () => {
+  it("Apprentice effect: Select 2, the top 2 Main Orders privately; no resource; the step waits for SELECT_CHOOSE", () => {
     const t = table();
     const [a, b, next] = t.state.hidden.mainDeck as [OrderId, OrderId, OrderId];
     const deckBefore = t.state.hidden.mainDeck.length;
@@ -105,9 +106,7 @@ describe("the placement opens the private look (v1.6.2 L195–196; INT: Commissi
       kind: "commission_market",
       workerId: "p1:apprentice:1",
       effect: "apprentice",
-      lookSize: 2,
-      maxReservations: 1,
-      lookedCount: 2,
+      select: { n: 2, maxReservations: 1, fromDisplay: true, lookedCount: 2 },
     });
     expect(t.player("p1").resources).toEqual({ clay: 2, wood: 2, coins: 3 });
     expect(t.state.market.display).toEqual(DISPLAY);
@@ -116,12 +115,12 @@ describe("the placement opens the private look (v1.6.2 L195–196; INT: Commissi
     t.expectRuleError("p1", { type: "PLACE_CANAL_WHARF", workerId: "p1:shifu" }, "WORKER_ACTION_ALREADY_TAKEN");
   });
 
-  it("Shifu effect: the top 3", () => {
+  it("Shifu effect: Select 3, reserving up to 2", () => {
     const t = table();
     const top = t.state.hidden.mainDeck.slice(0, 3);
     const events = t.act("p1", place("p1:shifu"));
     expect(only(events, "PRIVATE_LOOK_OPENED")).toMatchObject({ kind: "commission_market", count: 3, secret: { orderIds: top } });
-    expect(commissionStep(t)).toMatchObject({ effect: "shifu", lookSize: 3, maxReservations: 2, lookedCount: 3 });
+    expect(commissionStep(t)).toMatchObject({ effect: "shifu", select: { n: 3, maxReservations: 2, fromDisplay: true, lookedCount: 3 } });
   });
 
   it("the look happens even when the actor will reserve a face-up Order", () => {
@@ -277,7 +276,7 @@ describe("Shifu effect (v1.6.2 L196, L198): reserve 1–2 from the display and t
   });
 });
 
-describe("COMMISSION_CHOOSE refusals", () => {
+describe("SELECT_CHOOSE refusals at the Commission Market", () => {
   it("a stale face-up pick is ORDER_NOT_AVAILABLE; a card outside the look or a duplicate is INVALID_CHOICE", () => {
     const t = table({ display: ["O01", null, "O03", "O04", "O05", "O06"], refillPendingFor: null });
     const top = t.state.hidden.mainDeck.slice(0, 3) as [OrderId, OrderId, OrderId];
@@ -315,7 +314,7 @@ describe("Senior Apprentice at the Commission Market (v1.6.2 L618, L652, R12)", 
     expect(types(events)).toEqual(["WORKER_PLACED", "TECH_USED", "PRIVATE_LOOK_OPENED"]);
     expect(only(events, "WORKER_PLACED")).toMatchObject({ kind: "apprentice", effect: "shifu", viaSeniorApprentice: true });
     expect(only(events, "PRIVATE_LOOK_OPENED").count).toBe(3);
-    expect(commissionStep(t)).toMatchObject({ workerId: "p1:apprentice:1", effect: "shifu", lookSize: 3, maxReservations: 2 });
+    expect(commissionStep(t)).toMatchObject({ workerId: "p1:apprentice:1", effect: "shifu", select: { n: 3, maxReservations: 2 } });
     t.act("p1", choose(looked(top[1]), faceUp(0, "O01")));
     expect(t.state.hidden.orderHands["p1"]).toEqual([top[1], "O01"]);
     expect(t.player("p1").techs).toEqual([{ id: "T18", acquiredInRound: 1, usedThisRound: true }]);
@@ -330,7 +329,7 @@ describe("Senior Apprentice at the Commission Market (v1.6.2 L618, L652, R12)", 
     expectDocumentedDetails(shifu.expectRuleError("p1", place("p1:shifu", true), "SENIOR_APPRENTICE_NOT_APPLICABLE"));
     const declined = table({ players: [{ techs: ["T18"] }, {}] });
     declined.act("p1", place("p1:apprentice:1"));
-    expect(commissionStep(declined)).toMatchObject({ effect: "apprentice", lookSize: 2, maxReservations: 1 });
+    expect(commissionStep(declined)).toMatchObject({ effect: "apprentice", select: { n: 2, maxReservations: 1 } });
     expect(declined.player("p1").techs[0]).toMatchObject({ usedThisRound: false });
   });
 });
@@ -341,7 +340,7 @@ describe("Empty Main supply (B1, L511)", () => {
     const events = t.act("p1", place("p1:shifu"));
     expect(only(events, "PRIVATE_LOOK_OPENED")).toMatchObject({ count: 0, secret: { orderIds: [] } });
     expect(types(events)).not.toContain("MAIN_DECK_RESHUFFLED");
-    expect(commissionStep(t).lookedCount).toBe(0);
+    expect(commissionStep(t).select.lookedCount).toBe(0);
     const reserved = t.act("p1", choose(faceUp(1, "O02")));
     expect(types(reserved)).not.toContain("LOOKED_ORDERS_TO_BOTTOM");
     expect(only(reserved, "DISPLAY_REFILLED")).toMatchObject({ revealedOrderIds: [] });
@@ -354,7 +353,7 @@ describe("Empty Main supply (B1, L511)", () => {
     expect(only(events, "PRIVATE_LOOK_OPENED")).toMatchObject({ count: 1, secret: { orderIds: ["O07"] } });
     expect(types(events)).not.toContain("MAIN_DECK_RESHUFFLED");
     expect(t.state.hidden.mainDiscard).toEqual(["O08", "O09", "O10", "O11", "O12"]);
-    expect(commissionStep(t)).toMatchObject({ lookSize: 3, lookedCount: 1 });
+    expect(commissionStep(t)).toMatchObject({ select: { n: 3, lookedCount: 1 } });
     t.act("p1", choose(looked("O07")));
   });
 
@@ -417,7 +416,7 @@ describe("Empty Main supply (B1, L511)", () => {
     const empty: Array<OrderId | null> = [null, null, null, null, null, null];
     const t = table(supplySpec(empty, ["O07", "O08"], []));
     t.act("p1", place("p1:shifu"));
-    expect(lookedOrderOptions(t.view("p1"))).toEqual({ kind: "commission_market", orderIds: ["O07", "O08"], faceUpSlots: [], maxReservations: 2 });
+    expect(lookedOrderOptions(t.view("p1"))).toEqual({ kind: "commission_market", n: 3, orderIds: ["O07", "O08"], faceUpSlots: [], maxReservations: 2 });
     const events = t.act("p1", choose(looked("O08"), looked("O07")));
     expect(types(events)).not.toContain("LOOKED_ORDERS_TO_BOTTOM");
     expect(types(events)).not.toContain("DISPLAY_REFILLED");
@@ -443,8 +442,8 @@ describe("legal actions in the Commission step (DESIGN §5.2)", () => {
     t.act("p1", place("p1:shifu"));
     const actions = legalActions(t.view("p1"), { mode: "exhaustive" });
     expect(actions).toHaveLength(9 + 36);
-    expect(actions.every((action) => action.type === "COMMISSION_CHOOSE")).toBe(true);
-    expect(actions.filter((action) => action.type === "COMMISSION_CHOOSE" && action.reservations.length === 2)).toHaveLength(36);
+    expect(actions.every((action) => action.type === "SELECT_CHOOSE")).toBe(true);
+    expect(actions.filter((action) => action.type === "SELECT_CHOOSE" && action.reservations.length === 2)).toHaveLength(36);
   });
 
   it("other seats have no Commission action and never see the look", () => {

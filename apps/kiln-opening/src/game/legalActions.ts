@@ -25,9 +25,9 @@
  * | `PLACE_COMMISSION_MARKET` | one per worker choice (Shifu, Apprentice, Apprentice via Senior Apprentice) | same |
  * | `PLACE_GUILD_HALL` | Apprentice: each face-up Tech; Shifu: each discipline with a non-empty deck (the first discipline if every deck is empty, so the Shifu's face-up take stays reachable) | Shifu: every discipline |
  * | `PLACE_CANAL_WHARF`, `PLACE_MAGISTRATES_HALL` | each worker choice | same |
- * | `COMMISSION_CHOOSE` | every single pick (face-up slots ascending, then looked cards in look order), then, for the Shifu effect, every unordered pair in that order (≤ 9 + 36) | same |
- * | Guild / Colour Samples sub-steps | all: each next `GUILD_TAKE` (inspected Techs, then face-up), then `GUILD_FINISH` × every bottom order (≤ 2), each Colour Samples pick | same |
- * | `USE_COLOUR_SAMPLES_SWAP`, `COLOUR_SAMPLES_SWAP_CHOOSE` | one swap per held Order, in hand order; one choice per looked card | same |
+ * | `SELECT_CHOOSE` (every Select: the Commission Market, Colour Samples when acquired and its swap) | every single pick (face-up slots ascending, then looked cards in look order), then, for the Commission Market Shifu effect, every unordered pair in that order (≤ 9 + 36) | same |
+ * | Guild Hall sub-steps | all: each next `GUILD_TAKE` (inspected Techs, then face-up), then `GUILD_FINISH` × every bottom order (≤ 2) | same |
+ * | `USE_COLOUR_SAMPLES_SWAP` | one swap per held Order, in hand order | same |
  * | `COMPLETE_ORDER` | per held Order: the first match, plus the first Ru-triggering match; each triggered Ru/Guan and Tribute Ware used and declined | every match × decline flags |
  * | `USE_IMPERIAL_PRIORITY` | vessel class × Glaze × modifier; with Reworking Table ready, one variant per class and other Shape | every vessel × Glaze × modifier × rework |
  * | firing windows, salvage, `END_*` | all, incl. the `null` / decline choice; `SECOND_FIRING_CHOOSE` both cards × Jun {none, +1, −1 when ready} | same |
@@ -90,7 +90,7 @@ import type {
   AuthoritativeCommand,
   Decoration,
   FinishedCeramic,
-  CommissionPick,
+  SelectPick,
   FormVesselSpec,
   GameAction,
   GameActionType,
@@ -606,15 +606,15 @@ function glazeLoadStreams(ctx: EnumContext, choice: WorkerChoice): Array<Iterabl
   return streams;
 }
 
-/** Every single Commission pick the viewer's own look allows: the face-up slots ascending,
- * then the looked cards in look order (v1.6.2 L195–196). */
-function commissionPicks(ctx: EnumContext): CommissionPick[] {
+/** Every single pick the viewer's open Select allows: the face-up slots ascending, then the
+ * looked cards in look order (v1.6.2 L64). */
+function selectPicks(ctx: EnumContext): SelectPick[] {
   const options = lookedOrderOptions(ctx.view);
-  if (options === null || options.kind !== "commission_market") {
+  if (options === null) {
     return [];
   }
   const display = ctx.game.market.display;
-  const picks: CommissionPick[] = [];
+  const picks: SelectPick[] = [];
   for (const slotIndex of options.faceUpSlots) {
     const orderId = display[slotIndex];
     if (orderId !== null && orderId !== undefined) {
@@ -751,15 +751,6 @@ const USE_COLOUR_SAMPLES_SWAP = family("USE_COLOUR_SAMPLES_SWAP", function* (ctx
   }
 });
 
-const COLOUR_SAMPLES_SWAP_CHOOSE = family("COLOUR_SAMPLES_SWAP_CHOOSE", function* (ctx) {
-  const look = lookedOrderOptions(ctx.view);
-  if (look?.kind === "colour_samples_swap") {
-    for (const orderId of look.orderIds) {
-      yield { type: "COLOUR_SAMPLES_SWAP_CHOOSE", orderId };
-    }
-  }
-});
-
 const SECOND_FIRING_CHOOSE = family("SECOND_FIRING_CHOOSE", function* (ctx) {
   const options = secondFiringChoiceOptions(ctx.view);
   if (options === null) {
@@ -811,18 +802,18 @@ const USE_IMPERIAL_PRIORITY = family("USE_IMPERIAL_PRIORITY", function* (ctx) {
 
 const END_TURN = family("END_TURN", () => [{ type: "END_TURN" }]);
 
-const COMMISSION_CHOOSE = family("COMMISSION_CHOOSE", function* (ctx) {
-  const step = workStep(ctx.game, "commission_market");
-  if (step === null) {
+const SELECT_CHOOSE = family("SELECT_CHOOSE", function* (ctx) {
+  const options = lookedOrderOptions(ctx.view);
+  if (options === null) {
     return;
   }
-  const picks = commissionPicks(ctx);
+  const picks = selectPicks(ctx);
   for (const pick of picks) {
-    yield { type: "COMMISSION_CHOOSE", reservations: [pick] };
+    yield { type: "SELECT_CHOOSE", reservations: [pick] };
   }
-  if (step.maxReservations >= 2) {
+  if (options.maxReservations >= 2) {
     for (const pair of combinations(picks, 2)) {
-      yield { type: "COMMISSION_CHOOSE", reservations: pair };
+      yield { type: "SELECT_CHOOSE", reservations: pair };
     }
   }
 });
@@ -847,15 +838,6 @@ const GUILD_FINISH = family("GUILD_FINISH", function* (ctx) {
   }
   for (const bottomOrder of permutations(options.inspected.map((option) => option.techId))) {
     yield { type: "GUILD_FINISH", bottomOrder };
-  }
-});
-
-const COLOUR_SAMPLES_CHOOSE = family("COLOUR_SAMPLES_CHOOSE", function* (ctx) {
-  const look = lookedOrderOptions(ctx.view);
-  if (look?.kind === "colour_samples") {
-    for (const orderId of look.orderIds) {
-      yield { type: "COLOUR_SAMPLES_CHOOSE", orderId };
-    }
   }
 });
 
@@ -951,13 +933,11 @@ function familiesFor(ctx: EnumContext): readonly Family[] {
         case "before_action":
           return [USE_COLOUR_SAMPLES_SWAP, USE_IMPERIAL_PRIORITY, ...PLACEMENT_FAMILIES];
         case "commission_market":
-          return [COMMISSION_CHOOSE];
+        case "colour_samples":
+        case "colour_samples_swap":
+          return [SELECT_CHOOSE];
         case "guild_inspection":
           return [GUILD_TAKE, GUILD_FINISH];
-        case "colour_samples":
-          return [COLOUR_SAMPLES_CHOOSE];
-        case "colour_samples_swap":
-          return [COLOUR_SAMPLES_SWAP_CHOOSE];
         case "after_action":
           return [USE_COLOUR_SAMPLES_SWAP, USE_IMPERIAL_PRIORITY, END_TURN];
       }
@@ -1312,11 +1292,6 @@ function randomCandidate(ctx: EnumContext, type: GameActionType, rng: RandomSour
       const discard = pick(colourSamplesSwapOptions(view).discards.filter((d) => d.legal), rng);
       return discard === undefined ? null : { type, discardOrderId: discard.orderId };
     }
-    case "COLOUR_SAMPLES_SWAP_CHOOSE": {
-      const look = lookedOrderOptions(view);
-      const orderId = look?.kind === "colour_samples_swap" ? pick(look.orderIds, rng) : undefined;
-      return orderId === undefined ? null : { type, orderId };
-    }
     case "SECOND_FIRING_CHOOSE": {
       const options = secondFiringChoiceOptions(view);
       if (options === null) {
@@ -1344,20 +1319,16 @@ function randomCandidate(ctx: EnumContext, type: GameActionType, rng: RandomSour
     case "END_AFTER_QUALITY":
     case "END_ORDER_TURN":
       return { type };
-    case "COMMISSION_CHOOSE": {
-      // 1 pick, or (Shifu effect) 2 distinct picks half the time (v1.6.2 L196, L198).
-      const step = workStep(ctx.game, "commission_market");
-      const picks = shuffled(commissionPicks(ctx), rng);
-      if (step === null || picks.length === 0) {
+    case "SELECT_CHOOSE": {
+      // 1 pick, a face-up Order or a looked card, or (Commission Market Shifu effect) 2 distinct
+      // picks half the time (v1.6.2 L64, L202).
+      const options = lookedOrderOptions(view);
+      const picks = shuffled(selectPicks(ctx), rng);
+      if (options === null || picks.length === 0) {
         return null;
       }
-      const count = step.maxReservations >= 2 && picks.length >= 2 && coin(rng) ? 2 : 1;
+      const count = options.maxReservations >= 2 && picks.length >= 2 && coin(rng) ? 2 : 1;
       return { type, reservations: picks.slice(0, count) };
-    }
-    case "COLOUR_SAMPLES_CHOOSE": {
-      const look = lookedOrderOptions(view);
-      const orderId = look?.kind === "colour_samples" ? pick(look.orderIds, rng) : undefined;
-      return orderId === undefined ? null : { type, orderId };
     }
     case "GUILD_TAKE": {
       const options = guildInspectionOptions(view);

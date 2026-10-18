@@ -100,13 +100,13 @@ export function phaseScenarios(): PhaseScenario[] {
       "Commission Market: Shifu top-3 look, 2 reservations",
       table,
       "p1",
-      (c) => c.type === "COMMISSION_CHOOSE" && c.reservations.length === 2 && c.reservations.some((pick) => pick.kind === "looked"),
+      (c) => c.type === "SELECT_CHOOSE" && c.reservations.length === 2 && c.reservations.some((pick) => pick.kind === "looked"),
     );
   }
   {
     const table = work({ players: [{ resources: RICH }, {}] });
     table.act("p1", { type: "PLACE_COMMISSION_MARKET", workerId: "p1:apprentice:1" });
-    add("Commission Market: Apprentice top-2 look, 1 reservation", table, "p1", (c) => c.type === "COMMISSION_CHOOSE" && c.reservations[0]?.kind === "looked");
+    add("Commission Market: Apprentice top-2 look, 1 reservation", table, "p1", (c) => c.type === "SELECT_CHOOSE" && c.reservations[0]?.kind === "looked");
   }
   {
     const table = work({ players: [{ resources: RICH, techs: ["T01"] }, {}] });
@@ -116,12 +116,12 @@ export function phaseScenarios(): PhaseScenario[] {
   {
     const table = work({ players: [{ resources: RICH }, {}], techDisplay: { glazing_loading: ["T10", "T20"] } });
     table.act("p1", { type: "PLACE_GUILD_HALL", workerId: "p1:apprentice:1", choice: { kind: "buy_face_up", techId: "T10" } });
-    add("Colour Samples choice", table, "p1", (c) => c.type === "COLOUR_SAMPLES_CHOOSE");
+    add("Colour Samples choice", table, "p1", (c) => c.type === "SELECT_CHOOSE" && c.reservations[0]?.kind === "looked");
   }
   {
     const table = work({ players: [{ techs: ["T10"], hand: ["O40", "S01"] }, {}] });
     table.act("p1", { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: "S01" });
-    add("Colour Samples swap look", table, "p1", (c) => c.type === "COLOUR_SAMPLES_SWAP_CHOOSE");
+    add("Colour Samples swap look", table, "p1", (c) => c.type === "SELECT_CHOOSE" && c.reservations[0]?.kind === "looked");
   }
   {
     const table = work({

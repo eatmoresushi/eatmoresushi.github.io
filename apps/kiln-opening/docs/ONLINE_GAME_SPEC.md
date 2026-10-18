@@ -19,7 +19,7 @@ The [V1.6.2 Player Rulebook](./KILN_OPENING_v1.6.2_EN_SOURCE.md) and its [audit]
 - The host enters a display name (1–40 characters). The server creates a six-character room code and a stable seat credential. The browser keeps the raw seat token in durable per-room storage; the server stores only its hash.
 - Players join with the room code and a display name, up to 4 seats. An authenticated account holds at most one seat per room.
 - The lobby shows seats, the host, and computer seats. The host starts the game with 2–4 seats.
-- Every room is stamped `rules_version = content_version = '1.6.2'` and the server's rules fingerprint `r30-<digest>` (`RULES_BEHAVIOUR_REVISION` 30). Joining or adding a computer to any other room is refused before a seat is written.
+- Every room is stamped `rules_version = content_version = '1.6.2'` and the server's rules fingerprint `r31-<digest>` (`RULES_BEHAVIOUR_REVISION` 31, owner revision 3). Joining or adding a computer to any other room is refused before a seat is written.
 
 ### Computer players
 
@@ -51,14 +51,14 @@ Every consumer routes on the engine's `decisionPrompt(state)` alone, never on a 
 - Every command is untrusted JSON. `parseCommand` shape-checks it — `SUBMIT_CONTRIBUTION` included — before the service branches on its type (`MALFORMED_ACTION` otherwise).
 - Each command carries a UUID `commandId`. Replaying an accepted ID returns the stored response to the same seat and commits nothing; another seat using the ID gets `DUPLICATE_COMMAND` This holds after the room is `finished` or `abandoned`, including for the command that ended the game; only a new ID is refused with `SESSION_ENDED`.
 - The engine validates on the actor's view only, so a rule error can never mention hidden information. Rule errors are typed (`GameRuleError.code` + `details`) and localised from `RULE_ERROR_TEXT`.
-- Worker actions whose choices are all known when they are made are single commands (Materials Yard, Form & Decorate, Glaze & Load, Apprentice Guild purchases, Canal Wharf, Magistrate's Hall, Imperial Priority). Steps that follow a private reveal are separate commands: the Commission Market reservations after its look (`COMMISSION_CHOOSE`), the Guild Hall Shifu's takes and bottom order after the inspection (`GUILD_TAKE`, `GUILD_FINISH`), Colour Samples' reservation when acquired and its swap (`USE_COLOUR_SAMPLES_SWAP`, then `COLOUR_SAMPLES_SWAP_CHOOSE`), the Second Firing choice after its 2 cards are revealed, and the Test Pieces bury decision.
+- Worker actions whose choices are all known when they are made are single commands (Materials Yard, Form & Decorate, Glaze & Load, Apprentice Guild purchases, Canal Wharf, Magistrate's Hall, Imperial Priority). Steps that follow a private reveal are separate commands: every Select's reservations after its look (`SELECT_CHOOSE`, change 25: the Commission Market's Select 2 or 3, Colour Samples' Select 3 when acquired, and the swap's Select 3 after `USE_COLOUR_SAMPLES_SWAP`; each may also take a face-up Order), the Guild Hall Shifu's takes and bottom order after the inspection (`GUILD_TAKE`, `GUILD_FINISH`), the Second Firing choice after its 2 cards are revealed, and the Test Pieces bury decision.
 - Everything that needs no decision runs inside the command that reaches it: the Kiln Die roll, the round-start rotation, readying abilities, skipped windows, the Fire reveal, Actual Heat, Quality, Canal Barge's 2 Coins, the end of a Work turn with nothing left in the after-action window, the deferred Order and Tech display refills, the end of a Guild Hall Shifu's action when no decision is left, skipping a player with nothing to complete in the Order Phase, and final scoring.
 
 ## Responses and events
 
 - Every response carries the public projection (`PublicGameState`: the state without `hidden`, plus public counts) and the command's public events.
-- The acting seat's response also carries its own `PrivatePlayerView` (hand, own pending look, own Test Pieces peek, own sealed Contribution with its Fuel Ledger commitment) and the `secret` payloads of that command's events addressed to it (`ownSecrets`).
-- In-game VP is public and recorded as it is scored: Orders, Ru/Guan, Imperial Audience, Crowns beyond Recognition 4 and, under owner amendment A1, each Advanced Tech's 1 VP the moment it is gained (`ScoreLedger.techs`, carried on `TECH_ACQUIRED.vp`). `playerSummary(...).recordedVp` and `scorePreview` include Tech VP from the purchase on; the final breakdown still lists it as its own Tech line and never adds it again at game end.
+- The acting seat's response also carries its own `PrivatePlayerView` (hand, own pending look, own Test Pieces peek, own sealed Contribution card) and the `secret` payloads of that command's events addressed to it (`ownSecrets`).
+- In-game VP is public and recorded as it is scored: Orders, Ru/Guan, Imperial Audience and Crowns beyond Recognition 4. Advanced Techs score nothing (change 27, which supersedes owner amendment A1): no Tech line in the ledger, `TECH_ACQUIRED`, `playerSummary(...).recordedVp`, `scorePreview` or the final breakdown. Each player's Contribution cards (`contributionCards`) are public; owning Fuel Ledger is.
 - Events are the presentation timeline, in resolution order. Events with a `secret` — the setup deal, private looks, reservations from a look and the Canal Wharf Shifu's unseen card, the looked-at Orders put under the Main deck, the held Order a Colour Samples swap discards, the Guild bottom order, the Test Pieces peek, hand trims — are published without it. `CONTRIBUTION_SUBMITTED` never carries a card; cards appear only in `CONTRIBUTIONS_REVEALED`.
 - The game start persists `createGame`'s events, including each seat's secret deal, so the public event count always equals `eventSequence` and the event log can be reloaded by sequence.
 - The seat-private event log (`list_private_events`) returns, for the authenticated seat only, every event whose secret is addressed to it, with the secret intact. A non-host seat receives its setup deal this way; a reconnecting seat recovers secrets that are not in its private view, such as the Guild bottom order it chose.
@@ -68,21 +68,21 @@ Every consumer routes on the engine's `decisionPrompt(state)` alone, never on a 
 Refreshing the browser or a network loss never forfeits a seat. On reconnect the service:
 
 - authenticates the stored seat credential and re-checks the room's rules version and fingerprint;
-- returns the same seat, the public projection, and the seat's own `PrivatePlayerView`, rebuilt from the authoritative head and the open window's stored submissions — so a seat that already sealed its Contribution sees its own card and Fuel Ledger commitment;
+- returns the same seat, the public projection, and the seat's own `PrivatePlayerView`, rebuilt from the authoritative head and the open window's stored submissions — so a seat that already sealed its Contribution sees its own card;
 - returns the seat's own private event log;
 - writes nothing.
 
 ## Hidden information
 
 - Public: every ceramic and its attributes (Shaped, loaded, Finished, delivered; Imperial modifier; Kiln Furniture; Heat markers, turned or face down), resources, the Kiln Die, the Fire discard, the displays, owned Techs, completed Orders and Recognition, and hand counts.
-- Private to the owner: the Order hand and setup deal; the Commission Market looks (top 2 or 3) and the Colour Samples looks (top 3 when acquired, top 2 for a swap); which looked-at Orders went under the Main deck; the held Order a swap discarded; the Guild Hall Shifu inspection and chosen bottom order; the Test Pieces peek; reservations from a look and the Canal Wharf Shifu's card; Cleanup discards; a sealed Contribution and its Fuel Ledger commitment until every participant has submitted.
+- Private to the owner: the Order hand and setup deal; the cards each Select looks at (the Commission Market's 2 or 3, Colour Samples' 3 when acquired and for a swap) and the reservations taken from them (a face-up reservation is public); which looked-at Orders went under the Main deck; the held Order a swap discarded; the Guild Hall Shifu inspection and chosen bottom order; the Test Pieces peek; reservations from a look and the Canal Wharf Shifu's card; Cleanup discards; a sealed Contribution card, Fuel Ledger Bank and Fuel Ledger Stoke included, until every participant has submitted.
 - Private to nobody: deck orders (Main, Tech, Fire; several looked-at Orders go under the Main deck in random order, R19, so not even the looker knows their order) and the face-down Main discard (only its count is public).
 - The authoritative state, full events, raw commands and sealed submissions live only in the `private` schema, readable by the service role. Browser roles read only their own rooms' public rows under RLS. The commit RPCs refuse a public state that carries `hidden` and a public event that carries `secret`.
 
 ## Versions and compatibility
 
-- Only V1.6.2 rooms with the server's own `r30-` fingerprint and schema-7 saves continue. A V1.6.1 or V1.4 room is refused by version (`UNSUPPORTED_RULES_VERSION`); a room whose fingerprint differs — older revision, missing or foreign digest — is refused with `RULES_FINGERPRINT_MISMATCH`. Nothing is migrated or relabelled; old rows remain as history.
-- The client refuses any snapshot whose room or game is not V1.6.2 / schema 7 and drops its private payload.
+- Only V1.6.2 rooms with the server's own `r31-` fingerprint and schema-8 saves continue; rooms from before owner revision 3 (`r30-`, schema 7) are refused like older ones. A V1.6.1 or V1.4 room is refused by version (`UNSUPPORTED_RULES_VERSION`); a room whose fingerprint differs — older revision, missing or foreign digest — is refused with `RULES_FINGERPRINT_MISMATCH`. Nothing is migrated or relabelled; old rows remain as history.
+- The client refuses any snapshot whose room or game is not V1.6.2 / schema 8 and drops its private payload.
 
 ## Session lifecycle
 

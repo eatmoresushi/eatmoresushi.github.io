@@ -26,13 +26,13 @@ function priority(ceramicId: string, extra: Partial<Extract<GameAction, { type: 
 }
 
 /** A whole Commission Market action reserving the face-up Order at position 0 (v1.6.2 L195):
- * the placement opens the look, then `COMMISSION_CHOOSE`. Returns the reservation's events. */
+ * the placement opens the look, then `SELECT_CHOOSE`. Returns the reservation's events. */
 function reserveFaceUp(t: LocalTable, workerId: string): GameEvent[] {
   const orderId = t.state.market.display[0];
   if (orderId === null || orderId === undefined) throw new Error("no Order at 0");
   const playerId = workerId.split(":")[0] as string;
   t.act(playerId, { type: "PLACE_COMMISSION_MARKET", workerId });
-  return t.act(playerId, { type: "COMMISSION_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 0, orderId }] });
+  return t.act(playerId, { type: "SELECT_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 0, orderId }] });
 }
 
 /** p1 at Recognition 3: Imperial Kiln gained, token held (L285, L293). */

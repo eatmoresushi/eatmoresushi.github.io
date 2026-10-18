@@ -5,44 +5,44 @@
       {
         "en": "Starting Orders never enter the Main Order deck and have no Crowns; if discarded from your hand during Cleanup, return them to the box. They are Orders for all rules and Kiln Tradition abilities. A player is never required to complete a Starting Order.",
         "zh": "起始委托永远不进入主委托牌堆，也没有御令；若在收工时从手中弃置，放回盒中。对所有规则与窑口传承能力而言，起始委托都算作委托。玩家没有义务完成任何起始委托。",
-        "source": "L520"
+        "source": "L525"
       },
       {
         "en": "When completing an Order, each of your Crackle ceramics may count as having any one Decoration for that Order's Decoration requirements. Its printed Decoration is unchanged.",
         "zh": "完成委托时，你的每件开片器都可以视为具有任意一种纹饰，以满足该委托的纹饰要求；它原本的纹饰不变。",
-        "source": "L469"
+        "source": "L474"
       },
       {
         "en": "Starting Orders and reserved Main Orders both count toward your hand limit of 4 (5 with Colour Samples), checked only at Cleanup.",
         "zh": "起始委托与承接的主委托都计入委托上限4张（有色样簿则为5张），只在收工时检查。",
-        "source": "L199 · L303"
+        "source": "L205 · L309"
       }
     ],
     "main": [
       {
         "en": "Face-up Main Orders cannot be completed; they are reserved at the Commission Market during the Work Phase.",
         "zh": "委托榜上的主委托不能完成；它们要在派工阶段于瓷牙行承接。",
-        "source": "L296"
+        "source": "L302"
       },
       {
         "en": "Requirements are independent unless a specific pairing is explicitly printed.",
         "zh": "各项要求彼此独立，除非卡面直接写明配对。",
-        "source": "L422"
+        "source": "L427"
       },
       {
         "en": "Each Crackle ceramic may count as having any one Decoration for that Order's Decoration requirements; its printed Decoration is unchanged.",
         "zh": "每件开片器都可以视为具有任意一种纹饰，以满足该委托的纹饰要求；它原本的纹饰不变。",
-        "source": "L469 · INT Ge Crackle"
+        "source": "L474 · INT Ge Crackle"
       },
       {
         "en": "A Crackle ceramic cannot fill a Masterpiece requirement, including Painted Masterpiece Orders.",
         "zh": "开片器不能满足任何臻品要求，包括画花臻品委托。",
-        "source": "L645"
+        "source": "L650"
       },
       {
         "en": "Resolve 1 Crown at a time. Each Crown advances Imperial Recognition by 1 until you reach Recognition 4; after that, each further Crown scores 1 VP immediately. Resolve every milestone crossed.",
         "zh": "逐个结算御令。每个御令使御府声望推进1格，直到声望4。到达声望4之后，每再获得1个御令，立即得1分。途经的每一格奖励都要结算。",
-        "source": "L415"
+        "source": "L420"
       },
       {
         "en": "Tribute Ware's bonus Crown is not a printed Crown: it does not trigger Guan and does not count for tie-breaker 2.",
@@ -52,12 +52,12 @@
       {
         "en": "Tie-breaker 2 counts Crown icons printed across completed Orders.",
         "zh": "平局判定②统计已完成委托上印的御令总数。",
-        "source": "L497"
+        "source": "L502"
       },
       {
         "en": "At the start of Rounds 2–5, discard the 2 leftmost face-up Main Orders, slide the remaining 4 left and reveal 2 new Orders to restore the display to 6.",
         "zh": "第2–5轮开工时轮换委托榜：弃置最左边的2张主委托，余下4张向左推，再翻开2张新委托，使委托榜恢复为6张。",
-        "source": "L130 · L132"
+        "source": "L136 · L138"
       },
       {
         "en": "If the deck and discard are both empty, only available cards can be reserved and display positions stay empty. The round-start rotation discards up to 2 and slides the rest.",
@@ -77,7 +77,7 @@
       {
         "en": "Starting Orders and reserved Main Orders both count toward your hand limit of 4 (5 with Colour Samples), checked only at Cleanup. Discarded Main Orders go to the Main Order discard pile.",
         "zh": "起始委托与承接的主委托都计入委托上限4张（有色样簿则为5张），只在收工时检查；弃置的主委托进入主委托弃牌堆。",
-        "source": "L199 · L303"
+        "source": "L205 · L309"
       }
     ]
   },

@@ -3,6 +3,7 @@ import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   CENTRAL_LOCATION_IDS,
+  BASE_CONTRIBUTION_CARD_IDS,
   CONTRIBUTION_CARD_IDS,
   DECORATIONS,
   DISCIPLINES,
@@ -501,7 +502,8 @@ const gh = LOCATIONS.guild_hall.effects;
 const my = LOCATIONS.materials_yard.effects;
 const mh = LOCATIONS.magistrates_hall.effects;
 const cw = LOCATIONS.canal_wharf.effects;
-const stoke = contributionCard("STOKE").heat;
+const ledgerBank = contributionCard("FUEL_LEDGER_BANK");
+const ledgerStoke = contributionCard("FUEL_LEDGER_STOKE");
 /** The smallest Heat Difference the Quality table calls Flawed (L274–279). */
 const flawedFrom = (FIRING.qualityByHeatDifference.find((row) => row.quality === "standard")?.maxDifference ?? -1) + 1;
 
@@ -513,7 +515,8 @@ const PRINTED_NUMBERS: Array<[string, string, number[]]> = [
   ["T17", TECHS.T17.ability, [1, TECHS.T17.params.claySurcharge]],
   ["T18", TECHS.T18.ability, [1]],
   ["T19", TECHS.T19.ability, [TECHS.T19.params.vpPerCeramic, TECHS.T19.params.maxVp]],
-  ["T10", TECHS.T10.ability, [TECHS.T10.params.lookSize, 1, TECHS.T10.params.handLimit, TECHS.T10.params.swapDiscard, TECHS.T10.params.swapLookSize, 1]],
+  // v1.6.2 L622 (change 25): "When acquired: Select 3 … hand limit is 5 … discard 1 held Order to Select 3".
+  ["T10", TECHS.T10.ability, [TECHS.T10.params.select, TECHS.T10.params.handLimit, TECHS.T10.params.swapDiscard, TECHS.T10.params.swapSelect]],
   ["T20", TECHS.T20.ability, [1, TECHS.T20.params.clay, TECHS.T20.params.wood]],
   ["T15", TECHS.T15.ability, [1, ...abs(TECHS.T15.params.modifiers)]],
   ["T21", TECHS.T21.ability, [1]],
@@ -521,7 +524,9 @@ const PRINTED_NUMBERS: Array<[string, string, number[]]> = [
   ["T23", TECHS.T23.ability, [TECHS.T23.params.coins]],
   // "a Heat Difference of 3 or more" is the first difference the Quality table calls Flawed.
   ["T11", TECHS.T11.ability, [flawedFrom, 1]],
-  ["T12", TECHS.T12.ability, [TECHS.T12.params.extraWood, stoke + TECHS.T12.params.heat, stoke + TECHS.T12.params.heat]],
+  // v1.6.2 L634 (change 26): "Fuel Ledger Bank (1 Wood, −2) and Fuel Ledger Stoke (1 Wood, +2) …
+  // choose among all 5 of your cards as usual, playing exactly 1".
+  ["T12", TECHS.T12.ability, [ledgerBank.woodCost, -ledgerBank.heat, ledgerStoke.woodCost, ledgerStoke.heat, CONTRIBUTION_CARD_IDS.length, 1]],
   ["T13", TECHS.T13.ability, [1, TECHS.T13.params.wood]],
   ["T14", TECHS.T14.ability, [1, TECHS.T14.params.extraCards, TECHS.T14.params.chosenCards]],
   ["T24", TECHS.T24.ability, [...abs(TECHS.T24.params.values), 1]],
@@ -537,10 +542,11 @@ const PRINTED_NUMBERS: Array<[string, string, number[]]> = [
   ["form_decorate.shifu", LOCATIONS.form_decorate.shifuText, [fd.shifu.maxVessels, fd.shifu.maxVessels, fd.shifu.twoVesselDecorationDiscount]],
   ["glaze_load.apprentice", LOCATIONS.glaze_load.apprenticeText, [gl.apprentice.maxLoads]],
   ["glaze_load.shifu", LOCATIONS.glaze_load.shifuText, [gl.shifu.maxLoads, 1]],
-  ["commission_market.apprentice", LOCATIONS.commission_market.apprenticeText,
-    [cm.apprentice.lookSize, cm.apprentice.maxReservations, cm.apprentice.lookSize, cm.apprentice.lookSize]],
+  // v1.6.2 L201–202 (change 25): "Select 2."; "Select 3, reserving up to 2 Orders instead of 1,
+  // in any mix of the 3 cards and the display".
+  ["commission_market.apprentice", LOCATIONS.commission_market.apprenticeText, [cm.apprentice.select]],
   ["commission_market.shifu", LOCATIONS.commission_market.shifuText,
-    [cm.shifu.lookSize, cm.shifu.maxReservations, cm.shifu.lookSize, cm.shifu.lookSize]],
+    [cm.shifu.select, cm.shifu.maxReservations, cm.apprentice.maxReservations, cm.shifu.select]],
   ["guild_hall.apprentice", LOCATIONS.guild_hall.apprenticeText, [gh.apprentice.maxTechs]],
   // v1.6.2 L207 (owner revision 2026-10-17): "Choose 1 discipline … top 2 … take up to 2".
   ["guild_hall.shifu", LOCATIONS.guild_hall.shifuText, [1, gh.shifu.inspectCount, gh.shifu.maxTechs]],
@@ -740,8 +746,7 @@ describe("locations and capacity (L146–233)", () => {
       materials_yard: [[my.apprentice.resources], [my.shifu.resources]],
       form_decorate: [[fd.apprentice.maxVessels], [fd.shifu.maxVessels, fd.shifu.maxVessels, fd.shifu.twoVesselDecorationDiscount]],
       glaze_load: [[gl.apprentice.maxLoads], [gl.shifu.maxLoads, 1]],
-      commission_market: [[cm.apprentice.lookSize, cm.apprentice.maxReservations, cm.apprentice.lookSize],
-        [cm.shifu.lookSize, cm.shifu.maxReservations, cm.shifu.lookSize]],
+      commission_market: [[cm.apprentice.select], [cm.shifu.select, cm.shifu.maxReservations]],
       guild_hall: [[gh.apprentice.maxTechs], [gh.shifu.inspectCount, 1, gh.shifu.maxTechs]],
       canal_wharf: [[cw.apprentice.coins], [cw.shifu.coins]],
       magistrates_hall: [
@@ -792,30 +797,31 @@ describe("setup, production, firing and scoring values", () => {
     expect(SOURCE).toContain(`Exactly ${GAME_CONFIG.techs.perDiscipline} Form & Decorate, ${GAME_CONFIG.techs.perDiscipline} Glazing & Loading and ${GAME_CONFIG.techs.perDiscipline} Firing`);
   });
 
-  it("scores each Tech's printed 1 VP when it is gained, per owner amendment A1 (v1.6.2 L30, L378, L491, L600, L746)", () => {
-    const vp = GAME_CONFIG.techs.vpEach;
-    expect(vp).toBe(1);
-    // A1 is applied in the source itself (change 20 at line 30; lines 378, 491, 600, 746 after owner
-    // revision 2): scored on gain, never again at game end.
+  it("scores no VP for Advanced Techs, per rulebook change 27 (v1.6.2 L37, L496, L605, L753), which superseded owner amendment A1", () => {
+    expect(GAME_CONFIG.techs).not.toHaveProperty("vpEach");
     const lines = SOURCE.split("\n");
-    expect(lines[29]).toBe(`20. **Tech VP scored on purchase.** The ${vp} VP per Advanced Tech is recorded the moment the tile is taken, not at game end. Bookkeeping only; Techs cannot be lost.`);
-    expect(lines[377]).toBe(`- Each Advanced Tech scores **${vp} VP immediately when you gain it**; it is not scored again at game end.`);
-    // Final scoring (L491–493, owner wording 2026-10-16): recorded VP (Tech VP included), Exhibition, Coins; no Tech step.
-    expect(lines[490]).toContain(`**${vp} VP for each Advanced Tech** (scored when gained)`);
-    expect(lines[491]).toBe("2. the end-game Exhibition;");
-    expect(lines[492]).toBe(`3. **1 VP per 3 Coins remaining**, maximum **5 VP**.`);
-    expect(lines[493]).toBe("");
-    expect(lines[599]).toContain(`Each Advanced Tech scores **${vp} VP immediately when you gain it**.`);
-    expect(lines[745]).toBe(`- Advanced Techs: **${vp} VP each**, scored when you gain them.`);
-    expect(SOURCE).not.toMatch(/Advanced Tech[^\n]*\*\*1 VP at game end\*\*/);
-    // The audit records the amendment.
+    expect(lines[36]).toContain("27. **Tech VP removed.** Advanced Techs no longer score 1 VP when gained.");
+    expect(lines[36]).toContain("Connoisseur's Cabinet keeps its end-game VP. Printed costs unchanged");
+    // Change 20 (line 30, A1) stays in the change log as history; no rule line scores Tech VP.
+    expect(lines[29]).toContain("20. **Tech VP scored on purchase.**");
+    expect(SOURCE).not.toMatch(/Each Advanced Tech scores/);
+    expect(SOURCE).not.toMatch(/Advanced Techs: \*\*1 VP each\*\*/);
+    // Final scoring (L494–498): recorded VP without Techs, the Exhibition, Coins.
+    expect(lines[495]).toBe("1. all VP recorded during play: Orders, Kiln Tradition abilities, **Imperial Audience** and VP from Crowns gained beyond Recognition 4;");
+    expect(lines[496]).toBe("2. the end-game Exhibition;");
+    expect(lines[497]).toBe(`3. **1 VP per 3 Coins remaining**, maximum **5 VP**.`);
+    expect(lines[604]).toBe("Tech tiles use abbreviated reminder text; this appendix gives the full effects. A player owns at most 3 and at most 1 per discipline. **Form & Decorate** tiles remove the Cover token from your second Form & Decorate space, **Glazing & Loading** tiles the one from your second Glaze & Load space; **Firing** tiles remove nothing.");
+    // Connoisseur's Cabinet keeps its end-game VP (Appendix B).
+    expect(TECHS.T19.params).toEqual({ vpPerCeramic: 1, qualities: ["fine", "masterpiece"], maxVp: 5 });
+    // The audit records A1 as superseded by change 27.
     const a1 = AUDIT.split("\n").find((line) => line.startsWith("| A1 |"));
     expect(a1).toBeDefined();
     const [id, date, amendment, overrides] = cellsOf(a1 ?? "");
     expect([id, date]).toEqual(["A1", "2026-10-15"]);
-    expect(amendment).toContain(`Each Advanced Tech scores its ${vp} VP immediately when the player gains it`);
-    expect(amendment).toContain("It is no longer added at game end.");
-    expect(overrides).toContain("Lines 378, 491, 600, 746");
+    // `cellsOf` strips the bold markup: the cell opens "**Superseded**".
+    expect(amendment).toMatch(/^Superseded by rulebook change 27\b/);
+    expect(amendment).toContain("change 27");
+    expect(overrides).toContain("none");
   });
 
   it("prices Shapes, Decorations and Glazes as L319–353 print", () => {
@@ -869,15 +875,29 @@ describe("setup, production, firing and scoring values", () => {
     expect(FIRING.fireDeck).toHaveLength(12);
   });
 
-  it("matches the Contribution card table (L255–259)", () => {
+  it("matches the Contribution card table and Fuel Ledger's 2 cards (v1.6.2 L262–266, L634, change 26)", () => {
     const block = section("### Contribution Cards");
-    expect(CONTRIBUTION_CARD_IDS).toEqual(["BANK", "TEND", "STOKE"]);
-    for (const id of CONTRIBUTION_CARD_IDS) {
+    expect(CONTRIBUTION_CARD_IDS).toEqual(["BANK", "TEND", "STOKE", "FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"]);
+    expect(BASE_CONTRIBUTION_CARD_IDS).toEqual(["BANK", "TEND", "STOKE"]);
+    for (const id of BASE_CONTRIBUTION_CARD_IDS) {
       const card = contributionCard(id);
       const [, wood, heat] = row(block, card.name);
       expect(card.woodCost, id).toBe(Number(wood));
       expect(card.heat, id).toBe(Number((heat ?? "").replace("−", "-").replace("+", "")));
+      expect(card.techId, id).toBeNull();
     }
+    // "The owner of **Fuel Ledger** holds 2 more cards, **Fuel Ledger Bank** (1 Wood, −2) and
+    // **Fuel Ledger Stoke** (1 Wood, +2)" (L266), as Appendix B and the Quick Reference print them.
+    for (const id of ["FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"] as const) {
+      const card = contributionCard(id);
+      const sign = card.heat < 0 ? "−" : "+";
+      expect(block).toContain(`**${card.name}** (${card.woodCost} Wood, ${sign}${Math.abs(card.heat)})`);
+      expect(SOURCE).toContain(`${card.name} ${card.woodCost} Wood / ${sign}${Math.abs(card.heat)}`);
+      expect(card.techId).toBe("T12");
+    }
+    expect(TECHS.T12.params.cards).toEqual(["FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"]);
+    expect(TECHS.T12.params.freeCards).toEqual(["BANK", "STOKE"]);
+    expect(block).toContain("they still play exactly 1 card");
   });
 
   it("assigns Quality by the Quality table (L274–279)", () => {
@@ -996,13 +1016,18 @@ describe("components, round phases and Imperial milestones are the rulebook tabl
     expect(zh[5]).toEqual(["此后每个御令", "", `+${IMPERIAL_TRACK.overflowVpPerCrown}分`]);
   });
 
-  it("names the Contribution cards as the Chinese Contribution table prints them", () => {
+  it("names the Contribution cards as the Chinese Contribution table and Fuel Ledger's sentence print them", () => {
     const block = section("### 控火牌", SOURCE_ZH);
-    for (const id of CONTRIBUTION_CARD_IDS) {
+    for (const id of BASE_CONTRIBUTION_CARD_IDS) {
       const card = contributionCard(id);
       const [, wood, heat] = row(block, card.nameZh);
       expect(card.woodCost, id).toBe(Number(wood));
       expect(card.heat, id).toBe(Number((heat ?? "").replace("−", "-").replace("+", "")));
+    }
+    for (const id of ["FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"] as const) {
+      const card = contributionCard(id);
+      const sign = card.heat < 0 ? "−" : "+";
+      expect(block).toContain(`**${card.nameZh}**（${card.woodCost}柴，${sign}${Math.abs(card.heat)}）`);
     }
   });
 });
@@ -1070,9 +1095,9 @@ describe("content validation", () => {
   const mutations: Array<[string, (files: ContentFiles) => void]> = [
     ["a wrong rules version", (files) => { (files.orders as { rulesVersion: string }).rulesVersion = "1.4"; }],
     ["the V1.6.1 rules version", (files) => { (files.techniques as { rulesVersion: string }).rulesVersion = "1.6.1"; }],
-    ["a Commission look smaller than its reservations", (files) => {
+    ["a Commission Select smaller than its reservations", (files) => {
       const market = files.actionLocations.locations.find((location) => location.id === "commission_market");
-      (market?.effects as { shifu: { lookSize: number } }).shifu.lookSize = 1;
+      (market?.effects as unknown as { shifu: { select: number } }).shifu.select = 1;
     }],
     ["a Commission effect that reserves nothing", (files) => {
       const market = files.actionLocations.locations.find((location) => location.id === "commission_market");
@@ -1251,14 +1276,33 @@ function componentTexts(): ComponentText[] {
   return found;
 }
 
-/** The component of a Tech or Kiln, found by its heading. */
+/** Fuel Ledger's 2 Contribution cards, which carry component text (v1.6.2 change 26). */
+const LEDGER_CARD_IDS = ["FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"] as const;
+/** Every component with short text: the 18 Techs, the 2 Fuel Ledger cards and the 5 Kilns. */
+const SHORT_TEXT_IDS: readonly string[] = [...TECH_IDS, ...LEDGER_CARD_IDS, ...KILN_IDS];
+
+/** The component of a Tech, a Fuel Ledger card or a Kiln, found by its heading. */
 function componentHeading(id: string): string {
   if ((TECH_IDS as readonly string[]).includes(id)) {
     const tech = TECHS[id as TechId];
     return `${tech.name} / ${tech.nameZh}`;
   }
+  if ((LEDGER_CARD_IDS as readonly string[]).includes(id)) {
+    const card = contributionCard(id as (typeof LEDGER_CARD_IDS)[number]);
+    return `${card.name} / ${card.nameZh}`;
+  }
   const kiln = KILNS[id as keyof typeof KILNS];
   return `${kiln.name} / ${kiln.nameZh} — ${kiln.abilityName} / ${kiln.abilityNameZh}`;
+}
+
+/** The data definition holding a component's `shortText` / `shortTextZh`. */
+function shortTextOf(id: string): { id: string; shortText: string; shortTextZh: string } {
+  if ((TECH_IDS as readonly string[]).includes(id)) return TECHS[id as TechId];
+  if ((LEDGER_CARD_IDS as readonly string[]).includes(id)) {
+    const card = contributionCard(id as (typeof LEDGER_CARD_IDS)[number]);
+    return { id, shortText: card.shortText ?? "", shortTextZh: card.shortTextZh ?? "" };
+  }
+  return KILNS[id as keyof typeof KILNS];
 }
 
 /** The owner's bold runs of one line, in order. */
@@ -1273,7 +1317,7 @@ function componentTextSource(): Map<string, { heading: string; en?: string; zh?:
   let current: { heading: string; en?: string; zh?: string } | null = null;
   for (const line of COMPONENT_TEXT_SOURCE.split("\n")) {
     if (line.startsWith("## ")) current = null;
-    const heading = /^### (.+) \(([A-Z]{2}|T\d{2})\)$/.exec(line);
+    const heading = /^### (.+) \(([A-Z]{2}|T\d{2}|FUEL_LEDGER_(?:BANK|STOKE))\)$/.exec(line);
     if (heading !== null) {
       current = { heading: heading[1] ?? "" };
       found.set(heading[2] ?? "", current);
@@ -1290,13 +1334,16 @@ describe("short component text (the owner's V1.6.2 component text)", () => {
   const texts = componentTexts();
   const source = componentTextSource();
 
-  it("covers exactly the 18 Techs and 5 Kilns", () => {
-    expect(texts).toHaveLength(TECH_IDS.length + KILN_IDS.length);
-    expect(texts.map((text) => text.heading).sort()).toEqual([...TECH_IDS, ...KILN_IDS].map(componentHeading).sort());
+  it("covers exactly the 18 Techs, the 2 Fuel Ledger Contribution cards and the 5 Kilns", () => {
+    expect(texts).toHaveLength(SHORT_TEXT_IDS.length);
+    expect(texts.map((text) => text.heading).sort()).toEqual(SHORT_TEXT_IDS.map(componentHeading).sort());
+    // The keyword line of the introduction (v1.6.2 change 25) names no component.
+    expect(COMPONENT_TEXT).toContain("Keyword **Select N:** look at the top N cards of the Main Order deck, reserve 1 of them or 1 face-up Main Order from the display; the rest go to the bottom of the deck.");
+    expect(COMPONENT_TEXT).toContain("关键词**精选N：**查看主委托牌堆顶N张，承接其中1张或委托榜上1张，其余放到牌堆底。");
   });
 
   it("has a repository-format copy keyed by ID, line for line the owner's text with the bold removed", () => {
-    expect([...source.keys()].sort()).toEqual([...TECH_IDS, ...KILN_IDS].sort());
+    expect([...source.keys()].sort()).toEqual([...SHORT_TEXT_IDS].sort());
     for (const [id, entry] of source) {
       expect(entry.heading, id).toBe(componentHeading(id));
       const owner = texts.find((text) => text.heading === entry.heading);
@@ -1309,22 +1356,22 @@ describe("short component text (the owner's V1.6.2 component text)", () => {
     for (const label of SHORT_TEXT_SECONDARY_LABELS) expect(COMPONENT_TEXT_SOURCE, label).toContain(label);
   });
 
-  it("changed from V1.6.1 only on the five Techs V1.6.2 rewrote (changes 22–24)", () => {
+  it("changed from V1.6.1 only on the five Techs V1.6.2 rewrote and the 2 new Fuel Ledger cards (changes 22–26)", () => {
     const previous = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.1_COMPONENT_TEXT_SOURCE.md"), "utf8");
     const changed = [...source.entries()].filter(([id, entry]) =>
       !previous.includes(`(${id})\n- EN: ${entry.en ?? ""}\n- ZH: ${entry.zh ?? ""}\n`)).map(([id]) => id);
-    expect(new Set(changed)).toEqual(V162_TECHS);
+    expect(new Set(changed)).toEqual(new Set([...V162_TECHS, ...LEDGER_CARD_IDS]));
   });
 
-  it.each([...TECH_IDS, ...KILN_IDS])("%s: shortText and shortTextZh equal the owner's lines, bold removed", (id) => {
-    const definition = (TECH_IDS as readonly string[]).includes(id) ? TECHS[id as TechId] : KILNS[id as keyof typeof KILNS];
+  it.each(SHORT_TEXT_IDS)("%s: shortText and shortTextZh equal the owner's lines, bold removed", (id) => {
+    const definition = shortTextOf(id);
     const entry = texts.find((text) => text.heading === componentHeading(id));
     expect(definition.shortText).toBe(entry?.en.replaceAll("**", ""));
     expect(definition.shortTextZh).toBe(entry?.zh.replaceAll("**", ""));
   });
 
-  it.each([...TECH_IDS, ...KILN_IDS])("%s: the UI emphasis reproduces the owner's bold timing clauses", (id) => {
-    const definition = (TECH_IDS as readonly string[]).includes(id) ? TECHS[id as TechId] : KILNS[id as keyof typeof KILNS];
+  it.each(SHORT_TEXT_IDS)("%s: the UI emphasis reproduces the owner's bold timing clauses", (id) => {
+    const definition = shortTextOf(id);
     const entry = texts.find((text) => text.heading === componentHeading(id));
     for (const [text, line] of [[definition.shortText, entry?.en ?? ""], [definition.shortTextZh, entry?.zh ?? ""]] as const) {
       const emphasised = shortTextSegments(text).filter((segment) => segment.emphasis).map((segment) => segment.text);
@@ -1334,7 +1381,7 @@ describe("short component text (the owner's V1.6.2 component text)", () => {
 
   it("is plain text whose timing clause and secondary labels the UI emphasises", () => {
     const emphasised = new Map<string, string[]>();
-    for (const definition of [...TECH_IDS.map((id) => TECHS[id]), ...KILN_IDS.map((id) => KILNS[id])]) {
+    for (const definition of SHORT_TEXT_IDS.map(shortTextOf)) {
       for (const text of [definition.shortText, definition.shortTextZh]) {
         expect(text, definition.id).not.toMatch(/[*_`#\n]|<br>/);
         const segments = shortTextSegments(text);
@@ -1349,8 +1396,9 @@ describe("short component text (the owner's V1.6.2 component text)", () => {
       "T10:zh": ["持续：", "每轮一次，你的一次工人行动之前或之后："],
       "T11:en": ["Once per round, after Quality is assigned:"],
       "T11:zh": ["每轮一次，定品后："],
-      "T12:en": ["When you choose Bank or Stoke:"],
-      "T12:zh": ["选控火时："],
+      // Owner revision 3 (change 26): Fuel Ledger's second clause is "When acquired:".
+      "T12:en": ["When acquired:"],
+      "T12:zh": ["习得时："],
       "GE:en": ["Orders:"],
       "GE:zh": ["完成委托时："],
     });
@@ -1452,7 +1500,7 @@ function resolveTag(tag: string): string | null {
  * line exactly.
  */
 const QUOTE_ADAPTATIONS: ReadonlyArray<readonly [string, string, string]> = [
-  ["T12", "A ceramic in an Imperial Kiln gives no say over the shared fire", "L260 abridged"],
+  ["T12", "A ceramic in an Imperial Kiln gives no say over the shared fire", "L266 abridged"],
   ["JU", "Jun's adjustment applies on top of either a Heat marker or the Kiln Master marker", "L639's \"either\" named"],
   ["magistrates_hall", "You may place a worker only if you can perform at least 1 instance of the main action", "L144 \"that location's\" made specific"],
   ["orders.starting", "Starting Orders and reserved Main Orders both count toward your hand limit of 4", "L199 and L303 combined"],
@@ -1473,6 +1521,11 @@ const RETIRED_CLARIFICATION_WORDING: ReadonlyArray<readonly [RegExp, string]> = 
   [/extra Fire card is revealed|另翻1张/, "a single extra Fire card for Second Firing"],
   [/discard the rest|其余弃置|the other is discarded/i, "looked cards discarded instead of put on the deck bottom"],
   [/Coins? less, minimum 0|少付2铜钱/, "the Guild Hall Shifu discount"],
+  // Owner revision 3 (changes 25–27): the swap Selects 3, Fuel Ledger brings cards, no Tech VP.
+  [/looks at the top 2|2 for a swap|换单看2张|查看牌堆顶2张。如果/, "the Colour Samples swap's look of 2"],
+  [/takes only from the deck|只从牌堆取牌|takes from the deck\)|取自牌堆，委托榜不补牌/, "Colour Samples taking from the deck only"],
+  [/commit(?:s|ted)? (?:1 )?Wood|commitment|暗附|柴簿加柴|押下的柴/, "the Fuel Ledger commitment"],
+  [/1 VP immediately when you gain|its 1 VP|own 1 VP|立即得1分。$|它的1分|自身的1分/, "Tech VP (owner amendment A1)"],
 ];
 
 const CLARIFICATIONS_DOC_V161 = readFileSync(join(ROOT, "docs/KILN_OPENING_v1.6.1_CLARIFICATIONS.md"), "utf8");
@@ -1523,7 +1576,7 @@ describe("clarifications (owner decision D10, K15)", () => {
     for (const bad of ["L0", "R20", "B4", "P4", "P5", "INT", "ED 649", "l375"]) expect(CLARIFICATION_TAG.test(bad), bad).toBe(false);
     expect(resolveTag("L9999")).toBeNull();
     expect(resolveTag("INT Imaginary ruling")).toBeNull();
-    expect(resolveTag("ED L16")).toContain("It is superseded by change 21 (L31, L196) and change 22 (L32, L617).");
+    expect(resolveTag("ED L16")).toContain("It is superseded by change 21 (L31, L202), change 22 (L32, L622) and change 25 (L35).");
   });
 
   it("cites no owner ruling V1.6.2 made obsolete or superseded (R3, R6, R14)", () => {
@@ -1566,7 +1619,9 @@ describe("clarifications (owner decision D10, K15)", () => {
       }
     }
     expect(problems).toEqual([]);
-    expect(carried).toBe(120);
+    // 120 under owner revision 2; revision 3 removed the 2 Tech VP items (A1) and rewrote Fuel
+    // Ledger's commitment items (changes 26–27).
+    expect(carried).toBe(116);
   });
 
   it("quotes cited rulebook sentences exactly", () => {

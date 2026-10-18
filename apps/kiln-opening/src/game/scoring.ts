@@ -1,12 +1,10 @@
 /**
- * Final scoring, tie-breakers and the score preview (L442–452, L488–498, L620, R13, A1).
+ * Final scoring, tie-breakers and the score preview (L442–452, v1.6.2 L494–503, L616, R13).
  *
- * A player's total (L492–494) is:
- * 1. VP recorded during play (`ScoreLedger`): Orders, Ru/Guan, Imperial Audience, Crowns
- *    beyond Recognition 4 and — owner amendment A1, overriding L379/L492/L609/L755 — 1 VP
- *    per Advanced Tech, recorded when the Tech is gained and no longer added at game end.
- *    The breakdown keeps a separate `techs` line, read from the ledger, so players see where
- *    those points came from; no effect removes a Tech, so totals and ties are unchanged;
+ * A player's total (v1.6.2 L496–498) is:
+ * 1. VP recorded during play (`ScoreLedger`): Orders, Ru/Guan, Imperial Audience and Crowns
+ *    beyond Recognition 4. Advanced Techs score nothing, neither when gained nor at game end
+ *    (v1.6.2 change 27, which superseded owner amendment A1's 1 VP per Tech);
  * 2. the End-game Exhibition, automatic (INT: Exhibition): every Finished, undelivered
  *    ceramic of Standard or better (never Flawed, L452) scores 2/3/5 by Quality, plus +3 for
  *    ≥ 3 different Shapes and +3 for ≥ 3 different Glazes (L446–452); Connoisseur's Cabinet
@@ -46,18 +44,17 @@ import type {
 const CONNOISSEURS_CABINET = "T19";
 
 /**
- * The final score table's rows in L492–494 order: VP recorded during play (Orders, Kiln
- * Tradition abilities, Imperial Audience, Crowns beyond Recognition 4), 1 VP per Advanced
- * Tech (recorded when gained, A1), the End-game Exhibition, Connoisseur's Cabinet (T19, part
- * of the Exhibition scoring, L620), Coins, then the total. Every `FinalScoreBreakdown` key
- * exactly once (UI_V1.6.1_ARCHITECTURE §5 gap 9).
+ * The final score table's rows in v1.6.2 L496–498 order: VP recorded during play (Orders, Kiln
+ * Tradition abilities, Imperial Audience, Crowns beyond Recognition 4), the End-game Exhibition,
+ * Connoisseur's Cabinet (T19, part of the Exhibition scoring, L620), Coins, then the total. No
+ * Tech row (change 27). Every `FinalScoreBreakdown` key exactly once (UI_V1.6.1_ARCHITECTURE §5
+ * gap 9).
  */
 export const SCORE_BREAKDOWN_ROWS: readonly ScoreBreakdownRow[] = Object.freeze([
   "orders",
   "kilnAbilities",
   "imperialAudience",
   "recognitionOverflow",
-  "techs",
   "exhibition",
   "connoisseur",
   "coins",
@@ -119,8 +116,6 @@ function breakdownFor(game: PublicCore, playerId: PlayerId): FinalScoreBreakdown
   const p = player(game, playerId);
   const exhibited = exhibitedCeramics(game, playerId);
   const exhibition = exhibitionScore(exhibited);
-  // Recorded when each Tech was gained (A1), never recomputed here.
-  const techs = p.score.techs;
   const connoisseur = connoisseurVp(game, playerId, exhibited);
   const coins = coinVp(p.resources.coins);
   const total =
@@ -128,7 +123,6 @@ function breakdownFor(game: PublicCore, playerId: PlayerId): FinalScoreBreakdown
     p.score.kilnAbilities +
     p.score.recognitionOverflow +
     p.score.imperialAudience +
-    techs +
     exhibition.total +
     connoisseur +
     coins;
@@ -137,7 +131,6 @@ function breakdownFor(game: PublicCore, playerId: PlayerId): FinalScoreBreakdown
     kilnAbilities: p.score.kilnAbilities,
     recognitionOverflow: p.score.recognitionOverflow,
     imperialAudience: p.score.imperialAudience,
-    techs,
     exhibition,
     connoisseur,
     coins,

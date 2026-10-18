@@ -24,8 +24,9 @@ import type {
 } from "../../../src/multiplayer/types.ts";
 
 /**
- * One stored private submission row as the V1.6.2 RPCs return it. `use_fuel_ledger` is
- * returned as `fuelLedger`; a row without it (never written by V1.6.2) reads as false.
+ * One stored private submission row as the V1.6.2 RPCs return it: the sealed card, one of the
+ * 5 V1.6.2 Contribution cards (Fuel Ledger's 2 included, v1.6.2 change 26). The historical
+ * `use_fuel_ledger` column is no longer returned or written.
  */
 interface PrivateSubmissionRow {
   roomId: string;
@@ -33,11 +34,10 @@ interface PrivateSubmissionRow {
   playerId: string;
   commandId: string;
   card: PrivateSubmissionRecord["card"];
-  fuelLedger?: boolean | null;
   revealedRevision: number | null;
 }
 
-/** Maps a `private.private_submissions` row; the Fuel Ledger commitment must survive. */
+/** Maps a `private.private_submissions` row; the sealed card must survive unchanged. */
 export function privateSubmissionFromRow(row: PrivateSubmissionRow): PrivateSubmissionRecord {
   return {
     roomId: row.roomId,
@@ -45,7 +45,6 @@ export function privateSubmissionFromRow(row: PrivateSubmissionRow): PrivateSubm
     playerId: row.playerId,
     commandId: row.commandId,
     card: row.card,
-    fuelLedger: row.fuelLedger === true,
     revealedRevision: row.revealedRevision,
   };
 }
@@ -53,12 +52,11 @@ export function privateSubmissionFromRow(row: PrivateSubmissionRow): PrivateSubm
 /** The `p_private_submission` payload of `server_commit_transition`. */
 export function privateSubmissionPayload(
   submission: CommitTransitionInput["privateSubmission"],
-): { windowId: string; card: string; fuelLedger: boolean; revealed: boolean } | null {
+): { windowId: string; card: string; revealed: boolean } | null {
   if (submission === null) return null;
   return {
     windowId: submission.windowId,
     card: submission.card,
-    fuelLedger: submission.fuelLedger,
     revealed: submission.revealed,
   };
 }

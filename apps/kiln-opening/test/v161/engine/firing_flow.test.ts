@@ -7,6 +7,7 @@
 
 import { describe, expect, it } from "vitest";
 import { afterQualityOptions, salvageOptions, secondFiringChoiceOptions } from "../../../src/game/firing/afterQuality.ts";
+import { CONTRIBUTION_CARD_IDS } from "../../../src/game/content.ts";
 import { validateAction } from "../../../src/game/engine.ts";
 import { legalContributions, openFiringPhase, validateContribution } from "../../../src/game/firing/contributions.ts";
 import { heatMarkerStepOptions, junOptions, testPiecesOptions } from "../../../src/game/firing/pipeline.ts";
@@ -55,7 +56,7 @@ function everyWindow(fire: FireModifier[] = [0, -1, -2]): StateSpec {
 }
 
 type Step =
-  | { actor: PlayerId; contribute: ContributionCardId; fuelLedger?: boolean }
+  | { actor: PlayerId; contribute: ContributionCardId }
   | { actor: PlayerId; action: GameAction };
 
 /** Uses every ability once, in Appendix D order. */
@@ -89,7 +90,7 @@ const EXIT_SCRIPT: Step[] = [
 ];
 
 function run(table: LocalTable, step: Step): GameEvent[] {
-  return "contribute" in step ? table.contribute(step.actor, step.contribute, step.fuelLedger ?? false) : table.act(step.actor, step.action);
+  return "contribute" in step ? table.contribute(step.actor, step.contribute) : table.act(step.actor, step.action);
 }
 
 function fireCounts(table: LocalTable): string {
@@ -119,11 +120,9 @@ function expectSelectorsAgree(table: LocalTable): void {
       case "firing_contributions": {
         const listed = legalContributions(view);
         expect(listed[0]?.card, where).toBe("TEND");
-        for (const [card, fuelLedger] of [["TEND", false], ["BANK", false], ["STOKE", false], ["BANK", true], ["STOKE", true], ["TEND", true]] as const) {
-          const command: SubmitContributionCommand = { type: "SUBMIT_CONTRIBUTION", windowId: listed[0]?.windowId ?? "", card, fuelLedger };
-          expect(validateContribution(view, table.privateState, command) === null, `${where} ${card}/${fuelLedger}`).toBe(
-            listed.some((c) => c.card === card && c.fuelLedger === fuelLedger),
-          );
+        for (const card of CONTRIBUTION_CARD_IDS) {
+          const command: SubmitContributionCommand = { type: "SUBMIT_CONTRIBUTION", windowId: listed[0]?.windowId ?? "", card };
+          expect(validateContribution(view, table.privateState, command) === null, `${where} ${card}`).toBe(listed.some((c) => c.card === card));
         }
         break;
       }
@@ -381,7 +380,7 @@ function nextStep(table: LocalTable): Step {
       const options = legalContributions(view);
       const choice = options.at(-1) ?? options[0];
       if (choice === undefined) throw new Error("no Contribution offered");
-      return { actor, contribute: choice.card, fuelLedger: choice.fuelLedger };
+      return { actor, contribute: choice.card };
     }
     case "firing_test_pieces": {
       const options = testPiecesOptions(view);
@@ -461,7 +460,7 @@ describe("determinism (DESIGN §7)", () => {
     const table = openFiringTable(everyWindow([]), { seed: 5 });
     const before = table.rng.getState();
     table.expectRuleError("p1", { type: "TEST_PIECES_DECIDE", peek: true }, "WRONG_PHASE");
-    expect(table.tryContribute("p1", "STOKE", true).ok).toBe(false);
+    expect(table.tryContribute("p1", "FUEL_LEDGER_STOKE").ok).toBe(false);
     expect(table.rng.getState()).toBe(before);
   });
 });

@@ -51,19 +51,22 @@ export function safeExitCommands(view: PlayerView): AuthoritativeCommand[] {
             .map((workerId): AuthoritativeCommand => ({ type: "PLACE_CANAL_WHARF", workerId }));
         case "after_action":
           return [{ type: "END_TURN" }];
-        case "commission_market": {
-          // One reservation is always possible and always enough (v1.6.2 L195–198): every
+        case "commission_market":
+        case "colour_samples":
+        case "colour_samples_swap": {
+          // Every Select (v1.6.2 L64, change 25): one reservation is always possible and always
+          // enough (B1: a Select opens only with a looked card or a face-up Main Order). Every
           // single pick, the face-up positions first, then the looked cards in look order.
           const options = lookedOrderOptions(view);
-          if (options?.kind !== "commission_market") return [];
+          if (options === null || options.kind !== step.kind) return [];
           const faceUp = options.faceUpSlots.flatMap((slotIndex): AuthoritativeCommand[] => {
             const orderId = game.market.display[slotIndex];
             return orderId === null || orderId === undefined
               ? []
-              : [{ type: "COMMISSION_CHOOSE", reservations: [{ kind: "face_up", slotIndex, orderId }] }];
+              : [{ type: "SELECT_CHOOSE", reservations: [{ kind: "face_up", slotIndex, orderId }] }];
           });
           const looked = options.orderIds.map((orderId): AuthoritativeCommand => ({
-            type: "COMMISSION_CHOOSE",
+            type: "SELECT_CHOOSE",
             reservations: [{ kind: "looked", orderId }],
           }));
           return [...faceUp, ...looked];
@@ -81,23 +84,11 @@ export function safeExitCommands(view: PlayerView): AuthoritativeCommand[] {
             .filter((option) => option.legal)
             .map((option): AuthoritativeCommand => ({ type: "GUILD_TAKE", take: { kind: option.source, techId: option.techId } }));
         }
-        case "colour_samples": {
-          const look = lookedOrderOptions(view);
-          return look?.kind === "colour_samples" ? look.orderIds.map((orderId): AuthoritativeCommand => ({ type: "COLOUR_SAMPLES_CHOOSE", orderId })) : [];
-        }
-        case "colour_samples_swap": {
-          // The swap's look always shows at least 1 card (v1.6.2 L617, B1); reserving any of
-          // them is legal.
-          const look = lookedOrderOptions(view);
-          return look?.kind === "colour_samples_swap"
-            ? look.orderIds.map((orderId): AuthoritativeCommand => ({ type: "COLOUR_SAMPLES_SWAP_CHOOSE", orderId }))
-            : [];
-        }
       }
       return [];
     }
     case "firing_contributions":
-      return [{ type: "SUBMIT_CONTRIBUTION", windowId: phase.windowId, card: "TEND", fuelLedger: false }];
+      return [{ type: "SUBMIT_CONTRIBUTION", windowId: phase.windowId, card: "TEND" }];
     case "firing_test_pieces":
       return phase.awaiting === "decision" ? [{ type: "TEST_PIECES_DECIDE", peek: false }] : [{ type: "TEST_PIECES_BURY", bury: false }];
     case "firing_heat_markers": {

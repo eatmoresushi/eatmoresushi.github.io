@@ -22,6 +22,7 @@
  */
 
 import {
+  BASE_CONTRIBUTION_CARD_IDS,
   DISCIPLINES,
   FIRING,
   GAME_CONFIG,
@@ -37,6 +38,7 @@ import {
   TECHS,
   TECH_IDS,
   activeKilnSpaces,
+  contributionCardsOfTech,
   isStartingOrderId,
   locationCapacity,
 } from "./content.ts";
@@ -622,6 +624,14 @@ function checkPlayers(state: GameState, players: readonly PlayerState[], v: Viol
       v.check(tech.acquiredInRound <= state.round, () => `${p.id}'s ${tech.id} was acquired in a later round`);
     }
 
+    // Contribution cards (v1.6.2 L266, change 26): Bank, Tend, Stoke, then the cards each owned
+    // Tech brought (Fuel Ledger's 2), in the order the Techs were gained.
+    const expectedCards = [...BASE_CONTRIBUTION_CARD_IDS, ...p.techs.flatMap((tech) => contributionCardsOfTech(tech.id))];
+    v.check(
+      p.contributionCards.length === expectedCards.length && p.contributionCards.every((card, index) => card === expectedCards[index]),
+      () => `${p.id} holds Contribution cards ${p.contributionCards.join(", ")}, expected ${expectedCards.join(", ")}`,
+    );
+
     // Personal spaces: space 0 open; space 1 open exactly when a matching Tech is owned (L212).
     for (const locationId of PERSONAL_LOCATION_IDS) {
       const spaces = p.personalSpaces[locationId];
@@ -640,11 +650,12 @@ function checkPlayers(state: GameState, players: readonly PlayerState[], v: Viol
     const audience = IMPERIAL_TRACK.track.find((space) => space.space === 4)?.reward;
     const audienceVp = audience?.kind === "vp" ? audience.vp : 0;
     v.check(p.score.imperialAudience === (p.imperial.audienceReceived ? audienceVp : 0), () => `${p.id} recorded ${p.score.imperialAudience} Imperial Audience VP`);
-    // Tech VP is recorded when each Tech is gained (owner amendment A1) and no effect removes
-    // a Tech, so the ledger always equals 1 VP per owned Tech.
-    const techVp = p.techs.length * GAME_CONFIG.techs.vpEach;
-    v.check(p.score.techs === techVp, () => `${p.id} recorded ${p.score.techs} Tech VP for ${p.techs.length} Techs`);
-    for (const key of ["orders", "kilnAbilities", "recognitionOverflow", "imperialAudience", "techs"] as const) {
+    // No Tech VP (v1.6.2 change 27): the ledger has exactly the four lines of play VP.
+    v.check(
+      Object.keys(p.score).sort().join(",") === "imperialAudience,kilnAbilities,orders,recognitionOverflow",
+      () => `${p.id}'s score ledger has lines ${Object.keys(p.score).join(", ")}`,
+    );
+    for (const key of ["orders", "kilnAbilities", "recognitionOverflow", "imperialAudience"] as const) {
       v.check(Number.isSafeInteger(p.score[key]) && p.score[key] >= 0, () => `${p.id} recorded ${p.score[key]} ${key} VP`);
     }
 
@@ -908,6 +919,24 @@ function checkLive(state: GameState, players: readonly PlayerState[], ceramics: 
     const revealed = firing.contributions !== null;
     v.check(revealed === (firing.baseHeat !== null), () => "Base Heat and the Contribution reveal disagree");
     v.check(phase.type === "firing_contributions" ? !revealed : revealed, () => `Contributions revealed=${String(revealed)} in ${phase.type}`);
+    // Each participant played exactly 1 card of their own, with its printed Heat (v1.6.2 L246,
+    // change 26).
+    const revealedContributions = firing.contributions;
+    if (revealedContributions !== null) {
+      v.check(
+        Object.keys(revealedContributions).sort().join(",") === [...firing.participantIds].sort().join(","),
+        () => "the revealed Contributions are not exactly the participants'",
+      );
+      for (const pid of firing.participantIds) {
+        const played = lookup(revealedContributions, pid);
+        const holder = lookup(state.players, pid);
+        const printed = FIRING.contributionCards.find((card) => card.id === played?.card);
+        v.check(
+          played !== undefined && holder !== undefined && printed !== undefined && holder.contributionCards.includes(played.card) && played.heat === printed.heat,
+          () => `${pid}'s revealed Contribution ${String(played?.card)} is not one of their cards at its printed Heat`,
+        );
+      }
+    }
     const fired = firing.fireModifier !== null;
     v.check(
       fired === ["firing_heat_adjustment", "firing_after_quality", "firing_second_firing_choice", "firing_salvage"].includes(phase.type),
@@ -939,7 +968,11 @@ function checkLive(state: GameState, players: readonly PlayerState[], ceramics: 
       checkGuildInspection(state, phase.activePlayerId, step, look, v);
     }
     if (step?.kind === "colour_samples" && look.kind === "colour_samples") {
-      v.check(look.orderIds.length === step.lookedCount && look.orderIds.length > 0, () => "the Colour Samples look disagrees with its step");
+      // Select 3 with 1 reservation (v1.6.2 L622, change 25).
+      v.check(
+        look.orderIds.length === step.select.lookedCount && step.select.n === TECHS.T10.params.select && step.select.maxReservations === 1,
+        () => "the Colour Samples look disagrees with its step",
+      );
       v.check((step.resume === null) === (look.inspection === null), () => "a Colour Samples look and its step disagree on a resumed Guild inspection");
       if (step.resume !== null && look.inspection !== null) {
         v.check(step.resume.takes.some((take) => take.techId === COLOUR_SAMPLES), () => "a Guild inspection waits behind Colour Samples it did not take");
@@ -947,29 +980,35 @@ function checkLive(state: GameState, players: readonly PlayerState[], ceramics: 
       }
     }
     if (step?.kind === "colour_samples_swap" && look.kind === "colour_samples_swap") {
-      // The swap's look shows 1 or 2 cards (v1.6.2 L625, B1); T10 is spent this round.
+      // The swap's Select 3 with 1 reservation (v1.6.2 L622, change 25, B1); T10 is spent this round.
       v.check(
-        look.orderIds.length === step.lookedCount && look.orderIds.length >= 1 && look.orderIds.length <= TECHS.T10.params.swapLookSize,
+        look.orderIds.length === step.select.lookedCount && step.select.n === TECHS.T10.params.swapSelect && step.select.maxReservations === 1,
         () => "the Colour Samples swap look disagrees with its step",
       );
       const active = lookup(state.players, phase.activePlayerId);
       v.check(active?.techs.some((tech) => tech.id === COLOUR_SAMPLES && tech.usedThisRound) === true, () => "a Colour Samples swap is open but T10 is ready");
     }
     if (step?.kind === "commission_market" && look.kind === "commission_market") {
-      // The look shows at most its printed size, possibly none (B1); the step records how many.
-      v.check(look.orderIds.length === step.lookedCount && look.orderIds.length <= step.lookSize, () => "the Commission look disagrees with its step");
+      // The look shows at most N cards, possibly none (B1); the step records how many.
+      v.check(look.orderIds.length === step.select.lookedCount, () => "the Commission look disagrees with its step");
     }
   }
   if (phase.type === "work_turn" && step?.kind === "before_action") {
     const active = lookup(state.players, phase.activePlayerId);
     v.check(active !== undefined && Object.values(active.workers).some((w) => w.placement === null), () => `${phase.activePlayerId} has no worker to place`);
   }
+  if (step?.kind === "commission_market" || step?.kind === "colour_samples" || step?.kind === "colour_samples_swap") {
+    // Every Select (v1.6.2 L64, change 25): N cards at most, the display option, and a
+    // reservation always possible from the display or the look (L144, B1).
+    const select = step.select;
+    v.check(select.fromDisplay, () => `the ${step.kind} Select has no display option`);
+    v.check(select.lookedCount >= 0 && select.lookedCount <= select.n, () => `the ${step.kind} Select shows ${select.lookedCount} of ${select.n} cards`);
+    v.check(select.lookedCount > 0 || state.market.display.some((orderId) => orderId !== null), () => `the ${step.kind} Select has nothing to reserve`);
+  }
   if (step?.kind === "commission_market") {
-    // The printed limits of the step's effect (v1.6.2 L195–196), and a reservation is always
-    // possible from the display or the look (L142, B1).
+    // The printed Select of the step's effect (v1.6.2 L201–202).
     const limits = LOCATIONS.commission_market.effects[step.effect];
-    v.check(step.lookSize === limits.lookSize && step.maxReservations === limits.maxReservations, () => "the Commission step disagrees with its effect's printed limits");
-    v.check(step.lookedCount > 0 || state.market.display.some((orderId) => orderId !== null), () => "the Commission step has nothing to reserve");
+    v.check(step.select.n === limits.select && step.select.maxReservations === limits.maxReservations, () => "the Commission step disagrees with its effect's printed limits");
     const placed = lookup(state.players, phase.type === "work_turn" ? phase.activePlayerId : "")?.workers[step.workerId]?.placement;
     v.check(placed?.locationId === "commission_market" && placed.effect === step.effect, () => "the Commission step's worker is not at the Commission Market with that effect");
   }

@@ -1,7 +1,7 @@
 /**
  * Reconnect without changing seat or state (AGENTS.md, DESIGN §4.6): a seat recovers its
- * public projection, its own private view — including its sealed Contribution and Fuel
- * Ledger commitment — and its own secrets, and nothing is written.
+ * public projection, its own private view — including its sealed Contribution card, a Fuel
+ * Ledger card included (v1.6.2 change 26) — and its own secrets, and nothing is written.
  */
 
 import { describe, expect, it } from "vitest";
@@ -11,7 +11,7 @@ import { LocalTable } from "../engine/support/localTable.ts";
 import { command, connectionFor, lobby, openedFiringState, seatState, seedState, started, tryCommand, valueOf } from "./support.ts";
 
 describe("V1.6.2 reconnect", () => {
-  it("returns the seat's own sealed {card, fuelLedger} during an open window; seat and state unchanged", async () => {
+  it("returns the seat's own sealed card (Fuel Ledger Stoke) during an open window; seat and state unchanged", async () => {
     const { harness } = await started();
     const seeded = await seedState(harness, (gameId) =>
       openedFiringState({
@@ -28,26 +28,27 @@ describe("V1.6.2 reconnect", () => {
     );
     if (seeded.phase.type !== "firing_contributions") throw new Error("Expected the Contribution window");
     const windowId = seeded.phase.windowId;
-    await command(harness, "P1", { type: "SUBMIT_CONTRIBUTION", windowId, card: "STOKE", fuelLedger: true });
+    await command(harness, "P1", { type: "SUBMIT_CONTRIBUTION", windowId, card: "FUEL_LEDGER_STOKE" });
 
     const headBefore = await harness.store.loadHead(harness.roomId);
     const auditBefore = harness.store.audit();
     for (let attempt = 0; attempt < 2; attempt += 1) {
       const own = valueOf(await harness.service.reconnect({ roomCode: harness.roomCode, seatToken: connectionFor(harness, "P1").seatToken }));
       expect(own.seat).toEqual(connectionFor(harness, "P1").seat);
-      expect(own.ownPrivateView?.pendingContribution).toEqual({ card: "STOKE", fuelLedger: true, windowId });
+      expect(own.ownPrivateView?.pendingContribution).toEqual({ card: "FUEL_LEDGER_STOKE", windowId });
       expect(own.game?.revision).toBe(headBefore?.revision);
       const other = valueOf(await harness.service.reconnect({ roomCode: harness.roomCode, seatToken: connectionFor(harness, "P2").seatToken }));
       expect(other.seat).toEqual(connectionFor(harness, "P2").seat);
       expect(other.ownPrivateView?.pendingContribution).toBeNull();
-      expect(JSON.stringify(other)).not.toContain("STOKE");
+      // P1's public card list names its cards; the sealed one is nowhere in P2's response.
+      expect(JSON.stringify(other, (key, item: unknown) => (key === "contributionCards" ? undefined : item))).not.toContain("STOKE");
       expect(JSON.stringify(other.game)).toEqual(JSON.stringify(own.game));
     }
     expect(await harness.store.loadHead(harness.roomId)).toEqual(headBefore);
     expect(harness.store.audit()).toEqual(auditBefore);
 
     // The seat continues where it left off.
-    const last = await tryCommand(harness, "P2", { type: "SUBMIT_CONTRIBUTION", windowId, card: "TEND", fuelLedger: false });
+    const last = await tryCommand(harness, "P2", { type: "SUBMIT_CONTRIBUTION", windowId, card: "TEND" });
     expect(last.ok).toBe(true);
   });
 
@@ -59,7 +60,7 @@ describe("V1.6.2 reconnect", () => {
     expect(denied.ok ? null : denied.error.code).toBe("AUTHENTICATION_FAILED");
   });
 
-  it("restores a pending Commission Market top-3 look only to its owner, seat and step unchanged (v1.6.2 L196)", async () => {
+  it("restores a pending Commission Market Select 3 only to its owner, seat and step unchanged (v1.6.2 L202)", async () => {
     const { harness } = await started();
     let topThree: string[] = [];
     await seedState(harness, (gameId) => {
@@ -76,7 +77,7 @@ describe("V1.6.2 reconnect", () => {
     expect(own.game?.phase).toEqual({
       type: "work_turn",
       activePlayerId: "P1",
-      step: { kind: "commission_market", workerId: "P1:shifu", effect: "shifu", lookSize: 3, maxReservations: 2, lookedCount: 3 },
+      step: { kind: "commission_market", workerId: "P1:shifu", effect: "shifu", select: { n: 3, maxReservations: 2, fromDisplay: true, lookedCount: 3 } },
     });
     const other = valueOf(await harness.service.reconnect({ roomCode: harness.roomCode, seatToken: connectionFor(harness, "P2").seatToken }));
     expect(other.ownPrivateView?.pendingLook).toBeNull();
@@ -87,7 +88,7 @@ describe("V1.6.2 reconnect", () => {
     }
   });
 
-  it("restores a Colour Samples swap look only to its owner; the discarded Order and the looked cards stay private (v1.6.2 L617, change 24, B3)", async () => {
+  it("restores a Colour Samples swap's Select 3 only to its owner; the discarded Order and the looked cards stay private (v1.6.2 L622, changes 24–25, B3)", async () => {
     const { harness } = await started();
     let look: OrderId[] = [];
     await seedState(harness, (gameId) => {
@@ -95,7 +96,7 @@ describe("V1.6.2 reconnect", () => {
         gameId,
         players: [{ id: "P1", displayName: "Seat 1", techs: ["T10"], hand: ["O40"] }, { id: "P2", displayName: "Seat 2" }],
       });
-      look = state.hidden.mainDeck.slice(0, 2);
+      look = state.hidden.mainDeck.slice(0, 3);
       return state;
     });
     const opened = await command(harness, "P1", { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: "O40" });
@@ -104,17 +105,21 @@ describe("V1.6.2 reconnect", () => {
     expect(own.ownSecrets.map((record) => record.event.type)).toEqual(expect.arrayContaining(["HELD_ORDER_DISCARDED", "PRIVATE_LOOK_OPENED"]));
     expect(own.seat.playerId).toBe("P1");
     expect(own.game?.revision).toBe(opened.revision);
-    expect(own.game?.phase).toEqual({ type: "work_turn", activePlayerId: "P1", step: { kind: "colour_samples_swap", returnTo: "before_action", lookedCount: 2 } });
+    expect(own.game?.phase).toEqual({
+      type: "work_turn",
+      activePlayerId: "P1",
+      step: { kind: "colour_samples_swap", returnTo: "before_action", select: { n: 3, maxReservations: 1, fromDisplay: true, lookedCount: 3 } },
+    });
     const other = valueOf(await harness.service.reconnect({ roomCode: harness.roomCode, seatToken: connectionFor(harness, "P2").seatToken }));
     expect(other.ownPrivateView?.pendingLook).toBeNull();
-    expect(other.game?.counts.pendingLook).toEqual({ playerId: "P1", kind: "colour_samples_swap", count: 2 });
+    expect(other.game?.counts.pendingLook).toEqual({ playerId: "P1", kind: "colour_samples_swap", count: 3 });
     expect(other.game?.counts.mainDiscard).toBe(1);
     for (const orderId of ["O40", ...look]) {
       expect(JSON.stringify(other)).not.toContain(`"${orderId}"`);
       expect(JSON.stringify(own.game)).not.toContain(`"${orderId}"`);
     }
-    // The seat continues where it left off; the other card goes under the deck, still private.
-    const chosen = await command(harness, "P1", { type: "COLOUR_SAMPLES_SWAP_CHOOSE", orderId: look[1] as OrderId });
+    // The seat continues where it left off; the other 2 go under the deck, still private.
+    const chosen = await command(harness, "P1", { type: "SELECT_CHOOSE", reservations: [{ kind: "looked", orderId: look[1] as OrderId }] });
     expect(chosen.ownPrivateView?.orderHand).toEqual([look[1]]);
     const after = valueOf(await harness.service.reconnect({ roomCode: harness.roomCode, seatToken: connectionFor(harness, "P2").seatToken }));
     for (const orderId of ["O40", ...look]) expect(JSON.stringify(after)).not.toContain(`"${orderId}"`);

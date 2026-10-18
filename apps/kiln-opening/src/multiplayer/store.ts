@@ -91,9 +91,8 @@ export interface CommitStartInput {
 
 export interface PrivateCommitInput {
   windowId: string;
+  /** The sealed card; a Fuel Ledger card carries its own −2/+2 (v1.6.2 change 26). */
   card: ContributionCardId;
-  /** Fuel Ledger commitment (`use_fuel_ledger`). Dropping it would turn ±2 into ±1. */
-  fuelLedger: boolean;
   /** This submission was the last one and revealed the window. */
   revealed: boolean;
 }
@@ -133,7 +132,7 @@ export interface MultiplayerStore {
   endSession(input: EndSessionRecord): Promise<StoreResult<StoredRoom>>;
   commitStart(input: CommitStartInput): Promise<StoreResult<CommandSuccess>>;
   commitTransition(input: CommitTransitionInput): Promise<StoreResult<CommandSuccess>>;
-  /** Unrevealed submissions of one window, with their Fuel Ledger commitments. */
+  /** Unrevealed submissions of one window, each with its sealed card. */
   loadPrivateSubmissions(roomId: string, windowId: string): Promise<PrivateSubmissionRecord[]>;
   findOwnPendingSubmission(roomId: string, playerId: PlayerId): Promise<PrivateSubmissionRecord | null>;
   listPublicEvents(roomId: string, afterSequence?: number): Promise<PublicEventRecord[]>;

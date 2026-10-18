@@ -164,12 +164,13 @@ describe("contributions and finished games", () => {
     }
     const view = scenario.table.view(scenario.actor);
     const commands = legalCommands(view, { mode: "canonical" });
-    expect(commands.map((c) => (c.type === "SUBMIT_CONTRIBUTION" ? `${c.card}${c.fuelLedger ? "+FL" : ""}` : c.type))).toEqual([
+    // 1 command per held card: the Fuel Ledger owner's 5 (v1.6.2 change 26).
+    expect(commands.map((c) => (c.type === "SUBMIT_CONTRIBUTION" ? c.card : c.type))).toEqual([
       "TEND",
       "BANK",
       "STOKE",
-      "BANK+FL",
-      "STOKE+FL",
+      "FUEL_LEDGER_BANK",
+      "FUEL_LEDGER_STOKE",
     ]);
     expect(legalCommands(view, { mode: "canonical", limit: 1 })).toHaveLength(1);
     expect(legalActions(view, { mode: "canonical" })).toEqual([]);

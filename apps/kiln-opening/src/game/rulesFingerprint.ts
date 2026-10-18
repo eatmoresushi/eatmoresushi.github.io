@@ -23,7 +23,7 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  * the digest.
  *
  * This is drift detection, not security: FNV-1a is not a defence against a crafted collision.
- * Rooms store `r<revision>-<digest>`; the V1.6.2 Supabase gate requires `^r30-[0-9a-f]{16}$`.
+ * Rooms store `r<revision>-<digest>`; the V1.6.2 Supabase gate requires `^r31-[0-9a-f]{16}$`.
  */
 
 /**
@@ -57,8 +57,17 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  *        location changes and the new Tech costs first, the Tech behaviour after; V1.6.2 is
  *        unreleased, so the revision stays 30 across the stages, both owner revisions and R19,
  *        and the content digest moves with the data.
+ *  31 -- V1.6.2 owner revision 3 (changes 25–27, 2026-10-18), state schema 8: the keyword
+ *        Select N, one model for the Commission Market and both Colour Samples looks, every
+ *        Select able to reserve a face-up Main Order (refilled at the end of the turn) and one
+ *        `SELECT_CHOOSE` command; the Colour Samples swap Selects 3 instead of looking at 2;
+ *        Fuel Ledger as Contribution cards (Fuel Ledger Bank and Fuel Ledger Stoke come with
+ *        the tile, `PlayerState.contributionCards`; the `fuelLedger` commitment flag is gone);
+ *        no Tech VP (owner amendment A1 superseded: `ScoreLedger.techs`, the final `techs`
+ *        row, `TECH_ACQUIRED.vp` and `techs.vpEach` are gone). Rules version stays 1.6.2;
+ *        r30 rooms and schema-7 saves are rejected, never migrated.
  */
-export const RULES_BEHAVIOUR_REVISION = 30;
+export const RULES_BEHAVIOUR_REVISION = 31;
 
 /**
  * Display-only keys. A key is dropped only when its value is prose (a string, or `null` for an

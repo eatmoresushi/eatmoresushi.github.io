@@ -35,7 +35,7 @@ function redeal<T>(pool: readonly T[], sizes: readonly number[], rng: SeededRand
   });
 }
 
-const CARDS: readonly ContributionCardId[] = ["BANK", "TEND", "STOKE"];
+const CARDS: readonly ContributionCardId[] = ["BANK", "TEND", "STOKE", "FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"];
 
 /**
  * A copy of `state` and `privateFiring` whose server-only secrets are re-randomised, except
@@ -96,7 +96,7 @@ function rerandomiseHidden(
   const nextPrivate = structuredClone(privateFiring);
   for (const playerId of others) {
     if (nextPrivate.submissions[playerId] !== undefined) {
-      nextPrivate.submissions[playerId] = { card: CARDS[rng.nextInt(CARDS.length)] as ContributionCardId, fuelLedger: false };
+      nextPrivate.submissions[playerId] = { card: CARDS[rng.nextInt(CARDS.length)] as ContributionCardId };
     }
   }
   return { state: next, privateFiring: nextPrivate };

@@ -1,12 +1,12 @@
 /**
  * Heat and Quality (L245–279, L289, L674–680, v1.6.2 L636–637): Base Heat clamp, Contribution
- * values (Fuel Ledger's free Bank and Stoke), Actual Heat for the Shared Kiln (zone or Kiln
+ * values (Fuel Ledger's free Bank and Stoke and its 2 cards, change 26), Actual Heat for the Shared Kiln (zone or Kiln
  * Furniture + marker) and the Imperial Kiln, the Quality table with Protective Saggars' floor,
  * Quality assignment, and the public heat previews.
  */
 
 import { describe, expect, it } from "vitest";
-import { qualityForDifference } from "../../../src/game/content.ts";
+import { TECHS, qualityForDifference } from "../../../src/game/content.ts";
 import { InvariantError } from "../../../src/game/errors.ts";
 import {
   baseHeat,
@@ -47,24 +47,24 @@ describe("baseHeat (L249, L263, L674)", () => {
   });
 });
 
-describe("Contribution values (L253–259, v1.6.2 L637)", () => {
+describe("Contribution values (v1.6.2 L262–266, L634, change 26)", () => {
   it("Bank −1 / 1 Wood, Tend 0 / 0, Stoke +1 / 1 Wood", () => {
-    expect([contributionHeat({ card: "BANK", fuelLedger: false }), contributionWood({ card: "BANK", fuelLedger: false }, false)]).toEqual([-1, 1]);
-    expect([contributionHeat({ card: "TEND", fuelLedger: false }), contributionWood({ card: "TEND", fuelLedger: false }, false)]).toEqual([0, 0]);
-    expect([contributionHeat({ card: "STOKE", fuelLedger: false }), contributionWood({ card: "STOKE", fuelLedger: false }, false)]).toEqual([1, 1]);
+    expect([contributionHeat({ card: "BANK" }), contributionWood({ card: "BANK" }, false)]).toEqual([-1, 1]);
+    expect([contributionHeat({ card: "TEND" }), contributionWood({ card: "TEND" }, false)]).toEqual([0, 0]);
+    expect([contributionHeat({ card: "STOKE" }), contributionWood({ card: "STOKE" }, false)]).toEqual([1, 1]);
   });
 
   it("a Fuel Ledger owner's Bank and Stoke cost no Wood; Tend is unchanged", () => {
-    expect([contributionHeat({ card: "BANK", fuelLedger: false }), contributionWood({ card: "BANK", fuelLedger: false }, true)]).toEqual([-1, 0]);
-    expect([contributionHeat({ card: "STOKE", fuelLedger: false }), contributionWood({ card: "STOKE", fuelLedger: false }, true)]).toEqual([1, 0]);
-    expect([contributionHeat({ card: "TEND", fuelLedger: false }), contributionWood({ card: "TEND", fuelLedger: false }, true)]).toEqual([0, 0]);
+    expect([contributionHeat({ card: "BANK" }), contributionWood({ card: "BANK" }, true)]).toEqual([-1, 0]);
+    expect([contributionHeat({ card: "STOKE" }), contributionWood({ card: "STOKE" }, true)]).toEqual([1, 0]);
+    expect([contributionHeat({ card: "TEND" }), contributionWood({ card: "TEND" }, true)]).toEqual([0, 0]);
   });
 
-  it("the Fuel Ledger commitment turns Bank/Stoke into −2/+2 for its 1 Wood; never with Tend", () => {
-    expect([contributionHeat({ card: "BANK", fuelLedger: true }), contributionWood({ card: "BANK", fuelLedger: true }, true)]).toEqual([-2, 1]);
-    expect([contributionHeat({ card: "STOKE", fuelLedger: true }), contributionWood({ card: "STOKE", fuelLedger: true }, true)]).toEqual([2, 1]);
-    expect(() => contributionHeat({ card: "TEND", fuelLedger: true })).toThrow(InvariantError);
-    expect(() => contributionWood({ card: "TEND", fuelLedger: true }, true)).toThrow(InvariantError);
+  it("Fuel Ledger Bank and Fuel Ledger Stoke are −2 / +2 for their printed 1 Wood", () => {
+    expect([contributionHeat({ card: "FUEL_LEDGER_BANK" }), contributionWood({ card: "FUEL_LEDGER_BANK" }, true)]).toEqual([-2, 1]);
+    expect([contributionHeat({ card: "FUEL_LEDGER_STOKE" }), contributionWood({ card: "FUEL_LEDGER_STOKE" }, true)]).toEqual([2, 1]);
+    // The same options and prices as V1.6.2's commitment (change 26: "Same options and prices").
+    expect(TECHS.T12.params).toEqual({ freeCards: ["BANK", "STOKE"], cards: ["FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"] });
   });
 });
 
@@ -168,7 +168,7 @@ describe("Actual Heat in the firing (L245, L677–678)", () => {
         { owner: "p2", stage: "loaded", shape: "plate", glaze: "grey_green", at: "middle_1" },
       ],
     });
-    table.contribute("p1", "STOKE", true);
+    table.contribute("p1", "FUEL_LEDGER_STOKE");
     table.contribute("p2", "STOKE");
     // Base Heat 3 + 3 = 6 → 5; the Heat-marker step is p1's.
     expect(table.state.firing?.baseHeat).toBe(5);

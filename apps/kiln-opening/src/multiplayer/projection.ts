@@ -8,10 +8,10 @@ import { projectEvent, projectPublicState } from "../game/index.ts";
 import type { GameEvent, GameState, PlayerId } from "../game/index.ts";
 import type { PrivateEventRecord, PublicGameEvent, PublicGameState } from "./types.ts";
 
-/** Throws unless the state is a V1.6.2 schema-7 game: older saves (V1.6.1 schema 6 included) are never projected. */
+/** Throws unless the state is a V1.6.2 schema-8 game: older saves (schema 7, V1.6.1 schema 6) are never projected. */
 export function assertCurrentGameState(state: GameState): void {
-  if (state.schemaVersion !== 7 || state.rulesVersion !== "1.6.2") {
-    throw new Error("Only schema-7 V1.6.2 games may be projected by the current service");
+  if (state.schemaVersion !== 8 || state.rulesVersion !== "1.6.2") {
+    throw new Error("Only schema-8 V1.6.2 games may be projected by the current service");
   }
 }
 

@@ -80,7 +80,8 @@ describe("Apprentice (v1.6.2 L206): pay the printed cost and take 1 face-up Adva
     expect(t.player("p1").personalSpaces.form_decorate[1].unlocked).toBe(true);
     expect(types(events)).toEqual(["WORKER_PLACED", "RESOURCES_CHANGED", "TECH_ACQUIRED", "PERSONAL_SPACE_UNLOCKED"]);
     expect(only(events, "RESOURCES_CHANGED")).toMatchObject({ coins: -2, reason: "guild_hall" });
-    expect(only(events, "TECH_ACQUIRED")).toEqual({ type: "TECH_ACQUIRED", playerId: "p1", techId: "T01", source: "face_up", cost: 2, vp: 1 });
+    // No VP for gaining a Tech (v1.6.2 change 27).
+    expect(only(events, "TECH_ACQUIRED")).toEqual({ type: "TECH_ACQUIRED", playerId: "p1", techId: "T01", source: "face_up", cost: 2 });
     // The after-action window is still the taker's turn: the position stays empty.
     expect(t.state.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "after_action" } });
     expect(t.state.techDisplay.workshop).toEqual(["T16"]);
@@ -123,7 +124,7 @@ describe("Apprentice (v1.6.2 L206): pay the printed cost and take 1 face-up Adva
     t.act("p1", buy("p1:apprentice:1", "T16"));
     t.act("p2", { type: "PLACE_COMMISSION_MARKET", workerId: "p2:shifu" });
     const looked = t.state.hidden.pendingLook?.kind === "commission_market" ? t.state.hidden.pendingLook.orderIds : [];
-    t.act("p2", { type: "COMMISSION_CHOOSE", reservations: [{ kind: "looked", orderId: looked[0] as OrderId }] });
+    t.act("p2", { type: "SELECT_CHOOSE", reservations: [{ kind: "looked", orderId: looked[0] as OrderId }] });
     expect(t.prompt().actorIds).toEqual(["p1"]);
     expect(validatePlacement(t.actorView("p1"), "p1:shifu", "form_decorate", false)).toBeNull();
   });
@@ -168,7 +169,8 @@ describe("Shifu (v1.6.2 L207, B2): private inspection, then up to 2 Techs from d
     expect(t.state.techDisplay.firing).toEqual(["T11", "T12"]);
     expect(t.state.hidden.pendingLook).toBeNull();
     expect(types(events)).toEqual(["RESOURCES_CHANGED", "TECH_ACQUIRED", "TECHS_RETURNED_TO_BOTTOM", "WORK_TURN_ENDED", "WORK_TURN_STARTED"]);
-    expect(only(events, "TECH_ACQUIRED")).toMatchObject({ techId: "T13", source: "inspected", cost: 3, vp: 1 });
+    // No VP for gaining a Tech (v1.6.2 change 27).
+    expect(only(events, "TECH_ACQUIRED")).toEqual({ type: "TECH_ACQUIRED", playerId: "p1", techId: "T13", source: "inspected", cost: 3 });
     expect(only(events, "RESOURCES_CHANGED")).toMatchObject({ coins: -3, reason: "guild_hall" });
   });
 
@@ -179,7 +181,7 @@ describe("Shifu (v1.6.2 L207, B2): private inspection, then up to 2 Techs from d
     // The Cover token comes off at once, before the second take (L212, L214).
     expect(types(first)).toEqual(["RESOURCES_CHANGED", "TECH_ACQUIRED", "PERSONAL_SPACE_UNLOCKED"]);
     expect(t.player("p1").resources.coins).toBe(3);
-    expect(t.player("p1").score.techs).toBe(1);
+    expect(t.player("p1").score).toEqual({ orders: 0, kilnAbilities: 0, recognitionOverflow: 0, imperialAudience: 0 });
     expect(t.state.phase).toMatchObject({ step: { kind: "guild_inspection", takes: [{ kind: "face_up", techId: "T01" }] } });
     // T01's position stays empty: the Workshop deck's top card is not showing, and the other
     // Workshop Tech is of a discipline now owned.
@@ -190,7 +192,7 @@ describe("Shifu (v1.6.2 L207, B2): private inspection, then up to 2 Techs from d
     const second = t.act("p1", take("inspected", "T13"));
     expect(owned(t, "p1")).toEqual(["T01", "T13"]);
     expect(t.player("p1").resources.coins).toBe(0);
-    expect(t.player("p1").score.techs).toBe(2);
+    expect(t.player("p1").score).toEqual({ orders: 0, kilnAbilities: 0, recognitionOverflow: 0, imperialAudience: 0 });
     expect(types(second)).toEqual([
       "RESOURCES_CHANGED",
       "TECH_ACQUIRED",
@@ -374,14 +376,14 @@ describe("Shifu (v1.6.2 L207, B2): private inspection, then up to 2 Techs from d
     t.act("p1", inspect("firing"));
     t.expectRuleError("p1", { type: "END_TURN" }, "WRONG_PHASE");
     t.expectRuleError("p1", buy("p1:apprentice:1", "T01"), "WORKER_ACTION_ALREADY_TAKEN");
-    t.expectRuleError("p1", { type: "COLOUR_SAMPLES_CHOOSE", orderId: "O07" }, "WRONG_PHASE");
+    t.expectRuleError("p1", { type: "SELECT_CHOOSE", reservations: [{ kind: "looked", orderId: "O07" }] }, "WRONG_PHASE");
     t.expectRuleError("p2", take("face_up", "T01"), "NOT_YOUR_DECISION");
     t.expectRuleError("p2", finish(["T13", "T14"]), "NOT_YOUR_DECISION");
   });
 });
 
-describe("Colour Samples when acquired (v1.6.2 L214, L625, L649, R4, B1)", () => {
-  it("an Apprentice buy looks at the top 3 Main Orders and reserves 1 — no resource, no Main display refill; hand limit 5", () => {
+describe("Colour Samples when acquired: Select 3 (v1.6.2 L64, L218, L622, L646, change 25, R4, B1)", () => {
+  it("an Apprentice buy looks at the top 3 Main Orders and reserves 1 of them — no resource, no Main display refill; hand limit 5", () => {
     const t = table();
     const [a, b, c] = t.state.hidden.mainDeck as [OrderId, OrderId, OrderId];
     const display = [...t.state.market.display];
@@ -395,16 +397,20 @@ describe("Colour Samples when acquired (v1.6.2 L214, L625, L649, R4, B1)", () =>
       count: 3,
       secret: { visibleTo: "p1", orderIds: [a, b, c], techIds: [] },
     });
-    expect(t.state.phase).toEqual({ type: "work_turn", activePlayerId: "p1", step: { kind: "colour_samples", lookedCount: 3, resume: null } });
+    expect(t.state.phase).toEqual({
+      type: "work_turn",
+      activePlayerId: "p1",
+      step: { kind: "colour_samples", select: { n: 3, maxReservations: 1, fromDisplay: true, lookedCount: 3 }, resume: null },
+    });
     expect(t.state.hidden.pendingLook).toEqual({ kind: "colour_samples", playerId: "p1", orderIds: [a, b, c], inspection: null });
     expect(t.state.techDisplay.glazing_loading).toEqual(["T20"]);
 
     // Mandatory: the turn cannot end until a card is reserved.
     t.expectRuleError("p1", { type: "END_TURN" }, "WRONG_PHASE");
-    expectDocumentedDetails(t.expectRuleError("p1", { type: "COLOUR_SAMPLES_CHOOSE", orderId: "O01" }, "INVALID_CHOICE"));
+    expectDocumentedDetails(t.expectRuleError("p1", { type: "SELECT_CHOOSE", reservations: [{ kind: "looked", orderId: "O01" }] }, "INVALID_CHOICE"));
 
     const resources = { ...t.player("p1").resources };
-    const chosen = t.act("p1", { type: "COLOUR_SAMPLES_CHOOSE", orderId: c });
+    const chosen = t.act("p1", { type: "SELECT_CHOOSE", reservations: [{ kind: "looked", orderId: c }] });
     expect(t.state.hidden.orderHands["p1"]).toEqual([c]);
     // The swap is usable the round Colour Samples is acquired (v1.6.2 L213, L625): with an Order
     // now held, the after-action window opens, and the Tech display refills only at END_TURN.
@@ -434,7 +440,27 @@ describe("Colour Samples when acquired (v1.6.2 L214, L625, L649, R4, B1)", () =>
     expect(handLimit(t.player("p2"))).toBe(4);
   });
 
-  it("looks at as many as remain; with nothing to look at there is no reservation step", () => {
+  it("may reserve a face-up Main Order instead: its position stays empty until the turn ends, then refills; all 3 looked cards go under the deck", () => {
+    const t = table();
+    const [a, b, c, next] = t.state.hidden.mainDeck as [OrderId, OrderId, OrderId, OrderId];
+    t.act("p1", buy("p1:apprentice:1", "T10"));
+    expectDocumentedDetails(t.expectRuleError("p1", { type: "SELECT_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 0, orderId: "O02" }] }, "ORDER_NOT_AVAILABLE"));
+    const chosen = t.act("p1", { type: "SELECT_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 3, orderId: "O04" }] });
+    expect(types(chosen)).toEqual(["ORDER_RESERVED", "LOOKED_ORDERS_TO_BOTTOM"]);
+    expect(only(chosen, "ORDER_RESERVED")).toEqual({ type: "ORDER_RESERVED", playerId: "p1", via: "colour_samples", source: "face_up", slotIndex: 3, orderId: "O04" });
+    expect(only(chosen, "LOOKED_ORDERS_TO_BOTTOM")).toMatchObject({ count: 3, secret: { orderIds: [a, b, c] } });
+    expect([...t.state.hidden.mainDeck.slice(-3)].sort()).toEqual([a, b, c].sort());
+    expect(t.state.hidden.orderHands["p1"]).toEqual(["O04"]);
+    // The swap window opens (an Order is held); the position stays empty through it.
+    expect(t.state.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "after_action" } });
+    expect(t.state.market).toEqual({ display: ["O01", "O02", "O03", null, "O05", "O06"], refillPendingFor: "p1" });
+    const ended = t.act("p1", { type: "END_TURN" });
+    expect(types(ended)).toEqual(["DISPLAY_REFILLED", "TECH_DISPLAY_REFILLED", "WORK_TURN_ENDED", "WORK_TURN_STARTED"]);
+    expect(only(ended, "DISPLAY_REFILLED")).toMatchObject({ cause: "end_of_turn", revealedOrderIds: [next] });
+    expect(t.state.market.display).toEqual(["O01", "O02", "O03", "O05", "O06", next]);
+  });
+
+  it("looks at as many as remain; a 0-card look still reserves from the display; with nothing anywhere there is no step", () => {
     const keep: OrderId[] = ["O01", "O02", "O03", "O04", "O05", "O06", "O07"];
     const oneLeft = table({
       players: [{}, { hand: MAIN_ORDER_IDS.filter((id) => !keep.includes(id)) }],
@@ -443,13 +469,29 @@ describe("Colour Samples when acquired (v1.6.2 L214, L625, L649, R4, B1)", () =>
       mainDiscard: [],
     });
     oneLeft.act("p1", buy("p1:apprentice:1", "T10"));
-    expect(oneLeft.state.phase).toMatchObject({ step: { kind: "colour_samples", lookedCount: 1 } });
-    const chosen = oneLeft.act("p1", { type: "COLOUR_SAMPLES_CHOOSE", orderId: "O07" });
+    expect(oneLeft.state.phase).toMatchObject({ step: { kind: "colour_samples", select: { lookedCount: 1 } } });
+    const chosen = oneLeft.act("p1", { type: "SELECT_CHOOSE", reservations: [{ kind: "looked", orderId: "O07" }] });
     expect(types(chosen)).not.toContain("LOOKED_ORDERS_TO_BOTTOM");
 
-    const none = table({
+    // Deck and discard empty, the display full: the Select looks at nothing and must reserve a
+    // face-up Order (R4 as extended to the display, INT: Colour Samples Select).
+    const displayOnly = table({
       players: [{}, { hand: MAIN_ORDER_IDS.filter((id) => !keep.slice(0, 6).includes(id)) }],
       display: keep.slice(0, 6),
+      mainDeck: [],
+      mainDiscard: [],
+    });
+    const opened = displayOnly.act("p1", buy("p1:apprentice:1", "T10"));
+    expect(only(opened, "PRIVATE_LOOK_OPENED")).toMatchObject({ kind: "colour_samples", count: 0, secret: { orderIds: [] } });
+    expect(displayOnly.state.phase).toMatchObject({ step: { kind: "colour_samples", select: { lookedCount: 0 } } });
+    displayOnly.expectRuleError("p1", { type: "END_TURN" }, "WRONG_PHASE");
+    expect(types(displayOnly.act("p1", { type: "SELECT_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 1, orderId: "O02" }] }))).toEqual(["ORDER_RESERVED"]);
+    expect(displayOnly.state.hidden.orderHands["p1"]).toEqual(["O02"]);
+
+    // Nothing to reserve anywhere (B1): no look and no step.
+    const none = table({
+      players: [{}, { hand: [...MAIN_ORDER_IDS] }],
+      display: [null, null, null, null, null, null],
       mainDeck: [],
       mainDiscard: [],
     });
@@ -459,7 +501,7 @@ describe("Colour Samples when acquired (v1.6.2 L214, L625, L649, R4, B1)", () =>
     expect(none.state.hidden.orderHands["p1"]).toEqual([]);
   });
 
-  it("takes from the deck only, reshuffling the discard when the deck is empty (L511)", () => {
+  it("looks at the deck, reshuffling the discard when the deck is empty as the look starts (L516, R16)", () => {
     const keep: OrderId[] = ["O01", "O02", "O03", "O04", "O05", "O06", "O07", "O08"];
     const t = table({
       players: [{}, { hand: MAIN_ORDER_IDS.filter((id) => !keep.includes(id)) }],
@@ -469,7 +511,7 @@ describe("Colour Samples when acquired (v1.6.2 L214, L625, L649, R4, B1)", () =>
     });
     const events = t.act("p1", buy("p1:apprentice:1", "T10"));
     expect(types(events)).toContain("MAIN_DECK_RESHUFFLED");
-    expect(t.state.phase).toMatchObject({ step: { kind: "colour_samples", lookedCount: 2 } });
+    expect(t.state.phase).toMatchObject({ step: { kind: "colour_samples", select: { lookedCount: 2 } } });
     expect(t.state.market.display).toEqual(keep.slice(0, 6));
   });
 
@@ -485,7 +527,7 @@ describe("Colour Samples when acquired (v1.6.2 L214, L625, L649, R4, B1)", () =>
       activePlayerId: "p1",
       step: {
         kind: "colour_samples",
-        lookedCount: 3,
+        select: { n: 3, maxReservations: 1, fromDisplay: true, lookedCount: 3 },
         resume: { kind: "guild_inspection", workerId: "p1:shifu", discipline: "firing", inspectedCount: 2, takes: [{ kind: "face_up", techId: "T10" }] },
       },
     });
@@ -494,7 +536,7 @@ describe("Colour Samples when acquired (v1.6.2 L214, L625, L649, R4, B1)", () =>
     t.expectRuleError("p1", take("inspected", "T13"), "WRONG_PHASE");
     t.expectRuleError("p1", finish(["T13", "T14"]), "WRONG_PHASE");
 
-    const chosen = t.act("p1", { type: "COLOUR_SAMPLES_CHOOSE", orderId: b });
+    const chosen = t.act("p1", { type: "SELECT_CHOOSE", reservations: [{ kind: "looked", orderId: b }] });
     expect(types(chosen)).toEqual(["ORDER_RESERVED", "LOOKED_ORDERS_TO_BOTTOM"]);
     expect([...t.state.hidden.mainDeck.slice(-2)].sort()).toEqual([a, c].sort());
     expect(t.state.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "guild_inspection", takes: [{ kind: "face_up", techId: "T10" }] } });
@@ -511,6 +553,21 @@ describe("Colour Samples when acquired (v1.6.2 L214, L625, L649, R4, B1)", () =>
     expect(t.state.techDisplay.glazing_loading).toEqual(["T20", "T15"]);
   });
 
+  it("a Shifu's first take with a face-up reservation: the inspection resumes, and both displays refill when the turn ends", () => {
+    const t = table(coins(5));
+    t.act("p1", inspect("firing"));
+    t.act("p1", take("face_up", "T10"));
+    t.act("p1", { type: "SELECT_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 5, orderId: "O06" }] });
+    expect(t.state.market.display[5]).toBeNull();
+    expect(t.state.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "guild_inspection" } });
+    t.act("p1", take("inspected", "T13"));
+    expect(t.state.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "after_action" } });
+    const ended = t.act("p1", { type: "END_TURN" });
+    expect(types(ended)).toEqual(["DISPLAY_REFILLED", "TECH_DISPLAY_REFILLED", "WORK_TURN_ENDED", "WORK_TURN_STARTED"]);
+    expect(t.state.market.display.every((orderId) => orderId !== null)).toBe(true);
+    expect(t.state.hidden.orderHands["p1"]).toEqual(["O06"]);
+  });
+
   it("a Shifu's second take: after the reservation the Shifu still chooses the bottom order", () => {
     const t = table(coins(5));
     t.act("p1", inspect("workshop"));
@@ -519,7 +576,7 @@ describe("Colour Samples when acquired (v1.6.2 L214, L625, L649, R4, B1)", () =>
     expect(t.state.phase).toMatchObject({ step: { kind: "colour_samples", resume: { takes: [{ techId: "T12" }, { techId: "T10" }] } } });
     const look = t.state.hidden.pendingLook;
     const orderId = look?.kind === "colour_samples" ? (look.orderIds[0] as OrderId) : ("O01" as OrderId);
-    t.act("p1", { type: "COLOUR_SAMPLES_CHOOSE", orderId });
+    t.act("p1", { type: "SELECT_CHOOSE", reservations: [{ kind: "looked", orderId }] });
     expect(t.state.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "guild_inspection", takes: [{ techId: "T12" }, { techId: "T10" }] } });
     t.expectRuleError("p1", take("inspected", "T05"), "TECH_TAKE_LIMIT");
     const finished = t.act("p1", finish(["T05", "T17"]));

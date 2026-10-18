@@ -219,8 +219,8 @@ describe("via Order completion (L410–417)", () => {
     expect(record).toMatchObject({ printedCrowns: 3, bonusCrowns: 1 });
     const p1 = player(state, "p1");
     expect(p1.imperial).toEqual({ recognition: 4, grantReceived: true, kilnGained: true, priority: "held", audienceReceived: true });
-    // Tribute Ware's 1 VP was recorded when it was gained (owner amendment A1).
-    expect(p1.score).toEqual({ orders: 22, kilnAbilities: 0, recognitionOverflow: 1, imperialAudience: 6, techs: 1 });
+    // Owning Tribute Ware scores no VP (v1.6.2 change 27).
+    expect(p1.score).toEqual({ orders: 22, kilnAbilities: 0, recognitionOverflow: 1, imperialAudience: 6 });
     const crownEvents = ctx.events.filter(
       (e): e is Extract<GameEvent, { type: "RECOGNITION_ADVANCED" | "CROWN_OVERFLOW_VP" }> =>
         e.type === "RECOGNITION_ADVANCED" || e.type === "CROWN_OVERFLOW_VP",

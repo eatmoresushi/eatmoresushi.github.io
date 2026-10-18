@@ -75,7 +75,7 @@ describe("decisionPrompt (DESIGN §3.4)", () => {
     ["round_start_setters_mark", { type: "round_start_setters_mark", queue: { actorIds: ["p2", "p3"], index: 0 } }, ["p2"], "single"],
     [
       "work_turn",
-      { type: "work_turn", activePlayerId: "p3", step: { kind: "commission_market", workerId: "p3:shifu", effect: "shifu", lookSize: 3, maxReservations: 2, lookedCount: 3 } },
+      { type: "work_turn", activePlayerId: "p3", step: { kind: "commission_market", workerId: "p3:shifu", effect: "shifu", select: { n: 3, maxReservations: 2, fromDisplay: true, lookedCount: 3 } } },
       ["p3"],
       "single",
     ],

@@ -19,6 +19,7 @@
  */
 
 import {
+  BASE_CONTRIBUTION_CARD_IDS,
   DISCIPLINES,
   FIRING,
   GAME_CONFIG,
@@ -139,10 +140,12 @@ function makePlayer(seat: PlayerSetup, seatIndex: number): PlayerState {
     workers: makeWorkers(seat.id),
     personalSpaces: makePersonalSpaces(),
     techs: [],
+    // Bank, Tend and Stoke (v1.6.2 L260); Fuel Ledger adds its 2 cards when gained (change 26).
+    contributionCards: [...BASE_CONTRIBUTION_CARD_IDS],
     kilnAbilityUsedThisRound: false,
     imperial: { recognition: 0, grantReceived: false, kilnGained: false, priority: "on_track", audienceReceived: false },
     completedOrders: [],
-    score: { orders: 0, kilnAbilities: 0, recognitionOverflow: 0, imperialAudience: 0, techs: 0 },
+    score: { orders: 0, kilnAbilities: 0, recognitionOverflow: 0, imperialAudience: 0 },
   };
 }
 
@@ -229,7 +232,7 @@ export function createInitialState(input: CreateGameInput, rng: RandomSource): C
   const firstSeat = playerOrder[0];
   invariant(firstSeat !== undefined, "A game has players");
   const draft: GameState = {
-    schemaVersion: 7,
+    schemaVersion: 8,
     rulesVersion: GAME_CONFIG.rulesVersion,
     gameId: input.gameId,
     revision: 0,
