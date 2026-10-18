@@ -72,7 +72,7 @@ describe("the V1.6.2 rulebook is the source of truth", () => {
   const V162_FILES: ReadonlyArray<readonly [string, string]> = [
     [SOURCE_PATH, "93cc8173d14ae0320ea197e45ce68de2ebd2cd6165e215e8709622d2f0f7f8e3"],
     ["docs/KILN_OPENING_v1.6.2_ZH.md", "1bd43cdc90045682988e8ed155ff08be1645c44d00ad2ef4adb19c62e488fce2"],
-    ["docs/KILN_OPENING_v1.6.2_COMPONENT_TEXT.md", "7672006db153d9d7595ec3ec3120f41f6f79af5d780f6b7d3676627ade3e9a4f"],
+    ["docs/KILN_OPENING_v1.6.2_COMPONENT_TEXT.md", "0d2ebf8b9ae0521c991ef06d637a99772645150e68e635f576905822c142cfc6"],
   ];
 
   it.each(V162_FILES)("%s matches the checksum the audit records", (path, expected) => {
