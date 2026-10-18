@@ -5,7 +5,7 @@
  * One draft serves the `work` window's two steps:
  * - **before the worker action:** place a worker (worker entry × location × that location's
  *   sub-draft), or first use Imperial Priority or the Colour Samples swap (§3.4, R10, v1.6.2
- *   L617);
+ *   L622);
  * - **after the worker action:** Imperial Priority, the Colour Samples swap, or End turn.
  *
  * The worker and the location are chosen on the table (owner review, 2026-10-17): the work
@@ -107,7 +107,7 @@ export interface WorkDraft {
   readonly locationId: LocationId | null;
   readonly perLocation: PerLocation;
   readonly imperialPriority: ImperialPriorityDraft;
-  /** The Colour Samples swap's held Order to discard (v1.6.2 L617). */
+  /** The Colour Samples swap's held Order to discard (v1.6.2 L622). */
   readonly swap: ColourSamplesSwapDraft;
 }
 

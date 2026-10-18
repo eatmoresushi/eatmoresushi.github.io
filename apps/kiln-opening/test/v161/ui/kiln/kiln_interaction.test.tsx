@@ -40,7 +40,8 @@ function key(target: Element, keyName: string): void {
 
 describe("kiln tile rules details (D10)", () => {
   it("opens on keyboard focus, closes on Escape with focus kept, and pins on click", () => {
-    const setup = harness(fixtureSource("m3_heat_marker_step_3p"));
+    // m9: Wen's Setter's Mark tile on Middle 1.
+    const setup = harness(fixtureSource("m9_contributions_step1_3p"));
     act(() => root.render(setup.wrap(<KilnBlock />)));
     const cell = container.querySelector('[data-space="middle_1"]');
     const trigger = cell?.querySelector<HTMLButtonElement>(".ktile-detail .kit-detail-trigger");

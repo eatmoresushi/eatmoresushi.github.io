@@ -9,7 +9,7 @@
 import type { CSSProperties } from "react";
 import type { FinalResult } from "../../../game/index.ts";
 import { useT } from "../../i18n/I18nProvider.tsx";
-import { list } from "../../i18n/format.ts";
+import { andList } from "../../i18n/format.ts";
 import type { MessageKey } from "../../i18n/translator.ts";
 import { useGame } from "../../state/hooks.ts";
 import { nameOf, seatOf } from "../firing/firingSupport.ts";
@@ -39,7 +39,7 @@ export function FinalSummary() {
     <div className="dw-form">
       <Lead>
         {winners.length > 1
-          ? t("orders.final.shared", { names: list(names, t.locale), vp })
+          ? t("orders.final.shared", { names: andList(names, t.locale), vp })
           : t("orders.final.winner", { name: names[0] ?? "", vp })}
       </Lead>
       {decidedBy === null || winners.length > 1 ? null : <Note>{t("orders.final.decidedBy", { criterion: t.dynamic(decidedBy) })}</Note>}

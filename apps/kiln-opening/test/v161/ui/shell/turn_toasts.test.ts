@@ -154,10 +154,22 @@ describe("advanceTurns", () => {
 
   it("folds a Guild Hall payment into the acquisition line after it, as the log does", () => {
     const paid: PublicGameEvent = { type: "RESOURCES_CHANGED", playerId: other, clay: 0, wood: 0, coins: -2, reason: "guild_hall" };
-    const acquired: PublicGameEvent = { type: "TECH_ACQUIRED", playerId: other, techId: "T10", source: "face_up", cost: 2, vp: 1 };
+    const acquired: PublicGameEvent = { type: "TECH_ACQUIRED", playerId: other, techId: "T10", source: "face_up", cost: 2 };
     const log = entries(150, BASE + 1, other, [placed(other, "guild_hall"), paid, acquired]);
     expect(isToastLine(log[1]!, log[0], log[2])).toBe(false);
     expect(keysOf(advanceTurns(startTurnTracker([], BASE), log, viewer).turns)).toEqual([[other, ["WORKER_PLACED", "TECH_ACQUIRED"]]]);
+    // No VP for a Tech (v1.6.2 change 27).
+    expect(publicEventText(acquired, { t: en, view: logCeramicView(model, []), viewerId: viewer })).toBe(`${nameOf(other)} acquired Colour Samples: pay 2 Coins`);
+  });
+
+  it("shows the Contribution cards that come with Fuel Ledger as their own line, after the acquisition (v1.6.2 change 26)", () => {
+    const paid: PublicGameEvent = { type: "RESOURCES_CHANGED", playerId: other, clay: 0, wood: 0, coins: -2, reason: "guild_hall" };
+    const acquired: PublicGameEvent = { type: "TECH_ACQUIRED", playerId: other, techId: "T12", source: "face_up", cost: 2 };
+    const cards: PublicGameEvent = { type: "CONTRIBUTION_CARDS_GAINED", playerId: other, techId: "T12", cards: ["FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"] };
+    const log = entries(160, BASE + 1, other, [placed(other, "guild_hall"), paid, acquired, cards, turnEnded(other)]);
+    expect(isToastLine(log[3]!, log[2], log[4])).toBe(true);
+    expect(keysOf(advanceTurns(startTurnTracker([], BASE), log, viewer).turns)).toEqual([[other, ["WORKER_PLACED", "TECH_ACQUIRED", "CONTRIBUTION_CARDS_GAINED"]]]);
+    expect(publicEventText(cards, { t: en, view: logCeramicView(model, []), viewerId: viewer })).toBe(`${nameOf(other)} took the Contribution cards that come with Fuel Ledger: Fuel Ledger Bank, Fuel Ledger Stoke`);
   });
 
   it("fits a Form & Decorate turn with Ding's extra vessel in the toast's 4 lines: no \"used Moulded Production\", no separate Ding cost line", () => {

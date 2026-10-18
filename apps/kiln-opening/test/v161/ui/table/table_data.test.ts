@@ -81,9 +81,9 @@ describe("boardWorkers", () => {
     const model = modelOf("m5_two_player_board_2p");
     const lin = boardWorkers(model, summaryOf(model, "p1")!);
     expect(lin).toHaveLength(4);
-    expect(lin[0]).toEqual({ kind: "shifu", placedAt: "glaze_load", senior: false });
+    expect(lin[0]).toEqual({ kind: "shifu", placedAt: "form_decorate", senior: false });
     expect(lin.filter((worker) => worker.placedAt === null)).toEqual([{ kind: "apprentice", placedAt: null, senior: false }]);
-    expect(lin.map((worker) => worker.placedAt).sort()).toEqual(["glaze_load", "materials_yard", "materials_yard", null].sort());
+    expect(lin.map((worker) => worker.placedAt).sort()).toEqual(["form_decorate", "glaze_load", "materials_yard", null].sort());
     expect(JSON.stringify(lin)).not.toMatch(/p\d:/);
   });
 
@@ -99,7 +99,9 @@ describe("nextFreePersonalSpace", () => {
   it("is the first added, empty space", () => {
     const model = modelOf("m1_work_phase_r2_3p");
     const wen = summaryOf(model, "p3")!;
-    expect(nextFreePersonalSpace(wen, "form_decorate")).toBe(0);
+    // Wen's Apprentice stands on the first Form & Decorate space; the second, added by a Tech, is free.
+    expect(wen.personalSpaces.find((space) => space.locationId === "form_decorate" && space.spaceIndex === 0)?.occupant).not.toBeNull();
+    expect(nextFreePersonalSpace(wen, "form_decorate")).toBe(1);
     expect(nextFreePersonalSpace(wen, "glaze_load")).toBe(0);
     const m5 = modelOf("m5_two_player_board_2p");
     const lin = summaryOf(m5, "p1")!;

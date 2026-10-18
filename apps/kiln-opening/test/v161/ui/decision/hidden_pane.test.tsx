@@ -345,17 +345,17 @@ describe("the pane appears with a placement and hides again", () => {
     expect(document.activeElement).toBe(paneHeading());
     expect($('[data-b4="chosen"]').getAttribute("data-location-id")).toBe("canal_wharf");
     // Another Place while the pane shows: the choice changes, focus stays on the table.
-    press(placeButton("materials_yard", "shifu"));
-    expect($('[data-b4="chosen"]').getAttribute("data-location-id")).toBe("materials_yard");
-    expect(document.activeElement).toBe(placeButton("materials_yard", "shifu"));
+    press(placeButton("commission_market", "shifu"));
+    expect($('[data-b4="chosen"]').getAttribute("data-location-id")).toBe("commission_market");
+    expect(document.activeElement).toBe(placeButton("commission_market", "shifu"));
     // Into the pane, then Clear: back to placing.
     const clear = [...pane().querySelectorAll<HTMLButtonElement>(".confirm-buttons button")].find((button) => button.textContent === "Clear");
     if (clear === undefined) throw new Error("no Clear");
     press(clear);
     expect(pane().hidden).toBe(true);
     expect(shell().getAttribute("data-pane")).toBe("hidden");
-    expect(document.activeElement).toBe(placeButton("materials_yard", "shifu"));
-    expect(placeButton("materials_yard", "shifu").getAttribute("aria-pressed")).toBe("false");
+    expect(document.activeElement).toBe(placeButton("commission_market", "shifu"));
+    expect(placeButton("commission_market", "shifu").getAttribute("aria-pressed")).toBe("false");
   });
 
   it("after Confirm, a new turn of the viewer's hides the pane again and focus goes back to the table", async () => {
@@ -425,11 +425,11 @@ describe("the pane appears with a placement and hides again", () => {
 
   it("a clicked shortcut counts even when the click gives it no focus (WebKit)", () => {
     mount(new ControlledSource(M1));
-    act(() => placeButton("glaze_load", "apprentice").click());
+    act(() => placeButton("glaze_load", "shifu").click());
     expect(pane().hidden).toBe(false);
     pressClear();
     expect(pane().hidden).toBe(true);
-    expect(document.activeElement).toBe(placeButton("glaze_load", "apprentice"));
+    expect(document.activeElement).toBe(placeButton("glaze_load", "shifu"));
   });
 
   it("scrolls the world (only) to the return target only when the focus ring shows (a keyboard player)", () => {

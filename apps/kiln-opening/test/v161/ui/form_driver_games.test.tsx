@@ -20,9 +20,10 @@
  * engine. `KILN_UI_FUZZ_GAMES` plays more games per player count (like `test:fuzz:long`).
  *
  * A steered game also reaches the optional abilities a random autopilot rarely meets — the
- * Colour Samples swap, Protective Saggars, Second Firing's choice, Ge's Crackle and Kiln Master —
- * through their real form controls: a short preference list (Ge at Kiln selection, the Guild Hall
- * and those Techs when offered, then the ability's own option) is tried once per decision before
+ * Colour Samples swap, Protective Saggars, Second Firing's choice, Ge's Crackle, Kiln Master and
+ * Fuel Ledger's own Contribution cards — through their real form controls: a short preference list
+ * (Ge at Kiln selection, the Guild Hall and those Techs when offered, then the ability's own option
+ * or card) is tried once per decision before
  * the autopilot's own pick. The forms still build every command, and the engine still accepts
  * each one.
  */
@@ -88,7 +89,7 @@ class TableSource implements GameSource {
     const actorId = this.snapshot.view?.viewerId ?? null;
     if (actorId === null) return { kind: "ignored" };
     this.sent.push({ actorId, command });
-    const result = command.type === "SUBMIT_CONTRIBUTION" ? this.table.tryContribute(actorId, command.card, command.fuelLedger) : this.table.tryAct(actorId, command);
+    const result = command.type === "SUBMIT_CONTRIBUTION" ? this.table.tryContribute(actorId, command.card) : this.table.tryAct(actorId, command);
     if (!result.ok) {
       this.rejected.push(`${actorId} ${JSON.stringify(command)}: ${result.error.code}`);
       return { kind: "rejected", error: { kind: "rule", error: result.error } };
@@ -146,6 +147,8 @@ function abilitiesUsed(report: GameReport): Set<string> {
   for (const { command } of report.sent) {
     if (command.type === "USE_COLOUR_SAMPLES_SWAP" || command.type === "USE_PROTECTIVE_SAGGARS" || command.type === "USE_GE_CRACKLE" || command.type === "SECOND_FIRING_CHOOSE") used.add(command.type);
     if (command.type === "RESOLVE_HEAT_MARKERS" && command.kilnMaster !== undefined) used.add("RESOLVE_HEAT_MARKERS.kilnMaster");
+    // Fuel Ledger's own Contribution cards (v1.6.2 change 26).
+    if (command.type === "SUBMIT_CONTRIBUTION" && (command.card === "FUEL_LEDGER_BANK" || command.card === "FUEL_LEDGER_STOKE")) used.add("SUBMIT_CONTRIBUTION.fuelLedgerCard");
   }
   return used;
 }
@@ -175,6 +178,11 @@ const ABILITY_PREFERENCES: readonly string[] = [
   '[data-act="tech"][data-tech-id="T14"]',
   '[data-act="tech"][data-tech-id="T24"]',
   '[data-act="place"][data-location-id="guild_hall"][data-worker="apprentice"]',
+  // Fuel Ledger, then one of the 2 Contribution cards it brings (v1.6.2 change 26).
+  'input[name="take"][value="T12"]',
+  '[data-act="tech"][data-tech-id="T12"]',
+  'input[name="card"][value="FUEL_LEDGER_STOKE"]',
+  'input[name="card"][value="FUEL_LEDGER_BANK"]',
 ];
 
 async function playThroughForms(players: 2 | 3 | 4, seed: number, preferences: readonly string[] = []): Promise<GameReport> {
@@ -289,8 +297,8 @@ describe("full games played only through the decision forms (§9.4)", () => {
       "PLACE_GUILD_HALL",
       "PLACE_CANAL_WHARF",
       "PLACE_MAGISTRATES_HALL",
-      // V1.6.2: the Commission Market's reservation after its look, and the Guild Hall Shifu's takes.
-      "COMMISSION_CHOOSE",
+      // V1.6.2: the Commission Market's Select (SELECT_CHOOSE, change 25), and the Guild Hall Shifu's takes.
+      "SELECT_CHOOSE",
       "GUILD_TAKE",
       "SUBMIT_CONTRIBUTION",
       "COMPLETE_ORDER",
@@ -302,16 +310,16 @@ describe("full games played only through the decision forms (§9.4)", () => {
 });
 
 describe("steered games reach the optional abilities through their forms", () => {
-  // Seeds found by playing steered games under V1.6.2 (3 and 4 players, seeds 5000–5009 and the
-  // V1.6.1 set): together they use all five.
+  // Seeds found by playing steered games under V1.6.2 revision 3 (3 and 4 players, seeds
+  // 5000–5009 and the earlier sets): together they use all five abilities and a Fuel Ledger card.
   // `KILN_UI_STEER_SEEDS="4:5000,3:5001"` plays other steered games (to search for seeds).
   const override = process.env["KILN_UI_STEER_SEEDS"];
   const steered: ReadonlyArray<readonly [2 | 3 | 4, number]> =
     override === undefined
       ? [
-          [4, 5_022],
-          [3, 5_005],
-          [3, 5_001],
+          [3, 5_006],
+          [3, 5_003],
+          [3, 5_007],
         ]
       : override.split(",").map((pair) => {
           const [players, seed] = pair.split(":").map(Number);
@@ -331,8 +339,8 @@ describe("steered games reach the optional abilities through their forms", () =>
     }
   }, 600_000);
 
-  it("together, the Colour Samples swap, Protective Saggars, Second Firing's choice, Ge's Crackle and Kiln Master were sent from their forms", () => {
+  it("together, the Colour Samples swap, Protective Saggars, Second Firing's choice, Ge's Crackle, Kiln Master and a Fuel Ledger card were sent from their forms", () => {
     if (override !== undefined) return;
-    expect([...used].sort()).toEqual(["RESOLVE_HEAT_MARKERS.kilnMaster", "SECOND_FIRING_CHOOSE", "USE_COLOUR_SAMPLES_SWAP", "USE_GE_CRACKLE", "USE_PROTECTIVE_SAGGARS"]);
+    expect([...used].sort()).toEqual(["RESOLVE_HEAT_MARKERS.kilnMaster", "SECOND_FIRING_CHOOSE", "SUBMIT_CONTRIBUTION.fuelLedgerCard", "USE_COLOUR_SAMPLES_SWAP", "USE_GE_CRACKLE", "USE_PROTECTIVE_SAGGARS"]);
   });
 });

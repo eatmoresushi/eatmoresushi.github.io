@@ -92,7 +92,6 @@ const TECH = {
   reworkingTable: "T05",
   kilnTending: "T20",
   protectiveSaggars: "T11",
-  fuelLedger: "T12",
   testPieces: "T13",
   secondFiring: "T14",
   tributeWare: "T25",
@@ -282,10 +281,14 @@ export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
   ORDER_RESERVED: (event, c) => {
     const who = name(event.playerId, c);
     switch (event.source) {
-      case "face_up":
-        return event.orderId === null
-          ? c.t("shell.ev.ORDER_RESERVED.looked", { name: who })
-          : c.t("shell.ev.ORDER_RESERVED.face_up", { name: who, order: event.orderId });
+      case "face_up": {
+        if (event.orderId === null) return c.t("shell.ev.ORDER_RESERVED.looked", { name: who });
+        // Every Select may take a face-up Order (v1.6.2 L64, change 25): Colour Samples' say so.
+        const tech = techName(TECH.colourSamples, c.t.locale);
+        if (event.via === "colour_samples") return c.t("shell.ev.ORDER_RESERVED.face_upColourSamples", { name: who, order: event.orderId, tech });
+        if (event.via === "colour_samples_swap") return c.t("shell.ev.ORDER_RESERVED.face_upSwap", { name: who, order: event.orderId, tech });
+        return c.t("shell.ev.ORDER_RESERVED.face_up", { name: who, order: event.orderId });
+      }
       case "looked": {
         const tech = techName(TECH.colourSamples, c.t.locale);
         if (event.via === "colour_samples") return c.t("shell.ev.ORDER_RESERVED.colour_samples", { name: who, tech });
@@ -308,15 +311,22 @@ export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
       : c.t("shell.ev.PRIVATE_LOOK_OPENED.techs", { name: who, n: event.count, discipline });
   },
   LOOKED_ORDERS_TO_BOTTOM: (event, c) => c.t("shell.ev.LOOKED_ORDERS_TO_BOTTOM", { name: name(event.playerId, c), n: event.count }),
-  // The swap's discard (v1.6.2 L617): the line before it says "used Colour Samples to swap".
+  // The swap's discard (v1.6.2 L622): the line before it says "used Colour Samples to swap".
   HELD_ORDER_DISCARDED: (event, c) =>
     event.to === "box" ? c.t("shell.ev.HELD_ORDER_DISCARDED.box", { name: name(event.playerId, c) }) : c.t("shell.ev.HELD_ORDER_DISCARDED", { name: name(event.playerId, c) }),
+  // No VP: gaining a Tech scores nothing (v1.6.2 change 27).
   TECH_ACQUIRED: (event, c) =>
     c.t("shell.ev.TECH_ACQUIRED", {
       name: name(event.playerId, c),
       tech: techName(event.techId, c.t.locale),
       cost: event.cost === 0 ? c.t("common.free") : c.t("common.payRes", { n: event.cost, res: resourceName("coins", c.t.locale, event.cost) }),
-      vp: event.vp,
+    }),
+  // Fuel Ledger brings its 2 Contribution cards with the tile (v1.6.2 L634, change 26): public.
+  CONTRIBUTION_CARDS_GAINED: (event, c) =>
+    c.t("shell.ev.CONTRIBUTION_CARDS_GAINED", {
+      name: name(event.playerId, c),
+      tech: techName(event.techId, c.t.locale),
+      cards: list(event.cards.map((card) => contributionCardName(card, c.t.locale)), c.t.locale),
     }),
   TECHS_RETURNED_TO_BOTTOM: (event, c) =>
     c.t("shell.ev.TECHS_RETURNED_TO_BOTTOM", { name: name(event.playerId, c), n: event.count, discipline: disciplineName(event.discipline, c.t.locale) }),
@@ -330,7 +340,7 @@ export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
     c.t("shell.ev.PERSONAL_SPACE_UNLOCKED", { name: name(event.playerId, c), location: locationName(event.locationId, c.t.locale) }),
   TECH_USED: (event, c) => {
     const values = { name: name(event.playerId, c), tech: techName(event.techId, c.t.locale) };
-    // Colour Samples is used only by its swap (v1.6.2 L617); Canal Barge always pays its Coins
+    // Colour Samples is used only by its swap (v1.6.2 L622); Canal Barge always pays its Coins
     // in the next event, which the log folds into this line (`repeatsPreviousEntry`).
     if (event.techId === TECH.colourSamples) return c.t("shell.ev.TECH_USED.swap", values);
     if (event.techId === TECH.canalBarge) return c.t("shell.ev.TECH_USED.coins", { ...values, coins: coins(RULE_NUMBERS.canalBargeCoins, c) });
@@ -387,12 +397,10 @@ export const EVENT_TEXT: { readonly [T in GameEventType]: EventTemplate<T> } = {
   CONTRIBUTIONS_REVEALED: (event, c) => {
     const entries = Object.entries(event.contributions).flatMap(([playerId, revealed]) => (revealed === undefined ? [] : [[playerId, revealed] as const]));
     if (entries.length === 0) return c.t("shell.ev.CONTRIBUTIONS_REVEALED.none");
-    const items = entries.map(([playerId, revealed]) => {
-      const values = { name: name(playerId, c), card: contributionCardName(revealed.card, c.t.locale), heat: signed(revealed.heat) };
-      return revealed.fuelLedger
-        ? c.t("shell.ev.contribution.itemLedger", { ...values, ledger: techName(TECH.fuelLedger, c.t.locale) })
-        : c.t("shell.ev.contribution.item", values);
-    });
+    // Each card by its name, a Fuel Ledger card included (v1.6.2 change 26).
+    const items = entries.map(([playerId, revealed]) =>
+      c.t("shell.ev.contribution.item", { name: name(playerId, c), card: contributionCardName(revealed.card, c.t.locale), heat: signed(revealed.heat) }),
+    );
     return c.t("shell.ev.CONTRIBUTIONS_REVEALED", { list: list(items, c.t.locale) });
   },
   BASE_HEAT_DETERMINED: (event, c) => {

@@ -77,7 +77,8 @@ const SAMPLES: { readonly [T in GameEventType]: Extract<PublicGameEvent, { type:
   PRIVATE_LOOK_OPENED: { type: "PRIVATE_LOOK_OPENED", playerId: "p2", kind: "commission_market", discipline: null, count: 3 },
   LOOKED_ORDERS_TO_BOTTOM: { type: "LOOKED_ORDERS_TO_BOTTOM", playerId: "p2", count: 2 },
   HELD_ORDER_DISCARDED: { type: "HELD_ORDER_DISCARDED", playerId: "p2", cause: "colour_samples_swap", to: "main_discard" },
-  TECH_ACQUIRED: { type: "TECH_ACQUIRED", playerId: "p2", techId: "T13", source: "face_up", cost: 3, vp: 1 },
+  TECH_ACQUIRED: { type: "TECH_ACQUIRED", playerId: "p2", techId: "T13", source: "face_up", cost: 3 },
+  CONTRIBUTION_CARDS_GAINED: { type: "CONTRIBUTION_CARDS_GAINED", playerId: "p2", techId: "T12", cards: ["FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"] },
   TECHS_RETURNED_TO_BOTTOM: { type: "TECHS_RETURNED_TO_BOTTOM", playerId: "p2", discipline: "firing", count: 1 },
   TECH_DISPLAY_REFILLED: { type: "TECH_DISPLAY_REFILLED", discipline: "workshop", revealedTechIds: ["T05"], display: ["T05", "T16"] },
   PERSONAL_SPACE_UNLOCKED: { type: "PERSONAL_SPACE_UNLOCKED", playerId: "p2", locationId: "form_decorate" },
@@ -98,7 +99,7 @@ const SAMPLES: { readonly [T in GameEventType]: Extract<PublicGameEvent, { type:
   CONTRIBUTIONS_REVEALED: {
     type: "CONTRIBUTIONS_REVEALED",
     windowId: "w-1",
-    contributions: { p1: { card: "STOKE", fuelLedger: true, heat: 2, woodPaid: 2 }, p2: { card: "BANK", fuelLedger: false, heat: -1, woodPaid: 1 } },
+    contributions: { p1: { card: "FUEL_LEDGER_STOKE", heat: 2, woodPaid: 1 }, p2: { card: "BANK", heat: -1, woodPaid: 1 } },
   },
   BASE_HEAT_DETERMINED: { type: "BASE_HEAT_DETERMINED", kilnDie: 3, contributionSum: 3, unclamped: 6, baseHeat: 5 },
   TEST_PIECES_PEEKED: { type: "TEST_PIECES_PEEKED", playerId: "p2" },
@@ -167,9 +168,9 @@ const entry = (event: PublicGameEvent, sequence = 1, own?: GameEvent): LogEntry 
 });
 
 describe("EVENT_TEXT", () => {
-  it("has one template per engine event type (66)", () => {
+  it("has one template per engine event type (67, with CONTRIBUTION_CARDS_GAINED, v1.6.2 change 26)", () => {
     expect(Object.keys(EVENT_TEXT).sort()).toEqual([...TYPES].sort());
-    expect(TYPES).toHaveLength(66);
+    expect(TYPES).toHaveLength(67);
   });
 
   it("has an own-secret template for each of the eight secret events", () => {
@@ -213,8 +214,12 @@ describe("D9 and public facts", () => {
 
   it("never names a Contribution card before the reveal, and states the reveal in full", () => {
     expect(publicEventText(SAMPLES.CONTRIBUTION_SUBMITTED, context("en"))).toBe("Zhao chose a Contribution in secret");
-    expect(publicEventText(SAMPLES.CONTRIBUTIONS_REVEALED, context("en"))).toBe("Contributions revealed: Lin Stoke the Fire +2 (Fuel Ledger), Zhao Bank the Fire −1");
-    expect(publicEventText(SAMPLES.CONTRIBUTIONS_REVEALED, context("zh-CN"))).toBe("控火亮牌：Lin添柴+2（柴簿）、Zhao压火−1");
+    // A Fuel Ledger card is named as the card it is (v1.6.2 change 26).
+    expect(publicEventText(SAMPLES.CONTRIBUTIONS_REVEALED, context("en"))).toBe("Contributions revealed: Lin Fuel Ledger Stoke +2, Zhao Bank the Fire −1");
+    expect(publicEventText(SAMPLES.CONTRIBUTIONS_REVEALED, context("zh-CN"))).toBe("控火亮牌：Lin柴簿添柴+2、Zhao压火−1");
+    const bank: PublicGameEvent = { type: "CONTRIBUTIONS_REVEALED", windowId: "w-1", contributions: { p1: { card: "FUEL_LEDGER_BANK", heat: -2, woodPaid: 1 } } };
+    expect(publicEventText(bank, context("en"))).toBe("Contributions revealed: Lin Fuel Ledger Bank −2");
+    expect(publicEventText(bank, context("zh-CN"))).toBe("控火亮牌：Lin柴簿压火−2");
   });
 
   it("states Base Heat with the clamp, and never the Fire deck's size", () => {
@@ -257,6 +262,20 @@ describe("V1.6.2 lines", () => {
     const { secret: _secret, ...publicPart } = own;
     expect(eventText(entry(publicPart, 1, own), en)).toBe("Lin reserved O20");
     expect(eventText(entry(publicPart, 1, own), context("en", VIEW, "p2"))).not.toMatch(/O20/);
+  });
+
+  it("states a face-up reservation by any Select, naming the Order and Colour Samples where it took it (v1.6.2 L64, change 25)", () => {
+    const faceUp = SAMPLES.ORDER_RESERVED;
+    expect(publicEventText(faceUp, en)).toBe("Zhao reserved O17 from the display");
+    expect(publicEventText({ ...faceUp, via: "colour_samples" }, en)).toBe("Zhao reserved O17 from the display with Colour Samples");
+    expect(publicEventText({ ...faceUp, via: "colour_samples" }, zh)).toBe("Zhao用「色样簿」承接委托榜上的O17");
+    expect(publicEventText({ ...faceUp, via: "colour_samples_swap" }, en)).toBe("Zhao reserved O17 from the display (Colour Samples swap)");
+    expect(publicEventText({ ...faceUp, via: "colour_samples_swap" }, zh)).toBe("Zhao用「色样簿」换单，承接委托榜上的O17");
+  });
+
+  it("states the Contribution cards that come with Fuel Ledger, by name (v1.6.2 change 26)", () => {
+    expect(publicEventText(SAMPLES.CONTRIBUTION_CARDS_GAINED, en)).toBe("Zhao took the Contribution cards that come with Fuel Ledger: Fuel Ledger Bank, Fuel Ledger Stoke");
+    expect(publicEventText(SAMPLES.CONTRIBUTION_CARDS_GAINED, zh)).toBe("Zhao拿取随「柴簿」附带的控火牌：柴簿压火、柴簿添柴");
   });
 
   it("states the Canal Wharf Shifu's unseen card, named only to its owner", () => {
@@ -370,7 +389,9 @@ describe("V1.6.2 lines", () => {
     // A Guild Hall payment folds into the acquisition after it, which states the cost.
     const paid: PublicGameEvent = { type: "RESOURCES_CHANGED", playerId: "p2", clay: 0, wood: 0, coins: -3, reason: "guild_hall" };
     const acquired = SAMPLES.TECH_ACQUIRED;
-    expect(publicEventText(acquired, en)).toBe("Zhao acquired Test Pieces: pay 3 Coins, +1 VP");
+    // No VP for a Tech (v1.6.2 change 27).
+    expect(publicEventText(acquired, en)).toBe("Zhao acquired Test Pieces: pay 3 Coins");
+    expect(publicEventText(acquired, zh)).toBe("Zhao习得「火照」：付3铜钱");
     expect(repeatsNextEntry(entry(paid, 1), entry(acquired, 2))).toBe(true);
     expect(repeatsNextEntry(entry({ ...paid, coins: -2 }, 1), entry(acquired, 2))).toBe(false);
     expect(repeatsNextEntry(entry({ ...paid, playerId: "p1" }, 1), entry(acquired, 2))).toBe(false);

@@ -107,26 +107,26 @@ describe("Order Phase", () => {
 
   it("a blocked Order cannot be chosen, and revalidation drops an Order no longer completable", () => {
     const m6 = ctx("m6_order_phase_crackle_3p");
-    expect(orders(m6, { type: "order", orderId: "O48" }).orderId).toBeNull();
-    const stale: OrderDraft = { ...EMPTY_COMPLETION, orderId: "O48", ceramicIds: ["c6"], end: false };
+    expect(orders(m6, { type: "order", orderId: "O42" }).orderId).toBeNull();
+    const stale: OrderDraft = { ...EMPTY_COMPLETION, orderId: "O42", ceramicIds: ["c5"], end: false };
     expect(orderDraft.reduce(stale, REVALIDATE, m6.model, m6.engine)).toEqual({ ...EMPTY_COMPLETION, end: false });
   });
 
   it("table adapter: hand Order states and the chosen group's ceramics; clicking a completable Order chooses it", () => {
     const m6 = ctx("m6_order_phase_crackle_3p");
     const table = FIRING_WINDOWS.orders.table!;
-    const draft = orders(m6, { type: "order", orderId: "O30" });
+    const draft = orders(m6, { type: "order", orderId: "O25" });
     const selection = table.select(draft, m6.model, m6.engine);
     expect(Object.fromEntries([...selection.orderTargets].map(([key, target]) => [key, target.state]))).toEqual({
-      S02: "blocked",
-      O30: "chosen",
-      O19: "completable",
-      O15: "completable",
-      O48: "blocked",
+      S07: "completable",
+      O42: "blocked",
+      O46: "blocked",
+      O25: "chosen",
+      O40: "blocked",
     });
-    expect([...selection.highlightedCeramicIds]).toEqual(["c6", "c16"]);
-    expect(table.act(draft, { type: "order", key: "O19" }, m6.model, m6.engine)).toEqual({ type: "order", orderId: "O19" });
-    expect(table.act(draft, { type: "order", key: "O48" }, m6.model, m6.engine)).toBeNull();
+    expect([...selection.highlightedCeramicIds]).toEqual(["c5", "c9"]);
+    expect(table.act(draft, { type: "order", key: "S07" }, m6.model, m6.engine)).toEqual({ type: "order", orderId: "S07" });
+    expect(table.act(draft, { type: "order", key: "O42" }, m6.model, m6.engine)).toBeNull();
   });
 });
 

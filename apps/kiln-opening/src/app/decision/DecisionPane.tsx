@@ -15,6 +15,11 @@
  * - **Window change (§8.2):** when the window's kind or open key changes and focus was in the pane
  *   or on `<body>`, focus moves to the heading if it is visible, else (a phone sheet in `peek`)
  *   to the sheet strip, whose text names the window. Otherwise focus stays where it is.
+ * - **Scroll on a window change:** `.pane-scroll` is one element for every window, so a new
+ *   window would open where the last one was scrolled to (a Select's look and prompt above the
+ *   view after a long list was scrolled). A new acting window, a change of kind, and the pane
+ *   appearing all start the fields (and the short-landscape sheet body, which scrolls instead) at
+ *   the top. A waiting window whose actor changes keeps its place: the viewer may be reading it.
  * - **Hidden pane (owner review, 2026-10-17; `state/pane.ts`):** while the open window's draft has
  *   nothing for it (the work turn before a placement is chosen) the `<aside>` is `hidden`, its
  *   markup kept (the test-driver contract below still holds), and `GameShell` gives its room to
@@ -64,6 +69,7 @@ export function DecisionPane() {
   const [draft] = useDraft<unknown>();
   const headingId = useId();
   const paneRef = useRef<HTMLElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const stripRef = useRef<HTMLButtonElement>(null);
   const { window, spec, sending } = decision;
@@ -96,11 +102,12 @@ export function DecisionPane() {
 
   // Layout effect: it runs in the commit that shows or hides the pane, before focus rescue's
   // mutation observer, so the move below is the one that counts.
-  const previous = useRef({ key, hidden });
+  const kind = window.kind;
+  const previous = useRef({ key, hidden, kind });
   useLayoutEffect(() => {
     const before = previous.current;
     if (before.key === key && before.hidden === hidden) return;
-    previous.current = { key, hidden };
+    previous.current = { key, hidden, kind };
     if (typeof document === "undefined") return;
     const active = document.activeElement;
     const pane = paneRef.current;
@@ -110,13 +117,19 @@ export function DecisionPane() {
       if (focusWasHere) focusTable(document, { preferred: lastPlace.current, scroll: before.key === key ? true : "focus-visible" });
       return;
     }
+    // A new window, or the pane shown again, starts at the top of its fields.
+    if (before.hidden || (before.key !== key && (acting || before.kind !== kind))) {
+      if (scrollRef.current !== null) scrollRef.current.scrollTop = 0;
+      const body = scrollRef.current?.closest<HTMLElement>(".kit-sheet-body") ?? null;
+      if (body !== null) body.scrollTop = 0;
+    }
     // Shown again in the same window: the player placed a worker or opened an ability.
     const appeared = before.hidden && before.key === key;
     if (!appeared && !focusWasHere) return;
     const heading = headingRef.current;
     if (isVisible(heading)) heading.focus({ preventScroll: true });
     else stripRef.current?.focus({ preventScroll: true });
-  }, [key, hidden]);
+  }, [key, hidden, kind, acting]);
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -154,7 +167,7 @@ export function DecisionPane() {
         >
           {/* A window with no fields of its own (final results, waiting) may still scroll inside a
               short pane: then the region itself takes keyboard focus (axe scrollable-region-focusable). */}
-          <div className="pane-scroll" inert={sending} {...(acting ? {} : { tabIndex: 0, role: "group", "aria-labelledby": headingId })}>
+          <div ref={scrollRef} className="pane-scroll" inert={sending} {...(acting ? {} : { tabIndex: 0, role: "group", "aria-labelledby": headingId })}>
             <Fields />
             {/* Dev builds only. Inside the scroll area, so on a short pane it never takes height
                 from (or paints over) the ConfirmBar. */}

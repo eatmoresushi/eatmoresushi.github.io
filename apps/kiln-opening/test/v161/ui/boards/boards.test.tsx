@@ -54,7 +54,7 @@ describe("D7: personal spaces are added by learning a Tech (m1)", () => {
     const viewer = fixture(M1).viewerId;
     const en = render(M1, <PersonalSpaces playerId={viewer} />);
     const added = m1WorkshopTech();
-    expect(en).toContain(`Added by <strong>${techName(added, "en")}</strong>`);
+    expect(en).toContain(`Added by <strong>${escapeHtml(techName(added, "en"))}</strong>`);
     expect(textOf(en)).toContain(`Added by ${techName(added, "en")}`);
     const hint = ruleErrorText({ code: "PERSONAL_SPACE_LOCKED", details: { locationId: "glaze_load" } }, "en");
     expect(hint).toBe("Learn a Glazing & Loading Tech to add this space.");
@@ -62,7 +62,7 @@ describe("D7: personal spaces are added by learning a Tech (m1)", () => {
     expect(textOf(en)).not.toMatch(/\b(un)?lock/i);
 
     const zh = render(M1, <PersonalSpaces playerId={viewer} />, { locale: "zh-CN" });
-    expect(zh).toContain(`由「<strong>${techName(added, "zh-CN")}</strong>」添设`);
+    expect(zh).toContain(`由「<strong>${escapeHtml(techName(added, "zh-CN"))}</strong>」添设`);
     expect(textOf(zh)).toContain("习得釉作技艺即添此工位");
     expect(textOf(zh)).not.toMatch(/锁|封条|启封|封存|上锁|解锁/);
   });
@@ -132,7 +132,9 @@ describe("PlayerBoard", () => {
     const playerId = game.playerOrder.find((candidate) => game.players[candidate]!.completedOrders.length > 0)!;
     const html = render(id, <PlayerBoard playerId={playerId} />);
     const player = game.players[playerId]!;
-    const recorded = player.score.orders + player.score.kilnAbilities + player.score.recognitionOverflow + player.score.imperialAudience + player.score.techs;
+    // No Tech VP (v1.6.2 change 27): the score track holds Orders, Kiln abilities, overflow Crowns and Imperial Audience.
+    expect(Object.keys(player.score).sort()).toEqual(["imperialAudience", "kilnAbilities", "orders", "recognitionOverflow"]);
+    const recorded = player.score.orders + player.score.kilnAbilities + player.score.recognitionOverflow + player.score.imperialAudience;
     expect(html).toContain(`<strong>${recorded}</strong> VP`);
     expect(textOf(html)).toContain(`Recognition ${player.imperial.recognition}/4`);
     for (const record of player.completedOrders) expect(textOf(html)).toContain(`${record.orderId} · ${record.vp} VP`);
@@ -171,8 +173,10 @@ describe("KilnTradition and the marker line", () => {
 
 describe("TechSlots, WorkersRow and CeramicsRow", () => {
   it("shows the owned Tech per discipline with its state, and empty slots (m1)", () => {
+    // m1's viewer (Wen) owns Connoisseur's Cabinet, which has no once-per-round use: its state is Ongoing.
+    expect(m1WorkshopTech()).toBe("T19");
     const html = render(M1, <TechSlots playerId="p3" />);
-    expect(textOf(html)).toContain(`Form & Decorate ${techName(m1WorkshopTech(), "en")} Ready`);
+    expect(textOf(html)).toContain("Form & Decorate Connoisseur's Cabinet Ongoing");
     expect(textOf(html)).toContain("Glazing & Loading: empty");
     expect(textOf(html)).toContain("Firing: empty");
   });
@@ -180,7 +184,7 @@ describe("TechSlots, WorkersRow and CeramicsRow", () => {
   it("prints each owned Tech's short text, timing clause in bold, and opens no rules details (owner review, 2026-10-17)", () => {
     const html = render(M1, <TechSlots playerId="p3" />);
     const owned = m1WorkshopTech();
-    expect(textOf(html)).toContain(`${techName(owned, "en")} Ready ${textOf(techText(owned, "en").short)}`);
+    expect(textOf(html)).toContain(`${techName(owned, "en")} Ongoing ${textOf(techText(owned, "en").short)}`);
     const bold = shortTextSegments(techText(owned, "en").short).filter((segment) => segment.emphasis);
     expect(bold.length).toBeGreaterThan(0);
     for (const segment of bold) expect(html).toContain(`<strong>${escapeHtml(segment.text)}</strong>`);
@@ -190,7 +194,7 @@ describe("TechSlots, WorkersRow and CeramicsRow", () => {
     expect(html).not.toContain("kit-detail");
     const zh = render(M1, <TechSlots playerId="p3" />, { locale: "zh-CN" });
     for (const segment of shortTextSegments(techText(owned, "zh-CN").short).filter((part) => part.emphasis)) expect(zh).toContain(`<strong>${escapeHtml(segment.text)}</strong>`);
-    expect(textOf(zh)).toContain("可用");
+    expect(textOf(zh)).toContain(`${techName(owned, "zh-CN")} 持续`);
   });
 
   it("keeps every owned Tech's state visible on its tile: Ready, Used this round or Ongoing", () => {
@@ -217,25 +221,30 @@ describe("TechSlots, WorkersRow and CeramicsRow", () => {
   });
 
   it("names placed workers with where they stand (m5)", () => {
-    const html = render("m5_two_player_board_2p", <WorkersRow playerId="p1" />);
-    expect(html).toContain('aria-label="Your Shifu at Glaze &amp; Load"');
-    expect((html.match(/aria-label="Your Apprentice at Materials Yard"/g) ?? []).length).toBe(2);
+    // m5's viewer is Zhao (p2): the Shifu at the Canal Wharf, Apprentices at the Magistrate's Hall and the Materials Yard, one free.
+    const html = render("m5_two_player_board_2p", <WorkersRow playerId="p2" />);
+    expect(html).toContain('aria-label="Your Shifu at Canal Wharf"');
+    expect(html).toContain('aria-label="Your Apprentice at Magistrate&#x27;s Hall"');
+    expect(html).toContain('aria-label="Your Apprentice at Materials Yard"');
     expect(html).toContain('aria-label="Your Apprentice"');
     expect((html.match(/wk--dim/g) ?? []).length).toBe(3);
-    const other = render("m5_two_player_board_2p", <WorkersRow playerId="p2" />);
-    expect(other).toContain('aria-label="Zhao’s Apprentice at Magistrate&#x27;s Hall"');
-    expect(other).toContain('aria-label="Zhao’s Shifu at Canal Wharf"');
+    const other = render("m5_two_player_board_2p", <WorkersRow playerId="p1" />);
+    expect(other).toContain('aria-label="Lin’s Shifu at Form &amp; Decorate"');
+    expect(other).toContain('aria-label="Lin’s Apprentice at Glaze &amp; Load"');
+    expect(other).toContain('aria-label="Lin’s Apprentice at Materials Yard"');
     expect(other).not.toMatch(/\bp\d:(shifu|apprentice)/);
   });
 
   it("draws Shaped and Finished ceramics in words from model.ceramics (CR B2-1)", () => {
     expect(textOf(render(M1, <CeramicsRow playerId="p3" />))).not.toContain("Shaped 2 ceramics");
     const html = renderComponent(withModelCeramics(fixtureSource(M1)), <CeramicsRow playerId="p3" />, { registry: TABLE_WINDOWS });
+    // m1's viewer (Wen): a Shaped Bowl, Plain and a Finished Celadon Censer, Plain of Masterpiece Quality.
     expect((html.match(/data-motion="ceramic"/g) ?? []).length).toBe(2);
-    expect(textOf(html)).toContain("Brush Washer, Plain");
-    expect(textOf(html)).toContain("Brush Washer, Impressed");
+    expect(textOf(html)).toContain("Shaped Bowl, Plain");
+    expect(textOf(html)).toContain("Finished Celadon Censer, Plain · Masterpiece");
     expect(textOf(html)).not.toMatch(/\bc\d+\b/);
     const zh = renderComponent(withModelCeramics(fixtureSource(M1)), <CeramicsRow playerId="p3" />, { registry: TABLE_WINDOWS, locale: "zh-CN" });
-    expect(textOf(zh)).toContain("笔洗 · 印花");
+    expect(textOf(zh)).toContain("碗 · 素面");
+    expect(textOf(zh)).toContain("青釉香炉 · 素面 · 臻品");
   });
 });

@@ -1,24 +1,28 @@
 /**
  * Contributions (UI_V1.6.1_ARCHITECTURE §3.4, §3.7; wireframe `decContrib`, `submitRow`). Owner: B5.
  *
- * Firing step 1: the viewer chooses a Contribution card in secret (and, with Fuel Ledger, whether
- * to commit Wood with it: Bank and Stoke then cost no Wood of their own, and the commitment makes
- * them −2/+2 for its Wood, v1.6.2 L637). Each card shows the Heat and the Wood it would cost, from
- * the selector. Renders only from `contributionsDraft.options()`. Others see only who has chosen
- * (`phase.submittedPlayerIds`), never what; after submitting, the window becomes `waiting`, where
- * the viewer's own sealed card is shown from `own.pendingContribution`.
+ * Firing step 1: the viewer chooses 1 of their own Contribution cards in secret (v1.6.2 L246,
+ * L266, change 26): Tend, Bank and Stoke, and, with Fuel Ledger, Fuel Ledger Bank and Fuel Ledger
+ * Stoke, the two cards that come with the tile; its owner's plain Bank and Stoke cost no Wood
+ * (v1.6.2 L634). Each card shows its modifier and the Wood it would cost this player, paid at the
+ * reveal, from the selector; a card that costs less than its printed Wood names the owned Tech
+ * that makes it free (the draft's `freeBy`). Each Tech that brought cards gets a note: the cards
+ * it brought and those it makes free, as the draft links them. Renders only from
+ * `contributionsDraft.options()`. Others see only who
+ * has chosen (`phase.submittedPlayerIds`), never what; after submitting, the window becomes
+ * `waiting`, where the viewer's own sealed card is shown from `own.pendingContribution`.
  */
 import type { ContributionCardId } from "../../../game/index.ts";
 import { RULE_NUMBERS, contributionCardName, techName } from "../../i18n/content.ts";
-import { range, signed } from "../../i18n/format.ts";
+import { andList, range, signed } from "../../i18n/format.ts";
 import { useT } from "../../i18n/I18nProvider.tsx";
 import { OptionCard } from "../../kit/OptionCard.tsx";
 import { OptionGroup } from "../../kit/OptionGroup.tsx";
-import { useDraft, useEngineView, useGame } from "../../state/hooks.ts";
 import { RulesDetail } from "../../rules/RulesDetail.tsx";
+import { useDraft, useEngineView, useGame } from "../../state/hooks.ts";
 import { contributionsDraft } from "./Contributions.draft.ts";
-import type { ContributionsAction, ContributionsDraft } from "./Contributions.draft.ts";
-import { B5_TECHS, woodText } from "./firingSupport.ts";
+import type { ContributionCardChoice, ContributionsAction, ContributionsDraft } from "./Contributions.draft.ts";
+import { woodText } from "./firingSupport.ts";
 import { Lead, stepLabel, Note, PlayerQueue, Section } from "./WindowParts.tsx";
 
 export function Contributions() {
@@ -31,7 +35,10 @@ export function Contributions() {
   const submitted = new Set(stage?.submittedPlayerIds ?? []);
   const participants = stage?.contributions.map((entry) => entry.playerId) ?? [];
   const wood = model.me?.resources.wood ?? 0;
-  const fuel = options.fuelLedger;
+  // The Techs whose Contribution cards the viewer holds (Fuel Ledger): their rules details, the
+  // cards they brought and the cards they make free (`freeBy`), each as the draft links them.
+  const cardTechs = [...new Set(options.cards.flatMap((choice) => (choice.techId === null ? [] : [choice.techId])))];
+  const names = (choices: readonly ContributionCardChoice[]) => choices.map((choice) => contributionCardName(choice.card, t.locale));
   return (
     <div className="dw-form">
       <Lead step={stepLabel(model, t)}>{t("firing.contrib.lead")}</Lead>
@@ -60,51 +67,35 @@ export function Contributions() {
             key={choice.card}
             value={choice.card}
             leading={<span className="dw-big" aria-hidden="true">{signed(choice.option.heat)}</span>}
-            title={
-              choice.option.command.fuelLedger
-                ? t("firing.contrib.cardWithTech", { card: contributionCardName(choice.card, t.locale), tech: techName(B5_TECHS.fuelLedger, t.locale) })
-                : contributionCardName(choice.card, t.locale)
-            }
+            title={contributionCardName(choice.card, t.locale)}
             meta={
               choice.option.woodCost > 0
                 ? t("firing.contrib.woodAtReveal", { wood: woodText(choice.option.woodCost, t) })
-                : choice.belowPrintedCost
-                  ? t("firing.contrib.noWoodTech", { tech: techName(B5_TECHS.fuelLedger, t.locale) })
+                : choice.freeBy !== null
+                  ? t("firing.contrib.noWoodTech", { tech: techName(choice.freeBy, t.locale) })
                   : t("firing.contrib.noWood")
             }
-            description={t("firing.contrib.heat", { heat: signed(choice.option.heat) })}
-            disabled={!choice.available}
-            reason={
-              choice.reason === "cant_afford"
-                ? t("firing.contrib.cantAfford")
-                : choice.reason === "fuel_ledger_bank_stoke"
-                  ? t("firing.contrib.fuelOnlyBankStoke", { bank: contributionCardName("BANK", t.locale), stoke: contributionCardName("STOKE", t.locale) })
-                  : undefined
+            description={
+              choice.techId === null
+                ? t("firing.contrib.heat", { heat: signed(choice.option.heat) })
+                : t("firing.contrib.heatFromTech", { heat: signed(choice.option.heat), tech: techName(choice.techId, t.locale) })
             }
+            disabled={!choice.available}
+            reason={choice.reason === "cant_afford" ? t("firing.contrib.cantAfford") : undefined}
           />
         ))}
       </OptionGroup>
 
-      {fuel === null ? null : (
-        <Section heading={<RulesDetail subject={{ kind: "tech", id: B5_TECHS.fuelLedger }} look="name" />}>
-          <OptionCard
-            type="checkbox"
-            name="fuelLedger"
-            value="fuelLedger"
-            checked={draft.fuelLedger}
-            onChange={(_, checked) => dispatch({ type: "fuelLedger", on: checked })}
-            disabled={!fuel.canCommit && !draft.fuelLedger}
-            reason={!fuel.canCommit && !draft.fuelLedger ? t("firing.contrib.fuelCantAfford") : undefined}
-            title={t("firing.contrib.fuelToggle", { wood: woodText(fuel.commitWood, t) })}
-            description={t("firing.contrib.fuelEffect", {
-              bank: contributionCardName("BANK", t.locale),
-              bankHeat: fuel.bank === null ? "" : signed(fuel.bank.heat),
-              stoke: contributionCardName("STOKE", t.locale),
-              stokeHeat: fuel.stoke === null ? "" : signed(fuel.stoke.heat),
-            })}
-          />
-        </Section>
-      )}
+      {cardTechs.map((techId) => {
+        const tech = techName(techId, t.locale);
+        const cards = andList(names(options.cards.filter((choice) => choice.techId === techId)), t.locale);
+        const free = names(options.cards.filter((choice) => choice.freeBy === techId));
+        return (
+          <Section key={techId} heading={<RulesDetail subject={{ kind: "tech", id: techId }} look="name" />}>
+            <Note>{free.length === 0 ? t("firing.contrib.techCards", { cards, tech }) : t("firing.contrib.techCardsFree", { cards, tech, free: andList(free, t.locale) })}</Note>
+          </Section>
+        );
+      })}
 
       <Note tone="private">{t("firing.contrib.othersSee")}</Note>
     </div>

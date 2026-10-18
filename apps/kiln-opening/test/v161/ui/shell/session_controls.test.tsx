@@ -9,17 +9,22 @@
 import { describe, expect, it } from "vitest";
 import { ConnectionBanner } from "../../../../src/app/shell/ConnectionBanner.tsx";
 import { SessionMenu } from "../../../../src/app/shell/SessionMenu.tsx";
-import { fixtureSource } from "../support/fixtures.ts";
+import { fixture, fixtureSource } from "../support/fixtures.ts";
 import { renderComponent } from "../support/render.tsx";
 import { modelOf } from "./support.tsx";
+
+/** A moment whose viewer sits first, so the fixture seats them as host. */
+const HOST = "m7_cleanup_hand_limit_3p";
 
 const menuItems = (html: string): string[] => [...html.matchAll(/<button[^>]*role="(menuitem|menuitemradio)"[^>]*>(?:<span[^>]*>[^<]*<\/span>)?([^<]*)<\/button>/g)].map((match) => match[2] ?? "");
 
 describe("session menu", () => {
-  // fixtureSnapshot seats the first player as host; m1's viewer is p3 (seat 2), m5's is p1 (seat 0).
+  // fixtureSnapshot seats the first player as host; m1's viewer is p3 (seat 2), m7's is p1 (seat 0).
   it("offers End session only to the host", () => {
+    expect(fixture("m1_work_phase_r2_3p").playerView.game.playerOrder.indexOf(fixture("m1_work_phase_r2_3p").viewerId)).toBeGreaterThan(0);
+    expect(fixture(HOST).playerView.game.playerOrder[0]).toBe(fixture(HOST).viewerId);
     const guest = renderComponent(fixtureSource("m1_work_phase_r2_3p"), <SessionMenu />);
-    const host = renderComponent(fixtureSource("m5_two_player_board_2p"), <SessionMenu />);
+    const host = renderComponent(fixtureSource(HOST), <SessionMenu />);
     expect(menuItems(guest)).toEqual(["Light", "Dark", "System", "Room FIXTURE · copy code", "Leave view (your seat is kept)"]);
     expect(menuItems(host)).toEqual(["Light", "Dark", "System", "Room FIXTURE · copy code", "Leave view (your seat is kept)", "End session for everyone…"]);
     expect(host).toContain("<dialog");
@@ -27,7 +32,7 @@ describe("session menu", () => {
   });
 
   it("is a menu button with the theme as checked radio items", () => {
-    const html = renderComponent(fixtureSource("m5_two_player_board_2p"), <SessionMenu />, { ui: { theme: "dark" } });
+    const html = renderComponent(fixtureSource(HOST), <SessionMenu />, { ui: { theme: "dark" } });
     expect(html).toMatch(/<button[^>]*aria-haspopup="menu"[^>]*aria-expanded="false"[^>]*aria-label="Session menu"/);
     expect(html).toMatch(/role="group" aria-label="Theme"/);
     expect(html).toMatch(/role="menuitemradio" aria-checked="true"[^>]*>(?:<span[^>]*>[^<]*<\/span>)?Dark</);
@@ -36,7 +41,7 @@ describe("session menu", () => {
   });
 
   it("speaks Chinese", () => {
-    const html = renderComponent(fixtureSource("m5_two_player_board_2p"), <SessionMenu />, { locale: "zh-CN" });
+    const html = renderComponent(fixtureSource(HOST), <SessionMenu />, { locale: "zh-CN" });
     expect(menuItems(html)).toEqual(["浅色", "深色", "跟随系统", "房间FIXTURE · 复制房间码", "离开（保留座位）", "为所有人结束对局……"]);
   });
 });

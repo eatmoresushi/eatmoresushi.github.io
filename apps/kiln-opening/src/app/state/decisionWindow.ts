@@ -31,6 +31,7 @@ import type {
   PlayerId,
   PlayerView,
   PublicGameState,
+  SelectSpec,
   TechDiscipline,
   WorkerEffect,
 } from "../../game/index.ts";
@@ -80,22 +81,27 @@ export type DecisionWindow =
   | (WindowBase<"commission"> & {
       /** The placement's effect (Senior Apprentice gives an Apprentice the Shifu effect, R12). */
       effect: WorkerEffect;
-      /** 2 or 3 (v1.6.2 L195–196). */
-      lookSize: 2 | 3;
-      /** 1 or 2; at least 1 is always required. */
-      maxReservations: 1 | 2;
-      /** Cards the private look shows (up to `lookSize`, possibly 0, B1). */
-      lookedCount: number;
+      /**
+       * The Select (v1.6.2 L64, L201–202, change 25): Select 2 with 1 reservation (Apprentice
+       * effect) or Select 3 with up to 2 (Shifu effect); `lookedCount` cards shown (up to N,
+       * possibly 0, B1); a face-up Order may be reserved instead.
+       */
+      select: SelectSpec;
     })
   | (WindowBase<"guild_inspection"> & {
       discipline: TechDiscipline;
       /** Techs the Shifu has taken in this action so far (0 or 1; v1.6.2 L207). */
       takes: number;
     })
-  | WindowBase<"colour_samples">
+  | (WindowBase<"colour_samples"> & {
+      /** Colour Samples when acquired: Select 3, 1 reservation (v1.6.2 L622, change 25). */
+      select: SelectSpec;
+    })
   | (WindowBase<"colour_samples_swap"> & {
-      /** The work step the swap was used in, and returns to (v1.6.2 L617). */
+      /** The work step the swap was used in, and returns to (v1.6.2 L622). */
       returnTo: "before_action" | "after_action";
+      /** The swap's Select 3, 1 reservation, after its held Order was discarded (v1.6.2 L622, R17). */
+      select: SelectSpec;
     })
   | (WindowBase<"contributions"> & { windowId: string })
   | (WindowBase<"test_pieces"> & { awaiting: "decision" | "bury"; queueIndex: number })
@@ -149,15 +155,7 @@ function actingWindow(game: PublicGameState, phase: Exclude<GamePhase, { type: "
         case "after_action":
           return { ...base, kind: "work", step: step.kind, openKey: `${turn}:${step.kind}` };
         case "commission_market":
-          return {
-            ...base,
-            kind: "commission",
-            effect: step.effect,
-            lookSize: step.lookSize,
-            maxReservations: step.maxReservations,
-            lookedCount: step.lookedCount,
-            openKey: `${turn}:commission`,
-          };
+          return { ...base, kind: "commission", effect: step.effect, select: { ...step.select }, openKey: `${turn}:commission` };
         case "guild_inspection":
           return {
             ...base,
@@ -167,9 +165,9 @@ function actingWindow(game: PublicGameState, phase: Exclude<GamePhase, { type: "
             openKey: `${turn}:guild:${step.discipline}:t${step.takes.length}`,
           };
         case "colour_samples":
-          return { ...base, kind: "colour_samples", openKey: `${turn}:colour_samples` };
+          return { ...base, kind: "colour_samples", select: { ...step.select }, openKey: `${turn}:colour_samples` };
         case "colour_samples_swap":
-          return { ...base, kind: "colour_samples_swap", returnTo: step.returnTo, openKey: `${turn}:swap:${step.returnTo}` };
+          return { ...base, kind: "colour_samples_swap", returnTo: step.returnTo, select: { ...step.select }, openKey: `${turn}:swap:${step.returnTo}` };
         default:
           return assertNever(step);
       }

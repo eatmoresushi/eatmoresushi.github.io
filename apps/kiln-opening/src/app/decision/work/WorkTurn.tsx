@@ -143,7 +143,7 @@ export function WorkTurn() {
                 mode === "place"
                   ? t("work.work.mode.placeHint")
                   : mode === "colour_samples_swap"
-                    ? t("work.work.mode.swapHint", { n: RULE_NUMBERS.swapLookSize })
+                    ? t("work.work.mode.swapHint", { n: RULE_NUMBERS.swapSelect })
                     : t("work.work.mode.before")
               }
             />

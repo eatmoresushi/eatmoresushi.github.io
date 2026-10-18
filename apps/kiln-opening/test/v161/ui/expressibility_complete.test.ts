@@ -46,9 +46,9 @@ describe("expressibility, complete (§9.4)", () => {
     const forms = new Set<ExpressibilityForm>(rows.map((row) => row.form));
     for (const kind of ACTING) expect(forms.has(kind), kind).toBe(true);
     const families = new Set(rows.map((row) => row.command.type as string));
-    for (const type of ["COMMISSION_CHOOSE", "GUILD_TAKE", "GUILD_FINISH", "USE_COLOUR_SAMPLES_SWAP", "COLOUR_SAMPLES_SWAP_CHOOSE", "SECOND_FIRING_CHOOSE"]) expect(families.has(type), type).toBe(true);
-    // Retired by V1.6.2 (changes 21–22): never offered, so never expressed.
-    for (const type of ["USE_CANAL_BARGE", "COMMISSION_RESERVE", "COMMISSION_STOP", "COMMISSION_CHOOSE_LOOKED", "COMMISSION_GAIN"]) expect(families.has(type), type).toBe(false);
+    for (const type of ["SELECT_CHOOSE", "GUILD_TAKE", "GUILD_FINISH", "USE_COLOUR_SAMPLES_SWAP", "SECOND_FIRING_CHOOSE"]) expect(families.has(type), type).toBe(true);
+    // Retired by V1.6.2 (changes 21–22, and change 25's one Select command): never offered, so never expressed.
+    for (const type of ["USE_CANAL_BARGE", "COMMISSION_RESERVE", "COMMISSION_STOP", "COMMISSION_CHOOSE_LOOKED", "COMMISSION_GAIN", "COMMISSION_CHOOSE", "COLOUR_SAMPLES_CHOOSE", "COLOUR_SAMPLES_SWAP_CHOOSE"]) expect(families.has(type), type).toBe(false);
     expect(rows.every((row) => row.status === "ok")).toBe(true);
   });
 });

@@ -23,6 +23,7 @@ import {
   valueOf,
 } from "../../platform/support.ts";
 import type { Harness } from "../../platform/support.ts";
+import { contributionCardLeaks } from "../support/sealedCards.ts";
 import { FakeClock, MemoryStorage, ServiceGameApi, actorViewOfStore, deferred, playerOf, settle } from "./fakeGameApi.ts";
 
 interface Client {
@@ -341,11 +342,13 @@ describe("SessionStore: parallel and secret windows", () => {
     const p3 = await clientFor(harness, harness.humans[2] as RoomConnection);
     expect(playerOf(p1.store)).toBe("P1");
 
-    const sealed = await p1.store.submit({ type: "SUBMIT_CONTRIBUTION", windowId, card: "STOKE", fuelLedger: true });
+    // P1 holds Fuel Ledger's own cards (v1.6.2 change 26) and seals Fuel Ledger Stoke.
+    expect(p1.store.getSnapshot().view?.game.players["P1"]?.contributionCards).toEqual(["BANK", "TEND", "STOKE", "FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"]);
+    const sealed = await p1.store.submit({ type: "SUBMIT_CONTRIBUTION", windowId, card: "FUEL_LEDGER_STOKE" });
     expect(sealed.kind).toBe("success");
-    expect(p1.store.getSnapshot().view?.own?.pendingContribution).toEqual({ card: "STOKE", fuelLedger: true, windowId });
+    expect(p1.store.getSnapshot().view?.own?.pendingContribution).toEqual({ card: "FUEL_LEDGER_STOKE", windowId });
 
-    await harnessCommand(harness, "P2", { type: "SUBMIT_CONTRIBUTION", windowId, card: "TEND", fuelLedger: false });
+    await harnessCommand(harness, "P2", { type: "SUBMIT_CONTRIBUTION", windowId, card: "TEND" });
     p1.api.ping();
     p3.api.ping();
     await settle();
@@ -353,13 +356,16 @@ describe("SessionStore: parallel and secret windows", () => {
     const mine = p1.store.getSnapshot();
     expect(mine.lastBatch?.origin).toBe("remote");
     expect(JSON.stringify(mine.lastBatch?.events)).not.toContain("TEND");
-    expect(mine.view?.own?.pendingContribution).toEqual({ card: "STOKE", fuelLedger: true, windowId });
+    expect(mine.view?.own?.pendingContribution).toEqual({ card: "FUEL_LEDGER_STOKE", windowId });
     const phase = mine.view?.game.phase;
     expect(phase?.type === "firing_contributions" ? phase.submittedPlayerIds : []).toEqual(expect.arrayContaining(["P1", "P2"]));
 
     const theirs = p3.store.getSnapshot();
     expect(theirs.view?.own?.pendingContribution).toBeNull();
-    expect(JSON.stringify(theirs)).not.toContain("STOKE");
+    // Every player's cards are public (P1's include Fuel Ledger Stoke); which one P1 or P2 sealed is
+    // not: no card ID anywhere else in P3's snapshot, in any shape.
+    expect(contributionCardLeaks(theirs)).toEqual([]);
+    expect(contributionCardLeaks({ ...theirs, pending: { byPlayer: { FUEL_LEDGER_STOKE: "P1" } } })).toEqual(["$.pending.byPlayer.FUEL_LEDGER_STOKE (key)"]);
   });
 });
 

@@ -79,7 +79,7 @@ describe("SSR in English and Chinese for 2–4 players", () => {
         expect(select.includes('value="stoke_2"')).toBe(seat === 1);
       }
     }
-    expect(html).toContain("Bank the Fire + Fuel Ledger (−2)");
+    expect(html).toContain("Fuel Ledger Bank (−2)");
   });
 });
 

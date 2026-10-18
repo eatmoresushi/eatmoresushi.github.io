@@ -130,20 +130,21 @@ describe("the auto mode names a wildcard only where the ceramic's own Decoration
     expect(en).not.toContain("(as Plain)");
   });
 
-  it("m6: an Impressed Crackle Censer on O15 (any Decoration) is not said to count as Plain, in both languages", () => {
+  it("m6: a Plain Crackle Bowl on O25 (any Decorations) is not said to count as anything, in both languages", () => {
     const id = "m6_order_phase_crackle_3p";
     const view = fixture(id).playerView;
     const model = buildGameModel(structuredClone(view), []);
     const engine = engineViewOf(structuredClone(view));
-    const chosen = orderDraft.reduce(orderDraft.initial(model, engine), { type: "order", orderId: "O15" }, model, engine);
-    const draft = chosen.ceramicIds === null ? { ...chosen, ceramicIds: ["c19"] as CeramicId[] } : chosen;
-    expect(draft.ceramicIds).toContain("c19");
+    const chosen = orderDraft.reduce(orderDraft.initial(model, engine), { type: "order", orderId: "O25" }, model, engine);
+    const draft = chosen.ceramicIds === null ? { ...chosen, ceramicIds: ["c5", "c9"] as CeramicId[] } : chosen;
+    expect(draft.ceramicIds).toContain("c9");
+    expect(view.game.ceramics["c9"]).toMatchObject({ crackle: true, decoration: "plain" });
     const en = perceivable(renderWindow(fixtureSource(id), { locale: "en", draft }));
-    expect(en).toContain("Find a declaration for me ✓ satisfies O15");
+    expect(en).toContain("Find a declaration for me ✓ satisfies O25");
     expect(en).not.toContain("Counts as");
     expect(en).not.toContain("(as Plain)");
     const zh = perceivable(renderWindow(fixtureSource(id), { locale: "zh-CN", draft }));
-    expect(zh).toContain("满足O15");
+    expect(zh).toContain("满足O25");
     expect(zh).not.toContain("视为素面");
   });
 });

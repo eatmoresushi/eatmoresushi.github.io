@@ -12,12 +12,12 @@
  *   Load destinations on the kiln (`kilnTargets`) with pending chips; the held Orders the Colour
  *   Samples swap may give up (`orderTargets` keyed by OrderId); the chosen vessels highlighted;
  * - **setters_mark:** the open kiln spaces;
- * - **commission:** the display slots reservable now (`slot:<i>`) and the privately looked-at
- *   Orders (keyed by OrderId), toggled into the reservation;
+ * - **commission**, **colour_samples** and **colour_samples_swap** (every Select N, v1.6.2 L64,
+ *   change 25): the display slots reservable now (`slot:<i>`) and the privately looked-at Orders
+ *   (keyed by OrderId), toggled into the reservation (`selectDraft`, one `SELECT_CHOOSE`);
  * - **guild_inspection:** the face-up Techs on the Tech display (`techChooser` in take mode), for
  *   the Shifu's first take and the second (none once both are made); the inspected Techs are
- *   private and only in the pane;
- * - **colour_samples** and **colour_samples_swap:** the privately looked-at Orders.
+ *   private and only in the pane.
  *
  * The `work` window covers both the before-action step and the after-action window
  * (`window.step`); `WorkTurn` composes `ActionWindow` for the latter.
@@ -37,22 +37,19 @@ import { PANE_SHOWN, defineWindow } from "../../state/draftStore.ts";
 import type { PaneOpener, PanePresence, WindowSpecFor } from "../../state/draftStore.ts";
 import type { EngineView, GameModel } from "../../state/model.ts";
 import { displaySlotKey, placementWorkerKey, tableSelection } from "../../state/tableSelection.ts";
-import type { OrderTarget, OrderTargetReason, TableSelectionData } from "../../state/tableSelection.ts";
+import type { OrderTarget, OrderTargetReason, TableAction, TableSelectionData } from "../../state/tableSelection.ts";
 import type { OrderId } from "../../../game/index.ts";
 import { KilnSelection } from "../setup/KilnSelection.tsx";
 import { kilnSelectionDraft } from "../setup/KilnSelection.draft.ts";
 import { SettersMark } from "../setup/SettersMark.tsx";
 import { settersMarkDraft } from "../setup/SettersMark.draft.ts";
 import type { SettersMarkAction } from "../setup/SettersMark.draft.ts";
-import { ColourSamples } from "./ColourSamples.tsx";
-import { colourSamplesDraft, colourSamplesSwapLookDraft } from "./ColourSamples.draft.ts";
-import type { ColourSamplesAction, ColourSamplesDraft } from "./ColourSamples.draft.ts";
 import { colourSamplesSwapDraft } from "./ColourSamplesSwap.draft.ts";
-import { CommissionStep } from "./CommissionStep.tsx";
-import { commissionDraft, lookPickKey } from "./CommissionStep.draft.ts";
-import type { CommissionAction, CommissionDraft } from "./CommissionStep.draft.ts";
 import { placements } from "./context.ts";
 import { GuildInspection } from "./GuildInspection.tsx";
+import { SelectStep } from "./SelectStep.tsx";
+import { lookPickKey, selectActionFor, selectDraft } from "./SelectStep.draft.ts";
+import type { SelectAction, SelectDraft } from "./SelectStep.draft.ts";
 import { guildInspectionDraft, inspectionReturnOnly, inspectionTechChooser } from "./GuildInspection.draft.ts";
 import type { GuildInspectionAction } from "./GuildInspection.draft.ts";
 import { kilnTargetsOf, pendingLoads } from "./locations/GlazeLoad.draft.ts";
@@ -111,12 +108,22 @@ export function workPane(draft: WorkDraft, model: GameModel, engine: EngineView)
 }
 
 /**
- * The Commission step's targets: each display slot (`slot:<i>`) and looked card (OrderId), chosen
- * or not. With the Shifu effect's 2 chosen, the others are greyed out with the pane's own reason
- * ("You have chosen 2 already."), so the table never refuses a tap in silence.
+ * A Select's targets (every Select N: the Commission Market, Colour Samples when acquired and its
+ * swap, v1.6.2 L64): each display slot (`slot:<i>`) and looked card (OrderId), chosen or not.
+ * With the Commission Market Shifu effect's 2 chosen, the others are greyed out with the pane's
+ * own reason ("You have chosen 2 already."), so the table never refuses a tap in silence.
  */
-function commissionTargets(draft: CommissionDraft, model: GameModel, engine: EngineView): Map<string, OrderTarget> {
-  const options = commissionDraft.options(draft, model, engine);
+/**
+ * The open Select's N and reservation limit, from the window (the engine step's public `select`).
+ * Each Select window's title is only asked for while that window is open.
+ */
+function selectOf(model: GameModel): { n: number; maxReservations: number } {
+  const window = model.window;
+  return "select" in window ? window.select : { n: 0, maxReservations: 1 };
+}
+
+function selectTargets(draft: SelectDraft, model: GameModel, engine: EngineView): Map<string, OrderTarget> {
+  const options = selectDraft.options(draft, model, engine);
   const targets = new Map<string, OrderTarget>();
   const limit: OrderTargetReason = { kind: "message", message: msg("work.cm.limitReached", { n: options.maxReservations }) };
   const target = (chosen: boolean): OrderTarget => {
@@ -128,10 +135,18 @@ function commissionTargets(draft: CommissionDraft, model: GameModel, engine: Eng
   return targets;
 }
 
-/** A Colour Samples look's targets: each looked card (OrderId). */
-function lookTargets(draft: ColourSamplesDraft, orderIds: readonly OrderId[]): Map<string, OrderTarget> {
-  return new Map(orderIds.map((orderId) => [orderId, { state: orderId === draft.orderId ? "chosen" : "choosable", disabled: false }]));
-}
+/** The table adapter of every Select window: the display's and the look row's Choose toggles. */
+const SELECT_TABLE = {
+  select: (draft: SelectDraft, model: GameModel, engine: EngineView) => tableSelection({ orderTargets: selectTargets(draft, model, engine) }),
+  act(draft: SelectDraft, action: TableAction, model: GameModel, engine: EngineView): SelectAction | null {
+    if (action.type !== "order") return null;
+    const options = selectDraft.options(draft, model, engine);
+    const choice = action.key.startsWith("slot:")
+      ? options.slots.find((slot) => slot.slotIndex !== null && displaySlotKey(slot.slotIndex) === action.key)
+      : options.looked.find((looked) => looked.key === lookPickKey(action.key as OrderId));
+    return choice === undefined ? null : selectActionFor(draft, options, choice.key);
+  },
+};
 
 export const WORK_WINDOWS: { readonly [K in WorkWindowKind]: WindowSpecFor<K> } = {
   kiln_selection: defineWindow({
@@ -233,22 +248,14 @@ export const WORK_WINDOWS: { readonly [K in WorkWindowKind]: WindowSpecFor<K> } 
 
   commission: defineWindow({
     kind: "commission",
-    Component: CommissionStep,
-    draft: commissionDraft,
-    title: (model) => (model.window.kind === "commission" && model.window.maxReservations > 1 ? msg("work.title.commission.two", { n: model.window.maxReservations }) : msg("work.title.commission.one")),
-    table: {
-      select: (draft, model, engine) => tableSelection({ orderTargets: commissionTargets(draft, model, engine) }),
-      act(draft, action, model, engine): CommissionAction | null {
-        if (action.type !== "order") return null;
-        const options = commissionDraft.options(draft, model, engine);
-        const choice = action.key.startsWith("slot:")
-          ? options.slots.find((slot) => slot.slotIndex !== null && displaySlotKey(slot.slotIndex) === action.key)
-          : options.looked.find((looked) => looked.key === lookPickKey(action.key as OrderId));
-        if (choice === undefined) return null;
-        if (options.maxReservations === 1) return { type: "pick", key: choice.key };
-        return { type: "toggle", key: choice.key, on: !draft.picks.includes(choice.key) };
-      },
+    Component: SelectStep,
+    draft: selectDraft,
+    // The keyword names the window (Select 2 / Select 3, change 25), with its limit when it is 2.
+    title(model) {
+      const { n, maxReservations } = selectOf(model);
+      return maxReservations > 1 ? msg("work.title.commission.two", { n, max: maxReservations }) : msg("work.title.commission.one", { n });
     },
+    table: SELECT_TABLE,
   }),
 
   guild_inspection: defineWindow({
@@ -274,32 +281,18 @@ export const WORK_WINDOWS: { readonly [K in WorkWindowKind]: WindowSpecFor<K> } 
 
   colour_samples: defineWindow({
     kind: "colour_samples",
-    Component: ColourSamples,
-    draft: colourSamplesDraft,
-    title: () => msg("work.title.colourSamples"),
-    table: {
-      select: (draft, model, engine) => tableSelection({ orderTargets: lookTargets(draft, colourSamplesDraft.options(draft, model, engine).orderIds) }),
-      act(_draft, action, model, engine): ColourSamplesAction | null {
-        if (action.type !== "order") return null;
-        const orderId = colourSamplesDraft.options({ orderId: null }, model, engine).orderIds.find((candidate) => candidate === action.key);
-        return orderId === undefined ? null : { type: "order", orderId };
-      },
-    },
+    Component: SelectStep,
+    draft: selectDraft,
+    title: (model) => msg("work.title.colourSamples", { n: selectOf(model).n }),
+    table: SELECT_TABLE,
   }),
 
   colour_samples_swap: defineWindow({
     kind: "colour_samples_swap",
-    Component: ColourSamples,
-    draft: colourSamplesSwapLookDraft,
-    title: () => msg("work.title.colourSamplesSwap"),
-    table: {
-      select: (draft, model, engine) => tableSelection({ orderTargets: lookTargets(draft, colourSamplesSwapLookDraft.options(draft, model, engine).orderIds) }),
-      act(_draft, action, model, engine): ColourSamplesAction | null {
-        if (action.type !== "order") return null;
-        const orderId = colourSamplesSwapLookDraft.options({ orderId: null }, model, engine).orderIds.find((candidate) => candidate === action.key);
-        return orderId === undefined ? null : { type: "order", orderId };
-      },
-    },
+    Component: SelectStep,
+    draft: selectDraft,
+    title: (model) => msg("work.title.colourSamplesSwap", { n: selectOf(model).n }),
+    table: SELECT_TABLE,
   }),
 };
 

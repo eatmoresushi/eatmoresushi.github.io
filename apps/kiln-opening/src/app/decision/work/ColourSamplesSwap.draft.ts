@@ -1,14 +1,14 @@
 /**
- * The draft model of the Colour Samples swap (T10, v1.6.2 L617, R17; UI_V1.6.1_ARCHITECTURE §3.4).
+ * The draft model of the Colour Samples swap (T10, v1.6.2 L622, R17; UI_V1.6.1_ARCHITECTURE §3.4).
  * Owner: B4.
  *
  * Once per round, before or after one of your worker actions: discard 1 held Order (a Main Order
- * face down to the discard, a Starting Order to the box) to look privately at the top 2 Main
- * Orders and reserve 1 (`USE_COLOUR_SAMPLES_SWAP`, then the `colour_samples_swap` window). This
- * draft is the first half: which held Order to give up. Whether the swap may be used now, and
- * whether each discard is legal (a look of at least 1 card, B1), come from
- * `colourSamplesSwapOptions(view)`; an illegal discard carries the engine's own reason
- * (`validateAction`), never a rule of the UI's.
+ * face down to the discard, a Starting Order to the box) to Select 3: look privately at the top 3
+ * Main Orders and reserve 1 of them or 1 face-up Main Order (`USE_COLOUR_SAMPLES_SWAP`, then the
+ * `colour_samples_swap` window, change 25). This draft is the first half: which held Order to give
+ * up. Whether the swap may be used now, and whether each discard is legal (a looked card or a
+ * face-up Order to reserve, B1), come from `colourSamplesSwapOptions(view)`; an illegal discard
+ * carries the engine's own reason (`validateAction`), never a rule of the UI's.
  *
  * Composed by the work draft (`workDraft.ts`) as its `swap` sub-draft, like Imperial Priority; it
  * is a full `DraftModel`, so it can be tested on its own.
@@ -37,10 +37,15 @@ export interface SwapDiscardChoice {
   /** How many cards the look would show after this discard (public deck facts, B1). */
   lookCount: number;
   /**
-   * The look would show some cards, but fewer than the swap's size: the Main Order deck runs short
+   * The look would show some cards, but fewer than the swap's N: the Main Order deck runs short
    * (B1, R16). Shown on the option; a full look needs no words beyond the form's note.
    */
   short: boolean;
+  /**
+   * The look would show no card at all, but the discard is legal: the Select can still reserve a
+   * face-up Order (v1.6.2 L64, B1). Shown on the option.
+   */
+  none: boolean;
   legal: boolean;
   /** The engine's reason when this discard is not legal. */
   reason: GameRuleError | null;
@@ -68,7 +73,8 @@ function optionsOf(engine: EngineView): ColourSamplesSwapOptions {
     discards: selector.discards.map((discard) => ({
       orderId: discard.orderId,
       lookCount: discard.lookCount,
-      short: discard.lookCount > 0 && discard.lookCount < RULE_NUMBERS.swapLookSize,
+      short: discard.lookCount > 0 && discard.lookCount < RULE_NUMBERS.swapSelect,
+      none: discard.lookCount === 0 && discard.legal,
       legal: discard.legal,
       reason:
         discard.legal || actor === null
@@ -109,6 +115,6 @@ export const colourSamplesSwapDraft: DraftModel<ColourSamplesSwapDraft, ColourSa
   summary(draft): RichMessage {
     const orderId = draft.discardOrderId;
     if (orderId === null) return msg("work.swap.summaryChoose");
-    return msg("work.swap.summary", { tech: (t) => techName(COLOUR_SAMPLES, t.locale), order: orderId });
+    return msg("work.swap.summary", { tech: (t) => techName(COLOUR_SAMPLES, t.locale), order: orderId, n: RULE_NUMBERS.swapSelect });
   },
 };

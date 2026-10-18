@@ -103,7 +103,7 @@ describe("drafts and the session (§3.5, §3.7)", () => {
     act(() => $<HTMLInputElement>('input[name="card"][value="STOKE"]').click());
     const revision = p1.store.getSnapshot().view!.game.revision;
 
-    await harnessCommand(harness, "P2", { type: "SUBMIT_CONTRIBUTION", windowId, card: "TEND", fuelLedger: false });
+    await harnessCommand(harness, "P2", { type: "SUBMIT_CONTRIBUTION", windowId, card: "TEND" });
     p1.api.ping();
     await settleUi();
     expect(p1.store.getSnapshot().view!.game.revision).toBe(revision + 1);

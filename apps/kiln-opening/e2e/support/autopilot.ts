@@ -28,9 +28,10 @@
  * display (`[data-act="tech"]`, `[data-act="inspect"]`: the Apprentice's purchase, the Shifu's
  * discipline, and the face-up Techs of the Shifu's first and second take) are candidates too,
  * wherever they are on the page, and so are the other table targets a window offers beside its
- * pane options: the Order cards' toggles (`[data-act="order"]`: the Commission Market's
- * reservations on the display and the private look row, the Colour Samples looks, the held Order
- * the Colour Samples swap gives up, the Order Phase's Orders and the hand trim) and the Shared
+ * pane options: the Order cards' toggles (`[data-act="order"]`: every Select's reservations on the
+ * display and the private look row — the Commission Market's, and Colour Samples' when acquired and
+ * in its swap — the held Order the Colour Samples swap gives up, the Order Phase's Orders and the
+ * hand trim) and the Shared
  * Kiln's spaces (`[data-act="kiln-space"]`: a Glaze & Load destination, the Setter's Mark). A
  * target already pressed, unavailable (`aria-disabled`) or a dev tool (`data-dev`) is not. The
  * pane's own navigation buttons (`data-goto`: the Guild Hall's "Go to the Advanced Techs") move
@@ -38,16 +39,17 @@
  * the caller brings it into view (`e2e/full_game.spec.ts`).
  *
  * **V1.6.2 windows.** Every one is a form of native radios and checkboxes like the others, so the
- * autopilot needs no knowledge of them: the Commission Market step (`reservations`: radios for the
- * Apprentice's 1, checkboxes for the Shifu's 1–2, the others unavailable once 2 are chosen), the
- * Guild Hall inspection (`take`, one Tech per command; after the first take a second or "take no
- * more", then the bottom order's Move up / Move down buttons; after the second take only the
- * bottom order), Colour Samples' look when gained and the swap's look (`orderId`), the swap itself
- * (an opener before the worker action, a `mode` of the after-action window; `discardOrderId`),
- * Second Firing's card (`cardIndex`, and `jun` when Jun's adjustment applies), Protective
- * Saggars' upgrade (an `afterQuality` option), the Fuel Ledger commitment (the Contribution form's
- * `fuelLedger` checkbox) and the Order Phase's Orders (S07's "Carved, Impressed or Painted" and a
- * Crackle ceramic's declaration included).
+ * autopilot needs no knowledge of them: every Select N (v1.6.2 change 25: the Commission Market's,
+ * Colour Samples' when gained and the swap's; `reservations`, valued `look:<OrderId>` and
+ * `slot:<i>`: radios for a limit of 1, checkboxes for the Commission Market Shifu's 1–2, the others
+ * unavailable once 2 are chosen), the Guild Hall inspection (`take`, one Tech per command; after the
+ * first take a second or "take no more", then the bottom order's Move up / Move down buttons; after
+ * the second take only the bottom order), the swap itself (an opener before the worker action, a
+ * `mode` of the after-action window; `discardOrderId`), Second Firing's card (`cardIndex`, and
+ * `jun` when Jun's adjustment applies), Protective Saggars' upgrade (an `afterQuality` option), the
+ * Contribution card (`card`: Bank, Tend and Stoke, and Fuel Ledger Bank and Fuel Ledger Stoke for
+ * the Fuel Ledger's owner, change 26) and the Order Phase's Orders (S07's "Carved, Impressed or
+ * Painted" and a Crackle ceramic's declaration included).
  *
  * **The hidden pane.** During the work turn the pane is hidden until a placement is chosen (owner
  * review, 2026-10-17): its form stays in the page (`data-window`, `data-step`), but inside a

@@ -6,8 +6,8 @@
  * forms against the engine rather than against restated rules.
  */
 import { describe, expect, it } from "vitest";
-import { validateAction } from "../../../../src/game/index.ts";
-import type { ActorView, AuthoritativeCommand, PlayerView } from "../../../../src/game/index.ts";
+import { contributionCardsOfTech, validateAction } from "../../../../src/game/index.ts";
+import type { ActorView, AuthoritativeCommand, PlayerView, TechId } from "../../../../src/game/index.ts";
 import { afterQualityDraft } from "../../../../src/app/decision/firing/AfterQuality.draft.ts";
 import { contributionsDraft } from "../../../../src/app/decision/firing/Contributions.draft.ts";
 import { heatMarkersDraft } from "../../../../src/app/decision/firing/HeatMarkers.draft.ts";
@@ -15,6 +15,7 @@ import { junDraft } from "../../../../src/app/decision/firing/Jun.draft.ts";
 import { salvageDraft } from "../../../../src/app/decision/firing/Salvage.draft.ts";
 import { secondFiringDraft } from "../../../../src/app/decision/firing/SecondFiring.draft.ts";
 import { testPiecesDraft } from "../../../../src/app/decision/firing/TestPieces.draft.ts";
+import { techsFreeingContributionCard } from "../../../../src/app/i18n/content.ts";
 import { checkCommand } from "../../../../src/app/session/fixtureSource.ts";
 import { REVALIDATE } from "../../../../src/app/state/draftStore.ts";
 import type { DraftActionBase, DraftModel } from "../../../../src/app/state/draftStore.ts";
@@ -36,11 +37,13 @@ function ctx(id: string): Ctx {
   return ctxOf(structuredClone(fixture(id).playerView));
 }
 
-/** The same view with one Tech taken off the viewer's board (a player who never bought it). */
-function withoutTech(id: string, techId: string): Ctx {
+/** The same view with one Tech taken off the viewer's board (a player who never bought it), and the Contribution cards it brings. */
+function withoutTech(id: string, techId: TechId): Ctx {
   const view = structuredClone(fixture(id).playerView);
   const me = view.game.players[view.viewerId!]!;
   me.techs = me.techs.filter((tech) => tech.id !== techId);
+  const brought = contributionCardsOfTech(techId);
+  me.contributionCards = me.contributionCards.filter((card) => !brought.includes(card));
   return ctxOf(view);
 }
 
@@ -58,88 +61,90 @@ function valid(c: Ctx, command: AuthoritativeCommand | null): boolean {
 describe("Contributions", () => {
   const c = ctx("w-secret-contributions-with-fuel-ledger");
 
-  it("offers the selector's cards and the Fuel Ledger toggle, nothing chosen", () => {
+  it("offers the selector's cards, the viewer's own 5 with Fuel Ledger, nothing chosen (v1.6.2 change 26)", () => {
     const draft = contributionsDraft.initial(c.model, c.engine);
-    expect(draft).toEqual({ card: null, fuelLedger: false });
+    expect(draft).toEqual({ card: null });
     const options = contributionsDraft.options(draft, c.model, c.engine);
-    expect(options.cards.map((choice) => choice.card)).toEqual(["TEND", "BANK", "STOKE"]);
+    expect(options.cards.map((choice) => choice.card)).toEqual(["TEND", "BANK", "STOKE", "FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"]);
+    expect(options.cards.map((choice) => choice.card).sort()).toEqual([...c.view.game.players[c.view.viewerId!]!.contributionCards].sort());
     expect(options.cards.every((choice) => choice.available)).toBe(true);
-    expect(options.fuelLedger?.appliesTo).toEqual(["BANK", "STOKE"]);
     expect(contributionsDraft.build(draft, c.model, c.engine)).toBeNull();
     expect(contributionsDraft.summary(draft, c.model, c.engine)?.key).toBe("firing.contrib.pick");
   });
 
-  it("builds the selector's own command, window ID included", () => {
+  it("builds the selector's own command, window ID included, with nothing but the card", () => {
     const draft = run(contributionsDraft, c, { type: "card", card: "BANK" });
     const command = contributionsDraft.build(draft, c.model, c.engine);
-    expect(command).toEqual({ type: "SUBMIT_CONTRIBUTION", windowId: "test-game:r1:contributions", card: "BANK", fuelLedger: false });
+    expect(command).toEqual({ type: "SUBMIT_CONTRIBUTION", windowId: "test-game:r1:contributions", card: "BANK" });
     expect(valid(c, command)).toBe(true);
     expect(contributionsDraft.summary(draft, c.model, c.engine)?.key).toBe("firing.contrib.summary");
+    expect(contributionsDraft.fromCommand(command!, c.model, c.engine)).toEqual({ card: "BANK" });
   });
 
-  it("Fuel Ledger: Bank and Stoke only; Tend becomes unavailable and is dropped", () => {
-    const withTend = run(contributionsDraft, c, { type: "card", card: "TEND" }, { type: "fuelLedger", on: true });
-    expect(withTend).toEqual({ card: null, fuelLedger: true });
-    const options = contributionsDraft.options(withTend, c.model, c.engine);
-    expect(options.cards.find((choice) => choice.card === "TEND")).toMatchObject({ available: false, reason: "fuel_ledger_bank_stoke" });
-    // v1.6.2 L629: a Fuel Ledger owner's Bank and Stoke cost no Wood; the commitment still costs 1.
-    expect(options.cards.find((choice) => choice.card === "STOKE")?.option).toMatchObject({ woodCost: 1, heat: 2 });
-    const plain = contributionsDraft.options(contributionsDraft.initial(c.model, c.engine), c.model, c.engine);
-    expect(plain.cards.find((choice) => choice.card === "BANK")?.option).toMatchObject({ woodCost: 0, heat: -1 });
-    expect(plain.cards.find((choice) => choice.card === "STOKE")?.option).toMatchObject({ woodCost: 0, heat: 1 });
-    expect(contributionsDraft.reduce(withTend, { type: "card", card: "TEND" }, c.model, c.engine)).toBe(withTend);
-    const stoke = contributionsDraft.reduce(withTend, { type: "card", card: "STOKE" }, c.model, c.engine);
-    const command = contributionsDraft.build(stoke, c.model, c.engine);
-    expect(command).toMatchObject({ card: "STOKE", fuelLedger: true });
-    expect(valid(c, command)).toBe(true);
-    expect(contributionsDraft.summary(stoke, c.model, c.engine)?.key).toBe("firing.contrib.summaryFuel");
-  });
-
-  it("Fuel Ledger: the free Bank and Stoke are marked below their printed cost; the commitment adds 1 Wood (v1.6.2 L637)", () => {
+  it("Fuel Ledger: its own 2 cards cost 1 Wood each for −2 / +2 and name the Tech; the owner's Bank and Stoke cost none, and name the Tech that makes them free (v1.6.2 L634)", () => {
     const options = contributionsDraft.options(contributionsDraft.initial(c.model, c.engine), c.model, c.engine);
-    expect(options.cards.map((choice) => [choice.card, choice.option.woodCost, choice.belowPrintedCost])).toEqual([
-      ["TEND", 0, false],
-      ["BANK", 0, true],
-      ["STOKE", 0, true],
+    // [card, Wood, Heat, below its printed Wood, made free by, came with]
+    expect(options.cards.map((choice) => [choice.card, choice.option.woodCost, choice.option.heat, choice.belowPrintedCost, choice.freeBy, choice.techId])).toEqual([
+      ["TEND", 0, 0, false, null, null],
+      ["BANK", 0, -1, true, "T12", null],
+      ["STOKE", 0, 1, true, "T12", null],
+      ["FUEL_LEDGER_BANK", 1, -2, false, null, "T12"],
+      ["FUEL_LEDGER_STOKE", 1, 2, false, null, "T12"],
     ]);
-    expect(options.fuelLedger).toMatchObject({ commitWood: 1, canCommit: true });
-    // Without the Tech, Bank and Stoke cost their printed Wood and nothing is marked.
+    // The link comes from the tile's printed text (T12 freeCards), never from which Tech brought cards.
+    expect(techsFreeingContributionCard("BANK")).toEqual(["T12"]);
+    expect(techsFreeingContributionCard("STOKE")).toEqual(["T12"]);
+    for (const card of ["TEND", "FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"] as const) expect(techsFreeingContributionCard(card)).toEqual([]);
+    for (const card of ["FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"] as const) {
+      const draft = run(contributionsDraft, c, { type: "card", card });
+      const command = contributionsDraft.build(draft, c.model, c.engine);
+      expect(command).toEqual({ type: "SUBMIT_CONTRIBUTION", windowId: "test-game:r1:contributions", card });
+      expect(valid(c, command)).toBe(true);
+    }
+    // Without the Tech: the 3 cards every player holds, Bank and Stoke at their printed Wood, nothing marked.
     const m9 = withoutTech("m9_contributions_step1_3p", "T12");
     const plain = contributionsDraft.options(contributionsDraft.initial(m9.model, m9.engine), m9.model, m9.engine);
-    expect(plain.cards.map((choice) => [choice.card, choice.option.woodCost, choice.belowPrintedCost])).toEqual([
-      ["TEND", 0, false],
-      ["BANK", 1, false],
-      ["STOKE", 1, false],
+    expect(plain.cards.map((choice) => [choice.card, choice.option.woodCost, choice.belowPrintedCost, choice.freeBy, choice.techId])).toEqual([
+      ["TEND", 0, false, null, null],
+      ["BANK", 1, false, null, null],
+      ["STOKE", 1, false, null, null],
     ]);
+    expect(run(contributionsDraft, m9, { type: "card", card: "FUEL_LEDGER_STOKE" })).toEqual({ card: null });
   });
 
-  it("Fuel Ledger with no Wood: Bank and Stoke stay free, but the commitment cannot be turned on", () => {
+  it("Fuel Ledger with no Wood: Bank and Stoke stay free, its own 2 cards are unavailable and never chosen", () => {
     const view = structuredClone(fixture("w-secret-contributions-with-fuel-ledger").playerView);
     view.game.players[view.viewerId!]!.resources.wood = 0;
     const poor = ctxOf(view);
     const options = contributionsDraft.options(contributionsDraft.initial(poor.model, poor.engine), poor.model, poor.engine);
-    expect(options.cards.every((choice) => choice.available)).toBe(true);
-    expect(options.fuelLedger).toMatchObject({ commitWood: 1, canCommit: false });
-    expect(run(contributionsDraft, poor, { type: "fuelLedger", on: true })).toEqual({ card: null, fuelLedger: false });
-    // A committed draft from before is dropped on revalidation, the card kept.
-    expect(contributionsDraft.reduce({ card: "BANK", fuelLedger: true }, REVALIDATE, poor.model, poor.engine)).toEqual({ card: "BANK", fuelLedger: false });
+    expect(options.cards.map((choice) => [choice.card, choice.available, choice.reason])).toEqual([
+      ["TEND", true, null],
+      ["BANK", true, null],
+      ["STOKE", true, null],
+      ["FUEL_LEDGER_BANK", false, "cant_afford"],
+      ["FUEL_LEDGER_STOKE", false, "cant_afford"],
+    ]);
+    expect(run(contributionsDraft, poor, { type: "card", card: "FUEL_LEDGER_BANK" })).toEqual({ card: null });
+    // A Fuel Ledger card chosen before the Wood was gone is dropped on revalidation.
+    expect(contributionsDraft.reduce({ card: "FUEL_LEDGER_STOKE" }, REVALIDATE, poor.model, poor.engine)).toEqual({ card: null });
     const bank = run(contributionsDraft, poor, { type: "card", card: "BANK" });
     const command = contributionsDraft.build(bank, poor.model, poor.engine);
-    expect(command).toMatchObject({ card: "BANK", fuelLedger: false });
+    expect(command).toMatchObject({ card: "BANK" });
     expect(valid(poor, command)).toBe(true);
   });
 
-  it("without Fuel Ledger the toggle is not offered and cannot be set", () => {
+  it("with only Tend affordable, Tend is the choice (§3.5)", () => {
     const m9 = withoutTech("m9_contributions_step1_3p", "T12");
-    expect(contributionsDraft.options(contributionsDraft.initial(m9.model, m9.engine), m9.model, m9.engine).fuelLedger).toBeNull();
-    expect(run(contributionsDraft, m9, { type: "fuelLedger", on: true }).fuelLedger).toBe(false);
+    m9.view.game.players[m9.view.viewerId!]!.resources.wood = 0;
+    const poor = ctxOf(m9.view);
+    expect(contributionsDraft.initial(poor.model, poor.engine)).toEqual({ card: "TEND" });
   });
 
-  it("revalidation keeps a legal draft as is and drops what is not offered", () => {
-    const legal = { card: "BANK" as const, fuelLedger: true };
+  it("revalidation keeps a legal draft as is and drops a card the viewer does not hold", () => {
+    const legal = { card: "FUEL_LEDGER_BANK" as const };
     expect(contributionsDraft.reduce(legal, REVALIDATE, c.model, c.engine)).toBe(legal);
     const m9 = withoutTech("m9_contributions_step1_3p", "T12");
-    expect(contributionsDraft.reduce(legal, REVALIDATE, m9.model, m9.engine)).toEqual({ card: "BANK", fuelLedger: false });
+    expect(contributionsDraft.reduce(legal, REVALIDATE, m9.model, m9.engine)).toEqual({ card: null });
   });
 });
 
@@ -329,11 +334,17 @@ describe("after-Quality", () => {
     expect(afterQualityDraft.build(saggars, c.model, c.engine)).toEqual({ type: "USE_PROTECTIVE_SAGGARS", ceramicId: "c2" });
     expect(afterQualityDraft.summary(saggars, c.model, c.engine)?.key).toBe("firing.aq.sumSaggars");
     expect(afterQualityDraft.summary(run(afterQualityDraft, c, { type: "use", ability: "ge_crackle", ceramicId: "c1" }), c.model, c.engine)?.key).toBe("firing.aq.sumGe");
-    const m4 = ctx("m4_after_quality_3p");
-    const second = afterQualityOptionsFirst(m4, "second_firing");
+    // The same firing with Second Firing (T14) as the viewer's Firing Tech instead of Protective Saggars.
+    const view = structuredClone(fixture("w-after-quality-saggars-and-ge").playerView);
+    const me = view.game.players[view.viewerId!]!;
+    me.techs = me.techs.map((tech) => (tech.id === "T11" ? { ...tech, id: "T14" as const } : tech));
+    const sf = ctxOf(view);
+    const second = afterQualityOptionsFirst(sf, "second_firing");
     expect(second).not.toBeNull();
-    const draft = run(afterQualityDraft, m4, { type: "use", ability: "second_firing", ceramicId: second! });
-    expect(afterQualityDraft.summary(draft, m4.model, m4.engine)?.key).toBe("firing.aq.sumSecond");
+    expect(afterQualityOptionsFirst(sf, "protective_saggars")).toBeNull();
+    const draft = run(afterQualityDraft, sf, { type: "use", ability: "second_firing", ceramicId: second! });
+    expect(afterQualityDraft.build(draft, sf.model, sf.engine)).toEqual({ type: "USE_SECOND_FIRING", ceramicId: second });
+    expect(afterQualityDraft.summary(draft, sf.model, sf.engine)?.key).toBe("firing.aq.sumSecond");
     expect(afterQualityDraft.summary(run(afterQualityDraft, c, { type: "end" }), c.model, c.engine)?.key).toBe("firing.aq.sumEnd");
   });
 });

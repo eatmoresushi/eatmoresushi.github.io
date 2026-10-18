@@ -119,8 +119,7 @@
     }
   }
 
-  .results-meta,
-  .results-note {
+  .results-meta {
     margin: 0;
     font-size: var(--fs-12);
     color: var(--ink-2);
@@ -168,10 +167,6 @@
     border-radius: 2px;
     background: var(--pc);
     vertical-align: -2px;
-  }
-
-  .score-a1 {
-    background: var(--gold-pale);
   }
 
   .score-total td,

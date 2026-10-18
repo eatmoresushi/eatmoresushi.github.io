@@ -9,6 +9,7 @@ import { describe, expect, it } from "vitest";
 import type { PublicGameEvent } from "../../../../src/game/index.ts";
 import { fixtureSnapshot } from "../../../../src/app/session/fixtureSource.ts";
 import type { LogEntry } from "../../../../src/app/session/gameSource.ts";
+import { foldedEntry } from "../../../../src/app/i18n/events.ts";
 import { GameLog, LOG_PAGE } from "../../../../src/app/shell/GameLog.tsx";
 import { allFixtures, fixture, fixtureSource, secretIds } from "../support/fixtures.ts";
 import { renderComponent } from "../support/render.tsx";
@@ -45,7 +46,9 @@ describe("game log", () => {
     const snapshot = fixtureSnapshot(structuredClone(fixture("m1_work_phase_r2_3p")));
     const html = renderComponent(fixtureSource("m1_work_phase_r2_3p"), <GameLog />, { ui: { logOpen: true } });
     const lines = entries(html);
-    expect(lines).toHaveLength(snapshot.log.length);
+    // One line per entry, except a line that only repeats its neighbour (`foldedEntry`).
+    expect(lines).toHaveLength(snapshot.log.filter((_entry, index) => !foldedEntry(snapshot.log, index)).length);
+    expect(lines.length).toBeGreaterThan(10);
     expect(html).toMatch(/aria-expanded="true"/);
     expect(html).toContain("newest first");
     expect(html).not.toMatch(/class="game-log-panel"[^>]*hidden/);
@@ -141,7 +144,7 @@ describe("game log", () => {
     const html = renderComponent(fixtureSource("m2_commission_market_look_r3_4p"), <GameLog />, { ui: { logOpen: true } });
     expect(html).toMatch(/<li class="game-log-entry" data-own="">[^]*?only you/);
     // m2's viewer (Wen) sees the cards of their own open look; nobody else would.
-    expect(html).toContain("Wen looked at O45, O20, O28");
+    expect(html).toContain("Wen looked at O16, O45, O20");
   });
 
   it.each(allFixtures().map((entry) => [entry.id] as const))("%s: the open log shows no foreign secret or internal ID", (id) => {

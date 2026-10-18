@@ -78,7 +78,7 @@ export function TechDisplay() {
       <div className="techs-h">
         <h3>{t("table.techs.title")}</h3>
         <span className="techs-meta">
-          {t("table.techs.sub", { n: RULE_NUMBERS.techsFaceUp, guild: locationName("guild_hall", t.locale), vp: RULE_NUMBERS.techVp })}
+          {t("table.techs.sub", { n: RULE_NUMBERS.techsFaceUp, guild: locationName("guild_hall", t.locale) })}
         </span>
       </div>
       {!showLook || look === null || looker === null ? null : (

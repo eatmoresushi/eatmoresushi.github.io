@@ -82,7 +82,7 @@ const DERIVED: Readonly<Record<string, { base: string; edit: (entry: UiFixture) 
       viewer.techs = [...viewer.techs, { id: techId, acquiredInRound: game.round, usedThisRound: false }];
     },
   },
-  /** m2 right after the Shifu's COMMISSION_CHOOSE reserved display #1 (v1.6.2 L191): the position
+  /** m2 right after the Shifu's SELECT_CHOOSE reserved display #1 (v1.6.2 L197): the position
    * stays empty until the turn ends, the 3 looked cards went under the deck, and the turn is in
    * its after-action step (5 Orders held, over the limit). */
   "d-commission-after-face-up-reservation": {

@@ -721,7 +721,7 @@ function findCommissionLook(): Found {
         steeredSeat = actor;
         return {
           command: { type: "PLACE_COMMISSION_MARKET", workerId: shifu.id },
-          why: "Shifu to the Commission Market: the placement opens the private top-3 look.",
+          why: "Shifu to the Commission Market: the placement opens the private Select 3.",
         };
       }
       return null;
@@ -746,7 +746,7 @@ function findCommissionLook(): Found {
         actor,
         {
           id: "m2_commission_market_look_r3_4p",
-          title: "4P · Round 3 · Commission Market · Shifu mid-action with private top-3 look",
+          title: "4P · Round 3 · Commission Market · Shifu mid-action with a private Select 3",
           description:
             "The viewer's Shifu was placed at the Commission Market, which opened its Select 3: a private look at the top 3 Main Orders (v1.6.2 L64, L202). own.pendingLook holds the 3 Orders; other players only see counts.pendingLook (kind + count). The viewer now reserves 1 or 2, in any mix of those 3 and the display (SELECT_CHOOSE); a face-up position stays empty until the turn ends, and the looked cards not reserved go face down to the bottom of the Main Order deck (change 24). No resource is gained.",
         },
@@ -1112,7 +1112,6 @@ function findFinal(): Found {
               "kilnAbilities",
               "recognitionOverflow",
               "imperialAudience",
-              "techs",
               "exhibition",
               "connoisseur",
               "coins",
@@ -1611,7 +1610,7 @@ function findColourSamplesSwap(): Captured {
   return search({
     meta: {
       id: "m20_colour_samples_swap_look",
-      title: "3P · Work Phase · Colour Samples swap: reserve 1 of 2 (private)",
+      title: "3P · Work Phase · Colour Samples swap: Select 3 (private look)",
       description:
         "Before their worker action the viewer used the Colour Samples swap (T10, once per round): they discarded 1 held Order (a Main Order face down to the discard, a Starting Order to the box) and their Select 3 is open: a private look at the top 3 Main Orders. They reserve 1 of those 3 or 1 face-up Main Order (SELECT_CHOOSE; a face-up position stays empty until their turn ends); the looked cards not reserved go face down to the bottom of the Main Order deck (v1.6.2 L622, changes 24–25). Then they place a worker as usual.",
     },
@@ -1815,8 +1814,8 @@ function newMoments(): Captured[] {
     search({
       meta: {
         id: "m16_colour_samples",
-        title: "3P · Work Phase · Colour Samples: reserve 1 of 3 (private)",
-        description: "The viewer just gained Colour Samples (T10): they look at the top 3 Main Orders privately and must reserve one; the other 2 go face down to the bottom of the Main Order deck (v1.6.2 L617, change 24; lookedOrderOptions).",
+        title: "3P · Work Phase · Colour Samples when acquired: Select 3 (private look)",
+        description: "The viewer just gained Colour Samples (T10), whose Select 3 is open: a private look at the top 3 Main Orders. They must reserve 1 of those 3 or 1 face-up Main Order (SELECT_CHOOSE; a face-up position stays empty until their turn ends); the looked cards not reserved go face down to the bottom of the Main Order deck (v1.6.2 L622, L646, changes 24–25, R4; lookedOrderOptions).",
       },
       playerCounts: [3],
       seeds: 30,

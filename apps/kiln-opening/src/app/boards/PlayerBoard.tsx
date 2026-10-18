@@ -4,8 +4,8 @@
  *
  * One full Kiln Player Board, from `playerSummary` (public information only). The viewer's own
  * hand shows its count with "Only you can see"; another player's hand shows card backs and a
- * count, never a card. Score is the score-track value `recordedVp` (Tech VP included from the
- * purchase, amendment A1), never a projection.
+ * count, never a card. Score is the score-track value `recordedVp` (Orders, Kiln abilities,
+ * Crowns and Imperial Audience; a Tech scores nothing, v1.6.2 change 27), never a projection.
  */
 import { useId } from "react";
 import type { CSSProperties } from "react";

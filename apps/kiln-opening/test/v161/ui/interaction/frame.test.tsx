@@ -149,6 +149,61 @@ describe("focus on a window change (§8.2)", () => {
   });
 });
 
+/** jsdom keeps no scroll position: a `scrollTop` on the element itself, read back by the test. */
+function fakeScroll(element: HTMLElement, initial: number): () => number {
+  let top = initial;
+  Object.defineProperty(element, "scrollTop", {
+    configurable: true,
+    get: () => top,
+    set: (value: number) => {
+      top = value;
+    },
+  });
+  return () => top;
+}
+
+describe("scroll on a window change", () => {
+  it("opens a new acting window at the top of its fields, not where the last one was scrolled to", () => {
+    // Before the worker action, then the Commission Market's Select: the same `.pane-scroll` element.
+    const source = new ControlledSource("w-before-the-worker-action-rich-4-player-start");
+    mount(source, <DecisionPane />);
+    const scroll = $(".pane-scroll");
+    const top = fakeScroll(scroll, 1001);
+    act(() => source.setView(fixture("w-commission-market-shifu-top-3-look-2-reservations").playerView));
+    expect($("form[data-window]").getAttribute("data-window")).toBe("commission");
+    expect($(".pane-scroll")).toBe(scroll);
+    expect(top()).toBe(0);
+  });
+
+  it("starts the fields at the top when the viewer's window becomes a waiting one", () => {
+    const source = new ControlledSource("w-kiln-selection");
+    mount(source, <DecisionPane />);
+    const top = fakeScroll($(".pane-scroll"), 240);
+    act(() => source.setView(afterSelection(fixture("w-kiln-selection").playerView)));
+    expect($("form[data-window]").getAttribute("data-window")).toBe("waiting");
+    expect(top()).toBe(0);
+  });
+
+  it("keeps a waiting window's place when only the player it waits for changes", () => {
+    const waiting = afterSelection(fixture("w-kiln-selection").playerView);
+    const source = new ControlledSource("w-kiln-selection");
+    mount(source, <DecisionPane />);
+    act(() => source.setView(waiting));
+    const top = fakeScroll($(".pane-scroll"), 120);
+    act(() => source.setView(afterSelection(waiting)));
+    expect($("form[data-window]").getAttribute("data-window")).toBe("waiting");
+    expect(top()).toBe(120);
+  });
+
+  it("keeps the place while the same window re-renders (a choice in a long list)", () => {
+    const source = new ControlledSource("w-kiln-selection");
+    mount(source, <DecisionPane />);
+    const top = fakeScroll($(".pane-scroll"), 300);
+    click($('input[name="kilnId"][value="JU"]'));
+    expect(top()).toBe(300);
+  });
+});
+
 describe("table selection (§3.5)", () => {
   function KilnTargets() {
     const table = useTableSelection();

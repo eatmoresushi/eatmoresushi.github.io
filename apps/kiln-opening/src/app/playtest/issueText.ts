@@ -135,8 +135,8 @@ const MATCHERS: readonly Matcher[] = [
     text: (_, t) =>
       t("playtest.issue.fuelLedgerOne", {
         tech: fuelLedger(t),
-        bank: contributionCardName("BANK", t.locale),
-        stoke: contributionCardName("STOKE", t.locale),
+        bank: contributionCardName("FUEL_LEDGER_BANK", t.locale),
+        stoke: contributionCardName("FUEL_LEDGER_STOKE", t.locale),
         low: signed(-2),
         high: signed(2),
       }),
@@ -185,8 +185,8 @@ const BY_CODE: Partial<Readonly<Record<PlaytestIssueCode, (params: Params | unde
   fuel_ledger_one: (_, t) =>
     t("playtest.issue.fuelLedgerOne", {
       tech: fuelLedger(t),
-      bank: contributionCardName("BANK", t.locale),
-      stoke: contributionCardName("STOKE", t.locale),
+      bank: contributionCardName("FUEL_LEDGER_BANK", t.locale),
+      stoke: contributionCardName("FUEL_LEDGER_STOKE", t.locale),
       low: signed(-2),
       high: signed(2),
     }),

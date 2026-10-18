@@ -6,8 +6,8 @@
  * seat colour, First Player badge, name, Kiln short name (none before Kiln selection), VP, Clay,
  * Wood and Coins (`ResourceIcon` marks), hand count as card backs, and the acting badge. A computer
  * seat is said in the chip's name only; the visible "computer" pill was removed (owner review,
- * 2026-10-17). VP is the score-track value `recordedVp` (Tech VP included from
- * the purchase, amendment A1), and the final total once the game is finished.
+ * 2026-10-17). VP is the score-track value `recordedVp` (a Tech scores nothing, v1.6.2
+ * change 27), and the final total once the game is finished.
  *
  * Each chip is a button (`aria-pressed` = its board is the one shown) that opens that player's
  * board (D1) through `useUi().showBoard`, which applies the §8.1 viewport behaviour: on phones it

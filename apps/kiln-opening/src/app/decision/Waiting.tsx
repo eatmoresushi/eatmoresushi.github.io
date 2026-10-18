@@ -4,16 +4,17 @@
  * The pane when the viewer does not act. The heading (window spec) names who acts now; the body
  * shows only public facts plus the viewer's own secrets:
  * - in the Contribution window: who has chosen (`phase.submittedPlayerIds`, never what) and,
- *   once the viewer has submitted, their own sealed card from `own.pendingContribution` — which
- *   the server rebuilds on reconnect — marked "only you";
+ *   once the viewer has submitted, their own sealed card from `own.pendingContribution` (a Fuel
+ *   Ledger card named as such, v1.6.2 change 26) — which the server rebuilds on reconnect — marked
+ *   "only you";
  * - a queued firing step: its queue in First Player order;
  * - someone else's private look: "Zhao is looking at 3 cards in private" (`counts.pendingLook`).
  */
 import { Chip } from "../kit/Chip.tsx";
-import { contributionCardName, techName } from "../i18n/content.ts";
+import { contributionCardName } from "../i18n/content.ts";
 import { useT } from "../i18n/I18nProvider.tsx";
 import { useEngineView, useGame } from "../state/hooks.ts";
-import { B5_TECHS, nameOf } from "./firing/firingSupport.ts";
+import { nameOf } from "./firing/firingSupport.ts";
 import { Lead, Note, PlayerQueue, Section, StepQueue } from "./firing/WindowParts.tsx";
 
 export function Waiting() {
@@ -49,9 +50,7 @@ export function Waiting() {
       {contributions && sealed !== null && sealed.windowId === (view.game.phase.type === "firing_contributions" ? view.game.phase.windowId : null) ? (
         <Section heading={t("firing.contrib.card")} aside={<Chip tone="private">{t("common.status.onlyYou")}</Chip>}>
           <p className="dw-lead-text" data-sealed-contribution="">
-            {sealed.fuelLedger
-              ? t.rich("firing.sealedFuel", { card: contributionCardName(sealed.card, t.locale), tech: techName(B5_TECHS.fuelLedger, t.locale) })
-              : t.rich("firing.sealed", { card: contributionCardName(sealed.card, t.locale) })}
+            {t.rich("firing.sealed", { card: contributionCardName(sealed.card, t.locale) })}
           </p>
           <Note>{t("firing.sealedNote")}</Note>
         </Section>

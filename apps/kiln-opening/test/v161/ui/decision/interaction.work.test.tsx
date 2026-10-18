@@ -156,10 +156,10 @@ function shifuId(id: string): string {
 describe("rules details (owner review, 2026-10-17)", () => {
   it("the work pane and the location cards open no location rules", () => {
     mount(new ControlledSource("m1_work_phase_r2_3p"), <Table />);
-    expect(container.querySelector('[aria-label="Full rules: Materials Yard"]')).toBeNull();
+    expect(container.querySelector('[aria-label="Full rules: Commission Market"]')).toBeNull();
     expect(container.querySelector('article[data-location-id] .kit-detail-trigger')).toBeNull();
-    click(placeButton("materials_yard", "shifu"));
-    expect(chosen()?.querySelector(".kit-detail-trigger[aria-label^='Full rules: Materials Yard']")).toBeNull();
+    click(placeButton("commission_market", "shifu"));
+    expect(chosen()?.querySelector(".kit-detail-trigger[aria-label^='Full rules: Commission Market']")).toBeNull();
   });
 
   it("the Kiln options carry no Full rules button; clicking an option chooses it", () => {
@@ -465,7 +465,7 @@ describe("the Colour Samples swap (v1.6.2 L617)", () => {
     expect([...container.querySelectorAll<HTMLInputElement>('input[name="discardOrderId"]')].map((input) => input.value)).toEqual(hand);
     expect($('[data-action="confirm"]').getAttribute("aria-disabled")).toBe("true");
     click(radio("discardOrderId", hand[0]!));
-    expect(summary()).toBe(`Colour Samples: give up ${hand[0]!} and look at the top of the Main Order deck`);
+    expect(summary()).toBe(`Colour Samples: give up ${hand[0]!}, then Select 3`);
     click($('[data-action="confirm"]'));
     expect(source.submitted).toEqual([{ type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: hand[0] }]);
   });

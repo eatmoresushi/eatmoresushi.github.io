@@ -32,6 +32,7 @@ import {
   SHAPE_TEXT,
   STAGE_TEXT,
   TECHS,
+  TECH_IDS,
   WORKER_TEXT,
   ZONE_TEXT,
   clarificationTags,
@@ -106,6 +107,18 @@ export function contributionCardName(id: ContributionCardId, locale: Locale): st
 }
 
 export const CONTRIBUTION_CARDS: readonly ContributionCardId[] = CONTRIBUTION_CARD_IDS;
+
+/**
+ * The Techs whose printed text makes this Contribution card cost no Wood (Fuel Ledger's Bank and
+ * Stoke: T12 `freeCards`, v1.6.2 L634); [] for a card no Tech changes. A fact the tile prints, so
+ * the Contribution form can name the owned Tech that makes a card free.
+ */
+export function techsFreeingContributionCard(card: ContributionCardId): readonly TechId[] {
+  return TECH_IDS.filter((id) => {
+    const params: object = TECHS[id].params;
+    return "freeCards" in params && Array.isArray(params.freeCards) && params.freeCards.includes(card);
+  });
+}
 
 // ── Locations ─────────────────────────────────────────────────────────────────────────────
 
@@ -240,7 +253,6 @@ export const RULE_NUMBERS = Object.freeze({
   techsMaxOwned: GAME_CONFIG.techs.maxOwned,
   techsPerDiscipline: GAME_CONFIG.techs.maxPerDiscipline,
   techsFaceUp: GAME_CONFIG.techs.faceUpPerDiscipline,
-  techVp: GAME_CONFIG.techs.vpEach,
   coinsPerVp: GAME_CONFIG.coinEndGame.coinsPerVp,
   coinVpMax: GAME_CONFIG.coinEndGame.maxVp,
   baseHeatMin: FIRING.baseHeat.minimum,
@@ -250,8 +262,8 @@ export const RULE_NUMBERS = Object.freeze({
   overflowVpPerCrown: IMPERIAL_TRACK.overflowVpPerCrown,
   /** Canal Barge's Coins on your first completed Order each round (T23, v1.6.2 L622). */
   canalBargeCoins: TECHS.T23.params.coins,
-  /** The Colour Samples swap looks at this many Main Orders (T10, v1.6.2 L617). */
-  swapLookSize: TECHS.T10.params.swapLookSize,
+  /** The Colour Samples swap's Select N: it looks at this many Main Orders (T10, v1.6.2 L622, change 25). */
+  swapSelect: TECHS.T10.params.swapSelect,
   /** Second Firing turns this many extra Fire cards face up (T14, v1.6.2 L631). */
   secondFiringCards: TECHS.T14.params.extraCards,
 });

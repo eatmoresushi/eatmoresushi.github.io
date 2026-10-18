@@ -105,8 +105,8 @@ describe("Tech tiles (TechCard, Tech slots)", () => {
   });
 
   it("an owned Tech on a Kiln Player Board opens no rules details: its tile prints the short text (owner review, 2026-10-17)", () => {
-    // m1's viewer owns Senior Apprentice (T18).
-    expect(render(M1, <TechSlots playerId="p3" />)).toContain('data-tech-id="T18"');
+    // m1's viewer owns Connoisseur's Cabinet (T19).
+    expect(render(M1, <TechSlots playerId="p3" />)).toContain('data-tech-id="T19"');
     for (const locale of ["en", "zh-CN"] as const) {
       const t = locale === "en" ? EN : ZH;
       const slots = render(M1, <TechSlots playerId="p3" />, locale);

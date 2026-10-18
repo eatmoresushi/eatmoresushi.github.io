@@ -1,17 +1,18 @@
 /**
- * ColourSamplesSwap (T10, v1.6.2 L617, R17; UI_V1.6.1_ARCHITECTURE §3.4). Owner: B4.
+ * ColourSamplesSwap (T10, v1.6.2 L622, R17; UI_V1.6.1_ARCHITECTURE §3.4). Owner: B4.
  *
  * The first half of the Colour Samples swap, before or after a worker action: choose the held
  * Order to give up (radios here, or the Choose toggles on the table's hand row). The note says
- * the whole swap in one line (once per round, not a worker action: give up 1, look at the top 2,
- * reserve 1), or only "once per round, not a worker action" when the step's choice above already
- * describes it (`brief`), and the group says where the given-up Order goes (a Main Order face down to the
- * discard pile, a Starting Order back to the box). Each Order shows its card text and opens its
- * rules details from the shared "Rules" pill (D10). An Order after which the look would find
- * fewer cards than usual says so (public deck facts, B1); one that cannot be given up shows the
- * engine's reason in the player's words. The look and its reservation follow in the
- * `colour_samples_swap` window. Composed by `ActionWindow`; the draft lives in the work draft
- * (`swap`).
+ * the whole swap in one line (once per round, not a worker action: give up 1, look at the top 3,
+ * reserve 1 of them or 1 from the display: its Select 3, change 25), or only "once per round, not
+ * a worker action" when the step's choice above already describes it (`brief`), and the group
+ * says where the given-up Order goes (a Main Order face down to the discard pile, a Starting Order
+ * back to the box). Each Order shows its card text and opens its rules details from the shared
+ * "Rules" pill (D10). An Order after which the look would find fewer cards than usual, or none
+ * (the display then offers the reservation), says so (public deck facts, B1); one that cannot be
+ * given up shows the engine's reason in the player's words. The look and its reservation follow
+ * in the `colour_samples_swap` window (`SelectStep`). Composed by `ActionWindow`; the draft lives
+ * in the work draft (`swap`).
  *
  * On phones the form brings the Orders tab up behind the sheet when it opens (the opener above
  * the table, or the after-action window's choice), so collapsing the sheet shows the hand and its
@@ -58,7 +59,7 @@ export function ColourSamplesSwap({ brief = false }: ColourSamplesSwapProps) {
   return (
     <div className="b4-sub" data-b4="colour-samples-swap">
       <div className="b4-row">
-        <FormNote>{brief ? t("work.swap.noteBrief") : t("work.swap.note", { n: RULE_NUMBERS.swapLookSize })}</FormNote>
+        <FormNote>{brief ? t("work.swap.noteBrief") : t("work.swap.note", { n: RULE_NUMBERS.swapSelect })}</FormNote>
         <RulesDetail subject={{ kind: "tech", id: options.techId }} />
       </div>
       <OptionGroup
@@ -82,6 +83,11 @@ export function ColourSamplesSwap({ brief = false }: ColourSamplesSwapProps) {
                 <>
                   <OrderLines orderId={discard.orderId} />
                   <span className="b4-order-quality" data-b4="swap-look-short">{t("work.swap.lookShort", { n: discard.lookCount })}</span>
+                </>
+              ) : discard.none ? (
+                <>
+                  <OrderLines orderId={discard.orderId} />
+                  <span className="b4-order-quality" data-b4="swap-look-none">{t("work.swap.lookNone")}</span>
                 </>
               ) : (
                 <OrderLines orderId={discard.orderId} />

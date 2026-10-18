@@ -233,7 +233,7 @@
         },
         {
           "en": "The look always happens, before you choose. The Apprentice reserves exactly 1 Order; the Shifu reserves 1 or 2, from the display, the looked cards or both.",
-          "zh": "查看一定会进行，在承接之前。学徒恰好承接1张；师傅承接1或2张，可以来自委托榜、所看之牌，或两者都有。",
+          "zh": "查看一定会进行，在承接之前。学徒恰好承接1张；师傅承接1或2张，可以来自委托榜、看过的牌，或两者都有。",
           "source": "INT Commission Market looks"
         },
         {
@@ -243,7 +243,7 @@
         },
         {
           "en": "Your look is private: only you see the cards and which of them go to the bottom of the deck. Several go there in random order. The Main Order discard pile is face down; only the counts of the deck and the discard are public.",
-          "zh": "查看是私下进行的：所看之牌，以及哪几张放到牌堆底，只有你知道；不止1张时先洗混再放。主委托弃牌堆面朝下；牌堆与弃牌堆只公开张数。",
+          "zh": "查看是私下进行的：看过的牌，以及哪几张放到牌堆底，只有你知道；不止1张时先洗混再放。主委托弃牌堆面朝下；牌堆与弃牌堆只公开张数。",
           "source": "B3 · R19"
         },
         {

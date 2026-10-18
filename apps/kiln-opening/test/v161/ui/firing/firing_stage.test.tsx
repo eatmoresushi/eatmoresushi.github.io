@@ -88,7 +88,8 @@ describe("heat equation", () => {
     const text = perceivable(html);
     expect(text).toContain(`Kiln Die: ${String(view.kilnDie)}`);
     expect(text).toContain("Contributions (revealed)");
-    expect(text).toMatch(/Zhao \(you\)\s+Stoke the Fire\s+\+1 · paid 1 Wood/);
+    expect(text).toMatch(/Lin\s+Stoke the Fire\s+\+1 · paid 1 Wood/);
+    expect(text).toMatch(/Zhao \(you\)\s+Tend the Fire\s+0/);
     expect(text).toMatch(/Wen\s+Tend the Fire\s+0/);
     expect(text).toContain("Base Heat (0–5)");
     expect(html).toContain(`<b class="eq-val num">${String(view.baseHeat)}</b>`);
@@ -104,9 +105,22 @@ describe("heat equation", () => {
     const html = renderComponent(fixtureSource("m3_heat_marker_step_3p"), <HeatEquation stage={view} />, { locale: "zh-CN" });
     // The text a reader sees: tags removed without adding spaces, so run-together text shows.
     const text = html.replace(/<[^>]*>/g, "").replace(/\s+/g, " ");
-    expect(text).toMatch(/Zhao（你） 添柴 \+1 · 付1柴/);
+    expect(text).toMatch(/Lin 添柴 \+1 · 付1柴/);
+    expect(text).toMatch(/Zhao（你） 守火 0/);
     expect(text).toMatch(/Wen 守火 0/);
-    expect(text).not.toMatch(/(Zhao（你）|Wen)(守火|添柴|压火)/);
+    expect(text).not.toMatch(/(Lin|Zhao（你）|Wen)(守火|添柴|压火)/);
+  });
+
+  it("names a revealed Fuel Ledger card as the card it is, with its 1 Wood (v1.6.2 change 26)", () => {
+    const view = stage("t-fuel-ledger-reveal");
+    const html = renderComponent(fixtureSource("t-fuel-ledger-reveal"), <HeatEquation stage={view} />);
+    const text = perceivable(html);
+    expect(text).toMatch(/Lin\s+Fuel Ledger Stoke\s+\+2 · paid 1 Wood/);
+    expect(text).toMatch(/Zhao \(you\)\s+Bank the Fire\s+−1 · paid 1 Wood/);
+    expect(html).toContain('data-contribution="FUEL_LEDGER_STOKE"');
+    expect(html).toContain(`<b class="eq-val num">${String(view.baseHeat)}</b>`);
+    const zh = renderComponent(fixtureSource("t-fuel-ledger-reveal"), <HeatEquation stage={view} />, { locale: "zh-CN" }).replace(/<[^>]*>/g, "").replace(/\s+/g, " ");
+    expect(zh).toMatch(/Lin 柴簿添柴 \+2 · 付1柴/);
   });
 
   it("m4: the turned Fire card and Global Heat", () => {
@@ -122,10 +136,10 @@ describe("heat equation", () => {
     const html = renderComponent(fixtureSource("m9_contributions_step1_3p"), <HeatEquation stage={view} />);
     const text = perceivable(html);
     expect(text).toContain("Contributions (secret until all are in)");
-    expect(text).toMatch(/Wen\s+submitted, card hidden/);
-    expect(text).toMatch(/Lin\s+submitted, card hidden/);
-    expect(text).toMatch(/Zhao \(you\)\s+choosing…/);
-    expect(text).not.toMatch(/Bank the Fire|Tend the Fire|Stoke the Fire/);
+    expect(text).toMatch(/Zhao\s+submitted, card hidden/);
+    expect(text).toMatch(/Lin \(you\)\s+choosing…/);
+    expect(text).not.toMatch(/Wen\s+(submitted|choosing)/);
+    expect(text).not.toMatch(/Bank the Fire|Tend the Fire|Stoke the Fire|Fuel Ledger/);
     expect(html).not.toContain("data-contribution=");
     const zh = perceivable(renderComponent(fixtureSource("m9_contributions_step1_3p"), <HeatEquation stage={view} />, { locale: "zh-CN" }));
     expect(zh).toContain("控火（全部选定前保密）");
@@ -252,27 +266,28 @@ describe("queue, submissions and public records", () => {
   it("shows the queue in First Player order with who decides now", () => {
     const view = stage("m3_heat_marker_step_3p");
     const html = render("m3_heat_marker_step_3p");
-    expect(view.queue?.actorIds).toEqual(["p2", "p3", "p1"]);
+    expect(view.queue?.actorIds).toEqual(["p2", "p3"]);
     const text = perceivable(html);
     expect(text).toContain("Zhao (you), deciding now");
     expect(text).toContain("Wen, waiting");
+    expect(text).not.toMatch(/Lin, (waiting|deciding now)/);
     expect(html).toContain("queue-item--now");
   });
 
   it("shows who has chosen a Contribution, never what", () => {
     const text = perceivable(render("m9_contributions_step1_3p"));
     expect(text).toContain("Who has chosen");
-    expect(text).toContain("Lin, chosen");
-    expect(text).toContain("Wen, chosen");
-    expect(text).toContain("Zhao (you), choosing");
+    expect(text).toContain("Zhao, chosen");
+    expect(text).toContain("Lin (you), choosing");
+    expect(text).not.toContain("Wen, chosen");
   });
 
   it("records Test Pieces publicly (who paid; never the card)", () => {
     const html = withoutRulesPanels(render("m11b_test_pieces_bury"));
-    expect(perceivable(html)).toContain("Lin (you) paid for Test Pieces and looked at the top Fire card.");
+    expect(perceivable(html)).toContain("Zhao (you) paid for Test Pieces and looked at the top Fire card.");
   });
 
-  it.each(["m3_heat_marker_step_3p", "m4_after_quality_3p", "m9_contributions_step1_3p", "m11b_test_pieces_bury", "m13_jun_heat_adjustment", "m14_salvage", "m18_jun_second_firing", "t-imperial-only-firing", "t-fire-deck-reshuffle", "w-secret-contributions-with-fuel-ledger", "w-salvage"])(
+  it.each(["m3_heat_marker_step_3p", "m4_after_quality_3p", "m9_contributions_step1_3p", "m11b_test_pieces_bury", "m13_jun_heat_adjustment", "m14_salvage", "m18_jun_second_firing", "t-imperial-only-firing", "t-fire-deck-reshuffle", "t-fuel-ledger-reveal", "w-secret-contributions-with-fuel-ledger", "w-salvage"])(
     "%s uses no odds, deck-size or preview wording, in either language (D3, D4)",
     (id) => {
       expect(perceivable(withoutRulesPanels(render(id)))).not.toMatch(BANNED_EN);

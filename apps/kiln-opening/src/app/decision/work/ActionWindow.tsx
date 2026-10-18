@@ -2,7 +2,7 @@
  * ActionWindow (UI_V1.6.1_ARCHITECTURE §3.4, §4.3 rule 3). Owner: B4.
  *
  * The before- and after-action window of a Work turn: Imperial Priority and the Colour Samples
- * swap (v1.6.2 L617), plus End turn after the action. Before the action, `WorkTurn` shows the
+ * swap (v1.6.2 L622), plus End turn after the action. Before the action, `WorkTurn` shows the
  * choice of step and this component shows the chosen ability's form; after the action it shows
  * the choice too. Both abilities' drafts live in the work draft.
  */
@@ -54,7 +54,7 @@ export function ActionWindow({ source }: ActionWindowProps) {
               mode === "end_turn"
                 ? t("work.work.mode.endTurnHint")
                 : mode === "colour_samples_swap"
-                  ? t("work.work.mode.swapHint", { n: RULE_NUMBERS.swapLookSize })
+                  ? t("work.work.mode.swapHint", { n: RULE_NUMBERS.swapSelect })
                   : t("work.work.mode.after")
             }
           />

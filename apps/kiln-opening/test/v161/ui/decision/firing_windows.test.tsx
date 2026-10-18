@@ -80,7 +80,7 @@ function editedFixtureSource(id: string, edit: (entry: ReturnType<typeof fixture
 }
 
 const en = (id: string, draft?: unknown) => renderWindow(fixtureSource(id), { locale: "en", ...(draft === undefined ? {} : { draft }) });
-const zh = (id: string) => renderWindow(fixtureSource(id), { locale: "zh-CN" });
+const zh = (id: string, draft?: unknown) => renderWindow(fixtureSource(id), { locale: "zh-CN", ...(draft === undefined ? {} : { draft }) });
 /** Every `<input>` as its attributes. */
 function inputs(html: string): Record<string, string>[] {
   return [...html.matchAll(/<input\b([^>]*)\/?>/g)].map((match) => Object.fromEntries([...(match[1] ?? "").matchAll(/([\w-]+)="([^"]*)"/g)].map((attr) => [attr[1]!, attr[2]!])));
@@ -108,14 +108,16 @@ function expectRuleAndClarifications(body: string, items: readonly Clarification
 const alt = (html: string) => /data-action="alt"[^>]*>(.*?)<\/button>/.exec(html)?.[1]?.replace(/<[^>]*>/g, "") ?? null;
 
 describe("titles, alternatives and window content", () => {
-  it("Contributions: who has chosen, never what; the Fuel Ledger toggle", () => {
+  it("Contributions: who has chosen, never what; the owner's 5 Contribution cards with Fuel Ledger (v1.6.2 change 26)", () => {
     const html = en("m9_contributions_step1_3p");
     expect(heading(html)).toBe("Choose your Contribution");
     expect(heading(zh("m9_contributions_step1_3p"))).toBe("暗选控火");
-    // First Player order from Wen: Wen and Lin have chosen (never what), the viewer is choosing.
-    expect(perceivable(html)).toMatch(/Wen: chosen .*Lin: chosen .*Zhao \(you\): choosing…/);
-    expect(perceivable(html)).not.toMatch(/Wen: chosen [^.]*(Tend|Bank|Stoke)/);
-    expect(inputs(html).some((input) => input["name"] === "fuelLedger")).toBe(true);
+    // First Player order from Zhao: Zhao has chosen (never what), the viewer is choosing; Wen has no ceramic in the Shared Kiln.
+    expect(perceivable(html)).toMatch(/Zhao: chosen .*Lin \(you\): choosing…/);
+    expect(perceivable(html)).not.toMatch(/Zhao: chosen [^.]*(Tend|Bank|Stoke)/);
+    expect(perceivable(html)).not.toMatch(/Wen: (chosen|choosing)/);
+    expect(inputs(html).filter((input) => input["name"] === "card").map((input) => input["value"])).toEqual(["TEND", "BANK", "STOKE", "FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"]);
+    expect(inputs(html).some((input) => input["name"] === "fuelLedger")).toBe(false);
     expect(alt(html)).toBeNull();
   });
 
@@ -131,7 +133,7 @@ describe("titles, alternatives and window content", () => {
   it("Heat markers: the marked ceramic in words with its place, and the three choices", () => {
     const html = en("m3_heat_marker_step_3p");
     expect(heading(html)).toBe("Decide your Heat marker");
-    expect(perceivable(html)).toContain("Celadon Vase, Plain (in Low 1), Heat marker, face down");
+    expect(perceivable(html)).toContain("White Censer, Painted (in Middle 2), Heat marker, face down");
     expect(inputs(html).filter((input) => input["name"] === "ownMarker").map((input) => input["value"])).toEqual(["1", "-1", "return"]);
     expect(perceivable(html)).toContain("Adds +1 to this ceramic’s Actual Heat.");
   });
@@ -217,37 +219,47 @@ describe("titles, alternatives and window content", () => {
     expect(perceivable(renderWindow(source(), { locale: "zh-CN" }))).toContain(chinese);
   });
 
-  it("Contributions with Fuel Ledger: free Bank and Stoke, the 1-Wood commitment and its costs (v1.6.2 L637)", () => {
+  it("Contributions with Fuel Ledger: free Bank and Stoke, and its own 2 cards at 1 Wood each (v1.6.2 L634, change 26)", () => {
     const id = "w-secret-contributions-with-fuel-ledger";
     const html = en(id);
     const seen = perceivable(html);
     expect(seen).toMatch(/Tend the Fire no Wood Heat 0/);
     expect(seen).toMatch(/Bank the Fire no Wood: Fuel Ledger Heat −1/);
     expect(seen).toMatch(/Stoke the Fire no Wood: Fuel Ledger Heat \+1/);
-    expect(seen).toContain("Secretly commit 1 Wood with your card");
-    expect(seen).toContain("Bank the Fire becomes −2 and Stoke the Fire becomes +2; the Wood is paid at the reveal.");
-    expect(perceivable(zh(id))).toContain("随控火牌暗附1柴");
-    expect(perceivable(zh(id))).toContain("不耗柴（「柴簿」）");
-    // Committed: Bank and Stoke cost the committed Wood at the reveal; Tend cannot take it.
-    const committed = perceivable(en(id, { card: "STOKE", fuelLedger: true }));
-    expect(committed).toMatch(/Bank the Fire · Fuel Ledger 1 Wood at reveal Heat −2/);
-    expect(committed).toMatch(/Stoke the Fire · Fuel Ledger 1 Wood at reveal Heat \+2/);
-    expect(committed).toContain("Only with Bank the Fire or Stoke the Fire.");
-    expect(committed).toContain("Submit Stoke the Fire with Fuel Ledger in secret: Heat +2, 1 Wood at reveal");
-    // No Wood: the commitment is greyed out with the reason; Bank and Stoke stay free.
+    expect(seen).toMatch(/Fuel Ledger Bank 1 Wood at reveal Heat −2 · came with Fuel Ledger/);
+    expect(seen).toMatch(/Fuel Ledger Stoke 1 Wood at reveal Heat \+2 · came with Fuel Ledger/);
+    expect(seen).not.toMatch(/commit|Secretly commit/i);
+    const zhSeen = perceivable(zh(id));
+    expect(zhSeen).toContain("压火 不付柴（「柴簿」）");
+    expect(zhSeen).toContain("守火 不付柴");
+    expect(zhSeen).not.toContain("耗柴");
+    expect(zhSeen).toMatch(/柴簿压火 亮牌时付1柴 火候−2 · 随「柴簿」获得/);
+    expect(zhSeen).toMatch(/柴簿添柴 亮牌时付1柴 火候\+2 · 随「柴簿」获得/);
+    expect(zhSeen).not.toMatch(/暗附|加柴/);
+    expect(perceivable(en(id, { card: "FUEL_LEDGER_STOKE" }))).toContain("Submit Fuel Ledger Stoke in secret: Heat +2, 1 Wood at reveal");
+    expect(perceivable(zh(id, { card: "FUEL_LEDGER_BANK" }))).toMatch(/暗选\s*柴簿压火\s*：火候−2，亮牌时付1柴/);
+    // The Tech the 2 cards came with: its rules details and what it brings.
+    expect(seen).toContain("Fuel Ledger Bank and Fuel Ledger Stoke came with Fuel Ledger. With it, your Bank the Fire and Stoke the Fire cost no Wood. Wood is paid at the reveal.");
+    expect(html).toMatch(/<span class="rd-name">Fuel Ledger<\/span>/);
+    expect(zhSeen).toContain("柴簿压火与柴簿添柴随「柴簿」获得。有了它，你的压火与添柴不付柴。柴在亮牌时支付。");
+    // No Wood: its own 2 cards are greyed out with the reason; Bank and Stoke stay free.
     const poor = editedFixtureSource(id, (entry) => {
       entry.playerView.game.players[entry.viewerId]!.resources.wood = 0;
     });
     const poorHtml = renderWindow(poor, { locale: "en" });
-    expect(inputs(poorHtml).find((input) => input["name"] === "fuelLedger")?.["aria-disabled"]).toBe("true");
-    expect(perceivable(poorHtml)).toContain("Not enough Wood to commit");
+    const disabled = inputs(poorHtml).filter((input) => input["name"] === "card" && input["aria-disabled"] === "true").map((input) => input["value"]);
+    expect(disabled).toEqual(["FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"]);
+    expect(perceivable(poorHtml)).toContain("Not enough Wood");
     expect(perceivable(poorHtml)).toMatch(/Bank the Fire no Wood: Fuel Ledger Heat −1/);
-    // Without Fuel Ledger, Bank and Stoke cost their printed Wood.
+    // Without Fuel Ledger: the 3 cards every player holds, Bank and Stoke at their printed Wood.
     const plain = editedFixtureSource(id, (entry) => {
       const player = entry.playerView.game.players[entry.viewerId]!;
       player.techs = player.techs.filter((tech) => tech.id !== "T12");
+      player.contributionCards = player.contributionCards.filter((card) => card === "BANK" || card === "TEND" || card === "STOKE");
     });
-    const plainSeen = perceivable(renderWindow(plain, { locale: "en" }));
+    const plainHtml = renderWindow(plain, { locale: "en" });
+    expect(inputs(plainHtml).filter((input) => input["name"] === "card").map((input) => input["value"])).toEqual(["TEND", "BANK", "STOKE"]);
+    const plainSeen = perceivable(plainHtml);
     expect(plainSeen).toMatch(/Bank the Fire 1 Wood at reveal Heat −1/);
     expect(plainSeen).not.toContain("Fuel Ledger");
   });
@@ -297,8 +309,9 @@ describe("titles, alternatives and window content", () => {
     const html = en("m6_order_phase_crackle_3p");
     expect(heading(html)).toBe("Complete held Orders");
     expect(alt(html)).toBe("End turn");
-    expect(perceivable(html)).toContain("3 of 5 can be completed");
-    expect(perceivable(html)).toContain("S02 3 VP 4 Coins any Shape · Celadon · any Decoration · Standard+ No matching ceramics");
+    expect(perceivable(html)).toContain("2 of 5 can be completed");
+    expect(perceivable(html)).toContain("O42 16 VP 0 Coins ×2 2 Crowns Brush Washer + Censer; different Glazes; same Decoration · Fine+ each; ≥1 Masterpiece No matching ceramics");
+    expect(perceivable(html)).not.toMatch(/O25 9 VP 5 Coins [^.]*No matching ceramics/);
     expect(perceivable(html)).toContain("Only held Orders can be completed; Orders on the display cannot.");
   });
 
@@ -328,9 +341,9 @@ describe("titles, alternatives and window content", () => {
       const p = entry.playerView.game.players[entry.viewerId]!;
       p.techs = [...p.techs, { id: "T23", acquiredInRound: 1, usedThisRound: false }];
     });
-    const draft = { orderId: "O30", ceramicIds: ["c6", "c16"], declarations: "auto", declineKilnAbility: false, declineTributeWare: false, end: false };
+    const draft = { orderId: "O25", ceramicIds: ["c5", "c9"], declarations: "auto", declineKilnAbility: false, declineTributeWare: false, end: false };
     const html = renderWindow(withBarge, { locale: "en", draft });
-    expect(perceivable(html)).toContain("Rewards +13 VP +5 Coins Canal Barge: +2 Coins");
+    expect(perceivable(html)).toContain("Rewards +9 VP +5 Coins Canal Barge: +2 Coins");
     expect(perceivable(renderWindow(withBarge, { locale: "zh-CN", draft }))).toContain("「漕船」：得2铜钱");
     // Not offered as a choice: it is automatic, never declined.
     expect(inputs(html).filter((input) => input["name"] === "optional").map((input) => input["value"])).not.toContain("canalBarge");
@@ -389,10 +402,10 @@ describe("rules details (D10)", () => {
 
   it("an Order: its requirement and quality line, then the deck's clarifications, with no printed facts", () => {
     const html = en("m6_order_phase_crackle_3p");
-    expect(perceivable(html)).toContain("Full rules: Order O30");
-    const body = panel(html, "Full rules: Order O30");
-    expect(textOf(body)).toContain("Full rule Bowl + Brush Washer; one White, one Moon White; any Decorations Fine+ each");
-    expect(textOf(body)).not.toMatch(/Reward \d+ VP|13 VP|Crown Order Reward/);
+    expect(perceivable(html)).toContain("Full rules: Order O25");
+    const body = panel(html, "Full rules: Order O25");
+    expect(textOf(body)).toContain("Full rule 2 different Shapes; any Glazes; any Decorations Standard+ each");
+    expect(textOf(body)).not.toMatch(/Reward \d+ VP|9 VP|Crown Order Reward/);
     expectRuleAndClarifications(body, ORDER_CLARIFICATIONS.main, "en");
     expect(perceivable(zh("m7_cleanup_hand_limit_3p"))).toContain("完整规则：委托");
   });
@@ -424,10 +437,12 @@ describe("rules details (D10): one Order trigger across the pane (verifier findi
 });
 
 describe("rules details (D10): Imperial Recognition beside a completion's Crowns", () => {
-  const draft = { orderId: "O19", ceramicIds: ["c19"], declarations: "auto", declineKilnAbility: false, declineTributeWare: false, end: false };
+  // O22 (1 Crown) in the scripted Ru / Tribute Ware Order Phase.
+  const CROWNS = "w-order-phase-with-ru-tribute-ware-and-a-crackle-wildcard";
+  const draft = { orderId: "O22", ceramicIds: ["c1"], declarations: "auto", declineKilnAbility: false, declineTributeWare: false, end: false };
 
   it("lists the milestones, the reward beyond the track and the Crown clarifications, with no track facts or source labels", () => {
-    const html = en("m6_order_phase_crackle_3p", draft);
+    const html = en(CROWNS, draft);
     const seen = perceivable(html);
     expect(html).toMatch(/<span class="rd-name">Imperial Recognition<\/span>/);
     expect(seen).toContain("Crowns advance Imperial Recognition one at a time, resolving every milestone crossed; beyond Recognition 4, each Crown scores 1 VP immediately.");
@@ -438,7 +453,7 @@ describe("rules details (D10): Imperial Recognition beside a completion's Crowns
     expect(text).toContain("Each further Crown: +1 VP");
     expect(text).not.toContain("Track Recognition 0–4");
     expectRuleAndClarifications(body, IMPERIAL_TRACK.clarifications.imperial_overflow, "en");
-    const zhHtml = renderWindow(fixtureSource("m6_order_phase_crackle_3p"), { locale: "zh-CN", draft });
+    const zhHtml = renderWindow(fixtureSource(CROWNS), { locale: "zh-CN", draft });
     const zhBody = panel(zhHtml, "完整规则：御府声望");
     expect(textOf(zhBody)).toContain("声望2 · 赐御窑");
     expect(textOf(zhBody)).toContain("声望满后每个御令+1分");
@@ -446,8 +461,8 @@ describe("rules details (D10): Imperial Recognition beside a completion's Crowns
   });
 
   it("is not offered for an Order without Crowns", () => {
-    const html = en("m6_order_phase_crackle_3p", { orderId: "O30", ceramicIds: ["c6", "c16"], declarations: "auto", declineKilnAbility: false, declineTributeWare: false, end: false });
-    expect(perceivable(html)).toContain("Rewards +13 VP +5 Coins");
+    const html = en("m6_order_phase_crackle_3p", { orderId: "O25", ceramicIds: ["c5", "c9"], declarations: "auto", declineKilnAbility: false, declineTributeWare: false, end: false });
+    expect(perceivable(html)).toContain("Rewards +9 VP +5 Coins");
     expect(html).not.toContain('<span class="rd-name">Imperial Recognition</span>');
     expect(html).not.toContain("ord-crown-note");
   });
@@ -481,9 +496,9 @@ function probe(id: string, draft: unknown): { orderTargets: Record<string, strin
 
 describe("seeded drafts drive the table (§3.5)", () => {
   it("Order Phase: Order states and the chosen group's ceramics", () => {
-    const result = probe("m6_order_phase_crackle_3p", { orderId: "O30", ceramicIds: ["c6", "c16"], declarations: "auto", declineKilnAbility: false, declineTributeWare: false, end: false });
-    expect(result.orderTargets).toEqual({ S02: "blocked", O30: "chosen", O19: "completable", O15: "completable", O48: "blocked" });
-    expect(result.highlighted).toEqual(["c6", "c16"]);
+    const result = probe("m6_order_phase_crackle_3p", { orderId: "O25", ceramicIds: ["c5", "c9"], declarations: "auto", declineKilnAbility: false, declineTributeWare: false, end: false });
+    expect(result.orderTargets).toEqual({ S07: "completable", O42: "blocked", O46: "blocked", O25: "chosen", O40: "blocked" });
+    expect(result.highlighted).toEqual(["c5", "c9"]);
   });
 
   it("hand trim: the Orders marked for discard", () => {

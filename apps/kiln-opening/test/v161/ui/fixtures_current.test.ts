@@ -86,7 +86,7 @@ describe("moments.json is current", () => {
     expect(commands.length).toBeGreaterThan(0);
     for (const command of commands) {
       if (command.type === "SUBMIT_CONTRIBUTION") {
-        const option = contributionOptions(view).find((o) => o.command.card === command.card && o.command.fuelLedger === command.fuelLedger);
+        const option = contributionOptions(view).find((o) => o.command.card === command.card);
         expect(option?.affordable, JSON.stringify(command)).toBe(true);
       } else {
         expect(validateAction(view, command), JSON.stringify(command)).toBeNull();
@@ -99,8 +99,8 @@ describe("moments.json is current", () => {
     expect(m1).toBeDefined();
     if (m1 === undefined) return;
     const spaces = playerSummary(m1.playerView, m1.viewerId).personalSpaces;
-    // V1.6.2's seed-1 game: Senior Apprentice (T18), a Form & Decorate Tech, added it.
-    expect(spaces.find((s) => s.locationId === "form_decorate" && s.spaceIndex === 1)?.addedByTechId).toBe("T18");
+    // V1.6.2 revision 3's seed-7 game: Connoisseur's Cabinet (T19), a Form & Decorate Tech, added it.
+    expect(spaces.find((s) => s.locationId === "form_decorate" && s.spaceIndex === 1)?.addedByTechId).toBe("T19");
     expect(spaces.find((s) => s.locationId === "glaze_load" && s.spaceIndex === 1)).toMatchObject({ unlocked: false, addedByTechId: null });
   });
 
@@ -116,10 +116,10 @@ describe("moments.json is current", () => {
       const phase = moment(id).playerView.game.phase;
       return phase.type === "work_turn" ? phase.step : null;
     };
-    expect(step("m19_commission_apprentice_look")).toMatchObject({ kind: "commission_market", effect: "apprentice", lookSize: 2, lookedCount: 2 });
+    expect(step("m19_commission_apprentice_look")).toMatchObject({ kind: "commission_market", effect: "apprentice", select: { n: 2, maxReservations: 1, fromDisplay: true, lookedCount: 2 } });
     const look = moment("m19_commission_apprentice_look").playerView.own?.pendingLook;
     expect(look?.kind === "commission_market" && look.orderIds).toHaveLength(2);
-    expect(step("m20_colour_samples_swap_look")).toMatchObject({ kind: "colour_samples_swap", lookedCount: 2 });
+    expect(step("m20_colour_samples_swap_look")).toMatchObject({ kind: "colour_samples_swap", select: { n: 3, maxReservations: 1, fromDisplay: true, lookedCount: 3 } });
     expect(step("m21_guild_shifu_second_take")).toMatchObject({ kind: "guild_inspection", takes: [expect.anything()] });
     const saggars = moment("m22_saggars_upgrade");
     expect(afterQualityOptions(saggars.playerView).find((o) => o.ability === "protective_saggars")?.ceramicIds.length).toBeGreaterThan(0);

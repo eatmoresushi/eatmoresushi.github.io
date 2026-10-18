@@ -74,6 +74,11 @@
           "players": {
             "p1": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "A",
               "id": "p1",
               "imperial": {
@@ -112,8 +117,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [],
@@ -142,6 +146,11 @@
             },
             "p2": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "B",
               "id": "p2",
               "imperial": {
@@ -180,8 +189,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [],
@@ -210,6 +218,11 @@
             },
             "p3": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "C",
               "id": "p3",
               "imperial": {
@@ -248,8 +261,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 2,
               "techs": [],
@@ -280,7 +292,7 @@
           "revision": 0,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -510,6 +522,11 @@
           "players": {
             "p1": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 1",
               "id": "p1",
               "imperial": {
@@ -548,8 +565,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 1
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [
@@ -584,6 +600,11 @@
             },
             "p2": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 2",
               "id": "p2",
               "imperial": {
@@ -622,8 +643,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [],
@@ -654,7 +674,7 @@
           "revision": 0,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -1206,6 +1226,11 @@
           "players": {
             "p1": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 1",
               "id": "p1",
               "imperial": {
@@ -1244,8 +1269,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 3
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [
@@ -1290,6 +1314,11 @@
             },
             "p2": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 2",
               "id": "p2",
               "imperial": {
@@ -1328,8 +1357,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 3
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [
@@ -1374,6 +1402,11 @@
             },
             "p3": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 3",
               "id": "p3",
               "imperial": {
@@ -1412,8 +1445,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 3
+                "recognitionOverflow": 0
               },
               "seatIndex": 2,
               "techs": [
@@ -1458,6 +1490,11 @@
             },
             "p4": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 4",
               "id": "p4",
               "imperial": {
@@ -1496,8 +1533,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 3
+                "recognitionOverflow": 0
               },
               "seatIndex": 3,
               "techs": [
@@ -1544,7 +1580,7 @@
           "revision": 0,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -1795,6 +1831,11 @@
           "players": {
             "p1": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 1",
               "id": "p1",
               "imperial": {
@@ -1833,8 +1874,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 3
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [
@@ -1879,6 +1919,11 @@
             },
             "p2": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 2",
               "id": "p2",
               "imperial": {
@@ -1917,8 +1962,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [],
@@ -1949,7 +1993,7 @@
           "revision": 0,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -2214,6 +2258,11 @@
           "players": {
             "p1": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 1",
               "id": "p1",
               "imperial": {
@@ -2252,8 +2301,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 2
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [
@@ -2293,6 +2341,11 @@
             },
             "p2": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 2",
               "id": "p2",
               "imperial": {
@@ -2331,8 +2384,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 1
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [
@@ -2367,6 +2419,11 @@
             },
             "p3": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 3",
               "id": "p3",
               "imperial": {
@@ -2405,8 +2462,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 2,
               "techs": [],
@@ -2437,7 +2493,7 @@
           "revision": 0,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -2675,9 +2731,12 @@
             "step": {
               "effect": "shifu",
               "kind": "commission_market",
-              "lookSize": 3,
-              "lookedCount": 3,
-              "maxReservations": 2,
+              "select": {
+                "fromDisplay": true,
+                "lookedCount": 3,
+                "maxReservations": 2,
+                "n": 3
+              },
               "workerId": "p1:shifu"
             },
             "type": "work_turn"
@@ -2691,6 +2750,11 @@
           "players": {
             "p1": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 1",
               "id": "p1",
               "imperial": {
@@ -2729,8 +2793,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [],
@@ -2765,6 +2828,11 @@
             },
             "p2": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 2",
               "id": "p2",
               "imperial": {
@@ -2803,8 +2871,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [],
@@ -2835,7 +2902,7 @@
           "revision": 1,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -3109,9 +3176,12 @@
             "step": {
               "effect": "apprentice",
               "kind": "commission_market",
-              "lookSize": 2,
-              "lookedCount": 2,
-              "maxReservations": 1,
+              "select": {
+                "fromDisplay": true,
+                "lookedCount": 2,
+                "maxReservations": 1,
+                "n": 2
+              },
               "workerId": "p1:apprentice:1"
             },
             "type": "work_turn"
@@ -3125,6 +3195,11 @@
           "players": {
             "p1": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 1",
               "id": "p1",
               "imperial": {
@@ -3163,8 +3238,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [],
@@ -3199,6 +3273,11 @@
             },
             "p2": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 2",
               "id": "p2",
               "imperial": {
@@ -3237,8 +3316,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [],
@@ -3269,7 +3347,7 @@
           "revision": 1,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -3557,6 +3635,11 @@
           "players": {
             "p1": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 1",
               "id": "p1",
               "imperial": {
@@ -3595,8 +3678,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 1
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [
@@ -3637,6 +3719,11 @@
             },
             "p2": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 2",
               "id": "p2",
               "imperial": {
@@ -3675,8 +3762,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [],
@@ -3707,7 +3793,7 @@
           "revision": 1,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -3981,8 +4067,13 @@
             "activePlayerId": "p1",
             "step": {
               "kind": "colour_samples",
-              "lookedCount": 3,
-              "resume": null
+              "resume": null,
+              "select": {
+                "fromDisplay": true,
+                "lookedCount": 3,
+                "maxReservations": 1,
+                "n": 3
+              }
             },
             "type": "work_turn"
           },
@@ -3995,6 +4086,11 @@
           "players": {
             "p1": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 1",
               "id": "p1",
               "imperial": {
@@ -4033,8 +4129,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 1
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [
@@ -4075,6 +4170,11 @@
             },
             "p2": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 2",
               "id": "p2",
               "imperial": {
@@ -4113,8 +4213,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [],
@@ -4145,7 +4244,7 @@
           "revision": 1,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -4328,8 +4427,7 @@
             "playerId": "p1",
             "source": "face_up",
             "techId": "T10",
-            "type": "TECH_ACQUIRED",
-            "vp": 1
+            "type": "TECH_ACQUIRED"
           },
           "revision": 1,
           "sequence": 3
@@ -4400,14 +4498,15 @@
         {
           "actorId": "p1",
           "event": {
-            "count": 2,
+            "count": 3,
             "discipline": null,
             "kind": "colour_samples_swap",
             "playerId": "p1",
             "secret": {
               "orderIds": [
                 "O07",
-                "O08"
+                "O08",
+                "O09"
               ],
               "techIds": [],
               "visibleTo": "p1"
@@ -4424,14 +4523,14 @@
           "counts": {
             "fireBuried": 0,
             "fireDeck": 12,
-            "mainDeck": 39,
+            "mainDeck": 38,
             "mainDiscard": 0,
             "orderHands": {
               "p1": 1,
               "p2": 0
             },
             "pendingLook": {
-              "count": 2,
+              "count": 3,
               "kind": "colour_samples_swap",
               "playerId": "p1"
             },
@@ -4469,8 +4568,13 @@
             "activePlayerId": "p1",
             "step": {
               "kind": "colour_samples_swap",
-              "lookedCount": 2,
-              "returnTo": "before_action"
+              "returnTo": "before_action",
+              "select": {
+                "fromDisplay": true,
+                "lookedCount": 3,
+                "maxReservations": 1,
+                "n": 3
+              }
             },
             "type": "work_turn"
           },
@@ -4483,6 +4587,11 @@
           "players": {
             "p1": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 1",
               "id": "p1",
               "imperial": {
@@ -4521,8 +4630,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 1
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [
@@ -4557,6 +4665,11 @@
             },
             "p2": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 2",
               "id": "p2",
               "imperial": {
@@ -4595,8 +4708,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [],
@@ -4627,7 +4739,7 @@
           "revision": 1,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -4767,7 +4879,8 @@
             "kind": "colour_samples_swap",
             "orderIds": [
               "O07",
-              "O08"
+              "O08",
+              "O09"
             ],
             "playerId": "p1"
           },
@@ -4800,7 +4913,7 @@
         {
           "actorId": "p1",
           "event": {
-            "count": 2,
+            "count": 3,
             "discipline": null,
             "kind": "colour_samples_swap",
             "playerId": "p1",
@@ -4919,6 +5032,11 @@
           "players": {
             "p1": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 1",
               "id": "p1",
               "imperial": {
@@ -4957,8 +5075,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 1
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [
@@ -4999,6 +5116,11 @@
             },
             "p2": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 2",
               "id": "p2",
               "imperial": {
@@ -5037,8 +5159,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [],
@@ -5069,7 +5190,7 @@
           "revision": 1,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -5419,6 +5540,13 @@
           "players": {
             "p1": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE",
+                "FUEL_LEDGER_BANK",
+                "FUEL_LEDGER_STOKE"
+              ],
               "displayName": "Player 1",
               "id": "p1",
               "imperial": {
@@ -5457,8 +5585,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 1
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [
@@ -5493,6 +5620,11 @@
             },
             "p2": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 2",
               "id": "p2",
               "imperial": {
@@ -5531,8 +5663,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [],
@@ -5563,7 +5694,7 @@
           "revision": 0,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -5861,13 +5992,11 @@
             "contributions": {
               "p1": {
                 "card": "TEND",
-                "fuelLedger": false,
                 "heat": 0,
                 "woodPaid": 0
               },
               "p2": {
                 "card": "TEND",
-                "fuelLedger": false,
                 "heat": 0,
                 "woodPaid": 0
               }
@@ -5927,6 +6056,11 @@
           "players": {
             "p1": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 1",
               "id": "p1",
               "imperial": {
@@ -5965,8 +6099,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 1
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [
@@ -6001,6 +6134,11 @@
             },
             "p2": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 2",
               "id": "p2",
               "imperial": {
@@ -6039,8 +6177,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [],
@@ -6071,7 +6208,7 @@
           "revision": 2,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -6256,13 +6393,11 @@
             "contributions": {
               "p1": {
                 "card": "TEND",
-                "fuelLedger": false,
                 "heat": 0,
                 "woodPaid": 0
               },
               "p2": {
                 "card": "TEND",
-                "fuelLedger": false,
                 "heat": 0,
                 "woodPaid": 0
               }
@@ -6402,7 +6537,6 @@
             "contributions": {
               "p1": {
                 "card": "TEND",
-                "fuelLedger": false,
                 "heat": 0,
                 "woodPaid": 0
               }
@@ -6466,6 +6600,11 @@
           "players": {
             "p1": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 1",
               "id": "p1",
               "imperial": {
@@ -6504,8 +6643,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 1
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [
@@ -6540,6 +6678,11 @@
             },
             "p2": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 2",
               "id": "p2",
               "imperial": {
@@ -6578,8 +6721,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [],
@@ -6610,7 +6752,7 @@
           "revision": 2,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -6787,7 +6929,6 @@
             "contributions": {
               "p1": {
                 "card": "TEND",
-                "fuelLedger": false,
                 "heat": 0,
                 "woodPaid": 0
               }
@@ -6984,7 +7125,6 @@
             "contributions": {
               "p1": {
                 "card": "TEND",
-                "fuelLedger": false,
                 "heat": 0,
                 "woodPaid": 0
               }
@@ -7041,6 +7181,11 @@
           "players": {
             "p1": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 1",
               "id": "p1",
               "imperial": {
@@ -7079,8 +7224,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 1
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [
@@ -7115,6 +7259,11 @@
             },
             "p2": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 2",
               "id": "p2",
               "imperial": {
@@ -7153,8 +7302,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [],
@@ -7185,7 +7333,7 @@
           "revision": 1,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -7358,7 +7506,6 @@
             "contributions": {
               "p1": {
                 "card": "TEND",
-                "fuelLedger": false,
                 "heat": 0,
                 "woodPaid": 0
               }
@@ -7538,7 +7685,6 @@
             "contributions": {
               "p1": {
                 "card": "TEND",
-                "fuelLedger": false,
                 "heat": 0,
                 "woodPaid": 0
               }
@@ -7595,6 +7741,11 @@
           "players": {
             "p1": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 1",
               "id": "p1",
               "imperial": {
@@ -7633,8 +7784,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [],
@@ -7663,6 +7813,11 @@
             },
             "p2": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 2",
               "id": "p2",
               "imperial": {
@@ -7701,8 +7856,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [],
@@ -7733,7 +7887,7 @@
           "revision": 1,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -7906,7 +8060,6 @@
             "contributions": {
               "p1": {
                 "card": "TEND",
-                "fuelLedger": false,
                 "heat": 0,
                 "woodPaid": 0
               }
@@ -8196,7 +8349,6 @@
             "contributions": {
               "p1": {
                 "card": "TEND",
-                "fuelLedger": false,
                 "heat": 0,
                 "woodPaid": 0
               }
@@ -8253,6 +8405,11 @@
           "players": {
             "p1": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 1",
               "id": "p1",
               "imperial": {
@@ -8291,8 +8448,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 1
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [
@@ -8327,6 +8483,11 @@
             },
             "p2": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 2",
               "id": "p2",
               "imperial": {
@@ -8365,8 +8526,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [],
@@ -8397,7 +8557,7 @@
           "revision": 1,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -8571,7 +8731,6 @@
             "contributions": {
               "p1": {
                 "card": "TEND",
-                "fuelLedger": false,
                 "heat": 0,
                 "woodPaid": 0
               }
@@ -8811,7 +8970,6 @@
             "contributions": {
               "p1": {
                 "card": "TEND",
-                "fuelLedger": false,
                 "heat": 0,
                 "woodPaid": 0
               }
@@ -8871,6 +9029,11 @@
           "players": {
             "p1": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 1",
               "id": "p1",
               "imperial": {
@@ -8909,8 +9072,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 1
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [
@@ -8945,6 +9107,11 @@
             },
             "p2": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 2",
               "id": "p2",
               "imperial": {
@@ -8983,8 +9150,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [],
@@ -9015,7 +9181,7 @@
           "revision": 3,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -9187,7 +9353,6 @@
             "contributions": {
               "p1": {
                 "card": "TEND",
-                "fuelLedger": false,
                 "heat": 0,
                 "woodPaid": 0
               }
@@ -9450,13 +9615,11 @@
             "contributions": {
               "p1": {
                 "card": "TEND",
-                "fuelLedger": false,
                 "heat": 0,
                 "woodPaid": 0
               },
               "p2": {
                 "card": "TEND",
-                "fuelLedger": false,
                 "heat": 0,
                 "woodPaid": 0
               }
@@ -9513,6 +9676,11 @@
           "players": {
             "p1": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 1",
               "id": "p1",
               "imperial": {
@@ -9551,8 +9719,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [],
@@ -9581,6 +9748,11 @@
             },
             "p2": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 2",
               "id": "p2",
               "imperial": {
@@ -9619,8 +9791,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [],
@@ -9651,7 +9822,7 @@
           "revision": 2,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -9836,13 +10007,11 @@
             "contributions": {
               "p1": {
                 "card": "TEND",
-                "fuelLedger": false,
                 "heat": 0,
                 "woodPaid": 0
               },
               "p2": {
                 "card": "TEND",
-                "fuelLedger": false,
                 "heat": 0,
                 "woodPaid": 0
               }
@@ -10081,6 +10250,11 @@
           "players": {
             "p1": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 1",
               "id": "p1",
               "imperial": {
@@ -10119,8 +10293,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 1
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [
@@ -10155,6 +10328,11 @@
             },
             "p2": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 2",
               "id": "p2",
               "imperial": {
@@ -10193,8 +10371,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [],
@@ -10225,7 +10402,7 @@
           "revision": 0,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -10450,6 +10627,11 @@
           "players": {
             "p1": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 1",
               "id": "p1",
               "imperial": {
@@ -10488,8 +10670,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [],
@@ -10518,6 +10699,11 @@
             },
             "p2": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 2",
               "id": "p2",
               "imperial": {
@@ -10556,8 +10742,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [],
@@ -10588,7 +10773,7 @@
           "revision": 0,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -10890,13 +11075,11 @@
             "contributions": {
               "p1": {
                 "card": "TEND",
-                "fuelLedger": false,
                 "heat": 0,
                 "woodPaid": 0
               },
               "p2": {
                 "card": "TEND",
-                "fuelLedger": false,
                 "heat": 0,
                 "woodPaid": 0
               }
@@ -10946,6 +11129,11 @@
           "players": {
             "p1": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 1",
               "id": "p1",
               "imperial": {
@@ -10984,8 +11172,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [],
@@ -11014,6 +11201,11 @@
             },
             "p2": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 2",
               "id": "p2",
               "imperial": {
@@ -11052,8 +11244,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [],
@@ -11084,7 +11275,7 @@
           "revision": 1,
           "round": 3,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -11558,6 +11749,11 @@
           "players": {
             "p1": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Lin",
               "id": "p1",
               "imperial": {
@@ -11596,8 +11792,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [],
@@ -11626,6 +11821,11 @@
             },
             "p2": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Zhao",
               "id": "p2",
               "imperial": {
@@ -11664,8 +11864,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [],
@@ -11696,7 +11895,7 @@
           "revision": 0,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -12063,19 +12262,16 @@
             "contributions": {
               "p1": {
                 "card": "TEND",
-                "fuelLedger": false,
                 "heat": 0,
                 "woodPaid": 0
               },
               "p2": {
                 "card": "TEND",
-                "fuelLedger": false,
                 "heat": 0,
                 "woodPaid": 0
               },
               "p3": {
                 "card": "TEND",
-                "fuelLedger": false,
                 "heat": 0,
                 "woodPaid": 0
               }
@@ -12137,6 +12333,11 @@
           "players": {
             "p1": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 1",
               "id": "p1",
               "imperial": {
@@ -12175,8 +12376,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [],
@@ -12205,6 +12405,11 @@
             },
             "p2": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 2",
               "id": "p2",
               "imperial": {
@@ -12243,8 +12448,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [],
@@ -12273,6 +12477,11 @@
             },
             "p3": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 3",
               "id": "p3",
               "imperial": {
@@ -12311,8 +12520,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 2,
               "techs": [],
@@ -12343,7 +12551,7 @@
           "revision": 3,
           "round": 1,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -12541,19 +12749,16 @@
             "contributions": {
               "p1": {
                 "card": "TEND",
-                "fuelLedger": false,
                 "heat": 0,
                 "woodPaid": 0
               },
               "p2": {
                 "card": "TEND",
-                "fuelLedger": false,
                 "heat": 0,
                 "woodPaid": 0
               },
               "p3": {
                 "card": "TEND",
-                "fuelLedger": false,
                 "heat": 0,
                 "woodPaid": 0
               }
@@ -13510,6 +13715,11 @@
                   "vp": 15
                 }
               ],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 1",
               "id": "p1",
               "imperial": {
@@ -13548,8 +13758,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 61,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [],
@@ -13680,6 +13889,11 @@
                   "vp": 15
                 }
               ],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 2",
               "id": "p2",
               "imperial": {
@@ -13718,8 +13932,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 58,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [],
@@ -13851,6 +14064,11 @@
                   "vp": 14
                 }
               ],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 3",
               "id": "p3",
               "imperial": {
@@ -13889,8 +14107,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 61,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 2,
               "techs": [],
@@ -14022,6 +14239,11 @@
                   "vp": 18
                 }
               ],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 4",
               "id": "p4",
               "imperial": {
@@ -14060,8 +14282,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 75,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 3,
               "techs": [],
@@ -14092,7 +14313,7 @@
           "revision": 0,
           "round": 5,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -14305,6 +14526,11 @@
           "players": {
             "p1": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 1",
               "id": "p1",
               "imperial": {
@@ -14343,8 +14569,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [],
@@ -14373,6 +14598,11 @@
             },
             "p2": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 2",
               "id": "p2",
               "imperial": {
@@ -14411,8 +14641,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [],
@@ -14443,7 +14672,7 @@
           "revision": 0,
           "round": 5,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -14649,8 +14878,7 @@
                 "kilnAbilities": 0,
                 "orders": 0,
                 "recognitionOverflow": 0,
-                "techs": 1,
-                "total": 2
+                "total": 1
               },
               "p2": {
                 "coins": 1,
@@ -14666,8 +14894,7 @@
                 "kilnAbilities": 0,
                 "orders": 0,
                 "recognitionOverflow": 0,
-                "techs": 1,
-                "total": 2
+                "total": 1
               }
             },
             "standings": [
@@ -14679,7 +14906,7 @@
                   "printedCrowns": 0,
                   "recognition": 2
                 },
-                "total": 2
+                "total": 1
               },
               {
                 "playerId": "p2",
@@ -14689,7 +14916,7 @@
                   "printedCrowns": 0,
                   "recognition": 1
                 },
-                "total": 2
+                "total": 1
               }
             ],
             "winnerIds": [
@@ -14730,6 +14957,11 @@
           "players": {
             "p1": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 1",
               "id": "p1",
               "imperial": {
@@ -14768,8 +15000,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 1
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [
@@ -14804,6 +15035,11 @@
             },
             "p2": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 2",
               "id": "p2",
               "imperial": {
@@ -14842,8 +15078,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 1
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [
@@ -14880,7 +15115,7 @@
           "revision": 1,
           "round": 5,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -15078,8 +15313,7 @@
                   "kilnAbilities": 0,
                   "orders": 0,
                   "recognitionOverflow": 0,
-                  "techs": 1,
-                  "total": 2
+                  "total": 1
                 },
                 "p2": {
                   "coins": 1,
@@ -15095,8 +15329,7 @@
                   "kilnAbilities": 0,
                   "orders": 0,
                   "recognitionOverflow": 0,
-                  "techs": 1,
-                  "total": 2
+                  "total": 1
                 }
               },
               "standings": [
@@ -15108,7 +15341,7 @@
                     "printedCrowns": 0,
                     "recognition": 2
                   },
-                  "total": 2
+                  "total": 1
                 },
                 {
                   "playerId": "p2",
@@ -15118,7 +15351,7 @@
                     "printedCrowns": 0,
                     "recognition": 1
                   },
-                  "total": 2
+                  "total": 1
                 }
               ],
               "winnerIds": [
@@ -15262,6 +15495,11 @@
                   "vp": 6
                 }
               ],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 1",
               "id": "p1",
               "imperial": {
@@ -15300,8 +15538,7 @@
                 "imperialAudience": 6,
                 "kilnAbilities": 0,
                 "orders": 6,
-                "recognitionOverflow": 1,
-                "techs": 0
+                "recognitionOverflow": 1
               },
               "seatIndex": 0,
               "techs": [],
@@ -15330,6 +15567,11 @@
             },
             "p2": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Player 2",
               "id": "p2",
               "imperial": {
@@ -15368,8 +15610,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [],
@@ -15400,7 +15641,7 @@
           "revision": 1,
           "round": 3,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -15773,8 +16014,7 @@
                 "kilnAbilities": 4,
                 "orders": 12,
                 "recognitionOverflow": 0,
-                "techs": 2,
-                "total": 30
+                "total": 28
               },
               "p2": {
                 "coins": 2,
@@ -15792,8 +16032,7 @@
                 "kilnAbilities": 0,
                 "orders": 3,
                 "recognitionOverflow": 0,
-                "techs": 1,
-                "total": 9
+                "total": 8
               }
             },
             "standings": [
@@ -15805,7 +16044,7 @@
                   "printedCrowns": 1,
                   "recognition": 1
                 },
-                "total": 30
+                "total": 28
               },
               {
                 "playerId": "p2",
@@ -15815,7 +16054,7 @@
                   "printedCrowns": 0,
                   "recognition": 0
                 },
-                "total": 9
+                "total": 8
               }
             ],
             "winnerIds": [
@@ -15889,6 +16128,13 @@
                   "vp": 9
                 }
               ],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE",
+                "FUEL_LEDGER_BANK",
+                "FUEL_LEDGER_STOKE"
+              ],
               "displayName": "Lin",
               "id": "p1",
               "imperial": {
@@ -15927,8 +16173,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 4,
                 "orders": 12,
-                "recognitionOverflow": 0,
-                "techs": 2
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [
@@ -15983,6 +16228,11 @@
                   "vp": 3
                 }
               ],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Zhao",
               "id": "p2",
               "imperial": {
@@ -16021,8 +16271,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 3,
-                "recognitionOverflow": 0,
-                "techs": 1
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [
@@ -16059,7 +16308,7 @@
           "revision": 3,
           "round": 5,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -16413,8 +16662,7 @@
                   "kilnAbilities": 4,
                   "orders": 12,
                   "recognitionOverflow": 0,
-                  "techs": 2,
-                  "total": 30
+                  "total": 28
                 },
                 "p2": {
                   "coins": 2,
@@ -16432,8 +16680,7 @@
                   "kilnAbilities": 0,
                   "orders": 3,
                   "recognitionOverflow": 0,
-                  "techs": 1,
-                  "total": 9
+                  "total": 8
                 }
               },
               "standings": [
@@ -16445,7 +16692,7 @@
                     "printedCrowns": 1,
                     "recognition": 1
                   },
-                  "total": 30
+                  "total": 28
                 },
                 {
                   "playerId": "p2",
@@ -16455,7 +16702,7 @@
                     "printedCrowns": 0,
                     "recognition": 0
                   },
-                  "total": 9
+                  "total": 8
                 }
               ],
               "winnerIds": [
@@ -16641,8 +16888,7 @@
                 "kilnAbilities": 0,
                 "orders": 3,
                 "recognitionOverflow": 0,
-                "techs": 2,
-                "total": 12
+                "total": 10
               },
               "p2": {
                 "coins": 2,
@@ -16660,8 +16906,7 @@
                 "kilnAbilities": 0,
                 "orders": 6,
                 "recognitionOverflow": 0,
-                "techs": 3,
-                "total": 13
+                "total": 10
               },
               "p3": {
                 "coins": 3,
@@ -16677,8 +16922,7 @@
                 "kilnAbilities": 1,
                 "orders": 9,
                 "recognitionOverflow": 0,
-                "techs": 1,
-                "total": 14
+                "total": 13
               },
               "p4": {
                 "coins": 5,
@@ -16694,7 +16938,6 @@
                 "kilnAbilities": 0,
                 "orders": 3,
                 "recognitionOverflow": 0,
-                "techs": 0,
                 "total": 8
               }
             },
@@ -16707,27 +16950,27 @@
                   "printedCrowns": 1,
                   "recognition": 3
                 },
-                "total": 14
-              },
-              {
-                "playerId": "p2",
-                "rank": 2,
-                "tieBreak": {
-                  "masterpieces": 0,
-                  "printedCrowns": 0,
-                  "recognition": 1
-                },
                 "total": 13
               },
               {
                 "playerId": "p1",
-                "rank": 3,
+                "rank": 2,
                 "tieBreak": {
                   "masterpieces": 1,
                   "printedCrowns": 0,
                   "recognition": 3
                 },
-                "total": 12
+                "total": 10
+              },
+              {
+                "playerId": "p2",
+                "rank": 3,
+                "tieBreak": {
+                  "masterpieces": 0,
+                  "printedCrowns": 0,
+                  "recognition": 1
+                },
+                "total": 10
               },
               {
                 "playerId": "p4",
@@ -16795,6 +17038,11 @@
                   "vp": 3
                 }
               ],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Lin",
               "id": "p1",
               "imperial": {
@@ -16833,8 +17081,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 3,
-                "recognitionOverflow": 0,
-                "techs": 2
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [
@@ -16889,6 +17136,11 @@
                   "vp": 6
                 }
               ],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Zhao",
               "id": "p2",
               "imperial": {
@@ -16927,8 +17179,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 6,
-                "recognitionOverflow": 0,
-                "techs": 3
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [
@@ -17006,6 +17257,11 @@
                   "vp": 6
                 }
               ],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Wen",
               "id": "p3",
               "imperial": {
@@ -17044,8 +17300,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 1,
                 "orders": 9,
-                "recognitionOverflow": 0,
-                "techs": 1
+                "recognitionOverflow": 0
               },
               "seatIndex": 2,
               "techs": [
@@ -17095,6 +17350,11 @@
                   "vp": 3
                 }
               ],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Su",
               "id": "p4",
               "imperial": {
@@ -17133,8 +17393,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 3,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 3,
               "techs": [],
@@ -17165,7 +17424,7 @@
           "revision": 5,
           "round": 5,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -17625,8 +17884,7 @@
                   "kilnAbilities": 0,
                   "orders": 3,
                   "recognitionOverflow": 0,
-                  "techs": 2,
-                  "total": 12
+                  "total": 10
                 },
                 "p2": {
                   "coins": 2,
@@ -17644,8 +17902,7 @@
                   "kilnAbilities": 0,
                   "orders": 6,
                   "recognitionOverflow": 0,
-                  "techs": 3,
-                  "total": 13
+                  "total": 10
                 },
                 "p3": {
                   "coins": 3,
@@ -17661,8 +17918,7 @@
                   "kilnAbilities": 1,
                   "orders": 9,
                   "recognitionOverflow": 0,
-                  "techs": 1,
-                  "total": 14
+                  "total": 13
                 },
                 "p4": {
                   "coins": 5,
@@ -17678,7 +17934,6 @@
                   "kilnAbilities": 0,
                   "orders": 3,
                   "recognitionOverflow": 0,
-                  "techs": 0,
                   "total": 8
                 }
               },
@@ -17691,27 +17946,27 @@
                     "printedCrowns": 1,
                     "recognition": 3
                   },
-                  "total": 14
-                },
-                {
-                  "playerId": "p2",
-                  "rank": 2,
-                  "tieBreak": {
-                    "masterpieces": 0,
-                    "printedCrowns": 0,
-                    "recognition": 1
-                  },
                   "total": 13
                 },
                 {
                   "playerId": "p1",
-                  "rank": 3,
+                  "rank": 2,
                   "tieBreak": {
                     "masterpieces": 1,
                     "printedCrowns": 0,
                     "recognition": 3
                   },
-                  "total": 12
+                  "total": 10
+                },
+                {
+                  "playerId": "p2",
+                  "rank": 3,
+                  "tieBreak": {
+                    "masterpieces": 0,
+                    "printedCrowns": 0,
+                    "recognition": 1
+                  },
+                  "total": 10
                 },
                 {
                   "playerId": "p4",
@@ -17879,6 +18134,11 @@
           "players": {
             "p1": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Lin",
               "id": "p1",
               "imperial": {
@@ -17917,8 +18177,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 2
+                "recognitionOverflow": 0
               },
               "seatIndex": 0,
               "techs": [
@@ -17958,6 +18217,11 @@
             },
             "p2": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Zhao",
               "id": "p2",
               "imperial": {
@@ -17996,8 +18260,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 1,
               "techs": [],
@@ -18026,6 +18289,11 @@
             },
             "p3": {
               "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
               "displayName": "Wen",
               "id": "p3",
               "imperial": {
@@ -18064,8 +18332,7 @@
                 "imperialAudience": 0,
                 "kilnAbilities": 0,
                 "orders": 0,
-                "recognitionOverflow": 0,
-                "techs": 0
+                "recognitionOverflow": 0
               },
               "seatIndex": 2,
               "techs": [],
@@ -18096,7 +18363,7 @@
           "revision": 0,
           "round": 3,
           "rulesVersion": "1.6.2",
-          "schemaVersion": 7,
+          "schemaVersion": 8,
           "sharedKiln": {
             "spaces": {
               "high_1": {
@@ -18246,10 +18513,1182 @@
       },
       "viewerActs": true,
       "viewerId": "p1"
+    },
+    {
+      "decisionPrompt": {
+        "actorIds": [
+          "p1"
+        ],
+        "mode": "single",
+        "phaseType": "work_turn"
+      },
+      "description": "Table state: Colour Samples' Select 3 took a face-up Order: its position stays empty until the turn ends.",
+      "id": "t-colour-samples-select-face-up",
+      "kind": "table",
+      "name": "Colour Samples' Select 3 took a face-up Order: its position stays empty until the turn ends",
+      "notes": [],
+      "ownSecrets": [
+        {
+          "actorId": "p1",
+          "event": {
+            "count": 3,
+            "discipline": null,
+            "kind": "colour_samples",
+            "playerId": "p1",
+            "secret": {
+              "orderIds": [
+                "O08",
+                "O09",
+                "O10"
+              ],
+              "techIds": [],
+              "visibleTo": "p1"
+            },
+            "type": "PRIVATE_LOOK_OPENED"
+          },
+          "revision": 1,
+          "sequence": 5
+        },
+        {
+          "actorId": "p1",
+          "event": {
+            "count": 3,
+            "playerId": "p1",
+            "secret": {
+              "orderIds": [
+                "O08",
+                "O09",
+                "O10"
+              ],
+              "visibleTo": "p1"
+            },
+            "type": "LOOKED_ORDERS_TO_BOTTOM"
+          },
+          "revision": 2,
+          "sequence": 7
+        }
+      ],
+      "playerView": {
+        "game": {
+          "ceramics": {},
+          "counts": {
+            "fireBuried": 0,
+            "fireDeck": 12,
+            "mainDeck": 41,
+            "mainDiscard": 0,
+            "orderHands": {
+              "p1": 3,
+              "p2": 0,
+              "p3": 0
+            },
+            "pendingLook": null,
+            "techDecks": {
+              "firing": 4,
+              "glazing_loading": 4,
+              "workshop": 4
+            }
+          },
+          "eventSequence": 7,
+          "finalResult": null,
+          "fireDiscard": [],
+          "firing": null,
+          "firstPlayerId": "p1",
+          "gameId": "test-game",
+          "kilnDie": {
+            "round": 2,
+            "value": 2
+          },
+          "lastFiring": null,
+          "market": {
+            "display": [
+              "O01",
+              "O02",
+              null,
+              "O04",
+              "O06",
+              "O07"
+            ],
+            "refillPendingFor": "p1"
+          },
+          "nextCeramicSequence": 1,
+          "nextProxySequence": 1,
+          "phase": {
+            "activePlayerId": "p1",
+            "step": {
+              "kind": "after_action"
+            },
+            "type": "work_turn"
+          },
+          "placementSequence": 1,
+          "playerCount": 3,
+          "playerOrder": [
+            "p1",
+            "p2",
+            "p3"
+          ],
+          "players": {
+            "p1": {
+              "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
+              "displayName": "Lin",
+              "id": "p1",
+              "imperial": {
+                "audienceReceived": false,
+                "grantReceived": false,
+                "kilnGained": false,
+                "priority": "on_track",
+                "recognition": 0
+              },
+              "kilnAbilityUsedThisRound": false,
+              "kilnId": "RU",
+              "personalSpaces": {
+                "form_decorate": [
+                  {
+                    "unlocked": true
+                  },
+                  {
+                    "unlocked": false
+                  }
+                ],
+                "glaze_load": [
+                  {
+                    "unlocked": true
+                  },
+                  {
+                    "unlocked": true
+                  }
+                ]
+              },
+              "resources": {
+                "clay": 2,
+                "coins": 2,
+                "wood": 2
+              },
+              "score": {
+                "imperialAudience": 0,
+                "kilnAbilities": 0,
+                "orders": 0,
+                "recognitionOverflow": 0
+              },
+              "seatIndex": 0,
+              "techs": [
+                {
+                  "acquiredInRound": 2,
+                  "id": "T10",
+                  "usedThisRound": false
+                }
+              ],
+              "workers": {
+                "p1:apprentice:1": {
+                  "id": "p1:apprentice:1",
+                  "kind": "apprentice",
+                  "placement": {
+                    "effect": "apprentice",
+                    "locationId": "guild_hall",
+                    "sequence": 0,
+                    "spaceIndex": 0,
+                    "viaSeniorApprentice": false
+                  }
+                },
+                "p1:apprentice:2": {
+                  "id": "p1:apprentice:2",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p1:apprentice:3": {
+                  "id": "p1:apprentice:3",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p1:shifu": {
+                  "id": "p1:shifu",
+                  "kind": "shifu",
+                  "placement": null
+                }
+              }
+            },
+            "p2": {
+              "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
+              "displayName": "Zhao",
+              "id": "p2",
+              "imperial": {
+                "audienceReceived": false,
+                "grantReceived": false,
+                "kilnGained": false,
+                "priority": "on_track",
+                "recognition": 0
+              },
+              "kilnAbilityUsedThisRound": false,
+              "kilnId": "GU",
+              "personalSpaces": {
+                "form_decorate": [
+                  {
+                    "unlocked": true
+                  },
+                  {
+                    "unlocked": false
+                  }
+                ],
+                "glaze_load": [
+                  {
+                    "unlocked": true
+                  },
+                  {
+                    "unlocked": false
+                  }
+                ]
+              },
+              "resources": {
+                "clay": 2,
+                "coins": 3,
+                "wood": 2
+              },
+              "score": {
+                "imperialAudience": 0,
+                "kilnAbilities": 0,
+                "orders": 0,
+                "recognitionOverflow": 0
+              },
+              "seatIndex": 1,
+              "techs": [],
+              "workers": {
+                "p2:apprentice:1": {
+                  "id": "p2:apprentice:1",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p2:apprentice:2": {
+                  "id": "p2:apprentice:2",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p2:apprentice:3": {
+                  "id": "p2:apprentice:3",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p2:shifu": {
+                  "id": "p2:shifu",
+                  "kind": "shifu",
+                  "placement": null
+                }
+              }
+            },
+            "p3": {
+              "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
+              "displayName": "Wen",
+              "id": "p3",
+              "imperial": {
+                "audienceReceived": false,
+                "grantReceived": false,
+                "kilnGained": false,
+                "priority": "on_track",
+                "recognition": 0
+              },
+              "kilnAbilityUsedThisRound": false,
+              "kilnId": "GE",
+              "personalSpaces": {
+                "form_decorate": [
+                  {
+                    "unlocked": true
+                  },
+                  {
+                    "unlocked": false
+                  }
+                ],
+                "glaze_load": [
+                  {
+                    "unlocked": true
+                  },
+                  {
+                    "unlocked": false
+                  }
+                ]
+              },
+              "resources": {
+                "clay": 2,
+                "coins": 3,
+                "wood": 2
+              },
+              "score": {
+                "imperialAudience": 0,
+                "kilnAbilities": 0,
+                "orders": 0,
+                "recognitionOverflow": 0
+              },
+              "seatIndex": 2,
+              "techs": [],
+              "workers": {
+                "p3:apprentice:1": {
+                  "id": "p3:apprentice:1",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p3:apprentice:2": {
+                  "id": "p3:apprentice:2",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p3:apprentice:3": {
+                  "id": "p3:apprentice:3",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p3:shifu": {
+                  "id": "p3:shifu",
+                  "kind": "shifu",
+                  "placement": null
+                }
+              }
+            }
+          },
+          "revision": 2,
+          "round": 2,
+          "rulesVersion": "1.6.2",
+          "schemaVersion": 8,
+          "sharedKiln": {
+            "spaces": {
+              "high_1": {
+                "active": true,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "high_2": {
+                "active": true,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "high_3": {
+                "active": false,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "low_1": {
+                "active": true,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "low_2": {
+                "active": true,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "middle_1": {
+                "active": true,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "middle_2": {
+                "active": true,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "middle_3": {
+                "active": false,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              }
+            }
+          },
+          "techDisplay": {
+            "firing": [
+              "T11",
+              "T12"
+            ],
+            "glazing_loading": [
+              "T15"
+            ],
+            "workshop": [
+              "T01",
+              "T16"
+            ]
+          },
+          "vesselSupply": {
+            "bowl": [
+              "bowl-01",
+              "bowl-02",
+              "bowl-03",
+              "bowl-04",
+              "bowl-05",
+              "bowl-06",
+              "bowl-07",
+              "bowl-08",
+              "bowl-09",
+              "bowl-10"
+            ],
+            "censer": [
+              "censer-01",
+              "censer-02",
+              "censer-03",
+              "censer-04",
+              "censer-05",
+              "censer-06",
+              "censer-07",
+              "censer-08",
+              "censer-09",
+              "censer-10"
+            ],
+            "plate": [
+              "plate-01",
+              "plate-02",
+              "plate-03",
+              "plate-04",
+              "plate-05",
+              "plate-06",
+              "plate-07",
+              "plate-08",
+              "plate-09",
+              "plate-10"
+            ],
+            "vase": [
+              "vase-01",
+              "vase-02",
+              "vase-03",
+              "vase-04",
+              "vase-05",
+              "vase-06",
+              "vase-07",
+              "vase-08",
+              "vase-09",
+              "vase-10"
+            ],
+            "washer": [
+              "washer-01",
+              "washer-02",
+              "washer-03",
+              "washer-04",
+              "washer-05",
+              "washer-06",
+              "washer-07",
+              "washer-08",
+              "washer-09",
+              "washer-10"
+            ]
+          }
+        },
+        "own": {
+          "firePeek": null,
+          "orderHand": [
+            "S01",
+            "O05",
+            "O03"
+          ],
+          "pendingContribution": null,
+          "pendingLook": null,
+          "playerId": "p1"
+        },
+        "viewerId": "p1"
+      },
+      "recentPublicEvents": [
+        {
+          "actorId": "p1",
+          "event": {
+            "effect": "apprentice",
+            "kind": "apprentice",
+            "locationId": "guild_hall",
+            "playerId": "p1",
+            "spaceIndex": 0,
+            "type": "WORKER_PLACED",
+            "viaSeniorApprentice": false,
+            "workerId": "p1:apprentice:1"
+          },
+          "revision": 1,
+          "sequence": 1
+        },
+        {
+          "actorId": "p1",
+          "event": {
+            "clay": 0,
+            "coins": -2,
+            "playerId": "p1",
+            "reason": "guild_hall",
+            "type": "RESOURCES_CHANGED",
+            "wood": 0
+          },
+          "revision": 1,
+          "sequence": 2
+        },
+        {
+          "actorId": "p1",
+          "event": {
+            "cost": 2,
+            "playerId": "p1",
+            "source": "face_up",
+            "techId": "T10",
+            "type": "TECH_ACQUIRED"
+          },
+          "revision": 1,
+          "sequence": 3
+        },
+        {
+          "actorId": "p1",
+          "event": {
+            "locationId": "glaze_load",
+            "playerId": "p1",
+            "type": "PERSONAL_SPACE_UNLOCKED"
+          },
+          "revision": 1,
+          "sequence": 4
+        },
+        {
+          "actorId": "p1",
+          "event": {
+            "count": 3,
+            "discipline": null,
+            "kind": "colour_samples",
+            "playerId": "p1",
+            "type": "PRIVATE_LOOK_OPENED"
+          },
+          "revision": 1,
+          "sequence": 5
+        },
+        {
+          "actorId": "p1",
+          "event": {
+            "orderId": "O03",
+            "playerId": "p1",
+            "slotIndex": 2,
+            "source": "face_up",
+            "type": "ORDER_RESERVED",
+            "via": "colour_samples"
+          },
+          "revision": 2,
+          "sequence": 6
+        },
+        {
+          "actorId": "p1",
+          "event": {
+            "count": 3,
+            "playerId": "p1",
+            "type": "LOOKED_ORDERS_TO_BOTTOM"
+          },
+          "revision": 2,
+          "sequence": 7
+        }
+      ],
+      "source": {
+        "from": "tableScenarios",
+        "kind": "scripted",
+        "phase": "work_turn",
+        "revision": 2,
+        "round": 2,
+        "scenario": "t-colour-samples-select-face-up"
+      },
+      "viewerActs": true,
+      "viewerId": "p1"
+    },
+    {
+      "decisionPrompt": {
+        "actorIds": [
+          "p1"
+        ],
+        "mode": "single",
+        "phaseType": "firing_heat_markers"
+      },
+      "description": "Table state: Contributions revealed with a Fuel Ledger card: Fuel Ledger Stoke +2 for 1 Wood.",
+      "id": "t-fuel-ledger-reveal",
+      "kind": "table",
+      "name": "Contributions revealed with a Fuel Ledger card: Fuel Ledger Stoke +2 for 1 Wood",
+      "notes": [],
+      "ownSecrets": [],
+      "playerView": {
+        "game": {
+          "ceramics": {
+            "c1": {
+              "decoration": "carved",
+              "formedBy": "form_decorate",
+              "formedInRound": 1,
+              "glaze": "grey_green",
+              "heatMarker": {
+                "faceDown": true,
+                "source": "own"
+              },
+              "id": "c1",
+              "loadedBy": "glaze_load",
+              "loadedInRound": 1,
+              "ownerId": "p1",
+              "placement": {
+                "kiln": "shared",
+                "spaceId": "middle_1",
+                "stacked": false
+              },
+              "shape": "bowl",
+              "stage": "loaded",
+              "vesselInstanceId": "bowl-01"
+            },
+            "c2": {
+              "decoration": "plain",
+              "formedBy": "form_decorate",
+              "formedInRound": 1,
+              "glaze": "white",
+              "heatMarker": null,
+              "id": "c2",
+              "loadedBy": "glaze_load",
+              "loadedInRound": 1,
+              "ownerId": "p2",
+              "placement": {
+                "kiln": "shared",
+                "spaceId": "high_1",
+                "stacked": false
+              },
+              "shape": "plate",
+              "stage": "loaded",
+              "vesselInstanceId": "plate-01"
+            }
+          },
+          "counts": {
+            "fireBuried": 0,
+            "fireDeck": 12,
+            "mainDeck": 42,
+            "mainDiscard": 0,
+            "orderHands": {
+              "p1": 0,
+              "p2": 0
+            },
+            "pendingLook": null,
+            "techDecks": {
+              "firing": 3,
+              "glazing_loading": 4,
+              "workshop": 4
+            }
+          },
+          "eventSequence": 6,
+          "finalResult": null,
+          "fireDiscard": [],
+          "firing": {
+            "baseHeat": 2,
+            "ceramics": {
+              "c1": {
+                "ceramicId": "c1",
+                "crackle": false,
+                "first": null,
+                "glaze": "grey_green",
+                "history": [],
+                "kiln": "shared",
+                "ownerId": "p1",
+                "positionSource": "zone",
+                "preferredHeat": 3,
+                "quality": null,
+                "saggarsFloor": false,
+                "salvaged": false,
+                "second": null,
+                "secondFiringCards": null,
+                "spaceId": "middle_1"
+              },
+              "c2": {
+                "ceramicId": "c2",
+                "crackle": false,
+                "first": null,
+                "glaze": "white",
+                "history": [],
+                "kiln": "shared",
+                "ownerId": "p2",
+                "positionSource": "zone",
+                "preferredHeat": 1,
+                "quality": null,
+                "saggarsFloor": false,
+                "salvaged": false,
+                "second": null,
+                "secondFiringCards": null,
+                "spaceId": "high_1"
+              }
+            },
+            "contributionWindowId": "test-game:r1:contributions",
+            "contributions": {
+              "p1": {
+                "card": "FUEL_LEDGER_STOKE",
+                "heat": 2,
+                "woodPaid": 1
+              },
+              "p2": {
+                "card": "BANK",
+                "heat": -1,
+                "woodPaid": 1
+              }
+            },
+            "fireModifier": null,
+            "firingPlayerIds": [
+              "p1",
+              "p2"
+            ],
+            "globalHeat": null,
+            "kilnDie": 1,
+            "participantIds": [
+              "p1",
+              "p2"
+            ],
+            "pendingExtraFire": null,
+            "round": 1,
+            "testPieces": [],
+            "unclampedBaseHeat": 2
+          },
+          "firstPlayerId": "p1",
+          "gameId": "test-game",
+          "kilnDie": {
+            "round": 1,
+            "value": 1
+          },
+          "lastFiring": null,
+          "market": {
+            "display": [
+              "O01",
+              "O02",
+              "O03",
+              "O04",
+              "O05",
+              "O06"
+            ],
+            "refillPendingFor": null
+          },
+          "nextCeramicSequence": 3,
+          "nextProxySequence": 1,
+          "phase": {
+            "queue": {
+              "actorIds": [
+                "p1"
+              ],
+              "index": 0
+            },
+            "type": "firing_heat_markers"
+          },
+          "placementSequence": 0,
+          "playerCount": 2,
+          "playerOrder": [
+            "p1",
+            "p2"
+          ],
+          "players": {
+            "p1": {
+              "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE",
+                "FUEL_LEDGER_BANK",
+                "FUEL_LEDGER_STOKE"
+              ],
+              "displayName": "Lin",
+              "id": "p1",
+              "imperial": {
+                "audienceReceived": false,
+                "grantReceived": false,
+                "kilnGained": false,
+                "priority": "on_track",
+                "recognition": 0
+              },
+              "kilnAbilityUsedThisRound": false,
+              "kilnId": "RU",
+              "personalSpaces": {
+                "form_decorate": [
+                  {
+                    "unlocked": true
+                  },
+                  {
+                    "unlocked": false
+                  }
+                ],
+                "glaze_load": [
+                  {
+                    "unlocked": true
+                  },
+                  {
+                    "unlocked": false
+                  }
+                ]
+              },
+              "resources": {
+                "clay": 2,
+                "coins": 3,
+                "wood": 1
+              },
+              "score": {
+                "imperialAudience": 0,
+                "kilnAbilities": 0,
+                "orders": 0,
+                "recognitionOverflow": 0
+              },
+              "seatIndex": 0,
+              "techs": [
+                {
+                  "acquiredInRound": 1,
+                  "id": "T12",
+                  "usedThisRound": false
+                }
+              ],
+              "workers": {
+                "p1:apprentice:1": {
+                  "id": "p1:apprentice:1",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p1:apprentice:2": {
+                  "id": "p1:apprentice:2",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p1:apprentice:3": {
+                  "id": "p1:apprentice:3",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p1:shifu": {
+                  "id": "p1:shifu",
+                  "kind": "shifu",
+                  "placement": null
+                }
+              }
+            },
+            "p2": {
+              "completedOrders": [],
+              "contributionCards": [
+                "BANK",
+                "TEND",
+                "STOKE"
+              ],
+              "displayName": "Zhao",
+              "id": "p2",
+              "imperial": {
+                "audienceReceived": false,
+                "grantReceived": false,
+                "kilnGained": false,
+                "priority": "on_track",
+                "recognition": 0
+              },
+              "kilnAbilityUsedThisRound": false,
+              "kilnId": "GU",
+              "personalSpaces": {
+                "form_decorate": [
+                  {
+                    "unlocked": true
+                  },
+                  {
+                    "unlocked": false
+                  }
+                ],
+                "glaze_load": [
+                  {
+                    "unlocked": true
+                  },
+                  {
+                    "unlocked": false
+                  }
+                ]
+              },
+              "resources": {
+                "clay": 2,
+                "coins": 3,
+                "wood": 1
+              },
+              "score": {
+                "imperialAudience": 0,
+                "kilnAbilities": 0,
+                "orders": 0,
+                "recognitionOverflow": 0
+              },
+              "seatIndex": 1,
+              "techs": [],
+              "workers": {
+                "p2:apprentice:1": {
+                  "id": "p2:apprentice:1",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p2:apprentice:2": {
+                  "id": "p2:apprentice:2",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p2:apprentice:3": {
+                  "id": "p2:apprentice:3",
+                  "kind": "apprentice",
+                  "placement": null
+                },
+                "p2:shifu": {
+                  "id": "p2:shifu",
+                  "kind": "shifu",
+                  "placement": null
+                }
+              }
+            }
+          },
+          "revision": 2,
+          "round": 1,
+          "rulesVersion": "1.6.2",
+          "schemaVersion": 8,
+          "sharedKiln": {
+            "spaces": {
+              "high_1": {
+                "active": true,
+                "ceramicIds": [
+                  "c2"
+                ],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "high_2": {
+                "active": true,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "high_3": {
+                "active": false,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "low_1": {
+                "active": true,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "low_2": {
+                "active": false,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "middle_1": {
+                "active": true,
+                "ceramicIds": [
+                  "c1"
+                ],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "middle_2": {
+                "active": false,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              },
+              "middle_3": {
+                "active": false,
+                "ceramicIds": [],
+                "kilnFurniture": null,
+                "setterMarkOwnerId": null
+              }
+            }
+          },
+          "techDisplay": {
+            "firing": [
+              "T11",
+              "T13"
+            ],
+            "glazing_loading": [
+              "T10",
+              "T20"
+            ],
+            "workshop": [
+              "T01",
+              "T16"
+            ]
+          },
+          "vesselSupply": {
+            "bowl": [
+              "bowl-02",
+              "bowl-03",
+              "bowl-04",
+              "bowl-05",
+              "bowl-06",
+              "bowl-07",
+              "bowl-08",
+              "bowl-09",
+              "bowl-10"
+            ],
+            "censer": [
+              "censer-01",
+              "censer-02",
+              "censer-03",
+              "censer-04",
+              "censer-05",
+              "censer-06",
+              "censer-07",
+              "censer-08",
+              "censer-09",
+              "censer-10"
+            ],
+            "plate": [
+              "plate-02",
+              "plate-03",
+              "plate-04",
+              "plate-05",
+              "plate-06",
+              "plate-07",
+              "plate-08",
+              "plate-09",
+              "plate-10"
+            ],
+            "vase": [
+              "vase-01",
+              "vase-02",
+              "vase-03",
+              "vase-04",
+              "vase-05",
+              "vase-06",
+              "vase-07",
+              "vase-08",
+              "vase-09",
+              "vase-10"
+            ],
+            "washer": [
+              "washer-01",
+              "washer-02",
+              "washer-03",
+              "washer-04",
+              "washer-05",
+              "washer-06",
+              "washer-07",
+              "washer-08",
+              "washer-09",
+              "washer-10"
+            ]
+          }
+        },
+        "own": {
+          "firePeek": null,
+          "orderHand": [],
+          "pendingContribution": null,
+          "pendingLook": null,
+          "playerId": "p2"
+        },
+        "viewerId": "p2"
+      },
+      "recentPublicEvents": [
+        {
+          "actorId": "p1",
+          "event": {
+            "firingPlayerIds": [
+              "p1",
+              "p2"
+            ],
+            "participantIds": [
+              "p1",
+              "p2"
+            ],
+            "round": 1,
+            "type": "FIRING_STARTED"
+          },
+          "revision": 0,
+          "sequence": 1
+        },
+        {
+          "actorId": "p1",
+          "event": {
+            "playerId": "p1",
+            "type": "CONTRIBUTION_SUBMITTED",
+            "windowId": "test-game:r1:contributions"
+          },
+          "revision": 1,
+          "sequence": 2
+        },
+        {
+          "actorId": "p2",
+          "event": {
+            "playerId": "p2",
+            "type": "CONTRIBUTION_SUBMITTED",
+            "windowId": "test-game:r1:contributions"
+          },
+          "revision": 2,
+          "sequence": 3
+        },
+        {
+          "actorId": "p2",
+          "event": {
+            "contributions": {
+              "p1": {
+                "card": "FUEL_LEDGER_STOKE",
+                "heat": 2,
+                "woodPaid": 1
+              },
+              "p2": {
+                "card": "BANK",
+                "heat": -1,
+                "woodPaid": 1
+              }
+            },
+            "type": "CONTRIBUTIONS_REVEALED",
+            "windowId": "test-game:r1:contributions"
+          },
+          "revision": 2,
+          "sequence": 4
+        },
+        {
+          "actorId": "p2",
+          "event": {
+            "clay": 0,
+            "coins": 0,
+            "playerId": "p1",
+            "reason": "contribution",
+            "type": "RESOURCES_CHANGED",
+            "wood": -1
+          },
+          "revision": 2,
+          "sequence": 5
+        },
+        {
+          "actorId": "p2",
+          "event": {
+            "clay": 0,
+            "coins": 0,
+            "playerId": "p2",
+            "reason": "contribution",
+            "type": "RESOURCES_CHANGED",
+            "wood": -1
+          },
+          "revision": 2,
+          "sequence": 6
+        },
+        {
+          "actorId": "p2",
+          "event": {
+            "baseHeat": 2,
+            "contributionSum": 1,
+            "kilnDie": 1,
+            "type": "BASE_HEAT_DETERMINED",
+            "unclamped": 2
+          },
+          "revision": 2,
+          "sequence": 7
+        }
+      ],
+      "source": {
+        "from": "tableScenarios",
+        "kind": "scripted",
+        "phase": "firing_heat_markers",
+        "revision": 2,
+        "round": 1,
+        "scenario": "t-fuel-ledger-reveal"
+      },
+      "viewerActs": false,
+      "viewerId": "p2"
     }
   ],
   "generatedBy": "tools/uiFixtures.ts --target tests",
   "privacy": "Each entry holds only the viewer's PlayerView, projected public events and the viewer's own secret events; checked against the authoritative state when generated (tools/fixturePrivacy.ts).",
-  "rulesFingerprint": "r30-a1f440c3d586f7d7",
+  "rulesFingerprint": "r31-7b02f3d8e23eb29f",
   "rulesVersion": "1.6.2"
 }

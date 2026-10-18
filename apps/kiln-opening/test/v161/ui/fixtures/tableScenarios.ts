@@ -361,5 +361,50 @@ export function tableScenarios(): TableScenario[] {
     "p1",
   );
 
+  // 10. A Colour Samples Select that took a face-up Order (v1.6.2 L64, L622, change 25): an
+  //     Apprentice bought Colour Samples at the Guild Hall, and its when-acquired Select 3 reserved
+  //     display #3 instead of a looked card. The position stays empty until the turn ends; the 3
+  //     looked cards went to the bottom of the deck; the viewer is in the after-action window.
+  {
+    const table = new LocalTable(
+      buildState({
+        round: 2,
+        players: [{ displayName: "Lin", resources: { coins: 4 }, hand: ["S01", "O05"] }, { displayName: "Zhao" }, { displayName: "Wen" }],
+        techDisplay: { glazing_loading: ["T10", "T15"] },
+      }),
+      { seed: 17 },
+    );
+    table.act("p1", { type: "PLACE_GUILD_HALL", workerId: "p1:apprentice:1", choice: { kind: "buy_face_up", techId: "T10" } });
+    const phase = table.state.phase;
+    if (phase.type !== "work_turn" || phase.step.kind !== "colour_samples" || phase.step.select.lookedCount !== 3) throw new Error("tableScenarios: no Colour Samples Select 3");
+    const orderId = table.state.market.display[2];
+    if (orderId === null || orderId === undefined) throw new Error("tableScenarios: display #3 is empty");
+    table.act("p1", { type: "SELECT_CHOOSE", reservations: [{ kind: "face_up", slotIndex: 2, orderId }] });
+    const after = table.state.phase;
+    if (after.type !== "work_turn" || after.step.kind !== "after_action" || table.state.market.display[2] !== null) throw new Error("tableScenarios: the face-up reservation did not leave its position empty");
+    add("t-colour-samples-select-face-up", "Colour Samples' Select 3 took a face-up Order: its position stays empty until the turn ends", table, "p1");
+  }
+
+  // 11. The Contribution reveal with a Fuel Ledger card (v1.6.2 change 26): Lin played Fuel Ledger
+  //     Stoke (1 Wood, +2), Zhao Bank the Fire; the firing waits at Lin's Heat marker.
+  {
+    const table = openFiringTable({
+      kilnDie: 1,
+      players: [
+        { displayName: "Lin", techs: ["T12"], resources: { wood: 2 } },
+        { displayName: "Zhao", resources: { wood: 2 } },
+      ],
+      ceramics: [
+        { owner: "p1", stage: "loaded", shape: "bowl", glaze: "grey_green", decoration: "carved", at: "middle_1", heatMarker: { source: "own", faceDown: true } },
+        { owner: "p2", stage: "loaded", shape: "plate", glaze: "white", at: "high_1" },
+      ],
+    });
+    table.contribute("p1", "FUEL_LEDGER_STOKE");
+    table.contribute("p2", "BANK");
+    const revealed = table.events.find((event) => event.type === "CONTRIBUTIONS_REVEALED");
+    if (revealed?.type !== "CONTRIBUTIONS_REVEALED" || revealed.contributions["p1"]?.card !== "FUEL_LEDGER_STOKE") throw new Error("tableScenarios: no Fuel Ledger reveal");
+    add("t-fuel-ledger-reveal", "Contributions revealed with a Fuel Ledger card: Fuel Ledger Stoke +2 for 1 Wood", table, "p2");
+  }
+
   return scenarios;
 }

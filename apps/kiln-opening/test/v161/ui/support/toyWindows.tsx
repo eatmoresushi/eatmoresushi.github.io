@@ -84,13 +84,13 @@ export type ContributionAction = { readonly type: "card"; readonly card: Contrib
 export const contributionDraft: DraftModel<ContributionDraft, ContributionAction, readonly ContributionCardId[]> = {
   initial: () => ({ card: null }),
   reduce(draft, action, _model, engine) {
-    const offered = contributionOptions(engine.view).filter((option) => option.affordable && !option.command.fuelLedger).map((option) => option.command.card);
+    const offered = contributionOptions(engine.view).filter((option) => option.affordable).map((option) => option.command.card);
     if (action.type === "revalidate") return draft.card !== null && !offered.includes(draft.card) ? { card: null } : draft;
     return offered.includes(action.card) ? { card: action.card } : draft;
   },
-  options: (_draft, _model, engine) => contributionOptions(engine.view).filter((option) => option.affordable && !option.command.fuelLedger).map((option) => option.command.card),
-  build: (draft, _model, engine) => contributionOptions(engine.view).find((option) => option.command.card === draft.card && !option.command.fuelLedger)?.command ?? null,
-  fromCommand: (command) => (command.type === "SUBMIT_CONTRIBUTION" && !command.fuelLedger ? { card: command.card } : null),
+  options: (_draft, _model, engine) => contributionOptions(engine.view).filter((option) => option.affordable).map((option) => option.command.card),
+  build: (draft, _model, engine) => contributionOptions(engine.view).find((option) => option.command.card === draft.card)?.command ?? null,
+  fromCommand: (command) => (command.type === "SUBMIT_CONTRIBUTION" ? { card: command.card } : null),
   summary: () => null,
 };
 

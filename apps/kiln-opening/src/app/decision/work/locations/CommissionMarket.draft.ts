@@ -1,14 +1,15 @@
 /**
- * The Commission Market sub-draft (UI_V1.6.1_ARCHITECTURE §3.4; v1.6.2 L189–200). Owner: B4.
+ * The Commission Market sub-draft (UI_V1.6.1_ARCHITECTURE §3.4; v1.6.2 L195–206, change 25).
+ * Owner: B4.
  *
  * Nothing to choose at placement: the worker always looks first (INT Commission Market looks).
- * The Apprentice effect looks privately at the top 2 Main Orders and reserves 1 from the display
- * or those 2; the Shifu effect (Senior Apprentice included, R12) looks at the top 3 and reserves
- * up to 2 (at least 1) from the display and those 3. There is no resource and no blind
- * reservation. The reservations are the `commission` window's (`CommissionStep`), once the look
- * is open. What the look will show comes from `commissionOptions(view, effect)`: the look size,
- * how many cards it will actually show (fewer when the deck runs short, B1, R16) and the
- * reservation limit, all public facts.
+ * The Apprentice effect is Select 2: look privately at the top 2 Main Orders and reserve 1 of them
+ * or 1 from the display; the Shifu effect (Senior Apprentice included, R12) is Select 3,
+ * reserving up to 2 (at least 1) from those 3 and the display. There is no resource and no blind
+ * reservation. The reservations are the `commission` window's (`SelectStep`), once the look is
+ * open. What the look will show comes from `commissionOptions(view, effect)`: N, how many cards
+ * it will actually show (fewer when the deck runs short, B1, R16) and the reservation limit, all
+ * public facts.
  */
 import { commissionOptions } from "../../../../game/index.ts";
 import type { CommissionOptions } from "../../../../game/index.ts";
@@ -24,9 +25,9 @@ export interface CommissionMarketDraft {
 export type CommissionMarketAction = never;
 
 export interface CommissionMarketOptions {
-  /** 2 (Apprentice effect) or 3 (Shifu effect). */
-  lookSize: number;
-  /** How many cards the look will show: the deck's top `lookSize`, or fewer (B1); 0 with both piles empty. */
+  /** N of the Select: 2 (Apprentice effect) or 3 (Shifu effect). */
+  n: number;
+  /** How many cards the look will show: the deck's top `n`, or fewer (B1); 0 with both piles empty. */
   lookCount: number;
   /** 1, or 2 for the Shifu effect. */
   maxReservations: number;
@@ -55,12 +56,16 @@ export const commissionMarketDraft: LocationDraftModel<"commission_market", Comm
   reduce: (draft) => draft,
   options(_draft, context) {
     const selector = selectorOptions(context);
-    return { lookSize: selector.lookSize, lookCount: selector.lookCount, maxReservations: selector.maxReservations, faceUpCount: selector.faceUpSlots.length };
+    return { n: selector.n, lookCount: selector.lookCount, maxReservations: selector.maxReservations, faceUpCount: selector.faceUpSlots.length };
   },
   build: (_draft, context) => command(context),
   fromCommand: () => BLANK,
+  // The keyword, as the location summary prints it (Select 2 / Select 3, reserving up to 2), and
+  // how many cards are left to look at when the deck runs short (B1).
   detail(_draft, context): MessageParam | null {
-    const lookCount = selectorOptions(context).lookCount;
-    return lookCount === 0 ? null : msg("work.cm.detailLook", { n: lookCount });
+    const { n, lookCount, maxReservations } = selectorOptions(context);
+    const select = maxReservations > 1 ? msg("work.cm.detailSelectTwo", { n, max: maxReservations }) : msg("work.cm.detailSelect", { n });
+    if (lookCount >= n) return select;
+    return lookCount === 0 ? msg("work.cm.detailNone", { select }) : msg("work.cm.detailShort", { select, n: lookCount });
   },
 };

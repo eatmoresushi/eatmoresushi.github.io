@@ -74,16 +74,32 @@ describe("B4 forms express every canonical command", () => {
       "PLACE_GUILD_HALL",
       "PLACE_CANAL_WHARF",
       "PLACE_MAGISTRATES_HALL",
-      "COMMISSION_CHOOSE",
+      "SELECT_CHOOSE",
       "GUILD_TAKE",
-      "COLOUR_SAMPLES_CHOOSE",
       "USE_COLOUR_SAMPLES_SWAP",
-      "COLOUR_SAMPLES_SWAP_CHOOSE",
       "USE_IMPERIAL_PRIORITY",
       "END_TURN",
     ]) {
       expect(families.has(type as AuthoritativeCommand["type"]), type).toBe(true);
     }
+    // The removed commands are never offered (v1.6.2 change 25: one Select command).
+    for (const type of ["COMMISSION_CHOOSE", "COLOUR_SAMPLES_CHOOSE", "COLOUR_SAMPLES_SWAP_CHOOSE"]) expect(families.has(type as AuthoritativeCommand["type"]), type).toBe(false);
+  });
+
+  it("expresses SELECT_CHOOSE in every Select window, a face-up Order and a looked card each (v1.6.2 L64, change 25)", () => {
+    const picks = new Map<string, Set<string>>();
+    for (const entry of ACTING) {
+      const kind = decisionWindow(entry.playerView).kind;
+      for (const row of checkView(entry.playerView).rows) {
+        if (row.command.type !== "SELECT_CHOOSE" || row.status !== "ok") continue;
+        const kinds = picks.get(kind) ?? new Set<string>();
+        for (const pick of row.command.reservations) kinds.add(pick.kind);
+        if (row.command.reservations.length === 2) kinds.add("pair");
+        picks.set(kind, kinds);
+      }
+    }
+    expect([...picks.keys()].sort()).toEqual(["colour_samples", "colour_samples_swap", "commission"]);
+    for (const kind of ["commission", "colour_samples", "colour_samples_swap"]) expect([...(picks.get(kind) ?? [])].sort(), kind).toEqual(kind === "commission" ? ["face_up", "looked", "pair"] : ["face_up", "looked"]);
   });
 });
 

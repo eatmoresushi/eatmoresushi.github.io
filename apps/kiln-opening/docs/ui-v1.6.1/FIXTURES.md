@@ -60,7 +60,7 @@ Selectors are not stored: the UI computes them from `playerView` (DESIGN §5.4).
 | `t-round5-over-limit` | p1 (acts) | Round 5 Order Phase holding 6 Orders: `handLimitStatus(...).trimDue` is false (no trim at the last Cleanup) |
 | `t-tie-break-winner` | p2 | Final: equal VP, won on Imperial Recognition |
 | `t-recognition-overflow` | p1 (waiting) | A Crown gained at Recognition 4 scored +1 VP (`CROWN_OVERFLOW_VP`) |
-| `t-final-2p`, `t-final-4p` | p1, p3 | Final results after a last Order Phase (Ru bonus, Guan, Tech VP, Exhibition, Connoisseur, Coins) |
+| `t-final-2p`, `t-final-4p` | p1, p3 | Final results after a last Order Phase (Ru bonus, Guan, Exhibition, Connoisseur, Coins; no Tech VP, change 27) |
 | `t-glaze-load-imperial-furniture` | p1 (acts) | Glaze & Load with an Imperial Kiln (−1/0/+1) and Kiln Furniture (−1/0/+1) to choose |
 
 Together the scenarios and moments reach every engine phase, every Work step (`before_action`, the Commission look of either effect, Guild inspection, Colour Samples and its swap, `after_action`), both Test Pieces steps, a waiting viewer, and 2-, 3- and 4-player finals; `fixtures_current.test.ts` checks this.

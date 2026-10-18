@@ -4,8 +4,9 @@
  * Two browser contexts, so two distinct `x-e2e-user`s and two seats, play Round 1 through the
  * real lobby, store, client and local backend (`/test-api-v161`). A steered driver gives both
  * players a Shared Kiln ceramic (Form & Decorate, then Glaze & Load) so both are eligible to
- * contribute, and sends Lin's Shifu to the Commission Market, whose placement always looks at the
- * top 3 Main Orders first (v1.6.2 L195–196). Everything else is chosen by the shared autopilot
+ * contribute, and sends Lin's Shifu to the Commission Market, whose placement always opens its
+ * Select 3 first: a private look at the top 3 Main Orders (v1.6.2 L64, L202, change 25). Everything
+ * else is chosen by the shared autopilot
  * (`e2e/support/autopilot.ts`).
  *
  * Checked:
@@ -27,8 +28,8 @@
  * A second game (seed 1) checks the other private looks of AGENTS.md "Hidden information",
  * over two rounds, and the Guild Hall Shifu's two takes (v1.6.2 L207, owner revision
  * 2026-10-17). Lin's Shifu inspects the Glazing & Loading Tech deck at the Guild Hall and takes
- * the face-up Colour Samples (one `GUILD_TAKE`); Colour Samples, when gained, looks at the top 3
- * Main Orders; back in the inspection, Lin's second take is the face-up Test Pieces (another
+ * the face-up Colour Samples (one `GUILD_TAKE`); Colour Samples, when gained, Selects 3 (the top 3
+ * Main Orders, or a face-up one instead, `SELECT_CHOOSE`); back in the inspection, Lin's second take is the face-up Test Pieces (another
  * discipline), and with both takes made only the bottom order of the two inspected Techs is left
  * (`GUILD_FINISH`), which Lin changes. In Round 2 Lin loads a ceramic, contributes, and peeks at
  * the top Fire card with Test Pieces.
@@ -41,9 +42,10 @@
  * - in both games, no payload Zhao's client receives carries a secret addressed to Lin
  *   (`"visibleTo":"<Lin>"`), while Lin's own client does receive them.
  *
- * The Colour Samples swap, Protective Saggars, Second Firing's choice, Ge's Crackle and Kiln Master
- * are sent from their real forms in the steered `form_driver_games` games (happy-dom, the real
- * `DecisionPane` over the engine), and in `full_game.spec`'s steered case in a real browser.
+ * The Colour Samples swap, Protective Saggars, Second Firing's choice, Ge's Crackle, Kiln Master and
+ * Fuel Ledger's own Contribution cards are sent from their real forms in the steered
+ * `form_driver_games` games (happy-dom, the real `DecisionPane` over the engine), and in
+ * `full_game.spec`'s steered case in a real browser.
  *
  * Parallel Salvage and hand-trim races are not steered through the browser: platform
  * `parallel_windows.test.ts` and the session tests cover them (§9.6, E15).
@@ -57,7 +59,8 @@ import { revealPastTurnToast } from "./support/turnToasts.ts";
 const WIDTH = 1440;
 const HEIGHT = 900;
 const SEED = 2_202;
-const CONTRIBUTION_CARD = /"card":"(?:BANK|TEND|STOKE)"/;
+/** A sealed or revealed Contribution card in a payload (Fuel Ledger's own 2 included, v1.6.2 change 26). */
+const CONTRIBUTION_CARD = /"card":"(?:BANK|TEND|STOKE|FUEL_LEDGER_BANK|FUEL_LEDGER_STOKE)"/;
 const ENABLED_CARD = 'form.pane-form input[name="card"]:not([aria-disabled="true"])';
 
 type Placement = {
@@ -481,15 +484,17 @@ test("the Guild Hall inspection and its two takes, the Colour Samples look and t
       }
 
       if (window === "colour_samples" && player === host) {
-        // Colour Samples when gained: the top 3 Main Orders, only Lin sees them.
-        const options = host.page.locator('form.pane-form input[name="orderId"]');
+        // Colour Samples when gained, its Select 3: the top 3 Main Orders, only Lin sees them (the
+        // display's Orders are the other reservations offered, change 25).
+        const options = host.page.locator('form.pane-form input[name="reservations"][value^="look:"]');
         await expect(options).toHaveCount(3);
-        looked = await options.evaluateAll((inputs) => inputs.map((input) => (input as HTMLInputElement).value));
+        looked = await options.evaluateAll((inputs) => inputs.map((input) => (input as HTMLInputElement).value.replace(/^look:/, "")));
+        await expect(host.page.locator('form.pane-form input[name="reservations"][value^="slot:"]').first()).toBeAttached();
         lookedFrom = guest.received.length;
         await expect(guest.page.locator('[data-b4="colour-samples"]')).toHaveCount(0);
         await expectHiddenFrom(guest, looked, 0, await secretIdsOf(request, code, 1), "Colour Samples look");
         // One into Lin's hand, two face down under the Main deck (change 24): all three stay secret for Zhao.
-        await choose(host.page, "orderId", looked[0]!);
+        await choose(host.page, "reservations", `look:${looked[0]!}`);
         await send(host, "confirm");
         await guest.page.waitForTimeout(1_500);
         await expectHiddenFrom(guest, looked, lookedFrom, await secretIdsOf(request, code, 1), "after the Colour Samples look");

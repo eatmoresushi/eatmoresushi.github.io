@@ -90,8 +90,9 @@ describe("CentralBoard and LocationCard", () => {
     expect(visibleText(magistrate)).toContain("1/1 taken");
     expect(magistrate).toContain("loc-count--full");
     expect(visibleText(magistrate)).toContain("Recognition 0–2 only");
-    // Zhao's Apprentice stands there, named in words (D9).
-    expect(magistrate).toContain('aria-label="Zhao’s Apprentice"');
+    // The viewer's (Zhao's) Apprentice stands there, named in words (D9).
+    expect(magistrate).toContain('aria-label="Your Apprentice"');
+    expect(magistrate).not.toMatch(/\bp\d:(shifu|apprentice)/);
     // The Canal Wharf has no limit.
     expect(visibleText(card(html, "canal_wharf"))).toContain("No limit");
     expect(view.game.playerCount).toBe(2);
@@ -118,24 +119,27 @@ describe("CentralBoard and LocationCard", () => {
   });
 
   it("offers Place shortcuts from TableSelection, pressed for the draft's choice", () => {
-    const plain = render("m1_work_phase_r2_3p", <CentralBoard />);
+    const RICH = "w-before-the-worker-action-rich-4-player-start";
+    const plain = render(RICH, <CentralBoard />);
     const yard = card(plain, "materials_yard");
     expect(yard).toContain('data-act="place"');
     expect(yard).toContain('aria-label="Place Shifu at Materials Yard"');
     expect(yard).toContain('aria-label="Place Apprentice at Materials Yard"');
     expect(yard).not.toContain('aria-pressed="true"');
-    const seeded = render("m1_work_phase_r2_3p", <CentralBoard />, { draft: { locationId: "materials_yard", workerKey: "shifu" } });
+    const seeded = render(RICH, <CentralBoard />, { draft: { locationId: "materials_yard", workerKey: "shifu" } });
     const chosen = card(seeded, "materials_yard");
     expect(chosen).toContain('class="loc loc--chosen"');
     expect(chosen).toMatch(/aria-pressed="true"[^>]*aria-label="Place Shifu at Materials Yard"/);
     expect(chosen).toMatch(/aria-pressed="false"[^>]*aria-label="Place Apprentice at Materials Yard"/);
     // Without a table adapter the table is inert: no shortcuts.
-    expect(render("m1_work_phase_r2_3p", <CentralBoard />, { registry: INERT_WINDOWS })).not.toContain('data-act="place"');
+    expect(render(RICH, <CentralBoard />, { registry: INERT_WINDOWS })).not.toContain('data-act="place"');
+    // m1's viewer has only the Shifu left and the Materials Yard is full: no shortcut there, the reason instead.
+    expect(card(render("m1_work_phase_r2_3p", <CentralBoard />), "materials_yard")).not.toContain('data-act="place"');
   });
 
   it("renders Place shortcuts as compact worker pieces, the full sentence only in the accessible name (wireframe `.pbtn`)", () => {
     for (const locale of ["en", "zh-CN"] as const) {
-      const yard = card(render("m1_work_phase_r2_3p", <CentralBoard />, { locale }), "materials_yard");
+      const yard = card(render("w-before-the-worker-action-rich-4-player-start", <CentralBoard />, { locale }), "materials_yard");
       const heading = locale === "en" ? "Place:" : "派工：";
       expect(yard).toContain(`<span class="loc-place-h" aria-hidden="true">${heading}</span>`);
       const buttons = yard.match(/<button[^>]*data-act="place"[\s\S]*?<\/button>/g) ?? [];
@@ -274,8 +278,8 @@ describe("OrderDisplay", () => {
     expect(face).toContain("2 Coins");
     expect(face).toContain("1 Crown");
     expect(orderCard(html, "O18")).toContain('class="ord ord--crown"');
-    // A re-valued Main Order prints its V1.6.2 value (change 24): O26 11 VP.
-    expect(visibleText(orderCard(html, "O26"))).toContain("11 VP");
+    // A re-valued Main Order prints its V1.6.2 value (change 24): O20 6 VP.
+    expect(visibleText(orderCard(html, "O20"))).toContain("6 VP");
   });
 
   it("marks display slots the Commission adapter offers, keyed slot:<i>", () => {
@@ -427,7 +431,10 @@ describe("TechDisplay", () => {
       }
     }
     expect(textOf(render("m1_work_phase_r2_3p", <TechDisplay />))).toContain("Form & Decorate");
-    expect(textOf(render("m1_work_phase_r2_3p", <TechDisplay />))).toContain("+1 VP when gained");
+    // No VP for a Tech (v1.6.2 change 27): the display says where Techs are bought, nothing about scoring.
+    expect(textOf(render("m1_work_phase_r2_3p", <TechDisplay />))).toContain("2 face-up per discipline · bought at the Guild Hall");
+    expect(textOf(render("m1_work_phase_r2_3p", <TechDisplay />, { locale: "zh-CN" }))).toContain("每门类公开2张 · 在陶工行习得");
+    for (const locale of ["en", "zh-CN"] as const) expect(textOf(render("m1_work_phase_r2_3p", <TechDisplay />, { locale }))).not.toMatch(/when gained|习得时得/);
   });
 });
 

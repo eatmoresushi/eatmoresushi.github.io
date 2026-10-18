@@ -88,6 +88,8 @@ export const TOAST_EVENTS: ReadonlySet<GameEventType> = new Set<GameEventType>([
   "LOOKED_ORDERS_TO_BOTTOM",
   "HELD_ORDER_DISCARDED",
   "TECH_ACQUIRED",
+  // Fuel Ledger's 2 Contribution cards, taken with the tile (v1.6.2 change 26): public.
+  "CONTRIBUTION_CARDS_GAINED",
   "TECHS_RETURNED_TO_BOTTOM",
   "PERSONAL_SPACE_UNLOCKED",
   "TECH_USED",

@@ -29,20 +29,22 @@
  *   autopilot's `prefer` list sends the Shifu to the Guild Hall (the Glazing & Loading deck
  *   inspected, Colour Samples and then a Firing Tech taken when offered, the inspected Techs back
  *   under the deck in a chosen order) and an Apprentice to Glaze & Load, the Workshop or the
- *   Commission Market (its private look and reservations), and takes the Colour Samples swap,
- *   Protective Saggars' upgrade, Second Firing and the Fuel Ledger commitment whenever they are
- *   offered. A steered placement is completed inside its sub-editor (`within: ".b4-sub-region"`),
- *   a steered swap inside its form (the held Order to give up). It must confirm the Commission
- *   Market and Guild Hall windows; the V1.6.2 commands it sent are listed in the annotations;
+ *   Commission Market (its Select: the private look and the reservations), and takes the Colour
+ *   Samples swap, Protective Saggars' upgrade, Second Firing and a Fuel Ledger Contribution card
+ *   (Fuel Ledger Stoke or Fuel Ledger Bank, v1.6.2 change 26) whenever they are offered. A steered
+ *   placement is completed inside its sub-editor (`within: ".b4-sub-region"`), a steered swap
+ *   inside its form (the held Order to give up). It must confirm the Commission Market and Guild
+ *   Hall windows; the V1.6.2 commands it sent are listed in the annotations;
  * - 390 ZH, 2 players;
  * - 844×390 EN, 3 players;
  * - 1024 ZH, 2 players;
  * - `@ci`: 1440 EN, 1 human + 1 computer, `e2e_reset { policy: "canonical" }`.
  *
  * Every V1.6.2 window is a form of native inputs like the others (the autopilot's header lists
- * them), and the Order cards' toggles and the Shared Kiln's spaces are table targets too: the
- * Commission Market's reservations may be made on the display and the look row, the Colour
- * Samples swap gives up a held Order on the hand row.
+ * them), and the Order cards' toggles and the Shared Kiln's spaces are table targets too: every
+ * Select's reservations (the Commission Market's, and Colour Samples' when acquired and in its swap)
+ * may be made on the display and the look row, the Colour Samples swap gives up a held Order on
+ * the hand row.
  */
 import { expect, test } from "@playwright/test";
 import type { APIRequestContext, Page } from "@playwright/test";
@@ -94,10 +96,10 @@ const SWAP_PREFERENCES: readonly string[] = ['[data-pane-opener="colour_samples_
 /** The Shifu's Guild Hall takes, in the inspection's options or on the Tech display: Colour Samples, then a Firing Tech. */
 const TAKE_PREFERENCES: readonly string[] = ["T10", "T12", "T14", "T11"].flatMap((techId) => [`input[name="take"][value="${techId}"]`, `[data-act="tech"][data-tech-id="${techId}"]`]);
 /**
- * The Fuel Ledger commitment: Stoke, when the Contribution form offers the commitment at all (it
- * does only for the Fuel Ledger's owner), then the commitment itself.
+ * A Fuel Ledger card (v1.6.2 change 26): Fuel Ledger Stoke, else Fuel Ledger Bank. The
+ * Contribution form offers them only to the Fuel Ledger's owner, with the Wood to pay for one.
  */
-const FUEL_LEDGER_PREFERENCES: readonly string[] = ['form.pane-form:has(input[name="fuelLedger"]) input[name="card"][value="STOKE"]', 'input[name="fuelLedger"]'];
+const FUEL_LEDGER_PREFERENCES: readonly string[] = ['input[name="card"][value="FUEL_LEDGER_STOKE"]', 'input[name="card"][value="FUEL_LEDGER_BANK"]'];
 /** After Quality: Protective Saggars' upgrade, else Second Firing (its card is the autopilot's choice). */
 const AFTER_QUALITY_PREFERENCES: readonly string[] = ['input[name="afterQuality"][value^="protective_saggars:"]', 'input[name="afterQuality"][value^="second_firing:"]'];
 /**
@@ -117,38 +119,40 @@ const STEER: readonly string[] = [
  * Preferences that are one choice: once one of a group is pressed, the rest of the group is
  * skipped in that decision. A placement and the swap open a form, which the autopilot then
  * completes inside (`within`: the placement's sub-editor, the swap's held Orders); a take, an
- * after-Quality ability and the Fuel Ledger commitment complete their form, so Confirm follows at
- * once when it can.
+ * after-Quality ability and a Fuel Ledger card complete their form, so Confirm follows at once
+ * when it can.
  */
 const STEER_GROUPS: ReadonlyArray<{ preferences: readonly string[]; within: (preferred: string) => string | null; confirm: boolean }> = [
   { preferences: [...SWAP_PREFERENCES, ...PLACE_PREFERENCES], within: (preferred) => (SWAP_PREFERENCES.includes(preferred) ? '[data-b4="colour-samples-swap"]' : ".b4-sub-region"), confirm: false },
   { preferences: TAKE_PREFERENCES, within: () => null, confirm: true },
   { preferences: AFTER_QUALITY_PREFERENCES, within: () => null, confirm: true },
-  { preferences: FUEL_LEDGER_PREFERENCES.slice(1), within: () => null, confirm: true },
+  { preferences: FUEL_LEDGER_PREFERENCES, within: () => null, confirm: true },
 ];
 /** Seeded picks inside a steered form before the autopilot may leave it. */
 const MAX_WITHIN_PICKS = 60;
 /** The V1.6.2 commands the steered case reports (a game sends whichever its seed and its choices allow). */
 const V162_COMMANDS = new Set([
-  "COMMISSION_CHOOSE",
+  // Every Select N: the Commission Market's, Colour Samples' when acquired and its swap's (change 25).
+  "SELECT_CHOOSE",
   "GUILD_TAKE",
   "GUILD_FINISH",
-  "COLOUR_SAMPLES_CHOOSE",
   "USE_COLOUR_SAMPLES_SWAP",
-  "COLOUR_SAMPLES_SWAP_CHOOSE",
   "USE_PROTECTIVE_SAGGARS",
   "USE_SECOND_FIRING",
   "SECOND_FIRING_CHOOSE",
 ]);
 
-/** The game commands this page sends (`game_action` bodies), by type; a Fuel Ledger commitment and S07 are counted apart. */
+/**
+ * The game commands this page sends (`game_action` bodies), by type; a Fuel Ledger card
+ * (`SUBMIT_CONTRIBUTION.FUEL_LEDGER_BANK` / `.FUEL_LEDGER_STOKE`) and S07 are counted apart.
+ */
 function recordCommands(page: Page): Map<string, number> {
   const sent = new Map<string, number>();
   page.on("request", (request) => {
     if (!request.url().includes("/test-api-v161") || request.method() !== "POST") return;
     interface Body {
       operation?: string;
-      command?: { type?: string; fuelLedger?: boolean; orderId?: string };
+      command?: { type?: string; card?: string; orderId?: string };
     }
     let body: Body | null;
     try {
@@ -159,7 +163,7 @@ function recordCommands(page: Page): Map<string, number> {
     const command = body?.operation === "game_action" ? body.command : undefined;
     if (command?.type === undefined) return;
     const keys = [command.type];
-    if (command.type === "SUBMIT_CONTRIBUTION" && command.fuelLedger === true) keys.push("SUBMIT_CONTRIBUTION.fuelLedger");
+    if (command.type === "SUBMIT_CONTRIBUTION" && (command.card === "FUEL_LEDGER_BANK" || command.card === "FUEL_LEDGER_STOKE")) keys.push(`SUBMIT_CONTRIBUTION.${command.card}`);
     if (command.type === "COMPLETE_ORDER" && command.orderId === "S07") keys.push("COMPLETE_ORDER.S07");
     for (const key of keys) sent.set(key, (sent.get(key) ?? 0) + 1);
   });

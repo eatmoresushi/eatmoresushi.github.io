@@ -84,7 +84,7 @@ describe("FixtureGameSource", () => {
     }
     const phase = view.game.phase;
     if (phase.type !== "firing_contributions") throw new Error("Expected the Contribution window");
-    const wrongWindow = await source.submit({ type: "SUBMIT_CONTRIBUTION", windowId: "nope", card: "TEND", fuelLedger: false });
+    const wrongWindow = await source.submit({ type: "SUBMIT_CONTRIBUTION", windowId: "nope", card: "TEND" });
     expect(wrongWindow).toMatchObject({ kind: "rejected", error: { kind: "rule", error: { code: "INVALID_CONTRIBUTION" } } });
   });
 

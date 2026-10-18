@@ -5,7 +5,7 @@
  * The work turn hides the pane until a worker's placement is chosen on the table. The pane's
  * eyebrow ("Work Phase · Your turn") and heading are then out of sight, so this slim bar always
  * says it instead, in the spec's `lead`: "Your turn: place a worker · 3 left". An ability that may
- * come before the worker action (Imperial Priority and the Colour Samples swap, v1.6.2 L617:
+ * come before the worker action (Imperial Priority and the Colour Samples swap, v1.6.2 L622:
  * whatever the window's spec names as openers) still needs the pane, so it gets a small button
  * after the lead, behind the words that name the group: "Or first: [Imperial Priority]
  * [Colour Samples swap]". Pressing one chooses that ability, the pane appears with its form (open

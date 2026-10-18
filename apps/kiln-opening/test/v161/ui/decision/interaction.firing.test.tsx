@@ -131,11 +131,11 @@ describe("the Order Phase form", () => {
     const source = new ControlledSource("m6_order_phase_crackle_3p");
     mount(source, <DecisionPane />);
     expect($('[data-action="confirm"]').getAttribute("aria-disabled")).toBe("true");
-    click($('input[name="orderId"][value="O30"]'));
-    expect($<HTMLInputElement>('input[name="ceramicIds"][value="c6+c16"]').checked).toBe(true);
-    expect($(".confirm-summary").textContent).toBe("Complete O30 with White Bowl, Plain · Masterpiece, Moon White Brush Washer, Plain · Masterpiece");
+    click($('input[name="orderId"][value="O25"]'));
+    expect($<HTMLInputElement>('input[name="ceramicIds"][value="c5+c9"]').checked).toBe(true);
+    expect($(".confirm-summary").textContent).toBe("Complete O25 with Celadon Plate, Carved · Masterpiece, White Bowl, Plain · Fine · Crackle");
     click($('[data-action="confirm"]'));
-    expect(source.submitted.at(-1)).toEqual({ type: "COMPLETE_ORDER", orderId: "O30", ceramicIds: ["c6", "c16"] });
+    expect(source.submitted.at(-1)).toEqual({ type: "COMPLETE_ORDER", orderId: "O25", ceramicIds: ["c5", "c9"] });
     await act(async () => source.answer({ reject: null }));
     click($('[data-action="alt"]'));
     expect(source.submitted.at(-1)).toEqual({ type: "END_ORDER_TURN" });
@@ -143,7 +143,7 @@ describe("the Order Phase form", () => {
 
   it("a blocked Order cannot be chosen", () => {
     mount(new ControlledSource("m6_order_phase_crackle_3p"), <DecisionPane />);
-    const blocked = $<HTMLInputElement>('input[name="orderId"][value="O48"]');
+    const blocked = $<HTMLInputElement>('input[name="orderId"][value="O42"]');
     expect(blocked.getAttribute("aria-disabled")).toBe("true");
     click(blocked);
     expect(blocked.checked).toBe(false);
@@ -204,34 +204,32 @@ describe("Second Firing: Clear and a server rejection in the player's words", ()
   });
 });
 
-describe("Contributions with Fuel Ledger (v1.6.2 L637)", () => {
-  it("the commitment applies to Bank and Stoke only; Confirm sends the secret card with it", () => {
+describe("Contributions with Fuel Ledger (v1.6.2 L634, change 26)", () => {
+  it("offers the owner's 5 cards; Confirm sends the secret Fuel Ledger card by itself", () => {
     const source = new ControlledSource("w-secret-contributions-with-fuel-ledger");
     mount(source, <DecisionPane />);
+    expect([...container.querySelectorAll<HTMLInputElement>('input[name="card"]')].map((input) => input.value)).toEqual(["TEND", "BANK", "STOKE", "FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"]);
+    expect(container.querySelector('input[name="fuelLedger"]')).toBeNull();
     const tend = () => $<HTMLInputElement>('input[name="card"][value="TEND"]');
     click(tend());
     expect(tend().checked).toBe(true);
-    click($('input[name="fuelLedger"]'));
-    expect($<HTMLInputElement>('input[name="fuelLedger"]').checked).toBe(true);
-    // Tend cannot take the commitment: it is greyed out with the reason and dropped.
-    expect(tend().getAttribute("aria-disabled")).toBe("true");
+    click($('input[name="card"][value="FUEL_LEDGER_STOKE"]'));
     expect(tend().checked).toBe(false);
-    expect(document.getElementById(tend().getAttribute("aria-describedby")!.split(" ")[0]!)?.textContent).toBe("Only with Bank the Fire or Stoke the Fire.");
-    click(tend());
-    expect(tend().checked).toBe(false);
-    click($('input[name="card"][value="STOKE"]'));
-    expect($(".confirm-summary").textContent).toBe("Submit Stoke the Fire with Fuel Ledger in secret: Heat +2, 1 Wood at reveal");
+    expect($(".confirm-summary").textContent).toBe("Submit Fuel Ledger Stoke in secret: Heat +2, 1 Wood at reveal");
     click($('[data-action="confirm"]'));
-    expect(source.submitted).toEqual([{ type: "SUBMIT_CONTRIBUTION", windowId: "test-game:r1:contributions", card: "STOKE", fuelLedger: true }]);
+    expect(source.submitted).toEqual([{ type: "SUBMIT_CONTRIBUTION", windowId: "test-game:r1:contributions", card: "FUEL_LEDGER_STOKE" }]);
   });
 
-  it("without the commitment, Bank costs no Wood", () => {
+  it("the owner's plain Bank costs no Wood; Fuel Ledger Bank costs 1", () => {
     const source = new ControlledSource("w-secret-contributions-with-fuel-ledger");
     mount(source, <DecisionPane />);
     click($('input[name="card"][value="BANK"]'));
     expect($(".confirm-summary").textContent).toBe("Submit Bank the Fire in secret: Heat −1, no Wood");
+    click($('input[name="card"][value="FUEL_LEDGER_BANK"]'));
+    expect($(".confirm-summary").textContent).toBe("Submit Fuel Ledger Bank in secret: Heat −2, 1 Wood at reveal");
+    click($('input[name="card"][value="BANK"]'));
     click($('[data-action="confirm"]'));
-    expect(source.submitted).toEqual([{ type: "SUBMIT_CONTRIBUTION", windowId: "test-game:r1:contributions", card: "BANK", fuelLedger: false }]);
+    expect(source.submitted).toEqual([{ type: "SUBMIT_CONTRIBUTION", windowId: "test-game:r1:contributions", card: "BANK" }]);
   });
 });
 
@@ -288,11 +286,11 @@ describe("the hand trim", () => {
     );
     click($('input[name="orderIds"][value="S01"]'));
     click($('input[name="orderIds"][value="O04"]'));
-    expect($(".confirm-summary").textContent).toBe("Discard S01, O04");
+    expect($(".confirm-summary").textContent).toBe("Discard S01 and O04");
     const toggle = [...container.querySelectorAll("button")].find((button) => button.textContent === "中文");
     expect(toggle).toBeDefined();
     click(toggle!);
-    expect($(".confirm-summary").textContent).toBe("弃置S01、O04");
+    expect($(".confirm-summary").textContent).toBe("弃置S01与O04");
     expect($<HTMLInputElement>('input[name="orderIds"][value="O04"]').checked).toBe(true);
   });
 });

@@ -11,7 +11,7 @@
  */
 import { handLimitStatus } from "../../../game/index.ts";
 import type { HandLimitStatus, OrderId } from "../../../game/index.ts";
-import { list } from "../../i18n/format.ts";
+import { andList } from "../../i18n/format.ts";
 import { msg } from "../../i18n/translator.ts";
 import type { DraftModel } from "../../state/draftStore.ts";
 import type { EngineView } from "../../state/model.ts";
@@ -64,6 +64,6 @@ export const handTrimDraft: DraftModel<HandTrimDraft, HandTrimAction, HandTrimOp
     const must = status?.mustDiscard ?? 0;
     if (draft.orderIds.length !== must) return msg("orders.trim.count", { chosen: draft.orderIds.length, n: must });
     const orderIds = draft.orderIds;
-    return msg("orders.trim.sum", { list: (t) => list(orderIds, t.locale) });
+    return msg("orders.trim.sum", { list: (t) => andList(orderIds, t.locale) });
   },
 };

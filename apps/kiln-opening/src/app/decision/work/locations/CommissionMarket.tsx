@@ -1,5 +1,5 @@
 /**
- * CommissionMarket (UI_V1.6.1_ARCHITECTURE §3.4; v1.6.2 L189–200). Owner: B4.
+ * CommissionMarket (UI_V1.6.1_ARCHITECTURE §3.4; v1.6.2 L195–206, change 25). Owner: B4.
  *
  * Nothing to choose at placement: the pane says what follows. Confirm opens the private look
  * (only you see the cards), and the next step reserves from the display and the looked cards.
@@ -16,10 +16,10 @@ export type CommissionMarketProps = LocationEditorProps<CommissionMarketDraft, C
 
 export function CommissionMarket({ options }: CommissionMarketProps) {
   const t = useT();
-  const short = options.lookCount < options.lookSize;
+  const short = options.lookCount < options.n;
   return (
     <div className="b4-sub" data-location="commission_market">
-      <p>{options.maxReservations > 1 ? t("work.cm.planTwo", { n: options.lookSize, max: options.maxReservations }) : t("work.cm.planOne", { n: options.lookSize })}</p>
+      <p>{options.maxReservations > 1 ? t("work.cm.planTwo", { n: options.n, max: options.maxReservations }) : t("work.cm.planOne", { n: options.n })}</p>
       {short ? (
         <FormNote>{options.lookCount === 0 ? t("work.cm.lookNone") : t("work.cm.lookShort", { n: options.lookCount })}</FormNote>
       ) : null}

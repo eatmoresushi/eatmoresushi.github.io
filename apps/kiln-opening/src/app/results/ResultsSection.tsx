@@ -6,9 +6,8 @@
  * - Podium: standings in rank order, "Winner" / "Shared victory" / "Rank n", the total and the
  *   Kiln (its rules details on click or focus, D10).
  * - Score table: one row per `SCORE_BREAKDOWN_ROWS` key, players as columns in standing order.
- *   The Techs row follows owner amendment A1: each Tech's VP was recorded when gained and is
- *   listed once, never added again (the note says so). The row and note never print the
- *   internal amendment code; its source tag lives in each Tech's rules details (D10). The
+ *   Advanced Techs score nothing (v1.6.2 change 27), so there is no Techs row; Connoisseur's
+ *   Cabinet keeps its end-game row. The
  *   Exhibition cell shows its Quality, Shapes and Glazes parts and the exhibited ceramics. The
  *   table scrolls inside itself on narrow screens, so the rules details of Imperial Audience, Crown overflow and Connoisseur's Cabinet sit
  *   under it (a panel inside the scroll box would be clipped).
@@ -53,8 +52,6 @@ function rowHeader(row: ScoreBreakdownRow, t: Translator): string {
       return recognitionMilestones(t.locale).find((milestone) => milestone.space === IMPERIAL_AUDIENCE_RECOGNITION)?.title ?? "";
     case "recognitionOverflow":
       return t("results.row.recognitionOverflow", { n: RULE_NUMBERS.recognitionMax });
-    case "techs":
-      return t("results.row.techs", { n: RULE_NUMBERS.techVp });
     case "exhibition":
       return t("results.row.exhibition");
     case "connoisseur":
@@ -207,7 +204,7 @@ export function ResultsSection() {
                     }
                     const value = score[row];
                     return (
-                      <td key={playerId} className={row === "techs" ? "score-a1 num" : "num"}>
+                      <td key={playerId} className="num">
                         {row === "total" ? <b>{num(value)}</b> : num(value)}
                       </td>
                     );
@@ -217,7 +214,6 @@ export function ResultsSection() {
             </tbody>
           </table>
         </div>
-        <p className="results-note">{t("results.a1note", { n: RULE_NUMBERS.techVp })}</p>
         <RowRules model={model} t={t} />
       </section>
 

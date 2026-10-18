@@ -142,17 +142,12 @@ export function checkCommand(view: PlayerView, command: AuthoritativeCommand): G
     return { code: "UNKNOWN_PLAYER", message: "You are not seated in this game.", details: { playerId: String(viewerId) } };
   }
   if (command.type === "SUBMIT_CONTRIBUTION") {
-    const option = contributionOptions(view).find(
-      (candidate) =>
-        candidate.command.windowId === command.windowId &&
-        candidate.command.card === command.card &&
-        candidate.command.fuelLedger === command.fuelLedger,
-    );
+    const option = contributionOptions(view).find((candidate) => candidate.command.windowId === command.windowId && candidate.command.card === command.card);
     if (option?.affordable === true) return null;
     return {
       code: "INVALID_CONTRIBUTION",
       message: "That Contribution cannot be submitted.",
-      details: { card: command.card, fuelLedger: command.fuelLedger },
+      details: { card: command.card },
     };
   }
   return validateAction({ ...view, viewerId, own }, command);

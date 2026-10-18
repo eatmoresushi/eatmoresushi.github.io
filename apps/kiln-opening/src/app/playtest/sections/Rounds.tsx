@@ -5,10 +5,11 @@
  * One disclosure per round (the first open): the round's Kiln Die (its faces from content),
  * each player's Contribution, ceramics loaded into the Shared and Imperial Kilns, Orders
  * completed and Kiln ability uses, the Fire card, Base Heat (`roundBaseHeat`) and Global Heat,
- * and the Firing Techs used. Bank −2 / Stoke +2 are offered only to the player who owns Fuel
- * Ledger (T12); `reconcileFiringTechOwnership` clears them when that changes.
+ * and the Firing Techs used. Fuel Ledger Bank (−2) and Fuel Ledger Stoke (+2), the Contribution
+ * cards that come with Fuel Ledger (T12, v1.6.2 change 26), are offered only to the player who owns
+ * it; `reconcileFiringTechOwnership` clears them when that changes.
  */
-import type { FireModifier, TechId } from "../../../game/index.ts";
+import type { ContributionCardId, FireModifier, TechId } from "../../../game/index.ts";
 import { roundBaseHeat, sharedKilnCapacity } from "../../../playtest/model.ts";
 import { FIRE_CONTRIBUTIONS, FIRING_TECH_IDS, FUEL_LEDGER_TECH_ID, KILN_DIE_FACES, contributionHeat } from "../../../playtest/schema.ts";
 import type { FireContribution } from "../../../playtest/types.ts";
@@ -24,14 +25,17 @@ import { draftPlayerName, fieldId } from "../issueText.ts";
 /** The printed Fire card values (−2 … +2), in order. */
 const FIRE_MODIFIERS: readonly FireModifier[] = [-2, -1, 0, 1, 2];
 
-const CARD_OF: Readonly<Record<FireContribution, "BANK" | "TEND" | "STOKE">> = { bank_2: "BANK", bank: "BANK", tend: "TEND", stoke: "STOKE", stoke_2: "STOKE" };
+/** The Contribution card each recorded value is (±2: Fuel Ledger's own cards, v1.6.2 change 26). */
+const CARD_OF: Readonly<Record<FireContribution, ContributionCardId>> = {
+  bank_2: "FUEL_LEDGER_BANK",
+  bank: "BANK",
+  tend: "TEND",
+  stoke: "STOKE",
+  stoke_2: "FUEL_LEDGER_STOKE",
+};
 
 function contributionLabel(contribution: FireContribution, t: Translator): string {
-  const card = contributionCardName(CARD_OF[contribution], t.locale);
-  const heat = signed(contributionHeat(contribution));
-  return isFuelContribution(contribution)
-    ? t("playtest.rounds.contributionFuel", { card, tech: techName(FUEL_LEDGER_TECH_ID, t.locale), heat })
-    : t("playtest.rounds.contributionOption", { card, heat });
+  return t("playtest.rounds.contributionOption", { card: contributionCardName(CARD_OF[contribution], t.locale), heat: signed(contributionHeat(contribution)) });
 }
 
 export function Rounds({ draft, edit, index }: SectionProps & { index: number }) {

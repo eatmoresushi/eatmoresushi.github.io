@@ -26,6 +26,7 @@ import { GameProvider } from "../../../../src/app/state/hooks.ts";
 import { command as harnessCommand, openedFiringState, seedState, started } from "../../platform/support.ts";
 import type { Harness } from "../../platform/support.ts";
 import { FakeClock, MemoryStorage, ServiceGameApi, settle } from "../session/fakeGameApi.ts";
+import { contributionCardLeaks } from "../support/sealedCards.ts";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -116,7 +117,7 @@ describe("the sealed Contribution", () => {
 
     // A half-made choice survives P3's submission.
     act(() => find<HTMLInputElement>(one, 'input[name="card"][value="STOKE"]').click());
-    await harnessCommand(harness, "P3", { type: "SUBMIT_CONTRIBUTION", windowId, card: "TEND", fuelLedger: false });
+    await harnessCommand(harness, "P3", { type: "SUBMIT_CONTRIBUTION", windowId, card: "TEND" });
     p1.api.ping();
     p2.api.ping();
     await settleUi();
@@ -142,7 +143,11 @@ describe("the sealed Contribution", () => {
     const who = find(two, ".dw-queue").textContent ?? "";
     expect(who).toContain("chosen");
     expect(who).not.toContain("Stoke");
-    expect(JSON.stringify(p2.store.getSnapshot())).not.toContain('"STOKE"');
+    // Every player's Contribution cards are public (v1.6.2 change 26); which one P1 (or P3) sealed
+    // is not: no card ID anywhere else in P2's snapshot, in any shape.
+    const p2Snapshot = p2.store.getSnapshot();
+    expect(contributionCardLeaks(p2Snapshot)).toEqual([]);
+    expect(contributionCardLeaks({ ...p2Snapshot, planted: { P1: "STOKE" } })).toEqual(["$.planted.P1"]);
 
     // A fresh client for P1's seat: the server rebuilds the sealed card.
     p1.store.dispose();

@@ -106,7 +106,7 @@ describe("B5 forms express every decision of seeded games", () => {
         if (row.status !== "ok") problems.push(`decision ${decisions} ${row.form} ${JSON.stringify(row.command)}: ${row.status} ${row.problem ?? ""}`);
       }
       const command = commands[pick(commands.length)]!;
-      if (command.type === "SUBMIT_CONTRIBUTION") table.contribute(actorId!, command.card, command.fuelLedger);
+      if (command.type === "SUBMIT_CONTRIBUTION") table.contribute(actorId!, command.card);
       else table.act(actorId!, command);
     }
     expect(problems).toEqual([]);

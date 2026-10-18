@@ -66,7 +66,7 @@ export const table = defineNamespace({
 
     // Tech display (wireframe `techDisplay`, `techCard`).
     "techs.title": "Advanced Techs",
-    "techs.sub": "{n} face-up per discipline · bought at the {guild} · +{vp} VP when gained",
+    "techs.sub": "{n} face-up per discipline · bought at the {guild}",
     "techs.deck": "deck {n}",
     "techs.none": "No face-up Tech",
     "techs.looking": { one: "{name} is looking at {n} Tech", other: "{name} is looking at {n} Techs" },
@@ -141,7 +141,7 @@ export const table = defineNamespace({
     "finished.faceUpNote": "委托榜上的委托不能直接完成，要先在{market}承接。",
 
     "techs.title": "技艺",
-    "techs.sub": "每门类公开{n}张 · 在{guild}习得 · 习得时得{vp}分",
+    "techs.sub": "每门类公开{n}张 · 在{guild}习得",
     "techs.deck": "牌堆{n}张",
     "techs.none": "暂无公开技艺",
     "techs.looking": "{name}正在查看{n}张技艺",

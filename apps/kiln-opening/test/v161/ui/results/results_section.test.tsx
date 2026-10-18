@@ -36,8 +36,8 @@ describe("podium", () => {
     const zh = render(id, "zh-CN");
     expect(perceivable(zh)).toContain("共享胜利");
     expect(perceivable(zh)).toContain("第3名");
-    // m8 (V1.6.2's seed-2 game) is a single winner decided by Imperial Recognition.
-    expect(resultOf("m8_final_results_4p").resolvedBy).toBe("imperial_recognition");
+    // m8 (revision 3's seed-5 game) is a single winner: tied on VP and Recognition, decided by printed Crowns.
+    expect(resultOf("m8_final_results_4p").resolvedBy).toBe("printed_crowns");
   });
 
   it("the tie-break winner: one Winner, decided by Imperial Recognition", () => {
@@ -81,26 +81,20 @@ describe("score table", () => {
     expect(head.match(/<th scope="col"/g)?.length).toBe(result.standings.length + 1);
   });
 
-  it("lists the Tech row (amendment A1) once with its note, and never adds it again", () => {
+  it("has no Tech row or note: a Tech scores nothing (v1.6.2 change 27); Connoisseur's Cabinet keeps its end-game row", () => {
     const result = resultOf("m8_final_results_4p");
-    const html = render("m8_final_results_4p");
-    const row = elementAt(html, /<tr data-row="techs">/);
-    expect(perceivable(row)).toContain("Techs · 1 VP each when gained");
-    for (const standing of result.standings) {
-      expect(row).toContain(`<td class="score-a1 num">${String(result.scores[standing.playerId]!.techs)}</td>`);
+    for (const locale of ["en", "zh-CN"] as const) {
+      const html = render("m8_final_results_4p", locale);
+      expect(html).not.toContain('data-row="techs"');
+      expect(html).not.toContain("score-a1");
+      expect(html).not.toContain('class="results-note"');
+      expect(perceivable(html)).not.toMatch(locale === "en" ? /VP each when gained|when it was gained/ : /技艺分|习得时得|习得时已得/);
+      const cabinet = elementAt(html, /<tr data-row="connoisseur">/);
+      expect(perceivable(cabinet)).toContain(locale === "en" ? "Connoisseur's Cabinet" : "清玩斋");
+      for (const standing of result.standings) expect(cabinet).toContain(`<td class="num">${String(result.scores[standing.playerId]!.connoisseur)}</td>`);
     }
-    expect(perceivable(html)).toContain("Each Tech scored 1 VP when it was gained. It is listed here once and never added again at game end.");
-    const zh = render("m8_final_results_4p", "zh-CN");
-    expect(perceivable(zh)).toContain("技艺分 · 习得时得1分");
-    expect(perceivable(zh)).toContain("每项技艺在习得时已得1分；这里只列出一次，终局不再另计。");
-    expect(perceivable(zh)).toContain("余钱折分 · 每3铜钱1分，至多5分");
-    // The internal amendment code never shows in the table or its note (D10: source tags only in
-    // rules details).
-    const note = elementAt(html, /<p class="results-note">/);
-    for (const text of [perceivable(row), perceivable(note)]) expect(text).not.toMatch(/\bA1\b/);
-    const zhRow = elementAt(zh, /<tr data-row="techs">/);
-    const zhNote = elementAt(zh, /<p class="results-note">/);
-    for (const text of [perceivable(zhRow), perceivable(zhNote)]) expect(text).not.toMatch(/A1/);
+    expect(Object.keys(result.scores[result.standings[0]!.playerId]!)).not.toContain("techs");
+    expect(perceivable(render("m8_final_results_4p", "zh-CN"))).toContain("余钱折分 · 每3铜钱1分，至多5分");
   });
 
   it("splits the Exhibition into its Quality, Shapes and Glazes parts", () => {

@@ -42,6 +42,8 @@ const EXPECTED: Record<string, DecisionWindowKind> = {
   "t-final-2p": "final",
   "t-final-4p": "final",
   "t-glaze-load-imperial-furniture": "work",
+  "t-colour-samples-select-face-up": "work",
+  "t-fuel-ledger-reveal": "waiting",
   m1_work_phase_r2_3p: "work",
   m2_commission_market_look_r3_4p: "commission",
   m3_heat_marker_step_3p: "heat_markers",
@@ -109,21 +111,28 @@ describe("decisionWindow", () => {
     expect(step8.kind).toBe("jun");
   });
 
-  it("carries the Commission Market step's look size and reservation limit (v1.6.2 L195–196)", () => {
+  it("carries the Commission Market step's Select: N, the reservation limit, the display (v1.6.2 L64, L201–202, change 25)", () => {
     const shifu = decisionWindow(fixture("w-commission-market-shifu-top-3-look-2-reservations").playerView);
-    expect(shifu.kind === "commission" && [shifu.effect, shifu.lookSize, shifu.maxReservations]).toEqual(["shifu", 3, 2]);
+    expect(shifu.kind === "commission" && [shifu.effect, shifu.select.n, shifu.select.maxReservations, shifu.select.fromDisplay]).toEqual(["shifu", 3, 2, true]);
     const apprentice = decisionWindow(fixture("w-commission-market-apprentice-top-2-look-1-reservation").playerView);
-    expect(apprentice.kind === "commission" && [apprentice.effect, apprentice.lookSize, apprentice.maxReservations]).toEqual(["apprentice", 2, 1]);
+    expect(apprentice.kind === "commission" && [apprentice.effect, apprentice.select.n, apprentice.select.maxReservations, apprentice.select.fromDisplay]).toEqual(["apprentice", 2, 1, true]);
   });
 
-  it("carries the played V1.6.2 moments' steps: the Apprentice's look of 2, a second Guild Hall take (v1.6.2 L195, L207)", () => {
+  it("carries Colour Samples' Select 3 when acquired and in its swap, each with the display (v1.6.2 L622, change 25)", () => {
+    const acquired = decisionWindow(fixture("w-colour-samples-choice").playerView);
+    expect(acquired.kind === "colour_samples" && acquired.select).toEqual({ n: 3, maxReservations: 1, fromDisplay: true, lookedCount: 3 });
+    const swap = decisionWindow(fixture("w-colour-samples-swap-look").playerView);
+    expect(swap.kind === "colour_samples_swap" && swap.select).toEqual({ n: 3, maxReservations: 1, fromDisplay: true, lookedCount: 3 });
+  });
+
+  it("carries the played V1.6.2 moments' steps: the Apprentice's Select 2, a second Guild Hall take, the swap's Select 3 (v1.6.2 L201, L207, L622)", () => {
     const look = decisionWindow(fixture("m19_commission_apprentice_look").playerView);
-    expect(look.kind === "commission" && [look.effect, look.lookSize, look.maxReservations, look.lookedCount]).toEqual(["apprentice", 2, 1, 2]);
+    expect(look.kind === "commission" && [look.effect, look.select.n, look.select.maxReservations, look.select.lookedCount]).toEqual(["apprentice", 2, 1, 2]);
     const second = decisionWindow(fixture("m21_guild_shifu_second_take").playerView);
     expect(second.kind === "guild_inspection" && second.takes).toBe(1);
     expect(second.openKey).toMatch(/:t1$/);
     const swap = decisionWindow(fixture("m20_colour_samples_swap_look").playerView);
-    expect(swap.kind === "colour_samples_swap" && swap.returnTo).toBe("before_action");
+    expect(swap.kind === "colour_samples_swap" && [swap.returnTo, swap.select.n, swap.select.lookedCount]).toEqual(["before_action", 3, 3]);
   });
 
   it("names the step the Colour Samples swap returns to", () => {
