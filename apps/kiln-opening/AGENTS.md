@@ -26,7 +26,7 @@ V1.6.2 changes from V1.6.1 (rulebook changes 21–24; 23–24 are the owner's re
 
 - **Commission Market** gives no resource and has no blind reservation. An Apprentice privately looks at the top 2 Main Orders and reserves 1 from the display or those 2; the Shifu looks at the top 3 and reserves up to 2 (at least 1) from the display and those 3. Revealed cards not reserved go to the bottom of the Main Order deck (change 24), as do the cards Colour Samples looks at and does not reserve; when several go there together they go in **random order** (owner ruling R19, 2026-10-18 — it replaces the provisional 'order drawn' default P5; use the seeded RNG).
 - **Materials Yard** Shifu gains 6 Clay/Wood (no 1-Coin option). **Guild Hall** Shifu takes up to 2 Techs (1 or 2) from different disciplines, face-up or revealed, each at printed cost (no Shifu discount); a placement there is legal only if you can afford 1 face-up Tech from a discipline you do not own. A taken Tech's display position stays empty until the taking player's turn ends, then each discipline refills to 2 (owner revision, 2026-10-17). **Canal Wharf** Shifu gains 4 Coins and takes the top Main Order card unseen into hand.
-- **Techs:** Colour Samples adds a once-per-round swap before or after a worker action (discard 1 held Order, privately look at the top 2 Main Orders, reserve 1; the other goes to the bottom of the Main Order deck — rulebook change 24, which supersedes owner ruling R14). Canal Barge: once per round, when you complete an Order, gain 2 Coins (it no longer completes Orders). Protective Saggars (cost 3): your ceramics are never Flawed (Heat Difference 3+ counts as Standard), and once per round 1 of your Standard ceramics from this firing becomes Fine. Fuel Ledger (cost 2): your Bank and Stoke cost no Wood; committing 1 Wood still makes them −2/+2. Second Firing reveals 2 extra Fire cards and uses the one you choose. Senior Apprentice and Kiln Tending cost 3.
+- **Techs:** Colour Samples adds a once-per-round swap before or after a worker action (discard 1 held Order, then Select 3: reserve 1 of the 3 or 1 face-up Order; the rest go to the bottom of the Main Order deck — changes 24–25, which supersede owner ruling R14). Canal Barge: once per round, when you complete an Order, gain 2 Coins (it no longer completes Orders). Protective Saggars (cost 3): your ceramics are never Flawed (Heat Difference 3+ counts as Standard), and once per round 1 of your Standard ceramics from this firing becomes Fine. Fuel Ledger (cost 2): your Bank and Stoke cost no Wood; committing 1 Wood still makes them −2/+2. Second Firing reveals 2 extra Fire cards and uses the one you choose. Senior Apprentice and Kiln Tending cost 3.
 - **Orders (changes 23–24):** the Starting Order deck has **8** cards (S01–S08; S07 asks for Carved, Impressed or Painted); a 4-player game deals all 8. Nineteen Main Order values changed (O01–O05, O14, O15, O19, O20, O22, O26–O28, O30, O32–O34, O38, O39), per Appendix A.
 - **Fire deck:** with Second Firing taking 2 cards, the 12-card deck can now run out mid-game. The discard is then shuffled and placed on top, and a card buried by Test Pieces is drawn last (L640; owner ruling R15: a deck holding only buried cards counts as run out).
 - **Orders are completed only in the Order Phase.** Ru, Guan, Tribute Ware, Crackle wildcards and Canal Barge's 2 Coins trigger there; ruling R6 is obsolete.
@@ -94,7 +94,7 @@ Removed by V1.6.2 (rulebook changes 21–24):
 - any Guild Hall Shifu discount (the Shifu takes 1–2 Techs at printed cost), a Shifu limited to 1 Tech, an immediate Tech display refill after a take (positions refill when the taker's turn ends), and a Canal Wharf Shifu that gains only Coins (it also takes the top Main Order)
 - Canal Barge completing Orders, its before/after-action window, and any Order completion outside the Order Phase (ruling R6)
 - Protective Saggars' Wood cost and its Flawed → Standard upgrade (its ceramics are never Flawed instead); Ge following Saggars' upgrade on the same ceramic
-- Fuel Ledger without free Bank and Stoke (its committed Wood is the only Wood those cards cost)
+- Fuel Ledger without free Bank and Stoke
 - a single extra Fire card for Second Firing (it reveals 2 and uses 1)
 - the V1.6.1 costs Senior Apprentice 2, Kiln Tending 2, Protective Saggars 2, Fuel Ledger 3
 - the V1.6.1 editorial note that the Fire deck never runs out or reshuffles mid-game
@@ -153,7 +153,7 @@ The following are secret:
 - **Private looks**, visible only to the actor:
   - the Test Pieces peek;
   - the Commission Market top 2 (Apprentice effect) and top 3 (Shifu effect, Senior Apprentice included);
-  - the Colour Samples top 3 when acquired and its swap's top 2;
+  - the Colour Samples Select 3, when acquired and in its swap;
   - the Guild Hall Shifu inspection, including the bottom order chosen.
 - **The Main Order discard pile**, which is face down; only its count is public. This includes the held Order discarded for a Colour Samples swap; a discarded Starting Order goes to the box.
 - **Looked-at Orders not reserved**, which go face down to the bottom of the Main Order deck (change 24): which cards they are is visible only to the looker; the deck count is public. Several go there in random order (R19), which nobody knows, the looker included.
@@ -181,8 +181,8 @@ At minimum:
   - Form & Decorate Decoration costs and the Shifu −1 discount when forming 2
   - Glaze & Load: Imperial modifier choice and optional Heat-marker placement
   - Commission Market:
-    - the Apprentice privately looks at the top 2 and reserves exactly 1 from the display or those 2;
-    - the Shifu (or Senior Apprentice) looks at the top 3 and reserves 1 or 2 from the display and those 3;
+    - the Apprentice Selects 2 (a private look at the top 2), reserving exactly 1 from the display or those 2;
+    - the Shifu (or Senior Apprentice) Selects 3, reserving 1 or 2 in any mix of the display and those 3;
     - unreserved looked cards go face down to the bottom of the Main Order deck, never the discard (change 24), several in random order from the seeded RNG (R19); which ones is private to the looker, the deck count public;
     - no resource, no blind reservation;
     - deferred refill after the turn (once for two face-up reservations);
@@ -199,17 +199,17 @@ At minimum:
     - Jun: including during Second Firing per R7, after the chosen card
 - **Advanced Techs**
   - all 18, including:
-    - when-acquired Colour Samples (top-3 look, 1 reservation, the other 2 to the bottom of the Main Order deck in random order, R19);
-    - the Colour Samples once-per-round swap: before or after a worker action; discard 1 held Order (Main face down to the discard, Starting to the box); private top-2 look and 1 reservation, the other to the bottom of the Main Order deck (change 24, superseding R14); B1 when the supply is short; either order with Imperial Priority; usable the round it is acquired;
+    - when-acquired Colour Samples: Select 3 (1 reservation, a looked card or a face-up Order refilled at the end of the turn; the unreserved looked cards to the bottom of the Main Order deck in random order, R19);
+    - the Colour Samples once-per-round swap: before or after a worker action; discard 1 held Order first (Main face down to the discard, Starting to the box), then Select 3 (a looked card or a face-up Order; the rest to the bottom of the Main Order deck, R19); B1 when the supply is short
     - Kiln Master, Inverted Firing stacks, Setter's Mark reservation;
     - Canal Barge: 2 Coins on the first Order completed each round, in the Order Phase only
   - the printed V1.6.2 costs (Senior Apprentice 3, Kiln Tending 3, Protective Saggars 3, Fuel Ledger 2), the 3-total / 1-per-discipline limit, the end-of-turn discipline refill and partial display
-  - 1 VP each recorded in the score ledger the moment the Tech is gained (owner amendment A1: Apprentice buy, Shifu inspected or face-up take, Colour Samples itself), shown by the score preview at once, and listed once — not re-added — in final scoring
+  - no VP for gaining a Tech (change 27, superseding amendment A1): the score ledger, the score preview, final scoring and events have no Tech line; Connoisseur's Cabinet still scores at game end
   - optional abilities (R4): declining keeps the once-per-round use (the Colour Samples swap, Saggars' Standard → Fine step, Second Firing); Canal Barge and Saggars' floor are automatic
 - **Firing**
   - the Kiln Die every round (seeded, public)
   - Contribution eligibility from Shared Kiln ceramics only, including the zero-participant path
-  - secret simultaneous Contribution reveal; Fuel Ledger: the owner's Bank and Stoke cost no Wood, and 1 committed Wood makes them −2/+2
+  - secret simultaneous Contribution reveal; Fuel Ledger (change 26): the owner's Bank and Stoke cost no Wood, and its Fuel Ledger Bank and Fuel Ledger Stoke cards cost 1 Wood each for −2/+2; the owner plays 1 of 5 cards, and a card not held is refused
   - Base Heat clamp 0–5
   - Test Pieces after Base Heat (private peek, public bury)
   - Heat-marker step in First Player order (+1/−1/return); Kiln Master
