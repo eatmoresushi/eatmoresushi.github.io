@@ -70,8 +70,8 @@ describe("the V1.6.2 rulebook is the source of truth", () => {
    * Starting deck, the Main Order re-pass and looked cards to the deck bottom) and owner revision
    * 3 of 2026-10-18 (changes 25–27: Select N, Fuel Ledger as cards, no Tech VP). */
   const V162_FILES: ReadonlyArray<readonly [string, string]> = [
-    [SOURCE_PATH, "78e8a07bc90eca0c16f2cb62c0337de09d877440f5d5a5a5d37f70b49c3350de"],
-    ["docs/KILN_OPENING_v1.6.2_ZH.md", "abc960e936ca70a8175e81f7a59ef85bf33d42055c554242b8b8f2a07487aeb9"],
+    [SOURCE_PATH, "93cc8173d14ae0320ea197e45ce68de2ebd2cd6165e215e8709622d2f0f7f8e3"],
+    ["docs/KILN_OPENING_v1.6.2_ZH.md", "841b715c11de4024f5e9393398976b14ff43c2125154084f7a06d925f63fb8b6"],
     ["docs/KILN_OPENING_v1.6.2_COMPONENT_TEXT.md", "a466984ca6c4b8db629314369d8c67184f71cd3131ce15b5f9bdb36b68799677"],
   ];
 

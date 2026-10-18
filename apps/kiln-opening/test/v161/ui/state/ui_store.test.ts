@@ -33,7 +33,8 @@ function store(mode: LayoutMode, effects = recorder()) {
 
 describe("window defaults (wireframe resetApp)", () => {
   it("match the wireframe for the windows it designed", () => {
-    expect(WINDOW_UI_DEFAULTS.work).toEqual({ section: "workshop", sheet: "peek" });
+    // D20: phones open the work turn on the Table tab (workers are placed from the table).
+    expect(WINDOW_UI_DEFAULTS.work).toEqual({ section: "table", sheet: "peek" });
     expect(WINDOW_UI_DEFAULTS.contributions).toEqual({ section: "kiln", sheet: "peek" });
     expect(WINDOW_UI_DEFAULTS.heat_markers).toEqual({ section: "kiln", sheet: "peek" });
     expect(WINDOW_UI_DEFAULTS.after_quality).toEqual({ section: "kiln", sheet: "open" });
@@ -51,7 +52,7 @@ describe("window defaults (wireframe resetApp)", () => {
   it("apply when a new window opens, and choices last only for their window", () => {
     const { ui } = store("phone");
     const work = { window: windowOf("m1_work_phase_r2_3p"), phase: "work" as const };
-    expect(ui.stateFor(work)).toMatchObject({ section: "workshop", sheet: "peek" });
+    expect(ui.stateFor(work)).toMatchObject({ section: "table", sheet: "peek" });
     ui.actions.setSection("orders");
     ui.actions.setSheet("open");
     expect(ui.stateFor(work)).toMatchObject({ section: "orders", sheet: "open" });
@@ -62,7 +63,7 @@ describe("window defaults (wireframe resetApp)", () => {
   it("the work turn's after-action step keeps the section the worker action was shown on", () => {
     const after = { window: windowOf("m17_after_action"), phase: "work" as const };
     expect(after.window).toMatchObject({ kind: "work", step: "after_action" });
-    expect(windowUiDefaults(after.window, "work")).toEqual({ section: "workshop", sheet: "peek", keepSection: true });
+    expect(windowUiDefaults(after.window, "work")).toEqual({ section: "table", sheet: "peek", keepSection: true });
     // After a Commission reservation (the Orders tab, sheet open): the sheet collapses, the
     // Orders tab stays (the hand and the emptied display position), no jump to the Workshop.
     const { ui } = store("phone");
@@ -76,7 +77,7 @@ describe("window defaults (wireframe resetApp)", () => {
     ui.actions.setSection("kiln");
     expect(ui.stateFor(after).section).toBe("kiln");
     // Opened first (a reload, SSR): the work turn's default.
-    expect(store("phone").ui.stateFor(after)).toMatchObject({ section: "workshop", sheet: "peek" });
+    expect(store("phone").ui.stateFor(after)).toMatchObject({ section: "table", sheet: "peek" });
     // The player's own choice in the window before it carries over too.
     const { ui: chose } = store("phone");
     const before = { window: windowOf("m1_work_phase_r2_3p"), phase: "work" as const };

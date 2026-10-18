@@ -3,7 +3,7 @@
  * Source: wireframe `boardFull`: kiln tradition, resources, workers, hand, personal spaces, Tech slots, ceramics.
  *
  * One full Kiln Player Board, from `playerSummary` (public information only). The viewer's own
- * hand shows its count with "Only you can see"; another player's hand shows card backs and a
+ * hand shows its count (no "Only you can see" pill, owner review 2026-10-18); another player's hand shows card backs and a
  * count, never a card. Score is the score-track value `recordedVp` (Orders, Kiln abilities,
  * Crowns and Imperial Audience; a Tech scores nothing, v1.6.2 change 27), never a projection.
  */
@@ -75,7 +75,6 @@ export function PlayerBoard({ playerId }: PlayerBoardProps) {
               <>
                 <CardBack count={held} label={t("table.hand.held", { n: held, limit })} />
                 <span className="prow-note num" aria-hidden="true">{t("table.hand.held", { n: held, limit })}</span>
-                <Chip tone="private">{t("common.status.onlyYou")}</Chip>
               </>
             ) : (
               <>

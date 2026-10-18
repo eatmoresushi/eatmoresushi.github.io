@@ -226,7 +226,7 @@ describe("automatic section switch (phones)", () => {
     };
     try {
       const view = mount(new StaticSource(m1()), <GameScreen />, { layout: "phone" });
-      const before = $<HTMLElement>("#sec-workshops-h");
+      const before = $<HTMLElement>("#sec-table-h");
       expect(before.closest("section")?.hasAttribute("data-current")).toBe(true);
       act(() => before.focus());
       act(() => view.ui.actions.setSection("orders"));

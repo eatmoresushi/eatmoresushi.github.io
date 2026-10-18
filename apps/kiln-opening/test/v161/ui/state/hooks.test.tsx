@@ -96,7 +96,7 @@ describe("every hook renders on the server", () => {
     expect(valueOf(html, "draft")).toBe(JSON.stringify(initial).replace(/"/g, "&quot;"));
     // The real work window (B4) drives the table: Place shortcuts are live for the acting viewer.
     expect(valueOf(html, "table")).toBe("true");
-    expect(valueOf(html, "ui")).toBe("workshop");
+    expect(valueOf(html, "ui")).toBe("table");
     expect(valueOf(html, "layout")).toBe("phone");
     expect(valueOf(html, "dev")).toBe("false");
     expect(valueOf(html, "optional")).toBe("true");

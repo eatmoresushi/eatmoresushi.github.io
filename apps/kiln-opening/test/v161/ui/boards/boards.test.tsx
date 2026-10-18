@@ -123,7 +123,8 @@ describe("PlayerBoard", () => {
       for (const secret of secretIds(id)) expect(html).not.toMatch(new RegExp(`\\b${secret}\\b`));
     }
     const own = render(id, <PlayerBoard playerId={fixture(id).viewerId} />);
-    expect(textOf(own)).toContain("Only you can see");
+    // D20: the viewer's own board shows the hand count without the "Only you can see" pill.
+    expect(textOf(own)).not.toContain("Only you can see");
   });
 
   it("shows the recorded score, Recognition, First Player and completed Orders (m8)", () => {

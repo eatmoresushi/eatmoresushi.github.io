@@ -322,7 +322,7 @@ This file replaces the [V1.6.1 clarifications](./KILN_OPENING_v1.6.1_CLARIFICATI
 
 ### orders.main — Main Orders and Crown Orders / 主委托与御令委托
 
-- [L302] Face-up Main Orders cannot be completed; they are reserved at the Commission Market during the Work Phase. / 委托榜上的主委托不能完成；它们要在派工阶段于瓷牙行承接。
+- [L302] Face-up Main Orders cannot be completed; they are reserved at the Commission Market during the Work Phase. / 委托榜上的主委托不能完成；它们要在派工阶段到瓷牙行承接。
 - [L427] Requirements are independent unless a specific pairing is explicitly printed. / 各项要求彼此独立，除非卡面直接写明配对。
 - [L474 · INT Ge Crackle] Each Crackle ceramic may count as having any one Decoration for that Order's Decoration requirements; its printed Decoration is unchanged. / 每件开片器都可以视为具有任意一种纹饰，以满足该委托的纹饰要求；它原本的纹饰不变。
 - [L650] A Crackle ceramic cannot fill a Masterpiece requirement, including Painted Masterpiece Orders. / 开片器不能满足任何臻品要求，包括画花臻品委托。

@@ -76,7 +76,7 @@ export interface WindowUiDefaults {
 export const WINDOW_UI_DEFAULTS: Readonly<Record<Exclude<DecisionWindowKind, "waiting">, WindowUiDefaults>> = Object.freeze({
   kiln_selection: { section: "workshop", sheet: "open" },
   setters_mark: { section: "kiln", sheet: "peek" },
-  work: { section: "workshop", sheet: "peek" },
+  work: { section: "table", sheet: "peek" },
   commission: { section: "orders", sheet: "open" },
   guild_inspection: { section: "table", sheet: "open" },
   colour_samples: { section: "orders", sheet: "open" },

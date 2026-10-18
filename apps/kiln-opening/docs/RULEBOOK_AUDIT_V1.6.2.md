@@ -10,8 +10,8 @@ The owner supplied three files and has revised them three times. On 2026-10-17: 
 
 | File | Owner's original | SHA-256 |
 | --- | --- | --- |
-| [KILN_OPENING_v1.6.2_EN_SOURCE.md](./KILN_OPENING_v1.6.2_EN_SOURCE.md) — Player Rulebook, the mechanical authority | `KILN OPENING 开窑 v1.6.2 — Player Rulebook (Draft).md` | `78e8a07bc90eca0c16f2cb62c0337de09d877440f5d5a5a5d37f70b49c3350de` |
-| [KILN_OPENING_v1.6.2_ZH.md](./KILN_OPENING_v1.6.2_ZH.md) — Chinese edition; it defers to the English (line 3) | `KILN OPENING 开窑 v1.6.2 — 玩家规则书（中文）.md` | `abc960e936ca70a8175e81f7a59ef85bf33d42055c554242b8b8f2a07487aeb9` |
+| [KILN_OPENING_v1.6.2_EN_SOURCE.md](./KILN_OPENING_v1.6.2_EN_SOURCE.md) — Player Rulebook, the mechanical authority | `KILN OPENING 开窑 v1.6.2 — Player Rulebook (Draft).md` | `93cc8173d14ae0320ea197e45ce68de2ebd2cd6165e215e8709622d2f0f7f8e3` |
+| [KILN_OPENING_v1.6.2_ZH.md](./KILN_OPENING_v1.6.2_ZH.md) — Chinese edition; it defers to the English (line 3) | `KILN OPENING 开窑 v1.6.2 — 玩家规则书（中文）.md` | `841b715c11de4024f5e9393398976b14ff43c2125154084f7a06d925f63fb8b6` |
 | [KILN_OPENING_v1.6.2_COMPONENT_TEXT.md](./KILN_OPENING_v1.6.2_COMPONENT_TEXT.md) — short text for Kiln boards, Tech tiles and the 2 Fuel Ledger cards | `KILN OPENING 开窑 v1.6.2 — Component Text.md` | `a466984ca6c4b8db629314369d8c67184f71cd3131ce15b5f9bdb36b68799677` |
 
 History: [V1.6.1 source](./KILN_OPENING_v1.6.1_EN_SOURCE.md) (`173ec74a…`), [V1.6.1 Chinese edition](./KILN_OPENING_v1.6.1_ZH.md) (`d6d2f060…`) and [V1.6.1 audit](./RULEBOOK_AUDIT_V1.6.1.md). These are records, not rules. Before the Guild Hall revision the V1.6.2 English and Chinese files were `ed2ee2f1…` and `19fb1a21…`; between the first two revisions they were `8d5734c9…` and `f7270d2f…`, with the component text at `3957a76b…`; between revisions 2 and 3 the three files were `f30994f8…`, `222ea2f7…` and `cca04930…`. Those texts are superseded.
@@ -65,7 +65,7 @@ The rulebook lists its own changes as 21–27 (lines 31–37; 23–24 are owner 
 - **Commission Market** (L64, L197, L201–204, L401, L710; changes 21, 24, 25). It gives no resource and has no blind reservation.
   - An Apprentice Selects 2: it looks at the top 2 Main Orders and reserves 1 of them or 1 face-up Order.
   - The Shifu Selects 3, reserving up to 2, at least 1, in any mix of the 3 cards and the display.
-  - Looked cards not reserved go to the bottom of the Main Order deck (change 24). Change 21 (L31) still says they are discarded; change 24 supersedes it.
+  - Looked cards not reserved go to the bottom of the Main Order deck (change 24). The owner corrected change 21 (L31; Chinese line 33) to say the same on 2026-10-18.
   - A reserved face-up Order is still replaced only after the reserving player's turn.
 - **Materials Yard** Shifu gains 6 Clay/Wood, with no 1-Coin option (L171, L707).
 - **Guild Hall** (owner revision 2026-10-17; L31, L213, L215, L218, L711):
@@ -136,7 +136,7 @@ R1–R13 and B1–B3 were approved on 2026-10-14 for V1.6.1. R14 was approved on
 - Line 16: change 6's "The Shifu may use a top-3 selection for one reservation; Colour Samples is now a hand-limit tile" describes V1.6.1. It is superseded by change 21 (L31, L202), change 22 (L32, L622) and change 25 (L35).
 - Line 17's "2 + Fire" is superseded by change 15 (Kiln Die result).
 - Line 30: change 20, "Tech VP scored on purchase", is history. Change 27 (L37) removes Tech VP and supersedes it, with owner amendment A1.
-- Line 31 (change 21) still ends "revealed cards not reserved are discarded"; Chinese line 33 likewise (翻看而没有承接的牌弃置). Change 24 (L34, Chinese line 36) supersedes it, and L64, L197 and L401 print the new rule.
+- Resolved 2026-10-18: line 31 (change 21) and Chinese line 33 said unreserved looked cards are discarded, which change 24 replaced; the owner had both corrected to "go to the bottom of the deck" / 放到牌堆底, in the repository copies and in the owner's files.
 - Line 33 (change 23) abbreviates S07 as "Carved/Impressed/Painted"; A0 prints it as "Carved, Impressed or Painted" (L535). Same card.
 - Line 436: malformed bold markup ("**1 Clay, 1 Wood and** **1 Coin**"). This was 1.6.1 line 432.
 
@@ -158,8 +158,7 @@ Retired by revision 3 (revision-2 line numbers):
 - **Change 25 says "Wording only", but it changes the Colour Samples swap.** Before revision 3 the swap looked at the top 2 and reserved 1 of them; both Colour Samples looks took only from the deck (revision-2 lines 617 and 641). As a Select 3 (L622, component text line 44, quick reference L716) the swap looks at 3, and both the swap and the when-acquired Select may reserve a face-up Order instead. The Commission Market reads the same as before. The online game follows the printed text, which is consistent in all three files and in change 22 (L32, now "look at the top 3"). If "wording only" was meant, the swap would go back to looking at 2, from the deck only; tell us and the change is small (the T10 parameters `swapSelect` and the Select's display option).
 - Chinese line 3 still says 已收录修订A1与A2. A1 is superseded by change 27 (Chinese line 39).
 - The component text's Fuel Ledger line reads "Contribution cards(-1 Wood → -2/+2)": no space before the bracket, and ASCII hyphens where the rulebook uses "1 Wood" and "−2/+2" (L634). The Chinese reads （—1柴→−2或+2）, with an em dash as the minus. The online game prints the owner's text unchanged.
-- Chinese line 397 (394 before revision 3, 392 before revision 2) reads 只有在**于瓷牙行被承接**…; the plain register of 2026-10-16 uses 在 rather than 于.
-- Chinese line 304 (Order Phase) reads 它们要在派工阶段于瓷牙行承接, also with 于. The Main Orders clarification that quotes it keeps the owner's wording.
+- Resolved 2026-10-18 (owner's approval, plain register): Chinese line 397 now reads 只有**在瓷牙行被承接**或**在开工时被弃置**时 (was 只有在**于瓷牙行被承接**…), and Chinese line 304 reads 它们要在派工阶段到瓷牙行承接 (was …于瓷牙行承接; 到 avoids a doubled 在). The Main Orders clarification that quotes line 304 follows it. Both edits are in the repository copies and the owner's files.
 - The Chinese Colour Samples reminder in the component text (line 44) was 82 characters after revision 2 (79 before), over the glossary's former cap of 72; the owner kept it in full and the cap became 96, four printed lines of 24 (R18). After revision 3 it is 53.
 - Revision 2 replaced the English note after the change log ("Yours, from the doc comments: …") with changes 23–24; revision 3 restores it (L39). The Chinese edition kept it throughout (Chinese line 41), so from line 40 on each Chinese line number is again the English one plus 2.
 - Change 24 lists nineteen re-valued Main Orders (O01–O05, O14, O15, O19, O20, O22, O26–O28, O30, O32–O34, O38, O39); Appendix A prints all nineteen.

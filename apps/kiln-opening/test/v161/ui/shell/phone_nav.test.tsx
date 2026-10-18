@@ -36,7 +36,7 @@ describe("phone nav", () => {
   });
 
   it.each([
-    ["m1_work_phase_r2_3p", "workshop"],
+    ["m1_work_phase_r2_3p", "table"],
     ["m4_after_quality_3p", "kiln"],
     ["m6_order_phase_crackle_3p", "orders"],
     ["m7_cleanup_hand_limit_3p", "orders"],
