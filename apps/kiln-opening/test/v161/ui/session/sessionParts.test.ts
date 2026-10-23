@@ -148,15 +148,22 @@ describe("savedSeat", () => {
     }
   });
 
-  it("leaves the V1.4 keys alone until cutover enables their removal", () => {
-    expect(REMOVE_LEGACY_V14_KEYS).toBe(false);
+  it("removes the V1.4 keys since the cutover, and nothing else", () => {
+    expect(REMOVE_LEGACY_V14_KEYS).toBe(true);
+    expect([...LEGACY_V14_KEYS]).toEqual(["kiln-opening:last-seat", "kiln-opening:playtest-draft-v2"]);
     const storage = new MemoryStorage();
     for (const key of LEGACY_V14_KEYS) storage.setItem(key, "v14");
+    storage.setItem("kiln-opening:language", "zh-CN");
     const seats = new SavedSeatStore(storage);
-    seats.removeLegacyKeys();
+    seats.save({ roomCode: "R1", seatToken: "t" });
+    seats.removeLegacyKeys(false);
     expect(LEGACY_V14_KEYS.every((key) => storage.getItem(key) === "v14")).toBe(true);
-    seats.removeLegacyKeys(true);
+    seats.removeLegacyKeys();
     expect(LEGACY_V14_KEYS.every((key) => storage.getItem(key) === null)).toBe(true);
+    // The shared language preference and this app's own seat stay.
+    expect(storage.getItem("kiln-opening:language")).toBe("zh-CN");
+    expect(seats.last()).toEqual({ roomCode: "R1", seatToken: "t" });
+    expect(() => seats.removeLegacyKeys()).not.toThrow();
   });
 });
 

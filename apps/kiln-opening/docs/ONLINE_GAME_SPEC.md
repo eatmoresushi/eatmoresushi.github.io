@@ -8,9 +8,9 @@ The [V1.6.2 Player Rulebook](./KILN_OPENING_v1.6.2_EN_SOURCE.md) and its [audit]
 
 ## Transition status
 
-- The V1.6.2 engine (`src/game`), multiplayer service (`src/multiplayer`), Edge Functions (`supabase/functions`) and migrations (`202610150001_v161_rules.sql`, `202610150002_playtest_v161.sql`, written for V1.6.1 and edited in place for V1.6.2 before any deployment; nothing has been deployed) are the current server.
-- The browser UI still runs the pinned V1.4 copies (`src/game-v14`, `src/multiplayer-v14`, `src/playtest-v14`) until the UI phase replaces it with the table UI in `src/app`, which the UI stage moves to the V1.6.2 commands. The UI phase also deletes those copies.
-- The SQL migrations, both Edge Functions and the client must be deployed together. The migration replaces the V1.4 signatures of `server_add_computer_seat` and `server_commit_start`, so a V1.4 Edge Function cannot run against it. Checked-in migrations do not apply themselves.
+- The V1.6.2 engine (`src/game`), multiplayer service (`src/multiplayer`), Edge Functions (`supabase/functions`) and migrations (`202610150001_v161_rules.sql`, `202610150002_playtest_v161.sql`, written for V1.6.1 and edited in place for V1.6.2 before their first deployment) are the current server. They are deployed: by the owner's report of 2026-10-24 the live Supabase project runs both migrations and both Edge Functions as V1.6.2 (rules `1.6.2`, schema 9, `r32-`).
+- The browser UI is the table UI in `src/app` (cutover, UI architecture §10.4 C2.1): `/kiln-opening/` is the game and `/kiln-opening/playtest/` the Form V3 playtest form. The phase 4 preview pages under `/kiln-opening/next/` are gone, with no redirect. The pinned V1.4 copies (`src/ui`, `src/game-v14`, `src/multiplayer-v14`, `src/playtest-v14`) are no longer built or served and are deleted in C2.2.
+- The SQL migrations, both Edge Functions and the client form one release. The migration replaces the V1.4 signatures of `server_add_computer_seat` and `server_commit_start`, so a V1.4 Edge Function cannot run against it, and the V1.6.2 server answers only with V1.6.2 rooms, which a V1.4 client refuses. That is why `/kiln-opening/` failed with a V1.4 mismatch error after the backend was deployed and before the cutover published this client. Checked-in migrations do not apply themselves; the steps are in [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 ## Rooms and seats
 

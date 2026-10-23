@@ -4,8 +4,8 @@
  *
  * - **Draft save and restore.** The draft is saved under `kiln-opening:playtest-draft-v3` on
  *   every change and restored with `restorePlaytestDraft` (Form V3 only; older drafts are not
- *   migrated). Every storage call is wrapped in `try`/`catch` (§3.2); the V2 key is left alone
- *   until the cutover (C2.1).
+ *   migrated). Every storage call is wrapped in `try`/`catch` (§3.2). This page never reads the
+ *   V1.4 Form V2 key; since the cutover (C2.1) the game page removes it.
  * - **Sections:** the game (`Meta`), players with their Techs per discipline and results
  *   (`Players`), firing by round with the Kiln Die and Fuel Ledger ±2 only for its owner
  *   (`Rounds`), reflection (`Feedback`), and submission (`Submit`).

@@ -8,8 +8,8 @@ import { createBrowserSessionStore } from "./session/sessionStore.ts";
 import { applyTheme } from "./theme.ts";
 
 /**
- * The V1.6.1 app entry (UI_V1.6.1_ARCHITECTURE §1.2, §4.2): `next/index.html` during phase 4,
- * `index.html` after the cutover. The theme is applied before the first render (§7.1); the
+ * The V1.6.2 app entry (UI_V1.6.1_ARCHITECTURE §1.2, §4.2): `index.html`, served at
+ * `/kiln-opening/` since the cutover. The theme is applied before the first render (§7.1); the
  * session store talks to Supabase, or to the local backend at `/test-api-v161` when
  * `VITE_E2E_LOCAL_BACKEND=1` (`npm run dev:local`).
  */

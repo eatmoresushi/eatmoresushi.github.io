@@ -74,7 +74,7 @@ import type {
 import { SavedSeatStore, browserStorage } from "./savedSeat.ts";
 import type { KeyValueStorage, SavedSeat } from "./savedSeat.ts";
 
-/** Where the V1.6.1 app finds the local in-memory backend until cutover (§3.9). */
+/** Where the app finds the local in-memory backend, until the deletion commit (C2.2) moves it to `/test-api` (§3.9). */
 export const LOCAL_BACKEND_ENDPOINT_V161 = "/test-api-v161";
 
 export const SUBMIT_TIMEOUT_MS = 20_000;

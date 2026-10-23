@@ -66,7 +66,7 @@ const SIZES = [
   [2560, 1080],
 ] as const;
 
-const hashOf = (id: string, view: Pick<View, "lang" | "theme">) => `next/gallery.html#${encodeURIComponent(id)}?${view.lang === "en" ? "" : "lang=zh-CN&"}${view.theme === "light" ? "" : "theme=dark&"}bare=1`;
+const hashOf = (id: string, view: Pick<View, "lang" | "theme">) => `gallery/#${encodeURIComponent(id)}?${view.lang === "en" ? "" : "lang=zh-CN&"}${view.theme === "light" ? "" : "theme=dark&"}bare=1`;
 
 async function open(page: Page, id: string, view: View): Promise<void> {
   if (view.text !== 100) {

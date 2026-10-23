@@ -38,7 +38,7 @@ beforeAll(async () => {
   server.listen(0, "127.0.0.1");
   await once(server, "listening");
   origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
-  (window as unknown as { happyDOM: { setURL(url: string): void } }).happyDOM.setURL(`${origin}/kiln-opening/next/`);
+  (window as unknown as { happyDOM: { setURL(url: string): void } }).happyDOM.setURL(`${origin}/kiln-opening/`);
   vi.stubEnv("VITE_E2E_LOCAL_BACKEND", "1");
   // A real asynchronous app: React renders on its own schedule, not inside act().
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = false;

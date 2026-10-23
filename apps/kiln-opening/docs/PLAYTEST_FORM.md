@@ -1,37 +1,38 @@
 # Playtest form
 
-The web form is built at `/kiln-opening/playtest/`. In production that is:
+The web form is built at `/kiln-opening/playtest/` (`playtest/index.html` → `src/app/playtest/main.tsx`). In production that is:
 
 `https://luyuan.me/kiln-opening/playtest/`
 
-The form uses a concise subset of `Kiln_Opening_Playtest_Recording_v1.2.4.xlsx` and records:
+It submits **Form V3 for rules V1.6.2** (`src/playtest`; the form structure is unchanged from V1.6.1). Every option list and capacity comes from the V1.6.2 content API. The form records:
 
-- game date, player count, rules version, first player, and player setup;
-- for every player in each round: final Contribution value, Shared and Imperial Kiln loading, Orders completed, and Kiln ability use;
-- each round's Fire modifier, automatically calculated Base/Global Heat, and the five Firing Advanced Techs;
-- the winner and, for every player, completed Order IDs in completion order, final Imperial Recognition position, remaining Coins/Clay/Wood, and score;
+- game date, player count, first player and winner;
+- for every player: Kiln (all five, Ding included), at most one Tech per discipline (Form & Decorate, Glazing & Loading, Firing; there is no Starting Tech), completed Order IDs in completion order, final Imperial Recognition position (0–4), remaining Coins/Clay/Wood, final score and an optional VP breakdown (Orders, Tradition, Exhibition, Coins);
+- for every round: the Kiln Die, each player's revealed Contribution, Shared and Imperial Kiln loading, Orders completed and Kiln ability uses, the Fire card's modifier, and the Firing Techs used (Protective Saggars, Fuel Ledger, Test Pieces, Second Firing, Kiln Master, Tribute Ware);
 - optional qualitative table observations and rules ambiguities.
 
 Ceramic-level and general Tech-performance logs are intentionally omitted. The end-game Kiln ability total is derived from the five per-round counters. Completed Order count is derived from the Order IDs recorded for each player; when all five round counts are entered, the form also checks that their sum agrees with that list.
 
-Contribution choices include ordinary Bank (−1), Tend (0), and Stoke (+1), plus Fuel Ledger's adjusted Bank (−2) and Stoke (+2). Choosing an adjusted Contribution records Fuel Ledger automatically. Base Heat starts at 2, adds those final Contribution values, and clamps to 0–5 before the Fire modifier is added to produce Global Heat.
+Contribution choices are Bank (−1), Tend (0) and Stoke (+1), plus Fuel Ledger Bank (−2) and Fuel Ledger Stoke (+2), which appear only in the Fuel Ledger owner's menu. Choosing one of those records Fuel Ledger as used that round. Base Heat is the round's Kiln Die plus the revealed Contributions, clamped to 0–5; the Fire modifier is then added to give Global Heat. Both are shown, never typed.
 
-The round form shows only Firing Advanced Techs assigned to a player in the setup section. Fuel Ledger's adjusted Bank/Stoke choices appear only in that owner's Contribution menu. Removing or reassigning a Firing Tech clears firing-use data that no longer has a matching owner.
+The round form offers only the Firing Techs assigned to a player in the setup section. Removing or reassigning a Firing Tech clears firing-use data that no longer has a matching owner.
 
-Recognition VP is derived rather than manually entered. For current V1.2.6 submissions, reaching Recognition 4 records the 6 VP Imperial Audience reward and positions 0–3 record 0. Version-aware analysis preserves the historical V1.2.4 rule of 6 VP at Recognition 5. VP from Crowns gained beyond V1.2.6 Recognition 4 is immediate VP included in the player's final score rather than track position.
+Recognition VP is derived rather than entered: reaching Recognition 4 records the 6 VP Imperial Audience, and positions 0–3 record 0. VP from Crowns gained beyond Recognition 4 is immediate VP included in the player's final score. Version-aware analysis keeps the historical V1.2.4 rule of 6 VP at Recognition 5.
 
 There is no Game ID input. `public.server_submit_playtest` assigns the next private sequence value inside the database transaction and returns a reference such as `KO-000001` only after the submission is stored.
 
-## Form V3 (rules V1.6.1)
+The draft is saved in the browser under `kiln-opening:playtest-draft-v3`; older form drafts are not migrated.
 
-`src/playtest` validates Form V3 for rules V1.6.1; the current form page still submits Form V2 for V1.4 through the pinned `src/playtest-v14` copy until the V1.6.1 form UI ships. Form V3 differs where the rules differ:
+## Form V3 compared with Form V2
 
-- no Starting Tech; each player records at most one Tech per discipline (Workshop, Glazing & Loading, Firing);
+Form V2, last used for rules V1.4, was submitted by the V1.4 page (`src/ui/PlaytestFormPage.tsx`, `src/playtest-v14`), which is no longer built since the cutover. Form V3 differs where the rules differ:
+
+- no Starting Tech; each player records at most one Tech per discipline;
 - all five Kilns, including Ding;
-- each round records its Kiln Die; Base Heat is the Kiln Die plus the revealed Contributions, clamped to 0–5;
+- each round records its Kiln Die, because Base Heat starts from it (V1.4 started Base Heat at 2);
 - the Firing Techs are Protective Saggars, Fuel Ledger, Test Pieces, Second Firing, Kiln Master and Tribute Ware.
 
-Every option list and capacity comes from the V1.6.1 content API. Migration `202610150002_playtest_v161.sql` accepts only Form V3 for V1.6.1, adds the per-discipline Tech columns and the round's Kiln Die, Kiln Master and Tribute Ware columns, and keeps all earlier submissions readable.
+Migration `202610150002_playtest_v161.sql` (written for V1.6.1, edited in place for V1.6.2) accepts only Form V3 for rules V1.6.2, adds the per-discipline Tech columns and the round's Kiln Die, Kiln Master and Tribute Ware columns, and keeps all earlier submissions readable.
 
 ## Storage
 
@@ -51,7 +52,7 @@ Player names are optional. The database stores the anonymous Supabase user ID on
 
 Migration `202609070001_reset_playtest_records.sql` performs the owner-requested one-time reset before Form V2 collection: it deletes every row belonging to the playtest-form tables, resets Game ID numbering to `KO-000001`, and removes the legacy `shifu_reposition_used` column. It does not touch multiplayer rooms, accounts, or game-session data.
 
-Migration `202609100002_playtest_v126.sql` accepts current V1.2.6 Form V2 submissions, limits their Recognition position to 0–4, and makes analysis views calculate Recognition VP according to each row's stored rules version. Historical V1.2.4 and V1.2.5 submissions remain labelled and readable.
+Migration `202609100002_playtest_v126.sql` accepted V1.2.6 Form V2 submissions, limits their Recognition position to 0–4, and makes analysis views calculate Recognition VP according to each row's stored rules version. Historical V1.2.4 and V1.2.5 submissions remain labelled and readable.
 
 ## Analysis views
 
@@ -110,7 +111,7 @@ group by order_id
 order by completions desc, order_id;
 ```
 
-Keep these tables long-term so comparisons can accumulate across rules versions. The current UI submits Form V2 for rules V1.2.6; historical V1.2.4 and V1.2.5 records remain readable and version-labelled. When a future rules change alters payload meaning, add a new form version and migration rather than silently changing existing columns.
+Keep these tables long-term so comparisons can accumulate across rules versions. The current form submits Form V3 for rules V1.6.2; historical Form V1 and V2 records (rules V1.2.4 to V1.4) remain readable and version-labelled. When a future rules change alters payload meaning, add a new form version and migration rather than silently changing existing columns.
 
 ## Deployment
 

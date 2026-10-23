@@ -1,5 +1,5 @@
 /**
- * The scenario gallery (UI_V1.6.1_ARCHITECTURE §9.5). Dev only: `next/gallery.html` →
+ * The scenario gallery (UI_V1.6.1_ARCHITECTURE §9.5). Dev only: `gallery/index.html` →
  * `dev/gallery-main.tsx` → this page. Served by the dev server; never a build input.
  *
  * It lists every scripted scenario and played moment of `test/v161/ui/fixtures/*.json`, the shell

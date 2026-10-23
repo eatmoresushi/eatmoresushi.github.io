@@ -7,8 +7,8 @@ import { applyTheme } from "../theme.ts";
 import { PlaytestFormPage } from "./PlaytestFormPage.tsx";
 
 /**
- * The Playtest Form V3 entry (UI_V1.6.1_ARCHITECTURE §4.2): `next/playtest.html` during phase 4,
- * `playtest/index.html` after the cutover. Owner: B3 (kiln, firing stage, results, playtest).
+ * The Playtest Form V3 entry (UI_V1.6.1_ARCHITECTURE §4.2): `playtest/index.html`, served at
+ * `/kiln-opening/playtest/` since the cutover. Owner: B3 (kiln, firing stage, results, playtest).
  *
  * Created by A2 in phase A: the entry is complete (styles first, theme before the first render,
  * i18n); `PlaytestFormPage` is a stub until B3 lands it.

@@ -9,9 +9,11 @@
  * storage call is wrapped in try/catch: storage may be missing or throw in a private window,
  * with blocked site data or during SSR, and the app then simply has no saved seat.
  *
- * The V1.4 app shares this origin during phase 4 and still uses `kiln-opening:last-seat`,
- * so its keys are removed only by the cutover commit C2.1, which flips
- * `REMOVE_LEGACY_V14_KEYS` (§10.4).
+ * The V1.4 app shared this origin during phase 4 and used `kiln-opening:last-seat` and
+ * `kiln-opening:playtest-draft-v2`. The cutover commit C2.1 (§10.4) flipped
+ * `REMOVE_LEGACY_V14_KEYS`: the V1.4 app is no longer served, the V1.6.2 server cannot resume
+ * a V1.4 room or take a Form V2 draft, so the first load of the app removes both keys. This app
+ * never reads them, so a V1.4 saved room cannot start a reconnect here either.
  */
 
 export interface SavedSeat {
@@ -29,8 +31,8 @@ export interface KeyValueStorage {
 export const SEAT_KEY_PREFIX = "kiln-opening:v161:seat:";
 export const LAST_ROOM_KEY = "kiln-opening:v161:last-room";
 export const LEGACY_V14_KEYS = ["kiln-opening:last-seat", "kiln-opening:playtest-draft-v2"] as const;
-/** Flipped to true by cutover commit C2.1, never before (the V1.4 app still uses the keys). */
-export const REMOVE_LEGACY_V14_KEYS = false;
+/** True since cutover commit C2.1: no page serves the V1.4 app that used these keys. */
+export const REMOVE_LEGACY_V14_KEYS = true;
 
 export function seatKey(roomCode: string): string {
   return `${SEAT_KEY_PREFIX}${roomCode.toUpperCase()}`;
@@ -90,7 +92,7 @@ export class SavedSeatStore {
     if (this.read(LAST_ROOM_KEY)?.toUpperCase() === code) this.remove(LAST_ROOM_KEY);
   }
 
-  /** One-time cleanup of the V1.4 keys; a no-op until cutover enables it. */
+  /** Cleanup of the V1.4 keys (on every restore; a no-op once they are gone). */
   removeLegacyKeys(enabled: boolean = REMOVE_LEGACY_V14_KEYS): void {
     if (!enabled) return;
     for (const key of LEGACY_V14_KEYS) this.remove(key);

@@ -1,3 +1,7 @@
+/**
+ * The V1.4 local backend (`/test-api`). Not mounted since the cutover (UI plan §10.4 C2.1): no
+ * page serves the V1.4 app any more. It is deleted with the other V1.4 sources in C2.2.
+ */
 import { createHash, randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { Plugin } from "vite";

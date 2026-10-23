@@ -315,7 +315,7 @@ for (const game of CASES) {
       const sent = recordCommands(page);
 
       // Home: the language through the UI, then a room.
-      await page.goto("next/");
+      await page.goto("./");
       await page.locator(`.kit-seg-btn[lang="${game.locale === "en" ? "en" : "zh-Hans"}"]`).first().click();
       await expect(page.locator("html")).toHaveAttribute("lang", game.locale === "en" ? "en" : "zh-Hans");
       await page.locator('input[name="displayName"]').fill("Lin");

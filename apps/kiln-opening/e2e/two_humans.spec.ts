@@ -241,12 +241,12 @@ async function secretIdsOf(request: Parameters<typeof backendCall>[0], roomCode:
 
 /** Lin creates the room, Zhao joins it from another browser, Lin starts; returns the room code. */
 async function startRoom(host: Player, guest: Player): Promise<string> {
-  await host.page.goto("next/");
+  await host.page.goto("./");
   await host.page.locator('input[name="displayName"]').fill(host.name);
   await host.page.locator('[data-action="create-room"]').click();
   const code = (await host.page.locator("[data-room-code]").getAttribute("data-room-code")) ?? "";
   expect(code).not.toBe("");
-  await guest.page.goto("next/");
+  await guest.page.goto("./");
   await guest.page.locator('input[name="displayName"]').fill(guest.name);
   await guest.page.locator('input[name="roomCode"]').fill(code);
   await guest.page.locator('[data-action="join-room"]').click();

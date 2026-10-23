@@ -1,5 +1,5 @@
 /**
- * Playwright for the V1.6.1 app (UI plan §9.6). Specs live in `e2e/`, outside vitest's
+ * Playwright for the V1.6.2 app (UI plan §9.6). Specs live in `e2e/`, outside vitest's
  * `test/**` include, and are not part of `npm test`.
  *
  * - `npm run test:e2e`: every local project against `npm run dev:local` (port 4317).
@@ -16,7 +16,10 @@ import type { PlaywrightTestConfig } from "@playwright/test";
 const preview = process.env["KILN_E2E_SERVER"] === "preview";
 const port = preview ? 4318 : 4317;
 const origin = `http://localhost:${port}`;
-/** The app's Vite `base`; pages are addressed relative to it, e.g. `page.goto("next/")`. */
+/**
+ * The app's Vite `base`; pages are addressed relative to it: `page.goto("./")` is the app,
+ * `"playtest/"` the playtest form and `"gallery/"` the dev-only scenario gallery.
+ */
 const baseURL = `${origin}/kiln-opening/`;
 
 type Project = NonNullable<PlaywrightTestConfig["projects"]>[number];

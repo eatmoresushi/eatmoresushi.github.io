@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev:local", "--", "--port", "4317", "--strictPort"],
       "port": 4317
+    },
+    {
+      "name": "kiln-opening-preview-e2e",
+      "runtimeExecutable": "env",
+      "runtimeArgs": ["VITE_E2E_LOCAL_BACKEND=1", "npx", "vite", "preview", "--outDir", "output/dist-e2e", "--port", "4319", "--strictPort"],
+      "port": 4319
     }
   ]
 }

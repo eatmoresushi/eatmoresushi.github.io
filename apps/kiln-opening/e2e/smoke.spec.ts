@@ -10,6 +10,12 @@
  * screens keep. The work turn hides the decision pane until a placement is chosen on the table
  * (owner review, 2026-10-17), and the dev button with it: there it is pressed with a dispatched
  * click (it is a dev tool, not a player's control; the forms are played in `full_game.spec`).
+ *
+ * A second test checks the cutover's pages (UI plan §10.4 C2.1): the app at `/kiln-opening/` and
+ * the playtest form at `/kiln-opening/playtest/`. The phase 4 `next/` pages are gone, with no
+ * redirect (owner instruction, 2026-10-24); `tsconfig_includes.test.ts` checks that no `next/`
+ * page is built (the dev and preview servers answer any unknown path with the app, so a browser
+ * test cannot see the 404 that Pages gives).
  */
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
@@ -36,7 +42,7 @@ test("one human and two computers play a full game with the canonical-move butto
   await resetBackend(request, { seed: 720, policy: "canonical" });
   const errors = collectErrors(page);
 
-  await page.goto("next/");
+  await page.goto("./");
   await expect(page).toHaveTitle(/Kiln Opening/);
   await expect(page.locator("html")).toHaveAttribute("data-theme", /^(light|dark)$/);
 
@@ -87,4 +93,19 @@ test("one human and two computers play a full game with the canonical-move butto
   await expect(page.locator('form[data-window="final"] ~ * [data-dev="canonical-move"]')).toHaveCount(0);
   expect(errors).toEqual([]);
   test.info().annotations.push({ type: "moves", description: `${moves} human moves; revisions ${firstRevision} → ${finalRevision}; windows ${[...windowsSeen].sort().join(", ")}` });
+});
+
+test("the cutover pages: the app and the playtest form at their canonical URLs", async ({ page }) => {
+  const errors = collectErrors(page);
+
+  // The canonical pages load the V1.6.2 app and form (the titles no longer say "preview").
+  await page.goto("./");
+  await expect(page).toHaveTitle("Kiln Opening · 开窑");
+  await expect(page.locator('[data-action="create-room"]')).toBeVisible();
+  await page.goto("playtest/");
+  await expect(page).toHaveTitle("Kiln Opening · Playtest Record");
+  await expect(page.locator(".pt-masthead")).toBeVisible();
+  // The form's way back leads to the app at `/kiln-opening/`.
+  await expect(page.locator("a.pt-brand")).toHaveAttribute("href", "/kiln-opening/");
+  expect(errors).toEqual([]);
 });
