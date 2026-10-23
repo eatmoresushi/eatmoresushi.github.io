@@ -20,7 +20,9 @@ import {
   valueOf,
 } from "./support.ts";
 
-const DEALT = GAME_CONFIG.setupDeal.startingOrders + GAME_CONFIG.setupDeal.mainOrders;
+/** Only the 2 Starting Orders are dealt; the Main Order is taken face up with the Kiln (rev. 4
+ * L122, R23), so it is public. */
+const DEALT = GAME_CONFIG.setupDeal.startingOrders;
 
 function quoted(ids: readonly string[]): string[] {
   return ids.map((id) => `"${id}"`);
@@ -54,7 +56,7 @@ describe("V1.6.2 multiplayer privacy", () => {
     expect(start.ownSecrets.map((record) => record.event.type)).toEqual(["ORDERS_DEALT"]);
     const hostDeal = start.ownSecrets[0]!.event as Extract<GameEvent, { type: "ORDERS_DEALT" }>;
     expect(hostDeal.secret.visibleTo).toBe("P1");
-    expect([...hostDeal.secret.startingOrderIds, ...hostDeal.secret.mainOrderIds].sort()).toEqual([...hands["P1"]!].sort());
+    expect([...hostDeal.secret.startingOrderIds].sort()).toEqual([...hands["P1"]!].sort());
     expectAbsent(start, hands["P2"]!);
 
     // Every seat recovers exactly its own deal on reconnect, as a private log entry.
@@ -238,13 +240,15 @@ describe("V1.6.2 multiplayer privacy", () => {
     expect(await headState(harness)).toEqual(before);
   });
 
-  it("refuses to project any save that is not schema 8 under V1.6.2", () => {
+  it("refuses to project any save that is not schema 9 under V1.6.2", () => {
     const legacy = { schemaVersion: 5, rulesVersion: "1.4" } as unknown as GameState;
-    expect(() => projectPublicGameState(legacy)).toThrow("Only schema-8 V1.6.2 games");
+    expect(() => projectPublicGameState(legacy)).toThrow("Only schema-9 V1.6.2 games");
     const v161 = { schemaVersion: 6, rulesVersion: "1.6.1" } as unknown as GameState;
-    expect(() => projectPublicGameState(v161)).toThrow("Only schema-8 V1.6.2 games");
-    // A V1.6.2 save from before owner revision 3 (changes 25–27) is refused too.
+    expect(() => projectPublicGameState(v161)).toThrow("Only schema-9 V1.6.2 games");
+    // V1.6.2 saves from before owner revision 3 (changes 25–27) and 4 (changes 28–35) are refused too.
     const revision2 = { schemaVersion: 7, rulesVersion: "1.6.2" } as unknown as GameState;
-    expect(() => projectPublicGameState(revision2)).toThrow("Only schema-8 V1.6.2 games");
+    expect(() => projectPublicGameState(revision2)).toThrow("Only schema-9 V1.6.2 games");
+    const revision3 = { schemaVersion: 8, rulesVersion: "1.6.2" } as unknown as GameState;
+    expect(() => projectPublicGameState(revision3)).toThrow("Only schema-9 V1.6.2 games");
   });
 });

@@ -1,7 +1,8 @@
 /**
- * Form & Decorate (L165–173, L321–340): Apprentice and Shifu effects, Decoration costs, the
- * Shifu's −1 when forming 2 (L170), Large Throwing Wheel (T01, L615), Decorator's Kit (T16,
- * L616) and Ding (L474, R1), incl. the three separate reductions of L652.
+ * Form & Decorate (rev. 4 L179–187, L336, change 30): Apprentice and Shifu effects, each vessel's
+ * Shape Clay + 2 Coins whatever its Decoration, the Shifu's −1 Coin on one vessel when forming 2
+ * (rev. 4 L184), Large Throwing Wheel (T01, rev. 4 L602), Decorator's Kit (T16, rev. 4 L603) and
+ * Ding (rev. 4 L469, R1), incl. the three separate reductions of rev. 4 L639.
  */
 
 import { describe, expect, it } from "vitest";
@@ -36,11 +37,11 @@ function players(p1: PlayerSpec): PlayerSpec[] {
   return [{ resources: { clay: 10, wood: 0, coins: 10 }, ...p1 }, {}];
 }
 
-describe("Apprentice effect: form 1 vessel, paying Clay and a Decoration (L169)", () => {
+describe("Apprentice effect: form 1 vessel, paying its Clay and 2 Coins (rev. 4 L183)", () => {
   it("pays the Shape's Clay and 2 Coins, forms a Shaped vessel on space 0, then hands over", () => {
     const t = table();
     const events = t.act("p1", fd("p1:apprentice:1", [v("bowl", "impressed")]));
-    expect(t.player("p1").resources).toEqual({ clay: 1, wood: 2, coins: 1 });
+    expect(t.player("p1").resources).toEqual({ clay: 1, wood: 3, coins: 1 });
     expect(events).toEqual([
       {
         type: "WORKER_PLACED",
@@ -63,7 +64,7 @@ describe("Apprentice effect: form 1 vessel, paying Clay and a Decoration (L169)"
     expectPublicEvents(events);
   });
 
-  it.each(DECORATIONS)("%s costs 2 Coins (L333–340)", (decoration) => {
+  it.each(DECORATIONS)("a %s vessel costs 2 Coins (rev. 4 L336)", (decoration) => {
     const t = table({ players: players({}) });
     t.act("p1", fd("p1:apprentice:1", [v("plate", decoration)]));
     expect(t.player("p1").resources.coins).toBe(8);
@@ -81,7 +82,7 @@ describe("Apprentice effect: form 1 vessel, paying Clay and a Decoration (L169)"
   });
 });
 
-describe("Shifu effect: up to 2 vessels; forming 2 makes one Decoration 1 Coin cheaper (L170)", () => {
+describe("Shifu effect: up to 2 vessels; forming 2 makes one vessel 1 Coin cheaper (rev. 4 L184)", () => {
   it("forms 2 for 4 − 1 Coins", () => {
     const t = table({ players: players({}) });
     const events = t.act("p1", fd("p1:shifu", [v("vase", "carved"), v("washer", "painted")]));
@@ -107,7 +108,7 @@ describe("Shifu effect: up to 2 vessels; forming 2 makes one Decoration 1 Coin c
   });
 });
 
-describe("Large Throwing Wheel (T01, L615): total Clay −2, minimum 0, with ≥1 Vase or Censer", () => {
+describe("Large Throwing Wheel (T01, rev. 4 L602): total Clay −2, minimum 0, with ≥1 Vase or Censer", () => {
   it.each([
     [[v("vase")], 0],
     [[v("vase"), v("bowl")], 1],
@@ -140,7 +141,7 @@ describe("Large Throwing Wheel (T01, L615): total Clay −2, minimum 0, with ≥
   });
 });
 
-describe("Decorator's Kit (T16, L616): one Carved/Impressed/Painted Decoration −1 Coin", () => {
+describe("Decorator's Kit (T16, rev. 4 L603): one Carved/Impressed/Painted vessel −1 Coin", () => {
   it.each(["carved", "impressed", "painted"] as const)("reduces %s to 1 Coin", (decoration) => {
     const t = table({ players: players({ techs: ["T16"] }) });
     const events = t.act("p1", fd("p1:apprentice:1", [v("bowl", decoration)], { decoratorsKitVesselIndex: 0 }));
@@ -166,16 +167,16 @@ describe("Decorator's Kit (T16, L616): one Carved/Impressed/Painted Decoration �
     expect(again.error?.code).toBe("TECH_ALREADY_USED");
   });
 
-  it("stacks with the Shifu discount on the same Decoration: a Carved for 0 (L616, L652)", () => {
+  it("stacks with the Shifu discount on the same vessel: a Carved for 0 (rev. 4 L603, L639)", () => {
     const state = buildState({ players: players({ techs: ["T16"] }) });
     const command = fd("p1:shifu", [v("bowl", "carved"), v("plate")], { decoratorsKitVesselIndex: 0 });
     const quote = quoteFormDecorate(actorViewOf(state, "p1"), command);
     expect(quote.pay).toEqual({ clay: 2, wood: 0, coins: 2 });
     expect(quote.lines.filter((line) => line.resource === "coins")).toEqual([
-      { kind: "decoration", resource: "coins", amount: 2, itemIndex: 0 },
-      { kind: "decoration", resource: "coins", amount: 2, itemIndex: 1 },
+      { kind: "vessel_coins", resource: "coins", amount: 2, itemIndex: 0 },
+      { kind: "vessel_coins", resource: "coins", amount: 2, itemIndex: 1 },
       { kind: "decorators_kit", resource: "coins", amount: -1, itemIndex: 0 },
-      { kind: "shifu_decoration_discount", resource: "coins", amount: -1, itemIndex: 0 },
+      { kind: "shifu_discount", resource: "coins", amount: -1, itemIndex: 0 },
     ]);
     const t = table({ players: players({ techs: ["T16"] }) });
     t.act("p1", command);
@@ -183,7 +184,7 @@ describe("Decorator's Kit (T16, L616): one Carved/Impressed/Painted Decoration �
   });
 });
 
-describe("Ding (L474, R1): 1 Clay + 1 Coin for one more Bowl/Plate/Brush Washer of the same Shape", () => {
+describe("Ding (rev. 4 L469, R1): 1 Clay + 1 Coin for one more Bowl/Plate/Brush Washer of the same Shape", () => {
   const ding = (p1: PlayerSpec = {}) => players({ kilnId: "DI", ...p1 });
 
   it("forms the extra vessel after the action's vessel, with either worker type", () => {
@@ -205,7 +206,7 @@ describe("Ding (L474, R1): 1 Clay + 1 Coin for one more Bowl/Plate/Brush Washer 
     expectPublicEvents(events);
   });
 
-  it("is outside the vessel limit and the Shifu discount (L474, L652)", () => {
+  it("is outside the vessel limit and the Shifu discount (rev. 4 L469, L639)", () => {
     const t = table({ players: ding() });
     t.act("p1", fd("p1:shifu", [v("vase", "carved"), v("washer", "impressed")], { dingExtra: { copyOfVesselIndex: 1, decoration: "plain" } }));
     // Vessels: 2 + 1 Clay, 4 − 1 Coins. Ding: 1 Clay + 1 Coin.
@@ -217,7 +218,7 @@ describe("Ding (L474, R1): 1 Clay + 1 Coin for one more Bowl/Plate/Brush Washer 
     ]);
   });
 
-  it("takes neither Large Throwing Wheel nor Decorator's Kit (L652)", () => {
+  it("takes neither Large Throwing Wheel nor Decorator's Kit (rev. 4 L639)", () => {
     const wheel = table({ players: ding({ techs: ["T01"] }) });
     wheel.act("p1", fd("p1:shifu", [v("vase"), v("bowl")], { useLargeThrowingWheel: true, dingExtra: { copyOfVesselIndex: 1, decoration: "plain" } }));
     expect(wheel.player("p1").resources.clay).toBe(10 - (1 + 1)); // max(0, 3 − 2) + Ding's 1
@@ -263,7 +264,7 @@ describe("Ding (L474, R1): 1 Clay + 1 Coin for one more Bowl/Plate/Brush Washer 
 });
 
 describe("quoteFormDecorate (DESIGN §5.4)", () => {
-  it("itemises Shape Clay, the Wheel, Decorations, the Kit, the Shifu discount and Ding", () => {
+  it("itemises Shape Clay, the Wheel, each vessel's Coins, the Kit, the Shifu discount and Ding", () => {
     const state = buildState({ players: [{ kilnId: "DI", techs: ["T01"], resources: { clay: 9, coins: 9 } }, {}] });
     const quote = quoteFormDecorate(
       actorViewOf(state, "p1"),
@@ -278,9 +279,9 @@ describe("quoteFormDecorate (DESIGN §5.4)", () => {
         { kind: "shape_clay", resource: "clay", amount: 2, itemIndex: 0 },
         { kind: "shape_clay", resource: "clay", amount: 1, itemIndex: 1 },
         { kind: "large_throwing_wheel", resource: "clay", amount: -2, itemIndex: null },
-        { kind: "decoration", resource: "coins", amount: 2, itemIndex: 0 },
-        { kind: "decoration", resource: "coins", amount: 2, itemIndex: 1 },
-        { kind: "shifu_decoration_discount", resource: "coins", amount: -1, itemIndex: 0 },
+        { kind: "vessel_coins", resource: "coins", amount: 2, itemIndex: 0 },
+        { kind: "vessel_coins", resource: "coins", amount: 2, itemIndex: 1 },
+        { kind: "shifu_discount", resource: "coins", amount: -1, itemIndex: 0 },
         { kind: "ding_extra", resource: "clay", amount: 1, itemIndex: null },
         { kind: "ding_extra", resource: "coins", amount: 1, itemIndex: null },
       ],

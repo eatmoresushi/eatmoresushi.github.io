@@ -166,12 +166,15 @@ describe("V1.6.2 reconnect", () => {
     const actor = decisionPrompt(start.game).actorIds[0]!;
     const other = actor === "P1" ? "P2" : "P1";
     const commandId = "00000000-0000-4000-9700-000000000001";
-    const first = valueOf(await tryCommand(harness, actor, { type: "SELECT_KILN", kilnId: "DI" }, start.revision, commandId));
+    // Setup step 9 (rev. 4 L122, R23): the Kiln and a face-up Main Order in one command.
+    const orderId = start.game.market.display[0]!;
+    const pick = { type: "SELECT_KILN", kilnId: "DI", mainOrder: { slotIndex: 0, orderId } } as const;
+    const first = valueOf(await tryCommand(harness, actor, pick, start.revision, commandId));
     const commandsAfterFirst = harness.store.audit().commands.length;
-    const replay = valueOf(await tryCommand(harness, actor, { type: "SELECT_KILN", kilnId: "DI" }, start.revision, commandId));
+    const replay = valueOf(await tryCommand(harness, actor, pick, start.revision, commandId));
     expect(replay).toEqual(first);
     expect(harness.store.audit().commands).toHaveLength(commandsAfterFirst);
-    const stolen = await tryCommand(harness, other, { type: "SELECT_KILN", kilnId: "RU" }, first.revision, commandId);
+    const stolen = await tryCommand(harness, other, { type: "SELECT_KILN", kilnId: "RU", mainOrder: { slotIndex: 0, orderId } }, first.revision, commandId);
     expect(stolen.ok ? null : stolen.error.code).toBe("DUPLICATE_COMMAND");
     expect((await harness.store.loadHead(harness.roomId))?.revision).toBe(first.revision);
   });

@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { KILN_SPACE_IDS, LOCATION_IDS, TECHS } from "../../../src/game/content.ts";
+import { KILN_SPACE_IDS, LOCATION_IDS, ORDERS, TECHS } from "../../../src/game/content.ts";
 import { validateAction } from "../../../src/game/engine.ts";
 import { legalActions } from "../../../src/game/legalActions.ts";
 import { SeededRandom } from "../../../src/game/rng.ts";
@@ -20,8 +20,8 @@ import {
   firingSummary,
   guildOptions,
   handLimitStatus,
-  heatMarkerTargets,
   imperialPriorityOptions,
+  kilnMasterOption,
   kilnSelectionOptions,
   lookedOrderOptions,
   magistratesHallQuote,
@@ -131,10 +131,14 @@ describe("selector agreement at every decision of full games", () => {
 
 describe("view models", () => {
   const state = buildState({
-    players: [{ kilnId: "DI", techs: ["T10", "T14"], recognition: 2, resources: { clay: 5, wood: 4, coins: 7 }, hand: ["S01", "O01", "O02", "O03", "O04", "O05"] }, { kilnId: "GU" }],
+    players: [
+      { kilnId: "DI", techs: ["T10", { id: "T24", usedThisRound: true }], recognition: 2, resources: { clay: 5, wood: 4, coins: 7 }, hand: ["S01", "O01", "O02", "O03", "O04", "O05"] },
+      { kilnId: "GU" },
+    ],
     ceramics: [
       { owner: "p1", stage: "shaped", shape: "bowl", decoration: "carved" },
-      { owner: "p1", stage: "loaded", shape: "plate", glaze: "white", at: "middle_1", heatMarker: { source: "own", faceDown: true } },
+      // Kiln Master's marker, placed when c2 was loaded (rev. 4 L628, R22).
+      { owner: "p1", stage: "loaded", shape: "plate", glaze: "white", at: "middle_1", kilnMaster: -1 },
       { owner: "p1", stage: "loaded", shape: "vase", glaze: "celadon", at: "imperial", imperialModifier: 1 },
       { owner: "p1", stage: "finished", shape: "bowl", glaze: "white", quality: "standard" },
       { owner: "p1", stage: "finished", shape: "plate", glaze: "celadon", quality: "fine" },
@@ -185,8 +189,7 @@ describe("view models", () => {
       recognition: 2,
       orderHandCount: 6,
       handLimit: 5,
-      heatMarkerCeramicId: "c2",
-      kilnMasterCeramicId: null,
+      kilnMasterCeramicId: "c2",
       shapedCeramicIds: ["c1"],
       loadedCeramicIds: ["c2", "c3"],
       finishedCeramicIds: ["c4", "c5"],
@@ -197,7 +200,7 @@ describe("view models", () => {
     expect(summary.techs.map((t) => [t.techId, t.oncePerRound, t.ready])).toEqual([
       // Colour Samples has a once-per-round swap (v1.6.2 L625).
       ["T10", true, true],
-      ["T14", true, true],
+      ["T24", true, false],
     ]);
     expect(summary.personalSpaces.filter((s) => s.locationId === "glaze_load").map((s) => s.unlocked)).toEqual([true, true]);
     // Two Techs and no VP for them (v1.6.2 change 27).
@@ -232,8 +235,10 @@ describe("view models", () => {
 
   it("quotes and option lists carry the values the UI shows", () => {
     const view = viewOf(state, "p1");
-    expect(magistratesHallQuote(view, "apprentice")).toMatchObject({ ok: true, pay: { clay: 0, wood: 0, coins: 4 }, reachable: 3 });
-    expect(magistratesHallQuote(view, "shifu")).toMatchObject({ ok: true, pay: { coins: 3 }, reachable: 3 });
+    // Both workers pay 4; only the Shifu may then reserve a face-up Crown Order (rev. 4 L240–241, R21).
+    const crownSlots = state.market.display.flatMap((orderId, slotIndex) => (orderId !== null && ORDERS[orderId].crowns >= 1 ? [slotIndex] : []));
+    expect(magistratesHallQuote(view, "apprentice")).toMatchObject({ ok: true, pay: { clay: 0, wood: 0, coins: 4 }, reachable: 3, crownOrderSlots: [] });
+    expect(magistratesHallQuote(view, "shifu")).toMatchObject({ ok: true, pay: { coins: 4 }, reachable: 3, crownOrderSlots: crownSlots });
     const shifuGuild = guildOptions(view, "shifu");
     // Every Guild Hall take pays the printed cost; V1.6.2 has no Shifu discount (v1.6.2 L207).
     for (const option of shifuGuild.faceUp) {
@@ -263,21 +268,22 @@ describe("view models", () => {
     ]);
   });
 
-  it("heatMarkerTargets: loaded ceramics without a marker and the pending loads (R9); none once the marker is out", () => {
+  it("kilnMasterOption agrees with the validator at loading (rev. 4 L628, R22)", () => {
     const fresh = buildState({
-      players: [{}, {}],
-      ceramics: [
-        { owner: "p1", stage: "shaped", shape: "bowl" },
-        { owner: "p1", stage: "loaded", shape: "plate", glaze: "white", at: "middle_1" },
-        { owner: "p2", stage: "loaded", shape: "plate", glaze: "white", at: "high_1" },
-      ],
+      players: [{ techs: ["T24"] }, {}],
+      ceramics: [{ owner: "p1", stage: "shaped", shape: "bowl" }],
     });
     const view = actorViewOf(fresh, "p1");
-    const loads = [{ ceramicId: "c1", glaze: "white" as const, destination: { kiln: "shared" as const, spaceId: "low_1" as const } }];
-    expect(heatMarkerTargets(view, "p1", loads)).toEqual(["c2", "c1"]);
-    expect(validateAction(view, { type: "PLACE_GLAZE_LOAD", workerId: "p1:shifu", loads, heatMarkerCeramicId: "c2" })).toBeNull();
-    expect(validateAction(view, { type: "PLACE_GLAZE_LOAD", workerId: "p1:shifu", loads, heatMarkerCeramicId: "c3" })?.code).toBe("CERAMIC_NOT_OWNED");
-    expect(heatMarkerTargets(viewOf(state, "p1"), "p1", [])).toEqual([]);
+    const loads = [{ ceramicId: "c1", glaze: "white" as const, destination: { kiln: "shared" as const, spaceId: "low_1" as const }, kilnMaster: 1 as const }];
+    expect(kilnMasterOption(view, "p1")).toEqual({ ready: true, values: [1, -1] });
+    expect(validateAction(view, { type: "PLACE_GLAZE_LOAD", workerId: "p1:apprentice:1", loads })).toBeNull();
+    // Used this round: listed as not ready, and the validator agrees.
+    expect(kilnMasterOption(viewOf(state, "p1"), "p1")).toEqual({ ready: false, values: [1, -1] });
+    expect(validateAction(actorViewOf(state, "p1"), { type: "PLACE_GLAZE_LOAD", workerId: "p1:apprentice:1", loads })?.code).toBe("TECH_ALREADY_USED");
+    // Without the tile: null, and TECH_NOT_OWNED.
+    const none = actorViewOf(buildState({ players: [{}, {}], ceramics: [{ owner: "p1", stage: "shaped", shape: "bowl" }] }), "p1");
+    expect(kilnMasterOption(none, "p1")).toBeNull();
+    expect(validateAction(none, { type: "PLACE_GLAZE_LOAD", workerId: "p1:apprentice:1", loads })?.code).toBe("TECH_NOT_OWNED");
   });
 
   it("dingCopyableVesselIndexes lists only Bowls, Plates and Brush Washers, with Ding ready", () => {

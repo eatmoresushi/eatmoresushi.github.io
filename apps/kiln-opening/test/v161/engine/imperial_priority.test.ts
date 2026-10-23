@@ -2,7 +2,9 @@
  * Imperial Priority (L293, L288, L434, v1.6.2 L645, R10, R11; DESIGN §11 Q1 / audit P1): once per
  * game, before or after your worker action, spend the token — free — to give 1 of your Shaped
  * vessels a Glaze and load it into your empty Imperial Kiln with a chosen public modifier. It
- * is a token effect, not a Glaze & Load action. Reworking Table may change the Shape first.
+ * is a token effect, not a Glaze & Load action, and burns no kiln fuel (rev. 4 L291). Reworking
+ * Table may change the Shape first; Kiln Master's marker may go on the load (R22,
+ * `kiln_master.test.ts`).
  */
 
 import { describe, expect, it } from "vitest";
@@ -76,6 +78,13 @@ describe("using the token", () => {
 
     const placed = reserveFaceUp(t, "p1:apprentice:1");
     expect(placed.find((event) => event.type === "WORK_TURN_ENDED")).toMatchObject({ automatic: true });
+  });
+
+  it("burns no kiln fuel: usable with no Wood, unlike a Shared Kiln load (rev. 4 L291, change 34)", () => {
+    const t = table(holder({ players: [{ recognition: 3, resources: { clay: 0, wood: 0, coins: 0 } }, {}] }));
+    const events = t.act("p1", priority("c1"));
+    expect(types(events)).toEqual(["IMPERIAL_PRIORITY_USED", "CERAMIC_LOADED"]);
+    expect(t.player("p1").resources).toEqual({ clay: 0, wood: 0, coins: 0 });
   });
 
   it("after the worker action: the window opens because the token is usable, and closes once it is spent", () => {

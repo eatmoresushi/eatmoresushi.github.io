@@ -23,7 +23,7 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  * the digest.
  *
  * This is drift detection, not security: FNV-1a is not a defence against a crafted collision.
- * Rooms store `r<revision>-<digest>`; the V1.6.2 Supabase gate requires `^r31-[0-9a-f]{16}$`.
+ * Rooms store `r<revision>-<digest>`; the V1.6.2 Supabase gate requires `^r32-[0-9a-f]{16}$`.
  */
 
 /**
@@ -66,8 +66,25 @@ import techniquesJson from "../../data/techniques.json" with { type: "json" };
  *        no Tech VP (owner amendment A1 superseded: `ScoreLedger.techs`, the final `techs`
  *        row, `TECH_ACQUIRED.vp` and `techs.vpEach` are gone). Rules version stays 1.6.2;
  *        r30 rooms and schema-7 saves are rejected, never migrated.
+ *  32 -- V1.6.2 owner revision 4 (changes 28–35, 2026-10-22/23) and owner rulings R20–R25,
+ *        state schema 9: no player Heat marker and no Heat-marker step (the
+ *        `firing_heat_markers` phase, `RESOLVE_HEAT_MARKERS` and the Heat-marker events are
+ *        gone); Kiln Master's ±1 marker chosen when a ceramic is loaded
+ *        (`LoadedCeramic.kilnMasterMarker`, R22); Ge crackles a Fine or Standard ceramic and
+ *        each Crackle ceramic delivered scores 1 VP (`CompletedOrderRecord.crackleVp`); a Flawed
+ *        ceramic is sold for 2 Coins during its owner's turn (`SELL_FLAWED`, R20; the
+ *        `firing_salvage` step is gone); the starting Main Order is taken face up with the Kiln
+ *        in one Setup turn (`SELECT_KILN.mainOrder`, R23); the Magistrate's Hall Shifu pays 4
+ *        Coins and may reserve a face-up Crown Order (R21); 1 Wood per Glaze & Load action
+ *        into the Shared Kiln (R24); Select N discards its unreserved looked cards (R25,
+ *        replacing change 24's deck bottom and R19). Rules version stays 1.6.2; r31 rooms and
+ *        schema-8 saves are rejected, never migrated. The revision lands in stages
+ *        (ENGINE_V1.6.2_DELTA.md §15.20): Setup and the Work Phase first (with the Heat
+ *        marker's removal), the firing, Order Phase and Select changes after; V1.6.2 is
+ *        unreleased, so the revision stays 32 across the stages and the content digest moves
+ *        with the data.
  */
-export const RULES_BEHAVIOUR_REVISION = 31;
+export const RULES_BEHAVIOUR_REVISION = 32;
 
 /**
  * Display-only keys. A key is dropped only when its value is prose (a string, or `null` for an

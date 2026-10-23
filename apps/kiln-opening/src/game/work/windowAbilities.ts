@@ -15,9 +15,11 @@
  *   the looked cards or 1 face-up Main Order, whose position stays empty until the turn ends
  *   (v1.6.2 L646); the looked cards not reserved go face down to the bottom of the Main deck in
  *   random order (change 24, R19). The hand size is unchanged.
- * - Imperial Priority: once per game, free, glaze and load 1 Shaped vessel into your empty
- *   Imperial Kiln with a chosen public modifier (L293, R10, R11). Reworking Table may change
- *   the Shape first (DESIGN §11 Q1 default P1: allowed, using its once-per-round allowance).
+ * - Imperial Priority: once per game, free (no Wood, rev. 4 L291), glaze and load 1 Shaped
+ *   vessel into your empty Imperial Kiln with a chosen public modifier (L293, R10, R11).
+ *   Reworking Table may change the Shape first (DESIGN §11 Q1 default P1: allowed, using its
+ *   once-per-round allowance), and Kiln Master's marker may go on the ceramic as it is loaded
+ *   (T24, rev. 4 L628, R22).
  * - After each use (for the swap, after its reservation in `work/selectChoose.ts`)
  *   `work/turn.afterWindowAbilityUsed` rechecks the window and ends the turn when nothing is left
  *   after the worker action.
@@ -73,6 +75,7 @@ function imperialLoad(action: ImperialPriorityAction): LoadSpec {
     glaze: action.glaze,
     destination: { kiln: "imperial", imperialModifier: action.imperialModifier },
     ...(action.reworkShape === undefined ? {} : { reworkShape: action.reworkShape }),
+    ...(action.kilnMaster === undefined ? {} : { kilnMaster: action.kilnMaster }),
   };
 }
 
@@ -157,7 +160,8 @@ export const handlers: Pick<ActionHandlerTable, "USE_COLOUR_SAMPLES_SWAP" | "USE
     resolve: (draft, actorId, action, ctx) => {
       player(draft, actorId).imperial.priority = "spent";
       emit(ctx, { type: "IMPERIAL_PRIORITY_USED", playerId: actorId, ceramicId: action.ceramicId });
-      // Reworking Table, if chosen, changes the Shape first and uses its allowance (Q1).
+      // Reworking Table, if chosen, changes the Shape first and uses its allowance (Q1); Kiln
+      // Master's marker, if chosen, goes on as it is loaded (R22). No Wood (rev. 4 L291).
       loadCeramic(draft, actorId, imperialLoad(action), "imperial_priority", ctx);
       afterWindowAbilityUsed(draft, actorId, ctx);
     },

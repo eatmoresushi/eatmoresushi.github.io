@@ -57,7 +57,7 @@ function secretRichState(): GameState {
       testPieces: [{ playerId: "p1", peeked: true, buried: false }],
     }),
     ceramics: [
-      { owner: "p1", stage: "loaded", shape: "bowl", glaze: "white", at: "high_1", heatMarker: { source: "own", faceDown: true } },
+      { owner: "p1", stage: "loaded", shape: "bowl", glaze: "white", at: "high_1" },
       { owner: "p2", stage: "finished", shape: "vase", glaze: "celadon", quality: "fine", crackle: true },
     ],
   });
@@ -140,9 +140,9 @@ describe("projectPublicState", () => {
     expect(projected.firing?.testPieces).toEqual([{ playerId: "p1", peeked: true, buried: false }]);
   });
 
-  it("keeps every ceramic attribute public, including face-down markers and Crackle (L508)", () => {
+  it("keeps every ceramic attribute public, including the Kiln Master marker field and Crackle (L508, rev. 4 L635)", () => {
     const projected = projectPublicState(secretRichState());
-    expect(projected.ceramics["c1"]).toMatchObject({ stage: "loaded", heatMarker: { source: "own", faceDown: true } });
+    expect(projected.ceramics["c1"]).toMatchObject({ stage: "loaded", kilnMasterMarker: null });
     expect(projected.ceramics["c2"]).toMatchObject({ crackle: true, quality: "fine" });
     expect(projected.players["p1"]?.resources).toBeDefined();
   });
@@ -249,7 +249,7 @@ describe("private views", () => {
 
 describe("events (DESIGN §4.4)", () => {
   const secretEvents: GameEvent[] = [
-    { type: "ORDERS_DEALT", playerId: "p1", startingCount: 2, mainCount: 1, secret: { visibleTo: "p1", startingOrderIds: ["S01", "S02"], mainOrderIds: ["O10"] } },
+    { type: "ORDERS_DEALT", playerId: "p1", startingCount: 2, secret: { visibleTo: "p1", startingOrderIds: ["S01", "S02"] } },
     { type: "ORDER_RESERVED", playerId: "p2", via: "commission_market", source: "looked", slotIndex: null, orderId: null, secret: { visibleTo: "p2", orderId: "O31" } },
     { type: "ORDER_RESERVED", playerId: "p2", via: "canal_wharf", source: "deck_top", slotIndex: null, orderId: null, secret: { visibleTo: "p2", orderId: "O33" } },
     { type: "PRIVATE_LOOK_OPENED", playerId: "p2", kind: "commission_market", discipline: null, count: 3, secret: { visibleTo: "p2", orderIds: ["O30", "O31", "O32"], techIds: [] } },

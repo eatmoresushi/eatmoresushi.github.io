@@ -12,10 +12,11 @@ import {
 } from "../../../src/game/rulesFingerprint.ts";
 
 /**
- * The V1.6.2 rules fingerprint (DESIGN §6.9, ENGINE_V1.6.2_DELTA.md §3.6): behaviour revision
- * 31 (owner revision 3, changes 25–27), a content digest of the seven mechanical data files that
- * ignores display prose, and the `r31-<16 hex>` shape the V1.6.2 Supabase gate accepts (DESIGN
- * §4.6). V1.6.2 rooms from before revision 3 (`r30`) and V1.6.1 rooms (`r29`) are refused.
+ * The V1.6.2 rules fingerprint (DESIGN §6.9, ENGINE_V1.6.2_DELTA.md §3.6, §15.2): behaviour
+ * revision 32 (owner revision 4, changes 28–35, rulings R20–R25), a content digest of the seven
+ * mechanical data files that ignores display prose, and the `r32-<16 hex>` shape the V1.6.2
+ * Supabase gate accepts (DESIGN §4.6). V1.6.2 rooms from before revision 4 (`r31`, `r30`) and
+ * V1.6.1 rooms (`r29`) are refused.
  */
 
 const ROOT = join(import.meta.dirname, "../../..");
@@ -38,14 +39,46 @@ function entries(sources: Sources, name: string, key: string): Array<Record<stri
 }
 
 describe("V1.6.2 rules fingerprint", () => {
-  it("is behaviour revision 31", () => {
-    expect(RULES_BEHAVIOUR_REVISION).toBe(31);
+  it("is behaviour revision 32", () => {
+    expect(RULES_BEHAVIOUR_REVISION).toBe(32);
   });
 
-  it("has the r31-<16 hex> shape the V1.6.2 room gate requires, never an r30 or a V1.6.1 r29 one", () => {
-    expect(rulesFingerprint()).toMatch(/^r31-[0-9a-f]{16}$/);
-    expect(rulesFingerprint()).toBe(`r31-${contentDigest()}`);
-    expect(rulesFingerprint()).not.toMatch(/^r(?:29|30)-/);
+  it("has the r32-<16 hex> shape the V1.6.2 room gate requires, never an r31, r30 or a V1.6.1 r29 one", () => {
+    expect(rulesFingerprint()).toMatch(/^r32-[0-9a-f]{16}$/);
+    expect(rulesFingerprint()).toBe(`r32-${contentDigest()}`);
+    expect(rulesFingerprint()).not.toMatch(/^r(?:29|30|31)-/);
+  });
+
+  it("moves with owner revision 4's data (changes 28–35)", () => {
+    const edits: Array<(s: Sources) => void> = [
+      // Materials Yard 3/6 before change 34.
+      (s) => {
+        const effects = entries(s, "action_locations", "locations").find((location) => location["id"] === "materials_yard")!["effects"] as Record<string, Record<string, unknown>>;
+        effects["shifu"]!["resources"] = 6;
+      },
+      // The Magistrate's Hall Shifu paid 3 and reserved nothing before change 33.
+      (s) => {
+        const effects = entries(s, "action_locations", "locations").find((location) => location["id"] === "magistrates_hall")!["effects"] as Record<string, Record<string, unknown>>;
+        effects["shifu"]!["crownOrders"] = 0;
+      },
+      // No kiln fuel before changes 34–35.
+      (s) => {
+        const effects = entries(s, "action_locations", "locations").find((location) => location["id"] === "glaze_load")!["effects"] as Record<string, Record<string, unknown>>;
+        effects["apprentice"]!["sharedKilnWood"] = 0;
+      },
+      // Starting Wood 2 and a dealt Main Order before changes 32 and 34.
+      (s) => { ((file(s, "game_config")["startingResources"] ?? {}) as Record<string, unknown>)["wood"] = 2; },
+      (s) => { (file(s, "game_config")["setupDeal"] as Record<string, unknown>)["mainOrders"] = 1; },
+      // Fuel Ledger cost 2 before change 30.
+      (s) => { entries(s, "techniques", "advanced").find((tech) => tech["id"] === "T12")!["cost"] = 2; },
+      // Forming paid a Decoration cost before change 30.
+      (s) => { file(s, "game_config")["formingCoins"] = 1; },
+    ];
+    for (const edit of edits) {
+      const sources = copySources();
+      edit(sources);
+      expect(contentDigestOf(sources)).not.toBe(contentDigest());
+    }
   });
 
   it("moves with owner revision 3's data (changes 25–27)", () => {
@@ -181,7 +214,7 @@ describe("V1.6.2 rules fingerprint", () => {
     ["a Tech's per-round limit", (s) => { entries(s, "techniques", "advanced")[0]!["oncePerRound"] = false; }],
     ["a location effect object (keyed like V1.4 prose)", (s) => {
       const effects = entries(s, "action_locations", "locations")[0]!["effects"] as Record<string, Record<string, unknown>>;
-      effects["apprentice"]!["resources"] = 4;
+      effects["apprentice"]!["resources"] = 3;
     }],
     ["a capacity", (s) => {
       (entries(s, "action_locations", "locations")[6]!["capacity"] as Record<string, unknown>)["3"] = 2;

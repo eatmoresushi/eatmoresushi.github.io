@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_temp;
-select plan(29);
+select plan(30);
 
 insert into public.rooms (
   id, code, status, host_seat_id, rules_version, content_version, latest_revision
@@ -16,7 +16,7 @@ insert into public.rooms (
   id, code, status, host_seat_id, rules_version, content_version, latest_revision, content_digest
 ) values
   ('10000000-0000-4000-8000-000000000003', 'ROOM03', 'playing',
-   '20000000-0000-4000-8000-000000000003', '1.6.2', '1.6.2', 0, 'r31-0123456789abcdef');
+   '20000000-0000-4000-8000-000000000003', '1.6.2', '1.6.2', 0, 'r32-0123456789abcdef');
 
 insert into public.room_players (
   seat_id, room_id, player_id, seat_index, display_name, colour, is_host
@@ -116,7 +116,7 @@ select throws_ok(
              '20000000-0000-4000-8000-000000000009', '1.6.2', '1.6.2', 0, 'r29-0123456789abcdef') $$,
   '23514',
   null,
-  'a V1.6.2 room requires an r31 fingerprint (a V1.6.1 r29 one is refused)'
+  'a V1.6.2 room requires an r32 fingerprint (a V1.6.1 r29 one is refused)'
 );
 select throws_ok(
   $$ insert into public.rooms (id, code, status, host_seat_id, rules_version, content_version, latest_revision, content_digest)
@@ -125,6 +125,14 @@ select throws_ok(
   '23514',
   null,
   'an r30 fingerprint from before owner revision 3 is refused'
+);
+select throws_ok(
+  $$ insert into public.rooms (id, code, status, host_seat_id, rules_version, content_version, latest_revision, content_digest)
+     values ('10000000-0000-4000-8000-000000000006', 'ROOM06', 'lobby',
+             '20000000-0000-4000-8000-000000000006', '1.6.2', '1.6.2', 0, 'r31-0123456789abcdef') $$,
+  '23514',
+  null,
+  'an r31 fingerprint from before owner revision 4 is refused'
 );
 select lives_ok(
   $$ insert into public.rooms (id, code, status, host_seat_id, rules_version, content_version, latest_revision, content_digest)

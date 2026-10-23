@@ -11,7 +11,8 @@ import type { CeramicSpec } from "./support/fixtures.ts";
 import type { GameAction, Shape } from "../../../src/game/types.ts";
 import { table, types } from "./workshop_support.ts";
 
-const RICH = { resources: { clay: 20, wood: 0, coins: 20 } };
+// Wood pays the Glaze & Load fuel (rev. 4 L197).
+const RICH = { resources: { clay: 20, wood: 5, coins: 20 } };
 const fd = (workerId: string, shape: Shape, extra: Partial<Extract<GameAction, { type: "PLACE_FORM_DECORATE" }>> = {}): GameAction => ({
   type: "PLACE_FORM_DECORATE",
   workerId,
@@ -65,7 +66,7 @@ describe("Vessel cards are not a limit (L80, L329)", () => {
   it("Prepared Clay also uses the supply, then a proxy", () => {
     const tenVases: CeramicSpec[] = Array.from({ length: 10 }, () => ({ owner: "p2", shape: "vase", stage: "shaped" }));
     const t = table({ players: [{ ...RICH, techs: ["T17"] }, {}], ceramics: tenVases });
-    t.act("p1", { type: "PLACE_MATERIALS_YARD", workerId: "p1:apprentice:1", clay: 3, wood: 0, preparedClay: { shape: "vase", decoration: "plain" } });
+    t.act("p1", { type: "PLACE_MATERIALS_YARD", workerId: "p1:apprentice:1", clay: 4, wood: 0, preparedClay: { shape: "vase", decoration: "plain" } });
     expect(ceramic(t.state, "c11")).toMatchObject({ shape: "vase", vesselInstanceId: "vase-proxy-1", formedBy: "prepared_clay" });
   });
 

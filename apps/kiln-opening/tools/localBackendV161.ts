@@ -2,8 +2,8 @@
  * The V1.6.1 local in-memory backend for `npm run dev:local` and the Playwright specs
  * (UI plan §3.9, K11). A port of `tools/localBackend.ts`, which serves the V1.4 app at
  * `/test-api`; this one serves the V1.6.1 app at `/test-api-v161` until cutover. The file and
- * path names stay; the service it runs is the current engine (rules 1.6.2, schema 8, `r31-`;
- * ENGINE_V1.6.2_DELTA.md §9).
+ * path names stay; the service it runs is the current engine (rules 1.6.2, schema 9, `r32-`;
+ * ENGINE_V1.6.2_DELTA.md §9, §15.16).
  *
  * It runs the real `AuthoritativeGameService` over `InMemoryMultiplayerStore`, with:
  * - every operation of `TestHttpGameApi` in `src/multiplayer/client.ts`, including

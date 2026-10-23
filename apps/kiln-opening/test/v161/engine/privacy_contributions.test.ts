@@ -75,8 +75,9 @@ describe("sealed choices stay out of the public state (DESIGN §4.2)", () => {
 
   it("no Wood is set aside before the reveal: the public totals are unchanged (v1.6.2 L508)", () => {
     const { table } = sealedTable();
-    expect(projectPublicState(table.state).players["p1"]?.resources.wood).toBe(2);
-    expect(projectPublicState(table.state).players["p2"]?.resources.wood).toBe(2);
+    // Every seat starts with 3 Wood (rev. 4 L125).
+    expect(projectPublicState(table.state).players["p1"]?.resources.wood).toBe(3);
+    expect(projectPublicState(table.state).players["p2"]?.resources.wood).toBe(3);
   });
 
   it("each seat sees only its own sealed choice; other seats and spectators see none", () => {

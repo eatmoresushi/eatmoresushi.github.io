@@ -76,14 +76,13 @@ const COMMAND_TYPES = Object.keys({
   SUBMIT_CONTRIBUTION: true,
   TEST_PIECES_DECIDE: true,
   TEST_PIECES_BURY: true,
-  RESOLVE_HEAT_MARKERS: true,
   RESOLVE_JUN: true,
   USE_PROTECTIVE_SAGGARS: true,
   USE_SECOND_FIRING: true,
   SECOND_FIRING_CHOOSE: true,
   USE_GE_CRACKLE: true,
   END_AFTER_QUALITY: true,
-  SALVAGE_FLAWED: true,
+  SELL_FLAWED: true,
   COMPLETE_ORDER: true,
   END_ORDER_TURN: true,
   DISCARD_TO_HAND_LIMIT: true,
@@ -97,11 +96,9 @@ const PHASES = [
     work_turn: true,
     firing_contributions: true,
     firing_test_pieces: true,
-    firing_heat_markers: true,
     firing_heat_adjustment: true,
     firing_after_quality: true,
     firing_second_firing_choice: true,
-    firing_salvage: true,
     orders: true,
     cleanup_hand_limit: true,
   } satisfies Record<Exclude<GamePhaseType, "finished">, true>),
@@ -115,7 +112,9 @@ const PHASES = [
   } satisfies Record<WorkTurnStep["kind"], true>).map((kind) => `work_turn:${kind}`),
 ];
 
-const LOAD_FEATURES = ["inverted_firing", "kiln_furniture", "rework", "heat_marker", "pair", "imperial"];
+/** Optional load choices, Kiln Master's marker at loading (R22) among them, and the
+ * Magistrate's Hall Shifu's optional Crown Order (R21). */
+const LOAD_FEATURES = ["inverted_firing", "kiln_furniture", "rework", "kiln_master", "pair", "imperial", "crown_order"];
 
 function merge(into: Map<string, number>, from: ReadonlyMap<string, number>): void {
   for (const [key, value] of from) {

@@ -34,11 +34,12 @@ import type {
   CrackleDeclaration,
   FormVesselSpec,
   GameRuleError,
-  HeatMarkerValue,
+  HeatDelta,
   ImperialModifier,
   KilnFurnitureModifier,
   LoadSpec,
   OrderCompletionSpec,
+  OrderId,
   SelectPick,
 } from "./types.ts";
 
@@ -46,7 +47,8 @@ import type {
 
 const IMPERIAL_MODIFIERS = [-1, 0, 1] as const satisfies readonly ImperialModifier[];
 const KILN_FURNITURE_MODIFIERS = [-1, 0, 1] as const satisfies readonly KilnFurnitureModifier[];
-const HEAT_MARKER_VALUES = [1, -1] as const satisfies readonly HeatMarkerValue[];
+/** Jun's adjustment and Kiln Master's marker (rev. 4 L628). */
+const HEAT_DELTAS = [1, -1] as const satisfies readonly HeatDelta[];
 /** Second Firing's 2 revealed cards (v1.6.2 L639). */
 const SECOND_FIRING_CARD_INDEXES = [0, 1] as const;
 
@@ -55,7 +57,7 @@ type Covers<Union, List extends readonly unknown[]> = [Exclude<Union, List[numbe
 const _covers: [
   Covers<ImperialModifier, typeof IMPERIAL_MODIFIERS>,
   Covers<KilnFurnitureModifier, typeof KILN_FURNITURE_MODIFIERS>,
-  Covers<HeatMarkerValue, typeof HEAT_MARKER_VALUES>,
+  Covers<HeatDelta, typeof HEAT_DELTAS>,
 ] = [true, true, true];
 void _covers;
 
@@ -97,7 +99,7 @@ function objectAt(value: unknown, field: string): Fields {
 }
 
 /** Rejects unknown keys and missing required keys (`undefined` counts as missing; `null` is
- * present, for the nullable fields `spaceId`, `adjustment`, `ceramicId` and `jun`). */
+ * present, for the nullable fields `spaceId`, `adjustment` and `jun`). */
 function shape(o: Fields, field: string, required: readonly string[], optional: readonly string[] = []): void {
   for (const key of Object.keys(o)) {
     if (!required.includes(key) && !optional.includes(key)) {
@@ -188,7 +190,18 @@ const techId = (value: unknown, field: string) => oneOf(value, TECH_IDS, field);
 const shapeOf = (value: unknown, field: string) => oneOf(value, SHAPES, field);
 const glazeOf = (value: unknown, field: string) => oneOf(value, GLAZES, field);
 const decorationOf = (value: unknown, field: string) => oneOf(value, DECORATIONS, field);
-const heatMarkerValue = (value: unknown, field: string) => oneOf(value, HEAT_MARKER_VALUES, field);
+const heatDelta = (value: unknown, field: string) => oneOf(value, HEAT_DELTAS, field);
+
+/** A face-up display pick: the Setup Main Order (rev. 4 L122) or the Magistrate's Hall Shifu's
+ * Crown Order (rev. 4 L241). Whether the position still shows that Order is a rule check. */
+function displayPick(value: unknown, field: string): { slotIndex: number; orderId: OrderId } {
+  const o = objectAt(value, field);
+  shape(o, field, ["slotIndex", "orderId"]);
+  return {
+    slotIndex: count(get(o, "slotIndex"), path(field, "slotIndex")),
+    orderId: orderId(get(o, "orderId"), path(field, "orderId")),
+  };
+}
 
 function formVessel(value: unknown, field: string): FormVesselSpec {
   const o = objectAt(value, field);
@@ -198,7 +211,7 @@ function formVessel(value: unknown, field: string): FormVesselSpec {
 
 function loadSpec(value: unknown, field: string): LoadSpec {
   const o = objectAt(value, field);
-  shape(o, field, ["ceramicId", "glaze", "destination"], ["reworkShape"]);
+  shape(o, field, ["ceramicId", "glaze", "destination"], ["reworkShape", "kilnMaster"]);
   const destinationField = path(field, "destination");
   const d = objectAt(get(o, "destination"), destinationField);
   const kiln = oneOf(get(d, "kiln"), ["shared", "imperial"] as const, path(destinationField, "kiln"));
@@ -226,6 +239,7 @@ function loadSpec(value: unknown, field: string): LoadSpec {
     glaze: glazeOf(get(o, "glaze"), path(field, "glaze")),
     destination,
     ...maybe("reworkShape", optional(o, "reworkShape", field, shapeOf)),
+    ...maybe("kilnMaster", optional(o, "kilnMaster", field, heatDelta)),
   };
 }
 
@@ -289,8 +303,12 @@ type Parsers = { readonly [K in CommandType]: (o: Fields) => Extract<Authoritati
 
 const PARSERS: Parsers = {
   SELECT_KILN: (o) => {
-    shape(o, "", ["type", "kilnId"]);
-    return { type: "SELECT_KILN", kilnId: oneOf(get(o, "kilnId"), KILN_IDS, "kilnId") };
+    shape(o, "", ["type", "kilnId", "mainOrder"]);
+    return {
+      type: "SELECT_KILN",
+      kilnId: oneOf(get(o, "kilnId"), KILN_IDS, "kilnId"),
+      mainOrder: displayPick(get(o, "mainOrder"), "mainOrder"),
+    };
   },
   PLACE_SETTERS_MARK: (o) => {
     shape(o, "", ["type", "spaceId"]);
@@ -341,12 +359,11 @@ const PARSERS: Parsers = {
     };
   },
   PLACE_GLAZE_LOAD: (o) => {
-    shape(o, "", ["type", "workerId", "loads"], ["heatMarkerCeramicId"]);
+    shape(o, "", ["type", "workerId", "loads"]);
     return {
       type: "PLACE_GLAZE_LOAD",
       workerId: workerId(get(o, "workerId"), "workerId"),
       loads: list(get(o, "loads"), "loads", loadSpec),
-      ...maybe("heatMarkerCeramicId", optional(o, "heatMarkerCeramicId", "", ceramicId)),
     };
   },
   PLACE_COMMISSION_MARKET: (o) => {
@@ -372,7 +389,14 @@ const PARSERS: Parsers = {
     return { type: "PLACE_GUILD_HALL", workerId: workerId(get(o, "workerId"), "workerId"), choice };
   },
   PLACE_CANAL_WHARF: (o) => ({ type: "PLACE_CANAL_WHARF", workerId: workerOnly(o) }),
-  PLACE_MAGISTRATES_HALL: (o) => ({ type: "PLACE_MAGISTRATES_HALL", workerId: workerOnly(o) }),
+  PLACE_MAGISTRATES_HALL: (o) => {
+    shape(o, "", ["type", "workerId"], ["crownOrder"]);
+    return {
+      type: "PLACE_MAGISTRATES_HALL",
+      workerId: workerId(get(o, "workerId"), "workerId"),
+      ...maybe("crownOrder", optional(o, "crownOrder", "", displayPick)),
+    };
+  },
   SELECT_CHOOSE: (o) => {
     shape(o, "", ["type", "reservations"]);
     return { type: "SELECT_CHOOSE", reservations: list(get(o, "reservations"), "reservations", selectPick) };
@@ -398,13 +422,14 @@ const PARSERS: Parsers = {
     return { type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: orderId(get(o, "discardOrderId"), "discardOrderId") };
   },
   USE_IMPERIAL_PRIORITY: (o) => {
-    shape(o, "", ["type", "ceramicId", "glaze", "imperialModifier"], ["reworkShape"]);
+    shape(o, "", ["type", "ceramicId", "glaze", "imperialModifier"], ["reworkShape", "kilnMaster"]);
     return {
       type: "USE_IMPERIAL_PRIORITY",
       ceramicId: ceramicId(get(o, "ceramicId"), "ceramicId"),
       glaze: glazeOf(get(o, "glaze"), "glaze"),
       imperialModifier: oneOf(get(o, "imperialModifier"), IMPERIAL_MODIFIERS, "imperialModifier"),
       ...maybe("reworkShape", optional(o, "reworkShape", "", shapeOf)),
+      ...maybe("kilnMaster", optional(o, "kilnMaster", "", heatDelta)),
     };
   },
   END_TURN: (o) => {
@@ -419,27 +444,6 @@ const PARSERS: Parsers = {
     shape(o, "", ["type", "bury"]);
     return { type: "TEST_PIECES_BURY", bury: bool(get(o, "bury"), "bury") };
   },
-  RESOLVE_HEAT_MARKERS: (o) => {
-    shape(o, "", ["type"], ["ownMarker", "kilnMaster"]);
-    return {
-      type: "RESOLVE_HEAT_MARKERS",
-      ...maybe(
-        "ownMarker",
-        optional(o, "ownMarker", "", (value, field) => oneOf(value, [...HEAT_MARKER_VALUES, "return"] as const, field)),
-      ),
-      ...maybe(
-        "kilnMaster",
-        optional(o, "kilnMaster", "", (value, field) => {
-          const k = objectAt(value, field);
-          shape(k, field, ["ceramicId", "value"]);
-          return {
-            ceramicId: ceramicId(get(k, "ceramicId"), path(field, "ceramicId")),
-            value: heatMarkerValue(get(k, "value"), path(field, "value")),
-          };
-        }),
-      ),
-    };
-  },
   RESOLVE_JUN: (o) => {
     shape(o, "", ["type", "adjustment"]);
     const value = get(o, "adjustment");
@@ -452,7 +456,7 @@ const PARSERS: Parsers = {
       type: "RESOLVE_JUN",
       adjustment: {
         ceramicId: ceramicId(get(a, "ceramicId"), "adjustment.ceramicId"),
-        delta: heatMarkerValue(get(a, "delta"), "adjustment.delta"),
+        delta: heatDelta(get(a, "delta"), "adjustment.delta"),
       },
     };
   },
@@ -461,11 +465,11 @@ const PARSERS: Parsers = {
   SECOND_FIRING_CHOOSE: (o) => {
     shape(o, "", ["type", "cardIndex", "jun"]);
     const value = get(o, "jun");
-    let jun: { delta: HeatMarkerValue } | null = null;
+    let jun: { delta: HeatDelta } | null = null;
     if (value !== null) {
       const j = objectAt(value, "jun");
       shape(j, "jun", ["delta"]);
-      jun = { delta: heatMarkerValue(get(j, "delta"), "jun.delta") };
+      jun = { delta: heatDelta(get(j, "delta"), "jun.delta") };
     }
     return { type: "SECOND_FIRING_CHOOSE", cardIndex: oneOf(get(o, "cardIndex"), SECOND_FIRING_CARD_INDEXES, "cardIndex"), jun };
   },
@@ -474,11 +478,7 @@ const PARSERS: Parsers = {
     onlyType(o);
     return { type: "END_AFTER_QUALITY" };
   },
-  SALVAGE_FLAWED: (o) => {
-    shape(o, "", ["type", "ceramicId"]);
-    const value = get(o, "ceramicId");
-    return { type: "SALVAGE_FLAWED", ceramicId: value === null ? null : ceramicId(value, "ceramicId") };
-  },
+  SELL_FLAWED: (o) => ({ type: "SELL_FLAWED", ceramicId: ceramicOnly(o) }),
   COMPLETE_ORDER: (o) => ({ type: "COMPLETE_ORDER", ...completionSpec(o) }),
   END_ORDER_TURN: (o) => {
     onlyType(o);

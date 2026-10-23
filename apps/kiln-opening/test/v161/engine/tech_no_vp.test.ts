@@ -58,8 +58,8 @@ describe("change 27: gaining an Advanced Tech scores no VP", () => {
   it("the config has no Tech VP and the score table has no Tech row", () => {
     expect(GAME_CONFIG.techs).toEqual({ perDiscipline: 6, faceUpPerDiscipline: 2, maxOwned: 3, maxPerDiscipline: 1 });
     expect(SCORE_BREAKDOWN_ROWS).not.toContain("techs");
-    // Printed costs are unchanged by change 27.
-    expect([TECHS.T10.cost, TECHS.T12.cost, TECHS.T19.cost, TECHS.T25.cost]).toEqual([2, 2, 3, 4]);
+    // Printed costs are unchanged by change 27 (Fuel Ledger's 4 is change 30, rev. 4 L625).
+    expect([TECHS.T10.cost, TECHS.T12.cost, TECHS.T19.cost, TECHS.T25.cost]).toEqual([2, 4, 3, 4]);
   });
 
   it("Apprentice buy: no VP in the ledger, the event, the summary or the preview", () => {
@@ -103,7 +103,8 @@ describe("change 27: gaining an Advanced Tech scores no VP", () => {
   });
 
   it("Fuel Ledger brings its 2 Contribution cards, and still no VP", () => {
-    const t = table({ techDisplay: { firing: ["T12", "T13"] } });
+    // Fuel Ledger costs 4 (rev. 4 L625).
+    const t = table({ players: [{ resources: { coins: 4 } }, {}], techDisplay: { firing: ["T12", "T13"] } });
     const events = t.act("p1", buy("T12"));
     expect(events.find((event) => event.type === "CONTRIBUTION_CARDS_GAINED")).toEqual({
       type: "CONTRIBUTION_CARDS_GAINED",

@@ -1,8 +1,10 @@
--- V1.6.2 (state schema 8, rules behaviour revision 31): new rooms only.
+-- V1.6.2 (state schema 9, rules behaviour revision 32): new rooms only.
 --
 -- Written for V1.6.1 (schema 6, r29) and edited in place for V1.6.2 before any deployment
 -- (ENGINE_V1.6.2_DELTA.md §9), again for owner revision 3 (changes 25–27: schema 8, r31, the
--- five Contribution cards); the file keeps its name. No V1.6.1 room was ever stored.
+-- five Contribution cards) and for owner revision 4 (changes 28–35 and rulings R20–R25:
+-- schema 9, r32; ENGINE_V1.6.2_DELTA.md §15.16); the file keeps its name. No V1.6.1 room was
+-- ever stored.
 --
 -- Older rooms, saves, private submissions and events stay as readable history; they are
 -- never rewritten or relabelled. Every write path refuses them by rules version, schema
@@ -39,14 +41,14 @@ alter table public.rooms add constraint rooms_content_version_check
     '1.6.2'
   ));
 
--- The V1.4 fingerprint check stays for V1.4 rows; V1.6.2 rooms carry an r31 fingerprint.
+-- The V1.4 fingerprint check stays for V1.4 rows; V1.6.2 rooms carry an r32 fingerprint.
 alter table public.rooms drop constraint if exists rooms_v162_fingerprint_check;
 alter table public.rooms add constraint rooms_v162_fingerprint_check
   check (
     rules_version <> '1.6.2'
     or (
       content_version = '1.6.2'
-      and coalesce(content_digest, '') ~ '^r31-[0-9a-f]{16}$'
+      and coalesce(content_digest, '') ~ '^r32-[0-9a-f]{16}$'
     )
   );
 
@@ -128,7 +130,7 @@ set search_path = public, private, extensions, pg_temp
 as $$
 declare v_room jsonb; v_seat jsonb;
 begin
-  if coalesce(p_content_digest, '') !~ '^r31-[0-9a-f]{16}$' then
+  if coalesce(p_content_digest, '') !~ '^r32-[0-9a-f]{16}$' then
     return jsonb_build_object('status', 'error', 'code', 'session_not_active');
   end if;
   insert into public.rooms (id, code, status, host_seat_id, rules_version, content_version, latest_revision, content_digest)
@@ -187,7 +189,7 @@ begin
   end if;
   if v_room.rules_version <> '1.6.2'
      or v_room.content_version <> '1.6.2'
-     or coalesce(v_room.content_digest, '') !~ '^r31-[0-9a-f]{16}$' then
+     or coalesce(v_room.content_digest, '') !~ '^r32-[0-9a-f]{16}$' then
     return jsonb_build_object('status', 'error', 'code', 'session_not_active');
   end if;
   select candidate into v_seat_index
@@ -276,7 +278,7 @@ begin
   end if;
   if v_room.rules_version <> '1.6.2'
      or v_room.content_version <> '1.6.2'
-     or coalesce(v_room.content_digest, '') !~ '^r31-[0-9a-f]{16}$'
+     or coalesce(v_room.content_digest, '') !~ '^r32-[0-9a-f]{16}$'
      or coalesce(p_policy_version, '') !~ '^rules-v1\.6\.2-[a-z0-9]+(-[a-z0-9]+)*$' then
     return jsonb_build_object('status', 'error', 'code', 'session_not_active');
   end if;
@@ -380,11 +382,11 @@ begin
   end if;
   if coalesce(v_room.rules_version, '') <> '1.6.2'
      or coalesce(v_room.content_version, '') <> '1.6.2'
-     or coalesce(v_room.content_digest, '') !~ '^r31-[0-9a-f]{16}$'
+     or coalesce(v_room.content_digest, '') !~ '^r32-[0-9a-f]{16}$'
      or coalesce(p_state->>'rulesVersion', '') <> '1.6.2'
      or coalesce(p_public_state->>'rulesVersion', '') <> '1.6.2'
-     or coalesce((p_state->>'schemaVersion')::integer, -1) <> 8
-     or coalesce((p_public_state->>'schemaVersion')::integer, -1) <> 8 then
+     or coalesce((p_state->>'schemaVersion')::integer, -1) <> 9
+     or coalesce((p_public_state->>'schemaVersion')::integer, -1) <> 9 then
     return jsonb_build_object('status', 'error', 'code', 'session_not_active');
   end if;
   select count(*) into v_count from public.room_players where room_id = p_room_id;
@@ -481,14 +483,14 @@ begin
        where room.id = p_room_id
          and room.rules_version = '1.6.2'
          and room.content_version = '1.6.2'
-         and coalesce(room.content_digest, '') ~ '^r31-[0-9a-f]{16}$'
+         and coalesce(room.content_digest, '') ~ '^r32-[0-9a-f]{16}$'
      )
      or coalesce(v_head.state_json->>'rulesVersion', '') <> '1.6.2'
-     or coalesce((v_head.state_json->>'schemaVersion')::integer, -1) <> 8
+     or coalesce((v_head.state_json->>'schemaVersion')::integer, -1) <> 9
      or coalesce(p_next_state->>'rulesVersion', '') <> '1.6.2'
      or coalesce(p_public_state->>'rulesVersion', '') <> '1.6.2'
-     or coalesce((p_next_state->>'schemaVersion')::integer, -1) <> 8
-     or coalesce((p_public_state->>'schemaVersion')::integer, -1) <> 8 then
+     or coalesce((p_next_state->>'schemaVersion')::integer, -1) <> 9
+     or coalesce((p_public_state->>'schemaVersion')::integer, -1) <> 9 then
     raise exception 'unsupported rules or schema version';
   end if;
   -- Hidden information never reaches a public row (DESIGN §4).

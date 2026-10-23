@@ -33,7 +33,7 @@ import {
   clarificationSourceKind,
   clarificationTags,
   contributionCard,
-  decorationCost,
+  vesselCoins,
   isStartingOrderId,
   locationCapacity,
   preferredHeat,
@@ -446,6 +446,12 @@ describe("Appendix B: all 18 Advanced Techs", () => {
       if (fields.includes("`oncePerRound`")) entry.oncePerRound = literals[0] === "true";
       if (fields.includes("`timing`")) entry.timing = JSON.parse(literals[0] ?? "") as string;
     }
+    // DELTA §15.8 (owner revision 4, changes 28, 31, R22): Kiln Master acts when a ceramic is
+    // loaded, not in the retired Heat-marker step.
+    const kilnMaster = expected.get("T24");
+    if (kilnMaster === undefined) throw new Error("DESIGN §6.5 has no T24 row");
+    expect(kilnMaster.timing).toBe("heat_marker_step");
+    kilnMaster.timing = "when_loading";
     for (const id of TECH_IDS) {
       const tech = TECHS[id];
       expect(tech.oncePerRound, id).toBe(expected.get(id)?.oncePerRound);
@@ -454,8 +460,10 @@ describe("Appendix B: all 18 Advanced Techs", () => {
     }
   });
 
-  it("charges the V1.6.2 costs (changes 22, v1.6.2 L32; L618, L626, L636–637)", () => {
-    expect([TECHS.T18.cost, TECHS.T20.cost, TECHS.T11.cost, TECHS.T12.cost]).toEqual([3, 3, 3, 2]);
+  it("charges the V1.6.2 costs (changes 22 and 30, v1.6.2 L32, rev. 4 L40, L625; L618, L626, L636)", () => {
+    // Fuel Ledger: 2 since change 22, 4 since change 30 (owner revision 4).
+    expect([TECHS.T18.cost, TECHS.T20.cost, TECHS.T11.cost, TECHS.T12.cost]).toEqual([3, 3, 3, 4]);
+    expect(SOURCE.split("\n")[39]).toContain("Fuel Ledger costs 4.");
     // Test Pieces stays 3 (v1.6.2 L32).
     expect(TECHS.T13.cost).toBe(3);
     expect(SOURCE.split("\n")[31]).toContain("Senior Apprentice and Kiln Tending cost 3; Test Pieces stays at 3");
@@ -538,10 +546,12 @@ const PRINTED_NUMBERS: Array<[string, string, number[]]> = [
   ["JU", KILNS.JU.ability, [KILNS.JU.params.wood, ...abs(KILNS.JU.params.deltas)]],
   ["materials_yard.apprentice", LOCATIONS.materials_yard.apprenticeText, [my.apprentice.resources]],
   ["materials_yard.shifu", LOCATIONS.materials_yard.shifuText, [my.shifu.resources]],
-  ["form_decorate.apprentice", LOCATIONS.form_decorate.apprenticeText, [fd.apprentice.maxVessels]],
-  ["form_decorate.shifu", LOCATIONS.form_decorate.shifuText, [fd.shifu.maxVessels, fd.shifu.maxVessels, fd.shifu.twoVesselDecorationDiscount]],
+  // rev. 4 L183: "Form 1 vessel: pay its Clay cost plus 2 Coins …".
+  ["form_decorate.apprentice", LOCATIONS.form_decorate.apprenticeText, [fd.apprentice.maxVessels, vesselCoins()]],
+  ["form_decorate.shifu", LOCATIONS.form_decorate.shifuText, [fd.shifu.maxVessels, fd.shifu.maxVessels, fd.shifu.twoVesselDiscount]],
   ["glaze_load.apprentice", LOCATIONS.glaze_load.apprenticeText, [gl.apprentice.maxLoads]],
-  ["glaze_load.shifu", LOCATIONS.glaze_load.shifuText, [gl.shifu.maxLoads, 1]],
+  // rev. 4 L194: the Shifu "simply loads up to 2" (no Heat marker, changes 28, 31).
+  ["glaze_load.shifu", LOCATIONS.glaze_load.shifuText, [gl.shifu.maxLoads]],
   // v1.6.2 L201–202 (change 25): "Select 2."; "Select 3, reserving up to 2 Orders instead of 1,
   // in any mix of the 3 cards and the display".
   ["commission_market.apprentice", LOCATIONS.commission_market.apprenticeText, [cm.apprentice.select]],
@@ -554,7 +564,8 @@ const PRINTED_NUMBERS: Array<[string, string, number[]]> = [
   // "the top card of the Main Order deck" is `topMainOrders: 1`, which prints no numeral.
   ["canal_wharf.shifu", LOCATIONS.canal_wharf.shifuText, [cw.shifu.coins]],
   ["magistrates_hall.apprentice", LOCATIONS.magistrates_hall.apprenticeText, [mh.apprentice.coins, mh.apprentice.recognitionSteps]],
-  ["magistrates_hall.shifu", LOCATIONS.magistrates_hall.shifuText, [mh.shifu.coins, mh.shifu.recognitionSteps]],
+  // rev. 4 L241 (change 33): "Pay 4 Coins … by 1 step, then reserve 1 face-up Crown Order".
+  ["magistrates_hall.shifu", LOCATIONS.magistrates_hall.shifuText, [mh.shifu.coins, mh.shifu.recognitionSteps, mh.shifu.crownOrders]],
 ];
 
 describe("printed numbers equal the data parameters", () => {
@@ -729,6 +740,22 @@ describe("locations and capacity (L146–233)", () => {
         if (literal !== undefined) entry[effect] = designLiteral(literal);
       }
     }
+    // DELTA §15.8 (owner revision 4): Materials Yard 4 / 8 (rev. 4 L176–177, change 34); the
+    // Shifu's −1 Coin when forming 2 is a vessel's, not a Decoration's (rev. 4 L184, change 30);
+    // the Glaze & Load fuel and no Heat marker (rev. 4 L194, L197, changes 31, 34, 35, R24); the
+    // Magistrate's Hall Shifu pays 4 and reserves a Crown Order (rev. 4 L241, change 33, R21).
+    const revision4: Partial<Record<LocationId, { apprentice: unknown; shifu: unknown }>> = {
+      materials_yard: { apprentice: { resources: 4 }, shifu: { resources: 8 } },
+      form_decorate: { apprentice: { maxVessels: 1 }, shifu: { maxVessels: 2, twoVesselDiscount: 1 } },
+      glaze_load: {
+        apprentice: { maxLoads: 1, maxImperialLoads: 1, sharedKilnWood: 1 },
+        shifu: { maxLoads: 2, maxImperialLoads: 1, sharedKilnWood: 1 },
+      },
+      magistrates_hall: { apprentice: { coins: 4, recognitionSteps: 1 }, shifu: { coins: 4, recognitionSteps: 1, crownOrders: 1 } },
+    };
+    for (const [id, effects] of Object.entries(revision4) as Array<[LocationId, { apprentice: unknown; shifu: unknown }]>) {
+      expected.set(id, effects);
+    }
     for (const id of LOCATION_IDS) {
       expect(LOCATIONS[id].effects.apprentice, id).toEqual(expected.get(id)?.apprentice);
       expect(LOCATIONS[id].effects.shifu, id).toEqual(expected.get(id)?.shifu);
@@ -744,15 +771,18 @@ describe("locations and capacity (L146–233)", () => {
     const summary = section("### Action Summary");
     const expectations: Record<LocationId, [number[], number[]]> = {
       materials_yard: [[my.apprentice.resources], [my.shifu.resources]],
-      form_decorate: [[fd.apprentice.maxVessels], [fd.shifu.maxVessels, fd.shifu.maxVessels, fd.shifu.twoVesselDecorationDiscount]],
-      glaze_load: [[gl.apprentice.maxLoads], [gl.shifu.maxLoads, 1]],
+      // rev. 4 L691: "Form 1: Clay + 2 Coins, any Decoration"; "Form up to 2; if 2, one costs 1 Coin less".
+      form_decorate: [[fd.apprentice.maxVessels, vesselCoins()], [fd.shifu.maxVessels, fd.shifu.maxVessels, fd.shifu.twoVesselDiscount]],
+      // rev. 4 L692: "Glaze and load 1 (1 Wood)"; "Glaze and load up to 2 (still 1 Wood)".
+      glaze_load: [[gl.apprentice.maxLoads, gl.apprentice.sharedKilnWood], [gl.shifu.maxLoads, gl.shifu.sharedKilnWood]],
       commission_market: [[cm.apprentice.select], [cm.shifu.select, cm.shifu.maxReservations]],
       guild_hall: [[gh.apprentice.maxTechs], [gh.shifu.inspectCount, 1, gh.shifu.maxTechs]],
       canal_wharf: [[cw.apprentice.coins], [cw.shifu.coins]],
       magistrates_hall: [
         [mh.apprentice.coins, mh.apprentice.recognitionSteps,
           ...(LOCATIONS.magistrates_hall.usableAtRecognition ?? []).flatMap((r) => [r, r + mh.apprentice.recognitionSteps])],
-        [mh.shifu.coins],
+        // rev. 4 L696: "Pay 4 Coins → same, and reserve 1 face-up Crown Order".
+        [mh.shifu.coins, mh.shifu.crownOrders],
       ],
     };
     for (const id of LOCATION_IDS) {
@@ -786,10 +816,16 @@ describe("setup, production, firing and scoring values", () => {
     expect(SOURCE).toContain(`The game lasts exactly **${GAME_CONFIG.rounds} rounds**.`);
     const { clay, wood, coins } = GAME_CONFIG.startingResources;
     expect(SOURCE).toContain(`Each player receives **${clay} Clay, ${wood} Wood and ${coins} Coins**.`);
-    expect([clay, wood, coins]).toEqual([2, 2, 3]);
+    // rev. 4 L125 (changes 34, 35): 3 Wood, and no seat Coin.
+    expect([clay, wood, coins]).toEqual([2, 3, 3]);
+    expect(SOURCE).not.toMatch(/starts with 1 extra Coin\.\s*$/m);
     expect(SOURCE).toContain(`takes ${GAME_CONFIG.workers.shifu} Shifu, ${GAME_CONFIG.workers.apprentices} Apprentices`);
-    expect(SOURCE).toContain(`Deal each player **${GAME_CONFIG.setupDeal.startingOrders} Starting Orders and ${GAME_CONFIG.setupDeal.mainOrders} Main Order**.`);
-    expect(SOURCE).toContain(`reveal **${GAME_CONFIG.mainMarket.displaySize} face-up Main Orders**`);
+    // rev. 4 L115, L122 (change 32, R23): 2 Starting Orders dealt; 1 face-up Main Order taken with the Kiln.
+    expect(SOURCE).toContain(`Deal each player **${GAME_CONFIG.setupDeal.startingOrders} Starting Orders**, kept secret.`);
+    expect(GAME_CONFIG.setupFaceUpMainOrders).toBe(1);
+    expect(SOURCE).toContain("and takes **1 face-up Main Order** from the display into their hand; refill the display to 6 after each take.");
+    // rev. 4 L116: the 6 are revealed straight off the deck (nothing Main is dealt first).
+    expect(SOURCE).toContain(`Reveal **${GAME_CONFIG.mainMarket.displaySize} face-up Main Orders** from the Main Order deck, left to right.`);
     expect(SOURCE).toContain(`reveal **${GAME_CONFIG.techs.faceUpPerDiscipline} face-up tiles from each**`);
     expect(SOURCE).toContain(`Discard the **${GAME_CONFIG.mainMarket.roundStartDiscard} leftmost face-up Main Orders**`);
     expect(SOURCE).toContain(`hand limit of **${GAME_CONFIG.handLimit.base}** (${TECHS.T10.params.handLimit} with Colour Samples)`);
@@ -831,11 +867,12 @@ describe("setup, production, firing and scoring values", () => {
       expect(shapeClay(shape), shape).toBe(Number(clay));
       expect(GAME_CONFIG.shapeSupplyEach).toBe(Number(cards));
     }
+    // rev. 4 L336 (change 30): one forming price, any Decoration; the cost table is gone.
     const decorations = section("### Decorations");
-    for (const decoration of DECORATIONS) {
-      const [, cost] = row(decorations, Object.keys(DECORATION_NAMES).find((name) => DECORATION_NAMES[name] === decoration) ?? "");
-      expect(`${decorationCost(decoration)} Coins`, decoration).toBe(cost);
-    }
+    expect(decorations).toContain(`Forming costs the Shape's Clay plus **${vesselCoins()} Coins**; choose any Decoration — Plain, Carved, Impressed or Painted — when the vessel is formed.`);
+    expect(decorations).not.toContain("| Decoration | Cost |");
+    expect(GAME_CONFIG.decorations).toEqual([...DECORATIONS]);
+    expect(DECORATIONS.map((decoration) => Object.keys(DECORATION_NAMES).find((name) => DECORATION_NAMES[name] === decoration))).toEqual(["Plain", "Carved", "Impressed", "Painted"]);
     const glazes = section("### Glazes and Preferred Heat");
     for (const glaze of GLAZES) {
       const [, heat] = row(glazes, Object.keys(GLAZE_NAMES).find((name) => GLAZE_NAMES[name] === glaze) ?? "");
@@ -910,7 +947,10 @@ describe("setup, production, firing and scoring values", () => {
       .toEqual(["masterpiece", "fine", "standard", "flawed", "flawed", "flawed", "fine", "standard", "flawed"]);
     expect(QUALITY_RANK.masterpiece > QUALITY_RANK.fine && QUALITY_RANK.fine > QUALITY_RANK.standard
       && QUALITY_RANK.standard > QUALITY_RANK.flawed).toBe(true);
-    expect(SOURCE).toContain(`discard **1 ceramic that is still Flawed from this firing** to gain **${FIRING.salvageCoins} Coins**`);
+    // Rev. 4 L282, L284 (change 30): a Flawed ceramic is sold for 2 Coins (during its owner's
+    // turn, R20); the firing-step salvage is gone.
+    expect(row(block, "3+")[2]).toBe(`Cannot complete Orders or enter the Exhibition; may be sold at any time for ${FIRING.flawedSaleCoins} Coins.`);
+    expect(SOURCE).toContain(`A Flawed ceramic may be **sold at any time for ${FIRING.flawedSaleCoins} Coins**: return its Vessel card to the matching Shape supply.`);
     expect(SOURCE).toContain("choose a modifier of −1, 0 or +1");
     expect(FIRING.imperialModifiers).toEqual([-1, 0, 1]);
   });

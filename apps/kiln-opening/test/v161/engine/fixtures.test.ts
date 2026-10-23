@@ -28,7 +28,7 @@ describe("buildState", () => {
     expect(state.hidden.startingBox).toEqual(STARTING_ORDER_IDS);
     expect(state.techDisplay).toEqual({ workshop: ["T01", "T16"], glazing_loading: ["T10", "T20"], firing: ["T11", "T12"] });
     expect(state.hidden.fireDeck).toHaveLength(12);
-    expect(state.players["p1"]?.resources).toEqual({ clay: 2, wood: 2, coins: 3 });
+    expect(state.players["p1"]?.resources).toEqual({ clay: 2, wood: 3, coins: 3 });
     expect(Object.keys(state.players["p1"]?.workers ?? {}).sort()).toEqual([
       "p1:apprentice:1",
       "p1:apprentice:2",
@@ -212,32 +212,20 @@ describe("buildState refuses states the §8.3 invariants forbid", () => {
     ).toThrow(/already in high_1/);
   });
 
-  it("Heat markers: at most 1 own marker per player; 1 Kiln Master marker, on a T24 owner's ceramic", () => {
-    const own = { source: "own", faceDown: true } as const;
-    const master = { source: "kiln_master", faceDown: false, value: 1 } as const;
-    expect(() =>
-      buildState({
-        ceramics: [
-          { ...loaded, owner: "p1", shape: "bowl", at: "high_1", heatMarker: own },
-          { ...loaded, owner: "p1", shape: "bowl", at: "low_1", heatMarker: own },
-        ],
-      }),
-    ).toThrow(/own Heat marker/);
+  it("Kiln Master's marker: 1 in the game, on a T24 owner's loaded ceramic (rev. 4 L628)", () => {
     expect(
       buildState({
-        ceramics: [
-          { ...loaded, owner: "p1", shape: "bowl", at: "high_1", heatMarker: own },
-          { ...loaded, owner: "p2", shape: "bowl", at: "low_1", heatMarker: own },
-        ],
-      }).ceramics["c2"],
-    ).toMatchObject({ heatMarker: own });
-    expect(() => buildState({ ceramics: [{ ...loaded, owner: "p1", shape: "bowl", at: "high_1", heatMarker: master }] })).toThrow(/needs T24/);
+        players: [{ techs: [{ id: "T24", usedThisRound: true }] }, {}],
+        ceramics: [{ ...loaded, owner: "p1", shape: "bowl", at: "high_1", kilnMaster: -1 }],
+      }).ceramics["c1"],
+    ).toMatchObject({ kilnMasterMarker: -1 });
+    expect(() => buildState({ ceramics: [{ ...loaded, owner: "p1", shape: "bowl", at: "high_1", kilnMaster: 1 }] })).toThrow(/needs T24/);
     expect(() =>
       buildState({
         players: [{ techs: ["T24"] }, {}],
         ceramics: [
-          { ...loaded, owner: "p1", shape: "bowl", at: "high_1", heatMarker: master },
-          { ...loaded, owner: "p1", shape: "bowl", at: "low_1", heatMarker: master },
+          { ...loaded, owner: "p1", shape: "bowl", at: "high_1", kilnMaster: 1 },
+          { ...loaded, owner: "p1", shape: "bowl", at: "low_1", kilnMaster: -1 },
         ],
       }),
     ).toThrow(/Kiln Master marker is already/);
@@ -349,7 +337,7 @@ describe("mutation helpers", () => {
   it("setResources and stageCeramic", () => {
     const state = buildState();
     setResources(state, "p2", { coins: 0 });
-    expect(state.players["p2"]?.resources).toEqual({ clay: 2, wood: 2, coins: 0 });
+    expect(state.players["p2"]?.resources).toEqual({ clay: 2, wood: 3, coins: 0 });
     const staged = stageCeramic(state, { owner: "p2", stage: "finished", shape: "bowl", glaze: "white", quality: "masterpiece" });
     expect(staged).toMatchObject({ id: "c1", stage: "finished", crackle: false, quality: "masterpiece" });
     expect(() =>

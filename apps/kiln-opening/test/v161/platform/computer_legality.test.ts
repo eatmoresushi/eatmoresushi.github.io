@@ -1,14 +1,13 @@
 /**
  * Every computer proposal is legal (P9 regression). Local games logged "computer policy
- * proposal rejected … phase: firing_heat_markers, rejected: INVALID_CHOICE". Root cause: the
- * Heat-marker safe exits in `safeExitCommands` offered both `{ownMarker: "return"}` and the
- * bare `RESOLVE_HEAT_MARKERS`, and exactly one of them is ever legal — the validator requires
- * an own-marker choice while a face-down marker is out and rejects one without it. The
- * canonical baseline policy (`CANONICAL_COMPUTER_POLICY`, the local backend's and the e2e
- * smoke game's `policy: "canonical"`) samples uniformly from `fallbackComputerCommands(view)`,
- * so it sometimes proposed the illegal exit and the service fell back. The strategic policy
- * validates every candidate it proposes; these suites pin both: no proposal of either policy,
- * and no fallback candidate, is ever rejected, in any phase.
+ * proposal rejected … phase: firing_heat_markers, rejected: INVALID_CHOICE": the Heat-marker
+ * safe exits offered an exit the validator refused. Owner revision 4 removed the Heat-marker
+ * step (changes 28, 31), but the lesson stands. The canonical baseline policy
+ * (`CANONICAL_COMPUTER_POLICY`, the local backend's and the e2e smoke game's
+ * `policy: "canonical"`) samples uniformly from `fallbackComputerCommands(view)`, so one illegal
+ * exit makes the service fall back. The strategic policy validates every candidate it proposes;
+ * these suites pin both: no proposal of either policy, and no fallback candidate, is ever
+ * rejected, in any phase.
  */
 
 import { describe, expect, it } from "vitest";
@@ -70,30 +69,32 @@ function phaseKey(state: GameState): string {
   return state.phase.type === "work_turn" ? `work_turn/${state.phase.step.kind}` : state.phase.type;
 }
 
-describe("Heat-marker safe exits", () => {
-  it("offers only the return exit while a face-down own marker is out", () => {
-    const scenario = phaseScenarios().find((candidate) => candidate.phase === "firing_heat_markers");
-    if (scenario === undefined) throw new Error("No Heat-marker scenario");
+describe("safe exits", () => {
+  it("Setup takes an available Kiln with the first face-up Main Order in one command (rev. 4 L122, R23)", () => {
+    const scenario = phaseScenarios().find((candidate) => candidate.phase === "setup_kiln_selection");
+    if (scenario === undefined) throw new Error("No Setup scenario");
     const view = createComputerObservation(scenario.table.state, scenario.actor, scenario.table.privateState);
-    expect(safeExitCommands(view)).toEqual([{ type: "RESOLVE_HEAT_MARKERS", ownMarker: "return" }]);
-    // The bare command is the one the validator rejected (the logged INVALID_CHOICE).
-    expect(validateAction(view, { type: "RESOLVE_HEAT_MARKERS" })?.code).toBe("INVALID_CHOICE");
+    const exits = safeExitCommands(view);
+    expect(exits.length).toBeGreaterThan(0);
+    const first = view.game.market.display.findIndex((orderId) => orderId !== null);
+    for (const exit of exits) {
+      expect(exit).toMatchObject({ type: "SELECT_KILN", mainOrder: { slotIndex: first, orderId: view.game.market.display[first] } });
+      expect(validateAction(view, exit as Exclude<AuthoritativeCommand, { type: "SUBMIT_CONTRIBUTION" }>)).toBeNull();
+    }
+    // A Kiln alone is no longer a Setup command (R23): the shape check refuses it.
+    const bare = parseCommand({ type: "SELECT_KILN", kilnId: "JU" });
+    expect(isGameRuleError(bare) ? bare.code : null).toBe("MALFORMED_ACTION");
   });
 
-  it("offers only the decline exit on a Kiln Master-only turn", () => {
+  it("a Kiln Master owner's firing turns are plain decisions: there is no Heat-marker step (rev. 4 L628, changes 28, 31)", () => {
     const table = openFiringTable({
       fireDeck: [0, 1, -1],
-      players: [{ techs: ["T24"] }, {}],
-      ceramics: [{ owner: "p1", stage: "loaded", shape: "bowl", glaze: "white", at: "middle_1" }],
+      players: [{ techs: [{ id: "T24", usedThisRound: true }] }, {}],
+      ceramics: [{ owner: "p1", stage: "loaded", shape: "bowl", glaze: "white", at: "middle_1", kilnMaster: 1 }],
     });
     tendAll(table);
-    expect(table.state.phase.type).toBe("firing_heat_markers");
-    const view = createComputerObservation(table.state, "p1", table.privateState);
-    expect(safeExitCommands(view)).toEqual([{ type: "RESOLVE_HEAT_MARKERS" }]);
-    expect(validateAction(view, { type: "RESOLVE_HEAT_MARKERS", ownMarker: "return" })?.code).toBe("INVALID_CHOICE");
-    for (const candidate of fallbackComputerCommands(view)) {
-      expect(rejection(table.state, table.privateState, "p1", candidate), JSON.stringify(candidate)).toBeNull();
-    }
+    expect(table.state.firing).toBeNull();
+    expect(table.state.lastFiring?.ceramics["c1"]?.first?.kilnMasterMarker).toBe(1);
   });
 
   it("keeps every safe exit legal in every phase scenario", () => {
@@ -216,7 +217,6 @@ describe("computer proposals over many seeded engine games", () => {
       "work_turn/colour_samples",
       "work_turn/colour_samples_swap",
       "firing_contributions",
-      "firing_heat_markers",
       "firing_after_quality",
       "firing_second_firing_choice",
       "orders",
@@ -274,11 +274,9 @@ describe("computer proposals over many seeded engine games", () => {
       "work_turn/colour_samples_swap",
       "firing_contributions",
       "firing_test_pieces",
-      "firing_heat_markers",
       "firing_heat_adjustment",
       "firing_after_quality",
       "firing_second_firing_choice",
-      "firing_salvage",
       "orders",
       "cleanup_hand_limit",
     ]) {

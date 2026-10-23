@@ -3,13 +3,14 @@
  *
  * Authority: `docs/KILN_OPENING_v1.6.2_EN_SOURCE.md` (the only rules source), the owner
  * rulings recorded in `docs/RULEBOOK_AUDIT_V1.6.2.md` and the engine delta
- * `docs/ENGINE_V1.6.2_DELTA.md`. In JSDoc below, `R1`–`R19` / `B1`–`B3` cite owner rulings,
+ * `docs/ENGINE_V1.6.2_DELTA.md`. In JSDoc below, `R1`–`R25` / `B1`–`B3` cite owner rulings,
  * `INT:` cites a recorded interpretation and `DIG:` a digital decision from the audit.
  * `DESIGN §x` refers to `docs/ENGINE_V1.6.1_DESIGN.md`, which the delta amends.
  *
  * Line citations: a plain `L124` is a line of the V1.6.1 source, kept until the V1.6.2
  * renumbering (DELTA §1.1); a rule V1.6.2 changed is cited `v1.6.2 L195`, a line of the
- * V1.6.2 source.
+ * V1.6.2 source; `rev. 4 L122` a line of the V1.6.2 source as owner revision 4 left it
+ * (changes 28–35, 2026-10-22/23; DELTA §15).
  *
  * This file is types only: no imports and no runtime code. Every engine module, the
  * multiplayer layer and the UI import their shared vocabulary from here. Changing it is a
@@ -29,12 +30,13 @@
 /** DIG: the rulebook is "v1.6.2"; the engine uses `1.6.2` (audit, "Authority and provenance"). */
 export type RulesVersion = "1.6.2";
 /**
- * DIG: state schema 8 (owner revision 3 of V1.6.2, changes 25–27: the Select look on every
- * order-look step, `PlayerState.contributionCards`, no Tech VP in the ledger or the final
- * breakdown). Schema 7 (V1.6.2 before revision 3), V1.6.1 (schema 6) and older saves are
- * rejected, never migrated.
+ * DIG: state schema 9 (owner revision 4 of V1.6.2, changes 28–35, and owner rulings R20–R25:
+ * no player Heat marker, Kiln Master's marker chosen at loading, the Setup Main Order taken
+ * face up with the Kiln, the Magistrate's Hall Shifu's Crown Order, no salvage step (a Flawed
+ * ceramic is sold during its owner's turn, R20), Crackle VP; DELTA §15.2). Schema 8
+ * (revision 3), schema 7, V1.6.1 (schema 6) and older saves are rejected, never migrated.
  */
-export type SchemaVersion = 8;
+export type SchemaVersion = 9;
 
 export type PlayerId = string;
 /** `${playerId}:shifu` or `${playerId}:apprentice:${1|2|3}`. */
@@ -100,7 +102,7 @@ export type TechDiscipline = "workshop" | "glazing_loading" | "firing";
  * | T22 | glazing_loading   | Setter's Mark         | 2    | L629        | new                        |
  * | T23 | glazing_loading   | Canal Barge 漕船       | 2    | L630        | new                        |
  * | T11 | firing            | Protective Saggars    | 3    | L636        | kept                       |
- * | T12 | firing            | Fuel Ledger           | 2    | L637        | kept                       |
+ * | T12 | firing            | Fuel Ledger           | 4    | L637        | kept (rev. 4: cost 4)      |
  * | T13 | firing            | Test Pieces 火照       | 3    | L638        | kept                       |
  * | T14 | firing            | Second Firing         | 2    | L639        | kept                       |
  * | T24 | firing            | Kiln Master 窑工       | 2    | L640        | new                        |
@@ -172,8 +174,11 @@ export type ZoneModifier = -1 | 0 | 1;
 export type ImperialModifier = -1 | 0 | 1;
 /** Kiln Furniture's chosen zone modifier (L628). */
 export type KilnFurnitureModifier = -1 | 0 | 1;
-/** A turned Heat marker or Kiln Master marker (L59, L641). */
-export type HeatMarkerValue = 1 | -1;
+/**
+ * ±1: a Jun adjustment (L478) or the Kiln Master marker (T24, rev. 4 L628). Renamed from
+ * `HeatMarkerValue`: there is no player Heat marker since revision 4 (changes 28, 31).
+ */
+export type HeatDelta = 1 | -1;
 /** Imperial Recognition 0–4 (L429–436). */
 export type Recognition = 0 | 1 | 2 | 3 | 4;
 
@@ -264,7 +269,8 @@ export interface ImperialState {
 export interface ScoreLedger {
   /** Printed VP of completed Orders (L414). */
   orders: number;
-  /** Ru 4 VP (L460) and Guan 1 VP (L464). */
+  /** Ru 4 VP (L460), Guan 1 VP (L464) and 1 VP per Crackle ceramic delivered to complete an
+   * Order (Ge, rev. 4 L465, L487; `CompletedOrderRecord.crackleVp`). */
   kilnAbilities: number;
   /** +1 VP per Crown gained at Recognition 4 (L438), incl. Tribute Ware's bonus Crown (R13). */
   recognitionOverflow: number;
@@ -298,12 +304,22 @@ export interface CompletedOrderRecord {
   crackleDeclarations: CrackleDeclaration[];
   /** Ru/Guan reward if it triggered and was not declined (R4). */
   kilnAbility: { kilnId: "RU" | "GU"; vp: number; coins: number } | null;
+  /**
+   * Ge (rev. 4 L465, L480, change 29): 1 VP for each Crackle ceramic delivered with this Order
+   * (`KILNS.GE.params.vpPerDeliveredCrackle`), else 0. Automatic, with no once-per-round limit
+   * and no decline; counted in `ScoreLedger.kilnAbilities`; never a Crown or a tie-breaker.
+   *
+   * The engine always writes it (0 included). It is optional in the type only so that the UI
+   * fixture builder `test/v161/ui/fixtures/tableScenarios.ts`, which the UI stage migrates
+   * (DELTA §15.20), still compiles; a record without it means 0. Make it required then.
+   */
+  crackleVp?: number;
 }
 
 /**
  * Public per-player state. Deliberately not duplicated here (derive with selectors):
- * Order hand (`HiddenState.orderHands`, count in `PublicCounts`); own Heat marker and Kiln
- * Master marker (`LoadedCeramic.heatMarker`); Imperial Kiln content (loaded ceramic with
+ * Order hand (`HiddenState.orderHands`, count in `PublicCounts`); the Kiln Master marker
+ * (`LoadedCeramic.kilnMasterMarker`); Imperial Kiln content (loaded ceramic with
  * `placement.kiln === "imperial"`); Setter's Mark and Kiln Furniture positions
  * (`SharedKilnSpaceState`); personal-space occupancy (`WorkerState.placement`).
  */
@@ -358,20 +374,6 @@ export interface ShapedCeramic extends CeramicCore {
   stage: "shaped";
 }
 
-/**
- * A ceramic's Heat marker while loaded. The player's own marker is placed face-down by the
- * Glaze & Load Shifu (L180, R9) and turned to ±1 or returned in the Heat-marker step
- * (L268). INT: nothing hidden is committed at placement — a face-down marker has no value
- * yet. Kiln Master's marker (T24, L641) is placed face up in that step and "is a Heat marker
- * for all rules". At most one marker per ceramic (L185, L648).
- * Invariants (DESIGN §8.3): markers exist only on `loaded` ceramics (structural: the field
- * lives on `LoadedCeramic`); at most 1 `own` marker per player (L76); at most 1
- * `kiln_master` marker in the game (one T24 tile, L83), and its owner owns T24.
- */
-export type CeramicHeatMarker =
-  | { source: "own"; faceDown: true }
-  | { source: "own" | "kiln_master"; faceDown: false; value: HeatMarkerValue };
-
 export type LoadPlacement =
   | {
       kiln: "shared";
@@ -397,7 +399,16 @@ export interface LoadedCeramic extends CeramicCore {
   /** Imperial Priority is a token effect, not a Glaze & Load action (L293, L646). */
   loadedBy: "glaze_load" | "imperial_priority";
   placement: LoadPlacement;
-  heatMarker: CeramicHeatMarker | null;
+  /**
+   * Kiln Master's marker (T24, rev. 4 L628, L635, R22): chosen face up when this ceramic was
+   * loaded, by a Glaze & Load action or Imperial Priority, into either kiln; public (like the
+   * Imperial modifier); null without one. It adds to Actual Heat (rev. 4 L78, L255) and stays
+   * for a Second Firing recalculation (rev. 4 L627). Replaces revision 3's `heatMarker`: the
+   * player Heat marker is gone (changes 28, 31).
+   * Invariants (DESIGN §8.3, DELTA §15.12): at most 1 carrier in the game (one T24 tile), on a
+   * ceramic of the T24 owner, whose allowance is used this round.
+   */
+  kilnMasterMarker: HeatDelta | null;
 }
 
 /** Attributes every fired ceramic records (L359). */
@@ -408,10 +419,11 @@ export interface FiredCeramicCore extends CeramicCore {
 
 /**
  * Quality together with the permanent Crackle marker from Ge (L468), kept until delivered or
- * exhibited (L94). The union makes "a Crackle ceramic is never a Masterpiece" (L470, L654)
- * a type error rather than a comment: Ge targets only a Standard ceramic and makes it Fine,
- * and nothing can change it afterwards (Protective Saggars and Second Firing target only
- * Flawed or Standard ceramics, L637, L640), so a Crackle ceramic is always exactly Fine.
+ * exhibited (L94). The union makes "a Crackle ceramic is never a Masterpiece" a type error
+ * rather than a comment: Ge targets a Fine or Standard ceramic and leaves it Fine (rev. 4 L463,
+ * change 29), and nothing can raise it afterwards (Protective Saggars' step and Second Firing
+ * target only Flawed or Standard ceramics, rev. 4 L624, L627), so a Crackle ceramic is always
+ * exactly Fine.
  * `assertInvariants` checks the same fact at runtime (DESIGN §8.3).
  */
 export type FinishedQuality =
@@ -457,7 +469,7 @@ export interface SharedKilnSpaceState {
   /**
    * Kiln Furniture tile (T15, L628) beneath a ceramic in this space: every ceramic in the
    * space uses `modifier` instead of the printed zone modifier (R8). Returned after firing
-   * (Appendix D step 12).
+   * (Appendix D step 6, rev. 4 L664).
    * Invariants (DESIGN §8.3): `underCeramicId` is in `ceramicIds`; its owner is `ownerId`;
    * `ownerId` owns T15; at most 1 tile in the whole Shared Kiln. A stacked space under Kiln
    * Furniture is unreachable (T15 and T21 are both Glazing & Loading, L211), but the R8
@@ -621,9 +633,10 @@ export interface HeatCalculation {
   heatSource: number;
   /** Zone modifier, Kiln Furniture modifier or Imperial modifier. */
   positionModifier: number;
-  /** Fixed in the Heat-marker step; stays for Second Firing (L269, L648). 0 = no marker. */
-  heatMarker: -1 | 0 | 1;
-  /** heatSource + positionModifier + heatMarker (L245, L678). */
+  /** The ceramic's Kiln Master marker, 0 without one (rev. 4 L78, L255); the same in a Second
+   * Firing recalculation (rev. 4 L627). Replaces revision 3's `heatMarker`. */
+  kilnMasterMarker: -1 | 0 | 1;
+  /** heatSource + positionModifier + kilnMasterMarker (rev. 4 L255, L661). */
   actualHeat: number;
   /** Jun's ±1 (L478). Never carries into a Second Firing recalculation (L640). */
   junAdjustment: -1 | 0 | 1;
@@ -639,7 +652,7 @@ export interface FiringCeramicRecord {
   glaze: Glaze;
   preferredHeat: number;
   positionSource: "zone" | "kiln_furniture" | "imperial";
-  /** Set in step 7. */
+  /** Set in Appendix D step 3 (rev. 4 L661), with the Fire card. */
   first: HeatCalculation | null;
   /**
    * Set when Second Firing recalculates this ceramic with the chosen card (T14, v1.6.2 L639).
@@ -654,13 +667,18 @@ export interface FiringCeramicRecord {
    * Heat Difference of 3 or more. The Heat Difference stays the real one.
    */
   saggarsFloor: boolean;
-  /** Current Quality from step 9 on; replaced by after-Quality effects (L640). */
+  /** Current Quality from Appendix D step 4 on (rev. 4 L662); replaced by after-Quality effects (L640). */
   quality: Quality | null;
   history: QualityChange[];
-  /** Ge Crackle applied this firing (L468). Invariant: `crackle ⇒ quality === "fine"`. */
+  /** Ge Crackle applied this firing (rev. 4 L463: on a Fine or Standard ceramic, which is then
+   * Fine). Invariant: `crackle ⇒ quality === "fine"`. */
   crackle: boolean;
-  /** Discarded in step 11 (L281). */
-  salvaged: boolean;
+  /**
+   * Sold for 2 Coins during its owner's after-Quality turn while Flawed (change 30, R20; rev. 4
+   * L284): it left its kiln space and the game, its Vessel card back in the supply. Replaces
+   * revision 3's `salvaged` (the salvage step is gone).
+   */
+  sold: boolean;
 }
 
 export interface TestPiecesRecord {
@@ -686,7 +704,7 @@ export interface FiringContext {
   unclampedBaseHeat: number | null;
   baseHeat: BaseHeat | null;
   testPieces: TestPiecesRecord[];
-  /** The round's Fire card (step 6). Discarded face up in step 12. */
+  /** The round's Fire card (Appendix D step 2, rev. 4 L660). Discarded face up in step 6. */
   fireModifier: FireModifier | null;
   /** Base Heat + Fire; not clamped (L249). */
   globalHeat: number | null;
@@ -815,7 +833,11 @@ export type WorkTurnStep =
 
 export type GamePhase =
   | {
-      /** Setup step 9 (L108): reverse turn order; all five Kilns available (R1). */
+      /**
+       * Setup step 9 (rev. 4 L122, R23): reverse turn order; one turn takes a Kiln (all five
+       * available, R1) and 1 face-up Main Order, and the display is refilled before the next
+       * player (`SELECT_KILN`).
+       */
       type: "setup_kiln_selection";
       selectionOrder: PlayerId[];
       index: number;
@@ -831,7 +853,7 @@ export type GamePhase =
       step: WorkTurnStep;
     }
   | {
-      /** Appendix D steps 1–2. Secret, simultaneous; any eligible player may submit in any
+      /** Appendix D step 1 (rev. 4 L659). Secret, simultaneous; any eligible player may submit in any
        * order through `submitContribution` (not `applyAction`). */
       type: "firing_contributions";
       windowId: string;
@@ -839,66 +861,64 @@ export type GamePhase =
       submittedPlayerIds: PlayerId[];
     }
   | {
-      /** Step 4 (L675), First Player order. `bury` follows a private peek. */
+      /**
+       * Test Pieces (T13, rev. 4 L626, L668: after Base Heat is determined, before the Fire card
+       * is revealed), First Player order. `bury` follows a private peek. When the queue ends (or
+       * no one is queued), the Fire reveal and Actual Heat run automatically inside the same
+       * command; there is no reveal decision (DESIGN §3.3).
+       */
       type: "firing_test_pieces";
       queue: DecisionQueue;
       awaiting: "decision" | "bury";
     }
   | {
-      /**
-       * Step 5 (L676), First Player order: own marker and Kiln Master. When the queue ends
-       * (or no one is queued), step 6 (reveal Fire, L677) and step 7 (Actual Heat) run
-       * automatically inside the same command; there is no reveal decision (DESIGN §3.3).
-       */
-      type: "firing_heat_markers";
-      queue: DecisionQueue;
-    }
-  | {
-      /** Step 8 (L679): Jun and any heat-adjustment abilities, First Player order. */
+      /** Appendix D step 3 (rev. 4 L661): Jun after Actual Heat (Kiln Master marker included),
+       * before Quality, in First Player order. */
       type: "firing_heat_adjustment";
       queue: DecisionQueue;
     }
   | {
-      /** Step 10 (L681): Saggars, Second Firing, Ge in each owner's chosen order. */
+      /**
+       * Appendix D step 5 (rev. 4 L663): Saggars, Second Firing, Ge in each owner's chosen order,
+       * in First Player order. The queue head may also sell a Flawed ceramic (R20: their own
+       * after-Quality turn), one of this firing included (`SELL_FLAWED`).
+       */
       type: "firing_after_quality";
       queue: DecisionQueue;
     }
   | {
       /**
-       * Second Firing (T14, v1.6.2 L639, R7): the actor chooses 1 of the 2 revealed cards and,
-       * if Jun is unused and affordable, Jun's ±1 on this ceramic after the recalculation and
-       * before the new Quality. The cards wait in `FiringContext.pendingExtraFire`.
-       * SECOND_FIRING_CHOOSE resolves it and returns to `firing_after_quality`.
+       * Second Firing (T14, rev. 4 L627): the actor chooses 1 of the 2 revealed cards and, if
+       * Jun is unused and affordable, Jun's ±1 on this ceramic after the recalculation and
+       * before the new Quality (rev. 4 L627, formerly R7). The cards wait in
+       * `FiringContext.pendingExtraFire`. SECOND_FIRING_CHOOSE resolves it and returns to
+       * `firing_after_quality`.
        */
       type: "firing_second_firing_choice";
       actorId: PlayerId;
       ceramicId: CeramicId;
     }
   | {
-      /** Step 11 (L682): independent choices, so any pending player may act in any order
-       * (`DecisionPrompt.mode === "parallel"`). */
-      type: "firing_salvage";
-      pendingPlayerIds: PlayerId[];
       /**
-       * The revision at which this window first appears (the opener writes
-       * `draft.revision + 1`, the revision its command commits, DESIGN §2.5). The service
-       * accepts a command whose `expectedRevision` is at least this value (DESIGN §4.6).
+       * Phase 4 (rev. 4 L298–302): a single pass in First Player order. A player with nothing
+       * completable and no Flawed ceramic to sell is skipped automatically (INT Order Phase;
+       * R20 makes the Order Phase turn a sale window, DELTA §15.9.12).
        */
-      openedAtRevision: number;
-    }
-  | {
-      /** Phase 4 (L297): a single pass in First Player order; players with nothing
-       * completable are skipped automatically (INT). */
       type: "orders";
       turnOrder: PlayerId[];
       index: number;
     }
   | {
       /** Cleanup step 2 (L304). Skipped in Round 5 (INT). Independent, any order
-       * (`DecisionPrompt.mode === "parallel"`). */
+       * (`DecisionPrompt.mode === "parallel"`). A pending player may also sell a Flawed ceramic
+       * and stays pending (R20). */
       type: "cleanup_hand_limit";
       pendingPlayerIds: PlayerId[];
-      /** As `firing_salvage.openedAtRevision`. */
+      /**
+       * The revision at which this window first appears (the opener writes
+       * `draft.revision + 1`, the revision its command commits, DESIGN §2.5). The service
+       * accepts a command whose `expectedRevision` is at least this value (DESIGN §4.6).
+       */
       openedAtRevision: number;
     }
   | { type: "finished" };
@@ -1041,8 +1061,11 @@ export interface FormVesselSpec {
  * 2. `reworkShape` (L617 "you may first change its Shape"): the Shape every later check uses;
  * 3. the destination (R5), including Inverted Firing's Bowl/Plate/Brush Washer test on the
  *    reworked Shape (L629, R8);
- * 4. Kiln Furniture (Shared only, L647).
- * Once-per-round Techs (T05, T15, T21) may each appear at most once across the loads.
+ * 4. Kiln Furniture (Shared only, L647);
+ * 5. kiln fuel (rev. 4 L197, R24): a Shared destination of a Glaze & Load action needs the
+ *    action's 1 Wood (`kilnLoading.glazeLoadFuel`), paid once whether 1 or 2 loads go there;
+ * 6. Kiln Master (T24, rev. 4 L628, R22): its marker on this load.
+ * Once-per-round Techs (T05, T15, T21, T24) may each appear at most once across the loads.
  * Placement legality (R5c) looks only at current Shapes, not at a Shape Reworking Table could
  * produce (DESIGN §11 Q3 default).
  */
@@ -1068,6 +1091,12 @@ export interface LoadSpec {
       };
   /** Reworking Table (T05, L617): change Shape first; no Clay; Decoration kept. */
   reworkShape?: Shape;
+  /**
+   * Kiln Master (T24, rev. 4 L628, R22): place its +1 or −1 marker face up on this ceramic as
+   * it is loaded, into the Shared or the Imperial Kiln. Once per round, so at most 1 load of a
+   * command; omitted declines (R4).
+   */
+  kilnMaster?: HeatDelta;
 }
 
 /** One reservation of a Select (v1.6.2 L64, L197, change 25). */
@@ -1111,15 +1140,26 @@ export interface OrderCompletionSpec {
 
 export type GameAction =
   // ── Setup ──────────────────────────────────────────────────────────────────────────
-  | { type: "SELECT_KILN"; kilnId: KilnId }
+  | {
+      /**
+       * Setup step 9 (rev. 4 L122, R23): one reverse-order turn chooses an available Kiln
+       * Player Board (R1) and takes 1 face-up Main Order from the display into the hand. The
+       * take is public; the display is refilled to 6 at once (slide left, reveal into the
+       * rightmost position, as rev. 4 L386). `mainOrder.orderId` must match
+       * `market.display[mainOrder.slotIndex]`. Required: the take is not optional.
+       */
+      type: "SELECT_KILN";
+      kilnId: KilnId;
+      mainOrder: { slotIndex: number; orderId: OrderId };
+    }
   // ── Start of Round ─────────────────────────────────────────────────────────────────
   /** Setter's Mark on an empty active space, or null to decline (INT: optional). */
   | { type: "PLACE_SETTERS_MARK"; spaceId: KilnSpaceId | null }
   // ── Work: worker actions (one per turn; L136) ──────────────────────────────────────
   | {
       /**
-       * Materials Yard (v1.6.2 L164–165). clay + wood = 3 (Apprentice) or 6 (Shifu effect,
-       * incl. Senior Apprentice, R12). Resolution order, each step validated against the
+       * Materials Yard (rev. 4 L176–177, change 34). clay + wood = 4 (Apprentice) or 8 (Shifu
+       * effect, incl. Senior Apprentice, R12). Resolution order, each step validated against the
        * running totals (`quoteMaterialsYard`, DESIGN §3.5): (1) gain the split; (2)
        * `preparedClay` (L618 "after gaining resources"), so it may spend the Clay just gained.
        */
@@ -1131,8 +1171,9 @@ export type GameAction =
        * together with `preparedClay` in reachable play (both Workshop, L211). */
       seniorApprentice?: boolean;
       /**
-       * Prepared Clay (T17, L618), after gaining resources: Clay cost +1 and a Decoration.
-       * `useDecoratorsKit` implements the audit INT (Kit may reduce that Decoration), but the
+       * Prepared Clay (T17, rev. 4 L605), after gaining resources: the Shape's Clay +1 and 2 Coins,
+       * any Decoration. `useDecoratorsKit` implements the audit INT (Kit may reduce that vessel's
+       * Coins when its Decoration is Carved, Impressed or Painted), but the
        * combination is unreachable: T16 and T17 are both Workshop Techs (L211). Validators
        * keep the branch; enumeration never generates it (DESIGN §5.2).
        */
@@ -1140,35 +1181,40 @@ export type GameAction =
     }
   | {
       /**
-       * Form & Decorate (L167–173), on your first free unlocked space. Placement is legal if
-       * at least 1 single vessel (Shape × Decoration) is affordable after every ready
-       * Workshop discount: Large Throwing Wheel (Vase/Censer Clay to 0) and Decorator's Kit
-       * (non-Plain −1 Coin) (L172, R4 "apply valid discounts before payment"; `canFormAny`).
+       * Form & Decorate (rev. 4 L183–186, change 30), on your first free unlocked space. Each
+       * vessel costs its Shape's Clay + 2 Coins, any Decoration. Placement is legal if at least
+       * 1 single vessel (Shape × Decoration) is affordable after every reduction (rev. 4 L186:
+       * "the full cost of at least 1 vessel, after any reductions"): Large Throwing Wheel
+       * (Vase/Censer Clay to 0) and Decorator's Kit (−1 Coin on a Carved/Impressed/Painted
+       * vessel) (`canFormAny`).
        */
       type: "PLACE_FORM_DECORATE";
       workerId: WorkerId;
-      /** 1 (Apprentice) or 1–2 (Shifu). Forming 2 with the Shifu reduces one Decoration by
-       * 1 Coin (L170); the engine applies it. */
+      /** 1 (Apprentice) or 1–2 (Shifu). Forming 2 with the Shifu reduces one vessel's cost by
+       * 1 Coin (rev. 4 L184); the engine applies it. */
       vessels: FormVesselSpec[];
-      /** Ding (L474, R1): after forming a Bowl/Plate/Brush Washer, pay 1 Clay + 1 Coin for one
-       * more of the same Shape; its Decoration costs that 1 Coin; outside every discount (L652). */
+      /** Ding (rev. 4 L469, R1): after forming a Bowl/Plate/Brush Washer, pay 1 Clay + 1 Coin for
+       * one more of the same Shape, any Decoration; outside every reduction (rev. 4 L639). */
       dingExtra?: { copyOfVesselIndex: number; decoration: Decoration };
       /** Large Throwing Wheel (T01, L615): total Clay −2 (min 0) if ≥1 Vase/Censer formed. */
       useLargeThrowingWheel?: boolean;
-      /** Decorator's Kit (T16, L616): −1 Coin on this vessel's Carved/Impressed/Painted.
+      /** Decorator's Kit (T16, rev. 4 L603): −1 Coin on this vessel, which has a Carved,
+       * Impressed or Painted Decoration.
        * Never together with `useLargeThrowingWheel` in reachable play (both Workshop, L211);
        * the validator still handles both. */
       decoratorsKitVesselIndex?: number;
     }
   | {
-      /** Glaze & Load (L177–185), on your first free unlocked space. */
+      /**
+       * Glaze & Load (rev. 4 L189–199), on your first free unlocked space. The action pays 1
+       * Wood when any of its loads goes into the Shared Kiln, whether it loads 1 vessel or 2;
+       * loading only into the Imperial Kiln is free (rev. 4 L197, change 35, R24). The Shifu
+       * simply loads up to 2 (no Heat marker since revision 4, changes 28, 31).
+       */
       type: "PLACE_GLAZE_LOAD";
       workerId: WorkerId;
       /** 1 (Apprentice) or 1–2 (Shifu). */
       loads: LoadSpec[];
-      /** Shifu only, optional (R9): your Heat marker face down on one of your loaded ceramics
-       * (Shared or Imperial) without a marker, incl. one loaded earlier or by Imperial Priority. */
-      heatMarkerCeramicId?: CeramicId;
     }
   | {
       /**
@@ -1197,7 +1243,19 @@ export type GameAction =
       type: "PLACE_CANAL_WHARF";
       workerId: WorkerId;
     }
-  | { /** Magistrate's Hall (L223–233): 4 / 3 Coins, +1 Recognition, only at 0–2. */ type: "PLACE_MAGISTRATES_HALL"; workerId: WorkerId }
+  | {
+      /**
+       * Magistrate's Hall (rev. 4 L234–245, change 33): both workers pay 4 Coins for +1
+       * Recognition, only at 0–2. The Shifu then may reserve 1 face-up Crown Order from the
+       * display (R21: optional, the player chooses which or none; nothing if none shows): its
+       * position stays empty until the end of the turn, then the display is refilled as at the
+       * Commission Market (rev. 4 L245). `crownOrder.orderId` must match
+       * `market.display[crownOrder.slotIndex]` and show at least 1 Crown.
+       */
+      type: "PLACE_MAGISTRATES_HALL";
+      workerId: WorkerId;
+      crownOrder?: { slotIndex: number; orderId: OrderId };
+    }
   // ── Work: sub-steps that follow a private reveal ───────────────────────────────────
   | {
       /**
@@ -1242,34 +1300,26 @@ export type GameAction =
       discardOrderId: OrderId;
     }
   | {
-      /** Imperial Priority (L293, R10): free; Shaped vessel → your empty Imperial Kiln. */
+      /** Imperial Priority (L293, R10): free, no Wood (rev. 4 L291); Shaped vessel → your empty
+       * Imperial Kiln. */
       type: "USE_IMPERIAL_PRIORITY";
       ceramicId: CeramicId;
       glaze: Glaze;
       imperialModifier: ImperialModifier;
       /** Reworking Table if unused this round (DESIGN §11 open question Q1). */
       reworkShape?: Shape;
+      /** Kiln Master's marker on this ceramic (T24, rev. 4 L628, R22: any loading). */
+      kilnMaster?: HeatDelta;
     }
   | { /** End your Work turn; triggers the deferred Main display refill (L191). */ type: "END_TURN" }
   // ── Firing ─────────────────────────────────────────────────────────────────────────
   | { /** Test Pieces: pay 1 Wood and peek privately, or decline (L639). */ type: "TEST_PIECES_DECIDE"; peek: boolean }
   | { /** After the peek: bury the card at the bottom of the Fire deck or leave it. */ type: "TEST_PIECES_BURY"; bury: boolean }
   | {
-      /**
-       * Heat-marker step (L268, L676, INT). `ownMarker` is required iff you have a face-down
-       * marker: turn to +1/−1 or return it. `kilnMaster` (T24, optional R4): your ceramic in
-       * this firing that carries no Heat marker after `ownMarker` resolves (INT: a returned
-       * own marker frees its ceramic).
-       */
-      type: "RESOLVE_HEAT_MARKERS";
-      ownMarker?: HeatMarkerValue | "return";
-      kilnMaster?: { ceramicId: CeramicId; value: HeatMarkerValue };
-    }
-  | {
-      /** Jun (L478) in step 8: pay 1 Wood, ±1 on one of your ceramics; null declines (R4).
+      /** Jun (L478) in Appendix D step 3 (rev. 4 L661): pay 1 Wood, ±1 on one of your ceramics; null declines (R4).
        * Jun during Second Firing (R7) is part of SECOND_FIRING_CHOOSE. */
       type: "RESOLVE_JUN";
-      adjustment: { ceramicId: CeramicId; delta: HeatMarkerValue } | null;
+      adjustment: { ceramicId: CeramicId; delta: HeatDelta } | null;
     }
   | {
       /** T11 (v1.6.2 L636): once per round, 1 of your Standard ceramics from this firing becomes
@@ -1285,18 +1335,35 @@ export type GameAction =
     }
   | {
       /**
-       * Second Firing's choice (v1.6.2 L639, R7): the revealed card at `cardIndex` recalculates
-       * the ceramic with the same Base Heat (the Kiln Die for the Imperial Kiln), position
-       * modifier and Heat marker; then `jun`, if given, applies Jun's ±1 for 1 Wood before the
-       * new Quality, which replaces the old even if worse. Both cards are then discarded.
+       * Second Firing's choice (rev. 4 L627): the revealed card at `cardIndex` recalculates the
+       * ceramic with the same Base Heat (the Kiln Die for the Imperial Kiln), position modifier
+       * and Kiln Master marker; then `jun`, if given, applies an unused Jun's ±1 for 1 Wood
+       * before the new Quality (rev. 4 L627; formerly owner ruling R7), which replaces the old
+       * even if worse. Both cards are then discarded.
        */
       type: "SECOND_FIRING_CHOOSE";
       cardIndex: 0 | 1;
-      jun: { delta: HeatMarkerValue } | null;
+      jun: { delta: HeatDelta } | null;
     }
-  | { /** Ge (L468): one of your Standard ceramics from this firing → Fine + Crackle. */ type: "USE_GE_CRACKLE"; ceramicId: CeramicId }
+  | {
+      /** Ge (rev. 4 L463, change 29): one of your Fine or Standard ceramics from this firing →
+       * Crackle, Fine (a Standard one becomes Fine). Optional (R4). */
+      type: "USE_GE_CRACKLE";
+      ceramicId: CeramicId;
+    }
   | { /** Finish your after-Quality turn; remaining abilities are declined (R4). */ type: "END_AFTER_QUALITY" }
-  | { /** Step 11: discard 1 still-Flawed ceramic from this firing for 2 Coins, or null. */ type: "SALVAGE_FLAWED"; ceramicId: CeramicId | null }
+  // ── Any of your turns (R20) ────────────────────────────────────────────────────────
+  | {
+      /**
+       * Sell 1 of your Flawed ceramics for 2 Coins and return its Vessel card (change 30, rev. 4
+       * L282, L284, R20). Free, and only during your own turn while the game waits for your
+       * decision: the before- or after-action window of your Work turn, your Order Phase turn,
+       * your after-Quality turn (where a Flawed ceramic of this firing may be sold too) or your
+       * pending Cleanup hand trim. It never ends the turn by itself (DELTA §15.9.11).
+       */
+      type: "SELL_FLAWED";
+      ceramicId: CeramicId;
+    }
   // ── Order Phase ────────────────────────────────────────────────────────────────────
   | ({ type: "COMPLETE_ORDER" } & OrderCompletionSpec)
   | { type: "END_ORDER_TURN" }
@@ -1334,6 +1401,17 @@ export type Secret<P> = { visibleTo: PlayerId } & P;
  */
 export type OrderReservationSource = "face_up" | "looked" | "deck_top";
 
+/** What a reservation came from: a Select (the Commission Market, Colour Samples when acquired or
+ * its swap), the Canal Wharf Shifu, the Setup Main Order take (rev. 4 L122, R23) or the
+ * Magistrate's Hall Shifu's Crown Order (rev. 4 L241, R21). */
+export type OrderReservationVia =
+  | "commission_market"
+  | "colour_samples"
+  | "colour_samples_swap"
+  | "canal_wharf"
+  | "setup"
+  | "magistrates_hall";
+
 export type ResourceChangeReason =
   | "materials_yard"
   | "form_decorate"
@@ -1342,11 +1420,13 @@ export type ResourceChangeReason =
   | "guild_hall"
   | "canal_wharf"
   | "magistrates_hall"
+  | "kiln_fuel"
   | "kiln_tending"
   | "contribution"
   | "test_pieces"
   | "jun"
-  | "salvage"
+  /** A Flawed ceramic sold for 2 Coins (R20). */
+  | "flawed_sale"
   | "order_reward"
   | "guan"
   | "canal_barge"
@@ -1361,14 +1441,20 @@ export type GameEvent =
   // ── Setup and rounds ───────────────────────────────────────────────────────────────
   | { type: "GAME_CREATED"; playerOrder: PlayerId[]; firstPlayerId: PlayerId; playerCount: PlayerCount }
   | {
-      /** Setup step 2 (L101). Public: the counts. Private: the cards. */
+      /** Setup step 2 (rev. 4 L115): 2 Starting Orders each; nothing Main is dealt (the Main
+       * Order is taken face up at step 9). Public: the count. Private: the cards. */
       type: "ORDERS_DEALT";
       playerId: PlayerId;
       startingCount: number;
-      mainCount: number;
-      secret: Secret<{ startingOrderIds: StartingOrderId[]; mainOrderIds: MainOrderId[] }>;
+      secret: Secret<{ startingOrderIds: StartingOrderId[] }>;
     }
-  | { type: "KILN_SELECTED"; playerId: PlayerId; kilnId: KilnId }
+  | {
+      /** Setup step 9 (rev. 4 L122, R23); followed in the same command by the public
+       * `ORDER_RESERVED { via: "setup" }` and `DISPLAY_REFILLED { cause: "setup" }`. */
+      type: "KILN_SELECTED";
+      playerId: PlayerId;
+      kilnId: KilnId;
+    }
   | { type: "ROUND_STARTED"; round: RoundNumber; firstPlayerId: PlayerId }
   | { /** Public roll (L126, INT). */ type: "KILN_DIE_ROLLED"; round: RoundNumber; value: KilnDieFace }
   | {
@@ -1427,11 +1513,20 @@ export type GameEvent =
       loadedBy: LoadedCeramic["loadedBy"];
     }
   | { type: "KILN_FURNITURE_PLACED"; playerId: PlayerId; spaceId: KilnSpaceId; modifier: KilnFurnitureModifier }
-  | { /** Face down (L180); no value exists yet (INT). */ type: "HEAT_MARKER_PLACED"; playerId: PlayerId; ceramicId: CeramicId }
+  | {
+      /** Kiln Master's marker placed face up as the ceramic is loaded (T24, rev. 4 L628, R22),
+       * after the load's `CERAMIC_LOADED`, Setter's Mark and Kiln Furniture events and its own
+       * `TECH_USED`. Public. */
+      type: "KILN_MASTER_PLACED";
+      playerId: PlayerId;
+      ceramicId: CeramicId;
+      value: HeatDelta;
+    }
   | {
       type: "ORDER_RESERVED";
       playerId: PlayerId;
-      via: "commission_market" | "colour_samples" | "colour_samples_swap" | "canal_wharf";
+      /** `setup` and `magistrates_hall` are always `face_up` and public (no `secret`). */
+      via: OrderReservationVia;
       source: OrderReservationSource;
       /** Display position for `face_up`, else null. */
       slotIndex: number | null;
@@ -1543,9 +1638,6 @@ export type GameEvent =
     }
   | { /** The peek's value is private (INT: Test Pieces). */ type: "TEST_PIECES_PEEKED"; playerId: PlayerId; secret: Secret<{ modifier: FireModifier }> }
   | { /** Public: whether the top card was buried. */ type: "TEST_PIECES_USED"; playerId: PlayerId; buried: boolean }
-  | { type: "HEAT_MARKER_TURNED"; playerId: PlayerId; ceramicId: CeramicId; value: HeatMarkerValue }
-  | { type: "HEAT_MARKER_RETURNED"; playerId: PlayerId; ceramicId: CeramicId }
-  | { type: "KILN_MASTER_PLACED"; playerId: PlayerId; ceramicId: CeramicId; value: HeatMarkerValue }
   | { type: "FIRE_REVEALED"; modifier: FireModifier; baseHeat: BaseHeat; globalHeat: number }
   | {
       /** The open discard was shuffled and placed on top of the Fire deck, above `buriedBelow`
@@ -1555,7 +1647,7 @@ export type GameEvent =
       buriedBelow: number;
     }
   | { type: "ACTUAL_HEAT_CALCULATED"; results: CeramicHeatResult[] }
-  | { type: "JUN_ADJUSTED"; playerId: PlayerId; ceramicId: CeramicId; delta: HeatMarkerValue; finalActualHeat: number; during: "first_firing" | "second_firing" }
+  | { type: "JUN_ADJUSTED"; playerId: PlayerId; ceramicId: CeramicId; delta: HeatDelta; finalActualHeat: number; during: "first_firing" | "second_firing" }
   | {
       type: "QUALITY_ASSIGNED";
       ceramicId: CeramicId;
@@ -1565,7 +1657,15 @@ export type GameEvent =
       /** Protective Saggars made a Heat Difference of 3+ Standard (T11, v1.6.2 L636). */
       saggarsFloor: boolean;
     }
-  | { type: "QUALITY_IMPROVED"; ceramicId: CeramicId; from: Quality; to: Quality; cause: "protective_saggars" | "ge_crackle" }
+  | {
+      /** Saggars' Standard → Fine, or Ge on a Standard ceramic. Ge on a Fine ceramic changes no
+       * Quality and emits only `CRACKLE_APPLIED` (rev. 4 L463). */
+      type: "QUALITY_IMPROVED";
+      ceramicId: CeramicId;
+      from: Quality;
+      to: Quality;
+      cause: "protective_saggars" | "ge_crackle";
+    }
   | {
       /** Second Firing's 2 extra cards, revealed face up (T14, v1.6.2 L639). Public. */
       type: "SECOND_FIRING_REVEALED";
@@ -1583,7 +1683,18 @@ export type GameEvent =
       calculation: HeatCalculation;
     }
   | { type: "CRACKLE_APPLIED"; playerId: PlayerId; ceramicId: CeramicId }
-  | { type: "CERAMIC_SALVAGED"; playerId: PlayerId; ceramicId: CeramicId; coins: number }
+  | {
+      /**
+       * A Flawed ceramic sold (R20, rev. 4 L284); public. `from`: a Finished ceramic, or one of
+       * this firing sold in its owner's after-Quality turn. Followed by
+       * `RESOURCES_CHANGED { reason: "flawed_sale" }`.
+       */
+      type: "CERAMIC_SOLD";
+      playerId: PlayerId;
+      ceramicId: CeramicId;
+      coins: number;
+      from: "finished" | "firing";
+    }
   | { type: "FIRING_FINISHED"; round: RoundNumber; finishedCeramicIds: CeramicId[] }
   // ── Orders ─────────────────────────────────────────────────────────────────────────
   | { type: "ORDER_TURN_STARTED"; playerId: PlayerId }
@@ -1654,7 +1765,6 @@ export type GameRuleErrorCode =
   | "KILN_SPACE_MARKED"
   | "IMPERIAL_KILN_UNAVAILABLE"
   | "INVERTED_FIRING_INVALID"
-  | "HEAT_MARKER_INVALID"
   // Orders and market (B1)
   | "ORDER_NOT_AVAILABLE"
   | "ORDER_NOT_HELD"
@@ -1846,7 +1956,8 @@ export type TechTiming =
   | "after_quality"
   | "contributions"
   | "after_base_heat"
-  | "heat_marker_step"
+  /** Kiln Master (T24, rev. 4 L628): when you load a ceramic (R22: any loading). */
+  | "when_loading"
   | "order_completion"
   | "game_end";
 
@@ -1876,7 +1987,8 @@ export interface TechParamsById {
   T13: { wood: number };
   /** v1.6.2 L639: reveal `extraCards`, use `chosenCards` of them. */
   T14: { extraCards: number; chosenCards: number };
-  T24: { values: HeatMarkerValue[] };
+  /** rev. 4 L628: the marker's faces, chosen when a ceramic is loaded. */
+  T24: { values: HeatDelta[] };
   T25: { bonusCrowns: number };
 }
 
@@ -1933,9 +2045,11 @@ export interface TechDefinition<Id extends TechId = TechId> {
 export interface KilnParamsById {
   RU: { vp: number; glaze: Glaze; decoration: Decoration; quality: Quality };
   GU: { coins: number; vp: number; minPrintedCrowns: number };
-  GE: { fromQuality: Quality; toQuality: Quality };
+  /** Rev. 4 L463, L465 (change 29): Crackle on a Fine or Standard ceramic, which is then Fine;
+   * 1 VP per Crackle ceramic delivered to complete an Order. */
+  GE: { fromQualities: Quality[]; toQuality: Quality; vpPerDeliveredCrackle: number };
   DI: { shapes: Shape[]; clay: number; coins: number };
-  JU: { wood: number; deltas: HeatMarkerValue[] };
+  JU: { wood: number; deltas: HeatDelta[] };
 }
 
 export interface KilnDefinition<Id extends KilnId = KilnId> {
@@ -1958,18 +2072,22 @@ export interface KilnDefinition<Id extends KilnId = KilnId> {
 
 /** Printed location effects, mechanical half (DESIGN §6.3). */
 export interface LocationEffectsById {
-  /** v1.6.2 L164–165: 3 / 6 resources in any Clay/Wood split; no Coin option. */
+  /** rev. 4 L176–177 (change 34): 4 / 8 resources in any Clay/Wood split; no Coin option. */
   materials_yard: {
     apprentice: { resources: number };
     shifu: { resources: number };
   };
+  /** rev. 4 L183–184: forming 2 with the Shifu makes one vessel cost `twoVesselDiscount` Coin
+   * less (each vessel costs its Clay + `GAME_CONFIG.formingCoins`). */
   form_decorate: {
     apprentice: { maxVessels: number };
-    shifu: { maxVessels: number; twoVesselDecorationDiscount: number };
+    shifu: { maxVessels: number; twoVesselDiscount: number };
   };
+  /** rev. 4 L189–199 (changes 31, 34, 35, R24): `sharedKilnWood` is the action's kiln fuel,
+   * paid once when any of its loads goes into the Shared Kiln; the same for both workers. */
   glaze_load: {
-    apprentice: { maxLoads: number; maxImperialLoads: number };
-    shifu: { maxLoads: number; maxImperialLoads: number; placesHeatMarker: boolean };
+    apprentice: { maxLoads: number; maxImperialLoads: number; sharedKilnWood: number };
+    shifu: { maxLoads: number; maxImperialLoads: number; sharedKilnWood: number };
   };
   /** v1.6.2 L201–202 (change 25): Select `select`, reserving up to `maxReservations` (≥ 1). */
   commission_market: {
@@ -1987,9 +2105,11 @@ export interface LocationEffectsById {
     apprentice: { coins: number };
     shifu: { coins: number; topMainOrders: number };
   };
+  /** rev. 4 L240–241 (change 33): both pay 4 Coins for 1 step; the Shifu may then reserve
+   * `crownOrders` face-up Crown Order (R21: optional). */
   magistrates_hall: {
     apprentice: { coins: number; recognitionSteps: number };
-    shifu: { coins: number; recognitionSteps: number };
+    shifu: { coins: number; recognitionSteps: number; crownOrders: number };
   };
 }
 
@@ -2017,9 +2137,13 @@ export interface GameConfigDefinition {
   rulesVersion: RulesVersion;
   players: { min: 2; max: 4 };
   rounds: 5;
+  /** rev. 4 L125 (changes 34, 35): the same for every seat; there is no seat Coin. */
   startingResources: ResourceState;
   workers: { shifu: number; apprentices: number };
-  setupDeal: { startingOrders: number; mainOrders: number };
+  /** rev. 4 L115: Starting Orders dealt to each player; nothing Main is dealt. */
+  setupDeal: { startingOrders: number };
+  /** rev. 4 L122 (change 32, R23): face-up Main Orders each player takes at Setup step 9. */
+  setupFaceUpMainOrders: number;
   mainMarket: { displaySize: number; roundStartDiscard: number };
   /** Base hand limit 4 (L200); Colour Samples' 5 lives in its params (T10). */
   handLimit: { base: number };
@@ -2032,7 +2156,11 @@ export interface GameConfigDefinition {
   sharedKiln: { activeSpacesByPlayerCount: Record<"2" | "3" | "4", KilnSpaceId[]> };
   shapes: Record<Shape, number>;
   shapeSupplyEach: number;
-  decorations: Record<Decoration, number>;
+  /** The four Decorations, any one chosen at forming (rev. 4 L336); none has a cost of its own. */
+  decorations: Decoration[];
+  /** Coins every vessel costs on top of its Shape's Clay, whatever its Decoration (rev. 4 L183,
+   * L336, change 30), before any reduction. */
+  formingCoins: number;
   glazes: Record<Glaze, number>;
   coinEndGame: { coinsPerVp: number; maxVp: number };
 }
@@ -2061,7 +2189,8 @@ export interface FiringDefinition {
   qualityByHeatDifference: Array<{ maxDifference: number | null; quality: Quality }>;
   contributionCards: ContributionCardDefinition[];
   imperialModifiers: ImperialModifier[];
-  salvageCoins: number;
+  /** A Flawed ceramic sells for this many Coins (rev. 4 L284, R20). */
+  flawedSaleCoins: number;
 }
 
 export interface ImperialTrackDefinition {
@@ -2192,7 +2321,7 @@ export interface LegalActionOptions {
  * How the current actors may act:
  * - `single`: exactly one actor (a queue head, the active player, …);
  * - `parallel`: several actors, independent public choices in any order
- *   (`firing_salvage`, `cleanup_hand_limit`);
+ *   (`cleanup_hand_limit`);
  * - `simultaneous_secret`: the Contribution window; choices sealed until all submit.
  */
 export type DecisionMode = "single" | "parallel" | "simultaneous_secret";
@@ -2206,14 +2335,18 @@ export interface DecisionPrompt {
 
 export type CostLineKind =
   | "shape_clay"
-  | "decoration"
-  | "shifu_decoration_discount"
+  /** A vessel's 2 Coins (rev. 4 L183, L336), any Decoration. */
+  | "vessel_coins"
+  /** The Shifu's −1 Coin when forming 2 (rev. 4 L184). */
+  | "shifu_discount"
   | "decorators_kit"
   | "large_throwing_wheel"
   | "ding_extra"
   | "prepared_clay_surcharge"
   | "tech_price"
   | "magistrates_hall"
+  /** A Glaze & Load action's 1 Wood when it loads into the Shared Kiln (rev. 4 L197, R24). */
+  | "kiln_fuel"
   | "wood";
 
 export interface CostLine {
@@ -2289,9 +2422,10 @@ export interface OrderMatchOption {
   printedCrowns: number;
   /**
    * Effects this completion would trigger (R4, R13): Ru, Guan and Tribute Ware unless declined;
-   * Canal Barge's 2 Coins (T23, v1.6.2 L630) is informational, since it is never declined.
+   * Canal Barge's 2 Coins (T23, v1.6.2 L630) and the Crackle VP of the delivered Crackle
+   * ceramics (Ge, rev. 4 L465) are informational, since they are never declined.
    */
-  triggers: { ru: boolean; guan: boolean; tributeWare: boolean; canalBarge: boolean };
+  triggers: { ru: boolean; guan: boolean; tributeWare: boolean; canalBarge: boolean; crackleVp: number };
 }
 
 /**
@@ -2438,15 +2572,22 @@ export interface ContributionOption {
   affordable: boolean;
 }
 
-export interface HeatMarkerStepOptions {
-  /** Your face-down marker's ceramic; when set, `ownMarker` is required. */
-  ownMarkerCeramicId: CeramicId | null;
-  /** Kiln Master (T24), if owned: eligible ceramics as things stand, and if your own marker
-   * is returned first (INT: Heat-marker step). */
-  kilnMaster: { ready: boolean; targets: CeramicId[]; targetsIfOwnReturned: CeramicId[] } | null;
+/** Setup step 9 for the player choosing now (rev. 4 L122, R23): every Kiln with whether it is
+ * still available, and the display positions holding a Main Order to take with it. */
+export interface SetupChoiceOptions {
+  kilns: KilnSelectionOption[];
+  faceUpSlots: number[];
 }
 
-/** Jun in step 8 (`firing_heat_adjustment`). Jun during Second Firing (R7) is part of
+/** Kiln Master (T24, rev. 4 L628, R22) for a loading command: null without the tile. */
+export interface KilnMasterOption {
+  /** Owned and unused this round: a load of this command may carry the marker. */
+  ready: boolean;
+  /** The marker's faces (T24 params). */
+  values: HeatDelta[];
+}
+
+/** Jun in Appendix D step 3 (`firing_heat_adjustment`, rev. 4 L661). Jun during Second Firing (R7) is part of
  * `SecondFiringChoiceOptions`, so `during` is always "first_firing" here. */
 export interface JunOptions {
   during: "first_firing" | "second_firing";
@@ -2460,13 +2601,21 @@ export type AfterQualityAbility = "protective_saggars" | "second_firing" | "ge_c
 export interface AfterQualityOption {
   ability: AfterQualityAbility;
   /** Your eligible ceramics from this firing at this moment (rechecked after each use):
-   * Standard for Protective Saggars and Ge, Flawed or Standard for Second Firing. */
+   * Standard for Protective Saggars, Fine or Standard for Ge (rev. 4 L463), Flawed or Standard
+   * for Second Firing. A sold ceramic is never eligible. */
   ceramicIds: CeramicId[];
   /** Always zero in V1.6.2 (Saggars no longer costs Wood, v1.6.2 L636). */
   cost: ResourceState;
 }
 
-export interface SalvageOptions {
+/**
+ * The viewer's sale of a Flawed ceramic (R20, rev. 4 L284; `sellFlawedOptions`): non-null only
+ * in one of the viewer's sale windows with at least 1 sellable ceramic. Replaces revision 3's
+ * `SalvageOptions`.
+ */
+export interface SellFlawedOptions {
+  /** In ceramic sequence order: Finished Flawed ceramics, and in the viewer's after-Quality
+   * turn also Flawed ceramics of this firing. One `SELL_FLAWED` per ceramic. */
   ceramicIds: CeramicId[];
   coins: number;
 }
@@ -2571,8 +2720,7 @@ export interface PlayerSummary {
     /** Imperial Priority may be used right now (before/after-action window). */
     priorityUsableNow: boolean;
   };
-  /** The ceramic carrying your own Heat marker; the one carrying Kiln Master's marker. */
-  heatMarkerCeramicId: CeramicId | null;
+  /** The loaded ceramic carrying the player's Kiln Master marker (rev. 4 L628), else null. */
   kilnMasterCeramicId: CeramicId | null;
   orderHandCount: number;
   handLimit: number;
@@ -2608,8 +2756,11 @@ export interface KilnLayoutView {
   emptyActiveSpaceIds: KilnSpaceId[];
 }
 
-/** Appendix D firing steps (L670–693): 1 Contributions … 12 Finish. */
-export type FiringStep = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+/**
+ * Appendix D firing steps (rev. 4 L655–672): 1 Contributions (Test Pieces at its end), 2 Fire,
+ * 3 Actual Heat (Jun), 4 Quality, 5 after-Quality abilities, 6 Finish firing.
+ */
+export type FiringStep = 1 | 2 | 3 | 4 | 5 | 6;
 
 /** One Contribution participant (L261) on the firing stage. */
 export interface FiringStageContribution {
@@ -2624,15 +2775,15 @@ export interface FiringStageCeramic {
   ownerId: PlayerId;
   kiln: "shared" | "imperial";
   spaceId: KilnSpaceId | null;
-  /** The Heat marker on the ceramic while it is loaded (face down, or turned with its value);
-   * null without a marker and once the markers are removed (step 12). */
-  marker: CeramicHeatMarker | null;
-  /** Recorded from step 9 on (L274–279); null before. */
+  /** The Kiln Master marker on the ceramic while it is loaded (rev. 4 L628, public); null
+   * without one and once the firing finishes (Appendix D step 6). Replaces `marker`. */
+  kilnMasterMarker: HeatDelta | null;
+  /** Recorded from Appendix D step 4 on (rev. 4 L662); null before. */
   quality: Quality | null;
-  /** Ge Crackle applied this firing (L468). */
+  /** Ge Crackle applied this firing (rev. 4 L463). */
   crackle: boolean;
-  /** Discarded in step 11 (L281). */
-  salvaged: boolean;
+  /** Sold during its owner's after-Quality turn (R20). Replaces `salvaged`. */
+  sold: boolean;
   /** Second Firing's chosen Fire card (T14, v1.6.2 L639); null when not second-fired. */
   secondFireModifier: FireModifier | null;
   /** Second Firing's 2 revealed cards in reveal order; null when not second-fired. */
@@ -2653,11 +2804,16 @@ export interface FiringStageCeramic {
  */
 export interface FiringStageView {
   round: RoundNumber;
-  /** The Appendix D step now open (1, 4, 5, 8, 10 or 11), or 12 for a finished firing. */
+  /**
+   * The Appendix D step now open (rev. 4 L655–672): 1 for the Contributions and Test Pieces
+   * ("end of 1", L670), 3 for Jun, 5 for the after-Quality abilities (the Second Firing choice
+   * included), or 6 for a finished firing.
+   */
   step: FiringStep;
-  /** The Appendix D steps resolved in First Player order (4, 5, 8, 10), for the step rail. */
+  /** The Appendix D steps resolved in First Player order (1 for Test Pieces, 3, 5), for the
+   * step rail. */
   firstPlayerOrder: FiringStep[];
-  /** The decision queue of a queued step (4, 5, 8, 10), else null. */
+  /** The decision queue of a queued step (Test Pieces, Jun, after-Quality), else null. */
   queue: { actorIds: PlayerId[]; index: number } | null;
   /** Who has submitted a Contribution (public; never what, until the reveal). */
   submittedPlayerIds: PlayerId[];
@@ -2762,6 +2918,8 @@ export interface ImperialPriorityOptions {
   usable: boolean;
   ceramicIds: CeramicId[];
   ceramics: ImperialPriorityCeramicOption[];
+  /** Kiln Master's marker may go on this load (T24 ready, R22). */
+  kilnMaster: boolean;
 }
 
 /** The five round phases of `data/round_structure.json` (L114–132). */

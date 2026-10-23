@@ -1,21 +1,24 @@
 /**
- * Test Pieces, Heat markers, Fire reveal, Actual Heat, Jun and Quality (Appendix D steps
- * 4–9, L243–246, L267–279, L639, L641, L675–680).
+ * Test Pieces, Fire reveal, Actual Heat, Jun and Quality (Appendix D steps 1–4 as owner
+ * revision 4 left them, rev. 4 L655–664, L626, L628; changes 28, 31).
  *
- * - Step 4 `firing_test_pieces` (L639, INT): First Player order; queued when Test Pieces
- *   (T13) is ready, the owner has a ceramic in this firing (Imperial included) and 1 Wood.
+ * Revision 4 removed the player Heat marker and its step (changes 28, 31): the firing runs
+ * Contributions (Base Heat) → Test Pieces → Fire → Actual Heat (Jun) → Quality. Kiln Master's
+ * marker is chosen when the ceramic is loaded (T24, rev. 4 L628, R22; `kilnLoading.ts`), so it
+ * is already on the ceramic here.
+ *
+ * - `firing_test_pieces` (T13, rev. 4 L626, L670: after Base Heat is determined, before the
+ *   Fire card is revealed; INT): First Player order; queued when Test Pieces is ready, the
+ *   owner has a ceramic in this firing (Imperial included) and 1 Wood.
  *   `TEST_PIECES_DECIDE{peek}` pays and peeks privately (`hidden.firePeeks`,
  *   `TEST_PIECES_PEEKED.secret`), then `TEST_PIECES_BURY{bury}` publicly leaves the card or
  *   moves it to the bottom. The peek reshuffles the discard on top when only buried cards
  *   are left (R15), so the buried card is drawn last (v1.6.2 L648).
- * - Step 5 `firing_heat_markers` (L268, L676, INT): First Player order; players with a
- *   face-down own marker (who must turn or return it) or a ready Kiln Master (T24) with an
- *   eligible ceramic. One `RESOLVE_HEAT_MARKERS` per player; the own marker resolves first,
- *   so a returned marker frees its ceramic for Kiln Master.
- * - Steps 6–7 are automatic (L677–678): the command that ends step 5 (or the one that ends
- *   step 4 / 3 when step 5 has no actor) reveals the Fire card and calculates Actual Heat.
- * - Step 8 `firing_heat_adjustment` (L478, L679): Jun in First Player order (ready, a ceramic
- *   in this firing, 1 Wood). Step 9 assigns Quality automatically (L274–279); a Protective
+ * - Fire and Actual Heat are automatic (rev. 4 L660–661): the command that ends Test Pieces (or
+ *   the one that determines Base Heat when nobody uses Test Pieces) reveals the Fire card and
+ *   calculates Actual Heat, Kiln Master's marker included.
+ * - `firing_heat_adjustment` (L478, rev. 4 L661): Jun in First Player order (ready, a ceramic
+ *   in this firing, 1 Wood). Quality is then assigned automatically (L274–279); a Protective
  *   Saggars owner's ceramics are never Flawed (T11, v1.6.2 L636), in the Shared and Imperial
  *   Kilns alike (L650).
  *
@@ -25,17 +28,14 @@
 import { KILNS, TECHS } from "../content.ts";
 import { invariant, ruleError } from "../errors.ts";
 import { hasKiln, kilnAbilityReady, markKilnAbilityUsed } from "../kilns.ts";
-import { canAfford, emit, heatMarkerOf, loadedCeramics, lookup, phaseAs, player, spend, turnOrder } from "../state.ts";
+import { canAfford, emit, loadedCeramics, lookup, phaseAs, player, spend, turnOrder } from "../state.ts";
 import { markTechUsed, ownsTech, techReady } from "../techs.ts";
 import type {
   ActionHandlerTable,
   CeramicHeatResult,
-  CeramicId,
   GameRuleError,
   GameState,
-  HeatMarkerStepOptions,
   JunOptions,
-  LoadedCeramic,
   PlayerId,
   PlayerView,
   PublicCore,
@@ -49,7 +49,6 @@ import {
   firingRecord,
   firingRecordsInOrder,
   heatCalculation,
-  markerValue,
   positionFor,
   qualityFor,
   requireFiring,
@@ -59,7 +58,6 @@ import {
 } from "./heat.ts";
 
 const TEST_PIECES: TechId = "T13";
-const KILN_MASTER: TechId = "T24";
 
 /** The first index ≥ `from` whose player is still eligible, or `actorIds.length`. */
 function nextEligible(actorIds: readonly PlayerId[], from: number, eligible: (playerId: PlayerId) => boolean): number {
@@ -90,7 +88,7 @@ function woodError(game: PublicCore, playerId: PlayerId, needed: number): GameRu
   return have < needed ? ruleError("INSUFFICIENT_RESOURCES", `You need ${needed} Wood.`, { resource: "wood", needed, have }) : null;
 }
 
-// ── Step 4: Test Pieces ───────────────────────────────────────────────────────────────
+// ── Test Pieces (end of Appendix D step 1) ────────────────────────────────────────────
 
 function testPiecesEligible(game: PublicCore, playerId: PlayerId): boolean {
   const p = player(game, playerId);
@@ -98,8 +96,8 @@ function testPiecesEligible(game: PublicCore, playerId: PlayerId): boolean {
 }
 
 /**
- * Continues after Base Heat (step 3): opens Test Pieces for its eligible owners in First
- * Player order (L675), else goes straight on to the Heat-marker step.
+ * Continues after Base Heat (the end of Appendix D step 1): opens Test Pieces for its eligible
+ * owners in First Player order (rev. 4 L626, L670), else reveals the Fire card at once.
  */
 export function openAfterBaseHeat(draft: GameState, ctx: ResolveContext): void {
   const firing = requireFiring(draft);
@@ -109,21 +107,21 @@ export function openAfterBaseHeat(draft: GameState, ctx: ResolveContext): void {
     draft.phase = { type: "firing_test_pieces", queue: { actorIds, index: 0 }, awaiting: "decision" };
     return;
   }
-  openHeatMarkerStep(draft, ctx);
+  revealFireAndCalculate(draft, ctx);
 }
 
 function advanceTestPieces(draft: GameState, ctx: ResolveContext): void {
   const phase = phaseAs(draft, "firing_test_pieces");
   const index = nextEligible(phase.queue.actorIds, phase.queue.index + 1, (pid) => testPiecesEligible(draft, pid));
   if (index >= phase.queue.actorIds.length) {
-    openHeatMarkerStep(draft, ctx);
+    revealFireAndCalculate(draft, ctx);
     return;
   }
   phase.queue.index = index;
   phase.awaiting = "decision";
 }
 
-/** The viewer's Test Pieces choice while it is their turn in step 4; otherwise null. */
+/** The viewer's Test Pieces choice while it is their turn; otherwise null. */
 export function testPiecesOptions(view: PlayerView): TestPiecesOptions | null {
   const game = view.game;
   const viewerId = view.viewerId;
@@ -144,103 +142,20 @@ export function testPiecesOptions(view: PlayerView): TestPiecesOptions | null {
   };
 }
 
-// ── Step 5: Heat markers ──────────────────────────────────────────────────────────────
-
-/** The viewer's ceramic carrying their own face-down Heat marker (R9, L268), if any. */
-function ownFaceDownMarker(game: PublicCore, playerId: PlayerId): LoadedCeramic | null {
-  const carrier = heatMarkerOf(game, playerId, "own");
-  return carrier !== null && carrier.heatMarker?.faceDown === true ? carrier : null;
-}
-
-/** Kiln Master targets (T24, L641, L648): your ceramics in this firing without a Heat
- * marker — also the one carrying your own face-down marker if you return it first (INT). */
-function kilnMasterTargets(game: PublicCore, playerId: PlayerId, ownReturned: boolean): CeramicId[] {
-  const firing = game.firing;
-  if (firing === null) {
-    return [];
-  }
-  const targets: CeramicId[] = [];
-  for (const record of firingRecordsInOrder(firing)) {
-    const found = lookup(game.ceramics, record.ceramicId);
-    if (record.ownerId !== playerId || found === undefined || found.stage !== "loaded") {
-      continue;
-    }
-    const marker = found.heatMarker;
-    if (marker === null || (ownReturned && marker.source === "own" && marker.faceDown)) {
-      targets.push(found.id);
-    }
-  }
-  return targets;
-}
-
-function heatMarkerStepEligible(game: PublicCore, playerId: PlayerId): boolean {
-  if (ownFaceDownMarker(game, playerId) !== null) {
-    return true;
-  }
-  return techReady(player(game, playerId), KILN_MASTER) && kilnMasterTargets(game, playerId, true).length > 0;
-}
-
-function openHeatMarkerStep(draft: GameState, ctx: ResolveContext): void {
-  const actorIds = turnOrder(draft).filter((pid) => heatMarkerStepEligible(draft, pid));
-  if (actorIds.length > 0) {
-    draft.phase = { type: "firing_heat_markers", queue: { actorIds, index: 0 } };
-    return;
-  }
-  revealFireAndCalculate(draft, ctx);
-}
-
-function advanceHeatMarkers(draft: GameState, ctx: ResolveContext): void {
-  const phase = phaseAs(draft, "firing_heat_markers");
-  const index = nextEligible(phase.queue.actorIds, phase.queue.index + 1, (pid) => heatMarkerStepEligible(draft, pid));
-  if (index >= phase.queue.actorIds.length) {
-    revealFireAndCalculate(draft, ctx);
-    return;
-  }
-  phase.queue.index = index;
-}
-
-/** The viewer's Heat-marker step choices while it is their turn in step 5; otherwise null. */
-export function heatMarkerStepOptions(view: PlayerView): HeatMarkerStepOptions | null {
-  const game = view.game;
-  const viewerId = view.viewerId;
-  if (viewerId === null || game.phase.type !== "firing_heat_markers") {
-    return null;
-  }
-  const queue = game.phase.queue;
-  if (queue.actorIds[queue.index] !== viewerId) {
-    return null;
-  }
-  const p = player(game, viewerId);
-  const own = ownFaceDownMarker(game, viewerId);
-  let kilnMaster: HeatMarkerStepOptions["kilnMaster"] = null;
-  if (ownsTech(p, KILN_MASTER)) {
-    const ready = techReady(p, KILN_MASTER);
-    kilnMaster = {
-      ready,
-      targets: ready ? kilnMasterTargets(game, viewerId, false) : [],
-      targetsIfOwnReturned: ready ? kilnMasterTargets(game, viewerId, own !== null) : [],
-    };
-  }
-  return { ownMarkerCeramicId: own?.id ?? null, kilnMaster };
-}
-
-// ── Steps 6–7: Fire and Actual Heat (automatic) ───────────────────────────────────────
+// ── Fire and Actual Heat (Appendix D steps 2–3, automatic) ────────────────────────────
 
 /**
- * Step 6 (L677): reveal the top Fire card (reshuffling only if the deck is empty); Global
- * Heat = Base Heat + Fire, unclamped. Step 7 (L678): every ceramic's Actual Heat — Shared:
- * Global Heat + (Kiln Furniture ?? zone) + marker; Imperial: Kiln Die + Fire + Imperial
- * modifier + marker, whatever the Contributions were (L289). Then step 8.
+ * Step 2 (rev. 4 L660): reveal the top Fire card (reshuffling only if the deck is empty);
+ * Global Heat = Base Heat + Fire, unclamped. Step 3 (rev. 4 L661): every ceramic's Actual Heat —
+ * Shared: Global Heat + (Kiln Furniture ?? zone) + Kiln Master marker; Imperial: Kiln Die + Fire
+ * + Imperial modifier + Kiln Master marker, whatever the Contributions were (rev. 4 L292). Then
+ * Jun.
  */
 function revealFireAndCalculate(draft: GameState, ctx: ResolveContext): void {
   const firing = requireFiring(draft);
   const base = firing.baseHeat;
   invariant(base !== null, "Base Heat is not determined yet");
   const loaded = loadedCeramics(draft);
-  invariant(
-    loaded.every((c) => c.heatMarker === null || !c.heatMarker.faceDown),
-    "Every face-down Heat marker is turned or returned before the Fire card",
-  );
   const fire = drawFire(draft, ctx);
   const globalHeat = base + fire;
   firing.fireModifier = fire;
@@ -256,7 +171,7 @@ function revealFireAndCalculate(draft: GameState, ctx: ResolveContext): void {
       fireModifier: fire,
       heatSource: ceramic.placement.kiln === "imperial" ? firing.kilnDie + fire : globalHeat,
       positionModifier: position.modifier,
-      heatMarker: markerValue(ceramic.heatMarker),
+      kilnMasterMarker: ceramic.kilnMasterMarker ?? 0,
       junAdjustment: 0,
       preferredHeat: record.preferredHeat,
     });
@@ -266,7 +181,7 @@ function revealFireAndCalculate(draft: GameState, ctx: ResolveContext): void {
   openHeatAdjustment(draft, ctx);
 }
 
-// ── Steps 8–9: Jun and Quality ────────────────────────────────────────────────────────
+// ── Jun and Quality (Appendix D steps 3–4) ────────────────────────────────────────────
 
 function junEligible(game: PublicCore, playerId: PlayerId): boolean {
   const p = player(game, playerId);
@@ -293,7 +208,8 @@ function advanceHeatAdjustment(draft: GameState, ctx: ResolveContext): void {
 }
 
 /**
- * Step 9 (L274–279, L680): Quality from each ceramic's final Heat Difference, then step 10.
+ * Step 4 (L274–279, rev. 4 L662): Quality from each ceramic's final Heat Difference, then the
+ * after-Quality abilities (step 5).
  * Protective Saggars' owner never gets Flawed: a difference of 3+ is Standard (v1.6.2 L636),
  * recorded as `saggarsFloor`; the Heat Difference stays the real one.
  */
@@ -320,8 +236,8 @@ function assignQuality(draft: GameState, ctx: ResolveContext): void {
   openAfterQuality(draft, ctx);
 }
 
-/** The viewer's Jun choice in step 8; otherwise null. Jun during Second Firing (R7) is part
- * of `secondFiringChoiceOptions`. */
+/** The viewer's Jun choice (Appendix D step 3); otherwise null. Jun during Second Firing (rev. 4
+ * L627, formerly R7) is part of `secondFiringChoiceOptions`. */
 export function junOptions(view: PlayerView): JunOptions | null {
   const game = view.game;
   const viewerId = view.viewerId;
@@ -354,7 +270,7 @@ function stepMismatch(phaseType: string, step: string, actionType: string): Game
   return ruleError("WRONG_PHASE", "That choice is not due at this step.", { phase: phaseType, step, actionType });
 }
 
-export const handlers: Pick<ActionHandlerTable, "TEST_PIECES_DECIDE" | "TEST_PIECES_BURY" | "RESOLVE_HEAT_MARKERS" | "RESOLVE_JUN"> = {
+export const handlers: Pick<ActionHandlerTable, "TEST_PIECES_DECIDE" | "TEST_PIECES_BURY" | "RESOLVE_JUN"> = {
   TEST_PIECES_DECIDE: {
     phases: ["firing_test_pieces"],
     validate(view, action) {
@@ -410,67 +326,6 @@ export const handlers: Pick<ActionHandlerTable, "TEST_PIECES_DECIDE" | "TEST_PIE
       record.buried = action.bury;
       emit(ctx, { type: "TEST_PIECES_USED", playerId: actorId, buried: action.bury });
       advanceTestPieces(draft, ctx);
-    },
-  },
-  RESOLVE_HEAT_MARKERS: {
-    phases: ["firing_heat_markers"],
-    validate(view, action) {
-      const game = view.game;
-      const own = ownFaceDownMarker(game, view.viewerId);
-      if (own !== null && action.ownMarker === undefined) {
-        return ruleError("INVALID_CHOICE", "Turn your face-down Heat marker to +1 or −1, or return it.", {
-          field: "ownMarker",
-          ceramicId: own.id,
-        });
-      }
-      if (own === null && action.ownMarker !== undefined) {
-        return ruleError("INVALID_CHOICE", "You have no face-down Heat marker to resolve.", { field: "ownMarker" });
-      }
-      const kilnMaster = action.kilnMaster;
-      if (kilnMaster === undefined) {
-        return null;
-      }
-      const techError = techUseError(game, view.viewerId, KILN_MASTER);
-      if (techError !== null) {
-        return techError;
-      }
-      const target = ownFiringCeramic(game, view.viewerId, kilnMaster.ceramicId);
-      if (target.error !== null) {
-        return target.error;
-      }
-      const carrier = lookup(game.ceramics, kilnMaster.ceramicId);
-      const marker = carrier?.stage === "loaded" ? carrier.heatMarker : null;
-      const freedByReturn = own !== null && own.id === kilnMaster.ceramicId && action.ownMarker === "return";
-      if (marker !== null && !freedByReturn) {
-        return ruleError("HEAT_MARKER_INVALID", "That ceramic already carries a Heat marker.", {
-          ceramicId: kilnMaster.ceramicId,
-          source: marker.source,
-        });
-      }
-      return null;
-    },
-    resolve(draft, actorId, action, ctx) {
-      const own = ownFaceDownMarker(draft, actorId);
-      if (own !== null) {
-        const choice = action.ownMarker;
-        invariant(choice !== undefined, `${actorId} must resolve their face-down Heat marker`);
-        if (choice === "return") {
-          own.heatMarker = null;
-          emit(ctx, { type: "HEAT_MARKER_RETURNED", playerId: actorId, ceramicId: own.id });
-        } else {
-          own.heatMarker = { source: "own", faceDown: false, value: choice };
-          emit(ctx, { type: "HEAT_MARKER_TURNED", playerId: actorId, ceramicId: own.id, value: choice });
-        }
-      }
-      const kilnMaster = action.kilnMaster;
-      if (kilnMaster !== undefined) {
-        const target = lookup(draft.ceramics, kilnMaster.ceramicId);
-        invariant(target !== undefined && target.stage === "loaded" && target.heatMarker === null, "Kiln Master needs an unmarked ceramic");
-        markTechUsed(draft, actorId, KILN_MASTER, ctx);
-        target.heatMarker = { source: "kiln_master", faceDown: false, value: kilnMaster.value };
-        emit(ctx, { type: "KILN_MASTER_PLACED", playerId: actorId, ceramicId: target.id, value: kilnMaster.value });
-      }
-      advanceHeatMarkers(draft, ctx);
     },
   },
   RESOLVE_JUN: {

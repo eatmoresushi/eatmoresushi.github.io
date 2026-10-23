@@ -1,10 +1,11 @@
 /**
- * P6 `orders/phase.ts`: the Order Phase (L295–299, INT: Order Phase; DESIGN §3.4, §3.6,
- * §3.7, §8.2 "Single-pass Order Phase, held Orders only").
+ * P6 `orders/phase.ts`: the Order Phase (rev. 4 L298–302, INT: Order Phase; DESIGN §3.4, §3.6,
+ * §3.7, §8.2 "Single-pass Order Phase, held Orders only"; R20).
  *
  * - One pass, First Player then clockwise; any number of held Orders, one at a time.
- * - Players with nothing completable are skipped automatically, at the start of their turn and
- *   after each completion.
+ * - The turn is also a sale window (R20): a Flawed ceramic may be sold for 2 Coins.
+ * - Players with nothing completable and no Flawed ceramic to sell are skipped automatically, at
+ *   the start of their turn and after each completion or sale (DELTA §15.9.12).
  * - Face-up Main Orders can never be completed; the display never changes.
  * - The pass hands over through `continueAfter("order_phase_done")`.
  */
@@ -39,7 +40,8 @@ function finished(state: GameState, owner: PlayerId, shape: "bowl" | "plate" | "
   return stageCeramic(state, { owner, stage: "finished", shape, glaze: "white", quality }).id;
 }
 
-/** p2 is First Player: p2 holds two completable Orders, p3 none, p1 one. */
+/** p2 is First Player: p2 holds two completable Orders, p3 none but a Flawed ceramic to sell
+ * (R20), p1 one. */
 interface TableIds {
   p1Vase: string;
   p2Bowl: string;
@@ -125,6 +127,13 @@ describe("the single pass (L297)", () => {
     expect(second.slice(2)).toEqual([
       { type: "ORDER_TURN_ENDED", playerId: "p2", automatic: true },
       { type: "ORDER_TURN_STARTED", playerId: "p3" },
+    ]);
+    // p3 can complete nothing, but holds a Flawed ceramic: the turn opens for the sale (R20).
+    expect(table.prompt().actorIds).toEqual(["p3"]);
+    const sale = table.act("p3", { type: "SELL_FLAWED", ceramicId: ids.p3Flawed });
+    expect(sale).toEqual([
+      { type: "CERAMIC_SOLD", playerId: "p3", ceramicId: ids.p3Flawed, coins: 2, from: "finished" },
+      { type: "RESOURCES_CHANGED", playerId: "p3", clay: 0, wood: 0, coins: 2, reason: "flawed_sale" },
       { type: "ORDER_TURN_ENDED", playerId: "p3", automatic: true },
       { type: "ORDER_TURN_STARTED", playerId: "p1" },
     ]);
@@ -147,11 +156,34 @@ describe("the single pass (L297)", () => {
     const { state, ids } = threePlayerTable();
     const table = new LocalTable(state, { flow: "halt" });
     table.act("p2", { type: "END_ORDER_TURN" });
-    expect(table.prompt().actorIds).toEqual(["p1"]);
+    expect(table.prompt().actorIds).toEqual(["p3"]);
     table.expectRuleError("p2", { type: "COMPLETE_ORDER", orderId: "S01", ceramicIds: [ids.p2Bowl] }, "NOT_YOUR_DECISION");
+    // Keeping the Flawed ceramic is allowed: p3 simply ends the turn (R4).
+    table.act("p3", { type: "END_ORDER_TURN" });
+    expect(table.prompt().actorIds).toEqual(["p1"]);
+    expectDocumentedDetails(table.expectRuleError("p3", { type: "SELL_FLAWED", ceramicId: ids.p3Flawed }, "NOT_YOUR_DECISION"));
     table.act("p1", { type: "END_ORDER_TURN" });
     expect(table.halts).toEqual([{ kind: "continue_after", milestone: "order_phase_done" }]);
     expect(table.player("p2").completedOrders).toEqual([]);
+    expect(table.state.ceramics[ids.p3Flawed]).toMatchObject({ stage: "finished", quality: "flawed" });
+  });
+
+  it("a sale keeps the turn while something is left to complete or sell (R20)", () => {
+    const state = buildState({ players: [{ hand: ["S08"] }, {}] });
+    const vase = finished(state, "p1", "vase");
+    const flawedA = finished(state, "p1", "bowl", "flawed");
+    const flawedB = finished(state, "p1", "plate", "flawed");
+    openOrderPhase(state, testContext());
+    const table = new LocalTable(state, { flow: "halt" });
+    expect(table.act("p1", { type: "SELL_FLAWED", ceramicId: flawedA }).map((e) => e.type)).toEqual(["CERAMIC_SOLD", "RESOURCES_CHANGED"]);
+    expect(table.prompt().actorIds).toEqual(["p1"]);
+    table.act("p1", { type: "COMPLETE_ORDER", orderId: "S08", ceramicIds: [vase] });
+    // S08 is done, but flawedB can still be sold: the turn stays open.
+    expect(table.prompt().actorIds).toEqual(["p1"]);
+    const last = table.act("p1", { type: "SELL_FLAWED", ceramicId: flawedB });
+    expect(last.map((e) => e.type)).toEqual(["CERAMIC_SOLD", "RESOURCES_CHANGED", "ORDER_TURN_ENDED", "ORDER_TURN_STARTED", "ORDER_TURN_ENDED"]);
+    expect(table.halts).toEqual([{ kind: "continue_after", milestone: "order_phase_done" }]);
+    expect(table.player("p1").resources.coins).toBe(3 + 4 + (table.player("p1").completedOrders[0]?.coins ?? 0));
   });
 
   it("only the active player may act, and only during the Order Phase", () => {
@@ -200,6 +232,7 @@ describe("the single pass (L297)", () => {
       ...events,
       ...table.act("p2", { type: "COMPLETE_ORDER", orderId: "S01", ceramicIds: [ids.p2Bowl] }),
       ...table.act("p2", { type: "END_ORDER_TURN" }),
+      ...table.act("p3", { type: "SELL_FLAWED", ceramicId: ids.p3Flawed }),
       ...table.act("p1", { type: "END_ORDER_TURN" }),
     ];
     for (const event of all) {

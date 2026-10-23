@@ -1,7 +1,9 @@
 /**
- * Setup and Kiln selection (P2 `setup.ts`): L98–112, R1, DESIGN §7 setup draw order,
- * §8.2 "Setup for 2/3/4", "2 Clay / 2 Wood / 3 Coins; 1 Shifu + 3 Apprentices",
- * "Secret deal of 2 Starting + 1 Main", "6-card Main display; 2 face-up Techs per discipline".
+ * Setup and the Kiln and Main Order choice (P2 `setup.ts`; owner revision 4, change 32, rev. 4
+ * L113–126, R1, R23), DESIGN §7 setup draw order (as revised by ENGINE_V1.6.2_DELTA.md §15.9.1),
+ * §8.2 "Setup for 2/3/4", "2 Clay / 3 Wood / 3 Coins; 1 Shifu + 3 Apprentices" (changes 34, 35:
+ * the same for every seat), "secret deal of 2 Starting Orders", "6-card Main display; 2 face-up
+ * Techs per discipline", and the public face-up Main Order each player takes with its Kiln.
  */
 
 import { describe, expect, it } from "vitest";
@@ -18,15 +20,18 @@ import {
   techsOfDiscipline,
   zoneOf,
 } from "../../../src/game/content.ts";
+import { parseCommand } from "../../../src/game/actionGuard.ts";
 import { createGame, validateAction } from "../../../src/game/engine.ts";
 import { availableKilns } from "../../../src/game/kilns.ts";
 import { centralCapacity } from "../../../src/game/placement.ts";
 import { SeededRandom, shuffle } from "../../../src/game/rng.ts";
 import { createInitialState } from "../../../src/game/setup.ts";
+import { setupChoiceOptions } from "../../../src/game/selectors.ts";
 import { decisionPrompt, turnOrder } from "../../../src/game/state.ts";
 import type {
   CreateGameInput,
   FireModifier,
+  GameAction,
   GameEvent,
   GameState,
   KilnId,
@@ -52,6 +57,13 @@ function created(seed: number, n: number): { state: GameState; events: GameEvent
   return { state: result.state, events: result.events, rng };
 }
 
+/** `SELECT_KILN` with the face-up Main Order at `slotIndex` (rev. 4 L122, R23). */
+function choose(state: GameState, kilnId: KilnId, slotIndex = 0): GameAction {
+  const orderId = state.market.display[slotIndex];
+  if (orderId === null || orderId === undefined) throw new Error(`no Order at ${slotIndex}`);
+  return { type: "SELECT_KILN", kilnId, mainOrder: { slotIndex, orderId } };
+}
+
 function countBy<T extends string | number>(items: readonly T[]): Map<T, number> {
   const counts = new Map<T, number>();
   for (const item of items) counts.set(item, (counts.get(item) ?? 0) + 1);
@@ -61,7 +73,7 @@ function countBy<T extends string | number>(items: readonly T[]): Map<T, number>
 describe("createInitialState for 2, 3 and 4 players (L98–112)", () => {
   it.each(COUNTS)("%i players: versions, round, phase and empty boards", (n) => {
     const { state } = created(11, n);
-    expect(state.schemaVersion).toBe(8);
+    expect(state.schemaVersion).toBe(9);
     expect(state.rulesVersion).toBe("1.6.2");
     expect(state.gameId).toBe("g-setup");
     expect(state.playerCount).toBe(n);
@@ -97,7 +109,7 @@ describe("createInitialState for 2, 3 and 4 players (L98–112)", () => {
     expect(centralCapacity(state, "magistrates_hall")).toBe(hall);
   });
 
-  it.each(COUNTS)("%i players: 2 Clay, 2 Wood, 3 Coins; 1 Shifu + 3 Apprentices; Lock tokens; Recognition 0 (L107–112)", (n) => {
+  it.each(COUNTS)("%i players: 2 Clay, 3 Wood, 3 Coins at every seat (no seat Coin); 1 Shifu + 3 Apprentices; Cover tokens; Recognition 0 (rev. 4 L121–126)", (n) => {
     const { state } = created(5, n);
     state.playerOrder.forEach((playerId, seatIndex) => {
       const p = state.players[playerId];
@@ -106,7 +118,7 @@ describe("createInitialState for 2, 3 and 4 players (L98–112)", () => {
         seatIndex,
         displayName: `Player ${seatIndex + 1}`,
         kilnId: null,
-        resources: { clay: 2, wood: 2, coins: 3 },
+        resources: { clay: 2, wood: 3, coins: 3 },
         workers: {
           [`${playerId}:shifu`]: { id: `${playerId}:shifu`, kind: "shifu", placement: null },
           [`${playerId}:apprentice:1`]: { id: `${playerId}:apprentice:1`, kind: "apprentice", placement: null },
@@ -126,20 +138,19 @@ describe("createInitialState for 2, 3 and 4 players (L98–112)", () => {
         score: { orders: 0, kilnAbilities: 0, recognitionOverflow: 0, imperialAudience: 0 },
       });
     });
-    expect(GAME_CONFIG.startingResources).toEqual({ clay: 2, wood: 2, coins: 3 });
+    expect(GAME_CONFIG.startingResources).toEqual({ clay: 2, wood: 3, coins: 3 });
   });
 
-  it.each(COUNTS)("%i players: a secret hand of 2 Starting + 1 Main each; the rest of the 8-card Starting deck in the box (v1.6.2 L103–104, change 23)", (n) => {
+  it.each(COUNTS)("%i players: a secret hand of 2 Starting Orders each, nothing Main dealt; the rest of the 8-card Starting deck in the box (rev. 4 L115–116, change 32)", (n) => {
     const { state } = created(9, n);
     const dealt: OrderId[] = [];
     for (const playerId of state.playerOrder) {
       const hand = state.hidden.orderHands[playerId] ?? [];
-      expect(hand).toHaveLength(3);
-      expect(hand.slice(0, 2).every(isStartingOrderId)).toBe(true);
-      expect(isStartingOrderId(hand[2] as OrderId)).toBe(false);
+      expect(hand).toHaveLength(2);
+      expect(hand.every(isStartingOrderId)).toBe(true);
       dealt.push(...hand);
     }
-    expect(new Set(dealt).size).toBe(3 * n);
+    expect(new Set(dealt).size).toBe(2 * n);
     // 8 Starting Orders: a 4-player game deals the whole deck and leaves the box empty (L520).
     expect(STARTING_ORDER_IDS).toHaveLength(8);
     expect(state.hidden.startingBox).toHaveLength(8 - 2 * n);
@@ -147,11 +158,11 @@ describe("createInitialState for 2, 3 and 4 players (L98–112)", () => {
     expect([...state.hidden.startingBox, ...dealt.filter(isStartingOrderId)].sort()).toEqual([...STARTING_ORDER_IDS]);
   });
 
-  it.each(COUNTS)("%i players: a 6-card Main display, the rest in the deck, an empty discard (L102)", (n) => {
+  it.each(COUNTS)("%i players: a 6-card Main display, the rest in the deck, an empty discard (rev. 4 L116)", (n) => {
     const { state } = created(13, n);
     expect(state.market.display).toHaveLength(6);
     expect(state.market.display.every((id) => id !== null && !isStartingOrderId(id))).toBe(true);
-    expect(state.hidden.mainDeck).toHaveLength(48 - n - 6);
+    expect(state.hidden.mainDeck).toHaveLength(48 - 6);
     expect(state.hidden.mainDiscard).toEqual([]);
     const zones = cardZones(state).orders;
     expect(zones).toHaveLength(56);
@@ -185,7 +196,7 @@ describe("createInitialState for 2, 3 and 4 players (L98–112)", () => {
 });
 
 describe("setup draw order (DESIGN §7)", () => {
-  it.each(COUNTS)("%i players: Starting, Main, deal, box, reshuffle + reveal 6, Techs, Fire, First Player", (n) => {
+  it.each(COUNTS)("%i players: Starting, Main, deal, box, reveal 6 (no reshuffle), Techs, Fire, First Player", (n) => {
     const seed = 101 + n;
     const { state, rng } = created(seed, n);
     const replay = new SeededRandom(seed);
@@ -193,12 +204,12 @@ describe("setup draw order (DESIGN §7)", () => {
     const main = shuffle(MAIN_ORDER_IDS, replay);
     const players = state.playerOrder;
     players.forEach((playerId, seat) => {
-      expect(state.hidden.orderHands[playerId]).toEqual([starting[2 * seat], starting[2 * seat + 1], main[seat]]);
+      expect(state.hidden.orderHands[playerId]).toEqual([starting[2 * seat], starting[2 * seat + 1]]);
     });
     expect(state.hidden.startingBox).toEqual(starting.slice(2 * n));
-    const reshuffled = shuffle(main.slice(n), replay);
-    expect(state.market.display).toEqual(reshuffled.slice(0, 6));
-    expect(state.hidden.mainDeck).toEqual(reshuffled.slice(6));
+    // Nothing Main was dealt, so the display is the top 6 of the Main deck as shuffled (rev. 4 L116).
+    expect(state.market.display).toEqual(main.slice(0, 6));
+    expect(state.hidden.mainDeck).toEqual(main.slice(6));
     for (const discipline of DISCIPLINES) {
       const deck = shuffle(techsOfDiscipline(discipline), replay);
       expect(state.techDisplay[discipline]).toEqual(deck.slice(0, 2));
@@ -224,7 +235,7 @@ describe("setup draw order (DESIGN §7)", () => {
 });
 
 describe("creation events (DESIGN §4.4, §4.6)", () => {
-  it("GAME_CREATED, ORDERS_DEALT per seat with the cards under secret, then the setup displays", () => {
+  it("GAME_CREATED, ORDERS_DEALT per seat with the Starting Orders under secret, then the setup displays", () => {
     const { state, events } = created(31, 3);
     expect(events.map((event) => event.type)).toEqual([
       "GAME_CREATED",
@@ -243,8 +254,7 @@ describe("creation events (DESIGN §4.4, §4.6)", () => {
         type: "ORDERS_DEALT",
         playerId,
         startingCount: 2,
-        mainCount: 1,
-        secret: { visibleTo: playerId, startingOrderIds: hand.slice(0, 2), mainOrderIds: hand.slice(2) },
+        secret: { visibleTo: playerId, startingOrderIds: hand },
       });
     });
     expect(events[4]).toEqual({ type: "DISPLAY_REFILLED", cause: "setup", revealedOrderIds: state.market.display, display: state.market.display });
@@ -296,7 +306,7 @@ describe("invalid setups (INVALID_SETUP)", () => {
   });
 });
 
-describe("Kiln selection (L108, R1)", () => {
+describe("Setup step 9: a Kiln and a face-up Main Order in one reverse-order turn (rev. 4 L122, R1, R23)", () => {
   it.each(COUNTS)("%i players choose in reverse turn order: the First Player chooses last", (n) => {
     for (let seed = 1; seed <= 6; seed += 1) {
       const { state } = created(seed, n);
@@ -316,7 +326,7 @@ describe("Kiln selection (L108, R1)", () => {
     selectionOrder.forEach((playerId, index) => {
       const pick = picks[index] as KilnId;
       expect(availableKilns(table.state)).toContain(pick);
-      const events = table.act(playerId, { type: "SELECT_KILN", kilnId: pick });
+      const events = table.act(playerId, choose(table.state, pick));
       expect(events[0]).toEqual({ type: "KILN_SELECTED", playerId, kilnId: pick });
       expect(table.player(playerId).kilnId).toBe(pick);
       expect(availableKilns(table.state)).not.toContain(pick);
@@ -328,13 +338,13 @@ describe("Kiln selection (L108, R1)", () => {
     const { state } = created(4, 3);
     const table = new LocalTable(state, { flow: "halt" });
     const [first, second, third] = state.phase.type === "setup_kiln_selection" ? state.phase.selectionOrder : [];
-    table.expectRuleError(second as PlayerId, { type: "SELECT_KILN", kilnId: "RU" }, "NOT_YOUR_DECISION");
-    table.act(first as PlayerId, { type: "SELECT_KILN", kilnId: "GE" });
-    const error = table.expectRuleError(second as PlayerId, { type: "SELECT_KILN", kilnId: "GE" }, "KILN_UNAVAILABLE");
+    table.expectRuleError(second as PlayerId, choose(table.state, "RU"), "NOT_YOUR_DECISION");
+    table.act(first as PlayerId, choose(table.state, "GE"));
+    const error = table.expectRuleError(second as PlayerId, choose(table.state, "GE"), "KILN_UNAVAILABLE");
     expect(error.details).toEqual({ kilnId: "GE" });
     expectDocumentedDetails(error);
-    table.expectRuleError(third as PlayerId, { type: "SELECT_KILN", kilnId: "DI" }, "NOT_YOUR_DECISION");
-    expect(validateAction(actorViewOf(table.state, second as PlayerId), { type: "SELECT_KILN", kilnId: "DI" })).toBeNull();
+    table.expectRuleError(third as PlayerId, choose(table.state, "DI"), "NOT_YOUR_DECISION");
+    expect(validateAction(actorViewOf(table.state, second as PlayerId), choose(table.state, "DI"))).toBeNull();
   });
 
   it("the last choice hands over setup_done; the Lock tokens stay; Start of Round has not run yet", () => {
@@ -349,15 +359,77 @@ describe("Kiln selection (L108, R1)", () => {
       expect(table.player(playerId).personalSpaces.glaze_load[1].unlocked).toBe(false);
     }
     expect(table.events.filter((event) => event.type === "KILN_SELECTED")).toHaveLength(2);
-    table.expectRuleError(table.state.firstPlayerId, { type: "SELECT_KILN", kilnId: "JU" }, "WRONG_PHASE");
+    table.expectRuleError(table.state.firstPlayerId, choose(table.state, "JU"), "WRONG_PHASE");
   });
 
-  it("then Round 1 starts with a public Kiln Die roll after Kiln selection (INT)", () => {
+  it("takes the named face-up Main Order into the hand, publicly, and refills the display before the next choice (slide left)", () => {
+    const { state } = created(14, 3);
+    const table = new LocalTable(state, { flow: "halt" });
+    const order = state.phase.type === "setup_kiln_selection" ? state.phase.selectionOrder : [];
+    const chooser = order[0] as PlayerId;
+    const before = [...table.state.market.display];
+    const deckTop = table.state.hidden.mainDeck[0];
+    const taken = before[2] as OrderId;
+    expect(setupChoiceOptions(table.view(chooser))).toEqual({
+      kilns: expect.arrayContaining([expect.objectContaining({ kilnId: "RU", available: true })]),
+      faceUpSlots: [0, 1, 2, 3, 4, 5],
+    });
+    expect(setupChoiceOptions(table.view(order[1] as PlayerId))).toBeNull();
+    const events = table.act(chooser, choose(table.state, "RU", 2));
+    expect(events).toEqual([
+      { type: "KILN_SELECTED", playerId: chooser, kilnId: "RU" },
+      { type: "ORDER_RESERVED", playerId: chooser, via: "setup", source: "face_up", slotIndex: 2, orderId: taken },
+      {
+        type: "DISPLAY_REFILLED",
+        cause: "setup",
+        revealedOrderIds: [deckTop],
+        display: [before[0], before[1], before[3], before[4], before[5], deckTop],
+      },
+    ]);
+    // Public: everyone has seen which Main Order the player took (rev. 4 L122); no secret.
+    for (const event of events) expect("secret" in event).toBe(false);
+    expect(table.state.hidden.orderHands[chooser]?.slice(-1)).toEqual([taken]);
+    expect(table.state.hidden.orderHands[chooser]).toHaveLength(3);
+    expect(table.state.market.refillPendingFor).toBeNull();
+    expect(table.state.market.display.every((orderId) => orderId !== null)).toBe(true);
+    expect(table.state.hidden.mainDeck).toHaveLength(48 - 6 - 1);
+  });
+
+  it.each(COUNTS)("%i players: everyone ends with 2 Starting Orders and 1 Main Order, the display full", (n) => {
+    const table = LocalTable.newGame(20 + n, n, { flow: "halt", mainOrderSlots: { p1: 5, p2: 3 } });
+    for (const playerId of table.state.playerOrder) {
+      const hand = table.state.hidden.orderHands[playerId] ?? [];
+      expect(hand.filter(isStartingOrderId)).toHaveLength(2);
+      expect(hand.filter((orderId) => !isStartingOrderId(orderId))).toHaveLength(1);
+    }
+    expect(table.state.market.display.every((orderId) => orderId !== null)).toBe(true);
+    expect(table.state.hidden.mainDeck).toHaveLength(48 - 6 - n);
+    expect(table.events.filter((event) => event.type === "ORDER_RESERVED" && event.via === "setup")).toHaveLength(n);
+  });
+
+  it("refuses a stale face-up pick (ORDER_NOT_AVAILABLE) and a choice without a Main Order (MALFORMED_ACTION)", () => {
+    const { state } = created(15, 2);
+    const table = new LocalTable(state, { flow: "halt" });
+    const chooser = (state.phase.type === "setup_kiln_selection" ? state.phase.selectionOrder[0] : "p1") as PlayerId;
+    const wrong = table.state.market.display[1] as OrderId;
+    const error = table.expectRuleError(chooser, { type: "SELECT_KILN", kilnId: "GU", mainOrder: { slotIndex: 0, orderId: wrong } }, "ORDER_NOT_AVAILABLE");
+    expectDocumentedDetails(error);
+    expect(error.details).toMatchObject({ slotIndex: 0, orderId: wrong, field: "mainOrder" });
+    table.expectRuleError(chooser, { type: "SELECT_KILN", kilnId: "GU", mainOrder: { slotIndex: 6, orderId: wrong } }, "ORDER_NOT_AVAILABLE");
+    expect(parseCommand({ type: "SELECT_KILN", kilnId: "GU" })).toMatchObject({ code: "MALFORMED_ACTION", details: { field: "mainOrder" } });
+    expect(parseCommand({ type: "SELECT_KILN", kilnId: "GU", mainOrder: { slotIndex: 0, orderId: wrong, extra: 1 } })).toMatchObject({
+      code: "MALFORMED_ACTION",
+      details: { field: "mainOrder.extra" },
+    });
+    expect(parseCommand({ type: "SELECT_KILN", kilnId: "GU", mainOrder: { slotIndex: -1, orderId: wrong } })).toMatchObject({ code: "MALFORMED_ACTION" });
+  });
+
+  it("then Round 1 starts with a public Kiln Die roll after the last Kiln and Main Order choice (INT)", () => {
     const table = LocalTable.newGame(6, 3, { flow: "halt", pass: ["setup_done"] });
     expect(table.halts).toEqual([{ kind: "continue_after", milestone: "round_start_done" }]);
     const types = table.events.map((event) => event.type);
     const lastPick = types.lastIndexOf("KILN_SELECTED");
-    expect(types.slice(lastPick + 1)).toEqual(["ROUND_STARTED", "KILN_DIE_ROLLED", "ABILITIES_READIED"]);
+    expect(types.slice(lastPick + 1)).toEqual(["ORDER_RESERVED", "DISPLAY_REFILLED", "ROUND_STARTED", "KILN_DIE_ROLLED", "ABILITIES_READIED"]);
     expect(table.state.kilnDie?.round).toBe(1);
     expect(FIRING.kilnDie.faces).toContain(table.state.kilnDie?.value);
   });

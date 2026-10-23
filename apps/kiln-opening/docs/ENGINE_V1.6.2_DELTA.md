@@ -2,16 +2,17 @@
 
 Branch `kiln-opening-v162-engine`. The design and records of the V1.6.2 engine track, written in stage 1 and kept current as the stages land.
 
-- **Rules authority:** the [V1.6.2 Player Rulebook](./KILN_OPENING_v1.6.2_EN_SOURCE.md), designated by the owner on 2026-10-17, with its [Chinese edition](./KILN_OPENING_v1.6.2_ZH.md) and [component text](./KILN_OPENING_v1.6.2_COMPONENT_TEXT.md). [The V1.6.2 audit](./RULEBOOK_AUDIT_V1.6.2.md) records the checksums, the owner rulings (R1–R19, B1–B3; R15–R18 are the owner's confirmations of 2026-10-17; R19 of 2026-10-18 replaced provisional default P5; R3 is obsolete and R14 superseded since owner revision 2), the amendments (A1 superseded by owner revision 3's change 27, A2), interpretations (INT) and provisional defaults (P1–P3).
+- **Rules authority:** the [V1.6.2 Player Rulebook](./KILN_OPENING_v1.6.2_EN_SOURCE.md), designated by the owner on 2026-10-17, with its [Chinese edition](./KILN_OPENING_v1.6.2_ZH.md) and [component text](./KILN_OPENING_v1.6.2_COMPONENT_TEXT.md). [The V1.6.2 audit](./RULEBOOK_AUDIT_V1.6.2.md) records the checksums, the owner rulings (R1–R25, B1–B3; R15–R18 are the owner's confirmations of 2026-10-17; R19 of 2026-10-18 replaced provisional default P5; R20–R25 are of 2026-10-23; R3 is obsolete and R14 superseded since owner revision 2, R9 obsolete since owner revision 4, R19 obsolete since R25), the amendments (A1 superseded by owner revision 3's change 27, A2), interpretations (INT) and provisional defaults (P1–P3).
 - **Owner revision 2026-10-17 (Guild Hall).** After stage 1 was written, the owner revised the Guild Hall in the English and Chinese rulebooks (changes 21, L31; L207, L209, L212, L714). The Shifu takes up to 2 Techs from different disciplines at printed cost, with no discount. A taken Tech's position stays empty until the end of the taker's turn, for Apprentice and Shifu takes alike. Placement legality is the same for both workers. This document describes the revised rules; §1 rows 6–8, §4.3 and §13 say what changed.
 - **Owner revision 2, 2026-10-17 (changes 23–24, L33–34).** The owner then rebuilt the Starting Order deck as 8 cards (S01–S08, new values; S07 "Carved, Impressed or Painted"; a 4-player game deals all 8), re-valued nineteen Main Orders, and sent every looked-at Order not reserved to the **bottom of the Main Order deck** instead of the discard: the Commission Market's 2 or 3, Colour Samples' when-acquired 3 and the other card of its swap's 2. That supersedes ruling R14; the held Order a swap discards still goes to the discard (a Starting Order to the box). Several cards put on the bottom go there in random order (owner ruling R19, 2026-10-18, which replaced the provisional default P5, draw order). §1 rows 17–20, §3.5, §4.1–§4.4, §7 and §13 item 7 describe it.
 - **Owner revision 3, 2026-10-18 (changes 25–27, L35–37).** The owner added the keyword **Select N** (look at the top N Main Orders, reserve 1 of them or 1 face-up Main Order, the rest to the deck bottom): the Commission Market Apprentice Selects 2, the Shifu Selects 3 reserving up to 2, and Colour Samples Selects 3 when acquired and for its swap, which therefore looks at 3 and, like the when-acquired Select, may take a face-up Order. **Fuel Ledger** became 2 Contribution cards, Fuel Ledger Bank (1 Wood, −2) and Fuel Ledger Stoke (1 Wood, +2), in place of the secret Wood commitment; its owner plays 1 of 5 cards and plain Bank and Stoke stay free. **Tech VP is removed** (owner amendment A1 superseded). §1 rows 21–23, §1.1, §14 and stage 7 describe it; the sections below are amended where revision 3 changed them.
-- **Line numbers.** Revision 2 shortened Appendix A0 by 8 lines (revision-1 lines 540–756 became 532–748); revision 3 moved most lines down 5 or 6 (§1.1; the audit gives both maps). The `L` numbers in §1–§13 were written before revision 2 and are revision-1 numbers (for example L625 for Colour Samples, revision-2 L617, revision-3 L622) unless marked; §14 and the audit use revision-3 numbers. The clarifications and the line-pinned tests use revision-3 numbers; code comments keep the numbers they were written with until the renumbering pass (§1.1).
+- **Owner revision 4, 2026-10-22 and 2026-10-23 (changes 28–35, L38–45), and owner rulings R20–R25 (2026-10-23).** No player Heat marker (Kiln Master's marker is chosen at loading); Ge crackles a Fine or Standard ceramic and each delivered Crackle ceramic scores 1 VP; Fuel Ledger 4, forming at Clay + 2 Coins, an unused Jun on a Second Firing, a Flawed ceramic sold for 2 Coins; the starting Main Order taken face up with the Kiln; the Magistrate's Hall Shifu at 4 Coins with an optional Crown Order; 1 Wood per Glaze & Load action into the Shared Kiln, Materials Yard 4 / 8, 3 starting Wood and no seat Coin. R25 discards every Select's unreserved looked cards, reversing change 24's deck bottom and R19. **§15 is the design**; it supersedes the passages of §1–§14 on the Heat marker, salvage, the deck bottom (R19), the dealt starting Main Order, the Decoration cost table and the revision-3 values.
+- **Line numbers.** Revision 2 shortened Appendix A0 by 8 lines (revision-1 lines 540–756 became 532–748); revision 3 moved most lines down 5 or 6 (§1.1; the audit gives both maps). The `L` numbers in §1–§13 were written before revision 2 and are revision-1 numbers (for example L625 for Colour Samples, revision-2 L617, revision-3 L622) unless marked; §14 and the audit use revision-3 numbers. The clarifications and the line-pinned tests use revision-3 numbers; code comments keep the numbers they were written with until the renumbering pass (§1.1). §15 uses revision-4 numbers (the audit maps revision 3 to revision 4).
 - **Base contract:** [ENGINE_V1.6.1_DESIGN.md](./ENGINE_V1.6.1_DESIGN.md) and `src/game/types.ts`. Everything this document does not change stays as that design says. Where the two disagree, this document wins.
 - **Notation:** `L124` is a line of the V1.6.2 English source. `1.6.1:L124` is a line of the V1.6.1 source. `R4`, `B1`, `R15`, `P3` are audit entries. `DESIGN §x` is a section of the V1.6.1 engine design.
-- **Versions after this track:** rules `1.6.2`, state schema `8`, `RULES_BEHAVIOUR_REVISION` `31` (schema 7 and revision 30 until owner revision 3, stage 7).
+- **Versions after this track:** rules `1.6.2`, state schema `9`, `RULES_BEHAVIOUR_REVISION` `32` after owner revision 4 (§15.2); schema 8 and revision 31 from owner revision 3 (stage 7); schema 7 and revision 30 before.
 
-Nothing here changes a rule or a balance value. Every value below is printed in V1.6.2. §13 lists the cases the text left open and the owner's rulings on them (2026-10-17).
+Nothing here changes a rule or a balance value. Every value below is printed in V1.6.2. §13 lists the cases the text left open and the owner's rulings on them (2026-10-17); §15.21 the rulings of 2026-10-23.
 
 **Stage status.**
 
@@ -56,9 +57,11 @@ Nothing here changes a rule or a balance value. Every value below is printed in 
   - Data: T10 and T12 `params`, `ability`, `abilityZh` and short texts; the Commission Market `effects` (`select`) and texts; Contribution cards 14 (`components.json`, `firing.json`, `asset_specs.json`); clarifications re-cited to revision-3 lines (still 170 items); the component text source with the 2 Fuel Ledger cards; the pinned checksums.
   - Computer policy and fallback (§10 items 13–15), invariants, selectors and legal-action families, privacy, fuzz (seed base 7400), and the documents (audit, `GAME_RULES.md`, `IMPLEMENTATION_DECISIONS.md`, `ONLINE_GAME_SPEC.md`, the glossary).
   - Review fixes: `RESERVATION_LIMIT` names the Select and reads for a limit of 1 (§2.5; glossary §7); the audit records that change 25 makes R4, R19 and B1 reach further than approved, for the owner to confirm, and the owner's shorter Second Firing tile text; T12's L669 · L670 clarification says the same in both languages; the revision-2 passages left here (§1 rows 10 and 13, §2.2, §11.1, §12, §13), in `DESIGN_SPEC.md`, `UI_UX_SPEC.md` and `UI_V1.6.1_ARCHITECTURE.md` (Tech VP), the fixtures m16 and m20 and their `FIXTURES.md` rows, and the test headers that cited revision-2 lines are brought up to date. The `AGENTS.md` lines still to change are listed in §12.
+- **Stage 8 (this stage): design and records for owner revision 4 and rulings R20–R25** (§15). The audit gains the revision-4 section (checksums, line map, R20–R25, the re-check of every ruling and interpretation); `GAME_RULES.md` follows. No code, data or test changed.
 - **Still to come:**
-  - The renumbering pass of the remaining code and test comments (§1.1, now including revision 2's −8 after line 539 and revision 3's +5/+6) and the documents of §12.
-  - `src/app` (the UI stage): the swap, the Second Firing choice, `LOOKED_ORDERS_TO_BOTTOM` in place of `LOOKED_ORDERS_DISCARDED`, S07's `decorations`, the 8-card Starting deck, and revision 3: `SELECT_CHOOSE` with `step.select` for all three Selects (a face-up pick in every one), the 5-card Contribution chooser from `contributionCards`, and no Tech VP line.
+  - Owner revision 4 and R25: the engine (stage 9), content (stage 10) and platform and computer (stage 11) stages of §15.20.
+  - The renumbering pass of the remaining code and test comments (§1.1, now including revision 2's −8 after line 539, revision 3's +5/+6 and revision 4's map in the audit) and the documents of §12 and §15.19.
+  - `src/app` (the UI stage): the swap, the Second Firing choice, S07's `decorations`, the 8-card Starting deck, and revision 3: `SELECT_CHOOSE` with `step.select` for all three Selects (a face-up pick in every one), the 5-card Contribution chooser from `contributionCards`, and no Tech VP line; and revision 4: the Setup choice, Kiln Master at loading, the fuel line, the Magistrate's Hall Crown Order, the sale, Ge on Fine and Crackle VP, no Heat-marker step or salvage step, and `LOOKED_ORDERS_DISCARDED` (R25) in place of `LOOKED_ORDERS_TO_BOTTOM`.
 - **Line citations in code:** an unchanged rule keeps its V1.6.1 `L` number until the renumbering pass (§1.1); a rule V1.6.2 changed is cited `v1.6.2 L195`.
 
 ---
@@ -1055,3 +1058,447 @@ Line numbers in this section are revision-3 lines.
 - **Fuel Ledger cards** (change 26; L36, L93, L111, L266, L508, L634, L668–669, L734): `ContributionCardId` adds `FUEL_LEDGER_BANK` and `FUEL_LEDGER_STOKE`; `PlayerState.contributionCards`; `CONTRIBUTION_CARDS_GAINED`; T12 `{freeCards: ["BANK", "STOKE"], cards: ["FUEL_LEDGER_BANK", "FUEL_LEDGER_STOKE"]}`; `SUBMIT_CONTRIBUTION { windowId, card }`; `CONTRIBUTION_CARD_NOT_HELD`; `contributionOptions` lists each held card; the stores and Supabase hold the 5-card set (§4.9, §9).
 - **No Tech VP** (change 27; L37, L496, L605): `ScoreLedger.techs`, `FinalScoreBreakdown.techs`, `TECH_ACQUIRED.vp`, `GameConfig.techs.vpEach` and the score-breakdown row are gone; Connoisseur's Cabinet (L616) is unchanged.
 - **Versions:** schema 8, `RULES_BEHAVIOUR_REVISION` 31, rules `1.6.2`; the policy labels are unchanged (`rules-v1.6.2-strategic-001`, `rules-v1.6.2-canonical-001`).
+
+---
+
+## 15. Owner revision 4 (changes 28–35) and owner rulings R20–R25: design
+
+Stage 8 (design and records; no engine code). Sources: the V1.6.2 rulebook as the owner left it on 2026-10-23 (changes 28–34 of 2026-10-22, change 35 and R25's text edit of 2026-10-23; checksums in the audit), owner rulings R20–R25 (audit, rulings table) and `AGENTS.md`'s "Changes 28–35" bullet.
+
+**Line numbers in §15 are revision-4 lines**: lines of the English source as it stands now (737 lines). The Chinese edition is the English line plus 2 from English line 3 on; the component text keeps its numbering. The audit gives the revision-3 → revision-4 line map. `rev. 3 L…` marks a revision-3 line.
+
+Everything below is printed in revision 4 or ruled by the owner; nothing here changes a rule or a balance value. Where §1–§14 describe the Heat marker, the salvage step, the deck-bottom flow (change 24, R19), the dealt starting Main Order, the Decoration cost table or the revision-3 values, §15 supersedes them.
+
+### 15.1 What changes
+
+| # | Rule | Revision 3 | Revision 4 | Lines |
+| --- | --- | --- | --- | --- |
+| 24 | Player Heat marker (changes 28, 31) | Each player's marker; the Glaze & Load Shifu places it face down; turned to ±1 or returned in the Heat-marker step (firing step 5); Kiln Master's marker placed in that step | Gone: no marker, no step. The Glaze & Load Shifu "simply loads up to 2" | L38, L41, L194, L251–256, L659–664 |
+| 25 | Kiln Master (T24; change 31, R22) | In the Heat-marker step, on 1 of your ceramics without a Heat marker; "a Heat marker for all rules" | Once per round, **when you load a ceramic** (any loading: a Glaze & Load action or Imperial Priority, Shared or Imperial Kiln, R22), you may place a +1 or −1 marker on it, face up, public; it adds to that ceramic's Actual Heat, Jun on top; it stays for a Second Firing recalculation; it returns when the firing finishes | L628, L635, L664, L73, L78, L255, L292, L661, L719 |
+| 26 | Firing sequence (changes 28, 31) | Contributions → Base Heat → Test Pieces → Heat markers → Fire → Actual Heat → Jun → Quality → after-Quality → salvage → finish | Contributions (Base Heat) → Test Pieces (end of step 1) → Fire → Actual Heat (Jun) → Quality → after-Quality abilities → finish (Appendix D, 6 steps) | L41, L134, L659–672, L680 |
+| 27 | Test Pieces (T13) | After Base Heat, before Heat markers | After Base Heat is determined, before the Fire card is revealed. Engine: the same position in the flow | L626, L636 |
+| 28 | Ge (change 29) | 1 Standard ceramic → Fine + Crackle; never a Masterpiece; Saggars' step and Crackle never on one ceramic | Once per round, after Quality, 1 of your **Fine or Standard** ceramics from this firing → Crackle and Fine (a Standard one becomes Fine). **Each Crackle ceramic you deliver to complete an Order scores 1 VP** (in the Order Phase). Saggars' Standard → Fine and Crackle may both apply to one ceramic | L39, L463, L465, L479–480, L641, L728 |
+| 29 | Fuel Ledger cost (change 30) | 2 | **4** | L40, L625 |
+| 30 | Forming cost (change 30) | Clay + a Decoration cost (every Decoration 2 Coins; a table) | The Shape's Clay + **2 Coins**, any Decoration; no table. Shifu −1 Coin when forming 2, Decorator's Kit −1 Coin on a Carved/Impressed/Painted vessel, Ding's 1 Clay + 1 Coin vessel unchanged; Prepared Clay pays Clay + 1 and 2 Coins. **Engine behaviour unchanged**; data and names change | L183–186, L336, L469, L603, L605, L639, L691 |
+| 31 | Jun with Second Firing (change 30) | Owner ruling R7 | Rulebook text: "an unused Jun adjustment may be applied to the recalculated heat before the new Quality is assigned". Engine unchanged (`SECOND_FIRING_CHOOSE.jun`) | L478, L627 |
+| 32 | Form & Decorate legality (change 30) | "Clay cost and a Decoration cost for at least 1 vessel" (engine already applied R4's discounts) | "the full cost of at least 1 vessel, after any reductions". Engine unchanged (`canFormAny`) | L186 |
+| 33 | Flawed ceramics (change 30, R20) | Step 11: discard 1 still-Flawed ceramic from this firing for 2 Coins | A Flawed ceramic may be **sold for 2 Coins**, during its owner's turn (R20): Work turn windows, Order Phase turn, own after-Quality turn, pending Cleanup trim. The salvage step is gone | L282, L284, L729 |
+| 34 | Kiln Die (change 30) | — | "the day's weather": flavour only | L140 |
+| 35 | Starting Main Order (change 32, R23) | Dealt face down (2 Starting + 1 Main), then the Main deck reshuffled | Only 2 Starting Orders dealt; 6 Main Orders revealed (no reshuffle). In reverse turn order each player, in **one turn** (R23), chooses a Kiln and takes 1 face-up Main Order; the display is refilled to 6 after each take; the take is public | L42, L115–116, L122, L516 |
+| 36 | Magistrate's Hall Shifu (change 33, R21) | Pay 3 Coins, +1 step | Pay **4 Coins**, +1 step, then **may** (R21) reserve 1 face-up Crown Order from the display; nothing if none shows; its position stays empty until the end of the turn, then the display refills as at the Commission Market | L43, L241, L245, L392, L696 |
+| 37 | Kiln fuel (changes 34, 35, R24) | — | A Glaze & Load action that loads into the Shared Kiln costs **1 Wood**, whether it loads 1 vessel or 2 (Apprentice or Shifu); an action that loads only into the Imperial Kiln, and Imperial Priority, cost none. Legality adds "and 1 Wood if you load into the Shared Kiln" | L44–45, L92, L197–198, L291, L316, L692, L706 |
+| 38 | Materials Yard (change 34) | Apprentice 3, Shifu 6 | Apprentice **4**, Shifu **8** (Senior Apprentice 8) | L176–177, L690 |
+| 39 | Starting resources (changes 34, 35) | 2 Clay, 2 Wood, 3 Coins | **2 Clay, 3 Wood, 3 Coins**, the same for every seat: **no seat Coin** (change 30's seat Coin was withdrawn by change 35) | L45, L125 |
+| 40 | Select N's unreserved looked cards (R25) | Face down to the bottom of the Main deck, several in random order (change 24, R19) | **Discarded** face down to the Main Order discard pile (Commission Market's Select 2/3, Colour Samples' Select 3 when acquired and in its swap). The discard is shuffled into a new deck when the deck is empty and a card is needed (L506); B1/R16 unchanged: a look never reshuffles to complete itself. R19 obsolete | L31, L35, L72, L203, L506, L698; component text 3, 5 |
+
+### 15.2 Versions and fingerprint
+
+- `SchemaVersion = 9` (`types.ts`; `setup.ts` writes 9). Rules version stays `1.6.2`.
+- `RULES_BEHAVIOUR_REVISION = 32`, rooms `r32-<digest>`. History line in `src/game/rulesFingerprint.ts`: "32 -- V1.6.2 owner revision 4 (changes 28–35, 2026-10-22/23) and owner rulings R20–R25, state schema 9: no player Heat marker and no Heat-marker step (the `firing_heat_markers` phase, `RESOLVE_HEAT_MARKERS` and the Heat-marker events are gone); Kiln Master's ±1 marker chosen when a ceramic is loaded (`LoadedCeramic.kilnMasterMarker`, R22); Ge crackles a Fine or Standard ceramic and each Crackle ceramic delivered scores 1 VP (`CompletedOrderRecord.crackleVp`); a Flawed ceramic is sold for 2 Coins during its owner's turn (`SELL_FLAWED`, R20; the `firing_salvage` step is gone); the starting Main Order is taken face up with the Kiln in one Setup turn (`SELECT_KILN.mainOrder`, R23); the Magistrate's Hall Shifu pays 4 Coins and may reserve a face-up Crown Order (R21); 1 Wood per Glaze & Load action into the Shared Kiln (R24); Select N discards its unreserved looked cards (R25, replacing change 24's deck bottom and R19). Rules version stays 1.6.2; r31 rooms and schema-8 saves are rejected, never migrated."
+- The content digest moves with the data (§15.8).
+
+### 15.3 State (`src/game/types.ts`)
+
+```ts
+export type SchemaVersion = 9;
+
+/** ±1: a Jun adjustment or the Kiln Master marker (renamed from `HeatMarkerValue`: there is no
+ * Heat marker since revision 4). */
+export type HeatDelta = 1 | -1;
+
+// Deleted: `CeramicHeatMarker`.
+
+export interface LoadedCeramic extends CeramicCore {
+  // … unchanged fields …
+  /**
+   * Kiln Master's marker (T24, rev. 4 L628, L635, R22), chosen face up when this ceramic was
+   * loaded, by a Glaze & Load action or Imperial Priority, into either kiln; public; null
+   * without one. Replaces `heatMarker`.
+   */
+  kilnMasterMarker: HeatDelta | null;
+}
+
+export interface HeatCalculation {
+  fireModifier: FireModifier;
+  heatSource: number;
+  positionModifier: number;
+  /** The ceramic's Kiln Master marker, 0 without one (rev. 4 L255, L661); the same in a Second
+   * Firing recalculation (L627). Replaces `heatMarker`. */
+  kilnMasterMarker: -1 | 0 | 1;
+  /** heatSource + positionModifier + kilnMasterMarker. */
+  actualHeat: number;
+  junAdjustment: -1 | 0 | 1;
+  finalActualHeat: number;
+  heatDifference: number;
+}
+
+export interface FiringCeramicRecord {
+  // … unchanged fields …
+  /** Sold during its owner's after-Quality turn (R20, rev. 4 L284): it left the kiln and the
+   * game. Replaces `salvaged`. */
+  sold: boolean;
+}
+
+export interface CompletedOrderRecord {
+  // … unchanged fields …
+  /** Ge (rev. 4 L465, L480): 1 VP for each Crackle ceramic delivered with this Order, else 0.
+   * Automatic; counted in `ScoreLedger.kilnAbilities`. */
+  crackleVp: number;
+}
+```
+
+- `ScoreLedger.kilnAbilities` JSDoc: Ru 4 VP, Guan 1 VP and Crackle 1 VP per delivered Crackle ceramic (rev. 4 L465, L487).
+- `FinishedQuality` / `DeliveredQuality`: unchanged shapes (`crackle: true ⇒ quality: "fine"`). JSDoc: Ge now targets a Fine or Standard ceramic and leaves it Fine; nothing raises a Crackle ceramic afterwards (Saggars' step and Second Firing take only Flawed or Standard ones), so a Crackle ceramic is exactly Fine.
+- `PlayerState`, `ImperialState`, `MainOrderMarketState`, `HiddenState`, `PendingLook`, `FiringContext`: no new fields. `HiddenState.mainDeck` JSDoc: looked cards are no longer appended (R25). `HiddenState.mainDiscard` JSDoc: also receives every Select's unreserved looked cards (R25).
+- No new stable IDs; none retired (the Heat marker had no ID).
+
+### 15.4 Phases and windows
+
+- **Deleted:** `firing_heat_markers` (and its `DecisionQueue`), `firing_salvage` (and its `openedAtRevision`). `decisionPrompt`, `PHASE_TEXT`, `roundStructure.ts`, `invariants.ts` (`FIRING_PHASES`, the Fire-revealed list, the queue checks) and the service's parallel-window code lose them; `cleanup_hand_limit` is the only `parallel` phase.
+- **`setup_kiln_selection`:** same shape (`selectionOrder` in reverse turn order, `index`); its JSDoc becomes Setup step 9 (rev. 4 L122, R23): one turn = a Kiln and 1 face-up Main Order.
+- **Firing flow** (`firing/pipeline.ts`): `firing_contributions` → `firing_test_pieces` (if any Test Pieces owner is eligible) → automatic Fire reveal and Actual Heat → `firing_heat_adjustment` (Jun) → automatic Quality → `firing_after_quality` (⇄ `firing_second_firing_choice`) → automatic finish → Order Phase. `openAfterBaseHeat` and `advanceTestPieces` call `revealFireAndCalculate` directly; `advanceAfterQuality` and `openAfterQuality` call `finishFiring` directly when the queue is done (no `openSalvage`).
+- **Sale windows (R20)**, where `SELL_FLAWED` is legal for the player the game is waiting for: `work_turn` with `step.kind` `before_action` or `after_action` (the active player); `orders` (the current Order-turn player); `firing_after_quality` (the queue head); `cleanup_hand_limit` (a pending player). Never in `firing_contributions`, a Work sub-step (`commission_market`, `guild_inspection`, `colour_samples`, `colour_samples_swap`), `firing_test_pieces`, `firing_heat_adjustment`, `firing_second_firing_choice`, `round_start_setters_mark` or `setup_kiln_selection`. The command is free: it never ends the turn or changes the step by itself (§15.9.11).
+- **Order Phase skip (INT, §15.9.12):** a player is skipped automatically only when they have nothing completable **and** no sellable Flawed ceramic.
+- `FiringStep = 1 | 2 | 3 | 4 | 5 | 6` (Appendix D, rev. 4 L659–664). `FiringStageView.step`: 1 for `firing_contributions` and `firing_test_pieces` (Test Pieces is "end of 1", L670), 3 for `firing_heat_adjustment`, 5 for `firing_after_quality` and `firing_second_firing_choice`, 6 for a finished firing (the recap). `FIRST_PLAYER_ORDER_STEPS = [1, 3, 5]` (Test Pieces at the end of step 1, Jun, after-Quality).
+
+### 15.5 Commands
+
+| Command | Revision-4 shape | Notes |
+| --- | --- | --- |
+| `SELECT_KILN` | `{ kilnId: KilnId; mainOrder: { slotIndex: number; orderId: OrderId } }` | One Setup turn (R23). `mainOrder` is required: the take is not optional (L122) |
+| `PLACE_MATERIALS_YARD` | unchanged | clay + wood = 4 (Apprentice effect) or 8 (Shifu effect, Senior Apprentice included) |
+| `PLACE_FORM_DECORATE` | unchanged | costs unchanged (§15.9.3) |
+| `PLACE_GLAZE_LOAD` | `{ workerId; loads: LoadSpec[] }` | `heatMarkerCeramicId` deleted (`MALFORMED_ACTION` if sent). 1 Wood when any load goes into the Shared Kiln (§15.9.4) |
+| `LoadSpec` | adds `kilnMaster?: HeatDelta` | Kiln Master's marker on this load (T24, R22); at most 1 load per command; omitted declines (R4) |
+| `USE_IMPERIAL_PRIORITY` | adds `kilnMaster?: HeatDelta` | R22; free, no Wood (R10) |
+| `PLACE_MAGISTRATES_HALL` | `{ workerId; crownOrder?: { slotIndex: number; orderId: OrderId } }` | Shifu effect only; omitted declines (R21) |
+| `SELL_FLAWED` (new) | `{ ceramicId: CeramicId }` | R20; one ceramic per command; legal only in the sale windows (§15.4) |
+| `RESOLVE_JUN` | `adjustment: { ceramicId; delta: HeatDelta } \| null` | type rename only |
+| `SECOND_FIRING_CHOOSE` | `jun: { delta: HeatDelta } \| null` | type rename only; R7 is now text (L627) |
+| `RESOLVE_HEAT_MARKERS`, `SALVAGE_FLAWED` | deleted | `parseCommand` → `MALFORMED_ACTION` |
+
+`actionGuard.ts`: `SELECT_KILN` requires `mainOrder` (`slotIndex` a non-negative safe integer, `orderId` an Order ID; extra keys refused); `PLACE_GLAZE_LOAD` allows only `type`, `workerId`, `loads`; each load's optional `kilnMaster` ∈ {1, −1}; `USE_IMPERIAL_PRIORITY` optional `kilnMaster` ∈ {1, −1}; `PLACE_MAGISTRATES_HALL` optional `crownOrder` `{slotIndex, orderId}`; `SELL_FLAWED` requires `ceramicId`. `HEAT_MARKER_VALUES` becomes `HEAT_DELTAS`.
+
+### 15.6 Events
+
+| Event | Change |
+| --- | --- |
+| `ORDERS_DEALT` | `{ playerId; startingCount; secret: { visibleTo; startingOrderIds } }`: `mainCount` and `secret.mainOrderIds` deleted (nothing Main is dealt, L115) |
+| `KILN_SELECTED` | unchanged; followed in the same command by `ORDER_RESERVED { via: "setup", source: "face_up", slotIndex, orderId }` (public) and `DISPLAY_REFILLED { cause: "setup" }` |
+| `ORDER_RESERVED.via` | adds `"setup"` and `"magistrates_hall"` (both `source: "face_up"`, public, no `secret`) |
+| `HEAT_MARKER_PLACED`, `HEAT_MARKER_TURNED`, `HEAT_MARKER_RETURNED` | deleted |
+| `KILN_MASTER_PLACED` | same payload `{ playerId; ceramicId; value: HeatDelta }`, now emitted at loading (after the load's `CERAMIC_LOADED`, Setter's Mark and Kiln Furniture events, preceded by `TECH_USED{T24}`) |
+| `LOOKED_ORDERS_TO_BOTTOM` | replaced by `LOOKED_ORDERS_DISCARDED { playerId; count; secret: { visibleTo; orderIds } }` (R25): after every `SELECT_CHOOSE` with unreserved looked cards; `count` public, `orderIds` in look order, private to the looker |
+| `CERAMIC_SALVAGED` | replaced by `CERAMIC_SOLD { playerId; ceramicId; coins; from: "finished" \| "firing" }` (public), followed by `RESOURCES_CHANGED{reason: "flawed_sale"}` |
+| `RESOURCES_CHANGED.reason` | `"salvage"` → `"flawed_sale"`; adds `"kiln_fuel"` (Glaze & Load, wood −1) |
+| `QUALITY_IMPROVED{cause: "ge_crackle"}` | only when Ge turns a Standard ceramic Fine; on a Fine target only `CRACKLE_APPLIED` is emitted |
+| `ACTUAL_HEAT_CALCULATED`, `SECOND_FIRING_CHOSEN` | `calculation.kilnMasterMarker` replaces `calculation.heatMarker` |
+| `JUN_ADJUSTED` | `delta: HeatDelta` (type rename) |
+| `ORDER_COMPLETED` | `record.crackleVp` |
+| `MAIN_DECK_RESHUFFLED` | unchanged; now reachable in ordinary play (R25) |
+
+### 15.7 Rule errors (`GameRuleErrorCode`, `ruleErrorText.ts`)
+
+No new code. Plain modern Chinese, glossary terms.
+
+- **Deleted:** `HEAT_MARKER_INVALID` (code, text and the `localization_content` entry).
+- **`INVALID_TARGET`** (`REASON_TEXT`), new reasons:
+  - `not_fine_or_standard`: "the ceramic is not Fine or Standard" / 器物不是上品或良品 (`USE_GE_CRACKLE`; the Ge message "Crackle needs one of your Fine or Standard ceramics from this firing.");
+  - `no_crown`: "the Order shows no Crown" / 委托上没有御令 (`PLACE_MAGISTRATES_HALL.crownOrder`; message "The Magistrate's Hall Shifu reserves only a face-up Order that shows a Crown."; details `slotIndex`, `orderId`);
+  - `not_flawed` (existing) for `SELL_FLAWED` ("Only a Flawed ceramic can be sold." / 只有瑕品才能卖出); `not_standard` stays for Protective Saggars only.
+- **`INSUFFICIENT_RESOURCES`** for kiln fuel: details `{ resource: "wood", needed: 1, have, field: "loads[i].destination" }` (the first Shared load).
+- **`NO_MAIN_ACTION_POSSIBLE`** at Glaze & Load: the English message names the fuel ("You have no Shaped vessel with a legal destination you can pay for: the Shared Kiln needs 1 Wood."); the catalogue sentence is unchanged.
+- **`NOT_SHIFU_EFFECT`** for an Apprentice's `crownOrder` (details `field: "crownOrder"`).
+- **`ORDER_NOT_AVAILABLE`** for a stale `mainOrder` or `crownOrder` (`display[slotIndex] !== orderId`).
+- **`TECH_NOT_OWNED` / `TECH_ALREADY_USED`** for `kilnMaster` (owned, ready, at most 1 load per command; details `techId: "T24"`, `field`); a value outside ±1 is `MALFORMED_ACTION` (guard).
+- **`WRONG_PHASE`** for `SELL_FLAWED` outside a sale window: the dispatcher's phase check, and in a Work sub-step the window message "Finish your worker action first."; `NOT_YOUR_DECISION` from the dispatcher otherwise.
+- **`PHASE_TEXT`:** delete `firing_heat_markers` and `firing_salvage`; `setup_kiln_selection` becomes "Kiln and Main Order choice" / 选窑口和主委托.
+
+### 15.8 Data (`data/*.json`) and content definitions
+
+Mechanical values (engine stage); the display texts follow in the content stage from the revision-4 lines.
+
+| File | Change |
+| --- | --- |
+| `game_config.json` | `startingResources` `{clay: 2, wood: 3, coins: 3}` (L125); `setupDeal` `{startingOrders: 2}` (L115; `mainOrders` deleted); new `setupFaceUpMainOrders: 1` (L122); `decorations` becomes the list `["plain", "carved", "impressed", "painted"]` and new `formingCoins: 2` (L336; the per-Decoration cost table is gone) |
+| `action_locations.json` | `materials_yard` apprentice `{resources: 4}`, shifu `{resources: 8}` (L176–177); `form_decorate.shifu.twoVesselDiscount: 1` (renamed from `twoVesselDecorationDiscount`, L184); `glaze_load` apprentice and shifu add `sharedKilnWood: 1`, shifu loses `placesHeatMarker` (L193–194, L197); `magistrates_hall` shifu `{coins: 4, recognitionSteps: 1, crownOrders: 1}` (L241). Texts: MY L176–177, F&D L183–184, G&L L193–194, MH L241 (Chinese +2) |
+| `techniques.json` | T12 `cost` 4 (L625); T24 `timing` `"when_loading"`; texts of T12, T13 (L626), T14 (L627), T16 (L603), T17 (L605), T24 (L628) and the short texts (component text lines 15/17, 25/27, 84/86, 94/96) |
+| `kilns.json` | GE `params` `{fromQualities: ["fine", "standard"], toQuality: "fine", vpPerDeliveredCrackle: 1}` (L463, L465); GE ability and short texts (L463–465; component text 128/130); DI ability (L469; its short text, component text 133/135, is unchanged) |
+| `firing.json` | `salvageCoins` → `flawedSaleCoins: 2` (L284) |
+| `components.json` | Heat markers row deleted; Wood row note (L92) |
+| `round_structure.json` | firing summary (L134) |
+| `asset_specs.json` | `markers.heatMarkers` deleted; `kilnMasterMarker.note` "Placed face up on a ceramic when it is loaded" (not "a Heat marker for all rules") |
+| `orders.json`, `imperial_progress.json` | unchanged |
+
+Types: `GameConfigDefinition` (`setupDeal: { startingOrders: number }`, `setupFaceUpMainOrders: number`, `decorations: Decoration[]`, `formingCoins: number`); `LocationEffectsById` (`form_decorate.shifu.twoVesselDiscount`; `glaze_load.{apprentice,shifu}.sharedKilnWood`, no `placesHeatMarker`; `magistrates_hall.shifu.crownOrders`); `KilnParamsById.GE` `{ fromQualities: Quality[]; toQuality: Quality; vpPerDeliveredCrackle: number }`; `TechTiming` loses `"heat_marker_step"`, gains `"when_loading"`; `FiringDefinition.flawedSaleCoins`; `CostLineKind`: `"decoration"` → `"vessel_coins"`, `"shifu_decoration_discount"` → `"shifu_discount"`, adds `"kiln_fuel"`. `content.ts`: `decorationCost(d)` → `vesselCoins()` (= `formingCoins`); validation: Glaze & Load `sharedKilnWood` equal for both effects and ≥ 0; Magistrate's Hall `crownOrders` 0 for the Apprentice (absent) and 1 for the Shifu; GE `fromQualities` ⊆ {fine, standard}; `setupFaceUpMainOrders` ≥ 1.
+
+### 15.9 Module behaviour
+
+#### 15.9.1 `setup.ts` (change 32, R23; L115–116, L122, L125)
+
+`createInitialState`, draw order (DESIGN §7, revised): 1. shuffle the Starting deck; 2. shuffle the Main deck; 3. deal 2 Starting Orders to each player in seat order (secret); 4. undealt Starting Orders to the box; 5. reveal 6 Main Orders from the top (**no reshuffle**, nothing Main was dealt); 6. Tech decks; 7. Fire deck; 8. First Player. Hands hold only the 2 Starting Orders. `ORDERS_DEALT` per seat without Main. Resources from `startingResources` for every seat (no seat Coin, change 35).
+
+`SELECT_KILN { kilnId, mainOrder }` (phase `setup_kiln_selection`, the player at `index`):
+
+- **Validate:** Kiln available (`KILN_UNAVAILABLE`); `market.display[mainOrder.slotIndex] === mainOrder.orderId` (`ORDER_NOT_AVAILABLE`).
+- **Resolve:** set the Kiln, `KILN_SELECTED`; `takeFaceUpOrder` + `addToHand` + `ORDER_RESERVED{via: "setup", source: "face_up"}`; `refillMainDisplay(draft, "setup", ctx)` at once (slide left, reveal into the rightmost position, as L386 refills; clears `refillPendingFor`); next player, or `setup_done` after the last.
+
+#### 15.9.2 `work/materialsYard.ts` (change 34)
+
+The split must total `resources` (4 or 8); Senior Apprentice 8; Prepared Clay after the split pays Clay + 1 and `formingCoins` (2).
+
+#### 15.9.3 Forming (change 30): `work/formDecorate.ts`, `work/materialsYard.ts`, `legalActions.ts`
+
+No behaviour change. Each vessel costs its Shape's Clay + `formingCoins`; the Shifu's −1 (`twoVesselDiscount`) when forming 2, Decorator's Kit's −1 on a Carved/Impressed/Painted vessel (T16 `decorations`), Ding's extra vessel at 1 Clay + 1 Coin outside every reduction, Large Throwing Wheel's −2 Clay. Cost lines `vessel_coins` and `shifu_discount`. `canFormAny` already counts the reductions (L186). Messages and comments say "a vessel's cost", never "a Decoration cost".
+
+#### 15.9.4 Glaze & Load: fuel and Kiln Master (changes 31, 34, 35; R22, R24) — `work/glazeLoad.ts`, `kilnLoading.ts`
+
+- `kilnLoading.glazeLoadFuel(): number` = `LOCATIONS.glaze_load.effects.apprentice.sharedKilnWood` (1; content validation makes both effects equal).
+- `actionFuel(loads, loadedBy)`: `loadedBy === "glaze_load" && loads.some(shared) ? glazeLoadFuel() : 0` (R24: 1 in total).
+- `simulateLoad`, for a Shared destination when `loadedBy === "glaze_load"`: the player's Wood ≥ `glazeLoadFuel()`, else `INSUFFICIENT_RESOURCES` (§15.7). So `loadDestinationOptions` offers no Shared destination to a player without Wood, and the second load of a Shifu action needs no more Wood than the first.
+- `simulateLoad`, step 5 (after Kiln Furniture): `kilnMaster` given → T24 owned (`TECH_NOT_OWNED`), ready and not used by an earlier load of this command (`TECH_ALREADY_USED`); the value is in `T24.params.values`.
+- `hasAnyLegalLoad(game, pid)` (R5 as changed): a Shaped vessel exists, and either the player's Imperial Kiln is gained and empty, or the player has `glazeLoadFuel()` Wood and an open Shared space (R5a) or an Inverted Firing target with a stackable Shaped vessel (R5c, current Shapes, P3).
+- `PLACE_GLAZE_LOAD` resolve: `placeWorker`; if `actionFuel > 0`, `spend(wood: 1, reason: "kiln_fuel")`; the loads in order (`loadCeramic`); Kiln Tending afterwards (it can never pay this action's fuel). The `heatMarkerCeramicId` branch is deleted.
+- `loadCeramic`: the new ceramic gets `kilnMasterMarker: spec.kilnMaster ?? null`; when set, `markTechUsed(T24)` and `KILN_MASTER_PLACED` after the load's other events.
+- `quoteGlazeLoad(view, action): CostQuote` (new, for the UI): a `kiln_fuel` line (wood 1) when any load goes into the Shared Kiln; `ok`/`error` from the validator.
+
+#### 15.9.5 Imperial Priority (R10, R22) — `work/windowAbilities.ts`
+
+`USE_IMPERIAL_PRIORITY` passes `kilnMaster` into its `LoadSpec`; no Wood (`loadedBy: "imperial_priority"` never pays fuel); Reworking Table as before (P1).
+
+#### 15.9.6 Magistrate's Hall (change 33, R21) — `work/centralSimple.ts`
+
+- **Validate:** unchanged placement and Recognition gate; cost 4 for both effects (data). With `crownOrder`: Shifu effect only (`NOT_SHIFU_EFFECT`; Senior Apprentice never applies here, R12); `display[slotIndex] === orderId` (`ORDER_NOT_AVAILABLE`); the Order shows ≥ 1 Crown (`INVALID_TARGET`, reason `no_crown`).
+- **Resolve:** pay 4 Coins; advance 1 step (milestones resolve, `advanceRecognitionStep`); then, if `crownOrder`: `takeFaceUpOrder` (position empty, `refillPendingFor`), `addToHand`, `ORDER_RESERVED{via: "magistrates_hall", source: "face_up"}`; `workerActionDone`. The deferred refill runs in `endTurn` with any other face-up reservation of the turn (L386).
+- One command: everything the choice depends on (the display, the Recognition step and its public milestone) is known when it is made (DESIGN §1 principle 4).
+
+#### 15.9.7 Select N discards (R25) — `work/select.ts`, `market.ts`
+
+- `resolveSelectPicks`: the looked cards not reserved go to `discardMainOrders(draft, rest)` (face down, in look order, the last on top; no RNG) and `LOOKED_ORDERS_DISCARDED` is emitted. Used by all three Selects through `SELECT_CHOOSE`.
+- `putMainOrdersOnBottom` is deleted with its R19 shuffle and its tests. `discardMainOrders` JSDoc names the Selects. `takeTopMainOrders` unchanged (B1, R16: reshuffle only when the deck is empty as the look starts; R17 for the swap).
+- `lookCount`, `selectReservable`, `swapLookCount` unchanged. `SELECT_CHOOSE` uses no randomness any more.
+
+#### 15.9.8 Firing pipeline (changes 28, 31) — `firing/pipeline.ts`, `firing/heat.ts`
+
+- Delete step 5: `ownFaceDownMarker`, `kilnMasterTargets`, `heatMarkerStepEligible`, `openHeatMarkerStep`, `advanceHeatMarkers`, `heatMarkerStepOptions`, the `RESOLVE_HEAT_MARKERS` handler and the face-down invariant before the Fire reveal.
+- Test Pieces (`firing_test_pieces`) unchanged; it hands over to `revealFireAndCalculate`.
+- `revealFireAndCalculate`: `kilnMasterMarker: ceramic.kilnMasterMarker ?? 0` in each `heatCalculation`; Shared: Global Heat + (Kiln Furniture ?? zone) + marker; Imperial: Kiln Die + Fire + Imperial modifier + marker.
+- `heat.ts`: `HeatCalculationInput.kilnMasterMarker`; `markerValue` and `heatMarkerOf` deleted; new `state.kilnMasterCarrier(game, playerId): LoadedCeramic | null`; `heatPreviews` uses the marker (known since loading).
+- Jun (`firing_heat_adjustment`), Quality and Saggars' floor unchanged.
+
+#### 15.9.9 Ge (change 29) — `firing/afterQuality.ts`, `orders/completion.ts`
+
+- After-Quality eligibility and `USE_GE_CRACKLE`: a ceramic of yours from this firing, not sold, whose Quality is in `GE.params.fromQualities` (Fine or Standard); else `INVALID_TARGET` `not_fine_or_standard`.
+- Resolve: `markKilnAbilityUsed`; `record.crackle = true`; history `{cause: "ge_crackle", from, to: "fine"}`; `QUALITY_IMPROVED` only when `from === "standard"`; `CRACKLE_APPLIED`.
+- With Protective Saggars: Saggars' Standard → Fine first, then Crackle on the same ceramic is legal (L641); Crackle first leaves no Standard for Saggars on that ceramic.
+- `resolveOrderCompletion`: after the printed rewards, Crowns, Tribute Ware, Ru/Guan and Canal Barge, `crackleVp = (delivered ceramics with crackle) × GE.params.vpPerDeliveredCrackle`; `score.kilnAbilities += crackleVp`; `record.crackleVp`. Automatic, no allowance, no decline; it never counts as a Crown or a Masterpiece (tie-breakers unchanged).
+- `completionTriggers` / `OrderMatchOption.triggers.crackleVp: number` (informational).
+
+#### 15.9.10 Second Firing and Jun (change 30) — `firing/afterQuality.ts`
+
+Unchanged behaviour: the recalculation keeps Base Heat (Kiln Die for the Imperial Kiln), the position modifier and `first.kilnMasterMarker`; Jun from the first calculation does not carry over; an unused Jun may be applied by `SECOND_FIRING_CHOOSE.jun` before the new Quality (L627, formerly R7). Comments and clarifications cite L627.
+
+#### 15.9.11 Selling a Flawed ceramic (change 30, R20) — new `flawedSale.ts` (layer 3) and `flawedSaleHandler.ts` (layer 5)
+
+`src/game/flawedSale.ts` (layer 3, state and firing-record helpers only):
+
+- `sellableFlawed(game, playerId): CeramicId[]`, in sequence order: the player's `finished` ceramics with Quality Flawed; and, only while `game.phase.type === "firing_after_quality"`, the player's records of this firing with `quality === "flawed"` and `!sold`.
+- `saleWindowError(view)`: `work_turn` with the viewer active and `step.kind` ∈ {`before_action`, `after_action`}; `orders` with the viewer's turn; `firing_after_quality` with the viewer at the queue head; `cleanup_hand_limit` with the viewer pending. Else `WRONG_PHASE` (in a Work sub-step "Finish your worker action first.").
+- `sellFlawedCeramic(draft, playerId, ceramicId, ctx)`: a Finished ceramic is deleted from `ceramics` and its Vessel card returned; a ceramic of this firing gets `record.sold = true`, leaves its kiln space (Kiln Furniture beneath it moves to the ceramic left in a stacked space, or returns, as the salvage code did), is deleted and its Vessel card returned. Then `CERAMIC_SOLD` and `gain(coins: flawedSaleCoins, reason: "flawed_sale")`.
+- `sellFlawedOptions(view): { ceramicIds: CeramicId[]; coins: number } | null` (replaces `salvageOptions`): non-null when the viewer is in a sale window with ≥ 1 sellable ceramic.
+
+`src/game/flawedSaleHandler.ts` (layer 5, so it may call the layer-4 continuations; `engine.ts` adds its `handlers`): `SELL_FLAWED`, `phases: ["work_turn", "orders", "firing_after_quality", "cleanup_hand_limit"]`.
+
+- **Validate:** `saleWindowError`; the ceramic exists (`CERAMIC_NOT_FOUND`), is the viewer's (`CERAMIC_NOT_OWNED`) and is in `sellableFlawed` (`INVALID_TARGET`, `not_flawed`).
+- **Resolve:** `sellFlawedCeramic`, then by phase: `firing_after_quality` → `afterQuality.continueAfterSale(draft, actorId, ctx)` (exported wrapper of `afterAbilityUsed`: the turn passes when no after-Quality option is left); `orders` → `orders/phase.continueAfterSale(draft, actorId, ctx)` (ends the Order turn automatically when nothing is completable and nothing sellable is left); `work_turn` and `cleanup_hand_limit` → no change of step.
+
+Deleted: `openSalvage`, `salvageable`, `salvageOptions`, `discardSalvagedCeramic` (moved into `sellFlawedCeramic`), the `SALVAGE_FLAWED` handler.
+
+#### 15.9.12 Order Phase — `orders/phase.ts`
+
+`startNextTurn` skips a player only when `!hasCompletableOrder && sellableFlawed(...).length === 0` (INT Order Phase, revision 4: R20 names the Order Phase turn as a sale window, and a Flawed ceramic fired in Round 5 can be sold only there or in its owner's after-Quality turn, since the Round 5 Cleanup trim is skipped). After `COMPLETE_ORDER` or `SELL_FLAWED`, the same test ends the turn automatically. Crackle VP is recorded in `resolveOrderCompletion` (§15.9.9).
+
+#### 15.9.13 Cleanup — `round.ts`
+
+Unchanged, except that a pending player may send `SELL_FLAWED` before `DISCARD_TO_HAND_LIMIT` (they stay pending).
+
+#### 15.9.14 Other modules
+
+- `work/turn.ts`: `endTurn`'s deferred refill also covers the Magistrate's Hall Shifu's Crown Order (it sets `refillPendingFor`). `afterActionWindowOpen` unchanged: a sellable Flawed ceramic opens no window (the sale waits for the next own turn).
+- `state.ts`: `decisionPrompt` without the two phases; `kilnMasterCarrier`; `heatMarkerOf` deleted.
+- `view.ts`: unchanged (the marker was public).
+- `engine.ts`: handler table (§15.5), including `flawedSaleHandler.ts`. `index.ts`: barrel exports `sellFlawedOptions`, `setupChoiceOptions`, `kilnMasterOption`, `quoteGlazeLoad`; drops `heatMarkerStepOptions`, `heatMarkerTargets`, `salvageOptions`.
+- `scoring.ts`: unchanged (Crackle VP is in the ledger).
+
+### 15.10 Legality ("at least 1 instance of the main action", L156)
+
+| Location | Revision 4 |
+| --- | --- |
+| Materials Yard | always (4 or 8) |
+| Form & Decorate | the full cost of 1 vessel after reductions (L186): unchanged `canFormAny` |
+| Glaze & Load | a Shaped vessel with a destination you can pay for: your own empty Imperial Kiln, or (with 1 Wood) an open Shared space or an Inverted Firing target (L198, R5 as changed) |
+| Commission Market, Guild Hall, Canal Wharf | unchanged |
+| Magistrate's Hall | unchanged gate (Recognition 0–2, capacity) and 4 Coins for both workers; the Crown Order is optional and never affects legality |
+
+### 15.11 Progress guarantee and automatic steps
+
+- `setup_kiln_selection`: always an available Kiln (5 ≥ 4) and 6 face-up Orders (the Main deck still holds at least 39 cards at the last take).
+- `orders`: `END_ORDER_TURN` always legal; a turn opens only with something to complete or sell.
+- `firing_after_quality`: `END_AFTER_QUALITY` always legal.
+- `cleanup_hand_limit`: `DISCARD_TO_HAND_LIMIT` as before; `SELL_FLAWED` never blocks it.
+- Automatic, never declined: kiln fuel (a cost); Crackle VP; the setup refill after each take.
+
+### 15.12 Invariants (`invariants.ts`)
+
+- **Markers:** replace `checkMarkers`: every `kilnMasterMarker` is ±1 and sits on a `loaded` ceramic; at most 1 loaded ceramic per owner carries one, the owner owns T24 and its allowance is used this round (the existing "used" check); a firing record's `first` (and `second`) has `kilnMasterMarker === (ceramic.kilnMasterMarker ?? 0)` while the ceramic is loaded.
+- **Phases:** `FIRING_PHASES` without `firing_heat_markers` and `firing_salvage`; the Fire card is revealed exactly in `firing_heat_adjustment`, `firing_after_quality` and `firing_second_firing_choice`.
+- **Sold:** `record.sold ⇒` no ceramic with that ID; the stacked-space exception names `sold` (a ceramic sold from beneath a stack).
+- **Setup:** in `setup_kiln_selection`, the display has no empty position and `refillPendingFor === null`; a player who has chosen a Kiln holds 2 Starting Orders and 1 Main Order, one who has not holds 2 Starting Orders and no Main Order.
+- **Crackle:** `record.crackleVp` = the delivered Crackle ceramics of that Order × `vpPerDeliveredCrackle`, and is 0 unless the player has the Ge Kiln; `score.kilnAbilities` = Σ `kilnAbility.vp` + Σ `crackleVp`; a Crackle ceramic is Fine (unchanged).
+- Order conservation unchanged (the looked cards are now in the discard). Kiln fuel leaves no state to check.
+
+### 15.13 Selectors and legal actions
+
+Selectors:
+
+- Deleted: `heatMarkerStepOptions`, `heatMarkerTargets`, `salvageOptions`; `HeatMarkerStepOptions`, `SalvageOptions`.
+- New: `setupChoiceOptions(view): { kilns: KilnSelectionOption[]; faceUpSlots: number[] } | null` (the chooser only); `kilnMasterOption(view, playerId): { ready: boolean; values: HeatDelta[] } | null` (null without T24); `sellFlawedOptions(view)`; `quoteGlazeLoad(view, action)`.
+- Changed: `magistratesHallQuote(view, effect)` adds `crownOrderSlots: number[]` (Shifu effect: display positions holding an Order with ≥ 1 Crown; `[]` for the Apprentice); `ImperialPriorityOptions.kilnMaster: boolean`; `materialsYardOptions.resources` 4 / 8; `afterQualityOptions` Ge lists Fine and Standard; `OrderMatchOption.triggers.crackleVp`; `PlayerSummary.heatMarkerCeramicId` deleted (`kilnMasterCeramicId` from `kilnMasterCarrier`); `FiringStageCeramic.kilnMasterMarker: HeatDelta | null` (was `marker`) and `sold` (was `salvaged`); `FiringStageView.step` / `firstPlayerOrder` per §15.4. The key allow-list test (D3) follows. `heatPreviews.heatBeforeFire`: known once Base Heat is.
+
+`legalActions` families:
+
+| Family | Candidates |
+| --- | --- |
+| `SELECT_KILN` | every available Kiln × every face-up slot |
+| `PLACE_MATERIALS_YARD` | splits 0..4 or 0..8 × Senior Apprentice × Prepared Clay |
+| `PLACE_GLAZE_LOAD` | as before (destinations already exclude the Shared Kiln without Wood); canonical: Kiln Master {none, +1, −1} on the first load of each candidate when T24 is ready; exhaustive: on any one load |
+| `USE_IMPERIAL_PRIORITY` | × Kiln Master {none, +1, −1} when ready |
+| `PLACE_MAGISTRATES_HALL` | per worker option; for the Shifu effect also × each `crownOrderSlots` entry |
+| `USE_GE_CRACKLE` | each Fine or Standard target |
+| `SELL_FLAWED` | each `sellFlawedOptions` ceramic, in the families of `work_turn` (`before_action`, `after_action`), `orders`, `firing_after_quality` and `cleanup_hand_limit` |
+| removed | `RESOLVE_HEAT_MARKERS`, `SALVAGE_FLAWED` |
+
+`sampleLegalAction` and `legalActionFamilies` follow; the agreement property covers the new selectors; the perf fixture stays under 50 ms.
+
+### 15.14 Hidden information
+
+| Item | Lives in | Visible to | Public |
+| --- | --- | --- | --- |
+| A Select's unreserved looked cards (R25) | Main discard, face down; `LOOKED_ORDERS_DISCARDED.secret` | the looker | `count`, `counts.mainDiscard` |
+| The Setup Main Order take (L122) | hand; `ORDER_RESERVED{via: "setup"}` | everyone | the Order |
+| The Magistrate's Hall Shifu's Crown Order | hand; `ORDER_RESERVED{via: "magistrates_hall"}` | everyone | the Order |
+| Kiln Master's marker (L635) | the loaded ceramic | everyone | value |
+| A sale (`CERAMIC_SOLD`) | — | everyone | all |
+
+- `ORDERS_DEALT.secret` carries only the 2 Starting Orders; `privacy_setup` checks it.
+- Deleted rows: the face-down Heat marker (it never held a value).
+- Inference channels: the Order Phase now opens for a player with a Flawed ceramic (public) as well as one with something completable (hidden, as before; DESIGN §4.5 accepted the skip). The after-action window is unchanged. A card a seat saw in a look and then discarded may come back through a reshuffle into another seat's unseen draw or look, or face up on the display: `tools/fixturePrivacy.ts` treats it as `rehidden` (stage 6 logic), now with `LOOKED_ORDERS_DISCARDED`.
+
+### 15.15 Determinism
+
+- Setup consumes one shuffle fewer (the Main deck is not reshuffled at step 5); every seeded game moves. The fuzz seed base is re-baselined (7400 → 7700) and seed-pinned tests are re-recorded.
+- `SELECT_CHOOSE` consumes no randomness (R19's shuffle is gone). Main deck reshuffles (`MAIN_DECK_RESHUFFLED`) become reachable in long games (R25); the fuzz sets must include a game that reshuffles the Main discard, at the start of a look (R16) and at a Canal Wharf draw or display refill.
+
+### 15.16 Platform
+
+- `service.ts` (`CURRENT_SCHEMA_VERSION = 9`), `projection.ts`, `inMemoryStore.ts` (`^r32-`), `client.ts`, `store.ts`, `types.ts` comments: schema 9, `r32`; schema-8 saves and `r31` rooms are refused, never migrated (`UNSUPPORTED_RULES_VERSION` / `RULES_FINGERPRINT_MISMATCH`).
+- `revisionAcceptance` and `computerAdvanceAccepted`: the parallel window is `cleanup_hand_limit` only. `SELL_FLAWED` in that window touches only the actor's own ceramic, so the tolerant revision rule applies to it as to the trim.
+- Supabase (nothing deployed; pins edited in place): `202610150001_v161_rules.sql` `^r31-` → `^r32-`, schema 8 → 9, header comment for owner revision 4; `supabase/tests/rls.test.sql`: an `r31` fingerprint is refused; `supabase/README.md`, `supabase/functions/_shared/supabaseStore.ts` comments. `202610150002_playtest_v161.sql`: unchanged (Form V3 has no Heat-marker or salvage field; `kiln_master_used` still means a use).
+- `tools/` (keep compiling): `uiFixtures.ts` — m3 (Heat-marker step) becomes "Glaze & Load with Kiln Master's marker" or is removed; m14 (salvage) becomes "Order Phase: sell a Flawed ceramic"; m15 shows the Setup choice with the display; m6 notes Crackle VP; m18 Second Firing keeps R7's Jun; the Heat-marker and salvage option fields go, `sellFlawedOptions`, `setupChoiceOptions`, `kilnMasterOption` come in; outputs regenerate in the UI stage. `fixturePrivacy.ts` — `LOOKED_ORDERS_DISCARDED`; `ORDERS_DEALT` without Main; the `setup` and `magistrates_hall` reservations are public. `localBackendV161.ts` — pins and comments.
+- `src/app`, `e2e`, `test/v161/ui`: the UI stage (`npm run typecheck` may fail until then).
+
+### 15.17 Computer policy (`computerPlayer.ts`, `computerFallback.ts`)
+
+Heuristics, not rules; `computer_strength` thresholds may be re-baselined with the reason recorded.
+
+1. **Setup (`decideSetup`, replaces `decideKiln`):** the Kiln by `KILN_PREFERENCE` among the available ones; the Main Order = the face-up slot with the highest `reservationValue`, valued as if that Kiln were taken (a copy of the view with `kilnId` set); ties → the lowest slot.
+2. **Materials Yard:** totals 4 / 8 (from data); `materialsSplit` keeps 1 Wood per Glaze & Load action into the Shared Kiln it plans this round and the next, before Contribution, Jun and Test Pieces Wood; `resourceValue` raises Wood's weight accordingly.
+3. **Glaze & Load:** the planner's `GL` step needs 1 Wood when any planned load goes into the Shared Kiln (`next.wood -= 1`; an Imperial-only action pays none) and returns null without it; `buildGlazeLoad` drops the Heat-marker branch and adds Kiln Master: when T24 is ready, the best of {none, +1, −1} on one load by the same expected-Quality model that picks Glaze and zone (the target-heat distribution), with a 0.01 bias to "none".
+4. **Imperial Priority:** the same Kiln Master choice; no Wood.
+5. **Magistrate's Hall:** cost 4 for both effects; the Shifu's value adds the best face-up Crown Order's `reservationValue` when it clears the overflow threshold (`reservationOverflows`); `buildPlacement("MH")` names it in `crownOrder`, else omits it.
+6. **Firing:** delete `decideHeatMarkers` and every face-down "flexible" marker in `decideContribution`, `rivalPushDist` and the quality models; Actual Heat terms use `kilnMasterMarker`.
+7. **Ge:** `decideAfterQuality` offers Ge on Fine and Standard ceramics: gain = (Fine − Standard utility if Standard) + the Crackle value (wildcard + 1 VP when delivered, ≈ 0.7 at the current plan's delivery odds); with Saggars it evaluates both orders. `completionReward` adds `crackleVp`; the Order planner prefers delivering Crackle ceramics.
+8. **Sale:** `decideSellFlawed`: in `before_action`, the Order Phase turn and the Cleanup trim, sell every Finished Flawed ceramic (one command each) before any other choice; in the after-Quality turn sell nothing (Second Firing may still use the ceramic; the Order Phase turn always opens for a sale). `techValue(T11)` loses the salvage term.
+9. **Select N (R25):** no change (`unknownMainOrders` never modelled the deck bottom).
+10. **Fuel Ledger:** `techValue(T12)` accounts for the cost of 4.
+11. **Fallback:** `setup_kiln_selection` → the first available Kiln with the first face-up slot; `firing_heat_markers` and `firing_salvage` branches deleted; the Order Phase still `END_ORDER_TURN` (no sale); `PLACE_GLAZE_LOAD` fallbacks come from `legalCommands`, which respect the fuel.
+
+### 15.18 Test plan
+
+Engine (`test/v161/engine`):
+
+| File | Cases |
+| --- | --- |
+| `setup.test.ts`, `privacy_setup.test.ts`, `support/fixtures.ts` | schema 9; 2 Starting Orders each, no Main dealt; the undealt Starting Orders boxed (none at 4 players); 6 face-up, no reshuffle (draw order); every seat 2 Clay / 3 Wood / 3 Coins (no seat Coin); reverse turn order; one `SELECT_KILN` takes the Kiln and a face-up Order (R23), public `ORDER_RESERVED{via: "setup"}`, the display refilled before the next player (slide left); stale slot `ORDER_NOT_AVAILABLE`; missing `mainOrder` `MALFORMED_ACTION`; each player ends with 2 Starting + 1 Main; `ORDERS_DEALT` secret holds Starting Orders only |
+| `materials_yard.test.ts`, `placement_legality_materials.test.ts` | Apprentice 4 and Shifu 8 in every split; Senior Apprentice 8; Prepared Clay after the 8 |
+| `form_decorate.test.ts`, `vessels.test.ts` | Clay + 2 Coins for each Decoration; Shifu −1 forming 2; Decorator's Kit −1 on Carved/Impressed/Painted, not Plain; both on one vessel (0); Ding 1 + 1; legality after reductions; cost lines `vessel_coins`, `shifu_discount` |
+| `glaze_load.test.ts`, `kiln_loading.test.ts`, `placement_legality_personal.test.ts` | Apprentice Shared 1 Wood, Imperial 0; Shifu 2 Shared 1 Wood, Shared + Imperial 1 (R24), Imperial only impossible twice (1 Imperial load); 0 Wood: Shared refused `INSUFFICIENT_RESOURCES`, Imperial allowed, `loadDestinationOptions` without Shared, placement illegal without an Imperial Kiln; Inverted Firing stack pays once; Kiln Tending after the fuel; `heatMarkerCeramicId` `MALFORMED_ACTION`; `RESOURCES_CHANGED{kiln_fuel}` |
+| `kiln_master.test.ts` (replaces `heat_markers.test.ts`) | at a Glaze & Load load (Apprentice, Shifu either load), at Imperial Priority, into the Shared and the Imperial Kiln (R22); once per round (`TECH_ALREADY_USED` the second time, and on 2 loads of one command); optional; acquired the same round then used; ±1 in Actual Heat with zone, Kiln Furniture and Imperial modifier; Jun on top; kept in a Second Firing recalculation; public; returned at the finish |
+| `imperial_priority.test.ts` | free (no Wood with 0 Wood); Kiln Master |
+| `simple_locations.test.ts`, `recognition.test.ts` | Magistrate's Hall: Apprentice and Shifu 4 Coins; the Shifu reserves a Crown Order after the step (milestone first); optional (R21); no Crown Order showing → nothing; a non-Crown pick `INVALID_TARGET` `no_crown`; an Apprentice's pick `NOT_SHIFU_EFFECT`; stale slot; the position empty until the turn ends, then one refill with other face-up reservations; Senior Apprentice never applies |
+| `commission_market.test.ts`, `colour_samples_swap.test.ts`, `guild_hall.test.ts`, `market.test.ts` | R25: the unreserved looked cards go to the Main discard (count +n, deck count unchanged by the return), `LOOKED_ORDERS_DISCARDED` secret to the looker in look order, no RNG used; a later look on an empty deck reshuffles the discard first (B1, R16) and never mid-look; the swap's discarded Order and looked cards may come back (R17); `putMainOrdersOnBottom` tests removed |
+| `firing_flow.test.ts`, `test_pieces.test.ts`, `heat_quality.test.ts`, `heat_adjustment.test.ts` | no Heat-marker phase; Base Heat → Test Pieces → Fire → Actual Heat → Jun → Quality → after-Quality → finish; Test Pieces before the Fire reveal; calculations with `kilnMasterMarker` |
+| `after_quality.test.ts` | Ge on Standard (→ Fine, `QUALITY_IMPROVED`) and on Fine (no `QUALITY_IMPROVED`, Crackle); not on Flawed or Masterpiece (`not_fine_or_standard`); Saggars then Ge on the same ceramic; Ge then Saggars refused; selling a Flawed ceramic of this firing in the own after-Quality turn (kiln space emptied, stacked case, Kiln Furniture moved), then Second Firing impossible on it; the turn passes when nothing is left |
+| `flawed_sale.test.ts` (new) | each sale window (before/after action, Order turn, after-Quality head, pending Cleanup) accepts; refused during another player's turn (`NOT_YOUR_DECISION`), in the Contribution window, in Work sub-steps, Test Pieces, Jun, Second Firing choice, Setter's Mark, Setup (`WRONG_PHASE`); Finished Flawed only (Standard, delivered, other's refused); 2 Coins, Vessel card returned; Saggars owner never has one |
+| `order_phase.test.ts`, `kilns_orders.test.ts`, `scoring.test.ts` | the Order turn opens for a Flawed ceramic with nothing completable and closes after the sale; Round 5 sale before scoring; Crackle VP: 1 per delivered Crackle ceramic, several in one Order, recorded in `crackleVp` and `kilnAbilities`, final breakdown, no tie-breaker effect |
+| `cleanup.test.ts` | a pending player sells, stays pending, then trims |
+| `content_contract.test.ts`, `source_of_truth.test.ts`, `localization_content.test.ts` | the revision-4 rows and numbers (MY [4]/[8], F&D, G&L, MH Shifu [4, 1, 1], T12 4, T24, GE, Setup L115–125, components, Appendix D, timing vocabulary, quick reference, the Decorations paragraph L336); the checksums; the new reasons and `PHASE_TEXT` |
+| `rules_fingerprint.test.ts` | revision 32; data changes move the digest |
+| `action_guard.test.ts`, `errors.test.ts` | new shapes; deleted commands and `heatMarkerCeramicId` `MALFORMED_ACTION`; `HEAT_MARKER_INVALID` gone |
+| `invariants.test.ts`, `projection_privacy.test.ts`, `legal_actions*.test.ts`, `selector_agreement.test.ts`, `ui_selectors.test.ts`, `tech_matrix.test.ts`, `ability_cases.ts`, `optional_abilities.test.ts`, `fuzz.test.ts`, `determinism.test.ts`, `fixtures.test.ts`, `state_helpers.test.ts`, `p7_support.ts`, `phase_scenarios.ts`, `ui_support.ts` | §15.12 checks on broken states; new families and selectors; Kiln Master, the Crown Order and the sale as optional rows, fuel and Crackle VP as automatic; full games for 2/3/4 players reach `finished` with the new seed base |
+
+Platform (`test/v161/platform`): `rules_fingerprint_gate`, `client_compatibility`, `supabase_contract`, `local_backend_v161`, `tsconfig_includes` (schema 9, `r32`; `r31` refused); `parallel_windows` (salvage window gone; a sale in Cleanup under the tolerant rule); `multiplayer_privacy`, `reconnect` (the setup choice and a Magistrate's Hall Crown Order are public; looked cards discarded stay private); `privacy_full_games` (R25 discards and a Main reshuffle reached); `fixture_privacy_oracle` (`LOOKED_ORDERS_DISCARDED`); `computer_decisions` (setup pick; fuel kept; Kiln Master at loading; Crown Order; Ge on Fine; selling); `computer_legality` (every revision-4 step); `computer_fallback`; `computer_full_games`, `online_computer_player`, `multiplayer_computer_turns`, `computer_strength`.
+
+Gates for every stage: `npm run typecheck:engine`, `npm run typecheck:platform`, `npm run typecheck:edge`, `npx vitest run test/v161/engine test/v161/platform`, `npm run test:fuzz:long`, `npm run print:orders`.
+
+### 15.19 Documents and content
+
+- **Clarifications** (`KILN_OPENING_v1.6.2_CLARIFICATIONS.md`, content stage): re-cite every `L` tag to revision-4 lines; `CLARIFICATION_TAG` accepts R1–R25 and the contract refuses R3, R6, R9, R14 and R19. Retire: the Heat-marker items (T15 "A Heat marker is not a zone modifier", T24's three items, `glaze_load` R9 and the two Heat-marker-step items, JU's "Heat markers included" and "either a Heat marker or …"), T13's "before any Heat marker is turned", T11's salvage item, GE's "never a Masterpiece" and "cannot both apply" items, T16/`form_decorate`'s "Every Decoration costs 2 Coins", the R19 / deck-bottom items (T10, `commission_market` B3 · R19, the Main Orders item). Add: Kiln Master at loading (R22), kiln fuel (`glaze_load`, R24), the sale (R20) on the Flawed / Imperial / milestone or location items that fit, Ge's targets and Crackle VP, the Magistrate's Hall Shifu's Crown Order (R21), the Setup choice (R23), R25 on T10 and `commission_market`, and L627 on T14 and JU. The revision notes list the count.
+- **Component text source** (`KILN_OPENING_v1.6.2_COMPONENT_TEXT_SOURCE.md`): lines 3/5, 15/17, 25/27, 84/86, 94/96, 128/130; `SHORT_TEXT_SECONDARY_LABELS` unchanged unless a new bold clause appears (none does).
+- **Glossary** (`GLOSSARY_ZH_V1.6.1.md`): retire 火标, 翻火标, 暗置火标, 折卖; add 卖出 (sell a Flawed ceramic), 烧窑要烧柴 / 柴 for kiln fuel, 窑工标 placed at loading, the Magistrate's Hall Shifu's 承接榜上1张御令委托, the Setup choice; the Select N row (其余弃置); the error reasons of §15.7.
+- `IMPLEMENTATION_DECISIONS.md`, `ONLINE_GAME_SPEC.md`, `DESIGN_SPEC.md`, `UI_V1.6.1_ARCHITECTURE.md`, `ENGINE_V1.6.1_DESIGN.md` (header note), `supabase/README.md`: the Heat marker, salvage, deck bottom and versions.
+- **`AGENTS.md`** (the owner's file; not changed by this stage): its "Changes 28–35" bullet and the Commission Market / Techs / Select N items already describe revision 4 and R25. Still describing revision 3 or earlier:
+  - Key facts: "Setup deals 2 Starting Orders + 1 Main Order" (now 2 Starting Orders dealt and 1 face-up Main Order taken with the Kiln, R23).
+  - Hidden information: "Looked-at Orders not reserved, which go face down to the bottom of the Main Order deck (change 24) … Several go there in random order (R19)" (now: discarded face down to the Main Order discard, which cards private to the looker, the discard count public, R25); the public list could add the Setup Main Order take, the Magistrate's Hall Shifu's Crown Order and Kiln Master's marker.
+  - Tests that must exist: Setup "2 Clay / 2 Wood / 3 Coins" and "secret deal of 2 Starting + 1 Main Order"; Materials Yard "Apprentice 3, Shifu 6"; "Form & Decorate Decoration costs"; Glaze & Load "optional Heat-marker placement" (now Kiln Master at loading and the 1-Wood fuel); Commission Market and Colour Samples "to the bottom of the Main Order deck … R19"; Magistrate's Hall "4/3 Coins" (now 4/4 and the optional Crown Order); Ge "Saggars' Standard → Fine and Crackle never on one ceramic"; the printed costs "Fuel Ledger 2"; Kiln Master "stacks"; Firing "Heat-marker step in First Player order (+1/−1/return)" and "optional 2-Coin salvage of a still-Flawed ceramic" (now the sale, R20); Platform "schema 8, `r31-`" (now schema 9, `r32-`, and `r31` rooms refused).
+  - Explicitly obsolete / Removed by V1.6.2: add the player Heat marker and Heat-marker step, the firing-step salvage, the seat Coin, a dealt starting Main Order, the Decoration cost table, the Magistrate's Hall Shifu at 3 Coins, Materials Yard 3 / 6, 2 starting Wood, Fuel Ledger at 2, Ge on Standard only, and the deck-bottom flow with R19's random order (R25).
+
+### 15.20 Stages
+
+1. **Stage 8 (this):** design (§15) and records (audit, `GAME_RULES.md`).
+2. **Stage 9, engine:** §15.2–§15.15 with the mechanical data values (§15.8) and the engine tests (§15.18).
+3. **Stage 10, content:** the data texts from revision-4 lines, clarifications, component text source, glossary, the content contract and the renumbering of code and test citations to revision-4 lines (the audit's map).
+4. **Stage 11, platform and computer:** §15.16–§15.17 and the platform tests; `npm run test:fuzz:long`.
+5. **UI stage (later):** `src/app`, `e2e`, `test/v161/ui`, fixtures regenerated.
+
+**Implementation note (setup and Work Phase step, 2026-10-23).** The engine work was split. The first step implemented Setup (§15.9.1), the Materials Yard, forming, Glaze & Load with kiln fuel and Kiln Master at loading, Imperial Priority, the Magistrate's Hall Shifu and Fuel Ledger's cost of 4 (§15.9.1–§15.9.6), with schema 9, revision 32 and the `r32` pins. Kiln Master's marker at loading replaces the Heat marker, so that step also took these items from §15.9.8 and §15.4:
+- the whole Heat-marker step was removed: the `firing_heat_markers` phase, `RESOLVE_HEAT_MARKERS` and the Heat-marker events;
+- `FiringStep` was renumbered to 1–6;
+- the platform and computer items those changes touch (§15.16; §15.17 items 1–6, 10 and 11) were done, so the platform tests already pass.
+
+Still to do after that step: Ge (§15.9.9), the sale (§15.9.11, which removes `firing_salvage`; until then the salvage window shows as step 5), R25 (§15.9.7), the Order Phase and Cleanup items, and the content texts (the firing and scoring step below took Ge, the sale and the Order Phase and Cleanup items). `test/v161/engine/support/fixtures.ts` keeps a deprecated `heatMarker` field on loaded `CeramicSpec`, typed only, so that the unmigrated `test/v161/ui/fixtures/tableScenarios.ts` (imported by `tools/uiFixtures.ts`) still compiles. Any value for it is refused at build time. Remove the field in the UI stage. The fuzz seed base stays at 7400 because its coverage checks pass there.
+
+**Implementation note (firing and scoring step, 2026-10-23).** The second engine step implemented the firing and scoring parts: Ge (§15.9.9), the sale (§15.9.11), the Order Phase and Cleanup items (§15.9.12–§15.9.13) and the matching parts of §15.3–§15.7, §15.12–§15.14, §15.16 and §15.17. In detail:
+- **Ge:** `KILNS.GE.params` is `{fromQualities: ["fine", "standard"], toQuality: "fine", vpPerDeliveredCrackle: 1}` (content validation added; the DESIGN §6.4 row follows). `USE_GE_CRACKLE` takes a Fine or Standard ceramic of this firing (`INVALID_TARGET` `not_fine_or_standard` otherwise). `QUALITY_IMPROVED` is emitted only for a Standard target; the history records Fine → Fine. Saggars then Ge on one ceramic is legal, and Ge then Saggars is not.
+- **Crackle VP:** `resolveOrderCompletion` records `CompletedOrderRecord.crackleVp`, adds it to `score.kilnAbilities` and reports it in `completionTriggers` / `OrderMatchOption.triggers.crackleVp`. The score preview and the final breakdown carry it in the Kiln Tradition line. It has no event of its own: `ORDER_COMPLETED` carries the record.
+  - `crackleVp` is optional in the type, and a record without it means 0. The engine always writes it. It is optional only so that the unmigrated `test/v161/ui/fixtures/tableScenarios.ts`, which builds a `CompletedOrderRecord` literal and is reached through `tools/uiFixtures.ts`, still compiles. Make it required in the UI stage.
+  - New live invariants: `crackleVp` matches the delivered Crackle ceramics, `score.kilnAbilities` is the sum of Ru/Guan VP and `crackleVp`, and only a Ge player delivers a Crackle ceramic. The rich fuzz start now gives Crackle ceramics only to the Ge seat. Its RNG draws are unchanged, so the seeds are stable.
+- **The sale (R20):** `SELL_FLAWED { ceramicId }` lives in `flawedSale.ts` (layer 3: `sellableFlawed`, `saleWindowError`, `sellFlawedOptions`, `sellFlawedCeramic`) and `flawedSaleHandler.ts` (layer 5; `engine.ts` registers it). Its phases are `work_turn`, `orders`, `firing_after_quality` and `cleanup_hand_limit`.
+  - In a Work sub-step the error is `WRONG_PHASE` ("Finish your worker action first."). In a sale phase where the game waits for someone else it is `NOT_YOUR_DECISION`.
+  - `CERAMIC_SOLD` is public, followed by `RESOURCES_CHANGED{reason: "flawed_sale"}`. `FiringCeramicRecord.sold` and `FiringStageCeramic.sold` replace `salvaged`, and `FIRING.flawedSaleCoins` replaces `salvageCoins`.
+  - The `firing_salvage` phase, `SALVAGE_FLAWED`, `CERAMIC_SALVAGED`, `SalvageOptions` and `salvageOptions` are gone. `openAfterQuality` and `advanceAfterQuality` finish the firing directly.
+  - After a sale, `afterQuality.continueAfterSale` and `orders/phase.continueAfterSale` let the turn pass when nothing is left to do in it.
+  - The Order Phase skips a player only when they have nothing to complete and nothing to sell.
+- **Legal actions:** a `SELL_FLAWED` family before the exit of each sale window. The sampler, the selector agreement, the fuzz coverage (`SELL_FLAWED` is reached), the phase scenarios ("Order Phase: sell a Flawed ceramic") and the firing-flow script follow.
+- **Platform and computer:**
+  - `cleanup_hand_limit` is the only parallel window, and the tolerant revision rule covers a sale there.
+  - The strategic policy sells every Finished Flawed ceramic first in a before-action window, an Order Phase turn and a Cleanup trim, but never in the after-Quality turn (§15.17 item 8).
+  - The policy values Ge on a Fine ceramic by its Crackle value (wildcard plus 1 VP at the planned delivery odds). With Saggars' only Standard target, Ge is not credited with that Standard → Fine. `completionReward` counts `crackleVp`.
+  - The fallback's salvage branch is deleted.
+  - `tools/uiFixtures.ts`: m14 becomes "Order Phase: sell a Flawed ceramic", the firing selectors dump `sellFlawedOptions`, and m6 notes Crackle VP.
+- **Tests:** `flawed_sale.test.ts` (new), plus `after_quality`, `firing_flow`, `order_phase`, `kilns_orders`, `invariants`, `dispatcher`, `action_guard`, `contributions`, `heat_quality`, `test_pieces`, `canal_barge`, `ui_selectors`, `state_helpers`, `legal_actions`, `fuzz`, `localization_content` (the new reasons) and `content_contract` (the sale sentence, rev. 4 L282, L284). On the platform side: `parallel_windows` (a sale in Cleanup), `computer_decisions`, `computer_legality` and `computer_fallback`.
+- **Not in this step:** R25 (§15.9.7, Select N discards), the content texts (stage 10: GE/T11/T14 texts, clarifications, glossary terms 卖出 and 折卖) and the UI stage. The fuzz seed base stays at 7400, because its coverage checks pass there with `SELL_FLAWED` reached.
+
+### 15.21 Rulings and open questions
+
+The owner answered revision 4's questions on 2026-10-23 (audit: R20–R24) and ruled R25 the same day. Recorded as interpretations, not questions (each can change without changing the contract): selling a ceramic of this firing in the own after-Quality turn (R20 names that turn; the ceramic leaves the kiln); the Order Phase turn opening for a sale; the Setup refill after each take sliding left as L386 does; the Magistrate's Hall Shifu's Crown Order chosen in the placement command from what shows then; Crackle VP automatic and recorded as Kiln Tradition VP. No question is open.

@@ -55,21 +55,21 @@ describe("the Jun window (L478, L679)", () => {
     const record = (table.state.lastFiring ?? table.state.firing)?.ceramics["c1"];
     expect(record?.first).toMatchObject({ actualHeat: 3, junAdjustment: -1, finalActualHeat: 2, heatDifference: 0 });
     expect(table.player("p1").kilnAbilityUsedThisRound).toBe(true);
-    expect(table.player("p1").resources.wood).toBe(1);
+    expect(table.player("p1").resources.wood).toBe(2);
   });
 
-  it("applies on top of a Heat marker (Appendix B clarifications) and works on an Imperial ceramic", () => {
+  it("applies on top of the Kiln Master marker (rev. 4 L478, L635) and works on an Imperial ceramic", () => {
     const table = openFiringTable(
       junSpec({
+        players: [{ kilnId: "JU", recognition: 2, techs: [{ id: "T24", usedThisRound: true }] }, {}],
         ceramics: [
-          { owner: "p1", stage: "loaded", shape: "vase", glaze: "moon_white", at: "imperial", heatMarker: { source: "own", faceDown: true } },
+          { owner: "p1", stage: "loaded", shape: "vase", glaze: "moon_white", at: "imperial", kilnMaster: 1 },
           { owner: "p2", stage: "loaded", shape: "bowl", glaze: "celadon", at: "middle_1" },
         ],
       }),
     );
     // p1 has only an Imperial ceramic: not a participant, but in this firing (L290).
     tendAll(table);
-    table.act("p1", { type: "RESOLVE_HEAT_MARKERS", ownMarker: 1 });
     const events = table.act("p1", { type: "RESOLVE_JUN", adjustment: { ceramicId: "c1", delta: 1 } });
     // Imperial: die 2 + Fire 0 + 0 + marker 1 = 3, Jun +1 = 4 = Moon White's Preferred Heat.
     expect(eventsOfType(events, "JUN_ADJUSTED")[0]).toMatchObject({ ceramicId: "c1", delta: 1, finalActualHeat: 4 });
@@ -84,7 +84,7 @@ describe("the Jun window (L478, L679)", () => {
     expect(typesOf(events)).not.toContain("KILN_ABILITY_USED");
     expect(eventsOfType(events, "QUALITY_ASSIGNED")[0]).toMatchObject({ ceramicId: "c1", quality: "fine", heatDifference: 1 });
     expect(table.player("p1").kilnAbilityUsedThisRound).toBe(false);
-    expect(table.player("p1").resources.wood).toBe(2);
+    expect(table.player("p1").resources.wood).toBe(3);
   });
 });
 
@@ -140,14 +140,16 @@ describe("RESOLVE_JUN validation", () => {
   it("is not available outside its windows", () => {
     const table = openFiringTable(
       junSpec({
+        players: [{ kilnId: "JU", recognition: 2 }, { techs: ["T13"] }],
         ceramics: [
-          { owner: "p1", stage: "loaded", shape: "bowl", glaze: "celadon", at: "high_1", heatMarker: { source: "own", faceDown: true } },
+          { owner: "p1", stage: "loaded", shape: "bowl", glaze: "celadon", at: "high_1" },
           { owner: "p2", stage: "loaded", shape: "bowl", glaze: "celadon", at: "middle_1" },
         ],
       }),
     );
     tendAll(table);
-    expect(table.state.phase.type).toBe("firing_heat_markers");
+    // Test Pieces comes before the Fire card, and so before Jun (rev. 4 L626, L661).
+    expect(table.state.phase.type).toBe("firing_test_pieces");
     table.expectRuleError("p1", { type: "RESOLVE_JUN", adjustment: { ceramicId: "c1", delta: 1 } }, "WRONG_PHASE");
     expect(junOptions(table.view("p1"))).toBeNull();
   });

@@ -153,6 +153,11 @@ describe("every stable ID resolves to English and Chinese text", () => {
       .toBe("所选器物不满足委托O13的要求：开片器永远不是臻品");
     expect(formatRuleError({ code: "KILN_SPACE_UNAVAILABLE", details: { spaceId: "low_2" } }, "zh")).toBe("低温区2号窑位不可用：已被盖住或已有器物");
     expect(formatRuleError({ code: "TECH_LIMIT", details: { maxOwned: 3 } }, "zh")).toBe("你已拥有3项技艺");
+    // Revision 4: Ge takes a Fine or Standard ceramic (change 29); only a Flawed ceramic is sold (R20).
+    expect(formatRuleError({ code: "INVALID_TARGET", details: { ceramicId: "c1", reason: "not_fine_or_standard" } }, "en"))
+      .toBe("That target is not allowed: the ceramic is not Fine or Standard.");
+    expect(formatRuleError({ code: "INVALID_TARGET", details: { ceramicId: "c1", reason: "not_fine_or_standard" } }, "zh")).toBe("此目标不合法：器物不是上品或良品");
+    expect(formatRuleError({ code: "INVALID_TARGET", details: { ceramicId: "c1", reason: "not_flawed" } }, "zh")).toBe("此目标不合法：器物不是瑕品");
     // Only a Select returns RESERVATION_LIMIT, and a Colour Samples Select is a Tech effect, not an
     // action (v1.6.2 L646): the text names the Select and reads for a limit of 1 as well as 2.
     expect(formatRuleError({ code: "RESERVATION_LIMIT", details: { limit: 1, requested: 2 } }, "en"))
@@ -443,12 +448,12 @@ function sampleState(): GameState {
       stage: "finished", glaze: "moon_white", firedInRound: 1, crackle: true, quality: "fine" },
     c3: { id: "c3", ownerId: "p1", vesselInstanceId: "plate-01", shape: "plate", decoration: "impressed", formedInRound: 2, formedBy: "ding_extra",
       stage: "loaded", glaze: "white", loadedInRound: 2, loadedBy: "glaze_load",
-      placement: { kiln: "shared", spaceId: "high_1", stacked: false }, heatMarker: { source: "own", faceDown: true } },
+      placement: { kiln: "shared", spaceId: "high_1", stacked: false }, kilnMasterMarker: null },
     c4: { id: "c4", ownerId: "p2", vesselInstanceId: "censer-01", shape: "censer", decoration: "carved", formedInRound: 2, formedBy: "prepared_clay",
       stage: "shaped" },
     c5: { id: "c5", ownerId: "p1", vesselInstanceId: "washer-01", shape: "washer", decoration: "carved", formedInRound: 2, formedBy: "form_decorate",
       stage: "loaded", glaze: "grey_green", loadedInRound: 2, loadedBy: "imperial_priority",
-      placement: { kiln: "imperial", imperialModifier: -1 }, heatMarker: null },
+      placement: { kiln: "imperial", imperialModifier: -1 }, kilnMasterMarker: null },
   };
   const space = (id: KilnSpaceId): SharedKilnSpaceState => ({
     active: ["high_1", "high_2", "middle_1", "low_1"].includes(id),
@@ -457,7 +462,7 @@ function sampleState(): GameState {
     kilnFurniture: null,
   });
   return {
-    schemaVersion: 8,
+    schemaVersion: 9,
     rulesVersion: "1.6.2",
     gameId: "localization",
     revision: 12,

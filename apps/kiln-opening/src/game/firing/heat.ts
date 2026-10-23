@@ -3,8 +3,10 @@
  *
  * - Base Heat = Kiln Die + Σ Contributions, clamped to 0–5 (L249, L263, L674). Global and
  *   Actual Heat are never clamped.
- * - Actual Heat (L245, L678): Shared = Global Heat + (Kiln Furniture modifier ?? zone
- *   modifier) + Heat marker; Imperial = Kiln Die + Fire + Imperial modifier + Heat marker.
+ * - Actual Heat (rev. 4 L78, L255, L661): Shared = Global Heat + (Kiln Furniture modifier ??
+ *   zone modifier) + Kiln Master marker; Imperial = Kiln Die + Fire + Imperial modifier + Kiln
+ *   Master marker. The marker is chosen at loading (T24, rev. 4 L628, R22); there is no player
+ *   Heat marker since revision 4 (changes 28, 31).
  * - Heat Difference is the absolute difference from Preferred Heat (L64); Quality follows
  *   the table (L274–279). Protective Saggars (T11, v1.6.2 L636): its owner's ceramics are never
  *   Flawed, a Heat Difference of 3 or more counts as Standard (`qualityFor`).
@@ -21,7 +23,6 @@ import { InvariantError, invariant } from "../errors.ts";
 import type {
   BaseHeat,
   PlayerState,
-  CeramicHeatMarker,
   CeramicId,
   ContributionHeat,
   ContributionSubmission,
@@ -43,7 +44,8 @@ export interface HeatCalculationInput {
   /** Shared: Global Heat. Imperial: Kiln Die + Fire (L289). */
   heatSource: number;
   positionModifier: number;
-  heatMarker: -1 | 0 | 1;
+  /** The ceramic's Kiln Master marker (rev. 4 L628), 0 without one. */
+  kilnMasterMarker: -1 | 0 | 1;
   junAdjustment: -1 | 0 | 1;
   preferredHeat: number;
 }
@@ -121,23 +123,19 @@ export function positionFor(game: PublicCore, ceramic: LoadedCeramic): PositionM
   return { source: "zone", modifier: zoneModifier(placement.spaceId) };
 }
 
-/** The value a Heat marker adds (L59, L269): a face-down marker has none yet (0). */
-export function markerValue(marker: CeramicHeatMarker | null): -1 | 0 | 1 {
-  return marker === null || marker.faceDown ? 0 : marker.value;
-}
-
 /**
- * One Actual Heat calculation (L245, L678): heatSource + position + marker, then Jun's ±1
- * (L478), then the absolute Heat Difference from Preferred Heat (L64).
+ * One Actual Heat calculation (rev. 4 L255, L661): heatSource + position + Kiln Master marker,
+ * then Jun's ±1 (L478, on top of the marker, rev. 4 L635), then the absolute Heat Difference
+ * from Preferred Heat (L64).
  */
 export function heatCalculation(input: HeatCalculationInput): HeatCalculation {
-  const actualHeat = input.heatSource + input.positionModifier + input.heatMarker;
+  const actualHeat = input.heatSource + input.positionModifier + input.kilnMasterMarker;
   const finalActualHeat = actualHeat + input.junAdjustment;
   return {
     fireModifier: input.fireModifier,
     heatSource: input.heatSource,
     positionModifier: input.positionModifier,
-    heatMarker: input.heatMarker,
+    kilnMasterMarker: input.kilnMasterMarker,
     actualHeat,
     junAdjustment: input.junAdjustment,
     finalActualHeat,
@@ -151,7 +149,7 @@ export function withJunAdjustment(calculation: HeatCalculation, junAdjustment: -
     fireModifier: calculation.fireModifier,
     heatSource: calculation.heatSource,
     positionModifier: calculation.positionModifier,
-    heatMarker: calculation.heatMarker,
+    kilnMasterMarker: calculation.kilnMasterMarker,
     junAdjustment,
     preferredHeat: preferred,
   });
@@ -198,8 +196,8 @@ export function firingRecord(firing: FiringContext, ceramicId: CeramicId): Firin
  * Per loaded ceramic, in sequence order: Preferred Heat and, when everything except the Fire
  * card is known, the Actual Heat before the Fire card and the Quality each Fire card would
  * give. A Shared ceramic needs Base Heat (from the reveal on); an Imperial ceramic needs only
- * the public Kiln Die (L289). A face-down Heat marker has no value yet (INT), so its
- * ceramic's preview stays unknown until the marker is turned or returned. Jun is not included.
+ * the public Kiln Die (L289). The Kiln Master marker is known from loading (rev. 4 L635). Jun
+ * is not included.
  * The owner's Protective Saggars floor applies (v1.6.2 L636). Computer use only (D3).
  */
 export function heatPreviews(view: PlayerView): HeatPreview[] {
@@ -211,13 +209,11 @@ export function heatPreviews(view: PlayerView): HeatPreview[] {
   const base = game.firing?.baseHeat ?? null;
   return loaded.map((ceramic) => {
     const preferred = preferredHeat(ceramic.glaze);
-    const marker = ceramic.heatMarker;
     const source = ceramic.placement.kiln === "imperial" ? die : base;
-    const known = source !== null && !(marker !== null && marker.faceDown);
-    if (!known) {
+    if (source === null) {
       return { ceramicId: ceramic.id, preferredHeat: preferred, heatBeforeFire: null, qualityByFire: null };
     }
-    const heatBeforeFire = source + positionFor(game, ceramic).modifier + markerValue(marker);
+    const heatBeforeFire = source + positionFor(game, ceramic).modifier + (ceramic.kilnMasterMarker ?? 0);
     const owner = Object.hasOwn(game.players, ceramic.ownerId) ? game.players[ceramic.ownerId] : undefined;
     const neverFlawed = owner !== undefined && saggarsProtects(owner);
     const qualityByFire = {} as Record<"-2" | "-1" | "0" | "1" | "2", Quality>;

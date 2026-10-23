@@ -39,11 +39,9 @@ const DECISION_PHASES: readonly GamePhaseType[] = [
   "work_turn",
   "firing_contributions",
   "firing_test_pieces",
-  "firing_heat_markers",
   "firing_heat_adjustment",
   "firing_after_quality",
   "firing_second_firing_choice",
-  "firing_salvage",
   "orders",
   "cleanup_hand_limit",
 ];

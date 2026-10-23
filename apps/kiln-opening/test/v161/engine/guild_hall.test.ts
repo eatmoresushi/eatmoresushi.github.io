@@ -139,8 +139,10 @@ describe("Apprentice (v1.6.2 L206): pay the printed cost and take 1 face-up Adva
     const error = poor.expectRuleError("p1", buy("p1:apprentice:1", "T11"), "INSUFFICIENT_RESOURCES");
     expect(error.details).toMatchObject({ resource: "coins", needed: 3, have: 2 });
     expectDocumentedDetails(error);
-    // Fuel Ledger now costs 2 (v1.6.2 L637), which 2 Coins cover.
-    poor.act("p1", buy("p1:apprentice:1", "T12"));
+    // Fuel Ledger costs 4 (rev. 4 L625, change 30): 2 Coins do not cover it; a 2-Coin Tech they do.
+    const ledger = poor.expectRuleError("p1", buy("p1:apprentice:1", "T12"), "INSUFFICIENT_RESOURCES");
+    expect(ledger.details).toMatchObject({ resource: "coins", needed: 4, have: 2 });
+    poor.act("p1", buy("p1:apprentice:1", "T01"));
     expect(poor.player("p1").resources.coins).toBe(0);
   });
 });
@@ -208,11 +210,12 @@ describe("Shifu (v1.6.2 L207, B2): private inspection, then up to 2 Techs from d
   });
 
   it("two face-up takes, then GUILD_FINISH with the bottom order; a third take is refused; both disciplines refill when the turn ends", () => {
-    const t = table(coins(6));
+    const t = table(coins(8));
     t.act("p1", inspect("workshop"));
     expect(t.state.hidden.pendingLook).toMatchObject({ techIds: ["T05", "T17"] });
     t.act("p1", take("face_up", "T20"));
     t.act("p1", take("face_up", "T12"));
+    // Kiln Tending 3 + Fuel Ledger 4 (rev. 4 L625).
     expect(t.player("p1").resources.coins).toBe(1);
     // Two inspected Techs are still untaken, so the bottom order is the Shifu's to choose.
     expect(t.state.phase).toMatchObject({ activePlayerId: "p1", step: { kind: "guild_inspection", takes: [{ techId: "T20" }, { techId: "T12" }] } });
@@ -332,7 +335,7 @@ describe("Shifu (v1.6.2 L207, B2): private inspection, then up to 2 Techs from d
   });
 
   it("refuses a Tech that is neither face up nor inspected, an owned discipline, and a printed cost it cannot pay", () => {
-    const t = table({ players: [{ techs: ["T01"], resources: { coins: 2 } }, {}] });
+    const t = table({ players: [{ techs: ["T01"], resources: { coins: 3 } }, {}] });
     t.act("p1", inspect("workshop"));
     expect(t.state.techDisplay.workshop).toEqual(["T16", "T05"]);
     expect(t.state.hidden.pendingLook).toMatchObject({ techIds: ["T17", "T18"] });
@@ -340,12 +343,12 @@ describe("Shifu (v1.6.2 L207, B2): private inspection, then up to 2 Techs from d
     expectDocumentedDetails(t.expectRuleError("p1", take("face_up", "T13"), "TECH_NOT_AVAILABLE"));
     expectDocumentedDetails(t.expectRuleError("p1", take("inspected", "T17"), "TECH_DISCIPLINE_OWNED"));
     expectDocumentedDetails(t.expectRuleError("p1", take("face_up", "T05"), "TECH_DISCIPLINE_OWNED"));
-    // No Shifu discount: Protective Saggars costs the Shifu the printed 3.
-    const error = t.expectRuleError("p1", take("face_up", "T11"), "INSUFFICIENT_RESOURCES");
-    expect(error.details).toMatchObject({ resource: "coins", needed: 3, have: 2 });
+    // No Shifu discount: Fuel Ledger costs the Shifu the printed 4 (rev. 4 L625).
+    const error = t.expectRuleError("p1", take("face_up", "T12"), "INSUFFICIENT_RESOURCES");
+    expect(error.details).toMatchObject({ resource: "coins", needed: 4, have: 3 });
     expectDocumentedDetails(error);
-    const paid = t.act("p1", take("face_up", "T12"));
-    expect(only(paid, "TECH_ACQUIRED")).toMatchObject({ techId: "T12", cost: 2 });
+    const paid = t.act("p1", take("face_up", "T11"));
+    expect(only(paid, "TECH_ACQUIRED")).toMatchObject({ techId: "T11", cost: 3 });
     expect(t.player("p1").resources.coins).toBe(0);
   });
 
@@ -569,7 +572,7 @@ describe("Colour Samples when acquired: Select 3 (v1.6.2 L64, L219, L622, L646, 
   });
 
   it("a Shifu's second take: after the reservation the Shifu still chooses the bottom order", () => {
-    const t = table(coins(5));
+    const t = table(coins(6));
     t.act("p1", inspect("workshop"));
     t.act("p1", take("face_up", "T12"));
     t.act("p1", take("face_up", "T10"));

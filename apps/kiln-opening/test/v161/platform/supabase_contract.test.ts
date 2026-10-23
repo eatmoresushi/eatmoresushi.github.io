@@ -1,6 +1,6 @@
 /**
  * The Supabase contract for V1.6.2 (DESIGN §4.6; ENGINE_V1.6.2_DELTA.md §9): the undeployed
- * V1.6.1 migrations are edited in place (rules `1.6.2`, schema 8, `r31-`), every gate that
+ * V1.6.1 migrations are edited in place (rules `1.6.2`, schema 9, `r32-`), every gate that
  * hard-coded V1.4 is rewritten, the five Contribution cards (Fuel Ledger's 2 included, change 26)
  * are stored and returned, the private event log is seat-checked and
  * service-only, public rows can never carry hidden data, the Edge adapter calls every RPC
@@ -32,7 +32,7 @@ import playtestMigration from "../../../supabase/migrations/202610150002_playtes
 const MIGRATIONS_DIR = join(process.cwd(), "supabase", "migrations");
 const MIGRATION_FILES = readdirSync(MIGRATIONS_DIR).filter((name) => name.endsWith(".sql")).sort();
 const V161_FILES = new Set(["202610150001_v161_rules.sql", "202610150002_playtest_v161.sql"]);
-const R31 = `^r${RULES_BEHAVIOUR_REVISION}-[0-9a-f]{16}$`;
+const R32 = `^r${RULES_BEHAVIOUR_REVISION}-[0-9a-f]{16}$`;
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -74,8 +74,8 @@ function v14GatedFunctions(): string[] {
 }
 
 describe("V1.6.2 rules migration (edited in place, file name kept)", () => {
-  it("allows V1.6.2 rooms with an r31 fingerprint, keeps every deployed historical label and drops V1.6.1", () => {
-    expect(RULES_BEHAVIOUR_REVISION).toBe(31);
+  it("allows V1.6.2 rooms with an r32 fingerprint, keeps every deployed historical label and drops V1.6.1", () => {
+    expect(RULES_BEHAVIOUR_REVISION).toBe(32);
     for (const check of ["rooms_rules_version_check", "rooms_content_version_check"]) {
       const definition = migration.split(`add constraint ${check}`)[1]!.split(";")[0]!;
       expect(definition).toContain("'1.6.2'");
@@ -84,8 +84,8 @@ describe("V1.6.2 rules migration (edited in place, file name kept)", () => {
       for (const old of ["0.4", "1.2.7", "1.4"]) expect(definition).toContain(`'${old}'`);
     }
     expect(migration).toContain("add constraint rooms_v162_fingerprint_check");
-    expect(migration).toContain(`content_digest, '') ~ '${R31}'`);
-    expect(migration).not.toMatch(/'1\.6\.1'|\^r29-|\^r30-|rules-v1\\\.6\\\.1-/);
+    expect(migration).toContain(`content_digest, '') ~ '${R32}'`);
+    expect(migration).not.toMatch(/'1\.6\.1'|\^r29-|\^r30-|\^r31-|rules-v1\\\.6\\\.1-/);
     expect(migration).not.toContain("drop constraint if exists rooms_v14_fingerprint_check");
     expect(topLevel(migration)).not.toMatch(/\b(?:update|delete from|truncate)\s+(?:public\.|private\.)/i);
   });
@@ -105,13 +105,13 @@ describe("V1.6.2 rules migration (edited in place, file name kept)", () => {
       expect(body, name).not.toMatch(/'1\.4'|\^r2[3-8]-/);
       expect(body, name).toContain("'1.6.2'");
       expect(body, name).not.toContain("'1.6.1'");
-      if (name !== "server_submit_playtest") expect(body, name).toContain(R31);
+      if (name !== "server_submit_playtest") expect(body, name).toContain(R32);
     }
     expect(functionBody(migration, "server_create_room")).toContain("'1.6.2', '1.6.2', 0, p_content_digest");
     for (const name of ["server_commit_start", "server_commit_transition"]) {
       const body = functionBody(migration, name);
-      expect(body).toContain("<> 8");
-      expect(body).not.toMatch(/<> [567]\b/);
+      expect(body).toContain("<> 9");
+      expect(body).not.toMatch(/<> [5678]\b/);
     }
   });
 

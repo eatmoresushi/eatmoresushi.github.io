@@ -60,7 +60,9 @@ describe("handler table", () => {
     // One SELECT_CHOOSE for every Select (v1.6.2 L64, change 25).
     expect(HANDLERS.SELECT_CHOOSE.phases).toEqual(["work_turn"]);
     expect(HANDLERS.SELECT_KILN.phases).toEqual(["setup_kiln_selection"]);
-    expect(HANDLERS.SALVAGE_FLAWED.phases).toEqual(["firing_salvage"]);
+    // R20: a sale only in its owner's turns (the salvage step is gone, change 30).
+    expect(HANDLERS.SELL_FLAWED.phases).toEqual(["work_turn", "orders", "firing_after_quality", "cleanup_hand_limit"]);
+    expect(Object.keys(HANDLERS)).not.toContain("SALVAGE_FLAWED");
   });
 });
 
@@ -87,7 +89,7 @@ describe("validateAction", () => {
   });
 
   const wrongPhase: Array<[GameAction, GamePhase]> = [
-    [{ type: "SELECT_KILN", kilnId: "RU" }, { type: "work_turn", activePlayerId: "p1", step: { kind: "before_action" } }],
+    [{ type: "SELECT_KILN", kilnId: "RU", mainOrder: { slotIndex: 0, orderId: "O01" } }, { type: "work_turn", activePlayerId: "p1", step: { kind: "before_action" } }],
     [WHARF, { type: "orders", turnOrder: ["p1", "p2"], index: 0 }],
     [{ type: "END_ORDER_TURN" }, { type: "work_turn", activePlayerId: "p1", step: { kind: "after_action" } }],
     [{ type: "RESOLVE_JUN", adjustment: null }, { type: "firing_after_quality", queue: { actorIds: ["p1"], index: 0 } }],
@@ -95,11 +97,11 @@ describe("validateAction", () => {
     [{ type: "SECOND_FIRING_CHOOSE", cardIndex: 0, jun: null }, { type: "firing_after_quality", queue: { actorIds: ["p1"], index: 0 } }],
     [{ type: "USE_COLOUR_SAMPLES_SWAP", discardOrderId: "O01" }, { type: "orders", turnOrder: ["p1", "p2"], index: 0 }],
     [{ type: "PLACE_SETTERS_MARK", spaceId: null }, { type: "setup_kiln_selection", selectionOrder: ["p2", "p1"], index: 1 }],
-    [{ type: "DISCARD_TO_HAND_LIMIT", orderIds: [] }, { type: "firing_salvage", pendingPlayerIds: ["p1"], openedAtRevision: 0 }],
-    [
-      { type: "SALVAGE_FLAWED", ceramicId: null },
-      { type: "firing_contributions", windowId: "w", eligiblePlayerIds: ["p1"], submittedPlayerIds: [] },
-    ],
+    [{ type: "DISCARD_TO_HAND_LIMIT", orderIds: [] }, { type: "orders", turnOrder: ["p1", "p2"], index: 0 }],
+    // R20: never in the simultaneous Contribution choice, nor in any step but the owner's turns.
+    [{ type: "SELL_FLAWED", ceramicId: "c1" }, { type: "firing_contributions", windowId: "w", eligiblePlayerIds: ["p1"], submittedPlayerIds: [] }],
+    [{ type: "SELL_FLAWED", ceramicId: "c1" }, { type: "firing_heat_adjustment", queue: { actorIds: ["p1"], index: 0 } }],
+    [{ type: "SELL_FLAWED", ceramicId: "c1" }, { type: "setup_kiln_selection", selectionOrder: ["p2", "p1"], index: 1 }],
   ];
 
   it.each(wrongPhase.map(([action, phase]) => [action.type, phase.type, action, phase] as const))(
@@ -116,14 +118,14 @@ describe("validateAction", () => {
     expect(codeOf(actorViewOf(work, "p2"), { type: "PLACE_CANAL_WHARF", workerId: "p2:apprentice:1" })).toBe("NOT_YOUR_DECISION");
     expectRejected(work, "p2", { type: "END_TURN" }, "NOT_YOUR_DECISION");
 
-    const salvage = buildState({ players: 3, phase: { type: "firing_salvage", pendingPlayerIds: ["p1", "p3"], openedAtRevision: 0 } });
-    expect(codeOf(actorViewOf(salvage, "p2"), { type: "SALVAGE_FLAWED", ceramicId: null })).toBe("NOT_YOUR_DECISION");
+    const cleanup = buildState({ players: 3, phase: { type: "cleanup_hand_limit", pendingPlayerIds: ["p1", "p3"], openedAtRevision: 0 } });
+    expect(codeOf(actorViewOf(cleanup, "p2"), { type: "SELL_FLAWED", ceramicId: "c1" })).toBe("NOT_YOUR_DECISION");
 
     const queue = buildState({ phase: { type: "firing_after_quality", queue: { actorIds: ["p1", "p2"], index: 1 } } });
     expect(codeOf(actorViewOf(queue, "p1"), { type: "END_AFTER_QUALITY" })).toBe("NOT_YOUR_DECISION");
 
     const setup = buildState({ phase: { type: "setup_kiln_selection", selectionOrder: ["p2", "p1"], index: 0 } });
-    expect(codeOf(actorViewOf(setup, "p1"), { type: "SELECT_KILN", kilnId: "GE" })).toBe("NOT_YOUR_DECISION");
+    expect(codeOf(actorViewOf(setup, "p1"), { type: "SELECT_KILN", kilnId: "GE", mainOrder: { slotIndex: 0, orderId: "O01" } })).toBe("NOT_YOUR_DECISION");
 
     const orders = buildState({ phase: { type: "orders", turnOrder: ["p2", "p1"], index: 0 } });
     expectRejected(orders, "p1", { type: "END_ORDER_TURN" }, "NOT_YOUR_DECISION");

@@ -6,7 +6,8 @@ import { expectDocumentedDetails } from "./support/ruleErrors.ts";
 
 /** One well-formed example of every command type (DESIGN §2.5). */
 const VALID: { [K in AuthoritativeCommand["type"]]: Array<Extract<AuthoritativeCommand, { type: K }>> } = {
-  SELECT_KILN: [{ type: "SELECT_KILN", kilnId: "DI" }],
+  // Setup step 9: the Kiln and a face-up Main Order in one command (rev. 4 L122, R23).
+  SELECT_KILN: [{ type: "SELECT_KILN", kilnId: "DI", mainOrder: { slotIndex: 3, orderId: "O12" } }],
   PLACE_SETTERS_MARK: [
     { type: "PLACE_SETTERS_MARK", spaceId: "high_1" },
     { type: "PLACE_SETTERS_MARK", spaceId: null },
@@ -16,7 +17,7 @@ const VALID: { [K in AuthoritativeCommand["type"]]: Array<Extract<AuthoritativeC
     {
       type: "PLACE_MATERIALS_YARD",
       workerId: "p1:shifu",
-      clay: 6,
+      clay: 8,
       wood: 0,
       seniorApprentice: false,
       preparedClay: { shape: "vase", decoration: "painted", useDecoratorsKit: false },
@@ -47,9 +48,9 @@ const VALID: { [K in AuthoritativeCommand["type"]]: Array<Extract<AuthoritativeC
           destination: { kiln: "shared", spaceId: "low_2", invertedFiring: true },
           reworkShape: "plate",
         },
-        { ceramicId: "c3", glaze: "white", destination: { kiln: "imperial", imperialModifier: 1 } },
+        // Kiln Master's marker at loading (rev. 4 L628, R22).
+        { ceramicId: "c3", glaze: "white", destination: { kiln: "imperial", imperialModifier: 1 }, kilnMaster: -1 },
       ],
-      heatMarkerCeramicId: "c3",
     },
   ],
   PLACE_COMMISSION_MARKET: [
@@ -61,7 +62,11 @@ const VALID: { [K in AuthoritativeCommand["type"]]: Array<Extract<AuthoritativeC
     { type: "PLACE_GUILD_HALL", workerId: "p1:shifu", choice: { kind: "inspect", discipline: "glazing_loading" } },
   ],
   PLACE_CANAL_WHARF: [{ type: "PLACE_CANAL_WHARF", workerId: "player-a:apprentice:1" }],
-  PLACE_MAGISTRATES_HALL: [{ type: "PLACE_MAGISTRATES_HALL", workerId: "p2:shifu" }],
+  PLACE_MAGISTRATES_HALL: [
+    { type: "PLACE_MAGISTRATES_HALL", workerId: "p2:shifu" },
+    // The Shifu's optional Crown Order (rev. 4 L241, R21).
+    { type: "PLACE_MAGISTRATES_HALL", workerId: "p2:shifu", crownOrder: { slotIndex: 0, orderId: "O17" } },
+  ],
   // One command for every Select: the Commission Market's and both Colour Samples looks
   // (v1.6.2 L64, change 25).
   SELECT_CHOOSE: [
@@ -87,15 +92,11 @@ const VALID: { [K in AuthoritativeCommand["type"]]: Array<Extract<AuthoritativeC
   ],
   USE_IMPERIAL_PRIORITY: [
     { type: "USE_IMPERIAL_PRIORITY", ceramicId: "c9", glaze: "grey_green", imperialModifier: -1, reworkShape: "washer" },
+    { type: "USE_IMPERIAL_PRIORITY", ceramicId: "c9", glaze: "white", imperialModifier: 0, kilnMaster: 1 },
   ],
   END_TURN: [{ type: "END_TURN" }],
   TEST_PIECES_DECIDE: [{ type: "TEST_PIECES_DECIDE", peek: true }],
   TEST_PIECES_BURY: [{ type: "TEST_PIECES_BURY", bury: false }],
-  RESOLVE_HEAT_MARKERS: [
-    { type: "RESOLVE_HEAT_MARKERS" },
-    { type: "RESOLVE_HEAT_MARKERS", ownMarker: "return", kilnMaster: { ceramicId: "c2", value: -1 } },
-    { type: "RESOLVE_HEAT_MARKERS", ownMarker: 1 },
-  ],
   RESOLVE_JUN: [
     { type: "RESOLVE_JUN", adjustment: null },
     { type: "RESOLVE_JUN", adjustment: { ceramicId: "c2", delta: 1 } },
@@ -108,10 +109,8 @@ const VALID: { [K in AuthoritativeCommand["type"]]: Array<Extract<AuthoritativeC
   ],
   USE_GE_CRACKLE: [{ type: "USE_GE_CRACKLE", ceramicId: "c1" }],
   END_AFTER_QUALITY: [{ type: "END_AFTER_QUALITY" }],
-  SALVAGE_FLAWED: [
-    { type: "SALVAGE_FLAWED", ceramicId: null },
-    { type: "SALVAGE_FLAWED", ceramicId: "c7" },
-  ],
+  // R20: one Flawed ceramic per sale.
+  SELL_FLAWED: [{ type: "SELL_FLAWED", ceramicId: "c7" }],
   COMPLETE_ORDER: [
     { type: "COMPLETE_ORDER", orderId: "O01", ceramicIds: ["c1"] },
     { type: "COMPLETE_ORDER", orderId: "O02", ceramicIds: ["c1", "c2"], crackleDeclarations: [] },
@@ -141,8 +140,9 @@ describe("parseCommand: well-formed commands", () => {
   it("has an example for every command type, SUBMIT_CONTRIBUTION included", () => {
     expect(Object.keys(VALID).sort()).toEqual([...COMMAND_TYPES].sort());
     expect(COMMAND_TYPES).toContain("SUBMIT_CONTRIBUTION");
-    // 31 before owner revision 3; change 25 merged three Select choices into SELECT_CHOOSE.
-    expect(COMMAND_TYPES).toHaveLength(29);
+    // 31 before owner revision 3; change 25 merged three Select choices into SELECT_CHOOSE;
+    // revision 4 removed RESOLVE_HEAT_MARKERS (changes 28, 31).
+    expect(COMMAND_TYPES).toHaveLength(28);
   });
 
   it.each(Object.values(VALID).flat().map((command) => [command.type, command] as const))(
@@ -181,12 +181,12 @@ describe("parseCommand: well-formed commands", () => {
     const parsed = parseCommand({
       type: "PLACE_MATERIALS_YARD",
       workerId: "p1:shifu",
-      clay: 6,
+      clay: 8,
       wood: 0,
       seniorApprentice: undefined,
       preparedClay: undefined,
     });
-    expect(parsed).toEqual({ type: "PLACE_MATERIALS_YARD", workerId: "p1:shifu", clay: 6, wood: 0 });
+    expect(parsed).toEqual({ type: "PLACE_MATERIALS_YARD", workerId: "p1:shifu", clay: 8, wood: 0 });
     expect(Object.keys(parsed)).not.toContain("seniorApprentice");
   });
 });
@@ -205,8 +205,14 @@ const MALFORMED: Array<[label: string, input: unknown, field: string]> = [
   ["a malformed worker ID", { type: "PLACE_CANAL_WHARF", workerId: "__proto__" }, "workerId"],
   ["an Apprentice ID without a number", { type: "PLACE_CANAL_WHARF", workerId: "p1:apprentice" }, "workerId"],
   ["a malformed ceramic ID", { type: "USE_GE_CRACKLE", ceramicId: "constructor" }, "ceramicId"],
-  ["an unknown Kiln", { type: "SELECT_KILN", kilnId: "XX" }, "kilnId"],
-  ["a lower-case Kiln", { type: "SELECT_KILN", kilnId: "ru" }, "kilnId"],
+  ["an unknown Kiln", { type: "SELECT_KILN", kilnId: "XX", mainOrder: { slotIndex: 0, orderId: "O01" } }, "kilnId"],
+  ["a lower-case Kiln", { type: "SELECT_KILN", kilnId: "ru", mainOrder: { slotIndex: 0, orderId: "O01" } }, "kilnId"],
+  // Revision 4 (change 32, R23): the Setup Main Order is part of the Kiln choice.
+  ["a Kiln choice without the Main Order", { type: "SELECT_KILN", kilnId: "RU" }, "mainOrder"],
+  ["a Setup Main Order without a slot", { type: "SELECT_KILN", kilnId: "RU", mainOrder: { orderId: "O01" } }, "mainOrder.slotIndex"],
+  ["a Setup Main Order at a negative slot", { type: "SELECT_KILN", kilnId: "RU", mainOrder: { slotIndex: -1, orderId: "O01" } }, "mainOrder.slotIndex"],
+  ["a Setup Starting-like unknown Order", { type: "SELECT_KILN", kilnId: "RU", mainOrder: { slotIndex: 0, orderId: "S17" } }, "mainOrder.orderId"],
+  ["an extra key in the Setup Main Order", { type: "SELECT_KILN", kilnId: "RU", mainOrder: { slotIndex: 0, orderId: "O01", blind: true } }, "mainOrder.blind"],
   ["an unknown space", { type: "PLACE_SETTERS_MARK", spaceId: "high_4" }, "spaceId"],
   ["a missing nullable space", { type: "PLACE_SETTERS_MARK" }, "spaceId"],
   ["a negative resource split", { type: "PLACE_MATERIALS_YARD", workerId: "p1:shifu", clay: -1, wood: 5 }, "clay"],
@@ -301,11 +307,30 @@ const MALFORMED: Array<[label: string, input: unknown, field: string]> = [
     { type: "COMPLETE_ORDER", orderId: "O01", ceramicIds: ["c1"], crackleDeclarations: [{ ceramicId: "c1" }] },
     "crackleDeclarations[0].decoration",
   ],
-  ["a Heat marker of 2", { type: "RESOLVE_HEAT_MARKERS", ownMarker: 2 }, "ownMarker"],
-  ["a Kiln Master value of 0", { type: "RESOLVE_HEAT_MARKERS", kilnMaster: { ceramicId: "c1", value: 0 } }, "kilnMaster.value"],
+  // Revision 4 (changes 28, 31): no Heat marker; Kiln Master's marker is chosen at loading.
+  ["the retired Heat-marker step", { type: "RESOLVE_HEAT_MARKERS", ownMarker: 1 }, "type"],
+  [
+    "the retired Glaze & Load Heat marker",
+    { type: "PLACE_GLAZE_LOAD", workerId: "p1:shifu", loads: [{ ceramicId: "c1", glaze: "white", destination: { kiln: "imperial", imperialModifier: 0 } }], heatMarkerCeramicId: "c1" },
+    "heatMarkerCeramicId",
+  ],
+  [
+    "a Kiln Master value of 0 at loading",
+    { type: "PLACE_GLAZE_LOAD", workerId: "p1:shifu", loads: [{ ceramicId: "c1", glaze: "white", destination: { kiln: "imperial", imperialModifier: 0 }, kilnMaster: 0 }] },
+    "loads[0].kilnMaster",
+  ],
+  ["a Kiln Master value of 2 at Imperial Priority", { type: "USE_IMPERIAL_PRIORITY", ceramicId: "c1", glaze: "white", imperialModifier: 0, kilnMaster: 2 }, "kilnMaster"],
+  // Revision 4 (change 33, R21): the Magistrate's Hall Shifu's Crown Order.
+  ["a Crown Order without a slot", { type: "PLACE_MAGISTRATES_HALL", workerId: "p1:shifu", crownOrder: { orderId: "O17" } }, "crownOrder.slotIndex"],
+  ["a Crown Order of an unknown Order", { type: "PLACE_MAGISTRATES_HALL", workerId: "p1:shifu", crownOrder: { slotIndex: 0, orderId: "O99" } }, "crownOrder.orderId"],
+  ["an unknown Magistrate's Hall key", { type: "PLACE_MAGISTRATES_HALL", workerId: "p1:shifu", crown: true }, "crown"],
   ["a missing Jun adjustment", { type: "RESOLVE_JUN" }, "adjustment"],
   ["a Jun delta of 2", { type: "RESOLVE_JUN", adjustment: { ceramicId: "c1", delta: 2 } }, "adjustment.delta"],
-  ["a missing salvage choice", { type: "SALVAGE_FLAWED" }, "ceramicId"],
+  // Revision 4 (change 30, R20): the firing-step salvage is gone; a sale names one ceramic.
+  ["the retired salvage step", { type: "SALVAGE_FLAWED", ceramicId: null }, "type"],
+  ["a sale without a ceramic", { type: "SELL_FLAWED" }, "ceramicId"],
+  ["a sale that declines", { type: "SELL_FLAWED", ceramicId: null }, "ceramicId"],
+  ["a sale of several ceramics", { type: "SELL_FLAWED", ceramicIds: ["c1"] }, "ceramicIds"],
   ["a non-boolean peek", { type: "TEST_PIECES_DECIDE", peek: 1 }, "peek"],
   ["an Order list with a bad entry", { type: "DISCARD_TO_HAND_LIMIT", orderIds: ["S01", 3] }, "orderIds[1]"],
   ["a contribution without a window", { type: "SUBMIT_CONTRIBUTION", card: "BANK" }, "windowId"],

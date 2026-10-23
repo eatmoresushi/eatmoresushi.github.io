@@ -1,18 +1,26 @@
 /**
- * Canal Wharf (v1.6.2 L216–220) and Magistrate's Hall (L223–233): Apprentice and Shifu effects
- * — the Canal Wharf Shifu's unseen top Main Order (v1.6.2 L220, B1, B3) included — Recognition
- * 0–2 only, never to 4, the reached milestone resolved (fixed Grant 1/1/1, L432, change 8),
- * both spaces usable by one player at 4 players (L225).
+ * Canal Wharf (v1.6.2 L216–220) and Magistrate's Hall (rev. 4 L234–245, change 33, R21):
+ * Apprentice and Shifu effects — the Canal Wharf Shifu's unseen top Main Order (v1.6.2 L220, B1,
+ * B3) and the Magistrate's Hall Shifu's optional face-up Crown Order (R21) included — 4 Coins
+ * for both Magistrate's Hall effects, Recognition 0–2 only, never to 4, the reached milestone
+ * resolved (fixed Grant 1/1/1, L432, change 8), both spaces usable by one player at 4 players.
  */
 
 import { describe, expect, it } from "vitest";
 import { MAIN_ORDER_IDS } from "../../../src/game/content.ts";
 import { projectEvent, projectPublicState } from "../../../src/game/view.ts";
 import type { GameAction, OrderId, Recognition } from "../../../src/game/types.ts";
+import type { StateSpec } from "./support/fixtures.ts";
+import { LocalTable } from "./support/localTable.ts";
+import { expectDocumentedDetails } from "./support/ruleErrors.ts";
 import { expectPublicEvents, keySorted, reject, scrambleHidden, table, types, verdict, withHands, buildState } from "./workshop_support.ts";
 
 const wharf = (workerId: string): GameAction => ({ type: "PLACE_CANAL_WHARF", workerId });
-const hall = (workerId: string): GameAction => ({ type: "PLACE_MAGISTRATES_HALL", workerId });
+const hall = (workerId: string, crownOrder?: { slotIndex: number; orderId: OrderId }): GameAction => ({
+  type: "PLACE_MAGISTRATES_HALL",
+  workerId,
+  ...(crownOrder === undefined ? {} : { crownOrder }),
+});
 
 /** Pins the Main deck and discard; every other Main Order is in p2's hand. */
 function supply(mainDeck: OrderId[], mainDiscard: OrderId[]) {
@@ -126,7 +134,7 @@ describe("Canal Wharf: 2 Coins (Apprentice) / 4 Coins and the top Main Order uns
   });
 });
 
-describe("Magistrate's Hall: 4 Coins (Apprentice) / 3 Coins (Shifu) for +1 Recognition (L229–230)", () => {
+describe("Magistrate's Hall: 4 Coins for +1 Recognition, either worker (rev. 4 L240–241)", () => {
   it("Apprentice: pays 4, advances 0 → 1 and receives the fixed Imperial Grant (L432)", () => {
     const t = table({ players: [{ resources: { clay: 2, wood: 2, coins: 7 } }, {}] });
     const events = t.act("p1", hall("p1:apprentice:1"));
@@ -146,8 +154,8 @@ describe("Magistrate's Hall: 4 Coins (Apprentice) / 3 Coins (Shifu) for +1 Recog
     expectPublicEvents(events);
   });
 
-  it("Shifu: pays 3, advances 1 → 2 and gains the Imperial Kiln tile (L285, L433)", () => {
-    const t = table({ players: [{ recognition: 1, resources: { coins: 3 } }, {}] });
+  it("Shifu: pays 4, advances 1 → 2 and gains the Imperial Kiln tile (L285, L433)", () => {
+    const t = table({ players: [{ recognition: 1, resources: { coins: 4 } }, {}] });
     const events = t.act("p1", hall("p1:shifu"));
     expect(types(events)).toEqual(["WORKER_PLACED", "RESOURCES_CHANGED", "RECOGNITION_ADVANCED", "IMPERIAL_KILN_GAINED"]);
     expect(t.player("p1").resources.coins).toBe(0);
@@ -170,7 +178,8 @@ describe("Magistrate's Hall: 4 Coins (Apprentice) / 3 Coins (Shifu) for +1 Recog
     expect(verdict(buildState({ players: [{ resources: { coins: 4 } }, {}] }), "p1", hall("p1:apprentice:1"))).toBeNull();
     const short = reject(table({ players: [{ resources: { coins: 3 } }, {}] }), "p1", hall("p1:apprentice:1"), "INSUFFICIENT_RESOURCES");
     expect(short.details).toMatchObject({ resource: "coins", needed: 4, have: 3 });
-    reject(table({ players: [{ resources: { coins: 2 } }, {}] }), "p1", hall("p1:shifu"), "INSUFFICIENT_RESOURCES");
+    const shifu = reject(table({ players: [{ resources: { coins: 3 } }, {}] }), "p1", hall("p1:shifu"), "INSUFFICIENT_RESOURCES");
+    expect(shifu.details).toMatchObject({ resource: "coins", needed: 4, have: 3 });
   });
 
   it("a player may use both spaces in a 4-player round (L225)", () => {
@@ -178,8 +187,109 @@ describe("Magistrate's Hall: 4 Coins (Apprentice) / 3 Coins (Shifu) for +1 Recog
     t.act("p1", hall("p1:apprentice:1"));
     t.act("p1", hall("p1:shifu"));
     expect(t.player("p1").imperial.recognition).toBe(2);
-    expect(t.player("p1").resources.coins).toBe(10 - 4 + 1 - 3);
+    expect(t.player("p1").resources.coins).toBe(10 - 4 + 1 - 4);
     reject(t, "p1", hall("p1:apprentice:2"), "LOCATION_FULL");
+  });
+});
+
+/** O17 (1 Crown) at position 1 and O39 (2 Crowns) at position 3; the rest show no Crown. */
+const CROWN_DISPLAY: OrderId[] = ["O01", "O17", "O03", "O39", "O05", "O06"];
+
+/** A table that passes the worker hand-over, so the turn ends and the display refills. */
+function fullTurn(spec: StateSpec): LocalTable {
+  return new LocalTable(buildState(spec), { flow: "halt", pass: ["worker_action_done"] });
+}
+
+describe("Magistrate's Hall Shifu: then reserve 1 face-up Crown Order (rev. 4 L241, L245, change 33, R21)", () => {
+  it("reserves the chosen Crown Order after the payment and the step; its position stays empty until the turn ends", () => {
+    const t = table({ players: [{ resources: { coins: 4 } }, {}], display: CROWN_DISPLAY });
+    const events = t.act("p1", hall("p1:shifu", { slotIndex: 3, orderId: "O39" }));
+    expect(types(events)).toEqual([
+      "WORKER_PLACED",
+      "RESOURCES_CHANGED",
+      "RECOGNITION_ADVANCED",
+      "IMPERIAL_GRANT_RECEIVED",
+      "RESOURCES_CHANGED",
+      "ORDER_RESERVED",
+    ]);
+    expect(events[1]).toMatchObject({ coins: -4, reason: "magistrates_hall" });
+    // A face-up reservation is public, like any other (rev. 4 L245).
+    expect(events[5]).toEqual({ type: "ORDER_RESERVED", playerId: "p1", via: "magistrates_hall", source: "face_up", slotIndex: 3, orderId: "O39" });
+    expectPublicEvents(events);
+    expect(t.state.hidden.orderHands["p1"]).toEqual(["O39"]);
+    expect(t.state.market).toEqual({ display: ["O01", "O17", "O03", null, "O05", "O06"], refillPendingFor: "p1" });
+    expect(t.player("p1").imperial.recognition).toBe(1);
+  });
+
+  it("the milestone of the step resolves first, then the reservation (rev. 4 L241)", () => {
+    const t = table({ players: [{ recognition: 1, resources: { coins: 4 } }, {}], display: CROWN_DISPLAY });
+    const events = t.act("p1", hall("p1:shifu", { slotIndex: 1, orderId: "O17" }));
+    expect(types(events)).toEqual(["WORKER_PLACED", "RESOURCES_CHANGED", "RECOGNITION_ADVANCED", "IMPERIAL_KILN_GAINED", "ORDER_RESERVED"]);
+  });
+
+  it("refills the display once at the end of the turn, as at the Commission Market (rev. 4 L245, L386)", () => {
+    const t = fullTurn({ players: [{ resources: { coins: 4 } }, {}], display: CROWN_DISPLAY });
+    const next = t.state.hidden.mainDeck[0];
+    const events = t.act("p1", hall("p1:shifu", { slotIndex: 3, orderId: "O39" }));
+    expect(types(events).slice(-4)).toEqual(["ORDER_RESERVED", "DISPLAY_REFILLED", "WORK_TURN_ENDED", "WORK_TURN_STARTED"]);
+    expect(events.find((e) => e.type === "DISPLAY_REFILLED")).toMatchObject({ cause: "end_of_turn", revealedOrderIds: [next] });
+    expect(t.state.market).toEqual({ display: ["O01", "O17", "O03", "O05", "O06", next], refillPendingFor: null });
+  });
+
+  it("is optional (R21): without a pick Recognition still advances and the display is untouched", () => {
+    const t = table({ players: [{ resources: { coins: 4 } }, {}], display: CROWN_DISPLAY });
+    const events = t.act("p1", hall("p1:shifu"));
+    expect(types(events)).not.toContain("ORDER_RESERVED");
+    expect(t.player("p1").imperial.recognition).toBe(1);
+    expect(t.state.hidden.orderHands["p1"]).toEqual([]);
+    expect(t.state.market).toEqual({ display: CROWN_DISPLAY, refillPendingFor: null });
+  });
+
+  it("with no Crown Order showing nothing is reserved; a non-Crown pick is refused (rev. 4 L245)", () => {
+    const plain: OrderId[] = ["O01", "O02", "O03", "O04", "O05", "O06"];
+    expect(verdict(buildState({ players: [{ resources: { coins: 4 } }, {}], display: plain }), "p1", hall("p1:shifu"))).toBeNull();
+    const error = reject(
+      table({ players: [{ resources: { coins: 4 } }, {}], display: plain }),
+      "p1",
+      hall("p1:shifu", { slotIndex: 2, orderId: "O03" }),
+      "INVALID_TARGET",
+    );
+    expect(error.details).toMatchObject({ reason: "no_crown", orderId: "O03", slotIndex: 2, field: "crownOrder" });
+    expectDocumentedDetails(error);
+  });
+
+  it("names the Order at its display position: a stale, empty or out-of-range position is refused", () => {
+    const spec = { players: [{ resources: { coins: 4 } }, {}], display: CROWN_DISPLAY };
+    for (const crownOrder of [
+      { slotIndex: 3, orderId: "O17" as OrderId },
+      { slotIndex: 9, orderId: "O39" as OrderId },
+      { slotIndex: 0, orderId: "O40" as OrderId },
+    ]) {
+      const error = reject(table(spec), "p1", hall("p1:shifu", crownOrder), "ORDER_NOT_AVAILABLE");
+      expect(error.details).toMatchObject({ ...crownOrder, field: "crownOrder" });
+      expectDocumentedDetails(error);
+    }
+    // A position emptied earlier in the turn stays empty (rev. 4 L245).
+    const emptied = table({ players: [{ resources: { coins: 4 } }, {}], display: ["O01", "O17", null, "O39", "O05", "O06"], refillPendingFor: "p1" });
+    reject(emptied, "p1", hall("p1:shifu", { slotIndex: 2, orderId: "O03" }), "ORDER_NOT_AVAILABLE");
+  });
+
+  it("is the Shifu effect only: an Apprentice's pick is refused, and Senior Apprentice never applies here (R12)", () => {
+    for (const techs of [[], ["T18" as const]]) {
+      const error = reject(
+        table({ players: [{ techs, resources: { coins: 4 } }, {}], display: CROWN_DISPLAY }),
+        "p1",
+        hall("p1:apprentice:1", { slotIndex: 1, orderId: "O17" }),
+        "NOT_SHIFU_EFFECT",
+      );
+      expect(error.details).toMatchObject({ effect: "apprentice", field: "crownOrder" });
+      expectDocumentedDetails(error);
+    }
+  });
+
+  it("the Recognition gate and the Coins are checked before the pick", () => {
+    reject(table({ players: [{ recognition: 3, resources: { coins: 9 } }, {}], display: CROWN_DISPLAY }), "p1", hall("p1:shifu", { slotIndex: 1, orderId: "O17" }), "RECOGNITION_GATE");
+    reject(table({ players: [{ resources: { coins: 3 } }, {}], display: CROWN_DISPLAY }), "p1", hall("p1:shifu", { slotIndex: 1, orderId: "O17" }), "INSUFFICIENT_RESOURCES");
   });
 });
 
@@ -187,7 +297,7 @@ describe("privacy and determinism", () => {
   it("validation depends on the public view only (hidden contents scrambled)", () => {
     for (const recognition of [0, 2, 3] as const) {
       const state = buildState(withHands({ players: [{ recognition, resources: { coins: 4 } }, {}] }));
-      for (const command of [hall("p1:apprentice:1"), hall("p1:shifu"), wharf("p1:apprentice:1")]) {
+      for (const command of [hall("p1:apprentice:1"), hall("p1:shifu"), hall("p1:shifu", { slotIndex: 0, orderId: "O01" }), wharf("p1:apprentice:1")]) {
         expect(verdict(scrambleHidden(state), "p1", command)).toBe(verdict(state, "p1", command));
       }
     }

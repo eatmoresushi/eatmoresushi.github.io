@@ -6,7 +6,7 @@
  *   that hold after every resolver, including a resolver that a test's halting flow stopped
  *   at a cross-package hand-over (DESIGN §8.1). JSON safety, resources, card conservation
  *   (Orders, Techs, Fire cards, Vessel cards), ceramics and kiln consistency, Setter's Mark,
- *   Kiln Furniture, Heat markers, Crackle, Tech limits and personal spaces, Recognition flags,
+ *   Kiln Furniture, the Kiln Master marker, Crackle, Tech limits and personal spaces, Recognition flags,
  *   placements, the shape of the decision prompt, and the public projection's
  *   hidden-information boundary.
  * - **Live** (`assertInvariants(state, { live: true })`): additionally the facts that hold
@@ -27,6 +27,7 @@ import {
   FIRING,
   GAME_CONFIG,
   IMPERIAL_TRACK,
+  KILNS,
   KILN_IDS,
   KILN_SPACE_IDS,
   LOCATIONS,
@@ -81,15 +82,13 @@ const CANAL_BARGE: TechId = "T23";
 
 /** Phases with every Setter's Mark returned or not yet placeable (L303, L630). */
 const MARKLESS_PHASES: readonly GamePhaseType[] = ["setup_kiln_selection", "cleanup_hand_limit", "finished"];
-/** Phases that belong to an open firing (Appendix D steps 1–11). */
+/** Phases that belong to an open firing (Appendix D steps 1–5, rev. 4 L655–664). */
 const FIRING_PHASES: readonly GamePhaseType[] = [
   "firing_contributions",
   "firing_test_pieces",
-  "firing_heat_markers",
   "firing_heat_adjustment",
   "firing_after_quality",
   "firing_second_firing_choice",
-  "firing_salvage",
 ];
 /** Phases with nothing in any kiln: the firing has finished or been skipped. */
 const KILN_EMPTY_PHASES: readonly GamePhaseType[] = [
@@ -444,15 +443,15 @@ function checkKiln(state: GameState, ceramics: readonly CeramicState[], v: Viola
       loaded.push(c);
       const placement = c.placement;
       // The second ceramic got there only through Inverted Firing; the first was loaded into
-      // an empty space — unless the ceramic beneath a stack was salvaged (step 11, L281), which
-      // leaves the stacked one alone until the kiln empties (step 12). `stacked` records how a
-      // ceramic was loaded (LoadPlacement JSDoc).
-      const salvagedBeneath =
+      // an empty space — unless the ceramic beneath a stack was sold in its owner's
+      // after-Quality turn (R20), which leaves the stacked one alone until the kiln empties
+      // (step 6). `stacked` records how a ceramic was loaded (LoadPlacement JSDoc).
+      const soldBeneath =
         index === 0 &&
         space.ceramicIds.length === 1 &&
-        Object.values(state.firing?.ceramics ?? {}).some((record) => record?.salvaged === true && record.spaceId === spaceId);
+        Object.values(state.firing?.ceramics ?? {}).some((record) => record?.sold === true && record.spaceId === spaceId);
       v.check(
-        placement.stacked === (index === 1) || (placement.stacked && salvagedBeneath),
+        placement.stacked === (index === 1) || (placement.stacked && soldBeneath),
         () => `${ceramicId} in ${spaceId} has stacked=${String(placement.stacked)} at position ${index}`,
       );
     });
@@ -495,43 +494,42 @@ function checkKiln(state: GameState, ceramics: readonly CeramicState[], v: Viola
   }
 }
 
+/**
+ * The Kiln Master marker (T24, rev. 4 L628, L635, R22; DELTA §15.12): ±1, only on a loaded
+ * ceramic (structural: the field lives on `LoadedCeramic`), at most 1 carrier in the game (one
+ * T24 tile), owned by the T24 owner; while the ceramic is loaded, its firing record's
+ * calculations use exactly that marker (rev. 4 L627: it stays for a Second Firing).
+ */
 function checkMarkers(state: GameState, ceramics: readonly CeramicState[], v: Violations): void {
-  const ownMarkers: PlayerId[] = [];
   const kilnMasterCarriers: LoadedCeramic[] = [];
-  const fireRevealed = state.firing !== null && state.firing.fireModifier !== null;
   for (const c of ceramics) {
-    if (c.stage !== "loaded" || c.heatMarker === null) {
+    if (c.stage !== "loaded" || c.kilnMasterMarker === null) {
       continue;
     }
-    const marker = c.heatMarker;
-    if (marker.source === "own") {
-      ownMarkers.push(c.ownerId);
-    } else {
-      kilnMasterCarriers.push(c);
-    }
-    if (marker.faceDown) {
-      // Every face-down marker is turned or returned before the Fire card (L268, L677).
-      v.check(!fireRevealed, () => `${c.id} still carries a face-down Heat marker after the Fire reveal`);
-    } else {
-      v.check(marker.value === 1 || marker.value === -1, () => `${c.id}'s Heat marker shows ${String(marker.value)}`);
-    }
-  }
-  for (const [ownerId, count] of tally(ownMarkers)) {
-    v.check(count <= 1, () => `${ownerId}'s Heat marker is on ${count} ceramics`);
+    kilnMasterCarriers.push(c);
+    const marker: unknown = c.kilnMasterMarker;
+    v.check(marker === 1 || marker === -1, () => `${c.id}'s Kiln Master marker shows ${String(marker)}`);
   }
   v.check(kilnMasterCarriers.length <= 1, () => `${kilnMasterCarriers.length} Kiln Master markers in the game`);
   for (const carrier of kilnMasterCarriers) {
     const owner = lookup(state.players, carrier.ownerId);
     v.check(owner !== undefined && ownsTech(owner, KILN_MASTER), () => `Kiln Master marker on ${carrier.id}, whose owner lacks ${KILN_MASTER}`);
   }
-  const phase = state.phase;
-  if (phase.type === "firing_heat_markers") {
-    // Players before the queue head have resolved their own marker (L268, L676).
-    for (const playerId of phase.queue.actorIds.slice(0, phase.queue.index)) {
-      const faceDown = ceramics.some(
-        (c) => c.stage === "loaded" && c.ownerId === playerId && c.heatMarker?.source === "own" && c.heatMarker.faceDown,
+  const firing = state.firing;
+  if (firing === null) {
+    return;
+  }
+  for (const c of ceramics) {
+    if (c.stage !== "loaded") {
+      continue;
+    }
+    const record = Object.hasOwn(firing.ceramics, c.id) ? firing.ceramics[c.id] : undefined;
+    const expected = c.kilnMasterMarker ?? 0;
+    for (const calculation of [record?.first ?? null, record?.second ?? null]) {
+      v.check(
+        calculation === null || calculation.kilnMasterMarker === expected,
+        () => `${c.id}'s heat calculation uses Kiln Master marker ${String(calculation?.kilnMasterMarker)}, the ceramic carries ${expected}`,
       );
-      v.check(!faceDown, () => `${playerId} acted in the Heat-marker step but still has a face-down marker`);
     }
   }
 }
@@ -556,6 +554,8 @@ function checkFiringRecords(firing: FiringContext | null, label: string, v: Viol
     );
     // Protective Saggars' floor gives Standard; a later step may only raise it (v1.6.2 L636).
     v.check(!record.saggarsFloor || record.quality === "standard" || record.quality === "fine", () => `${label}: floored ${ceramicId} is ${String(record.quality)}`);
+    // R20: only a Flawed ceramic is sold, and never one with Crackle.
+    v.check(!record.sold || (record.quality === "flawed" && !record.crackle), () => `${label}: sold ${ceramicId} is ${String(record.quality)}`);
   }
 }
 
@@ -760,7 +760,6 @@ function checkPhaseShape(state: GameState, v: Violations): void {
       break;
     case "round_start_setters_mark":
     case "firing_test_pieces":
-    case "firing_heat_markers":
     case "firing_heat_adjustment":
     case "firing_after_quality":
       v.check(phase.queue.actorIds.every(seated) && unique(phase.queue.actorIds), () => `${phase.type} queue is malformed`);
@@ -782,7 +781,6 @@ function checkPhaseShape(state: GameState, v: Violations): void {
     case "firing_second_firing_choice":
       v.check(seated(phase.actorId), () => `Second Firing actor ${phase.actorId} is not seated`);
       break;
-    case "firing_salvage":
     case "cleanup_hand_limit":
       v.check(phase.pendingPlayerIds.every(seated) && unique(phase.pendingPlayerIds), () => `${phase.type} pending players are malformed`);
       break;
@@ -892,6 +890,24 @@ function checkLive(state: GameState, players: readonly PlayerState[], ceramics: 
     v.check(state.kilnDie !== null && state.kilnDie.round === state.round, () => "the Kiln Die was not rolled this round");
   }
 
+  // Setup step 9 (rev. 4 L122, R23; DELTA §15.12): the display is refilled after every take, so
+  // it is full between choices; a player who has chosen holds the 2 dealt Starting Orders and
+  // the Main Order taken, one who has not holds only the Starting Orders.
+  if (phase.type === "setup_kiln_selection") {
+    v.check(state.market.display.every((orderId) => orderId !== null), () => "the Main display has an empty position during Setup step 9");
+    v.check(state.market.refillPendingFor === null, () => "a refill is owed during Setup step 9");
+    for (const p of players) {
+      const hand = lookup(state.hidden.orderHands, p.id) ?? [];
+      const starting = hand.filter((orderId) => isStartingOrderId(orderId)).length;
+      const main = hand.length - starting;
+      const expectedMain = p.kilnId === null ? 0 : GAME_CONFIG.setupFaceUpMainOrders;
+      v.check(
+        starting === GAME_CONFIG.setupDeal.startingOrders && main === expectedMain,
+        () => `${p.id} holds ${starting} Starting and ${main} Main Orders during Setup step 9 (expected ${GAME_CONFIG.setupDeal.startingOrders} and ${expectedMain})`,
+      );
+    }
+  }
+
   // The firing exists exactly during the firing phases.
   const inFiring = FIRING_PHASES.includes(phase.type);
   v.check(inFiring === (firing !== null), () => `firing is ${firing === null ? "null" : "open"} in ${phase.type}`);
@@ -905,7 +921,7 @@ function checkLive(state: GameState, players: readonly PlayerState[], ceramics: 
     }
     for (const [ceramicId, record] of Object.entries(firing.ceramics)) {
       const c = lookup(state.ceramics, ceramicId);
-      v.check(record?.salvaged === true ? c === undefined : c?.stage === "loaded", () => `firing record ${ceramicId} has no loaded ceramic`);
+      v.check(record?.sold === true ? c === undefined : c?.stage === "loaded", () => `firing record ${ceramicId} has no loaded ceramic`);
     }
     v.check(
       phase.type === "firing_second_firing_choice"
@@ -939,7 +955,7 @@ function checkLive(state: GameState, players: readonly PlayerState[], ceramics: 
     }
     const fired = firing.fireModifier !== null;
     v.check(
-      fired === ["firing_heat_adjustment", "firing_after_quality", "firing_second_firing_choice", "firing_salvage"].includes(phase.type),
+      fired === ["firing_heat_adjustment", "firing_after_quality", "firing_second_firing_choice"].includes(phase.type),
       () => `the Fire card is ${fired ? "revealed" : "hidden"} in ${phase.type}`,
     );
   } else {
@@ -1039,7 +1055,7 @@ function checkLive(state: GameState, players: readonly PlayerState[], ceramics: 
       if (c.placement.kiln === "shared" && c.placement.stacked) {
         v.check(used(INVERTED_FIRING), () => `${c.id} is stacked but ${INVERTED_FIRING} is ready`);
       }
-      if (c.heatMarker?.source === "kiln_master") {
+      if (c.kilnMasterMarker !== null) {
         v.check(used(KILN_MASTER), () => `${c.id} carries the Kiln Master marker but ${KILN_MASTER} is ready`);
       }
       v.check(c.loadedInRound === state.round, () => `${c.id} was loaded in an earlier round`);
@@ -1063,8 +1079,20 @@ function checkLive(state: GameState, players: readonly PlayerState[], ceramics: 
     // The ledger matches the completed Orders (DESIGN §8.3).
     const orderVp = p.completedOrders.reduce((sum, record) => sum + record.vp, 0);
     v.check(p.score.orders === orderVp, () => `${p.id} recorded ${p.score.orders} Order VP, completed Orders sum to ${orderVp}`);
-    const kilnVp = p.completedOrders.reduce((sum, record) => sum + (record.kilnAbility?.vp ?? 0), 0);
+    // Kiln Tradition VP: Ru/Guan and the Crackle VP (rev. 4 L465, L487). A record without
+    // `crackleVp` (built outside the engine) counts 0.
+    const kilnVp = p.completedOrders.reduce((sum, record) => sum + (record.kilnAbility?.vp ?? 0) + (record.crackleVp ?? 0), 0);
     v.check(p.score.kilnAbilities === kilnVp, () => `${p.id} recorded ${p.score.kilnAbilities} Kiln VP, completed Orders sum to ${kilnVp}`);
+    for (const record of p.completedOrders) {
+      // 1 VP per delivered Crackle ceramic (rev. 4 L465); Crackle comes only from Ge (L463).
+      const crackled = record.ceramicIds.filter((ceramicId) => {
+        const c = lookup(state.ceramics, ceramicId);
+        return c !== undefined && c.stage === "delivered" && c.crackle;
+      }).length;
+      const expected = crackled * KILNS.GE.params.vpPerDeliveredCrackle;
+      v.check((record.crackleVp ?? 0) === expected, () => `${p.id}'s ${record.orderId} records ${String(record.crackleVp)} Crackle VP for ${crackled} Crackle ceramics`);
+      v.check(crackled === 0 || p.kilnId === "GE", () => `${p.id} delivered a Crackle ceramic without the Ge Kiln`);
+    }
     for (const record of p.completedOrders) {
       const order = lookup(ORDERS, record.orderId);
       v.check(

@@ -140,14 +140,15 @@ describe("kilnLayout (§5 gap 5)", () => {
 
 // ── Gaps 7 and 18: firingStageView / firingRecapView ─────────────────────────────────
 
+/** Appendix D steps (rev. 4 L655–672): Contributions and Test Pieces in step 1, Jun in step 3,
+ * the after-Quality abilities in step 5 (there is no salvage step since revision 4, change 30);
+ * a finished firing is step 6. */
 const STEP_OF: Partial<Record<GamePhaseType, number>> = {
   firing_contributions: 1,
-  firing_test_pieces: 4,
-  firing_heat_markers: 5,
-  firing_heat_adjustment: 8,
-  firing_after_quality: 10,
-  firing_second_firing_choice: 10,
-  firing_salvage: 11,
+  firing_test_pieces: 1,
+  firing_heat_adjustment: 3,
+  firing_after_quality: 5,
+  firing_second_firing_choice: 5,
 };
 
 /** The stage agrees with the engine's firing record and the live board, field by field. */
@@ -159,7 +160,7 @@ function agreement(state: GameState, firing: FiringContext, stage: FiringStageVi
   expect(stage.fireModifier).toBe(firing.fireModifier);
   expect(stage.globalHeat).toBe(firing.globalHeat);
   expect(stage.fireDiscard).toEqual(state.fireDiscard);
-  expect(stage.firstPlayerOrder).toEqual([4, 5, 8, 10]);
+  expect(stage.firstPlayerOrder).toEqual([1, 3, 5]);
   expect(stage.testPieces).toEqual(firing.testPieces);
   expect(stage.contributions.map((c) => c.playerId)).toEqual(firing.participantIds);
   for (const c of stage.contributions) {
@@ -172,13 +173,13 @@ function agreement(state: GameState, firing: FiringContext, stage: FiringStageVi
     const record = firing.ceramics[c.id];
     expect(record).toBeDefined();
     if (record === undefined) continue;
-    expect(c).toMatchObject({ ownerId: record.ownerId, kiln: record.kiln, spaceId: record.spaceId, quality: record.quality, crackle: record.crackle, salvaged: record.salvaged });
+    expect(c).toMatchObject({ ownerId: record.ownerId, kiln: record.kiln, spaceId: record.spaceId, quality: record.quality, crackle: record.crackle, sold: record.sold });
     expect(c.secondFireModifier).toBe(record.second?.fireModifier ?? null);
     expect(c.secondFireRevealed).toEqual(record.secondFiringCards);
     expect(c.saggarsFloor).toBe(record.saggarsFloor);
     const current = lookup(state.ceramics, c.id);
-    const marker = live && current !== undefined && current.stage === "loaded" ? current.heatMarker : null;
-    expect(c.marker).toEqual(marker);
+    const marker = live && current !== undefined && current.stage === "loaded" ? current.kilnMasterMarker : null;
+    expect(c.kilnMasterMarker).toEqual(marker);
   }
   if (live) {
     expect(stage.extraFire).toEqual(firing.pendingExtraFire === null ? null : { ...firing.pendingExtraFire, modifiers: [...firing.pendingExtraFire.modifiers] });
@@ -194,10 +195,10 @@ function agreement(state: GameState, firing: FiringContext, stage: FiringStageVi
       expect(stage.contributions.every((c) => c.revealed === null)).toBe(true);
     }
   } else {
-    expect(stage.step).toBe(12);
+    expect(stage.step).toBe(6);
     expect(stage.queue).toBeNull();
     expect(stage.extraFire).toBeNull();
-    expect(stage.ceramics.every((c) => c.marker === null)).toBe(true);
+    expect(stage.ceramics.every((c) => c.kilnMasterMarker === null)).toBe(true);
   }
 }
 
@@ -250,10 +251,10 @@ describe("firingStageView and firingRecapView (§5 gaps 7, 18; D3, D4)", () => {
 
   it("keeps Contributions sealed until all are revealed, then shows card, heat and Wood paid", () => {
     const table = openFiringTable({
-      players: [{ techs: ["T12"], resources: { wood: 3 } }, {}],
+      players: [{ techs: ["T12"], kilnId: "JU", resources: { wood: 3 } }, {}],
       ceramics: [
-        // The face-down marker keeps the firing open at step 5 after the reveal.
-        { owner: "p1", stage: "loaded", shape: "bowl", glaze: "white", at: "middle_1", heatMarker: { source: "own", faceDown: true } },
+        // The Jun window keeps the firing open at step 3 after the reveal (rev. 4 L661).
+        { owner: "p1", stage: "loaded", shape: "bowl", glaze: "white", at: "middle_1" },
         { owner: "p2", stage: "loaded", shape: "bowl", glaze: "white", at: "high_1" },
       ],
     });
@@ -280,9 +281,10 @@ describe("firingStageView and firingRecapView (§5 gaps 7, 18; D3, D4)", () => {
   it("an Imperial-only firing has no Contributions and Base Heat equals the Kiln Die", () => {
     const table = openFiringTable({
       kilnDie: 3,
-      players: [{ recognition: 2 }, {}],
+      // The Jun window keeps the firing open at step 3 (rev. 4 L661).
+      players: [{ recognition: 2, kilnId: "JU", resources: { wood: 1 } }, {}],
       ceramics: [
-        { owner: "p1", stage: "loaded", shape: "vase", glaze: "moon_white", at: "imperial", imperialModifier: 1, heatMarker: { source: "own", faceDown: true } },
+        { owner: "p1", stage: "loaded", shape: "vase", glaze: "moon_white", at: "imperial", imperialModifier: 1 },
       ],
     });
     const stage = firingStageView(table.view("p2"));
@@ -294,9 +296,10 @@ describe("firingStageView and firingRecapView (§5 gaps 7, 18; D3, D4)", () => {
 
   it("a recap is the last finished firing, without markers, and is cleared when the next firing starts", () => {
     const table = openFiringTable({
-      players: [{}, {}],
+      players: [{ techs: [{ id: "T24", usedThisRound: true }] }, {}],
       ceramics: [
-        { owner: "p1", stage: "loaded", shape: "bowl", glaze: "celadon", at: "middle_1", heatMarker: { source: "own", faceDown: true } },
+        // The Kiln Master marker is on the board while loaded and gone from the recap (rev. 4 L628).
+        { owner: "p1", stage: "loaded", shape: "bowl", glaze: "celadon", at: "middle_1", kilnMaster: 1 },
         { owner: "p2", stage: "loaded", shape: "plate", glaze: "white", at: "high_1" },
       ],
     });
@@ -305,10 +308,8 @@ describe("firingStageView and firingRecapView (§5 gaps 7, 18; D3, D4)", () => {
     while (table.state.firing !== null && guard < 20) {
       const actor = table.prompt().actorIds[0] as PlayerId;
       const phase = table.state.phase.type;
-      if (phase === "firing_heat_markers") table.act(actor, { type: "RESOLVE_HEAT_MARKERS", ownMarker: 1 });
-      else if (phase === "firing_heat_adjustment") table.act(actor, { type: "RESOLVE_JUN", adjustment: null });
+      if (phase === "firing_heat_adjustment") table.act(actor, { type: "RESOLVE_JUN", adjustment: null });
       else if (phase === "firing_after_quality") table.act(actor, { type: "END_AFTER_QUALITY" });
-      else if (phase === "firing_salvage") table.act(actor, { type: "SALVAGE_FLAWED", ceramicId: null });
       else if (phase === "firing_test_pieces") table.act(actor, { type: "TEST_PIECES_DECIDE", peek: false });
       else throw new Error(`unexpected ${phase}`);
       guard += 1;
@@ -342,7 +343,7 @@ describe("firingStageView and firingRecapView (§5 gaps 7, 18; D3, D4)", () => {
             agreement(state, state.firing, stage, true);
             seen.add(`step${stage.step}`);
             if (stage.extraFire !== null) seen.add("extraFire");
-            if (stage.ceramics.some((c) => c.marker !== null)) seen.add("marker");
+            if (stage.ceramics.some((c) => c.kilnMasterMarker !== null)) seen.add("marker");
           }
         } else {
           expect(stage).toBeNull();
@@ -356,7 +357,7 @@ describe("firingStageView and firingRecapView (§5 gaps 7, 18; D3, D4)", () => {
         }
       });
     }
-    expect([...seen].sort()).toEqual(expect.arrayContaining(["marker", "recap", "step1", "step10", "step5"]));
+    expect([...seen].sort()).toEqual(expect.arrayContaining(["marker", "recap", "step1", "step3", "step5"]));
   });
 
   it("is the same for every viewer at every firing decision (public information only)", () => {
@@ -375,11 +376,9 @@ const EXPECTED_ROUND_PHASE: Record<GamePhaseType, RoundPhaseId | "final"> = {
   work_turn: "work",
   firing_contributions: "firing",
   firing_test_pieces: "firing",
-  firing_heat_markers: "firing",
   firing_heat_adjustment: "firing",
   firing_after_quality: "firing",
   firing_second_firing_choice: "firing",
-  firing_salvage: "firing",
   orders: "orders",
   cleanup_hand_limit: "cleanup",
   finished: "final",
@@ -402,8 +401,8 @@ describe("ROUND_STRUCTURE and roundPhaseOf (§5 gap 17)", () => {
 
   it("is display text only: not a rules-fingerprint input, and the fingerprint is unchanged", () => {
     expect(CONTENT_SOURCES.map(([name]) => name)).not.toContain("round_structure");
-    expect(RULES_BEHAVIOUR_REVISION).toBe(31);
-    expect(rulesFingerprint()).toMatch(/^r31-[0-9a-f]{16}$/);
+    expect(RULES_BEHAVIOUR_REVISION).toBe(32);
+    expect(rulesFingerprint()).toMatch(/^r32-[0-9a-f]{16}$/);
   });
 
   it("is exported from the barrel", () => {
@@ -518,7 +517,7 @@ describe("placementLimits (§5 gap 10)", () => {
       }
     }
     expect(placementLimits(view, "form_decorate", "shifu").maxVessels).toBe(LOCATIONS.form_decorate.effects.shifu.maxVessels);
-    expect(placementLimits(view, "glaze_load", "shifu").placesHeatMarker).toBe(true);
+    expect(placementLimits(view, "glaze_load", "shifu").sharedKilnWood).toBe(1);
   });
 });
 
@@ -570,12 +569,12 @@ describe("materialsYardOptions (§5 gap 14)", () => {
       ?.workers.map((w) => ({ worker: w, options: materialsYardOptions(view, w), legal: legalMaterialsYardCommands(view, w) })) ?? [];
   };
 
-  it("offers Prepared Clay only with T17 ready and never with Senior Apprentice (L350); the Shifu effect gains 6 (v1.6.2 L165)", () => {
+  it("offers Prepared Clay only with T17 ready and never with Senior Apprentice (L350); the Shifu effect gains 8 (rev. 4 L176–177)", () => {
     const senior = optionsFor("Materials Yard: Senior Apprentice, Prepared Clay used");
     expect(senior.map((x) => [x.worker.kind, x.worker.seniorApprentice, x.options.resources, x.options.preparedClay])).toEqual([
-      ["shifu", false, 6, null],
-      ["apprentice", false, 3, null],
-      ["apprentice", true, 6, null],
+      ["shifu", false, 8, null],
+      ["apprentice", false, 4, null],
+      ["apprentice", true, 8, null],
     ]);
     // V1.6.2 removed the Shifu's 1-Coin option: the options carry no bonus.
     for (const { options } of senior) expect(Object.keys(options).sort()).toEqual(["preparedClay", "resources"]);
@@ -594,8 +593,8 @@ describe("materialsYardOptions (§5 gap 14)", () => {
   });
 
   it("gates each Prepared Clay pair: the split covers its Clay, the Coins its Decoration", () => {
-    // From 0 Clay even the Apprentice effect's 3 resources cover any Shape's Clay + 1 (L618),
-    // and 2 Coins pay any Decoration: every pair is legal for every worker option.
+    // From 0 Clay even the Apprentice effect's 4 resources cover any Shape's Clay + 1 (L618),
+    // and 2 Coins pay any vessel (rev. 4 L188): every pair is legal for every worker option.
     for (const name of ["Materials Yard: Prepared Clay with 2 Coins and no Clay", "Materials Yard: Prepared Clay with 3 Coins and no Clay"]) {
       for (const { options, legal } of optionsFor(name)) {
         expect(options.preparedClay?.pairs).toEqual(SHAPES.flatMap((shape) => DECORATIONS.map((decoration) => ({ shape, decoration }))));
@@ -678,7 +677,7 @@ describe("imperialPriorityOptions.ceramics (§5 gap 16)", () => {
     const offered = options.ceramics.reduce((n, c) => n + c.glazes.length * c.imperialModifiers.length * (1 + c.reworkShapes.length), 0);
     expect(exhaustive).toHaveLength(offered);
     const full = uiOptionScenarios().find((s) => s.name === "Imperial Priority with the Imperial Kiln full");
-    expect(full === undefined ? null : imperialPriorityOptions(full.table.actorView("p1"))).toEqual({ usable: false, ceramicIds: [], ceramics: [] });
+    expect(full === undefined ? null : imperialPriorityOptions(full.table.actorView("p1"))).toEqual({ usable: false, ceramicIds: [], ceramics: [], kilnMaster: false });
   });
 });
 

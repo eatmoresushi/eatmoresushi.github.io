@@ -157,7 +157,7 @@ describe("createGame", () => {
   it("returns setup's state with eventSequence equal to the persisted creation events", () => {
     const events: GameEvent[] = [
       { type: "GAME_CREATED", playerOrder: ["p1", "p2"], firstPlayerId: "p1", playerCount: 2 },
-      { type: "ORDERS_DEALT", playerId: "p1", startingCount: 2, mainCount: 1, secret: { visibleTo: "p1", startingOrderIds: ["S01", "S02"], mainOrderIds: ["O01"] } },
+      { type: "ORDERS_DEALT", playerId: "p1", startingCount: 2, secret: { visibleTo: "p1", startingOrderIds: ["S01", "S02"] } },
     ];
     vi.mocked(createInitialState).mockImplementation(() => ({ ok: true, state: buildState(), events }));
     const rng = new SeededRandom(5);

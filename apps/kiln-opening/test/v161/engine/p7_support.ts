@@ -41,10 +41,9 @@ import {
   dingCopyableVesselIndexes,
   guildInspectionOptions,
   guildOptions,
-  heatMarkerStepOptions,
-  heatMarkerTargets,
   imperialPriorityOptions,
   junOptions,
+  kilnMasterOption,
   kilnSelectionOptions,
   legalContributions,
   loadDestinationOptions,
@@ -54,8 +53,10 @@ import {
   placementOptions,
   quoteFormDecorate,
   quoteMaterialsYard,
-  salvageOptions,
+  quoteGlazeLoad,
+  sellFlawedOptions,
   settersMarkOptions,
+  setupChoiceOptions,
   testPiecesOptions,
 } from "../../../src/game/selectors.ts";
 import { ceramicsOf, decisionPrompt, lookup } from "../../../src/game/state.ts";
@@ -276,7 +277,9 @@ export function richStartState(seed: number, playerCount: PlayerCount): GameStat
       // Protective Saggars' owner fires nothing Flawed (v1.6.2 L636): its Finished ceramics of
       // this round are Standard instead (the same draws, so the seed's other content is kept).
       const quality = drawn === "flawed" && seatTechs.includes("T11") ? "standard" : drawn;
-      const crackle = quality === "fine" && rng.nextInt(3) === 0;
+      // Crackle comes only from the Ge Kiln (rev. 4 L463), which scores 1 VP per delivered
+      // Crackle ceramic (L465); the draw is kept for every seat so the seeds stay stable.
+      const crackle = quality === "fine" && rng.nextInt(3) === 0 && kilns[seat] === "GE";
       const shape = pickOf(SHAPES, rng);
       const decoration = pickOf(DECORATIONS, rng);
       const glaze = pickOf(GLAZES, rng);
@@ -394,7 +397,8 @@ export interface FuzzResult {
   /** Decisions per phase type, and per Work step as `work_turn:<step kind>`. */
   phases: Map<string, number>;
   /** Commands with each optional load choice: `inverted_firing`, `kiln_furniture`, `rework`,
-   * `heat_marker`, `pair`, `imperial`. */
+   * `kiln_master` (T24 at loading, R22), `pair`, `imperial`, and `crown_order` (the Magistrate's
+   * Hall Shifu's optional Crown Order, R21). */
   loadFeatures: Map<string, number>;
 }
 
@@ -525,7 +529,7 @@ export function playFuzzGame(options: FuzzOptions): FuzzResult {
         inverted_firing: loads.some((l) => l.destination.kiln === "shared" && l.destination.invertedFiring === true),
         kiln_furniture: loads.some((l) => l.destination.kiln === "shared" && l.destination.kilnFurniture !== undefined),
         rework: loads.some((l) => l.reworkShape !== undefined) || (command.type === "USE_IMPERIAL_PRIORITY" && command.reworkShape !== undefined),
-        heat_marker: command.type === "PLACE_GLAZE_LOAD" && command.heatMarkerCeramicId !== undefined,
+        kiln_master: loads.some((l) => l.kilnMaster !== undefined) || (command.type === "USE_IMPERIAL_PRIORITY" && command.kilnMaster !== undefined),
         pair: loads.length === 2,
         imperial: loads.some((l) => l.destination.kiln === "imperial"),
       };
@@ -534,6 +538,9 @@ export function playFuzzGame(options: FuzzOptions): FuzzResult {
           count(loadFeatures, feature);
         }
       }
+    }
+    if (command.type === "PLACE_MAGISTRATES_HALL" && command.crownOrder !== undefined) {
+      count(loadFeatures, "crown_order");
     }
     const before = table.state;
     const events = table.apply(actorId, command, context);
@@ -694,12 +701,26 @@ export function selectorAgreementViolations(state: GameState, privateState: Priv
     expect(option.legal === option.workers.some((w) => w.legal), `placementOptions ${option.locationId}.legal disagrees with its workers`);
   }
 
-  // Setup and Start of Round.
+  // Setup (step 9, rev. 4 L122, R23) and Start of Round.
   if (phase.type === "setup_kiln_selection" && acts) {
+    const setup = setupChoiceOptions(view);
+    expect(setup !== null, "setupChoiceOptions is null for the player choosing");
+    const firstSlot = setup?.faceUpSlots[0];
+    const firstOrder = firstSlot === undefined ? null : game.market.display[firstSlot];
     for (const option of kilnSelectionOptions(view)) {
-      const ok = codeOf(view, { type: "SELECT_KILN", kilnId: option.kilnId }) === null;
+      const ok =
+        firstSlot !== undefined &&
+        firstOrder !== null &&
+        firstOrder !== undefined &&
+        codeOf(view, { type: "SELECT_KILN", kilnId: option.kilnId, mainOrder: { slotIndex: firstSlot, orderId: firstOrder } }) === null;
       expect(ok === option.available, `kilnSelectionOptions ${option.kilnId} available=${option.available} but validator ok=${ok}`);
     }
+    const kilnId = kilnSelectionOptions(view).find((option) => option.available)?.kilnId;
+    game.market.display.forEach((orderId, slotIndex) => {
+      if (orderId === null || kilnId === undefined) return;
+      const ok = codeOf(view, { type: "SELECT_KILN", kilnId, mainOrder: { slotIndex, orderId } }) === null;
+      expect(ok === (setup?.faceUpSlots.includes(slotIndex) ?? false), `setupChoiceOptions slot ${slotIndex} listed=${setup?.faceUpSlots.includes(slotIndex)} ok=${ok}`);
+    });
   }
   if (phase.type === "round_start_setters_mark") {
     const listed = settersMarkOptions(view);
@@ -745,12 +766,17 @@ export function selectorAgreementViolations(state: GameState, privateState: Priv
           expect(ok, `guildOptions inspect ${option.discipline} is rejected`);
         }
       }
-      // Magistrate's Hall quotes.
+      // Magistrate's Hall quotes, and the Shifu's optional Crown Order (rev. 4 L241, R21).
       for (const worker of options.find((o) => o.locationId === "magistrates_hall")?.workers ?? []) {
         const quote = magistratesHallQuote(view, worker.effect);
         const error = validateAction(view, { type: "PLACE_MAGISTRATES_HALL", workerId: worker.workerId });
         if (error === null) {
           expect(quote.ok, `magistratesHallQuote(${worker.effect}) is not ok but the placement validates`);
+          game.market.display.forEach((orderId, slotIndex) => {
+            if (orderId === null) return;
+            const ok = codeOf(view, { type: "PLACE_MAGISTRATES_HALL", workerId: worker.workerId, crownOrder: { slotIndex, orderId } }) === null;
+            expect(ok === quote.crownOrderSlots.includes(slotIndex), `magistratesHallQuote(${worker.effect}).crownOrderSlots ${slotIndex} listed=${quote.crownOrderSlots.includes(slotIndex)} ok=${ok}`);
+          });
         } else if (!PLACEMENT_LEVEL.has(error.code)) {
           expect(!quote.ok && quote.error?.code === error.code, `magistratesHallQuote(${worker.effect}) ${quote.error?.code ?? "ok"} vs validator ${error.code}`);
         }
@@ -768,7 +794,8 @@ export function selectorAgreementViolations(state: GameState, privateState: Priv
           }
         }
       }
-      // Glaze & Load: destinations and Heat-marker targets.
+      // Glaze & Load: destinations (a Shared one only with the action's 1 Wood, R24), Kiln
+      // Master's marker (R22) and the fuel quote.
       const loader = legalWorker("glaze_load", "shifu") ?? legalWorker("glaze_load", "apprentice");
       if (loader !== undefined) {
         for (const vessel of ceramicsOf(game, actorId, "shaped")) {
@@ -780,14 +807,17 @@ export function selectorAgreementViolations(state: GameState, privateState: Priv
             expect(ok === keys.has(JSON.stringify(destination)), `loadDestinationOptions(${vessel.id}) ${JSON.stringify(destination)} listed=${keys.has(JSON.stringify(destination))} ok=${ok}`);
           }
           const firstDestination = listed[0]?.destination;
-          if (loader.effect === "shifu" && firstDestination !== undefined) {
-            const loads = [{ ceramicId: vessel.id, glaze: "white" as const, destination: firstDestination }];
-            const targets = heatMarkerTargets(view, actorId, loads);
-            const candidates = new Set([...ceramicsOf(game, actorId, "loaded").map((c) => c.id), vessel.id]);
-            for (const ceramicId of candidates) {
-              const ok = codeOf(view, { type: "PLACE_GLAZE_LOAD", workerId: loader.workerId, loads, heatMarkerCeramicId: ceramicId }) === null;
-              expect(ok === targets.includes(ceramicId), `heatMarkerTargets ${ceramicId} listed=${targets.includes(ceramicId)} ok=${ok}`);
+          if (firstDestination !== undefined) {
+            const kilnMaster = kilnMasterOption(view, actorId);
+            for (const value of [1, -1] as const) {
+              const loads = [{ ceramicId: vessel.id, glaze: "white" as const, destination: firstDestination, kilnMaster: value }];
+              const ok = codeOf(view, { type: "PLACE_GLAZE_LOAD", workerId: loader.workerId, loads }) === null;
+              expect(ok === (kilnMaster?.ready ?? false), `kilnMasterOption ready=${kilnMaster?.ready ?? "none"} but a load with ${value} ok=${ok}`);
             }
+            const plain = { type: "PLACE_GLAZE_LOAD" as const, workerId: loader.workerId, loads: [{ ceramicId: vessel.id, glaze: "white" as const, destination: firstDestination }] };
+            const quote = quoteGlazeLoad(view, plain);
+            expect(quote.ok, `quoteGlazeLoad rejects a listed destination: ${quote.error?.code ?? ""}`);
+            expect(quote.pay.wood === (firstDestination.kiln === "shared" ? 1 : 0), `quoteGlazeLoad charges ${quote.pay.wood} Wood for a ${firstDestination.kiln} load`);
           }
         }
       }
@@ -868,6 +898,8 @@ export function selectorAgreementViolations(state: GameState, privateState: Priv
   expect(priority.usable === anyPriority, `imperialPriorityOptions.usable=${priority.usable} but ok=${anyPriority} (${phase.type})`);
   for (const ceramicId of priority.ceramicIds) {
     expect(codeOf(view, { type: "USE_IMPERIAL_PRIORITY", ceramicId, glaze: "moon_white", imperialModifier: 1 }) === null, `imperialPriorityOptions lists ${ceramicId} but it is rejected`);
+    const ok = codeOf(view, { type: "USE_IMPERIAL_PRIORITY", ceramicId, glaze: "moon_white", imperialModifier: 1, kilnMaster: -1 }) === null;
+    expect(ok === priority.kilnMaster, `imperialPriorityOptions.kilnMaster=${priority.kilnMaster} but Kiln Master on ${ceramicId} ok=${ok}`);
   }
 
   // Orders.
@@ -906,20 +938,6 @@ export function selectorAgreementViolations(state: GameState, privateState: Priv
       expect(ok === options.canPeek, `testPiecesOptions.canPeek=${options.canPeek} ok=${ok}`);
     }
   }
-  if (phase.type === "firing_heat_markers" && acts) {
-    const options = heatMarkerStepOptions(view);
-    if (options !== null) {
-      const ownChoice = options.ownMarkerCeramicId === null ? {} : { ownMarker: 1 as const };
-      const returned = options.ownMarkerCeramicId === null ? {} : { ownMarker: "return" as const };
-      const firingIds = Object.keys(game.firing?.ceramics ?? {}).filter((id) => lookup(game.ceramics, id)?.ownerId === actorId);
-      for (const ceramicId of firingIds) {
-        const ok = codeOf(view, { type: "RESOLVE_HEAT_MARKERS", ...ownChoice, kilnMaster: { ceramicId, value: 1 } }) === null;
-        expect(ok === (options.kilnMaster?.targets.includes(ceramicId) ?? false), `heatMarkerStepOptions Kiln Master ${ceramicId} ok=${ok}`);
-        const okReturned = codeOf(view, { type: "RESOLVE_HEAT_MARKERS", ...returned, kilnMaster: { ceramicId, value: -1 } }) === null;
-        expect(okReturned === (options.kilnMaster?.targetsIfOwnReturned.includes(ceramicId) ?? false), `heatMarkerStepOptions Kiln Master (own returned) ${ceramicId} ok=${okReturned}`);
-      }
-    }
-  }
   if (phase.type === "firing_heat_adjustment" && acts) {
     const options = junOptions(view);
     const firingIds = Object.keys(game.firing?.ceramics ?? {}).filter((id) => lookup(game.ceramics, id)?.ownerId === actorId);
@@ -940,12 +958,18 @@ export function selectorAgreementViolations(state: GameState, privateState: Priv
       }
     }
   }
-  if (phase.type === "firing_salvage" && acts) {
-    const listed = salvageOptions(view)?.ceramicIds ?? [];
-    const firingIds = Object.keys(game.firing?.ceramics ?? {}).filter((id) => lookup(game.ceramics, id)?.ownerId === actorId && lookup(game.ceramics, id)?.stage === "loaded");
-    for (const ceramicId of firingIds) {
-      const ok = codeOf(view, { type: "SALVAGE_FLAWED", ceramicId }) === null;
-      expect(ok === listed.includes(ceramicId), `salvageOptions ${ceramicId} listed=${listed.includes(ceramicId)} ok=${ok}`);
+  // R20: the sale of a Flawed ceramic, in every phase, for every ceramic of the viewer (and
+  // one of another player's, which is never listed nor accepted).
+  {
+    const listed = sellFlawedOptions(view)?.ceramicIds ?? [];
+    const candidates = Object.values(game.ceramics)
+      .filter((c) => c.ownerId === actorId)
+      .map((c) => c.id);
+    const other = Object.values(game.ceramics).find((c) => c.ownerId !== actorId && c.stage === "finished" && c.quality === "flawed");
+    if (other !== undefined) candidates.push(other.id);
+    for (const ceramicId of candidates) {
+      const ok = codeOf(view, { type: "SELL_FLAWED", ceramicId }) === null;
+      expect(ok === listed.includes(ceramicId), `sellFlawedOptions ${ceramicId} listed=${listed.includes(ceramicId)} ok=${ok} in ${phase.type}`);
     }
   }
   return out;

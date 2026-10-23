@@ -17,7 +17,7 @@
  * data), never `GameState`.
  */
 
-import { KILN_IDS, guildInspectionOptions, handLimitStatus, heatMarkerStepOptions, legalCommands, lookedOrderOptions } from "../game/index.ts";
+import { KILN_IDS, guildInspectionOptions, handLimitStatus, legalCommands, lookedOrderOptions } from "../game/index.ts";
 import type { AuthoritativeCommand, LegalActionOptions, PlayerView } from "../game/index.ts";
 
 export const FALLBACK_LEGAL_ACTION_OPTIONS: LegalActionOptions = { mode: "canonical", perFamilyLimit: 8 };
@@ -34,8 +34,17 @@ export function safeExitCommands(view: PlayerView): AuthoritativeCommand[] {
   const phase = game.phase;
   switch (phase.type) {
     case "setup_kiln_selection": {
+      // Setup step 9 (rev. 4 L122, R23): an available Kiln with the first face-up Main Order.
+      // The display is refilled after every take, so it is full at every choice.
       const taken = new Set(game.playerOrder.map((playerId) => game.players[playerId]?.kilnId ?? null));
-      return KILN_IDS.filter((kilnId) => !taken.has(kilnId)).map((kilnId) => ({ type: "SELECT_KILN", kilnId }));
+      const slotIndex = game.market.display.findIndex((orderId) => orderId !== null);
+      const orderId = slotIndex < 0 ? null : game.market.display[slotIndex];
+      if (orderId === null || orderId === undefined) return [];
+      return KILN_IDS.filter((kilnId) => !taken.has(kilnId)).map((kilnId): AuthoritativeCommand => ({
+        type: "SELECT_KILN",
+        kilnId,
+        mainOrder: { slotIndex, orderId },
+      }));
     }
     case "round_start_setters_mark":
       return [{ type: "PLACE_SETTERS_MARK", spaceId: null }];
@@ -91,18 +100,6 @@ export function safeExitCommands(view: PlayerView): AuthoritativeCommand[] {
       return [{ type: "SUBMIT_CONTRIBUTION", windowId: phase.windowId, card: "TEND" }];
     case "firing_test_pieces":
       return phase.awaiting === "decision" ? [{ type: "TEST_PIECES_DECIDE", peek: false }] : [{ type: "TEST_PIECES_BURY", bury: false }];
-    case "firing_heat_markers": {
-      // Return a face-down own marker; without one (a Kiln Master-only turn), decline Kiln
-      // Master (R4). Exactly one of the two is legal, so only that one is offered: the
-      // validator rejects an own-marker choice without a face-down marker and requires one
-      // with it (INVALID_CHOICE either way), and the canonical baseline policy picks
-      // uniformly among these candidates, so an illegal exit here became its proposal.
-      const options = heatMarkerStepOptions(view);
-      if (options === null) return [];
-      return options.ownMarkerCeramicId === null
-        ? [{ type: "RESOLVE_HEAT_MARKERS" }]
-        : [{ type: "RESOLVE_HEAT_MARKERS", ownMarker: "return" }];
-    }
     case "firing_heat_adjustment":
       return [{ type: "RESOLVE_JUN", adjustment: null }];
     case "firing_second_firing_choice":
@@ -110,8 +107,6 @@ export function safeExitCommands(view: PlayerView): AuthoritativeCommand[] {
       return [{ type: "SECOND_FIRING_CHOOSE", cardIndex: 0, jun: null }];
     case "firing_after_quality":
       return [{ type: "END_AFTER_QUALITY" }];
-    case "firing_salvage":
-      return [{ type: "SALVAGE_FLAWED", ceramicId: null }];
     case "orders":
       return [{ type: "END_ORDER_TURN" }];
     case "cleanup_hand_limit": {

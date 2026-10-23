@@ -40,14 +40,15 @@ export function phaseScenarios(): PhaseScenario[] {
     scenarios.push({ name, phase: table.state.phase.type, table, actor, exit });
   };
 
-  // Setup: reverse-order Kiln selection over all five Kilns (L108, R1).
+  // Setup step 9: reverse-order Kiln and face-up Main Order choice over all five Kilns (rev. 4
+  // L122, R1, R23).
   {
     const created = createGame({ gameId: "scenario-setup", players: [{ id: "p1", displayName: "A" }, { id: "p2", displayName: "B" }, { id: "p3", displayName: "C" }] }, new SeededRandom(3));
     if (!created.ok) {
       throw new Error("createGame failed");
     }
     const table = new LocalTable(created.state, { seed: 3 });
-    add("Kiln selection", table, table.prompt().actorIds[0] as PlayerId, (c) => c.type === "SELECT_KILN");
+    add("Kiln and Main Order choice", table, table.prompt().actorIds[0] as PlayerId, (c) => c.type === "SELECT_KILN");
   }
 
   add(
@@ -88,6 +89,20 @@ export function phaseScenarios(): PhaseScenario[] {
         { owner: "p1", stage: "shaped", shape: "censer", decoration: "painted" },
       ],
       settersMarks: { high_1: "p2" },
+    }),
+    "p1",
+    (c) => c.type === "PLACE_CANAL_WHARF",
+  );
+
+  add(
+    "before the worker action: Kiln Master at loading, the Magistrate's Hall Shifu's Crown Order, the kiln fuel",
+    work({
+      players: [{ techs: ["T24"], recognition: 1, resources: RICH }, {}],
+      display: ["O01", "O17", "O02", "O40", "O03", "O04"],
+      ceramics: [
+        { owner: "p1", stage: "shaped", shape: "bowl" },
+        { owner: "p1", stage: "shaped", shape: "plate", decoration: "carved" },
+      ],
     }),
     "p1",
     (c) => c.type === "PLACE_CANAL_WHARF",
@@ -167,18 +182,6 @@ export function phaseScenarios(): PhaseScenario[] {
     add("Test Pieces bury", table, "p1", (c) => c.type === "TEST_PIECES_BURY" && !c.bury);
   }
   add(
-    "Heat-marker step with a face-down marker and Kiln Master",
-    fired({
-      players: [{ techs: ["T24"] }, {}],
-      ceramics: [
-        { owner: "p1", stage: "loaded", shape: "bowl", glaze: "white", at: "middle_1", heatMarker: { source: "own", faceDown: true } },
-        { owner: "p1", stage: "loaded", shape: "plate", glaze: "celadon", at: "high_1" },
-      ],
-    }),
-    "p1",
-    (c) => c.type === "RESOLVE_HEAT_MARKERS" && c.ownMarker === "return" && c.kilnMaster === undefined,
-  );
-  add(
     "Jun heat adjustment",
     fired({
       players: [{ kilnId: "JU" }, {}],
@@ -212,17 +215,19 @@ export function phaseScenarios(): PhaseScenario[] {
     table.act("p1", { type: "USE_SECOND_FIRING", ceramicId: "c1" });
     add("Second Firing choice with Jun (R7)", table, "p1", (c) => c.type === "SECOND_FIRING_CHOOSE" && c.cardIndex === 0 && c.jun === null);
   }
+  // R20: the Order Phase turn opens for a Finished Flawed ceramic even with nothing to
+  // complete; the player may sell it (SELL_FLAWED) or end the turn.
   add(
-    "salvage",
-    fired({
-      players: [{}, {}],
-      ceramics: [
-        { owner: "p1", stage: "loaded", shape: "bowl", glaze: "moon_white", at: "low_1" },
-        { owner: "p2", stage: "loaded", shape: "bowl", glaze: "moon_white", at: "middle_1" },
-      ],
-    }),
+    "Order Phase: sell a Flawed ceramic",
+    new LocalTable(
+      buildState({
+        players: [{ hand: ["O22"] }, {}],
+        phase: { type: "orders", turnOrder: ["p1", "p2"], index: 0 },
+        ceramics: [{ owner: "p1", stage: "finished", shape: "bowl", glaze: "white", quality: "flawed" }],
+      }),
+    ),
     "p1",
-    (c) => c.type === "SALVAGE_FLAWED" && c.ceramicId === null,
+    (c) => c.type === "END_ORDER_TURN",
   );
   add(
     "Order Phase with Ru, Tribute Ware and a Crackle wildcard",

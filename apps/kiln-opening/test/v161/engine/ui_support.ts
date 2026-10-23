@@ -122,9 +122,8 @@ export const FIRING_STAGE_KEYS = {
   extraFire: ["playerId", "ceramicId", "modifiers"],
   /** `secondFireRevealed` (both revealed cards) and `saggarsFloor` (v1.6.2 L636) are recorded
    * facts of the table, not analysis (DELTA §2.7, D3, D4). */
-  ceramic: ["id", "ownerId", "kiln", "spaceId", "marker", "quality", "crackle", "salvaged", "secondFireModifier", "secondFireRevealed", "saggarsFloor"],
-  /** `CeramicHeatMarker`: `value` only once turned. */
-  marker: ["source", "faceDown", "value"],
+  /** `kilnMasterMarker` (rev. 4 L628): the public ±1 Kiln Master marker, a number or null. */
+  ceramic: ["id", "ownerId", "kiln", "spaceId", "kilnMasterMarker", "quality", "crackle", "sold", "secondFireModifier", "secondFireRevealed", "saggarsFloor"],
 } as const;
 
 /** Heat-calculation, preview and deck vocabulary that must never reach the firing stage. */
@@ -183,7 +182,7 @@ export function firingStageKeyViolations(stage: FiringStageView): string[] {
   if (stage.extraFire !== null) exactKeys("extraFire", stage.extraFire, k.extraFire, out);
   stage.ceramics.forEach((c, i) => {
     exactKeys(`ceramics[${i}]`, c, k.ceramic, out);
-    if (c.marker !== null) exactKeys(`ceramics[${i}].marker`, c.marker, k.marker, out, ["value"]);
+    if (c.kilnMasterMarker !== null && c.kilnMasterMarker !== 1 && c.kilnMasterMarker !== -1) out.push(`ceramics[${i}].kilnMasterMarker is not ±1`);
   });
   const walk = (value: unknown, path: string): void => {
     if (Array.isArray(value)) {

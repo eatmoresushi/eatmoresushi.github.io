@@ -283,15 +283,12 @@ export const ABILITY_CASES: readonly AbilityCase[] = [
     ready: techIsReady("T14"),
   },
   {
+    // Kiln Master's marker is chosen when a ceramic is loaded (rev. 4 L628, R22).
     ability: "T24",
     actor: P1,
-    table: () =>
-      firedTable({
-        players: [{ techs: ["T24"] }, {}],
-        ceramics: [{ owner: P1, stage: "loaded", shape: "bowl", glaze: "white", at: "middle_1" }],
-      }),
-    uses: isType("RESOLVE_HEAT_MARKERS", (a) => a.kilnMaster !== undefined),
-    declines: isType("RESOLVE_HEAT_MARKERS", (a) => a.kilnMaster === undefined),
+    table: () => workTable({ players: [{ techs: ["T24"] }, {}], ceramics: [{ owner: P1, stage: "shaped", shape: "bowl" }] }),
+    uses: isType("PLACE_GLAZE_LOAD", (a) => a.loads.some((l) => l.kilnMaster !== undefined)),
+    declines: isType("PLACE_GLAZE_LOAD", (a) => a.loads.every((l) => l.kilnMaster === undefined)),
     used: (events) => techUsed(events, "T24") && hasEvent(events, (e) => e.type === "KILN_MASTER_PLACED"),
     ready: techIsReady("T24"),
   },

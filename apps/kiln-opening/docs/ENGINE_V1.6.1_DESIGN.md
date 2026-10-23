@@ -853,7 +853,7 @@ Every file has `"rulesVersion": "1.6.1"`.
 - `qualityByHeatDifference`: `[{maxDifference:0,quality:"masterpiece"},{1,"fine"},{2,"standard"},{null,"flawed"}]`.
 - `contributionCards`: BANK 1 Wood / −1, TEND 0 / 0, STOKE 1 / +1.
 - `imperialModifiers`: `[-1,0,1]`.
-- `salvageCoins`: 2.
+- `flawedSaleCoins`: 2 (V1.6.2 owner revision 4, change 30 and R20: a Flawed ceramic is sold during its owner's turn; revision 3 called it `salvageCoins`, for the removed salvage step).
 
 The Fuel Ledger values live in T12's params (`extraWood: 1`, `heat: 1`, which turns ±1 into ±2).
 
@@ -877,9 +877,11 @@ There is no `enabled` flag: all five are selectable (R1).
 | --- | --- |
 | RU | `{vp:4, glaze:"celadon", decoration:"plain", quality:"masterpiece"}` |
 | GU | `{coins:2, vp:1, minPrintedCrowns:1}` |
-| GE | `{fromQuality:"standard", toQuality:"fine"}` |
+| GE | `{fromQualities:["fine","standard"], toQuality:"fine", vpPerDeliveredCrackle:1}` |
 | DI | `{shapes:["bowl","plate","washer"], clay:1, coins:1}` |
 | JU | `{wood:1, deltas:[1,-1]}` |
+
+GE follows V1.6.2 owner revision 4 (change 29; ENGINE_V1.6.2_DELTA.md §15.8): it was `{fromQuality:"standard", toQuality:"fine"}`.
 
 ### 6.5 `techniques.json` → `{rulesVersion, advanced: TechDefinition[18]}`
 

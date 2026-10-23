@@ -55,10 +55,14 @@ describe("Magistrate's Hall legality", () => {
     expect(verdict(state, "p1", hall("p1:shifu"))).toBe("RECOGNITION_GATE");
   });
 
-  it("costs 4 Coins for an Apprentice and 3 for the Shifu (L229–230)", () => {
+  it("costs 4 Coins for either worker (rev. 4 L240–241, change 33)", () => {
     const three = buildState({ players: [{ resources: { coins: 3 } }, {}] });
     expect(verdict(three, "p1", hall("p1:apprentice:1"))).toBe("INSUFFICIENT_RESOURCES");
-    expect(verdict(three, "p1", hall("p1:shifu"))).toBeNull();
+    expect(verdict(three, "p1", hall("p1:shifu"))).toBe("INSUFFICIENT_RESOURCES");
+    const four = buildState({ players: [{ resources: { coins: 4 } }, {}] });
+    expect(verdict(four, "p1", hall("p1:apprentice:1"))).toBeNull();
+    // The Crown Order is optional (R21): no Crown Order showing never refuses the Shifu.
+    expect(verdict(four, "p1", hall("p1:shifu"))).toBeNull();
   });
 
   it("has 1 space at 2–3 players and 2 at 4 (L225)", () => {

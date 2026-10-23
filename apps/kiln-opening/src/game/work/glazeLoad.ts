@@ -1,91 +1,47 @@
 /**
- * Glaze & Load (L175–185), incl. the Shifu's optional face-down Heat marker (L180, R9) and
- * Kiln Tending (T20, L627; automatic on the first qualifying action each round, INT).
+ * Glaze & Load (rev. 4 L189–199, changes 31, 34, 35), incl. the kiln fuel (R24), Kiln Master's
+ * marker at loading (T24, rev. 4 L628, R22) and Kiln Tending (T20, L627; automatic on the first
+ * qualifying action each round, INT).
  *
  * One atomic command (DESIGN §3.5): every choice — 1 or 2 ordered loads, Glaze, destination,
- * Imperial modifier, Kiln Furniture, Inverted Firing, Reworking Table, Heat-marker target — is
- * known when it is made. Loading rules live in `kilnLoading.ts`.
+ * Imperial modifier, Kiln Furniture, Inverted Firing, Reworking Table, Kiln Master — is known
+ * when it is made. The Shifu simply loads up to 2: there is no player Heat marker since
+ * revision 4 (changes 28, 31). Loading rules live in `kilnLoading.ts`.
+ *
+ * Kiln fuel (rev. 4 L197, change 35, R24): the action pays 1 Wood when any of its loads goes into
+ * the Shared Kiln, whether it loads 1 vessel or 2, Apprentice or Shifu; an action that loads only
+ * into the Imperial Kiln pays nothing. The Wood is paid once the worker is placed, before the
+ * loads; Kiln Tending's +1 Wood comes after them and never pays this action's fuel.
  *
  * Layer 4. Hands over through `ctx.flow.workerActionDone` (DESIGN §2.2).
  */
 
 import { LOCATIONS, TECHS } from "../content.ts";
-import { invariant, ruleError } from "../errors.ts";
-import { hasAnyLegalLoad, loadCeramic, validateLoads } from "../kilnLoading.ts";
+import { ruleError } from "../errors.ts";
+import { actionFuel, hasAnyLegalLoad, loadCeramic, validateLoads } from "../kilnLoading.ts";
 import { placeWorker, validatePlacement, workerEffectFor } from "../placement.ts";
-import { ceramic, emit, gain, heatMarkerOf, lookup, player } from "../state.ts";
+import { gain, lookup, player, spend } from "../state.ts";
 import { markTechUsed, techReady } from "../techs.ts";
 import type {
   ActionHandlerTable,
   ActorView,
+  CostLine,
+  CostQuote,
   GameAction,
   GameRuleError,
   GameState,
   PlayerId,
   ResolveContext,
+  ResourceState,
   TechId,
-  WorkerEffect,
 } from "../types.ts";
 
 type GlazeLoadAction = Extract<GameAction, { type: "PLACE_GLAZE_LOAD" }>;
 
 const KILN_TENDING: TechId = "T20";
 
-/**
- * R9: optional, Shifu effect only; your own marker (L76: 1 per player) on 1 of your ceramics
- * in the Shared Kiln or your Imperial Kiln — loaded by this action, earlier this round, or by
- * Imperial Priority — that carries no marker (L185).
- */
-function heatMarkerError(view: ActorView, action: GlazeLoadAction, effect: WorkerEffect): GameRuleError | null {
-  const targetId = action.heatMarkerCeramicId;
-  if (targetId === undefined) {
-    return null;
-  }
-  const game = view.game;
-  const playerId = view.viewerId;
-  if (effect !== "shifu" || !LOCATIONS.glaze_load.effects.shifu.placesHeatMarker) {
-    return ruleError("NOT_SHIFU_EFFECT", "Only the Glaze & Load Shifu places a Heat marker.", {
-      workerId: action.workerId,
-      effect,
-      locationId: "glaze_load",
-      field: "heatMarkerCeramicId",
-    });
-  }
-  const placed = heatMarkerOf(game, playerId, "own");
-  if (placed !== null) {
-    return ruleError("HEAT_MARKER_INVALID", "Your Heat marker is already on a ceramic.", {
-      ceramicId: placed.id,
-      source: "own",
-      field: "heatMarkerCeramicId",
-    });
-  }
-  const target = lookup(game.ceramics, targetId);
-  if (target === undefined) {
-    return ruleError("CERAMIC_NOT_FOUND", "That ceramic does not exist.", { ceramicId: targetId, field: "heatMarkerCeramicId" });
-  }
-  if (target.ownerId !== playerId) {
-    return ruleError("CERAMIC_NOT_OWNED", "The Heat marker goes on one of your own ceramics.", {
-      ceramicId: targetId,
-      field: "heatMarkerCeramicId",
-    });
-  }
-  const loadedNow = action.loads.some((load) => load.ceramicId === targetId);
-  if (target.stage !== "loaded" && !loadedNow) {
-    return ruleError("ILLEGAL_CERAMIC_STAGE", "The Heat marker goes on a ceramic in the Shared or Imperial Kiln.", {
-      ceramicId: targetId,
-      stage: target.stage,
-      expectedStage: "loaded",
-      field: "heatMarkerCeramicId",
-    });
-  }
-  if (target.stage === "loaded" && target.heatMarker !== null) {
-    return ruleError("HEAT_MARKER_INVALID", "A ceramic may carry at most 1 Heat marker.", {
-      ceramicId: targetId,
-      source: target.heatMarker.source,
-      field: "heatMarkerCeramicId",
-    });
-  }
-  return null;
+function zero(): ResourceState {
+  return { clay: 0, wood: 0, coins: 0 };
 }
 
 function validate(view: ActorView, action: GlazeLoadAction): GameRuleError | null {
@@ -94,19 +50,38 @@ function validate(view: ActorView, action: GlazeLoadAction): GameRuleError | nul
     return placementError;
   }
   const effect = workerEffectFor(view, action.workerId, false);
-  // L142, L183, R5: at least 1 Shaped vessel with a legal destination (current Shapes, §11 Q3).
+  // L142, rev. 4 L198, R5, R24: at least 1 Shaped vessel with a destination you can pay for
+  // (current Shapes, §11 Q3).
   if (!hasAnyLegalLoad(view.game, view.viewerId)) {
-    return ruleError("NO_MAIN_ACTION_POSSIBLE", "You have no Shaped vessel with a legal destination.", {
-      locationId: "glaze_load",
-      workerId: action.workerId,
-      effect,
-    });
+    return ruleError(
+      "NO_MAIN_ACTION_POSSIBLE",
+      "You have no Shaped vessel with a legal destination you can pay for: the Shared Kiln needs 1 Wood.",
+      { locationId: "glaze_load", workerId: action.workerId, effect },
+    );
   }
-  const loadError = validateLoads(view, action.loads, LOCATIONS.glaze_load.effects[effect].maxLoads, "glaze_load");
-  if (loadError !== null) {
-    return loadError;
+  return validateLoads(view, action.loads, LOCATIONS.glaze_load.effects[effect].maxLoads, "glaze_load");
+}
+
+/**
+ * The engine's cost of a Glaze & Load command (DESIGN §5.4, ENGINE_V1.6.2_DELTA.md §15.9.4): a
+ * `kiln_fuel` line of 1 Wood when any load goes into the Shared Kiln (R24), nothing otherwise.
+ * `ok` and `error` are the validator's (`validateAction` also checks the phase and the actor).
+ * Kiln Tending's gain is not quoted: it is automatic and comes after the loads.
+ */
+export function quoteGlazeLoad(view: ActorView, action: GlazeLoadAction): CostQuote {
+  const pay = zero();
+  const lines: CostLine[] = [];
+  const fuel = actionFuel(action.loads, "glaze_load");
+  if (fuel > 0) {
+    pay.wood = fuel;
+    lines.push({ kind: "kiln_fuel", resource: "wood", amount: fuel, itemIndex: null });
   }
-  return heatMarkerError(view, action, effect);
+  const p = player(view.game, view.viewerId);
+  const error =
+    lookup(p.workers, action.workerId) === undefined
+      ? ruleError("WORKER_UNAVAILABLE", "That worker is not available.", { workerId: action.workerId })
+      : validate(view, action);
+  return { ok: error === null, error, pay, gain: zero(), lines };
 }
 
 /** Kiln Tending (T20, L627): once per round, after a Glaze & Load action that loaded ≥ 1
@@ -122,15 +97,10 @@ function resolveKilnTending(draft: GameState, playerId: PlayerId, loadCount: num
 
 function resolve(draft: GameState, playerId: PlayerId, action: GlazeLoadAction, ctx: ResolveContext): void {
   placeWorker(draft, playerId, action.workerId, "glaze_load", false, ctx);
+  // Kiln fuel (rev. 4 L197, R24): 1 Wood for the whole action when it loads into the Shared Kiln.
+  spend(draft, playerId, { wood: actionFuel(action.loads, "glaze_load") }, "kiln_fuel", ctx);
   for (const spec of action.loads) {
     loadCeramic(draft, playerId, spec, "glaze_load", ctx);
-  }
-  if (action.heatMarkerCeramicId !== undefined) {
-    const target = ceramic(draft, action.heatMarkerCeramicId);
-    invariant(target.stage === "loaded" && target.heatMarker === null, `${target.id} cannot take a Heat marker`);
-    // Face down: nothing hidden is committed yet; the face is chosen in the Heat-marker step (INT).
-    target.heatMarker = { source: "own", faceDown: true };
-    emit(ctx, { type: "HEAT_MARKER_PLACED", playerId, ceramicId: target.id });
   }
   resolveKilnTending(draft, playerId, action.loads.length, ctx);
   ctx.flow.workerActionDone(draft, playerId, ctx);

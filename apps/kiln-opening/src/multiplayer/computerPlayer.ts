@@ -8,7 +8,7 @@
  *
  * **How it decides.** Every decision is routed on `decisionPrompt` and the phase, and built
  * from the engine's own selectors (`placementOptions`, `loadDestinationOptions`,
- * `heatMarkerTargets`, `commissionOptions`, `orderMatchOptions`, the firing-window options,
+ * `kilnMasterOption`, `commissionOptions`, `orderMatchOptions`, the firing-window options,
  * `legalContributions`, …). Candidates are ranked by a value model and each one is checked with
  * the engine's `validateAction` before it is returned, so the policy never re-implements a
  * rule's legality; when nothing it prefers validates it returns null and the service uses
@@ -21,12 +21,17 @@
  *   Plans give a completion probability, the vessels still to form (Shape and Decoration) and
  *   the Glazes that keep a plan alive when a vessel is loaded.
  * - **Heat.** Glazes and kiln spaces are chosen for the expected heat: the public Kiln Die, the
- *   space's zone or Kiln Furniture modifier, the Imperial modifier, the Heat marker, and the
- *   remaining Fire deck computed from the public discard (and the seat's own peek). The same
+ *   space's zone or Kiln Furniture modifier, the Imperial modifier, the Kiln Master marker, and
+ *   the remaining Fire deck computed from the public discard (and the seat's own peek). The same
  *   expectation chooses Contributions (with a model of the other participants' pushes from
- *   their public loads), Heat markers, Kiln Master, Test Pieces, Jun, Protective Saggars,
- *   Second Firing (the better of 2 cards) and Ge. The Fire deck model follows R15: once only
- *   buried cards are left, the next card comes from the reshuffled discard.
+ *   their public loads), Kiln Master's marker at loading (rev. 4 L628, R22), Test Pieces, Jun,
+ *   Protective Saggars, Second Firing (the better of 2 cards) and Ge (on a Fine or Standard
+ *   ceramic, with its 1 VP per delivered Crackle ceramic, rev. 4 L463, L465). The Fire deck model
+ *   follows R15: once only buried cards are left, the next card comes from the reshuffled
+ *   discard. There is no player Heat marker since revision 4 (changes 28, 31).
+ * - **Sales.** A Finished Flawed ceramic can complete no Order and enter no Exhibition (rev. 4
+ *   L282), so it is sold for 2 Coins (R20) at the start of the seat's next Work turn, Order Phase
+ *   turn or Cleanup trim, before any other choice.
  * - **Work.** A small dynamic programme plans the seat's remaining placements this round over
  *   an abstract economy (resources, Shaped and Loaded counts, free personal spaces, kiln
  *   contention, Order and Tech offers); the best first step is then built concretely.
@@ -59,11 +64,11 @@ import {
   guildInspectionOptions,
   guildOptions,
   handLimitStatus,
-  heatMarkerStepOptions,
-  heatMarkerTargets,
   imperialPriorityOptions,
   junOptions,
-  kilnSelectionOptions,
+  kilnMasterOption,
+  magistratesHallQuote,
+  setupChoiceOptions,
   contributionOptions,
   loadDestinationOptions,
   lookedOrderOptions,
@@ -71,13 +76,14 @@ import {
   placementOptions,
   preferredHeat,
   qualityForDifference,
-  salvageOptions,
   secondFiringChoiceOptions,
+  sellFlawedOptions,
   settersMarkOptions,
   shapeClay,
   techsOfDiscipline,
   testPiecesOptions,
   validateAction,
+  vesselCoins,
   zoneModifier,
 } from "../game/index.ts";
 import type {
@@ -92,6 +98,7 @@ import type {
   GameAction,
   Glaze,
   GuildTechOption,
+  HeatDelta,
   KilnId,
   KilnSpaceId,
   LoadSpec,
@@ -263,7 +270,6 @@ const GENERIC_DECORATION: Decoration = "plain";
 const COLOUR_SAMPLES: TechId = "T10";
 const PROTECTIVE_SAGGARS: TechId = "T11";
 const FUEL_LEDGER: TechId = "T12";
-const KILN_MASTER: TechId = "T24";
 const REWORKING_TABLE: TechId = "T05";
 const SENIOR_APPRENTICE: TechId = "T18";
 const PREPARED_CLAY: TechId = "T17";
@@ -515,9 +521,9 @@ function positionModifierOf(game: PublicGameState, ceramic: LoadedCeramic): numb
   return game.sharedKiln.spaces[placement.spaceId].kilnFurniture?.modifier ?? zoneModifier(placement.spaceId);
 }
 
+/** The Kiln Master marker a loaded ceramic carries (rev. 4 L628, public), 0 without one. */
 function markerValueOf(ceramic: LoadedCeramic): number {
-  const marker = ceramic.heatMarker;
-  return marker === null || marker.faceDown ? 0 : marker.value;
+  return ceramic.kilnMasterMarker ?? 0;
 }
 
 function clampBase(value: number): number {
@@ -732,8 +738,8 @@ interface HandPlan {
 /** Base probability that a fired ceramic reaches a Quality rank when its Glaze is aimed well. */
 function aimedQualityP(k: Know, rank: number): number {
   const jun = k.me.kilnId === "JU";
-  // Protective Saggars: never Flawed, and once a round a Standard becomes Fine (v1.6.2 L628);
-  // Ge crackles a Standard to Fine (L467).
+  // Protective Saggars: never Flawed, and once a round a Standard becomes Fine (rev. 4 L624);
+  // Ge crackles a Fine or Standard ceramic, and a Standard one becomes Fine (rev. 4 L463).
   const saggars = ownsTech(k.me, PROTECTIVE_SAGGARS);
   const lift = saggars || k.me.kilnId === "GE";
   if (rank <= 0) return 1;
@@ -773,7 +779,6 @@ function loadedQualityP(k: Know, c: LoadedCeramic): { pAtLeast: number[]; pMp: n
   }
   const preferred = preferredHeat(c.glaze);
   const pos = positionModifierOf(k.game, c);
-  const flexible = c.heatMarker !== null && c.heatMarker.faceDown;
   const fire = nextFireDist(k);
   const bases: Dist =
     c.placement.kiln === "imperial"
@@ -788,7 +793,7 @@ function loadedQualityP(k: Know, c: LoadedCeramic): { pAtLeast: number[]; pMp: n
   const pAtLeast = [0, 0, 0, 0];
   let pMp = 0;
   for (const [base, pb] of bases) {
-    const markers = flexible ? [-1, 0, 1] : [markerValueOf(c)];
+    const markers = [markerValueOf(c)];
     let best: number[] = [0, 0, 0, 0];
     let bestScore = -1;
     for (const marker of markers) {
@@ -1308,10 +1313,14 @@ function expectedBestWithDisplay(k: Know, count: number, pending = 0): number {
 // 6. Valuations
 // ═══════════════════════════════════════════════════════════════════════════════════════
 
+/**
+ * The resources the seat's plan wants in hand. Wood covers the kiln fuel (1 per Glaze & Load
+ * action into the Shared Kiln, rev. 4 L197, R24) as well as Contributions, Jun and Test Pieces.
+ */
 function resourceNeed(k: Know): { clay: number; wood: number; coins: number } {
   const demands = handPlan(k).demands.slice(0, 3);
   const clay = demands.length > 0 ? demands.reduce((sum, d) => sum + shapeClay(d.shape), 0) : 3;
-  return { clay: Math.max(2, Math.min(4, clay)), wood: k.lastRound ? 1 : 2, coins: k.lastRound ? 0 : 5 };
+  return { clay: Math.max(2, Math.min(4, clay)), wood: k.lastRound ? 2 : 3, coins: k.lastRound ? 0 : 5 };
 }
 
 function marginal(units: number, need: number, high: number, low: number): number {
@@ -1379,7 +1388,7 @@ function kilnSynergy(kilnId: KilnId | null, techId: TechId): number {
       return techId === "T25" ? 1.6 : techId === "T23" ? 1.3 : 1;
     case "GE":
       // Under Protective Saggars a would-be Flawed ceramic is Standard, which Ge may crackle
-      // (v1.6.2 L645); Second Firing makes Standards to crackle.
+      // (rev. 4 L641); Second Firing makes Flawed ceramics Standard or better to crackle.
       return techId === "T11" ? 1.3 : techId === "T14" ? 1.2 : 1;
     case "DI":
       // Cheap Bowls, Plates and Brush Washers: Clay and stacking.
@@ -1503,12 +1512,37 @@ function firstValid(k: Know, candidates: Iterable<GameAction>): GameAction | nul
 
 const KILN_PREFERENCE: readonly KilnId[] = ["JU", "GE", "DI", "RU", "GU"];
 
-function decideKiln(k: Know): GameAction | null {
-  const available = new Set(kilnSelectionOptions(k.view).filter((option) => option.available).map((option) => option.kilnId));
-  return firstValid(
-    k,
-    KILN_PREFERENCE.filter((kilnId) => available.has(kilnId)).map((kilnId): GameAction => ({ type: "SELECT_KILN", kilnId })),
-  );
+/** The seat's knowledge as if it had already taken `kilnId` (a copy of the view; nothing else
+ * changes), for valuing the Setup Main Order with the Kiln it comes with. */
+function withKiln(k: Know, kilnId: KilnId): Know {
+  const players = { ...k.game.players, [k.pid]: { ...k.me, kilnId } };
+  const view: ActorView = { ...k.view, game: { ...k.game, players } };
+  return { ...k, view, game: view.game, me: players[k.pid] as PlayerState, memo: new Map() };
+}
+
+/**
+ * Setup step 9 (rev. 4 L122, R23): one command takes a Kiln and a face-up Main Order. The Kiln
+ * by `KILN_PREFERENCE` among the available ones; the Main Order is the face-up one with the
+ * highest `reservationValue`, valued as if that Kiln were already taken; ties to the lowest
+ * position.
+ */
+function decideSetup(k: Know): GameAction | null {
+  const options = setupChoiceOptions(k.view);
+  if (options === null) return null;
+  const available = new Set(options.kilns.filter((option) => option.available).map((option) => option.kilnId));
+  const candidates: GameAction[] = [];
+  for (const kilnId of KILN_PREFERENCE.filter((id) => available.has(id))) {
+    const asIf = withKiln(k, kilnId);
+    const slots = options.faceUpSlots
+      .map((slotIndex) => ({ slotIndex, orderId: k.game.market.display[slotIndex] ?? null }))
+      .filter((entry): entry is { slotIndex: number; orderId: OrderId } => entry.orderId !== null)
+      .map((entry) => ({ ...entry, value: reservationValue(asIf, entry.orderId) }))
+      .sort((a, b) => b.value - a.value || a.slotIndex - b.slotIndex);
+    for (const { slotIndex, orderId } of slots) {
+      candidates.push({ type: "SELECT_KILN", kilnId, mainOrder: { slotIndex, orderId } });
+    }
+  }
+  return firstValid(k, candidates);
 }
 
 function decideSettersMark(k: Know): GameAction | null {
@@ -1538,9 +1572,8 @@ function demandedGlazes(k: Know): Glaze[] {
 
 // ── Contributions (secret, simultaneous; L253–263, L638) ─────────────────────────────
 
-/** My firing value at a known Base Heat: fixed markers as turned, a face-down own marker turned
- * optimally (step 5 comes after Base Heat), Kiln Master on the best target, and Jun's ±1 after
- * the Fire card when ready and affordable. */
+/** My firing value at a known Base Heat: each ceramic with its Kiln Master marker (chosen at
+ * loading, rev. 4 L628), and Jun's ±1 after the Fire card when ready and affordable. */
 function firingValueAtBase(k: Know, base: number, fire: Dist, woodLeft: number): number {
   const mine = ceramicsOf(k.game, k.pid, "loaded");
   if (mine.length === 0) return 0;
@@ -1550,40 +1583,15 @@ function firingValueAtBase(k: Know, base: number, fire: Dist, woodLeft: number):
     preferred: preferredHeat(c.glaze),
     source: c.placement.kiln === "imperial" ? k.die : base,
     pos: positionModifierOf(k.game, c),
-    flexible: c.heatMarker !== null && c.heatMarker.faceDown,
     marker: markerValueOf(c),
-    open: c.heatMarker === null,
   }));
   let total = 0;
   const heatOf: number[] = [];
-  let kilnMasterGain = 0;
-  const kilnMaster = techReady(k.me, KILN_MASTER);
   for (const entry of entries) {
     const before = entry.source + entry.pos;
-    if (entry.flexible) {
-      let best = -Infinity;
-      let bestMarker = 0;
-      for (const marker of [-1, 0, 1]) {
-        const value = expectQuality(before + marker, entry.preferred, fire, entry.utility);
-        if (value > best) {
-          best = value;
-          bestMarker = marker;
-        }
-      }
-      total += best;
-      heatOf.push(before + bestMarker);
-    } else {
-      const value = expectQuality(before + entry.marker, entry.preferred, fire, entry.utility);
-      total += value;
-      heatOf.push(before + entry.marker);
-      if (kilnMaster && entry.open) {
-        for (const marker of [-1, 1]) {
-          kilnMasterGain = Math.max(kilnMasterGain, expectQuality(before + marker, entry.preferred, fire, entry.utility) - value);
-        }
-      }
-    }
+    total += expectQuality(before + entry.marker, entry.preferred, fire, entry.utility);
+    heatOf.push(before + entry.marker);
   }
-  total += kilnMasterGain;
   if (kilnReady(k.me, "JU") && woodLeft >= KILNS.JU.params.wood) {
     let junGain = 0;
     for (const [fire1, pf] of fire) {
@@ -1619,10 +1627,8 @@ function rivalPushDist(k: Know, playerId: PlayerId): Dist {
   const value = (q: Quality): number => QUALITY_VALUE[saggars && q === "flawed" ? "standard" : q];
   const scoreAt = (delta: number): number =>
     loads.reduce((sum, c) => {
-      const flexible = c.heatMarker !== null && c.heatMarker.faceDown;
       const before = clampBase(k.die + delta) + positionModifierOf(k.game, c) + markerValueOf(c);
-      const markers = flexible ? [-1, 0, 1] : [0];
-      return sum + Math.max(...markers.map((m) => expectQuality(before + m, preferredHeat(c.glaze), fire, value)));
+      return sum + expectQuality(before, preferredHeat(c.glaze), fire, value);
     }, 0);
   // The reluctance to spend a Wood card's Wood; almost none when Fuel Ledger makes it free.
   const woodCard = fuelLedger ? 0.05 : 0.35;
@@ -1670,7 +1676,7 @@ function decideContribution(k: Know): AuthoritativeCommand | null {
   return best?.command ?? null;
 }
 
-// ── Test Pieces, Heat markers, Jun ────────────────────────────────────────────────────
+// ── Test Pieces, Jun ──────────────────────────────────────────────────────────────────
 
 function knownBase(k: Know): number {
   return k.game.firing?.baseHeat ?? k.die;
@@ -1713,44 +1719,6 @@ function decideTestPieces(k: Know): GameAction | null {
   return firstValid(k, [{ type: "TEST_PIECES_DECIDE", peek }, { type: "TEST_PIECES_DECIDE", peek: false }]);
 }
 
-function decideHeatMarkers(k: Know): GameAction | null {
-  const options = heatMarkerStepOptions(k.view);
-  if (options === null) return null;
-  const fire = nextFireDist(k);
-  const base = knownBase(k);
-  const mine = ceramicsOf(k.game, k.pid, "loaded");
-  const evaluate = (own: 1 | -1 | "return" | null, master: { ceramicId: CeramicId; value: 1 | -1 } | null): number => {
-    let total = 0;
-    for (const c of mine) {
-      let marker = markerValueOf(c);
-      if (c.id === options.ownMarkerCeramicId && own !== null) marker = own === "return" ? 0 : own;
-      if (master !== null && master.ceramicId === c.id) marker = master.value;
-      const source = c.placement.kiln === "imperial" ? k.die : base;
-      total += expectQuality(source + positionModifierOf(k.game, c) + marker, preferredHeat(c.glaze), fire, loadedUtility(k, c));
-    }
-    return total;
-  };
-  const owns: Array<1 | -1 | "return" | null> = options.ownMarkerCeramicId === null ? [null] : ["return", 1, -1];
-  const candidates: Array<{ action: GameAction; score: number }> = [];
-  for (const own of owns) {
-    const base0: ActionOf<"RESOLVE_HEAT_MARKERS"> = { type: "RESOLVE_HEAT_MARKERS", ...(own === null ? {} : { ownMarker: own }) };
-    candidates.push({ action: base0, score: evaluate(own, null) });
-    const kilnMaster = options.kilnMaster;
-    if (kilnMaster !== null && kilnMaster.ready) {
-      for (const ceramicId of own === "return" ? kilnMaster.targetsIfOwnReturned : kilnMaster.targets) {
-        for (const value of [1, -1] as const) {
-          candidates.push({ action: { ...base0, kilnMaster: { ceramicId, value } }, score: evaluate(own, { ceramicId, value }) - 0.01 });
-        }
-      }
-    }
-  }
-  candidates.sort((a, b) => b.score - a.score);
-  return firstValid(
-    k,
-    candidates.map((candidate) => candidate.action),
-  );
-}
-
 function decideJun(k: Know): GameAction | null {
   const options = junOptions(k.view);
   const decline: GameAction = { type: "RESOLVE_JUN", adjustment: null };
@@ -1774,7 +1742,7 @@ function decideJun(k: Know): GameAction | null {
   return firstValid(k, best !== null && best.gain > threshold ? [best.action, decline] : [decline]);
 }
 
-// ── After Quality, salvage ────────────────────────────────────────────────────────────
+// ── After Quality and sales ──────────────────────────────────────────────────────────
 
 /**
  * Second Firing's 2 cards (v1.6.2 L631), drawn one after the other without replacement, as
@@ -1809,7 +1777,7 @@ function secondFiringValue(k: Know, record: NonNullable<NonNullable<PublicGameSt
   const calculation = record.first;
   if (calculation === null) return 0;
   const source = calculation.heatSource - calculation.fireModifier;
-  const heat = source + fire1 + calculation.positionModifier + calculation.heatMarker;
+  const heat = source + fire1 + calculation.positionModifier + calculation.kilnMasterMarker;
   let value = utility(qualityAt(heat, record.preferredHeat));
   if (jun) {
     for (const delta of [-1, 1]) value = Math.max(value, utility(qualityAt(heat + delta, record.preferredHeat)) - woodValue(k));
@@ -1817,11 +1785,26 @@ function secondFiringValue(k: Know, record: NonNullable<NonNullable<PublicGameSt
   return value;
 }
 
+/**
+ * The value of a Crackle marker on `ceramicId` (rev. 4 L465): its wildcard Decoration and 1 VP
+ * when it is delivered to complete an Order, at the odds its planned Order is completed (a
+ * ceramic no held Order plans for may still meet a later one while rounds remain).
+ */
+function crackleValue(k: Know, ceramicId: CeramicId): number {
+  const plan = handPlan(k).planOf.get(ceramicId);
+  const deliveryP = plan !== undefined ? Math.max(0.3, Math.min(1, plan.p)) : k.roundsAfter >= 1 ? 0.4 : 0.1;
+  return 0.15 + KILNS.GE.params.vpPerDeliveredCrackle * deliveryP;
+}
+
 function decideAfterQuality(k: Know): GameAction | null {
   const options = afterQualityOptions(k.view);
   const firing = k.game.firing;
   const end: GameAction = { type: "END_AFTER_QUALITY" };
   if (options.length === 0 || firing === null) return firstValid(k, [end]);
+  // Protective Saggars' Standard targets: Ge on the only one would leave Saggars nothing to do
+  // (Ge on a Standard makes it Fine as well), so that Standard → Fine is not Ge's gain
+  // (rev. 4 L641: Saggars first, then Crackle on the same ceramic, is the other order).
+  const saggarsTargets = options.find((option) => option.ability === "protective_saggars")?.ceramicIds ?? [];
   const candidates: Array<{ action: GameAction; gain: number }> = [];
   for (const option of options) {
     for (const ceramicId of option.ceramicIds) {
@@ -1831,10 +1814,13 @@ function decideAfterQuality(k: Know): GameAction | null {
       const utility = loadedUtility(k, c);
       const now = utility(record.quality);
       if (option.ability === "ge_crackle") {
-        candidates.push({ action: { type: "USE_GE_CRACKLE", ceramicId }, gain: utility("fine") - now + 0.15 });
+        // Rev. 4 L463: a Fine or Standard ceramic develops Crackle and is Fine.
+        const lift = utility("fine") - now;
+        const saggarsWouldLift = saggarsTargets.length === 1 && saggarsTargets[0] === ceramicId;
+        candidates.push({ action: { type: "USE_GE_CRACKLE", ceramicId }, gain: (saggarsWouldLift ? 0 : lift) + crackleValue(k, ceramicId) });
       } else if (option.ability === "protective_saggars") {
-        // v1.6.2 L628: Standard → Fine, no Wood. Ge also takes only Standard ceramics, so the
-        // two never share one; spending Saggars where Ge could not follow costs nothing extra.
+        // Rev. 4 L624: Standard → Fine, no Wood. Ge may crackle the same ceramic afterwards
+        // (rev. 4 L641).
         const improved = stepQuality(record.quality, 1, "fine");
         candidates.push({ action: { type: "USE_PROTECTIVE_SAGGARS", ceramicId }, gain: utility(improved) - now });
       } else {
@@ -1866,7 +1852,7 @@ function decideSecondFiringChoice(k: Know): GameAction | null {
   if (c === undefined || c.stage !== "loaded" || record === undefined || record.first === null) return firstValid(k, [fallback]);
   const utility = loadedUtility(k, c);
   const source = record.first.heatSource - record.first.fireModifier;
-  const fixed = record.first.positionModifier + record.first.heatMarker;
+  const fixed = record.first.positionModifier + record.first.kilnMasterMarker;
   const candidates: Array<{ action: GameAction; value: number }> = [];
   for (const cardIndex of [0, 1] as const) {
     const heat = source + options.modifiers[cardIndex] + fixed;
@@ -1882,19 +1868,31 @@ function decideSecondFiringChoice(k: Know): GameAction | null {
   return firstValid(k, [...candidates.map((candidate) => candidate.action), fallback]);
 }
 
-function decideSalvage(k: Know): GameAction | null {
-  const options = salvageOptions(k.view);
-  const candidates: GameAction[] = (options?.ceramicIds ?? []).map((ceramicId) => ({ type: "SALVAGE_FLAWED", ceramicId }));
-  candidates.push({ type: "SALVAGE_FLAWED", ceramicId: null });
-  return firstValid(k, candidates);
+/**
+ * R20: sells the seat's Finished Flawed ceramics, one command each, before any other choice of
+ * a Work turn's before-action window, an Order Phase turn or a Cleanup trim. A Finished Flawed
+ * ceramic can complete no Order and enter no Exhibition (rev. 4 L282), so its 2 Coins are pure
+ * gain. In the after-Quality turn it sells nothing: Second Firing may still use a Flawed
+ * ceramic of this firing, and the Order Phase turn always opens for a sale. Null when there is
+ * nothing to sell.
+ */
+function decideSellFlawed(k: Know): GameAction | null {
+  const options = sellFlawedOptions(k.view);
+  if (options === null) return null;
+  const finished = options.ceramicIds.filter((ceramicId) => k.game.ceramics[ceramicId]?.stage === "finished");
+  return firstValid(
+    k,
+    finished.map((ceramicId): GameAction => ({ type: "SELL_FLAWED", ceramicId })),
+  );
 }
 
 // ── Orders (Order Phase) ──────────────────────────────────────────────────────────────
 
 /**
  * The reward side of completing `options` one after another: printed VP and Coins, each Crown
- * from the Recognition it reaches, and each once-per-round trigger (Ru, Guan, Tribute Ware,
- * Canal Barge's 2 Coins; L458, L464, v1.6.2 L622, L641) at most once. After the last Work
+ * from the Recognition it reaches, each once-per-round trigger (Ru, Guan, Tribute Ware, Canal
+ * Barge's 2 Coins; L458, L464, v1.6.2 L622, L641) at most once, and the Crackle VP of every
+ * delivered Crackle ceramic (rev. 4 L465). After the last Work
  * Phase every term is exact end-game VP: Coins through the capped 1-per-3 rule (L494), and a
  * Crown only for its Grant Coin, the Audience or overflow VP.
  */
@@ -1912,7 +1910,7 @@ function completionReward(k: Know, options: readonly OrderMatchOption[]): number
       barge = true;
       coins += TECHS.T23.params.coins;
     }
-    value += option.vp;
+    value += option.vp + option.triggers.crackleVp;
     coins += option.coins;
     let crowns = option.printedCrowns;
     if (option.triggers.ru && !ru) {
@@ -2225,10 +2223,15 @@ function colourSamplesSwap(k: Know): GameAction | null {
   return best !== null && best.gain > 0.3 ? firstValid(k, [best.action]) : null;
 }
 
+/**
+ * Imperial Priority (free, no Wood, rev. 4 L291): every vessel × Glaze × Imperial modifier, and,
+ * when Kiln Master is ready, its +1 or −1 marker on the load (R22) at a small bias to none.
+ */
 function imperialPriorityCandidates(k: Know): Array<{ action: GameAction; value: number }> {
   const options = imperialPriorityOptions(k.view);
   if (!options.usable) return [];
   const fire = nextFireDist(k);
+  const markers: Array<HeatDelta | null> = [null, ...(options.kilnMaster ? (kilnMasterOption(k.view, k.pid)?.values ?? []) : [])];
   const candidates: Array<{ action: GameAction; value: number }> = [];
   for (const ceramicId of options.ceramicIds) {
     const vessel = k.game.ceramics[ceramicId];
@@ -2236,8 +2239,13 @@ function imperialPriorityCandidates(k: Know): Array<{ action: GameAction; value:
     for (const glaze of GLAZES) {
       const utility = vesselUtility(k, vessel, glaze);
       for (const modifier of FIRING.imperialModifiers) {
-        const value = expectQuality(k.die + modifier, preferredHeat(glaze), fire, utility);
-        candidates.push({ action: { type: "USE_IMPERIAL_PRIORITY", ceramicId, glaze, imperialModifier: modifier }, value });
+        for (const kilnMaster of markers) {
+          const value = expectQuality(k.die + modifier + (kilnMaster ?? 0), preferredHeat(glaze), fire, utility) - (kilnMaster === null ? 0 : KILN_MASTER_BIAS);
+          candidates.push({
+            action: { type: "USE_IMPERIAL_PRIORITY", ceramicId, glaze, imperialModifier: modifier, ...(kilnMaster === null ? {} : { kilnMaster }) },
+            value,
+          });
+        }
       }
     }
   }
@@ -2345,8 +2353,11 @@ function targetBase(k: Know): number {
   });
 }
 
-/** Expected value of loading `vessel` with `glaze` at a destination of position `modifier`. */
-function loadValue(k: Know, vessel: ShapedCeramic, glaze: Glaze, destination: LoadSpec["destination"], modifier: number, shape: Shape, flexibleMarker: boolean): number {
+/**
+ * Expected value of loading `vessel` with `glaze` at a destination of position `modifier`, with
+ * Kiln Master's `marker` on it (rev. 4 L628; 0 without one).
+ */
+function loadValue(k: Know, vessel: ShapedCeramic, glaze: Glaze, destination: LoadSpec["destination"], modifier: number, shape: Shape, marker = 0): number {
   const fire = nextFireDist(k);
   const utility = vesselUtility(k, vessel, glaze, shape);
   const preferred = preferredHeat(glaze);
@@ -2364,8 +2375,7 @@ function loadValue(k: Know, vessel: ShapedCeramic, glaze: Glaze, destination: Lo
         })();
   let total = 0;
   for (const [base, pb] of bases) {
-    const markers = flexibleMarker ? [-1, 0, 1] : [0];
-    total += pb * Math.max(...markers.map((marker) => expectQuality(base + modifier + marker, preferred, fire, utility)));
+    total += pb * expectQuality(base + modifier + marker, preferred, fire, utility);
   }
   return total;
 }
@@ -2399,7 +2409,7 @@ function rankedLoads(k: Know, earlier: readonly LoadSpec[], limit: number): Load
       const shape = reworkShape ?? vessel.shape;
       for (const option of destinations) {
         for (const glaze of GLAZES) {
-          const value = loadValue(k, vessel, glaze, option.destination, option.modifier, shape, false) + (reworkShape === undefined ? 0 : 0.2);
+          const value = loadValue(k, vessel, glaze, option.destination, option.modifier, shape) + (reworkShape === undefined ? 0 : 0.2);
           choices.push({
             load: { ceramicId: vessel.id, glaze, destination: option.destination, ...(reworkShape === undefined ? {} : { reworkShape }) },
             value: value + (option.destination.kiln === "imperial" ? 0.15 : 0) + (option.returnsSettersMark ? 0.05 : 0),
@@ -2412,6 +2422,12 @@ function rankedLoads(k: Know, earlier: readonly LoadSpec[], limit: number): Load
   return choices.slice(0, limit);
 }
 
+/**
+ * The Glaze & Load candidates: the best 1–3 first loads, each with the best second load for the
+ * Shifu when it is worth it (the second load into the Shared Kiln costs no more Wood, R24), Kiln
+ * Master's marker where it helps most (`withKilnMaster`), and the single load as a fallback.
+ * Shared destinations need the action's 1 Wood; `loadDestinationOptions` offers none without it.
+ */
 function buildGlazeLoad(k: Know, workerId: string, effect: WorkerEffect): GameAction[] {
   const maxLoads = LOCATIONS.glaze_load.effects[effect].maxLoads;
   const firstChoices = rankedLoads(k, [], 6);
@@ -2422,34 +2438,47 @@ function buildGlazeLoad(k: Know, workerId: string, effect: WorkerEffect): GameAc
       const second = rankedLoads(k, loads, 3)[0];
       if (second !== undefined && second.value > 1.0) loads.push(second.load);
     }
-    const action: ActionOf<"PLACE_GLAZE_LOAD"> = { type: "PLACE_GLAZE_LOAD", workerId, loads };
-    if (effect === "shifu") {
-      const targets = heatMarkerTargets(k.view, k.pid, loads);
-      const target = pickMarkerTarget(k, targets, loads);
-      if (target !== null) actions.push({ ...action, heatMarkerCeramicId: target });
+    const marked = withKilnMaster(k, loads);
+    if (marked !== null) actions.push({ type: "PLACE_GLAZE_LOAD", workerId, loads: marked });
+    actions.push({ type: "PLACE_GLAZE_LOAD", workerId, loads });
+    if (loads.length > 1) {
+      const single = withKilnMaster(k, [first.load]);
+      if (single !== null) actions.push({ type: "PLACE_GLAZE_LOAD", workerId, loads: single });
+      actions.push({ type: "PLACE_GLAZE_LOAD", workerId, loads: [first.load] });
     }
-    actions.push(action);
-    if (loads.length > 1) actions.push({ ...action, loads: [first.load] });
   }
   return actions;
 }
 
-/** The Heat marker goes where turning it later is worth most: the most valuable load. */
-function pickMarkerTarget(k: Know, targets: readonly CeramicId[], loads: readonly LoadSpec[]): CeramicId | null {
-  let best: { id: CeramicId; value: number } | null = null;
-  for (const ceramicId of targets) {
-    const c = k.game.ceramics[ceramicId];
-    if (c === undefined) continue;
-    let value = 0;
-    if (c.stage === "loaded") {
-      value = ceramicNeed(k, c.id).bonus + 1;
-    } else {
-      const load = loads.find((l) => l.ceramicId === ceramicId);
-      value = ceramicNeed(k, ceramicId).bonus + (load?.destination.kiln === "imperial" ? 0.5 : 1.2);
+/** A small preference for keeping Kiln Master's once-per-round use when its marker barely helps. */
+const KILN_MASTER_BIAS = 0.01;
+
+/**
+ * Kiln Master (T24, rev. 4 L628, R22): when it is ready, the loads with its +1 or −1 marker on
+ * the one load where the expected Quality gains most (the same heat model that chooses the Glaze
+ * and the space); null when it is not ready or no marker beats none by `KILN_MASTER_BIAS`.
+ */
+function withKilnMaster(k: Know, loads: readonly LoadSpec[]): LoadSpec[] | null {
+  const option = kilnMasterOption(k.view, k.pid);
+  if (option === null || !option.ready) return null;
+  let best: { index: number; value: HeatDelta; gain: number } | null = null;
+  loads.forEach((load, index) => {
+    const vessel = k.game.ceramics[load.ceramicId];
+    if (vessel === undefined || vessel.stage !== "shaped") return;
+    const shape = load.reworkShape ?? vessel.shape;
+    const modifier =
+      load.destination.kiln === "imperial"
+        ? load.destination.imperialModifier
+        : (load.destination.kilnFurniture ?? k.game.sharedKiln.spaces[load.destination.spaceId].kilnFurniture?.modifier ?? zoneModifier(load.destination.spaceId));
+    const plain = loadValue(k, vessel, load.glaze, load.destination, modifier, shape);
+    for (const value of option.values) {
+      const gain = loadValue(k, vessel, load.glaze, load.destination, modifier, shape, value) - plain;
+      if (best === null || gain > best.gain) best = { index, value, gain };
     }
-    if (best === null || value > best.value) best = { id: ceramicId, value };
-  }
-  return best?.id ?? null;
+  });
+  const chosen = best as { index: number; value: HeatDelta; gain: number } | null;
+  if (chosen === null || chosen.gain <= KILN_MASTER_BIAS) return null;
+  return loads.map((load, index) => (index === chosen.index ? { ...load, kilnMaster: chosen.value } : load));
 }
 
 /** Vessels to form: the most valuable planned demands, else cheap Shapes that add variety. */
@@ -2506,17 +2535,23 @@ function buildFormDecorate(k: Know, workerId: string, effect: WorkerEffect): Gam
   return actions;
 }
 
+/**
+ * The Clay/Wood split of a Materials Yard gain (4 or 8, rev. 4 L176–177): the Clay the next
+ * vessels need, then Wood up to the round's fuel and firing needs (1 Wood per Glaze & Load
+ * action into the Shared Kiln this round and the next, R24), the rest as Clay once the Wood is
+ * covered.
+ */
 function materialsSplit(k: Know, total: number, clayHave: number, woodHave: number): { clay: number; wood: number } {
   const need = resourceNeed(k);
   const wantClay = clamp(need.clay - clayHave, 0, total);
-  const wantWood = clamp((k.lastRound ? 1 : 3) - woodHave, 0, total - wantClay);
+  const wantWood = clamp((k.lastRound ? 2 : 4) - woodHave, 0, total - wantClay);
   const rest = total - wantClay - wantWood;
-  const clay = wantClay + (woodHave + wantWood < 2 ? 0 : rest);
+  const clay = wantClay + (woodHave + wantWood < 3 ? 0 : rest);
   return { clay, wood: total - clay };
 }
 
 function buildMaterialsYard(k: Know, workerId: string, effect: WorkerEffect, senior: boolean): GameAction[] {
-  // 3 resources, or 6 for the Shifu effect (Senior Apprentice included), with no Coin option (v1.6.2 L164–165).
+  // 4 resources, or 8 for the Shifu effect (Senior Apprentice included), with no Coin option (rev. 4 L176–177).
   const total = LOCATIONS.materials_yard.effects[effect].resources;
   const r = k.me.resources;
   const split = materialsSplit(k, total, r.clay, r.wood);
@@ -2608,6 +2643,9 @@ interface PlanParams {
   readonly cwDraw: number;
   readonly gh: Readonly<Record<WorkerEffect, { value: number; price: number; unlocks: "form_decorate" | "glaze_load" | null } | null>>;
   readonly mhStep: (recognition: number) => number;
+  /** The Magistrate's Hall Shifu's best face-up Crown Order (rev. 4 L241, R21), 0 when none is
+   * worth taking. */
+  readonly mhCrown: number;
 }
 
 function planParams(k: Know): PlanParams {
@@ -2647,7 +2685,30 @@ function planParams(k: Know): PlanParams {
     cwDraw: k.game.counts.mainDeck + k.game.counts.mainDiscard > 0 ? Math.max(0, expectedBestOf(k, 1)) : 0,
     gh: { apprentice: ghFor("apprentice"), shifu: ghFor("shifu") },
     mhStep: (recognition: number) => (recognition <= 2 ? crownStepValue(k, recognition) : 0),
+    mhCrown: bestMagistratesCrownOrder(k)?.value ?? 0,
   };
+}
+
+/** A face-up Crown Order is taken at the Magistrate's Hall only when it is worth this much. */
+const MH_CROWN_ORDER_THRESHOLD = 0.3;
+
+/**
+ * The Magistrate's Hall Shifu's optional Crown Order (rev. 4 L241, R21): the face-up Order
+ * showing a Crown with the highest `reservationValue` (which already counts the Cleanup hand
+ * limit, `reservationOverflows`), when it clears `MH_CROWN_ORDER_THRESHOLD`; ties to the lowest
+ * position. Null when none is worth taking or none shows.
+ */
+function bestMagistratesCrownOrder(k: Know): { slotIndex: number; orderId: OrderId; value: number } | null {
+  return memo(k, "mhCrown", () => {
+    let best: { slotIndex: number; orderId: OrderId; value: number } | null = null;
+    for (const slotIndex of magistratesHallQuote(k.view, "shifu").crownOrderSlots) {
+      const orderId = k.game.market.display[slotIndex];
+      if (orderId === null || orderId === undefined) continue;
+      const value = reservationValue(k, orderId);
+      if (best === null || value > best.value + 1e-9) best = { slotIndex, orderId, value };
+    }
+    return best !== null && best.value > MH_CROWN_ORDER_THRESHOLD ? best : null;
+  });
 }
 
 function initialAbs(k: Know): AbsState {
@@ -2715,9 +2776,9 @@ function absApply(k: Know, params: PlanParams, s: AbsState, worker: PlanWorker, 
       next.wood += split.wood;
       if (next.prepared && !worker.senior && (k.roundsAfter >= 1 || next.gl > 0)) {
         const clay = (params.demandClay[0] ?? 1) + TECHS.T17.params.claySurcharge;
-        if (next.clay >= clay && next.coins >= 2) {
+        if (next.clay >= clay && next.coins >= vesselCoins()) {
           next.clay -= clay;
-          next.coins -= 2;
+          next.coins -= vesselCoins();
           next.shaped += 1;
           next.prepared = false;
         }
@@ -2736,8 +2797,8 @@ function absApply(k: Know, params: PlanParams, s: AbsState, worker: PlanWorker, 
       let formed = 0;
       for (let index = 0; index < maxVessels; index += 1) {
         const clay = params.demandClay[index] ?? 1;
-        let coins = 2;
-        if (index === 1) coins -= LOCATIONS.form_decorate.effects.shifu.twoVesselDecorationDiscount;
+        let coins = vesselCoins();
+        if (index === 1) coins -= LOCATIONS.form_decorate.effects.shifu.twoVesselDiscount;
         if (next.kit && index === 0) coins -= 1;
         const clayCost = next.wheel && clay >= 2 ? Math.max(0, clay - TECHS.T01.params.clayReduction) : clay;
         if (next.clay < clayCost || next.coins < coins) break;
@@ -2760,7 +2821,10 @@ function absApply(k: Know, params: PlanParams, s: AbsState, worker: PlanWorker, 
     case "GL": {
       if (s.gl <= 0 || s.shaped <= 0) return null;
       const maxLoads = LOCATIONS.glaze_load.effects[effect].maxLoads;
-      const sharedFree = Math.floor(Math.max(0, params.sharedOpen - params.oppRate * s.step - s.sharedLoads));
+      // Kiln fuel (rev. 4 L197, R24): 1 Wood for the action when any load goes into the Shared
+      // Kiln; without it, only the Imperial Kiln (free) can take a load.
+      const fuel = LOCATIONS.glaze_load.effects[effect].sharedKilnWood;
+      const sharedFree = s.wood >= fuel ? Math.floor(Math.max(0, params.sharedOpen - params.oppRate * s.step - s.sharedLoads)) : 0;
       const imperialFree = params.imperialOpen && s.imperialLoads === 0 ? 1 : 0;
       const loads = Math.min(maxLoads, s.shaped, sharedFree + imperialFree);
       if (loads <= 0) return null;
@@ -2770,6 +2834,7 @@ function absApply(k: Know, params: PlanParams, s: AbsState, worker: PlanWorker, 
       const imperial = Math.min(imperialFree, loads);
       next.imperialLoads += imperial;
       next.sharedLoads += loads - imperial;
+      if (loads - imperial > 0) next.wood -= fuel;
       gain += imperial * 0.5 + (effect === "shifu" ? 0.35 : 0);
       if (next.tending) {
         next.tending = false;
@@ -2803,6 +2868,9 @@ function absApply(k: Know, params: PlanParams, s: AbsState, worker: PlanWorker, 
       next.mh -= 1;
       next.coins -= cost;
       gain += params.mhStep(s.recognition);
+      // The Shifu then may reserve a face-up Crown Order (R21): counted for the plan's first
+      // Magistrate's Hall visit only (each visit advances Recognition).
+      if (effect === "shifu" && s.recognition === k.me.imperial.recognition) gain += params.mhCrown;
       next.recognition += 1;
       break;
     }
@@ -2865,8 +2933,12 @@ function buildPlacement(k: Know, action: PlanAction, workerId: string, effect: W
       return buildCommission(workerId, senior);
     case "GH":
       return buildGuildHall(k, workerId, effect);
-    case "MH":
-      return [{ type: "PLACE_MAGISTRATES_HALL", workerId }];
+    case "MH": {
+      // The Shifu's optional Crown Order (R21), when one is worth taking; the bare step after.
+      const crown = effect === "shifu" ? bestMagistratesCrownOrder(k) : null;
+      const base: GameAction = { type: "PLACE_MAGISTRATES_HALL", workerId };
+      return crown === null ? [base] : [{ type: "PLACE_MAGISTRATES_HALL", workerId, crownOrder: { slotIndex: crown.slotIndex, orderId: crown.orderId } }, base];
+    }
   }
 }
 
@@ -2900,7 +2972,7 @@ function decidePlacement(k: Know): GameAction | null {
 }
 
 function decideBeforeAction(k: Know): GameAction | null {
-  return windowAbility(k) ?? decidePlacement(k);
+  return decideSellFlawed(k) ?? windowAbility(k) ?? decidePlacement(k);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════════════
@@ -2933,7 +3005,7 @@ function decide(k: Know): AuthoritativeCommand | null {
   const phase = k.game.phase;
   switch (phase.type) {
     case "setup_kiln_selection":
-      return decideKiln(k);
+      return decideSetup(k);
     case "round_start_setters_mark":
       return decideSettersMark(k);
     case "work_turn":
@@ -2954,20 +3026,16 @@ function decide(k: Know): AuthoritativeCommand | null {
       return decideContribution(k);
     case "firing_test_pieces":
       return decideTestPieces(k);
-    case "firing_heat_markers":
-      return decideHeatMarkers(k);
     case "firing_heat_adjustment":
       return decideJun(k);
     case "firing_second_firing_choice":
       return decideSecondFiringChoice(k);
     case "firing_after_quality":
       return decideAfterQuality(k);
-    case "firing_salvage":
-      return decideSalvage(k);
     case "orders":
-      return decideOrders(k);
+      return decideSellFlawed(k) ?? decideOrders(k);
     case "cleanup_hand_limit":
-      return decideHandLimit(k);
+      return decideSellFlawed(k) ?? decideHandLimit(k);
     case "finished":
       return null;
   }

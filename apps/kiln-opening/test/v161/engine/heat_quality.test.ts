@@ -15,8 +15,8 @@ import {
   firingRecordsInOrder,
   heatCalculation,
   heatPreviews,
-  markerValue,
   positionFor,
+  withJunAdjustment,
   qualityFor,
   saggarsFloored,
 } from "../../../src/game/firing/heat.ts";
@@ -87,18 +87,18 @@ describe("Protective Saggars' floor (v1.6.2 L636)", () => {
 });
 
 describe("heatCalculation and the Quality table (L64, L245, L274–279)", () => {
-  it("sums source, position and marker, then Jun, and takes the absolute Heat Difference", () => {
-    expect(heatCalculation({ fireModifier: 1, heatSource: 4, positionModifier: -1, heatMarker: 1, junAdjustment: -1, preferredHeat: 2 })).toEqual({
+  it("sums source, position and the Kiln Master marker, then Jun, and takes the absolute Heat Difference (rev. 4 L255, L635)", () => {
+    expect(heatCalculation({ fireModifier: 1, heatSource: 4, positionModifier: -1, kilnMasterMarker: 1, junAdjustment: -1, preferredHeat: 2 })).toEqual({
       fireModifier: 1,
       heatSource: 4,
       positionModifier: -1,
-      heatMarker: 1,
+      kilnMasterMarker: 1,
       actualHeat: 4,
       junAdjustment: -1,
       finalActualHeat: 3,
       heatDifference: 1,
     });
-    expect(heatCalculation({ fireModifier: -2, heatSource: 0, positionModifier: -1, heatMarker: -1, junAdjustment: 0, preferredHeat: 4 }).heatDifference).toBe(6);
+    expect(heatCalculation({ fireModifier: -2, heatSource: 0, positionModifier: -1, kilnMasterMarker: -1, junAdjustment: 0, preferredHeat: 4 }).heatDifference).toBe(6);
   });
 
   it.each([
@@ -113,11 +113,9 @@ describe("heatCalculation and the Quality table (L64, L245, L274–279)", () => 
     expect(qualityForDifference(difference)).toBe(quality);
   });
 
-  it("markerValue: a face-down marker has no value yet (INT); a turned marker adds ±1", () => {
-    expect(markerValue(null)).toBe(0);
-    expect(markerValue({ source: "own", faceDown: true })).toBe(0);
-    expect(markerValue({ source: "own", faceDown: false, value: -1 })).toBe(-1);
-    expect(markerValue({ source: "kiln_master", faceDown: false, value: 1 })).toBe(1);
+  it("withJunAdjustment keeps the Kiln Master marker and replaces only Jun's ±1 (rev. 4 L627, L635)", () => {
+    const first = heatCalculation({ fireModifier: 0, heatSource: 2, positionModifier: 0, kilnMasterMarker: -1, junAdjustment: 0, preferredHeat: 2 });
+    expect(withJunAdjustment(first, 1, 2)).toEqual({ ...first, junAdjustment: 1, finalActualHeat: 2, heatDifference: 0 });
   });
 });
 
@@ -157,75 +155,72 @@ function results(events: Parameters<typeof eventsOfType>[0]): CeramicHeatResult[
 }
 
 describe("Actual Heat in the firing (L245, L677–678)", () => {
-  it("Shared: Global Heat + zone + marker; Global Heat is Base + Fire and unclamped (L249)", () => {
+  it("Shared: Global Heat + zone + Kiln Master marker; Global Heat is Base + Fire and unclamped (L249, rev. 4 L255)", () => {
     const table = openFiringTable({
-      players: [{ techs: ["T12"], resources: { wood: 3 } }, {}],
+      players: [{ techs: ["T12"], resources: { wood: 3 } }, { techs: [{ id: "T24", usedThisRound: true }] }],
       kilnDie: 3,
       fireDeck: [2],
       ceramics: [
-        { owner: "p1", stage: "loaded", shape: "bowl", glaze: "moon_white", at: "high_1", heatMarker: { source: "own", faceDown: true } },
-        { owner: "p2", stage: "loaded", shape: "bowl", glaze: "white", at: "low_1" },
+        { owner: "p1", stage: "loaded", shape: "bowl", glaze: "moon_white", at: "high_1" },
+        { owner: "p2", stage: "loaded", shape: "bowl", glaze: "white", at: "low_1", kilnMaster: -1 },
         { owner: "p2", stage: "loaded", shape: "plate", glaze: "grey_green", at: "middle_1" },
       ],
     });
     table.contribute("p1", "FUEL_LEDGER_STOKE");
-    table.contribute("p2", "STOKE");
-    // Base Heat 3 + 3 = 6 → 5; the Heat-marker step is p1's.
-    expect(table.state.firing?.baseHeat).toBe(5);
-    const events = table.act("p1", { type: "RESOLVE_HEAT_MARKERS", ownMarker: 1 });
+    // Base Heat 3 + 3 = 6 → 5; nobody uses Test Pieces, so the Fire card follows at once.
+    const events = table.contribute("p2", "STOKE");
+    expect(eventsOfType(events, "BASE_HEAT_DETERMINED")[0]?.baseHeat).toBe(5);
     expect(eventsOfType(events, "FIRE_REVEALED")).toEqual([{ type: "FIRE_REVEALED", modifier: 2, baseHeat: 5, globalHeat: 7 }]);
-    expect(results(events).map((r) => [r.ceramicId, r.calculation.heatSource, r.calculation.positionModifier, r.calculation.heatMarker, r.calculation.actualHeat])).toEqual([
-      ["c1", 7, 1, 1, 9],
-      ["c2", 7, -1, 0, 6],
+    expect(results(events).map((r) => [r.ceramicId, r.calculation.heatSource, r.calculation.positionModifier, r.calculation.kilnMasterMarker, r.calculation.actualHeat])).toEqual([
+      ["c1", 7, 1, 0, 8],
+      ["c2", 7, -1, -1, 5],
       ["c3", 7, 0, 0, 7],
     ]);
     expect(table.state.lastFiring?.globalHeat ?? table.state.firing?.globalHeat).toBe(7);
   });
 
-  it("Imperial: Kiln Die + Fire + Imperial modifier + marker, whatever the Contributions were (L289, R10)", () => {
+  it("Imperial: Kiln Die + Fire + Imperial modifier + Kiln Master marker, whatever the Contributions were (L289, R10, rev. 4 L292)", () => {
     const table = openFiringTable({
-      players: [{ recognition: 2, techs: ["T11"], resources: { wood: 4 } }, {}],
+      players: [{ recognition: 2, techs: [{ id: "T24", usedThisRound: true }], resources: { wood: 4 } }, {}],
       kilnDie: 1,
       fireDeck: [-1],
       ceramics: [
-        { owner: "p1", stage: "loaded", shape: "vase", glaze: "white", at: "imperial", imperialModifier: 1, heatMarker: { source: "own", faceDown: true } },
+        { owner: "p1", stage: "loaded", shape: "vase", glaze: "white", at: "imperial", imperialModifier: 1, kilnMaster: -1 },
         { owner: "p1", stage: "loaded", shape: "bowl", glaze: "white", at: "high_1" },
         { owner: "p2", stage: "loaded", shape: "bowl", glaze: "white", at: "middle_1" },
       ],
     });
     table.contribute("p1", "STOKE");
-    table.contribute("p2", "STOKE");
-    expect(table.state.firing?.baseHeat).toBe(3);
-    const events = table.act("p1", { type: "RESOLVE_HEAT_MARKERS", ownMarker: -1 });
+    const events = table.contribute("p2", "STOKE");
+    expect(eventsOfType(events, "BASE_HEAT_DETERMINED")[0]?.baseHeat).toBe(3);
     // Imperial: 1 + (−1) + 1 + (−1) = 0, untouched by the two Stokes. Shared: 3 − 1 = 2.
     expect(results(events)).toEqual([
       {
         ceramicId: "c1",
-        calculation: { fireModifier: -1, heatSource: 0, positionModifier: 1, heatMarker: -1, actualHeat: 0, junAdjustment: 0, finalActualHeat: 0, heatDifference: 1 },
+        calculation: { fireModifier: -1, heatSource: 0, positionModifier: 1, kilnMasterMarker: -1, actualHeat: 0, junAdjustment: 0, finalActualHeat: 0, heatDifference: 1 },
       },
       {
         ceramicId: "c2",
-        calculation: { fireModifier: -1, heatSource: 2, positionModifier: 1, heatMarker: 0, actualHeat: 3, junAdjustment: 0, finalActualHeat: 3, heatDifference: 2 },
+        calculation: { fireModifier: -1, heatSource: 2, positionModifier: 1, kilnMasterMarker: 0, actualHeat: 3, junAdjustment: 0, finalActualHeat: 3, heatDifference: 2 },
       },
       {
         ceramicId: "c3",
-        calculation: { fireModifier: -1, heatSource: 2, positionModifier: 0, heatMarker: 0, actualHeat: 2, junAdjustment: 0, finalActualHeat: 2, heatDifference: 1 },
+        calculation: { fireModifier: -1, heatSource: 2, positionModifier: 0, kilnMasterMarker: 0, actualHeat: 2, junAdjustment: 0, finalActualHeat: 2, heatDifference: 1 },
       },
     ]);
   });
 
-  it("Kiln Furniture's modifier replaces the zone and stacks with a Heat marker (L269, L628)", () => {
+  it("Kiln Furniture's modifier replaces the zone and stacks with the Kiln Master marker (L628, rev. 4 L635)", () => {
     const table = openFiringTable({
-      players: [{ techs: ["T15"] }, {}],
+      players: [{ techs: ["T15", { id: "T24", usedThisRound: true }] }, {}],
       fireDeck: [0],
       ceramics: [
-        { owner: "p1", stage: "loaded", shape: "bowl", glaze: "moon_white", at: "low_1", kilnFurniture: 1, heatMarker: { source: "own", faceDown: true } },
+        { owner: "p1", stage: "loaded", shape: "bowl", glaze: "moon_white", at: "low_1", kilnFurniture: 1, kilnMaster: 1 },
         { owner: "p2", stage: "loaded", shape: "bowl", glaze: "celadon", at: "middle_1" },
       ],
     });
-    tendAll(table);
-    const events = table.act("p1", { type: "RESOLVE_HEAT_MARKERS", ownMarker: 1 });
-    expect(results(events)[0]?.calculation).toMatchObject({ heatSource: 2, positionModifier: 1, heatMarker: 1, actualHeat: 4, heatDifference: 0 });
+    const events = tendAll(table);
+    expect(results(events)[0]?.calculation).toMatchObject({ heatSource: 2, positionModifier: 1, kilnMasterMarker: 1, actualHeat: 4, heatDifference: 0 });
     expect(table.state.lastFiring?.ceramics["c1"]).toMatchObject({ positionSource: "kiln_furniture", quality: "masterpiece" });
   });
 });
@@ -234,8 +229,9 @@ describe("Quality assignment (L274–279, L680)", () => {
   it("assigns every ceramic's Quality from its Heat Difference, in ceramic order", () => {
     // Base 2, Fire 0, Global 2. Middle spaces (0): White 1 → Fine, Celadon 2 → Masterpiece,
     // Grey-Green 3 → Fine; Low (−1): Moon White 4 → 1, Flawed; High (+1): White 1 → 3, Standard.
+    // p4 owns Second Firing, so the firing stays open at p4's after-Quality turn.
     const table = openFiringTable({
-      players: 4,
+      players: [{}, {}, {}, { techs: ["T14"] }],
       fireDeck: [0],
       ceramics: [
         { owner: "p1", stage: "loaded", shape: "bowl", glaze: "white", at: "middle_1" },
@@ -261,9 +257,10 @@ describe("Quality assignment (L274–279, L680)", () => {
     const qualities: Array<Quality | null> = firingRecordsInOrder(firing).map((record) => record.quality);
     expect(qualities).toEqual(["fine", "masterpiece", "fine", "flawed", "standard"]);
     expect(firing.ceramics["c4"]?.history).toEqual([{ cause: "fired", from: null, to: "flawed" }]);
-    // Quality is recorded on the firing; the ceramics stay loaded until step 12.
+    // Quality is recorded on the firing; the ceramics stay loaded until step 6 (rev. 4 L664).
     expect(table.state.ceramics["c4"]?.stage).toBe("loaded");
-    expect(table.state.phase).toEqual({ type: "firing_salvage", pendingPlayerIds: ["p4"], openedAtRevision: table.state.revision });
+    // p3 (the default Ge Kiln) may crackle its Fine c3 (rev. 4 L463); p4 may Second-Fire c4.
+    expect(table.state.phase).toEqual({ type: "firing_after_quality", queue: { actorIds: ["p3", "p4"], index: 0 } });
   });
 
   it("firingRecordsInOrder follows ceramic sequence, never key order (DESIGN §2.3)", () => {
@@ -306,19 +303,20 @@ describe("heatPreviews (public information only)", () => {
     ]);
   });
 
-  it("after Base Heat: known for unmarked ceramics, unknown under a face-down marker until it is turned", () => {
+  it("after Base Heat: known for every ceramic, the Kiln Master marker included (public since loading, rev. 4 L635)", () => {
     const table = openFiringTable({
-      players: [{}, {}],
+      players: [{ techs: [{ id: "T24", usedThisRound: true }] }, { techs: ["T13"] }],
       fireDeck: [0],
       ceramics: [
-        { owner: "p1", stage: "loaded", shape: "bowl", glaze: "celadon", at: "high_1", heatMarker: { source: "own", faceDown: true } },
+        { owner: "p1", stage: "loaded", shape: "bowl", glaze: "celadon", at: "high_1", kilnMaster: 1 },
         { owner: "p2", stage: "loaded", shape: "bowl", glaze: "celadon", at: "low_1" },
       ],
     });
     tendAll(table);
-    expect(table.state.phase.type).toBe("firing_heat_markers");
+    // Test Pieces pauses the firing after Base Heat and before the Fire card (rev. 4 L626).
+    expect(table.state.phase.type).toBe("firing_test_pieces");
     const previews = heatPreviews(table.view("p2"));
-    expect(previews[0]).toEqual({ ceramicId: "c1", preferredHeat: 2, heatBeforeFire: null, qualityByFire: null });
+    expect(previews[0]).toMatchObject({ ceramicId: "c1", preferredHeat: 2, heatBeforeFire: 4 });
     expect(previews[1]).toMatchObject({ ceramicId: "c2", heatBeforeFire: 1 });
     expect(previews[1]?.qualityByFire?.["1"]).toBe("masterpiece");
     // The same answer for every viewer: previews use public information only.

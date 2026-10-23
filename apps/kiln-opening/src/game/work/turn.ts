@@ -150,7 +150,9 @@ export function afterWindowAbilityUsed(draft: GameState, playerId: PlayerId, ctx
 
 /**
  * Ends the active player's Work turn (DESIGN §3.2 step 4):
- * 1. the deferred Main display refill if this player reserved a face-up Order (L191, L391);
+ * 1. the deferred Main display refill if this player reserved a face-up Order this turn (L191,
+ *    L391): at a Select, or the Magistrate's Hall Shifu's Crown Order (rev. 4 L245), one refill
+ *    for every face-up take of the turn;
  * 2. the deferred Tech refill: every discipline back to 2 as its deck allows, in
  *    `DISCIPLINES` order (v1.6.2 L209). Only a Guild Hall take this turn leaves a display
  *    short with cards in its deck, so this refills exactly the taker's disciplines;

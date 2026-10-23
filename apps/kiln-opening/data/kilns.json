@@ -64,8 +64,12 @@
       "id": "GE",
       "oncePerRound": true,
       "params": {
-        "fromQuality": "standard",
-        "toQuality": "fine"
+        "fromQualities": [
+          "fine",
+          "standard"
+        ],
+        "toQuality": "fine",
+        "vpPerDeliveredCrackle": 1
       },
       "name": "Ge Kiln",
       "nameZh": "哥窑",

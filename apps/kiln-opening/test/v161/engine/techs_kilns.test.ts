@@ -79,13 +79,13 @@ describe("acquisition (L208–214, L375)", () => {
     expect([techPrice("T01"), techPrice("T17"), techPrice("T25")]).toEqual([2, 3, 4]);
   });
 
-  it("charges the V1.6.2 costs (v1.6.2 L32, L618, L626, L636–637)", () => {
+  it("charges the V1.6.2 costs (v1.6.2 L32, L618, L626, L636; Fuel Ledger 4 by rev. 4 L625, change 30)", () => {
     expect(TECHS.T18.cost).toBe(3);
     expect(TECHS.T20.cost).toBe(3);
     expect(TECHS.T11.cost).toBe(3);
-    expect(TECHS.T12.cost).toBe(2);
+    expect(TECHS.T12.cost).toBe(4);
     expect(TECHS.T13.cost).toBe(3);
-    expect([techPrice("T18"), techPrice("T20"), techPrice("T11"), techPrice("T12")]).toEqual([3, 3, 3, 2]);
+    expect([techPrice("T18"), techPrice("T20"), techPrice("T11"), techPrice("T12")]).toEqual([3, 3, 3, 4]);
   });
 
   it("grantTech adds the Tech and unlocks the matching personal space (L212)", () => {

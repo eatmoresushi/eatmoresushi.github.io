@@ -83,6 +83,7 @@ export class LocalTable {
     const flow = options.flow === "halt" ? haltingFlow(halts, { pass: options.pass ?? [] }) : undefined;
     const game = newGame(seed, playerCount, {
       ...(options.kilns === undefined ? {} : { kilns: options.kilns }),
+      ...(options.mainOrderSlots === undefined ? {} : { mainOrderSlots: options.mainOrderSlots }),
       ...(flow === undefined ? {} : { flow }),
     });
     const table = new LocalTable(game.state, { ...options, rng: game.rng });

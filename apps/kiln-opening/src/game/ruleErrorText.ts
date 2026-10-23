@@ -241,11 +241,6 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
     zh: "覆烧只能把碗、盘或笔洗叠放进恰好已有1件你的器物的启用窑位",
     detailKeys: keys("spaceId", "ceramicId", "shape"),
   },
-  HEAT_MARKER_INVALID: {
-    en: "A ceramic may carry at most 1 Heat marker.",
-    zh: "每件器物至多带1个火标",
-    detailKeys: keys("ceramicId", "source"),
-  },
   // ── Orders and market (B1) ────────────────────────────────────────────────────────────
   ORDER_NOT_AVAILABLE: {
     en: "That Order is no longer on the display.",
@@ -356,7 +351,7 @@ export const RULE_ERROR_TEXT: Readonly<Record<GameRuleErrorCode, RuleErrorTextEn
   INVALID_TARGET: {
     en: "That target is not allowed: {reason}.",
     zh: "此目标不合法：{reason}",
-    detailKeys: keys("ceramicId", "spaceId", "orderId", "techId", "kilnId"),
+    detailKeys: keys("ceramicId", "spaceId", "orderId", "slotIndex", "techId", "kilnId"),
     fallbacks: [{ en: "That target is not allowed.", zh: "此目标不合法" }],
   },
   // ── Recognition ───────────────────────────────────────────────────────────────────────
@@ -476,16 +471,14 @@ export const ZONE_TEXT: Labels<KilnZone> = {
 
 /** Phase and timing-window names (glossary §2.11, §1.4). */
 export const PHASE_TEXT: Labels<GamePhaseType> = {
-  setup_kiln_selection: { en: "Kiln selection", zh: "选窑口" },
+  setup_kiln_selection: { en: "Kiln and Main Order choice", zh: "选窑口和主委托" },
   round_start_setters_mark: { en: "the start of the Work Phase", zh: "派工阶段开始时" },
   work_turn: { en: "the Work Phase", zh: "派工阶段" },
   firing_contributions: { en: "Choose Contributions", zh: "暗选控火" },
   firing_test_pieces: { en: "Test Pieces", zh: "火照" },
-  firing_heat_markers: { en: "the Heat marker step", zh: "翻火标" },
   firing_heat_adjustment: { en: "Heat adjustment", zh: "调火" },
   firing_after_quality: { en: "after-Quality abilities", zh: "定品后结算" },
   firing_second_firing_choice: { en: "the Second Firing choice", zh: "复烧选牌" },
-  firing_salvage: { en: "Salvage a Flawed ceramic", zh: "折卖瑕品" },
   orders: { en: "the Order Phase", zh: "交货阶段" },
   cleanup_hand_limit: { en: "Cleanup", zh: "收工" },
   finished: { en: "game end", zh: "终局" },
@@ -502,11 +495,15 @@ export const REASON_TEXT: Readonly<Record<string, RuleErrorTemplate>> = {
   flawed: { en: "a Flawed ceramic cannot complete an Order", zh: "瑕品不能完成委托" },
   crackle_not_masterpiece: { en: "a Crackle ceramic is never a Masterpiece", zh: "开片器永远不是臻品" },
   not_this_firing: { en: "the ceramic is not in this firing", zh: "器物不在本次烧成中" },
-  // After-Quality targets (v1.6.2 L628, L631, L280, L467): Protective Saggars and Ge take a
-  // Standard ceramic, Second Firing a Flawed or Standard one, salvage a Flawed one.
+  // After-Quality targets (rev. 4 L624, L627, L463): Protective Saggars takes a Standard
+  // ceramic, Second Firing a Flawed or Standard one, Ge a Fine or Standard one (change 29).
   not_standard: { en: "the ceramic is not Standard", zh: "器物不是良品" },
   not_flawed_or_standard: { en: "the ceramic is not Flawed or Standard", zh: "器物不是瑕品或良品" },
+  not_fine_or_standard: { en: "the ceramic is not Fine or Standard", zh: "器物不是上品或良品" },
+  // Only a Flawed ceramic can be sold (rev. 4 L284, R20).
   not_flawed: { en: "the ceramic is not Flawed", zh: "器物不是瑕品" },
+  // The Magistrate's Hall Shifu reserves only a face-up Crown Order (rev. 4 L241).
+  no_crown: { en: "the Order shows no Crown", zh: "委托上没有御令" },
   wrong_count: { en: "the number of ceramics does not match", zh: "器物件数不符" },
   relation_mismatch: { en: "the combined requirements are not met", zh: "组合要求不符" },
   crackle_not_selected: { en: "the declared ceramic is not one of those chosen", zh: "声明的器物不在所选器物中" },

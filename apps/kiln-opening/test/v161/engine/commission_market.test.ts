@@ -108,7 +108,7 @@ describe("the placement opens the private look (v1.6.2 L195–196; INT: Commissi
       effect: "apprentice",
       select: { n: 2, maxReservations: 1, fromDisplay: true, lookedCount: 2 },
     });
-    expect(t.player("p1").resources).toEqual({ clay: 2, wood: 2, coins: 3 });
+    expect(t.player("p1").resources).toEqual({ clay: 2, wood: 3, coins: 3 });
     expect(t.state.market.display).toEqual(DISPLAY);
     // Nothing else may happen until the reservation is made.
     t.expectRuleError("p1", { type: "END_TURN" }, "WRONG_PHASE");
@@ -150,7 +150,7 @@ describe("Apprentice effect (v1.6.2 L195): reserve 1 from the display or the 2 l
     const events = t.act("p1", choose(faceUp(2, "O03")));
 
     expect(t.state.hidden.orderHands["p1"]).toEqual(["O03"]);
-    expect(t.player("p1").resources).toEqual({ clay: 2, wood: 2, coins: 3 });
+    expect(t.player("p1").resources).toEqual({ clay: 2, wood: 3, coins: 3 });
     expect(types(events)).toEqual(["ORDER_RESERVED", "LOOKED_ORDERS_TO_BOTTOM", "DISPLAY_REFILLED", "WORK_TURN_ENDED", "WORK_TURN_STARTED"]);
     expect(only(events, "ORDER_RESERVED")).toEqual({
       type: "ORDER_RESERVED",
@@ -196,7 +196,7 @@ describe("Apprentice effect (v1.6.2 L195): reserve 1 from the display or the 2 l
     });
     expect(projectEvent(reserved)).not.toHaveProperty("secret");
     expect(t.state.market.display).toEqual(DISPLAY);
-    expect(t.player("p1").resources).toEqual({ clay: 2, wood: 2, coins: 3 });
+    expect(t.player("p1").resources).toEqual({ clay: 2, wood: 3, coins: 3 });
   });
 
   it("must reserve exactly 1: 0 is RESERVATION_REQUIRED, 2 is RESERVATION_LIMIT", () => {
@@ -233,7 +233,7 @@ describe("Shifu effect (v1.6.2 L196, L198): reserve 1–2 from the display and t
     expect(sorted(t.state.hidden.mainDeck.slice(-3))).toEqual(sorted(top.slice(0, 3)));
     expect(only(events, "DISPLAY_REFILLED")).toMatchObject({ cause: "end_of_turn", revealedOrderIds: [top[3], top[4]] });
     expect(t.state.market.display).toEqual(["O02", "O03", "O05", "O06", top[3], top[4]]);
-    expect(t.player("p1").resources).toEqual({ clay: 2, wood: 2, coins: 3 });
+    expect(t.player("p1").resources).toEqual({ clay: 2, wood: 3, coins: 3 });
   });
 
   it("two looked reservations: the third card goes to the deck bottom, the display is untouched", () => {

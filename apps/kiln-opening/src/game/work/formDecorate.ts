@@ -1,25 +1,27 @@
 /**
- * Form & Decorate (L165–173, L321–340), incl. the Shifu's two-vessel Decoration discount
- * (L170), Large Throwing Wheel (T01, L615), Decorator's Kit (T16, L616) and Ding (L474, R1).
+ * Form & Decorate (rev. 4 L179–187, L336, change 30), incl. the Shifu's two-vessel discount
+ * (rev. 4 L184), Large Throwing Wheel (T01, rev. 4 L602), Decorator's Kit (T16, rev. 4 L603) and
+ * Ding (rev. 4 L469, R1).
  *
- * Costs (L652: three separate reductions):
+ * Costs (rev. 4 L639: three separate reductions):
  * - Clay: each vessel's Shape cost (L321–327). Large Throwing Wheel, if used and at least 1
  *   Vase or Censer is formed, reduces the action's total Clay by 2, to a minimum of 0.
- * - Coins: each vessel's Decoration (2 Coins, L333–340). Forming 2 with the Shifu effect
- *   reduces one Decoration by 1 (automatic, DESIGN §3.7). Decorator's Kit, if used, reduces
- *   one Carved/Impressed/Painted Decoration by 1 and may hit the same Decoration as the
- *   Shifu discount (a Carved for 0).
+ * - Coins: each vessel costs 2 Coins, whatever its Decoration (rev. 4 L183, L336; there is no
+ *   Decoration cost table since change 30). Forming 2 with the Shifu effect makes one vessel
+ *   cost 1 Coin less (automatic, DESIGN §3.7). Decorator's Kit, if used, makes one vessel with a
+ *   Carved, Impressed or Painted Decoration cost 1 Coin less and may hit the same vessel as the
+ *   Shifu discount (its 2 Coins become 0, rev. 4 L639).
  * - Ding: after forming a Bowl/Plate/Brush Washer, 1 Clay + 1 Coin for one more of the same
- *   Shape with any Decoration; outside the vessel limit and every discount (L474, L652); either
- *   worker type (R1).
+ *   Shape with any Decoration; outside the vessel limit and every reduction (rev. 4 L469,
+ *   L639); either worker type (R1).
  *
- * Placement legality (L172, R4, `canFormAny`): at least 1 single vessel is affordable after
- * every ready Workshop discount.
+ * Placement legality (rev. 4 L186, `canFormAny`): the full cost of at least 1 vessel is
+ * affordable after every reduction a ready Workshop Tech gives.
  *
  * Layer 4. Hands over through `ctx.flow.workerActionDone` (DESIGN §2.2).
  */
 
-import { DECORATIONS, KILNS, LOCATIONS, SHAPES, TECHS, decorationCost, shapeClay } from "../content.ts";
+import { DECORATIONS, KILNS, LOCATIONS, SHAPES, TECHS, shapeClay, vesselCoins } from "../content.ts";
 import { invariant, ruleError } from "../errors.ts";
 import { hasKiln, kilnAbilityReady, markKilnAbilityUsed } from "../kilns.ts";
 import { placeWorker, validatePlacement, workerEffectFor } from "../placement.ts";
@@ -129,10 +131,11 @@ function computeCost(game: PublicCore, playerId: PlayerId, action: FormDecorateA
     lines.push({ kind: "large_throwing_wheel", resource: "clay", amount: -reduction, itemIndex: null });
   }
 
-  // Decorations (L333–340), Decorator's Kit (L616) and the Shifu discount (L170).
-  const remaining = vessels.map((vessel) => decorationCost(vessel.decoration));
+  // Each vessel's 2 Coins (rev. 4 L183, L336), Decorator's Kit (rev. 4 L603) and the Shifu
+  // discount (rev. 4 L184).
+  const remaining = vessels.map(() => vesselCoins());
   vessels.forEach((_, index) => {
-    lines.push({ kind: "decoration", resource: "coins", amount: remaining[index] ?? 0, itemIndex: index });
+    lines.push({ kind: "vessel_coins", resource: "coins", amount: remaining[index] ?? 0, itemIndex: index });
   });
   const kitIndex = action.decoratorsKitVesselIndex;
   if (kitIndex !== undefined) {
@@ -151,7 +154,7 @@ function computeCost(game: PublicCore, playerId: PlayerId, action: FormDecorateA
     }
     if (!TECHS.T16.params.decorations.includes(target.decoration)) {
       return failed(
-        ruleError("INVALID_VESSEL_CHOICE", "Decorator's Kit reduces only a Carved, Impressed or Painted Decoration.", {
+        ruleError("INVALID_VESSEL_CHOICE", "Decorator's Kit reduces only a vessel with a Carved, Impressed or Painted Decoration.", {
           vesselIndex: kitIndex,
           decoration: target.decoration,
           field: "decoratorsKitVesselIndex",
@@ -163,19 +166,19 @@ function computeCost(game: PublicCore, playerId: PlayerId, action: FormDecorateA
     lines.push({ kind: "decorators_kit", resource: "coins", amount: -reduction, itemIndex: kitIndex });
   }
   if (effect === "shifu" && vessels.length === 2) {
-    // Automatic (DESIGN §3.7). Every Decoration costs the same, so which vessel takes it never
+    // Automatic (DESIGN §3.7). Every vessel costs the same, so which one takes it never
     // changes the total; it goes to the first vessel with Coins left to reduce.
-    const discount = LOCATIONS.form_decorate.effects.shifu.twoVesselDecorationDiscount;
+    const discount = LOCATIONS.form_decorate.effects.shifu.twoVesselDiscount;
     const index = remaining.findIndex((cost) => cost > 0);
     if (index >= 0) {
       const reduction = Math.min(discount, remaining[index] ?? 0);
       remaining[index] = (remaining[index] ?? 0) - reduction;
-      lines.push({ kind: "shifu_decoration_discount", resource: "coins", amount: -reduction, itemIndex: index });
+      lines.push({ kind: "shifu_discount", resource: "coins", amount: -reduction, itemIndex: index });
     }
   }
   const vesselCost: ResourceState = { clay, wood: 0, coins: remaining.reduce((sum, cost) => sum + cost, 0) };
 
-  // Ding (L474, R1): outside the vessel limit and every discount (L652).
+  // Ding (rev. 4 L469, R1): outside the vessel limit and every reduction (rev. 4 L639).
   const dingCost = zero();
   const ding = action.dingExtra;
   if (ding !== undefined) {
@@ -229,8 +232,8 @@ function computeCost(game: PublicCore, playerId: PlayerId, action: FormDecorateA
 }
 
 /**
- * The engine-computed cost of a Form & Decorate command (DESIGN §3.5, §5.4): Shape Clay,
- * Decorations, the Shifu −1 when forming 2, Decorator's Kit, Large Throwing Wheel and Ding.
+ * The engine-computed cost of a Form & Decorate command (DESIGN §3.5, §5.4): Shape Clay, each
+ * vessel's 2 Coins, the Shifu −1 when forming 2, Decorator's Kit, Large Throwing Wheel and Ding.
  * `lines` itemise every amount; `itemIndex` points into `vessels` (Ding's vessel: null).
  */
 export function quoteFormDecorate(view: ActorView, action: FormDecorateAction): CostQuote {
@@ -242,10 +245,11 @@ export function quoteFormDecorate(view: ActorView, action: FormDecorateAction): 
 }
 
 /**
- * L172 with R4: some single Shape × Decoration is affordable after every ready Workshop
- * discount — Large Throwing Wheel on a Vase/Censer, Decorator's Kit on a non-Plain
- * Decoration. Forming 2 is never cheaper than forming 1, so singles suffice; Ding needs a
- * vessel formed first, so it never makes the placement legal.
+ * rev. 4 L186 ("the full cost of at least 1 vessel, after any reductions"): some single Shape ×
+ * Decoration is affordable after every reduction a ready Workshop Tech gives — Large Throwing
+ * Wheel on a Vase/Censer, Decorator's Kit on a Carved/Impressed/Painted vessel. Forming 2 is
+ * never cheaper than forming 1 (the Shifu's −1 needs a second vessel at full price), so singles
+ * suffice; Ding needs a vessel formed first, so it never makes the placement legal.
  */
 export function canFormAny(game: PublicCore, playerId: PlayerId): boolean {
   const p = player(game, playerId);
@@ -255,7 +259,7 @@ export function canFormAny(game: PublicCore, playerId: PlayerId): boolean {
     const baseClay = shapeClay(shape);
     const clay = wheel !== null && wheel.triggerShapes.includes(shape) ? Math.max(0, baseClay - wheel.clayReduction) : baseClay;
     return DECORATIONS.some((decoration) => {
-      const baseCoins = decorationCost(decoration);
+      const baseCoins = vesselCoins();
       const coins = kit !== null && kit.decorations.includes(decoration) ? Math.max(0, baseCoins - kit.coinReduction) : baseCoins;
       return canAfford(p.resources, { clay, coins });
     });
@@ -268,7 +272,7 @@ function validate(view: ActorView, action: FormDecorateAction): GameRuleError | 
     return placementError;
   }
   if (!canFormAny(view.game, view.viewerId)) {
-    return ruleError("NO_MAIN_ACTION_POSSIBLE", "You cannot pay the Clay and a Decoration for even 1 vessel.", {
+    return ruleError("NO_MAIN_ACTION_POSSIBLE", "You cannot pay the full cost of even 1 vessel, after any reductions.", {
       locationId: "form_decorate",
       workerId: action.workerId,
       effect: workerEffectFor(view, action.workerId, false),

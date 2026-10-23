@@ -195,8 +195,10 @@ describe("V1.6.2 privacy across complete service games", () => {
       [2, 31_201],
       [3, 31_301],
       [4, 31_401],
-      [3, 31_302],
-      [4, 31_402],
+      // Re-baselined for owner revision 4 (changes 28–35): 31 302 and 31 402 no longer reach a
+      // Guild Hall Shifu inspection with the new costs and resources; 31 303 and 31 403 do.
+      [3, 31_303],
+      [4, 31_403],
     ] as const) {
       const result = await sweepOnce(players, seedBase);
       expect(result.problems).toEqual([]);

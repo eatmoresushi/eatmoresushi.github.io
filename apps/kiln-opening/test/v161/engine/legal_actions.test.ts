@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { validateAction } from "../../../src/game/engine.ts";
+import { createGame, validateAction } from "../../../src/game/engine.ts";
 import { validateContribution } from "../../../src/game/firing/contributions.ts";
 import { enumerateLegalActions, legalActionFamilies, legalActions, legalCommands, sampleLegalAction } from "../../../src/game/legalActions.ts";
 import { SeededRandom } from "../../../src/game/rng.ts";
@@ -26,11 +26,9 @@ const ALL_PHASES: readonly GamePhaseType[] = [
   "work_turn",
   "firing_contributions",
   "firing_test_pieces",
-  "firing_heat_markers",
   "firing_heat_adjustment",
   "firing_after_quality",
   "firing_second_firing_choice",
-  "firing_salvage",
   "orders",
   "cleanup_hand_limit",
 ];
@@ -51,6 +49,36 @@ function copyOf(scenario: PhaseScenario): LocalTable {
     ...(HALTING_PHASES.some((prefix) => original.state.phase.type.startsWith(prefix)) ? { flow: "halt" as const } : {}),
   });
 }
+
+describe("revision-4 families (rev. 4 L122, L241; R21, R23)", () => {
+  it("Setup step 9: every available Kiln with every face-up Main Order", () => {
+    const created = createGame({ gameId: "la-setup", players: [{ id: "p1", displayName: "A" }, { id: "p2", displayName: "B" }] }, new SeededRandom(4));
+    if (!created.ok) throw new Error(created.error.code);
+    const chooser = decisionPrompt(created.state).actorIds[0] as string;
+    const kilns = legalActions(viewOf(created.state, chooser), { mode: "canonical" }).filter(
+      (a): a is Extract<GameAction, { type: "SELECT_KILN" }> => a.type === "SELECT_KILN",
+    );
+    expect(kilns).toHaveLength(5 * 6);
+    expect(new Set(kilns.map((a) => a.kilnId)).size).toBe(5);
+    expect(new Set(kilns.map((a) => a.mainOrder.slotIndex))).toEqual(new Set([0, 1, 2, 3, 4, 5]));
+    for (const action of kilns) {
+      expect(action.mainOrder.orderId).toBe(created.state.market.display[action.mainOrder.slotIndex]);
+    }
+  });
+
+  it("the Magistrate's Hall: the step alone, and for the Shifu each face-up Crown Order", () => {
+    const state = buildState({ players: [{ recognition: 1, resources: { coins: 9 } }, {}], display: ["O01", "O17", "O02", "O40", "O03", "O04"] });
+    const halls = legalActions(actorViewOf(state, "p1"), { mode: "canonical", perFamilyLimit: 100_000 }).filter(
+      (a): a is Extract<GameAction, { type: "PLACE_MAGISTRATES_HALL" }> => a.type === "PLACE_MAGISTRATES_HALL",
+    );
+    expect(halls).toEqual([
+      { type: "PLACE_MAGISTRATES_HALL", workerId: "p1:shifu" },
+      { type: "PLACE_MAGISTRATES_HALL", workerId: "p1:apprentice:1" },
+      { type: "PLACE_MAGISTRATES_HALL", workerId: "p1:shifu", crownOrder: { slotIndex: 1, orderId: "O17" } },
+      { type: "PLACE_MAGISTRATES_HALL", workerId: "p1:shifu", crownOrder: { slotIndex: 3, orderId: "O40" } },
+    ]);
+  });
+});
 
 describe("legal actions in every phase", () => {
   const scenarios = phaseScenarios();
@@ -285,7 +313,8 @@ describe("collapsing (DESIGN §5.2)", () => {
 describe("Glaze & Load under the default canonical limits", () => {
   const glazeLoads = (techs: Array<"T05" | "T15" | "T21">) => {
     const state = buildState({
-      players: [{ techs }, {}, {}, {}],
+      // Kiln Master (a Firing Tech) besides the loading Tech: its marker at loading (R22).
+      players: [{ techs: [...techs, "T24"] }, {}, {}, {}],
       ceramics: [
         { owner: "p1", stage: "loaded", shape: "bowl", glaze: "white", at: "low_1" },
         { owner: "p1", stage: "shaped", shape: "vase" },
@@ -305,7 +334,7 @@ describe("Glaze & Load under the default canonical limits", () => {
     ["T05", (l: Extract<GameAction, { type: "PLACE_GLAZE_LOAD" }>["loads"][number]) => l.reworkShape !== undefined],
     ["T15", (l: Extract<GameAction, { type: "PLACE_GLAZE_LOAD" }>["loads"][number]) => l.destination.kiln === "shared" && l.destination.kilnFurniture !== undefined],
     ["T21", (l: Extract<GameAction, { type: "PLACE_GLAZE_LOAD" }>["loads"][number]) => l.destination.kiln === "shared" && l.destination.invertedFiring === true],
-  ] as const)("%s is offered used and declined, beside pairs and Heat markers, for both workers", (tech, uses) => {
+  ] as const)("%s is offered used and declined, beside pairs and Kiln Master's marker, for both workers", (tech, uses) => {
     const loads = glazeLoads([tech]);
     expect(loads).toHaveLength(64);
     for (const workerId of ["p1:shifu", "p1:apprentice:1"]) {
@@ -315,8 +344,24 @@ describe("Glaze & Load under the default canonical limits", () => {
     }
     const shifu = loads.filter((a) => a.workerId === "p1:shifu");
     expect(shifu.some((a) => a.loads.length === 2), "a Shifu pair").toBe(true);
-    expect(shifu.some((a) => a.heatMarkerCeramicId !== undefined), "a Heat marker").toBe(true);
-    expect(shifu.some((a) => a.heatMarkerCeramicId === undefined), "no Heat marker").toBe(true);
+    for (const workerId of ["p1:shifu", "p1:apprentice:1"]) {
+      const own = loads.filter((a) => a.workerId === workerId);
+      expect(own.some((a) => a.loads.some((l) => l.kilnMaster === 1)), `${workerId}: Kiln Master +1`).toBe(true);
+      expect(own.some((a) => a.loads.some((l) => l.kilnMaster === -1)), `${workerId}: Kiln Master −1`).toBe(true);
+      expect(own.some((a) => a.loads.every((l) => l.kilnMaster === undefined)), `${workerId}: no marker`).toBe(true);
+    }
+  });
+
+  it("offers no Shared destination without the action's 1 Wood (R24)", () => {
+    const state = buildState({
+      players: [{ recognition: 2, resources: { wood: 0 } }, {}],
+      ceramics: [{ owner: "p1", stage: "shaped", shape: "bowl" }],
+    });
+    const loads = legalActions(actorViewOf(state, "p1"), { mode: "canonical", perFamilyLimit: 100_000 }).filter(
+      (a): a is Extract<GameAction, { type: "PLACE_GLAZE_LOAD" }> => a.type === "PLACE_GLAZE_LOAD",
+    );
+    expect(loads.length).toBeGreaterThan(0);
+    expect(loads.every((a) => a.loads.every((l) => l.destination.kiln === "imperial"))).toBe(true);
   });
 
   it("still offers every Glaze within the limit", () => {

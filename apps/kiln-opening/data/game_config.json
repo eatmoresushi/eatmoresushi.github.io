@@ -7,7 +7,7 @@
   "rounds": 5,
   "startingResources": {
     "clay": 2,
-    "wood": 2,
+    "wood": 3,
     "coins": 3
   },
   "workers": {
@@ -15,9 +15,9 @@
     "apprentices": 3
   },
   "setupDeal": {
-    "startingOrders": 2,
-    "mainOrders": 1
+    "startingOrders": 2
   },
+  "setupFaceUpMainOrders": 1,
   "mainMarket": {
     "displaySize": 6,
     "roundStartDiscard": 2
@@ -67,12 +67,13 @@
     "censer": 2
   },
   "shapeSupplyEach": 10,
-  "decorations": {
-    "plain": 2,
-    "carved": 2,
-    "impressed": 2,
-    "painted": 2
-  },
+  "decorations": [
+    "plain",
+    "carved",
+    "impressed",
+    "painted"
+  ],
+  "formingCoins": 2,
   "glazes": {
     "white": 1,
     "celadon": 2,

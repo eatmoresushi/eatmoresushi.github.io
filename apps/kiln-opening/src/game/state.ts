@@ -102,7 +102,6 @@ export function decisionPrompt(game: PublicCore): DecisionPrompt {
       return { phaseType: phase.type, actorIds: queueHead(phase.selectionOrder, phase.index), mode: "single" };
     case "round_start_setters_mark":
     case "firing_test_pieces":
-    case "firing_heat_markers":
     case "firing_heat_adjustment":
     case "firing_after_quality":
       return { phaseType: phase.type, actorIds: queueHead(phase.queue.actorIds, phase.queue.index), mode: "single" };
@@ -116,7 +115,6 @@ export function decisionPrompt(game: PublicCore): DecisionPrompt {
       };
     case "firing_second_firing_choice":
       return { phaseType: phase.type, actorIds: [phase.actorId], mode: "single" };
-    case "firing_salvage":
     case "cleanup_hand_limit":
       return { phaseType: phase.type, actorIds: [...phase.pendingPlayerIds], mode: "parallel" };
     case "orders":
@@ -360,9 +358,10 @@ export function loadedCeramics(game: PublicCore): LoadedCeramic[] {
   return ceramicsInOrder(game).filter((c): c is LoadedCeramic => c.stage === "loaded");
 }
 
-/** The loaded ceramic carrying this player's own Heat marker or Kiln Master marker. */
-export function heatMarkerOf(game: PublicCore, playerId: PlayerId, source: "own" | "kiln_master"): LoadedCeramic | null {
-  return loadedCeramics(game).find((c) => c.ownerId === playerId && c.heatMarker?.source === source) ?? null;
+/** The loaded ceramic of this player carrying the Kiln Master marker (T24, rev. 4 L628), else
+ * null. There is one T24 tile, so at most one carrier in the game. */
+export function kilnMasterCarrier(game: PublicCore, playerId: PlayerId): LoadedCeramic | null {
+  return loadedCeramics(game).find((c) => c.ownerId === playerId && c.kilnMasterMarker !== null) ?? null;
 }
 
 /** This firing's ceramic in the player's Imperial Kiln, if any (L287). */

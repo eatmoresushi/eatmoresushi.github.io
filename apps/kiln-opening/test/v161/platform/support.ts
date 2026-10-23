@@ -290,9 +290,12 @@ export function exitCommand(view: ActorView): AuthoritativeCommand | null {
   const phase = game.phase;
   switch (phase.type) {
     case "setup_kiln_selection": {
+      // Setup step 9 (rev. 4 L122, R23): a Kiln and a face-up Main Order in one command.
       const taken = new Set(game.playerOrder.map((id) => game.players[id]?.kilnId ?? null));
       const kilnId = KILN_IDS.find((id) => !taken.has(id));
-      return kilnId === undefined ? null : { type: "SELECT_KILN", kilnId };
+      const slotIndex = game.market.display.findIndex((orderId) => orderId !== null);
+      const orderId = slotIndex < 0 ? null : game.market.display[slotIndex];
+      return kilnId === undefined || orderId === null || orderId === undefined ? null : { type: "SELECT_KILN", kilnId, mainOrder: { slotIndex, orderId } };
     }
     case "round_start_setters_mark":
       return { type: "PLACE_SETTERS_MARK", spaceId: null };
@@ -308,20 +311,12 @@ export function exitCommand(view: ActorView): AuthoritativeCommand | null {
       return { type: "SUBMIT_CONTRIBUTION", windowId: phase.windowId, card: "TEND" };
     case "firing_test_pieces":
       return phase.awaiting === "decision" ? { type: "TEST_PIECES_DECIDE", peek: false } : { type: "TEST_PIECES_BURY", bury: false };
-    case "firing_heat_markers": {
-      const faceDown = Object.values(game.ceramics).some(
-        (ceramic) => ceramic.stage === "loaded" && ceramic.ownerId === view.viewerId && ceramic.heatMarker?.faceDown === true,
-      );
-      return faceDown ? { type: "RESOLVE_HEAT_MARKERS", ownMarker: "return" } : { type: "RESOLVE_HEAT_MARKERS" };
-    }
     case "firing_heat_adjustment":
       return { type: "RESOLVE_JUN", adjustment: null };
     case "firing_second_firing_choice":
       return { type: "SECOND_FIRING_CHOOSE", cardIndex: 0, jun: null };
     case "firing_after_quality":
       return { type: "END_AFTER_QUALITY" };
-    case "firing_salvage":
-      return { type: "SALVAGE_FLAWED", ceramicId: null };
     case "orders":
       return { type: "END_ORDER_TURN" };
     case "cleanup_hand_limit": {

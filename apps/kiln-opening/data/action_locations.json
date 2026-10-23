@@ -13,18 +13,18 @@
       "usableAtRecognition": null,
       "effects": {
         "apprentice": {
-          "resources": 3
+          "resources": 4
         },
         "shifu": {
-          "resources": 6
+          "resources": 8
         }
       },
       "name": "Materials Yard",
       "nameZh": "泥柴场",
-      "apprenticeText": "Gain 3 resources in any combination of Clay and Wood.",
-      "apprenticeTextZh": "获得3份资源，泥和柴任意搭配。",
-      "shifuText": "Gain 6 resources in any combination of Clay and Wood.",
-      "shifuTextZh": "获得6份资源，泥和柴任意搭配。",
+      "apprenticeText": "Gain 4 resources in any combination of Clay and Wood.",
+      "apprenticeTextZh": "获得4份资源，泥和柴任意搭配。",
+      "shifuText": "Gain 8 resources in any combination of Clay and Wood.",
+      "shifuTextZh": "获得8份资源，泥和柴任意搭配。",
       "clarifications": [
         {
           "en": "Capacity is 2, 3 or 4 spaces in 2-, 3- or 4-player games.",
@@ -58,15 +58,15 @@
         },
         "shifu": {
           "maxVessels": 2,
-          "twoVesselDecorationDiscount": 1
+          "twoVesselDiscount": 1
         }
       },
       "name": "Form & Decorate",
       "nameZh": "制坯饰纹",
-      "apprenticeText": "Form 1 vessel: pay its Clay cost, choose a Decoration and pay the Decoration cost.",
-      "apprenticeTextZh": "制1件坯：支付其泥费，选择1种纹饰并支付纹饰费。",
-      "shifuText": "Form up to 2 vessels, choosing and paying a Decoration for each. If you form 2, one of their Decorations costs 1 Coin less.",
-      "shifuTextZh": "制至多2件坯，每件各选1种纹饰并付费。若制2件，其中1项纹饰少付1铜钱。",
+      "apprenticeText": "Form 1 vessel: pay its Clay cost plus 2 Coins and choose any Decoration for it.",
+      "apprenticeTextZh": "制1件坯：支付其泥费外加2铜钱，并为它任选1种纹饰。",
+      "shifuText": "Form up to 2 vessels, paying for each. If you form 2, one of them costs 1 Coin less.",
+      "shifuTextZh": "制至多2件坯，逐件付费。若制2件，其中1件少付1铜钱。",
       "clarifications": [
         {
           "en": "Personal locations are on your own board. Each personal space may be used once per round.",
@@ -117,20 +117,21 @@
       "effects": {
         "apprentice": {
           "maxLoads": 1,
-          "maxImperialLoads": 1
+          "maxImperialLoads": 1,
+          "sharedKilnWood": 1
         },
         "shifu": {
           "maxLoads": 2,
           "maxImperialLoads": 1,
-          "placesHeatMarker": true
+          "sharedKilnWood": 1
         }
       },
       "name": "Glaze & Load",
       "nameZh": "施釉装窑",
       "apprenticeText": "Choose 1 of your Shaped vessels, give it a Glaze and load it.",
       "apprenticeTextZh": "选择你的1件坯，为它选定釉并装窑。",
-      "shifuText": "Do this for up to 2 of your Shaped vessels. Then place your Heat marker face-down on 1 of your ceramics in the Shared Kiln or your Imperial Kiln. The Shifu stays on the Glaze & Load space.",
-      "shifuTextZh": "为你的至多2件坯施釉并装窑。然后把你的火标暗置于你在共窑或御窑中的1件器物上。师傅留在施釉装窑工位上。",
+      "shifuText": "Do this for up to 2 of your Shaped vessels.",
+      "shifuTextZh": "为你的至多2件坯施釉并装窑。",
       "clarifications": [
         {
           "en": "Personal locations are on your own board. Each personal space may be used once per round.",
@@ -399,16 +400,17 @@
           "recognitionSteps": 1
         },
         "shifu": {
-          "coins": 3,
-          "recognitionSteps": 1
+          "coins": 4,
+          "recognitionSteps": 1,
+          "crownOrders": 1
         }
       },
       "name": "Magistrate's Hall",
       "nameZh": "州衙",
       "apprenticeText": "Pay 4 Coins to advance your Imperial Recognition by 1 step.",
       "apprenticeTextZh": "支付4铜钱，御府声望推进1格。",
-      "shifuText": "Pay 3 Coins to advance your Imperial Recognition by 1 step.",
-      "shifuTextZh": "支付3铜钱，御府声望推进1格。",
+      "shifuText": "Pay 4 Coins to advance your Imperial Recognition by 1 step, then reserve 1 face-up Crown Order from the display.",
+      "shifuTextZh": "支付4铜钱，御府声望推进1格，然后从委托榜上承接1张御令委托。",
       "clarifications": [
         {
           "en": "It has 1 space in 2- and 3-player games and 2 spaces in 4-player games; in 2- and 3-player games the second space is covered.",

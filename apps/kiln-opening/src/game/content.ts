@@ -431,11 +431,22 @@ export function validateContentFiles(files: ContentFiles): string[] {
   for (const value of Object.values(gameConfig.startingResources)) {
     if (!isNonNegativeInteger(value)) problems.push("game_config: startingResources must be non-negative integers");
   }
+  // rev. 4 L115, L122 (change 32): Starting Orders are dealt; the Main Order is taken face up.
+  if (!isNonNegativeInteger(gameConfig.setupDeal?.startingOrders) || !sameMembers(Object.keys(gameConfig.setupDeal ?? {}), ["startingOrders"])) {
+    problems.push("game_config: setupDeal must be {startingOrders} (nothing Main is dealt, rev. 4 L115)");
+  }
+  if (!isNonNegativeInteger(gameConfig.setupFaceUpMainOrders) || gameConfig.setupFaceUpMainOrders < 1) {
+    problems.push("game_config: setupFaceUpMainOrders must be a positive integer (rev. 4 L122)");
+  }
   if (!sameMembers(Object.keys(gameConfig.shapes), SHAPES)) problems.push("game_config: shapes must list the five Shapes");
   if (!sameMembers(Object.keys(gameConfig.glazes), GLAZES)) problems.push("game_config: glazes must list the four Glazes");
-  if (!sameMembers(Object.keys(gameConfig.decorations), DECORATIONS)) problems.push("game_config: decorations must list the four Decorations");
-  for (const value of [...Object.values(gameConfig.shapes), ...Object.values(gameConfig.decorations), ...Object.values(gameConfig.glazes)]) {
-    if (!isNonNegativeInteger(value)) problems.push("game_config: Shape, Decoration and Glaze values must be non-negative integers");
+  // rev. 4 L336 (change 30): any Decoration; a vessel costs its Clay + `formingCoins`.
+  if (!Array.isArray(gameConfig.decorations) || !sameSequence(gameConfig.decorations, DECORATIONS)) {
+    problems.push("game_config: decorations must list the four Decorations in order");
+  }
+  if (!isNonNegativeInteger(gameConfig.formingCoins)) problems.push("game_config: formingCoins must be a non-negative integer");
+  for (const value of [...Object.values(gameConfig.shapes), ...Object.values(gameConfig.glazes)]) {
+    if (!isNonNegativeInteger(value)) problems.push("game_config: Shape and Glaze values must be non-negative integers");
   }
   if (gameConfig.techs.perDiscipline * DISCIPLINES.length !== TECH_IDS.length) problems.push("game_config: techs.perDiscipline × 3 must equal 18");
   for (const key of PLAYER_COUNT_KEYS) {
@@ -481,7 +492,8 @@ export function validateContentFiles(files: ContentFiles): string[] {
     if (!isNonNegativeInteger(card.woodCost) || !Number.isInteger(card.heat) || Math.abs(card.heat) > 2) problems.push(`firing: ${card.id} needs a Wood cost and a Heat of −2 to +2`);
   }
   if (!sameSequence(firing.imperialModifiers, [-1, 0, 1])) problems.push("firing: Imperial modifiers must be −1, 0, +1");
-  if (!isNonNegativeInteger(firing.salvageCoins)) problems.push("firing: salvageCoins must be a non-negative integer");
+  // Rev. 4 L284 (change 30, R20): a Flawed ceramic sells for 2 Coins.
+  if (!isNonNegativeInteger(firing.flawedSaleCoins)) problems.push("firing: flawedSaleCoins must be a non-negative integer");
 
   // Locations.
   const locationIds = actionLocations.locations.map((location) => location.id);
@@ -517,9 +529,12 @@ export function validateContentFiles(files: ContentFiles): string[] {
   };
   const EFFECT_KEYS: ReadonlyArray<readonly [LocationId, readonly string[], readonly string[]]> = [
     ["materials_yard", ["resources"], ["resources"]],
+    ["form_decorate", ["maxVessels"], ["maxVessels", "twoVesselDiscount"]],
+    ["glaze_load", ["maxLoads", "maxImperialLoads", "sharedKilnWood"], ["maxLoads", "maxImperialLoads", "sharedKilnWood"]],
     ["commission_market", ["select", "maxReservations"], ["select", "maxReservations"]],
     ["guild_hall", ["maxTechs"], ["inspectCount", "maxTechs"]],
     ["canal_wharf", ["coins"], ["coins", "topMainOrders"]],
+    ["magistrates_hall", ["coins", "recognitionSteps"], ["coins", "recognitionSteps", "crownOrders"]],
   ];
   for (const [id, apprenticeKeys, shifuKeys] of EFFECT_KEYS) {
     const effects = effectsOf(id);
@@ -534,6 +549,16 @@ export function validateContentFiles(files: ContentFiles): string[] {
   const guild = effectsOf("guild_hall");
   if (guild?.apprentice?.["maxTechs"] !== 1 || typeof guild.shifu?.["maxTechs"] !== "number" || guild.shifu["maxTechs"] < 1) {
     problems.push("action_locations: guild_hall takes exactly 1 Tech with an Apprentice and at least 1 with the Shifu");
+  }
+  // Kiln fuel (rev. 4 L197, change 35, R24): one price per Glaze & Load action, whichever worker.
+  const glazeLoad = effectsOf("glaze_load");
+  if (glazeLoad?.apprentice?.["sharedKilnWood"] !== glazeLoad?.shifu?.["sharedKilnWood"]) {
+    problems.push("action_locations: glaze_load sharedKilnWood must be the same for both workers (rev. 4 L197)");
+  }
+  // Magistrate's Hall (rev. 4 L240–241, change 33): only the Shifu reserves a Crown Order.
+  const magistrates = effectsOf("magistrates_hall");
+  if (magistrates?.shifu?.["crownOrders"] !== 1) {
+    problems.push("action_locations: the magistrates_hall Shifu reserves 1 face-up Crown Order (rev. 4 L241)");
   }
   const commission = effectsOf("commission_market");
   for (const effect of ["apprentice", "shifu"] as const) {
@@ -550,6 +575,22 @@ export function validateContentFiles(files: ContentFiles): string[] {
   for (const kiln of kilns.kilns) {
     if (kiln.oncePerRound !== true) problems.push(`kilns: ${kiln.id} is once per round`);
     if (kiln.params === null || typeof kiln.params !== "object") problems.push(`kilns: ${kiln.id} needs params`);
+  }
+  // Ge (rev. 4 L463, L465, change 29): Crackle on a Fine or Standard ceramic, which is then Fine
+  // (so a Crackle ceramic is never a Masterpiece), and a VP per delivered Crackle ceramic.
+  const ge = kilns.kilns.find((kiln) => kiln.id === "GE")?.params as Record<string, unknown> | undefined;
+  const geFrom = ge?.["fromQualities"];
+  if (
+    ge === undefined ||
+    !sameMembers(Object.keys(ge), ["fromQualities", "toQuality", "vpPerDeliveredCrackle"]) ||
+    !Array.isArray(geFrom) ||
+    geFrom.length === 0 ||
+    !geFrom.every((quality) => quality === "fine" || quality === "standard") ||
+    new Set(geFrom).size !== geFrom.length ||
+    ge["toQuality"] !== "fine" ||
+    !isNonNegativeInteger(ge["vpPerDeliveredCrackle"])
+  ) {
+    problems.push("kilns: GE needs {fromQualities ⊆ [fine, standard], toQuality: fine, vpPerDeliveredCrackle}");
   }
 
   // Techs.
@@ -717,9 +758,12 @@ export function shapeClay(shape: Shape): number {
   return GAME_CONFIG.shapes[shape];
 }
 
-/** Printed Coin cost of a Decoration before discounts: 2 each (L333–340). */
-export function decorationCost(decoration: Decoration): number {
-  return GAME_CONFIG.decorations[decoration];
+/**
+ * The Coins a vessel costs on top of its Shape's Clay, whatever its Decoration, before any
+ * reduction (rev. 4 L183, L336, change 30: 2). Replaces revision 3's per-Decoration cost table.
+ */
+export function vesselCoins(): number {
+  return GAME_CONFIG.formingCoins;
 }
 
 /** The zone of a Shared Kiln space (L72). */

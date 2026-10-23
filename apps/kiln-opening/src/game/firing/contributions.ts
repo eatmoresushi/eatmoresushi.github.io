@@ -88,7 +88,7 @@ export function openFiringPhase(draft: GameState, ctx: ResolveContext): void {
       quality: null,
       history: [],
       crackle: false,
-      salvaged: false,
+      sold: false,
     };
   }
   // The previous recap is kept only until the next firing starts.

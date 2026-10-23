@@ -82,7 +82,7 @@ import type {
 } from "./types.ts";
 
 export const CURRENT_RULES_VERSION = "1.6.2" as const;
-export const CURRENT_SCHEMA_VERSION = 8 as const;
+export const CURRENT_SCHEMA_VERSION = 9 as const;
 
 const MAX_DISPLAY_NAME_LENGTH = 40;
 const ROOM_CODE_ATTEMPTS = 8;
@@ -177,7 +177,7 @@ function gameFailure(ruleError: GameRuleError, revision: number | null): Multipl
   return error(ruleError.code, ruleError.message, revision, ruleError.details);
 }
 
-/** Only schema-8 V1.6.2 saves continue; anything older (V1.6.2 schema 7 before owner revision 3, V1.6.1 schema 6) is refused, never migrated (DIG). */
+/** Only schema-9 V1.6.2 saves continue; anything older (V1.6.2 schema 8 before owner revision 4, schema 7 before revision 3, V1.6.1 schema 6) is refused, never migrated (DIG). */
 function gameCompatibilityError(state: GameState, revision: number): MultiplayerError | null {
   if (state.schemaVersion === CURRENT_SCHEMA_VERSION && state.rulesVersion === CURRENT_RULES_VERSION) return null;
   return error(
@@ -233,10 +233,11 @@ function privateViewOf(state: GameState, playerId: PlayerId, privateFiring: Priv
 
 /**
  * Whether a command based on `expectedRevision` may be validated against the current head
- * (DESIGN §4.6). Strict equality, except in a `parallel` window (`firing_salvage`,
- * `cleanup_hand_limit`): choices there touch only the actor's own ceramics or hand, so a
- * command based on any revision since the window opened is validated against the newer
- * head while the actor is still pending.
+ * (DESIGN §4.6). Strict equality, except in the `parallel` window (`cleanup_hand_limit`, the
+ * only one since revision 4 removed the salvage step): its choices (the trim, and a sale of a
+ * Flawed ceramic, R20) touch only the actor's own hand or ceramics, so a command based on any
+ * revision since the window opened is validated against the newer head while the actor is
+ * still pending.
  */
 function revisionAcceptance(
   state: GameState,
@@ -246,7 +247,7 @@ function revisionAcceptance(
   const prompt = decisionPrompt(state);
   const phase = state.phase;
   const window =
-    prompt.mode === "parallel" && (phase.type === "firing_salvage" || phase.type === "cleanup_hand_limit") ? phase : null;
+    prompt.mode === "parallel" && phase.type === "cleanup_hand_limit" ? phase : null;
   if (expectedRevision === state.revision) {
     return { ok: true, tolerant: window !== null && prompt.actorIds.includes(actorId) };
   }
@@ -800,7 +801,7 @@ export class AuthoritativeGameService {
     if (expectedRevision === state.revision) return true;
     if (expectedRevision > state.revision) return false;
     const phase = state.phase;
-    if (phase.type === "firing_salvage" || phase.type === "cleanup_hand_limit") {
+    if (phase.type === "cleanup_hand_limit") {
       return phase.openedAtRevision <= expectedRevision;
     }
     return phase.type === "firing_contributions";

@@ -13,6 +13,9 @@
  * - Canal Barge (T23, v1.6.2 L630): 2 Coins on the first Order its owner completes each round,
  *   Starting Orders included (L520). Automatic (INT: Canal Barge): declining could only move
  *   the same 2 Coins to a later completion of the same Order-Phase turn.
+ * - Crackle VP (Ge, rev. 4 L465, L480, change 29): 1 VP for each Crackle ceramic delivered,
+ *   recorded with the Order (`CompletedOrderRecord.crackleVp`) as Kiln Tradition VP (rev. 4
+ *   L487). Automatic, no once-per-round limit, never declined (INT Ge Crackle, revision 4).
  *
  * Validation sees only the actor's view (DESIGN §1.3); errors name only what the actor chose.
  *
@@ -51,18 +54,26 @@ function orderDefinition(orderId: OrderId): OrderDefinition | undefined {
 }
 
 /** The completion abilities this completion would trigger (R4, R13): Ru, Guan and Tribute
- * Ware unless declined; Canal Barge always (it is never declined). */
+ * Ware unless declined; Canal Barge and the Crackle VP always (they are never declined). */
 export interface CompletionTriggers {
   ru: boolean;
   guan: boolean;
   tributeWare: boolean;
   canalBarge: boolean;
+  /** 1 VP per delivered Crackle ceramic (rev. 4 L465). */
+  crackleVp: number;
+}
+
+/** The Crackle VP of delivering `ceramics` (rev. 4 L465): 1 per Crackle ceramic. */
+export function crackleVpOf(ceramics: readonly FinishedCeramic[]): number {
+  return ceramics.filter((c) => c.crackle).length * KILNS.GE.params.vpPerDeliveredCrackle;
 }
 
 /**
  * Which completion abilities apply to completing `order` with `ceramics`, before any decline:
  * Ru (actual Celadon Plain Masterpiece delivered), Guan and Tribute Ware (an Order showing ≥ 1
- * printed Crown) and Canal Barge (any Order), each only while its once-per-round use is unspent.
+ * printed Crown) and Canal Barge (any Order), each only while its once-per-round use is unspent;
+ * and the Crackle VP of the delivered Crackle ceramics.
  */
 export function completionTriggers(
   p: PlayerState,
@@ -74,6 +85,7 @@ export function completionTriggers(
     guan: kilnAbilityReady(p, "GU") && order.crowns >= KILNS.GU.params.minPrintedCrowns,
     tributeWare: techReady(p, TRIBUTE_WARE) && order.crowns >= 1,
     canalBarge: techReady(p, CANAL_BARGE),
+    crackleVp: crackleVpOf(ceramics),
   };
 }
 
@@ -169,13 +181,15 @@ function deliver(draft: GameState, finished: FinishedCeramic, orderId: OrderId):
 
 /**
  * Resolves a completion that `validateOrderCompletion` accepted (L410–417), then Tribute
- * Ware, Ru and Guan unless declined (R4), then Canal Barge's 2 Coins, and returns the record.
+ * Ware, Ru and Guan unless declined (R4), then Canal Barge's 2 Coins, then the Crackle VP, and
+ * returns the record.
  *
- * Event order: `ORDER_COMPLETED` (the reveal, with the full record); `RESOURCES_CHANGED`
- * (printed Coins); each printed Crown (`RECOGNITION_ADVANCED` + milestone events, or
- * `CROWN_OVERFLOW_VP`); Tribute Ware (`TECH_USED`, then its Crown); Ru or Guan
+ * Event order: `ORDER_COMPLETED` (the reveal, with the full record, `crackleVp` included);
+ * `RESOURCES_CHANGED` (printed Coins); each printed Crown (`RECOGNITION_ADVANCED` + milestone
+ * events, or `CROWN_OVERFLOW_VP`); Tribute Ware (`TECH_USED`, then its Crown); Ru or Guan
  * (`KILN_ABILITY_USED`, then Guan's Coins); Canal Barge (`TECH_USED`, then
- * `RESOURCES_CHANGED{reason: "canal_barge"}`).
+ * `RESOURCES_CHANGED{reason: "canal_barge"}`). The Crackle VP has no event of its own: the
+ * record carries it.
  */
 export function resolveOrderCompletion(
   draft: GameState,
@@ -209,6 +223,7 @@ export function resolveOrderCompletion(
 
   const bonusCrowns = useTribute ? TECHS.T25.params.bonusCrowns : 0;
   invariant(bonusCrowns === 0 || bonusCrowns === 1, "Tribute Ware grants 1 bonus Crown (L642)");
+  const crackleVp = triggers.crackleVp;
   let kilnAbility: CompletedOrderRecord["kilnAbility"] = null;
   if (useRu) {
     kilnAbility = { kilnId: "RU", vp: KILNS.RU.params.vp, coins: 0 };
@@ -232,6 +247,7 @@ export function resolveOrderCompletion(
     bonusCrowns: bonusCrowns as 0 | 1,
     crackleDeclarations: match.crackleDeclarations,
     kilnAbility,
+    crackleVp,
   };
   owner.completedOrders.push(record);
   emit(ctx, { type: "ORDER_COMPLETED", playerId, record: structuredClone(record) });
@@ -266,6 +282,9 @@ export function resolveOrderCompletion(
     markTechUsed(draft, playerId, CANAL_BARGE, ctx);
     gain(draft, playerId, { coins: bargeCoins }, "canal_barge", ctx);
   }
+
+  // Crackle VP (rev. 4 L465, L487): 1 per delivered Crackle ceramic, as Kiln Tradition VP.
+  owner.score.kilnAbilities += crackleVp;
   return record;
 }
 

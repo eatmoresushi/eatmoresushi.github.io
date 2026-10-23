@@ -17,20 +17,22 @@
  *
  * | Family | canonical | exhaustive |
  * | --- | --- | --- |
- * | `SELECT_KILN` | every available Kiln | same |
+ * | `SELECT_KILN` | every available Kiln × every face-up slot (rev. 4 L122, R23) | same |
  * | `PLACE_SETTERS_MARK` | one open space per zone, then `null` | every open space, then `null` |
- * | `PLACE_MATERIALS_YARD` | per worker choice: Prepared Clay {none, each Shape × Decoration if ready} × every split (0..3 or 0..6) | same |
+ * | `PLACE_MATERIALS_YARD` | per worker choice: Prepared Clay {none, each Shape × Decoration if ready} × every split (0..4 or 0..8) | same |
  * | `PLACE_FORM_DECORATE` | 20 singles, then (Shifu effect) 210 unordered pairs; × {no discount, Large Throwing Wheel, Decorator's Kit on the first eligible vessel}; × Ding {none, each Decoration on the first Bowl/Plate/Brush Washer} | singles and 400 ordered pairs; the Kit on every eligible vessel; Ding on every eligible vessel |
- * | `PLACE_GLAZE_LOAD` | singles, then (Shifu effect) pairs, each built from `loadDestinationOptions` after the earlier load (R8): vessel class × Glaze × destination (one plain space per zone, the own Setter's Mark space, every Inverted Firing target, Kiln Furniture × 3 on one space per zone, Imperial × 3); Reworking Table: each class × other Shape × destination with the first Glaze; Heat marker {none, each `heatMarkerTargets`}. Each worker's candidates are disjoint streams interleaved round-robin (`glazeLoadStreams`), each ability variant and the first pair before the Glaze cross-product, so the default `perFamilyLimit` still offers every optional ability used and declined | every vessel, destination and rework (Glaze × destination product) |
+ * | `PLACE_GLAZE_LOAD` | singles, then (Shifu effect) pairs, each built from `loadDestinationOptions` after the earlier load (R8; a Shared destination only with the action's 1 Wood, R24): vessel class × Glaze × destination (one plain space per zone, the own Setter's Mark space, every Inverted Firing target, Kiln Furniture × 3 on one space per zone, Imperial × 3); Reworking Table: each class × other Shape × destination with the first Glaze; Kiln Master {none, +1, −1} on the first load when T24 is ready (R22). Each worker's candidates are disjoint streams interleaved round-robin (`glazeLoadStreams`), each ability variant and the first pair before the Glaze cross-product, so the default `perFamilyLimit` still offers every optional ability used and declined | every vessel, destination and rework (Glaze × destination product); Kiln Master on any one load |
  * | `PLACE_COMMISSION_MARKET` | one per worker choice (Shifu, Apprentice, Apprentice via Senior Apprentice) | same |
  * | `PLACE_GUILD_HALL` | Apprentice: each face-up Tech; Shifu: each discipline with a non-empty deck (the first discipline if every deck is empty, so the Shifu's face-up take stays reachable) | Shifu: every discipline |
- * | `PLACE_CANAL_WHARF`, `PLACE_MAGISTRATES_HALL` | each worker choice | same |
+ * | `PLACE_CANAL_WHARF` | each worker choice | same |
+ * | `PLACE_MAGISTRATES_HALL` | each worker choice; for the Shifu effect also each face-up Crown Order (R21) | same |
  * | `SELECT_CHOOSE` (every Select: the Commission Market, Colour Samples when acquired and its swap) | every single pick (face-up slots ascending, then looked cards in look order), then, for the Commission Market Shifu effect, every unordered pair in that order (≤ 9 + 36) | same |
  * | Guild Hall sub-steps | all: each next `GUILD_TAKE` (inspected Techs, then face-up), then `GUILD_FINISH` × every bottom order (≤ 2) | same |
  * | `USE_COLOUR_SAMPLES_SWAP` | one swap per held Order, in hand order | same |
  * | `COMPLETE_ORDER` | per held Order: the first match, plus the first Ru-triggering match; each triggered Ru/Guan and Tribute Ware used and declined | every match × decline flags |
- * | `USE_IMPERIAL_PRIORITY` | vessel class × Glaze × modifier; with Reworking Table ready, one variant per class and other Shape | every vessel × Glaze × modifier × rework |
- * | firing windows, salvage, `END_*` | all, incl. the `null` / decline choice; `SECOND_FIRING_CHOOSE` both cards × Jun {none, +1, −1 when ready} | same |
+ * | `USE_IMPERIAL_PRIORITY` | vessel class × Glaze × modifier; with Reworking Table ready, one variant per class and other Shape; with Kiln Master ready, one variant per class and face (R22) | every vessel × Glaze × modifier × rework × Kiln Master |
+ * | firing windows, `END_*` | all, incl. the `null` / decline choice; `SECOND_FIRING_CHOOSE` both cards × Jun {none, +1, −1 when ready}; `USE_GE_CRACKLE` each Fine or Standard target (rev. 4 L463) | same |
+ * | `SELL_FLAWED` (R20) | each `sellFlawedOptions` ceramic, in the before- and after-action windows of a Work turn, the Order Phase turn, the after-Quality turn and the pending Cleanup trim; before that decision's exit (`END_*`, the trim) | same |
  * | `DISCARD_TO_HAND_LIMIT` | every C(hand, excess) | same |
  *
  * **Bounds.** `perFamilyLimit` (default 64 in canonical, unlimited in exhaustive) stops each
@@ -54,12 +56,13 @@
  * the import is acyclic (`engine.ts` imports neither module).
  */
 
-import { DECORATIONS, DISCIPLINES, FIRING, GLAZES, KILNS, KILN_IDS, LOCATIONS, ORDERS, SHAPES, TECHS, decorationCost, shapeClay, zoneOf } from "./content.ts";
+import { DECORATIONS, DISCIPLINES, FIRING, GLAZES, KILNS, KILN_IDS, LOCATIONS, ORDERS, SHAPES, TECHS, shapeClay, vesselCoins, zoneOf } from "./content.ts";
 import { validateAction } from "./engine.ts";
 import { InvariantError } from "./errors.ts";
-import { afterQualityOptions, salvageOptions } from "./firing/afterQuality.ts";
+import { afterQualityOptions } from "./firing/afterQuality.ts";
 import { legalContributions } from "./firing/contributions.ts";
-import { heatMarkerStepOptions, junOptions } from "./firing/pipeline.ts";
+import { junOptions } from "./firing/pipeline.ts";
+import { sellFlawedOptions } from "./flawedSale.ts";
 import { kilnAbilityReady } from "./kilns.ts";
 import { loadDestinationOptions } from "./kilnLoading.ts";
 import { completionTriggers } from "./orders/completion.ts";
@@ -74,14 +77,16 @@ import {
   formDiscountVariants,
   guildInspectionOptions,
   guildOptions,
-  heatMarkerTargets,
   imperialPriorityOptions,
+  kilnMasterOption,
   lookedOrderOptions,
+  magistratesHallQuote,
   orderMatchOptions,
   placementOptions,
   placementWorkerChoices,
   secondFiringChoiceOptions,
   settersMarkOptions,
+  setupChoiceOptions,
 } from "./selectors.ts";
 import { ceramicsOf, decisionPrompt, lookup, player, workStep } from "./state.ts";
 import { handLimit, techReady } from "./techs.ts";
@@ -89,6 +94,7 @@ import type {
   ActorView,
   AuthoritativeCommand,
   Decoration,
+  HeatDelta,
   FinishedCeramic,
   SelectPick,
   FormVesselSpec,
@@ -126,7 +132,6 @@ const INVERTED_FIRING: TechId = "T21";
 const STACKABLE_SHAPES: readonly Shape[] = TECHS.T21.params.shapes;
 const LARGE_THROWING_WHEEL: TechId = "T01";
 const DECORATORS_KIT: TechId = "T16";
-const KILN_MASTER_VALUES = TECHS.T24.params.values;
 const DEFAULT_CANONICAL_FAMILY_LIMIT = 64;
 /** DESIGN §5.3: sampling attempts before the canonical fallback. */
 const SAMPLE_ATTEMPTS = 20;
@@ -375,7 +380,7 @@ const SINGLE_VESSELS: readonly FormVesselSpec[] = SHAPES.flatMap((shape) => DECO
  */
 function formCostLowerBound(effect: WorkerEffect, action: FormDecorateAction): { clay: number; coins: number } {
   let clay = action.vessels.reduce((sum, v) => sum + shapeClay(v.shape), 0);
-  let coins = action.vessels.reduce((sum, v) => sum + decorationCost(v.decoration), 0);
+  let coins = action.vessels.length * vesselCoins();
   if (action.useLargeThrowingWheel === true) {
     clay = Math.max(0, clay - TECHS.T01.params.clayReduction);
   }
@@ -383,7 +388,7 @@ function formCostLowerBound(effect: WorkerEffect, action: FormDecorateAction): {
     coins -= TECHS.T16.params.coinReduction;
   }
   if (effect === "shifu" && action.vessels.length === 2) {
-    coins -= LOCATIONS.form_decorate.effects.shifu.twoVesselDecorationDiscount;
+    coins -= LOCATIONS.form_decorate.effects.shifu.twoVesselDiscount;
   }
   coins = Math.max(0, coins);
   if (action.dingExtra !== undefined) {
@@ -474,37 +479,49 @@ function* interleave<T>(streams: ReadonlyArray<Iterable<T>>): Generator<T> {
 const FIRST_GLAZE: readonly Glaze[] = GLAZES.slice(0, 1);
 const OTHER_GLAZES: readonly Glaze[] = GLAZES.slice(1);
 
+/** Kiln Master's faces when its marker may go on a load now (T24 ready, R22), else none. */
+function kilnMasterValues(ctx: EnumContext): readonly HeatDelta[] {
+  const option = kilnMasterOption(ctx.view, ctx.pid);
+  return option !== null && option.ready ? option.values : [];
+}
+
 /**
  * Glaze & Load candidate streams for one worker choice (`interleave`d into its group).
- * Exhaustive: one stream, every single then every pair, each with every Heat-marker choice.
- * Canonical: disjoint streams taken round-robin, so the default `perFamilyLimit` still offers each optional
- * ability used and declined (R4) and a Shifu pair, instead of spending the limit on Glaze
- * permutations of single loads:
+ * Exhaustive: one stream, every single then every pair, each with every Kiln Master choice (on
+ * any one load). Canonical: disjoint streams taken round-robin, so the default `perFamilyLimit`
+ * still offers each optional ability used and declined (R4) and a Shifu pair, instead of
+ * spending the limit on Glaze permutations of single loads:
  *
  * 1. singles, first Glaze, a plain space (zone representative or own Setter's Mark), no marker;
  * 2. the same with Inverted Firing; 3. with Kiln Furniture; 4. into the Imperial Kiln;
- * 5. Reworking Table singles, first Glaze; 6. (Shifu) first-Glaze singles with each Heat-marker
- *    target; 7. (Shifu) pairs, first Glaze on both, no marker, except those of stream 8;
- * 8. (T21 ready) a plain first load, then a Bowl, Plate or Brush Washer stacked by Inverted
- *    Firing;
- * 9. the rest: every other Glaze and every marker variant of singles and pairs.
+ * 5. Reworking Table singles, first Glaze; 6. (T24 ready) first-Glaze singles with Kiln
+ *    Master's +1 and −1; 7. (Shifu) pairs, first Glaze on both, no marker, except those of
+ *    stream 8; 8. (T21 ready) a plain first load, then a Bowl, Plate or Brush Washer stacked by
+ *    Inverted Firing;
+ * 9. the rest: every other Glaze and every Kiln Master variant (on the first load) of singles
+ *    and pairs.
+ *
+ * A Shared destination appears only when the player has the action's 1 Wood (R24): the
+ * destinations come from `loadDestinationOptions`, the validator's own simulation.
  */
 function glazeLoadStreams(ctx: EnumContext, choice: WorkerChoice): Array<Iterable<GameAction>> {
   const pairs = LOCATIONS.glaze_load.effects[choice.effect].maxLoads >= 2;
-  const marker = choice.effect === "shifu" && LOCATIONS.glaze_load.effects.shifu.placesHeatMarker;
-  const action = (loads: LoadSpec[], heatMarkerCeramicId?: string): GlazeLoadAction => ({
-    type: "PLACE_GLAZE_LOAD",
-    workerId: choice.workerId,
-    loads,
-    ...(heatMarkerCeramicId === undefined ? {} : { heatMarkerCeramicId }),
-  });
-  const markerTargets = (loads: LoadSpec[]): string[] => (marker ? heatMarkerTargets(ctx.view, ctx.pid, loads) : []);
+  const values = kilnMasterValues(ctx);
+  const marker = values.length > 0;
+  const action = (loads: LoadSpec[]): GlazeLoadAction => ({ type: "PLACE_GLAZE_LOAD", workerId: choice.workerId, loads });
+  /** `loads` with Kiln Master's marker on load `index` (R22). */
+  const marked = (loads: LoadSpec[], index: number, value: HeatDelta): LoadSpec[] =>
+    loads.map((load, i) => (i === index ? { ...load, kilnMaster: value } : load));
   const withMarkers = function* (loads: LoadSpec[], includeNone: boolean): Generator<GameAction> {
     if (includeNone) {
       yield action(loads);
     }
-    for (const target of markerTargets(loads)) {
-      yield action(loads, target);
+    // Canonical: on the first load; exhaustive: on any one load.
+    const indexes = isCanonical(ctx) ? [0] : loads.map((_, index) => index);
+    for (const index of indexes) {
+      for (const value of values) {
+        yield action(marked(loads, index, value));
+      }
     }
   };
   const pairsOf = function* (filter: SingleFilter, second: SingleFilter = filter): Generator<LoadSpec[]> {
@@ -546,6 +563,7 @@ function glazeLoadStreams(ctx: EnumContext, choice: WorkerChoice): Array<Iterabl
     })(),
   ];
   if (marker) {
+    // Kiln Master (T24, R22): its marker on a first-Glaze single, into either kiln.
     streams.push(
       (function* () {
         for (const load of singleLoads(ctx, [], { glazes: FIRST_GLAZE, rework: "none" })) {
@@ -589,8 +607,10 @@ function glazeLoadStreams(ctx: EnumContext, choice: WorkerChoice): Array<Iterabl
   }
   streams.push(
     (function* () {
+      // Every other Glaze unmarked first, so the default limit still offers each Glaze; the
+      // Kiln Master variants of these singles come last.
       for (const load of singleLoads(ctx, [], { glazes: OTHER_GLAZES, rework: "none" })) {
-        yield* withMarkers([load], true);
+        yield action([load]);
       }
       for (const load of singleLoads(ctx, [], { glazes: FIRST_GLAZE, rework: "only" })) {
         yield* withMarkers([load], false);
@@ -600,6 +620,9 @@ function glazeLoadStreams(ctx: EnumContext, choice: WorkerChoice): Array<Iterabl
           const firstGlazeOnly = loads.every((load) => load.glaze === FIRST_GLAZE[0]);
           yield* withMarkers(loads, !firstGlazeOnly);
         }
+      }
+      for (const load of singleLoads(ctx, [], { glazes: OTHER_GLAZES, rework: "none" })) {
+        yield* withMarkers([load], false);
       }
     })(),
   );
@@ -629,6 +652,24 @@ function selectPicks(ctx: EnumContext): SelectPick[] {
 
 function* commissionCandidates(_ctx: EnumContext, choice: WorkerChoice): Generator<GameAction> {
   yield { type: "PLACE_COMMISSION_MARKET", workerId: choice.workerId, ...seniorFlag(choice) };
+}
+
+/**
+ * The Magistrate's Hall (rev. 4 L240–245, change 33): the step alone, then for the Shifu effect
+ * each face-up Crown Order it may reserve after the step (R21: optional; the display positions
+ * of `magistratesHallQuote`).
+ */
+function* magistratesHallCandidates(ctx: EnumContext, choice: WorkerChoice): Generator<GameAction> {
+  yield { type: "PLACE_MAGISTRATES_HALL", workerId: choice.workerId };
+  if (choice.effect !== "shifu") {
+    return;
+  }
+  for (const slotIndex of magistratesHallQuote(ctx.view, "shifu").crownOrderSlots) {
+    const orderId = ctx.game.market.display[slotIndex];
+    if (orderId !== null && orderId !== undefined) {
+      yield { type: "PLACE_MAGISTRATES_HALL", workerId: choice.workerId, crownOrder: { slotIndex, orderId } };
+    }
+  }
 }
 
 function* guildHallCandidates(ctx: EnumContext, choice: WorkerChoice): Generator<GameAction> {
@@ -664,7 +705,7 @@ const PLACEMENT_FAMILIES: readonly Family[] = [
   placementFamily("PLACE_COMMISSION_MARKET", "commission_market", commissionCandidates),
   placementFamily("PLACE_GUILD_HALL", "guild_hall", guildHallCandidates),
   placementFamily("PLACE_CANAL_WHARF", "canal_wharf", (_ctx, choice) => [{ type: "PLACE_CANAL_WHARF", workerId: choice.workerId }]),
-  placementFamily("PLACE_MAGISTRATES_HALL", "magistrates_hall", (_ctx, choice) => [{ type: "PLACE_MAGISTRATES_HALL", workerId: choice.workerId }]),
+  placementFamily("PLACE_MAGISTRATES_HALL", "magistrates_hall", magistratesHallCandidates),
 ];
 
 // ── Order completion (Order Phase) ───────────────────────────────────────────────────
@@ -724,7 +765,18 @@ function family(type: GameActionType, generate: (ctx: EnumContext) => Iterable<G
   return { type, gated: false, groups: (ctx) => [generate(ctx)] };
 }
 
-const SELECT_KILN = family("SELECT_KILN", () => KILN_IDS.map((kilnId): GameAction => ({ type: "SELECT_KILN", kilnId })));
+/** Setup step 9 (rev. 4 L122, R23): every Kiln × every face-up Main Order, in one command. */
+const SELECT_KILN = family("SELECT_KILN", function* (ctx) {
+  const display = ctx.game.market.display;
+  for (const kilnId of KILN_IDS) {
+    for (const slotIndex of setupChoiceOptions(ctx.view)?.faceUpSlots ?? []) {
+      const orderId = display[slotIndex];
+      if (orderId !== null && orderId !== undefined) {
+        yield { type: "SELECT_KILN", kilnId, mainOrder: { slotIndex, orderId } };
+      }
+    }
+  }
+});
 
 const PLACE_SETTERS_MARK = family("PLACE_SETTERS_MARK", function* (ctx) {
   const zones = new Set<string>();
@@ -771,10 +823,15 @@ const USE_IMPERIAL_PRIORITY = family("USE_IMPERIAL_PRIORITY", function* (ctx) {
     return;
   }
   const vessels = vesselChoices(ctx, new Set());
+  const markers: Array<HeatDelta | undefined> = [undefined, ...kilnMasterValues(ctx)];
   for (const vessel of vessels) {
     for (const glaze of GLAZES) {
       for (const imperialModifier of FIRING.imperialModifiers) {
-        yield { type: "USE_IMPERIAL_PRIORITY", ceramicId: vessel.id, glaze, imperialModifier };
+        // Canonical: Kiln Master's faces (R22) once per class, with the first Glaze and modifier.
+        const first = glaze === GLAZES[0] && imperialModifier === FIRING.imperialModifiers[0];
+        for (const kilnMaster of isCanonical(ctx) && !first ? markers.slice(0, 1) : markers) {
+          yield { type: "USE_IMPERIAL_PRIORITY", ceramicId: vessel.id, glaze, imperialModifier, ...(kilnMaster === undefined ? {} : { kilnMaster }) };
+        }
       }
     }
   }
@@ -851,27 +908,6 @@ const TEST_PIECES_BURY = family("TEST_PIECES_BURY", () => [
   { type: "TEST_PIECES_BURY", bury: false },
 ]);
 
-const RESOLVE_HEAT_MARKERS = family("RESOLVE_HEAT_MARKERS", function* (ctx) {
-  const options = heatMarkerStepOptions(ctx.view);
-  if (options === null) {
-    return;
-  }
-  const ownChoices: Array<1 | -1 | "return" | null> = options.ownMarkerCeramicId === null ? [null] : [1, -1, "return"];
-  for (const own of ownChoices) {
-    const base: ActionOf<"RESOLVE_HEAT_MARKERS"> = { type: "RESOLVE_HEAT_MARKERS", ...(own === null ? {} : { ownMarker: own }) };
-    const kilnMaster = options.kilnMaster;
-    if (kilnMaster !== null && kilnMaster.ready) {
-      const targets = own === "return" ? kilnMaster.targetsIfOwnReturned : kilnMaster.targets;
-      for (const ceramicId of targets) {
-        for (const value of KILN_MASTER_VALUES) {
-          yield { ...base, kilnMaster: { ceramicId, value } };
-        }
-      }
-    }
-    yield base;
-  }
-});
-
 const RESOLVE_JUN = family("RESOLVE_JUN", function* (ctx) {
   for (const ceramicId of junOptions(ctx.view)?.ceramicIds ?? []) {
     for (const delta of KILNS.JU.params.deltas) {
@@ -899,11 +935,11 @@ const USE_GE_CRACKLE = afterQualityFamily("USE_GE_CRACKLE", "ge_crackle");
 
 const END_AFTER_QUALITY = family("END_AFTER_QUALITY", () => [{ type: "END_AFTER_QUALITY" }]);
 
-const SALVAGE_FLAWED = family("SALVAGE_FLAWED", function* (ctx) {
-  for (const ceramicId of salvageOptions(ctx.view)?.ceramicIds ?? []) {
-    yield { type: "SALVAGE_FLAWED", ceramicId };
+/** R20: one sale per Flawed ceramic the viewer may sell now (rev. 4 L284). */
+const SELL_FLAWED = family("SELL_FLAWED", function* (ctx) {
+  for (const ceramicId of sellFlawedOptions(ctx.view)?.ceramicIds ?? []) {
+    yield { type: "SELL_FLAWED", ceramicId };
   }
-  yield { type: "SALVAGE_FLAWED", ceramicId: null };
 });
 
 const COMPLETE_ORDER = family("COMPLETE_ORDER", (ctx) => completionCandidates(ctx));
@@ -931,7 +967,7 @@ function familiesFor(ctx: EnumContext): readonly Family[] {
     case "work_turn":
       switch (phase.step.kind) {
         case "before_action":
-          return [USE_COLOUR_SAMPLES_SWAP, USE_IMPERIAL_PRIORITY, ...PLACEMENT_FAMILIES];
+          return [USE_COLOUR_SAMPLES_SWAP, USE_IMPERIAL_PRIORITY, SELL_FLAWED, ...PLACEMENT_FAMILIES];
         case "commission_market":
         case "colour_samples":
         case "colour_samples_swap":
@@ -939,7 +975,7 @@ function familiesFor(ctx: EnumContext): readonly Family[] {
         case "guild_inspection":
           return [GUILD_TAKE, GUILD_FINISH];
         case "after_action":
-          return [USE_COLOUR_SAMPLES_SWAP, USE_IMPERIAL_PRIORITY, END_TURN];
+          return [USE_COLOUR_SAMPLES_SWAP, USE_IMPERIAL_PRIORITY, SELL_FLAWED, END_TURN];
       }
       return [];
     case "firing_contributions":
@@ -947,20 +983,16 @@ function familiesFor(ctx: EnumContext): readonly Family[] {
       return [];
     case "firing_test_pieces":
       return [TEST_PIECES_DECIDE, TEST_PIECES_BURY];
-    case "firing_heat_markers":
-      return [RESOLVE_HEAT_MARKERS];
     case "firing_heat_adjustment":
       return [RESOLVE_JUN];
     case "firing_second_firing_choice":
       return [SECOND_FIRING_CHOOSE];
     case "firing_after_quality":
-      return [USE_PROTECTIVE_SAGGARS, USE_SECOND_FIRING, USE_GE_CRACKLE, END_AFTER_QUALITY];
-    case "firing_salvage":
-      return [SALVAGE_FLAWED];
+      return [USE_PROTECTIVE_SAGGARS, USE_SECOND_FIRING, USE_GE_CRACKLE, SELL_FLAWED, END_AFTER_QUALITY];
     case "orders":
-      return [COMPLETE_ORDER, END_ORDER_TURN];
+      return [COMPLETE_ORDER, SELL_FLAWED, END_ORDER_TURN];
     case "cleanup_hand_limit":
-      return [DISCARD_TO_HAND_LIMIT];
+      return [SELL_FLAWED, DISCARD_TO_HAND_LIMIT];
     case "finished":
       return [];
   }
@@ -1197,14 +1229,14 @@ function randomGlazeLoad(ctx: EnumContext, choice: WorkerChoice, rng: RandomSour
   if (loads.length === 0) {
     return null;
   }
-  const action: GlazeLoadAction = { type: "PLACE_GLAZE_LOAD", workerId: choice.workerId, loads };
-  if (choice.effect === "shifu" && coin(rng)) {
-    const target = pick(heatMarkerTargets(ctx.view, ctx.pid, loads), rng);
-    if (target !== undefined) {
-      return { ...action, heatMarkerCeramicId: target };
-    }
+  // Kiln Master (T24, R22): its marker on one of the loads, half the time when ready.
+  const values = kilnMasterValues(ctx);
+  if (values.length > 0 && coin(rng)) {
+    const index = rng.nextInt(loads.length);
+    const value = pick(values, rng) ?? 1;
+    return { type: "PLACE_GLAZE_LOAD", workerId: choice.workerId, loads: loads.map((load, i) => (i === index ? { ...load, kilnMaster: value } : load)) };
   }
-  return action;
+  return { type: "PLACE_GLAZE_LOAD", workerId: choice.workerId, loads };
 }
 
 function randomPlacement(ctx: EnumContext, type: GameActionType, rng: RandomSource): GameAction | null {
@@ -1246,8 +1278,14 @@ function randomPlacement(ctx: EnumContext, type: GameActionType, rng: RandomSour
     }
     case "canal_wharf":
       return { type: "PLACE_CANAL_WHARF", workerId };
-    case "magistrates_hall":
-      return { type: "PLACE_MAGISTRATES_HALL", workerId };
+    case "magistrates_hall": {
+      // The Shifu's optional Crown Order (R21), half the time when one shows.
+      const slotIndex = choice.effect === "shifu" && coin(rng) ? pick(magistratesHallQuote(ctx.view, "shifu").crownOrderSlots, rng) : undefined;
+      const orderId = slotIndex === undefined ? null : (ctx.game.market.display[slotIndex] ?? null);
+      return slotIndex === undefined || orderId === null
+        ? { type: "PLACE_MAGISTRATES_HALL", workerId }
+        : { type: "PLACE_MAGISTRATES_HALL", workerId, crownOrder: { slotIndex, orderId } };
+    }
   }
 }
 
@@ -1273,8 +1311,11 @@ function randomCandidate(ctx: EnumContext, type: GameActionType, rng: RandomSour
   const view = ctx.view;
   switch (type) {
     case "SELECT_KILN": {
-      const kilnId = pick(KILN_IDS.filter((id) => validateAction(view, { type, kilnId: id }) === null), rng);
-      return kilnId === undefined ? null : { type, kilnId };
+      const options = setupChoiceOptions(view);
+      const kilnId = pick(options?.kilns.filter((k) => k.available).map((k) => k.kilnId) ?? [], rng);
+      const slotIndex = pick(options?.faceUpSlots ?? [], rng);
+      const orderId = slotIndex === undefined ? null : (ctx.game.market.display[slotIndex] ?? null);
+      return kilnId === undefined || slotIndex === undefined || orderId === null ? null : { type, kilnId, mainOrder: { slotIndex, orderId } };
     }
     case "PLACE_SETTERS_MARK":
       return { type, spaceId: coin(rng) ? null : (pick(settersMarkOptions(view), rng) ?? null) };
@@ -1307,12 +1348,14 @@ function randomCandidate(ctx: EnumContext, type: GameActionType, rng: RandomSour
         return null;
       }
       const rework = techReady(ctx.me, REWORKING_TABLE) && rng.nextInt(3) === 0 ? pick(SHAPES.filter((s) => s !== vessel.shape), rng) : undefined;
+      const kilnMaster = coin(rng) ? pick(kilnMasterValues(ctx), rng) : undefined;
       return {
         type,
         ceramicId: vessel.id,
         glaze: pick(GLAZES, rng) ?? "white",
         imperialModifier: pick(FIRING.imperialModifiers, rng) ?? 0,
         ...(rework === undefined ? {} : { reworkShape: rework }),
+        ...(kilnMaster === undefined ? {} : { kilnMaster }),
       };
     }
     case "END_TURN":
@@ -1350,22 +1393,6 @@ function randomCandidate(ctx: EnumContext, type: GameActionType, rng: RandomSour
       return { type, peek: coin(rng) };
     case "TEST_PIECES_BURY":
       return { type, bury: coin(rng) };
-    case "RESOLVE_HEAT_MARKERS": {
-      const options = heatMarkerStepOptions(view);
-      if (options === null) {
-        return null;
-      }
-      const own = options.ownMarkerCeramicId === null ? null : (pick([1, -1, "return"] as const, rng) ?? "return");
-      const base: ActionOf<"RESOLVE_HEAT_MARKERS"> = { type, ...(own === null ? {} : { ownMarker: own }) };
-      const kilnMaster = options.kilnMaster;
-      if (kilnMaster !== null && kilnMaster.ready && coin(rng)) {
-        const ceramicId = pick(own === "return" ? kilnMaster.targetsIfOwnReturned : kilnMaster.targets, rng);
-        if (ceramicId !== undefined) {
-          return { ...base, kilnMaster: { ceramicId, value: pick(KILN_MASTER_VALUES, rng) ?? 1 } };
-        }
-      }
-      return base;
-    }
     case "RESOLVE_JUN": {
       const ceramicId = coin(rng) ? pick(junOptions(view)?.ceramicIds ?? [], rng) : undefined;
       return { type, adjustment: ceramicId === undefined ? null : { ceramicId, delta: pick(KILNS.JU.params.deltas, rng) ?? 1 } };
@@ -1377,9 +1404,9 @@ function randomCandidate(ctx: EnumContext, type: GameActionType, rng: RandomSour
       const ceramicId = pick(afterQualityOptions(view).find((o) => o.ability === ability)?.ceramicIds ?? [], rng);
       return ceramicId === undefined ? null : { type, ceramicId };
     }
-    case "SALVAGE_FLAWED": {
-      const ceramicId = coin(rng) ? pick(salvageOptions(view)?.ceramicIds ?? [], rng) : undefined;
-      return { type, ceramicId: ceramicId ?? null };
+    case "SELL_FLAWED": {
+      const ceramicId = pick(sellFlawedOptions(view)?.ceramicIds ?? [], rng);
+      return ceramicId === undefined ? null : { type, ceramicId };
     }
     case "DISCARD_TO_HAND_LIMIT": {
       const hand = view.own.orderHand;

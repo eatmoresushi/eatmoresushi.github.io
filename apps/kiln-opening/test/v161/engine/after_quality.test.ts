@@ -1,13 +1,15 @@
 /**
- * Appendix D steps 9–12 (L281, L468–470, v1.6.2 L636, L639, L650, L653, L681–683; R4, R7, R15):
- * Protective Saggars (its floor at Quality and its once-per-round Standard → Fine step), Second
- * Firing (2 cards revealed, 1 chosen, R7's Jun with the choice), Ge's Crackle in the owner's
- * chosen order with eligibility rechecked after each use, the optional 2-Coin salvage, and
- * finishing.
+ * Appendix D steps 4–6 as owner revision 4 left them (rev. 4 L662–664, L463–465, L624, L627,
+ * L641, L284; R4, R15, R20): Protective Saggars (its floor at Quality and its once-per-round
+ * Standard → Fine step), Second Firing (2 cards revealed, 1 chosen, an unused Jun with the
+ * choice), Ge's Crackle on a Fine or Standard ceramic (change 29) in the owner's chosen order with
+ * eligibility rechecked after each use, selling a Flawed ceramic in the owner's after-Quality
+ * turn (R20; the salvage step is gone), and finishing.
  */
 
 import { describe, expect, it } from "vitest";
-import { afterQualityOptions, salvageOptions, secondFiringChoiceOptions } from "../../../src/game/firing/afterQuality.ts";
+import { afterQualityOptions, secondFiringChoiceOptions } from "../../../src/game/firing/afterQuality.ts";
+import { sellFlawedOptions } from "../../../src/game/flawedSale.ts";
 import { junOptions } from "../../../src/game/firing/pipeline.ts";
 import { firingStageView } from "../../../src/game/selectors.ts";
 import type { FireModifier, KilnId, TechId } from "../../../src/game/types.ts";
@@ -81,11 +83,12 @@ describe("the after-Quality window (L681)", () => {
     expect(afterQualityOptions(table.view("p1"))).toEqual([{ ability: "protective_saggars", ceramicIds: ["c1"], cost: NO_COST }]);
   });
 
-  it("is skipped when nobody has an eligible ability", () => {
+  it("is skipped when nobody has an eligible ability, and the firing finishes (no salvage step, change 30)", () => {
     const table = openFiringTable(aqSpec({}));
     const events = tendAll(table);
     expect(typesOf(events)).toContain("QUALITY_ASSIGNED");
-    expect(table.state.phase).toMatchObject({ type: "firing_salvage", pendingPlayerIds: ["p1"] });
+    expect(typesOf(events).at(-1)).toBe("FIRING_FINISHED");
+    expect(table.halts).toEqual([{ kind: "continue_after", milestone: "firing_done" }]);
   });
 });
 
@@ -151,13 +154,14 @@ describe("Protective Saggars: never Flawed (T11, v1.6.2 L636, L650)", () => {
     });
   });
 
-  it("its owner never salvages, since nothing of theirs is Flawed (L280)", () => {
+  it("its owner never has a Flawed ceramic of this firing to sell (rev. 4 L624, R20)", () => {
     const table = openFiringTable(aqSpec(withTechs(["T11"])));
     tendAll(table);
     table.act("p1", { type: "END_AFTER_QUALITY" });
     expect(table.halts).toEqual([{ kind: "continue_after", milestone: "firing_done" }]);
     expect(table.state.ceramics["c1"]).toMatchObject({ stage: "finished", quality: "standard" });
     expect(table.player("p1").techs[0]?.usedThisRound).toBe(false);
+    expect(Object.values(table.state.ceramics).some((c) => c.ownerId === "p1" && c.stage === "finished" && c.quality === "flawed")).toBe(false);
   });
 
   it("never reaches ceramics fired before the owner had the tile (L650)", () => {
@@ -188,7 +192,7 @@ describe("Protective Saggars: Standard → Fine once per round (T11, v1.6.2 L636
     ]);
     expect(eventsOfType(events, "RESOURCES_CHANGED")).toEqual([]);
     expect(table.player("p1").resources.wood).toBe(0);
-    // Once per round: nothing eligible remains, the firing finishes (no salvage for p1).
+    // Once per round: nothing eligible remains, the firing finishes.
     expect(typesOf(events).at(-1)).toBe("FIRING_FINISHED");
     expect(record(table, "c1")).toMatchObject({ quality: "fine", saggarsFloor: true });
     expect(record(table, "c1")?.history).toEqual([
@@ -271,7 +275,7 @@ describe("Second Firing: 2 cards revealed, 1 chosen (T14, v1.6.2 L639, L650)", (
         ceramicId: "c1",
         cardIndex: 1,
         modifier: 2,
-        calculation: { fireModifier: 2, heatSource: 4, positionModifier: -1, heatMarker: 0, actualHeat: 3, junAdjustment: 0, finalActualHeat: 3, heatDifference: 1 },
+        calculation: { fireModifier: 2, heatSource: 4, positionModifier: -1, kilnMasterMarker: 0, actualHeat: 3, junAdjustment: 0, finalActualHeat: 3, heatDifference: 1 },
       },
       { type: "QUALITY_ASSIGNED", ceramicId: "c1", quality: "fine", heatDifference: 1, cause: "second_firing", saggarsFloor: false },
     ]);
@@ -297,36 +301,36 @@ describe("Second Firing: 2 cards revealed, 1 chosen (T14, v1.6.2 L639, L650)", (
       { cause: "fired", from: null, to: "standard" },
       { cause: "second_firing", from: "standard", to: "flawed" },
     ]);
-    expect(table.state.phase).toMatchObject({ type: "firing_salvage", pendingPlayerIds: ["p1"] });
-    expect(salvageOptions(table.view("p1"))).toEqual({ ceramicIds: ["c1", "c2"], coins: 2 });
+    // p1 has nothing left: the firing finishes with both Flawed; they sell in a later turn (R20).
+    expect(table.halts).toEqual([{ kind: "continue_after", milestone: "firing_done" }]);
+    expect(table.state.ceramics["c2"]).toMatchObject({ stage: "finished", quality: "flawed" });
   });
 
-  it("keeps the Heat marker and the Kiln Furniture modifier (L269, v1.6.2 L639)", () => {
+  it("keeps the Kiln Furniture modifier (rev. 4 L627; the Kiln Master marker case is kiln_master.test.ts)", () => {
     const table = openFiringTable({
       players: [{ techs: ["T14", "T15"] }, {}],
       fireDeck: [0, -1, 2],
       ceramics: [
-        { owner: "p1", stage: "loaded", shape: "bowl", glaze: "white", at: "low_1", kilnFurniture: 1, heatMarker: { source: "own", faceDown: true } },
+        { owner: "p1", stage: "loaded", shape: "bowl", glaze: "white", at: "low_1", kilnFurniture: 1 },
         { owner: "p2", stage: "loaded", shape: "bowl", glaze: "celadon", at: "middle_1" },
       ],
     });
     tendAll(table);
-    table.act("p1", { type: "RESOLVE_HEAT_MARKERS", ownMarker: 1 });
-    // First: 2 + Furniture 1 + marker 1 = 4 vs White 1 → Flawed.
-    expect(record(table, "c1")?.quality).toBe("flawed");
+    // First: 2 + Furniture 1 = 3 vs White 1 → Standard.
+    expect(record(table, "c1")?.quality).toBe("standard");
     table.act("p1", { type: "USE_SECOND_FIRING", ceramicId: "c1" });
     const events = table.act("p1", { type: "SECOND_FIRING_CHOOSE", cardIndex: 0, jun: null });
     expect(eventsOfType(events, "SECOND_FIRING_CHOSEN")[0]?.calculation).toEqual({
       fireModifier: -1,
       heatSource: 1,
       positionModifier: 1,
-      heatMarker: 1,
-      actualHeat: 3,
+      kilnMasterMarker: 0,
+      actualHeat: 2,
       junAdjustment: 0,
-      finalActualHeat: 3,
-      heatDifference: 2,
+      finalActualHeat: 2,
+      heatDifference: 1,
     });
-    expect(eventsOfType(events, "QUALITY_ASSIGNED")[0]).toMatchObject({ quality: "standard" });
+    expect(eventsOfType(events, "QUALITY_ASSIGNED")[0]).toMatchObject({ quality: "fine" });
   });
 
   it("an Imperial ceramic uses the Kiln Die again, not Base Heat (L289)", () => {
@@ -391,7 +395,7 @@ describe("Second Firing: 2 cards revealed, 1 chosen (T14, v1.6.2 L639, L650)", (
   });
 });
 
-describe("R7: Jun during Second Firing, with the choice", () => {
+describe("an unused Jun on the Second Firing recalculation, with the choice (rev. 4 L627, formerly R7)", () => {
   function r7Table(fire: FireModifier[] = [0, -2, 2]): LocalTable {
     const table = openFiringTable(aqSpec(withTechs(["T14"], "JU"), fire));
     tendAll(table);
@@ -413,7 +417,7 @@ describe("R7: Jun during Second Firing, with the choice", () => {
         ceramicId: "c1",
         cardIndex: 1,
         modifier: 2,
-        calculation: { fireModifier: 2, heatSource: 4, positionModifier: -1, heatMarker: 0, actualHeat: 3, junAdjustment: 0, finalActualHeat: 3, heatDifference: 1 },
+        calculation: { fireModifier: 2, heatSource: 4, positionModifier: -1, kilnMasterMarker: 0, actualHeat: 3, junAdjustment: 0, finalActualHeat: 3, heatDifference: 1 },
       },
       { type: "RESOURCES_CHANGED", playerId: "p1", clay: 0, wood: -1, coins: 0, reason: "jun" },
       { type: "KILN_ABILITY_USED", playerId: "p1", kilnId: "JU" },
@@ -480,14 +484,14 @@ describe("R7: Jun during Second Firing, with the choice", () => {
   });
 });
 
-describe("Ge Crackle (L467–469, v1.6.2 L653)", () => {
+describe("Ge Crackle (rev. 4 L463–465, L641; change 29)", () => {
   it("turns one of your Standard ceramics Fine with a permanent Crackle marker", () => {
     const table = openFiringTable(aqSpec(withTechs([], "GE")));
     tendAll(table);
-    expect(afterQualityOptions(table.view("p1"))).toEqual([{ ability: "ge_crackle", ceramicIds: ["c2"], cost: NO_COST }]);
+    // Fine or Standard ceramics of this firing: c2 Standard, c3 Fine.
+    expect(afterQualityOptions(table.view("p1"))).toEqual([{ ability: "ge_crackle", ceramicIds: ["c2", "c3"], cost: NO_COST }]);
     for (const [ceramicId, code] of [
       ["c1", "INVALID_TARGET"],
-      ["c3", "INVALID_TARGET"],
       ["c4", "INVALID_TARGET"],
       ["c5", "CERAMIC_NOT_OWNED"],
       ["c6", "INVALID_TARGET"],
@@ -501,17 +505,44 @@ describe("Ge Crackle (L467–469, v1.6.2 L653)", () => {
       { type: "CRACKLE_APPLIED", playerId: "p1", ceramicId: "c2" },
     ]);
     expect(record(table, "c2")).toMatchObject({ quality: "fine", crackle: true });
-    // c1 is still Flawed: salvage, then finish with the Crackle ceramic exactly Fine.
-    table.act("p1", { type: "SALVAGE_FLAWED", ceramicId: null });
+    // Ge is spent and c1 stays Flawed: the firing finishes with the Crackle ceramic exactly Fine.
+    expect(table.halts).toEqual([{ kind: "continue_after", milestone: "firing_done" }]);
     expect(table.state.ceramics["c2"]).toMatchObject({ stage: "finished", quality: "fine", crackle: true, decoration: "plain" });
   });
 
-  it("with Protective Saggars, a ceramic that would have been Flawed is Standard and may be crackled (v1.6.2 L653)", () => {
+  it("crackles a Fine ceramic, which stays Fine: no Quality change, only the marker (rev. 4 L463)", () => {
+    const table = openFiringTable(aqSpec(withTechs([], "GE")));
+    tendAll(table);
+    const events = table.act("p1", { type: "USE_GE_CRACKLE", ceramicId: "c3" });
+    expect(events.slice(0, 2)).toEqual([
+      { type: "KILN_ABILITY_USED", playerId: "p1", kilnId: "GE" },
+      { type: "CRACKLE_APPLIED", playerId: "p1", ceramicId: "c3" },
+    ]);
+    expect(eventsOfType(events, "QUALITY_IMPROVED")).toEqual([]);
+    expect(record(table, "c3")?.history).toEqual([
+      { cause: "fired", from: null, to: "fine" },
+      { cause: "ge_crackle", from: "fine", to: "fine" },
+    ]);
+    expect(table.state.ceramics["c3"]).toMatchObject({ stage: "finished", quality: "fine", crackle: true });
+    expect(table.state.ceramics["c2"]).toMatchObject({ stage: "finished", quality: "standard", crackle: false });
+  });
+
+  it("refuses a Masterpiece or a Flawed ceramic (INVALID_TARGET not_fine_or_standard): a Crackle ceramic is never a Masterpiece", () => {
+    const table = openFiringTable(aqSpec(withTechs([], "GE")));
+    tendAll(table);
+    for (const ceramicId of ["c1", "c4"]) {
+      const error = table.expectRuleError("p1", { type: "USE_GE_CRACKLE", ceramicId }, "INVALID_TARGET");
+      expect(error.details).toEqual({ ceramicId, reason: "not_fine_or_standard" });
+      expect(error.message).toBe("Crackle needs one of your Fine or Standard ceramics from this firing.");
+    }
+  });
+
+  it("with Protective Saggars, a ceramic that would have been Flawed is Standard and may be crackled (rev. 4 L641)", () => {
     const table = openFiringTable(aqSpec(withTechs(["T11"], "GE")));
     tendAll(table);
     expect(afterQualityOptions(table.view("p1"))).toEqual([
       { ability: "protective_saggars", ceramicIds: ["c1", "c2"], cost: NO_COST },
-      { ability: "ge_crackle", ceramicIds: ["c1", "c2"], cost: NO_COST },
+      { ability: "ge_crackle", ceramicIds: ["c1", "c2", "c3"], cost: NO_COST },
     ]);
     table.act("p1", { type: "USE_GE_CRACKLE", ceramicId: "c1" });
     expect(record(table, "c1")?.history).toEqual([
@@ -528,15 +559,23 @@ describe("Ge Crackle (L467–469, v1.6.2 L653)", () => {
     expect(table.state.ceramics["c2"]).toMatchObject({ stage: "finished", quality: "fine", crackle: false });
   });
 
-  it("after Saggars' Standard → Fine, Ge cannot crackle that ceramic (v1.6.2 L653)", () => {
+  it("Saggars' Standard → Fine and then Crackle may both apply to one ceramic (rev. 4 L641)", () => {
     const table = openFiringTable(aqSpec(withTechs(["T11"], "GE")));
     tendAll(table);
     table.act("p1", { type: "USE_PROTECTIVE_SAGGARS", ceramicId: "c2" });
-    expect(afterQualityOptions(table.view("p1"))).toEqual([{ ability: "ge_crackle", ceramicIds: ["c1"], cost: NO_COST }]);
-    // A Fine ceramic is not Standard: Crackle needs Standard (L467).
-    expectDocumentedDetails(table.expectRuleError("p1", { type: "USE_GE_CRACKLE", ceramicId: "c2" }, "INVALID_TARGET"));
-    table.act("p1", { type: "USE_GE_CRACKLE", ceramicId: "c1" });
-    expect(table.state.ceramics["c2"]).toMatchObject({ stage: "finished", quality: "fine", crackle: false });
+    // c2 is Fine now, and still a Ge target (with c1, floored Standard, and c3, Fine).
+    expect(afterQualityOptions(table.view("p1"))).toEqual([{ ability: "ge_crackle", ceramicIds: ["c1", "c2", "c3"], cost: NO_COST }]);
+    const events = table.act("p1", { type: "USE_GE_CRACKLE", ceramicId: "c2" });
+    expect(eventsOfType(events, "QUALITY_IMPROVED")).toEqual([]);
+    expect(eventsOfType(events, "CRACKLE_APPLIED")).toEqual([{ type: "CRACKLE_APPLIED", playerId: "p1", ceramicId: "c2" }]);
+    expect(record(table, "c2")?.history).toEqual([
+      { cause: "fired", from: null, to: "standard" },
+      { cause: "protective_saggars", from: "standard", to: "fine" },
+      { cause: "ge_crackle", from: "fine", to: "fine" },
+    ]);
+    expect(table.halts).toEqual([{ kind: "continue_after", milestone: "firing_done" }]);
+    expect(table.state.ceramics["c2"]).toMatchObject({ stage: "finished", quality: "fine", crackle: true });
+    expect(table.state.ceramics["c1"]).toMatchObject({ stage: "finished", quality: "standard", crackle: false });
   });
 
   it("may follow Second Firing on the same ceramic; a Crackle ceramic cannot be fired again", () => {
@@ -544,12 +583,12 @@ describe("Ge Crackle (L467–469, v1.6.2 L653)", () => {
     tendAll(table);
     expect(afterQualityOptions(table.view("p1"))).toEqual([
       { ability: "second_firing", ceramicIds: ["c1", "c2"], cost: NO_COST },
-      { ability: "ge_crackle", ceramicIds: ["c2"], cost: NO_COST },
+      { ability: "ge_crackle", ceramicIds: ["c2", "c3"], cost: NO_COST },
     ]);
     // Second Firing with the chosen 1: 2 + 1 − 1 = 2 vs Moon White 4 → Standard, so Ge may now take c1.
     table.act("p1", { type: "USE_SECOND_FIRING", ceramicId: "c1" });
     table.act("p1", { type: "SECOND_FIRING_CHOOSE", cardIndex: 0, jun: null });
-    expect(afterQualityOptions(table.view("p1"))).toEqual([{ ability: "ge_crackle", ceramicIds: ["c1", "c2"], cost: NO_COST }]);
+    expect(afterQualityOptions(table.view("p1"))).toEqual([{ ability: "ge_crackle", ceramicIds: ["c1", "c2", "c3"], cost: NO_COST }]);
     table.act("p1", { type: "USE_GE_CRACKLE", ceramicId: "c1" });
     expect(record(table, "c1")?.history.map((change) => change.cause)).toEqual(["fired", "second_firing", "ge_crackle"]);
     expect(table.state.ceramics["c1"]).toMatchObject({ stage: "finished", quality: "fine", crackle: true });
@@ -572,7 +611,7 @@ describe("Ge Crackle (L467–469, v1.6.2 L653)", () => {
     );
     tendAll(table);
     const events = table.act("p1", { type: "USE_GE_CRACKLE", ceramicId: "c1" });
-    // Saggars is still ready but has no Standard target left: on to step 12.
+    // Saggars is still ready but has no Standard target left: on to step 6.
     expect(typesOf(events).at(-1)).toBe("FIRING_FINISHED");
     expect(table.player("p1").techs[0]?.usedThisRound).toBe(false);
   });
@@ -580,7 +619,7 @@ describe("Ge Crackle (L467–469, v1.6.2 L653)", () => {
   it("is once per round, and only for the Ge Kiln", () => {
     const used = openFiringTable(aqSpec({ kilnId: "GE", kilnAbilityUsedThisRound: true }));
     tendAll(used);
-    expect(used.state.phase.type).toBe("firing_salvage");
+    expect(used.halts).toEqual([{ kind: "continue_after", milestone: "firing_done" }]);
 
     const table = openFiringTable(aqSpec(withTechs(["T11"], "GE")));
     tendAll(table);
@@ -592,75 +631,118 @@ describe("Ge Crackle (L467–469, v1.6.2 L653)", () => {
   });
 });
 
-describe("salvage (L281, L682)", () => {
-  function salvageSpec(): StateSpec {
+describe("selling a Flawed ceramic in the owner's after-Quality turn (change 30, R20; rev. 4 L284)", () => {
+  /**
+   * p1 (Second Firing, Kiln Furniture): c1 Moon White in Low over Kiln Furniture −1 → 1, Flawed;
+   * c2 White in High → 3, Standard; c4 Moon White in Middle → 2, Standard; c5 a Finished Flawed
+   * Bowl from an earlier round. p2: c3 Moon White in Low → 1, Flawed (p2 has no ability, so no
+   * after-Quality turn).
+   */
+  function saleSpec(): StateSpec {
     return {
-      players: [{ techs: ["T15"] }, {}, {}],
+      players: [{ techs: ["T14", "T15"] }, {}, {}],
       fireDeck: [0],
       ceramics: [
         { owner: "p1", stage: "loaded", shape: "bowl", glaze: "moon_white", at: "low_1", kilnFurniture: -1 },
         { owner: "p1", stage: "loaded", shape: "plate", glaze: "white", at: "high_1" },
         { owner: "p2", stage: "loaded", shape: "vase", glaze: "moon_white", at: "low_2" },
         { owner: "p1", stage: "loaded", shape: "washer", glaze: "moon_white", at: "middle_1" },
+        { owner: "p1", stage: "finished", shape: "bowl", glaze: "white", quality: "flawed", firedInRound: 1 },
       ],
     };
   }
 
-  it("each player with a still-Flawed ceramic decides, in any order (parallel)", () => {
-    const table = openFiringTable(salvageSpec());
+  it("the queue head may sell a Flawed ceramic of this firing: it leaves its kiln space, its Kiln Furniture and the game", () => {
+    const table = openFiringTable(saleSpec());
     tendAll(table);
-    expect(table.state.phase).toEqual({ type: "firing_salvage", pendingPlayerIds: ["p1", "p2"], openedAtRevision: table.state.revision });
-    expect(table.prompt()).toEqual({ phaseType: "firing_salvage", actorIds: ["p1", "p2"], mode: "parallel" });
-    expect(salvageOptions(table.view("p1"))).toEqual({ ceramicIds: ["c1"], coins: 2 });
-    expect(salvageOptions(table.view("p3"))).toBeNull();
+    expect(table.prompt()).toEqual({ phaseType: "firing_after_quality", actorIds: ["p1"], mode: "single" });
+    // Finished and this firing's Flawed ceramics, in sequence order; only for the queue head.
+    expect(sellFlawedOptions(table.view("p1"))).toEqual({ ceramicIds: ["c1", "c5"], coins: 2 });
+    expect(sellFlawedOptions(table.view("p2"))).toBeNull();
+    expectDocumentedDetails(table.expectRuleError("p2", { type: "SELL_FLAWED", ceramicId: "c3" }, "NOT_YOUR_DECISION"));
 
-    const card = table.state.ceramics["c3"]?.vesselInstanceId;
-    const events = table.act("p2", { type: "SALVAGE_FLAWED", ceramicId: "c3" });
+    const card = table.state.ceramics["c1"]?.vesselInstanceId;
+    const events = table.act("p1", { type: "SELL_FLAWED", ceramicId: "c1" });
     expect(events).toEqual([
-      { type: "CERAMIC_SALVAGED", playerId: "p2", ceramicId: "c3", coins: 2 },
-      { type: "RESOURCES_CHANGED", playerId: "p2", clay: 0, wood: 0, coins: 2, reason: "salvage" },
+      { type: "CERAMIC_SOLD", playerId: "p1", ceramicId: "c1", coins: 2, from: "firing" },
+      { type: "RESOURCES_CHANGED", playerId: "p1", clay: 0, wood: 0, coins: 2, reason: "flawed_sale" },
     ]);
-    expect(table.state.ceramics["c3"]).toBeUndefined();
-    expect(table.state.sharedKiln.spaces.low_2.ceramicIds).toEqual([]);
-    expect(table.state.vesselSupply.vase).toContain(card);
-    expect(table.state.vesselSupply.vase).toEqual([...table.state.vesselSupply.vase].sort());
-    expect(record(table, "c3")).toMatchObject({ salvaged: true, quality: "flawed" });
-    expect(table.player("p2").resources.coins).toBe(5);
-    expect(table.state.phase).toMatchObject({ pendingPlayerIds: ["p1"] });
+    expect(table.state.ceramics["c1"]).toBeUndefined();
+    expect(table.state.sharedKiln.spaces.low_1).toMatchObject({ ceramicIds: [], kilnFurniture: null });
+    expect(table.state.vesselSupply.bowl).toContain(card);
+    expect(record(table, "c1")).toMatchObject({ sold: true, quality: "flawed" });
+    expect(table.player("p1").resources.coins).toBe(5);
+    // The sale is free: the turn goes on while Second Firing has a target (c2, c4), but no longer c1.
+    expect(table.prompt()).toEqual({ phaseType: "firing_after_quality", actorIds: ["p1"], mode: "single" });
+    expect(afterQualityOptions(table.view("p1"))).toEqual([{ ability: "second_firing", ceramicIds: ["c2", "c4"], cost: NO_COST }]);
+    const sold = table.expectRuleError("p1", { type: "USE_SECOND_FIRING", ceramicId: "c1" }, "CERAMIC_NOT_FOUND");
+    expectDocumentedDetails(sold);
+    // A Finished Flawed ceramic from an earlier round sells too.
+    expect(table.act("p1", { type: "SELL_FLAWED", ceramicId: "c5" })[0]).toEqual({ type: "CERAMIC_SOLD", playerId: "p1", ceramicId: "c5", coins: 2, from: "finished" });
+    expect(sellFlawedOptions(table.view("p1"))).toBeNull();
+    table.act("p1", { type: "END_AFTER_QUALITY" });
+    expect(table.halts).toEqual([{ kind: "continue_after", milestone: "firing_done" }]);
+    // The sold ceramic is not finished; the firing record keeps it as sold (public).
+    expect(eventsOfType(table.events, "FIRING_FINISHED").at(-1)?.finishedCeramicIds).toEqual(["c2", "c3", "c4"]);
+    expect(firingStageView(table.view("p3"))).toBeNull();
+    expect(table.state.lastFiring?.ceramics["c1"]).toMatchObject({ sold: true });
   });
 
-  it("validates the target: your own, still Flawed, from this firing", () => {
-    const table = openFiringTable(salvageSpec());
+  it("validates the target: your own Flawed ceramic (INVALID_TARGET not_flawed, CERAMIC_NOT_OWNED, CERAMIC_NOT_FOUND)", () => {
+    const table = openFiringTable(saleSpec());
     tendAll(table);
-    expectDocumentedDetails(table.expectRuleError("p1", { type: "SALVAGE_FLAWED", ceramicId: "c2" }, "INVALID_TARGET"));
-    expectDocumentedDetails(table.expectRuleError("p1", { type: "SALVAGE_FLAWED", ceramicId: "c3" }, "CERAMIC_NOT_OWNED"));
-    table.expectRuleError("p3", { type: "SALVAGE_FLAWED", ceramicId: null }, "NOT_YOUR_DECISION");
+    const standard = table.expectRuleError("p1", { type: "SELL_FLAWED", ceramicId: "c2" }, "INVALID_TARGET");
+    expect(standard.details).toEqual({ ceramicId: "c2", reason: "not_flawed" });
+    expect(standard.message).toBe("Only a Flawed ceramic can be sold.");
+    expectDocumentedDetails(standard);
+    expectDocumentedDetails(table.expectRuleError("p1", { type: "SELL_FLAWED", ceramicId: "c3" }, "CERAMIC_NOT_OWNED"));
+    expectDocumentedDetails(table.expectRuleError("p1", { type: "SELL_FLAWED", ceramicId: "c99" }, "CERAMIC_NOT_FOUND"));
   });
 
-  it("salvages at most 1 ceramic per player; Kiln Furniture under it leaves with it", () => {
+  it("a sale of the ceramic beneath an Inverted Firing stack leaves the stacked one alone in its space", () => {
     const table = openFiringTable({
-      ...salvageSpec(),
+      players: [{ techs: ["T14", "T21"] }, {}],
+      fireDeck: [0],
       ceramics: [
-        { owner: "p1", stage: "loaded", shape: "bowl", glaze: "moon_white", at: "low_1", kilnFurniture: -1 },
-        { owner: "p1", stage: "loaded", shape: "plate", glaze: "moon_white", at: "low_2" },
-        { owner: "p2", stage: "loaded", shape: "bowl", glaze: "celadon", at: "middle_2" },
+        { owner: "p1", stage: "loaded", shape: "bowl", glaze: "moon_white", at: "low_1" },
+        { owner: "p1", stage: "loaded", shape: "plate", glaze: "moon_white", at: "low_1" },
+        { owner: "p1", stage: "loaded", shape: "washer", glaze: "white", at: "high_1" },
+        { owner: "p2", stage: "loaded", shape: "bowl", glaze: "celadon", at: "middle_1" },
       ],
     });
     tendAll(table);
-    expect(salvageOptions(table.view("p1"))).toEqual({ ceramicIds: ["c1", "c2"], coins: 2 });
-    const events = table.act("p1", { type: "SALVAGE_FLAWED", ceramicId: "c1" });
-    expect(table.state.sharedKiln.spaces.low_1).toMatchObject({ ceramicIds: [], kilnFurniture: null });
-    // p1 is done: the firing finishes with c2 still Flawed.
-    expect(typesOf(events).at(-1)).toBe("FIRING_FINISHED");
-    expect(table.state.ceramics["c2"]).toMatchObject({ stage: "finished", quality: "flawed" });
-    expect(eventsOfType(events, "FIRING_FINISHED")[0]?.finishedCeramicIds).toEqual(["c2", "c3"]);
+    expect(sellFlawedOptions(table.view("p1"))?.ceramicIds).toEqual(["c1", "c2"]);
+    table.act("p1", { type: "SELL_FLAWED", ceramicId: "c1" });
+    expect(table.state.sharedKiln.spaces.low_1.ceramicIds).toEqual(["c2"]);
+    expect(table.state.ceramics["c2"]).toMatchObject({ stage: "loaded", placement: { kiln: "shared", spaceId: "low_1", stacked: true } });
+    // Second Firing still has c2 and c3 (Standard): the turn goes on, and c2 keeps the
+    // position modifier it was fired with.
+    table.act("p1", { type: "USE_SECOND_FIRING", ceramicId: "c2" });
+    table.act("p1", { type: "SECOND_FIRING_CHOOSE", cardIndex: 0, jun: null });
+    expect(record(table, "c2")?.second?.positionModifier).toBe(-1);
   });
 
-  it("declining keeps the ceramic, which finishes Flawed", () => {
-    const table = openFiringTable(aqSpec({}));
+  it("when no ability is left after a sale, the turn passes; Second Firing stays unused (R4)", () => {
+    const table = openFiringTable({
+      players: [{ techs: ["T14"] }, {}],
+      fireDeck: [0],
+      ceramics: [
+        { owner: "p1", stage: "loaded", shape: "bowl", glaze: "moon_white", at: "low_1" },
+        { owner: "p2", stage: "loaded", shape: "bowl", glaze: "celadon", at: "middle_1" },
+      ],
+    });
     tendAll(table);
-    const events = table.act("p1", { type: "SALVAGE_FLAWED", ceramicId: null });
-    expect(typesOf(events)).toEqual(["FIRING_FINISHED"]);
+    expect(afterQualityOptions(table.view("p1"))).toEqual([{ ability: "second_firing", ceramicIds: ["c1"], cost: NO_COST }]);
+    const events = table.act("p1", { type: "SELL_FLAWED", ceramicId: "c1" });
+    expect(typesOf(events)).toEqual(["CERAMIC_SOLD", "RESOURCES_CHANGED", "FIRING_FINISHED"]);
+    expect(table.halts).toEqual([{ kind: "continue_after", milestone: "firing_done" }]);
+    expect(table.player("p1").techs[0]?.usedThisRound).toBe(false);
+  });
+
+  it("a player without an after-Quality turn keeps a Flawed ceramic, which finishes Flawed (no salvage step)", () => {
+    const table = openFiringTable(aqSpec({}));
+    const events = tendAll(table);
+    expect(typesOf(events).at(-1)).toBe("FIRING_FINISHED");
     expect(table.state.ceramics["c1"]).toMatchObject({ stage: "finished", quality: "flawed" });
     expect(table.player("p1").resources.coins).toBe(3);
   });
@@ -673,17 +755,17 @@ describe("finishing the firing (L683)", () => {
       fireDeck: [1],
       settersMarks: { low_1: "p2" },
       ceramics: [
-        { owner: "p1", stage: "loaded", shape: "vase", glaze: "grey_green", at: "middle_1", kilnFurniture: 0, heatMarker: { source: "own", faceDown: true } },
+        { owner: "p1", stage: "loaded", shape: "vase", glaze: "grey_green", at: "middle_1", kilnFurniture: 0 },
         { owner: "p1", stage: "loaded", shape: "bowl", glaze: "celadon", at: "imperial" },
         { owner: "p2", stage: "loaded", shape: "plate", glaze: "grey_green", at: "high_1", decoration: "carved" },
       ],
     });
     tendAll(table);
     table.act("p1", { type: "TEST_PIECES_DECIDE", peek: true });
-    table.act("p1", { type: "TEST_PIECES_BURY", bury: false });
     const firingBefore = structuredClone(table.state.firing);
     const discardBefore = [...table.state.fireDiscard];
-    const events = table.act("p1", { type: "RESOLVE_HEAT_MARKERS", ownMarker: -1 });
+    // Test Pieces is the last decision before the Fire card (rev. 4 L626); the rest is automatic.
+    const events = table.act("p1", { type: "TEST_PIECES_BURY", bury: false });
     expect(eventsOfType(events, "FIRING_FINISHED")).toEqual([{ type: "FIRING_FINISHED", round: 1, finishedCeramicIds: ["c1", "c2", "c3"] }]);
     expect(table.halts).toEqual([{ kind: "continue_after", milestone: "firing_done" }]);
     const c1 = table.state.ceramics["c1"];
@@ -699,7 +781,8 @@ describe("finishing the firing (L683)", () => {
       firedInRound: 1,
       stage: "finished",
       crackle: false,
-      quality: "fine",
+      // Base 2 + Fire 1 + Kiln Furniture 0 = 3 vs Grey-Green 3.
+      quality: "masterpiece",
     });
     expect(table.state.ceramics["c2"]).toMatchObject({ stage: "finished", quality: "fine" });
     expect(table.state.ceramics["c3"]).toMatchObject({ stage: "finished", quality: "fine", decoration: "carved" });

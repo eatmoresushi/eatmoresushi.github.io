@@ -91,7 +91,7 @@ describe("2 Coins on the first Order completed each round (v1.6.2 L630)", () => 
   it("shows on the completion options as an automatic trigger", () => {
     const t = orderTable({ players: [{ techs: ["T23"], hand: ["O01"] }, {}], ceramics: [WHITE_BOWL] });
     expect(completableOrders(viewOf(t.state, "p1")).map((option) => option.triggers)).toEqual([
-      { ru: false, guan: false, tributeWare: false, canalBarge: true },
+      { ru: false, guan: false, tributeWare: false, canalBarge: true, crackleVp: 0 },
     ]);
   });
 });

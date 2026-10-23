@@ -55,7 +55,8 @@ export const ROUND_STRUCTURE: RoundStructureDefinition = loadRoundStructure(roun
 
 /**
  * The round phase an engine phase belongs to, or `"final"` once the game is finished.
- * Kiln selection (setup step 9, L108) is shown with the Start of Round, as the wireframe does.
+ * The Kiln and Main Order choice (Setup step 9, rev. 4 L122) is shown with the Start of Round,
+ * as the wireframe does.
  * Exhaustive over `GamePhaseType`, so a new engine phase fails `typecheck` here.
  */
 export function roundPhaseOf(phaseType: GamePhaseType): RoundPhaseId | "final" {
@@ -67,11 +68,9 @@ export function roundPhaseOf(phaseType: GamePhaseType): RoundPhaseId | "final" {
       return "work";
     case "firing_contributions":
     case "firing_test_pieces":
-    case "firing_heat_markers":
     case "firing_heat_adjustment":
     case "firing_after_quality":
     case "firing_second_firing_choice":
-    case "firing_salvage":
       return "firing";
     case "orders":
       return "orders";

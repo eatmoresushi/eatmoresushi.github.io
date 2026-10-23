@@ -11,9 +11,9 @@ import {
   emit,
   formCeramic,
   gain,
-  heatMarkerOf,
   imperialKilnCeramic,
   isSeated,
+  kilnMasterCarrier,
   loadedCeramics,
   lookup,
   nextClockwise,
@@ -86,15 +86,13 @@ describe("decisionPrompt (DESIGN §3.4)", () => {
       "simultaneous_secret",
     ],
     ["firing_test_pieces", { type: "firing_test_pieces", queue: { actorIds: ["p1", "p3"], index: 1 }, awaiting: "bury" }, ["p3"], "single"],
-    ["firing_heat_markers", { type: "firing_heat_markers", queue: { actorIds: ["p2"], index: 0 } }, ["p2"], "single"],
     ["firing_heat_adjustment", { type: "firing_heat_adjustment", queue: { actorIds: ["p1"], index: 0 } }, ["p1"], "single"],
     ["firing_after_quality", { type: "firing_after_quality", queue: { actorIds: ["p1", "p2"], index: 1 } }, ["p2"], "single"],
     ["firing_second_firing_choice", { type: "firing_second_firing_choice", actorId: "p1", ceramicId: "c1" }, ["p1"], "single"],
-    ["firing_salvage", { type: "firing_salvage", pendingPlayerIds: ["p3", "p1"], openedAtRevision: 4 }, ["p3", "p1"], "parallel"],
     ["orders", { type: "orders", turnOrder: ["p2", "p3", "p1"], index: 2 }, ["p1"], "single"],
     ["cleanup_hand_limit", { type: "cleanup_hand_limit", pendingPlayerIds: ["p2"], openedAtRevision: 9 }, ["p2"], "parallel"],
     ["finished", { type: "finished" }, [], "single"],
-    ["an exhausted queue", { type: "firing_heat_markers", queue: { actorIds: ["p2"], index: 1 } }, [], "single"],
+    ["an exhausted queue", { type: "firing_heat_adjustment", queue: { actorIds: ["p2"], index: 1 } }, [], "single"],
   ];
 
   it.each(cases)("%s", (_label, phase, actorIds, mode) => {
@@ -103,9 +101,9 @@ describe("decisionPrompt (DESIGN §3.4)", () => {
   });
 
   it("returns a copy that callers cannot use to mutate the phase", () => {
-    const state = buildState({ players: 3, phase: { type: "firing_salvage", pendingPlayerIds: ["p1"], openedAtRevision: 0 } });
+    const state = buildState({ players: 3, phase: { type: "cleanup_hand_limit", pendingPlayerIds: ["p1"], openedAtRevision: 0 } });
     decisionPrompt(state).actorIds.push("p2");
-    expect(phaseAs(state, "firing_salvage").pendingPlayerIds).toEqual(["p1"]);
+    expect(phaseAs(state, "cleanup_hand_limit").pendingPlayerIds).toEqual(["p1"]);
   });
 });
 
@@ -126,7 +124,7 @@ describe("resources", () => {
     const ctx = testContext();
     gain(state, "p1", { clay: 2, coins: 1 }, "materials_yard", ctx);
     gain(state, "p1", {}, "canal_wharf", ctx);
-    expect(state.players["p1"]?.resources).toEqual({ clay: 4, wood: 2, coins: 4 });
+    expect(state.players["p1"]?.resources).toEqual({ clay: 4, wood: 3, coins: 4 });
     expect(ctx.events).toEqual([{ type: "RESOURCES_CHANGED", playerId: "p1", clay: 2, wood: 0, coins: 1, reason: "materials_yard" }]);
   });
 
@@ -151,7 +149,7 @@ describe("resources", () => {
     const state = buildState();
     const ctx = testContext();
     spend(state, "p2", { wood: 1, coins: 3 }, "test_pieces", ctx);
-    expect(state.players["p2"]?.resources).toEqual({ clay: 2, wood: 1, coins: 0 });
+    expect(state.players["p2"]?.resources).toEqual({ clay: 2, wood: 2, coins: 0 });
     const [event] = ctx.events;
     expect(event).toEqual({ type: "RESOURCES_CHANGED", playerId: "p2", clay: 0, wood: -1, coins: -3, reason: "test_pieces" });
     expect(Object.is((event as { clay: number }).clay, -0)).toBe(false);
@@ -161,7 +159,7 @@ describe("resources", () => {
     const state = buildState();
     const ctx = testContext();
     expect(() => spend(state, "p1", { clay: 1, coins: 4 }, "form_decorate", ctx)).toThrow(InvariantError);
-    expect(state.players["p1"]?.resources).toEqual({ clay: 2, wood: 2, coins: 3 });
+    expect(state.players["p1"]?.resources).toEqual({ clay: 2, wood: 3, coins: 3 });
     expect(ctx.events).toEqual([]);
   });
 
@@ -250,20 +248,19 @@ describe("ceramics", () => {
     expect(() => returnVesselCard(state, "teapot-01")).toThrow(InvariantError);
   });
 
-  it("loadedCeramics, heatMarkerOf and imperialKilnCeramic", () => {
+  it("loadedCeramics, kilnMasterCarrier and imperialKilnCeramic", () => {
     const state = buildState({
-      players: [{ recognition: 2 }, { techs: ["T24"] }],
+      players: [{ recognition: 2 }, { techs: [{ id: "T24", usedThisRound: true }] }],
       ceramics: [
         { owner: "p1", stage: "shaped", shape: "bowl" },
-        { owner: "p1", stage: "loaded", shape: "bowl", glaze: "white", at: "high_1", heatMarker: { source: "own", faceDown: true } },
+        { owner: "p1", stage: "loaded", shape: "bowl", glaze: "white", at: "high_1" },
         { owner: "p1", stage: "loaded", shape: "vase", glaze: "celadon", at: "imperial", imperialModifier: -1 },
-        { owner: "p2", stage: "loaded", shape: "plate", glaze: "white", at: "low_1", heatMarker: { source: "kiln_master", faceDown: false, value: 1 } },
+        { owner: "p2", stage: "loaded", shape: "plate", glaze: "white", at: "low_1", kilnMaster: 1 },
       ],
     });
     expect(loadedCeramics(state).map((c) => c.id)).toEqual(["c2", "c3", "c4"]);
-    expect(heatMarkerOf(state, "p1", "own")?.id).toBe("c2");
-    expect(heatMarkerOf(state, "p1", "kiln_master")).toBeNull();
-    expect(heatMarkerOf(state, "p2", "kiln_master")?.id).toBe("c4");
+    expect(kilnMasterCarrier(state, "p1")).toBeNull();
+    expect(kilnMasterCarrier(state, "p2")?.id).toBe("c4");
     expect(imperialKilnCeramic(state, "p1")?.id).toBe("c3");
     expect(imperialKilnCeramic(state, "p2")).toBeNull();
   });

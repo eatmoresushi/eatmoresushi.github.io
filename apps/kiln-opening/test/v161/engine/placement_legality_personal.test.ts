@@ -1,10 +1,12 @@
 /**
  * Personal-location placement legality (L142):
- * - Form & Decorate (L172, R4): Clay plus a Decoration payable for 1 vessel after every ready
- *   Workshop discount — Large Throwing Wheel (a Vase with 0 Clay), Decorator's Kit (a Carved
- *   with 1 Coin). Ding and the Shifu discount never make it legal.
- * - Glaze & Load (L183, R5 a/b/c): at least 1 Shaped vessel with a legal destination; current
- *   Shapes only (DESIGN §11 Q3).
+ * - Form & Decorate (rev. 4 L186, R4): the full cost of 1 vessel — its Shape's Clay and 2 Coins
+ *   (change 30) — payable after every reduction a ready Workshop Tech gives: Large Throwing
+ *   Wheel (a Vase with 0 Clay), Decorator's Kit (a Carved vessel with 1 Coin). Ding and the
+ *   Shifu discount never make it legal.
+ * - Glaze & Load (rev. 4 L195–198, R5 a/b/c, R24): at least 1 Shaped vessel with a legal
+ *   destination you can pay for — a Shared Kiln destination needs the action's 1 Wood, the
+ *   Imperial Kiln is free; current Shapes only (DESIGN §11 Q3).
  */
 
 import { describe, expect, it } from "vitest";
@@ -24,7 +26,7 @@ function withResources(resources: Partial<ResourceState>, techs: TechSpec[] = []
   return buildState({ players: [{ resources, techs, ...more }, {}] });
 }
 
-describe("Form & Decorate: Clay and a Decoration for at least 1 vessel (L172)", () => {
+describe("Form & Decorate: the full cost of at least 1 vessel, after any reductions (rev. 4 L186)", () => {
   it("is legal with 1 Clay and 2 Coins; illegal with less", () => {
     expect(canFormAny(withResources({ clay: 1, coins: 2 }), "p1")).toBe(true);
     expect(canFormAny(withResources({ clay: 0, coins: 9 }), "p1")).toBe(false);
@@ -62,7 +64,7 @@ describe("Form & Decorate: Clay and a Decoration for at least 1 vessel (L172)", 
   });
 });
 
-describe("Glaze & Load: a Shaped vessel with a legal destination (L183, R5)", () => {
+describe("Glaze & Load: a Shaped vessel with a legal destination you can pay for (rev. 4 L195–198, R5, R24)", () => {
   const gl = (loads: Extract<GameAction, { type: "PLACE_GLAZE_LOAD" }>["loads"]): GameAction => ({
     type: "PLACE_GLAZE_LOAD",
     workerId: "p1:apprentice:1",
@@ -112,6 +114,35 @@ describe("Glaze & Load: a Shaped vessel with a legal destination (L183, R5)", ()
       "NO_MAIN_ACTION_POSSIBLE",
     );
     expect(verdict(buildState({ ceramics }), "p1", load)).toBe("NO_MAIN_ACTION_POSSIBLE");
+  });
+
+  it("a Shared Kiln destination needs the action's 1 Wood; the Imperial Kiln is free (rev. 4 L197–198)", () => {
+    const shared = gl([{ ceramicId: "c1", glaze: "white", destination: { kiln: "shared", spaceId: "high_1" } }]);
+    const imperial = gl([{ ceramicId: "c1", glaze: "white", destination: { kiln: "imperial", imperialModifier: 0 } }]);
+    const vessel: CeramicSpec = { owner: "p1", shape: "bowl", stage: "shaped" };
+    // No Wood and no Imperial Kiln: no destination can be paid for.
+    expect(verdict(buildState({ players: [{ resources: { wood: 0 } }, {}], ceramics: [vessel] }), "p1", shared)).toBe("NO_MAIN_ACTION_POSSIBLE");
+    expect(verdict(buildState({ players: [{ resources: { wood: 1 } }, {}], ceramics: [vessel] }), "p1", shared)).toBeNull();
+    // An empty Imperial Kiln makes the placement legal without Wood; a Shared load is then unaffordable as given.
+    const imperialOnly = buildState({ players: [{ recognition: 2, resources: { wood: 0 } }, {}], ceramics: [vessel] });
+    expect(verdict(imperialOnly, "p1", imperial)).toBeNull();
+    expect(verdict(imperialOnly, "p1", shared)).toBe("INSUFFICIENT_RESOURCES");
+    // An occupied Imperial Kiln gives no free destination.
+    const imperialFull = buildState({
+      players: [{ recognition: 2, resources: { wood: 0 } }, {}],
+      ceramics: [vessel, { owner: "p1", shape: "vase", stage: "loaded", glaze: "white", at: "imperial", imperialModifier: 0 }],
+    });
+    expect(verdict(imperialFull, "p1", shared)).toBe("NO_MAIN_ACTION_POSSIBLE");
+  });
+
+  it("an Inverted Firing stack is a Shared Kiln load: without Wood it gives no legal destination", () => {
+    const ceramics: CeramicSpec[] = [
+      { owner: "p1", shape: "plate", stage: "shaped" },
+      { owner: "p1", shape: "vase", stage: "loaded", glaze: "white", at: "high_1" },
+      ...fill(1),
+    ];
+    const load = gl([{ ceramicId: "c1", glaze: "white", destination: { kiln: "shared", spaceId: "high_1", invertedFiring: true } }]);
+    expect(verdict(buildState({ players: [{ techs: ["T21"], resources: { wood: 0 } }, {}], ceramics }), "p1", load)).toBe("NO_MAIN_ACTION_POSSIBLE");
   });
 
   it("§11 Q3 default: a vessel Reworking Table could make stackable does not count", () => {

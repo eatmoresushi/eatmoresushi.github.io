@@ -1,16 +1,20 @@
 /**
- * The whole Firing Phase as a state machine (DESIGN §3.1, §3.3, §3.6, §3.7, §7; Appendix D):
+ * The whole Firing Phase as a state machine (DESIGN §3.1, §3.3, §3.6, §3.7, §7; Appendix D as
+ * owner revision 4 left it, rev. 4 L655–664: Contributions (Base Heat) → Test Pieces → Fire →
+ * Actual Heat (Jun) → Quality → after-Quality → finish; no Heat-marker step, changes 28, 31, and
+ * no salvage step, change 30: a Flawed ceramic is sold during its owner's turn instead, R20):
  * the skip check, every window in Appendix D order with the right actors, automatic steps
  * inside the command that reaches them, an always-legal exit in every window, card
  * conservation, and determinism under a `jsonb`-style key-sorted round trip.
  */
 
 import { describe, expect, it } from "vitest";
-import { afterQualityOptions, salvageOptions, secondFiringChoiceOptions } from "../../../src/game/firing/afterQuality.ts";
+import { afterQualityOptions, secondFiringChoiceOptions } from "../../../src/game/firing/afterQuality.ts";
+import { sellFlawedOptions } from "../../../src/game/flawedSale.ts";
 import { CONTRIBUTION_CARD_IDS } from "../../../src/game/content.ts";
 import { validateAction } from "../../../src/game/engine.ts";
 import { legalContributions, openFiringPhase, validateContribution } from "../../../src/game/firing/contributions.ts";
-import { heatMarkerStepOptions, junOptions, testPiecesOptions } from "../../../src/game/firing/pipeline.ts";
+import { junOptions, testPiecesOptions } from "../../../src/game/firing/pipeline.ts";
 import { SeededRandom } from "../../../src/game/rng.ts";
 import type {
   AfterQualityAbility,
@@ -32,25 +36,29 @@ import type { LocalTable } from "./support/localTable.ts";
 
 /**
  * Three players, First Player p1, every firing window in play:
- * - p1 Jun Kiln + Test Pieces; c1 Celadon in Middle with a face-down marker;
- * - p2 Ge Kiln + Kiln Master; c2 White in High (Standard), c3 Grey-Green in its Imperial Kiln;
- * - p3 Second Firing; c4 Moon White in Low (Flawed), c5 White in Low (Masterpiece).
- * Fire deck: the round's 0, then −1 and −2 for Second Firing (v1.6.2 L639).
+ * - p1 Jun Kiln + Test Pieces; c1 Celadon in High;
+ * - p2 Ge Kiln + Kiln Master, its marker +1 placed on c3 when it was loaded (rev. 4 L628, R22);
+ *   c2 White in High (Standard), c3 Grey-Green in its Imperial Kiln;
+ * - p3 Second Firing; c4 Moon White in Low (Flawed), c5 White in Low (Masterpiece), and c6, a
+ *   Finished Flawed Bowl from an earlier round, which p3 may sell in their after-Quality turn
+ *   (R20).
+ * Fire deck: the round's 0, then −1 and −2 for Second Firing (rev. 4 L627).
  */
 function everyWindow(fire: FireModifier[] = [0, -1, -2]): StateSpec {
   return {
     players: [
       { kilnId: "JU", techs: ["T13"], resources: { wood: 4 } },
-      { kilnId: "GE", techs: ["T24"], recognition: 2 },
+      { kilnId: "GE", techs: [{ id: "T24", usedThisRound: true }], recognition: 2 },
       { kilnId: "RU", techs: ["T14"] },
     ],
     fireDeck: fire,
     ceramics: [
-      { owner: "p1", stage: "loaded", shape: "bowl", glaze: "celadon", at: "middle_1", heatMarker: { source: "own", faceDown: true } },
+      { owner: "p1", stage: "loaded", shape: "bowl", glaze: "celadon", at: "high_2" },
       { owner: "p2", stage: "loaded", shape: "plate", glaze: "white", at: "high_1" },
-      { owner: "p2", stage: "loaded", shape: "vase", glaze: "grey_green", at: "imperial" },
+      { owner: "p2", stage: "loaded", shape: "vase", glaze: "grey_green", at: "imperial", kilnMaster: 1 },
       { owner: "p3", stage: "loaded", shape: "bowl", glaze: "moon_white", at: "low_1" },
       { owner: "p3", stage: "loaded", shape: "washer", glaze: "white", at: "low_2" },
+      { owner: "p3", stage: "finished", shape: "bowl", glaze: "white", quality: "flawed" },
     ],
   };
 }
@@ -66,13 +74,12 @@ const FULL_SCRIPT: Step[] = [
   { actor: "p1", contribute: "STOKE" },
   { actor: "p1", action: { type: "TEST_PIECES_DECIDE", peek: true } },
   { actor: "p1", action: { type: "TEST_PIECES_BURY", bury: false } },
-  { actor: "p1", action: { type: "RESOLVE_HEAT_MARKERS", ownMarker: 1 } },
-  { actor: "p2", action: { type: "RESOLVE_HEAT_MARKERS", kilnMaster: { ceramicId: "c3", value: 1 } } },
   { actor: "p1", action: { type: "RESOLVE_JUN", adjustment: { ceramicId: "c1", delta: -1 } } },
   { actor: "p2", action: { type: "USE_GE_CRACKLE", ceramicId: "c2" } },
+  // R20: a sale in p3's own after-Quality turn keeps the turn (Second Firing is still eligible).
+  { actor: "p3", action: { type: "SELL_FLAWED", ceramicId: "c6" } },
   { actor: "p3", action: { type: "USE_SECOND_FIRING", ceramicId: "c4" } },
   { actor: "p3", action: { type: "SECOND_FIRING_CHOOSE", cardIndex: 0, jun: null } },
-  { actor: "p3", action: { type: "SALVAGE_FLAWED", ceramicId: "c4" } },
 ];
 
 /** Declines everything: the always-legal exit of every window (DESIGN §3.6). */
@@ -81,12 +88,9 @@ const EXIT_SCRIPT: Step[] = [
   { actor: "p2", contribute: "TEND" },
   { actor: "p3", contribute: "TEND" },
   { actor: "p1", action: { type: "TEST_PIECES_DECIDE", peek: false } },
-  { actor: "p1", action: { type: "RESOLVE_HEAT_MARKERS", ownMarker: "return" } },
-  { actor: "p2", action: { type: "RESOLVE_HEAT_MARKERS" } },
   { actor: "p1", action: { type: "RESOLVE_JUN", adjustment: null } },
   { actor: "p2", action: { type: "END_AFTER_QUALITY" } },
   { actor: "p3", action: { type: "END_AFTER_QUALITY" } },
-  { actor: "p3", action: { type: "SALVAGE_FLAWED", ceramicId: null } },
 ];
 
 function run(table: LocalTable, step: Step): GameEvent[] {
@@ -107,11 +111,24 @@ const ABILITY_ACTIONS: Record<AfterQualityAbility, (ceramicId: CeramicId) => Gam
 
 /**
  * Selector–validator agreement (DESIGN §5.4) for the P5 option selectors: every listed option
- * validates, every unlisted target is rejected, and the window's decline always validates.
+ * validates, every unlisted target is rejected, and the window's decline always validates. The
+ * sale of a Flawed ceramic (R20) agrees with `sellFlawedOptions` for every player in every
+ * window: only the after-Quality queue head may sell.
  */
 function expectSelectorsAgree(table: LocalTable): void {
   const prompt = table.prompt();
   const ceramicIds = Object.keys(table.state.ceramics).sort();
+  for (const player of table.state.playerOrder) {
+    const view = table.actorView(player);
+    const listed = sellFlawedOptions(view)?.ceramicIds ?? [];
+    if (prompt.phaseType !== "firing_after_quality" || !prompt.actorIds.includes(player)) {
+      expect(listed, `${prompt.phaseType} / ${player} sale`).toEqual([]);
+    }
+    for (const ceramicId of ceramicIds) {
+      const ok = validateAction(view, { type: "SELL_FLAWED", ceramicId }) === null;
+      expect(ok, `${prompt.phaseType} / ${player} sells ${ceramicId}`).toBe(listed.includes(ceramicId));
+    }
+  }
   for (const actor of prompt.actorIds) {
     const view = table.actorView(actor);
     const ok = (action: GameAction): boolean => validateAction(view, action) === null;
@@ -135,25 +152,6 @@ function expectSelectorsAgree(table: LocalTable): void {
         } else {
           expect(ok({ type: "TEST_PIECES_BURY", bury: true }), where).toBe(true);
           expect(ok({ type: "TEST_PIECES_BURY", bury: false }), where).toBe(true);
-        }
-        break;
-      }
-      case "firing_heat_markers": {
-        const options = heatMarkerStepOptions(view);
-        if (options === null) throw new Error(`${where}: no options`);
-        const own = options.ownMarkerCeramicId === null ? {} : { ownMarker: 1 as const };
-        expect(ok({ type: "RESOLVE_HEAT_MARKERS", ...own }), where).toBe(true);
-        if (options.ownMarkerCeramicId !== null) {
-          expect(ok({ type: "RESOLVE_HEAT_MARKERS", ownMarker: "return" }), where).toBe(true);
-        }
-        for (const ceramicId of ceramicIds) {
-          const kilnMaster = { ceramicId, value: 1 as const };
-          expect(ok({ type: "RESOLVE_HEAT_MARKERS", ...own, kilnMaster }), `${where} ${ceramicId}`).toBe(options.kilnMaster?.targets.includes(ceramicId) ?? false);
-          if (options.ownMarkerCeramicId !== null) {
-            expect(ok({ type: "RESOLVE_HEAT_MARKERS", ownMarker: "return", kilnMaster }), `${where} return ${ceramicId}`).toBe(
-              options.kilnMaster?.targetsIfOwnReturned.includes(ceramicId) ?? false,
-            );
-          }
         }
         break;
       }
@@ -186,15 +184,6 @@ function expectSelectorsAgree(table: LocalTable): void {
             const listed = options.find((option) => option.ability === ability)?.ceramicIds.includes(ceramicId) ?? false;
             expect(ok(ABILITY_ACTIONS[ability](ceramicId)), `${where} ${ability} ${ceramicId}`).toBe(listed);
           }
-        }
-        break;
-      }
-      case "firing_salvage": {
-        const options = salvageOptions(view);
-        expect(options?.ceramicIds.length, where).toBeGreaterThan(0);
-        expect(ok({ type: "SALVAGE_FLAWED", ceramicId: null }), where).toBe(true);
-        for (const ceramicId of ceramicIds) {
-          expect(ok({ type: "SALVAGE_FLAWED", ceramicId }), `${where} ${ceramicId}`).toBe(options?.ceramicIds.includes(ceramicId) ?? false);
         }
         break;
       }
@@ -250,13 +239,11 @@ describe("Appendix D in order, with every window (DESIGN §3.3)", () => {
       { phaseType: "firing_contributions", actorIds: ["p1"], mode: "simultaneous_secret" },
       { phaseType: "firing_test_pieces", actorIds: ["p1"], mode: "single" },
       { phaseType: "firing_test_pieces", actorIds: ["p1"], mode: "single" },
-      { phaseType: "firing_heat_markers", actorIds: ["p1"], mode: "single" },
-      { phaseType: "firing_heat_markers", actorIds: ["p2"], mode: "single" },
       { phaseType: "firing_heat_adjustment", actorIds: ["p1"], mode: "single" },
       { phaseType: "firing_after_quality", actorIds: ["p2"], mode: "single" },
       { phaseType: "firing_after_quality", actorIds: ["p3"], mode: "single" },
+      { phaseType: "firing_after_quality", actorIds: ["p3"], mode: "single" },
       { phaseType: "firing_second_firing_choice", actorIds: ["p3"], mode: "single" },
-      { phaseType: "firing_salvage", actorIds: ["p3"], mode: "parallel" },
     ]);
     expect(phases).toHaveLength(prompts.length);
     expect(table.halts).toEqual([{ kind: "continue_after", milestone: "firing_done" }]);
@@ -271,8 +258,6 @@ describe("Appendix D in order, with every window (DESIGN §3.3)", () => {
       "BASE_HEAT_DETERMINED",
       "TEST_PIECES_PEEKED",
       "TEST_PIECES_USED",
-      "HEAT_MARKER_TURNED",
-      "KILN_MASTER_PLACED",
       "FIRE_REVEALED",
       "ACTUAL_HEAT_CALCULATED",
       "JUN_ADJUSTED",
@@ -283,15 +268,17 @@ describe("Appendix D in order, with every window (DESIGN §3.3)", () => {
       "QUALITY_ASSIGNED",
       "QUALITY_IMPROVED",
       "CRACKLE_APPLIED",
+      "CERAMIC_SOLD",
       "SECOND_FIRING_REVEALED",
       "SECOND_FIRING_CHOSEN",
       "QUALITY_ASSIGNED",
-      "CERAMIC_SALVAGED",
       "FIRING_FINISHED",
     ]);
 
     // The outcome, ceramic by ceramic.
     expect(eventsOfType(all, "BASE_HEAT_DETERMINED")[0]?.baseHeat).toBe(2);
+    // c3 carries Kiln Master's +1 from loading: Kiln Die 2 + Fire 0 + 0 + 1 = 3.
+    expect(eventsOfType(all, "ACTUAL_HEAT_CALCULATED")[0]?.results.find((r) => r.ceramicId === "c3")?.calculation.kilnMasterMarker).toBe(1);
     expect(eventsOfType(all, "ACTUAL_HEAT_CALCULATED")[0]?.results.map((r) => [r.ceramicId, r.calculation.actualHeat])).toEqual([
       ["c1", 3],
       ["c2", 3],
@@ -309,13 +296,16 @@ describe("Appendix D in order, with every window (DESIGN §3.3)", () => {
     ]);
     const final = table.state;
     expect(final.firing).toBeNull();
-    expect(final.ceramics["c4"]).toBeUndefined();
+    // c6 was sold; c4 stays Flawed after Second Firing and finishes (sellable in p3's next turn).
+    expect(final.ceramics["c6"]).toBeUndefined();
+    expect(final.ceramics["c4"]).toMatchObject({ stage: "finished", quality: "flawed" });
+    expect(eventsOfType(all, "CERAMIC_SOLD")).toEqual([{ type: "CERAMIC_SOLD", playerId: "p3", ceramicId: "c6", coins: 2, from: "finished" }]);
     expect(final.ceramics["c2"]).toMatchObject({ stage: "finished", quality: "fine", crackle: true });
     expect(["c1", "c3", "c5"].map((id) => final.ceramics[id])).toEqual(
       ["c1", "c3", "c5"].map((id) => expect.objectContaining({ id, stage: "finished", quality: "masterpiece", crackle: false })),
     );
     expect(final.players["p3"]?.resources.coins).toBe(5);
-    // Both Second Firing cards in reveal order, then the round's card at step 12 (L683).
+    // Both Second Firing cards in reveal order, then the round's card at step 6 (rev. 4 L664).
     expect(final.fireDiscard.slice(-3)).toEqual([-1, -2, 0]);
     // No projected event carries a secret.
     for (const event of all) {
@@ -336,7 +326,8 @@ describe("Appendix D in order, with every window (DESIGN §3.3)", () => {
     expect(table.player("p1").kilnAbilityUsedThisRound).toBe(false);
     expect(table.player("p1").techs[0]?.usedThisRound).toBe(false);
     expect(table.player("p2").kilnAbilityUsedThisRound).toBe(false);
-    expect(table.player("p2").techs[0]?.usedThisRound).toBe(false);
+    // p2's Kiln Master was used when c3 was loaded (rev. 4 L628), before the firing.
+    expect(table.player("p2").techs[0]?.usedThisRound).toBe(true);
     expect(table.player("p3").techs[0]?.usedThisRound).toBe(false);
     expect(table.state.ceramics["c4"]).toMatchObject({ stage: "finished", quality: "flawed" });
   });
@@ -389,19 +380,6 @@ function nextStep(table: LocalTable): Step {
         ? { actor, action: { type: "TEST_PIECES_DECIDE", peek: options.canPeek } }
         : { actor, action: { type: "TEST_PIECES_BURY", bury: (options.peekedModifier ?? 0) > 0 } };
     }
-    case "firing_heat_markers": {
-      const options = heatMarkerStepOptions(view);
-      if (options === null) throw new Error("no Heat-marker options");
-      const target = options.kilnMaster?.targets[0];
-      return {
-        actor,
-        action: {
-          type: "RESOLVE_HEAT_MARKERS",
-          ...(options.ownMarkerCeramicId === null ? {} : { ownMarker: 1 as const }),
-          ...(target === undefined ? {} : { kilnMaster: { ceramicId: target, value: -1 as const } }),
-        },
-      };
-    }
     case "firing_heat_adjustment": {
       const options = junOptions(view);
       const ceramicId = options?.ceramicIds[0];
@@ -412,14 +390,15 @@ function nextStep(table: LocalTable): Step {
       return { actor, action: { type: "SECOND_FIRING_CHOOSE", cardIndex: 1, jun: options?.jun.ready === true ? { delta: 1 } : null } };
     }
     case "firing_after_quality": {
+      // R20: a Finished Flawed ceramic is sold first; the turn stays open for the abilities.
+      const sale = sellFlawedOptions(view)?.ceramicIds.find((id) => table.state.ceramics[id]?.stage === "finished");
+      if (sale !== undefined) return { actor, action: { type: "SELL_FLAWED", ceramicId: sale } };
       const [option] = afterQualityOptions(view);
       const ceramicId = option?.ceramicIds[0];
       if (option === undefined || ceramicId === undefined) return { actor, action: { type: "END_AFTER_QUALITY" } };
       const type = option.ability === "protective_saggars" ? "USE_PROTECTIVE_SAGGARS" : option.ability === "second_firing" ? "USE_SECOND_FIRING" : "USE_GE_CRACKLE";
       return { actor, action: { type, ceramicId } };
     }
-    case "firing_salvage":
-      return { actor, action: { type: "SALVAGE_FLAWED", ceramicId: salvageOptions(view)?.ceramicIds[0] ?? null } };
     default:
       throw new Error(`unexpected phase ${prompt.phaseType}`);
   }

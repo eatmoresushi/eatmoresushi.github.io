@@ -1,17 +1,18 @@
 /**
- * Materials Yard (v1.6.2 L160–165), incl. Senior Apprentice (T18, v1.6.2 L618, R12) and
- * Prepared Clay (T17, L618).
+ * Materials Yard (rev. 4 L172–177, change 34), incl. Senior Apprentice (T18, rev. 4 L606, R12)
+ * and Prepared Clay (T17, rev. 4 L605).
  *
  * One atomic command resolved in this order (DESIGN §3.5), each step validated against the
  * running totals:
- * 1. gain the split: 3 (Apprentice effect) or 6 (Shifu effect, incl. Senior Apprentice) Clay/
- *    Wood in any mix (v1.6.2 L164–165). V1.6.2 removed the Shifu's 1-Coin +1 Clay +1 Wood
+ * 1. gain the split: 4 (Apprentice effect) or 8 (Shifu effect, incl. Senior Apprentice) Clay/
+ *    Wood in any mix (rev. 4 L176–177). V1.6.2 removed the Shifu's 1-Coin +1 Clay +1 Wood
  *    option;
- * 2. `preparedClay` (optional, L618 "after gaining resources"): form 1 vessel paying its Clay
- *    cost +1 and a Decoration cost, so it may spend Clay gained in step 1. A Tech effect,
- *    not a Form & Decorate action (L646): Ding, Large Throwing Wheel and the Shifu discount
- *    never apply. Decorator's Kit may reduce its Decoration (audit INT; unreachable under
- *    L211 because T16 and T17 are both Workshop Techs, but the branch is implemented).
+ * 2. `preparedClay` (optional, rev. 4 L605 "after gaining resources"): form 1 vessel paying its
+ *    Shape's Clay +1 and 2 Coins, any Decoration (change 30), so it may spend Clay gained in
+ *    step 1. A Tech effect, not a Form & Decorate action (L646): Ding, Large Throwing Wheel and
+ *    the Shifu discount never apply. Decorator's Kit may reduce that vessel's Coins when its
+ *    Decoration is Carved, Impressed or Painted (audit INT; unreachable under L211 because T16
+ *    and T17 are both Workshop Techs, but the branch is implemented).
  *
  * The main action (gain resources) is always possible, so placement legality is only the
  * shared placement check (L142).
@@ -19,7 +20,7 @@
  * Layer 4. Hands over through `ctx.flow.workerActionDone` (DESIGN §2.2).
  */
 
-import { LOCATIONS, TECHS, decorationCost, shapeClay } from "../content.ts";
+import { LOCATIONS, TECHS, shapeClay, vesselCoins } from "../content.ts";
 import { invariant, ruleError } from "../errors.ts";
 import { placeWorker, validatePlacement, workerEffectFor } from "../placement.ts";
 import { formCeramic, gain, lookup, player, spend } from "../state.ts";
@@ -70,21 +71,22 @@ function shortfall(resource: ResourceKind, needed: number, have: number): GameRu
   });
 }
 
-/** Prepared Clay's cost (L618): Clay cost +1 and the Decoration cost, less Decorator's Kit. */
+/** Prepared Clay's cost (rev. 4 L605): the Shape's Clay +1 and the vessel's 2 Coins, less
+ * Decorator's Kit. */
 function preparedClayCost(spec: PreparedClaySpec): { clay: number; coins: number; lines: CostLine[] } {
   const shapeCost = shapeClay(spec.shape);
   const surcharge = TECHS.T17.params.claySurcharge;
-  const decoration = decorationCost(spec.decoration);
-  const kit = spec.useDecoratorsKit === true ? Math.min(TECHS.T16.params.coinReduction, decoration) : 0;
+  const coins = vesselCoins();
+  const kit = spec.useDecoratorsKit === true ? Math.min(TECHS.T16.params.coinReduction, coins) : 0;
   const lines: CostLine[] = [
     { kind: "shape_clay", resource: "clay", amount: shapeCost, itemIndex: null },
     { kind: "prepared_clay_surcharge", resource: "clay", amount: surcharge, itemIndex: null },
-    { kind: "decoration", resource: "coins", amount: decoration, itemIndex: null },
+    { kind: "vessel_coins", resource: "coins", amount: coins, itemIndex: null },
   ];
   if (kit > 0) {
     lines.push({ kind: "decorators_kit", resource: "coins", amount: -kit, itemIndex: null });
   }
-  return { clay: shapeCost + surcharge, coins: decoration - kit, lines };
+  return { clay: shapeCost + surcharge, coins: coins - kit, lines };
 }
 
 function failed(error: GameRuleError, pay: ResourceState, gained: ResourceState, lines: CostLine[]): CostQuote {
@@ -102,7 +104,7 @@ function quoteFor(game: PublicCore, playerId: PlayerId, action: MaterialsYardAct
   const gained = zero();
   const lines: CostLine[] = [];
 
-  // 1. The split (v1.6.2 L164–165).
+  // 1. The split (rev. 4 L176–177).
   const total = LOCATIONS.materials_yard.effects[effect].resources;
   const validCount = (n: number) => Number.isSafeInteger(n) && n >= 0;
   if (!validCount(action.clay) || !validCount(action.wood) || action.clay + action.wood !== total) {
@@ -122,7 +124,7 @@ function quoteFor(game: PublicCore, playerId: PlayerId, action: MaterialsYardAct
   gained.clay += action.clay;
   gained.wood += action.wood;
 
-  // 2. Prepared Clay (L618), after gaining resources.
+  // 2. Prepared Clay (rev. 4 L605), after gaining resources.
   const prepared = action.preparedClay;
   if (prepared !== undefined) {
     const tech = techError(p, PREPARED_CLAY, "preparedClay");
@@ -136,7 +138,7 @@ function quoteFor(game: PublicCore, playerId: PlayerId, action: MaterialsYardAct
       }
       if (!TECHS.T16.params.decorations.includes(prepared.decoration)) {
         return failed(
-          ruleError("INVALID_VESSEL_CHOICE", "Decorator's Kit reduces only a Carved, Impressed or Painted Decoration.", {
+          ruleError("INVALID_VESSEL_CHOICE", "Decorator's Kit reduces only a vessel with a Carved, Impressed or Painted Decoration.", {
             decoration: prepared.decoration,
             field: "preparedClay.useDecoratorsKit",
           }),

@@ -383,7 +383,7 @@ describe("loadCeramic / reworkShape (resolution)", () => {
       loadedBy: "glaze_load",
       loadedInRound: 1,
       placement: { kiln: "shared", spaceId: "middle_1", stacked: false },
-      heatMarker: null,
+      kilnMasterMarker: null,
     });
     expect(ceramic(draft, "c1")).toEqual(loaded);
     expect(draft.sharedKiln.spaces.middle_1.ceramicIds).toEqual(["c1"]);

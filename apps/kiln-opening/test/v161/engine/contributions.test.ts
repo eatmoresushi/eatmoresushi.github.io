@@ -41,11 +41,13 @@ function threeParticipants(extra: Partial<StateSpec> = {}): StateSpec {
 
 /**
  * As `threeParticipants`, but p3's Moon White (Preferred 4) sits in a Low space: at Base
- * Heat 2 and Fire 0 its Actual Heat is 1, Flawed, so the firing stops at the salvage window
- * instead of finishing (the halting flow would otherwise leave the phase as it was).
+ * Heat 2 and Fire 0 its Actual Heat is 1, Flawed, and p3 owns Second Firing, so the firing
+ * stops at p3's after-Quality turn instead of finishing (the halting flow would otherwise leave
+ * the phase as it was).
  */
 function threeWithFlawed(extra: Partial<StateSpec> = {}): StateSpec {
   return threeParticipants({
+    players: [{}, {}, { techs: ["T14"] }],
     ceramics: [shared("p1", "middle_1"), shared("p2", "middle_2"), shared("p3", "low_1", "moon_white")],
     fireDeck: [0],
     ...extra,
@@ -163,8 +165,9 @@ describe("secret simultaneous submission (L672–673)", () => {
     expect(table.state.phase).toMatchObject({ type: "firing_contributions", submittedPlayerIds: ["p3"] });
     expect(table.state.firing?.contributions).toBeNull();
     expect(table.privateState.submissions).toEqual({ p3: { card: "STOKE" } });
-    // Wood is paid only on reveal, so nothing is set aside (v1.6.2 L508).
-    expect(table.player("p3").resources.wood).toBe(2);
+    // Wood is paid only on reveal, so nothing is set aside (v1.6.2 L508). Every seat starts
+    // with 3 Wood (rev. 4 L125).
+    expect(table.player("p3").resources.wood).toBe(3);
     expect(table.prompt().actorIds).toEqual(["p1", "p2"]);
     table.contribute("p1", "BANK");
     expect(table.state.phase).toMatchObject({ submittedPlayerIds: ["p1", "p3"] });
@@ -211,13 +214,13 @@ describe("secret simultaneous submission (L672–673)", () => {
       { type: "RESOURCES_CHANGED", playerId: "p2", clay: 0, wood: -1, coins: 0, reason: "contribution" },
       { type: "RESOURCES_CHANGED", playerId: "p3", clay: 0, wood: -1, coins: 0, reason: "contribution" },
     ]);
-    expect([table.player("p1"), table.player("p2"), table.player("p3")].map((p) => p.resources.wood)).toEqual([2, 1, 1]);
+    expect([table.player("p1"), table.player("p2"), table.player("p3")].map((p) => p.resources.wood)).toEqual([3, 2, 2]);
     expect(eventsOfType(events, "BASE_HEAT_DETERMINED")).toEqual([
       { type: "BASE_HEAT_DETERMINED", kilnDie: 2, contributionSum: 0, unclamped: 2, baseHeat: 2 },
     ]);
     expect(table.privateState).toEqual({ gameId: "test-game", windowId: null, submissions: {} });
     expect(table.state.firing?.contributions).toEqual(eventsOfType(events, "CONTRIBUTIONS_REVEALED")[0]?.contributions);
-    expect(table.state.phase.type).toBe("firing_salvage");
+    expect(table.state.phase.type).toBe("firing_after_quality");
   });
 
   it("a late submission after the reveal is PRIVATE_WINDOW_MISMATCH", () => {
@@ -342,7 +345,7 @@ describe("Fuel Ledger as Contribution cards (T12, v1.6.2 L266, L634, change 26)"
     table.contribute("p1", "TEND");
     const events = table.contribute("p2", "STOKE");
     expect(eventsOfType(events, "CONTRIBUTIONS_REVEALED")[0]?.contributions["p2"]).toMatchObject({ heat: 1, woodPaid: 1 });
-    expect(table.player("p2").resources.wood).toBe(1);
+    expect(table.player("p2").resources.wood).toBe(2);
   });
 
   it("a Fuel Ledger card needs the Tech (CONTRIBUTION_CARD_NOT_HELD) and its 1 Wood (INVALID_CONTRIBUTION)", () => {

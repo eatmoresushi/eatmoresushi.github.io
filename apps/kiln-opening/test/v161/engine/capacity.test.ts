@@ -42,7 +42,7 @@ function rich(n: PlayerCount): PlayerSpec[] {
 }
 
 const PLACE: Record<"materials_yard" | "canal_wharf" | "magistrates_hall", (workerId: string) => GameAction> = {
-  materials_yard: (workerId) => ({ type: "PLACE_MATERIALS_YARD", workerId, clay: workerId.endsWith("shifu") ? 6 : 3, wood: 0 }),
+  materials_yard: (workerId) => ({ type: "PLACE_MATERIALS_YARD", workerId, clay: workerId.endsWith("shifu") ? 8 : 4, wood: 0 }),
   canal_wharf: (workerId) => ({ type: "PLACE_CANAL_WHARF", workerId }),
   magistrates_hall: (workerId) => ({ type: "PLACE_MAGISTRATES_HALL", workerId }),
 };

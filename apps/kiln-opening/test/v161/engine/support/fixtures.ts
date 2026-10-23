@@ -13,8 +13,8 @@
  *   (T21 shapes) on 1 ceramic of the same owner, who owns Inverted Firing (T21); ≤ 1
  *   Imperial ceramic per player and only once `kilnGained`;
  * - Kiln Furniture: its owner owns T15; ≤ 1 tile in the Shared Kiln;
- * - Heat markers: ≤ 1 `own` marker per player; ≤ 1 `kiln_master` marker in the game, on a
- *   ceramic of the T24 owner;
+ * - Kiln Master's marker (rev. 4 L628, R22): ≤ 1 in the game, on a loaded ceramic of the T24
+ *   owner (there is no player Heat marker since revision 4);
  * - Setter's Mark: on an empty active space; the owner owns T22; ≤ 1 per owner; none during
  *   `setup_kiln_selection`, `cleanup_hand_limit` or `finished`;
  * - placements: an explicit personal `spaceIndex` is an unlocked space unused this round; a
@@ -48,7 +48,7 @@ import { availableKilns } from "../../../../src/game/kilns.ts";
 import { SeededRandom } from "../../../../src/game/rng.ts";
 import {
   decisionPrompt,
-  heatMarkerOf,
+  kilnMasterCarrier,
   imperialKilnCeramic,
   loadedCeramics,
   lookOrderIds,
@@ -59,7 +59,7 @@ import {
 } from "../../../../src/game/state.ts";
 import { acquisitionError, grantTech, ownsTech, techReady } from "../../../../src/game/techs.ts";
 import type {
-  CeramicHeatMarker,
+  HeatDelta,
   CeramicState,
   Decoration,
   FireModifier,
@@ -109,7 +109,7 @@ export interface PlayerSpec {
   displayName?: string;
   /** Default: `KILN_IDS[seat]` (RU, GU, GE, DI), or null during `setup_kiln_selection`. */
   kilnId?: KilnId | null;
-  /** Merged over the starting resources (2 Clay, 2 Wood, 3 Coins). */
+  /** Merged over the starting resources (2 Clay, 3 Wood, 3 Coins; rev. 4 L125). */
   resources?: Partial<ResourceState>;
   techs?: TechSpec[];
   kilnAbilityUsedThisRound?: boolean;
@@ -157,7 +157,15 @@ export type CeramicSpec = CeramicSpecCore &
         imperialModifier?: ImperialModifier;
         /** Shared only: Kiln Furniture beneath this ceramic. */
         kilnFurniture?: KilnFurnitureModifier;
-        heatMarker?: CeramicHeatMarker | null;
+        /** Kiln Master's marker placed at loading (T24, rev. 4 L628); its owner must own T24. */
+        kilnMaster?: HeatDelta | null;
+        /**
+         * @deprecated Revision 4 has no player Heat marker (changes 28, 31). Accepted by the type
+         * only so the not-yet-migrated UI table scenarios (`test/v161/ui/fixtures/tableScenarios.ts`,
+         * reached through `tools/uiFixtures.ts`) still compile; any value is refused at build time
+         * with a fixture error. Remove with the UI stage of revision 4.
+         */
+        heatMarker?: unknown;
         loadedBy?: LoadedCeramic["loadedBy"];
         loadedInRound?: RoundNumber;
       }
@@ -432,7 +440,7 @@ export function buildState(spec: StateSpec = {}): GameState {
   }
 
   const state: GameState = {
-    schemaVersion: 8,
+    schemaVersion: 9,
     rulesVersion: "1.6.2",
     gameId: spec.gameId ?? "test-game",
     revision: 0,
@@ -586,7 +594,10 @@ export function stageCeramic(state: GameState, spec: CeramicSpec): CeramicState 
       break;
     case "loaded": {
       let placement: LoadedCeramic["placement"];
-      checkHeatMarker(state, spec.owner, spec.heatMarker ?? null);
+      if (spec.heatMarker !== undefined) {
+        throw fixtureError("Revision 4 has no player Heat marker (changes 28, 31): use kilnMaster for Kiln Master's ±1 marker");
+      }
+      checkKilnMaster(state, spec.owner, spec.kilnMaster ?? null);
       if (spec.at === "imperial") {
         if (spec.kilnFurniture !== undefined) {
           throw fixtureError("Kiln Furniture is Shared Kiln only");
@@ -638,7 +649,7 @@ export function stageCeramic(state: GameState, spec: CeramicSpec): CeramicState 
         loadedInRound: spec.loadedInRound ?? state.round,
         loadedBy: spec.loadedBy ?? "glaze_load",
         placement,
-        heatMarker: spec.heatMarker ?? null,
+        kilnMasterMarker: spec.kilnMaster ?? null,
       };
       break;
     }
@@ -659,22 +670,16 @@ export function stageCeramic(state: GameState, spec: CeramicSpec): CeramicState 
   return staged;
 }
 
-/** ≤ 1 `own` marker per player; ≤ 1 `kiln_master` marker in the game, owned by the T24
- * owner (§8.3). Markers are only on loaded ceramics by construction. */
-function checkHeatMarker(state: GameState, ownerId: PlayerId, marker: CeramicHeatMarker | null): void {
+/** ≤ 1 Kiln Master marker in the game, owned by the T24 owner (§8.3, DELTA §15.12). Markers
+ * are only on loaded ceramics by construction. */
+function checkKilnMaster(state: GameState, ownerId: PlayerId, marker: HeatDelta | null): void {
   if (marker === null) {
-    return;
-  }
-  if (marker.source === "own") {
-    if (heatMarkerOf(state, ownerId, "own") !== null) {
-      throw fixtureError(`${ownerId} already has its own Heat marker on a ceramic`);
-    }
     return;
   }
   if (!ownsTech(player(state, ownerId), KILN_MASTER)) {
     throw fixtureError(`the Kiln Master marker needs ${KILN_MASTER}, which ${ownerId} does not own`);
   }
-  if (loadedCeramics(state).some((c) => c.heatMarker?.source === "kiln_master")) {
+  if (kilnMasterCarrier(state, ownerId) !== null || loadedCeramics(state).some((c) => c.kilnMasterMarker !== null)) {
     throw fixtureError("the Kiln Master marker is already on a ceramic");
   }
 }
@@ -859,6 +864,9 @@ export function cardZones(state: GameState): {
 export interface NewGameOptions {
   /** Kiln per seat; default: the first available Kiln at each pick. */
   kilns?: Partial<Record<PlayerId, KilnId>>;
+  /** The display position of the face-up Main Order each seat takes with its Kiln (Setup step 9,
+   * rev. 4 L122, R23); default 0, the leftmost. */
+  mainOrderSlots?: Partial<Record<PlayerId, number>>;
   /** Flow for the Kiln-selection commands (the last one hands over `setup_done`). */
   flow?: FlowController;
 }
@@ -892,7 +900,12 @@ export function newGame(
     if (kilnId === undefined) {
       throw fixtureError("no Kiln available");
     }
-    const result = applyAction(state, actor, { type: "SELECT_KILN", kilnId }, rng, {
+    const slotIndex = options.mainOrderSlots?.[actor] ?? 0;
+    const orderId = state.market.display[slotIndex];
+    if (orderId === null || orderId === undefined) {
+      throw fixtureError(`no face-up Main Order at position ${slotIndex}`);
+    }
+    const result = applyAction(state, actor, { type: "SELECT_KILN", kilnId, mainOrder: { slotIndex, orderId } }, rng, {
       checkInvariants: true,
       ...(options.flow === undefined ? {} : { flow: options.flow }),
     });

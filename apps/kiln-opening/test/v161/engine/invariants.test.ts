@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { applyAction } from "../../../src/game/engine.ts";
+import { applyAction, createGame } from "../../../src/game/engine.ts";
 import { InvariantError } from "../../../src/game/errors.ts";
 import { assertInvariants, hiddenIdsIn, invariantViolations, publiclyVisibleIds } from "../../../src/game/invariants.ts";
 import { SeededRandom } from "../../../src/game/rng.ts";
@@ -29,7 +29,7 @@ function base(): GameState {
     players: [{ techs: ["T15", "T24"], hand: ["S01", "O01"] }, { techs: ["T22"], hand: ["S02"] }],
     ceramics: [
       { owner: "p1", stage: "shaped", shape: "bowl" },
-      { owner: "p1", stage: "loaded", shape: "plate", glaze: "white", at: "middle_1", kilnFurniture: 1, heatMarker: { source: "own", faceDown: true } },
+      { owner: "p1", stage: "loaded", shape: "plate", glaze: "white", at: "middle_1", kilnFurniture: 1, kilnMaster: 1 },
       { owner: "p2", stage: "loaded", shape: "vase", glaze: "celadon", at: "high_1" },
       { owner: "p1", stage: "finished", shape: "censer", glaze: "grey_green", quality: "fine", crackle: true },
     ],
@@ -96,18 +96,13 @@ describe("structural violations are reported", () => {
       s.sharedKiln.spaces.middle_1.kilnFurniture = null;
       s.sharedKiln.spaces.high_1.kilnFurniture = { ownerId: "p1", modifier: 0, underCeramicId: "c3" };
     }, /beneath another player's ceramic/],
-    ["two own Heat markers", (s: GameState) => {
-      const other = loaded(s, "c3");
-      other.ownerId = "p1";
-      other.heatMarker = { source: "own", faceDown: true };
-    }, /p1's Heat marker is on 2 ceramics/],
-    ["a Kiln Master marker without T24", (s: GameState) => void (loaded(s, "c3").heatMarker = { source: "kiln_master", faceDown: false, value: 1 }), /lacks T24/],
-    ["a face-down marker after the Fire reveal", (s: GameState) => {
-      s.firing = {
-        round: 1, kilnDie: 2, participantIds: ["p1", "p2"], firingPlayerIds: ["p1", "p2"], contributionWindowId: null, contributions: {}, unclampedBaseHeat: 2,
-        baseHeat: 2, testPieces: [], fireModifier: s.hidden.fireDeck.shift() ?? 0, globalHeat: 2, ceramics: {}, pendingExtraFire: null,
-      };
-    }, /face-down Heat marker after the Fire reveal/],
+    // Kiln Master's marker (rev. 4 L628, R22; DELTA §15.12).
+    ["two Kiln Master markers", (s: GameState) => void (loaded(s, "c3").kilnMasterMarker = -1), /2 Kiln Master markers in the game/],
+    ["a Kiln Master marker without T24", (s: GameState) => {
+      loaded(s, "c2").kilnMasterMarker = null;
+      loaded(s, "c3").kilnMasterMarker = 1;
+    }, /lacks T24/],
+    ["a Kiln Master marker other than ±1", (s: GameState) => void (loaded(s, "c2").kilnMasterMarker = 2 as never), /Kiln Master marker shows 2/],
     ["four Techs", (s: GameState) => {
       for (const id of ["T01", "T11"] as const) {
         for (const d of ["workshop", "firing"] as const) {
@@ -154,10 +149,38 @@ describe("structural violations are reported", () => {
   });
 });
 
+describe("Setup step 9 (rev. 4 L122, R23; DELTA §15.12)", () => {
+  function setupState(): GameState {
+    const created = createGame({ gameId: "inv-setup", players: [{ id: "p1", displayName: "A" }, { id: "p2", displayName: "B" }] }, new SeededRandom(3));
+    if (!created.ok) throw new Error(created.error.code);
+    return created.state;
+  }
+
+  it("a fresh Setup is sound in both tiers", () => {
+    expect(invariantViolations(setupState(), { live: true })).toEqual([]);
+  });
+
+  it("reports an empty display position between choices", () => {
+    const state = setupState();
+    const shown = state.market.display[0] as OrderId;
+    state.market.display[0] = null;
+    state.hidden.mainDeck.unshift(shown);
+    expect(invariantViolations(state, { live: true }).join("\n")).toMatch(/empty position during Setup step 9/);
+  });
+
+  it("reports a Main Order in the hand of a player who has not chosen yet", () => {
+    const state = setupState();
+    const order = state.phase.type === "setup_kiln_selection" ? state.phase.selectionOrder : [];
+    state.hidden.orderHands[order[0] as string]?.push(state.hidden.mainDeck.shift() as OrderId);
+    expect(invariantViolations(state, { live: true }).join("\n")).toMatch(/holds 2 Starting and 1 Main Orders during Setup step 9 \(expected 2 and 0\)/);
+  });
+});
+
 describe("live violations are reported", () => {
   it.each([
-    ["an exhausted queue", (s: GameState) => void (s.phase = { type: "firing_heat_markers", queue: { actorIds: [], index: 0 } }), /has no actor|queue is exhausted|firing is null/],
-    ["a firing phase without a firing", (s: GameState) => void (s.phase = { type: "firing_salvage", pendingPlayerIds: ["p1"], openedAtRevision: 0 }), /firing is null in firing_salvage/],
+    ["an exhausted queue", (s: GameState) => void (s.phase = { type: "firing_heat_adjustment", queue: { actorIds: [], index: 0 } }), /has no actor|queue is exhausted|firing is null/],
+    ["a Kiln Master marker on the kiln while T24 is ready", () => undefined, /c2 carries the Kiln Master marker but T24 is ready/],
+    ["a firing phase without a firing", (s: GameState) => void (s.phase = { type: "firing_after_quality", queue: { actorIds: ["p1"], index: 0 } }), /firing is null in firing_after_quality/],
     ["a Setter's Mark out while T22 is ready", () => undefined, /Setter's Mark is out but T22 is ready/],
     ["Kiln Furniture in the kiln while T15 is ready", () => undefined, /Kiln Furniture is in the kiln but T15 is ready/],
     ["a ledger that disagrees with completed Orders", (s: GameState) => void (s.players["p2"]!.score.orders = 4), /recorded 4 Order VP/],
@@ -170,7 +193,7 @@ describe("live violations are reported", () => {
 
   it("the structural tier tolerates states a halting-flow test leaves between hand-overs", () => {
     const state = base();
-    state.phase = { type: "firing_salvage", pendingPlayerIds: [], openedAtRevision: 0 };
+    state.phase = { type: "firing_after_quality", queue: { actorIds: [], index: 0 } };
     state.sharedKiln.spaces.low_1.setterMarkOwnerId = null;
     expect(invariantViolations(state)).toEqual([]);
   });
@@ -327,7 +350,7 @@ describe("the Guild Hall inspection, its takes and the deferred Tech refill (v1.
   });
 });
 
-describe("Inverted Firing stacks and salvage (found by the fuzz test)", () => {
+describe("Inverted Firing stacks and the sale of a Flawed ceramic (found by the fuzz test; R20)", () => {
   function stackState(): GameState {
     return buildState({
       players: [{ techs: ["T21"] }, {}],
@@ -338,9 +361,9 @@ describe("Inverted Firing stacks and salvage (found by the fuzz test)", () => {
     });
   }
 
-  it("a stacked ceramic left alone after the one beneath it is salvaged is sound", () => {
-    // Salvaging the bottom ceramic (step 11, L281) leaves the stacked one alone in its space;
-    // `stacked` records how it was loaded, and the kiln empties at step 12.
+  it("a stacked ceramic left alone after the one beneath it is sold is sound", () => {
+    // Selling the bottom ceramic in its owner's after-Quality turn (R20) leaves the stacked one
+    // alone in its space; `stacked` records how it was loaded, and the kiln empties at step 6.
     const state = stackState();
     expect(invariantViolations(state)).toEqual([]);
     state.sharedKiln.spaces.low_1.ceramicIds = ["c2"];
@@ -351,14 +374,14 @@ describe("Inverted Firing stacks and salvage (found by the fuzz test)", () => {
       round: 1, kilnDie: 2, participantIds: ["p1"], firingPlayerIds: ["p1"], contributionWindowId: null, contributions: {}, unclampedBaseHeat: 2,
       baseHeat: 2, testPieces: [], fireModifier: state.hidden.fireDeck.shift() ?? 0, globalHeat: 2, pendingExtraFire: null,
       ceramics: {
-        c1: { ceramicId: "c1", ownerId: "p1", kiln: "shared", spaceId: "low_1", glaze: "moon_white", preferredHeat: 4, positionSource: "zone", first: null, second: null, secondFiringCards: null, saggarsFloor: false, quality: "flawed", history: [], crackle: false, salvaged: true },
-        c2: { ceramicId: "c2", ownerId: "p1", kiln: "shared", spaceId: "low_1", glaze: "white", preferredHeat: 1, positionSource: "zone", first: null, second: null, secondFiringCards: null, saggarsFloor: false, quality: "fine", history: [], crackle: false, salvaged: false },
+        c1: { ceramicId: "c1", ownerId: "p1", kiln: "shared", spaceId: "low_1", glaze: "moon_white", preferredHeat: 4, positionSource: "zone", first: null, second: null, secondFiringCards: null, saggarsFloor: false, quality: "flawed", history: [], crackle: false, sold: true },
+        c2: { ceramicId: "c2", ownerId: "p1", kiln: "shared", spaceId: "low_1", glaze: "white", preferredHeat: 1, positionSource: "zone", first: null, second: null, secondFiringCards: null, saggarsFloor: false, quality: "fine", history: [], crackle: false, sold: false },
       },
     };
     expect(invariantViolations(state)).toEqual([]);
   });
 
-  it("a stacked ceramic alone in a space without a salvage is reported", () => {
+  it("a stacked ceramic alone in a space without a sale is reported", () => {
     const state = stackState();
     (state.ceramics["c1"] as LoadedCeramic).placement = { kiln: "shared", spaceId: "low_1", stacked: true };
     (state.ceramics["c2"] as LoadedCeramic).placement = { kiln: "shared", spaceId: "low_1", stacked: false };
@@ -388,7 +411,7 @@ describe("the V1.6.2 Tech checks (ENGINE_V1.6.2_DELTA.md §4.12)", () => {
       ceramics: {
         c1: {
           ceramicId: "c1", ownerId: "p1", kiln: "shared", spaceId: "high_1", glaze: "white", preferredHeat: 1, positionSource: "zone",
-          first: null, second: null, secondFiringCards: null, saggarsFloor: false, quality: "standard", history: [], crackle: false, salvaged: false,
+          first: null, second: null, secondFiringCards: null, saggarsFloor: false, quality: "standard", history: [], crackle: false, sold: false,
           ...record,
         },
       },
@@ -397,7 +420,7 @@ describe("the V1.6.2 Tech checks (ENGINE_V1.6.2_DELTA.md §4.12)", () => {
   }
 
   const calculation = (fireModifier: -2 | -1 | 0 | 1 | 2): HeatCalculation => ({
-    fireModifier, heatSource: 2 + fireModifier, positionModifier: 1, heatMarker: 0, actualHeat: 3 + fireModifier, junAdjustment: 0,
+    fireModifier, heatSource: 2 + fireModifier, positionModifier: 1, kilnMasterMarker: 0, actualHeat: 3 + fireModifier, junAdjustment: 0,
     finalActualHeat: 3 + fireModifier, heatDifference: Math.abs(2 + fireModifier),
   });
 
@@ -414,6 +437,8 @@ describe("the V1.6.2 Tech checks (ENGINE_V1.6.2_DELTA.md §4.12)", () => {
     ["a Second Firing recalculation without its revealed cards", () => firingWith({ second: calculation(1) }, []), /Second Firing record of c1 disagrees/],
     ["a Second Firing card that was not revealed", () => firingWith({ second: calculation(2), secondFiringCards: [-1, 1] }, []), /Second Firing record of c1 disagrees/],
     ["revealed cards without a recalculation", () => firingWith({ secondFiringCards: [0, 0] }, []), /Second Firing record of c1 disagrees/],
+    // R20: only a Flawed ceramic is sold, and a sold one has left the game.
+    ["a sold record that is not Flawed", () => firingWith({ sold: true }, []), /sold c1 is standard/],
   ] as Array<[string, () => GameState, RegExp]>)("%s is reported", (_name, build, pattern) => {
     expect(invariantViolations(build()).join("\n")).toMatch(pattern);
   });

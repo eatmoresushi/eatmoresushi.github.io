@@ -543,7 +543,7 @@
     {
       "id": "T12",
       "discipline": "firing",
-      "cost": 2,
+      "cost": 4,
       "oncePerRound": false,
       "timing": "contributions",
       "unlocks": null,
@@ -680,7 +680,7 @@
       "discipline": "firing",
       "cost": 2,
       "oncePerRound": true,
-      "timing": "heat_marker_step",
+      "timing": "when_loading",
       "unlocks": null,
       "params": {
         "values": [

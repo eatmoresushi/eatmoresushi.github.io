@@ -165,7 +165,7 @@ describe("the private peek and the public bury (v1.6.2 L638, L648, R15)", () => 
     expect(typesOf(events)).not.toContain("RESOURCES_CHANGED");
     expect(eventsOfType(events, "FIRE_REVEALED")[0]?.modifier).toBe(2);
     expect(table.player("p1").techs.find((t) => t.id === "T13")?.usedThisRound).toBe(false);
-    expect(table.player("p1").resources.wood).toBe(2);
+    expect(table.player("p1").resources.wood).toBe(3);
     expect(table.state.lastFiring?.testPieces ?? table.state.firing?.testPieces).toEqual([{ playerId: "p1", peeked: false, buried: false }]);
   });
 
@@ -196,22 +196,27 @@ describe("the private peek and the public bury (v1.6.2 L638, L648, R15)", () => 
   });
 });
 
-describe("timing and step errors (L675–676)", () => {
-  it("resolves before any Heat marker is turned", () => {
+describe("timing and step errors (rev. 4 L626, L668–670)", () => {
+  it("resolves after Base Heat is determined and before the Fire card is revealed (rev. 4 L626, L670)", () => {
     const table = openFiringTable(
       spec({
         ceramics: [
-          { owner: "p1", stage: "loaded", shape: "bowl", glaze: "celadon", at: "middle_1", heatMarker: { source: "own", faceDown: true } },
+          { owner: "p1", stage: "loaded", shape: "bowl", glaze: "celadon", at: "middle_1" },
           { owner: "p2", stage: "loaded", shape: "bowl", glaze: "celadon", at: "high_1" },
         ],
       }),
     );
     tendAll(table);
     expect(table.state.phase.type).toBe("firing_test_pieces");
-    table.expectRuleError("p1", { type: "RESOLVE_HEAT_MARKERS", ownMarker: 1 }, "WRONG_PHASE");
-    table.act("p1", { type: "TEST_PIECES_DECIDE", peek: false });
-    expect(table.state.phase.type).toBe("firing_heat_markers");
+    expect(table.state.firing?.baseHeat).not.toBeNull();
     expect(table.state.firing?.fireModifier).toBeNull();
+    table.expectRuleError("p1", { type: "RESOLVE_JUN", adjustment: null }, "WRONG_PHASE");
+    // No Heat-marker step follows (changes 28, 31): the Fire card is revealed at once.
+    const events = table.act("p1", { type: "TEST_PIECES_DECIDE", peek: false });
+    expect(events.map((event) => event.type)).toContain("FIRE_REVEALED");
+    // The Fire card is turned in the same command (the firing may even finish in it, since
+    // revision 4 has no salvage step either).
+    expect((table.state.firing ?? table.state.lastFiring)?.fireModifier).not.toBeNull();
   });
 
   it("bury before deciding, deciding twice, or another player acting are rejected", () => {

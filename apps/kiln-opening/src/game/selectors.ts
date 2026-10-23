@@ -46,7 +46,7 @@ import { ruleError } from "./errors.ts";
 import { legalContributions } from "./firing/contributions.ts";
 import { contributionHeat, contributionWood } from "./firing/heat.ts";
 import { availableKilns, kilnAbilityReady } from "./kilns.ts";
-import { loadDestinationOptions } from "./kilnLoading.ts";
+import { kilnMasterOptionFor, loadDestinationOptions } from "./kilnLoading.ts";
 import { lookCount, reservable } from "./market.ts";
 import { completionTriggers, validateOrderCompletion } from "./orders/completion.ts";
 import { findOrderMatches, matchOrder, type OrderMatch } from "./orders/matching.ts";
@@ -54,7 +54,7 @@ import { availableWorkers, centralCapacity, nextPersonalSpace, workersAt } from 
 import { magistratesHallOpen } from "./recognition.ts";
 import { isFinalRound, settersMarkSpaces } from "./round.ts";
 import { scorePreview as scorePreviewOf } from "./scoring.ts";
-import { ceramicSequence, ceramicsOf, decisionPrompt, heatMarkerOf, imperialKilnCeramic, lookup, player, selectStep, turnOrder, workStep } from "./state.ts";
+import { ceramicSequence, ceramicsOf, decisionPrompt, imperialKilnCeramic, kilnMasterCarrier, lookup, player, selectStep, turnOrder, workStep } from "./state.ts";
 import { acquisitionError, handLimit, ownsTech, techPrice, techReady } from "./techs.ts";
 import { commissionLimits } from "./work/commissionMarket.ts";
 import { colourSamplesSwapUsable, imperialPriorityUsable } from "./work/turn.ts";
@@ -88,6 +88,7 @@ import type {
   ImperialPriorityCeramicOption,
   ImperialPriorityOptions,
   KilnLayoutView,
+  KilnMasterOption,
   KilnSelectionOption,
   KilnSpaceId,
   KilnSpaceView,
@@ -115,6 +116,7 @@ import type {
   PublicGameState,
   Recognition,
   ScorePreview,
+  SetupChoiceOptions,
   Shape,
   ShapedCeramic,
   SubmitContributionCommand,
@@ -129,9 +131,11 @@ export { decisionPrompt } from "./state.ts";
 export { heatPreviews } from "./firing/heat.ts";
 export { quoteMaterialsYard } from "./work/materialsYard.ts";
 export { quoteFormDecorate } from "./work/formDecorate.ts";
+export { quoteGlazeLoad } from "./work/glazeLoad.ts";
 export { loadDestinationOptions } from "./kilnLoading.ts";
-export { heatMarkerStepOptions, junOptions, testPiecesOptions } from "./firing/pipeline.ts";
-export { afterQualityOptions, salvageOptions, secondFiringChoiceOptions } from "./firing/afterQuality.ts";
+export { junOptions, testPiecesOptions } from "./firing/pipeline.ts";
+export { afterQualityOptions, secondFiringChoiceOptions } from "./firing/afterQuality.ts";
+export { sellFlawedOptions } from "./flawedSale.ts";
 export { legalContributions } from "./firing/contributions.ts";
 export { findOrderMatches } from "./orders/matching.ts";
 export { SCORE_BREAKDOWN_ROWS, TIE_BREAK_ORDER } from "./scoring.ts";
@@ -304,8 +308,7 @@ export function playerSummary(view: PlayerView, playerId: PlayerId): PlayerSumma
       priority: p.imperial.priority,
       priorityUsableNow: imperialPriorityWindowUsable(game, playerId),
     },
-    heatMarkerCeramicId: heatMarkerOf(game, playerId, "own")?.id ?? null,
-    kilnMasterCeramicId: heatMarkerOf(game, playerId, "kiln_master")?.id ?? null,
+    kilnMasterCeramicId: kilnMasterCarrier(game, playerId)?.id ?? null,
     orderHandCount: lookup(game.counts.orderHands, playerId) ?? 0,
     handLimit: handLimit(p),
     shapedCeramicIds: ceramicsOf(game, playerId, "shaped").map((c) => c.id),
@@ -349,26 +352,22 @@ export function kilnLayout(view: PlayerView): KilnLayoutView {
   };
 }
 
-/** Appendix D steps resolved in First Player order: Test Pieces, Heat markers, heat
- * adjustment, after-Quality (L675, L676, L679, L681). */
-const FIRST_PLAYER_ORDER_STEPS: readonly FiringStep[] = [4, 5, 8, 10];
+/** Appendix D steps resolved in First Player order (rev. 4 L655–672): Test Pieces at the end of
+ * step 1, Jun in step 3, the after-Quality abilities in step 5. */
+const FIRST_PLAYER_ORDER_STEPS: readonly FiringStep[] = [1, 3, 5];
 
-/** The Appendix D step a firing phase decides (L670–693); null outside the Firing Phase. */
+/** The Appendix D step a firing phase decides (rev. 4 L655–672); null outside the Firing Phase.
+ * Revision 4 has no Heat-marker step (changes 28, 31). */
 function firingStepOf(phase: PublicGameState["phase"]): FiringStep | null {
   switch (phase.type) {
     case "firing_contributions":
-      return 1;
     case "firing_test_pieces":
-      return 4;
-    case "firing_heat_markers":
-      return 5;
+      return 1;
     case "firing_heat_adjustment":
-      return 8;
+      return 3;
     case "firing_after_quality":
     case "firing_second_firing_choice":
-      return 10;
-    case "firing_salvage":
-      return 11;
+      return 5;
     default:
       return null;
   }
@@ -377,14 +376,13 @@ function firingStepOf(phase: PublicGameState["phase"]): FiringStep | null {
 /**
  * A firing as the table shows it (owner decisions D3, D4): never Actual Heat, a heat source,
  * a Heat Difference, a preview or the Fire-deck count. `live` reads the ceramics' current
- * markers; a finished firing (the recap) has had its markers removed (step 12).
+ * Kiln Master marker; a finished firing (the recap) has had it removed (step 6).
  */
 function stageOf(game: PublicGameState, firing: FiringContext, step: FiringStep, live: boolean): FiringStageView {
   const phase = game.phase;
   const queue =
     live &&
     (phase.type === "firing_test_pieces" ||
-      phase.type === "firing_heat_markers" ||
       phase.type === "firing_heat_adjustment" ||
       phase.type === "firing_after_quality")
       ? { actorIds: [...phase.queue.actorIds], index: phase.queue.index }
@@ -397,16 +395,16 @@ function stageOf(game: PublicGameState, firing: FiringContext, step: FiringStep,
     .sort((a, b) => ceramicSequence(a.ceramicId) - ceramicSequence(b.ceramicId))
     .map((record) => {
       const current = live ? lookup(game.ceramics, record.ceramicId) : undefined;
-      const marker = current !== undefined && current.stage === "loaded" && current.heatMarker !== null ? { ...current.heatMarker } : null;
+      const kilnMasterMarker = current !== undefined && current.stage === "loaded" ? current.kilnMasterMarker : null;
       return {
         id: record.ceramicId,
         ownerId: record.ownerId,
         kiln: record.kiln,
         spaceId: record.spaceId,
-        marker,
+        kilnMasterMarker,
         quality: record.quality,
         crackle: record.crackle,
-        salvaged: record.salvaged,
+        sold: record.sold,
         secondFireModifier: record.second?.fireModifier ?? null,
         secondFireRevealed: record.secondFiringCards === null ? null : [...record.secondFiringCards],
         saggarsFloor: record.saggarsFloor,
@@ -451,11 +449,11 @@ export function firingStageView(view: PlayerView): FiringStageView | null {
   return stageOf(game, firing, step, true);
 }
 
-/** The last finished firing (step 12), for the recap between firings (§5 gap 18); null before
- * the first firing and while the next one runs (its start clears the recap). */
+/** The last finished firing (Appendix D step 6), for the recap between firings (§5 gap 18);
+ * null before the first firing and while the next one runs (its start clears the recap). */
 export function firingRecapView(view: PlayerView): FiringStageView | null {
   const game = view.game;
-  return game.lastFiring === null ? null : stageOf(game, game.lastFiring, 12, false);
+  return game.lastFiring === null ? null : stageOf(game, game.lastFiring, 6, false);
 }
 
 /** The current firing, else the most recent one (for the recap). */
@@ -465,6 +463,18 @@ export function firingSummary(view: PlayerView): FiringContext | null {
 }
 
 // ── Setup and Start of Round ─────────────────────────────────────────────────────────
+
+/**
+ * Setup step 9 for the viewer while it is their choice (rev. 4 L122, R23): every Kiln with its
+ * availability, and the display positions holding a Main Order to take with it in the same
+ * `SELECT_KILN`. Null when it is not the viewer's choice.
+ */
+export function setupChoiceOptions(view: PlayerView): SetupChoiceOptions | null {
+  if (!viewerActs(view) || view.game.phase.type !== "setup_kiln_selection") {
+    return null;
+  }
+  return { kilns: kilnSelectionOptions(view), faceUpSlots: [...reservable(view.game).faceUpSlots] };
+}
 
 /** All five Kilns (R1), each with whether it is still available and who chose it. */
 export function kilnSelectionOptions(view: PlayerView): KilnSelectionOption[] {
@@ -693,9 +703,10 @@ export function placementOptions(view: PlayerView): PlacementOption[] {
 
 /**
  * The printed effect record of a location for a worker effect (Appendix E; §5 gap 10): Form &
- * Decorate `maxVessels`, Glaze & Load `maxLoads` / `maxImperialLoads` / `placesHeatMarker`,
- * Materials Yard `resources`, Commission Market `select` / `maxReservations`, Canal Wharf
- * `coins` / `topMainOrders`, … so a form never reads rule
+ * Decorate `maxVessels` / `twoVesselDiscount`, Glaze & Load `maxLoads` / `maxImperialLoads` /
+ * `sharedKilnWood`, Materials Yard `resources`, Commission Market `select` / `maxReservations`,
+ * Canal Wharf `coins` / `topMainOrders`, Magistrate's Hall `coins` / `recognitionSteps` /
+ * `crownOrders`, … so a form never reads rule
  * constants. A copy; `view` keeps the selector shape (and the UI's import rule).
  */
 export function placementLimits<L extends LocationId, E extends WorkerEffect>(
@@ -709,9 +720,9 @@ export function placementLimits<L extends LocationId, E extends WorkerEffect>(
 }
 
 /**
- * Materials Yard choices for one `placementOptions` worker entry (v1.6.2 L164–165, L618; §5
+ * Materials Yard choices for one `placementOptions` worker entry (rev. 4 L176–177, L605; §5
  * gap 14), probed through `validateAction`:
- * - `resources`: the Clay/Wood split total for the worker's effect (3, or 6 for the Shifu
+ * - `resources`: the Clay/Wood split total for the worker's effect (4, or 8 for the Shifu
  *   effect, Senior Apprentice included);
  * - `preparedClay`: every Shape + Decoration pair some legal command names (any split), and
  *   the Shapes and Decorations of those pairs; null for a Senior Apprentice placement (L350:
@@ -820,26 +831,13 @@ export function shapedVessels(view: PlayerView, playerId: PlayerId): ShapedCeram
 }
 
 /**
- * Ceramics the Glaze & Load Shifu may put the face-down Heat marker on with these loads (R9,
- * L180, L185): your loaded ceramics without a marker (Shared or Imperial, incl. earlier this
- * round or by Imperial Priority), then the vessels these loads would load; `[]` when your
- * marker is already on a ceramic (L76).
+ * Kiln Master (T24, rev. 4 L628, R22) for a player's next loading command — a Glaze & Load load
+ * or Imperial Priority, into either kiln: null without the tile; else whether it is unused this
+ * round (`LoadSpec.kilnMaster` / `USE_IMPERIAL_PRIORITY.kilnMaster` may then name a face) and
+ * its faces (+1, −1). Public facts only.
  */
-export function heatMarkerTargets(view: PlayerView, playerId: PlayerId, pendingLoads: readonly LoadSpec[]): CeramicId[] {
-  const game = view.game;
-  if (seatedPlayer(game, playerId) === null || heatMarkerOf(game, playerId, "own") !== null) {
-    return [];
-  }
-  const targets = ceramicsOf(game, playerId, "loaded")
-    .filter((c) => c.heatMarker === null)
-    .map((c) => c.id);
-  for (const load of pendingLoads) {
-    const c = lookup(game.ceramics, load.ceramicId);
-    if (c !== undefined && c.ownerId === playerId && c.stage === "shaped" && !targets.includes(c.id)) {
-      targets.push(c.id);
-    }
-  }
-  return targets;
+export function kilnMasterOption(view: PlayerView, playerId: PlayerId): KilnMasterOption | null {
+  return kilnMasterOptionFor(view.game, playerId);
 }
 
 /**
@@ -938,22 +936,50 @@ export function guildInspectionOptions(view: PlayerView): GuildInspectionOptions
   };
 }
 
-/** The Magistrate's Hall for a worker effect (L223–233): 4 / 3 Coins, +1 Recognition, only
- * from Recognition 0–2 and never to 4; `reachable` is the Recognition it would reach. */
-export function magistratesHallQuote(view: PlayerView, effect: WorkerEffect): CostQuote & { reachable: Recognition | null } {
+/**
+ * The display positions the Magistrate's Hall Shifu could take a Crown Order from now (rev. 4
+ * L241, R21): positions holding a face-up Order that shows at least 1 Crown. Public.
+ */
+function crownOrderSlots(game: PublicGameState): number[] {
+  return reservable(game).faceUpSlots.filter((slotIndex) => {
+    const orderId = game.market.display[slotIndex];
+    return orderId !== null && orderId !== undefined && ORDERS[orderId].crowns >= 1;
+  });
+}
+
+/**
+ * The Magistrate's Hall for a worker effect (rev. 4 L234–245, change 33): 4 Coins for either
+ * worker, +1 Recognition, only from Recognition 0–2 and never to 4; `reachable` is the
+ * Recognition it would reach. `crownOrderSlots`: for the Shifu effect, the display positions
+ * whose Order shows a Crown — the optional reservation that follows the step (R21; `[]` when
+ * none shows, and always `[]` for the Apprentice).
+ */
+export function magistratesHallQuote(
+  view: PlayerView,
+  effect: WorkerEffect,
+): CostQuote & { reachable: Recognition | null; crownOrderSlots: number[] } {
   const effects = LOCATIONS.magistrates_hall.effects[effect];
   const pay = { clay: 0, wood: 0, coins: effects.coins };
   const lines = [{ kind: "magistrates_hall" as const, resource: "coins" as const, amount: effects.coins, itemIndex: null }];
   const zero = { clay: 0, wood: 0, coins: 0 };
+  const slots = effect === "shifu" && LOCATIONS.magistrates_hall.effects.shifu.crownOrders > 0 ? crownOrderSlots(view.game) : [];
   const p = view.viewerId === null ? null : seatedPlayer(view.game, view.viewerId);
   if (p === null) {
-    return { ok: false, error: ruleError("UNKNOWN_PLAYER", "You are not seated in this game.", { playerId: String(view.viewerId) }), pay, gain: zero, lines, reachable: null };
+    return {
+      ok: false,
+      error: ruleError("UNKNOWN_PLAYER", "You are not seated in this game.", { playerId: String(view.viewerId) }),
+      pay,
+      gain: zero,
+      lines,
+      reachable: null,
+      crownOrderSlots: slots,
+    };
   }
   const from = p.imperial.recognition;
   const to = from + effects.recognitionSteps;
   if (!magistratesHallOpen(p) || to >= 4) {
     const error = ruleError("RECOGNITION_GATE", "The Magistrate's Hall is usable only at Recognition 0–2 and never advances you to 4.", { recognition: from });
-    return { ok: false, error, pay, gain: zero, lines, reachable: null };
+    return { ok: false, error, pay, gain: zero, lines, reachable: null, crownOrderSlots: slots };
   }
   const reachable = to as Recognition;
   if (p.resources.coins < effects.coins) {
@@ -962,9 +988,9 @@ export function magistratesHallQuote(view: PlayerView, effect: WorkerEffect): Co
       needed: effects.coins,
       have: p.resources.coins,
     });
-    return { ok: false, error, pay, gain: zero, lines, reachable };
+    return { ok: false, error, pay, gain: zero, lines, reachable, crownOrderSlots: slots };
   }
-  return { ok: true, error: null, pay, gain: zero, lines, reachable };
+  return { ok: true, error: null, pay, gain: zero, lines, reachable, crownOrderSlots: slots };
 }
 
 /**
@@ -1007,14 +1033,15 @@ function imperialPriorityWindowUsable(game: PublicGameState, playerId: PlayerId)
 
 /**
  * Imperial Priority now (L293, R10): usable in your before/after-action window with the token
- * held, an empty gained Imperial Kiln and a Shaped vessel, which may be any of them. Per
- * vessel (§5 gap 16), probed through `validateAction`: its Glazes, Imperial modifiers and
- * Reworking Table Shapes (DESIGN §11 Q1).
+ * held, an empty gained Imperial Kiln and a Shaped vessel, which may be any of them. Free: no
+ * Wood (rev. 4 L291). Per vessel (§5 gap 16), probed through `validateAction`: its Glazes,
+ * Imperial modifiers and Reworking Table Shapes (DESIGN §11 Q1). `kilnMaster`: Kiln Master's
+ * marker may go on this load (T24 ready, rev. 4 L628, R22).
  */
 export function imperialPriorityOptions(view: PlayerView): ImperialPriorityOptions {
   const actor = asActorView(view);
   if (actor === null || !imperialPriorityWindowUsable(view.game, actor.viewerId)) {
-    return { usable: false, ceramicIds: [], ceramics: [] };
+    return { usable: false, ceramicIds: [], ceramics: [], kilnMaster: false };
   }
   const vessels = ceramicsOf(view.game, actor.viewerId, "shaped");
   const firstGlaze = GLAZES[0] as Glaze;
@@ -1027,7 +1054,8 @@ export function imperialPriorityOptions(view: PlayerView): ImperialPriorityOptio
     imperialModifiers: FIRING.imperialModifiers.filter((modifier) => probe(vessel.id, firstGlaze, modifier)),
     reworkShapes: SHAPES.filter((shape) => shape !== vessel.shape && probe(vessel.id, firstGlaze, firstModifier, shape)),
   }));
-  return { usable: true, ceramicIds: vessels.map((c) => c.id), ceramics };
+  const kilnMaster = kilnMasterOptionFor(view.game, actor.viewerId)?.ready === true;
+  return { usable: true, ceramicIds: vessels.map((c) => c.id), ceramics, kilnMaster };
 }
 
 // ── Orders (Order Phase pickers) ─────────────────────────────────────────────────────
