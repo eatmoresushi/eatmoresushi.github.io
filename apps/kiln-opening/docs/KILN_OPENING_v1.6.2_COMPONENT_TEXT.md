@@ -1,8 +1,8 @@
 # KILN OPENING 开窑 v1.6.2 — Component Text / 组件简文
 
-Short text for the Kiln Player Boards, the 18 Advanced Tech tiles and the 2 Fuel Ledger Contribution cards, in English and Chinese. Format: **timing:** cost → effect. The full rules are in the v1.6.2 Player Rulebook; every ability is optional unless it says otherwise. Keyword **Select N:** look at the top N cards of the Main Order deck, reserve 1 of them or 1 face-up Main Order from the display; the rest go to the bottom of the deck.
+Short text for the Kiln Player Boards, the 18 Advanced Tech tiles and the 2 Fuel Ledger Contribution cards, in English and Chinese. Format: **timing:** cost → effect. The full rules are in the v1.6.2 Player Rulebook; every ability is optional unless it says otherwise. Keyword **Select N:** look at the top N cards of the Main Order deck, reserve 1 of them or 1 face-up Main Order from the display; the rest are discarded.
 
-窑口板、18张技艺牌与2张柴簿控火牌上的简文，中英对照。格式：**时机：**费用→效果。完整规则见v1.6.2玩家规则书；除注明“须”者外，各项能力均可选用。关键词**精选N：**查看主委托牌堆顶N张，承接其中1张或委托榜上1张，其余放到牌堆底。
+窑口板、18张技艺牌与2张柴簿控火牌上的简文，中英对照。格式：**时机：**费用→效果。完整规则见v1.6.2玩家规则书；除注明“须”者外，各项能力均可选用。关键词**精选N：**查看主委托牌堆顶N张，承接其中1张或委托榜上1张，其余弃置。
 
 # Form & Decorate Techs / 坯作技艺
 
