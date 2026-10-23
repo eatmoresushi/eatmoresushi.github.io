@@ -46,7 +46,7 @@ Key facts V1.6.1 introduced over V1.4 (V1.6.2 keeps them):
 - **Ge** (change 29) crackles 1 Fine or Standard ceramic from this firing per round after Quality (a Standard one becomes Fine; it keeps a Crackle marker). Each Crackle ceramic may count as any one Decoration when completing an Order and scores 1 VP when delivered.
 - **Advanced Techs:** 18, 6 per discipline; at most 3 owned, 1 per discipline. There are no Starting Techs. Gaining a Tech scores no VP (change 27 supersedes owner amendment A1).
 - **Orders:**
-  - Setup deals 2 Starting Orders + 1 Main Order. The hand limit is 4 (5 with Colour Samples).
+  - Setup deals 2 Starting Orders; each player takes 1 face-up Main Order with their Kiln, in reverse turn order (change 32, R23). The hand limit is 4 (5 with Colour Samples).
   - Only held Orders are completed, in a single First-Player-order pass.
   - A reserved face-up Order is refilled only after the reserving player's turn ends.
 
@@ -88,7 +88,7 @@ Do not reintroduce any of these unless the user explicitly changes the rules:
 - any VP for owning or gaining an Advanced Tech (owner amendment A1's 1 VP per Tech was removed by change 27; only Connoisseur's Cabinet scores, at game end)
 - a secret Fuel Ledger Wood commitment beside a Contribution card (change 26 replaced it with the Fuel Ledger Bank and Fuel Ledger Stoke cards)
 
-Removed by V1.6.2 (rulebook changes 21–25; changes 26–27 are the last two items of the list above):
+Removed by V1.6.2 (rulebook changes 21–35; changes 26–27 are the last two items of the list above):
 
 - a resource (Clay, Wood or Coin) gained at the Commission Market, after each reservation or otherwise
 - blind Commission Market reservations (the top card taken unseen); the Shifu's optional top-3 selection replacing one of two separate reservations; a Commission Market placement that reserves without first looking at the top 2 (Apprentice) or 3 (Shifu)
@@ -102,8 +102,15 @@ Removed by V1.6.2 (rulebook changes 21–25; changes 26–27 are the last two it
 - the V1.6.1 editorial note that the Fire deck never runs out or reshuffles mid-game
 - the 16-card Starting Order deck (S01–S16) and its V1.6.1 values, and ruling R3 on S14 and S16 (change 23: 8 cards, S01–S08; S09–S16 are retired; a 4-player game deals all 8)
 - the V1.6.1 values of the nineteen re-valued Main Orders (change 24, Appendix A)
-- discarding looked-at Orders that are not reserved, at the Commission Market or by Colour Samples (when acquired or in its swap), including ruling R14 (change 24: they go face down to the bottom of the Main Order deck; the held Order a swap gives up still goes to the discard, a Starting Order to the box)
+- the bottom-of-deck flow for looked-at Orders not reserved, and ruling R19's random order there (change 24's flow, reversed by owner ruling R25: they are discarded); ruling R14 (the swap's 2-card look)
 - a Colour Samples swap that looks at only the top 2, and Colour Samples looks that reserve only from the looked cards (change 25: both are a Select 3, which may reserve a face-up Order instead)
+- the player Heat marker, its face-down placement by the Glaze & Load Shifu and the Heat-marker step (changes 28, 31)
+- the firing-step salvage of a still-Flawed ceramic (change 30: a Flawed ceramic is sold for 2 Coins during its owner's turn, R20)
+- a seat Coin for players after the first (change 35), a dealt starting Main Order (change 32), and 2 starting Wood
+- the Decoration cost table and Decoration costs (change 30: a vessel costs its Clay + 2 Coins)
+- the Magistrate's Hall Shifu at 3 Coins (change 33), Materials Yard 3 / 6 (change 34), Fuel Ledger at 2 (change 30)
+- Ge crackling only a Standard ceramic, and 'a Crackle ceramic is never a Masterpiece' as a separate rule (change 29)
+- free loading into the Shared Kiln (change 34: 1 Wood per Glaze & Load action into it)
 
 ## Engineering principles
 
@@ -159,9 +166,9 @@ The following are secret:
   - the Colour Samples Select 3, when acquired and in its swap;
   - the Guild Hall Shifu inspection, including the bottom order chosen.
 - **The Main Order discard pile**, which is face down; only its count is public. This includes the held Order discarded for a Colour Samples swap; a discarded Starting Order goes to the box.
-- **Looked-at Orders not reserved**, which go face down to the bottom of the Main Order deck (change 24): which cards they are is visible only to the looker; the deck count is public. Several go there in random order (R19), which nobody knows, the looker included.
+- **Looked-at Orders not reserved**, which are discarded face down to the Main Order discard pile (R25): which cards they are is visible only to the looker; the discard count is public.
 
-The number of cards each look shows, face-up reservations, the two Second Firing cards and the number of buried Fire cards are public.
+The number of cards each look shows, face-up reservations (including the Setup Main Order take and the Magistrate's Hall Shifu's Crown Order), Kiln Master's marker, the two Second Firing cards and the number of buried Fire cards are public.
 
 Do not expose other players' secret information in realtime payloads, logs visible to clients, browser state, or database rows readable under client credentials.
 
@@ -171,8 +178,8 @@ At minimum:
 
 - **Setup**
   - setup for 2/3/4 players; reverse-order selection of all five Kilns
-  - 2 Clay / 2 Wood / 3 Coins; 1 Shifu + 3 Apprentices
-  - secret deal of 2 Starting + 1 Main Order from the 8-card Starting deck (a 4-player game deals all 8; otherwise the undealt ones go to the box)
+  - 2 Clay / 3 Wood / 3 Coins (no seat Coin, change 35); 1 Shifu + 3 Apprentices
+  - secret deal of 2 Starting Orders from the 8-card Starting deck (a 4-player game deals all 8; otherwise the undealt ones go to the box), then the public reverse-order Kiln + face-up Main Order pick with a display refill after each take (change 32, R23)
   - 6-card Main display; 2 face-up Techs per discipline
 - **Work Phase placement**
   - no passing; all four workers placed each round
@@ -180,33 +187,33 @@ At minimum:
   - the "at least 1 instance of the main action" legality rule at every location
 - **Personal spaces:** once per round each; the second space starts covered; a Form & Decorate or Glazing & Loading Tech adds it, usable later the same round
 - **Location effects:** Apprentice and Shifu effects at all seven locations
-  - Materials Yard: Apprentice 3, Shifu 6 Clay/Wood in any split, no Coin option (Senior Apprentice too)
-  - Form & Decorate Decoration costs and the Shifu −1 discount when forming 2
-  - Glaze & Load: Imperial modifier choice and optional Heat-marker placement
+  - Materials Yard: Apprentice 4, Shifu 8 Clay/Wood in any split, no Coin option (Senior Apprentice too)
+  - Form & Decorate: each vessel costs its Clay + 2 Coins whatever its Decoration; the Shifu −1 Coin when forming 2, Decorator's Kit and Ding as reductions; legality counts reductions (change 30)
+  - Glaze & Load: Imperial modifier choice; 1 Wood per action that loads into the Shared Kiln, free for an action loading only into the Imperial Kiln (changes 34–35, R24); Kiln Master's marker at loading (R22); no Heat marker
   - Commission Market:
     - the Apprentice Selects 2 (a private look at the top 2), reserving exactly 1 from the display or those 2;
     - the Shifu (or Senior Apprentice) Selects 3, reserving 1 or 2 in any mix of the display and those 3;
-    - unreserved looked cards go face down to the bottom of the Main Order deck, never the discard (change 24), several in random order from the seeded RNG (R19); which ones is private to the looker, the deck count public;
+    - unreserved looked cards are discarded face down to the Main Order discard pile (R25); which ones is private to the looker, the discard count public; the discard is shuffled into a new deck when the deck is empty and a card is needed;
     - no resource, no blind reservation;
     - deferred refill after the turn (once for two face-up reservations);
     - B1 looks: as many as remain, a reshuffle only at the start of a look, a 0-card look with a display choice
   - Guild Hall: private inspection, chosen bottom order, the Shifu taking 1 or 2 Techs from different disciplines (face-up or revealed) at printed cost, the end-of-turn display refill, placement legality (an affordable face-up Tech from a discipline you do not own)
   - Canal Wharf: Apprentice 2 Coins; Shifu 4 Coins and the top Main Order into the hand unseen (a reshuffle when the deck is empty, no card when both piles are empty, B1)
-  - Magistrate's Hall: 4/3 Coins, Recognition 0–2 only, never to 4
+  - Magistrate's Hall: 4 Coins for either worker, Recognition 0–2 only, never to 4; the Shifu may reserve 1 face-up Crown Order (change 33, R21), refilled at the end of the turn
 - **Shapes and Kilns**
   - Shape costs and non-limiting Vessel-card proxies
   - all five Kiln abilities:
     - Ru and Guan in the Order Phase;
-    - Ge Crackle: a Standard floored by Protective Saggars may be crackled, Saggars' Standard → Fine and Crackle never on one ceramic, wildcard Decoration, never Masterpiece;
+    - Ge Crackle (change 29): 1 Fine or Standard ceramic from this firing (a Standard one becomes Fine), Saggars' Standard → Fine then Crackle on one ceramic allowed, wildcard Decoration, 1 VP per delivered Crackle ceramic;
     - Ding: 1 Clay + 1 Coin, outside discounts;
     - Jun: including during Second Firing per R7, after the chosen card
 - **Advanced Techs**
   - all 18, including:
-    - when-acquired Colour Samples: Select 3 (1 reservation, a looked card or a face-up Order refilled at the end of the turn; the unreserved looked cards to the bottom of the Main Order deck in random order, R19);
-    - the Colour Samples once-per-round swap: before or after a worker action; discard 1 held Order first (Main face down to the discard, Starting to the box), then Select 3 (a looked card or a face-up Order; the rest to the bottom of the Main Order deck, R19); B1 when the supply is short; either order with Imperial Priority; usable the round it is acquired;
-    - Kiln Master, Inverted Firing stacks, Setter's Mark reservation;
+    - when-acquired Colour Samples: Select 3 (1 reservation, a looked card or a face-up Order refilled at the end of the turn; the unreserved looked cards discarded, R25);
+    - the Colour Samples once-per-round swap: before or after a worker action; discard 1 held Order first (Main face down to the discard, Starting to the box), then Select 3 (a looked card or a face-up Order; the rest discarded, R25); B1 when the supply is short; either order with Imperial Priority; usable the round it is acquired;
+    - Kiln Master (its +1/−1 marker placed face up at loading, R22), Inverted Firing stacks, Setter's Mark reservation;
     - Canal Barge: 2 Coins on the first Order completed each round, in the Order Phase only
-  - the printed V1.6.2 costs (Senior Apprentice 3, Kiln Tending 3, Protective Saggars 3, Fuel Ledger 2), the 3-total / 1-per-discipline limit, the end-of-turn discipline refill and partial display
+  - the printed V1.6.2 costs (Senior Apprentice 3, Kiln Tending 3, Protective Saggars 3, Fuel Ledger 4), the 3-total / 1-per-discipline limit, the end-of-turn discipline refill and partial display
   - no VP for gaining a Tech (change 27, superseding amendment A1): the score ledger, the score preview, final scoring and events have no Tech line; Connoisseur's Cabinet still scores at game end
   - optional abilities (R4): declining keeps the once-per-round use (the Colour Samples swap, Saggars' Standard → Fine step, Second Firing); Canal Barge and Saggars' floor are automatic
 - **Firing**
@@ -215,12 +222,12 @@ At minimum:
   - secret simultaneous Contribution reveal; Fuel Ledger (change 26): the owner's Bank and Stoke cost no Wood, and its Fuel Ledger Bank and Fuel Ledger Stoke cards cost 1 Wood each for −2/+2; the owner plays 1 of 5 cards, and a card not held is refused
   - Base Heat clamp 0–5
   - Test Pieces after Base Heat (private peek, public bury)
-  - Heat-marker step in First Player order (+1/−1/return); Kiln Master
+  - no Heat-marker step (changes 28, 31); Test Pieces after Base Heat and before the Fire card; Kiln Master's marker in Actual Heat
   - Fire deck 1/3/4/3/1 and open discard; when the deck runs out, the shuffled discard goes on top and a buried Test Pieces card is drawn last (L645, R15), including a run-out caused by Second Firing
   - Actual Heat for Shared Kiln (zone or Kiln Furniture modifier + marker) and court-fired Imperial Kiln ceramics
   - Quality assignment, including Protective Saggars: the owner's Shared and Imperial ceramics are never Flawed (Heat Difference 3+ counts as Standard)
   - after-Quality abilities in the owner's chosen order: Saggars (1 Standard → Fine once per round, no Wood, never Masterpiece), Second Firing (2 extra cards revealed, 1 chosen, both discarded), Ge
-  - optional 2-Coin salvage of a still-Flawed ceramic
+  - selling a Flawed ceramic for 2 Coins during its owner's turn (change 30, R20), not during another player's turn or the simultaneous Contribution choice; no firing-step salvage
   - skipping the firing when nothing is loaded
 - **Orders**
   - all 8 Starting and 48 Main Orders at their V1.6.2 values (a content contract against Appendix A), including independent multi-ceramic matching, S07's Decoration alternative (Carved, Impressed or Painted; Plain refused) and Crackle wildcards
@@ -239,7 +246,7 @@ At minimum:
   - English/Simplified Chinese rendering from the same stable IDs without changing game state
   - full random legal games for 2/3/4 players completing without error
   - reconnect without changing player seat/state, including during a Commission Market look, a Colour Samples swap look and a Second Firing choice
-  - V1.6.1 rooms and saves, and V1.6.2 rooms from before owner revision 3 (schema 7, `r30-`), refused by rules version and fingerprint (rules `1.6.2`, schema 8, `r31-`)
+  - V1.6.1 rooms and saves, and V1.6.2 rooms from before owner revision 4 (schema 8, `r31-`, and earlier), refused by rules version and fingerprint (rules `1.6.2`, schema 9, `r32-`)
 
 ## Change discipline
 
