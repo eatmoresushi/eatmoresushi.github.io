@@ -12,9 +12,9 @@ Short text for the Kiln Player Boards, the 18 Advanced Tech tiles and the 2 Fuel
 **每轮一次，制坯饰纹行动中制有至少1件瓶或香炉时：**该行动的泥总费−2，最低为0。
 
 ### Decorator's Kit / 饰坯匣
-**Once per round:** 1 Carved, Impressed or Painted Decoration you apply costs 1 Coin less. Stacks with the Shifu discount.
+**Once per round:** a vessel you form with a Carved, Impressed or Painted Decoration costs 1 Coin less. Stacks with the Shifu discount.
 
-**每轮一次：**你施加的1项刻花、印花或画花少付1铜钱。可与师傅的纹饰减免叠加。
+**每轮一次：**你制的1件刻花、印花或画花的坯少付1铜钱。可与师傅的减免叠加。
 
 ### Reworking Table / 改坯案
 **Once per round, when you glaze and load a Shaped vessel:** first change its Shape to any other Shape. Pay no Clay; its Decoration stays.
@@ -22,9 +22,9 @@ Short text for the Kiln Player Boards, the 18 Advanced Tech tiles and the 2 Fuel
 **每轮一次，为1件坯施釉装窑时：**可先将其器型改为任意其他器型。不付泥，纹饰不变。
 
 ### Prepared Clay / 练泥
-**Once per round, after gaining resources at the Materials Yard:** pay a vessel's Clay cost + 1 Clay and a Decoration cost → form and decorate 1 vessel.
+**Once per round, after gaining resources at the Materials Yard:** pay a vessel's Clay cost + 1 Clay and 2 Coins → form 1 vessel, any Decoration.
 
-**每轮一次，泥柴场行动得到资源后：**可付器型泥费+1泥及纹饰费→制1件坯并饰纹。
+**每轮一次，泥柴场行动得到资源后：**可付器型泥费+1泥及2铜钱→制1件坯，纹饰任选。
 
 ### Senior Apprentice / 高徒
 **Once per round:** 1 Apprentice you place at the Materials Yard or Commission Market uses the Shifu effect instead.
@@ -81,9 +81,9 @@ Short text for the Kiln Player Boards, the 18 Advanced Tech tiles and the 2 Fuel
 **持续：**你的压火与添柴不付柴。**习得时：**获取柴簿压火与柴簿添柴两张控火牌（付1柴→−2或+2）。
 
 ### Test Pieces / 火照
-**Once per round, after Base Heat, before Heat markers, if you have a ceramic in this firing:** pay 1 Wood → privately look at the top Fire card; you may put it on the bottom of the deck.
+**Once per round, after Base Heat, before the Fire card, if you have a ceramic in this firing:** pay 1 Wood → privately look at the top Fire card; you may put it on the bottom of the deck.
 
-**每轮一次，基础火候定后、翻火标前，本窑有己方器物时：**可付1柴→私看窑火牌堆顶1张，可将其置于牌堆底。
+**每轮一次，基础火候定后、翻窑火前，本窑有己方器物时：**可付1柴→私看窑火牌堆顶1张，可将其置于牌堆底。
 
 ### Second Firing / 复烧
 **Once per round, after Quality is assigned:** 1 of your Flawed or Standard ceramics from this firing → reveal 2 Fire cards and recalculate its Quality with 1 of them, even if worse.
@@ -91,9 +91,9 @@ Short text for the Kiln Player Boards, the 18 Advanced Tech tiles and the 2 Fuel
 **每轮一次，定品后：**己方本窑1件瑕品或良品→另翻2张窑火牌，以其中1张重算其品质，即使更差也算。
 
 ### Kiln Master / 窑工
-**Once per round, in the Heat marker step:** place the Kiln Master marker (+1 or −1) on 1 of your ceramics in this firing that has no Heat marker.
+**Once per round, when you load a ceramic:** you may place a +1 or −1 marker on it. It adds its value to that ceramic's Actual Heat.
 
-**每轮一次，翻火标步骤中：**可将窑工标（+1或−1）放在己方本窑1件未带火标的器物上。
+**每轮一次，装窑1件器物时：**可在它上面放一个+1或−1标记。其数值计入该器物的实际火候。
 
 ### Tribute Ware / 贡瓷
 **Once per round, when you complete a Crown Order:** gain 1 additional Crown.
@@ -125,9 +125,9 @@ Short text for the Kiln Player Boards, the 18 Advanced Tech tiles and the 2 Fuel
 **每轮一次，完成御令委托时：**得2铜钱和1分。
 
 ### Ge Kiln / 哥窑 — Crackle Mastery / 金丝铁线
-**Once per round, after Quality is assigned:** 1 of your Standard ceramics from this firing → Fine + Crackle. **Orders:** each Crackle ceramic may count as any 1 Decoration; it is never a Masterpiece.
+**Once per round, after Quality is assigned:** 1 of your Fine or Standard ceramics from this firing → Crackle; it is Fine. **Orders:** each Crackle ceramic may count as any 1 Decoration and scores 1 VP when delivered.
 
-**每轮一次，定品后：**可令己方本窑1件良品开片→升为上品。**完成委托时：**每件开片器可作任意1种纹饰；永远不算臻品。
+**每轮一次，定品后：**可令己方本窑1件上品或良品开片→品质为上品。**完成委托时：**每件开片器可作任意1种纹饰，交付时得1分。
 
 ### Ding Kiln / 定窑 — Moulded Production / 范制成器
 **Once per round, during a Form & Decorate action:** after forming a Bowl, Plate or Brush Washer, pay 1 Clay + 1 Coin → form 1 extra vessel of the same Shape with any Decoration (no discounts). It counts as formed by that action.

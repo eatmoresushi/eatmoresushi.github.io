@@ -35,6 +35,13 @@ Version v1.6.2 (the working name v1.3 was already used by an earlier draft). Thi
 25. **Keyword: Select N.** Look at the top N cards of the Main Order deck, reserve 1 of them or 1 face-up Order, put the rest on the bottom. Commission Market: Apprentice Select 2, Shifu Select 3 reserving up to 2; Colour Samples: Select 3 when acquired and for its once-a-round swap. Wording only.
 26. **Fuel Ledger as cards.** Wood is open information, so a Wood token tucked under a face-down Contribution card could never be secret. The hidden commitment is replaced by 2 Contribution cards that come with the tile: **Fuel Ledger Bank** (1 Wood, −2) and **Fuel Ledger Stoke** (1 Wood, +2). Its owner chooses among 5 cards and plays 1; plain Bank and Stoke stay free. Same options and prices as before. Contribution cards rise to 14 and all share one back, so a face-down card reveals nothing.
 27. **Tech VP removed.** Advanced Techs no longer score 1 VP when gained. After the re-pass every tile pays for itself on ability alone (first tile: the Cover token; second: a Firing ability ≈ 4.7 VP), so the VP was only subsidising third tiles and round-4 purchases. Techs are workshop growth; Orders and Crowns are the points. Connoisseur's Cabinet keeps its end-game VP. Printed costs unchanged; watch Techs per player and Guild placements in rounds 4–5.
+28. **Heat markers before Test Pieces.** Firing steps 2 and 3 swap: markers are turned, then Test Pieces looks. Looking first let its owner set a marker to cancel a ±1 card and bury a ±2, a 98% Masterpiece on one ceramic every round the Shifu glazed — a private gain the "bury helps everyone" pricing never covered. Markers now hedge Contributions, as designed; Test Pieces keeps its bury.
+29. **Ge rebalanced.** Crackle now goes on 1 Fine or Standard ceramic a round (a Standard one becomes Fine), and each delivered Crackle ceramic scores 1 VP. The old trigger needed a Standard, which an aimed pot is only 17% of the time, so Ge was worth ≈ 3–4 VP a game against 7–9 for the other four boards; this brings it to ≈ 7.5. The redundant "never a Masterpiece" clause is dropped: a Fine or Standard pot that stays Fine cannot be one.
+30. **Quick wins from the v1.6.2 review.** Fuel Ledger costs 4. Forming costs the Shape's Clay plus 2 Coins with any Decoration (the Decoration table goes; the discounts are unchanged). Seat compensation: every player after the first starts with 1 extra Coin. An unused Jun adjustment may apply to a Second Firing recalculation. Form & Decorate legality counts reductions. The firing-step salvage becomes: a Flawed ceramic may be sold at any time for 2 Coins. The Kiln Die is the day's weather.
+31. **Heat marker removed.** The player Heat marker is gone: no face-down token, no marker step, and the Glaze & Load Shifu simply loads up to 2. With it, a player whose one pot was protected could Stoke or Bank for 1 Wood and shift every other pot at the table (about +1.4 VP a round relative to each opponent); with nothing protected, a shift costs the shifter as much as anyone. Kiln Master's marker is now chosen when the ceramic is loaded, +1 or −1 face up, like the Imperial Kiln's modifier. Firing: Contributions → Test Pieces → Fire → Actual Heat → Quality.
+32. **Starting hand: the Main Order is chosen, not dealt.** Each player still starts with 2 Starting Orders and 1 Main Order, but the Main Order is taken from the face-up display in reverse turn order during Setup (refilling after each take) instead of being dealt blind. A dealt card ranged from O01 (4 VP for one Standard pot, deliverable in round 2) to O47 (three pots, two Masterpieces), a 3–5 VP swing bigger than any seat effect; a choice from six visible cards removes it, costs no placement, and gives the last seat the first pick.
+33. **Magistrate's Hall Shifu.** The 3-Coin discount was worth about 0.5 VP over the Apprentice, a quarter of what a Shifu placement should buy, and was the only one-space price exception. Now the Shifu pays the same 4 Coins, advances 1 step and reserves 1 face-up Crown Order from the display (nothing if none is showing): the magistrate commissions court wares. About 1.5 VP over the Apprentice; it feeds Guan and Tribute Ware and is self-limiting because the Hall closes at Recognition 3.
+34. **The kiln burns fuel.** Loading a ceramic into the Shared Kiln costs 1 Wood, paid as it is loaded; the Glaze & Load Shifu loads up to 2 and pays Wood for at most 1 of them, the mirror of Form & Decorate's discount (2.05 VP over the Apprentice against 2.30). Loading into the Imperial Kiln costs no Wood. Wood had no sink for three of the five boards — 1–2 a game, inside the starting 2 — so the Yard's Clay/Wood split was no decision; fuel is about 5 Wood a game on every production line, Kiln Tending and the Grant's Wood gain a point, and Jun's and Test Pieces' Wood become real trade-offs. Materials Yard 4 / 8 and 3 starting Wood keep the pot count where it was. A player who leads a round with the Yard can never be shut out of fuel, since the Yard has as many spaces as players; a player stuck without Wood spent their first worker elsewhere.
 
 **Yours, from the doc comments:** 1–4, the first two sentences of 6, the first sentence of 7, the marker turn order in 3, 12, and 15. **The review's recommendations, applied at your request so the draft plays as one piece:** 5, the Shifu selection and Colour Samples in 6, the court-fired Imperial Kiln in 7, 8, 9, 11, 13 and 14. Each is a sentence to revert.
 
@@ -62,13 +69,12 @@ The game lasts exactly **5 rounds**.
 | Crown Order | Any Order showing at least 1 Crown icon. Each Crown advances Imperial Recognition until Recognition 4; Crowns gained after reaching 4 score 1 VP each. |
 | Held (Reserved) Order | An Order in your hand, protected from other players. |
 | Select N | Look at the top N cards of the Main Order deck. Reserve 1 of them, or 1 face-up Main Order from the display; put the rest of the N on the bottom of the deck. |
-| Imperial Kiln | A private one-ceramic firing tile gained at Imperial Recognition 2. Its ceramic ignores Contributions: Actual Heat = Kiln Die result + Fire modifier + a modifier of −1, 0 or +1 chosen when it is loaded, plus any Heat marker. |
+| Imperial Kiln | A private one-ceramic firing tile gained at Imperial Recognition 2. Its ceramic ignores Contributions: Actual Heat = Kiln Die result + Fire modifier + a modifier of −1, 0 or +1 chosen when it is loaded, plus the Kiln Master marker if it carries it. |
 | Imperial Priority | A once-per-game token gained at Imperial Recognition 3. Before or after your worker action, spend it to give 1 of your Shaped vessels a Glaze and load it into your empty Imperial Kiln. |
-| Heat marker | A player's token with a +1 face and a −1 face. The Glaze & Load Shifu places it face-down on 1 of that player's loaded ceramics; after Base Heat it is turned to +1 or −1 or returned. It adds its value to that ceramic's Actual Heat. |
 | Preferred Heat | The heat value required by a Glaze: White 1, Celadon 2, Grey-Green 3, Moon White 4. |
 | Base Heat | Start at this round's Kiln Die result (1, 2 or 3), add all Contribution modifiers, then clamp to 0–5. Shared by the firing. |
 | Global Heat | Base Heat plus the Fire-card modifier. Not capped. |
-| Actual Heat | For a Shared Kiln ceramic: Global Heat plus its zone modifier (printed, or chosen under Kiln Furniture) plus its Heat marker, after applicable abilities. For an Imperial Kiln ceramic: Kiln Die result + Fire modifier + its chosen modifier + Heat marker. |
+| Actual Heat | For a Shared Kiln ceramic: Global Heat plus its zone modifier (printed, or chosen under Kiln Furniture) plus the Kiln Master marker if it carries it, after applicable abilities. For an Imperial Kiln ceramic: Kiln Die result + Fire modifier + its chosen modifier + the Kiln Master marker if it carries it. |
 | Heat Difference | Absolute difference between Actual Heat and Preferred Heat; determines Quality. |
 | Load | Give a Shaped vessel a Glaze and place it in an empty active Shared Kiln space, or in your empty Imperial Kiln. |
 
@@ -81,9 +87,8 @@ The game lasts exactly **5 rounds**.
 | Kiln Player Boards | 5 | Ru, Guan, Ge, Ding and Jun. Each shows its Kiln Tradition, a Form & Decorate and a Glaze & Load with 2 spaces each (the second of each starts under a Cover token), 3 Tech slots and an Imperial Kiln area. |
 | Shifu Workers | 4 | One per player colour. |
 | Apprentice Workers | 12 | Three per player. |
-| Heat markers | 4 | One per player colour; faces +1 and −1. |
 | Clay | 40 | Resource. |
-| Wood | 40 | Resource and firing fuel. |
+| Wood | 40 | Resource and kiln fuel: 1 per ceramic loaded into the Shared Kiln, and the cost of Bank and Stoke. |
 | Coins | 50 | Decoration, Advanced Tech and Magistrate's Hall currency. |
 | Vessel Cards | 50 | Ten each: Bowl, Plate, Brush Washer, Vase and Censer. |
 | Main Order Cards | 48 | One unified public/reservable deck; see Appendix A. |
@@ -106,17 +111,17 @@ The game lasts exactly **5 rounds**.
 ## Setup
 
 1. Place the Central Action Board and Shared Kiln in the centre. For the Shared Kiln: **4 players** use all 8 spaces (3 High, 3 Middle, 2 Low); **3 players** use 6 spaces, covering 1 High and 1 Middle space (2-2-2); **2 players** use 4 spaces, covering 1 High, 2 Middle and 1 Low space (2-1-1). In 2- and 3-player games also cover the second Magistrate's Hall space.
-2. Shuffle the **8-card Starting Order deck** and the **48-card Main Order deck** separately. Deal each player **2 Starting Orders and 1 Main Order**. These 3 Orders form that player's starting hand and are **kept secret**.
-3. Return any undealt Starting Orders to the box. Reshuffle the remaining Main Order deck, then reveal **6 face-up Main Orders** from left to right.
+2. Shuffle the **8-card Starting Order deck** and the **48-card Main Order deck** separately. Deal each player **2 Starting Orders**, kept secret.
+3. Return any undealt Starting Orders to the box. Reveal **6 face-up Main Orders** from the Main Order deck, left to right.
 4. Separate the 18 Advanced Techs into Form & Decorate, Glazing & Loading and Firing decks of 6. Shuffle each discipline and reveal **2 face-up tiles from each**. Keep the 2 Fuel Ledger Contribution cards beside the Firing deck; they go to whoever acquires Fuel Ledger.
 5. Shuffle the 12-card Fire deck and place it face down beside a face-up discard pile. Place the Kiln Die beside the Base Heat track.
 6. Place Clay, Wood, Coins and Vessel cards within reach. Sort Vessel cards by Shape.
 7. Place the **4 Imperial Kiln tiles** beside the Imperial Recognition track.
-8. Each player chooses a player colour and takes 1 Shifu, 3 Apprentices, 1 Heat marker, 1 Imperial Recognition marker, 2 Cover tokens, and 1 each of Bank the Fire, Tend the Fire and Stoke the Fire. Place that colour's **Imperial Priority token** on Recognition space **3**.
-9. Randomly choose the First Player. In reverse turn order, each player chooses an available Kiln Player Board and places a Cover token on the second space of its Form & Decorate and of its Glaze & Load.
+8. Each player chooses a player colour and takes 1 Shifu, 3 Apprentices, 1 Imperial Recognition marker, 2 Cover tokens, and 1 each of Bank the Fire, Tend the Fire and Stoke the Fire. Place that colour's **Imperial Priority token** on Recognition space **3**.
+9. Randomly choose the First Player. In reverse turn order, each player chooses an available Kiln Player Board, places a Cover token on the second space of its Form & Decorate and of its Glaze & Load, and takes **1 face-up Main Order** from the display into their hand; refill the display to 6 after each take. Each player now holds 2 Starting Orders and 1 Main Order, and everyone has seen which Main Order each player took.
 10. Each player places **1 Shifu + 3 Apprentices** as available workers.
 11. Leave each player's Imperial Kiln area empty until it is gained through Imperial Recognition.
-12. Each player receives **2 Clay, 2 Wood and 3 Coins**.
+12. Each player receives **2 Clay, 3 Wood and 3 Coins**. Every player after the first in turn order takes **1 extra Coin**.
 13. Place all Imperial Recognition markers on space **0** and the Round marker on Round **1**.
 
 ## Round Structure
@@ -125,13 +130,13 @@ The game lasts exactly **5 rounds**.
 | --- | --- | --- |
 | 1 | Start of Round | Roll the Kiln Die for this round's starting Base Heat; rotate Orders; refill displays; ready abilities. |
 | 2 | Work Phase | Alternate worker placements at central and personal locations. |
-| 3 | Firing Phase | Contributions → Base Heat → Test Pieces → Heat markers → Fire → Actual Heat → Quality. |
+| 3 | Firing Phase | Contributions → Base Heat → Fire → Actual Heat → Quality. |
 | 4 | Order Phase | Complete held Orders, one at a time, in turn order. |
 | 5 | Cleanup | Return workers and markers; trim Order hands; pass First Player. |
 
 ## Phase 1 — Start of Round
 
-Every round, first **roll the Kiln Die** and place the Base Heat marker on the result (1, 2 or 3). Base Heat starts at that value this round; the Contributions will move it from there. Then, in Rounds 2–5:
+Every round, first **roll the Kiln Die** — the day's weather: a damp day keeps the kiln cool (1), a dry, windy one draws it hot (3) — and place the Base Heat marker on the result (1, 2 or 3). Base Heat starts at that value this round; the Contributions will move it from there. Then, in Rounds 2–5:
 
 1. Discard the **2 leftmost face-up Main Orders** to the Main Order discard pile.
 2. Slide the remaining **4 Main Orders** left.
@@ -167,30 +172,30 @@ Each player has **1 Shifu and 3 Apprentices** available each round. Each worker 
 
 | Worker | Effect |
 | --- | --- |
-| Apprentice | Gain **3 resources** in any combination of Clay and Wood. |
-| **Shifu** | Gain **6 resources** in any combination of Clay and Wood. |
+| Apprentice | Gain **4 resources** in any combination of Clay and Wood. |
+| **Shifu** | Gain **8 resources** in any combination of Clay and Wood. |
 
 ### Form & Decorate (personal)
 
 | Worker | Effect |
 | --- | --- |
-| Apprentice | Form **1 vessel**: pay its Clay cost, choose a Decoration and pay the Decoration cost. |
-| **Shifu** | Form up to **2 vessels**, choosing and paying a Decoration for each. **If you form 2, one of their Decorations costs 1 Coin less.** |
+| Apprentice | Form **1 vessel**: pay its Clay cost plus **2 Coins** and choose any Decoration for it. |
+| **Shifu** | Form up to **2 vessels**, paying for each. **If you form 2, one of them costs 1 Coin less.** |
 
-- A placement here is legal only if you can pay the Clay cost and a Decoration cost for at least 1 vessel.
+- A placement here is legal only if you can pay the full cost of at least 1 vessel, after any reductions.
 - Formed vessels are **Shaped** ceramics: they record Shape and Decoration and wait in your workshop until loaded.
 
 ### Glaze & Load (personal)
 
 | Worker | Effect |
 | --- | --- |
-| Apprentice | Choose **1** of your Shaped vessels, give it a Glaze and load it. |
-| **Shifu** | Do this for up to **2** of your Shaped vessels. Then place your **Heat marker face-down** on 1 of your ceramics in the Shared Kiln or your Imperial Kiln. The Shifu stays on the Glaze & Load space. |
+| Apprentice | Choose **1** of your Shaped vessels, give it a Glaze and load it, paying **1 Wood**. |
+| **Shifu** | Do this for up to **2** of your Shaped vessels, paying Wood for **at most 1** of them. |
 
 - **Loading** places the vessel in an empty active Shared Kiln space. If you have gained your Imperial Kiln and it is empty, **1 vessel loaded by this action** may enter it instead.
-- A placement here is legal only if you have at least 1 Shaped vessel and either an empty active Shared Kiln space or your own empty Imperial Kiln.
+- **The kiln burns fuel:** each ceramic loaded into the Shared Kiln costs **1 Wood**, paid as it is loaded. You pay **no Wood** when loading into your Imperial Kiln.
+- A placement here is legal only if you have at least 1 Shaped vessel, an empty active Shared Kiln space or your own empty Imperial Kiln, and 1 Wood if you load into the Shared Kiln.
 - Covered Shared Kiln spaces are never empty or usable. The Imperial Kiln holds 1 ceramic per firing.
-- The Heat marker is resolved in the Firing Phase. Only 1 Heat marker may sit on a ceramic.
 
 ### Commission Market
 
@@ -232,10 +237,11 @@ The Magistrate's Hall has **1 space** in 2- and 3-player games and **2 spaces** 
 | Worker | Effect |
 | --- | --- |
 | Apprentice | Pay **4 Coins** to advance your Imperial Recognition by **1 step**. |
-| Shifu | Pay 3 Coins to advance your Imperial Recognition by 1 step. |
+| **Shifu** | Pay **4 Coins** to advance your Imperial Recognition by **1 step**, then reserve **1 face-up Crown Order** from the display. |
 
 - The Magistrate's Hall has **no Crown requirement**: it may advance Recognition **0 → 1, 1 → 2 or 2 → 3**. Resolve the reward of the space you reach normally.
 - The Magistrate's Hall **cannot advance you to Recognition 4**, so it cannot be used at Recognition 3 or 4.
+- If no face-up Order shows a Crown when the Shifu acts, Recognition still advances but **nothing is reserved**. The reserved Order's position stays empty until the end of your turn; then the display is refilled as at the Commission Market.
 
 ## Phase 3 — Firing Phase
 
@@ -244,11 +250,9 @@ If no ceramics are loaded in the Shared Kiln or any Imperial Kiln, **skip the Fi
 | Step | What happens | Produces |
 | --- | --- | --- |
 | 1. Contributions | Participating players each secretly choose 1 of their Contribution cards, then reveal and pay Wood. Start at the Kiln Die result and clamp the final result to 0–5. | **Base Heat** |
-| 2. Test Pieces | In First Player order, a Test Pieces owner may look at the top Fire card and bury it. | — |
-| 3. Heat markers | In First Player order, each player with a face-down Heat marker on a ceramic turns it to +1 or −1, or returns it. Kiln Master places its marker now. | — |
-| 4. Fire | Reveal the top Fire card and add its modifier. | **Global Heat** |
-| 5. Position | Shared-Kiln ceramics: Global Heat + zone modifier (High +1 / Middle 0 / Low −1, or the Kiln Furniture modifier) + Heat marker. Imperial Kiln ceramics: Kiln Die result + Fire modifier + the modifier chosen at loading + Heat marker. | **Actual Heat** |
-| 6. Compare | Compare Actual Heat with Preferred Heat after applicable abilities. | **Quality** |
+| 2. Fire | Reveal the top Fire card and add its modifier. | **Global Heat** |
+| 3. Position | Shared-Kiln ceramics: Global Heat + zone modifier (High +1 / Middle 0 / Low −1, or the Kiln Furniture modifier) + Kiln Master marker if present. Imperial Kiln ceramics: Kiln Die result + Fire modifier + the modifier chosen at loading + Kiln Master marker if present. | **Actual Heat** |
+| 4. Compare | Compare Actual Heat with Preferred Heat after applicable abilities. | **Quality** |
 
 - **Base Heat and Global Heat belong to the whole firing. Actual Heat belongs to one ceramic.**
 - Clamp Base Heat to 0–5. Global Heat and Actual Heat are not clamped.
@@ -267,13 +271,6 @@ A player participates in Contributions **only if they have at least 1 ceramic in
 
 **Base Heat = the Kiln Die result + the sum of final Contribution modifiers, clamped to 0–5.** Examples with the die showing 2: Tend + Tend + Tend → 2. Stoke + Tend + Tend → 3. Bank + Tend + Tend → 1. Stoke + Bank + Tend → 2; both players still pay their Wood. With the die showing 3: Tend + Tend + Tend → 3; Bank + Tend + Tend → 2; Stoke + Stoke + Tend → 5.
 
-### Heat Markers
-
-- Each player owns 1 Heat marker, with a +1 face and a −1 face. The Glaze & Load Shifu places it **face-down** on 1 of that player's ceramics in the Shared Kiln or Imperial Kiln.
-- After Base Heat is determined, in First Player order, each player with a face-down marker **turns it to +1 or −1, or returns it to their supply**.
-- A Heat marker adds its value to that ceramic's Actual Heat. It is not a zone modifier: it stacks with Kiln Furniture, and it stays in place for a Second Firing recalculation.
-- A ceramic may carry only 1 Heat marker. Return markers when the ceramic leaves the kiln.
-
 ### Quality Table
 
 | Heat Difference | Quality | Order Eligibility |
@@ -281,17 +278,17 @@ A player participates in Contributions **only if they have at least 1 ceramic in
 | 0 | **Masterpiece** | Meets any minimum Quality. |
 | 1 | **Fine** | Meets Fine+ and Standard+. |
 | 2 | **Standard** | Meets Standard+ only. |
-| 3+ | **Flawed** | Cannot complete Orders or enter the Exhibition. |
+| 3+ | **Flawed** | Cannot complete Orders or enter the Exhibition; may be sold at any time for 2 Coins. |
 
-After all after-Quality abilities for the firing have resolved, each player may discard **1 ceramic that is still Flawed from this firing** to gain **2 Coins**. Return its Vessel card to the matching Shape supply.
+A Flawed ceramic may be **sold at any time for 2 Coins**: return its Vessel card to the matching Shape supply.
 
 ### Imperial Kiln
 
 When you first reach **Imperial Recognition 2**, take an Imperial Kiln tile and place it in your Imperial Kiln area.
 
 - The Imperial Kiln holds **1 ceramic per firing**.
-- During a Glaze & Load action, 1 vessel loaded by that action may be placed in your empty Imperial Kiln instead of the Shared Kiln. Imperial Priority also loads it. No Tech effect loads it.
-- Its ceramic **is fired by the court's own kilnmen. When you load it, choose a modifier of −1, 0 or +1 and note it. Its Actual Heat is the Kiln Die result + the Fire modifier + that modifier, plus any Heat marker, whatever the Contributions were. It still fires during the shared Firing Phase**.
+- During a Glaze & Load action, 1 vessel loaded by that action may be placed in your empty Imperial Kiln instead of the Shared Kiln. Imperial Priority also loads it. No Tech effect loads it. **You pay no Wood when loading into it.**
+- Its ceramic **is fired by the court's own kilnmen. When you load it, choose a modifier of −1, 0 or +1 and note it. Its Actual Heat is the Kiln Die result + the Fire modifier + that modifier (plus the Kiln Master marker if it carries it), whatever the Contributions were. It still fires during the shared Firing Phase**.
 - It counts as a ceramic in this firing for your Techs and abilities, but it does not make you a Contribution participant: only a ceramic in the Shared Kiln does. It does not occupy a Shared Kiln space.
 - After firing, its ceramic resolves Quality and moves to the owner's Finished Ceramics area normally.
 
@@ -315,7 +312,7 @@ See **Completing Orders** below for the procedure.
 
 1. Gain Clay and Wood (Materials Yard).
 2. Form a vessel and choose its Decoration (Form & Decorate).
-3. Give it a Glaze and load it into the Shared Kiln or, if available, your Imperial Kiln (Glaze & Load).
+3. Give it a Glaze and load it into the Shared Kiln (1 Wood) or, if available, your Imperial Kiln (Glaze & Load).
 4. Resolve the common Firing Phase.
 5. Use the finished ceramic to complete a held Order or keep it for the end-game Exhibition.
 
@@ -335,14 +332,7 @@ Vessel cards are **not a hard gameplay limit**. If all 10 cards of a Shape are i
 
 ### Decorations
 
-Chosen and paid when the vessel is formed. Every Decoration costs 2 Coins; the Shifu's Form & Decorate action and Decorator's Kit each reduce one Decoration by 1 Coin.
-
-| Decoration | Cost |
-| --- | --- |
-| Plain | 2 Coins |
-| Carved | 2 Coins |
-| Impressed | 2 Coins |
-| Painted | 2 Coins |
+Forming costs the Shape's Clay plus **2 Coins**; choose any Decoration — Plain, Carved, Impressed or Painted — when the vessel is formed. The Shifu's Form & Decorate action and Decorator's Kit each reduce one vessel's cost by 1 Coin. Decorations matter only for Order requirements.
 
 ### Glazes and Preferred Heat
 
@@ -392,13 +382,13 @@ There is one **48-card Main Order deck** and one **6-card public display**. The 
 
 The display is ordered from oldest to newest: the **leftmost Order is the oldest** and the **rightmost Order is the newest**.
 
-A face-up Main Order leaves the display only when it is **reserved** at the Commission Market or **discarded at the start of a round**. When one is reserved, leave its position empty until the reserving player's turn ends; then slide every Order to its right one position left and reveal Main Orders into the rightmost empty positions, restoring the display to 6. If a single turn takes more than one face-up Order, refill after the turn, not between the takes.
+A face-up Main Order leaves the display only when it is **reserved** or **discarded at the start of a round**. When one is reserved, leave its position empty until the reserving player's turn ends; then slide every Order to its right one position left and reveal Main Orders into the rightmost empty positions, restoring the display to 6. If a single turn takes more than one face-up Order, refill after the turn, not between the takes.
 
 Orders may award **VP, Coins and 0–3 Crowns**. Commercial Orders tend to be more flexible and pay more Coins. Crown Orders tend to be more specific, pay fewer Coins and advance Imperial Recognition.
 
 ### Reserving Orders
 
-Use the Commission Market during the Work Phase to reserve Main Orders: an Apprentice Selects 2, the Shifu Selects 3 and reserves up to 2. The Canal Wharf Shifu takes the top card of the deck unseen. Acquiring **Colour Samples** lets you Select 3 at once without a Commission Market action, raises your hand limit to 5 and lets you swap 1 held Order for a Select 3 once a round; see Appendix B.
+Use the Commission Market during the Work Phase to reserve Main Orders: an Apprentice Selects 2, the Shifu Selects 3 and reserves up to 2. The Canal Wharf Shifu takes the top card of the deck unseen. The Magistrate's Hall Shifu reserves 1 face-up Crown Order. Acquiring **Colour Samples** lets you Select 3 at once without a Commission Market action, raises your hand limit to 5 and lets you swap 1 held Order for a Select 3 once a round; see Appendix B.
 
 A held Order:
 
@@ -469,13 +459,13 @@ Once per round, when you complete an Order showing **at least 1 Crown**, gain **
 
 ### Ge Kiln / 哥窑 — Crackle Mastery
 
-**Once per round**, after Quality is assigned, choose 1 of your ceramics from this firing that is **Standard**: it develops Crackle and becomes **Fine**. Place a **Crackle marker** on it; the ceramic keeps the marker.
+**Once per round**, after Quality is assigned, choose 1 of your **Fine or Standard** ceramics from this firing: it develops Crackle and is **Fine** (a Standard one becomes Fine). Place a **Crackle marker** on it; the ceramic keeps the marker.
 
-When completing an Order, each of your **Crackle ceramics may count as having any one Decoration** for that Order's Decoration requirements. Its printed Decoration is unchanged. A Crackle ceramic is never a Masterpiece, so it cannot fill a Masterpiece requirement.
+When completing an Order, each of your **Crackle ceramics may count as having any one Decoration** for that Order's Decoration requirements; its printed Decoration is unchanged. Each Crackle ceramic you deliver to complete an Order scores **1 VP**.
 
 ### Ding Kiln / 定窑 — Moulded Production
 
-Once per round, when resolving a Form & Decorate action, after you form a **Bowl, Plate or Brush Washer**, you may pay **1 Clay and 1 Coin** to form and decorate **one additional vessel of the same Shape**. Its Decoration, whichever you choose, costs that 1 Coin. This additional vessel does not count against the action's vessel limit and is not one of the 2 vessels for the Shifu's Decoration discount. For effects that refer to vessels formed by that action, it counts as formed by that action.
+Once per round, when resolving a Form & Decorate action, after you form a **Bowl, Plate or Brush Washer**, you may pay **1 Clay and 1 Coin** to form **one additional vessel of the same Shape**, with any Decoration. It does not count against the action's vessel limit and is not one of the 2 vessels for the Shifu's discount. For effects that refer to vessels formed by that action, it counts as formed by that action.
 
 ### Jun Kiln / 钧窑 — Kiln Transformation
 
@@ -484,9 +474,9 @@ Once per round, after Actual Heat is calculated but before Quality is assigned, 
 ### Ability Timing
 
 - If several players resolve abilities in the same window, resolve them beginning with the First Player and proceeding clockwise.
-- Jun acts after Actual Heat is calculated (Heat markers included) and before Quality is assigned.
+- Jun acts after Actual Heat is calculated (Kiln Master marker included) and before Quality is assigned. If a Second Firing recalculates a ceramic, an unused Jun adjustment may be applied to the recalculated heat.
 - Ge's Crackle is an after-Quality effect; Ge chooses its order among their own after-Quality effects.
-- Ru and Guan trigger while completing an Order in the Order Phase; a Crackle ceramic's wildcard Decoration is declared while completing an Order.
+- Ru, Guan and Crackle VP trigger while completing an Order in the Order Phase; a Crackle ceramic's wildcard Decoration is declared then.
 - Ding triggers during its Form & Decorate action.
 
 ## End of the Game and Scoring
@@ -507,7 +497,7 @@ The player with the most VP wins.
 - Gain Clay, Wood and Coins from the general supply and return all spent Clay, Wood and Coins to it.
 - **Resources are open information.** Each player's total Clay, Wood and Coins must be clear to all players and accurately stated on request. Contribution choices remain secret until revealed; Wood is paid only on reveal, so no Wood is set aside beforehand.
 - **No trading:** Players may not trade Clay, Wood, Coins, Orders, Techs or ceramics.
-- **Negotiation:** Players may discuss and make promises about their intended Contributions and Heat markers. These promises are non-binding. Players must accurately disclose public information and may not transfer resources or other game components between players.
+- **Negotiation:** Players may discuss and make promises about their intended Contributions. These promises are non-binding. Players must accurately disclose public information and may not transfer resources or other game components between players.
 - **Orders in hand are secret information.** The number of Orders in each player's hand is public.
 - **All undelivered ceramics are open information**, including Shaped, Loaded and Finished ceramics and all recorded attributes on them.
 - Shaped, Loaded and Finished ceramics remain between rounds and keep all recorded attributes until a rule explicitly changes, delivers or discards them.
@@ -522,7 +512,7 @@ The player with the most VP wins.
 
 ### A0. Starting Order Deck — 8
 
-Starting Orders are easy **commercial Orders** that give each workshop achievable opening targets. Shuffle this deck separately during Setup and deal each player 2 Starting Orders and 1 Main Order; a 4-player game uses the whole deck, otherwise return the undealt Starting Orders to the box. Every card asks for one thing and pays about the same, so the deal cannot swing the game. The second Starting Order is the insurance for a firing that misses: every Starting Order accepts Standard quality. Starting Orders never enter the Main Order deck and have **no Crowns**; if discarded from your hand during Cleanup, return them to the box. They are Orders for all rules and Kiln Tradition abilities. A player is never required to complete a Starting Order.
+Starting Orders are easy **commercial Orders** that give each workshop achievable opening targets. Shuffle this deck separately during Setup and deal each player 2 Starting Orders; a 4-player game uses the whole deck, otherwise return the undealt Starting Orders to the box. Each player then chooses 1 face-up Main Order from the display, in reverse turn order. Every card asks for one thing and pays about the same, so the deal cannot swing the game. The second Starting Order is the insurance for a firing that misses: every Starting Order accepts Standard quality. Starting Orders never enter the Main Order deck and have **no Crowns**; if discarded from your hand during Cleanup, return them to the box. They are Orders for all rules and Kiln Tradition abilities. A player is never required to complete a Starting Order.
 
 | ID | Requirements | Quality | VP | Coins |
 | --- | --- | --- | --- | --- |
@@ -609,9 +599,9 @@ Tech tiles use abbreviated reminder text; this appendix gives the full effects. 
 | Advanced Tech | Cost | Ability |
 | --- | --- | --- |
 | **Large Throwing Wheel** | 2 | Once per round, during a Form & Decorate action in which you form at least **1 Vase or Censer**, reduce that action's **total Clay cost by 2**, to a minimum of 0. |
-| **Decorator's Kit** | 2 | Once per round, **1 Carved, Impressed or Painted Decoration** you apply costs **1 Coin less**. It may be the same Decoration the Shifu's discount reduces. |
+| **Decorator's Kit** | 2 | Once per round, a vessel you form with a **Carved, Impressed or Painted** Decoration costs **1 Coin less**. It may be the same vessel the Shifu's discount reduces. |
 | **Reworking Table** | 2 | Once per round, when you glaze and load a Shaped vessel, you may first **change its Shape** to any other Shape: return its Vessel card and take the new one. No Clay is paid; its Decoration stays. |
-| **Prepared Clay** | 3 | Once per round, during a Materials Yard action, after gaining resources, you may **form 1 vessel**: pay its Clay cost **+1** and a Decoration cost. This is a Tech effect, not a Form & Decorate action. |
+| **Prepared Clay** | 3 | Once per round, during a Materials Yard action, after gaining resources, you may **form 1 vessel**: pay its Clay cost **+1 Clay** and 2 Coins, choosing any Decoration. This is a Tech effect, not a Form & Decorate action. |
 | **Senior Apprentice** | 3 | Once per round, **1 Apprentice** you place at the **Materials Yard or Commission Market** resolves the **Shifu effect** there instead of the Apprentice effect. |
 | **Connoisseur's Cabinet** | 3 | At game end, each **Fine or Masterpiece** ceramic in your Exhibition scores **+1 VP**, up to **+5 VP**. |
 
@@ -631,23 +621,23 @@ Tech tiles use abbreviated reminder text; this appendix gives the full effects. 
 | Advanced Tech | Cost | Ability |
 | --- | --- | --- |
 | **Protective Saggars** | 3 | Your ceramics are never Flawed: for them, a Heat Difference of **3 or more counts as Standard**. Once per round, after Quality is assigned, **1 of your Standard ceramics** from this firing becomes **Fine**. This cannot create a Masterpiece. |
-| **Fuel Ledger** | 2 | Your Bank the Fire and Stoke the Fire cost **no Wood**. When you acquire this tile, take the **Fuel Ledger Bank** (1 Wood, **−2**) and **Fuel Ledger Stoke** (1 Wood, **+2**) Contribution cards; choose among all 5 of your cards as usual, playing exactly 1. |
-| **Test Pieces 火照** | 3 | Once per round, **after Base Heat is determined and before Heat markers are set**, if you have at least 1 ceramic in this firing, pay **1 Wood** to privately look at the top Fire card. You may then put it on the **bottom** of the deck. You may not show it. |
-| **Second Firing** | 2 | Once per round, after Quality is assigned, choose **1 of your Flawed or Standard ceramics** from this firing. Reveal **2 extra Fire cards**, choose 1 of them and recalculate that ceramic's Actual Heat and Quality with the **same Base Heat, zone modifier, Kiln Furniture modifier and Heat marker** and the chosen card's modifier. Jun's adjustment from the first calculation does not carry over. The new Quality replaces the old, even if worse. Discard both extra Fire cards after resolving. |
-| **Kiln Master 窑工** | 2 | Once per round, in the Heat marker step, place the **Kiln Master marker** (+1 or −1 face up) on **1 of your ceramics in this firing that carries no Heat marker**. It is a Heat marker for all rules. |
+| **Fuel Ledger** | 4 | Your Bank the Fire and Stoke the Fire cost **no Wood**. When you acquire this tile, take the **Fuel Ledger Bank** (1 Wood, **−2**) and **Fuel Ledger Stoke** (1 Wood, **+2**) Contribution cards; choose among all 5 of your cards as usual, playing exactly 1. |
+| **Test Pieces 火照** | 3 | Once per round, **after Base Heat is determined and before the Fire card is revealed**, if you have at least 1 ceramic in this firing, pay **1 Wood** to privately look at the top Fire card. You may then put it on the **bottom** of the deck. You may not show it. |
+| **Second Firing** | 2 | Once per round, after Quality is assigned, choose **1 of your Flawed or Standard ceramics** from this firing. Reveal **2 extra Fire cards**, choose 1 of them and recalculate that ceramic's Actual Heat and Quality with the **same Base Heat, zone or Kiln Furniture modifier and Kiln Master marker** and the chosen card's modifier. Jun's adjustment from the first calculation does not carry over; an unused Jun adjustment may be applied to the recalculated heat before the new Quality is assigned. The new Quality replaces the old, even if worse. Discard both extra Fire cards after resolving. |
+| **Kiln Master 窑工** | 2 | Once per round, when you load a ceramic, you may place a **+1 or −1 marker** on it. It adds its value to that ceramic's Actual Heat. |
 | **Tribute Ware 贡瓷** | 4 | Once per round, when you complete an Order showing **at least 1 Crown**, gain **1 additional Crown**. |
 
 ### Tech Clarifications
 
 - **Prepared Clay and Imperial Priority** are Tech or token effects, not worker actions. They never count as Form & Decorate or Glaze & Load actions, and they do not trigger effects that require those actions.
 - **Kiln Furniture, Inverted Firing and Setter's Mark** affect the Shared Kiln only. The Imperial Kiln holds 1 ceramic and uses its own modifier.
-- **Heat markers:** a ceramic carries at most 1 marker. Kiln Master's marker and your own Heat marker may not sit on the same ceramic. Jun's adjustment applies on top of either. Markers stay in place through a Second Firing recalculation.
-- **Test Pieces** resolves in First Player order, before any Heat marker is turned. A buried card stays on the bottom; if the Fire deck runs out, the discard pile is shuffled and placed above it, so the buried card is drawn last. You may discuss what you saw but may not show the card.
+- **Kiln Master:** its marker is chosen when the ceramic is loaded, like the Imperial Kiln's modifier, and is open information. Jun's adjustment applies on top of it; it stays in place through a Second Firing recalculation.
+- **Test Pieces** resolves after Base Heat is determined and before the Fire card is revealed. A buried card stays on the bottom; if the Fire deck runs out, the discard pile is shuffled and placed above it, so the buried card is drawn last. You may discuss what you saw but may not show the card.
 - **Colour Samples:** each Select 3 it grants is a Tech effect, not a Commission Market action; a face-up Order taken by one is replaced at the end of your turn as usual. Your hand limit of 5 applies at every Cleanup while you own the tile. The Order you discard for the swap goes to the Main Order discard pile (a Starting Order goes to the box).
 - **Protective Saggars** and **Second Firing** affect only your own eligible ceramics in the current firing, in the Shared Kiln or your Imperial Kiln; never ceramics fired in earlier rounds. Second Firing's extra Fire cards change nothing for any other ceramic.
-- **Discounts: the Shifu's Decoration discount, Decorator's Kit and Ding's 1-Coin vessel are three separate reductions. The first two may apply to the same Decoration (a Carved for 0). Ding's vessel takes neither. Large Throwing Wheel reduces Clay only; Ding's vessel is not a Vase or Censer**.
+- **Discounts: the Shifu's discount, Decorator's Kit and Ding's 1-Coin vessel are three separate reductions. The first two may apply to the same vessel (its 2 Coins become 0). Ding's vessel takes neither. Large Throwing Wheel reduces Clay only; Ding's vessel is not a Vase or Censer**.
 - **Senior Apprentice** at the Commission Market gives that Apprentice the Shifu's effect: Select 3, reserving up to 2.
-- **Ge's Crackle** is an after-Quality effect. With Protective Saggars, a ceramic that would have been Flawed is Standard and may be crackled; Saggars' own Standard → Fine step and Crackle cannot both apply to the same ceramic. Crackle never creates a Masterpiece, so a Crackle ceramic cannot fill a Masterpiece requirement, including Painted Masterpiece Orders.
+- **Ge's Crackle** is an after-Quality effect. With Protective Saggars, a ceramic that would have been Flawed is Standard and may be crackled; Saggars' Standard → Fine step and Crackle may both apply to the same ceramic, since Crackle does not change a Fine ceramic's Quality.
 
 ## Appendix C — Fire Deck
 
@@ -665,28 +655,20 @@ Tech tiles use abbreviated reminder text; this appendix gives the full effects. 
 
 If no ceramics are loaded in the Shared Kiln or any Imperial Kiln, **skip this phase and do not reveal a Fire card**.
 
-1. **Choose Contributions.** Every player with at least 1 ceramic in the Shared Kiln secretly chooses 1 of their Contribution cards (Bank, Tend or Stoke; Fuel Ledger's owner also has Fuel Ledger Bank and Fuel Ledger Stoke) and must be able to pay its Wood cost.
-2. **Reveal and pay.** Reveal all Contribution cards simultaneously, then pay all costs.
-3. **Determine Base Heat.** Start at the Kiln Die result, add all final Contribution modifiers, then clamp to 0–5.
-4. **Test Pieces.** In First Player order, each Test Pieces owner with a ceramic in this firing may pay 1 Wood to look at the top Fire card and may bury it.
-5. **Heat markers.** In First Player order, each player with a face-down Heat marker on a ceramic turns it to **+1 or −1**, or returns it to their supply. Kiln Master owners place their marker in this step.
-6. **Reveal Fire.** Reveal the top Fire card and add its modifier to Base Heat. This is Global Heat and is not capped.
-7. **Calculate Actual Heat.** Shared-Kiln ceramics: Global Heat + zone modifier (or the Kiln Furniture modifier) + Heat marker. Imperial Kiln ceramics: Kiln Die result + Fire modifier + the modifier chosen at loading + Heat marker.
-8. **Heat-adjustment abilities.** In First Player order, resolve Jun and any other abilities that occur after Actual Heat is calculated and before Quality is assigned.
-9. **Assign Quality.** Compare final Actual Heat with Preferred Heat.
-10. **After-Quality abilities.** In First Player order, resolve Protective Saggars, Second Firing, Ge's Crackle and similar effects. If you control multiple abilities in this window, choose their order.
-11. **Salvage a Flawed ceramic, if desired.** Each player may discard 1 ceramic still Flawed from this firing to gain 2 Coins. Return its Vessel card to the matching Shape supply.
-12. **Finish firing.** Move all remaining fired ceramics to their owners' Finished Ceramics areas. Empty all Shared Kiln and Imperial Kiln spaces. Return Heat markers, the Kiln Master marker and Kiln Furniture tiles to their owners, discard the Fire card face up, and return all Contribution cards.
+1. **Contributions.** Every player with at least 1 ceramic in the Shared Kiln secretly chooses 1 of their Contribution cards that they can pay for (Fuel Ledger's owner chooses among 5); reveal them together and pay the Wood. Base Heat = the Kiln Die result + all modifiers, clamped to 0–5.
+2. **Fire.** Reveal the top Fire card. Global Heat = Base Heat + its modifier, not capped.
+3. **Actual Heat.** Shared-Kiln ceramics: Global Heat + zone modifier (or the Kiln Furniture modifier) + Kiln Master marker if present. Imperial Kiln ceramics: Kiln Die result + Fire modifier + the modifier chosen at loading + Kiln Master marker if present. Jun's adjustment applies now.
+4. **Quality.** Compare each ceramic's Actual Heat with its Preferred Heat.
+5. **After-Quality abilities.** In First Player order, resolve Protective Saggars, Second Firing, Ge's Crackle and similar effects; a player with several chooses their order.
+6. **Finish firing.** Move the fired ceramics to their owners' Finished Ceramics areas and empty all kiln spaces. Return the Kiln Master marker, Kiln Furniture tiles and Contribution cards; discard the Fire card face up.
 
 ### Timing Vocabulary
 
 | Wording | Sequence Step |
 | --- | --- |
-| When Contributions are chosen | 1 |
-| After Base Heat is determined, before Heat markers are set | 4 |
-| In the Heat marker step | 5 |
-| After Actual Heat is calculated, before Quality is assigned | 8 |
-| After Quality is assigned | 10 |
+| After Base Heat is determined, before the Fire card is revealed | end of 1 |
+| After Actual Heat is calculated, before Quality is assigned | 3 |
+| After Quality is assigned | 5 |
 
 ## Appendix E — Quick Reference
 
@@ -694,7 +676,7 @@ If no ceramics are loaded in the Shared Kiln or any Imperial Kiln, **skip this p
 
 1. **Start:** roll the Kiln Die and set the starting Base Heat (1, 2 or 3); Rounds 2–5 discard the 2 leftmost Main Orders, slide the remaining 4 left and reveal 2 new Orders to restore the **6-card display**; ready abilities.
 2. **Work:** First Player clockwise; each player must place 1 worker per turn. No passing; end when every player has placed all their workers.
-3. **Fire:** Contributions → Base Heat → Test Pieces → Heat markers → Fire → Actual Heat → abilities → Quality.
+3. **Fire:** Contributions → Base Heat → Fire → Actual Heat → abilities → Quality.
 4. **Orders:** First Player clockwise; each player completes any number of held Orders, one at a time. Face-up Orders cannot be completed.
 5. **Cleanup:** return workers and markers; trim Orders to your hand limit (4; 5 with Colour Samples); if the game continues, pass First Player and advance the round.
 
@@ -704,13 +686,13 @@ If no ceramics are loaded in the Shared Kiln or any Imperial Kiln, **skip this p
 
 | Location | Apprentice | Shifu |
 | --- | --- | --- |
-| Materials Yard | Gain 3 Clay/Wood | Gain 6 Clay/Wood |
-| Form & Decorate | Form and decorate 1 | Form and decorate up to 2; if 2, one Decoration −1 Coin |
-| Glaze & Load | Glaze and load 1 | Glaze and load up to 2; Heat marker face-down on 1 of your ceramics |
+| Materials Yard | Gain 4 Clay/Wood | Gain 8 Clay/Wood |
+| Form & Decorate | Form 1: Clay + 2 Coins, any Decoration | Form up to 2; if 2, one costs 1 Coin less |
+| Glaze & Load | Glaze and load 1 (1 Wood) | Glaze and load up to 2 (1 Wood for both) |
 | Commission Market | Select 2 | Select 3, reserving up to 2 |
 | Guild Hall | Buy 1 Advanced Tech at cost | Look at top 2 Techs of 1 discipline (or as many as remain); buy up to 2 Techs from different disciplines at cost |
 | Canal Wharf | 2 Coins | 4 Coins + the top Order card, unseen, to hand |
-| Magistrate's Hall | Pay 4 Coins → +1 Recognition (0 → 1, 1 → 2 or 2 → 3) | Pay 3 Coins → same |
+| Magistrate's Hall | Pay 4 Coins → +1 Recognition (0 → 1, 1 → 2 or 2 → 3) | Pay 4 Coins → same, and reserve 1 face-up Crown Order (none if none is showing) |
 
 - **Select N:** look at the top N Main Orders, reserve 1 of them or 1 from the display, rest to the bottom of the deck.
 - A reserved face-up Order is replaced only after the reserving player's turn ends. Colour Samples: Select 3 when acquired; hand limit 5; once a round discard 1 held Order to Select 3.
@@ -720,7 +702,7 @@ If no ceramics are loaded in the Shared Kiln or any Imperial Kiln, **skip this p
 ### Imperial Recognition
 
 - **1 Crown — Imperial Grant:** gain **1 Clay, 1 Wood and 1 Coin**.
-- **2 Crowns — Imperial Gift:** gain your **Imperial Kiln tile** (court-fired: Kiln Die result + Fire + chosen modifier, immune to Contributions).
+- **2 Crowns — Imperial Gift:** gain your **Imperial Kiln tile** (court-fired: Kiln Die result + Fire + chosen modifier, immune to Contributions, pay no Wood when loading into it).
 - **3 Crowns — Imperial Priority:** take your coloured token. Once per game, before or after your worker action, spend it to glaze and load **1 Shaped vessel** into your empty Imperial Kiln.
 - **4 Crowns — Imperial Audience:** gain **6 VP**. After Recognition 4, each additional Crown scores **1 VP immediately**.
 - Crowns on completed Orders and the Magistrate's Hall advance Recognition; the Magistrate's Hall cannot reach Recognition 4.
@@ -733,6 +715,8 @@ A Tech effect is **not a worker action**. It does not count toward location visi
 
 **Base Heat starts at the Kiln Die result, rolled at the start of the round (faces 1, 1, 2, 2, 3, 3).** Bank 1 Wood / −1 · Tend 0 / 0 · Stoke 1 Wood / +1. Fuel Ledger owner: Bank and Stoke free; Fuel Ledger Bank 1 Wood / −2 · Fuel Ledger Stoke 1 Wood / +2.
 
+Base Heat = Kiln Die + Contributions, clamped 0–5. Global Heat = Base Heat + Fire card. Actual Heat = Global Heat + zone (High +1 / Middle 0 / Low −1, or Kiln Furniture) + Kiln Master marker if present; not clamped.
+
 | Difference | Quality |
 | --- | --- |
 | 0 | Masterpiece |
@@ -740,9 +724,8 @@ A Tech effect is **not a worker action**. It does not count toward location visi
 | 2 | Standard |
 | 3+ | Flawed |
 
-- **Heat marker:** turned to +1 or −1 after Base Heat, in First Player order; adds to that ceramic's Actual Heat.
-- **Ge:** once per round after Quality, 1 Standard ceramic develops Crackle and becomes Fine; Crackle ceramics count as any one Decoration for Orders.
-- After after-Quality abilities, each player may discard **1 ceramic still Flawed from this firing** to gain **2 Coins**.
+- **Ge:** once per round after Quality, 1 Fine or Standard ceramic develops Crackle and is Fine; Crackle ceramics count as any one Decoration for Orders and score 1 VP each when delivered.
+- A Flawed ceramic may be sold at any time for **2 Coins**.
 
 ### Scoring
 
